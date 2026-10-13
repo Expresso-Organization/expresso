@@ -187,3 +187,12 @@ describe("canonical stale property conflict",()=>{
   expect(new Headers(patches[1]!.headers).get("if-match")).toBe('"v2"');
  });
 });
+
+it("resets the title draft when switching to another record with the same saved title", () => {
+  const { rerender, record } = setup([]);
+  fireEvent.change(screen.getByLabelText("제목"), { target: { value: "이전 기록의 입력 중 제목" } });
+  rerender(<PropertyList record={{ ...record }} definitions={definitions} categoryId={recordId} />);
+  expect((screen.getByLabelText("제목") as HTMLInputElement).value).toBe("이전 기록의 입력 중 제목");
+  rerender(<PropertyList record={{ ...record, id: dateId }} definitions={definitions} categoryId={recordId} />);
+  expect((screen.getByLabelText("제목") as HTMLInputElement).value).toBe("기록");
+});

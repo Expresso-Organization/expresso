@@ -149,6 +149,7 @@ async function handleSocket(
         send(socket, {
           type: "ready", protocolVersion: 1, recordId, sessionId,
           sequence: bootstrap.documentVersion, documentVersion: bootstrap.documentVersion,
+          ...(bootstrap.stateUpdateBase64 ? { stateUpdateBase64: bootstrap.stateUpdateBase64 } : {}),
         });
         for (const update of await options.service.updatesSince(
           principal.user.id, recordId, message.lastAckSequence,

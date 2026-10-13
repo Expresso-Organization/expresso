@@ -14,11 +14,12 @@ import {
   type AiEditProposalDetail,
   type CreateAiEditProposal,
 } from "@expresso/contracts";
-import { applyCareerCommands, encodeDocumentAsYUpdate, encodeDocumentStateVector, parseCareerDocument, reconstructYDocument, type CareerDocument, type CareerEditCommand } from "@expresso/editor";
+import { applyCareerCommands, encodeDocumentAsYUpdate, encodeDocumentUpdatesStateVector, mergeDocumentYUpdates, reconstructYDocument, type CareerDocument, type CareerEditCommand } from "@expresso/editor";
 import { mongoCollections, type CareerAiProposalDoc } from "@expresso/database";
 import { Binary } from "mongodb";
 
 import { inTransaction, type MongoTransaction } from "../../platform/mongo-transaction.js";
+import { readCareerSnapshotUpdate } from "../../platform/career-document-snapshot.js";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { CareerDocumentError } from "./errors.js";
@@ -144,7 +145,8 @@ export class AiProposalService {
       if (!record || (record.documentVersion ?? 0) !== input.expectedDocumentVersion) throw new CareerDocumentError(409, "document version is stale");
       const snapshot = await repository.snapshot(recordId, tx.session); if (!snapshot) throw new CareerDocumentError(409, "career document is not initialized");
       const updates = await repository.updates(recordId, snapshot.serverSequence, tx.session);
-      const before = reconstructYDocument([encodeDocumentAsYUpdate(parseCareerDocument(snapshot.content)), ...updates.map((update) => binaryBytes(update.update))]);
+      const beforeState = mergeDocumentYUpdates([readCareerSnapshotUpdate(snapshot), ...updates.map((update) => binaryBytes(update.update))]);
+      const before = reconstructYDocument([beforeState]);
       const existingBlocks = blockMap(before.content);
       const commands = input.commandIndexes.map((index) => proposal.commands[index] as unknown as CareerEditCommand | undefined).filter((command): command is CareerEditCommand => command !== undefined);
       const changes = input.propertyChangeIndexes.map((index) => proposal.propertyChanges[index] as unknown as { propertyId: string; previousValue: unknown; nextValue: unknown } | undefined).filter((change): change is { propertyId: string; previousValue: unknown; nextValue: unknown } => change !== undefined);
@@ -153,12 +155,12 @@ export class AiProposalService {
       await this.validateProposal(before, commands, proposal.selection.blockIds);
       const after = applyCareerCommands(before, commands);
       const beforeSnapshotId = randomUUID(); const afterSnapshotId = randomUUID(); const beforeChecksum = checksum(before); const afterChecksum = checksum(after);
-      const canonicalBefore = encodeDocumentAsYUpdate(before); const nextUpdate = encodeDocumentAsYUpdate(after, [canonicalBefore], `ai:${proposal._id}:apply`);
-      await repository.insertSnapshot({ _id: beforeSnapshotId, userId, recordId, documentVersion: input.expectedDocumentVersion, version: input.expectedDocumentVersion, schemaVersion: 1, content: before as never, stateVector: new Binary(Buffer.from(encodeDocumentStateVector(before))), serverSequence: input.expectedDocumentVersion, checksum: hashUpdate(canonicalBefore), actor: "ai", createdAt: new Date() }, tx.session);
+      const canonicalBefore = encodeDocumentAsYUpdate(before); const nextUpdate = encodeDocumentAsYUpdate(after, [beforeState, canonicalBefore], `ai:${proposal._id}:apply`);
+      await repository.insertSnapshot({ _id: beforeSnapshotId, userId, recordId, documentVersion: input.expectedDocumentVersion, version: input.expectedDocumentVersion, schemaVersion: 1, content: before as never, stateUpdate: new Binary(Buffer.from(beforeState)), stateVector: new Binary(Buffer.from(encodeDocumentUpdatesStateVector([beforeState]))), serverSequence: input.expectedDocumentVersion, checksum: hashUpdate(canonicalBefore), actor: "ai", createdAt: new Date() }, tx.session);
       const nextVersion = await repository.bumpDocumentVersion(recordId, userId, input.expectedDocumentVersion, afterSnapshotId, tx.session); if (nextVersion === null) throw new CareerDocumentError(409, "document version is stale");
       await repository.insertUpdate({ _id: randomUUID(), recordId, userId, clientId: proposal._id, clientSequence: 1, serverSequence: nextVersion, update: new Binary(nextUpdate), byteLength: nextUpdate.byteLength, updateHash: hashUpdate(nextUpdate), actor: "ai", receivedAt: new Date(), compactedAt: null }, tx.session);
       update = { base64: Buffer.from(nextUpdate).toString("base64"), sequence: nextVersion };
-      await repository.insertSnapshot({ _id: afterSnapshotId, userId, recordId, documentVersion: nextVersion, version: nextVersion, schemaVersion: 1, content: after as never, stateVector: new Binary(Buffer.from(encodeDocumentStateVector(after))), serverSequence: nextVersion, checksum: hashUpdate(encodeDocumentAsYUpdate(after)), actor: "ai", createdAt: new Date() }, tx.session);
+      await repository.insertSnapshot({ _id: afterSnapshotId, userId, recordId, documentVersion: nextVersion, version: nextVersion, schemaVersion: 1, content: after as never, stateUpdate: new Binary(Buffer.from(nextUpdate)), stateVector: new Binary(Buffer.from(encodeDocumentUpdatesStateVector([nextUpdate]))), serverSequence: nextVersion, checksum: hashUpdate(encodeDocumentAsYUpdate(after)), actor: "ai", createdAt: new Date() }, tx.session);
       const category = await db.careerCategories.findOne({ _id: record.categoryId, $or: [{ userId: null }, { userId }] }, { session: tx.session }); if (!category) throw new CareerDocumentError(404, "career category not found");
       const properties = { ...record.properties }; const definitions = definitionMap(category); const changedPropertyIds: string[] = [];
       for (const change of changes) { const definition = definitions.get(change.propertyId); if (!definition || definition.system || JSON.stringify(properties[definition.key] ?? null) !== JSON.stringify(change.previousValue)) throw new CareerDocumentError(409, "AI proposal property changed"); if (change.nextValue === null) delete properties[definition.key]; else properties[definition.key] = CareerPropertyValueV2Schema.parse(change.nextValue); changedPropertyIds.push(change.propertyId); }
@@ -182,12 +184,8 @@ export class AiProposalService {
     if (!proposal?.revisionId || !proposal.beforeSnapshotId || proposal.appliedDocumentVersion !== input.expectedDocumentVersion) throw new CareerDocumentError(409, "AI proposal undo is stale");
     const beforeSnapshot = await mongoCollections(this.context.db).careerDocumentSnapshots.findOne({ _id: proposal.beforeSnapshotId, userId, recordId });
     if (!beforeSnapshot) throw new CareerDocumentError(409, "AI proposal before snapshot is missing");
-    const before = parseCareerDocument(beforeSnapshot.content);
-    const current = await this.documentService.bootstrap(userId, recordId);
     const bootstrap = await this.documentService.restoreRevision(userId, proposal.revisionId, input.expectedDocumentVersion, recordId);
-    const canonicalBefore = encodeDocumentAsYUpdate(before);
-    const appliedUpdate = encodeDocumentAsYUpdate(current.document, [canonicalBefore], `ai:${proposal._id}:apply`);
-    const update = encodeDocumentAsYUpdate(bootstrap.document, [canonicalBefore, appliedUpdate], `ai:${proposal._id}:undo:${bootstrap.documentVersion}`);
+    const update = bootstrap.stateUpdateBase64 ? Buffer.from(bootstrap.stateUpdateBase64, "base64") : encodeDocumentAsYUpdate(bootstrap.document);
     this.updatePublisher?.(recordId, Buffer.from(update).toString("base64"), bootstrap.documentVersion);
     return bootstrap;
   }

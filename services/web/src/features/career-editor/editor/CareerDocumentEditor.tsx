@@ -5,7 +5,7 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import { CareerCategoriesResponseSchema, CareerRecordResponseSchema, type CareerCategory, type CareerPropertyDefinitionV2, type CareerRecordListItem } from "@expresso/contracts";
 import { useEffect, useRef, useState } from "react";
 
-import { useCareerEditorSession } from "../session/useCareerEditorSession";
+import { useCareerEditorSession, type CareerEditorSnapshot } from "../session/useCareerEditorSession";
 import { BlockHandle } from "./BlockHandle";
 import styles from "./CareerDocumentEditor.module.css";
 import {
@@ -27,6 +27,7 @@ export function CareerDocumentEditor({
   category,
   showAiProposal = true,
   onAiRequest,
+  onSaveStatusChange,
   onResumePropertyMutation,
 }: {
   recordId: string;
@@ -36,8 +37,10 @@ export function CareerDocumentEditor({
   showAiProposal?: boolean;
   onResumePropertyMutation?(jobId: string): Promise<void>;
   onAiRequest?: ((request: AiPromptRequest) => void) | undefined;
+  onSaveStatusChange?: ((status: CareerEditorSnapshot["status"]) => void) | undefined;
 }) {
   const { snapshot, document, updateDocument } = useCareerEditorSession(recordId);
+  useEffect(() => { onSaveStatusChange?.(snapshot.status); }, [recordId, snapshot.status, onSaveStatusChange]);
   const [localRecord, setLocalRecord] = useState(record);
   const currentRecordId = useRef(recordId);
   const mutationPoll = useRef<AbortController | null>(null);
@@ -49,7 +52,7 @@ export function CareerDocumentEditor({
   const [slashOpen, setSlashOpen] = useState(false);
   const [aiRequest, setAiRequest] = useState<AiPromptRequest | null>(null);
   const applyingRemote = useRef(false);
-  const loadedVersion = useRef(-1);
+  const loadedDocument = useRef<{ recordId: string; json: string } | null>(null);
   const editor = useEditor({
     immediatelyRender: false,
     extensions: careerEditorExtensions,
@@ -74,17 +77,21 @@ export function CareerDocumentEditor({
     },
     onUpdate({ editor: current }) {
       if (applyingRemote.current) return;
-      updateDocument(tiptapToCareerDocument(current.getJSON()));
+      const next = tiptapToCareerDocument(current.getJSON());
+      loadedDocument.current = { recordId, json: JSON.stringify(next) };
+      updateDocument(next);
     },
   });
 
   useEffect(() => {
-    if (!editor || !document || snapshot.documentVersion === loadedVersion.current) return;
+    if (!editor || !document) return;
+    const json = JSON.stringify(document);
+    if (loadedDocument.current?.recordId === recordId && loadedDocument.current.json === json) return;
     applyingRemote.current = true;
     editor.commands.setContent(careerDocumentToTiptap(document), { emitUpdate: false });
-    loadedVersion.current = snapshot.documentVersion;
+    loadedDocument.current = { recordId, json };
     applyingRemote.current = false;
-  }, [document, editor, snapshot.documentVersion]);
+  }, [document, editor, recordId]);
 
   async function refreshBusinessRecord(signal?: AbortSignal) {
     async function read(url: string, issue: string) {

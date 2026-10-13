@@ -1,9 +1,10 @@
 import { randomUUID } from "node:crypto";
-import { careerDocumentToMarkdown, encodeDocumentAsYUpdate, encodeDocumentStateVector, markdownToCareerDocument, parseCareerDocument, reconstructYDocument } from "@expresso/editor";
+import { careerDocumentToMarkdown, encodeDocumentAsYUpdate, encodeDocumentUpdatesStateVector, markdownToCareerDocument, reconstructYDocument } from "@expresso/editor";
 import { CareerPropertySchemaSchema, CareerProfileSchema, CreateCareerCategorySchema, CreateCareerRecordSchema, CreateCareerViewSchema, SaveCareerProfileSchema, UpdateCareerRecordSchema, type CareerPropertySchema, type CreateCareerCategory, type CreateCareerRecord, type CreateCareerView, type ListCareerRecordsQuery, type SaveCareerProfile, type UpdateCareerRecord } from "@expresso/contracts";
 import { mongoCollections, type CareerCategoryDoc, type CareerRecordDoc, type CareerViewDoc } from "@expresso/database";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction } from "../../platform/mongo-transaction.js";
+import { readCareerSnapshotUpdate } from "../../platform/career-document-snapshot.js";
 import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { requireActiveUser } from "../identity/index.js";
 import { CareerError } from "./errors.js";
@@ -153,7 +154,7 @@ export class CareerService implements CareerApi {
     try {
       const updates = await mongoCollections(this.context.db).careerDocumentUpdates.find({ recordId, serverSequence: { $gt: snapshot.serverSequence }, compactedAt: null }).sort({ serverSequence: 1 }).limit(10_001).toArray();
       if (updates.length > 10_000) throw new CareerError(503, "document compaction is required before legacy projection");
-      const document = reconstructYDocument([encodeDocumentAsYUpdate(parseCareerDocument(snapshot.content)), ...updates.map((row) => new Uint8Array(row.update.buffer))]);
+      const document = reconstructYDocument([readCareerSnapshotUpdate(snapshot), ...updates.map((row) => new Uint8Array(row.update.buffer))]);
       return mapMongoRecord(record, careerDocumentToMarkdown(document));
     }
     catch { return mapMongoRecord(record); }
@@ -206,9 +207,12 @@ export class CareerService implements CareerApi {
         const next = await repository.bumpDocumentVersion(recordId, userId, current, undefined, tx.session);
         if (next === null) throw new CareerError(412, "document version is stale");
         const document = markdownToCareerDocument(input.bodyMd);
-        const update = encodeDocumentAsYUpdate(document);
+        const previousSnapshot = await repository.snapshot(recordId, tx.session);
+        const priorUpdates = previousSnapshot ? [readCareerSnapshotUpdate(previousSnapshot)] : [encodeDocumentAsYUpdate(markdownToCareerDocument(existing.bodyMd))];
         const snapshotId = randomUUID();
-        await repository.insertSnapshot({ _id: snapshotId, userId, recordId, documentVersion: next, version: next, schemaVersion: 1, content: document as never, stateVector: new Binary(Buffer.from(encodeDocumentStateVector(document))), serverSequence: next, checksum: hashUpdate(update), actor: "user", createdAt: new Date() }, tx.session);
+        const stateUpdate = encodeDocumentAsYUpdate(document, priorUpdates, `legacy:${snapshotId}`);
+        const update = encodeDocumentAsYUpdate(document);
+        await repository.insertSnapshot({ _id: snapshotId, userId, recordId, documentVersion: next, version: next, schemaVersion: 1, content: document as never, stateUpdate: new Binary(Buffer.from(stateUpdate)), stateVector: new Binary(Buffer.from(encodeDocumentUpdatesStateVector([stateUpdate]))), serverSequence: next, checksum: hashUpdate(update), actor: "user", createdAt: new Date() }, tx.session);
         await records.updateOne({ _id: recordId, userId, documentVersion: next }, { $set: { latestSnapshotId: snapshotId } }, { session: tx.session });
         await repository.insertRevision({ _id: randomUUID(), userId, recordId, actor: "user", summary: "레거시 본문 저장", beforeVersion: current, afterVersion: next, snapshotId, createdAt: new Date() }, tx.session);
       }

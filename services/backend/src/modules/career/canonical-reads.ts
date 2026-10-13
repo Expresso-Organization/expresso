@@ -1,9 +1,10 @@
-import { careerDocumentToMarkdown,encodeDocumentAsYUpdate,parseCareerDocument,reconstructYDocument } from "@expresso/editor";
+import { careerDocumentToMarkdown,reconstructYDocument } from "@expresso/editor";
 import { CareerRecordSchema,CareerPendingPropertyMutationSchema,CareerPropertyDefinitionV2Schema,type CareerPropertyDefinitionV2 } from "@expresso/contracts";
 import { projectCanonicalCareerProductProperties,mongoCollections,readCanonicalCareerPropertyValues,readCareerCategoryPropertyOptions,readCareerPropertyOptionSnapshot,overlayCareerPropertyOptionSnapshot,overlayCareerPropertyOptions,type CareerCategoryDoc,type CareerRecordDoc } from "@expresso/database";
 import type { ClientSession } from "mongodb";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction } from "../../platform/mongo-transaction.js";
+import { readCareerSnapshotUpdate } from "../../platform/career-document-snapshot.js";
 import { CareerError } from "./errors.js";
 import { mapMongoRecord } from "./mongo-records.js";
 import { mapMongoCategory,requireCareerCategory } from "./mongo-categories.js";
@@ -62,7 +63,7 @@ export class CanonicalCareerReadService {
   if(!snapshot)return record.bodyMd;
   const updates=await db.careerDocumentUpdates.find({recordId:record._id,userId:record.userId,serverSequence:{$gt:snapshot.serverSequence},compactedAt:null},options).sort({serverSequence:1}).limit(10001).toArray();
   if(updates.length>10000)throw new CareerError(503,"document compaction is required before projection");
-  try{return careerDocumentToMarkdown(reconstructYDocument([encodeDocumentAsYUpdate(parseCareerDocument(snapshot.content)),...updates.map(row=>new Uint8Array(row.update.buffer))]));}
+  try{return careerDocumentToMarkdown(reconstructYDocument([readCareerSnapshotUpdate(snapshot),...updates.map(row=>new Uint8Array(row.update.buffer))]));}
   catch {throw new CareerError(503,"document projection is unavailable");}
  }
  /** 삭제/복원 중인 관계는 부분 집합을 완성된 빈 값으로 표시하지 않습니다. */

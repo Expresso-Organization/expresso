@@ -7,12 +7,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { CareerDocumentEditor } from "@/features/career-editor/editor/CareerDocumentEditor";
 import { AiProposalPanel, type AiPromptRequest } from "@/features/career-editor/ai/AiProposalPanel";
-import { useCareerEditorSession } from "@/features/career-editor/session/useCareerEditorSession";
+import { useCareerEditorSession, type CareerEditorSnapshot } from "@/features/career-editor/session/useCareerEditorSession";
 
 import styles from "./DocumentPanel.module.css";
 
 const DEFAULT_PANEL_WIDTH = 680;
 const MAX_PANEL_WIDTH = 900;
+const SAVE_STATUS_LABELS: Record<CareerEditorSnapshot["status"], string> = { loading: "불러오는 중", saving: "저장 중", offline: "오프라인", conflict: "충돌", saved: "저장됨" };
 
 export function DocumentPanel({
   record,
@@ -46,6 +47,15 @@ export function DocumentPanel({
   }, []);
   const drag = useRef<{ pointerId: number; startX: number; startWidth: number } | null>(null);
   const panelRecord = record ?? visibleRecord;
+  const bodyRecordId = panelRecord?.id;
+  const activeBodyRecordId = useRef(bodyRecordId);
+  activeBodyRecordId.current = bodyRecordId;
+  const [bodySaveState, setBodySaveState] = useState<{ recordId: string; status: CareerEditorSnapshot["status"] } | null>(null);
+  const handleSaveStatusChange = useCallback((status: CareerEditorSnapshot["status"]) => {
+    if (!bodyRecordId || activeBodyRecordId.current !== bodyRecordId) return;
+    setBodySaveState(previous => previous?.recordId === bodyRecordId && previous.status === status ? previous : { recordId: bodyRecordId, status });
+  }, [bodyRecordId]);
+  const bodySaveStatus = bodySaveState && bodySaveState.recordId === bodyRecordId ? bodySaveState.status : "loading";
 
   useEffect(() => {
     if (record) setVisibleRecord(record);
@@ -132,7 +142,7 @@ export function DocumentPanel({
         </button>
         <span className={styles.headLabel}>{category.name} · 문서</span>
         <div className={styles.headRight}>
-          <span className={styles.headLabel}>{panelRecord ? "저장됨" : ""}</span>
+          <span className={styles.headLabel} role="status" aria-label="본문 저장 상태">{panelRecord ? SAVE_STATUS_LABELS[bodySaveStatus] : ""}</span>
           <button type="button" className={styles.headAction} aria-label="닫기" onClick={onClose}>
             <Icon name="x" size={15} />
           </button>
@@ -143,7 +153,7 @@ export function DocumentPanel({
         <>
           <div className={styles.body}>
             <div className={styles.blocks}>
-              <CareerDocumentEditor key={panelRecord.id} recordId={panelRecord.id} mode="peek" record={panelRecord} category={category} showAiProposal={false} onAiRequest={setEditorAiRequest} />
+              <CareerDocumentEditor key={panelRecord.id} recordId={panelRecord.id} mode="peek" record={panelRecord} category={category} showAiProposal={false} onAiRequest={setEditorAiRequest} onSaveStatusChange={handleSaveStatusChange} />
             </div>
           </div>
 

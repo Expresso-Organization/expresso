@@ -18,8 +18,13 @@ const repo=resolve(dirname(fileURLToPath(import.meta.url)),"../../../.."),backen
 const infrastructure=await readFile(join(repo,"scripts/test-infra.mjs"),"utf8");
 let mongoUri=process.env.B2_TEST_MONGO_URL??infrastructure.match(/"(mongodb:\/\/[^"\r\n]+)"/)?.[1];
 const redisUri=process.env.B2_TEST_REDIS_URL??infrastructure.match(/"(redis:\/\/[^"\r\n]+)"/)?.[1];
-assert.equal(new URL(mongoUri).hostname,"127.0.0.1");assert.equal(new URL(mongoUri).port,"57017");
-assert.equal(new URL(redisUri).hostname,"127.0.0.1");assert.equal(new URL(redisUri).port,"56379");
+for (const [uri, protocol] of [[mongoUri, "mongodb:"], [redisUri, "redis:"]]) {
+ const target = new URL(uri);
+ assert.equal(target.hostname, "127.0.0.1");
+ assert.equal(target.protocol, protocol);
+ assert.match(target.port, /^[1-9][0-9]{0,4}$/);
+ assert.ok(Number(target.port) <= 65535);
+}
 const database="expresso_test_b2web_"+randomUUID().replaceAll("-",""),queuePrefix="b2web-"+randomUUID().slice(0,8);
 const scopedMongoUrl=new URL(mongoUri);scopedMongoUrl.pathname="/"+database;mongoUri=scopedMongoUrl.toString();
 const ownedTempParent=join(backend,"var");await mkdir(ownedTempParent,{recursive:true});

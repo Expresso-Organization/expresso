@@ -5,10 +5,11 @@ import {
   type CareerProducerCommitRequest, type CareerProducerScope, type CareerProducerIntent,
   type CareerProducerDocumentResult,
 } from "@expresso/contracts";
-import { applyCareerCommands, encodeDocumentAsYUpdate, encodeDocumentStateVector, markdownToCareerDocument, parseCareerDocument, reconstructYDocument, type CareerDocument, type CareerEditCommand } from "@expresso/editor";
+import { applyCareerCommands, encodeDocumentAsYUpdate, encodeDocumentStateVector, encodeDocumentUpdatesStateVector, mergeDocumentYUpdates, markdownToCareerDocument, parseCareerDocument, reconstructYDocument, type CareerDocument, type CareerEditCommand } from "@expresso/editor";
 import { mongoCollections } from "@expresso/database";
 import { Binary, type ClientSession } from "mongodb";
 import { inTransaction, type MongoTransaction } from "../../platform/mongo-transaction.js";
+import { readCareerSnapshotUpdate } from "../../platform/career-document-snapshot.js";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { CareerDocumentError } from "./errors.js";
 import { requireActiveUser } from "../identity/index.js";
@@ -126,13 +127,14 @@ export class PreparedCareerDocumentWriter {
         const initial = markdownToCareerDocument(record.bodyMd);
         const initialId = randomUUID();
         if (!await repository.initializeDocument(recordId, scope.userId, initialId, tx.session)) throw new CareerDocumentError(409, "document initialization conflicted");
-        snapshot = { _id: initialId, userId: scope.userId, recordId, documentVersion: 0, version: 0, schemaVersion: 1, content: initial as never, stateVector: new Binary(Buffer.from(encodeDocumentStateVector(initial))), serverSequence: 0, checksum: hashUpdate(encodeDocumentAsYUpdate(initial)), actor: "migration", createdAt: new Date() };
+        snapshot = { _id: initialId, userId: scope.userId, recordId, documentVersion: 0, version: 0, schemaVersion: 1, content: initial as never, stateUpdate: new Binary(Buffer.from(encodeDocumentAsYUpdate(initial))), stateVector: new Binary(Buffer.from(encodeDocumentStateVector(initial))), serverSequence: 0, checksum: hashUpdate(encodeDocumentAsYUpdate(initial)), actor: "migration", createdAt: new Date() };
         await repository.insertSnapshot(snapshot, tx.session);
       }
       const updates = await repository.updates(recordId, snapshot.serverSequence, tx.session);
       if (updates.length > 10_000) throw new CareerDocumentError(503, "document compaction required");
       // 본문과 Undo 기준은 공개 bootstrap과 같은 최신 스냅샷·pending update 정책으로 읽습니다.
-      const before = reconstructYDocument([encodeDocumentAsYUpdate(parseCareerDocument(snapshot.content)), ...updates.map((update) => binaryBytes(update.update))]);
+      const beforeState = mergeDocumentYUpdates([readCareerSnapshotUpdate(snapshot), ...updates.map((update) => binaryBytes(update.update))]);
+      const before = reconstructYDocument([beforeState]);
       // JSON 스냅샷 재인코딩은 원래 CRDT item을 잃으므로 압축된 update도 원장에서 이어 붙입니다.
       const collections = mongoCollections(tx.db);
       const causalBase = await collections.careerDocumentSnapshots.findOne(
@@ -140,7 +142,7 @@ export class PreparedCareerDocumentWriter {
         { sort: { createdAt: 1 }, session: tx.session },
       );
       if (!causalBase) throw new CareerDocumentError(409, "document causal base snapshot is missing");
-      const priorUpdates = [encodeDocumentAsYUpdate(parseCareerDocument(causalBase.content))];
+      const priorUpdates = [readCareerSnapshotUpdate(causalBase)];
       const history = collections.careerDocumentUpdates.find(
         { recordId, userId: scope.userId, serverSequence: { $gt: 0, $lte: record.documentVersion ?? 0 } },
         { session: tx.session },
@@ -151,7 +153,7 @@ export class PreparedCareerDocumentWriter {
         { recordId, userId: scope.userId, serverSequence: { $lte: record.documentVersion ?? 0 } },
         { session: tx.session },
       ).sort({ serverSequence: 1, createdAt: 1 });
-      for await (const historicalSnapshot of snapshotHistory) priorUpdates.push(encodeDocumentAsYUpdate(parseCareerDocument(historicalSnapshot.content)));
+      for await (const historicalSnapshot of snapshotHistory) priorUpdates.push(readCareerSnapshotUpdate(historicalSnapshot), encodeDocumentAsYUpdate(parseCareerDocument(historicalSnapshot.content)));
       let after: CareerDocument;
       if (intent.document.kind === "commands") {
         const known = blockIds(before); const allowed = new Set(intent.document.allowedBlockIds);
@@ -172,13 +174,13 @@ export class PreparedCareerDocumentWriter {
       const beforeSnapshotId = randomUUID(); const afterSnapshotId = randomUUID(); const revisionId = randomUUID();
       const canonicalBefore = encodeDocumentAsYUpdate(before);
       // 늦게 접속한 클라이언트의 JSON bootstrap 기준도 실제 원장과 함께 새 변경의 인과 기준으로 둡니다.
-      const bytes = encodeDocumentAsYUpdate(after, [...priorUpdates, canonicalBefore], `prepared:${scope.producer}:${scope.operationId}`);
+      const bytes = encodeDocumentAsYUpdate(after, [...priorUpdates, beforeState, canonicalBefore], `prepared:${scope.producer}:${scope.operationId}`);
       const expected = intent.document.expectedVersion;
-      await repository.insertSnapshot({ _id: beforeSnapshotId, userId: scope.userId, recordId, documentVersion: expected, version: expected, schemaVersion: 1, content: before as never, stateVector: new Binary(Buffer.from(encodeDocumentStateVector(before))), serverSequence: expected, checksum: hashUpdate(canonicalBefore), actor: "ai", createdAt: new Date() }, tx.session);
+      await repository.insertSnapshot({ _id: beforeSnapshotId, userId: scope.userId, recordId, documentVersion: expected, version: expected, schemaVersion: 1, content: before as never, stateUpdate: new Binary(Buffer.from(beforeState)), stateVector: new Binary(Buffer.from(encodeDocumentUpdatesStateVector([beforeState]))), serverSequence: expected, checksum: hashUpdate(canonicalBefore), actor: "ai", createdAt: new Date() }, tx.session);
       const version = await repository.bumpDocumentVersion(recordId, scope.userId, expected, afterSnapshotId, tx.session);
       if (version === null) throw new CareerDocumentError(409, "document version is stale");
       await repository.insertUpdate({ _id: randomUUID(), recordId, userId: scope.userId, clientId: scope.operationId, clientSequence: 1, serverSequence: version, update: new Binary(bytes), byteLength: bytes.byteLength, updateHash: hashUpdate(bytes), actor: "ai", receivedAt: new Date(), compactedAt: null }, tx.session);
-      await repository.insertSnapshot({ _id: afterSnapshotId, userId: scope.userId, recordId, documentVersion: version, version, schemaVersion: 1, content: after as never, stateVector: new Binary(Buffer.from(encodeDocumentStateVector(after))), serverSequence: version, checksum: hashUpdate(encodeDocumentAsYUpdate(after)), actor: "ai", createdAt: new Date() }, tx.session);
+      await repository.insertSnapshot({ _id: afterSnapshotId, userId: scope.userId, recordId, documentVersion: version, version, schemaVersion: 1, content: after as never, stateUpdate: new Binary(Buffer.from(bytes)), stateVector: new Binary(Buffer.from(encodeDocumentUpdatesStateVector([bytes]))), serverSequence: version, checksum: hashUpdate(encodeDocumentAsYUpdate(after)), actor: "ai", createdAt: new Date() }, tx.session);
       await repository.insertRevision({ _id: revisionId, userId: scope.userId, recordId, actor: "ai", summary: intent.document.summary, beforeVersion: expected, afterVersion: version, snapshotId: beforeSnapshotId, ...(scope.producer === "ai-proposal" ? { proposalId: scope.sourceId } : {}), createdAt: new Date() }, tx.session);
       const receipt = CareerProducerDocumentResultSchema.parse({ recordId, documentVersion: version, beforeSnapshotId, afterSnapshotId, revisionId });
       const saved = await sourceCollection(tx, scope).updateOne({ ...scopeFilter(scope), "writerIntegration.state": "running", "writerIntegration.leaseToken": request.leaseToken, "writerIntegration.leaseUntil": { $gt: new Date().toISOString() }, "writerIntegration.documentResult": null }, { $set: { "writerIntegration.documentResult": receipt, "writerIntegration.updatedAt": new Date().toISOString() } }, { session: tx.session });

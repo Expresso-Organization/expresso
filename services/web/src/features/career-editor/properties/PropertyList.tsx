@@ -126,7 +126,7 @@ export function PropertyList({
     {pending ? <WriteOperationStatus operationId={pending.operationId} initial={pending.initial} scope={recordWriteScope(current.id)} producer="career-product" recordId={current.id} onCompleted={completeWrite} /> : null}
     <PropertyMutationNotice record={current} {...(onResumePropertyMutation ? { onResumePropertyMutation } : {})} {...(onCheckPropertyMutation ? { onCheckPropertyMutation } : {})} />
     <div className={styles.titleEditor}>
-      <PropertyValueEditor definition={{ id: "00000000-0000-4000-8000-000000000000", key: "title", name: "제목", type: "title", required: false, system: true, config: {}, order: 0, version: 1, deletedAt: null }} value={{ type: "title", value: current.title }} disabled={!!mutationHint} onCommit={async (value) => { if (value?.type === "title") await savePatch({ title: value.value }); }} />
+      <PropertyValueEditor key={current.id} definition={{ id: "00000000-0000-4000-8000-000000000000", key: "title", name: "제목", type: "title", required: false, system: true, config: {}, order: 0, version: 1, deletedAt: null }} value={{ type: "title", value: current.title }} disabled={!!mutationHint} onCommit={async (value) => { if (value?.type === "title") await savePatch({ title: value.value }); }} />
     </div>
     <div className={styles.propertyRow}><label><Icon name="circle-half" size={13}/><span className={styles.propertyName}>상태</span></label><span className={styles.metaValue}>{current.status === "draft" ? "초안" : current.status === "organized" ? "정리됨" : "검증됨"}</span></div>
     {visible.map((definition) => {

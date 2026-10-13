@@ -14,6 +14,8 @@ export interface CareerDocumentSnapshotDoc {
   schemaVersion: number;
   content: JsonValue;
   stateVector: Binary;
+  /** 압축 전후에도 같은 CRDT item을 유지하는 실제 Yjs 상태입니다. */
+  stateUpdate?: Binary;
   serverSequence: number;
   checksum: string;
   actor: CareerEditorActor;

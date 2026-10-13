@@ -26,6 +26,17 @@ describe("CareerDocumentEditor", () => {
     });
   });
 
+  it("applies synchronized content even when its document version matches the previous frame", async () => {
+    const id="11111111-1111-4111-8111-111111111111";
+    const rendered=render(<CareerDocumentEditor recordId={id} mode="peek" showAiProposal={false} />);
+    const editor=await screen.findByLabelText("커리어 기록 본문");
+    const remote=createEmptyCareerDocument();remote.content[0]!.text=[{text:"same-version authoritative sync"}];
+    mocks.useSession.mockReturnValue({snapshot:{status:"saved",documentVersion:1,lastAckSequence:1,proposal:null},document:remote,updateDocument:mocks.updateDocument});
+    rendered.rerender(<CareerDocumentEditor recordId={id} mode="peek" showAiProposal={false} />);
+    await waitFor(()=>expect(editor.textContent).toContain("same-version authoritative sync"));
+    expect(mocks.updateDocument).not.toHaveBeenCalled();
+  });
+
   it("preserves nested and unknown neutral blocks through the Tiptap boundary", () => {
     const unknown = { id: crypto.randomUUID(), type: "futureWidget", attrs: { version: 2 }, text: [{ text: "future" }] };
     const document = parseCareerDocument({

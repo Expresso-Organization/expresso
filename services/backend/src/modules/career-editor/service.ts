@@ -2,7 +2,8 @@ import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 
 import {
   encodeDocumentAsYUpdate,
-  encodeDocumentStateVector,
+  encodeDocumentUpdatesStateVector,
+  mergeDocumentYUpdates,
   markdownToCareerDocument,
   parseCareerDocument,
   reconstructYDocument,
@@ -22,6 +23,7 @@ import type { CareerRecordRevisionDoc, JsonValue } from "@expresso/database";
 import { Binary } from "mongodb";
 
 import { inTransaction } from "../../platform/mongo-transaction.js";
+import { readCareerSnapshotUpdate } from "../../platform/career-document-snapshot.js";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { compactDocument } from "./compaction.js";
 import { CareerDocumentError } from "./errors.js";
@@ -129,7 +131,8 @@ export class CareerDocumentService implements CareerDocumentApi {
           version: 0,
           schemaVersion: 1,
           content: document as unknown as JsonValue,
-          stateVector: new Binary(Buffer.from(encodeDocumentStateVector(document))),
+          stateVector: new Binary(Buffer.from(encodeDocumentUpdatesStateVector([canonicalUpdate]))),
+          stateUpdate: new Binary(Buffer.from(canonicalUpdate)),
           serverSequence: 0,
           checksum: hashUpdate(canonicalUpdate),
           actor: "migration",
@@ -140,11 +143,13 @@ export class CareerDocumentService implements CareerDocumentApi {
       const pending = await this.repository.updates(recordId, snapshot.serverSequence, tx.session);
       if (pending.length > 10_000) throw new CareerDocumentError(503, "document compaction is required before bootstrap");
       let document;
+      let stateUpdate;
       try {
-        document = reconstructYDocument([
-          encodeDocumentAsYUpdate(parseCareerDocument(snapshot.content)),
+        stateUpdate = mergeDocumentYUpdates([
+          readCareerSnapshotUpdate(snapshot),
           ...pending.map((row) => binaryBytes(row.update)),
         ]);
+        document = reconstructYDocument([stateUpdate]);
       } catch {
         throw new CareerDocumentError(422, "invalid document update");
       }
@@ -164,7 +169,8 @@ export class CareerDocumentService implements CareerDocumentApi {
         document,
         snapshotVersion: snapshot.documentVersion,
         documentVersion,
-        stateVectorBase64: Buffer.from(encodeDocumentStateVector(document)).toString("base64"),
+        stateVectorBase64: Buffer.from(encodeDocumentUpdatesStateVector([stateUpdate])).toString("base64"),
+        stateUpdateBase64: Buffer.from(stateUpdate).toString("base64"),
         pendingUpdateCount: pending.length,
         sessionToken: this.token(userId, recordId),
       });
@@ -286,7 +292,12 @@ export class CareerDocumentService implements CareerDocumentApi {
       const source = await this.repository.snapshotById(userId, record._id, revision.snapshotId, tx.session);
       if (!source) throw new CareerDocumentError(404, "career revision snapshot not found");
       const document = parseCareerDocument(source.content);
+      const latest = await this.repository.snapshot(record._id, tx.session);
+      const updates = await this.repository.updates(record._id, latest?.serverSequence ?? 0, tx.session);
+      if (updates.length > 10_000) throw new CareerDocumentError(503, "document compaction is required before restore");
+      const priorUpdates = [...(latest ? [readCareerSnapshotUpdate(latest)] : []), ...updates.map(row => binaryBytes(row.update)), readCareerSnapshotUpdate(source)];
       const newSnapshotId = randomUUID();
+      const stateUpdate = encodeDocumentAsYUpdate(document, priorUpdates, `restore:${newSnapshotId}`);
       const newVersion = await this.repository.bumpDocumentVersion(
         record._id, userId, expectedVersion, newSnapshotId, tx.session,
       );
@@ -295,7 +306,8 @@ export class CareerDocumentService implements CareerDocumentApi {
       await this.repository.insertSnapshot({
         _id: newSnapshotId, userId, recordId: record._id, documentVersion: newVersion,
         version: newVersion, schemaVersion: 1, content: document as unknown as JsonValue,
-        stateVector: new Binary(Buffer.from(encodeDocumentStateVector(document))),
+        stateVector: new Binary(Buffer.from(encodeDocumentUpdatesStateVector([stateUpdate]))),
+        stateUpdate: new Binary(Buffer.from(stateUpdate)),
         serverSequence: newVersion, checksum: hashUpdate(canonicalUpdate), actor: "user", createdAt: new Date(),
       }, tx.session);
       await this.repository.insertRevision({

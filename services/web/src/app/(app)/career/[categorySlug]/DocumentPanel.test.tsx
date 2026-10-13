@@ -3,10 +3,14 @@ import type { CareerCategory, CareerRecordListItem } from "@expresso/contracts";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+type SaveStatus = "loading" | "saving" | "offline" | "conflict" | "saved";
+const saveCallbacks = vi.hoisted(() => new Map<string, (status: SaveStatus) => void>());
+afterEach(() => { cleanup(); saveCallbacks.clear(); });
+
 const requestCallbacks = vi.hoisted(() => new Map<string, () => void>());
 
 vi.mock("@/features/career-editor/editor/CareerDocumentEditor", () => ({
-  CareerDocumentEditor: ({ recordId, onAiRequest }: { recordId: string; onAiRequest?: (request: { id: string; recordId: string; prompt: string; blockIds: string[] }) => void }) => <div>편집기 {recordId}<button type="button" onClick={() => onAiRequest?.({ id: "selection-request", recordId, prompt: "선택한 문장을 짧게", blockIds: ["00000000-0000-4000-8000-000000000003"] })}>선택 AI 요청</button><button type="button" onClick={() => onAiRequest?.({ id: "selection-request-B", recordId, prompt: "다음 요청 B", blockIds: ["00000000-0000-4000-8000-000000000003"] })}>다음 선택 AI 요청</button></div>,
+  CareerDocumentEditor: ({ recordId, onAiRequest, onSaveStatusChange }: { recordId: string; onSaveStatusChange?: (status: SaveStatus) => void; onAiRequest?: (request: { id: string; recordId: string; prompt: string; blockIds: string[] }) => void }) => { if (onSaveStatusChange) saveCallbacks.set(recordId, onSaveStatusChange); return <div>편집기 {recordId}<button type="button" onClick={() => onAiRequest?.({ id: "selection-request", recordId, prompt: "선택한 문장을 짧게", blockIds: ["00000000-0000-4000-8000-000000000003"] })}>선택 AI 요청</button><button type="button" onClick={() => onAiRequest?.({ id: "selection-request-B", recordId, prompt: "다음 요청 B", blockIds: ["00000000-0000-4000-8000-000000000003"] })}>다음 선택 AI 요청</button></div>; },
 }));
 vi.mock("@/features/career-editor/ai/AiProposalPanel", () => ({ AiProposalPanel: ({ requestedPrompt, onRequestHandled }: { requestedPrompt?: { id: string; prompt: string } | null; onRequestHandled?: () => void }) => { if (requestedPrompt && onRequestHandled) requestCallbacks.set(requestedPrompt.id, onRequestHandled); return <div>AI {requestedPrompt?.prompt}</div>; } }));
 vi.mock("@/features/career-editor/session/useCareerEditorSession", () => ({
@@ -84,4 +88,26 @@ it("keeps editor request B when the captured completion for request A arrives", 
   expect(screen.getByText("AI 다음 요청 B")).toBeTruthy();
   act(() => requestCallbacks.get("selection-request-B")!());
   expect(screen.queryByText("AI 다음 요청 B")).toBeNull();
+});
+
+it.each([
+  ["loading", "불러오는 중"], ["saving", "저장 중"], ["offline", "오프라인"], ["conflict", "충돌"], ["saved", "저장됨"],
+] as const)("shows the live body session status %s", (status, label) => {
+  render(<DocumentPanel record={record} category={category} onClose={() => undefined} />);
+  expect(screen.queryByText("저장됨")).toBeNull();
+  act(() => saveCallbacks.get(record.id)?.(status));
+  expect(screen.getByRole("status", { name: "본문 저장 상태" }).textContent).toBe(label);
+});
+
+it("ignores a stale save callback after switching records", () => {
+  const view = render(<DocumentPanel record={record} category={category} onClose={() => undefined} />);
+  const completePrevious = saveCallbacks.get(record.id);
+  act(() => completePrevious?.("saved"));
+  expect(screen.getByRole("status", { name: "본문 저장 상태" }).textContent).toBe("저장됨");
+  const nextRecord = { ...record, id: "00000000-0000-4000-8000-000000000004" };
+  view.rerender(<DocumentPanel record={nextRecord} category={category} onClose={() => undefined} />);
+  expect(screen.getByRole("status", { name: "본문 저장 상태" }).textContent).toBe("불러오는 중");
+  act(() => saveCallbacks.get(nextRecord.id)?.("saving"));
+  act(() => completePrevious?.("saved"));
+  expect(screen.getByRole("status", { name: "본문 저장 상태" }).textContent).toBe("저장 중");
 });
