@@ -1,10 +1,9 @@
 import { createHash } from "node:crypto";
+import { z } from "zod";
 import {
   PAGE_PROMPT_VERSION,
-  STRUCTURED_MAX_GROUPS,
   StructuredPortfolioContentSchema,
   structuredModelSchema,
-  validateStructuredPortfolio,
   type StructuredPortfolioContent,
   type PageGenerationManifest,
 } from "@expresso/contracts";
@@ -27,21 +26,41 @@ import {
   type PageStreamSink,
   type GeneratedPageResult,
 } from "./generator.js";
+import {
+  describeGroupRules,
+  describeSpecSchema,
+} from "./structured-spec-format.js";
+
+/** 선택지 목록에서 출력 스키마의 원본 ID enum을 만듭니다. 생성기와 프롬프트가 같은 값을 씁니다. */
+export function libraryChoices(
+  library: ReturnType<typeof retrievePageLibrary>,
+) {
+  return {
+    intro: library.intro.map((i) => i.renderKey || i.id),
+    section: library.section.map((i) => i.renderKey || i.id),
+    guidance: library.guidance.map((i) => i.id),
+  };
+}
 
 export function structuredSpecPrompt(
   content: StructuredPortfolioContent,
   instruction = "",
   previous: unknown = null,
   library = retrievePageLibrary(content, instruction),
+  schema: z.ZodType = structuredModelSchema(content, {
+    ...libraryChoices(library),
+    layout: "library",
+  }),
 ): string {
-  const ids = [
-    "intro",
-    "index",
-    ...content.sections.map((s) => `section-${s.id}`),
-    ...(content.career.length ? ["career"] : []),
-    ...(content.evidence.length ? ["evidence"] : []),
-    ...(content.contact ? ["contact"] : []),
-  ];
+  const choices = libraryChoices(library);
+  // 요소 ID와 props 형태는 공급자에 넘기는 출력 스키마에서 만듭니다. 아래 문장은 스키마로 표현할 수 없는 규칙입니다.
+  const format = describeSpecSchema(schema, [
+    { values: choices.intro, label: "intro 선택지 ID" },
+    { values: choices.section, label: "section 선택지 ID" },
+    { values: choices.guidance, label: "guidance 선택지 ID" },
+  ]);
+  const ids = format.required;
+  const groupId = format.optional[0] ?? "group-1";
   // 예시는 첫 사례와 그 옆에 둘 보조 요소로 만듭니다. 보조 요소가 없으면 두 번째 사례를 씁니다.
   const pair = [
     `section-${content.sections[0]!.id}`,
@@ -55,7 +74,7 @@ export function structuredSpecPrompt(
   ];
   const example = {
     page: ids.flatMap((key) =>
-      key === pair[0] ? ["group-1"] : pair.includes(key) ? [] : [key],
+      key === pair[0] ? [groupId] : pair.includes(key) ? [] : [key],
     ),
     group: {
       type: "Columns",
@@ -68,23 +87,21 @@ ${Object.entries(structuredCatalog.data.components)
   .map(([name, component]) => `${name}: ${component.description}`)
   .join("\n")}
 전체 수집 목록 ${library.inventoryTotal}개를 검색 대상으로 사용했습니다. 실행할 수 있는 전체 선택지: ${JSON.stringify({ intro: library.intro.map((i) => ({ id: i.renderKey || i.id, name: i.name, description: i.reason })), section: library.section.map((i) => ({ id: i.renderKey || i.id, name: i.name, description: i.reason })), guidance: library.guidance.map((i) => ({ id: i.renderKey || i.id, name: i.name, categories: i.categories })) })}
-NameIntro.props.sourceId는 intro 목록에서, 모든 사례 props.sourceId는 section 목록에서 선택합니다. ID를 반드시 지정합니다. 원본 React 코드를 입력 데이터에 연결합니다. 책/도록은 book, 항목 설명이 많은 자료는 feature, 간결한 설명은 card, 제목 강조는 text-gradient를 검토합니다. referenceIds에는 선택한 guidance ID 또는 []를 씁니다. 별도 스타일 요청이 없으면 design.layout='library'로 원본 컴포넌트의 내부 배치를 살립니다.
+NameIntro.props.sourceId는 intro 목록에서, 모든 사례 props.sourceId는 section 목록에서 선택합니다. ID를 반드시 지정합니다. 원본 React 코드를 입력 데이터에 연결합니다. 책/도록은 book, 항목 설명이 많은 자료는 feature, 간결한 설명은 card, 제목 강조는 text-gradient를 검토합니다. referenceIds에는 선택한 guidance ID 또는 []를 씁니다.
 입력 특징: ${JSON.stringify({ profile: content.profile, sections: content.sections.map((section) => ({ id: section.id, title: section.title, summary: section.summary, pattern: section.pattern, bodyLength: section.body.length, images: section.media.length, imageDescriptions: section.media.map((item) => item.alt), details: section.details.map((item) => ({ label: item.label, excerpt: item.text.slice(0, 160) })) })), careerCount: content.career.length, evidenceCount: content.evidence.length, contact: !!content.contact })}
-수집 원본의 내부 배치를 사용하므로 기본 골격은 library입니다. 사용자가 특정 스타일을 지정했을 때 editorial(측면 소개+기사), gallery(넓은 작품 전시), dossier(측면 목차+기술 상세)를 사용합니다. 팔레트는 ivory/cobalt/graphite/sage/burgundy, 서체는 serif/sans/mono입니다. 직무 이름만으로 어두운 색을 고르지 마세요. 이미지·본문 길이·설명 유형을 근거로 선택하고 rationale에 이유를 쓰세요.
-원본 자료가 책·도록·작품처럼 이미지 자체가 성과를 보여주면 gallery에서 큰 이미지의 흐름을 살펴봅니다. 논리·해석이 주인공이면 editorial, 구조도·시험 절차·항목 비교를 탐색해야 하면 dossier가 적합합니다. 자료마다 사례 유형도 독립적으로 선택합니다.
+직무 이름만으로 어두운 색을 고르지 마세요. 이미지·본문 길이·설명 유형을 근거로 팔레트와 서체를 선택하고 rationale에 이유를 쓰세요. motion은 'showcase'를 씁니다. 자료마다 사례 유형을 독립적으로 선택합니다.
+출력 형식(공급자에 넘기는 출력 스키마에서 생성):
+${format.text}
 모든 요소 ID를 트리 전체에서 정확히 한 번씩 연결합니다. 사용할 요소 ID: ${JSON.stringify(ids)}. 요소는 page.children에 바로 두거나 컨테이너의 children에 넣습니다. 첫 ID는 intro, 연락처가 있으면 마지막 ID는 contact이며 둘은 컨테이너에 넣지 않습니다.
-컨테이너는 지면을 나누는 요소이며 0–${STRUCTURED_MAX_GROUPS}개를 쓸 수 있습니다. 요소 ID는 group-1부터 차례로 쓰고, 각 컨테이너를 page.children에서 한 번 참조합니다. 컨테이너 안에 컨테이너를 넣지 않습니다. Columns는 자식 2개(variant even|wide-start|wide-end), Grid는 2–3개(variant even), Band는 1–3개(variant panel|accent)입니다. 자료의 비중과 관계에 맞을 때만 쓰고, 쓰지 않아도 됩니다.
-컨테이너 예: page.children=${JSON.stringify(example.page)}, elements["group-1"]=${JSON.stringify(example.group)}. 컨테이너에 넣은 ID는 page.children에 다시 쓰지 않습니다.
-root='page'. PortfolioPage.props={profile:{$state:'/profile'},design:{layout,palette,font},motion:'showcase',rationale}.
-NameIntro.props={profile:{$state:'/profile'},sections:{$state:'/sections'},sourceId:<선택 ID>}를 첫 요소로 한 번 둡니다. 이름이 가장 크고 바로 아래 한 문장을 둡니다.
-모든 section을 정확히 한 번, CaseEssay/CaseGallery/CaseTechnical/CaseProcess/ContentPanel 중 알맞은 타입으로 표시합니다. props={section:{$state:'/sectionById/<입력 id>'},sourceId:<선택 ID>}. 이미지 없는 section에 CaseGallery를 쓰지 않습니다. CaseProcess에는 설명 두 개 이상이 필요합니다.
-ProjectIndex는 필수이며 요소 ID는 index입니다. 소개 바로 다음에 두거나, variant='rail'로 Columns에 넣어 사례 옆 목차로 씁니다. props={sections:{$state:'/sections'},variant:'rows'|'mosaic'|'rail'}.
-입력 경력이 있으면 CareerTimeline.props={career:{$state:'/career'}}, 근거가 있으면 EvidenceGrid.props={evidence:{$state:'/evidence'}}를 한 번씩 둡니다. 경력·근거·사례의 순서는 자유롭게 선택할 수 있습니다. contact가 있으면 Contact.props={contact:{$state:'/contact'}}를 마지막에 둡니다. 없으면 생략합니다.
-page와 컨테이너의 children에는 실제 요소 ID를 넣고, 그 밖의 요소의 children은 []입니다. 다른 속성, 경로, 텍스트를 props에 추가하지 마세요.
+컨테이너는 지면을 나누는 요소입니다. 요소 ID는 ${groupId}부터 차례로 쓰고, 각 컨테이너를 page.children에서 한 번 참조합니다. 컨테이너 안에 컨테이너를 넣지 않습니다. ${describeGroupRules()} 자료의 비중과 관계에 맞을 때만 쓰고, 쓰지 않아도 됩니다.
+컨테이너 예: page.children=${JSON.stringify(example.page)}, elements["${groupId}"]=${JSON.stringify(example.group)}. 컨테이너에 넣은 ID는 page.children에 다시 쓰지 않습니다.
+NameIntro는 첫 요소로 한 번 둡니다. 이름이 가장 크고 바로 아래 한 문장을 둡니다.
+모든 section을 정확히 한 번, 알맞은 사례 타입으로 표시합니다. 이미지 없는 section에 CaseGallery를 쓰지 않습니다. CaseProcess에는 설명 두 개 이상이 필요합니다.
+ProjectIndex는 필수이며 요소 ID는 index입니다. 소개 바로 다음에 두거나, variant='rail'로 Columns에 넣어 사례 옆 목차로 씁니다.
+경력·근거·사례의 순서는 자유롭게 선택할 수 있습니다. contact가 있으면 마지막에 둡니다. 형식에 없는 속성, 경로, 텍스트를 props에 추가하지 마세요.
 직전 Spec: ${JSON.stringify(previous)}
 수정 요청: ${instruction || "자료를 읽기 좋은 구성으로 조립하세요."}
-컨테이너 없이 쓰는 유효한 page.children 예시: ${JSON.stringify(ids)}. 첫 ID는 intro이며 마지막 ID는 ${content.contact ? "contact" : "자료에 맞는 요소"}입니다. 가운데 사례·경력·근거의 순서는 바꿀 수 있습니다. 연락처 뒤에 다른 요소를 추가하지 않습니다.
-출력 형식은 {root,elements}입니다.`;
+컨테이너 없이 쓰는 유효한 page.children 예시: ${JSON.stringify(ids)}. 첫 ID는 intro이며 마지막 ID는 ${content.contact ? "contact" : "자료에 맞는 요소"}입니다. 가운데 사례·경력·근거의 순서는 바꿀 수 있습니다. 연락처 뒤에 다른 요소를 추가하지 않습니다.`;
 }
 
 export class StructuredPageGenerator implements PageGenerator {
@@ -157,11 +174,7 @@ export class StructuredPageGenerator implements PageGenerator {
     }
     content = StructuredPortfolioContentSchema.parse(content);
     const library = retrievePageLibrary(content, context.instruction);
-    const choices = {
-      intro: library.intro.map((i) => i.renderKey || i.id),
-      section: library.section.map((i) => i.renderKey || i.id),
-      guidance: library.guidance.map((i) => i.id),
-    };
+    const choices = libraryChoices(library);
     const fixedLayout =
       context.style?.structure === "wide-margin"
         ? "editorial"
@@ -170,20 +183,21 @@ export class StructuredPageGenerator implements PageGenerator {
           : context.style
             ? "library"
             : null;
+    const schema = structuredModelSchema(content, {
+      ...choices,
+      layout: fixedLayout || "library",
+    });
     const prompt =
       structuredSpecPrompt(
         content,
         context.instruction,
         context.previous?.structured?.spec,
         library,
+        schema,
       ) +
       (context.style
         ? `\n사용자가 고른 스타일이 우선입니다. design.layout='${fixedLayout}', design.font='${context.style.font === "serif" ? "serif" : "sans"}'를 사용하세요. 색은 저장된 사용자 스타일에서 적용합니다.`
         : "");
-    const schema = structuredModelSchema(content, {
-      ...choices,
-      layout: fixedLayout || "library",
-    });
     // 모델이 고칠 수 있는 Spec 검사 실패만 다시 요청합니다. 렌더링은 검사를 통과한 뒤 한 번만 합니다.
     const attempts: { output: unknown; error: string }[] = [];
     let accepted: {

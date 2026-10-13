@@ -19,9 +19,9 @@ date: 2026-10-13
 | `packages/portfolio-renderer/src/renderer.test.ts` | 오류 코드 테스트 추가 |
 | `services/backend/src/modules/page/generator.ts` | `PageRenderError` 추가 |
 | `services/backend/src/modules/page/structured-spec-format.ts` (새 파일) | `describeSpecSchema`, `describeGroupRules` |
-| `services/backend/src/modules/page/structured-spec-format.test.ts` (새 파일) | 설명과 스키마의 일치 테스트 |
-| `services/backend/src/modules/page/structured-generator.ts` | 고리 두 단계 분리, 프롬프트가 스키마를 받아 형식 설명 생성 |
-| `services/backend/src/modules/page/structured-generator.test.ts` | 렌더 예외 1회 호출, 프롬프트 ID 일치 테스트 |
+| `services/backend/src/modules/page/structured-spec-format.test.ts` (새 파일) | 설명과 스키마의 일치 테스트, 프롬프트 ID 일치 테스트 |
+| `services/backend/src/modules/page/structured-generator.ts` | 고리 두 단계 분리, 프롬프트가 스키마를 받아 형식 설명 생성, 선택지 ID 함수(`libraryChoices`)를 생성기·프롬프트가 함께 사용 |
+| `services/backend/src/modules/page/structured-generator.test.ts` | 렌더 예외 1회 호출 테스트 |
 | `packages/contracts/src/page.ts` | `PAGE_PROMPT_VERSION` 9와 주석 |
 | `docs/architecture/portfolio-structured-pipeline.md` | 재시도 대상과 프롬프트 생성 방식 한 단락 |
 
