@@ -17,7 +17,8 @@ const DOMAIN_COLLECTIONS = [
   "media_variants", "notifications", "outbox_events", "portfolio_edit_proposals", "portfolio_snapshots",
   "recent_searches", "recipe_revisions", "recipe_unused_sources", "record_links", "record_usages",
   "requirement_coverages", "revisions", "saved_searches", "skills", "skill_evidence", "snapshot_chunks",
-  "brews", "job_analyses", "portfolios", "deployments",
+  "brews", "job_analyses", "portfolios", "deployments", "job_career_gaps", "career_preparation_plans", "career_preparation_progress",
+  "career_preparation_progress_events", "career_preparation_replans",
 ] as const;
 
 async function erase(tx: MongoTransaction, names: readonly string[], userId: string) {

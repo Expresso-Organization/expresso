@@ -73,3 +73,6 @@ export * from "./agent-chat.js";
 export * from "./job-chat.js";
 export * from "./job-career-match.js";
 export * from "./job-chat-facts.js";
+export * from "./job-career-gap.js";
+export * from "./career-preparation.js";
+export * from "./preparation-progress.js";

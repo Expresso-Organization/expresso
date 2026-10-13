@@ -47,6 +47,9 @@ import { createReliableQueue } from "../platform/queue.js";
 import { JobChatService } from "../modules/job-chat/index.js";
 import { JobCareerMatchAnalyzer, JobCareerMatchInputLoader, JobCareerMatchService, } from "../modules/job-career-match/index.js";
 import { JobChatFactService } from "../modules/job-chat/fact-service.js";
+import { CareerGapAnalyzer, CareerGapInputLoader, CareerGapService } from "../modules/job-career-gap/index.js";
+import { PreparationService } from "../modules/career-preparation/index.js";
+import { PreparationProgressService } from "../modules/preparation-progress/index.js";
 
 const config = loadRuntimeConfig();
 if (!config.mongodbUrl || !config.mongodbDatabase) throw new Error("MongoDB runtime configuration is missing");
@@ -160,12 +163,34 @@ const careerDocumentService = new CareerDocumentService(
   config.careerAiDeterministicTest ? new SelectedBlockTextAiProposalAdapter() : ai ? new AiClientProposalAdapter(ai) : undefined,
 );
 const agentChatService = new AgentChatService(database, config.agentChatEnabled ? (config.agentChatProvider === "codex" ? new AiClientAgentRuntime(ai!) : new ClaudeAgentRuntime(config.agentChatModel)) : null, careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(database, config.agentCredentialEncryptionKey), portfolioReadService, pageService, jobCareerMatchService);
+const careerGapService = new CareerGapService(
+  database,
+  new CareerGapInputLoader(
+    agentChatService,
+    jobCareerMatchService,
+    jobCareerMatchInputLoader,
+  ),
+  ai ? new CareerGapAnalyzer(ai, consentService) : null,
+  (config.aiTimeoutMs ?? 180_000) * 3 + 60_000,
+);
+const preparationService = new PreparationService(
+  database,
+  careerGapService,
+);
+const preparationProgressService = new PreparationProgressService(
+  database,
+  preparationService,
+  careerGapService,
+);
 const app = buildApi({
   agentChatService,
   config,
   jobChatAi: ai,
   jobChatService,
   jobCareerMatchService,
+  careerGapService,
+  preparationService,
+  preparationProgressService,
   jobChatFactService: new JobChatFactService(database, ai, consentService),
   readinessChecks: [database.readinessCheck, redis.readinessCheck],
   identityService,

@@ -14,6 +14,9 @@ import { agentCredentialSteps } from "./mongodb-migrations/0010/migration.js";
 import { jobChatFactSteps } from "./mongodb-migrations/0011/migration.js";
 import { jobChatSteps } from "./mongodb-migrations/0012/migration.js";
 import { jobCareerMatchSteps } from "./mongodb-migrations/0013/migration.js";
+import { careerGapSteps } from "./mongodb-migrations/0014/migration.js";
+import { preparationPlanSteps } from "./mongodb-migrations/0015/migration.js";
+import { preparationProgressSteps } from "./mongodb-migrations/0016/migration.js";
 
 export interface MongoMigrationStep {
   id: string;
@@ -59,6 +62,12 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
   const twelfthHash = createHash("sha256").update(`migration.ts\0${twelfthSource.byteLength}\0`).update(twelfthSource).digest("hex");
   const thirteenthSource = await readFile(new URL("./mongodb-migrations/0013/migration.ts", import.meta.url));
   const thirteenthHash = createHash("sha256").update(`migration.ts\0${thirteenthSource.byteLength}\0`).update(thirteenthSource).digest("hex");
+  const gapSource = await readFile(new URL("./mongodb-migrations/0014/migration.ts", import.meta.url));
+  const gapHash = createHash("sha256").update(`migration.ts\0${gapSource.byteLength}\0`).update(gapSource).digest("hex");
+  const preparationSource = await readFile(new URL("./mongodb-migrations/0015/migration.ts", import.meta.url));
+  const preparationHash = createHash("sha256").update(`migration.ts\0${preparationSource.byteLength}\0`).update(preparationSource).digest("hex");
+  const progressSource = await readFile(new URL("./mongodb-migrations/0016/migration.ts", import.meta.url));
+  const progressHash = createHash("sha256").update(`migration.ts\0${progressSource.byteLength}\0`).update(progressSource).digest("hex");
   return [
     { version: "0001", name: "initial_collections", checksum: hash.digest("hex"), steps: await initialMigrationSteps() },
     { version: "0002", name: "generation_ledger_amount_constraint", checksum: secondHash, steps: await generationLedgerConstraintSteps() },
@@ -73,5 +82,8 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
     { version: "0011", name: "job_chat_confirmed_facts", checksum: eleventhHash, steps: await jobChatFactSteps() },
     { version: "0012", name: "job_chat_storage", checksum: twelfthHash, steps: await jobChatSteps() },
     { version: "0013", name: "job_career_match_storage", checksum: thirteenthHash, steps: await jobCareerMatchSteps() },
+    { version: "0014", name: "job_career_gap_storage", checksum: gapHash, steps: await careerGapSteps() },
+    { version: "0015", name: "career_preparation_plans", checksum: preparationHash, steps: await preparationPlanSteps() },
+    { version: "0016", name: "preparation_progress", checksum: progressHash, steps: await preparationProgressSteps() },
   ];
 }

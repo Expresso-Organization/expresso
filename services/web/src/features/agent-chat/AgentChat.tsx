@@ -22,6 +22,8 @@ import { useAgentConversation } from "./useAgentConversation";
 import styles from "./AgentChat.module.css";
 import CareerMatch from "@/app/(app)/agentic-chat/CareerMatch";
 import ConfirmedFacts from "@/app/(app)/agentic-chat/ConfirmedFacts";
+import CareerGap from "./CareerGap";
+import PreparationPlan from "./PreparationPlan";
 
 /** 프레임워크 원본 Thread를 사용하고 도메인 도구의 승인 화면만 확장합니다. */
 const ChatContext = createContext<ReturnType<typeof useAgentConversation> | null>(null);
@@ -178,11 +180,25 @@ export function AgentChat({ context, contextLabel, standalone = false }: { conte
         />
       </div>
     ) : null}
-
     {state.id && state.conversation && linkedJobs.length > 1 ? (
       <p role="status">
         맞춤 분석을 실행하려면 연결된 공고를 하나만 남겨 주세요.
       </p>
+    ) : null}
+    {state.id && state.conversation && linkedJobs.length === 1 ? (
+      <CareerGap
+        key={`career-gap:${state.id}`}
+        conversationId={state.id}
+        messages={state.conversation.messages}
+        disabled={!canSend || !!preview || state.pending || running}
+      />
+    ) : null}
+    {state.id && state.conversation && linkedJobs.length === 1 ? (
+      <PreparationPlan
+        key={`preparation-plan:${state.id}`}
+        conversationId={state.id}
+        disabled={!canSend || !!preview || state.pending || running}
+      />
     ) : null}
   </AssistantRuntimeProvider></ChatContext.Provider>;
 }
