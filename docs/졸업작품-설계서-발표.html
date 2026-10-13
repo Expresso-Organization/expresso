@@ -745,7 +745,7 @@ h2 { font-size: 50px; }
 <!-- ============================================================
      01 · 표지
      ============================================================ -->
-<section class="slide" data-lens="off" data-title="졸업작품 설계서 v0.7" data-kind="COVER" data-doc="sel:.cover" data-doc-label="표지">
+<section class="slide" data-lens="off" data-mark="off" data-title="졸업작품 설계서 v0.7" data-kind="COVER" data-doc="sel:.cover" data-doc-label="표지">
   <div class="frame">
     <div class="rail in in-fade dl-1" style="border: none">
       <span class="brandline">
@@ -789,7 +789,7 @@ h2 { font-size: 50px; }
 <!-- ============================================================
      03 · 발표 순서
      ============================================================ -->
-<section class="slide" data-lens="off" data-title="발표 순서" data-kind="AGENDA" data-doc="sel:#ex-toc-page" data-doc-label="목차">
+<section class="slide" data-lens="off" data-mark="off" data-title="발표 순서" data-kind="AGENDA" data-doc="sel:#ex-toc-page" data-doc-label="목차">
   <div class="frame">
     <div class="rail in in-fade dl-1"><span class="ko">설계서 v0.7</span><span class="end count"></span></div>
     <div class="head">
@@ -1414,6 +1414,7 @@ window.deck = new Deck();
      sel:<CSS>        선택자
    data-doc-span="n"  찾은 요소 뒤의 형제 n개까지 함께 박스에 넣습니다.
    data-lens="off"    확대 창을 띄우지 않는 장(표지 · 순서 · 끝장).
+   data-mark="off"    설계서에 색 박스를 두르지 않는 장(표지 · 순서). 자리만 옮깁니다.
 
    설계서 파일은 고치지 않습니다. 상단 바 · 목차 · 미니맵은 여기서 스타일을 넣어 가립니다.
    =========================================================== */
@@ -1623,7 +1624,7 @@ window.deck = new Deck();
       cur = { slide, el, span };
       /* 박스와 확대 창을 같은 프레임에 켭니다. */
       showLens(slide, box, instant);
-      mark(box, instant);
+      mark(slide.dataset.mark === 'off' ? null : box, instant);
     };
     /* 탭이 가려져 있으면 프레임이 돌지 않습니다 — 그때는 바로 그 자리에 둡니다. */
     if (still || document.hidden) { se.scrollTop = to; arrive(true); return; }
@@ -1692,7 +1693,7 @@ window.deck = new Deck();
   function relayout() {
     if (!doc || !cur) return;
     const box = boxOf(cur.el, cur.span);
-    mark(box, true);
+    mark(cur.slide.dataset.mark === 'off' ? null : box, true);
     if (!full && ldoc && cur.slide.dataset.lens !== 'off') placeLens(cur.slide, box);
   }
 
