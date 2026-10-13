@@ -697,6 +697,22 @@ h2 { font-size: 50px; }
 @media (prefers-reduced-motion: reduce) { .docpane .pager .dg, .docpane .pager .dg i { transition: none; } }
 .is-preview .docpane .pager .dg, .is-preview .docpane .pager .dg i { transition: none; }
 
+/* 설계서 위치 막대 — 위치 표시 · 쪽 번호(right 20px)보다 바깥쪽 끝에 둡니다.
+   손잡이 높이는 화면에 보이는 비율, 위치는 스크롤 비율입니다. 너무 얇아지지 않게 28px 아래로는 줄이지 않습니다.
+   라운드 full은 양식 기본값으로 Brew 버튼 전용이지만, 폭 조절 핸들과 같은 막대 모양이라 여기서도 씁니다. */
+.docpane .vbar {
+  position: absolute; top: 18px; bottom: 20px; right: 6px; width: 8px; z-index: 3;
+  border-radius: 999px; background: var(--ex-track); cursor: pointer; touch-action: none;
+}
+/* 누를 수 있는 폭은 보이는 폭보다 넓게 */
+.docpane .vbar::before { content: ""; position: absolute; inset: 0 -5px; }
+.docpane .vbar .thumb {
+  position: absolute; left: 0; right: 0; top: 0; height: 28px;
+  border-radius: 999px; background: var(--ex-slate-300); transition: background-color var(--ex-motion-quick);
+}
+.docpane .vbar:hover .thumb, .docpane .vbar.dragging .thumb { background: var(--ex-slate-400); }
+.docpane .vbar.dragging { cursor: grabbing; }
+
 /* 지금 보고 있는 설계서의 자리 — 쪽 번호는 설계서 제목의 data-page(PDF 기준)를 읽습니다. */
 .docpane .where {
   position: absolute; top: 18px; right: 20px; z-index: 2; pointer-events: none;
@@ -1075,6 +1091,9 @@ h2 { font-size: 50px; }
     <span class="num"><span class="dg"><i></i><i>0</i><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i><i>7</i><i>8</i><i>9</i></span><span class="dg"><i></i><i>0</i><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i><i>7</i><i>8</i><i>9</i></span><span class="dg"><i></i><i>0</i><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i><i>7</i><i>8</i><i>9</i></span></span>
     <span class="of">/ <span class="total"></span>쪽</span>
   </div>
+  <!-- 설계서 위치 막대 — 오른쪽 끝. 손잡이가 지금 보는 구간을 보이고, 끌거나 막대를 누르면 그 자리로 갑니다. -->
+  <div class="vbar" role="scrollbar" aria-orientation="vertical" aria-label="설계서 위치"
+       aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="thumb"></div></div>
   <iframe src="졸업작품-설계서.html" title="졸업작품 설계서 v1.0"></iframe>
 </aside>
 
@@ -1612,7 +1631,56 @@ window.deck = new Deck();
     pager.setAttribute('aria-label', `설계서 ${page}쪽`);
   }
 
-  const syncPage = () => doc && renderPage(pageAt(doc.scrollingElement.scrollTop + TOP + 1));
+  /* 위치 막대 — 손잡이 높이는 보이는 비율, 자리는 스크롤 비율 */
+  const bar = pane.querySelector('.vbar');
+  const thumb = bar && bar.querySelector('.thumb');
+  const THUMB_MIN = 28;
+  function barGeom() {
+    const se = doc.scrollingElement, H = bar.clientHeight;
+    const th = Math.min(H, Math.max(THUMB_MIN, H * se.clientHeight / se.scrollHeight));
+    return { se, H, th, max: Math.max(0, se.scrollHeight - se.clientHeight) };
+  }
+  function syncBar() {
+    if (!doc || !bar) return;
+    const { se, H, th, max } = barGeom();
+    const t = max ? se.scrollTop / max : 0;
+    thumb.style.height = th + 'px';
+    thumb.style.transform = `translateY(${(H - th) * t}px)`;
+    bar.setAttribute('aria-valuenow', String(Math.round(t * 100)));
+  }
+
+  const syncPage = () => {
+    if (!doc) return;
+    renderPage(pageAt(doc.scrollingElement.scrollTop + TOP + 1));
+    syncBar();
+  };
+
+  /* 손잡이를 끌거나 막대를 누르면 설계서를 그 자리로 옮깁니다. 장 전환 스크롤이 도는 중이면 멈춥니다. */
+  if (bar) {
+    let grab = null;
+    const toScroll = (clientY) => {
+      const { se, H, th, max } = barGeom();
+      const r = bar.getBoundingClientRect(), k = r.height / H;   /* 무대 축소 배율 */
+      const top = (clientY - r.top) / k - grab;
+      se.scrollTop = max * Math.max(0, Math.min(1, top / Math.max(1, H - th)));
+    };
+    bar.addEventListener('pointerdown', (e) => {
+      if (!doc) return;
+      e.preventDefault();
+      cancelAnimationFrame(anim);
+      ticket++;
+      const tr = thumb.getBoundingClientRect(), k = tr.height / thumb.offsetHeight;
+      /* 손잡이를 잡으면 잡은 자리를 유지하고, 막대를 누르면 손잡이 가운데를 그 자리로 */
+      grab = e.target === thumb ? (e.clientY - tr.top) / k : thumb.offsetHeight / 2;
+      bar.classList.add('dragging');
+      toScroll(e.clientY);
+      bar.setPointerCapture(e.pointerId);
+    });
+    bar.addEventListener('pointermove', (e) => { if (grab !== null) toScroll(e.clientY); });
+    const release = () => { grab = null; bar.classList.remove('dragging'); };
+    bar.addEventListener('pointerup', release);
+    bar.addEventListener('pointercancel', release);
+  }
 
   /* 색 박스 — 다음 장으로 넘어갈 때까지 남겨 둡니다. 왼쪽 요점이 설계서의 어디를 다루는지 보여 주는 자리입니다. */
   function mark(box, instant) {
@@ -1703,6 +1771,7 @@ window.deck = new Deck();
     stage.style.setProperty('--split', split + 'px');
     stage.style.setProperty('--doc-s', String(split / 1000));
     if (handle) handle.setAttribute('aria-valuenow', String(Math.round(split)));
+    syncBar();
   }
 
   /* 폭이 바뀐 뒤 박스의 자리를 다시 맞춥니다(밝기는 그대로). */
@@ -1829,6 +1898,9 @@ window.deck = new Deck();
       doc.querySelectorAll('.docpane .pager .dg').forEach((d) => { d.removeAttribute('style'); d.classList.remove('off'); });
       const tot = doc.querySelector('.docpane .pager .total'); if (tot) tot.textContent = '';
       doc.querySelector('.docpane .pager')?.setAttribute('aria-label', '설계서 쪽');
+      doc.querySelector('.docpane .vbar .thumb')?.removeAttribute('style');
+      doc.querySelector('.docpane .vbar')?.classList.remove('dragging');
+      doc.querySelector('.docpane .vbar')?.setAttribute('aria-valuenow', '0');
       const over = doc.querySelector('#overview');
       if (over) { over.classList.remove('on'); over.setAttribute('hidden', ''); }
     },
