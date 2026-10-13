@@ -10,6 +10,7 @@ import {
 } from "@expresso/contracts";
 import {
   renderStructuredPortfolio,
+  validateRenderableSpec,
   structuredCatalog,
   retrievePageLibrary,
   librarySelection,
@@ -18,6 +19,7 @@ import type { AiClient, AiUsage } from "../../platform/ai/client.js";
 import { ungroundedNumbers, isOrdinalLabel } from "../../platform/numbers.js";
 import {
   PageGenerationError,
+  PageRenderError,
   visibleText,
   DESIGN_PRINCIPLES_VERSION,
   type PageGenerator,
@@ -55,7 +57,11 @@ export function structuredSpecPrompt(
     page: ids.flatMap((key) =>
       key === pair[0] ? ["group-1"] : pair.includes(key) ? [] : [key],
     ),
-    group: { type: "Columns", props: { variant: "wide-start" }, children: pair },
+    group: {
+      type: "Columns",
+      props: { variant: "wide-start" },
+      children: pair,
+    },
   };
   return `개인 포트폴리오의 json-render Spec을 작성하세요. HTML/CSS를 쓰지 않습니다.
 ${Object.entries(structuredCatalog.data.components)
@@ -174,8 +180,22 @@ export class StructuredPageGenerator implements PageGenerator {
       (context.style
         ? `\n사용자가 고른 스타일이 우선입니다. design.layout='${fixedLayout}', design.font='${context.style.font === "serif" ? "serif" : "sans"}'를 사용하세요. 색은 저장된 사용자 스타일에서 적용합니다.`
         : "");
+    const schema = structuredModelSchema(content, {
+      ...choices,
+      layout: fixedLayout || "library",
+    });
+    // 모델이 고칠 수 있는 Spec 검사 실패만 다시 요청합니다. 렌더링은 검사를 통과한 뒤 한 번만 합니다.
     const attempts: { output: unknown; error: string }[] = [];
-    for (let attempt = 0; attempt < 2; attempt++) {
+    let accepted: {
+      snapshot: ReturnType<typeof validateRenderableSpec>;
+      root: Extract<
+        ReturnType<typeof validateRenderableSpec>["spec"]["elements"][string],
+        { type: "PortfolioPage" }
+      >;
+      attempt: number;
+      usage: AiUsage;
+    } | null = null;
+    for (let attempt = 0; attempt < 2 && !accepted; attempt++) {
       const request = attempts.length
         ? `${prompt}\n직전 출력: ${JSON.stringify(attempts[0]?.output)}\n검사 오류: ${attempts[0]?.error}. 수정한 전체 Spec을 출력하세요.`
         : prompt;
@@ -188,15 +208,12 @@ export class StructuredPageGenerator implements PageGenerator {
           promptVersion: PAGE_PROMPT_VERSION,
           ...(context.modelTier ? { modelTier: context.modelTier } : {}),
         },
-        structuredModelSchema(content, {
-          ...choices,
-          layout: fixedLayout || "library",
-        }),
+        schema,
         sink ? { onThinking: (tokens) => sink.thinking(tokens) } : {},
       );
       usages.push(result.usage);
       try {
-        const snapshot = validateStructuredPortfolio(result.data, content);
+        const snapshot = validateRenderableSpec(result.data, content);
         const root = snapshot.spec.elements[snapshot.spec.root]!;
         if (root.type !== "PortfolioPage")
           throw new Error("페이지 루트가 필요합니다.");
@@ -207,101 +224,7 @@ export class StructuredPageGenerator implements PageGenerator {
               (context.style.font === "serif" ? "serif" : "sans"))
         )
           throw new Error("사용자가 고른 스타일을 보존해야 합니다.");
-        const rendered = renderStructuredPortfolio(
-          snapshot.spec,
-          snapshot.content,
-          context.style,
-        );
-        // 스트림 소비자는 기존 html/css 필드를 읽습니다. 완성된 검증 결과만 내보냅니다.
-        sink?.delta(JSON.stringify(rendered));
-        const usage = usages.reduce(
-          (sum, item) => ({
-            ...sum,
-            inputTokens: sum.inputTokens + item.inputTokens,
-            outputTokens: sum.outputTokens + item.outputTokens,
-            cacheReadTokens: sum.cacheReadTokens + item.cacheReadTokens,
-            cacheCreationTokens:
-              sum.cacheCreationTokens + item.cacheCreationTokens,
-            durationMs: sum.durationMs + item.durationMs,
-            costUsd:
-              sum.costUsd === null || item.costUsd === null
-                ? null
-                : sum.costUsd + item.costUsd,
-          }),
-          {
-            ...result.usage,
-            inputTokens: 0,
-            outputTokens: 0,
-            cacheReadTokens: 0,
-            cacheCreationTokens: 0,
-            durationMs: 0,
-            costUsd: 0 as number | null,
-          },
-        );
-        const source = context.structuredContent
-          ? JSON.stringify(context.structuredContent)
-          : context.evidence.map((item) => item.text).join("\n");
-        const ungrounded = ungroundedNumbers(
-          visibleText(rendered.html),
-          source,
-        ).filter(
-          (number) =>
-            number.replace(/\D/g, "").length >= 2 && !isOrdinalLabel(number),
-        );
-        const { model: usageModel, ...manifestUsage } = usage;
-        const manifest: PageGenerationManifest = {
-          methodologyVersion: 1,
-          model: usageModel,
-          promptHash: createHash("sha256").update(prompt).digest("hex"),
-          promptVersions: {
-            page: PAGE_PROMPT_VERSION,
-            designPrinciples: DESIGN_PRINCIPLES_VERSION,
-          },
-          tools: [],
-          sourceUrls: librarySelection(snapshot.spec).selected.flatMap(
-            (item) => (item.sourceUrl ? [item.sourceUrl] : []),
-          ),
-          attempts: attempt + 1,
-          repairCount: attempt,
-          usage: manifestUsage,
-          structured: snapshot,
-          library: {
-            ...librarySelection(snapshot.spec),
-            query: library.query,
-            offeredIds: [
-              ...choices.intro,
-              ...choices.section,
-              ...choices.guidance,
-            ],
-          },
-        };
-        return {
-          ...rendered,
-          rationale: root.props.rationale,
-          ungrounded,
-          removed: [],
-          usage,
-          qaReport: {
-            status: "ready",
-            checks: [
-              {
-                name: "has-markup",
-                status: "pass",
-                severity: "error",
-                detail: "검증된 json-render Spec에서 렌더링했습니다.",
-              },
-              {
-                name: "grounded-numbers",
-                status: ungrounded.length ? "fail" : "pass",
-                severity: "warning",
-                detail: ungrounded.length
-                  ? "수치 출처를 검토해 주세요."
-                  : "수치 출처 대조를 통과했습니다.",
-              },
-            ],
-          },
-          manifest,
-        };
+        accepted = { snapshot, root, attempt, usage: result.usage };
       } catch (error) {
         attempts.push({
           output: result.data,
@@ -309,8 +232,108 @@ export class StructuredPageGenerator implements PageGenerator {
         });
       }
     }
-    throw new PageGenerationError(
-      `구성 계약 검사를 통과하지 못했습니다: ${attempts.at(-1)?.error}`,
+    if (!accepted)
+      throw new PageGenerationError(
+        `구성 계약 검사를 통과하지 못했습니다: ${attempts.at(-1)?.error}`,
+      );
+    const { snapshot, root, attempt } = accepted;
+    let rendered: { html: string; css: string };
+    try {
+      rendered = renderStructuredPortfolio(
+        snapshot.spec,
+        snapshot.content,
+        context.style,
+      );
+    } catch (error) {
+      throw new PageRenderError(
+        `지면 렌더링에 실패했습니다: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error },
+      );
+    }
+    // 스트림 소비자는 기존 html/css 필드를 읽습니다. 완성된 검증 결과만 내보냅니다.
+    sink?.delta(JSON.stringify(rendered));
+    const usage = usages.reduce(
+      (sum, item) => ({
+        ...sum,
+        inputTokens: sum.inputTokens + item.inputTokens,
+        outputTokens: sum.outputTokens + item.outputTokens,
+        cacheReadTokens: sum.cacheReadTokens + item.cacheReadTokens,
+        cacheCreationTokens: sum.cacheCreationTokens + item.cacheCreationTokens,
+        durationMs: sum.durationMs + item.durationMs,
+        costUsd:
+          sum.costUsd === null || item.costUsd === null
+            ? null
+            : sum.costUsd + item.costUsd,
+      }),
+      {
+        ...accepted.usage,
+        inputTokens: 0,
+        outputTokens: 0,
+        cacheReadTokens: 0,
+        cacheCreationTokens: 0,
+        durationMs: 0,
+        costUsd: 0 as number | null,
+      },
     );
+    const source = context.structuredContent
+      ? JSON.stringify(context.structuredContent)
+      : context.evidence.map((item) => item.text).join("\n");
+    const ungrounded = ungroundedNumbers(
+      visibleText(rendered.html),
+      source,
+    ).filter(
+      (number) =>
+        number.replace(/\D/g, "").length >= 2 && !isOrdinalLabel(number),
+    );
+    const { model: usageModel, ...manifestUsage } = usage;
+    const manifest: PageGenerationManifest = {
+      methodologyVersion: 1,
+      model: usageModel,
+      promptHash: createHash("sha256").update(prompt).digest("hex"),
+      promptVersions: {
+        page: PAGE_PROMPT_VERSION,
+        designPrinciples: DESIGN_PRINCIPLES_VERSION,
+      },
+      tools: [],
+      sourceUrls: librarySelection(snapshot.spec).selected.flatMap((item) =>
+        item.sourceUrl ? [item.sourceUrl] : [],
+      ),
+      attempts: attempt + 1,
+      repairCount: attempt,
+      usage: manifestUsage,
+      structured: snapshot,
+      library: {
+        ...librarySelection(snapshot.spec),
+        query: library.query,
+        offeredIds: [...choices.intro, ...choices.section, ...choices.guidance],
+      },
+    };
+    return {
+      ...rendered,
+      rationale: root.props.rationale,
+      ungrounded,
+      removed: [],
+      usage,
+      qaReport: {
+        status: "ready",
+        checks: [
+          {
+            name: "has-markup",
+            status: "pass",
+            severity: "error",
+            detail: "검증된 json-render Spec에서 렌더링했습니다.",
+          },
+          {
+            name: "grounded-numbers",
+            status: ungrounded.length ? "fail" : "pass",
+            severity: "warning",
+            detail: ungrounded.length
+              ? "수치 출처를 검토해 주세요."
+              : "수치 출처 대조를 통과했습니다.",
+          },
+        ],
+      },
+      manifest,
+    };
   }
 }

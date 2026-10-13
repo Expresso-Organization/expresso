@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { renderStructuredPortfolio } from "./renderer.js";
+import { renderStructuredPortfolio, StructuredRenderError } from "./renderer.js";
 import type { StructuredPortfolioContent } from "@expresso/contracts";
 const content: StructuredPortfolioContent = {
   version: 1,
@@ -57,6 +57,18 @@ describe("등록 지면 렌더러", () => {
     const value = structuredClone(content);
     value.sections[0]!.media = [{ src: "data:image/svg+xml;base64," + "A".repeat(600_000), alt: "가상 시험 이미지", origin: "fictional" }];
     expect(() => renderStructuredPortfolio(spec, value)).toThrow("저장 크기 제한");
+  });
+  it("렌더링 단계 실패만 StructuredRenderError로 구분한다", () => {
+    const value = structuredClone(content);
+    value.sections[0]!.media = [{ src: "data:image/svg+xml;base64," + "A".repeat(600_000), alt: "가상 시험 이미지", origin: "fictional" }];
+    const tooLarge = (() => { try { renderStructuredPortfolio(spec, value); } catch (error) { return error; } })();
+    expect(tooLarge).toBeInstanceOf(StructuredRenderError);
+    expect((tooLarge as StructuredRenderError).code).toBe("PAGE_TOO_LARGE");
+    const broken = structuredClone(spec);
+    broken.elements.page.children = ["case-a", "intro"];
+    const invalid = (() => { try { renderStructuredPortfolio(broken, content); } catch (error) { return error; } })();
+    expect(invalid).toBeInstanceOf(Error);
+    expect(invalid).not.toBeInstanceOf(StructuredRenderError);
   });
   it("동일 내용의 전체 배치를 바꾸고 세 지면 유형을 저장 HTML에 표시한다", () => {
     for (const layout of ["editorial", "gallery", "dossier"]) {
