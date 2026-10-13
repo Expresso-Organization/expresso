@@ -7,7 +7,7 @@
 <title>설계서 발표 — Expresso</title>
 
 <!--
-  졸업작품 설계서 v0.7 발표 — docs/templates/expresso-deck.html 에서 시작했습니다.
+  졸업작품 설계서 v1.0 발표 — docs/templates/expresso-deck.html 에서 시작했습니다.
 
   지면 왼쪽 960px은 발표 내용, 오른쪽 960px은 설계서 원문(졸업작품-설계서.html)입니다.
   장마다 data-doc 이 설계서의 그림 · 표 · 절을 가리키고, 장을 넘기면 오른쪽 설계서가
@@ -598,14 +598,12 @@ svg [data-morph] { transform-box: fill-box; }
 }
 
 /* ===========================================================
-   08 · 발표 · 설계서 분할 — 오른쪽 760px은 설계서 원문, 왼쪽은 그 일부를 키워 보이는 자리.
-   그림을 새로 그리지 않습니다. 설계서(.docpane)가 대상에 색 박스를 두르면, 같은 설계서를
-   띄운 확대 창(.lens)이 그 구역만 잘라 왼쪽에 키워 보입니다. 확대 창은 제자리에서 밝아지고 걷힙니다.
+   08 · 발표 · 설계서 분할 — 기본은 절반씩. 오른쪽 960px은 설계서 원문, 왼쪽은 발표 글.
+   설계서(.docpane)가 장마다 대상에 색 박스를 두르고, 왼쪽은 그 대상의 요점을 글로 적습니다.
    설계서는 슬라이드 밖에 한 번만 놓여 장이 바뀌어도 사라지지 않습니다.
    =========================================================== */
-/* 설계서는 1000px 폭으로 그린 뒤 칸 폭에 비례해 줄입니다(기본 760px 칸이면 0.76배). 확대 창도 같은
-   1000px 폭으로 그려야 줄바꿈과 그림 크기가 똑같습니다(.lens iframe 도 var(--doc-w)). */
-:root { --split: 760px; --doc-w: 1000px; --doc-s: .76; }
+/* 설계서는 1000px 폭으로 그린 뒤 칸 폭에 비례해 줄입니다(기본 960px 칸이면 0.96배). */
+:root { --split: 960px; --doc-w: 1000px; --doc-s: .96; }
 
 /* 양식 기본값에서 벗어남 — 지면 바탕을 장이 아니라 무대에 칠합니다.
    왼쪽 글을 「나가는 글이 걷힌 뒤 들어오는 글이 뜨는」 순서로 바꾸려면
@@ -619,6 +617,19 @@ svg [data-morph] { transform-box: fill-box; }
 h2 { font-size: 50px; }
 .sub { font-size: 22px; margin-top: 12px; max-width: none; }
 .body { padding: 32px 0 16px; }
+
+/* 대상 설명 — 오른쪽 설계서가 박스를 두른 그림 · 표의 역할과 그 그림이 보여 주는 기능. */
+.notes { display: grid; gap: 40px; padding-top: 28px; }
+.notes .lab { font-size: 18px; font-weight: 600; color: var(--ex-espresso); margin-bottom: 14px; }
+.pts { list-style: none; display: grid; gap: 18px; }
+.pts li {
+  position: relative; padding-left: 32px; font-size: 30px; font-weight: 500; line-height: 1.45;
+  letter-spacing: -.01em; color: var(--ex-ink-900); word-break: keep-all;
+}
+.pts li::before {
+  content: ""; position: absolute; left: 2px; top: 18px;
+  width: 8px; height: 8px; border-radius: 50%; background: var(--ex-espresso);
+}
 
 /* 왼쪽 글의 장 전환 — 나가는 글이 240ms 동안 걷히고, 그다음 들어오는 글이 뜹니다.
    양식은 나가는 장을 그대로 두고 겹치지만, 이 덱은 오른쪽 설계서가 계속 움직이므로
@@ -640,19 +651,6 @@ h2 { font-size: 50px; }
   width: var(--doc-w); height: calc(1080px / var(--doc-s));
   transform: scale(var(--doc-s)); transform-origin: 0 0;
 }
-
-/* 확대 창 — 설계서의 한 구역만 잘라 보이는 창. 위치와 배율은 스크립트가 transform 으로 줍니다.
-   떠 있는 것이라 그림자를 씁니다. */
-.lens {
-  position: absolute; left: 0; top: 0; z-index: 6; pointer-events: none;
-  transform-origin: 0 0; opacity: 0; will-change: transform;
-}
-.lens .clip {
-  position: relative; overflow: hidden; background: var(--ex-white);
-  border-radius: 12px; outline: 2px solid var(--ex-espresso); outline-offset: 0;
-  box-shadow: var(--ex-elevation-overlay);
-}
-.lens iframe { position: absolute; left: 0; top: 0; width: var(--doc-w); border: 0; background: var(--ex-white); }
 
 /* 폭 조절 핸들 — 경계의 세로 가운데에 놓인 회색 pill. 눈에 띄지 않게 두께만 있는 막대로 둡니다.
    라운드 full은 양식 기본값으로 Brew 버튼 전용이지만, 막대 끝을 둥글게 하려고 여기서도 씁니다.
@@ -683,7 +681,9 @@ h2 { font-size: 50px; }
   padding: 8px 16px 9px; box-shadow: var(--ex-elevation-raised);
 }
 .docpane .pager .num { display: flex; font-family: var(--ex-font-brand); font-weight: 300; font-size: 34px; line-height: 1; color: var(--ex-ink-900); }
-.docpane .pager .dg { display: block; height: 1em; overflow: hidden; max-width: .6em; transition: max-width 620ms cubic-bezier(.22, 1, .36, 1); }
+/* overflow: hidden 은 스크롤 컨테이너를 만들어 기준선이 상자 아래 끝으로 잡히고, 「/ 214쪽」이 숫자보다 내려앉습니다.
+   clip 은 기준선을 글자에서 그대로 읽습니다. 빈 첫 칸에도 글자를 넣어야 첫 줄 기준선이 0–9 띠 첫 칸에 남습니다. */
+.docpane .pager .dg { display: block; height: 1em; overflow: clip; max-width: .6em; transition: max-width 620ms cubic-bezier(.22, 1, .36, 1); }
 /* 자리 수가 모자라면 앞 자리 폭을 접습니다 — 6쪽에서 203쪽으로 가면 자리가 펴지며 숫자가 굴러 나옵니다. */
 .docpane .pager .dg.off { max-width: 0; }
 .docpane .pager .dg i {
@@ -691,10 +691,27 @@ h2 { font-size: 50px; }
   transform: translateY(calc(var(--n, 0) * -1em));
   transition: transform 620ms cubic-bezier(.22, 1, .36, 1);
 }
+.docpane .pager .dg i:empty::before { content: "\00a0"; }
 .docpane .pager .of { font-size: 16px; color: var(--ex-slate-400); }
 .docpane .pager .of .total { font-family: var(--ex-font-brand); font-weight: 300; font-size: 18px; margin-right: 2px; }
 @media (prefers-reduced-motion: reduce) { .docpane .pager .dg, .docpane .pager .dg i { transition: none; } }
 .is-preview .docpane .pager .dg, .is-preview .docpane .pager .dg i { transition: none; }
+
+/* 설계서 위치 막대 — 위치 표시 · 쪽 번호(right 20px)보다 바깥쪽 끝에 둡니다.
+   손잡이 높이는 화면에 보이는 비율, 위치는 스크롤 비율입니다. 너무 얇아지지 않게 28px 아래로는 줄이지 않습니다.
+   라운드 full은 양식 기본값으로 Brew 버튼 전용이지만, 폭 조절 핸들과 같은 막대 모양이라 여기서도 씁니다. */
+.docpane .vbar {
+  position: absolute; top: 18px; bottom: 20px; right: 6px; width: 8px; z-index: 3;
+  border-radius: 999px; background: var(--ex-track); cursor: pointer; touch-action: none;
+}
+/* 누를 수 있는 폭은 보이는 폭보다 넓게 */
+.docpane .vbar::before { content: ""; position: absolute; inset: 0 -5px; }
+.docpane .vbar .thumb {
+  position: absolute; left: 0; right: 0; top: 0; height: 28px;
+  border-radius: 999px; background: var(--ex-slate-300); transition: background-color var(--ex-motion-quick);
+}
+.docpane .vbar:hover .thumb, .docpane .vbar.dragging .thumb { background: var(--ex-slate-400); }
+.docpane .vbar.dragging { cursor: grabbing; }
 
 /* 지금 보고 있는 설계서의 자리 — 쪽 번호는 설계서 제목의 data-page(PDF 기준)를 읽습니다. */
 .docpane .where {
@@ -710,20 +727,16 @@ h2 { font-size: 50px; }
 
 /* 양식에서 라틴 크롬(mono · 넓은 자간 · 대문자)인 자리에 이 덱은 한글을 씁니다.
    한글에는 자간을 벌리지 않으므로 이 자리들만 본문 서체로 되돌립니다. */
-.covermeta .k, .tl .who, .rail .end, .docpane .where .pgno {
+.covermeta .k, .rail .end, .docpane .where .pgno {
   font-family: var(--ex-font-ui); letter-spacing: normal; text-transform: none; font-weight: 600;
 }
 
-/* 왼쪽 부품 — 표지 · 순서 · 끝장에서만 씁니다. */
+/* 왼쪽 부품 — 장 머리말의 판 표시 */
 .tag { display: inline-block; font-size: 15px; font-weight: 600; border-radius: 8px; padding: 4px 10px;
   color: var(--ex-espresso); background: var(--ex-bean-50); vertical-align: middle; }
-.tl .row { grid-template-columns: 120px 1fr 110px; gap: 24px; padding: 18px 0; }
-.tl .what { font-size: 21px; line-height: 1.5; }
-.tl .what small { display: block; margin-top: 4px; font-size: 17px; font-weight: 400; color: var(--ex-slate-500); }
-.tl .who { font-size: 16px; }
 
 @media print {
-  .docpane, .lens, .split-handle { display: none; }
+  .docpane, .split-handle { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -742,7 +755,7 @@ h2 { font-size: 50px; }
 <!-- ============================================================
      01 · 표지
      ============================================================ -->
-<section class="slide" data-lens="off" data-title="졸업작품 설계서 v0.7" data-kind="COVER" data-doc="sel:.cover" data-doc-label="표지">
+<section class="slide" data-mark="off" data-title="졸업작품 설계서 v1.0" data-kind="COVER" data-doc="sel:.cover" data-doc-label="표지">
   <div class="frame">
     <div class="rail in in-fade dl-1" style="border: none">
       <span class="brandline">
@@ -754,7 +767,7 @@ h2 { font-size: 50px; }
 
     <div class="body mid">
       <div class="kicker ko in dl-2">졸업작품 AI트랙 · 설계서</div>
-      <h2 class="in dl-3" style="font-size: 76px">졸업작품 설계서 v0.7</h2>
+      <h2 class="in dl-3" style="font-size: 76px">졸업작품 설계서 v1.0</h2>
       <p class="sub in dl-4">채용 공고·커리어 기록 추천 모델 기반<br>맞춤형 포트폴리오 생성 및 배포 플랫폼 개발</p>
     </div>
 
@@ -769,207 +782,395 @@ h2 { font-size: 50px; }
 </section>
 
 <!-- ============================================================
-     02 · 발표 순서
+     02 · 변경 이력 — 설계서 문서 정보
      ============================================================ -->
-<section class="slide" data-lens="off" data-title="발표 순서" data-kind="AGENDA" data-doc="sel:#ex-toc-page" data-doc-label="목차">
+<section class="slide" data-title="변경 이력" data-kind="CHANGES" data-doc="sel:.docinfo .table-wrap:last-of-type" data-doc-label="문서 정보 · 변경 이력">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="ko">설계서 v0.7</span><span class="end count"></span></div>
-    <div class="head">
-      <div class="kicker ko in dl-2">AGENDA</div>
-      <h2 class="in dl-2">발표 순서</h2>
-    </div>
-    <div class="body">
-      <div class="tl">
-        <div class="row in dl-3"><span class="when">01</span><span class="what">프로젝트 소개<small>서비스 개요 · 추천 모델 두 종</small></span><span class="who">1장 · 3장</span></div>
-        <div class="row in dl-4"><span class="when">02</span><span class="what">v0.4 ~ v0.7 추가 내역<small>피드백 반영 그림 · 지표 설명 · 명세 확장</small></span><span class="who">1 – 9장</span></div>
-        <div class="row in dl-5"><span class="when">03</span><span class="what">파일럿 실험 결과와 해석<small>학습 조건 · NDCG 해석 방법 · 결과 · 남은 측정</small></span><span class="who">9.2</span></div>
-      </div>
-    </div>
-    <div class="foot in in-fade dl-1"><p>오른쪽은 설계서 원문 · 장을 넘기면 해당 위치로 이동</p><span class="pg"></span></div>
-  </div>
-</section>
-
-<!-- ============================================================
-     01 프로젝트 소개
-     ============================================================ -->
-<section class="slide" data-title="서비스 개요" data-kind="01 · 소개" data-doc="fig:1.1" data-doc-label="그림 1.1">
-  <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">01</span><span class="ko">프로젝트 소개</span><span class="end count"></span></div>
-    <div class="head">
-      <div class="kicker ko in dl-2">설계서 1.1 · <span class="tag">v0.7 추가 그림</span></div>
-      <h2 class="in dl-2">서비스 개요</h2>
-      <p class="sub in dl-3">쌓아 둔 커리어 기록을 지원할 공고에 맞는 웹 포트폴리오로 만들어 배포</p>
-    </div>
-    <div class="body"></div>
-  </div>
-</section>
-
-<section class="slide" data-title="추천 모델 두 종" data-kind="01 · 소개" data-doc="fig:3.1" data-doc-label="그림 3.1">
-  <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">01</span><span class="ko">프로젝트 소개</span><span class="end count"></span></div>
-    <div class="head">
-      <div class="kicker ko in dl-2">설계서 1.1 · 3장</div>
-      <h2 class="in dl-2">추천 모델 두 종</h2>
-      <p class="sub in dl-3">모델 A 채용 공고 추천 · 모델 B 커리어 기록 추천(모델 A의 Cross-Encoder 재사용) · 생성은 외부 LLM</p>
-    </div>
-    <div class="body"></div>
-  </div>
-</section>
-
-<!-- ============================================================
-     02 v0.4 ~ v0.7 추가 내역
-     ============================================================ -->
-<section class="slide" data-title="변경 이력" data-kind="02 · 추가 내역" data-doc="sel:.docinfo .table-wrap:last-of-type" data-doc-label="문서 정보 · 변경 이력">
-  <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">02</span><span class="ko">v0.4 ~ v0.7 추가 내역</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="ko">설계서 v1.0</span><span class="end count"></span></div>
     <div class="head">
       <div class="kicker ko in dl-2">문서 정보</div>
       <h2 class="in dl-2">변경 이력</h2>
       <p class="sub in dl-3">v0.3(10/5, 제안서 기준 정합) 이후 피드백을 반영해 추가한 것</p>
     </div>
-    <div class="body"></div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">역할</div><ul class="pts">
+          <li>v0.3 이후 반영 내용의 버전별 기록</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>버전별 변경 내용 · 날짜 · 작성자 확인</li>
+          <li>발표 각 장 그림의 추가 시점 확인</li>
+        </ul></div>
+      </div>
+    </div>
   </div>
 </section>
 
-<section class="slide" data-title="기존 서비스 대비 지원 범위" data-kind="02 · 추가 내역" data-doc="fig:1.3" data-doc-label="그림 1.3">
+<!-- ============================================================
+     01 서비스와 모델 — 설계서 1 – 4장
+     ============================================================ -->
+<section class="slide" data-title="서비스 개요" data-kind="01 · 서비스와 모델" data-doc="fig:1.1" data-doc-label="그림 1.1">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">02</span><span class="ko">v0.4 ~ v0.7 추가 내역</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now">01</span><span class="ko">서비스와 모델</span><span class="end count"></span></div>
+    <div class="head">
+      <div class="kicker ko in dl-2">설계서 1.1 · <span class="tag">v0.7 추가 그림</span></div>
+      <h2 class="in dl-2">서비스 개요</h2>
+      <p class="sub in dl-3">쌓아 둔 커리어 기록을 지원할 공고에 맞는 웹 포트폴리오로 만들어 배포</p>
+    </div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">역할</div><ul class="pts">
+          <li>서비스 전체 흐름의 한 장 요약</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>커리어 기록 · 채용 공고 → 맞춤 포트폴리오 → 배포 흐름 표시</li>
+          <li>방문 분석 결과의 다음 포트폴리오 개선 반영 표시</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="기존 서비스 대비 지원 범위" data-kind="01 · 서비스와 모델" data-doc="fig:1.3" data-doc-label="그림 1.3">
+  <div class="frame">
+    <div class="rail in in-fade dl-1"><span class="now">01</span><span class="ko">서비스와 모델</span><span class="end count"></span></div>
     <div class="head">
       <div class="kicker ko in dl-2">설계서 1.1 개발필요성 · <span class="tag">v0.5 비교표</span> <span class="tag">v0.7 벤 다이어그램</span></div>
       <h2 class="in dl-2">기존 서비스 대비 지원 범위</h2>
       <p class="sub in dl-3">기존 서비스는 세 영역 중 일부만, Expresso는 세 영역을 한 흐름으로</p>
     </div>
-    <div class="body"></div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">역할</div><ul class="pts">
+          <li>비교표 차별점의 시각적 제시</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>채용 공고 추천 · 공고 맞춤 문서 작성 · 커리어 기록 · 공개 영역별 기존 서비스 위치 표시</li>
+          <li>세 영역 교집합의 Expresso 위치와 차별화 방안 연결</li>
+        </ul></div>
+      </div>
+    </div>
   </div>
 </section>
 
-<section class="slide" data-title="전체 사용자 플로우" data-kind="02 · 추가 내역" data-doc="fig:2.1" data-doc-label="그림 2.1">
+<section class="slide" data-title="전체 사용자 플로우" data-kind="01 · 서비스와 모델" data-doc="fig:2.1" data-doc-label="그림 2.1">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">02</span><span class="ko">v0.4 ~ v0.7 추가 내역</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now">01</span><span class="ko">서비스와 모델</span><span class="end count"></span></div>
     <div class="head">
       <div class="kicker ko in dl-2">설계서 2.1 · <span class="tag">v0.7 · 피드백 반영</span></div>
       <h2 class="in dl-2">전체 사용자 플로우</h2>
       <p class="sub in dl-3">한 번 하는 일, 공고마다 반복하는 일, 배포 뒤 돌아가는 자리</p>
     </div>
-    <div class="body"></div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">역할</div><ul class="pts">
+          <li>사용자 기능 수행 프로세스 시각화</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>최초 1회 · 공고별 반복 · 배포 뒤 재진입 흐름 구분</li>
+          <li>학습 모델 · 외부 LLM 사용 단계 색 구분</li>
+        </ul></div>
+      </div>
+    </div>
   </div>
 </section>
 
-<section class="slide" data-title="교사 지식 증류" data-kind="02 · 추가 내역" data-doc="fig:3.3" data-doc-label="그림 3.3">
+<section class="slide" data-title="추천 모델 두 종" data-kind="01 · 서비스와 모델" data-doc="fig:3.1" data-doc-label="그림 3.1">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">02</span><span class="ko">v0.4 ~ v0.7 추가 내역</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now">01</span><span class="ko">서비스와 모델</span><span class="end count"></span></div>
+    <div class="head">
+      <div class="kicker ko in dl-2">설계서 1.1 · 3장</div>
+      <h2 class="in dl-2">추천 모델 두 종</h2>
+      <p class="sub in dl-3">모델 A 채용 공고 추천 · 모델 B 커리어 기록 추천(모델 A의 Cross-Encoder 재사용) · 생성은 외부 LLM</p>
+    </div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">역할</div><ul class="pts">
+          <li>제안서 기준 두 추천 모델 구성 정합</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>모델 A 기록 → 공고 · 모델 B 공고 → 기록 방향 구분</li>
+          <li>입력 · 학습 모델 · 점수 조합 규칙 · 출력 단계와 Cross-Encoder 재사용 표시</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="교사 지식 증류" data-kind="01 · 서비스와 모델" data-doc="fig:3.3" data-doc-label="그림 3.3">
+  <div class="frame">
+    <div class="rail in in-fade dl-1"><span class="now">01</span><span class="ko">서비스와 모델</span><span class="end count"></span></div>
     <div class="head">
       <div class="kicker ko in dl-2">설계서 3.1 라벨 생성 방법 · <span class="tag">v0.6 추가 그림</span></div>
       <h2 class="in dl-2">교사 지식 증류</h2>
       <p class="sub in dl-3">실사용 로그 0건 · 1만 쌍을 사람이 라벨링할 수 없어 LLM을 교사로</p>
     </div>
-    <div class="body"></div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">역할</div><ul class="pts">
+          <li>실사용 로그 없는 상태의 라벨 생성 근거 제시</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>입력 수집 → 교사 판정 → 루브릭 점수화 → 지식 증류 단계 표시</li>
+          <li>교사 LLM 판정 · 코드 계산 · 학습 대상 역할 구분</li>
+        </ul></div>
+      </div>
+    </div>
   </div>
 </section>
 
-<section class="slide" data-title="두 모델의 단계적 활용" data-kind="02 · 추가 내역" data-doc="fig:4.4" data-doc-label="그림 4.4">
+<section class="slide" data-title="두 모델의 단계적 활용" data-kind="01 · 서비스와 모델" data-doc="fig:4.4" data-doc-label="그림 4.4">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">02</span><span class="ko">v0.4 ~ v0.7 추가 내역</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now">01</span><span class="ko">서비스와 모델</span><span class="end count"></span></div>
     <div class="head">
       <div class="kicker ko in dl-2">설계서 4.2 · <span class="tag">v0.6 추가 그림</span></div>
       <h2 class="in dl-2">두 모델의 단계적 활용</h2>
       <p class="sub in dl-3">빠른 모델로 거르고, 정밀한 모델로 다시 매기기</p>
     </div>
-    <div class="body"></div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">역할</div><ul class="pts">
+          <li>Bi-Encoder+MLP · Cross-Encoder 결합 방식 명시</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>스크리닝 → 리랭킹 → 최종 추천 순위 변화 예시</li>
+          <li>상위 K개 선별 경계와 관련 기록 동시 입력 표시</li>
+        </ul></div>
+      </div>
+    </div>
   </div>
 </section>
 
-<section class="slide" data-title="순위 지표" data-kind="02 · 추가 내역" data-doc="fig:9.1" data-doc-label="그림 9.1">
+<!-- ============================================================
+     02 화면 · 시스템 설계 — 설계서 5 – 8장. 다이어그램 종류마다 한 장씩, 예시는 공고 분석 기능으로 맞춥니다
+     ============================================================ -->
+<section class="slide" data-title="메뉴 구조도" data-kind="02 · 화면 · 시스템 설계" data-doc="fig:5.1" data-doc-label="그림 5.1">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">02</span><span class="ko">v0.4 ~ v0.7 추가 내역</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now">02</span><span class="ko">화면 · 시스템 설계</span><span class="end count"></span></div>
+    <div class="head">
+      <div class="kicker ko in dl-2">설계서 5.1 메뉴 구조도</div>
+      <h2 class="in dl-2">메뉴 구조도</h2>
+      <p class="sub in dl-3">화면 정의서(docs/Expresso Screens.dc.html) 기준 화면번호 사용</p>
+    </div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">수록 범위</div><ul class="pts">
+          <li>사용자용(그림 5.1) · 관리자용(그림 5.4) 메뉴 구조도</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>기록 · 공고 · 생성 · 배포 · 분석 · 설정 메뉴별 화면 배치 표시</li>
+          <li>화면번호 기준 화면 정의서 대응</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="화면 설계" data-kind="02 · 화면 · 시스템 설계" data-doc="h:■ 공고 분석 — 화면번호 01" data-doc-span="3" data-doc-label="5.3 공고 분석 (화면번호 01)">
+  <div class="frame">
+    <div class="rail in in-fade dl-1"><span class="now">02</span><span class="ko">화면 · 시스템 설계</span><span class="end count"></span></div>
+    <div class="head">
+      <div class="kicker ko in dl-2">설계서 5.3 · 예시 화면번호 01 공고 분석</div>
+      <h2 class="in dl-2">화면 설계</h2>
+      <p class="sub in dl-3">화면마다 한 쪽 · 실제 화면 캡처 기반</p>
+    </div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">수록 범위</div><ul class="pts">
+          <li>사용자 화면 29개의 화면별 설계</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>화면 캡처 · 라우트 · 담당 도메인 모듈 표시</li>
+          <li>주요 구성 요소 · 사용자에게 하는 역할 · 기능 요구사항 · 제약조건 정리</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="시스템 아키텍쳐" data-kind="02 · 화면 · 시스템 설계" data-doc="fig:6.1" data-doc-label="그림 6.1">
+  <div class="frame">
+    <div class="rail in in-fade dl-1"><span class="now">02</span><span class="ko">화면 · 시스템 설계</span><span class="end count"></span></div>
+    <div class="head">
+      <div class="kicker ko in dl-2">설계서 6.1 시스템 아키텍쳐</div>
+      <h2 class="in dl-2">시스템 아키텍쳐</h2>
+      <p class="sub in dl-3">화면 · 백엔드 · 저장소 · 외부 서비스의 계층 구성</p>
+    </div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">수록 범위</div><ul class="pts">
+          <li>화면 · API 서버 · Worker · 저장소 · 외부 서비스 구성도</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>계층 간 의존 방향 표시</li>
+          <li>API 서버 · Worker 분리 실행과 Outbox 기반 큐 발행 표시</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="시퀀스 다이어그램" data-kind="02 · 화면 · 시스템 설계" data-doc="h:7) 공고 분석 기능" data-doc-span="2" data-doc-label="6.2.7 공고 분석 기능">
+  <div class="frame">
+    <div class="rail in in-fade dl-1"><span class="now">02</span><span class="ko">화면 · 시스템 설계</span><span class="end count"></span></div>
+    <div class="head">
+      <div class="kicker ko in dl-2">설계서 6.2 · 6.3 · 예시 6.2.7 공고 분석</div>
+      <h2 class="in dl-2">시퀀스 다이어그램</h2>
+      <p class="sub in dl-3">기능 하나에 시퀀스 다이어그램 한 장</p>
+    </div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">수록 범위</div><ul class="pts">
+          <li>사용자 기능(6.2) · 관리자 기능(6.3)별 시퀀스 다이어그램</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>사용자 · 웹 · API 서버 · 큐 · Worker · AI서버 간 호출 순서 표시</li>
+          <li>비동기 접수(202) 뒤 완료 조회 흐름 표시</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="API 설계" data-kind="02 · 화면 · 시스템 설계" data-doc="h:5) 공고 분석 접수" data-doc-span="3" data-doc-label="7.3.5 공고 분석 접수">
+  <div class="frame">
+    <div class="rail in in-fade dl-1"><span class="now">02</span><span class="ko">화면 · 시스템 설계</span><span class="end count"></span></div>
+    <div class="head">
+      <div class="kicker ko in dl-2">설계서 7.3 · 예시 7.3.5 공고 분석 접수</div>
+      <h2 class="in dl-2">API 설계</h2>
+      <p class="sub in dl-3">packages/contracts의 zod 스키마 기준</p>
+    </div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">수록 범위</div><ul class="pts">
+          <li>요청 · 응답 유형별 대표 API 상세 설계</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>요청 · 응답 방향 그림과 파라메터 표 제시</li>
+          <li>실제 전송 내용(IN · OUT) 예시 제시</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="컬렉션 참조 관계" data-kind="02 · 화면 · 시스템 설계" data-doc="fig:8.1" data-doc-label="그림 8.1">
+  <div class="frame">
+    <div class="rail in in-fade dl-1"><span class="now">02</span><span class="ko">화면 · 시스템 설계</span><span class="end count"></span></div>
+    <div class="head">
+      <div class="kicker ko in dl-2">설계서 8.1 · 8.2 데이터 설계</div>
+      <h2 class="in dl-2">컬렉션 참조 관계</h2>
+      <p class="sub in dl-3">MongoDB 컬렉션 간 식별자 참조</p>
+    </div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">수록 범위</div><ul class="pts">
+          <li>핵심 컬렉션 참조 관계(그림 8.1) · 컬렉션 명세서(8.2)</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>users · career_records · brews · portfolios · job_postings 간 식별자 참조 표시</li>
+          <li>참조 방향 기준 문서 간 의존 확인</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     03 지표와 파일럿 실험 — 설계서 9장
+     ============================================================ -->
+<section class="slide" data-title="순위 지표" data-kind="03 · 지표와 파일럿" data-doc="fig:9.1" data-doc-label="그림 9.1">
+  <div class="frame">
+    <div class="rail in in-fade dl-1"><span class="now">03</span><span class="ko">지표와 파일럿 실험</span><span class="end count"></span></div>
     <div class="head">
       <div class="kicker ko in dl-2">설계서 9.2 · <span class="tag">v0.7 · 피드백 반영</span></div>
       <h2 class="in dl-2">순위 지표</h2>
       <p class="sub in dl-3">추천은 점수 하나가 아니라 공고의 순서를 정하는 일</p>
     </div>
-    <div class="body"></div>
-  </div>
-</section>
-
-<section class="slide" data-title="API · 데이터 명세" data-kind="02 · 추가 내역" data-doc="h:■ 요청 · 응답 유형" data-doc-span="1" data-doc-label="7.3 요청 · 응답 유형">
-  <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">02</span><span class="ko">v0.4 ~ v0.7 추가 내역</span><span class="end count"></span></div>
-    <div class="head">
-      <div class="kicker ko in dl-2">설계서 7.3 · 8.2 · <span class="tag">v0.4</span></div>
-      <h2 class="in dl-2">API · 데이터 명세</h2>
-      <p class="sub in dl-3">API 163개를 요청 · 응답 유형으로 묶고 26개를 상세 설계 · 컬렉션 명세서 82개는 스크립트로 생성</p>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">역할</div><ul class="pts">
+          <li>NDCG · Recall 지표의 평가 대상 설명</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>Recall@K의 스크리닝 단계 적합 공고 누락 측정 표시</li>
+          <li>NDCG@10의 최종 순위 상위 배치 측정 표시</li>
+        </ul></div>
+      </div>
     </div>
-    <div class="body"></div>
   </div>
 </section>
 
-<!-- ============================================================
-     03 파일럿 실험 결과와 해석
-     ============================================================ -->
-<section class="slide" data-title="파일럿 학습 조건" data-kind="03 · 파일럿" data-doc="h:■ 파일럿 학습 조건" data-doc-span="3" data-doc-label="9.2 파일럿 학습 조건">
+<section class="slide" data-title="NDCG 해석 방법" data-kind="03 · 지표와 파일럿" data-doc="fig:9.2" data-doc-label="그림 9.2">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">03</span><span class="ko">파일럿 실험 결과와 해석</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now">03</span><span class="ko">지표와 파일럿 실험</span><span class="end count"></span></div>
+    <div class="head">
+      <div class="kicker ko in dl-2">설계서 9.2 순위 지표의 이해 · <span class="tag">v1.0 추가 그림</span></div>
+      <h2 class="in dl-2">NDCG 해석 방법</h2>
+      <p class="sub in dl-3">순서를 정반대로 놓아도 NDCG@5 = 0.702 · 값 하나의 크기가 아니라 기준선과의 차이로 판단</p>
+    </div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">역할</div><ul class="pts">
+          <li>지표 값의 해석 기준 제시</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>공고 5건 예시의 DCG · IDCG · NDCG 계산 과정 표시</li>
+          <li>후보 20건 예시의 k별 Recall 계산 표시</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="파일럿 학습 조건" data-kind="03 · 지표와 파일럿" data-doc="h:■ 파일럿 학습 조건" data-doc-span="3" data-doc-label="9.2 파일럿 학습 조건">
+  <div class="frame">
+    <div class="rail in in-fade dl-1"><span class="now">03</span><span class="ko">지표와 파일럿 실험</span><span class="end count"></span></div>
     <div class="head">
       <div class="kicker ko in dl-2">설계서 9.2 · 2026-09-04 수행</div>
       <h2 class="in dl-2">파일럿 학습 조건</h2>
       <p class="sub in dl-3">합성 프로필 1,000개 × 공고 10개 = 10,000쌍 · 평가 분할 70명 · 700쌍 · 두 모델은 각각 독립 평가</p>
     </div>
-    <div class="body"></div>
-  </div>
-</section>
-
-<section class="slide" data-title="NDCG 해석 방법" data-kind="03 · 파일럿" data-doc="fig:9.2" data-doc-label="그림 9.2">
-  <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">03</span><span class="ko">파일럿 실험 결과와 해석</span><span class="end count"></span></div>
-    <div class="head">
-      <div class="kicker ko in dl-2">설계서 9.2 순위 지표의 이해 · 예시 숫자</div>
-      <h2 class="in dl-2">NDCG 해석 방법</h2>
-      <p class="sub in dl-3">순서를 정반대로 놓아도 NDCG@5 = 0.702 · 값 하나의 크기가 아니라 기준선과의 차이로 판단</p>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">역할</div><ul class="pts">
+          <li>파일럿 학습 결과의 재현 조건 기록</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>학습 · 검증 · 평가 분할별 프로필 · 공고 · 쌍 수 제시</li>
+          <li>두 모델의 기반 모델 · 학습률 · 선택 epoch · 실행 장비 비교</li>
+        </ul></div>
+      </div>
     </div>
-    <div class="body"></div>
   </div>
 </section>
 
-<section class="slide" data-title="파일럿 평가 결과" data-kind="03 · 파일럿" data-doc="h:■ 파일럿 평가 결과" data-doc-span="1" data-doc-label="9.2 파일럿 평가 결과">
+<section class="slide" data-title="파일럿 평가 결과" data-kind="03 · 지표와 파일럿" data-doc="fig:9.3" data-doc-span="1" data-doc-label="그림 9.3 · 9.4">
   <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">03</span><span class="ko">파일럿 실험 결과와 해석</span><span class="end count"></span></div>
+    <div class="rail in in-fade dl-1"><span class="now">03</span><span class="ko">지표와 파일럿 실험</span><span class="end count"></span></div>
     <div class="head">
       <div class="kicker ko in dl-2">설계서 9.2 · 평가 분할 70명 · 700쌍</div>
       <h2 class="in dl-2">파일럿 평가 결과</h2>
       <p class="sub in dl-3">NDCG@10 Bi-Encoder+MLP 0.9555 · Cross-Encoder 0.9608, 기준선 중 최고 Char TF-IDF 0.8799</p>
     </div>
-    <div class="body"></div>
-  </div>
-</section>
-
-<section class="slide" data-title="기준선 대비 차이의 신뢰구간" data-kind="03 · 파일럿" data-doc="cell:Bi-Encoder+MLP − Char TF-IDF" data-doc-span="1" data-doc-label="9.2 paired bootstrap">
-  <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">03</span><span class="ko">파일럿 실험 결과와 해석</span><span class="end count"></span></div>
-    <div class="head">
-      <div class="kicker ko in dl-2">설계서 9.2 · 평가 프로필 70명 단위 paired bootstrap · 20,000회</div>
-      <h2 class="in dl-2">기준선 대비 차이의 신뢰구간</h2>
-      <p class="sub in dl-3">두 모델 모두 기준선 대비 95% 구간이 0을 포함하지 않음 · 두 모델 사이의 차이는 0을 포함</p>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">역할</div><ul class="pts">
+          <li>기준선 대비 학습 모델 성능의 시각적 비교</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>NDCG@10 · pairwise accuracy · MAP@10 · MAE 모델별 비교</li>
+          <li>LLM 라벨 대비 모델 예측값 분포 비교</li>
+        </ul></div>
+      </div>
     </div>
-    <div class="body"></div>
-  </div>
-</section>
-
-<section class="slide" data-title="측정하지 않은 지표" data-kind="03 · 파일럿" data-doc="h:■ 지표별 측정 현황" data-doc-span="1" data-doc-label="9.2 지표별 측정 현황">
-  <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">03</span><span class="ko">파일럿 실험 결과와 해석</span><span class="end count"></span></div>
-    <div class="head">
-      <div class="kicker ko in dl-2">설계서 9.2 지표별 측정 현황</div>
-      <h2 class="in dl-2">측정하지 않은 지표</h2>
-      <p class="sub in dl-3">Recall@K · 모델 B NDCG@10 · p95 지연 · AUC는 아직 측정값 없음</p>
-    </div>
-    <div class="body"></div>
   </div>
 </section>
 
 <!-- ============================================================
-     끝장 — 표지와 짝. 자료 위치 · 묻는 곳 · 다음 판
+     끝장 — 표지와 짝. 자료 위치 · 묻는 곳 · 다음 판. data-doc 이 없어 설계서는 앞 장의 자리에 머뭅니다
      ============================================================ -->
-<section class="slide" data-lens="off" data-title="감사합니다" data-kind="END" data-doc="sel:.docinfo .table-wrap:last-of-type" data-doc-label="문서 정보 · 변경 이력">
+<section class="slide" data-title="감사합니다" data-kind="END">
   <div class="frame">
     <div class="rail in in-fade dl-1" style="border: none">
       <span class="brandline">
@@ -980,13 +1181,11 @@ h2 { font-size: 50px; }
     </div>
     <div class="body mid">
       <h2 class="in dl-2" style="font-size: 76px">감사합니다</h2>
-      <p class="sub in dl-3">질문과 피드백은 다음 판 v1.0에 반영</p>
     </div>
     <div class="foot in in-fade dl-5">
       <div class="covermeta">
         <div><div class="k" style="color: var(--ex-slate-400)">자료</div><div class="v" style="color: var(--ex-ink-900)">개발 포털 · 설계서 · PDF 214쪽</div></div>
         <div><div class="k" style="color: var(--ex-slate-400)">묻는 곳</div><div class="v" style="color: var(--ex-ink-900)">팀장 박민재</div></div>
-        <div><div class="k" style="color: var(--ex-slate-400)">다음 판</div><div class="v" style="color: var(--ex-ink-900)">v1.0 설계서 작성 완료</div></div>
       </div>
       <span class="pg"></span>
     </div>
@@ -1001,18 +1200,15 @@ h2 { font-size: 50px; }
     <span class="num"><span class="dg"><i></i><i>0</i><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i><i>7</i><i>8</i><i>9</i></span><span class="dg"><i></i><i>0</i><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i><i>7</i><i>8</i><i>9</i></span><span class="dg"><i></i><i>0</i><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i><i>7</i><i>8</i><i>9</i></span></span>
     <span class="of">/ <span class="total"></span>쪽</span>
   </div>
-  <iframe src="졸업작품-설계서.html" title="졸업작품 설계서 v0.7"></iframe>
+  <!-- 설계서 위치 막대 — 오른쪽 끝. 손잡이가 지금 보는 구간을 보이고, 끌거나 막대를 누르면 그 자리로 갑니다. -->
+  <div class="vbar" role="scrollbar" aria-orientation="vertical" aria-label="설계서 위치"
+       aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="thumb"></div></div>
+  <iframe src="졸업작품-설계서.html" title="졸업작품 설계서 v1.0"></iframe>
 </aside>
 
 <!-- 설계서 폭 조절 핸들 — 경계의 세로 가운데. 끌어서 폭을 바꾸고, 더블클릭하면 기본 폭으로 돌아갑니다. -->
 <div class="split-handle" role="separator" aria-orientation="vertical" aria-label="설계서 폭 조절"
-     aria-valuemin="520" aria-valuemax="1920" aria-valuenow="760" tabindex="0" title="끌어서 폭 조절 · 더블클릭하면 기본 폭"></div>
-
-<!-- 확대 창 — 같은 설계서를 한 번 더 띄워 대상 구역만 잘라 보입니다. 그림을 새로 그리지 않고
-     설계서의 그림 · 표를 그대로 키우기 위한 것입니다. 위치와 배율은 스크립트가 정합니다. -->
-<div class="lens" aria-hidden="true">
-  <div class="clip"><iframe src="졸업작품-설계서.html" title="설계서 확대" tabindex="-1"></iframe></div>
-</div>
+     aria-valuemin="520" aria-valuemax="1920" aria-valuenow="960" tabindex="0" title="끌어서 폭 조절 · 더블클릭하면 기본 폭"></div>
 
 </div><!-- /deck-stage -->
 </div><!-- /deck-viewport -->
@@ -1411,7 +1607,7 @@ window.deck = new Deck();
 <script>
 /* ===========================================================
    설계서 연결 — 장의 data-doc 을 읽어 오른쪽 설계서를 그 자리로 스크롤하고,
-   대상에 색 박스를 두른 뒤 확대 창(.lens)으로 그 구역을 왼쪽에 키워 보입니다.
+   대상에 색 박스를 두릅니다.
 
    data-doc 형식(설계서에 id가 없어 글자로 찾습니다)
      fig:2.1          「그림 2.1 」로 시작하는 figcaption 의 figure
@@ -1419,7 +1615,7 @@ window.deck = new Deck();
      cell:<글자>       그 글자와 같은 td 가 든 표
      sel:<CSS>        선택자
    data-doc-span="n"  찾은 요소 뒤의 형제 n개까지 함께 박스에 넣습니다.
-   data-lens="off"    확대 창을 띄우지 않는 장(표지 · 순서 · 끝장).
+   data-mark="off"    설계서에 색 박스를 두르지 않는 장(표지). 자리만 옮깁니다.
 
    설계서 파일은 고치지 않습니다. 상단 바 · 목차 · 미니맵은 여기서 스타일을 넣어 가립니다.
    =========================================================== */
@@ -1427,21 +1623,16 @@ window.deck = new Deck();
   const pane = document.querySelector('.docpane');
   const frame = pane && pane.querySelector('iframe');
   const where = pane && pane.querySelector('.where');
-  const lens = document.querySelector('.lens');
-  const lensFrame = lens && lens.querySelector('iframe');
-  const clip = lens && lens.querySelector('.clip');
   if (!frame || !window.deck) return;
 
   const q = new URLSearchParams(location.search);
   /* 축소판 · 내보내기는 한 장씩 찍으므로 움직이지 않고 바로 그 자리에 둡니다. */
   const STILL = q.has('preview') || q.has('export') || matchMedia('(prefers-reduced-motion: reduce)').matches;
   const TOP = 84;          /* 대상 위쪽이 놓일 자리(설계서 px) — 오른쪽 위 위치 표시 아래 */
-  const PAD = 14;          /* 박스와 확대 창이 대상 둘레에 두는 여백(설계서 px) */
-  /* 색 박스와 확대 창은 같은 순간 · 같은 시간 · 같은 곡선으로 밝아지고 걷힙니다. 둘이 짝이라는 것이
-     보이려면 어긋나지 않아야 합니다. */
+  const PAD = 14;          /* 박스가 대상 둘레에 두는 여백(설계서 px) */
   const FADE = 'opacity 420ms cubic-bezier(.4, 0, .2, 1)';
-  let doc = null, ldoc = null, anim = 0, ticket = 0;
-  let cur = null;          /* 지금 장의 대상 — 폭을 바꿀 때 박스와 확대 창을 다시 맞추는 데 씁니다 */
+  let doc = null, anim = 0, ticket = 0;
+  let cur = null;          /* 지금 장의 대상 — 폭을 바꿀 때 박스를 다시 맞추는 데 씁니다 */
   let full = false;        /* 설계서가 지면 전체를 쓰는 중 */
 
   /* 양끝에서 속도와 가속도가 모두 0인 곡선 — 출발과 정지에 턱이 생기지 않습니다. */
@@ -1459,7 +1650,7 @@ window.deck = new Deck();
     .sheet { max-width: 860px; margin: 0 auto; padding: 48px 52px 60px !important; border-radius: 16px !important; }
     .deck-mark {
       position: absolute; pointer-events: none; z-index: 30; border-radius: 12px;
-      border: 3px solid #9a4030; background: rgba(251, 238, 228, .5); mix-blend-mode: multiply;
+      border: 3px solid #9a4030;
       opacity: 0; transition: ${FADE};
     }
     .deck-mark.on { opacity: 1; }`;
@@ -1549,60 +1740,67 @@ window.deck = new Deck();
     pager.setAttribute('aria-label', `설계서 ${page}쪽`);
   }
 
-  const syncPage = () => doc && renderPage(pageAt(doc.scrollingElement.scrollTop + TOP + 1));
+  /* 위치 막대 — 손잡이 높이는 보이는 비율, 자리는 스크롤 비율 */
+  const bar = pane.querySelector('.vbar');
+  const thumb = bar && bar.querySelector('.thumb');
+  const THUMB_MIN = 28;
+  function barGeom() {
+    const se = doc.scrollingElement, H = bar.clientHeight;
+    const th = Math.min(H, Math.max(THUMB_MIN, H * se.clientHeight / se.scrollHeight));
+    return { se, H, th, max: Math.max(0, se.scrollHeight - se.clientHeight) };
+  }
+  function syncBar() {
+    if (!doc || !bar) return;
+    const { se, H, th, max } = barGeom();
+    const t = max ? se.scrollTop / max : 0;
+    thumb.style.height = th + 'px';
+    thumb.style.transform = `translateY(${(H - th) * t}px)`;
+    bar.setAttribute('aria-valuenow', String(Math.round(t * 100)));
+  }
 
-  /* 색 박스 — 다음 장으로 넘어갈 때까지 남겨 둡니다. 확대 창이 어디서 왔는지 보여 주는 자리입니다. */
+  const syncPage = () => {
+    if (!doc) return;
+    renderPage(pageAt(doc.scrollingElement.scrollTop + TOP + 1));
+    syncBar();
+  };
+
+  /* 손잡이를 끌거나 막대를 누르면 설계서를 그 자리로 옮깁니다. 장 전환 스크롤이 도는 중이면 멈춥니다. */
+  if (bar) {
+    let grab = null;
+    const toScroll = (clientY) => {
+      const { se, H, th, max } = barGeom();
+      const r = bar.getBoundingClientRect(), k = r.height / H;   /* 무대 축소 배율 */
+      const top = (clientY - r.top) / k - grab;
+      se.scrollTop = max * Math.max(0, Math.min(1, top / Math.max(1, H - th)));
+    };
+    bar.addEventListener('pointerdown', (e) => {
+      if (!doc) return;
+      e.preventDefault();
+      cancelAnimationFrame(anim);
+      ticket++;
+      const tr = thumb.getBoundingClientRect(), k = tr.height / thumb.offsetHeight;
+      /* 손잡이를 잡으면 잡은 자리를 유지하고, 막대를 누르면 손잡이 가운데를 그 자리로 */
+      grab = e.target === thumb ? (e.clientY - tr.top) / k : thumb.offsetHeight / 2;
+      bar.classList.add('dragging');
+      toScroll(e.clientY);
+      bar.setPointerCapture(e.pointerId);
+    });
+    bar.addEventListener('pointermove', (e) => { if (grab !== null) toScroll(e.clientY); });
+    const release = () => { grab = null; bar.classList.remove('dragging'); };
+    bar.addEventListener('pointerup', release);
+    bar.addEventListener('pointercancel', release);
+  }
+
+  /* 색 박스 — 다음 장으로 넘어갈 때까지 남겨 둡니다. 왼쪽 요점이 설계서의 어디를 다루는지 보여 주는 자리입니다. */
   function mark(box, instant) {
     let el = doc.querySelector('.deck-mark');
     if (!el) { el = doc.createElement('div'); el.className = 'deck-mark'; doc.body.appendChild(el); }
-    /* 확대 창이 바로 놓이는 경우(미리보기 · 가려진 탭)에는 박스도 바로 놓습니다. */
+    /* 미리보기 · 가려진 탭에서는 박스를 바로 놓습니다. */
     el.style.transition = instant ? 'none' : '';
     if (!box) { el.classList.remove('on'); return; }
     Object.assign(el.style, { top: box.y + 'px', left: box.x + 'px', width: box.w + 'px', height: box.h + 'px' });
     el.getBoundingClientRect();
     el.classList.add('on');
-  }
-
-  /* ── 확대 창 ─────────────────────────────────────────────────────── */
-  function hideLens(still) {
-    if (!lens) return;
-    lens.style.transition = still ? 'none' : FADE;
-    lens.style.opacity = '0';
-  }
-
-  /* 왼쪽에서 확대 창이 앉을 자리 — 그 장의 제목 아래부터 바닥까지 */
-  function slotOf(slide) {
-    const frameEl = slide.querySelector('.frame'), head = slide.querySelector('.head');
-    /* 확대 창이 있는 장은 아랫줄(쪽 번호)을 두지 않습니다 — 위쪽 레일의 「지금 / 전체」와 같은 정보이고,
-       그 높이를 확대 창에 줍니다. */
-    const x = frameEl.offsetLeft, top = frameEl.offsetTop + head.offsetTop + head.offsetHeight + 32;
-    return { x, y: top, w: frameEl.offsetWidth, h: frameEl.offsetTop + frameEl.offsetHeight - top };
-  }
-
-  /* 확대 창의 자리와 배율만 맞춥니다 — 밝기는 건드리지 않습니다(폭을 끌 때 매 프레임 부릅니다). */
-  function placeLens(slide, box) {
-    const se = ldoc.scrollingElement;
-    /* 확대 창 안의 설계서를 대상 구역만 보이게 맞춥니다 — 창 높이를 구역 높이로, 스크롤을 구역 위로. */
-    lensFrame.style.height = box.h + 'px';
-    clip.style.width = box.w + 'px';
-    clip.style.height = box.h + 'px';
-    se.scrollTop = box.y;
-    const off = se.scrollTop - box.y;          /* 문서 끝 근처라 끝까지 못 내려간 만큼 */
-    lensFrame.style.transform = `translate(${-box.x}px, ${off}px)`;
-
-    /* 왼쪽 자리에 꽉 차게, 2배까지. 자리를 옮기며 커지는 연출은 정신없어 쓰지 않고 그 자리에서 밝아집니다. */
-    const slot = slotOf(slide);
-    const k = Math.min(slot.w / box.w, slot.h / box.h, 2);
-    lens.style.transform = `translate(${slot.x}px, ${slot.y}px) scale(${k})`;
-  }
-
-  function showLens(slide, box, still) {
-    if (!lens || !ldoc || full || slide.dataset.lens === 'off' || !box) { hideLens(still); return; }
-    placeLens(slide, box);
-    if (still) { lens.style.transition = 'none'; lens.style.opacity = '1'; return; }
-    lens.getBoundingClientRect();
-    lens.style.transition = FADE;
-    lens.style.opacity = '1';
   }
 
   /* ── 장 바꾸기 ───────────────────────────────────────────────────── */
@@ -1616,7 +1814,6 @@ window.deck = new Deck();
     if (slide.dataset.doc && !el) console.warn('[설계서 연결] 대상을 찾지 못했습니다:', slide.dataset.doc);
     label(slide, el);
     mark(null, still);
-    hideLens(still);
     cancelAnimationFrame(anim);
     if (!el) return;
     const span = parseInt(slide.dataset.docSpan || '0', 10);
@@ -1627,9 +1824,7 @@ window.deck = new Deck();
       syncPage();
       const box = boxOf(el, span);
       cur = { slide, el, span };
-      /* 박스와 확대 창을 같은 프레임에 켭니다. */
-      showLens(slide, box, instant);
-      mark(box, instant);
+      mark(slide.dataset.mark === 'off' ? null : box, instant);
     };
     /* 탭이 가려져 있으면 프레임이 돌지 않습니다 — 그때는 바로 그 자리에 둡니다. */
     if (still || document.hidden) { se.scrollTop = to; arrive(true); return; }
@@ -1669,22 +1864,15 @@ window.deck = new Deck();
     setTimeout(settle, 800);
   }
 
-  function attachLens() {
-    try { ldoc = lensFrame.contentDocument; } catch { ldoc = null; }
-    if (!ldoc || !ldoc.body) return;
-    inject(ldoc);
-    if (doc) settle();
-  }
-
   /* ── 설계서 폭 조절 ────────────────────────────────────────────────
      경계 가운데의 핸들을 끌면 설계서 칸의 폭이 바뀝니다. 설계서는 늘 1000px 폭으로 그리고
      칸 폭에 비례해 줄이거나 키웁니다 — 전체 보기(1920px)에서는 1.92배가 되어 확대해 읽는 자리가 됩니다.
-     그리는 폭이 고정이라 확대 창과 줄바꿈 · 좌표가 늘 같습니다.
-     왼쪽이 MIN_LEFT 보다 좁아지면 발표 내용과 확대 창을 걷고, 손을 떼면 설계서가 지면 전체로
+     그리는 폭이 고정이라 줄바꿈 · 좌표가 늘 같습니다.
+     왼쪽이 MIN_LEFT 보다 좁아지면 발표 내용을 걷고, 손을 떼면 설계서가 지면 전체로
      펴집니다. 다시 HYST 만큼 넓히면 발표 내용이 돌아옵니다. 더블클릭은 기본 폭으로. */
   const stage = document.getElementById('deckStage');
   const handle = document.querySelector('.split-handle');
-  const SPLIT0 = 760, MIN_W = 520, MIN_LEFT = 640, HYST = 40, KEY = 'deck:split:' + location.pathname;
+  const SPLIT0 = 960, MIN_W = 520, MIN_LEFT = 300, HYST = 40, KEY = 'deck:split:' + location.pathname;
   let split = SPLIT0, splitAnim = 0;
 
   function setSplit(w) {
@@ -1692,22 +1880,20 @@ window.deck = new Deck();
     stage.style.setProperty('--split', split + 'px');
     stage.style.setProperty('--doc-s', String(split / 1000));
     if (handle) handle.setAttribute('aria-valuenow', String(Math.round(split)));
+    syncBar();
   }
 
-  /* 폭이 바뀐 뒤 박스와 확대 창의 자리를 다시 맞춥니다(밝기는 그대로). */
+  /* 폭이 바뀐 뒤 박스의 자리를 다시 맞춥니다(밝기는 그대로). */
   function relayout() {
     if (!doc || !cur) return;
     const box = boxOf(cur.el, cur.span);
-    mark(box, true);
-    if (!full && ldoc && cur.slide.dataset.lens !== 'off') placeLens(cur.slide, box);
+    mark(cur.slide.dataset.mark === 'off' ? null : box, true);
   }
 
   function setFull(on) {
     if (full === on) return;
     full = on;
     stage.classList.toggle('doc-full', on);
-    if (on) hideLens(false);
-    else if (cur && doc) showLens(cur.slide, boxOf(cur.el, cur.span), false);
   }
 
   const crossing = () => {
@@ -1785,17 +1971,13 @@ window.deck = new Deck();
     } catch { /* 저장소가 막힌 창 */ }
   }
 
-  /* 컨트롤러의 show 를 감쌉니다 — 왼쪽 글은 양식대로, 오른쪽과 확대 창은 여기서. */
+  /* 컨트롤러의 show 를 감쌉니다 — 왼쪽 글은 양식대로, 오른쪽 설계서는 여기서. */
   const show = window.deck.show.bind(window.deck);
   window.deck.show = (n) => { show(n); go(window.deck.i, STILL); };
 
   const ready = (f) => f.contentDocument && f.contentDocument.readyState === 'complete' && f.contentDocument.body?.childElementCount;
   if (ready(frame)) attach();
   frame.addEventListener('load', attach);
-  if (lensFrame) {
-    if (ready(lensFrame)) attachLens();
-    lensFrame.addEventListener('load', attachLens);
-  }
 })();
 </script>
 
@@ -1820,12 +2002,14 @@ window.deck = new Deck();
       if (list) list.innerHTML = '';
       /* 오른쪽 위치 표시는 장마다 스크립트가 다시 씁니다 — 파일에 남기지 않습니다. */
       doc.querySelector('.docpane .where')?.replaceChildren();
-      doc.querySelectorAll('.lens, .lens .clip, .lens iframe').forEach((el) => el.removeAttribute('style'));
       doc.querySelector('#deckStage')?.classList.remove('doc-full', 'resizing');
-      doc.querySelector('.split-handle')?.setAttribute('aria-valuenow', '760');
+      doc.querySelector('.split-handle')?.setAttribute('aria-valuenow', '960');
       doc.querySelectorAll('.docpane .pager .dg').forEach((d) => { d.removeAttribute('style'); d.classList.remove('off'); });
       const tot = doc.querySelector('.docpane .pager .total'); if (tot) tot.textContent = '';
       doc.querySelector('.docpane .pager')?.setAttribute('aria-label', '설계서 쪽');
+      doc.querySelector('.docpane .vbar .thumb')?.removeAttribute('style');
+      doc.querySelector('.docpane .vbar')?.classList.remove('dragging');
+      doc.querySelector('.docpane .vbar')?.setAttribute('aria-valuenow', '0');
       const over = doc.querySelector('#overview');
       if (over) { over.classList.remove('on'); over.setAttribute('hidden', ''); }
     },
