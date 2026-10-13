@@ -802,7 +802,7 @@ h2 { font-size: 50px; }
       <div class="tl">
         <div class="row in dl-3"><span class="when">01</span><span class="what">서비스와 모델<small>서비스 개요 · 지원 범위 · 사용자 플로우 · 추천 모델 · 교사 지식 증류 · 단계적 활용</small></span><span class="who">1 – 4장</span></div>
         <div class="row in dl-4"><span class="when">02</span><span class="what">명세와 지표<small>API · 데이터 명세 · 순위 지표 · NDCG 해석 방법</small></span><span class="who">7장 · 9장</span></div>
-        <div class="row in dl-5"><span class="when">03</span><span class="what">파일럿 실험 결과와 해석<small>학습 조건 · 평가 결과 · 신뢰구간</small></span><span class="who">9.2</span></div>
+        <div class="row in dl-5"><span class="when">03</span><span class="what">파일럿 실험 결과와 해석<small>학습 조건 · 평가 결과</small></span><span class="who">9.2</span></div>
       </div>
     </div>
     <div class="foot in in-fade dl-1"><p>오른쪽은 설계서 원문 · 장을 넘기면 해당 위치로 이동</p><span class="pg"></span></div>
@@ -1011,24 +1011,6 @@ h2 { font-size: 50px; }
         <li>두 학습 모델의 NDCG@10 · pairwise accuracy · MAP@10 기준선 대비 향상</li>
         <li>MAE 14.91(Char TF-IDF) → 10.54 · 10.51 감소</li>
         <li>Char TF-IDF 예측값 라벨 무관 25 – 30점 집중 · 학습 모델 예측값 대각선 근접</li>
-      </ul>
-    </div>
-  </div>
-</section>
-
-<section class="slide" data-title="기준선 대비 차이의 신뢰구간" data-kind="03 · 파일럿" data-doc="cell:Bi-Encoder+MLP − Char TF-IDF" data-doc-span="1" data-doc-label="9.2 paired bootstrap">
-  <div class="frame">
-    <div class="rail in in-fade dl-1"><span class="now">03</span><span class="ko">파일럿 실험 결과와 해석</span><span class="end count"></span></div>
-    <div class="head">
-      <div class="kicker ko in dl-2">설계서 9.2 · 평가 프로필 70명 단위 paired bootstrap · 20,000회</div>
-      <h2 class="in dl-2">기준선 대비 차이의 신뢰구간</h2>
-      <p class="sub in dl-3">두 모델 모두 기준선 대비 95% 구간이 0을 포함하지 않음 · 두 모델 사이의 차이는 0을 포함</p>
-    </div>
-    <div class="body">
-      <ul class="pts in dl-4">
-        <li>Bi-Encoder+MLP − Char TF-IDF NDCG@10 +0.0756 [+0.0548, +0.0967]</li>
-        <li>Cross-Encoder − Char TF-IDF NDCG@10 +0.0809 [+0.0597, +0.1036]</li>
-        <li>Cross-Encoder − Bi-Encoder+MLP NDCG@10 +0.0054 [−0.0046, +0.0160]</li>
       </ul>
     </div>
   </div>
