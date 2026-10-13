@@ -598,12 +598,12 @@ svg [data-morph] { transform-box: fill-box; }
 }
 
 /* ===========================================================
-   08 · 발표 · 설계서 분할 — 오른쪽 760px은 설계서 원문, 왼쪽은 발표 글.
+   08 · 발표 · 설계서 분할 — 기본은 절반씩. 오른쪽 960px은 설계서 원문, 왼쪽은 발표 글.
    설계서(.docpane)가 장마다 대상에 색 박스를 두르고, 왼쪽은 그 대상의 요점을 글로 적습니다.
    설계서는 슬라이드 밖에 한 번만 놓여 장이 바뀌어도 사라지지 않습니다.
    =========================================================== */
-/* 설계서는 1000px 폭으로 그린 뒤 칸 폭에 비례해 줄입니다(기본 760px 칸이면 0.76배). */
-:root { --split: 760px; --doc-w: 1000px; --doc-s: .76; }
+/* 설계서는 1000px 폭으로 그린 뒤 칸 폭에 비례해 줄입니다(기본 960px 칸이면 0.96배). */
+:root { --split: 960px; --doc-w: 1000px; --doc-s: .96; }
 
 /* 양식 기본값에서 벗어남 — 지면 바탕을 장이 아니라 무대에 칠합니다.
    왼쪽 글을 「나가는 글이 걷힌 뒤 들어오는 글이 뜨는」 순서로 바꾸려면
@@ -619,14 +619,14 @@ h2 { font-size: 50px; }
 .body { padding: 32px 0 16px; }
 
 /* 요점 — 오른쪽 설계서가 박스를 두른 대상의 요점을 크게 적습니다. */
-.pts { list-style: none; display: grid; gap: 44px; padding-top: 32px; }
+.pts { list-style: none; display: grid; gap: 32px; padding-top: 28px; }
 .pts li {
-  position: relative; padding-left: 38px; font-size: 38px; font-weight: 500; line-height: 1.45;
+  position: relative; padding-left: 32px; font-size: 30px; font-weight: 500; line-height: 1.45;
   letter-spacing: -.01em; color: var(--ex-ink-900); word-break: keep-all;
 }
 .pts li::before {
-  content: ""; position: absolute; left: 2px; top: 23px;
-  width: 10px; height: 10px; border-radius: 50%; background: var(--ex-espresso);
+  content: ""; position: absolute; left: 2px; top: 18px;
+  width: 8px; height: 8px; border-radius: 50%; background: var(--ex-espresso);
 }
 
 /* 왼쪽 글의 장 전환 — 나가는 글이 240ms 동안 걷히고, 그다음 들어오는 글이 뜹니다.
@@ -1055,7 +1055,7 @@ h2 { font-size: 50px; }
 
 <!-- 설계서 폭 조절 핸들 — 경계의 세로 가운데. 끌어서 폭을 바꾸고, 더블클릭하면 기본 폭으로 돌아갑니다. -->
 <div class="split-handle" role="separator" aria-orientation="vertical" aria-label="설계서 폭 조절"
-     aria-valuemin="520" aria-valuemax="1920" aria-valuenow="760" tabindex="0" title="끌어서 폭 조절 · 더블클릭하면 기본 폭"></div>
+     aria-valuemin="520" aria-valuemax="1920" aria-valuenow="960" tabindex="0" title="끌어서 폭 조절 · 더블클릭하면 기본 폭"></div>
 
 </div><!-- /deck-stage -->
 </div><!-- /deck-viewport -->
@@ -1497,7 +1497,7 @@ window.deck = new Deck();
     .sheet { max-width: 860px; margin: 0 auto; padding: 48px 52px 60px !important; border-radius: 16px !important; }
     .deck-mark {
       position: absolute; pointer-events: none; z-index: 30; border-radius: 12px;
-      border: 3px solid #9a4030; background: rgba(251, 238, 228, .5); mix-blend-mode: multiply;
+      border: 3px solid #9a4030;
       opacity: 0; transition: ${FADE};
     }
     .deck-mark.on { opacity: 1; }`;
@@ -1670,7 +1670,7 @@ window.deck = new Deck();
      펴집니다. 다시 HYST 만큼 넓히면 발표 내용이 돌아옵니다. 더블클릭은 기본 폭으로. */
   const stage = document.getElementById('deckStage');
   const handle = document.querySelector('.split-handle');
-  const SPLIT0 = 760, MIN_W = 520, MIN_LEFT = 640, HYST = 40, KEY = 'deck:split:' + location.pathname;
+  const SPLIT0 = 960, MIN_W = 520, MIN_LEFT = 640, HYST = 40, KEY = 'deck:split:' + location.pathname;
   let split = SPLIT0, splitAnim = 0;
 
   function setSplit(w) {
@@ -1800,7 +1800,7 @@ window.deck = new Deck();
       /* 오른쪽 위치 표시는 장마다 스크립트가 다시 씁니다 — 파일에 남기지 않습니다. */
       doc.querySelector('.docpane .where')?.replaceChildren();
       doc.querySelector('#deckStage')?.classList.remove('doc-full', 'resizing');
-      doc.querySelector('.split-handle')?.setAttribute('aria-valuenow', '760');
+      doc.querySelector('.split-handle')?.setAttribute('aria-valuenow', '960');
       doc.querySelectorAll('.docpane .pager .dg').forEach((d) => { d.removeAttribute('style'); d.classList.remove('off'); });
       const tot = doc.querySelector('.docpane .pager .total'); if (tot) tot.textContent = '';
       doc.querySelector('.docpane .pager')?.setAttribute('aria-label', '설계서 쪽');
