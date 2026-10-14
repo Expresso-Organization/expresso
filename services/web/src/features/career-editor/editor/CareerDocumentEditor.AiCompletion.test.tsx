@@ -2,6 +2,9 @@
 import { parseCareerDocument } from "@expresso/editor";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
+
+// 채팅의 네트워크·스크롤은 별도 테스트와 실제 브라우저에서 검증합니다.
+vi.mock("@/features/agent-chat/AgentChat", () => ({ AgentChat: () => null }));
 const update = vi.hoisted(() => vi.fn());
 vi.mock("../session/useCareerEditorSession", () => ({ useCareerEditorSession: () => ({ snapshot: { status: "saving", documentVersion: 1, lastAckSequence: 0, proposal: null }, document: parseCareerDocument({ schemaVersion: 1, type: "doc", content: [{ id: "00000000-0000-4000-8000-000000000002", type: "paragraph", attrs: {}, text: [{ text: "Unsent live document" }] }] }), updateDocument: update }) }));
 vi.mock("../ai/AiProposalPanel", () => ({ AiProposalPanel: ({ onApplied }: { onApplied: () => Promise<void> }) => <button type="button" onClick={() => void onApplied()}>Owner completed</button> }));

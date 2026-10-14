@@ -3,6 +3,9 @@ import type { CareerCategory, CareerRecord, CareerViewConfiguration, CareerWrite
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+// 채팅의 네트워크·스크롤은 별도 테스트와 실제 브라우저에서 검증합니다.
+vi.mock("@/features/agent-chat/AgentChat", () => ({ AgentChat: () => null }));
+
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 import { CareerViewShell } from "./CareerViewShell";

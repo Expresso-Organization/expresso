@@ -15,7 +15,7 @@
 6. API와 Worker를 같은 Spring 주소 및 actor 키로 함께 배포합니다. Web은 기존 BFF 주소를 유지합니다. 주소·키 누락 또는 Spring 장애 시 Career business write는 명시적으로 실패하며 direct Mongo fallback을 하지 않습니다.
 7. disposable rehearsal과 같은 create/edit/duplicate/trash/restore/relation/schema/AI/Interview·pending recovery·Yjs smoke를 운영 승인 범위에서 확인합니다.
 
-현재 repository에는 0009~0013 migration 구현이 없습니다. 해당 과거 canary(특히 0012) marker가 존재하는 DB는 지원되는 history와 checksum을 먼저 조사해야 합니다. 없는 migration을 만들어 applied로 표시하거나 marker를 지워 우회하지 않습니다. 최신 main과 stack 정렬 및 운영 history 검토는 최종 merge 이전의 별도 통합 작업입니다.
+최종 Preview에는 main의 0009/0010을 포함한 0001~0010 및 0014~0019, 총 16개 migration이 등록되어 있습니다. 0011~0013 migration 구현은 없습니다. 해당 과거 canary(특히 0012) marker가 존재하는 DB는 지원되는 history와 checksum을 먼저 조사해야 합니다. 없는 migration을 만들어 applied로 표시하거나 marker를 지워 우회하지 않습니다. 최신 main의 문서 변경은 최종 후보 작업 트리에 통합했습니다. 최종 SHA 확정 및 운영 history 검토는 Merge 승인 이전에 별도로 완료해야 합니다.
 
 ## 내부 설정
 

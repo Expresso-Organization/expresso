@@ -16,7 +16,9 @@ import {
   type EditStructuredPage,
   PortfolioMediaSchema,
   PAGE_IMAGE_SRC_PREFIX,
+  UuidSchema,
 } from "@expresso/contracts";
+import { markdownToCareerDocument, type CareerBlock } from "@expresso/editor";
 import { renderStructuredPortfolio, librarySelection } from "@expresso/portfolio-renderer";
 import { mongoCollections, type GeneratedPageDoc, type JsonObject } from "@expresso/database";
 
@@ -41,6 +43,22 @@ function toPage(row: GeneratedPageDoc): GeneratedPage {
 }
 
 function isPageStyleGrammar(value: unknown): value is PageStyleGrammar { return PageStyleGrammarSchema.safeParse(value).success; }
+
+function careerRecordImages(bodyMd: string, title: string): { id: string; alt: string }[] {
+  const images = [...bodyMd.matchAll(/\/v1\/media\/([a-f0-9-]{36})/gi)].map(match => ({ id: match[1]!, alt: title }));
+  const visit = (blocks: readonly CareerBlock[]) => {
+    for (const block of blocks) {
+      if (block.type === "image" && UuidSchema.safeParse(block.attrs.mediaId).success) {
+        images.push({ id: block.attrs.mediaId as string, alt: typeof block.attrs.alt === "string" && block.attrs.alt.trim() ? block.attrs.alt : title });
+      }
+      if (block.content) visit(block.content);
+    }
+  };
+  // 정본 Markdown의 native 이미지와 이전 media: 형식을 같은 입력으로 읽습니다.
+  try { visit(markdownToCareerDocument(bodyMd).content); }
+  catch { /* 이전 본문에 지원하지 않는 블록이 있어도 URL 이미지 수집은 유지합니다. */ }
+  return images;
+}
 
 export class PageService {
   readonly #consent: ConsentApi | null; readonly #stream: PageStream | null;
@@ -115,7 +133,7 @@ export class PageService {
     const pageSections = await db.portfolioSections.find({ userId, portfolioId }).toArray();
     const mediaBlocks = await db.blocks.find({ userId, portfolioSectionId: { $in: pageSections.map(item => item._id) }, kind: "media" }).toArray();
     const supplied = mediaBlocks.flatMap(item => { const parsed = PortfolioMediaSchema.safeParse(item.content); return parsed.success ? [{ id: parsed.data.assetId, alt: parsed.data.alt }] : []; });
-    for (const record of records) for (const match of record.bodyMd.matchAll(/\/v1\/media\/([a-f0-9-]{36})/gi)) supplied.push({ id: match[1]!, alt: record.title });
+    for (const record of projectedRecords) supplied.push(...careerRecordImages(record.bodyMd, record.title));
     const assets = await db.mediaAssets.find({ userId, _id: { $in: supplied.map(item => item.id) }, storageKey: { $ne: "" } }).toArray();
     const media = [...new Map(supplied.flatMap(item => { const asset = assets.find(value => value._id === item.id); return asset ? [[item.id, { src: `${PAGE_IMAGE_SRC_PREFIX}${asset._id}`, srcSet: "", alt: item.alt, width: asset.width, height: asset.height }] as const] : []; })).values()];
     return {

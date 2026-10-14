@@ -3,6 +3,9 @@ import type { CareerCategory, CareerRecordListItem, CareerViewConfiguration } fr
 import { parseCareerDocument } from "@expresso/editor";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+
+// 채팅의 네트워크·스크롤은 별도 테스트와 실제 브라우저에서 검증합니다.
+vi.mock("@/features/agent-chat/AgentChat", () => ({ AgentChat: () => null }));
 const update = vi.hoisted(() => vi.fn());
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock("../session/useCareerEditorSession", () => ({ useCareerEditorSession: () => ({ snapshot: { status: "saving", documentVersion: 1, lastAckSequence: 0, proposal: null }, document: parseCareerDocument({ schemaVersion: 1, type: "doc", content: [{ id: "00000000-0000-4000-8000-000000000004", type: "paragraph", attrs: {}, text: [{ text: "Live document retained" }] }] }), updateDocument: update }) }));

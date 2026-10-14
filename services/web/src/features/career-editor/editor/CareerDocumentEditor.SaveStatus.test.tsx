@@ -4,6 +4,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import type { CareerEditorSnapshot } from "../session/useCareerEditorSession";
 
+vi.mock("@/features/agent-chat/AgentChat", () => ({ AgentChat: () => null }));
 const mocks = vi.hoisted(() => ({ useSession: vi.fn() }));
 vi.mock("../session/useCareerEditorSession", () => ({ useCareerEditorSession: () => mocks.useSession() }));
 import { CareerDocumentEditor } from "./CareerDocumentEditor";
