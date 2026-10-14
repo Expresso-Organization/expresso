@@ -40,6 +40,17 @@ public final class MongoCareerCommandRepository implements CareerCommandReposito
             },TransactionOptions.builder().readConcern(ReadConcern.SNAPSHOT).writeConcern(WriteConcern.MAJORITY).readPreference(ReadPreference.primary()).build());
         }
     }
+    /** 사용자 세션 경로와 분리하여 동일 Mongo session 안에서 producer의 B1 작업을 수행합니다. */
+    public <T> T serviceTransaction(com.expresso.backend.career.integration.ServiceActor actor, Function<MongoCareerProducerOperations,T> work) {
+        try(var session=client.startSession()) {
+            return session.withTransaction(() -> {
+                if(!actor.expiresAt().isAfter(clock.instant())) throw new CareerCommandException(401,"UNAUTHENTICATED");
+                var active=db.getCollection("users").updateOne(session,new Document("_id",actor.scope().userId()).append("deletionRequestedAt",null),new Document("$inc",new Document("writeVersion",1L)));
+                if(active.getMatchedCount()!=1) throw new CareerCommandException(401,"UNAUTHENTICATED");
+                return work.apply(new MongoCareerProducerOperations(db,session,clock,actor.scope(),new MongoOperations(session,actor.scope().userId())));
+            },TransactionOptions.builder().readConcern(ReadConcern.SNAPSHOT).writeConcern(WriteConcern.MAJORITY).readPreference(ReadPreference.primary()).build());
+        }
+    }
     private final class MongoOperations implements Operations {
         private final ClientSession session;
         private final String user;

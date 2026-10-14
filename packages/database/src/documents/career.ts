@@ -24,6 +24,7 @@ export interface CareerCategoryDoc {
 }
 
 export interface CareerRecordDoc {
+  documentReservation?: Contracts.CareerProducerScope;
   _id: string;
   userId: string;
   categoryId: Contracts.CareerRecord["categoryId"];

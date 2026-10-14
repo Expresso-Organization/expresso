@@ -32,3 +32,9 @@ export interface CareerApi extends Pick<LegacyCareerService, keyof LegacyCareerS
   previewFormula?: CareerComputationService["previewFormula"];
   previewRollup?: CareerComputationService["previewRollup"];
 }
+
+export { CareerProducerCoordinator, createCareerProducerIntent, careerProducerFingerprint, validateCareerProducerIntent, careerProducerSource, careerProducerScopeFilter } from "./prepared-producer.js";
+export type { CareerProducerBusinessPort, CareerProducerDocumentPort } from "./prepared-producer.js";
+
+export { createSpringCareerProducerPort, createCareerProducerCredential } from "./spring-producer-port.js";
+export type { CareerProducerCredentialProvider, CareerProducerHttpTransport } from "./spring-producer-port.js";

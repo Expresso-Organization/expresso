@@ -6,3 +6,7 @@ export { registerCareerDocumentSocket } from "./socket.js";
 export { InMemoryCareerDocumentSessionRegistry } from "./session-registry.js";
 export type { CareerDocumentSessionRegistry, CareerSocketSession } from "./session-registry.js";
 export { MongoCareerDocumentRepository } from "./repository.js";
+
+export { PreparedCareerDocumentWriter } from "./prepared-document-writer.js";
+
+export { PreparedAiProposalService, selectAiCanonicalDelta } from "./prepared-ai-proposals.js";

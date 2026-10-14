@@ -106,6 +106,7 @@ export class CareerDocumentService implements CareerDocumentApi {
       if (!record) throw new CareerDocumentError(404, "career record not found");
       let snapshot = await this.repository.snapshot(recordId, tx.session);
       if (!snapshot) {
+        if (record.documentReservation) throw new CareerDocumentError(409, "document is reserved by a prepared writer");
         const document = markdownToCareerDocument(record.bodyMd);
         const canonicalUpdate = encodeDocumentAsYUpdate(document);
         const snapshotId = randomUUID();
@@ -171,6 +172,7 @@ export class CareerDocumentService implements CareerDocumentApi {
     const acknowledgement = await inTransaction(this.context, async (tx) => {
       const record = await this.repository.record(userId, input.recordId, tx.session);
       if (!record) throw new CareerDocumentError(404, "career record not found");
+      if ("documentReservation" in record && record.documentReservation != null) throw new CareerDocumentError(409, "document is reserved by a prepared writer");
       const duplicate = await this.repository.byClient(input.recordId, input.clientId, input.clientSequence, tx.session);
       if (duplicate) {
         return {
@@ -269,6 +271,7 @@ export class CareerDocumentService implements CareerDocumentApi {
       }
       const record = await this.repository.record(userId, revision.recordId, tx.session);
       if (!record) throw new CareerDocumentError(404, "career record not found");
+      if ("documentReservation" in record && record.documentReservation != null) throw new CareerDocumentError(409, "document is reserved by a prepared writer");
       if ((record.documentVersion ?? 0) !== expectedVersion) {
         throw new CareerDocumentError(409, "document version is stale");
       }

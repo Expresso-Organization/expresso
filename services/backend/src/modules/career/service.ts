@@ -161,6 +161,7 @@ export class CareerService implements CareerApi {
       if (!existing) throw new CareerError(404, "career record not found");
       if (existing.version !== expectedVersion) throw new CareerError(412, "career record version is stale");
       if (input.bodyMd !== undefined) {
+        if ("documentReservation" in existing && existing.documentReservation != null) throw new CareerError(409, "document is reserved by a prepared writer");
         const latestSnapshot = await mongoCollections(tx.db).careerDocumentSnapshots.findOne(
           { recordId },
           { sort: { documentVersion: -1 }, session: tx.session },

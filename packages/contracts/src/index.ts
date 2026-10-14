@@ -79,3 +79,7 @@ export * from "./career-writer.js";
 export * from "./career-writer-openapi.js";
 export * from "./career-property-mutation.js";
 export * from "./career-property-mutation-openapi.js";
+
+export * from "./career-producer.js";
+
+export * from "./career-producer-openapi.js";
