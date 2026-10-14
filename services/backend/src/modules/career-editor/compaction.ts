@@ -1,13 +1,14 @@
 import {
   encodeDocumentAsYUpdate,
-  encodeDocumentStateVector,
-  parseCareerDocument,
+  encodeDocumentUpdatesStateVector,
+  mergeDocumentYUpdates,
   reconstructYDocument,
 } from "@expresso/editor";
 import type { JsonValue } from "@expresso/database";
 import { Binary, type ClientSession } from "mongodb";
 
 import { CareerDocumentError } from "./errors.js";
+import { readCareerSnapshotUpdate } from "../../platform/career-document-snapshot.js";
 import { binaryBytes, hashUpdate, type CareerDocumentRepository } from "./repository.js";
 
 export async function compactDocument(
@@ -30,12 +31,13 @@ export async function compactDocument(
   if (through !== expectedSequence) throw new CareerDocumentError(409, "document sequence is stale");
 
   const base = snapshot
-    ? encodeDocumentAsYUpdate(parseCareerDocument(snapshot.content))
+    ? readCareerSnapshotUpdate(snapshot)
     : undefined;
-  const document = reconstructYDocument([
+  const stateUpdate = mergeDocumentYUpdates([
     ...(base ? [base] : []),
     ...updates.map((row) => binaryBytes(row.update)),
   ]);
+  const document = reconstructYDocument([stateUpdate]);
   const canonicalUpdate = encodeDocumentAsYUpdate(document);
   const snapshotId = crypto.randomUUID();
   await repository.insertSnapshot({
@@ -46,7 +48,8 @@ export async function compactDocument(
     version: expectedSequence,
     schemaVersion: 1,
     content: document as unknown as JsonValue,
-    stateVector: new Binary(Buffer.from(encodeDocumentStateVector(document))),
+    stateVector: new Binary(Buffer.from(encodeDocumentUpdatesStateVector([stateUpdate]))),
+    stateUpdate: new Binary(Buffer.from(stateUpdate)),
     serverSequence: through,
     checksum: hashUpdate(canonicalUpdate),
     actor: "migration",

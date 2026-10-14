@@ -60,4 +60,15 @@ class CareerPropertyMutationValuesTest {
             assertEquals(row.get("result"),actual,row.get("name").asText());
         }
     }
+    @Test void customTimestampMutationPreservesCanonicalDatetimeAndRejectsDayRangeOrSystemAlias() {
+        var id="00000000-0000-4000-8000-000000000011";var date=new DatePropertyValue(id,DatePropertyValue.Precision.DATETIME,"2026-10-09T01:02:03.123456789+09:00",null,"Asia/Seoul");
+        for(var type:List.of(PropertyDefinitionType.CREATED_TIME,PropertyDefinitionType.UPDATED_TIME)) {
+            var target=new PropertyDefinition(id,"timestamp","timestamp",type,false,false,Map.of(),0,3,null);var source=new PropertyDefinition(id,"timestamp","timestamp",type,false,false,Map.of(),0,2,Instant.parse("2026-10-09T00:00:00Z"));
+            assertEquals(new CareerPropertyMutationValues.Conversion("exact",date),CareerPropertyMutationValues.convert(date,target));
+            assertEquals(new PropertyDelta(List.of(date),List.of()),CareerPropertyMutationValues.delta("restoration",source,target,null,false,List.of(),date));
+            assertEquals(new PropertyDelta(List.of(date),List.of()),CareerPropertyMutationValues.delta("conversion",source,target,null,false,List.of(date),null));
+            for(var invalid:List.of(new DatePropertyValue(id,DatePropertyValue.Precision.DAY,"2026-10-09",null,null),new DatePropertyValue(id,DatePropertyValue.Precision.DATETIME,date.start(),"2026-10-10T00:00:00Z",date.timezone())))assertEquals("unmapped",CareerPropertyMutationValues.convert(invalid,target).kind());
+            var system=new PropertyDefinition(id,"timestamp","timestamp",type,false,true,Map.of(),0,3,null);assertEquals("unmapped",CareerPropertyMutationValues.convert(date,system).kind());
+        }
+    }
 }

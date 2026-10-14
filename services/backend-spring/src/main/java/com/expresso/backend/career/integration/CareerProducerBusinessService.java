@@ -28,25 +28,29 @@ public final class CareerProducerBusinessService {
             var source=tx.source(); var intent=boundIntent(source,scope); var business=intent.get("business");
             if(business==null || business.isNull()) throw new CareerCommandException(409,"PRODUCER_BUSINESS_MISSING");
             var kind=CareerBusinessInput.text(business.get("kind"));
-            long expected=0;
+            long expected=0;String productRecordId=null;
             if(kind.equals("patch")) {
                 CareerBusinessInput.fields(business,Set.of("kind","recordId","expectedVersion","expectedCategoryVersion","patches"),Set.of("kind","recordId","expectedVersion","expectedCategoryVersion","patches"));
                 var recordId=CareerBusinessInput.uuid(business.get("recordId"));
                 if(scope.producer().equals("ai-proposal") && !recordId.equals(source.getString("recordId"))) throw new CareerCommandException(409,"PRODUCER_SOURCE_CHANGED");
+                productRecordId=recordId;
                 expected=version(business.get("expectedVersion"));
                 if(CareerBusinessInput.version(match)!=expected) throw CareerCommandException.stale();
             } else if(kind.equals("create")) {
                 CareerBusinessInput.fields(business,Set.of("kind","expectedCategoryVersion","input"),Set.of("kind","expectedCategoryVersion","input"));
-                if(!scope.producer().equals("interview")) throw new CareerCommandException(403,"PRODUCER_CREATE_FORBIDDEN");
+                if(!Set.of("interview","career-product").contains(scope.producer())) throw new CareerCommandException(403,"PRODUCER_CREATE_FORBIDDEN");
             } else throw new IllegalArgumentException("business kind 오류입니다");
+            if(scope.producer().equals("career-product"))tx.validateProductSource(source,kind,productRecordId,false);
             var receipt=tx.operations().replay(scope.receiptKey());
             if(receipt!=null) {
                 if(!receipt.requestHash().equals(scope.fingerprint())) throw new CareerCommandException(409,"IDEMPOTENCY_CONFLICT");
                 tx.guardReplay(receipt.record()); return new Result(CareerBusinessRecordData.from(receipt.record()),true);
             }
             tx.guardLease(lease);
+            if(scope.producer().equals("career-product"))tx.guardProductSource(source,kind,productRecordId);
             var categoryVersion=version(business.get("expectedCategoryVersion"));
-            var ops=scopedOperations(tx.operations(),categoryVersion);
+            var sourceCategoryId=kind.equals("create")?CareerBusinessInput.uuid(business.get("input").get("categoryId")):tx.operations().record(productRecordId,false).business().categoryId();
+            var ops=scopedOperations(tx.operations(),categoryVersion,sourceCategoryId);
             CareerCommandRepository scoped=new CareerCommandRepository() {
                 @Override public <T> T transaction(Actor b1Actor,java.util.function.Function<Operations,T> work) {
                     if(!scope.userId().equals(b1Actor.userId())) throw new CareerCommandException(403,"PRODUCER_SCOPE_MISMATCH");
@@ -57,11 +61,12 @@ public final class CareerProducerBusinessService {
             // B1의 aggregate 생성에만 userId를 전달합니다. 세션 인증과 일반 transaction을 호출하지 않습니다.
             var b1Actor=new Actor(scope.userId(),"service-producer"); CareerRecord result;
             if(kind.equals("create")) {
-                tx.guardInterview(source,source.getString("kind"),null);
-                result=commands.create(b1Actor,CareerBusinessInput.create(business.get("input")),scope.receiptKey()); tx.interviewOrigin(result);
+                if(scope.producer().equals("interview"))tx.guardInterview(source,source.getString("kind"),null);
+                else tx.requireProductCreateCategory(CareerBusinessInput.uuid(business.get("input").get("categoryId")));
+                result=commands.create(b1Actor,CareerBusinessInput.create(business.get("input")),scope.receiptKey()); if(scope.producer().equals("interview"))tx.interviewOrigin(result);
             } else {
                 var id=CareerBusinessInput.uuid(business.get("recordId")); var patches=business.get("patches");
-                if(patches==null || !patches.isArray() || patches.size()<1 || patches.size()>2) throw new IllegalArgumentException("patch 배열 범위 오류입니다");
+                if(patches==null || !patches.isArray() || patches.size()<1 || patches.size()>2 || (scope.producer().equals("career-product") && patches.size()!=1)) throw new IllegalArgumentException("patch 배열 범위 오류입니다");
                 if(scope.producer().equals("interview")) tx.guardInterview(source,source.getString("kind"),id);
                 // 모든 patch를 먼저 파싱하여 일부 입력만 실행하는 일을 막습니다.
                 var parsed=new ArrayList<PatchCareerBusinessCommand>(); for(var patch:patches) parsed.add(CareerBusinessInput.patch(patch));
@@ -76,14 +81,14 @@ public final class CareerProducerBusinessService {
         if(value==null || !value.isIntegralNumber() || !value.canConvertToLong()) throw new IllegalArgumentException("version은 정수여야 합니다");
         var version=value.asLong(); if(version<1 || version>CareerRecord.MAX_VERSION) throw new IllegalArgumentException("version 범위 오류입니다"); return version;
     }
-    private Operations scopedOperations(Operations delegate,long categoryVersion) {
+    private Operations scopedOperations(Operations delegate,long categoryVersion,String sourceCategoryId) {
         return (Operations)Proxy.newProxyInstance(Operations.class.getClassLoader(),new Class<?>[]{Operations.class},(proxy,method,args) -> {
             // create의 기존 사용자 receipt는 외부 producer receipt로 대체합니다.
             if(method.getName().equals("replay")) return null;
             if(method.getName().equals("remember")) return null;
             try {
                 var value=method.invoke(delegate,args);
-                if(method.getName().equals("category") && ((Category)value).categoryVersion()!=categoryVersion) throw new CareerCommandException(409,"CATEGORY_SCHEMA_CHANGED");
+                if(method.getName().equals("category") && ((Category)value).business().id().equals(sourceCategoryId) && ((Category)value).categoryVersion()!=categoryVersion) throw new CareerCommandException(409,"CATEGORY_SCHEMA_CHANGED");
                 return value;
             } catch(InvocationTargetException error) {throw error.getCause();}
         });

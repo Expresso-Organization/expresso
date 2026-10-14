@@ -8,6 +8,7 @@ import { assertActiveRecordsForWrite, createCareerProducerIntent, type CareerPro
 import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { requireActiveUser } from "../identity/index.js";
 import { InterviewError } from "./public.js";
+import { refreshMongoInterviewProgress } from "./mongo-answers.js";
 
 const hash = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 function conflict(message: string): never { throw new InterviewError(409, message); }
@@ -79,6 +80,7 @@ export class PreparedInterviewCareerWriter {
           expectedAnswerVersion, recordId, inputIdempotencyKey, requestHash, kind: "answer", input,
           writerIntegration, active: true, result: null, createdAt: now, updatedAt: now };
         await db.interviewCareerOperations.insertOne(operation, options);
+        if (operation.kind === "answer") await refreshMongoInterviewProgress(tx, userId, sessionId);
         return operation;
       });
     } catch (error) {
@@ -125,9 +127,10 @@ export class PreparedInterviewCareerWriter {
     const answered = new Set(answers.map(({ questionId }) => questionId));
     const next = questions.find((question) => !question.skipped && !answered.has(question._id));
     const finished = questions.every((question) => question.skipped || answered.has(question._id));
+    const currentSession = await db.interviewSessions.findOne({ _id: sessionId, userId }, options);
     const session = await db.interviewSessions.findOneAndUpdate({ _id: sessionId, userId }, {
       $set: { answeredCount: answered.size, currentOrder: next?.orderNo ?? questions.length,
-        ...(finished ? { status: "done" as const } : {}), updatedAt: new Date() }, $inc: { version: 1 },
+        status: finished ? "done" as const : currentSession?.status === "paused" ? "paused" as const : "open" as const, updatedAt: new Date() }, $inc: { version: 1 },
     }, { ...options, returnDocument: "after" });
     if (!session) conflict("prepared interview session changed");
     return { answered: session.answeredCount, total: session.questionCount };

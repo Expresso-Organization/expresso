@@ -51,10 +51,31 @@ public final class MongoCareerCommandRepository implements CareerCommandReposito
             },TransactionOptions.builder().readConcern(ReadConcern.SNAPSHOT).writeConcern(WriteConcern.MAJORITY).readPreference(ReadPreference.primary()).build());
         }
     }
+    /** mutation credential을 사용자 세션으로 바꾸지 않고 job 범위를 같은 business transaction에서 검증합니다. */
+    public <T> T serviceTransaction(com.expresso.backend.career.mutation.MutationServiceActor actor,Function<Operations,T> work) {
+        try(var session=client.startSession()) {
+            return session.withTransaction(() -> {
+                if(!actor.expiresAt().isAfter(clock.instant()))throw new CareerCommandException(401,"UNAUTHENTICATED");
+                var active=db.getCollection("users").updateOne(session,new Document("_id",actor.scope().userId()).append("deletionRequestedAt",null),new Document("$inc",new Document("writeVersion",1L)));
+                if(active.getMatchedCount()!=1)throw new CareerCommandException(401,"UNAUTHENTICATED");
+                new MongoCareerMutationScope(db,session).validate(actor.scope());
+                return work.apply(new MongoOperations(session,actor.scope().userId(),true));
+            },TransactionOptions.builder().readConcern(ReadConcern.SNAPSHOT).writeConcern(WriteConcern.MAJORITY).readPreference(ReadPreference.primary()).build());
+        }
+    }
     private final class MongoOperations implements Operations {
         private final ClientSession session;
         private final String user;
-        MongoOperations(ClientSession session,String user) {this.session=session;this.user=user;}
+        private final boolean scopedMutationWorker;
+        private String leasedMutationCategory;
+        private final MongoCareerPropertyMutationBusinessGuard businessGuard;
+        MongoOperations(ClientSession session,String user) {this(session,user,false);}
+        MongoOperations(ClientSession session,String user,boolean scopedMutationWorker) {this.session=session;this.user=user;this.scopedMutationWorker=scopedMutationWorker;this.businessGuard=new MongoCareerPropertyMutationBusinessGuard(db,session,user);}
+        private void guardBusinessCategory(String id) {if(!id.equals(leasedMutationCategory))businessGuard.fence(id);}
+        private void guardBusinessRecord(String id) {
+            var raw=records().find(session,new Document("_id",id).append("userId",user)).first();
+            if(raw!=null)guardBusinessCategory(raw.getString("categoryId"));
+        }
         private MongoCollection<Document> records() {return db.getCollection("career_records");}
         @Override public StoredRecord record(String id,boolean deleted) {
             var filter=new Document("_id",id).append("userId",user).append("deletedAt",deleted?new Document("$ne",null):null);
@@ -64,7 +85,9 @@ public final class MongoCareerCommandRepository implements CareerCommandReposito
             if(!raw.containsKey("propertyValues")) throw new CareerCommandException(409,"CANONICAL_VALUES_NOT_PREPARED");
             return new StoredRecord(projector.project(raw),instant(raw,"deletedAt"),instant(raw,"purgeAfter"),raw.get("referenceVersion") instanceof Number n?n.longValue():0,readUnmapped(raw.get("unmappedProperties")));
         }
-        @Override public Category category(String id) {
+        @Override public Category category(String id) {return category(id,null);}
+        @Override public Category mutationCategory(MutationJob job) {return category(job.categoryId(),MongoCareerMutationPrivateOptions.rows(user,job));}
+        private Category category(String id,List<Document> snapshot) {
             var raw=db.getCollection("career_categories").find(session,new Document("_id",id).append("deletedAt",null).append("$or",List.of(new Document("userId",user),new Document("userId",null)))).first();
             if(raw==null) throw CareerCommandException.missing();
             List<PropertyDefinition> definitions;
@@ -80,11 +103,19 @@ public final class MongoCareerCommandRepository implements CareerCommandReposito
                 });
                 definitions=List.copyOf(result);
             }
+            var options=new MongoCareerPrivatePropertyOptions(db,session,user);
+            definitions=snapshot==null?options.overlay(id,definitions):options.overlaySnapshot(definitions,snapshot);
             var categoryVersion=((Number)raw.get("version")).longValue();
             var schemaVersion=raw.get("schemaVersion") instanceof Number n?n.longValue():categoryVersion;
-            return new Category(new CareerCategory(id,raw.getString("key"),raw.getString("name"),definitions),schemaVersion,categoryVersion);
+            try {
+                return new Category(new CareerCategory(id,raw.getString("key"),raw.getString("name"),definitions),schemaVersion,categoryVersion);
+            } catch (IllegalArgumentException error) {
+                if ("DUPLICATE_CANONICAL_DEFINITION".equals(error.getMessage())) throw new CareerCommandException(409,error.getMessage());
+                throw error;
+            }
         }
         @Override public void guardCategory(Category category) {
+            guardBusinessCategory(category.business().id());
             var result=db.getCollection("career_categories").updateOne(session,new Document("_id",category.business().id()).append("version",category.categoryVersion()).append("deletedAt",null),new Document("$inc",new Document("writeVersion",1L)));
             if(result.getMatchedCount()!=1) throw new CareerCommandException(409,"CATEGORY_SCHEMA_CHANGED");
         }
@@ -95,6 +126,7 @@ public final class MongoCareerCommandRepository implements CareerCommandReposito
             }
         }
         @Override public void insert(CareerRecord record) {
+            guardBusinessCategory(record.categoryId());
             var raw=new Document("_id",record.id()).append("userId",user).append("categoryId",record.categoryId());
             raw.putAll(writer.writeUpdate(record).get("$set",Document.class));
             // 현재 validator를 위한 storage 최소값입니다. aggregate/API/mutation의 소유 필드가 아닙니다.
@@ -102,6 +134,7 @@ public final class MongoCareerCommandRepository implements CareerCommandReposito
             records().insertOne(session,raw);
         }
         @Override public void save(StoredRecord before,CareerRecord after,Instant deletedAt,Instant purgeAfter,Map<String,CareerUnmappedPropertyEnvelope> unmapped,boolean move) {
+            guardBusinessCategory(before.business().categoryId());guardBusinessCategory(after.categoryId());
             var update=writer.writeUpdate(after);
             var set=update.get("$set",Document.class);
             if(move) {set.append("categoryId",after.categoryId()).append("unmappedProperties",writeUnmapped(unmapped));}
@@ -136,21 +169,40 @@ public final class MongoCareerCommandRepository implements CareerCommandReposito
             db.getCollection("outbox_events").insertOne(session,new Document("_id",UUID.randomUUID().toString()).append("userId",user).append("topic","career.computation").append("payload",payload)
                     .append("idempotencyKey","spring-career:"+record.id()+":v"+record.version()+":"+suffix).append("state","pending").append("attempts",0).append("availableAt",now).append("createdAt",now).append("updatedAt",now));
         }
+        private MongoCareerRelationMutationOperations relationMutations() {return new MongoCareerRelationMutationOperations(db,session,user,clock,this);}
+        @Override public Map<String,Object> relationMutationRead(String id,MutationJob job) {return relationMutations().read(id,job);}
+        @Override public CareerPropertyMutationService.Result commitRelationMutation(MutationJob job,CareerRelationPropertyMutationCommand command) {return relationMutations().commit(job,command);}
         private MongoCareerMutationOperations mutations() {return new MongoCareerMutationOperations(db,session,user,clock);}
-        @Override public MutationJob mutationJob(String id,String lease,String fingerprint) {return mutations().job(id,lease,fingerprint);}
+        @Override public MutationJob mutationJob(String id,String lease,String fingerprint) {
+            var job=mutations().job(id,lease,fingerprint);
+            // 기존 내부 mutation port도 DB lease를 검증한 뒤에만 같은 job의 business guard를 통과합니다.
+            leasedMutationCategory=job.categoryId();return job;
+        }
         @Override public MutationReceipt mutationReceipt(String id,String recordId) {return mutations().receipt(id,recordId);}
         @Override public void guardMutation(MutationJob job,String lease) {mutations().guard(job,lease);}
         @Override public PropertyValue mutationTombstone(String recordId,MutationJob job) {return mutations().tombstone(recordId,job);}
         @Override public void mutationTombstone(CareerRecord record,MutationJob job,PropertyValue value) {mutations().tombstone(record,job,value);}
         @Override public void rememberMutation(MutationJob job,CareerRecord record,boolean changed) {mutations().remember(job,record,changed);}
+        @Override public RecordLink recordLink(String from,String to,String relation) {
+            var raw=db.getCollection("record_links").find(session,new Document("userId",user).append("fromRecordId",from).append("toRecordId",to).append("relation",relation)).first();return raw==null?null:recordLink(raw);
+        }
+        private RecordLink recordLink(Document raw) {return new RecordLink(raw.getString("_id"),raw.getString("fromRecordId"),raw.getString("toRecordId"),raw.getString("relation"));}
+        @Override public List<RecordLink> recordLinks(String id) {
+            return db.getCollection("record_links").find(session,new Document("userId",user).append("$or",List.of(new Document("fromRecordId",id),new Document("toRecordId",id)))).sort(new Document("_id",1)).limit(1000).into(new ArrayList<>()).stream().map(this::recordLink).toList();
+        }
+        @Override public void insertRecordLink(RecordLink link) {
+            guardBusinessRecord(link.fromRecordId());guardBusinessRecord(link.toRecordId());
+            db.getCollection("record_links").insertOne(session,new Document("_id",link.id()).append("userId",user).append("fromRecordId",link.fromRecordId()).append("toRecordId",link.toRecordId()).append("relation",link.relation()).append("createdBy","user"));
+        }
         private Document edgeFilter(Edge edge) {return new Document("userId",user).append("sourceRecordId",edge.sourceRecordId()).append("sourcePropertyId",edge.sourcePropertyId()).append("targetRecordId",edge.targetRecordId());}
         @Override public List<Edge> edges(String id,String propertyId) {
-            var raw=db.getCollection("career_record_relations").find(session,new Document("userId",user).append("sourceRecordId",id).append("sourcePropertyId",propertyId)).limit(1001).into(new ArrayList<>());
-            if(raw.size()>1000) throw new CareerCommandException(409,"RELATION_TARGET_LIMIT");
+            var raw=db.getCollection("career_record_relations").find(session,new Document("userId",user).append("$or",List.of(new Document("sourceRecordId",id).append("sourcePropertyId",propertyId),new Document("targetRecordId",id).append("inversePropertyId",propertyId)))).limit(2001).into(new ArrayList<>());
+            if(raw.size()>2000||raw.stream().map(edge->id.equals(edge.getString("sourceRecordId"))?edge.getString("targetRecordId"):edge.getString("sourceRecordId")).distinct().count()>1000) throw new CareerCommandException(409,"RELATION_TARGET_LIMIT");
             return raw.stream().map(d -> new Edge(d.getString("sourceRecordId"),d.getString("sourcePropertyId"),d.getString("targetRecordId"),d.getString("inversePropertyId"),d.getString("cardinality"),d.getString("deletePolicy"))).toList();
         }
-        @Override public void removeEdge(Edge edge) {db.getCollection("career_record_relations").deleteOne(session,edgeFilter(edge));}
+        @Override public void removeEdge(Edge edge) {guardBusinessRecord(edge.sourceRecordId());db.getCollection("career_record_relations").deleteOne(session,edgeFilter(edge));}
         @Override public void insertEdge(Edge edge) {
+            guardBusinessRecord(edge.sourceRecordId());
             var now=Date.from(clock.instant());
             var raw=edgeFilter(edge).append("_id",UUID.randomUUID().toString()).append("inversePropertyId",edge.inversePropertyId()).append("cardinality",edge.cardinality()).append("deletePolicy",edge.deletePolicy()).append("createdBy","user").append("createdAt",now).append("updatedAt",now);
             db.getCollection("career_record_relations").insertOne(session,raw);

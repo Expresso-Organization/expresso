@@ -36,7 +36,7 @@ final class MongoCareerMutationOperations {
         if(category==null || !semanticEqual(plan.get("definitions"),json.valueToTree(category.get("propertySchemaV2")))) throw new CareerCommandException(409,"CATEGORY_SCHEMA_CHANGED");
         var recordIds=new ArrayList<String>();plan.get("recordIds").forEach(node -> recordIds.add(node.asText()));
         return new MutationJob(id,raw.getString("categoryId"),plan.get("categoryVersion").asLong(),plan.get("schemaVersion").asLong(),plan.get("definitions").toString(),kind,source,target,
-                operation.get("defaultValue").isNull()?null:wireValue(operation.get("defaultValue")),operation.get("confirmLossy").asBoolean(),List.copyOf(recordIds),fingerprint);
+                operation.get("defaultValue").isNull()?null:wireValue(operation.get("defaultValue")),operation.get("confirmLossy").asBoolean(),List.copyOf(recordIds),fingerprint,raw.getString("privateOptionSnapshotJson"),raw.getString("privateOptionSnapshotFingerprint"));
     }
     private Document leaseFilter(String id,String lease,String fingerprint) {return new Document("_id",id).append("userId",user).append("status","running").append("active",true).append("leaseToken",lease).append("operationFingerprint",fingerprint).append("leaseUntil",new Document("$gt",Date.from(clock.instant())));}
     void guard(MutationJob job,String lease) {
@@ -73,7 +73,8 @@ final class MongoCareerMutationOperations {
                     || source.type()!=deletedDefinition.type() || !semanticEqual(json.valueToTree(source.config()),target.get("config"))
                     || job.target().type()!=source.type() || !semanticEqual(json.valueToTree(job.target().config()),target.get("config"))) throw invalidTombstone();
             var value=MongoCareerRecordProjector.projectPropertyValue(envelope.get("value",Document.class));
-            if(!value.propertyDefinitionId().equals(propertyId) || !value.type().wireName().equals(source.type().wireName())) throw invalidTombstone();
+            var timestampAlias=!source.system()&&Set.of(PropertyDefinitionType.CREATED_TIME,PropertyDefinitionType.UPDATED_TIME).contains(source.type())&&value instanceof DatePropertyValue date&&date.precision()==DatePropertyValue.Precision.DATETIME&&date.end()==null;
+            if(!value.propertyDefinitionId().equals(propertyId) || (!timestampAlias&&!value.type().wireName().equals(source.type().wireName()))) throw invalidTombstone();
             return value;
         } catch(CareerCommandException error) {throw error;}
         catch(RuntimeException error) {throw invalidTombstone();}
@@ -97,10 +98,13 @@ final class MongoCareerMutationOperations {
         var result=db.getCollection("career_records").updateOne(session,new Document("_id",record.id()).append("userId",user).append("version",record.version()).append("deletedAt",null),update);
         if(result.getMatchedCount()!=1) throw CareerCommandException.stale();
     }
-    void remember(MutationJob job,CareerRecord record,boolean changed) {
+    void remember(MutationJob job,CareerRecord record,boolean changed) {remember(job,record,changed,null);}
+    void remember(MutationJob job,CareerRecord record,boolean changed,Document relationRestoration) {
         var response=new Document("_id",record.id()).append("userId",user).append("categoryId",record.categoryId());
         response.putAll(new MongoCareerRecordWriter().writeUpdate(record).get("$set",Document.class));
-        db.getCollection("career_property_mutation_receipts").insertOne(session,new Document("_id",UUID.randomUUID().toString()).append("userId",user).append("mutationId",job.id()).append("recordId",record.id()).append("operationFingerprint",job.operationFingerprint()).append("response",response).append("changed",changed).append("createdAt",Date.from(clock.instant())));
+        var receipt=new Document("_id",UUID.randomUUID().toString()).append("userId",user).append("mutationId",job.id()).append("recordId",record.id()).append("operationFingerprint",job.operationFingerprint()).append("response",response).append("changed",changed).append("createdAt",Date.from(clock.instant()));
+        if(relationRestoration!=null)receipt.append("relationRestoration",relationRestoration);
+        db.getCollection("career_property_mutation_receipts").insertOne(session,receipt);
     }
     private PropertyDefinition definition(JsonNode raw) {
         return new PropertyDefinition(raw.get("id").asText(),raw.get("key").asText(),raw.get("name").asText(),PropertyDefinitionType.fromStoredName(raw.get("type").asText()),raw.get("required").asBoolean(),raw.get("system").asBoolean(),json.convertValue(raw.get("config"),Map.class),raw.get("order").asInt(),raw.get("version").asLong(),raw.get("deletedAt").isNull()?null:Instant.parse(raw.get("deletedAt").asText()));

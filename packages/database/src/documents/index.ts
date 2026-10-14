@@ -17,3 +17,8 @@ export type * from "./common.js";
 export type * from "./agent-chat.js";
 
 export type { AgentCredentialDoc } from "./agent-credential.js";
+export type * from "./career-property-option.js";
+
+export type * from "./career-relation-property-tombstone.js";
+
+export type * from "./career-product-operation.js";

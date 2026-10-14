@@ -41,3 +41,12 @@ describe("prepared AI canonical selection", () => {
     expect(() => selectAiCanonicalDelta([definition("relation")], [], [change])).toThrow();
   });
 });
+it("freezes canonical-only exact decimal and month changes without client overrides",()=>{
+ const previous={propertyDefinitionId:id,type:"number" as const,value:"12345678901234567890.123400"},next={...previous,value:"12345678901234567890.123500"};
+ expect(selectAiCanonicalDelta([definition("number")],[{...previous,value:Decimal128.fromString(previous.value)}],[{propertyId:id,canonicalPreviousValue:previous,canonicalNextValue:next}])).toEqual({set:[next],unsetPropertyIds:[]});
+ const month={propertyDefinitionId:id,type:"date" as const,value:{precision:"month" as const,start:"2026-01",end:"2026-02"}};
+ expect(selectAiCanonicalDelta([definition("date")],[month],[{propertyId:id,canonicalPreviousValue:month,canonicalNextValue:null}])).toEqual({set:[],unsetPropertyIds:[id]});
+});it("preserves editable custom timestamp aliases and rejects system or range aliases",()=>{
+ const previous={propertyDefinitionId:id,type:"date" as const,value:{precision:"datetime" as const,start:"2025-06-01T02:03:04.123456789+09:00",end:null,timezone:"Asia/Seoul"}},next={...previous,value:{...previous.value,start:"2025-07-01T02:03:04.987654321+09:00"}},change={propertyId:id,canonicalPreviousValue:previous,canonicalNextValue:next};
+ for(const type of ["created_time","updated_time"] as const){const custom=definition(type);expect(selectAiCanonicalDelta([custom],[previous],[change])).toEqual({set:[next],unsetPropertyIds:[]});expect(()=>selectAiCanonicalDelta([{...custom,system:true}],[previous],[change])).toThrow();expect(()=>selectAiCanonicalDelta([custom],[previous],[{...change,canonicalNextValue:{...next,value:{...next.value,end:"2025-07-02T02:03:04.987654321+09:00"}}}])).toThrow();}
+});

@@ -20,7 +20,7 @@
     {"name":"null missing distinction","kind":"patch","valid":false,"input":{"propertyValues":null}},
     {"name":"status patch","kind":"patch","valid":true,"input":{"status":"verified"}},
     {"name":"status invalid","kind":"patch","valid":false,"input":{"status":"published"}},
-    {"name":"status separate","kind":"patch","valid":false,"input":{"status":"draft","title":"changed"}},
+    {"name":"status and title","kind":"patch","valid":true,"input":{"status":"draft","title":"changed"}},
     {"name":"no rich body","kind":"patch","valid":false,"input":{"blockBody":[]}},
     {"name":"decimal exact","kind":"patch","valid":true,"input":{"propertyValues":{"set":[{"propertyDefinitionId":"00000000-0000-4000-8000-000000000012","type":"number","value":"12.500"}],"unsetPropertyIds":[]}}},
     {"name":"decimal exponent rejected","kind":"patch","valid":false,"input":{"propertyValues":{"set":[{"propertyDefinitionId":"00000000-0000-4000-8000-000000000012","type":"number","value":"1e2"}],"unsetPropertyIds":[]}}},

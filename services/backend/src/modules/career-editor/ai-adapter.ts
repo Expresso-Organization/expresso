@@ -1,6 +1,6 @@
 import type { CareerDocument, CareerEditCommand } from "@expresso/editor";
 import { CareerEditCommandSchema } from "@expresso/editor/commands";
-import { AiEditProposalSchema, type AiEditProposal } from "@expresso/contracts";
+import { AiEditProposalSchema, type AiEditProposal, type CareerBusinessPropertyValue, type CareerPropertyDefinitionV2 } from "@expresso/contracts";
 import { z } from "zod";
 
 import type { AiClient } from "../../platform/ai/client.js";
@@ -12,6 +12,8 @@ export interface AiProposalGenerationInput {
   readonly selectedBlocks: ReadonlyArray<CareerDocument["content"][number]>;
   readonly prompt: string;
   readonly signal: AbortSignal;
+  readonly canonicalPropertyValues?: readonly CareerBusinessPropertyValue[];
+  readonly propertyDefinitions?: readonly CareerPropertyDefinitionV2[];
 }
 export interface AiProposalGenerationResult {
   readonly summary: string;
@@ -58,6 +60,8 @@ export class AiClientProposalAdapter implements AiProposalAdapter {
       selectionBlockIds: [...input.selectionBlockIds],
       selectedBlocks: input.selectedBlocks,
       instruction: input.prompt,
+      ...(input.canonicalPropertyValues ? { canonicalPropertyValues: input.canonicalPropertyValues } : {}),
+      ...(input.propertyDefinitions ? { propertyDefinitions: input.propertyDefinitions } : {}),
     });
     const result = await this.client.complete({
       contract: "partial_edit",

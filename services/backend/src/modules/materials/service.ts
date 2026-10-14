@@ -4,19 +4,20 @@ import { mongoCollections, type BrewDoc, type BrewSourceDoc, type CareerRecordDo
 import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction, type MongoTransaction } from "../../platform/mongo-transaction.js";
 import { requireActiveUser } from "../identity/index.js";
-import { assertActiveRecordsForWrite } from "../career/index.js";
+import { assertActiveRecordsForWrite, type CanonicalCareerReadService } from "../career/index.js";
 import { MongoEntitlementService } from "../entitlements/index.js";
 import type { MaterialsApi } from "./index.js";
 import { MaterialsError } from "./public.js";
 import { rankMaterials } from "./ranking.js";
 
 export class MaterialsService implements MaterialsApi {
-  constructor(readonly context: MongoContext) {}
+  constructor(readonly context: MongoContext, readonly careerReads?: CanonicalCareerReadService) {}
 
   async #create(tx: MongoTransaction, userId: string, input: { jobAnalysisId: string; lengthPreset: BrewDoc["lengthPreset"]; freeTitle?: string; freeBrief?: string }, labels: string[]) {
     const db = mongoCollections(tx.db); const options = { session: tx.session };
     const records = await db.careerRecords.find({ userId, deletedAt: null, status: { $in: ["organized", "verified"] } }, options).toArray();
-    const ranked = rankMaterials(records.flatMap((record) => record.status === "organized" || record.status === "verified" ? [{ id: record._id, title: record.title, status: record.status, text: `${record.title}\n${record.bodyMd}\n${JSON.stringify(record.properties)}` }] : []), labels).slice(0, 50);
+    const candidates = await Promise.all(records.map(async record => record.status === "organized" || record.status === "verified" ? { id: record._id, title: record.title, status: record.status, text: this.careerReads ? await this.careerReads.searchableRecordText(record,tx.session) : `${record.title}\n${record.bodyMd}\n${JSON.stringify(record.properties)}` } : null));
+    const ranked = rankMaterials(candidates.flatMap(record => record ? [record] : []), labels).slice(0,50);
     await assertActiveRecordsForWrite(tx, userId, ranked.map((record) => record.id));
     const brew: BrewDoc = { _id: randomUUID(), userId, ...input, mode: "solo", status: "draft", createdAt: new Date(), updatedAt: new Date() };
     await db.brews.insertOne(brew, options);
@@ -58,9 +59,22 @@ export class MaterialsService implements MaterialsApi {
       { $lookup: { from: "career_records", localField: "recordId", foreignField: "_id", pipeline: [{ $match: { userId } }], as: "record" } }, { $unwind: "$record" },
       { $lookup: { from: "career_categories", localField: "record.categoryId", foreignField: "_id", pipeline: [{ $match: { $or: [{ userId: null }, { userId }] } }], as: "category" } }, { $unwind: "$category" },
     ]).toArray();
-    return BrewMaterialsSchema.parse({ brewId, jobAnalysisId: brew.jobAnalysisId, updatedAt: brew.updatedAt.toISOString(), selectionLimit: 10, mode: brew.mode, lengthPreset: brew.lengthPreset,
-      materials: rows.map((row) => ({ recordId: row.recordId, title: row.record.title, status: row.record.status, score: row.score, rank: row.rank, selected: row.isSelected, selectedBy: row.selectedBy, excludedReason: row.excludedReason ?? null, categoryName: row.category.name, categoryIcon: row.category.icon, periodFrom: row.record.periodStart ?? null, periodTo: row.record.periodEnd ?? null, origin: row.record.origin, reason: row.reasonText })),
-    });
+    const materials = await Promise.all(rows.map(async (row) => {
+      let periodFrom = row.record.periodStart ?? null, periodTo = row.record.periodEnd ?? null;
+      if (this.careerReads) {
+        const canonical = await this.careerReads.mapRecord(row.record, row.category);
+        const source = canonical.pendingPropertyMutation?.sourceProperty;
+        const definitions = [...(row.category.propertySchemaV2 ?? []).filter(definition => definition.key === "period" && definition.type === "date" && definition.deletedAt === null),
+          ...(source?.key === "period" && source.type === "date" ? [source] : [])];
+        const value = canonical.propertyValues?.find(item => item.type === "date" && definitions.some(definition => definition.id === item.propertyDefinitionId));
+        // 기존 일자 DTO에는 월의 표시 기준일과 offset 원문의 달력 날짜만 투영합니다.
+        const date = (text: string | null) => text === null || value?.type !== "date" ? null : value.value.precision === "month" ? text + "-01" : text.slice(0, 10);
+        periodFrom = value?.type === "date" ? date(value.value.start) : null;
+        periodTo = value?.type === "date" ? date(value.value.end) : null;
+      }
+      return { recordId: row.recordId, title: row.record.title, status: row.record.status, score: row.score, rank: row.rank, selected: row.isSelected, selectedBy: row.selectedBy, excludedReason: row.excludedReason ?? null, categoryName: row.category.name, categoryIcon: row.category.icon, periodFrom, periodTo, origin: row.record.origin, reason: row.reasonText };
+    }));
+    return BrewMaterialsSchema.parse({ brewId, jobAnalysisId: brew.jobAnalysisId, updatedAt: brew.updatedAt.toISOString(), selectionLimit: 10, mode: brew.mode, lengthPreset: brew.lengthPreset, materials });
   }
 
   async updateBrew(userId: string, brewId: string, inputValue: UpdateBrew) {

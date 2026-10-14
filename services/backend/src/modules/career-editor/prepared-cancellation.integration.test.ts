@@ -86,7 +86,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("prepared cancellation rejection 
           if (!current) throw new Error("business CAS failed");
           record = { ...current, version: current.version + 1, updatedAt: now };
           for (const patch of command.patches) {
-            if ("title" in patch) record.title = patch.title;
+            if ("title" in patch && patch.title !== undefined) record.title = patch.title;
             if ("status" in patch) record.status = patch.status;
           }
           await db.careerRecords.replaceOne({ _id: current._id, userId, version: current.version }, record, options);

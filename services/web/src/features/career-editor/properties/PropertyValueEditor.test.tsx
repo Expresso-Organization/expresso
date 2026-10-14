@@ -21,4 +21,25 @@ describe("PropertyValueEditor", () => {
   it.each(["created_time", "updated_time"] as const)("protects the system %s value", (type) => { setup(type, { type, value: "2026-09-01T00:00:00.000Z" }, {}, true); expect(screen.getByRole("status", { hidden: true }).textContent).toBe("2026-09-01T00:00:00.000Z"); });
   it.each(["created_time", "updated_time"] as const)("edits a user-defined %s value", async (type) => { const commit = setup(type); const input = screen.getByLabelText("테스트 속성"); fireEvent.change(input, { target: { value: "2026-09-02 14:30" } }); await waitFor(() => expect(commit).toHaveBeenCalledWith({ type, value: new Date("2026-09-02T14:30").toISOString() })); });
   it("saves silently in the background", () => { const onCommit = vi.fn(() => new Promise<void>(() => undefined)); render(<PropertyValueEditor definition={definition("text")} value={null} onCommit={onCommit} />); const input = screen.getByLabelText("테스트 속성"); fireEvent.change(input, { target: { value: "자동 저장" } }); fireEvent.blur(input); expect(onCommit).toHaveBeenCalled(); expect(screen.queryByText("저장 중")).toBeNull(); });
+
+  it("preserves a text draft when an equal value arrives as a new object", () => {
+    const props = { definition: definition("text"), onCommit: vi.fn(async () => undefined) };
+    const view = render(<PropertyValueEditor {...props} value={{ type: "text", value: "원본" }} />);
+    fireEvent.change(screen.getByLabelText("테스트 속성"), { target: { value: "아직 입력 중" } });
+    view.rerender(<PropertyValueEditor {...props} value={{ type: "text", value: "원본" }} />);
+    expect((screen.getByLabelText("테스트 속성") as HTMLInputElement).value).toBe("아직 입력 중");
+    view.rerender(<PropertyValueEditor {...props} value={{ type: "text", value: "서버의 새 값" }} />);
+    expect((screen.getByLabelText("테스트 속성") as HTMLInputElement).value).toBe("서버의 새 값");
+  });
+  it("preserves an unfinished date range across equivalent value objects", () => {
+    const props = { definition: definition("date"), onCommit: vi.fn(async () => undefined) };
+    const value = { type: "date" as const, value: { start: "2026-09-01", end: null, timezone: null } };
+    const view = render(<PropertyValueEditor {...props} value={value} />);
+    fireEvent.change(screen.getByLabelText("테스트 속성 종료"), { target: { value: "2026-10-01" } });
+    view.rerender(<PropertyValueEditor {...props} value={{ ...value, value: { ...value.value } }} />);
+    expect((screen.getByLabelText("테스트 속성 종료") as HTMLInputElement).value).toBe("2026-10-01");
+    view.rerender(<PropertyValueEditor {...props} value={{ type: "date", value: { start: "2026-10-02", end: "2026-10-03", timezone: null } }} />);
+    expect((screen.getByLabelText("테스트 속성 시작") as HTMLInputElement).value).toBe("2026-10-02");
+    expect((screen.getByLabelText("테스트 속성 종료") as HTMLInputElement).value).toBe("2026-10-03");
+  });
 });

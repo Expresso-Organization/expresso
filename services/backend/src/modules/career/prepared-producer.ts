@@ -1,5 +1,5 @@
 import { createHash,randomUUID } from "node:crypto";
-import { CareerProducerIntentSchema,CareerProducerScopeSchema,type CareerProducerIntent,type CareerProducerScope,
+import { CareerProducerIntentSchema,CareerProducerScopeSchema,IdempotencyKeySchema,UuidSchema,type CareerProducerIntent,type CareerProducerScope,
  type CareerProducerCommitRequest,type CareerProducerBusinessResult,type CareerProducerDocumentResult } from "@expresso/contracts";
 import type { Document } from "mongodb";
 import type { MongoContext } from "../../platform/mongodb.js";
@@ -18,6 +18,16 @@ function sorted(value:unknown):unknown{
  if(Array.isArray(value))return ["array",value.map(sorted)];
  if(typeof value==="object")return ["object",Object.entries(value).sort(([a],[b])=>a<b?-1:a>b?1:0).map(([key,item])=>[key,sorted(item)])];
  throw new Error("invalid intent JSON value");
+}
+export function careerProducerInputFingerprint(value:unknown):string {
+ return createHash("sha256").update(JSON.stringify(sorted(value))).digest("hex");
+}
+export function careerProducerOperationId(input:{producer:CareerProducerScope["producer"];userId:string;sourceId:string;kind:string;idempotencyKey:string}):string {
+ CareerProducerScopeSchema.shape.producer.parse(input.producer);UuidSchema.parse(input.userId);UuidSchema.parse(input.sourceId);IdempotencyKeySchema.parse(input.idempotencyKey);
+ if(!/^[a-z][a-z0-9-]{0,63}$/.test(input.kind))throw new Error("invalid producer action");
+ const bytes=createHash("sha256").update(JSON.stringify(sorted(input))).digest().subarray(0,16);
+ bytes[6]=(bytes[6]!&15)|80;bytes[8]=(bytes[8]!&63)|128;
+ const hex=bytes.toString("hex");return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
 }
 export function careerProducerFingerprint(input:Input):string{
  const {producer,userId,sourceId,operationId,business,document}=input;
@@ -38,6 +48,7 @@ export interface CareerProducerDocumentPort{
  reserve(scope:CareerProducerScope):Promise<void>;
  commit(request:CareerProducerCommitRequest):Promise<CareerProducerDocumentResult>;
  cancel(scope:CareerProducerScope):Promise<void>;
+ releaseBlocked?(scope:CareerProducerScope,tx:MongoTransaction):Promise<void>;
 }
 const conflict=(message:string)=>Object.assign(new Error(message),{statusCode:409});
 const LEASE_MS=30000;
@@ -46,12 +57,21 @@ export function careerProducerScopeFilter(scope:CareerProducerScope){return{
  _id:scope.sourceId,userId:scope.userId,"writerIntegration.producer":scope.producer,"writerIntegration.userId":scope.userId,
  "writerIntegration.sourceId":scope.sourceId,"writerIntegration.operationId":scope.operationId,"writerIntegration.fingerprint":scope.fingerprint,
 };}
+export const CAREER_PRODUCER_COLLECTIONS = {
+ "ai-proposal": "career_ai_proposals", interview: "interview_career_operations", "career-product": "career_product_operations",
+} as const;
 export function careerProducerSource(context:MongoContext,scope:CareerProducerScope){
- return context.db.collection<Source>(scope.producer==="ai-proposal"?"career_ai_proposals":"interview_career_operations");
+ return context.db.collection<Source>(CAREER_PRODUCER_COLLECTIONS[scope.producer]);
+}
+export interface CareerProducerRecoveryPolicy {
+ maxAttempts:number;
+ classify(error:unknown,intent:CareerProducerIntent):"retry"|"blocked";
 }
 /** Owner 결과는 각 owner가 자신의 쓰기와 원자적으로 저장합니다. 여기서는 source 상태만 갱신합니다. */
 export class CareerProducerCoordinator{
- constructor(readonly context:MongoContext,private readonly business:CareerProducerBusinessPort,private readonly document:CareerProducerDocumentPort){}
+ constructor(readonly context:MongoContext,private readonly business:CareerProducerBusinessPort,private readonly document:CareerProducerDocumentPort,private readonly recovery?:CareerProducerRecoveryPolicy){
+  if(recovery && (!Number.isSafeInteger(recovery.maxAttempts)||recovery.maxAttempts<1||recovery.maxAttempts>1000))throw new RangeError("producer recovery attempt limit is invalid");
+ }
  async pending(raw:CareerProducerScope):Promise<CareerProducerIntent>{
   const scope=CareerProducerScopeSchema.parse(raw);
   const row=await careerProducerSource(this.context,scope).findOne({_id:scope.sourceId,userId:scope.userId});
@@ -64,6 +84,7 @@ export class CareerProducerCoordinator{
   const scope=CareerProducerScopeSchema.parse(raw),initial=await this.pending(scope);
   if(initial.state==="completed"){await inTransaction(this.context,tx=>requireActiveUser(tx,scope.userId));return initial;}
   if(initial.state==="cancelled")throw conflict("prepared operation cancelled");
+  if(initial.state==="blocked")throw Object.assign(conflict("prepared operation requires recovery"),{errorCode:"RECOVERY_REQUIRED"});
   const leaseToken=randomUUID(),time=new Date();
   const claim=await inTransaction(this.context,async tx=>{
    await requireActiveUser(tx,scope.userId);
@@ -122,7 +143,18 @@ export class CareerProducerCoordinator{
    });
   }catch(error){
    // 외부 오류 본문·credential을 durable metadata에 남기지 않습니다.
-   if(!uncertain)await careerProducerSource(this.context,scope).updateOne(owned(),{$set:{"writerIntegration.state":"retry","writerIntegration.leaseToken":null,"writerIntegration.leaseUntil":null,"writerIntegration.lastError":"OWNER_CALL_FAILED","writerIntegration.updatedAt":new Date().toISOString()},$inc:{"writerIntegration.fence":1}});
+   if(!uncertain)await inTransaction(this.context,async tx=>{
+    const row=await careerProducerSource(tx,scope).findOne(owned(),{session:tx.session});
+    if(!row)return;
+    const current=validateCareerProducerIntent(row.writerIntegration);
+    const conflictBlocked=this.recovery?.classify(error,current)==="blocked";
+    // 응답만 유실되고 모든 owner receipt가 이미 있으면 다음 전달에서 finalize를 실행할 수 있습니다.
+    const ownersComplete=(!current.business||Boolean(current.businessResult))&&(!current.document||Boolean(current.documentResult));
+    const exhausted=Boolean(this.recovery && current.attempts>=this.recovery.maxAttempts && !ownersComplete);
+    const blocked=conflictBlocked||exhausted;
+    const result=await careerProducerSource(tx,scope).updateOne(owned(),{$set:{"writerIntegration.state":blocked?"blocked":"retry","writerIntegration.leaseToken":null,"writerIntegration.leaseUntil":null,"writerIntegration.lastError":conflictBlocked?"OWNER_CONFLICT":exhausted?"RECOVERY_ATTEMPTS_EXHAUSTED":"OWNER_CALL_FAILED","writerIntegration.updatedAt":new Date().toISOString()},$inc:{"writerIntegration.fence":1}},{session:tx.session});
+    if(result.matchedCount===1 && blocked)await this.document.releaseBlocked?.(scope,tx);
+   });
    throw error;
   }
  }
@@ -135,7 +167,7 @@ export class CareerProducerCoordinator{
   await inTransaction(this.context,async tx=>{
    await requireActiveUser(tx,scope.userId);
    const result=await careerProducerSource(tx,scope).updateOne({...careerProducerScopeFilter(scope),
-    "writerIntegration.state":{$in:["pending","running","retry","cancelled"]},"writerIntegration.businessResult":null,"writerIntegration.documentResult":null},
+    "writerIntegration.state":{$in:["pending","running","retry","blocked","cancelled"]},"writerIntegration.businessResult":null,"writerIntegration.documentResult":null},
     {$set:{"writerIntegration.state":"cancelled","writerIntegration.leaseToken":null,"writerIntegration.leaseUntil":null,"writerIntegration.updatedAt":new Date().toISOString()},$inc:{"writerIntegration.fence":1}},{session:tx.session});
    if(!result.matchedCount)throw conflict("committed owner operation cannot be cancelled");
   });

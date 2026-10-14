@@ -83,12 +83,13 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
       for (let round = 0; round < (repeatCompaction ? 2 : 1); round += 1) {
         if (round) await documents.compact(record.id, expectedVersion);
         const compactedBootstrap = await documents.bootstrap(userId, record.id);
-        const lateBase = encodeDocumentAsYUpdate(compactedBootstrap.document);
+        expect(compactedBootstrap.stateUpdateBase64).toEqual(expect.any(String));
+        const lateBase = Buffer.from(compactedBootstrap.stateUpdateBase64!, "base64");
         historicalAliases.push(lateBase);
         const lateContent = structuredClone(compactedBootstrap.document);
         expectedBefore = round ? "두 번째 늦은 본문" : "늦은 클라이언트 본문";
         lateContent.content[0]!.text = [{ text: expectedBefore }];
-        // 상태 벡터 이후의 delta만 보내므로 압축된 JSON 기준 item이 없으면 이 편집은 pending 상태로 남습니다.
+        // 상태 벡터 이후의 delta만 보내므로 bootstrap의 원래 CRDT item도 압축 뒤 유지되어야 합니다.
         const delta = independentUpdate(lateBase, 4_294_967_292 - round, lateContent);
         await documents.appendUpdate(userId, { recordId: record.id, clientId: randomUUID(), clientSequence: 1, expectedSequence: expectedVersion, updateBase64: Buffer.from(delta).toString("base64"), checksum: createHash("sha256").update(delta).digest("hex") });
         expectedVersion += 1;
@@ -122,7 +123,10 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect(JSON.parse(live.getMap(documentMap).get("json"))).toEqual(serverAfter.document);
 
     const late = new Y.Doc();
-    if (lateBootstrap) Y.applyUpdate(late, encodeDocumentAsYUpdate(serverAfter.document));
+    if (lateBootstrap) {
+      expect(serverAfter.stateUpdateBase64).toEqual(expect.any(String));
+      Y.applyUpdate(late, Buffer.from(serverAfter.stateUpdateBase64!, "base64"));
+    }
     if (compact) await documents.compact(record.id, expectedVersion + 1);
     const undoScope = await producer.prepareUndo(userId, record.id, { recordId: record.id, proposalId: proposal.proposalId, operationId: undoId, expectedDocumentVersion: expectedVersion + 1 });
     const undone = await producer.execute(undoScope);

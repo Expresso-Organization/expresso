@@ -56,7 +56,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("prepared Interview Career writer
           if (!found) throw Object.assign(new Error("record version changed"), { statusCode: 412 });
           record = { ...found, version: found.version + 1, updatedAt: now };
           for (const patch of command.patches) {
-            if ("title" in patch) record.title = patch.title;
+            if ("title" in patch && patch.title !== undefined) record.title = patch.title;
             if ("status" in patch) record.status = patch.status;
           }
           await db.careerRecords.replaceOne({ _id: record._id, userId, version: found.version }, record, mongoOptions);
@@ -211,7 +211,8 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("prepared Interview Career writer
     const command = await cleanupCommand(saved);
     expect(writer).toHaveProperty("prepareCleanup");
     const cleanup = await writer.prepareCleanup(userId, saved.answer.id, "cleanup-stale-record", saved.answer.version, command);
-    await new CareerService(fixture.resource).updateRecord(userId, saved.answer.createdRecordId, command.expectedVersion, { title: "사용자 편집" });
+    // 사용자 owner 변경을 fixture CAS로 재현하며 canonical 배열과 본문은 보존합니다.
+    expect((await mongoCollections(fixture.resource.db).careerRecords.updateOne({ _id: saved.answer.createdRecordId, userId, deletedAt: null, version: command.expectedVersion }, { $set: { title: "사용자 편집", updatedAt: new Date() }, $inc: { version: 1, referenceVersion: 1 } })).matchedCount).toBe(1);
     await expect(writer.executeCleanup(userId, cleanup._id)).rejects.toMatchObject({ statusCode: 412 });
     expect(await mongoCollections(fixture.resource.db).careerRecords.findOne({ _id: saved.answer.createdRecordId })).toMatchObject({ title: "사용자 편집", status: "draft" });
     expect((await mongoCollections(fixture.resource.db).interviewCareerOperations.findOne({ _id: cleanup._id }))?.result).toBeNull();
@@ -322,7 +323,8 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("prepared Interview Career writer
     const operation = await writer.prepareAnswer(userId, sessionId, questionId, "cleanup-edited-answer", { inputType: "text", transcript: "원래 답변" });
     const saved = await writer.executeAnswer(userId, operation._id);
     const initial = await cleanupCommand(saved);
-    await new CareerService(fixture.resource).updateRecord(userId, saved.answer.createdRecordId, initial.expectedVersion, { title: "사용자가 확정한 제목" });
+    // 사용자 owner 변경을 fixture CAS로 재현하며 canonical 배열과 본문은 보존합니다.
+    expect((await mongoCollections(fixture.resource.db).careerRecords.updateOne({ _id: saved.answer.createdRecordId, userId, deletedAt: null, version: initial.expectedVersion }, { $set: { title: "사용자가 확정한 제목", updatedAt: new Date() }, $inc: { version: 1, referenceVersion: 1 } })).matchedCount).toBe(1);
     const freshCommand = await cleanupCommand(saved);
     expect(freshCommand.expectedVersion).toBe(initial.expectedVersion + 1);
 
@@ -340,7 +342,8 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("prepared Interview Career writer
     const saved = await writer.executeAnswer(userId, answer._id);
     const command = await cleanupCommand(saved);
     const cleanup = await writer.prepareCleanup(userId, saved.answer.id, "cleanup-legacy-record", saved.answer.version, command);
-    await new CareerService(fixture.resource).updateRecord(userId, saved.answer.createdRecordId, command.expectedVersion, { title: "사용자 편집 보존" });
+    // 사용자 owner 변경을 fixture CAS로 재현하며 canonical 배열과 본문은 보존합니다.
+    expect((await mongoCollections(fixture.resource.db).careerRecords.updateOne({ _id: saved.answer.createdRecordId, userId, deletedAt: null, version: command.expectedVersion }, { $set: { title: "사용자 편집 보존", updatedAt: new Date() }, $inc: { version: 1, referenceVersion: 1 } })).matchedCount).toBe(1);
     const freshCommand = await cleanupCommand(saved);
     // 이전 준비 코드가 사용자 편집 뒤의 버전을 채택해 저장한 durable operation을 재현합니다.
     const intent = createCareerProducerIntent({ producer: "interview", userId, sourceId: cleanup._id, operationId: cleanup._id,

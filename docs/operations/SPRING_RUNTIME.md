@@ -8,7 +8,7 @@ PR-E는 팀장 서버에 적용할 구성 제안입니다. 운영값은 아직 �
 
 기존 [배포 절차](DEPLOYMENT.md), Compose, nginx, CI, 자동 배포 스크립트는 유지합니다.
 Spring JAR는 기존 API·Worker·Web과 별도 프로세스로 실행합니다.
-기존 Career direct writer와 제품 호출 경로는 PR-B2에서 다룹니다.
+PR-B2의 제품 호출 전환과 명시적 활성화 절차는 [Career Writer Cutover](CAREER_WRITER_CUTOVER.md)를 따릅니다.
 
 ## 기존 서버 구성
 
@@ -55,7 +55,7 @@ systemd는 Java 실행 전에 환경 파일을 읽으므로, 검증하지 않은
 [내부 consumer URL 예시](../../infra/spring-consumer.env.example)의 `CAREER_SPRING_BASE_URL`은
 Web 서버/Fastify에서 사용할 loopback URL의 준비값입니다. Spring 포트와 같은 값을 지정합니다.
 브라우저에 공개하는 `NEXT_PUBLIC_*` 변수로 만들지 않습니다.
-이 예시를 복사해도 제품 caller가 등록되지 않습니다. 이번 PR은 기존 consumer 설정을 읽거나 routing을 전환하지 않습니다.
+PR-B2에서는 API와 Worker가 이 설정을 읽습니다. 빈 주소·키는 활성화 설정이 아닙니다. 운영 적용 승인은 별도로 필요합니다.
 
 ## Java와 빌드
 

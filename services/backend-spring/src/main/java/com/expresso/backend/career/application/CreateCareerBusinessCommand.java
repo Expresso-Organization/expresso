@@ -4,10 +4,11 @@ import java.util.List;
 import java.util.Objects;
 import com.expresso.backend.career.domain.*;
 
-public record CreateCareerBusinessCommand(String categoryId, String title, List<PropertyValue> propertyValues, Mode mode) {
+public record CreateCareerBusinessCommand(String categoryId, String title, List<PropertyValue> propertyValues, Mode mode,List<CareerRelationTargets> initialRelations) {
+    public CreateCareerBusinessCommand(String categoryId,String title,List<PropertyValue> values,Mode mode){this(categoryId,title,values,mode,List.of());}
     public enum Mode { EMPTY, GROUPED, DUPLICATE }
     public CreateCareerBusinessCommand {
-        Objects.requireNonNull(mode);
+        Objects.requireNonNull(mode);initialRelations=CareerRelationTargets.validate(initialRelations);
         propertyValues = List.copyOf(propertyValues);
         // aggregate와 동일한 제목·ID·중복 값 경계를 적용합니다.
         new CareerRecord(categoryId, categoryId, categoryId, title, propertyValues, CareerRecordStatus.DRAFT, 1, java.time.Instant.EPOCH);

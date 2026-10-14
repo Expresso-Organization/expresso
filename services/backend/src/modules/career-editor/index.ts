@@ -10,3 +10,5 @@ export { MongoCareerDocumentRepository } from "./repository.js";
 export { PreparedCareerDocumentWriter } from "./prepared-document-writer.js";
 
 export { PreparedAiProposalService, selectAiCanonicalDelta } from "./prepared-ai-proposals.js";
+export { ProductAiProposalIntegration } from "./product-ai-integration.js";
+export { createCareerDocumentDelivery } from "./document-delivery.js";

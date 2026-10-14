@@ -7,6 +7,13 @@ import {
   UuidSchema,
 } from "./common.js";
 import { CareerPropertyDefinitionV2Schema, CareerPropertyValueV2Schema } from "./career-properties.js";
+import { CareerProductTitleSchema, CareerProductPropertiesSchema, CareerProductPropertyDeltaSchema, CareerProductPropertyValuesSchema } from "./career-product.js";
+import { CareerWriterRelationSchema } from "./career-writer.js";
+import { CareerRecordStatusSchema } from "./career-record-status.js";
+
+import { CareerPropertiesSchema, CareerPropertyValueSchema } from "./career-property-values.js";
+
+export { CareerRecordStatusSchema, CareerPropertiesSchema, CareerPropertyValueSchema };
 
 export const CareerViewTypeSchema = z.enum([
   "table",
@@ -36,19 +43,6 @@ export const CareerPropertyDefinitionSchema = z.strictObject({
 export const CareerPropertySchemaSchema = z.record(
   z.string().regex(/^[A-Za-z][A-Za-z0-9_]{0,63}$/),
   CareerPropertyDefinitionSchema,
-);
-
-export const CareerPropertyValueSchema = z.union([
-  z.string().max(5_000),
-  z.number().finite(),
-  z.boolean(),
-  z.array(z.string().max(200)).max(100),
-  CareerPropertyValueV2Schema,
-]);
-
-export const CareerPropertiesSchema = z.record(
-  z.string().regex(/^[A-Za-z][A-Za-z0-9_]{0,63}$/),
-  CareerPropertyValueSchema,
 );
 
 export const CareerCategorySchema = z.strictObject({
@@ -83,11 +77,6 @@ export const UpdateCareerPropertySchemaSchema = z.strictObject({
   confirmValueRemoval: z.boolean().default(false),
 });
 
-export const CareerRecordStatusSchema = z.enum([
-  "draft",
-  "organized",
-  "verified",
-]);
 
 export const CareerRecordOriginSchema = z.enum([
   "manual",
@@ -96,13 +85,25 @@ export const CareerRecordOriginSchema = z.enum([
   "import",
 ]);
 
+/** 속성 변경 중에도 각 기록의 원래 값과 정의를 읽을 수 있는 소유자 전용 문맥입니다. */
+export const CareerPendingPropertyMutationSchema = z.strictObject({
+  jobId: UuidSchema,
+  status: z.enum(["pending", "running", "failed"]),
+  retryable: z.boolean(),
+  sourceProperty: CareerPropertyDefinitionV2Schema.nullable(),
+});
+
 export const CareerRecordSchema = z.strictObject({
   id: UuidSchema,
   categoryId: UuidSchema,
-  title: z.string().max(300),
+  title: CareerProductTitleSchema,
   status: CareerRecordStatusSchema,
   origin: CareerRecordOriginSchema,
-  properties: CareerPropertiesSchema,
+  properties: CareerProductPropertiesSchema,
+  propertyValues: CareerProductPropertyValuesSchema.optional(),
+  pendingPropertyMutation: CareerPendingPropertyMutationSchema.optional(),
+  /** 처리 중인 relation projection만 숨기며 다른 business 입력은 유지합니다. */
+  pendingRelationPropertyIds: z.array(UuidSchema).max(200).refine(ids => new Set(ids).size === ids.length).optional(),
   /** 수식·롤업 Worker가 확정한 읽기 전용 projection입니다. 내부 계산 메타데이터는 포함하지 않습니다. */
   computedProperties: z.record(z.string().regex(/^[A-Za-z][A-Za-z0-9_]{0,63}$/), CareerPropertyValueV2Schema).optional(),
   bodyMd: z.string().max(200_000),
@@ -117,10 +118,14 @@ export const CareerRecordResponseSchema = z.strictObject({
 });
 
 export const CreateCareerRecordSchema = z.strictObject({
+  initialRelations: z.array(CareerWriterRelationSchema).max(50).refine(items => new Set(items.map(item => item.propertyId)).size === items.length, {message:"duplicate relation propertyId"}).optional(),
   categoryId: UuidSchema,
   title: z.string().trim().max(300).default(""),
   properties: CareerPropertiesSchema.default({}),
+  propertyValues: CareerProductPropertyValuesSchema.optional(),
   bodyMd: z.string().max(200_000).default(""),
+}).refine((value) => value.propertyValues === undefined || Object.keys(value.properties).length === 0, {
+  message: "legacy properties and canonical propertyValues must not be supplied together",
 });
 
 export const UpdateCareerRecordSchema = z
@@ -128,10 +133,14 @@ export const UpdateCareerRecordSchema = z
     title: z.string().trim().max(300).optional(),
     status: CareerRecordStatusSchema.optional(),
     properties: CareerPropertiesSchema.optional(),
+    propertyValues: CareerProductPropertyDeltaSchema.optional(),
     bodyMd: z.string().max(200_000).optional(),
   })
   .refine((value) => Object.keys(value).length > 0, {
     message: "at least one record field must be supplied",
+  })
+  .refine((value) => value.properties === undefined || value.propertyValues === undefined, {
+    message: "legacy properties and canonical propertyValues must not be supplied together",
   });
 
 export const CareerRecordIdParamsSchema = z.strictObject({
@@ -287,6 +296,7 @@ export type CareerViewType = z.infer<typeof CareerViewTypeSchema>;
 export type CareerRecordStatus = z.infer<typeof CareerRecordStatusSchema>;
 export type CareerRecordOrigin = z.infer<typeof CareerRecordOriginSchema>;
 export type CareerRecord = z.infer<typeof CareerRecordSchema>;
+export type CareerPendingPropertyMutation = z.infer<typeof CareerPendingPropertyMutationSchema>;
 export type CareerPropertyDefinition = z.infer<
   typeof CareerPropertyDefinitionSchema
 >;

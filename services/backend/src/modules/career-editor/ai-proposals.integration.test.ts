@@ -88,8 +88,11 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const local = new AiProposalService(fixture.resource, documentService, adapter);
     const proposal = await local.create(userId, recordId, { selection: { blockIds: [blockId] }, prompt: "변경" });
     const deleted = structuredClone(current.document); deleted.content = [];
-    const update = encodeDocumentAsYUpdate(deleted, [encodeDocumentAsYUpdate(current.document)]);
+    // 실제 클라이언트처럼 복원된 문서의 인과 상태에서 삭제해야 충돌 조건이 성립합니다.
+    expect(current.stateUpdateBase64).toEqual(expect.any(String));
+    const update = encodeDocumentAsYUpdate(deleted, [Buffer.from(current.stateUpdateBase64!, "base64")], `delete:${proposal.proposalId}`);
     await documentService.appendUpdate(userId, { recordId, clientId: randomUUID(), clientSequence: 9, expectedSequence: current.documentVersion, updateBase64: Buffer.from(update).toString("base64"), checksum: createHash("sha256").update(update).digest("hex") });
+    expect((await documentService.bootstrap(userId, recordId)).document.content).toEqual([]);
     await expect(local.apply(userId, recordId, { recordId, proposalId: proposal.proposalId, expectedDocumentVersion: current.documentVersion + 1, commandIndexes: [0], propertyChangeIndexes: [] })).rejects.toMatchObject({ statusCode: 409 });
     expect((await local.get(userId, recordId, proposal.proposalId)).status).toBe("conflicted");
   });

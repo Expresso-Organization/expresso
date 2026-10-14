@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { Queue, Worker } from "bullmq";
 import { Decimal128 } from "mongodb";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { mongoCollections, type CareerPropertyMutationDoc } from "@expresso/database";
+import { mongoCollections, prepareCareerPropertyOptionSnapshot, type CareerPropertyMutationDoc } from "@expresso/database";
 import type { CareerBusinessRecord, CareerPropertyMutationCommit, CareerPropertyMutationResult } from "@expresso/contracts";
 import { inTransaction } from "../../platform/mongo-transaction.js";
 import type { SpringPropertyMutationPort } from "./spring-property-mutation-port.js";
@@ -39,6 +39,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("inactive canonical mutation work
       commit:async(_user:string,command:CareerPropertyMutationCommit)=>{
         if(takeover) {await mongoCollections(fixture.resource.db).careerPropertyMutations.updateOne({_id:job._id},{$set:{leaseToken:randomUUID(),leaseUntil:new Date(Date.now()+60_000)}});throw new Error("lease lost");}
         if(conflicts-->0) {const current=records.get(command.recordId)!;current.version++;current.title="concurrent edit";throw Object.assign(new Error("stale"),{statusCode:412});}
+        if(!("propertyValues" in command))throw new Error("scalar test boundary requires property values");
         const current=records.get(command.recordId)!;expect(command.expectedVersion).toBe(current.version);
         const values=current.propertyValues.map(v=>command.propertyValues.set.find(s=>s.propertyDefinitionId===v.propertyDefinitionId)??v);
         const result={data:{...current,propertyValues:values,version:current.version+1},changed:true,replayed:false};records.set(current.id,result.data);receipts.set(current.id,result);commits++;
@@ -66,6 +67,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("inactive canonical mutation work
       async commit(userId,command) {
         // Spring 외부 경계 대역만 실제 Mongo 트랜잭션으로 business commit을 소유합니다.
         return inTransaction(fixture.resource,async tx=>{
+          if(!("propertyValues" in command))throw new Error("scalar test boundary requires property values");
           const db=mongoCollections(tx.db);
           const existing=await db.careerPropertyMutationReceipts.findOne({userId,mutationId:command.mutationId,recordId:command.recordId,operationFingerprint:command.operationFingerprint},{session:tx.session});
           if(existing)return {data:business(existing.response),changed:existing.changed,replayed:true};
@@ -84,6 +86,95 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("inactive canonical mutation work
       },
     };
   }
+  it("publishes computation only with durable completion and current committed record versions",async()=>{
+    const state=await setup(),canonical=await durablePort(state),db=mongoCollections(fixture.resource.db),recordId=[...state.records.keys()][0]!;
+    let acknowledge!:()=>void,started!:()=>void;
+    const gate=new Promise<void>(resolve=>{acknowledge=resolve;}),committed=new Promise<void>(resolve=>{started=resolve;});
+    const port={...canonical,commit:async(...args:Parameters<SpringPropertyMutationPort["commit"]>)=>{const result=await canonical.commit(...args);started();await gate;return result;}};
+    const worker=new state.Worker(fixture.resource,port),run=worker.run(state.job._id,state.job.operationFingerprint);
+    try {
+      await committed;
+      expect(await db.outboxEvents.countDocuments({topic:"career.computation","payload.recordId":recordId})).toBe(0);
+      expect(await db.careerPropertyMutations.findOne({_id:state.job._id})).toMatchObject({status:"running",cursor:0});
+      acknowledge();await run;
+      expect(await db.careerPropertyMutations.findOne({_id:state.job._id})).toMatchObject({status:"completed",active:false});
+      expect(await db.outboxEvents.findOne({topic:"career.computation","payload.recordId":recordId})).toMatchObject({payload:{sourceRecordVersion:2,sourceCategoryVersion:2,sourceSchemaVersion:2,changedPropertyIds:[state.job.propertyId],sourcePropertyVersions:{[state.job.propertyId]:2}}});
+      await worker.run(state.job._id,state.job.operationFingerprint);
+      expect(await db.outboxEvents.countDocuments({topic:"career.computation","payload.recordId":recordId})).toBe(1);
+    }finally{acknowledge();await run.catch(()=>undefined);}
+  });
+  it("converts using the immutable private option snapshot after live registration changes",async()=>{
+    const state=await setup(),db=mongoCollections(fixture.resource.db),optionId=randomUUID(),plan=JSON.parse(state.job.planJson),scope={userId:state.job.userId,categoryId:state.job.categoryId};
+    plan.operation.source.type="multi_select";plan.operation.source.config={legacyFreeformTags:true,options:[]};
+    plan.operation.target.type="select";plan.operation.target.config={legacyFreeformTags:true,options:[]};plan.definitions=[plan.operation.target];
+    for(const record of state.records.values())record.propertyValues[0]={propertyDefinitionId:state.job.propertyId,type:"multi_select",value:[optionId]};
+    const snapshot=prepareCareerPropertyOptionSnapshot([{_id:randomUUID(),...scope,propertyId:state.job.propertyId,optionId,rawLabel:" Frozen ",version:1,createdAt:new Date(0)}],scope,plan.definitions);
+    const planJson=mutationCanonicalJson(plan),operationFingerprint=mutationFingerprint(plan);
+    await db.careerPropertyMutations.updateOne({_id:state.job._id},{$set:{planJson,operationFingerprint,...snapshot}});
+    await db.careerPropertyOptions.insertOne({_id:randomUUID(),...scope,propertyId:state.job.propertyId,optionId:randomUUID(),rawLabel:" Later ",version:1,createdAt:new Date()});
+    await new state.Worker(fixture.resource,state.port).run(state.job._id,operationFingerprint);
+    expect([...state.records.values()][0]!.propertyValues[0]).toEqual({propertyDefinitionId:state.job.propertyId,type:"select",value:optionId});
+    const job=await db.careerPropertyMutations.findOne({_id:state.job._id});
+    expect(job!.planJson).toBe(planJson);expect(job!.privateOptionSnapshotJson).toBe(snapshot.privateOptionSnapshotJson);
+  });
+  it("fails a private-dependent legacy job before read or commit, but replays a committed receipt",async()=>{
+    const state=await setup(),db=mongoCollections(fixture.resource.db),plan=JSON.parse(state.job.planJson),optionId=randomUUID();
+    plan.operation.source.type="multi_select";plan.operation.source.config={legacyFreeformTags:true,options:[]};plan.operation.target.type="select";plan.operation.target.config={legacyFreeformTags:true,options:[]};plan.definitions=[plan.operation.target];
+    const operationFingerprint=mutationFingerprint(plan);await db.careerPropertyMutations.updateOne({_id:state.job._id},{$set:{planJson:mutationCanonicalJson(plan),operationFingerprint}});
+    let reads=0;const port={...state.port,read:async(...args:Parameters<typeof state.port.read>)=>{reads++;return state.port.read(...args);}};
+    const worker=new state.Worker(fixture.resource,port);
+    await expect(worker.run(state.job._id,operationFingerprint)).rejects.toThrow("CAREER_PRIVATE_OPTIONS_SNAPSHOT_REQUIRED");expect(reads).toBe(0);expect(state.commits).toBe(0);
+    await worker.resume(state.job._id,operationFingerprint);
+    const current=[...state.records.values()][0]!;
+    const replay={...port,receipt:async()=>({data:{...current,propertyValues:[{propertyDefinitionId:state.job.propertyId,type:"select" as const,value:optionId}]},changed:true,replayed:true})};
+    await new state.Worker(fixture.resource,replay).run(state.job._id,operationFingerprint);
+    expect(reads).toBe(0);expect(state.commits).toBe(0);
+  });
+  it.each([["deletion",false],["restoration",false],["restoration",true]] as const)("delegates relation %s edges to Spring using scoped targets and endpoint CAS (incoming=%s)",async(kind,incoming)=>{
+    const state=await setup(),db=mongoCollections(fixture.resource.db),plan=JSON.parse(state.job.planJson),record=[...state.records.values()][0]!,targetId=randomUUID(),inverseId=randomUUID(),now=new Date().toISOString(),deletionMutationId=randomUUID();
+    const config={targetCategoryId:state.job.categoryId,inversePropertyId:incoming?inverseId:null,cardinality:"multiple",deletePolicy:"restrict"};
+    plan.operation.kind=kind;plan.operation.confirmLossy=true;plan.operation.source={...plan.operation.source,type:"relation",config,deletedAt:kind==="restoration"?now:null};plan.operation.target={...plan.operation.target,type:"relation",config,deletedAt:kind==="deletion"?now:null};plan.definitions=[plan.operation.target];
+    const operationFingerprint=mutationFingerprint(plan);await db.careerPropertyMutations.updateOne({_id:state.job._id},{$set:{planJson:mutationCanonicalJson(plan),operationFingerprint}});
+    const edge={id:randomUUID(),userId:state.job.userId,sourceRecordId:incoming?targetId:record.id,sourcePropertyId:incoming?inverseId:state.job.propertyId,targetRecordId:incoming?record.id:targetId,inversePropertyId:incoming?state.job.propertyId:null,cardinality:"multiple" as const,deletePolicy:"restrict" as const,createdBy:"ai" as const,createdAt:now,updatedAt:now};
+    const tombstone={deletionMutationId,propertyId:state.job.propertyId,definitionVersion:plan.operation.source.version,deletedAt:now,categoryVersion:2,schemaVersion:2,config,sourceRecordVersion:record.version,forwardEdges:incoming?[]:[edge],inverseEdges:incoming?[edge]:[],inverseDefinitionBindings:[],inverseRecordVersions:{[targetId]:7},inverseRecordReferenceVersions:{[targetId]:0}};
+    const commands:CareerPropertyMutationCommit[]=[];
+    const port:SpringPropertyMutationPort={
+      receipt:async()=>null,
+      read:async()=>({data:record,relation:{edges:kind==="deletion"?[edge]:[],inverseEdges:[],targetRecordVersions:{[targetId]:7},tombstone:kind==="restoration"?tombstone:null}}),
+      commit:async(_user,command)=>{commands.push(command);return {data:{...record,version:record.version+1},changed:true,replayed:false};},
+    };
+    await new state.Worker(fixture.resource,port).run(state.job._id,operationFingerprint);
+    expect(commands).toEqual([expect.objectContaining({expectedVersion:record.version,relationChanges:{targetRecordIds:kind==="deletion"?[]:[targetId],targetRecordVersions:{[targetId]:7}}})]);
+    expect(commands[0]).not.toHaveProperty("propertyValues");
+    expect(await db.careerRecordRelations.countDocuments({userId:state.job.userId})).toBe(0);
+    expect(await db.careerRelationPropertyTombstones.countDocuments({userId:state.job.userId})).toBe(0);
+    expect(await db.careerRecords.countDocuments({userId:state.job.userId})).toBe(0);
+    expect(await db.careerPropertyMutations.findOne({_id:state.job._id})).toMatchObject({status:"completed",processedCount:1});
+  });
+  it.each(["created_time","updated_time"] as const)("preserves %s datetime precision and raw deletion/restoration aliases",async(type)=>{
+    for(const kind of ["deletion","restoration"] as const){
+      const state=await setup(),db=mongoCollections(fixture.resource.db),plan=JSON.parse(state.job.planJson),now=new Date().toISOString();
+      plan.operation.kind=kind;plan.operation.confirmLossy=true;plan.operation.source={...plan.operation.source,type,deletedAt:kind==="restoration"?now:null};plan.operation.target={...plan.operation.target,type,deletedAt:kind==="deletion"?now:null};plan.definitions=[plan.operation.target];
+      const property={propertyDefinitionId:state.job.propertyId,type:"date" as const,value:{precision:"datetime" as const,start:"2026-10-09T12:34:56.123456789+09:00",end:null,timezone:"Asia/Seoul"}},record=[...state.records.values()][0]!;
+      record.propertyValues=kind==="deletion"?[property]:[];
+      const planJson=mutationCanonicalJson(plan),operationFingerprint=mutationFingerprint(plan);await db.careerPropertyMutations.updateOne({_id:state.job._id},{$set:{planJson,operationFingerprint}});
+      const commands:CareerPropertyMutationCommit[]=[];
+      const port:SpringPropertyMutationPort={receipt:async()=>null,read:async()=>({data:record,tombstone:kind==="restoration"?property:null}),commit:async(_user,command)=>{commands.push(command);return {data:record,changed:true,replayed:false};}};
+      await new state.Worker(fixture.resource,port).run(state.job._id,operationFingerprint);
+      expect(commands[0]).toMatchObject({propertyValues:{set:kind==="restoration"?[property]:[],unsetPropertyIds:kind==="deletion"?[state.job.propertyId]:[]}});
+      expect((await db.careerPropertyMutations.findOne({_id:state.job._id}))!.planJson).toBe(planJson);
+    }
+  });
+  it.each(["created_time","updated_time"] as const)("rejects malformed %s day/range tombstones before Spring commit",async(type)=>{
+    for(const value of [{precision:"day" as const,start:"2026-10-09",end:null},{precision:"datetime" as const,start:"2026-10-09T00:00:00Z",end:"2026-10-10T00:00:00Z",timezone:null}]){
+      const state=await setup(),db=mongoCollections(fixture.resource.db),plan=JSON.parse(state.job.planJson),now=new Date().toISOString(),record=[...state.records.values()][0]!;
+      plan.operation.kind="restoration";plan.operation.source={...plan.operation.source,type,deletedAt:now};plan.operation.target={...plan.operation.target,type};plan.definitions=[plan.operation.target];record.propertyValues=[];
+      const operationFingerprint=mutationFingerprint(plan);await db.careerPropertyMutations.updateOne({_id:state.job._id},{$set:{planJson:mutationCanonicalJson(plan),operationFingerprint}});
+      let commits=0;const port:SpringPropertyMutationPort={receipt:async()=>null,read:async()=>({data:record,tombstone:{propertyDefinitionId:state.job.propertyId,type:"date",value}}),commit:async()=>{commits++;return {data:record,changed:true,replayed:false};}};
+      await expect(new state.Worker(fixture.resource,port).run(state.job._id,operationFingerprint)).rejects.toThrow("custom timestamp");
+      expect(commits).toBe(0);expect(await db.careerPropertyMutations.findOne({_id:state.job._id})).toMatchObject({status:"failed",cursor:0});
+    }
+  });
   it("checkpoints only acknowledged commits across more than one batch",async()=>{
     const state=await setup(101);await new state.Worker(fixture.resource,state.port).run(state.job._id,state.job.operationFingerprint);
     const job=await mongoCollections(fixture.resource.db).careerPropertyMutations.findOne({_id:state.job._id});expect(job).toMatchObject({status:"completed",active:false,cursor:101,processedCount:101,skippedCount:0});

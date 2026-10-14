@@ -23,6 +23,15 @@ describe("prepared Spring Career writer contract", () => {
       expect(schema.safeParse(item.input).success, item.name).toBe(item.valid);
     }
   });
+  it("accepts combined status/title/delta as one strict business patch", () => {
+    const propertyValues = { set: [{ propertyDefinitionId: "00000000-0000-4000-8000-000000000011", type: "text", value: "updated" }], unsetPropertyIds: [] };
+    for (const patch of [{ status: "verified", title: "combined" }, { status: "organized", propertyValues }, { status: "draft", title: "combined", propertyValues }]) {
+      expect(CareerWriterPatchSchema.safeParse(patch).success).toBe(true);
+      const ajv = new Ajv2020({ strict: true }); addFormats.default(ajv);
+      expect(ajv.compile(careerWriterOpenApi.components.schemas.CareerWriterPatch)(patch)).toBe(true);
+    }
+    for (const patch of [{}, { status: "verified", bodyMd: "forbidden" }, { title: "combined", status: null }, { status: "organized", propertyValues: [] }]) expect(CareerWriterPatchSchema.safeParse(patch).success).toBe(false);
+  });
   it("publishes only command paths in a separate OpenAPI document", () => {
     expect(Object.keys(careerWriterOpenApi.paths)).toEqual([
       "/v1/career/records", "/v1/career/records/{id}", "/v1/career/records/{id}/restore",
@@ -41,4 +50,12 @@ describe("prepared Spring Career writer contract", () => {
       expect(validate(item.input), item.name).toBe(item.valid);
     }
   });
+});
+
+it("accepts bounded unique initial and mixed relation commands without scalar relation values",()=>{
+  const id=(n:number)=>`00000000-0000-4000-8000-${String(n).padStart(12,"0")}`;
+  const relations=[{propertyId:id(2),targetIds:[id(3)]}];
+  for(const input of [{categoryId:id(1),initialRelations:relations},{categoryId:id(1),title:"duplicate",propertyValues:[],initialRelations:relations}])expect(CareerWriterCreateSchema.safeParse(input).success).toBe(true);
+  for(const input of [{relations},{title:"combined",status:"verified",propertyValues:{set:[],unsetPropertyIds:[]},relations}])expect(CareerWriterPatchSchema.safeParse(input).success).toBe(true);
+  for(const input of [{relations:[...relations,...relations]},{relations:null},{relations:[{...relations[0],bodyMd:"forbidden"}]},{propertyValues:{set:[{propertyDefinitionId:id(2),type:"relation",value:[id(3)]}],unsetPropertyIds:[]}}])expect(CareerWriterPatchSchema.safeParse(input).success).toBe(false);
 });

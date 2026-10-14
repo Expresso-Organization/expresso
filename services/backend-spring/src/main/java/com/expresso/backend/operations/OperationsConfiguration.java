@@ -17,8 +17,10 @@ class OperationsConfiguration {
             @Value("${career.runtime.replica-set}") String replicaSet,
             @Value("${career.writer.enabled}") String writer, @Value("${career.integration.enabled}") String integration,
             @Value("${career.writer.move-secret}") String move, @Value("${career.integration.ai-secret}") String ai,
-            @Value("${career.integration.interview-secret}") String interview) {
-        return new OperationsSettings(address, port, uri, database, replicaSet, writer, integration, move, ai, interview);
+            @Value("${career.integration.interview-secret}") String interview,
+            @Value("${career.property-mutation.enabled}") String mutation, @Value("${career.product.service-secret}") String product,
+            @Value("${career.property-mutation.secret}") String mutationSecret) {
+        return new OperationsSettings(address, port, uri, database, replicaSet, writer, integration, move, ai, interview, mutation, product, mutationSecret);
     }
     @Bean(destroyMethod="close") OperationsMongoReadiness operationsMongoReadiness(OperationsSettings settings) {
         return new OperationsMongoReadiness(settings);

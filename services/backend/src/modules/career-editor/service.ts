@@ -2,7 +2,8 @@ import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 
 import {
   encodeDocumentAsYUpdate,
-  encodeDocumentStateVector,
+  encodeDocumentUpdatesStateVector,
+  mergeDocumentYUpdates,
   markdownToCareerDocument,
   parseCareerDocument,
   reconstructYDocument,
@@ -22,6 +23,7 @@ import type { CareerRecordRevisionDoc, JsonValue } from "@expresso/database";
 import { Binary } from "mongodb";
 
 import { inTransaction } from "../../platform/mongo-transaction.js";
+import { readCareerSnapshotUpdate } from "../../platform/career-document-snapshot.js";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { compactDocument } from "./compaction.js";
 import { CareerDocumentError } from "./errors.js";
@@ -33,6 +35,7 @@ import {
 } from "./repository.js";
 import { AiProposalService } from "./ai-proposals.js";
 import type { AiProposalAdapter } from "./ai-adapter.js";
+import type { ProductAiProposalIntegration,AiApplyOperationResult,AiUndoOperationResult } from "./product-ai-integration.js";
 
 type CreateRevisionInput = CareerRevision & { userId: string };
 
@@ -52,6 +55,8 @@ export interface CareerDocumentApi {
   rejectAiProposal(userId: string, recordId: string, input: unknown): Promise<void>;
   cancelAiProposal(userId: string, recordId: string, input: unknown): Promise<void>;
   undoAiProposal(userId: string, recordId: string, input: unknown): Promise<CareerDocumentBootstrap>;
+  applyAiProposalOperation?: (userId:string,recordId:string,input:unknown,key?:string)=>Promise<AiApplyOperationResult>;
+  undoAiProposalOperation?: (userId:string,recordId:string,input:unknown,key?:string)=>Promise<AiUndoOperationResult>;
   setAiProposalPublisher(publisher: (recordId: string, proposal: AiEditProposalDetail) => void): void;
   setAiUpdatePublisher(publisher: (recordId: string, updateBase64: string, serverSequence: number) => void): void;
 }
@@ -59,6 +64,8 @@ export interface CareerDocumentApi {
 export class CareerDocumentService implements CareerDocumentApi {
   private readonly repository: CareerDocumentRepository;
   private aiProposals?: AiProposalService;
+  private productAi?: ProductAiProposalIntegration;
+  private aiPublisher?: (recordId:string,proposal:AiEditProposalDetail)=>void;
 
   constructor(
     private readonly context: MongoContext,
@@ -70,8 +77,9 @@ export class CareerDocumentService implements CareerDocumentApi {
     this.repository = repository ?? new MongoCareerDocumentRepository(context);
   }
 
-  private proposalService(adapter?: AiProposalAdapter) { return this.aiProposals ??= new AiProposalService(this.context, this, adapter ?? this.aiProposalAdapter); }
-  setAiProposalPublisher(publisher: (recordId: string, proposal: AiEditProposalDetail) => void) { this.proposalService().setPublisher(publisher); }
+  private proposalService(adapter?: AiProposalAdapter) { const service=this.aiProposals ??= new AiProposalService(this.context, this, adapter ?? this.aiProposalAdapter);if(this.productAi)service.setProductWriter(this.productAi.reads);return service; }
+  setProductAiIntegration(integration:ProductAiProposalIntegration){this.productAi=integration;this.proposalService().setProductWriter(integration.reads);if(this.aiPublisher)integration.setPublisher(this.aiPublisher);}
+  setAiProposalPublisher(publisher: (recordId: string, proposal: AiEditProposalDetail) => void) { this.aiPublisher=publisher;this.proposalService().setPublisher(publisher);this.productAi?.setPublisher(publisher); }
   setAiUpdatePublisher(publisher: (recordId: string, updateBase64: string, serverSequence: number) => void) { this.proposalService().setUpdatePublisher(publisher); }
   async createPreparedAiProposal(userId: string, recordId: string, input: CreateAiEditProposal, draft: AgentEditDraft) {
     // 에이전트가 만든 명령도 기존 제안 검증과 저장 절차를 거칩니다.
@@ -79,10 +87,12 @@ export class CareerDocumentService implements CareerDocumentApi {
   }
   createAiProposal(userId: string, recordId: string, input: CreateAiEditProposal) { return this.proposalService().create(userId, recordId, input); }
   getAiProposal(userId: string, recordId: string, proposalId: string) { return this.proposalService().get(userId, recordId, proposalId); }
-  applyAiProposal(userId: string, recordId: string, input: unknown) { return this.proposalService().apply(userId, recordId, input); }
-  rejectAiProposal(userId: string, recordId: string, input: unknown) { return this.proposalService().reject(userId, recordId, input); }
-  cancelAiProposal(userId: string, recordId: string, input: unknown) { return this.proposalService().reject(userId, recordId, input, "cancelled"); }
-  undoAiProposal(userId: string, recordId: string, input: unknown) { return this.proposalService().undo(userId, recordId, input); }
+  async applyAiProposal(userId: string, recordId: string, input: unknown) { if(!this.productAi)return this.proposalService().apply(userId,recordId,input);const result=await this.productAi.applyOperation(userId,recordId,input);if(result.status!==200)throw new CareerDocumentError(503,"AI operation is pending");return result.body.data;}
+  async applyAiProposalOperation(userId:string,recordId:string,input:unknown,key?:string):Promise<AiApplyOperationResult>{return this.productAi?this.productAi.applyOperation(userId,recordId,input,key):{status:200,body:{data:await this.proposalService().apply(userId,recordId,input)}};}
+  async rejectAiProposal(userId: string, recordId: string, input: unknown) { if(this.productAi&&await this.productAi.terminate(userId,recordId,input,"rejected"))return;return this.proposalService().reject(userId,recordId,input);}
+  async cancelAiProposal(userId: string, recordId: string, input: unknown) { if(this.productAi&&await this.productAi.terminate(userId,recordId,input,"cancelled"))return;return this.proposalService().reject(userId,recordId,input,"cancelled");}
+  async undoAiProposal(userId: string, recordId: string, input: unknown) { if(this.productAi)throw new CareerDocumentError(409,"Use the AI owner operation response for Undo");return this.proposalService().undo(userId,recordId,input); }
+  async undoAiProposalOperation(userId:string,recordId:string,input:unknown,key?:string):Promise<AiUndoOperationResult>{return this.productAi?this.productAi.undoOperation(userId,recordId,input,key):{status:200,body:await this.proposalService().undo(userId,recordId,input)};}
 
   private token(userId: string, recordId: string) {
     const body = `${userId}.${recordId}.${Date.now() + 15 * 60_000}`;
@@ -121,7 +131,8 @@ export class CareerDocumentService implements CareerDocumentApi {
           version: 0,
           schemaVersion: 1,
           content: document as unknown as JsonValue,
-          stateVector: new Binary(Buffer.from(encodeDocumentStateVector(document))),
+          stateVector: new Binary(Buffer.from(encodeDocumentUpdatesStateVector([canonicalUpdate]))),
+          stateUpdate: new Binary(Buffer.from(canonicalUpdate)),
           serverSequence: 0,
           checksum: hashUpdate(canonicalUpdate),
           actor: "migration",
@@ -132,17 +143,19 @@ export class CareerDocumentService implements CareerDocumentApi {
       const pending = await this.repository.updates(recordId, snapshot.serverSequence, tx.session);
       if (pending.length > 10_000) throw new CareerDocumentError(503, "document compaction is required before bootstrap");
       let document;
+      let stateUpdate;
       try {
-        document = reconstructYDocument([
-          encodeDocumentAsYUpdate(parseCareerDocument(snapshot.content)),
+        stateUpdate = mergeDocumentYUpdates([
+          readCareerSnapshotUpdate(snapshot),
           ...pending.map((row) => binaryBytes(row.update)),
         ]);
+        document = reconstructYDocument([stateUpdate]);
       } catch {
         throw new CareerDocumentError(422, "invalid document update");
       }
       const documentVersion = record.documentVersion ?? snapshot.documentVersion + pending.length;
       return CareerDocumentBootstrapSchema.parse({
-        record: {
+        record: this.productAi ? await this.productAi.reads.mapRecord(record,undefined,tx.session) : {
           id: record._id,
           categoryId: record.categoryId,
           title: record.title,
@@ -156,7 +169,8 @@ export class CareerDocumentService implements CareerDocumentApi {
         document,
         snapshotVersion: snapshot.documentVersion,
         documentVersion,
-        stateVectorBase64: Buffer.from(encodeDocumentStateVector(document)).toString("base64"),
+        stateVectorBase64: Buffer.from(encodeDocumentUpdatesStateVector([stateUpdate])).toString("base64"),
+        stateUpdateBase64: Buffer.from(stateUpdate).toString("base64"),
         pendingUpdateCount: pending.length,
         sessionToken: this.token(userId, recordId),
       });
@@ -278,7 +292,12 @@ export class CareerDocumentService implements CareerDocumentApi {
       const source = await this.repository.snapshotById(userId, record._id, revision.snapshotId, tx.session);
       if (!source) throw new CareerDocumentError(404, "career revision snapshot not found");
       const document = parseCareerDocument(source.content);
+      const latest = await this.repository.snapshot(record._id, tx.session);
+      const updates = await this.repository.updates(record._id, latest?.serverSequence ?? 0, tx.session);
+      if (updates.length > 10_000) throw new CareerDocumentError(503, "document compaction is required before restore");
+      const priorUpdates = [...(latest ? [readCareerSnapshotUpdate(latest)] : []), ...updates.map(row => binaryBytes(row.update)), readCareerSnapshotUpdate(source)];
       const newSnapshotId = randomUUID();
+      const stateUpdate = encodeDocumentAsYUpdate(document, priorUpdates, `restore:${newSnapshotId}`);
       const newVersion = await this.repository.bumpDocumentVersion(
         record._id, userId, expectedVersion, newSnapshotId, tx.session,
       );
@@ -287,7 +306,8 @@ export class CareerDocumentService implements CareerDocumentApi {
       await this.repository.insertSnapshot({
         _id: newSnapshotId, userId, recordId: record._id, documentVersion: newVersion,
         version: newVersion, schemaVersion: 1, content: document as unknown as JsonValue,
-        stateVector: new Binary(Buffer.from(encodeDocumentStateVector(document))),
+        stateVector: new Binary(Buffer.from(encodeDocumentUpdatesStateVector([stateUpdate]))),
+        stateUpdate: new Binary(Buffer.from(stateUpdate)),
         serverSequence: newVersion, checksum: hashUpdate(canonicalUpdate), actor: "user", createdAt: new Date(),
       }, tx.session);
       await this.repository.insertRevision({

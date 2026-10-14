@@ -14,13 +14,24 @@ final class OperationsMongoReadiness implements AutoCloseable {
             new RequiredIndex("career_command_idempotency", "career_command_actor_key", List.of("userId", "key")),
             new RequiredIndex("career_property_mutation_receipts", "career_mutation_record_receipt", List.of("userId", "mutationId", "recordId")),
             new RequiredIndex("interview_career_operations", "interview_writer_input_key", List.of("userId", "inputIdempotencyKey")));
-    private record RequiredIndex(String collection, String name, List<String> keys) {
+        private static final List<RequiredIndex> CUTOVER_INDEXES = List.of(
+            new RequiredIndex("career_property_options", "career_option_scope_label", List.of("userId","categoryId","propertyId","rawLabel")),
+            new RequiredIndex("career_property_options", "career_option_scope_canonical_id", List.of("userId","categoryId","propertyId","optionId")),
+            new RequiredIndex("career_relation_property_tombstones", "career_relation_tombstone_current_generation", List.of("userId","recordId","propertyId")),
+            new RequiredIndex("career_relation_property_tombstones", "career_relation_tombstone_deletion_generation", List.of("userId","deletionMutationId","recordId","propertyId")),
+            new RequiredIndex("career_product_operations", "career_product_input_key", List.of("userId","inputIdempotencyKey")),
+            new RequiredIndex("career_product_operations", "career_product_active_record", List.of("userId","recordId"), true, new Document("active",true).append("kind","patch")),
+            new RequiredIndex("career_product_operations", "career_product_recovery", List.of("writerIntegration.state","writerIntegration.leaseUntil","updatedAt"), false, null),
+            new RequiredIndex("career_ai_proposals", "career_ai_writer_recovery", List.of("writerIntegration.state","writerIntegration.leaseUntil","updatedAt"), false, null));
+    private record RequiredIndex(String collection, String name, List<String> keys, boolean unique, Document partial) {
+        RequiredIndex(String collection, String name, List<String> keys) { this(collection,name,keys,true,null); }
         boolean matches(Document index) {
             if (!name.equals(index.getString("name")) || !(index.get("key") instanceof Document key)) return false;
             if (!List.copyOf(key.keySet()).equals(keys)) return false;
             for (var value : key.values()) if (!(value instanceof Number number) || number.doubleValue() != 1) return false;
-            return Boolean.TRUE.equals(index.getBoolean("unique")) && !index.getBoolean("sparse", false) && !index.getBoolean("hidden", false)
-                    && !index.containsKey("partialFilterExpression") && !index.containsKey("expireAfterSeconds") && !index.containsKey("collation");
+            return unique == index.getBoolean("unique", false) && !index.getBoolean("sparse", false) && !index.getBoolean("hidden", false)
+                    && java.util.Objects.equals(partial,index.get("partialFilterExpression")) && !index.containsKey("expireAfterSeconds")
+                    && (!index.containsKey("collation") || new Document("locale","simple").equals(index.get("collation")));
         }
     }
     private final MongoClient client;
@@ -39,10 +50,12 @@ final class OperationsMongoReadiness implements AutoCloseable {
             var hello = db.runCommand(new Document("hello", 1));
             if (!settings.replicaSet.equals(hello.getString("setName")) || !Boolean.TRUE.equals(hello.getBoolean("isWritablePrimary"))) return false;
             db.runCommand(new Document("ping", 1));
-            for (var version : List.of("0014", "0015", "0016")) {
+            for (var version : settings.writerEnabled ? List.of("0014", "0015", "0016", "0017", "0018", "0019") : List.of("0014", "0015", "0016")) {
                 if (db.getCollection("schema_migrations").countDocuments(new Document("_id", version).append("state", "applied")) != 1) return false;
             }
-            for (var expected : REQUIRED_INDEXES) {
+            var required = new java.util.ArrayList<>(REQUIRED_INDEXES);
+            if (settings.writerEnabled) required.addAll(CUTOVER_INDEXES);
+            for (var expected : required) {
                 boolean found = false;
                 for (var index : db.getCollection(expected.collection()).listIndexes()) {
                     if (expected.matches(index)) found = true;

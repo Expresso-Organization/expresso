@@ -7,6 +7,7 @@ import { UuidSchema } from "./common.js";
 export const CareerDocumentBootstrapSchema = z.strictObject({
   record: CareerRecordSchema, document: CareerDocumentSchema, snapshotVersion: z.number().int().nonnegative(),
   documentVersion: z.number().int().nonnegative(), stateVectorBase64: z.string().base64().max(1_398_104),
+  stateUpdateBase64: z.string().base64().max(22_369_624).optional(),
   pendingUpdateCount: z.number().int().nonnegative(), sessionToken: z.string().min(32).max(4_096),
 });
 const SocketEnvelopeSchema = z.strictObject({ protocolVersion: z.literal(1), recordId: UuidSchema, sessionId: UuidSchema });
@@ -17,10 +18,10 @@ export const CareerSocketClientMessageSchema = z.discriminatedUnion("type", [
   SocketEnvelopeSchema.extend({ type: z.literal("ack"), sequence: z.number().int().nonnegative() }),
 ]);
 export const CareerSocketServerMessageSchema = z.discriminatedUnion("type", [
-  SocketEnvelopeSchema.extend({ type: z.literal("ready"), sequence: z.number().int().nonnegative(), documentVersion: z.number().int().nonnegative() }),
+  SocketEnvelopeSchema.extend({ type: z.literal("ready"), sequence: z.number().int().nonnegative(), documentVersion: z.number().int().nonnegative(), stateUpdateBase64: z.string().base64().max(22_369_624).optional() }),
   SocketEnvelopeSchema.extend({ type: z.literal("update"), sequence: z.number().int().nonnegative(), updateBase64: z.string().base64().max(1_398_104), actor: z.enum(["user", "ai", "migration"]) }),
   SocketEnvelopeSchema.extend({ type: z.literal("ack"), sequence: z.number().int().nonnegative(), documentVersion: z.number().int().nonnegative() }),
-  SocketEnvelopeSchema.extend({ type: z.literal("proposal"), proposalId: UuidSchema, baseDocumentVersion: z.number().int().nonnegative(), status: z.enum(["draft", "streaming", "ready", "applied", "rejected", "cancelled", "expired", "conflicted"]), progress: z.strictObject({ phase: z.enum(["preparing", "generating", "validating"]), completed: z.number().int().nonnegative(), total: z.number().int().positive().optional() }).nullable() }),
+  SocketEnvelopeSchema.extend({ type: z.literal("proposal"), proposalId: UuidSchema, createdAt: z.iso.datetime().optional(), baseDocumentVersion: z.number().int().nonnegative(), status: z.enum(["draft", "streaming", "ready", "applied", "rejected", "cancelled", "expired", "conflicted"]), progress: z.strictObject({ phase: z.enum(["preparing", "generating", "validating"]), completed: z.number().int().nonnegative(), total: z.number().int().positive().optional() }).nullable() }),
   SocketEnvelopeSchema.extend({ type: z.literal("awareness"), actor: z.enum(["user", "ai"]), payload: z.record(z.string(), z.unknown()) }),
   SocketEnvelopeSchema.extend({ type: z.literal("error"), code: z.enum(["AUTH", "ORIGIN", "PROTOCOL", "SIZE", "RATE_LIMIT", "VERSION_CONFLICT"]), message: z.string().min(1).max(500) }),
 ]);

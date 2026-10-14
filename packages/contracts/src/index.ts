@@ -83,3 +83,14 @@ export * from "./career-property-mutation-openapi.js";
 export * from "./career-producer.js";
 
 export * from "./career-producer-openapi.js";
+
+export * from "./career-property-mutation-http.js";
+export * from "./career-product.js";
+export * from "./career-property-options.js";
+
+export * from "./career-property-mutation-status.js";
+
+export { CareerWriteOperationSchema,CareerWriteOperationResponseSchema,type CareerWriteOperation,type CareerWriteOperationResponse } from "./career-write-operation.js";
+
+export { AiProposalUndoNoDocumentTargetSchema, AiProposalUndoResultSchema, AiProposalUndoResponseSchema, type AiProposalUndoResult, type AiProposalUndoResponse } from "./career-ai.js";
+export { AiProposalApplyResponseSchema, type AiProposalApplyResponse } from "./career-ai.js";

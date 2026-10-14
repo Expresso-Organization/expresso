@@ -3,7 +3,7 @@ import { mongoCollections } from "@expresso/database";
 import type { MongoContext } from "../../platform/mongodb.js";
 import type { CanonicalPropertyMutationWorker } from "../../modules/career/index.js";
 
-/** runtime bootstrap에는 등록하지 않습니다. */
+/** 제품 runtime이 등록한 canonical worker로만 business 변경을 위임합니다. */
 export function createCareerPropertyMutationProcessor(worker:CanonicalPropertyMutationWorker) {
   return async(job:Job<Record<string,unknown>>)=>{
     const {mutationId,operationFingerprint}=job.data;
@@ -24,7 +24,7 @@ export interface CareerPropertyMutationRecoveryOptions {
   onError?:(error:unknown)=>void;
 }
 
-/** 명시적으로 시작하는 준비용 복구 루프입니다. Mongo 작업이 재전달 의도를 소유합니다. */
+/** 제품 runtime이 명시적으로 시작하며 Mongo 작업이 재전달 의도를 소유합니다. */
 export function createCareerPropertyMutationRecovery(
   context:MongoContext,
   queue:Pick<Queue<Record<string,unknown>>, "add"|"getJob">,

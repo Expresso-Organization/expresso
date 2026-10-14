@@ -1,9 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { mongoCollections } from "@expresso/database";
+import { mongoCollections, registerCareerPropertyOption } from "@expresso/database";
 import { createMongoFixture } from "../../../test/support/mongodb.js";
 import { MongoIdentityService } from "../identity/index.js";
 import { CareerService } from "./service.js";
+import { CareerViewService } from "./views.js";
+import { CanonicalCareerReadService } from "./canonical-reads.js";
 import { MongoCanonicalCareerPropertySchemaService } from "./canonical-property-schema.js";
 import type { CareerPropertyDefinitionV2, CareerPropertySchemaChange } from "@expresso/contracts";
 import { mutationCanonicalJson,mutationFingerprint } from "./property-mutation-state.js";
@@ -40,6 +42,118 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("inactive canonical schema orches
     const job=await mongoCollections(fixture.resource.db).careerPropertyMutations.findOne({categoryId});expect(job?.status).toBe("pending");
     expect(JSON.parse(job!.planJson).recordIds).toEqual([id]);
     await expect(apply({kind:"rename",propertyId,name:"blocked"})).rejects.toMatchObject({statusCode:409});
+  });
+  it("uses private option metadata for preview while the raw schema and immutable job stay unchanged", async () => {
+    const id = await setup(), db = mongoCollections(fixture.resource.db);
+    const source = (await db.careerCategories.findOne({ _id: categoryId }))!.propertySchemaV2![0]!;
+    const definition = { ...source, type: "multi_select" as const, config: { legacyFreeformTags: true, options: [] } };
+    await db.careerCategories.updateOne({ _id: categoryId }, { $set: { propertySchemaV2: [definition] } });
+    const option = await registerCareerPropertyOption(fixture.resource.db, { userId, categoryId, propertyId }, " Private ");
+    await db.careerRecords.updateOne({ _id: id }, { $set: { propertyValues: [{ propertyDefinitionId: propertyId, type: "multi_select", value: [option.optionId] }] } });
+    const change: CareerPropertySchemaChange = { kind: "type-change", propertyId, type: "select" };
+    const preview = await api.previewChange(userId, categoryId, change);
+    expect(preview.impact).toMatchObject({ affectedRecordCount: 1, convertibleCount: 1, lossyExamples: [] });
+    const response = await api.applyChange(userId, categoryId, preview.categoryVersion, randomUUID(), { change, previewToken: preview.previewToken, confirmLossy: false });
+    expect(response.propertySchemaV2?.[0]?.config.options).toContainEqual(expect.objectContaining({ id: option.optionId, name: " Private ", label: " Private " }));
+    const category = (await db.careerCategories.findOne({ _id: categoryId }))!;
+    expect(category.propertySchemaV2?.[0]?.config.options).toEqual([]);
+    const job = (await db.careerPropertyMutations.findOne({ categoryId, active: true }))!;
+    const plan = JSON.parse(job.planJson);
+    expect(plan.operation.source).toEqual(definition);
+    expect(plan.operation.target).toEqual(category.propertySchemaV2![0]);
+    expect(plan.operation.target.config.options).toEqual([]);
+    expect(mutationFingerprint(plan)).toBe(job.operationFingerprint);
+  });
+  it("defers schema conversion computation refresh until the mutation job completes", async () => {
+    const id = await setup(), db = mongoCollections(fixture.resource.db);
+    await apply({ kind: "type-change", propertyId, type: "number" });
+    expect(await db.careerPropertyMutations.findOne({ categoryId, active: true })).not.toBeNull();
+    expect(await db.outboxEvents.countDocuments({ topic: "career.computation", "payload.recordId": id })).toBe(0);
+  });
+  it.each(["created_time", "updated_time"] as const)("schedules a custom %s datetime default without changing the raw schema alias", async (type) => {
+    const id = await setup(), db = mongoCollections(fixture.resource.db), createdId = randomUUID();
+    const value = { precision: "datetime" as const, start: "2026-10-09T12:34:56.123456789+09:00", end: null, timezone: "Asia/Seoul" };
+    await apply({ kind: "create", property: { id: createdId, key: "custom_stamp", name: "시각", type, required: false, system: false, config: { defaultValue: { type: "date", value } } } });
+    const job = (await db.careerPropertyMutations.findOne({ categoryId, active: true }))!;
+    const plan = JSON.parse(job.planJson);
+    expect(plan.operation.target.type).toBe(type);
+    expect(plan.operation.defaultValue).toEqual({ propertyDefinitionId: createdId, type: "date", value });
+    expect(plan.recordIds).toEqual([id]);
+  });
+  it("publishes relation deletion jobs from canonical edges while leaving all business data unchanged",async()=>{
+    const id=await setup(),db=mongoCollections(fixture.resource.db),source=(await db.careerCategories.findOne({_id:categoryId}))!.propertySchemaV2![0]!;
+    const relation={...source,type:"relation" as const,config:{targetCategoryId:categoryId,inversePropertyId:null,cardinality:"multiple",deletePolicy:"restrict"}};
+    await db.careerCategories.updateOne({_id:categoryId},{$set:{propertySchemaV2:[relation]}});
+    await db.careerRecords.updateOne({_id:id},{$set:{propertyValues:[]}});
+    const target=randomUUID(),record=(await db.careerRecords.findOne({_id:id}))!;
+    await db.careerRecords.insertOne({...record,_id:target,title:"target"});
+    const now=new Date(),edge={_id:randomUUID(),userId,sourceRecordId:id,sourcePropertyId:propertyId,targetRecordId:target,cardinality:"multiple" as const,deletePolicy:"restrict" as const,createdBy:"user" as const,createdAt:now,updatedAt:now};
+    await db.careerRecordRelations.insertOne(edge);
+    const recordsBefore=await db.careerRecords.find({categoryId}).sort({_id:1}).toArray();
+    const preview=await api.previewChange(userId,categoryId,{kind:"delete",propertyId});
+    expect(preview.impact).toMatchObject({affectedRecordCount:1,convertibleCount:1});
+    expect(preview.impact.lossyExamples[0]?.before).toEqual([target]);
+    await expect(api.applyChange(userId,categoryId,preview.categoryVersion,randomUUID(),{change:{kind:"delete",propertyId},previewToken:preview.previewToken,confirmLossy:false})).rejects.toMatchObject({statusCode:409});
+    await apply({kind:"delete",propertyId},true);
+    const job=(await db.careerPropertyMutations.findOne({categoryId,active:true}))!,plan=JSON.parse(job.planJson);
+    expect(plan.operation).toMatchObject({kind:"deletion",source:relation,target:{type:"relation",deletedAt:expect.any(String)}});
+    expect(plan.recordIds).toEqual([id]);
+    expect(await db.careerRecordRelations.findOne({_id:edge._id})).toEqual(edge);
+    expect(await db.careerRecords.find({categoryId}).sort({_id:1}).toArray()).toEqual(recordsBefore);
+    expect(await db.careerRelationPropertyTombstones.countDocuments({categoryId})).toBe(0);
+    expect(await db.outboxEvents.countDocuments({topic:"career.computation","payload.recordId":id})).toBe(0);
+  });
+  it("includes incoming-only inverse relation owners in deletion impact and immutable jobs",async()=>{
+    const id=await setup(),db=mongoCollections(fixture.resource.db),otherCategory=randomUUID(),otherId=randomUUID(),otherProperty=randomUUID(),original=(await db.careerCategories.findOne({_id:categoryId}))!;
+    const relation:CareerPropertyDefinitionV2={...original.propertySchemaV2![0]!,type:"relation",config:{targetCategoryId:otherCategory,inversePropertyId:otherProperty,cardinality:"multiple",deletePolicy:"restrict"}};
+    const forward={...relation,id:otherProperty,key:"forward",config:{targetCategoryId:categoryId,inversePropertyId:propertyId,cardinality:"multiple",deletePolicy:"restrict"}};
+    await db.careerCategories.updateOne({_id:categoryId},{$set:{propertySchemaV2:[relation]}});
+    await db.careerCategories.insertOne({...original,_id:otherCategory,key:"inverse-impact-"+otherCategory,propertySchemaV2:[forward]});
+    await db.careerRecords.updateOne({_id:id},{$set:{propertyValues:[]}});
+    await db.careerRecords.insertOne({...((await db.careerRecords.findOne({_id:id}))!),_id:otherId,categoryId:otherCategory});
+    const now=new Date(),edge={_id:randomUUID(),userId,sourceRecordId:otherId,sourcePropertyId:otherProperty,targetRecordId:id,inversePropertyId:propertyId,cardinality:"multiple" as const,deletePolicy:"restrict" as const,createdBy:"user" as const,createdAt:now,updatedAt:now};
+    await db.careerRecordRelations.insertOne(edge);
+    const change:CareerPropertySchemaChange={kind:"delete",propertyId},preview=await api.previewChange(userId,categoryId,change);
+    expect(preview.impact).toMatchObject({affectedRecordCount:1,convertibleCount:1,lossyExamples:[{recordId:id,before:[otherId]}]});
+    await api.applyChange(userId,categoryId,preview.categoryVersion,randomUUID(),{change,previewToken:preview.previewToken,confirmLossy:true});
+    const job=(await db.careerPropertyMutations.findOne({categoryId,active:true}))!;
+    expect(JSON.parse(job.planJson).recordIds).toEqual([id]);
+    expect(await db.careerRecordRelations.findOne({_id:edge._id})).toEqual(edge);
+  });
+  it("rejects stale relation restoration generation before schema or job writes",async()=>{
+    const id=await setup(),db=mongoCollections(fixture.resource.db),now=new Date(),definition=(await db.careerCategories.findOne({_id:categoryId}))!.propertySchemaV2![0]!;
+    const source={...definition,type:"relation" as const,config:{targetCategoryId:categoryId,inversePropertyId:null,cardinality:"multiple",deletePolicy:"restrict"}},deleted={...source,version:2,deletedAt:now.toISOString()},deletionMutationId=randomUUID();
+    await db.careerCategories.updateOne({_id:categoryId},{$set:{propertySchemaV2:[deleted],version:2,schemaVersion:2}});
+    await db.careerRecords.updateOne({_id:id},{$set:{propertyValues:[],version:3}});
+    const plan={userId,categoryId,categoryVersion:2,schemaVersion:2,definitions:[deleted],recordIds:[id],operation:{kind:"deletion",source,target:deleted,defaultValue:null,confirmLossy:true}};
+    await db.careerPropertyMutations.insertOne({_id:deletionMutationId,userId,categoryId,propertyId,planJson:mutationCanonicalJson(plan),operationFingerprint:mutationFingerprint(plan),status:"completed",active:false,cursor:1,processedCount:1,skippedCount:0,attempts:1,leaseToken:null,leaseUntil:null,lastError:null,commitFence:1,createdAt:now,updatedAt:now,completedAt:now});
+    await db.careerRelationPropertyTombstones.insertOne({_id:randomUUID(),userId,categoryId,propertyId,recordId:id,deletionMutationId,definitionVersion:2,deletedAt:deleted.deletedAt,categoryVersion:2,schemaVersion:2,config:source.config,sourceRecordVersion:2,forwardEdges:[],inverseEdges:[],inverseDefinitionBindings:[],inverseRecordVersions:{},inverseRecordReferenceVersions:{},createdAt:now});
+    const before=await db.careerCategories.findOne({_id:categoryId});
+    await expect(apply({kind:"restore",propertyId},true)).rejects.toMatchObject({statusCode:409});
+    expect(await db.careerCategories.findOne({_id:categoryId})).toEqual(before);
+    expect(await db.careerPropertyMutations.countDocuments({categoryId,active:true})).toBe(0);
+    expect(await db.careerRelationPropertyTombstones.countDocuments({categoryId})).toBe(1);
+  });
+  it("accepts exact label option spelling and rejects conflicting name/label metadata",async()=>{
+    await setup();const optionId=randomUUID(),createdId=randomUUID(),change:CareerPropertySchemaChange={kind:"create",property:{id:createdId,key:"pick",name:"pick",type:"select",required:false,system:false,config:{options:[{id:optionId,label:"Exact"}]}}};
+    await apply(change);
+    expect((await mongoCollections(fixture.resource.db).careerCategories.findOne({_id:categoryId}))!.propertySchemaV2!.find(definition=>definition.id===createdId)!.config.options).toEqual([{id:optionId,label:"Exact"}]);
+    const invalid:CareerPropertySchemaChange={kind:"create",property:{...change.property,id:randomUUID(),key:"conflict",config:{options:[{id:optionId,label:"A",name:"B"}]}}};
+    const before=await mongoCollections(fixture.resource.db).careerCategories.findOne({_id:categoryId});
+    await expect(apply(invalid)).rejects.toMatchObject({statusCode:400});
+    expect(await mongoCollections(fixture.resource.db).careerCategories.findOne({_id:categoryId})).toEqual(before);
+  });
+  it("binds preview to the exact private option snapshot without changing shared schema on registration",async()=>{
+    const id=await setup(),db=mongoCollections(fixture.resource.db),source=(await db.careerCategories.findOne({_id:categoryId}))!.propertySchemaV2![0]!;
+    await db.careerCategories.updateOne({_id:categoryId},{$set:{propertySchemaV2:[{...source,type:"multi_select",config:{options:[],legacyFreeformTags:true}}]}});
+    const option=await registerCareerPropertyOption(fixture.resource.db,{userId,categoryId,propertyId},"A");
+    await db.careerRecords.updateOne({_id:id},{$set:{propertyValues:[{propertyDefinitionId:propertyId,type:"multi_select",value:[option.optionId]}]}});
+    const change:CareerPropertySchemaChange={kind:"type-change",propertyId,type:"select"},preview=await api.previewChange(userId,categoryId,change),before=await db.careerCategories.findOne({_id:categoryId});
+    await registerCareerPropertyOption(fixture.resource.db,{userId,categoryId,propertyId},"B");
+    expect(await db.careerCategories.findOne({_id:categoryId})).toEqual(before);
+    await expect(api.applyChange(userId,categoryId,preview.categoryVersion,randomUUID(),{change,previewToken:preview.previewToken,confirmLossy:false})).rejects.toMatchObject({statusCode:409});
+    expect(await db.careerCategories.findOne({_id:categoryId})).toEqual(before);
+    expect(await db.careerPropertyMutations.countDocuments({categoryId})).toBe(0);
   });
   it("stale preview detects same-version option/config tampering",async()=>{
     await setup();const change: CareerPropertySchemaChange={kind:"rename",propertyId,name:"next"};const preview=await api.previewChange(userId,categoryId,change);
@@ -100,5 +214,59 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("inactive canonical schema orches
     const id=await setup();const db=mongoCollections(fixture.resource.db);await db.careerRecords.updateOne({_id:id},{$set:{propertyValues:[{propertyDefinitionId:propertyId,type:"text",value:"1."+"0".repeat(34)}]}});
     const before=await db.careerCategories.findOne({_id:categoryId});const change:CareerPropertySchemaChange={kind:"type-change",propertyId,type:"number"};expect((await api.previewChange(userId,categoryId,change)).impact.convertibleCount).toBe(0);
     await expect(apply(change,true)).rejects.toMatchObject({statusCode:409});expect(await db.careerCategories.findOne({_id:categoryId})).toEqual(before);expect(await db.careerPropertyMutations.countDocuments({categoryId})).toBe(0);
+  });
+  it("rejects view reorder atomically while a frozen schema job is pending or failed",async()=>{
+    const id=await setup(),views=new CareerViewService(fixture.resource),db=mongoCollections(fixture.resource.db);
+    const view=await views.create(userId,categoryId,1,{name:"View",type:"table",filter:null,sorts:[],groupPropertyId:null,groupOrder:[],recordOrder:[],visiblePropertyIds:[propertyId],propertyOrder:[propertyId],columnWidths:{},gallery:null,board:null,timeline:null});
+    await apply({kind:"type-change",propertyId,type:"number"});
+    const job=(await db.careerPropertyMutations.findOne({userId,categoryId,active:true}))!,before=(await db.careerCategories.findOne({_id:categoryId}))!,viewBefore=await db.careerViews.findOne({_id:view.id});
+    for(const status of ["pending","failed"] as const){
+      await db.careerPropertyMutations.updateOne({_id:job._id},{$set:{status}});
+      await expect(views.reorder(userId,categoryId,before.version,[view.id])).rejects.toMatchObject({statusCode:409,publicDetails:{mutationId:job._id,status}});
+      expect(await db.careerCategories.findOne({_id:categoryId})).toEqual(before);expect(await db.careerViews.findOne({_id:view.id})).toEqual(viewBefore);
+      expect((await new CanonicalCareerReadService(fixture.resource).getRecord(userId,id)).properties.p).toBe("42.1200");
+      expect((await db.careerPropertyMutations.findOne({_id:job._id}))!.operationFingerprint).toBe(job.operationFingerprint);
+    }
+    await db.careerPropertyMutations.updateOne({_id:job._id},{$set:{status:"completed",active:false}});
+    expect(await views.reorder(userId,categoryId,before.version,[view.id])).toHaveLength(1);
+  });
+  it("keeps pending and failed conversion view filters aligned with both stored business types",async()=>{
+    const id=await setup(),views=new CareerViewService(fixture.resource),db=mongoCollections(fixture.resource.db);
+    const base={name:"Pending read",type:"table" as const,sorts:[],groupPropertyId:null,groupOrder:[],recordOrder:[],visiblePropertyIds:[propertyId],propertyOrder:[propertyId],columnWidths:{},gallery:null,board:null,timeline:null};
+    const nonempty=await views.create(userId,categoryId,1,{...base,filter:{propertyId,operator:"is_not_empty",operand:null}});
+    const contains=await views.create(userId,categoryId,1,{...base,name:"Pending contains",filter:{propertyId,operator:"contains",operand:{type:"text",value:"42"}}});
+    await apply({kind:"type-change",propertyId,type:"number"});
+    const job=(await db.careerPropertyMutations.findOne({userId,categoryId,active:true}))!;
+    const convertedId=randomUUID(),original=(await db.careerRecords.findOne({_id:id}))!;
+    const {Decimal128}=await import("mongodb");
+    await db.careerRecords.insertOne({...original,_id:convertedId,propertyValues:[{propertyDefinitionId:propertyId,type:"number",value:Decimal128.fromString("42.1200")}]});
+    for(const status of ["pending","failed"] as const){
+      await db.careerPropertyMutations.updateOne({_id:job._id},{$set:{status}});
+      const page=await views.query(userId,nonempty.id,null,10);
+      expect(page.data.map(row=>row.id).sort()).toEqual([id,convertedId].sort());
+      expect(page.data.every(row=>row.properties.p==="42.1200")).toBe(true);
+      expect(page.data.every(row=>row.pendingPropertyMutation?.status===status)).toBe(true);
+      expect((await views.query(userId,contains.id,null,10)).data.map(row=>row.id)).toEqual([id]);
+    }
+  });
+  it("keeps same-type removed options readable until their canonical value is converted",async()=>{
+    const id=await setup(),db=mongoCollections(fixture.resource.db),a=randomUUID(),b=randomUUID(),original=(await db.careerCategories.findOne({_id:categoryId}))!.propertySchemaV2![0]!;
+    await db.careerCategories.updateOne({_id:categoryId},{$set:{propertySchemaV2:[{...original,type:"multi_select",config:{options:[{id:a,label:"A"},{id:b,label:" B exact "}]}}]}});
+    await db.careerRecords.updateOne({_id:id},{$set:{propertyValues:[{propertyDefinitionId:propertyId,type:"multi_select",value:[b]}]}});
+    const views=new CareerViewService(fixture.resource),base={name:"Removed option",type:"table" as const,sorts:[],groupPropertyId:null,groupOrder:[],recordOrder:[],visiblePropertyIds:[propertyId],propertyOrder:[propertyId],columnWidths:{},gallery:null,board:null,timeline:null};
+    const contains=await views.create(userId,categoryId,1,{...base,filter:{propertyId,operator:"contains",operand:{type:"multi_select",value:[b]}}}),empty=await views.create(userId,categoryId,1,{...base,name:"Option empty",filter:{propertyId,operator:"is_empty",operand:null}});
+    await apply({kind:"type-change",propertyId,type:"multi_select",config:{options:[{id:a,label:"A"}]}},true);
+    const job=(await db.careerPropertyMutations.findOne({userId,categoryId,active:true}))!;
+    await db.careerPropertyMutations.updateOne({_id:job._id},{$set:{status:"failed"}});
+    const page=await views.query(userId,contains.id,null,10);expect(page.data.map(row=>row.id)).toEqual([id]);expect(page.data[0]!.pendingPropertyMutation?.sourceProperty?.config.options).toContainEqual({id:b,label:" B exact "});expect((await views.query(userId,empty.id,null,10)).data).toHaveLength(0);
+    await db.careerRecords.updateOne({_id:id},{$set:{propertyValues:[{propertyDefinitionId:propertyId,type:"multi_select",value:[]}]}});
+    expect((await views.query(userId,contains.id,null,10)).data).toHaveLength(0);expect((await views.query(userId,empty.id,null,10)).data.map(row=>row.id)).toEqual([id]);
+  });
+  it("preserves a deleted property view source until each value has been tombstoned",async()=>{
+    const id=await setup(),views=new CareerViewService(fixture.resource),db=mongoCollections(fixture.resource.db),view=await views.create(userId,categoryId,1,{name:"Deleting property",type:"table",filter:{propertyId,operator:"is_not_empty",operand:null},sorts:[],groupPropertyId:null,groupOrder:[],recordOrder:[],visiblePropertyIds:[propertyId],propertyOrder:[propertyId],columnWidths:{},gallery:null,board:null,timeline:null});
+    await apply({kind:"delete",propertyId},true);
+    expect((await views.query(userId,view.id,null,10)).data.map(row=>row.id)).toEqual([id]);
+    await db.careerRecords.updateOne({_id:id},{$set:{propertyValues:[]}});
+    expect((await views.query(userId,view.id,null,10)).data).toHaveLength(0);
   });
 });

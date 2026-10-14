@@ -36,6 +36,31 @@ class OperationsMongoIntegrationTest {
         client=MongoClients.create(System.getenv("B1_TEST_MONGO_URL")); db=client.getDatabase(DB);
     }
     @AfterAll static void cleanup() { if (client!=null) { try { db.drop(); } finally { client.close(); } } }
+    @Test void enabledCutoverRequiresExactPrivateOptionAndProductIndexesWithoutReadinessWrites() {
+        var settings=new OperationsSettings("127.0.0.1",19181,System.getenv("B1_TEST_MONGO_URL"),DB,"rs0","true","false","m".repeat(32),"","");
+        var options=db.getCollection("career_property_options");
+        try(var readiness=new OperationsMongoReadiness(settings)) {
+            assertTrue(readiness.ready());
+            var original=options.listIndexes().into(new java.util.ArrayList<>()).stream().filter(index->"career_option_scope_label".equals(index.getString("name"))).findFirst().orElseThrow();
+            options.dropIndex("career_option_scope_label");
+            try {
+                options.createIndex(new Document("categoryId",1).append("userId",1).append("propertyId",1).append("rawLabel",1),new com.mongodb.client.model.IndexOptions().unique(true).name("career_option_scope_label"));
+                var before=options.listIndexes().into(new java.util.ArrayList<>());
+                assertFalse(readiness.ready());assertEquals(before,options.listIndexes().into(new java.util.ArrayList<>()));
+            } finally {
+                options.dropIndex("career_option_scope_label");options.createIndex(original.get("key",Document.class),new com.mongodb.client.model.IndexOptions().unique(true).name("career_option_scope_label"));
+            }
+            assertTrue(readiness.ready());
+            var products=db.getCollection("career_product_operations");products.dropIndex("career_product_active_record");
+            try {
+                products.createIndex(new Document("userId",1).append("recordId",1),new com.mongodb.client.model.IndexOptions().unique(true).name("career_product_active_record"));
+                assertFalse(readiness.ready());
+            } finally {
+                products.dropIndex("career_product_active_record");products.createIndex(new Document("userId",1).append("recordId",1),new com.mongodb.client.model.IndexOptions().unique(true).partialFilterExpression(new Document("active",true).append("kind","patch")).name("career_product_active_record"));
+            }
+            assertTrue(readiness.ready());
+        }
+    }
     @Test void preparedReplicaSetIsReadyWithoutAnyWritesOrMigrationExecution() throws Exception {
         var before=db.getCollection("schema_migrations").find().into(new java.util.ArrayList<>());
         for (int i=0;i<3;i++) {
@@ -91,6 +116,8 @@ class OperationsMongoIntegrationTest {
         var properties=new java.util.HashMap<String,Object>();
         properties.put("SPRING_PORT",Integer.toString(port)); properties.put("MONGODB_URL",System.getenv("B1_TEST_MONGO_URL")); properties.put("MONGODB_DATABASE",DB);
         properties.put("CAREER_WRITER_ENABLED","true"); properties.put("CAREER_INTEGRATION_ENABLED","true");
+        properties.put("CAREER_PRODUCT_SERVICE_SECRET","disposable-operations-product-secret-32-bytes");
+        properties.put("CAREER_PROPERTY_MUTATION_ENABLED","true");properties.put("CAREER_PROPERTY_MUTATION_SECRET","disposable-operations-mutation-secret-32-bytes");
         properties.put("CAREER_WRITER_MOVE_SECRET","disposable-operations-move-secret-32-bytes");
         properties.put("CAREER_INTEGRATION_AI_SECRET","disposable-operations-ai-secret-32-bytes");
         properties.put("CAREER_INTEGRATION_INTERVIEW_SECRET","disposable-operations-interview-secret-32-bytes");

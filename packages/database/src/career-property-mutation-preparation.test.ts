@@ -7,7 +7,7 @@ import { migrateMongo } from "./mongo-migrate.js";
 describe("forward-only property mutation storage preparation", () => {
   it("prepares durable jobs and receipts after immutable 0014", async () => {
     const migrations = await loadMongoMigrations();
-    expect(migrations.map(item => item.version)).toEqual(["0001","0002","0003","0004","0005","0006","0007","0008","0009","0010","0014","0015","0016"]);
+    expect(migrations.map(item => item.version)).toEqual(["0001", "0002", "0003", "0004", "0005", "0006", "0007", "0008", "0009", "0010", "0014", "0015", "0016", "0017", "0018", "0019"]);
     expect(migrations.find(item => item.version === "0015")!.steps.map(step => step.id)).toEqual(["career_property_mutations:collection", "career_property_mutation_receipts:collection", "career_records:derived_metadata"]);
   });
 });

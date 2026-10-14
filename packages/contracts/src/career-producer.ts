@@ -13,11 +13,11 @@ export const CareerProducerBusinessCommandSchema=z.discriminatedUnion("kind",[
 ]);
 export const CareerProducerDocumentCommandSchema=z.discriminatedUnion("kind",[
   z.strictObject({kind:z.literal("commands"),recordId:UuidSchema,expectedVersion:nonnegative,commands:z.array(CareerEditCommandSchema).min(1).max(200),allowedBlockIds:z.array(UuidSchema).max(200),summary:z.string().max(1000)}),
-  z.strictObject({kind:z.literal("markdown"),recordId:UuidSchema.nullable(),expectedVersion:nonnegative,markdown:z.string().max(100000),summary:z.string().max(1000)}),
+  z.strictObject({kind:z.literal("markdown"),recordId:UuidSchema.nullable(),expectedVersion:nonnegative,markdown:z.string().max(200000),summary:z.string().max(1000)}),
   z.strictObject({kind:z.literal("restore"),recordId:UuidSchema,expectedVersion:nonnegative,snapshotId:UuidSchema,revisionId:UuidSchema,summary:z.string().max(1000)}),
 ]);
 export const CareerProducerScopeSchema=z.object({
-  producer:z.enum(["ai-proposal","interview"]),userId:UuidSchema,sourceId:UuidSchema,operationId:UuidSchema,fingerprint:z.string().regex(/^[a-f0-9]{64}$/),
+  producer:z.enum(["ai-proposal","interview","career-product"]),userId:UuidSchema,sourceId:UuidSchema,operationId:UuidSchema,fingerprint:z.string().regex(/^[a-f0-9]{64}$/),
 });
 export const CareerProducerCommitRequestSchema=CareerProducerScopeSchema.extend({leaseToken:UuidSchema}).strict();
 export const CareerProducerServiceClaimsSchema=CareerProducerScopeSchema.extend({audience:z.literal("career-producer"),expiresAt:TimestampSchema}).strict();
@@ -30,10 +30,10 @@ export const CareerProducerSelectedPropertyChangeSchema=z.strictObject({
 }).refine(value=>[value.previousValue,value.nextValue].every(item=>item===null || item.propertyDefinitionId===value.propertyId),{message:"selected value ID must match propertyId"});
 export const CareerProducerIntentSchema=CareerProducerScopeSchema.extend({
   business:CareerProducerBusinessCommandSchema.nullable(),document:CareerProducerDocumentCommandSchema.nullable(),
-  state:z.enum(["pending","running","retry","completed","cancelled"]),
+  state:z.enum(["pending","running","retry","completed","cancelled","blocked"]),
   leaseToken:UuidSchema.nullable(),leaseUntil:TimestampSchema.nullable(),attempts:nonnegative,fence:nonnegative,
   businessResult:CareerProducerBusinessResultSchema.nullable(),documentResult:CareerProducerDocumentResultSchema.nullable(),
-  lastError:z.enum(["OWNER_CALL_FAILED","LEASE_LOST","FINALIZE_FAILED"]).nullable(),createdAt:TimestampSchema,updatedAt:TimestampSchema,
+  lastError:z.enum(["OWNER_CALL_FAILED","LEASE_LOST","FINALIZE_FAILED","OWNER_CONFLICT","RECOVERY_ATTEMPTS_EXHAUSTED"]).nullable(),createdAt:TimestampSchema,updatedAt:TimestampSchema,
 }).strict().superRefine((intent,ctx)=>{
   if(!intent.business && !intent.document)ctx.addIssue({code:"custom",message:"at least one owner required"});
   if(intent.producer==="ai-proposal" && intent.business?.kind==="create")ctx.addIssue({code:"custom",message:"AI cannot create"});

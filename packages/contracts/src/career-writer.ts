@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { UuidSchema, TimestampSchema } from "./common.js";
-import { CareerRecordStatusSchema } from "./career.js";
+import { CareerRecordStatusSchema } from "./career-record-status.js";
 import { CareerBusinessPropertyValueSchema, CareerBusinessRecordSchema } from "./career-business.js";
 
 const values = z.array(CareerBusinessPropertyValueSchema).max(50).refine(
@@ -11,10 +11,13 @@ const groupedValue = z.union([
   z.strictObject({ propertyDefinitionId: UuidSchema, type: z.literal("select"), value: UuidSchema }),
   z.strictObject({ propertyDefinitionId: UuidSchema, type: z.literal("multi_select"), value: z.array(UuidSchema).length(1) }),
 ]);
+
+export const CareerWriterRelationSchema = z.strictObject({ propertyId: UuidSchema, targetIds: z.array(UuidSchema).max(1000) });
+const relations = z.array(CareerWriterRelationSchema).max(50).refine(items => new Set(items.map(item => item.propertyId)).size === items.length, { message: "duplicate relation propertyId" });
 export const CareerWriterCreateSchema = z.union([
-  z.strictObject({ categoryId: UuidSchema }),
-  z.strictObject({ categoryId: UuidSchema, propertyValues: z.array(groupedValue).max(1) }),
-  z.strictObject({ categoryId: UuidSchema, title: CareerBusinessRecordSchema.shape.title, propertyValues: values }),
+  z.strictObject({ categoryId: UuidSchema, initialRelations: relations.optional() }),
+  z.strictObject({ categoryId: UuidSchema, propertyValues: z.array(groupedValue).max(1), initialRelations: relations.optional() }),
+  z.strictObject({ categoryId: UuidSchema, title: CareerBusinessRecordSchema.shape.title, propertyValues: values, initialRelations: relations.optional() }),
 ]);
 export const CareerWriterPropertyDeltaSchema = z.strictObject({
   set: values,
@@ -24,9 +27,10 @@ export const CareerWriterPropertyDeltaSchema = z.strictObject({
   { message: "set and unsetPropertyIds must not overlap" })
   .describe("Upsert set values; remove unsetPropertyIds; preserve omitted IDs. Unsetting an absent canonical ID is a no-op. Duplicate or overlapping IDs are rejected.");
 export const CareerWriterPatchSchema = z.union([
-  z.strictObject({ status: CareerRecordStatusSchema }),
-  z.strictObject({ title: CareerBusinessRecordSchema.shape.title, propertyValues: CareerWriterPropertyDeltaSchema.optional() }),
-  z.strictObject({ propertyValues: CareerWriterPropertyDeltaSchema }),
+  z.strictObject({ status: CareerRecordStatusSchema, title: CareerBusinessRecordSchema.shape.title.optional(), propertyValues: CareerWriterPropertyDeltaSchema.optional(), relations: relations.optional() }),
+  z.strictObject({ title: CareerBusinessRecordSchema.shape.title, propertyValues: CareerWriterPropertyDeltaSchema.optional(), relations: relations.optional() }),
+  z.strictObject({ propertyValues: CareerWriterPropertyDeltaSchema, relations: relations.optional() }),
+  z.strictObject({ relations }),
 ]);
 // 숫자 상한을 문자열 pattern에도 표현하여 OpenAPI와 Java의 ETag 경계를 맞춥니다.
 const upperBound = String(Number.MAX_SAFE_INTEGER);
@@ -40,8 +44,8 @@ const boundedDigits = upperBound.split("").flatMap((digit, index) => {
 });
 export const CareerWriterIfMatchSchema = z.string().regex(new RegExp(`^"v(?:[1-9][0-9]{0,14}|${boundedDigits.join("|")}|${upperBound})"$`));
 export const CareerWriterMovePreviewInputSchema = z.strictObject({ targetCategoryId: UuidSchema });
-export const CareerWriterMoveSchema = z.strictObject({ targetCategoryId: UuidSchema, previewToken: z.string().min(32).max(4096) });
-export const CareerWriterRelationSchema = z.strictObject({ propertyId: UuidSchema, targetIds: z.array(UuidSchema).max(1000) });
+export const CareerWriterMoveSchema = z.strictObject({ targetCategoryId: UuidSchema, previewToken: z.string().min(32).max(4096), discardUnmappedPropertyIds: z.array(UuidSchema).max(200).optional() });
+
 export const CareerWriterRestoreSchema = z.strictObject({});
 export const CareerWriterMovePreviewResponseSchema = z.strictObject({ data: z.strictObject({
   previewToken: z.string().min(32).max(4096), targetCategoryId: UuidSchema,

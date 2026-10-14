@@ -8,7 +8,8 @@ import { createRedisResource, createStreamRedis } from "../platform/redis.js";
 import { IdentityService } from "../modules/identity/index.js";
 import { RemoteGoogleIdTokenVerifier } from "../modules/identity/google.js";
 import { EntitlementService } from "../modules/entitlements/index.js";
-import { CareerService } from "../modules/career/index.js";
+import { CanonicalCareerReadService } from "../modules/career/index.js";
+import { createCareerWriterRuntime } from "../platform/career-writer-runtime.js";
 import { JobMarketService } from "../modules/jobs/index.js";
 import { AiSearchInterpreter } from "../modules/jobs/search-interpreter.js";
 import { AiFactsReader, createJobSourceAdapters, BundledMarkReader, JobIngestService, JobUrlImporter, SiteMarkReader } from "../modules/jobs/ingest/index.js";
@@ -40,7 +41,7 @@ import { createMediaStorage } from "../platform/storage/create-storage.js";
 import { AnalyticsService } from "../modules/analytics/index.js";
 import { EngagementService } from "../modules/engagement/index.js";
 import { AccountLifecycleService } from "../modules/account-lifecycle/index.js";
-import { CareerDocumentService } from "../modules/career-editor/index.js";
+import { CareerDocumentService, InMemoryCareerDocumentSessionRegistry, createCareerDocumentDelivery } from "../modules/career-editor/index.js";
 import { AiClientProposalAdapter, SelectedBlockTextAiProposalAdapter } from "../modules/career-editor/ai-adapter.js";
 import { createReliableQueue } from "../platform/queue.js";
 
@@ -48,6 +49,7 @@ const config = loadRuntimeConfig();
 if (!config.mongodbUrl || !config.mongodbDatabase) throw new Error("MongoDB runtime configuration is missing");
 const database = createMongoResource(config.mongodbUrl, { databaseName: config.mongodbDatabase });
 const redis = createRedisResource(config.redisUrl);
+const careerReads = new CanonicalCareerReadService(database);
 const identityService = new IdentityService(database);
 // 클라이언트 ID가 없으면 만들지 않는다 — 라우트가 503으로 답하고, 화면은
 // 버튼을 열지 않는다. 검증기 없이 도는 척하는 경로를 두지 않는다.
@@ -55,17 +57,17 @@ const googleIdTokenVerifier = config.googleClientId
   ? new RemoteGoogleIdTokenVerifier({ clientId: config.googleClientId })
   : null;
 const entitlementService = new EntitlementService(database);
-const careerService = new CareerService(database);
+
 const jobUrlImporter = new JobUrlImporter();
 const jobBoardService = new JobBoardService(database);
-const jobAnalysisService = new JobAnalysisService(database);
-const materialsService = new MaterialsService(database);
-const interviewService = new InterviewService(database);
-const recipeService = new RecipeService(database);
+const jobAnalysisService = new JobAnalysisService(database,careerReads);
+const materialsService = new MaterialsService(database,careerReads);
+
+const recipeService = new RecipeService(database,null,null,careerReads);
 const companyResearchService = new CompanyResearchService(database);
 const designSystemService = new DesignSystemService(database);
 const templateService = new TemplateService(database, recipeService);
-const generationService = new GenerationService(database);
+const generationService = new GenerationService(database,null,careerReads);
 // 04b "말로 고치기"만 요청 안에서 계약을 부른다 — 사용자가 결과를 보고
 // 적용할지 정하는 대화형 편집이라 뒤로 미룰 수 없다(§8.3은 이 화면을
 // 스트리밍으로 그린다. 지금은 한 번에 받는다).
@@ -91,11 +93,13 @@ const jobMarketService = new JobMarketService(
   database,
   ai ? new AiSearchInterpreter(ai) : null,
   consentService,
+  careerReads,
 );
 const portfolioEditingService = new PortfolioEditingService(
   database,
   ai ? new AiBlockEditor(ai) : null,
   consentService,
+  careerReads,
 );
 const portfolioReadService = new PortfolioReadService(database);
 const layoutService = new LayoutService(database, ai ? new AiLayoutRemixer(ai) : null, consentService);
@@ -107,7 +111,7 @@ const mediaService = new MediaService(database, createMediaStorage(config));
 const pageStream = new PageStream(createStreamRedis(config.redisUrl), {
   prefix: config.queuePrefix,
 });
-const pageService = new PageService(database, consentService, pageStream);
+const pageService = new PageService(database, consentService, pageStream, careerReads);
 // AI가 켜져 있을 때 모델이 내용·Spec 또는 HTML을 생성합니다.
 const pageGenerator = ai ? (config.pageGenerationFormat === "html" ? new AiPageGenerator(ai) : new StructuredPageGenerator(ai)) : null;
 const analyticsService = new AnalyticsService(database, {
@@ -119,7 +123,7 @@ const analyticsService = new AnalyticsService(database, {
   entitlements: entitlementService,
 });
 const engagementService = new EngagementService(database);
-const accountLifecycleService = new AccountLifecycleService(database);
+const accountLifecycleService = new AccountLifecycleService(database,careerReads);
 const careerDocumentJobs = createReliableQueue<Record<string, unknown>>(
   "domain-jobs",
   config.redisUrl,
@@ -138,6 +142,11 @@ const careerDocumentService = new CareerDocumentService(
   },
   config.careerAiDeterministicTest ? new SelectedBlockTextAiProposalAdapter() : ai ? new AiClientProposalAdapter(ai) : undefined,
 );
+const careerWriterRuntime=createCareerWriterRuntime(database,config,careerDocumentService,{consent:consentService});
+const careerService=careerWriterRuntime.career;
+const interviewService=new InterviewService(database,null,null,consentService,careerWriterRuntime.interview);
+const careerDocumentRegistry=new InMemoryCareerDocumentSessionRegistry();
+const careerDocumentDelivery=createCareerDocumentDelivery(database,careerDocumentRegistry,{onError:()=>{console.error(JSON.stringify({level:"error",event:"career.document.delivery_failed"}));}});
 const agentChatService = new AgentChatService(database, config.agentChatEnabled ? new ClaudeAgentRuntime(config.agentChatModel) : null, careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(database, config.agentCredentialEncryptionKey), portfolioReadService, pageService);
 const app = buildApi({
   agentChatService,
@@ -147,6 +156,7 @@ const app = buildApi({
   ...(googleIdTokenVerifier ? { googleIdTokenVerifier } : {}),
   entitlementService,
   careerService,
+  careerDocumentRegistry,
   ...(config.careerEditorV2Enabled ? { careerDocumentService } : {}),
   jobMarketService,
   jobIngestService,
@@ -182,6 +192,7 @@ async function stop(signal: NodeJS.Signals): Promise<void> {
   stopping = true;
 
   app.log.info({ signal }, "stopping API");
+  await careerDocumentDelivery.stop();
   await app.close();
   await Promise.allSettled([database.close(), redis.close(), careerDocumentJobs.close()]);
 }
@@ -197,8 +208,10 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
 
 try {
   await app.listen({ host: config.host, port: config.port });
+  if(config.careerEditorV2Enabled)careerDocumentDelivery.start();
 } catch (error) {
   app.log.error({ error }, "failed to start API");
+  await careerDocumentDelivery.stop();
   await Promise.allSettled([app.close(), database.close(), redis.close(), careerDocumentJobs.close()]);
   process.exitCode = 1;
 }
