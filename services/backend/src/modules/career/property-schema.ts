@@ -29,6 +29,8 @@ const PREVIEW_SCAN_LIMIT = 10_000;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const READ_ONLY_TYPES = new Set(["formula", "rollup", "created_time", "updated_time"]);
 
+export { definitions as careerPropertyDefinitions, validateConfiguration as validateCareerPropertyConfiguration };
+
 type ConversionKind = "exact" | "safe" | "lossy" | "unmapped";
 interface ConversionResult { value?: unknown; kind: ConversionKind }
 interface SignedPreview {

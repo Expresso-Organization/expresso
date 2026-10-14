@@ -100,6 +100,15 @@ public final class MongoCareerCommandRepository implements CareerCommandReposito
             }
             var result=records().updateOne(session,new Document("_id",before.business().id()).append("userId",user).append("version",before.business().version()).append("deletedAt",before.deletedAt()==null?null:Date.from(before.deletedAt())),update);
             if(result.getMatchedCount()!=1) throw CareerCommandException.stale();
+            if(!Objects.equals(before.deletedAt(),deletedAt)) {
+                // lifecycle 변경과 같은 transaction에서 종속 계산의 보정 작업을 보장합니다.
+                var now=Date.from(clock.instant());
+                var payload=new Document("userId",user).append("targetRecordId",after.id()).append("targetRecordVersion",after.version());
+                db.getCollection("outbox_events").insertOne(session,new Document("_id",UUID.randomUUID().toString()).append("userId",user)
+                        .append("topic","career.computation.target-state").append("payload",payload)
+                        .append("idempotencyKey","spring-career-target-state:"+after.id()+":v"+after.version()).append("state","pending").append("attempts",0)
+                        .append("availableAt",now).append("createdAt",now).append("updatedAt",now));
+            }
         }
         @Override public Replay replay(String key) {
             var raw=db.getCollection("career_command_idempotency").find(session,new Document("userId",user).append("key",key)).first();
@@ -116,6 +125,13 @@ public final class MongoCareerCommandRepository implements CareerCommandReposito
             db.getCollection("outbox_events").insertOne(session,new Document("_id",UUID.randomUUID().toString()).append("userId",user).append("topic","career.computation").append("payload",payload)
                     .append("idempotencyKey","spring-career:"+record.id()+":v"+record.version()+":"+suffix).append("state","pending").append("attempts",0).append("availableAt",now).append("createdAt",now).append("updatedAt",now));
         }
+        private MongoCareerMutationOperations mutations() {return new MongoCareerMutationOperations(db,session,user,clock);}
+        @Override public MutationJob mutationJob(String id,String lease,String fingerprint) {return mutations().job(id,lease,fingerprint);}
+        @Override public MutationReceipt mutationReceipt(String id,String recordId) {return mutations().receipt(id,recordId);}
+        @Override public void guardMutation(MutationJob job,String lease) {mutations().guard(job,lease);}
+        @Override public PropertyValue mutationTombstone(String recordId,MutationJob job) {return mutations().tombstone(recordId,job);}
+        @Override public void mutationTombstone(CareerRecord record,MutationJob job,PropertyValue value) {mutations().tombstone(record,job,value);}
+        @Override public void rememberMutation(MutationJob job,CareerRecord record,boolean changed) {mutations().remember(job,record,changed);}
         private Document edgeFilter(Edge edge) {return new Document("userId",user).append("sourceRecordId",edge.sourceRecordId()).append("sourcePropertyId",edge.sourcePropertyId()).append("targetRecordId",edge.targetRecordId());}
         @Override public List<Edge> edges(String id,String propertyId) {
             var raw=db.getCollection("career_record_relations").find(session,new Document("userId",user).append("sourceRecordId",id).append("sourcePropertyId",propertyId)).limit(1001).into(new ArrayList<>());

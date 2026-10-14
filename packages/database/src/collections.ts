@@ -22,6 +22,8 @@ export interface MongoCollections {
   questions: Collection<Docs.QuestionDoc>;
   careerCategories: Collection<Docs.CareerCategoryDoc>;
   careerRecords: Collection<Docs.CareerRecordDoc>;
+  careerPropertyMutations: Collection<Docs.CareerPropertyMutationDoc>;
+  careerPropertyMutationReceipts: Collection<Docs.CareerPropertyMutationReceiptDoc>;
   careerDocumentSnapshots: Collection<Docs.CareerDocumentSnapshotDoc>;
   careerDocumentUpdates: Collection<Docs.CareerDocumentUpdateDoc>;
   careerRecordRevisions: Collection<Docs.CareerRecordRevisionDoc>;
@@ -110,6 +112,8 @@ export function mongoCollections(db: Db): MongoCollections {
     questions: db.collection<Docs.QuestionDoc>("questions"),
     careerCategories: db.collection<Docs.CareerCategoryDoc>("career_categories"),
     careerRecords: db.collection<Docs.CareerRecordDoc>("career_records"),
+    careerPropertyMutations: db.collection<Docs.CareerPropertyMutationDoc>("career_property_mutations"),
+    careerPropertyMutationReceipts: db.collection<Docs.CareerPropertyMutationReceiptDoc>("career_property_mutation_receipts"),
     careerDocumentSnapshots: db.collection<Docs.CareerDocumentSnapshotDoc>("career_document_snapshots"),
     careerDocumentUpdates: db.collection<Docs.CareerDocumentUpdateDoc>("career_document_updates"),
     careerRecordRevisions: db.collection<Docs.CareerRecordRevisionDoc>("career_record_revisions"),

@@ -14,6 +14,10 @@ public interface CareerCommandRepository {
     record Replay(String requestHash, CareerRecord record) {}
     record Edge(String sourceRecordId, String sourcePropertyId, String targetRecordId, String inversePropertyId,
                 String cardinality, String deletePolicy) {}
+    record MutationJob(String id,String categoryId,long categoryVersion,long schemaVersion,String definitionsJson,
+                       String kind,PropertyDefinition source,PropertyDefinition target,PropertyValue defaultValue,
+                       boolean confirmLossy,List<String> recordIds,String operationFingerprint) {}
+    record MutationReceipt(String operationFingerprint,CareerRecord record,boolean changed) {}
     <T> T transaction(Actor actor, Function<Operations, T> work);
     interface Operations {
         StoredRecord record(String id, boolean deleted);
@@ -29,5 +33,11 @@ public interface CareerCommandRepository {
         List<Edge> edges(String recordId, String propertyId);
         void removeEdge(Edge edge);
         void insertEdge(Edge edge);
+        MutationJob mutationJob(String id,String lease,String fingerprint);
+        MutationReceipt mutationReceipt(String mutationId,String recordId);
+        void guardMutation(MutationJob job,String lease);
+        PropertyValue mutationTombstone(String recordId,MutationJob job);
+        void mutationTombstone(CareerRecord record,MutationJob job,PropertyValue value);
+        void rememberMutation(MutationJob job,CareerRecord record,boolean changed);
     }
 }
