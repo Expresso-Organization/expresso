@@ -25,7 +25,7 @@ public record CareerBusinessRecordData(
     public record Response(CareerBusinessRecordData data) {}
 
     public record PropertyValueData(String propertyDefinitionId, String type, Object value) {
-        static PropertyValueData from(PropertyValue value) {
+        public static PropertyValueData from(PropertyValue value) {
             Object wireValue = switch (value) {
                 case TextualPropertyValue textual -> textual.value();
                 case NumberPropertyValue number -> number.value().toPlainString();

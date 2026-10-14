@@ -9,6 +9,7 @@ import { jobSourceProviderSteps } from "./mongodb-migrations/0005/migration.js";
 import { careerEditorLedgerSteps } from "./mongodb-migrations/0006/migration.js";
 import { jobSourceSeedSteps } from "./mongodb-migrations/0007/migration.js";
 import { careerViewConfigurationSteps } from "./mongodb-migrations/0008/migration.js";
+import { careerBusinessWriterPreparationSteps } from "./mongodb-migrations/0014/migration.js";
 
 import { agentCredentialSteps } from "./mongodb-migrations/0010/migration.js";
 import { agentConversationSteps } from "./mongodb-migrations/0009/migration.js";
@@ -51,6 +52,15 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
   const ninthSource = await readFile(new URL("./mongodb-migrations/0009/migration.ts", import.meta.url));
   const ninthHash = createHash("sha256").update(ninthSource).digest("hex");
   const tenthHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0010/migration.ts", import.meta.url))).digest("hex");
+  const businessDirectory = new URL("./mongodb-migrations/0014/", import.meta.url);
+  const manifest = await readFile(new URL("checksum-manifest.json", businessDirectory));
+  const businessHash = createHash("sha256").update(`checksum-manifest.json\0${manifest.byteLength}\0`).update(manifest);
+  const { files } = JSON.parse(manifest.toString("utf8")) as { files: string[] };
+  if (files.length !== new Set(files).size || files.some((file) => !/^[a-z-]+\.(ts|json)$/.test(file))) throw new Error("invalid 0014 checksum manifest");
+  for (const file of files) {
+    const source = await readFile(new URL(file, businessDirectory));
+    businessHash.update(`${file}\0${source.byteLength}\0`).update(source);
+  }
   return [
     { version: "0001", name: "initial_collections", checksum: hash.digest("hex"), steps: await initialMigrationSteps() },
     { version: "0002", name: "generation_ledger_amount_constraint", checksum: secondHash, steps: await generationLedgerConstraintSteps() },
@@ -62,5 +72,6 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
     { version: "0008", name: "career_view_configurations", checksum: eighthHash, steps: await careerViewConfigurationSteps() },
     { version: "0009", name: "agent_conversations", checksum: ninthHash, steps: await agentConversationSteps() },
     { version: "0010", name: "agent_credentials", checksum: tenthHash, steps: await agentCredentialSteps() },
+    { version: "0014", name: "career_business_writer_preparation", checksum: businessHash.digest("hex"), steps: await careerBusinessWriterPreparationSteps() },
   ];
 }

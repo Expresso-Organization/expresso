@@ -45,7 +45,12 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.springframework.boot:spring-boot-starter-jackson")
     implementation("org.mongodb:bson")
+    implementation("org.mongodb:mongodb-driver-sync")
+    implementation("org.springframework.boot:spring-boot-starter-webmvc")
+    implementation("org.springframework.boot:spring-boot-starter-security")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-security-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
@@ -54,4 +59,5 @@ tasks.withType<Test> {
     systemProperty("careerBusinessFixture", rootProject.file("../../packages/contracts/openapi/fixtures/career-business-v1.json").absolutePath)
     systemProperty("careerBusinessBoundaryFixture", rootProject.file("../../packages/contracts/openapi/fixtures/career-business-boundaries-v1.json").absolutePath)
     systemProperty("careerBusinessTimezonePolicy", timezonePolicy.absolutePath)
+    systemProperty("b1RepositoryRoot", rootProject.file("../..").absolutePath)
 }
