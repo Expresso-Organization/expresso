@@ -58,7 +58,8 @@ intent의 A1~A5와 정의서 06b.
 `AgentChat.module.css`에 `.rail { display:flex; height:100%; min-height:0; }`
 (테두리 · 둥근 모서리 없음, 레일의 왼쪽 테두리를 그대로 쓴다). `.rail`의 헤더 · 자료 줄 ·
 환영 화면 여백은 `.panel` 규칙과 같은 값을 쓴다 — `.panel` 규칙의 선택자에 `.rail`을
-더한다. 1023px 이하에서는 `.rail { height: min(720px, 85dvh); }`.
+더한다. 1023px 이하에서는 `.rail { height: min(720px, 85dvh); }`이고, 쌓인 본문의 `.left`는
+`flex: none; overflow: visible`로 두어 원문이 채팅 높이에 밀려 줄어들지 않고 본문 전체가 스크롤된다.
 
 **다시 보내기 — 백엔드 `AgentChatService.retry`.**
 `send`의 앞부분(동의 확인 · 문맥 적재 · 크기 확인)을 `prepare`로 묶어 둘이 함께 쓴다.
@@ -69,8 +70,9 @@ intent의 A1~A5와 정의서 06b.
 라우트 `POST /v1/agent/conversations/:id/retry`(본문 없음, API 키 처리는 `messages`와 같다),
 웹 프록시 허용 목록에 `retry` 추가, 훅에 `retry()` 추가.
 
-**회사 톤 절.** 지금의 `railCard` 마크업을 왼쪽 `.section`으로 옮기고 제목을 다른 절과 같은
-`blockTitle`로 쓴다. 쓰이지 않게 되는 클래스(`matchCard` 계열, `railCard*`, `railCta`,
+**회사 톤 절.** 왼쪽 마지막 `.section`으로 옮기고 제목은 다른 절과 같은 `blockTitle`을 쓴다.
+색 견본은 그대로, 공고 말투 · 인상은 공고 속성 표(`facts` · `fact`)와 같은 줄 양식으로 그린다 —
+316px용 `toneRow`(라벨 34px)는 넓은 본문에서 줄이 맞지 않는다. 쓰이지 않게 되는 클래스(`matchCard` 계열, `railCard*`, `railCta`,
 `topRecord*`, `.brew`)는 지운다.
 
 ## 버린 대안
