@@ -18,6 +18,7 @@ import {
   StructuredSectionSchema,
   validateStructuredPortfolio,
   type StructuredPortfolioContent,
+  type StructuredPortfolioSnapshot,
   type StructuredSection,
 } from "@expresso/contracts";
 import {
@@ -78,7 +79,7 @@ export const structuredCatalog = defineCatalog(schema, {
       }),
       slots: ["default"],
       description:
-        "전체 구도: editorial=고정 소개와 기사 두 열, gallery=전면 작품 전시, dossier=목차와 상세 두 열.",
+        "전체 구도: editorial=고정 소개와 기사 두 열, gallery=전면 작품 전시, dossier=목차와 상세 두 열, library=수집 원본의 전면 구도.",
     },
     NameIntro: {
       props: z.object({
@@ -515,13 +516,34 @@ const { registry } = defineRegistry(structuredCatalog, {
   },
 });
 
+/** 렌더링 단계의 실패입니다. Spec 검사를 통과한 뒤에 나므로 Spec을 바꿔도 해결되지 않습니다. */
+export class StructuredRenderError extends Error {
+  constructor(
+    readonly code: "RENDER_FAILED" | "PAGE_TOO_LARGE",
+    message: string,
+    options: { cause?: unknown } = {},
+  ) {
+    super(message, options.cause === undefined ? {} : { cause: options.cause });
+    this.name = "StructuredRenderError";
+  }
+}
+
+/** Renderer 앞의 검사입니다. 계약·참조·순서와 수집 원본의 역할을 함께 확인합니다. */
+export function validateRenderableSpec(
+  spec: unknown,
+  input: unknown,
+): StructuredPortfolioSnapshot {
+  const snapshot = validateStructuredPortfolio(spec, input);
+  validateLibrarySelection(snapshot.spec);
+  return snapshot;
+}
+
 export function renderStructuredPortfolio(
   spec: unknown,
   input: unknown,
   theme?: { background: string; text: string; accent: string },
 ): { html: string; css: string } {
-  const snapshot = validateStructuredPortfolio(spec, input);
-  validateLibrarySelection(snapshot.spec);
+  const snapshot = validateRenderableSpec(spec, input);
   const state = {
     ...snapshot.content,
     sectionById: Object.fromEntries(
@@ -531,20 +553,33 @@ export function renderStructuredPortfolio(
   const evidenceTitles = new Map(
     snapshot.content.evidence.map((item) => [item.id, item.title]),
   );
-  const html = renderToStaticMarkup(
-    <StateProvider initialState={state}>
-      <VisibilityProvider>
-        <ActionProvider handlers={{}}>
-          <EvidenceTitles.Provider value={evidenceTitles}>
-            <Renderer spec={snapshot.spec} registry={registry} />
-          </EvidenceTitles.Provider>
-        </ActionProvider>
-      </VisibilityProvider>
-    </StateProvider>,
-  );
+  let html: string;
+  // 서버 렌더링에서는 json-render의 요소별 오류 경계가 동작하지 않아 컴포넌트 하나의 예외가 렌더링 전체를 멈춥니다.
+  try {
+    html = renderToStaticMarkup(
+      <StateProvider initialState={state}>
+        <VisibilityProvider>
+          <ActionProvider handlers={{}}>
+            <EvidenceTitles.Provider value={evidenceTitles}>
+              <Renderer spec={snapshot.spec} registry={registry} />
+            </EvidenceTitles.Provider>
+          </ActionProvider>
+        </VisibilityProvider>
+      </StateProvider>,
+    );
+  } catch (error) {
+    throw new StructuredRenderError(
+      "RENDER_FAILED",
+      `컴포넌트 렌더링 중 오류가 발생했습니다: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
+    );
+  }
   // 저장 계약을 넘는 지면은 판을 추가하기 전에 거부합니다.
   if (html.length > PAGE_MAX_BYTES)
-    throw new Error("지면이 저장 크기 제한을 넘었습니다. 내용을 줄여 주세요.");
+    throw new StructuredRenderError(
+      "PAGE_TOO_LARGE",
+      "지면이 저장 크기 제한을 넘었습니다. 내용을 줄여 주세요.",
+    );
   const colors = theme
     ? z
         .object({
@@ -565,6 +600,9 @@ export function renderStructuredPortfolio(
     (hasSources ? COLLECTED_PORTFOLIO_CSS : "") +
     overrides;
   if (css.length > PAGE_MAX_BYTES)
-    throw new Error("스타일이 저장 크기 제한을 넘었습니다.");
+    throw new StructuredRenderError(
+      "PAGE_TOO_LARGE",
+      "스타일이 저장 크기 제한을 넘었습니다.",
+    );
   return { html, css };
 }

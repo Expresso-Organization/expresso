@@ -8,7 +8,7 @@ import {
 } from "@expresso/contracts";
 import type { AiClient, AiCallSpec } from "../../platform/ai/client.js";
 import { StructuredPageGenerator } from "./structured-generator.js";
-import type { PageGenerationContext } from "./generator.js";
+import { PageRenderError, type PageGenerationContext } from "./generator.js";
 
 const content: StructuredPortfolioContent = {
   version: 1,
@@ -193,5 +193,24 @@ describe("모델 기반 구조화 생성", () => {
     expect(ai.calls[0]!.prompt).toContain("컨테이너 예:");
     expect(result.html).toContain('data-group="columns" data-variant="wide-end"');
     expect(result.manifest.structured?.spec).toEqual(grouped);
+  });
+  it("검사를 통과한 Spec의 렌더링 실패는 모델에 다시 요청하지 않는다", async () => {
+    const large = structuredClone(content);
+    large.sections[0]!.media = [
+      {
+        src: "data:image/svg+xml;base64," + "A".repeat(600_000),
+        alt: "가상 시험 이미지",
+        origin: "fictional",
+      },
+    ];
+    const ai = new Stub([spec, spec]);
+    const failure = await new StructuredPageGenerator(ai)
+      .generate({ ...context, structuredContent: large })
+      .catch((error: unknown) => error);
+    expect(ai.calls).toHaveLength(1);
+    expect(failure).toBeInstanceOf(PageRenderError);
+    expect((failure as Error).message).toMatch(
+      /^지면 렌더링에 실패했습니다: .*저장 크기 제한/,
+    );
   });
 });

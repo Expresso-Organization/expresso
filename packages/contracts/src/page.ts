@@ -51,8 +51,12 @@ import { MEDIA_ASSET_PATH_PREFIX } from "./media-path.js";
  * 8 — 구조화 Spec이 평평한 목록이라 지면 구성이 모델 출력과 관계없이 같았다.
  * Columns·Grid·Band 컨테이너 규칙과 예시를 넣고, "모든 ID를 page.children에
  * 한 번씩"을 "트리 전체에서 한 번씩"으로 바꿨다.
+ *
+ * 9 — 요소 ID와 props 형태를 손으로 적던 문장을 출력 스키마에서 생성한다.
+ * 스키마가 design.layout을 한 값으로 고정하는데 남아 있던 editorial·gallery·
+ * dossier 선택 지시를 뺐다.
  */
-export const PAGE_PROMPT_VERSION = 8;
+export const PAGE_PROMPT_VERSION = 9;
 
 /**
  * 한 지면의 상한.
