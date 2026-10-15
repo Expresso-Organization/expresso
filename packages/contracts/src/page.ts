@@ -47,8 +47,12 @@ import { MEDIA_ASSET_PATH_PREFIX } from "./media-path.js";
  * 이 플랫폼의 기획은 원래 **뽑기 전에 스타일 문법을 고르는 것**이었고(03),
  * 그 값이 `template.style`에 이미 있는데 생성기가 안 읽고 있었다. 문법을
  * 제약으로 넘긴다 — 흔들리던 축을 사용자가 쥔다.
+ *
+ * 8 — 구조화 Spec이 평평한 목록이라 지면 구성이 모델 출력과 관계없이 같았다.
+ * Columns·Grid·Band 컨테이너 규칙과 예시를 넣고, "모든 ID를 page.children에
+ * 한 번씩"을 "트리 전체에서 한 번씩"으로 바꿨다.
  */
-export const PAGE_PROMPT_VERSION = 7;
+export const PAGE_PROMPT_VERSION = 8;
 
 /**
  * 한 지면의 상한.

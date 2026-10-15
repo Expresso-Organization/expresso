@@ -53,8 +53,21 @@ const measure = () => {
   };
   const intro = document.querySelector("#intro");
   const plate = intro.querySelector(".sp-source-nameplate");
+  // 페이지 최상위 요소와 컨테이너 안 요소의 배치입니다.
+  const part = (node) =>
+    node.dataset.caseType
+      ? `사례:${node.dataset.caseType}`
+      : (node.className.split(" ")[0] || node.tagName).replace(/^sp-/, "");
+  const composition = [...document.querySelector(".sp-page").children]
+    .map((node) =>
+      node.classList.contains("sp-group")
+        ? `${node.dataset.group}(${node.dataset.variant})[${[...node.querySelector(".sp-group-track").children].map(part).join(", ")}]`
+        : part(node),
+    )
+    .join(" · ");
   return {
     intro: {
+      "지면 구성": composition,
       "이름 판 블러": plate ? getComputedStyle(plate).backdropFilter : "없음",
       // 원본 색 클래스가 없어 브라우저 기본 링크색(rgb(0, 0, 238))으로 그려진 링크입니다.
       "기본 링크색 링크": (() => {

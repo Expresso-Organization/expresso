@@ -119,6 +119,24 @@ export const STRUCTURED_CASE_TYPES = [
   "CaseProcess",
   "ContentPanel",
 ] as const;
+// 모델이 지면을 나누는 컨테이너입니다. 자식은 json-render의 기본 slot(children)에 둡니다.
+export const STRUCTURED_GROUP_TYPES = ["Columns", "Grid", "Band"] as const;
+export type StructuredGroupType = (typeof STRUCTURED_GROUP_TYPES)[number];
+export const STRUCTURED_GROUP_VARIANTS = {
+  Columns: ["even", "wide-start", "wide-end"],
+  Grid: ["even"],
+  Band: ["panel", "accent"],
+} as const satisfies Record<StructuredGroupType, readonly string[]>;
+// 컨테이너별 자식 수 [최소, 최대]입니다.
+export const STRUCTURED_GROUP_CHILDREN: Record<StructuredGroupType, [number, number]> = {
+  Columns: [2, 2],
+  Grid: [2, 3],
+  Band: [1, 3],
+};
+export const STRUCTURED_MAX_GROUPS = 4;
+export const STRUCTURED_GROUP_VARIANT_VALUES = [
+  ...new Set(Object.values(STRUCTURED_GROUP_VARIANTS).flat()),
+] as [string, ...string[]];
 const leaf = <T extends string, P extends z.ZodType>(type: T, props: P) =>
   z.strictObject({
     type: z.literal(type),
@@ -158,6 +176,12 @@ export const StructuredNodeSchema = z.union([
   leaf("CareerTimeline", z.strictObject({ career: binding })),
   leaf("EvidenceGrid", z.strictObject({ evidence: binding })),
   leaf("Contact", z.strictObject({ contact: binding })),
+  // type과 variant의 짝은 validateStructuredPortfolio가 읽을 수 있는 메시지로 검사합니다.
+  z.strictObject({
+    type: z.enum(STRUCTURED_GROUP_TYPES),
+    props: z.strictObject({ variant: z.enum(STRUCTURED_GROUP_VARIANT_VALUES) }),
+    children: z.array(id).min(1).max(3),
+  }),
 ]);
 export const StructuredPortfolioSpecSchema = z.strictObject({
   root: id,
@@ -166,6 +190,27 @@ export const StructuredPortfolioSpecSchema = z.strictObject({
 export type StructuredPortfolioSpec = z.infer<
   typeof StructuredPortfolioSpecSchema
 >;
+type StructuredNode = StructuredPortfolioSpec["elements"][string];
+export const isStructuredGroup = (
+  node: StructuredNode | undefined,
+): node is Extract<StructuredNode, { type: StructuredGroupType }> =>
+  !!node &&
+  (STRUCTURED_GROUP_TYPES as readonly string[]).includes(node.type);
+/** 페이지에서 깊이 우선으로 요소를 모읍니다. 컨테이너 자체는 제외하고 부모 ID를 함께 돌려줍니다. */
+export function structuredLeaves(spec: StructuredPortfolioSpec) {
+  const root = spec.elements[spec.root];
+  if (root?.type !== "PortfolioPage") return [];
+  return root.children.flatMap((key) => {
+    const node = spec.elements[key];
+    return isStructuredGroup(node)
+      ? node.children.map((child) => ({
+          key: child,
+          node: spec.elements[child],
+          parent: key,
+        }))
+      : [{ key, node, parent: spec.root }];
+  });
+}
 export const StructuredPortfolioSnapshotSchema = z.strictObject({
   version: z.literal(1),
   content: StructuredPortfolioContentSchema,
@@ -300,6 +345,22 @@ export function structuredModelSchema(
       children: empty,
     });
   const nodeIds = Object.keys(nodes) as [string, ...string[]];
+  // 소개와 연락처는 페이지의 처음과 끝에만 둡니다. 나머지는 컨테이너에 넣을 수 있습니다.
+  const groupable = nodeIds.filter(
+    (key) => key !== "intro" && key !== "contact",
+  ) as [string, ...string[]];
+  const groupIds = Array.from(
+    { length: STRUCTURED_MAX_GROUPS },
+    (_, index) => `group-${index + 1}`,
+  );
+  const group = z.strictObject({
+    type: z.enum(STRUCTURED_GROUP_TYPES),
+    // type과 variant의 짝은 도메인 검사에서 확인합니다. 공급자 공통 문법을 위해 union을 쓰지 않습니다.
+    props: z.strictObject({
+      variant: z.enum(STRUCTURED_GROUP_VARIANT_VALUES),
+    }),
+    children: z.array(z.enum(groupable)).min(1).max(3),
+  });
   const page = z.strictObject({
     type: z.literal("PortfolioPage"),
     props: z.strictObject({
@@ -317,12 +378,19 @@ export function structuredModelSchema(
       motion: z.enum(["none", "subtle", "showcase"]),
       rationale: z.string().min(1).max(400),
     }),
-    // 공급자 공통 배열 문법을 사용하고 소개·연락처 위치는 아래 도메인 검사에서 검증합니다.
-    children: z.array(z.enum(nodeIds)).length(nodeIds.length),
+    // 공급자 공통 배열 문법을 사용하고 소개·연락처 위치와 중복·누락은 아래 도메인 검사에서 검증합니다.
+    children: z
+      .array(z.enum([...nodeIds, ...groupIds] as [string, ...string[]]))
+      .min(2)
+      .max(nodeIds.length + STRUCTURED_MAX_GROUPS),
   });
   return z.strictObject({
     root: z.literal("page"),
-    elements: z.strictObject({ page, ...nodes }),
+    elements: z.strictObject({
+      page,
+      ...nodes,
+      ...Object.fromEntries(groupIds.map((key) => [key, group.optional()])),
+    }),
   }) as z.ZodType<StructuredPortfolioSpec>;
 }
 
@@ -336,26 +404,68 @@ export function validateStructuredPortfolio(
   const root = spec.elements[spec.root];
   if (root?.type !== "PortfolioPage")
     throw new Error("PortfolioPage 루트가 필요합니다.");
+  // 페이지 → 컨테이너 → 요소의 한 단계 트리만 허용합니다. 모든 요소는 트리에서 정확히 한 번 나타나야 합니다.
+  const visits = new Map<string, number>();
+  const visit = (key: string) => visits.set(key, (visits.get(key) ?? 0) + 1);
+  const nodes: (StructuredNode | undefined)[] = [];
+  let groups = 0;
+  for (const key of root.children) {
+    visit(key);
+    const node = spec.elements[key];
+    if (!isStructuredGroup(node)) {
+      nodes.push(node);
+      continue;
+    }
+    groups++;
+    const [min, max] = STRUCTURED_GROUP_CHILDREN[node.type];
+    if (
+      !(STRUCTURED_GROUP_VARIANTS[node.type] as readonly string[]).includes(
+        node.props.variant,
+      )
+    )
+      throw new Error(
+        `${node.type}에 사용할 수 없는 variant입니다: ${node.props.variant}.`,
+      );
+    if (node.children.length < min || node.children.length > max)
+      throw new Error(
+        `${node.type}의 자식은 ${min === max ? `${min}개` : `${min}–${max}개`}여야 합니다.`,
+      );
+    for (const child of node.children) {
+      visit(child);
+      const inner = spec.elements[child];
+      if (
+        !inner ||
+        isStructuredGroup(inner) ||
+        ["PortfolioPage", "NameIntro", "Contact"].includes(inner.type)
+      )
+        throw new Error(
+          `컨테이너 ${key}에 넣을 수 없는 요소입니다: ${child}. 컨테이너에는 사례·목차·경력·근거만 넣습니다.`,
+        );
+      nodes.push(inner);
+    }
+  }
   if (
-    Object.keys(spec.elements).length > 25 ||
-    new Set(root.children).size !== root.children.length ||
-    Object.keys(spec.elements).length !== root.children.length + 1
+    Object.keys(spec.elements).length > 30 ||
+    groups > STRUCTURED_MAX_GROUPS ||
+    [...visits.values()].some((count) => count > 1) ||
+    Object.keys(spec.elements).some(
+      (key) => key !== spec.root && !visits.has(key),
+    )
   ) {
-    const duplicate = root.children.filter(
-      (key, index) => root.children.indexOf(key) !== index,
+    const duplicate = [...visits].flatMap(([key, count]) =>
+      count > 1 ? [key] : [],
     );
     const missing = Object.keys(spec.elements).filter(
-      (key) => key !== spec.root && !root.children.includes(key),
+      (key) => key !== spec.root && !visits.has(key),
     );
     throw new Error(
-      `children의 중복 ID: ${duplicate.join(", ") || "없음"}; 누락 ID: ${missing.join(", ") || "없음"}. 각각 한 번씩 연결해야 합니다.`,
+      `트리의 중복 ID: ${duplicate.join(", ") || "없음"}; 누락 ID: ${missing.join(", ") || "없음"}; 컨테이너 ${groups}개(최대 ${STRUCTURED_MAX_GROUPS}개). 모든 요소를 트리 전체에서 한 번씩 연결해야 합니다.`,
     );
   }
-  const nodes = root.children.map((key) => spec.elements[key]);
   if (nodes.some((node) => !node || node.type === "PortfolioPage"))
     throw new Error("허용되지 않은 섹션 연결입니다.");
   if (
-    nodes[0]?.type !== "NameIntro" ||
+    spec.elements[root.children[0] ?? ""]?.type !== "NameIntro" ||
     nodes.filter((node) => node?.type === "NameIntro").length !== 1
   )
     throw new Error("이름과 자기 정의를 첫 섹션에 한 번 표시해야 합니다.");
@@ -437,7 +547,8 @@ export function validateStructuredPortfolio(
     throw new Error("근거가 누락되었습니다.");
   if (
     content.contact &&
-    (nodes.at(-1)?.type !== "Contact" || counts.get("Contact") !== 1)
+    (spec.elements[root.children.at(-1) ?? ""]?.type !== "Contact" ||
+      counts.get("Contact") !== 1)
   )
     throw new Error("연락처를 마지막에 표시해야 합니다.");
   if (!content.contact && counts.has("Contact"))

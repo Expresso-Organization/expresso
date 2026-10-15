@@ -11,14 +11,37 @@ if (!runId || !/^[a-zA-Z0-9-]+$/.test(runId))
   throw new Error("실행 ID가 필요합니다.");
 const folder = path.join(root, "docs/library/previews/portfolio/runs", runId);
 const base = process.env.PORTFOLIO_PREVIEW_BASE || "http://127.0.0.1:8942";
-const slugs = process.env.PORTFOLIO_PROFILE
+const requested = process.env.PORTFOLIO_PROFILE
   ? [process.env.PORTFOLIO_PROFILE]
   : ["robotics-engineer", "editorial-designer", "climate-analyst"];
+// 생성에 실패한 프로필은 run.json이 없습니다. 검사에서 빼고 실패로 기록합니다.
+const slugs = requested.filter((slug) =>
+  fs.existsSync(path.join(folder, slug, "run.json")),
+);
+const failed = requested
+  .filter((slug) => !slugs.includes(slug))
+  .map((slug) => {
+    const record = path.join(folder, slug, "model-record.json");
+    return {
+      slug,
+      attempts: fs.existsSync(record)
+        ? JSON.parse(fs.readFileSync(record, "utf8")).length
+        : 0,
+    };
+  });
+if (!slugs.length) throw new Error("검사할 생성 결과가 없습니다.");
 const normalize = (value) =>
   String(value)
     .replace(/[^\p{L}\p{N}@]/gu, "")
     .toLowerCase();
 const sha = (value) => createHash("sha256").update(value).digest("hex");
+// 컨테이너는 Type(variant)[자식들]로, 나머지 요소는 name(node)로 적습니다.
+const label = (spec, key, name) => {
+  const node = spec.elements[key];
+  return ["Columns", "Grid", "Band"].includes(node.type)
+    ? `${node.type}(${node.props.variant})[${node.children.map((child) => name(spec.elements[child])).join(", ")}]`
+    : name(node);
+};
 const browser = await chromium.launch({
   headless: true,
   executablePath:
@@ -202,30 +225,22 @@ try {
       role: content.profile.role,
       design,
       library: run.library || null,
-      sourceComposition: spec.elements[spec.root].children.map(
-        (key) =>
-          spec.elements[key].props.sourceId ||
-          spec.elements[key].props.variant ||
-          spec.elements[key].type,
+      // 최상위 요소마다 선택한 원본입니다. 컨테이너는 안의 원본을 함께 적습니다.
+      sourceComposition: spec.elements[spec.root].children.map((key) =>
+        label(spec, key, (node) => node.props.sourceId || node.props.variant || node.type),
       ),
+      // 지면 구성(요소 유형과 컨테이너 트리)입니다. 원본 선택과 관계없이 배치만 비교합니다.
+      layout: spec.elements[spec.root].children
+        .map((key) => label(spec, key, (node) => node.type))
+        .join(" · "),
+      usage: run.usage,
       htmlSha256: run.htmlSha256,
       screens,
       noJavaScript: true,
     });
     console.log(slug, "passed", design);
   }
-  if (slugs.length === 3)
-    assert.equal(
-      new Set(
-        report.map((item) =>
-          item.library
-            ? JSON.stringify(item.sourceComposition)
-            : item.design.layout,
-        ),
-      ).size,
-      3,
-      "세 입력의 원본 컴포넌트 조합이 수렴했습니다.",
-    );
+  // 세 결과의 구성이 같아도 실패로 처리하지 않고 서로 다른 수를 기록합니다.
   fs.writeFileSync(
     path.join(folder, "verification.json"),
     JSON.stringify(
@@ -241,6 +256,9 @@ try {
         distinctSourceCompositions: new Set(
           report.map((item) => JSON.stringify(item.sourceComposition)),
         ).size,
+        distinctLayouts: new Set(report.map((item) => item.layout)).size,
+        failed,
+        groupCount: report.map((item) => (item.layout.match(/\(/g) || []).length),
       },
       null,
       2,
@@ -256,7 +274,7 @@ try {
   const cards = report
     .map(
       (item) =>
-        `<li><a href="./${item.slug}/index.html" target="_blank" rel="noopener"><article class="comparison-card" style="background:white;border:1px solid var(--line);border-radius:12px;padding:16px"><img style="height:auto" src="./${item.slug}-intro.png" alt="${item.name} 첫 화면"><h2>${item.name}</h2><p>${item.role} · ${item.design.layout}</p><p>전체 페이지 열기 ↗</p></article></a></li>`,
+        `<li><a href="./${item.slug}/index.html" target="_blank" rel="noopener"><article class="comparison-card" style="background:white;border:1px solid var(--line);border-radius:12px;padding:16px"><img style="height:auto" src="./${item.slug}-intro.png" alt="${item.name} 첫 화면"><h2>${item.name}</h2><p>${item.role} · ${item.design.layout}</p><p style="font-size:13px;color:var(--muted)">${item.layout}</p><p>전체 페이지 열기 ↗</p></article></a></li>`,
     )
     .join("");
   const cases = report

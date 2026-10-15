@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import {
   PAGE_PROMPT_VERSION,
+  STRUCTURED_MAX_GROUPS,
   StructuredPortfolioContentSchema,
   structuredModelSchema,
   validateStructuredPortfolio,
@@ -31,6 +32,31 @@ export function structuredSpecPrompt(
   previous: unknown = null,
   library = retrievePageLibrary(content, instruction),
 ): string {
+  const ids = [
+    "intro",
+    "index",
+    ...content.sections.map((s) => `section-${s.id}`),
+    ...(content.career.length ? ["career"] : []),
+    ...(content.evidence.length ? ["evidence"] : []),
+    ...(content.contact ? ["contact"] : []),
+  ];
+  // 예시는 첫 사례와 그 옆에 둘 보조 요소로 만듭니다. 보조 요소가 없으면 두 번째 사례를 씁니다.
+  const pair = [
+    `section-${content.sections[0]!.id}`,
+    content.evidence.length
+      ? "evidence"
+      : content.career.length
+        ? "career"
+        : content.sections[1]
+          ? `section-${content.sections[1].id}`
+          : "index",
+  ];
+  const example = {
+    page: ids.flatMap((key) =>
+      key === pair[0] ? ["group-1"] : pair.includes(key) ? [] : [key],
+    ),
+    group: { type: "Columns", props: { variant: "wide-start" }, children: pair },
+  };
   return `개인 포트폴리오의 json-render Spec을 작성하세요. HTML/CSS를 쓰지 않습니다.
 ${Object.entries(structuredCatalog.data.components)
   .map(([name, component]) => `${name}: ${component.description}`)
@@ -40,16 +66,18 @@ NameIntro.props.sourceId는 intro 목록에서, 모든 사례 props.sourceId는 
 입력 특징: ${JSON.stringify({ profile: content.profile, sections: content.sections.map((section) => ({ id: section.id, title: section.title, summary: section.summary, pattern: section.pattern, bodyLength: section.body.length, images: section.media.length, imageDescriptions: section.media.map((item) => item.alt), details: section.details.map((item) => ({ label: item.label, excerpt: item.text.slice(0, 160) })) })), careerCount: content.career.length, evidenceCount: content.evidence.length, contact: !!content.contact })}
 수집 원본의 내부 배치를 사용하므로 기본 골격은 library입니다. 사용자가 특정 스타일을 지정했을 때 editorial(측면 소개+기사), gallery(넓은 작품 전시), dossier(측면 목차+기술 상세)를 사용합니다. 팔레트는 ivory/cobalt/graphite/sage/burgundy, 서체는 serif/sans/mono입니다. 직무 이름만으로 어두운 색을 고르지 마세요. 이미지·본문 길이·설명 유형을 근거로 선택하고 rationale에 이유를 쓰세요.
 원본 자료가 책·도록·작품처럼 이미지 자체가 성과를 보여주면 gallery에서 큰 이미지의 흐름을 살펴봅니다. 논리·해석이 주인공이면 editorial, 구조도·시험 절차·항목 비교를 탐색해야 하면 dossier가 적합합니다. 자료마다 사례 유형도 독립적으로 선택합니다.
-children에는 다음의 모든 ID를 각각 한 번씩 연결합니다. 이 순서는 유효한 시작 예시이며 가운데 부분의 순서만 바꿀 수 있습니다: ${JSON.stringify(["intro", "index", ...content.sections.map((s) => `section-${s.id}`), ...(content.career.length ? ["career"] : []), ...(content.evidence.length ? ["evidence"] : []), ...(content.contact ? ["contact"] : [])])}. 첫 ID는 intro, 연락처가 있으면 마지막 ID는 contact입니다.
+모든 요소 ID를 트리 전체에서 정확히 한 번씩 연결합니다. 사용할 요소 ID: ${JSON.stringify(ids)}. 요소는 page.children에 바로 두거나 컨테이너의 children에 넣습니다. 첫 ID는 intro, 연락처가 있으면 마지막 ID는 contact이며 둘은 컨테이너에 넣지 않습니다.
+컨테이너는 지면을 나누는 요소이며 0–${STRUCTURED_MAX_GROUPS}개를 쓸 수 있습니다. 요소 ID는 group-1부터 차례로 쓰고, 각 컨테이너를 page.children에서 한 번 참조합니다. 컨테이너 안에 컨테이너를 넣지 않습니다. Columns는 자식 2개(variant even|wide-start|wide-end), Grid는 2–3개(variant even), Band는 1–3개(variant panel|accent)입니다. 자료의 비중과 관계에 맞을 때만 쓰고, 쓰지 않아도 됩니다.
+컨테이너 예: page.children=${JSON.stringify(example.page)}, elements["group-1"]=${JSON.stringify(example.group)}. 컨테이너에 넣은 ID는 page.children에 다시 쓰지 않습니다.
 root='page'. PortfolioPage.props={profile:{$state:'/profile'},design:{layout,palette,font},motion:'showcase',rationale}.
 NameIntro.props={profile:{$state:'/profile'},sections:{$state:'/sections'},sourceId:<선택 ID>}를 첫 요소로 한 번 둡니다. 이름이 가장 크고 바로 아래 한 문장을 둡니다.
 모든 section을 정확히 한 번, CaseEssay/CaseGallery/CaseTechnical/CaseProcess/ContentPanel 중 알맞은 타입으로 표시합니다. props={section:{$state:'/sectionById/<입력 id>'},sourceId:<선택 ID>}. 이미지 없는 section에 CaseGallery를 쓰지 않습니다. CaseProcess에는 설명 두 개 이상이 필요합니다.
-ProjectIndex는 필수이며 요소 ID는 index입니다. 소개 바로 다음에 index를 연결합니다. props={sections:{$state:'/sections'},variant:'rows'|'mosaic'|'rail'}.
+ProjectIndex는 필수이며 요소 ID는 index입니다. 소개 바로 다음에 두거나, variant='rail'로 Columns에 넣어 사례 옆 목차로 씁니다. props={sections:{$state:'/sections'},variant:'rows'|'mosaic'|'rail'}.
 입력 경력이 있으면 CareerTimeline.props={career:{$state:'/career'}}, 근거가 있으면 EvidenceGrid.props={evidence:{$state:'/evidence'}}를 한 번씩 둡니다. 경력·근거·사례의 순서는 자유롭게 선택할 수 있습니다. contact가 있으면 Contact.props={contact:{$state:'/contact'}}를 마지막에 둡니다. 없으면 생략합니다.
-페이지의 children에는 실제 요소 ID를 넣고 각 하위 요소의 children은 []입니다. 다른 속성, 경로, 텍스트를 props에 추가하지 마세요.
+page와 컨테이너의 children에는 실제 요소 ID를 넣고, 그 밖의 요소의 children은 []입니다. 다른 속성, 경로, 텍스트를 props에 추가하지 마세요.
 직전 Spec: ${JSON.stringify(previous)}
 수정 요청: ${instruction || "자료를 읽기 좋은 구성으로 조립하세요."}
-유효한 page.children의 시작 예시: ${JSON.stringify(["intro", "index", ...content.sections.map((s) => `section-${s.id}`), ...(content.career.length ? ["career"] : []), ...(content.evidence.length ? ["evidence"] : []), ...(content.contact ? ["contact"] : [])])}. 모든 ID를 한 번씩 사용합니다. 첫 ID는 intro이며 마지막 ID는 ${content.contact ? "contact" : "자료에 맞는 요소"}입니다. 가운데 사례·경력·근거의 순서는 바꿀 수 있습니다. 연락처 뒤에 index나 다른 요소를 추가하지 않습니다.
+컨테이너 없이 쓰는 유효한 page.children 예시: ${JSON.stringify(ids)}. 첫 ID는 intro이며 마지막 ID는 ${content.contact ? "contact" : "자료에 맞는 요소"}입니다. 가운데 사례·경력·근거의 순서는 바꿀 수 있습니다. 연락처 뒤에 다른 요소를 추가하지 않습니다.
 출력 형식은 {root,elements}입니다.`;
 }
 

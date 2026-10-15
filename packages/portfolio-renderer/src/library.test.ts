@@ -248,3 +248,34 @@ describe("수집 원본 렌더링 품질", () => {
     expect(html).toContain("min-w-[calc(var(--book-width))]");
   });
 });
+describe("지면 컨테이너", () => {
+  const runs = new URL(
+    "../../../docs/library/previews/portfolio/runs/library-selection-rerender-2026-10-09/",
+    import.meta.url,
+  );
+  it("컨테이너가 없는 저장 Spec은 이전 렌더링과 같은 HTML을 만든다", () => {
+    for (const slug of ["robotics-engineer", "editorial-designer", "climate-analyst"]) {
+      const run = JSON.parse(fs.readFileSync(new URL(`${slug}/run.json`, runs), "utf8"));
+      const saved = fs.readFileSync(new URL(`${slug}/index.html`, runs), "utf8");
+      const { html } = renderStructuredPortfolio(run.structured.spec, run.structured.content);
+      expect(saved.slice(saved.indexOf("<body>") + 6, saved.lastIndexOf("</body>")), slug).toBe(html);
+    }
+  });
+  it("컨테이너 자식을 같은 부모 아래에 그리고 type·variant를 표시한다", () => {
+    const run = JSON.parse(fs.readFileSync(new URL("robotics-engineer/run.json", runs), "utf8"));
+    const next = structuredClone(run.structured.spec) as StructuredPortfolioSpec;
+    const page = next.elements.page!;
+    if (page.type !== "PortfolioPage") throw new Error("시험 초기 상태 오류");
+    const cases = page.children.filter((key) => key.startsWith("section-"));
+    page.children = page.children.filter((key) => !cases.slice(0, 2).includes(key));
+    page.children.splice(2, 0, "group-1");
+    next.elements["group-1"] = { type: "Columns", props: { variant: "wide-start" }, children: cases.slice(0, 2) };
+    const { html, css } = renderStructuredPortfolio(next, run.structured.content);
+    const group = html.slice(html.indexOf('data-group="columns"'));
+    expect(html).toContain('<div class="sp-group" data-group="columns" data-variant="wide-start"><div class="sp-group-track">');
+    expect(group.indexOf(`id="${cases[0]}"`)).toBeGreaterThan(0);
+    expect(group.indexOf(`id="${cases[1]}"`)).toBeGreaterThan(group.indexOf(`id="${cases[0]}"`));
+    expect(css).toContain(".sp-group[data-group=columns][data-variant=wide-start]>.sp-group-track{grid-template-columns:minmax(0,2fr) minmax(300px,1fr)}");
+    expect(css).toContain("@container (max-width:679px)");
+  });
+});
