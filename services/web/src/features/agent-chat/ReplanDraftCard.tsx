@@ -17,9 +17,9 @@ export function ReplanDraftCard({ draft, disabled, onDecide }: { draft: AgentRep
   return <section className={styles.card} aria-label="계획 재배치 초안">
     <header className={styles.head}><Icon name="arrows-clockwise" size={15} /><span>계획 재배치 초안</span></header>
     <p className={styles.muted}>{settingsLine(draft.settings)} · 남은 작업 {draft.slots.length}개</p>
-    <ol className={styles.weeks}>{byWeek(draft.slots).map(([week, group]) => <li key={week}>
-      <span className={styles.weekLabel}>{week}주 · {group.date}</span>
-      <ul>{group.tasks.map(slot => <li key={slot.taskId} className={styles.taskRow}><span className={styles.taskTitle}>{slot.title}</span></li>)}</ul>
+    <ol className={styles.weeks}>{byWeek(draft.slots).map(([date, group]) => <li key={date}>
+      <span className={styles.weekLabel}>{date} 주</span>
+      <ul>{group.map(slot => <li key={slot.taskId} className={styles.taskRow}><span className={styles.taskTitle}>{slot.title}</span></li>)}</ul>
     </li>)}</ol>
     {draft.status === "ready" ? <>
       {error ? <p role="alert" className={styles.error}>{error}</p> : null}

@@ -15,9 +15,9 @@ afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe("준비 계획 초안 카드", () => {
   it("주차별 작업을 보이고, 대화상자에서 고친 작업 문구로 승인한다", async () => {
-    const onDecide = vi.fn(async () => undefined);
+    const onDecide = vi.fn(async (_decision: unknown) => undefined);
     render(<PlanDraftCard draft={draft} disabled={false} onDecide={onDecide} />);
-    expect(screen.getByText("1주 · 2026-10-19")).toBeTruthy();
+    expect(screen.getByText("2026-10-19 주")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /작업 문구 고치기/ }));
     const dialog = await screen.findByRole("dialog");
     fireEvent.change(within(dialog).getAllByLabelText("작업")[0]!, { target: { value: "작업 1 (고침)" } });
@@ -54,12 +54,22 @@ describe("준비 계획 카드", () => {
   });
 });
 
+describe("주 묶음", () => {
+  it("재배치로 주 번호가 겹쳐도 날짜로 따로 묶는다", async () => {
+    const replanned = { ...plan, tasks: [{ ...plan.tasks[0]!, status: "completed" as const, outcome: "완료" }, { ...plan.tasks[1]!, week: 1, date: "2026-11-02" }] };
+    vi.stubGlobal("fetch", vi.fn(async () => Response.json({ data: replanned })));
+    render(<PlanCard planId={plan.id} refreshKey={1} />);
+    expect(await screen.findByText("2026-10-19 주")).toBeTruthy();
+    expect(screen.getByText("2026-11-02 주")).toBeTruthy();
+  });
+});
+
 describe("계획 재배치 초안 카드", () => {
   it("남은 작업의 새 주차를 보이고 승인한다", async () => {
     const replan: AgentReplanDraft = { draftId: id(4), planId: plan.id, baseVersion: 2, settings: { ...settings, weeklyHours: 2 }, slots: [{ taskId: id(11), title: "작업 2", week: 1, date: "2026-11-02" }], status: "ready" };
     const onDecide = vi.fn(async () => undefined);
     render(<ReplanDraftCard draft={replan} disabled={false} onDecide={onDecide} />);
-    expect(screen.getByText("1주 · 2026-11-02")).toBeTruthy();
+    expect(screen.getByText("2026-11-02 주")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "이대로 다시 배치" }));
     await waitFor(() => expect(onDecide).toHaveBeenCalledWith({ action: "approve" }));
   });

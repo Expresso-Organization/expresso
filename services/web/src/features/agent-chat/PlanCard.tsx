@@ -12,14 +12,14 @@ import styles from "./PlanCards.module.css";
 const STATUS = { not_started: "시작 전", in_progress: "진행 중", completed: "완료", blocked: "막힘" } as const;
 const STATUS_ICON = { not_started: "circle", in_progress: "circle-half", completed: "check-circle", blocked: "prohibit" } as const;
 
-/** 오늘이 든 주. 시작 전이거나 끝난 뒤면 끝나지 않은 작업이 있는 첫 주. */
+/** 오늘이 든 주(그 주의 시작일). 시작 전이거나 끝난 뒤면 끝나지 않은 작업이 있는 첫 주. */
 function currentWeek(tasks: readonly PreparationTask[]) {
   const today = new Date().toLocaleDateString("sv-SE");
   const week = tasks.find(task => {
     const end = new Date(`${task.date}T00:00:00Z`); end.setUTCDate(end.getUTCDate() + 7);
     return task.date <= today && today < end.toISOString().slice(0, 10);
-  })?.week;
-  return week ?? tasks.find(task => task.status !== "completed")?.week ?? 1;
+  })?.date;
+  return week ?? tasks.find(task => task.status !== "completed")?.date ?? tasks[0]!.date;
 }
 
 /**
@@ -29,7 +29,7 @@ function currentWeek(tasks: readonly PreparationTask[]) {
 export function PlanCard({ planId, refreshKey }: { planId: string; refreshKey: number | undefined }) {
   const [plan, setPlan] = useState<PreparationPlan | null>(null);
   const [failed, setFailed] = useState(false);
-  const [openWeek, setOpenWeek] = useState<number | null>(null);
+  const [openWeek, setOpenWeek] = useState<string | null>(null);
   const [editing, setEditing] = useState<PreparationTask | null>(null);
   const load = useCallback(async (signal?: AbortSignal) => {
     try {
@@ -52,12 +52,12 @@ export function PlanCard({ planId, refreshKey }: { planId: string; refreshKey: n
     <div className={styles.bar} aria-hidden="true"><span style={{ width: `${Math.round((done / plan.tasks.length) * 100)}%` }} /></div>
     <p className={styles.muted}>{settingsLine(plan.settings)}</p>
     <ol className={styles.weeks}>{byWeek(plan.tasks).map(([week, group]) => {
-      const left = group.tasks.filter(task => task.status !== "completed").length;
+      const left = group.filter(task => task.status !== "completed").length;
       return <li key={week}>
         <button type="button" className={`${styles.weekToggle} ${styles.weekLabel}`} aria-expanded={openWeek === week} onClick={() => setOpenWeek(openWeek === week ? null : week)}>
-          <span>{week}주 · {group.date}</span><span>{left ? `남은 작업 ${left}` : "모두 완료"} <Icon name={openWeek === week ? "caret-up" : "caret-down"} size={11} /></span>
+          <span>{week} 주</span><span>{left ? `남은 작업 ${left}` : "모두 완료"} <Icon name={openWeek === week ? "caret-up" : "caret-down"} size={11} /></span>
         </button>
-        {openWeek === week ? <ul>{group.tasks.map(task => <li key={task.id}>
+        {openWeek === week ? <ul>{group.map(task => <li key={task.id}>
           <button type="button" className={styles.taskButton} data-status={task.status} onClick={() => setEditing(task)} aria-label={`${task.title} · ${STATUS[task.status]}`}>
             <Icon name={STATUS_ICON[task.status]} weight={task.status === "completed" ? "fill" : "regular"} size={14} className={styles[`status-${task.status}`]} />
             <span className={styles.taskTitle}>{task.title}</span>
@@ -89,7 +89,7 @@ function TaskProgressDialog({ plan, task, onClose, onSaved, onConflict }: { plan
     } catch (cause) { setError(cause instanceof Error ? cause.message : "저장하지 못했습니다."); } finally { setBusy(false); }
   };
   return <Dialog open onOpenChange={open => { if (!open) onClose(); }}><DialogContent className={`acf-scope ${chat.resourceDialog}`} showCloseButton={false}>
-    <DialogHeader className={chat.previewHeader}><div><DialogDescription>{task.week}주 · {task.date} · {TASK_KIND[task.kind]} · {task.minutes}분</DialogDescription><DialogTitle>{task.title}</DialogTitle></div><Button variant="ghost" size="icon" aria-label="닫기" onClick={onClose}><Icon name="x" size={18} /></Button></DialogHeader>
+    <DialogHeader className={chat.previewHeader}><div><DialogDescription>{task.date} 주 · {TASK_KIND[task.kind]} · {task.minutes}분</DialogDescription><DialogTitle>{task.title}</DialogTitle></div><Button variant="ghost" size="icon" aria-label="닫기" onClick={onClose}><Icon name="x" size={18} /></Button></DialogHeader>
     <div className={chat.previewBody}><div className={styles.editList}>
       <p className={styles.muted}>{task.action}</p>
       <p className={styles.muted}>결과물: {task.deliverable}</p>
