@@ -100,13 +100,14 @@ export function JobChatRailProvider({ children }: { children: ReactNode }) {
  * 머리의 채팅 접기 · 펼치기 버튼. 레일이 본문 옆에 설 때(≥1024px)만 보인다 — 첫 렌더에서
  * 자리를 잡아 두고, 좁은 폭에서는 CSS가 감춘다. 접힌 채 응답이 진행 중이면 점을 하나 둔다.
  */
-export function JobChatToggle({ className }: { className?: string | undefined }) {
+export function JobChatToggle({ className, labelClassName }: { className?: string | undefined; labelClassName?: string | undefined }) {
   const rail = useRail();
   const open = !(rail.docked && rail.collapsed);
   const label = open ? "채팅 접기" : "채팅 펼치기";
   return (
     <button type="button" className={`${className ?? ""} ${styles.chatToggle}`} aria-label={label} title={label} aria-pressed={open} onClick={() => rail.setCollapsed(open)}>
       <Icon name="chat-circle-dots" weight={open ? "fill" : "regular"} size={16} color={open ? "var(--ex-accent-text)" : "var(--ex-fg-muted)"} />
+      <span className={labelClassName}>{label}</span>
       {!open && rail.running ? <span className={`${styles.chatRunning} ex-anim-pulse`} role="status" aria-label="응답을 준비하고 있어요" /> : null}
     </button>
   );

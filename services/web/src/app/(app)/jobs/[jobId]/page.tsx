@@ -93,7 +93,8 @@ export default async function JobDetailPage({
           `${job.company.name} · ${job.title}`,
         ]}
         actions={
-          // 머리 오른쪽은 아이콘 버튼 세 개다 — 관심 공고 · 원문 · 채팅. 이름은 툴팁과 읽기 레이블로 둔다.
+          // 머리 오른쪽은 버튼 세 개다 — 관심 공고 · 원문 · 채팅. 폭이 넉넉하면(≥1280px) 아이콘 옆에
+          // 이름을 함께 보이고, 좁으면 아이콘만 남기고 이름은 툴팁과 읽기 레이블로 둔다.
           <div className={styles.headActions}>
             <button
               type="button"
@@ -108,6 +109,7 @@ export default async function JobDetailPage({
                 size={16}
                 color={job.interest ? "var(--ex-accent-text)" : "var(--ex-fg-muted)"}
               />
+              <span className={styles.headLabel}>{job.interest ? "관심 공고" : "관심 공고에 담기"}</span>
             </button>
             {job.sourceUrl ? (
               <a
@@ -115,13 +117,14 @@ export default async function JobDetailPage({
                 href={job.sourceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="공고 원문 열기"
-                title="공고 원문 열기"
+                aria-label="원문 보기"
+                title="원문 보기"
               >
                 <Icon name="arrow-square-out" size={16} color="var(--ex-fg-muted)" />
+                <span className={styles.headLabel}>원문 보기</span>
               </a>
             ) : null}
-            <JobChatToggle className={styles.headIcon} />
+            <JobChatToggle className={styles.headIcon} labelClassName={styles.headLabel} />
           </div>
         }
       />
