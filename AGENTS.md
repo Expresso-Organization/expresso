@@ -54,8 +54,7 @@ pnpm test
 
 - **테스트는 `dist`를 봅니다.** `@expresso/contracts`와 `@expresso/database`를
   먼저 지어야 vitest가 찾습니다. 각 패키지의 `test` 스크립트가 자기가 쓰는
-  워크스페이스 패키지를 먼저 짓게 되어 있고(`pnpm --filter "<자기>^..." build`,
-  backend는 빌드할 패키지를 직접 나열),
+  워크스페이스 패키지를 먼저 짓게 되어 있고(`pnpm --filter "<자기>^..." build`),
   CI와 `scripts/operations/deploy.sh`도 같은 순서입니다. 순서가 갈리면 한쪽에서만
   깨집니다. 예전 dist가 남아 있으면 타입 검사는 `src`를 봐서 통과하고 테스트만
   깨집니다.
