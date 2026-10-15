@@ -26,7 +26,7 @@ date: 2026-10-16
 1. 두 테스트를 추가하고 수정 전 코드로 돌린다 — 가드는 `document.ts` · `markdown.ts` 두 곳을 지목하며 실패, 웹 테스트는 `randomUUID is not a function`으로 실패.
 2. 두 소스를 고치고 `pnpm --filter @expresso/editor build` — `grep -n "node:crypto" packages/editor/dist/*.js`가 비어 있다.
 3. editor · web · backend 테스트와 `pnpm typecheck` — 전부 통과.
-4. 화면 확인 — 전용 DB `expresso_editor_uuid`, `QUEUE_PREFIX=expresso-editor-uuid`, `CAREER_EDITOR_V2_ENABLED=false`, API 4031 · 웹 3131로 띄우고 개발 로그인 뒤 기록을 하나 만들어 `/career/records/:id`를 연다. 편집기와 빈 문단, 콘솔 오류 없음을 확인하고 스크린샷을 남긴다.
+4. 화면 확인 — 전용 DB `expresso_editor_uuid`, `QUEUE_PREFIX=expresso-editor-uuid`, `CAREER_EDITOR_V2_ENABLED=false`, API 4031 · 웹 3131로 띄우고 개발 로그인 뒤 기록을 하나 만들어 `/career/records/:id`를 연다. 편집기와 빈 문단, 콘솔 오류 없음을 확인하고 스크린샷을 남긴다. Claude 브라우저 창이 숨겨져 있으면 rAF가 멈춰 편집기 마운트가 늦어 보이므로 Playwright headless Chrome(`channel: "chrome"`)으로 잰다. 같은 서버에서 editor 두 파일만 main 버전으로 지은 dist로도 한 번 돌려 실패가 재현되는지 확인한다.
 5. 구현 커밋 `fix: 편집기 패키지 브라우저 UUID 생성 오류 수정`, 푸시, PR.
 
 ## 가장 위험한 단계
