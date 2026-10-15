@@ -449,8 +449,12 @@
   display: none;
 }
 
-/* `--ex-bp-xl`(화면 정의서의 지면 폭)부터는 아이콘 옆에 이름을 함께 보인다. */
-@media (min-width: 1280px) {
+/*
+ * 머리에 자리가 있으면 아이콘 옆에 이름을 함께 보인다. 창 폭이 아니라 머리 폭으로 정한다 — 앱
+ * 사이드바를 접으면 같은 창에서도 머리가 넓어진다. 이름 붙은 버튼 세 개가 약 340px을 쓰므로, 경로
+ * 줄에 그만큼을 남길 수 있는 720px부터 이름을 붙인다.
+ */
+@container document-header (min-width: 720px) {
   .headIcon {
     width: auto;
     padding: 0 10px;
