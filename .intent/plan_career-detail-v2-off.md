@@ -20,6 +20,7 @@ date: 2026-10-16
 | `services/web/src/features/career-editor/editor/CareerDocumentEditor.module.css` | `.notice`를 `.loading` 규칙에 추가, 본문 열 안의 여백 |
 | `services/web/src/features/career-editor/editor/CareerDocumentEditor.test.tsx` | `unavailable` 읽기 전용 렌더 테스트 |
 | `services/web/src/app/(app)/career/records/[recordId]/page.tsx` | 웹 플래그가 꺼지면 읽기 전용 화면 |
+| `services/web/e2e/career-editor.spec.ts` | v2 꺼짐 e2e에 기록 상세 읽기 전용 · `/document` 0번 확인 추가 |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
 
