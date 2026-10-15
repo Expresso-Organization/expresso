@@ -2,12 +2,13 @@ import type { PortfolioReadApi } from "../portfolios/index.js";
 import type { PageApi } from "../page/index.js";
 import { AgentCredentials } from "./credentials.js";
 import { randomUUID } from "node:crypto";
-import { AgentConversationSchema, type CareerDocumentBootstrap, type AgentConversation, type AgentContext, type AgentMessage, type SendAgentMessage, type AgentApproval, type AgentRecordDraftDecision, type AgentRecordDraftInput, type RequirementReviewDraft } from "@expresso/contracts";
+import { AgentConversationSchema, type CareerDocumentBootstrap, type AgentConversation, type AgentContext, type AgentMessage, type SendAgentMessage, type AgentApproval, type AgentRecordDraftDecision, type AgentRecordDraftInput, type GapReviewDraft, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
 import { mongoCollections, type AgentConversationDoc } from "@expresso/database";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { AgentToolRejection, type AgentRecordText, type AgentRuntime } from "../../platform/agent/runtime.js";
 import { buildReview, hash, recordText, reviewIssues } from "./requirement-review.js";
 import { buildDraft, draftIssues } from "./record-draft.js";
+import { buildGapReview, gapIssues, latestReview } from "./gap-review.js";
 import type { CareerDocumentApi } from "../career-editor/index.js";
 import type { CareerApi } from "../career/index.js";
 import type { JobBoardApi } from "../jobs/index.js";
@@ -116,12 +117,28 @@ export class AgentChatService {
     const row = await this.owned(userId, id);
     const review = row.messages.flatMap(message => message.tools).find(tool => tool.id === toolId)?.review;
     if (!review) throw new AgentChatError(404, "이 대화의 요건 대조를 찾을 수 없습니다.");
+    return this.reviewFreshness(userId, review);
+  }
+  private async reviewFreshness(userId: string, review: RequirementReview) {
     const job = await this.jobs.get(userId, review.jobPostingId).catch(() => null);
     const records = await this.recordTexts(userId, review.snapshot.records.map(item => item.recordId));
     const changed: ("job" | "records")[] = [];
     if (!job?.descriptionRaw || hash(job.descriptionRaw) !== review.snapshot.jobContentHash) changed.push("job");
     if (review.snapshot.records.some(item => { const current = records.get(item.recordId); return !current || hash(current.text) !== item.textHash; })) changed.push("records");
     return { stale: changed.length > 0, changed };
+  }
+  /**
+   * 보완점 정리. 가장 최근 요건 대조를 기준으로 하고, 그 대조가 오래되었으면 받지 않는다 —
+   * 최신성은 여기(만들 때)서만 본다.
+   */
+  private async gapReview(row: AgentConversationDoc, draft: GapReviewDraft) {
+    const review = latestReview(row.messages);
+    if (!review) throw new AgentToolRejection(["이 대화에 요건 대조가 없습니다. 먼저 record_requirement_review로 대조하십시오."]);
+    if ((await this.reviewFreshness(row.userId, review)).stale) throw new AgentToolRejection(["요건 대조 뒤에 공고나 근거 기록이 바뀌었습니다. 요건 대조를 먼저 다시 하십시오."]);
+    const records = await this.recordTexts(row.userId, draft.items.flatMap(item => item.evidence.filter(evidence => evidence.sourceType === "record").map(evidence => evidence.sourceId)));
+    const issues = gapIssues(draft, review, records, row.messages);
+    if (issues.length) throw new AgentToolRejection(issues);
+    return buildGapReview(draft, review, records);
   }
   async create(userId: string, contexts: AgentContext[]) {
     await this.context(userId, contexts);
@@ -223,6 +240,7 @@ export class AgentChatService {
         records: { list: () => this.listRecords(row.userId), read: ids => this.readRecords(row.userId, ids) },
         review: draft => this.review(row.userId, row.contexts, draft),
         draftRecord: input => this.draftRecord(row, input),
+        gapReview: draft => this.gapReview(row, draft),
         propose: async (recordId, draft) => {
           if (!row.contexts.some(ref => ref.kind === "record" && ref.id === recordId)) throw new AgentChatError(403, "대화에 연결된 기록만 변경할 수 있습니다.");
           await this.consent.require(row.userId, "partial_edit");

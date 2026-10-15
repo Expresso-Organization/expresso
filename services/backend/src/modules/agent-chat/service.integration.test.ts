@@ -227,6 +227,39 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect((await service.decideRecordDraft(userId, row.id, draft.draftId, { action: "reject" })).messages.at(-1)!.tools[0]!.recordDraft!.status).toBe("rejected");
     expect((await career.listRecords(userId, { sort: "updated_desc", limit: 100 })).data.length).toBe(before);
   });
+  it("보완점은 최신 요건 대조를 기준으로만 기록하고, 대조가 오래되면 다시 대조하게 한다", async () => {
+    const jobId = randomUUID();
+    const jobs = { get: async () => ({ descriptionRaw: "자격 요건\n\n원래 본문을 다룬 경험" }) as never };
+    let step = 0; let rejected: string[] = [];
+    const service = new AgentChatService(fixture.resource, { run: async input => {
+      step += 1;
+      const question = input.messages.at(-1)!;
+      if (step === 1) {
+        await expect(input.gapReview({ summary: "요약", items: [{ requirementIndex: 0, type: "skill", status: "needs_confirmation", priority: "high", explanation: "설명", suggestedAction: "확인", evidence: [] }] })).rejects.toBeInstanceOf(AgentToolRejection);
+        const read = await input.records.read([recordId]);
+        const review = await input.review({ jobPostingId: jobId, summary: "요약", items: [{ requirement: "본문 경험", jobQuote: "원래 본문을 다룬 경험", kind: "must", assessment: "partial", explanation: "설명", recommendation: "", evidence: [{ recordId, quote: read[0]!.text.split("\n\n")[1]!.slice(0, 4) }] }] });
+        await input.emit({ type: "tool", tool: { id: randomUUID(), name: "요건 대조", status: "complete", summary: "", review } });
+        return;
+      }
+      try {
+        const gapReview = await input.gapReview({ summary: "요약", items: [{ requirementIndex: 0, type: "experience", status: "needs_improvement", priority: "high", explanation: "설명", suggestedAction: "경험 쌓기", evidence: [{ sourceType: "user_message", sourceId: question.id, quote: "해 본 적이 없어요" }] }] });
+        await input.emit({ type: "tool", tool: { id: randomUUID(), name: "보완점 정리", status: "complete", summary: "", gapReview } });
+      } catch (error) { if (error instanceof AgentToolRejection) rejected = error.issues; else throw error; }
+    } }, career, jobs, documents, consent, new AgentCredentials(fixture.resource));
+    services.push(service);
+    const row = await service.create(userId, [{ kind: "job", id: jobId }]);
+    const finish = async (text: string) => { await service.send(userId, row.id, { requestId: randomUUID(), text }); await expect.poll(async () => (await service.get(userId, row.id)).run?.status).toBe("complete"); };
+    await finish("대조해 줘");
+    await finish("그 일은 해 본 적이 없어요. 보완점 정리해 줘");
+    const gap = (await service.get(userId, row.id)).messages.at(-1)!.tools[0]!.gapReview!;
+    expect(gap.items[0]).toMatchObject({ requirement: "본문 경험", jobQuote: "원래 본문을 다룬 경험", status: "needs_improvement", evidence: [{ label: "내 답변" }] });
+    const current = await documents.bootstrap(userId, recordId);
+    const proposal = await documents.createPreparedAiProposal(userId, recordId, { prompt: "수정", selection: { blockIds: current.document.content.map(block => block.id) } }, { summary: "수정", commands: [{ type: "setText", blockId: current.document.content[0]!.id, text: "다른 본문" }], propertyChanges: [] });
+    await documents.applyAiProposal(userId, recordId, { recordId, proposalId: proposal.proposalId, expectedDocumentVersion: proposal.baseDocumentVersion, commandIndexes: [0], propertyChangeIndexes: [] });
+    await finish("그 일은 해 본 적이 없어요. 다시 정리해 줘");
+    expect(rejected[0]).toContain("요건 대조를 먼저 다시");
+    await documents.undoAiProposal(userId, recordId, { recordId, proposalId: proposal.proposalId, expectedDocumentVersion: (await documents.getAiProposal(userId, recordId, proposal.proposalId)).appliedDocumentVersion! });
+  });
   it("연결되지 않은 기록에 대한 도구 실행을 차단한다", async () => {
     let rejected = false;
     const service = make({ run: async input => { try { await input.propose(recordId, { summary: "불허", commands: [], propertyChanges: [] }); } catch { rejected = true; } } });

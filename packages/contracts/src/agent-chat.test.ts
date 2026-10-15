@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AgentRecordDraftDecisionSchema, AgentRecordDraftInputSchema, RequirementReviewDraftSchema } from "./agent-chat.js";
+import { GapReviewDraftSchema, AgentRecordDraftDecisionSchema, AgentRecordDraftInputSchema, RequirementReviewDraftSchema } from "./agent-chat.js";
 
 const jobPostingId = "00000000-0000-4000-8000-000000000001";
 const recordId = "00000000-0000-4000-8000-000000000002";
@@ -31,5 +31,13 @@ describe("새 기록 초안", () => {
     expect(AgentRecordDraftDecisionSchema.safeParse({ action: "approve", title: "제목", bodyMd: "본문" }).success).toBe(false);
     expect(AgentRecordDraftDecisionSchema.safeParse({ action: "approve", title: "제목", bodyMd: "본문", categoryId: recordId }).success).toBe(true);
     expect(AgentRecordDraftDecisionSchema.safeParse({ action: "reject" }).success).toBe(true);
+  });
+});
+
+describe("보완점 정리", () => {
+  it("요건 번호는 대조의 요건 수(최대 12) 안이다", () => {
+    const item = { requirementIndex: 0, type: "skill" as const, status: "needs_confirmation" as const, priority: "high" as const, explanation: "설명", suggestedAction: "확인", evidence: [] };
+    expect(GapReviewDraftSchema.safeParse({ summary: "요약", items: [item] }).success).toBe(true);
+    expect(GapReviewDraftSchema.safeParse({ summary: "요약", items: [{ ...item, requirementIndex: 12 }] }).success).toBe(false);
   });
 });

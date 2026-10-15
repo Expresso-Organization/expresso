@@ -73,7 +73,44 @@ export const AgentRecordDraftDecisionSchema = z.discriminatedUnion("action", [
 export type AgentRecordDraftInput = z.infer<typeof AgentRecordDraftInputSchema>;
 export type AgentRecordDraft = z.infer<typeof AgentRecordDraftSchema>;
 export type AgentRecordDraftDecision = z.infer<typeof AgentRecordDraftDecisionSchema>;
-export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional() });
+/**
+ * 보완점 정리 — 요건 대조와 대화에서 확인한 내용으로, 이 공고를 위해 무엇을 확인하거나
+ * 준비할지 정리한 것.
+ *
+ * 기록에 없다는 것만으로는 부족하다고 보지 않는다 — 그런 요건은 "확인 필요"이고, "보완 필요"는
+ * 사용자가 대화에서 직접 부족하다고 말한 경우에만 쓴다.
+ */
+const GapTypeSchema = z.enum(["evidence", "experience", "skill", "qualification", "portfolio"]);
+const GapStatusSchema = z.enum(["needs_confirmation", "needs_improvement"]);
+const GapPrioritySchema = z.enum(["high", "medium", "low"]);
+const gapEvidenceShape = { sourceType: z.enum(["record", "user_message"]), sourceId: UuidSchema, quote: z.string().trim().min(1).max(600) };
+const gapItemShape = {
+  requirementIndex: z.number().int().min(0).max(11),
+  type: GapTypeSchema,
+  status: GapStatusSchema,
+  priority: GapPrioritySchema,
+  explanation: z.string().trim().min(1).max(1_200),
+  suggestedAction: z.string().trim().min(1).max(600),
+};
+export const GapReviewDraftSchema = z.strictObject({
+  summary: z.string().trim().min(1).max(1_500),
+  items: z.array(z.strictObject({ ...gapItemShape, evidence: z.array(z.strictObject(gapEvidenceShape)).max(7) })).min(1).max(20),
+});
+export const GapReviewSchema = z.strictObject({
+  jobPostingId: UuidSchema,
+  summary: GapReviewDraftSchema.shape.summary,
+  items: z.array(z.strictObject({
+    ...gapItemShape,
+    id: UuidSchema,
+    requirement: z.string().max(300),
+    jobQuote: z.string().max(600),
+    evidence: z.array(z.strictObject({ ...gapEvidenceShape, label: z.string().max(200) })).max(7),
+  })).min(1).max(20),
+  createdAt: TimestampSchema,
+});
+export type GapReviewDraft = z.infer<typeof GapReviewDraftSchema>;
+export type GapReview = z.infer<typeof GapReviewSchema>;
+export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional(), gapReview: GapReviewSchema.optional() });
 export const AgentMessageSchema = z.strictObject({ id: UuidSchema, role: z.enum(["user", "assistant"]), text: z.string().max(64_000), tools: z.array(AgentToolResultSchema).max(30), createdAt: TimestampSchema });
 export const AgentRunSchema = z.strictObject({ id: UuidSchema, requestId: UuidSchema, status: z.enum(["running", "complete", "cancelled", "failed", "interrupted"]), error: z.string().max(1_000).nullable(), startedAt: TimestampSchema });
 export const AgentConversationSchema = z.strictObject({ id: UuidSchema, title: z.string().max(120), contexts: z.array(AgentContextSchema).max(10), messages: z.array(AgentMessageSchema).max(100), run: AgentRunSchema.nullable(), version: z.number().int().nonnegative(), updatedAt: TimestampSchema });
