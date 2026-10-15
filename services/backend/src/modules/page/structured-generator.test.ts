@@ -1,4 +1,3 @@
-import { retrievePageLibrary } from "@expresso/portfolio-renderer";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import {
@@ -13,6 +12,7 @@ import {
 } from "../../platform/ai/client.js";
 import { StructuredPageGenerator } from "./structured-generator.js";
 import { PageRenderError, type PageGenerationContext } from "./generator.js";
+import { findPortfolioDesign } from "../design-systems/index.js";
 
 const content: StructuredPortfolioContent = {
   version: 1,
@@ -40,7 +40,6 @@ const content: StructuredPortfolioContent = {
   contact: null,
 };
 const { contact: _contact, ...modelContent } = content;
-const choices = retrievePageLibrary(content);
 const spec = {
   root: "page",
   elements: {
@@ -50,7 +49,6 @@ const spec = {
         profile: { $state: "/profile" },
         design: { layout: "library", palette: "sage", font: "sans" },
         motion: "showcase",
-        referenceIds: [],
         rationale: "경로 설명을 읽는 목차와 상세 구성",
       },
       children: ["intro", "index", "section-project-a"],
@@ -60,7 +58,7 @@ const spec = {
       props: {
         profile: { $state: "/profile" },
         sections: { $state: "/sections" },
-        sourceId: choices.intro[0]!.renderKey!,
+        variant: "statement",
       },
       children: [],
     },
@@ -73,8 +71,6 @@ const spec = {
       type: "CaseTechnical",
       props: {
         section: { $state: "/sectionById/project-a" },
-        sourceId: choices.section.find((i) => i.sourceItemId === "card")!
-          .renderKey!,
       },
       children: [],
     },
@@ -282,5 +278,22 @@ describe("모델 기반 구조화 생성", () => {
     expect((failure as Error).message).toMatch(
       /^지면 렌더링에 실패했습니다: .*저장 크기 제한/,
     );
+  });
+  it("디자인 스펙을 받으면 토큰 키트로 그리고 디자인 검사를 QA에 넣는다", async () => {
+    const design = findPortfolioDesign({});
+    const result = await new StructuredPageGenerator(new Stub([spec])).generate({ ...context, design });
+    expect(result.html).toContain('class="xp-page"');
+    expect(result.css.startsWith("@import url(")).toBe(true);
+    expect(result.qaReport.status).toBe("ready");
+    expect(result.qaReport.checks.map((check) => check.name)).toEqual(
+      expect.arrayContaining(["design-contrast", "design-type-size", "design-fonts"]),
+    );
+    // 본문이 15px보다 작은 디자인은 검토 대상으로 남깁니다.
+    const small = structuredClone(design);
+    small.typography.scale = small.typography.scale.map((step) =>
+      step.name === "body" ? { ...step, size: "0.8rem" } : step,
+    );
+    const failed = await new StructuredPageGenerator(new Stub([spec])).generate({ ...context, design: small });
+    expect(failed.qaReport.status).toBe("failed_qa");
   });
 });

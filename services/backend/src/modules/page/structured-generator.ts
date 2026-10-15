@@ -10,11 +10,10 @@ import {
   type PageGenerationManifest,
 } from "@expresso/contracts";
 import {
+  designQa,
   renderStructuredPortfolio,
   validateRenderableSpec,
   structuredCatalog,
-  retrievePageLibrary,
-  librarySelection,
 } from "@expresso/portfolio-renderer";
 import {
   AiError,
@@ -37,34 +36,14 @@ import {
   describeSpecSchema,
 } from "./structured-spec-format.js";
 
-/** 선택지 목록에서 출력 스키마의 원본 ID enum을 만듭니다. 생성기와 프롬프트가 같은 값을 씁니다. */
-export function libraryChoices(
-  library: ReturnType<typeof retrievePageLibrary>,
-) {
-  return {
-    intro: library.intro.map((i) => i.renderKey || i.id),
-    section: library.section.map((i) => i.renderKey || i.id),
-    guidance: library.guidance.map((i) => i.id),
-  };
-}
-
 export function structuredSpecPrompt(
   content: StructuredPortfolioContent,
   instruction = "",
   previous: unknown = null,
-  library = retrievePageLibrary(content, instruction),
-  schema: z.ZodType = structuredModelSchema(content, {
-    ...libraryChoices(library),
-    layout: "library",
-  }),
+  schema: z.ZodType = structuredModelSchema(content),
 ): string {
-  const choices = libraryChoices(library);
   // 요소 ID와 props 형태는 공급자에 넘기는 출력 스키마에서 만듭니다. 아래 문장은 스키마로 표현할 수 없는 규칙입니다.
-  const format = describeSpecSchema(schema, [
-    { values: choices.intro, label: "intro 선택지 ID" },
-    { values: choices.section, label: "section 선택지 ID" },
-    { values: choices.guidance, label: "guidance 선택지 ID" },
-  ]);
+  const format = describeSpecSchema(schema);
   const ids = format.required;
   const groupId = format.optional[0] ?? "group-1";
   // 예시는 첫 사례와 그 옆에 둘 보조 요소로 만듭니다. 보조 요소가 없으면 두 번째 사례를 씁니다.
@@ -92,16 +71,14 @@ export function structuredSpecPrompt(
 ${Object.entries(structuredCatalog.data.components)
   .map(([name, component]) => `${name}: ${component.description}`)
   .join("\n")}
-전체 수집 목록 ${library.inventoryTotal}개를 검색 대상으로 사용했습니다. 실행할 수 있는 전체 선택지: ${JSON.stringify({ intro: library.intro.map((i) => ({ id: i.renderKey || i.id, name: i.name, description: i.reason })), section: library.section.map((i) => ({ id: i.renderKey || i.id, name: i.name, description: i.reason })), guidance: library.guidance.map((i) => ({ id: i.renderKey || i.id, name: i.name, categories: i.categories })) })}
-NameIntro.props.sourceId는 intro 목록에서, 모든 사례 props.sourceId는 section 목록에서 선택합니다. ID를 반드시 지정합니다. 원본 React 코드를 입력 데이터에 연결합니다. 책/도록은 book, 항목 설명이 많은 자료는 feature, 간결한 설명은 card, 제목 강조는 text-gradient를 검토합니다. referenceIds에는 선택한 guidance ID 또는 []를 씁니다.
 입력 특징: ${JSON.stringify({ profile: content.profile, sections: content.sections.map((section) => ({ id: section.id, title: section.title, summary: section.summary, pattern: section.pattern, bodyLength: section.body.length, images: section.media.length, imageDescriptions: section.media.map((item) => item.alt), details: section.details.map((item) => ({ label: item.label, excerpt: item.text.slice(0, 160) })) })), careerCount: content.career.length, evidenceCount: content.evidence.length, contact: !!content.contact })}
-직무 이름만으로 어두운 색을 고르지 마세요. 이미지·본문 길이·설명 유형을 근거로 팔레트와 서체를 선택하고 rationale에 이유를 쓰세요. motion은 'showcase'를 씁니다. 자료마다 사례 유형을 독립적으로 선택합니다.
+색·서체·간격은 사용자가 고른 디자인 시스템이 정합니다. 이 Spec은 구성(첫 화면 구도, 사례 유형, 목차 형태, 컨테이너 배치)을 정합니다. rationale에는 이미지·본문 길이·설명 유형을 근거로 고른 구성의 이유를 씁니다. motion은 'showcase'를 씁니다. 자료마다 사례 유형을 독립적으로 선택합니다.
 출력 형식(공급자에 넘기는 출력 스키마에서 생성):
 ${format.text}
 모든 요소 ID를 트리 전체에서 정확히 한 번씩 연결합니다. 사용할 요소 ID: ${JSON.stringify(ids)}. 요소는 page.children에 바로 두거나 컨테이너의 children에 넣습니다. 첫 ID는 intro, 연락처가 있으면 마지막 ID는 contact이며 둘은 컨테이너에 넣지 않습니다.
 컨테이너는 지면을 나누는 요소입니다. 요소 ID는 ${groupId}부터 차례로 쓰고, 각 컨테이너를 page.children에서 한 번 참조합니다. 컨테이너 안에 컨테이너를 넣지 않습니다. ${describeGroupRules()} 자료의 비중과 관계에 맞을 때만 쓰고, 쓰지 않아도 됩니다.
 컨테이너 예: page.children=${JSON.stringify(example.page)}, elements["${groupId}"]=${JSON.stringify(example.group)}. 컨테이너에 넣은 ID는 page.children에 다시 쓰지 않습니다.
-NameIntro는 첫 요소로 한 번 둡니다. 이름이 가장 크고 바로 아래 한 문장을 둡니다.
+NameIntro는 첫 요소로 한 번 둡니다. 이름이 가장 크고 바로 아래 한 문장을 둡니다. variant는 소개 문단이 짧고 한 문장이 강하면 'statement', 소개 문단과 집중 분야가 함께 읽혀야 하면 'split', 대표 이미지가 첫 인상을 정할 만하면 'media'를 고릅니다.
 모든 section을 정확히 한 번, 알맞은 사례 타입으로 표시합니다. 이미지 없는 section에 CaseGallery를 쓰지 않습니다. CaseProcess에는 설명 두 개 이상이 필요합니다.
 ProjectIndex는 필수이며 요소 ID는 index입니다. 소개 바로 다음에 두거나, variant='rail'로 Columns에 넣어 사례 옆 목차로 씁니다.
 경력·근거·사례의 순서는 자유롭게 선택할 수 있습니다. contact가 있으면 마지막에 둡니다. 형식에 없는 속성, 경로, 텍스트를 props에 추가하지 마세요.
@@ -239,8 +216,6 @@ export class StructuredPageGenerator implements PageGenerator {
         );
     }
     content = StructuredPortfolioContentSchema.parse(content);
-    const library = retrievePageLibrary(content, context.instruction);
-    const choices = libraryChoices(library);
     const fixedLayout =
       context.style?.structure === "wide-margin"
         ? "editorial"
@@ -249,8 +224,11 @@ export class StructuredPageGenerator implements PageGenerator {
           : context.style
             ? "library"
             : null;
+    // 새 생성은 수집 원본을 고르지 않습니다. 선택지를 비우면 출력 스키마에 sourceId가 없습니다.
     const schema = structuredModelSchema(content, {
-      ...choices,
+      intro: [],
+      section: [],
+      guidance: [],
       layout: fixedLayout || "library",
     });
     const prompt =
@@ -258,11 +236,10 @@ export class StructuredPageGenerator implements PageGenerator {
         content,
         context.instruction,
         context.previous?.structured?.spec,
-        library,
         schema,
       ) +
       (context.style
-        ? `\n사용자가 고른 스타일이 우선입니다. design.layout='${fixedLayout}', design.font='${context.style.font === "serif" ? "serif" : "sans"}'를 사용하세요. 색은 저장된 사용자 스타일에서 적용합니다.`
+        ? `\n사용자가 고른 스타일이 우선입니다. design.layout='${fixedLayout}', design.font='${context.style.font === "serif" ? "serif" : "sans"}'를 사용하세요.`
         : "");
     // 모델이 고칠 수 있는 Spec 검사 실패만 다시 요청합니다. 렌더링은 검사를 통과한 뒤 한 번만 합니다.
     const attempts: { output: unknown; error: string }[] = [];
@@ -319,11 +296,10 @@ export class StructuredPageGenerator implements PageGenerator {
     const { snapshot, root, attempt } = accepted;
     let rendered: { html: string; css: string };
     try {
-      rendered = renderStructuredPortfolio(
-        snapshot.spec,
-        snapshot.content,
-        context.style,
-      );
+      rendered = renderStructuredPortfolio(snapshot.spec, snapshot.content, {
+        design: context.design,
+        theme: context.style,
+      });
     } catch (error) {
       throw new PageRenderError(
         `지면 렌더링에 실패했습니다: ${error instanceof Error ? error.message : String(error)}`,
@@ -375,19 +351,14 @@ export class StructuredPageGenerator implements PageGenerator {
         designPrinciples: DESIGN_PRINCIPLES_VERSION,
       },
       tools: [],
-      sourceUrls: librarySelection(snapshot.spec).selected.flatMap((item) =>
-        item.sourceUrl ? [item.sourceUrl] : [],
-      ),
+      sourceUrls: [],
       attempts: attempt + 1,
       repairCount: attempt,
       usage: manifestUsage,
       structured: snapshot,
-      library: {
-        ...librarySelection(snapshot.spec),
-        query: library.query,
-        offeredIds: [...choices.intro, ...choices.section, ...choices.guidance],
-      },
     };
+    // 디자인 토큰의 정적 검사입니다. 오류 하나라도 실패하면 지면을 검토 대상으로 표시합니다.
+    const designChecks = context.design ? designQa(context.design) : [];
     return {
       ...rendered,
       rationale: root.props.rationale,
@@ -395,7 +366,9 @@ export class StructuredPageGenerator implements PageGenerator {
       removed: [],
       usage,
       qaReport: {
-        status: "ready",
+        status: designChecks.some((check) => check.status === "fail" && check.severity === "error")
+          ? "failed_qa"
+          : "ready",
         checks: [
           {
             name: "has-markup",
@@ -411,6 +384,7 @@ export class StructuredPageGenerator implements PageGenerator {
               ? "수치 출처를 검토해 주세요."
               : "수치 출처 대조를 통과했습니다.",
           },
+          ...designChecks,
         ],
       },
       manifest,

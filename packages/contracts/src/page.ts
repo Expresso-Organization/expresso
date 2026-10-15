@@ -58,8 +58,12 @@ import { MEDIA_ASSET_PATH_PREFIX } from "./media-path.js";
  *
  * 10 — 내용 정리 호출에서 연락처를 묻지 않는다(입력 경로가 없어 null로 고정).
  * 이름 아래 한 문장 규칙을 어기면 오류와 직전 출력을 붙여 한 번 다시 요청한다.
+ *
+ * 11 — Spec 생성에서 수집 원본 선택지와 sourceId 지시를 뺐다(디자인 토큰 키트로
+ * 그린다). 색·서체는 디자인 시스템이 정한다고 알리고, NameIntro.variant 선택
+ * 기준을 넣었다.
  */
-export const PAGE_PROMPT_VERSION = 10;
+export const PAGE_PROMPT_VERSION = 11;
 
 /**
  * 한 지면의 상한.
