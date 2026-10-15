@@ -29,6 +29,7 @@ date: 2026-10-16
 | `services/web/src/app/(app)/jobs/page.tsx` | 레일 조회를 `watchedJobs`로 |
 | `services/web/src/components/shell/AppChrome.tsx` | 사이드바 관심 공고 출처 교체 |
 | `services/web/src/components/shell/Sidebar.tsx` | `interestTotal` 속성 |
+| `services/web/src/components/shell/Sidebar.module.css` | 관심 공고 grid 열을 목록 너비에 묶음 — 화면 확인에서 긴 이름이 점수를 밖으로 미는 것을 발견 |
 
 ## 작업 순서
 
