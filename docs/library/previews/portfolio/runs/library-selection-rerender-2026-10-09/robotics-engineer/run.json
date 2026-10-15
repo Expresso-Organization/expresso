@@ -1,0 +1,436 @@
+{
+  "fictional": true,
+  "specOrigin": "model",
+  "contentOrigin": "prepared-fictional",
+  "model": "qwen3.5:9b-q8_0",
+  "htmlSha256": "225fffdbc798c6d4f83c224f8e27731930c11ef9b334d6936ff09787f4ef150a",
+  "methodologyVersion": 1,
+  "promptHash": "367b8497240f20c7e1386561492421b473a58ad73293bcb4b9b9968857d76edf",
+  "promptVersions": {
+    "page": 7,
+    "designPrinciples": 1
+  },
+  "tools": [],
+  "sourceUrls": [],
+  "attempts": 1,
+  "repairCount": 0,
+  "usage": {
+    "inputTokens": 4575,
+    "outputTokens": 702,
+    "cacheReadTokens": 0,
+    "cacheCreationTokens": 0,
+    "durationMs": 27358,
+    "costUsd": null
+  },
+  "structured": {
+    "version": 1,
+    "content": {
+      "version": 1,
+      "profile": {
+        "name": "한도윤",
+        "role": "로봇 엔지니어",
+        "headline": "현장 로봇의 경로 계획을 설계하는 로봇 엔지니어입니다.",
+        "intro": "센서 기록과 현장 제약을 함께 읽어 로봇의 이동과 조작을 설계합니다. 시뮬레이션에서 가설을 확인하고 안전한 시험 절차로 옮기는 과정을 기록합니다.",
+        "focus": [
+          "경로 계획",
+          "조작 계획",
+          "현장 검증"
+        ]
+      },
+      "sections": [
+        {
+          "id": "route-planner",
+          "title": "순찰 로봇 경로 계획",
+          "summary": "좁은 통로에서 장애물을 만났을 때 안전하게 우회 경로를 다시 찾는 가상 계획기입니다.",
+          "body": "",
+          "pattern": "project",
+          "details": [
+            {
+              "label": "역할",
+              "text": "경로 계획 · 상태 설계"
+            },
+            {
+              "label": "기간",
+              "text": "2026.02 — 2026.06"
+            },
+            {
+              "label": "문제 정의",
+              "text": "좁은 통로에서 이동 로봇이 새 장애물을 만나면 기존 경로를 계속 따를 수 없다는 시험 상황을 설정했습니다."
+            },
+            {
+              "label": "담당 작업",
+              "text": "장애물 확인, 정지, 대체 경로 탐색을 분리하고 각 상태의 전환 조건을 설계했습니다."
+            },
+            {
+              "label": "결과와 한계",
+              "text": "가상 시뮬레이션에서 경로를 비교할 수 있는 기록 화면을 만들었습니다. 현장 성능은 측정하지 않았습니다."
+            }
+          ],
+          "media": [
+            {
+              "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NjAiIGhlaWdodD0iNzIwIiB2aWV3Qm94PSIwIDAgOTYwIDcyMCIgcm9sZT0iaW1nIj48cmVjdCB3aWR0aD0iOTYwIiBoZWlnaHQ9IjcyMCIgZmlsbD0iIzEyMjIyZiIvPjx0ZXh0IHg9IjUyIiB5PSI3MCIgZm9udC1mYW1pbHk9IkFyaWFsLEFwcGxlIFNEIEdvdGhpYyBOZW8sc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzdhYzlkYiI+RklFTEQgU1lTVEVNUyAvIEVYUEVSSU1FTlQgMDE8L3RleHQ+PHBhdGggZD0iTTUyIDg4TDkwOCA4OCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNTI3MDgwIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMTEwTDQ4IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMTIwTDkxMiAxMjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTEyNiAxMTBMMTI2IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMTY5TDkxMiAxNjkiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTIwNCAxMTBMMjA0IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMjE4TDkxMiAyMTgiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTI4MiAxMTBMMjgyIDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMjY3TDkxMiAyNjciIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTM2MCAxMTBMMzYwIDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMzE2TDkxMiAzMTYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTQzOCAxMTBMNDM4IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMzY1TDkxMiAzNjUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTUxNiAxMTBMNTE2IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNDE0TDkxMiA0MTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTU5NCAxMTBMNTk0IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNDYzTDkxMiA0NjMiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTY3MiAxMTBMNjcyIDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNTEyTDkxMiA1MTIiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTc1MCAxMTBMNzUwIDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNTYxTDkxMiA1NjEiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTgyOCAxMTBMODI4IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNjEwTDkxMiA2MTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTkwNiAxMTBMOTA2IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNjU5TDkxMiA2NTkiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTE0MCA1NDVMMjYwIDQ4NUwzMzIgNDg1TDM5MiAzNDRMNTE1IDM0NEw2MDIgMjMwTDc4NSAyMzAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2U4YjU3NCIgc3Ryb2tlLXdpZHRoPSIxMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PGNpcmNsZSBjeD0iMTQwIiBjeT0iNTQ1IiByPSIxOSIgZmlsbD0iIzE3MjYzMyIgc3Ryb2tlPSIjZjJjODhlIiBzdHJva2Utd2lkdGg9IjYiLz48dGV4dCB4PSIxNjQiIHk9IjUyNSIgZm9udC1mYW1pbHk9IkFyaWFsLEFwcGxlIFNEIEdvdGhpYyBOZW8sc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNiIgZm9udC13ZWlnaHQ9IjUwMCIgZmlsbD0iI2U1ZTllOCI+UDA8L3RleHQ+PGNpcmNsZSBjeD0iMzMyIiBjeT0iNDg1IiByPSIxOSIgZmlsbD0iIzE3MjYzMyIgc3Ryb2tlPSIjZjJjODhlIiBzdHJva2Utd2lkdGg9IjYiLz48dGV4dCB4PSIzNTYiIHk9IjQ2NSIgZm9udC1mYW1pbHk9IkFyaWFsLEFwcGxlIFNEIEdvdGhpYyBOZW8sc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNiIgZm9udC13ZWlnaHQ9IjUwMCIgZmlsbD0iI2U1ZTllOCI+UDE8L3RleHQ+PGNpcmNsZSBjeD0iNTE1IiBjeT0iMzQ0IiByPSIxOSIgZmlsbD0iIzE3MjYzMyIgc3Ryb2tlPSIjZjJjODhlIiBzdHJva2Utd2lkdGg9IjYiLz48dGV4dCB4PSI1MzkiIHk9IjMyNCIgZm9udC1mYW1pbHk9IkFyaWFsLEFwcGxlIFNEIEdvdGhpYyBOZW8sc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNiIgZm9udC13ZWlnaHQ9IjUwMCIgZmlsbD0iI2U1ZTllOCI+UDI8L3RleHQ+PGNpcmNsZSBjeD0iNzg1IiBjeT0iMjMwIiByPSIxOSIgZmlsbD0iIzE3MjYzMyIgc3Ryb2tlPSIjZjJjODhlIiBzdHJva2Utd2lkdGg9IjYiLz48dGV4dCB4PSI4MDkiIHk9IjIxMCIgZm9udC1mYW1pbHk9IkFyaWFsLEFwcGxlIFNEIEdvdGhpYyBOZW8sc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNiIgZm9udC13ZWlnaHQ9IjUwMCIgZmlsbD0iI2U1ZTllOCI+UDM8L3RleHQ+PHRleHQgeD0iNzIiIHk9IjY1MCIgZm9udC1mYW1pbHk9IkFyaWFsLEFwcGxlIFNEIEdvdGhpYyBOZW8sc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMyIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iI2U5ZjNmMiI+Uk9VVEUgLyAwNCBXQVlQT0lOVFM8L3RleHQ+PC9zdmc+Cg==",
+              "alt": "장애물 우회 경로가 표시된 가상 로봇 계획 도면",
+              "origin": "fictional"
+            }
+          ],
+          "sourceIds": [
+            "route-log"
+          ]
+        },
+        {
+          "id": "gripper-study",
+          "title": "집기 분류 그리퍼",
+          "summary": "크기가 다른 물체의 파지 위치를 비교하는 그리퍼 설계 스터디입니다.",
+          "body": "",
+          "pattern": "project",
+          "details": [
+            {
+              "label": "역할",
+              "text": "파지 조건 · 동작 검토"
+            },
+            {
+              "label": "기간",
+              "text": "2025.08 — 2025.12"
+            },
+            {
+              "label": "문제 정의",
+              "text": "한 가지 파지 위치로는 서로 다른 형태의 물체를 안정적으로 잡기 어렵다는 가상 과제를 설정했습니다."
+            },
+            {
+              "label": "담당 작업",
+              "text": "접촉 위치와 그리퍼 개방 폭을 도면으로 비교하고 실패 조건을 분류했습니다."
+            },
+            {
+              "label": "결과와 한계",
+              "text": "세 물체 유형의 동작 시퀀스를 보여 주는 가상 시제품을 만들었습니다. 물리 시험 결과는 포함하지 않습니다."
+            }
+          ],
+          "media": [
+            {
+              "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NjAiIGhlaWdodD0iNzIwIiB2aWV3Qm94PSIwIDAgOTYwIDcyMCIgcm9sZT0iaW1nIj48cmVjdCB3aWR0aD0iOTYwIiBoZWlnaHQ9IjcyMCIgZmlsbD0iIzEyMjIyZiIvPjx0ZXh0IHg9IjUyIiB5PSI3MCIgZm9udC1mYW1pbHk9IkFyaWFsLEFwcGxlIFNEIEdvdGhpYyBOZW8sc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzdhYzlkYiI+RklFTEQgU1lTVEVNUyAvIEVYUEVSSU1FTlQgMDI8L3RleHQ+PHBhdGggZD0iTTUyIDg4TDkwOCA4OCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNTI3MDgwIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMTEwTDQ4IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMTIwTDkxMiAxMjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTEyNiAxMTBMMTI2IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMTY5TDkxMiAxNjkiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTIwNCAxMTBMMjA0IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMjE4TDkxMiAyMTgiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTI4MiAxMTBMMjgyIDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMjY3TDkxMiAyNjciIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTM2MCAxMTBMMzYwIDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMzE2TDkxMiAzMTYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTQzOCAxMTBMNDM4IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMzY1TDkxMiAzNjUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTUxNiAxMTBMNTE2IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNDE0TDkxMiA0MTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTU5NCAxMTBMNTk0IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNDYzTDkxMiA0NjMiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTY3MiAxMTBMNjcyIDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNTEyTDkxMiA1MTIiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTc1MCAxMTBMNzUwIDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNTYxTDkxMiA1NjEiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTgyOCAxMTBMODI4IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNjEwTDkxMiA2MTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTkwNiAxMTBMOTA2IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNjU5TDkxMiA2NTkiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PGNpcmNsZSBjeD0iNTAwIiBjeT0iMzcwIiByPSIxNzAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzVhNzg4OCIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtZGFzaGFycmF5PSI5IDEyIi8+PHBhdGggZD0iTTI5NCA1OTBMMzU1IDQ5MEw0MzAgMzg1TDU0NSAzMTBMNjIwIDIwNSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjN2FjOWRiIiBzdHJva2Utd2lkdGg9IjQ4IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSJNNjE1IDIwMkw2OTYgMTQyTTYxNSAyMDJMNjk3IDI2MCIgc3Ryb2tlPSIjZjJjODhlIiBzdHJva2Utd2lkdGg9IjI3IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48Y2lyY2xlIGN4PSI0MzAiIGN5PSIzODUiIHI9IjE1IiBmaWxsPSIjMTUyNTMyIiBzdHJva2U9IiNlYWYzZjIiIHN0cm9rZS13aWR0aD0iNCIvPjxjaXJjbGUgY3g9IjU0NSIgY3k9IjMxMCIgcj0iMTUiIGZpbGw9IiMxNTI1MzIiIHN0cm9rZT0iI2VhZjNmMiIgc3Ryb2tlLXdpZHRoPSI0Ii8+PHRleHQgeD0iNzQiIHk9IjY0MCIgZm9udC1mYW1pbHk9IkFyaWFsLEFwcGxlIFNEIEdvdGhpYyBOZW8sc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMyIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iI2U5ZjNmMiI+R1JJUCBGT1JDRSAvIDAuNDI8L3RleHQ+PC9zdmc+Cg==",
+              "alt": "관절과 접촉 위치가 표시된 가상 그리퍼 구조도",
+              "origin": "fictional"
+            }
+          ],
+          "sourceIds": [
+            "grip-table"
+          ]
+        },
+        {
+          "id": "warehouse-aisle",
+          "title": "창고 통로 시험",
+          "summary": "선반 사이 이동 시 정지와 재시작 조건을 보여 주는 가상 통로 시험입니다.",
+          "body": "",
+          "pattern": "project",
+          "details": [
+            {
+              "label": "역할",
+              "text": "시험 절차 · 운영 화면"
+            },
+            {
+              "label": "기간",
+              "text": "2025.01 — 2025.05"
+            },
+            {
+              "label": "문제 정의",
+              "text": "작업자가 통로에 들어왔을 때 로봇이 언제 멈추고 다시 움직여야 하는지 설명 가능한 절차가 필요하다는 상황을 만들었습니다."
+            },
+            {
+              "label": "담당 작업",
+              "text": "통로 점유, 정지, 확인, 재시작을 단계로 나누고 기록 항목을 정의했습니다."
+            },
+            {
+              "label": "결과와 한계",
+              "text": "조건을 검토하는 가상 테스트 화면을 작성했습니다. 실제 창고 운영 이력은 없습니다."
+            }
+          ],
+          "media": [
+            {
+              "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NjAiIGhlaWdodD0iNzIwIiB2aWV3Qm94PSIwIDAgOTYwIDcyMCIgcm9sZT0iaW1nIj48cmVjdCB3aWR0aD0iOTYwIiBoZWlnaHQ9IjcyMCIgZmlsbD0iIzEyMjIyZiIvPjx0ZXh0IHg9IjUyIiB5PSI3MCIgZm9udC1mYW1pbHk9IkFyaWFsLEFwcGxlIFNEIEdvdGhpYyBOZW8sc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzdhYzlkYiI+RklFTEQgU1lTVEVNUyAvIEVYUEVSSU1FTlQgMDM8L3RleHQ+PHBhdGggZD0iTTUyIDg4TDkwOCA4OCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNTI3MDgwIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMTEwTDQ4IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMTIwTDkxMiAxMjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTEyNiAxMTBMMTI2IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMTY5TDkxMiAxNjkiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTIwNCAxMTBMMjA0IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMjE4TDkxMiAyMTgiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTI4MiAxMTBMMjgyIDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMjY3TDkxMiAyNjciIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTM2MCAxMTBMMzYwIDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMzE2TDkxMiAzMTYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTQzOCAxMTBMNDM4IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMzY1TDkxMiAzNjUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTUxNiAxMTBMNTE2IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNDE0TDkxMiA0MTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTU5NCAxMTBMNTk0IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNDYzTDkxMiA0NjMiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTY3MiAxMTBMNjcyIDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNTEyTDkxMiA1MTIiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTc1MCAxMTBMNzUwIDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNTYxTDkxMiA1NjEiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTgyOCAxMTBMODI4IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNjEwTDkxMiA2MTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTkwNiAxMTBMOTA2IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNjU5TDkxMiA2NTkiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHJlY3QgeD0iMTAwIiB5PSIxNjYiIHdpZHRoPSI2MiIgaGVpZ2h0PSI0OCIgcng9IjUiIGZpbGw9IiM0MzY5NzgiIHN0cm9rZT0iIzU4Nzk4OSIvPjxyZWN0IHg9IjE5NCIgeT0iMTY2IiB3aWR0aD0iNjIiIGhlaWdodD0iNDgiIHJ4PSI1IiBmaWxsPSIjMmI0NjU1IiBzdHJva2U9IiM1ODc5ODkiLz48cmVjdCB4PSIyODgiIHk9IjE2NiIgd2lkdGg9IjYyIiBoZWlnaHQ9IjQ4IiByeD0iNSIgZmlsbD0iIzJiNDY1NSIgc3Ryb2tlPSIjNTg3OTg5Ii8+PHJlY3QgeD0iMzgyIiB5PSIxNjYiIHdpZHRoPSI2MiIgaGVpZ2h0PSI0OCIgcng9IjUiIGZpbGw9IiMyYjQ2NTUiIHN0cm9rZT0iIzU4Nzk4OSIvPjxyZWN0IHg9IjQ3NiIgeT0iMTY2IiB3aWR0aD0iNjIiIGhlaWdodD0iNDgiIHJ4PSI1IiBmaWxsPSIjNDM2OTc4IiBzdHJva2U9IiM1ODc5ODkiLz48cmVjdCB4PSI1NzAiIHk9IjE2NiIgd2lkdGg9IjYyIiBoZWlnaHQ9IjQ4IiByeD0iNSIgZmlsbD0iIzJiNDY1NSIgc3Ryb2tlPSIjNTg3OTg5Ii8+PHJlY3QgeD0iNjY0IiB5PSIxNjYiIHdpZHRoPSI2MiIgaGVpZ2h0PSI0OCIgcng9IjUiIGZpbGw9IiMyYjQ2NTUiIHN0cm9rZT0iIzU4Nzk4OSIvPjxyZWN0IHg9Ijc1OCIgeT0iMTY2IiB3aWR0aD0iNjIiIGhlaWdodD0iNDgiIHJ4PSI1IiBmaWxsPSIjMmI0NjU1IiBzdHJva2U9IiM1ODc5ODkiLz48cmVjdCB4PSIxMDAiIHk9IjI0NSIgd2lkdGg9IjYyIiBoZWlnaHQ9IjQ4IiByeD0iNSIgZmlsbD0iIzJiNDY1NSIgc3Ryb2tlPSIjNTg3OTg5Ii8+PHJlY3QgeD0iMTk0IiB5PSIyNDUiIHdpZHRoPSI2MiIgaGVpZ2h0PSI0OCIgcng9IjUiIGZpbGw9IiMyYjQ2NTUiIHN0cm9rZT0iIzU4Nzk4OSIvPjxyZWN0IHg9IjI4OCIgeT0iMjQ1IiB3aWR0aD0iNjIiIGhlaWdodD0iNDgiIHJ4PSI1IiBmaWxsPSIjMmI0NjU1IiBzdHJva2U9IiM1ODc5ODkiLz48cmVjdCB4PSIzODIiIHk9IjI0NSIgd2lkdGg9IjYyIiBoZWlnaHQ9IjQ4IiByeD0iNSIgZmlsbD0iIzQzNjk3OCIgc3Ryb2tlPSIjNTg3OTg5Ii8+PHJlY3QgeD0iNDc2IiB5PSIyNDUiIHdpZHRoPSI2MiIgaGVpZ2h0PSI0OCIgcng9IjUiIGZpbGw9IiMyYjQ2NTUiIHN0cm9rZT0iIzU4Nzk4OSIvPjxyZWN0IHg9IjU3MCIgeT0iMjQ1IiB3aWR0aD0iNjIiIGhlaWdodD0iNDgiIHJ4PSI1IiBmaWxsPSIjMmI0NjU1IiBzdHJva2U9IiM1ODc5ODkiLz48cmVjdCB4PSI2NjQiIHk9IjI0NSIgd2lkdGg9IjYyIiBoZWlnaHQ9IjQ4IiByeD0iNSIgZmlsbD0iIzJiNDY1NSIgc3Ryb2tlPSIjNTg3OTg5Ii8+PHJlY3QgeD0iNzU4IiB5PSIyNDUiIHdpZHRoPSI2MiIgaGVpZ2h0PSI0OCIgcng9IjUiIGZpbGw9IiM0MzY5NzgiIHN0cm9rZT0iIzU4Nzk4OSIvPjxyZWN0IHg9IjEwMCIgeT0iMzI0IiB3aWR0aD0iNjIiIGhlaWdodD0iNDgiIHJ4PSI1IiBmaWxsPSIjMmI0NjU1IiBzdHJva2U9IiM1ODc5ODkiLz48cmVjdCB4PSIxOTQiIHk9IjMyNCIgd2lkdGg9IjYyIiBoZWlnaHQ9IjQ4IiByeD0iNSIgZmlsbD0iIzJiNDY1NSIgc3Ryb2tlPSIjNTg3OTg5Ii8+PHJlY3QgeD0iMjg4IiB5PSIzMjQiIHdpZHRoPSI2MiIgaGVpZ2h0PSI0OCIgcng9IjUiIGZpbGw9IiM0MzY5NzgiIHN0cm9rZT0iIzU4Nzk4OSIvPjxyZWN0IHg9IjM4MiIgeT0iMzI0IiB3aWR0aD0iNjIiIGhlaWdodD0iNDgiIHJ4PSI1IiBmaWxsPSIjMmI0NjU1IiBzdHJva2U9IiM1ODc5ODkiLz48cmVjdCB4PSI0NzYiIHk9IjMyNCIgd2lkdGg9IjYyIiBoZWlnaHQ9IjQ4IiByeD0iNSIgZmlsbD0iIzJiNDY1NSIgc3Ryb2tlPSIjNTg3OTg5Ii8+PHJlY3QgeD0iNTcwIiB5PSIzMjQiIHdpZHRoPSI2MiIgaGVpZ2h0PSI0OCIgcng9IjUiIGZpbGw9IiMyYjQ2NTUiIHN0cm9rZT0iIzU4Nzk4OSIvPjxyZWN0IHg9IjY2NCIgeT0iMzI0IiB3aWR0aD0iNjIiIGhlaWdodD0iNDgiIHJ4PSI1IiBmaWxsPSIjNDM2OTc4IiBzdHJva2U9IiM1ODc5ODkiLz48cmVjdCB4PSI3NTgiIHk9IjMyNCIgd2lkdGg9IjYyIiBoZWlnaHQ9IjQ4IiByeD0iNSIgZmlsbD0iIzJiNDY1NSIgc3Ryb2tlPSIjNTg3OTg5Ii8+PHJlY3QgeD0iMTAwIiB5PSI0MDMiIHdpZHRoPSI2MiIgaGVpZ2h0PSI0OCIgcng9IjUiIGZpbGw9IiMyYjQ2NTUiIHN0cm9rZT0iIzU4Nzk4OSIvPjxyZWN0IHg9IjE5NCIgeT0iNDAzIiB3aWR0aD0iNjIiIGhlaWdodD0iNDgiIHJ4PSI1IiBmaWxsPSIjNDM2OTc4IiBzdHJva2U9IiM1ODc5ODkiLz48cmVjdCB4PSIyODgiIHk9IjQwMyIgd2lkdGg9IjYyIiBoZWlnaHQ9IjQ4IiByeD0iNSIgZmlsbD0iIzJiNDY1NSIgc3Ryb2tlPSIjNTg3OTg5Ii8+PHJlY3QgeD0iMzgyIiB5PSI0MDMiIHdpZHRoPSI2MiIgaGVpZ2h0PSI0OCIgcng9IjUiIGZpbGw9IiMyYjQ2NTUiIHN0cm9rZT0iIzU4Nzk4OSIvPjxyZWN0IHg9IjQ3NiIgeT0iNDAzIiB3aWR0aD0iNjIiIGhlaWdodD0iNDgiIHJ4PSI1IiBmaWxsPSIjMmI0NjU1IiBzdHJva2U9IiM1ODc5ODkiLz48cmVjdCB4PSI1NzAiIHk9IjQwMyIgd2lkdGg9IjYyIiBoZWlnaHQ9IjQ4IiByeD0iNSIgZmlsbD0iIzQzNjk3OCIgc3Ryb2tlPSIjNTg3OTg5Ii8+PHJlY3QgeD0iNjY0IiB5PSI0MDMiIHdpZHRoPSI2MiIgaGVpZ2h0PSI0OCIgcng9IjUiIGZpbGw9IiMyYjQ2NTUiIHN0cm9rZT0iIzU4Nzk4OSIvPjxyZWN0IHg9Ijc1OCIgeT0iNDAzIiB3aWR0aD0iNjIiIGhlaWdodD0iNDgiIHJ4PSI1IiBmaWxsPSIjMmI0NjU1IiBzdHJva2U9IiM1ODc5ODkiLz48cmVjdCB4PSIxMDAiIHk9IjQ4MiIgd2lkdGg9IjYyIiBoZWlnaHQ9IjQ4IiByeD0iNSIgZmlsbD0iIzQzNjk3OCIgc3Ryb2tlPSIjNTg3OTg5Ii8+PHJlY3QgeD0iMTk0IiB5PSI0ODIiIHdpZHRoPSI2MiIgaGVpZ2h0PSI0OCIgcng9IjUiIGZpbGw9IiMyYjQ2NTUiIHN0cm9rZT0iIzU4Nzk4OSIvPjxyZWN0IHg9IjI4OCIgeT0iNDgyIiB3aWR0aD0iNjIiIGhlaWdodD0iNDgiIHJ4PSI1IiBmaWxsPSIjMmI0NjU1IiBzdHJva2U9IiM1ODc5ODkiLz48cmVjdCB4PSIzODIiIHk9IjQ4MiIgd2lkdGg9IjYyIiBoZWlnaHQ9IjQ4IiByeD0iNSIgZmlsbD0iIzJiNDY1NSIgc3Ryb2tlPSIjNTg3OTg5Ii8+PHJlY3QgeD0iNDc2IiB5PSI0ODIiIHdpZHRoPSI2MiIgaGVpZ2h0PSI0OCIgcng9IjUiIGZpbGw9IiM0MzY5NzgiIHN0cm9rZT0iIzU4Nzk4OSIvPjxyZWN0IHg9IjU3MCIgeT0iNDgyIiB3aWR0aD0iNjIiIGhlaWdodD0iNDgiIHJ4PSI1IiBmaWxsPSIjMmI0NjU1IiBzdHJva2U9IiM1ODc5ODkiLz48cmVjdCB4PSI2NjQiIHk9IjQ4MiIgd2lkdGg9IjYyIiBoZWlnaHQ9IjQ4IiByeD0iNSIgZmlsbD0iIzJiNDY1NSIgc3Ryb2tlPSIjNTg3OTg5Ii8+PHJlY3QgeD0iNzU4IiB5PSI0ODIiIHdpZHRoPSI2MiIgaGVpZ2h0PSI0OCIgcng9IjUiIGZpbGw9IiMyYjQ2NTUiIHN0cm9rZT0iIzU4Nzk4OSIvPjxwYXRoIGQ9Ik0xNTAgNjI1TDIzNSA1ODVMMzMwIDU4NUw0MDUgNTA1TDUyMCA1MDVMNTkyIDQyNUw3MzUgNDI1IiBmaWxsPSJub25lIiBzdHJva2U9IiNlOGI1NzQiIHN0cm9rZS13aWR0aD0iMTAiIHN0cm9rZS1kYXNoYXJyYXk9IjEyIDEwIi8+PGNpcmNsZSBjeD0iNzM1IiBjeT0iNDI1IiByPSIxOSIgZmlsbD0iI2U4YjU3NCIvPjx0ZXh0IHg9Ijc0IiB5PSI2NjAiIGZvbnQtZmFtaWx5PSJBcmlhbCxBcHBsZSBTRCBHb3RoaWMgTmVvLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjMiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNlOWYzZjIiPkFJU0xFIC8gMDg8L3RleHQ+PC9zdmc+Cg==",
+              "alt": "선반과 이동 경로가 표현된 가상 창고 시험 도면",
+              "origin": "fictional"
+            }
+          ],
+          "sourceIds": [
+            "aisle-protocol"
+          ]
+        }
+      ],
+      "career": [
+        {
+          "id": "robo-lab",
+          "period": "2024.03 — 현재",
+          "organization": "가상 조직 · 모래 로봇 연구실",
+          "role": "로봇 엔지니어",
+          "description": "이동 로봇의 가상 경로 계획과 실험 기록을 담당한 설정입니다."
+        },
+        {
+          "id": "robo-team",
+          "period": "2022.01 — 2024.02",
+          "organization": "가상 조직 · 작은 기계팀",
+          "role": "시뮬레이션 개발자",
+          "description": "조작 동작을 검토하는 가상 시뮬레이션 도구를 설계한 경력 설정입니다."
+        }
+      ],
+      "evidence": [
+        {
+          "id": "route-log",
+          "title": "경로 재계획 기록",
+          "kind": "실험 기록",
+          "summary": "장애물 조건별 경로 변경",
+          "body": "가상 통로 장애물 설정 → 우회 후보 계산 → 정지 조건 확인. 공개 장소나 실제 로봇의 주행 결과를 나타내지 않습니다."
+        },
+        {
+          "id": "grip-table",
+          "title": "파지 조건표",
+          "kind": "설계 자료",
+          "summary": "물체 크기와 접촉 위치 정의",
+          "body": "서로 다른 가상 물체의 접촉 위치를 비교하고 파지 실패 조건을 정리한 도면입니다."
+        },
+        {
+          "id": "aisle-protocol",
+          "title": "통로 시험 절차",
+          "kind": "시험 계획",
+          "summary": "정지와 재시작 기준",
+          "body": "통로 내 장애물이 생겼을 때 정지, 경로 재계산, 재시작을 구분하는 가상 시험 절차입니다."
+        }
+      ],
+      "contact": {
+        "label": "작업을 함께 검토할 수 있습니다.",
+        "href": "mailto:fictional-robotics@example.com"
+      }
+    },
+    "spec": {
+      "root": "page",
+      "elements": {
+        "page": {
+          "type": "PortfolioPage",
+          "props": {
+            "profile": {
+              "$state": "/profile"
+            },
+            "design": {
+              "layout": "library",
+              "palette": "graphite",
+              "font": "sans"
+            },
+            "motion": "showcase",
+            "rationale": "로봇 엔지니어의 기술적 프로젝트와 시뮬레이션 데이터를 강조하기 위해, 정보 밀도가 높은 'library' 레이아웃을 선택했습니다. 어두운 그래파이트 팔레트는 전문적인 기술 문서 느낌을 줍니다.",
+            "referenceIds": []
+          },
+          "children": [
+            "intro",
+            "index",
+            "section-route-planner",
+            "section-gripper-study",
+            "section-warehouse-aisle",
+            "career",
+            "evidence",
+            "contact"
+          ]
+        },
+        "intro": {
+          "type": "NameIntro",
+          "props": {
+            "profile": {
+              "$state": "/profile"
+            },
+            "sections": {
+              "$state": "/sections"
+            },
+            "sourceId": "watermelon-hero-12"
+          },
+          "children": []
+        },
+        "index": {
+          "type": "ProjectIndex",
+          "props": {
+            "sections": {
+              "$state": "/sections"
+            },
+            "variant": "rows"
+          },
+          "children": []
+        },
+        "section-route-planner": {
+          "type": "CaseTechnical",
+          "props": {
+            "section": {
+              "$state": "/sectionById/route-planner"
+            },
+            "sourceId": "watermelon-book"
+          },
+          "children": []
+        },
+        "section-gripper-study": {
+          "type": "CaseTechnical",
+          "props": {
+            "section": {
+              "$state": "/sectionById/gripper-study"
+            },
+            "sourceId": "watermelon-book"
+          },
+          "children": []
+        },
+        "section-warehouse-aisle": {
+          "type": "CaseProcess",
+          "props": {
+            "section": {
+              "$state": "/sectionById/warehouse-aisle"
+            },
+            "sourceId": "watermelon-feature-4"
+          },
+          "children": []
+        },
+        "career": {
+          "type": "CareerTimeline",
+          "props": {
+            "career": {
+              "$state": "/career"
+            }
+          },
+          "children": []
+        },
+        "evidence": {
+          "type": "EvidenceGrid",
+          "props": {
+            "evidence": {
+              "$state": "/evidence"
+            }
+          },
+          "children": []
+        },
+        "contact": {
+          "type": "Contact",
+          "props": {
+            "contact": {
+              "$state": "/contact"
+            }
+          },
+          "children": []
+        }
+      }
+    }
+  },
+  "library": {
+    "inventoryHash": "4985cdcfd66e312515888735c8578dd238cf97b5766fedcafbc85bcd21e1e2fc",
+    "inventoryTotal": 9516,
+    "selected": [
+      {
+        "id": "watermelon-38872751a90a18eb",
+        "key": "watermelon-hero-12",
+        "sourceUrl": null,
+        "status": "renderable",
+        "material": "./library/materials/watermelon/registry/hero-12.json",
+        "sha256": "460addf0ca3573e76875ff42aa0ba1acd980f00c80bbb69bbef2c8c6401cdbd0",
+        "adaptation": "원본 React 코드 + 입력 속성 연결 + 샘플/외부 자산 제거 + CSS 모션"
+      },
+      {
+        "id": "watermelon-92719fe0cf8cd515",
+        "key": "watermelon-book",
+        "sourceUrl": null,
+        "status": "renderable",
+        "material": "./library/materials/watermelon/registry/book.json",
+        "sha256": "39fbf105061d3a60e95932065ae7b3e044269aebcdc97d7bd1e440fea84d5dbf",
+        "adaptation": "원본 React 코드 + 입력 속성 연결 + 샘플/외부 자산 제거 + CSS 모션"
+      },
+      {
+        "id": "watermelon-81213bb8a61f3c51",
+        "key": "watermelon-feature-4",
+        "sourceUrl": null,
+        "status": "renderable",
+        "material": "./library/materials/watermelon/registry/feature-4.json",
+        "sha256": "99b65e28e486bcd2d694f82ac9d869a1a8a22faaa74ef8d47a62eb1e45d53f1e",
+        "adaptation": "원본 React 코드 + 입력 속성 연결 + 샘플/외부 자산 제거 + CSS 모션"
+      }
+    ],
+    "query": "grid timeline technical 로봇 엔지니어 경로 계획 조작 계획 현장 검증 순찰 로봇 경로 계획 집기 분류 그리퍼 창고 통로 시험 ",
+    "offeredIds": [
+      "watermelon-hero-1",
+      "watermelon-hero-10",
+      "watermelon-hero-11",
+      "watermelon-hero-12",
+      "watermelon-hero-14",
+      "watermelon-hero-15",
+      "watermelon-hero-16",
+      "watermelon-hero-17",
+      "watermelon-hero-18",
+      "watermelon-hero-19",
+      "watermelon-hero-2",
+      "watermelon-hero-20",
+      "watermelon-hero-21",
+      "watermelon-hero-22",
+      "watermelon-hero-23",
+      "watermelon-hero-24",
+      "watermelon-hero-25",
+      "watermelon-hero-26",
+      "watermelon-hero-27",
+      "watermelon-hero-28",
+      "watermelon-hero-29",
+      "watermelon-hero-3",
+      "watermelon-hero-30",
+      "watermelon-hero-31",
+      "watermelon-hero-32",
+      "watermelon-hero-33",
+      "watermelon-hero-4",
+      "watermelon-hero-5",
+      "watermelon-hero-6",
+      "watermelon-hero-7",
+      "watermelon-hero-8",
+      "watermelon-hero-9",
+      "watermelon-feature-1",
+      "watermelon-feature-4",
+      "watermelon-book",
+      "watermelon-card",
+      "watermelon-text-gradient",
+      "componentry-annotated-text",
+      "diagram-296c29b485b3393b",
+      "diagram-979793da545bf928",
+      "diagram-a5f3d2526bd439f0",
+      "404-650e9a4c4e52cebb",
+      "404-e9cad4163efa6951",
+      "404-f7693932d4b3a8ab",
+      "404-fc317a3dde743a0d",
+      "60fps-0ada8b4c85b925b1"
+    ]
+  },
+  "modelRunId": "collected-readable-keys-2026-10-07",
+  "renderer": "source-adapter-reviewed",
+  "rendererLibrary": {
+    "inventoryHash": "701f1b2e84b5124509dc563cbf731fbe55ae6d371352bac1e0f2ec60c44cab6e",
+    "inventoryTotal": 9516,
+    "selected": [
+      {
+        "id": "watermelon-38872751a90a18eb",
+        "key": "watermelon-hero-12",
+        "sourceUrl": "https://ui.watermelon.sh/block/hero-12",
+        "status": "renderable",
+        "material": "./library/materials/watermelon/registry/hero-12.json",
+        "sha256": "460addf0ca3573e76875ff42aa0ba1acd980f00c80bbb69bbef2c8c6401cdbd0",
+        "adaptation": "원본 React 코드 + 입력 속성 연결 + 샘플/외부 자산 제거 + CSS 모션"
+      },
+      {
+        "id": "watermelon-92719fe0cf8cd515",
+        "key": "watermelon-book",
+        "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+        "status": "renderable",
+        "material": "./library/materials/watermelon/registry/book.json",
+        "sha256": "39fbf105061d3a60e95932065ae7b3e044269aebcdc97d7bd1e440fea84d5dbf",
+        "adaptation": "원본 React 코드 + 입력 속성 연결 + 샘플/외부 자산 제거 + CSS 모션"
+      },
+      {
+        "id": "watermelon-81213bb8a61f3c51",
+        "key": "watermelon-feature-4",
+        "sourceUrl": "https://ui.watermelon.sh/block/feature-4",
+        "status": "renderable",
+        "material": "./library/materials/watermelon/registry/feature-4.json",
+        "sha256": "99b65e28e486bcd2d694f82ac9d869a1a8a22faaa74ef8d47a62eb1e45d53f1e",
+        "adaptation": "원본 React 코드 + 입력 속성 연결 + 샘플/외부 자산 제거 + CSS 모션"
+      }
+    ]
+  },
+  "rerenderOf": {
+    "runId": "library-selection-2026-10-07",
+    "htmlSha256": "5457a5b2dca85eb968f5d4f383a305d5dad1dc07326368f353cc662321d14839"
+  }
+}
