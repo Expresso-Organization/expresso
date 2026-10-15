@@ -1,4 +1,3 @@
-import { AgentChat } from "@/features/agent-chat/AgentChat";
 import type { JobPostingDetail, JobRequirement } from "@expresso/contracts";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -10,6 +9,7 @@ import { jobs as jobsApi } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 import { backToListHref } from "../list-query";
+import { JobChatRail } from "./JobChatRail";
 
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { mendEmphasis } from "@/components/ui/mend-emphasis";
@@ -336,14 +336,12 @@ export default async function JobDetailPage({
 
           {/*
             레일은 이 공고를 두고 나누는 대화 하나다. 공고가 바뀌면 다시 마운트해
-            그 공고가 연결된 대화를 새로 고른다.
+            그 공고가 연결된 대화를 새로 고른다. 접기와 너비 조절은 레일이 맡는다.
           */}
-          <aside className={styles.rail}>
-            <AgentChat
-              key={job.id}
-              job={{ id: job.id, title: job.title, company: job.company.name }}
-            />
-          </aside>
+          <JobChatRail
+            key={job.id}
+            job={{ id: job.id, title: job.title, company: job.company.name }}
+          />
         </div>
       </AppBody>
     </>
