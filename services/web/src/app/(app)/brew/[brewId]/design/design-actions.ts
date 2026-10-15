@@ -2,19 +2,20 @@
 
 import { randomUUID } from "node:crypto";
 
-import { TemplateStyleOverrideSchema } from "@expresso/contracts";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 
 import { ApiError } from "@/lib/api/client";
-import { generation } from "@/lib/api/endpoints";
+import { designSystems, generation } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 /**
- * 03 추출하기.
+ * 03 디자인 선택에서 생성을 시작한다.
  *
- * 3분쯤 걸리는 일이라 202와 잡 id만 받고 돌아온다. 진행은 `brew.latestGeneration`이
- * 알려주므로 화면은 다시 그리기만 하면 된다 — 잡 id를 주소에 실어 나를 필요가 없다.
+ * 고른 디자인 시스템을 브루에 저장한 뒤, 그 판으로 생성을 요청한다. 스타일 값은 서버가
+ * 판의 토큰에서 정한다. 3분쯤 걸리는 일이라 202와 잡 id만 받고 돌아온다. 진행은
+ * `brew.latestGeneration`이 알려주므로 화면은 다시 그리기만 하면 된다.
  */
 export type BrewState = { error: string | null };
 
@@ -23,28 +24,20 @@ export async function startGenerationAction(
   formData: FormData,
 ): Promise<BrewState> {
   const session = await requireSession();
-  const brewId = String(formData.get("brewId") ?? "");
-  const recipeId = String(formData.get("recipeId") ?? "");
-  const templateId = String(formData.get("templateId") ?? "");
-  const styleOverrides = TemplateStyleOverrideSchema.safeParse({
-    structure: formData.get("structure") ?? "single-column",
-    density: formData.get("density") ?? "comfortable",
-    font: formData.get("font") ?? "sans",
-    // 기업 색과 대비 보정을 포함해 사용자가 실제로 본 팔레트를 넘깁니다.
-    background: formData.get("background") ?? undefined,
-    text: formData.get("text") ?? undefined,
-    accent: formData.get("accent") ?? undefined,
-  });
-
-  if (!templateId) return { error: "디자인을 먼저 골라 주세요." };
-  if (!styleOverrides.success) return { error: "디자인 설정을 확인하고 다시 골라 주세요." };
+  const ids = z
+    .object({ brewId: z.uuid(), recipeId: z.uuid(), designSystemRevisionId: z.uuid() })
+    .safeParse({
+      brewId: formData.get("brewId"),
+      recipeId: formData.get("recipeId"),
+      designSystemRevisionId: formData.get("designSystemRevisionId"),
+    });
+  if (!ids.success) return { error: "디자인과 레시피를 확인하고 다시 눌러 주세요." };
+  const { brewId, recipeId, designSystemRevisionId } = ids.data;
 
   try {
-    await generation.submit(
-      session.accessToken,
-      { recipeId, templateId, styleOverrides: styleOverrides.data },
-      randomUUID(),
-    );
+    // 선택을 먼저 남긴다. 생성이 실패해도 다시 열면 같은 디자인이 골라져 있다.
+    await designSystems.select(session.accessToken, brewId, { revisionId: designSystemRevisionId });
+    await generation.submit(session.accessToken, { recipeId, designSystemRevisionId }, randomUUID());
   } catch (error) {
     if (error instanceof ApiError) return { error: submitFailure(error) };
     throw error;

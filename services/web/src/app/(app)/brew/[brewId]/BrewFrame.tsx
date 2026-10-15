@@ -5,7 +5,6 @@ import {
   WizardHeader,
   WizardStage,
   WizardSteps,
-  type WizardFlow,
   type WizardStepKey,
 } from "@/components/shell/WizardShell";
 
@@ -25,7 +24,6 @@ export function BrewFrame({
   situation,
   portfolioTitle,
   tinted = false,
-  flow = "legacy",
   children,
 }: {
   brewId: string;
@@ -34,13 +32,12 @@ export function BrewFrame({
   /** 머리말에 그리는 이름. 아직 정해지지 않았으면 공고 제목이 대신 선다. */
   portfolioTitle?: string | null;
   tinted?: boolean;
-  flow?: WizardFlow;
   children: ReactNode;
 }) {
   return (
     <>
       <WizardHeader portfolioTitle={portfolioTitle ?? "새 포트폴리오"} />
-      <WizardSteps brewId={brewId} current={step} situation={situation} flow={flow} />
+      <WizardSteps brewId={brewId} current={step} situation={situation} />
       <AppBody>
         <WizardStage tinted={tinted}>{children}</WizardStage>
       </AppBody>

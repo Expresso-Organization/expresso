@@ -1,43 +1,58 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const submit = vi.hoisted(() => vi.fn());
+const select = vi.hoisted(() => vi.fn());
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
 vi.mock("@/lib/require-session", () => ({ requireSession: async () => ({ accessToken: "test-session" }) }));
-vi.mock("@/lib/api/endpoints", () => ({ generation: { submit } }));
+vi.mock("@/lib/api/endpoints", () => ({ generation: { submit }, designSystems: { select } }));
+
+import { ApiError } from "@/lib/api/client";
 
 import { startGenerationAction } from "./design-actions";
 
-function form() {
+const BREW = "6f1d7f0e-3c2a-4b9e-8d11-2a7c5b9e0a01";
+const RECIPE = "6f1d7f0e-3c2a-4b9e-8d11-2a7c5b9e0a02";
+const REVISION = "5d8f5f2d-6d2a-4f24-9d1a-2b8f9e7c1702";
+
+function form(values: Record<string, string> = {}) {
   const data = new FormData();
   for (const [key, value] of Object.entries({
-    brewId: "brew", recipeId: "recipe", templateId: "terminal",
-    structure: "dense-grid", density: "spacious", font: "mono",
-    background: "#101010", text: "#ffffff", accent: "#f7931a",
+    brewId: BREW, recipeId: RECIPE, designSystemRevisionId: REVISION, ...values,
   })) data.set(key, value);
   return data;
 }
 
-describe("디자인 생성 요청", () => {
-  beforeEach(() => submit.mockReset());
-
-  it("선택한 고정폭 서체와 화면의 팔레트를 함께 전달한다", async () => {
-    expect(await startGenerationAction({ error: null }, form())).toEqual({ error: null });
-    expect(submit).toHaveBeenCalledWith("test-session", {
-      recipeId: "recipe", templateId: "terminal",
-      styleOverrides: {
-        structure: "dense-grid", density: "spacious", font: "mono",
-        background: "#101010", text: "#ffffff", accent: "#f7931a",
-      },
-    }, expect.any(String));
+describe("디자인 시스템으로 생성 요청", () => {
+  beforeEach(() => {
+    submit.mockReset();
+    select.mockReset();
   });
 
-  it.each([ ["font", "invalid"], ["accent", "url(https://example.com)"] ])(
-    "잘못된 %s 값은 생성 전에 차단한다", async (field, value) => {
-      const data = form();
-      data.set(field, value);
-      expect((await startGenerationAction({ error: null }, data)).error).toBeTruthy();
-      expect(submit).not.toHaveBeenCalled();
-    },
-  );
+  it("고른 디자인을 저장한 뒤 그 판으로 생성을 요청한다", async () => {
+    const order: string[] = [];
+    select.mockImplementation(async () => { order.push("select"); });
+    submit.mockImplementation(async () => { order.push("submit"); });
+    expect(await startGenerationAction({ error: null }, form())).toEqual({ error: null });
+    expect(select).toHaveBeenCalledWith("test-session", BREW, { revisionId: REVISION });
+    expect(submit).toHaveBeenCalledWith(
+      "test-session",
+      { recipeId: RECIPE, designSystemRevisionId: REVISION },
+      expect.any(String),
+    );
+    expect(order).toEqual(["select", "submit"]);
+  });
+
+  it("레시피나 디자인 ID가 올바르지 않으면 요청하지 않는다", async () => {
+    expect((await startGenerationAction({ error: null }, form({ recipeId: "" }))).error).toBeTruthy();
+    expect((await startGenerationAction({ error: null }, form({ designSystemRevisionId: "x" }))).error).toBeTruthy();
+    expect(select).not.toHaveBeenCalled();
+    expect(submit).not.toHaveBeenCalled();
+  });
+
+  it("생성 한도를 넘으면 한도 문구를 돌려준다", async () => {
+    submit.mockRejectedValue(new ApiError({ status: 402, code: "FORBIDDEN", message: "limit", requestId: "test" }));
+    const result = await startGenerationAction({ error: null }, form());
+    expect(result.error).toContain("추출 횟수");
+  });
 });

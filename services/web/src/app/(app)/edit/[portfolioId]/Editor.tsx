@@ -6,6 +6,7 @@ import { useActionState, useState, useTransition } from "react";
 import type { GeneratedPage, PortfolioDetail, PortfolioRevision, PageLibraryItem } from "@expresso/contracts";
 
 import { LogoMark } from "@/components/brand/Logo";
+import { WizardSteps } from "@/components/shell/WizardShell";
 import { Icon } from "@/components/ui/Icon";
 import { EDITOR_SUGGESTION } from "@/lib/sample/editor";
 
@@ -41,7 +42,7 @@ function panelTarget(tab: PanelTab, revisionCount: number, chosen: string | null
 
 const RAIL_ITEMS = [
   { icon: "house", label: "홈", href: "/home" as const, active: false, dot: false },
-  { icon: "coffee", label: "새 포트폴리오", href: "/portfolio/new" as const, active: true, dot: false },
+  { icon: "coffee", label: "새 포트폴리오", href: "/brew/new" as const, active: true, dot: false },
   { icon: "target", label: "공고 탐색", href: "/jobs" as const, active: false, dot: false },
   { icon: "chart-bar", label: "분석", href: "/analytics" as const, active: false, dot: true },
 ];
@@ -304,6 +305,13 @@ export function Editor({
             </Link>
           </div>
         </div>
+
+        {/* 04 다듬기도 제작 흐름의 여섯째 단계다. 지난 단계는 이 포트폴리오의 브루 화면으로 돌아간다. */}
+        <WizardSteps
+          brewId={portfolio.brewId}
+          current="edit"
+          situation={generatedPage ? `생성 완료 · 판 ${generatedPage.revision}` : "생성 전"}
+        />
 
         <div className={styles.stage} data-pane={pane}>
           <aside className={styles.sections} aria-label="섹션">
