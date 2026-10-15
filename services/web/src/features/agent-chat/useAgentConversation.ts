@@ -9,8 +9,14 @@ export async function agentRequest(path: string, body?: unknown) {
   if (!response.ok) throw new Error(payload.error?.message ?? payload.message ?? "대화를 불러오지 못했습니다.");
   return AgentConversationResponseSchema.parse(payload).data;
 }
-export function useAgentConversation(context?: AgentContext) {
+/**
+ * `restore: "context"`는 처음 열 대화를 브라우저의 마지막 대화가 아니라 `context`가
+ * 연결된 가장 최근 대화로 고른다. 공고 화면이 쓴다 — 다른 공고의 대화가 열리지 않게.
+ */
+export function useAgentConversation(context?: AgentContext, options: { restore?: "context" } = {}) {
+  const { restore } = options;
   const [id, setId] = useState<string | null>(null);
+  const [resolving, setResolving] = useState(restore === "context" && !!context);
   const [conversation, setConversation] = useState<AgentConversation | null>(null);
   const [list, setList] = useState<ReturnType<typeof AgentConversationListSchema.parse>["data"]>([]);
   const [issue, setIssue] = useState<string | null>(null);
@@ -29,7 +35,21 @@ export function useAgentConversation(context?: AgentContext) {
     const url = new URL(window.location.href); if (next) { url.searchParams.set("chat", next); sessionStorage.setItem("ex-agent-conversation", next); } else { url.searchParams.delete("chat"); sessionStorage.removeItem("ex-agent-conversation"); }
     window.history.replaceState(null, "", url);
   }, []);
-  useEffect(() => { select(new URL(window.location.href).searchParams.get("chat") ?? sessionStorage.getItem("ex-agent-conversation")); }, [select]);
+  const contextKind = context?.kind; const contextId = context?.id;
+  useEffect(() => {
+    const requested = new URL(window.location.href).searchParams.get("chat");
+    if (requested || restore !== "context" || !contextKind || !contextId) { setResolving(false); select(requested ?? sessionStorage.getItem("ex-agent-conversation")); return; }
+    let alive = true;
+    setResolving(true);
+    // 목록은 updatedAt 내림차순이다. 맞는 대화가 없으면 아무것도 고르지 않는다 —
+    // select(null)은 브라우저에 남은 마지막 대화 기록까지 지운다.
+    void fetch(base, { cache: "no-store" })
+      .then(async response => { if (!response.ok) throw new Error("list"); return AgentConversationListSchema.parse(await response.json()).data; })
+      .then(rows => { if (!alive) return; setList(rows); const found = rows.find(row => row.contexts.some(ref => ref.kind === contextKind && ref.id === contextId)); if (found) select(found.id); })
+      .catch(() => undefined)
+      .finally(() => { if (alive) setResolving(false); });
+    return () => { alive = false; };
+  }, [select, restore, contextKind, contextId]);
   useEffect(() => {
     let alive = true;
     const refresh = async () => {
@@ -86,9 +106,10 @@ export function useAgentConversation(context?: AgentContext) {
     } catch (error) { setIssue(error instanceof Error ? error.message : "자료 선택을 저장하지 못했습니다."); }
     finally { contextMutation.current = false; setPending(false); }
   };
-  return { id, conversation, list, issue, pending, select, send, toggleContext,
+  return { id, conversation, list, issue, pending, resolving, select, send, toggleContext,
     attach: () => id && context ? perform(() => agentRequest(`/${id}/contexts`, { context })) : Promise.resolve(),
     cancel: () => perform(() => agentRequest(`/${id}/cancel`, {})),
+    retry: () => perform(() => agentRequest(`/${id}/retry`, {})),
     approve: (input: AgentApproval) => perform(() => agentRequest(`/${id}/approval`, input)),
   };
 }
