@@ -16,7 +16,7 @@ date: 2026-10-15
 |---|---|
 | `packages/contracts/src/structured-portfolio.ts` | `StructuredProfileSchema`, `StructuredContentModelSchema` |
 | `packages/contracts/src/structured-portfolio.test.ts` | 모델 스키마에 `contact`·규칙 없음, 저장 계약은 규칙 유지 |
-| `packages/contracts/src/page.ts` | `PAGE_PROMPT_VERSION` 9와 이유 |
+| `packages/contracts/src/page.ts` | `PAGE_PROMPT_VERSION` 8과 이유(기준값 7) |
 | `services/backend/src/modules/page/structured-generator.ts` | 내용 정리 재요청 고리, `normalizedContent`, 지시문에서 contact 문장 제거 |
 | `services/backend/src/modules/page/structured-generator.test.ts` | 재요청·연락처·오류 구분 테스트, 기존 중단 테스트 수정 |
 | `docs/architecture/portfolio-structured-pipeline.md` | 내용 정리 재요청 한 단락 |

@@ -47,8 +47,11 @@ import { MEDIA_ASSET_PATH_PREFIX } from "./media-path.js";
  * 이 플랫폼의 기획은 원래 **뽑기 전에 스타일 문법을 고르는 것**이었고(03),
  * 그 값이 `template.style`에 이미 있는데 생성기가 안 읽고 있었다. 문법을
  * 제약으로 넘긴다 — 흔들리던 축을 사용자가 쥔다.
+ *
+ * 8 — 내용 정리 호출에서 연락처를 묻지 않는다(입력 경로가 없어 null로 고정).
+ * 이름 아래 한 문장 규칙을 어기면 오류와 직전 출력을 붙여 한 번 다시 요청한다.
  */
-export const PAGE_PROMPT_VERSION = 7;
+export const PAGE_PROMPT_VERSION = 8;
 
 /**
  * 한 지면의 상한.

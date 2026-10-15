@@ -40,34 +40,35 @@ export const StructuredSectionSchema = z.strictObject({
   media: z.array(StructuredMediaSchema).max(8),
   sourceIds: z.array(id).max(30),
 });
+/** 프로필의 모양입니다. 이름 아래 한 문장 규칙은 저장 계약에서 따로 검사합니다. */
+export const StructuredProfileSchema = z.strictObject({
+  name: z.string().min(1).max(200),
+  role: z.string().min(1).max(200),
+  headline: z.string().min(1).max(160),
+  intro: text,
+  focus: z.array(z.string().max(100)).max(8),
+});
 export const StructuredPortfolioContentSchema = z.strictObject({
   version: z.literal(1),
-  profile: z
-    .strictObject({
-      name: z.string().min(1).max(200),
-      role: z.string().min(1).max(200),
-      headline: z.string().min(1).max(160),
-      intro: text,
-      focus: z.array(z.string().max(100)).max(8),
-    })
-    .superRefine((value, context) => {
-      const sentence = value.headline.trim(),
-        length = [...sentence].reduce(
-          (sum, char) => sum + (/\p{Script=Hangul}/u.test(char) ? 2 : 1),
-          0,
-        );
-      if (
-        /[\r\n]/.test(sentence) ||
-        length > 72 ||
-        !/[.!?。！？]$/.test(sentence) ||
-        [...sentence.matchAll(/[.!?。！？]/g)].length !== 1
-      )
-        context.addIssue({
-          code: "custom",
-          path: ["headline"],
-          message: "이름 아래 소개는 짧은 한 문장이어야 합니다.",
-        });
-    }),
+  profile: StructuredProfileSchema.superRefine((value, context) => {
+    const sentence = value.headline.trim(),
+      length = [...sentence].reduce(
+        (sum, char) => sum + (/\p{Script=Hangul}/u.test(char) ? 2 : 1),
+        0,
+      );
+    if (
+      /[\r\n]/.test(sentence) ||
+      length > 72 ||
+      !/[.!?。！？]$/.test(sentence) ||
+      [...sentence.matchAll(/[.!?。！？]/g)].length !== 1
+    )
+      context.addIssue({
+        code: "custom",
+        path: ["headline"],
+        message:
+          "이름 아래 소개는 줄바꿈 없이 마침표·물음표·느낌표 하나로 끝나는 한 문장이어야 합니다(한글 기준 36자 이내).",
+      });
+  }),
   sections: z.array(StructuredSectionSchema).min(1).max(16),
   career: z
     .array(
@@ -103,6 +104,20 @@ export const StructuredPortfolioContentSchema = z.strictObject({
     })
     .nullable(),
 });
+/**
+ * 내용 정리 모델 호출의 출력 스키마입니다.
+ *
+ * 연락처는 입력 경로가 없어 생성기가 null로 정하므로 모델에게 묻지 않습니다. 이름 아래
+ * 한 문장 규칙은 공급자 스키마로 표현되지 않으므로, 받은 뒤 저장 계약으로 검사하고
+ * 어기면 오류를 붙여 다시 요청합니다.
+ */
+export const StructuredContentModelSchema =
+  StructuredPortfolioContentSchema.omit({
+    contact: true,
+  }).extend({ profile: StructuredProfileSchema });
+export type StructuredContentModel = z.infer<
+  typeof StructuredContentModelSchema
+>;
 export type StructuredPortfolioContent = z.infer<
   typeof StructuredPortfolioContentSchema
 >;

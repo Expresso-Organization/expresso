@@ -1,9 +1,11 @@
 import { createHash } from "node:crypto";
 import {
   PAGE_PROMPT_VERSION,
+  StructuredContentModelSchema,
   StructuredPortfolioContentSchema,
   structuredModelSchema,
   validateStructuredPortfolio,
+  type StructuredContentModel,
   type StructuredPortfolioContent,
   type PageGenerationManifest,
 } from "@expresso/contracts";
@@ -13,7 +15,11 @@ import {
   retrievePageLibrary,
   librarySelection,
 } from "@expresso/portfolio-renderer";
-import type { AiClient, AiUsage } from "../../platform/ai/client.js";
+import {
+  AiError,
+  type AiClient,
+  type AiUsage,
+} from "../../platform/ai/client.js";
 import { ungroundedNumbers, isOrdinalLabel } from "../../platform/numbers.js";
 import {
   PageGenerationError,
@@ -53,6 +59,65 @@ ProjectIndex는 필수이며 요소 ID는 index입니다. 소개 바로 다음�
 출력 형식은 {root,elements}입니다.`;
 }
 
+type NormalizationInput = {
+  author: { name: string };
+  sections: { id: string }[];
+  evidence: { id: string }[];
+};
+
+/**
+ * 내용 정리 출력을 저장 계약 값으로 만듭니다.
+ *
+ * 연락처는 입력 경로가 없어 null로 정합니다. 저장 계약의 규칙(이름 아래 한 문장)과
+ * 입력 보존 규칙을 검사하고, 어기면 모델이 읽을 수 있는 문장으로 던집니다.
+ */
+function normalizedContent(
+  data: StructuredContentModel,
+  input: NormalizationInput,
+  context: PageGenerationContext,
+): StructuredPortfolioContent {
+  const parsed = StructuredPortfolioContentSchema.safeParse({
+    ...data,
+    contact: null,
+  });
+  if (!parsed.success)
+    throw new Error(
+      parsed.error.issues
+        .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+        .join("; "),
+    );
+  const content = parsed.data;
+  const expectedIds = input.sections.map((item) => item.id).sort();
+  if (
+    content.profile.name !== input.author.name ||
+    JSON.stringify(content.sections.map((item) => item.id).sort()) !==
+      JSON.stringify(expectedIds)
+  )
+    throw new Error(
+      `이름(${input.author.name})과 섹션 ID(${expectedIds.join(", ")})를 그대로 사용해야 합니다.`,
+    );
+  const sources = new Set(input.evidence.map((item) => item.id));
+  const extra = content.evidence
+    .filter((item) => !sources.has(item.id))
+    .map((item) => item.id);
+  if (extra.length)
+    throw new Error(
+      `제공되지 않은 근거 ID를 추가했습니다: ${extra.join(", ")}.`,
+    );
+  const provided = new Set(context.media.map((item) => item.src));
+  if (
+    content.sections.some((section) =>
+      section.media.some(
+        (item) => !provided.has(item.src) || item.origin !== "uploaded",
+      ),
+    )
+  )
+    throw new Error(
+      "제공되지 않은 이미지를 추가했습니다. 입력 media의 src만 origin=uploaded로 사용합니다.",
+    );
+  return content;
+}
+
 export class StructuredPageGenerator implements PageGenerator {
   constructor(private readonly ai: AiClient) {}
   async generate(
@@ -77,48 +142,49 @@ export class StructuredPageGenerator implements PageGenerator {
         plan: context.portfolioPlan,
         media: context.media,
       };
-      const { data, usage } = await this.ai.complete(
-        {
-          contract: "page_generation",
-          promptVersion: PAGE_PROMPT_VERSION,
-          ...(context.modelTier ? { modelTier: context.modelTier } : {}),
-          system:
-            "출처 자료에서 포트폴리오 표시용 내용을 정리합니다. 제공된 이름·섹션 ID·출처 ID를 그대로 사용합니다. 수치·성과·경력·연락처·이미지를 지어내지 않습니다. 이름 아래 headline은 직무와 구체적인 작업을 밝히는 짧은 한 문장입니다. 36자 안으로 작성합니다. 입력 자료의 개인정보는 필요한 표시 내용만 추립니다. 원본 전체를 evidence.body에 복사하지 않습니다. 연락처가 제공되지 않으면 contact=null입니다.",
-          prompt: JSON.stringify(input),
-        },
-        StructuredPortfolioContentSchema,
-        sink ? { onThinking: (tokens) => sink.thinking(tokens) } : {},
-      );
-      usages.push(usage);
-      content = data;
-      const expectedIds = input.sections.map((item) => item.id).sort();
-      if (
-        data.profile.name !== context.author.name ||
-        JSON.stringify(data.sections.map((item) => item.id).sort()) !==
-          JSON.stringify(expectedIds)
-      )
+      // 모델이 고칠 수 있는 오류는 직전 출력과 오류를 붙여 한 번 다시 요청합니다.
+      const attempts: { output: unknown; error: string }[] = [];
+      for (let attempt = 0; attempt < 2 && !content; attempt++) {
+        const last = attempts.at(-1);
+        const prompt = last
+          ? `${JSON.stringify(input)}\n직전 출력: ${JSON.stringify(last.output)}\n검사 오류: ${last.error}\n수정한 전체 결과를 출력하세요.`
+          : JSON.stringify(input);
+        let data: StructuredContentModel;
+        try {
+          const result = await this.ai.complete(
+            {
+              contract: "page_generation",
+              promptVersion: PAGE_PROMPT_VERSION,
+              ...(context.modelTier ? { modelTier: context.modelTier } : {}),
+              system:
+                "출처 자료에서 포트폴리오 표시용 내용을 정리합니다. 제공된 이름·섹션 ID·출처 ID를 그대로 사용합니다. 수치·성과·경력·연락처·이미지를 지어내지 않습니다. 이름 아래 headline은 직무와 구체적인 작업을 밝히는 짧은 한 문장입니다. 36자 안으로 작성합니다. 입력 자료의 개인정보는 필요한 표시 내용만 추립니다. 원본 전체를 evidence.body에 복사하지 않습니다.",
+              prompt,
+            },
+            StructuredContentModelSchema,
+            sink ? { onThinking: (tokens) => sink.thinking(tokens) } : {},
+          );
+          usages.push(result.usage);
+          data = result.data;
+        } catch (error) {
+          // 공급자 스키마 위반은 출력이 남지 않으므로 오류만 붙여 다시 요청합니다.
+          if (error instanceof AiError && error.code === "AI_INVALID_OUTPUT") {
+            attempts.push({ output: null, error: error.message });
+            continue;
+          }
+          throw error;
+        }
+        try {
+          content = normalizedContent(data, input, context);
+        } catch (error) {
+          attempts.push({
+            output: data,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
+      if (!content)
         throw new PageGenerationError(
-          "모델이 이름이나 입력 섹션을 변경했습니다.",
-        );
-      const sources = new Set(input.evidence.map((item) => item.id));
-      if (data.evidence.some((item) => !sources.has(item.id)))
-        throw new PageGenerationError(
-          "모델이 제공되지 않은 근거를 추가했습니다.",
-        );
-      const provided = new Set(context.media.map((item) => item.src));
-      if (
-        data.sections.some((section) =>
-          section.media.some(
-            (item) => !provided.has(item.src) || item.origin !== "uploaded",
-          ),
-        )
-      )
-        throw new PageGenerationError(
-          "모델이 제공되지 않은 이미지를 추가했습니다.",
-        );
-      if (data.contact)
-        throw new PageGenerationError(
-          "연락처 입력 경로가 없는 실행에서 연락처를 추가했습니다.",
+          `내용 정리 결과가 계약 검사를 통과하지 못했습니다: ${attempts.at(-1)?.error}`,
         );
     }
     content = StructuredPortfolioContentSchema.parse(content);

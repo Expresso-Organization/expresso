@@ -3,7 +3,9 @@ import { z } from "zod";
 import {
   applyStructuredTextPatches,
   EditStructuredPageSchema,
+  StructuredContentModelSchema,
   StructuredMediaSchema,
+  StructuredPortfolioContentSchema,
   structuredModelSchema,
   validateStructuredPortfolio,
   type StructuredPortfolioContent,
@@ -108,6 +110,30 @@ describe("구조화 포트폴리오 계약", () => {
         contact: { label: "연락", href: "mailto:fictional@example.com" },
       }),
     ).toThrow("마지막");
+  });
+  it("내용 정리 모델 스키마는 연락처를 묻지 않고, 소개 문장 규칙은 저장 계약에만 둔다", () => {
+    const { contact: _contact, ...model } = content;
+    const twoSentences = {
+      ...model,
+      profile: {
+        ...model.profile,
+        headline: "첫 문장입니다. 둘째 문장입니다.",
+      },
+    };
+    const jsonSchema = z.toJSONSchema(StructuredContentModelSchema) as {
+      properties: Record<string, unknown>;
+    };
+    expect(Object.keys(jsonSchema.properties)).not.toContain("contact");
+    expect(StructuredContentModelSchema.safeParse(twoSentences).success).toBe(
+      true,
+    );
+    expect(StructuredContentModelSchema.safeParse(content).success).toBe(false);
+    const stored = StructuredPortfolioContentSchema.safeParse({
+      ...twoSentences,
+      contact: null,
+    });
+    expect(stored.success).toBe(false);
+    expect(stored.error?.issues[0]?.message).toContain("한 문장");
   });
   it("업로드 경로의 외부 URL과 경로 이탈을 거부한다", () => {
     const media = { alt: "업로드 이미지", origin: "uploaded" };
