@@ -5,11 +5,27 @@ import { PortfolioChartSchema } from "./portfolio-chart.js";
 import { ListItemSchema, TextRunsSchema, flattenRuns } from "./portfolio-text.js";
 import { TemplateStyleOverrideSchema } from "./templates.js";
 
-export const SubmitGenerationSchema = z.strictObject({
-  recipeId: UuidSchema,
-  templateId: UuidSchema,
-  styleOverrides: TemplateStyleOverrideSchema.optional(),
-});
+/**
+ * 생성 요청은 템플릿 또는 디자인 시스템 판 중 정확히 하나로 스타일을 정한다.
+ *
+ * 디자인 시스템 판으로 요청하면 서버가 판의 토큰에서 템플릿과 스타일 값을 정하고,
+ * 어떤 판으로 만들었는지 생성 작업과 포트폴리오에 남긴다.
+ */
+export const SubmitGenerationSchema = z
+  .strictObject({
+    recipeId: UuidSchema,
+    templateId: UuidSchema.optional(),
+    styleOverrides: TemplateStyleOverrideSchema.optional(),
+    designSystemRevisionId: UuidSchema.optional(),
+  })
+  .refine(
+    (value) => (value.templateId === undefined) !== (value.designSystemRevisionId === undefined),
+    "templateId와 designSystemRevisionId 중 하나만 보내야 합니다.",
+  )
+  .refine(
+    (value) => value.designSystemRevisionId === undefined || value.styleOverrides === undefined,
+    "디자인 시스템 판으로 요청할 때는 styleOverrides를 보내지 않습니다.",
+  );
 
 export const GenerationJobStatusSchema = z.strictObject({
   generationJobId: UuidSchema,

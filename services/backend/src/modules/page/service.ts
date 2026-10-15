@@ -24,6 +24,7 @@ import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction } from "../../platform/mongo-transaction.js";
 import { withTimeout } from "../../platform/timeouts.js";
 import type { ConsentApi } from "../consent/index.js";
+import { findDesignSystemRevision } from "../design-systems/index.js";
 import { requireActiveUser } from "../identity/index.js";
 import { DESIGN_PRINCIPLES_VERSION, type PageGenerationContext, type PageGenerator } from "./generator.js";
 import { PageServiceError } from "./public.js";
@@ -92,8 +93,10 @@ export class PageService {
     };
     const composed = template ? composeTemplateStyle(template.style, portfolio.styleOverrides) : null;
     const preset = template ? findPortfolioStyle(template.code) : undefined;
+    // 디자인 시스템 판으로 만든 포트폴리오는 템플릿 이름 대신 고른 디자인의 이름을 남깁니다.
+    const design = portfolio.designSystemRevisionId ? findDesignSystemRevision(portfolio.designSystemRevisionId)?.spec.identity ?? null : null;
     const style: PageStyleGrammar | undefined = composed && template ? {
-      name: template.name, description: template.description,
+      name: design?.name ?? template.name, description: design?.description ?? template.description,
       toneTags: Array.isArray(template.toneTags) ? template.toneTags.filter((v): v is string => typeof v === "string") : [],
       ...composed,
       // 지면 문법은 명조와 고딕만 안다. 고정폭 스타일은 고딕으로 내려 둔다.

@@ -13,6 +13,7 @@ import { MongoCareerService } from "../career/index.js";
 import { MongoMaterialsService } from "../materials/index.js";
 import { MongoRecipeService } from "../recipe/index.js";
 import { MongoGenerationService } from "../generation/index.js";
+import { findDesignSystemRevision } from "../design-systems/index.js";
 import { MongoPublishingService } from "../publishing/service.js";
 import { PageService } from "./service.js";
 import type { PageGenerator, PageGenerationContext } from "./generator.js";
@@ -24,7 +25,8 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
       service: PageService,
       user = "",
       other = "",
-      portfolio = "";
+      portfolio = "",
+      recipeId = "";
     beforeAll(async () => {
       fixture = await createMongoFixture("structured-page");
       service = new PageService(fixture.resource);
@@ -75,6 +77,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
           randomUUID(),
         ),
         template = await db.templates.findOne({ isActive: true });
+      recipeId = recipe.id;
       const generation = new MongoGenerationService(fixture.resource),
         job = await generation.submit(user, randomUUID(), {
           recipeId: recipe.id,
@@ -233,6 +236,30 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
       expect(after?.snapshot).toEqual(before?.snapshot);
       expect(await service.document(user, portfolio)).not.toBe(document);
     });
+    it("디자인 시스템 판으로 만든 포트폴리오는 생성 문맥에 그 디자인의 이름과 토큰을 쓴다", async () => {
+      // Refero Stripe 판은 내장 Clarity 틀을 쓰지만, 이름과 토큰은 판에서 와야 합니다.
+      const revisionId = "5d8f5f2d-6d2a-4f24-9d1a-2b8f9e7c1702";
+      const revision = findDesignSystemRevision(revisionId)!;
+      const generation = new MongoGenerationService(fixture.resource);
+      const job = await generation.submit(user, randomUUID(), {
+        recipeId,
+        designSystemRevisionId: revisionId,
+      });
+      const designed = (await generation.prepareFreeHtml(job.generationJobId))
+        .portfolioId!;
+      await service.generate(user, designed, {
+        async generate(next) {
+          expect(next.style?.name).toBe(revision.spec.identity.name);
+          expect(next.style?.background).toBe(
+            revision.spec.colors.canvas.value,
+          );
+          expect(next.style?.accent).toBe(revision.spec.colors.accent.value);
+          expect(next.style?.structure).toBe(revision.spec.composition.layout);
+          return generator.generate(next);
+        },
+      });
+    });
+
     it("직접 선택한 레이아웃을 다음 생성 문맥에도 유지한다", async () => {
       const current = (await service.latest(user, portfolio))!;
       const spec = structuredClone(
