@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { query, tool, createSdkMcpServer } from "@anthropic-ai/claude-agent-sdk";
 import { z } from "zod";
-import { AgentEditDraftSchema, AgentRecordDraftInputSchema, GapReviewDraftSchema, PlanProposalInputSchema, type AgentPlanDraft, type PlanProposalInput, type GapReview, type GapReviewDraft, RequirementReviewDraftSchema, UuidSchema, type AgentRecordDraft, type AgentRecordDraftInput, type AgentEditDraft, type AgentMessage, type AgentToolResult, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
+import { AgentEditDraftSchema, AgentRecordDraftInputSchema, GapReviewDraftSchema, PlanProposalInputSchema, ReplanProposalInputSchema, type AgentPlanDraft, type AgentReplanDraft, type PlanProposalInput, type PreparationPlan, type ReplanProposalInput, type GapReview, type GapReviewDraft, RequirementReviewDraftSchema, UuidSchema, type AgentRecordDraft, type AgentRecordDraftInput, type AgentEditDraft, type AgentMessage, type AgentToolResult, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
 
 export type AgentEvent = { type: "text"; text: string } | { type: "tool"; tool: AgentToolResult };
 export interface AgentRecordSummary { id: string; title: string; category: string; status: string; updatedAt: string }
@@ -26,6 +26,10 @@ export interface AgentInput {
   gapReview(draft: GapReviewDraft): Promise<GapReview>;
   /** 가장 최근 보완점에서 고른 번호와 시간 설정으로 준비 계획 초안을 만든다. 저장은 승인할 때. */
   planDraft(input: PlanProposalInput): Promise<AgentPlanDraft>;
+  /** 승인한 계획의 남은 작업을 새 설정으로 다시 배치한 초안. 저장은 승인할 때. */
+  replanDraft(input: ReplanProposalInput): Promise<AgentReplanDraft>;
+  /** 승인한 계획과 작업별 진행. 사용자의 계획이 아니면 null. */
+  readPlan(planId: string): Promise<PreparationPlan | null>;
 }
 
 /**
@@ -40,6 +44,7 @@ export function conversationForModel(messages: AgentMessage[]) {
     ...(tool.review ? { review: { jobPostingId: tool.review.jobPostingId, summary: tool.review.summary, items: tool.review.items.map(item => ({ requirement: item.requirement, kind: item.kind, assessment: item.assessment, recommendation: item.recommendation, evidence: item.evidence.map(evidence => ({ recordTitle: evidence.recordTitle, quote: evidence.quote })) })) } } : {}),
     ...(tool.recordDraft ? { recordDraft: { title: tool.recordDraft.title, status: tool.recordDraft.status, recordId: tool.recordDraft.recordId } } : {}),
     ...(tool.planDraft ? { planDraft: { title: tool.planDraft.title, status: tool.planDraft.status, planId: tool.planDraft.planId, settings: tool.planDraft.settings, tasks: tool.planDraft.tasks.length } } : {}),
+    ...(tool.replanDraft ? { replanDraft: { planId: tool.replanDraft.planId, status: tool.replanDraft.status, settings: tool.replanDraft.settings } } : {}),
     ...(tool.gapReview ? { gapReview: { summary: tool.gapReview.summary, items: tool.gapReview.items.map((item, index) => ({ index, requirement: item.requirement, type: item.type, status: item.status, priority: item.priority, suggestedAction: item.suggestedAction })) } } : {}),
   })) } : {}) }));
 }
@@ -52,6 +57,7 @@ const SYSTEM_PROMPT = [
   "사용자가 대화에서 말한 경험을 기록으로 남기자고 하면 propose_new_record로 새 기록 초안을 제안하십시오. 사용자가 실제로 말한 내용만 쓰고, 팀원이 한 일을 사용자의 일로 바꾸거나 말하지 않은 수치 · 기술을 더하지 마십시오. 본문은 상황 · 역할 · 행동 · 결과 소제목의 마크다운으로 쓰고 말하지 않은 항목은 비워 두십시오. sources에는 근거가 된 사용자 메시지의 id와 그 말을 그대로 옮긴 인용을 넣으십시오. 저장은 사용자가 카드에서 승인할 때만 일어나므로 승인 전에는 저장했다고 말하지 마십시오.",
   "무엇을 보완하거나 준비해야 하는지 정리해 달라고 하면 가장 최근 요건 대조와 대화에서 확인한 답을 바탕으로 record_gap_review를 쓰십시오. requirementIndex는 그 대조의 요건 순서(0부터)입니다. 확인되지 않은 요건은 needs_confirmation으로 두고, needs_improvement는 사용자가 대화에서 직접 부족하다고 말한 경우에만 그 발언을 근거로 쓰십시오. priority는 준비할 순서입니다.",
   "준비 계획을 요청받으면 주당 쓸 수 있는 시간, 기간(주), 시작일을 모르면 먼저 묻고, 가장 최근 보완점 정리에서 고른 번호(gapIndexes, 0부터)로 propose_preparation_plan을 부르십시오. 작업과 일정은 서버가 정하므로 지어내지 마십시오. 시간이 모자라다고 돌아오면 그 내용을 사용자에게 전하고 설정을 다시 물으십시오. 계획은 사용자가 카드에서 승인해야 저장됩니다.",
+  "승인한 계획의 진행을 묻거나 남은 작업을 다시 배치해 달라고 하면 read_preparation_plan으로 진행을 보고, 재배치는 새 주당 시간 · 기간 · 시작일로 propose_replan을 부르십시오. 완료한 작업은 그대로 두고 남은 작업만 다시 배치되며, 사용자가 카드에서 승인해야 바뀝니다.",
   "부족한 요건을 보완할 질문을 요청받으면 가장 최근 요건 대조의 unconfirmed · partial 요건부터 한 번에 질문 하나만 하십시오. 답에 역할 · 행동 · 결과 중 빠진 것이 있으면 그것을 이어 묻고, 충분히 확인되었거나 사용자가 그만하자고 하면 질문을 멈추고 확인된 내용을 정리하십시오. 요건 대조가 없으면 먼저 대조하십시오.",
 ].join(" ");
 export interface AgentRuntime { run(input: AgentInput): Promise<void> }
@@ -109,6 +115,24 @@ export class ClaudeAgentRuntime implements AgentRuntime {
           throw error;
         }
       }),
+      tool("read_preparation_plan", "승인한 준비 계획의 작업별 일정과 진행 상태를 읽습니다.", { planId: UuidSchema }, async ({ planId }) => {
+        const plan = await input.readPlan(planId);
+        if (!plan) return { content: [{ type: "text" as const, text: "그 계획을 찾을 수 없습니다." }], isError: true };
+        const done = plan.tasks.filter(task => task.status === "completed").length;
+        await input.emit({ type: "tool", tool: { id: crypto.randomUUID(), name: "계획 진행 확인", status: "complete", summary: `${plan.title} · ${done}/${plan.tasks.length} 완료` } });
+        return { content: [{ type: "text" as const, text: JSON.stringify({ title: plan.title, settings: plan.settings, tasks: plan.tasks.map(task => ({ title: task.title, kind: task.kind, week: task.week, date: task.date, minutes: task.minutes, status: task.status, outcome: task.outcome, spentMinutes: task.spentMinutes })) }) }] };
+      }),
+      tool("propose_replan", "승인한 준비 계획에서 완료하지 않은 작업만 새 주당 시간 · 기간 · 시작일로 다시 배치한 초안을 만듭니다.", ReplanProposalInputSchema.shape, async proposal => {
+        if (input.signal.aborted) throw new Error("cancelled");
+        try {
+          const replanDraft = await input.replanDraft(proposal);
+          await input.emit({ type: "tool", tool: { id: crypto.randomUUID(), name: "계획 재배치 초안", status: "complete", summary: `남은 작업 ${replanDraft.slots.length}개 · 주 ${replanDraft.settings.weeklyHours}시간`, replanDraft } });
+          return { content: [{ type: "text" as const, text: JSON.stringify({ draftId: replanDraft.draftId, tasks: replanDraft.slots.length, requiresUserApproval: true }) }] };
+        } catch (error) {
+          if (error instanceof AgentToolRejection) return { content: [{ type: "text" as const, text: `다시 배치하지 않았습니다.\n${error.issues.join("\n")}` }], isError: true };
+          throw error;
+        }
+      }),
       tool("propose_new_record", "사용자가 대화에서 말한 경험으로 새 커리어 기록 초안을 만듭니다. 저장은 사용자가 승인할 때만 일어납니다. categoryId는 list_career_records의 카테고리 중에서 고르고, 모르면 비웁니다.", AgentRecordDraftInputSchema.shape, async draftInput => {
         if (input.signal.aborted) throw new Error("cancelled");
         try {
@@ -143,7 +167,7 @@ export class ClaudeAgentRuntime implements AgentRuntime {
       const messages = query({ prompt: JSON.stringify({ conversation: conversationForModel(input.messages), context: input.context }), options: {
         model: "sonnet",
         ...(isolatedHome ? { env: { PATH: process.env.PATH, HOME: isolatedHome, CLAUDE_CONFIG_DIR: isolatedHome, ANTHROPIC_API_KEY: input.apiKey } } : {}), abortController, persistSession: false, includePartialMessages: true, maxTurns: 8, maxBudgetUsd: 1,
-        tools: [], mcpServers: { expresso: server }, allowedTools: ["mcp__expresso__propose_record_edit", "mcp__expresso__list_career_records", "mcp__expresso__read_career_records", "mcp__expresso__record_requirement_review", "mcp__expresso__propose_new_record", "mcp__expresso__record_gap_review", "mcp__expresso__propose_preparation_plan"], permissionMode: "dontAsk", settingSources: [], strictMcpConfig: true,
+        tools: [], mcpServers: { expresso: server }, allowedTools: ["mcp__expresso__propose_record_edit", "mcp__expresso__list_career_records", "mcp__expresso__read_career_records", "mcp__expresso__record_requirement_review", "mcp__expresso__propose_new_record", "mcp__expresso__record_gap_review", "mcp__expresso__propose_preparation_plan", "mcp__expresso__read_preparation_plan", "mcp__expresso__propose_replan"], permissionMode: "dontAsk", settingSources: [], strictMcpConfig: true,
         systemPrompt: SYSTEM_PROMPT,
       } });
       for await (const message of messages) {

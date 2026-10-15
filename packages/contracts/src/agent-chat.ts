@@ -179,6 +179,31 @@ export const PreparationPlanSchema = z.strictObject({
   updatedAt: TimestampSchema,
 });
 export const PreparationPlanResponseSchema = z.strictObject({ data: PreparationPlanSchema });
+/** 작업 진행 기록. 완료는 결과 설명이나 링크가 있어야 한다 — 무엇을 끝냈는지 남지 않은 완료는 받지 않는다. */
+export const UpdateTaskProgressSchema = z.strictObject({
+  expectedVersion: z.number().int().positive(),
+  status: TaskProgressStatusSchema,
+  note: z.string().max(2_000),
+  outcome: z.string().max(2_000),
+  outcomeUrl: OutcomeUrlSchema,
+  spentMinutes: z.number().int().min(0).max(100_000),
+}).refine(input => input.status !== "completed" || !!input.outcome.trim() || !!input.outcomeUrl, { message: "완료하려면 결과 설명이나 링크를 남겨 주세요.", path: ["outcome"] });
+/** 남은 작업 재배치. 완료하지 않은 작업만 새 설정으로 다시 배치한다. */
+export const ReplanProposalInputSchema = z.strictObject({ planId: UuidSchema, settings: PreparationSettingsSchema });
+export const AgentReplanDraftSchema = z.strictObject({
+  draftId: UuidSchema,
+  planId: UuidSchema,
+  /** 이 초안을 만든 때의 계획 버전. 승인할 때 계획이 그 사이에 바뀌었으면 받지 않는다. */
+  baseVersion: z.number().int().positive(),
+  settings: PreparationSettingsSchema,
+  slots: z.array(z.strictObject({ taskId: UuidSchema, title: z.string().max(300), week: z.number().int().min(1).max(12), date: z.iso.date() })).min(1).max(40),
+  status: z.enum(["ready", "approved", "rejected"]),
+});
+export const AgentReplanDecisionSchema = z.strictObject({ action: z.enum(["approve", "reject"]) });
+export type UpdateTaskProgress = z.infer<typeof UpdateTaskProgressSchema>;
+export type ReplanProposalInput = z.infer<typeof ReplanProposalInputSchema>;
+export type AgentReplanDraft = z.infer<typeof AgentReplanDraftSchema>;
+export type AgentReplanDecision = z.infer<typeof AgentReplanDecisionSchema>;
 export type PreparationSettings = z.infer<typeof PreparationSettingsSchema>;
 export type PreparationTaskDraft = z.infer<typeof PreparationTaskDraftSchema>;
 export type PreparationTask = z.infer<typeof PreparationTaskSchema>;
@@ -186,7 +211,7 @@ export type PlanProposalInput = z.infer<typeof PlanProposalInputSchema>;
 export type AgentPlanDraft = z.infer<typeof AgentPlanDraftSchema>;
 export type AgentPlanDecision = z.infer<typeof AgentPlanDecisionSchema>;
 export type PreparationPlan = z.infer<typeof PreparationPlanSchema>;
-export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional(), gapReview: GapReviewSchema.optional(), planDraft: AgentPlanDraftSchema.optional() });
+export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional(), gapReview: GapReviewSchema.optional(), planDraft: AgentPlanDraftSchema.optional(), replanDraft: AgentReplanDraftSchema.optional() });
 export const AgentMessageSchema = z.strictObject({ id: UuidSchema, role: z.enum(["user", "assistant"]), text: z.string().max(64_000), tools: z.array(AgentToolResultSchema).max(30), createdAt: TimestampSchema });
 export const AgentRunSchema = z.strictObject({ id: UuidSchema, requestId: UuidSchema, status: z.enum(["running", "complete", "cancelled", "failed", "interrupted"]), error: z.string().max(1_000).nullable(), startedAt: TimestampSchema });
 export const AgentConversationSchema = z.strictObject({ id: UuidSchema, title: z.string().max(120), contexts: z.array(AgentContextSchema).max(10), messages: z.array(AgentMessageSchema).max(100), run: AgentRunSchema.nullable(), version: z.number().int().nonnegative(), updatedAt: TimestampSchema });

@@ -12,6 +12,7 @@ import { AgentCredentials } from "./credentials.js";
 import { ConsentService } from "../consent/index.js";
 import { AgentToolRejection, type AgentRuntime } from "../../platform/agent/runtime.js";
 import { AgentChatService } from "./service.js";
+import { PreparationPlans } from "./plans.js";
 
 describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB_URL))("공통 에이전트 대화", () => {
   let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
@@ -299,6 +300,38 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect(plan.tasks.every(task => task.status === "not_started" && task.title.endsWith("(고침)"))).toBe(true);
     await expect(service.plan(other, approved.planId!)).rejects.toMatchObject({ statusCode: 404 });
     await expect(service.decidePlanDraft(userId, row.id, draft.draftId, { action: "reject" })).rejects.toMatchObject({ statusCode: 409 });
+  });
+  it("계획 작업 진행을 버전으로 지키고, 승인한 재배치는 남은 작업만 옮긴다", async () => {
+    const replans: string[] = [];
+    const service = make({ run: async input => {
+      const planId = input.messages.at(-1)!.text;
+      const plan = await input.readPlan(planId);
+      expect(plan?.tasks).toHaveLength(3);
+      const draft = await input.replanDraft({ planId, settings: { weeklyHours: 3, weeks: 1, startDate: "2026-11-02" } });
+      replans.push(draft.draftId);
+      await input.emit({ type: "tool", tool: { id: randomUUID(), name: "계획 재배치 초안", status: "complete", summary: "", replanDraft: draft } });
+    } });
+    const row = await service.create(userId, []);
+    const settings = { weeklyHours: 1, weeks: 4, startDate: "2026-10-19" };
+    const tasks = ["learn", "project", "check"].map((kind, index) => ({ id: randomUUID(), gapId: randomUUID(), requirement: "요건", kind: kind as "learn", week: index + 1, date: ["2026-10-19", "2026-10-26", "2026-11-02"][index]!, minutes: 60, title: `작업 ${index + 1}`, action: "할 일", deliverable: "결과물" }));
+    const plans = new PreparationPlans(fixture.resource);
+    const plan = await plans.create(userId, row.id, { draftId: randomUUID(), jobPostingId: randomUUID(), title: "계획", summary: "요약", settings, tasks, status: "ready", planId: null }, { title: "계획", summary: "요약", tasks: new Map(tasks.map(task => [task.id, task])) });
+    const done = await service.updateTaskProgress(userId, plan.id, tasks[0]!.id, { expectedVersion: 1, status: "completed", note: "", outcome: "예제를 만들었다", outcomeUrl: "", spentMinutes: 70 });
+    expect(done).toMatchObject({ version: 2 });
+    expect(done.tasks[0]).toMatchObject({ status: "completed", outcome: "예제를 만들었다", spentMinutes: 70 });
+    await expect(service.updateTaskProgress(userId, plan.id, tasks[1]!.id, { expectedVersion: 1, status: "in_progress", note: "", outcome: "", outcomeUrl: "", spentMinutes: 0 })).rejects.toMatchObject({ statusCode: 409 });
+    await expect(service.updateTaskProgress(other, plan.id, tasks[1]!.id, { expectedVersion: 2, status: "in_progress", note: "", outcome: "", outcomeUrl: "", spentMinutes: 0 })).rejects.toMatchObject({ statusCode: 404 });
+    const finish = async () => { await service.send(userId, row.id, { requestId: randomUUID(), text: plan.id }); await expect.poll(async () => (await service.get(userId, row.id)).run?.status).toBe("complete"); };
+    await finish();
+    const approved = await service.decideReplanDraft(userId, row.id, replans[0]!, { action: "approve" });
+    expect(approved.messages.at(-1)!.tools[0]!.replanDraft!.status).toBe("approved");
+    const moved = await service.plan(userId, plan.id);
+    expect(moved).toMatchObject({ scheduleVersion: 2, settings: { weeklyHours: 3, weeks: 1, startDate: "2026-11-02" } });
+    expect(moved.tasks.map(task => [task.status, task.week, task.date])).toEqual([["completed", 1, "2026-10-19"], ["not_started", 1, "2026-11-02"], ["not_started", 1, "2026-11-02"]]);
+    await finish();
+    await service.updateTaskProgress(userId, plan.id, tasks[1]!.id, { expectedVersion: moved.version, status: "in_progress", note: "시작", outcome: "", outcomeUrl: "", spentMinutes: 10 });
+    await expect(service.decideReplanDraft(userId, row.id, replans[1]!, { action: "approve" })).rejects.toMatchObject({ statusCode: 409 });
+    expect((await service.decideReplanDraft(userId, row.id, replans[1]!, { action: "reject" })).messages.at(-1)!.tools[0]!.replanDraft!.status).toBe("rejected");
   });
   it("연결되지 않은 기록에 대한 도구 실행을 차단한다", async () => {
     let rejected = false;
