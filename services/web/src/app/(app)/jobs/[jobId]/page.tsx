@@ -16,6 +16,7 @@ import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { mendEmphasis } from "@/components/ui/mend-emphasis";
 import { StackChip, StackMarkdown } from "@/components/ui/StackMarkdown";
 import { findStacks, resolveStack } from "@/components/ui/stacks";
+import { InterestButton } from "./InterestButton";
 import styles from "./page.module.css";
 
 /** §3.5 요건 충족 / 약함 / 없음은 아이콘이 고정 매핑이다. */
@@ -95,15 +96,7 @@ export default async function JobDetailPage({
         ]}
         actions={
           <>
-            <button type="button" className={styles.headAction}>
-              <Icon
-                name="bookmark-simple"
-                weight={job.interest ? "fill" : "regular"}
-                size={14}
-                color={job.interest ? "var(--ex-accent-text)" : "var(--ex-fg-muted)"}
-              />
-              {job.interest ? "관심 공고" : "관심 공고에 담기"}
-            </button>
+            <InterestButton jobPostingId={job.id} interested={job.interest !== null} />
             <Icon name="arrow-square-out" size={16} color="var(--ex-fg-muted)" />
           </>
         }

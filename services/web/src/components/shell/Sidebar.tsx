@@ -37,6 +37,8 @@ export interface SidebarProps {
   categories: readonly CareerCategory[];
   portfolios?: readonly SidebarPortfolio[];
   interests?: readonly SidebarInterest[];
+  /** 관심 공고 전체 건수. 줄은 몇 건만 보이므로 숫자는 따로 받는다. */
+  interestTotal?: number | undefined;
   /** 공고 탐색 배지 = 관심 + 추천 건수. */
   jobCount?: number | undefined;
   displayName: string;
@@ -49,6 +51,7 @@ export function Sidebar({
   categories,
   portfolios = [],
   interests = [],
+  interestTotal,
   jobCount,
   displayName,
   quotaUsed,
@@ -168,7 +171,7 @@ export function Sidebar({
             <div className={`${styles.copy} ${styles.groupHeadRow}`}>
               <span className={styles.groupLabel}>관심 공고</span>
               <div className={styles.groupActions}>
-                <span className={styles.groupCount}>{interests.length}</span>
+                <span className={styles.groupCount}>{interestTotal ?? interests.length}</span>
                 <button type="button" className={styles.groupAction} aria-label="관심 공고 추가">
                   <Icon name="plus" size={13} />
                 </button>

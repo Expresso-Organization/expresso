@@ -12,6 +12,7 @@ import Link from "next/link";
 import { AppBody, AppHeader } from "@/components/shell/AppShell";
 import { Icon } from "@/components/ui/Icon";
 import { jobs as jobsApi } from "@/lib/api/endpoints";
+import { watchedJobs } from "@/lib/app-data";
 import { BROWSE_QUERY_PLACEHOLDER, SIMILAR_SEARCHES } from "@/lib/sample/jobs";
 import { requireSession } from "@/lib/require-session";
 
@@ -227,7 +228,8 @@ export default async function JobsPage({
    */
   const [interpreted, watched, recent, sourceList] = await Promise.all([
     q ? jobsApi.interpret(session.accessToken, q, 0) : Promise.resolve(null),
-    jobsApi.postings(session.accessToken, { interested: true, sort: "deadline", limit: 5 }),
+    // 사이드바 "관심 공고"와 같은 목록이다. 한 요청 안에서 한 번만 부른다.
+    watchedJobs(session.accessToken),
     jobsApi.recentSearches(session.accessToken, 4),
     // 헤더가 "어디서 몇 건"을 말하려면 실제로 모으는 곳을 알아야 한다.
     // 예전에는 "원티드 · 잡코리아 · 링크드인에서 매일 아침 모아 옵니다 ·
