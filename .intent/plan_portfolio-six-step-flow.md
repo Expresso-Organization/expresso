@@ -17,7 +17,7 @@ date: 2026-10-15
 | `packages/contracts/src/generation.ts` (+ 테스트) | `SubmitGenerationSchema`에 `designSystemRevisionId`, 정확히 하나 규칙 |
 | `packages/database/src/documents/generation.ts` · `portfolio.ts` | `designSystemRevisionId?` 타입 |
 | `services/backend/src/modules/design-systems/index.ts` (새 파일) | `findDesignSystemRevision`, `generationStyleFor` |
-| `services/backend/src/modules/design-systems/generation-style.test.ts` (새 파일) | 35종 템플릿 일치, Refero 대체 |
+| `services/backend/src/modules/design-systems/generation-style.test.ts` (새 파일) | 프리셋 30종 템플릿 일치, 내장 3종은 판의 색 사용, Refero 대체 |
 | `services/backend/src/modules/generation/service.ts` | 판 ID 요청 처리와 저장, 포트폴리오로 복사 |
 | `services/backend/src/modules/generation/*.test.ts` | 판 ID 요청 저장 테스트 |
 | `services/backend/src/modules/page/service.ts` | 디자인 시스템 이름·설명 사용 |
@@ -37,7 +37,7 @@ date: 2026-10-15
 ## 작업 순서
 
 1. 계약과 문서 타입 — 계약 테스트가 정확히 하나 규칙을 확인하면 끝난 것이다.
-2. 디자인 시스템 진입점과 변환 함수 — 35종 일치 테스트가 통과하면 끝난 것이다. 다르면 다른 항목을 기록하고 변환 규칙과 비교해 판단한다.
+2. 디자인 시스템 진입점과 변환 함수 — 템플릿 일치 테스트가 통과하면 끝난 것이다. 구현 중 확인: 연결된 판은 33종이며 내장 3종의 색이 템플릿과 달라 판의 색을 쓴다.
 3. 생성 서비스와 `PageService` — 단위·통합 테스트가 통과하면 끝난 것이다.
 4. 웹 단계 정의 하나로 통합, 입구 링크, 자유 제작 경로, 편집기 단계 표시줄 — 웹 타입 검사와 테스트가 통과하면 끝난 것이다.
 5. 7단계 카탈로그 생성 연결과 레거시 선택 화면 삭제 — 액션 테스트가 통과하면 끝난 것이다.

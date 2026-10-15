@@ -24,7 +24,7 @@ date: 2026-10-15
   - 서체 계열 = `typography.display.fallback`의 일반 글꼴 이름(monospace → mono, serif → serif, 그 밖 → sans)
   - 밀도 = `composition.density`, 배치 = `composition.layout`
   - 템플릿 = 판의 `legacyTemplateId`. 없으면(Refero 5종) 내장 Clarity 템플릿
-- [ ] 테스트로 확인한다. 기존 템플릿과 연결된 디자인 시스템(35종)을 변환하면 그 템플릿의 스타일 6개 값과 같아야 한다. 다르면 차이를 기록한다.
+- [ ] 테스트로 확인한다. 기존 템플릿과 연결된 디자인 시스템은 33종(내장 3 · 프리셋 30)이다. 변환하면 프리셋 30종은 그 템플릿의 스타일 6개 값과 같다. 내장 3종(Clarity · Signal · Editorial)은 색 값만 템플릿과 다르며(구현 중 확인), 카탈로그에 보이는 판의 색을 쓴다.
 - [ ] 생성 문맥(`PageService`)의 스타일 이름·설명은 포트폴리오에 디자인 시스템이 있으면 그 디자인 시스템의 이름·설명이다.
 - [ ] 웹에서 닿을 수 없는 레거시 템플릿 선택 화면(`DesignPicker`, `TemplateThumb`, `design-filters`, 해당 테스트)과 `?legacy=1` 분기를 지운다. 백엔드 `templates.previews` API는 남긴다.
 - [ ] 마이그레이션은 없다. `generation_jobs`·`portfolios` validator는 추가 필드를 허용한다(0001 schema, `additionalProperties` 없음).
@@ -62,6 +62,6 @@ date: 2026-10-15
 - 새 테스트가 통과한다.
   - 계약: 정확히 하나 규칙
   - 생성 서비스: 판 ID 요청 시 저장 필드
-  - 변환 함수: 35종 템플릿 일치, Refero는 Clarity 대체
+  - 변환 함수: 프리셋 30종 템플릿 일치 · 내장 3종 템플릿 연결, Refero는 Clarity 대체
   - 웹: 단계 정의 하나, 입구 링크, `startGenerationAction`의 저장 → 제출 순서
 - 체험 서버에서 새 포트폴리오 → 공고 분석 → 재료 → AI 대화 → 레시피 → 디자인 선택(카탈로그) → 생성 → 다듬기를 실제로 진행한다. 생성된 지면 CSS의 `--sp-bg`·`--sp-ink`·`--sp-accent`가 고른 디자인 시스템의 토큰과 같은지 확인한다.
