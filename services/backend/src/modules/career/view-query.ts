@@ -1,4 +1,4 @@
-import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 
 import type {
   CareerCategory,
@@ -8,6 +8,7 @@ import type {
 import type { Document } from "mongodb";
 
 import { CareerError } from "./errors.js";
+import { careerPropertyDefinitions } from "./property-definitions.js";
 
 const CURSOR_LIFETIME_MS = 15 * 60_000;
 const CURSOR_SECRET = process.env.CAREER_VIEW_CURSOR_SECRET ?? "expresso-career-view-cursor-secret";
@@ -37,20 +38,7 @@ function escapeRegex(value: string): string {
 }
 
 function activeDefinitions(category: CareerCategory): CareerPropertyDefinitionV2[] {
-  if (category.propertySchemaV2) return category.propertySchemaV2.filter((definition) => definition.deletedAt === null);
-  return Object.entries(category.propertySchema).map(([key, property], order) => ({
-    id: property.id ?? stablePropertyId(category.id, key), key, name: property.label,
-    type: property.type === "boolean" ? "checkbox" : property.type === "tags" ? "multi_select" : property.type,
-    required: property.required, system: property.system, config: {}, order, version: 1, deletedAt: null,
-  }));
-}
-
-function stablePropertyId(categoryId: string, key: string): string {
-  const bytes = createHash("sha1").update(Buffer.from("6ba7b8109dad11d180b400c04fd430c8", "hex")).update(`${categoryId}:${key}`).digest();
-  bytes[6] = (bytes[6]! & 15) | 80;
-  bytes[8] = (bytes[8]! & 63) | 128;
-  const hex = bytes.subarray(0, 16).toString("hex");
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+  return careerPropertyDefinitions(category.id, category.propertySchema, category.propertySchemaV2).filter((definition) => definition.deletedAt === null);
 }
 
 function leafCount(filter: CareerViewFilterV2 | null): number {

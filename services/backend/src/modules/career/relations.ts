@@ -18,22 +18,7 @@ import { CareerError } from "./errors.js";
 import { requireCareerCategory } from "./mongo-categories.js";
 import { assertActiveRecordsForWrite } from "./mongo-record-guard.js";
 import { mapMongoRecord } from "./mongo-records.js";
-import { stablePropertyId } from "./property-schema.js";
-
-export function careerCategoryDefinitions(category: CareerCategoryDoc) {
-  return category.propertySchemaV2 ?? Object.entries(category.propertySchema).map(([key, property], order) => ({
-    id: property.id ?? stablePropertyId(category._id, key),
-    key,
-    name: property.label,
-    type: property.type === "boolean" ? "checkbox" : property.type === "tags" ? "multi_select" : property.type,
-    required: property.required,
-    system: property.system,
-    config: {},
-    order,
-    version: 1,
-    deletedAt: null,
-  }));
-}
+import { careerCategoryDefinitions } from "./property-definitions.js";
 
 function relationDefinition(category: CareerCategoryDoc, propertyId: string): CareerRelationDefinition {
   const property = careerCategoryDefinitions(category).find((definition) => definition.id === propertyId && definition.deletedAt === null);
