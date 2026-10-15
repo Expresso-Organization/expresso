@@ -1,3 +1,4 @@
+import { AgentChat } from "@/features/agent-chat/AgentChat";
 import type { JobPostingDetail, JobRequirement } from "@expresso/contracts";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -301,6 +302,7 @@ export default async function JobDetailPage({
           </div>
 
           <aside className={styles.rail}>
+            <AgentChat context={{ kind: "job", id: jobId }} contextLabel={job.title} />
             {job.match ? (
               <div className={styles.matchCard}>
                 {/*
