@@ -38,7 +38,7 @@ date: 2026-10-16
 - `updateDocument`는 `unavailable`이면 아무것도 하지 않는다. 그래서 pending이 쌓이지 않고,
   `useCareerEditorSession`의 풀은 지금 규칙대로 30초 뒤 세션을 정리한다.
 
-**읽기 전용 화면** (새 파일 `editor/CareerDocumentReadOnly.tsx`)
+**읽기 전용 화면** (`editor/CareerDocumentEditor.tsx`에서 내보내는 `CareerDocumentReadOnly`. `categoryDefinitions`를 함께 써서 같은 파일에 둔다)
 
 - 입력: `mode`, `record?`, `category?`. 세션을 쓰지 않는다.
 - 본문은 기존 `careerEditorExtensions` · `careerDocumentToTiptap`으로 Tiptap을 `editable: false`로 띄운다.
