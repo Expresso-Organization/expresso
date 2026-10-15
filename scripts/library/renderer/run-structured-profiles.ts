@@ -6,6 +6,7 @@ import { z } from "zod";
 import { StructuredPortfolioContentSchema } from "../../../packages/contracts/src/structured-portfolio.js";
 import { StructuredPageGenerator } from "../../../services/backend/src/modules/page/structured-generator.js";
 import type { AiClient } from "../../../services/backend/src/platform/ai/client.js";
+import { renderStructuredPortfolio } from "../../../packages/portfolio-renderer/dist/index.js";
 
 const root = process.cwd();
 const model = process.env.PORTFOLIO_TEST_MODEL || "qwen3.5:9b-q8_0";
@@ -27,7 +28,45 @@ if (
 )
   throw new Error("알려진 가상 프로필이 필요합니다.");
 const sha = (value: string) => createHash("sha256").update(value).digest("hex");
-for (const slug of slugs) {
+const runs = path.join(root, "docs/library/previews/portfolio/runs");
+const htmlDocument = (name: string, rendered: { html: string; css: string }) =>
+  `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>${name} 포트폴리오</title><style>html,body{margin:0} ${rendered.css}</style></head><body>${rendered.html}</body></html>`;
+// 렌더러 변경만 비교할 때는 모델을 다시 부르지 않고 저장된 모델 Spec을 현재 렌더러로 다시 그립니다.
+const rerenderFrom = process.env.PORTFOLIO_RERENDER_FROM;
+if (rerenderFrom && !/^[a-zA-Z0-9-]+$/.test(rerenderFrom))
+  throw new Error("재렌더링할 실행 식별자가 올바르지 않습니다.");
+for (const slug of rerenderFrom ? slugs : []) {
+  const source = path.join(runs, rerenderFrom!, slug);
+  const out = path.join(runs, runId, slug);
+  if (fs.existsSync(path.join(out, "index.html")))
+    throw new Error("완료된 실행을 덮어쓸 수 없습니다. 새 실행 ID를 사용하세요.");
+  const run = JSON.parse(fs.readFileSync(path.join(source, "run.json"), "utf8"));
+  const { spec, content } = run.structured;
+  const document = htmlDocument(
+    content.profile.name,
+    renderStructuredPortfolio(spec, content),
+  );
+  fs.mkdirSync(out, { recursive: true });
+  fs.writeFileSync(path.join(out, "index.html"), document);
+  fs.copyFileSync(
+    path.join(source, "model-record.json"),
+    path.join(out, "model-record.json"),
+  );
+  fs.writeFileSync(
+    path.join(out, "run.json"),
+    JSON.stringify(
+      {
+        ...run,
+        htmlSha256: sha(document),
+        rerenderOf: { runId: rerenderFrom, htmlSha256: run.htmlSha256 },
+      },
+      null,
+      2,
+    ) + "\n",
+  );
+  console.log(slug, "rerendered from", rerenderFrom);
+}
+for (const slug of rerenderFrom ? [] : slugs) {
   const folder = path.join(
     root,
     "scripts/library/renderer/portfolio/samples/fictional-profiles",
@@ -180,7 +219,7 @@ for (const slug of slugs) {
       jobTitle: null,
       company: null,
     });
-    const document = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>${content.profile.name} 포트폴리오</title><style>html,body{margin:0} ${result.css}</style></head><body>${result.html}</body></html>`;
+    const document = htmlDocument(content.profile.name, result);
     fs.writeFileSync(path.join(out, "index.html"), document);
     fs.writeFileSync(
       path.join(out, "run.json"),

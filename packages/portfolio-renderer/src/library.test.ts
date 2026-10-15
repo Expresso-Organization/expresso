@@ -10,6 +10,7 @@ import {
   searchPageLibrary,
   retrievePageLibrary,
   librarySelection,
+  collectedBoundDetails,
   LIBRARY_TOTAL,
 } from "./library.js";
 import { renderStructuredPortfolio } from "./renderer.js";
@@ -152,5 +153,98 @@ describe("전체 수집 라이브러리 연결", () => {
     const selection = librarySelection(next);
     expect(selection.inventoryTotal).toBe(LIBRARY_TOTAL);
     expect(selection.selected[0]?.sha256).toMatch(/^[0-9a-f]{64}$/);
+  });
+});
+// 근거·이미지가 있는 입력으로 사례 원본 하나를 그립니다.
+const withSource = (
+  sourceId: string,
+  type: "CaseTechnical" | "CaseProcess" | "CaseEssay" = "CaseTechnical",
+) => {
+  const input = structuredClone(content);
+  input.sections[0]!.sourceIds = ["e1"];
+  input.sections[0]!.media = [
+    { src: "data:image/png;base64,AA==", alt: "가상 이미지", origin: "fictional" },
+  ];
+  input.evidence = [
+    { id: "e1", kind: "문서", title: "가상 근거 문서", summary: "요약", body: "본문" },
+  ];
+  const next = structuredClone(spec);
+  (next.elements.page!.children as string[]).push("evidence");
+  next.elements.evidence = {
+    type: "EvidenceGrid",
+    props: { evidence: { $state: "/evidence" } },
+    children: [],
+  };
+  next.elements.case = {
+    type,
+    props: { section: { $state: "/sectionById/a" }, sourceId },
+    children: [],
+  };
+  return renderStructuredPortfolio(next, input);
+};
+describe("수집 원본 렌더링 품질", () => {
+  const sections = () =>
+    search({ slot: "section", status: "renderable" }).items;
+  it("원본을 고른 사례도 사례 유형별 항목 표현을 쓰고 원본에 연결한 항목은 반복하지 않는다", () => {
+    for (const item of sections()) {
+      const bound = collectedBoundDetails(item.id);
+      const technical = withSource(item.id).html,
+        process = withSource(item.id, "CaseProcess").html;
+      expect(technical, item.sourceItemId).not.toMatch(/<dl\b|<dd\b/);
+      for (let i = 0; i < 5; i++)
+        expect(technical.split(`설명 ${i}`).length - 1, item.sourceItemId).toBe(1);
+      if (bound < 5) {
+        expect(technical, item.sourceItemId).toContain('class="sp-facts"');
+        expect(process, item.sourceItemId).toContain('class="sp-steps"');
+      }
+      expect(technical).toContain(`sp-source-details sp-case-technical`);
+    }
+    expect(collectedBoundDetails("watermelon-feature-1")).toBe(5);
+    expect(collectedBoundDetails("watermelon-feature-4")).toBe(3);
+    expect(collectedBoundDetails("watermelon-card")).toBe(0);
+  });
+  it("원본의 샘플 수치로 그린 그래프와 글자를 지운 빈 샘플 상자를 출력하지 않는다", () => {
+    const feature4 = withSource("watermelon-feature-4").html,
+      feature1 = withSource("watermelon-feature-1").html;
+    for (const sample of ["height:40%", "height:90%", "width:82%", "rotate-45"])
+      expect(feature4).not.toContain(sample);
+    expect(feature1).not.toContain("bg-white/80 px-2 py-1");
+    // 입력 슬롯으로 연결한 제목과 설명은 남는다.
+    expect(feature4).toContain("항목 0");
+    expect(feature4).toContain("설명 2");
+  });
+  it("관련 자료 링크가 근거 항목의 제목을 표시한다", () => {
+    for (const item of sections()) {
+      const html = withSource(item.id).html;
+      expect(html, item.sourceItemId).toContain('href="#source-e1"');
+      expect(html).toContain("가상 근거 문서 ↗");
+      expect(html).not.toMatch(/관련 자료 \d/);
+    }
+  });
+  it("이미지가 있는 히어로는 이름과 자기 정의를 블러 판 하나로 묶는다", () => {
+    const input = structuredClone(content);
+    input.sections[0]!.media = [
+      { src: "data:image/png;base64,AA==", alt: "가상 이미지", origin: "fictional" },
+    ];
+    for (const item of search({ slot: "intro", status: "renderable" }).items) {
+      const next = structuredClone(spec);
+      Object.assign(next.elements.intro!.props, { sourceId: item.id });
+      const { html, css } = renderStructuredPortfolio(next, input);
+      expect(html, item.sourceItemId).toMatch(
+        /<div class="sp-source-nameplate"><h1[^>]*>가상 서연<\/h1><p class="sp-definition sp-source-definition">사용자 인터페이스를 설계합니다.<\/p><\/div>/,
+      );
+      expect(css).toContain("backdrop-filter:blur(");
+    }
+  });
+  it("원본 레이어보다 낮은 레이어에 기본 규칙을 두어 원본 크기 유틸리티를 덮지 않는다", () => {
+    const { css, html } = withSource("watermelon-book");
+    // 먼저 선언한 레이어가 가장 낮은 우선순위를 갖습니다.
+    expect(css.indexOf("@layer")).toBe(css.indexOf("@layer sp-source-base"));
+    const reset = [...css.matchAll(/\.sp-source \*\{[^}]*min-width:0/g)];
+    expect(reset).toHaveLength(1);
+    const layer = css.indexOf("@layer sp-source-base");
+    expect(reset[0]!.index).toBeGreaterThan(layer);
+    expect(reset[0]!.index).toBeLessThan(css.indexOf("}}", layer));
+    expect(html).toContain("min-w-[calc(var(--book-width))]");
   });
 });

@@ -17,7 +17,7 @@
 
 생성기는 모든 호환 소개·사례 원본 ID를 모델에게 제공합니다. 참고 자료는 전체 목록에서 프로필과 요청 키워드를 검색해 최대 8개를 전달합니다. 모델은 `watermelon-hero-12`처럼 읽을 수 있는 Registry 키를 `sourceId`에 적습니다. 기존 수집 ID도 호환됩니다. 키는 하나의 원본 수집 ID로 해석되며 선택 기록에 둘을 함께 저장합니다. 선택적 `referenceIds`에는 검색한 참고 ID를 적습니다. 동적 Zod 계약은 제공한 실행 ID만 허용합니다. 저장·직접 편집 렌더링에서도 실제 Registry와 역할을 검사합니다.
 
-`NameIntro`와 사례 타입은 의미 단위를 나타냅니다. `sourceId`는 실제 렌더링 구현을 지정합니다. 예를 들어 같은 `CaseTechnical`에 Card 또는 Feature 원본을 선택할 수 있습니다. 모델이 HTML이나 React 코드를 새로 작성하지 않습니다.
+`NameIntro`와 사례 타입은 의미 단위를 나타냅니다. `sourceId`는 실제 렌더링 구현을 지정합니다. 예를 들어 같은 `CaseTechnical`에 Card 또는 Feature 원본을 선택할 수 있습니다. 모델이 HTML이나 React 코드를 새로 작성하지 않습니다. 원본을 고른 사례도 설명 블록에 `sp-case-${kind}`를 붙여 유형별 항목 표현(기술형=항목표, 과정형=단계, 기사형=설명 묶음)과 이미지 규칙을 그대로 씁니다. Feature 원본이 이미 표시한 항목 수는 빌드가 `runtime.boundDetails`에 기록하고, 나머지 항목만 설명 블록에 출력합니다. 관련 자료 링크는 근거 항목의 제목을 표시합니다.
 
 원본에 입력을 연결하는 방법은 다음과 같습니다.
 
@@ -25,6 +25,9 @@
 - 제목·소개·이름·내부 링크·제공 이미지를 원본 props에 전달합니다.
 - Feature 1과 4는 원본 JSX의 제목·설명 위치를 데이터 슬롯으로 표시합니다.
 - 원본의 샘플 문구·수치·인물 목록을 제거합니다. 이미지와 배경 URL은 제공된 자산으로 제한합니다.
+- 원본 코드에 글자가 있었는데 샘플을 지운 뒤 입력 내용이 하나도 남지 않는 요소는 출력하지 않습니다. Feature 4의 샘플 수치 막대·도넛·진행 막대와 Feature 1의 빈 알약 상자가 여기에 해당합니다. 원래 글자 없이 만든 장식은 `data-source-decoration`으로 표시하고 그대로 둡니다.
+- 원본은 Tailwind 기본 리셋을 전제로 작성됐습니다. 리셋 중 링크 상속·이미지 최대 폭·`border-box`·`min-width:0`만 원본 레이어보다 먼저 선언한 `sp-source-base` 레이어에 둡니다. 레이어 밖에 두면 원본의 크기 유틸리티를 덮어 Book 표지 폭이 0이 됩니다.
+- 이미지가 있는 히어로는 이름과 자기 정의를 `.sp-source-nameplate` 하나로 묶고 블러 판을 씌웁니다. 배경 이미지와 어둡게 처리는 유지합니다.
 - 로그인·검색·외부 폼·동영상 등 연결되지 않은 동작을 제거합니다. 내비게이션은 실제 포트폴리오 목차에 연결합니다.
 - 원본 Motion 노드는 저장 HTML에서 읽을 수 있는 CSS 등장·호버 효과로 연결합니다. 원본의 클라이언트 상호작용을 전부 재현했다고 표시하지 않습니다.
 - 사례 본문·설명·근거·이미지는 입력 내용이 누락되지 않도록 함께 출력합니다.
@@ -46,10 +49,22 @@
 ## 검증 근거
 
 - `packages/portfolio-renderer/src/library.test.ts`: 전체 수집 ID 보존, 원본 전체 SSR, 샘플 제거, 권한·역할 거절, 선택 해시 기록.
-- `check-collected-runtime.mjs --browser`: 38개 × 390/926/1440px, 이름·가로 넘침·JavaScript 없는 표시 검사.
+- `check-collected-runtime.mjs --browser`: 38개 × 390/926/1440px, 이름·가로 넘침·JavaScript 없는 표시, 서식 없는 항목표와 사례 원본의 샘플 잔여 요소 검사.
 - `run-structured-profiles.ts`: 기존 가상 프로필 세 개를 실제 로컬 모델에 입력. 모델 응답 원문·Spec·입력·HTML 해시 기록.
-- `verify-structured-profiles.mjs`: 응답 원문과 저장 Spec 일치, 본문 보존, 이미지·목차·반응형·모션 감소·JavaScript 없는 문서 검사.
+- `verify-structured-profiles.mjs`: 응답 원문과 저장 Spec 일치, 본문 보존, 이미지·목차·반응형·모션 감소·JavaScript 없는 문서, 사례 유형 규칙·샘플 잔여 요소·관련 자료 제목·히어로 이름 판 블러 검사.
 
 로컬 모델에서 JSON Schema 강제 출력이 시간 제한에 걸리면 `PORTFOLIO_JSON_MODE=1`로 JSON 응답을 받고 동일한 동적 Zod 계약으로 검사할 수 있습니다. 이 옵션은 검증 계약을 완화하지 않습니다. 모델 선택의 다양성과 화면 품질은 별도 브라우저 검증 결과로 판단합니다.
 
 이번 검증에서는 가상 프로필 3개의 소개 원본이 2종, 전체 원본 조합이 3종으로 선택됐습니다. `docs/library/previews/portfolio/runs/library-selection-2026-10-07/`에 모델 원문, Spec, 렌더링 문서, 화면과 검증 기록이 있습니다. 밝은 배경 이미지의 글자 대비와 책 표지 내용은 모델 Spec을 유지한 채 렌더러에서 보강했습니다. 이미지 자산은 기존의 가상 입력 준비 과정에서 생성한 SVG입니다.
+
+렌더러만 바꿨을 때는 모델을 다시 부르지 않고 저장 Spec을 다시 그려 비교합니다.
+
+```bash
+PORTFOLIO_RERENDER_FROM=<원래 실행 ID> PORTFOLIO_RUN_ID=<새 실행 ID> services/backend/node_modules/.bin/tsx scripts/library/renderer/run-structured-profiles.ts
+node scripts/library/renderer/compare-runs.mjs <원래 실행 ID> <새 실행 ID>
+node scripts/library/renderer/verify-structured-profiles.mjs <새 실행 ID>
+```
+
+`compare-runs.mjs`는 두 실행의 같은 프로필을 첫 화면과 사례 지면 단위로 캡처하고, 달라진 측정값(서식 없는 항목, 샘플 잔여 요소, 원본 블록 크기, 관련 자료 링크, 기본 링크색 링크, 이름 판 블러, 사례 높이)만 표로 적어 `compare.html`을 만듭니다. 새 실행 폴더의 `notes.json`이 있으면 지면별 설명을 붙입니다. `verify-structured-profiles.mjs`는 `compare.html`이 있으면 비교 페이지에서 링크합니다.
+
+`library-selection-rerender-2026-10-09/`는 위 실행의 Spec을 원본 렌더링 결함 수정 뒤에 다시 그린 결과입니다. 이미지 속 글자는 검사하지 못합니다. 블러 판 밖의 이미지 글자는 그대로 보입니다.
