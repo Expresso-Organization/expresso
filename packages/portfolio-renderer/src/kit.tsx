@@ -15,7 +15,7 @@ export const KitContext = React.createContext<{
   content: StructuredPortfolioContent;
   evidenceTitles: ReadonlyMap<string, string>;
   design: DesignSystemSpecV2;
-  /** 읽는 순서로 매긴 사례 번호(섹션 ID → 1부터). CSS 카운터는 컨테이너 쿼리의 style containment에 갇혀 쓰지 않습니다. */
+  /** 읽는 순서로 매긴 프로젝트 사례 번호(섹션 ID → 1부터). 목차와 사례 머리가 같은 값을 씁니다. CSS 카운터는 컨테이너 쿼리의 style containment에 갇혀 쓰지 않습니다. */
   caseNumbers: ReadonlyMap<string, number>;
 } | null>(null);
 
@@ -301,6 +301,8 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
       );
     },
     ProjectIndex: ({ props: { sections, variant } }) => {
+      const { caseNumbers } = useKit();
+      const number = (id: string, index: number) => twoDigits(caseNumbers.get(id) ?? index + 1);
       const projects = sections.filter((section) => section.pattern === "project");
       const items = projects.length ? projects : sections;
       return (
@@ -314,7 +316,7 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
               {items.map((section, index) => (
                 <a href={`#section-${section.id}`} key={section.id} className="xp-panel">
                   {section.media[0] ? <img src={section.media[0].src} alt={section.media[0].alt} loading="lazy" /> : null}
-                  <span className="xp-num xp-small">{twoDigits(index + 1)}</span>
+                  <span className="xp-num xp-small">{number(section.id, index)}</span>
                   <strong>{section.title}</strong>
                   <span className="xp-small">{section.summary}</span>
                 </a>
@@ -325,7 +327,7 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
               {items.map((section, index) => (
                 <li key={section.id}>
                   <a href={`#section-${section.id}`}>
-                    <span className="xp-num">{twoDigits(index + 1)}</span>
+                    <span className="xp-num">{number(section.id, index)}</span>
                     <span>
                       <strong>{section.title}</strong>
                       <small className="xp-small">{section.summary}</small>
@@ -416,10 +418,12 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
 
 export { kitRegistry };
 
-/** Spec 트리를 읽는 순서로 따라가 사례 요소에 번호를 매깁니다. */
+/** Spec 트리를 읽는 순서로 따라가 프로젝트 사례에 번호를 매깁니다. 소개·역량·경력 사례는 번호 없이 둡니다. */
 export function caseNumbers(
   spec: { root: string; elements: Record<string, { type: string; props: unknown; children?: string[] }> },
+  content: StructuredPortfolioContent,
 ): Map<string, number> {
+  const projects = new Set(content.sections.filter((section) => section.pattern === "project").map((section) => section.id));
   const numbers = new Map<string, number>();
   const visit = (key: string) => {
     const node = spec.elements[key];
@@ -427,7 +431,7 @@ export function caseNumbers(
     // 사례 props.section은 {$state: "/sectionById/<id>"} 바인딩입니다.
     const binding = (node.props as { section?: { $state?: unknown } }).section?.$state;
     const id = typeof binding === "string" ? binding.match(/^\/sectionById\/(.+)$/)?.[1] : undefined;
-    if (id && !numbers.has(id)) numbers.set(id, numbers.size + 1);
+    if (id && projects.has(id) && !numbers.has(id)) numbers.set(id, numbers.size + 1);
     for (const child of node.children ?? []) visit(child);
   };
   visit(spec.root);

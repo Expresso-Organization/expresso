@@ -162,7 +162,8 @@ describe("토큰 키트 경로", () => {
     expect(html).toContain('data-case-type="technical"');
     // 사례 번호는 읽는 순서로 매기고, 컨테이너 안에서도 이어집니다.
     expect(html).toMatch(/<span class="xp-num">01<\/span> · 프로젝트/);
-    expect(html).toMatch(/<span class="xp-num">02<\/span> · 역량/);
+    // 역량 사례에는 번호를 붙이지 않습니다.
+    expect(html).toContain('<p class="xp-eyebrow">역량</p>');
     expect(html).toContain("<dt>문제</dt><dd>교차로 정체</dd>");
     expect(html).toContain('<ul class="xp-tags"><li>ROS 2</li></ul>');
     expect(html).toContain('href="#source-e1"');
@@ -170,5 +171,25 @@ describe("토큰 키트 경로", () => {
     expect(html).toContain('id="source-e1"');
     expect(html).toContain("&lt;script&gt;");
     expect(html).not.toContain("<script>");
+  });
+});
+
+describe("사례 번호", () => {
+  it("목차와 사례 머리가 Spec의 읽는 순서로 같은 번호를 쓴다", () => {
+    const two = structuredClone(content);
+    two.sections.push({ ...two.sections[0]!, id: "c", title: "두 번째 프로젝트", sourceIds: [] });
+    const spec = pageSpec();
+    // 사례 c를 a보다 먼저 둡니다.
+    spec.elements.page.children = ["intro", "index", "section-c", "section-a", "section-b", "career", "evidence"];
+    (spec.elements as Record<string, unknown>)["section-c"] = {
+      type: "CaseEssay",
+      props: { section: { $state: "/sectionById/c" } },
+      children: [],
+    };
+    const { html } = renderStructuredPortfolio(spec, two, { design: clarity });
+    expect(html).toMatch(/href="#section-c"><span class="xp-num">01<\/span>/);
+    expect(html).toMatch(/href="#section-a"><span class="xp-num">02<\/span>/);
+    expect(html).toMatch(/id="section-c"[^]*?<span class="xp-num">01<\/span> · 프로젝트/);
+    expect(html).toMatch(/id="section-a"[^]*?<span class="xp-num">02<\/span> · 프로젝트/);
   });
 });

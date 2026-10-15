@@ -490,7 +490,7 @@ export function renderStructuredPortfolio(
         <VisibilityProvider>
           <ActionProvider handlers={{}}>
             {design ? (
-              <KitContext.Provider value={{ content: snapshot.content, evidenceTitles, design, caseNumbers: caseNumbers(snapshot.spec) }}>
+              <KitContext.Provider value={{ content: snapshot.content, evidenceTitles, design, caseNumbers: caseNumbers(snapshot.spec, snapshot.content) }}>
                 <Renderer spec={snapshot.spec} registry={kitRegistry} />
               </KitContext.Provider>
             ) : (
