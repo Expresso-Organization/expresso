@@ -71,3 +71,5 @@ export * from "./design-system.js";
 export * from "./structured-portfolio.js";
 
 export * from "./page-library.js";
+
+export * from "./agent-chat.js";
