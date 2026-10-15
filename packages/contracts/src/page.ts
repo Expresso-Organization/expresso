@@ -305,12 +305,17 @@ export const PageQaCheckSchema = z.strictObject({
     "responsive-css",
     "reduced-motion",
     "portfolio-plan",
+    // 디자인 시스템 토큰으로 판정하는 키트 검사입니다(대비 · 본문 크기 · 웹폰트).
+    "design-contrast",
+    "design-type-size",
+    "design-fonts",
   ]),
   status: z.enum(["pass", "fail"]),
   severity: z.enum(["error", "warning"]),
   detail: z.string().max(2_000),
 });
 
+export type PageQaCheck = z.infer<typeof PageQaCheckSchema>;
 export const PageQaReportSchema = z.strictObject({
   status: z.enum(["ready", "failed_qa"]),
   checks: z.array(PageQaCheckSchema),
