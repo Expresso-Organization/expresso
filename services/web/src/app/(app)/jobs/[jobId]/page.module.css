@@ -337,9 +337,11 @@
   transition: width var(--ex-motion-panel);
 }
 
-/* 접힌 띠 — 왼쪽 앱 사이드바의 접힌 폭과 같은 56px. */
+/* 접으면 레일이 사라지고 본문이 그 자리를 쓴다. 채팅은 마운트된 채 감춰 둔다. */
 .rail[data-collapsed="true"] {
-  width: 56px;
+  width: 0;
+  border-left: 0;
+  overflow: hidden;
 }
 
 .railChat {
@@ -382,36 +384,9 @@
   background: var(--ex-fg-muted);
 }
 
-.railStrip {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding-top: 14px;
-}
 
-.railExpand {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border: 0;
-  border-radius: 10px;
-  background: var(--ex-accent-surface);
-  color: var(--ex-accent-text);
-  cursor: pointer;
-}
 
-.railExpand:hover {
-  background: var(--ex-bg-tint-strong);
-}
 
-.railRunning {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--ex-accent);
-}
 
 .palette {
   display: flex;
@@ -439,17 +414,52 @@
   color: var(--ex-fg-subtle);
 }
 
-/* 문서 헤더의 보조 동작 — 정의서 06b "관심 공고에 담기". */
-.headAction {
-  border: none;
-  background: none;
-  padding: 0;
+/* 머리 오른쪽 아이콘 버튼 세 개 — 관심 공고 · 원문 · 채팅. */
+.headActions {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: var(--ex-text-sm);
-  color: var(--ex-fg-body);
+  gap: 4px;
+}
+
+.headIcon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ex-fg-muted);
   cursor: pointer;
+  text-decoration: none;
+}
+
+.headIcon:hover {
+  background: var(--ex-bg-tint);
+}
+
+.headIcon:focus-visible {
+  outline: 2px solid var(--ex-accent-soft);
+  outline-offset: 1px;
+}
+
+/* 접힌 채 응답이 진행 중일 때의 점. */
+.chatRunning {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ex-accent);
+}
+
+/* 레일이 본문 아래로 내려가는 폭에서는 접지 않으므로 버튼도 없다. */
+@media (max-width: 1023px) {
+  .chatToggle {
+    display: none;
+  }
 }
 
 /* 공고 원문 — 뽑아 놓은 것이 없으면 이게 본문이다 */

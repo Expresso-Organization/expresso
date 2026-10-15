@@ -119,11 +119,9 @@ const convertMessage = (message: AgentMessage): ThreadMessageLike => ({
     { type: "text", text: message.text },
   ],
 });
-export function AgentChat({ job, standalone = false, onCollapse, onRunningChange, ...props }: {
+export function AgentChat({ job, standalone = false, onRunningChange, ...props }: {
   context?: AgentContext; contextLabel?: string; standalone?: boolean; job?: AgentChatJob;
-  /** 있으면 머리에 "채팅 접기" 버튼을 둔다 — 접을 수 있는 자리(공고 상세 레일)만 넘긴다. */
-  onCollapse?: (() => void) | undefined;
-  /** 응답 진행 여부가 바뀔 때. 접힌 레일이 진행 표시를 그리는 데 쓴다. */
+  /** 응답 진행 여부가 바뀔 때. 레일이 접혀 있으면 머리의 채팅 버튼이 진행 표시를 그린다. */
   onRunningChange?: ((running: boolean) => void) | undefined;
 }) {
   const context: AgentContext | undefined = job ? { kind: "job", id: job.id } : props.context;
@@ -172,7 +170,7 @@ export function AgentChat({ job, standalone = false, onCollapse, onRunningChange
       <div className={styles.main}>
         <header className={styles.header}>
           <div className={styles.heading}><span className={styles.assistantMark}><LogoMark size={22} /></span><div><strong>{state.conversation?.title ?? "새 대화"}</strong><span>{running ? "답변을 준비하고 있어요" : "Expresso AI"}</span></div></div>
-          <div className={styles.headerActions}><span className={standalone ? styles.compactHistory : undefined}><ConversationSwitcher contexts={state.conversation?.contexts ?? []} contextDisabled={contextDisabled} onToggleContext={toggleContext} onPreview={setPreview} currentId={state.id} conversations={state.list} disabled={state.pending} onSelect={state.select} /></span>{!standalone ? <Link aria-label="독립 채팅으로 크게 열기" title="크게 열기" href={{ pathname: "/agent", query: state.id ? { chat: state.id } : {} }}><Icon name="arrows-out-simple" size={17} /></Link> : null}<Button variant="ghost" size="icon" aria-label="새 대화" title="새 대화" disabled={state.pending} onClick={() => state.select(null)}><Icon name="note-pencil" size={18} /></Button>{onCollapse ? <Button variant="ghost" size="icon" aria-label="채팅 접기" title="채팅 접기" onClick={onCollapse}><Icon name="sidebar-simple" size={18} /></Button> : null}</div>
+          <div className={styles.headerActions}><span className={standalone ? styles.compactHistory : undefined}><ConversationSwitcher contexts={state.conversation?.contexts ?? []} contextDisabled={contextDisabled} onToggleContext={toggleContext} onPreview={setPreview} currentId={state.id} conversations={state.list} disabled={state.pending} onSelect={state.select} /></span>{!standalone ? <Link aria-label="독립 채팅으로 크게 열기" title="크게 열기" href={{ pathname: "/agent", query: state.id ? { chat: state.id } : {} }}><Icon name="arrows-out-simple" size={17} /></Link> : null}<Button variant="ghost" size="icon" aria-label="새 대화" title="새 대화" disabled={state.pending} onClick={() => state.select(null)}><Icon name="note-pencil" size={18} /></Button></div>
         </header>
 
         <div className={styles.contexts} aria-label="대화에 연결된 자료">

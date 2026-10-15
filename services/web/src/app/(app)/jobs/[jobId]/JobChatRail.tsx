@@ -1,7 +1,7 @@
 "use client";
 
-import type { CSSProperties, KeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import type { CSSProperties, KeyboardEvent, PointerEvent as ReactPointerEvent, ReactNode, RefObject } from "react";
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { Icon } from "@/components/ui/Icon";
 import { AgentChat, type AgentChatJob } from "@/features/agent-chat/AgentChat";
@@ -74,15 +74,50 @@ export function useJobChatRail(container: () => HTMLElement | null) {
   };
 }
 
-/** 공고 상세 우측 레일. 채팅을 감싸고, 왼쪽 경계 핸들과 접힌 띠를 그린다. */
-export function JobChatRail({ job }: { job: AgentChatJob }) {
+type RailValue = ReturnType<typeof useJobChatRail> & { aside: RefObject<HTMLElement | null>; running: boolean; setRunning: (running: boolean) => void };
+const RailContext = createContext<RailValue | null>(null);
+function useRail() {
+  const value = useContext(RailContext);
+  if (!value) throw new Error("공고 채팅 레일은 JobChatRailProvider 안에서만 쓸 수 있습니다.");
+  return value;
+}
+
+/**
+ * 공고 상세의 머리(접기 · 펼치기 버튼)와 레일이 함께 보는 상태.
+ *
+ * 접기 버튼은 페이지 머리에, 레일은 본문 오른쪽에 있어 둘을 감싸는 자리에서 상태를 든다.
+ * 최대 너비는 레일이 들어 있는 본문의 폭으로 정하므로 레일의 `<aside>`를 여기서 참조한다.
+ */
+export function JobChatRailProvider({ children }: { children: ReactNode }) {
   const aside = useRef<HTMLElement>(null);
   const container = useCallback(() => aside.current?.parentElement ?? null, []);
   const rail = useJobChatRail(container);
   const [running, setRunning] = useState(false);
+  return <RailContext.Provider value={{ ...rail, aside, running, setRunning }}>{children}</RailContext.Provider>;
+}
+
+/**
+ * 머리의 채팅 접기 · 펼치기 버튼. 레일이 본문 옆에 설 때(≥1024px)만 보인다 — 첫 렌더에서
+ * 자리를 잡아 두고, 좁은 폭에서는 CSS가 감춘다. 접힌 채 응답이 진행 중이면 점을 하나 둔다.
+ */
+export function JobChatToggle({ className }: { className?: string | undefined }) {
+  const rail = useRail();
+  const open = !(rail.docked && rail.collapsed);
+  const label = open ? "채팅 접기" : "채팅 펼치기";
+  return (
+    <button type="button" className={`${className ?? ""} ${styles.chatToggle}`} aria-label={label} title={label} aria-pressed={open} onClick={() => rail.setCollapsed(open)}>
+      <Icon name="chat-circle-dots" weight={open ? "fill" : "regular"} size={16} color={open ? "var(--ex-accent-text)" : "var(--ex-fg-muted)"} />
+      {!open && rail.running ? <span className={`${styles.chatRunning} ex-anim-pulse`} role="status" aria-label="응답을 준비하고 있어요" /> : null}
+    </button>
+  );
+}
+
+/** 공고 상세 우측 레일. 채팅을 감싸고 왼쪽 경계 핸들을 그린다. 접히면 폭이 0이 된다. */
+export function JobChatRail({ job }: { job: AgentChatJob }) {
+  const rail = useRail();
   const [resizing, setResizing] = useState(false);
   const drag = useRef<{ startX: number; startWidth: number; width: number } | null>(null);
-  const { resize, commit } = rail;
+  const { resize, commit, setRunning } = rail;
 
   useEffect(() => {
     if (!resizing) return;
@@ -127,7 +162,7 @@ export function JobChatRail({ job }: { job: AgentChatJob }) {
   const collapsed = rail.docked && rail.collapsed;
   return (
     <aside
-      ref={aside}
+      ref={rail.aside}
       className={styles.rail}
       data-collapsed={collapsed ? "true" : "false"}
       data-resizing={resizing ? "true" : "false"}
@@ -148,17 +183,9 @@ export function JobChatRail({ job }: { job: AgentChatJob }) {
           onPointerDown={startResize}
         />
       ) : null}
-      {collapsed ? (
-        <div className={styles.railStrip}>
-          <button type="button" className={styles.railExpand} aria-label="채팅 펼치기" title="채팅 펼치기" onClick={() => rail.setCollapsed(false)}>
-            <Icon name="chat-circle-dots" size={18} />
-          </button>
-          {running ? <span className={`${styles.railRunning} ex-anim-pulse`} role="status" aria-label="응답을 준비하고 있어요" /> : null}
-        </div>
-      ) : null}
       {/* 접혀도 채팅은 마운트된 채로 둔다 — 입력 중인 글과 진행 중인 응답이 끊기지 않게. */}
       <div className={styles.railChat} hidden={collapsed}>
-        <AgentChat job={job} onCollapse={rail.docked ? () => rail.setCollapsed(true) : undefined} onRunningChange={setRunning} />
+        <AgentChat job={job} onRunningChange={setRunning} />
       </div>
     </aside>
   );

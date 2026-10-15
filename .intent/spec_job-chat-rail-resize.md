@@ -11,8 +11,9 @@ date: 2026-10-16
 
 ## 요구사항
 
-- [ ] ≥1024px: 채팅 머리에 "채팅 접기" 버튼. 누르면 레일이 56px 띠가 되고, 띠에는 "채팅 펼치기"
-      버튼과(응답 중이면) 진행 표시가 있다. 접혀 있어도 `AgentChat`은 마운트된 채로 남는다.
+- [ ] ≥1024px: 페이지 머리 오른쪽에 아이콘 버튼 세 개(관심 공고 · 공고 원문 링크(`sourceUrl`이 있을 때) ·
+      채팅). 채팅 버튼(`aria-pressed`)이 "채팅 접기"/"채팅 펼치기"를 오간다. 접으면 레일 폭이 0이 되고
+      `AgentChat`은 마운트된 채로 감춰진다. 접힌 채 응답 중이면 채팅 버튼에 점이 있다.
 - [ ] ≥1024px: 레일 왼쪽 경계(`role="separator"`)를 끌거나 ←/→(24px)로 너비를 바꾼다.
       범위는 316px ~ (본문 폭 − 700px). 최대가 316보다 작으면 316. 창이 줄어 최대를 넘으면 최대로.
       `aria-valuenow/min/max`가 현재 값과 범위를 말한다.
@@ -23,12 +24,14 @@ date: 2026-10-16
 
 ## 설계
 
-- `jobs/[jobId]/JobChatRail.tsx`(클라이언트): `<aside>`와 핸들 · 띠를 그리고 `AgentChat`을 감싼다.
+- `jobs/[jobId]/JobChatRail.tsx`(클라이언트): `JobChatRailProvider`가 머리와 레일을 함께 감싸 상태를
+  든다(머리의 `JobChatToggle`과 본문의 `JobChatRail`이 같은 상태를 본다). `JobChatRail`은 `<aside>`와
+  핸들을 그리고 `AgentChat`을 감싼다.
   너비는 CSS 변수 `--job-chat-width`로 넘겨 `page.module.css`의 `.rail`이 쓴다. 상태 로직은
   `useJobChatRail` 훅(같은 파일)에 두고, 끌기 · 키보드는 `DocumentPanel`과 같은 방식(포인터 캡처 대신
   window 이벤트, body 커서)으로 한다. 최대폭은 `aside.parentElement.clientWidth - 700`.
-- `AgentChat`에 `onCollapse?: () => void`(있으면 머리에 접기 버튼)와
-  `onRunningChange?: (running: boolean) => void`(띠의 진행 표시)를 더한다. 공고 페이지만 넘긴다.
+- `AgentChat`에 `onRunningChange?: (running: boolean) => void`(머리 채팅 버튼의 진행 표시)를 더한다.
+  공고 페이지만 넘긴다.
 - 접힌 동안 채팅은 `hidden` 속성으로 감춘다(마운트 유지).
 
 ## 버린 대안

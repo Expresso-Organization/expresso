@@ -15,10 +15,10 @@ date: 2026-10-16
 | 파일 | 무엇을 |
 |---|---|
 | `services/web/src/app/(app)/jobs/[jobId]/JobChatRail.tsx` · `.test.tsx` | 레일 껍데기 · 훅 · 테스트 |
-| `services/web/src/app/(app)/jobs/[jobId]/page.tsx` | `<aside>`를 `JobChatRail`로 |
+| `services/web/src/app/(app)/jobs/[jobId]/page.tsx` | `<aside>`를 `JobChatRail`로, 머리 아이콘 버튼 세 개, `JobChatRailProvider`로 감쌈 |
 | `services/web/src/app/(app)/jobs/[jobId]/page.module.css` | 너비 변수 · 접힘 · 핸들 · 띠 |
-| `services/web/src/features/agent-chat/AgentChat.tsx` | `onCollapse` · `onRunningChange` |
-| `docs/Expresso Screens.dc.html` | 06b 레일 버튼 · 핸들 |
+| `services/web/src/features/agent-chat/AgentChat.tsx` | `onRunningChange` |
+| `docs/Expresso Screens.dc.html` | 06b 머리 버튼 세 개 · 레일 핸들 |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
 

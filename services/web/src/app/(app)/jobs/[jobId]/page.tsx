@@ -9,7 +9,7 @@ import { jobs as jobsApi } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 import { backToListHref } from "../list-query";
-import { JobChatRail } from "./JobChatRail";
+import { JobChatRail, JobChatRailProvider, JobChatToggle } from "./JobChatRail";
 
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { mendEmphasis } from "@/components/ui/mend-emphasis";
@@ -85,25 +85,44 @@ export default async function JobDetailPage({
     || job.technologies.length > 0;
 
   return (
-    <>
+    // 머리의 채팅 버튼과 본문의 레일이 접힘 상태를 함께 본다.
+    <JobChatRailProvider>
       <DocumentHeader
         crumbs={[
           { label: "공고 탐색", href: backHref },
           `${job.company.name} · ${job.title}`,
         ]}
         actions={
-          <>
-            <button type="button" className={styles.headAction}>
+          // 머리 오른쪽은 아이콘 버튼 세 개다 — 관심 공고 · 원문 · 채팅. 이름은 툴팁과 읽기 레이블로 둔다.
+          <div className={styles.headActions}>
+            <button
+              type="button"
+              className={styles.headIcon}
+              aria-label={job.interest ? "관심 공고" : "관심 공고에 담기"}
+              title={job.interest ? "관심 공고" : "관심 공고에 담기"}
+              aria-pressed={!!job.interest}
+            >
               <Icon
                 name="bookmark-simple"
                 weight={job.interest ? "fill" : "regular"}
-                size={14}
+                size={16}
                 color={job.interest ? "var(--ex-accent-text)" : "var(--ex-fg-muted)"}
               />
-              {job.interest ? "관심 공고" : "관심 공고에 담기"}
             </button>
-            <Icon name="arrow-square-out" size={16} color="var(--ex-fg-muted)" />
-          </>
+            {job.sourceUrl ? (
+              <a
+                className={styles.headIcon}
+                href={job.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="공고 원문 열기"
+                title="공고 원문 열기"
+              >
+                <Icon name="arrow-square-out" size={16} color="var(--ex-fg-muted)" />
+              </a>
+            ) : null}
+            <JobChatToggle className={styles.headIcon} />
+          </div>
         }
       />
       <AppBody>
@@ -344,7 +363,7 @@ export default async function JobDetailPage({
           />
         </div>
       </AppBody>
-    </>
+    </JobChatRailProvider>
   );
 }
 

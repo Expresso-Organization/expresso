@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-import { act, cleanup, renderHook } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, renderHook, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { LEFT_MIN_WIDTH, MIN_WIDTH, useJobChatRail } from "./JobChatRail";
+import { JobChatRailProvider, JobChatToggle, LEFT_MIN_WIDTH, MIN_WIDTH, useJobChatRail } from "./JobChatRail";
 
 const media = (matches: boolean) => vi.fn(() => ({ matches, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
 const body = (width: number) => { const element = document.createElement("div"); Object.defineProperty(element, "clientWidth", { value: width }); return () => element; };
@@ -49,5 +49,15 @@ describe("공고 채팅 레일", () => {
     const { result } = renderHook(() => useJobChatRail(body(1000)));
     expect(result.current.docked).toBe(false);
     expect(result.current.collapsed).toBe(false);
+  });
+  it("머리의 채팅 버튼 하나가 접기와 펼치기를 오가며 그 상태를 기억한다", () => {
+    vi.stubGlobal("matchMedia", media(true));
+    vi.stubGlobal("requestAnimationFrame", () => 1); vi.stubGlobal("cancelAnimationFrame", vi.fn());
+    render(<JobChatRailProvider><JobChatToggle /></JobChatRailProvider>);
+    fireEvent.click(screen.getByRole("button", { name: "채팅 접기" }));
+    expect(screen.getByRole("button", { name: "채팅 펼치기" }).getAttribute("aria-pressed")).toBe("false");
+    expect(localStorage.getItem("ex.jobChat.collapsed")).toBe("true");
+    fireEvent.click(screen.getByRole("button", { name: "채팅 펼치기" }));
+    expect(screen.getByRole("button", { name: "채팅 접기" }).getAttribute("aria-pressed")).toBe("true");
   });
 });
