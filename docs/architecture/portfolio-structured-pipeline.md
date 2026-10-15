@@ -16,6 +16,10 @@
 
 두 번째 호출은 `structuredModelSchema(content)`에 따라 Spec을 만듭니다. 입력 식별자와 데이터 참조는 고정하고 지면·순서·팔레트·서체·모션을 선택합니다. 이름 소개는 맨 앞, 제공된 연락처는 맨 뒤에 둡니다. 누락·중복·잘못된 참조를 거부하며, 실패하면 한 번 수정 요청을 보냅니다. 사용자가 생성 전에 선택한 스타일은 모델 선택보다 우선합니다.
 
+수정 요청은 Spec 검사(`validateRenderableSpec`: 계약·참조·순서와 수집 원본 역할, 사용자 스타일 보존) 실패에만 보냅니다. 검사를 통과한 Spec은 한 번 렌더링합니다. 렌더링 예외와 저장 크기 초과는 렌더러의 `StructuredRenderError`, 생성기의 `PageRenderError`로 끝나며 모델을 다시 호출하지 않습니다. 서버 렌더링에서는 json-render의 요소별 오류 경계가 동작하지 않아 컴포넌트 하나의 예외가 렌더링 전체를 멈추고, 이 오류는 Spec을 바꿔도 해결되지 않기 때문입니다.
+
+프롬프트의 요소 ID 목록과 요소별 `type`·`props`·`children` 형태는 공급자에 넘기는 출력 스키마 객체에서 생성합니다(`structured-spec-format.ts`). 컨테이너 자식 수와 variant 규칙은 계약 상수에서 만듭니다. 순서·한 번씩 연결·원본 선택 기준처럼 스키마로 표현할 수 없는 규칙만 문장으로 둡니다. json-render의 `catalog.prompt()`는 JSONL 패치 출력과 예시 데이터 생성을 지시하므로 사용하지 않습니다.
+
 공급자에 전달하는 `children`은 요소 ID의 enum 배열과 길이 제한을 사용합니다. [OpenAI Structured Outputs의 지원 배열 문법](https://developers.openai.com/api/docs/guides/structured-outputs)에 맞춰 위치별 튜플 문법을 피하고, 소개·연락처의 위치와 참조 관계는 반환 후 도메인 검사에서 검증합니다.
 
 `packages/portfolio-renderer`는 실제 `@json-render/core` Catalog와 `@json-render/react` Registry/Renderer를 사용합니다. 서버에서 HTML을 만들고 같은 CSS를 제품 미리보기와 저장 문서에 사용합니다. 모델이 HTML/CSS를 자유 작성하는 경로는 `PAGE_GENERATION_FORMAT=html`로 유지합니다. 기본값은 `json-render`이며 AI 공급자의 기본값 `off`는 유지합니다.

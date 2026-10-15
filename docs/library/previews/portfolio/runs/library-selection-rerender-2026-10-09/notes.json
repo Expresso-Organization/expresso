@@ -1,0 +1,21 @@
+{
+  "summary": [
+    "사례 항목표: 원본을 고른 사례가 브라우저 기본 들여쓰기(40px)가 남은 dl 목록으로 나오던 것을, 사례 유형별 항목표·단계·설명 묶음으로 그립니다.",
+    "샘플 장식: Feature 4의 샘플 수치 막대·도넛·진행 막대와 Feature 1의 빈 알약 상자를 제거했습니다. 입력에 없는 데이터를 그래프 모양으로 보여 주던 요소입니다.",
+    "Book 표지: 원본 블록이 28px 높이로 접혀 표지가 보이지 않던 것을 300×400 표지로 복구했습니다.",
+    "히어로: 배경 이미지는 유지하고 이름과 자기 정의 뒤에 블러 판(14px)을 넣었습니다. 로봇 엔지니어·기후 분석가의 '프로젝트 보기' 버튼이 브라우저 기본 링크색과 밑줄로 그려지던 것도 고쳤습니다.",
+    "관련 자료 링크: '관련 자료 1 ↗' 대신 근거 항목의 제목을 표시합니다."
+  ],
+  "climate-analyst/intro": "배경 열지도 이미지의 글자(CITY CLIMATE / OPEN NOTE 01)가 이름 영역에 겹치던 자리에 블러 판을 넣었습니다. '프로젝트 보기' 버튼 안의 파란 기본 밑줄이 사라졌습니다.",
+  "climate-analyst/section-block-heat": "Feature 1 카드마다 남던 빈 알약 상자 5개가 사라졌습니다.",
+  "climate-analyst/section-rain-series": "Feature 4의 샘플 수치 막대 7개·도넛·진행 막대 패널이 사라지고, 원본이 표시하지 않은 항목 2개가 들여쓰기 목록 대신 단계로 나옵니다.",
+  "climate-analyst/section-green-access": "28px로 접혀 있던 Book 표지가 보이고, 항목 5개가 항목표로 나옵니다.",
+  "editorial-designer/intro": "표지 이미지의 '계절의 언어' 곡선 위에 이름이 겹치던 자리에 블러 판을 넣었습니다.",
+  "editorial-designer/section-season-reader": "Book 표지가 보이면서 사례 높이가 늘었습니다. 항목 5개는 전시형 설명 묶음으로 나옵니다.",
+  "editorial-designer/section-archive-walk": "Feature 4의 샘플 수치 그래프가 사라지고 사례 높이가 2214px에서 1195px로 줄었습니다.",
+  "editorial-designer/section-reading-routes": "카드 안의 항목 5개가 들여쓰기 목록 대신 단계로 나옵니다.",
+  "robotics-engineer/intro": "'프로젝트 보기' 버튼 밑줄이 브라우저 기본 파란색으로 그려지던 것을 고쳤고, 이름 뒤에 블러 판을 넣었습니다.",
+  "robotics-engineer/section-route-planner": "28px로 접혀 있던 Book 표지가 보이고, 항목 5개가 도면 옆 항목표로 나옵니다.",
+  "robotics-engineer/section-gripper-study": "28px로 접혀 있던 Book 표지가 보이고, 항목 5개가 도면 옆 항목표로 나옵니다.",
+  "robotics-engineer/section-warehouse-aisle": "Feature 4의 샘플 수치 그래프가 사라졌습니다."
+}

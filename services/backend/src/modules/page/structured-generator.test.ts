@@ -12,7 +12,7 @@ import {
   type AiCallSpec,
 } from "../../platform/ai/client.js";
 import { StructuredPageGenerator } from "./structured-generator.js";
-import type { PageGenerationContext } from "./generator.js";
+import { PageRenderError, type PageGenerationContext } from "./generator.js";
 
 const content: StructuredPortfolioContent = {
   version: 1,
@@ -243,5 +243,44 @@ describe("모델 기반 구조화 생성", () => {
       new StructuredPageGenerator(unavailable).generate(rawInput),
     ).rejects.toThrow("claude exited with 1");
     expect(unavailable.calls).toHaveLength(1);
+  });
+  it("모델이 컨테이너로 묶은 Spec을 받아 렌더링하고, 규칙을 어긴 컨테이너는 오류와 함께 다시 요청한다", async () => {
+    const grouped = structuredClone(spec) as unknown as {
+      elements: Record<string, unknown> & { page: { children: string[] } };
+    };
+    grouped.elements.page.children = ["intro", "group-1"];
+    grouped.elements["group-1"] = {
+      type: "Columns",
+      props: { variant: "wide-end" },
+      children: ["index", "section-project-a"],
+    };
+    const broken = structuredClone(grouped);
+    (broken.elements["group-1"] as { props: { variant: string } }).props.variant = "panel";
+    const ai = new Stub([broken, grouped]);
+    const result = await new StructuredPageGenerator(ai).generate(context);
+    expect(ai.calls).toHaveLength(2);
+    expect(ai.calls[1]!.prompt).toContain("Columns에 사용할 수 없는 variant");
+    expect(ai.calls[0]!.prompt).toContain("컨테이너 예:");
+    expect(result.html).toContain('data-group="columns" data-variant="wide-end"');
+    expect(result.manifest.structured?.spec).toEqual(grouped);
+  });
+  it("검사를 통과한 Spec의 렌더링 실패는 모델에 다시 요청하지 않는다", async () => {
+    const large = structuredClone(content);
+    large.sections[0]!.media = [
+      {
+        src: "data:image/svg+xml;base64," + "A".repeat(600_000),
+        alt: "가상 시험 이미지",
+        origin: "fictional",
+      },
+    ];
+    const ai = new Stub([spec, spec]);
+    const failure = await new StructuredPageGenerator(ai)
+      .generate({ ...context, structuredContent: large })
+      .catch((error: unknown) => error);
+    expect(ai.calls).toHaveLength(1);
+    expect(failure).toBeInstanceOf(PageRenderError);
+    expect((failure as Error).message).toMatch(
+      /^지면 렌더링에 실패했습니다: .*저장 크기 제한/,
+    );
   });
 });
