@@ -130,6 +130,9 @@ describe("토큰 키트 경로", () => {
       .toContain('data-variant="split"');
     expect(renderStructuredPortfolio(pageSpec({ variant: "media" }), content, { design: clarity }).html)
       .toContain('class="xp-hero-art"');
+    // 어느 구도든 집중 분야를 빠뜨리지 않습니다.
+    for (const variant of ["statement", "split", "media"])
+      expect(renderStructuredPortfolio(pageSpec({ variant }), content, { design: clarity }).html).toContain("<li>센서 융합</li>");
     const noImage = structuredClone(content);
     noImage.sections[0]!.media = [];
     const fallback = renderStructuredPortfolio(pageSpec({ variant: "media" }), noImage, { design: clarity }).html;
@@ -157,6 +160,9 @@ describe("토큰 키트 경로", () => {
     const { html } = renderStructuredPortfolio(pageSpec({}, "mosaic"), content, { design: clarity });
     expect(html).toContain('class="xp-mosaic"');
     expect(html).toContain('data-case-type="technical"');
+    // 사례 번호는 읽는 순서로 매기고, 컨테이너 안에서도 이어집니다.
+    expect(html).toMatch(/<span class="xp-num">01<\/span> · 프로젝트/);
+    expect(html).toMatch(/<span class="xp-num">02<\/span> · 역량/);
     expect(html).toContain("<dt>문제</dt><dd>교차로 정체</dd>");
     expect(html).toContain('<ul class="xp-tags"><li>ROS 2</li></ul>');
     expect(html).toContain('href="#source-e1"');

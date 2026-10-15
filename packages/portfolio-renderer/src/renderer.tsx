@@ -29,7 +29,7 @@ import {
 } from "./library.js";
 import { STRUCTURED_PORTFOLIO_CSS } from "./styles.js";
 import { structuredCatalog } from "./catalog.js";
-import { KitContext, kitCss, kitRegistry } from "./kit.js";
+import { KitContext, caseNumbers, kitCss, kitRegistry } from "./kit.js";
 
 export { structuredCatalog };
 
@@ -490,7 +490,7 @@ export function renderStructuredPortfolio(
         <VisibilityProvider>
           <ActionProvider handlers={{}}>
             {design ? (
-              <KitContext.Provider value={{ content: snapshot.content, evidenceTitles, design }}>
+              <KitContext.Provider value={{ content: snapshot.content, evidenceTitles, design, caseNumbers: caseNumbers(snapshot.spec) }}>
                 <Renderer spec={snapshot.spec} registry={kitRegistry} />
               </KitContext.Provider>
             ) : (

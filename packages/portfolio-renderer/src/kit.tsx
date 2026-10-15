@@ -15,6 +15,8 @@ export const KitContext = React.createContext<{
   content: StructuredPortfolioContent;
   evidenceTitles: ReadonlyMap<string, string>;
   design: DesignSystemSpecV2;
+  /** 읽는 순서로 매긴 사례 번호(섹션 ID → 1부터). CSS 카운터는 컨테이너 쿼리의 style containment에 갇혀 쓰지 않습니다. */
+  caseNumbers: ReadonlyMap<string, number>;
 } | null>(null);
 
 function useKit() {
@@ -103,11 +105,20 @@ function Details({ details }: { details: StructuredSection["details"] }) {
   );
 }
 
+const twoDigits = (value: number) => String(value).padStart(2, "0");
+
 function CaseHead({ section }: { section: StructuredSection }) {
+  const { caseNumbers } = useKit();
+  const number = caseNumbers.get(section.id);
   return (
     <header className="xp-head">
       <p className="xp-eyebrow">
-        <span className="xp-num xp-case-no" /> · {PATTERN_LABEL[section.pattern]}
+        {number ? (
+          <>
+            <span className="xp-num">{twoDigits(number)}</span> ·{" "}
+          </>
+        ) : null}
+        {PATTERN_LABEL[section.pattern]}
       </p>
       <h2 className="xp-h2">{section.title}</h2>
       {section.summary ? <p className="xp-lead">{section.summary}</p> : null}
@@ -142,7 +153,9 @@ function Case({ section, kind }: { section: StructuredSection; kind: CaseKind })
         <ol className="xp-steps">
           {section.details.map((item, index) => (
             <li key={index}>
-              <span className="xp-num" aria-hidden="true" />
+              <span className="xp-num" aria-hidden="true">
+                {twoDigits(index + 1)}
+              </span>
               <div>
                 <h3 className="xp-h3">{item.label}</h3>
                 <Paragraphs value={item.text} />
@@ -267,6 +280,7 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
               <h1 className="xp-name">{profile.name}</h1>
               <p className="xp-headline">{profile.headline}</p>
               <Paragraphs value={profile.intro} className="xp-body xp-lead" />
+              {focus}
               {actions}
             </div>
             <figure className="xp-hero-art">
@@ -300,7 +314,7 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
               {items.map((section, index) => (
                 <a href={`#section-${section.id}`} key={section.id} className="xp-panel">
                   {section.media[0] ? <img src={section.media[0].src} alt={section.media[0].alt} loading="lazy" /> : null}
-                  <span className="xp-num xp-small">{String(index + 1).padStart(2, "0")}</span>
+                  <span className="xp-num xp-small">{twoDigits(index + 1)}</span>
                   <strong>{section.title}</strong>
                   <span className="xp-small">{section.summary}</span>
                 </a>
@@ -311,7 +325,7 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
               {items.map((section, index) => (
                 <li key={section.id}>
                   <a href={`#section-${section.id}`}>
-                    <span className="xp-num">{String(index + 1).padStart(2, "0")}</span>
+                    <span className="xp-num">{twoDigits(index + 1)}</span>
                     <span>
                       <strong>{section.title}</strong>
                       <small className="xp-small">{section.summary}</small>
@@ -401,3 +415,21 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
 });
 
 export { kitRegistry };
+
+/** Spec 트리를 읽는 순서로 따라가 사례 요소에 번호를 매깁니다. */
+export function caseNumbers(
+  spec: { root: string; elements: Record<string, { type: string; props: unknown; children?: string[] }> },
+): Map<string, number> {
+  const numbers = new Map<string, number>();
+  const visit = (key: string) => {
+    const node = spec.elements[key];
+    if (!node) return;
+    // 사례 props.section은 {$state: "/sectionById/<id>"} 바인딩입니다.
+    const binding = (node.props as { section?: { $state?: unknown } }).section?.$state;
+    const id = typeof binding === "string" ? binding.match(/^\/sectionById\/(.+)$/)?.[1] : undefined;
+    if (id && !numbers.has(id)) numbers.set(id, numbers.size + 1);
+    for (const child of node.children ?? []) visit(child);
+  };
+  visit(spec.root);
+  return numbers;
+}

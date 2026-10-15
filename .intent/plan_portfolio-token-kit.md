@@ -26,7 +26,7 @@ date: 2026-10-16
 | `services/backend/src/modules/design-systems/compiler.ts` | 토큰·글꼴 함수를 렌더러에서 가져옴(출력 동일) |
 | `services/backend/src/modules/design-systems/generation-style.ts` · `index.ts` (+ 테스트) | `findPortfolioDesign`, 38종 `designQa` 테스트 |
 | `services/backend/src/modules/page/generator.ts` · `service.ts` · `structured-generator.ts` (+ 테스트) | 문맥의 `design`, 렌더 호출, 프롬프트에서 수집 원본 제거, `NameIntro.variant` 지시, QA 반영 |
-| `scripts/library/renderer/run-structured-profiles.ts` · `verify-structured-profiles.mjs` | 디자인 지정, 키트 재렌더, 검사 두 가지 |
+| `scripts/library/renderer/run-structured-profiles.ts` · `verify-token-kit.mjs` (새) | 디자인 지정, 키트 재렌더(수집 원본 제거·첫 화면 구도 배정 기록). 기존 검증 스크립트는 `.sp-*` 마크업 전용이라 키트 검사(넘침·한 글자 줄바꿈·열 이탈·대비·서체 적용·JS 없는 표시·사례 번호)는 새 스크립트로 둔다 |
 | `docs/library/previews/portfolio/runs/token-kit-2026-10-16/` | 실행 기록·화면·검증 |
 | `docs/architecture/portfolio-structured-pipeline.md` | 키트 경로 설명 |
 
