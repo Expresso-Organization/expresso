@@ -4,14 +4,18 @@ import { normalize } from "./requirement-review.js";
 
 type Records = ReadonlyMap<string, { title: string; text: string }>;
 
-/** 대화에서 가장 최근의 요건 대조. 보완점은 이 대조의 요건 번호를 가리킨다. */
-export function latestReview(messages: readonly AgentMessage[]) {
-  for (let index = messages.length - 1; index >= 0; index -= 1) {
-    const found = [...messages[index]!.tools].reverse().find(tool => tool.review);
-    if (found?.review) return found.review;
+type Tool = AgentMessage["tools"][number];
+/** 대화에서 조건에 맞는 가장 최근 도구 결과와 그 위치(앞에서부터 센 순서). */
+export function latestTool<T>(messages: readonly AgentMessage[], pick: (tool: Tool) => T | undefined) {
+  const tools = messages.flatMap(message => message.tools);
+  for (let position = tools.length - 1; position >= 0; position -= 1) {
+    const value = pick(tools[position]!);
+    if (value) return { value, position };
   }
   return null;
 }
+/** 대화에서 가장 최근의 요건 대조. 보완점은 이 대조의 요건 번호를 가리킨다. */
+export const latestReview = (messages: readonly AgentMessage[]) => latestTool(messages, tool => tool.review)?.value ?? null;
 
 /**
  * 보완점 검증. 규칙은 이전 경력 Gap 분석의 것을 따른다.

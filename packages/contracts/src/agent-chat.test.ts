@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GapReviewDraftSchema, AgentRecordDraftDecisionSchema, AgentRecordDraftInputSchema, RequirementReviewDraftSchema } from "./agent-chat.js";
+import { PlanProposalInputSchema, PreparationTaskSchema, GapReviewDraftSchema, AgentRecordDraftDecisionSchema, AgentRecordDraftInputSchema, RequirementReviewDraftSchema } from "./agent-chat.js";
 
 const jobPostingId = "00000000-0000-4000-8000-000000000001";
 const recordId = "00000000-0000-4000-8000-000000000002";
@@ -39,5 +39,19 @@ describe("보완점 정리", () => {
     const item = { requirementIndex: 0, type: "skill" as const, status: "needs_confirmation" as const, priority: "high" as const, explanation: "설명", suggestedAction: "확인", evidence: [] };
     expect(GapReviewDraftSchema.safeParse({ summary: "요약", items: [item] }).success).toBe(true);
     expect(GapReviewDraftSchema.safeParse({ summary: "요약", items: [{ ...item, requirementIndex: 12 }] }).success).toBe(false);
+  });
+});
+
+describe("준비 계획", () => {
+  const settings = { weeklyHours: 5, weeks: 4, startDate: "2026-10-19" };
+  it("같은 보완점을 두 번 고를 수 없고, 기간은 12주까지다", () => {
+    expect(PlanProposalInputSchema.safeParse({ title: "계획", summary: "요약", gapIndexes: [0, 1], settings }).success).toBe(true);
+    expect(PlanProposalInputSchema.safeParse({ title: "계획", summary: "요약", gapIndexes: [0, 0], settings }).success).toBe(false);
+    expect(PlanProposalInputSchema.safeParse({ title: "계획", summary: "요약", gapIndexes: [0], settings: { ...settings, weeks: 13 } }).success).toBe(false);
+  });
+  it("결과 링크는 http(s)만 받는다", () => {
+    const task = { id: recordId, gapId: recordId, requirement: "요건", kind: "learn", week: 1, date: "2026-10-19", minutes: 60, title: "실습", action: "구현", deliverable: "예제", status: "completed", note: "", outcome: "", spentMinutes: 0, updatedAt: "2026-10-15T00:00:00.000Z" };
+    expect(PreparationTaskSchema.safeParse({ ...task, outcomeUrl: "https://example.com/result" }).success).toBe(true);
+    expect(PreparationTaskSchema.safeParse({ ...task, outcomeUrl: "javascript:alert(1)" }).success).toBe(false);
   });
 });
