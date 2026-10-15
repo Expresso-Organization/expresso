@@ -55,8 +55,11 @@ import { MEDIA_ASSET_PATH_PREFIX } from "./media-path.js";
  * 9 — 요소 ID와 props 형태를 손으로 적던 문장을 출력 스키마에서 생성한다.
  * 스키마가 design.layout을 한 값으로 고정하는데 남아 있던 editorial·gallery·
  * dossier 선택 지시를 뺐다.
+ *
+ * 10 — 내용 정리 호출에서 연락처를 묻지 않는다(입력 경로가 없어 null로 고정).
+ * 이름 아래 한 문장 규칙을 어기면 오류와 직전 출력을 붙여 한 번 다시 요청한다.
  */
-export const PAGE_PROMPT_VERSION = 9;
+export const PAGE_PROMPT_VERSION = 10;
 
 /**
  * 한 지면의 상한.
