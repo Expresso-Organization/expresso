@@ -55,7 +55,7 @@ describe("공유 대화 상태", () => {
     const job = { kind: "job" as const, id: "00000000-0000-4000-8000-0000000000aa" };
     window.history.replaceState(null, "", "/jobs/aa");
     sessionStorage.setItem("ex-agent-conversation", second);
-    const fetcher = vi.fn(async () => Response.json({ data: [] }));
+    const fetcher = vi.fn(async (_url: string) => Response.json({ data: [] }));
     vi.stubGlobal("fetch", fetcher);
     const { result } = renderHook(() => useAgentConversation(job, { restore: "context" }));
     await waitFor(() => expect(result.current.resolving).toBe(false));
