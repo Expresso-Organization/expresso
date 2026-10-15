@@ -13,7 +13,7 @@ date: 2026-10-16
 
 ## 요구사항
 
-- [ ] 렌더러가 디자인 시스템 스펙(`DesignSystemSpecV2`)을 받는다. `renderStructuredPortfolio(spec, content, { design })`이고, `theme` 인자는 `design`으로 대체한다.
+- [ ] 렌더러가 디자인 시스템 스펙(`DesignSystemSpecV2`)을 받는다. `renderStructuredPortfolio(spec, content, { design, theme })`이다. 키트 경로는 `design`만 쓰고(사용자 색은 `design`에 이미 반영), `theme`은 수집 원본으로 그리는 저장된 판의 사용자 색에만 쓴다. `design`이 없으면 저장된 판의 렌더러로 그린다.
 - [ ] Spec의 어떤 요소에도 `sourceId`가 없으면 키트 경로로 그린다. 하나라도 있으면 지금 렌더러로 그린다(저장된 판 호환).
 - [ ] 키트 경로의 CSS 맨 앞에 그 디자인의 Google Fonts `@import`를 넣는다. 서체 변수는 라틴 서체 → 한글 대체 서체 순서다. 고정 서체(Pretendard·JetBrains Mono·Outfit)는 키트 CSS에 쓰지 않는다.
 - [ ] 키트 CSS는 토큰 변수만 쓴다.

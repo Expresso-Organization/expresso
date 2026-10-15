@@ -1,7 +1,5 @@
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { defineCatalog } from "@json-render/core";
-import { schema } from "@json-render/react/schema";
 import {
   StateProvider,
   VisibilityProvider,
@@ -20,6 +18,7 @@ import {
   type StructuredPortfolioContent,
   type StructuredPortfolioSnapshot,
   type StructuredSection,
+  type DesignSystemSpecV2,
 } from "@expresso/contracts";
 import {
   renderCollected,
@@ -29,6 +28,10 @@ import {
   COLLECTED_PORTFOLIO_CSS,
 } from "./library.js";
 import { STRUCTURED_PORTFOLIO_CSS } from "./styles.js";
+import { structuredCatalog } from "./catalog.js";
+import { KitContext, kitCss, kitRegistry } from "./kit.js";
+
+export { structuredCatalog };
 
 // 수집한 레지스트리의 구도를 데이터에 연결할 수 있는 어댑터로 확장합니다.
 export const STRUCTURED_COMPONENT_SOURCES = {
@@ -63,97 +66,6 @@ export const STRUCTURED_COMPONENT_SOURCES = {
     adaptation: "과정별 설명과 자료",
   },
 };
-const projectProps = z.object({
-  section: StructuredSectionSchema,
-  sourceId: z.string().optional(),
-});
-export const structuredCatalog = defineCatalog(schema, {
-  components: {
-    PortfolioPage: {
-      props: z.object({
-        profile: content.shape.profile,
-        design: StructuredDesignSchema,
-        motion: z.enum(["none", "subtle", "showcase"]),
-        rationale: z.string(),
-        referenceIds: z.array(z.string()).optional(),
-      }),
-      slots: ["default"],
-      description:
-        "전체 구도: editorial=고정 소개와 기사 두 열, gallery=전면 작품 전시, dossier=목차와 상세 두 열, library=수집 원본의 전면 구도.",
-    },
-    NameIntro: {
-      props: z.object({
-        profile: content.shape.profile,
-        sections: content.shape.sections.optional(),
-        sourceId: z.string().optional(),
-      }),
-      description:
-        "이름을 가장 크게, 그 아래 짧은 자기 정의와 제공된 대표 작품을 표시합니다.",
-    },
-    ProjectIndex: {
-      props: z.object({
-        sections: content.shape.sections,
-        variant: z.enum(["rows", "mosaic", "rail"]),
-      }),
-      description:
-        "rows=짧은 목록, mosaic=이미지 중심 비대칭 타일, rail=측면 목차.",
-    },
-    CaseEssay: {
-      props: projectProps,
-      description: "문장과 판단을 읽는 기사형. 설명이 긴 자료에 적합합니다.",
-    },
-    CaseGallery: {
-      props: projectProps,
-      description:
-        "제공 이미지를 크게 전시합니다. 이미지가 있는 작품에 사용합니다.",
-    },
-    CaseTechnical: {
-      props: projectProps,
-      description: "도면과 근거, 담당 작업, 결과의 항목표를 나누는 기술형.",
-    },
-    CaseProcess: {
-      props: projectProps,
-      description:
-        "문제·작업·결과 등 두 개 이상의 설명을 단계별로 표시하는 과정형.",
-    },
-    ContentPanel: {
-      props: projectProps,
-      description: "자기소개·능력·추가 설명을 표시합니다.",
-    },
-    Columns: {
-      props: z.object({ variant: z.enum(STRUCTURED_GROUP_VARIANTS.Columns) }),
-      slots: ["default"],
-      description:
-        "두 요소를 나란히 놓는 두 열. even=같은 폭, wide-start=왼쪽이 넓음, wide-end=오른쪽이 넓음. 사례와 근거·경력·목차를 나란히 둘 때 사용합니다.",
-    },
-    Grid: {
-      props: z.object({ variant: z.enum(STRUCTURED_GROUP_VARIANTS.Grid) }),
-      slots: ["default"],
-      description:
-        "2–3개 요소를 같은 폭의 열로 나열합니다. 비슷한 비중의 짧은 사례를 비교해 보여 줄 때 사용합니다.",
-    },
-    Band: {
-      props: z.object({ variant: z.enum(STRUCTURED_GROUP_VARIANTS.Band) }),
-      slots: ["default"],
-      description:
-        "1–3개 요소를 한 묶음으로 구분합니다. panel=면 배경, accent=강조색 상단 선. 지면의 흐름을 나눌 때 사용합니다.",
-    },
-    CareerTimeline: {
-      props: z.object({ career: content.shape.career }),
-      description: "제공된 경력을 시간순으로 표시합니다.",
-    },
-    EvidenceGrid: {
-      props: z.object({ evidence: content.shape.evidence }),
-      description: "표시용으로 선택한 근거 제목과 설명을 펼칩니다.",
-    },
-    Contact: {
-      props: z.object({ contact: content.shape.contact }),
-      description: "입력에 제공된 연락처를 표시합니다.",
-    },
-  },
-  actions: {},
-});
-
 // shadcn Card의 구조를 유지하고 포트폴리오 의미 토큰으로 렌더링합니다.
 function Card({
   children,
@@ -538,12 +450,29 @@ export function validateRenderableSpec(
   return snapshot;
 }
 
+/** Spec에 수집 원본이 하나라도 있으면 저장된 판입니다. 그 판은 원래 렌더러로 그려 모양을 보존합니다. */
+function usesCollectedSources(spec: StructuredPortfolioSnapshot["spec"]): boolean {
+  return Object.values(spec.elements).some(
+    (node) => "sourceId" in node.props && node.props.sourceId,
+  );
+}
+
+export type RenderStructuredOptions = {
+  /** 키트 경로의 디자인 시스템 스펙입니다. 사용자 색 덮어쓰기는 호출하는 쪽이 이미 반영해 넘깁니다. */
+  design?: DesignSystemSpecV2 | undefined;
+  /** 수집 원본으로 그리는 저장된 판의 사용자 색입니다. 키트 경로에서는 쓰지 않습니다. */
+  theme?: { background: string; text: string; accent: string } | undefined;
+};
+
 export function renderStructuredPortfolio(
   spec: unknown,
   input: unknown,
-  theme?: { background: string; text: string; accent: string },
+  options: RenderStructuredOptions = {},
 ): { html: string; css: string } {
   const snapshot = validateRenderableSpec(spec, input);
+  const hasSources = usesCollectedSources(snapshot.spec);
+  const design = hasSources ? undefined : options.design;
+  const theme = options.theme;
   const state = {
     ...snapshot.content,
     sectionById: Object.fromEntries(
@@ -560,9 +489,15 @@ export function renderStructuredPortfolio(
       <StateProvider initialState={state}>
         <VisibilityProvider>
           <ActionProvider handlers={{}}>
-            <EvidenceTitles.Provider value={evidenceTitles}>
-              <Renderer spec={snapshot.spec} registry={registry} />
-            </EvidenceTitles.Provider>
+            {design ? (
+              <KitContext.Provider value={{ content: snapshot.content, evidenceTitles, design }}>
+                <Renderer spec={snapshot.spec} registry={kitRegistry} />
+              </KitContext.Provider>
+            ) : (
+              <EvidenceTitles.Provider value={evidenceTitles}>
+                <Renderer spec={snapshot.spec} registry={registry} />
+              </EvidenceTitles.Provider>
+            )}
           </ActionProvider>
         </VisibilityProvider>
       </StateProvider>,
@@ -580,6 +515,12 @@ export function renderStructuredPortfolio(
       "PAGE_TOO_LARGE",
       "지면이 저장 크기 제한을 넘었습니다. 내용을 줄여 주세요.",
     );
+  if (design) {
+    const css = kitCss(design);
+    if (css.length > PAGE_MAX_BYTES)
+      throw new StructuredRenderError("PAGE_TOO_LARGE", "스타일이 저장 크기 제한을 넘었습니다.");
+    return { html, css };
+  }
   const colors = theme
     ? z
         .object({
@@ -592,9 +533,6 @@ export function renderStructuredPortfolio(
   const overrides = colors
     ? `\n.sp-page[data-palette]{--sp-bg:${colors.background};--sp-ink:${colors.text};--sp-accent:${colors.accent};--sp-panel:color-mix(in srgb,${colors.background},${colors.text} 7%);--sp-muted:color-mix(in srgb,${colors.background},${colors.text} 70%);--sp-line:color-mix(in srgb,${colors.background},${colors.text} 25%)}`
     : "";
-  const hasSources = Object.values(snapshot.spec.elements).some(
-    (node) => "sourceId" in node.props && node.props.sourceId,
-  );
   const css =
     STRUCTURED_PORTFOLIO_CSS +
     (hasSources ? COLLECTED_PORTFOLIO_CSS : "") +

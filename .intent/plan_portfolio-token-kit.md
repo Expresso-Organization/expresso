@@ -17,7 +17,8 @@ date: 2026-10-16
 | `packages/portfolio-renderer/src/design-tokens.ts` (새) | 토큰 변수, 웹폰트, 대비 계산·보정, `designQa` |
 | `packages/portfolio-renderer/src/design-tokens.test.ts` (새) | 변수, 보정, 38종 QA는 백엔드 테스트에서 |
 | `packages/portfolio-renderer/src/kit.tsx` · `kit-styles.ts` (새) | 키트 레지스트리와 CSS |
-| `packages/portfolio-renderer/src/kit.test.ts` (새) | 섹션 대응, 변형, JS 없는 표시용 마크업 |
+| `packages/portfolio-renderer/src/catalog.ts` (새) | 렌더러에서 카탈로그를 떼어 두 레지스트리가 함께 씀 |
+| `packages/portfolio-renderer/src/kit.test.ts` · `fixtures/designs.json` (새) | 섹션 대응, 변형, JS 없는 표시용 마크업. 고정 자료는 백엔드 기본 디자인 Clarity·Signal 스펙 |
 | `packages/portfolio-renderer/src/renderer.tsx` · `index.ts` | 경로 분기, `design` 옵션, 내보내기 |
 | `packages/portfolio-renderer/package.json` | `@expresso/contracts` 디자인 시스템 타입 사용(이미 의존) |
 | `packages/contracts/src/structured-portfolio.ts` (+ 테스트) | `NameIntro.variant`, 모델 스키마 |
