@@ -60,7 +60,7 @@ export function useSidebarCollapse(): SidebarCollapseValue {
   return value;
 }
 
-export function SidebarCollapseProvider({ children }: { children: ReactNode }) {
+export function SidebarCollapseProvider({ children, storageKey = STORAGE_KEY }: { children: ReactNode; storageKey?: string }) {
   const [collapsed, setCollapsed] = useState(false);
   const [animated, setAnimated] = useState(false);
 
@@ -74,7 +74,7 @@ export function SidebarCollapseProvider({ children }: { children: ReactNode }) {
       }
       let stored: string | null = null;
       try {
-        stored = window.localStorage.getItem(STORAGE_KEY);
+        stored = window.localStorage.getItem(storageKey);
       } catch {
         // 저장소를 막아 둔 브라우저. 기억하지 못할 뿐 접기는 된다.
       }
@@ -84,7 +84,7 @@ export function SidebarCollapseProvider({ children }: { children: ReactNode }) {
     apply();
     docked.addEventListener("change", apply);
     return () => docked.removeEventListener("change", apply);
-  }, []);
+  }, [storageKey]);
 
   // 저장값이 그려진 다음 프레임부터 전환을 켠다.
   useEffect(() => {
@@ -96,7 +96,7 @@ export function SidebarCollapseProvider({ children }: { children: ReactNode }) {
     const remember = (next: boolean) => {
       setCollapsed(next);
       try {
-        window.localStorage.setItem(STORAGE_KEY, String(next));
+        window.localStorage.setItem(storageKey, String(next));
       } catch {
         // 위와 같다.
       }
@@ -107,7 +107,7 @@ export function SidebarCollapseProvider({ children }: { children: ReactNode }) {
       toggle: () => remember(!collapsed),
       setCollapsed: remember,
     };
-  }, [collapsed, animated]);
+  }, [collapsed, animated, storageKey]);
 
   return (
     <SidebarCollapseContext.Provider value={value}>
