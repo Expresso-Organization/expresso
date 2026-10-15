@@ -2,10 +2,11 @@ import type { PortfolioReadApi } from "../portfolios/index.js";
 import type { PageApi } from "../page/index.js";
 import { AgentCredentials } from "./credentials.js";
 import { randomUUID } from "node:crypto";
-import { AgentConversationSchema, type CareerDocumentBootstrap, type AgentConversation, type AgentContext, type AgentMessage, type SendAgentMessage, type AgentApproval } from "@expresso/contracts";
+import { AgentConversationSchema, type CareerDocumentBootstrap, type AgentConversation, type AgentContext, type AgentMessage, type SendAgentMessage, type AgentApproval, type RequirementReviewDraft } from "@expresso/contracts";
 import { mongoCollections, type AgentConversationDoc } from "@expresso/database";
 import type { MongoContext } from "../../platform/mongodb.js";
-import type { AgentRuntime } from "../../platform/agent/runtime.js";
+import { AgentToolRejection, type AgentRecordText, type AgentRuntime } from "../../platform/agent/runtime.js";
+import { buildReview, hash, recordText, reviewIssues } from "./requirement-review.js";
 import type { CareerDocumentApi } from "../career-editor/index.js";
 import type { CareerApi } from "../career/index.js";
 import type { JobBoardApi } from "../jobs/index.js";
@@ -16,7 +17,7 @@ const view = (row: AgentConversationDoc) => { const { _id, userId: _userId, hear
 export class AgentChatService {
   private readonly running = new Map<string, AbortController>();
   private readonly tasks = new Set<Promise<void>>();
-  constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord">, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi, readonly credentials: AgentCredentials = new AgentCredentials(db), private readonly portfolios?: Pick<PortfolioReadApi, "get">, private readonly pages?: Pick<PageApi, "latest">) {}
+  constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord" | "listRecords">, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi, readonly credentials: AgentCredentials = new AgentCredentials(db), private readonly portfolios?: Pick<PortfolioReadApi, "get">, private readonly pages?: Pick<PageApi, "latest">) {}
   async consentRequired(userId: string) {
     const result = await this.consent.list(userId);
     return !result.data.consents.some(item => item.scope === "career_records" && item.granted);
@@ -47,6 +48,48 @@ export class AgentChatService {
       const snapshot = await this.documents.bootstrap(userId, ref.id);
       return { ...ref, data: { record, document: snapshot.document, documentVersion: snapshot.documentVersion } };
     }));
+  }
+  /** 에이전트가 읽는 기록의 글. 남의 기록 · 삭제된 기록은 getRecord가 막는다. */
+  private async recordTexts(userId: string, ids: readonly string[]) {
+    const rows = new Map<string, { title: string; text: string }>();
+    for (const id of new Set(ids)) {
+      try {
+        const record = await this.career.getRecord(userId, id);
+        rows.set(id, { title: record.title, text: recordText(record, (await this.documents.bootstrap(userId, id)).document) });
+      } catch { /* 읽을 수 없는 기록은 없는 기록과 같다. */ }
+    }
+    return rows;
+  }
+  private async readRecords(userId: string, ids: string[]): Promise<AgentRecordText[]> {
+    const rows = await this.recordTexts(userId, ids);
+    // 한 번에 읽는 양을 기록당 4,000자로 묶어 둔다 — 인용은 앞부분에서 나와도 전체 글 안에 있다.
+    return [...rows].map(([id, row]) => ({ id, title: row.title, text: row.text.slice(0, 4_000), truncated: row.text.length > 4_000 }));
+  }
+  private async listRecords(userId: string) {
+    const result = await this.career.listRecords(userId, { sort: "updated_desc", limit: 100 });
+    return result.data.map(record => ({ id: record.id, title: record.title, category: record.categoryKey, status: record.status, updatedAt: record.updatedAt }));
+  }
+  /** 요건 대조 검증. 대화에 연결된 공고의 원문과 인용한 기록의 원문으로만 확인한다. */
+  private async review(userId: string, contexts: readonly AgentContext[], draft: RequirementReviewDraft) {
+    if (!contexts.some(ref => ref.kind === "job" && ref.id === draft.jobPostingId)) throw new AgentToolRejection(["대화에 연결된 공고만 대조할 수 있습니다. jobPostingId를 확인하십시오."]);
+    const job = await this.jobs.get(userId, draft.jobPostingId);
+    if (!job.descriptionRaw) throw new AgentToolRejection(["이 공고는 원문이 없어 인용을 확인할 수 없습니다."]);
+    const records = await this.recordTexts(userId, draft.items.flatMap(item => item.evidence.map(evidence => evidence.recordId)));
+    const issues = reviewIssues(draft, job.descriptionRaw, records);
+    if (issues.length) throw new AgentToolRejection(issues);
+    return buildReview(draft, job.descriptionRaw, records);
+  }
+  /** 대조 이후 공고 원문이나 근거로 쓴 기록이 바뀌었는가. */
+  async freshness(userId: string, id: string, toolId: string) {
+    const row = await this.owned(userId, id);
+    const review = row.messages.flatMap(message => message.tools).find(tool => tool.id === toolId)?.review;
+    if (!review) throw new AgentChatError(404, "이 대화의 요건 대조를 찾을 수 없습니다.");
+    const job = await this.jobs.get(userId, review.jobPostingId).catch(() => null);
+    const records = await this.recordTexts(userId, review.snapshot.records.map(item => item.recordId));
+    const changed: ("job" | "records")[] = [];
+    if (!job?.descriptionRaw || hash(job.descriptionRaw) !== review.snapshot.jobContentHash) changed.push("job");
+    if (review.snapshot.records.some(item => { const current = records.get(item.recordId); return !current || hash(current.text) !== item.textHash; })) changed.push("records");
+    return { stale: changed.length > 0, changed };
   }
   async create(userId: string, contexts: AgentContext[]) {
     await this.context(userId, contexts);
@@ -145,6 +188,8 @@ export class AgentChatService {
           else { const before = event.tool.proposal ? beforeDocuments.get(event.tool.proposal.proposalId) : undefined; if (before) event.tool.beforeDocument = before; const at = message.tools.findIndex(tool => tool.id === event.tool.id); if (at < 0) message.tools.push(event.tool); else message.tools[at] = event.tool; if (message.tools.length > 30) throw new Error("too many tools"); }
           if (event.type === "tool" || Date.now() - lastFlush > 200) await flush();
         },
+        records: { list: () => this.listRecords(row.userId), read: ids => this.readRecords(row.userId, ids) },
+        review: draft => this.review(row.userId, row.contexts, draft),
         propose: async (recordId, draft) => {
           if (!row.contexts.some(ref => ref.kind === "record" && ref.id === recordId)) throw new AgentChatError(403, "대화에 연결된 기록만 변경할 수 있습니다.");
           await this.consent.require(row.userId, "partial_edit");
