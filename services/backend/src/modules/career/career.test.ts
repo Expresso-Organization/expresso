@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { CareerError } from "./errors.js";
 import { validateCareerProperties } from "./properties.js";
+import { careerPropertyDefinitions, stablePropertyId } from "./property-definitions.js";
 import { computeSkillAggregate, normalizeSkillName } from "./skills.js";
 
 describe("career property validation", () => {
@@ -41,6 +42,28 @@ describe("career property validation", () => {
     const timestamp = { ...definitions[0]!, key: "timestamp", type: "created_time" as const };
     expect(() => validateCareerProperties({}, { timestamp: { type: "created_time", value: "2026-09-01T00:00:00.000Z" } }, [timestamp])).not.toThrow();
     expect(() => validateCareerProperties({}, { timestamp: { type: "created_time", value: "2026-09-01T00:00:00.000Z" } }, [{ ...timestamp, system: true }])).toThrow(CareerError);
+  });
+
+  it("derives v2 definitions from the v1 schema and accepts the values the web editor sends", () => {
+    const categoryId = "475106fc-bf88-4a73-9c27-66c648733936";
+    const seeded = {
+      role: { label: "역할", type: "text" as const, required: false, system: false },
+      startMonth: { label: "시작 월", type: "date" as const, required: false, system: false },
+      metrics: { label: "수치", type: "tags" as const, required: false, system: false },
+      remote: { label: "원격", type: "boolean" as const, required: false, system: false },
+    };
+    const definitions = careerPropertyDefinitions(categoryId, seeded, undefined);
+    expect(definitions.map(({ key, type }) => [key, type])).toEqual([["role", "text"], ["startMonth", "date"], ["metrics", "multi_select"], ["remote", "checkbox"]]);
+    expect(definitions[0]!.id).toBe(stablePropertyId(categoryId, "role"));
+    expect(careerPropertyDefinitions(categoryId, seeded, [])).toEqual([]);
+    expect(() => validateCareerProperties(seeded, {
+      role: { type: "text", value: "리드" },
+      startMonth: { type: "date", value: { start: "2024-03-01", end: null, timezone: null } },
+      remote: { type: "checkbox", value: true },
+    }, definitions)).not.toThrow();
+    expect(() => validateCareerProperties(seeded, { role: "평문", startMonth: "2024-03", metrics: ["3배"], remote: false }, definitions)).not.toThrow();
+    expect(() => validateCareerProperties(seeded, { role: { type: "number", value: 1 } }, definitions)).toThrow(CareerError);
+    expect(() => validateCareerProperties(seeded, { role: { type: "text", value: "리드" } })).toThrow(CareerError);
   });
 });
 
