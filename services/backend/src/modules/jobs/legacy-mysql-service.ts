@@ -345,8 +345,9 @@ export class JobMarketService {
       stage: string;
       deadline_at: Date | string | null;
       memo: string | null;
+      updated_at: Date | string;
     }[]>`
-      select id, stage, deadline_at, memo from interest
+      select id, stage, deadline_at, memo, updated_at from interest
       where user_id = ${userId} and job_posting_id = ${jobPostingId}
     `;
     const interest = rows[0];
@@ -359,7 +360,20 @@ export class JobMarketService {
         ? new Date(interest.deadline_at).toISOString()
         : null,
       memo: interest.memo,
+      updatedAt: new Date(interest.updated_at).toISOString(),
     };
+  }
+
+  /** 관심 공고 해제. PUT처럼 멱등이라 담겨 있지 않아도 성공이다 — 없는 공고만 404. */
+  async deleteInterest(userId: string, jobPostingId: string): Promise<void> {
+    const postings = await this.#sql<IdRow[]>`
+      select id from job_posting where id = ${jobPostingId}
+    `;
+    if (!postings[0]) throw new JobMarketError(404, "job posting not found");
+    await this.#sql`
+      delete from interest
+      where user_id = ${userId} and job_posting_id = ${jobPostingId}
+    `;
   }
 
   async computeMatch(userId: string, jobPostingId: string, at = new Date()) {

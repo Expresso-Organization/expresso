@@ -121,7 +121,16 @@ export class JobMarketService implements JobMarketApi {
       if (!await db.jobPostings.findOne({ _id: jobPostingId }, options)) throw new JobMarketError(404, "job posting not found");
       const interest = await db.interests.findOneAndUpdate({ userId, jobPostingId }, { $set: { stage: input.stage, deadlineAt: input.deadlineAt ? new Date(input.deadlineAt) : null, memo: input.memo, updatedAt: new Date() }, $setOnInsert: { _id: randomUUID(), userId, jobPostingId } }, { ...options, upsert: true, returnDocument: "after" });
       if (!interest) throw new Error("job interest was not persisted");
-      return { id: interest._id, jobPostingId, stage: interest.stage, deadlineAt: interest.deadlineAt?.toISOString() ?? null, memo: interest.memo ?? null };
+      return { id: interest._id, jobPostingId, stage: interest.stage, deadlineAt: interest.deadlineAt?.toISOString() ?? null, memo: interest.memo ?? null, updatedAt: interest.updatedAt.toISOString() };
+    });
+  }
+
+  /** 관심 공고 해제. PUT처럼 멱등이라 담겨 있지 않아도 성공이다 — 없는 공고만 404. */
+  async deleteInterest(userId: string, jobPostingId: string): Promise<void> {
+    await this.#write(userId, async (tx) => {
+      const db = mongoCollections(tx.db); const options = { session: tx.session };
+      if (!await db.jobPostings.findOne({ _id: jobPostingId }, options)) throw new JobMarketError(404, "job posting not found");
+      await db.interests.deleteOne({ userId, jobPostingId }, options);
     });
   }
 

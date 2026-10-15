@@ -14,7 +14,7 @@ date: 2026-10-16
 
 | 파일 | 무엇을 |
 |---|---|
-| `packages/contracts/src/job-market.ts` | `JobInterestResponseSchema` · 타입 추가 |
+| `packages/contracts/src/job-board.ts` | `JobInterestResponseSchema` · 타입 추가 (`job-board.ts`가 `job-market.ts`를 가져오므로 순환을 피해 이쪽) |
 | `services/backend/src/modules/jobs/service.ts` | `deleteInterest`, `upsertInterest`가 `updatedAt` 반환 |
 | `services/backend/src/modules/jobs/legacy-mysql-service.ts` | 같은 두 가지(MySQL) |
 | `services/backend/src/modules/jobs/routes.ts` | DELETE 라우트, PUT 응답 계약 파싱 |

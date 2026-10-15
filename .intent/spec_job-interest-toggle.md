@@ -22,7 +22,7 @@ date: 2026-10-16
 
 ## 설계
 
-- **계약**: `job-market.ts`에 `JobInterestResponseSchema`를 둔다. 본체는 `job-board.ts`의 `JobInterestSchema`를 `jobPostingId`로 넓힌 것이다. 관심 행의 모양을 한 곳에서만 정한다.
+- **계약**: `job-board.ts`에 `JobInterestResponseSchema`를 둔다. 본체는 `job-board.ts`의 `JobInterestSchema`를 `jobPostingId`로 넓힌 것이다. 관심 행의 모양을 한 곳에서만 정한다.
 - **백엔드**: `deleteInterest(userId, jobPostingId)`를 `service.ts`(`#write` 트랜잭션, `deleteRecentSearch`와 같은 꼴)와 `legacy-mysql-service.ts`에 둔다. 두 `upsertInterest`가 `updatedAt`도 돌려준다. `routes.ts`에 `app.delete(…/postings/:id/interest)`를 PUT 옆에 둔다.
 - **웹 API**: `endpoints.ts`의 `jobs`에 `saveInterest`(`request` + 계약) · `removeInterest`(`requestNoContent`).
 - **서버 액션**: `jobs/[jobId]/interest-actions.ts` — 폼의 `jobPostingId`와 `next`(`save`|`remove`)를 읽어 API를 부르고 `revalidatePath("/", "layout")`. 사이드바는 각 구간 `layout.tsx`의 `AppChrome`에 있어 모든 앱 화면에 걸쳐 바뀌므로 루트 레이아웃 단위로 무효화한다(Next 16 `revalidatePath` 문서: 서버 함수에서 부르면 보고 있는 화면을 바로 갱신하고 클라이언트 캐시를 비운다). 실패(`ApiError`)는 `{ error }`로 돌려준다. `next`를 클라이언트가 본 상태로 정하므로 두 번 눌러도 PUT · DELETE가 멱등이라 결과가 같다.
