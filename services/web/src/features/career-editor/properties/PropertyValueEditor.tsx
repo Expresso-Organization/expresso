@@ -5,14 +5,15 @@ import { useEffect, useMemo, useState } from "react";
 
 import { Icon } from "@/components/ui/Icon";
 
-import { commitOnEnter, propertyOptions, ReadOnlyValue } from "./property-editors";
+import { commitOnEnter, isLegacyTags, propertyOptions, ReadOnlyValue, TagListEditor } from "./property-editors";
 import { PropertySelect } from "./PropertySelect";
 import styles from "./properties.module.css";
 
 export interface PropertyValueEditorProps {
   definition: CareerPropertyDefinitionV2;
   value: CareerPropertyValueV2 | null;
-  onCommit(value: CareerPropertyValueV2 | null): Promise<void>;
+  /** v1 tags(`isLegacyTags`)만 자유 문자열 배열을 그대로 저장합니다. */
+  onCommit(value: CareerPropertyValueV2 | string[] | null): Promise<void>;
   disabled?: boolean;
 }
 
@@ -82,6 +83,15 @@ export function PropertyValueEditor({ definition, value, onCommit, disabled = fa
       options={[{ value: "", label: "선택 안 함" }, ...options.map((option) => ({ value: option.id, label: option.name }))]}
       onChange={(next) => void commit({ type: "select", value: next || null })}
     />;
+  }
+  if (isLegacyTags(definition)) {
+    const commitTags = async (next: string[] | null) => {
+      setSaving(true); setIssue(null);
+      try { await onCommit(next); }
+      catch (error) { setIssue(error instanceof Error ? error.message : "저장하지 못했습니다."); }
+      finally { setSaving(false); }
+    };
+    return <TagListEditor label={definition.name} values={value?.type === "multi_select" ? value.value : []} disabled={disabled || saving} onCommit={(next) => void commitTags(next)}><IssueBadge issue={issue} /></TagListEditor>;
   }
   if (definition.type === "multi_select") {
     const selected = new Set(value?.type === "multi_select" ? value.value : []);

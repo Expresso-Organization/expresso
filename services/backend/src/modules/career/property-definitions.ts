@@ -25,7 +25,8 @@ export function careerPropertyDefinitions(
   return Object.entries(propertySchema).map(([key, property], order) => ({
     id: property.id ?? stablePropertyId(categoryId, key), key, name: property.label,
     type: property.type === "boolean" ? "checkbox" : property.type === "tags" ? "multi_select" : property.type,
-    required: property.required, system: property.system, config: {}, order, version: 1, deletedAt: null,
+    // v1 tags 값은 사용자별 자유 문자열 배열이라 선택지 UUID로 옮길 수 없습니다. 편집기가 자유 태그로 다루도록 출처를 남깁니다.
+    required: property.required, system: property.system, config: property.type === "tags" ? { legacyType: "tags" } : {}, order, version: 1, deletedAt: null,
   }));
 }
 

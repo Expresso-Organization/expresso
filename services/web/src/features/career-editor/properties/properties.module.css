@@ -67,6 +67,11 @@
 .readOnlyValue { display: block; min-height: 32px; padding: 7px 8px; color: var(--ex-fg-muted); font-size: var(--ex-text-sm); overflow-wrap: anywhere; }
 .assetList { display: flex; flex-wrap: wrap; gap: 4px; }
 .assetList button { border: 1px solid var(--ex-border-soft); border-radius: 999px; background: var(--ex-bg-muted); padding: 3px 8px; color: var(--ex-fg-body); }
+.tagList { display: flex; flex-wrap: wrap; gap: 4px; padding-top: 4px; }
+.tagChip { display: inline-flex; align-items: center; gap: 2px; border: 1px solid var(--ex-border-soft); border-radius: 999px; background: var(--ex-bg-muted); padding: 3px 4px 3px 8px; color: var(--ex-fg-body); font-size: var(--ex-text-xs); }
+.tagChip button { display: grid; width: 18px; height: 18px; place-items: center; border: 0; border-radius: 999px; background: transparent; padding: 0; color: var(--ex-fg-muted); cursor: pointer; }
+.tagChip button:hover { background: var(--ex-bg-hover); color: var(--ex-fg); }
+.tagChip button:focus-visible { outline: none; box-shadow: var(--ex-focus-ring); }
 .relationEditor { position: relative; display: grid; gap: 6px; }
 .propertyChips { display: flex; flex-wrap: wrap; gap: 4px; }
 .propertyChips button { border: 1px solid var(--ex-border-soft); border-radius: 999px; background: var(--ex-bg-muted); padding: 4px 8px; color: var(--ex-fg-body); }
