@@ -15,6 +15,29 @@ describe("PropertyValueEditor", () => {
   it.each(["title", "text", "url", "email", "phone"] as const)("commits %s on Enter", async (type) => { const commit = setup(type); const input = screen.getByLabelText("테스트 속성"); fireEvent.change(input, { target: { value: "새 값" } }); fireEvent.keyDown(input, { key: "Enter" }); await waitFor(() => expect(commit).toHaveBeenCalledWith({ type, value: "새 값" })); });
   it("preserves an invalid number draft and explains the issue", () => { const commit = setup("number"); const input = screen.getByLabelText("테스트 속성"); fireEvent.change(input, { target: { value: "not-a-number" } }); fireEvent.blur(input); expect(commit).not.toHaveBeenCalled(); expect(screen.getByRole("alert", { name: "숫자를 입력해 주세요." })).toBeTruthy(); expect((input as HTMLInputElement).value).toBe("not-a-number"); });
   it("commits select, multiselect and checkbox choices", async () => { const options = { options: [{ id: option, name: "선택 A" }] }; let commit = setup("select", null, options); const selectTrigger = screen.getByRole("button", { name: "테스트 속성" }); fireEvent.click(selectTrigger); fireEvent.click(screen.getByRole("option", { name: "선택 A" })); await waitFor(() => expect(commit).toHaveBeenCalledWith({ type: "select", value: option })); expect(document.querySelector("select")).toBeNull(); cleanup(); commit = setup("multi_select", { type: "multi_select", value: [] }, options); fireEvent.click(screen.getByLabelText("선택 A")); await waitFor(() => expect(commit).toHaveBeenCalledWith({ type: "multi_select", value: [option] })); cleanup(); commit = setup("checkbox", { type: "checkbox", value: false }); fireEvent.click(screen.getByLabelText("테스트 속성")); await waitFor(() => expect(commit).toHaveBeenCalledWith({ type: "checkbox", value: true })); });
+  it("edits v1 tags as free-text chips and commits plain string arrays", async () => {
+    const commit = setup("multi_select", { type: "multi_select", value: ["일 1,200만 건", "장애 대응"] }, { legacyType: "tags" });
+    expect(screen.getByText("일 1,200만 건")).toBeTruthy();
+    expect(screen.queryByRole("checkbox")).toBeNull();
+    const input = screen.getByLabelText("테스트 속성 추가");
+    fireEvent.change(input, { target: { value: "  배포 3배  " } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    await waitFor(() => expect(commit).toHaveBeenLastCalledWith(["일 1,200만 건", "장애 대응", "배포 3배"]));
+    fireEvent.change(input, { target: { value: "장애 대응" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    fireEvent.change(input, { target: { value: "   " } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(commit).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("button", { name: "장애 대응 지우기" }));
+    await waitFor(() => expect(commit).toHaveBeenLastCalledWith(["일 1,200만 건"]));
+  });
+
+  it("clears v1 tags when the last chip is removed", async () => {
+    const commit = setup("multi_select", { type: "multi_select", value: ["하나"] }, { legacyType: "tags" });
+    fireEvent.click(screen.getByRole("button", { name: "하나 지우기" }));
+    await waitFor(() => expect(commit).toHaveBeenLastCalledWith(null));
+  });
+
   it("commits a date range", async () => { const commit = setup("date"); fireEvent.change(screen.getByLabelText("테스트 속성 시작"), { target: { value: "2026-09-01" } }); fireEvent.change(screen.getByLabelText("테스트 속성 종료"), { target: { value: "2026-09-30" } }); fireEvent.blur(screen.getByLabelText("테스트 속성 종료")); await waitFor(() => expect(commit).toHaveBeenCalledWith({ type: "date", value: { start: "2026-09-01", end: "2026-09-30", timezone: null } })); });
   it.each(["file", "media"] as const)("validates and commits %s IDs", async (type) => { const commit = setup(type, { type, value: [] }); const input = screen.getByLabelText("테스트 속성 ID 추가"); fireEvent.change(input, { target: { value: option } }); fireEvent.keyDown(input, { key: "Enter" }); await waitFor(() => expect(commit).toHaveBeenCalledWith({ type, value: [option] })); });
   it.each(["formula", "rollup"] as const)("renders %s as read-only", (type) => { setup(type, { type, value: 3, diagnostics: [] }); expect(screen.getByRole("status", { hidden: true }).textContent).toBe("3"); });

@@ -106,6 +106,7 @@ function categoryDefinitions(category: CareerCategory): CareerPropertyDefinition
     id: definition.id ?? `00000000-0000-4000-8000-${String(order + 1).padStart(12, "0")}`,
     key, name: definition.label,
     type: definition.type === "boolean" ? "checkbox" : definition.type === "tags" ? "multi_select" : definition.type,
-    required: definition.required, system: definition.system, config: {}, order, version: 1, deletedAt: null,
+    // 백엔드 property-definitions.ts와 같은 규칙입니다. v1 tags는 자유 문자열 배열이라 출처를 남겨 편집기가 칩으로 다룹니다.
+    required: definition.required, system: definition.system, config: definition.type === "tags" ? { legacyType: "tags" } : {}, order, version: 1, deletedAt: null,
   }));
 }

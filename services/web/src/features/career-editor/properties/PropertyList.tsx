@@ -63,7 +63,7 @@ export function PropertyList({
     setCurrent((previous) => ({ ...previous, ...payload.data }));
   }
 
-  async function saveProperty(key: string, value: CareerPropertyValueV2 | null) {
+  async function saveProperty(key: string, value: CareerPropertyValueV2 | string[] | null) {
     async function attempt(base: CareerRecordListItem, retry: boolean): Promise<void> {
       const properties = { ...base.properties, [key]: value };
       if (value === null) delete properties[key];
@@ -89,7 +89,7 @@ export function PropertyList({
 
   return <section className={styles.propertyList} aria-label="문서 속성">
     <div className={styles.titleEditor}>
-      <PropertyValueEditor definition={{ id: "00000000-0000-4000-8000-000000000000", key: "title", name: "제목", type: "title", required: false, system: true, config: {}, order: 0, version: 1, deletedAt: null }} value={{ type: "title", value: current.title }} onCommit={async (value) => { if (value?.type === "title") await savePatch({ title: value.value }); }} />
+      <PropertyValueEditor definition={{ id: "00000000-0000-4000-8000-000000000000", key: "title", name: "제목", type: "title", required: false, system: true, config: {}, order: 0, version: 1, deletedAt: null }} value={{ type: "title", value: current.title }} onCommit={async (value) => { if (value && !Array.isArray(value) && value.type === "title") await savePatch({ title: value.value }); }} />
     </div>
     <div className={styles.propertyRow}><label><Icon name="circle-half" size={13}/><span className={styles.propertyName}>상태</span></label><span className={styles.metaValue}>{current.status === "draft" ? "초안" : current.status === "organized" ? "정리됨" : "검증됨"}</span></div>
     {visible.map((definition) => <div className={styles.propertyRow} key={definition.id}><label title={definition.name}><Icon name={propertyIcon(definition.type)} size={13}/><span className={styles.propertyName}>{definition.name}</span></label>{definition.type==="relation"?<RelationEditor recordId={current.id} propertyId={definition.id} definition={definition.config as unknown as CareerRelationDefinition} value={asV2Value(definition,current.properties[definition.key])?.type==="relation"?(asV2Value(definition,current.properties[definition.key]) as Extract<CareerPropertyValueV2,{type:"relation"}>).value:[]} onConflict={()=>window.location.reload()} onCommit={async targetIds=>{const response=await fetch(`/api/career/records/${current.id}/relations`,{method:"PUT",headers:{"content-type":"application/json","if-match":`"v${current.version}"`},body:JSON.stringify({propertyId:definition.id,targetIds})});if(!response.ok)throw new Error(`${response.status} 관계를 저장하지 못했습니다.`);const payload=await response.json() as {data:CareerRecordListItem};setCurrent(previous=>({...previous,...payload.data}));}}/>:<PropertyValueEditor definition={definition} value={resolvedPropertyValue(definition, current)} onCommit={async (value) => saveProperty(definition.key, value)} />}</div>)}
