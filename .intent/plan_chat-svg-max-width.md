@@ -16,6 +16,7 @@ date: 2026-10-17
 |---|---|
 | `services/web/src/styles/agent-chat-preflight.css` | 고침 — `.acf-scope svg { max-width: none; }`와 이유 주석 |
 | `services/web/e2e/agent-chat-svg.spec.ts` | 새로 — 대화 시드 후 액션바 아이콘 16×16 · `max-width: none` 확인 |
+| `services/web/playwright.config.ts` | 고침(구현 중 추가) — 워커가 러너의 `CAREER_E2E_DATABASE`를 이어 쓰게 함. 워커에서 설정이 다시 평가되며 자기 pid로 다른 DB 이름을 만들어, 시드가 서버와 다른 DB를 보던 문제 |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
 
