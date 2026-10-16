@@ -4,9 +4,9 @@ import Link from "next/link";
 import { GlideMenu } from "@/components/ui/GlideMenu";
 import { Icon } from "@/components/ui/Icon";
 
-import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { SidebarCategories } from "./SidebarCategories";
 import { SidebarFrame } from "./SidebarFrame";
+import { SidebarInterests } from "./SidebarInterests";
 import { SidebarNav, type SidebarSection } from "./SidebarNav";
 import styles from "./Sidebar.module.css";
 
@@ -172,45 +172,19 @@ export function Sidebar({
               <span className={styles.groupLabel}>관심 공고</span>
               <div className={styles.groupActions}>
                 <span className={styles.groupCount}>{interestTotal ?? interests.length}</span>
-                <button type="button" className={styles.groupAction} aria-label="관심 공고 추가">
+                {/* 관심 공고는 공고 상세에서 담는다. 상세에 닿는 목록이 공고 탐색이다. */}
+                <Link
+                  href="/jobs"
+                  className={styles.groupAction}
+                  aria-label="관심 공고 추가"
+                  title="공고 탐색에서 담기"
+                >
                   <Icon name="plus" size={13} />
-                </button>
+                </Link>
               </div>
             </div>
           </div>
-          <GlideMenu className={`${styles.interests} ${styles.navGroup}`}>
-            {interests.map((interest) => (
-              <div
-                key={interest.id}
-                data-row
-                title={interest.label}
-                className={`${styles.row} ${styles.interestItem}`}
-              >
-                <CompanyAvatar
-                  company={{
-                    name: interest.company,
-                    initial: interest.initial,
-                    logoUrl: interest.logoUrl,
-                  }}
-                  className={styles.initial}
-                />
-                <span className={`${styles.copy} ${styles.interestName}`}>
-                  {interest.label}
-                </span>
-                {interest.score === null ? (
-                  <span className={`${styles.copy} ${styles.pending}`}>분석 대기</span>
-                ) : (
-                  <span
-                    className={`${styles.copy} ${styles.score} ${
-                      interest.score >= 85 ? styles.scoreHigh : styles.scoreMid
-                    }`}
-                  >
-                    {interest.score}
-                  </span>
-                )}
-              </div>
-            ))}
-          </GlideMenu>
+          <SidebarInterests interests={interests} />
         </>
       ) : null}
 
