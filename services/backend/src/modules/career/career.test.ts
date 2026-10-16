@@ -55,6 +55,7 @@ describe("career property validation", () => {
     const definitions = careerPropertyDefinitions(categoryId, seeded, undefined);
     expect(definitions.map(({ key, type }) => [key, type])).toEqual([["role", "text"], ["startMonth", "date"], ["metrics", "multi_select"], ["remote", "checkbox"]]);
     expect(definitions[0]!.id).toBe(stablePropertyId(categoryId, "role"));
+    expect(definitions.map(({ key, config }) => [key, config])).toEqual([["role", {}], ["startMonth", {}], ["metrics", { legacyType: "tags" }], ["remote", {}]]);
     expect(careerPropertyDefinitions(categoryId, seeded, [])).toEqual([]);
     expect(() => validateCareerProperties(seeded, {
       role: { type: "text", value: "리드" },
