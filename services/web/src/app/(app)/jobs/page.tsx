@@ -548,11 +548,12 @@ export default async function JobsPage({
           {/*
            * 관심 공고만 보기를 켜고 끈다. 켤 때는 다른 조건을 들고 가지 않는다 —
            * 이 숫자는 조건 없이 센 건수라, 눌러서 나온 목록도 같은 수여야 한다.
+           * 링크라서 `aria-pressed`(button 전용) 대신 `aria-current`로 켜짐을 알린다.
            */}
           <Link
             href={(interested ? "/jobs" : "/jobs?interested=true") as Route}
             className={`${styles.headAction} ${interested ? styles.headActionActive : ""}`}
-            aria-pressed={interested}
+            aria-current={interested ? "true" : undefined}
           >
             <Icon
               name="bookmark-simple"

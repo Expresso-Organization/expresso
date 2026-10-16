@@ -16,7 +16,7 @@ date: 2026-10-17
 - [ ] `currentListQuery` · `backToListHref`가 `interested=true`를 보존하고, `true`가 아닌 값(`false`, `1`, 빈 값)은 버린다.
 - [ ] `/jobs?interested=true`가 `jobs.postings`에 `interested: true`를 싣고, 주소에 `country`가 없으면 나라 조건을 걸지 않는다.
 - [ ] 관심 모드에서 카테고리 칩 · 필터 4축 · 쪽 이동 · 해석 칩 · 검색 결과 정렬 · 검색 폼 제출 · 검색 초기화가 만든 주소가 모두 `interested=true`를 가진다.
-- [ ] 머리 "관심 공고 N"이 링크다. 꺼져 있으면 `/jobs?interested=true`, 켜져 있으면 `/jobs`. 켜져 있으면 `aria-pressed="true"`, 채운 북마크 아이콘, 진한 글자.
+- [ ] 머리 "관심 공고 N"이 링크다. 꺼져 있으면 `/jobs?interested=true`, 켜져 있으면 `/jobs`. 켜져 있으면 `aria-current="true"`(링크라서 button 전용인 `aria-pressed`를 쓰지 않는다), 채운 북마크 아이콘, 진한 글자.
 - [ ] 결과 머리 문구가 관심 모드에서 "관심 공고 · N건", 0건이면 꼬리 문구가 "조건에 맞는 관심 공고가 없습니다".
 - [ ] 06 레일 "관심 공고" 머리에 `전체` 링크(`/jobs?interested=true`)가 있다.
 
