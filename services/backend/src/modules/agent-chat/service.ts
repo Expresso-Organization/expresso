@@ -2,11 +2,12 @@ import type { PortfolioReadApi } from "../portfolios/index.js";
 import type { PageApi } from "../page/index.js";
 import { AgentCredentials } from "./credentials.js";
 import { randomUUID } from "node:crypto";
-import { AgentConversationSchema, type CareerDocumentBootstrap, type AgentConversation, type AgentContext, type AgentMessage, type SendAgentMessage, type AgentApproval, type RequirementReviewDraft } from "@expresso/contracts";
+import { AgentConversationSchema, type CareerDocumentBootstrap, type AgentConversation, type AgentContext, type AgentMessage, type SendAgentMessage, type AgentApproval, type AgentRecordDraftDecision, type AgentRecordDraftInput, type RequirementReviewDraft } from "@expresso/contracts";
 import { mongoCollections, type AgentConversationDoc } from "@expresso/database";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { AgentToolRejection, type AgentRecordText, type AgentRuntime } from "../../platform/agent/runtime.js";
 import { buildReview, hash, recordText, reviewIssues } from "./requirement-review.js";
+import { buildDraft, draftIssues } from "./record-draft.js";
 import type { CareerDocumentApi } from "../career-editor/index.js";
 import type { CareerApi } from "../career/index.js";
 import type { JobBoardApi } from "../jobs/index.js";
@@ -17,7 +18,7 @@ const view = (row: AgentConversationDoc) => { const { _id, userId: _userId, hear
 export class AgentChatService {
   private readonly running = new Map<string, AbortController>();
   private readonly tasks = new Set<Promise<void>>();
-  constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord" | "listRecords">, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi, readonly credentials: AgentCredentials = new AgentCredentials(db), private readonly portfolios?: Pick<PortfolioReadApi, "get">, private readonly pages?: Pick<PageApi, "latest">) {}
+  constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord" | "listRecords" | "listCategories" | "createRecord">, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi, readonly credentials: AgentCredentials = new AgentCredentials(db), private readonly portfolios?: Pick<PortfolioReadApi, "get">, private readonly pages?: Pick<PageApi, "latest">) {}
   async consentRequired(userId: string) {
     const result = await this.consent.list(userId);
     return !result.data.consents.some(item => item.scope === "career_records" && item.granted);
@@ -65,9 +66,40 @@ export class AgentChatService {
     // 한 번에 읽는 양을 기록당 4,000자로 묶어 둔다 — 인용은 앞부분에서 나와도 전체 글 안에 있다.
     return [...rows].map(([id, row]) => ({ id, title: row.title, text: row.text.slice(0, 4_000), truncated: row.text.length > 4_000 }));
   }
+  private async categories(userId: string) {
+    return (await this.career.listCategories(userId)).map(category => ({ id: category.id, name: category.name }));
+  }
   private async listRecords(userId: string) {
-    const result = await this.career.listRecords(userId, { sort: "updated_desc", limit: 100 });
-    return result.data.map(record => ({ id: record.id, title: record.title, category: record.categoryKey, status: record.status, updatedAt: record.updatedAt }));
+    const [categories, result] = await Promise.all([this.categories(userId), this.career.listRecords(userId, { sort: "updated_desc", limit: 100 })]);
+    return { categories, records: result.data.map(record => ({ id: record.id, title: record.title, category: record.categoryKey, status: record.status, updatedAt: record.updatedAt })) };
+  }
+  /** 새 기록 초안. 출처는 실행을 시작할 때의 대화(방금 보낸 질문 포함)에서 확인한다. */
+  private async draftRecord(row: AgentConversationDoc, input: AgentRecordDraftInput) {
+    const categories = await this.categories(row.userId);
+    const issues = draftIssues(input, row.messages, new Set(categories.map(category => category.id)));
+    if (issues.length) throw new AgentToolRejection(issues);
+    return buildDraft(input, randomUUID(), categories);
+  }
+  /**
+   * 초안 승인 · 거절. AI 없이 동작한다.
+   *
+   * 승인은 초안 id를 멱등 키로 기록을 만든다 — 두 번 눌러도 기록은 하나다. 기록 생성이
+   * 실패하면(카테고리 필수 속성 등) 초안 상태를 바꾸지 않는다.
+   */
+  async decideRecordDraft(userId: string, id: string, draftId: string, decision: AgentRecordDraftDecision) {
+    const row = await this.owned(userId, id);
+    if (row.run?.status === "running") throw new AgentChatError(409, "응답이 끝난 뒤 처리해 주세요.");
+    const draft = row.messages.flatMap(message => message.tools).find(tool => tool.recordDraft?.draftId === draftId)?.recordDraft;
+    if (!draft) throw new AgentChatError(404, "이 대화의 기록 초안을 찾을 수 없습니다.");
+    const target = decision.action === "approve" ? "approved" : "rejected";
+    if (draft.status !== "ready") { if (draft.status === target) return view(row); throw new AgentChatError(409, "이미 처리한 초안입니다."); }
+    let next: Record<string, unknown> = { "messages.$[].tools.$[tool].recordDraft.status": target };
+    if (decision.action === "approve") {
+      const { record } = await this.career.createRecord(userId, draftId, { categoryId: decision.categoryId, title: decision.title, bodyMd: decision.bodyMd, properties: {} });
+      next = { ...next, "messages.$[].tools.$[tool].recordDraft.recordId": record.id, "messages.$[].tools.$[tool].recordDraft.title": decision.title, "messages.$[].tools.$[tool].recordDraft.bodyMd": decision.bodyMd, "messages.$[].tools.$[tool].recordDraft.categoryId": decision.categoryId };
+    }
+    await this.rows.updateOne({ _id: id, userId }, { $set: { ...next, updatedAt: new Date().toISOString() }, $inc: { version: 1 } }, { arrayFilters: [{ "tool.recordDraft.draftId": draftId, "tool.recordDraft.status": "ready" }] });
+    return this.get(userId, id);
   }
   /** 요건 대조 검증. 대화에 연결된 공고의 원문과 인용한 기록의 원문으로만 확인한다. */
   private async review(userId: string, contexts: readonly AgentContext[], draft: RequirementReviewDraft) {
@@ -190,6 +222,7 @@ export class AgentChatService {
         },
         records: { list: () => this.listRecords(row.userId), read: ids => this.readRecords(row.userId, ids) },
         review: draft => this.review(row.userId, row.contexts, draft),
+        draftRecord: input => this.draftRecord(row, input),
         propose: async (recordId, draft) => {
           if (!row.contexts.some(ref => ref.kind === "record" && ref.id === recordId)) throw new AgentChatError(403, "대화에 연결된 기록만 변경할 수 있습니다.");
           await this.consent.require(row.userId, "partial_edit");

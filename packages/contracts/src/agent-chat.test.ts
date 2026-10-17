@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { RequirementReviewDraftSchema } from "./agent-chat.js";
+import { AgentRecordDraftDecisionSchema, AgentRecordDraftInputSchema, RequirementReviewDraftSchema } from "./agent-chat.js";
 
 const jobPostingId = "00000000-0000-4000-8000-000000000001";
 const recordId = "00000000-0000-4000-8000-000000000002";
@@ -18,5 +18,18 @@ describe("요건 대조 초안", () => {
   it("요건은 1개 이상 12개 이하다", () => {
     expect(RequirementReviewDraftSchema.safeParse({ jobPostingId, summary: "요약", items: [] }).success).toBe(false);
     expect(RequirementReviewDraftSchema.safeParse({ jobPostingId, summary: "요약", items: Array.from({ length: 13 }, () => item("unconfirmed", [])) }).success).toBe(false);
+  });
+});
+
+describe("새 기록 초안", () => {
+  it("출처 발언이 1개 이상 있어야 한다", () => {
+    const base = { title: "EKS 위 Airflow 운영", bodyMd: "## 상황\n인턴", sources: [{ messageId: recordId, quote: "EKS 위에 Airflow" }] };
+    expect(AgentRecordDraftInputSchema.safeParse(base).success).toBe(true);
+    expect(AgentRecordDraftInputSchema.safeParse({ ...base, sources: [] }).success).toBe(false);
+  });
+  it("승인에는 제목 · 본문 · 카테고리가 필요하고 거절에는 없다", () => {
+    expect(AgentRecordDraftDecisionSchema.safeParse({ action: "approve", title: "제목", bodyMd: "본문" }).success).toBe(false);
+    expect(AgentRecordDraftDecisionSchema.safeParse({ action: "approve", title: "제목", bodyMd: "본문", categoryId: recordId }).success).toBe(true);
+    expect(AgentRecordDraftDecisionSchema.safeParse({ action: "reject" }).success).toBe(true);
   });
 });

@@ -44,7 +44,36 @@ export const RequirementReviewSchema = z.strictObject({
 export const AgentReviewFreshnessResponseSchema = z.strictObject({ data: z.strictObject({ stale: z.boolean(), changed: z.array(z.enum(["job", "records"])).max(2) }) });
 export type RequirementReviewDraft = z.infer<typeof RequirementReviewDraftSchema>;
 export type RequirementReview = z.infer<typeof RequirementReviewSchema>;
-export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional() });
+/**
+ * 대화로 만드는 새 기록 초안. 출처는 이 대화에서 사용자가 한 말이어야 하고, 저장은 사용자가
+ * 카드에서 승인할 때만 일어난다.
+ */
+const recordDraftSourceSchema = z.strictObject({ messageId: UuidSchema, quote: z.string().trim().min(1).max(600) });
+export const AgentRecordDraftInputSchema = z.strictObject({
+  title: z.string().trim().min(1).max(300),
+  categoryId: UuidSchema.optional(),
+  bodyMd: z.string().trim().min(1).max(20_000),
+  sources: z.array(recordDraftSourceSchema).min(1).max(10),
+});
+export const AgentRecordDraftSchema = z.strictObject({
+  draftId: UuidSchema,
+  title: AgentRecordDraftInputSchema.shape.title,
+  categoryId: UuidSchema.nullable(),
+  bodyMd: AgentRecordDraftInputSchema.shape.bodyMd,
+  sources: AgentRecordDraftInputSchema.shape.sources,
+  /** 카드에서 고를 수 있는 카테고리. 초안을 만들 때의 목록이다. */
+  categories: z.array(z.strictObject({ id: UuidSchema, name: z.string().max(120) })).max(50),
+  status: z.enum(["ready", "approved", "rejected"]),
+  recordId: UuidSchema.nullable(),
+});
+export const AgentRecordDraftDecisionSchema = z.discriminatedUnion("action", [
+  z.strictObject({ action: z.literal("approve"), title: AgentRecordDraftInputSchema.shape.title, bodyMd: AgentRecordDraftInputSchema.shape.bodyMd, categoryId: UuidSchema }),
+  z.strictObject({ action: z.literal("reject") }),
+]);
+export type AgentRecordDraftInput = z.infer<typeof AgentRecordDraftInputSchema>;
+export type AgentRecordDraft = z.infer<typeof AgentRecordDraftSchema>;
+export type AgentRecordDraftDecision = z.infer<typeof AgentRecordDraftDecisionSchema>;
+export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional() });
 export const AgentMessageSchema = z.strictObject({ id: UuidSchema, role: z.enum(["user", "assistant"]), text: z.string().max(64_000), tools: z.array(AgentToolResultSchema).max(30), createdAt: TimestampSchema });
 export const AgentRunSchema = z.strictObject({ id: UuidSchema, requestId: UuidSchema, status: z.enum(["running", "complete", "cancelled", "failed", "interrupted"]), error: z.string().max(1_000).nullable(), startedAt: TimestampSchema });
 export const AgentConversationSchema = z.strictObject({ id: UuidSchema, title: z.string().max(120), contexts: z.array(AgentContextSchema).max(10), messages: z.array(AgentMessageSchema).max(100), run: AgentRunSchema.nullable(), version: z.number().int().nonnegative(), updatedAt: TimestampSchema });
