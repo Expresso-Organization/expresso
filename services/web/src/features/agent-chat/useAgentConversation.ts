@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AgentConversationResponseSchema, AgentConversationListSchema, type AgentConversation, type AgentContext, type AgentApproval, type AgentRecordDraftDecision } from "@expresso/contracts";
+import { AgentConversationResponseSchema, AgentConversationListSchema, type AgentConversation, type AgentContext, type AgentApproval, type AgentPlanDecision, type AgentRecordDraftDecision, type AgentReplanDecision } from "@expresso/contracts";
 const base = "/api/agent/conversations";
 export async function agentRequest(path: string, body?: unknown) {
   const response = await fetch(`${base}${path}`, { ...(body === undefined ? {} : { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), cache: "no-store" });
@@ -106,15 +106,18 @@ export function useAgentConversation(context?: AgentContext, options: { restore?
     } catch (error) { setIssue(error instanceof Error ? error.message : "자료 선택을 저장하지 못했습니다."); }
     finally { contextMutation.current = false; setPending(false); }
   };
+  const decide = async (path: string, decision: unknown) => {
+    setPending(true); setIssue(null);
+    try { accept(await agentRequest(`/${id}/${path}`, decision)); } finally { setPending(false); }
+  };
   return { id, conversation, list, issue, pending, resolving, select, send, toggleContext,
     attach: () => id && context ? perform(() => agentRequest(`/${id}/contexts`, { context })) : Promise.resolve(),
     cancel: () => perform(() => agentRequest(`/${id}/cancel`, {})),
     retry: () => perform(() => agentRequest(`/${id}/retry`, {})),
     /** 초안 승인 · 거절. 실패를 카드가 직접 보여 주도록 오류를 다시 던진다. */
-    decideDraft: async (draftId: string, decision: AgentRecordDraftDecision) => {
-      setPending(true); setIssue(null);
-      try { accept(await agentRequest(`/${id}/record-drafts/${draftId}`, decision)); } finally { setPending(false); }
-    },
+    decideDraft: (draftId: string, decision: AgentRecordDraftDecision) => decide(`record-drafts/${draftId}`, decision),
+    decidePlanDraft: (draftId: string, decision: AgentPlanDecision) => decide(`plan-drafts/${draftId}`, decision),
+    decideReplanDraft: (draftId: string, decision: AgentReplanDecision) => decide(`replan-drafts/${draftId}`, decision),
     approve: (input: AgentApproval) => perform(() => agentRequest(`/${id}/approval`, input)),
   };
 }

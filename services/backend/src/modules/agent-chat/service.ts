@@ -2,12 +2,15 @@ import type { PortfolioReadApi } from "../portfolios/index.js";
 import type { PageApi } from "../page/index.js";
 import { AgentCredentials } from "./credentials.js";
 import { randomUUID } from "node:crypto";
-import { AgentConversationSchema, type CareerDocumentBootstrap, type AgentConversation, type AgentContext, type AgentMessage, type SendAgentMessage, type AgentApproval, type AgentRecordDraftDecision, type AgentRecordDraftInput, type RequirementReviewDraft } from "@expresso/contracts";
+import { AgentConversationSchema, type CareerDocumentBootstrap, type AgentConversation, type AgentContext, type AgentMessage, type SendAgentMessage, type AgentApproval, type AgentRecordDraftDecision, type AgentRecordDraftInput, type AgentPlanDecision, type AgentReplanDecision, type ReplanProposalInput, type UpdateTaskProgress, type GapReviewDraft, type PlanProposalInput, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
 import { mongoCollections, type AgentConversationDoc } from "@expresso/database";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { AgentToolRejection, type AgentRecordText, type AgentRuntime } from "../../platform/agent/runtime.js";
 import { buildReview, hash, recordText, reviewIssues } from "./requirement-review.js";
 import { buildDraft, draftIssues } from "./record-draft.js";
+import { buildGapReview, gapIssues, latestReview, latestTool } from "./gap-review.js";
+import { buildPreparationTasks, PlanCapacityError, scheduleRemaining } from "./preparation-planner.js";
+import { PreparationPlans } from "./plans.js";
 import type { CareerDocumentApi } from "../career-editor/index.js";
 import type { CareerApi } from "../career/index.js";
 import type { JobBoardApi } from "../jobs/index.js";
@@ -19,6 +22,7 @@ export class AgentChatService {
   private readonly running = new Map<string, AbortController>();
   private readonly tasks = new Set<Promise<void>>();
   constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord" | "listRecords" | "listCategories" | "createRecord">, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi, readonly credentials: AgentCredentials = new AgentCredentials(db), private readonly portfolios?: Pick<PortfolioReadApi, "get">, private readonly pages?: Pick<PageApi, "latest">) {}
+  private get plans() { return new PreparationPlans(this.db); }
   async consentRequired(userId: string) {
     const result = await this.consent.list(userId);
     return !result.data.consents.some(item => item.scope === "career_records" && item.granted);
@@ -116,12 +120,104 @@ export class AgentChatService {
     const row = await this.owned(userId, id);
     const review = row.messages.flatMap(message => message.tools).find(tool => tool.id === toolId)?.review;
     if (!review) throw new AgentChatError(404, "이 대화의 요건 대조를 찾을 수 없습니다.");
+    return this.reviewFreshness(userId, review);
+  }
+  private async reviewFreshness(userId: string, review: RequirementReview) {
     const job = await this.jobs.get(userId, review.jobPostingId).catch(() => null);
     const records = await this.recordTexts(userId, review.snapshot.records.map(item => item.recordId));
     const changed: ("job" | "records")[] = [];
     if (!job?.descriptionRaw || hash(job.descriptionRaw) !== review.snapshot.jobContentHash) changed.push("job");
     if (review.snapshot.records.some(item => { const current = records.get(item.recordId); return !current || hash(current.text) !== item.textHash; })) changed.push("records");
     return { stale: changed.length > 0, changed };
+  }
+  /**
+   * 보완점 정리. 가장 최근 요건 대조를 기준으로 하고, 그 대조가 오래되었으면 받지 않는다 —
+   * 최신성은 여기(만들 때)서만 본다.
+   */
+  private async gapReview(userId: string, messages: AgentMessage[], draft: GapReviewDraft) {
+    const review = latestReview(messages);
+    if (!review) throw new AgentToolRejection(["이 대화에 요건 대조가 없습니다. 먼저 record_requirement_review로 대조하십시오."]);
+    if ((await this.reviewFreshness(userId, review)).stale) throw new AgentToolRejection(["요건 대조 뒤에 공고나 근거 기록이 바뀌었습니다. 요건 대조를 먼저 다시 하십시오."]);
+    const records = await this.recordTexts(userId, draft.items.flatMap(item => item.evidence.filter(evidence => evidence.sourceType === "record").map(evidence => evidence.sourceId)));
+    const issues = gapIssues(draft, review, records, messages);
+    if (issues.length) throw new AgentToolRejection(issues);
+    return buildGapReview(draft, review, records);
+  }
+  /**
+   * 준비 계획 제안. 가장 최근 보완점 정리를 기준으로 규칙으로 작업을 배치한다.
+   * 보완점이 그 뒤의 요건 대조보다 오래되었거나 대조가 오래되었으면 받지 않는다.
+   */
+  private async planDraft(userId: string, messages: AgentMessage[], input: PlanProposalInput) {
+    const gap = latestTool(messages, tool => tool.gapReview);
+    if (!gap) throw new AgentToolRejection(["이 대화에 보완점 정리가 없습니다. 먼저 record_gap_review로 정리하십시오."]);
+    const review = latestTool(messages, tool => tool.review);
+    if (review && review.position > gap.position) throw new AgentToolRejection(["보완점 정리 뒤에 요건 대조를 다시 했습니다. 보완점을 먼저 다시 정리하십시오."]);
+    if (review && (await this.reviewFreshness(userId, review.value)).stale) throw new AgentToolRejection(["요건 대조 뒤에 공고나 근거 기록이 바뀌었습니다. 요건 대조와 보완점 정리를 먼저 다시 하십시오."]);
+    const missing = input.gapIndexes.filter(index => !gap.value.items[index]);
+    if (missing.length) throw new AgentToolRejection([`보완점 번호 ${missing.join(", ")}는 가장 최근 보완점 정리에 없습니다.`]);
+    try {
+      const tasks = buildPreparationTasks(input.gapIndexes.map(index => gap.value.items[index]!), input.settings);
+      return { draftId: randomUUID(), jobPostingId: gap.value.jobPostingId, title: input.title, summary: input.summary, settings: input.settings, tasks, status: "ready" as const, planId: null };
+    } catch (error) {
+      if (!(error instanceof PlanCapacityError)) throw error;
+      const hours = (minutes: number) => Math.ceil(minutes / 60);
+      throw new AgentToolRejection([`시간이 모자랍니다. 고른 보완점에 총 ${hours(error.neededMinutes)}시간이 필요한데 주 ${input.settings.weeklyHours}시간 × ${input.settings.weeks}주는 ${hours(error.availableMinutes)}시간입니다. 주당 시간이나 기간을 늘리거나 보완점을 줄일지 사용자에게 물어보십시오.`]);
+    }
+  }
+  /** 계획 초안 승인 · 거절. AI 없이 동작한다. 승인하면 대화 밖에도 남는 계획이 된다. */
+  async decidePlanDraft(userId: string, id: string, draftId: string, decision: AgentPlanDecision) {
+    const row = await this.owned(userId, id);
+    if (row.run?.status === "running") throw new AgentChatError(409, "응답이 끝난 뒤 처리해 주세요.");
+    const draft = row.messages.flatMap(message => message.tools).find(tool => tool.planDraft?.draftId === draftId)?.planDraft;
+    if (!draft) throw new AgentChatError(404, "이 대화의 계획 초안을 찾을 수 없습니다.");
+    const target = decision.action === "approve" ? "approved" : "rejected";
+    if (draft.status !== "ready") { if (draft.status === target) return view(row); throw new AgentChatError(409, "이미 처리한 초안입니다."); }
+    let next: Record<string, unknown> = { "messages.$[].tools.$[tool].planDraft.status": target };
+    if (decision.action === "approve") {
+      const edits = new Map(decision.taskEdits.map(edit => [edit.id, { title: edit.title, action: edit.action, deliverable: edit.deliverable }]));
+      if (edits.size !== draft.tasks.length || draft.tasks.some(task => !edits.has(task.id))) throw new AgentChatError(422, "모든 작업의 내용을 함께 보내 주세요.");
+      const plan = await this.plans.create(userId, id, draft, { title: decision.title, summary: decision.summary, tasks: edits });
+      next = { ...next, "messages.$[].tools.$[tool].planDraft.planId": plan.id, "messages.$[].tools.$[tool].planDraft.title": plan.title, "messages.$[].tools.$[tool].planDraft.summary": plan.summary };
+    }
+    await this.rows.updateOne({ _id: id, userId }, { $set: { ...next, updatedAt: new Date().toISOString() }, $inc: { version: 1 } }, { arrayFilters: [{ "tool.planDraft.draftId": draftId, "tool.planDraft.status": "ready" }] });
+    return this.get(userId, id);
+  }
+  /** 남은 작업 재배치 초안. 완료하지 않은 작업만 새 설정으로 배치한다. 저장은 승인할 때. */
+  private async replanDraft(userId: string, input: ReplanProposalInput) {
+    const plan = await this.plans.get(userId, input.planId);
+    if (!plan) throw new AgentToolRejection(["그 계획을 찾을 수 없습니다. 승인한 계획 초안의 planId를 쓰십시오."]);
+    try {
+      const slots = scheduleRemaining(plan.tasks, input.settings);
+      if (!slots.length) throw new AgentToolRejection(["모든 작업을 마쳐 다시 배치할 작업이 없습니다."]);
+      const titles = new Map(plan.tasks.map(task => [task.id, task.title]));
+      return { draftId: randomUUID(), planId: plan.id, baseVersion: plan.version, settings: input.settings, slots: slots.map(slot => ({ ...slot, title: titles.get(slot.taskId)! })), status: "ready" as const };
+    } catch (error) {
+      if (!(error instanceof PlanCapacityError)) throw error;
+      throw new AgentToolRejection([`시간이 모자랍니다. 남은 작업에 총 ${Math.ceil(error.neededMinutes / 60)}시간이 필요한데 주 ${input.settings.weeklyHours}시간 × ${input.settings.weeks}주는 ${Math.ceil(error.availableMinutes / 60)}시간입니다. 설정을 다시 물어보십시오.`]);
+    }
+  }
+  /** 재배치 승인 · 거절. 초안 이후 계획이 바뀌었으면(진행 기록 포함) 409. */
+  async decideReplanDraft(userId: string, id: string, draftId: string, decision: AgentReplanDecision) {
+    const row = await this.owned(userId, id);
+    if (row.run?.status === "running") throw new AgentChatError(409, "응답이 끝난 뒤 처리해 주세요.");
+    const draft = row.messages.flatMap(message => message.tools).find(tool => tool.replanDraft?.draftId === draftId)?.replanDraft;
+    if (!draft) throw new AgentChatError(404, "이 대화의 재배치 초안을 찾을 수 없습니다.");
+    const target = decision.action === "approve" ? "approved" : "rejected";
+    if (draft.status !== "ready") { if (draft.status === target) return view(row); throw new AgentChatError(409, "이미 처리한 초안입니다."); }
+    if (decision.action === "approve" && !await this.plans.applyReplan(userId, draft)) throw new AgentChatError(409, "초안을 만든 뒤 계획이 바뀌었습니다. 다시 배치를 요청해 주세요.");
+    await this.rows.updateOne({ _id: id, userId }, { $set: { "messages.$[].tools.$[tool].replanDraft.status": target, updatedAt: new Date().toISOString() }, $inc: { version: 1 } }, { arrayFilters: [{ "tool.replanDraft.draftId": draftId, "tool.replanDraft.status": "ready" }] });
+    return this.get(userId, id);
+  }
+  async updateTaskProgress(userId: string, planId: string, taskId: string, input: UpdateTaskProgress) {
+    const plan = await this.plans.updateTask(userId, planId, taskId, input);
+    if (plan) return plan;
+    if (!await this.plans.get(userId, planId)) throw new AgentChatError(404, "준비 계획을 찾을 수 없습니다.");
+    throw new AgentChatError(409, "다른 화면에서 계획을 먼저 고쳤습니다. 새로 불러온 뒤 다시 저장해 주세요.");
+  }
+  async plan(userId: string, planId: string) {
+    const plan = await this.plans.get(userId, planId);
+    if (!plan) throw new AgentChatError(404, "준비 계획을 찾을 수 없습니다.");
+    return plan;
   }
   async create(userId: string, contexts: AgentContext[]) {
     await this.context(userId, contexts);
@@ -223,6 +319,11 @@ export class AgentChatService {
         records: { list: () => this.listRecords(row.userId), read: ids => this.readRecords(row.userId, ids) },
         review: draft => this.review(row.userId, row.contexts, draft),
         draftRecord: input => this.draftRecord(row, input),
+        // 같은 실행에서 방금 남긴 도구 결과(예: 대조 직후의 보완점)도 보이도록 지금 쓰는 답변을 넣어 넘긴다.
+        gapReview: draft => this.gapReview(row.userId, [...row.messages.slice(0, -1), message], draft),
+        planDraft: input => this.planDraft(row.userId, [...row.messages.slice(0, -1), message], input),
+        replanDraft: input => this.replanDraft(row.userId, input),
+        readPlan: planId => this.plans.get(row.userId, planId),
         propose: async (recordId, draft) => {
           if (!row.contexts.some(ref => ref.kind === "record" && ref.id === recordId)) throw new AgentChatError(403, "대화에 연결된 기록만 변경할 수 있습니다.");
           await this.consent.require(row.userId, "partial_edit");

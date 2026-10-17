@@ -16,3 +16,4 @@ export type * from "./common.js";
 export type * from "./agent-chat.js";
 
 export type { AgentCredentialDoc } from "./agent-credential.js";
+export type { PreparationPlanDoc } from "./preparation-plan.js";

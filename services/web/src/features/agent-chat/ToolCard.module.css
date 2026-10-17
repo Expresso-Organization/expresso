@@ -1,4 +1,4 @@
-/* 요건 대조 카드 — 대화 안 도구 카드(.toolCard)와 같은 테두리 · 바탕을 쓴다. */
+/* 요건 대조 · 보완점 카드 — 대화 안 도구 카드(.toolCard)와 같은 테두리 · 바탕을 쓴다. */
 .card { border: 1px solid var(--ex-border); border-radius: 12px; background: var(--ex-bg-sunken); padding: 12px 14px; font-family: var(--ex-font-ui); color: var(--ex-fg); }
 .head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .title { display: inline-flex; align-items: center; gap: 6px; font-size: var(--ex-text-xs); font-weight: 600; }
@@ -28,3 +28,9 @@
 .evidence q { color: var(--ex-fg-body); }
 .recommendation { display: flex; gap: 6px; color: var(--ex-fg-muted); }
 .recommendation > i { flex-shrink: 0; margin-top: 3px; }
+.status { flex-shrink: 0; margin-top: 1px; padding: 1px 6px; border-radius: 999px; font-size: var(--ex-text-3xs); white-space: nowrap; }
+.status[data-status="needs_confirmation"] { background: var(--ex-status-warning-surface); color: var(--ex-status-warning-text); }
+.status[data-status="needs_improvement"] { background: var(--ex-status-danger-surface); color: var(--ex-status-danger-text); }
+.priority { flex-shrink: 0; width: 6px; height: 6px; margin-top: 7px; border-radius: 50%; background: var(--ex-fg-subtle); }
+.priority[data-priority="high"] { background: var(--ex-accent); }
+.priority[data-priority="medium"] { background: var(--ex-accent-soft); }

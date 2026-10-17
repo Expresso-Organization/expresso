@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { Route } from "next";
 import { AgentReviewFreshnessResponseSchema, type RequirementReview } from "@expresso/contracts";
 import { Icon } from "@/components/ui/Icon";
-import styles from "./RequirementReviewCard.module.css";
+import styles from "./ToolCard.module.css";
 
 /** 공고 상세의 자격 요건 표시와 같은 아이콘 매핑을 쓴다 — 같은 판정이 두 화면에서 같은 모양이다. */
 const ASSESSMENT = {

@@ -10,6 +10,10 @@ import type { AgentContext, AgentMessage, AiEditProposalDetail, CareerDocumentBo
 import { ResourcePreview, type PreviewResource } from "./ResourcePreview";
 import { RequirementReviewCard } from "./RequirementReviewCard";
 import { RecordDraftCard } from "./RecordDraftCard";
+import { GapReviewCard } from "./GapReviewCard";
+import { PlanDraftCard } from "./PlanDraftCard";
+import { PlanCard } from "./PlanCard";
+import { ReplanDraftCard } from "./ReplanDraftCard";
 import { AgentConsentDialog } from "./AgentConsentDialog";
 import { ConversationSwitcher } from "./ConversationSwitcher";
 import { AiProposalDiff } from "@/features/career-editor/ai/AiProposalDiff";
@@ -72,12 +76,23 @@ function GeneralWelcome() {
     <div className={styles.starters}>{STARTERS.map(item => <Button key={item.title} variant="ghost" className={styles.starter} onClick={() => start(item.prompt)}><Icon name={item.icon} size={19} /><strong>{item.title}</strong><span>{item.description}</span><Icon name="arrow-up-right" size={14} /></Button>)}</div>
   </div>;
 }
-/** 도구 결과의 모양으로 화면을 나눈다 — 요건 대조 · 새 기록 초안은 카드, 기록 변경 제안은 승인 화면, 그 밖은 요약. */
+/**
+ * 도구 결과의 모양으로 화면을 나눈다 — 요건 대조 · 보완점 · 새 기록 · 준비 계획 · 재배치는 카드,
+ * 기록 변경 제안은 승인 화면, 그 밖은 요약. 승인 · 거절은 AI를 부르지 않으므로 실행 중에만 막는다.
+ */
 const RecordTool: ToolCallMessagePartComponent = props => {
   const state = useContext(ChatContext)!;
   const tool = state.conversation?.messages.flatMap(message => message.tools).find(tool => tool.id === props.toolCallId);
+  const busy = state.pending || state.conversation?.run?.status === "running";
   if (tool?.review) return <RequirementReviewCard conversationId={state.id} toolId={tool.id} review={tool.review} />;
-  if (tool?.recordDraft) { const draftId = tool.recordDraft.draftId; return <RecordDraftCard draft={tool.recordDraft} disabled={state.pending || state.conversation?.run?.status === "running"} onDecide={decision => state.decideDraft(draftId, decision)} />; }
+  if (tool?.gapReview) return <GapReviewCard gapReview={tool.gapReview} />;
+  if (tool?.recordDraft) { const draftId = tool.recordDraft.draftId; return <RecordDraftCard draft={tool.recordDraft} disabled={busy} onDecide={decision => state.decideDraft(draftId, decision)} />; }
+  if (tool?.planDraft) {
+    const { draftId, planId, status } = tool.planDraft;
+    if (status === "approved" && planId) return <PlanCard planId={planId} refreshKey={state.conversation?.version} />;
+    return <PlanDraftCard draft={tool.planDraft} disabled={busy} onDecide={decision => state.decidePlanDraft(draftId, decision)} />;
+  }
+  if (tool?.replanDraft) { const draftId = tool.replanDraft.draftId; return <ReplanDraftCard draft={tool.replanDraft} disabled={busy} onDecide={decision => state.decideReplanDraft(draftId, decision)} />; }
   return <ToolFallback.Root defaultOpen className={styles.toolCard}><ToolFallback.Trigger toolName={tool?.name ?? props.toolName} status={props.status} /><ToolFallback.Content>
     <p className={styles.toolSummary}>{tool?.summary}</p>
     {tool?.proposal ? <Proposal proposal={tool.proposal} beforeDocument={tool.beforeDocument} undone={tool.undone} /> : null}
