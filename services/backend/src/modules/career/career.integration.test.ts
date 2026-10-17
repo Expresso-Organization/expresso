@@ -48,6 +48,22 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB career editing", () => {
     await expect(service.createRecord(userId, randomUUID(), { ...input, properties: { role: null } as never })).rejects.toThrow();
   });
 
+  it("saves v2 values on default categories that only have the v1 property schema", async () => {
+    const categories = await service.listCategories(userId);
+    expect(categories.find((category) => category.id === categoryId)?.propertySchemaV2).toBeUndefined();
+    const { record } = await service.createRecord(userId, randomUUID(), { categoryId, title: "역할 기록", properties: { role: { type: "text", value: "리드" } }, bodyMd: "" });
+    expect(record.properties.role).toEqual({ type: "text", value: "리드" });
+    const saved = await service.updateRecord(userId, record.id, record.version, { properties: { role: "평문 역할", situation: { type: "text", value: "출시 직전" } } });
+    expect((await service.getRecord(userId, record.id)).properties).toEqual({ role: "평문 역할", situation: { type: "text", value: "출시 직전" } });
+    await expect(service.updateRecord(userId, record.id, saved.version, { properties: { role: { type: "number", value: 1 } } })).rejects.toMatchObject({ statusCode: 400 });
+    await expect(service.updateRecord(userId, record.id, saved.version, { properties: { unknown: { type: "text", value: "x" } } })).rejects.toMatchObject({ statusCode: 400 });
+
+    const education = categories.find((category) => category.key === "education_history")!;
+    const period = { type: "date" as const, value: { start: "2024-03-01", end: null, timezone: null } };
+    const dated = await service.createRecord(userId, randomUUID(), { categoryId: education.id, title: "학력", properties: { startMonth: period, endMonth: "2026-02" }, bodyMd: "" });
+    expect(dated.record.properties).toEqual({ startMonth: period, endMonth: "2026-02" });
+  });
+
   it("allows exactly one concurrent update at the same version", async () => {
     const { record } = await service.createRecord(userId, randomUUID(), { categoryId, title: "초기", properties: {}, bodyMd: "" });
     const results = await Promise.allSettled(["A", "B"].map((title) => service.updateRecord(userId, record.id, record.version, { title })));

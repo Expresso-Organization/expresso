@@ -8,6 +8,7 @@ import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { requireActiveUser } from "../identity/index.js";
 import { CareerError } from "./errors.js";
 import { validateCareerProperties } from "./properties.js";
+import { careerCategoryDefinitions } from "./property-definitions.js";
 import { mapMongoCategory, mapMongoView, requireCareerCategory } from "./mongo-categories.js";
 import { careerRequestHash, listMongoRecords, mapMongoRecord } from "./mongo-records.js";
 import type { CareerApi } from "./index.js";
@@ -118,7 +119,7 @@ export class CareerService implements CareerApi {
     return inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId);
       const category = await requireCareerCategory(tx, userId, input.categoryId, tx.session);
-      validateCareerProperties(category.propertySchema, input.properties, category.propertySchemaV2);
+      validateCareerProperties(category.propertySchema, input.properties, careerCategoryDefinitions(category));
       const records = mongoCollections(tx.db).careerRecords;
       const existing = await records.findOne({ userId, createIdempotencyKey: idempotencyKey }, { session: tx.session });
       if (existing) {
@@ -173,7 +174,7 @@ export class CareerService implements CareerApi {
       }
       const category = await requireCareerCategory(tx, userId, existing.categoryId, tx.session);
       const properties = input.properties ?? existing.properties;
-      validateCareerProperties(category.propertySchema, properties, category.propertySchemaV2);
+      validateCareerProperties(category.propertySchema, properties, careerCategoryDefinitions(category));
       const computationDefinitions = category.propertySchemaV2?.filter((definition) => definition.deletedAt === null) ?? [];
       const changedPropertyIds = computationDefinitions.filter((definition) => {
         if (definition.type === "title") return input.title !== undefined && input.title !== existing.title;
