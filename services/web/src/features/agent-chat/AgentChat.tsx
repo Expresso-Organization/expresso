@@ -8,6 +8,7 @@ import { AssistantRuntimeProvider, useExternalStoreRuntime, useAui, useAuiState,
 import { AgentChatAccessSchema, AgentResourceDetailSchema } from "@expresso/contracts";
 import type { AgentContext, AgentMessage, AiEditProposalDetail, CareerDocumentBootstrap } from "@expresso/contracts";
 import { ResourcePreview, type PreviewResource } from "./ResourcePreview";
+import { RequirementReviewCard } from "./RequirementReviewCard";
 import { AgentConsentDialog } from "./AgentConsentDialog";
 import { ConversationSwitcher } from "./ConversationSwitcher";
 import { AiProposalDiff } from "@/features/career-editor/ai/AiProposalDiff";
@@ -70,9 +71,11 @@ function GeneralWelcome() {
     <div className={styles.starters}>{STARTERS.map(item => <Button key={item.title} variant="ghost" className={styles.starter} onClick={() => start(item.prompt)}><Icon name={item.icon} size={19} /><strong>{item.title}</strong><span>{item.description}</span><Icon name="arrow-up-right" size={14} /></Button>)}</div>
   </div>;
 }
+/** 도구 결과의 모양으로 화면을 나눈다 — 요건 대조는 카드, 기록 변경 제안은 승인 화면, 그 밖은 요약. */
 const RecordTool: ToolCallMessagePartComponent = props => {
   const state = useContext(ChatContext)!;
   const tool = state.conversation?.messages.flatMap(message => message.tools).find(tool => tool.id === props.toolCallId);
+  if (tool?.review) return <RequirementReviewCard conversationId={state.id} toolId={tool.id} review={tool.review} />;
   return <ToolFallback.Root defaultOpen className={styles.toolCard}><ToolFallback.Trigger toolName={tool?.name ?? props.toolName} status={props.status} /><ToolFallback.Content>
     <p className={styles.toolSummary}>{tool?.summary}</p>
     {tool?.proposal ? <Proposal proposal={tool.proposal} beforeDocument={tool.beforeDocument} undone={tool.undone} /> : null}

@@ -10,7 +10,7 @@ import { PortfolioReadService } from "../portfolios/index.js";
 import { PageService } from "../page/index.js";
 import { AgentCredentials } from "./credentials.js";
 import { ConsentService } from "../consent/index.js";
-import type { AgentRuntime } from "../../platform/agent/runtime.js";
+import { AgentToolRejection, type AgentRuntime } from "../../platform/agent/runtime.js";
 import { AgentChatService } from "./service.js";
 
 describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB_URL))("공통 에이전트 대화", () => {
@@ -157,6 +157,35 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     await service.send(userId, row.id, { requestId: randomUUID(), text: "기다리기" });
     await expect(service.retry(userId, row.id)).rejects.toMatchObject({ statusCode: 409 });
     await service.cancel(userId, row.id);
+  });
+  it("연결하지 않은 내 기록을 읽고, 인용을 확인한 요건 대조만 저장하며, 기록이 바뀌면 다시 대조할 것을 알린다", async () => {
+    const jobId = randomUUID();
+    const jobs = { get: async (_user: string, id: string) => { if (id !== jobId) throw new Error("없는 공고"); return { descriptionRaw: "자격 요건\n\n원래 본문을 다룬 경험" } as never; } };
+    const service = new AgentChatService(fixture.resource, { run: async input => {
+      const listed = await input.records.list();
+      const read = await input.records.read([recordId, randomUUID()]);
+      await input.emit({ type: "text", text: `${listed.some(row => row.id === recordId)}:${read.length}` });
+      const item = { requirement: "본문 경험", jobQuote: "원래 본문을 다룬 경험", kind: "must" as const, assessment: "strong" as const, explanation: "근거가 있습니다", recommendation: "" };
+      await expect(input.review({ jobPostingId: jobId, summary: "요약", items: [{ ...item, evidence: [{ recordId, quote: "없는 문장" }] }] })).rejects.toBeInstanceOf(AgentToolRejection);
+      await expect(input.review({ jobPostingId: randomUUID(), summary: "요약", items: [{ ...item, evidence: [{ recordId, quote: read[0]!.text.split("\n\n")[1]!.slice(0, 4) }] }] })).rejects.toBeInstanceOf(AgentToolRejection);
+      const review = await input.review({ jobPostingId: jobId, summary: "요약", items: [{ ...item, evidence: [{ recordId, quote: read[0]!.text.split("\n\n")[1]!.slice(0, 4) }] }] });
+      await input.emit({ type: "tool", tool: { id: toolId, name: "요건 대조", status: "complete", summary: "요건 1개", review } });
+    } }, career, jobs, documents, consent, new AgentCredentials(fixture.resource));
+    services.push(service);
+    const toolId = randomUUID();
+    const row = await service.create(userId, [{ kind: "job", id: jobId }]);
+    await service.send(userId, row.id, { requestId: randomUUID(), text: "요건과 내 기록 비교" });
+    await expect.poll(async () => (await service.get(userId, row.id)).run?.status).toBe("complete");
+    const answer = (await service.get(userId, row.id)).messages.at(-1)!;
+    expect(answer.text).toBe("true:1");
+    expect(answer.tools[0]!.review!.items[0]!.evidence[0]!.recordTitle).toBe("채팅 테스트 기록");
+    expect(await service.freshness(userId, row.id, toolId)).toEqual({ stale: false, changed: [] });
+    await expect(service.freshness(other, row.id, toolId)).rejects.toMatchObject({ statusCode: 404 });
+    const current = await documents.bootstrap(userId, recordId);
+    const proposal = await documents.createPreparedAiProposal(userId, recordId, { prompt: "수정", selection: { blockIds: current.document.content.map(block => block.id) } }, { summary: "수정", commands: [{ type: "setText", blockId: current.document.content[0]!.id, text: "바뀐 본문" }], propertyChanges: [] });
+    await documents.applyAiProposal(userId, recordId, { recordId, proposalId: proposal.proposalId, expectedDocumentVersion: proposal.baseDocumentVersion, commandIndexes: [0], propertyChangeIndexes: [] });
+    expect(await service.freshness(userId, row.id, toolId)).toEqual({ stale: true, changed: ["records"] });
+    await documents.undoAiProposal(userId, recordId, { recordId, proposalId: proposal.proposalId, expectedDocumentVersion: (await documents.getAiProposal(userId, recordId, proposal.proposalId)).appliedDocumentVersion! });
   });
   it("연결되지 않은 기록에 대한 도구 실행을 차단한다", async () => {
     let rejected = false;
