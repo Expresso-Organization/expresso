@@ -145,5 +145,19 @@ test("keeps legacy page and API while v2 routes stay closed when the flag is fal
   expect(legacy.ok()).toBe(true);
   const v2 = await page.request.get(`http://127.0.0.1:4101/v1/career/records/${randomUUID()}/document`, { headers: { authorization: `Bearer ${token}` } });
   expect(v2.status()).toBe(404);
+  // 기록 상세는 문서 세션 없이 기존 Markdown 본문을 읽기 전용으로 보여 줍니다.
+  const experience = (await (await page.request.get("http://127.0.0.1:4101/v1/career/categories", { headers: { authorization: `Bearer ${token}` } })).json() as { data: Array<{ id: string; key: string }> }).data.find((category) => category.key === "experience")!;
+  const created = await page.request.post("http://127.0.0.1:4101/v1/career/records", { headers: { authorization: `Bearer ${token}`, "idempotency-key": `e2e-${randomUUID()}` }, data: { categoryId: experience.id, title: "기존 본문 기록", properties: {}, bodyMd: "## 배경\n\n기존 Markdown 본문입니다." } });
+  const recordId = (await created.json() as { data: { id: string } }).data.id;
+  const documentRequests: string[] = [];
+  page.on("request", (request) => { if (request.url().includes("/document")) documentRequests.push(request.url()); });
+  await page.goto(`/career/records/${recordId}`);
+  // 스트리밍 중에는 같은 내용이 숨김 경계 안에도 있으므로, 숨긴 요소를 빼는 역할 기준으로 범위를 잡습니다.
+  const view = page.getByRole("region", { name: "커리어 문서" });
+  await expect(view.getByText("문서 편집기가 꺼져 있어 본문을 읽기만 할 수 있습니다.")).toBeVisible();
+  await expect(view.getByText("기존 Markdown 본문입니다.")).toBeVisible();
+  await expect(view.getByLabel("커리어 기록 본문")).toHaveAttribute("contenteditable", "false");
+  await expect(page.getByLabel("커리어 문서 편집기")).toHaveCount(0);
+  expect(documentRequests).toEqual([]);
   await context.close();
 });
