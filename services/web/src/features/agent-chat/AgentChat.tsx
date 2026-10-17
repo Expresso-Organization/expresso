@@ -23,6 +23,9 @@ import styles from "./AgentChat.module.css";
 
 /** 프레임워크 원본 Thread를 사용하고 도메인 도구의 승인 화면만 확장합니다. */
 const ChatContext = createContext<ReturnType<typeof useAgentConversation> | null>(null);
+/** 공고 상세 우측 레일에서 여는 대화의 공고. 첫 화면과 시작 제안이 이 공고를 기준으로 바뀐다. */
+export type AgentChatJob = { id: string; title: string; company: string };
+const JobContext = createContext<AgentChatJob | null>(null);
 function AssistantIdentity() {
   const running = useAuiState(s => s.message.status?.type === "running");
   return <div className={styles.identity}><LogoMark size={20} /><span>Expresso AI</span>{running ? <span className={styles.working}>함께 살펴보는 중</span> : null}</div>;
@@ -32,15 +35,39 @@ const STARTERS = [
   { icon: "chat-circle-dots", title: "경험 구체화", description: "역할과 성과를 질문으로 정리", prompt: "내 커리어 기록에서 역할·행동·성과가 부족한 부분을 질문해 줘." },
   { icon: "pencil-line", title: "기록 다듬기", description: "더 잘 읽히는 문장으로 제안", prompt: "연결한 기록의 문장을 다듬는 변경 제안을 만들어 줘." },
 ];
-function ChatWelcome() {
+/** 공고 하나만 연결된 대화에서도 답할 수 있는 것만 둔다 — 기록을 연결해야 하는 제안은 없다. */
+const JOB_STARTERS = [
+  { icon: "list-checks", title: "요건과 내 기록 비교", prompt: "이 공고의 자격 요건을 내 커리어 기록과 비교해 줘. 근거가 있는 요건과 근거가 약하거나 없는 요건을 나눠서 알려 줘." },
+  { icon: "magnifying-glass", title: "이 공고가 보는 역량", prompt: "이 공고가 가장 중요하게 보는 역량과 경험을 우선순위대로 정리해 줘." },
+  { icon: "chat-circle-dots", title: "부족한 요건 보완 질문", prompt: "근거가 약하거나 없는 요건부터 내 경험을 확인할 질문을 한 번에 하나씩 해 줘." },
+];
+function useStarter() {
   const runtime = useAui();
   const welcome = useRef<HTMLDivElement>(null);
+  const start = (prompt: string) => { runtime.thread.composer().setText(prompt); welcome.current?.closest(".aui-thread-root")?.querySelector<HTMLTextAreaElement>(".aui-composer-input")?.focus(); };
+  return { welcome, start };
+}
+function ChatWelcome() {
+  const job = useContext(JobContext);
+  return job ? <JobWelcome job={job} /> : <GeneralWelcome />;
+}
+function JobWelcome({ job }: { job: AgentChatJob }) {
+  const { welcome, start } = useStarter();
+  return <div ref={welcome} className={styles.jobWelcome}>
+    <span className={styles.jobCompany}>{job.company}</span>
+    <h1 className={styles.jobTitle}>{job.title}</h1>
+    <p>이 공고를 기준으로 내 기록을 살펴봅니다.</p>
+    <div className={styles.jobStarters}>{JOB_STARTERS.map(item => <Button key={item.title} variant="ghost" className={styles.jobStarter} onClick={() => start(item.prompt)}><Icon name={item.icon} size={16} /><span>{item.title}</span><Icon name="arrow-up-right" size={13} /></Button>)}</div>
+  </div>;
+}
+function GeneralWelcome() {
+  const { welcome, start } = useStarter();
   return <div ref={welcome} className={styles.welcome}>
     <div className={styles.welcomeMark}><LogoMark size={44} /></div>
     <span className={styles.eyebrow}>내 기록에서, 다음 기회까지</span>
     <h1>내 경험을,<br /><span>다음 기회로.</span></h1>
     <p>관심 있는 공고와 커리어 기록을 연결해 주세요.<br />어떤 경험을 보여줄지 함께 정리합니다.</p>
-    <div className={styles.starters}>{STARTERS.map(item => <Button key={item.title} variant="ghost" className={styles.starter} onClick={() => { runtime.thread.composer().setText(item.prompt); welcome.current?.closest(".aui-thread-root")?.querySelector<HTMLTextAreaElement>(".aui-composer-input")?.focus(); }}><Icon name={item.icon} size={19} /><strong>{item.title}</strong><span>{item.description}</span><Icon name="arrow-up-right" size={14} /></Button>)}</div>
+    <div className={styles.starters}>{STARTERS.map(item => <Button key={item.title} variant="ghost" className={styles.starter} onClick={() => start(item.prompt)}><Icon name={item.icon} size={19} /><strong>{item.title}</strong><span>{item.description}</span><Icon name="arrow-up-right" size={14} /></Button>)}</div>
   </div>;
 }
 const RecordTool: ToolCallMessagePartComponent = props => {
@@ -72,8 +99,10 @@ const convertMessage = (message: AgentMessage): ThreadMessageLike => ({
     { type: "text", text: message.text },
   ],
 });
-export function AgentChat({ context, contextLabel, standalone = false }: { context?: AgentContext; contextLabel?: string; standalone?: boolean }) {
-  const state = useAgentConversation(context);
+export function AgentChat({ job, standalone = false, ...props }: { context?: AgentContext; contextLabel?: string; standalone?: boolean; job?: AgentChatJob }) {
+  const context: AgentContext | undefined = job ? { kind: "job", id: job.id } : props.context;
+  const contextLabel = job?.title ?? props.contextLabel;
+  const state = useAgentConversation(context, job ? { restore: "context" } : {});
   const [preview, setPreview] = useState<PreviewResource | null>(null);
   const [contextTitles, setContextTitles] = useState<Record<string, string>>({});
   const contextKeys = (state.conversation?.contexts ?? []).map(ref => `${ref.kind}:${ref.id}`).join(",");
@@ -104,12 +133,15 @@ export function AgentChat({ context, contextLabel, standalone = false }: { conte
   useEffect(() => { const controller = new AbortController(); void fetch("/api/agent/access", { signal: controller.signal, cache: "no-store" }).then(async response => { if (!response.ok) throw new Error("access"); setAccess(AgentChatAccessSchema.parse(await response.json()).data); }).catch(() => { if (!controller.signal.aborted) setAccessError(true); }); return () => controller.abort(); }, []);
   const canSend = !!access?.enabled && !access.consentRequired && (access.serverCredentialAllowed || access.apiKeyConfigured);
   const running = state.conversation?.run?.status === "running";
-  const runtime = useExternalStoreRuntime({ messages: state.conversation?.messages ?? [], convertMessage, isRunning: running, isLoading: !!state.id && !state.conversation, isDisabled: !!preview || !canSend || state.pending || (!!state.id && !state.conversation), onNew: async message => { const text = message.content.filter(part => part.type === "text").map(part => part.text).join("\n"); try { await state.send(text); } catch { runtime.thread.composer.setText(text); } }, onCancel: state.cancel });
+  const runtime = useExternalStoreRuntime({ messages: state.conversation?.messages ?? [], convertMessage, isRunning: running, isLoading: state.resolving || (!!state.id && !state.conversation), isDisabled: !!preview || !canSend || state.pending || state.resolving || (!!state.id && !state.conversation), onNew: async message => { const text = message.content.filter(part => part.type === "text").map(part => part.text).join("\n"); try { await state.send(text); } catch { runtime.thread.composer.setText(text); } }, onCancel: state.cancel });
+  const lastRun = state.conversation?.run;
+  const canRetry = !!lastRun && ["failed", "interrupted", "cancelled"].includes(lastRun.status) && state.conversation?.messages.at(-1)?.role === "assistant";
+  const retryButton = canRetry ? <Button variant="outline" size="sm" className={styles.retryButton} disabled={!canSend || state.pending} onClick={() => void state.retry()}><Icon name="arrow-clockwise" size={13} />다시 보내기</Button> : null;
   const missing = context && state.conversation && !state.conversation.contexts.some(ref => ref.kind === context.kind && ref.id === context.id);
-  return <ChatContext.Provider value={state}><AssistantRuntimeProvider runtime={runtime}>
+  return <ChatContext.Provider value={state}><JobContext.Provider value={job ?? null}><AssistantRuntimeProvider runtime={runtime}>
     {preview ? <ResourcePreview resource={preview} onClose={() => setPreview(null)} selected={!!state.conversation?.contexts.some(ref => ref.kind === preview.kind && ref.id === preview.id)} disabled={contextDisabled} onToggle={toggleContext} /> : null}
     <AgentConsentDialog consentRequired={access?.consentRequired ?? true} requiresKey={!!access && !access.serverCredentialAllowed && !access.apiKeyConfigured} onKeySaved={() => setAccess(current => current ? { ...current, apiKeyConfigured: true } : current)} open={consentOpen} onOpenChange={setConsentOpen} onConsented={() => setAccess(current => current ? { ...current, consentRequired: false } : current)} />
-    <section className={`acf-scope ${styles.root} ${standalone ? styles.standalone : styles.panel}`} aria-label="에이전트 채팅">
+    <section className={`acf-scope ${styles.root} ${job ? styles.rail : standalone ? styles.standalone : styles.panel}`} aria-label="에이전트 채팅">
       <div className={styles.main}>
         <header className={styles.header}>
           <div className={styles.heading}><span className={styles.assistantMark}><LogoMark size={22} /></span><div><strong>{state.conversation?.title ?? "새 대화"}</strong><span>{running ? "답변을 준비하고 있어요" : "Expresso AI"}</span></div></div>
@@ -130,11 +162,11 @@ export function AgentChat({ context, contextLabel, standalone = false }: { conte
         {accessError ? <p role="alert" className={styles.error}>채팅 사용 권한을 확인하지 못했습니다. 새로고침해 주세요.</p> : !access ? <p role="status" className={styles.status}>채팅 사용 권한 확인 중…</p> : !access.enabled ? <p className={styles.status}>에이전트 채팅이 아직 활성화되지 않았습니다.</p> : !access.serverCredentialAllowed && !access.apiKeyConfigured ? <div className={styles.apiKeyField}><p>Anthropic API 키를 등록하면 채팅을 시작할 수 있습니다.</p><Link href="/account#ai-chat-settings">설정에서 API 키 등록</Link></div> : null}
         <div className={styles.thread}><Thread autoFocus={standalone} components={{ Welcome: ChatWelcome, AssistantHeader: AssistantIdentity, ToolFallback: RecordTool, ToolGroup: ExpandedTools }} /></div>
         <div className={styles.footnote}><Icon name="check-circle" size={12} /><span>기록의 변경은 확인 후 적용됩니다.</span></div>
-        {state.conversation?.run?.status === "cancelled" ? <p role="status" className={styles.status}>응답을 중지했습니다.</p> : null}
-        {state.conversation?.run?.error ? <p role="alert" className={styles.error}>{state.conversation.run.error}</p> : null}
+        {lastRun?.status === "cancelled" ? <div role="status" className={`${styles.status} ${styles.runNotice}`}><span>응답을 중지했습니다.</span>{retryButton}</div> : null}
+        {lastRun?.error ? <div role="alert" className={`${styles.error} ${styles.runNotice}`}><span>{lastRun.error}</span>{retryButton}</div> : null}
         {state.issue ? <p role="alert" className={styles.error}>{state.issue}</p> : null}
       </div>
       {standalone ? <ConversationSwitcher contexts={state.conversation?.contexts ?? []} contextDisabled={contextDisabled} onToggleContext={toggleContext} onPreview={setPreview} inline currentId={state.id} conversations={state.list} disabled={state.pending} onSelect={state.select} /> : null}
     </section>
-  </AssistantRuntimeProvider></ChatContext.Provider>;
+  </AssistantRuntimeProvider></JobContext.Provider></ChatContext.Provider>;
 }

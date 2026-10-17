@@ -71,24 +71,53 @@ export class AgentChatService {
     if (!result.modifiedCount) throw new AgentChatError(409, "대화가 변경되었습니다.");
     return this.get(userId, id);
   }
-  async send(userId: string, id: string, input: SendAgentMessage, apiKey?: string) {
-    const row = await this.owned(userId, id);
-    if (row.messages.some(message => message.id === input.requestId)) return view(row);
+  /** 실행 전에 확인할 것: 런타임 · 실행 중 여부 · 동의 · 연결 자료 크기. 보내기와 다시 보내기가 함께 쓴다. */
+  private async prepare(userId: string, row: AgentConversationDoc) {
     if (!this.runtime) throw new AgentChatError(503, "에이전트가 아직 설정되지 않았습니다.");
     if (row.run?.status === "running") throw new AgentChatError(409, "응답이 끝나거나 취소된 뒤 보내 주세요.");
-    if (row.messages.length >= 98 || JSON.stringify(row.messages).length > 160_000) throw new AgentChatError(409, "대화가 길어졌습니다. 새 대화를 시작해 주세요.");
     await this.consent.require(userId, "partial_edit");
     const context = await this.context(userId, row.contexts);
     if (JSON.stringify(context).length > 120_000) throw new AgentChatError(422, "연결된 자료가 너무 큽니다. 자료를 나누어 새 대화를 시작해 주세요.");
+    return context;
+  }
+  async send(userId: string, id: string, input: SendAgentMessage, apiKey?: string) {
+    const row = await this.owned(userId, id);
+    if (row.messages.some(message => message.id === input.requestId)) return view(row);
+    if (row.messages.length >= 98 || JSON.stringify(row.messages).length > 160_000) throw new AgentChatError(409, "대화가 길어졌습니다. 새 대화를 시작해 주세요.");
+    const context = await this.prepare(userId, row);
     const now = new Date().toISOString();
     const user: AgentMessage = { id: input.requestId, role: "user", text: input.text, tools: [], createdAt: now };
     const assistant: AgentMessage = { id: randomUUID(), role: "assistant", text: "", tools: [], createdAt: now };
     const run = { id: randomUUID(), requestId: input.requestId, status: "running" as const, error: null, startedAt: now };
     const changed = await this.rows.findOneAndUpdate({ _id: id, userId, version: row.version, "run.status": { $ne: "running" } }, { $push: { messages: { $each: [user, assistant] } }, $set: { run, title: row.messages.length ? row.title : input.text.slice(0, 100), updatedAt: now, heartbeatAt: new Date() }, $inc: { version: 1 } }, { returnDocument: "after" });
     if (!changed) throw new AgentChatError(409, "다른 화면에서 실행을 시작했습니다.");
-    const task = this.execute(changed, context, apiKey).catch(() => undefined);
-    this.tasks.add(task); void task.finally(() => this.tasks.delete(task));
+    this.start(changed, context, apiKey);
     return view(changed);
+  }
+  /**
+   * 끝나지 못한 마지막 답변을 같은 질문으로 다시 만든다.
+   *
+   * 새 메시지를 덧붙이지 않고 마지막 답변 자리만 비워 다시 채운다 — 같은 질문이 두 번
+   * 쌓이지 않는다. 그 답변이 남긴 적용 전 제안은 먼저 취소한다. 새 답변이 다시 만들
+   * 수 있고, 남겨 두면 기록 편집기에 주인 없는 제안이 보인다.
+   */
+  async retry(userId: string, id: string, apiKey?: string) {
+    const row = await this.owned(userId, id);
+    const [question, answer] = row.messages.slice(-2);
+    if (!row.run || !["failed", "interrupted", "cancelled"].includes(row.run.status) || question?.role !== "user" || answer?.role !== "assistant" || question.id !== row.run.requestId) throw new AgentChatError(409, "다시 보낼 질문이 없습니다.");
+    const context = await this.prepare(userId, row);
+    for (const tool of answer.tools) if (tool.proposal?.status === "ready") await this.documents.cancelAiProposal(userId, tool.proposal.recordId, { recordId: tool.proposal.recordId, proposalId: tool.proposal.proposalId }).catch(() => undefined);
+    const now = new Date().toISOString();
+    const fresh: AgentMessage = { id: randomUUID(), role: "assistant", text: "", tools: [], createdAt: now };
+    const run = { id: randomUUID(), requestId: question.id, status: "running" as const, error: null, startedAt: now };
+    const changed = await this.rows.findOneAndUpdate({ _id: id, userId, version: row.version, "run.status": { $ne: "running" } }, { $set: { [`messages.${row.messages.length - 1}`]: fresh, run, updatedAt: now, heartbeatAt: new Date() }, $inc: { version: 1 } }, { returnDocument: "after" });
+    if (!changed) throw new AgentChatError(409, "다른 화면에서 실행을 시작했습니다.");
+    this.start(changed, context, apiKey);
+    return view(changed);
+  }
+  private start(row: AgentConversationDoc, context: Awaited<ReturnType<AgentChatService["context"]>>, apiKey?: string) {
+    const task = this.execute(row, context, apiKey).catch(() => undefined);
+    this.tasks.add(task); void task.finally(() => this.tasks.delete(task));
   }
   private async execute(row: AgentConversationDoc, context: Awaited<ReturnType<AgentChatService["context"]>>, apiKey?: string) {
     const controller = new AbortController(); this.running.set(row._id, controller);

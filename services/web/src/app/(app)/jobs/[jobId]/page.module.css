@@ -317,147 +317,19 @@
   line-height: 1.7;
 }
 
-/* 우측 316px 레일 */
+/*
+ * 우측 316px 레일 — 공고를 두고 나누는 대화 하나가 레일 높이를 다 쓴다.
+ * 여백은 채팅이 갖고, 스크롤도 채팅의 메시지 목록 안에서만 일어난다.
+ */
 .rail {
   width: 316px;
   flex-shrink: 0;
+  min-height: 0;
   border-left: 1px solid var(--ex-border);
   background: var(--ex-bg);
-  padding: 26px 24px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  overflow: auto;
-}
-
-.matchCard {
-  background: var(--ex-bg-sunken);
-  border-radius: 14px;
-  padding: 17px 19px;
-}
-
-/* 왼쪽에 라벨 + 큰 숫자, 오른쪽에 충족 내역 (정의서 06b). */
-.matchHead {
-  display: flex;
-  align-items: flex-end;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-
-.matchScoreRow {
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-}
-
-.matchUnit {
-  font-size: var(--ex-text-lg);
-  color: var(--ex-fg-muted);
-}
-
-.matchTally {
-  margin-left: auto;
-  text-align: right;
-}
-
-.matchScore {
-  font-family: var(--ex-font-brand);
-  font-weight: 300;
-  font-size: var(--ex-text-display-sm);
-  line-height: 1;
-  letter-spacing: -0.03em;
-  color: var(--ex-fg);
-}
-
-.matchLabel {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
-}
-
-/* 충족 / 미충족 2분할 바 — 위의 숫자를 그대로 쪼갠 것이다. */
-.matchBar {
-  display: flex;
-  gap: 3px;
-  height: 6px;
-  margin-bottom: 12px;
-}
-
-.matchSlot {
-  height: 6px;
-  border-radius: 999px;
-}
-
-.matchLegend {
-  display: grid;
-  gap: 5px;
-}
-
-.legendItem {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-subtle);
-}
-
-.legendCovered {
-  color: var(--ex-status-success-text);
-}
-
-.legendDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-}
-
-.matchRank {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
-  line-height: 1.65;
-  margin-top: 11px;
-}
-
-.railCard {
-  background: var(--ex-bg);
-  border: 1px solid var(--ex-border);
-  border-radius: 14px;
-  padding: 16px 18px;
-}
-
-.railCardBrew {
-  background: var(--ex-accent-surface);
-  border-radius: 14px;
-  padding: 16px 18px;
-}
-
-.railTitle {
-  font-size: var(--ex-text-sm);
-  font-weight: 600;
-  margin-bottom: 9px;
-}
-
-.railBody {
-  font-size: var(--ex-text-xs);
-  line-height: 1.7;
-  color: var(--ex-fg-muted);
-}
-
-.railBodyBrew {
-  color: var(--ex-accent-ink);
-}
-
-.railCta {
-  width: 100%;
-  margin-top: 12px;
-  font-size: var(--ex-text-sm);
-  font-weight: 600;
-  color: var(--ex-fg-on-accent);
-  background: var(--ex-accent);
-  border: none;
-  border-radius: 9px;
-  padding: 10px;
-  transition: background var(--ex-motion-quick);
-}
-
-.railCta:hover {
-  background: var(--ex-accent-hover);
+  overflow: hidden;
 }
 
 .palette {
@@ -484,67 +356,6 @@
   font-family: var(--ex-font-mono);
   font-size: var(--ex-text-3xs);
   color: var(--ex-fg-subtle);
-}
-
-.toneRow {
-  display: flex;
-  gap: 8px;
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
-  line-height: 1.65;
-}
-
-.toneKey {
-  color: var(--ex-fg-subtle);
-  flex-shrink: 0;
-  width: 34px;
-}
-
-.topRecord {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 0;
-}
-
-.topRecordNo {
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-3xs);
-  color: var(--ex-accent-text);
-  flex-shrink: 0;
-}
-
-.topRecordTitle {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-body);
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* brew CTA — radius full */
-.brew {
-  display: block;
-  width: 100%;
-  margin-top: 12px;
-  font-size: var(--ex-text-md);
-  font-weight: 600;
-  color: var(--ex-fg-on-accent);
-  background: var(--ex-accent);
-  border: none;
-  border-radius: 999px;
-  padding: 12px;
-  text-align: center;
-  transition:
-    background var(--ex-motion-quick),
-    transform var(--ex-motion-spring);
-}
-
-.brew:hover {
-  background: var(--ex-accent-hover);
-  transform: translateY(-1px);
-  color: var(--ex-fg-on-accent);
 }
 
 /* 문서 헤더의 보조 동작 — 정의서 06b "관심 공고에 담기". */
@@ -606,12 +417,18 @@
 /*
  * 좁은 화면 — 원문과 레일을 위아래로 쌓는다.
  *
- * 레일에는 "내 기록이 닿는 지점"이 들어 있어 원문을 읽고 나서 보는 것이
- * 차례에 맞다. 옆에 세우려면 최소 700px이 필요하다.
+ * 레일의 대화는 원문을 읽고 나서 하는 것이 차례에 맞다. 옆에 세우려면 최소
+ * 700px이 필요하다.
  */
 @media (max-width: 1023px) {
   .body {
     flex-direction: column;
+  }
+
+  /* 쌓인 뒤에는 본문 전체가 한 번에 스크롤된다 — 원문이 채팅 높이에 밀려 줄어들지 않게. */
+  .left {
+    flex: none;
+    overflow: visible;
   }
 
   .rail {
@@ -624,10 +441,6 @@
 @media (max-width: 767px) {
   .left {
     padding: 18px 14px 26px;
-  }
-
-  .rail {
-    padding: 18px 14px;
   }
 }
 

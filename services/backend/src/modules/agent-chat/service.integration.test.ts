@@ -124,6 +124,40 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect(undone.messages.at(-1)!.tools[0]!.undone).toBe(true);
     expect((await documents.bootstrap(userId, recordId)).document.content).toEqual(original.document.content);
   });
+  it("실패한 답변을 같은 질문으로 다시 만들고 남은 제안을 취소한다", async () => {
+    const original = await documents.bootstrap(userId, recordId);
+    let attempt = 0;
+    const service = make({ run: async input => {
+      attempt += 1;
+      if (attempt === 1) {
+        const proposal = await input.propose(recordId, { summary: "실패 전 제안", commands: [{ type: "setText", blockId: original.document.content[0]!.id, text: "남으면 안 되는 본문" }], propertyChanges: [] });
+        await input.emit({ type: "tool", tool: { id: "proposal", name: "기록 변경 제안", status: "complete", summary: proposal.summary, proposal } });
+        throw new Error("모델 오류");
+      }
+      await input.emit({ type: "text", text: "다시 만든 답변" });
+    } });
+    const row = await service.create(userId, [{ kind: "record", id: recordId }]);
+    await service.send(userId, row.id, { requestId: randomUUID(), text: "본문을 다듬어줘" });
+    await expect.poll(async () => (await service.get(userId, row.id)).run?.status).toBe("failed");
+    const failed = await service.get(userId, row.id);
+    const stale = failed.messages.at(-1)!.tools[0]!.proposal!;
+    await expect(service.retry(other, row.id)).rejects.toMatchObject({ statusCode: 404 });
+    await service.retry(userId, row.id);
+    await expect.poll(async () => (await service.get(userId, row.id)).run?.status).toBe("complete");
+    const retried = await service.get(userId, row.id);
+    expect(retried.messages.map(message => [message.role, message.text])).toEqual([["user", "본문을 다듬어줘"], ["assistant", "다시 만든 답변"]]);
+    expect(retried.run?.requestId).toBe(failed.run?.requestId);
+    expect((await documents.getAiProposal(userId, recordId, stale.proposalId)).status).toBe("cancelled");
+  });
+  it("실행 중이거나 다시 보낼 답변이 없으면 다시 보내기를 거절한다", async () => {
+    const service = make({ run: input => new Promise<void>(resolve => input.signal.addEventListener("abort", () => resolve(), { once: true })) });
+    const empty = await service.create(userId, []);
+    await expect(service.retry(userId, empty.id)).rejects.toMatchObject({ statusCode: 409 });
+    const row = await service.create(userId, []);
+    await service.send(userId, row.id, { requestId: randomUUID(), text: "기다리기" });
+    await expect(service.retry(userId, row.id)).rejects.toMatchObject({ statusCode: 409 });
+    await service.cancel(userId, row.id);
+  });
   it("연결되지 않은 기록에 대한 도구 실행을 차단한다", async () => {
     let rejected = false;
     const service = make({ run: async input => { try { await input.propose(recordId, { summary: "불허", commands: [], propertyChanges: [] }); } catch { rejected = true; } } });
