@@ -5,20 +5,32 @@ import { useActionState } from "react";
 
 import { loginAction, type AuthFormState } from "@/app/auth-actions";
 import { Catchphrase } from "@/components/brand/Catchphrase";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverDescription,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 import { AuthAside } from "../AuthAside";
 import { SocialSignIn } from "../SocialSignIn";
 import styles from "../auth.module.css";
+import type { DemoAccount } from "./demo-account";
 
 const INITIAL: AuthFormState = {};
 
 export function LoginForm({
   googleEnabled,
   notice,
+  demoAccount,
 }: {
   googleEnabled: boolean;
   /** 소셜 왕복이 중간에 끊겼을 때 그 이유. 화면 위쪽에 한 줄로 선다. */
   notice?: string | undefined;
+  demoAccount?: DemoAccount | null | undefined;
 }) {
   const [state, action, pending] = useActionState(loginAction, INITIAL);
 
@@ -116,6 +128,44 @@ export function LoginForm({
           </div>
         </div>
       </div>
+      {demoAccount !== undefined ? (
+        <div className={styles.demoDock}>
+          <Popover>
+            <PopoverTrigger
+              render={<Button variant="outline" size="xs" className={styles.demoButton} />}
+            >
+              데모 계정 보기
+            </PopoverTrigger>
+            <PopoverContent
+              side="top"
+              align="end"
+              sideOffset={10}
+              className={styles.demoPopover}
+            >
+              <PopoverHeader className={styles.demoHeader}>
+                <PopoverTitle className={styles.demoTitle}>데모 계정</PopoverTitle>
+                <PopoverDescription className={styles.demoDescription}>
+                  {demoAccount
+                    ? "아래 계정으로 이메일 로그인을 진행하세요."
+                    : "개발 환경에 등록된 데모 계정이 없습니다."}
+                </PopoverDescription>
+              </PopoverHeader>
+              {demoAccount ? (
+                <dl className={styles.demoCredentials}>
+                  <dt>이메일</dt>
+                  <dd>{demoAccount.email}</dd>
+                  <dt>비밀번호</dt>
+                  <dd>{demoAccount.password}</dd>
+                </dl>
+              ) : (
+                <p className={styles.demoSetup}>
+                  .env.local에 DEV_LOGIN_EMAIL과 DEV_LOGIN_PASSWORD를 설정하세요.
+                </p>
+              )}
+            </PopoverContent>
+          </Popover>
+        </div>
+      ) : null}
     </div>
   );
 }
