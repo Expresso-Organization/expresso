@@ -489,6 +489,22 @@
   }
 }
 
+.headIcon:disabled {
+  cursor: progress;
+}
+
+/* 관심 공고 버튼과 실패 문구가 머리 한 줄에 나란히 선다 */
+.interestForm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.interestError {
+  font-size: var(--ex-text-sm);
+  color: var(--ex-status-danger-text);
+}
+
 /* 공고 원문 — 뽑아 놓은 것이 없으면 이게 본문이다 */
 .rawSection {
   margin-top: 26px;

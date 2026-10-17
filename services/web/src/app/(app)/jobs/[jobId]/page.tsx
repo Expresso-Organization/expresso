@@ -15,6 +15,7 @@ import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { mendEmphasis } from "@/components/ui/mend-emphasis";
 import { StackChip, StackMarkdown } from "@/components/ui/StackMarkdown";
 import { findStacks, resolveStack } from "@/components/ui/stacks";
+import { InterestButton } from "./InterestButton";
 import styles from "./page.module.css";
 
 /** §3.5 요건 충족 / 약함 / 없음은 아이콘이 고정 매핑이다. */
@@ -96,21 +97,7 @@ export default async function JobDetailPage({
           // 머리 오른쪽은 버튼 세 개다 — 관심 공고 · 원문 · 채팅. 머리 폭이 넉넉하면(≥768px) 아이콘 옆에
           // 이름을 함께 보이고, 좁으면 아이콘만 남기고 이름은 툴팁과 읽기 레이블로 둔다.
           <div className={styles.headActions}>
-            <button
-              type="button"
-              className={styles.headIcon}
-              aria-label={job.interest ? "관심 공고" : "관심 공고에 담기"}
-              title={job.interest ? "관심 공고" : "관심 공고에 담기"}
-              aria-pressed={!!job.interest}
-            >
-              <Icon
-                name="bookmark-simple"
-                weight={job.interest ? "fill" : "regular"}
-                size={16}
-                color={job.interest ? "var(--ex-accent-text)" : "var(--ex-fg-muted)"}
-              />
-              <span className={styles.headLabel}>{job.interest ? "관심 공고" : "관심 공고에 담기"}</span>
-            </button>
+            <InterestButton jobPostingId={job.id} interested={job.interest !== null} />
             {job.sourceUrl ? (
               <a
                 className={styles.headIcon}

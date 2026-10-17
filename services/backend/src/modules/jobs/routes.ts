@@ -6,6 +6,7 @@ import {
   SaveJobSearchSchema,
   SubmitJobPostingSchema,
   UpsertJobInterestSchema,
+  JobInterestResponseSchema,
   CreateJobSourceSchema,
   ImportJobPostingSchema,
 } from "@expresso/contracts";
@@ -98,9 +99,16 @@ export function registerJobMarketRoutes(
     const principal = requireAuth(request);
     const { id } = parse(IdParamsSchema, request.params);
     const input = parse(UpsertJobInterestSchema, request.body);
-    return {
+    return JobInterestResponseSchema.parse({
       data: await options.jobMarketService.upsertInterest(principal.user.id, id, input),
-    };
+    });
+  });
+
+  app.delete(`${API_PREFIX}/jobs/postings/:id/interest`, { preHandler }, async (request, reply) => {
+    const principal = requireAuth(request);
+    const { id } = parse(IdParamsSchema, request.params);
+    await options.jobMarketService.deleteInterest(principal.user.id, id);
+    return reply.code(204).send();
   });
 
   /** 모아 둔 공고를 내 분석으로 가져온다. 제작은 분석 위에서만 시작한다. */

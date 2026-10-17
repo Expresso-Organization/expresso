@@ -35,6 +35,7 @@ import {
   CurrentUserResponseSchema,
   HomeReadModelSchema,
   JobPostingDetailResponseSchema,
+  JobInterestResponseSchema,
   BrewStateResponseSchema,
   ConsentListResponseSchema,
   DeploymentListResponseSchema,
@@ -818,6 +819,21 @@ export const jobs = {
     request(`${API_PREFIX}/job-sources`, JobSourceListResponseSchema, {
       accessToken,
       cache: "no-store",
+    }),
+
+  /** 관심 공고에 담는다. 이미 담겨 있으면 단계를 `saved`로 되돌리지 않도록 화면이 담기 전에만 부른다. */
+  saveInterest: (accessToken: string, jobPostingId: string) =>
+    request(`${API_PREFIX}/jobs/postings/${jobPostingId}/interest`, JobInterestResponseSchema, {
+      accessToken,
+      method: "PUT",
+      body: { stage: "saved" },
+    }),
+
+  /** 관심 공고에서 뺀다. 담겨 있지 않아도 성공한다(204). */
+  removeInterest: (accessToken: string, jobPostingId: string) =>
+    requestNoContent(`${API_PREFIX}/jobs/postings/${jobPostingId}/interest`, {
+      accessToken,
+      method: "DELETE",
     }),
 
   /** 모아 둔 공고를 내 분석으로 가져온다. 이미 분석했으면 그것을 돌려준다. */
