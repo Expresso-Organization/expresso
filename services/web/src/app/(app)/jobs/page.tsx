@@ -18,7 +18,7 @@ import { requireSession } from "@/lib/require-session";
 
 import { JobRowList, deadlineLabel } from "./JobRows";
 import { ConditionChip } from "./ConditionChip";
-import { currentListQuery, detailHref } from "./list-query";
+import { currentListQuery, detailHref, isInterestedList } from "./list-query";
 import { Pagination } from "./Pagination";
 import { ALL, JobFilter, type FilterSection } from "./JobFilter";
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
@@ -159,6 +159,17 @@ export default async function JobsPage({
   // 주소창의 숫자는 사용자가 고칠 수 있다. 1보다 작은 쪽은 없다.
   const page = Math.max(1, Number.parseInt(String(params.page ?? "1"), 10) || 1);
   /**
+   * 머리의 "관심 공고 N"을 눌러 켠 목록. 켜져 있으면 다른 조건과 겹쳐 걸리고,
+   * 이 화면이 만드는 모든 주소에 함께 실린다.
+   */
+  const interested = isInterestedList(params);
+  /**
+   * 관심 공고 목록에는 나라 기본값을 걸지 않는다. 머리 숫자 N은 나라 조건 없이
+   * 센 건수다 — 기본값이 걸리면 해외 공고를 담은 사람이 N보다 적은 목록을 본다.
+   * 담은 것은 사용자가 직접 고른 것이라 국내 기본값으로 감출 근거도 없다.
+   */
+  const defaultCountry = interested ? "all" : DEFAULT_COUNTRY;
+  /**
    * 근무지 나라. **적혀 있지 않으면 한국이다.**
    *
    * 이 화면을 쓰는 사람은 국내에서 일자리를 찾는다. 모아 둔 158건 중 70건이
@@ -172,7 +183,7 @@ export default async function JobsPage({
   const countryExplicit = typeof params.country === "string" && params.country.trim()
     ? params.country.trim()
     : undefined;
-  const country = countryExplicit ?? DEFAULT_COUNTRY;
+  const country = countryExplicit ?? defaultCountry;
   const countryFilter = country === "all" ? null : country;
   /**
    * 해석 칩에서 축 하나를 "끄기"로 누르면 그 축 값을 `off`로 적는다 —
@@ -277,6 +288,7 @@ export default async function JobsPage({
       : derived.family;
 
   const listing = await jobsApi.postings(session.accessToken, {
+    ...(interested ? { interested: true } : {}),
     ...(q
       ? {
           ...derived,
@@ -309,6 +321,17 @@ export default async function JobsPage({
   const postings = listing.data;
 
   /**
+   * 목록 주소의 끝부분. 아래 주소 조립 함수가 모두 여기를 지난다 — 관심 공고
+   * 목록이면 `interested=true`를 싣는다. 한 곳이라도 빠지면 그 링크를 누르는
+   * 순간 관심 공고 목록이 풀린다.
+   */
+  const listHref = (search: URLSearchParams): Route => {
+    if (interested) search.set("interested", "true");
+    const query = search.toString();
+    return (query ? `/jobs?${query}` : "/jobs") as Route;
+  };
+
+  /**
    * 축 하나만 바꾼 주소. 나머지 조건은 그대로 들고 가고 **쪽은 1로 되돌린다** —
    * 3쪽을 보다 조건을 바꾸면 그 쪽이 없을 수 있다.
    *
@@ -327,7 +350,7 @@ export default async function JobsPage({
     if (sort !== "match") search.set("sort", sort);
 
     const nextCountry = "country" in patch ? (patch.country ?? "all") : country;
-    if (nextCountry !== DEFAULT_COUNTRY) search.set("country", nextCountry);
+    if (nextCountry !== defaultCountry) search.set("country", nextCountry);
 
     const nextExperience = "experience" in patch ? patch.experience : experienceYears;
     if (nextExperience !== undefined && nextExperience !== null) {
@@ -338,8 +361,7 @@ export default async function JobsPage({
     const nextCompany = "company" in patch ? patch.company : company;
     if (nextCompany) search.set("company", nextCompany);
 
-    const query = search.toString();
-    return (query ? `/jobs?${query}` : "/jobs") as Route;
+    return listHref(search);
   };
 
   /** 쪽만 바꾸고 나머지 조건은 그대로 들고 간다. 필터가 풀리면 다른 목록이 된다. */
@@ -347,15 +369,14 @@ export default async function JobsPage({
     const search = new URLSearchParams();
     if (q) search.set("q", q);
     if (category) search.set("category", category);
-    if (country !== DEFAULT_COUNTRY) search.set("country", country);
+    if (country !== defaultCountry) search.set("country", country);
     if (locationExplicit) search.set("location", locationExplicit);
     if (experienceYears !== undefined) search.set("experience", String(experienceYears));
     if (workType) search.set("workType", workType);
     if (company) search.set("company", company);
     if (sort !== "match") search.set("sort", sort);
     if (next > 1) search.set("page", String(next));
-    const query = search.toString();
-    return (query ? `/jobs?${query}` : "/jobs") as Route;
+    return listHref(search);
   };
   /**
    * 해석 칩 하나를 다른 값으로 바꾸거나 끄는 주소. `filterHref`와 달리
@@ -375,7 +396,7 @@ export default async function JobsPage({
     const search = new URLSearchParams();
     if (q) search.set("q", q);
     if (sort !== "match") search.set("sort", sort);
-    if (country !== DEFAULT_COUNTRY) search.set("country", country);
+    if (country !== defaultCountry) search.set("country", country);
     if (workType) search.set("workType", workType);
     if (company) search.set("company", company);
 
@@ -417,8 +438,7 @@ export default async function JobsPage({
       search.set("family", familyExplicit);
     }
 
-    const query = search.toString();
-    return (query ? `/jobs?${query}` : "/jobs") as Route;
+    return listHref(search);
   };
   /**
    * 필터에 세울 것들. 구획마다 `전체`가 맨 위고, 그 아래로 **걸린 것이 있는
@@ -525,10 +545,24 @@ export default async function JobsPage({
       actions={
         <>
           <span className={styles.headNote}>{collectionNote(sources)}</span>
-          <button type="button" className={styles.headAction}>
-            <Icon name="bookmark-simple" size={14} color="var(--ex-fg-muted)" />
+          {/*
+           * 관심 공고만 보기를 켜고 끈다. 켤 때는 다른 조건을 들고 가지 않는다 —
+           * 이 숫자는 조건 없이 센 건수라, 눌러서 나온 목록도 같은 수여야 한다.
+           * 링크라서 `aria-pressed`(button 전용) 대신 `aria-current`로 켜짐을 알린다.
+           */}
+          <Link
+            href={(interested ? "/jobs" : "/jobs?interested=true") as Route}
+            className={`${styles.headAction} ${interested ? styles.headActionActive : ""}`}
+            aria-current={interested ? "true" : undefined}
+          >
+            <Icon
+              name="bookmark-simple"
+              weight={interested ? "fill" : "regular"}
+              size={14}
+              color={interested ? "var(--ex-fg)" : "var(--ex-fg-muted)"}
+            />
             관심 공고 {watched.summary.total}
-          </button>
+          </Link>
           <span className={styles.headRule} />
           <button type="button" className={styles.headAction}>
             <Icon name="bell-simple" size={14} color="var(--ex-fg-muted)" />
@@ -561,9 +595,11 @@ export default async function JobsPage({
                 family: familyOptions,
               }}
               conditionHref={conditionHref}
+              clearHref={listHref(new URLSearchParams())}
+              interested={interested}
             />
           ) : (
-            <BrowseSearchBar />
+            <BrowseSearchBar interested={interested} />
           )}
 
           {q ? null : (
@@ -571,7 +607,7 @@ export default async function JobsPage({
               {listing.summary.categories.map((chip) => (
                 <Link
                   key={chip.key}
-                  href={chipHref(chip)}
+                  href={listHref(chipQuery(chip))}
                   className={`${styles.categoryTab} ${
                     (category ?? "all") === chip.key ? styles.categoryTabActive : ""
                   }`}
@@ -591,7 +627,9 @@ export default async function JobsPage({
             <div className={styles.results}>
               <div className={styles.resultsHead}>
                 <span className={styles.resultsCount}>
-                  {q ? `결과 ${listing.summary.total}건` : `공고 · ${listing.summary.total}건`}
+                  {q
+                    ? `결과 ${listing.summary.total}건`
+                    : `${interested ? "관심 공고" : "공고"} · ${listing.summary.total}건`}
                 </span>
                 <span className={styles.resultsNote}>내 기록 {recordCount}건과 비교</span>
                 {q ? (
@@ -606,11 +644,9 @@ export default async function JobsPage({
                       ).map(([key, label]) => (
                         <Link
                           key={key}
-                          href={
-                            (key === "match"
-                              ? `/jobs?q=${encodeURIComponent(q)}`
-                              : `/jobs?q=${encodeURIComponent(q)}&sort=${key}`) as Route
-                          }
+                          href={listHref(
+                            new URLSearchParams(key === "match" ? { q } : { q, sort: key }),
+                          )}
                           className={`${styles.sort} ${sort === key ? styles.sortActive : ""}`}
                         >
                           {label}
@@ -633,7 +669,9 @@ export default async function JobsPage({
               <div className={styles.resultsFoot}>
                 <span className={styles.footText}>
                   {listing.summary.total === 0
-                    ? "걸린 공고가 없습니다"
+                    ? interested
+                      ? "조건에 맞는 관심 공고가 없습니다"
+                      : "걸린 공고가 없습니다"
                     : `${listing.summary.total.toLocaleString("ko-KR")}건 중 ${
                         ((page - 1) * pageSize + 1).toLocaleString("ko-KR")
                       }–${
@@ -770,8 +808,9 @@ function categoryFilter(key: string | undefined) {
   return {};
 }
 
-function chipHref(chip: JobPostingCategory): Route {
-  return (chip.key === "all" ? "/jobs" : `/jobs?category=${encodeURIComponent(chip.key)}`) as Route;
+/** 칩 하나가 거는 조건. 주소의 끝부분은 화면의 `listHref`가 붙인다. */
+function chipQuery(chip: JobPostingCategory): URLSearchParams {
+  return new URLSearchParams(chip.key === "all" ? {} : { category: chip.key });
 }
 
 /** 해석 칩 중 다른 값으로 바꾸거나 끌 수 있는 축과, 그 값이 채워 넣는 질의 파라미터. */
@@ -829,6 +868,8 @@ function SearchQueryCard({
   effectiveByAxis,
   optionsByAxis,
   conditionHref,
+  clearHref,
+  interested,
 }: {
   query: string;
   conditions: readonly JobSearchCondition[];
@@ -840,10 +881,14 @@ function SearchQueryCard({
     technology?: string | null;
     family?: string | null;
   }) => Route;
+  /** 검색어만 지운 목록. 관심 공고 목록이면 그 목록으로 돌아간다. */
+  clearHref: Route;
+  interested: boolean;
 }) {
   return (
     <div className={styles.queryCard}>
       <form className={styles.queryRow} action="/jobs">
+        <InterestedField interested={interested} />
         <Icon name="sparkle" size={18} color="var(--ex-accent-text)" />
         <input
           name="q"
@@ -851,7 +896,7 @@ function SearchQueryCard({
           className={styles.queryText}
           aria-label="공고 검색"
         />
-        <Link href="/jobs" className={styles.queryClear} aria-label="검색 초기화">
+        <Link href={clearHref} className={styles.queryClear} aria-label="검색 초기화">
           <Icon name="x" size={15} />
         </Link>
         <button type="submit" className={styles.querySubmit}>
@@ -916,9 +961,15 @@ function SearchQueryCard({
   );
 }
 
-function BrowseSearchBar() {
+/** 관심 공고 목록 안에서 검색하면 결과도 관심 공고 안에서 찾는다. */
+function InterestedField({ interested }: { interested: boolean }) {
+  return interested ? <input type="hidden" name="interested" value="true" /> : null;
+}
+
+function BrowseSearchBar({ interested }: { interested: boolean }) {
   return (
     <form className={styles.searchBar} action="/jobs">
+      <InterestedField interested={interested} />
       <Icon name="sparkle" size={18} color="var(--ex-accent-text)" />
       <input
         name="q"
@@ -1118,6 +1169,9 @@ function BrowseRail({
           <button type="button" className={styles.railHeadAction}>
             마감 순
           </button>
+          <Link href={"/jobs?interested=true" as Route} className={styles.railHeadLink}>
+            전체
+          </Link>
         </div>
         <div className={styles.watchList}>
           {watched.map((job) => (

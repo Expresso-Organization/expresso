@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { backToListHref, currentListQuery, detailHref } from "./list-query";
+import { backToListHref, currentListQuery, detailHref, isInterestedList } from "./list-query";
 
 describe("currentListQuery", () => {
   it("아는 조건만 담는다", () => {
@@ -12,6 +12,16 @@ describe("currentListQuery", () => {
 
   it("조건이 없으면 빈 문자열이다 — 빈 from을 달고 다니지 않는다", () => {
     expect(currentListQuery({})).toBe("");
+  });
+
+  it("관심 공고만 보는 조건을 담는다", () => {
+    expect(currentListQuery({ interested: "true", page: "2" })).toBe("page=2&interested=true");
+  });
+
+  it("interested는 true가 아니면 버린다 — 서버가 받는 값이라도 화면에 없는 목록이다", () => {
+    for (const value of ["false", "1", "TRUE", ""]) {
+      expect(currentListQuery({ interested: value })).toBe("");
+    }
   });
 
   it("배열로 온 값은 무시한다 — 같은 키가 두 번 온 주소는 우리 것이 아니다", () => {
@@ -61,7 +71,27 @@ describe("backToListHref", () => {
     }
   });
 
+  it("관심 공고 목록에서 왔으면 관심 공고 목록으로 돌아간다", () => {
+    const from = currentListQuery({ interested: "true", category: "family:백엔드" });
+    expect(backToListHref(from)).toBe(
+      "/jobs?category=family%3A%EB%B0%B1%EC%97%94%EB%93%9C&interested=true",
+    );
+  });
+
+  it("interested에 다른 값을 실어 보내면 버린다", () => {
+    expect(backToListHref("interested=false&sort=recent")).toBe("/jobs?sort=recent");
+  });
+
   it("지나치게 긴 값은 담지 않는다", () => {
     expect(backToListHref(`q=${"가".repeat(300)}`)).toBe("/jobs");
+  });
+});
+
+describe("isInterestedList", () => {
+  it("interested=true일 때만 참이다", () => {
+    expect(isInterestedList({ interested: "true" })).toBe(true);
+    expect(isInterestedList({ interested: "false" })).toBe(false);
+    expect(isInterestedList({ interested: ["true", "true"] })).toBe(false);
+    expect(isInterestedList({})).toBe(false);
   });
 });
