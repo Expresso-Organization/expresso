@@ -39,6 +39,30 @@ describe("공유 대화 상태", () => {
     await act(async () => release(Response.json({ data: row(first, 99) })));
     expect(result.current.conversation?.id).toBe(second);
   });
+  it("공고 화면은 브라우저의 마지막 대화 대신 그 공고가 연결된 가장 최근 대화를 연다", async () => {
+    const job = { kind: "job" as const, id: "00000000-0000-4000-8000-0000000000aa" };
+    window.history.replaceState(null, "", "/jobs/aa");
+    sessionStorage.setItem("ex-agent-conversation", second);
+    const list = [{ ...row(second), contexts: [{ kind: "job" as const, id: "00000000-0000-4000-8000-0000000000bb" }] }, { ...row(first), contexts: [job] }].map(({ messages: _messages, ...summary }) => summary);
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => Response.json({ data: url.endsWith("conversations") ? list : row(first) })));
+    const { result } = renderHook(() => useAgentConversation(job, { restore: "context" }));
+    expect(result.current.resolving).toBe(true);
+    await waitFor(() => expect(result.current.conversation?.id).toBe(first));
+    expect(result.current.resolving).toBe(false);
+    expect(new URL(window.location.href).searchParams.get("chat")).toBe(first);
+  });
+  it("공고가 연결된 대화가 없으면 새 대화로 시작하고 브라우저의 마지막 대화 기록은 남긴다", async () => {
+    const job = { kind: "job" as const, id: "00000000-0000-4000-8000-0000000000aa" };
+    window.history.replaceState(null, "", "/jobs/aa");
+    sessionStorage.setItem("ex-agent-conversation", second);
+    const fetcher = vi.fn(async (_url: string) => Response.json({ data: [] }));
+    vi.stubGlobal("fetch", fetcher);
+    const { result } = renderHook(() => useAgentConversation(job, { restore: "context" }));
+    await waitFor(() => expect(result.current.resolving).toBe(false));
+    expect(result.current.id).toBeNull();
+    expect(sessionStorage.getItem("ex-agent-conversation")).toBe(second);
+    expect(fetcher.mock.calls.every(([url]) => String(url).endsWith("conversations"))).toBe(true);
+  });
   it("전송 실패 후 재시도에는 같은 요청 ID를 사용한다", async () => {
     window.history.replaceState(null, "", `/agent?chat=${first}`);
     const ids: string[] = [];

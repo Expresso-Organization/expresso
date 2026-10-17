@@ -15,7 +15,8 @@ import {
 } from "@expresso/editor/yjs";
 
 const EMPTY_STATE_VECTOR = "";
-type SessionStatus = "loading" | "saving" | "saved" | "offline" | "conflict";
+// unavailable은 문서 bootstrap이 404인 상태입니다. v2 꺼짐과 기록 없음을 구분할 수 없어 둘을 함께 뜻합니다.
+type SessionStatus = "loading" | "saving" | "saved" | "offline" | "conflict" | "unavailable";
 export interface CareerEditorSnapshot {
   status: SessionStatus;
   documentVersion: number;
@@ -81,7 +82,8 @@ export class CareerEditorSession {
   getDocument = () => this.document;
   hasPendingUpdates = () => this.pending.size > 0;
   updateDocument = (next: CareerDocument) => {
-    if (this.disposed) return;
+    // 문서 세션이 없으면 보낼 곳이 없으므로 입력을 pending에 쌓지 않습니다.
+    if (this.disposed || this.snapshot.status === "unavailable") return;
     const parsed = CareerDocumentBootstrapSchema.shape.document.parse(next);
     const clientSequence = this.nextSequence++;
     const update = encodeDocumentAsYUpdate(parsed, this.updates, `${this.clientId}:${clientSequence}`);
@@ -105,6 +107,8 @@ export class CareerEditorSession {
   private async bootstrap() {
     try {
       const response = await this.fetcher(`/api/career/records/${encodeURIComponent(this.recordId)}/document`, { credentials: "same-origin", cache: "no-store" });
+      // 404는 다시 불러도 같으므로 재연결하지 않고 멈춥니다. 네트워크 오류와 5xx만 catch에서 재시도합니다.
+      if (response.status === 404) { this.setSnapshot({ status: "unavailable" }); return; }
       if (!response.ok) throw new Error(`bootstrap failed: ${response.status}`);
       const bootstrap = CareerDocumentBootstrapSchema.parse(await response.json());
       this.sessionToken = bootstrap.sessionToken;

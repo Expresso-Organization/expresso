@@ -1,0 +1,19 @@
+/* 새 기록 초안 카드 — 요건 대조 카드와 같은 테두리 · 바탕 · 글자 크기를 쓴다. */
+.card { display: flex; flex-direction: column; gap: 10px; border: 1px solid var(--ex-border); border-radius: 12px; background: var(--ex-bg-sunken); padding: 12px 14px; font-family: var(--ex-font-ui); color: var(--ex-fg); }
+.head { display: flex; align-items: center; gap: 6px; font-size: var(--ex-text-xs); font-weight: 600; }
+.head > i { color: var(--ex-accent-text); }
+.field { display: flex; flex-direction: column; gap: 4px; font-size: var(--ex-text-3xs); color: var(--ex-fg-muted); }
+.field input, .field select { width: 100%; min-width: 0; padding: 7px 9px; border: 1px solid var(--ex-border); border-radius: 8px; background: var(--ex-bg); color: var(--ex-fg); font: inherit; font-size: var(--ex-text-xs); }
+.field input:focus-visible, .field select:focus-visible { outline: none; border-color: var(--ex-accent-soft); }
+.card .body { min-height: 120px; background: var(--ex-bg); font-size: var(--ex-text-xs); line-height: var(--ex-leading-relaxed); }
+.sourceLabel { font-size: var(--ex-text-3xs); color: var(--ex-fg-muted); }
+.sources { list-style: none; margin: -4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.sources li { padding-left: 8px; border-left: 2px solid var(--ex-border-firm); font-size: var(--ex-text-2xs); line-height: var(--ex-leading-relaxed); color: var(--ex-fg-body); }
+.error { margin: 0; font-size: var(--ex-text-2xs); color: var(--ex-status-danger-text); }
+.actions { display: flex; justify-content: flex-end; gap: 8px; }
+.card .approve { background: var(--ex-accent); color: var(--ex-fg-on-accent); }
+.card .approve:hover:not(:disabled) { background: var(--ex-accent-hover); }
+.doneTitle { font-size: var(--ex-text-xs); font-weight: 600; }
+.done { display: flex; align-items: center; gap: 5px; margin: 0; font-size: var(--ex-text-2xs); color: var(--ex-fg-muted); }
+.done[data-state="approved"] { color: var(--ex-status-success-text); }
+.done a { color: var(--ex-accent-text); }

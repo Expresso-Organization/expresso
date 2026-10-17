@@ -29,23 +29,28 @@ export function InterestButton({
     { error: null },
   );
 
+  // 머리의 다른 두 버튼과 같은 아이콘 버튼이다. 이름은 머리 폭이 넉넉할 때만 보이고(`.headLabel`),
+  // 좁을 때는 `aria-label` · `title`이 이름을 맡는다.
+  const label = shown ? "관심 공고" : "관심 공고에 담기";
   return (
     <form action={action} className={styles.interestForm}>
       <input type="hidden" name="jobPostingId" value={jobPostingId} />
       <input type="hidden" name="next" value={interested ? "remove" : "save"} />
       <button
         type="submit"
-        className={styles.headAction}
+        className={styles.headIcon}
+        aria-label={label}
+        title={label}
         aria-pressed={shown}
         disabled={pending}
       >
         <Icon
           name="bookmark-simple"
           weight={shown ? "fill" : "regular"}
-          size={14}
+          size={16}
           color={shown ? "var(--ex-accent-text)" : "var(--ex-fg-muted)"}
         />
-        {shown ? "관심 공고" : "관심 공고에 담기"}
+        <span className={styles.headLabel}>{label}</span>
       </button>
       {state.error && !pending ? (
         <span role="status" className={styles.interestError}>

@@ -12,16 +12,19 @@ import {
 import { z } from "zod";
 import {
   PAGE_MAX_BYTES,
+  STRUCTURED_GROUP_VARIANTS,
   StructuredDesignSchema,
   StructuredPortfolioContentSchema as content,
   StructuredSectionSchema,
   validateStructuredPortfolio,
   type StructuredPortfolioContent,
+  type StructuredPortfolioSnapshot,
   type StructuredSection,
 } from "@expresso/contracts";
 import {
   renderCollected,
   collectedSourceName,
+  collectedBoundDetails,
   validateLibrarySelection,
   COLLECTED_PORTFOLIO_CSS,
 } from "./library.js";
@@ -76,7 +79,7 @@ export const structuredCatalog = defineCatalog(schema, {
       }),
       slots: ["default"],
       description:
-        "전체 구도: editorial=고정 소개와 기사 두 열, gallery=전면 작품 전시, dossier=목차와 상세 두 열.",
+        "전체 구도: editorial=고정 소개와 기사 두 열, gallery=전면 작품 전시, dossier=목차와 상세 두 열, library=수집 원본의 전면 구도.",
     },
     NameIntro: {
       props: z.object({
@@ -116,6 +119,24 @@ export const structuredCatalog = defineCatalog(schema, {
     ContentPanel: {
       props: projectProps,
       description: "자기소개·능력·추가 설명을 표시합니다.",
+    },
+    Columns: {
+      props: z.object({ variant: z.enum(STRUCTURED_GROUP_VARIANTS.Columns) }),
+      slots: ["default"],
+      description:
+        "두 요소를 나란히 놓는 두 열. even=같은 폭, wide-start=왼쪽이 넓음, wide-end=오른쪽이 넓음. 사례와 근거·경력·목차를 나란히 둘 때 사용합니다.",
+    },
+    Grid: {
+      props: z.object({ variant: z.enum(STRUCTURED_GROUP_VARIANTS.Grid) }),
+      slots: ["default"],
+      description:
+        "2–3개 요소를 같은 폭의 열로 나열합니다. 비슷한 비중의 짧은 사례를 비교해 보여 줄 때 사용합니다.",
+    },
+    Band: {
+      props: z.object({ variant: z.enum(STRUCTURED_GROUP_VARIANTS.Band) }),
+      slots: ["default"],
+      description:
+        "1–3개 요소를 한 묶음으로 구분합니다. panel=면 배경, accent=강조색 상단 선. 지면의 흐름을 나눌 때 사용합니다.",
     },
     CareerTimeline: {
       props: z.object({ career: content.shape.career }),
@@ -182,16 +203,77 @@ function Body({ value }: { value: string }) {
     </div>
   );
 }
+// 사례에서 근거 항목을 제목으로 가리키기 위해 입력의 근거 제목을 전달합니다.
+const EvidenceTitles = React.createContext<ReadonlyMap<string, string>>(
+  new Map(),
+);
 function Sources({ section }: { section: StructuredSection }) {
-  return section.sourceIds.length ? (
+  const titles = React.useContext(EvidenceTitles);
+  const links = section.sourceIds.flatMap((key) => {
+    const title = titles.get(key);
+    return title ? [{ key, title }] : [];
+  });
+  return links.length ? (
     <nav className="sp-sources" aria-label={`${section.title} 관련 자료`}>
-      {section.sourceIds.map((key, i) => (
+      {links.map(({ key, title }) => (
         <a href={`#source-${key}`} key={key}>
-          관련 자료 {i + 1} ↗
+          {title} ↗
         </a>
       ))}
     </nav>
   ) : null;
+}
+type CaseKind = "essay" | "gallery" | "technical" | "process" | "panel";
+// 사례 유형별 항목 표현입니다. 원본을 고른 사례와 아닌 사례가 함께 씁니다.
+function Details({
+  section,
+  kind,
+  skip = 0,
+}: {
+  section: StructuredSection;
+  kind: CaseKind;
+  skip?: number;
+}) {
+  const details = section.details.slice(skip);
+  if (!details.length) return null;
+  return kind === "technical" ? (
+    <table className="sp-facts">
+      <caption className="sp-sr">{section.title} 작업 설명</caption>
+      <tbody>
+        {details.map((item, i) => (
+          <tr key={i}>
+            <th scope="row">{item.label}</th>
+            <td>
+              <Body value={item.text} />
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  ) : kind === "process" ? (
+    <ol className="sp-steps">
+      {details.map((item, i) => (
+        <li key={i}>
+          <span className="sp-step-number">
+            {String(skip + i + 1).padStart(2, "0")}
+          </span>
+          <div>
+            <h3>{item.label}</h3>
+            <Body value={item.text} />
+          </div>
+        </li>
+      ))}
+    </ol>
+  ) : (
+    <div className="sp-details">
+      {details.map((item, i) => (
+        <section key={i}>
+          <h3>{item.label}</h3>
+          <Body value={item.text} />
+        </section>
+      ))}
+    </div>
+  );
 }
 function Case({
   section,
@@ -199,33 +281,26 @@ function Case({
   sourceId,
 }: {
   section: StructuredSection;
-  kind: "essay" | "gallery" | "technical" | "process" | "panel";
+  kind: CaseKind;
   sourceId?: string | undefined;
 }) {
   if (sourceId) {
     const sourceName = collectedSourceName(sourceId);
     const isFeature = sourceName?.startsWith("feature-");
+    const isAnnotation =
+      sourceName === "annotated-text" || sourceName === "text-gradient";
+    // 유형 클래스를 설명 블록에 붙여 원본이 아닌 사례와 같은 그리드·이미지 규칙을 적용합니다.
     const content = (
-      <div className="sp-source-details">
-        {!isFeature &&
-          sourceName !== "annotated-text" &&
-          sourceName !== "text-gradient" && <SectionTitle section={section} />}
-        {(sourceName === "annotated-text" ||
-          sourceName === "text-gradient") && (
-          <p className="sp-summary">{section.summary}</p>
-        )}
+      <div className={`sp-source-details sp-case-${kind}`}>
+        {!isFeature && !isAnnotation && <SectionTitle section={section} />}
+        {isAnnotation && <p className="sp-summary">{section.summary}</p>}
         <Media section={section} />
         <Body value={section.body} />
-        <dl>
-          {section.details
-            .slice(isFeature ? (sourceName === "feature-1" ? 5 : 3) : 0)
-            .map((detail) => (
-              <div key={detail.label}>
-                <dt>{detail.label}</dt>
-                <dd>{detail.text}</dd>
-              </div>
-            ))}
-        </dl>
+        <Details
+          section={section}
+          kind={kind}
+          skip={collectedBoundDetails(sourceId)}
+        />
         <Sources section={section} />
       </div>
     );
@@ -259,44 +334,7 @@ function Case({
       <SectionTitle section={section} />
       <Media section={section} />
       <Body value={section.body} />
-      {kind === "technical" ? (
-        <table className="sp-facts">
-          <caption className="sp-sr">{section.title} 작업 설명</caption>
-          <tbody>
-            {section.details.map((item, i) => (
-              <tr key={i}>
-                <th scope="row">{item.label}</th>
-                <td>
-                  <Body value={item.text} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : kind === "process" ? (
-        <ol className="sp-steps">
-          {section.details.map((item, i) => (
-            <li key={i}>
-              <span className="sp-step-number">
-                {String(i + 1).padStart(2, "0")}
-              </span>
-              <div>
-                <h3>{item.label}</h3>
-                <Body value={item.text} />
-              </div>
-            </li>
-          ))}
-        </ol>
-      ) : (
-        <div className="sp-details">
-          {section.details.map((item, i) => (
-            <section key={i}>
-              <h3>{item.label}</h3>
-              <Body value={item.text} />
-            </section>
-          ))}
-        </div>
-      )}
+      <Details section={section} kind={kind} />
       <Sources section={section} />
     </article>
   );
@@ -417,6 +455,21 @@ const { registry } = defineRegistry(structuredCatalog, {
     ContentPanel: ({ props }) => (
       <Case section={props.section} sourceId={props.sourceId} kind="panel" />
     ),
+    Columns: ({ props, children }) => (
+      <div className="sp-group" data-group="columns" data-variant={props.variant}>
+        <div className="sp-group-track">{children}</div>
+      </div>
+    ),
+    Grid: ({ props, children }) => (
+      <div className="sp-group" data-group="grid" data-variant={props.variant}>
+        <div className="sp-group-track">{children}</div>
+      </div>
+    ),
+    Band: ({ props, children }) => (
+      <div className="sp-group" data-group="band" data-variant={props.variant}>
+        <div className="sp-group-track">{children}</div>
+      </div>
+    ),
     CareerTimeline: ({ props: { career } }) => (
       <section id="career" className="sp-career">
         <p className="sp-kicker">EXPERIENCE</p>
@@ -463,31 +516,70 @@ const { registry } = defineRegistry(structuredCatalog, {
   },
 });
 
+/** 렌더링 단계의 실패입니다. Spec 검사를 통과한 뒤에 나므로 Spec을 바꿔도 해결되지 않습니다. */
+export class StructuredRenderError extends Error {
+  constructor(
+    readonly code: "RENDER_FAILED" | "PAGE_TOO_LARGE",
+    message: string,
+    options: { cause?: unknown } = {},
+  ) {
+    super(message, options.cause === undefined ? {} : { cause: options.cause });
+    this.name = "StructuredRenderError";
+  }
+}
+
+/** Renderer 앞의 검사입니다. 계약·참조·순서와 수집 원본의 역할을 함께 확인합니다. */
+export function validateRenderableSpec(
+  spec: unknown,
+  input: unknown,
+): StructuredPortfolioSnapshot {
+  const snapshot = validateStructuredPortfolio(spec, input);
+  validateLibrarySelection(snapshot.spec);
+  return snapshot;
+}
+
 export function renderStructuredPortfolio(
   spec: unknown,
   input: unknown,
   theme?: { background: string; text: string; accent: string },
 ): { html: string; css: string } {
-  const snapshot = validateStructuredPortfolio(spec, input);
-  validateLibrarySelection(snapshot.spec);
+  const snapshot = validateRenderableSpec(spec, input);
   const state = {
     ...snapshot.content,
     sectionById: Object.fromEntries(
       snapshot.content.sections.map((section) => [section.id, section]),
     ),
   };
-  const html = renderToStaticMarkup(
-    <StateProvider initialState={state}>
-      <VisibilityProvider>
-        <ActionProvider handlers={{}}>
-          <Renderer spec={snapshot.spec} registry={registry} />
-        </ActionProvider>
-      </VisibilityProvider>
-    </StateProvider>,
+  const evidenceTitles = new Map(
+    snapshot.content.evidence.map((item) => [item.id, item.title]),
   );
+  let html: string;
+  // 서버 렌더링에서는 json-render의 요소별 오류 경계가 동작하지 않아 컴포넌트 하나의 예외가 렌더링 전체를 멈춥니다.
+  try {
+    html = renderToStaticMarkup(
+      <StateProvider initialState={state}>
+        <VisibilityProvider>
+          <ActionProvider handlers={{}}>
+            <EvidenceTitles.Provider value={evidenceTitles}>
+              <Renderer spec={snapshot.spec} registry={registry} />
+            </EvidenceTitles.Provider>
+          </ActionProvider>
+        </VisibilityProvider>
+      </StateProvider>,
+    );
+  } catch (error) {
+    throw new StructuredRenderError(
+      "RENDER_FAILED",
+      `컴포넌트 렌더링 중 오류가 발생했습니다: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
+    );
+  }
   // 저장 계약을 넘는 지면은 판을 추가하기 전에 거부합니다.
   if (html.length > PAGE_MAX_BYTES)
-    throw new Error("지면이 저장 크기 제한을 넘었습니다. 내용을 줄여 주세요.");
+    throw new StructuredRenderError(
+      "PAGE_TOO_LARGE",
+      "지면이 저장 크기 제한을 넘었습니다. 내용을 줄여 주세요.",
+    );
   const colors = theme
     ? z
         .object({
@@ -508,6 +600,9 @@ export function renderStructuredPortfolio(
     (hasSources ? COLLECTED_PORTFOLIO_CSS : "") +
     overrides;
   if (css.length > PAGE_MAX_BYTES)
-    throw new Error("스타일이 저장 크기 제한을 넘었습니다.");
+    throw new StructuredRenderError(
+      "PAGE_TOO_LARGE",
+      "스타일이 저장 크기 제한을 넘었습니다.",
+    );
   return { html, css };
 }

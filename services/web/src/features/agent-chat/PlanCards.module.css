@@ -1,0 +1,36 @@
+/* 준비 계획 카드들 — 대화 안 도구 카드와 같은 테두리 · 바탕 · 글자 크기를 쓴다. */
+.card { display: flex; flex-direction: column; gap: 10px; border: 1px solid var(--ex-border); border-radius: 12px; background: var(--ex-bg-sunken); padding: 12px 14px; font-family: var(--ex-font-ui); color: var(--ex-fg); }
+.head { display: flex; align-items: center; gap: 6px; font-size: var(--ex-text-xs); font-weight: 600; }
+.head > i { color: var(--ex-accent-text); }
+.head > .progress { margin-left: auto; font-weight: 400; font-size: var(--ex-text-3xs); color: var(--ex-fg-muted); }
+.planTitle { font-size: var(--ex-text-xs); font-weight: 600; }
+.muted { display: flex; align-items: center; gap: 5px; margin: 0; font-size: var(--ex-text-3xs); color: var(--ex-fg-muted); }
+.field { display: flex; flex-direction: column; gap: 4px; font-size: var(--ex-text-3xs); color: var(--ex-fg-muted); }
+.field input, .field select { width: 100%; min-width: 0; padding: 7px 9px; border: 1px solid var(--ex-border); border-radius: 8px; background: var(--ex-bg); color: var(--ex-fg); font: inherit; font-size: var(--ex-text-xs); }
+.field input:focus-visible, .field select:focus-visible { outline: none; border-color: var(--ex-accent-soft); }
+.text { background: var(--ex-bg); font-size: var(--ex-text-xs); line-height: var(--ex-leading-relaxed); }
+.bar { height: 4px; border-radius: 999px; background: var(--ex-border-inner); overflow: hidden; }
+.bar > span { display: block; height: 100%; background: var(--ex-status-success); }
+.weeks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.weeks ul { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.weekLabel { font-size: var(--ex-text-3xs); color: var(--ex-fg-subtle); }
+.weekToggle { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.taskRow { display: flex; align-items: flex-start; gap: 6px; font-size: var(--ex-text-2xs); line-height: var(--ex-leading-normal); }
+.taskButton { display: flex; align-items: flex-start; gap: 6px; width: 100%; padding: 4px 0; border: 0; background: transparent; color: inherit; font: inherit; font-size: var(--ex-text-2xs); line-height: var(--ex-leading-normal); text-align: left; cursor: pointer; }
+.taskButton:hover .taskTitle { color: var(--ex-accent-text); }
+.taskButton > i { flex-shrink: 0; margin-top: 2px; }
+.taskButton[data-status="completed"] .taskTitle { color: var(--ex-fg-muted); text-decoration: line-through; }
+.status-completed { color: var(--ex-status-success-text); }
+.status-in_progress { color: var(--ex-accent-text); }
+.status-blocked { color: var(--ex-status-danger-text); }
+.status-not_started { color: var(--ex-fg-subtle); }
+.kind { flex-shrink: 0; font-size: var(--ex-text-3xs); color: var(--ex-fg-subtle); margin-top: 1px; }
+.taskTitle { flex: 1; min-width: 0; }
+.minutes { flex-shrink: 0; font-size: var(--ex-text-3xs); color: var(--ex-fg-subtle); margin-top: 1px; }
+.editTasks.editTasks { align-self: flex-start; gap: 4px; height: auto; padding: 4px 6px; font-size: var(--ex-text-2xs); color: var(--ex-fg-muted); }
+.editList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 18px; }
+.editList > li { display: flex; flex-direction: column; gap: 8px; padding-bottom: 18px; border-bottom: 1px solid var(--ex-border-inner); }
+.error { margin: 0; font-size: var(--ex-text-2xs); color: var(--ex-status-danger-text); }
+.actions { display: flex; justify-content: flex-end; gap: 8px; }
+.card .approve, .dialogSave { background: var(--ex-accent); color: var(--ex-fg-on-accent); }
+.card .approve:hover:not(:disabled), .dialogSave:hover:not(:disabled) { background: var(--ex-accent-hover); }

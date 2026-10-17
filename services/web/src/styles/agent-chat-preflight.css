@@ -235,6 +235,17 @@
 }
 
 /*
+  Expresso: 앱 전역 global.css의 `img, svg { max-width: 100% }`가 이 범위에도 걸린다.
+  원본 preflight는 svg를 제한하지 않으므로 여기서 되돌린다. 제한이 남으면 아이콘 버튼
+  (size-6 p-1, 콘텐츠 14px) 안 16px 아이콘이 14px로 줄어든다. 전역 svg(0,0,1)를 불러오는
+  순서와 관계없이 이기도록 :where 없이 (0,1,1)로 둔다.
+*/
+
+.acf-scope svg {
+  max-width: none;
+}
+
+/*
   1. Inherit font styles in all browsers.
   2. Remove border radius in all browsers.
   3. Remove background color in all browsers.

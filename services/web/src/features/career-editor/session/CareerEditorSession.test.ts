@@ -72,6 +72,32 @@ describe("CareerEditorSession", () => {
     session.dispose();
   });
 
+  it("stops after a 404 bootstrap and ignores local edits", async () => {
+    const fetcher = vi.fn(async () => new Response(null, { status: 404 }));
+    const session = new CareerEditorSession(recordId, { fetch: fetcher as typeof fetch, WebSocket: FakeSocket as unknown as typeof WebSocket, reconnectDelay: () => 0 });
+    for (let index = 0; index < 5; index += 1) await flush();
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(session.getSnapshot().status).toBe("unavailable");
+    expect(session.getDocument()).toBeNull();
+    session.updateDocument(createEmptyCareerDocument());
+    expect(session.getSnapshot().status).toBe("unavailable");
+    expect(session.hasPendingUpdates()).toBe(false);
+    expect(FakeSocket.instances).toHaveLength(0);
+    session.dispose();
+  });
+
+  it.each([
+    ["a network error", async () => { throw new TypeError("fetch failed"); }],
+    ["a 503 response", async () => new Response(null, { status: 503 })],
+  ])("keeps retrying the bootstrap after %s", async (_label, respond) => {
+    const fetcher = vi.fn(respond);
+    const session = new CareerEditorSession(recordId, { fetch: fetcher as typeof fetch, WebSocket: FakeSocket as unknown as typeof WebSocket, reconnectDelay: () => 0 });
+    for (let index = 0; index < 5; index += 1) await flush();
+    expect(fetcher.mock.calls.length).toBeGreaterThan(1);
+    expect(session.getSnapshot().status).toBe("offline");
+    session.dispose();
+  });
+
   it("applies remote updates and exposes conflict state", async () => {
     const fetcher = vi.fn(async () => new Response(JSON.stringify(bootstrap), { status: 200 }));
     const session = new CareerEditorSession(recordId, { fetch: fetcher as typeof fetch, WebSocket: FakeSocket as unknown as typeof WebSocket });

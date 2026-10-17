@@ -54,20 +54,23 @@ export class GenerationService {
   }
 
   async submit(userId: string, idempotencyKey: string, input: SubmitGeneration) {
+    // MySQL 경로는 템플릿 요청만 받습니다. 디자인 시스템 판 요청은 MongoDB 서비스가 처리합니다.
+    if (!input.templateId) throw new GenerationError(400, "templateId is required");
+    const templateId = input.templateId;
     const hash = requestHash(input);
     const jobId = await this.#sql.begin(async (transaction) => {
       const recipe = (await transaction<{ id: string; brew_id: string }[]>`
         select id, brew_id from recipe where id = ${input.recipeId} and user_id = ${userId}
       `)[0];
       if (!recipe) throw new GenerationError(404, "recipe not found");
-      const template = (await transaction<{ id: string }[]>`select id from template where id = ${input.templateId} and is_active`)[0];
+      const template = (await transaction<{ id: string }[]>`select id from template where id = ${templateId} and is_active`)[0];
       if (!template) throw new GenerationError(404, "template not found");
       await transaction`
         insert ignore into generation_job (
           user_id, brew_id, recipe_id, template_id, status,
           input_idempotency_key, request_hash, style_overrides
         ) values (
-          ${userId}, ${recipe.brew_id}, ${input.recipeId}, ${input.templateId}, 'queued',
+          ${userId}, ${recipe.brew_id}, ${input.recipeId}, ${templateId}, 'queued',
           ${idempotencyKey}, ${hash},
           ${transaction.json((input.styleOverrides ?? {}) as JSONValue)}
         )
