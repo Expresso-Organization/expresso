@@ -344,10 +344,15 @@
   overflow: hidden;
 }
 
+/*
+ * 세로 방향이어야 채팅 루트가 가로로 늘어나 레일 폭을 다 쓴다. 가로 방향이면 채팅 루트가 내용 폭으로
+ * 줄어, 대화가 없는 첫 화면에서 오른쪽이 비어 보인다. 높이는 채팅 루트의 `height: 100%`가 정한다.
+ */
 .railChat {
   flex: 1;
   min-height: 0;
   display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
