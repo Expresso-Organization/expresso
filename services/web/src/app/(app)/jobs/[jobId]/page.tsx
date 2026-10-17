@@ -1,4 +1,3 @@
-import { AgentChat } from "@/features/agent-chat/AgentChat";
 import type { JobPostingDetail, JobRequirement } from "@expresso/contracts";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -10,6 +9,7 @@ import { jobs as jobsApi } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 import { backToListHref } from "../list-query";
+import { JobChatRail, JobChatRailProvider, JobChatToggle } from "./JobChatRail";
 
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { mendEmphasis } from "@/components/ui/mend-emphasis";
@@ -85,25 +85,47 @@ export default async function JobDetailPage({
     || job.technologies.length > 0;
 
   return (
-    <>
+    // 머리의 채팅 버튼과 본문의 레일이 접힘 상태를 함께 본다.
+    <JobChatRailProvider>
       <DocumentHeader
         crumbs={[
           { label: "공고 탐색", href: backHref },
           `${job.company.name} · ${job.title}`,
         ]}
         actions={
-          <>
-            <button type="button" className={styles.headAction}>
+          // 머리 오른쪽은 버튼 세 개다 — 관심 공고 · 원문 · 채팅. 머리 폭이 넉넉하면(≥768px) 아이콘 옆에
+          // 이름을 함께 보이고, 좁으면 아이콘만 남기고 이름은 툴팁과 읽기 레이블로 둔다.
+          <div className={styles.headActions}>
+            <button
+              type="button"
+              className={styles.headIcon}
+              aria-label={job.interest ? "관심 공고" : "관심 공고에 담기"}
+              title={job.interest ? "관심 공고" : "관심 공고에 담기"}
+              aria-pressed={!!job.interest}
+            >
               <Icon
                 name="bookmark-simple"
                 weight={job.interest ? "fill" : "regular"}
-                size={14}
+                size={16}
                 color={job.interest ? "var(--ex-accent-text)" : "var(--ex-fg-muted)"}
               />
-              {job.interest ? "관심 공고" : "관심 공고에 담기"}
+              <span className={styles.headLabel}>{job.interest ? "관심 공고" : "관심 공고에 담기"}</span>
             </button>
-            <Icon name="arrow-square-out" size={16} color="var(--ex-fg-muted)" />
-          </>
+            {job.sourceUrl ? (
+              <a
+                className={styles.headIcon}
+                href={job.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="원문 보기"
+                title="원문 보기"
+              >
+                <Icon name="arrow-square-out" size={16} color="var(--ex-fg-muted)" />
+                <span className={styles.headLabel}>원문 보기</span>
+              </a>
+            ) : null}
+            <JobChatToggle className={styles.headIcon} labelClassName={styles.headLabel} />
+          </div>
         }
       />
       <AppBody>
@@ -336,17 +358,15 @@ export default async function JobDetailPage({
 
           {/*
             레일은 이 공고를 두고 나누는 대화 하나다. 공고가 바뀌면 다시 마운트해
-            그 공고가 연결된 대화를 새로 고른다.
+            그 공고가 연결된 대화를 새로 고른다. 접기와 너비 조절은 레일이 맡는다.
           */}
-          <aside className={styles.rail}>
-            <AgentChat
-              key={job.id}
-              job={{ id: job.id, title: job.title, company: job.company.name }}
-            />
-          </aside>
+          <JobChatRail
+            key={job.id}
+            job={{ id: job.id, title: job.title, company: job.company.name }}
+          />
         </div>
       </AppBody>
-    </>
+    </JobChatRailProvider>
   );
 }
 
