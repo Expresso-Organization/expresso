@@ -16,7 +16,7 @@ date: 2026-09-15
 |---|---|
 | `packages/contracts/src/identity.ts` · `contracts.test.ts` | `TERMS_VERSION` · `emailVerifiedAt` · `termsVersion` · 재설정/인증 스키마 · 토큰 형식 |
 | `packages/database/src/documents/identity.ts` · `collections.ts` | `IdentityTokenDoc` · `identityTokens` · 사용자 세 필드 |
-| `packages/database/src/mongodb-migrations/0010/migration.ts` (새) · `mongo-migrations.ts` · `mongo-build.mjs` · `schema.test.ts` · `migrations.test.ts` | 0010 등록 |
+| `packages/database/src/mongodb-migrations/0013/migration.ts` (새) · `mongo-migrations.ts` · `mongo-build.mjs` · `schema.test.ts` · `migrations.test.ts` | 0013 등록 |
 | `services/backend/src/config/runtime-config.ts` · `.env.example` | `MAIL_PROVIDER` · `RESEND_API_KEY` · `MAIL_FROM` · `MAIL_TIMEOUT_MS` · `APP_BASE_URL` |
 | `services/backend/src/platform/mail/{client,log,resend,create-mailer}.ts` (새) · `resend.test.ts` (새) | 어댑터 |
 | `services/backend/src/modules/identity/{mail,token,service,routes,legacy-mysql-service,public,index}.ts` | 재설정 · 인증 · 동의 기록 · 게이트용 사용자 필드 |
@@ -36,7 +36,7 @@ date: 2026-09-15
 
 ## 작업 순서
 
-1. 계약 · 데이터 — 스키마와 0010. `pnpm --filter @expresso/contracts build && test`, `--filter @expresso/database build && test`.
+1. 계약 · 데이터 — 스키마와 0013. `pnpm --filter @expresso/contracts build && test`, `--filter @expresso/database build && test`.
 2. 메일 플랫폼 — `platform/mail`, `runtime-config`, `.env.example`. Resend 어댑터 단위 테스트(fetch 스텁: 200 · 422 · 타임아웃).
 3. 백엔드 identity — 토큰 · 서비스 · 라우트 · 레거시 시그니처 · `main.ts` 주입 · 통합 테스트 12곳 `termsVersion`. `pnpm --filter backend typecheck`.
 4. 백엔드 테스트 — `auth.integration.test.ts` 7개 · publishing 게이트 1개. `pnpm test:infra`.
@@ -51,7 +51,7 @@ date: 2026-09-15
 
 3의 재설정 확인 — 비밀번호 갱신 · 전 세션 취소 · 새 세션을 한 트랜잭션에 넣는다. 둘 중 하나만 남으면 옛 비밀번호로 열린 세션이
 살아 있거나, 비밀번호는 바뀌었는데 로그인이 안 된다. `inTransaction` 안에서만 쓰고 통합 테스트가 "이전 세션 401"을 확인한다.
-되돌리기: 라우트 4개는 새 경로라 등록을 빼면 이전과 같다. 0010은 추가만 한다(필수 필드 없음).
+되돌리기: 라우트 4개는 새 경로라 등록을 빼면 이전과 같다. 0013은 추가만 한다(필수 필드 없음).
 
 ## 검증
 

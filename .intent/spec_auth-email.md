@@ -53,7 +53,7 @@ date: 2026-09-15
 **데이터** `packages/database`
 - `IdentityTokenDoc { _id, userId, kind, tokenHash, expiresAt, usedAt, createdAt }`. 인덱스: `tokenHash` unique ·
   `(userId, kind, createdAt desc)` · `expiresAt` TTL 0.
-- `UserDoc.emailVerifiedAt?` · `termsAcceptedAt?` · `termsVersion?`. 마이그레이션 `0010_identity_email_and_terms`
+- `UserDoc.emailVerifiedAt?` · `termsAcceptedAt?` · `termsVersion?`. 마이그레이션 `0013_identity_email_and_terms`
   — 컬렉션 생성 · 인덱스 · users validator 세 필드. 기존 사용자는 셋 다 없음 = 미인증 · 미기록.
 
 **백엔드**
