@@ -1,0 +1,70 @@
+{
+  "id": "watermelon-d4c3e8a11256ab82",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/browser.json",
+      "sha256": "aca73c6961f4786afd1ee13636acb34a5749decb4e525eb32216c9ce0c3e57c7",
+      "bytes": 24266,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/browser.tsx",
+      "target": "components/ui/browser.tsx",
+      "type": "registry:ui",
+      "sha256": "de3c2ead6b53f4b46a969b6ad27c18a7313b590564a0f4f337fa63735025c110",
+      "bytes": 22664
+    }
+  ],
+  "dependencies": [
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "badge",
+    "button",
+    "card",
+    "input",
+    "separator"
+  ],
+  "imports": [
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/input",
+    "@/components/ui/separator",
+    "@/lib/utils",
+    "lucide-react",
+    "react"
+  ],
+  "propsDeclarations": [
+    "interface BrowserProps {\n  image?: string\n  initialUrl?: string\n  initialTabs?: Partial<Tab>[]\n  theme?: \"light\" | \"dark\" | \"system\"\n  showWindowControls?: boolean\n  showBookmarksBar?: boolean\n  showStatusBar?: boolean\n  className?: string\n  enableTabManagement?: boolean\n  enableBookmarks?: boolean\n  enableHistory?: boolean\n  enableDownloads?: boolean\n  enableSettings?: boolean\n  maxTabs?: number\n  customBookmarks?: Bookmark[]\n  customHistory?: HistoryItem[]\n  onNavigate?: (url: string, tabId: string) => void\n  onTabCreate?: (tab: Tab) => void\n  onTabClose?: (tabId: string) => void\n  onTabSwitch?: (tabId: string) => void\n  onBookmarkToggle?: (url: string, isBookmarked: boolean) => void\n  onDownload?: (url: string) => void\n  renderContent?: (url: string, isLoading: boolean) => React.ReactNode\n  customFavicons?: Record<string, string>\n  openLinksInNewTab?: boolean\n  autoFocusAddressBar?: boolean\n  simulateLoading?: boolean\n  loadingDuration?: number\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "https://dalim.in",
+    "https://developer.mozilla.org",
+    "https://github.com",
+    "https://stackoverflow.com",
+    "https://www.google.com",
+    "https://www.google.com/search?q=${encodeURIComponent(url"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/browser.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

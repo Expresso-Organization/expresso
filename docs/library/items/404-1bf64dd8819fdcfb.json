@@ -1,0 +1,29 @@
+{
+  "id": "404-1bf64dd8819fdcfb",
+  "sourceUrl": "https://www.404s.design/sites/coder",
+  "sourceRevision": null,
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Coder",
+    "공개 이미지 요소: 15개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://www.404s.design/sites/coder",
+    "sha256": "3f1f0c4bc475af49c0b507246c0fee34f7ffbbba23c659bc08529c98d6c77130",
+    "fetchedAt": "2026-09-23T12:51:16+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": "https://www.404s.design/legal"
+}

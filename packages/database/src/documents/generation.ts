@@ -12,6 +12,8 @@ export interface PortfolioDoc {
   createdAt: Date;
   updatedAt: Date;
   styleOverrides: JsonObject;
+  /** 디자인 시스템 판으로 생성했으면 그 판입니다. 템플릿으로 만든 포트폴리오는 비어 있습니다. */
+  designSystemRevisionId?: string | null;
 }
 
 export interface PortfolioSectionDoc {
@@ -57,6 +59,8 @@ export interface GenerationJobDoc {
   createdAt: Date;
   updatedAt: Date;
   styleOverrides: JsonObject;
+  /** 디자인 시스템 판으로 요청한 생성이면 그 판입니다. 템플릿과 스타일 값은 이 판의 토큰에서 정했습니다. */
+  designSystemRevisionId?: string | null;
 }
 
 export interface GenerationSentenceEvidenceDoc {

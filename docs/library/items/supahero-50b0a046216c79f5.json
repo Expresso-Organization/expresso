@@ -1,0 +1,30 @@
+{
+  "id": "supahero-50b0a046216c79f5",
+  "sourceUrl": "https://supahero.io/hero/james-xi",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: James Xi",
+    "공개 이미지 요소: 1개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://www.jamesxi.com/",
+  "evidence": {
+    "url": "https://supahero.io/hero/james-xi",
+    "sha256": "f271f889eff7ae973e09f168c2c7ce9317dbfdeb1740f84d3ad711b708376672",
+    "fetchedAt": "2026-09-23T12:52:42+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

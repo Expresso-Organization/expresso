@@ -1,0 +1,72 @@
+{
+  "id": "watermelon-b1f29704f67fb58e",
+  "sourceUrl": "https://ui.watermelon.sh/block/hero-8",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/hero-8.json",
+      "sha256": "dd4bf2b4add0bde0de9d3fc2fc67ff1748d86575085a4359c989e58001f9b1ee",
+      "bytes": 11260,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/hero-8.tsx",
+      "target": "components/ui/hero-8.tsx",
+      "type": "registry:ui",
+      "sha256": "81de9c9627da73cfc9fe1a101478c896150e60840d54b627fb6279ae4d426e3f",
+      "bytes": 10475
+    }
+  ],
+  "dependencies": [
+    "lucide-react",
+    "motion"
+  ],
+  "registryDependencies": [
+    "button"
+  ],
+  "imports": [
+    "@/assets/logo-icon",
+    "motion/react",
+    "react",
+    "react-icons/fa6"
+  ],
+  "propsDeclarations": [
+    "export interface Hero8Props {\n  logo?: ReactNode;\n  logoText?: string;\n  navItems?: Hero8NavItem[];\n  loginText?: string;\n  loginHref?: string;\n  badgeText?: string;\n  title?: string;\n  titleAccent?: string;\n  description?: string;\n  videoText?: string;\n  videoHref?: string;\n  scrollText?: string;\n  backgroundImage?: string;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "https://assets.watermelon.sh/hero-8-bg.avif"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/hero-8.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "hero-8",
+    "status": "built",
+    "export": "Hero8",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-8.tsx",
+    "url": "./library/previews/watermelon/hero-8.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:22+00:00",
+    "snapshotSha256": "ad3fc9257a5d25567cea0522cfa2e67eda1e55a57dff3edf0cabfe639efd64fa"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

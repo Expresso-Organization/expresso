@@ -41,12 +41,14 @@ export function ChatPanel({
   portfolioId,
   blocks,
   freePage = false,
+  structured = false,
 }: {
   portfolioId: string;
   /** 말로 고칠 수 있는 블록. 미디어는 없고, 잠근 것은 계약이 거절한다. */
   blocks: { id: string; label: string }[];
   /** 자유 HTML이 최종 지면이면 블록 대신 페이지 전체를 새 판으로 고친다. */
   freePage?: boolean;
+  structured?: boolean;
 }) {
   const [result, instruct, pending] = useActionState<EditResult, FormData>(
     instructAction, {},
@@ -56,7 +58,7 @@ export function ChatPanel({
   );
   const [target, setTarget] = useState(freePage ? "page" : (blocks[0]?.id ?? "layout"));
   const targetLabel = target === "page"
-    ? "웹페이지 전체"
+    ? (structured ? "지면 구성" : "웹페이지 전체")
     : target === "layout"
       ? "지면 전체"
       : blocks.find(({ id }) => id === target)?.label ?? "블록";
@@ -147,7 +149,7 @@ export function ChatPanel({
           <div className={styles.chatHint}>
             <Icon name="cursor-click" size={12} color="#A39B8C" />
             <span className={styles.chatHintText}>
-              고칠 곳을 고르고 말해주세요. 바꾸기 전에 무엇이 바뀌는지 먼저 보여드립니다.
+              {structured ? "배치와 사례 구성을 요청해 주세요. 문장은 속성 탭에서 편집할 수 있습니다." : "고칠 곳을 고르고 말해주세요. 바꾸기 전에 무엇이 바뀌는지 먼저 보여드립니다."}
             </span>
           </div>
         )}
@@ -167,7 +169,7 @@ export function ChatPanel({
             aria-label="고칠 대상"
           >
             {freePage ? (
-              <option value="page">웹페이지 전체</option>
+              <option value="page">{structured ? "지면 구성" : "웹페이지 전체"}</option>
             ) : (
               <>
                 {blocks.map((block) => (
@@ -213,7 +215,7 @@ export function FreePageProperties({ page }: { page: GeneratedPage }) {
       <div className={styles.targetCard}>
         <Icon name="code" size={15} color="#354DA8" />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div className={styles.targetName}>자유 HTML · 판 {page.revision + 1}</div>
+          <div className={styles.targetName}>{page.generationManifest?.structured ? "구조화 지면" : "자유 HTML"} · 판 {page.revision + 1}</div>
           <div className={styles.targetPath}>사용자가 요청할 때만 새 판을 만듭니다</div>
         </div>
       </div>

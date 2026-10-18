@@ -1,8 +1,11 @@
+import { PageLibrarySelectionSchema } from "./page-library.js";
 import { z } from "zod";
 
 import { TimestampSchema, UuidSchema } from "./common.js";
 import { PAGE_KIT_CSS, pageKitVariables } from "./page-kit.js";
 import { PortfolioDesignReferenceSchema, TemplateFontSchema } from "./templates.js";
+import { StructuredPortfolioSnapshotSchema } from "./structured-portfolio.js";
+import { MEDIA_ASSET_PATH_PREFIX } from "./media-path.js";
 
 /**
  * 자유 생성 지면.
@@ -44,8 +47,19 @@ import { PortfolioDesignReferenceSchema, TemplateFontSchema } from "./templates.
  * 이 플랫폼의 기획은 원래 **뽑기 전에 스타일 문법을 고르는 것**이었고(03),
  * 그 값이 `template.style`에 이미 있는데 생성기가 안 읽고 있었다. 문법을
  * 제약으로 넘긴다 — 흔들리던 축을 사용자가 쥔다.
+ *
+ * 8 — 구조화 Spec이 평평한 목록이라 지면 구성이 모델 출력과 관계없이 같았다.
+ * Columns·Grid·Band 컨테이너 규칙과 예시를 넣고, "모든 ID를 page.children에
+ * 한 번씩"을 "트리 전체에서 한 번씩"으로 바꿨다.
+ *
+ * 9 — 요소 ID와 props 형태를 손으로 적던 문장을 출력 스키마에서 생성한다.
+ * 스키마가 design.layout을 한 값으로 고정하는데 남아 있던 editorial·gallery·
+ * dossier 선택 지시를 뺐다.
+ *
+ * 10 — 내용 정리 호출에서 연락처를 묻지 않는다(입력 경로가 없어 null로 고정).
+ * 이름 아래 한 문장 규칙을 어기면 오류와 직전 출력을 붙여 한 번 다시 요청한다.
  */
-export const PAGE_PROMPT_VERSION = 7;
+export const PAGE_PROMPT_VERSION = 10;
 
 /**
  * 한 지면의 상한.
@@ -190,7 +204,7 @@ export const PAGE_ALLOWED_LINK_SCHEMES = ["http", "https", "mailto"] as const;
  * 방문자의 IP가 그 서버에 남는다 — 남의 포트폴리오를 보는 일이 추적당하는
  * 일이 되어서는 안 된다.
  */
-export const PAGE_IMAGE_SRC_PREFIX = "/v1/media/";
+export const PAGE_IMAGE_SRC_PREFIX = MEDIA_ASSET_PATH_PREFIX;
 
 /**
  * 바깥 스타일시트를 부를 수 있는 곳.
@@ -316,6 +330,8 @@ export const PageGenerationManifestSchema = z.strictObject({
   sourceUrls: z.array(z.string().url().max(2_000)).max(100),
   attempts: z.number().int().min(1).max(2),
   repairCount: z.number().int().min(0).max(1),
+  structured: StructuredPortfolioSnapshotSchema.optional(),
+  library: PageLibrarySelectionSchema.optional(),
   usage: z.strictObject({
     inputTokens: z.number().int().nonnegative(),
     outputTokens: z.number().int().nonnegative(),

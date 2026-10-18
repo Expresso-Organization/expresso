@@ -1,0 +1,30 @@
+{
+  "id": "supahero-f06f5ebbec94d195",
+  "sourceUrl": "https://supahero.io/hero/gary-and-the-endless-forest",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Gary and the endless forest",
+    "공개 이미지 요소: 1개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://play.garance.com/",
+  "evidence": {
+    "url": "https://supahero.io/hero/gary-and-the-endless-forest",
+    "sha256": "b265fa342d7af6c0d92e1bf4791e506afde498ff167e9f74bca535bb37450bc3",
+    "fetchedAt": "2026-09-23T12:52:21+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

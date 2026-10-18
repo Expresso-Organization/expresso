@@ -17,8 +17,8 @@ date: 2026-09-15
 | `packages/contracts/src/identity.ts` | `SESSION_POLICY` 상수, 요청 4종에 `persistent` 기본 true, 발급 세션에 `persistent` |
 | `packages/contracts/src/contracts.test.ts` | 발급 세션 픽스처에 `persistent` |
 | `packages/database/src/documents/identity.ts` | `IdentitySessionDoc.idleTtlMs` · `absoluteExpiresAt` |
-| `packages/database/src/mongodb-migrations/0009/migration.ts` (새) | `identity_sessions` validator에 두 필드 |
-| `packages/database/src/mongo-migrations.ts` · `mongo-build.mjs` · `schema.test.ts` · `migrations.test.ts` | 0009 등록(개수 단언 9) |
+| `packages/database/src/mongodb-migrations/0012/migration.ts` (새) | `identity_sessions` validator에 두 필드 |
+| `packages/database/src/mongo-migrations.ts` · `mongo-build.mjs` · `schema.test.ts` · `migrations.test.ts` | 0012 등록(개수 단언 12) |
 | `services/backend/src/modules/identity/public.ts` | `IssueIdentitySessionInput.ttlMs` → `persistent` |
 | `services/backend/src/modules/identity/service.ts` | 정책으로 발급, 파이프라인 갱신으로 연장 |
 | `services/backend/src/modules/identity/legacy-mysql-service.ts` | `persistent` 시그니처만 맞춤 |
@@ -44,7 +44,7 @@ date: 2026-09-15
 ## 작업 순서
 
 1. 계약 — `identity.ts` · `contracts.test.ts`. `pnpm --filter @expresso/contracts build && pnpm --filter @expresso/contracts test`.
-2. 데이터베이스 — 문서 타입 · 0009 마이그레이션 · 등록 셋. `pnpm --filter @expresso/database build && pnpm --filter @expresso/database test`.
+2. 데이터베이스 — 문서 타입 · 0012 마이그레이션 · 등록 셋. `pnpm --filter @expresso/database build && pnpm --filter @expresso/database test`.
 3. 백엔드 — `public.ts` · `service.ts` · 레거시 시그니처 → `pnpm --filter backend typecheck`. 그다음 테스트 4개 추가 → `pnpm test:infra`(인프라 `pnpm infra:up`, 마이그레이션 적용 포함).
 4. 웹 배관 — `session-cookie.ts` · `next-path.ts` · `session.ts` · `proxy.ts` · `expired` 라우트 · `require-session.ts` · `dev/session`. `pnpm --filter web typecheck && pnpm --filter web test`.
 5. 웹 화면·액션 — 로그인·가입 페이지, `LoginForm`, `SocialSignIn`, `auth-actions.ts`, Google 왕복 셋.

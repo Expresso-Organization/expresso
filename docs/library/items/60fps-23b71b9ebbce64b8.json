@@ -1,0 +1,29 @@
+{
+  "id": "60fps-23b71b9ebbce64b8",
+  "sourceUrl": "https://60fps.design/shots/duolingo-quest-point-trail-animation",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Duolingo Quest Point Trail Animation",
+    "공개 이미지 요소: 32개",
+    "동영상 포스터: 31개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/duolingo-quest-point-trail-animation",
+    "sha256": "2cede7291431bfdf8b98d82c1973361ad0b372e55909f4d5509ba5df930163ed",
+    "fetchedAt": "2026-09-23T13:00:28+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

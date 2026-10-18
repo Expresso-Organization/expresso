@@ -1,0 +1,71 @@
+{
+  "id": "watermelon-819f933a39cd3344",
+  "sourceUrl": "https://ui.watermelon.sh/block/footer-31",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "contact"
+  ],
+  "roleEvidence": "본문을 읽은 뒤 연락·외부 자료로 이어 줄 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/footer-31.json",
+      "sha256": "0081ae6c35db0dbf4c9cbac5495e1eedf8e9e53a5a3af8326e7180c77ebeafc0",
+      "bytes": 24840,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/footer-31.tsx",
+      "target": "components/ui/footer-31.tsx",
+      "type": "registry:ui",
+      "sha256": "b3e52d3f57059b8732acf421600a4e4097346973de79985d1c120e8ccdbd1f60",
+      "bytes": 22980
+    }
+  ],
+  "dependencies": [
+    "lucide-react",
+    "framer-motion"
+  ],
+  "registryDependencies": [
+    "footer"
+  ],
+  "imports": [
+    "framer-motion",
+    "lucide-react"
+  ],
+  "propsDeclarations": [
+    "export interface Footer31Props {\n  heading?: string;\n  subtitle?: string;\n  newsletterPlaceholder?: string;\n  newsletterButtonText?: string;\n  columns?: FooterColumn[];\n  brandDescription?: string;\n  bigText?: string;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "http://www.w3.org/2000/svg",
+    "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/footer-31.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "footer-31",
+    "status": "built",
+    "export": "Footer31",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-31.tsx",
+    "url": "./library/previews/watermelon/footer-31.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:12+00:00",
+    "snapshotSha256": "70ad6b982929603a6b85097320ae85c57770dd0a5c9cf035e2fc9e779d3af95f"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

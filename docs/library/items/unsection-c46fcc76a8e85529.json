@@ -1,0 +1,29 @@
+{
+  "id": "unsection-c46fcc76a8e85529",
+  "sourceUrl": "https://www.unsection.com/section/montoni-corporate-priorities-bento-grid-design",
+  "sourceRevision": null,
+  "roles": [
+    "project-grid"
+  ],
+  "roleEvidence": "작품·프로젝트·사례를 묶어 보여주는 표현 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: montoni corporate priorities bento grid design",
+    "공개 이미지 요소: 22개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://www.unsection.com/section/montoni-corporate-priorities-bento-grid-design",
+    "sha256": "467ab0e7c3bc5cd4f0d20cbd6d4291ebc6b9f2b0e1a7ee9e42c751f7f278522a",
+    "fetchedAt": "2026-09-23T12:55:05+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

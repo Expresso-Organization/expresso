@@ -1,0 +1,69 @@
+{
+  "id": "watermelon-e764642b8047a8f9",
+  "sourceUrl": "https://ui.watermelon.sh/block/footer-19",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "contact"
+  ],
+  "roleEvidence": "본문을 읽은 뒤 연락·외부 자료로 이어 줄 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/footer-19.json",
+      "sha256": "ad3acbc13a2ca46622e6a87b182929765c13441dcd3a37433592ea99416e4b26",
+      "bytes": 8148,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/footer-19.tsx",
+      "target": "components/ui/footer-19.tsx",
+      "type": "registry:ui",
+      "sha256": "5eb4796d2f4db21c0f377cf053cbab5efa720c7141f048de587c78b4eff5c89d",
+      "bytes": 7372
+    }
+  ],
+  "dependencies": [
+    "@hugeicons/react",
+    "framer-motion"
+  ],
+  "registryDependencies": [
+    "footer"
+  ],
+  "imports": [
+    "@hugeicons/core-free-icons",
+    "@hugeicons/react",
+    "motion/react"
+  ],
+  "propsDeclarations": [
+    "export interface Footer19Props {\n  badgeText?: string;\n  newsletterHeading?: string;\n  newsletterPlaceholder?: string;\n  newsletterButtonText?: string;\n  brandName?: string;\n  brandLogo?: React.ReactNode;\n  navColumns?: FooterColumn[];\n  copyright?: string;\n  location?: string;\n  time?: string;\n  socialLinks?: { label: string; href: string }"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/footer-19.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "footer-19",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-19.tsx",
+    "url": "./library/previews/watermelon/footer-19.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:10+00:00",
+    "snapshotSha256": "c8fe9de42809b34187246ca2f7482236a2938d066dcaf94003e6f63c5edb8ae3"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

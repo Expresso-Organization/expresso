@@ -1,0 +1,22 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "dropdown-menu-13",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "dropdown-menu",
+    "button",
+    "switch",
+    "avatar"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/dropdown-menu/dropdown-menu-13.tsx",
+      "content": "\"use client\";\n\nimport { useState } from \"react\";\nimport { FaClock } from \"react-icons/fa6\";\n\nimport { Avatar, AvatarFallback, AvatarImage } from \"@/components/ui/avatar\";\nimport { Button } from \"@/components/ui/button\";\nimport {\n  DropdownMenu,\n  DropdownMenuContent,\n  DropdownMenuGroup,\n  DropdownMenuItem,\n  DropdownMenuLabel,\n  DropdownMenuTrigger,\n} from \"@/components/ui/dropdown-menu\";\nimport { Switch } from \"@/components/ui/switch\";\n\nconst people = [\n  \"https://github.com/ThePrimeagen.png\",\n  \"https://github.com/leerob.png\",\n  \"https://github.com/t3dotgg.png\",\n];\n\nconst sessions = [\n  {\n    time: \"08:00\",\n    title: \"Deep Work\",\n    desc: \"Focus on core feature\",\n    color: \"bg-blue-500/10 text-blue-500\",\n  },\n  {\n    time: \"10:30\",\n    title: \"Team Sync\",\n    desc: \"Quick alignment call\",\n    color: \"bg-green-500/10 text-green-500\",\n  },\n  {\n    time: \"01:00\",\n    title: \"Code Review\",\n    desc: \"PR feedback session\",\n    color: \"bg-purple-500/10 text-purple-500\",\n  },\n  {\n    time: \"04:00\",\n    title: \"Build & Ship\",\n    desc: \"Deploy + monitor\",\n    color: \"bg-amber-500/10 text-amber-500\",\n  },\n];\n\nconst DropdownMeeting13 = () => {\n  const [active, setActive] = useState(sessions.map(() => true));\n\n  const toggle = (index: number) => {\n    setActive((prev) => prev.map((v, i) => (i === index ? !v : v)));\n  };\n\n  return (\n    <div>\n      <DropdownMenu>\n        <DropdownMenuTrigger asChild>\n          <Button variant=\"outline\" className=\"rounded-lg\">\n            Focus Planner\n          </Button>\n        </DropdownMenuTrigger>\n\n        <DropdownMenuContent\n          className=\"bg-popover sm:w-[420px] w-full rounded-lg border p-1 shadow-md\"\n          align=\"center\"\n        >\n          <DropdownMenuLabel className=\"px-2 pb-2 text-sm font-semibold\">\n            Today’s Schedule\n          </DropdownMenuLabel>\n\n          <DropdownMenuGroup>\n            {sessions.map((item, index) => (\n              <DropdownMenuItem\n                key={index}\n                onSelect={(e) => e.preventDefault()}\n                className=\"group hover:bg-accent/50! flex cursor-pointer items-center gap-3 rounded-lg p-2\"\n              >\n                <div\n                  className={`rounded-md px-2 py-1 text-xs font-medium ${item.color}`}\n                >\n                  {item.time}\n                </div>\n\n                <div className=\"flex flex-1 flex-col\">\n                  <span className=\"text-sm font-medium\">{item.title}</span>\n                  <span className=\"text-muted-foreground text-xs\">\n                    {item.desc}\n                  </span>\n                </div>\n\n                <div className=\"flex -space-x-2\">\n                  {people.map((src, i) => (\n                    <Avatar key={i} className=\"ring-background h-6 w-6 ring-2\">\n                      <AvatarImage src={src} />\n                      <AvatarFallback>U</AvatarFallback>\n                    </Avatar>\n                  ))}\n                </div>\n\n                <div className=\"flex items-center gap-2 pl-2\">\n                  <FaClock className=\"text-muted-foreground text-xs\" />\n                  <Switch\n                    checked={active[index]}\n                    onCheckedChange={() => toggle(index)}\n                  />\n                </div>\n              </DropdownMenuItem>\n            ))}\n          </DropdownMenuGroup>\n        </DropdownMenuContent>\n      </DropdownMenu>\n    </div>\n  );\n};\n\nexport default DropdownMeeting13;\n",
+      "type": "registry:ui",
+      "target": "components/ui/dropdown-menu-13.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

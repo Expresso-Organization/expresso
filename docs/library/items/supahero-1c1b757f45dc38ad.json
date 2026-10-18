@@ -1,0 +1,30 @@
+{
+  "id": "supahero-1c1b757f45dc38ad",
+  "sourceUrl": "https://supahero.io/hero/comanche-indians",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Comanche Indians",
+    "공개 이미지 요소: 1개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://comancheindians.tilda.ws/",
+  "evidence": {
+    "url": "https://supahero.io/hero/comanche-indians",
+    "sha256": "624c763095ed7baec70f2baec5147bed1cb6ce2d4623b2bb2fe967366cc10fbf",
+    "fetchedAt": "2026-09-23T12:51:40+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

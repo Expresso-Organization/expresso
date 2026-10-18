@@ -44,7 +44,7 @@ date: 2026-09-15
 - `verifyAccessToken`의 `findOneAndUpdate`를 파이프라인 갱신으로 바꾼다:
   `$set: { lastSeenAt: "$$NOW", expiresAt: { $min: [ now + $ifNull(idleTtlMs, 30d), $ifNull(absoluteExpiresAt, createdAt + 90d) ] } }`.
   필터는 지금과 같다(`revokedAt: null`, `expiresAt > now`). 쓰기 한 번은 이미 하고 있어 비용이 늘지 않는다.
-- 마이그레이션 `0009 identity_session_sliding_expiry`: `identity_sessions` validator에
+- 마이그레이션 `0012 identity_session_sliding_expiry`: `identity_sessions` validator에
   두 필드를 추가한다(required 아님). 0003의 collMod 패턴을 따른다.
 - 레거시 MySQL 서비스는 타입 출처(`IdentityApi`)라 시그니처만 맞춘다 — `persistent`로
   고정 TTL을 고르고 연장은 하지 않는다. 운영 런타임은 Mongo다(`api/main.ts`).
@@ -95,7 +95,7 @@ date: 2026-09-15
 ## 완료 기준
 
 - `pnpm typecheck` 무오류.
-- `pnpm test` — contracts · web(proxy · next-path) · database(schema 목록에 `0009_…`) 통과.
+- `pnpm test` — contracts · web(proxy · next-path) · database(schema 목록에 `0012_…`) 통과.
 - `pnpm test:infra` — `auth HTTP integration (mongodb)`에 세션 연장 케이스 4개가 추가되어 통과.
 - 브라우저 확인: 체크 끄고 로그인 → 개발자 도구에서 `ex_session`의 Expires가 `Session`.
   체크 켜고 로그인 → 30일 뒤 날짜, 새로고침하면 날짜가 앞으로 밀린다.

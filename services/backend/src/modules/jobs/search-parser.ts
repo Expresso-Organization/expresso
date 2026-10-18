@@ -1,4 +1,5 @@
 import type { JobSearchCondition } from "@expresso/contracts";
+import { normalizeRegion } from "./ingest/classify.js";
 
 /**
  * 규칙 기반 검색 해석기. §8.3의 AI 계약이 붙기 전까지 쓰는 자리다
@@ -9,7 +10,8 @@ import type { JobSearchCondition } from "@expresso/contracts";
  * 없는 조건을 지어내는 쪽이 훨씬 나쁘다.
  */
 
-const TECHNOLOGIES = [
+/** AI 해석기(search-interpreter.ts)도 같은 사전을 쓴다 — 두 곳에 따로 두면 갈린다. */
+export const TECHNOLOGIES = [
   "typescript",
   "javascript",
   "python",
@@ -39,7 +41,7 @@ const TECHNOLOGIES = [
   "celery",
 ] as const;
 
-const CANONICAL: Record<string, string> = {
+export const CANONICAL: Record<string, string> = {
   postgres: "postgresql",
   k8s: "kubernetes",
   golang: "go",
@@ -57,8 +59,6 @@ const ROLES = [
   "플랫폼 엔지니어",
   "서버 개발자",
 ] as const;
-
-const LOCATIONS = ["seoul", "서울", "busan", "부산", "판교", "분당", "성수"] as const;
 
 /** 짧은 이름(go · java)이 다른 낱말 안에서 잡히지 않게 경계를 둔다. */
 function mentions(normalized: string, term: string): boolean {
@@ -97,10 +97,11 @@ export function interpretSearchQuery(query: string): JobSearchCondition[] {
   } else if (/on[ -]?site|출근/.test(normalized)) {
     add({ field: "work_type", value: "on-site", enabled: true, confidence: 0.9 });
   }
-  for (const location of LOCATIONS) {
-    if (normalized.includes(location)) {
-      add({ field: "location", value: location, enabled: true, confidence: 0.9 });
-    }
+  // 지역 사전은 공고 수집 쪽(ingest/classify.ts)의 REGION_RULES를 그대로 쓴다 —
+  // 두 곳에 각자 사전을 두면 "성수"처럼 한쪽만 알아듣는 말이 생긴다.
+  const region = normalizeRegion(normalized);
+  if (region) {
+    add({ field: "location", value: region, enabled: true, confidence: 0.9 });
   }
   for (const technology of TECHNOLOGIES) {
     if (mentions(normalized, technology)) {

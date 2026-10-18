@@ -1,0 +1,72 @@
+{
+  "id": "watermelon-32c3d608e7327272",
+  "sourceUrl": "https://ui.watermelon.sh/block/footer-23",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "contact"
+  ],
+  "roleEvidence": "본문을 읽은 뒤 연락·외부 자료로 이어 줄 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/footer-23.json",
+      "sha256": "df228819c979899e93a789b013b76a96b6565f36b65322725ca7163ce834e326",
+      "bytes": 11594,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/footer-23.tsx",
+      "target": "components/ui/footer-23.tsx",
+      "type": "registry:ui",
+      "sha256": "7b66859ce0cac89d1c17f9e1ac5307e9cf8ee4223147dbf16224459823db1dcd",
+      "bytes": 10725
+    }
+  ],
+  "dependencies": [
+    "lucide-react",
+    "framer-motion"
+  ],
+  "registryDependencies": [
+    "footer"
+  ],
+  "imports": [
+    "@/assets/logo-icon",
+    "lucide-react",
+    "motion/react",
+    "react"
+  ],
+  "propsDeclarations": [
+    "interface Footer23Props {\n  brandName?: string;\n  ctaHeading?: string;\n  ctaSubtitle?: string;\n  getDemoLabel?: string;\n  getDemoHref?: string;\n  signInLabel?: string;\n  signInHref?: string;\n  heroImage?: string;\n  heroAlt?: string;\n  emailPlaceholder?: string;\n  subscribeLabel?: string;\n  onSubscribe?: (email: string) => void;\n  columns?: NavColumn[];\n  language?: string;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "https://assets.watermelon.sh/footer-23-bg.avif"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/footer-23.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "footer-23",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-23.tsx",
+    "url": "./library/previews/watermelon/footer-23.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:10+00:00",
+    "snapshotSha256": "3c429229c5f10c0de4dda92285cf44900b4a32f80e2214628b9d9313c5f9cb23"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

@@ -1,0 +1,30 @@
+{
+  "id": "cta-119854cd81e4ad3a",
+  "sourceUrl": "https://www.cta.gallery/cta/my-health-prac",
+  "sourceRevision": null,
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: My health prac",
+    "공개 이미지 요소: 46개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://www.myhealthprac.com/",
+  "evidence": {
+    "url": "https://www.cta.gallery/cta/my-health-prac",
+    "sha256": "6c9d3f3934fe3dcf2971a50f3474dba5f127d0b889d80946570be7b8e6a8b178",
+    "fetchedAt": "2026-09-23T12:52:54+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

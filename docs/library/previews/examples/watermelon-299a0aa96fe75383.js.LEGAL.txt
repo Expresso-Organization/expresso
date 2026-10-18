@@ -1,0 +1,20 @@
+Bundled license information:
+
+@tabler/icons-react/dist/esm/defaultAttributes.mjs:
+@tabler/icons-react/dist/esm/createReactComponent.mjs:
+@tabler/icons-react/dist/esm/icons/IconAlertHexagon.mjs:
+@tabler/icons-react/dist/esm/icons/IconCalendarTime.mjs:
+@tabler/icons-react/dist/esm/icons/IconCircleDashed.mjs:
+@tabler/icons-react/dist/esm/icons/IconPennant.mjs:
+@tabler/icons-react/dist/esm/icons/IconAlertCircleFilled.mjs:
+@tabler/icons-react/dist/esm/icons/IconDeviceVisionProFilled.mjs:
+@tabler/icons-react/dist/esm/icons/IconSettingsFilled.mjs:
+@tabler/icons-react/dist/esm/icons/IconStarFilled.mjs:
+@tabler/icons-react/dist/esm/icons/IconTriangleFilled.mjs:
+@tabler/icons-react/dist/esm/tabler-icons-react.mjs:
+  /**
+   * @license @tabler/icons-react v3.44.0 - MIT
+   *
+   * This source code is licensed under the MIT license.
+   * See the LICENSE file in the root directory of this source tree.
+   */

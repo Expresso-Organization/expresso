@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "radiogroup-3",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "radio-group"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/radiogroup/radiogroup-3.tsx",
+      "content": "import { Label } from \"@/components/ui/label\";\nimport { RadioGroup, RadioGroupItem } from \"@/components/ui/radio-group\";\nimport { FaSun, FaMoon, FaDesktop } from \"react-icons/fa\";\n\nconst RadioGroup3 = () => {\n  return (\n    <RadioGroup defaultValue=\"light\" className=\"  space-y-2\">\n      <div className=\"flex items-center gap-2\">\n        <RadioGroupItem\n          value=\"light\"\n          id=\"theme-light\"\n          className=\"text-primary-foreground data-[state=checked]:bg-primary! data-[state=checked]:border-primary data-[state=checked]:[&_svg]:fill-primary-foreground shadow-md\"\n        />\n        <Label htmlFor=\"theme-light\" className=\"flex items-center gap-2\">\n          <FaSun className=\"text-foreground\" />\n          Light Theme\n        </Label>\n      </div>\n\n      <div className=\"flex items-center gap-2\">\n        <RadioGroupItem\n          value=\"dark\"\n          id=\"theme-dark\"\n          className=\"text-primary-foreground data-[state=checked]:bg-primary! data-[state=checked]:border-primary data-[state=checked]:[&_svg]:fill-primary-foreground shadow-md\"\n        />\n        <Label htmlFor=\"theme-dark\" className=\"flex items-center gap-2\">\n          <FaMoon className=\"text-foreground\" />\n          Dark Theme\n        </Label>\n      </div>\n\n      <div className=\"flex items-center gap-2\">\n        <RadioGroupItem\n          value=\"system\"\n          id=\"theme-system\"\n          className=\"text-primary-foreground data-[state=checked]:bg-primary! data-[state=checked]:border-primary data-[state=checked]:[&_svg]:fill-primary-foreground shadow-md\"\n        />\n        <Label htmlFor=\"theme-system\" className=\"flex items-center gap-2\">\n          <FaDesktop className=\"text-foreground\" />\n          System Default\n        </Label>\n      </div>\n    </RadioGroup>\n  );\n};\n\nexport default RadioGroup3;\n",
+      "type": "registry:ui",
+      "target": "components/ui/radiogroup-3.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "avatar-12",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "avatar"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/avatar/avatar-12.tsx",
+      "content": "import { BadgeCheckIcon } from 'lucide-react'\n\nimport { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'\n\ntype Profile = {\n  name: string\n  avatar: string\n  status: string\n}\n\nconst profile: Profile = {\n  name: 'Clara Hughes',\n  avatar: 'https://i.pravatar.cc/160?img=56',\n  status: 'Verified'\n}\n\nconst getInitials = (name: string) =>\n  name\n    .split(/\\s+/)\n    .map((word) => word.slice(0, 1))\n    .join('')\n\nconst Avatar12 = () => {\n  return (\n    <div className='relative w-fit'>\n      <Avatar className='size-10 ring-1 ring-border/70'>\n        <AvatarImage src={profile.avatar} alt={profile.name} />\n        <AvatarFallback className='text-xs'>{getInitials(profile.name)}</AvatarFallback>\n      </Avatar>\n      <span className='absolute -top-1 -right-1'>\n        <span className='sr-only'>{profile.status}</span>\n        <BadgeCheckIcon className='size-4.5 fill-sky-500 text-background' />\n      </span>\n    </div>\n  )\n}\n\nexport default Avatar12\n\n",
+      "type": "registry:ui",
+      "target": "components/ui/avatar-12.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

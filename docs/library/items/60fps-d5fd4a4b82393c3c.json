@@ -1,0 +1,29 @@
+{
+  "id": "60fps-d5fd4a4b82393c3c",
+  "sourceUrl": "https://60fps.design/shots/shuteye-sleep-demo-recordings-and-patterns-tip-overlay",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: ShutEye Sleep Demo Recordings and Patterns Tip Overlay",
+    "공개 이미지 요소: 29개",
+    "동영상 포스터: 31개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/shuteye-sleep-demo-recordings-and-patterns-tip-overlay",
+    "sha256": "7d1aaecc63be53199da89cba403dc1a569c8e09ed9dd0195f413277f6cec2c59",
+    "fetchedAt": "2026-09-23T13:06:39+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

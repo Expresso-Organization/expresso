@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "accordion-4",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "accordion"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/accordion/accordion-4.tsx",
+      "content": "import {\n  Accordion,\n  AccordionContent,\n  AccordionItem,\n  AccordionTrigger,\n} from '@/components/ui/accordion'\nimport { MinusIcon, PlusIcon } from 'lucide-react'\n\nconst items = [\n  {\n    value: \"item-1\",\n    title: \"How secure is my data?\",\n    content:\n      \"We use industry-standard encryption and secure infrastructure to protect your data at every step. Your information is never shared without your consent.\",\n  },\n  {\n    value: \"item-2\",\n    title: \"How do transactions work?\",\n    content:\n      \"Transactions are processed instantly and reflected in your account in real time. You can view detailed history and insights anytime.\",\n  },\n  {\n    value: \"item-3\",\n    title: \"Can I manage everything in one place?\",\n    content:\n      \"Yes - track activity, manage settings, and control your account from a single, unified dashboard designed for clarity and speed.\",\n  },\n] as const\n\nconst Accordion4 = () => {\n  return (\n    <Accordion className='w-full space-y-2' type=\"multiple\" defaultValue={[items[0].value]}>\n      {items.map((item) => (\n        <AccordionItem\n          key={item.value}\n          value={item.value}\n          className='rounded-sm border-b-0 bg-card shadow-sm transition-shadow data-[state=open]:shadow-lg'\n        >\n          <AccordionTrigger className='px-5 [&_[data-slot=accordion-trigger-icon]]:hidden'>\n            <span className='flex w-full items-center justify-between gap-4'>\n              <span>{item.title}</span>\n              <span className='relative size-3 shrink-0 text-muted-foreground'>\n                <PlusIcon className='absolute inset-0 size-3 group-aria-expanded/accordion-trigger:hidden' />\n                <MinusIcon className='absolute inset-0 hidden size-3 group-aria-expanded/accordion-trigger:block' />\n              </span>\n            </span>\n          </AccordionTrigger>\n          <AccordionContent className='px-5 text-muted-foreground'>\n            {item.content}\n          </AccordionContent>\n        </AccordionItem>\n      ))}\n    </Accordion>\n  )\n}\n\nexport default Accordion4\n",
+      "type": "registry:ui",
+      "target": "components/ui/accordion-4.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

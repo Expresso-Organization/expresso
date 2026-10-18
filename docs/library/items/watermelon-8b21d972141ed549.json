@@ -1,0 +1,57 @@
+{
+  "id": "watermelon-8b21d972141ed549",
+  "sourceUrl": "https://ui.watermelon.sh/block/file-upload-4",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/file-upload-4.json",
+      "sha256": "869c7749331171d284ce8dfe07b70fe8f513cab5659dfde725e7903c2179185e",
+      "bytes": 10748,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/file-upload-4.tsx",
+      "target": "components/ui/file-upload-4.tsx",
+      "type": "registry:ui",
+      "sha256": "ade1c6f0a3431b1b98988137a2852f9f148fb2cd6c1e6b999177666d60264a85",
+      "bytes": 9855
+    }
+  ],
+  "dependencies": [
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "file-upload",
+    "button"
+  ],
+  "imports": [
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/progress",
+    "react",
+    "react-icons/fa"
+  ],
+  "propsDeclarations": [
+    "export interface DocumentUploaderProps {\n  title?: string;\n  acceptedFormats?: string[];\n  maxFileSizeMb?: number;\n  minFileSizeMb?: number;\n  onClose?: () => void;\n  onUploadComplete?: (files: File[]) => void;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/file-upload-4.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

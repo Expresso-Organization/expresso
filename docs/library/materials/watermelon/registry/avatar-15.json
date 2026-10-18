@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "avatar-15",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "avatar"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/avatar/avatar-15.tsx",
+      "content": "import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'\n\ntype Profile = {\n  name: string\n  src: string\n}\n\nconst avatars: readonly Profile[] = [\n  {\n    src: 'https://i.pravatar.cc/160?img=12',\n    name: 'Leo Grant'\n  },\n  {\n    src: 'https://i.pravatar.cc/160?img=28',\n    name: 'Nina Alvarez'\n  },\n  {\n    src: 'https://i.pravatar.cc/160?img=36',\n    name: 'Amara Lewis'\n  },\n  {\n    src: 'https://i.pravatar.cc/160?img=52',\n    name: 'Noah Bennett'\n  }\n] as const\n\nconst getInitials = (name: string) =>\n  name\n    .split(/\\s+/)\n    .map((word) => word.slice(0, 1))\n    .join('')\n\nconst Avatar15 = () => {\n  return (\n    <div className='flex -space-x-2.5'>\n      {avatars.map((avatar) => (\n        <Avatar key={avatar.name} className='ring-background size-12 ring-2 shadow-sm'>\n          <AvatarImage src={avatar.src} alt={avatar.name} />\n          <AvatarFallback>{getInitials(avatar.name)}</AvatarFallback>\n        </Avatar>\n      ))}\n    </div>\n  )\n}\n\nexport default Avatar15\n\n",
+      "type": "registry:ui",
+      "target": "components/ui/avatar-15.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

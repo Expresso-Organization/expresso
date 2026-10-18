@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "input-otp-3",
+  "dependencies": [
+    "react-icons",
+    "input-otp"
+  ],
+  "registryDependencies": [
+    "input-otp",
+    "label"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/input-otp/input-otp-3.tsx",
+      "content": "\"use client\";\n\nimport { useId } from \"react\";\n\nimport { REGEXP_ONLY_DIGITS_AND_CHARS } from \"input-otp\";\n\nimport {\n  InputOTP,\n  InputOTPGroup,\n  InputOTPSlot,\n} from \"@/components/ui/input-otp\";\nimport { Label } from \"@/components/ui/label\";\n\nconst InputOtp3 = () => {\n  const id = useId();\n\n  return (\n    <div className=\"space-y-3\">\n      <div className=\"space-y-1\">\n        <Label htmlFor={id}>Enter verification code</Label>\n        <p className=\"text-muted-foreground text-xs\">\n          This code may include letters (A–Z) and numbers (0–9)\n        </p>\n      </div>\n\n      <InputOTP id={id} maxLength={4} pattern={REGEXP_ONLY_DIGITS_AND_CHARS}>\n        <InputOTPGroup>\n          <InputOTPSlot\n            index={0}\n            className=\"data-[active=true]:ring-primary/30! data-[active=true]:border-primary/50 h-14 w-14 border text-lg data-[active=true]:ring-2!\"\n          />\n          <InputOTPSlot\n            index={1}\n            className=\"data-[active=true]:ring-primary/30! data-[active=true]:border-primary/50 h-14 w-14 border text-lg data-[active=true]:ring-2!\"\n          />\n          <InputOTPSlot\n            index={2}\n            className=\"data-[active=true]:ring-primary/30! data-[active=true]:border-primary/50 h-14 w-14 border text-lg data-[active=true]:ring-2!\"\n          />\n          <InputOTPSlot\n            index={3}\n            className=\"data-[active=true]:ring-primary/30! data-[active=true]:border-primary/50 h-14 w-14 border text-lg data-[active=true]:ring-2!\"\n          />\n        </InputOTPGroup>\n      </InputOTP>\n\n      <p className=\"text-muted-foreground text-xs\">\n        Tip: Characters are not case-sensitive\n      </p>\n    </div>\n  );\n};\n\nexport default InputOtp3;\n",
+      "type": "registry:ui",
+      "target": "components/ui/input-otp-3.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

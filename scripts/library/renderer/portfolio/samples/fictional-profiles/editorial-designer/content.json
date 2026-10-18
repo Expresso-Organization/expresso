@@ -1,0 +1,136 @@
+{
+  "fictional": true,
+  "profile": {
+    "name": "오수빈",
+    "monogram": "OSB",
+    "role": "편집 디자이너",
+    "headline": "읽는 흐름을 조판하는 편집 디자이너입니다.",
+    "highlight": "읽는 흐름",
+    "intro": "문장과 이미지가 페이지에서 만나는 리듬을 설계합니다. 책과 전시 도록에서 독자가 시선을 옮기는 순서, 지면의 여백, 인쇄 후 질감을 함께 검토합니다.",
+    "location": "가상 스튜디오 · 대한민국",
+    "focus": [
+      "조판",
+      "출판 디자인",
+      "인쇄"
+    ]
+  },
+  "contact": {
+    "heading": "작업을 함께 검토할 수 있습니다.",
+    "description": "인물, 조직, 프로젝트와 연락처는 포트폴리오 생성 시험을 위해 만든 가상 정보입니다.",
+    "email": "fictional-editorial@example.com"
+  },
+  "career": [
+    {
+      "id": "editorial-studio",
+      "period": "2023.09 — 현재",
+      "organization": "가상 조직 · 이음 지면 스튜디오",
+      "role": "편집 디자이너",
+      "description": "가상 도록과 독립 출판물의 지면 체계를 설계한 설정입니다."
+    },
+    {
+      "id": "editorial-press",
+      "period": "2021.02 — 2023.08",
+      "organization": "가상 조직 · 여백 인쇄소",
+      "role": "그래픽 디자이너",
+      "description": "소형 인쇄물의 활자와 제작 사양을 검토한 가상 경력입니다."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "season-grid",
+      "title": "본문 그리드",
+      "kind": "조판 기준",
+      "summary": "책의 여백과 행 길이",
+      "body": "가상 지면에서 본문 행 길이, 절 제목 위치, 이미지 캡션 간격을 비교한 조판 기준입니다."
+    },
+    {
+      "id": "archive-proof",
+      "title": "도록 교정지",
+      "kind": "제작 기록",
+      "summary": "펼침면의 이미지와 주석 점검",
+      "body": "가상 전시 도록의 펼침면에서 이미지 순서와 주석 연결을 검토한 교정 기록입니다."
+    },
+    {
+      "id": "reading-key",
+      "title": "독서 지도 범례",
+      "kind": "정보 디자인",
+      "summary": "주제와 동선을 구분하는 범례",
+      "body": "도서관의 가상 주제 구역을 색과 번호로 함께 구분한 정보 디자인 자료입니다."
+    }
+  ],
+  "projects": [
+    {
+      "id": "season-reader",
+      "title": "계절의 언어",
+      "category": "독립 출판",
+      "summary": "한 계절의 짧은 글과 식물 도판을 엮은 가상 독립 출판물입니다.",
+      "role": "아트 디렉션 · 조판",
+      "period": "2026.01 — 2026.04",
+      "tags": [
+        "Book Design",
+        "Typography",
+        "Print"
+      ],
+      "problem": "짧은 글과 이미지가 같은 속도로 반복되면 책의 장면 전환이 잘 드러나지 않는다는 가상 편집 과제를 설정했습니다.",
+      "contribution": "절마다 글줄 길이와 이미지 여백을 달리하고 표지부터 본문까지 하나의 조판 규칙을 정의했습니다.",
+      "outcome": "표지와 본문 펼침면을 포함한 가상 인쇄 시안을 제작했습니다. 실제 출판 이력은 없습니다.",
+      "process": [],
+      "image": "./assets/portfolio-editorial-season.svg",
+      "imageAlt": "계절의 언어 가상 출판물 표지 시안",
+      "showcase": null,
+      "evidenceIds": [
+        "season-grid"
+      ]
+    },
+    {
+      "id": "archive-walk",
+      "title": "아카이브 산책",
+      "category": "전시 도록",
+      "summary": "거리의 기록을 시간과 장소의 단서로 엮은 가상 전시 도록입니다.",
+      "role": "편집 구조 · 이미지 배열",
+      "period": "2025.05 — 2025.11",
+      "tags": [
+        "Exhibition",
+        "Editorial",
+        "Archive"
+      ],
+      "problem": "서로 다른 시기의 기록 사진을 촬영 순서대로 놓으면 장소의 변화를 읽기 어렵다는 가상 문제를 다뤘습니다.",
+      "contribution": "장소별 펼침면을 만들고 사진, 기록 시점, 해설이 짝을 이루도록 배열했습니다.",
+      "outcome": "지면 순서와 이미지 크기의 차이를 보여 주는 가상 도록 시안을 작성했습니다.",
+      "process": [
+        "problem",
+        "contribution",
+        "outcome"
+      ],
+      "image": "./assets/portfolio-editorial-archive.svg",
+      "imageAlt": "아카이브 산책 가상 도록의 펼침면",
+      "showcase": null,
+      "evidenceIds": [
+        "archive-proof"
+      ]
+    },
+    {
+      "id": "reading-routes",
+      "title": "읽는 길",
+      "category": "정보 디자인",
+      "summary": "동네 도서관의 주제 구역을 작은 인쇄 지도에 표현한 가상 프로젝트입니다.",
+      "role": "정보 구성 · 그래픽 시스템",
+      "period": "2024.09 — 2025.01",
+      "tags": [
+        "Wayfinding",
+        "Infographic",
+        "Print"
+      ],
+      "problem": "서가 번호만으로는 처음 방문한 사람이 주제 구역을 빠르게 찾기 어렵다는 상황을 설정했습니다.",
+      "contribution": "주제 범례와 동선 번호를 함께 표기하고 지도를 접어도 핵심 안내가 보이도록 배치했습니다.",
+      "outcome": "접지형 지도와 벽면 안내의 가상 시안을 만들었습니다. 실제 설치는 진행하지 않았습니다.",
+      "process": [],
+      "image": "./assets/portfolio-editorial-reading.svg",
+      "imageAlt": "읽는 길 가상 도서관 인쇄 지도 시안",
+      "showcase": null,
+      "evidenceIds": [
+        "reading-key"
+      ]
+    }
+  ]
+}

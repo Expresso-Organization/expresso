@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "avatar-3",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "avatar"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/avatar/avatar-3.tsx",
+      "content": "import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'\n\ntype Profile = {\n  name: string\n  avatar: string\n}\n\nconst profile: Profile = {\n  name: 'Sara Patel',\n  avatar: 'https://i.pravatar.cc/160?img=21'\n}\n\nconst getInitials = (name: string) =>\n  name\n    .split(/\\s+/)\n    .map((word) => word.slice(0, 1))\n    .join('')\n\nconst Avatar3 = () => {\n  return (\n    <Avatar className='rounded-sm'>\n      <AvatarImage\n        src={profile.avatar}\n        alt={profile.name}\n        className='rounded-sm'\n      />\n      <AvatarFallback className='text-xs'>{getInitials(profile.name)}</AvatarFallback>\n    </Avatar>\n  )\n}\n\nexport default Avatar3\n\n",
+      "type": "registry:ui",
+      "target": "components/ui/avatar-3.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

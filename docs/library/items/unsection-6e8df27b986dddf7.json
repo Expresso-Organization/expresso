@@ -1,0 +1,29 @@
+{
+  "id": "unsection-6e8df27b986dddf7",
+  "sourceUrl": "https://www.unsection.com/section/tiny-wins-contact-footer-design",
+  "sourceRevision": null,
+  "roles": [
+    "contact"
+  ],
+  "roleEvidence": "본문을 읽은 뒤 연락·외부 자료로 이어 줄 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: tiny wins contact footer design",
+    "공개 이미지 요소: 22개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://www.unsection.com/section/tiny-wins-contact-footer-design",
+    "sha256": "475a83bec170bcd57e7c92bf48b0f6daf6d5ca06d9a36320abd803273d3c1296",
+    "fetchedAt": "2026-09-23T12:56:54+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

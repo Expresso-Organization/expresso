@@ -1,0 +1,11 @@
+{
+  "model": "qwen3.5:9b-q8_0",
+  "brief": "이름이 가장 크게 보이는 검은 무대, 주황빛 광원, 왼쪽 소개와 오른쪽 프로젝트 화면의 분할형 포트폴리오. 프로젝트 목록은 벤토형으로 선택하세요.",
+  "attempts": [
+    {
+      "valid": true,
+      "outputSha256": "f55311cc0218965bfc69ffa531d3c0417ba26b9bce0ee1825e248391115d4581",
+      "output": "{\n  \"recipe\": \"gallery\",\n  \"design\": {\n    \"palette\": \"midnight\",\n    \"typography\": \"display\",\n    \"layout\": \"studio\"\n  },\n  \"heroStyle\": \"spotlight\",\n  \"projectIndex\": \"bento\",\n  \"reason\": \"사용자가 요청한 검은 무대 배경과 주황 광원 (spotlight), 벤토형 프로젝트 목록 (bento), 그리고 서비스 디자인 분야의 전문성을 강조할 수 있는 대형 타이포그래피와 스타디움 레이아웃을 적용했습니다.\"\n}"
+    }
+  ]
+}

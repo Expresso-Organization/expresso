@@ -1,0 +1,58 @@
+{
+  "id": "watermelon-f72e406a468c64fe",
+  "sourceUrl": "https://ui.watermelon.sh/animated-components/inline-disclosure-menu",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "navigation"
+  ],
+  "roleEvidence": "페이지·사례 사이의 탐색을 구성할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/inline-disclosure-menu.json",
+      "sha256": "df6e6d2d6cc0f27e0a92262b92a5f7ee30accb314b7c045a7bb050cbe50781f2",
+      "bytes": 7789,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/inline-disclosure-menu.tsx",
+      "target": "components/ui/inline-disclosure-menu.tsx",
+      "type": "registry:ui",
+      "sha256": "a9d0dd4225a984493f3dd80fccfcbb3df6d9ea9006106edbef2004ae5e676490",
+      "bytes": 7027
+    }
+  ],
+  "dependencies": [
+    "@hugeicons/core-free-icons",
+    "@hugeicons/react",
+    "lucide-react",
+    "motion"
+  ],
+  "registryDependencies": [],
+  "imports": [
+    "@hugeicons/core-free-icons",
+    "@hugeicons/react",
+    "lucide-react",
+    "motion/react",
+    "react"
+  ],
+  "propsDeclarations": [
+    "export interface MenuItemProps {\n  icon: React.ReactNode;\n  label: string;\n  onClick?: () => void;\n  className?: string;\n}",
+    "export interface InlineDisclosureMenuProps {\n  menuItems?: MenuItemProps[];\n  showDelete?: boolean;\n  onDelete?: () => void;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/inline-disclosure-menu.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

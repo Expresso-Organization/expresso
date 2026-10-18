@@ -1,0 +1,73 @@
+{
+  "id": "watermelon-943ed153ca196c01",
+  "sourceUrl": "https://ui.watermelon.sh/block/hero-41",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/hero-41.json",
+      "sha256": "63cf412d3af9cf40b15cfc9441d0fc7b3a8e0663614b880b051c2b5fcd503a04",
+      "bytes": 13890,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/hero-41.tsx",
+      "target": "components/ui/hero-41.tsx",
+      "type": "registry:ui",
+      "sha256": "4fcf00e3e1bad8724ab7d468c284e79b2dfc5a5e77805912cc54ccbb0c504dad",
+      "bytes": 12949
+    }
+  ],
+  "dependencies": [
+    "lucide-react",
+    "motion",
+    "react-icons",
+    "@hugeicons/react"
+  ],
+  "registryDependencies": [
+    "button"
+  ],
+  "imports": [
+    "framer-motion",
+    "hugeicons-react",
+    "lucide-react",
+    "react-icons/fa6"
+  ],
+  "propsDeclarations": [],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "https://assets.watermelon.sh/bg-hero-41.avif",
+    "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,700;1,800&display=swap"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/hero-41.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "hero-41",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-41.tsx",
+    "url": "./library/previews/watermelon/hero-41.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:20+00:00",
+    "snapshotSha256": "5870411486ba9aee4342a853fa9c83f9c24106fc6e19bb77bd430fe23e3bf493"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

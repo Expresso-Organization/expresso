@@ -74,6 +74,7 @@ function runPnpm(pnpmArgs) {
 for (const command of [
   ["--filter", "@expresso/contracts", "build"],
   ["--filter", "@expresso/database", "build"],
+  ["--filter", "@expresso/portfolio-renderer", "build"],
   ["--filter", "@expresso/backend", "exec", "vitest", "run", ...testFiles],
 ]) {
   const exitCode = await runPnpm(command);

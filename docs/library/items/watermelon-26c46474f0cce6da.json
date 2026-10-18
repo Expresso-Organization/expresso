@@ -1,0 +1,66 @@
+{
+  "id": "watermelon-26c46474f0cce6da",
+  "sourceUrl": "https://ui.watermelon.sh/block/stats-2",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "outcome"
+  ],
+  "roleEvidence": "성과와 수치의 비교를 표현할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/stats-2.json",
+      "sha256": "e37948080d33cdef1314e544f4ecfc10687c37c2a2169ce78391ca4144476e20",
+      "bytes": 7870,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/stats-2.tsx",
+      "target": "components/ui/stats-2.tsx",
+      "type": "registry:ui",
+      "sha256": "bb48917e0a5415ed09946adf26f4d5be1a96c10a7d05dfa6b2e8bd7a6c9ab790",
+      "bytes": 7184
+    }
+  ],
+  "dependencies": [
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "stats",
+    "button"
+  ],
+  "imports": [
+    "@/components/ui/card",
+    "react-icons/fa"
+  ],
+  "propsDeclarations": [],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/stats-2.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "stats-2",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/stats-2.tsx",
+    "url": "./library/previews/watermelon/stats-2.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:25+00:00",
+    "snapshotSha256": "538511f94424d71b347d8f538202e11fba8565b2f2c663737deff929856a6da0"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

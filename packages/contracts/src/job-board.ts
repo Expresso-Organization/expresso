@@ -83,6 +83,14 @@ export const JobInterestSchema = z.strictObject({
   updatedAt: TimestampSchema,
 });
 
+/**
+ * `PUT /v1/jobs/postings/:id/interest` 응답. 목록 · 상세가 싣는 관심 행과 같은
+ * 모양에 어느 공고인지를 더한다.
+ */
+export const JobInterestResponseSchema = z.strictObject({
+  data: JobInterestSchema.extend({ jobPostingId: UuidSchema }),
+});
+
 /** 이 공고로 시작한 제작. 06 "관심 공고" 레일의 상태 줄이 이걸로 갈린다. */
 export const JobBrewStateSchema = z.strictObject({
   id: UuidSchema,
@@ -191,6 +199,17 @@ export const ListJobPostingsQuerySchema = z.strictObject({
    * 만큼 쌓이면 그때 한 겹 더 둔다.
    */
   country: z.string().trim().min(1).max(60).optional(),
+  /**
+   * 근무지 지역(서울·경기 등). `country`보다 한 겹 더 좁게 건다 — 국내 안에서도
+   * 더 잘라야 할 만큼 쌓이면 그때 한 겹 더 둔다고 `country` 주석이 적어 둔
+   * 바로 그 자리다.
+   *
+   * `location_region`과 정확히 일치해야 한다 — 값은 `ingest/classify.ts`의
+   * `REGION_RULES`가 정한 지역명 그대로다(예: "경기"). 공고 수집 때 이미 그
+   * 지역으로 정규화해 저장해 두므로, "경기"로 걸면 "판교"·"성남"처럼 다른
+   * 표기로 들어온 공고도 함께 걸린다 — 둘 다 같은 `location_region`을 쓴다.
+   */
+  location: z.string().trim().min(1).max(60).optional(),
   /**
    * **내 연차.** 요구 최소 연차가 이 값 이하인 공고만 남긴다.
    *
@@ -352,6 +371,7 @@ export type JobPostingSummary = z.infer<typeof JobPostingSummarySchema>;
 export type JobPostingDetail = z.infer<typeof JobPostingDetailSchema>;
 export type JobPostingMatch = z.infer<typeof JobPostingMatchSchema>;
 export type JobInterest = z.infer<typeof JobInterestSchema>;
+export type JobInterestResponse = z.infer<typeof JobInterestResponseSchema>;
 export type JobRequirement = z.infer<typeof JobRequirementSchema>;
 export type JobDutyGroup = z.infer<typeof JobDutyGroupSchema>;
 export type JobPostingCategory = z.infer<typeof JobPostingCategorySchema>;

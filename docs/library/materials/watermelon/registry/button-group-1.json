@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "button-group-1",
+  "dependencies": [
+    "lucide-react",
+    "motion"
+  ],
+  "registryDependencies": [
+    "button-group"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/button-group/button-group-1.tsx",
+      "content": "import type { LucideIcon } from 'lucide-react'\nimport { UploadIcon } from 'lucide-react'\n\nimport { Button } from '@/components/ui/button'\n\ntype ButtonGroupData = {\n  actionLabel: string\n  countLabel: string\n  icon: LucideIcon\n}\n\nconst buttonGroup: ButtonGroupData = {\n  actionLabel: 'Upload',\n  countLabel: '24 files',\n  icon: UploadIcon\n}\n\nconst ButtonGroup1 = () => {\n  const Icon = buttonGroup.icon\n\n  return (\n    <div className='inline-flex w-fit -space-x-px rounded-md shadow-xs rtl:space-x-reverse'>\n      <Button\n        variant='outline'\n        className='gap-2 rounded-none rounded-l-md border-border/70 px-3 shadow-none focus-visible:z-10'\n      >\n        <Icon className='size-4' />\n        {buttonGroup.actionLabel}\n      </Button>\n      <span className='flex items-center rounded-r-md border border-border/70 bg-muted/20 px-3 text-sm font-medium text-muted-foreground'>\n        {buttonGroup.countLabel}\n      </span>\n    </div>\n  )\n}\n\nexport default ButtonGroup1\n",
+      "type": "registry:ui",
+      "target": "components/ui/button-group-1.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

@@ -1,0 +1,30 @@
+{
+  "id": "supahero-8dbe30428ee4764a",
+  "sourceUrl": "https://supahero.io/hero/myhealthprac",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: MyHealthPrac",
+    "공개 이미지 요소: 1개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://www.myhealthprac.com/",
+  "evidence": {
+    "url": "https://supahero.io/hero/myhealthprac",
+    "sha256": "26bbc2613956a39e5775edebc21c041029b52b0cb6e38fd288d173c7dc9486b2",
+    "fetchedAt": "2026-09-23T12:53:18+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

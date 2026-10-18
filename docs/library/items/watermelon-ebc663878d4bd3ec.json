@@ -1,0 +1,71 @@
+{
+  "id": "watermelon-ebc663878d4bd3ec",
+  "sourceUrl": "https://ui.watermelon.sh/block/hero-21",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/hero-21.json",
+      "sha256": "7d6b44cba026c28c765ccb091e1a15dbb15f27aad8900740f572f51093bca26f",
+      "bytes": 11518,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/hero-21.tsx",
+      "target": "components/ui/hero-21.tsx",
+      "type": "registry:ui",
+      "sha256": "f78d481abb122ed8cdc1573135df0ca0ef861610d03a3bc2e28eeef8d8769177",
+      "bytes": 10700
+    }
+  ],
+  "dependencies": [
+    "lucide-react",
+    "motion"
+  ],
+  "registryDependencies": [
+    "button"
+  ],
+  "imports": [
+    "@/assets/logo-icon",
+    "lucide-react",
+    "motion/react"
+  ],
+  "propsDeclarations": [
+    "interface Hero21Props {\n  brandName?: string;\n  navLinks?: NavLink[];\n  headingLine1?: string;\n  headingLine2?: string;\n  description?: string;\n  primaryCtaLabel?: string;\n  primaryCtaHref?: string;\n  languageLabel?: string;\n  loginLabel?: string;\n  loginHref?: string;\n  previewLabel?: string;\n  trustLabelLine1?: string;\n  trustLabelLine2?: string;\n  backgroundImage?: string;\n  previewImage?: string;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "https://assets.watermelon.sh/hero-20-bg.avif"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/hero-21.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "hero-21",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-21.tsx",
+    "url": "./library/previews/watermelon/hero-21.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:17+00:00",
+    "snapshotSha256": "4a94665115bb42771e8e0deddd88d8113c8e8bf0205867f127b63517baceb909"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

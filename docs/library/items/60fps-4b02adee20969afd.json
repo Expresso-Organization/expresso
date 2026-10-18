@@ -1,0 +1,29 @@
+{
+  "id": "60fps-4b02adee20969afd",
+  "sourceUrl": "https://60fps.design/shots/fitness-wrapped-into-circle-icon-formation-animation",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Fitness Wrapped Into Circle Icon Formation Animation",
+    "공개 이미지 요소: 27개",
+    "동영상 포스터: 26개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/fitness-wrapped-into-circle-icon-formation-animation",
+    "sha256": "67b8ea3ef0e54448e4231b9c6dcb8e1b0c51ec6060ea876126f08b7ce75aefef",
+    "fetchedAt": "2026-09-23T13:01:31+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

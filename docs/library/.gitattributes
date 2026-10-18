@@ -1,0 +1,9 @@
+# 공급자 원문과 렌더링 산출물의 바이트·줄바꿈을 보존합니다.
+materials/** -text -whitespace linguist-vendored
+previews/** -text -whitespace linguist-generated
+items/** linguist-generated
+acquisitions.json linguist-generated
+acquisition-run.json linguist-generated
+curation.json linguist-generated
+examples.json linguist-generated
+portal-search-index.json linguist-generated

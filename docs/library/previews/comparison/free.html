@@ -1,0 +1,781 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'"><title>자유 생성 · 가상 포트폴리오 비교</title><style>:root{--page-sans:"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;--page-serif:serif;--page-mono:monospace;--page-display:system-ui}html{box-sizing:border-box}*,*::before,*::after{box-sizing:inherit}body{margin:0;font-family:var(--page-sans);word-break:keep-all;-webkit-font-smoothing:antialiased}
+:root{
+  --bg:#f7f6f1;
+  --ink:#1c302e;
+  --accent:#24654d;
+  --ink-soft:#3d5350;
+  --ink-mute:#566b68;
+  --rule:#d8d5c8;
+  --rule-soft:#e7e4d9;
+  --panel:#f1efe5;
+  --tint:#e6eee9;
+  --sans:"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --measure:62ch;
+}
+
+.page,.topbar,.foot{background:var(--bg);color:var(--ink);}
+.page *,.topbar *,.foot *{box-sizing:border-box;}
+
+.topbar,.page,.foot{
+  font-family:var(--sans);
+  word-break:keep-all;
+  overflow-wrap:break-word;
+  -webkit-text-size-adjust:100%;
+}
+.page{font-size:16px;line-height:1.7;}
+
+.page h1,.page h2,.page h3,.page h4,
+.page p,.page dl,.page dd,.page dt,.page ol,.page ul,.page figure{margin:0;padding:0;}
+.page ol,.page ul,.topbar ol{list-style:none;}
+.page img{display:block;max-width:100%;height:auto;}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:.06em;}
+.mute{color:var(--ink-mute);}
+
+.wrap{width:100%;max-width:1200px;margin:0 auto;padding:0 clamp(20px,5vw,80px);}
+
+/* focus + skip */
+.skip{
+  position:absolute;left:-9999px;top:0;z-index:50;
+  background:var(--accent);color:var(--bg);
+  padding:10px 16px;font-family:var(--sans);font-size:14px;text-decoration:none;
+}
+.skip:focus{left:12px;top:12px;}
+a:focus-visible,summary:focus-visible{
+  outline:2px solid var(--accent);outline-offset:3px;border-radius:2px;
+}
+
+/* ---------- topbar ---------- */
+.topbar{
+  position:sticky;top:0;z-index:30;
+  border-bottom:1px solid var(--rule);
+  background:color-mix(in srgb,var(--bg) 92%,transparent);
+  backdrop-filter:saturate(120%) blur(6px);
+}
+.topbar-in{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;
+  gap:6px 24px;padding-top:11px;padding-bottom:11px;
+}
+.mark{display:flex;align-items:baseline;gap:10px;text-decoration:none;color:var(--ink);}
+.mark-mono{
+  display:inline-block;font-size:12px;font-weight:700;color:var(--accent);
+  border:1px solid var(--accent);padding:2px 6px;
+}
+.mark-text{font-size:14px;font-weight:700;letter-spacing:-.01em;}
+.mark-role{font-weight:400;color:var(--ink-mute);font-size:13px;}
+.toc ol{display:flex;flex-wrap:wrap;gap:4px 18px;}
+.toc a{
+  display:inline-flex;align-items:baseline;gap:6px;
+  font-size:13.5px;color:var(--ink-soft);text-decoration:none;
+  padding:3px 0;border-bottom:1px solid transparent;
+  transition:color .2s ease,border-color .2s ease;
+}
+.toc a i{font-size:10.5px;color:var(--ink-mute);font-style:normal;}
+.toc a:hover{color:var(--accent);border-bottom-color:var(--accent);}
+.toc a:hover i{color:var(--accent);}
+
+/* ---------- shared bits ---------- */
+.link{color:var(--accent);text-decoration:none;border-bottom:1px solid rgba(36,101,77,.35);transition:border-color .2s ease;}
+.link:hover{border-bottom-color:var(--accent);}
+
+section[id],article[id],details[id]{scroll-margin-top:96px;}
+
+.band{border-top:1px solid var(--rule);padding:clamp(56px,7vw,104px) 0 clamp(60px,8vw,120px);}
+.band-head{
+  display:grid;grid-template-columns:minmax(0,1fr);gap:8px;
+  margin-bottom:clamp(36px,5vw,64px);
+}
+.band-num{font-size:12px;color:var(--accent);font-weight:700;}
+.band-title{font-size:clamp(28px,4.4vw,44px);line-height:1.15;letter-spacing:-.03em;font-weight:700;}
+.band-note{max-width:46ch;color:var(--ink-mute);font-size:15px;}
+
+/* ---------- 01 hero ---------- */
+.hero{padding:clamp(40px,6vw,78px) 0 clamp(56px,7vw,96px);}
+.hero-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:0 32px;}
+.badge{
+  grid-column:1/-1;
+  display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;
+  font-size:12.5px;color:var(--ink-soft);
+  padding-bottom:22px;margin-bottom:clamp(30px,5vw,52px);
+  border-bottom:1px solid var(--rule);
+}
+.badge .mono{
+  display:inline-block;font-size:10.5px;font-weight:700;
+  color:var(--bg);background:var(--accent);padding:3px 7px;
+}
+.eyebrow{grid-column:1/-1;font-size:12.5px;color:var(--accent);font-weight:700;margin-bottom:14px;}
+.headline{
+  grid-column:1/9;
+  font-size:clamp(40px,7.6vw,86px);line-height:1.08;letter-spacing:-.045em;font-weight:700;
+}
+.headline em{font-style:normal;color:var(--accent);position:relative;white-space:nowrap;}
+.headline em::after{
+  content:"";position:absolute;left:0;right:0;bottom:.06em;height:3px;
+  background:var(--accent);opacity:.28;transform-origin:left center;
+  animation:draw 1s cubic-bezier(.2,.7,.2,1) .35s both;
+}
+@keyframes draw{from{transform:scaleX(0);}to{transform:scaleX(1);}}
+
+.hero-side{grid-column:9/13;align-self:end;padding-bottom:6px;}
+.lede{font-size:17px;line-height:1.72;color:var(--ink-soft);margin-bottom:26px;}
+.hero-meta{border-top:1px solid var(--rule);}
+.hero-meta .row{display:grid;grid-template-columns:52px minmax(0,1fr);gap:12px;padding:9px 0;border-bottom:1px solid var(--rule-soft);}
+.hero-meta dt{font-size:10.5px;color:var(--ink-mute);padding-top:4px;}
+.hero-meta dd{font-size:14.5px;}
+
+.focus{
+  grid-column:1/9;margin-top:clamp(40px,5vw,64px);
+  display:flex;flex-wrap:wrap;align-items:baseline;gap:10px 30px;
+  border-top:1px solid var(--rule);padding-top:18px;
+}
+.focus-label{font-size:10.5px;color:var(--ink-mute);}
+.focus-list{display:flex;flex-wrap:wrap;gap:10px 30px;}
+.focus-list li{display:flex;align-items:baseline;gap:8px;font-size:17px;font-weight:600;letter-spacing:-.02em;}
+.focus-list .mono{font-size:10.5px;font-weight:400;color:var(--accent);}
+
+.hero-guide{
+  grid-column:1/9;margin-top:24px;max-width:56ch;
+  font-size:15px;color:var(--ink-mute);
+}
+.hero-guide strong{color:var(--ink);font-weight:600;}
+
+/* ---------- 02 index ---------- */
+.index{border-top:1px solid var(--ink);}
+.index-row{
+  display:grid;
+  grid-template-columns:64px minmax(0,4fr) minmax(0,5fr);
+  grid-template-areas:
+    "n title sum"
+    "n cat meta"
+    "n cat tags";
+  gap:2px 32px;
+  padding:26px 0 28px;
+  border-bottom:1px solid var(--rule);
+  transition:background-color .25s ease;
+}
+.index-row:hover{background:color-mix(in srgb,var(--panel) 70%,transparent);}
+.index-n{grid-area:n;font-size:11.5px;color:var(--ink-mute);padding-top:8px;}
+.index-title{grid-area:title;font-size:clamp(24px,3.2vw,34px);line-height:1.2;letter-spacing:-.035em;font-weight:700;}
+.index-title a{
+  display:inline-flex;align-items:baseline;gap:10px;
+  color:var(--ink);text-decoration:none;
+  transition:color .2s ease;
+}
+.index-title a .arrow{
+  font-size:.55em;color:var(--accent);
+  transition:transform .25s ease,opacity .25s ease;opacity:.55;
+}
+.index-title a:hover{color:var(--accent);}
+.index-title a:hover .arrow{transform:translateY(4px);opacity:1;}
+.index-cat{grid-area:cat;font-size:13.5px;color:var(--accent);margin-top:4px;}
+.index-sum{grid-area:sum;font-size:15.5px;color:var(--ink-soft);max-width:48ch;}
+.index-meta{grid-area:meta;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;margin-top:12px;font-size:13.5px;color:var(--ink-mute);}
+.index-meta .mono{font-size:12px;}
+.index-meta .dot{color:var(--rule);}
+.tags{grid-area:tags;display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.tags li{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;
+  color:var(--ink-soft);border:1px solid var(--rule);padding:3px 8px;
+}
+
+/* ---------- 03 cases ---------- */
+.band-cases{padding-bottom:0;}
+.case{padding:clamp(44px,5.5vw,76px) 0 clamp(48px,6vw,88px);border-top:1px solid var(--rule);}
+.case:first-of-type{border-top:1px solid var(--ink);}
+.case-grid{
+  display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:clamp(28px,3.4vw,44px) 32px;
+  align-items:start;
+}
+.case-head{grid-column:1/5;}
+.case-figure{grid-column:5/13;}
+.beats{grid-column:5/13;}
+.case.flip .case-head{grid-column:9/13;}
+.case.flip .case-figure{grid-column:1/9;}
+.case.flip .beats{grid-column:1/9;}
+
+.case-tag{font-size:11px;color:var(--accent);font-weight:700;margin-bottom:12px;}
+.case-title{font-size:clamp(28px,3.8vw,40px);line-height:1.15;letter-spacing:-.04em;font-weight:700;margin-bottom:14px;}
+.case-sum{font-size:15.5px;color:var(--ink-soft);margin-bottom:24px;}
+.case-meta{border-top:1px solid var(--rule);}
+.case-meta .row{display:grid;grid-template-columns:48px minmax(0,1fr);gap:10px;padding:8px 0;border-bottom:1px solid var(--rule-soft);}
+.case-meta dt{font-size:10px;color:var(--ink-mute);padding-top:4px;}
+.case-meta dd{font-size:14px;}
+.case-meta dd.num{font-size:13px;}
+
+.case-figure{margin:0;}
+.case-figure img{
+  width:100%;background:var(--panel);
+  border:1px solid var(--rule);
+  transition:transform .4s cubic-bezier(.2,.7,.2,1);
+}
+.case-figure:hover img{transform:translateY(-4px);}
+.case-figure figcaption{
+  margin-top:12px;font-size:12.5px;color:var(--ink-mute);
+  padding-left:2px;
+}
+
+.beats{display:grid;gap:0;}
+.beat{padding:20px 0;border-top:1px solid var(--rule-soft);}
+.beat:first-child{border-top:1px solid var(--ink);}
+.beat h4{
+  display:flex;align-items:baseline;gap:10px;
+  font-size:13px;font-weight:700;letter-spacing:.02em;margin-bottom:7px;color:var(--ink);
+}
+.beat h4 .mono{font-size:10px;font-weight:400;color:var(--ink-mute);}
+.beat p{font-size:16px;max-width:var(--measure);color:var(--ink-soft);}
+.beat-key{background:var(--tint);padding:20px clamp(16px,2vw,24px);border-top-color:var(--accent);}
+.beat-key h4{color:var(--accent);}
+.beat-key h4 .mono{color:var(--accent);}
+.beat-key p{color:var(--ink);}
+
+.case-ev{
+  display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;
+  border-top:1px solid var(--rule-soft);padding-top:18px;margin-top:6px;
+}
+.ev-label{font-size:10px;color:var(--ink-mute);}
+.chip{
+  display:inline-block;font-size:13px;color:var(--accent);text-decoration:none;
+  border:1px solid rgba(36,101,77,.4);padding:5px 11px;
+  transition:background-color .2s ease,color .2s ease;
+}
+.chip::before{content:"↳ ";opacity:.6;}
+.chip:hover{background:var(--accent);color:var(--bg);}
+
+/* ---------- 04 career ---------- */
+.career{position:relative;}
+.career-item{
+  display:grid;grid-template-columns:minmax(0,200px) minmax(0,1fr);gap:8px 40px;
+  padding:26px 0 30px;border-top:1px solid var(--rule);position:relative;
+}
+.career-item:first-child{border-top:1px solid var(--ink);}
+.career-item:last-child{border-bottom:1px solid var(--rule);}
+.career-period{font-size:12.5px;color:var(--accent);padding-top:6px;position:relative;}
+.career-period::before{
+  content:"";position:absolute;left:-13px;top:12px;
+  width:5px;height:5px;display:block;border-radius:50%;background:var(--accent);
+}
+.career-role{font-size:clamp(21px,2.6vw,27px);line-height:1.25;letter-spacing:-.03em;font-weight:700;}
+.career-org{font-size:14px;color:var(--ink-mute);margin:4px 0 12px;}
+.career-desc{font-size:16px;color:var(--ink-soft);max-width:var(--measure);}
+
+/* ---------- 05 evidence ---------- */
+.band-evidence{background:linear-gradient(to bottom,var(--panel),var(--panel));}
+.ev-group{margin-bottom:clamp(30px,4vw,48px);}
+.ev-owner{
+  display:flex;align-items:baseline;gap:10px;
+  font-size:13px;color:var(--ink-mute);margin-bottom:8px;
+}
+.ev-owner .link{color:var(--ink);border-bottom-color:var(--rule);font-weight:600;}
+.ev-owner .link:hover{color:var(--accent);border-bottom-color:var(--accent);}
+.ev-owner .count{font-size:10.5px;color:var(--accent);}
+
+.ev{border-top:1px solid var(--rule);}
+.ev:last-child{border-bottom:1px solid var(--rule);}
+.ev summary{
+  display:grid;
+  grid-template-columns:110px minmax(0,1.1fr) minmax(0,1.4fr) 22px;
+  gap:6px 24px;align-items:baseline;
+  padding:18px 0;cursor:pointer;list-style:none;
+  transition:color .2s ease;
+}
+.ev summary::-webkit-details-marker{display:none;}
+.ev-kind{font-size:10.5px;color:var(--accent);padding-top:5px;}
+.ev-title{font-size:19px;font-weight:700;letter-spacing:-.025em;}
+.ev-sum{font-size:14.5px;color:var(--ink-mute);}
+.ev summary::after{
+  content:"+";justify-self:end;
+  font-family:var(--mono);font-size:17px;color:var(--accent);line-height:1;
+  transition:transform .25s ease;
+}
+.ev[open] summary::after{content:"–";}
+.ev summary:hover .ev-title{color:var(--accent);}
+
+.ev-body{
+  padding:0 0 26px;max-width:var(--measure);
+  animation:reveal .3s ease both;
+}
+@keyframes reveal{from{opacity:0;transform:translateY(-5px);}to{opacity:1;transform:none;}}
+.ev-body p{font-size:15.5px;color:var(--ink-soft);}
+
+.flow{display:flex;flex-wrap:wrap;gap:8px 4px;margin-bottom:16px;}
+.flow li{
+  display:flex;align-items:center;gap:4px;
+  font-size:13.5px;font-weight:600;color:var(--ink);
+  background:var(--bg);border:1px solid var(--rule);padding:6px 11px;
+}
+.flow li:not(:last-child)::after{
+  content:"→";display:inline-block;margin-left:7px;margin-right:-4px;
+  color:var(--accent);font-family:var(--mono);
+}
+.checks,.fields{margin-bottom:16px;display:grid;gap:0;}
+.checks li,.fields li{
+  display:flex;align-items:baseline;gap:10px;
+  font-size:15px;padding:8px 0;border-bottom:1px solid var(--rule-soft);
+}
+.checks li::before{
+  content:"";display:block;flex:0 0 auto;
+  width:7px;height:7px;background:var(--accent);margin-top:8px;
+}
+.fields li .mono{font-size:10.5px;color:var(--accent);}
+
+/* ---------- 06 contact ---------- */
+.band-contact{border-top:1px solid var(--ink);padding-bottom:clamp(64px,8vw,112px);}
+.contact-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:0 32px;}
+.contact-grid .band-num{grid-column:1/-1;margin-bottom:18px;}
+.contact-head{
+  grid-column:1/8;
+  font-size:clamp(32px,5.6vw,62px);line-height:1.12;letter-spacing:-.045em;font-weight:700;
+}
+.contact-side{grid-column:8/13;align-self:end;}
+.contact-desc{font-size:15px;color:var(--ink-mute);margin-bottom:12px;max-width:40ch;}
+.mailto{
+  display:flex;flex-direction:column;gap:4px;
+  margin-top:22px;padding:16px 18px;
+  background:var(--accent);color:var(--bg);text-decoration:none;
+  transition:transform .25s ease,opacity .25s ease;
+}
+.mailto-label{font-size:10px;opacity:.75;}
+.mailto-addr{font-size:clamp(15px,1.6vw,19px);font-weight:700;letter-spacing:-.02em;overflow-wrap:anywhere;}
+.mailto:hover{transform:translateY(-2px);opacity:.92;}
+.contact-loc{margin-top:16px;font-size:13.5px;color:var(--ink-mute);display:flex;gap:10px;align-items:baseline;}
+.contact-loc .mono{font-size:10px;}
+
+/* ---------- footer ---------- */
+.foot{border-top:1px solid var(--rule);padding:28px 0 42px;}
+.foot-in{display:flex;flex-wrap:wrap;gap:14px 32px;align-items:baseline;justify-content:space-between;}
+.foot-note{font-size:12.5px;color:var(--ink-mute);max-width:74ch;line-height:1.65;}
+.foot-note .mono{
+  display:inline-block;font-size:10px;font-weight:700;color:var(--accent);
+  border:1px solid var(--accent);padding:2px 6px;margin-right:6px;
+}
+.foot-links{font-size:13px;}
+
+/* ---------- tablet ---------- */
+@media (max-width:900px){
+  .headline{grid-column:1/-1;}
+  .hero-side{grid-column:1/-1;margin-top:30px;}
+  .lede{max-width:52ch;}
+  .focus,.hero-guide{grid-column:1/-1;}
+
+  .case-grid{gap:26px 24px;}
+  .case-head{grid-column:1/-1;}
+  .case-figure,.beats{grid-column:1/-1;}
+  .case.flip .case-head,.case.flip .case-figure,.case.flip .beats{grid-column:1/-1;}
+
+  .contact-head{grid-column:1/-1;}
+  .contact-side{grid-column:1/-1;margin-top:28px;}
+
+  .ev summary{grid-template-columns:minmax(0,1fr) 22px;grid-template-areas:"kind mark" "title title" "sum sum";gap:4px 16px;}
+  .ev-kind{grid-area:kind;padding-top:0;}
+  .ev-title{grid-area:title;}
+  .ev-sum{grid-area:sum;}
+  .ev summary::after{grid-area:mark;}
+}
+
+/* ---------- phone ---------- */
+@media (max-width:640px){
+  .page{font-size:15.5px;}
+  section[id],article[id],details[id]{scroll-margin-top:118px;}
+  .topbar-in{padding-top:9px;padding-bottom:9px;gap:6px 14px;}
+  .mark-role{display:none;}
+  .toc ol{gap:2px 14px;}
+  .toc a{font-size:12.5px;}
+  .toc a i{display:none;}
+
+  .index-row{
+    grid-template-columns:34px minmax(0,1fr);
+    grid-template-areas:
+      "n title"
+      "n cat"
+      ". sum"
+      ". meta"
+      ". tags";
+    gap:2px 14px;padding:22px 0 24px;
+  }
+  .index-n{padding-top:6px;}
+  .index-sum{margin-top:10px;}
+
+  .career-item{grid-template-columns:minmax(0,1fr);gap:6px;}
+  .career-period::before{display:none;}
+  .career-org{margin-bottom:10px;}
+
+  .beat-key{padding-left:14px;padding-right:14px;}
+  .flow li{font-size:12.5px;padding:5px 9px;}
+  .foot-in{flex-direction:column;align-items:flex-start;}
+}
+
+/* ---------- motion ---------- */
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important;}
+  .headline em::after{transform:none;}
+}</style></head><body><a class="skip" href="#intro">본문으로 건너뛰기</a>
+
+<header class="topbar">
+  <div class="wrap topbar-in">
+    <a class="mark" href="#intro">
+      <span class="mark-mono mono">YSH</span>
+      <span class="mark-text">윤서하 <span class="mark-role">프로덕트 디자이너</span></span>
+    </a>
+    <nav class="toc" aria-label="목차">
+      <ol>
+        <li><a href="#intro"><i class="mono">01</i>소개</a></li>
+        <li><a href="#work"><i class="mono">02</i>프로젝트</a></li>
+        <li><a href="#cases"><i class="mono">03</i>사례 상세</a></li>
+        <li><a href="#career"><i class="mono">04</i>경력</a></li>
+        <li><a href="#evidence"><i class="mono">05</i>근거 자료</a></li>
+        <li><a href="#contact"><i class="mono">06</i>연락처</a></li>
+      </ol>
+    </nav>
+  </div>
+</header>
+
+<main class="page">
+
+  
+  <section id="intro" class="hero">
+    <div class="wrap hero-grid">
+      <p class="badge"><span class="mono">FICTIONAL DEMO</span> 시연용 가상 포트폴리오 — 인물 · 조직 · 프로젝트 · 성과는 모두 가상입니다</p>
+
+      <p class="eyebrow mono">Product designer</p>
+
+      <h1 class="headline">
+        복잡한 정보를<br />
+        <em>명료한 경험</em>으로.
+      </h1>
+
+      <div class="hero-side">
+        <p class="lede">관찰에서 시작해 화면의 작은 선택까지 설계합니다. 사람들에게 필요한 정보가 적절한 순간에 닿는 제품을 만듭니다.</p>
+        <dl class="hero-meta">
+          <div class="row"><dt class="mono">NAME</dt><dd>윤서하 <span class="mute">(가상 인물)</span></dd></div>
+          <div class="row"><dt class="mono">BASE</dt><dd>서울 · 대한민국</dd></div>
+          <div class="row"><dt class="mono">MAIL</dt><dd><a class="link" href="mailto:portfolio-demo@example.com">portfolio-demo@example.com</a></dd></div>
+        </dl>
+      </div>
+
+      <div class="focus">
+        <p class="focus-label mono">FOCUS</p>
+        <ol class="focus-list">
+          <li><span class="mono">01</span>정보 구조</li>
+          <li><span class="mono">02</span>인터랙션 디자인</li>
+          <li><span class="mono">03</span>접근성</li>
+        </ol>
+      </div>
+
+      <p class="hero-guide">
+        아래에 세 개의 가상 프로젝트가 있습니다. 각 사례는 <strong>문제 · 기여 · 결과</strong>를 나누어 적었고,
+        설계 판단의 바탕이 된 기록은 <a class="link" href="#evidence">근거 자료</a>에서 펼쳐 볼 수 있습니다.
+      </p>
+    </div>
+  </section>
+
+  
+  <section id="work" class="band">
+    <div class="wrap">
+      <div class="band-head">
+        <p class="band-num mono">02</p>
+        <h2 class="band-title">프로젝트 목록</h2>
+        <p class="band-note">세 편 모두 가상 설계 사례입니다. 제목을 누르면 해당 사례 상세로 이동합니다.</p>
+      </div>
+
+      <ol class="index">
+        <li class="index-row">
+          <p class="index-n mono">01</p>
+          <h3 class="index-title"><a href="#moa">모아 지도<span class="arrow" aria-hidden="true">↓</span></a></h3>
+          <p class="index-cat">지역 탐색 서비스</p>
+          <p class="index-sum">동네의 공공 공간을 찾는 흐름을 정리한 탐색 서비스 콘셉트입니다. 장소를 비교하고 방문 계획을 저장하는 화면을 설계했습니다.</p>
+          <p class="index-meta"><span class="mono">2026.01 — 2026.04</span><span class="dot" aria-hidden="true">·</span>UX 리서치 · 제품 설계</p>
+          <ul class="tags"><li>UX Research</li><li>Product Design</li></ul>
+        </li>
+        <li class="index-row">
+          <p class="index-n mono">02</p>
+          <h3 class="index-title"><a href="#lumen">루멘 노트<span class="arrow" aria-hidden="true">↓</span></a></h3>
+          <p class="index-cat">개인 지식 도구</p>
+          <p class="index-sum">읽은 자료를 주제별로 연결하는 개인 지식 도구 콘셉트입니다. 기록 · 연결 · 재발견을 하나의 작업 흐름으로 구성했습니다.</p>
+          <p class="index-meta"><span class="mono">2025.08 — 2025.12</span><span class="dot" aria-hidden="true">·</span>정보 구조 · 인터랙션</p>
+          <ul class="tags"><li>Information Architecture</li><li>Interaction</li></ul>
+        </li>
+        <li class="index-row">
+          <p class="index-n mono">03</p>
+          <h3 class="index-title"><a href="#ongil">온길 안내<span class="arrow" aria-hidden="true">↓</span></a></h3>
+          <p class="index-cat">공공 공간 안내</p>
+          <p class="index-sum">낯선 건물에서 필요한 시설을 찾도록 돕는 안내 화면 콘셉트입니다. 큰 글자와 간단한 선택지로 이동 경로를 표현했습니다.</p>
+          <p class="index-meta"><span class="mono">2025.03 — 2025.06</span><span class="dot" aria-hidden="true">·</span>접근성 · UI 설계</p>
+          <ul class="tags"><li>Accessibility</li><li>Design System</li></ul>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  
+  <section id="cases" class="band band-cases">
+    <div class="wrap">
+      <div class="band-head">
+        <p class="band-num mono">03</p>
+        <h2 class="band-title">사례 상세</h2>
+        <p class="band-note">각 사례의 주인공은 화면입니다. 이미지는 가상 프로젝트를 위해 그린 설계 산출물입니다.</p>
+      </div>
+    </div>
+
+    <article class="case" id="moa">
+      <div class="wrap case-grid">
+        <div class="case-head">
+          <p class="case-tag mono">CASE 01 · 지역 탐색 서비스</p>
+          <h3 class="case-title">모아 지도</h3>
+          <p class="case-sum">동네의 공공 공간을 찾는 흐름을 정리한 탐색 서비스 콘셉트입니다. 장소를 비교하고 방문 계획을 저장하는 화면을 설계했습니다.</p>
+          <dl class="case-meta">
+            <div class="row"><dt class="mono">ROLE</dt><dd>UX 리서치 · 제품 설계</dd></div>
+            <div class="row"><dt class="mono">TERM</dt><dd class="mono num">2026.01 — 2026.04</dd></div>
+            <div class="row"><dt class="mono">TAGS</dt><dd>UX Research, Product Design</dd></div>
+          </dl>
+        </div>
+
+        <figure class="case-figure">
+          <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NjAiIGhlaWdodD0iNzIwIiB2aWV3Qm94PSIwIDAgOTYwIDcyMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSLqsIDsg4Eg7ZSE66Gc7KCd7Yq4IOuqqOyVhCDsp4Drj4Qg7ZmU66m0Ij4KPHJlY3Qgd2lkdGg9Ijk2MCIgaGVpZ2h0PSI3MjAiIGZpbGw9IiNkY2VlZTkiLz48cmVjdCB4PSI1OCIgeT0iMzYiIHdpZHRoPSI4NDQiIGhlaWdodD0iNjQ4IiByeD0iMjYiIGZpbGw9IiNmZmYiLz4KPHBhdGggZD0iTTU4IDYycTAtMjYgMjYtMjZoNzkycTI2IDAgMjYgMjZ2ODRINTh6IiBmaWxsPSIjMTk0YzUzIi8+PHRleHQgeD0iOTQiIHk9IjEwNiIgZmlsbD0iI2ZmZiIgZm9udC1zaXplPSIzMyIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI3MDAiPk1PQSBNQVA8L3RleHQ+PHRleHQgeD0iNzcwIiB5PSIxMDMiIGZpbGw9IiNjNGU3ZGEiIGZvbnQtc2l6ZT0iMTciIGZvbnQtZmFtaWx5PSJBcmlhbCxzYW5zLXNlcmlmIj5FeHBsb3JlPC90ZXh0Pgo8cmVjdCB4PSI5MiIgeT0iMTgyIiB3aWR0aD0iMjcwIiBoZWlnaHQ9IjUyIiByeD0iMTMiIGZpbGw9IiNmMWY3ZjQiLz48dGV4dCB4PSIxMTMiIHk9IjIxNiIgZmlsbD0iIzUzNmU2OSIgZm9udC1zaXplPSIxOSIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiPlBsYWNlcyBhcm91bmQgeW91PC90ZXh0Pgo8cmVjdCB4PSI5MiIgeT0iMjYwIiB3aWR0aD0iMjcwIiBoZWlnaHQ9IjExMiIgcng9IjE2IiBmaWxsPSIjZTlmNWVkIi8+PGNpcmNsZSBjeD0iMTI2IiBjeT0iMjk2IiByPSIxNyIgZmlsbD0iIzc4YmI5NiIvPjx0ZXh0IHg9IjE1OCIgeT0iMzAxIiBmaWxsPSIjMjQ0YjNkIiBmb250LXNpemU9IjIwIiBmb250LWZhbWlseT0iQXJpYWwsc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9IjcwMCI+R3JlZW4gTGlicmFyeTwvdGV4dD48dGV4dCB4PSIxNTgiIHk9IjMzMiIgZmlsbD0iIzYxNzk2ZiIgZm9udC1zaXplPSIxNSIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiPlF1aWV0IMK3IE9wZW4gdG9kYXk8L3RleHQ+CjxyZWN0IHg9IjkyIiB5PSIzOTIiIHdpZHRoPSIyNzAiIGhlaWdodD0iMTEyIiByeD0iMTYiIGZpbGw9IiNmZmY0ZGMiLz48Y2lyY2xlIGN4PSIxMjYiIGN5PSI0MjgiIHI9IjE3IiBmaWxsPSIjZWViOTYwIi8+PHRleHQgeD0iMTU4IiB5PSI0MzMiIGZpbGw9IiM1YTQ3MjYiIGZvbnQtc2l6ZT0iMjAiIGZvbnQtZmFtaWx5PSJBcmlhbCxzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iNzAwIj5Db21tdW5pdHkgSGFsbDwvdGV4dD48dGV4dCB4PSIxNTgiIHk9IjQ2NCIgZmlsbD0iIzg0NzU1YSIgZm9udC1zaXplPSIxNSIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiPkV2ZW50cyDCtyBTdGVwLWZyZWU8L3RleHQ+CjxyZWN0IHg9IjM5MCIgeT0iMTgyIiB3aWR0aD0iNDc2IiBoZWlnaHQ9IjQ0OCIgcng9IjE4IiBmaWxsPSIjZTVmMmVkIi8+PHBhdGggZD0iTTQxMSA1MTBRNTY1IDMyMCA4NTAgMzg5TTQxNiAyNTJRNjEwIDQ0OCA4NTggNTQ0IiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMzAiIGZpbGw9Im5vbmUiLz48cGF0aCBkPSJNNDY4IDE5NVE1NTAgMzg4IDY0OCA2MTIiIHN0cm9rZT0iI2JmZGNjZiIgc3Ryb2tlLXdpZHRoPSI2MCIgZmlsbD0ibm9uZSIvPjxjaXJjbGUgY3g9IjYzNiIgY3k9IjM3MiIgcj0iMzgiIGZpbGw9IiMyNDVmNWMiLz48Y2lyY2xlIGN4PSI2MzYiIGN5PSIzNzIiIHI9IjEzIiBmaWxsPSIjZmZmIi8+PGNpcmNsZSBjeD0iNzY2IiBjeT0iNDkxIiByPSIyNSIgZmlsbD0iI2U5YTk2NyIvPjxjaXJjbGUgY3g9Ijc2NiIgY3k9IjQ5MSIgcj0iOCIgZmlsbD0iI2ZmZiIvPgo8dGV4dCB4PSI5NCIgeT0iNjMzIiBmaWxsPSIjNmQ4ODdkIiBmb250LXNpemU9IjE2IiBmb250LWZhbWlseT0iQXJpYWwsc2Fucy1zZXJpZiI+RmljdGlvbmFsIHBvcnRmb2xpbyBwcm9qZWN0IMK3IHZpc3VhbCBwcm90b3R5cGU8L3RleHQ+PC9zdmc+Cg==" width="960" height="720" alt="가상 프로젝트 모아 지도의 장소 탐색 화면" loading="lazy" decoding="async" />
+          <figcaption>지도와 장소 목록을 함께 살펴보는 탐색 화면 — 가상 설계 산출물</figcaption>
+        </figure>
+
+        <div class="beats">
+          <section class="beat">
+            <h4><span class="mono">01</span>문제</h4>
+            <p>시설 정보가 여러 화면에 나뉘어 있어 장소를 비교하기 어렵다는 상황을 가정했습니다.</p>
+          </section>
+          <section class="beat beat-key">
+            <h4><span class="mono">02</span>나의 기여</h4>
+            <p>지도와 장소 목록을 함께 살펴보는 화면을 설계하고, 접근성 조건과 운영 시간을 비교 항목으로 정리했습니다.</p>
+          </section>
+          <section class="beat">
+            <h4><span class="mono">03</span>결과</h4>
+            <p>장소 탐색에서 방문 계획 저장까지 연결되는 시제품을 구성했습니다. <span class="mute">실제 사용자 효과는 측정하지 않은 가상 사례입니다.</span></p>
+          </section>
+          <p class="case-ev">
+            <span class="mono ev-label">EVIDENCE</span>
+            <a class="chip" href="#moa-flow">장소 탐색 흐름</a>
+            <a class="chip" href="#moa-criteria">장소 비교 기준</a>
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="case flip" id="lumen">
+      <div class="wrap case-grid">
+        <div class="case-head">
+          <p class="case-tag mono">CASE 02 · 개인 지식 도구</p>
+          <h3 class="case-title">루멘 노트</h3>
+          <p class="case-sum">읽은 자료를 주제별로 연결하는 개인 지식 도구 콘셉트입니다. 기록 · 연결 · 재발견을 하나의 작업 흐름으로 구성했습니다.</p>
+          <dl class="case-meta">
+            <div class="row"><dt class="mono">ROLE</dt><dd>정보 구조 · 인터랙션</dd></div>
+            <div class="row"><dt class="mono">TERM</dt><dd class="mono num">2025.08 — 2025.12</dd></div>
+            <div class="row"><dt class="mono">TAGS</dt><dd>Information Architecture, Interaction</dd></div>
+          </dl>
+        </div>
+
+        <figure class="case-figure">
+          <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NjAiIGhlaWdodD0iNzIwIiB2aWV3Qm94PSIwIDAgOTYwIDcyMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSLqsIDsg4Eg7ZSE66Gc7KCd7Yq4IOujqOupmCDrhbjtirgg7ZmU66m0Ij4KPHJlY3Qgd2lkdGg9Ijk2MCIgaGVpZ2h0PSI3MjAiIGZpbGw9IiNlOWUyZjQiLz48cmVjdCB4PSI1NSIgeT0iMzgiIHdpZHRoPSI4NTAiIGhlaWdodD0iNjQ0IiByeD0iMjYiIGZpbGw9IiNmZmYiLz4KPHBhdGggZD0iTTU1IDY0cTAtMjYgMjYtMjZoMTk4djY0NEg1NXoiIGZpbGw9IiMzYzMxNTgiLz48dGV4dCB4PSI4OCIgeT0iMTAwIiBmaWxsPSIjZmZmIiBmb250LXNpemU9IjMwIiBmb250LWZhbWlseT0iQXJpYWwsc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9IjcwMCI+TFVNRU48L3RleHQ+PHRleHQgeD0iODgiIHk9IjE2OSIgZmlsbD0iI2Q5Y2ZmMCIgZm9udC1zaXplPSIyMCIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiPkxpYnJhcnk8L3RleHQ+PHRleHQgeD0iODgiIHk9IjIxNSIgZmlsbD0iI2JkYjFkNyIgZm9udC1zaXplPSIyMCIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiPkNvbm5lY3Rpb25zPC90ZXh0Pjx0ZXh0IHg9Ijg4IiB5PSIyNjEiIGZpbGw9IiNiZGIxZDciIGZvbnQtc2l6ZT0iMjAiIGZvbnQtZmFtaWx5PSJBcmlhbCxzYW5zLXNlcmlmIj5SZWFkaW5nIGxpc3Q8L3RleHQ+Cjx0ZXh0IHg9IjMyNCIgeT0iMTE2IiBmaWxsPSIjMzUyZDUwIiBmb250LXNpemU9IjM1IiBmb250LWZhbWlseT0iQXJpYWwsc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9IjcwMCI+SWRlYXMgaW4gY29udGV4dDwvdGV4dD48dGV4dCB4PSIzMjYiIHk9IjE1NyIgZmlsbD0iIzg5N2Y5ZCIgZm9udC1zaXplPSIxOCIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiPkEgcXVpZXQgcGxhY2UgdG8gY29ubmVjdCB3aGF0IHlvdSByZWFkLjwvdGV4dD4KPHJlY3QgeD0iMzI0IiB5PSIxOTciIHdpZHRoPSI1MzIiIGhlaWdodD0iMTM0IiByeD0iMTgiIGZpbGw9IiNmNGYwZmIiLz48dGV4dCB4PSIzNDkiIHk9IjIzOSIgZmlsbD0iIzQ5Mzk2OCIgZm9udC1zaXplPSIxOSIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI3MDAiPlJlc2VhcmNoIG5vdGU8L3RleHQ+PHJlY3QgeD0iMzQ5IiB5PSIyNjAiIHdpZHRoPSIzNDQiIGhlaWdodD0iMTEiIHJ4PSI1IiBmaWxsPSIjY2FjMGRkIi8+PHJlY3QgeD0iMzQ5IiB5PSIyODQiIHdpZHRoPSI0MjAiIGhlaWdodD0iMTEiIHJ4PSI1IiBmaWxsPSIjZGVkNWVhIi8+CjxwYXRoIGQ9Ik00NjEgNDM3TDYwNyA0NzNMNzYzIDQxNE00NjEgNDM3TDU0NyA1ODBMNzYzIDQxNCIgc3Ryb2tlPSIjYmNhNGRmIiBzdHJva2Utd2lkdGg9IjUiIGZpbGw9Im5vbmUiLz48Y2lyY2xlIGN4PSI0NjEiIGN5PSI0MzciIHI9IjQwIiBmaWxsPSIjNzE1NTlmIi8+PGNpcmNsZSBjeD0iNjA3IiBjeT0iNDczIiByPSI0MCIgZmlsbD0iI2I0ODhjOCIvPjxjaXJjbGUgY3g9Ijc2MyIgY3k9IjQxNCIgcj0iNDAiIGZpbGw9IiM5MTczYjMiLz48Y2lyY2xlIGN4PSI1NDciIGN5PSI1ODAiIHI9IjM0IiBmaWxsPSIjYzZhN2Q4Ii8+Cjx0ZXh0IHg9IjMyNCIgeT0iNjMxIiBmaWxsPSIjOGE4MDlhIiBmb250LXNpemU9IjE2IiBmb250LWZhbWlseT0iQXJpYWwsc2Fucy1zZXJpZiI+RmljdGlvbmFsIHBvcnRmb2xpbyBwcm9qZWN0IMK3IHZpc3VhbCBwcm90b3R5cGU8L3RleHQ+PC9zdmc+Cg==" width="960" height="720" alt="가상 프로젝트 루멘 노트의 자료 연결 화면" loading="lazy" decoding="async" />
+          <figcaption>자료와 주제를 잇는 연결 화면 — 가상 설계 산출물</figcaption>
+        </figure>
+
+        <div class="beats">
+          <section class="beat">
+            <h4><span class="mono">01</span>문제</h4>
+            <p>읽은 자료가 폴더 안에 쌓여 주제 사이의 관계를 다시 찾기 어려운 상황을 설정했습니다.</p>
+          </section>
+          <section class="beat beat-key">
+            <h4><span class="mono">02</span>나의 기여</h4>
+            <p>기록 · 연결 · 재발견의 흐름을 정의하고, 관련 자료를 연결하는 화면과 읽기 목록을 구성했습니다.</p>
+          </section>
+          <section class="beat">
+            <h4><span class="mono">03</span>결과</h4>
+            <p>자료 간 연결을 탐색할 수 있는 시제품을 구성했습니다. <span class="mute">이 화면은 가상 설계 과정의 결과물입니다.</span></p>
+          </section>
+          <p class="case-ev">
+            <span class="mono ev-label">EVIDENCE</span>
+            <a class="chip" href="#lumen-map">기록의 정보 구조</a>
+          </p>
+        </div>
+      </div>
+    </article>
+
+    <article class="case" id="ongil">
+      <div class="wrap case-grid">
+        <div class="case-head">
+          <p class="case-tag mono">CASE 03 · 공공 공간 안내</p>
+          <h3 class="case-title">온길 안내</h3>
+          <p class="case-sum">낯선 건물에서 필요한 시설을 찾도록 돕는 안내 화면 콘셉트입니다. 큰 글자와 간단한 선택지로 이동 경로를 표현했습니다.</p>
+          <dl class="case-meta">
+            <div class="row"><dt class="mono">ROLE</dt><dd>접근성 · UI 설계</dd></div>
+            <div class="row"><dt class="mono">TERM</dt><dd class="mono num">2025.03 — 2025.06</dd></div>
+            <div class="row"><dt class="mono">TAGS</dt><dd>Accessibility, Design System</dd></div>
+          </dl>
+        </div>
+
+        <figure class="case-figure">
+          <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NjAiIGhlaWdodD0iNzIwIiB2aWV3Qm94PSIwIDAgOTYwIDcyMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSLqsIDsg4Eg7ZSE66Gc7KCd7Yq4IOyYqOq4uCDslYjrgrQg7ZmU66m0Ij4KPHJlY3Qgd2lkdGg9Ijk2MCIgaGVpZ2h0PSI3MjAiIGZpbGw9IiNmN2U5ZDciLz48cmVjdCB4PSI2NSIgeT0iMzQiIHdpZHRoPSI4MzAiIGhlaWdodD0iNjUyIiByeD0iMjgiIGZpbGw9IiNmZmZkZjkiLz4KPHBhdGggZD0iTTY1IDYycTAtMjggMjgtMjhoNzc0cTI4IDAgMjggMjh2MTEySDY1eiIgZmlsbD0iIzg4NDgyZSIvPjx0ZXh0IHg9IjExMCIgeT0iMTEwIiBmaWxsPSIjZmZmIiBmb250LXNpemU9IjM0IiBmb250LWZhbWlseT0iQXJpYWwsc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9IjcwMCI+T05HSUwgR1VJREU8L3RleHQ+PHRleHQgeD0iMTEwIiB5PSIxNDUiIGZpbGw9IiNmN2Q5YmYiIGZvbnQtc2l6ZT0iMTciIGZvbnQtZmFtaWx5PSJBcmlhbCxzYW5zLXNlcmlmIj5GaW5kIGEgY2xlYXIgd2F5IGZvcndhcmQ8L3RleHQ+Cjx0ZXh0IHg9IjExMiIgeT0iMjQ1IiBmaWxsPSIjNTEzMjIxIiBmb250LXNpemU9IjM2IiBmb250LWZhbWlseT0iQXJpYWwsc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9IjcwMCI+V2hlcmUgd291bGQgeW91IGxpa2UgdG8gZ28/PC90ZXh0Pjx0ZXh0IHg9IjExMyIgeT0iMjgzIiBmaWxsPSIjOGM3NzZhIiBmb250LXNpemU9IjIwIiBmb250LWZhbWlseT0iQXJpYWwsc2Fucy1zZXJpZiI+Q2hvb3NlIGEgZGVzdGluYXRpb24gdG8gdmlldyBhbiBlYXN5IHJvdXRlLjwvdGV4dD4KPHJlY3QgeD0iMTEwIiB5PSIzMzIiIHdpZHRoPSIzMzUiIGhlaWdodD0iMTIyIiByeD0iMjAiIGZpbGw9IiNmZmYwZGQiIHN0cm9rZT0iI2U0YjE3YiIgc3Ryb2tlLXdpZHRoPSIzIi8+PGNpcmNsZSBjeD0iMTU5IiBjeT0iMzkzIiByPSIyNSIgZmlsbD0iI2M0NzQ0MyIvPjx0ZXh0IHg9IjIwOCIgeT0iNDAwIiBmaWxsPSIjNWMzODI2IiBmb250LXNpemU9IjI1IiBmb250LWZhbWlseT0iQXJpYWwsc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9IjcwMCI+SW5mb3JtYXRpb24gZGVzazwvdGV4dD4KPHJlY3QgeD0iNDczIiB5PSIzMzIiIHdpZHRoPSIzMzUiIGhlaWdodD0iMTIyIiByeD0iMjAiIGZpbGw9IiNmNWYwZTciLz48Y2lyY2xlIGN4PSI1MjIiIGN5PSIzOTMiIHI9IjI1IiBmaWxsPSIjOGI5YTczIi8+PHRleHQgeD0iNTcxIiB5PSI0MDAiIGZpbGw9IiM0ZDUxM2QiIGZvbnQtc2l6ZT0iMjUiIGZvbnQtZmFtaWx5PSJBcmlhbCxzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iNzAwIj5SZXN0IGFyZWE8L3RleHQ+CjxyZWN0IHg9IjExMCIgeT0iNDc4IiB3aWR0aD0iNjk4IiBoZWlnaHQ9Ijg3IiByeD0iMTkiIGZpbGw9IiM4ODQ4MmUiLz48dGV4dCB4PSIxNDYiIHk9IjUzMiIgZmlsbD0iI2ZmZiIgZm9udC1zaXplPSIyNSIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI3MDAiPlNob3cgYSBzdGVwLWZyZWUgcm91dGUgIOKGkjwvdGV4dD4KPHRleHQgeD0iMTExIiB5PSI2MzgiIGZpbGw9IiM5Zjg1NzIiIGZvbnQtc2l6ZT0iMTYiIGZvbnQtZmFtaWx5PSJBcmlhbCxzYW5zLXNlcmlmIj5GaWN0aW9uYWwgcG9ydGZvbGlvIHByb2plY3QgwrcgdmlzdWFsIHByb3RvdHlwZTwvdGV4dD48L3N2Zz4K" width="960" height="720" alt="가상 프로젝트 온길 안내의 경로 선택 화면" loading="lazy" decoding="async" />
+          <figcaption>목적지와 이동 조건을 고르는 경로 선택 화면 — 가상 설계 산출물</figcaption>
+        </figure>
+
+        <div class="beats">
+          <section class="beat">
+            <h4><span class="mono">01</span>문제</h4>
+            <p>낯선 건물에서 층별 시설과 이동 경로를 함께 파악하기 어려운 상황을 다뤘습니다.</p>
+          </section>
+          <section class="beat beat-key">
+            <h4><span class="mono">02</span>나의 기여</h4>
+            <p>목적지를 먼저 고르는 흐름과 계단 없는 경로 선택을 설계했습니다. 큰 글자와 설명이 있는 아이콘을 사용했습니다.</p>
+          </section>
+          <section class="beat">
+            <h4><span class="mono">03</span>결과</h4>
+            <p>목적지와 이동 조건을 한 화면에서 선택하는 시제품을 구성했습니다. <span class="mute">실제 시설에 적용한 이력은 없습니다.</span></p>
+          </section>
+          <p class="case-ev">
+            <span class="mono ev-label">EVIDENCE</span>
+            <a class="chip" href="#ongil-checklist">안내 화면 검토표</a>
+          </p>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  
+  <section id="career" class="band">
+    <div class="wrap">
+      <div class="band-head">
+        <p class="band-num mono">04</p>
+        <h2 class="band-title">경력</h2>
+        <p class="band-note">아래 조직과 직함은 조합 검증을 위해 설정한 가상 경력입니다.</p>
+      </div>
+
+      <ol class="career">
+        <li class="career-item" id="career-studio">
+          <p class="career-period mono num">2024.03 — 현재</p>
+          <div class="career-body">
+            <h3 class="career-role">프로덕트 디자이너</h3>
+            <p class="career-org">가상 조직 · 스튜디오 여백</p>
+            <p class="career-desc">정보 탐색과 기록 도구를 주제로 프로젝트를 설계한 가상 경력입니다. 조사 질문부터 인터랙션 시제품까지 담당한 것으로 설정했습니다.</p>
+          </div>
+        </li>
+        <li class="career-item" id="career-lab">
+          <p class="career-period mono num">2022.09 — 2024.02</p>
+          <div class="career-body">
+            <h3 class="career-role">UX 디자인 연구원</h3>
+            <p class="career-org">가상 조직 · 일상경험 연구실</p>
+            <p class="career-desc">공공 공간 안내와 접근성을 주제로 관찰 내용을 정리하고 화면 가설을 만든 가상 경력입니다.</p>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  
+  <section id="evidence" class="band band-evidence">
+    <div class="wrap">
+      <div class="band-head">
+        <p class="band-num mono">05</p>
+        <h2 class="band-title">근거 자료</h2>
+        <p class="band-note">설계 판단의 바탕이 된 기록입니다. 제목을 눌러 펼치면 내용이 보이고, JavaScript 없이도 동작합니다.</p>
+      </div>
+
+      <div class="ev-group">
+        <p class="ev-owner"><a class="link" href="#moa">모아 지도</a><span class="mono count">2</span></p>
+
+        <details class="ev" id="moa-flow">
+          <summary>
+            <span class="ev-kind mono">설계 기록</span>
+            <span class="ev-title">장소 탐색 흐름</span>
+            <span class="ev-sum">검색부터 비교, 방문 계획 저장까지의 연결</span>
+          </summary>
+          <div class="ev-body">
+            <ol class="flow">
+              <li>검색어 입력</li>
+              <li>지도와 목록 탐색</li>
+              <li>운영 시간 · 접근성 조건 비교</li>
+              <li>방문 계획 저장</li>
+            </ol>
+            <p>각 단계에서 필요한 정보가 이어지는지 확인하기 위한 가상 설계 기록입니다.</p>
+          </div>
+        </details>
+
+        <details class="ev" id="moa-criteria">
+          <summary>
+            <span class="ev-kind mono">검토 기준</span>
+            <span class="ev-title">장소 비교 기준</span>
+            <span class="ev-sum">비교 화면에서 놓치지 않아야 할 정보</span>
+          </summary>
+          <div class="ev-body">
+            <ul class="checks">
+              <li>운영 시간</li>
+              <li>이동 거리</li>
+              <li>계단 없는 출입구</li>
+              <li>이용 가능한 시설</li>
+            </ul>
+            <p>위 네 항목을 항상 같은 순서로 표시합니다. 실제 기관에서 수집한 조사 자료를 포함하지 않습니다.</p>
+          </div>
+        </details>
+      </div>
+
+      <div class="ev-group">
+        <p class="ev-owner"><a class="link" href="#lumen">루멘 노트</a><span class="mono count">1</span></p>
+
+        <details class="ev" id="lumen-map">
+          <summary>
+            <span class="ev-kind mono">구조 설계</span>
+            <span class="ev-title">기록의 정보 구조</span>
+            <span class="ev-sum">자료와 주제 사이의 관계</span>
+          </summary>
+          <div class="ev-body">
+            <ul class="fields">
+              <li><span class="mono">01</span>제목</li>
+              <li><span class="mono">02</span>요약</li>
+              <li><span class="mono">03</span>주제</li>
+              <li><span class="mono">04</span>관련 기록</li>
+            </ul>
+            <p>자료에는 위 네 가지를 둡니다. 하나의 자료를 여러 주제와 연결하고 읽기 목록에서 다시 방문할 수 있게 설계한 가상 예제입니다.</p>
+          </div>
+        </details>
+      </div>
+
+      <div class="ev-group">
+        <p class="ev-owner"><a class="link" href="#ongil">온길 안내</a><span class="mono count">1</span></p>
+
+        <details class="ev" id="ongil-checklist">
+          <summary>
+            <span class="ev-kind mono">접근성 검토</span>
+            <span class="ev-title">안내 화면 검토표</span>
+            <span class="ev-sum">큰 글자와 명확한 이동 선택</span>
+          </summary>
+          <div class="ev-body">
+            <ul class="checks">
+              <li>글자 확대 시 정보가 잘리지 않는지</li>
+              <li>키보드로 목적지를 선택할 수 있는지</li>
+              <li>색상 외의 설명으로 경로를 구분할 수 있는지</li>
+            </ul>
+            <p>가상 프로젝트의 안내 화면을 검토하기 위해 사용한 항목입니다.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  
+  <section id="contact" class="band band-contact">
+    <div class="wrap contact-grid">
+      <p class="band-num mono">06</p>
+      <h2 class="contact-head">다음 문제를 함께<br />풀어갈 수 있도록.</h2>
+      <div class="contact-side">
+        <p class="contact-desc">이 페이지의 인물, 조직, 프로젝트 이력은 조합 검증을 위한 가상 예제입니다.</p>
+        <p class="contact-desc">문제와 제약을 함께 읽고, 화면의 작은 선택까지 같이 정리하는 방식으로 일합니다.</p>
+        <a class="mailto" href="mailto:portfolio-demo@example.com">
+          <span class="mono mailto-label">EMAIL</span>
+          <span class="mailto-addr">portfolio-demo@example.com</span>
+        </a>
+        <p class="contact-loc"><span class="mono">BASE</span> 서울 · 대한민국</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-in">
+    <p class="foot-note"><span class="mono">FICTIONAL DEMO</span> 윤서하 · 스튜디오 여백 · 일상경험 연구실 · 모아 지도 · 루멘 노트 · 온길 안내는 모두 시연을 위한 가상 정보입니다. 성과 수치는 측정하지 않았습니다.</p>
+    <p class="foot-links"><a class="link" href="#intro">맨 위로 ↑</a></p>
+  </div>
+</footer></body></html>

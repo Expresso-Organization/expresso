@@ -1,0 +1,57 @@
+{
+  "id": "shadcn-timeline-timeline",
+  "sourceUrl": "https://github.com/timDeHof/shadcn-timeline/blob/23a910569ca1f44eafd4d069f4ec523d9e2934ab/src/components/timeline/timeline.tsx",
+  "sourceRevision": "23a910569ca1f44eafd4d069f4ec523d9e2934ab",
+  "roles": [
+    "experience",
+    "education"
+  ],
+  "roleEvidence": "원본 데이터 구조 검토",
+  "roleMethod": "source_review",
+  "materials": [
+    {
+      "path": "./library/materials/shadcn-timeline/timeline.json",
+      "sha256": "bcb2d1678d988f7fa867f343d0eab01d0c88835a41ac4313b25111f36b369ce6",
+      "bytes": 23810,
+      "label": "원본 코드 묶음",
+      "kind": "registry_source"
+    },
+    {
+      "path": "./library/materials/shadcn-timeline/LICENSE.txt",
+      "sha256": "0be89388a28b29295cb926fef18c1e0770ba49d49fd6c90084e71155d6fcb0ad",
+      "bytes": 1066,
+      "label": "MIT 라이선스 원문",
+      "kind": "license"
+    }
+  ],
+  "observations": [
+    "날짜 형식 en-US 고정과 잘못된 날짜의 toISOString 예외를 수정해야 합니다.",
+    "아이콘·ReactNode·Date를 직렬화 가능한 입력으로 감싸야 합니다."
+  ],
+  "inputs": [
+    "date",
+    "title",
+    "description",
+    "status",
+    "icon"
+  ],
+  "framework": "React / Tailwind CSS",
+  "sourceLicense": "https://github.com/timDeHof/shadcn-timeline/blob/23a910569ca1f44eafd4d069f4ec523d9e2934ab/LICENSE",
+  "acquisitionStatus": "source_ready",
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/timeline/timeline.tsx",
+      "sha256": "1d9e3110b4dc954deea0443177b6056eb376349a3696cf21dfcea398f9264c8b",
+      "bytes": 13745
+    },
+    {
+      "path": "src/components/timeline/timeline.stories.tsx",
+      "sha256": "1929ac058575ff32d379fa9c9585ea6555c6d74fd5826dca9de75526335e7611",
+      "bytes": 8801
+    }
+  ],
+  "usageNote": "고정 버전의 지정 파일 묶음입니다. 완전한 실행 의존성 묶음은 아니며 설치·렌더링 전입니다."
+}

@@ -1,0 +1,29 @@
+{
+  "id": "60fps-b7b23fbf5c1eb872",
+  "sourceUrl": "https://60fps.design/shots/liquid-cats-progress-reveal-close-button-interaction",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Liquid Cats Progress Reveal Close Button Interaction",
+    "공개 이미지 요소: 32개",
+    "동영상 포스터: 31개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/liquid-cats-progress-reveal-close-button-interaction",
+    "sha256": "4ead7653c88496f152d2edb4ef11c67e3fc554390d3feab95a42735adde244a9",
+    "fetchedAt": "2026-09-23T13:03:40+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

@@ -1,0 +1,29 @@
+{
+  "id": "unsection-717c21b4501e5043",
+  "sourceUrl": "https://www.unsection.com/section/ebury-global-accounts-hero-design",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: ebury global accounts hero design",
+    "공개 이미지 요소: 22개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://www.unsection.com/section/ebury-global-accounts-hero-design",
+    "sha256": "f133bca138346c4973c6a30e05ecce9b1686ec3c370e89c74802691b03771ca0",
+    "fetchedAt": "2026-09-23T12:52:57+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

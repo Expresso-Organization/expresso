@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-09-29T16:32:09.112Z",
+  "fictional": true,
+  "model": "qwen3.5:9b-q8_0",
+  "specOrigin": "model",
+  "modelSelection": {
+    "recipe": "gallery",
+    "design": {
+      "palette": "midnight",
+      "typography": "serif",
+      "layout": "editorial"
+    },
+    "heroStyle": "spotlight",
+    "projectIndex": "mosaic",
+    "reason": "편집 디자이너의 정체성을 반영하여 어두운 배경과 명조체로 고급스러운 편집성 (Editorial) 을 살리고, 계절의 언어와 아카이브 프로젝트 특유의 깊이 있는 내용을 강조하기 위해 검은 배경에 주황 광원이 있는 스포트라이트 형식과 이미지 중심의 모자이크 레이아웃을 선택했습니다."
+  },
+  "validationAttempts": [
+    {
+      "valid": true,
+      "outputSha256": "cdf225b0dd185227f73d71db4e6139d30fa8c00be29bebbf4404e3fb4fadb548"
+    }
+  ],
+  "inputSha256": "453580878542642f5dabc9de8c28f83397893f98a482eff5b8e4fb6aac41933e",
+  "planSha256": "2656959a54885c7fa25d5943fcd39e89c012ecdd30ac1fdaf64b24ecdbab06f1",
+  "specSha256": "0ede34aad9b90eb988fe7599c11c604a7756699ae5799d7ac78ef7721e17e13c",
+  "htmlSha256": "b9b143409a465a7e7556dd77510f62b2dad56816a4b611448cdb2802e5cd8552",
+  "modelOutputSha256": "cdf225b0dd185227f73d71db4e6139d30fa8c00be29bebbf4404e3fb4fadb548",
+  "assets": {
+    "./assets/portfolio-editorial-season.svg": {
+      "sha256": "43d707889f345b67d7a74e8dff93054ee8e0a720aed2d83072a700fa92f89d6d",
+      "bytes": 1235
+    },
+    "./assets/portfolio-editorial-archive.svg": {
+      "sha256": "470965a6138738bef3d4cd5150b6d22517d7d24ca4e08e73f0a0ee99d1f11c19",
+      "bytes": 1412
+    },
+    "./assets/portfolio-editorial-reading.svg": {
+      "sha256": "ad422a8b4db6ba81404de904f3b6c25dddd3670a1792dbb37126964274e879ec",
+      "bytes": 1476
+    }
+  },
+  "previewComparison": null,
+  "comparison": null
+}

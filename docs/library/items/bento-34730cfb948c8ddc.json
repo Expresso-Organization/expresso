@@ -1,0 +1,24 @@
+{
+  "id": "bento-34730cfb948c8ddc",
+  "sourceUrl": "https://bentogrids.com/",
+  "sourceRevision": "3BufFBeEzmxTEe5rgVLQ0",
+  "roles": [
+    "project-grid"
+  ],
+  "roleEvidence": "작품·프로젝트·사례를 묶어 보여주는 표현 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "공개 분류: ui",
+    "원본 종횡비: 2952×2192",
+    "동일 사례 자산: 2개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://twitter.com/cactusui",
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

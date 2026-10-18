@@ -1,0 +1,59 @@
+{
+  "id": "watermelon-6f5a6034e770acbf",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/copy.json",
+      "sha256": "5f498808f39280e487b25697dd75a7b379f335e5b1d6e68fd50caac8d6084dc4",
+      "bytes": 8057,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/copy.tsx",
+      "target": "components/ui/copy.tsx",
+      "type": "registry:ui",
+      "sha256": "88464ab2cb5106ffa8d0c89305641090848766b409671d58a8756641a11fea48",
+      "bytes": 7406
+    }
+  ],
+  "dependencies": [
+    "class-variance-authority",
+    "lucide-react",
+    "motion"
+  ],
+  "registryDependencies": [],
+  "imports": [
+    "@/lib/utils",
+    "class-variance-authority",
+    "lucide-react",
+    "motion/react",
+    "react"
+  ],
+  "propsDeclarations": [
+    "type CopyButtonProps = Omit<ButtonPrimitiveProps, 'children'> &\n  VariantProps<typeof buttonVariants> & {\n    content: string;\n    copied?: boolean;\n    onCopiedChange?: (copied: boolean, content?: string) => void;\n    delay?: number;\n  }",
+    "type ButtonPrimitiveProps = WithAsChild<\n  HTMLMotionProps<'button'> & {\n    hoverScale?: number;\n    tapScale?: number;\n  }",
+    "type AnyProps = Record<string, unknown>;\n\ntype DOMMotionProps<T extends HTMLElement = HTMLElement> = Omit<\n  HTMLMotionProps<keyof HTMLElementTagNameMap>,\n  'ref'\n> & { ref?: React.Ref<T> }",
+    "interface CommonControlledStateProps<T> {\n  value?: T;\n  defaultValue?: T;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/copy.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

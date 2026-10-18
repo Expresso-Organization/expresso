@@ -7,11 +7,10 @@ import { useActionState, useEffect, useMemo, useState, type CSSProperties } from
 
 import { Icon } from "@/components/ui/Icon";
 
+import { startGenerationAction, type BrewState } from "./design-actions";
 import {
   loadDesignDocumentAction,
-  saveDesignSelectionAction,
   type DesignDocument,
-  type DesignSelectionActionState,
 } from "./design-selection-actions";
 import { COMPANY_MARKS, markAspectRatio } from "./company-marks";
 import styles from "./DesignCatalog.module.css";
@@ -178,19 +177,28 @@ export function DesignCatalog({
   brewId,
   entries,
   initialRevisionId,
+  recipeId,
+  generationAllowed,
+  failureCode,
 }: {
   brewId: string;
   entries: DesignCatalogEntry[];
   initialRevisionId: string | null;
+  /** 레시피가 있어야 생성할 수 있다. 없으면 레시피 단계로 돌려보낸다. */
+  recipeId: string | null;
+  /** 이번 달 생성 한도 안인가. */
+  generationAllowed: boolean;
+  /** 지난 생성이 실패했으면 그 코드. */
+  failureCode: string | null;
 }) {
   const firstAvailableRevisionId = initialRevisionId
     && entries.some((entry) => entry.revisionId === initialRevisionId)
     ? initialRevisionId
     : entries[0]?.revisionId ?? null;
-  const [actionState, saveSelection, pending] = useActionState<
-    DesignSelectionActionState,
-    FormData
-  >(saveDesignSelectionAction, { error: null, savedRevisionId: initialRevisionId });
+  const [actionState, startGeneration, pending] = useActionState<BrewState, FormData>(
+    startGenerationAction,
+    { error: null },
+  );
   const [category, setCategory] = useState<CatalogCategory>("recommended");
   const [query, setQuery] = useState("");
   const [surface, setSurface] = useState<"all" | "light" | "dark">("all");
@@ -258,7 +266,7 @@ export function DesignCatalog({
       .finally(() => { if (live) setDocumentPending(false); });
     return () => { live = false; };
   }, [selectedRevisionId]);
-  const selectedIsSaved = selected?.revisionId === actionState.savedRevisionId;
+  const selectedIsSaved = selected?.revisionId === initialRevisionId;
 
   useEffect(() => {
     if (!fullscreen) return;
@@ -595,29 +603,31 @@ export function DesignCatalog({
 
           <footer className={styles.inspectorFooter}>
             <div className={styles.selectionSummary}>
-              <span>{selectedIsSaved ? "현재 적용한 디자인" : "선택한 디자인"}</span>
+              <span>{selectedIsSaved ? "지난번에 고른 디자인" : "선택한 디자인"}</span>
               <strong>{selected.name}</strong>
-              {actionState.error ? <em role="alert">{actionState.error}</em> : null}
+              {actionState.error ? <em role="alert">{actionState.error}</em> : failureCode ? (
+                <em role="alert">지난 생성이 실패했습니다({failureCode}). 다시 만들 수 있습니다.</em>
+              ) : null}
             </div>
-            {selectedIsSaved ? (
+            {recipeId === null ? (
               <Link
                 href={`/brew/${brewId}/outline` as Route}
                 className={styles.continueLink}
               >
-                레시피로 계속 <Icon name="arrow-right" size={13} />
+                레시피 먼저 만들기 <Icon name="arrow-right" size={13} />
               </Link>
-            ) : null}
-            <form action={saveSelection}>
-              <input type="hidden" name="brewId" value={brewId} />
-              <input type="hidden" name="designSystemRevisionId" value={selected.revisionId} />
-              <button type="submit" disabled={pending || selectedIsSaved}>
-                {pending ? "적용하는 중" : selectedIsSaved ? (
-                  <><Icon name="check" size={14} /> 적용됨</>
-                ) : (
-                  <>이 디자인 적용 <Icon name="arrow-right" size={14} /></>
-                )}
-              </button>
-            </form>
+            ) : (
+              <form action={startGeneration}>
+                <input type="hidden" name="brewId" value={brewId} />
+                <input type="hidden" name="recipeId" value={recipeId} />
+                <input type="hidden" name="designSystemRevisionId" value={selected.revisionId} />
+                <button type="submit" disabled={pending || !generationAllowed}>
+                  {pending ? "생성을 시작하는 중" : generationAllowed ? (
+                    <>이 디자인으로 만들기 <Icon name="arrow-right" size={14} /></>
+                  ) : "이번 달 생성 횟수를 다 썼습니다"}
+                </button>
+              </form>
+            )}
           </footer>
         </aside>
       ) : (

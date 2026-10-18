@@ -1,0 +1,29 @@
+{
+  "id": "60fps-3c5d4377515e83e3",
+  "sourceUrl": "https://60fps.design/shots/pinterest-add-widget-tooltip-animation-in-sheet",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Pinterest Add Widget Tooltip Animation in Sheet",
+    "공개 이미지 요소: 30개",
+    "동영상 포스터: 31개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/pinterest-add-widget-tooltip-animation-in-sheet",
+    "sha256": "ad1c3ab8321e32fffe77f7ebf6d5b0fc101030060c69e0e157d2e984cf3f93ad",
+    "fetchedAt": "2026-09-23T13:05:29+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

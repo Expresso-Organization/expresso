@@ -1,0 +1,59 @@
+{
+  "type": "object",
+  "properties": {
+    "root": {
+      "type": "string"
+    },
+    "elements": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "PortfolioPage",
+              "Hero",
+              "ProjectGrid",
+              "CaseStudies",
+              "CareerTimeline",
+              "EvidenceList",
+              "Contact"
+            ]
+          },
+          "props": {
+            "type": "object",
+            "additionalProperties": {}
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "slots": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "visible": {},
+          "repeat": {}
+        },
+        "required": [
+          "type",
+          "props",
+          "children"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "root",
+    "elements"
+  ],
+  "additionalProperties": false
+}

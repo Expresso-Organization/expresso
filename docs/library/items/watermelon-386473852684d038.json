@@ -1,0 +1,74 @@
+{
+  "id": "watermelon-386473852684d038",
+  "sourceUrl": "https://ui.watermelon.sh/block/testimonials-2",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "evidence"
+  ],
+  "roleEvidence": "협업 평가와 근거를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/testimonials-2.json",
+      "sha256": "d9ec818246421effaeecbcac8ec08bfc58bacff395bb0ea1023c19132bf4ca2f",
+      "bytes": 5127,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/testimonials-2.tsx",
+      "target": "components/ui/testimonials-2.tsx",
+      "type": "registry:ui",
+      "sha256": "a1503280e465cd7761661c82961b9455f57a06d9e046f2b329c3af125a35e02e",
+      "bytes": 4501
+    }
+  ],
+  "dependencies": [
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "testimonials",
+    "button"
+  ],
+  "imports": [
+    "@/components/ui/avatar",
+    "@/components/ui/card",
+    "lucide-react"
+  ],
+  "propsDeclarations": [],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "https://github.com/gaearon.png",
+    "https://github.com/kentcdodds.png",
+    "https://github.com/leerob.png",
+    "https://github.com/rauchg.png",
+    "https://github.com/t3dotgg.png",
+    "https://github.com/yyx990803.png"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/testimonials-2.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "testimonials-2",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/testimonials-2.tsx",
+    "url": "./library/previews/watermelon/testimonials-2.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:25+00:00",
+    "snapshotSha256": "98caf617fdd1129c82dbea946d29dfc21c814e004b669b0d00d685528916ba9b"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

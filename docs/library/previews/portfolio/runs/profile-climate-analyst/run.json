@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-09-29T16:32:42.014Z",
+  "fictional": true,
+  "model": "qwen3.5:9b-q8_0",
+  "specOrigin": "model",
+  "modelSelection": {
+    "recipe": "featured",
+    "design": {
+      "palette": "midnight",
+      "typography": "serif",
+      "layout": "editorial"
+    },
+    "heroStyle": "spotlight",
+    "projectIndex": "bento",
+    "reason": "어두운 배경과 주황빛의 강렬한 대비를 활용한 스포트라이트 히어로와 정보 밀집도를 고려한 벤토 그리드 레이아웃이 데이터 분석가의 전문성과 프로젝트의 기술적 깊이를 동시에 강조합니다."
+  },
+  "validationAttempts": [
+    {
+      "valid": true,
+      "outputSha256": "2a093f18c1ec643b5c06e243ae9d4917628233695a03381a163f8115e9d6a57f"
+    }
+  ],
+  "inputSha256": "e8ab3c1780409bb35f0333d80e9b2ae592535984b021c197b83be6df96f0f2ac",
+  "planSha256": "3973e7f13f1de40fb63a12df4de4a0577a0dd59f10a605e5dd77ccc0248bdadb",
+  "specSha256": "a59ff09fce67984a7649b91672070ae10f95c5f439ee22b95c2f6b983a12af6a",
+  "htmlSha256": "5d9f2d979703cfe08d2659124e70537796bbc927c0a17ba377babef28564d153",
+  "modelOutputSha256": "2a093f18c1ec643b5c06e243ae9d4917628233695a03381a163f8115e9d6a57f",
+  "assets": {
+    "./assets/portfolio-climate-heat.svg": {
+      "sha256": "e240a42dbfe36961586c00c485e60b1bdb1e8b1fdb694b06588624d1c401110c",
+      "bytes": 6434
+    },
+    "./assets/portfolio-climate-rain.svg": {
+      "sha256": "1fd8c32585a02704df8cf3576310a930e7bd81ee1f43d9be390eaaf918a4cf09",
+      "bytes": 1196
+    },
+    "./assets/portfolio-climate-green.svg": {
+      "sha256": "b4cc78a48aab95ea2226253fb0849206ebb32d109020d551ec99c6733425d590",
+      "bytes": 1472
+    }
+  },
+  "previewComparison": null,
+  "comparison": null
+}

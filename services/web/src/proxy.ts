@@ -8,6 +8,20 @@ import {
 } from "@/lib/auth/session-cookie";
 
 /**
+ * 개발 로그인이 켜져 있으면 로그인 대신 그 문으로 보낸다.
+ *
+ * 화면을 볼 때마다 손으로 로그인하지 않으려고 만든 문인데, 여기서 먼저
+ * `/login` 으로 돌려 버리면 주소를 직접 열 때마다 여전히 막힌다. 켜져 있을
+ * 때는 보려던 자리를 `next` 로 넘겨 로그인 뒤 그 자리로 돌아오게 한다.
+ *
+ * 판단은 `/api/dev/session` 이 다시 한다 — 프로덕션이거나 계정 정보가 없으면
+ * 그 라우트가 404 다. 여기서 보는 것은 스위치 하나뿐이다.
+ */
+function devLoginEnabled(): boolean {
+  return process.env.NODE_ENV !== "production" && process.env.DEV_LOGIN === "1";
+}
+
+/**
  * 세션 쿠키가 아예 없는 요청을 화면에 닿기 전에 로그인으로 돌린다.
  *
  * 왜 필요한가 — 구간마다 `loading.tsx`가 생기면서 화면 위에 Suspense 경계가
@@ -25,20 +39,6 @@ import {
  * 로그아웃처럼 보인다. 유지 플래그(`ex_session_keep`)가 있는 요청은 두 쿠키를 같은
  * 규칙으로 다시 찍는다. 플래그가 없는 세션은 브라우저 세션 쿠키라 손대지 않는다.
  */
-/**
- * 개발 로그인이 켜져 있으면 로그인 대신 그 문으로 보낸다.
- *
- * 화면을 볼 때마다 손으로 로그인하지 않으려고 만든 문인데, 여기서 먼저
- * `/login` 으로 돌려 버리면 주소를 직접 열 때마다 여전히 막힌다. 켜져 있을
- * 때는 보려던 자리를 `next` 로 넘겨 로그인 뒤 그 자리로 돌아오게 한다.
- *
- * 판단은 `/api/dev/session` 이 다시 한다 — 프로덕션이거나 계정 정보가 없으면
- * 그 라우트가 404 다. 여기서 보는 것은 스위치 하나뿐이다.
- */
-function devLoginEnabled(): boolean {
-  return process.env.NODE_ENV !== "production" && process.env.DEV_LOGIN === "1";
-}
-
 export function proxy(request: NextRequest) {
   const target = request.nextUrl.pathname + request.nextUrl.search;
   const token = request.cookies.get(SESSION_COOKIE)?.value;

@@ -1,0 +1,29 @@
+{
+  "id": "60fps-cdee21b0b61f603d",
+  "sourceUrl": "https://60fps.design/shots/alfread-left-right-cards-swipe-tooltip",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Alfread Left Right Cards Swipe Tooltip",
+    "공개 이미지 요소: 25개",
+    "동영상 포스터: 26개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/alfread-left-right-cards-swipe-tooltip",
+    "sha256": "4d063270ca617d59951f000aae57f8145e253c10144aae33cdc4b4f3a6148ee9",
+    "fetchedAt": "2026-09-23T12:56:22+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

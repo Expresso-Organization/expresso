@@ -1,0 +1,15 @@
+/* 기본 HTML은 보입니다. 관찰자가 준비된 뒤 화면 밖의 대상만 대기시킵니다. */
+.variant-shell[data-motion-effective]:not([data-motion-effective=none]) [data-motion-state=pending]{opacity:0}
+.variant-shell[data-motion-preset] .showcase-panel{animation:none!important}
+.variant-shell[data-motion-effective=none] *,.variant-shell[data-motion-preset=none] *,.variant-shell[data-input-mode=keyboard] *{animation:none!important;transition:none!important}
+.variant-shell [data-motion-state=pending]:focus-within{opacity:1!important}
+.preview-toolbar .motion-status{font-size:11px;color:#d9e2f0}.preview-toolbar button:disabled{opacity:.55;cursor:default}
+@media(prefers-reduced-motion:reduce){.variant-shell [data-motion-state]{opacity:1!important;animation:none!important;transition:none!important}}
+@media print{.variant-shell [data-motion-state]{opacity:1!important;transform:none!important}}
+/* 카드 내부 조작에는 별도의 진입 효과를 중첩하지 않습니다. */
+.visual-project-cover>.project-scene{transition:transform 180ms cubic-bezier(.22,1,.36,1)}
+.v-disclosure-sign{transition:transform 180ms ease}
+@media(hover:hover) and (pointer:fine){.variant-shell[data-motion-effective]:not([data-motion-effective=none]) .visual-project-cover:hover>.project-scene{transform:translateY(-6px) rotate(-2deg)}}
+
+/* 키보드 포커스 이동은 긴 문서에서도 즉시 도착합니다. */
+html:has(.variant-shell :focus-visible){scroll-behavior:auto}

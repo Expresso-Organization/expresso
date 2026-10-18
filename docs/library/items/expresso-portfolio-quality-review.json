@@ -1,0 +1,32 @@
+{
+  "id": "expresso-portfolio-quality-review",
+  "sourceUrl": "https://github.com/Expresso-Organization/expresso/blob/codex/portfolio-reference-research/scripts/library/prompts.json",
+  "sourceRevision": "1.0",
+  "roles": [
+    "quality-workflow"
+  ],
+  "roleEvidence": "실제 콘텐츠를 렌더링한 화면에서 내용·조판·페이지 연결의 결함을 찾습니다.",
+  "materials": [],
+  "observations": [
+    "익스프레소에서 직접 작성한 템플릿입니다. 모델 실행·품질 평가는 아직 수행하지 않았습니다."
+  ],
+  "prompt": {
+    "id": "portfolio-quality-review",
+    "title": "완성 페이지 품질 검토",
+    "purpose": "실제 콘텐츠를 렌더링한 화면에서 내용·조판·페이지 연결의 결함을 찾습니다.",
+    "inputs": [
+      "renderedScreens",
+      "careerEvidence",
+      "recipe",
+      "testedViewports"
+    ],
+    "output": "findings[{severity,componentId,evidence,fix}], untestedCases, releaseDecision",
+    "body": "renderedScreens를 careerEvidence와 대조해 사실 누락·과장·변조를 먼저 확인하세요. 이어서 읽기 순서, 한국어 줄바꿈, 잘림, 이미지 비율, 섹션 간 폭·배경·간격과 강조의 일관성을 확인하세요. 각 finding에는 화면 위치와 관찰 근거, 영향을 받는 componentId, 수정안을 적으세요. testedViewports 밖의 반응형·인쇄·키보드 동작은 untestedCases에 남기세요. 보기 좋은 예시 콘텐츠만으로 제품 사용 가능 판정을 내리지 마세요.",
+    "version": "1.0",
+    "executionStatus": "not_run"
+  },
+  "acquisitionStatus": "prompt_ready",
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured"
+}

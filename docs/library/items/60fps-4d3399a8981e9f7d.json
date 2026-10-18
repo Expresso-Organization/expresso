@@ -1,0 +1,29 @@
+{
+  "id": "60fps-4d3399a8981e9f7d",
+  "sourceUrl": "https://60fps.design/shots/cred-custom-amount-slider-interaction",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: CRED Custom Amount Slider Interaction",
+    "공개 이미지 요소: 32개",
+    "동영상 포스터: 31개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/cred-custom-amount-slider-interaction",
+    "sha256": "d175ad1e6eb823cc5bb8b6ef688d4313682212abaeb8333251881501686032df",
+    "fetchedAt": "2026-09-23T12:58:55+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

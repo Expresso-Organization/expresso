@@ -1,0 +1,30 @@
+{
+  "id": "supahero-bf28b3c768c13a1e",
+  "sourceUrl": "https://supahero.io/hero/tiny-coast-digital",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Tiny Coast Digital",
+    "공개 이미지 요소: 1개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://tinycoastdigital.com/",
+  "evidence": {
+    "url": "https://supahero.io/hero/tiny-coast-digital",
+    "sha256": "c21ac1573b08333e2671ce878e066df7d98b1f8f0a401ba497c06efe55a5e577",
+    "fetchedAt": "2026-09-23T12:54:30+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

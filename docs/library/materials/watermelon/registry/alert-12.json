@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "alert-12",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "alert"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/alerts/alert-12.tsx",
+      "content": "import { FaUserXmark } from \"react-icons/fa6\";\n\nimport { Alert, AlertTitle } from \"@/components/ui/alert\";\n\nconst Alert12 = () => {\n  return (\n    <Alert className=\"border-destructive bg-destructive/10 text-destructive rounded-none border-0 border-l-10\">\n      <FaUserXmark className=\"size-4\" />\n      <AlertTitle>Your request to join the team was declined.</AlertTitle>\n    </Alert>\n  );\n};\n\nexport default Alert12;\n",
+      "type": "registry:ui",
+      "target": "components/ui/alert-12.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

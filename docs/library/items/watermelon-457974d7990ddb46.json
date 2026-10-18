@@ -1,0 +1,72 @@
+{
+  "id": "watermelon-457974d7990ddb46",
+  "sourceUrl": "https://ui.watermelon.sh/block/hero-4",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/hero-4.json",
+      "sha256": "a0e90bb9d0edac81b9468079a3a23525648edca702846a4404e84292f37fe721",
+      "bytes": 15387,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/hero-4.tsx",
+      "target": "components/ui/hero-4.tsx",
+      "type": "registry:ui",
+      "sha256": "2ae0563eea620cc7e152a0e5c7cd4785a4851ea8927746ac9568a2109e9f0919",
+      "bytes": 14454
+    }
+  ],
+  "dependencies": [
+    "lucide-react",
+    "motion"
+  ],
+  "registryDependencies": [
+    "button"
+  ],
+  "imports": [
+    "@/assets/logo-icon",
+    "motion/react",
+    "react",
+    "react-icons/fa6"
+  ],
+  "propsDeclarations": [
+    "export interface Hero4Props {\n  /** Brand logo icon */\n  logo?: ReactNode;\n  /** Brand logo text */\n  logoText?: string;\n  /** Navigation items */\n  navItems?: Hero4NavItem[];\n  /** Sign in button text */\n  signInText?: string;\n  /** Sign in button URL */\n  signInHref?: string;\n  /** Get started button text */\n  getStartedText?: string;\n  /** Get started button URL */\n  getStartedHref?: string;\n  /** Badge text above the headline */\n  badgeText?: string;\n  /** Headline line 1 */\n  titleLine1?: string;\n  /** Headline line 2 (start — regular color) */\n  titleLine2Start?: string;\n  /** Headline line 2 (end — gradient accent) */\n  titleLine2Accent?: string;\n  /** Body description paragraph */\n  description?: string;\n  /** Primary CTA text */\n  primaryCtaText?: string;\n  /** Primary CTA URL */\n  primaryCtaHref?: string;\n  /** Secondary CTA text */\n  secondaryCtaText?: string;\n  /** Secondary CTA URL */\n  secondaryCtaHref?: string;\n  /** Background image URL */\n  backgroundImage?: string;\n  /** Stats displayed in the bottom bar */\n  stats?: Hero4Stat[];\n  /** Social links in the bottom bar */\n  socialLinks?: Hero4SocialLink[];\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "https://images.unsplash.com/photo-1635776062127-d379bfcba9f8?q=80&w=1920"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/hero-4.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "hero-4",
+    "status": "built",
+    "export": "Hero4",
+    "props": {},
+    "entry": "src/components/watermelon-ui/hero-4.tsx",
+    "url": "./library/previews/watermelon/hero-4.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:20+00:00",
+    "snapshotSha256": "a482fb3b4d578cd09791b5650ac2352b762a5ff52014e74084600a554cd67e0d"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

@@ -1,0 +1,348 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "root": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{0,63}$"
+    },
+    "elements": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]{0,63}$"
+      },
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "PortfolioPage"
+              },
+              "props": {
+                "type": "object",
+                "properties": {
+                  "profile": {
+                    "type": "object",
+                    "properties": {
+                      "$state": {
+                        "type": "string",
+                        "const": "/profile"
+                      }
+                    },
+                    "required": [
+                      "$state"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "profile"
+                ],
+                "additionalProperties": false
+              },
+              "children": {
+                "minItems": 6,
+                "maxItems": 6,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]{0,63}$"
+                }
+              }
+            },
+            "required": [
+              "type",
+              "props",
+              "children"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "Hero"
+              },
+              "props": {
+                "type": "object",
+                "properties": {
+                  "profile": {
+                    "type": "object",
+                    "properties": {
+                      "$state": {
+                        "type": "string",
+                        "const": "/profile"
+                      }
+                    },
+                    "required": [
+                      "$state"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "profile"
+                ],
+                "additionalProperties": false
+              },
+              "children": {
+                "minItems": 0,
+                "maxItems": 0,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]{0,63}$"
+                }
+              }
+            },
+            "required": [
+              "type",
+              "props",
+              "children"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "ProjectGrid"
+              },
+              "props": {
+                "type": "object",
+                "properties": {
+                  "projects": {
+                    "type": "object",
+                    "properties": {
+                      "$state": {
+                        "type": "string",
+                        "const": "/projects"
+                      }
+                    },
+                    "required": [
+                      "$state"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "projects"
+                ],
+                "additionalProperties": false
+              },
+              "children": {
+                "minItems": 0,
+                "maxItems": 0,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]{0,63}$"
+                }
+              }
+            },
+            "required": [
+              "type",
+              "props",
+              "children"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "CaseStudies"
+              },
+              "props": {
+                "type": "object",
+                "properties": {
+                  "projects": {
+                    "type": "object",
+                    "properties": {
+                      "$state": {
+                        "type": "string",
+                        "const": "/projects"
+                      }
+                    },
+                    "required": [
+                      "$state"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "projects"
+                ],
+                "additionalProperties": false
+              },
+              "children": {
+                "minItems": 0,
+                "maxItems": 0,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]{0,63}$"
+                }
+              }
+            },
+            "required": [
+              "type",
+              "props",
+              "children"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "CareerTimeline"
+              },
+              "props": {
+                "type": "object",
+                "properties": {
+                  "career": {
+                    "type": "object",
+                    "properties": {
+                      "$state": {
+                        "type": "string",
+                        "const": "/career"
+                      }
+                    },
+                    "required": [
+                      "$state"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "career"
+                ],
+                "additionalProperties": false
+              },
+              "children": {
+                "minItems": 0,
+                "maxItems": 0,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]{0,63}$"
+                }
+              }
+            },
+            "required": [
+              "type",
+              "props",
+              "children"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "EvidenceList"
+              },
+              "props": {
+                "type": "object",
+                "properties": {
+                  "evidence": {
+                    "type": "object",
+                    "properties": {
+                      "$state": {
+                        "type": "string",
+                        "const": "/evidence"
+                      }
+                    },
+                    "required": [
+                      "$state"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "evidence"
+                ],
+                "additionalProperties": false
+              },
+              "children": {
+                "minItems": 0,
+                "maxItems": 0,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]{0,63}$"
+                }
+              }
+            },
+            "required": [
+              "type",
+              "props",
+              "children"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "Contact"
+              },
+              "props": {
+                "type": "object",
+                "properties": {
+                  "contact": {
+                    "type": "object",
+                    "properties": {
+                      "$state": {
+                        "type": "string",
+                        "const": "/contact"
+                      }
+                    },
+                    "required": [
+                      "$state"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "contact"
+                ],
+                "additionalProperties": false
+              },
+              "children": {
+                "minItems": 0,
+                "maxItems": 0,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]{0,63}$"
+                }
+              }
+            },
+            "required": [
+              "type",
+              "props",
+              "children"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      }
+    }
+  },
+  "required": [
+    "root",
+    "elements"
+  ],
+  "additionalProperties": false
+}

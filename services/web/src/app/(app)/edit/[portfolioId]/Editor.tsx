@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { useActionState, useState, useTransition } from "react";
 
-import type { GeneratedPage, PortfolioDetail, PortfolioRevision } from "@expresso/contracts";
+import type { GeneratedPage, PortfolioDetail, PortfolioRevision, PageLibraryItem } from "@expresso/contracts";
 
 import { LogoMark } from "@/components/brand/Logo";
+import { WizardSteps } from "@/components/shell/WizardShell";
 import { Icon } from "@/components/ui/Icon";
 import { EDITOR_SUGGESTION } from "@/lib/sample/editor";
 
 import { PagePreview } from "@/components/portfolio/PagePreview";
+import { StructuredPageProperties } from "./StructuredPageProperties";
 import { PortfolioPage } from "@/components/portfolio/PortfolioPage";
 
 import {
@@ -40,7 +42,7 @@ function panelTarget(tab: PanelTab, revisionCount: number, chosen: string | null
 
 const RAIL_ITEMS = [
   { icon: "house", label: "홈", href: "/home" as const, active: false, dot: false },
-  { icon: "coffee", label: "새 포트폴리오", href: "/portfolio/new" as const, active: true, dot: false },
+  { icon: "coffee", label: "새 포트폴리오", href: "/brew/new" as const, active: true, dot: false },
   { icon: "target", label: "공고 탐색", href: "/jobs" as const, active: false, dot: false },
   { icon: "chart-bar", label: "분석", href: "/analytics" as const, active: false, dot: true },
 ];
@@ -66,6 +68,7 @@ export function Editor({
   checkpoints,
   generatedPage,
   generatedPageHistory,
+  libraryItems = [],
 }: {
   displayName: string;
   portfolio: PortfolioDetail;
@@ -73,6 +76,7 @@ export function Editor({
   checkpoints: readonly EditorCheckpoint[];
   generatedPage: GeneratedPage | null;
   generatedPageHistory: readonly GeneratedPage[];
+  libraryItems?: readonly PageLibraryItem[];
 }) {
   const [, startTransition] = useTransition();
   const [tab, setTab] = useState<PanelTab>("chat");
@@ -302,6 +306,13 @@ export function Editor({
           </div>
         </div>
 
+        {/* 04 다듬기도 제작 흐름의 여섯째 단계다. 지난 단계는 이 포트폴리오의 브루 화면으로 돌아간다. */}
+        <WizardSteps
+          brewId={portfolio.brewId}
+          current="edit"
+          situation={generatedPage ? `생성 완료 · 판 ${generatedPage.revision}` : "생성 전"}
+        />
+
         <div className={styles.stage} data-pane={pane}>
           <aside className={styles.sections} aria-label="섹션">
             <div className={styles.sectionsHead}>
@@ -529,7 +540,7 @@ export function Editor({
               <div className={styles.crumbs}>
                 {generatedPage ? (
                   <span className={`${styles.crumb} ${styles.crumbCurrent}`}>
-                    자유 HTML · 판 {generatedPage.revision + 1}
+                    {generatedPage.generationManifest?.structured ? "구조화 지면" : "자유 HTML"} · 판 {generatedPage.revision + 1}
                   </span>
                 ) : chosen ? (
                   <>
@@ -628,7 +639,7 @@ export function Editor({
               <span className={styles.panelTitle}>편집</span>
               <span className={styles.panelTarget}>
                 {generatedPage
-                  ? (tab === "history" ? `판 ${generatedPageHistory.length}개` : "웹페이지 전체")
+                  ? (tab === "history" ? `판 ${generatedPageHistory.length}개` : generatedPage.generationManifest?.structured ? "구성·문장" : "웹페이지 전체")
                   : panelTarget(tab, revisions.length, chosen?.path ?? null)}
               </span>
               <button type="button" className={styles.panelHeadAction} aria-label="넓게 보기">
@@ -658,11 +669,15 @@ export function Editor({
                 portfolioId={portfolio.id}
                 blocks={editableBlocks}
                 freePage={generatedPage !== null}
+                structured={!!generatedPage?.generationManifest?.structured}
               />
             ) : null}
             {tab === "properties" ? (
               generatedPage ? (
-                <FreePageProperties page={generatedPage} />
+                <div className={styles.propertiesStack}>
+                  <StructuredPageProperties key={generatedPage.revision} page={generatedPage} portfolioId={portfolio.id} libraryItems={libraryItems} />
+                  <FreePageProperties page={generatedPage} />
+                </div>
               ) : <>
                 <PropertiesPanel
                   portfolioId={portfolio.id}

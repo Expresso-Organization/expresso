@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "accordion-9",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "accordion"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/accordion/accordion-9.tsx",
+      "content": "import * as AccordionPrimitive from '@radix-ui/react-accordion'\nimport { ChevronDownIcon, ChevronRightIcon } from 'lucide-react'\n\nimport { Accordion, AccordionContent, AccordionItem } from '@/components/ui/accordion'\n\ntype AccordionItemData = {\n  value: string\n  title: string\n  content: string\n}\n\nconst items: readonly AccordionItemData[] = [\n  {\n    value: 'item-1',\n    title: 'Why are property listings going stale so quickly?',\n    content:\n      'Listings usually become outdated when status changes, pricing updates, and agent notes are managed in separate places. A stronger real estate workflow keeps availability, media, and listing metadata synced across every channel.'\n  },\n  {\n    value: 'item-2',\n    title: 'How can brokers reduce friction during inquiry handoff?',\n    content:\n      'Lead handoff often breaks when inquiry details, preferred move-in dates, and follow-up history are incomplete. A better handoff flow gives every broker the right context before the first conversation starts.'\n  },\n  {\n    value: 'item-3',\n    title: 'What makes scheduling property visits harder than it should be?',\n    content:\n      'Scheduling gets messy when agent calendars, tenant availability, and buyer interest are not aligned in one place. Clearer availability windows and confirmation updates help visits feel coordinated instead of manual.'\n  }\n] as const\n\nconst Accordion9 = () => {\n  return (\n    <Accordion className='w-full space-y-2' type=\"multiple\" defaultValue={[items[0].value]}>\n      {items.map((item) => (\n        <AccordionItem\n          key={item.value}\n          value={item.value}\n          className='rounded-md border bg-background shadow-sm transition-shadow has-[button[aria-expanded=true]]:shadow-md'\n        >\n          <AccordionPrimitive.Header className='flex'>\n            <AccordionPrimitive.Trigger\n              data-slot='accordion-trigger'\n              className='group/accordion-trigger focus-visible:border-ring focus-visible:ring-ring/50 flex flex-1 items-center justify-between gap-4 rounded-md px-5 py-4 text-left text-sm font-medium outline-none transition-all focus-visible:ring-[3px] aria-disabled:pointer-events-none aria-disabled:opacity-50'\n            >\n              <span className='flex items-center gap-3'>\n                <span className='relative size-4 shrink-0 text-muted-foreground'>\n                  <ChevronRightIcon className='absolute inset-0 size-4 group-aria-expanded/accordion-trigger:hidden' />\n                  <ChevronDownIcon className='absolute inset-0 hidden size-4 group-aria-expanded/accordion-trigger:block' />\n                </span>\n                <span>{item.title}</span>\n              </span>\n            </AccordionPrimitive.Trigger>\n          </AccordionPrimitive.Header>\n\n          <AccordionContent className='px-5 pl-12 text-muted-foreground'>\n            {item.content}\n          </AccordionContent>\n        </AccordionItem>\n      ))}\n    </Accordion>\n  )\n}\n\nexport default Accordion9\n",
+      "type": "registry:ui",
+      "target": "components/ui/accordion-9.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

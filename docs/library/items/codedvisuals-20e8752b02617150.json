@@ -1,0 +1,21 @@
+{
+  "id": "codedvisuals-20e8752b02617150",
+  "sourceUrl": "https://codedvisuals.com/visuals/sections/contact",
+  "sourceRevision": null,
+  "roles": [
+    "contact"
+  ],
+  "roleEvidence": "본문을 읽은 뒤 연락·외부 자료로 이어 줄 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상용 라이선스의 AI builder·site builder 사용 제한"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "licenseUrl": "https://codedvisuals.com/license",
+  "acquisitionStatus": "permission_needed",
+  "previewReason": "상용 라이선스의 AI builder·site builder 사용 제한",
+  "sourceLicense": "https://codedvisuals.com/license"
+}

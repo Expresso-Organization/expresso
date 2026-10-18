@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" role="img" aria-label="길눈 가상 시제품 화면">
+  <rect width="1200" height="900" fill="#f6f1e8"/>
+  <rect x="0" y="0" width="1200" height="76" fill="#24344c"/>
+  <text x="42" y="50" fill="#fff" font-family="Arial,sans-serif" font-size="30" font-weight="700">gilnun  /  find your way</text>
+  <text x="944" y="49" fill="#d5e0e9" font-family="Arial,sans-serif" font-size="18">Destinations  /  Help</text>
+  <text x="61" y="166" fill="#24344c" font-family="Arial,sans-serif" font-size="43" font-weight="700">Where would you like to go?</text>
+  <text x="61" y="205" fill="#687689" font-family="Arial,sans-serif" font-size="20">Choose a destination and review each step of the route</text>
+  <g font-family="Arial,sans-serif">
+    <rect x="56" y="259" width="323" height="119" rx="15" fill="#e7d8bf" stroke="#9a7442" stroke-width="3"/>
+    <text x="85" y="307" fill="#634727" font-size="19" font-weight="700">01  INFORMATION</text><text x="85" y="347" fill="#6d5336" font-size="24">Ground floor</text>
+    <rect x="56" y="398" width="323" height="119" rx="15" fill="#fff" stroke="#d8cec1" stroke-width="3"/>
+    <text x="85" y="446" fill="#677283" font-size="19" font-weight="700">02  READING ROOM</text><text x="85" y="486" fill="#24344c" font-size="24">Second floor</text>
+    <rect x="56" y="537" width="323" height="119" rx="15" fill="#fff" stroke="#d8cec1" stroke-width="3"/>
+    <text x="85" y="585" fill="#677283" font-size="19" font-weight="700">03  LOUNGE</text><text x="85" y="625" fill="#24344c" font-size="24">Third floor</text>
+  </g>
+  <rect x="423" y="258" width="717" height="530" rx="19" fill="#fff"/>
+  <text x="466" y="314" fill="#24344c" font-family="Arial,sans-serif" font-size="25" font-weight="700">Your route  /  step-free</text>
+  <g fill="#ece6dd" stroke="#b7a998" stroke-width="3"><path d="M497 480L734 392L1040 492L805 580Z"/><path d="M497 480V520L805 620V580M805 620L1040 531V492"/></g>
+  <g fill="#f5f0e7" stroke="#b7a998" stroke-width="3"><path d="M497 603L734 515L1040 615L805 703Z"/><path d="M497 603V643L805 743V703M805 743L1040 654V615"/></g>
+  <path d="M572 505L710 554L773 531L833 555L917 522" fill="none" stroke="#a55c38" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="572" cy="505" r="16" fill="#a55c38" stroke="#fff" stroke-width="6"/>
+  <circle cx="917" cy="522" r="16" fill="#a55c38" stroke="#fff" stroke-width="6"/>
+  <rect x="485" y="721" width="614" height="43" rx="10" fill="#eef2f6"/>
+  <text x="506" y="750" fill="#33465c" font-family="Arial,sans-serif" font-size="19">Entrance  →  Information desk  ·  No stairs</text>
+</svg>

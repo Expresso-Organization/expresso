@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "avatar-11",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "avatar"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/avatar/avatar-11.tsx",
+      "content": "import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'\nimport { Badge } from '@/components/ui/badge'\n\ntype Profile = {\n  name: string\n  avatar: string\n  count: number\n}\n\nconst profile: Profile = {\n  name: 'Noah Bennett',\n  avatar: 'https://i.pravatar.cc/160?img=52',\n  count: 5\n}\n\nconst getInitials = (name: string) =>\n  name\n    .split(/\\s+/)\n    .map((word) => word.slice(0, 1))\n    .join('')\n\nconst Avatar11 = () => {\n  return (\n    <div className='relative w-fit'>\n      <Avatar className='size-10 rounded-sm'>\n        <AvatarImage\n          src={profile.avatar}\n          alt={profile.name}\n          className='rounded-sm'\n        />\n        <AvatarFallback className='text-xs'>{getInitials(profile.name)}</AvatarFallback>\n      </Avatar>\n      <Badge className='absolute -top-2.5 -right-2.5 h-5 min-w-5 bg-slate-700 px-1 tabular-nums text-white dark:bg-slate-200 dark:text-slate-900'>\n        {profile.count}\n      </Badge>\n    </div>\n  )\n}\n\nexport default Avatar11\n\n",
+      "type": "registry:ui",
+      "target": "components/ui/avatar-11.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

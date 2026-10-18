@@ -1,0 +1,85 @@
+{
+  "id": "watermelon-fc3e0fba89a72bb9",
+  "sourceUrl": "https://ui.watermelon.sh/animated-components/activities-card",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/activities-card.json",
+      "sha256": "de9e25f2575e842e30603674148d39eebb22b04747b8b2009688c282583b2757",
+      "bytes": 6245,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/activities-card.tsx",
+      "target": "components/ui/activities-card.tsx",
+      "type": "registry:ui",
+      "sha256": "3ac6d064bf89f329588551afdb312bd8f6b92885dd69424e0df14ce9d57d0bc9",
+      "bytes": 5668
+    }
+  ],
+  "dependencies": [
+    "lucide-react",
+    "motion"
+  ],
+  "registryDependencies": [],
+  "imports": [
+    "lucide-react",
+    "motion/react",
+    "react"
+  ],
+  "propsDeclarations": [
+    "export interface ActivitiesCardProps {\n  headerIcon: ReactNode;\n  title: string;\n  subtitle: string;\n  activities: ActivityItemType[];\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/activities-card.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "activities-card",
+    "status": "built",
+    "export": "ActivitiesCard",
+    "props": {
+      "headerIcon": "P",
+      "title": "Project activity",
+      "subtitle": "Example portfolio timeline",
+      "activities": [
+        {
+          "icon": "1",
+          "title": "Research",
+          "desc": "Example process entry",
+          "time": "Phase 1"
+        },
+        {
+          "icon": "2",
+          "title": "Prototype",
+          "desc": "Example implementation entry",
+          "time": "Phase 2"
+        }
+      ]
+    },
+    "entry": "src/components/watermelon-ui/activities-card.tsx",
+    "url": "./library/previews/watermelon/activities-card.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:02+00:00",
+    "snapshotSha256": "2f90f393f1b77087fdb10981def46f16224f58dfee5d43e9775a510aec197d54"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

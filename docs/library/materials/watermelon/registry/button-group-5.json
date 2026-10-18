@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "button-group-5",
+  "dependencies": [
+    "lucide-react",
+    "motion"
+  ],
+  "registryDependencies": [
+    "button-group"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/button-group/button-group-5.tsx",
+      "content": "import type { LucideIcon } from 'lucide-react';\nimport {\n  BookOpenIcon,\n  BriefcaseIcon,\n  LayoutGridIcon,\n  TerminalSquareIcon,\n} from 'lucide-react';\n\nimport { buttonVariants } from '@/components/ui/button';\nimport { cn } from '@/lib/utils';\n\ntype SocialAction = {\n  href: string;\n  hoverClassName: string;\n  icon: LucideIcon;\n  iconClassName: string;\n  label: string;\n};\n\nconst actions: readonly SocialAction[] = [\n  {\n    href: '#',\n    hoverClassName: 'hover:!bg-[#2563eb]/10',\n    icon: TerminalSquareIcon,\n    iconClassName: 'stroke-[#2563eb]',\n    label: 'Code',\n  },\n  {\n    href: '#',\n    hoverClassName: 'hover:!bg-[#16a34a]/10',\n    icon: BriefcaseIcon,\n    iconClassName: 'stroke-[#16a34a]',\n    label: 'Work',\n  },\n  {\n    href: '#',\n    hoverClassName: 'hover:!bg-[#dc2626]/10',\n    icon: LayoutGridIcon,\n    iconClassName: 'stroke-[#dc2626]',\n    label: 'Library',\n  },\n  {\n    href: '#',\n    hoverClassName: 'hover:!bg-[#ca8a04]/10',\n    icon: BookOpenIcon,\n    iconClassName: 'stroke-[#ca8a04]',\n    label: 'Docs',\n  },\n] as const;\n\nconst ButtonGroup5 = () => {\n  return (\n    <div className=\"inline-flex w-fit -space-x-px rounded-full shadow-xs rtl:space-x-reverse\">\n      {actions.map((action, index) => {\n        const Icon = action.icon;\n        const isFirst = index === 0;\n        const isLast = index === actions.length - 1;\n\n        return (\n          <a\n            key={action.label}\n            href={action.href}\n            target=\"_blank\"\n            rel=\"noopener noreferrer\"\n            className={cn(\n              buttonVariants({ variant: 'outline', size: 'icon' }),\n              'border-border/70 bg-background size-9 rounded-none p-2.5 shadow-none focus-visible:z-10',\n              action.hoverClassName,\n              isFirst ? 'rounded-l-full' : '',\n              isLast ? 'rounded-r-full' : '',\n            )}\n          >\n            <Icon className={action.iconClassName} />\n            <span className=\"sr-only\">{action.label}</span>\n          </a>\n        );\n      })}\n    </div>\n  );\n};\n\nexport default ButtonGroup5;\n",
+      "type": "registry:ui",
+      "target": "components/ui/button-group-5.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "radiogroup-5",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "radio-group"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/radiogroup/radiogroup-5.tsx",
+      "content": "import { useId } from \"react\";\n\nimport { Badge } from \"@/components/ui/badge\";\nimport { Label } from \"@/components/ui/label\";\nimport { RadioGroup, RadioGroupItem } from \"@/components/ui/radio-group\";\nimport { FaUser, FaUsers, FaBuilding } from \"react-icons/fa6\";\n\nconst RadioGroup5 = () => {\n  const id = useId();\n\n  const items = [\n    { value: \"1\", label: \"Individual\", price: \"Free\", icon: FaUser },\n    { value: \"2\", label: \"Team Workspace\", price: \"₹999/mo\", icon: FaUsers },\n    { value: \"3\", label: \"Organization\", price: \"Custom\", icon: FaBuilding },\n  ];\n\n  return (\n    <RadioGroup\n      className=\"w-full max-w-96 gap-0 -space-y-px rounded-md shadow-xs\"\n      defaultValue=\"2\"\n    >\n      {items.map((item) => (\n        <div\n          key={`${id}-${item.value}`}\n          className=\"border-input has-data-[state=checked]:border-primary/50 has-data-[state=checked]:bg-accent dark:has-data-[state=checked]:bg-card relative flex flex-col gap-4 border p-4 outline-none first:rounded-t-md last:rounded-b-md has-data-[state=checked]:z-10 has-data-[state=checked]:shadow-[inset_0_2px_4px_rgba(0,0,0,0.15),inset_0_-1px_2px_rgba(255,255,255,0.1)]\"\n        >\n          <div className=\"flex items-center justify-between\">\n            <div className=\"flex items-center gap-2\">\n              <RadioGroupItem\n                id={`${id}-${item.value}`}\n                value={item.value}\n                className=\"after:absolute after:inset-0\"\n                aria-label={`plan-radio-${item.value}`}\n                aria-describedby={`${`${id}-${item.value}`}-price`}\n              />\n              <Label\n                className=\"inline-flex items-center\"\n                htmlFor={`${id}-${item.value}`}\n              >\n                <item.icon className=\"text-muted-foreground shrink-0\" />\n                {item.label}\n                {item.value === \"2\" && (\n                  <Badge className=\"rounded-sm px-1.5 py-px text-xs hidden sm:block\">\n                    Best Seller\n                  </Badge>\n                )}\n              </Label>\n            </div>\n            <div\n              id={`${`${id}-${item.value}`}-price`}\n              className=\"text-muted-foreground text-xs leading-[inherit]\"\n            >\n              {item.price}\n            </div>\n          </div>\n        </div>\n      ))}\n    </RadioGroup>\n  );\n};\n\nexport default RadioGroup5;\n",
+      "type": "registry:ui",
+      "target": "components/ui/radiogroup-5.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

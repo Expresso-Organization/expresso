@@ -1,0 +1,341 @@
+{
+  "method": "sandbox_iframe",
+  "results": [
+    {
+      "id": "componentry-animated-gradient",
+      "name": "animated-gradient",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-annotated-text",
+      "name": "annotated-text",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-ascii-effect",
+      "name": "ascii-effect",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-aurora-flow",
+      "name": "aurora-flow",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-case-study-flip-stack",
+      "name": "case-study-flip-stack",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-circuit-board",
+      "name": "circuit-board",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-closing-plasma",
+      "name": "closing-plasma",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-collection-surfer",
+      "name": "collection-surfer",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-cursor-driven-particle-typography",
+      "name": "cursor-driven-particle-typography",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-dither-gradient",
+      "name": "dither-gradient",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-dither-prism-hero",
+      "name": "dither-prism-hero",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-dithered-logo",
+      "name": "dithered-logo",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-eye-tracking",
+      "name": "eye-tracking",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-fisheye-infinite-grid",
+      "name": "fisheye-infinite-grid",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-flight-status-card",
+      "name": "flight-status-card",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-flipping-word-swap",
+      "name": "flipping-word-swap",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-github-calendar",
+      "name": "github-calendar",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-gradient-hero-01",
+      "name": "gradient-hero-01",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-grain-gradient",
+      "name": "grain-gradient",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-hero-geometric",
+      "name": "hero-geometric",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-hover-transition",
+      "name": "hover-transition",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-image-ripple-effect",
+      "name": "image-ripple-effect",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-image-trail",
+      "name": "image-trail",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-infinite-image-field",
+      "name": "infinite-image-field",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-kinetic-text-reveal",
+      "name": "kinetic-text-reveal",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-layered-stack",
+      "name": "layered-stack",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-letter-cascade",
+      "name": "letter-cascade",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-liquid-chrome",
+      "name": "liquid-chrome",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-liquid-glass-carousel",
+      "name": "liquid-glass-carousel",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-mac-keyboard",
+      "name": "mac-keyboard",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-magnet-lines",
+      "name": "magnet-lines",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-magnetic-dock",
+      "name": "magnetic-dock",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-matrix-rain",
+      "name": "matrix-rain",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-music-player",
+      "name": "music-player",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-newsletter-bookshelf",
+      "name": "newsletter-bookshelf",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-orbit-card-stack",
+      "name": "orbit-card-stack",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-pixel-canvas",
+      "name": "pixel-canvas",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-pixel-image-trail",
+      "name": "pixel-image-trail",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-pricing-01",
+      "name": "pricing-01",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-pricing-02",
+      "name": "pricing-02",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-prism-gradient",
+      "name": "prism-gradient",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-ripple-transition",
+      "name": "ripple-transition",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-scroll-based-velocity",
+      "name": "scroll-based-velocity",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-scroll-choreography",
+      "name": "scroll-choreography",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-scroll-split-card",
+      "name": "scroll-split-card",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-scroll-tilted-grid",
+      "name": "scroll-tilted-grid",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-signature",
+      "name": "signature",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-silk-aurora",
+      "name": "silk-aurora",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-spectral-ribbon",
+      "name": "spectral-ribbon",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-spiral-3d-slider",
+      "name": "spiral-3d-slider",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-split-flap-display",
+      "name": "split-flap-display",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-sticky-scroll-cards",
+      "name": "sticky-scroll-cards",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-text-morph",
+      "name": "text-morph",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-text-repel",
+      "name": "text-repel",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-webgl-liquid",
+      "name": "webgl-liquid",
+      "status": "ready",
+      "reason": ""
+    },
+    {
+      "id": "componentry-wheel-carousel",
+      "name": "wheel-carousel",
+      "status": "ready",
+      "reason": ""
+    }
+  ]
+}

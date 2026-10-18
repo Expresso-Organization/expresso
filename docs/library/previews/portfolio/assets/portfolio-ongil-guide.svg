@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="720" viewBox="0 0 960 720" role="img" aria-label="가상 프로젝트 온길 안내 화면">
+<rect width="960" height="720" fill="#f7e9d7"/><rect x="65" y="34" width="830" height="652" rx="28" fill="#fffdf9"/>
+<path d="M65 62q0-28 28-28h774q28 0 28 28v112H65z" fill="#88482e"/><text x="110" y="110" fill="#fff" font-size="34" font-family="Arial,sans-serif" font-weight="700">ONGIL GUIDE</text><text x="110" y="145" fill="#f7d9bf" font-size="17" font-family="Arial,sans-serif">Find a clear way forward</text>
+<text x="112" y="245" fill="#513221" font-size="36" font-family="Arial,sans-serif" font-weight="700">Where would you like to go?</text><text x="113" y="283" fill="#8c776a" font-size="20" font-family="Arial,sans-serif">Choose a destination to view an easy route.</text>
+<rect x="110" y="332" width="335" height="122" rx="20" fill="#fff0dd" stroke="#e4b17b" stroke-width="3"/><circle cx="159" cy="393" r="25" fill="#c47443"/><text x="208" y="400" fill="#5c3826" font-size="25" font-family="Arial,sans-serif" font-weight="700">Information desk</text>
+<rect x="473" y="332" width="335" height="122" rx="20" fill="#f5f0e7"/><circle cx="522" cy="393" r="25" fill="#8b9a73"/><text x="571" y="400" fill="#4d513d" font-size="25" font-family="Arial,sans-serif" font-weight="700">Rest area</text>
+<rect x="110" y="478" width="698" height="87" rx="19" fill="#88482e"/><text x="146" y="532" fill="#fff" font-size="25" font-family="Arial,sans-serif" font-weight="700">Show a step-free route  →</text>
+<text x="111" y="638" fill="#9f8572" font-size="16" font-family="Arial,sans-serif">Fictional portfolio project · visual prototype</text></svg>

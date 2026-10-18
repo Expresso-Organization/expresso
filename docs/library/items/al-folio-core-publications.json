@@ -1,0 +1,55 @@
+{
+  "id": "al-folio-core-publications",
+  "sourceUrl": "https://github.com/al-org-dev/al-folio-core/blob/fa58be03acad50a4a1ec566dc88280e73ab75d18/_layouts/bib.liquid",
+  "sourceRevision": "fa58be03acad50a4a1ec566dc88280e73ab75d18",
+  "roles": [
+    "research",
+    "technical-evidence"
+  ],
+  "roleEvidence": "원본 데이터 구조 검토",
+  "roleMethod": "source_review",
+  "materials": [
+    {
+      "path": "./library/materials/al-folio-core/publications.json",
+      "sha256": "0918a0d0e7160353d0910bb03b5dc07696b22c82d1621dd91ec22e344f46e07e",
+      "bytes": 18622,
+      "label": "원본 코드 묶음",
+      "kind": "registry_source"
+    },
+    {
+      "path": "./library/materials/al-folio-core/LICENSE.txt",
+      "sha256": "24a7406c4f73258556a4ab05a631b089bf646cd0b64cf853de112f7c79e74281",
+      "bytes": 1086,
+      "label": "MIT 라이선스 원문",
+      "kind": "license"
+    }
+  ],
+  "observations": [
+    "BibTeX/Jekyll 데이터를 JSON으로 매핑해야 합니다.",
+    "접힌 초록·저자 확장·외부 배지는 React로 이식하고 외부 요청 정책을 정해야 합니다."
+  ],
+  "inputs": [
+    "title",
+    "authors",
+    "journal",
+    "year",
+    "abstract",
+    "pdf",
+    "doi",
+    "code"
+  ],
+  "framework": "Jekyll / Liquid",
+  "sourceLicense": "https://github.com/al-org-dev/al-folio-core/blob/fa58be03acad50a4a1ec566dc88280e73ab75d18/LICENSE",
+  "acquisitionStatus": "source_ready",
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "_layouts/bib.liquid",
+      "sha256": "f3c547969ef76219ca1eb21df09dce5a3daf32a1f491b1586f68e3213fa35f53",
+      "bytes": 17690
+    }
+  ],
+  "usageNote": "고정 버전의 지정 파일 묶음입니다. 완전한 실행 의존성 묶음은 아니며 설치·렌더링 전입니다."
+}

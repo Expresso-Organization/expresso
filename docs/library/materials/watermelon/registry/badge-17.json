@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "badge-17",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "badge"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/badge/badge-17.tsx",
+      "content": "\n\n\nimport { Badge } from \"@/components/ui/badge\";\nimport { MdError } from \"react-icons/md\";\n\nconst Badge17 = () => {\n  return (\n    <Badge\n      variant=\"outline\"\n      className=\"rounded-sm border-sky-600 text-sky-600 dark:border-sky-400 dark:text-sky-400 [a&]:hover:bg-sky-600/10 bg-sky-600/10 dark:bg-sky-400/10\"\n    >\n      <MdError className=\"size-3\" />\n      Pending\n    </Badge>\n  );\n};\n\nexport default Badge17;\n",
+      "type": "registry:ui",
+      "target": "components/ui/badge-17.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

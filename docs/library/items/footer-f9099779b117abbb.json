@@ -1,0 +1,30 @@
+{
+  "id": "footer-f9099779b117abbb",
+  "sourceUrl": "https://www.footer.design/sites/huy-nguyen-portfolio",
+  "sourceRevision": null,
+  "roles": [
+    "project-grid"
+  ],
+  "roleEvidence": "작품·프로젝트·사례를 묶어 보여주는 표현 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Huy Nguyen Portfolio",
+    "공개 이미지 요소: 27개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://www.huyng.xyz/",
+  "evidence": {
+    "url": "https://www.footer.design/sites/huy-nguyen-portfolio",
+    "sha256": "46a9d1a509e65f7bd2c06b98d0cfca42958eb436ee8848e663975e78c53b7b32",
+    "fetchedAt": "2026-09-23T12:52:56+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

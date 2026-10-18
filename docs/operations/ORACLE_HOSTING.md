@@ -92,25 +92,19 @@ DNS가 이미 이 서버를 가리키고 있었다. 인증서는 Let's Encrypt�
 
 지금은 앱이 없어 **502가 정상이다.**
 
-#### 이 기계의 nginx는 systemd가 아니다
+#### nginx 재로드 (2026-09-27 재확인)
 
-`nginx.service`는 `inactive`인데 80/443은 다른 마스터(`nginx -c
-/etc/nginx/nginx.conf`, PID 552610)가 쥐고 있고 `/run/nginx.pid`가 비어 있다.
-그래서 `systemctl reload nginx`도 `nginx -s reload`도 듣지 않는다. 리로드는
-마스터에 직접 신호를 보낸다.
+현재 호스트의 `nginx.service`는 `active`이고 `MainPID`가 호스트 nginx 마스터와
+일치합니다. 설정을 바꿀 때는 문법을 확인한 뒤 서비스를 재로드합니다.
 
 ```bash
-sudo kill -HUP "$(pgrep -f '^nginx: master process nginx -c')"
+sudo nginx -t && sudo systemctl reload nginx
 ```
 
-**앵커(`^`)를 빼면 듣지 않는다.** 이 기계에는 컨테이너의 nginx 마스터가 셋 더
-있고, `pgrep -f`는 그 명령을 담은 자기 자신의 셸까지 물어 온다. PID가 여럿
-나오면 `kill`이 인자를 못 읽고 실패한다(2026-08-20에 겪었다).
-
-**이것이 인증서 갱신에도 걸린다.** `/etc/letsencrypt/renewal-hooks/deploy/00-reload-nginx.sh`가
-`systemctl reload nginx`를 부르고 실패한다(발급할 때 실제로 실패했다). 갱신은
-되지만 **nginx가 새 인증서를 집어 들지 않는다** — 이 기계의 모든 도메인이 같은
-상태다. 훅을 고칠지는 다른 서비스에도 영향이 있어 따로 정한다.
+2026-08-20에는 `nginx.service`가 비활성이어서 마스터에 직접 HUP을 보냈습니다.
+현재 상태에서 그 명령의 PID 패턴은 일치하지 않습니다. 재로드 전에
+`systemctl is-active nginx`와 `systemctl show -p MainPID --value nginx`로 상태를
+확인할 수 있습니다. 당시 인증서 갱신 훅 실패도 비활성 상태에서 발생했습니다.
 
 ### 올린 결과 (2026-08-13)
 
@@ -276,18 +270,19 @@ gh secret set ORACLE_DEV_PORTAL_KEY \
 호스트 키는 시크릿이 아니라 지문이라 워크플로에 그대로 박아 두었다. 서버를 다시
 만들면 그 줄도 바꾼다(`ssh-keyscan -t ed25519 140.245.74.246`).
 
-### nginx 리로드는 4절의 그 문제를 그대로 겪는다
+### nginx 재로드와 ES 모듈
 
-`systemctl reload nginx`도 `nginx -s reload`도 듣지 않는다. 마스터에 직접
-신호를 보낸다. `pgrep -f "nginx: master"`는 **컨테이너의 마스터 셋과 자기
-자신까지 물어 온다** — 앵커를 붙여 호스트 것만 고른다.
+2026-09-27 현재 호스트의 `nginx.service`가 활성 상태입니다. 설정 파일을
+검사하고 재로드합니다.
 
 ```bash
-sudo kill -HUP "$(pgrep -f '^nginx: master process nginx -c')"
+sudo nginx -t && sudo systemctl reload nginx
 ```
 
-인증서를 받을 때 `deploy-hook`이 `nginx.service is not active`로 실패한 것도
-같은 원인이고, 이 기계의 모든 도메인이 같은 상태다. 발급 자체는 되었다.
+`infra/nginx/dev.expresso.ai.kr.conf`는 라이브러리의 `.mjs` 파일을
+`application/javascript`로 제공합니다. 서버 기본 `mime.types`는 이 확장자를
+모르므로 설정이 빠지면 라이브러리 모듈을 브라우저가 실행하지 못합니다.
+배포 워크플로가 응답 유형을 확인합니다.
 
 ### 문서를 한 벌로 모았다 (2026-08-20)
 

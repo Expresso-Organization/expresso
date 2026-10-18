@@ -1,0 +1,512 @@
+{
+  "fictional": true,
+  "model": "qwen3.5:9b-q8_0",
+  "runs": [
+    {
+      "slug": "robotics-engineer",
+      "name": "한도윤",
+      "role": "로봇 엔지니어",
+      "design": {
+        "layout": "library",
+        "palette": "graphite",
+        "font": "sans"
+      },
+      "library": {
+        "inventoryHash": "4985cdcfd66e312515888735c8578dd238cf97b5766fedcafbc85bcd21e1e2fc",
+        "inventoryTotal": 9516,
+        "selected": [
+          {
+            "id": "watermelon-38872751a90a18eb",
+            "key": "watermelon-hero-12",
+            "sourceUrl": null,
+            "status": "renderable",
+            "material": "./library/materials/watermelon/registry/hero-12.json",
+            "sha256": "460addf0ca3573e76875ff42aa0ba1acd980f00c80bbb69bbef2c8c6401cdbd0",
+            "adaptation": "원본 React 코드 + 입력 속성 연결 + 샘플/외부 자산 제거 + CSS 모션"
+          },
+          {
+            "id": "watermelon-92719fe0cf8cd515",
+            "key": "watermelon-book",
+            "sourceUrl": null,
+            "status": "renderable",
+            "material": "./library/materials/watermelon/registry/book.json",
+            "sha256": "39fbf105061d3a60e95932065ae7b3e044269aebcdc97d7bd1e440fea84d5dbf",
+            "adaptation": "원본 React 코드 + 입력 속성 연결 + 샘플/외부 자산 제거 + CSS 모션"
+          },
+          {
+            "id": "watermelon-81213bb8a61f3c51",
+            "key": "watermelon-feature-4",
+            "sourceUrl": null,
+            "status": "renderable",
+            "material": "./library/materials/watermelon/registry/feature-4.json",
+            "sha256": "99b65e28e486bcd2d694f82ac9d869a1a8a22faaa74ef8d47a62eb1e45d53f1e",
+            "adaptation": "원본 React 코드 + 입력 속성 연결 + 샘플/외부 자산 제거 + CSS 모션"
+          }
+        ],
+        "query": "grid timeline technical 로봇 엔지니어 경로 계획 조작 계획 현장 검증 순찰 로봇 경로 계획 집기 분류 그리퍼 창고 통로 시험 ",
+        "offeredIds": [
+          "watermelon-hero-1",
+          "watermelon-hero-10",
+          "watermelon-hero-11",
+          "watermelon-hero-12",
+          "watermelon-hero-14",
+          "watermelon-hero-15",
+          "watermelon-hero-16",
+          "watermelon-hero-17",
+          "watermelon-hero-18",
+          "watermelon-hero-19",
+          "watermelon-hero-2",
+          "watermelon-hero-20",
+          "watermelon-hero-21",
+          "watermelon-hero-22",
+          "watermelon-hero-23",
+          "watermelon-hero-24",
+          "watermelon-hero-25",
+          "watermelon-hero-26",
+          "watermelon-hero-27",
+          "watermelon-hero-28",
+          "watermelon-hero-29",
+          "watermelon-hero-3",
+          "watermelon-hero-30",
+          "watermelon-hero-31",
+          "watermelon-hero-32",
+          "watermelon-hero-33",
+          "watermelon-hero-4",
+          "watermelon-hero-5",
+          "watermelon-hero-6",
+          "watermelon-hero-7",
+          "watermelon-hero-8",
+          "watermelon-hero-9",
+          "watermelon-feature-1",
+          "watermelon-feature-4",
+          "watermelon-book",
+          "watermelon-card",
+          "watermelon-text-gradient",
+          "componentry-annotated-text",
+          "diagram-296c29b485b3393b",
+          "diagram-979793da545bf928",
+          "diagram-a5f3d2526bd439f0",
+          "404-650e9a4c4e52cebb",
+          "404-e9cad4163efa6951",
+          "404-f7693932d4b3a8ab",
+          "404-fc317a3dde743a0d",
+          "60fps-0ada8b4c85b925b1"
+        ]
+      },
+      "sourceComposition": [
+        "watermelon-hero-12",
+        "rows",
+        "watermelon-book",
+        "watermelon-book",
+        "watermelon-feature-4",
+        "CareerTimeline",
+        "EvidenceGrid",
+        "Contact"
+      ],
+      "htmlSha256": "5457a5b2dca85eb968f5d4f383a305d5dad1dc07326368f353cc662321d14839",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 52,
+          "headlineSize": 16,
+          "caseTypes": [
+            "technical",
+            "technical",
+            "process"
+          ],
+          "motion": "none",
+          "controlContrast": [],
+          "preservedFields": 66
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 64.82,
+          "headlineSize": 18.52,
+          "caseTypes": [
+            "technical",
+            "technical",
+            "process"
+          ],
+          "motion": "none",
+          "controlContrast": [],
+          "preservedFields": 66
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 100.8,
+          "headlineSize": 24,
+          "caseTypes": [
+            "technical",
+            "technical",
+            "process"
+          ],
+          "motion": "none",
+          "controlContrast": [],
+          "preservedFields": 66
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "design": {
+        "layout": "library",
+        "palette": "ivory",
+        "font": "serif"
+      },
+      "library": {
+        "inventoryHash": "4985cdcfd66e312515888735c8578dd238cf97b5766fedcafbc85bcd21e1e2fc",
+        "inventoryTotal": 9516,
+        "selected": [
+          {
+            "id": "watermelon-ce66f3b1a56849db",
+            "key": "watermelon-hero-15",
+            "sourceUrl": null,
+            "status": "renderable",
+            "material": "./library/materials/watermelon/registry/hero-15.json",
+            "sha256": "24eca369ad8547f582bd56760e591945713818c9f2dbd95c7b003d2ece255079",
+            "adaptation": "원본 React 코드 + 입력 속성 연결 + 샘플/외부 자산 제거 + CSS 모션"
+          },
+          {
+            "id": "watermelon-92719fe0cf8cd515",
+            "key": "watermelon-book",
+            "sourceUrl": null,
+            "status": "renderable",
+            "material": "./library/materials/watermelon/registry/book.json",
+            "sha256": "39fbf105061d3a60e95932065ae7b3e044269aebcdc97d7bd1e440fea84d5dbf",
+            "adaptation": "원본 React 코드 + 입력 속성 연결 + 샘플/외부 자산 제거 + CSS 모션"
+          },
+          {
+            "id": "watermelon-81213bb8a61f3c51",
+            "key": "watermelon-feature-4",
+            "sourceUrl": null,
+            "status": "renderable",
+            "material": "./library/materials/watermelon/registry/feature-4.json",
+            "sha256": "99b65e28e486bcd2d694f82ac9d869a1a8a22faaa74ef8d47a62eb1e45d53f1e",
+            "adaptation": "원본 React 코드 + 입력 속성 연결 + 샘플/외부 자산 제거 + CSS 모션"
+          },
+          {
+            "id": "watermelon-8367cd66fdd136bb",
+            "key": "watermelon-card",
+            "sourceUrl": null,
+            "status": "renderable",
+            "material": "./library/materials/watermelon/registry/card.json",
+            "sha256": "76314b6dd15952fa21ac98d23beecd6678e11aea04986b1793e1794bdafe9193",
+            "adaptation": "원본 React 코드 + 입력 속성 연결 + 샘플/외부 자산 제거 + CSS 모션"
+          }
+        ],
+        "query": "editorial typography layout bento 편집 디자이너 조판 출판 디자인 인쇄 계절의 언어 아카이브 산책 읽는 길 ",
+        "offeredIds": [
+          "watermelon-hero-1",
+          "watermelon-hero-10",
+          "watermelon-hero-11",
+          "watermelon-hero-12",
+          "watermelon-hero-14",
+          "watermelon-hero-15",
+          "watermelon-hero-16",
+          "watermelon-hero-17",
+          "watermelon-hero-18",
+          "watermelon-hero-19",
+          "watermelon-hero-2",
+          "watermelon-hero-20",
+          "watermelon-hero-21",
+          "watermelon-hero-22",
+          "watermelon-hero-23",
+          "watermelon-hero-24",
+          "watermelon-hero-25",
+          "watermelon-hero-26",
+          "watermelon-hero-27",
+          "watermelon-hero-28",
+          "watermelon-hero-29",
+          "watermelon-hero-3",
+          "watermelon-hero-30",
+          "watermelon-hero-31",
+          "watermelon-hero-32",
+          "watermelon-hero-33",
+          "watermelon-hero-4",
+          "watermelon-hero-5",
+          "watermelon-hero-6",
+          "watermelon-hero-7",
+          "watermelon-hero-8",
+          "watermelon-hero-9",
+          "watermelon-feature-1",
+          "watermelon-feature-4",
+          "watermelon-book",
+          "watermelon-card",
+          "watermelon-text-gradient",
+          "componentry-annotated-text",
+          "al-folio-core-article",
+          "al-folio-core-publications",
+          "bento-01a24bda1a663e15",
+          "bento-01eb4be6b2e8c3b0",
+          "bento-02bdc3d40d1b3a96",
+          "bento-037d13497cb7a47b",
+          "bento-0482b8b607f6f780",
+          "bento-04ce998a59bc6cc3"
+        ]
+      },
+      "sourceComposition": [
+        "watermelon-hero-15",
+        "mosaic",
+        "watermelon-book",
+        "watermelon-feature-4",
+        "watermelon-card",
+        "CareerTimeline",
+        "EvidenceGrid",
+        "Contact"
+      ],
+      "htmlSha256": "279a1e00a4dcfd3ae2a012442a9b44ad180efa3a946e67738b15ba551bb97259",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 52,
+          "headlineSize": 16,
+          "caseTypes": [
+            "gallery",
+            "technical",
+            "process"
+          ],
+          "motion": "none",
+          "controlContrast": [
+            {
+              "text": "프로젝트 보기",
+              "ratio": 13.297176725788873
+            }
+          ],
+          "preservedFields": 66
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 64.82,
+          "headlineSize": 18.52,
+          "caseTypes": [
+            "gallery",
+            "technical",
+            "process"
+          ],
+          "motion": "none",
+          "controlContrast": [
+            {
+              "text": "프로젝트 보기",
+              "ratio": 13.297176725788873
+            }
+          ],
+          "preservedFields": 66
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 100.8,
+          "headlineSize": 24,
+          "caseTypes": [
+            "gallery",
+            "technical",
+            "process"
+          ],
+          "motion": "none",
+          "controlContrast": [
+            {
+              "text": "프로젝트 보기",
+              "ratio": 13.297176725788873
+            }
+          ],
+          "preservedFields": 66
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "slug": "climate-analyst",
+      "name": "정하린",
+      "role": "기후 데이터 분석가",
+      "design": {
+        "layout": "library",
+        "palette": "graphite",
+        "font": "sans"
+      },
+      "library": {
+        "inventoryHash": "4985cdcfd66e312515888735c8578dd238cf97b5766fedcafbc85bcd21e1e2fc",
+        "inventoryTotal": 9516,
+        "selected": [
+          {
+            "id": "watermelon-38872751a90a18eb",
+            "key": "watermelon-hero-12",
+            "sourceUrl": null,
+            "status": "renderable",
+            "material": "./library/materials/watermelon/registry/hero-12.json",
+            "sha256": "460addf0ca3573e76875ff42aa0ba1acd980f00c80bbb69bbef2c8c6401cdbd0",
+            "adaptation": "원본 React 코드 + 입력 속성 연결 + 샘플/외부 자산 제거 + CSS 모션"
+          },
+          {
+            "id": "watermelon-1801a37189a38ef8",
+            "key": "watermelon-feature-1",
+            "sourceUrl": null,
+            "status": "renderable",
+            "material": "./library/materials/watermelon/registry/feature-1.json",
+            "sha256": "00f80a421dd526b21416ee94973438ef0f2325e4d52262767f1fc9fbd8e38ae6",
+            "adaptation": "원본 React 코드 + 입력 속성 연결 + 샘플/외부 자산 제거 + CSS 모션"
+          },
+          {
+            "id": "watermelon-81213bb8a61f3c51",
+            "key": "watermelon-feature-4",
+            "sourceUrl": null,
+            "status": "renderable",
+            "material": "./library/materials/watermelon/registry/feature-4.json",
+            "sha256": "99b65e28e486bcd2d694f82ac9d869a1a8a22faaa74ef8d47a62eb1e45d53f1e",
+            "adaptation": "원본 React 코드 + 입력 속성 연결 + 샘플/외부 자산 제거 + CSS 모션"
+          },
+          {
+            "id": "watermelon-92719fe0cf8cd515",
+            "key": "watermelon-book",
+            "sourceUrl": null,
+            "status": "renderable",
+            "material": "./library/materials/watermelon/registry/book.json",
+            "sha256": "39fbf105061d3a60e95932065ae7b3e044269aebcdc97d7bd1e440fea84d5dbf",
+            "adaptation": "원본 React 코드 + 입력 속성 연결 + 샘플/외부 자산 제거 + CSS 모션"
+          }
+        ],
+        "query": "chart dashboard analytics 기후 데이터 분석가 도시 열 시계열 분석 공간 데이터 골목 열지도 강우 격자 노트 녹지 격차 아틀라스 ",
+        "offeredIds": [
+          "watermelon-hero-1",
+          "watermelon-hero-10",
+          "watermelon-hero-11",
+          "watermelon-hero-12",
+          "watermelon-hero-14",
+          "watermelon-hero-15",
+          "watermelon-hero-16",
+          "watermelon-hero-17",
+          "watermelon-hero-18",
+          "watermelon-hero-19",
+          "watermelon-hero-2",
+          "watermelon-hero-20",
+          "watermelon-hero-21",
+          "watermelon-hero-22",
+          "watermelon-hero-23",
+          "watermelon-hero-24",
+          "watermelon-hero-25",
+          "watermelon-hero-26",
+          "watermelon-hero-27",
+          "watermelon-hero-28",
+          "watermelon-hero-29",
+          "watermelon-hero-3",
+          "watermelon-hero-30",
+          "watermelon-hero-31",
+          "watermelon-hero-32",
+          "watermelon-hero-33",
+          "watermelon-hero-4",
+          "watermelon-hero-5",
+          "watermelon-hero-6",
+          "watermelon-hero-7",
+          "watermelon-hero-8",
+          "watermelon-hero-9",
+          "watermelon-feature-1",
+          "watermelon-feature-4",
+          "watermelon-book",
+          "watermelon-card",
+          "watermelon-text-gradient",
+          "componentry-annotated-text",
+          "60fps-209b0beba8aa4585",
+          "60fps-7cf0c3bf3b336976",
+          "codedvisuals-0230d17fbaeed6a1",
+          "codedvisuals-1b60399665f63fef",
+          "codedvisuals-52d017c3a49f5632",
+          "codedvisuals-6290620769734af4",
+          "codedvisuals-8c15e616653c78a8",
+          "codedvisuals-ac29f17a57e6aa99"
+        ]
+      },
+      "sourceComposition": [
+        "watermelon-hero-12",
+        "rows",
+        "watermelon-feature-1",
+        "watermelon-feature-4",
+        "watermelon-book",
+        "CareerTimeline",
+        "EvidenceGrid",
+        "Contact"
+      ],
+      "htmlSha256": "260fd7f665fca8e2ea65c433b208f30253f97c43ca3c42c5fc2ed6baca0d4a5c",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 52,
+          "headlineSize": 16,
+          "caseTypes": [
+            "process",
+            "process",
+            "technical"
+          ],
+          "motion": "none",
+          "controlContrast": [],
+          "preservedFields": 66
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 64.82,
+          "headlineSize": 18.52,
+          "caseTypes": [
+            "process",
+            "process",
+            "technical"
+          ],
+          "motion": "none",
+          "controlContrast": [],
+          "preservedFields": 66
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 100.8,
+          "headlineSize": 24,
+          "caseTypes": [
+            "process",
+            "process",
+            "technical"
+          ],
+          "motion": "none",
+          "controlContrast": [],
+          "preservedFields": 66
+        }
+      ],
+      "noJavaScript": true
+    }
+  ],
+  "distinctIntroSources": 2,
+  "distinctSourceCompositions": 3
+}

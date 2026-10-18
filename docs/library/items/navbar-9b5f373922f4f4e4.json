@@ -1,0 +1,30 @@
+{
+  "id": "navbar-9b5f373922f4f4e4",
+  "sourceUrl": "https://www.navbar.gallery/navbar/loop",
+  "sourceRevision": null,
+  "roles": [
+    "navigation"
+  ],
+  "roleEvidence": "페이지·사례 사이의 탐색을 구성할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Loop",
+    "공개 이미지 요소: 26개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://www.loopreturns.com/",
+  "evidence": {
+    "url": "https://www.navbar.gallery/navbar/loop",
+    "sha256": "d23b41961e02ef83fa4adcf6f5db5ac2764d0cd676bb4d07f3d09db73f66cbf4",
+    "fetchedAt": "2026-09-23T12:52:43+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

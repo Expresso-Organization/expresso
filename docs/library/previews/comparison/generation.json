@@ -1,0 +1,72 @@
+{
+  "inputHash": "b770a9e3b39e804ba77d1ba846294afe0b8919811198b2e39ac5b8b90a037702",
+  "model": "claude-opus-5",
+  "runsPerMethod": 1,
+  "sharedBrief": "한국어 프로덕트 디자이너의 가상 포트폴리오를 만듭니다. 모든 인물·조직·경력·프로젝트·성과는 시연용입니다.\n목표: 처음 방문한 사람이 역할, 프로젝트 문제와 기여, 경력, 근거 자료, 연락처를 읽고 탐색할 수 있는 완성 페이지.\n시각 방향: 차분한 편집형. 배경 #f7f6f1, 본문 #1c302e, 강조 #24654d. 넓은 여백과 명확한 글자 위계.\n서체: Apple SD Gothic Neo, Malgun Gothic, system-ui, sans-serif. 별도 폰트 다운로드를 사용하지 않습니다.\n가상 데이터 표시를 눈에 보이게 유지합니다. 출처에 없는 성과 수치나 회사·프로젝트를 추가하지 않습니다.\n제목·이름·조직·기간·역할·연락처·근거 자료를 보존합니다. 설명 문장은 의미를 유지하며 정리할 수 있습니다.\n휴대폰 390px, 태블릿 768px, 데스크톱 1440px에서 읽히고, 키보드 포커스와 모션 감소를 지원합니다.\n목차, 프로젝트 상세, 근거 자료를 실제 앵커나 네이티브 details로 연결합니다. JavaScript가 없는 문서에서도 읽을 수 있어야 합니다.",
+  "structured": {
+    "usage": {
+      "model": "claude-opus-5",
+      "inputTokens": 2,
+      "outputTokens": 425,
+      "cacheReadTokens": 0,
+      "cacheCreationTokens": 9578,
+      "costUsd": 0.110962,
+      "durationMs": 5237
+    },
+    "specBytes": 748,
+    "sectionOrder": [
+      "Hero",
+      "ProjectGrid",
+      "CaseStudies",
+      "CareerTimeline",
+      "EvidenceList",
+      "Contact"
+    ]
+  },
+  "free": {
+    "usage": {
+      "model": "claude-opus-5",
+      "inputTokens": 2,
+      "outputTokens": 21617,
+      "cacheReadTokens": 0,
+      "cacheCreationTokens": 14814,
+      "costUsd": 0.698429,
+      "durationMs": 228044
+    },
+    "htmlCssBytes": 35222,
+    "rationale": "가상 사례라 성과 수치가 없는 데이터여서, 숫자 대신 '문제 → 기여 → 결과' 세 박자와 실제 화면 산출물을 지면의 주인공으로 세우고, 근거 기록은 details로 펼쳐 보게 해 검증 가능한 읽기 흐름을 만들었습니다.",
+    "qaReport": {
+      "status": "ready",
+      "checks": [
+        {
+          "name": "has-markup",
+          "status": "pass",
+          "severity": "error",
+          "detail": "지면이 마크업으로 되어 있음"
+        },
+        {
+          "name": "grounded-numbers",
+          "status": "pass",
+          "severity": "warning",
+          "detail": "모든 수치가 근거에 있음"
+        },
+        {
+          "name": "portfolio-plan",
+          "status": "fail",
+          "severity": "warning",
+          "detail": "옛 레시피 호환 경로"
+        }
+      ]
+    },
+    "removed": [],
+    "ungrounded": []
+  },
+  "conditions": {
+    "content": "같은 가상 콘텐츠",
+    "design": "같은 편집형 색상·시스템 서체·가상 이미지",
+    "freePipeline": "AiPageGenerator → PageDraftSchema → sanitizePage → pageQa",
+    "structuredPipeline": "같은 AI 클라이언트 → generationSchema → validatePortfolio → json-render → 정적 HTML",
+    "presentation": "서체 셸 공통화, 제공 이미지 임베드. 모델의 레이아웃과 문구 수동 수정 없음.",
+    "scope": "구조화 방식의 기존 컴포넌트·테마 제작 비용은 이번 모델 호출 비용에 포함되지 않음. 단일 호출씩의 예비 비교."
+  }
+}
