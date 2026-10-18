@@ -1,0 +1,196 @@
+{
+  "id": "watermelon-466baf92f1a25107",
+  "sourceUrl": "https://ui.watermelon.sh/dashboard/web3-dashboard",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/web3-dashboard.json",
+      "sha256": "8cd22b1052b974c400d1046f5275a1b3d17f7002f9e5e1c0cd0d48831931c045",
+      "bytes": 34745,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/dashboards/web3-dashboard/components/web3/asset-badge.tsx",
+      "target": "components/watermelon/web3-dashboard/components/web3/asset-badge.tsx",
+      "type": "registry:component",
+      "sha256": "6b84cfe27b5ae8ad60f2f3ab8efc8cfbfe7af52df39f707b06814978c8833ea6",
+      "bytes": 672
+    },
+    {
+      "path": "src/components/dashboards/web3-dashboard/components/web3/asset-table-card.tsx",
+      "target": "components/watermelon/web3-dashboard/components/web3/asset-table-card.tsx",
+      "type": "registry:component",
+      "sha256": "b42a17395b20776803d9ccce7f407370a1ad79695798f8d377579b9686988a39",
+      "bytes": 3136
+    },
+    {
+      "path": "src/components/dashboards/web3-dashboard/components/web3/charts.tsx",
+      "target": "components/watermelon/web3-dashboard/components/web3/charts.tsx",
+      "type": "registry:component",
+      "sha256": "83a45806d9b2043e2ec2c2891c226cc42c8ca15d5883e7ebf65ea35ab913be08",
+      "bytes": 2256
+    },
+    {
+      "path": "src/components/dashboards/web3-dashboard/components/web3/logo-icons.tsx",
+      "target": "components/watermelon/web3-dashboard/components/web3/logo-icons.tsx",
+      "type": "registry:component",
+      "sha256": "aed76a3f7f529a1a350b7b6c8975685df2cf7014eb3ec8ff93af85e5e6e40d42",
+      "bytes": 927
+    },
+    {
+      "path": "src/components/dashboards/web3-dashboard/components/web3/markets-panel.tsx",
+      "target": "components/watermelon/web3-dashboard/components/web3/markets-panel.tsx",
+      "type": "registry:component",
+      "sha256": "a58b0bf418873212df2e216a16fb32351fb6327ee4cfe52474e78dcd3dabb686",
+      "bytes": 1509
+    },
+    {
+      "path": "src/components/dashboards/web3-dashboard/components/web3/portfolio-panel.tsx",
+      "target": "components/watermelon/web3-dashboard/components/web3/portfolio-panel.tsx",
+      "type": "registry:component",
+      "sha256": "3e949ba42c26fae778e6cdefe8afdfffafdde9dbe017a1c22b1e15d7a52f4e8d",
+      "bytes": 1758
+    },
+    {
+      "path": "src/components/dashboards/web3-dashboard/components/web3/sidebar.tsx",
+      "target": "components/watermelon/web3-dashboard/components/web3/sidebar.tsx",
+      "type": "registry:component",
+      "sha256": "a1636de5ae778ff9f56b335e2288e4d681b0fa948421127f22d03a4de22b272e",
+      "bytes": 4843
+    },
+    {
+      "path": "src/components/dashboards/web3-dashboard/components/web3/stat-card.tsx",
+      "target": "components/watermelon/web3-dashboard/components/web3/stat-card.tsx",
+      "type": "registry:component",
+      "sha256": "d85ead25501f3116c794d98d846fb57f931680868cc457d297dea052accb4fde",
+      "bytes": 2952
+    },
+    {
+      "path": "src/components/dashboards/web3-dashboard/components/web3/topbar.tsx",
+      "target": "components/watermelon/web3-dashboard/components/web3/topbar.tsx",
+      "type": "registry:component",
+      "sha256": "807a0550f30431a7910c30beb4404eaecc40f997ba23f217f726e7fff6478f54",
+      "bytes": 1901
+    },
+    {
+      "path": "src/components/dashboards/web3-dashboard/dashboard-layout.tsx",
+      "target": "components/watermelon/web3-dashboard/dashboard-layout.tsx",
+      "type": "registry:component",
+      "sha256": "07929c748ef197e4f6e410d9500a371f17b96a3fd1e5318449aea5354af6ddf7",
+      "bytes": 712
+    },
+    {
+      "path": "src/components/dashboards/web3-dashboard/dashboard.css",
+      "target": "components/watermelon/web3-dashboard/dashboard.css",
+      "type": "registry:component",
+      "sha256": "4f815a209780f57f394c1e2b69a082a4700f491c5d63773b143f8258ed478446",
+      "bytes": 3316
+    },
+    {
+      "path": "src/components/dashboards/web3-dashboard/dashboardView.tsx",
+      "target": "components/watermelon/web3-dashboard/dashboardView.tsx",
+      "type": "registry:component",
+      "sha256": "e230fe806736a825244287c53489a431202e8deb9fad55732399f807c12576bd",
+      "bytes": 1162
+    },
+    {
+      "path": "src/components/dashboards/web3-dashboard/data.ts",
+      "target": "components/watermelon/web3-dashboard/data.ts",
+      "type": "registry:component",
+      "sha256": "e83804e4e88c1c52fa47dc0b5f3a2a9a3ee81ffdf15f7067542999972338af80",
+      "bytes": 3295
+    },
+    {
+      "path": "src/components/dashboards/web3-dashboard/demo.tsx",
+      "target": "components/watermelon/web3-dashboard/demo.tsx",
+      "type": "registry:component",
+      "sha256": "697fa3500556dcf0d1f78500e66bb945fe86595d25ba6e110ea405b42c3ac59f",
+      "bytes": 243
+    },
+    {
+      "path": "src/components/dashboards/web3-dashboard/web3-dashboard.mdx",
+      "target": "components/watermelon/web3-dashboard/web3-dashboard.mdx",
+      "type": "registry:component",
+      "sha256": "1f791656a268f6233a626ca0a1590a5b841ec903caa25f6b6cc80e72a7d9202b",
+      "bytes": 536
+    }
+  ],
+  "dependencies": [
+    "@tabler/icons-react",
+    "class-variance-authority",
+    "lucide-react",
+    "recharts"
+  ],
+  "registryDependencies": [
+    "avatar",
+    "badge",
+    "button",
+    "card",
+    "dropdown-menu",
+    "input",
+    "separator",
+    "sheet",
+    "sidebar",
+    "skeleton",
+    "table",
+    "tooltip"
+  ],
+  "imports": [
+    "../../data",
+    "../ui/theme-toggle",
+    "./asset-badge",
+    "./charts",
+    "./components/web3/asset-table-card",
+    "./components/web3/markets-panel",
+    "./components/web3/portfolio-panel",
+    "./components/web3/sidebar",
+    "./components/web3/stat-card",
+    "./components/web3/topbar",
+    "./dashboard-layout",
+    "./dashboardView",
+    "./data",
+    "./logo-icons",
+    "@/components/ui/avatar",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/input",
+    "@/components/ui/sidebar",
+    "@/components/ui/table",
+    "@/lib/utils",
+    "lucide-react",
+    "react",
+    "react-icons/go",
+    "recharts"
+  ],
+  "propsDeclarations": [
+    "type AssetBadgeProps = {\n  symbol: string;\n  color: string;\n  size?: \"sm\" | \"md\";\n}",
+    "type AssetTableCardProps = {\n  title: string;\n  assets: Asset[];\n  action: string;\n  valueLabel: string;\n  external?: boolean;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "http://www.w3.org/2000/svg",
+    "https://assets.watermelon.sh/components/task-management-dashboard.mp4",
+    "https://assets.watermelon.sh/components/task-management-dashboard.webp",
+    "https://assets.watermelon.sh/wm_ben.png",
+    "https://registry.watermelon.sh/r/web3-dashboard.json"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/web3-dashboard.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

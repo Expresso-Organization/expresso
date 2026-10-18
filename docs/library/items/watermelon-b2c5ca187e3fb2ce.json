@@ -1,0 +1,64 @@
+{
+  "id": "watermelon-b2c5ca187e3fb2ce",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/avatar-group.json",
+      "sha256": "606485ab2d016da4ff191ed91cb95e0dbce601e969419405f4c89adcb17c2fd6",
+      "bytes": 23659,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/avatar-group.tsx",
+      "target": "components/ui/avatar-group.tsx",
+      "type": "registry:ui",
+      "sha256": "392a16946447fd93d9fc90cfbc44260957535b59f487bb48594d70692e92c87d",
+      "bytes": 22384
+    }
+  ],
+  "dependencies": [
+    "@floating-ui/react",
+    "motion"
+  ],
+  "registryDependencies": [],
+  "imports": [
+    "@/lib/utils",
+    "@floating-ui/react",
+    "motion/react",
+    "react"
+  ],
+  "propsDeclarations": [
+    "type AvatarGroupProps = AvatarGroupPropsPrimitive;\n\nfunction AvatarGroup({\n  className,\n  invertOverlap = true,\n  ...props\n}",
+    "type AvatarGroupTooltipProps = Omit<\n  AvatarGroupTooltipPropsPrimitive,\n  'asChild'\n> & {\n  children: React.ReactNode;\n  layout?: boolean | 'position' | 'size' | 'preserve-aspect';\n}",
+    "type AvatarProps = Omit<HTMLMotionProps<'div'>, 'translate'> & {\n  children: React.ReactNode;\n  zIndex: number;\n  translate?: string | number;\n}",
+    "type AvatarGroupTooltipArrowProps = TooltipArrowProps;\n\nfunction AvatarGroupTooltipArrowPrimitive(props: AvatarGroupTooltipArrowProps) {\n  return <TooltipArrow {...props}",
+    "type TooltipProviderProps = {\n  children: React.ReactNode;\n  id?: string;\n  openDelay?: number;\n  closeDelay?: number;\n  transition?: Transition;\n}",
+    "type TooltipArrowProps = Omit<\n  React.ComponentProps<typeof MotionTooltipArrow>,\n  'context'\n> & {\n  withTransition?: boolean;\n}",
+    "type TooltipPortalProps = React.ComponentProps<typeof FloatingPortal>;\n\nfunction TooltipPortal(props: TooltipPortalProps) {\n  return <FloatingPortal {...props}",
+    "type TooltipProps = {\n  children: React.ReactNode;\n  side?: Side;\n  sideOffset?: number;\n  align?: Align;\n  alignOffset?: number;\n}",
+    "type TooltipContentProps = WithAsChild<HTMLMotionProps<'div'>>;\n\nfunction shallowEqualWithoutChildren(\n  a?: HTMLMotionProps<'div'>,\n  b?: HTMLMotionProps<'div'>,\n) {\n  if (a === b) return true;\n  if (!a || !b) return false;\n  const keysA = Object.keys(a).filter((k) => k !== 'children');\n  const keysB = Object.keys(b).filter((k) => k !== 'children');\n  if (keysA.length !== keysB.length) return false;\n  for (const k of keysA) {\n    // @ts-expect-error index\n    if (a[k] !== b[k]) return false;\n  }",
+    "type TooltipTriggerProps = WithAsChild<HTMLMotionProps<'div'>>;\n\nfunction TooltipTrigger({\n  ref,\n  onMouseEnter,\n  onMouseLeave,\n  onFocus,\n  onBlur,\n  onPointerDown,\n  asChild = false,\n  ...props\n}",
+    "type AnyProps = Record<string, unknown>;\n\ntype DOMMotionProps<T extends HTMLElement = HTMLElement> = Omit<\n  HTMLMotionProps<keyof HTMLElementTagNameMap>,\n  'ref'\n> & { ref?: React.Ref<T> }"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/avatar-group.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

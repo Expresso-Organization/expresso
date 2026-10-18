@@ -1,0 +1,63 @@
+{
+  "id": "watermelon-ac9de0966870d1e9",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/github-stars-wheel.json",
+      "sha256": "ad046d339f5933558206f7b74e03279bc459c64b7c86ac2c8e9599b6bc4cb374",
+      "bytes": 19253,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/github-stars-wheel.tsx",
+      "target": "components/ui/github-stars-wheel.tsx",
+      "type": "registry:ui",
+      "sha256": "d19b5563d8e82a7c5074a62b9af960ac3183380d4fdc8673356b8407426f2746",
+      "bytes": 18121
+    }
+  ],
+  "dependencies": [
+    "lucide-react",
+    "motion"
+  ],
+  "registryDependencies": [],
+  "imports": [
+    "@/lib/utils",
+    "lucide-react",
+    "motion/react",
+    "react"
+  ],
+  "propsDeclarations": [
+    "type GitHubStarsWheelProps = {\n  username?: string;\n  repo?: string;\n  direction?: 'btt' | 'ttb';\n  delay?: number;\n  value?: number;\n  step?: number;\n}",
+    "type ParticlesProps = WithAsChild<\n  Omit<HTMLMotionProps<'div'>, 'children'> & {\n    animate?: boolean;\n    children: React.ReactNode;\n  }",
+    "type ParticlesEffectProps = Omit<HTMLMotionProps<'div'>, 'children'> & {\n  side?: Side;\n  align?: Align;\n  count?: number;\n  radius?: number;\n  spread?: number;\n  duration?: number;\n  holdDelay?: number;\n  sideOffset?: number;\n  alignOffset?: number;\n  delay?: number;\n}",
+    "type AnyProps = Record<string, unknown>;\n\ntype DOMMotionProps<T extends HTMLElement = HTMLElement> = Omit<\n  HTMLMotionProps<keyof HTMLElementTagNameMap>,\n  'ref'\n> & { ref?: React.Ref<T> }",
+    "type ScrollingNumberContainerProps = React.ComponentProps<'div'> & {\n  number: number;\n  step: number;\n  itemsSize?: number;\n  sideItemsCount?: number;\n  direction?: ScrollingNumberDirection;\n  onNumberChange?: (value: number) => void;\n}",
+    "type ScrollingNumberHighlightProps = React.ComponentProps<'div'>;\n\nfunction ScrollingNumberHighlight({\n  style,\n  ...props\n}",
+    "type ScrollingNumberProps = HTMLMotionProps<'div'> & {\n  delay?: number;\n  onCompleted?: () => void;\n}",
+    "type ScrollingNumberItemsProps = Omit<React.ComponentProps<'div'>, 'children'>;\n\nfunction ScrollingNumberItems({ style, ...props }"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "https://api.github.com/repos/${username}/${repo}"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/github-stars-wheel.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

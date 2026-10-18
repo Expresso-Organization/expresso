@@ -9,6 +9,7 @@
  */
 
 .frame {
+  position: relative;
   display: flex;
   min-height: 100dvh;
   background: var(--ex-bg);
@@ -412,6 +413,101 @@
 
 .footLink:hover {
   color: var(--ex-accent-hover);
+}
+
+/* 개발용 버튼은 로그인 폼 바깥의 우하단에 둔다. */
+.demoDock {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+}
+
+.frame:has(.demoDock) .formPane {
+  padding-bottom: 64px;
+}
+
+.demoButton {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 8px;
+  border: 1px solid var(--ex-border);
+  border-radius: 8px;
+  background: var(--ex-bg);
+  color: var(--ex-fg-muted);
+  font-size: var(--ex-text-2xs);
+  font-weight: 500;
+  transition: background var(--ex-motion-quick);
+}
+
+.demoButton:hover,
+.demoButton[aria-expanded="true"] {
+  background: var(--ex-bg-hover);
+  color: var(--ex-fg);
+}
+
+.demoButton:focus-visible {
+  outline: none;
+  box-shadow: var(--ex-focus-ring);
+}
+
+.demoPopover {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 288px;
+  max-width: calc(100vw - 32px);
+  padding: 16px;
+  border: 1px solid var(--ex-border);
+  border-radius: 10px;
+  background: var(--ex-bg);
+  color: var(--ex-fg);
+  box-shadow: var(--ex-elevation-overlay);
+  outline: none;
+}
+
+.demoHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.demoTitle {
+  margin: 0;
+  font-size: var(--ex-text-sm);
+  font-weight: 600;
+}
+
+.demoDescription {
+  margin: 0;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
+  line-height: var(--ex-leading-normal);
+}
+
+.demoCredentials {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+}
+
+.demoCredentials dt {
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-muted);
+}
+
+.demoCredentials dd {
+  margin: 0 0 8px;
+  font-family: var(--ex-font-mono);
+  font-size: var(--ex-text-xs);
+  overflow-wrap: anywhere;
+}
+
+.demoSetup {
+  margin: 0;
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-muted);
+  overflow-wrap: anywhere;
 }
 
 /* 1024 미만 — 브랜드 패널을 접는다 (§12) */

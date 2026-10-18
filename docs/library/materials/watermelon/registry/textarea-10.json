@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "textarea-10",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "textarea"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/textarea/textarea-10.tsx",
+      "content": "import { useId } from \"react\";\n\nimport { Label } from \"@/components/ui/label\";\nimport { Textarea } from \"@/components/ui/textarea\";\n\nconst Textarea10 = () => {\n  const id = useId();\n\n  return (\n    <div className=\"relative w-full max-w-xs space-y-2\">\n      <Label\n        htmlFor={id}\n        className=\"bg-background text-foreground absolute top-0 left-2 z-10 block -translate-y-1/2 px-1 text-xs font-medium group-has-disabled:opacity-50\"\n      >\n        Your message\n      </Label>\n      <Textarea\n        id={id}\n        placeholder=\"Type your message here...\"\n        className=\"!bg-background focus-visible:ring-primary/20 focus-visible:border-primary/50 rounded-sm shadow-sm focus-visible:ring-2\"\n      />\n    </div>\n  );\n};\n\nexport default Textarea10;\n",
+      "type": "registry:ui",
+      "target": "components/ui/textarea-10.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

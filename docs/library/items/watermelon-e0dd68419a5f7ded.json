@@ -1,0 +1,83 @@
+{
+  "id": "watermelon-e0dd68419a5f7ded",
+  "sourceUrl": "https://ui.watermelon.sh/components/data-table",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/data-table.json",
+      "sha256": "ec9c310f7ab9f62c7dab26960d29dcb2abdba90133e7ef88c99382f8c94d0c3d",
+      "bytes": 85294,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/data-table.tsx",
+      "target": "components/ui/data-table.tsx",
+      "type": "registry:ui",
+      "sha256": "d5dba1208e59e881e587d3187e333d787328b546393c4055d3b6b8da2e6b6a96",
+      "bytes": 80672
+    }
+  ],
+  "dependencies": [
+    "@radix-ui/react-accordion",
+    "@radix-ui/react-slot",
+    "@radix-ui/react-tooltip",
+    "class-variance-authority",
+    "lucide-react",
+    "zod"
+  ],
+  "registryDependencies": [],
+  "imports": [
+    "@/lib/utils",
+    "@radix-ui/react-accordion",
+    "@radix-ui/react-slot",
+    "@radix-ui/react-tooltip",
+    "class-variance-authority",
+    "lucide-react",
+    "react",
+    "zod"
+  ],
+  "propsDeclarations": [
+    "interface DataTableHeadProps {\n  column: Column;\n  columnIndex?: number;\n  totalColumns?: number;\n}",
+    "interface DataTableRowProps {\n  row: DataTableRowData;\n  className?: string;\n}",
+    "interface DataTableCellProps {\n  value:\n  | string\n  | number\n  | boolean\n  | null\n  | (string | number | boolean | null)[];\n  column: Column;\n  row: DataTableRowData;\n  className?: string;\n  columnIndex?: number;\n}",
+    "interface DataTableAccordionCardProps {\n  row: DataTableRowData;\n  index: number;\n  isFirst?: boolean;\n}",
+    "export interface ToolUIErrorBoundaryProps {\n  componentName: string;\n  children: React.ReactNode;\n  fallback?: React.ReactNode;\n  onError?: (error: Error, errorInfo: React.ErrorInfo) => void;\n}",
+    "interface DeltaValueProps {\n  value: number;\n  options?: Extract<FormatConfig, { kind: \"delta\" }",
+    "interface StatusBadgeProps {\n  value: string;\n  options?: Extract<FormatConfig, { kind: \"status\" }",
+    "interface CurrencyValueProps {\n  value: number;\n  options?: Extract<FormatConfig, { kind: \"currency\" }",
+    "interface PercentValueProps {\n  value: number;\n  options?: Extract<FormatConfig, { kind: \"percent\" }",
+    "interface DateValueProps {\n  value: string;\n  options?: Extract<FormatConfig, { kind: \"date\" }",
+    "interface BooleanValueProps {\n  value: boolean;\n  options?: Extract<FormatConfig, { kind: \"boolean\" }",
+    "interface LinkValueProps {\n  value: string;\n  options?: Extract<FormatConfig, { kind: \"link\" }",
+    "interface NumberValueProps {\n  value: number;\n  options?: Extract<FormatConfig, { kind: \"number\" }",
+    "interface BadgeValueProps {\n  value: string;\n  options?: Extract<FormatConfig, { kind: \"badge\" }",
+    "interface ArrayValueProps {\n  value: (string | number | boolean | null)[] | string;\n  options?: Extract<FormatConfig, { kind: \"array\" }",
+    "export interface ActionsConfig {\n  items: Action[];\n  align?: \"left\" | \"center\" | \"right\";\n  confirmTimeout?: number;\n}",
+    "export interface ActionButtonsProps {\n  actions: Action[];\n  onAction: (actionId: string) => void | Promise<void>;\n  onBeforeAction?: (actionId: string) => boolean | Promise<boolean>;\n  confirmTimeout?: number;\n  align?: \"left\" | \"center\" | \"right\";\n  className?: string;\n}",
+    "export interface DataTableSerializableProps<T extends object = RowData> {\n  /**\n   * Unique identifier for this tool UI instance in the conversation.\n   *\n   * Used for:\n   * - Assistant referencing (\"the table above\")\n   * - Receipt generation (linking actions to their source)\n   * - Narration context\n   *\n   * Should be stable across re-renders, meaningful, and unique within the conversation.\n   *\n   * @example \"data-table-expenses-q3\", \"search-results-repos\"\n   */\n  id: ToolUIId;\n  /** Optional surface role metadata (serializable) */\n  role?: ToolUIRole;\n  /** Optional receipt metadata for consequential outcomes (serializable) */\n  receipt?: ToolUIReceipt;\n  /** Column definitions */\n  columns: Column<T>[];\n  /** Row data (primitives only - no functions or class instances) */\n  data: T[];\n  /**\n   * Layout mode for the component.\n   * - 'auto' (default): Container queries choose table/cards\n   * - 'table': Force table layout\n   * - 'cards': Force stacked card layout\n   */\n  layout?: \"auto\" | \"table\" | \"cards\";\n  /**\n   * Key in row data to use as unique identifier for React keys\n   *\n   * **Strongly recommended:** Always provide this for dynamic data to prevent\n   * reconciliation issues (focus traps, animation glitches, incorrect state preservation)\n   * when data reorders. Falls back to array index if omitted (only acceptable for static mock data).\n   *\n   * @example rowIdKey=\"id\" or rowIdKey=\"uuid\"\n   */\n  rowIdKey?: ColumnKey<T>;\n  /**\n   * Uncontrolled initial sort state (table manages its own sort state internally)\n   *\n   * **Sorting cycle:** Clicking column headers cycles through tri-state:\n   * 1. none (unsorted) → 2. asc → 3. desc → 4. none (back to unsorted)\n   *\n   * @example\n   * ```tsx\n   * // Start with descending price sort\n   * <DataTable defaultSort={{ by: \"price\", direction: \"desc\" }",
+    "export interface DataTableClientProps<T extends object = RowData> {\n  /** Show loading skeleton */\n  isLoading?: boolean;\n  /** Additional CSS classes */\n  className?: string;\n  /**\n   * Sort change handler for controlled mode (required if sort is provided)\n   *\n   * **Tri-state cycle behavior:**\n   * - Click unsorted column: `{ by: \"column\", direction: \"asc\" }",
+    "export interface DataTableProps<T extends object = RowData>\n  extends DataTableSerializableProps<T>, DataTableClientProps<T> { }"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "http://www.w3.org/2000/svg"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/data-table.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

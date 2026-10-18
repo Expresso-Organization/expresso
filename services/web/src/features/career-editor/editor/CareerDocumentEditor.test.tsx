@@ -1,9 +1,12 @@
 // @vitest-environment jsdom
 
+import type { CareerRecordListItem } from "@expresso/contracts";
 import { createEmptyCareerDocument, parseCareerDocument } from "@expresso/editor";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+// 채팅의 네트워크·스크롤은 별도 테스트와 실제 브라우저에서 검증합니다.
+vi.mock("@/features/agent-chat/AgentChat", () => ({ AgentChat: () => null }));
 const mocks = vi.hoisted(() => ({ useSession: vi.fn(), updateDocument: vi.fn() }));
 vi.mock("../session/useCareerEditorSession", () => ({
   useCareerEditorSession: (recordId: string) => mocks.useSession(recordId),
@@ -56,6 +59,35 @@ describe("CareerDocumentEditor", () => {
     expect(document.activeElement).toBe(screen.getByRole("menuitem", { name: /본문/ }));
     fireEvent.keyDown(screen.getByRole("menu", { name: "블록 명령" }), { key: "Escape" });
     await waitFor(() => expect(screen.queryByRole("menu", { name: "블록 명령" })).toBeNull());
+  });
+
+  it("shows the stored Markdown body read-only when the document session is unavailable", async () => {
+    mocks.useSession.mockReturnValue({
+      snapshot: { status: "unavailable", documentVersion: 0, lastAckSequence: 0, proposal: null },
+      document: null,
+      updateDocument: mocks.updateDocument,
+    });
+    const record = { id: "11111111-1111-4111-8111-111111111111", bodyMd: "## 배경\n\n기존 Markdown 본문입니다." } as CareerRecordListItem;
+    render(<CareerDocumentEditor recordId={record.id} mode="page" record={record} />);
+    const body = await screen.findByLabelText("커리어 기록 본문");
+    expect(body.getAttribute("contenteditable")).toBe("false");
+    expect(body.querySelector("h2")?.textContent).toBe("배경");
+    expect(screen.getByText("기존 Markdown 본문입니다.")).toBeTruthy();
+    expect(screen.getByText("문서 편집기가 꺼져 있어 본문을 읽기만 할 수 있습니다.")).toBeTruthy();
+    expect(screen.queryByRole("toolbar", { name: "텍스트 서식" })).toBeNull();
+    expect(screen.queryByText("문서를 불러오고 있습니다.")).toBeNull();
+  });
+
+  it("leaves the body area out when the unavailable record has no Markdown body", () => {
+    mocks.useSession.mockReturnValue({
+      snapshot: { status: "unavailable", documentVersion: 0, lastAckSequence: 0, proposal: null },
+      document: null,
+      updateDocument: mocks.updateDocument,
+    });
+    const record = { id: "11111111-1111-4111-8111-111111111111", bodyMd: "" } as CareerRecordListItem;
+    render(<CareerDocumentEditor recordId={record.id} mode="peek" record={record} />);
+    expect(screen.getByText("문서 편집기가 꺼져 있어 본문을 읽기만 할 수 있습니다.")).toBeTruthy();
+    expect(screen.queryByLabelText("커리어 기록 본문")).toBeNull();
   });
 
   it("removes the redundant body status bar and keeps accessible formatting controls", async () => {

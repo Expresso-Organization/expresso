@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "avatar-7",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "avatar"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/avatar/avatar-7.tsx",
+      "content": "import { Avatar, AvatarBadge, AvatarFallback, AvatarImage } from '@/components/ui/avatar'\n\ntype Profile = {\n  name: string\n  avatar: string\n  status: string\n}\n\nconst profile: Profile = {\n  name: 'Leo Grant',\n  avatar: 'https://i.pravatar.cc/160?img=12',\n  status: 'Available'\n}\n\nconst getInitials = (name: string) =>\n  name\n    .split(/\\s+/)\n    .map((word) => word.slice(0, 1))\n    .join('')\n\nconst Avatar7 = () => {\n  return (\n    <Avatar>\n        <AvatarImage src={profile.avatar} alt={profile.name} />\n        <AvatarFallback className='text-xs'>{getInitials(profile.name)}</AvatarFallback>\n      <AvatarBadge className='bg-emerald-500'>\n        <span className='sr-only'>{profile.status}</span>\n      </AvatarBadge>\n    </Avatar>\n  )\n}\n\nexport default Avatar7\n\n",
+      "type": "registry:ui",
+      "target": "components/ui/avatar-7.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

@@ -1,0 +1,29 @@
+{
+  "id": "60fps-51c4d7d2016a71b9",
+  "sourceUrl": "https://60fps.design/shots/airbnb-guest-favorite-icon-animation",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Airbnb Guest Favorite Icon Animation",
+    "공개 이미지 요소: 32개",
+    "동영상 포스터: 31개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/airbnb-guest-favorite-icon-animation",
+    "sha256": "0756328dd952bd4ced3e35ad8b086816ae858aeb9ff9b88e3b88e206e3772ee7",
+    "fetchedAt": "2026-09-23T12:56:08+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

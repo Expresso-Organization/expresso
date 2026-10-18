@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 1,
+  "fictional": true,
+  "method": "same model and default prompt; three distinct inputs; no avoid flag",
+  "runs": [
+    {
+      "slug": "robotics-engineer",
+      "name": "한도윤",
+      "role": "로봇 엔지니어",
+      "inputSha256": "b1b28874b5fc2f7240cbfcf862072c5ba0a29f64213b4d2dca5ed5fa78b77bf7",
+      "htmlSha256": "e95e3056262fa709879ec8868a2a167140ee62bc484c4564206c48b45bc1b30b",
+      "modelSelection": {
+        "recipe": "featured",
+        "design": {
+          "palette": "midnight",
+          "typography": "sans",
+          "layout": "studio"
+        },
+        "heroStyle": "spotlight",
+        "projectIndex": "bento",
+        "reason": "로봇 엔지니어의 전문성을 어두운 배경과 주황 광원 (spotlight, midnight) 으로 강조하고, 세 가지 프로젝트 (경로 계획, 그리퍼, 현장 시험) 를 시각적 위중도가 다른 카드 (bento) 로 명확하게 구분하여 기술적 근거를 직관적으로 제시합니다."
+      },
+      "components": {
+        "projectIndex": "bento",
+        "heroStyle": "spotlight",
+        "heroAnnotation": "off",
+        "heroReveal": "block",
+        "careerStyle": "default",
+        "evidenceStyle": "default",
+        "contactStyle": "card"
+      },
+      "cases": [
+        {
+          "projectId": "route-planner",
+          "variant": "text"
+        },
+        {
+          "projectId": "gripper-study",
+          "variant": "media"
+        },
+        {
+          "projectId": "warehouse-aisle",
+          "variant": "process"
+        }
+      ],
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "preservedFields": 32
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "preservedFields": 32
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "inputSha256": "453580878542642f5dabc9de8c28f83397893f98a482eff5b8e4fb6aac41933e",
+      "htmlSha256": "b9b143409a465a7e7556dd77510f62b2dad56816a4b611448cdb2802e5cd8552",
+      "modelSelection": {
+        "recipe": "gallery",
+        "design": {
+          "palette": "midnight",
+          "typography": "serif",
+          "layout": "editorial"
+        },
+        "heroStyle": "spotlight",
+        "projectIndex": "mosaic",
+        "reason": "편집 디자이너의 정체성을 반영하여 어두운 배경과 명조체로 고급스러운 편집성 (Editorial) 을 살리고, 계절의 언어와 아카이브 프로젝트 특유의 깊이 있는 내용을 강조하기 위해 검은 배경에 주황 광원이 있는 스포트라이트 형식과 이미지 중심의 모자이크 레이아웃을 선택했습니다."
+      },
+      "components": {
+        "projectIndex": "mosaic",
+        "heroStyle": "spotlight",
+        "heroAnnotation": "off",
+        "heroReveal": "block",
+        "careerStyle": "default",
+        "evidenceStyle": "default",
+        "contactStyle": "card"
+      },
+      "cases": [
+        {
+          "projectId": "season-reader",
+          "variant": "text"
+        },
+        {
+          "projectId": "archive-walk",
+          "variant": "process"
+        },
+        {
+          "projectId": "reading-routes",
+          "variant": "media"
+        }
+      ],
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "preservedFields": 32
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "preservedFields": 32
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "slug": "climate-analyst",
+      "name": "정하린",
+      "role": "기후 데이터 분석가",
+      "inputSha256": "e8ab3c1780409bb35f0333d80e9b2ae592535984b021c197b83be6df96f0f2ac",
+      "htmlSha256": "5d9f2d979703cfe08d2659124e70537796bbc927c0a17ba377babef28564d153",
+      "modelSelection": {
+        "recipe": "featured",
+        "design": {
+          "palette": "midnight",
+          "typography": "serif",
+          "layout": "editorial"
+        },
+        "heroStyle": "spotlight",
+        "projectIndex": "bento",
+        "reason": "어두운 배경과 주황빛의 강렬한 대비를 활용한 스포트라이트 히어로와 정보 밀집도를 고려한 벤토 그리드 레이아웃이 데이터 분석가의 전문성과 프로젝트의 기술적 깊이를 동시에 강조합니다."
+      },
+      "components": {
+        "projectIndex": "bento",
+        "heroStyle": "spotlight",
+        "heroAnnotation": "drawn",
+        "heroReveal": "lines",
+        "careerStyle": "default",
+        "evidenceStyle": "default",
+        "contactStyle": "card"
+      },
+      "cases": [
+        {
+          "projectId": "block-heat",
+          "variant": "text"
+        },
+        {
+          "projectId": "rain-series",
+          "variant": "media"
+        },
+        {
+          "projectId": "green-access",
+          "variant": "process"
+        }
+      ],
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "preservedFields": 32
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "preservedFields": 32
+        }
+      ],
+      "noJavaScript": true
+    }
+  ]
+}

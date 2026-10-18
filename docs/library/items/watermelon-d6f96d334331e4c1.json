@@ -1,0 +1,53 @@
+{
+  "id": "watermelon-d6f96d334331e4c1",
+  "sourceUrl": "https://ui.watermelon.sh/animated-components/quick-paste",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/quick-paste.json",
+      "sha256": "e86bc4ba9fbff0652ca6127d3145f9a2b5ec5c2ea0054294dc837fb3317b0d67",
+      "bytes": 6629,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/quick-paste.tsx",
+      "target": "components/ui/quick-paste.tsx",
+      "type": "registry:ui",
+      "sha256": "c350b31fde8d89b7c9c1c39b22b995b1c181ad73dd8acdceb09188bffbce2a4f",
+      "bytes": 6106
+    }
+  ],
+  "dependencies": [
+    "lucide-react",
+    "motion"
+  ],
+  "registryDependencies": [],
+  "imports": [
+    "lucide-react",
+    "motion/react",
+    "react"
+  ],
+  "propsDeclarations": [
+    "interface QuickPasteProps {\n    onPaste: () => PasteData;\n    onClear?: () => void;\n    onContinue?: (data: PasteData) => void;\n    placeholder?: string;\n    className?: string;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/quick-paste.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

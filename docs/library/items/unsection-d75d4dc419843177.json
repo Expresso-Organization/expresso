@@ -1,0 +1,29 @@
+{
+  "id": "unsection-d75d4dc419843177",
+  "sourceUrl": "https://www.unsection.com/section/old-tom-capital-portfolio-grid-design",
+  "sourceRevision": null,
+  "roles": [
+    "project-grid"
+  ],
+  "roleEvidence": "작품·프로젝트·사례를 묶어 보여주는 표현 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: old tom capital portfolio grid design",
+    "공개 이미지 요소: 22개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://www.unsection.com/section/old-tom-capital-portfolio-grid-design",
+    "sha256": "ab289c02b1e3c9aa92b12fb681334a9e4d44b8835eb8ddaae4b416f30e6077e4",
+    "fetchedAt": "2026-09-23T12:55:32+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

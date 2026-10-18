@@ -1,0 +1,29 @@
+{
+  "id": "60fps-0a17f307d2b2a11b",
+  "sourceUrl": "https://60fps.design/shots/1password-watchtower-meter",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: 1Password Watchtower Meter",
+    "공개 이미지 요소: 5개",
+    "동영상 포스터: 4개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/1password-watchtower-meter",
+    "sha256": "8b88977a587d1ec3fe28ac34c7fcedd306882c41a66e67bae3094fae23621ec0",
+    "fetchedAt": "2026-09-23T12:55:56+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

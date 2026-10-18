@@ -1,0 +1,29 @@
+{
+  "id": "unsection-ccef29aa9d11cab3",
+  "sourceUrl": "https://www.unsection.com/section/customer-io-customer-journey-feature-grid-design",
+  "sourceRevision": null,
+  "roles": [
+    "capability"
+  ],
+  "roleEvidence": "역할·역량·기여를 설명할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: customer io customer journey feature grid design",
+    "공개 이미지 요소: 22개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://www.unsection.com/section/customer-io-customer-journey-feature-grid-design",
+    "sha256": "649b9b5361d2d6eccf2d386abba0457c11f18cd4b441dcb2b9e94ba79bf743e8",
+    "fetchedAt": "2026-09-23T12:52:28+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

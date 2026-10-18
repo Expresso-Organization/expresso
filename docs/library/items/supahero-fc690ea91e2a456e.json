@@ -1,0 +1,30 @@
+{
+  "id": "supahero-fc690ea91e2a456e",
+  "sourceUrl": "https://supahero.io/hero/did-global-cinema",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Did Global Cinema",
+    "공개 이미지 요소: 1개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://www.dg-cinema.com/en",
+  "evidence": {
+    "url": "https://supahero.io/hero/did-global-cinema",
+    "sha256": "0657051a0cdf555903af268a456b7bccb280a3277b1b0910e4c22e0bf1fafcea",
+    "fetchedAt": "2026-09-23T12:51:52+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

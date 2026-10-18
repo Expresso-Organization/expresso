@@ -1,0 +1,29 @@
+{
+  "id": "60fps-b192338ae3cb6c58",
+  "sourceUrl": "https://60fps.design/shots/apple-ios-mic-options-visualiser",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Apple iOS Mic Options Visualiser",
+    "공개 이미지 요소: 23개",
+    "동영상 포스터: 24개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/apple-ios-mic-options-visualiser",
+    "sha256": "d469822cc9ad326b9ec14042443c877d9762ee4bdf0c280afdad14bdb5b250fa",
+    "fetchedAt": "2026-09-23T12:56:54+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

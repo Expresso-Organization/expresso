@@ -1,0 +1,21 @@
+{
+  "id": "codedvisuals-2907c932090627b5",
+  "sourceUrl": "https://codedvisuals.com/visuals/sections/hero",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상용 라이선스의 AI builder·site builder 사용 제한"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "licenseUrl": "https://codedvisuals.com/license",
+  "acquisitionStatus": "permission_needed",
+  "previewReason": "상용 라이선스의 AI builder·site builder 사용 제한",
+  "sourceLicense": "https://codedvisuals.com/license"
+}

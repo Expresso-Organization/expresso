@@ -1,0 +1,63 @@
+{
+  "id": "magic-portfolio-project-card",
+  "sourceUrl": "https://github.com/magicuidesign/portfolio/blob/5ef12e4c8bd0de3e22e89c2181ee77a35925ec8b/src/components/project-card.tsx",
+  "sourceRevision": "5ef12e4c8bd0de3e22e89c2181ee77a35925ec8b",
+  "roles": [
+    "project-grid"
+  ],
+  "roleEvidence": "원본 데이터 구조 검토",
+  "roleMethod": "source_review",
+  "materials": [
+    {
+      "path": "./library/materials/magic-portfolio/project-card.json",
+      "sha256": "c73862d742ef44aabcfb3cb8f0a307951e17c9304c92b76340f169ed3db8998b",
+      "bytes": 6368,
+      "label": "원본 코드 묶음",
+      "kind": "registry_source"
+    },
+    {
+      "path": "./library/materials/magic-portfolio/LICENSE.txt",
+      "sha256": "3d801bfc3879f9e9ea11043bb614aa8caa59a4b981e89eac6074a99ddfc9573c",
+      "bytes": 1070,
+      "label": "MIT 라이선스 원문",
+      "kind": "license"
+    }
+  ],
+  "observations": [
+    "이미지 누락 시 높이 고정 빈 상자를 접는 변형이 필요합니다.",
+    "ReactNode 아이콘을 허용된 아이콘 ID로 바꾸고 영상 자동 재생 정책을 정해야 합니다."
+  ],
+  "inputs": [
+    "title",
+    "description",
+    "dates",
+    "tags",
+    "image?",
+    "video?",
+    "links"
+  ],
+  "framework": "React / Next.js / Tailwind CSS",
+  "sourceLicense": "https://github.com/magicuidesign/portfolio/blob/5ef12e4c8bd0de3e22e89c2181ee77a35925ec8b/LICENSE",
+  "acquisitionStatus": "source_ready",
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/project-card.tsx",
+      "sha256": "d96bc33ebaba9d437cfe478d8de47c89e0002b6558ebe9302990d7cb5eee8bc2",
+      "bytes": 4006
+    },
+    {
+      "path": "src/components/ui/badge.tsx",
+      "sha256": "dab689d836ad3292b41e7f4986b4e68e5d45c6903e4aeaae8972a82d4aebec29",
+      "bytes": 1140
+    },
+    {
+      "path": "src/lib/utils.ts",
+      "sha256": "46aa759ac54e621d043e31975433d26c7a70bed4a6b5fac063ab9007f1cb5df3",
+      "bytes": 495
+    }
+  ],
+  "usageNote": "고정 버전의 지정 파일 묶음입니다. 완전한 실행 의존성 묶음은 아니며 설치·렌더링 전입니다."
+}

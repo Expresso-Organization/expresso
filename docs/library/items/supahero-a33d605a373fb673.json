@@ -1,0 +1,30 @@
+{
+  "id": "supahero-a33d605a373fb673",
+  "sourceUrl": "https://supahero.io/hero/biograph",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Biograph",
+    "공개 이미지 요소: 1개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://www.biograph.com/",
+  "evidence": {
+    "url": "https://supahero.io/hero/biograph",
+    "sha256": "8bb76111cfee0f89cab7fe43bca8750eb62927bcbdd1a443fb903b1da9177faf",
+    "fetchedAt": "2026-09-23T12:51:25+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

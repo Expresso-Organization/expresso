@@ -1,0 +1,29 @@
+{
+  "id": "60fps-d906e42178a19f56",
+  "sourceUrl": "https://60fps.design/shots/edits-discard-menu-interaction",
+  "sourceRevision": null,
+  "roles": [
+    "navigation"
+  ],
+  "roleEvidence": "페이지·사례 사이의 탐색을 구성할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Edits Discard Menu Interaction",
+    "공개 이미지 요소: 29개",
+    "동영상 포스터: 31개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/edits-discard-menu-interaction",
+    "sha256": "96229503638f0ff5c41ffd1185948bc2ad209aaa64a97ded3f39ef0c5d3a007c",
+    "fetchedAt": "2026-09-23T13:00:44+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

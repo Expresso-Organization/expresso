@@ -1,0 +1,30 @@
+{
+  "id": "supahero-77d2473fcdd18928",
+  "sourceUrl": "https://supahero.io/hero/light-in-the-darkness",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Light in the Darkness",
+    "공개 이미지 요소: 1개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://www.lightinthedarkness.it/",
+  "evidence": {
+    "url": "https://supahero.io/hero/light-in-the-darkness",
+    "sha256": "6f1afdd5e1cda6554eb73d4626fd6997ae91d6ec3f1c04ecfd8cdff77e85211b",
+    "fetchedAt": "2026-09-23T12:52:57+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

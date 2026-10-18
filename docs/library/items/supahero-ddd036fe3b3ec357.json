@@ -1,0 +1,30 @@
+{
+  "id": "supahero-ddd036fe3b3ec357",
+  "sourceUrl": "https://supahero.io/hero/chaingpt",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: ChainGPT",
+    "공개 이미지 요소: 1개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://labs.chaingpt.org/",
+  "evidence": {
+    "url": "https://supahero.io/hero/chaingpt",
+    "sha256": "580fae2b1771a0d4ade413b6a28d6669eb51b84e0e50136c4972e27860320913",
+    "fetchedAt": "2026-09-23T12:51:35+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

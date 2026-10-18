@@ -1,0 +1,30 @@
+{
+  "id": "supahero-992bc498c62de3de",
+  "sourceUrl": "https://supahero.io/hero/mikki-sindhunata",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Mikki Sindhunata",
+    "공개 이미지 요소: 1개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://mikkisindhunata.com/",
+  "evidence": {
+    "url": "https://supahero.io/hero/mikki-sindhunata",
+    "sha256": "c91e24ae720bdf0348d3b0a63c0d7cf67685fa4a47d0307cbde4b5ebed92e519",
+    "fetchedAt": "2026-09-23T12:53:11+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

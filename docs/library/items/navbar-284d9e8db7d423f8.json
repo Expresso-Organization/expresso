@@ -1,0 +1,30 @@
+{
+  "id": "navbar-284d9e8db7d423f8",
+  "sourceUrl": "https://www.navbar.gallery/navbar/nicolas-bussiere",
+  "sourceRevision": null,
+  "roles": [
+    "navigation"
+  ],
+  "roleEvidence": "페이지·사례 사이의 탐색을 구성할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Nicolas Bussière",
+    "공개 이미지 요소: 26개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://www.nicolasbussiere.com/",
+  "evidence": {
+    "url": "https://www.navbar.gallery/navbar/nicolas-bussiere",
+    "sha256": "a04fee1b1efc18dab5d17ad6bceb5a5a964b7b5c7139edaebabbbcb272b819be",
+    "fetchedAt": "2026-09-23T12:52:59+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

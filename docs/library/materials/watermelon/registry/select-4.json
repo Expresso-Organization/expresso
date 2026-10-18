@@ -1,0 +1,18 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "select-4",
+  "dependencies": [],
+  "registryDependencies": [
+    "label",
+    "native-select"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/select/select-4.tsx",
+      "content": "import { useId } from 'react';\n\nimport { Label } from '@/components/ui/label';\nimport { NativeSelect } from '@/components/ui/native-select';\n\nconst Select4 = () => {\n  const id = useId();\n\n  return (\n    <div className=\"w-full max-w-xs space-y-2\">\n      <Label htmlFor={id} className=\"text-zinc-600 dark:text-zinc-400\">\n        Data Residency Policy\n      </Label>\n      <NativeSelect \n        id={id} \n        className=\"w-full [&_select]:!rounded-xl [&_select]:!border-zinc-200 shadow-xs dark:[&_select]:!border-zinc-800 dark:[&_select]:!bg-zinc-950 transition-all focus:ring-2 focus:ring-zinc-400/20 dark:focus:ring-zinc-500/20 dark:[&_select]:[color-scheme:dark]\"\n      >\n        <option value=\"gdpr\" className=\"dark:bg-zinc-950 dark:text-zinc-100\">EU Sovereignty (GDPR)</option>\n        <option value=\"ccpa\" className=\"dark:bg-zinc-950 dark:text-zinc-100\">California Privacy (CCPA)</option>\n        <option value=\"federal\" className=\"dark:bg-zinc-950 dark:text-zinc-100\">Federal Compliance (HIPAA)</option>\n        <option value=\"global\" className=\"dark:bg-zinc-950 dark:text-zinc-100\">Standard Global Policy</option>\n      </NativeSelect>\n      <p className=\"text-[11px] text-zinc-500 px-1 dark:text-zinc-500\" role=\"region\" aria-live=\"polite\">\n        Selection determines the primary geographic cluster for secure storage.\n      </p>\n    </div>\n  );\n};\n\nexport default Select4;\n\n",
+      "type": "registry:ui",
+      "target": "components/ui/select-4.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

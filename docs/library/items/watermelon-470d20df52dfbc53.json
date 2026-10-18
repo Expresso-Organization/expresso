@@ -1,0 +1,187 @@
+{
+  "id": "watermelon-470d20df52dfbc53",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "project-grid"
+  ],
+  "roleEvidence": "작품·프로젝트·사례를 묶어 보여주는 표현 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/project-management-dashboard.json",
+      "sha256": "5e753b52c4ba70077f4af05790b207f60f8846ceef949b8ec990f73cd1629b3a",
+      "bytes": 69708,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/dashboards/project-management-dashboard/components/app-sidebar.tsx",
+      "target": "components/watermelon/project-management-dashboard/components/app-sidebar.tsx",
+      "type": "registry:component",
+      "sha256": "544803885acab32addb0294e02746f3dbf73377fc773b0f3231e3b4c73bae47f",
+      "bytes": 2271
+    },
+    {
+      "path": "src/components/dashboards/project-management-dashboard/components/nav-apps.tsx",
+      "target": "components/watermelon/project-management-dashboard/components/nav-apps.tsx",
+      "type": "registry:component",
+      "sha256": "8dbcdde2d96366582c931aa00bf3a4ad0e807bee668c58e563a2588c94e535bb",
+      "bytes": 3973
+    },
+    {
+      "path": "src/components/dashboards/project-management-dashboard/components/nav-main.tsx",
+      "target": "components/watermelon/project-management-dashboard/components/nav-main.tsx",
+      "type": "registry:component",
+      "sha256": "a4ea5f4f9066a9276d38136ff62f9a5c3febf01dbcf039051e7472f20e17738b",
+      "bytes": 1628
+    },
+    {
+      "path": "src/components/dashboards/project-management-dashboard/components/nav-management.tsx",
+      "target": "components/watermelon/project-management-dashboard/components/nav-management.tsx",
+      "type": "registry:component",
+      "sha256": "d7e1786477f572316482f19213b9de00e2abda80300c0d52f3e125bf8cbce87b",
+      "bytes": 4031
+    },
+    {
+      "path": "src/components/dashboards/project-management-dashboard/components/nav-projects.tsx",
+      "target": "components/watermelon/project-management-dashboard/components/nav-projects.tsx",
+      "type": "registry:component",
+      "sha256": "25b2ccd6b0dbf84b9feea3538e4ba67c25a1b94a7a6683498e66a47d09aad0e3",
+      "bytes": 4239
+    },
+    {
+      "path": "src/components/dashboards/project-management-dashboard/components/nav-support.tsx",
+      "target": "components/watermelon/project-management-dashboard/components/nav-support.tsx",
+      "type": "registry:component",
+      "sha256": "4771f9c718a0653fdef55c61143c1dd3f3d1403065e10f1e28836cf6109a0415",
+      "bytes": 4131
+    },
+    {
+      "path": "src/components/dashboards/project-management-dashboard/components/search-form.tsx",
+      "target": "components/watermelon/project-management-dashboard/components/search-form.tsx",
+      "type": "registry:component",
+      "sha256": "769828c328742be044bfa59aed7a374a59d891624beaa8ffaa1b2f4e98a32844",
+      "bytes": 1399
+    },
+    {
+      "path": "src/components/dashboards/project-management-dashboard/dashboardLayout.tsx",
+      "target": "components/watermelon/project-management-dashboard/dashboardLayout.tsx",
+      "type": "registry:component",
+      "sha256": "01861c488fc58f43432eae7b5944c0069eb25df4688caa63182e731ca0118b73",
+      "bytes": 900
+    },
+    {
+      "path": "src/components/dashboards/project-management-dashboard/data.ts",
+      "target": "components/watermelon/project-management-dashboard/data.ts",
+      "type": "registry:component",
+      "sha256": "37fac2834e634593e40fac5fb6d801c98e15545aa275892b92b4e56b1aa170ea",
+      "bytes": 6670
+    },
+    {
+      "path": "src/components/dashboards/project-management-dashboard/demo.tsx",
+      "target": "components/watermelon/project-management-dashboard/demo.tsx",
+      "type": "registry:component",
+      "sha256": "20d0fa0fbe7808edf43444cef2db6c9d12f5cfca8cf755454f14b26f3a616062",
+      "bytes": 279
+    },
+    {
+      "path": "src/components/dashboards/project-management-dashboard/settingsView.tsx",
+      "target": "components/watermelon/project-management-dashboard/settingsView.tsx",
+      "type": "registry:component",
+      "sha256": "516ad06a7172d50b55fbca9ee42080d504f8f4e75e419cfd8db7b261e9d2656b",
+      "bytes": 34075
+    }
+  ],
+  "dependencies": [
+    "@radix-ui/react-avatar",
+    "@radix-ui/react-checkbox",
+    "@radix-ui/react-collapsible",
+    "@radix-ui/react-dialog",
+    "@radix-ui/react-dropdown-menu",
+    "@radix-ui/react-label",
+    "@radix-ui/react-select",
+    "@radix-ui/react-separator",
+    "@radix-ui/react-slot",
+    "@radix-ui/react-tabs",
+    "@radix-ui/react-tooltip",
+    "class-variance-authority",
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "avatar",
+    "breadcrumb",
+    "button",
+    "card",
+    "checkbox",
+    "collapsible",
+    "dialog",
+    "dropdown-menu",
+    "input",
+    "label",
+    "select",
+    "separator",
+    "sheet",
+    "sidebar",
+    "skeleton",
+    "tabs",
+    "textarea",
+    "tooltip"
+  ],
+  "imports": [
+    "../data",
+    "./components/app-sidebar",
+    "./dashboardLayout",
+    "./data",
+    "./nav-apps",
+    "./nav-main",
+    "./nav-management",
+    "./nav-projects",
+    "./nav-support",
+    "./search-form",
+    "./settingsView",
+    "@/components/ui/avatar",
+    "@/components/ui/button",
+    "@/components/ui/checkbox",
+    "@/components/ui/collapsible",
+    "@/components/ui/dialog",
+    "@/components/ui/dropdown-menu",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/select",
+    "@/components/ui/sidebar",
+    "@/components/ui/tabs",
+    "@/components/ui/textarea",
+    "lucide-react",
+    "react"
+  ],
+  "propsDeclarations": [],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/project-management-dashboard.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "project-management-dashboard",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/dashboards/project-management-dashboard/demo.tsx",
+    "url": "./library/previews/watermelon/project-management-dashboard.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:22+00:00",
+    "snapshotSha256": "a62c0b264cac8a5830a967ebda4da4b5b8142e57c983150e56c0b2fc4298f9c4"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

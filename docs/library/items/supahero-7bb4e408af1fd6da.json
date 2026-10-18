@@ -1,0 +1,30 @@
+{
+  "id": "supahero-7bb4e408af1fd6da",
+  "sourceUrl": "https://supahero.io/hero/media-work",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Media.Work",
+    "공개 이미지 요소: 1개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://media.work/",
+  "evidence": {
+    "url": "https://supahero.io/hero/media-work",
+    "sha256": "06be64b334e270466137ca5a54018e52ab6416dcaafb871e7d40c923e31a1a64",
+    "fetchedAt": "2026-09-23T12:53:08+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

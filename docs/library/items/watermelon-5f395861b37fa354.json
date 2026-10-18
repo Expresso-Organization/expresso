@@ -1,0 +1,77 @@
+{
+  "id": "watermelon-5f395861b37fa354",
+  "sourceUrl": "https://ui.watermelon.sh/block/testimonials-4",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "evidence"
+  ],
+  "roleEvidence": "협업 평가와 근거를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/testimonials-4.json",
+      "sha256": "63e5c06105008de5960745f70276a2e5ea4aecc4ed6c6d5b548707f55cccf2a1",
+      "bytes": 6296,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/testimonials-4.tsx",
+      "target": "components/ui/testimonials-4.tsx",
+      "type": "registry:ui",
+      "sha256": "c11184dc798775463f0d25add6e12df3b03ab0c180b5a191cc758d12970526fe",
+      "bytes": 5610
+    }
+  ],
+  "dependencies": [
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "testimonials",
+    "button"
+  ],
+  "imports": [
+    "@/components/ui/avatar",
+    "@/components/ui/card",
+    "@/components/ui/carousel",
+    "embla-carousel-autoplay",
+    "lucide-react",
+    "react"
+  ],
+  "propsDeclarations": [],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "https://avatars.githubusercontent.com/u/11719236",
+    "https://avatars.githubusercontent.com/u/13041",
+    "https://avatars.githubusercontent.com/u/1500684",
+    "https://avatars.githubusercontent.com/u/499550",
+    "https://avatars.githubusercontent.com/u/810438",
+    "https://avatars.githubusercontent.com/u/9113740"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/testimonials-4.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "testimonials-4",
+    "status": "built",
+    "export": "default",
+    "props": {},
+    "entry": "src/components/watermelon-ui/testimonials-4.tsx",
+    "url": "./library/previews/watermelon/testimonials-4.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:25+00:00",
+    "snapshotSha256": "721ee1ce34f98575dd31b48db46e6955abb196c30091dc8df472cb07e3f5d0af"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

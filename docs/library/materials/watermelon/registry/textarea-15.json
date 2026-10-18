@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "textarea-15",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "textarea"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/textarea/textarea-15.tsx",
+      "content": "import { useId } from \"react\";\n\nimport { Label } from \"@/components/ui/label\";\nimport { Textarea } from \"@/components/ui/textarea\";\n\nconst Textarea15 = () => {\n  const id = useId();\n\n  return (\n    <div className=\"w-full max-w-sm space-y-2\">\n      <Label htmlFor={id}>Fixed size Textarea</Label>\n      <Textarea\n        id={id}\n        placeholder=\"Enter your response...\"\n        className=\"focus-visible:ring-primary/20 focus-visible:border-primary/50 [resize:none]\"\n      />\n    </div>\n  );\n};\n\nexport default Textarea15;\n",
+      "type": "registry:ui",
+      "target": "components/ui/textarea-15.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

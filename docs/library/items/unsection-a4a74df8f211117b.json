@@ -1,0 +1,29 @@
+{
+  "id": "unsection-a4a74df8f211117b",
+  "sourceUrl": "https://www.unsection.com/section/clarasight-business-outcomes-cta-section",
+  "sourceRevision": null,
+  "roles": [
+    "contact"
+  ],
+  "roleEvidence": "본문을 읽은 뒤 연락·외부 자료로 이어 줄 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: CTAClarasight Business Outcomes CTA Section",
+    "공개 이미지 요소: 22개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://www.unsection.com/section/clarasight-business-outcomes-cta-section",
+    "sha256": "b95a63f44f253ab3f131e15fa9beab00f6dbafe3354a32febdf7f142300d9e1c",
+    "fetchedAt": "2026-09-23T12:52:06+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

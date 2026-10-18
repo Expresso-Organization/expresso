@@ -1,0 +1,30 @@
+{
+  "id": "supahero-be54e10a1cee270d",
+  "sourceUrl": "https://supahero.io/hero/ycode",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Ycode",
+    "공개 이미지 요소: 1개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://www.ycode.com/?ref=soltwagner",
+  "evidence": {
+    "url": "https://supahero.io/hero/ycode",
+    "sha256": "632fd8c08d32e5834e81ddf6b476949bd0ca406fbba8f31c8afa35fc11ac3d2f",
+    "fetchedAt": "2026-09-23T12:54:50+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

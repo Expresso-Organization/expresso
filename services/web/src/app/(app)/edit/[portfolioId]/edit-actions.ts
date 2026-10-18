@@ -1,6 +1,6 @@
 "use server";
 
-import type { PortfolioEditPatch } from "@expresso/contracts";
+import { EditStructuredPageSchema, type PortfolioEditPatch } from "@expresso/contracts";
 import { revalidatePath } from "next/cache";
 
 import { ApiError } from "@/lib/api/client";
@@ -38,6 +38,18 @@ function message(error: unknown): string {
     if (error.status === 503) return "지금은 말로 고치기를 쓸 수 없습니다.";
   }
   return "고치지 못했습니다. 다시 시도해 주세요.";
+}
+
+export async function structuredPageAction(_previous: { error?: string; saved?: boolean }, form: FormData): Promise<{ error?: string; saved?: boolean }> {
+  const portfolioId = form.get("portfolioId"), payload = form.get("payload");
+  if (typeof portfolioId !== "string" || typeof payload !== "string") return { error: "저장할 구성이 없습니다." };
+  try {
+    const input = EditStructuredPageSchema.parse(JSON.parse(payload));
+    const session = await requireSession();
+    await page.editComposition(session.accessToken, portfolioId, input);
+    revalidatePath(`/edit/${portfolioId}`);
+    return { saved: true };
+  } catch (error) { return { error: error instanceof ApiError ? error.message : "저장하지 못했습니다. 입력을 확인해 주세요." }; }
 }
 
 export async function instructAction(

@@ -1,0 +1,12 @@
+{
+  "name": "projects-horizontal",
+  "sourceRepository": "https://github.com/al-org-dev/al-folio-core",
+  "sourceRevision": "fa58be03acad50a4a1ec566dc88280e73ab75d18",
+  "license": "MIT",
+  "files": [
+    {
+      "path": "_includes/projects_horizontal.liquid",
+      "content": "<div class=\"col mb-4\">\n  <a href=\"{% if project.redirect %}{{ project.redirect }}{% else %}{{ project.url | relative_url }}{% endif %}\">\n    <div class=\"card h-100 hoverable\">\n      <div class=\"row no-gutters\">\n        {% if project.img %}\n          <div class=\"col-md-6\">\n            {% include figure.liquid loading=\"eager\" path=project.img sizes=\"(min-width: 768px) 156px, 50vw\" alt=\"project thumbnail\" class=\"card-img\" %}\n          </div>\n        {% endif %}\n        <div class=\"{% if project.img %}col-md-6{% else %}col-md-12{% endif %}\">\n          <div class=\"card-body\">\n            <h3 class=\"card-title\">{{ project.title }}</h3>\n            <p class=\"card-text\">{{ project.description }}</p>\n            <div class=\"row ml-1 mr-1 p-0\">\n              {% if project.github %}\n                <div class=\"github-icon\">\n                  <div class=\"icon\" data-toggle=\"tooltip\" title=\"Code Repository\">\n                    <a href=\"{{ project.github }}\"><i class=\"fa-brands fa-github gh-icon\"></i></a>\n                  </div>\n                  {% if project.github_stars %}\n                    <span class=\"stars\" data-toggle=\"tooltip\" title=\"GitHub Stars\">\n                      <i class=\"fa-solid fa-star\"></i>\n                      <span id=\"{{ project.github_stars }}-stars\"></span>\n                    </span>\n                  {% endif %}\n                </div>\n              {% endif %}\n            </div>\n          </div>\n        </div>\n      </div>\n    </div>\n  </a>\n</div>\n"
+    }
+  ]
+}

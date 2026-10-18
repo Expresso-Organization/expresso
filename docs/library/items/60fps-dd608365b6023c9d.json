@@ -1,0 +1,29 @@
+{
+  "id": "60fps-dd608365b6023c9d",
+  "sourceUrl": "https://60fps.design/shots/apple-podcasts-playback-speed-slider-interaction",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Apple Podcasts Playback Speed Slider Interaction",
+    "공개 이미지 요소: 25개",
+    "동영상 포스터: 24개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/apple-podcasts-playback-speed-slider-interaction",
+    "sha256": "063a654072bc9b33623aead0171c50dcd76fabcca7b90b80cd0077440b9618ea",
+    "fetchedAt": "2026-09-23T12:57:11+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

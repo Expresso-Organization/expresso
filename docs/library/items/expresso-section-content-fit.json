@@ -1,0 +1,31 @@
+{
+  "id": "expresso-section-content-fit",
+  "sourceUrl": "https://github.com/Expresso-Organization/expresso/blob/codex/portfolio-reference-research/scripts/library/prompts.json",
+  "sourceRevision": "1.0",
+  "roles": [
+    "quality-workflow"
+  ],
+  "roleEvidence": "경력 원문을 손상하지 않고 후보 컴포넌트에 배치할 수 있는지 검토합니다.",
+  "materials": [],
+  "observations": [
+    "익스프레소에서 직접 작성한 템플릿입니다. 모델 실행·품질 평가는 아직 수행하지 않았습니다."
+  ],
+  "prompt": {
+    "id": "section-content-fit",
+    "title": "섹션 콘텐츠 적합성 검토",
+    "purpose": "경력 원문을 손상하지 않고 후보 컴포넌트에 배치할 수 있는지 검토합니다.",
+    "inputs": [
+      "careerEvidence",
+      "componentProps",
+      "contentLimits"
+    ],
+    "output": "fit, missingInputs, overflowRisks, evidenceMapping을 포함하는 JSON",
+    "body": "제공된 careerEvidence를 유일한 사실 근거로 사용하세요. componentProps와 contentLimits에 각 문장·수치·이미지를 대응하고, 지원하지 않는 내용은 missingInputs 또는 overflowRisks에 남기세요. 경력에 없는 성과·사용자 수·기간·역할을 만들지 마세요. 문장을 줄여야 할 때는 원문과 축약안을 함께 기록하세요. fit(ready/needs_adaptation/unsuitable), missingInputs, overflowRisks, evidenceMapping을 JSON으로 반환하세요.",
+    "version": "1.0",
+    "executionStatus": "not_run"
+  },
+  "acquisitionStatus": "prompt_ready",
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured"
+}

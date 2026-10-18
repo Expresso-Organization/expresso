@@ -1,0 +1,21 @@
+{
+  "id": "kobra-32d0c90a76f84939",
+  "sourceUrl": "https://kobra.systems/components/navigation-menu",
+  "sourceRevision": null,
+  "roles": [
+    "navigation"
+  ],
+  "roleEvidence": "페이지·사례 사이의 탐색을 구성할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "코드 재배포와 생성 라이브러리 이용 범위 확인 필요"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "licenseUrl": "https://kobra.systems/terms",
+  "acquisitionStatus": "permission_needed",
+  "previewReason": "코드 재배포와 생성 라이브러리 이용 범위 확인 필요",
+  "sourceLicense": "https://kobra.systems/terms"
+}

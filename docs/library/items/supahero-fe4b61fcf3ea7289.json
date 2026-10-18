@@ -1,0 +1,30 @@
+{
+  "id": "supahero-fe4b61fcf3ea7289",
+  "sourceUrl": "https://supahero.io/hero/aadityaa-nagarajan",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Aadityaa Nagarajan",
+    "공개 이미지 요소: 1개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://www.aadinagarajan.com/",
+  "evidence": {
+    "url": "https://supahero.io/hero/aadityaa-nagarajan",
+    "sha256": "411d18298c37af7ed9aab164c26a37c50cd7977824f026fb9d19a9244784898b",
+    "fetchedAt": "2026-09-23T12:51:01+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

@@ -1,0 +1,37 @@
+Bundled license information:
+
+@tabler/icons-react/dist/esm/defaultAttributes.mjs:
+@tabler/icons-react/dist/esm/createReactComponent.mjs:
+@tabler/icons-react/dist/esm/icons/IconArrowNarrowDownDashed.mjs:
+@tabler/icons-react/dist/esm/icons/IconArrowNarrowRight.mjs:
+@tabler/icons-react/dist/esm/icons/IconArrowNarrowUpDashed.mjs:
+@tabler/icons-react/dist/esm/icons/IconArrowNarrowUp.mjs:
+@tabler/icons-react/dist/esm/icons/IconArrowRight.mjs:
+@tabler/icons-react/dist/esm/icons/IconBox.mjs:
+@tabler/icons-react/dist/esm/icons/IconBrandAppgallery.mjs:
+@tabler/icons-react/dist/esm/icons/IconCreditCard.mjs:
+@tabler/icons-react/dist/esm/icons/IconDashboard.mjs:
+@tabler/icons-react/dist/esm/icons/IconDotsVertical.mjs:
+@tabler/icons-react/dist/esm/icons/IconDots.mjs:
+@tabler/icons-react/dist/esm/icons/IconEye.mjs:
+@tabler/icons-react/dist/esm/icons/IconFolder.mjs:
+@tabler/icons-react/dist/esm/icons/IconInnerShadowTop.mjs:
+@tabler/icons-react/dist/esm/icons/IconKey.mjs:
+@tabler/icons-react/dist/esm/icons/IconLayoutGrid.mjs:
+@tabler/icons-react/dist/esm/icons/IconLogout.mjs:
+@tabler/icons-react/dist/esm/icons/IconMessageCircle.mjs:
+@tabler/icons-react/dist/esm/icons/IconNotification.mjs:
+@tabler/icons-react/dist/esm/icons/IconReceiptRefund.mjs:
+@tabler/icons-react/dist/esm/icons/IconShare3.mjs:
+@tabler/icons-react/dist/esm/icons/IconShoppingCart.mjs:
+@tabler/icons-react/dist/esm/icons/IconTrash.mjs:
+@tabler/icons-react/dist/esm/icons/IconTrendingUp.mjs:
+@tabler/icons-react/dist/esm/icons/IconUserCheck.mjs:
+@tabler/icons-react/dist/esm/icons/IconUserCircle.mjs:
+@tabler/icons-react/dist/esm/tabler-icons-react.mjs:
+  /**
+   * @license @tabler/icons-react v3.44.0 - MIT
+   *
+   * This source code is licensed under the MIT license.
+   * See the LICENSE file in the root directory of this source tree.
+   */

@@ -1,0 +1,30 @@
+{
+  "id": "supahero-2c62a947bddf623c",
+  "sourceUrl": "https://supahero.io/hero/linear",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Linear",
+    "공개 이미지 요소: 1개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://linear.app/",
+  "evidence": {
+    "url": "https://supahero.io/hero/linear",
+    "sha256": "9de2c4f9c119d2c86d82506e00c574a2d35867dacca48be72d6365d4a64c70c5",
+    "fetchedAt": "2026-09-23T12:52:58+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

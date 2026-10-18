@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "badge-19",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "badge"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/badge/badge-19.tsx",
+      "content": "\n\nimport { BsBanFill } from \"react-icons/bs\";\n\nimport { Badge } from \"@/components/ui/badge\";\n\nconst Badge19 = () => {\n  return (\n    <Badge\n      variant=\"outline\"\n      className=\"text-destructive bg-destructive/10 border-destructive rounded-sm\"\n    >\n      <BsBanFill className=\"size-3\" />\n      Error\n    </Badge>\n  );\n};\n\nexport default Badge19;\n",
+      "type": "registry:ui",
+      "target": "components/ui/badge-19.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "table-6",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "table"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/table/table-6.tsx",
+      "content": "import {\n  Table,\n  TableBody,\n  TableCell,\n  TableFooter,\n  TableHead,\n  TableHeader,\n  TableRow,\n} from \"@/components/ui/table\";\n\nconst users = [\n  {\n    id: \"USR001\",\n    name: \"Aarav Sharma\",\n    status: \"Active\",\n    role: \"Admin\",\n    usage: \"₹1,200\",\n  },\n  {\n    id: \"USR002\",\n    name: \"Priya Verma\",\n    status: \"Pending\",\n    role: \"Editor\",\n    usage: \"₹800\",\n  },\n  {\n    id: \"USR003\",\n    name: \"Rohan Gupta\",\n    status: \"Inactive\",\n    role: \"Viewer\",\n    usage: \"₹350\",\n  },\n  {\n    id: \"USR004\",\n    name: \"Sneha Kapoor\",\n    status: \"Active\",\n    role: \"Admin\",\n    usage: \"₹2,100\",\n  },\n  {\n    id: \"USR005\",\n    name: \"Kunal Mehta\",\n    status: \"Active\",\n    role: \"Editor\",\n    usage: \"₹950\",\n  },\n];\n\nconst Table6 = () => {\n  return (\n    <div className=\"w-full\">\n      <div className=\"overflow-hidden rounded-xl border shadow-xs\">\n        <Table>\n          <TableHeader className=\"bg-muted/50 shadow-[inset_0px_1px_2px_0px_rgba(255,255,255,1),inset_0px_-1px_4px_0px_rgba(0,0,0,0.05)] dark:shadow-[inset_0px_1px_2px_0px_rgba(255,255,255,0.05),inset_0px_-1px_2px_0px_rgba(0,0,0,0.02)]\">\n            <TableRow>\n              <TableHead className=\"w-25\">User ID</TableHead>\n              <TableHead>Name</TableHead>\n              <TableHead>Status</TableHead>\n              <TableHead>Role</TableHead>\n              <TableHead className=\"text-right\">Usage</TableHead>\n            </TableRow>\n          </TableHeader>\n\n          <TableBody>\n            {users.map((user) => (\n              <TableRow key={user.id}>\n                <TableCell className=\"font-medium\">{user.id}</TableCell>\n                <TableCell>{user.name}</TableCell>\n                <TableCell>{user.status}</TableCell>\n                <TableCell>{user.role}</TableCell>\n                <TableCell className=\"text-right\">{user.usage}</TableCell>\n              </TableRow>\n            ))}\n          </TableBody>\n\n          <TableFooter className=\"shadow-[inset_0px_1px_2px_0px_rgba(255,255,255,1),inset_0px_-1px_4px_0px_rgba(0,0,0,0.05)] dark:shadow-[inset_0px_1px_2px_0px_rgba(255,255,255,0.1),inset_0px_-1px_2px_0px_rgba(0,0,0,0.02)]\">\n            <TableRow>\n              <TableCell colSpan={4}>Total Usage</TableCell>\n              <TableCell className=\"text-right\">₹5,400</TableCell>\n            </TableRow>\n          </TableFooter>\n        </Table>\n      </div>\n\n      <p className=\"text-muted-foreground mt-4 text-center text-sm\">\n        Rounded corner table\n      </p>\n    </div>\n  );\n};\n\nexport default Table6;\n",
+      "type": "registry:ui",
+      "target": "components/ui/table-6.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

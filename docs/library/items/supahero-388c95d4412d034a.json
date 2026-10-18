@@ -1,0 +1,30 @@
+{
+  "id": "supahero-388c95d4412d034a",
+  "sourceUrl": "https://supahero.io/hero/violin-workshop",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Violin Workshop",
+    "공개 이미지 요소: 1개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://studio-moramora.com/",
+  "evidence": {
+    "url": "https://supahero.io/hero/violin-workshop",
+    "sha256": "dad0c7d35aaba578d857096a7e6c6e158e24f2a7abb156de259a330f26359c10",
+    "fetchedAt": "2026-09-23T12:54:39+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

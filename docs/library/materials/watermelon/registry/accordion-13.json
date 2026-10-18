@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "accordion-13",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "accordion"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/accordion/accordion-13.tsx",
+      "content": "import type { LucideIcon } from 'lucide-react'\nimport { BookOpenIcon, GraduationCapIcon, UsersIcon } from 'lucide-react'\n\nimport { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'\n\ntype AccordionItemData = {\n  value: string\n  icon: LucideIcon\n  title: string\n  content: string\n  media: string\n}\n\nconst items: readonly AccordionItemData[] = [\n  {\n    value: 'item-1',\n    icon: GraduationCapIcon,\n    title: 'How do students stay oriented in longer courses?',\n    content:\n      'Learning journeys feel smoother when weekly goals, lesson progress, and upcoming deadlines are visible in one place. Students usually stay more engaged when the platform clearly shows what has been completed and what comes next.',\n    media:\n      'https://images.unsplash.com/photo-1753892208880-7032f44ad6ea?auto=format&fit=crop&fm=jpg&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&ixlib=rb-4.1.0&q=60&w=1200'\n  },\n  {\n    value: 'item-2',\n    icon: BookOpenIcon,\n    title: 'What makes digital learning resources easier to use?',\n    content:\n      'Course materials work better when readings, notes, and assignments are grouped by topic instead of being scattered across separate pages. Clear structure helps learners spend more time studying and less time searching.',\n    media:\n      'https://images.unsplash.com/photo-1741707596390-2f0c75580ca5?auto=format&fit=crop&fm=jpg&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&ixlib=rb-4.1.0&q=60&w=1200'\n  },\n  {\n    value: 'item-3',\n    icon: UsersIcon,\n    title: 'How can cohort collaboration feel more natural?',\n    content:\n      'Peer interaction improves when discussion, feedback, and shared milestones are built into the same flow as the coursework. Students are more likely to participate when collaboration feels like part of learning instead of an extra destination.',\n    media:\n      'https://images.unsplash.com/photo-1741699427706-7bfb38c716d8?auto=format&fit=crop&fm=jpg&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&ixlib=rb-4.1.0&q=60&w=1200'\n  }\n] as const\n\nconst Accordion13 = () => {\n  return (\n    <Accordion className='w-full rounded-2xl border border-border/80 bg-background px-3' type=\"multiple\" defaultValue={[items[0].value]}>\n      {items.map((item) => {\n        const Icon = item.icon\n\n        return (\n          <AccordionItem key={item.value} value={item.value} className='border-border/70'>\n            <AccordionTrigger className='items-center py-4 hover:no-underline'>\n              <span className='flex items-center gap-3'>\n                <span className='flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground'>\n                  <Icon className='size-4' />\n                </span>\n                <span className='text-sm font-medium'>{item.title}</span>\n              </span>\n            </AccordionTrigger>\n\n            <AccordionContent className='space-y-4 pb-4'>\n              <p className='text-sm leading-6 text-muted-foreground'>{item.content}</p>\n              <img\n                src={item.media}\n                alt={item.title}\n                className='h-52 w-full rounded-xl object-cover'\n                loading='lazy'\n              />\n            </AccordionContent>\n          </AccordionItem>\n        )\n      })}\n    </Accordion>\n  )\n}\n\nexport default Accordion13\n",
+      "type": "registry:ui",
+      "target": "components/ui/accordion-13.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

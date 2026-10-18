@@ -1,0 +1,29 @@
+{
+  "id": "60fps-42e69d15b50eb3aa",
+  "sourceUrl": "https://60fps.design/shots/polaroid-manual-shutter-aperture-slider-interaction",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Polaroid Manual Shutter Aperture Slider Interaction",
+    "공개 이미지 요소: 32개",
+    "동영상 포스터: 31개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/polaroid-manual-shutter-aperture-slider-interaction",
+    "sha256": "72e26adeef4edd1eef84d8faf116e2e9b420777b41f56b119b1811583e21ba11",
+    "fetchedAt": "2026-09-23T13:05:39+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

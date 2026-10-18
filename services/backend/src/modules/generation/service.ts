@@ -19,6 +19,7 @@ import { withTimeout } from "../../platform/timeouts.js";
 import { writeSnapshot } from "../../platform/snapshot-payload.js";
 import { assertActiveRecordsForWrite } from "../career/index.js";
 import type { ConsentApi } from "../consent/index.js";
+import { findDesignSystemRevision, generationStyleFor } from "../design-systems/index.js";
 import { requireActiveUser } from "../identity/index.js";
 import {
   LAYOUT_PROMPT_VERSION,
@@ -38,6 +39,25 @@ import {
 import { GenerationValidationError, validateGenerationOutput } from "./validator.js";
 import { SentenceWriterUnavailableError, type SentenceWriter, type WriterContext } from "./writer.js";
 
+/**
+ * 요청의 스타일 출처를 템플릿과 스타일 값으로 정합니다.
+ *
+ * 디자인 시스템 판으로 요청하면 판의 토큰에서 정하고, 어떤 판인지 함께 돌려줍니다.
+ */
+function resolveStyle(input: SubmitGeneration): {
+  templateId: string;
+  styleOverrides: Record<string, unknown>;
+  designSystemRevisionId: string | null;
+} {
+  if (input.designSystemRevisionId) {
+    const revision = findDesignSystemRevision(input.designSystemRevisionId);
+    if (!revision) throw new GenerationError(404, "design system revision not found");
+    return { ...generationStyleFor(revision), designSystemRevisionId: revision.revisionId };
+  }
+  if (!input.templateId) throw new GenerationError(400, "templateId or designSystemRevisionId is required");
+  return { templateId: input.templateId, styleOverrides: input.styleOverrides ?? {}, designSystemRevisionId: null };
+}
+
 function requestHash(input: SubmitGeneration): string {
   return createHash("sha256").update(JSON.stringify(input)).digest("hex");
 }
@@ -55,7 +75,8 @@ export class GenerationService {
       const db = mongoCollections(tx.db); const options = { session: tx.session };
       const recipe = await db.recipes.findOne({ _id: input.recipeId, userId }, options);
       if (!recipe) throw new GenerationError(404, "recipe not found");
-      if (!await db.templates.findOne({ _id: input.templateId, isActive: true }, options)) {
+      const style = resolveStyle(input);
+      if (!await db.templates.findOne({ _id: style.templateId, isActive: true }, options)) {
         throw new GenerationError(404, "template not found");
       }
       const existing = await db.generationJobs.findOne({ userId, inputIdempotencyKey: idempotencyKey }, options);
@@ -65,12 +86,13 @@ export class GenerationService {
       }
       const now = new Date(); const id = randomUUID();
       await db.generationJobs.insertOne({
-        _id: id, userId, brewId: recipe.brewId, recipeId: recipe._id, templateId: input.templateId,
+        _id: id, userId, brewId: recipe.brewId, recipeId: recipe._id, templateId: style.templateId,
         status: "queued", usageCharged: false, stage: "queued", attempts: 0,
         inputIdempotencyKey: idempotencyKey, requestHash: hash, portfolioId: null,
         errorCode: null, failureRetryable: null, runToken: null,
         createdAt: now, updatedAt: now,
-        styleOverrides: (input.styleOverrides ?? {}) as JsonObject,
+        styleOverrides: style.styleOverrides as JsonObject,
+        designSystemRevisionId: style.designSystemRevisionId,
       }, options);
       await addMongoOutboxEvent(tx, {
         userId, topic: "portfolio.generate", payload: { generationJobId: id, userId },
@@ -105,6 +127,7 @@ export class GenerationService {
         await db.portfolios.insertOne({
           _id: portfolioId, userId: job.userId, brewId: job.brewId, templateId: job.templateId,
           title: brew?.freeTitle ?? "Generated portfolio", status: "draft", styleOverrides: job.styleOverrides,
+          designSystemRevisionId: job.designSystemRevisionId ?? null,
           createdAt: now, updatedAt: now,
         }, options);
       }
@@ -288,7 +311,7 @@ export class GenerationService {
       let portfolioId = current.portfolioId ?? null; const now = new Date();
       if (!portfolioId) {
         portfolioId = randomUUID();
-        await db.portfolios.insertOne({ _id: portfolioId, userId: job.userId, brewId: job.brewId, templateId: job.templateId, title: "Generated portfolio", status: "draft", styleOverrides: job.styleOverrides, createdAt: now, updatedAt: now }, options);
+        await db.portfolios.insertOne({ _id: portfolioId, userId: job.userId, brewId: job.brewId, templateId: job.templateId, title: "Generated portfolio", status: "draft", styleOverrides: job.styleOverrides, designSystemRevisionId: job.designSystemRevisionId ?? null, createdAt: now, updatedAt: now }, options);
       }
       const oldSections = await db.portfolioSections.find({ userId: job.userId, portfolioId }, options).toArray();
       const lockedCount = await db.blocks.countDocuments({ userId: job.userId, portfolioSectionId: { $in: oldSections.map(({ _id }) => _id) }, locked: true }, options);
@@ -352,7 +375,7 @@ export class GenerationService {
       let portfolioId = current.portfolioId ?? null; const now = new Date();
       if (!portfolioId) {
         portfolioId = randomUUID();
-        await db.portfolios.insertOne({ _id: portfolioId, userId: job.userId, brewId: job.brewId, templateId: job.templateId, title: "Failed generation draft", status: "draft", styleOverrides: job.styleOverrides, createdAt: now, updatedAt: now }, options);
+        await db.portfolios.insertOne({ _id: portfolioId, userId: job.userId, brewId: job.brewId, templateId: job.templateId, title: "Failed generation draft", status: "draft", styleOverrides: job.styleOverrides, designSystemRevisionId: job.designSystemRevisionId ?? null, createdAt: now, updatedAt: now }, options);
       }
       await db.generationJobs.updateOne({ _id: job._id, status: "running", attempts: job.attempts, runToken }, { $set: { status: "failed", stage: "failed", errorCode: code, failureRetryable: retryable, portfolioId, runToken: null, updatedAt: now } }, options);
     });

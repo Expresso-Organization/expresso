@@ -153,6 +153,25 @@ export const ExplainableMatchSchema = z
     }
   });
 
+/**
+ * §8.3 「자연어 검색」 계약이 모델에게 요구하는 모양.
+ *
+ * `quote`는 검색어 원문에서 그대로 잘라 온 부분이다(§8.3 환각 방지 ① —
+ * 공고 분석의 `quote`와 같은 이유). 그 조각이 검색어 안에 없으면 지어낸
+ * 근거이므로 그 조건은 버린다. `confidence`는 모델에게 묻지 않는다 — 계약마다
+ * 갈리는 잣대를 모델 스스로 매기게 하면 비교할 수 없는 숫자가 나온다. 도메인이
+ * 필드별로 고정값을 매긴다.
+ */
+export const SearchInterpretAiConditionSchema = z.strictObject({
+  field: JobSearchFieldSchema.exclude(["company_size"]),
+  value: z.union([z.string().min(1).max(200), z.number().nonnegative()]),
+  quote: z.string().min(1).max(200),
+});
+
+export const SearchInterpretAiOutputSchema = z.strictObject({
+  conditions: z.array(SearchInterpretAiConditionSchema).max(10),
+});
+
 export const JobDemandSummarySchema = z.strictObject({
   sampleSize: z.number().int().nonnegative(),
   demandRatios: z.record(z.string(), z.number().min(0).max(1)).nullable(),
@@ -160,7 +179,9 @@ export const JobDemandSummarySchema = z.strictObject({
 
 export type SubmitJobPosting = z.infer<typeof SubmitJobPostingSchema>;
 export type AnalyzedJobPosting = z.infer<typeof AnalyzedJobPostingSchema>;
+export type JobSearchField = z.infer<typeof JobSearchFieldSchema>;
 export type JobSearchCondition = z.infer<typeof JobSearchConditionSchema>;
+export type SearchInterpretAiOutput = z.infer<typeof SearchInterpretAiOutputSchema>;
 export type SaveJobSearch = z.infer<typeof SaveJobSearchSchema>;
 export type UpsertJobInterest = z.infer<typeof UpsertJobInterestSchema>;
 export type JobRequirements = z.infer<typeof JobRequirementsSchema>;

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "dropdown-menu-9",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "dropdown-menu",
+    "button"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/dropdown-menu/dropdown-menu-9.tsx",
+      "content": "\"use client\";\n\nimport { useState } from \"react\";\nimport { FaSun, FaMoon, FaDesktop } from \"react-icons/fa6\";\n\nimport { Button } from \"@/components/ui/button\";\nimport {\n  DropdownMenu,\n  DropdownMenuContent,\n  DropdownMenuLabel,\n  DropdownMenuRadioGroup,\n  DropdownMenuRadioItem,\n  DropdownMenuTrigger,\n} from \"@/components/ui/dropdown-menu\";\n\nconst themes = [\n  { value: \"light\", label: \"Light\", icon: FaSun },\n  { value: \"dark\", label: \"Dark\", icon: FaMoon },\n  { value: \"system\", label: \"System\", icon: FaDesktop, disabled: true },\n];\n\nconst DropdownMenu9 = () => {\n  const [theme, setTheme] = useState(\"dark\");\n\n  return (\n    <div>\n      <DropdownMenu>\n        <DropdownMenuTrigger asChild>\n          <Button variant=\"outline\" className=\"rounded-lg\">\n            Theme\n          </Button>\n        </DropdownMenuTrigger>\n\n        <DropdownMenuContent\n          className=\"bg-popover w-60 rounded-lg border p-1 shadow-md\"\n          align=\"center\"\n        >\n          <DropdownMenuLabel className=\"px-1 pb-1 text-sm font-semibold\">\n            Appearance\n          </DropdownMenuLabel>\n\n          <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>\n            {themes.map((item) => {\n              const Icon = item.icon;\n\n              return (\n                <DropdownMenuRadioItem\n                  key={item.value}\n                  value={item.value}\n                  disabled={item.disabled}\n                  className=\"group flex cursor-pointer items-center gap-3 rounded-lg p-1 data-[disabled]:opacity-40\"\n                >\n                  <Icon className=\"text-muted-foreground group-hover:text-foreground transition-all duration-200 group-hover:scale-110\" />\n\n                  <span className=\"flex-1 text-sm font-medium\">\n                    {item.label}\n                  </span>\n                </DropdownMenuRadioItem>\n              );\n            })}\n          </DropdownMenuRadioGroup>\n        </DropdownMenuContent>\n      </DropdownMenu>\n    </div>\n  );\n};\n\nexport default DropdownMenu9;\n",
+      "type": "registry:ui",
+      "target": "components/ui/dropdown-menu-9.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

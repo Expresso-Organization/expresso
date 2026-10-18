@@ -2,7 +2,10 @@ import {
   AnalyticsAggregationResponseSchema,
   MediaAssetResponseSchema,
   GeneratedPageSchema,
+  PageLibraryResultSchema,
+  type PageLibrarySearch,
   type RegeneratePage,
+  type EditStructuredPage,
   type CreateMediaBlock,
   AnalyticsDashboardResponseSchema,
   API_PREFIX,
@@ -32,6 +35,7 @@ import {
   CurrentUserResponseSchema,
   HomeReadModelSchema,
   JobPostingDetailResponseSchema,
+  JobInterestResponseSchema,
   BrewStateResponseSchema,
   ConsentListResponseSchema,
   DeploymentListResponseSchema,
@@ -747,6 +751,7 @@ export const jobs = {
         // 서버는 처음부터 받고 있었고 클라이언트가 안 실어 보냈다.
         ...(query.family ? { family: query.family } : {}),
         ...(query.country ? { country: query.country } : {}),
+        ...(query.location ? { location: query.location } : {}),
         ...(query.experience === undefined ? {} : { experience: String(query.experience) }),
         ...(query.workType ? { workType: query.workType } : {}),
         ...(query.company ? { company: query.company } : {}),
@@ -814,6 +819,21 @@ export const jobs = {
     request(`${API_PREFIX}/job-sources`, JobSourceListResponseSchema, {
       accessToken,
       cache: "no-store",
+    }),
+
+  /** 관심 공고에 담는다. 이미 담겨 있으면 단계를 `saved`로 되돌리지 않도록 화면이 담기 전에만 부른다. */
+  saveInterest: (accessToken: string, jobPostingId: string) =>
+    request(`${API_PREFIX}/jobs/postings/${jobPostingId}/interest`, JobInterestResponseSchema, {
+      accessToken,
+      method: "PUT",
+      body: { stage: "saved" },
+    }),
+
+  /** 관심 공고에서 뺀다. 담겨 있지 않아도 성공한다(204). */
+  removeInterest: (accessToken: string, jobPostingId: string) =>
+    requestNoContent(`${API_PREFIX}/jobs/postings/${jobPostingId}/interest`, {
+      accessToken,
+      method: "DELETE",
     }),
 
   /** 모아 둔 공고를 내 분석으로 가져온다. 이미 분석했으면 그것을 돌려준다. */
@@ -958,6 +978,9 @@ export const media = {
  * 지시를 붙여 다시 뽑는다. 앞 판은 지워지지 않으므로 되돌아갈 수 있다.
  */
 export const page = {
+  library: (accessToken: string, query: Partial<PageLibrarySearch> = {}) => request(`${API_PREFIX}/page-library?${new URLSearchParams(Object.entries(query).map(([key,value])=>[key,String(value)]))}`, z.object({data:PageLibraryResultSchema}), {accessToken}),
+  editComposition: (accessToken: string, portfolioId: string, body: EditStructuredPage) =>
+    request(`${API_PREFIX}/portfolios/${portfolioId}/page/composition`, z.object({ data: GeneratedPageSchema }), { method: "PATCH", accessToken, body }),
   latest: (accessToken: string, portfolioId: string) =>
     request(
       `${API_PREFIX}/portfolios/${portfolioId}/page`,

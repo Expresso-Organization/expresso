@@ -1,0 +1,29 @@
+{
+  "id": "unsection-cd4e0e4ff6919397",
+  "sourceUrl": "https://www.unsection.com/section/v7-professional-testimonial-design",
+  "sourceRevision": null,
+  "roles": [
+    "evidence"
+  ],
+  "roleEvidence": "협업 평가와 근거를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: v7 professional testimonial design",
+    "공개 이미지 요소: 22개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://www.unsection.com/section/v7-professional-testimonial-design",
+    "sha256": "47d85382ba35bc352bfb12e5c2f70eda41786f057ae98b4d75e91d0aa4d79e0e",
+    "fetchedAt": "2026-09-23T12:57:23+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

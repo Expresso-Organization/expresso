@@ -1,0 +1,29 @@
+{
+  "id": "60fps-f7151ef412d51ede",
+  "sourceUrl": "https://60fps.design/shots/apple-music-replay-2025-loading-text-pulse-animation",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Apple Music Replay 2025 Loading Text Pulse Animation",
+    "공개 이미지 요소: 32개",
+    "동영상 포스터: 31개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/apple-music-replay-2025-loading-text-pulse-animation",
+    "sha256": "339aa94d5143dfeac278b80eaeec8c054c90c3999844c8b482fc0dc5f45e6254",
+    "fetchedAt": "2026-09-23T12:57:04+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

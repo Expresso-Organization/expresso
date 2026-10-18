@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "tooltip-15",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "tooltip"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/tooltip/tooltip-15.tsx",
+      "content": "import { MdSecurity } from \"react-icons/md\";\n\nimport { Button } from \"@/components/ui/button\";\nimport {\n  HoverCard,\n  HoverCardContent,\n  HoverCardTrigger,\n} from \"@/components/ui/hover-card\";\n\nconst Tooltip15 = () => {\n  return (\n    <HoverCard openDelay={0} closeDelay={0}>\n      <HoverCardTrigger asChild>\n        <Button variant=\"link\">Security Notice</Button>\n      </HoverCardTrigger>\n\n      <HoverCardContent className=\"w-72\">\n        <div className=\"flex flex-col items-center text-center\">\n          <span className=\"bg-primary/10 mb-2.5 flex size-12 items-center justify-center rounded-full\">\n            <MdSecurity className=\"text-primary size-6\" />\n          </span>\n\n          <div className=\"mb-1 text-lg font-medium\">\n            Secure environment detected\n          </div>\n\n          <p className=\"text-muted-foreground text-sm\">\n            Your connection is encrypted and your data is protected. Continue\n            safely without any concerns.\n          </p>\n        </div>\n      </HoverCardContent>\n    </HoverCard>\n  );\n};\n\nexport default Tooltip15;\n",
+      "type": "registry:ui",
+      "target": "components/ui/tooltip-15.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

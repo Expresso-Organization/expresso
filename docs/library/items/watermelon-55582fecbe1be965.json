@@ -1,0 +1,212 @@
+{
+  "id": "watermelon-55582fecbe1be965",
+  "sourceUrl": "https://ui.watermelon.sh/dashboard/jobtracker-dashboard",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/jobtracker-dashboard.json",
+      "sha256": "a71c293bc5204bbcbdb16e54d9aa20f3f38c5e8043b7060ecf6108c6cdad062b",
+      "bytes": 89253,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/dashboards/jobtracker-dashboard/assets/icons.tsx",
+      "target": "components/watermelon/jobtracker-dashboard/assets/icons.tsx",
+      "type": "registry:component",
+      "sha256": "27172f596c5cce21b4a06b7d71de1098d76382dde1abd3d16e05d709895ed35d",
+      "bytes": 18930
+    },
+    {
+      "path": "src/components/dashboards/jobtracker-dashboard/assets/logo.tsx",
+      "target": "components/watermelon/jobtracker-dashboard/assets/logo.tsx",
+      "type": "registry:component",
+      "sha256": "9c41221ba9af6530a3eeda9b4937ce30762a63b1956e4323158e26df37cfe42c",
+      "bytes": 698
+    },
+    {
+      "path": "src/components/dashboards/jobtracker-dashboard/components/dashboard/customers-content.tsx",
+      "target": "components/watermelon/jobtracker-dashboard/components/dashboard/customers-content.tsx",
+      "type": "registry:component",
+      "sha256": "ccb94743540d457b3d559ef61219e4c1cea06ba5f49ff24005e5be54449e5902",
+      "bytes": 6030
+    },
+    {
+      "path": "src/components/dashboards/jobtracker-dashboard/components/dashboard/job-details/estimates-content.tsx",
+      "target": "components/watermelon/jobtracker-dashboard/components/dashboard/job-details/estimates-content.tsx",
+      "type": "registry:component",
+      "sha256": "19336dba5d44fc9736f6038d2abdecd4662989fb562e8ffe9c5db129bf27cf38",
+      "bytes": 21455
+    },
+    {
+      "path": "src/components/dashboards/jobtracker-dashboard/components/dashboard/job-details/job-details-content.tsx",
+      "target": "components/watermelon/jobtracker-dashboard/components/dashboard/job-details/job-details-content.tsx",
+      "type": "registry:component",
+      "sha256": "db96a6b3b41a7ca1181ca3888b83117edc8e322e9b7315f6bcc6d3feecff79f3",
+      "bytes": 1812
+    },
+    {
+      "path": "src/components/dashboards/jobtracker-dashboard/components/dashboard/jobs-content.tsx",
+      "target": "components/watermelon/jobtracker-dashboard/components/dashboard/jobs-content.tsx",
+      "type": "registry:component",
+      "sha256": "5df9fbb43d84e6450a8da5fb140e2190fc5cf6020e1d9076dd5a4a1b22f14553",
+      "bytes": 8979
+    },
+    {
+      "path": "src/components/dashboards/jobtracker-dashboard/components/layout/app-sidebar.tsx",
+      "target": "components/watermelon/jobtracker-dashboard/components/layout/app-sidebar.tsx",
+      "type": "registry:component",
+      "sha256": "f9fe9b1fc644422ba178c0c586c4d4f8ecb193e615af81360e5dbf06ca68ab4e",
+      "bytes": 3540
+    },
+    {
+      "path": "src/components/dashboards/jobtracker-dashboard/components/layout/dashboard-shell.tsx",
+      "target": "components/watermelon/jobtracker-dashboard/components/layout/dashboard-shell.tsx",
+      "type": "registry:component",
+      "sha256": "fa1b2f85c36802d014e8a9e424146a0a293dd2d900913dd809ca308d51233eb9",
+      "bytes": 1015
+    },
+    {
+      "path": "src/components/dashboards/jobtracker-dashboard/components/layout/sidebar-navigation-item.tsx",
+      "target": "components/watermelon/jobtracker-dashboard/components/layout/sidebar-navigation-item.tsx",
+      "type": "registry:component",
+      "sha256": "d4321ddef3ec46c0e79dedadaea7dcf66a67f7f035d618d60788e21f50a6f3e6",
+      "bytes": 3107
+    },
+    {
+      "path": "src/components/dashboards/jobtracker-dashboard/components/layout/top-navbar.tsx",
+      "target": "components/watermelon/jobtracker-dashboard/components/layout/top-navbar.tsx",
+      "type": "registry:component",
+      "sha256": "f15bf34d066a4124204add18ef365c3fd631c1d5eefdabeea82334c2ab4415f1",
+      "bytes": 6086
+    },
+    {
+      "path": "src/components/dashboards/jobtracker-dashboard/components/navigation.tsx",
+      "target": "components/watermelon/jobtracker-dashboard/components/navigation.tsx",
+      "type": "registry:component",
+      "sha256": "1e5782cf177a6260fd3c35f7fa70679a937076f0df15fef6892eaf1680aa829d",
+      "bytes": 1520
+    },
+    {
+      "path": "src/components/dashboards/jobtracker-dashboard/dashboard.css",
+      "target": "components/watermelon/jobtracker-dashboard/dashboard.css",
+      "type": "registry:component",
+      "sha256": "9a3a657f4f7d7cc4342b93d68ff201cbaf5f29d4bc5942b5b96faf23325f61a8",
+      "bytes": 2383
+    },
+    {
+      "path": "src/components/dashboards/jobtracker-dashboard/dashboardView.tsx",
+      "target": "components/watermelon/jobtracker-dashboard/dashboardView.tsx",
+      "type": "registry:component",
+      "sha256": "06de97e7eab233943e745c9c03fe169d60d40f34b1e9399eb14eaf1b7031ecdc",
+      "bytes": 883
+    },
+    {
+      "path": "src/components/dashboards/jobtracker-dashboard/data/index.ts",
+      "target": "components/watermelon/jobtracker-dashboard/data/index.ts",
+      "type": "registry:component",
+      "sha256": "e7e686811d68d7e3e9c80682e895a5ca3c6483d58d966a608a37ed9889fd1434",
+      "bytes": 4126
+    },
+    {
+      "path": "src/components/dashboards/jobtracker-dashboard/demo.tsx",
+      "target": "components/watermelon/jobtracker-dashboard/demo.tsx",
+      "type": "registry:component",
+      "sha256": "83380931231959515907bc0fc6c3fc124ed9168a69ad252670ad4f2819d98bd0",
+      "bytes": 155
+    }
+  ],
+  "dependencies": [
+    "@dnd-kit/core",
+    "@dnd-kit/modifiers",
+    "@dnd-kit/sortable",
+    "@dnd-kit/utilities",
+    "lucide-react",
+    "next-themes"
+  ],
+  "registryDependencies": [
+    "avatar",
+    "badge",
+    "button",
+    "card",
+    "dropdown-menu",
+    "input",
+    "select",
+    "separator",
+    "sidebar",
+    "table",
+    "tabs",
+    "tooltip"
+  ],
+  "imports": [
+    "../../../assets/icons",
+    "../../../data",
+    "../../assets/icons",
+    "../../assets/logo",
+    "../../data",
+    "../../navigation",
+    "../navigation",
+    "./app-sidebar",
+    "./components/dashboard/customers-content",
+    "./components/dashboard/job-details/job-details-content",
+    "./components/dashboard/jobs-content",
+    "./components/layout/dashboard-shell",
+    "./components/navigation",
+    "./dashboardView",
+    "./estimates-content",
+    "./sidebar-navigation-item",
+    "./top-navbar",
+    "@/components/ui/avatar",
+    "@/components/ui/badge",
+    "@/components/ui/button",
+    "@/components/ui/card",
+    "@/components/ui/dropdown-menu",
+    "@/components/ui/input",
+    "@/components/ui/select",
+    "@/components/ui/separator",
+    "@/components/ui/sidebar",
+    "@/components/ui/table",
+    "@/components/ui/tabs",
+    "@/components/ui/tooltip",
+    "@/hooks/use-mobile",
+    "@/lib/utils",
+    "@dnd-kit/core",
+    "@dnd-kit/modifiers",
+    "@dnd-kit/sortable",
+    "@dnd-kit/utilities",
+    "lucide-react",
+    "next-themes",
+    "react"
+  ],
+  "propsDeclarations": [
+    "type IconProps = SVGProps<SVGSVGElement>;\n\nexport function CollapseIcon(props: IconProps) {\n  return (\n    <svg\n      viewBox=\"0 0 24 24\"\n      fill=\"none\"\n      xmlns=\"http://www.w3.org/2000/svg\"\n      aria-hidden=\"true\"\n      focusable=\"false\"\n      {...props}",
+    "type EstimatesContentProps = {\n  sections: EstimateSection[];\n}",
+    "type SortableEstimateSectionProps = {\n  section: EstimateSection;\n  sectionIndex: number;\n  collapsed: boolean;\n  onToggle: () => void;\n  onAddItem: () => void;\n  onUnitChange: (itemId: string, unit: string) => void;\n  onDuplicateItem: (itemId: string) => void;\n  onDeleteItem: (itemId: string) => void;\n}",
+    "type SortableEstimateItemRowProps = {\n  item: EstimateLineItem;\n  sectionId: string;\n  number: string;\n  onUnitChange: (unit: string) => void;\n  onDuplicate: () => void;\n  onDelete: () => void;\n}",
+    "type DashboardShellProps = {\n  children: ReactNode;\n}",
+    "type SidebarNavigationItemProps = {\n  item: NavigationItem;\n  trailing?: ReactNode;\n}",
+    "type MenuPositioningProps = {\n  align: \"center\" | \"end\";\n  collisionPadding: number;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "http://www.w3.org/2000/svg",
+    "https://api.dicebear.com/10.x/avataaars/svg?seed=${encodeURIComponent(seed"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/jobtracker-dashboard.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

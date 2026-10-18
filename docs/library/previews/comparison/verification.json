@@ -1,0 +1,492 @@
+{
+  "method": "chrome_common_viewports",
+  "results": [
+    {
+      "method": "structured",
+      "width": 390,
+      "overflow": false,
+      "pageHeight": 6614,
+      "images": 3,
+      "brokenImages": [],
+      "missingAnchors": [],
+      "duplicateIds": [],
+      "h1Count": 1,
+      "headings": [
+        {
+          "tag": "H1",
+          "text": "복잡한 정보를\n명료한 경험으로."
+        },
+        {
+          "tag": "H2",
+          "text": "생각을 형태로 만든 작업"
+        },
+        {
+          "tag": "H3",
+          "text": "모아 지도"
+        },
+        {
+          "tag": "H3",
+          "text": "루멘 노트"
+        },
+        {
+          "tag": "H3",
+          "text": "온길 안내"
+        },
+        {
+          "tag": "H2",
+          "text": "문제부터 설계의 이유까지"
+        },
+        {
+          "tag": "H3",
+          "text": "모아 지도"
+        },
+        {
+          "tag": "H3",
+          "text": "루멘 노트"
+        },
+        {
+          "tag": "H3",
+          "text": "온길 안내"
+        },
+        {
+          "tag": "H2",
+          "text": "경험이 쌓인 방향"
+        },
+        {
+          "tag": "H3",
+          "text": "프로덕트 디자이너"
+        },
+        {
+          "tag": "H3",
+          "text": "UX 디자인 연구원"
+        },
+        {
+          "tag": "H2",
+          "text": "선택의 이유를 남기는 기록"
+        },
+        {
+          "tag": "H2",
+          "text": "다음 문제를 함께\n풀어갈 수 있도록."
+        }
+      ],
+      "focusStylePresent": true,
+      "reducedMotionPresent": true,
+      "identityFieldMatches": 22,
+      "identityFieldsTotal": 22,
+      "missingFields": [],
+      "fictionalLabel": true,
+      "screenshot": "structured-390.jpg",
+      "sha256": "192b7816acf23b97e4fe2d20847ef380b3b22308aad0492c2818079319041c9e"
+    },
+    {
+      "method": "structured",
+      "width": 768,
+      "overflow": false,
+      "pageHeight": 5315,
+      "images": 3,
+      "brokenImages": [],
+      "missingAnchors": [],
+      "duplicateIds": [],
+      "h1Count": 1,
+      "headings": [
+        {
+          "tag": "H1",
+          "text": "복잡한 정보를\n명료한 경험으로."
+        },
+        {
+          "tag": "H2",
+          "text": "생각을 형태로 만든 작업"
+        },
+        {
+          "tag": "H3",
+          "text": "모아 지도"
+        },
+        {
+          "tag": "H3",
+          "text": "루멘 노트"
+        },
+        {
+          "tag": "H3",
+          "text": "온길 안내"
+        },
+        {
+          "tag": "H2",
+          "text": "문제부터 설계의 이유까지"
+        },
+        {
+          "tag": "H3",
+          "text": "모아 지도"
+        },
+        {
+          "tag": "H3",
+          "text": "루멘 노트"
+        },
+        {
+          "tag": "H3",
+          "text": "온길 안내"
+        },
+        {
+          "tag": "H2",
+          "text": "경험이 쌓인 방향"
+        },
+        {
+          "tag": "H3",
+          "text": "프로덕트 디자이너"
+        },
+        {
+          "tag": "H3",
+          "text": "UX 디자인 연구원"
+        },
+        {
+          "tag": "H2",
+          "text": "선택의 이유를 남기는 기록"
+        },
+        {
+          "tag": "H2",
+          "text": "다음 문제를 함께\n풀어갈 수 있도록."
+        }
+      ],
+      "focusStylePresent": true,
+      "reducedMotionPresent": true,
+      "identityFieldMatches": 22,
+      "identityFieldsTotal": 22,
+      "missingFields": [],
+      "fictionalLabel": true,
+      "screenshot": "structured-768.jpg",
+      "sha256": "3e0848afcbd866c0456b222d1916d6f9706c3057cd6f345ff8590444f52f971b"
+    },
+    {
+      "method": "structured",
+      "width": 1440,
+      "overflow": false,
+      "pageHeight": 5012,
+      "images": 3,
+      "brokenImages": [],
+      "missingAnchors": [],
+      "duplicateIds": [],
+      "h1Count": 1,
+      "headings": [
+        {
+          "tag": "H1",
+          "text": "복잡한 정보를\n명료한 경험으로."
+        },
+        {
+          "tag": "H2",
+          "text": "생각을 형태로 만든 작업"
+        },
+        {
+          "tag": "H3",
+          "text": "모아 지도"
+        },
+        {
+          "tag": "H3",
+          "text": "루멘 노트"
+        },
+        {
+          "tag": "H3",
+          "text": "온길 안내"
+        },
+        {
+          "tag": "H2",
+          "text": "문제부터 설계의 이유까지"
+        },
+        {
+          "tag": "H3",
+          "text": "모아 지도"
+        },
+        {
+          "tag": "H3",
+          "text": "루멘 노트"
+        },
+        {
+          "tag": "H3",
+          "text": "온길 안내"
+        },
+        {
+          "tag": "H2",
+          "text": "경험이 쌓인 방향"
+        },
+        {
+          "tag": "H3",
+          "text": "프로덕트 디자이너"
+        },
+        {
+          "tag": "H3",
+          "text": "UX 디자인 연구원"
+        },
+        {
+          "tag": "H2",
+          "text": "선택의 이유를 남기는 기록"
+        },
+        {
+          "tag": "H2",
+          "text": "다음 문제를 함께\n풀어갈 수 있도록."
+        }
+      ],
+      "focusStylePresent": true,
+      "reducedMotionPresent": true,
+      "identityFieldMatches": 22,
+      "identityFieldsTotal": 22,
+      "missingFields": [],
+      "fictionalLabel": true,
+      "screenshot": "structured-1440.jpg",
+      "sha256": "b7f064329e4c74bbad91645338c4c597f7a507fe6035f86a0f0e469071ec9144"
+    },
+    {
+      "method": "free",
+      "width": 390,
+      "overflow": false,
+      "pageHeight": 7702,
+      "images": 3,
+      "brokenImages": [],
+      "missingAnchors": [],
+      "duplicateIds": [],
+      "h1Count": 1,
+      "headings": [
+        {
+          "tag": "H1",
+          "text": "\n        복잡한 정보를\n        명료한 경험으로.\n      "
+        },
+        {
+          "tag": "H2",
+          "text": "프로젝트 목록"
+        },
+        {
+          "tag": "H3",
+          "text": "모아 지도↓"
+        },
+        {
+          "tag": "H3",
+          "text": "루멘 노트↓"
+        },
+        {
+          "tag": "H3",
+          "text": "온길 안내↓"
+        },
+        {
+          "tag": "H2",
+          "text": "사례 상세"
+        },
+        {
+          "tag": "H3",
+          "text": "모아 지도"
+        },
+        {
+          "tag": "H3",
+          "text": "루멘 노트"
+        },
+        {
+          "tag": "H3",
+          "text": "온길 안내"
+        },
+        {
+          "tag": "H2",
+          "text": "경력"
+        },
+        {
+          "tag": "H3",
+          "text": "프로덕트 디자이너"
+        },
+        {
+          "tag": "H3",
+          "text": "UX 디자인 연구원"
+        },
+        {
+          "tag": "H2",
+          "text": "근거 자료"
+        },
+        {
+          "tag": "H2",
+          "text": "다음 문제를 함께풀어갈 수 있도록."
+        }
+      ],
+      "focusStylePresent": true,
+      "reducedMotionPresent": true,
+      "identityFieldMatches": 22,
+      "identityFieldsTotal": 22,
+      "missingFields": [],
+      "fictionalLabel": true,
+      "screenshot": "free-390.jpg",
+      "sha256": "f04c8f8f9173199174546bd53a8ea300c051ad63d6638429746d56a5d7d5893b"
+    },
+    {
+      "method": "free",
+      "width": 768,
+      "overflow": false,
+      "pageHeight": 7809,
+      "images": 3,
+      "brokenImages": [],
+      "missingAnchors": [],
+      "duplicateIds": [],
+      "h1Count": 1,
+      "headings": [
+        {
+          "tag": "H1",
+          "text": "\n        복잡한 정보를\n        명료한 경험으로.\n      "
+        },
+        {
+          "tag": "H2",
+          "text": "프로젝트 목록"
+        },
+        {
+          "tag": "H3",
+          "text": "모아 지도↓"
+        },
+        {
+          "tag": "H3",
+          "text": "루멘 노트↓"
+        },
+        {
+          "tag": "H3",
+          "text": "온길 안내↓"
+        },
+        {
+          "tag": "H2",
+          "text": "사례 상세"
+        },
+        {
+          "tag": "H3",
+          "text": "모아 지도"
+        },
+        {
+          "tag": "H3",
+          "text": "루멘 노트"
+        },
+        {
+          "tag": "H3",
+          "text": "온길 안내"
+        },
+        {
+          "tag": "H2",
+          "text": "경력"
+        },
+        {
+          "tag": "H3",
+          "text": "프로덕트 디자이너"
+        },
+        {
+          "tag": "H3",
+          "text": "UX 디자인 연구원"
+        },
+        {
+          "tag": "H2",
+          "text": "근거 자료"
+        },
+        {
+          "tag": "H2",
+          "text": "다음 문제를 함께풀어갈 수 있도록."
+        }
+      ],
+      "focusStylePresent": true,
+      "reducedMotionPresent": true,
+      "identityFieldMatches": 22,
+      "identityFieldsTotal": 22,
+      "missingFields": [],
+      "fictionalLabel": true,
+      "screenshot": "free-768.jpg",
+      "sha256": "f1796195068597bd0af413f56e5d3312d65592a5f4c393e869614c3b959cafbe"
+    },
+    {
+      "method": "free",
+      "width": 1440,
+      "overflow": false,
+      "pageHeight": 7815,
+      "images": 3,
+      "brokenImages": [],
+      "missingAnchors": [],
+      "duplicateIds": [],
+      "h1Count": 1,
+      "headings": [
+        {
+          "tag": "H1",
+          "text": "\n        복잡한 정보를\n        명료한 경험으로.\n      "
+        },
+        {
+          "tag": "H2",
+          "text": "프로젝트 목록"
+        },
+        {
+          "tag": "H3",
+          "text": "모아 지도↓"
+        },
+        {
+          "tag": "H3",
+          "text": "루멘 노트↓"
+        },
+        {
+          "tag": "H3",
+          "text": "온길 안내↓"
+        },
+        {
+          "tag": "H2",
+          "text": "사례 상세"
+        },
+        {
+          "tag": "H3",
+          "text": "모아 지도"
+        },
+        {
+          "tag": "H3",
+          "text": "루멘 노트"
+        },
+        {
+          "tag": "H3",
+          "text": "온길 안내"
+        },
+        {
+          "tag": "H2",
+          "text": "경력"
+        },
+        {
+          "tag": "H3",
+          "text": "프로덕트 디자이너"
+        },
+        {
+          "tag": "H3",
+          "text": "UX 디자인 연구원"
+        },
+        {
+          "tag": "H2",
+          "text": "근거 자료"
+        },
+        {
+          "tag": "H2",
+          "text": "다음 문제를 함께풀어갈 수 있도록."
+        }
+      ],
+      "focusStylePresent": true,
+      "reducedMotionPresent": true,
+      "identityFieldMatches": 22,
+      "identityFieldsTotal": 22,
+      "missingFields": [],
+      "fictionalLabel": true,
+      "screenshot": "free-1440.jpg",
+      "sha256": "0c1f4f92f2ccf35065f6564bbb41175414b9302070cef14f2e884a95bfee4a99"
+    }
+  ],
+  "keyboardDisclosures": {
+    "structured": true,
+    "free": true
+  },
+  "freeCaseLayout": [
+    {
+      "id": "moa",
+      "headingColumn": "1 / 5",
+      "imageColumn": "5 / 13",
+      "imageTopOffset": 0
+    },
+    {
+      "id": "lumen",
+      "headingColumn": "9 / 13",
+      "imageColumn": "1 / 9",
+      "imageTopOffset": 309.4
+    },
+    {
+      "id": "ongil",
+      "headingColumn": "1 / 5",
+      "imageColumn": "5 / 13",
+      "imageTopOffset": 0
+    }
+  ],
+  "fieldMetric": "이름·제목·기간·역할·연락처·근거 제목의 문자열 일치. 문장 의미 보존 평가는 별도 시각 검토."
+}

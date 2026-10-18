@@ -1,0 +1,11 @@
+{
+  "model": "qwen3.5:9b-q8_0",
+  "brief": "이름이 가장 크게 보이는 밝은 공기감의 중앙형 소개, 둥근 빛과 프로젝트 이미지 타일, 편안한 서체를 선택하세요.",
+  "attempts": [
+    {
+      "valid": true,
+      "outputSha256": "3ec5c6a23e9bb9664143ad816325099b0ded99021c6df352dfc8629b74d6b8da",
+      "output": "{\n  \"recipe\": \"gallery\",\n  \"design\": {\n    \"palette\": \"paper\",\n    \"typography\": \"serif\",\n    \"layout\": \"studio\"\n  },\n  \"heroStyle\": \"gradient\",\n  \"projectIndex\": \"mosaic\",\n  \"reason\": \"따뜻한 종이색과 명조체, 중앙 정렬된 밝은 배경 스타일을 통해 서비스 디자이너의 친근하고 전문적인 이미지를 강조하며, 프로젝트는 둥근 빛이 있는 비대칭 타일로 표현되었습니다.\"\n}"
+    }
+  ]
+}

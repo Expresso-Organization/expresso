@@ -1,0 +1,179 @@
+{
+  "id": "watermelon-48d3f53902f5f337",
+  "sourceUrl": "https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/registry.json",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/invoice-manager-dashboard.json",
+      "sha256": "cc2586f10e2288bef71d2046b002c63a698e2572fdc95bb9910130714f1ccdb6",
+      "bytes": 61717,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/dashboards/invoice-manager-dashboard/components/app-sidebar.tsx",
+      "target": "components/watermelon/invoice-manager-dashboard/components/app-sidebar.tsx",
+      "type": "registry:component",
+      "sha256": "b7a69e6f036ea2abff505011c42f9a53b026c05b8cddb81ef0c27d10d9955cf2",
+      "bytes": 5353
+    },
+    {
+      "path": "src/components/dashboards/invoice-manager-dashboard/components/nav-Tertiary.tsx",
+      "target": "components/watermelon/invoice-manager-dashboard/components/nav-Tertiary.tsx",
+      "type": "registry:component",
+      "sha256": "dc8781b7e2a6c0b3bd6e060790cc8043384434a7bdfd83391a2a15f9b81bd386",
+      "bytes": 1265
+    },
+    {
+      "path": "src/components/dashboards/invoice-manager-dashboard/components/nav-footer.tsx",
+      "target": "components/watermelon/invoice-manager-dashboard/components/nav-footer.tsx",
+      "type": "registry:component",
+      "sha256": "bd271d015165bbb7608be8efe9e6a3c63abca6b333a688323c747f468f260db7",
+      "bytes": 1256
+    },
+    {
+      "path": "src/components/dashboards/invoice-manager-dashboard/components/nav-main.tsx",
+      "target": "components/watermelon/invoice-manager-dashboard/components/nav-main.tsx",
+      "type": "registry:component",
+      "sha256": "f59bf01c12b61100cdf9e72a0b1875c98ff10818b2d7f6d6a20131ee970fb263",
+      "bytes": 1303
+    },
+    {
+      "path": "src/components/dashboards/invoice-manager-dashboard/components/nav-secondary.tsx",
+      "target": "components/watermelon/invoice-manager-dashboard/components/nav-secondary.tsx",
+      "type": "registry:component",
+      "sha256": "ca2847e2a257b41f6d55ec704398363e2072afcdfb5504e1cc5db2ed076bc992",
+      "bytes": 5020
+    },
+    {
+      "path": "src/components/dashboards/invoice-manager-dashboard/components/search-form.tsx",
+      "target": "components/watermelon/invoice-manager-dashboard/components/search-form.tsx",
+      "type": "registry:component",
+      "sha256": "d538e9aa05577ff80dc1dd3f9636e7f639139d7f056c5799d6a5765cb744ca90",
+      "bytes": 1211
+    },
+    {
+      "path": "src/components/dashboards/invoice-manager-dashboard/components/site-header.tsx",
+      "target": "components/watermelon/invoice-manager-dashboard/components/site-header.tsx",
+      "type": "registry:component",
+      "sha256": "7773eb9d6a011dda1bd01a246e59a7c30f08f66e5f608b3ea91a375cdeb1fca8",
+      "bytes": 11230
+    },
+    {
+      "path": "src/components/dashboards/invoice-manager-dashboard/components/team-switcher.tsx",
+      "target": "components/watermelon/invoice-manager-dashboard/components/team-switcher.tsx",
+      "type": "registry:component",
+      "sha256": "00d6d1ae3ab125adda8f043bde78de75e7e888a36d700bd933bc605f08508da4",
+      "bytes": 1589
+    },
+    {
+      "path": "src/components/dashboards/invoice-manager-dashboard/dashboardLayout.tsx",
+      "target": "components/watermelon/invoice-manager-dashboard/dashboardLayout.tsx",
+      "type": "registry:component",
+      "sha256": "96472ae91edaebca61a35a866e25260f6406efb849e4f625032aa38faf1824e8",
+      "bytes": 555
+    },
+    {
+      "path": "src/components/dashboards/invoice-manager-dashboard/demo.tsx",
+      "target": "components/watermelon/invoice-manager-dashboard/demo.tsx",
+      "type": "registry:component",
+      "sha256": "eb8a8af6e56365d70070dd61a9d57088874fcd370b2afc97b87ba5be79864620",
+      "bytes": 294
+    },
+    {
+      "path": "src/components/dashboards/invoice-manager-dashboard/invoiceManagerView.tsx",
+      "target": "components/watermelon/invoice-manager-dashboard/invoiceManagerView.tsx",
+      "type": "registry:component",
+      "sha256": "cfb1002c4fc9f5bc14810dcf5c9a19df027ffa6a4e89f0ba7de1de00c32f29e5",
+      "bytes": 26771
+    }
+  ],
+  "dependencies": [
+    "@radix-ui/react-avatar",
+    "@radix-ui/react-checkbox",
+    "@radix-ui/react-collapsible",
+    "@radix-ui/react-dialog",
+    "@radix-ui/react-dropdown-menu",
+    "@radix-ui/react-label",
+    "@radix-ui/react-select",
+    "@radix-ui/react-separator",
+    "@radix-ui/react-slot",
+    "@radix-ui/react-tooltip",
+    "class-variance-authority",
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "avatar",
+    "badge",
+    "breadcrumb",
+    "button",
+    "checkbox",
+    "collapsible",
+    "dialog",
+    "dropdown-menu",
+    "input",
+    "label",
+    "pagination",
+    "popover",
+    "select",
+    "separator",
+    "sheet",
+    "sidebar",
+    "skeleton",
+    "table",
+    "tooltip"
+  ],
+  "imports": [
+    "./components/app-sidebar",
+    "./components/site-header",
+    "./dashboardLayout",
+    "./data",
+    "./invoiceManagerView",
+    "./nav-Tertiary",
+    "./nav-footer",
+    "./nav-main",
+    "./nav-secondary",
+    "./search-form",
+    "./team-switcher",
+    "@/components/ui/avatar",
+    "@/components/ui/breadcrumb",
+    "@/components/ui/button",
+    "@/components/ui/checkbox",
+    "@/components/ui/collapsible",
+    "@/components/ui/dialog",
+    "@/components/ui/dropdown-menu",
+    "@/components/ui/input",
+    "@/components/ui/label",
+    "@/components/ui/pagination",
+    "@/components/ui/popover",
+    "@/components/ui/select",
+    "@/components/ui/sidebar",
+    "@/components/ui/table",
+    "lucide-react",
+    "react"
+  ],
+  "propsDeclarations": [],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [
+    "https://avatar.vercel.sh/${row.clientName}",
+    "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=1480&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "https://watermelon.xyz/invoice/inv-7821"
+  ],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/invoice-manager-dashboard.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

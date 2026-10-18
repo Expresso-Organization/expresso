@@ -9,12 +9,13 @@ import { jobs as jobsApi } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 import { backToListHref } from "../list-query";
+import { JobChatRail, JobChatRailProvider, JobChatToggle } from "./JobChatRail";
 
-import { analyzePostingAction } from "../../brew/new/new-brew-actions";
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { mendEmphasis } from "@/components/ui/mend-emphasis";
 import { StackChip, StackMarkdown } from "@/components/ui/StackMarkdown";
 import { findStacks, resolveStack } from "@/components/ui/stacks";
+import { InterestButton } from "./InterestButton";
 import styles from "./page.module.css";
 
 /** §3.5 요건 충족 / 약함 / 없음은 아이콘이 고정 매핑이다. */
@@ -76,7 +77,6 @@ export default async function JobDetailPage({
   const coveredCount = musts.filter((item) => item.coverage === "covered").length;
   const comparedCount = musts.filter((item) => item.coverage !== null).length;
   const haveStack = job.technologies.filter((tool) => tool.matched === true).length;
-  const firstMissing = musts.find((item) => item.coverage === "missing");
   const rows = facts(job);
   // 뽑아 놓은 것이 하나라도 있나. 없으면 원문을 펴서 보여준다.
   const hasStructure = job.duties.length > 0
@@ -86,25 +86,33 @@ export default async function JobDetailPage({
     || job.technologies.length > 0;
 
   return (
-    <>
+    // 머리의 채팅 버튼과 본문의 레일이 접힘 상태를 함께 본다.
+    <JobChatRailProvider>
       <DocumentHeader
         crumbs={[
           { label: "공고 탐색", href: backHref },
           `${job.company.name} · ${job.title}`,
         ]}
         actions={
-          <>
-            <button type="button" className={styles.headAction}>
-              <Icon
-                name="bookmark-simple"
-                weight={job.interest ? "fill" : "regular"}
-                size={14}
-                color={job.interest ? "var(--ex-accent-text)" : "var(--ex-fg-muted)"}
-              />
-              {job.interest ? "관심 공고" : "관심 공고에 담기"}
-            </button>
-            <Icon name="arrow-square-out" size={16} color="var(--ex-fg-muted)" />
-          </>
+          // 머리 오른쪽은 버튼 세 개다 — 관심 공고 · 원문 · 채팅. 머리 폭이 넉넉하면(≥768px) 아이콘 옆에
+          // 이름을 함께 보이고, 좁으면 아이콘만 남기고 이름은 툴팁과 읽기 레이블로 둔다.
+          <div className={styles.headActions}>
+            <InterestButton jobPostingId={job.id} interested={job.interest !== null} />
+            {job.sourceUrl ? (
+              <a
+                className={styles.headIcon}
+                href={job.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="원문 보기"
+                title="원문 보기"
+              >
+                <Icon name="arrow-square-out" size={16} color="var(--ex-fg-muted)" />
+                <span className={styles.headLabel}>원문 보기</span>
+              </a>
+            ) : null}
+            <JobChatToggle className={styles.headIcon} labelClassName={styles.headLabel} />
+          </div>
         }
       />
       <AppBody>
@@ -297,75 +305,9 @@ export default async function JobDetailPage({
               </details>
             ) : null}
 
-            {job.notice ? <p className={styles.notice}>{job.notice}</p> : null}
-          </div>
-
-          <aside className={styles.rail}>
-            {job.match ? (
-              <div className={styles.matchCard}>
-                {/*
-                  큰 숫자는 요건 충족률이고, 오른쪽 내역이 그 분자·분모다.
-                  요건 원문의 충족 · 약함 · 없음 3단 판정은 아래 "자격 요건"
-                  절이 따로 보여준다 — 정밀도가 다른 별개의 읽기다.
-                */}
-                <div className={styles.matchHead}>
-                  <div>
-                    <div className={styles.matchLabel}>내 기록과의 일치</div>
-                    <div className={styles.matchScoreRow}>
-                      <span className={styles.matchScore}>{job.match.total}</span>
-                      <span className={styles.matchUnit}>%</span>
-                    </div>
-                  </div>
-                  <div className={styles.matchTally}>
-                    <div className={`${styles.legendItem} ${styles.legendCovered}`}>
-                      충족 {job.match.covered}
-                    </div>
-                    <div className={styles.legendItem}>
-                      미충족 {job.match.required - job.match.covered}
-                    </div>
-                    <div className={styles.legendItem}>요건 {job.match.required}개</div>
-                  </div>
-                </div>
-                <div className={styles.matchBar}>
-                  <span
-                    className={styles.matchSlot}
-                    style={{ flex: job.match.covered, background: "var(--ex-status-success)" }}
-                  />
-                  <span
-                    className={styles.matchSlot}
-                    style={{
-                      flex: job.match.required - job.match.covered,
-                      background: "var(--ex-border)",
-                    }}
-                  />
-                </div>
-                {job.rank ? (
-                  <div className={styles.matchRank}>
-                    비슷한 공고 {job.rank.total}건 중 <b>{job.rank.position}번째로 가까운</b>{" "}
-                    공고입니다.
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-
-            {firstMissing ? (
-              <div className={styles.railCardBrew}>
-                <div className={styles.railTitle}>빠진 재료 하나</div>
-                <p className={`${styles.railBody} ${styles.railBodyBrew}`}>
-                  {firstMissing.label}만 기록이 없습니다. {job.match?.nextAction}
-                </p>
-                <form action={analyzePostingAction}>
-                  <input type="hidden" name="jobPostingId" value={job.id} />
-                  <button type="submit" className={styles.railCta}>
-                    질문 3개로 채우기
-                  </button>
-                </form>
-              </div>
-            ) : null}
-
-            {job.company.brandColors.length > 0 || job.company.toneSummary ? (
-              <div className={styles.railCard}>
-                <div className={styles.railTitle}>이 회사의 톤</div>
+            {job.company.brandColors.length > 0 || job.company.toneSummary || job.company.toneImpression ? (
+              <div className={styles.section}>
+                <div className={styles.blockTitle}>이 회사의 톤</div>
                 {job.company.brandColors.length > 0 ? (
                   <div className={styles.palette}>
                     {job.company.brandColors.map((color) => (
@@ -376,53 +318,42 @@ export default async function JobDetailPage({
                     ))}
                   </div>
                 ) : null}
-                {job.company.toneSummary ? (
-                  <div className={styles.toneRow}>
-                    <span className={styles.toneKey}>공고 말투</span>
-                    <span>{job.company.toneSummary}</span>
-                  </div>
-                ) : null}
-                {job.company.toneImpression ? (
-                  <div className={styles.toneRow} style={{ marginTop: "6px" }}>
-                    <span className={styles.toneKey}>인상</span>
-                    <span>{job.company.toneImpression}</span>
-                  </div>
+                {/* 공고 속성 표와 같은 줄 양식을 쓴다 — 왼쪽 본문 폭에서 라벨과 값이 같은 자리에 선다. */}
+                {job.company.toneSummary || job.company.toneImpression ? (
+                  <dl className={styles.facts}>
+                    {[
+                      { label: "공고 말투", icon: "chat-text", value: job.company.toneSummary },
+                      { label: "인상", icon: "sparkle", value: job.company.toneImpression },
+                    ]
+                      .filter((row) => row.value)
+                      .map((row) => (
+                        <div key={row.label} className={styles.fact}>
+                          <dt className={styles.factLabel}>
+                            <Icon name={row.icon} size={14} color="var(--ex-fg-subtle)" />
+                            {row.label}
+                          </dt>
+                          <dd className={styles.factValue}>{row.value}</dd>
+                        </div>
+                      ))}
+                  </dl>
                 ) : null}
               </div>
             ) : null}
 
-            <div className={styles.railCard}>
-              <div className={styles.railTitle}>
-                이 공고로 만들면 이 기록들이 먼저 올라갑니다
-              </div>
-              {job.topRecords.length > 0 ? (
-                job.topRecords.map((record, index) => (
-                  <div key={record.id} className={styles.topRecord}>
-                    <span className={styles.topRecordNo}>
-                      {String(index + 1).padStart(2, "0")}
-                    </span>
-                    <span className={styles.topRecordTitle}>{record.title}</span>
-                  </div>
-                ))
-              ) : (
-                <div className={styles.topRecord}>
-                  <span className={styles.topRecordTitle}>
-                    아직 이 공고를 해석하지 않았습니다
-                  </span>
-                </div>
-              )}
-              {/* 공고는 이미 있다. 새로 생기는 것은 내 분석과 제작뿐이다. */}
-              <form action={analyzePostingAction}>
-                <input type="hidden" name="jobPostingId" value={job.id} />
-                <button type="submit" className={styles.brew}>
-                  이 공고로 포트폴리오 만들기
-                </button>
-              </form>
-            </div>
-          </aside>
+            {job.notice ? <p className={styles.notice}>{job.notice}</p> : null}
+          </div>
+
+          {/*
+            레일은 이 공고를 두고 나누는 대화 하나다. 공고가 바뀌면 다시 마운트해
+            그 공고가 연결된 대화를 새로 고른다. 접기와 너비 조절은 레일이 맡는다.
+          */}
+          <JobChatRail
+            key={job.id}
+            job={{ id: job.id, title: job.title, company: job.company.name }}
+          />
         </div>
       </AppBody>
-    </>
+    </JobChatRailProvider>
   );
 }
 

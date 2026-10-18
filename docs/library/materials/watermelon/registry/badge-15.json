@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "badge-15",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "badge"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/badge/badge-15.tsx",
+      "content": "\nimport { Badge } from \"@/components/ui/badge\";\n\nconst Badge15 = () => {\n  return (\n    <Badge className=\"border-none bg-green-600/10 text-green-600 focus-visible:ring-green-600/20 focus-visible:outline-none dark:bg-green-400/10 dark:text-green-400 dark:focus-visible:ring-green-400/40 \">\n      <span\n        className=\"size-2 rounded-full bg-green-600 dark:bg-green-400\"\n        aria-hidden=\"true\"\n      />\n      Done\n    </Badge>\n  );\n};\n\nexport default Badge15;\n",
+      "type": "registry:ui",
+      "target": "components/ui/badge-15.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

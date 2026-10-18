@@ -1,0 +1,102 @@
+# 수집 라이브러리와 포트폴리오 생성
+
+포트폴리오 생성기는 전체 수집 목록을 검색하고, 데이터 어댑터가 연결된 원본 React 컴포넌트를 모델의 Spec에 따라 렌더링합니다.
+
+- 검색 대상: 9,516개. 기존 shortlist 필터를 사용하지 않습니다.
+- 실행 원본: 38개. 히어로 32개, 콘텐츠 요소 6개입니다.
+- SVG 자산: 908개. 자산 목록에 포함되며 현재 섹션 렌더링 선택지에는 포함되지 않습니다.
+- 참고 자료: 7,467개. 실행 코드와 구분하여 구도 선택의 참고 ID로 기록합니다.
+- 어댑터 필요: 1,085개. 입력 연결·실행 조건이 아직 충족되지 않았습니다.
+- 원본 미확보: 18개.
+
+## 선택과 렌더링
+
+`catalog.json → acquisitions → curation → examples → componentry`를 포털과 같은 순서로 합칩니다. `build-collected-registry.mjs`가 전체 목록과 실행 가능 상태를 생성합니다. `generation-index.json`에는 모든 항목의 상태와 이유가 있습니다.
+
+`GET /v1/page-library`는 인증 후 전체 목록을 검색합니다. `q`, `status`, `slot`, `page`, `limit`로 이름·출처·유형·역할을 찾습니다. 결과의 `inventoryTotal`과 `total`은 전체 수집 규모와 현재 검색 결과 규모를 각각 나타냅니다. 실행 필터를 적용해도 전체 규모는 유지합니다.
+
+생성기는 모든 호환 소개·사례 원본 ID를 모델에게 제공합니다. 참고 자료는 전체 목록에서 프로필과 요청 키워드를 검색해 최대 8개를 전달합니다. 모델은 `watermelon-hero-12`처럼 읽을 수 있는 Registry 키를 `sourceId`에 적습니다. 기존 수집 ID도 호환됩니다. 키는 하나의 원본 수집 ID로 해석되며 선택 기록에 둘을 함께 저장합니다. 선택적 `referenceIds`에는 검색한 참고 ID를 적습니다. 동적 Zod 계약은 제공한 실행 ID만 허용합니다. 저장·직접 편집 렌더링에서도 실제 Registry와 역할을 검사합니다.
+
+`NameIntro`와 사례 타입은 의미 단위를 나타냅니다. `sourceId`는 실제 렌더링 구현을 지정합니다. 예를 들어 같은 `CaseTechnical`에 Card 또는 Feature 원본을 선택할 수 있습니다. 모델이 HTML이나 React 코드를 새로 작성하지 않습니다. 원본을 고른 사례도 설명 블록에 `sp-case-${kind}`를 붙여 유형별 항목 표현(기술형=항목표, 과정형=단계, 기사형=설명 묶음)과 이미지 규칙을 그대로 씁니다. Feature 원본이 이미 표시한 항목 수는 빌드가 `runtime.boundDetails`에 기록하고, 나머지 항목만 설명 블록에 출력합니다. 관련 자료 링크는 근거 항목의 제목을 표시합니다.
+
+원본에 입력을 연결하는 방법은 다음과 같습니다.
+
+- 보관된 registry JSON의 원본 파일과 SHA-256을 확인하고 컴파일합니다.
+- 제목·소개·이름·내부 링크·제공 이미지를 원본 props에 전달합니다.
+- Feature 1과 4는 원본 JSX의 제목·설명 위치를 데이터 슬롯으로 표시합니다.
+- 원본의 샘플 문구·수치·인물 목록을 제거합니다. 이미지와 배경 URL은 제공된 자산으로 제한합니다.
+- 원본 코드에 글자가 있었는데 샘플을 지운 뒤 입력 내용이 하나도 남지 않는 요소는 출력하지 않습니다. Feature 4의 샘플 수치 막대·도넛·진행 막대와 Feature 1의 빈 알약 상자가 여기에 해당합니다. 원래 글자 없이 만든 장식은 `data-source-decoration`으로 표시하고 그대로 둡니다.
+- 원본은 Tailwind 기본 리셋을 전제로 작성됐습니다. 리셋 중 링크 상속·이미지 최대 폭·`border-box`·`min-width:0`만 원본 레이어보다 먼저 선언한 `sp-source-base` 레이어에 둡니다. 레이어 밖에 두면 원본의 크기 유틸리티를 덮어 Book 표지 폭이 0이 됩니다.
+- 이미지가 있는 히어로는 이름과 자기 정의를 `.sp-source-nameplate` 하나로 묶고 블러 판을 씌웁니다. 배경 이미지와 어둡게 처리는 유지합니다.
+- 로그인·검색·외부 폼·동영상 등 연결되지 않은 동작을 제거합니다. 내비게이션은 실제 포트폴리오 목차에 연결합니다.
+- 원본 Motion 노드는 저장 HTML에서 읽을 수 있는 CSS 등장·호버 효과로 연결합니다. 원본의 클라이언트 상호작용을 전부 재현했다고 표시하지 않습니다.
+- 사례 본문·설명·근거·이미지는 입력 내용이 누락되지 않도록 함께 출력합니다.
+
+전체 페이지의 `library` 배치는 원본의 전면 구도를 표시합니다. 기존 `editorial`, `gallery`, `dossier` Spec도 계속 읽습니다. 단일 열 스타일로 재생성하면 `library` 배치를 사용하고, 넓은 여백과 밀집 배치의 사용자 선택은 유지합니다.
+
+## 지면 컨테이너
+
+모델은 섹션 요소를 컨테이너에 넣어 지면을 나눌 수 있습니다. 자식은 json-render의 기본 slot인 `children`에 둡니다.
+
+| 컨테이너 | 자식 수 | variant | 표시 |
+| --- | --- | --- | --- |
+| `Columns` | 2 | `even` · `wide-start` · `wide-end` | 두 열. 넓은 쪽은 2fr, 좁은 쪽은 최소 300px |
+| `Grid` | 2–3 | `even` | 같은 폭 열. 열이 300px보다 좁아지면 다음 줄로 넘김 |
+| `Band` | 1–3 | `panel` · `accent` | 묶음. `panel`은 `--sp-panel` 면과 32px 여백, `accent`는 상단 3px `--sp-accent` 선 |
+
+- 트리는 `page → 컨테이너 → 요소` 한 단계까지입니다. 컨테이너 안에 컨테이너·`NameIntro`·`Contact`를 넣지 않습니다. 컨테이너는 최대 4개이고, 모든 요소는 트리 전체에서 한 번만 나타납니다. `NameIntro`는 `page.children`의 처음, `Contact`는 마지막입니다.
+- 모델 계약은 `group-1`…`group-4`를 선택 키로 둡니다. 저장 스키마와 모델 계약 모두 variant를 단일 enum으로 받고, type과 variant의 짝은 `validateStructuredPortfolio`가 읽을 수 있는 메시지로 검사합니다. 이 메시지가 재시도 요청에 그대로 들어갑니다.
+- 열 최소 폭 300px은 수집 원본 중 가장 넓은 고정 폭인 Book에서 가져왔습니다. `Columns`는 컨테이너 쿼리로 폭이 680px(300px 두 열과 최대 열 간격 80px)보다 좁으면 한 열이 됩니다. 화면 폭이 아니라 컨테이너 폭을 기준으로 하므로 editorial 배치의 본문 열 안에서도 같은 규칙이 적용됩니다.
+- 컨테이너가 없는 기존 Spec은 이전과 같은 HTML로 렌더링됩니다(`library.test.ts`).
+- 편집 화면은 `structuredLeaves`로 트리를 따라 사례를 나열하고, 컨테이너 안 사례에 묶음 이름을 표시합니다. 위·아래 이동은 같은 부모 안에서만 일어나며 컨테이너 구성은 보존됩니다. 컨테이너를 만들거나 옮기는 편집은 아직 없습니다.
+
+### 컨테이너 도입 후 생성 결과(2026-10-09)
+
+같은 준비된 입력 세 개를 모델별로 생성했습니다. 비교 기준은 `library-selection-rerender-2026-10-09`입니다.
+
+| 실행 | 모델 | 통과 | 컨테이너를 쓴 결과 | Spec 생성 시간 | 출력 토큰 |
+| --- | --- | --- | --- | --- | --- |
+| `library-layout-qwen-2026-10-09` | qwen3.5 9B (q8) | 2/3 | 0/2 | 28.8–34.1초 | 723–754 |
+| `library-layout-sonnet-2026-10-09` | claude-sonnet-5 | 3/3 | 1/3 (경력·근거 두 열) | 88.6–117.8초 | 7,464–9,698 |
+| `library-layout-opus-2026-10-09` | claude-opus-5 1건, claude-fable-5-1 2건 | 3/3 | 3/3 (각 2개) | 71.8–93.9초 | 2,097–5,501 |
+
+- qwen은 기후 분석가에서 두 번 모두 같은 요소를 컨테이너와 `page.children`에 중복으로 넣어 거절됐습니다.
+- Sonnet은 제품 경로(`PageService`)와 같은 `modelTier: "sonnet"`으로 실행했습니다. Opus 실행은 이 값을 넘기지 않아 지면 생성 기본 티어(`opus`)로 호출된 결과입니다.
+- Claude 실행은 개발용 `claude-code` 공급자를 썼습니다. 입력은 대부분 캐시 읽기·생성 토큰(호출당 약 6만–21만)으로 집계되며, 지면 프롬프트 자체는 qwen 기준 약 5천 토큰이므로 나머지는 CLI가 붙이는 문맥입니다. 출력 토큰에도 CLI의 사고 토큰이 포함될 수 있고, 비용(Sonnet $0.33–0.42, Opus 계열 $0.74–1.36)도 CLI가 보고한 값입니다. 운영 API의 토큰·비용으로 보지 않습니다.
+- Sonnet 전체 경로(입력 정리 포함)는 입력 정리 단계에서 두 번 실패했습니다. `profile.headline`이 한 문장 규칙을 어기고 `contact`가 빠졌습니다. 입력 정리 단계에는 재시도 고리가 없습니다.
+- 변경 전후 화면과 측정값은 각 실행 폴더의 `compare.html`에 있습니다.
+
+## 기록과 편집
+
+`generationManifest.library`는 전체 목록 해시·전체 규모·검색어·제공 ID·선택 ID·원본 파일·원본 해시·적용 어댑터를 저장합니다. 직접 편집해 원본을 교체하면 선택 기록도 갱신합니다. 편집기의 지면 구성에는 소개와 사례 원본 선택 메뉴가 있습니다.
+
+일반 빌드는 커밋된 `packages/portfolio-renderer/src/collected`를 사용합니다. API·Worker·저장 HTML·내보내기 모두 같은 서버 렌더러를 호출합니다. 실행 시 수집 사이트에 접속하거나 모델의 코드를 평가하지 않습니다. 원본 라이선스와 의존성의 저작권 표시를 보존합니다.
+
+## 범위와 다음 연결 대상
+
+9,516개 모두가 실행 가능한 포트폴리오 섹션인 것은 아닙니다. 실행 원본은 Watermelon 37개와 Componentry Annotated Text 1개입니다. Componentry의 56개를 포함한 다른 공급자도 검색 목록에 포함되지만, 해당 원본들은 입력 계약과 브라우저 실행 환경을 추가로 연결해야 합니다. 아이콘·프롬프트·다이어그램과 참고 화면은 용도에 맞는 별도 계약이 필요합니다.
+
+현재 여섯 사례 원본은 Book, Card, Text Gradient, Feature 1, Feature 4, Annotated Text입니다. 고정 데이터가 있는 Bento, 차트, 3D·Canvas 효과를 임의의 수치나 그림으로 실행했다고 처리하지 않습니다. 이를 확대하려면 원본의 데이터 슬롯·실제 입력·상호작용 계약을 추가하고 같은 렌더링 검증을 통과시킵니다.
+
+## 검증 근거
+
+- `packages/portfolio-renderer/src/library.test.ts`: 전체 수집 ID 보존, 원본 전체 SSR, 샘플 제거, 권한·역할 거절, 선택 해시 기록.
+- `check-collected-runtime.mjs --browser`: 38개 × 390/926/1440px, 이름·가로 넘침·JavaScript 없는 표시, 서식 없는 항목표와 사례 원본의 샘플 잔여 요소 검사.
+- `run-structured-profiles.ts`: 기존 가상 프로필 세 개를 실제 로컬 모델에 입력. 모델 응답 원문·Spec·입력·HTML 해시 기록.
+- `verify-structured-profiles.mjs`: 응답 원문과 저장 Spec 일치, 본문 보존, 이미지·목차·반응형·모션 감소·JavaScript 없는 문서, 사례 유형 규칙·샘플 잔여 요소·관련 자료 제목·히어로 이름 판 블러 검사.
+
+로컬 모델에서 JSON Schema 강제 출력이 시간 제한에 걸리면 `PORTFOLIO_JSON_MODE=1`로 JSON 응답을 받고 동일한 동적 Zod 계약으로 검사할 수 있습니다. 이 옵션은 검증 계약을 완화하지 않습니다. 모델 선택의 다양성과 화면 품질은 별도 브라우저 검증 결과로 판단합니다.
+
+이번 검증에서는 가상 프로필 3개의 소개 원본이 2종, 전체 원본 조합이 3종으로 선택됐습니다. `docs/library/previews/portfolio/runs/library-selection-2026-10-07/`에 모델 원문, Spec, 렌더링 문서, 화면과 검증 기록이 있습니다. 밝은 배경 이미지의 글자 대비와 책 표지 내용은 모델 Spec을 유지한 채 렌더러에서 보강했습니다. 이미지 자산은 기존의 가상 입력 준비 과정에서 생성한 SVG입니다.
+
+렌더러만 바꿨을 때는 모델을 다시 부르지 않고 저장 Spec을 다시 그려 비교합니다.
+
+```bash
+PORTFOLIO_RERENDER_FROM=<원래 실행 ID> PORTFOLIO_RUN_ID=<새 실행 ID> services/backend/node_modules/.bin/tsx scripts/library/renderer/run-structured-profiles.ts
+node scripts/library/renderer/compare-runs.mjs <원래 실행 ID> <새 실행 ID>
+node scripts/library/renderer/verify-structured-profiles.mjs <새 실행 ID>
+```
+
+`compare-runs.mjs`는 두 실행의 같은 프로필을 첫 화면과 사례 지면 단위로 캡처하고, 달라진 측정값(서식 없는 항목, 샘플 잔여 요소, 원본 블록 크기, 관련 자료 링크, 기본 링크색 링크, 이름 판 블러, 사례 높이)만 표로 적어 `compare.html`을 만듭니다. 새 실행 폴더의 `notes.json`이 있으면 지면별 설명을 붙입니다. `verify-structured-profiles.mjs`는 `compare.html`이 있으면 비교 페이지에서 링크합니다.
+
+`library-selection-rerender-2026-10-09/`는 위 실행의 Spec을 원본 렌더링 결함 수정 뒤에 다시 그린 결과입니다. 이미지 속 글자는 검사하지 못합니다. 블러 판 밖의 이미지 글자는 그대로 보입니다.

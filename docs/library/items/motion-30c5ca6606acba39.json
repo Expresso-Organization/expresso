@@ -1,0 +1,21 @@
+{
+  "id": "motion-30c5ca6606acba39",
+  "sourceUrl": "https://www.motionin.design/gallery/spring",
+  "sourceRevision": null,
+  "roles": [
+    "project-grid"
+  ],
+  "roleEvidence": "작품·프로젝트·사례를 묶어 보여주는 표현 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "공식 약관의 프롬프트 재배포·갤러리 수집 제한"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "licenseUrl": "https://www.motionin.design/terms",
+  "acquisitionStatus": "permission_needed",
+  "previewReason": "공식 약관의 프롬프트 재배포·갤러리 수집 제한",
+  "sourceLicense": "https://www.motionin.design/terms"
+}

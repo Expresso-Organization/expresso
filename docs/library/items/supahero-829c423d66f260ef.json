@@ -1,0 +1,30 @@
+{
+  "id": "supahero-829c423d66f260ef",
+  "sourceUrl": "https://supahero.io/hero/off-grid",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Off-Grid",
+    "공개 이미지 요소: 1개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://www.offgrid-design.co/",
+  "evidence": {
+    "url": "https://supahero.io/hero/off-grid",
+    "sha256": "db6dc40077c0cdb5474d657d45c08100f952490512a933b72c7a68cbf62f7999",
+    "fetchedAt": "2026-09-23T12:53:30+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

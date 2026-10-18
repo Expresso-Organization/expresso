@@ -1,0 +1,29 @@
+{
+  "id": "60fps-882752e11952e5d6",
+  "sourceUrl": "https://60fps.design/shots/telegram-folders-animation",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Telegram Folders Animation",
+    "공개 이미지 요소: 32개",
+    "동영상 포스터: 31개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/telegram-folders-animation",
+    "sha256": "341f75d0b69bbd4f7d409cbfbcc00c0296ac1a5b204bf7aac3e3ca576d7d7649",
+    "fetchedAt": "2026-09-23T13:07:59+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

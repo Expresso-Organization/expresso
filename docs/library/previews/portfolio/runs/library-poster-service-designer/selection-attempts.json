@@ -1,0 +1,11 @@
+{
+  "model": "qwen3.5:9b-q8_0",
+  "brief": "이름이 가장 크게 보이는 밝은 포스터. 아주 큰 고딕 이름, 강한 파란색 면, 조작 가능한 프로젝트 카드가 있는 전시 스타일. 히어로는 클래식 보드형으로 선택하세요.",
+  "attempts": [
+    {
+      "valid": true,
+      "outputSha256": "a01f6a42486b268eb8d53e09c4db78a3bf8cfb47955348eca7c6cd0fb721d705",
+      "output": "{\n  \"recipe\": \"gallery\",\n  \"design\": {\n    \"palette\": \"electric\",\n    \"typography\": \"display\",\n    \"layout\": \"poster\"\n  },\n  \"heroStyle\": \"classic\",\n  \"projectIndex\": \"mosaic\",\n  \"reason\": \"사용자가 명백히 밝은 포스터 스타일과 고딕 폰트를 요청했으므로, 이전 페이지의 어두운 배경과 스튜디오 레이아웃과 대비되도록 전기색 팔레트와 포스터 레이아웃을 선택했습니다.\"\n}"
+    }
+  ]
+}

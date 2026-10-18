@@ -1,0 +1,30 @@
+{
+  "id": "supahero-7d6286ceaa2731c0",
+  "sourceUrl": "https://supahero.io/hero/gradientshub",
+  "sourceRevision": null,
+  "roles": [
+    "hero"
+  ],
+  "roleEvidence": "대표 소개와 핵심 메시지를 배치할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: GradientsHub",
+    "공개 이미지 요소: 1개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://gradientshub.com/",
+  "evidence": {
+    "url": "https://supahero.io/hero/gradientshub",
+    "sha256": "db439bb8f94609db4f193da6820e6d78f03df18204832c6e4c48322299d2cbf3",
+    "fetchedAt": "2026-09-23T12:52:28+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

@@ -1,0 +1,56 @@
+{
+  "id": "watermelon-9f4ddcc98986eeae",
+  "sourceUrl": "https://ui.watermelon.sh/animated-components/pop-stepper",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/pop-stepper.json",
+      "sha256": "92fd754e4e158d7e3d4fb3ddb64fa6c785ef6372dada16a2ed87a881307c8889",
+      "bytes": 3920,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/pop-stepper.tsx",
+      "target": "components/ui/pop-stepper.tsx",
+      "type": "registry:ui",
+      "sha256": "b7f945acdc569a538b9209d87467288bb465f0a41fd69de20f8f7a313629185c",
+      "bytes": 3387
+    }
+  ],
+  "dependencies": [
+    "motion",
+    "react",
+    "useTheme",
+    "lucide-react"
+  ],
+  "registryDependencies": [],
+  "imports": [
+    "lucide-react",
+    "motion/react",
+    "next-themes",
+    "react"
+  ],
+  "propsDeclarations": [
+    "interface PopStepperProps {\n  initialValue?: number;\n  step?: number;\n  min?: number;\n  max?: number;\n  fontClassName?: string;\n  lightColors?: string[];\n  darkColors?: string[];\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/pop-stepper.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "acquisitionStatus": "source_ready",
+  "previewReason": "원본 코드 확보 · 예제 입력과 실행 환경 확인 필요",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

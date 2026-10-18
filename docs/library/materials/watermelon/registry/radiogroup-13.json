@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "radiogroup-13",
+  "dependencies": [
+    "react-icons"
+  ],
+  "registryDependencies": [
+    "radio-group"
+  ],
+  "files": [
+    {
+      "path": "src/components/base-variants/radiogroup/radiogroup-13.tsx",
+      "content": "import { useId } from \"react\";\nimport {\n  FaMobileAlt,\n  FaTabletAlt,\n  FaLaptop,\n  FaDesktop,\n  FaLayerGroup,\n} from \"react-icons/fa\";\n\nimport { RadioGroup, RadioGroupItem } from \"@/components/ui/radio-group\";\n\nconst RadioGroup13 = () => {\n  const id = useId();\n\n  const items = [\n    { value: \"1\", label: \"Mobile\", icon: FaMobileAlt },\n    { value: \"2\", label: \"Tablet\", icon: FaTabletAlt, disabled: true },\n    { value: \"3\", label: \"Laptop\", icon: FaLaptop },\n    { value: \"4\", label: \"Desktop\", icon: FaDesktop },\n    { value: \"5\", label: \"Hybrid\", icon: FaLayerGroup },\n  ];\n\n  return (\n    <fieldset className=\"w-full max-w-96 space-y-4\">\n      <legend className=\"text-foreground text-sm font-medium\">\n        Select Device:\n      </legend>\n\n      <RadioGroup className=\"grid grid-cols-3 gap-2\" defaultValue=\"1\">\n        {items.map((item) => {\n          const Icon = item.icon;\n\n          return (\n            <label\n              key={`${id}-${item.value}`}\n              className=\"border-input has-data-[state=checked]:border-primary/80 has-data-[state=checked]:bg-accent/40 has-focus-visible:border-ring has-focus-visible:ring-ring/50 relative flex flex-col items-center justify-center gap-2 rounded-md border px-2 py-3 text-center shadow-xs transition outline-none has-focus-visible:ring-[3px] has-data-disabled:cursor-not-allowed has-data-disabled:opacity-50\"\n            >\n              <RadioGroupItem\n                id={`${id}-${item.value}`}\n                value={item.value}\n                className=\"sr-only after:absolute after:inset-0\"\n                aria-label={`device-radio-${item.value}`}\n                disabled={item.disabled}\n              />\n\n              <Icon className=\"text-muted-foreground size-5 shrink-0\" />\n\n              <p className=\"text-foreground text-sm font-medium\">\n                {item.label}\n              </p>\n            </label>\n          );\n        })}\n      </RadioGroup>\n    </fieldset>\n  );\n};\n\nexport default RadioGroup13;\n",
+      "type": "registry:ui",
+      "target": "components/ui/radiogroup-13.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

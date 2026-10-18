@@ -1,0 +1,29 @@
+{
+  "id": "60fps-4cef26131c445fbc",
+  "sourceUrl": "https://60fps.design/shots/duolingo-lighting-mascot-score-increase-animation",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Duolingo Lighting Mascot Score Increase Animation",
+    "공개 이미지 요소: 32개",
+    "동영상 포스터: 31개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/shots/duolingo-lighting-mascot-score-increase-animation",
+    "sha256": "cc16fcdb43bdd66af1d369ec7c57f6070d7390d9b9dac257f9d8e6c67850e299",
+    "fetchedAt": "2026-09-23T13:00:14+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

@@ -21,26 +21,34 @@ import styles from "./Sidebar.module.css";
 export function SidebarFrame({
   footer,
   children,
+  title,
+  label = "사이드바",
+  className = "",
+  collapsedChildren,
 }: {
-  footer: ReactNode;
+  title?: string;
+  label?: string;
+  className?: string | undefined;
+  collapsedChildren?: ReactNode;
+  footer?: ReactNode;
   children: ReactNode;
 }) {
   const { collapsed, animated, setCollapsed } = useSidebarCollapse();
 
   return (
     <aside
-      className={`${styles.sidebar} ${animated ? styles.sidebarAnimated : ""}`}
+      className={`${styles.sidebar} ${animated ? styles.sidebarAnimated : ""} ${className}`}
       data-sidebar-collapsed={collapsed}
-      aria-label="사이드바"
+      aria-label={label}
     >
-      <div className={styles.panel}>
+      <div className={styles.panel} data-slot="sidebar-panel">
         <div className={styles.head}>
           <div className={styles.brand}>
             <span className={styles.brandMark}>
               <LogoMark size={22} />
             </span>
             <span className={`${styles.copy} ${styles.brandName}`}>
-              <Wordmark />
+              {title ?? <Wordmark />}
             </span>
           </div>
 
@@ -52,7 +60,7 @@ export function SidebarFrame({
           <button
             type="button"
             className={styles.collapseControl}
-            aria-label="사이드바 접기"
+            aria-label={`${label} 접기`}
             aria-hidden={collapsed}
             tabIndex={collapsed ? -1 : 0}
             onClick={() => setCollapsed(true)}
@@ -62,7 +70,7 @@ export function SidebarFrame({
           <button
             type="button"
             className={styles.expandControl}
-            aria-label="사이드바 펼치기"
+            aria-label={`${label} 펼치기`}
             aria-hidden={!collapsed}
             tabIndex={collapsed ? 0 : -1}
             onClick={() => setCollapsed(false)}
@@ -71,9 +79,9 @@ export function SidebarFrame({
           </button>
         </div>
 
-        <div className={styles.scroll}>{children}</div>
+        <div className={styles.scroll} data-slot="sidebar-scroll">{collapsed && collapsedChildren ? collapsedChildren : children}</div>
 
-        <div className={styles.footer}>{footer}</div>
+        {footer ? <div className={styles.footer}>{footer}</div> : null}
       </div>
     </aside>
   );

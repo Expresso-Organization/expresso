@@ -18,10 +18,26 @@ const FILTER_KEYS = [
   "sort",
   "page",
   "country",
+  "location",
   "experience",
+  "technology",
+  "family",
   "workType",
   "company",
+  "interested",
 ] as const;
+
+type FilterKey = (typeof FILTER_KEYS)[number];
+
+/**
+ * 값이 정해진 조건. 여기 적힌 값이 아니면 버린다.
+ *
+ * `interested`는 "관심 공고만"을 켜는 스위치다. 서버는 `false`(관심 아닌
+ * 것만)도 받지만 화면에 그런 목록이 없으므로 `true`만 남긴다.
+ */
+const FIXED_VALUES: Partial<Record<FilterKey, readonly string[]>> = {
+  interested: ["true"],
+};
 
 /** 한 조건이 지나치게 길면 주소가 아니라 짐이다. 목록 쪽 계약의 상한과 맞춘다. */
 const MAX_VALUE_LENGTH = 200;
@@ -31,6 +47,8 @@ function serialize(read: (key: string) => string | undefined): string {
   for (const key of FILTER_KEYS) {
     const value = read(key)?.trim();
     if (!value || value.length > MAX_VALUE_LENGTH) continue;
+    const fixed = FIXED_VALUES[key];
+    if (fixed && !fixed.includes(value)) continue;
     query.set(key, value);
   }
   return query.toString();
@@ -49,6 +67,13 @@ export function currentListQuery(
     const value = params[key];
     return typeof value === "string" ? value : undefined;
   });
+}
+
+/** 지금 목록이 관심 공고만 보고 있는가. `serialize`와 같은 기준으로 판정한다. */
+export function isInterestedList(
+  params: Record<string, string | string[] | undefined>,
+): boolean {
+  return params.interested === "true";
 }
 
 /** 상세로 가는 주소. 조건이 없으면 `from`을 달지 않는다. */

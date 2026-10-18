@@ -1,0 +1,255 @@
+{
+  "fictional": true,
+  "specOrigin": "model",
+  "contentOrigin": "model-normalized",
+  "model": "qwen3.8:27b-q4_K_M",
+  "htmlSha256": "d5feeb097764d30f078c2f31eda68c76a4b80d9db24d277830790c976246ba33",
+  "methodologyVersion": 1,
+  "promptHash": "113da61cbfe7144c61ca683be96ce8e2c5a51ff01d9f41505f85dceb5e0a8a90",
+  "promptVersions": {
+    "page": 7,
+    "designPrinciples": 1
+  },
+  "tools": [],
+  "sourceUrls": [],
+  "attempts": 1,
+  "repairCount": 0,
+  "usage": {
+    "inputTokens": 8184,
+    "outputTokens": 2021,
+    "cacheReadTokens": 0,
+    "cacheCreationTokens": 0,
+    "durationMs": 230303,
+    "costUsd": null
+  },
+  "structured": {
+    "version": 1,
+    "content": {
+      "version": 1,
+      "profile": {
+        "name": "한도윤",
+        "role": "로봇 설계 연구원",
+        "headline": "로봇 경로 계획과 그리퍼 동작을 가상 시뮬레이션으로 설계합니다.",
+        "intro": "좁은 통로에서의 로봇 경로 재계획, 다양한 물체 파지를 위한 그리퍼 조건 비교, 창고 통로 정지 및 재시작 절차 설계에 집중합니다. 모든 작업은 가상 시뮬레이션 및 도면 기반의 설계 검토와 기록 화면 제작을 중심으로 수행되었습니다.",
+        "focus": [
+          "로봇 경로 계획",
+          "그리퍼 파지 조건 설계",
+          "창고 통로 운영 절차",
+          "가상 시뮬레이션 기록"
+        ]
+      },
+      "sections": [
+        {
+          "id": "route-planner",
+          "title": "순찰 로봇 경로 계획",
+          "summary": "좁은 통로에서 장애물을 만났을 때 안전하게 우회 경로를 다시 찾는 가상 계획기입니다.",
+          "body": "역할: 경로 계획 · 상태 설계\n기간: 2026.02 — 2026.06\n문제 정의: 좁은 통로에서 이동 로봇이 새 장애물을 만나면 기존 경로를 계속 따를 수 없다는 시험 상황을 설정했습니다.\n담당 작업: 장애물 확인, 정지, 대체 경로 탐색을 분리하고 각 상태의 전환 조건을 설계했습니다.\n결과와 한계: 가상 시뮬레이션에서 경로를 비교할 수 있는 기록 화면을 만들었습니다. 현장 성능은 측정하지 않았습니다.",
+          "pattern": "project",
+          "details": [
+            {
+              "label": "역할",
+              "text": "경로 계획 · 상태 설계"
+            },
+            {
+              "label": "기간",
+              "text": "2026.02 — 2026.06"
+            },
+            {
+              "label": "문제 정의",
+              "text": "좁은 통로에서 이동 로봇이 새 장애물을 만나면 기존 경로를 계속 따를 수 없다는 시험 상황을 설정했습니다."
+            },
+            {
+              "label": "담당 작업",
+              "text": "장애물 확인, 정지, 대체 경로 탐색을 분리하고 각 상태의 전환 조건을 설계했습니다."
+            },
+            {
+              "label": "결과와 한계",
+              "text": "가상 시뮬레이션에서 경로를 비교할 수 있는 기록 화면을 만들었습니다. 현장 성능은 측정하지 않았습니다."
+            }
+          ],
+          "media": [],
+          "sourceIds": [
+            "route-log"
+          ]
+        },
+        {
+          "id": "gripper-study",
+          "title": "집기 분류 그리퍼",
+          "summary": "크기가 다른 물체의 파지 위치를 비교하는 그리퍼 설계 스터디입니다.",
+          "body": "역할: 파지 조건 · 동작 검토\n기간: 2025.08 — 2025.12\n문제 정의: 한 가지 파지 위치로는 서로 다른 형태의 물체를 안정적으로 잡기 어렵다는 가상 과제를 설정했습니다.\n담당 작업: 접촉 위치와 그리퍼 개방 폭을 도면으로 비교하고 실패 조건을 분류했습니다.\n결과와 한계: 세 물체 유형의 동작 시퀀스를 보여 주는 가상 시제품을 만들었습니다. 물리 시험 결과는 포함하지 않습니다.",
+          "pattern": "project",
+          "details": [
+            {
+              "label": "역할",
+              "text": "파지 조건 · 동작 검토"
+            },
+            {
+              "label": "기간",
+              "text": "2025.08 — 2025.12"
+            },
+            {
+              "label": "문제 정의",
+              "text": "한 가지 파지 위치로는 서로 다른 형태의 물체를 안정적으로 잡기 어렵다는 가상 과제를 설정했습니다."
+            },
+            {
+              "label": "담당 작업",
+              "text": "접촉 위치와 그리퍼 개방 폭을 도면으로 비교하고 실패 조건을 분류했습니다."
+            },
+            {
+              "label": "결과와 한계",
+              "text": "세 물체 유형의 동작 시퀀스를 보여 주는 가상 시제품을 만들었습니다. 물리 시험 결과는 포함하지 않습니다."
+            }
+          ],
+          "media": [],
+          "sourceIds": [
+            "grip-table"
+          ]
+        },
+        {
+          "id": "warehouse-aisle",
+          "title": "창고 통로 시험",
+          "summary": "선반 사이 이동 시 정지와 재시작 조건을 보여 주는 가상 통로 시험입니다.",
+          "body": "역할: 시험 절차 · 운영 화면\n기간: 2025.01 — 2025.05\n문제 정의: 작업자가 통로에 들어왔을 때 로봇이 언제 멈추고 다시 움직여야 하는지 설명 가능한 절차가 필요하다는 상황을 만들었습니다.\n담당 작업: 통로 점유, 정지, 확인, 재시작을 단계로 나누고 기록 항목을 정의했습니다.\n결과와 한계: 조건을 검토하는 가상 테스트 화면을 작성했습니다. 실제 창고 운영 이력은 없습니다.",
+          "pattern": "project",
+          "details": [
+            {
+              "label": "역할",
+              "text": "시험 절차 · 운영 화면"
+            },
+            {
+              "label": "기간",
+              "text": "2025.01 — 2025.05"
+            },
+            {
+              "label": "문제 정의",
+              "text": "작업자가 통로에 들어왔을 때 로봇이 언제 멈추고 다시 움직여야 하는지 설명 가능한 절차가 필요하다는 상황을 만들었습니다."
+            },
+            {
+              "label": "담당 작업",
+              "text": "통로 점유, 정지, 확인, 재시작을 단계로 나누고 기록 항목을 정의했습니다."
+            },
+            {
+              "label": "결과와 한계",
+              "text": "조건을 검토하는 가상 테스트 화면을 작성했습니다. 실제 창고 운영 이력은 없습니다."
+            }
+          ],
+          "media": [],
+          "sourceIds": [
+            "aisle-protocol"
+          ]
+        }
+      ],
+      "career": [],
+      "evidence": [
+        {
+          "id": "route-log",
+          "title": "경로 재계획 기록",
+          "kind": "record",
+          "summary": "장애물 조건별 경로 변경",
+          "body": "장애물 조건별 경로 변경\n가상 통로 장애물 설정 → 우회 후보 계산 → 정지 조건 확인. 공개 장소나 실제 로봇의 주행 결과를 나타내지 않습니다."
+        },
+        {
+          "id": "grip-table",
+          "title": "파지 조건표",
+          "kind": "record",
+          "summary": "물체 크기와 접촉 위치 정의",
+          "body": "물체 크기와 접촉 위치 정의\n서로 다른 가상 물체의 접촉 위치를 비교하고 파지 실패 조건을 정리한 도면입니다."
+        },
+        {
+          "id": "aisle-protocol",
+          "title": "통로 시험 절차",
+          "kind": "record",
+          "summary": "정지와 재시작 기준",
+          "body": "정지와 재시작 기준\n통로 내 장애물이 생겼을 때 정지, 경로 재계산, 재시작을 구분하는 가상 시험 절차입니다."
+        }
+      ],
+      "contact": null
+    },
+    "spec": {
+      "root": "page",
+      "elements": {
+        "page": {
+          "type": "PortfolioPage",
+          "props": {
+            "profile": {
+              "$state": "/profile"
+            },
+            "design": {
+              "layout": "dossier",
+              "palette": "graphite",
+              "font": "sans"
+            },
+            "motion": "subtle",
+            "rationale": "이미지가 없고 구조·시험 절차·항목 비교가 중심이므로 dossier(목차+기술 상세)를 선택했습니다."
+          },
+          "children": [
+            "intro",
+            "index",
+            "section-route-planner",
+            "section-gripper-study",
+            "section-warehouse-aisle",
+            "evidence"
+          ]
+        },
+        "intro": {
+          "type": "NameIntro",
+          "props": {
+            "profile": {
+              "$state": "/profile"
+            },
+            "sections": {
+              "$state": "/sections"
+            }
+          },
+          "children": []
+        },
+        "index": {
+          "type": "ProjectIndex",
+          "props": {
+            "sections": {
+              "$state": "/sections"
+            },
+            "variant": "rail"
+          },
+          "children": []
+        },
+        "section-route-planner": {
+          "type": "CaseProcess",
+          "props": {
+            "section": {
+              "$state": "/sectionById/route-planner"
+            }
+          },
+          "children": []
+        },
+        "section-gripper-study": {
+          "type": "CaseTechnical",
+          "props": {
+            "section": {
+              "$state": "/sectionById/gripper-study"
+            }
+          },
+          "children": []
+        },
+        "section-warehouse-aisle": {
+          "type": "CaseProcess",
+          "props": {
+            "section": {
+              "$state": "/sectionById/warehouse-aisle"
+            }
+          },
+          "children": []
+        },
+        "evidence": {
+          "type": "EvidenceGrid",
+          "props": {
+            "evidence": {
+              "$state": "/evidence"
+            }
+          },
+          "children": []
+        }
+      }
+    }
+  }
+}

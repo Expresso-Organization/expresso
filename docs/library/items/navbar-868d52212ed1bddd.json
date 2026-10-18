@@ -1,0 +1,30 @@
+{
+  "id": "navbar-868d52212ed1bddd",
+  "sourceUrl": "https://www.navbar.gallery/navbar/pomergranate",
+  "sourceRevision": null,
+  "roles": [
+    "navigation"
+  ],
+  "roleEvidence": "페이지·사례 사이의 탐색을 구성할 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: Pomergranate",
+    "공개 이미지 요소: 26개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://pomegranate.health/",
+  "evidence": {
+    "url": "https://www.navbar.gallery/navbar/pomergranate",
+    "sha256": "c7de049f3f4634e7b909dc116973a4493fb9f0395b9e75078362735d7a79df4b",
+    "fetchedAt": "2026-09-23T12:53:13+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

@@ -1,0 +1,20 @@
+{
+  "id": "watermelon-a90354ec5aafe3b2",
+  "sourceUrl": "https://ui.watermelon.sh/block/bento-02",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "project-grid"
+  ],
+  "roleEvidence": "작품·프로젝트·사례를 묶어 보여주는 표현 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "사이트맵에만 있는 항목입니다. 고정 registry의 이름과 대응하지 않아 소스 연결을 보류했습니다."
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "acquisitionStatus": "access_blocked",
+  "previewReason": "고정 registry에 대응하는 코드 파일 없음",
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

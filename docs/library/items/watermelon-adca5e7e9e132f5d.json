@@ -1,0 +1,73 @@
+{
+  "id": "watermelon-adca5e7e9e132f5d",
+  "sourceUrl": "https://ui.watermelon.sh/block/footer-12",
+  "sourceRevision": "0099addd50a985bf53bdb81140ab4b72fc0668ce",
+  "roles": [
+    "contact"
+  ],
+  "roleEvidence": "본문을 읽은 뒤 연락·외부 자료로 이어 줄 후보입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [
+    {
+      "path": "./library/materials/watermelon/registry/footer-12.json",
+      "sha256": "d209e1f228de843992b2e8ffaefc516de1e67f7d493088fc5f06819405a1bd20",
+      "bytes": 10398,
+      "kind": "registry_source",
+      "label": "원본 registry JSON"
+    }
+  ],
+  "observations": [],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "src/components/watermelon-ui/footer-12.tsx",
+      "target": "components/ui/footer-12.tsx",
+      "type": "registry:ui",
+      "sha256": "c2e8079b92a074ba4220b7c20749f48259a3f43cedfe31c05ab059b2f3df6980",
+      "bytes": 9575
+    }
+  ],
+  "dependencies": [
+    "react-icons",
+    "lucide-react",
+    "framer-motion"
+  ],
+  "registryDependencies": [
+    "footer",
+    "button"
+  ],
+  "imports": [
+    "@/assets/logo-icon",
+    "lucide-react",
+    "motion/react",
+    "react",
+    "react-icons/fa6"
+  ],
+  "propsDeclarations": [
+    "export interface Footer12Props {\n  newsletterTitle?: string;\n  inputPlaceholder?: string;\n  subscribeText?: string;\n  onSubscribe?: (email: string) => void;\n  columns?: Footer12Column[];\n  brandName?: string;\n  copyright?: string;\n  socialLinks?: Footer12SocialLink[];\n  languageLabel?: string;\n}"
+  ],
+  "propsExtraction": "source_declaration_not_runtime_schema",
+  "externalAssets": [],
+  "framework": "React / TypeScript / Tailwind CSS",
+  "installation": "pnpm dlx shadcn@latest add https://raw.githubusercontent.com/WatermelonCorp/watermellon-registry/0099addd50a985bf53bdb81140ab4b72fc0668ce/public/r/footer-12.json",
+  "usageNote": "원본의 기본값과 props 선언을 함께 확인하세요. registryDependencies와 import 목록은 원본 그대로이며 실행 시 추가 의존성이 필요할 수 있습니다.",
+  "example": {
+    "name": "footer-12",
+    "status": "built",
+    "export": "Footer12",
+    "props": {},
+    "entry": "src/components/watermelon-ui/footer-12.tsx",
+    "url": "./library/previews/watermelon/footer-12.html"
+  },
+  "renderCheck": {
+    "status": "ready",
+    "reason": "",
+    "checkedAt": "2026-09-23T13:24:07+00:00",
+    "snapshotSha256": "c3bf8784b552269abe148107a81b11581ee98f2f865a6fb8d225156bede883ed"
+  },
+  "acquisitionStatus": "source_ready",
+  "previewReason": null,
+  "sourceLicense": "https://github.com/WatermelonCorp/watermellon-registry/blob/0099addd50a985bf53bdb81140ab4b72fc0668ce/LICENSE"
+}

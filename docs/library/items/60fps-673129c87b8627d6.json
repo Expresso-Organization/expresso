@@ -1,0 +1,29 @@
+{
+  "id": "60fps-673129c87b8627d6",
+  "sourceUrl": "https://60fps.design/motion/brandmelder-by-new-standard-s",
+  "sourceRevision": null,
+  "roles": [
+    "interaction"
+  ],
+  "roleEvidence": "선택·확대·이동·피드백을 설명하는 동작 참고입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: brandmelder by new standard s",
+    "공개 이미지 요소: 38개",
+    "동영상 포스터: 19개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "evidence": {
+    "url": "https://60fps.design/motion/brandmelder-by-new-standard-s",
+    "sha256": "602315c6acb8bd47c7090ff0324296e5da4e0842e22e2fd09d47fcdc790a3f55",
+    "fetchedAt": "2026-09-23T12:55:30+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

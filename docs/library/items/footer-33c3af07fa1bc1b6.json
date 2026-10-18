@@ -1,0 +1,30 @@
+{
+  "id": "footer-33c3af07fa1bc1b6",
+  "sourceUrl": "https://www.footer.design/sites/bmf",
+  "sourceRevision": null,
+  "roles": [
+    "supporting-ui"
+  ],
+  "roleEvidence": "포트폴리오 편집기 또는 보조 표현으로 활용할 수 있는지 검토할 항목입니다.",
+  "roleMethod": "identifier_and_source_category",
+  "materials": [],
+  "observations": [
+    "상세 제목: BMF",
+    "공개 이미지 요소: 27개",
+    "동영상 포스터: 0개"
+  ],
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "originalUrl": "https://bmf.com.au/",
+  "evidence": {
+    "url": "https://www.footer.design/sites/bmf",
+    "sha256": "ca4d5eac22d3b2f49786b3f9014e6b8b7e90f76e286d52f59eb767c8f8142be6",
+    "fetchedAt": "2026-09-23T12:51:32+00:00",
+    "method": "public_detail_html"
+  },
+  "previewRights": "원본 호스트의 공개 참고 이미지 링크입니다. 원본 미디어 복제·제품 삽입 권한은 포함하지 않습니다.",
+  "acquisitionStatus": "reference_ready",
+  "previewReason": null,
+  "sourceLicense": null
+}

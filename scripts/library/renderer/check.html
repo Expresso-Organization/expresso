@@ -1,0 +1,11 @@
+<!doctype html><html><meta charset="utf-8"><title>Library preview verification</title><style>body{font:14px system-ui;margin:20px;background:#eee}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.frame{position:relative;overflow:hidden;height:105px;background:white}iframe{border:0;width:1280px;height:880px;transform:scale(.12);transform-origin:0 0}article{min-width:0}output{display:block;padding:8px}pre{white-space:pre-wrap;max-height:60px;overflow:auto}</style><h1>Library preview verification</h1><nav id="pages"></nav><pre id="results">loading</pre><div class="grid" id="grid"></div><script>
+const page=Number(new URLSearchParams(location.search).get('page')||1);const statuses={};const frames=new Map();
+fetch('/docs/library/previews/watermelon/build-results.json').then(r=>r.json()).then(all=>{
+ const entries=all.filter(e=>e.status==='built');const start=(page-1)*12;
+ for(let n=1;n<=Math.ceil(entries.length/12);n++){const a=document.createElement('a');a.href='?page='+n;a.textContent=n+' ';document.getElementById('pages').append(a)}
+ for(const e of entries.slice(start,start+12)){const a=document.createElement('article');const output=document.createElement('output');output.id=e.name;output.textContent=e.name+' pending';const holder=document.createElement('div');holder.className='frame';const frame=document.createElement('iframe');frame.title=e.name;frame.sandbox='allow-scripts';frame.src='/docs/library/previews/watermelon/'+e.name+'.html';holder.append(frame);a.append(output,holder);document.getElementById('grid').append(a);frames.set(frame.contentWindow,e.name);statuses[e.name]={status:'pending'}}
+ update();
+});
+function update(){const el=document.getElementById('results');el.textContent=JSON.stringify(statuses,null,2);el.dataset.complete=String(Object.keys(statuses).length>0 && Object.values(statuses).every(v=>v.status!=='pending'))}
+addEventListener('message',e=>{const id=frames.get(e.source);if(!id||e.data.type!=='expresso-preview'||e.data.id!==id)return;statuses[id]={status:e.data.status,reason:e.data.reason};fetch('/__preview-result',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(e.data)});document.getElementById(id).textContent=id+' '+e.data.status+' '+e.data.reason;update()});
+</script></html>

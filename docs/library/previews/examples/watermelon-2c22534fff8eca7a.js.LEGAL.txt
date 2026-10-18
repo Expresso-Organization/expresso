@@ -1,0 +1,15 @@
+Bundled license information:
+
+papaparse/papaparse.min.js:
+  /* @license
+  Papa Parse
+  v5.5.4
+  https://github.com/mholt/PapaParse
+  License: MIT
+  */
+
+xlsx/xlsx.mjs:
+  /*! xlsx.js (C) 2013-present SheetJS -- http://sheetjs.com */
+
+xlsx/xlsx.mjs:
+  /*! sheetjs (C) 2013-present SheetJS -- http://sheetjs.com */

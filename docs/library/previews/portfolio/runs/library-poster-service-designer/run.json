@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-09-29T14:17:21.758Z",
+  "fictional": true,
+  "model": "qwen3.5:9b-q8_0",
+  "specOrigin": "recorded-model-spec",
+  "modelSelection": {
+    "recipe": "gallery",
+    "design": {
+      "palette": "electric",
+      "typography": "display",
+      "layout": "poster"
+    },
+    "heroStyle": "classic",
+    "projectIndex": "mosaic",
+    "reason": "사용자가 명백히 밝은 포스터 스타일과 고딕 폰트를 요청했으므로, 이전 페이지의 어두운 배경과 스튜디오 레이아웃과 대비되도록 전기색 팔레트와 포스터 레이아웃을 선택했습니다."
+  },
+  "validationAttempts": [
+    {
+      "valid": true,
+      "outputSha256": "98bf15e6a6235c1db43c45424629055029c80235c86d3d9300077069bfc4e693"
+    }
+  ],
+  "inputSha256": "a9f66944a1ec61e7b73404112862939f0095dba8bfa705db77e72fb0400025eb",
+  "planSha256": "16b3c50d72fe1f028046db62133d09006612e01883143c973eb747dd6d462b2e",
+  "specSha256": "1541b5fbfbd34bd5397303f8f3c8ae1e56de56f3ec42705153661268ded783a8",
+  "htmlSha256": "bbc4d9e8672f39490f5d8fc7504abb47970599a03f5bc864c78eb52f8dda942f",
+  "modelOutputSha256": "98bf15e6a6235c1db43c45424629055029c80235c86d3d9300077069bfc4e693",
+  "assets": {
+    "./assets/portfolio-threadlab.svg": {
+      "sha256": "aea7faa3ca30da3265e01b5db8ed1fbb29f38d80f1aac64e5b308a2b90d31f83",
+      "bytes": 2954
+    },
+    "./assets/portfolio-comma-map.svg": {
+      "sha256": "8a1be8f0727311e9bde261cf633957035c632e6c966b4d2852f983d497040ea4",
+      "bytes": 3068
+    },
+    "./assets/portfolio-gilnun.svg": {
+      "sha256": "d892273c5b3fac6d9845fb9c4ee8585367ed07900211a273e9ed07632685ed37",
+      "bytes": 2680
+    }
+  },
+  "comparison": null
+}

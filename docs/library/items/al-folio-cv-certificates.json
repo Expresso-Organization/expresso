@@ -1,0 +1,50 @@
+{
+  "id": "al-folio-cv-certificates",
+  "sourceUrl": "https://github.com/al-org-dev/al-folio-cv/blob/a2d2e673215dfb01e3a5a8c8e36683eec6c550fa/templates/cv/certificates.liquid",
+  "sourceRevision": "a2d2e673215dfb01e3a5a8c8e36683eec6c550fa",
+  "roles": [
+    "evidence"
+  ],
+  "roleEvidence": "원본 데이터 구조 검토",
+  "roleMethod": "source_review",
+  "materials": [
+    {
+      "path": "./library/materials/al-folio-cv/certificates.json",
+      "sha256": "3a5cab183ac213d289b7504effab976471f893cb1df198b0ef2b5c68650fd5dc",
+      "bytes": 1057,
+      "label": "원본 코드 묶음",
+      "kind": "registry_source"
+    },
+    {
+      "path": "./library/materials/al-folio-cv/LICENSE.txt",
+      "sha256": "5ab2a5be971a7ebaa7374280c92f3a7896c6a4ad9b639110696f76f2a265b57c",
+      "bytes": 1077,
+      "label": "MIT 라이선스 원문",
+      "kind": "license"
+    }
+  ],
+  "observations": [
+    "Liquid 템플릿을 React로 이식하고 입력의 별칭을 단일 JSON 계약으로 정리해야 합니다.",
+    "긴 한국어·항목 누락·연도 정렬·인쇄 스타일 검증이 필요합니다."
+  ],
+  "inputs": [
+    "name",
+    "issuer",
+    "date",
+    "url"
+  ],
+  "framework": "Jekyll / Liquid",
+  "sourceLicense": "https://github.com/al-org-dev/al-folio-cv/blob/a2d2e673215dfb01e3a5a8c8e36683eec6c550fa/LICENSE",
+  "acquisitionStatus": "source_ready",
+  "visualReview": "not_reviewed",
+  "responsiveReview": "not_measured",
+  "interactionReview": "not_measured",
+  "codeFiles": [
+    {
+      "path": "templates/cv/certificates.liquid",
+      "sha256": "6aa171f982e0c92f65f22941bc3fa971a40a1d7d11ce9aeee56b16e5c38082fe",
+      "bytes": 739
+    }
+  ],
+  "usageNote": "고정 버전의 지정 파일 묶음입니다. 완전한 실행 의존성 묶음은 아니며 설치·렌더링 전입니다."
+}

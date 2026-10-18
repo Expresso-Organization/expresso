@@ -1,0 +1,2031 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>설계서 발표 — Expresso</title>
+
+<!--
+  졸업작품 설계서 v1.0 발표 — docs/templates/expresso-deck.html 에서 시작했습니다.
+
+  지면 왼쪽 960px은 발표 내용, 오른쪽 960px은 설계서 원문(졸업작품-설계서.html)입니다.
+  장마다 data-doc 이 설계서의 그림 · 표 · 절을 가리키고, 장을 넘기면 오른쪽 설계서가
+  그 자리로 스크롤해 대상을 잠깐 강조합니다. 설계서 파일은 고치지 않습니다.
+  형식은 아래 「설계서 연결」 스크립트, 지면 배치는 「08 · 발표 · 설계서 분할」에 있습니다.
+
+  조작: ← → Space PageUp/Down · Home/End · O 목록 · F 전체화면 · P 인쇄(왼쪽 지면만)
+  손대지 않는 곳: :root 토큰(디자인 시스템)과 컨트롤러.
+-->
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- 아이콘 — 이모지 대신 씁니다. Regular만, Bold는 쓰지 않습니다. -->
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+
+<style>
+/* ===========================================================
+   01 · TOKENS — 문서 양식과 같은 값. 디자인 시스템이 출처입니다.
+   =========================================================== */
+:root {
+  color-scheme: light;
+
+  --ex-ink-900: #16223a;
+  --ex-ink-900-hover: #0b1220;
+  --ex-slate-700: #35455f;
+  --ex-slate-500: #5a6b87;
+  --ex-slate-400: #93a2ba;
+  --ex-slate-300: #afbacb;
+  --ex-line-200: #e2e9f4;
+  --ex-line-inner: #f1f5fb;
+  --ex-tint-50: #eff2f7;
+  --ex-tint-100: #e4e9f2;
+  --ex-surface-100: #eff4fb;
+  --ex-surface-50: #f7fafe;
+  --ex-white: #ffffff;
+  --ex-canvas: #e6ebf3;      /* 무대 바깥 레터박스 */
+  --ex-table-header: #fafbfd;
+  --ex-track: #edf1f7;
+
+  --ex-espresso: #9a4030;
+  --ex-espresso-hover: #7e3225;
+  --ex-crema: #e0b486;
+  --ex-crema-deep: #a9793f;  /* 어두운 지면의 손잡이 */
+  --ex-bean-50: #fbeee4;
+  --ex-bean-ink: #5a3a28;
+
+  --ex-on-dark-body: #9fb0c9;
+  --ex-on-dark-muted: #7c8ba5;
+
+  --ex-success-text: #0e8a63;
+  --ex-success-surface: #e4f7f0;
+  --ex-warning-text: #8a6412;
+  --ex-warning-surface: #fbf4e2;
+  --ex-danger: #e2543a;
+  --ex-danger-text: #c6402a;
+  --ex-danger-surface: #fef5f3;
+
+  --ex-font-ui: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --ex-font-brand: "Outfit", var(--ex-font-ui);
+  --ex-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --ex-elevation-raised: 0 2px 10px rgba(22, 34, 58, .05);
+  --ex-elevation-overlay: 0 18px 44px rgba(22, 34, 58, .11);
+  --ex-focus-ring: 0 0 0 3px rgba(22, 34, 58, .18);
+
+  --ex-motion-quick: 160ms ease;
+  --ex-motion-panel: 280ms cubic-bezier(.32, .72, 0, 1);
+  --ex-motion-spring: 200ms cubic-bezier(.34, 1.4, .64, 1);
+
+  /* 지면 여백 — 1920×1080 기준 고정값 */
+  --pad-x: 128px;
+  --pad-y: 88px;
+}
+
+/* ===========================================================
+   02 · FIXED 16:9 STAGE — 무대는 통째로 축소됩니다.
+   =========================================================== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: var(--ex-canvas); }
+
+.deck-viewport { position: fixed; inset: 0; overflow: hidden; background: var(--ex-canvas); }
+
+.deck-stage {
+  position: absolute; left: 0; top: 0;
+  width: 1920px; height: 1080px; overflow: hidden;
+  transform-origin: 0 0;
+  background: var(--ex-white);
+}
+
+.slide {
+  position: absolute; inset: 0; width: 1920px; height: 1080px; overflow: hidden;
+  visibility: hidden; opacity: 0; pointer-events: none;
+  background: var(--ex-surface-50);
+  font-family: var(--ex-font-ui); color: var(--ex-ink-900);
+}
+.slide.active { visibility: visible; opacity: 1; pointer-events: auto; z-index: 1; }
+img, video, canvas, svg { max-width: 100%; max-height: 100%; }
+
+/* 어두운 지면 — 표지 · 섹션 표지 · 마무리에만 씁니다. */
+.slide.dark { background: var(--ex-ink-900); color: var(--ex-white); }
+.slide.dark .sub, .slide.dark p { color: var(--ex-on-dark-body); }
+.slide.dark .rail { color: var(--ex-on-dark-muted); border-color: rgba(255,255,255,.13); }
+.slide.dark .foot { border-color: rgba(255,255,255,.13); }
+.slide.dark .foot p { color: var(--ex-on-dark-muted); }
+
+/* 지면 하나가 시그니처를 통째로 두르는 자리 — 발표 중 딱 한 장. */
+.slide.bean { background: var(--ex-bean-50); }
+.slide.bean .sub, .slide.bean p { color: var(--ex-bean-ink); }
+
+/* ===========================================================
+   03 · SLIDE SHELL — 레일 · 제목 · 본문 · 레일
+   본문이 남는 높이를 전부 가져가므로 장마다 위치를 맞출 필요가 없습니다.
+   =========================================================== */
+.frame { position: absolute; inset: var(--pad-y) var(--pad-x); display: flex; flex-direction: column; }
+
+.rail {
+  flex: none; display: flex; align-items: baseline; gap: 16px;
+  font-family: var(--ex-font-mono); font-size: 16px; letter-spacing: .12em;
+  color: var(--ex-slate-400); text-transform: uppercase;
+  padding-bottom: 16px; border-bottom: 1px solid var(--ex-line-200);
+}
+.rail .now { color: var(--ex-espresso); }
+.rail .end { margin-left: auto; }
+/* 한글에는 자간을 벌리지 않습니다 — 라틴 크롬에만 붙는 규칙입니다. */
+.rail .ko { letter-spacing: normal; text-transform: none; font-family: var(--ex-font-ui); font-size: 17px; }
+
+.head { flex: none; padding-top: 52px; }
+.kicker {
+  font-family: var(--ex-font-mono); font-size: 17px; letter-spacing: .18em;
+  color: var(--ex-espresso); text-transform: uppercase; margin-bottom: 18px;
+}
+/* 한글 킥커 — 라틴 크롬(.18em)의 절반 남짓만 벌립니다. 대문자 규칙은 걸지 않습니다.
+   붙여 두면 답답하고, 라틴만큼 벌리면 낱말이 흩어집니다. */
+.kicker.ko {
+  font-family: var(--ex-font-ui); font-size: 19px; font-weight: 500;
+  letter-spacing: .1em; text-transform: none;
+}
+h2 {
+  font-size: 60px; font-weight: 600; letter-spacing: -.03em; line-height: 1.25;
+  word-break: keep-all;
+}
+h2 em { font-style: normal; color: var(--ex-espresso); }
+.sub {
+  margin-top: 18px; font-size: 26px; line-height: 1.6; color: var(--ex-slate-500);
+  max-width: 1280px; word-break: keep-all; text-wrap: pretty;
+}
+
+.body { flex: 1 1 auto; min-height: 0; padding: 46px 0 20px; display: flex; flex-direction: column; }
+/* 본문을 지면 가운데로 — 한 문장 · 인용처럼 덩어리 하나만 놓는 장. */
+.body.mid { justify-content: center; }
+/* 좌우로 갈라 놓는 장 — 큰 번호 옆에 이름을 세울 때. */
+.body.split { flex-direction: row; align-items: center; gap: 80px; }
+
+.foot {
+  flex: none; margin-top: auto;
+  display: flex; justify-content: space-between; align-items: flex-end;
+  border-top: 1px solid var(--ex-line-200); padding-top: 18px;
+}
+.foot p { font-size: 19px; color: var(--ex-slate-500); word-break: keep-all; max-width: 1300px; }
+.foot .pg {
+  font-family: var(--ex-font-mono); font-size: 16px; letter-spacing: .12em; color: var(--ex-slate-400);
+}
+
+/* ===========================================================
+   04 · 부품 — 여기 있는 것만으로 모든 장을 짭니다.
+   =========================================================== */
+
+/* 다단 — 혼자면 지면을 채우고(카드 높이가 맞는다), 형제가 있으면 제 높이만 씁니다. */
+.cols { display: grid; gap: 32px; }
+.body > .cols:only-child { flex: 1 1 auto; min-height: 0; }
+.c-2 { grid-template-columns: 1fr 1fr; }
+.c-3 { grid-template-columns: repeat(3, 1fr); }
+.c-4 { grid-template-columns: repeat(4, 1fr); }
+.c-64 { grid-template-columns: 1.5fr 1fr; }
+.c-46 { grid-template-columns: 1fr 1.5fr; }
+
+/* 패널 — 라운드 18, 테두리만. 그림자는 떠 있는 것에만. */
+.panel {
+  background: var(--ex-white); border: 1px solid var(--ex-line-200); border-radius: 18px;
+  padding: 30px 32px; display: flex; flex-direction: column;
+}
+.panel.quiet { background: var(--ex-surface-100); border-color: transparent; }
+.panel.sig { background: var(--ex-bean-50); border-color: transparent; }
+.panel.raised { border-color: var(--ex-line-inner); box-shadow: var(--ex-elevation-raised); }
+.panel .lab {
+  font-family: var(--ex-font-mono); font-size: 14px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ex-slate-400); margin-bottom: 18px;
+}
+.panel.sig .lab { color: var(--ex-espresso); }
+.panel h3 { font-size: 28px; font-weight: 600; letter-spacing: -.02em; line-height: 1.4; margin-bottom: 12px; word-break: keep-all; }
+.panel p { font-size: 20px; line-height: 1.75; color: var(--ex-slate-500); word-break: keep-all; }
+.panel.sig p { color: var(--ex-bean-ink); }
+.panel .grow { flex: 1 1 auto; }
+.panel ul { list-style: none; display: grid; gap: 12px; }
+.panel li {
+  position: relative; padding-left: 22px; font-size: 20px; line-height: 1.7;
+  color: var(--ex-slate-700); word-break: keep-all;
+}
+.panel li::before {
+  content: ""; position: absolute; left: 0; top: 13px;
+  width: 6px; height: 6px; border-radius: 50%; background: var(--ex-slate-300);
+}
+.panel li.on::before { background: var(--ex-espresso); }
+
+/* 배지 · 칩 */
+.badge {
+  display: inline-block; font-family: var(--ex-font-mono); font-size: 14px; letter-spacing: .1em;
+  border-radius: 8px; padding: 5px 10px; color: var(--ex-slate-500); background: var(--ex-surface-100);
+}
+.badge.done { color: var(--ex-ink-900); background: var(--ex-tint-50); }
+.badge.live { color: var(--ex-success-text); background: var(--ex-success-surface); }
+.badge.pro  { color: var(--ex-espresso); background: var(--ex-bean-50); }
+.badge.hold { color: var(--ex-warning-text); background: var(--ex-warning-surface); }
+.badge.stop { color: var(--ex-danger-text); background: var(--ex-danger-surface); }
+.chip {
+  display: inline-block; font-size: 19px; color: var(--ex-slate-700);
+  border: 1px solid var(--ex-line-200); border-radius: 999px; padding: 9px 20px; background: var(--ex-white);
+}
+.chip.on { background: var(--ex-ink-900); border-color: var(--ex-ink-900); color: var(--ex-white); }
+
+/* 수치 — 항상 Outfit 300. 굵게 쓰지 않습니다. */
+.stat .k { font-size: 19px; color: var(--ex-slate-500); margin-bottom: 14px; }
+.stat .v {
+  font-family: var(--ex-font-brand); font-weight: 300; font-size: 84px; line-height: .95;
+  letter-spacing: -.03em; color: var(--ex-ink-900);
+}
+.stat .d { font-size: 18px; margin-top: 14px; color: var(--ex-slate-400); }
+.stat .d.up { color: var(--ex-success-text); }
+.stat .d.down { color: var(--ex-danger-text); }
+.slide.dark .stat .v { color: var(--ex-white); }
+.slide.dark .stat .k { color: var(--ex-on-dark-muted); }
+
+/* 큰 번호 — 목차와 섹션 표지 */
+.bignum {
+  font-family: var(--ex-font-brand); font-weight: 300; letter-spacing: -.04em;
+  font-size: 190px; line-height: .82; color: var(--ex-espresso);
+}
+.slide.dark .bignum { color: var(--ex-crema); }
+
+/* 흐름 — 가로 단계 */
+.flow {
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 0;
+  flex: 1 1 auto; min-height: 0; align-items: stretch;
+}
+.flow .step { position: relative; padding: 0 30px 0 0; display: flex; flex-direction: column; }
+.flow .step + .step { padding-left: 30px; border-left: 1px solid var(--ex-line-200); }
+.flow .n {
+  font-family: var(--ex-font-mono); font-size: 15px; letter-spacing: .14em; color: var(--ex-slate-400);
+  margin-bottom: 20px;
+}
+.flow .step.on .n { color: var(--ex-espresso); }
+.flow .dot {
+  width: 12px; height: 12px; border-radius: 50%; background: var(--ex-tint-100); margin-bottom: 22px;
+}
+.flow .step.on .dot { background: var(--ex-espresso); }
+.flow h3 { font-size: 26px; font-weight: 600; letter-spacing: -.02em; line-height: 1.35; margin-bottom: 12px; word-break: keep-all; }
+.flow p { font-size: 18px; line-height: 1.7; color: var(--ex-slate-500); word-break: keep-all; }
+
+/* 세로 타임라인 */
+.tl { display: grid; gap: 0; }
+.tl .row {
+  display: grid; grid-template-columns: 190px 1fr 200px; gap: 32px; align-items: center;
+  padding: 22px 0; border-bottom: 1px solid var(--ex-line-inner);
+}
+.tl .row:last-child { border-bottom: none; }
+.tl .when { font-family: var(--ex-font-mono); font-size: 17px; letter-spacing: .1em; color: var(--ex-slate-400); }
+.tl .row.on .when { color: var(--ex-espresso); }
+.tl .what { font-size: 24px; font-weight: 500; letter-spacing: -.015em; word-break: keep-all; }
+.tl .who { font-size: 18px; color: var(--ex-slate-500); text-align: right; }
+
+/* 표 */
+table { width: 100%; border-collapse: collapse; font-size: 20px; }
+thead th {
+  text-align: left; padding: 16px 22px; background: var(--ex-table-header);
+  border-bottom: 1px solid var(--ex-line-200);
+  font-family: var(--ex-font-mono); font-size: 14px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ex-slate-500); font-weight: 500; white-space: nowrap;
+}
+tbody td { padding: 18px 22px; border-bottom: 1px solid var(--ex-line-inner); color: var(--ex-slate-700); }
+tbody tr:last-child td { border-bottom: none; }
+td.num, th.num { font-family: var(--ex-font-mono); text-align: right; white-space: nowrap; }
+.table-shell { border: 1px solid var(--ex-line-200); border-radius: 18px; overflow: hidden; background: var(--ex-white); }
+
+/* 코드 */
+.code { border: 1px solid var(--ex-line-200); border-radius: 18px; overflow: hidden; background: var(--ex-white); height: 100%; display: flex; flex-direction: column; }
+.code .bar {
+  background: var(--ex-surface-50); border-bottom: 1px solid var(--ex-line-200); padding: 14px 22px;
+  font-family: var(--ex-font-mono); font-size: 15px; color: var(--ex-slate-500);
+}
+.code pre {
+  flex: 1 1 auto; padding: 24px 26px; overflow: hidden;
+  font-family: var(--ex-font-mono); font-size: 19px; line-height: 1.8; color: var(--ex-ink-900);
+}
+.code pre .cm { color: var(--ex-slate-400); }
+.code pre .hi { color: var(--ex-espresso); }
+
+/* 한 문장 — 발표에서 가장 조용하고 가장 센 장 */
+.oneline {
+  font-size: 82px; font-weight: 600; letter-spacing: -.035em; line-height: 1.32;
+  word-break: keep-all; max-width: 1500px;
+}
+.oneline em { font-style: normal; color: var(--ex-espresso); }
+
+/* 인용 */
+blockquote { border-left: 3px solid var(--ex-espresso); padding-left: 34px; max-width: 1400px; }
+blockquote p { font-size: 40px; font-weight: 500; line-height: 1.55; letter-spacing: -.025em; color: var(--ex-ink-900); word-break: keep-all; }
+blockquote cite {
+  display: block; margin-top: 26px; font-style: normal;
+  font-family: var(--ex-font-mono); font-size: 16px; letter-spacing: .12em; color: var(--ex-slate-400);
+}
+
+/* DO / DON'T */
+.dd { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+.dd > div { background: var(--ex-white); border: 1px solid var(--ex-line-200); border-radius: 18px; padding: 30px 32px; }
+.dd .t { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; font-family: var(--ex-font-mono); font-size: 14px; letter-spacing: .12em; }
+.dd .t .m { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; }
+.dd .do .t { color: var(--ex-success-text); } .dd .do .t .m { background: var(--ex-success-surface); }
+.dd .dont .t { color: var(--ex-danger-text); } .dd .dont .t .m { background: var(--ex-danger-surface); }
+.dd p { font-size: 23px; line-height: 1.7; color: var(--ex-slate-700); word-break: keep-all; }
+.dd .dont p { color: var(--ex-slate-400); }
+
+/* 브랜드 · 표지 */
+/* 레일의 라틴 크롬 규칙(대문자 · 자간)이 워드마크까지 먹지 않게 끊습니다. */
+.brandline { display: flex; align-items: center; gap: 14px; text-transform: none; letter-spacing: normal; }
+.brandline .word { font-family: var(--ex-font-brand); font-size: 26px; font-weight: 500; letter-spacing: -.025em; }
+.brandline .word em { font-style: normal; color: var(--ex-crema); }
+.display {
+  font-family: var(--ex-font-brand); font-weight: 300; font-size: 128px; line-height: 1.02;
+  letter-spacing: -.035em; color: var(--ex-white);
+}
+.display em { font-style: normal; color: var(--ex-crema); }
+.covermeta { display: flex; gap: 60px; }
+.covermeta .k { font-family: var(--ex-font-mono); font-size: 14px; letter-spacing: .14em; color: var(--ex-on-dark-muted); margin-bottom: 10px; }
+.covermeta .v { font-size: 21px; color: var(--ex-white); }
+
+/* Brew CTA — 라운드 full은 이 버튼에만 허용됩니다. */
+.brew {
+  display: inline-block; font-family: var(--ex-font-ui); font-size: 22px; font-weight: 600;
+  color: var(--ex-white); background: var(--ex-espresso); border: none; border-radius: 999px;
+  padding: 18px 40px;
+}
+
+/* 전면 지면 — 내용 뒤에 깔립니다. 반드시 .frame 앞에 둡니다.
+   그림은 docs/templates/expresso-visuals.html 10절에서 가져옵니다. */
+.slide > .bg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+/* 그림 한 장이 지면을 쓰는 자리 — viewBox가 남는 높이에 맞춰 들어갑니다. */
+.plot { flex: 1 1 auto; min-height: 0; }
+.plot > svg { display: block; width: 100%; height: 100%; }
+
+/* 화면 캡처 틀 */
+.shot {
+  border: 1px solid var(--ex-line-200); border-radius: 18px; overflow: hidden;
+  background: var(--ex-white); box-shadow: var(--ex-elevation-raised);
+  display: flex; flex-direction: column; height: 100%;
+}
+.shot .bar {
+  flex: none; display: flex; align-items: center; gap: 10px; padding: 15px 20px;
+  background: var(--ex-surface-50); border-bottom: 1px solid var(--ex-line-200);
+}
+.shot .bar i { width: 11px; height: 11px; border-radius: 50%; background: var(--ex-line-200); display: block; }
+.shot .bar .url {
+  margin-left: 14px; flex: 1; max-width: 460px; background: var(--ex-white);
+  border: 1px solid var(--ex-line-200); border-radius: 8px; padding: 6px 14px;
+  font-family: var(--ex-font-mono); font-size: 15px; color: var(--ex-slate-400);
+}
+.shot .plate {
+  flex: 1 1 auto; display: grid; place-items: center;
+  background: repeating-linear-gradient(135deg, #f2f6fc 0 10px, #eaf0f9 10px 20px);
+}
+.shot .plate span { font-family: var(--ex-font-mono); font-size: 16px; letter-spacing: .12em; color: var(--ex-slate-400); }
+
+/* 사람 — 이니셜 한 글자와 무채색 지면. 사진을 쓰지 않습니다. */
+.who { display: flex; align-items: center; gap: 16px; }
+.who .av {
+  flex: none; width: 56px; height: 56px; border-radius: 50%; background: var(--ex-tint-100);
+  display: grid; place-items: center; font-size: 21px; font-weight: 600; color: var(--ex-slate-700);
+}
+.who .nm { font-size: 21px; font-weight: 600; letter-spacing: -.015em; }
+.who .rl { font-size: 17px; color: var(--ex-slate-500); margin-top: 3px; }
+.slide.dark .who .av { background: rgba(255,255,255,.1); color: var(--ex-crema); }
+.slide.dark .who .rl { color: var(--ex-on-dark-muted); }
+
+/* 대화 — AI 말풍선만 Bean, 사용자 말풍선은 Ink. 색으로 화자를 구분합니다. */
+.chat { display: grid; gap: 18px; max-width: 1180px; }
+.chat .ai, .chat .me { display: flex; gap: 14px; }
+.chat .me { justify-content: flex-end; }
+.chat .bot {
+  flex: none; width: 46px; height: 46px; border-radius: 50%; background: var(--ex-espresso);
+  display: grid; place-items: center;
+}
+.chat .bot i { width: 14px; height: 14px; border-radius: 50%; background: var(--ex-bean-50); display: block; }
+.chat .ai p {
+  background: var(--ex-bean-50); border-radius: 6px 20px 20px 20px; padding: 18px 24px;
+  font-size: 23px; line-height: 1.7; color: var(--ex-bean-ink); max-width: 74%; word-break: keep-all;
+}
+.chat .me p {
+  background: var(--ex-ink-900); color: var(--ex-white); border-radius: 20px 6px 20px 20px;
+  padding: 18px 24px; font-size: 23px; line-height: 1.7; max-width: 70%; word-break: keep-all;
+}
+
+/* 사용자의 말 한 마디가 지면을 쓰는 장 */
+.voice p { font-size: 48px; font-weight: 500; line-height: 1.5; letter-spacing: -.028em; word-break: keep-all; }
+
+/* 위저드 단계 — 여러 장이 같은 줄을 지니면 어느 단계 이야기인지 지면마다 보입니다.
+   연달아 나오는 두 장이 이 줄을 함께 가지면 「06 · 장 바꾸기」의 표시가
+   앞 장의 자리에서 다음 자리로 이동합니다. */
+.wiz { display: flex; align-items: center; margin-top: 14px; }
+.wiz .w { flex: 1 1 0; display: flex; align-items: center; gap: 11px; }
+.wiz .w:last-child { flex: 0 0 auto; }
+.wiz .w::after { content: ""; flex: 1 1 auto; height: 1px; background: var(--ex-line-200); margin-left: 8px; }
+.wiz .w:last-child::after { display: none; }
+.wiz .m {
+  flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+  border: 1px solid var(--ex-line-200); background: var(--ex-white);
+  font-family: var(--ex-font-mono); font-size: 13px; color: var(--ex-slate-400);
+}
+.wiz .t { font-size: 19px; color: var(--ex-slate-400); white-space: nowrap; }
+.wiz .w.done .m { border-color: transparent; background: var(--ex-tint-50); color: var(--ex-slate-500); }
+.wiz .w.done .t { color: var(--ex-slate-500); }
+.wiz .w.on .m { border-color: var(--ex-espresso); background: var(--ex-espresso); color: var(--ex-white); }
+.wiz .w.on .t { color: var(--ex-ink-900); font-weight: 600; }
+/* 단계 줄이 있으면 그다음 다단이 남는 높이를 가져갑니다. */
+.body > .wiz + .cols { flex: 1 1 auto; min-height: 0; margin-top: 30px; }
+
+/* ===========================================================
+   05 · CHROME — 무대 바깥. 슬라이드 디자인에 섞이지 않습니다.
+   =========================================================== */
+.deck-controls {
+  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+  z-index: 1000; display: flex; align-items: center; gap: 10px;
+  background: rgba(255, 255, 255, .9); backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid var(--ex-line-200); border-radius: 999px; padding: 7px 10px;
+  box-shadow: var(--ex-elevation-raised);
+  opacity: .3; transition: opacity var(--ex-motion-quick);
+}
+.deck-controls:hover, .deck-controls:focus-within { opacity: 1; }
+.deck-controls button {
+  font: inherit; width: 34px; height: 34px; border-radius: 50%;
+  border: 1px solid var(--ex-line-200); background: var(--ex-white); color: var(--ex-slate-700);
+  cursor: pointer; display: grid; place-items: center; font-size: 14px;
+  transition: border-color var(--ex-motion-quick), color var(--ex-motion-quick);
+}
+.deck-controls button:hover { border-color: var(--ex-ink-900); color: var(--ex-ink-900); }
+/* 작업대로 나가는 길. 작업대 위에서 열렸을 때만 뜹니다 — 파일로 받아 연
+   자료에 눌리지 않는 단추가 있으면 안 됩니다. */
+.deck-controls .home, .deck-controls .sep, .overview .lab .back { display: none; }
+html.has-desk .deck-controls .home { display: grid; }
+html.has-desk .deck-controls .sep { display: block; }
+html.has-desk .overview .lab .back { display: inline; }
+.deck-controls .home {
+  width: 34px; height: 34px; border-radius: 50%; place-items: center;
+  border: 1px solid var(--ex-line-200); background: var(--ex-white); color: var(--ex-slate-500);
+  text-decoration: none; transition: border-color var(--ex-motion-quick), color var(--ex-motion-quick);
+}
+.deck-controls .home:hover { border-color: var(--ex-espresso); color: var(--ex-espresso); }
+.deck-controls .home svg { width: 13px; height: 13px; }
+.deck-controls .sep { width: 1px; height: 18px; background: var(--ex-line-200); margin: 0 2px; flex: none; }
+.overview .lab .back {
+  float: right; font-family: var(--ex-font-ui); font-size: 11.5px; letter-spacing: normal;
+  text-transform: none; color: var(--ex-slate-400); text-decoration: none;
+}
+.overview .lab .back:hover { color: var(--ex-espresso); }
+/* 장을 건널 때 자리와 크기가 함께 바뀌므로 제 가운데를 축으로 삼습니다. */
+[data-morph] { transform-origin: 50% 50%; }
+/* 조각이 자리를 옮기는 동안에는 지면을 통째로 흐리지 않고 그대로 세워 둡니다.
+   나머지를 왼쪽으로 빼는 일은 스크립트가 맡습니다. */
+.deck-stage.morph > .slide { transition: opacity 0s linear 780ms, visibility 0s linear 780ms; }
+.deck-stage.morph > .slide > .frame { transition: none; opacity: 1; }
+/* fill-box 는 SVG 조각에만 겁니다. HTML 에 걸면 안쪽 여백만큼 축이 어긋납니다. */
+svg [data-morph] { transform-box: fill-box; }
+
+/* 작업대의 축소판 — 조작 장치를 걷고 지면만 남깁니다. */
+.is-preview .deck-controls, .is-preview .deck-progress, .is-preview .overview { display: none !important; }
+.deck-controls .counter {
+  font-family: var(--ex-font-mono); font-size: 12px; letter-spacing: .1em;
+  color: var(--ex-slate-500); padding: 0 8px; min-width: 74px; text-align: center;
+}
+.deck-progress { position: fixed; left: 0; bottom: 0; height: 2px; width: 0; background: var(--ex-espresso); z-index: 1001; }
+
+/* 목록 — O로 열고 슬라이드를 골라 뜁니다. */
+.overview {
+  position: fixed; inset: 0; z-index: 1100; display: none;
+  background: rgba(22, 34, 58, .55); backdrop-filter: blur(6px);
+  padding: 60px; overflow: auto;
+}
+.overview.on { display: block; }
+.overview .sheet {
+  max-width: 880px; margin: 0 auto; background: var(--ex-white);
+  border-radius: 18px; padding: 28px 30px 30px; box-shadow: var(--ex-elevation-overlay);
+}
+.overview .lab { font-family: var(--ex-font-mono); font-size: 11px; letter-spacing: .14em; color: var(--ex-slate-400); margin-bottom: 16px; }
+.overview ol { list-style: none; display: grid; gap: 2px; }
+.overview button {
+  width: 100%; font: inherit; text-align: left; cursor: pointer;
+  display: grid; grid-template-columns: 34px 1fr auto; gap: 14px; align-items: baseline;
+  background: transparent; border: none; border-radius: 10px; padding: 10px 12px;
+  color: var(--ex-slate-700); font-size: 14.5px;
+  transition: background var(--ex-motion-quick);
+}
+.overview button:hover { background: var(--ex-surface-50); }
+.overview button.on { background: var(--ex-tint-50); color: var(--ex-ink-900); font-weight: 600; }
+.overview button .n { font-family: var(--ex-font-mono); font-size: 11px; color: var(--ex-slate-400); }
+.overview button.on .n { color: var(--ex-espresso); }
+.overview button .kind { font-family: var(--ex-font-mono); font-size: 10px; letter-spacing: .1em; color: var(--ex-slate-300); }
+.overview .hint { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--ex-line-inner); font-size: 12.5px; color: var(--ex-slate-400); line-height: 1.8; }
+.overview kbd {
+  font-family: var(--ex-font-mono); font-size: 11px; background: var(--ex-surface-50);
+  border: 1px solid var(--ex-line-200); border-radius: 5px; padding: 2px 6px; color: var(--ex-slate-500);
+}
+
+/* ===========================================================
+   06 · 장 바꾸기 — 겹쳐 넘기고, 내용은 순서대로 올라옵니다.
+
+   나가는 장은 흐려지지 않습니다. 자리에 그대로 둔 채 들어오는 장을 그 위에
+   겹쳐 띄우고(.active 의 z-index: 1), 다 뜬 뒤에 치웁니다. 둘을 같이 흐리면
+   중간에 무대 바탕이 비쳐 어두운 장에서 한 번 번쩍입니다.
+
+   내용은 .in 을 단 자리만 올라옵니다. 시차는 .dl-1 … .dl-9, 한 칸에 65ms.
+   레일과 맨 아랫줄은 자리를 옮기지 않고 밝아지기만 합니다(.in-fade) —
+   지면의 틀이 먼저 서고 그 안이 채워지는 순서입니다.
+
+   여기 있는 것은 규칙이고, 어느 자리가 올라올지는 장마다 정합니다.
+   표시를 하나도 달지 않으면 지면끼리만 겹치며 넘어갑니다.
+   =========================================================== */
+.deck-stage > .slide        { transition: opacity 0s linear 420ms, visibility 0s linear 420ms; }
+/* 겹치는 동안은 두 장이 함께 보입니다 — 앞이 확 튀는 곡선을 쓰면 잔상만 길게 남습니다.
+   그래서 이 한 줄만 양끝을 눅인 곡선이고, 내용이 올라오는 곡선은 아래의 것을 씁니다. */
+.deck-stage > .slide.active { transition: opacity 420ms cubic-bezier(.4, 0, .2, 1) 0s, visibility 0s; }
+
+/* 나가는 장은 글부터 걷습니다. 지면끼리만 겹치게 두려는 것입니다 —
+   어두운 표지가 밝은 목차와 그대로 겹치면 두 장의 글이 한 번에 보입니다.
+   배경(.bg)은 지면의 일부라 함께 남겨 두고 겹칩니다. */
+.deck-stage > .slide > .frame        { opacity: 0; transition: opacity 200ms cubic-bezier(.4, 0, .2, 1); }
+.deck-stage > .slide.active > .frame { opacity: 1; transition: none; }
+
+@keyframes ex-in-rise    { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+@keyframes ex-in-fade    { from { opacity: 0; }                              to { opacity: 1; } }
+@keyframes ex-in-zoom    { from { opacity: 0; transform: scale(.93); }       to { opacity: 1; transform: none; } }
+@keyframes ex-in-settle  { from { opacity: 0; transform: scale(1.05); }      to { opacity: 1; transform: none; } }
+@keyframes ex-in-wipe    { from { opacity: 0; transform: scaleX(0); }        to { opacity: 1; transform: none; } }
+@keyframes ex-in-numeral { from { opacity: 0; transform: translateY(96px); } to { opacity: 1; transform: none; } }
+/* 점선은 밝아지면서 한 번 흘러 들어옵니다 — dasharray 는 그대로 두고 offset 만 움직입니다. */
+@keyframes ex-in-flow    { from { opacity: 0; stroke-dashoffset: 78; }       to { opacity: 1; stroke-dashoffset: 0; } }
+
+.deck-stage > .slide.active .in {
+  animation: ex-in-rise 620ms cubic-bezier(.32, .72, 0, 1) both;
+  animation-delay: var(--dl, 0ms);
+}
+.deck-stage > .slide.active .in-fade    { animation-name: ex-in-fade; }
+.deck-stage > .slide.active .in-zoom    { animation-name: ex-in-zoom; }
+.deck-stage > .slide.active .in-settle  { animation-name: ex-in-settle;  animation-duration: 900ms; }
+.deck-stage > .slide.active .in-wipe    { animation-name: ex-in-wipe;    animation-duration: 760ms; }
+.deck-stage > .slide.active .in-numeral { animation-name: ex-in-numeral; animation-duration: 980ms; }
+.deck-stage > .slide.active .in-flow    { animation-name: ex-in-flow;    animation-duration: 980ms; }
+
+.dl-1 { --dl:  80ms } .dl-2 { --dl: 145ms } .dl-3 { --dl: 210ms }
+.dl-4 { --dl: 275ms } .dl-5 { --dl: 340ms } .dl-6 { --dl: 405ms }
+.dl-7 { --dl: 470ms } .dl-8 { --dl: 535ms } .dl-9 { --dl: 600ms }
+
+/* 동작 줄이기를 켠 사람에게는 장이 그냥 바뀝니다. */
+@media (prefers-reduced-motion: reduce) {
+  .deck-stage > .slide, .deck-stage > .slide.active { transition: none; }
+  .deck-stage > .slide > .frame { transition: none; }
+  .deck-stage > .slide.active .in { animation: none; opacity: 1; transform: none; }
+}
+/* 인쇄는 정지 화면입니다 — 시차가 남아 있으면 흐린 채로 찍힙니다. */
+@media print {
+  .slide .in, .slide > .frame { animation: none !important; opacity: 1 !important; transform: none !important; transition: none !important; }
+}
+
+/* ===========================================================
+   07 · 인쇄 — 한 장에 한 슬라이드, 가로.
+   =========================================================== */
+@media print {
+  @page { size: 1920px 1080px; margin: 0; }
+  html, body { width: 1920px; height: auto; overflow: visible; background: #fff; }
+  .deck-viewport { position: static; overflow: visible; }
+  .deck-stage { position: static; width: auto; height: auto; transform: none !important; }
+  .slide {
+    position: relative; visibility: visible !important; opacity: 1 !important;
+    width: 1920px; height: 1080px; break-after: page; page-break-after: always;
+  }
+  .slide:last-child { break-after: auto; }
+  .deck-controls, .deck-progress, .overview { display: none !important; }
+}
+
+/* ===========================================================
+   08 · 발표 · 설계서 분할 — 기본은 절반씩. 오른쪽 960px은 설계서 원문, 왼쪽은 발표 글.
+   설계서(.docpane)가 장마다 대상에 색 박스를 두르고, 왼쪽은 그 대상의 요점을 글로 적습니다.
+   설계서는 슬라이드 밖에 한 번만 놓여 장이 바뀌어도 사라지지 않습니다.
+   =========================================================== */
+/* 설계서는 1000px 폭으로 그린 뒤 칸 폭에 비례해 줄입니다(기본 960px 칸이면 0.96배). */
+:root { --split: 960px; --doc-w: 1000px; --doc-s: .96; }
+
+/* 양식 기본값에서 벗어남 — 지면 바탕을 장이 아니라 무대에 칠합니다.
+   왼쪽 글을 「나가는 글이 걷힌 뒤 들어오는 글이 뜨는」 순서로 바꾸려면
+   두 장이 겹치는 동안 위에 놓인 장의 바탕이 아래 장의 글을 가리면 안 됩니다.
+   모든 장이 같은 밝은 지면이라 바탕을 한 곳에 두어도 깜빡임이 생기지 않습니다. */
+.deck-stage { background: var(--ex-surface-50); }
+.slide { background: transparent; }
+
+.frame { inset: 64px calc(var(--split) + 64px) 64px 88px; }
+.head { padding-top: 28px; }
+h2 { font-size: 50px; }
+.sub { font-size: 22px; margin-top: 12px; max-width: none; }
+.body { padding: 32px 0 16px; }
+
+/* 대상 설명 — 오른쪽 설계서가 박스를 두른 그림 · 표의 역할과 그 그림이 보여 주는 기능. */
+.notes { display: grid; gap: 40px; padding-top: 28px; }
+.notes .lab { font-size: 18px; font-weight: 600; color: var(--ex-espresso); margin-bottom: 14px; }
+.pts { list-style: none; display: grid; gap: 18px; }
+.pts li {
+  position: relative; padding-left: 32px; font-size: 30px; font-weight: 500; line-height: 1.45;
+  letter-spacing: -.01em; color: var(--ex-ink-900); word-break: keep-all;
+}
+.pts li::before {
+  content: ""; position: absolute; left: 2px; top: 18px;
+  width: 8px; height: 8px; border-radius: 50%; background: var(--ex-espresso);
+}
+
+/* 왼쪽 글의 장 전환 — 나가는 글이 240ms 동안 걷히고, 그다음 들어오는 글이 뜹니다.
+   양식은 나가는 장을 그대로 두고 겹치지만, 이 덱은 오른쪽 설계서가 계속 움직이므로
+   왼쪽은 한 번에 한 장의 글만 보이게 합니다. */
+.deck-stage > .slide        { transition: opacity 0s linear 560ms, visibility 0s linear 560ms; }
+.deck-stage > .slide.active { transition: none; }
+.deck-stage > .slide > .frame        { opacity: 0; transition: opacity 240ms cubic-bezier(.4, 0, 1, 1); }
+.deck-stage > .slide.active > .frame { opacity: 1; transition: opacity 320ms cubic-bezier(0, 0, .2, 1) 240ms; }
+.deck-stage > .slide.active .in { animation-delay: calc(var(--dl, 0ms) + 240ms); }
+
+/* 오른쪽 설계서 */
+.docpane {
+  position: absolute; top: 0; right: 0; width: var(--split); height: 1080px; z-index: 5; overflow: hidden;
+  /* 설계서를 불러오기 전에 비치는 바탕 — 설계서 본문 바탕과 같은 색입니다. */
+  background: var(--ex-surface-50); border-left: 1px solid var(--ex-line-200);
+}
+.docpane iframe {
+  display: block; border: 0; background: var(--ex-surface-50);
+  width: var(--doc-w); height: calc(1080px / var(--doc-s));
+  transform: scale(var(--doc-s)); transform-origin: 0 0;
+}
+
+/* 폭 조절 핸들 — 경계의 세로 가운데에 놓인 회색 pill. 눈에 띄지 않게 두께만 있는 막대로 둡니다.
+   라운드 full은 양식 기본값으로 Brew 버튼 전용이지만, 막대 끝을 둥글게 하려고 여기서도 씁니다.
+   왼쪽 끝까지 가면 지면 안쪽에 붙어 남습니다. */
+.split-handle {
+  position: absolute; top: 540px; left: max(10px, calc(1920px - var(--split))); z-index: 8;
+  width: 6px; height: 56px; transform: translate(-50%, -50%);
+  background: var(--ex-slate-300); border-radius: 999px;
+  cursor: col-resize; touch-action: none;
+  transition: background-color var(--ex-motion-quick);
+}
+/* 잡는 자리는 막대보다 넓게 — 보이는 두께는 6px, 누를 수 있는 폭은 24px */
+.split-handle::before { content: ""; position: absolute; inset: -8px -9px; }
+.split-handle:hover, .split-handle:focus-visible, .deck-stage.resizing .split-handle { background: var(--ex-slate-400); outline: none; }
+/* 끄는 동안 iframe 이 포인터를 가져가지 않게 합니다. */
+.deck-stage.resizing iframe { pointer-events: none; }
+.deck-stage.resizing { cursor: col-resize; user-select: none; }
+/* 왼쪽이 좁아지면 발표 내용을 걷고 설계서가 지면 전체를 씁니다. */
+.deck-stage.doc-full > .slide.active > .frame { opacity: 0; transition: opacity 240ms ease; pointer-events: none; }
+.deck-stage.doc-full .docpane { border-left-color: transparent; }
+.is-preview .split-handle { display: none; }
+
+/* 쪽 번호 — 오른쪽 아래. 숫자는 자리마다 0–9 띠를 굴려 바꿉니다(--n 칸만큼 올림). */
+.docpane .pager {
+  position: absolute; right: 20px; bottom: 20px; z-index: 2; pointer-events: none;
+  display: flex; align-items: baseline; gap: 8px;
+  background: rgba(255, 255, 255, .92); border: 1px solid var(--ex-line-200); border-radius: 12px;
+  padding: 8px 16px 9px; box-shadow: var(--ex-elevation-raised);
+}
+.docpane .pager .num { display: flex; font-family: var(--ex-font-brand); font-weight: 300; font-size: 34px; line-height: 1; color: var(--ex-ink-900); }
+/* overflow: hidden 은 스크롤 컨테이너를 만들어 기준선이 상자 아래 끝으로 잡히고, 「/ 214쪽」이 숫자보다 내려앉습니다.
+   clip 은 기준선을 글자에서 그대로 읽습니다. 빈 첫 칸에도 글자를 넣어야 첫 줄 기준선이 0–9 띠 첫 칸에 남습니다. */
+.docpane .pager .dg { display: block; height: 1em; overflow: clip; max-width: .6em; transition: max-width 620ms cubic-bezier(.22, 1, .36, 1); }
+/* 자리 수가 모자라면 앞 자리 폭을 접습니다 — 6쪽에서 203쪽으로 가면 자리가 펴지며 숫자가 굴러 나옵니다. */
+.docpane .pager .dg.off { max-width: 0; }
+.docpane .pager .dg i {
+  display: block; height: 1em; font-style: normal; text-align: center; min-width: .56em;
+  transform: translateY(calc(var(--n, 0) * -1em));
+  transition: transform 620ms cubic-bezier(.22, 1, .36, 1);
+}
+.docpane .pager .dg i:empty::before { content: "\00a0"; }
+.docpane .pager .of { font-size: 16px; color: var(--ex-slate-400); }
+.docpane .pager .of .total { font-family: var(--ex-font-brand); font-weight: 300; font-size: 18px; margin-right: 2px; }
+@media (prefers-reduced-motion: reduce) { .docpane .pager .dg, .docpane .pager .dg i { transition: none; } }
+.is-preview .docpane .pager .dg, .is-preview .docpane .pager .dg i { transition: none; }
+
+/* 설계서 위치 막대 — 위치 표시 · 쪽 번호(right 20px)보다 바깥쪽 끝에 둡니다.
+   손잡이 높이는 화면에 보이는 비율, 위치는 스크롤 비율입니다. 너무 얇아지지 않게 28px 아래로는 줄이지 않습니다.
+   라운드 full은 양식 기본값으로 Brew 버튼 전용이지만, 폭 조절 핸들과 같은 막대 모양이라 여기서도 씁니다. */
+.docpane .vbar {
+  position: absolute; top: 18px; bottom: 20px; right: 6px; width: 8px; z-index: 3;
+  border-radius: 999px; background: var(--ex-track); cursor: pointer; touch-action: none;
+}
+/* 누를 수 있는 폭은 보이는 폭보다 넓게 */
+.docpane .vbar::before { content: ""; position: absolute; inset: 0 -5px; }
+.docpane .vbar .thumb {
+  position: absolute; left: 0; right: 0; top: 0; height: 28px;
+  border-radius: 999px; background: var(--ex-slate-300); transition: background-color var(--ex-motion-quick);
+}
+.docpane .vbar:hover .thumb, .docpane .vbar.dragging .thumb { background: var(--ex-slate-400); }
+.docpane .vbar.dragging { cursor: grabbing; }
+
+/* 지금 보고 있는 설계서의 자리 — 쪽 번호는 설계서 제목의 data-page(PDF 기준)를 읽습니다. */
+.docpane .where {
+  position: absolute; top: 18px; right: 20px; z-index: 2; pointer-events: none;
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255, 255, 255, .92); border: 1px solid var(--ex-line-200); border-radius: 10px;
+  padding: 8px 14px; box-shadow: var(--ex-elevation-raised);
+  font-size: 15px; color: var(--ex-slate-700); transition: opacity 240ms ease;
+}
+.docpane .where b { font-weight: 600; color: var(--ex-ink-900); }
+.docpane .where .pgno { font-size: 13px; color: var(--ex-espresso); }
+.docpane .where:empty { opacity: 0; }
+
+/* 양식에서 라틴 크롬(mono · 넓은 자간 · 대문자)인 자리에 이 덱은 한글을 씁니다.
+   한글에는 자간을 벌리지 않으므로 이 자리들만 본문 서체로 되돌립니다. */
+.covermeta .k, .rail .end, .docpane .where .pgno {
+  font-family: var(--ex-font-ui); letter-spacing: normal; text-transform: none; font-weight: 600;
+}
+
+/* 왼쪽 부품 — 장 머리말의 판 표시 */
+.tag { display: inline-block; font-size: 15px; font-weight: 600; border-radius: 8px; padding: 4px 10px;
+  color: var(--ex-espresso); background: var(--ex-bean-50); vertical-align: middle; }
+
+@media print {
+  .docpane, .split-handle { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 1ms !important; animation-duration: 1ms !important; }
+}
+</style>
+</head>
+
+<body>
+<div class="deck-viewport">
+<div class="deck-stage" id="deckStage">
+
+<!-- 장마다 data-doc 이 오른쪽 설계서의 자리를, data-doc-label 이 위치 표시의 이름을 정합니다.
+     형식은 맨 아래 「설계서 연결」 스크립트 머리 주석에 있습니다. -->
+
+<!-- ============================================================
+     01 · 표지
+     ============================================================ -->
+<section class="slide" data-mark="off" data-title="졸업작품 설계서 v1.0" data-kind="COVER" data-doc="sel:.cover" data-doc-label="표지">
+  <div class="frame">
+    <div class="rail in in-fade dl-1" style="border: none">
+      <span class="brandline">
+        <svg width="30" height="30" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><clipPath id="dc"><circle cx="44" cy="54" r="36"/></clipPath><mask id="dm"><rect width="108" height="108" fill="#fff"/><circle cx="44" cy="54" r="46.5" fill="#000"/></mask></defs><circle cx="78.2" cy="54" r="19.8" stroke="#E0B486" stroke-width="8.5" mask="url(#dm)"/><rect y="58.96" width="108" height="49.04" fill="#9A4030" clip-path="url(#dc)"/><circle cx="44" cy="54" r="36" stroke="#9A4030" stroke-width="10"/></svg>
+        <span class="word" style="color: var(--ex-ink-900)">Expre<em style="color: var(--ex-espresso)">ss</em>o</span>
+      </span>
+      <span class="end">2026 · 설계서 발표</span>
+    </div>
+
+    <div class="body mid">
+      <div class="kicker ko in dl-2">졸업작품 AI트랙 · 설계서</div>
+      <h2 class="in dl-3" style="font-size: 76px">졸업작품 설계서 v1.0</h2>
+      <p class="sub in dl-4">채용 공고·커리어 기록 추천 모델 기반<br>맞춤형 포트폴리오 생성 및 배포 플랫폼 개발</p>
+    </div>
+
+    <div class="foot in in-fade dl-6">
+      <div class="covermeta">
+        <div><div class="k" style="color: var(--ex-slate-400)">소속</div><div class="v" style="color: var(--ex-ink-900)">가천대학교 컴퓨터공학과</div></div>
+        <div><div class="k" style="color: var(--ex-slate-400)">팀</div><div class="v" style="color: var(--ex-ink-900)">팀장 박민재 · 심민규 · 오시건 · 채서현 · 윤규현</div></div>
+      </div>
+      <span class="pg"></span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     02 · 변경 이력 — 설계서 문서 정보
+     ============================================================ -->
+<section class="slide" data-title="변경 이력" data-kind="CHANGES" data-doc="sel:.docinfo .table-wrap:last-of-type" data-doc-label="문서 정보 · 변경 이력">
+  <div class="frame">
+    <div class="rail in in-fade dl-1"><span class="ko">설계서 v1.0</span><span class="end count"></span></div>
+    <div class="head">
+      <div class="kicker ko in dl-2">문서 정보</div>
+      <h2 class="in dl-2">변경 이력</h2>
+      <p class="sub in dl-3">v0.3(10/5, 제안서 기준 정합) 이후 피드백을 반영해 추가한 것</p>
+    </div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">역할</div><ul class="pts">
+          <li>v0.3 이후 반영 내용의 버전별 기록</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>버전별 변경 내용 · 날짜 · 작성자 확인</li>
+          <li>발표 각 장 그림의 추가 시점 확인</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     01 서비스와 모델 — 설계서 1 – 4장
+     ============================================================ -->
+<section class="slide" data-title="서비스 개요" data-kind="01 · 서비스와 모델" data-doc="fig:1.1" data-doc-label="그림 1.1">
+  <div class="frame">
+    <div class="rail in in-fade dl-1"><span class="now">01</span><span class="ko">서비스와 모델</span><span class="end count"></span></div>
+    <div class="head">
+      <div class="kicker ko in dl-2">설계서 1.1 · <span class="tag">v0.7 추가 그림</span></div>
+      <h2 class="in dl-2">서비스 개요</h2>
+      <p class="sub in dl-3">쌓아 둔 커리어 기록을 지원할 공고에 맞는 웹 포트폴리오로 만들어 배포</p>
+    </div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">역할</div><ul class="pts">
+          <li>서비스 전체 흐름의 한 장 요약</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>커리어 기록 · 채용 공고 → 맞춤 포트폴리오 → 배포 흐름 표시</li>
+          <li>방문 분석 결과의 다음 포트폴리오 개선 반영 표시</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="기존 서비스 대비 지원 범위" data-kind="01 · 서비스와 모델" data-doc="fig:1.3" data-doc-label="그림 1.3">
+  <div class="frame">
+    <div class="rail in in-fade dl-1"><span class="now">01</span><span class="ko">서비스와 모델</span><span class="end count"></span></div>
+    <div class="head">
+      <div class="kicker ko in dl-2">설계서 1.1 개발필요성 · <span class="tag">v0.5 비교표</span> <span class="tag">v0.7 벤 다이어그램</span></div>
+      <h2 class="in dl-2">기존 서비스 대비 지원 범위</h2>
+      <p class="sub in dl-3">기존 서비스는 세 영역 중 일부만, Expresso는 세 영역을 한 흐름으로</p>
+    </div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">역할</div><ul class="pts">
+          <li>비교표 차별점의 시각적 제시</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>채용 공고 추천 · 공고 맞춤 문서 작성 · 커리어 기록 · 공개 영역별 기존 서비스 위치 표시</li>
+          <li>세 영역 교집합의 Expresso 위치와 차별화 방안 연결</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="전체 사용자 플로우" data-kind="01 · 서비스와 모델" data-doc="fig:2.1" data-doc-label="그림 2.1">
+  <div class="frame">
+    <div class="rail in in-fade dl-1"><span class="now">01</span><span class="ko">서비스와 모델</span><span class="end count"></span></div>
+    <div class="head">
+      <div class="kicker ko in dl-2">설계서 2.1 · <span class="tag">v0.7 · 피드백 반영</span></div>
+      <h2 class="in dl-2">전체 사용자 플로우</h2>
+      <p class="sub in dl-3">한 번 하는 일, 공고마다 반복하는 일, 배포 뒤 돌아가는 자리</p>
+    </div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">역할</div><ul class="pts">
+          <li>사용자 기능 수행 프로세스 시각화</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>최초 1회 · 공고별 반복 · 배포 뒤 재진입 흐름 구분</li>
+          <li>학습 모델 · 외부 LLM 사용 단계 색 구분</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="추천 모델 두 종" data-kind="01 · 서비스와 모델" data-doc="fig:3.1" data-doc-label="그림 3.1">
+  <div class="frame">
+    <div class="rail in in-fade dl-1"><span class="now">01</span><span class="ko">서비스와 모델</span><span class="end count"></span></div>
+    <div class="head">
+      <div class="kicker ko in dl-2">설계서 1.1 · 3장</div>
+      <h2 class="in dl-2">추천 모델 두 종</h2>
+      <p class="sub in dl-3">모델 A 채용 공고 추천 · 모델 B 커리어 기록 추천(모델 A의 Cross-Encoder 재사용) · 생성은 외부 LLM</p>
+    </div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">역할</div><ul class="pts">
+          <li>제안서 기준 두 추천 모델 구성 정합</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>모델 A 기록 → 공고 · 모델 B 공고 → 기록 방향 구분</li>
+          <li>입력 · 학습 모델 · 점수 조합 규칙 · 출력 단계와 Cross-Encoder 재사용 표시</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="교사 지식 증류" data-kind="01 · 서비스와 모델" data-doc="fig:3.3" data-doc-label="그림 3.3">
+  <div class="frame">
+    <div class="rail in in-fade dl-1"><span class="now">01</span><span class="ko">서비스와 모델</span><span class="end count"></span></div>
+    <div class="head">
+      <div class="kicker ko in dl-2">설계서 3.1 라벨 생성 방법 · <span class="tag">v0.6 추가 그림</span></div>
+      <h2 class="in dl-2">교사 지식 증류</h2>
+      <p class="sub in dl-3">실사용 로그 0건 · 1만 쌍을 사람이 라벨링할 수 없어 LLM을 교사로</p>
+    </div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">역할</div><ul class="pts">
+          <li>실사용 로그 없는 상태의 라벨 생성 근거 제시</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>입력 수집 → 교사 판정 → 루브릭 점수화 → 지식 증류 단계 표시</li>
+          <li>교사 LLM 판정 · 코드 계산 · 학습 대상 역할 구분</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="두 모델의 단계적 활용" data-kind="01 · 서비스와 모델" data-doc="fig:4.4" data-doc-label="그림 4.4">
+  <div class="frame">
+    <div class="rail in in-fade dl-1"><span class="now">01</span><span class="ko">서비스와 모델</span><span class="end count"></span></div>
+    <div class="head">
+      <div class="kicker ko in dl-2">설계서 4.2 · <span class="tag">v0.6 추가 그림</span></div>
+      <h2 class="in dl-2">두 모델의 단계적 활용</h2>
+      <p class="sub in dl-3">빠른 모델로 거르고, 정밀한 모델로 다시 매기기</p>
+    </div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">역할</div><ul class="pts">
+          <li>Bi-Encoder+MLP · Cross-Encoder 결합 방식 명시</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>스크리닝 → 리랭킹 → 최종 추천 순위 변화 예시</li>
+          <li>상위 K개 선별 경계와 관련 기록 동시 입력 표시</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     02 화면 · 시스템 설계 — 설계서 5 – 8장. 다이어그램 종류마다 한 장씩, 예시는 공고 분석 기능으로 맞춥니다
+     ============================================================ -->
+<section class="slide" data-title="메뉴 구조도" data-kind="02 · 화면 · 시스템 설계" data-doc="fig:5.1" data-doc-label="그림 5.1">
+  <div class="frame">
+    <div class="rail in in-fade dl-1"><span class="now">02</span><span class="ko">화면 · 시스템 설계</span><span class="end count"></span></div>
+    <div class="head">
+      <div class="kicker ko in dl-2">설계서 5.1 메뉴 구조도</div>
+      <h2 class="in dl-2">메뉴 구조도</h2>
+      <p class="sub in dl-3">화면 정의서(docs/Expresso Screens.dc.html) 기준 화면번호 사용</p>
+    </div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">수록 범위</div><ul class="pts">
+          <li>사용자용(그림 5.1) · 관리자용(그림 5.4) 메뉴 구조도</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>기록 · 공고 · 생성 · 배포 · 분석 · 설정 메뉴별 화면 배치 표시</li>
+          <li>화면번호 기준 화면 정의서 대응</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="화면 설계" data-kind="02 · 화면 · 시스템 설계" data-doc="h:■ 공고 분석 — 화면번호 01" data-doc-span="3" data-doc-label="5.3 공고 분석 (화면번호 01)">
+  <div class="frame">
+    <div class="rail in in-fade dl-1"><span class="now">02</span><span class="ko">화면 · 시스템 설계</span><span class="end count"></span></div>
+    <div class="head">
+      <div class="kicker ko in dl-2">설계서 5.3 · 예시 화면번호 01 공고 분석</div>
+      <h2 class="in dl-2">화면 설계</h2>
+      <p class="sub in dl-3">화면마다 한 쪽 · 실제 화면 캡처 기반</p>
+    </div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">수록 범위</div><ul class="pts">
+          <li>사용자 화면 29개의 화면별 설계</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>화면 캡처 · 라우트 · 담당 도메인 모듈 표시</li>
+          <li>주요 구성 요소 · 사용자에게 하는 역할 · 기능 요구사항 · 제약조건 정리</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="시스템 아키텍쳐" data-kind="02 · 화면 · 시스템 설계" data-doc="fig:6.1" data-doc-label="그림 6.1">
+  <div class="frame">
+    <div class="rail in in-fade dl-1"><span class="now">02</span><span class="ko">화면 · 시스템 설계</span><span class="end count"></span></div>
+    <div class="head">
+      <div class="kicker ko in dl-2">설계서 6.1 시스템 아키텍쳐</div>
+      <h2 class="in dl-2">시스템 아키텍쳐</h2>
+      <p class="sub in dl-3">화면 · 백엔드 · 저장소 · 외부 서비스의 계층 구성</p>
+    </div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">수록 범위</div><ul class="pts">
+          <li>화면 · API 서버 · Worker · 저장소 · 외부 서비스 구성도</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>계층 간 의존 방향 표시</li>
+          <li>API 서버 · Worker 분리 실행과 Outbox 기반 큐 발행 표시</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="시퀀스 다이어그램" data-kind="02 · 화면 · 시스템 설계" data-doc="h:7) 공고 분석 기능" data-doc-span="2" data-doc-label="6.2.7 공고 분석 기능">
+  <div class="frame">
+    <div class="rail in in-fade dl-1"><span class="now">02</span><span class="ko">화면 · 시스템 설계</span><span class="end count"></span></div>
+    <div class="head">
+      <div class="kicker ko in dl-2">설계서 6.2 · 6.3 · 예시 6.2.7 공고 분석</div>
+      <h2 class="in dl-2">시퀀스 다이어그램</h2>
+      <p class="sub in dl-3">기능 하나에 시퀀스 다이어그램 한 장</p>
+    </div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">수록 범위</div><ul class="pts">
+          <li>사용자 기능(6.2) · 관리자 기능(6.3)별 시퀀스 다이어그램</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>사용자 · 웹 · API 서버 · 큐 · Worker · AI서버 간 호출 순서 표시</li>
+          <li>비동기 접수(202) 뒤 완료 조회 흐름 표시</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="API 설계" data-kind="02 · 화면 · 시스템 설계" data-doc="h:5) 공고 분석 접수" data-doc-span="3" data-doc-label="7.3.5 공고 분석 접수">
+  <div class="frame">
+    <div class="rail in in-fade dl-1"><span class="now">02</span><span class="ko">화면 · 시스템 설계</span><span class="end count"></span></div>
+    <div class="head">
+      <div class="kicker ko in dl-2">설계서 7.3 · 예시 7.3.5 공고 분석 접수</div>
+      <h2 class="in dl-2">API 설계</h2>
+      <p class="sub in dl-3">packages/contracts의 zod 스키마 기준</p>
+    </div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">수록 범위</div><ul class="pts">
+          <li>요청 · 응답 유형별 대표 API 상세 설계</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>요청 · 응답 방향 그림과 파라메터 표 제시</li>
+          <li>실제 전송 내용(IN · OUT) 예시 제시</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="컬렉션 참조 관계" data-kind="02 · 화면 · 시스템 설계" data-doc="fig:8.1" data-doc-label="그림 8.1">
+  <div class="frame">
+    <div class="rail in in-fade dl-1"><span class="now">02</span><span class="ko">화면 · 시스템 설계</span><span class="end count"></span></div>
+    <div class="head">
+      <div class="kicker ko in dl-2">설계서 8.1 · 8.2 데이터 설계</div>
+      <h2 class="in dl-2">컬렉션 참조 관계</h2>
+      <p class="sub in dl-3">MongoDB 컬렉션 간 식별자 참조</p>
+    </div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">수록 범위</div><ul class="pts">
+          <li>핵심 컬렉션 참조 관계(그림 8.1) · 컬렉션 명세서(8.2)</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>users · career_records · brews · portfolios · job_postings 간 식별자 참조 표시</li>
+          <li>참조 방향 기준 문서 간 의존 확인</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     03 지표와 파일럿 실험 — 설계서 9장
+     ============================================================ -->
+<section class="slide" data-title="순위 지표" data-kind="03 · 지표와 파일럿" data-doc="fig:9.1" data-doc-label="그림 9.1">
+  <div class="frame">
+    <div class="rail in in-fade dl-1"><span class="now">03</span><span class="ko">지표와 파일럿 실험</span><span class="end count"></span></div>
+    <div class="head">
+      <div class="kicker ko in dl-2">설계서 9.2 · <span class="tag">v0.7 · 피드백 반영</span></div>
+      <h2 class="in dl-2">순위 지표</h2>
+      <p class="sub in dl-3">추천은 점수 하나가 아니라 공고의 순서를 정하는 일</p>
+    </div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">역할</div><ul class="pts">
+          <li>NDCG · Recall 지표의 평가 대상 설명</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>Recall@K의 스크리닝 단계 적합 공고 누락 측정 표시</li>
+          <li>NDCG@10의 최종 순위 상위 배치 측정 표시</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="NDCG 해석 방법" data-kind="03 · 지표와 파일럿" data-doc="fig:9.2" data-doc-label="그림 9.2">
+  <div class="frame">
+    <div class="rail in in-fade dl-1"><span class="now">03</span><span class="ko">지표와 파일럿 실험</span><span class="end count"></span></div>
+    <div class="head">
+      <div class="kicker ko in dl-2">설계서 9.2 순위 지표의 이해 · <span class="tag">v1.0 추가 그림</span></div>
+      <h2 class="in dl-2">NDCG 해석 방법</h2>
+      <p class="sub in dl-3">순서를 정반대로 놓아도 NDCG@5 = 0.702 · 값 하나의 크기가 아니라 기준선과의 차이로 판단</p>
+    </div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">역할</div><ul class="pts">
+          <li>지표 값의 해석 기준 제시</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>공고 5건 예시의 DCG · IDCG · NDCG 계산 과정 표시</li>
+          <li>후보 20건 예시의 k별 Recall 계산 표시</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="파일럿 학습 조건" data-kind="03 · 지표와 파일럿" data-doc="h:■ 파일럿 학습 조건" data-doc-span="3" data-doc-label="9.2 파일럿 학습 조건">
+  <div class="frame">
+    <div class="rail in in-fade dl-1"><span class="now">03</span><span class="ko">지표와 파일럿 실험</span><span class="end count"></span></div>
+    <div class="head">
+      <div class="kicker ko in dl-2">설계서 9.2 · 2026-09-04 수행</div>
+      <h2 class="in dl-2">파일럿 학습 조건</h2>
+      <p class="sub in dl-3">합성 프로필 1,000개 × 공고 10개 = 10,000쌍 · 평가 분할 70명 · 700쌍 · 두 모델은 각각 독립 평가</p>
+    </div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">역할</div><ul class="pts">
+          <li>파일럿 학습 결과의 재현 조건 기록</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>학습 · 검증 · 평가 분할별 프로필 · 공고 · 쌍 수 제시</li>
+          <li>두 모델의 기반 모델 · 학습률 · 선택 epoch · 실행 장비 비교</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="파일럿 평가 결과" data-kind="03 · 지표와 파일럿" data-doc="fig:9.3" data-doc-span="1" data-doc-label="그림 9.3 · 9.4">
+  <div class="frame">
+    <div class="rail in in-fade dl-1"><span class="now">03</span><span class="ko">지표와 파일럿 실험</span><span class="end count"></span></div>
+    <div class="head">
+      <div class="kicker ko in dl-2">설계서 9.2 · 평가 분할 70명 · 700쌍</div>
+      <h2 class="in dl-2">파일럿 평가 결과</h2>
+      <p class="sub in dl-3">NDCG@10 Bi-Encoder+MLP 0.9555 · Cross-Encoder 0.9608, 기준선 중 최고 Char TF-IDF 0.8799</p>
+    </div>
+    <div class="body">
+      <div class="notes">
+        <div class="in dl-4"><div class="lab">역할</div><ul class="pts">
+          <li>기준선 대비 학습 모델 성능의 시각적 비교</li>
+        </ul></div>
+        <div class="in dl-5"><div class="lab">기능</div><ul class="pts">
+          <li>NDCG@10 · pairwise accuracy · MAP@10 · MAE 모델별 비교</li>
+          <li>LLM 라벨 대비 모델 예측값 분포 비교</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     끝장 — 표지와 짝. 자료 위치 · 묻는 곳 · 다음 판. data-doc 이 없어 설계서는 앞 장의 자리에 머뭅니다
+     ============================================================ -->
+<section class="slide" data-title="감사합니다" data-kind="END">
+  <div class="frame">
+    <div class="rail in in-fade dl-1" style="border: none">
+      <span class="brandline">
+        <svg width="30" height="30" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="transform: scaleX(-1)"><defs><clipPath id="ec"><circle cx="44" cy="54" r="36"/></clipPath><mask id="em"><rect width="108" height="108" fill="#fff"/><circle cx="44" cy="54" r="46.5" fill="#000"/></mask></defs><circle cx="78.2" cy="54" r="19.8" stroke="#E0B486" stroke-width="8.5" mask="url(#em)"/><rect y="58.96" width="108" height="49.04" fill="#9A4030" clip-path="url(#ec)"/><circle cx="44" cy="54" r="36" stroke="#9A4030" stroke-width="10"/></svg>
+        <span class="word" style="color: var(--ex-ink-900)">Expre<em style="color: var(--ex-espresso)">ss</em>o</span>
+      </span>
+      <span class="end count"></span>
+    </div>
+    <div class="body mid">
+      <h2 class="in dl-2" style="font-size: 76px">감사합니다</h2>
+    </div>
+    <div class="foot in in-fade dl-5">
+      <div class="covermeta">
+        <div><div class="k" style="color: var(--ex-slate-400)">자료</div><div class="v" style="color: var(--ex-ink-900)">개발 포털 · 설계서 · PDF 214쪽</div></div>
+        <div><div class="k" style="color: var(--ex-slate-400)">묻는 곳</div><div class="v" style="color: var(--ex-ink-900)">팀장 박민재</div></div>
+      </div>
+      <span class="pg"></span>
+    </div>
+  </div>
+</section>
+
+<!-- 오른쪽 설계서 — 슬라이드 밖에 한 번만 둡니다. 장이 바뀌어도 다시 불러오지 않습니다. -->
+<aside class="docpane" aria-label="설계서 원문">
+  <div class="where"></div>
+  <!-- 설계서 쪽 번호 — 스크롤에 따라 자리마다 굴러 바뀝니다. 띠는 스크립트가 아니라 여기 적어 둡니다. -->
+  <div class="pager" role="status" aria-live="off" aria-label="설계서 쪽">
+    <span class="num"><span class="dg"><i></i><i>0</i><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i><i>7</i><i>8</i><i>9</i></span><span class="dg"><i></i><i>0</i><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i><i>7</i><i>8</i><i>9</i></span><span class="dg"><i></i><i>0</i><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i><i>7</i><i>8</i><i>9</i></span></span>
+    <span class="of">/ <span class="total"></span>쪽</span>
+  </div>
+  <!-- 설계서 위치 막대 — 오른쪽 끝. 손잡이가 지금 보는 구간을 보이고, 끌거나 막대를 누르면 그 자리로 갑니다. -->
+  <div class="vbar" role="scrollbar" aria-orientation="vertical" aria-label="설계서 위치"
+       aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="thumb"></div></div>
+  <iframe src="졸업작품-설계서.html" title="졸업작품 설계서 v1.0"></iframe>
+</aside>
+
+<!-- 설계서 폭 조절 핸들 — 경계의 세로 가운데. 끌어서 폭을 바꾸고, 더블클릭하면 기본 폭으로 돌아갑니다. -->
+<div class="split-handle" role="separator" aria-orientation="vertical" aria-label="설계서 폭 조절"
+     aria-valuemin="520" aria-valuemax="1920" aria-valuenow="960" tabindex="0" title="끌어서 폭 조절 · 더블클릭하면 기본 폭"></div>
+
+</div><!-- /deck-stage -->
+</div><!-- /deck-viewport -->
+
+<!-- 크롬 — 무대 바깥. 슬라이드 색이 무엇이든 같은 모습입니다. -->
+<div class="deck-controls">
+  <a class="home" href="/" title="작업대로 (H)" aria-label="작업대로">
+    <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><rect x="1" y="1" width="6" height="6" rx="1.4"/><rect x="9" y="1" width="6" height="6" rx="1.4"/><rect x="1" y="9" width="6" height="6" rx="1.4"/><rect x="9" y="9" width="6" height="6" rx="1.4"/></svg>
+  </a>
+  <span class="sep"></span>
+  <button id="prevBtn" type="button" aria-label="이전 슬라이드">←</button>
+  <span class="counter" id="counter">01 / 14</span>
+  <button id="nextBtn" type="button" aria-label="다음 슬라이드">→</button>
+  <button id="mapBtn" type="button" aria-label="슬라이드 목록">☰</button>
+</div>
+<div class="deck-progress" id="progress"></div>
+
+<div class="overview" id="overview" hidden>
+  <div class="sheet">
+    <div class="lab">SLIDES<a class="back" href="/">← 작업대 (H)</a></div>
+    <ol id="mapList"></ol>
+    <div class="hint">
+      <kbd>←</kbd> <kbd>→</kbd> 이동 · <kbd>Home</kbd> <kbd>End</kbd> 처음/끝 · <kbd>O</kbd> 이 목록 ·
+      <kbd>F</kbd> 전체화면 · <kbd>P</kbd> 인쇄(PDF) · <kbd>E</kbd> 글 고치기 · <kbd>S</kbd> 장 목록 · <kbd>Esc</kbd> 닫기
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===========================================================
+   SLIDE CONTROLLER
+   무대는 통째로 축소됩니다. 슬라이드 내용은 절대 다시 흐르지 않습니다.
+   발표 자료를 쓰는 사람이 손댈 일은 없습니다.
+   =========================================================== */
+/* 작업대의 축소판은 이 파일을 `?preview` 로 그대로 띄웁니다. 그때는 조작 장치를
+   걷고 「마지막으로 본 장」도 남기지 않습니다 — 축소판이 훑고 지나간 것을 사람이
+   본 것으로 셈하면 돌아갈 자리가 어긋납니다. */
+const PREVIEW = new URLSearchParams(location.search).has('preview');
+if (PREVIEW) document.documentElement.classList.add('is-preview');
+
+/* 작업대 위에서 열렸는지 물어봅니다. 아니면 나가는 길을 아예 감춥니다. */
+if (!PREVIEW) {
+  fetch('/__decks', { method: 'HEAD' })
+    .then((r) => { if (r.ok) document.documentElement.classList.add('has-desk'); })
+    .catch(() => {});
+}
+
+class Deck {
+  constructor() {
+    this.slides = [...document.querySelectorAll('.slide')];
+    this.stage = document.getElementById('deckStage');
+    this.progress = document.getElementById('progress');
+    this.counter = document.getElementById('counter');
+    this.overview = document.getElementById('overview');
+    this.mapList = document.getElementById('mapList');
+    this.i = 0;
+
+    this.fitStage();
+    this.stampNumbers();
+    this.buildMap();
+    this.bindKeys();
+    this.bindTouch();
+    this.bindWheel();
+    this.bindButtons();
+
+    /* 주소의 #3 같은 조각으로 특정 장을 열 수 있게 합니다 — 링크로 공유되는 자리입니다. */
+    const from = parseInt(location.hash.replace('#', ''), 10);
+    this.show(Number.isFinite(from) ? from - 1 : 0);
+  }
+
+  /* 1920×1080 무대를 뷰포트에 맞춰 한 번의 transform으로 축소합니다.
+     남는 공간은 레터박스로 둡니다 — 내용을 재배치하지 않습니다. */
+  fitStage() {
+    const fit = () => {
+      const f = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+      const x = (window.innerWidth - 1920 * f) / 2;
+      const y = (window.innerHeight - 1080 * f) / 2;
+      this.stage.style.transform = `translate(${x}px, ${y}px) scale(${f})`;
+    };
+    fit();
+    window.addEventListener('resize', fit);
+  }
+
+  /* 목록은 슬라이드의 data-title을 읽습니다 — 장을 지워도 목록이 어긋나지 않습니다. */
+  buildMap() {
+    this.mapBtns = this.slides.map((s, n) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.innerHTML = '<span class="n"></span><span class="t"></span><span class="kind"></span>';
+      b.querySelector('.n').textContent = String(n + 1).padStart(2, '0');
+      b.querySelector('.t').textContent = s.dataset.title || '제목 없음';
+      b.querySelector('.kind').textContent = s.dataset.kind || '';
+      b.addEventListener('click', () => { this.show(n); this.toggleMap(false); });
+      const li = document.createElement('li');
+      li.appendChild(b);
+      this.mapList.appendChild(li);
+      return b;
+    });
+  }
+
+  bindKeys() {
+    document.addEventListener('keydown', (e) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      /* 글을 고치는 중에는 화살표가 글자 사이를 움직여야 합니다. */
+      if (document.body.classList.contains('de-editing')) return;
+      const k = e.key;
+      if (['ArrowRight', 'ArrowDown', ' ', 'PageDown'].includes(k)) { e.preventDefault(); this.next(); }
+      else if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(k)) { e.preventDefault(); this.prev(); }
+      else if (k === 'Home') { e.preventDefault(); this.show(0); }
+      else if (k === 'End') { e.preventDefault(); this.show(this.slides.length - 1); }
+      else if (k === 'o' || k === 'O') { e.preventDefault(); this.toggleMap(); }
+      else if ((k === 'h' || k === 'H') && document.documentElement.classList.contains('has-desk')) {
+        e.preventDefault(); location.href = '/';
+      }
+      else if (k === 'Escape') { this.toggleMap(false); }
+      else if (k === 'p' || k === 'P') { e.preventDefault(); window.print(); }
+      else if (k === 'f' || k === 'F') {
+        e.preventDefault();
+        document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+      }
+    });
+  }
+
+  bindTouch() {
+    let x0 = null;
+    document.addEventListener('touchstart', (e) => { if (document.body.classList.contains('de-editing')) return; x0 = e.changedTouches[0].clientX; }, { passive: true });
+    document.addEventListener('touchend', (e) => {
+      if (x0 === null) return;
+      const dx = e.changedTouches[0].clientX - x0;
+      if (Math.abs(dx) > 60) dx < 0 ? this.next() : this.prev();
+      x0 = null;
+    }, { passive: true });
+  }
+
+  /* 휠은 연속으로 들어옵니다 — 잠금을 두어 한 번 굴려 한 장만 넘어가게 합니다. */
+  bindWheel() {
+    let lock = false;
+    window.addEventListener('wheel', (e) => {
+      if (lock || this.overview.classList.contains('on') || document.body.classList.contains('de-editing')) return;
+      if (Math.abs(e.deltaY) < 24) return;
+      lock = true;
+      e.deltaY > 0 ? this.next() : this.prev();
+      setTimeout(() => { lock = false; }, 560);
+    }, { passive: true });
+  }
+
+  /* 번호는 손으로 적지 않습니다 — 장을 지우거나 끼워도 어긋나지 않게 여기서 채웁니다.
+     .pg 는 쪽 번호, .rail .count 는 「지금 / 전체」입니다. */
+  stampNumbers() {
+    const total = String(this.slides.length).padStart(2, '0');
+    this.slides.forEach((s, n) => {
+      const num = String(n + 1).padStart(2, '0');
+      s.querySelectorAll('.pg').forEach((el) => { el.textContent = num; });
+      s.querySelectorAll('.rail .count').forEach((el) => { el.textContent = num + ' / ' + total; });
+    });
+  }
+
+  bindButtons() {
+    document.getElementById('nextBtn').addEventListener('click', () => this.next());
+    document.getElementById('prevBtn').addEventListener('click', () => this.prev());
+    document.getElementById('mapBtn').addEventListener('click', () => this.toggleMap());
+    this.overview.addEventListener('click', (e) => { if (e.target === this.overview) this.toggleMap(false); });
+  }
+
+  toggleMap(force) {
+    const on = force === undefined ? !this.overview.classList.contains('on') : force;
+    this.overview.classList.toggle('on', on);
+    this.overview.hidden = !on;
+  }
+
+  next() { this.show(this.i + 1); }
+  prev() { this.show(this.i - 1); }
+
+  show(n) {
+    this.i = Math.max(0, Math.min(n, this.slides.length - 1));
+    this.slides.forEach((s, k) => s.classList.toggle('active', k === this.i));
+    this.mapBtns.forEach((b, k) => b.classList.toggle('on', k === this.i));
+    this.progress.style.width = ((this.i + 1) / this.slides.length) * 100 + '%';
+    this.counter.textContent =
+      String(this.i + 1).padStart(2, '0') + ' / ' + String(this.slides.length).padStart(2, '0');
+    if (!PREVIEW) {
+      history.replaceState(null, '', '#' + (this.i + 1));
+      this.remember();
+    }
+  }
+
+  /* 마지막으로 본 장을 남깁니다 — 작업대(~/.claude/skills/html-presentation/tool/deck.py)가
+     읽어 그 자리로 되돌려 줍니다. 브라우저에만 쌓이고 파일에는 영향이 없습니다. */
+  remember() {
+    try {
+      const key = 'deck:last';
+      const all = JSON.parse(localStorage.getItem(key) || '{}');
+      all[location.pathname] = { n: this.i + 1, total: this.slides.length, at: Date.now() };
+      localStorage.setItem(key, JSON.stringify(all));
+    } catch { /* 사생활 보호 모드에서는 그냥 넘어갑니다. */ }
+  }
+}
+/* 컨트롤러를 전역에 둡니다 — deck-editor.js 가 장을 더하거나 지운 뒤
+   번호와 목록을 다시 만들 때 이 객체를 찾습니다. */
+window.deck = new Deck();
+</script>
+
+<script>
+/* ===========================================================
+   단계 표시 이동 — 연달아 나오는 두 장이 같은 `.wiz` 줄을 가질 때만 돕니다.
+   표시(.w.on .m)가 앞 장의 자리에서 다음 자리로 옮겨 갑니다.
+
+   DOM 을 건드리지 않고 WAAPI 로만 움직이므로 저장한 파일은 그대로입니다.
+   `.wiz` 를 쓰지 않는 자료에서는 아무 일도 하지 않습니다.
+   =========================================================== */
+(() => {
+  const EASE = 'cubic-bezier(.32, .72, 0, 1)';
+  /* 자리를 옮기는 곡선만 다릅니다. 양끝을 다 눅이는 곡선(ease-in-out)은 여기 안
+     맞습니다 — 출발까지 느려서 부드러운 게 아니라 굼떠 보입니다. 그건 화면
+     밖에서 들어오고 나가는 것에 쓰는 곡선입니다.
+
+     화면 안의 한 자리에서 다른 자리로 옮겨 가는 것은 **떠날 때 확실히 떠나고
+     앉을 때 천천히 앉아야** 합니다. 시간의 1/4에 거리의 절반쯤 가고 나머지
+     시간에 남은 절반을 천천히 좁힙니다. 지면의 다른 자리가 쓰는 곡선
+     (.32 .72 0 1)은 같은 성격인데 훨씬 급합니다 — 1/8 만에 36%를 가서,
+     자리를 옮기는 데 쓰면 부드럽지 않고 튄 것으로 보입니다. */
+  const GLIDE = 'cubic-bezier(.35, .45, .25, 1)';
+  const still = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const bar = () => document.querySelector('.deck-stage > .slide.active .wiz');
+  const show = window.deck.show.bind(window.deck);
+
+  /* ── 두 장에 함께 있는 조각 ──────────────────────────────────────────────
+     연달아 나오는 두 장이 `data-morph` 값이 같은 조각을 지니면, 그 조각이 앞
+     장의 자리에서 다음 자리로 이동합니다. 한 내용을 두 장으로 나눠 놓고 같은
+     것을 가리킬 때 씁니다 — 지면이 바뀌어도 같은 것임을 알아볼 수 있습니다.
+
+     DOM 을 건드리지 않고 WAAPI 로만 움직이므로 저장한 파일은 그대로입니다. */
+  const keyed = (root) => {
+    const map = new Map();
+    root?.querySelectorAll('[data-morph]').forEach((n) => map.set(n.dataset.morph, n));
+    return map;
+  };
+
+  function glide(from, to) {
+    const a = from.getBoundingClientRect();
+    const b = to.getBoundingClientRect();
+    if (!a.width || !b.width) return;
+    /* 가운데를 맞춰 옮기고 크기 차이는 배율로 메웁니다 — 상자에서 원으로
+       바뀌어도 같은 것이 자라거나 줄어든 것으로 보입니다. */
+    const dx = (a.left + a.width / 2) - (b.left + b.width / 2);
+    const dy = (a.top + a.height / 2) - (b.top + b.height / 2);
+    /* 가로세로를 따로 늘리면 안쪽 글자와 그림이 찌그러집니다. 두 조각의 비율이
+       달라도 **한 배율로** 키우고, 모자란 만큼은 서로 겹쳐 흐리며 메웁니다. */
+    const k2 = a.width / b.width;
+    if (Math.abs(dx) < 1 && Math.abs(dy) < 1 && Math.abs(k2 - 1) < .02) return;
+    /* 잰 값은 화면 좌표입니다. SVG 안이면 그 그림의 배율로, 밖이면 무대
+       배율로 나눠야 이동 거리가 모자라지 않습니다. */
+    const m = to.getScreenCTM ? to.getScreenCTM() : null;
+    const k = m && m.a ? m.a : (document.getElementById('deckStage').getBoundingClientRect().width / 1920);
+    const ms = Math.min(760, 380 + Math.hypot(dx, dy) / k * 0.16);
+    /* 두 조각을 겹쳐 흐립니다 — 앞엣것은 제자리에서 사라지고 뒤엣것은 떠나면서
+       나타납니다. 모양이 서로 다를 때 이 겹침이 그 차이를 덮습니다. */
+    running.push(from.animate([{ opacity: 1 }, { opacity: 0 }],
+                              { duration: Math.round(ms * .5), easing: 'linear', fill: 'forwards' }));
+    running.push(to.animate([{ opacity: 0 }, { opacity: 1 }],
+                            { duration: Math.round(ms * .45), easing: 'linear', fill: 'both' }));
+    running.push(to.animate(
+      [{ transform: `translate(${dx / k}px, ${dy / k}px) scale(${k2})` }, { transform: 'none' }],
+      { duration: ms, easing: GLIDE },
+    ));
+  }
+
+  /* 같은 조각을 지닌 두 장 사이에서는 지면이 통째로 흐려지지 않습니다.
+     남는 것만 남기고 **나머지는 왼쪽으로 빠집니다.** 그래야 조각이 자리를
+     옮기는 동안 눈이 그것만 따라갑니다. 들어오는 쪽은 오른쪽에서 들어옵니다 —
+     나간 방향과 같아야 한 방향으로 넘어간 것으로 읽힙니다. */
+  const OUT = 'cubic-bezier(.32, 0, .58, 1)';   // 떠날 때는 일찍 크게
+  const IN  = 'cubic-bezier(.32, .72, 0, 1)';   // 들어올 때는 점점 천천히
+  const STAGE = document.getElementById('deckStage');
+  let running = [];
+  let token = 0;
+  const stop = () => { running.forEach((a) => { try { a.cancel(); } catch {} }); running = []; };
+
+  /* 조각들을 뺀 나머지. 한 장에 건너갈 조각이 여럿일 수 있으므로 **한꺼번에**
+     셈합니다 — 하나씩 셈하면 다른 조각이 「나머지」에 들어가, 건너가는 중에
+     왼쪽으로 밀리기까지 합니다. */
+  function others(root, nodes) {
+    const path = new Set();
+    nodes.forEach((n) => { let c = n; while (c && c !== root) { path.add(c); c = c.parentElement; } });
+    const out = [];
+    (function walk(el) {
+      for (const kid of el.children) {
+        if (nodes.includes(kid)) continue;      // 건너갈 조각 자신
+        if (path.has(kid)) walk(kid);           // 길목이면 더 들어갑니다
+        else out.push(kid);
+      }
+    })(root);
+    return out;
+  }
+
+  window.deck.show = (n) => {
+    stop();
+    /* 되돌아갈 때는 반대로 빠집니다 — 앞으로 갈 때와 같은 쪽으로 밀면
+       뒤로 온 것인지 앞으로 간 것인지 알 수 없습니다. */
+    const back = n < (window.deck.i ?? 0);
+    const way = back ? -1 : 1;
+    const was = document.querySelector('.deck-stage > .slide.active');
+    const from = bar();
+    const marks = keyed(was);
+    show(n);
+    const to = bar();
+    if (still.matches) return;
+    const now = document.querySelector('.deck-stage > .slide.active');
+
+    if (now !== was) {
+      const pairs = [];
+      keyed(now).forEach((node, key) => {
+        const prev = marks.get(key);
+        if (prev) pairs.push([prev, node]);
+      });
+      /* 건너갈 조각 안에 또 건너갈 조각이 있으면 안쪽 것은 그만둡니다 —
+         바깥이 옮기고 줄이는 위에 안쪽이 한 번 더 걸려서 엉뚱하게 날아갑니다. */
+      const nodes = pairs.map((p) => p[1]);
+      for (let i = pairs.length - 1; i >= 0; i -= 1) {
+        if (nodes.some((n) => n !== pairs[i][1] && n.contains(pairs[i][1]))) pairs.splice(i, 1);
+      }
+      if (pairs.length) {
+        sweep(was, pairs.map((p) => p[0]), now, pairs.map((p) => p[1]), way);
+        pairs.forEach(([prev, node]) => glide(prev, node));
+      }
+      if (pairs.length) {
+        /* 나가는 장이 안무가 끝날 때까지 자리를 지킵니다. 정해 둔 시간이 아니라
+           **실제로 다 끝났을 때** 걷습니다 — 시간을 손으로 적으면 안무를 고칠
+           때마다 그 숫자도 따라 고쳐야 합니다. */
+        STAGE.classList.add('morph');
+        const mine = ++token;
+        Promise.all(running.map((a) => a.finished.catch(() => {})))
+          .then(() => { if (mine === token) STAGE.classList.remove('morph'); });
+      }
+    }
+    if (!to || to === from) return;
+    from ? cross(from, to) : enter(to);
+  };
+
+  function sweep(oldSlide, oldNodes, newSlide, newNodes, way) {
+    others(oldSlide, oldNodes).forEach((el) => {
+      /* 옮기는 것과 흐려지는 것을 한 곡선에 묶으면, 다 흐려진 뒤에야 움직임이
+         커져서 「왼쪽으로 빠졌다」가 보이지 않습니다. 그래서 둘로 나눕니다 —
+         이동은 일찍 크게, 흐려지는 것은 그 뒤를 따릅니다. */
+      running.push(el.animate(
+        [{ transform: 'none' }, { transform: `translateX(${-240 * way}px)` }],
+        { duration: 460, easing: OUT, fill: 'forwards' },
+      ));
+      running.push(el.animate(
+        [{ opacity: 1 }, { opacity: 0 }],
+        { duration: 300, delay: 90, easing: 'linear', fill: 'forwards' },
+      ));
+    });
+    /* 들어오는 쪽이 제 시차(.in)를 이미 지녔으면 그쪽에 맡깁니다. */
+    if (newSlide.querySelector('.in')) return;
+    /* 들어올 때는 **밝아지기만** 합니다. 자리를 옮기는 것은 조각 하나뿐이어야
+       눈이 그것을 따라갑니다. 그림이 든 장은 조각이 수십 개라, 하나하나 밀어
+       넣으면 어디를 봐야 할지 알 수 없습니다. 시차도 주지 않습니다 — 조각
+       수만큼 늘어나서 그림 한 장이 몇 초에 걸쳐 나타납니다. */
+    others(newSlide, newNodes).forEach((el) => {
+      running.push(el.animate(
+        [{ opacity: 0 }, { opacity: 1 }],
+        { duration: 420, delay: 240, easing: IN, fill: 'both' },
+      ));
+    });
+  }
+
+  /* 줄이 처음 나올 때 — 지면의 다른 자리와 같은 곡선 · 같은 시차(dl-3). */
+  function enter(to) {
+    to.animate([{ opacity: 0, transform: 'translateY(20px)' }, { opacity: 1, transform: 'none' }],
+               { duration: 620, delay: 210, easing: EASE, fill: 'both' });
+  }
+
+  /* 표시가 옮겨 가는 동안 앞 장의 표시는 지웁니다 — 안 그러면 둘로 보입니다.
+     되돌아올 것을 생각해 fill 을 남기지 않습니다(지면은 420ms 뒤 치워집니다). */
+  function cross(from, to) {
+    const a = from.querySelector('.w.on .m');
+    const b = to.querySelector('.w.on .m');
+    if (!a || !b) return;
+    /* 잰 값은 화면 좌표(무대가 축소된 뒤)이고 transform 은 축소 전 좌표로 돕니다.
+       배율로 나누지 않으면 표시가 가다 마는 만큼만 갑니다. */
+    const stage = document.getElementById('deckStage');
+    const f = stage.getBoundingClientRect().width / 1920;
+    const dx = (a.getBoundingClientRect().left - b.getBoundingClientRect().left) / f;
+    if (Math.abs(dx) < 1) return;
+    /* 한 칸이든 다섯 칸이든 같은 시간에 가면 먼 거리가 튑니다 — 거리에 따라
+       시간을 늘립니다. 한 칸 395ms, 다섯 칸 640ms. */
+    const ms = Math.min(640, 330 + Math.abs(dx) * 0.20);
+    a.animate([{ opacity: 0 }, { opacity: 0 }], { duration: 200 });
+    b.animate([{ transform: `translateX(${dx}px)` }, { transform: 'none' }],
+              { duration: ms, easing: GLIDE });
+  }
+})();
+</script>
+
+<script>
+/* ===========================================================
+   설계서 연결 — 장의 data-doc 을 읽어 오른쪽 설계서를 그 자리로 스크롤하고,
+   대상에 색 박스를 두릅니다.
+
+   data-doc 형식(설계서에 id가 없어 글자로 찾습니다)
+     fig:2.1          「그림 2.1 」로 시작하는 figcaption 의 figure
+     h:■ 평가 조건     그 글자로 시작하는 h2 · h3 · h4
+     cell:<글자>       그 글자와 같은 td 가 든 표
+     sel:<CSS>        선택자
+   data-doc-span="n"  찾은 요소 뒤의 형제 n개까지 함께 박스에 넣습니다.
+   data-mark="off"    설계서에 색 박스를 두르지 않는 장(표지). 자리만 옮깁니다.
+
+   설계서 파일은 고치지 않습니다. 상단 바 · 목차 · 미니맵은 여기서 스타일을 넣어 가립니다.
+   =========================================================== */
+(() => {
+  const pane = document.querySelector('.docpane');
+  const frame = pane && pane.querySelector('iframe');
+  const where = pane && pane.querySelector('.where');
+  if (!frame || !window.deck) return;
+
+  const q = new URLSearchParams(location.search);
+  /* 축소판 · 내보내기는 한 장씩 찍으므로 움직이지 않고 바로 그 자리에 둡니다. */
+  const STILL = q.has('preview') || q.has('export') || matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const TOP = 84;          /* 대상 위쪽이 놓일 자리(설계서 px) — 오른쪽 위 위치 표시 아래 */
+  const PAD = 14;          /* 박스가 대상 둘레에 두는 여백(설계서 px) */
+  const FADE = 'opacity 420ms cubic-bezier(.4, 0, .2, 1)';
+  let doc = null, anim = 0, ticket = 0;
+  let cur = null;          /* 지금 장의 대상 — 폭을 바꿀 때 박스를 다시 맞추는 데 씁니다 */
+  let full = false;        /* 설계서가 지면 전체를 쓰는 중 */
+
+  /* 양끝에서 속도와 가속도가 모두 0인 곡선 — 출발과 정지에 턱이 생기지 않습니다. */
+  const smooth = (t) => t * t * t * (t * (6 * t - 15) + 10);
+  /* 이동 시간은 거리의 로그에 비례합니다 — 한 화면은 약 0.8초, 200쪽은 약 1.5초. */
+  const durationOf = (d, vh) => Math.min(1500, 650 + 170 * Math.log2(1 + Math.abs(d) / vh));
+  const text = (el) => (el.textContent || '').replace(/\s+/g, ' ').trim();
+
+  const STYLE = `
+    html { scroll-behavior: auto !important; scrollbar-width: none; }
+    html::-webkit-scrollbar { display: none; }
+    .topbar, .toc, .skip, .ex-rail, .ex-rail-cut { display: none !important; }
+    body { padding-right: 0 !important; }
+    .shell { display: block !important; padding: 28px 28px 70vh !important; }
+    .sheet { max-width: 860px; margin: 0 auto; padding: 48px 52px 60px !important; border-radius: 16px !important; }
+    .deck-mark {
+      position: absolute; pointer-events: none; z-index: 30; border-radius: 12px;
+      border: 3px solid #9a4030;
+      opacity: 0; transition: ${FADE};
+    }
+    .deck-mark.on { opacity: 1; }`;
+
+  function inject(d) {
+    const st = d.createElement('style');
+    st.textContent = STYLE;
+    d.head.appendChild(st);
+  }
+
+  function find(d, spec) {
+    if (!d || !spec) return null;
+    const i = spec.indexOf(':');
+    const kind = spec.slice(0, i), arg = spec.slice(i + 1).trim();
+    if (kind === 'sel') return d.querySelector(arg);
+    if (kind === 'fig') {
+      const cap = [...d.querySelectorAll('figcaption')].find((c) => text(c).startsWith('그림 ' + arg + ' '));
+      return cap ? cap.closest('figure') : null;
+    }
+    if (kind === 'h') return [...d.querySelectorAll('h2, h3, h4')].find((h) => text(h).startsWith(arg)) || null;
+    if (kind === 'cell') {
+      const td = [...d.querySelectorAll('td')].find((c) => text(c) === arg);
+      return td ? (td.closest('.table-wrap') || td.closest('table')) : null;
+    }
+    return null;
+  }
+
+  /* 대상과 뒤따르는 형제 span 개를 감싸는 사각형 — 설계서 문서 좌표(스크롤 포함) */
+  function boxOf(el, span) {
+    const els = [el];
+    for (let n = 0, s = el.nextElementSibling; n < span && s; n++, s = s.nextElementSibling) els.push(s);
+    const win = el.ownerDocument.defaultView;
+    const rs = els.map((e) => e.getBoundingClientRect()).filter((r) => r.height > 0);
+    const top = Math.min(...rs.map((r) => r.top)), bottom = Math.max(...rs.map((r) => r.bottom));
+    const left = Math.min(...rs.map((r) => r.left)), right = Math.max(...rs.map((r) => r.right));
+    return { x: left + win.scrollX - PAD, y: top + win.scrollY - PAD, w: right - left + PAD * 2, h: bottom - top + PAD * 2 };
+  }
+
+  /* 쪽 번호 — 대상이 제목일 때만 붙입니다. 그림 · 표의 쪽은 아래 인디케이터가 보간해 보입니다. */
+  function label(slide, el) {
+    if (!where) return;
+    const name = slide.dataset.docLabel || '';
+    const page = el && el.dataset && el.dataset.page;
+    where.innerHTML = name ? `<b></b>${page ? '<span class="pgno"></span>' : ''}` : '';
+    if (!name) return;
+    where.querySelector('b').textContent = '설계서 · ' + name;
+    if (page) where.querySelector('.pgno').textContent = page + '쪽';
+  }
+
+  /* 쪽 번호 인디케이터 — 설계서 PDF의 쪽은 절 제목(data-page)에만 새겨져 있습니다. 앞의 표지 ·
+     문서 정보 · 목차는 PDF에서 확인한 쪽(1 · 2 · 4)을 기준점으로 두고, 기준점 사이는 화면 위치로
+     보간합니다. 그래서 절 중간에서는 ±1쪽 어긋날 수 있습니다. */
+  const pager = pane.querySelector('.pager');
+  const digits = pager ? [...pager.querySelectorAll('.dg')] : [];
+  let anchors = [], lastPage = null;
+
+  function measure() {
+    if (!doc) return;
+    const y = (el) => el.getBoundingClientRect().top + doc.defaultView.scrollY;
+    const front = [['.cover', 1], ['.docinfo', 2], ['#ex-toc-page', 4]]
+      .map(([sel, p]) => [doc.querySelector(sel), p]).filter(([el]) => el);
+    const heads = [...doc.querySelectorAll('[data-page]')].map((el) => [el, +el.dataset.page]);
+    anchors = [...front, ...heads].map(([el, p]) => ({ y: y(el), p })).sort((a, b) => a.y - b.y);
+    const total = doc.getElementById('doc')?.dataset.docPages;
+    if (total && pager) pager.querySelector('.total').textContent = total;
+  }
+
+  function pageAt(ref) {
+    if (!anchors.length) return null;
+    let i = 0;
+    while (i + 1 < anchors.length && anchors[i + 1].y <= ref) i++;
+    const a = anchors[i], b = anchors[i + 1];
+    if (!b || ref <= a.y || b.p <= a.p) return a.p;
+    return a.p + Math.floor(((ref - a.y) / (b.y - a.y)) * (b.p - a.p));
+  }
+
+  /* 자리마다 0–9 띠를 세워 두고 위아래로 굴립니다. 맨 앞 칸(빈칸)은 자리 수가 모자랄 때 씁니다. */
+  function renderPage(page) {
+    if (!digits.length || page === lastPage || page == null) return;
+    lastPage = page;
+    const str = String(page).padStart(digits.length, ' ');
+    digits.forEach((d, k) => {
+      const ch = str[k];
+      d.style.setProperty('--n', ch === ' ' ? 0 : +ch + 1);
+      d.classList.toggle('off', ch === ' ');
+    });
+    pager.setAttribute('aria-label', `설계서 ${page}쪽`);
+  }
+
+  /* 위치 막대 — 손잡이 높이는 보이는 비율, 자리는 스크롤 비율 */
+  const bar = pane.querySelector('.vbar');
+  const thumb = bar && bar.querySelector('.thumb');
+  const THUMB_MIN = 28;
+  function barGeom() {
+    const se = doc.scrollingElement, H = bar.clientHeight;
+    const th = Math.min(H, Math.max(THUMB_MIN, H * se.clientHeight / se.scrollHeight));
+    return { se, H, th, max: Math.max(0, se.scrollHeight - se.clientHeight) };
+  }
+  function syncBar() {
+    if (!doc || !bar) return;
+    const { se, H, th, max } = barGeom();
+    const t = max ? se.scrollTop / max : 0;
+    thumb.style.height = th + 'px';
+    thumb.style.transform = `translateY(${(H - th) * t}px)`;
+    bar.setAttribute('aria-valuenow', String(Math.round(t * 100)));
+  }
+
+  const syncPage = () => {
+    if (!doc) return;
+    renderPage(pageAt(doc.scrollingElement.scrollTop + TOP + 1));
+    syncBar();
+  };
+
+  /* 손잡이를 끌거나 막대를 누르면 설계서를 그 자리로 옮깁니다. 장 전환 스크롤이 도는 중이면 멈춥니다. */
+  if (bar) {
+    let grab = null;
+    const toScroll = (clientY) => {
+      const { se, H, th, max } = barGeom();
+      const r = bar.getBoundingClientRect(), k = r.height / H;   /* 무대 축소 배율 */
+      const top = (clientY - r.top) / k - grab;
+      se.scrollTop = max * Math.max(0, Math.min(1, top / Math.max(1, H - th)));
+    };
+    bar.addEventListener('pointerdown', (e) => {
+      if (!doc) return;
+      e.preventDefault();
+      cancelAnimationFrame(anim);
+      ticket++;
+      const tr = thumb.getBoundingClientRect(), k = tr.height / thumb.offsetHeight;
+      /* 손잡이를 잡으면 잡은 자리를 유지하고, 막대를 누르면 손잡이 가운데를 그 자리로 */
+      grab = e.target === thumb ? (e.clientY - tr.top) / k : thumb.offsetHeight / 2;
+      bar.classList.add('dragging');
+      toScroll(e.clientY);
+      bar.setPointerCapture(e.pointerId);
+    });
+    bar.addEventListener('pointermove', (e) => { if (grab !== null) toScroll(e.clientY); });
+    const release = () => { grab = null; bar.classList.remove('dragging'); };
+    bar.addEventListener('pointerup', release);
+    bar.addEventListener('pointercancel', release);
+  }
+
+  /* 색 박스 — 다음 장으로 넘어갈 때까지 남겨 둡니다. 왼쪽 요점이 설계서의 어디를 다루는지 보여 주는 자리입니다. */
+  function mark(box, instant) {
+    let el = doc.querySelector('.deck-mark');
+    if (!el) { el = doc.createElement('div'); el.className = 'deck-mark'; doc.body.appendChild(el); }
+    /* 미리보기 · 가려진 탭에서는 박스를 바로 놓습니다. */
+    el.style.transition = instant ? 'none' : '';
+    if (!box) { el.classList.remove('on'); return; }
+    Object.assign(el.style, { top: box.y + 'px', left: box.x + 'px', width: box.w + 'px', height: box.h + 'px' });
+    el.getBoundingClientRect();
+    el.classList.add('on');
+  }
+
+  /* ── 장 바꾸기 ───────────────────────────────────────────────────── */
+  function go(n, still) {
+    if (!doc) return;
+    const slide = window.deck.slides[n];
+    if (!slide) return;
+    const my = ++ticket;
+    cur = null;
+    const el = find(doc, slide.dataset.doc);
+    if (slide.dataset.doc && !el) console.warn('[설계서 연결] 대상을 찾지 못했습니다:', slide.dataset.doc);
+    label(slide, el);
+    mark(null, still);
+    cancelAnimationFrame(anim);
+    if (!el) return;
+    const span = parseInt(slide.dataset.docSpan || '0', 10);
+    const win = doc.defaultView, se = doc.scrollingElement;
+    const to = Math.max(0, Math.min(el.getBoundingClientRect().top + win.scrollY - TOP, se.scrollHeight - win.innerHeight));
+    const arrive = (instant) => {
+      if (my !== ticket) return;
+      syncPage();
+      const box = boxOf(el, span);
+      cur = { slide, el, span };
+      mark(slide.dataset.mark === 'off' ? null : box, instant);
+    };
+    /* 탭이 가려져 있으면 프레임이 돌지 않습니다 — 그때는 바로 그 자리에 둡니다. */
+    if (still || document.hidden) { se.scrollTop = to; arrive(true); return; }
+    const from = se.scrollTop, d = to - from, t0 = performance.now();
+    if (Math.abs(d) < 2) { arrive(false); return; }
+    const dur = durationOf(d, win.innerHeight);
+    const step = (now) => {
+      const t = Math.min(1, (now - t0) / dur);
+      se.scrollTop = from + d * smooth(t);
+      if (t < 1) anim = requestAnimationFrame(step); else arrive(false);
+    };
+    anim = requestAnimationFrame(step);
+  }
+
+  /* 설계서를 눌러 포커스가 넘어가도 장 넘기기 키는 덱이 받습니다. */
+  function forwardKeys(d) {
+    d.addEventListener('keydown', (e) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const keys = ['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp', ' ', 'PageDown', 'PageUp', 'Home', 'End', 'o', 'O', 'f', 'F', 'Escape'];
+      if (!keys.includes(e.key)) return;
+      e.preventDefault();
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: e.key, bubbles: true }));
+    });
+  }
+
+  const settle = () => { measure(); go(window.deck.i, true); };
+
+  function attach() {
+    try { doc = frame.contentDocument; } catch { doc = null; }
+    if (!doc || !doc.body) return;
+    inject(doc);
+    forwardKeys(doc);
+    doc.addEventListener('scroll', syncPage, { passive: true });
+    /* 설계서의 글꼴과 그림이 다 놓인 뒤에 자리를 잡아야 위치가 어긋나지 않습니다. */
+    settle();
+    (doc.fonts ? doc.fonts.ready : Promise.resolve()).then(settle);
+    setTimeout(settle, 800);
+  }
+
+  /* ── 설계서 폭 조절 ────────────────────────────────────────────────
+     경계 가운데의 핸들을 끌면 설계서 칸의 폭이 바뀝니다. 설계서는 늘 1000px 폭으로 그리고
+     칸 폭에 비례해 줄이거나 키웁니다 — 전체 보기(1920px)에서는 1.92배가 되어 확대해 읽는 자리가 됩니다.
+     그리는 폭이 고정이라 줄바꿈 · 좌표가 늘 같습니다.
+     왼쪽이 MIN_LEFT 보다 좁아지면 발표 내용을 걷고, 손을 떼면 설계서가 지면 전체로
+     펴집니다. 다시 HYST 만큼 넓히면 발표 내용이 돌아옵니다. 더블클릭은 기본 폭으로. */
+  const stage = document.getElementById('deckStage');
+  const handle = document.querySelector('.split-handle');
+  const SPLIT0 = 960, MIN_W = 520, MIN_LEFT = 300, HYST = 40, KEY = 'deck:split:' + location.pathname;
+  let split = SPLIT0, splitAnim = 0;
+
+  function setSplit(w) {
+    split = Math.max(MIN_W, Math.min(1920, w));
+    stage.style.setProperty('--split', split + 'px');
+    stage.style.setProperty('--doc-s', String(split / 1000));
+    if (handle) handle.setAttribute('aria-valuenow', String(Math.round(split)));
+    syncBar();
+  }
+
+  /* 폭이 바뀐 뒤 박스의 자리를 다시 맞춥니다(밝기는 그대로). */
+  function relayout() {
+    if (!doc || !cur) return;
+    const box = boxOf(cur.el, cur.span);
+    mark(cur.slide.dataset.mark === 'off' ? null : box, true);
+  }
+
+  function setFull(on) {
+    if (full === on) return;
+    full = on;
+    stage.classList.toggle('doc-full', on);
+  }
+
+  const crossing = () => {
+    const left = 1920 - split;
+    if (!full && left < MIN_LEFT) setFull(true);
+    else if (full && left >= MIN_LEFT + HYST) setFull(false);
+  };
+
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify({ w: split, full })); } catch { /* 저장소가 막힌 창 */ }
+  }
+
+  function animateSplit(to) {
+    cancelAnimationFrame(splitAnim);
+    const from = split, t0 = performance.now();
+    const end = () => { setSplit(to); relayout(); measure(); save(); };
+    if (STILL || document.hidden) { end(); return; }
+    const step = (now) => {
+      const t = Math.min(1, (now - t0) / 380);
+      setSplit(from + (to - from) * smooth(t));
+      relayout();
+      if (t < 1) splitAnim = requestAnimationFrame(step); else end();
+    };
+    splitAnim = requestAnimationFrame(step);
+  }
+
+  if (handle) {
+    let dragging = false;
+    const stageX = (clientX) => {
+      const r = stage.getBoundingClientRect();
+      return (clientX - r.left) * 1920 / r.width;
+    };
+    handle.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      cancelAnimationFrame(splitAnim);
+      dragging = true;
+      handle.setPointerCapture(e.pointerId);
+      stage.classList.add('resizing');
+    });
+    handle.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      setSplit(1920 - stageX(e.clientX));
+      crossing();
+      relayout();
+    });
+    const release = () => {
+      if (!dragging) return;
+      dragging = false;
+      stage.classList.remove('resizing');
+      handle.blur();               /* 포커스가 남으면 화살표가 장 넘기기 대신 폭 조절로 갑니다 */
+      if (full) animateSplit(1920); else { measure(); save(); }
+    };
+    handle.addEventListener('pointerup', release);
+    handle.addEventListener('pointercancel', release);
+    handle.addEventListener('dblclick', () => { setFull(false); animateSplit(SPLIT0); });
+    /* 키보드로 고를 때만 화살표가 폭을 바꿉니다 — 덱의 장 넘기기로 새지 않게 막습니다. */
+    handle.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      e.preventDefault();
+      e.stopPropagation();
+      setSplit(split + (e.key === 'ArrowLeft' ? 40 : -40));
+      crossing();
+      if (full) setSplit(1920);
+      relayout();
+      save();
+    });
+    handle.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
+  }
+
+  /* 보는 사람이 정한 폭을 되살립니다. 축소판 · 내보내기는 늘 기본 폭으로. */
+  if (!STILL) {
+    try {
+      const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (saved && saved.w) { setSplit(saved.w); if (saved.full) { full = true; stage.classList.add('doc-full'); } }
+    } catch { /* 저장소가 막힌 창 */ }
+  }
+
+  /* 컨트롤러의 show 를 감쌉니다 — 왼쪽 글은 양식대로, 오른쪽 설계서는 여기서. */
+  const show = window.deck.show.bind(window.deck);
+  window.deck.show = (n) => { show(n); go(window.deck.i, STILL); };
+
+  const ready = (f) => f.contentDocument && f.contentDocument.readyState === 'complete' && f.contentDocument.body?.childElementCount;
+  if (ready(frame)) attach();
+  frame.addEventListener('load', attach);
+})();
+</script>
+
+<!-- 글 고치기 · 장 다루기 · 파일에 바로 저장 —
+     여러 발표 자료가 함께 쓰는 도구입니다(docs/templates/deck-editor.js).
+     이 파일이 없어도 발표는 그대로 돌아갑니다. -->
+<script>
+  window.deckEditorConfig = {
+    slides: '.slide',
+    skip: '.pg, .count',
+    /* 컨트롤러가 실행 중에 남긴 것을 걷어냅니다 — 무대 축소 transform,
+       활성 장 표시, 자동으로 만든 목록. 도구는 이걸 알 수 없습니다. */
+    beforeSave(doc) {
+      doc.querySelectorAll('.slide.active').forEach((el) => el.classList.remove('active'));
+      doc.querySelector('#deckStage')?.removeAttribute('style');
+      doc.querySelector('#progress')?.removeAttribute('style');
+      /* 「지금 / 전체」는 컨트롤러가 매번 다시 씁니다 — 걷지 않으면
+         저장할 때마다 지금 보고 있던 쪽 번호가 파일에 박힙니다. */
+      const cnt = doc.querySelector('#counter');
+      if (cnt) cnt.textContent = '01 / ' + String(doc.querySelectorAll('.slide').length).padStart(2, '0');
+      const list = doc.querySelector('#mapList');
+      if (list) list.innerHTML = '';
+      /* 오른쪽 위치 표시는 장마다 스크립트가 다시 씁니다 — 파일에 남기지 않습니다. */
+      doc.querySelector('.docpane .where')?.replaceChildren();
+      doc.querySelector('#deckStage')?.classList.remove('doc-full', 'resizing');
+      doc.querySelector('.split-handle')?.setAttribute('aria-valuenow', '960');
+      doc.querySelectorAll('.docpane .pager .dg').forEach((d) => { d.removeAttribute('style'); d.classList.remove('off'); });
+      const tot = doc.querySelector('.docpane .pager .total'); if (tot) tot.textContent = '';
+      doc.querySelector('.docpane .pager')?.setAttribute('aria-label', '설계서 쪽');
+      doc.querySelector('.docpane .vbar .thumb')?.removeAttribute('style');
+      doc.querySelector('.docpane .vbar')?.classList.remove('dragging');
+      doc.querySelector('.docpane .vbar')?.setAttribute('aria-valuenow', '0');
+      const over = doc.querySelector('#overview');
+      if (over) { over.classList.remove('on'); over.setAttribute('hidden', ''); }
+    },
+  };
+  /* 양식은 templates/ 안에, 복사본은 docs/ 바로 아래에 놓입니다. */
+  (() => {
+    const tag = document.createElement('script');
+    tag.src = location.pathname.includes('/templates/') ? 'deck-editor.js' : 'templates/deck-editor.js';
+    tag.defer = true;
+    /* 저장할 때 걷히도록 표를 답니다 — 안 그러면 이 태그가 파일에 박혀
+       다음에 열 때 도구가 두 번 실행됩니다. */
+    tag.setAttribute('data-deck-editor', '');
+    document.head.appendChild(tag);
+  })();
+</script>
+
+<script src="templates/deck-portal-navigation.js"></script>
+</body>
+</html>

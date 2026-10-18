@@ -1,7 +1,9 @@
 "use client";
+import { AgentChat } from "@/features/agent-chat/AgentChat";
 
 import { EditorContent, useEditor } from "@tiptap/react";
 import type { CareerCategory, CareerPropertyDefinitionV2, CareerRecordListItem } from "@expresso/contracts";
+import { markdownToCareerDocument } from "@expresso/editor";
 import { useEffect, useRef, useState } from "react";
 
 import { useCareerEditorSession } from "../session/useCareerEditorSession";
@@ -17,22 +19,32 @@ import { SlashMenu } from "./SlashMenu";
 import { PropertyList } from "../properties/PropertyList";
 import { AiProposalPanel, type AiPromptRequest } from "../ai/AiProposalPanel";
 
-export function CareerDocumentEditor({
-  recordId,
-  mode,
-  record,
-  category,
-  showAiProposal = true,
-  onAiRequest,
-}: {
+type CareerDocumentEditorProps = {
   recordId: string;
   mode: "peek" | "page";
   record?: CareerRecordListItem;
   category?: CareerCategory;
   showAiProposal?: boolean;
   onAiRequest?: ((request: AiPromptRequest) => void) | undefined;
-}) {
-  const { snapshot, document, updateDocument } = useCareerEditorSession(recordId);
+};
+
+export function CareerDocumentEditor(props: CareerDocumentEditorProps) {
+  const session = useCareerEditorSession(props.recordId);
+  // 문서 세션이 없는 기록은 편집기 대신 기존 본문을 읽기 전용으로 보여 줍니다.
+  if (session.snapshot.status === "unavailable") return <CareerDocumentReadOnly mode={props.mode} {...(props.record ? { record: props.record } : {})} {...(props.category ? { category: props.category } : {})} />;
+  return <CareerDocumentEditorBody {...props} session={session} />;
+}
+
+function CareerDocumentEditorBody({
+  recordId,
+  mode,
+  record,
+  category,
+  showAiProposal = true,
+  onAiRequest,
+  session,
+}: CareerDocumentEditorProps & { session: ReturnType<typeof useCareerEditorSession> }) {
+  const { snapshot, document, updateDocument } = session;
   const [slashOpen, setSlashOpen] = useState(false);
   const [aiRequest, setAiRequest] = useState<AiPromptRequest | null>(null);
   const applyingRemote = useRef(false);
@@ -86,7 +98,29 @@ export function CareerDocumentEditor({
         <EditorContent editor={editor} />
         <SlashMenu editor={editor} open={slashOpen} onClose={() => setSlashOpen(false)} />
       </div>
-      {showAiProposal ? <AiProposalPanel recordId={recordId} documentVersion={snapshot.documentVersion} selectedBlockIds={selectedBlockIds(editor, document.content[0]?.id)} announcedProposal={snapshot.proposal} requestedPrompt={aiRequest} onRequestHandled={() => setAiRequest(null)} document={document} definitions={category ? categoryDefinitions(category) : []} /> : null}
+      <AgentChat context={{ kind: "record", id: recordId }} contextLabel="현재 기록" />
+      {showAiProposal ? <details open={aiRequest != null}><summary>선택 영역 빠른 편집</summary><AiProposalPanel recordId={recordId} documentVersion={snapshot.documentVersion} selectedBlockIds={selectedBlockIds(editor, document.content[0]?.id)} announcedProposal={snapshot.proposal} requestedPrompt={aiRequest} onRequestHandled={() => setAiRequest(null)} document={document} definitions={category ? categoryDefinitions(category) : []} /></details> : null}
+    </section>
+  );
+}
+
+/** v2 문서 세션 없이 기록의 속성과 기존 Markdown 본문을 보여 줍니다. 본문은 고칠 수 없고 속성은 기존 기록 API로 저장됩니다. */
+export function CareerDocumentReadOnly({ mode, record, category }: { mode: "peek" | "page"; record?: CareerRecordListItem; category?: CareerCategory }) {
+  const bodyMd = record?.bodyMd ?? "";
+  const editor = useEditor({
+    immediatelyRender: false,
+    editable: false,
+    extensions: careerEditorExtensions,
+    content: careerDocumentToTiptap(markdownToCareerDocument(bodyMd)),
+    editorProps: { attributes: { "aria-label": "커리어 기록 본문" } },
+  }, [bodyMd]);
+  return (
+    <section className={styles.editor} data-mode={mode} aria-label="커리어 문서">
+      {record && category ? <PropertyList record={record} definitions={categoryDefinitions(category)} categoryId={category.id} schemaMutable={!category.isSystem} /> : null}
+      <div className={styles.content}>
+        <p className={styles.notice}>문서 편집기가 꺼져 있어 본문을 읽기만 할 수 있습니다.</p>
+        {bodyMd.trim() && editor ? <EditorContent editor={editor} /> : null}
+      </div>
     </section>
   );
 }

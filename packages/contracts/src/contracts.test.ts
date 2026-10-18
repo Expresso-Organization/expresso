@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
 import {
+  SubmitGenerationSchema,
   ApiErrorResponseSchema,
   CursorPaginationQuerySchema,
   CurrentUserResponseSchema,
@@ -874,5 +875,27 @@ describe("키트", () => {
     for (const rule of ["k-reveal{", "k-stagger", "k-progress{display:block"]) {
       expect(guarded).toContain(rule);
     }
+  });
+});
+
+describe("생성 요청 스타일 출처", () => {
+  const recipeId = "8f6c2c6e-1b7a-4c1d-9a55-2f1f0c1d2e3f";
+  const id = "5d8f5f2d-6d2a-4f24-9d1a-2b8f9e7c1002";
+  it("템플릿 또는 디자인 시스템 판 중 정확히 하나를 받는다", () => {
+    expect(SubmitGenerationSchema.safeParse({ recipeId, templateId: id }).success).toBe(true);
+    expect(SubmitGenerationSchema.safeParse({ recipeId, designSystemRevisionId: id }).success).toBe(true);
+    expect(SubmitGenerationSchema.safeParse({ recipeId }).success).toBe(false);
+    expect(
+      SubmitGenerationSchema.safeParse({ recipeId, templateId: id, designSystemRevisionId: id }).success,
+    ).toBe(false);
+  });
+  it("디자인 시스템 판 요청에는 스타일 덮어쓰기를 받지 않는다", () => {
+    expect(
+      SubmitGenerationSchema.safeParse({
+        recipeId,
+        designSystemRevisionId: id,
+        styleOverrides: { font: "serif" },
+      }).success,
+    ).toBe(false);
   });
 });

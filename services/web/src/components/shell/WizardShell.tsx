@@ -6,8 +6,11 @@ import { Icon } from "@/components/ui/Icon";
 
 import styles from "./WizardShell.module.css";
 
-/** 기존 제작의 6단계. 진행 중인 brew가 돌아올 수 있어 호환 경로에서 유지한다. */
-export const LEGACY_WIZARD_STEPS = [
+/**
+ * 포트폴리오 제작의 여섯 단계. 설계서 2.1 이용 절차의 3–8단계이며 화면 01 · 01b · 02 ·
+ * 02b · 03 · 04에 해당한다.
+ */
+export const WIZARD_STEPS = [
   { key: "analyze", label: "공고 분석", segment: "analyze" },
   { key: "materials", label: "재료 고르기", segment: "materials" },
   { key: "counter", label: "AI 대화", segment: "counter" },
@@ -16,20 +19,7 @@ export const LEGACY_WIZARD_STEPS = [
   { key: "edit", label: "다듬기", segment: "edit" },
 ] as const;
 
-/** 이전 진입점이 재개 위치를 계산할 때 읽는 호환 이름. */
-export const WIZARD_STEPS = LEGACY_WIZARD_STEPS;
-
-/** 포트폴리오 제작 흐름 v2의 세 단계. */
-export const PORTFOLIO_V2_STEPS = [
-  { key: "design", label: "디자인", segment: "design" },
-  { key: "recipe", label: "레시피", segment: "recipe" },
-  { key: "generate", label: "생성", segment: "generate" },
-] as const;
-
-export type WizardFlow = "legacy" | "portfolio-v2";
-export type WizardStepKey =
-  | (typeof LEGACY_WIZARD_STEPS)[number]["key"]
-  | (typeof PORTFOLIO_V2_STEPS)[number]["key"];
+export type WizardStepKey = (typeof WIZARD_STEPS)[number]["key"];
 
 export function WizardHeader({
   portfolioTitle,
@@ -73,15 +63,13 @@ export function WizardSteps({
   brewId = null,
   current = null,
   situation,
-  flow = "legacy",
 }: {
   brewId?: string | null;
   current?: WizardStepKey | null;
   /** 우측 끝 상황 문구 — "예상 3분", "남은 질문 2개", "초안 완성 · 섹션 6개". */
   situation: ReactNode;
-  flow?: WizardFlow;
 }) {
-  const steps = flow === "portfolio-v2" ? PORTFOLIO_V2_STEPS : LEGACY_WIZARD_STEPS;
+  const steps = WIZARD_STEPS;
   const currentIndex = current === null
     ? -1
     : steps.findIndex((step) => step.key === current);

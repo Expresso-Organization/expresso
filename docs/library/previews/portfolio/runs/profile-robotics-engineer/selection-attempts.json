@@ -1,0 +1,11 @@
+{
+  "model": "qwen3.5:9b-q8_0",
+  "brief": null,
+  "attempts": [
+    {
+      "valid": true,
+      "outputSha256": "cff40575f788e877049f16df6498fc230095322521cd8af3f8594f7cc0843d78",
+      "output": "{\n  \"recipe\": \"featured\",\n  \"design\": {\n    \"palette\": \"midnight\",\n    \"typography\": \"sans\",\n    \"layout\": \"studio\"\n  },\n  \"heroStyle\": \"spotlight\",\n  \"projectIndex\": \"bento\",\n  \"reason\": \"로봇 엔지니어의 전문성을 어두운 배경과 주황 광원 (spotlight, midnight) 으로 강조하고, 세 가지 프로젝트 (경로 계획, 그리퍼, 현장 시험) 를 시각적 위중도가 다른 카드 (bento) 로 명확하게 구분하여 기술적 근거를 직관적으로 제시합니다.\"\n}"
+    }
+  ]
+}
