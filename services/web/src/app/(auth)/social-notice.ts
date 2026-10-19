@@ -12,6 +12,8 @@ const NOTICES: Record<string, string> = {
     "로그인 요청이 만료됐습니다. Google 버튼을 다시 눌러 주세요.",
   google_failed:
     "Google 로그인을 끝내지 못했습니다. 다시 시도하거나 이메일로 로그인해 주세요.",
+  reset_invalid:
+    "재설정 링크가 만료됐거나 이미 쓰였습니다. 이메일을 다시 넣어 새 링크를 받으십시오.",
 };
 
 export function socialNotice(code: string | undefined): string | undefined {

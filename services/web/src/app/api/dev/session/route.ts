@@ -1,3 +1,5 @@
+import { TERMS_VERSION } from "@expresso/contracts";
+
 import { ApiError } from "@/lib/api/client";
 import { auth } from "@/lib/api/endpoints";
 import { safeNext } from "@/lib/auth/next-path";
@@ -49,7 +51,8 @@ async function issueSession(login: DevLogin) {
     return data.session;
   } catch (error) {
     if (!(error instanceof ApiError) || error.status !== 401) throw error;
-    const { data } = await auth.signup(login);
+    // 개발자 자신의 계정이다. 현재 판의 약관에 동의한 것으로 적는다.
+    const { data } = await auth.signup({ ...login, termsVersion: TERMS_VERSION });
     return data.session;
   }
 }
