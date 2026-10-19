@@ -57,8 +57,16 @@ export interface IdentitySessionDoc {
   _id: string;
   userId: string;
   tokenHash: string;
+  /** 다음 만료. 인증된 요청마다 `min(now + idleTtlMs, absoluteExpiresAt)`으로 앞당겨진다. */
   expiresAt: Date;
   revokedAt?: Date | null;
   lastSeenAt?: Date | null;
   createdAt: Date;
+  /**
+   * 마지막 활동 뒤 이 세션이 살아 있는 시간(ms). 0009 이전 문서에는 없다 — 그 문서는
+   * 유지 모드(30일)로 읽는다.
+   */
+  idleTtlMs?: number;
+  /** 활동으로도 넘지 못하는 절대 상한. 없으면 `createdAt + 90일`로 본다. */
+  absoluteExpiresAt?: Date;
 }
