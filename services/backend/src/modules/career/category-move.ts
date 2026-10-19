@@ -20,7 +20,7 @@ import { CareerError } from "./errors.js";
 import { requireCareerCategory } from "./mongo-categories.js";
 import { mapMongoRecord } from "./mongo-records.js";
 import { convertCareerPropertyValue } from "./property-schema.js";
-import { careerCategoryDefinitions } from "./relations.js";
+import { careerCategoryDefinitions } from "./property-definitions.js";
 
 const PREVIEW_LIFETIME_MS = 15 * 60_000;
 

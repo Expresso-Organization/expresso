@@ -21,6 +21,7 @@ import type { MongoContext } from "../../platform/mongodb.js";
 import { requireActiveUser } from "../identity/index.js";
 import { CareerError } from "./errors.js";
 import { mapMongoCategory } from "./mongo-categories.js";
+import { careerCategoryDefinitions } from "./property-definitions.js";
 
 const PREVIEW_LIFETIME_MS = 15 * 60_000;
 const INLINE_MUTATION_LIMIT = 100;
@@ -49,22 +50,6 @@ function canonical(value: unknown): string {
 
 function digest(value: unknown): string {
   return createHash("sha256").update(canonical(value)).digest("hex");
-}
-
-export function stablePropertyId(categoryId: string, key: string): string {
-  const bytes = createHash("sha1").update(Buffer.from("6ba7b8109dad11d180b400c04fd430c8", "hex")).update(`${categoryId}:${key}`).digest();
-  bytes[6] = (bytes[6]! & 15) | 80;
-  bytes[8] = (bytes[8]! & 63) | 128;
-  const hex = bytes.subarray(0, 16).toString("hex");
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-}
-
-function definitions(category: CareerCategoryDoc): CareerPropertyDefinitionV2[] {
-  return category.propertySchemaV2 ?? Object.entries(category.propertySchema).map(([key, property], order) => ({
-    id: property.id ?? stablePropertyId(category._id, key), key, name: property.label,
-    type: property.type === "boolean" ? "checkbox" : property.type === "tags" ? "multi_select" : property.type,
-    required: property.required, system: property.system, config: {}, order, version: 1, deletedAt: null,
-  }));
 }
 
 function signPreview(payload: SignedPreview, signingSecret: string): string {
@@ -182,7 +167,7 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
     const db = mongoCollections(this.context.db);
     const category = await db.careerCategories.findOne({ _id: categoryId, userId, isSystem: false });
     if (!category) throw new CareerError(404, "career category not found");
-    const current = definitions(category);
+    const current = careerCategoryDefinitions(category);
     const propertyId = "propertyId" in change ? change.propertyId : undefined;
     const source = propertyId ? current.find((definition) => definition.id === propertyId) : undefined;
     if (propertyId && !source) throw new CareerError(404, "property not found");
@@ -233,7 +218,7 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
       if (category.version !== expectedVersion) throw new CareerError(409, "category version is stale");
       if (!verifyPreview(input.previewToken, { userId, categoryId, categoryVersion: expectedVersion, change: input.change }, this.signingSecret)) throw new CareerError(409, "preview token is invalid or expired");
       const now = new Date();
-      const next = definitions(category).map((definition) => ({ ...definition, config: { ...definition.config } }));
+      const next = careerCategoryDefinitions(category).map((definition) => ({ ...definition, config: { ...definition.config } }));
       const change = input.change;
       let recomputePropertyId: string | null = null;
       if (change.kind === "create") {

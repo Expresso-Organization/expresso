@@ -4,7 +4,7 @@ import { CareerCategoryMoveCommitSchema, CareerPropertyDefinitionV2Schema, Previ
 import type { CareerCategoryDoc } from "@expresso/database";
 import { describe, expect, it } from "vitest";
 
-import { careerCategoryDefinitions } from "./relations.js";
+import { careerCategoryDefinitions } from "./property-definitions.js";
 
 describe("career category move contracts", () => {
   it("requires the route record, signed preview and an explicit optimistic version", () => {
