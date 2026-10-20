@@ -26,6 +26,12 @@
   color: var(--ex-fg-body);
 }
 
+/* 켜진 토글. 카테고리 탭의 활성 표시와 같은 값을 쓴다. */
+.headActionActive {
+  font-weight: 600;
+  color: var(--ex-fg);
+}
+
 .headRule {
   width: 1px;
   height: 18px;
@@ -631,6 +637,10 @@
   border: none;
   background: none;
   padding: 0;
+}
+
+.railHeadLink {
+  font-size: var(--ex-text-xs);
 }
 
 .recentList {

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Suspense } from "react";
 
-import { homeEngagement, recentPortfolios } from "@/lib/app-data";
+import { homeEngagement, recentPortfolios, watchedJobs } from "@/lib/app-data";
 import { requireSession } from "@/lib/require-session";
 
 import { AppShell } from "./AppShell";
@@ -31,9 +31,10 @@ export function AppChrome({ children }: { children: ReactNode }) {
 
 async function AppSidebar() {
   const session = await requireSession();
-  const [portfolioList, { data: home }] = await Promise.all([
+  const [portfolioList, { data: home }, watched] = await Promise.all([
     recentPortfolios(session.accessToken),
     homeEngagement(session.accessToken),
+    watchedJobs(session.accessToken),
   ]);
 
   return (
@@ -51,14 +52,18 @@ async function AppSidebar() {
           ? { delta: `v${portfolio.deployment.version}`, deltaTone: "quiet" as const }
           : {}),
       }))}
-      interests={home.recommendedJobs.map((job) => ({
+      // 관심 공고는 내가 담은 공고다. 일치도 상위 목록(`recommendedJobs`)이 아니다 —
+      // 그 목록으로 채우면 담아도 여기 나타나지 않고, 일치도가 없는 공고의
+      // "분석 대기" 줄은 나올 수가 없다.
+      interests={watched.data.map((job) => ({
         id: job.id,
-        initial: job.company.slice(0, 1),
-        company: job.company,
-        logoUrl: job.companyLogoUrl,
-        label: `${job.company} · ${job.title}`,
-        score: job.score,
+        initial: job.company.initial ?? job.company.name.slice(0, 1),
+        company: job.company.name,
+        logoUrl: job.company.logoUrl,
+        label: `${job.company.name} · ${job.title}`,
+        score: job.match?.total ?? null,
       }))}
+      interestTotal={watched.summary.total}
       jobCount={
         home.recommendedJobs.length > 0 ? home.recommendedJobs.length : undefined
       }

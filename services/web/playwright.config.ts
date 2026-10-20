@@ -8,7 +8,9 @@ const devEmail = `career-editor-e2e-${process.pid}@example.com`;
 const redisURL = process.env.TEST_REDIS_URL ?? "redis://127.0.0.1:56379";
 const queuePrefix = `career-editor-e2e-${process.pid}`;
 const mongoURL = process.env.TEST_MONGODB_ADMIN_URL ?? "mongodb://admin:expresso-admin@127.0.0.1:57017/?authSource=admin&replicaSet=rs0";
-const databaseName = `expresso_career_editor_e2e_${process.pid}`;
+// 설정 파일은 워커 프로세스에서 다시 평가된다. 러너가 정해 물려준 DB 이름을 이어 써야 테스트가 서버와 같은 DB를 본다.
+const inheritedDatabase = process.env.CAREER_E2E_DATABASE;
+const databaseName = inheritedDatabase && /^expresso_career_editor_e2e_[0-9]+$/.test(inheritedDatabase) ? inheritedDatabase : `expresso_career_editor_e2e_${process.pid}`;
 process.env.CAREER_E2E_DATABASE = databaseName;
 process.env.CAREER_E2E_MONGODB_URL = mongoURL;
 const mongoEnvironment = `MONGODB_URL='${mongoURL}' MONGODB_MIGRATE_URL='${mongoURL}' MONGODB_DATABASE=${databaseName}`;

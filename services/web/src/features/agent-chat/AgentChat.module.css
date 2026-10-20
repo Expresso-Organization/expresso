@@ -1,6 +1,9 @@
 .root { min-width:0; background:var(--ex-bg); color:var(--ex-fg); font-family:var(--ex-font-ui); overflow:hidden; }
 .standalone { display:flex; width:100%; height:calc(100dvh - 52px); }
 .panel { display:flex; height:min(720px,85dvh); border:1px solid var(--ex-border); border-radius:14px; }
+/* 공고 상세 우측 레일 — 레일 높이를 그대로 쓴다. 테두리는 레일의 왼쪽 선이 맡는다. */
+.rail { display:flex; height:100%; min-height:0; }
+@media(max-width:1023px) { .rail { height:min(720px,85dvh); } }
 .main { min-width:0; min-height:0; flex:1; display:flex; flex-direction:column; }
 .header { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:18px 26px; flex-shrink:0; }
 .heading { display:flex; align-items:center; gap:10px; min-width:0; }
@@ -56,17 +59,17 @@
 .actions { display:flex; justify-content:flex-end; gap:8px; margin-top:12px; }
 .error { color:var(--ex-status-danger-text); padding:8px 14px; font-size:var(--ex-text-xs); }
 .status { color:var(--ex-fg-muted); padding:8px 14px; font-size:var(--ex-text-xs); }
-.panel .header { padding:14px; }
-.panel .contexts { flex-direction:column; align-items:flex-start; gap:8px; padding:0 14px 12px; }
-.panel .welcome { padding:12px 0 18px; }
-.panel .welcomeMark { margin-bottom:12px; }
-.panel .welcome h1 { font-size:var(--ex-text-3xl); }
-.panel .welcome > p { font-size:var(--ex-text-xs); }
-.root.panel .starters { grid-template-columns:1fr; gap:6px; margin-top:18px; }
-.root.panel .starter { padding:10px; display:grid; grid-template-columns:20px 1fr; gap:4px 8px; }
-.root.panel .starter > span { grid-column:2; }
-.root.panel .starter > i:last-child { top:12px; right:10px; }
-.panel .identity { font-size:var(--ex-text-3xs); }
+:is(.panel, .rail) .header { padding:14px; }
+:is(.panel, .rail) .contexts { flex-direction:column; align-items:flex-start; gap:8px; padding:0 14px 12px; }
+:is(.panel, .rail) .welcome { padding:12px 0 18px; }
+:is(.panel, .rail) .welcomeMark { margin-bottom:12px; }
+:is(.panel, .rail) .welcome h1 { font-size:var(--ex-text-3xl); }
+:is(.panel, .rail) .welcome > p { font-size:var(--ex-text-xs); }
+.root:is(.panel, .rail) .starters { grid-template-columns:1fr; gap:6px; margin-top:18px; }
+.root:is(.panel, .rail) .starter { padding:10px; display:grid; grid-template-columns:20px 1fr; gap:4px 8px; }
+.root:is(.panel, .rail) .starter > span { grid-column:2; }
+.root:is(.panel, .rail) .starter > i:last-child { top:12px; right:10px; }
+:is(.panel, .rail) .identity { font-size:var(--ex-text-3xs); }
 
 @media(max-width:767px) { .header { padding:14px 16px; } .contexts { padding:0 16px 12px; gap:8px; align-items:flex-start; flex-direction:column; } .welcome { padding:6px 0 20px; } .welcome h1 { font-size:var(--ex-text-3xl); } .root .starters { grid-template-columns:1fr; gap:6px; margin-top:20px; } .root .starter { display:grid; grid-template-columns:22px 1fr; gap:4px 8px; padding:12px; } .root .starter > span { grid-column:2; } .standalone { height:calc(100dvh - 108px); } .footnote { font-size:var(--ex-text-3xs); } }
 @media(max-width:767px) {
@@ -77,9 +80,9 @@
 }
 .root .attachButton { max-width:100%; min-width:0; }
 .attachButton > span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.panel .welcomeMark { display:none; }
-.panel :global(.aui-thread-viewport-footer) { position:sticky; bottom:0; background:var(--ex-bg); padding-top:10px; }
-.panel .referenceItems { width:100%; }
+:is(.panel, .rail) .welcomeMark { display:none; }
+:is(.panel, .rail) :global(.aui-thread-viewport-footer) { position:sticky; bottom:0; background:var(--ex-bg); padding-top:10px; }
+:is(.panel, .rail) .referenceItems { width:100%; }
 .root .attachButton { overflow:hidden; }
 .attachButton > span { min-width:0; flex:1; }
 .titleTrigger { display:flex; align-items:center; gap:8px; min-width:0; max-width:100%; padding:2px 4px; margin-left:-4px; border:0; border-radius:6px; color:var(--ex-fg); background:transparent; text-align:left; cursor:pointer; }
@@ -213,3 +216,18 @@
 .previewFooter > span { font-size:var(--ex-text-xs); color:var(--ex-fg-muted); }
 .portfolioFrame { width:100%; height:100%; min-height:480px; border:0; background:var(--ex-bg); }
 @media(max-width:767px) { .resourceDialog .previewHeader { padding:16px; } .previewBody { padding:16px; } .resourceDialog .previewFooter { flex-direction:column; align-items:stretch; padding:16px; } }
+
+/* 공고 모드 첫 화면 — 레일 316px에 맞춰 표제를 줄이고 시작 제안을 한 줄씩 둔다. */
+.jobWelcome { padding:4px 0 16px; }
+.jobCompany { font-size:var(--ex-text-2xs); color:var(--ex-fg-muted); }
+.jobTitle { margin:6px 0 8px; font-size:var(--ex-text-xl); font-weight:600; line-height:var(--ex-leading-tight); letter-spacing:-.02em; display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.jobWelcome > p { font-size:var(--ex-text-xs); color:var(--ex-fg-muted); line-height:var(--ex-leading-relaxed); }
+.jobStarters { display:flex; flex-direction:column; gap:6px; margin-top:16px; }
+.root .jobStarter { display:flex; align-items:center; justify-content:flex-start; gap:10px; height:auto; padding:10px 12px; background:var(--ex-bg-sunken); border:1px solid var(--ex-border-inner); border-radius:10px; font-size:var(--ex-text-xs); font-weight:500; text-align:left; white-space:normal; }
+.root .jobStarter > i:first-child { color:var(--ex-accent-text); }
+.root .jobStarter > span { flex:1; min-width:0; }
+.root .jobStarter > i:last-child { color:var(--ex-fg-subtle); }
+.root .jobStarter:hover { background:var(--ex-accent-surface); border-color:var(--ex-accent-soft); }
+
+.runNotice { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.root .retryButton { flex-shrink:0; gap:4px; }
