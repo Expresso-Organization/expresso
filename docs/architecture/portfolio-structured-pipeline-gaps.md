@@ -93,6 +93,25 @@ json-render 방식을 유지합니다. 자유 생성이 잘한 것은 대부분 
 6. **자유 생성과 재비교** — 같은 브루와 가상 프로필 3종, 디자인 3종으로 나란히 비교합니다. 그래도 자유 생성이 뚜렷하게 앞서면 방향을 다시 정합니다.
 7. **화면을 보는 수선 에이전트** — 2의 브라우저 기반 위에서 측정으로 잡히지 않는 위계·균형을 보고 Spec을 고칩니다. HTML이 아니라 Spec을 고치므로 수선 뒤에도 계약 보장이 유지됩니다.
 
-## 정할 것
+## 결정: 측정 브라우저 (2026-10-20)
 
-- **운영 워커의 headless Chromium.** 2와 7은 운영 서버 워커에 브라우저가 있어야 합니다. 지금 운영 서버·배포 스크립트·백엔드 의존성에는 브라우저가 없고, 서버 사양도 문서에 없습니다. 워커에 Chromium을 설치해 브라우저 하나를 재사용하는 안과, 측정 전용 서비스를 따로 두는 안이 있습니다. 생성 1회당 늘어나는 시간은 아직 재지 않았습니다.
+2와 7은 운영 서버 워커에 실제 레이아웃 엔진이 있는 브라우저가 있어야 합니다. 지금 운영 서버 · 배포 스크립트 · 백엔드 의존성에는 브라우저가 없습니다.
+
+**Playwright Chromium의 chrome-headless-shell을 워커에 설치해 씁니다.**
+
+- 설치: `npx playwright install --with-deps --only-shell`. shell은 Playwright가 headless 실행 시 기본으로 쓰는 빌드이고, Chrome 문서가 자동 화면 캡처용으로 권합니다([Chrome headless shell](https://developer.chrome.com/blog/chrome-headless-shell), [Playwright browsers](https://playwright.dev/docs/browsers)).
+- 운영: 워커마다 브라우저 프로세스 하나를 상주시키고 작업마다 context를 새로 만듭니다. `--single-process`는 Chromium이 지원하지 않아 쓰지 않습니다. 컨테이너에서는 `--disable-dev-shm-usage`를 씁니다.
+- 폰트: 한 글자 줄바꿈 측정은 실제로 쓰인 폰트에 따라 결과가 바뀝니다. 서버에 한국어 대체 폰트(Noto Sans CJK 등)를 설치하고, 워커가 Google Fonts에 접근할 수 있게 하거나 폰트를 자체 호스팅합니다.
+- 보조: Safari 확인이 필요해지면 Playwright WebKit을 보조 검사로 붙입니다.
+
+검토하고 쓰지 않는 것:
+
+| 대안 | 이유 |
+|---|---|
+| Lightpanda | README에 "No graphical rendering engine". 크기 측정 · 줄바꿈 검출 · 화면 캡처가 안 됩니다. AGPL-3.0 |
+| jsdom · happy-dom · linkedom | 레이아웃이 없어 크기 값이 0입니다. DOM 사전 검사에만 쓸 수 있습니다 |
+| Servo · Ladybird | 성숙도 부족(Servo 임베딩 crate 첫 릴리스 2026-04, Ladybird alpha 이전) |
+| Playwright Firefox | Chromium보다 무겁고 이득이 없습니다 |
+| Cloudflare Browser Rendering · Browserless · Browserbase · Steel(호스팅) | 엔진은 Chromium이고, 사용자 커리어 데이터가 외부로 나가며 네트워크 왕복이 더해집니다 |
+
+아직 재지 않은 것: 작업당 context · page 생성 시간, 페이지당 메모리, 생성 1회당 늘어나는 시간. 2단계 구현에서 실측해 이 문서에 적습니다.
