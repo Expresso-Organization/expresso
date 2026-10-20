@@ -68,6 +68,7 @@ export const KIT_CSS = String.raw`
 .xp-page .xp-act:hover{transform:translateY(-1px);background:color-mix(in srgb,var(--action) 88%,var(--text))}
 .xp-quiet{font-size:var(--xp-small);font-weight:var(--xp-weight-mid)}
 .xp-tags{display:flex;flex-wrap:wrap;gap:calc(var(--element-gap) * .6)}
+.xp-case-body{display:grid;align-content:start;gap:calc(var(--component-gap) * 1.1);min-width:0}
 .xp-tags li{padding:.42em .85em;border:var(--border-width) solid var(--border);border-radius:var(--control-radius);color:var(--xp-muted);font-size:var(--xp-small);line-height:1.3}
 
 /* 첫 화면 */

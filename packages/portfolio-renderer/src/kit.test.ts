@@ -201,4 +201,10 @@ describe("사례 번호", () => {
       expect(section.slice(0, section.indexOf("</article>")), type).toContain(`alt="${image.alt}"`);
     }
   });
+  it("사례 블록의 자식은 제목과 본문 묶음 둘뿐이다", () => {
+    const { html } = renderStructuredPortfolio(pageSpec(), content, { design: clarity });
+    for (const match of html.matchAll(/<article id="section-[^"]+" class="xp-block xp-case"[^>]*>(<header class="xp-head">[\s\S]*?<\/header>)(<div class="xp-case-body">)/g))
+      expect(match[2]).toBe('<div class="xp-case-body">');
+    expect([...html.matchAll(/class="xp-block xp-case"/g)].length).toBe([...html.matchAll(/class="xp-case-body"/g)].length);
+  });
 });

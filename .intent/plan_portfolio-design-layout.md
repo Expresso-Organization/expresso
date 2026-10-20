@@ -22,7 +22,7 @@ date: 2026-10-20
 | `services/backend/src/modules/page/structured-generator.ts` (+ 테스트, `structured-spec-format.test.ts`) | 배치 문단, 컨테이너 조건부, `design.layout` 주입, 스타일 보존 검사 제거 |
 | `services/backend/src/modules/design-systems/design-layout.test.ts` (새) | 38종 문단 수치 = `designLayout` 결과 |
 | `scripts/library/renderer/run-structured-profiles.ts` · `verify-token-kit.mjs` | 모델 생성 경로 `PORTFOLIO_DESIGN`, 디자인별 폴더, 검증이 모델 실행도 받음 |
-| `packages/portfolio-renderer/src/kit.tsx` · `kit.test.ts` | 과정형 사례(CaseProcess)에 사례 이미지 표시(4단계에서 발견한 토큰 키트 결함) |
+| `packages/portfolio-renderer/src/kit.tsx` · `kit-styles.ts` · `kit.test.ts` | 과정형 사례(CaseProcess)에 사례 이미지 표시, 사례 본문 묶음(넓은 여백에서 제목 칸 높이가 본문 행을 늘리던 결함). 4·5단계에서 발견한 토큰 키트 결함 |
 | `docs/library/previews/portfolio/runs/design-layout-2026-10-20/` | 3종 × 3 생성 기록·화면 |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
