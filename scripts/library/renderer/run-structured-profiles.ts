@@ -243,6 +243,7 @@ for (const slug of rerenderFrom ? [] : slugs) {
     root,
     "docs/library/previews/portfolio/runs",
     runId,
+    ...(designCode ? [designCode] : []),
     slug,
   );
   if (fs.existsSync(path.join(out, "index.html")))
@@ -285,8 +286,12 @@ for (const slug of rerenderFrom ? [] : slugs) {
       media: [],
       jobTitle: null,
       company: null,
+      // 제품 경로처럼 고른 디자인의 전체 토큰을 넘깁니다. 렌더러는 토큰 키트로, 프롬프트는 그 배치로 씁니다.
+      ...(design ? { design } : {}),
     });
-    const document = htmlDocument(content.profile.name, result);
+    const document = design
+      ? pageDocument({ ...result, title: `${content.profile.name} 포트폴리오` })
+      : htmlDocument(content.profile.name, result);
     fs.writeFileSync(path.join(out, "index.html"), document);
     fs.writeFileSync(
       path.join(out, "run.json"),
@@ -297,6 +302,7 @@ for (const slug of rerenderFrom ? [] : slugs) {
           contentOrigin: normalize ? "model-normalized" : "prepared-fictional",
           model,
           htmlSha256: sha(document),
+          ...(designRevision ? { design: { code: designCode, revisionId: designRevision.revisionId } } : {}),
           ...result.manifest,
         },
         null,

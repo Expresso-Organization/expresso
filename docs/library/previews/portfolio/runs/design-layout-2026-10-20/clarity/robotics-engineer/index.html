@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>한도윤 포트폴리오</title>
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Nanum+Myeongjo:wght@400;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --page-sans:"Pretendard Variable",Pretendard,-apple-system,system-ui,sans-serif;
+  --page-serif:"Nanum Myeongjo","Noto Serif KR",serif;
+  --page-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --page-display:"Outfit",var(--page-sans);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font-family:var(--page-sans);word-break:keep-all;-webkit-font-smoothing:antialiased}
+img{max-width:100%;height:auto;display:block}
+svg{max-width:100%}
+/* 가로 스크롤은 폰에서 지면을 무너뜨린다. 여기서 한 번 더 막는다. */
+body{overflow-x:hidden}
+</style>
+
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap");
+.xp-page{--canvas:#ffffff;--surface:#f7f8fa;--elevated:#eef2f7;--text:#17202a;--muted:#5f6b78;--border:#d6dde6;--accent:#2563eb;--action:#2563eb;--actionText:#ffffff;--font-display:"Inter",Noto Sans KR, system-ui;--font-body:system-ui,Noto Sans KR, sans-serif;--font-mono:ui-monospace,monospace;--type-body:1rem;--line-body:1.65;--type-eyebrow:0.8rem;--line-eyebrow:1.4;--type-heading:2rem;--line-heading:1.2;--type-display:4rem;--line-display:1.05;--type-example-body:1rem;--line-example-body:1.65;--type-example-heading:2rem;--line-example-heading:1.2;--type-example-display:4rem;--line-example-display:1.05;--measure:46rem;--base-unit:4px;--element-gap:14px;--component-gap:24px;--section-gap:72px;--content-width:1080px;--card-radius:12px;--control-radius:8px;--border-width:1px;--motion-duration:180ms;--motion-easing:ease-out;--shadow:0 12px 30px color-mix(in srgb,var(--text) 10%,transparent);--xp-muted:#5f6b78;--xp-muted-surface:#5f6b78;--xp-accent-text:#2563eb;--xp-action-text:#ffffff;--xp-weight:700;--xp-weight-mid:500;--xp-tracking:-0.02em}
+
+.xp-page{--xp-pad:clamp(20px,5vw,56px);--xp-section:var(--section-gap);--xp-rule:var(--border-width) solid var(--border);--xp-small:max(13px,calc(var(--type-example-body) * .86));--xp-name:clamp(2.6rem,5.2vw + 1rem,calc(var(--type-example-display) * 1.3));--xp-h2:clamp(1.55rem,1.6vw + 1rem,var(--type-example-heading));
+  min-height:100vh;margin:0;background:var(--canvas);color:var(--text);font-family:var(--font-body);font-size:var(--type-example-body);line-height:var(--line-example-body);word-break:keep-all;overflow-wrap:anywhere;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+.xp-page *,.xp-page *::before,.xp-page *::after{box-sizing:border-box}
+.xp-page :is(h1,h2,h3,p,ol,ul,dl,dd,figure,blockquote){margin:0;padding:0}
+.xp-page li{list-style:none}
+.xp-page a{color:var(--xp-accent-text);text-decoration-thickness:1px;text-underline-offset:.22em}
+.xp-page a:focus-visible{outline:2px solid var(--xp-accent-text);outline-offset:3px;border-radius:2px}
+.xp-page[data-density="compact"]{--xp-section:calc(var(--section-gap) * .8)}
+.xp-page[data-density="spacious"]{--xp-section:calc(var(--section-gap) * 1.2)}
+.xp-page[data-divider="none"]{--xp-rule:0 solid transparent}
+.xp-page[data-divider="double"]{--xp-rule:3px double var(--border)}
+.xp-page[data-divider="dashed"]{--xp-rule:var(--border-width) dashed var(--border)}
+.xp-page[data-divider="dotted"]{--xp-rule:max(2px,var(--border-width)) dotted var(--border)}
+.xp-page[data-divider="thick"]{--xp-rule:2px solid var(--text)}
+
+.xp-inner{width:min(100% - var(--xp-pad) * 2,var(--content-width));margin-inline:auto;padding-block:calc(var(--xp-section) * .7) var(--xp-section);display:grid;gap:var(--xp-section)}
+
+/* 글자 */
+.xp-eyebrow{display:block;color:var(--xp-muted);font-family:var(--font-mono);font-size:12px;line-height:1.5;letter-spacing:.08em}
+.xp-name{font-family:var(--font-display);font-size:var(--xp-name);font-weight:var(--xp-weight);line-height:1.02;letter-spacing:calc(var(--xp-tracking) * 1.6)}
+.xp-headline{max-width:30ch;font-family:var(--font-display);font-size:clamp(1.2rem,.9vw + 1rem,calc(var(--type-example-heading) * .78));font-weight:var(--xp-weight-mid);line-height:var(--line-example-heading);letter-spacing:var(--xp-tracking)}
+.xp-h2{font-family:var(--font-display);font-size:var(--xp-h2);font-weight:var(--xp-weight);line-height:var(--line-example-heading);letter-spacing:var(--xp-tracking)}
+.xp-h3{font-size:calc(var(--type-example-body) * 1.06);font-weight:var(--xp-weight);line-height:1.4}
+.xp-lead{max-width:var(--measure);color:var(--xp-muted);font-size:calc(var(--type-example-body) * 1.08);line-height:var(--line-example-body)}
+.xp-body{display:grid;gap:.85em;max-width:var(--measure)}
+.xp-body p{color:var(--text)}
+.xp-small{color:var(--xp-muted);font-size:var(--xp-small);line-height:1.55}
+
+/* 표식 — 라벨 앞에 붙는 디자인별 기호 */
+.xp-page[data-marker="prompt"] .xp-eyebrow::before{content:"$ ";color:var(--xp-accent-text)}
+.xp-page[data-marker="bullet"] .xp-eyebrow::before{content:"■  ";color:var(--xp-accent-text)}
+.xp-page[data-marker="bracket"] .xp-eyebrow::before{content:"[ ";color:var(--xp-accent-text)}
+.xp-page[data-marker="bracket"] .xp-eyebrow::after{content:" ]";color:var(--xp-accent-text)}
+.xp-page[data-marker="rule"] .xp-eyebrow::before{content:"";display:inline-block;width:22px;margin-right:10px;border-top:1px solid var(--xp-accent-text);vertical-align:middle}
+.xp-page[data-marker="numbered"] .xp-eyebrow::before{content:"— ";color:var(--xp-accent-text)}
+
+/* 면 — 카드와 테두리 방식 */
+.xp-panel{position:relative;padding:clamp(20px,2.4vw,calc(var(--component-gap) * 1.35));border:var(--border-width) solid var(--border);border-radius:var(--card-radius);background:var(--surface);box-shadow:var(--shadow);--xp-muted:var(--xp-muted-surface)}
+.xp-page[data-chrome="window"] .xp-panel{padding-top:calc(clamp(20px,2.4vw,calc(var(--component-gap) * 1.35)) + 30px)}
+.xp-page[data-chrome="window"] .xp-panel::before{content:"";position:absolute;inset:0 0 auto;height:30px;border-bottom:var(--border-width) solid var(--border);border-radius:var(--card-radius) var(--card-radius) 0 0;background:var(--elevated)}
+.xp-page[data-chrome="window"] .xp-panel::after{content:"";position:absolute;top:11px;left:14px;width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:15px 0 0 var(--border),30px 0 0 var(--border)}
+.xp-page[data-chrome="masthead"] .xp-panel{padding-top:calc(clamp(20px,2.4vw,calc(var(--component-gap) * 1.35)) + 14px)}
+.xp-page[data-chrome="masthead"] .xp-panel::before{content:"";position:absolute;inset:12px clamp(20px,2.4vw,calc(var(--component-gap) * 1.35)) auto;border-top:3px double var(--text)}
+.xp-page[data-chrome="masthead"] .xp-hero{padding-top:22px;border-top:4px double var(--text)}
+.xp-page[data-chrome="sticker"] .xp-panel{transform:rotate(-.6deg)}
+.xp-page[data-chrome="sticker"] .xp-panel:nth-of-type(2n){transform:rotate(.5deg)}
+.xp-page[data-chrome="panel"] .xp-panel::before{content:"";position:absolute;inset:0 0 auto;height:1px;border-radius:var(--card-radius) var(--card-radius) 0 0;background:color-mix(in srgb,var(--canvas) 55%,white);pointer-events:none}
+.xp-page[data-chrome="frame"] .xp-panel::before{content:"";position:absolute;inset:8px;border:1px solid color-mix(in srgb,var(--accent) 55%,transparent);border-radius:max(0px,calc(var(--card-radius) - 6px));pointer-events:none}
+.xp-page[data-chrome="blob"] .xp-panel{border-radius:calc(var(--card-radius) * 2.1) calc(var(--card-radius) * .8) calc(var(--card-radius) * 2.1) calc(var(--card-radius) * .8)}
+
+/* 행동 */
+.xp-actions{display:flex;flex-wrap:wrap;align-items:center;gap:var(--element-gap) calc(var(--element-gap) * 1.6)}
+.xp-page .xp-act{display:inline-flex;align-items:center;gap:.5em;padding:.78em 1.25em;border-radius:var(--control-radius);background:var(--action);color:var(--xp-action-text);font-size:var(--xp-small);font-weight:var(--xp-weight);line-height:1;text-decoration:none;transition:transform var(--motion-duration) var(--motion-easing),background var(--motion-duration) var(--motion-easing)}
+.xp-page .xp-act:hover{transform:translateY(-1px);background:color-mix(in srgb,var(--action) 88%,var(--text))}
+.xp-quiet{font-size:var(--xp-small);font-weight:var(--xp-weight-mid)}
+.xp-tags{display:flex;flex-wrap:wrap;gap:calc(var(--element-gap) * .6)}
+.xp-case-body{display:grid;align-content:start;gap:calc(var(--component-gap) * 1.1);min-width:0}
+.xp-tags li{padding:.42em .85em;border:var(--border-width) solid var(--border);border-radius:var(--control-radius);color:var(--xp-muted);font-size:var(--xp-small);line-height:1.3}
+
+/* 첫 화면 */
+.xp-hero{display:grid;gap:calc(var(--element-gap) * 1.5);padding-top:calc(var(--xp-section) * .4)}
+.xp-hero .xp-name{margin-top:calc(var(--element-gap) * -.2)}
+.xp-hero .xp-headline{margin-top:calc(var(--element-gap) * -.4)}
+.xp-hero .xp-actions{margin-top:calc(var(--element-gap) * .5)}
+.xp-hero[data-variant="split"]{grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:var(--component-gap) calc(var(--component-gap) * 2);align-items:end}
+.xp-hero[data-variant="split"] .xp-hero-side{display:grid;gap:calc(var(--element-gap) * 1.3)}
+.xp-hero[data-variant="media"]{grid-template-columns:minmax(0,6fr) minmax(0,5fr);gap:calc(var(--component-gap) * 1.6);align-items:center}
+.xp-hero[data-variant="media"] .xp-hero-text{display:grid;gap:calc(var(--element-gap) * 1.4)}
+.xp-hero-art img{width:100%;aspect-ratio:4/3;object-fit:cover;border:var(--border-width) solid var(--border);border-radius:var(--card-radius);background:var(--surface)}
+.xp-hero-art figcaption{margin-top:10px}
+
+/* 섹션 머리 */
+.xp-block{display:grid;align-content:start;gap:calc(var(--component-gap) * 1.1);padding-top:calc(var(--xp-section) * .5);border-top:var(--xp-rule);container-type:inline-size}
+.xp-head{display:grid;gap:calc(var(--element-gap) * .7);align-content:start}
+
+/* 강조 — 번호를 세우는 방식 */
+.xp-num{font-family:var(--font-display);font-weight:var(--xp-weight);font-variant-numeric:tabular-nums}
+.xp-page[data-emphasis="boxed"] .xp-num{padding:.05em .3em;border:var(--border-width) solid var(--text);border-radius:var(--control-radius)}
+.xp-page[data-emphasis="underlined"] .xp-num{padding-bottom:.04em;border-bottom:.12em solid var(--accent)}
+.xp-page[data-emphasis="oversized"] .xp-num{font-size:1.35em}
+.xp-page[data-emphasis="bar"] .xp-num{padding-left:.4em;border-left:.14em solid var(--accent)}
+
+/* 작업 목록 */
+.xp-index-list{display:grid;border-top:var(--xp-rule)}
+.xp-index-list a{display:grid;grid-template-columns:3.2em minmax(0,1fr) auto;gap:var(--element-gap) calc(var(--element-gap) * 1.4);align-items:baseline;padding-block:calc(var(--element-gap) * 1.15);border-bottom:var(--xp-rule);color:inherit;text-decoration:none;transition:background var(--motion-duration) var(--motion-easing)}
+.xp-index-list a:hover{background:color-mix(in srgb,var(--surface) 70%,transparent)}
+.xp-index-list strong{display:block;font-family:var(--font-display);font-size:calc(var(--type-example-body) * 1.2);font-weight:var(--xp-weight);line-height:1.35;letter-spacing:var(--xp-tracking)}
+.xp-index-list small{display:block;margin-top:4px}
+.xp-index-list .xp-arrow{color:var(--xp-accent-text)}
+.xp-index[data-variant="rail"] .xp-index-list a{grid-template-columns:2.4em minmax(0,1fr);padding-block:calc(var(--element-gap) * .8)}
+.xp-index[data-variant="rail"] .xp-index-list strong{font-size:var(--type-example-body)}
+.xp-index[data-variant="rail"] .xp-index-list :is(small,.xp-arrow){display:none}
+.xp-mosaic{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:var(--component-gap)}
+.xp-mosaic a{display:grid;gap:calc(var(--element-gap) * .8);align-content:start;color:inherit;text-decoration:none}
+.xp-mosaic img{width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:max(0px,calc(var(--card-radius) - 4px))}
+.xp-mosaic strong{font-family:var(--font-display);font-size:calc(var(--type-example-body) * 1.15);font-weight:var(--xp-weight);line-height:1.35;letter-spacing:var(--xp-tracking)}
+
+/* 사례 */
+.xp-case-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:calc(var(--component-gap) * 1.4);align-items:start}
+.xp-par{display:grid;grid-template-columns:minmax(4.5em,auto) minmax(0,1fr);gap:calc(var(--element-gap) * .9) calc(var(--element-gap) * 1.3)}
+.xp-par dt{padding-top:.18em;color:var(--xp-muted);font-family:var(--font-mono);font-size:12px;letter-spacing:.04em}
+.xp-par dd{line-height:1.6}
+.xp-par dd+dt,.xp-par dd+dt+dd{padding-top:calc(var(--element-gap) * .9);border-top:var(--xp-rule)}
+.xp-notes{display:grid;gap:calc(var(--element-gap) * 1.3);max-width:var(--measure)}
+.xp-notes section{display:grid;gap:.35em}
+.xp-steps{display:grid;gap:0;border-top:var(--xp-rule)}
+.xp-steps li{display:grid;grid-template-columns:3.2em minmax(0,1fr);gap:calc(var(--element-gap) * 1.2);padding-block:calc(var(--element-gap) * 1.2);border-bottom:var(--xp-rule)}
+.xp-steps li>div{display:grid;gap:.4em;max-width:var(--measure)}
+.xp-gallery{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:var(--element-gap)}
+.xp-gallery figure:first-child{grid-row:span 2}
+.xp-gallery figure:only-child{grid-column:1/-1}
+.xp-figure img{width:100%;height:100%;min-height:180px;object-fit:cover;border:var(--border-width) solid var(--border);border-radius:var(--card-radius);background:var(--surface)}
+.xp-figure figcaption{margin-top:8px}
+.xp-sources{display:flex;flex-wrap:wrap;gap:6px calc(var(--element-gap) * 1.4);font-size:var(--xp-small)}
+
+/* 경력·근거·연락 */
+.xp-timeline{display:grid;gap:0;border-top:var(--xp-rule)}
+.xp-timeline li{display:grid;grid-template-columns:minmax(7.5em,auto) minmax(0,1fr);gap:var(--element-gap) calc(var(--element-gap) * 1.6);padding-block:calc(var(--element-gap) * 1.3);border-bottom:var(--xp-rule)}
+.xp-timeline li>div{display:grid;gap:.3em;max-width:var(--measure)}
+.xp-evidence-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:var(--element-gap)}
+.xp-evidence-list details{padding:calc(var(--element-gap) * 1.1) calc(var(--element-gap) * 1.2);border:var(--border-width) solid var(--border);border-radius:var(--card-radius);background:var(--surface);--xp-muted:var(--xp-muted-surface)}
+.xp-evidence-list summary{display:grid;gap:.3em;cursor:pointer;list-style:none}
+.xp-evidence-list summary::-webkit-details-marker{display:none}
+.xp-evidence-list summary strong{font-weight:var(--xp-weight);line-height:1.4}
+.xp-evidence-list details[open] summary{margin-bottom:calc(var(--element-gap) * .8)}
+.xp-contact{display:grid;gap:calc(var(--element-gap) * 1.2);justify-items:start}
+.xp-footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;padding-top:calc(var(--element-gap) * 1.2);border-top:var(--xp-rule)}
+
+/* 묶음 */
+.xp-group{display:grid;align-items:start;gap:calc(var(--component-gap) * 1.4);container-type:inline-size}
+.xp-group>.xp-index[data-variant="rail"]{position:sticky;top:calc(var(--element-gap) * 2)}
+.xp-group[data-group="columns"]{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.xp-group[data-group="columns"][data-variant="wide-start"]{grid-template-columns:minmax(0,1.7fr) minmax(0,1fr)}
+.xp-group[data-group="columns"][data-variant="wide-end"]{grid-template-columns:minmax(0,1fr) minmax(0,1.7fr)}
+.xp-group[data-group="grid"]{grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+.xp-group[data-group="band"]{padding:clamp(20px,3vw,calc(var(--component-gap) * 1.5));border-radius:var(--card-radius);background:var(--surface);--xp-muted:var(--xp-muted-surface)}
+.xp-group[data-group="band"][data-variant="accent"]{background:transparent;border-top:3px solid var(--accent);border-radius:0}
+.xp-group .xp-case-grid{grid-template-columns:minmax(0,1fr)}
+
+/* 배치 — 넓은 여백은 머리를 왼쪽 단에, 촘촘한 격자는 간격을 줄이고 표를 펼칩니다 */
+.xp-page[data-layout="wide-margin"] .xp-inner>.xp-block{grid-template-columns:minmax(150px,1fr) minmax(0,2.8fr);column-gap:calc(var(--component-gap) * 2)}
+.xp-page[data-layout="wide-margin"] .xp-inner>.xp-block>.xp-head{position:sticky;top:24px}
+.xp-page[data-layout="wide-margin"] .xp-inner>.xp-block>:not(.xp-head){grid-column:2}
+.xp-page[data-layout="wide-margin"] .xp-inner>.xp-block .xp-case-grid{grid-template-columns:minmax(0,1fr)}
+.xp-page[data-layout="dense-grid"] .xp-inner{gap:calc(var(--xp-section) * .75)}
+.xp-page[data-layout="dense-grid"] .xp-index[data-variant="rows"] .xp-index-list{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:var(--component-gap)}
+.xp-page[data-layout="single-column"] .xp-case-grid{grid-template-columns:minmax(0,1fr)}
+
+/* 좁은 폭 — 한 열로 접습니다 */
+@container (max-width:720px){
+  .xp-case-grid,.xp-group[data-group="columns"][data-variant]{grid-template-columns:minmax(0,1fr)}
+  .xp-par{grid-template-columns:minmax(0,1fr);gap:.25em}
+  .xp-par dd+dt,.xp-par dd+dt+dd{border-top:0}
+  .xp-par dd+dt{margin-top:calc(var(--element-gap) * .7);padding-top:calc(var(--element-gap) * .7);border-top:var(--xp-rule)}
+  .xp-timeline li{grid-template-columns:minmax(0,1fr);gap:.35em}
+}
+@media (max-width:760px){
+  .xp-hero[data-variant="split"],.xp-hero[data-variant="media"]{grid-template-columns:minmax(0,1fr)}
+  .xp-page[data-layout="wide-margin"] .xp-inner>.xp-block{grid-template-columns:minmax(0,1fr)}
+  .xp-page[data-layout="wide-margin"] .xp-inner>.xp-block>.xp-head{position:static}
+  .xp-page[data-layout="wide-margin"] .xp-inner>.xp-block>:not(.xp-head){grid-column:1}
+  .xp-page[data-layout="dense-grid"] .xp-index[data-variant="rows"] .xp-index-list{grid-template-columns:minmax(0,1fr)}
+  .xp-gallery{grid-template-columns:minmax(0,1fr)}
+  .xp-gallery figure:first-child{grid-row:auto}
+  .xp-group[data-group="columns"][data-variant]{grid-template-columns:minmax(0,1fr)}
+  .xp-group>.xp-index[data-variant="rail"]{position:static}
+}
+
+/* 모션 — 디자인의 시간·곡선. JavaScript 없이 보이고, 모션 감소·인쇄에서 꺼집니다 */
+@keyframes xp-rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:no-preference){
+  .xp-page:not([data-motion="none"]) .xp-hero>*{animation:xp-rise calc(var(--motion-duration) * 3) var(--motion-easing) both}
+  .xp-page:not([data-motion="none"]) .xp-hero>:nth-child(2){animation-delay:60ms}
+  .xp-page:not([data-motion="none"]) .xp-hero>:nth-child(3){animation-delay:120ms}
+  .xp-page:not([data-motion="none"]) .xp-hero>:nth-child(n+4){animation-delay:180ms}
+  @supports (animation-timeline:view()){
+    .xp-page[data-motion="showcase"] .xp-inner>.xp-block{animation:xp-rise linear both;animation-timeline:view();animation-range:entry 0% entry 28%}
+  }
+}
+@media print{
+  .xp-page *{animation:none!important;transition:none!important}
+  .xp-page{min-height:0}
+  .xp-page[data-layout="wide-margin"] .xp-inner>.xp-block>.xp-head{position:static}
+}
+
+</style>
+</head>
+<body>
+<main class="xp-page" data-layout="single-column" data-density="comfortable" data-chrome="plain" data-marker="plain" data-emphasis="plain" data-divider="hairline" data-motion="showcase" aria-label="한도윤 포트폴리오"><div class="xp-inner"><header id="intro" class="xp-hero" data-variant="split"><div><p class="xp-eyebrow">로봇 엔지니어</p><h1 class="xp-name">한도윤</h1></div><div class="xp-hero-side"><p class="xp-headline">현장 로봇의 경로 계획을 설계하는 로봇 엔지니어입니다.</p><div class="xp-body xp-lead"><p>센서 기록과 현장 제약을 함께 읽어 로봇의 이동과 조작을 설계합니다. 시뮬레이션에서 가설을 확인하고 안전한 시험 절차로 옮기는 과정을 기록합니다.</p></div><ul class="xp-tags" aria-label="집중하는 일"><li>경로 계획</li><li>조작 계획</li><li>현장 검증</li></ul><div class="xp-actions"><a class="xp-act" href="#work">대표 작업 보기 <span aria-hidden="true">↓</span></a><a class="xp-quiet" href="#contact">연락하기 ↗</a></div></div></header><nav id="work" class="xp-block xp-index" data-variant="rows" aria-label="선택한 작업"><header class="xp-head"><p class="xp-eyebrow">Selected work</p><h2 class="xp-h2">선택한 작업</h2></header><ol class="xp-index-list"><li><a href="#section-route-planner"><span class="xp-num">01</span><span><strong>순찰 로봇 경로 계획</strong><small class="xp-small">좁은 통로에서 장애물을 만났을 때 안전하게 우회 경로를 다시 찾는 가상 계획기입니다.</small></span><span class="xp-arrow" aria-hidden="true">↗</span></a></li><li><a href="#section-gripper-study"><span class="xp-num">02</span><span><strong>집기 분류 그리퍼</strong><small class="xp-small">크기가 다른 물체의 파지 위치를 비교하는 그리퍼 설계 스터디입니다.</small></span><span class="xp-arrow" aria-hidden="true">↗</span></a></li><li><a href="#section-warehouse-aisle"><span class="xp-num">03</span><span><strong>창고 통로 시험</strong><small class="xp-small">선반 사이 이동 시 정지와 재시작 조건을 보여 주는 가상 통로 시험입니다.</small></span><span class="xp-arrow" aria-hidden="true">↗</span></a></li></ol></nav><article id="section-route-planner" class="xp-block xp-case" data-case-type="process"><header class="xp-head"><p class="xp-eyebrow"><span class="xp-num">01</span> · 프로젝트</p><h2 class="xp-h2">순찰 로봇 경로 계획</h2><p class="xp-lead">좁은 통로에서 장애물을 만났을 때 안전하게 우회 경로를 다시 찾는 가상 계획기입니다.</p></header><div class="xp-case-body"><figure class="xp-figure"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NjAiIGhlaWdodD0iNzIwIiB2aWV3Qm94PSIwIDAgOTYwIDcyMCIgcm9sZT0iaW1nIj48cmVjdCB3aWR0aD0iOTYwIiBoZWlnaHQ9IjcyMCIgZmlsbD0iIzEyMjIyZiIvPjx0ZXh0IHg9IjUyIiB5PSI3MCIgZm9udC1mYW1pbHk9IkFyaWFsLEFwcGxlIFNEIEdvdGhpYyBOZW8sc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzdhYzlkYiI+RklFTEQgU1lTVEVNUyAvIEVYUEVSSU1FTlQgMDE8L3RleHQ+PHBhdGggZD0iTTUyIDg4TDkwOCA4OCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNTI3MDgwIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMTEwTDQ4IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMTIwTDkxMiAxMjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTEyNiAxMTBMMTI2IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMTY5TDkxMiAxNjkiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTIwNCAxMTBMMjA0IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMjE4TDkxMiAyMTgiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTI4MiAxMTBMMjgyIDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMjY3TDkxMiAyNjciIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTM2MCAxMTBMMzYwIDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMzE2TDkxMiAzMTYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTQzOCAxMTBMNDM4IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMzY1TDkxMiAzNjUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTUxNiAxMTBMNTE2IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNDE0TDkxMiA0MTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTU5NCAxMTBMNTk0IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNDYzTDkxMiA0NjMiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTY3MiAxMTBMNjcyIDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNTEyTDkxMiA1MTIiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTc1MCAxMTBMNzUwIDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNTYxTDkxMiA1NjEiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTgyOCAxMTBMODI4IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNjEwTDkxMiA2MTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTkwNiAxMTBMOTA2IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNjU5TDkxMiA2NTkiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTE0MCA1NDVMMjYwIDQ4NUwzMzIgNDg1TDM5MiAzNDRMNTE1IDM0NEw2MDIgMjMwTDc4NSAyMzAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2U4YjU3NCIgc3Ryb2tlLXdpZHRoPSIxMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PGNpcmNsZSBjeD0iMTQwIiBjeT0iNTQ1IiByPSIxOSIgZmlsbD0iIzE3MjYzMyIgc3Ryb2tlPSIjZjJjODhlIiBzdHJva2Utd2lkdGg9IjYiLz48dGV4dCB4PSIxNjQiIHk9IjUyNSIgZm9udC1mYW1pbHk9IkFyaWFsLEFwcGxlIFNEIEdvdGhpYyBOZW8sc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNiIgZm9udC13ZWlnaHQ9IjUwMCIgZmlsbD0iI2U1ZTllOCI+UDA8L3RleHQ+PGNpcmNsZSBjeD0iMzMyIiBjeT0iNDg1IiByPSIxOSIgZmlsbD0iIzE3MjYzMyIgc3Ryb2tlPSIjZjJjODhlIiBzdHJva2Utd2lkdGg9IjYiLz48dGV4dCB4PSIzNTYiIHk9IjQ2NSIgZm9udC1mYW1pbHk9IkFyaWFsLEFwcGxlIFNEIEdvdGhpYyBOZW8sc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNiIgZm9udC13ZWlnaHQ9IjUwMCIgZmlsbD0iI2U1ZTllOCI+UDE8L3RleHQ+PGNpcmNsZSBjeD0iNTE1IiBjeT0iMzQ0IiByPSIxOSIgZmlsbD0iIzE3MjYzMyIgc3Ryb2tlPSIjZjJjODhlIiBzdHJva2Utd2lkdGg9IjYiLz48dGV4dCB4PSI1MzkiIHk9IjMyNCIgZm9udC1mYW1pbHk9IkFyaWFsLEFwcGxlIFNEIEdvdGhpYyBOZW8sc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNiIgZm9udC13ZWlnaHQ9IjUwMCIgZmlsbD0iI2U1ZTllOCI+UDI8L3RleHQ+PGNpcmNsZSBjeD0iNzg1IiBjeT0iMjMwIiByPSIxOSIgZmlsbD0iIzE3MjYzMyIgc3Ryb2tlPSIjZjJjODhlIiBzdHJva2Utd2lkdGg9IjYiLz48dGV4dCB4PSI4MDkiIHk9IjIxMCIgZm9udC1mYW1pbHk9IkFyaWFsLEFwcGxlIFNEIEdvdGhpYyBOZW8sc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNiIgZm9udC13ZWlnaHQ9IjUwMCIgZmlsbD0iI2U1ZTllOCI+UDM8L3RleHQ+PHRleHQgeD0iNzIiIHk9IjY1MCIgZm9udC1mYW1pbHk9IkFyaWFsLEFwcGxlIFNEIEdvdGhpYyBOZW8sc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMyIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iI2U5ZjNmMiI+Uk9VVEUgLyAwNCBXQVlQT0lOVFM8L3RleHQ+PC9zdmc+Cg==" alt="장애물 우회 경로가 표시된 가상 로봇 계획 도면" loading="lazy"/><figcaption class="xp-small">장애물 우회 경로가 표시된 가상 로봇 계획 도면</figcaption></figure><ol class="xp-steps"><li><span class="xp-num" aria-hidden="true">01</span><div><h3 class="xp-h3">역할</h3><div class="xp-body"><p>경로 계획 · 상태 설계</p></div></div></li><li><span class="xp-num" aria-hidden="true">02</span><div><h3 class="xp-h3">기간</h3><div class="xp-body"><p>2026.02 — 2026.06</p></div></div></li><li><span class="xp-num" aria-hidden="true">03</span><div><h3 class="xp-h3">문제 정의</h3><div class="xp-body"><p>좁은 통로에서 이동 로봇이 새 장애물을 만나면 기존 경로를 계속 따를 수 없다는 시험 상황을 설정했습니다.</p></div></div></li><li><span class="xp-num" aria-hidden="true">04</span><div><h3 class="xp-h3">담당 작업</h3><div class="xp-body"><p>장애물 확인, 정지, 대체 경로 탐색을 분리하고 각 상태의 전환 조건을 설계했습니다.</p></div></div></li><li><span class="xp-num" aria-hidden="true">05</span><div><h3 class="xp-h3">결과와 한계</h3><div class="xp-body"><p>가상 시뮬레이션에서 경로를 비교할 수 있는 기록 화면을 만들었습니다. 현장 성능은 측정하지 않았습니다.</p></div></div></li></ol><nav class="xp-sources" aria-label="순찰 로봇 경로 계획 관련 자료"><a href="#source-route-log">경로 재계획 기록 ↗</a></nav></div></article><article id="section-gripper-study" class="xp-block xp-case" data-case-type="process"><header class="xp-head"><p class="xp-eyebrow"><span class="xp-num">02</span> · 프로젝트</p><h2 class="xp-h2">집기 분류 그리퍼</h2><p class="xp-lead">크기가 다른 물체의 파지 위치를 비교하는 그리퍼 설계 스터디입니다.</p></header><div class="xp-case-body"><figure class="xp-figure"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NjAiIGhlaWdodD0iNzIwIiB2aWV3Qm94PSIwIDAgOTYwIDcyMCIgcm9sZT0iaW1nIj48cmVjdCB3aWR0aD0iOTYwIiBoZWlnaHQ9IjcyMCIgZmlsbD0iIzEyMjIyZiIvPjx0ZXh0IHg9IjUyIiB5PSI3MCIgZm9udC1mYW1pbHk9IkFyaWFsLEFwcGxlIFNEIEdvdGhpYyBOZW8sc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzdhYzlkYiI+RklFTEQgU1lTVEVNUyAvIEVYUEVSSU1FTlQgMDI8L3RleHQ+PHBhdGggZD0iTTUyIDg4TDkwOCA4OCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNTI3MDgwIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMTEwTDQ4IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMTIwTDkxMiAxMjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTEyNiAxMTBMMTI2IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMTY5TDkxMiAxNjkiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTIwNCAxMTBMMjA0IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMjE4TDkxMiAyMTgiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTI4MiAxMTBMMjgyIDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMjY3TDkxMiAyNjciIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTM2MCAxMTBMMzYwIDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMzE2TDkxMiAzMTYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTQzOCAxMTBMNDM4IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMzY1TDkxMiAzNjUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTUxNiAxMTBMNTE2IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNDE0TDkxMiA0MTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTU5NCAxMTBMNTk0IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNDYzTDkxMiA0NjMiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTY3MiAxMTBMNjcyIDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNTEyTDkxMiA1MTIiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTc1MCAxMTBMNzUwIDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNTYxTDkxMiA1NjEiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTgyOCAxMTBMODI4IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNjEwTDkxMiA2MTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTkwNiAxMTBMOTA2IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNjU5TDkxMiA2NTkiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PGNpcmNsZSBjeD0iNTAwIiBjeT0iMzcwIiByPSIxNzAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzVhNzg4OCIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtZGFzaGFycmF5PSI5IDEyIi8+PHBhdGggZD0iTTI5NCA1OTBMMzU1IDQ5MEw0MzAgMzg1TDU0NSAzMTBMNjIwIDIwNSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjN2FjOWRiIiBzdHJva2Utd2lkdGg9IjQ4IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSJNNjE1IDIwMkw2OTYgMTQyTTYxNSAyMDJMNjk3IDI2MCIgc3Ryb2tlPSIjZjJjODhlIiBzdHJva2Utd2lkdGg9IjI3IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48Y2lyY2xlIGN4PSI0MzAiIGN5PSIzODUiIHI9IjE1IiBmaWxsPSIjMTUyNTMyIiBzdHJva2U9IiNlYWYzZjIiIHN0cm9rZS13aWR0aD0iNCIvPjxjaXJjbGUgY3g9IjU0NSIgY3k9IjMxMCIgcj0iMTUiIGZpbGw9IiMxNTI1MzIiIHN0cm9rZT0iI2VhZjNmMiIgc3Ryb2tlLXdpZHRoPSI0Ii8+PHRleHQgeD0iNzQiIHk9IjY0MCIgZm9udC1mYW1pbHk9IkFyaWFsLEFwcGxlIFNEIEdvdGhpYyBOZW8sc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMyIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iI2U5ZjNmMiI+R1JJUCBGT1JDRSAvIDAuNDI8L3RleHQ+PC9zdmc+Cg==" alt="관절과 접촉 위치가 표시된 가상 그리퍼 구조도" loading="lazy"/><figcaption class="xp-small">관절과 접촉 위치가 표시된 가상 그리퍼 구조도</figcaption></figure><ol class="xp-steps"><li><span class="xp-num" aria-hidden="true">01</span><div><h3 class="xp-h3">역할</h3><div class="xp-body"><p>파지 조건 · 동작 검토</p></div></div></li><li><span class="xp-num" aria-hidden="true">02</span><div><h3 class="xp-h3">기간</h3><div class="xp-body"><p>2025.08 — 2025.12</p></div></div></li><li><span class="xp-num" aria-hidden="true">03</span><div><h3 class="xp-h3">문제 정의</h3><div class="xp-body"><p>한 가지 파지 위치로는 서로 다른 형태의 물체를 안정적으로 잡기 어렵다는 가상 과제를 설정했습니다.</p></div></div></li><li><span class="xp-num" aria-hidden="true">04</span><div><h3 class="xp-h3">담당 작업</h3><div class="xp-body"><p>접촉 위치와 그리퍼 개방 폭을 도면으로 비교하고 실패 조건을 분류했습니다.</p></div></div></li><li><span class="xp-num" aria-hidden="true">05</span><div><h3 class="xp-h3">결과와 한계</h3><div class="xp-body"><p>세 물체 유형의 동작 시퀀스를 보여 주는 가상 시제품을 만들었습니다. 물리 시험 결과는 포함하지 않습니다.</p></div></div></li></ol><nav class="xp-sources" aria-label="집기 분류 그리퍼 관련 자료"><a href="#source-grip-table">파지 조건표 ↗</a></nav></div></article><article id="section-warehouse-aisle" class="xp-block xp-case" data-case-type="process"><header class="xp-head"><p class="xp-eyebrow"><span class="xp-num">03</span> · 프로젝트</p><h2 class="xp-h2">창고 통로 시험</h2><p class="xp-lead">선반 사이 이동 시 정지와 재시작 조건을 보여 주는 가상 통로 시험입니다.</p></header><div class="xp-case-body"><figure class="xp-figure"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NjAiIGhlaWdodD0iNzIwIiB2aWV3Qm94PSIwIDAgOTYwIDcyMCIgcm9sZT0iaW1nIj48cmVjdCB3aWR0aD0iOTYwIiBoZWlnaHQ9IjcyMCIgZmlsbD0iIzEyMjIyZiIvPjx0ZXh0IHg9IjUyIiB5PSI3MCIgZm9udC1mYW1pbHk9IkFyaWFsLEFwcGxlIFNEIEdvdGhpYyBOZW8sc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzdhYzlkYiI+RklFTEQgU1lTVEVNUyAvIEVYUEVSSU1FTlQgMDM8L3RleHQ+PHBhdGggZD0iTTUyIDg4TDkwOCA4OCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNTI3MDgwIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMTEwTDQ4IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMTIwTDkxMiAxMjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTEyNiAxMTBMMTI2IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMTY5TDkxMiAxNjkiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTIwNCAxMTBMMjA0IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMjE4TDkxMiAyMTgiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTI4MiAxMTBMMjgyIDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMjY3TDkxMiAyNjciIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTM2MCAxMTBMMzYwIDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMzE2TDkxMiAzMTYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTQzOCAxMTBMNDM4IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggMzY1TDkxMiAzNjUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTUxNiAxMTBMNTE2IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNDE0TDkxMiA0MTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTU5NCAxMTBMNTk0IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNDYzTDkxMiA0NjMiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTY3MiAxMTBMNjcyIDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNTEyTDkxMiA1MTIiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTc1MCAxMTBMNzUwIDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNTYxTDkxMiA1NjEiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTgyOCAxMTBMODI4IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNjEwTDkxMiA2MTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTkwNiAxMTBMOTA2IDY3NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjYzYzRiIiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNNDggNjU5TDkxMiA2NTkiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2M2M0YiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHJlY3QgeD0iMTAwIiB5PSIxNjYiIHdpZHRoPSI2MiIgaGVpZ2h0PSI0OCIgcng9IjUiIGZpbGw9IiM0MzY5NzgiIHN0cm9rZT0iIzU4Nzk4OSIvPjxyZWN0IHg9IjE5NCIgeT0iMTY2IiB3aWR0aD0iNjIiIGhlaWdodD0iNDgiIHJ4PSI1IiBmaWxsPSIjMmI0NjU1IiBzdHJva2U9IiM1ODc5ODkiLz48cmVjdCB4PSIyODgiIHk9IjE2NiIgd2lkdGg9IjYyIiBoZWlnaHQ9IjQ4IiByeD0iNSIgZmlsbD0iIzJiNDY1NSIgc3Ryb2tlPSIjNTg3OTg5Ii8+PHJlY3QgeD0iMzgyIiB5PSIxNjYiIHdpZHRoPSI2MiIgaGVpZ2h0PSI0OCIgcng9IjUiIGZpbGw9IiMyYjQ2NTUiIHN0cm9rZT0iIzU4Nzk4OSIvPjxyZWN0IHg9IjQ3NiIgeT0iMTY2IiB3aWR0aD0iNjIiIGhlaWdodD0iNDgiIHJ4PSI1IiBmaWxsPSIjNDM2OTc4IiBzdHJva2U9IiM1ODc5ODkiLz48cmVjdCB4PSI1NzAiIHk9IjE2NiIgd2lkdGg9IjYyIiBoZWlnaHQ9IjQ4IiByeD0iNSIgZmlsbD0iIzJiNDY1NSIgc3Ryb2tlPSIjNTg3OTg5Ii8+PHJlY3QgeD0iNjY0IiB5PSIxNjYiIHdpZHRoPSI2MiIgaGVpZ2h0PSI0OCIgcng9IjUiIGZpbGw9IiMyYjQ2NTUiIHN0cm9rZT0iIzU4Nzk4OSIvPjxyZWN0IHg9Ijc1OCIgeT0iMTY2IiB3aWR0aD0iNjIiIGhlaWdodD0iNDgiIHJ4PSI1IiBmaWxsPSIjMmI0NjU1IiBzdHJva2U9IiM1ODc5ODkiLz48cmVjdCB4PSIxMDAiIHk9IjI0NSIgd2lkdGg9IjYyIiBoZWlnaHQ9IjQ4IiByeD0iNSIgZmlsbD0iIzJiNDY1NSIgc3Ryb2tlPSIjNTg3OTg5Ii8+PHJlY3QgeD0iMTk0IiB5PSIyNDUiIHdpZHRoPSI2MiIgaGVpZ2h0PSI0OCIgcng9IjUiIGZpbGw9IiMyYjQ2NTUiIHN0cm9rZT0iIzU4Nzk4OSIvPjxyZWN0IHg9IjI4OCIgeT0iMjQ1IiB3aWR0aD0iNjIiIGhlaWdodD0iNDgiIHJ4PSI1IiBmaWxsPSIjMmI0NjU1IiBzdHJva2U9IiM1ODc5ODkiLz48cmVjdCB4PSIzODIiIHk9IjI0NSIgd2lkdGg9IjYyIiBoZWlnaHQ9IjQ4IiByeD0iNSIgZmlsbD0iIzQzNjk3OCIgc3Ryb2tlPSIjNTg3OTg5Ii8+PHJlY3QgeD0iNDc2IiB5PSIyNDUiIHdpZHRoPSI2MiIgaGVpZ2h0PSI0OCIgcng9IjUiIGZpbGw9IiMyYjQ2NTUiIHN0cm9rZT0iIzU4Nzk4OSIvPjxyZWN0IHg9IjU3MCIgeT0iMjQ1IiB3aWR0aD0iNjIiIGhlaWdodD0iNDgiIHJ4PSI1IiBmaWxsPSIjMmI0NjU1IiBzdHJva2U9IiM1ODc5ODkiLz48cmVjdCB4PSI2NjQiIHk9IjI0NSIgd2lkdGg9IjYyIiBoZWlnaHQ9IjQ4IiByeD0iNSIgZmlsbD0iIzJiNDY1NSIgc3Ryb2tlPSIjNTg3OTg5Ii8+PHJlY3QgeD0iNzU4IiB5PSIyNDUiIHdpZHRoPSI2MiIgaGVpZ2h0PSI0OCIgcng9IjUiIGZpbGw9IiM0MzY5NzgiIHN0cm9rZT0iIzU4Nzk4OSIvPjxyZWN0IHg9IjEwMCIgeT0iMzI0IiB3aWR0aD0iNjIiIGhlaWdodD0iNDgiIHJ4PSI1IiBmaWxsPSIjMmI0NjU1IiBzdHJva2U9IiM1ODc5ODkiLz48cmVjdCB4PSIxOTQiIHk9IjMyNCIgd2lkdGg9IjYyIiBoZWlnaHQ9IjQ4IiByeD0iNSIgZmlsbD0iIzJiNDY1NSIgc3Ryb2tlPSIjNTg3OTg5Ii8+PHJlY3QgeD0iMjg4IiB5PSIzMjQiIHdpZHRoPSI2MiIgaGVpZ2h0PSI0OCIgcng9IjUiIGZpbGw9IiM0MzY5NzgiIHN0cm9rZT0iIzU4Nzk4OSIvPjxyZWN0IHg9IjM4MiIgeT0iMzI0IiB3aWR0aD0iNjIiIGhlaWdodD0iNDgiIHJ4PSI1IiBmaWxsPSIjMmI0NjU1IiBzdHJva2U9IiM1ODc5ODkiLz48cmVjdCB4PSI0NzYiIHk9IjMyNCIgd2lkdGg9IjYyIiBoZWlnaHQ9IjQ4IiByeD0iNSIgZmlsbD0iIzJiNDY1NSIgc3Ryb2tlPSIjNTg3OTg5Ii8+PHJlY3QgeD0iNTcwIiB5PSIzMjQiIHdpZHRoPSI2MiIgaGVpZ2h0PSI0OCIgcng9IjUiIGZpbGw9IiMyYjQ2NTUiIHN0cm9rZT0iIzU4Nzk4OSIvPjxyZWN0IHg9IjY2NCIgeT0iMzI0IiB3aWR0aD0iNjIiIGhlaWdodD0iNDgiIHJ4PSI1IiBmaWxsPSIjNDM2OTc4IiBzdHJva2U9IiM1ODc5ODkiLz48cmVjdCB4PSI3NTgiIHk9IjMyNCIgd2lkdGg9IjYyIiBoZWlnaHQ9IjQ4IiByeD0iNSIgZmlsbD0iIzJiNDY1NSIgc3Ryb2tlPSIjNTg3OTg5Ii8+PHJlY3QgeD0iMTAwIiB5PSI0MDMiIHdpZHRoPSI2MiIgaGVpZ2h0PSI0OCIgcng9IjUiIGZpbGw9IiMyYjQ2NTUiIHN0cm9rZT0iIzU4Nzk4OSIvPjxyZWN0IHg9IjE5NCIgeT0iNDAzIiB3aWR0aD0iNjIiIGhlaWdodD0iNDgiIHJ4PSI1IiBmaWxsPSIjNDM2OTc4IiBzdHJva2U9IiM1ODc5ODkiLz48cmVjdCB4PSIyODgiIHk9IjQwMyIgd2lkdGg9IjYyIiBoZWlnaHQ9IjQ4IiByeD0iNSIgZmlsbD0iIzJiNDY1NSIgc3Ryb2tlPSIjNTg3OTg5Ii8+PHJlY3QgeD0iMzgyIiB5PSI0MDMiIHdpZHRoPSI2MiIgaGVpZ2h0PSI0OCIgcng9IjUiIGZpbGw9IiMyYjQ2NTUiIHN0cm9rZT0iIzU4Nzk4OSIvPjxyZWN0IHg9IjQ3NiIgeT0iNDAzIiB3aWR0aD0iNjIiIGhlaWdodD0iNDgiIHJ4PSI1IiBmaWxsPSIjMmI0NjU1IiBzdHJva2U9IiM1ODc5ODkiLz48cmVjdCB4PSI1NzAiIHk9IjQwMyIgd2lkdGg9IjYyIiBoZWlnaHQ9IjQ4IiByeD0iNSIgZmlsbD0iIzQzNjk3OCIgc3Ryb2tlPSIjNTg3OTg5Ii8+PHJlY3QgeD0iNjY0IiB5PSI0MDMiIHdpZHRoPSI2MiIgaGVpZ2h0PSI0OCIgcng9IjUiIGZpbGw9IiMyYjQ2NTUiIHN0cm9rZT0iIzU4Nzk4OSIvPjxyZWN0IHg9Ijc1OCIgeT0iNDAzIiB3aWR0aD0iNjIiIGhlaWdodD0iNDgiIHJ4PSI1IiBmaWxsPSIjMmI0NjU1IiBzdHJva2U9IiM1ODc5ODkiLz48cmVjdCB4PSIxMDAiIHk9IjQ4MiIgd2lkdGg9IjYyIiBoZWlnaHQ9IjQ4IiByeD0iNSIgZmlsbD0iIzQzNjk3OCIgc3Ryb2tlPSIjNTg3OTg5Ii8+PHJlY3QgeD0iMTk0IiB5PSI0ODIiIHdpZHRoPSI2MiIgaGVpZ2h0PSI0OCIgcng9IjUiIGZpbGw9IiMyYjQ2NTUiIHN0cm9rZT0iIzU4Nzk4OSIvPjxyZWN0IHg9IjI4OCIgeT0iNDgyIiB3aWR0aD0iNjIiIGhlaWdodD0iNDgiIHJ4PSI1IiBmaWxsPSIjMmI0NjU1IiBzdHJva2U9IiM1ODc5ODkiLz48cmVjdCB4PSIzODIiIHk9IjQ4MiIgd2lkdGg9IjYyIiBoZWlnaHQ9IjQ4IiByeD0iNSIgZmlsbD0iIzJiNDY1NSIgc3Ryb2tlPSIjNTg3OTg5Ii8+PHJlY3QgeD0iNDc2IiB5PSI0ODIiIHdpZHRoPSI2MiIgaGVpZ2h0PSI0OCIgcng9IjUiIGZpbGw9IiM0MzY5NzgiIHN0cm9rZT0iIzU4Nzk4OSIvPjxyZWN0IHg9IjU3MCIgeT0iNDgyIiB3aWR0aD0iNjIiIGhlaWdodD0iNDgiIHJ4PSI1IiBmaWxsPSIjMmI0NjU1IiBzdHJva2U9IiM1ODc5ODkiLz48cmVjdCB4PSI2NjQiIHk9IjQ4MiIgd2lkdGg9IjYyIiBoZWlnaHQ9IjQ4IiByeD0iNSIgZmlsbD0iIzJiNDY1NSIgc3Ryb2tlPSIjNTg3OTg5Ii8+PHJlY3QgeD0iNzU4IiB5PSI0ODIiIHdpZHRoPSI2MiIgaGVpZ2h0PSI0OCIgcng9IjUiIGZpbGw9IiMyYjQ2NTUiIHN0cm9rZT0iIzU4Nzk4OSIvPjxwYXRoIGQ9Ik0xNTAgNjI1TDIzNSA1ODVMMzMwIDU4NUw0MDUgNTA1TDUyMCA1MDVMNTkyIDQyNUw3MzUgNDI1IiBmaWxsPSJub25lIiBzdHJva2U9IiNlOGI1NzQiIHN0cm9rZS13aWR0aD0iMTAiIHN0cm9rZS1kYXNoYXJyYXk9IjEyIDEwIi8+PGNpcmNsZSBjeD0iNzM1IiBjeT0iNDI1IiByPSIxOSIgZmlsbD0iI2U4YjU3NCIvPjx0ZXh0IHg9Ijc0IiB5PSI2NjAiIGZvbnQtZmFtaWx5PSJBcmlhbCxBcHBsZSBTRCBHb3RoaWMgTmVvLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjMiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNlOWYzZjIiPkFJU0xFIC8gMDg8L3RleHQ+PC9zdmc+Cg==" alt="선반과 이동 경로가 표현된 가상 창고 시험 도면" loading="lazy"/><figcaption class="xp-small">선반과 이동 경로가 표현된 가상 창고 시험 도면</figcaption></figure><ol class="xp-steps"><li><span class="xp-num" aria-hidden="true">01</span><div><h3 class="xp-h3">역할</h3><div class="xp-body"><p>시험 절차 · 운영 화면</p></div></div></li><li><span class="xp-num" aria-hidden="true">02</span><div><h3 class="xp-h3">기간</h3><div class="xp-body"><p>2025.01 — 2025.05</p></div></div></li><li><span class="xp-num" aria-hidden="true">03</span><div><h3 class="xp-h3">문제 정의</h3><div class="xp-body"><p>작업자가 통로에 들어왔을 때 로봇이 언제 멈추고 다시 움직여야 하는지 설명 가능한 절차가 필요하다는 상황을 만들었습니다.</p></div></div></li><li><span class="xp-num" aria-hidden="true">04</span><div><h3 class="xp-h3">담당 작업</h3><div class="xp-body"><p>통로 점유, 정지, 확인, 재시작을 단계로 나누고 기록 항목을 정의했습니다.</p></div></div></li><li><span class="xp-num" aria-hidden="true">05</span><div><h3 class="xp-h3">결과와 한계</h3><div class="xp-body"><p>조건을 검토하는 가상 테스트 화면을 작성했습니다. 실제 창고 운영 이력은 없습니다.</p></div></div></li></ol><nav class="xp-sources" aria-label="창고 통로 시험 관련 자료"><a href="#source-aisle-protocol">통로 시험 절차 ↗</a></nav></div></article><section id="career" class="xp-block xp-career"><header class="xp-head"><p class="xp-eyebrow">Experience</p><h2 class="xp-h2">경력</h2></header><ol class="xp-timeline"><li><span class="xp-small">2024.03 — 현재</span><div><h3 class="xp-h3">가상 조직 · 모래 로봇 연구실</h3><p class="xp-small">로봇 엔지니어</p><div class="xp-body"><p>이동 로봇의 가상 경로 계획과 실험 기록을 담당한 설정입니다.</p></div></div></li><li><span class="xp-small">2022.01 — 2024.02</span><div><h3 class="xp-h3">가상 조직 · 작은 기계팀</h3><p class="xp-small">시뮬레이션 개발자</p><div class="xp-body"><p>조작 동작을 검토하는 가상 시뮬레이션 도구를 설계한 경력 설정입니다.</p></div></div></li></ol></section><section id="evidence" class="xp-block xp-evidence"><header class="xp-head"><p class="xp-eyebrow">Evidence</p><h2 class="xp-h2">근거 자료</h2></header><div class="xp-evidence-list"><details id="source-route-log"><summary><span class="xp-eyebrow">실험 기록</span><strong>경로 재계획 기록</strong><span class="xp-small">장애물 조건별 경로 변경</span></summary><div class="xp-body"><p>가상 통로 장애물 설정 → 우회 후보 계산 → 정지 조건 확인. 공개 장소나 실제 로봇의 주행 결과를 나타내지 않습니다.</p></div></details><details id="source-grip-table"><summary><span class="xp-eyebrow">설계 자료</span><strong>파지 조건표</strong><span class="xp-small">물체 크기와 접촉 위치 정의</span></summary><div class="xp-body"><p>서로 다른 가상 물체의 접촉 위치를 비교하고 파지 실패 조건을 정리한 도면입니다.</p></div></details><details id="source-aisle-protocol"><summary><span class="xp-eyebrow">시험 계획</span><strong>통로 시험 절차</strong><span class="xp-small">정지와 재시작 기준</span></summary><div class="xp-body"><p>통로 내 장애물이 생겼을 때 정지, 경로 재계산, 재시작을 구분하는 가상 시험 절차입니다.</p></div></details></div></section><section id="contact" class="xp-block"><div class="xp-panel xp-contact"><p class="xp-eyebrow">Contact</p><h2 class="xp-h2">연락</h2><a class="xp-act" href="mailto:fictional-robotics@example.com">작업을 함께 검토할 수 있습니다. ↗</a></div></section><footer class="xp-footer xp-small"><span>한도윤</span><span>로봇 엔지니어</span></footer></div></main>
+</body>
+</html>
