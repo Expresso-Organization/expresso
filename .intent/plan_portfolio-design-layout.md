@@ -16,12 +16,13 @@ date: 2026-10-20
 |---|---|
 | `packages/portfolio-renderer/src/design-layout.ts` (새) · `design-layout.test.ts` (새) | 배치 계산·문단, 넓은 여백 상수 |
 | `packages/portfolio-renderer/src/kit-styles.ts` | 넓은 여백 규칙을 상수로 생성 |
-| `packages/portfolio-renderer/src/catalog.ts` · `renderer.tsx` · `index.ts` | PortfolioPage 설명, `palette`·`font` 선택 값 처리, 내보내기 |
+| `packages/portfolio-renderer/src/catalog.ts` · `index.ts` | PortfolioPage 설명, 내보내기. `renderer.tsx`는 `palette`·`font`가 없으면 속성을 쓰지 않아 고칠 것이 없음 |
 | `packages/contracts/src/structured-portfolio.ts` (+ 테스트) | 모델 스키마 `groups` 선택지·`design` 제거, 저장 계약 `palette`·`font` 선택 |
 | `packages/contracts/src/page.ts` | `PAGE_PROMPT_VERSION` 12 |
 | `services/backend/src/modules/page/structured-generator.ts` (+ 테스트, `structured-spec-format.test.ts`) | 배치 문단, 컨테이너 조건부, `design.layout` 주입, 스타일 보존 검사 제거 |
 | `services/backend/src/modules/design-systems/design-layout.test.ts` (새) | 38종 문단 수치 = `designLayout` 결과 |
 | `scripts/library/renderer/run-structured-profiles.ts` · `verify-token-kit.mjs` | 모델 생성 경로 `PORTFOLIO_DESIGN`, 디자인별 폴더, 검증이 모델 실행도 받음 |
+| `packages/portfolio-renderer/src/kit.tsx` · `kit.test.ts` | 과정형 사례(CaseProcess)에 사례 이미지 표시(4단계에서 발견한 토큰 키트 결함) |
 | `docs/library/previews/portfolio/runs/design-layout-2026-10-20/` | 3종 × 3 생성 기록·화면 |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.

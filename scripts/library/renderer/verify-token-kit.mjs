@@ -109,6 +109,7 @@ function inspect() {
     headlineSize: parseFloat(getComputedStyle(document.querySelector(".xp-headline")).fontSize),
     introMotion: getComputedStyle(document.querySelector("#intro")).animationName,
     hiddenCases: [...document.querySelectorAll("[data-case-type]")].filter((node) => Number(getComputedStyle(node).opacity) < 1).length,
+    casesWithImage: [...document.querySelectorAll("[data-case-type]")].filter((node) => node.querySelector("img")).map((node) => node.id),
     caseNumbers: [...document.querySelectorAll(".xp-case .xp-head .xp-num")].map((node) => node.textContent),
     displayFamily: firstFamily(getComputedStyle(h1).fontFamily),
     bodyFamily: firstFamily(getComputedStyle(bodyText).fontFamily),
@@ -157,6 +158,12 @@ try {
         assert.ok(checks.nameSize > checks.headlineSize, `${where}: 이름이 가장 크지 않음`);
         assert.equal(checks.introMotion, "none", `${where}: 모션 줄이기 무시`);
         assert.equal(checks.hiddenCases, 0, `${where}: 보이지 않는 사례`);
+        // 이미지가 있는 섹션은 어느 사례 유형으로 그려도 이미지를 하나 이상 보여야 합니다.
+        assert.deepEqual(
+          content.sections.filter((section) => section.media.length).map((section) => `section-${section.id}`).filter((id) => !checks.casesWithImage.includes(id)),
+          [],
+          `${where}: 이미지가 빠진 사례`,
+        );
         assert.deepEqual(checks.caseNumbers, checks.caseNumbers.map((_, index) => String(index + 1).padStart(2, "0")), `${where}: 사례 번호`);
         assert.deepEqual(checks.contrast, [], `${where}: 글자 대비`);
         assert.deepEqual(checks.orphans, [], `${where}: 한 글자 줄바꿈`);

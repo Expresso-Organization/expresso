@@ -192,4 +192,13 @@ describe("사례 번호", () => {
     expect(html).toMatch(/id="section-c"[^]*?<span class="xp-num">01<\/span> · 프로젝트/);
     expect(html).toMatch(/id="section-a"[^]*?<span class="xp-num">02<\/span> · 프로젝트/);
   });
+  it("이미지가 있는 사례는 어느 사례 유형이든 이미지를 하나 이상 표시한다", () => {
+    for (const type of ["CaseEssay", "CaseGallery", "CaseTechnical", "CaseProcess", "ContentPanel"]) {
+      const spec = pageSpec();
+      (spec.elements["section-a"] as { type: string }).type = type;
+      const { html } = renderStructuredPortfolio(spec, content, { design: clarity });
+      const section = html.slice(html.indexOf('id="section-section-a"') >= 0 ? html.indexOf('id="section-section-a"') : html.indexOf('id="section-a"'));
+      expect(section.slice(0, section.indexOf("</article>")), type).toContain(`alt="${image.alt}"`);
+    }
+  });
 });

@@ -149,6 +149,7 @@ function Case({ section, kind }: { section: StructuredSection; kind: CaseKind })
   else if (kind === "process")
     body = (
       <>
+        {first ? <Figure media={first} /> : null}
         <Paragraphs value={section.body} />
         <ol className="xp-steps">
           {section.details.map((item, index) => (
