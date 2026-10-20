@@ -3,7 +3,7 @@
   "specOrigin": "model",
   "contentOrigin": "prepared-fictional",
   "model": "claude-sonnet-5",
-  "htmlSha256": "c14f6120bb3e370a48534b0876af863a86094a418c9d5ba626b45d0a1cd2a00d",
+  "htmlSha256": "b3cdabad22210490b166b9cb64a4c98b22a5937d9568494a9023459148bea1f9",
   "design": {
     "code": "refero-linear-midnight",
     "revisionId": "5d8f5f2d-6d2a-4f24-9d1a-2b8f9e7c1502"
@@ -20,11 +20,11 @@
   "repairCount": 0,
   "usage": {
     "inputTokens": 4,
-    "outputTokens": 8095,
-    "cacheReadTokens": 91619,
-    "cacheCreationTokens": 35027,
-    "costUsd": 0.2393898,
-    "durationMs": 89312
+    "outputTokens": 4825,
+    "cacheReadTokens": 91621,
+    "cacheCreationTokens": 31060,
+    "costUsd": 0.1908222,
+    "durationMs": 57971
   },
   "structured": {
     "version": 1,
@@ -217,7 +217,7 @@
               "layout": "library"
             },
             "motion": "showcase",
-            "rationale": "소개 문단과 집중 분야(조판·출판 디자인·인쇄)가 함께 읽혀야 해 NameIntro를 split으로 둔다. 사례가 3건으로 적어 목차는 rows 두 칸으로 간결하게 편다. 세 사례는 모두 bodyLength 0에 이미지 1장, 역할·기간·문제 정의·담당 작업·결과 항목을 갖춰 각기 다른 사례 유형을 적용한다: 계절의 언어는 문제 정의-담당 작업-결과의 3단 설명이 뚜렷해 CaseProcess, 아카이브 산책은 펼침면 이미지 배열이 핵심이라 CaseGallery, 읽는 길은 지도의 범례·동선 항목표가 중심이라 CaseTechnical을 쓴다. 경력 2건과 근거 3건은 비중이 비슷한 보조 정보라 Columns(even)으로 묶어 지면을 촘촘히 하고 연락처 앞에 배치한다."
+            "rationale": "세 사례 모두 이미지 1장과 문제 정의·담당 작업·결과라는 동일한 단계 구조를 가진 가상 프로젝트이고 본문 길이가 0이라 서사형 대신 CaseProcess로 통일했다. NameIntro는 소개 문단과 집중 분야를 함께 읽혀야 해 split을 골랐고, 목차는 지정된 두 칸 펼침에 맞춰 rows를 썼다. 경력과 근거는 분량이 짧아 Columns(even)으로 묶어 촘촘한 격자 흐름에서 밀도를 맞췄다."
           },
           "children": [
             "intro",
@@ -262,7 +262,7 @@
           "children": []
         },
         "section-archive-walk": {
-          "type": "CaseGallery",
+          "type": "CaseProcess",
           "props": {
             "section": {
               "$state": "/sectionById/archive-walk"
@@ -271,7 +271,7 @@
           "children": []
         },
         "section-reading-routes": {
-          "type": "CaseTechnical",
+          "type": "CaseProcess",
           "props": {
             "section": {
               "$state": "/sectionById/reading-routes"

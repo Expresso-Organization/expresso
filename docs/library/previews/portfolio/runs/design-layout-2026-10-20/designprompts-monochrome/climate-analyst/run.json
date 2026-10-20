@@ -3,7 +3,7 @@
   "specOrigin": "model",
   "contentOrigin": "prepared-fictional",
   "model": "claude-sonnet-5",
-  "htmlSha256": "28555c5a7953d75e583c0440353536037b7961c2151cebbb882b9eb49b3b6935",
+  "htmlSha256": "512aab1233bc3f3105de54290181f6d303aa07c4e63f8dcbae3b592e419053a0",
   "design": {
     "code": "designprompts-monochrome",
     "revisionId": "d3510001-0000-4000-8000-000000000001"
@@ -19,12 +19,12 @@
   "attempts": 1,
   "repairCount": 0,
   "usage": {
-    "inputTokens": 4,
-    "outputTokens": 4762,
-    "cacheReadTokens": 88652,
-    "cacheCreationTokens": 30737,
-    "costUsd": 0.18830639999999998,
-    "durationMs": 50443
+    "inputTokens": 2,
+    "outputTokens": 7222,
+    "cacheReadTokens": 31196,
+    "cacheCreationTokens": 26257,
+    "costUsd": 0.18349120000000002,
+    "durationMs": 86636
   },
   "structured": {
     "version": 1,
@@ -217,7 +217,7 @@
               "layout": "library"
             },
             "motion": "showcase",
-            "rationale": "소개 문단이 방법론을 설명하는 세 문장이고 집중 분야 세 항목이 함께 읽혀야 해 split을 골랐습니다. 사례마다 이미지가 하나씩 있어 색인은 이미지 중심 mosaic으로 미리보기를 제공합니다. 세 사례 모두 본문 문단 없이 지도·차트 이미지 한 장과 역할·기간·문제정의·담당작업·결과한계의 항목표로 이루어져, 도면과 항목표를 나누는 CaseTechnical로 통일했습니다. 왼쪽 제목·오른쪽 본문의 고정 2단 레이아웃에서 이미지와 항목표는 본문 칸 안에서 위아래로 이어집니다."
+            "rationale": "소개 문단과 집중 분야 3가지가 함께 읽혀야 해 NameIntro는 split을 썼습니다. 모든 사례의 본문 길이가 0이고 이미지가 각 1장뿐이라 이미지 중심 타일보다 짧은 목록인 rows가 왼쪽 제목칸·오른쪽 본문칸 단일 열 배치와 맞습니다. 각 사례는 역할·기간·문제 정의·담당 작업·결과와 한계라는 항목표 구조라 CaseTechnical을 기본으로 쓰고, 강우 격자 노트는 문제-작업-결과 서술 흐름이 뚜렷해 CaseProcess를 썼습니다."
           },
           "children": [
             "intro",
@@ -249,7 +249,7 @@
             "sections": {
               "$state": "/sections"
             },
-            "variant": "mosaic"
+            "variant": "rows"
           },
           "children": []
         },
@@ -263,7 +263,7 @@
           "children": []
         },
         "section-rain-series": {
-          "type": "CaseTechnical",
+          "type": "CaseProcess",
           "props": {
             "section": {
               "$state": "/sectionById/rain-series"

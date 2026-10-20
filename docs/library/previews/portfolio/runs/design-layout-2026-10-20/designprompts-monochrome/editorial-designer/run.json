@@ -3,7 +3,7 @@
   "specOrigin": "model",
   "contentOrigin": "prepared-fictional",
   "model": "claude-sonnet-5",
-  "htmlSha256": "20696f0a8adde2ef536bd62900aca19355e1008e5178b42ccea53f0ddac5eb9f",
+  "htmlSha256": "907d85e423239b9e29aa94cd1277e4a2b4ca2dbf7a3554fcd5c742673ecd4d54",
   "design": {
     "code": "designprompts-monochrome",
     "revisionId": "d3510001-0000-4000-8000-000000000001"
@@ -20,11 +20,11 @@
   "repairCount": 0,
   "usage": {
     "inputTokens": 4,
-    "outputTokens": 4720,
-    "cacheReadTokens": 88678,
-    "cacheCreationTokens": 30578,
-    "costUsd": 0.1872556,
-    "durationMs": 50473
+    "outputTokens": 5884,
+    "cacheReadTokens": 88673,
+    "cacheCreationTokens": 32375,
+    "costUsd": 0.2060826,
+    "durationMs": 68367
   },
   "structured": {
     "version": 1,
@@ -217,7 +217,7 @@
               "layout": "library"
             },
             "motion": "showcase",
-            "rationale": "소개 문단이 집중 분야 목록과 함께 읽혀야 해 split으로 나눕니다. 세 사례 모두 요약이 짧고 이미지가 1장뿐이라 색인은 rows로 간결하게 둡니다. 각 사례는 역할·기간 메타 다음에 문제 정의·담당 작업·결과와 한계가 단계로 이어져 CaseProcess로 표시합니다. 넓은 여백 배치에 맞춰 motion은 showcase로 전환을 또렷하게 둡니다."
+            "rationale": "소개 문단과 집중 분야를 나란히 읽도록 NameIntro는 split으로 구성했습니다. 세 사례 모두 이미지 한 장과 역할·기간·문제 정의·담당 작업·결과와 한계라는 동일한 구조라 문제-작업-결과 단계를 보여주는 CaseProcess로 통일했습니다. 사례가 세 건으로 많지 않고 요약이 짧아 ProjectIndex는 rows로 간결하게 두었습니다. 왼쪽 제목 칸·오른쪽 본문 칸 배치를 모든 섹션에 그대로 적용해 넓은 여백의 Monochrome 디자인과 맞췄습니다."
           },
           "children": [
             "intro",

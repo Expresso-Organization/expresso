@@ -3,7 +3,7 @@
   "specOrigin": "model",
   "contentOrigin": "prepared-fictional",
   "model": "claude-sonnet-5",
-  "htmlSha256": "18cff1fa7de4fa65620506cbfae90383bf3815f55d10f22bfa897e6a5e871dfa",
+  "htmlSha256": "2656faa8718c944639c83d29c66c773bf11ff279111ee1c4f1faf4425b2b1c7b",
   "design": {
     "code": "clarity",
     "revisionId": "5d8f5f2d-6d2a-4f24-9d1a-2b8f9e7c1002"
@@ -20,11 +20,11 @@
   "repairCount": 0,
   "usage": {
     "inputTokens": 4,
-    "outputTokens": 6655,
-    "cacheReadTokens": 91511,
-    "cacheCreationTokens": 33546,
-    "costUsd": 0.21904419999999997,
-    "durationMs": 71865
+    "outputTokens": 9348,
+    "cacheReadTokens": 91505,
+    "cacheCreationTokens": 36296,
+    "costUsd": 0.256973,
+    "durationMs": 101224
   },
   "structured": {
     "version": 1,
@@ -217,7 +217,7 @@
               "layout": "library"
             },
             "motion": "showcase",
-            "rationale": "소개 문단이 집중 분야와 함께 읽혀야 해 NameIntro는 split을 썼습니다. 목차는 세 사례가 짧아 rows로 두었습니다. 세 사례는 본문이 없고 이미지 1장과 문제 정의·담당 작업·결과와 한계로 이어지는 3단계 서사라 CaseProcess를 공통으로 썼습니다. 경력과 근거는 비중이 비슷한 보충 정보라 even Columns로 나란히 두고, 나머지는 단일 열로 이어지게 했습니다."
+            "rationale": "소개와 집중 분야를 함께 보여주려 NameIntro는 split을 선택했습니다. 세 사례 모두 이미지 1점과 역할·기간·문제·작업·결과 구조가 같아, 골목 열지도는 방법론과 항목표가 중심이라 CaseTechnical, 강우 격자 노트는 문제→작업→결과의 시간순 흐름이 중심이라 CaseProcess, 녹지 격차 아틀라스는 본문이 짧고 대표 이미지가 중심이라 CaseGallery로 구분했습니다. 세 사례 모두 이미지가 있어 ProjectIndex는 mosaic으로 미리보기를 강조했습니다. 디자인이 단일 열을 지정해 컨테이너 없이 소개-목차-사례-경력-근거-연락처 순으로 배치했습니다."
           },
           "children": [
             "intro",
@@ -225,7 +225,8 @@
             "section-block-heat",
             "section-rain-series",
             "section-green-access",
-            "group-1",
+            "career",
+            "evidence",
             "contact"
           ]
         },
@@ -248,12 +249,12 @@
             "sections": {
               "$state": "/sections"
             },
-            "variant": "rows"
+            "variant": "mosaic"
           },
           "children": []
         },
         "section-block-heat": {
-          "type": "CaseProcess",
+          "type": "CaseTechnical",
           "props": {
             "section": {
               "$state": "/sectionById/block-heat"
@@ -271,7 +272,7 @@
           "children": []
         },
         "section-green-access": {
-          "type": "CaseProcess",
+          "type": "CaseGallery",
           "props": {
             "section": {
               "$state": "/sectionById/green-access"
@@ -305,16 +306,6 @@
             }
           },
           "children": []
-        },
-        "group-1": {
-          "type": "Columns",
-          "props": {
-            "variant": "even"
-          },
-          "children": [
-            "career",
-            "evidence"
-          ]
         }
       }
     }

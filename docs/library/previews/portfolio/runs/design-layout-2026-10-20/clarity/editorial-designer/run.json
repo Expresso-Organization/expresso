@@ -3,7 +3,7 @@
   "specOrigin": "model",
   "contentOrigin": "prepared-fictional",
   "model": "claude-sonnet-5",
-  "htmlSha256": "d06d343708a4bc2bfe3039335fec9ebf2831a84085ef5bc15aceefcb78f2a7ff",
+  "htmlSha256": "ac29fea75d5625f564ffb427fcf6d0e7446535172ab30727c960d02cb35bce95",
   "design": {
     "code": "clarity",
     "revisionId": "5d8f5f2d-6d2a-4f24-9d1a-2b8f9e7c1002"
@@ -19,12 +19,12 @@
   "attempts": 1,
   "repairCount": 0,
   "usage": {
-    "inputTokens": 4,
-    "outputTokens": 7326,
-    "cacheReadTokens": 91559,
-    "cacheCreationTokens": 33580,
-    "costUsd": 0.22589979999999998,
-    "durationMs": 86224
+    "inputTokens": 2,
+    "outputTokens": 6252,
+    "cacheReadTokens": 32224,
+    "cacheCreationTokens": 27117,
+    "costUsd": 0.1774368,
+    "durationMs": 67664
   },
   "structured": {
     "version": 1,
@@ -217,7 +217,7 @@
               "layout": "library"
             },
             "motion": "showcase",
-            "rationale": "소개문과 집중 분야 세 가지를 함께 읽어야 해 intro는 split을 씀. 세 사례 모두 본문 없이 이미지 한 장과 문제 정의·담당 작업·결과와 한계로 이어지는 항목표만 있어 셋 다 CaseProcess로 통일. 목차는 세 항목뿐인 짧은 목록이라 rows로 소개 바로 다음에 둠. 디자인이 단일 열로 고정돼 있어 컨테이너 없이 소개·목차·사례 세 개·경력·근거·연락처를 위에서 아래로 그대로 이어붙임."
+            "rationale": "소개 문단이 길고 집중 분야 3개가 함께 읽혀야 해 NameIntro는 split으로 이름·소개·집중분야를 좌우로 나눴다. 사례 3건은 모두 이미지 1장과 항목표 중심이고 본문이 없어, 문제정의→담당작업→결과 흐름이 뚜렷한 계절의 언어는 CaseProcess, 펼침면 이미지 전시가 핵심인 아카이브 산책은 CaseGallery, 범례·동선 등 정보 시스템 성격이 강한 읽는 길은 CaseTechnical로 각각 다르게 선택했다. 목차는 사례 수가 적어 간결한 rows로 소개 직후에 두었다. 사용자가 고른 단일 열 배치를 따라 Columns·Grid·Band는 쓰지 않고 소개-목차-사례 3건-경력-근거-연락처 순서로 1080px 폭 안에서 위에서 아래로 이어지게 구성했다."
           },
           "children": [
             "intro",
@@ -263,7 +263,7 @@
           "children": []
         },
         "section-archive-walk": {
-          "type": "CaseProcess",
+          "type": "CaseGallery",
           "props": {
             "section": {
               "$state": "/sectionById/archive-walk"
@@ -272,7 +272,7 @@
           "children": []
         },
         "section-reading-routes": {
-          "type": "CaseProcess",
+          "type": "CaseTechnical",
           "props": {
             "section": {
               "$state": "/sectionById/reading-routes"

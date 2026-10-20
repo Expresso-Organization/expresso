@@ -3,7 +3,7 @@
   "specOrigin": "model",
   "contentOrigin": "prepared-fictional",
   "model": "claude-sonnet-5",
-  "htmlSha256": "c5100963dbcfc555a376b813765406895dfff1003c2a9c14b051a499f3e6375e",
+  "htmlSha256": "04eb1c41e41ba545af46a2aec630246dddd1452d7753fa95db088526e6941ed3",
   "design": {
     "code": "designprompts-monochrome",
     "revisionId": "d3510001-0000-4000-8000-000000000001"
@@ -19,12 +19,12 @@
   "attempts": 1,
   "repairCount": 0,
   "usage": {
-    "inputTokens": 4,
-    "outputTokens": 4961,
-    "cacheReadTokens": 88653,
-    "cacheCreationTokens": 30787,
-    "costUsd": 0.1904966,
-    "durationMs": 53637
+    "inputTokens": 2,
+    "outputTokens": 5915,
+    "cacheReadTokens": 31220,
+    "cacheCreationTokens": 26344,
+    "costUsd": 0.17077399999999998,
+    "durationMs": 64376
   },
   "structured": {
     "version": 1,
@@ -217,7 +217,7 @@
               "layout": "library"
             },
             "motion": "showcase",
-            "rationale": "소개 문단이 짧고 집중 분야 3개가 함께 읽혀야 해 NameIntro는 split으로 이름과 소개를 나란히 배치합니다. 사례 3개의 요약이 짧아 ProjectIndex는 rows로 구성합니다. 각 사례는 도면 이미지 1장과 역할·기간·문제 정의·담당 작업·결과와 한계로 이어지는 항목표를 가져 CaseTechnical로 표시합니다. 좌우 241/675 고정 배치에서 motion은 showcase로 지정합니다."
+            "rationale": "소개 문단과 집중 분야가 함께 읽혀야 해 NameIntro는 split을 씁니다. 세 사례 모두 본문 텍스트 없이 역할·기간·문제 정의·담당 작업·결과 항목과 도면 1장으로 구성되어 목차는 rows로 짧게 보여줍니다. 경로 계획과 창고 통로 사례는 상태 전환과 단계 절차를 담당 작업으로 설계해 CaseProcess로, 그리퍼 사례는 접촉 위치와 개방 폭 도면 비교·분류가 중심이라 CaseTechnical로 나눕니다. 넓은 좌우 2단 레이아웃에서 제목은 왼쪽 칸, 본문·도면·항목표는 오른쪽 칸에 이어지도록 구성합니다."
           },
           "children": [
             "intro",
@@ -254,7 +254,7 @@
           "children": []
         },
         "section-route-planner": {
-          "type": "CaseTechnical",
+          "type": "CaseProcess",
           "props": {
             "section": {
               "$state": "/sectionById/route-planner"
@@ -272,7 +272,7 @@
           "children": []
         },
         "section-warehouse-aisle": {
-          "type": "CaseTechnical",
+          "type": "CaseProcess",
           "props": {
             "section": {
               "$state": "/sectionById/warehouse-aisle"

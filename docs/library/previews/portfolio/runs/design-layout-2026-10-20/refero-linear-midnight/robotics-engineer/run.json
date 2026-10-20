@@ -3,7 +3,7 @@
   "specOrigin": "model",
   "contentOrigin": "prepared-fictional",
   "model": "claude-sonnet-5",
-  "htmlSha256": "37b4e3f8eaac8ee788f30dad08ffb2313e384973dfebaab021c8b599af291f6c",
+  "htmlSha256": "523e6d2969479854694c7882a9fe90737dbed1e59a98fc964d637b934c187598",
   "design": {
     "code": "refero-linear-midnight",
     "revisionId": "5d8f5f2d-6d2a-4f24-9d1a-2b8f9e7c1502"
@@ -20,11 +20,11 @@
   "repairCount": 0,
   "usage": {
     "inputTokens": 2,
-    "outputTokens": 4243,
+    "outputTokens": 4435,
     "cacheReadTokens": 32248,
-    "cacheCreationTokens": 27131,
-    "costUsd": 0.15740759999999998,
-    "durationMs": 44994
+    "cacheCreationTokens": 27259,
+    "costUsd": 0.1598396,
+    "durationMs": 46441
   },
   "structured": {
     "version": 1,
@@ -217,7 +217,7 @@
               "layout": "library"
             },
             "motion": "showcase",
-            "rationale": "세 사례는 모두 본문 없이 도면 1장과 역할·기간·문제정의·담당작업·결과 항목표로 구성되어 CaseTechnical의 좌우 분할 구조에 맞으므로 모두 CaseTechnical로 표시합니다. 컨테이너에 넣으면 그림과 항목표가 위아래로 쌓여 이 좌우 분할을 잃으므로 세 사례는 컨테이너 밖에 독립적으로 둡니다. 소개 문단과 집중 분야 세 가지를 함께 읽어야 하므로 intro는 split으로 좌우 배치합니다. 목차는 rows로 두어 소개 다음에 두 칸으로 펼칩니다. 경력과 근거는 둘 다 짧은 목록형 자료라 Columns(even)로 나란히 묶어 지면 흐름을 정리했습니다."
+            "rationale": "대표 이미지가 없어 소개는 문단과 집중 분야를 함께 읽히는 split으로 짓고, 촘촘한 격자에 맞춰 목차는 rows로 두 칸 전개합니다. 세 사례는 모두 본문 없이 도면 한 장과 역할·기간·문제정의·담당작업·결과 항목표로 구성되어 CaseTechnical로 통일했습니다. 경력과 근거는 비중이 비슷해 Columns(even)로 묶어 지면 흐름을 나누고, 연락처는 마지막에 둡니다."
           },
           "children": [
             "intro",

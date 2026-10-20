@@ -3,7 +3,7 @@
   "specOrigin": "model",
   "contentOrigin": "prepared-fictional",
   "model": "claude-sonnet-5",
-  "htmlSha256": "a02c72e116f97ed1d115d90dbda872ee754be6b1aab7a7971fc680e74ebdb8ab",
+  "htmlSha256": "7fdf9859403362175e4e49ad5ed64cbae6b85cf960fff0c67949be42a971964f",
   "design": {
     "code": "refero-linear-midnight",
     "revisionId": "5d8f5f2d-6d2a-4f24-9d1a-2b8f9e7c1502"
@@ -20,11 +20,11 @@
   "repairCount": 0,
   "usage": {
     "inputTokens": 4,
-    "outputTokens": 6534,
-    "cacheReadTokens": 91567,
-    "cacheCreationTokens": 33315,
-    "costUsd": 0.2169214,
-    "durationMs": 67207
+    "outputTokens": 8880,
+    "cacheReadTokens": 91561,
+    "cacheCreationTokens": 35918,
+    "costUsd": 0.2507922,
+    "durationMs": 94159
   },
   "structured": {
     "version": 1,
@@ -217,13 +217,15 @@
               "layout": "library"
             },
             "motion": "showcase",
-            "rationale": "세 사례 모두 bodyLength 0으로 역할·기간·문제 정의·담당 작업·결과의 항목표만 있어 CaseTechnical로 통일했습니다. 비중이 같은 세 사례라 Grid(even)로 나란히 비교하고, 그림과 항목표는 컨테이너 규칙에 따라 위아래로 쌓입니다. 소개는 집중 분야 3개와 방법론 문장이 함께 읽혀야 해 split을 썼고, 목차는 사례 설명이 짧아 rows로 두 칸에 펼칩니다. 경력과 근거는 비중이 비슷해 Columns(even)로 나란히 두었습니다."
+            "rationale": "세 사례 모두 bodyLength 0, 이미지 1장, 역할·기간·문제 정의·담당 작업·결과와 한계 5항목 표로 구성되어 서술형 설명이 없어 CaseTechnical을 공통으로 선택했다(그림과 항목표를 좌우로 분할). 목차는 사례가 3개로 적어 rows로 배치했다. intro는 소개 문단이 세 문장으로 길고 집중 분야 3개를 함께 보여줘야 해 split을 선택했다. career(2건)·evidence(3건)는 비중이 가볍고 성격이 비슷해 Columns even으로 582px씩 나란히 뒀고, CaseTechnical 세 건은 좌우 분할을 유지하기 위해 전체 폭으로 독립 배치했다."
           },
           "children": [
             "intro",
             "index",
+            "section-block-heat",
+            "section-rain-series",
+            "section-green-access",
             "group-1",
-            "group-2",
             "contact"
           ]
         },
@@ -305,17 +307,6 @@
           "children": []
         },
         "group-1": {
-          "type": "Grid",
-          "props": {
-            "variant": "even"
-          },
-          "children": [
-            "section-block-heat",
-            "section-rain-series",
-            "section-green-access"
-          ]
-        },
-        "group-2": {
           "type": "Columns",
           "props": {
             "variant": "even"

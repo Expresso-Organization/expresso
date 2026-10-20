@@ -9,8 +9,8 @@
       "introVariant": "split",
       "groups": 0,
       "specOrigin": "model",
-      "layout": "NameIntro · ProjectIndex · CaseTechnical · CaseTechnical · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
-      "htmlSha256": "950dbd2fdcb5b56a50c08ee15f355f954973124b301e3e219ca232509796cba4",
+      "layout": "NameIntro · ProjectIndex · CaseProcess · CaseProcess · CaseProcess · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "77d10cfe93fa12945e656a17bf6b6d62baf28c7c1d9bee81dd5270c5da75b151",
       "screens": [
         {
           "width": 390,
@@ -22,6 +22,7 @@
           "headlineSize": 19.51,
           "introMotion": "none",
           "hiddenCases": 0,
+          "stretchedTags": [],
           "casesWithImage": [
             "section-route-planner",
             "section-gripper-study",
@@ -53,6 +54,7 @@
           "headlineSize": 24.334,
           "introMotion": "none",
           "hiddenCases": 0,
+          "stretchedTags": [],
           "casesWithImage": [
             "section-route-planner",
             "section-gripper-study",
@@ -84,6 +86,7 @@
           "headlineSize": 24.96,
           "introMotion": "none",
           "hiddenCases": 0,
+          "stretchedTags": [],
           "casesWithImage": [
             "section-route-planner",
             "section-gripper-study",
@@ -116,8 +119,8 @@
       "introVariant": "split",
       "groups": 0,
       "specOrigin": "model",
-      "layout": "NameIntro · ProjectIndex · CaseProcess · CaseProcess · CaseProcess · CareerTimeline · EvidenceGrid · Contact",
-      "htmlSha256": "d06d343708a4bc2bfe3039335fec9ebf2831a84085ef5bc15aceefcb78f2a7ff",
+      "layout": "NameIntro · ProjectIndex · CaseProcess · CaseGallery · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "ac29fea75d5625f564ffb427fcf6d0e7446535172ab30727c960d02cb35bce95",
       "screens": [
         {
           "width": 390,
@@ -129,6 +132,7 @@
           "headlineSize": 19.51,
           "introMotion": "none",
           "hiddenCases": 0,
+          "stretchedTags": [],
           "casesWithImage": [
             "section-season-reader",
             "section-archive-walk",
@@ -160,6 +164,7 @@
           "headlineSize": 24.334,
           "introMotion": "none",
           "hiddenCases": 0,
+          "stretchedTags": [],
           "casesWithImage": [
             "section-season-reader",
             "section-archive-walk",
@@ -191,6 +196,7 @@
           "headlineSize": 24.96,
           "introMotion": "none",
           "hiddenCases": 0,
+          "stretchedTags": [],
           "casesWithImage": [
             "section-season-reader",
             "section-archive-walk",
@@ -221,10 +227,10 @@
       "name": "정하린",
       "role": "기후 데이터 분석가",
       "introVariant": "split",
-      "groups": 1,
+      "groups": 0,
       "specOrigin": "model",
-      "layout": "NameIntro · ProjectIndex · CaseProcess · CaseProcess · CaseProcess · Columns · Contact",
-      "htmlSha256": "18cff1fa7de4fa65620506cbfae90383bf3815f55d10f22bfa897e6a5e871dfa",
+      "layout": "NameIntro · ProjectIndex · CaseTechnical · CaseProcess · CaseGallery · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "2656faa8718c944639c83d29c66c773bf11ff279111ee1c4f1faf4425b2b1c7b",
       "screens": [
         {
           "width": 390,
@@ -236,6 +242,7 @@
           "headlineSize": 19.51,
           "introMotion": "none",
           "hiddenCases": 0,
+          "stretchedTags": [],
           "casesWithImage": [
             "section-block-heat",
             "section-rain-series",
@@ -267,6 +274,7 @@
           "headlineSize": 24.334,
           "introMotion": "none",
           "hiddenCases": 0,
+          "stretchedTags": [],
           "casesWithImage": [
             "section-block-heat",
             "section-rain-series",
@@ -298,6 +306,7 @@
           "headlineSize": 24.96,
           "introMotion": "none",
           "hiddenCases": 0,
+          "stretchedTags": [],
           "casesWithImage": [
             "section-block-heat",
             "section-rain-series",
@@ -330,8 +339,8 @@
       "introVariant": "split",
       "groups": 0,
       "specOrigin": "model",
-      "layout": "NameIntro · ProjectIndex · CaseTechnical · CaseTechnical · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
-      "htmlSha256": "c5100963dbcfc555a376b813765406895dfff1003c2a9c14b051a499f3e6375e",
+      "layout": "NameIntro · ProjectIndex · CaseProcess · CaseTechnical · CaseProcess · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "04eb1c41e41ba545af46a2aec630246dddd1452d7753fa95db088526e6941ed3",
       "screens": [
         {
           "width": 390,
@@ -343,6 +352,7 @@
           "headlineSize": 19.51,
           "introMotion": "none",
           "hiddenCases": 0,
+          "stretchedTags": [],
           "casesWithImage": [
             "section-route-planner",
             "section-gripper-study",
@@ -375,6 +385,7 @@
           "headlineSize": 24.334,
           "introMotion": "none",
           "hiddenCases": 0,
+          "stretchedTags": [],
           "casesWithImage": [
             "section-route-planner",
             "section-gripper-study",
@@ -407,6 +418,7 @@
           "headlineSize": 24.96,
           "introMotion": "none",
           "hiddenCases": 0,
+          "stretchedTags": [],
           "casesWithImage": [
             "section-route-planner",
             "section-gripper-study",
@@ -441,7 +453,7 @@
       "groups": 0,
       "specOrigin": "model",
       "layout": "NameIntro · ProjectIndex · CaseProcess · CaseProcess · CaseProcess · CareerTimeline · EvidenceGrid · Contact",
-      "htmlSha256": "20696f0a8adde2ef536bd62900aca19355e1008e5178b42ccea53f0ddac5eb9f",
+      "htmlSha256": "907d85e423239b9e29aa94cd1277e4a2b4ca2dbf7a3554fcd5c742673ecd4d54",
       "screens": [
         {
           "width": 390,
@@ -453,6 +465,7 @@
           "headlineSize": 19.51,
           "introMotion": "none",
           "hiddenCases": 0,
+          "stretchedTags": [],
           "casesWithImage": [
             "section-season-reader",
             "section-archive-walk",
@@ -485,6 +498,7 @@
           "headlineSize": 24.334,
           "introMotion": "none",
           "hiddenCases": 0,
+          "stretchedTags": [],
           "casesWithImage": [
             "section-season-reader",
             "section-archive-walk",
@@ -517,6 +531,7 @@
           "headlineSize": 24.96,
           "introMotion": "none",
           "hiddenCases": 0,
+          "stretchedTags": [],
           "casesWithImage": [
             "section-season-reader",
             "section-archive-walk",
@@ -550,8 +565,8 @@
       "introVariant": "split",
       "groups": 0,
       "specOrigin": "model",
-      "layout": "NameIntro · ProjectIndex · CaseTechnical · CaseTechnical · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
-      "htmlSha256": "28555c5a7953d75e583c0440353536037b7961c2151cebbb882b9eb49b3b6935",
+      "layout": "NameIntro · ProjectIndex · CaseTechnical · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "512aab1233bc3f3105de54290181f6d303aa07c4e63f8dcbae3b592e419053a0",
       "screens": [
         {
           "width": 390,
@@ -563,6 +578,7 @@
           "headlineSize": 19.51,
           "introMotion": "none",
           "hiddenCases": 0,
+          "stretchedTags": [],
           "casesWithImage": [
             "section-block-heat",
             "section-rain-series",
@@ -595,6 +611,7 @@
           "headlineSize": 24.334,
           "introMotion": "none",
           "hiddenCases": 0,
+          "stretchedTags": [],
           "casesWithImage": [
             "section-block-heat",
             "section-rain-series",
@@ -627,6 +644,7 @@
           "headlineSize": 24.96,
           "introMotion": "none",
           "hiddenCases": 0,
+          "stretchedTags": [],
           "casesWithImage": [
             "section-block-heat",
             "section-rain-series",
@@ -661,7 +679,7 @@
       "groups": 1,
       "specOrigin": "model",
       "layout": "NameIntro · ProjectIndex · CaseTechnical · CaseTechnical · CaseTechnical · Columns · Contact",
-      "htmlSha256": "37b4e3f8eaac8ee788f30dad08ffb2313e384973dfebaab021c8b599af291f6c",
+      "htmlSha256": "523e6d2969479854694c7882a9fe90737dbed1e59a98fc964d637b934c187598",
       "screens": [
         {
           "width": 390,
@@ -673,6 +691,7 @@
           "headlineSize": 19.51,
           "introMotion": "none",
           "hiddenCases": 0,
+          "stretchedTags": [],
           "casesWithImage": [
             "section-route-planner",
             "section-gripper-study",
@@ -704,6 +723,7 @@
           "headlineSize": 24.334,
           "introMotion": "none",
           "hiddenCases": 0,
+          "stretchedTags": [],
           "casesWithImage": [
             "section-route-planner",
             "section-gripper-study",
@@ -735,6 +755,7 @@
           "headlineSize": 28.08,
           "introMotion": "none",
           "hiddenCases": 0,
+          "stretchedTags": [],
           "casesWithImage": [
             "section-route-planner",
             "section-gripper-study",
@@ -767,8 +788,8 @@
       "introVariant": "split",
       "groups": 1,
       "specOrigin": "model",
-      "layout": "NameIntro · ProjectIndex · CaseProcess · CaseGallery · CaseTechnical · Columns · Contact",
-      "htmlSha256": "c14f6120bb3e370a48534b0876af863a86094a418c9d5ba626b45d0a1cd2a00d",
+      "layout": "NameIntro · ProjectIndex · CaseProcess · CaseProcess · CaseProcess · Columns · Contact",
+      "htmlSha256": "b3cdabad22210490b166b9cb64a4c98b22a5937d9568494a9023459148bea1f9",
       "screens": [
         {
           "width": 390,
@@ -780,6 +801,7 @@
           "headlineSize": 19.51,
           "introMotion": "none",
           "hiddenCases": 0,
+          "stretchedTags": [],
           "casesWithImage": [
             "section-season-reader",
             "section-archive-walk",
@@ -811,6 +833,7 @@
           "headlineSize": 24.334,
           "introMotion": "none",
           "hiddenCases": 0,
+          "stretchedTags": [],
           "casesWithImage": [
             "section-season-reader",
             "section-archive-walk",
@@ -842,6 +865,7 @@
           "headlineSize": 28.08,
           "introMotion": "none",
           "hiddenCases": 0,
+          "stretchedTags": [],
           "casesWithImage": [
             "section-season-reader",
             "section-archive-walk",
@@ -872,10 +896,10 @@
       "name": "정하린",
       "role": "기후 데이터 분석가",
       "introVariant": "split",
-      "groups": 2,
+      "groups": 1,
       "specOrigin": "model",
-      "layout": "NameIntro · ProjectIndex · Grid · Columns · Contact",
-      "htmlSha256": "a02c72e116f97ed1d115d90dbda872ee754be6b1aab7a7971fc680e74ebdb8ab",
+      "layout": "NameIntro · ProjectIndex · CaseTechnical · CaseTechnical · CaseTechnical · Columns · Contact",
+      "htmlSha256": "7fdf9859403362175e4e49ad5ed64cbae6b85cf960fff0c67949be42a971964f",
       "screens": [
         {
           "width": 390,
@@ -887,6 +911,7 @@
           "headlineSize": 19.51,
           "introMotion": "none",
           "hiddenCases": 0,
+          "stretchedTags": [],
           "casesWithImage": [
             "section-block-heat",
             "section-rain-series",
@@ -918,6 +943,7 @@
           "headlineSize": 24.334,
           "introMotion": "none",
           "hiddenCases": 0,
+          "stretchedTags": [],
           "casesWithImage": [
             "section-block-heat",
             "section-rain-series",
@@ -949,6 +975,7 @@
           "headlineSize": 28.08,
           "introMotion": "none",
           "hiddenCases": 0,
+          "stretchedTags": [],
           "casesWithImage": [
             "section-block-heat",
             "section-rain-series",

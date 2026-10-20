@@ -3,7 +3,7 @@
   "specOrigin": "model",
   "contentOrigin": "prepared-fictional",
   "model": "claude-sonnet-5",
-  "htmlSha256": "950dbd2fdcb5b56a50c08ee15f355f954973124b301e3e219ca232509796cba4",
+  "htmlSha256": "77d10cfe93fa12945e656a17bf6b6d62baf28c7c1d9bee81dd5270c5da75b151",
   "design": {
     "code": "clarity",
     "revisionId": "5d8f5f2d-6d2a-4f24-9d1a-2b8f9e7c1002"
@@ -19,12 +19,12 @@
   "attempts": 1,
   "repairCount": 0,
   "usage": {
-    "inputTokens": 2,
-    "outputTokens": 4397,
-    "cacheReadTokens": 32248,
-    "cacheCreationTokens": 27071,
-    "costUsd": 0.1587076,
-    "durationMs": 47264
+    "inputTokens": 4,
+    "outputTokens": 7666,
+    "cacheReadTokens": 91706,
+    "cacheCreationTokens": 34614,
+    "costUsd": 0.23346520000000004,
+    "durationMs": 82124
   },
   "structured": {
     "version": 1,
@@ -217,7 +217,7 @@
               "layout": "library"
             },
             "motion": "showcase",
-            "rationale": "소개 문단과 집중 분야를 함께 보여주기 위해 NameIntro는 split으로 구성했다. 세 사례 모두 긴 서술 없이 도면 1장과 역할·기간·문제 정의·담당 작업·결과와 한계를 담은 항목표로 이루어져 있어 CaseTechnical로 통일했다. 목차는 사례 수가 적어 rows로 구성했다. 단일 열 배치를 지키기 위해 컨테이너는 쓰지 않고 소개, 목차, 세 사례, 경력, 근거, 연락처를 순서대로 이어지게 배치했다."
+            "rationale": "소개 문단과 집중 분야 세 가지가 함께 읽혀야 해 NameIntro는 split을 선택했습니다. 세 사례 모두 본문 길이가 0이고 문제 정의·담당 작업·결과와 한계로 이어지는 단계형 설명과 도면 1장을 갖춰 CaseProcess로 통일했습니다. 사례 요약이 한 문장으로 짧아 목차는 rows로 두었습니다. 단일 열 배치를 유지하기 위해 컨테이너는 쓰지 않고 소개·목차·세 사례·경력·근거·연락처를 순서대로 이어 붙였습니다."
           },
           "children": [
             "intro",
@@ -254,7 +254,7 @@
           "children": []
         },
         "section-route-planner": {
-          "type": "CaseTechnical",
+          "type": "CaseProcess",
           "props": {
             "section": {
               "$state": "/sectionById/route-planner"
@@ -263,7 +263,7 @@
           "children": []
         },
         "section-gripper-study": {
-          "type": "CaseTechnical",
+          "type": "CaseProcess",
           "props": {
             "section": {
               "$state": "/sectionById/gripper-study"
@@ -272,7 +272,7 @@
           "children": []
         },
         "section-warehouse-aisle": {
-          "type": "CaseTechnical",
+          "type": "CaseProcess",
           "props": {
             "section": {
               "$state": "/sectionById/warehouse-aisle"
