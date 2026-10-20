@@ -1,0 +1,562 @@
+{
+  "clarity": {
+    "version": 2,
+    "identity": {
+      "name": "Clarity",
+      "description": "빠른 검토에서 역할, 대표 성과, 근거가 한 흐름으로 읽히는 기본 디자인",
+      "visualThesis": "한 줄기의 읽기 흐름으로 역할과 성과를 분명하게 연결",
+      "traits": [
+        "명료함",
+        "안정된 리듬",
+        "성과 우선"
+      ],
+      "signatureMoves": [
+        "Hero에서 역할과 대표 성과를 한 문장으로 연결",
+        "얕은 표면과 부드러운 경계"
+      ]
+    },
+    "origin": {
+      "kind": "builtin",
+      "sourceName": "Expresso",
+      "sourceUrl": null,
+      "capturedAt": null,
+      "attribution": "Expresso 기본 디자인"
+    },
+    "colors": {
+      "canvas": {
+        "value": "#ffffff",
+        "role": "페이지 전체 바탕"
+      },
+      "surface": {
+        "value": "#f7f8fa",
+        "role": "기본 섹션과 카드 표면"
+      },
+      "elevated": {
+        "value": "#eef2f7",
+        "role": "한 단계 올라온 정보 표면"
+      },
+      "text": {
+        "value": "#17202a",
+        "role": "제목과 본문"
+      },
+      "muted": {
+        "value": "#5f6b78",
+        "role": "설명과 메타데이터"
+      },
+      "border": {
+        "value": "#d6dde6",
+        "role": "정보 구획의 경계"
+      },
+      "accent": {
+        "value": "#2563eb",
+        "role": "대표 성과와 현재 상태"
+      },
+      "action": {
+        "value": "#2563eb",
+        "role": "주요 행동 배경"
+      },
+      "actionText": {
+        "value": "#ffffff",
+        "role": "주요 행동 위 글자"
+      },
+      "roles": [
+        {
+          "token": "accent",
+          "role": "강조",
+          "usage": "대표 성과와 선택 상태"
+        },
+        {
+          "token": "action",
+          "role": "주요 행동",
+          "usage": "페이지의 핵심 연락 행동"
+        },
+        {
+          "token": "muted",
+          "role": "보조 정보",
+          "usage": "기간, 역할, 설명"
+        }
+      ]
+    },
+    "typography": {
+      "display": {
+        "family": "Inter",
+        "fallback": "Noto Sans KR, system-ui",
+        "role": "Hero와 섹션 제목"
+      },
+      "body": {
+        "family": "system-ui",
+        "fallback": "Noto Sans KR, sans-serif",
+        "role": "사례 설명과 긴 본문"
+      },
+      "mono": {
+        "family": "ui-monospace",
+        "fallback": "monospace",
+        "role": "수치, 기간, 기술 메타데이터"
+      },
+      "scale": [
+        {
+          "name": "body",
+          "size": "1rem",
+          "lineHeight": "1.65"
+        },
+        {
+          "name": "eyebrow",
+          "size": "0.8rem",
+          "lineHeight": "1.4"
+        },
+        {
+          "name": "heading",
+          "size": "2rem",
+          "lineHeight": "1.2"
+        },
+        {
+          "name": "display",
+          "size": "4rem",
+          "lineHeight": "1.05"
+        }
+      ],
+      "weights": [
+        400,
+        500,
+        700
+      ],
+      "lineHeights": [
+        1.2,
+        1.65
+      ],
+      "letterSpacing": [
+        "0",
+        "-0.02em"
+      ],
+      "measure": "46rem"
+    },
+    "spacing": {
+      "baseUnit": 4,
+      "elementGap": 14,
+      "componentGap": 24,
+      "sectionGap": 72,
+      "contentWidth": 1080
+    },
+    "shape": {
+      "cardRadius": 12,
+      "controlRadius": 8,
+      "borderWidth": 1,
+      "shadowStyle": "soft"
+    },
+    "componentKit": {
+      "chrome": "plain",
+      "marker": "plain",
+      "emphasis": "plain",
+      "divider": "hairline"
+    },
+    "composition": {
+      "structure": "single-column",
+      "layout": "single-column",
+      "density": "comfortable",
+      "sectionRhythm": "하나의 읽기 흐름에 일정한 섹션 간격을 적용",
+      "hierarchy": "역할, 대표 성과, 상세 근거 순서",
+      "surfaceStrategy": "밝은 바탕 위에 얕은 카드 표면"
+    },
+    "components": {
+      "hero": {
+        "description": "첫 화면부터 마지막 연락 행동까지 끊기지 않는 단일 읽기 흐름",
+        "anatomy": [
+          "역할",
+          "대표 성과",
+          "연락 행동"
+        ],
+        "tokens": [
+          "canvas",
+          "text",
+          "accent",
+          "action",
+          "action-text"
+        ],
+        "do": [
+          "첫 화면에서 역할과 대표 성과를 함께 보여준다"
+        ],
+        "dont": [
+          "소개 문구만으로 첫 화면을 채우지 않는다"
+        ]
+      },
+      "card": {
+        "description": "문제, 행동, 결과를 한 경계 안에서 읽는 단위",
+        "anatomy": [
+          "제목",
+          "맥락",
+          "결과",
+          "근거"
+        ],
+        "tokens": [
+          "surface",
+          "elevated",
+          "border",
+          "text",
+          "muted"
+        ],
+        "do": [
+          "성과와 근거가 같은 시야에 들어오게 한다"
+        ],
+        "dont": [
+          "장식만 있는 빈 카드를 반복하지 않는다"
+        ]
+      },
+      "metric": {
+        "description": "대표 성과를 본문보다 한 단계 크게 보여주는 수치 단위",
+        "anatomy": [
+          "값",
+          "단위",
+          "비교 기준",
+          "설명"
+        ],
+        "tokens": [
+          "accent",
+          "text",
+          "muted"
+        ],
+        "do": [
+          "수치의 기간과 비교 기준을 함께 적는다"
+        ],
+        "dont": [
+          "맥락 없는 숫자만 크게 놓지 않는다"
+        ]
+      },
+      "contact": {
+        "description": "읽기 흐름의 끝에서 제공하는 한 가지 연락 행동",
+        "anatomy": [
+          "행동 문구",
+          "연락 수단"
+        ],
+        "tokens": [
+          "action",
+          "action-text"
+        ],
+        "do": [
+          "행동 결과를 알 수 있는 문구를 쓴다"
+        ],
+        "dont": [
+          "같은 위계의 행동을 여러 개 나열하지 않는다"
+        ]
+      }
+    },
+    "imagery": {
+      "mode": "project-artifacts-optional",
+      "aspectRatio": "4:3",
+      "treatment": "얇은 경계와 자연 비율",
+      "fallback": "이미지가 없으면 성과와 과정이 읽히는 텍스트 사례를 사용"
+    },
+    "motion": {
+      "personality": "차분한 진입과 상태 변화",
+      "duration": "180ms",
+      "easing": "ease-out",
+      "reducedMotion": "움직임을 제거하고 최종 상태를 즉시 표시"
+    },
+    "rules": {
+      "do": [
+        "선언된 토큰 역할로 색과 서체를 사용한다",
+        "역할과 성과를 먼저 읽히게 한다"
+      ],
+      "dont": [
+        "장식용 그러데이션을 사용하지 않는다",
+        "외부 자산과 식별 가능한 원본 카피를 가져오지 않는다"
+      ],
+      "tokenRoles": [
+        {
+          "token": "text",
+          "role": "핵심 내용",
+          "usage": "제목과 본문"
+        },
+        {
+          "token": "accent",
+          "role": "한 가지 강조",
+          "usage": "대표 성과와 현재 상태"
+        },
+        {
+          "token": "action",
+          "role": "행동",
+          "usage": "연락과 프로젝트 열기"
+        }
+      ]
+    }
+  },
+  "signal": {
+    "version": 2,
+    "identity": {
+      "name": "Signal",
+      "description": "기술, 데이터, 운영 성과의 수치와 비교 기준을 정밀하게 보여주는 디자인",
+      "visualThesis": "어두운 기술 지면에서 수치, 경계, 고정폭 메타데이터를 선명하게 분리",
+      "traits": [
+        "정밀함",
+        "높은 정보 밀도",
+        "수치 중심"
+      ],
+      "signatureMoves": [
+        "고정폭 메타데이터와 청록색 수치 강조",
+        "얇은 선으로 나눈 증거 격자"
+      ]
+    },
+    "origin": {
+      "kind": "builtin",
+      "sourceName": "Expresso",
+      "sourceUrl": null,
+      "capturedAt": null,
+      "attribution": "Expresso 기본 디자인"
+    },
+    "colors": {
+      "canvas": {
+        "value": "#0b1220",
+        "role": "페이지 전체 바탕"
+      },
+      "surface": {
+        "value": "#111c2e",
+        "role": "기본 섹션과 카드 표면"
+      },
+      "elevated": {
+        "value": "#18263b",
+        "role": "한 단계 올라온 정보 표면"
+      },
+      "text": {
+        "value": "#f2f6fb",
+        "role": "제목과 본문"
+      },
+      "muted": {
+        "value": "#a6b4c7",
+        "role": "설명과 메타데이터"
+      },
+      "border": {
+        "value": "#29405f",
+        "role": "정보 구획의 경계"
+      },
+      "accent": {
+        "value": "#22d3ee",
+        "role": "대표 성과와 현재 상태"
+      },
+      "action": {
+        "value": "#22d3ee",
+        "role": "주요 행동 배경"
+      },
+      "actionText": {
+        "value": "#07111f",
+        "role": "주요 행동 위 글자"
+      },
+      "roles": [
+        {
+          "token": "accent",
+          "role": "강조",
+          "usage": "대표 성과와 선택 상태"
+        },
+        {
+          "token": "action",
+          "role": "주요 행동",
+          "usage": "페이지의 핵심 연락 행동"
+        },
+        {
+          "token": "muted",
+          "role": "보조 정보",
+          "usage": "기간, 역할, 설명"
+        }
+      ]
+    },
+    "typography": {
+      "display": {
+        "family": "Inter",
+        "fallback": "IBM Plex Sans KR, system-ui",
+        "role": "Hero와 섹션 제목"
+      },
+      "body": {
+        "family": "system-ui",
+        "fallback": "IBM Plex Sans KR, sans-serif",
+        "role": "사례 설명과 긴 본문"
+      },
+      "mono": {
+        "family": "ui-monospace",
+        "fallback": "monospace",
+        "role": "수치, 기간, 기술 메타데이터"
+      },
+      "scale": [
+        {
+          "name": "body",
+          "size": "1rem",
+          "lineHeight": "1.65"
+        },
+        {
+          "name": "eyebrow",
+          "size": "0.8rem",
+          "lineHeight": "1.4"
+        },
+        {
+          "name": "heading",
+          "size": "1.8rem",
+          "lineHeight": "1.2"
+        },
+        {
+          "name": "display",
+          "size": "4rem",
+          "lineHeight": "1.05"
+        }
+      ],
+      "weights": [
+        400,
+        500,
+        700
+      ],
+      "lineHeights": [
+        1.2,
+        1.5
+      ],
+      "letterSpacing": [
+        "0",
+        "0.04em"
+      ],
+      "measure": "46rem"
+    },
+    "spacing": {
+      "baseUnit": 4,
+      "elementGap": 10,
+      "componentGap": 24,
+      "sectionGap": 56,
+      "contentWidth": 1180
+    },
+    "shape": {
+      "cardRadius": 4,
+      "controlRadius": 4,
+      "borderWidth": 1,
+      "shadowStyle": "hairline"
+    },
+    "componentKit": {
+      "chrome": "plain",
+      "marker": "numbered",
+      "emphasis": "bar",
+      "divider": "hairline"
+    },
+    "composition": {
+      "structure": "evidence-grid",
+      "layout": "dense-grid",
+      "density": "compact",
+      "sectionRhythm": "짧은 정보 묶음과 정밀한 구획을 반복",
+      "hierarchy": "대표 수치, 비교 기준, 기술 근거 순서",
+      "surfaceStrategy": "어두운 표면 단계를 얇은 선으로 구분"
+    },
+    "components": {
+      "hero": {
+        "description": "청록 수치와 고정폭 메타데이터가 이끄는 증거 격자",
+        "anatomy": [
+          "역할",
+          "대표 성과",
+          "연락 행동"
+        ],
+        "tokens": [
+          "canvas",
+          "text",
+          "accent",
+          "action",
+          "action-text"
+        ],
+        "do": [
+          "첫 화면에서 역할과 대표 성과를 함께 보여준다"
+        ],
+        "dont": [
+          "소개 문구만으로 첫 화면을 채우지 않는다"
+        ]
+      },
+      "card": {
+        "description": "문제, 행동, 결과를 한 경계 안에서 읽는 단위",
+        "anatomy": [
+          "제목",
+          "맥락",
+          "결과",
+          "근거"
+        ],
+        "tokens": [
+          "surface",
+          "elevated",
+          "border",
+          "text",
+          "muted"
+        ],
+        "do": [
+          "성과와 근거가 같은 시야에 들어오게 한다"
+        ],
+        "dont": [
+          "장식만 있는 빈 카드를 반복하지 않는다"
+        ]
+      },
+      "metric": {
+        "description": "고정폭 숫자와 비교 기준을 함께 제시하는 수치 단위",
+        "anatomy": [
+          "값",
+          "단위",
+          "비교 기준",
+          "설명"
+        ],
+        "tokens": [
+          "accent",
+          "text",
+          "muted"
+        ],
+        "do": [
+          "수치의 기간과 비교 기준을 함께 적는다"
+        ],
+        "dont": [
+          "맥락 없는 숫자만 크게 놓지 않는다"
+        ]
+      },
+      "contact": {
+        "description": "읽기 흐름의 끝에서 제공하는 한 가지 연락 행동",
+        "anatomy": [
+          "행동 문구",
+          "연락 수단"
+        ],
+        "tokens": [
+          "action",
+          "action-text"
+        ],
+        "do": [
+          "행동 결과를 알 수 있는 문구를 쓴다"
+        ],
+        "dont": [
+          "같은 위계의 행동을 여러 개 나열하지 않는다"
+        ]
+      }
+    },
+    "imagery": {
+      "mode": "data-and-architecture-first",
+      "aspectRatio": "4:3",
+      "treatment": "도표와 아키텍처를 경계 안에 정렬",
+      "fallback": "이미지가 없으면 성과와 과정이 읽히는 텍스트 사례를 사용"
+    },
+    "motion": {
+      "personality": "정확하고 짧은 상태 변화",
+      "duration": "140ms",
+      "easing": "ease-out",
+      "reducedMotion": "움직임을 제거하고 최종 상태를 즉시 표시"
+    },
+    "rules": {
+      "do": [
+        "선언된 토큰 역할로 색과 서체를 사용한다",
+        "수치에 비교 기준을 붙인다"
+      ],
+      "dont": [
+        "장식용 그러데이션을 사용하지 않는다",
+        "외부 자산과 식별 가능한 원본 카피를 가져오지 않는다"
+      ],
+      "tokenRoles": [
+        {
+          "token": "text",
+          "role": "핵심 내용",
+          "usage": "제목과 본문"
+        },
+        {
+          "token": "accent",
+          "role": "한 가지 강조",
+          "usage": "대표 성과와 현재 상태"
+        },
+        {
+          "token": "action",
+          "role": "행동",
+          "usage": "연락과 프로젝트 열기"
+        }
+      ]
+    }
+  }
+}

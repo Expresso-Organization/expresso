@@ -1,1 +1,1 @@
-export { findDesignSystemRevision, generationStyleFor } from "./generation-style.js";
+export { findDesignSystemRevision, findPortfolioDesign, generationStyleFor } from "./generation-style.js";

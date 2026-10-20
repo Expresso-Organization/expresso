@@ -106,11 +106,11 @@ describe("등록 지면 렌더러", () => {
   it("본문을 실행 코드로 해석하지 않고 사용자 스타일의 색을 보존한다", () => {
     const value = structuredClone(content);
     value.sections[0]!.body = '<script>alert("x")</script>';
-    const result = renderStructuredPortfolio(spec, value, {
+    const result = renderStructuredPortfolio(spec, value, { theme: {
       background: "#eeeeee",
       text: "#111111",
       accent: "#123456",
-    });
+    } });
     expect(result.html).toContain("&lt;script&gt;");
     expect(result.html).not.toContain("<script>");
     expect(result.css).toContain("--sp-accent:#123456");
