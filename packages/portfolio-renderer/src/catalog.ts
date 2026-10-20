@@ -29,7 +29,7 @@ export const structuredCatalog = defineCatalog(schema, {
       }),
       slots: ["default"],
       description:
-        "전체 구도: editorial=고정 소개와 기사 두 열, gallery=전면 작품 전시, dossier=목차와 상세 두 열, library=수집 원본의 전면 구도.",
+        "페이지 루트. 배치·색·서체는 사용자가 고른 디자인 시스템이 정합니다. 자식 순서가 읽는 순서입니다.",
     },
     NameIntro: {
       props: z.object({

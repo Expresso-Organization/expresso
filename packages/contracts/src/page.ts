@@ -62,8 +62,12 @@ import { MEDIA_ASSET_PATH_PREFIX } from "./media-path.js";
  * 11 — Spec 생성에서 수집 원본 선택지와 sourceId 지시를 뺐다(디자인 토큰 키트로
  * 그린다). 색·서체는 디자인 시스템이 정한다고 알리고, NameIntro.variant 선택
  * 기준을 넣었다.
+ *
+ * 12 — 고른 디자인의 배치(단일 열 · 촘촘한 격자 · 넓은 여백, 본문 폭, 제목 위치, 칸 폭)를
+ * 배치 계산(`describeDesignLayout`)에서 만든 문단으로 알린다. 넓은 여백이면 컨테이너
+ * 설명을 빼고, 모델이 design(배치 이름 · 색 묶음 · 서체 종류)을 고르지 않는다.
  */
-export const PAGE_PROMPT_VERSION = 11;
+export const PAGE_PROMPT_VERSION = 12;
 
 /**
  * 한 지면의 상한.

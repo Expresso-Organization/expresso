@@ -74,7 +74,6 @@ const schema = structuredModelSchema(content, {
   intro: [],
   section: [],
   guidance: [],
-  layout: "library",
 });
 type JsonObject = {
   properties: Record<string, JsonObject>;
@@ -112,7 +111,9 @@ describe("출력 스키마에서 만든 형식 설명", () => {
         expect(line, `${key}.${prop}`).toContain(`${prop}`);
     }
     expect(format.text).toContain('section: {$state: "/sectionById/route"}');
-    expect(format.text).toContain('layout: "library"');
+    // 모델은 design을 고르지 않습니다.
+    expect(format.text).not.toContain("palette");
+    expect(format.text).not.toContain("design");
   });
   it("이미지가 없는 사례에는 CaseGallery를 적지 않는다", () => {
     const gripper = format.text
@@ -143,5 +144,17 @@ describe("출력 스키마에서 만든 형식 설명", () => {
       `사용할 요소 ID: ${JSON.stringify(format.required)}`,
     );
     expect(prompt).not.toContain("editorial(측면 소개+기사)");
+  });
+  it("컨테이너를 쓸 수 없는 디자인이면 컨테이너 설명 없이 배치 문단을 넣는다", () => {
+    const flat = structuredModelSchema(content, { intro: [], section: [], guidance: [], groups: [] });
+    const prompt = structuredSpecPrompt(content, "", null, flat, "고른 디자인은 가상이고 배치는 넓은 여백입니다.");
+    expect(prompt).toContain("고른 디자인은 가상이고 배치는 넓은 여백입니다.");
+    expect(prompt).not.toContain("컨테이너는 지면을 나누는 요소입니다");
+    expect(prompt).not.toContain("Columns:");
+    expect(prompt).not.toContain("variant='rail'로 Columns");
+    expect(prompt).toContain("모든 요소를 page.children에 바로 둡니다");
+    const withGroups = structuredSpecPrompt(content, "", null, schema);
+    expect(withGroups).toContain("컨테이너는 지면을 나누는 요소입니다");
+    expect(withGroups).toContain("Columns:");
   });
 });
