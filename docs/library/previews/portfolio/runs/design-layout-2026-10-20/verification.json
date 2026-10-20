@@ -1,0 +1,977 @@
+{
+  "fictional": true,
+  "runs": [
+    {
+      "design": "clarity",
+      "slug": "robotics-engineer",
+      "name": "한도윤",
+      "role": "로봇 엔지니어",
+      "introVariant": "split",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseTechnical · CaseTechnical · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "950dbd2fdcb5b56a50c08ee15f355f954973124b301e3e219ca232509796cba4",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 41.6,
+          "headlineSize": 19.51,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "casesWithImage": [
+            "section-route-planner",
+            "section-gripper-study",
+            "section-warehouse-aisle"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "system-ui",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 64.152,
+          "headlineSize": 24.334,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "casesWithImage": [
+            "section-route-planner",
+            "section-gripper-study",
+            "section-warehouse-aisle"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "system-ui",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 83.2,
+          "headlineSize": 24.96,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "casesWithImage": [
+            "section-route-planner",
+            "section-gripper-study",
+            "section-warehouse-aisle"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "system-ui",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "clarity",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "split",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseProcess · CaseProcess · CaseProcess · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "d06d343708a4bc2bfe3039335fec9ebf2831a84085ef5bc15aceefcb78f2a7ff",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 41.6,
+          "headlineSize": 19.51,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "system-ui",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 64.152,
+          "headlineSize": 24.334,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "system-ui",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 83.2,
+          "headlineSize": 24.96,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "system-ui",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "clarity",
+      "slug": "climate-analyst",
+      "name": "정하린",
+      "role": "기후 데이터 분석가",
+      "introVariant": "split",
+      "groups": 1,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseProcess · CaseProcess · CaseProcess · Columns · Contact",
+      "htmlSha256": "18cff1fa7de4fa65620506cbfae90383bf3815f55d10f22bfa897e6a5e871dfa",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 41.6,
+          "headlineSize": 19.51,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "casesWithImage": [
+            "section-block-heat",
+            "section-rain-series",
+            "section-green-access"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "system-ui",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 64.152,
+          "headlineSize": 24.334,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "casesWithImage": [
+            "section-block-heat",
+            "section-rain-series",
+            "section-green-access"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "system-ui",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 83.2,
+          "headlineSize": 24.96,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "casesWithImage": [
+            "section-block-heat",
+            "section-rain-series",
+            "section-green-access"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "system-ui",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-monochrome",
+      "slug": "robotics-engineer",
+      "name": "한도윤",
+      "role": "로봇 엔지니어",
+      "introVariant": "split",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseTechnical · CaseTechnical · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "c5100963dbcfc555a376b813765406895dfff1003c2a9c14b051a499f3e6375e",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 41.6,
+          "headlineSize": 19.51,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "casesWithImage": [
+            "section-route-planner",
+            "section-gripper-study",
+            "section-warehouse-aisle"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Playfair Display",
+          "bodyFamily": "Source Serif 4",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "Playfair Display",
+            "Source Serif 4"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 64.152,
+          "headlineSize": 24.334,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "casesWithImage": [
+            "section-route-planner",
+            "section-gripper-study",
+            "section-warehouse-aisle"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Playfair Display",
+          "bodyFamily": "Source Serif 4",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "Playfair Display",
+            "Source Serif 4"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 90.88,
+          "headlineSize": 24.96,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "casesWithImage": [
+            "section-route-planner",
+            "section-gripper-study",
+            "section-warehouse-aisle"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Playfair Display",
+          "bodyFamily": "Source Serif 4",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "Playfair Display",
+            "Source Serif 4"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-monochrome",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "split",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseProcess · CaseProcess · CaseProcess · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "20696f0a8adde2ef536bd62900aca19355e1008e5178b42ccea53f0ddac5eb9f",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 41.6,
+          "headlineSize": 19.51,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Playfair Display",
+          "bodyFamily": "Source Serif 4",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "Playfair Display",
+            "Source Serif 4"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 64.152,
+          "headlineSize": 24.334,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Playfair Display",
+          "bodyFamily": "Source Serif 4",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "Playfair Display",
+            "Source Serif 4"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 90.88,
+          "headlineSize": 24.96,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Playfair Display",
+          "bodyFamily": "Source Serif 4",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "Playfair Display",
+            "Source Serif 4"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-monochrome",
+      "slug": "climate-analyst",
+      "name": "정하린",
+      "role": "기후 데이터 분석가",
+      "introVariant": "split",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseTechnical · CaseTechnical · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "28555c5a7953d75e583c0440353536037b7961c2151cebbb882b9eb49b3b6935",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 41.6,
+          "headlineSize": 19.51,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "casesWithImage": [
+            "section-block-heat",
+            "section-rain-series",
+            "section-green-access"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Playfair Display",
+          "bodyFamily": "Source Serif 4",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "Playfair Display",
+            "Source Serif 4"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 64.152,
+          "headlineSize": 24.334,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "casesWithImage": [
+            "section-block-heat",
+            "section-rain-series",
+            "section-green-access"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Playfair Display",
+          "bodyFamily": "Source Serif 4",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "Playfair Display",
+            "Source Serif 4"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 90.88,
+          "headlineSize": 24.96,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "casesWithImage": [
+            "section-block-heat",
+            "section-rain-series",
+            "section-green-access"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Playfair Display",
+          "bodyFamily": "Source Serif 4",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "Playfair Display",
+            "Source Serif 4"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "refero-linear-midnight",
+      "slug": "robotics-engineer",
+      "name": "한도윤",
+      "role": "로봇 엔지니어",
+      "introVariant": "split",
+      "groups": 1,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseTechnical · CaseTechnical · CaseTechnical · Columns · Contact",
+      "htmlSha256": "37b4e3f8eaac8ee788f30dad08ffb2313e384973dfebaab021c8b599af291f6c",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 41.6,
+          "headlineSize": 19.51,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "casesWithImage": [
+            "section-route-planner",
+            "section-gripper-study",
+            "section-warehouse-aisle"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 64.152,
+          "headlineSize": 24.334,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "casesWithImage": [
+            "section-route-planner",
+            "section-gripper-study",
+            "section-warehouse-aisle"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 83.2,
+          "headlineSize": 28.08,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "casesWithImage": [
+            "section-route-planner",
+            "section-gripper-study",
+            "section-warehouse-aisle"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "refero-linear-midnight",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "split",
+      "groups": 1,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseProcess · CaseGallery · CaseTechnical · Columns · Contact",
+      "htmlSha256": "c14f6120bb3e370a48534b0876af863a86094a418c9d5ba626b45d0a1cd2a00d",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 41.6,
+          "headlineSize": 19.51,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 64.152,
+          "headlineSize": 24.334,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 83.2,
+          "headlineSize": 28.08,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "refero-linear-midnight",
+      "slug": "climate-analyst",
+      "name": "정하린",
+      "role": "기후 데이터 분석가",
+      "introVariant": "split",
+      "groups": 2,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · Grid · Columns · Contact",
+      "htmlSha256": "a02c72e116f97ed1d115d90dbda872ee754be6b1aab7a7971fc680e74ebdb8ab",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 41.6,
+          "headlineSize": 19.51,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "casesWithImage": [
+            "section-block-heat",
+            "section-rain-series",
+            "section-green-access"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 64.152,
+          "headlineSize": 24.334,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "casesWithImage": [
+            "section-block-heat",
+            "section-rain-series",
+            "section-green-access"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 83.2,
+          "headlineSize": 28.08,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "casesWithImage": [
+            "section-block-heat",
+            "section-rain-series",
+            "section-green-access"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    }
+  ]
+}
