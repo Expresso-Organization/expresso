@@ -66,8 +66,12 @@ import { MEDIA_ASSET_PATH_PREFIX } from "./media-path.js";
  * 12 — 고른 디자인의 배치(단일 열 · 촘촘한 격자 · 넓은 여백, 본문 폭, 제목 위치, 칸 폭)를
  * 배치 계산(`describeDesignLayout`)에서 만든 문단으로 알린다. 넓은 여백이면 컨테이너
  * 설명을 빼고, 모델이 design(배치 이름 · 색 묶음 · 서체 종류)을 고르지 않는다.
+ *
+ * 13 — 사용자가 고른 유형(사례 상세형 · 포스터형 · 글 · 목록형)의 문단(`describeArchetype`)을
+ * 넣고, 유형에 없는 컴포넌트 설명을 뺀다. 첫 화면 구도가 고정된 유형은 구도 선택 기준을 빼고,
+ * 글 · 목록형은 목차 지시를 뺀다. 내용 정리는 출처에 있는 기간만 period로 옮긴다.
  */
-export const PAGE_PROMPT_VERSION = 12;
+export const PAGE_PROMPT_VERSION = 13;
 
 /**
  * 한 지면의 상한.
