@@ -29,6 +29,17 @@ describe("디자인 시스템으로 생성 요청", () => {
     select.mockReset();
   });
 
+  it("고른 페이지 짜임새를 생성 요청에 함께 보낸다", async () => {
+    expect(await startGenerationAction({ error: null }, form({ archetype: "poster" }))).toEqual({ error: null });
+    expect(submit).toHaveBeenCalledWith("test-session", { recipeId: RECIPE, designSystemRevisionId: REVISION, archetype: "poster" }, expect.any(String));
+  });
+
+  it("알 수 없는 짜임새 값이면 생성을 요청하지 않는다", async () => {
+    const result = await startGenerationAction({ error: null }, form({ archetype: "magazine" }));
+    expect(result.error).toBeTruthy();
+    expect(submit).not.toHaveBeenCalled();
+  });
+
   it("고른 디자인을 저장한 뒤 그 판으로 생성을 요청한다", async () => {
     const order: string[] = [];
     select.mockImplementation(async () => { order.push("select"); });

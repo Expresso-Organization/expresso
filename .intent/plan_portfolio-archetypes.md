@@ -21,7 +21,7 @@ date: 2026-10-22
 | `packages/portfolio-renderer/src/archetype.ts` (새) · `catalog.ts` · `kit.tsx` · `kit-styles.ts` · `index.ts` (+ 테스트) | 유형 문단, 새 컴포넌트 · 변형, 유형 CSS |
 | `services/backend/src/modules/generation/service.ts` (+ 테스트) | `archetype`을 작업 → 포트폴리오 |
 | `services/backend/src/modules/page/service.ts` · `generator.ts` · `structured-generator.ts` (+ 테스트) | 생성 문맥 `archetype`, 유형별 스키마 · 프롬프트 · 루트 prop, 내용 정리 `period` 규칙 |
-| `services/web/src/app/(app)/brew/[brewId]/design/DesignCatalog.tsx` · `.module.css` · `design-actions.ts` (+ 테스트) · `src/lib/api/endpoints.ts` | 유형 선택과 전송 |
+| `services/web/src/app/(app)/brew/[brewId]/design/DesignCatalog.tsx` · `.module.css` · `design-actions.ts` (+ 테스트) | 유형 선택과 전송. API 클라이언트는 계약 타입(`SubmitGeneration`)을 그대로 써서 고칠 것이 없음 |
 | `scripts/library/renderer/run-structured-profiles.ts` | `PORTFOLIO_ARCHETYPE`, `period` 채움, 디자인 폴더 재렌더 원본 |
 | `docs/library/previews/portfolio/runs/archetype-*-2026-10-22/` | 생성 · 38종 재렌더 기록 |
 
