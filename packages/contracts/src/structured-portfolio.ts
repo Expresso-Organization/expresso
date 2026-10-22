@@ -150,6 +150,13 @@ export const STRUCTURED_CASE_TYPES = [
   // 글 · 목록형 전용: "기간 · 제목 · 요약" 한 줄을 펼쳐 상세를 봅니다.
   "CaseRow",
 ] as const;
+/**
+ * 유형마다 모델이 쓸 수 있는 사례 유형입니다. 글 · 목록형은 사례 행만, 나머지는 사례 행을 뺀 다섯 가지입니다.
+ * 출력 스키마와 Spec 프롬프트의 카탈로그 설명이 이 목록을 함께 씁니다.
+ */
+export function archetypeCaseTypes(archetype: PortfolioArchetype): readonly (typeof STRUCTURED_CASE_TYPES)[number][] {
+  return archetype === "list" ? ["CaseRow"] : STRUCTURED_CASE_TYPES.filter((type) => type !== "CaseRow");
+}
 // 모델이 지면을 나누는 컨테이너입니다. 자식은 json-render의 기본 slot(children)에 둡니다.
 export const STRUCTURED_GROUP_TYPES = ["Columns", "Grid", "Band"] as const;
 export type StructuredGroupType = (typeof STRUCTURED_GROUP_TYPES)[number];
@@ -369,14 +376,9 @@ export function structuredModelSchema(
   };
   for (const section of content.sections)
     nodes[`section-${section.id}`] = z.strictObject({
-      type:
-        archetype === "list"
-          ? z.literal("CaseRow")
-          : z.enum(
-              section.media.length
-                ? ["CaseEssay", "CaseGallery", "CaseTechnical", "CaseProcess", "ContentPanel"]
-                : ["CaseEssay", "CaseTechnical", "CaseProcess", "ContentPanel"],
-            ),
+      type: z.enum(
+        archetypeCaseTypes(archetype).filter((type) => section.media.length || type !== "CaseGallery") as [string, ...string[]],
+      ),
       props: z.strictObject({
         section: ref(`sectionById/${section.id}`),
         ...(choices?.section.length
@@ -612,4 +614,22 @@ export function validateStructuredPortfolio(
   if (!content.contact && counts.has("Contact"))
     throw new Error("제공되지 않은 연락처를 표시할 수 없습니다.");
   return { version: 1, content, spec };
+}
+
+/** 유형과 허용 컨테이너로 Spec 생성 모델에게 보일 컴포넌트 이름을 정합니다. 출력 스키마와 같은 규칙입니다. */
+export function archetypeComponents(
+  archetype: PortfolioArchetype,
+  groups: readonly StructuredGroupType[],
+): string[] {
+  const allowedGroups = archetype === "case-study" ? groups : [];
+  return [
+    "PortfolioPage",
+    "NameIntro",
+    ...(archetype === "list" ? [] : ["ProjectIndex"]),
+    ...archetypeCaseTypes(archetype),
+    ...allowedGroups,
+    "CareerTimeline",
+    "EvidenceGrid",
+    "Contact",
+  ];
 }

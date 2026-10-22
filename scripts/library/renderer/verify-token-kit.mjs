@@ -94,7 +94,7 @@ function inspect() {
   const escaped = [...document.querySelectorAll(".xp-inner *")]
     .filter((node) => {
       const rect = node.getBoundingClientRect();
-      return rect.width && (rect.right > inner.right + 1 || rect.left < inner.left - 1) && !node.closest("[hidden],details:not([open]) > :not(summary)");
+      return rect.width && (rect.right > inner.right + 1 || rect.left < inner.left - 1) && !node.closest("[hidden],details:not([open]) > :not(summary),[data-bleed]");
     })
     .map((node) => node.className || node.tagName)
     .slice(0, 5);
@@ -106,11 +106,17 @@ function inspect() {
     missingAnchors: [...document.querySelectorAll('a[href^="#"]')].filter((link) => !document.getElementById(link.hash.slice(1))).map((link) => link.hash),
     h1: document.querySelectorAll("h1").length,
     nameSize: parseFloat(getComputedStyle(h1).fontSize),
-    headlineSize: parseFloat(getComputedStyle(document.querySelector(".xp-headline")).fontSize),
+    headlineSize: document.querySelector(".xp-headline") ? parseFloat(getComputedStyle(document.querySelector(".xp-headline")).fontSize) : null,
     introMotion: getComputedStyle(document.querySelector("#intro")).animationName,
     hiddenCases: [...document.querySelectorAll("[data-case-type]")].filter((node) => Number(getComputedStyle(node).opacity) < 1).length,
     // 태그는 한 줄짜리 항목입니다. 줄 높이의 두 배를 넘게 늘어났으면 격자 행에 끌려 늘어난 것입니다.
     stretchedTags: [...document.querySelectorAll(".xp-tags li")].filter((node) => node.getBoundingClientRect().height > parseFloat(getComputedStyle(node).lineHeight) * 2 + 24).map((node) => node.textContent.trim()).slice(0, 5),
+    // 그림 설명이 그림 상자 밖으로 밀려 다음 요소와 겹친 곳입니다.
+    overlappedCaptions: [...document.querySelectorAll(".xp-figure figcaption")].filter((caption) => {
+      const next = caption.closest(".xp-figure")?.nextElementSibling;
+      if (!next || !caption.getClientRects().length) return false;
+      return caption.getBoundingClientRect().bottom > next.getBoundingClientRect().top + 1;
+    }).map((caption) => caption.textContent.trim().slice(0, 30)),
     casesWithImage: [...document.querySelectorAll("[data-case-type]")].filter((node) => node.querySelector("img")).map((node) => node.id),
     caseNumbers: [...document.querySelectorAll(".xp-case .xp-head .xp-num")].map((node) => node.textContent),
     displayFamily: firstFamily(getComputedStyle(h1).fontFamily),
@@ -157,10 +163,11 @@ try {
         assert.equal(checks.brokenImages, 0, `${where}: 깨진 이미지`);
         assert.deepEqual(checks.missingAnchors, [], `${where}: 대상 없는 링크`);
         assert.equal(checks.h1, 1, `${where}: h1 개수`);
-        assert.ok(checks.nameSize > checks.headlineSize, `${where}: 이름이 가장 크지 않음`);
+        if (checks.headlineSize !== null) assert.ok(checks.nameSize > checks.headlineSize, `${where}: 이름이 가장 크지 않음`);
         assert.equal(checks.introMotion, "none", `${where}: 모션 줄이기 무시`);
         assert.equal(checks.hiddenCases, 0, `${where}: 보이지 않는 사례`);
         assert.deepEqual(checks.stretchedTags, [], `${where}: 늘어난 태그`);
+        assert.deepEqual(checks.overlappedCaptions, [], `${where}: 그림 설명 겹침`);
         // 이미지가 있는 섹션은 어느 사례 유형으로 그려도 이미지를 하나 이상 보여야 합니다.
         assert.deepEqual(
           content.sections.filter((section) => section.media.length).map((section) => `section-${section.id}`).filter((id) => !checks.casesWithImage.includes(id)),

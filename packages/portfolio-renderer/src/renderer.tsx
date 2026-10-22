@@ -29,7 +29,7 @@ import {
 } from "./library.js";
 import { STRUCTURED_PORTFOLIO_CSS } from "./styles.js";
 import { structuredCatalog } from "./catalog.js";
-import { KitContext, caseNumbers, kitCss, kitRegistry } from "./kit.js";
+import { KitContext, caseNumbers, firstRowId, kitCss, kitRegistry } from "./kit.js";
 
 export { structuredCatalog };
 
@@ -367,6 +367,10 @@ const { registry } = defineRegistry(structuredCatalog, {
     ContentPanel: ({ props }) => (
       <Case section={props.section} sourceId={props.sourceId} kind="panel" />
     ),
+    // 사례 행은 토큰 키트의 글 · 목록형 전용입니다. 수집 원본 렌더러에서는 기사형으로 그립니다.
+    CaseRow: ({ props }) => (
+      <Case section={props.section} sourceId={props.sourceId} kind="essay" />
+    ),
     Columns: ({ props, children }) => (
       <div className="sp-group" data-group="columns" data-variant={props.variant}>
         <div className="sp-group-track">{children}</div>
@@ -490,7 +494,7 @@ export function renderStructuredPortfolio(
         <VisibilityProvider>
           <ActionProvider handlers={{}}>
             {design ? (
-              <KitContext.Provider value={{ content: snapshot.content, evidenceTitles, design, caseNumbers: caseNumbers(snapshot.spec, snapshot.content) }}>
+              <KitContext.Provider value={{ content: snapshot.content, evidenceTitles, design, caseNumbers: caseNumbers(snapshot.spec, snapshot.content), firstRowId: firstRowId(snapshot.spec) }}>
                 <Renderer spec={snapshot.spec} registry={kitRegistry} />
               </KitContext.Provider>
             ) : (
