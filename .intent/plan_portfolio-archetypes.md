@@ -17,7 +17,7 @@ date: 2026-10-22
 | `packages/contracts/src/portfolio-archetype.ts` (새) · `index.ts` · `generation.ts` | 유형 상수 · 스키마, 생성 요청 `archetype` |
 | `packages/contracts/src/structured-portfolio.ts` (+ 테스트) | 루트 `archetype` prop, `CaseRow`, `poster` · `sentence` 변형, `period`, 유형별 모델 스키마 |
 | `packages/contracts/src/page.ts` | `PAGE_PROMPT_VERSION` 13 |
-| `packages/database/src/documents/generation.ts` · `brew.ts` | 작업 · 포트폴리오 문서 `archetype` |
+| `packages/database/src/documents/generation.ts` | 작업 · 포트폴리오 문서 `archetype`(브루 문서는 디자인 선택만 담아 고치지 않음) |
 | `packages/portfolio-renderer/src/archetype.ts` (새) · `catalog.ts` · `kit.tsx` · `kit-styles.ts` · `index.ts` (+ 테스트) | 유형 문단, 새 컴포넌트 · 변형, 유형 CSS |
 | `services/backend/src/modules/generation/service.ts` (+ 테스트) | `archetype`을 작업 → 포트폴리오 |
 | `services/backend/src/modules/page/service.ts` · `generator.ts` · `structured-generator.ts` (+ 테스트) | 생성 문맥 `archetype`, 유형별 스키마 · 프롬프트 · 루트 prop, 내용 정리 `period` 규칙 |

@@ -1,4 +1,9 @@
 import { z } from "zod";
+import {
+  DEFAULT_PORTFOLIO_ARCHETYPE,
+  PortfolioArchetypeSchema,
+  type PortfolioArchetype,
+} from "./portfolio-archetype.js";
 import { MEDIA_ASSET_PATH_PREFIX } from "./media-path.js";
 
 const id = z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9-]{0,99}$/);
@@ -34,6 +39,8 @@ export const StructuredSectionSchema = z.strictObject({
   summary: text,
   body: text,
   pattern: z.enum(["project", "about", "skills", "career"]),
+  // 출처에 적힌 기간(예: "2025.08 — 2026.02"). 출처에 없으면 비웁니다. 글 · 목록형 행의 앞자리에 씁니다.
+  period: z.string().min(1).max(60).optional(),
   details: z
     .array(z.strictObject({ label: z.string().min(1).max(100), text }))
     .max(12),
@@ -128,14 +135,20 @@ export const StructuredDesignSchema = z.strictObject({
   palette: z.enum(["ivory", "cobalt", "graphite", "sage", "burgundy"]).optional(),
   font: z.enum(["serif", "sans", "mono"]).optional(),
 });
-/** 첫 화면 구도: 큰 문장 · 좌우 분할 · 이미지 중심. */
+/** 사례 상세형의 첫 화면 구도: 큰 문장 · 좌우 분할 · 이미지 중심. */
 export const STRUCTURED_INTRO_VARIANTS = ["statement", "split", "media"] as const;
+/** 저장 계약이 받는 첫 화면 구도 전부. poster는 포스터형, sentence는 글 · 목록형 전용입니다. */
+export const STRUCTURED_INTRO_ALL_VARIANTS = [...STRUCTURED_INTRO_VARIANTS, "poster", "sentence"] as const;
+/** 저장 계약이 받는 목차 형태. poster는 포스터형 전용입니다. */
+export const STRUCTURED_INDEX_VARIANTS = ["rows", "mosaic", "rail", "poster"] as const;
 export const STRUCTURED_CASE_TYPES = [
   "CaseEssay",
   "CaseGallery",
   "CaseTechnical",
   "CaseProcess",
   "ContentPanel",
+  // 글 · 목록형 전용: "기간 · 제목 · 요약" 한 줄을 펼쳐 상세를 봅니다.
+  "CaseRow",
 ] as const;
 // 모델이 지면을 나누는 컨테이너입니다. 자식은 json-render의 기본 slot(children)에 둡니다.
 export const STRUCTURED_GROUP_TYPES = ["Columns", "Grid", "Band"] as const;
@@ -170,6 +183,8 @@ export const StructuredNodeSchema = z.union([
       motion: z.enum(["none", "subtle", "showcase"]),
       rationale: z.string().min(1).max(400),
       referenceIds: z.array(id).max(8).optional(),
+      // 페이지 짜임새. 생성기가 채우고, 없으면(옛 저장본) 사례 상세형으로 그립니다.
+      archetype: PortfolioArchetypeSchema.optional(),
     }),
     children: z.array(id).min(2).max(24),
   }),
@@ -180,14 +195,14 @@ export const StructuredNodeSchema = z.union([
       sections: binding.optional(),
       sourceId: id.optional(),
       // 키트 경로의 첫 화면 구도입니다. media는 섹션 이미지가 있을 때만 그 구도로 그립니다.
-      variant: z.enum(STRUCTURED_INTRO_VARIANTS).optional(),
+      variant: z.enum(STRUCTURED_INTRO_ALL_VARIANTS).optional(),
     }),
   ),
   leaf(
     "ProjectIndex",
     z.strictObject({
       sections: binding,
-      variant: z.enum(["rows", "mosaic", "rail"]),
+      variant: z.enum(STRUCTURED_INDEX_VARIANTS),
     }),
   ),
   ...STRUCTURED_CASE_TYPES.map((type) =>
@@ -311,8 +326,12 @@ export function structuredModelSchema(
     section: string[];
     guidance: string[];
     groups?: readonly StructuredGroupType[];
+    /** 페이지 짜임새. 첫 화면 구도 · 목차 · 사례 유형의 선택지가 유형마다 다릅니다. */
+    archetype?: PortfolioArchetype;
   },
 ): z.ZodType {
+  const archetype = choices?.archetype ?? DEFAULT_PORTFOLIO_ARCHETYPE;
+  const hasMedia = content.sections.some((section) => section.media.length);
   const ref = (value: string) =>
     z.strictObject({ $state: z.literal(`/${value}`) });
   const empty = z.array(z.string()).max(0);
@@ -322,33 +341,42 @@ export function structuredModelSchema(
       props: z.strictObject({
         profile: ref("profile"),
         sections: ref("sections"),
-        variant: z.enum(
-          content.sections.some((section) => section.media.length)
-            ? STRUCTURED_INTRO_VARIANTS
-            : ["statement", "split"],
-        ),
+        variant:
+          archetype === "poster"
+            ? z.literal("poster")
+            : archetype === "list"
+              ? z.literal("sentence")
+              : z.enum(hasMedia ? STRUCTURED_INTRO_VARIANTS : ["statement", "split"]),
         ...(choices?.intro.length
           ? { sourceId: z.enum(choices.intro as [string, ...string[]]) }
           : {}),
       }),
       children: empty,
     }),
-    index: z.strictObject({
-      type: z.literal("ProjectIndex"),
-      props: z.strictObject({
-        sections: ref("sections"),
-        variant: z.enum(["rows", "mosaic", "rail"]),
-      }),
-      children: empty,
-    }),
+    // 글 · 목록형은 사례 행 자체가 목록이라 목차를 두지 않습니다.
+    ...(archetype === "list"
+      ? {}
+      : {
+          index: z.strictObject({
+            type: z.literal("ProjectIndex"),
+            props: z.strictObject({
+              sections: ref("sections"),
+              variant: archetype === "poster" ? z.literal("poster") : z.enum(["rows", "mosaic", "rail"]),
+            }),
+            children: empty,
+          }),
+        }),
   };
   for (const section of content.sections)
     nodes[`section-${section.id}`] = z.strictObject({
-      type: z.enum(
-        section.media.length
-          ? STRUCTURED_CASE_TYPES
-          : ["CaseEssay", "CaseTechnical", "CaseProcess", "ContentPanel"],
-      ),
+      type:
+        archetype === "list"
+          ? z.literal("CaseRow")
+          : z.enum(
+              section.media.length
+                ? ["CaseEssay", "CaseGallery", "CaseTechnical", "CaseProcess", "ContentPanel"]
+                : ["CaseEssay", "CaseTechnical", "CaseProcess", "ContentPanel"],
+            ),
       props: z.strictObject({
         section: ref(`sectionById/${section.id}`),
         ...(choices?.section.length
@@ -380,7 +408,8 @@ export function structuredModelSchema(
   const groupable = nodeIds.filter(
     (key) => key !== "intro" && key !== "contact",
   ) as [string, ...string[]];
-  const groupTypes = choices?.groups ?? STRUCTURED_GROUP_TYPES;
+  // 포스터형 · 글 · 목록형은 섹션을 페이지 폭 그대로 이어 붙이므로 컨테이너를 쓰지 않습니다.
+  const groupTypes = archetype === "case-study" ? choices?.groups ?? STRUCTURED_GROUP_TYPES : [];
   const groupIds = Array.from(
     { length: groupTypes.length ? STRUCTURED_MAX_GROUPS : 0 },
     (_, index) => `group-${index + 1}`,

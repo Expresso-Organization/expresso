@@ -316,3 +316,61 @@ describe("구조화 포트폴리오 계약", () => {
     });
   });
 });
+
+describe("포트폴리오 유형별 모델 스키마", () => {
+  const value: StructuredPortfolioContent = {
+    version: 1,
+    profile: { name: "가상 인물", role: "엔지니어", headline: "경로를 설계하는 엔지니어입니다.", intro: "설명", focus: [] },
+    sections: [
+      { id: "a", title: "시험", summary: "요약", body: "본문", pattern: "project", period: "2025.01 — 2025.05", details: [], media: [], sourceIds: [] },
+    ],
+    career: [],
+    evidence: [],
+    contact: null,
+  };
+  const page = (children: string[]) => ({ type: "PortfolioPage", props: { profile: { $state: "/profile" }, motion: "showcase", rationale: "근거" }, children });
+  const intro = (variant: string) => ({ type: "NameIntro", props: { profile: { $state: "/profile" }, sections: { $state: "/sections" }, variant }, children: [] });
+  const index = (variant: string) => ({ type: "ProjectIndex", props: { sections: { $state: "/sections" }, variant }, children: [] });
+  const caseNode = (type: string) => ({ type, props: { section: { $state: "/sectionById/a" } }, children: [] });
+  const schema = (archetype: "case-study" | "poster" | "list") => structuredModelSchema(value, { intro: [], section: [], guidance: [], archetype });
+
+  it("포스터형은 포스터 첫 화면과 포스터 목차만 고르고 컨테이너가 없다", () => {
+    const ok = { root: "page", elements: { page: page(["intro", "index", "section-a"]), intro: intro("poster"), index: index("poster"), "section-a": caseNode("CaseEssay") } };
+    expect(schema("poster").safeParse(ok).error?.issues ?? []).toEqual([]);
+    expect(schema("poster").safeParse({ ...ok, elements: { ...ok.elements, intro: intro("statement") } }).success).toBe(false);
+    expect(schema("poster").safeParse({ ...ok, elements: { ...ok.elements, index: index("rows") } }).success).toBe(false);
+    expect(schema("poster").safeParse({ ...ok, elements: { ...ok.elements, "section-a": caseNode("CaseRow") } }).success).toBe(false);
+    const grouped = { ...ok, elements: { ...ok.elements, page: page(["intro", "group-1"]), "group-1": { type: "Columns", props: { variant: "even" }, children: ["index", "section-a"] } } };
+    expect(schema("poster").safeParse(grouped).success).toBe(false);
+  });
+
+  it("글 · 목록형은 목차 없이 문장 첫 화면과 사례 행만 쓴다", () => {
+    const ok = { root: "page", elements: { page: page(["intro", "section-a"]), intro: intro("sentence"), "section-a": caseNode("CaseRow") } };
+    expect(schema("list").safeParse(ok).error?.issues ?? []).toEqual([]);
+    expect(schema("list").safeParse({ ...ok, elements: { ...ok.elements, index: index("rows"), page: page(["intro", "index", "section-a"]) } }).success).toBe(false);
+    expect(schema("list").safeParse({ ...ok, elements: { ...ok.elements, "section-a": caseNode("CaseEssay") } }).success).toBe(false);
+  });
+
+  it("사례 상세형은 지금과 같고 새 변형 · 사례 행을 고를 수 없다", () => {
+    const ok = { root: "page", elements: { page: page(["intro", "index", "section-a"]), intro: intro("split"), index: index("rows"), "section-a": caseNode("CaseTechnical") } };
+    expect(schema("case-study").safeParse(ok).error?.issues ?? []).toEqual([]);
+    expect(structuredModelSchema(value).safeParse(ok).error?.issues ?? []).toEqual([]);
+    expect(schema("case-study").safeParse({ ...ok, elements: { ...ok.elements, intro: intro("poster") } }).success).toBe(false);
+    expect(schema("case-study").safeParse({ ...ok, elements: { ...ok.elements, "section-a": caseNode("CaseRow") } }).success).toBe(false);
+  });
+
+  it("저장 계약은 유형 · 기간이 있는 새 판과 없는 옛 판을 모두 받는다", () => {
+    const stored = (archetype?: string) => ({
+      root: "page",
+      elements: {
+        page: { ...page(["intro", "section-a"]), props: { ...page([]).props, design: { layout: "library" }, ...(archetype ? { archetype } : {}) } },
+        intro: intro("sentence"),
+        "section-a": caseNode("CaseRow"),
+      },
+    });
+    expect(() => validateStructuredPortfolio(stored("list"), value)).not.toThrow();
+    expect(() => validateStructuredPortfolio(stored(), value)).not.toThrow();
+    const { period: _period, ...section } = value.sections[0]!;
+    expect(() => validateStructuredPortfolio(stored(), { ...value, sections: [section] })).not.toThrow();
+  });
+});
