@@ -56,8 +56,8 @@ pnpm typecheck && pnpm test
 pnpm test:infra integration.test.ts --maxWorkers=2
 pnpm --filter @expresso/web build
 # 유형마다 실행 ID 하나(폴더 구조 <실행>/<디자인>/<프로필>)
-node scripts/library/renderer/verify-token-kit.mjs archetype-poster-2026-10-22
-node scripts/library/renderer/verify-token-kit.mjs archetype-list-2026-10-22
-node scripts/library/renderer/verify-token-kit.mjs archetype-poster-matrix-2026-10-22
-node scripts/library/renderer/verify-token-kit.mjs archetype-list-matrix-2026-10-22
+node scripts/library/renderer/verify-token-kit.mjs archetype-poster-2026-10-24
+node scripts/library/renderer/verify-token-kit.mjs archetype-list-2026-10-24
+node scripts/library/renderer/verify-token-kit.mjs archetype-poster-matrix-2026-10-24
+node scripts/library/renderer/verify-token-kit.mjs archetype-list-matrix-2026-10-24
 ```

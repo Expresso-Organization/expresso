@@ -23,7 +23,7 @@ date: 2026-10-22
 | `services/backend/src/modules/page/service.ts` · `generator.ts` · `structured-generator.ts` (+ 테스트) | 생성 문맥 `archetype`, 유형별 스키마 · 프롬프트 · 루트 prop, 내용 정리 `period` 규칙 |
 | `services/web/src/app/(app)/brew/[brewId]/design/DesignCatalog.tsx` · `.module.css` · `design-actions.ts` (+ 테스트) | 유형 선택과 전송. API 클라이언트는 계약 타입(`SubmitGeneration`)을 그대로 써서 고칠 것이 없음 |
 | `scripts/library/renderer/run-structured-profiles.ts` | `PORTFOLIO_ARCHETYPE`, `period` 채움, 디자인 폴더 재렌더 원본 |
-| `docs/library/previews/portfolio/runs/archetype-*-2026-10-22/` | 생성 · 38종 재렌더 기록 |
+| `docs/library/previews/portfolio/runs/archetype-*-2026-10-24/` | 생성 · 38종 재렌더 기록. 38종 실행은 전체 페이지 스크린샷(`*-1440.png` · `*-390.png`, 약 55MB)을 커밋하지 않고 검사 결과 · HTML · 첫 화면 스크린샷만 남김 |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
 
@@ -47,8 +47,8 @@ pnpm typecheck
 pnpm test
 pnpm test:infra integration.test.ts --maxWorkers=2
 pnpm --filter @expresso/web build
-node scripts/library/renderer/verify-token-kit.mjs archetype-poster-2026-10-22
-node scripts/library/renderer/verify-token-kit.mjs archetype-list-2026-10-22
-node scripts/library/renderer/verify-token-kit.mjs archetype-poster-matrix-2026-10-22
-node scripts/library/renderer/verify-token-kit.mjs archetype-list-matrix-2026-10-22
+node scripts/library/renderer/verify-token-kit.mjs archetype-poster-2026-10-24
+node scripts/library/renderer/verify-token-kit.mjs archetype-list-2026-10-24
+node scripts/library/renderer/verify-token-kit.mjs archetype-poster-matrix-2026-10-24
+node scripts/library/renderer/verify-token-kit.mjs archetype-list-matrix-2026-10-24
 ```

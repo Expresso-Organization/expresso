@@ -1,0 +1,4393 @@
+{
+  "fictional": true,
+  "rerenderOf": {
+    "runId": "archetype-poster-matrix-2026-10-24",
+    "htmlSha256": "6e34a0fed986b37befef7d741bfc67d466e2c4bb547cf9f5581e460a33a9453a"
+  },
+  "runs": [
+    {
+      "design": "clarity",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "dc36344fc184c219f1fe5c2314923ae8ae8f0e735d6ad5b3baa7da331ed9306e",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "system-ui",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "system-ui",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "system-ui",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-academia",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "ce9ff66e96f879a323d2efee3a6be016e6cc6780148f3297f2bac3f9dc490a5e",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "EB Garamond",
+          "bodyFamily": "EB Garamond",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "EB Garamond"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "EB Garamond",
+          "bodyFamily": "EB Garamond",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "EB Garamond"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "EB Garamond",
+          "bodyFamily": "EB Garamond",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "EB Garamond"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-art-deco",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "92c2b47b8fcd442c63bc00c5409e9ff288daa047b1f5966cbbcb314e8427ff3c",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Poiret One",
+          "bodyFamily": "Cormorant Garamond",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "Cormorant Garamond",
+            "Diphylleia",
+            "Poiret One"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Poiret One",
+          "bodyFamily": "Cormorant Garamond",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "Cormorant Garamond",
+            "Diphylleia",
+            "Poiret One"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Poiret One",
+          "bodyFamily": "Cormorant Garamond",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "Cormorant Garamond",
+            "Diphylleia",
+            "Poiret One"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-bauhaus",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "c2e9395dece6589f44cebc41ba931eaf6f5908222a08cc238c76e7c29a29bab9",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Archivo Black",
+          "bodyFamily": "Archivo",
+          "loadedFamilies": [
+            "Archivo",
+            "Archivo Black",
+            "Black Han Sans",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Archivo Black",
+          "bodyFamily": "Archivo",
+          "loadedFamilies": [
+            "Archivo",
+            "Archivo Black",
+            "Black Han Sans",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Archivo Black",
+          "bodyFamily": "Archivo",
+          "loadedFamilies": [
+            "Archivo",
+            "Archivo Black",
+            "Black Han Sans",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-bold-typography",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "120b95071c4f603cf5d6849d4e9ea226c71f77f43e53295d9def94fa4c05a4bf",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Anton",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Anton",
+            "Gasoek One",
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Anton",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Anton",
+            "Gasoek One",
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Anton",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Anton",
+            "Gasoek One",
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-botanical",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "ac4d77599d2b688907bda116d4b6d5648c360152fae94efc00c48b5899e4f574",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Cormorant Garamond",
+          "bodyFamily": "Lora",
+          "loadedFamilies": [
+            "Cormorant Garamond",
+            "Gowun Batang",
+            "Lora"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Cormorant Garamond",
+          "bodyFamily": "Lora",
+          "loadedFamilies": [
+            "Cormorant Garamond",
+            "Gowun Batang",
+            "Lora"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Cormorant Garamond",
+          "bodyFamily": "Lora",
+          "loadedFamilies": [
+            "Cormorant Garamond",
+            "Gowun Batang",
+            "Lora"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-claymorphism",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "344ca3aade0629b33c56b1a839720a95c35a63c92be747fabdba410a6253aa1c",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Nunito",
+          "bodyFamily": "Nunito",
+          "loadedFamilies": [
+            "Gowun Dodum",
+            "Jua",
+            "Nunito"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Nunito",
+          "bodyFamily": "Nunito",
+          "loadedFamilies": [
+            "Gowun Dodum",
+            "Jua",
+            "Nunito"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Nunito",
+          "bodyFamily": "Nunito",
+          "loadedFamilies": [
+            "Gowun Dodum",
+            "Jua",
+            "Nunito"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-cyberpunk",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "2f254eee4e1d7f133645b0a51425494efe5624fedfaa51efd8954bdd05fb9643",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Rajdhani",
+          "bodyFamily": "JetBrains Mono",
+          "loadedFamilies": [
+            "JetBrains Mono",
+            "Gothic A1",
+            "Nanum Gothic Coding",
+            "Orbit",
+            "Rajdhani"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Rajdhani",
+          "bodyFamily": "JetBrains Mono",
+          "loadedFamilies": [
+            "JetBrains Mono",
+            "Gothic A1",
+            "Nanum Gothic Coding",
+            "Orbit",
+            "Rajdhani"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Rajdhani",
+          "bodyFamily": "JetBrains Mono",
+          "loadedFamilies": [
+            "JetBrains Mono",
+            "Gothic A1",
+            "Nanum Gothic Coding",
+            "Orbit",
+            "Rajdhani"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-enterprise",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "4c70c4337a4ec90a2ade4fdc602f94a48dffb46da72d51af1a2fb5f230f2cdd4",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "IBM Plex Sans",
+          "bodyFamily": "IBM Plex Sans",
+          "loadedFamilies": [
+            "IBM Plex Sans",
+            "IBM Plex Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "IBM Plex Sans",
+          "bodyFamily": "IBM Plex Sans",
+          "loadedFamilies": [
+            "IBM Plex Sans",
+            "IBM Plex Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "IBM Plex Sans",
+          "bodyFamily": "IBM Plex Sans",
+          "loadedFamilies": [
+            "IBM Plex Sans",
+            "IBM Plex Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-flat-design",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "e3ec7a992281c419ef46df5ff9a81e208a4e0409e3d7c09175912c990203e57d",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Poppins",
+          "bodyFamily": "Poppins",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Poppins"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Poppins",
+          "bodyFamily": "Poppins",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Poppins"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Poppins",
+          "bodyFamily": "Poppins",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Poppins"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-industrial",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "08f915e2176839c29047128a4a596f98782c5bd5ad2f525a17873dedca1adc54",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Oswald",
+          "bodyFamily": "Chivo",
+          "loadedFamilies": [
+            "Chivo",
+            "Do Hyeon",
+            "Noto Sans KR",
+            "Oswald"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Oswald",
+          "bodyFamily": "Chivo",
+          "loadedFamilies": [
+            "Chivo",
+            "Do Hyeon",
+            "Noto Sans KR",
+            "Oswald"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Oswald",
+          "bodyFamily": "Chivo",
+          "loadedFamilies": [
+            "Chivo",
+            "Do Hyeon",
+            "Noto Sans KR",
+            "Oswald"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-kinetic",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "2caa65411b5e44c4bdbb0aaf92e93bd8fda4d6a61c21aa7d62951038c7cc216f",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Anton",
+          "bodyFamily": "Archivo",
+          "loadedFamilies": [
+            "Anton",
+            "Archivo",
+            "Black Han Sans",
+            "Gothic A1"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Anton",
+          "bodyFamily": "Archivo",
+          "loadedFamilies": [
+            "Anton",
+            "Archivo",
+            "Black Han Sans",
+            "Gothic A1"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Anton",
+          "bodyFamily": "Archivo",
+          "loadedFamilies": [
+            "Anton",
+            "Archivo",
+            "Black Han Sans",
+            "Gothic A1"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-luxury",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "281b7cab21c22c74a7c5f8ac70fc149f3b9689b8c318977b86cee81952608bee",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Cormorant Garamond",
+          "bodyFamily": "Lora",
+          "loadedFamilies": [
+            "Cormorant Garamond",
+            "Gowun Batang",
+            "Lora"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Cormorant Garamond",
+          "bodyFamily": "Lora",
+          "loadedFamilies": [
+            "Cormorant Garamond",
+            "Gowun Batang",
+            "Lora"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Cormorant Garamond",
+          "bodyFamily": "Lora",
+          "loadedFamilies": [
+            "Cormorant Garamond",
+            "Gowun Batang",
+            "Lora"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-material-design",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "b24f5bca53275cbcac03e9c2437b2ebbd7cc820bbef28c4eb08428ffb2aea8b4",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Roboto",
+          "bodyFamily": "Roboto",
+          "loadedFamilies": [
+            "Noto Sans KR",
+            "Roboto"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Roboto",
+          "bodyFamily": "Roboto",
+          "loadedFamilies": [
+            "Noto Sans KR",
+            "Roboto"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Roboto",
+          "bodyFamily": "Roboto",
+          "loadedFamilies": [
+            "Noto Sans KR",
+            "Roboto"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-maximalism",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "4886a3b198e30761a7cfb73f39a441e9e68d5d719fb6a5bd46be9641b13d496e",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Abril Fatface",
+          "bodyFamily": "Playfair Display",
+          "loadedFamilies": [
+            "Abril Fatface",
+            "Hahmlet",
+            "Playfair Display"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Abril Fatface",
+          "bodyFamily": "Playfair Display",
+          "loadedFamilies": [
+            "Abril Fatface",
+            "Hahmlet",
+            "Playfair Display"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Abril Fatface",
+          "bodyFamily": "Playfair Display",
+          "loadedFamilies": [
+            "Abril Fatface",
+            "Hahmlet",
+            "Playfair Display"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-minimal-dark",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "9fc83690f2e3eaf18bb8a54e7152827da7e209624cc438495b55cccf51a1dde7",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Gowun Dodum",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Gowun Dodum",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Gowun Dodum",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-modern-dark",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "8a26a558871e6626a69fb6bf4704ecf263794a7c91181aa3b9161201fa43d310",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-monochrome",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "79cb60bd14e8b1ee472e835445387dfedcbc3ef6c0d89450579389e820780e8b",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Playfair Display",
+          "bodyFamily": "Source Serif 4",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "Playfair Display",
+            "Source Serif 4"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Playfair Display",
+          "bodyFamily": "Source Serif 4",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "Playfair Display",
+            "Source Serif 4"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Playfair Display",
+          "bodyFamily": "Source Serif 4",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "Playfair Display",
+            "Source Serif 4"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-neo-brutalism",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "20c74d0c71914ccd064da2246a9f0528394b488b42b86b152fe0713da7938421",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Archivo Black",
+          "bodyFamily": "Space Grotesk",
+          "loadedFamilies": [
+            "Archivo Black",
+            "Black Han Sans",
+            "Gothic A1",
+            "Space Grotesk"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Archivo Black",
+          "bodyFamily": "Space Grotesk",
+          "loadedFamilies": [
+            "Archivo Black",
+            "Black Han Sans",
+            "Gothic A1",
+            "Space Grotesk"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Archivo Black",
+          "bodyFamily": "Space Grotesk",
+          "loadedFamilies": [
+            "Archivo Black",
+            "Black Han Sans",
+            "Gothic A1",
+            "Space Grotesk"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-neumorphism",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "054ef7e1309c2e0025343ac632e83b57cf087d55e650944b74c48ae9976c68f9",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Manrope",
+          "bodyFamily": "Manrope",
+          "loadedFamilies": [
+            "Gowun Dodum",
+            "Manrope"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Manrope",
+          "bodyFamily": "Manrope",
+          "loadedFamilies": [
+            "Gowun Dodum",
+            "Manrope"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Manrope",
+          "bodyFamily": "Manrope",
+          "loadedFamilies": [
+            "Gowun Dodum",
+            "Manrope"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-newsprint",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "e281aea1cfa6490ad99ca007d45baebc5cbf26c3e3fdd65a237aeadb76c2a859",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Playfair Display",
+          "bodyFamily": "Newsreader",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "Newsreader",
+            "Playfair Display",
+            "Song Myung"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Playfair Display",
+          "bodyFamily": "Newsreader",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "Newsreader",
+            "Playfair Display",
+            "Song Myung"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Playfair Display",
+          "bodyFamily": "Newsreader",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "Newsreader",
+            "Playfair Display",
+            "Song Myung"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-organic",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "5451933faa62102fe5f4a9b05714b2c80e40619bb9a83acb331bb5561c49f55b",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Fraunces",
+          "bodyFamily": "Lora",
+          "loadedFamilies": [
+            "Fraunces",
+            "Gowun Batang",
+            "Lora"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Fraunces",
+          "bodyFamily": "Lora",
+          "loadedFamilies": [
+            "Fraunces",
+            "Gowun Batang",
+            "Lora"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Fraunces",
+          "bodyFamily": "Lora",
+          "loadedFamilies": [
+            "Fraunces",
+            "Gowun Batang",
+            "Lora"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-playful-geometric",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "b9873b136635235085e6ac74f9c7ba7added4507af0a9053a9286c9cf588ae7a",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Quicksand",
+          "bodyFamily": "Nunito",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Jua",
+            "Nunito",
+            "Quicksand"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Quicksand",
+          "bodyFamily": "Nunito",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Jua",
+            "Nunito",
+            "Quicksand"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Quicksand",
+          "bodyFamily": "Nunito",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Jua",
+            "Nunito",
+            "Quicksand"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-professional",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "ffebce61a9d8a1ed0278d01991427dd7b7bb10f8f7cc95ad7806039a1a2b3463",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Source Serif 4",
+          "bodyFamily": "Source Serif 4",
+          "loadedFamilies": [
+            "Noto Serif KR",
+            "Source Serif 4"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Source Serif 4",
+          "bodyFamily": "Source Serif 4",
+          "loadedFamilies": [
+            "Noto Serif KR",
+            "Source Serif 4"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Source Serif 4",
+          "bodyFamily": "Source Serif 4",
+          "loadedFamilies": [
+            "Noto Serif KR",
+            "Source Serif 4"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-retro",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "d6004635aaf74d969133c011913f32fd0be5e8d6153af7b66196a240c412847a",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Silkscreen",
+          "bodyFamily": "Space Grotesk",
+          "loadedFamilies": [
+            "Do Hyeon",
+            "Noto Sans KR",
+            "Silkscreen",
+            "Space Grotesk"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Silkscreen",
+          "bodyFamily": "Space Grotesk",
+          "loadedFamilies": [
+            "Do Hyeon",
+            "Noto Sans KR",
+            "Silkscreen",
+            "Space Grotesk"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Silkscreen",
+          "bodyFamily": "Space Grotesk",
+          "loadedFamilies": [
+            "Do Hyeon",
+            "Noto Sans KR",
+            "Silkscreen",
+            "Space Grotesk"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-saas",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "c73503f6c3ef92fda8c999ac53995f26022ee0167b0e2f6f9d85b93d5941a16c",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-sketch",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "da588060d5aefb12470b1d6046e74bdcf96899f14658b630d17a695b505304bc",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Caveat",
+          "bodyFamily": "Work Sans",
+          "loadedFamilies": [
+            "Caveat",
+            "Gaegu",
+            "Gowun Dodum",
+            "Work Sans"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Caveat",
+          "bodyFamily": "Work Sans",
+          "loadedFamilies": [
+            "Caveat",
+            "Gaegu",
+            "Gowun Dodum",
+            "Work Sans"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Caveat",
+          "bodyFamily": "Work Sans",
+          "loadedFamilies": [
+            "Caveat",
+            "Gaegu",
+            "Gowun Dodum",
+            "Work Sans"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-swiss-minimalist",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "bf88cfbf9e71e2ca155cfe69cb1f5f9966000a6ef5bc007cea40cd262e8db75e",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Archivo",
+          "bodyFamily": "Archivo",
+          "loadedFamilies": [
+            "Archivo",
+            "Gothic A1"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Archivo",
+          "bodyFamily": "Archivo",
+          "loadedFamilies": [
+            "Archivo",
+            "Gothic A1"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Archivo",
+          "bodyFamily": "Archivo",
+          "loadedFamilies": [
+            "Archivo",
+            "Gothic A1"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-terminal",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "31244ca3802436543bc19d14ad1c160c3e24d881edf3d410d1bacb87c885ae37",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "JetBrains Mono",
+          "bodyFamily": "JetBrains Mono",
+          "loadedFamilies": [
+            "JetBrains Mono",
+            "Nanum Gothic Coding"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "JetBrains Mono",
+          "bodyFamily": "JetBrains Mono",
+          "loadedFamilies": [
+            "JetBrains Mono",
+            "Nanum Gothic Coding"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "JetBrains Mono",
+          "bodyFamily": "JetBrains Mono",
+          "loadedFamilies": [
+            "JetBrains Mono",
+            "Nanum Gothic Coding"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-vaporwave",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "c24ca8c96a5b912fca5efdc61769362ab249547af5cc9defbcec6890cccfa29b",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Orbitron",
+          "bodyFamily": "Space Grotesk",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Orbit",
+            "Orbitron",
+            "Space Grotesk"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Orbitron",
+          "bodyFamily": "Space Grotesk",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Orbit",
+            "Orbitron",
+            "Space Grotesk"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Orbitron",
+          "bodyFamily": "Space Grotesk",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Orbit",
+            "Orbitron",
+            "Space Grotesk"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-web3",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "57c52b808994febce3c7b1ff93f9b22ac56d1db56ee82cee8c106fca9fd8885e",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Space Grotesk",
+          "bodyFamily": "Space Grotesk",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Space Grotesk"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Space Grotesk",
+          "bodyFamily": "Space Grotesk",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Space Grotesk"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Space Grotesk",
+          "bodyFamily": "Space Grotesk",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Space Grotesk"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "editorial",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "ddf8a791b908d2baec4f40533171a62083dc0359b5b5ccda7ecce409fe53d477",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Georgia",
+          "bodyFamily": "Georgia",
+          "loadedFamilies": [
+            "Nanum Myeongjo"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Georgia",
+          "bodyFamily": "Georgia",
+          "loadedFamilies": [
+            "Nanum Myeongjo"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Georgia",
+          "bodyFamily": "Georgia",
+          "loadedFamilies": [
+            "Nanum Myeongjo"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "refero-apple",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "6c41e7bf3b0d335fdd43133c1753e6e72793c214dd227000b4a09e5a6d6c900a",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "refero-elevenlabs-cream",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "87f0a880206608985cfaf76db812afbe4b8193ae77b1ce27a52c288e219bd7a0",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Gowun Batang",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Gowun Batang",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Gowun Batang",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "refero-linear-midnight",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "e4d6622363933d005676d3dbada7a0eda2f106d129b109d360848ea7ab9657fa",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "refero-mercury-alpine",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "294f48f4c31e931ae41428e6fc2abfa5a72ae10e4deab22ef9bfb7187ff69853",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "refero-stripe-ledger",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "57068d6255cf980c8eefc3c2b90fc2c4919f44421ab2abb88ae9422a4a710c72",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "signal",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "poster",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · ProjectIndex · CaseGallery · CaseProcess · CaseTechnical · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "170c3752f5b710ba32aa551637c820be3c6d61485c8e9a33848c1cf568acd32e",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 74.1,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "system-ui",
+          "loadedFamilies": [
+            "IBM Plex Sans KR",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 175.94,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "system-ui",
+          "loadedFamilies": [
+            "IBM Plex Sans KR",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 272,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [
+            "01",
+            "02",
+            "03"
+          ],
+          "displayFamily": "Inter",
+          "bodyFamily": "system-ui",
+          "loadedFamilies": [
+            "IBM Plex Sans KR",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    }
+  ]
+}

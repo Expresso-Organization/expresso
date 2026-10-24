@@ -1,0 +1,3937 @@
+{
+  "fictional": true,
+  "rerenderOf": {
+    "runId": "archetype-list-matrix-2026-10-24",
+    "htmlSha256": "f34c431f8d58f8e2ea709317d4e9f547f35549a3feed193697a71de9bc3ebd6d"
+  },
+  "runs": [
+    {
+      "design": "clarity",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "36bc1ca38fc4ef2812cade50339aa7e5c8525ad94452d26041887fbefa99063c",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Inter",
+          "bodyFamily": "system-ui",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Inter",
+          "bodyFamily": "system-ui",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Inter",
+          "bodyFamily": "system-ui",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-academia",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "3fe12940af7372062c9a7ec350f1b0f96a65c2590dd233585c22354fc80c9703",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "EB Garamond",
+          "bodyFamily": "EB Garamond",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "EB Garamond"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "EB Garamond",
+          "bodyFamily": "EB Garamond",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "EB Garamond"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "EB Garamond",
+          "bodyFamily": "EB Garamond",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "EB Garamond"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-art-deco",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "e9bfc54ba21945e33ebf2a5e254e2916e6c3be59612307e0816ead2065f92d62",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Poiret One",
+          "bodyFamily": "Cormorant Garamond",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "Cormorant Garamond",
+            "Diphylleia",
+            "Poiret One"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Poiret One",
+          "bodyFamily": "Cormorant Garamond",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "Cormorant Garamond",
+            "Diphylleia",
+            "Poiret One"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Poiret One",
+          "bodyFamily": "Cormorant Garamond",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "Cormorant Garamond",
+            "Diphylleia",
+            "Poiret One"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-bauhaus",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "d7be329141ffaecbe79589911e7e094821565d45bc2869b0be33a783c765bfcb",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Archivo Black",
+          "bodyFamily": "Archivo",
+          "loadedFamilies": [
+            "Archivo",
+            "Archivo Black",
+            "Black Han Sans",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Archivo Black",
+          "bodyFamily": "Archivo",
+          "loadedFamilies": [
+            "Archivo",
+            "Archivo Black",
+            "Black Han Sans",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Archivo Black",
+          "bodyFamily": "Archivo",
+          "loadedFamilies": [
+            "Archivo",
+            "Archivo Black",
+            "Black Han Sans",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-bold-typography",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "d88bd1384719e255bb0a466db6833ada5603f6017549e096de9f5b4f1613f00e",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Anton",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Anton",
+            "Gasoek One",
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Anton",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Anton",
+            "Gasoek One",
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Anton",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Anton",
+            "Gasoek One",
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-botanical",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "f9861eb9430bbef6083862c23b87b64bcb54fc094923efc1abcb99a989914e03",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Cormorant Garamond",
+          "bodyFamily": "Lora",
+          "loadedFamilies": [
+            "Cormorant Garamond",
+            "Gowun Batang",
+            "Lora"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Cormorant Garamond",
+          "bodyFamily": "Lora",
+          "loadedFamilies": [
+            "Cormorant Garamond",
+            "Gowun Batang",
+            "Lora"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Cormorant Garamond",
+          "bodyFamily": "Lora",
+          "loadedFamilies": [
+            "Cormorant Garamond",
+            "Gowun Batang",
+            "Lora"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-claymorphism",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "d81bc49937655c7f01b8d6763ad2057171dd030f5b21ced37bbb4c49b991c829",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Nunito",
+          "bodyFamily": "Nunito",
+          "loadedFamilies": [
+            "Gowun Dodum",
+            "Jua",
+            "Nunito"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Nunito",
+          "bodyFamily": "Nunito",
+          "loadedFamilies": [
+            "Gowun Dodum",
+            "Jua",
+            "Nunito"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Nunito",
+          "bodyFamily": "Nunito",
+          "loadedFamilies": [
+            "Gowun Dodum",
+            "Jua",
+            "Nunito"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-cyberpunk",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "3e79b78dcf59aef15e6eb3ce9c6bfefeb2861867fa9527c51d36507217a9ff3d",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Rajdhani",
+          "bodyFamily": "JetBrains Mono",
+          "loadedFamilies": [
+            "JetBrains Mono",
+            "Gothic A1",
+            "Nanum Gothic Coding",
+            "Orbit",
+            "Rajdhani"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Rajdhani",
+          "bodyFamily": "JetBrains Mono",
+          "loadedFamilies": [
+            "JetBrains Mono",
+            "Gothic A1",
+            "Nanum Gothic Coding",
+            "Orbit",
+            "Rajdhani"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Rajdhani",
+          "bodyFamily": "JetBrains Mono",
+          "loadedFamilies": [
+            "JetBrains Mono",
+            "Gothic A1",
+            "Nanum Gothic Coding",
+            "Orbit",
+            "Rajdhani"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-enterprise",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "eaaeab7f9647316c3261f907817f42df60a7b5a2ec12c7f45c8ff52636065a6a",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "IBM Plex Sans",
+          "bodyFamily": "IBM Plex Sans",
+          "loadedFamilies": [
+            "IBM Plex Sans",
+            "IBM Plex Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "IBM Plex Sans",
+          "bodyFamily": "IBM Plex Sans",
+          "loadedFamilies": [
+            "IBM Plex Sans",
+            "IBM Plex Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "IBM Plex Sans",
+          "bodyFamily": "IBM Plex Sans",
+          "loadedFamilies": [
+            "IBM Plex Sans",
+            "IBM Plex Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-flat-design",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "de98bb00128f9ab6b2b8a71d52ccc82c31fa45b6d856449d4bf99a94f49a6589",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Poppins",
+          "bodyFamily": "Poppins",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Poppins"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Poppins",
+          "bodyFamily": "Poppins",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Poppins"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Poppins",
+          "bodyFamily": "Poppins",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Poppins"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-industrial",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "351cdb8a97a724c05f7f45e21664646299871133da90eedf1c01fcb00320e3e3",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Oswald",
+          "bodyFamily": "Chivo",
+          "loadedFamilies": [
+            "Chivo",
+            "Do Hyeon",
+            "Noto Sans KR",
+            "Oswald"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Oswald",
+          "bodyFamily": "Chivo",
+          "loadedFamilies": [
+            "Chivo",
+            "Do Hyeon",
+            "Noto Sans KR",
+            "Oswald"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Oswald",
+          "bodyFamily": "Chivo",
+          "loadedFamilies": [
+            "Chivo",
+            "Do Hyeon",
+            "Noto Sans KR",
+            "Oswald"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-kinetic",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "92b2462514dc2465d1ad366e7d3944b9b1d978af040324f95be3d2acca432ba9",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Anton",
+          "bodyFamily": "Archivo",
+          "loadedFamilies": [
+            "Anton",
+            "Archivo",
+            "Black Han Sans",
+            "Gothic A1"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Anton",
+          "bodyFamily": "Archivo",
+          "loadedFamilies": [
+            "Anton",
+            "Archivo",
+            "Black Han Sans",
+            "Gothic A1"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Anton",
+          "bodyFamily": "Archivo",
+          "loadedFamilies": [
+            "Anton",
+            "Archivo",
+            "Black Han Sans",
+            "Gothic A1"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-luxury",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "5910af8394650742df12a8424a0a2758961b691522f547276a3cb49fd1cd4013",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Cormorant Garamond",
+          "bodyFamily": "Lora",
+          "loadedFamilies": [
+            "Cormorant Garamond",
+            "Gowun Batang",
+            "Lora"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Cormorant Garamond",
+          "bodyFamily": "Lora",
+          "loadedFamilies": [
+            "Cormorant Garamond",
+            "Gowun Batang",
+            "Lora"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Cormorant Garamond",
+          "bodyFamily": "Lora",
+          "loadedFamilies": [
+            "Cormorant Garamond",
+            "Gowun Batang",
+            "Lora"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-material-design",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "7ba28c0ef78ef3abec291f19b2269e4ab86c0070aa130680ffa673a23c75fa3f",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Roboto",
+          "bodyFamily": "Roboto",
+          "loadedFamilies": [
+            "Noto Sans KR",
+            "Roboto"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Roboto",
+          "bodyFamily": "Roboto",
+          "loadedFamilies": [
+            "Noto Sans KR",
+            "Roboto"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Roboto",
+          "bodyFamily": "Roboto",
+          "loadedFamilies": [
+            "Noto Sans KR",
+            "Roboto"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-maximalism",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "71998c54303e2d94d624d73ce0fd6f017ac0b8b074933e96b79e79c13c516a97",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Abril Fatface",
+          "bodyFamily": "Playfair Display",
+          "loadedFamilies": [
+            "Abril Fatface",
+            "Hahmlet",
+            "Playfair Display"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Abril Fatface",
+          "bodyFamily": "Playfair Display",
+          "loadedFamilies": [
+            "Abril Fatface",
+            "Hahmlet",
+            "Playfair Display"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Abril Fatface",
+          "bodyFamily": "Playfair Display",
+          "loadedFamilies": [
+            "Abril Fatface",
+            "Hahmlet",
+            "Playfair Display"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-minimal-dark",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "e840cfdfe0c2276f8a21432fe36c530fe63209e09143d377ee741e4a66fa75e5",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Gowun Dodum",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Gowun Dodum",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Gowun Dodum",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-modern-dark",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "e114b4b251a4aaf21cd1e8e2f9f77de3080e4b904e72db4e0e883d515f207247",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-monochrome",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "0026f908a2c228796e5b18fcc560449bb08f9ab7b838bee5f6994ca45b912ef4",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Playfair Display",
+          "bodyFamily": "Source Serif 4",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "Playfair Display",
+            "Source Serif 4"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Playfair Display",
+          "bodyFamily": "Source Serif 4",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "Playfair Display",
+            "Source Serif 4"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Playfair Display",
+          "bodyFamily": "Source Serif 4",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "Playfair Display",
+            "Source Serif 4"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-neo-brutalism",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "524a48ef791b742570ed5d291ab19ac09ed0c8abb1fe90ee1871224aeb301938",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Archivo Black",
+          "bodyFamily": "Space Grotesk",
+          "loadedFamilies": [
+            "Archivo Black",
+            "Black Han Sans",
+            "Gothic A1",
+            "Space Grotesk"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Archivo Black",
+          "bodyFamily": "Space Grotesk",
+          "loadedFamilies": [
+            "Archivo Black",
+            "Black Han Sans",
+            "Gothic A1",
+            "Space Grotesk"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Archivo Black",
+          "bodyFamily": "Space Grotesk",
+          "loadedFamilies": [
+            "Archivo Black",
+            "Black Han Sans",
+            "Gothic A1",
+            "Space Grotesk"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-neumorphism",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "8851f182838455303b0467c94b6e3af83891e644b3a1cfcd4c30eeb3aa1c4e32",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Manrope",
+          "bodyFamily": "Manrope",
+          "loadedFamilies": [
+            "Gowun Dodum",
+            "Manrope"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Manrope",
+          "bodyFamily": "Manrope",
+          "loadedFamilies": [
+            "Gowun Dodum",
+            "Manrope"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Manrope",
+          "bodyFamily": "Manrope",
+          "loadedFamilies": [
+            "Gowun Dodum",
+            "Manrope"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-newsprint",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "8494f6bcee21dcaa029968513e2af5f978e52f260a6e299d583bbd7c5e0d02f3",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Playfair Display",
+          "bodyFamily": "Newsreader",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "Newsreader",
+            "Playfair Display",
+            "Song Myung"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Playfair Display",
+          "bodyFamily": "Newsreader",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "Newsreader",
+            "Playfair Display",
+            "Song Myung"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Playfair Display",
+          "bodyFamily": "Newsreader",
+          "loadedFamilies": [
+            "Nanum Myeongjo",
+            "Newsreader",
+            "Playfair Display",
+            "Song Myung"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-organic",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "260248cd638f551a6f8eb0b218d0e4b52e440e0e89d514f8c7730cdd388e4fea",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Fraunces",
+          "bodyFamily": "Lora",
+          "loadedFamilies": [
+            "Fraunces",
+            "Gowun Batang",
+            "Lora"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Fraunces",
+          "bodyFamily": "Lora",
+          "loadedFamilies": [
+            "Fraunces",
+            "Gowun Batang",
+            "Lora"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Fraunces",
+          "bodyFamily": "Lora",
+          "loadedFamilies": [
+            "Fraunces",
+            "Gowun Batang",
+            "Lora"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-playful-geometric",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "591012f1fdef061e29190f98eaf4675b0d69416a18e5fc56e2046c241a7bcde2",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Quicksand",
+          "bodyFamily": "Nunito",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Jua",
+            "Nunito",
+            "Quicksand"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Quicksand",
+          "bodyFamily": "Nunito",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Jua",
+            "Nunito",
+            "Quicksand"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Quicksand",
+          "bodyFamily": "Nunito",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Jua",
+            "Nunito",
+            "Quicksand"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-professional",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "7abf52e36abda029aa4d88335d8a0eb3910b394805fce6d69e3524f2f8f93f77",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Source Serif 4",
+          "bodyFamily": "Source Serif 4",
+          "loadedFamilies": [
+            "Noto Serif KR",
+            "Source Serif 4"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Source Serif 4",
+          "bodyFamily": "Source Serif 4",
+          "loadedFamilies": [
+            "Noto Serif KR",
+            "Source Serif 4"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Source Serif 4",
+          "bodyFamily": "Source Serif 4",
+          "loadedFamilies": [
+            "Noto Serif KR",
+            "Source Serif 4"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-retro",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "1f53cf9377a1846e67418d09262e5e35213939df742e1f149468916d0ce9411a",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Silkscreen",
+          "bodyFamily": "Space Grotesk",
+          "loadedFamilies": [
+            "Do Hyeon",
+            "Noto Sans KR",
+            "Silkscreen",
+            "Space Grotesk"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Silkscreen",
+          "bodyFamily": "Space Grotesk",
+          "loadedFamilies": [
+            "Do Hyeon",
+            "Noto Sans KR",
+            "Silkscreen",
+            "Space Grotesk"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Silkscreen",
+          "bodyFamily": "Space Grotesk",
+          "loadedFamilies": [
+            "Do Hyeon",
+            "Noto Sans KR",
+            "Silkscreen",
+            "Space Grotesk"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-saas",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "111f10378589a449784f8817b6636da17eae0e4d32adb3b35e819e794926e4ef",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-sketch",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "ea4b2065f33e231d6b1f8cb6a4df84b16b6b6d11325d999e85ed9d9e3f2a0bd5",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Caveat",
+          "bodyFamily": "Work Sans",
+          "loadedFamilies": [
+            "Caveat",
+            "Gaegu",
+            "Gowun Dodum",
+            "Work Sans"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Caveat",
+          "bodyFamily": "Work Sans",
+          "loadedFamilies": [
+            "Caveat",
+            "Gaegu",
+            "Gowun Dodum",
+            "Work Sans"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Caveat",
+          "bodyFamily": "Work Sans",
+          "loadedFamilies": [
+            "Caveat",
+            "Gaegu",
+            "Gowun Dodum",
+            "Work Sans"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-swiss-minimalist",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "08d9b3728287e18a65a2c83713ed8a3cf4558878a1277bb809ab6e65e1ebb46c",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Archivo",
+          "bodyFamily": "Archivo",
+          "loadedFamilies": [
+            "Archivo",
+            "Gothic A1"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Archivo",
+          "bodyFamily": "Archivo",
+          "loadedFamilies": [
+            "Archivo",
+            "Gothic A1"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Archivo",
+          "bodyFamily": "Archivo",
+          "loadedFamilies": [
+            "Archivo",
+            "Gothic A1"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-terminal",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "f09ff6f90d16e473ada1bdc39506a2a376ab12840f89e99125e8b59d2b74738c",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "JetBrains Mono",
+          "bodyFamily": "JetBrains Mono",
+          "loadedFamilies": [
+            "JetBrains Mono",
+            "Nanum Gothic Coding"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "JetBrains Mono",
+          "bodyFamily": "JetBrains Mono",
+          "loadedFamilies": [
+            "JetBrains Mono",
+            "Nanum Gothic Coding"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "JetBrains Mono",
+          "bodyFamily": "JetBrains Mono",
+          "loadedFamilies": [
+            "JetBrains Mono",
+            "Nanum Gothic Coding"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-vaporwave",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "338be48b4ae10bbd5edc3a48933ee21a06f12207e1778fc77600a17d63b8ad67",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Orbitron",
+          "bodyFamily": "Space Grotesk",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Orbit",
+            "Orbitron",
+            "Space Grotesk"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Orbitron",
+          "bodyFamily": "Space Grotesk",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Orbit",
+            "Orbitron",
+            "Space Grotesk"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Orbitron",
+          "bodyFamily": "Space Grotesk",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Orbit",
+            "Orbitron",
+            "Space Grotesk"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "designprompts-web3",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "c6d7af4d6c847a4351aec6ae94b2929802fa38756c9d77e476ebf49788598294",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Space Grotesk",
+          "bodyFamily": "Space Grotesk",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Space Grotesk"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Space Grotesk",
+          "bodyFamily": "Space Grotesk",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Space Grotesk"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Space Grotesk",
+          "bodyFamily": "Space Grotesk",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Space Grotesk"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "editorial",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "aae756e327c0cb27e2465d0c42f0d8b4518ed990390f3d6746280068c07719ca",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Georgia",
+          "bodyFamily": "Georgia",
+          "loadedFamilies": [
+            "Nanum Myeongjo"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Georgia",
+          "bodyFamily": "Georgia",
+          "loadedFamilies": [
+            "Nanum Myeongjo"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Georgia",
+          "bodyFamily": "Georgia",
+          "loadedFamilies": [
+            "Nanum Myeongjo"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "refero-apple",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "454f50d862b5f15dd37d345982816785ada582a92f7cdd14484bd8f4fedf8aaf",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "refero-elevenlabs-cream",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "c4d3ec42e91303eca528176ccc90adf001bc89b1bca46c57f0725e2c4d1c931d",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Gowun Batang",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Gowun Batang",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Gowun Batang",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "refero-linear-midnight",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "8a858f126359d129eb8b8fd1c7d8c628f64da6a3af04bf37db96c5e1f922a73b",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Gothic A1",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "refero-mercury-alpine",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "d694dffafb636631b8c3ba77b195c33aad4c199be019de07a8411e1ef33bebc8",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "refero-stripe-ledger",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "2b5c3ad9906915224e5807f2ef61d50bb37669afa4e348745bb7d755c93e9a0e",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Inter",
+          "bodyFamily": "Inter",
+          "loadedFamilies": [
+            "Inter",
+            "Noto Sans KR"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    },
+    {
+      "design": "signal",
+      "slug": "editorial-designer",
+      "name": "오수빈",
+      "role": "편집 디자이너",
+      "introVariant": "sentence",
+      "groups": 0,
+      "specOrigin": "model",
+      "layout": "NameIntro · CaseRow · CaseRow · CaseRow · CareerTimeline · EvidenceGrid · Contact",
+      "htmlSha256": "392690ca9798e392467cc054e0905579a8d3446584aa353bda7ed00363cd7aa0",
+      "screens": [
+        {
+          "width": 390,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.4,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Inter",
+          "bodyFamily": "system-ui",
+          "loadedFamilies": [
+            "IBM Plex Sans KR",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 926,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 30.558,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Inter",
+          "bodyFamily": "system-ui",
+          "loadedFamilies": [
+            "IBM Plex Sans KR",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        },
+        {
+          "width": 1440,
+          "overflow": false,
+          "brokenImages": 0,
+          "missingAnchors": [],
+          "h1": 1,
+          "nameSize": 47.52,
+          "headlineSize": null,
+          "introMotion": "none",
+          "hiddenCases": 0,
+          "stretchedTags": [],
+          "overlappedCaptions": [],
+          "casesWithImage": [
+            "section-season-reader",
+            "section-archive-walk",
+            "section-reading-routes"
+          ],
+          "caseNumbers": [],
+          "displayFamily": "Inter",
+          "bodyFamily": "system-ui",
+          "loadedFamilies": [
+            "IBM Plex Sans KR",
+            "Inter"
+          ],
+          "contrast": [],
+          "orphans": [],
+          "escaped": [],
+          "preservedFields": 63
+        }
+      ],
+      "noJavaScript": true
+    }
+  ]
+}
