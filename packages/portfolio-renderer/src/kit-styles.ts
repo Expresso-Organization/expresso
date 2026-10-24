@@ -56,8 +56,10 @@ export const KIT_CSS = String.raw`
 .xp-page[data-chrome="masthead"] .xp-panel{padding-top:calc(clamp(20px,2.4vw,calc(var(--component-gap) * 1.35)) + 14px)}
 .xp-page[data-chrome="masthead"] .xp-panel::before{content:"";position:absolute;inset:12px clamp(20px,2.4vw,calc(var(--component-gap) * 1.35)) auto;border-top:3px double var(--text)}
 .xp-page[data-chrome="masthead"] .xp-hero{padding-top:22px;border-top:4px double var(--text)}
-.xp-page[data-chrome="sticker"] .xp-panel{transform:rotate(-.6deg)}
-.xp-page[data-chrome="sticker"] .xp-panel:nth-of-type(2n){transform:rotate(.5deg)}
+/* 기울인 패널은 모서리가 제자리 밖으로 나갑니다. 높이가 폭의 두 배를 넘지 않는 목차 카드만 기울이고,
+   0.6도 기울였을 때 그 모서리가 제자리 안에 남도록 1 / (1 + 2·sin 0.6°) ≈ .979배로 줄입니다 */
+.xp-page[data-chrome="sticker"] .xp-mosaic .xp-panel{transform:rotate(-.6deg) scale(.979)}
+.xp-page[data-chrome="sticker"] .xp-mosaic .xp-panel:nth-of-type(2n){transform:rotate(.5deg) scale(.979)}
 .xp-page[data-chrome="panel"] .xp-panel::before{content:"";position:absolute;inset:0 0 auto;height:1px;border-radius:var(--card-radius) var(--card-radius) 0 0;background:color-mix(in srgb,var(--canvas) 55%,white);pointer-events:none}
 .xp-page[data-chrome="frame"] .xp-panel::before{content:"";position:absolute;inset:8px;border:1px solid color-mix(in srgb,var(--accent) 55%,transparent);border-radius:max(0px,calc(var(--card-radius) - 6px));pointer-events:none}
 .xp-page[data-chrome="blob"] .xp-panel{border-radius:calc(var(--card-radius) * 2.1) calc(var(--card-radius) * .8) calc(var(--card-radius) * 2.1) calc(var(--card-radius) * .8)}
@@ -203,9 +205,12 @@ export const KIT_CSS = String.raw`
 .xp-poster-index a{display:grid;grid-template-columns:4ch minmax(0,1fr) minmax(0,20rem);gap:var(--element-gap) var(--component-gap);align-items:baseline;padding-block:1em;border-bottom:var(--xp-rule);color:inherit;text-decoration:none;transition:color var(--motion-duration) var(--motion-easing)}
 .xp-poster-index strong{font-family:var(--font-display);font-size:clamp(1.45rem,6vw,4.2rem);text-wrap:balance;font-weight:var(--xp-weight);letter-spacing:var(--xp-tracking);line-height:1.02}
 .xp-poster-index a:hover{color:var(--xp-accent-text)}
-.xp-page[data-archetype="poster"] .xp-case .xp-h2{font-size:clamp(2.2rem,4.6vw,4.4rem);line-height:1.04}
+.xp-page[data-archetype="poster"] .xp-case .xp-h2{font-size:clamp(2.2rem,4.6vw,4.4rem);line-height:1.04;text-wrap:balance}
+/* 넓은 여백 배치에서 제목은 좁은 왼쪽 단에 놓입니다. 한글 다섯 글자 낱말이 그 단 한 줄에 들어가는 크기를 넘지 않습니다 */
+.xp-page[data-archetype="poster"][data-layout="wide-margin"] .xp-inner>.xp-block>.xp-head{container-type:inline-size}
+.xp-page[data-archetype="poster"][data-layout="wide-margin"] .xp-inner>.xp-block>.xp-head .xp-h2{font-size:clamp(1.6rem,calc(100cqi / 5),4.4rem)}
 .xp-page[data-archetype="poster"] .xp-case .xp-eyebrow .xp-num{display:block;margin-bottom:.15em;font-family:var(--font-display);font-size:clamp(3rem,7vw,6.4rem);line-height:1;color:var(--xp-accent-text)}
-.xp-page[data-archetype="poster"] .xp-contact{transform:none;border:0;box-shadow:none;background:var(--action);color:var(--xp-action-text);padding:clamp(28px,6vw,84px)}
+.xp-page[data-archetype="poster"] .xp-contact{border:0;box-shadow:none;background:var(--action);color:var(--xp-action-text);padding:clamp(28px,6vw,84px)}
 .xp-page[data-archetype="poster"] .xp-contact .xp-eyebrow{color:inherit}
 .xp-page[data-archetype="poster"] .xp-contact .xp-h2{font-size:clamp(3rem,9vw,8rem);line-height:.95}
 .xp-page[data-archetype="poster"] .xp-contact .xp-act{background:var(--xp-action-text);color:var(--action)}
