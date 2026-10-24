@@ -418,7 +418,11 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
       const { caseNumbers } = useKit();
       const number = (id: string, index: number) => twoDigits(caseNumbers.get(id) ?? index + 1);
       const projects = sections.filter((section) => section.pattern === "project");
-      const items = projects.length ? projects : sections;
+      // 목차는 페이지에서 읽는 순서를 따릅니다. 내용의 섹션 순서와 Spec의 배치 순서가 다를 수 있습니다.
+      const items = (projects.length ? projects : sections)
+        .map((section, index) => ({ section, order: caseNumbers.get(section.id) ?? Number.POSITIVE_INFINITY, index }))
+        .sort((a, b) => a.order - b.order || a.index - b.index)
+        .map(({ section }) => section);
       if (variant === "poster")
         return (
           <nav id="work" className="xp-poster-index" aria-label="선택한 작업">

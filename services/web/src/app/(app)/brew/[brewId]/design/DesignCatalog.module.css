@@ -145,7 +145,7 @@
   display: block;
   height: 4px;
   border-radius: 2px;
-  background: var(--ex-border-strong);
+  background: var(--ex-border-firm);
 }
 
 .archetypeSketch[data-archetype="case-study"] i:first-child { width: 50%; height: 6px; }

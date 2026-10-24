@@ -192,6 +192,24 @@ describe("사례 번호", () => {
     expect(html).toMatch(/id="section-c"[^]*?<span class="xp-num">01<\/span> · 프로젝트/);
     expect(html).toMatch(/id="section-a"[^]*?<span class="xp-num">02<\/span> · 프로젝트/);
   });
+  it("목차는 내용 순서가 아니라 페이지에서 읽는 순서로 항목을 놓는다", () => {
+    const two = structuredClone(content);
+    two.sections.push({ ...two.sections[0]!, id: "c", title: "두 번째 프로젝트", sourceIds: [] });
+    for (const variant of ["rows", "mosaic", "rail", "poster"]) {
+      const spec = pageSpec({}, variant);
+      // 내용에서는 a가 먼저지만 페이지에는 c를 먼저 둡니다.
+      spec.elements.page.children = ["intro", "index", "section-c", "section-a", "section-b", "career", "evidence"];
+      (spec.elements as Record<string, unknown>)["section-c"] = {
+        type: "CaseEssay",
+        props: { section: { $state: "/sectionById/c" } },
+        children: [],
+      };
+      const { html } = renderStructuredPortfolio(spec, two, { design: clarity });
+      const index = html.slice(html.indexOf('id="work"'), html.indexOf('id="section-c"'));
+      expect(index.indexOf('href="#section-c"'), variant).toBeGreaterThan(-1);
+      expect(index.indexOf('href="#section-c"'), variant).toBeLessThan(index.indexOf('href="#section-a"'));
+    }
+  });
   it("이미지가 있는 사례는 어느 사례 유형이든 이미지를 하나 이상 표시한다", () => {
     for (const type of ["CaseEssay", "CaseGallery", "CaseTechnical", "CaseProcess", "ContentPanel"]) {
       const spec = pageSpec();
