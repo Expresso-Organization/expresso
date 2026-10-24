@@ -93,6 +93,7 @@ export class GenerationService {
         createdAt: now, updatedAt: now,
         styleOverrides: style.styleOverrides as JsonObject,
         designSystemRevisionId: style.designSystemRevisionId,
+        archetype: input.archetype ?? null,
       }, options);
       await addMongoOutboxEvent(tx, {
         userId, topic: "portfolio.generate", payload: { generationJobId: id, userId },
@@ -128,6 +129,7 @@ export class GenerationService {
           _id: portfolioId, userId: job.userId, brewId: job.brewId, templateId: job.templateId,
           title: brew?.freeTitle ?? "Generated portfolio", status: "draft", styleOverrides: job.styleOverrides,
           designSystemRevisionId: job.designSystemRevisionId ?? null,
+          archetype: job.archetype ?? null,
           createdAt: now, updatedAt: now,
         }, options);
       }
@@ -311,7 +313,7 @@ export class GenerationService {
       let portfolioId = current.portfolioId ?? null; const now = new Date();
       if (!portfolioId) {
         portfolioId = randomUUID();
-        await db.portfolios.insertOne({ _id: portfolioId, userId: job.userId, brewId: job.brewId, templateId: job.templateId, title: "Generated portfolio", status: "draft", styleOverrides: job.styleOverrides, designSystemRevisionId: job.designSystemRevisionId ?? null, createdAt: now, updatedAt: now }, options);
+        await db.portfolios.insertOne({ _id: portfolioId, userId: job.userId, brewId: job.brewId, templateId: job.templateId, title: "Generated portfolio", status: "draft", styleOverrides: job.styleOverrides, designSystemRevisionId: job.designSystemRevisionId ?? null, archetype: job.archetype ?? null, createdAt: now, updatedAt: now }, options);
       }
       const oldSections = await db.portfolioSections.find({ userId: job.userId, portfolioId }, options).toArray();
       const lockedCount = await db.blocks.countDocuments({ userId: job.userId, portfolioSectionId: { $in: oldSections.map(({ _id }) => _id) }, locked: true }, options);
@@ -375,7 +377,7 @@ export class GenerationService {
       let portfolioId = current.portfolioId ?? null; const now = new Date();
       if (!portfolioId) {
         portfolioId = randomUUID();
-        await db.portfolios.insertOne({ _id: portfolioId, userId: job.userId, brewId: job.brewId, templateId: job.templateId, title: "Failed generation draft", status: "draft", styleOverrides: job.styleOverrides, designSystemRevisionId: job.designSystemRevisionId ?? null, createdAt: now, updatedAt: now }, options);
+        await db.portfolios.insertOne({ _id: portfolioId, userId: job.userId, brewId: job.brewId, templateId: job.templateId, title: "Failed generation draft", status: "draft", styleOverrides: job.styleOverrides, designSystemRevisionId: job.designSystemRevisionId ?? null, archetype: job.archetype ?? null, createdAt: now, updatedAt: now }, options);
       }
       await db.generationJobs.updateOne({ _id: job._id, status: "running", attempts: job.attempts, runToken }, { $set: { status: "failed", stage: "failed", errorCode: code, failureRetryable: retryable, portfolioId, runToken: null, updatedAt: now } }, options);
     });

@@ -64,6 +64,103 @@
   font-size: var(--ex-text-3xs);
 }
 
+/* 페이지 짜임새 — 디자인(색 · 글꼴)과 따로 고르는 축입니다. 견본은 CSS로 그린 짜임새 윤곽입니다. */
+.archetypeRow {
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 0;
+  border: 0;
+}
+
+.archetypeLegend {
+  grid-column: 1 / -1;
+  margin-bottom: 8px;
+  padding: 0;
+  color: var(--ex-fg-muted);
+  font-size: var(--ex-text-2xs);
+}
+
+.archetypeOption {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--ex-border-soft);
+  border-radius: 12px;
+  background: var(--ex-bg);
+  cursor: pointer;
+  transition: border-color var(--ex-motion-quick), background var(--ex-motion-quick);
+}
+
+.archetypeOption:hover {
+  border-color: var(--ex-border-firm);
+}
+
+.archetypeOption:has(input:focus-visible) {
+  outline: 2px solid var(--ex-accent);
+  outline-offset: 2px;
+}
+
+.archetypeOptionActive,
+.archetypeOptionActive:hover {
+  border-color: var(--ex-bg-inverse);
+  background: var(--ex-bg-sunken);
+}
+
+.archetypeText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  word-break: keep-all;
+}
+
+.archetypeText strong {
+  color: var(--ex-fg);
+  font-size: var(--ex-text-xs);
+  font-weight: 600;
+}
+
+.archetypeText small {
+  color: var(--ex-fg-muted);
+  font-size: var(--ex-text-3xs);
+  line-height: var(--ex-leading-snug);
+}
+
+.archetypeSketch {
+  flex-shrink: 0;
+  display: grid;
+  align-content: start;
+  gap: 3px;
+  width: 44px;
+  height: 34px;
+  padding: 4px;
+  border-radius: 6px;
+  background: var(--ex-bg-muted);
+}
+
+.archetypeSketch i {
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--ex-border-firm);
+}
+
+.archetypeSketch[data-archetype="case-study"] i:first-child { width: 50%; height: 6px; }
+.archetypeSketch[data-archetype="case-study"] i:nth-child(2) { height: 8px; }
+.archetypeSketch[data-archetype="poster"] { background: var(--ex-bg-inverse); }
+.archetypeSketch[data-archetype="poster"] i { background: var(--ex-fg-on-inverse); }
+.archetypeSketch[data-archetype="poster"] i:first-child { width: 90%; height: 12px; }
+.archetypeSketch[data-archetype="poster"] i:nth-child(2) { width: 60%; }
+.archetypeSketch[data-archetype="list"] i:first-child { width: 80%; height: 7px; }
+.archetypeSketch[data-archetype="list"] i:nth-child(n + 2) { height: 2px; margin-top: 3px; }
+
+@media (max-width: 767px) {
+  .archetypeRow { grid-template-columns: minmax(0, 1fr); }
+}
+
 .categoryRow {
   flex-shrink: 0;
   display: flex;

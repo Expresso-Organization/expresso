@@ -264,6 +264,28 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
       });
     });
 
+    it("생성 요청의 유형을 포트폴리오에 남기고 생성 문맥에 넘긴다", async () => {
+      const revisionId = "5d8f5f2d-6d2a-4f24-9d1a-2b8f9e7c1702";
+      const generation = new MongoGenerationService(fixture.resource);
+      const job = await generation.submit(user, randomUUID(), { recipeId, designSystemRevisionId: revisionId, archetype: "list" });
+      const created = (await generation.prepareFreeHtml(job.generationJobId)).portfolioId!;
+      await service.generate(user, created, {
+        async generate(next) {
+          expect(next.archetype).toBe("list");
+          return generator.generate(next);
+        },
+      });
+      // 유형 없이 요청하면 문맥에도 없고, 생성기는 사례 상세형으로 만듭니다.
+      const plain = await generation.submit(user, randomUUID(), { recipeId, designSystemRevisionId: revisionId });
+      const plainPortfolio = (await generation.prepareFreeHtml(plain.generationJobId)).portfolioId!;
+      await service.generate(user, plainPortfolio, {
+        async generate(next) {
+          expect(next.archetype).toBeUndefined();
+          return generator.generate(next);
+        },
+      });
+    });
+
     it("직접 선택한 레이아웃을 다음 생성 문맥에도 유지한다", async () => {
       const current = (await service.latest(user, portfolio))!;
       const spec = structuredClone(

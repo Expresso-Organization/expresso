@@ -2,8 +2,10 @@ import { defineCatalog } from "@json-render/core";
 import { schema } from "@json-render/react/schema";
 import { z } from "zod";
 import {
+  PortfolioArchetypeSchema,
   STRUCTURED_GROUP_VARIANTS,
-  STRUCTURED_INTRO_VARIANTS,
+  STRUCTURED_INDEX_VARIANTS,
+  STRUCTURED_INTRO_ALL_VARIANTS,
   StructuredDesignSchema,
   StructuredPortfolioContentSchema as content,
   StructuredSectionSchema,
@@ -26,6 +28,7 @@ export const structuredCatalog = defineCatalog(schema, {
         motion: z.enum(["none", "subtle", "showcase"]),
         rationale: z.string(),
         referenceIds: z.array(z.string()).optional(),
+        archetype: PortfolioArchetypeSchema.optional(),
       }),
       slots: ["default"],
       description:
@@ -36,18 +39,18 @@ export const structuredCatalog = defineCatalog(schema, {
         profile: content.shape.profile,
         sections: content.shape.sections.optional(),
         sourceId: z.string().optional(),
-        variant: z.enum(STRUCTURED_INTRO_VARIANTS).optional(),
+        variant: z.enum(STRUCTURED_INTRO_ALL_VARIANTS).optional(),
       }),
       description:
-        "이름을 가장 크게, 그 아래 짧은 자기 정의를 표시합니다. statement=큰 이름과 한 문장, split=이름과 소개를 좌우로 나눔, media=제공된 대표 이미지와 함께.",
+        "이름을 가장 크게, 그 아래 짧은 자기 정의를 표시합니다. statement=큰 이름과 한 문장, split=이름과 소개를 좌우로 나눔, media=제공된 대표 이미지와 함께, poster=행동색 면 위에 화면 폭에 가까운 이름과 한 문장, sentence=작은 이름 아래 소개를 큰 문장으로.",
     },
     ProjectIndex: {
       props: z.object({
         sections: content.shape.sections,
-        variant: z.enum(["rows", "mosaic", "rail"]),
+        variant: z.enum(STRUCTURED_INDEX_VARIANTS),
       }),
       description:
-        "rows=짧은 목록, mosaic=이미지 중심 비대칭 타일, rail=측면 목차.",
+        "rows=짧은 목록, mosaic=이미지 중심 비대칭 타일, rail=측면 목차, poster=번호와 큰 글자 제목 행.",
     },
     CaseEssay: {
       props: projectProps,
@@ -70,6 +73,10 @@ export const structuredCatalog = defineCatalog(schema, {
     ContentPanel: {
       props: projectProps,
       description: "자기소개·능력·추가 설명을 표시합니다.",
+    },
+    CaseRow: {
+      props: projectProps,
+      description: "글 · 목록형의 한 줄. 기간 · 제목 · 요약을 보이고, 펼치면 본문 · 항목 · 이미지가 나옵니다.",
     },
     Columns: {
       props: z.object({ variant: z.enum(STRUCTURED_GROUP_VARIANTS.Columns) }),

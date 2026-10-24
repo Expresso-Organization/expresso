@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>오수빈 포트폴리오</title>
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Nanum+Myeongjo:wght@400;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --page-sans:"Pretendard Variable",Pretendard,-apple-system,system-ui,sans-serif;
+  --page-serif:"Nanum Myeongjo","Noto Serif KR",serif;
+  --page-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --page-display:"Outfit",var(--page-sans);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font-family:var(--page-sans);word-break:keep-all;-webkit-font-smoothing:antialiased}
+img{max-width:100%;height:auto;display:block}
+svg{max-width:100%}
+/* 가로 스크롤은 폰에서 지면을 무너뜨린다. 여기서 한 번 더 막는다. */
+body{overflow-x:hidden}
+</style>
+
+<style>
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Nanum+Gothic+Coding:wght@400;700&display=swap");
+.xp-page{--canvas:#0a0a0a;--surface:#0c1909;--elevated:#0f2509;--text:#33ff00;--muted:#229804;--border:#154f07;--accent:#33ff00;--action:#33ff00;--actionText:#111111;--font-display:"JetBrains Mono",Nanum Gothic Coding, monospace;--font-body:"JetBrains Mono",Nanum Gothic Coding, monospace;--font-mono:"JetBrains Mono",Nanum Gothic Coding, monospace;--type-body:0.9375rem;--line-body:1.55;--type-subheading:1.25rem;--line-subheading:1.35;--type-heading:2rem;--line-heading:1.2;--type-display:3.25rem;--line-display:1.05;--type-example-body:0.9375rem;--line-example-body:1.55;--type-example-heading:2rem;--line-example-heading:1.2;--type-example-display:3.25rem;--line-example-display:1.05;--measure:46rem;--base-unit:4px;--element-gap:10px;--component-gap:20px;--section-gap:56px;--content-width:1180px;--card-radius:0px;--control-radius:0px;--border-width:1px;--motion-duration:140ms;--motion-easing:ease-out;--shadow:none;--xp-muted:#229804;--xp-muted-surface:#229804;--xp-accent-text:#33ff00;--xp-action-text:#111111;--xp-weight:700;--xp-weight-mid:500;--xp-tracking:-0.01em}
+
+.xp-page{--xp-pad:clamp(20px,5vw,56px);--xp-section:var(--section-gap);--xp-rule:var(--border-width) solid var(--border);--xp-small:max(13px,calc(var(--type-example-body) * .86));--xp-name:clamp(2.6rem,5.2vw + 1rem,calc(var(--type-example-display) * 1.3));--xp-h2:clamp(1.55rem,1.6vw + 1rem,var(--type-example-heading));
+  min-height:100vh;margin:0;background:var(--canvas);color:var(--text);font-family:var(--font-body);font-size:var(--type-example-body);line-height:var(--line-example-body);word-break:keep-all;overflow-wrap:anywhere;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+.xp-page *,.xp-page *::before,.xp-page *::after{box-sizing:border-box}
+.xp-page :is(h1,h2,h3,p,ol,ul,dl,dd,figure,blockquote){margin:0;padding:0}
+.xp-page li{list-style:none}
+.xp-page a{color:var(--xp-accent-text);text-decoration-thickness:1px;text-underline-offset:.22em}
+.xp-page a:focus-visible{outline:2px solid var(--xp-accent-text);outline-offset:3px;border-radius:2px}
+.xp-page[data-density="compact"]{--xp-section:calc(var(--section-gap) * .8)}
+.xp-page[data-density="spacious"]{--xp-section:calc(var(--section-gap) * 1.2)}
+.xp-page[data-divider="none"]{--xp-rule:0 solid transparent}
+.xp-page[data-divider="double"]{--xp-rule:3px double var(--border)}
+.xp-page[data-divider="dashed"]{--xp-rule:var(--border-width) dashed var(--border)}
+.xp-page[data-divider="dotted"]{--xp-rule:max(2px,var(--border-width)) dotted var(--border)}
+.xp-page[data-divider="thick"]{--xp-rule:2px solid var(--text)}
+
+.xp-inner{width:min(100% - var(--xp-pad) * 2,var(--content-width));margin-inline:auto;padding-block:calc(var(--xp-section) * .7) var(--xp-section);display:grid;gap:var(--xp-section)}
+
+/* 글자 */
+.xp-eyebrow{display:block;color:var(--xp-muted);font-family:var(--font-mono);font-size:12px;line-height:1.5;letter-spacing:.08em}
+.xp-name{font-family:var(--font-display);font-size:var(--xp-name);font-weight:var(--xp-weight);line-height:1.02;letter-spacing:calc(var(--xp-tracking) * 1.6)}
+.xp-headline{max-width:30ch;font-family:var(--font-display);font-size:clamp(1.2rem,.9vw + 1rem,calc(var(--type-example-heading) * .78));font-weight:var(--xp-weight-mid);line-height:var(--line-example-heading);letter-spacing:var(--xp-tracking)}
+.xp-h2{font-family:var(--font-display);font-size:var(--xp-h2);font-weight:var(--xp-weight);line-height:var(--line-example-heading);letter-spacing:var(--xp-tracking)}
+.xp-h3{font-size:calc(var(--type-example-body) * 1.06);font-weight:var(--xp-weight);line-height:1.4}
+.xp-lead{max-width:var(--measure);color:var(--xp-muted);font-size:calc(var(--type-example-body) * 1.08);line-height:var(--line-example-body)}
+.xp-body{display:grid;gap:.85em;max-width:var(--measure)}
+.xp-body p{color:var(--text)}
+.xp-small{color:var(--xp-muted);font-size:var(--xp-small);line-height:1.55}
+
+/* 표식 — 라벨 앞에 붙는 디자인별 기호 */
+.xp-page[data-marker="prompt"] .xp-eyebrow::before{content:"$ ";color:var(--xp-accent-text)}
+.xp-page[data-marker="bullet"] .xp-eyebrow::before{content:"■  ";color:var(--xp-accent-text)}
+.xp-page[data-marker="bracket"] .xp-eyebrow::before{content:"[ ";color:var(--xp-accent-text)}
+.xp-page[data-marker="bracket"] .xp-eyebrow::after{content:" ]";color:var(--xp-accent-text)}
+.xp-page[data-marker="rule"] .xp-eyebrow::before{content:"";display:inline-block;width:22px;margin-right:10px;border-top:1px solid var(--xp-accent-text);vertical-align:middle}
+.xp-page[data-marker="numbered"] .xp-eyebrow::before{content:"— ";color:var(--xp-accent-text)}
+
+/* 면 — 카드와 테두리 방식 */
+.xp-panel{position:relative;padding:clamp(20px,2.4vw,calc(var(--component-gap) * 1.35));border:var(--border-width) solid var(--border);border-radius:var(--card-radius);background:var(--surface);box-shadow:var(--shadow);--xp-muted:var(--xp-muted-surface)}
+.xp-page[data-chrome="window"] .xp-panel{padding-top:calc(clamp(20px,2.4vw,calc(var(--component-gap) * 1.35)) + 30px)}
+.xp-page[data-chrome="window"] .xp-panel::before{content:"";position:absolute;inset:0 0 auto;height:30px;border-bottom:var(--border-width) solid var(--border);border-radius:var(--card-radius) var(--card-radius) 0 0;background:var(--elevated)}
+.xp-page[data-chrome="window"] .xp-panel::after{content:"";position:absolute;top:11px;left:14px;width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:15px 0 0 var(--border),30px 0 0 var(--border)}
+.xp-page[data-chrome="masthead"] .xp-panel{padding-top:calc(clamp(20px,2.4vw,calc(var(--component-gap) * 1.35)) + 14px)}
+.xp-page[data-chrome="masthead"] .xp-panel::before{content:"";position:absolute;inset:12px clamp(20px,2.4vw,calc(var(--component-gap) * 1.35)) auto;border-top:3px double var(--text)}
+.xp-page[data-chrome="masthead"] .xp-hero{padding-top:22px;border-top:4px double var(--text)}
+/* 기울인 패널은 모서리가 제자리 밖으로 나갑니다. 높이가 폭의 두 배를 넘지 않는 목차 카드만 기울이고,
+   0.6도 기울였을 때 그 모서리가 제자리 안에 남도록 1 / (1 + 2·sin 0.6°) ≈ .979배로 줄입니다 */
+.xp-page[data-chrome="sticker"] .xp-mosaic .xp-panel{transform:rotate(-.6deg) scale(.979)}
+.xp-page[data-chrome="sticker"] .xp-mosaic .xp-panel:nth-of-type(2n){transform:rotate(.5deg) scale(.979)}
+.xp-page[data-chrome="panel"] .xp-panel::before{content:"";position:absolute;inset:0 0 auto;height:1px;border-radius:var(--card-radius) var(--card-radius) 0 0;background:color-mix(in srgb,var(--canvas) 55%,white);pointer-events:none}
+.xp-page[data-chrome="frame"] .xp-panel::before{content:"";position:absolute;inset:8px;border:1px solid color-mix(in srgb,var(--accent) 55%,transparent);border-radius:max(0px,calc(var(--card-radius) - 6px));pointer-events:none}
+.xp-page[data-chrome="blob"] .xp-panel{border-radius:calc(var(--card-radius) * 2.1) calc(var(--card-radius) * .8) calc(var(--card-radius) * 2.1) calc(var(--card-radius) * .8)}
+
+/* 행동 */
+.xp-actions{display:flex;flex-wrap:wrap;align-items:center;gap:var(--element-gap) calc(var(--element-gap) * 1.6)}
+.xp-page .xp-act{display:inline-flex;align-items:center;gap:.5em;padding:.78em 1.25em;border-radius:var(--control-radius);background:var(--action);color:var(--xp-action-text);font-size:var(--xp-small);font-weight:var(--xp-weight);line-height:1;text-decoration:none;transition:transform var(--motion-duration) var(--motion-easing),background var(--motion-duration) var(--motion-easing)}
+.xp-page .xp-act:hover{transform:translateY(-1px);background:color-mix(in srgb,var(--action) 88%,var(--text))}
+.xp-quiet{font-size:var(--xp-small);font-weight:var(--xp-weight-mid)}
+.xp-tags{display:flex;flex-wrap:wrap;gap:calc(var(--element-gap) * .6)}
+.xp-case-body{display:grid;align-content:start;gap:calc(var(--component-gap) * 1.1);min-width:0}
+.xp-tags li{padding:.42em .85em;border:var(--border-width) solid var(--border);border-radius:var(--control-radius);color:var(--xp-muted);font-size:var(--xp-small);line-height:1.3}
+
+/* 첫 화면 */
+.xp-hero{display:grid;gap:calc(var(--element-gap) * 1.5);padding-top:calc(var(--xp-section) * .4)}
+.xp-hero .xp-name{margin-top:calc(var(--element-gap) * -.2)}
+.xp-hero .xp-headline{margin-top:calc(var(--element-gap) * -.4)}
+.xp-hero .xp-actions{margin-top:calc(var(--element-gap) * .5)}
+.xp-hero[data-variant="split"]{grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:var(--component-gap) calc(var(--component-gap) * 2);align-items:end}
+.xp-hero[data-variant="split"] .xp-hero-side{display:grid;gap:calc(var(--element-gap) * 1.3)}
+.xp-hero[data-variant="media"]{grid-template-columns:minmax(0,6fr) minmax(0,5fr);gap:calc(var(--component-gap) * 1.6);align-items:center}
+.xp-hero[data-variant="media"] .xp-hero-text{display:grid;gap:calc(var(--element-gap) * 1.4)}
+.xp-hero-art img{width:100%;aspect-ratio:4/3;object-fit:cover;border:var(--border-width) solid var(--border);border-radius:var(--card-radius);background:var(--surface)}
+.xp-hero-art figcaption{margin-top:10px}
+
+/* 섹션 머리 */
+.xp-block{display:grid;align-content:start;gap:calc(var(--component-gap) * 1.1);padding-top:calc(var(--xp-section) * .5);border-top:var(--xp-rule);container-type:inline-size}
+.xp-head{display:grid;gap:calc(var(--element-gap) * .7);align-content:start}
+
+/* 강조 — 번호를 세우는 방식 */
+.xp-num{font-family:var(--font-display);font-weight:var(--xp-weight);font-variant-numeric:tabular-nums}
+.xp-page[data-emphasis="boxed"] .xp-num{padding:.05em .3em;border:var(--border-width) solid var(--text);border-radius:var(--control-radius)}
+.xp-page[data-emphasis="underlined"] .xp-num{padding-bottom:.04em;border-bottom:.12em solid var(--accent)}
+.xp-page[data-emphasis="oversized"] .xp-num{font-size:1.35em}
+.xp-page[data-emphasis="bar"] .xp-num{padding-left:.4em;border-left:.14em solid var(--accent)}
+
+/* 작업 목록 */
+.xp-index-list{display:grid;border-top:var(--xp-rule)}
+.xp-index-list a{display:grid;grid-template-columns:3.2em minmax(0,1fr) auto;gap:var(--element-gap) calc(var(--element-gap) * 1.4);align-items:baseline;padding-block:calc(var(--element-gap) * 1.15);border-bottom:var(--xp-rule);color:inherit;text-decoration:none;transition:background var(--motion-duration) var(--motion-easing)}
+.xp-index-list a:hover{background:color-mix(in srgb,var(--surface) 70%,transparent)}
+.xp-index-list strong{display:block;font-family:var(--font-display);font-size:calc(var(--type-example-body) * 1.2);font-weight:var(--xp-weight);line-height:1.35;letter-spacing:var(--xp-tracking)}
+.xp-index-list small{display:block;margin-top:4px}
+.xp-index-list .xp-arrow{color:var(--xp-accent-text)}
+.xp-index[data-variant="rail"] .xp-index-list a{grid-template-columns:2.4em minmax(0,1fr);padding-block:calc(var(--element-gap) * .8)}
+.xp-index[data-variant="rail"] .xp-index-list strong{font-size:var(--type-example-body)}
+.xp-index[data-variant="rail"] .xp-index-list :is(small,.xp-arrow){display:none}
+.xp-mosaic{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:var(--component-gap)}
+.xp-mosaic a{display:grid;gap:calc(var(--element-gap) * .8);align-content:start;color:inherit;text-decoration:none}
+.xp-mosaic img{width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:max(0px,calc(var(--card-radius) - 4px))}
+.xp-mosaic strong{font-family:var(--font-display);font-size:calc(var(--type-example-body) * 1.15);font-weight:var(--xp-weight);line-height:1.35;letter-spacing:var(--xp-tracking)}
+
+/* 사례 */
+.xp-case-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:calc(var(--component-gap) * 1.4);align-items:start}
+.xp-par{display:grid;grid-template-columns:minmax(4.5em,auto) minmax(0,1fr);gap:calc(var(--element-gap) * .9) calc(var(--element-gap) * 1.3)}
+.xp-par dt{padding-top:.18em;color:var(--xp-muted);font-family:var(--font-mono);font-size:12px;letter-spacing:.04em}
+.xp-par dd{line-height:1.6}
+.xp-par dd+dt,.xp-par dd+dt+dd{padding-top:calc(var(--element-gap) * .9);border-top:var(--xp-rule)}
+.xp-notes{display:grid;gap:calc(var(--element-gap) * 1.3);max-width:var(--measure)}
+.xp-notes section{display:grid;gap:.35em}
+.xp-steps{display:grid;gap:0;border-top:var(--xp-rule)}
+.xp-steps li{display:grid;grid-template-columns:3.2em minmax(0,1fr);gap:calc(var(--element-gap) * 1.2);padding-block:calc(var(--element-gap) * 1.2);border-bottom:var(--xp-rule)}
+.xp-steps li>div{display:grid;gap:.4em;max-width:var(--measure)}
+.xp-gallery{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:var(--element-gap)}
+.xp-gallery figure:first-child{grid-row:span 2}
+.xp-gallery figure:only-child{grid-column:1/-1}
+.xp-figure img{width:100%;height:100%;min-height:180px;object-fit:cover;border:var(--border-width) solid var(--border);border-radius:var(--card-radius);background:var(--surface)}
+.xp-figure figcaption{margin-top:8px}
+/* 본문 흐름의 그림은 원래 비율로 높이를 정합니다. 칸을 채우는 갤러리 · 격자 그림만 height:100%를 씁니다. */
+.xp-case-body>.xp-figure img,.xp-row-body .xp-figure img{height:auto}
+.xp-sources{display:flex;flex-wrap:wrap;gap:6px calc(var(--element-gap) * 1.4);font-size:var(--xp-small)}
+
+/* 경력·근거·연락 */
+.xp-timeline{display:grid;gap:0;border-top:var(--xp-rule)}
+.xp-timeline li{display:grid;grid-template-columns:minmax(7.5em,auto) minmax(0,1fr);gap:var(--element-gap) calc(var(--element-gap) * 1.6);padding-block:calc(var(--element-gap) * 1.3);border-bottom:var(--xp-rule)}
+.xp-timeline li>div{display:grid;gap:.3em;max-width:var(--measure)}
+.xp-evidence-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:var(--element-gap)}
+.xp-evidence-list details{padding:calc(var(--element-gap) * 1.1) calc(var(--element-gap) * 1.2);border:var(--border-width) solid var(--border);border-radius:var(--card-radius);background:var(--surface);--xp-muted:var(--xp-muted-surface)}
+.xp-evidence-list summary{display:grid;gap:.3em;cursor:pointer;list-style:none}
+.xp-evidence-list summary::-webkit-details-marker{display:none}
+.xp-evidence-list summary strong{font-weight:var(--xp-weight);line-height:1.4}
+.xp-evidence-list details[open] summary{margin-bottom:calc(var(--element-gap) * .8)}
+.xp-contact{display:grid;gap:calc(var(--element-gap) * 1.2);justify-items:start}
+.xp-footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;padding-top:calc(var(--element-gap) * 1.2);border-top:var(--xp-rule)}
+
+/* 묶음 */
+.xp-group{display:grid;align-items:start;gap:calc(var(--component-gap) * 1.4);container-type:inline-size}
+.xp-group>.xp-index[data-variant="rail"]{position:sticky;top:calc(var(--element-gap) * 2)}
+.xp-group[data-group="columns"]{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.xp-group[data-group="columns"][data-variant="wide-start"]{grid-template-columns:minmax(0,1.7fr) minmax(0,1fr)}
+.xp-group[data-group="columns"][data-variant="wide-end"]{grid-template-columns:minmax(0,1fr) minmax(0,1.7fr)}
+.xp-group[data-group="grid"]{grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+.xp-group[data-group="band"]{padding:clamp(20px,3vw,calc(var(--component-gap) * 1.5));border-radius:var(--card-radius);background:var(--surface);--xp-muted:var(--xp-muted-surface)}
+.xp-group[data-group="band"][data-variant="accent"]{background:transparent;border-top:3px solid var(--accent);border-radius:0}
+.xp-group .xp-case-grid{grid-template-columns:minmax(0,1fr)}
+
+/* 배치 — 넓은 여백은 머리를 왼쪽 단에, 촘촘한 격자는 간격을 줄이고 표를 펼칩니다 */
+.xp-page[data-layout="wide-margin"] .xp-inner>.xp-block{grid-template-columns:minmax(150px,1fr) minmax(0,2.8fr);column-gap:calc(var(--component-gap) * 2)}
+.xp-page[data-layout="wide-margin"] .xp-inner>.xp-block>.xp-head{position:sticky;top:24px}
+.xp-page[data-layout="wide-margin"] .xp-inner>.xp-block>:not(.xp-head){grid-column:2}
+.xp-page[data-layout="wide-margin"] .xp-inner>.xp-block .xp-case-grid{grid-template-columns:minmax(0,1fr)}
+.xp-page[data-layout="dense-grid"] .xp-inner{gap:calc(var(--xp-section) * .75)}
+.xp-page[data-layout="dense-grid"] .xp-index[data-variant="rows"] .xp-index-list{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:var(--component-gap)}
+.xp-page[data-layout="single-column"] .xp-case-grid{grid-template-columns:minmax(0,1fr)}
+
+/* 좁은 폭 — 한 열로 접습니다 */
+@container (max-width:720px){
+  .xp-case-grid,.xp-group[data-group="columns"][data-variant]{grid-template-columns:minmax(0,1fr)}
+  .xp-par{grid-template-columns:minmax(0,1fr);gap:.25em}
+  .xp-par dd+dt,.xp-par dd+dt+dd{border-top:0}
+  .xp-par dd+dt{margin-top:calc(var(--element-gap) * .7);padding-top:calc(var(--element-gap) * .7);border-top:var(--xp-rule)}
+  .xp-timeline li{grid-template-columns:minmax(0,1fr);gap:.35em}
+}
+@media (max-width:760px){
+  .xp-hero[data-variant="split"],.xp-hero[data-variant="media"]{grid-template-columns:minmax(0,1fr)}
+  .xp-page[data-layout="wide-margin"] .xp-inner>.xp-block{grid-template-columns:minmax(0,1fr)}
+  .xp-page[data-layout="wide-margin"] .xp-inner>.xp-block>.xp-head{position:static}
+  .xp-page[data-layout="wide-margin"] .xp-inner>.xp-block>:not(.xp-head){grid-column:1}
+  .xp-page[data-layout="dense-grid"] .xp-index[data-variant="rows"] .xp-index-list{grid-template-columns:minmax(0,1fr)}
+  .xp-gallery{grid-template-columns:minmax(0,1fr)}
+  .xp-gallery figure:first-child{grid-row:auto}
+  .xp-group[data-group="columns"][data-variant]{grid-template-columns:minmax(0,1fr)}
+  .xp-group>.xp-index[data-variant="rail"]{position:static}
+}
+
+/* 유형 — 포스터형. 첫 화면은 창 폭 전체를 행동색 면으로 채웁니다.
+   본문 영역 바깥 폭(--xp-bleed)은 창 폭 단위로만 계산해, 면과 글자 띠가 같은 경계를 씁니다. */
+.xp-page[data-archetype="poster"]{--xp-bleed:max(var(--xp-pad),(100vw - var(--content-width)) / 2)}
+.xp-hero[data-variant="poster"]{position:relative;display:flex;flex-direction:column;gap:calc(var(--element-gap) * 1.1);min-height:min(92vh,980px);margin:calc(var(--xp-section) * -.7) calc(var(--xp-bleed) * -1) 0;padding:calc(var(--xp-section) * .5) var(--xp-bleed) 0;background-color:var(--action);background-image:repeating-linear-gradient(-45deg,color-mix(in srgb,var(--xp-action-text) 7%,transparent) 0 1px,transparent 1px 18px);color:var(--xp-action-text);overflow:hidden}
+.xp-poster-role{font-family:var(--font-mono);font-size:var(--xp-small);letter-spacing:.08em;text-transform:uppercase}
+.xp-poster-name{font-family:var(--font-display);font-weight:var(--xp-weight);letter-spacing:calc(var(--xp-tracking) - .02em);line-height:.9;font-size:clamp(4.2rem,19vw,17rem)}
+/* 문서 기본 여백 초기화(.xp-page :is(h1 …))보다 우선해야 이름이 면의 아래쪽으로 내려갑니다. */
+.xp-hero[data-variant="poster"] .xp-poster-name{margin-top:auto}
+.xp-poster-name[data-name-length="medium"]{font-size:clamp(3.2rem,11.5vw,10.5rem)}
+.xp-poster-name[data-name-length="long"]{font-size:clamp(2.5rem,7.2vw,6.8rem)}
+.xp-poster-line{max-width:30ch;font-family:var(--font-display);font-size:clamp(1.15rem,1.7vw,1.55rem);line-height:1.35}
+.xp-page .xp-poster-cue{align-self:flex-start;color:inherit;font-size:var(--xp-small);font-weight:var(--xp-weight);text-decoration:underline;text-underline-offset:.3em}
+.xp-marquee{display:flex;overflow:hidden;margin:calc(var(--element-gap) * 1.4) calc(var(--xp-bleed) * -1) 0;border-top:1px solid color-mix(in srgb,var(--xp-action-text) 40%,transparent)}
+.xp-marquee ul{display:flex;flex:none;gap:2.4rem;padding:.8em 1.2rem;font-family:var(--font-display);font-size:clamp(1rem,1.4vw,1.25rem);font-weight:var(--xp-weight);text-transform:uppercase;letter-spacing:.02em;white-space:nowrap}
+.xp-marquee li::after{content:"✦";margin-left:2.4rem}
+.xp-poster-about-text{max-width:28em;font-family:var(--font-display);font-size:clamp(1.45rem,2.7vw,2.5rem);font-weight:var(--xp-weight-mid);letter-spacing:var(--xp-tracking);line-height:1.3;text-wrap:pretty}
+.xp-poster-index{display:grid;gap:var(--element-gap)}
+.xp-poster-index ol{border-top:var(--xp-rule)}
+.xp-poster-index a{display:grid;grid-template-columns:4ch minmax(0,1fr) minmax(0,20rem);gap:var(--element-gap) var(--component-gap);align-items:baseline;padding-block:1em;border-bottom:var(--xp-rule);color:inherit;text-decoration:none;transition:color var(--motion-duration) var(--motion-easing)}
+.xp-poster-index strong{font-family:var(--font-display);font-size:clamp(1.45rem,6vw,4.2rem);text-wrap:balance;font-weight:var(--xp-weight);letter-spacing:var(--xp-tracking);line-height:1.02}
+.xp-poster-index a:hover{color:var(--xp-accent-text)}
+.xp-page[data-archetype="poster"] .xp-case .xp-h2{font-size:clamp(2.2rem,4.6vw,4.4rem);line-height:1.04;text-wrap:balance}
+/* 넓은 여백 배치에서 제목은 좁은 왼쪽 단에 놓입니다. 한글 다섯 글자 낱말이 그 단 한 줄에 들어가는 크기를 넘지 않습니다 */
+.xp-page[data-archetype="poster"][data-layout="wide-margin"] .xp-inner>.xp-block>.xp-head{container-type:inline-size}
+.xp-page[data-archetype="poster"][data-layout="wide-margin"] .xp-inner>.xp-block>.xp-head .xp-h2{font-size:clamp(1.6rem,calc(100cqi / 5),4.4rem)}
+.xp-page[data-archetype="poster"] .xp-case .xp-eyebrow .xp-num{display:block;margin-bottom:.15em;font-family:var(--font-display);font-size:clamp(3rem,7vw,6.4rem);line-height:1;color:var(--xp-accent-text)}
+.xp-page[data-archetype="poster"] .xp-contact{border:0;box-shadow:none;background:var(--action);color:var(--xp-action-text);padding:clamp(28px,6vw,84px)}
+.xp-page[data-archetype="poster"] .xp-contact .xp-eyebrow{color:inherit}
+.xp-page[data-archetype="poster"] .xp-contact .xp-h2{font-size:clamp(3rem,9vw,8rem);line-height:.95}
+.xp-page[data-archetype="poster"] .xp-contact .xp-act{background:var(--xp-action-text);color:var(--action)}
+
+/* 유형 — 글 · 목록형. 큰 소개 문장 아래 "기간 · 제목 · 요약" 행이 붙어 이어집니다. */
+.xp-hero[data-variant="sentence"]{display:grid;gap:calc(var(--element-gap) * 1.2);max-width:min(100%,54rem);padding-top:calc(var(--xp-section) * .3)}
+.xp-sentence-meta{font-size:var(--xp-small);color:var(--xp-muted)}
+.xp-sentence-meta strong{color:var(--text);font-weight:var(--xp-weight)}
+.xp-sentence{font-family:var(--font-display);font-size:clamp(1.9rem,3.3vw,3.1rem);font-weight:var(--xp-weight-mid);letter-spacing:var(--xp-tracking);line-height:1.2}
+.xp-sentence-intro{max-width:var(--measure);color:var(--xp-muted)}
+.xp-sentence-focus{display:flex;flex-wrap:wrap;gap:.3em .9em;font-size:var(--xp-small);color:var(--xp-muted)}
+.xp-sentence-focus li+li::before{content:"·";margin-right:.9em}
+.xp-inner>.xp-row-heading+.xp-row{margin-top:calc(var(--xp-section) * -1 + var(--element-gap))}
+.xp-inner>.xp-row+.xp-row{margin-top:calc(var(--xp-section) * -1)}
+.xp-row{border-bottom:var(--xp-rule)}
+.xp-row-heading+.xp-row{border-top:var(--xp-rule)}
+.xp-row summary{display:grid;grid-template-columns:9.5rem minmax(0,1fr) minmax(0,1.25fr) 1.5rem;gap:var(--element-gap) var(--component-gap);align-items:baseline;padding-block:1.05em;cursor:pointer;list-style:none}
+.xp-row summary:not(:has(.xp-row-period)){grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) 1.5rem}
+.xp-row summary::-webkit-details-marker{display:none}
+.xp-row-title{font-family:var(--font-display);font-size:calc(var(--type-example-body) * 1.15);font-weight:var(--xp-weight)}
+.xp-row-summary{color:var(--xp-muted)}
+.xp-row-toggle{justify-self:end;color:var(--xp-accent-text);transition:transform var(--motion-duration) var(--motion-easing)}
+.xp-row details[open] .xp-row-toggle{transform:rotate(45deg)}
+.xp-row summary:hover .xp-row-title{color:var(--xp-accent-text)}
+.xp-row-body{display:grid;gap:var(--element-gap);max-width:calc(var(--measure) + 10rem);padding:0 0 1.6em calc(9.5rem + var(--component-gap))}
+.xp-row summary:not(:has(.xp-row-period))+.xp-row-body{padding-left:0}
+.xp-row-body .xp-figure{max-width:40rem}
+.xp-page[data-archetype="list"] .xp-contact{border:0;box-shadow:none;background:transparent;padding:0}
+/* 유형의 좁은 폭 규칙은 유형 규칙 뒤에 둡니다. 같은 우선순위에서 앞의 좁은 폭 블록에 두면 넓은 폭 규칙이 이깁니다. */
+@media (max-width:760px){
+  .xp-hero[data-variant="poster"]{min-height:min(84vh,760px)}
+  .xp-poster-index a{grid-template-columns:3ch minmax(0,1fr)}
+  .xp-poster-index a>.xp-small{grid-column:2}
+  .xp-row summary,.xp-row summary:not(:has(.xp-row-period)){grid-template-columns:minmax(0,1fr) 1.5rem}
+  .xp-row summary>:not(.xp-row-toggle){grid-column:1}
+  .xp-row-toggle{grid-column:2;grid-row:1}
+  .xp-row-body{padding-left:0}
+}
+
+/* 모션 — 디자인의 시간·곡선. JavaScript 없이 보이고, 모션 감소·인쇄에서 꺼집니다 */
+@keyframes xp-rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes xp-marquee{from{transform:translateX(0)}to{transform:translateX(-100%)}}
+@media (prefers-reduced-motion:no-preference){
+  .xp-marquee ul{animation:xp-marquee 32s linear infinite}
+  .xp-page:not([data-motion="none"]) .xp-hero>*{animation:xp-rise calc(var(--motion-duration) * 3) var(--motion-easing) both}
+  .xp-page:not([data-motion="none"]) .xp-hero>:nth-child(2){animation-delay:60ms}
+  .xp-page:not([data-motion="none"]) .xp-hero>:nth-child(3){animation-delay:120ms}
+  .xp-page:not([data-motion="none"]) .xp-hero>:nth-child(n+4){animation-delay:180ms}
+  @supports (animation-timeline:view()){
+    .xp-page[data-motion="showcase"] .xp-inner>.xp-block{animation:xp-rise linear both;animation-timeline:view();animation-range:entry 0% entry 28%}
+  }
+}
+@media print{
+  .xp-page *{animation:none!important;transition:none!important}
+  .xp-page{min-height:0}
+  .xp-page[data-layout="wide-margin"] .xp-inner>.xp-block>.xp-head{position:static}
+}
+
+</style>
+</head>
+<body>
+<main class="xp-page" data-layout="dense-grid" data-density="compact" data-chrome="window" data-marker="prompt" data-emphasis="bar" data-divider="dashed" data-motion="showcase" data-archetype="poster" aria-label="오수빈 포트폴리오"><div class="xp-inner"><header id="intro" class="xp-hero" data-variant="poster" data-bleed=""><p class="xp-poster-role">편집 디자이너</p><h1 class="xp-poster-name" data-name-length="short">오수빈</h1><p class="xp-poster-line">읽는 흐름을 조판하는 편집 디자이너입니다.</p><a class="xp-poster-cue" href="#work">대표 작업 보기 <span aria-hidden="true">↓</span></a><div class="xp-marquee" aria-label="집중하는 일"><ul><li>조판</li><li>출판 디자인</li><li>인쇄</li></ul><ul aria-hidden="true"><li>조판</li><li>출판 디자인</li><li>인쇄</li></ul></div></header><section class="xp-poster-about" aria-label="소개"><div class="xp-poster-about-text"><p>문장과 이미지가 페이지에서 만나는 리듬을 설계합니다. 책과 전시 도록에서 독자가 시선을 옮기는 순서, 지면의 여백, 인쇄 후 질감을 함께 검토합니다.</p></div></section><nav id="work" class="xp-poster-index" aria-label="선택한 작업"><p class="xp-eyebrow">Selected work</p><ol><li><a href="#section-season-reader"><span class="xp-num">01</span><strong>계절의 언어</strong><span class="xp-small">한 계절의 짧은 글과 식물 도판을 엮은 가상 독립 출판물입니다.</span></a></li><li><a href="#section-archive-walk"><span class="xp-num">02</span><strong>아카이브 산책</strong><span class="xp-small">거리의 기록을 시간과 장소의 단서로 엮은 가상 전시 도록입니다.</span></a></li><li><a href="#section-reading-routes"><span class="xp-num">03</span><strong>읽는 길</strong><span class="xp-small">동네 도서관의 주제 구역을 작은 인쇄 지도에 표현한 가상 프로젝트입니다.</span></a></li></ol></nav><article id="section-season-reader" class="xp-block xp-case" data-case-type="gallery"><header class="xp-head"><p class="xp-eyebrow"><span class="xp-num">01</span> · 프로젝트</p><h2 class="xp-h2">계절의 언어</h2><p class="xp-lead">한 계절의 짧은 글과 식물 도판을 엮은 가상 독립 출판물입니다.</p></header><div class="xp-case-body"><div class="xp-gallery"><figure class="xp-figure"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NjAiIGhlaWdodD0iNzIwIiB2aWV3Qm94PSIwIDAgOTYwIDcyMCIgcm9sZT0iaW1nIj48cmVjdCB3aWR0aD0iOTYwIiBoZWlnaHQ9IjcyMCIgZmlsbD0iI2Y0ZWVlMiIvPjxwYXRoIGQ9Ik01NSA2NEw5MDUgNjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2MjMyYSIgc3Ryb2tlLXdpZHRoPSIxIi8+PHBhdGggZD0iTTU1IDY1Nkw5MDUgNjU2IiBmaWxsPSJub25lIiBzdHJva2U9IiMyNjIzMmEiIHN0cm9rZS13aWR0aD0iMSIvPjxyZWN0IHg9IjU1IiB5PSI5OCIgd2lkdGg9Ijg1MCIgaGVpZ2h0PSI1MjAiIGZpbGw9IiNlNWM1YTkiLz48Y2lyY2xlIGN4PSI2NjUiIGN5PSIzMzAiIHI9IjIwNCIgZmlsbD0iI2U5ZTBjOCIvPjxwYXRoIGQ9Ik02NzAgMTgwUTQzMCAzMjAgNjgwIDU2ME03MzQgMjA4UTU2OCAzMTIgNzkwIDUzMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjYmE2MTNkIiBzdHJva2Utd2lkdGg9IjM0IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48dGV4dCB4PSI4NiIgeT0iMjg0IiBmb250LWZhbWlseT0iQXJpYWwsQXBwbGUgU0QgR290aGljIE5lbyxzYW5zLXNlcmlmIiBmb250LXNpemU9Ijc4IiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjMjYyMzJhIj7qs4TsoIjsnZg8L3RleHQ+PHRleHQgeD0iODYiIHk9IjM4NSIgZm9udC1mYW1pbHk9IkFyaWFsLEFwcGxlIFNEIEdvdGhpYyBOZW8sc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMTIiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiMyNjIzMmEiPuyWuOyWtDwvdGV4dD48dGV4dCB4PSI4NiIgeT0iNTcwIiBmb250LWZhbWlseT0iQXJpYWwsQXBwbGUgU0QgR290aGljIE5lbyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjE4IiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjMjYyMzJhIj5TRUFTT05BTCBSRUFERVIgLyBWT0wuIDAxPC90ZXh0Pjx0ZXh0IHg9IjU1IiB5PSI0NSIgZm9udC1mYW1pbHk9IkFyaWFsLEFwcGxlIFNEIEdvdGhpYyBOZW8sc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNSIgZm9udC13ZWlnaHQ9IjUwMCIgZmlsbD0iIzI2MjMyYSI+RURJVE9SSUFMIFNUVURZPC90ZXh0Pjx0ZXh0IHg9IjgyNSIgeT0iNjkwIiBmb250LWZhbWlseT0iQXJpYWwsQXBwbGUgU0QgR290aGljIE5lbyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjE1IiBmb250LXdlaWdodD0iNTAwIiBmaWxsPSIjMjYyMzJhIj4wMSAvIDAzPC90ZXh0Pjwvc3ZnPgo=" alt="계절의 언어 가상 출판물 표지 시안" loading="lazy"/><figcaption class="xp-small">계절의 언어 가상 출판물 표지 시안</figcaption></figure></div><div class="xp-case-grid"><div class="xp-notes"><section><h3 class="xp-h3">역할</h3><div class="xp-body"><p>아트 디렉션 · 조판</p></div></section><section><h3 class="xp-h3">기간</h3><div class="xp-body"><p>2026.01 — 2026.04</p></div></section><section><h3 class="xp-h3">문제 정의</h3><div class="xp-body"><p>짧은 글과 이미지가 같은 속도로 반복되면 책의 장면 전환이 잘 드러나지 않는다는 가상 편집 과제를 설정했습니다.</p></div></section><section><h3 class="xp-h3">담당 작업</h3><div class="xp-body"><p>절마다 글줄 길이와 이미지 여백을 달리하고 표지부터 본문까지 하나의 조판 규칙을 정의했습니다.</p></div></section><section><h3 class="xp-h3">결과와 한계</h3><div class="xp-body"><p>표지와 본문 펼침면을 포함한 가상 인쇄 시안을 제작했습니다. 실제 출판 이력은 없습니다.</p></div></section></div></div><nav class="xp-sources" aria-label="계절의 언어 관련 자료"><a href="#source-season-grid">본문 그리드 ↗</a></nav></div></article><article id="section-archive-walk" class="xp-block xp-case" data-case-type="process"><header class="xp-head"><p class="xp-eyebrow"><span class="xp-num">02</span> · 프로젝트</p><h2 class="xp-h2">아카이브 산책</h2><p class="xp-lead">거리의 기록을 시간과 장소의 단서로 엮은 가상 전시 도록입니다.</p></header><div class="xp-case-body"><figure class="xp-figure"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NjAiIGhlaWdodD0iNzIwIiB2aWV3Qm94PSIwIDAgOTYwIDcyMCIgcm9sZT0iaW1nIj48cmVjdCB3aWR0aD0iOTYwIiBoZWlnaHQ9IjcyMCIgZmlsbD0iI2Y0ZWVlMiIvPjxwYXRoIGQ9Ik01NSA2NEw5MDUgNjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2MjMyYSIgc3Ryb2tlLXdpZHRoPSIxIi8+PHBhdGggZD0iTTU1IDY1Nkw5MDUgNjU2IiBmaWxsPSJub25lIiBzdHJva2U9IiMyNjIzMmEiIHN0cm9rZS13aWR0aD0iMSIvPjxyZWN0IHg9IjU1IiB5PSI5NiIgd2lkdGg9IjQwOCIgaGVpZ2h0PSI1MjAiIGZpbGw9IiNkOWNmZGIiLz48cmVjdCB4PSI0ODAiIHk9Ijk2IiB3aWR0aD0iNDI1IiBoZWlnaHQ9IjUyMCIgZmlsbD0iI2VmZTRkMyIvPjxjaXJjbGUgY3g9IjI2MCIgY3k9IjMyNSIgcj0iMTUwIiBmaWxsPSIjYWFhMGFmIi8+PHBhdGggZD0iTTE5MCA0MzBRMjYwIDE1MCAzNDUgNDAwIiBmaWxsPSJub25lIiBzdHJva2U9IiNmNmVjZTUiIHN0cm9rZS13aWR0aD0iMzAiLz48dGV4dCB4PSI1MDAiIHk9IjIyMCIgZm9udC1mYW1pbHk9IkFyaWFsLEFwcGxlIFNEIEdvdGhpYyBOZW8sc2Fucy1zZXJpZiIgZm9udC1zaXplPSI0OCIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzI2MjMyYSI+QVJDSElWRTwvdGV4dD48dGV4dCB4PSI1MDAiIHk9IjI3OCIgZm9udC1mYW1pbHk9IkFyaWFsLEFwcGxlIFNEIEdvdGhpYyBOZW8sc2Fucy1zZXJpZiIgZm9udC1zaXplPSI0OCIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzI2MjMyYSI+V0FMSzwvdGV4dD48dGV4dCB4PSI1MDAiIHk9IjM3MyIgZm9udC1mYW1pbHk9IkFyaWFsLEFwcGxlIFNEIEdvdGhpYyBOZW8sc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNiIgZm9udC13ZWlnaHQ9IjUwMCIgZmlsbD0iIzI2MjMyYSI+7J287IOB7J2YIOuztOq0gCDrsKnsi508L3RleHQ+PHRleHQgeD0iNTAwIiB5PSI0MTgiIGZvbnQtZmFtaWx5PSJBcmlhbCxBcHBsZSBTRCBHb3RoaWMgTmVvLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTciIGZvbnQtd2VpZ2h0PSI1MDAiIGZpbGw9IiMyNjIzMmEiPuqxsOumrOydmCDquLDroZ3snYQg7J2964qUIOuPhOuhnTwvdGV4dD48dGV4dCB4PSI1NSIgeT0iNDUiIGZvbnQtZmFtaWx5PSJBcmlhbCxBcHBsZSBTRCBHb3RoaWMgTmVvLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTUiIGZvbnQtd2VpZ2h0PSI1MDAiIGZpbGw9IiMyNjIzMmEiPkVYSElCSVRJT04gQ0FUQUxPR1VFPC90ZXh0Pjx0ZXh0IHg9IjgyNSIgeT0iNjkwIiBmb250LWZhbWlseT0iQXJpYWwsQXBwbGUgU0QgR290aGljIE5lbyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjE1IiBmb250LXdlaWdodD0iNTAwIiBmaWxsPSIjMjYyMzJhIj4wMiAvIDAzPC90ZXh0Pjwvc3ZnPgo=" alt="아카이브 산책 가상 도록의 펼침면" loading="lazy"/><figcaption class="xp-small">아카이브 산책 가상 도록의 펼침면</figcaption></figure><ol class="xp-steps"><li><span class="xp-num" aria-hidden="true">01</span><div><h3 class="xp-h3">역할</h3><div class="xp-body"><p>편집 구조 · 이미지 배열</p></div></div></li><li><span class="xp-num" aria-hidden="true">02</span><div><h3 class="xp-h3">기간</h3><div class="xp-body"><p>2025.05 — 2025.11</p></div></div></li><li><span class="xp-num" aria-hidden="true">03</span><div><h3 class="xp-h3">문제 정의</h3><div class="xp-body"><p>서로 다른 시기의 기록 사진을 촬영 순서대로 놓으면 장소의 변화를 읽기 어렵다는 가상 문제를 다뤘습니다.</p></div></div></li><li><span class="xp-num" aria-hidden="true">04</span><div><h3 class="xp-h3">담당 작업</h3><div class="xp-body"><p>장소별 펼침면을 만들고 사진, 기록 시점, 해설이 짝을 이루도록 배열했습니다.</p></div></div></li><li><span class="xp-num" aria-hidden="true">05</span><div><h3 class="xp-h3">결과와 한계</h3><div class="xp-body"><p>지면 순서와 이미지 크기의 차이를 보여 주는 가상 도록 시안을 작성했습니다.</p></div></div></li></ol><nav class="xp-sources" aria-label="아카이브 산책 관련 자료"><a href="#source-archive-proof">도록 교정지 ↗</a></nav></div></article><article id="section-reading-routes" class="xp-block xp-case" data-case-type="technical"><header class="xp-head"><p class="xp-eyebrow"><span class="xp-num">03</span> · 프로젝트</p><h2 class="xp-h2">읽는 길</h2><p class="xp-lead">동네 도서관의 주제 구역을 작은 인쇄 지도에 표현한 가상 프로젝트입니다.</p></header><div class="xp-case-body"><div class="xp-case-grid"><div class="xp-body-stack"><figure class="xp-figure"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NjAiIGhlaWdodD0iNzIwIiB2aWV3Qm94PSIwIDAgOTYwIDcyMCIgcm9sZT0iaW1nIj48cmVjdCB3aWR0aD0iOTYwIiBoZWlnaHQ9IjcyMCIgZmlsbD0iI2Y0ZWVlMiIvPjxwYXRoIGQ9Ik01NSA2NEw5MDUgNjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI2MjMyYSIgc3Ryb2tlLXdpZHRoPSIxIi8+PHBhdGggZD0iTTU1IDY1Nkw5MDUgNjU2IiBmaWxsPSJub25lIiBzdHJva2U9IiMyNjIzMmEiIHN0cm9rZS13aWR0aD0iMSIvPjxyZWN0IHg9IjU1IiB5PSI5NiIgd2lkdGg9Ijg1MCIgaGVpZ2h0PSI1MjAiIGZpbGw9IiNkOGU3ZGYiLz48cGF0aCBkPSJNOTUgMTE2UTEyMCAzMzAgMTAwIDU5NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOWViZGIyIiBzdHJva2Utd2lkdGg9IjMyIi8+PHBhdGggZD0iTTIyMCAxMTZRMjQwIDMzMCAyMjYgNTk1IiBmaWxsPSJub25lIiBzdHJva2U9IiMzZDcyNmEiIHN0cm9rZS13aWR0aD0iMTgiLz48cGF0aCBkPSJNMzQ1IDExNlEzNjAgMzMwIDM1MiA1OTUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzllYmRiMiIgc3Ryb2tlLXdpZHRoPSIzMiIvPjxwYXRoIGQ9Ik00NzAgMTE2UTQ4MCAzMzAgNDc4IDU5NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjM2Q3MjZhIiBzdHJva2Utd2lkdGg9IjE4Ii8+PHBhdGggZD0iTTU5NSAxMTZRNjAwIDMzMCA2MDQgNTk1IiBmaWxsPSJub25lIiBzdHJva2U9IiM5ZWJkYjIiIHN0cm9rZS13aWR0aD0iMzIiLz48cGF0aCBkPSJNNzIwIDExNlE3MjAgMzMwIDczMCA1OTUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzNkNzI2YSIgc3Ryb2tlLXdpZHRoPSIxOCIvPjxyZWN0IHg9IjEyMCIgeT0iMTYwIiB3aWR0aD0iNTIwIiBoZWlnaHQ9IjE5MCIgZmlsbD0iI2Y3ZjNlOCIvPjx0ZXh0IHg9IjE1NSIgeT0iMjUwIiBmb250LWZhbWlseT0iQXJpYWwsQXBwbGUgU0QgR290aGljIE5lbyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjgyIiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjMjYyMzJhIj7snb3ripQg6ri4PC90ZXh0Pjx0ZXh0IHg9IjE1NSIgeT0iMzA1IiBmb250LWZhbWlseT0iQXJpYWwsQXBwbGUgU0QgR290aGljIE5lbyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjI0IiBmb250LXdlaWdodD0iNTAwIiBmaWxsPSIjMjYyMzJhIj5SRUFESU5HIFJPVVRFUzwvdGV4dD48dGV4dCB4PSI1NSIgeT0iNDUiIGZvbnQtZmFtaWx5PSJBcmlhbCxBcHBsZSBTRCBHb3RoaWMgTmVvLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTUiIGZvbnQtd2VpZ2h0PSI1MDAiIGZpbGw9IiMyNjIzMmEiPklORk9STUFUSU9OIERFU0lHTjwvdGV4dD48dGV4dCB4PSI4MjUiIHk9IjY5MCIgZm9udC1mYW1pbHk9IkFyaWFsLEFwcGxlIFNEIEdvdGhpYyBOZW8sc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNSIgZm9udC13ZWlnaHQ9IjUwMCIgZmlsbD0iIzI2MjMyYSI+MDMgLyAwMzwvdGV4dD48L3N2Zz4K" alt="읽는 길 가상 도서관 인쇄 지도 시안" loading="lazy"/><figcaption class="xp-small">읽는 길 가상 도서관 인쇄 지도 시안</figcaption></figure></div><div class="xp-panel"><dl class="xp-par"><dt>역할</dt><dd>정보 구성 · 그래픽 시스템</dd><dt>기간</dt><dd>2024.09 — 2025.01</dd><dt>문제 정의</dt><dd>서가 번호만으로는 처음 방문한 사람이 주제 구역을 빠르게 찾기 어렵다는 상황을 설정했습니다.</dd><dt>담당 작업</dt><dd>주제 범례와 동선 번호를 함께 표기하고 지도를 접어도 핵심 안내가 보이도록 배치했습니다.</dd><dt>결과와 한계</dt><dd>접지형 지도와 벽면 안내의 가상 시안을 만들었습니다. 실제 설치는 진행하지 않았습니다.</dd></dl></div></div><nav class="xp-sources" aria-label="읽는 길 관련 자료"><a href="#source-reading-key">독서 지도 범례 ↗</a></nav></div></article><section id="career" class="xp-block xp-career"><header class="xp-head"><p class="xp-eyebrow">Experience</p><h2 class="xp-h2">경력</h2></header><ol class="xp-timeline"><li><span class="xp-small">2023.09 — 현재</span><div><h3 class="xp-h3">가상 조직 · 이음 지면 스튜디오</h3><p class="xp-small">편집 디자이너</p><div class="xp-body"><p>가상 도록과 독립 출판물의 지면 체계를 설계한 설정입니다.</p></div></div></li><li><span class="xp-small">2021.02 — 2023.08</span><div><h3 class="xp-h3">가상 조직 · 여백 인쇄소</h3><p class="xp-small">그래픽 디자이너</p><div class="xp-body"><p>소형 인쇄물의 활자와 제작 사양을 검토한 가상 경력입니다.</p></div></div></li></ol></section><section id="evidence" class="xp-block xp-evidence"><header class="xp-head"><p class="xp-eyebrow">Evidence</p><h2 class="xp-h2">근거 자료</h2></header><div class="xp-evidence-list"><details id="source-season-grid"><summary><span class="xp-eyebrow">조판 기준</span><strong>본문 그리드</strong><span class="xp-small">책의 여백과 행 길이</span></summary><div class="xp-body"><p>가상 지면에서 본문 행 길이, 절 제목 위치, 이미지 캡션 간격을 비교한 조판 기준입니다.</p></div></details><details id="source-archive-proof"><summary><span class="xp-eyebrow">제작 기록</span><strong>도록 교정지</strong><span class="xp-small">펼침면의 이미지와 주석 점검</span></summary><div class="xp-body"><p>가상 전시 도록의 펼침면에서 이미지 순서와 주석 연결을 검토한 교정 기록입니다.</p></div></details><details id="source-reading-key"><summary><span class="xp-eyebrow">정보 디자인</span><strong>독서 지도 범례</strong><span class="xp-small">주제와 동선을 구분하는 범례</span></summary><div class="xp-body"><p>도서관의 가상 주제 구역을 색과 번호로 함께 구분한 정보 디자인 자료입니다.</p></div></details></div></section><section id="contact" class="xp-block"><div class="xp-panel xp-contact"><p class="xp-eyebrow">Contact</p><h2 class="xp-h2">연락</h2><a class="xp-act" href="mailto:fictional-editorial@example.com">작업을 함께 검토할 수 있습니다. ↗</a></div></section><footer class="xp-footer xp-small"><span>오수빈</span><span>편집 디자이너</span></footer></div></main>
+</body>
+</html>

@@ -192,6 +192,24 @@ describe("사례 번호", () => {
     expect(html).toMatch(/id="section-c"[^]*?<span class="xp-num">01<\/span> · 프로젝트/);
     expect(html).toMatch(/id="section-a"[^]*?<span class="xp-num">02<\/span> · 프로젝트/);
   });
+  it("목차는 내용 순서가 아니라 페이지에서 읽는 순서로 항목을 놓는다", () => {
+    const two = structuredClone(content);
+    two.sections.push({ ...two.sections[0]!, id: "c", title: "두 번째 프로젝트", sourceIds: [] });
+    for (const variant of ["rows", "mosaic", "rail", "poster"]) {
+      const spec = pageSpec({}, variant);
+      // 내용에서는 a가 먼저지만 페이지에는 c를 먼저 둡니다.
+      spec.elements.page.children = ["intro", "index", "section-c", "section-a", "section-b", "career", "evidence"];
+      (spec.elements as Record<string, unknown>)["section-c"] = {
+        type: "CaseEssay",
+        props: { section: { $state: "/sectionById/c" } },
+        children: [],
+      };
+      const { html } = renderStructuredPortfolio(spec, two, { design: clarity });
+      const index = html.slice(html.indexOf('id="work"'), html.indexOf('id="section-c"'));
+      expect(index.indexOf('href="#section-c"'), variant).toBeGreaterThan(-1);
+      expect(index.indexOf('href="#section-c"'), variant).toBeLessThan(index.indexOf('href="#section-a"'));
+    }
+  });
   it("이미지가 있는 사례는 어느 사례 유형이든 이미지를 하나 이상 표시한다", () => {
     for (const type of ["CaseEssay", "CaseGallery", "CaseTechnical", "CaseProcess", "ContentPanel"]) {
       const spec = pageSpec();
@@ -206,5 +224,53 @@ describe("사례 번호", () => {
     for (const match of html.matchAll(/<article id="section-[^"]+" class="xp-block xp-case"[^>]*>(<header class="xp-head">[\s\S]*?<\/header>)(<div class="xp-case-body">)/g))
       expect(match[2]).toBe('<div class="xp-case-body">');
     expect([...html.matchAll(/class="xp-block xp-case"/g)].length).toBe([...html.matchAll(/class="xp-case-body"/g)].length);
+  });
+});
+
+describe("포트폴리오 유형", () => {
+  const archetypeSpec = (archetype: "poster" | "list") => {
+    const base = pageSpec(archetype === "poster" ? { variant: "poster" } : { variant: "sentence" }, "poster");
+    const elements = base.elements as Record<string, { type: string; props: Record<string, unknown>; children: string[] }>;
+    elements.page!.props.archetype = archetype;
+    if (archetype === "list") {
+      elements.page!.children = ["intro", "section-a", "section-b", "career", "evidence"];
+      delete elements.index;
+      elements["section-a"]!.type = "CaseRow";
+      elements["section-b"]!.type = "CaseRow";
+    }
+    return base;
+  };
+
+  it("포스터형은 이름 글자 수 단계 · 글자 띠 · 소개 단락 · 포스터 목차를 그린다", () => {
+    const { html } = renderStructuredPortfolio(archetypeSpec("poster"), content, { design: clarity });
+    expect(html).toContain('data-archetype="poster"');
+    // "가상 인물"은 공백을 포함해 다섯 글자라 중간 단계입니다.
+    expect(html).toContain('<h1 class="xp-poster-name" data-name-length="medium">가상 인물</h1>');
+    expect(html).toContain('class="xp-marquee"');
+    expect(html).toContain('<li>경로 계획</li>');
+    expect(html).toContain('class="xp-poster-about"');
+    expect(html).toContain("첫 문단입니다.");
+    expect(html).toContain('class="xp-poster-index"');
+  });
+
+  it("글 · 목록형은 문장 첫 화면과 펼치는 사례 행을 그리고 항목표를 쓰지 않는다", () => {
+    const withPeriod = structuredClone(content);
+    withPeriod.sections[0]!.period = "2025.01 — 2025.05";
+    const { html } = renderStructuredPortfolio(archetypeSpec("list"), withPeriod, { design: clarity });
+    expect(html).toContain('data-archetype="list"');
+    expect(html).toContain('<h1 class="xp-sentence">현장에서 멈추지 않는 경로를 설계합니다.</h1>');
+    expect(html).toContain('<span class="xp-row-period xp-small">2025.01 — 2025.05</span>');
+    expect(html).toContain("<details>");
+    expect(html).toContain("<strong>문제</strong> 교차로 정체");
+    expect(html).not.toContain("<dl");
+    // 첫 사례 행 위에만 목록 제목을 둡니다.
+    expect([...html.matchAll(/class="xp-row-heading"/g)]).toHaveLength(1);
+    // 기간이 없는 행은 기간 칸을 그리지 않습니다.
+    expect([...html.matchAll(/xp-row-period/g)]).toHaveLength(1);
+  });
+
+  it("유형이 없는 옛 판은 사례 상세형으로 그린다", () => {
+    const { html } = renderStructuredPortfolio(pageSpec(), content, { design: clarity });
+    expect(html).toContain('data-archetype="case-study"');
   });
 });
