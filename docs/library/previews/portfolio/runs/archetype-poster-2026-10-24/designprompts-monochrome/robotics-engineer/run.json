@@ -317,7 +317,7 @@
   },
   "rerenderOf": {
     "runId": "archetype-poster-2026-10-24",
-    "htmlSha256": "249b1d6a23365ce8a774adaad51a962bbfd692fe170253634839f0d8e008ec2e"
+    "htmlSha256": "d0bab7574e44b939b367fd19f25900ad2dc8714105a7a2f52ae56916b6a8e865"
   },
   "kitRerender": {
     "designCode": "designprompts-monochrome",

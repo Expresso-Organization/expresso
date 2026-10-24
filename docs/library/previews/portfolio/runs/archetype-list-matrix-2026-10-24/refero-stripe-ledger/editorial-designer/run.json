@@ -306,7 +306,7 @@
   },
   "rerenderOf": {
     "runId": "archetype-list-matrix-2026-10-24",
-    "htmlSha256": "6079d9877b55082323f9d6dde1a7cdc7709e91ead6cdf725fc518fcf460270dc"
+    "htmlSha256": "2b5c3ad9906915224e5807f2ef61d50bb37669afa4e348745bb7d755c93e9a0e"
   },
   "kitRerender": {
     "designCode": "refero-stripe-ledger",

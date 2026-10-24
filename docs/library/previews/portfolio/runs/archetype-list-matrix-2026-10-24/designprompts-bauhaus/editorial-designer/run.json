@@ -306,7 +306,7 @@
   },
   "rerenderOf": {
     "runId": "archetype-list-matrix-2026-10-24",
-    "htmlSha256": "935f31fa1bd25c28650653bc71cb3db52b9074c9894fa559565b686c50d68a0a"
+    "htmlSha256": "d7be329141ffaecbe79589911e7e094821565d45bc2869b0be33a783c765bfcb"
   },
   "kitRerender": {
     "designCode": "designprompts-bauhaus",

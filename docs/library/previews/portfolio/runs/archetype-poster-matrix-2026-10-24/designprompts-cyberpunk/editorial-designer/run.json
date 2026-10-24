@@ -317,7 +317,7 @@
   },
   "rerenderOf": {
     "runId": "archetype-poster-matrix-2026-10-24",
-    "htmlSha256": "b0eb64027a6ff7c898acb3a1f614fb408184c537c492948d4d0d1c89ab413616"
+    "htmlSha256": "2f254eee4e1d7f133645b0a51425494efe5624fedfaa51efd8954bdd05fb9643"
   },
   "kitRerender": {
     "designCode": "designprompts-cyberpunk",

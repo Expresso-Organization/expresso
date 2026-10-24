@@ -306,7 +306,7 @@
   },
   "rerenderOf": {
     "runId": "archetype-list-matrix-2026-10-24",
-    "htmlSha256": "efcbf873d1f8a8d1fa38e787cf10071e0b49d9aae87750bfdb932e26f56fbc04"
+    "htmlSha256": "08d9b3728287e18a65a2c83713ed8a3cf4558878a1277bb809ab6e65e1ebb46c"
   },
   "kitRerender": {
     "designCode": "designprompts-swiss-minimalist",

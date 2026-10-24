@@ -306,7 +306,7 @@
   },
   "rerenderOf": {
     "runId": "archetype-list-2026-10-24",
-    "htmlSha256": "ac0c60a9422d4075725f831e90a1bc28978b3b01aaf77bba99139c49ad712ef3"
+    "htmlSha256": "0870508e455877ee321af80a3988ea086e5237b39af441311094534bf3d516d5"
   },
   "kitRerender": {
     "designCode": "designprompts-monochrome",

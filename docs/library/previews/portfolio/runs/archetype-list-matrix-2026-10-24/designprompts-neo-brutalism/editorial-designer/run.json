@@ -306,7 +306,7 @@
   },
   "rerenderOf": {
     "runId": "archetype-list-matrix-2026-10-24",
-    "htmlSha256": "7d29c1b7134b220de6a97f370f0fdef58bc96c6e9c20d97f78fe95340e83c02e"
+    "htmlSha256": "524a48ef791b742570ed5d291ab19ac09ed0c8abb1fe90ee1871224aeb301938"
   },
   "kitRerender": {
     "designCode": "designprompts-neo-brutalism",

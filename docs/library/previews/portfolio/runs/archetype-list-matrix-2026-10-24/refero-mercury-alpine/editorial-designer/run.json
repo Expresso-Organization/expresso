@@ -306,7 +306,7 @@
   },
   "rerenderOf": {
     "runId": "archetype-list-matrix-2026-10-24",
-    "htmlSha256": "21f7affdc03c53b5bd0ce88458ece95df788872c80e869991048bff97790f9d9"
+    "htmlSha256": "d694dffafb636631b8c3ba77b195c33aad4c199be019de07a8411e1ef33bebc8"
   },
   "kitRerender": {
     "designCode": "refero-mercury-alpine",
