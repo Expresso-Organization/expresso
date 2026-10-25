@@ -16,7 +16,8 @@ date: 2026-10-25
 |---|---|
 | `services/web/src/app/(app)/career/[categorySlug]/page.tsx` | v2 분기 삭제, `CareerBrowser`만 |
 | `services/web/src/app/(app)/career/[categorySlug]/LegacyCareerBrowser.tsx` | 삭제 |
-| `services/web/src/app/(app)/career/[categorySlug]/page.module.css` | 쓰이지 않는 클래스 삭제 |
+| `services/web/src/app/(app)/career/[categorySlug]/page.module.css` → `career/loading.module.css` | 로딩 골격만 쓰므로 옮기고 쓰이지 않는 클래스 삭제 |
+| `services/web/src/app/(app)/career/loading.tsx` | 옮긴 CSS 경로 |
 | `services/web/src/app/(app)/career/records/[recordId]/page.tsx` | `CareerDocumentEditor`만 |
 | `services/web/src/features/career-editor/feature-flag.ts` · `.test.ts` | 삭제 |
 | `services/web/src/features/career-editor/editor/CareerDocumentEditor.tsx` · `.test.tsx` | `CareerDocumentReadOnly` 삭제, 404 안내 |

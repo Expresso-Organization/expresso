@@ -40,6 +40,6 @@ date: 2026-10-25
 
 ## 완료 기준
 
-- `git grep -n "CAREER_EDITOR_V2_ENABLED\|careerEditorV2Enabled\|LegacyCareerBrowser" -- services scripts`가 빈 결과.
+- `git grep -n "CAREER_EDITOR_V2_ENABLED\|careerEditorV2Enabled\|LegacyCareerBrowser" -- services scripts`가 남은 `.env`의 값을 무시하는지 보는 `runtime-config.test.ts` 두 줄만 낸다.
 - `pnpm typecheck` · `pnpm test` · `pnpm test:infra` · `pnpm --filter @expresso/web exec playwright test` 통과.
 - 설정값 없이, 또 API에 `CAREER_EDITOR_V2_ENABLED=false`를 넣고 띄운 서버에서 `/career/project`가 v2 갤러리를, 기록 클릭이 v2 문서 패널을, `/career/records/:id`가 고칠 수 있는 본문을 보인다.
