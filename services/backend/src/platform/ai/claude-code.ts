@@ -138,6 +138,7 @@ export class ClaudeCodeAiClient implements AiClient {
       // 이미지는 글 입력으로 보낼 수 없습니다. stream-json 입력의 사용자 메시지 한 줄에 글과 이미지 블록을 함께 담습니다
       // (https://code.claude.com/docs/en/agent-sdk/streaming-vs-single-mode).
       ...(spec.images?.length ? ["--input-format", "stream-json"] : []),
+      ...(spec.effort ? ["--effort", spec.effort] : []),
     ];
     const input = spec.images?.length
       ? `${JSON.stringify({

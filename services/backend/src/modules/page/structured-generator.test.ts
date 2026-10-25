@@ -127,7 +127,7 @@ describe("모델 기반 구조화 생성", () => {
   it("선택 자료를 내용 계약으로 정리한 뒤 Spec 생성으로 이어간다", async () => {
     const ai = new Stub([modelContent, spec]);
     const { structuredContent: _content, ...raw } = context;
-    const result = await new StructuredPageGenerator(ai).generate({
+    const result = await new StructuredPageGenerator(ai, null, { designFirst: false }).generate({
       ...raw,
       author: { name: content.profile.name },
       sections: [
@@ -195,7 +195,7 @@ describe("모델 기반 구조화 생성", () => {
     changed.profile.name = "다른 이름";
     const ai = new Stub([changed, changed]);
     await expect(
-      new StructuredPageGenerator(ai).generate(rawInput),
+      new StructuredPageGenerator(ai, null, { designFirst: false }).generate(rawInput),
     ).rejects.toThrow(
       /내용 정리 결과가 계약 검사를 통과하지 못했습니다: 이름\(가상 민수\)/,
     );
@@ -204,7 +204,7 @@ describe("모델 기반 구조화 생성", () => {
 
   it("내용 정리 모델에게 연락처를 묻지 않고, 생성 결과의 연락처는 비어 있다", async () => {
     const ai = new Stub([modelContent, spec]);
-    const result = await new StructuredPageGenerator(ai).generate(rawInput);
+    const result = await new StructuredPageGenerator(ai, null, { designFirst: false }).generate(rawInput);
     const schema = z.toJSONSchema(ai.schemas[0]!) as {
       properties: Record<string, unknown>;
     };
@@ -217,7 +217,7 @@ describe("모델 기반 구조화 생성", () => {
     const broken = structuredClone(modelContent);
     broken.profile.headline = "경로를 설계합니다. 시험도 합니다.";
     const ai = new Stub([broken, modelContent, spec]);
-    const result = await new StructuredPageGenerator(ai).generate(rawInput);
+    const result = await new StructuredPageGenerator(ai, null, { designFirst: false }).generate(rawInput);
     expect(ai.calls).toHaveLength(3);
     expect(ai.calls[1]!.prompt).toContain("검사 오류: profile.headline:");
     expect(ai.calls[1]!.prompt).toContain("경로를 설계합니다. 시험도 합니다.");
@@ -233,7 +233,7 @@ describe("모델 기반 구조화 생성", () => {
     >;
     delete missing.career;
     const retried = new Stub([missing, modelContent, spec]);
-    await new StructuredPageGenerator(retried).generate(rawInput);
+    await new StructuredPageGenerator(retried, null, { designFirst: false }).generate(rawInput);
     expect(retried.calls).toHaveLength(3);
     expect(retried.calls[1]!.prompt).toContain(
       "검사 오류: structured output did not match the schema",
@@ -243,7 +243,7 @@ describe("모델 기반 구조화 생성", () => {
       new AiError("AI_UNAVAILABLE", "page_generation", "claude exited with 1"),
     ]);
     await expect(
-      new StructuredPageGenerator(unavailable).generate(rawInput),
+      new StructuredPageGenerator(unavailable, null, { designFirst: false }).generate(rawInput),
     ).rejects.toThrow("claude exited with 1");
     expect(unavailable.calls).toHaveLength(1);
   });
@@ -398,7 +398,7 @@ describe("모델 기반 구조화 생성", () => {
     it("다듬기: 측정 결함을 고친 뒤 스크린샷 검토로 고친 판이 비교에서 이기면 채택한다", async () => {
       const ai = new Stub([changed("rows"), { critique: ["첫 화면 아래 목차가 사례를 밀어냅니다."], spec: changed("mosaic") }, { winner: "A", reason: "사례가 첫 화면에 보입니다." }]);
       // random() < 0.5 이면 고친 판을 A에 둡니다.
-      const generator = new StructuredPageGenerator(ai, new FakeMeasurer([orphan, clean(), clean()]), () => 0.1);
+      const generator = new StructuredPageGenerator(ai, new FakeMeasurer([orphan, clean(), clean()]), { random: () => 0.1 });
       const outcome = await generator.refine(input);
       expect(outcome.status).toBe("adopted");
       expect(ai.calls.map((call) => call.contract)).toEqual(["page_generation", "page_review", "page_review"]);
@@ -418,7 +418,7 @@ describe("모델 기반 구조화 생성", () => {
     it("다듬기: 비교에서 직전 판이 이기면 결함을 고친 판까지만 채택한다", async () => {
       const ai = new Stub([changed("rows"), { critique: ["목차를 카드로 바꿉니다."], spec: changed("mosaic") }, { winner: "A", reason: "직전 판이 더 차분합니다." }]);
       // random() >= 0.5 이면 고친 판을 B에 두므로 A 승리는 직전 판 승리입니다.
-      const outcome = await new StructuredPageGenerator(ai, new FakeMeasurer([orphan, clean(), clean()]), () => 0.9).refine(input);
+      const outcome = await new StructuredPageGenerator(ai, new FakeMeasurer([orphan, clean(), clean()]), { random: () => 0.9 }).refine(input);
       expect(outcome.status).toBe("adopted");
       expect(outcome.review.comparison).toEqual({ winner: "draft", reason: "직전 판이 더 차분합니다." });
       expect((outcome.result!.manifest.structured!.spec.elements.index as { props: { variant: string } }).props.variant).toBe("rows");
@@ -426,7 +426,7 @@ describe("모델 기반 구조화 생성", () => {
 
     it("다듬기: 비교에서 초안이 이기면 초안을 유지한다", async () => {
       const ai = new Stub([{ critique: ["목차를 카드로 바꿉니다."], spec: changed("mosaic") }, { winner: "B", reason: "초안이 낫습니다." }]);
-      const outcome = await new StructuredPageGenerator(ai, new FakeMeasurer([clean(), clean()]), () => 0.1).refine(input);
+      const outcome = await new StructuredPageGenerator(ai, new FakeMeasurer([clean(), clean()]), { random: () => 0.1 }).refine(input);
       expect(outcome).toMatchObject({ status: "kept", review: { status: "kept", comparison: { winner: "draft" }, calls: 2, costUsd: null } });
       // 진 판의 구성도 다시 볼 수 있게 남습니다.
       expect((outcome.review.revisedSpec!.elements.index as { props: { variant: string } }).props.variant).toBe("mosaic");

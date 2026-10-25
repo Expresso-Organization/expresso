@@ -4,7 +4,7 @@ import { z } from "zod";
 import { TimestampSchema, UuidSchema } from "./common.js";
 import { PAGE_KIT_CSS, pageKitVariables } from "./page-kit.js";
 import { PortfolioDesignReferenceSchema, TemplateFontSchema } from "./templates.js";
-import { StructuredPortfolioSnapshotSchema, StructuredPortfolioSpecSchema } from "./structured-portfolio.js";
+import { StructuredDesignPlanSchema, StructuredPortfolioSnapshotSchema, StructuredPortfolioSpecSchema } from "./structured-portfolio.js";
 import { MEDIA_ASSET_PATH_PREFIX } from "./media-path.js";
 
 /**
@@ -412,6 +412,26 @@ export const PageGenerationManifestSchema = z.strictObject({
   library: PageLibrarySelectionSchema.optional(),
   renderMeasure: PageRenderMeasureSchema.optional(),
   visualReview: PageVisualReviewSchema.optional(),
+  /** 설계가 먼저 오는 생성의 지면 설계입니다. */
+  designPlan: StructuredDesignPlanSchema.optional(),
+  /** 모델 호출마다의 기록입니다. 어느 호출이 느린지 보려고 남깁니다. */
+  calls: z
+    .array(
+      z.strictObject({
+        contract: z.string().min(1).max(40),
+        model: z.string().min(1).max(200),
+        durationMs: z.number().int().nonnegative(),
+        outputTokens: z.number().int().nonnegative(),
+        costUsd: z.number().nonnegative().nullable(),
+      }),
+    )
+    .max(40)
+    .optional(),
+  /** 생성 시작부터 단계가 끝난 시각(밀리초)입니다. 청사진 · 채움 · 렌더 · 측정. */
+  timeline: z
+    .array(z.strictObject({ stage: z.enum(["designed", "filled", "rendered", "measured"]), atMs: z.number().int().nonnegative() }))
+    .max(8)
+    .optional(),
   usage: z.strictObject({
     inputTokens: z.number().int().nonnegative(),
     outputTokens: z.number().int().nonnegative(),

@@ -348,6 +348,11 @@ const { registry } = defineRegistry(structuredCatalog, {
         </div>
       </nav>
     ),
+    // 전후 비교와 수치 강조 줄은 토큰 키트 부품입니다. 수집 원본 렌더러에서는 기사형으로 그리고, 수치 줄은 그리지 않습니다.
+    CaseBeforeAfter: ({ props }) => (
+      <Case section={props.section} sourceId={props.sourceId} kind="essay" />
+    ),
+    MetricStrip: () => null,
     CaseEssay: ({ props }) => (
       <Case section={props.section} sourceId={props.sourceId} kind="essay" />
     ),

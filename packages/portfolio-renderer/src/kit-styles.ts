@@ -119,6 +119,22 @@ export const KIT_CSS = String.raw`
 .xp-par dd+dt,.xp-par dd+dt+dd{padding-top:calc(var(--element-gap) * .9);border-top:var(--xp-rule)}
 .xp-notes{display:grid;gap:calc(var(--element-gap) * 1.3);max-width:var(--measure)}
 .xp-notes section{display:grid;gap:.35em}
+.xp-metrics{padding-block:calc(var(--section-gap) * .5)}
+.xp-metric-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr));gap:var(--component-gap);border-block:var(--xp-rule);padding-block:calc(var(--element-gap) * 1.6)}
+.xp-metric-strip a{display:grid;gap:.35em;color:inherit;text-decoration:none}
+.xp-metric-value{font-family:var(--font-display);font-weight:var(--xp-weight);letter-spacing:var(--xp-tracking);font-size:clamp(2rem,4.2vw,3.4rem);line-height:1;color:var(--xp-accent-text)}
+.xp-metric-label{font-weight:var(--xp-weight-mid)}
+.xp-compare-list{display:grid;gap:calc(var(--element-gap) * 1.6);align-content:start}
+.xp-compare{display:grid;gap:.5em}
+.xp-compare-label{font-weight:var(--xp-weight-mid)}
+.xp-bar{display:grid;grid-template-columns:3.2em minmax(0,1fr) minmax(4.5em,auto);align-items:center;gap:.6em;min-height:2em}
+.xp-bar-fill{grid-column:2;height:1.4em;width:var(--w,100%);border-radius:var(--control-radius);background:var(--border)}
+.xp-bar[data-tone="after"] .xp-bar-fill{background:var(--action)}
+.xp-bar-value{grid-column:3;font-family:var(--font-display);font-weight:var(--xp-weight);white-space:nowrap}
+.xp-bar[data-tone="after"] .xp-bar-value{color:var(--xp-accent-text)}
+.xp-compare[data-bars="off"] .xp-bar{grid-template-columns:3.2em minmax(0,1fr)}
+.xp-compare[data-bars="off"] .xp-bar-fill{display:none}
+.xp-compare[data-bars="off"] .xp-bar-value{grid-column:2}
 .xp-steps{display:grid;gap:0;border-top:var(--xp-rule)}
 .xp-steps li{display:grid;grid-template-columns:3.2em minmax(0,1fr);gap:calc(var(--element-gap) * 1.2);padding-block:calc(var(--element-gap) * 1.2);border-bottom:var(--xp-rule)}
 .xp-steps li>div{display:grid;gap:.4em;max-width:var(--measure)}

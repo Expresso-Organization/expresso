@@ -233,13 +233,65 @@ function CaseRow({ section }: { section: StructuredSection }) {
   );
 }
 
-type CaseKind = "essay" | "technical" | "process" | "gallery" | "panel";
+type CaseKind = "essay" | "technical" | "process" | "gallery" | "panel" | "before-after";
+
+type Metric = NonNullable<StructuredSection["metrics"]>[number];
+
+/** "3.8초" · "420KB" · "1,200만 건"에서 첫 숫자를 읽습니다. 읽지 못하면 null입니다. */
+function metricNumber(value: string): number | null {
+  const match = value.replace(/,/g, "").match(/-?\d+(?:\.\d+)?/);
+  return match ? Number(match[0]) : null;
+}
+
+/**
+ * 전후 수치를 막대 두 줄로 비교합니다. 막대 길이는 둘 중 큰 값을 100%로 둔 비율이고, 값은 막대 옆 글자로 둡니다.
+ * 두 값의 숫자를 읽지 못하면 막대 없이 글자만 보입니다. 단위는 원문 그대로라 막대는 같은 단위끼리만 비교합니다.
+ */
+function Compare({ metric }: { metric: Metric }) {
+  const before = metric.before ? metricNumber(metric.before) : null;
+  const after = metricNumber(metric.value);
+  const top = before !== null && after !== null ? Math.max(Math.abs(before), Math.abs(after)) : 0;
+  const width = (value: number | null) => (top > 0 && value !== null ? `${Math.max(4, Math.round((Math.abs(value) / top) * 100))}%` : undefined);
+  return (
+    <div className="xp-compare" data-bars={top > 0 ? "on" : "off"}>
+      <p className="xp-compare-label">{metric.label}</p>
+      {metric.before ? (
+        <p className="xp-bar" data-tone="before">
+          <span className="xp-bar-fill" style={{ "--w": width(before) } as React.CSSProperties} aria-hidden="true" />
+          <span className="xp-small">이전</span>
+          <span className="xp-bar-value">{metric.before}</span>
+        </p>
+      ) : null}
+      <p className="xp-bar" data-tone="after">
+        <span className="xp-bar-fill" style={{ "--w": width(after) } as React.CSSProperties} aria-hidden="true" />
+        <span className="xp-small">{metric.before ? "이후" : "결과"}</span>
+        <span className="xp-bar-value">{metric.value}</span>
+      </p>
+      {metric.note ? <p className="xp-small">{metric.note}</p> : null}
+    </div>
+  );
+}
 
 function Case({ section, kind }: { section: StructuredSection; kind: CaseKind }) {
   const first = section.media[0];
   const isSkills = section.pattern === "skills";
   let body: React.ReactNode;
-  if (kind === "technical")
+  if (kind === "before-after")
+    body = (
+      <div className="xp-case-grid" data-form="before-after">
+        <div className="xp-compare-list">
+          {(section.metrics ?? []).map((metric, index) => (
+            <Compare metric={metric} key={index} />
+          ))}
+        </div>
+        <div className="xp-body-stack">
+          {first ? <Figure media={first} /> : null}
+          <Paragraphs value={section.body} />
+          <Details details={section.details} />
+        </div>
+      </div>
+    );
+  else if (kind === "technical")
     body = (
       <div className="xp-case-grid">
         <div className="xp-body-stack">
@@ -474,6 +526,30 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
             </ol>
           )}
         </nav>
+      );
+    },
+    CaseBeforeAfter: ({ props }) => <Case section={props.section} kind="before-after" />,
+    MetricStrip: ({ props: { sections } }) => {
+      const { caseNumbers } = useKit();
+      // 섹션마다 첫 수치 하나를, 페이지에서 읽는 순서로 네 개까지 보입니다.
+      const items = sections
+        .flatMap((section, index) => (section.metrics?.[0] ? [{ section, metric: section.metrics[0], order: caseNumbers.get(section.id) ?? 100 + index }] : []))
+        .sort((a, b) => a.order - b.order)
+        .slice(0, 4);
+      return (
+        <section className="xp-block xp-metrics" aria-label="주요 수치">
+          <ul className="xp-metric-strip">
+            {items.map(({ section, metric }) => (
+              <li key={section.id}>
+                <a href={`#section-${section.id}`}>
+                  <strong className="xp-metric-value">{metric.value}</strong>
+                  <span className="xp-metric-label">{metric.label}</span>
+                  {metric.before ? <span className="xp-small">이전 {metric.before}</span> : null}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
       );
     },
     CaseEssay: ({ props }) => <Case section={props.section} kind="essay" />,

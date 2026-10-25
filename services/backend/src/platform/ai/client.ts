@@ -29,6 +29,9 @@ export const AI_CONTRACTS = [
   "page_generation",
   // 완성된 지면의 스크린샷을 보고 구성을 고치고, 고치기 전후를 비교합니다.
   "page_review",
+  // 설계가 먼저 오는 생성: 지면 설계와 설계도의 칸 채우기.
+  "page_design",
+  "page_fill",
   "partial_edit",
   "style_remix",
   "insight_note",
@@ -56,6 +59,9 @@ export const DEFAULT_MODEL_TIER: Record<AiContract, AiModelTier> = {
   page_generation: "opus",
   // 지면을 고치는 판단이라 생성과 같은 모델을 씁니다. 다듬기는 초안을 보여 준 뒤에 돌아 사람이 기다리지 않습니다.
   page_review: "opus",
+  // 지면 설계는 생성의 판단 전부라 비싼 모델을 씁니다. 칸 채우기는 정해진 칸에 원문을 옮겨 적는 일이라 빠른 모델로 시작합니다.
+  page_design: "opus",
+  page_fill: "sonnet",
   question_draft: "sonnet",
   record_cleanup: "sonnet",
   generation: "sonnet",
@@ -81,6 +87,11 @@ export interface AiCallSpec {
   modelTier?: AiModelTier;
   /** 프롬프트와 함께 보낼 이미지(base64). 이미지를 받지 못하는 공급자는 `AI_UNAVAILABLE`을 냅니다. */
   images?: readonly AiImage[];
+  /**
+   * 생각하는 양입니다. 출력 토큰의 대부분이 생각이라 시간이 이 값에 따라 달라집니다. 주지 않으면 공급자 기본값입니다.
+   * Claude Code는 `--effort`로 넘기고, 지원하지 않는 공급자는 무시합니다.
+   */
+  effort?: "low" | "medium" | "high";
 }
 
 export interface AiImage {
@@ -324,6 +335,7 @@ export function callKey(spec: AiCallSpec, schema: z.ZodType): string {
     spec.system,
     spec.prompt,
     shape,
+    spec.effort ?? "",
     // 같은 글이라도 다른 화면을 보여 주면 다른 호출입니다.
     ...(spec.images ?? []).map((image) => `${image.label}:${createHash("sha256").update(image.data).digest("hex")}`),
   ].join("\0");

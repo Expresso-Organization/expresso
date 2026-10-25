@@ -50,6 +50,7 @@ import {
   describeGroupRules,
   describeSpecSchema,
 } from "./structured-spec-format.js";
+import { designFirst } from "./design-first.js";
 
 export function structuredSpecPrompt(
   content: StructuredPortfolioContent,
@@ -73,12 +74,12 @@ export function structuredSpecPrompt(
   const format = describeSpecSchema(schema);
   const ids = format.required;
   // 컨테이너를 쓸 수 있는지는 출력 스키마가 정합니다. 넓은 여백 디자인은 group 요소가 없습니다.
-  const groups = format.optional.length > 0;
+  const groups = format.optional.some((key) => key.startsWith("group-"));
   // 목차와 첫 화면 구도 선택도 출력 스키마가 정합니다. 글 · 목록형은 목차가 없고, 포스터 · 글 · 목록형은 첫 화면 구도가 하나로 고정됩니다.
   const hasIndex = ids.includes("index");
   const introLine = format.text.split("\n").find((line) => line.startsWith("elements.intro")) ?? "";
   const introChoices = introLine.includes('"split"');
-  const groupId = format.optional[0] ?? "group-1";
+  const groupId = format.optional.find((key) => key.startsWith("group-")) ?? "group-1";
   // 예시는 첫 사례와 그 옆에 둘 보조 요소로 만듭니다. 보조 요소가 없으면 두 번째 사례를 씁니다.
   const pair = [
     `section-${content.sections[0]!.id}`,
@@ -267,18 +268,41 @@ const fixableCount = (defects: readonly PageRenderDefect[]) => defects.filter((i
 
 export class StructuredPageGenerator implements PageGenerator {
   /** 측정기가 없으면(API 프로세스 · 브라우저 없는 환경) 그린 결과를 재지 않습니다. */
+  private readonly random: () => number;
+  private readonly designFirst: boolean;
   constructor(
     private readonly ai: AiClient,
     private readonly measurer: PageMeasurer | null = null,
-    /** 전후 비교에서 고친 판을 A · B 중 어디에 둘지 정합니다. 테스트가 고정합니다. */
-    private readonly random: () => number = Math.random,
-  ) {}
+    options: {
+      /** 전후 비교에서 고친 판을 A · B 중 어디에 둘지 정합니다. 테스트가 고정합니다. */
+      random?: () => number;
+      /** 새 생성을 설계 → 채우기로 합니다. 끄면 내용 정리 → 구성 경로만 씁니다. */
+      designFirst?: boolean;
+      /** 설계 · 채우기의 생각량과 채우기 티어입니다. */
+      tuning?: Parameters<typeof designFirst>[3];
+    } = {},
+  ) {
+    this.random = options.random ?? Math.random;
+    this.designFirst = options.designFirst ?? true;
+    this.tuning = options.tuning ?? {};
+  }
+  private readonly tuning: NonNullable<Parameters<typeof designFirst>[3]>;
   async generate(
     context: PageGenerationContext,
     sink: PageStreamSink | null = null,
   ): Promise<GeneratedPageResult> {
     const usages: AiUsage[] = [];
     let content = context.structuredContent;
+    // 새 생성은 지면을 먼저 설계하고 그 칸을 채웁니다. 실패하면 이전 경로(내용 정리 → 구성)로 이어 갑니다.
+    // 지시를 받아 직전 지면을 고치는 재생성은 직전 구성을 보고 고치는 이전 경로를 그대로 씁니다.
+    if (!content && !context.previous?.structured && this.designFirst) {
+      try {
+        return await this.#designFirstPage(context, sink);
+      } catch (error) {
+        if (error instanceof PageRenderError) throw error;
+        console.error(JSON.stringify({ level: "warn", event: "page.design_first_failed", message: errorText(error) }));
+      }
+    }
     if (!content) {
       if (!context.author?.name)
         throw new PageGenerationError("포트폴리오에 표시할 이름이 필요합니다.");
@@ -398,6 +422,30 @@ export class StructuredPageGenerator implements PageGenerator {
       ? JSON.stringify(context.structuredContent)
       : context.evidence.map((item) => item.text).join("\n");
     return pageResult({ rendered, snapshot, root, usages, prompt, attempt, source, design: context.design, renderMeasure });
+  }
+
+  async #designFirstPage(context: PageGenerationContext, sink: PageStreamSink | null): Promise<GeneratedPageResult> {
+    const started = Date.now();
+    const designed = await designFirst(this.ai, context, sink ? { thinking: (tokens) => sink.thinking(tokens) } : {}, this.tuning);
+    const { snapshot, root } = specSetup(designed.content, context).accept(designed.spec);
+    const rendered = renderSpec(snapshot, context);
+    const timeline = [...designed.timeline, { stage: "rendered" as const, atMs: Date.now() - started }];
+    let renderMeasure: PageRenderMeasure | undefined;
+    if (this.measurer) {
+      try {
+        const measured = await measureRendered(this.measurer, rendered, snapshot.content, context.style);
+        renderMeasure = { status: "measured", adopted: 0, passes: [{ durationMs: measured.durationMs, defects: measured.defects }] };
+      } catch (error) {
+        renderMeasure = { status: "skipped", reason: errorText(error), passes: [] };
+      }
+      timeline.push({ stage: "measured", atMs: Date.now() - started });
+    }
+    sink?.delta(JSON.stringify(rendered));
+    const source = [...context.sections.map((section) => [section.title, section.purpose, section.goal, ...section.points].join("\n")), ...context.evidence.map((item) => item.text)].join("\n");
+    return pageResult({
+      rendered, snapshot, root, usages: designed.usages, prompt: designed.prompt, attempt: 0, source, design: context.design, renderMeasure,
+      extra: { designPlan: designed.plan, calls: designed.calls, timeline },
+    });
   }
 
   /**
@@ -559,6 +607,8 @@ function pageResult(input: {
   design: PageGenerationContext["design"];
   renderMeasure: PageRenderMeasure | undefined;
   visualReview?: PageVisualReview;
+  /** 설계가 먼저 오는 생성의 설계 · 호출별 기록 · 단계 시각입니다. */
+  extra?: Pick<PageGenerationManifest, "designPlan" | "calls" | "timeline">;
 }): GeneratedPageResult {
   const { rendered, snapshot, root, renderMeasure } = input;
   const usage = input.usages.reduce(
@@ -594,6 +644,7 @@ function pageResult(input: {
     structured: snapshot,
     ...(renderMeasure ? { renderMeasure } : {}),
     ...(input.visualReview ? { visualReview: input.visualReview } : {}),
+    ...(input.extra ?? {}),
   };
   // 디자인 토큰의 정적 검사입니다. 오류 하나라도 실패하면 지면을 검토 대상으로 표시합니다.
   const designChecks = input.design ? designQa(input.design) : [];

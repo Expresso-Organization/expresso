@@ -52,6 +52,14 @@ export const structuredCatalog = defineCatalog(schema, {
       description:
         "rows=짧은 목록, mosaic=이미지 중심 비대칭 타일, rail=측면 목차, poster=번호와 큰 글자 제목 행.",
     },
+    CaseBeforeAfter: {
+      props: projectProps,
+      description: "이전 값과 이후 값을 막대 두 줄로 비교하고 옆에 짧은 설명을 둡니다. 개선 폭이 핵심인 작업에 사용합니다. 이전 값이 있는 수치가 필요합니다.",
+    },
+    MetricStrip: {
+      props: z.object({ sections: content.shape.sections }),
+      description: "작업마다 대표 수치 하나를 큰 숫자로 한 줄에 4개까지 보입니다. 소개 바로 뒤에 두면 첫 화면에서 성과가 먼저 읽힙니다.",
+    },
     CaseEssay: {
       props: projectProps,
       description: "문장과 판단을 읽는 기사형. 설명이 긴 자료에 적합합니다.",
