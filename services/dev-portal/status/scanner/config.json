@@ -40,7 +40,7 @@
   },
   "judge": {
     "model": "sonnet",
-    "maxBudgetUsdPerGroup": 3,
+    "maxBudgetUsdPerGroup": 10,
     "timeoutMinutes": 20,
     "minIntervalMinutes": 60,
     "fullEveryDays": 7
