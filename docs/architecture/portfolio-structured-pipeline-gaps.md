@@ -128,4 +128,13 @@ json-render 방식을 유지합니다. 자유 생성이 잘한 것은 대부분 
 | Playwright Firefox | Chromium보다 무겁고 이득이 없습니다 |
 | Cloudflare Browser Rendering · Browserless · Browserbase · Steel(호스팅) | 엔진은 Chromium이고, 사용자 커리어 데이터가 외부로 나가며 네트워크 왕복이 더해집니다 |
 
-아직 재지 않은 것: 작업당 context · page 생성 시간, 페이지당 메모리, 생성 1회당 늘어나는 시간. 2단계 구현에서 실측해 이 문서에 적습니다.
+재지 않았던 것: 작업당 context · page 생성 시간, 페이지당 메모리, 생성 1회당 늘어나는 시간. 아래 2단계 진행에 적었습니다.
+
+## 진행: 2단계 생성 중 브라우저 측정 (2026-10-25, `feat/portfolio-render-qa`)
+
+- 렌더러 패키지의 `inspectRenderedPage`(페이지 안 측정) · `renderDefects`(판정) · `describeRenderDefects`(수정 요청 문장)를 워커와 개발 검사 스크립트(`verify-token-kit.mjs`)가 함께 씁니다.
+- 워커의 `ChromiumPageMeasurer`가 브라우저를 처음 잴 때 띄워 재사용하고, 측정마다 새 context로 390 · 926 · 1440px를 잽니다. 문서는 공개 페이지와 같은 `pageDocument`로 조립하고, `/v1/media/…`는 미디어 서비스에서 읽어 채웁니다. 네트워크는 서체 CDN만 엽니다.
+- 구성으로 고칠 수 있는 결함(가로 넘침 · 한 글자 줄바꿈 · 단 이탈 · 그림 설명 겹침 · 늘어난 태그 · 이미지가 빠진 사례)이 있으면 결함 문장을 수정 요청으로 붙여 Spec을 최대 2회 다시 받고, 그 결함이 가장 적은 판을 채택합니다. 대비 · 서체 · 내용 누락은 기록만 합니다.
+- 결과는 `qaReport`의 `rendered-layout` · `rendered-readability`(경고)와 `generationManifest.renderMeasure`(판마다 결함 · 측정 시간 · 채택한 판)에 남습니다. 결함이 남아도 지면은 공개됩니다.
+- 실측(로컬 macOS, 같은 지면 6회): 측정 1회(3개 너비) 3.0–3.4초, 브라우저 메모리 대기 196MB · 측정 중 최대 392MB. 체험 서버 실제 생성 1회(사례 상세형 × Linear Midnight): 측정 3.4초 · 생성 전체 376초(약 0.9%), 결함 0건이라 재요청 없음. 재요청 경로는 가짜 측정기를 쓴 생성기 테스트와 실제 Chromium 측정기 테스트로 확인했습니다.
+- 남은 것: 운영 서버에서 같은 값을 다시 재야 합니다(Linux · 한국어 폰트 설치 뒤). 실제 생성에서 재요청이 일어난 사례가 아직 없습니다.
