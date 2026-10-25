@@ -27,6 +27,8 @@ export const AI_CONTRACTS = [
   "generation",
   "layout_draft",
   "page_generation",
+  // 완성된 지면의 스크린샷을 보고 구성을 고치고, 고치기 전후를 비교합니다.
+  "page_review",
   "partial_edit",
   "style_remix",
   "insight_note",
@@ -52,6 +54,8 @@ export const DEFAULT_MODEL_TIER: Record<AiContract, AiModelTier> = {
   // 한 번 뽑아서 오래 쓰는 것 중에서도 가장 그렇다 — 이 호출의 결과가 곧
   // 사람들이 보는 페이지 전체이고, 여기서 아낀 값은 바로 지면 품질로 나온다.
   page_generation: "opus",
+  // 지면을 고치는 판단이라 생성과 같은 모델을 씁니다. 다듬기는 초안을 보여 준 뒤에 돌아 사람이 기다리지 않습니다.
+  page_review: "opus",
   question_draft: "sonnet",
   record_cleanup: "sonnet",
   generation: "sonnet",
@@ -75,6 +79,16 @@ export interface AiCallSpec {
   promptVersion: number;
   /** 티어 기본값을 덮어쓸 때만. */
   modelTier?: AiModelTier;
+  /** 프롬프트와 함께 보낼 이미지(base64). 이미지를 받지 못하는 공급자는 `AI_UNAVAILABLE`을 냅니다. */
+  images?: readonly AiImage[];
+}
+
+export interface AiImage {
+  mediaType: "image/png" | "image/jpeg";
+  /** base64 본문입니다. data URL 접두어를 붙이지 않습니다. */
+  data: string;
+  /** 모델이 이미지를 가리킬 때 쓰는 이름입니다(예: "A · 1440px 첫 화면"). 이미지 바로 앞에 글로 붙습니다. */
+  label: string;
 }
 
 export interface AiUsage {
@@ -310,6 +324,8 @@ export function callKey(spec: AiCallSpec, schema: z.ZodType): string {
     spec.system,
     spec.prompt,
     shape,
+    // 같은 글이라도 다른 화면을 보여 주면 다른 호출입니다.
+    ...(spec.images ?? []).map((image) => `${image.label}:${createHash("sha256").update(image.data).digest("hex")}`),
   ].join("\0");
   // 해시는 파일 이름으로 쓴다. 충돌하면 다른 계약의 픽스처를 재생하게 되므로
   // 짧게 자르되 sha256을 쓴다.

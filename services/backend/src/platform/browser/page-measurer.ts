@@ -2,16 +2,30 @@ import { chromium, type Browser } from "playwright";
 import { PAGE_ALLOWED_STYLESHEET_HOSTS, PAGE_IMAGE_SRC_PREFIX } from "@expresso/contracts";
 import { RENDER_MEASURE_WIDTHS, inspectRenderedPage, settleRenderedPage, type RenderMeasurement } from "@expresso/portfolio-renderer";
 
+/** 다듬기에서 모델에게 보여 줄 화면입니다. 1440 첫 화면은 PNG, 전체 페이지는 크기를 줄이려고 JPEG입니다. */
+export interface PageScreenshot {
+  name: "1440-first" | "1440-full" | "390-full";
+  mediaType: "image/png" | "image/jpeg";
+  /** base64 본문입니다. */
+  data: string;
+  /** 전체 페이지가 길이 한도에서 잘렸으면 true입니다. */
+  truncated: boolean;
+}
+
 /** 한 지면을 너비마다 잰 결과입니다. */
 export interface PageMeasurement {
   widths: { width: number; measurement: RenderMeasurement }[];
+  screenshots: PageScreenshot[];
   durationMs: number;
 }
 
 /** 완성된 HTML 문서를 실제 레이아웃 엔진으로 잽니다. 생성기는 이 인터페이스만 압니다. */
 export interface PageMeasurer {
-  measure(document: string): Promise<PageMeasurement>;
+  measure(document: string, options?: { screenshots?: boolean }): Promise<PageMeasurement>;
 }
+
+// 이미지 한 장의 긴 변 한도(8,000px) 안에서 자릅니다. 넘으면 아래쪽은 보이지 않습니다.
+const MAX_SCREENSHOT_HEIGHT = 7_800;
 
 /** `/v1/media/<id>` 이미지를 채울 바이트를 돌려줍니다. 없으면 null입니다. */
 export type MeasureAssetReader = (assetId: string, width?: number) => Promise<{ bytes: Uint8Array; mimeType: string } | null>;
@@ -48,7 +62,7 @@ export class ChromiumPageMeasurer implements PageMeasurer {
     return this.#browser;
   }
 
-  async measure(html: string): Promise<PageMeasurement> {
+  async measure(html: string, options: { screenshots?: boolean } = {}): Promise<PageMeasurement> {
     const started = performance.now();
     const browser = await this.#launch();
     const context = await browser.newContext({ reducedMotion: "reduce" });
@@ -72,15 +86,29 @@ export class ChromiumPageMeasurer implements PageMeasurer {
         return route.abort();
       });
       const widths: PageMeasurement["widths"] = [];
+      const screenshots: PageScreenshot[] = [];
       for (const width of RENDER_MEASURE_WIDTHS) {
         const page = await context.newPage();
         await page.setViewportSize({ width, height: 1000 });
         await page.goto(`${ORIGIN}/`, { waitUntil: "load" });
         await page.evaluate(settleRenderedPage);
         widths.push({ width, measurement: await page.evaluate(inspectRenderedPage) });
+        if (options.screenshots && (width === 1440 || width === 390)) {
+          if (width === 1440)
+            screenshots.push({ name: "1440-first", mediaType: "image/png", data: (await page.screenshot({ type: "png" })).toString("base64"), truncated: false });
+          const height = await page.evaluate<number>("document.documentElement.scrollHeight");
+          const truncated = height > MAX_SCREENSHOT_HEIGHT;
+          const full = await page.screenshot({
+            type: "jpeg",
+            quality: 70,
+            fullPage: true,
+            ...(truncated ? { clip: { x: 0, y: 0, width, height: MAX_SCREENSHOT_HEIGHT } } : {}),
+          });
+          screenshots.push({ name: width === 1440 ? "1440-full" : "390-full", mediaType: "image/jpeg", data: full.toString("base64"), truncated });
+        }
         await page.close();
       }
-      return { widths, durationMs: Math.round(performance.now() - started) };
+      return { widths, screenshots, durationMs: Math.round(performance.now() - started) };
     } finally {
       await context.close();
     }

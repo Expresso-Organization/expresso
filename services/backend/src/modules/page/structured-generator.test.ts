@@ -14,7 +14,7 @@ import { StructuredPageGenerator } from "./structured-generator.js";
 import { PageRenderError, type PageGenerationContext } from "./generator.js";
 import { findPortfolioDesign } from "../design-systems/index.js";
 import { describeArchetype, describeDesignLayout, designLayout, renderedContentValues, type RenderMeasurement } from "@expresso/portfolio-renderer";
-import type { PageMeasurer, PageMeasurement } from "../../platform/browser/page-measurer.js";
+import type { PageMeasurer, PageMeasurement, PageScreenshot } from "../../platform/browser/page-measurer.js";
 
 const content: StructuredPortfolioContent = {
   version: 1,
@@ -346,7 +346,7 @@ describe("모델 기반 구조화 생성", () => {
     expect((listResult.manifest.structured!.spec.elements.page as { props: Record<string, unknown> }).props.archetype).toBe("list");
   });
 
-  describe("생성 중 브라우저 측정", () => {
+  describe("초안 측정과 다듬기", () => {
     /** 결함이 없는 측정값입니다. 지면 글에는 내용 값을 모두 넣어 본문 누락이 나오지 않게 합니다. */
     const clean = (overrides: Partial<RenderMeasurement> = {}): RenderMeasurement => ({
       overflow: false, brokenImages: 0, missingAnchors: [], h1: 1, nameSize: 60, headlineSize: 20, introMotion: "none", hiddenCases: 0,
@@ -355,70 +355,96 @@ describe("모델 기반 구조화 생성", () => {
       text: renderedContentValues(content).join(" "), ...overrides,
     });
     const orphan = clean({ orphans: [{ element: "section-project-a", text: "경로 설계 사례" }] });
-    /** 부를 때마다 다음 측정값을 세 너비에 똑같이 돌려주는 가짜 측정기입니다. Error를 넣으면 던집니다. */
+    const shots = (tag: string): PageScreenshot[] => (["390-full", "1440-first", "1440-full"] as const).map((name) => ({ name, mediaType: name === "1440-first" ? "image/png" as const : "image/jpeg" as const, data: Buffer.from(`${tag}-${name}`).toString("base64"), truncated: false }));
+    /** 부를 때마다 다음 측정값을 세 너비에 똑같이 돌려주는 가짜 측정기입니다. 스크린샷은 몇 번째 측정인지 적힌 가짜 바이트입니다. */
     class FakeMeasurer implements PageMeasurer {
       documents: string[] = [];
       constructor(private readonly results: (RenderMeasurement | Error)[]) {}
-      async measure(html: string): Promise<PageMeasurement> {
+      async measure(html: string, options: { screenshots?: boolean } = {}): Promise<PageMeasurement> {
         this.documents.push(html);
         const next = this.results.shift();
         if (next instanceof Error) throw next;
-        return { durationMs: 5, widths: [390, 926, 1440].map((width) => ({ width, measurement: next! })) };
+        return { durationMs: 5, widths: [390, 926, 1440].map((width) => ({ width, measurement: next! })), screenshots: options.screenshots ? shots(`m${this.documents.length}`) : [] };
       }
     }
-    const changed = () => {
+    const changed = (variant = "rows") => {
       const next = structuredClone(spec);
-      next.elements.index.props.variant = "rows";
+      next.elements.index.props.variant = variant;
       return next;
     };
+    const input = { snapshot: { spec: stored(spec), content } };
 
-    it("구성으로 고칠 결함이 나오면 결함 문장을 붙여 구성을 다시 받고, 나아진 판을 채택한다", async () => {
-      const ai = new Stub([spec, changed()]);
-      const measurer = new FakeMeasurer([orphan, clean()]);
+    it("초안은 한 번만 재고 측정 결함이 있어도 다시 요청하지 않는다", async () => {
+      const ai = new Stub([spec]);
+      const measurer = new FakeMeasurer([orphan]);
       const result = await new StructuredPageGenerator(ai, measurer).generate(context);
-      expect(ai.calls).toHaveLength(2);
-      expect(ai.calls[1]!.prompt).toContain('- 390px · 926px · 1440px section-project-a: "경로 설계 사례"의 마지막 줄에 한 글자만 남습니다.');
-      // 직전 Spec은 계약 검사를 지난 판입니다. 결함을 낸 구성(목차 rail)을 모델이 보고 바꿀 수 있어야 합니다.
-      expect(ai.calls[1]!.prompt).toMatch(/직전 Spec: \{.*"variant":"rail"/);
+      expect(ai.calls).toHaveLength(1);
       expect(measurer.documents[0]).toContain("<!doctype html>");
-      expect(result.manifest.renderMeasure).toMatchObject({ status: "measured", adopted: 1 });
-      expect(result.manifest.renderMeasure!.passes.map((pass) => pass.defects.length)).toEqual([3, 0]);
-      expect(result.manifest.structured!.spec).toEqual(stored(changed()));
-      expect(result.qaReport.checks.find((check) => check.name === "rendered-layout")).toMatchObject({ status: "pass", severity: "warning" });
+      expect(result.manifest.renderMeasure).toMatchObject({ status: "measured", adopted: 0, passes: [{ defects: [{ kind: "orphan" }, { kind: "orphan" }, { kind: "orphan" }] }] });
+      expect(result.qaReport.status).toBe("ready");
+      expect(result.qaReport.checks.find((check) => check.name === "rendered-layout")).toMatchObject({ status: "fail", severity: "warning" });
       expect(PageGenerationManifestSchema.parse(result.manifest)).toEqual(result.manifest);
     });
 
-    it("두 번 다시 받아도 나아지지 않으면 첫 판을 쓰고 남은 결함을 경고로 남긴다", async () => {
-      const ai = new Stub([spec, changed(), changed()]);
-      const result = await new StructuredPageGenerator(ai, new FakeMeasurer([orphan, orphan, orphan])).generate(context);
-      expect(ai.calls).toHaveLength(3);
-      expect(result.manifest.renderMeasure).toMatchObject({ status: "measured", adopted: 0 });
-      expect(result.manifest.structured!.spec).toEqual(stored(spec));
-      expect(result.qaReport.status).toBe("ready");
-      expect(result.qaReport.checks.find((check) => check.name === "rendered-layout")).toMatchObject({ status: "fail", severity: "warning" });
-    });
-
-    it("다시 받은 Spec이 계약 검사에 걸리면 그 판을 버린다", async () => {
-      const broken = structuredClone(spec);
-      broken.elements.page.children[2] = "index";
-      const ai = new Stub([spec, broken, changed()]);
-      const result = await new StructuredPageGenerator(ai, new FakeMeasurer([orphan, clean()])).generate(context);
-      expect(result.manifest.renderMeasure!.passes[1]!.rejected).toBeTruthy();
-      expect(result.manifest.renderMeasure).toMatchObject({ adopted: 2 });
-    });
-
-    it("기록만 할 결함(대비)으로는 다시 요청하지 않는다", async () => {
-      const ai = new Stub([spec]);
-      const result = await new StructuredPageGenerator(ai, new FakeMeasurer([clean({ contrast: [{ element: "intro", text: "소개", ratio: 2.1, min: 4.5 }] })])).generate(context);
-      expect(ai.calls).toHaveLength(1);
-      expect(result.qaReport.checks.find((check) => check.name === "rendered-readability")).toMatchObject({ status: "fail", severity: "warning" });
-    });
-
-    it("측정이 실패하면 생성은 이어가고 건너뛴 이유를 남긴다", async () => {
-      const ai = new Stub([spec]);
-      const result = await new StructuredPageGenerator(ai, new FakeMeasurer([new Error("browser missing")])).generate(context);
+    it("초안 측정이 실패하면 생성은 이어가고 건너뛴 이유를 남긴다", async () => {
+      const result = await new StructuredPageGenerator(new Stub([spec]), new FakeMeasurer([new Error("browser missing")])).generate(context);
       expect(result.manifest.renderMeasure).toEqual({ status: "skipped", reason: "browser missing", passes: [] });
       expect(result.qaReport.checks.some((check) => check.name.startsWith("rendered-"))).toBe(false);
+    });
+
+    it("다듬기: 측정 결함을 고친 뒤 스크린샷 검토로 고친 판이 비교에서 이기면 채택한다", async () => {
+      const ai = new Stub([changed("rows"), { critique: ["첫 화면 아래 목차가 사례를 밀어냅니다."], spec: changed("mosaic") }, { winner: "A", reason: "사례가 첫 화면에 보입니다." }]);
+      // random() < 0.5 이면 고친 판을 A에 둡니다.
+      const generator = new StructuredPageGenerator(ai, new FakeMeasurer([orphan, clean(), clean()]), () => 0.1);
+      const outcome = await generator.refine(input);
+      expect(outcome.status).toBe("adopted");
+      expect(ai.calls.map((call) => call.contract)).toEqual(["page_generation", "page_review", "page_review"]);
+      expect(ai.calls[0]!.prompt).toContain('section-project-a: "경로 설계 사례"의 마지막 줄에 한 글자만 남습니다.');
+      // 검토는 결함을 고친 판(두 번째 측정)의 스크린샷을, 비교는 A(고친 판) · B(직전 판)를 봅니다.
+      expect(ai.calls[1]!.images!.map((image) => [image.label, Buffer.from(image.data, "base64").toString()])).toEqual([
+        ["390px 전체", "m2-390-full"], ["1440px 첫 화면", "m2-1440-first"], ["1440px 전체", "m2-1440-full"],
+      ]);
+      expect(ai.calls[2]!.images!.map((image) => image.label.slice(0, 1))).toEqual(["A", "A", "A", "B", "B", "B"]);
+      expect(Buffer.from(ai.calls[2]!.images![0]!.data, "base64").toString()).toBe("m3-390-full");
+      expect(outcome.review).toMatchObject({ status: "adopted", critique: ["첫 화면 아래 목차가 사례를 밀어냅니다."], comparison: { winner: "revised", reason: "사례가 첫 화면에 보입니다." } });
+      expect(outcome.result!.manifest.renderMeasure).toMatchObject({ adopted: 2 });
+      expect((outcome.result!.manifest.structured!.spec.elements.index as { props: { variant: string } }).props.variant).toBe("mosaic");
+      expect(PageGenerationManifestSchema.parse(outcome.result!.manifest)).toEqual(outcome.result!.manifest);
+    });
+
+    it("다듬기: 비교에서 직전 판이 이기면 결함을 고친 판까지만 채택한다", async () => {
+      const ai = new Stub([changed("rows"), { critique: ["목차를 카드로 바꿉니다."], spec: changed("mosaic") }, { winner: "A", reason: "직전 판이 더 차분합니다." }]);
+      // random() >= 0.5 이면 고친 판을 B에 두므로 A 승리는 직전 판 승리입니다.
+      const outcome = await new StructuredPageGenerator(ai, new FakeMeasurer([orphan, clean(), clean()]), () => 0.9).refine(input);
+      expect(outcome.status).toBe("adopted");
+      expect(outcome.review.comparison).toEqual({ winner: "draft", reason: "직전 판이 더 차분합니다." });
+      expect((outcome.result!.manifest.structured!.spec.elements.index as { props: { variant: string } }).props.variant).toBe("rows");
+    });
+
+    it("다듬기: 비교에서 초안이 이기면 초안을 유지한다", async () => {
+      const ai = new Stub([{ critique: ["목차를 카드로 바꿉니다."], spec: changed("mosaic") }, { winner: "B", reason: "초안이 낫습니다." }]);
+      const outcome = await new StructuredPageGenerator(ai, new FakeMeasurer([clean(), clean()]), () => 0.1).refine(input);
+      expect(outcome).toMatchObject({ status: "kept", review: { status: "kept", comparison: { winner: "draft" } } });
+      expect(outcome.result).toBeUndefined();
+    });
+
+    it("다듬기: 고친 구성이 측정 결함을 늘리면 비교 없이 초안을 유지한다", async () => {
+      const ai = new Stub([{ critique: ["사례를 두 칸으로 나눕니다."], spec: changed("mosaic") }]);
+      const outcome = await new StructuredPageGenerator(ai, new FakeMeasurer([clean(), orphan])).refine(input);
+      expect(ai.calls).toHaveLength(1);
+      expect(outcome.review.reason).toBe("고친 구성이 측정 결함을 늘렸습니다.");
+      expect(outcome.status).toBe("kept");
+    });
+
+    it("다듬기: 이미지를 받지 못하는 공급자면 검토를 건너뛴다", async () => {
+      const ai = new Stub([new AiError("AI_UNAVAILABLE", "page_review", "codex provider does not accept image input")]);
+      const outcome = await new StructuredPageGenerator(ai, new FakeMeasurer([clean()])).refine(input);
+      expect(outcome.status).toBe("skipped");
+      expect(outcome.review.reason).toContain("스크린샷 검토를 하지 못했습니다");
+    });
+
+    it("다듬기: 측정기가 없으면 건너뛴다", async () => {
+      expect((await new StructuredPageGenerator(new Stub([])).refine(input)).status).toBe("skipped");
     });
   });
 });

@@ -40,6 +40,18 @@ run("ChromiumPageMeasurer", () => {
     expect(requested).toContain(ASSET);
   }, 60_000);
 
+  it("요청하면 1440 첫 화면 · 1440 전체 · 390 전체를 찍고, 긴 페이지는 길이 한도에서 자른다", async () => {
+    const result = await measurer.measure(documentWith(`<article id="section-c" data-case-type="CaseStudy"><div style="height:9000px">긴 사례</div></article>`), { screenshots: true });
+    // 너비 순서(390 → 1440)로 찍습니다.
+    expect(result.screenshots.map((shot) => [shot.name, shot.mediaType, shot.truncated])).toEqual([
+      ["390-full", "image/jpeg", true], ["1440-first", "image/png", false], ["1440-full", "image/jpeg", true],
+    ]);
+    const png = Buffer.from(result.screenshots.find((shot) => shot.name === "1440-first")!.data, "base64");
+    // PNG 머리의 너비 · 높이(IHDR)는 화면 크기와 같아야 합니다.
+    expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1440, 1000]);
+    expect((await measurer.measure(documentWith("<p>짧은 지면</p>"))).screenshots).toEqual([]);
+  }, 60_000);
+
   it("허용하지 않은 바깥 주소는 막는다", async () => {
     const result = await measurer.measure(documentWith(`<article id="section-b" data-case-type="CaseStudy"><img src="https://example.com/x.png" alt="바깥 그림"></article>`));
     expect(result.widths[0]!.measurement.brokenImages).toBe(1);

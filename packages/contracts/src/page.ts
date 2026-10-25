@@ -365,6 +365,31 @@ export const PageRenderMeasureSchema = z.strictObject({
 });
 export type PageRenderMeasure = z.infer<typeof PageRenderMeasureSchema>;
 
+/**
+ * 초안을 저장한 뒤 워커가 스크린샷을 보고 다듬은 기록입니다.
+ *
+ * `critique`는 모델이 지적한 점, `comparison`은 전후 스크린샷을 순서를 섞어 보여 준 비교 결과입니다.
+ */
+export const PageVisualReviewSchema = z.strictObject({
+  status: z.enum(["adopted", "kept", "skipped"]),
+  reason: z.string().max(1_000).optional(),
+  critique: z.array(z.string().max(500)).max(20),
+  comparison: z.strictObject({
+    winner: z.enum(["draft", "revised"]),
+    reason: z.string().max(1_000),
+  }).optional(),
+  durationMs: z.number().int().nonnegative(),
+});
+export type PageVisualReview = z.infer<typeof PageVisualReviewSchema>;
+
+/** 초안의 다듬기 상태입니다. 다듬은 판을 채택하면 그 판의 ID가 남습니다. */
+export const PageRefinementSchema = z.strictObject({
+  status: z.enum(["pending", "adopted", "kept", "superseded", "skipped", "failed"]),
+  reason: z.string().max(1_000).optional(),
+  revisionId: UuidSchema.optional(),
+});
+export type PageRefinement = z.infer<typeof PageRefinementSchema>;
+
 export const PageGenerationManifestSchema = z.strictObject({
   methodologyVersion: z.literal(1),
   model: z.string().min(1).max(200),
@@ -381,6 +406,7 @@ export const PageGenerationManifestSchema = z.strictObject({
   structured: StructuredPortfolioSnapshotSchema.optional(),
   library: PageLibrarySelectionSchema.optional(),
   renderMeasure: PageRenderMeasureSchema.optional(),
+  visualReview: PageVisualReviewSchema.optional(),
   usage: z.strictObject({
     inputTokens: z.number().int().nonnegative(),
     outputTokens: z.number().int().nonnegative(),
@@ -410,6 +436,8 @@ export const GeneratedPageSchema = z.strictObject({
   qaReport: PageQaReportSchema.default({ status: "ready", checks: [] }),
   generationManifest: PageGenerationManifestSchema.nullable().default(null),
   styleSpec: PageStyleGrammarSchema.nullable().default(null),
+  /** 구조화 초안이면 워커가 이어서 다듬습니다. 다듬기 전에 만든 판에는 없습니다. */
+  refinement: PageRefinementSchema.optional(),
   createdAt: TimestampSchema,
 });
 export type GeneratedPage = z.infer<typeof GeneratedPageSchema>;

@@ -205,3 +205,19 @@ describe("계약별 프로바이더 가르기", () => {
     expect(client).toBeInstanceOf(FixtureAiClient);
   });
 });
+
+describe("이미지 입력", () => {
+  const image = { mediaType: "image/png" as const, data: Buffer.from("a").toString("base64"), label: "A · 1440px 첫 화면" };
+  it("같은 글이라도 보여 준 이미지가 다르면 다른 픽스처 키다", () => {
+    const schema = z.object({ ok: z.boolean() });
+    const base = callKey(spec, schema);
+    const withImage = callKey({ ...spec, images: [image] }, schema);
+    expect(withImage).not.toBe(base);
+    expect(callKey({ ...spec, images: [{ ...image, data: Buffer.from("b").toString("base64") }] }, schema)).not.toBe(withImage);
+    expect(callKey({ ...spec, images: [image] }, schema)).toBe(withImage);
+  });
+  it("Codex 공급자는 이미지 입력을 받지 않는다", async () => {
+    const client = new CodexAiClient({ cliPath: "/nonexistent/codex" });
+    await expect(client.complete({ ...spec, images: [image] }, z.object({ ok: z.boolean() }))).rejects.toMatchObject({ code: "AI_UNAVAILABLE" });
+  });
+});
