@@ -1209,8 +1209,8 @@ const STATUS_PAGE = 'status/index.html';
 const STATUS_LOAD = Date.now().toString(36);
 const statusSrc = query => STATUS_PAGE + '?' + (query ? query + '&' : '') + 'v=' + STATUS_LOAD;
 const NAV = [
-  ['DOC', DOCUMENTATION_TAB, '', '#E0B486'],
   ['STAT', STATUS_TAB, '', '#7FD3AE'],
+  ['DOC', DOCUMENTATION_TAB, '', '#E0B486'],
   ['LIB', LIBRARY_TAB, '', '#E0B486'],
   ['DECK', DECK_TAB, '', '#E0B486'],
   ['SRS', '설계서', GD, '#E0B486'],
@@ -1218,7 +1218,7 @@ const NAV = [
   ['DS', '디자인 시스템', DS, '#D8B49A'],
   ['ICON', '아이콘', IC, '#D8B49A']
 ];
-// 파일을 가진 NAV 항목만 바로가기 탭이다(개발 문서 · 진행 현황 · 라이브러리 · 프리젠테이션 제외).
+// 파일을 가진 NAV 항목만 바로가기 탭이다(진행 현황 · 개발 문서 · 라이브러리 · 프리젠테이션 제외).
 const DIRECT_DOC_TABS = new Set(NAV.filter(n => n[2]).map(n => n[1]));
 const PORTAL_DOCUMENTS = [
   ['SRS', '설계서', GD, '#E0B486'],
@@ -1391,7 +1391,8 @@ function tasksOf(d) {
 
 class Component extends DCLogic {
   state = {
-    sel: 'D1', q: '', role: 'all', status: 'all', prog: {}, doc: DOCUMENTATION_TAB, deck: null, slides: {}, toc: [], tocAt: -1, tocMiss: null,
+    // 주소 없이 열면 진행 현황이 첫 화면이다.
+    sel: 'D1', q: '', role: 'all', status: 'all', prog: {}, doc: STATUS_TAB, statusQuery: '', statusSrc: statusSrc(''), deck: null, slides: {}, toc: [], tocAt: -1, tocMiss: null,
     view: 'console', section: 'domain', bview: 'kanban', tickets: [], seq: 1, tsel: null, member: 'all',
     impDomain: 'D1', form: { title: '', assignee: '', due: '', effort: 'M', domain: '' },
     pages: [], comments: [], wseq: 1, psel: null, editing: false, block: -1, draft: '', me: '', newTpl: 'blank',
@@ -2132,7 +2133,7 @@ class Component extends DCLogic {
         this._frame = null;
         this.setState({
           sel: 'D1', q: '', role: 'all', status: 'all',
-          doc: DOCUMENTATION_TAB, deck: null, toc: [], tocAt: -1,
+          doc: STATUS_TAB, statusQuery: '', statusSrc: statusSrc(''), deck: null, toc: [], tocAt: -1,
           globalOpen: false, themeOpen: false, changesOpen: false,
           view: 'console', section: 'domain', tsel: null
         });
