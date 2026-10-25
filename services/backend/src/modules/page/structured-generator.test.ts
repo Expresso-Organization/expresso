@@ -13,7 +13,8 @@ import {
 import { StructuredPageGenerator } from "./structured-generator.js";
 import { PageRenderError, type PageGenerationContext } from "./generator.js";
 import { findPortfolioDesign } from "../design-systems/index.js";
-import { describeArchetype, describeDesignLayout, designLayout } from "@expresso/portfolio-renderer";
+import { describeArchetype, describeDesignLayout, designLayout, renderedContentValues, type RenderMeasurement } from "@expresso/portfolio-renderer";
+import type { PageMeasurer, PageMeasurement } from "../../platform/browser/page-measurer.js";
 
 const content: StructuredPortfolioContent = {
   version: 1,
@@ -343,5 +344,81 @@ describe("모델 기반 구조화 생성", () => {
     expect(listAi.calls[0]!.prompt).not.toContain("ProjectIndex:");
     // 디자인이 없는 문맥이라 저장된 판 렌더러로 그립니다. 유형은 저장 Spec에 남습니다.
     expect((listResult.manifest.structured!.spec.elements.page as { props: Record<string, unknown> }).props.archetype).toBe("list");
+  });
+
+  describe("생성 중 브라우저 측정", () => {
+    /** 결함이 없는 측정값입니다. 지면 글에는 내용 값을 모두 넣어 본문 누락이 나오지 않게 합니다. */
+    const clean = (overrides: Partial<RenderMeasurement> = {}): RenderMeasurement => ({
+      overflow: false, brokenImages: 0, missingAnchors: [], h1: 1, nameSize: 60, headlineSize: 20, introMotion: "none", hiddenCases: 0,
+      stretchedTags: [], overlappedCaptions: [], orphans: [], escaped: [], casesWithImage: [], caseNumbers: ["01"],
+      displayFamily: "system-ui", bodyFamily: "system-ui", loadedFamilies: [], contrast: [],
+      text: renderedContentValues(content).join(" "), ...overrides,
+    });
+    const orphan = clean({ orphans: [{ element: "section-project-a", text: "경로 설계 사례" }] });
+    /** 부를 때마다 다음 측정값을 세 너비에 똑같이 돌려주는 가짜 측정기입니다. Error를 넣으면 던집니다. */
+    class FakeMeasurer implements PageMeasurer {
+      documents: string[] = [];
+      constructor(private readonly results: (RenderMeasurement | Error)[]) {}
+      async measure(html: string): Promise<PageMeasurement> {
+        this.documents.push(html);
+        const next = this.results.shift();
+        if (next instanceof Error) throw next;
+        return { durationMs: 5, widths: [390, 926, 1440].map((width) => ({ width, measurement: next! })) };
+      }
+    }
+    const changed = () => {
+      const next = structuredClone(spec);
+      next.elements.index.props.variant = "rows";
+      return next;
+    };
+
+    it("구성으로 고칠 결함이 나오면 결함 문장을 붙여 구성을 다시 받고, 나아진 판을 채택한다", async () => {
+      const ai = new Stub([spec, changed()]);
+      const measurer = new FakeMeasurer([orphan, clean()]);
+      const result = await new StructuredPageGenerator(ai, measurer).generate(context);
+      expect(ai.calls).toHaveLength(2);
+      expect(ai.calls[1]!.prompt).toContain('- 390px · 926px · 1440px section-project-a: "경로 설계 사례"의 마지막 줄에 한 글자만 남습니다.');
+      // 직전 Spec은 계약 검사를 지난 판입니다. 결함을 낸 구성(목차 rail)을 모델이 보고 바꿀 수 있어야 합니다.
+      expect(ai.calls[1]!.prompt).toMatch(/직전 Spec: \{.*"variant":"rail"/);
+      expect(measurer.documents[0]).toContain("<!doctype html>");
+      expect(result.manifest.renderMeasure).toMatchObject({ status: "measured", adopted: 1 });
+      expect(result.manifest.renderMeasure!.passes.map((pass) => pass.defects.length)).toEqual([3, 0]);
+      expect(result.manifest.structured!.spec).toEqual(stored(changed()));
+      expect(result.qaReport.checks.find((check) => check.name === "rendered-layout")).toMatchObject({ status: "pass", severity: "warning" });
+      expect(PageGenerationManifestSchema.parse(result.manifest)).toEqual(result.manifest);
+    });
+
+    it("두 번 다시 받아도 나아지지 않으면 첫 판을 쓰고 남은 결함을 경고로 남긴다", async () => {
+      const ai = new Stub([spec, changed(), changed()]);
+      const result = await new StructuredPageGenerator(ai, new FakeMeasurer([orphan, orphan, orphan])).generate(context);
+      expect(ai.calls).toHaveLength(3);
+      expect(result.manifest.renderMeasure).toMatchObject({ status: "measured", adopted: 0 });
+      expect(result.manifest.structured!.spec).toEqual(stored(spec));
+      expect(result.qaReport.status).toBe("ready");
+      expect(result.qaReport.checks.find((check) => check.name === "rendered-layout")).toMatchObject({ status: "fail", severity: "warning" });
+    });
+
+    it("다시 받은 Spec이 계약 검사에 걸리면 그 판을 버린다", async () => {
+      const broken = structuredClone(spec);
+      broken.elements.page.children[2] = "index";
+      const ai = new Stub([spec, broken, changed()]);
+      const result = await new StructuredPageGenerator(ai, new FakeMeasurer([orphan, clean()])).generate(context);
+      expect(result.manifest.renderMeasure!.passes[1]!.rejected).toBeTruthy();
+      expect(result.manifest.renderMeasure).toMatchObject({ adopted: 2 });
+    });
+
+    it("기록만 할 결함(대비)으로는 다시 요청하지 않는다", async () => {
+      const ai = new Stub([spec]);
+      const result = await new StructuredPageGenerator(ai, new FakeMeasurer([clean({ contrast: [{ element: "intro", text: "소개", ratio: 2.1, min: 4.5 }] })])).generate(context);
+      expect(ai.calls).toHaveLength(1);
+      expect(result.qaReport.checks.find((check) => check.name === "rendered-readability")).toMatchObject({ status: "fail", severity: "warning" });
+    });
+
+    it("측정이 실패하면 생성은 이어가고 건너뛴 이유를 남긴다", async () => {
+      const ai = new Stub([spec]);
+      const result = await new StructuredPageGenerator(ai, new FakeMeasurer([new Error("browser missing")])).generate(context);
+      expect(result.manifest.renderMeasure).toEqual({ status: "skipped", reason: "browser missing", passes: [] });
+      expect(result.qaReport.checks.some((check) => check.name.startsWith("rendered-"))).toBe(false);
+    });
   });
 });

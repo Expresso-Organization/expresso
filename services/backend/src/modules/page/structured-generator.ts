@@ -5,18 +5,23 @@ import {
   PAGE_PROMPT_VERSION,
   STRUCTURED_GROUP_TYPES,
   archetypeComponents,
+  pageDocument,
   StructuredContentModelSchema,
   StructuredPortfolioContentSchema,
   structuredModelSchema,
   type StructuredContentModel,
   type StructuredPortfolioContent,
   type PageGenerationManifest,
+  type PageRenderDefect,
+  type PageRenderMeasure,
 } from "@expresso/contracts";
 import {
   describeArchetype,
   describeDesignLayout,
   designLayout,
   designQa,
+  describeRenderDefects,
+  renderDefects,
   renderStructuredPortfolio,
   validateRenderableSpec,
   structuredCatalog,
@@ -26,6 +31,7 @@ import {
   type AiClient,
   type AiUsage,
 } from "../../platform/ai/client.js";
+import type { PageMeasurer } from "../../platform/browser/page-measurer.js";
 import { ungroundedNumbers, isOrdinalLabel } from "../../platform/numbers.js";
 import {
   PageGenerationError,
@@ -173,8 +179,12 @@ function normalizedContent(
   return content;
 }
 
+/** 생성 중 측정으로 구성을 다시 요청하는 최대 횟수입니다. */
+const MEASURE_RETRIES = 2;
+
 export class StructuredPageGenerator implements PageGenerator {
-  constructor(private readonly ai: AiClient) {}
+  /** 측정기가 없으면(API 프로세스 · 브라우저 없는 환경) 그린 결과를 재지 않습니다. */
+  constructor(private readonly ai: AiClient, private readonly measurer: PageMeasurer | null = null) {}
   async generate(
     context: PageGenerationContext,
     sink: PageStreamSink | null = null,
@@ -324,18 +334,84 @@ export class StructuredPageGenerator implements PageGenerator {
       throw new PageGenerationError(
         `구성 계약 검사를 통과하지 못했습니다: ${attempts.at(-1)?.error}`,
       );
-    const { snapshot, root, attempt } = accepted;
-    let rendered: { html: string; css: string };
-    try {
-      rendered = renderStructuredPortfolio(snapshot.spec, snapshot.content, {
-        design: context.design,
-        theme: context.style,
-      });
-    } catch (error) {
-      throw new PageRenderError(
-        `지면 렌더링에 실패했습니다: ${error instanceof Error ? error.message : String(error)}`,
-        { cause: error },
-      );
+    const { attempt } = accepted;
+    const render = (spec: typeof accepted.snapshot.spec, renderContent: typeof accepted.snapshot.content) => {
+      try {
+        return renderStructuredPortfolio(spec, renderContent, {
+          design: context.design,
+          theme: context.style,
+        });
+      } catch (error) {
+        throw new PageRenderError(
+          `지면 렌더링에 실패했습니다: ${error instanceof Error ? error.message : String(error)}`,
+          { cause: error },
+        );
+      }
+    };
+    let snapshot = accepted.snapshot;
+    let root = accepted.root;
+    let rendered = render(snapshot.spec, snapshot.content);
+    let renderMeasure: PageRenderMeasure | undefined;
+    if (this.measurer) {
+      // 그린 결과를 공개 페이지와 같은 문서로 열어 잽니다. 구성으로 고칠 결함이 있으면 결함 문장을 붙여 구성을 다시 받고,
+      // 고칠 결함이 가장 적은 판을 채택합니다. 측정이 실패해도 생성은 막지 않고 그때까지의 판을 씁니다.
+      const measurer = this.measurer;
+      const measure = async (page: { html: string; css: string }, measuredContent: StructuredPortfolioContent) => {
+        const result = await measurer.measure(pageDocument({ html: page.html, css: page.css, title: measuredContent.profile.name, ...(context.style ? { grammar: context.style } : {}) }));
+        return { durationMs: result.durationMs, defects: renderDefects(result.widths, measuredContent) };
+      };
+      const fixable = (defects: readonly PageRenderDefect[]) => defects.filter((item) => item.fixable).length;
+      const passes: PageRenderMeasure["passes"] = [];
+      let adopted = 0;
+      let best: { snapshot: typeof snapshot; root: typeof root; rendered: typeof rendered; defects: PageRenderDefect[] } = { snapshot, root, rendered, defects: [] };
+      try {
+        const first = await measure(rendered, snapshot.content);
+        passes.push(first);
+        best.defects = first.defects;
+        for (let retry = 0; retry < MEASURE_RETRIES && fixable(best.defects) > 0; retry++) {
+          const repairPrompt = structuredSpecPrompt(content, {
+            instruction: `${context.instruction ? `사용자 수정 요청: ${context.instruction}\n` : ""}${describeRenderDefects(best.defects)}`,
+            previous: best.snapshot.spec,
+            schema,
+            layout: layout ? describeDesignLayout(layout, context.design!.identity.name) : undefined,
+            archetype: describeArchetype(archetype),
+            components: archetypeComponents(archetype, layout?.groups ?? STRUCTURED_GROUP_TYPES),
+          });
+          const result = await this.ai.complete(
+            {
+              contract: "page_generation",
+              system: "등록된 컴포넌트와 데이터 참조만 사용하여 json-render Spec을 만듭니다.",
+              prompt: repairPrompt,
+              promptVersion: PAGE_PROMPT_VERSION,
+              ...(context.modelTier ? { modelTier: context.modelTier } : {}),
+            },
+            schema,
+            sink ? { onThinking: (tokens) => sink.thinking(tokens) } : {},
+          );
+          usages.push(result.usage);
+          let candidate: { snapshot: typeof snapshot; root: typeof root; rendered: typeof rendered };
+          try {
+            const candidateSnapshot = validateRenderableSpec(withDesign(result.data), content);
+            const candidateRoot = candidateSnapshot.spec.elements[candidateSnapshot.spec.root]!;
+            if (candidateRoot.type !== "PortfolioPage") throw new Error("페이지 루트가 필요합니다.");
+            candidate = { snapshot: candidateSnapshot, root: candidateRoot, rendered: render(candidateSnapshot.spec, candidateSnapshot.content) };
+          } catch (error) {
+            passes.push({ durationMs: 0, defects: [], rejected: (error instanceof Error ? error.message : String(error)).slice(0, 1_000) });
+            continue;
+          }
+          const next = await measure(candidate.rendered, candidate.snapshot.content);
+          passes.push(next);
+          if (fixable(next.defects) < fixable(best.defects)) {
+            best = { ...candidate, defects: next.defects };
+            adopted = passes.length - 1;
+          }
+        }
+        renderMeasure = { status: "measured", adopted, passes };
+      } catch (error) {
+        renderMeasure = { status: "skipped", reason: (error instanceof Error ? error.message : String(error)).slice(0, 1_000), passes };
+        if (passes.length) renderMeasure.adopted = adopted;
+      }
+      ({ snapshot, root, rendered } = best);
     }
     // 스트림 소비자는 기존 html/css 필드를 읽습니다. 완성된 검증 결과만 내보냅니다.
     sink?.delta(JSON.stringify(rendered));
@@ -387,9 +463,24 @@ export class StructuredPageGenerator implements PageGenerator {
       repairCount: attempt,
       usage: manifestUsage,
       structured: snapshot,
+      ...(renderMeasure ? { renderMeasure } : {}),
     };
     // 디자인 토큰의 정적 검사입니다. 오류 하나라도 실패하면 지면을 검토 대상으로 표시합니다.
     const designChecks = context.design ? designQa(context.design) : [];
+    // 측정 결과는 경고로 남깁니다. 결함이 남아도 지면을 공개에서 빼지 않습니다 — 렌더러 결함까지 사용자에게 떠넘기지 않습니다.
+    const adoptedDefects = renderMeasure?.status === "measured" ? renderMeasure.passes[renderMeasure.adopted ?? 0]!.defects : null;
+    const summarize = (defects: readonly PageRenderDefect[]) =>
+      [...new Set(defects.map((item) => `${item.width}px ${item.element ? `${item.element}: ` : ""}${item.detail}`))].join("\n").slice(0, 2_000);
+    const renderChecks = adoptedDefects
+      ? (() => {
+          const layoutDefects = adoptedDefects.filter((item) => item.fixable);
+          const readability = adoptedDefects.filter((item) => !item.fixable);
+          return [
+            { name: "rendered-layout" as const, status: layoutDefects.length ? "fail" as const : "pass" as const, severity: "warning" as const, detail: layoutDefects.length ? summarize(layoutDefects) : "390 · 926 · 1440px에서 넘침 · 줄바꿈 · 단 이탈 · 겹침이 없습니다." },
+            { name: "rendered-readability" as const, status: readability.length ? "fail" as const : "pass" as const, severity: "warning" as const, detail: readability.length ? summarize(readability) : "글자 대비 · 서체 · 이미지 · 내용이 모두 보입니다." },
+          ];
+        })()
+      : [];
     return {
       ...rendered,
       rationale: root.props.rationale,
@@ -416,6 +507,7 @@ export class StructuredPageGenerator implements PageGenerator {
               : "수치 출처 대조를 통과했습니다.",
           },
           ...designChecks,
+          ...renderChecks,
         ],
       },
       manifest,

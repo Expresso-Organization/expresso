@@ -39,6 +39,9 @@ import { PageStream } from "../modules/page/stream.js";
 import { createStreamRedis } from "../platform/redis.js";
 import { AiPageGenerator } from "../modules/page/generator.js";
 import { StructuredPageGenerator } from "../modules/page/structured-generator.js";
+import { MediaService } from "../modules/media/index.js";
+import { ChromiumPageMeasurer } from "../platform/browser/page-measurer.js";
+import { createMediaStorage } from "../platform/storage/create-storage.js";
 import { CareerDocumentService } from "../modules/career-editor/index.js";
 import { createCareerDocumentCompactionProcessor } from "./processors/career-document-compaction.js";
 import { MongoCareerComputationService } from "../modules/career-computation/index.js";
@@ -70,6 +73,9 @@ const pageStream = new PageStream(createStreamRedis(config.redisUrl), {
   prefix: config.queuePrefix,
 });
 const pageService = new PageService(database, consentService, pageStream);
+// 생성한 지면을 실제 브라우저로 재는 측정기입니다. 브라우저는 처음 잴 때 띄우고, 띄우지 못하면 생성은 측정 없이 이어갑니다.
+const mediaService = new MediaService(database, createMediaStorage(config));
+const pageMeasurer = new ChromiumPageMeasurer((assetId, width) => mediaService.read(assetId, width).catch(() => null));
 const analysisProcessor = createJobAnalysisProcessor(
   jobAnalysisService,
   ai ? new AiRequirementExtractor(ai) : new UnavailableRequirementExtractor(),
@@ -79,7 +85,7 @@ const generationProcessor = createGenerationProcessor(
   generationService,
   ai ? new AiSentenceWriter(ai) : new UnavailableSentenceWriter(),
   ai ? new AiLayoutDesigner(ai) : null,
-  ai ? { service: pageService, generator: config.pageGenerationFormat === "html" ? new AiPageGenerator(ai) : new StructuredPageGenerator(ai) } : null,
+  ai ? { service: pageService, generator: config.pageGenerationFormat === "html" ? new AiPageGenerator(ai) : new StructuredPageGenerator(ai, pageMeasurer) } : null,
 );
 // 질문 생성 · 레시피 생성도 여기서 돈다. HTTP 요청은 잡만 만들고 바로 돌아간다.
 const brewJobService = new BrewJobService(database);
@@ -208,4 +214,4 @@ while (!abortController.signal.aborted) {
   }
 }
 
-await Promise.allSettled([queueWorker.close(), jobs.close(), database.close()]);
+await Promise.allSettled([queueWorker.close(), jobs.close(), database.close(), pageMeasurer.close()]);

@@ -93,8 +93,14 @@ jobs:
       - name: 타입 검사
         run: pnpm typecheck
 
+      # 생성 중 측정기 테스트가 실제 Chromium을 띄웁니다. 웹 E2E도 같은 판을 씁니다.
+      - name: Chromium 설치
+        run: pnpm --filter @expresso/web exec playwright install --with-deps chromium
+
       - name: 단위 테스트
         run: pnpm test
+        env:
+          REQUIRE_BROWSER: "1"
 
       - name: 실제 인프라 통합 테스트
         run: pnpm --filter @expresso/backend test:infra
@@ -110,9 +116,6 @@ jobs:
       # 아니다. 혼자 돌린다.
       - name: 성능 예산
         run: pnpm --filter @expresso/backend test:load
-
-      - name: Chromium 설치
-        run: pnpm --filter @expresso/web exec playwright install --with-deps chromium
 
       - name: 커리어 편집기 브라우저 E2E
         run: pnpm --filter @expresso/web exec playwright test
