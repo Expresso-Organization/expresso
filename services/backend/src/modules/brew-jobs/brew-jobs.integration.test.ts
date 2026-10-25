@@ -4,6 +4,10 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { createMongoFixture } from "../../../test/support/mongodb.js";
 import { MongoOutboxDispatcher } from "../../platform/mongo-outbox.js";
+import { createReliableQueue } from "../../platform/queue.js";
+import { createQueueWorker } from "../../worker/create-queue-worker.js";
+import { createBrewJobProcessor } from "../../worker/processors/brew-jobs.js";
+import { RecipeError } from "../recipe/index.js";
 import { MongoIdentityService } from "../identity/index.js";
 import { MongoMaterialsService } from "../materials/service.js";
 import { MongoBrewJobService } from "./service.js";
@@ -144,4 +148,62 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB brew job resubmission", 
     expect(await jobs.submit(owner, "recipe", key, { brewId })).toMatchObject({ jobId: job.jobId, status: "succeeded", resultId });
     expect(await outbox(job.jobId)).toHaveLength(1);
   });
+});
+
+describe.skipIf(!process.env.TEST_MONGODB_URL || !process.env.TEST_REDIS_URL)("MongoDB brew jobs through BullMQ retries", () => {
+  const prefix = `expresso-brew-retry-${randomUUID()}`;
+  const queue = createReliableQueue<Record<string, unknown>>("domain-jobs", process.env.TEST_REDIS_URL!, prefix);
+  let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
+  let jobs: MongoBrewJobService;
+  let materials: MongoMaterialsService;
+  let worker: { close(): Promise<void> } | undefined;
+  let owner: string;
+  const calls = new Map<string, number>();
+  // brew 제목이 실패 방식을 정한다 — "retryable"이면 매번 일시 오류, 아니면 입력 거절.
+  const failures = new Map<string, () => Error>();
+
+  beforeAll(async () => {
+    fixture = await createMongoFixture("brew-job-bullmq");
+    jobs = new MongoBrewJobService(fixture.resource);
+    materials = new MongoMaterialsService(fixture.resource);
+    owner = (await new MongoIdentityService(fixture.resource).signup({ email: `brew-bullmq-${randomUUID()}@example.com`, displayName: "큐 재시도", password: "correct-horse-battery" })).user.id;
+    const runner = { async run({ brewId }: { brewId: string }): Promise<string> { calls.set(brewId, (calls.get(brewId) ?? 0) + 1); throw failures.get(brewId)!(); } };
+    const processor = createBrewJobProcessor(jobs, { interview: runner, recipe: runner });
+    worker = createQueueWorker({ queueName: "domain-jobs", redisUrl: process.env.TEST_REDIS_URL!, prefix, concurrency: 1, deadLetterQueue: queue.deadLetterQueue, processor });
+  }, 60_000);
+  afterAll(async () => {
+    if (worker) await worker.close();
+    await Promise.allSettled([queue.queue.obliterate({ force: true }), queue.deadLetterQueue.obliterate({ force: true })]);
+    await queue.close(); await fixture?.dispose();
+  }, 60_000);
+
+  async function waitFor<T>(read: () => Promise<T>, done: (value: T) => boolean, timeoutMs = 15_000): Promise<T> {
+    const deadline = Date.now() + timeoutMs;
+    for (;;) { const value = await read(); if (done(value)) return value; if (Date.now() > deadline) throw new Error(`timed out: ${JSON.stringify(value)}`); await new Promise((resolve) => setTimeout(resolve, 100)); }
+  }
+  async function enqueue(failure: () => Error) {
+    const brewId = (await materials.createFreeBrew(owner, { title: "큐 재시도", brief: "재시도 사이 상태", lengthPreset: "single" })).brewId;
+    failures.set(brewId, failure);
+    const job = await jobs.submit(owner, "recipe", `recipe:${brewId}`, { brewId });
+    // 재시도 간격을 넉넉히 둬서 그 사이의 상태를 읽는다.
+    await queue.queue.add("recipe.draft", { brewJobId: job.jobId, userId: owner }, { jobId: randomUUID(), attempts: 2, backoff: { type: "fixed", delay: 2_000 } });
+    return { brewId, jobId: job.jobId };
+  }
+
+  it("shows a retryable failure as queued while BullMQ has attempts left and failed after the last one", async () => {
+    const { brewId, jobId } = await enqueue(() => new Error("provider timeout"));
+    const between = await waitFor(() => jobs.getStatus(owner, jobId), (status) => status.attempts === 1 && status.status !== "running");
+    expect(between).toMatchObject({ status: "queued", stage: "queued", failure: null });
+    const last = await waitFor(() => jobs.getStatus(owner, jobId), (status) => status.status === "failed");
+    expect(last).toMatchObject({ attempts: 2, failure: { code: "PROVIDER_FAILED", retryable: true } });
+    expect(calls.get(brewId)).toBe(2);
+  }, 30_000);
+
+  it("runs a non-retryable rejection once even though BullMQ allows another attempt", async () => {
+    const { brewId, jobId } = await enqueue(() => new RecipeError(422, "fewer than three materials"));
+    expect(await waitFor(() => jobs.getStatus(owner, jobId), (status) => status.status === "failed")).toMatchObject({ attempts: 1, failure: { code: "BREW_INPUT_REJECTED", retryable: false } });
+    await new Promise((resolve) => setTimeout(resolve, 3_000));
+    expect(calls.get(brewId)).toBe(1);
+    expect(await jobs.getStatus(owner, jobId)).toMatchObject({ status: "failed", attempts: 1 });
+  }, 30_000);
 });

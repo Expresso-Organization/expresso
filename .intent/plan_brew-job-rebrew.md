@@ -23,7 +23,7 @@ date: 2026-10-25
 | `services/backend/src/worker/processors/brew-jobs.test.ts` (새 파일) | 처리기 단위 테스트 |
 | `services/backend/src/modules/brew-jobs/service.ts` | `process`의 `{ finalAttempt }`와 큐 재시도 중 `queued` 기록 |
 | `services/backend/src/modules/brew-jobs/legacy-mysql-service.ts` | 같은 선택 인자와 규칙 |
-| `services/backend/src/modules/brew-jobs/brew-jobs.integration.test.ts` | 새 키 재제출 · 큐 재시도 중 상태 경우 추가 |
+| `services/backend/src/modules/brew-jobs/brew-jobs.integration.test.ts` | 새 키 재제출 · 큐 재시도 중 상태 경우 추가, 실제 BullMQ 워커로 재시도 사이 `queued` · 재시도 불가 1회 확인 |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
 
@@ -32,6 +32,7 @@ date: 2026-10-25
 1. 백엔드 `process`의 `finalAttempt`와 legacy 시그니처 — 백엔드 typecheck 통과
 2. 처리기와 단위 테스트 — `vitest run src/worker/processors/brew-jobs.test.ts` 통과
 3. 통합 테스트 추가: 성공 잡에 새 키 → 새 `jobId` · 새 아웃박스 · 다른 `resultId`. 재시도 불가 실패에 새 키 → 새 잡. `finalAttempt: false` 재시도 가능한 실패 → `queued`, 같은 키 재제출은 아웃박스를 늘리지 않음, 이어서 `finalAttempt: true` 실패 → `failed`
+   - 실제 BullMQ 워커(`createReliableQueue` · `createQueueWorker`, 고유 접두사, `attempts: 2`, 고정 backoff 2초)로 재시도 가능한 실패는 시도 사이 `queued`, 마지막에 `failed`, 재시도 불가 실패는 1회만 실행되는지 본다
 4. 웹 키 함수와 단위 테스트, 액션 · `Waiting` · 두 페이지 — 웹 typecheck와 테스트 통과
 5. 전체 검증
 
@@ -52,3 +53,5 @@ pnpm --filter @expresso/web test
 ```
 
 화면 확인 경로: 레시피가 있는 브루의 레시피 단계에서 "구성 다시 만들기"를 누르면 "레시피 만드는 중"이 보이고, 끝나면 버전이 올라간다.
+
+화면 확인은 이 워크트리 전용 서버로 했다 — 별도 DB와 `QUEUE_PREFIX`, API 4031 · 워커(`AI_PROVIDER=off`) · 웹 3041(`--hostname 127.0.0.1`, 3031은 macOS `eppc` 포트라 쓸 수 없다), 개발 로그인. 기록 4건과 자유 생성 브루를 만든 뒤 "레시피 만들기"(v1), "구성 다시 만들기"(v2), 질문 거절 뒤 다시 누르기(새 잡, 큐 시도 1회), 연달아 두 번 누르기(잡 1개, v3)를 확인하고 DB와 큐 키를 지웠다.
