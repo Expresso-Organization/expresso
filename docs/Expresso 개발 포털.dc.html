@@ -1204,7 +1204,10 @@ const DOCUMENTATION_TAB = '개발 문서';
 // 진행 현황 대시보드. 원본은 services/dev-portal/status/, 빌드 결과와 판정 데이터는 docs/status/ 에 있다.
 const STATUS_TAB = '진행 현황';
 const STATUS_PAGE = 'status/index.html';
-const statusSrc = query => STATUS_PAGE + (query ? '?' + query : '');
+// index.html 은 해시가 붙지 않는 파일이라 브라우저가 이전 판을 쥐고 있으면 지워진 자산을 찾다 빈 화면이 된다.
+// 포털을 열 때마다 다른 값(v)을 붙여 늘 새 index.html 을 받게 한다. 대시보드는 v 를 읽지 않는다.
+const STATUS_LOAD = Date.now().toString(36);
+const statusSrc = query => STATUS_PAGE + '?' + (query ? query + '&' : '') + 'v=' + STATUS_LOAD;
 const NAV = [
   ['DOC', DOCUMENTATION_TAB, '', '#E0B486'],
   ['STAT', STATUS_TAB, '', '#7FD3AE'],

@@ -8,14 +8,17 @@
     "setup": "pnpm install",
     "dev": "vite",
     "clean": "node -e \"require('node:fs').rmSync('../../../docs/status/assets',{recursive:true,force:true})\"",
-    "build": "pnpm run clean && tsc -b && vite build",
-    "typecheck": "tsc -b",
+    "build": "pnpm run clean && tsc -b && tsc -p tsconfig.scanner.json && vite build",
+    "typecheck": "tsc -b && tsc -p tsconfig.scanner.json",
     "lint": "eslint .",
-    "format": "prettier --write \"**/*.{ts,tsx}\""
+    "format": "prettier --write \"**/*.{ts,tsx}\"",
+    "scan": "node scanner/main.ts",
+    "test": "node --test scanner/*.test.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
     "@tailwindcss/vite": "^4",
+    "@tanstack/react-table": "^8.21.3",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.5.0",
     "lucide-react": "^1.61.0",

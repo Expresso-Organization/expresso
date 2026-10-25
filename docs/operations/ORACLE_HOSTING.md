@@ -303,3 +303,52 @@ sudo nginx -t && sudo systemctl reload nginx
 **`expresso-dev-portal.pages.dev`는 아직 살아 있고 8월 6일 문서를 보여 준다.**
 이제 아무도 갱신하지 않으므로 Pages 프로젝트를 지우는 편이 낫지만, 그 주소를
 아는 사람이 있을 수 있어 따로 정한다.
+
+## 8. 개발 현황 스캔 — 포털 「진행 현황」 (2026-10-25)
+
+포털의 「진행 현황」 탭(`#/status`)이 읽는 값은 이 기계에서 만든다. systemd 타이머가 15분마다
+스캐너를 부르고, 스캐너가 결과 JSON 을 쓰면 nginx 가 `/status/data/` 로 내보낸다.
+
+| 항목 | 값 |
+|---|---|
+| 스캐너 원본 | `services/dev-portal/status/scanner/` (설정 `config.json`) |
+| 실행 스크립트 | `infra/server/expresso-status-scan.sh` → 서버 사본 `/usr/local/bin/expresso-status-scan` |
+| 유닛 | `infra/systemd/expresso-status-scan.{service,timer}` |
+| 클론 | `~/expresso-status-scan` — 실행마다 origin/main 으로 맞춘다 |
+| 결과 | `/var/lib/expresso-status/{report,history,runs}.json` |
+| 내보내는 주소 | `https://dev.expresso.ai.kr/status/data/report.json` |
+
+### 무엇을 하는가
+
+- **매번 — 사실 수집(AI 없음)**: 열린 PR 의 CI · 충돌 · 리뷰, main 의 워크플로 실행, 주별 머지 · 커밋. `gh`(이 기계에 로그인된 계정)로 읽는다.
+- **시간당 최대 한 번 — 기능 판정**: main 이 바뀌었으면, 바뀐 파일이 걸린 도메인만 Claude Code(`~/.local/bin/claude`)가 읽기 도구(Read · Grep · Glob)로 코드를 보고 설계서 기능마다 판정한다. 7일마다 전체를 다시 본다.
+- **팀원별 할 일**: 판정 · PR · 제안서 일정에서 후보를 코드가 만들고, Claude 가 그중에서 순서와 이유만 고른다.
+
+Claude 사용량은 제품의 `claude-code` AI 와 같은 로그인을 쓴다. 판정 예산은 `config.json` 의
+`judge.maxBudgetUsdPerGroup` 이 도메인마다 막는다.
+
+### 처음 한 번
+
+```bash
+# 스크립트 · 유닛
+ssh Oracle-Server 'cd ~/expresso-status-scan 2>/dev/null || git clone -q https://github.com/Expresso-Organization/expresso.git ~/expresso-status-scan'
+ssh Oracle-Server 'sudo install -m 755 ~/expresso-status-scan/infra/server/expresso-status-scan.sh /usr/local/bin/expresso-status-scan'
+ssh Oracle-Server 'sudo install -d -o ubuntu -g www-data -m 755 /var/lib/expresso-status'
+ssh Oracle-Server 'sudo cp ~/expresso-status-scan/infra/systemd/expresso-status-scan.{service,timer} /etc/systemd/system/ && sudo systemctl daemon-reload'
+
+# 첫 실행은 전체 판정이라 오래 걸린다 — 손으로 한 번 돌리고 타이머를 켠다
+ssh Oracle-Server '/usr/local/bin/expresso-status-scan --full'
+ssh Oracle-Server 'sudo systemctl enable --now expresso-status-scan.timer'
+
+# nginx — 저장소의 vhost 를 서버 사본에 반영하고 검사 후 재로드
+ssh Oracle-Server 'sudo cp ~/expresso-status-scan/infra/nginx/dev.expresso.ai.kr.conf /etc/nginx/sites-available/dev.expresso.ai.kr && sudo nginx -t && sudo systemctl reload nginx'
+```
+
+### 확인 · 손으로 돌리기
+
+```bash
+ssh Oracle-Server 'systemctl list-timers expresso-status-scan.timer --no-pager'
+ssh Oracle-Server 'journalctl -u expresso-status-scan --since -1h --no-pager | tail -40'
+ssh Oracle-Server '/usr/local/bin/expresso-status-scan --groups D7'   # 한 도메인만 다시 판정
+curl -s https://dev.expresso.ai.kr/status/data/runs.json | tail -c 600
+```
