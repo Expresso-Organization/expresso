@@ -89,6 +89,52 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB brew job resubmission", 
     expect(await outbox(job.jobId)).toHaveLength(1);
   });
 
+  it("starts a new job when the page sends the last job it saw, after a success or a rejection", async () => {
+    const brewId = await newBrew();
+    const first = await jobs.submit(owner, "recipe", `recipe:${brewId}`, { brewId });
+    const firstResult = randomUUID();
+    await jobs.process(first.jobId, { async run() { return firstResult; } }, () => ({ code: "PROVIDER_FAILED", retryable: true }));
+
+    const rebrewKey = `recipe:${brewId}:${first.jobId}`;
+    const rebrew = await jobs.submit(owner, "recipe", rebrewKey, { brewId });
+    expect(rebrew).toMatchObject({ status: "queued" });
+    expect(rebrew.jobId).not.toBe(first.jobId);
+    expect(await jobs.submit(owner, "recipe", rebrewKey, { brewId })).toMatchObject({ jobId: rebrew.jobId });
+    expect((await outbox(rebrew.jobId)).map((event) => event.idempotencyKey)).toEqual([`brew-job:${rebrew.jobId}`]);
+    const runnerKeys: string[] = [];
+    const secondResult = randomUUID();
+    expect(await jobs.process(rebrew.jobId, { async run({ idempotencyKey }) { runnerKeys.push(idempotencyKey); return secondResult; } }, () => ({ code: "PROVIDER_FAILED", retryable: true }))).toMatchObject({ status: "succeeded", resultId: secondResult });
+    expect(runnerKeys).toEqual([`brew-job:${rebrew.jobId}`]);
+
+    const rejected = await jobs.submit(owner, "recipe", `recipe:${brewId}:${rebrew.jobId}`, { brewId });
+    await fail(rejected.jobId, false);
+    const afterRejection = await jobs.submit(owner, "recipe", `recipe:${brewId}:${rejected.jobId}`, { brewId });
+    expect(afterRejection).toMatchObject({ status: "queued", failure: null });
+    expect(afterRejection.jobId).not.toBe(rejected.jobId);
+    expect(await outbox(afterRejection.jobId)).toHaveLength(1);
+  });
+
+  it("keeps a retryable failure queued while BullMQ will try again and fails it on the last attempt", async () => {
+    const brewId = await newBrew();
+    const key = `recipe:${brewId}`;
+    const job = await jobs.submit(owner, "recipe", key, { brewId });
+    const classify = () => ({ code: "PROVIDER_FAILED", retryable: true });
+    await expect(jobs.process(job.jobId, failing, classify, { finalAttempt: false })).rejects.toThrow("consent missing");
+    expect(await jobs.getStatus(owner, job.jobId)).toMatchObject({ status: "queued", stage: "queued", failure: null, attempts: 1 });
+    expect(await jobs.submit(owner, "recipe", key, { brewId })).toMatchObject({ jobId: job.jobId, status: "queued" });
+    expect(await outbox(job.jobId)).toHaveLength(1);
+
+    await expect(jobs.process(job.jobId, failing, classify, { finalAttempt: true })).rejects.toThrow("consent missing");
+    expect(await jobs.getStatus(owner, job.jobId)).toMatchObject({ status: "failed", failure: { code: "PROVIDER_FAILED", retryable: true }, attempts: 2 });
+  });
+
+  it("fails a non-retryable rejection at once even when BullMQ has attempts left", async () => {
+    const brewId = await newBrew();
+    const job = await jobs.submit(owner, "recipe", `recipe:${brewId}`, { brewId });
+    await expect(jobs.process(job.jobId, failing, () => ({ code: "BREW_INPUT_REJECTED", retryable: false }), { finalAttempt: false })).rejects.toThrow("consent missing");
+    expect(await jobs.getStatus(owner, job.jobId)).toMatchObject({ status: "failed", failure: { code: "BREW_INPUT_REJECTED", retryable: false } });
+  });
+
   it("replays a succeeded job without publishing", async () => {
     const brewId = await newBrew();
     const key = `recipe:${brewId}`;

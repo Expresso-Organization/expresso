@@ -49,7 +49,7 @@ export class BrewJobService implements BrewJobApi {
     if (!job) throw new BrewJobError(404, "brew job not found");
     return BrewJobStatusSchema.parse({ jobId, type: job.type, status: job.status, stage: job.stage, attempts: job.attempts, resultId: job.resultId ?? null, failure: job.errorCode ? { code: job.errorCode, retryable: job.failureRetryable ?? false } : null });
   }
-  async process(jobId: string, runner: BrewJobRunner, classify: FailureClassifier) {
+  async process(jobId: string, runner: BrewJobRunner, classify: FailureClassifier, { finalAttempt = true }: { finalAttempt?: boolean } = {}) {
     const job = await inTransaction(this.context, async (tx) => {
       const db = mongoCollections(tx.db); const options = { session: tx.session };
       const existing = await db.brewJobs.findOne({ _id: jobId }, options);
@@ -70,9 +70,14 @@ export class BrewJobService implements BrewJobApi {
       });
     } catch (error) {
       const { code, retryable } = classify(error);
+      // 큐가 다시 돌릴 실패는 아직 끝난 게 아니다. `failed`로 두면 그 틈에 화면이
+      // 버튼을 보여 주고, 누르면 같은 일을 하는 잡이 하나 더 생긴다.
+      const outcome = retryable && !finalAttempt
+        ? { status: "queued" as const, stage: "queued", errorCode: null, failureRetryable: null }
+        : { status: "failed" as const, stage: "failed", errorCode: code, failureRetryable: retryable };
       await inTransaction(this.context, async (tx) => {
         await requireActiveUser(tx, job.userId);
-        await mongoCollections(tx.db).brewJobs.updateOne({ _id: jobId, userId: job.userId, status: "running", attempts: job.attempts }, { $set: { status: "failed", stage: "failed", errorCode: code, failureRetryable: retryable, updatedAt: new Date() } }, { session: tx.session });
+        await mongoCollections(tx.db).brewJobs.updateOne({ _id: jobId, userId: job.userId, status: "running", attempts: job.attempts }, { $set: { ...outcome, updatedAt: new Date() } }, { session: tx.session });
       }).catch(() => undefined);
       throw error;
     }
