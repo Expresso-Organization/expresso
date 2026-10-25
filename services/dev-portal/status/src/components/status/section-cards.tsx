@@ -20,7 +20,7 @@ function Delta({ now, before, unit = "%p" }: { now: number; before: number | nul
   )
 }
 
-export function SectionCards({ data, rows, groups }: { data: Data; rows: Row[]; groups: string[] | null }) {
+export function SectionCards({ data, rows, groups, logins }: { data: Data; rows: Row[]; groups: string[] | null; logins: string[] | null }) {
   const { report, history } = data
   const c = countStates(rows)
   const total = rows.length
@@ -29,7 +29,9 @@ export function SectionCards({ data, rows, groups }: { data: Data; rows: Row[]; 
   const prev = weekAgo ? totals(weekAgo, groups ?? undefined) : null
   const prevTotal = prev ? prev.done + prev.partial + prev.api + prev.todo : 0
 
-  const action = report.pulls.filter((p) => needsAction(p).length > 0)
+  // 팀원을 골랐으면 그 사람 계정의 PR 만 센다.
+  const pulls = logins ? report.pulls.filter((p) => logins.includes(p.author)) : report.pulls
+  const action = pulls.filter((p) => needsAction(p).length > 0)
   const ci = report.runs.find((r) => /CI/i.test(r.workflow))
   const deploy = report.runs.find((r) => /배포|deploy/i.test(r.workflow))
   const runIcon = (conclusion: string | null | undefined, status?: string) =>
@@ -84,14 +86,14 @@ export function SectionCards({ data, rows, groups }: { data: Data; rows: Row[]; 
           <CardAction>
             <Badge variant="outline" className="tabular-nums">
               <GitPullRequestIcon />
-              열림 {report.pulls.length}
+              열림 {pulls.length}
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1 text-sm">
           <span className="font-medium">
-            CI 실패 {report.pulls.filter((p) => p.checks === "failure").length} · 충돌{" "}
-            {report.pulls.filter((p) => p.mergeable === "CONFLICTING").length}
+            CI 실패 {pulls.filter((p) => p.checks === "failure").length} · 충돌{" "}
+            {pulls.filter((p) => p.mergeable === "CONFLICTING").length}
           </span>
           <span className="text-muted-foreground">7일 넘게 멈춘 PR 포함</span>
         </CardFooter>

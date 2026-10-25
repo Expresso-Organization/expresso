@@ -123,7 +123,7 @@ function Dashboard({ data, view, setView }: { data: Data; view: View; setView: (
         </header>
 
         <div className="@container/main flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
-          <SectionCards data={data} rows={rows} groups={member ? groups : null} />
+          <SectionCards data={data} rows={rows} groups={member ? groups : null} logins={member ? member.logins : null} />
 
           <section id="todos" className="scroll-mt-16">
             <TeamTodos data={data} member={member?.name ?? null} onMember={pickMember} />

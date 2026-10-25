@@ -3,11 +3,11 @@
   "repo": "Expresso-Organization/expresso",
   "semester": { "week2Start": "2026-08-31", "weeks": 15 },
   "members": [
-    { "name": "박민재", "logins": [] },
-    { "name": "심민규", "logins": [] },
-    { "name": "오시건", "logins": [] },
+    { "name": "박민재", "logins": ["Nedian0Brien"] },
+    { "name": "심민규", "logins": ["urimi-kyu"] },
+    { "name": "오시건", "logins": ["dhtlrjs5"] },
     { "name": "채서현", "logins": [] },
-    { "name": "윤규현", "logins": [] }
+    { "name": "윤규현", "logins": ["Yoon-Kyuhyun"] }
   ],
   "$planComment": "제안서 「개발 일정 및 계획」의 작업 항목. 담당이 정해진 AI 모델 항목만 채서현, 나머지는 전원이다.",
   "plan": [
