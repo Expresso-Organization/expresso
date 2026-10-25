@@ -39,10 +39,9 @@ const PROPERTY_TYPES: ReadonlyArray<{ value: CreatableType; label: string; icon:
 
 interface PopoverPosition { top: number; left: number; width: number; maxHeight: number }
 
-export function PropertyCreatePopover({ categoryId, definitions, disabled, onDefinitionsChange, onVersionConflict }: {
+export function PropertyCreatePopover({ categoryId, definitions, onDefinitionsChange, onVersionConflict }: {
   categoryId: string;
   definitions: readonly CareerPropertyDefinitionV2[];
-  disabled: boolean;
   onDefinitionsChange(definitions: CareerPropertyDefinitionV2[]): void;
   onVersionConflict(): void;
 }) {
@@ -243,7 +242,7 @@ export function PropertyCreatePopover({ categoryId, definitions, disabled, onDef
   </section> : null;
 
   return <div className={styles.propertyCreateAnchor}>
-    <button ref={triggerRef} type="button" disabled={disabled} aria-haspopup="dialog" aria-expanded={open} title={disabled ? "기본 카테고리의 속성 구성은 고정되어 있습니다." : "속성 추가"} onClick={openPopover}><Icon name="plus" size={13}/>속성 추가</button>
+    <button ref={triggerRef} type="button" aria-haspopup="dialog" aria-expanded={open} title="속성 추가" onClick={openPopover}><Icon name="plus" size={13}/>속성 추가</button>
     {popover && typeof document !== "undefined" ? createPortal(popover, document.body) : null}
   </div>;
 }

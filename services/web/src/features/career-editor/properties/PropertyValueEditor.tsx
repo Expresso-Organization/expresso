@@ -13,6 +13,8 @@ export interface PropertyValueEditorProps {
   definition: CareerPropertyDefinitionV2;
   value: CareerPropertyValueV2 | null;
   onCommit(value: CareerPropertyValueV2 | null): Promise<void>;
+  /** 선택 · 다중 선택에 새 옵션을 만들고 그 ID를 돌려준다. 없으면 옵션 추가 칸을 그리지 않는다. */
+  onCreateOption?(name: string): Promise<string>;
   disabled?: boolean;
 }
 
@@ -40,10 +42,12 @@ function initialDraft(value: CareerPropertyValueV2 | null): string {
   return String(value.value ?? "");
 }
 
-export function PropertyValueEditor({ definition, value, onCommit, disabled = false }: PropertyValueEditorProps) {
+export function PropertyValueEditor({ definition, value, onCommit, onCreateOption, disabled = false }: PropertyValueEditorProps) {
   const [draft, setDraft] = useState(() => initialDraft(value));
   const [dateEnd, setDateEnd] = useState(() => value?.type === "date" ? value.value.end ?? "" : "");
   const [issue, setIssue] = useState<string | null>(null);
+  // 새 옵션 이름은 값 초안과 따로 둔다. 값이 바뀔 때 초안을 되돌리는 effect가 입력 중인 이름을 지우지 않게 한다.
+  const [optionName, setOptionName] = useState("");
   const [saving, setSaving] = useState(false);
   const options = useMemo(() => propertyOptions(definition), [definition]);
   useEffect(() => { setDraft(initialDraft(value)); setDateEnd(value?.type === "date" ? value.value.end ?? "" : ""); setIssue(null); }, [value]);
@@ -73,19 +77,24 @@ export function PropertyValueEditor({ definition, value, onCommit, disabled = fa
   if (definition.type === "checkbox") {
     return <label className={styles.checkboxLabel}><input aria-label={definition.name} type="checkbox" checked={value?.type === "checkbox" ? value.value : false} disabled={disabled || saving} onChange={(event) => void commit({ type: "checkbox", value: event.target.checked })} /><span>{value?.type === "checkbox" && value.value ? "예" : "아니요"}</span></label>;
   }
+  const optionInput = (choose: (optionId: string) => Promise<void>) => onCreateOption ? <div className={styles.fieldRow}><input className={styles.input} aria-label={`${definition.name} 새 항목`} placeholder="새 항목 입력 후 Enter" value={optionName} disabled={disabled || saving} onChange={(event) => { setOptionName(event.target.value); setIssue(null); }} onKeyDown={(event) => { if (event.nativeEvent.isComposing) return; commitOnEnter(event, () => {
+    if (!optionName.trim()) return;
+    setSaving(true); setIssue(null);
+    void onCreateOption(optionName).then(async (optionId) => { setOptionName(""); setSaving(false); await choose(optionId); }).catch((error: unknown) => { setSaving(false); setIssue(error instanceof Error ? error.message : "항목을 추가하지 못했습니다."); });
+  }); }} /><IssueBadge issue={issue} /></div> : null;
   if (definition.type === "select") {
-    return <PropertySelect
+    return <div className={styles.fieldEditor}><PropertySelect
       label={definition.name}
       value={value?.type === "select" ? value.value ?? "" : ""}
       placeholder="선택 안 함"
       disabled={disabled || saving}
       options={[{ value: "", label: "선택 안 함" }, ...options.map((option) => ({ value: option.id, label: option.name }))]}
       onChange={(next) => void commit({ type: "select", value: next || null })}
-    />;
+    />{optionInput((optionId) => commit({ type: "select", value: optionId }))}</div>;
   }
   if (definition.type === "multi_select") {
     const selected = new Set(value?.type === "multi_select" ? value.value : []);
-    return <div className={styles.multiSelect} aria-label={definition.name}>{options.map((option) => <label key={option.id} className={styles.optionCheck}><input type="checkbox" checked={selected.has(option.id)} disabled={disabled || saving} onChange={() => { const next = new Set(selected); if (next.has(option.id)) next.delete(option.id); else next.add(option.id); void commit({ type: "multi_select", value: [...next] }); }} />{option.name}</label>)}</div>;
+    return <div className={styles.fieldEditor}><div className={styles.multiSelect} aria-label={definition.name}>{options.map((option) => <label key={option.id} className={styles.optionCheck}><input type="checkbox" checked={selected.has(option.id)} disabled={disabled || saving} onChange={() => { const next = new Set(selected); if (next.has(option.id)) next.delete(option.id); else next.add(option.id); void commit({ type: "multi_select", value: [...next] }); }} />{option.name}</label>)}</div>{optionInput((optionId) => commit({ type: "multi_select", value: [...new Set([...selected, optionId])] }))}</div>;
   }
   if (definition.type === "date") {
     const commitDate = () => draft ? void commit({ type: "date", value: { start: draft, end: dateEnd || null, timezone: null } }) : void commit(null);

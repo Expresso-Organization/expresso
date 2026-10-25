@@ -32,7 +32,7 @@ function editedLabel(updatedAt: string | undefined): string {
 }
 
 function fallbackView(category: CareerCategory): CareerViewConfiguration {
-  const definitions = category.propertySchemaV2 ?? Object.entries(category.propertySchema).flatMap(([key, item], order) => item.id ? [{ id: item.id, key, name: item.label, type: item.type === "tags" ? "multi_select" as const : item.type === "boolean" ? "checkbox" as const : item.type, required: item.required, system: item.system, config: {}, order, version: 1, deletedAt: null }] : []);
+  const definitions = category.propertySchemaV2.filter((item) => item.deletedAt === null);
   const date = definitions.find((item) => item.type === "date");
   const type = category.defaultView === "timeline" && !date ? "table" : category.defaultView;
   const now = new Date().toISOString();

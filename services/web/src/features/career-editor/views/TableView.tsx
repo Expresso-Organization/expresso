@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Icon } from "@/components/ui/Icon";
 import { propertyOptions } from "@/features/career-editor/properties/property-editors";
+import { createPropertyOption } from "@/features/career-editor/properties/property-options";
 
 import { CareerTableCell, type TableCellValue } from "./CareerTableCell";
 import { PropertyHeaderMenu } from "./PropertyHeaderMenu";
@@ -124,6 +125,12 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
 
   const cellKey = (recordId: string, propertyId: string) => `${recordId}:${propertyId}`;
   const propertyIds = [titleColumnId, ...columns];
+
+  async function createOption(definition: CareerPropertyDefinitionV2, name: string): Promise<string> {
+    const created = await createPropertyOption(props.category.id, definition, name);
+    if (created.category) props.onCategoryChange(created.category);
+    return created.optionId;
+  }
 
   function focusCell(recordId: string, propertyId: string, edit = false, instanceKey = "main") {
     const next = { recordId, propertyId, instanceKey };
@@ -342,7 +349,7 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
     return <CareerTableCell key={definition.id} record={record} definition={definition} active={active} editing={editing} {...(issue ? { issue } : {})} cellRef={(node) => { if (node) cellRefs.current.set(refKey, node); else cellRefs.current.delete(refKey); }} onFocus={() => setActiveCell({ recordId: record.id, propertyId: definition.id, instanceKey })} onEdit={() => { const next = { recordId: record.id, propertyId: definition.id, instanceKey }; setActiveCell(next); setEditingCell(next); }} onCommit={(value: TableCellValue) => {
       if (!["multi_select", "date"].includes(definition.type)) setEditingCell(null);
       void props.onCellCommit?.(record.id, definition, value);
-    }} onCancel={() => setEditingCell(null)} onMove={(direction) => moveCell(record.id, definition.id, direction, instanceKey, keyboardRecords)} onContextMenu={(event) => showCellMenu(event, record.id, definition.id, instanceKey)} onOpenRecord={() => props.onActivate(record.id)} />;
+    }} onCreateOption={definition.type === "select" || definition.type === "multi_select" ? (name) => createOption(definition, name) : undefined} onCancel={() => setEditingCell(null)} onMove={(direction) => moveCell(record.id, definition.id, direction, instanceKey, keyboardRecords)} onContextMenu={(event) => showCellMenu(event, record.id, definition.id, instanceKey)} onOpenRecord={() => props.onActivate(record.id)} />;
   };
 
   const tableRows = (items: readonly CareerRecord[], rowOffset: number, keyboardRecords: readonly CareerRecord[], instanceKey = "main") => items.map((record, index) => <div className={record.id === props.openId ? styles.rowActive : styles.tableRow} role="row" aria-rowindex={rowOffset + index} key={record.id} tabIndex={activeCell ? -1 : record.id === props.activeId ? 0 : -1} data-dragging={rowDrag.sourceId === record.id ? "true" : undefined} data-drop-position={rowDrag.targetId === record.id ? rowDrag.placement : undefined} style={{ gridTemplateColumns: template }} onKeyDown={(event) => keyboardActivate(event, record.id, keyboardRecords, props.onActivate)} onDoubleClick={(event) => { if (event.target === event.currentTarget) props.onActivate(record.id); }} onDragOver={(event) => setRecordDropTarget(event, record.id)} onDrop={(event) => finishRecordDrop(event, record.id)}>
