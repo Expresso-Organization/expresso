@@ -4,7 +4,7 @@ import { z } from "zod";
 import { TimestampSchema, UuidSchema } from "./common.js";
 import { PAGE_KIT_CSS, pageKitVariables } from "./page-kit.js";
 import { PortfolioDesignReferenceSchema, TemplateFontSchema } from "./templates.js";
-import { StructuredPortfolioSnapshotSchema } from "./structured-portfolio.js";
+import { StructuredPortfolioSnapshotSchema, StructuredPortfolioSpecSchema } from "./structured-portfolio.js";
 import { MEDIA_ASSET_PATH_PREFIX } from "./media-path.js";
 
 /**
@@ -378,7 +378,12 @@ export const PageVisualReviewSchema = z.strictObject({
     winner: z.enum(["draft", "revised"]),
     reason: z.string().max(1_000),
   }).optional(),
+  /** 스크린샷 검토가 낸 구성입니다. 비교에서 져서 버려진 판도 지적과 함께 다시 볼 수 있게 남깁니다. */
+  revisedSpec: StructuredPortfolioSpecSchema.optional(),
   durationMs: z.number().int().nonnegative(),
+  /** 다듬기에서 부른 모델 호출 수와 비용입니다. 공급자가 비용을 알려주지 않으면 null입니다. */
+  calls: z.number().int().nonnegative(),
+  costUsd: z.number().nonnegative().nullable(),
 });
 export type PageVisualReview = z.infer<typeof PageVisualReviewSchema>;
 

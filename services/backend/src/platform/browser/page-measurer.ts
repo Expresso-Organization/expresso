@@ -2,13 +2,22 @@ import { chromium, type Browser } from "playwright";
 import { PAGE_ALLOWED_STYLESHEET_HOSTS, PAGE_IMAGE_SRC_PREFIX } from "@expresso/contracts";
 import { RENDER_MEASURE_WIDTHS, inspectRenderedPage, settleRenderedPage, type RenderMeasurement } from "@expresso/portfolio-renderer";
 
-/** 다듬기에서 모델에게 보여 줄 화면입니다. 1440 첫 화면은 PNG, 전체 페이지는 크기를 줄이려고 JPEG입니다. */
+/**
+ * 다듬기에서 모델에게 보여 줄 화면입니다.
+ *
+ * 모델은 긴 변이 한도를 넘는 이미지를 줄여 봅니다. Claude 4.7 이후 모델의 한도는 2,576px입니다
+ * (https://platform.claude.com/docs/en/build-with-claude/vision 「Resolution and token cost」).
+ * 그래서 1440 전체는 짜임새와 리듬을 보는 축소본으로, 390은 줄이지 않고 읽히도록 390×2,560 조각으로 나눠 찍습니다.
+ */
 export interface PageScreenshot {
-  name: "1440-first" | "1440-full" | "390-full";
+  name: "1440-first" | "1440-full" | "390-part";
   mediaType: "image/png" | "image/jpeg";
   /** base64 본문입니다. */
   data: string;
-  /** 전체 페이지가 길이 한도에서 잘렸으면 true입니다. */
+  /** 390 조각의 순서(1부터)와 개수입니다. 나머지는 1/1입니다. */
+  part: number;
+  parts: number;
+  /** 지면이 찍은 범위보다 길어 아래쪽이 빠졌으면 true입니다. */
   truncated: boolean;
 }
 
@@ -26,6 +35,9 @@ export interface PageMeasurer {
 
 // 이미지 한 장의 긴 변 한도(8,000px) 안에서 자릅니다. 넘으면 아래쪽은 보이지 않습니다.
 const MAX_SCREENSHOT_HEIGHT = 7_800;
+// 390 조각 하나의 높이와 개수입니다. 2,560px은 긴 변 한도(2,576px) 안이고, 세 조각이면 첫 7,680px을 봅니다.
+const MOBILE_PART_HEIGHT = 2_560;
+const MOBILE_PARTS = 3;
 
 /** `/v1/media/<id>` 이미지를 채울 바이트를 돌려줍니다. 없으면 null입니다. */
 export type MeasureAssetReader = (assetId: string, width?: number) => Promise<{ bytes: Uint8Array; mimeType: string } | null>;
@@ -93,9 +105,8 @@ export class ChromiumPageMeasurer implements PageMeasurer {
         await page.goto(`${ORIGIN}/`, { waitUntil: "load" });
         await page.evaluate(settleRenderedPage);
         widths.push({ width, measurement: await page.evaluate(inspectRenderedPage) });
-        if (options.screenshots && (width === 1440 || width === 390)) {
-          if (width === 1440)
-            screenshots.push({ name: "1440-first", mediaType: "image/png", data: (await page.screenshot({ type: "png" })).toString("base64"), truncated: false });
+        if (options.screenshots && width === 1440) {
+          screenshots.push({ name: "1440-first", mediaType: "image/png", data: (await page.screenshot({ type: "png" })).toString("base64"), part: 1, parts: 1, truncated: false });
           const height = await page.evaluate<number>("document.documentElement.scrollHeight");
           const truncated = height > MAX_SCREENSHOT_HEIGHT;
           const full = await page.screenshot({
@@ -104,7 +115,16 @@ export class ChromiumPageMeasurer implements PageMeasurer {
             fullPage: true,
             ...(truncated ? { clip: { x: 0, y: 0, width, height: MAX_SCREENSHOT_HEIGHT } } : {}),
           });
-          screenshots.push({ name: width === 1440 ? "1440-full" : "390-full", mediaType: "image/jpeg", data: full.toString("base64"), truncated });
+          screenshots.push({ name: "1440-full", mediaType: "image/jpeg", data: full.toString("base64"), part: 1, parts: 1, truncated });
+        }
+        if (options.screenshots && width === 390) {
+          const height = await page.evaluate<number>("document.documentElement.scrollHeight");
+          const parts = Math.min(MOBILE_PARTS, Math.ceil(height / MOBILE_PART_HEIGHT));
+          for (let part = 0; part < parts; part++) {
+            const y = part * MOBILE_PART_HEIGHT;
+            const shot = await page.screenshot({ type: "jpeg", quality: 75, fullPage: true, clip: { x: 0, y, width, height: Math.min(MOBILE_PART_HEIGHT, height - y) } });
+            screenshots.push({ name: "390-part", mediaType: "image/jpeg", data: shot.toString("base64"), part: part + 1, parts, truncated: part === parts - 1 && height > (part + 1) * MOBILE_PART_HEIGHT });
+          }
         }
         await page.close();
       }

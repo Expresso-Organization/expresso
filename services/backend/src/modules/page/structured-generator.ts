@@ -410,12 +410,19 @@ export class StructuredPageGenerator implements PageGenerator {
    */
   async refine(input: PageRefineInput): Promise<PageRefineOutcome> {
     const started = Date.now();
-    const review = (status: PageVisualReview["status"], extra: Partial<PageVisualReview> = {}): PageVisualReview => ({ status, critique: [], durationMs: Date.now() - started, ...extra });
+    const usages: AiUsage[] = [];
+    const review = (status: PageVisualReview["status"], extra: Partial<PageVisualReview> = {}): PageVisualReview => ({
+      status,
+      critique: [],
+      durationMs: Date.now() - started,
+      calls: usages.length,
+      costUsd: usages.reduce<number | null>((sum, item) => (sum === null || item.costUsd === null ? null : sum + item.costUsd), 0),
+      ...extra,
+    });
     if (!this.measurer) return { status: "skipped", review: review("skipped", { reason: "측정 브라우저가 없습니다." }) };
     const measurer = this.measurer;
     const content = StructuredPortfolioContentSchema.parse(input.snapshot.content);
     const setup = specSetup(content, input);
-    const usages: AiUsage[] = [];
     const call = async <T>(prompt: string, schema: z.ZodType<T>, contract: "page_generation" | "page_review", system: string, images?: AiImage[]) => {
       const result = await this.ai.complete(
         { contract, system, prompt, promptVersion: PAGE_PROMPT_VERSION, ...(input.modelTier ? { modelTier: input.modelTier } : {}), ...(images ? { images } : {}) },
@@ -458,12 +465,14 @@ export class StructuredPageGenerator implements PageGenerator {
     // (2) 스크린샷 검토 — 지적 목록과 고친 구성을 받습니다.
     let critique: string[] = [];
     let comparison: PageVisualReview["comparison"];
+    let revisedSpec: PageVisualReview["revisedSpec"];
     let reason: string | undefined;
     try {
       lastPrompt = `${setup.prompt({ instruction: input.instruction, previous: best.snapshot.spec })}\n${REVIEW_GUIDE}`;
       const reviewed = await call(lastPrompt, z.object({ critique: z.array(z.string().max(300)).min(1).max(8), spec: setup.schema }), "page_review", REVIEW_SYSTEM, screenshotImages(best.screenshots, ""));
       critique = reviewed.critique;
       const revised = await tryCandidate(reviewed.spec);
+      if (revised) revisedSpec = revised.snapshot.spec;
       if (!revised) reason = "고친 구성이 계약 검사를 지나지 못했습니다.";
       else if (JSON.stringify(revised.snapshot.spec) === JSON.stringify(best.snapshot.spec)) reason = "모델이 구성을 바꾸지 않았습니다.";
       else if (fixableCount(revised.defects) > fixableCount(best.defects)) reason = "고친 구성이 측정 결함을 늘렸습니다.";
@@ -490,9 +499,9 @@ export class StructuredPageGenerator implements PageGenerator {
     const renderMeasure: PageRenderMeasure = { status: "measured", adopted: best.pass, passes };
     if (best === draftCandidate) {
       const status = critique.length || comparison ? "kept" : "skipped";
-      return { status, review: review(status, { critique, ...(comparison ? { comparison } : {}), ...(reason ? { reason } : {}) }) };
+      return { status, review: review(status, { critique, ...(comparison ? { comparison } : {}), ...(revisedSpec ? { revisedSpec } : {}), ...(reason ? { reason } : {}) }) };
     }
-    const visualReview = review("adopted", { critique, ...(comparison ? { comparison } : {}), ...(reason ? { reason } : {}) });
+    const visualReview = review("adopted", { critique, ...(comparison ? { comparison } : {}), ...(revisedSpec ? { revisedSpec } : {}), ...(reason ? { reason } : {}) });
     const result = pageResult({
       rendered: best.rendered, snapshot: best.snapshot, root: best.root, usages, prompt: lastPrompt, attempt: 0,
       source: JSON.stringify(content), design: input.design, renderMeasure, visualReview,
@@ -519,17 +528,23 @@ const SPEC_SYSTEM = "등록된 컴포넌트와 데이터 참조만 사용하여 
 const REVIEW_SYSTEM = "포트폴리오 지면의 디자인 검토자입니다. 그려진 화면을 보고 등록된 컴포넌트와 데이터 참조만으로 구성을 고칩니다.";
 const COMPARE_SYSTEM = "포트폴리오 지면의 시각 품질을 비교하는 디자인 심사자입니다.";
 const REVIEW_GUIDE = `## 스크린샷 검토
-함께 보낸 이미지는 직전 Spec을 실제로 그린 지면입니다(1440px 첫 화면, 1440px 전체, 390px 전체). 이 지면의 시각 품질을 평가하고 구성을 고치세요.
+함께 보낸 이미지는 직전 Spec을 실제로 그린 지면입니다(1440px 첫 화면, 1440px 전체 축소본, 390px 위에서부터 조각). 이 지면의 시각 품질을 평가하고 구성을 고치세요.
 볼 것: 첫 화면이 이 사람의 직무와 대표 작업을 바로 보여 주는가 · 가장 중요한 사례가 먼저 · 크게 보이는가(위계) · 같은 모양의 사례가 이어져 단조롭지 않은가(리듬) · 여백과 밀도가 고른 디자인에 맞는가 · 390px에서도 읽기 편한가.
 글(내용)은 바꿀 수 없습니다. 첫 화면 구도, 사례 유형과 순서, 컨테이너, 목차 형태만 바꿉니다.
 critique에는 고칠 점을 화면에 보이는 말로 하나씩 짧게 적고, spec에는 고친 전체 Spec을 냅니다. 고칠 점이 없으면 직전 Spec을 그대로 냅니다.`;
-const COMPARE_GUIDE = `같은 내용으로 만든 포트폴리오 지면 두 판(A, B)의 스크린샷입니다. 판마다 1440px 첫 화면, 1440px 전체, 390px 전체를 보냅니다.
+const COMPARE_GUIDE = `같은 내용으로 만든 포트폴리오 지면 두 판(A, B)의 스크린샷입니다. 판마다 1440px 첫 화면, 1440px 전체 축소본, 390px 위에서부터 조각을 보냅니다.
 채용 담당자가 처음 열었을 때 더 잘 읽히고 완성도가 높아 보이는 판을 고르세요. 기준: 첫 화면의 인상과 위계, 사례 강조, 리듬과 여백, 디자인 일관성, 좁은 화면 가독성.
 winner에 A 또는 B를, reason에 화면에 보이는 근거를 적습니다.`;
 
-const SHOT_LABELS: Record<PageScreenshot["name"], string> = { "1440-first": "1440px 첫 화면", "1440-full": "1440px 전체", "390-full": "390px 전체" };
+const SHOT_LABELS: Record<PageScreenshot["name"], string> = { "1440-first": "1440px 첫 화면", "1440-full": "1440px 전체(축소)", "390-part": "390px" };
 function screenshotImages(shots: readonly PageScreenshot[], prefix: string): AiImage[] {
-  return shots.map((shot) => ({ mediaType: shot.mediaType, data: shot.data, label: `${prefix}${SHOT_LABELS[shot.name]}${shot.truncated ? "(아래쪽 잘림)" : ""}` }));
+  // 1440 첫 화면 · 전체를 먼저, 390 조각을 위에서부터 보냅니다.
+  const order = (shot: PageScreenshot) => (shot.name === "1440-first" ? 0 : shot.name === "1440-full" ? 1 : 2) * 10 + shot.part;
+  return [...shots].sort((a, b) => order(a) - order(b)).map((shot) => ({
+    mediaType: shot.mediaType,
+    data: shot.data,
+    label: `${prefix}${SHOT_LABELS[shot.name]}${shot.parts > 1 ? ` ${shot.part}/${shot.parts}` : ""}${shot.truncated ? "(아래쪽 잘림)" : ""}`,
+  }));
 }
 
 /** 초안 · 다듬은 판의 결과를 같은 모양으로 만듭니다. */

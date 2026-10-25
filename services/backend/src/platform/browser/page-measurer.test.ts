@@ -42,10 +42,15 @@ run("ChromiumPageMeasurer", () => {
 
   it("요청하면 1440 첫 화면 · 1440 전체 · 390 전체를 찍고, 긴 페이지는 길이 한도에서 자른다", async () => {
     const result = await measurer.measure(documentWith(`<article id="section-c" data-case-type="CaseStudy"><div style="height:9000px">긴 사례</div></article>`), { screenshots: true });
-    // 너비 순서(390 → 1440)로 찍습니다.
-    expect(result.screenshots.map((shot) => [shot.name, shot.mediaType, shot.truncated])).toEqual([
-      ["390-full", "image/jpeg", true], ["1440-first", "image/png", false], ["1440-full", "image/jpeg", true],
+    // 너비 순서(390 → 1440)로 찍습니다. 390은 2,560px 조각 세 개(첫 7,680px)이고 그 아래는 잘립니다.
+    expect(result.screenshots.map((shot) => [shot.name, shot.mediaType, `${shot.part}/${shot.parts}`, shot.truncated])).toEqual([
+      ["390-part", "image/jpeg", "1/3", false], ["390-part", "image/jpeg", "2/3", false], ["390-part", "image/jpeg", "3/3", true],
+      ["1440-first", "image/png", "1/1", false], ["1440-full", "image/jpeg", "1/1", true],
     ]);
+    const tile = Buffer.from(result.screenshots[0]!.data, "base64");
+    // JPEG SOF0 · SOF2 머리에서 높이 · 너비를 읽습니다.
+    const sof = [...tile.keys()].find((i) => tile[i] === 0xff && (tile[i + 1] === 0xc0 || tile[i + 1] === 0xc2))!;
+    expect([tile.readUInt16BE(sof + 7), tile.readUInt16BE(sof + 5)]).toEqual([390, 2560]);
     const png = Buffer.from(result.screenshots.find((shot) => shot.name === "1440-first")!.data, "base64");
     // PNG 머리의 너비 · 높이(IHDR)는 화면 크기와 같아야 합니다.
     expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1440, 1000]);

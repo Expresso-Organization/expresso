@@ -355,7 +355,10 @@ describe("모델 기반 구조화 생성", () => {
       text: renderedContentValues(content).join(" "), ...overrides,
     });
     const orphan = clean({ orphans: [{ element: "section-project-a", text: "경로 설계 사례" }] });
-    const shots = (tag: string): PageScreenshot[] => (["390-full", "1440-first", "1440-full"] as const).map((name) => ({ name, mediaType: name === "1440-first" ? "image/png" as const : "image/jpeg" as const, data: Buffer.from(`${tag}-${name}`).toString("base64"), truncated: false }));
+    const shots = (tag: string): PageScreenshot[] => [
+      ...[1, 2].map((part) => ({ name: "390-part" as const, mediaType: "image/jpeg" as const, data: Buffer.from(`${tag}-390-${part}`).toString("base64"), part, parts: 2, truncated: false })),
+      ...(["1440-first", "1440-full"] as const).map((name) => ({ name, mediaType: name === "1440-first" ? "image/png" as const : "image/jpeg" as const, data: Buffer.from(`${tag}-${name}`).toString("base64"), part: 1, parts: 1, truncated: false })),
+    ];
     /** 부를 때마다 다음 측정값을 세 너비에 똑같이 돌려주는 가짜 측정기입니다. 스크린샷은 몇 번째 측정인지 적힌 가짜 바이트입니다. */
     class FakeMeasurer implements PageMeasurer {
       documents: string[] = [];
@@ -402,10 +405,10 @@ describe("모델 기반 구조화 생성", () => {
       expect(ai.calls[0]!.prompt).toContain('section-project-a: "경로 설계 사례"의 마지막 줄에 한 글자만 남습니다.');
       // 검토는 결함을 고친 판(두 번째 측정)의 스크린샷을, 비교는 A(고친 판) · B(직전 판)를 봅니다.
       expect(ai.calls[1]!.images!.map((image) => [image.label, Buffer.from(image.data, "base64").toString()])).toEqual([
-        ["390px 전체", "m2-390-full"], ["1440px 첫 화면", "m2-1440-first"], ["1440px 전체", "m2-1440-full"],
+        ["1440px 첫 화면", "m2-1440-first"], ["1440px 전체(축소)", "m2-1440-full"], ["390px 1/2", "m2-390-1"], ["390px 2/2", "m2-390-2"],
       ]);
-      expect(ai.calls[2]!.images!.map((image) => image.label.slice(0, 1))).toEqual(["A", "A", "A", "B", "B", "B"]);
-      expect(Buffer.from(ai.calls[2]!.images![0]!.data, "base64").toString()).toBe("m3-390-full");
+      expect(ai.calls[2]!.images!.map((image) => image.label.slice(0, 1))).toEqual(["A", "A", "A", "A", "B", "B", "B", "B"]);
+      expect(Buffer.from(ai.calls[2]!.images![0]!.data, "base64").toString()).toBe("m3-1440-first");
       expect(outcome.review).toMatchObject({ status: "adopted", critique: ["첫 화면 아래 목차가 사례를 밀어냅니다."], comparison: { winner: "revised", reason: "사례가 첫 화면에 보입니다." } });
       expect(outcome.result!.manifest.renderMeasure).toMatchObject({ adopted: 2 });
       expect((outcome.result!.manifest.structured!.spec.elements.index as { props: { variant: string } }).props.variant).toBe("mosaic");
@@ -424,7 +427,9 @@ describe("모델 기반 구조화 생성", () => {
     it("다듬기: 비교에서 초안이 이기면 초안을 유지한다", async () => {
       const ai = new Stub([{ critique: ["목차를 카드로 바꿉니다."], spec: changed("mosaic") }, { winner: "B", reason: "초안이 낫습니다." }]);
       const outcome = await new StructuredPageGenerator(ai, new FakeMeasurer([clean(), clean()]), () => 0.1).refine(input);
-      expect(outcome).toMatchObject({ status: "kept", review: { status: "kept", comparison: { winner: "draft" } } });
+      expect(outcome).toMatchObject({ status: "kept", review: { status: "kept", comparison: { winner: "draft" }, calls: 2, costUsd: null } });
+      // 진 판의 구성도 다시 볼 수 있게 남습니다.
+      expect((outcome.review.revisedSpec!.elements.index as { props: { variant: string } }).props.variant).toBe("mosaic");
       expect(outcome.result).toBeUndefined();
     });
 

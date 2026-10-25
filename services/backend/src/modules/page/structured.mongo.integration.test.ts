@@ -405,7 +405,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
       expect(await db.outboxEvents.findOne({ topic: "page.refine", idempotencyKey: `page-refine:${draft.id}` })).toMatchObject({ payload: { userId: user, pageId: draft.id } });
       const improved = await generator.generate({ author: { name: "가상 작성자" } } as PageGenerationContext);
       const inputs: unknown[] = [];
-      const review = { status: "adopted" as const, critique: ["사례를 첫 화면 가까이 올립니다."], comparison: { winner: "revised" as const, reason: "사례가 먼저 보입니다." }, durationMs: 10 };
+      const review = { status: "adopted" as const, critique: ["사례를 첫 화면 가까이 올립니다."], comparison: { winner: "revised" as const, reason: "사례가 먼저 보입니다." }, durationMs: 10, calls: 3, costUsd: 0.5 };
       const refiner = { refine: async (input: unknown) => { inputs.push(input); return { status: "adopted" as const, review, result: { ...improved, html: `${improved.html}<p>다듬은 판</p>` } }; } };
       await service.refine(other, draft.id, refiner);
       expect(inputs).toHaveLength(0);
