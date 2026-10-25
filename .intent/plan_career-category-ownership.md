@@ -18,13 +18,16 @@ date: 2026-10-25
 | `packages/database/src/career-category-templates.ts`(새) · `index.ts` · `documents/career.ts` | 템플릿 7종과 결정적 ID, 문서 타입 정리 |
 | `packages/database/src/mongodb-migrations/0017/`(새) · `mongo-migrations.ts` · `mongo-build.mjs` · 테스트 | 이관 마이그레이션과 등록 |
 | `services/backend/src/modules/identity/service.ts` | 가입 트랜잭션에서 템플릿 카테고리 생성 |
-| `services/backend/src/modules/career/*` | v1 경로 · v1 API · `legacy-mysql-service.ts` 삭제, 소유자 조회, 옵션 `configure`, 기록 글 읽기 함수, 역량 옵션 쓰기 |
+| `services/backend/src/modules/career/*` | v1 경로 · v1 API · `legacy-mysql-service.ts` 삭제, 소유자 조회, 옵션 `configure`, 기록 글 읽기 함수(`record-text.ts`), 역량 옵션 쓰기(`select-options.ts`) |
+| 백엔드 통합 테스트 · `test/e2e/*` | 지운 MySQL career 서비스를 쓰던 MySQL 분기 삭제(CI가 `TEST_DATABASE_URL`을 넘기지 않아 돈 적 없음), MySQL 전용 `brewing-flow.test.ts` 삭제 |
 | `career-computation` · `career-editor/ai-proposals.ts` | v2 정의만 읽기, 소유자 조회 |
 | `jobs` · `job-analysis` · `materials` · `interview` · `agent-chat` | 이름으로 푼 기록 글, 인터뷰 기록의 사용자 경험 카테고리, 정리는 제목 · 역량만 |
 | `services/web/src/app/(app)/career/[categorySlug]/page.tsx` | `fallbackView` v1 변환 삭제 |
-| `services/web/src/features/career-editor/**` | v1 변환 · `isSystem` 잠금 삭제, 옵션 추가 UI(문서 패널 · 표 셀) |
+| `services/web/src/features/career-editor/**` | v1 변환 · `isSystem` 잠금 삭제, 옵션 추가 UI(문서 패널 · 표 셀, 공용 `properties/property-options.ts`) |
 | `services/web/e2e/career-editor.spec.ts` · 각 테스트 고정값 | v2 생성 요청, `isSystem` 제거, 옵션 추가 시나리오 |
 | `scripts/operations/career-ownership-snapshot.mjs`(새) | 이관 전후 사용자별 수 · 매칭 점수 스냅샷 |
+| `scripts/operations/verify-career-editor-restore.mjs` · `backfill-career-documents.test.mjs` | 공용 카테고리 조회 삭제 |
+| `services/web/e2e/career-editor.visual.spec.ts-snapshots/career-editor-375-chromium-darwin.png` | 새 기본 경험 속성(역량 · 시기)으로 기준 이미지 갱신 |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
 
