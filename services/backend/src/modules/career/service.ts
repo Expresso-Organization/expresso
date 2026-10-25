@@ -1,14 +1,14 @@
 import { randomUUID } from "node:crypto";
 import { careerDocumentToMarkdown, encodeDocumentAsYUpdate, encodeDocumentStateVector, markdownToCareerDocument, parseCareerDocument, reconstructYDocument } from "@expresso/editor";
-import { CareerPropertySchemaSchema, CareerProfileSchema, CreateCareerCategorySchema, CreateCareerRecordSchema, CreateCareerViewSchema, SaveCareerProfileSchema, UpdateCareerRecordSchema, type CareerPropertySchema, type CreateCareerCategory, type CreateCareerRecord, type CreateCareerView, type ListCareerRecordsQuery, type SaveCareerProfile, type UpdateCareerRecord } from "@expresso/contracts";
-import { mongoCollections, type CareerCategoryDoc, type CareerRecordDoc, type CareerViewDoc } from "@expresso/database";
+import { CareerProfileSchema, CreateCareerCategorySchema, CreateCareerRecordSchema, SaveCareerProfileSchema, UpdateCareerRecordSchema, type CreateCareerCategory, type CreateCareerRecord, type ListCareerRecordsQuery, type SaveCareerProfile, type UpdateCareerRecord } from "@expresso/contracts";
+import { mongoCollections, type CareerCategoryDoc, type CareerRecordDoc } from "@expresso/database";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction } from "../../platform/mongo-transaction.js";
 import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { requireActiveUser } from "../identity/index.js";
 import { CareerError } from "./errors.js";
 import { validateCareerProperties } from "./properties.js";
-import { mapMongoCategory, mapMongoView, requireCareerCategory } from "./mongo-categories.js";
+import { mapMongoCategory, requireCareerCategory } from "./mongo-categories.js";
 import { careerRequestHash, listMongoRecords, mapMongoRecord } from "./mongo-records.js";
 import type { CareerApi } from "./index.js";
 import type { RecomputeCareerSkill } from "@expresso/contracts";
@@ -23,6 +23,8 @@ import { MongoRelationService } from "./relations.js";
 import { MongoCareerComputationService } from "../career-computation/index.js";
 
 const duplicate = (error: unknown) => (error as { code?: number })?.code === 11000;
+/** 기본 7종과 사용자가 더한 카테고리 100개. */
+const CATEGORY_LIMIT = 107;
 
 export class CareerService implements CareerApi {
   constructor(readonly context: MongoContext) {}
@@ -57,13 +59,11 @@ export class CareerService implements CareerApi {
 
   async listCategories(userId: string) {
     const rows = await mongoCollections(this.context.db).careerCategories.aggregate<CareerCategoryDoc & { counts: { total: number }[] }>([
-      { $match: { $or: [{ userId: null }, { userId }] } },
-      { $sort: { isSystem: -1, sortOrder: 1, _id: 1 } },
-      { $limit: 107 },
+      { $match: { userId } },
+      { $sort: { sortOrder: 1, _id: 1 } },
+      { $limit: CATEGORY_LIMIT },
       { $lookup: { from: "career_records", let: { categoryId: "$_id" }, pipeline: [{ $match: { userId, deletedAt: null, $expr: { $eq: ["$categoryId", "$$categoryId"] } } }, { $count: "total" }], as: "counts" } },
     ]).toArray();
-    const keys = new Set(rows.filter((row) => row.isSystem).map((row) => row.key));
-    if (["experience", "project", "education_history", "certification_award", "academic_writing", "activity_leadership", "skill_tool"].some((key) => !keys.has(key))) throw new Error("default career categories are not installed");
     return rows.map((row) => mapMongoCategory(row, row.counts[0]?.total ?? 0));
   }
 
@@ -71,45 +71,21 @@ export class CareerService implements CareerApi {
 
   async createCategory(userId: string, inputValue: CreateCareerCategory) {
     const input = CreateCareerCategorySchema.parse(inputValue);
+    const keys = new Set(input.propertySchemaV2.map((definition) => definition.key));
+    const ids = new Set(input.propertySchemaV2.map((definition) => definition.id));
+    if (keys.size !== input.propertySchemaV2.length || ids.size !== input.propertySchemaV2.length) throw new CareerError(400, "property keys and IDs must be unique");
     try {
       return await inTransaction(this.context, async (tx) => {
         await requireActiveUser(tx, userId);
         const categories = mongoCollections(tx.db).careerCategories;
-        const customCount = await categories.countDocuments({ userId }, { session: tx.session });
-        if (customCount >= 100) throw new CareerError(409, "career category limit exceeded");
-        const propertySchema = Object.fromEntries(Object.entries(input.propertySchema).map(([key, definition]) => [key, { ...definition, id: definition.id ?? randomUUID() }]));
-        const category: CareerCategoryDoc = { _id: randomUUID(), userId, ...input, propertySchema, isSystem: false, sortOrder: 7 + customCount, version: 1, updatedAt: new Date() };
+        const owned = await categories.find({ userId }, { session: tx.session }).project<{ sortOrder: number }>({ sortOrder: 1 }).toArray();
+        if (owned.length >= CATEGORY_LIMIT) throw new CareerError(409, "career category limit exceeded");
+        const sortOrder = Math.max(-1, ...owned.map((category) => category.sortOrder)) + 1;
+        const category: CareerCategoryDoc = { _id: randomUUID(), userId, ...input, sortOrder, schemaVersion: 1, version: 1, updatedAt: new Date() };
         await categories.insertOne(category, { session: tx.session });
         return mapMongoCategory(category);
       });
     } catch (error) { if (duplicate(error)) throw new CareerError(409, "career category key already exists"); throw error; }
-  }
-
-  async updatePropertySchema(userId: string, categoryId: string, expectedVersion: number, nextSchemaInput: CareerPropertySchema, confirmValueRemoval: boolean) {
-    const nextSchema = CareerPropertySchemaSchema.parse(nextSchemaInput);
-    return inTransaction(this.context, async (tx) => {
-      await requireActiveUser(tx, userId);
-      const db = mongoCollections(tx.db);
-      const category = await db.careerCategories.findOne({ _id: categoryId, userId, isSystem: false }, { session: tx.session });
-      if (!category) throw new CareerError(404, "career category not found");
-      if (category.version !== expectedVersion) throw new CareerError(412, "category version is stale");
-      const normalizedSchema = Object.fromEntries(Object.entries(nextSchema).map(([key, definition]) => [key, { ...definition, id: definition.id ?? category.propertySchema[key]?.id ?? randomUUID() }]));
-      const removed = Object.keys(category.propertySchema).filter((key) => !Object.hasOwn(normalizedSchema, key));
-      const protectedProperties = removed.filter((key) => category.propertySchema[key]?.system);
-      if (protectedProperties.length) throw new CareerError(403, "system properties cannot be removed", { protectedProperties });
-      const propertyValueCounts: Record<string, number> = {};
-      for (const key of removed) {
-        const count = await db.careerRecords.countDocuments({ userId, categoryId, deletedAt: null, [`properties.${key}`]: { $exists: true } }, { session: tx.session });
-        if (count) propertyValueCounts[key] = count;
-      }
-      if (Object.keys(propertyValueCounts).length && !confirmValueRemoval) throw new CareerError(409, "category properties still contain values", { propertyValueCounts });
-      for (const key of Object.keys(propertyValueCounts)) {
-        await db.careerRecords.updateMany({ userId, categoryId, [`properties.${key}`]: { $exists: true } }, { $unset: { [`properties.${key}`]: "" }, $inc: { version: 1 }, $set: { updatedAt: new Date() } }, { session: tx.session });
-      }
-      const updated = await db.careerCategories.findOneAndUpdate({ _id: categoryId, userId, version: expectedVersion }, { $set: { propertySchema: normalizedSchema, updatedAt: new Date() }, $inc: { version: 1 } }, { session: tx.session, returnDocument: "after" });
-      if (!updated) throw new CareerError(412, "category version is stale");
-      return mapMongoCategory(updated);
-    });
   }
 
   async createRecord(userId: string, idempotencyKey: string, inputValue: CreateCareerRecord) {
@@ -118,7 +94,7 @@ export class CareerService implements CareerApi {
     return inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId);
       const category = await requireCareerCategory(tx, userId, input.categoryId, tx.session);
-      validateCareerProperties(category.propertySchema, input.properties, category.propertySchemaV2);
+      validateCareerProperties(category.propertySchemaV2, input.properties);
       const records = mongoCollections(tx.db).careerRecords;
       const existing = await records.findOne({ userId, createIdempotencyKey: idempotencyKey }, { session: tx.session });
       if (existing) {
@@ -128,7 +104,7 @@ export class CareerService implements CareerApi {
       const now = new Date();
       const record: CareerRecordDoc = { _id: randomUUID(), userId, ...input, status: "draft", origin: "manual", version: 1, createdAt: now, updatedAt: now, deletedAt: null, purgeAfter: null, createIdempotencyKey: idempotencyKey, createRequestHash: hash };
       await records.insertOne(record, { session: tx.session });
-      const definitions = category.propertySchemaV2?.filter((definition) => definition.deletedAt === null) ?? [];
+      const definitions = category.propertySchemaV2.filter((definition) => definition.deletedAt === null);
       const changedPropertyIds = definitions.filter((definition) => definition.type === "formula" || definition.type === "rollup" || Object.hasOwn(input.properties, definition.key) || (definition.type === "title" && input.title !== "")).map((definition) => definition.id);
       if (changedPropertyIds.length > 0) await addMongoOutboxEvent(tx, {
         userId, topic: "career.computation", idempotencyKey: `career-record-create:${record._id}:v1`,
@@ -173,8 +149,8 @@ export class CareerService implements CareerApi {
       }
       const category = await requireCareerCategory(tx, userId, existing.categoryId, tx.session);
       const properties = input.properties ?? existing.properties;
-      validateCareerProperties(category.propertySchema, properties, category.propertySchemaV2);
-      const computationDefinitions = category.propertySchemaV2?.filter((definition) => definition.deletedAt === null) ?? [];
+      validateCareerProperties(category.propertySchemaV2, properties);
+      const computationDefinitions = category.propertySchemaV2.filter((definition) => definition.deletedAt === null);
       const changedPropertyIds = computationDefinitions.filter((definition) => {
         if (definition.type === "title") return input.title !== undefined && input.title !== existing.title;
         return JSON.stringify(existing.properties[definition.key] ?? null) !== JSON.stringify(properties[definition.key] ?? null);
@@ -212,32 +188,6 @@ export class CareerService implements CareerApi {
       });
       return mapMongoRecord(updated);
     });
-  }
-
-  async createView(userId: string, categoryId: string, inputValue: CreateCareerView) {
-    const input = CreateCareerViewSchema.parse(inputValue);
-    try {
-      return await inTransaction(this.context, async (tx) => {
-        await requireActiveUser(tx, userId);
-        const category = await requireCareerCategory(tx, userId, categoryId, tx.session);
-        const allowed = new Set(["title", "status", "period", ...Object.keys(category.propertySchema)]);
-        for (const field of [...input.filters.map((item) => item.property), ...input.sorts.map((item) => item.property), ...input.visibleProperties]) {
-          if (!allowed.has(field)) throw new CareerError(400, `view references an unknown property: ${field}`);
-        }
-        if (input.viewType === "timeline" && !Object.values(category.propertySchema).some((property) => property.type === "date")) throw new CareerError(400, "timeline views require a date property");
-        const views = mongoCollections(tx.db).careerViews;
-        const count = await views.countDocuments({ userId, categoryId }, { session: tx.session });
-        if (count >= 8) throw new CareerError(409, "category view limit exceeded");
-        const view: CareerViewDoc = { _id: randomUUID(), userId, categoryId, ...input, filters: input.filters.map(({ property, operator, value }) => value === undefined ? { property, operator } : { property, operator, value }), sortOrder: count, createdAt: new Date() };
-        await views.insertOne(view, { session: tx.session });
-        return mapMongoView(view);
-      });
-    } catch (error) { if (duplicate(error)) throw new CareerError(409, "career view name already exists"); throw error; }
-  }
-
-  async listViews(userId: string, categoryId: string) {
-    await requireCareerCategory(this.context, userId, categoryId);
-    return (await mongoCollections(this.context.db).careerViews.find({ userId, categoryId }).sort({ sortOrder: 1, _id: 1 }).limit(100).toArray()).map(mapMongoView);
   }
 
   async getProfile(userId: string) {

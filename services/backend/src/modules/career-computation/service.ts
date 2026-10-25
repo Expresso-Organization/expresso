@@ -49,14 +49,7 @@ export interface CareerComputationApi extends CareerComputationService {}
 interface ComputationMetadata { readonly eventIds?: readonly string[]; readonly sourceRecordVersion?: number }
 interface DerivedDefinition extends CareerPropertyDefinitionV2 { readonly ast?: FormulaAst | null; readonly dependencies: readonly string[] }
 
-function definitions(category: CareerCategoryDoc): CareerPropertyDefinitionV2[] {
-  return category.propertySchemaV2 ?? Object.entries(category.propertySchema).map(([key, property], order) => ({
-    id: property.id ?? key, key, name: property.label,
-    type: property.type === "boolean" ? "checkbox" : property.type === "tags" ? "multi_select" : property.type,
-    required: property.required, system: property.system, config: {}, order, version: 1, deletedAt: null,
-  }));
-}
-function activeDefinitions(category: CareerCategoryDoc): CareerPropertyDefinitionV2[] { return definitions(category).filter((definition) => definition.deletedAt === null); }
+function activeDefinitions(category: CareerCategoryDoc): CareerPropertyDefinitionV2[] { return category.propertySchemaV2.filter((definition) => definition.deletedAt === null); }
 function editorSchema(definitions_: readonly CareerPropertyDefinitionV2[]): FormulaPropertyDefinition[] {
   return definitions_.map((definition) => ({ id: definition.id, type: definition.type, deletedAt: definition.deletedAt }));
 }

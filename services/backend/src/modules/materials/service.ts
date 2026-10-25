@@ -4,7 +4,7 @@ import { mongoCollections, type BrewDoc, type BrewSourceDoc, type CareerRecordDo
 import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction, type MongoTransaction } from "../../platform/mongo-transaction.js";
 import { requireActiveUser } from "../identity/index.js";
-import { assertActiveRecordsForWrite } from "../career/index.js";
+import { assertActiveRecordsForWrite, careerRecordTextReader } from "../career/index.js";
 import { MongoEntitlementService } from "../entitlements/index.js";
 import type { MaterialsApi } from "./index.js";
 import { MaterialsError } from "./public.js";
@@ -16,7 +16,8 @@ export class MaterialsService implements MaterialsApi {
   async #create(tx: MongoTransaction, userId: string, input: { jobAnalysisId: string; lengthPreset: BrewDoc["lengthPreset"]; freeTitle?: string; freeBrief?: string }, labels: string[]) {
     const db = mongoCollections(tx.db); const options = { session: tx.session };
     const records = await db.careerRecords.find({ userId, deletedAt: null, status: { $in: ["organized", "verified"] } }, options).toArray();
-    const ranked = rankMaterials(records.flatMap((record) => record.status === "organized" || record.status === "verified" ? [{ id: record._id, title: record.title, status: record.status, text: `${record.title}\n${record.bodyMd}\n${JSON.stringify(record.properties)}` }] : []), labels).slice(0, 50);
+    const recordText = await careerRecordTextReader(tx.db, userId, tx.session);
+    const ranked = rankMaterials(records.flatMap((record) => record.status === "organized" || record.status === "verified" ? [{ id: record._id, title: record.title, status: record.status, text: recordText(record) }] : []), labels).slice(0, 50);
     await assertActiveRecordsForWrite(tx, userId, ranked.map((record) => record.id));
     const brew: BrewDoc = { _id: randomUUID(), userId, ...input, mode: "solo", status: "draft", createdAt: new Date(), updatedAt: new Date() };
     await db.brews.insertOne(brew, options);
@@ -56,7 +57,7 @@ export class MaterialsService implements MaterialsApi {
     const rows = await db.brewSources.aggregate<BrewSourceDoc & { record: CareerRecordDoc; category: CareerCategoryDoc }>([
       { $match: { userId, brewId } }, { $sort: { rank: 1, recordId: 1 } },
       { $lookup: { from: "career_records", localField: "recordId", foreignField: "_id", pipeline: [{ $match: { userId } }], as: "record" } }, { $unwind: "$record" },
-      { $lookup: { from: "career_categories", localField: "record.categoryId", foreignField: "_id", pipeline: [{ $match: { $or: [{ userId: null }, { userId }] } }], as: "category" } }, { $unwind: "$category" },
+      { $lookup: { from: "career_categories", localField: "record.categoryId", foreignField: "_id", pipeline: [{ $match: { userId } }], as: "category" } }, { $unwind: "$category" },
     ]).toArray();
     return BrewMaterialsSchema.parse({ brewId, jobAnalysisId: brew.jobAnalysisId, updatedAt: brew.updatedAt.toISOString(), selectionLimit: 10, mode: brew.mode, lengthPreset: brew.lengthPreset,
       materials: rows.map((row) => ({ recordId: row.recordId, title: row.record.title, status: row.record.status, score: row.score, rank: row.rank, selected: row.isSelected, selectedBy: row.selectedBy, excludedReason: row.excludedReason ?? null, categoryName: row.category.name, categoryIcon: row.category.icon, periodFrom: row.record.periodStart ?? null, periodTo: row.record.periodEnd ?? null, origin: row.record.origin, reason: row.reasonText })),

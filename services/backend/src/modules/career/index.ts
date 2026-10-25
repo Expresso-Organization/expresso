@@ -1,4 +1,4 @@
-import type { CareerService as LegacyCareerService } from "./legacy-mysql-service.js";
+import type { CareerService } from "./service.js";
 import type { CareerPropertySchemaService } from "./property-schema.js";
 import type { CareerViewService } from "./views.js";
 import type { CategoryMoveService } from "./category-move.js";
@@ -8,8 +8,14 @@ export { CareerService } from "./service.js";
 export { MongoCareerService } from "./service.js";
 export { assertActiveRecordsForWrite, purgeTrashedCareerRecord } from "./mongo-record-guard.js";
 export { CareerError } from "./errors.js";
-export interface CareerApi extends Pick<LegacyCareerService, keyof LegacyCareerService> {
-  /** Mongo v2 구현이 연결된 서비스에서 제공됩니다. 레거시 SQL 서비스와의 롤아웃 호환을 위해 선택적입니다. */
+export { cleanupChangedFields, type RecordCleaner } from "./record-cleaner.js";
+export { multiSelectValueByNames } from "./select-options.js";
+export { careerRecordText, careerRecordTextReader, readableCareerProperties } from "./record-text.js";
+type CareerCoreMethod = "listCategories" | "listRecords" | "createCategory" | "createRecord" | "getRecord" | "updateRecord"
+  | "createLink" | "listLinks" | "getDeleteImpact" | "trashRecord" | "restoreRecord"
+  | "recomputeSkill" | "listSkills" | "listSkillEvidence" | "getProfile" | "saveProfile";
+export interface CareerApi extends Pick<CareerService, CareerCoreMethod> {
+  /** 라우트 단위 테스트가 필요한 부분만 조립할 수 있게 선택적으로 둡니다. */
   previewChange?: CareerPropertySchemaService["previewChange"];
   applyChange?: CareerPropertySchemaService["applyChange"];
   restoreProperty?: CareerPropertySchemaService["restoreProperty"];

@@ -75,7 +75,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
       accessToken = first.session.accessToken;
       otherAccessToken = second.session.accessToken;
       recordId = randomUUID();
-      const category = await mongoCollections(fixture.resource.db).careerCategories.findOne({ isSystem: true });
+      const category = await mongoCollections(fixture.resource.db).careerCategories.findOne({ userId, key: "experience" });
       await mongoCollections(fixture.resource.db).careerRecords.insertOne({
         _id: recordId, userId, categoryId: category!._id, title: "소켓 기록", status: "draft",
         origin: "manual", properties: {}, bodyMd: "# 소켓 기록", version: 1,

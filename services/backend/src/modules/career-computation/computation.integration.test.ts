@@ -14,7 +14,6 @@ import { CareerService } from "../career/service.js";
 import { MongoCareerComputationService } from "./service.js";
 
 const definition = (id: string, key: string, type: CareerPropertyDefinitionV2["type"], config: Record<string, unknown> = {}, order = 0): CareerPropertyDefinitionV2 => ({ id, key, name: key, type, required: false, system: false, config, order, version: 1, deletedAt: null });
-const legacy = (label: string, type: "number" | "text") => ({ label, type, required: false, system: false });
 
 describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB_URL))("career computation MongoDB and BullMQ", () => {
   let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
@@ -36,8 +35,8 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     career = new CareerService(fixture.resource); service = new MongoCareerComputationService(fixture.resource);
     const identity = new MongoIdentityService(fixture.resource);
     userId = (await identity.signup({ email: `compute-${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "계산" })).user.id;
-    const source = await career.createCategory(userId, { key: `compute_source_${randomUUID().replaceAll("-", "")}`, name: "계산 원본", icon: "folder", defaultView: "table", propertySchema: { score: legacy("score", "number") } });
-    const target = await career.createCategory(userId, { key: `compute_target_${randomUUID().replaceAll("-", "")}`, name: "계산 대상", icon: "folder", defaultView: "table", propertySchema: { score: legacy("score", "number") } });
+    const source = await career.createCategory(userId, { key: `compute_source_${randomUUID().replaceAll("-", "")}`, name: "계산 원본", icon: "folder", defaultView: "table" });
+    const target = await career.createCategory(userId, { key: `compute_target_${randomUUID().replaceAll("-", "")}`, name: "계산 대상", icon: "folder", defaultView: "table" });
     sourceCategoryId = source.id; targetCategoryId = target.id;
     scoreId = randomUUID(); targetScoreId = randomUUID(); relationId = randomUUID(); formulaId = randomUUID(); rollupId = randomUUID();
     const db = mongoCollections(fixture.resource.db);

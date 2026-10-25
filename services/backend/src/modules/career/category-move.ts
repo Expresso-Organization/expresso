@@ -20,7 +20,6 @@ import { CareerError } from "./errors.js";
 import { requireCareerCategory } from "./mongo-categories.js";
 import { mapMongoRecord } from "./mongo-records.js";
 import { convertCareerPropertyValue } from "./property-schema.js";
-import { careerCategoryDefinitions } from "./relations.js";
 
 const PREVIEW_LIFETIME_MS = 15 * 60_000;
 
@@ -62,7 +61,7 @@ function normalized(value: string): string {
 }
 
 function activeDefinitions(category: CareerCategoryDoc): CareerPropertyDefinitionV2[] {
-  return careerCategoryDefinitions(category).filter((definition) => definition.deletedAt === null) as CareerPropertyDefinitionV2[];
+  return category.propertySchemaV2.filter((definition) => definition.deletedAt === null);
 }
 
 function previewValue(value: unknown, definition: CareerPropertyDefinitionV2): CareerPropertyValueV2 {
@@ -71,7 +70,7 @@ function previewValue(value: unknown, definition: CareerPropertyDefinitionV2): C
   const candidate = { type: definition.type, value };
   const typed = CareerPropertyValueV2Schema.safeParse(candidate);
   if (typed.success) return typed.data;
-  // 기존 v1 값은 원본을 DB의 unmappedProperties에 유지하며, preview에는 읽기 가능한 표현만 낸다.
+  // 타입이 맞지 않는 원값은 DB의 unmappedProperties에 그대로 두고, preview에는 읽기 가능한 표현만 낸다.
   return { type: "text", value: JSON.stringify(value) };
 }
 

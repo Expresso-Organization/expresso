@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { SESSION_POLICY, type AuthSession, type AuthenticatedUser, type IssuedIdentitySession, type Login, type Signup, type SocialAuthSession } from "@expresso/contracts";
-import { mongoCollections, type UserDoc } from "@expresso/database";
+import { defaultCareerCategories, mongoCollections, type UserDoc } from "@expresso/database";
 import type { ClientSession } from "mongodb";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction, type MongoTransaction } from "../../platform/mongo-transaction.js";
@@ -54,6 +54,7 @@ export class IdentityService implements IdentityApi {
         if (!plan) throw new Error("free plan is not installed");
         const account: UserDoc = { _id: randomUUID(), email: input.email, displayName: input.displayName, planId: plan._id, passwordHash, createdAt: new Date(), deletionRequestedAt: null, lifecycleVersion: 0 };
         await collections.users.insertOne(account, { session: tx.session });
+        await collections.careerCategories.insertMany(defaultCareerCategories(account._id, account.createdAt), { session: tx.session });
         return { user: await this.#user(account, tx.session), session: await this.#session(tx, { userId: account._id, persistent: input.persistent }) };
       });
     } catch (error) { if (duplicate(error)) throw new IdentityError(409, "email is already registered"); throw error; }
@@ -87,6 +88,7 @@ export class IdentityService implements IdentityApi {
         if (!plan) throw new Error("free plan is not installed");
         const account: UserDoc = { _id: randomUUID(), email: identity.email, displayName: (identity.displayName?.trim() || identity.email.split("@")[0] || identity.email).slice(0, 200), planId: plan._id, passwordHash: null, deletionRequestedAt: null, createdAt: new Date(), lifecycleVersion: 0 };
         await collections.users.insertOne(account, { session: tx.session });
+        await collections.careerCategories.insertMany(defaultCareerCategories(account._id, account.createdAt), { session: tx.session });
         await collections.identityOauthAccounts.insertOne({ _id: randomUUID(), userId: account._id, provider: "google", providerAccountId: identity.subject, email: identity.email, linkedAt: new Date(), lastLoginAt: new Date() }, { session: tx.session });
         return { user: await this.#user(account, tx.session), session: await this.#session(tx, { userId: account._id, persistent }), created: true };
       });

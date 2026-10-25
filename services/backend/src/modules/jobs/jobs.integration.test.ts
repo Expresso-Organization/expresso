@@ -1,14 +1,8 @@
 import { randomUUID } from "node:crypto";
-import { createMysqlResource } from "../../platform/legacy-mysql.js";
-
-import type { SqlTag } from "../../platform/legacy-mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
 import type { RuntimeConfig } from "../../config/runtime-config.js";
-import { CareerService } from "../career/legacy-mysql-service.js";
-import { IdentityService } from "../identity/legacy-mysql-service.js";
-import { JobMarketService } from "./legacy-mysql-service.js";
 import type { JobMarketApi } from "./index.js";
 import { MongoJobMarketService } from "./service.js";
 import { MongoJobBoardService } from "./board-service.js";
@@ -110,15 +104,11 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB job market and board", (
   });
 });
 
-const databaseUrl = process.env.TEST_DATABASE_URL;
-const describeWithDatabase = databaseUrl ? describe : describe.skip;
-
 const config: RuntimeConfig = {
   nodeEnv: "test",
   host: "127.0.0.1",
   port: 4_000,
   logLevel: "silent",
-  databaseUrl: databaseUrl ?? "mysql://127.0.0.1:1/unused",
   redisUrl: "redis://127.0.0.1:1",
   outboxPollIntervalMs: 1_000,
   outboxBatchSize: 25,
@@ -126,18 +116,8 @@ const config: RuntimeConfig = {
   queuePrefix: "expresso-jobs-test",
 };
 
-interface IdRow {
-  id: string;
-}
-
-interface CountRow {
-  count: number;
-}
-
-for (const engine of ["mysql", "mongodb"] as const) {
-describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_URL)(`job market integration (${engine})`, () => {
-  let sql: SqlTag;
-  let fixture: Awaited<ReturnType<typeof createMongoFixture>> | undefined;
+describe.skipIf(!process.env.TEST_MONGODB_URL)("job market integration", () => {
+  let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
   let identityService: IdentityApi;
   let careerService: CareerApi;
   let jobMarketService: JobMarketApi;
@@ -155,69 +135,34 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
   const auth = (token = firstToken) => ({ authorization: `Bearer ${token}` });
 
   beforeAll(async () => {
-    if (engine === "mongodb") {
-      fixture = await createMongoFixture("job-market-http");
-      identityService = new MongoIdentityService(fixture.resource);
-      careerService = new MongoCareerService(fixture.resource);
-      // AI 활성 경로의 저장·소유권 검증에는 외부 호출 없는 해석기를 주입합니다.
-      jobMarketService = new MongoJobMarketService(fixture.resource, {
-        async interpret(query) {
-          expect(query).toBe("서울 3년 TypeScript 백엔드 remote 연봉 6000");
-          return [
-            { field: "location", value: "서울", enabled: true, confidence: 0.85 },
-            { field: "experience", value: 3, enabled: true, confidence: 0.9 },
-            { field: "technology", value: "typescript", enabled: true, confidence: 0.95 },
-            { field: "role", value: "백엔드", enabled: true, confidence: 0.9 },
-            { field: "work_type", value: "remote", enabled: true, confidence: 0.9 },
-            { field: "salary", value: 6000, enabled: false, confidence: 0.6 },
-          ];
-        },
-      });
-      const first = await identityService.signup({ email: `jobs-a-${marker}@example.com`, displayName: "Jobs A", password: "correct-horse-battery" });
-      const second = await identityService.signup({ email: `jobs-b-${marker}@example.com`, displayName: "Jobs B", password: "correct-horse-battery" });
-      firstUserId = first.user.id; secondUserId = second.user.id; firstToken = first.session.accessToken; secondToken = second.session.accessToken;
-      experienceCategoryId = (await careerService.listCategories(firstUserId)).find((category) => category.key === "experience")!.id;
-    } else {
-      sql = createMysqlResource(databaseUrl!).sql;
-      identityService = new IdentityService(sql); careerService = new CareerService(sql); jobMarketService = new JobMarketService(sql);
-    const planId = (await sql<IdRow[]>`select id from plan where code = 'free'`)[0]?.id;
-    if (!planId) throw new Error("free plan missing");
-    // 여러 행을 한 번에 넣을 때는 id 를 우리가 만들어 준다 — MySQL 은 returning 이 없다.
-    firstUserId = randomUUID();
-    secondUserId = randomUUID();
-    await sql`
-      insert into \`user\` (id, email, display_name, plan_id)
-      values
-        (${firstUserId}, ${`jobs-a-${marker}@example.com`}, 'Jobs A', ${planId}),
-        (${secondUserId}, ${`jobs-b-${marker}@example.com`}, 'Jobs B', ${planId})
-    `;
-    firstToken = (await identityService.issueSession({ userId: firstUserId })).accessToken;
-    secondToken = (await identityService.issueSession({ userId: secondUserId })).accessToken;
-    experienceCategoryId = (await sql<IdRow[]>`
-      select id from category where \`key\` = 'experience' and is_system
-    `)[0]?.id ?? "";
-    if (!experienceCategoryId) throw new Error("experience category missing");
-    }
+    fixture = await createMongoFixture("job-market-http");
+    identityService = new MongoIdentityService(fixture.resource);
+    careerService = new MongoCareerService(fixture.resource);
+    // AI 활성 경로의 저장·소유권 검증에는 외부 호출 없는 해석기를 주입합니다.
+    jobMarketService = new MongoJobMarketService(fixture.resource, {
+      async interpret(query) {
+        expect(query).toBe("서울 3년 TypeScript 백엔드 remote 연봉 6000");
+        return [
+          { field: "location", value: "서울", enabled: true, confidence: 0.85 },
+          { field: "experience", value: 3, enabled: true, confidence: 0.9 },
+          { field: "technology", value: "typescript", enabled: true, confidence: 0.95 },
+          { field: "role", value: "백엔드", enabled: true, confidence: 0.9 },
+          { field: "work_type", value: "remote", enabled: true, confidence: 0.9 },
+          { field: "salary", value: 6000, enabled: false, confidence: 0.6 },
+        ];
+      },
+    });
+    const first = await identityService.signup({ email: `jobs-a-${marker}@example.com`, displayName: "Jobs A", password: "correct-horse-battery" });
+    const second = await identityService.signup({ email: `jobs-b-${marker}@example.com`, displayName: "Jobs B", password: "correct-horse-battery" });
+    firstUserId = first.user.id; secondUserId = second.user.id; firstToken = first.session.accessToken; secondToken = second.session.accessToken;
+    experienceCategoryId = (await careerService.listCategories(firstUserId)).find((category) => category.key === "experience")!.id;
     app = buildApi({ config, identityService, jobMarketService });
     await app.ready();
   }, 60_000);
 
   afterAll(async () => {
-    if (fixture) { await app?.close(); await fixture.dispose(); return; }
-    if (firstUserId && secondUserId) {
-      await sql`
-        delete from platform_outbox
-        where topic = 'job.normalize'
-          and payload ->> '$.userId' in (${firstUserId}, ${secondUserId})
-      `;
-      await sql`delete from \`user\` where id in (${firstUserId}, ${secondUserId})`;
-    }
-    if (postingIds.length > 0) {
-      await sql`delete from job_posting where id in ${sql(postingIds)}`;
-    }
-    if (primaryCompanyId) await sql`delete from company where id = ${primaryCompanyId}`;
-    await app.close();
-    await sql.end({ timeout: 5 });
+    await app?.close();
+    await fixture?.dispose();
   });
 
   it("preserves and deduplicates a 200+ character source while enqueueing normalization", async () => {
@@ -257,25 +202,11 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
       deduplicated: true,
     });
     postingIds.push(primaryPostingId);
-    const document = fixture ? await mongoCollections(fixture.resource.db).jobPostings.findOne({ _id: primaryPostingId }) : null;
-    const posting = fixture ? [{ description_raw: document?.descriptionRaw, source_url: document?.sourceUrl, company_id: document?.companyId }] : await sql<{
-      description_raw: string;
-      source_url: string;
-      company_id: string;
-    }[]>`
-      select description_raw, source_url, company_id
-      from job_posting where id = ${primaryPostingId}
-    `;
-    expect(posting[0]).toMatchObject({ description_raw: descriptionRaw, source_url: payload.sourceUrl });
-    primaryCompanyId = posting[0]?.company_id ?? "";
-    if (!fixture) await expect(
-      sql`update job_posting set description_raw = 'tampered' where id = ${primaryPostingId}`,
-    ).rejects.toThrow(/immutable/);
-    const outbox = fixture ? [{ count: await mongoCollections(fixture.resource.db).outboxEvents.countDocuments({ topic: "job.normalize", "payload.jobPostingId": primaryPostingId }) }] : await sql<CountRow[]>`
-      select count(*) as count from platform_outbox
-      where topic = 'job.normalize' and payload ->> '$.jobPostingId' = ${primaryPostingId}
-    `;
-    expect(outbox[0]?.count).toBe(2);
+    const posting = await mongoCollections(fixture.resource.db).jobPostings.findOne({ _id: primaryPostingId });
+    expect(posting).toMatchObject({ descriptionRaw, sourceUrl: payload.sourceUrl });
+    primaryCompanyId = posting?.companyId ?? "";
+    const outbox = await mongoCollections(fixture.resource.db).outboxEvents.countDocuments({ topic: "job.normalize", "payload.jobPostingId": primaryPostingId });
+    expect(outbox).toBe(2);
   });
 
   it("stores editable search conditions, enforces ten saved searches, and scopes recent/interest state", async () => {
@@ -330,18 +261,13 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
       memo: "Prepare evidence",
     });
     expect(interest).toMatchObject({ jobPostingId: primaryPostingId, stage: "saved" });
-    const secondUserInterests = fixture ? [{ count: await mongoCollections(fixture.resource.db).interests.countDocuments({ userId: secondUserId }) }] : await sql<CountRow[]>`
-      select count(*) as count from interest where user_id = ${secondUserId}
-    `;
-    expect(secondUserInterests[0]?.count).toBe(0);
+    const secondUserInterests = await mongoCollections(fixture.resource.db).interests.countDocuments({ userId: secondUserId });
+    expect(secondUserInterests).toBe(0);
 
     // 담기 → 다른 사람의 해제는 내 관심에 닿지 않음 → 해제.
     const interestUrl = `/v1/jobs/postings/${primaryPostingId}/interest`;
-    const ownInterests = async () => fixture
-      ? await mongoCollections(fixture.resource.db).interests.countDocuments({ userId: firstUserId, jobPostingId: primaryPostingId })
-      : Number((await sql<CountRow[]>`
-          select count(*) as count from interest where user_id = ${firstUserId} and job_posting_id = ${primaryPostingId}
-        `)[0]?.count);
+    const ownInterests = async () =>
+      await mongoCollections(fixture.resource.db).interests.countDocuments({ userId: firstUserId, jobPostingId: primaryPostingId });
     const saved = await app.inject({ method: "PUT", url: interestUrl, headers: auth(), payload: { stage: "saved" } });
     expect(saved.statusCode).toBe(200);
     expect(JobInterestResponseSchema.parse(saved.json()).data).toMatchObject({ jobPostingId: primaryPostingId, stage: "saved", deadlineAt: null, memo: null });
@@ -357,17 +283,7 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
   });
 
   it("requires three records, persists four-axis scores, and hides demand ratios below five jobs", async () => {
-    if (fixture) await mongoCollections(fixture.resource.db).jobPostings.updateOne({ _id: primaryPostingId }, { $set: { requirements: { technologies: ["postgresql", "kubernetes"], impacts: ["scale"], roles: ["backend"], conditions: ["remote"] } } });
-    else await sql`
-      update job_posting
-      set requirements = ${sql.json({
-        technologies: ["postgresql", "kubernetes"],
-        impacts: ["scale"],
-        roles: ["backend"],
-        conditions: ["remote"],
-      })}
-      where id = ${primaryPostingId}
-    `;
+    await mongoCollections(fixture.resource.db).jobPostings.updateOne({ _id: primaryPostingId }, { $set: { requirements: { technologies: ["postgresql", "kubernetes"], impacts: ["scale"], roles: ["backend"], conditions: ["remote"] } } });
     for (const [index, text] of [
       "Backend engineer used PostgreSQL to scale services.",
       "Operated remote production systems.",
@@ -401,33 +317,13 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
     expect(match.total).toBe(Math.round((100 * match.covered) / match.required));
     expect(match.reason.length).toBeGreaterThan(0);
     expect(match.nextAction).toContain("기록");
-    const score = fixture ? await mongoCollections(fixture.resource.db).matchScores.findOne({ userId: firstUserId, jobPostingId: primaryPostingId }) : null;
-    const persisted = fixture ? [{ total: score?.total.toString() }] : await sql<{ total: string; reason_text: string; next_action: string }[]>`
-      select total, reason_text, next_action from match_score
-      where user_id = ${firstUserId} and job_posting_id = ${primaryPostingId}
-    `;
-    expect(Number(persisted[0]?.total)).toBe(match.total);
+    const score = await mongoCollections(fixture.resource.db).matchScores.findOne({ userId: firstUserId, jobPostingId: primaryPostingId });
+    expect(Number(score?.total.toString())).toBe(match.total);
 
     for (let index = 0; index < 4; index += 1) {
-      if (fixture) {
-        const id = randomUUID();
-        await mongoCollections(fixture.resource.db).jobPostings.insertOne({ _id: id, companyId: primaryCompanyId, source: "api", externalId: `demand-${marker}-${index}`, title: `Demand ${index}`, descriptionRaw: `Demand source ${index}`, requirements: { technologies: index < 3 ? ["postgresql"] : ["kubernetes"], impacts: [], roles: [], conditions: [] }, dedupeHash: `demand-hash-${marker}-${index}`, createdAt: new Date(), duties: [], preferred: [], hiringProcess: [] });
-        postingIds.push(id); continue;
-      }
-      const rows = await sql<IdRow[]>`
-        insert into job_posting (
-          company_id, source, external_id, title,
-          description_raw, requirements, dedupe_hash
-        ) values (
-          ${primaryCompanyId}, 'api', ${`demand-${marker}-${index}`},
-          ${`Demand ${index}`}, ${`Demand source ${index}`},
-          ${sql.json({
-            technologies: index < 3 ? ["postgresql"] : ["kubernetes"],
-            impacts: [], roles: [], conditions: [],
-          })}, ${`demand-hash-${marker}-${index}`}
-        ) returning id
-      `;
-      if (rows[0]) postingIds.push(rows[0].id);
+      const id = randomUUID();
+      await mongoCollections(fixture.resource.db).jobPostings.insertOne({ _id: id, companyId: primaryCompanyId, source: "api", externalId: `demand-${marker}-${index}`, title: `Demand ${index}`, descriptionRaw: `Demand source ${index}`, requirements: { technologies: index < 3 ? ["postgresql"] : ["kubernetes"], impacts: [], roles: [], conditions: [] }, dedupeHash: `demand-hash-${marker}-${index}`, createdAt: new Date(), duties: [], preferred: [], hiringProcess: [] });
+      postingIds.push(id);
     }
     expect(await jobMarketService.summarizeDemand(postingIds.slice(0, 4))).toEqual({
       sampleSize: 4,
@@ -439,9 +335,7 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
   });
 
   it("brings a board posting into a per-user analysis exactly once, without cloning the posting", async () => {
-    const before = (fixture ? [{ count: await mongoCollections(fixture.resource.db).jobPostings.countDocuments({ _id: primaryPostingId }) }] : await sql<CountRow[]>`
-      select count(*) as count from job_posting where id = ${primaryPostingId}
-    `)[0]?.count;
+    const before = await mongoCollections(fixture.resource.db).jobPostings.countDocuments({ _id: primaryPostingId });
 
     const created = await app.inject({
       method: "POST",
@@ -468,20 +362,11 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
     });
 
     // 공고는 이미 있던 것을 쓴다. 본문 해시로 다시 찾으면 사본이 하나 더 생긴다.
-    expect((fixture ? [{ count: await mongoCollections(fixture.resource.db).jobPostings.countDocuments({ _id: primaryPostingId }) }] : await sql<CountRow[]>`
-      select count(*) as count from job_posting where id = ${primaryPostingId}
-    `)[0]?.count).toBe(before);
-    expect((fixture ? [{ count: await mongoCollections(fixture.resource.db).jobAnalyses.countDocuments({ userId: secondUserId, jobPostingId: primaryPostingId }) }] : await sql<CountRow[]>`
-      select count(*) as count from job_analysis
-      where user_id = ${secondUserId} and job_posting_id = ${primaryPostingId}
-    `)[0]?.count).toBe(1);
+    expect(await mongoCollections(fixture.resource.db).jobPostings.countDocuments({ _id: primaryPostingId })).toBe(before);
+    expect(await mongoCollections(fixture.resource.db).jobAnalyses.countDocuments({ userId: secondUserId, jobPostingId: primaryPostingId })).toBe(1);
 
     // 요건을 뽑는 것은 워커가 한다. 여기서는 자리만 만들고 큐에 넣는다.
-    expect((fixture ? [{ count: await mongoCollections(fixture.resource.db).outboxEvents.countDocuments({ topic: "job.normalize", "payload.jobAnalysisId": created.json().data.jobAnalysisId }) }] : await sql<CountRow[]>`
-      select count(*) as count from platform_outbox
-      where topic = 'job.normalize'
-        and payload ->> '$.jobAnalysisId' = ${created.json().data.jobAnalysisId}
-    `)[0]?.count).toBe(1);
+    expect(await mongoCollections(fixture.resource.db).outboxEvents.countDocuments({ topic: "job.normalize", "payload.jobAnalysisId": created.json().data.jobAnalysisId })).toBe(1);
 
     const missing = await app.inject({
       method: "POST",
@@ -491,5 +376,3 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
     expect(missing.statusCode).toBe(404);
   });
 });
-
-}

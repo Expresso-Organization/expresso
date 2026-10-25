@@ -78,8 +78,8 @@ export async function saveMongoAnswer(context: MongoContext, userId: string, ses
         await refreshMongoInterviewProgress(tx, userId, sessionId);
         return existing._id;
       }
-      const category = await db.careerCategories.findOne({ key: "experience", isSystem: true, userId: null }, options);
-      if (!category) throw new Error("experience category missing");
+      const category = await db.careerCategories.findOne({ userId, key: "experience" }, options);
+      if (!category) throw new InterviewError(409, "experience category is missing");
       const record: CareerRecordDoc = { _id: randomUUID(), userId, categoryId: category._id, title: fallbackTitle(input.transcript), status: "draft", origin: "interview", properties: {}, bodyMd: input.transcript, version: 1, updatedAt: now, deletedAt: null, purgeAfter: null, referenceVersion: 0 };
       const answer: AnswerDoc = { _id: randomUUID(), userId, questionId, inputType: input.inputType, transcript: input.transcript, createdRecordId: record._id, inputIdempotencyKey: idempotencyKey, requestHash: hash, version: 1, recordVersion: 1, updatedAt: now };
       await db.careerRecords.insertOne(record, options);

@@ -5,30 +5,22 @@ import {
   CurrentUserResponseSchema,
   SESSION_POLICY,
 } from "@expresso/contracts";
-import type { SqlTag } from "../../platform/legacy-mysql.js";
-import { createMysqlResource } from "../../platform/legacy-mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
 import type { RuntimeConfig } from "../../config/runtime-config.js";
 import { MongoCareerService } from "../career/index.js";
-import { CareerService } from "../career/legacy-mysql-service.js";
-import { IdentityService } from "./legacy-mysql-service.js";
 import { MongoIdentityService, type IdentityApi } from "./index.js";
 import { createMongoFixture } from "../../../test/support/mongodb.js";
 import { mongoCollections } from "@expresso/database";
 import { inTransaction } from "../../platform/mongo-transaction.js";
 import { requireActiveUser } from "./mongo-user-guard.js";
 
-const databaseUrl = process.env.TEST_DATABASE_URL;
-const describeWithDatabase = databaseUrl ? describe : describe.skip;
-
 const config: RuntimeConfig = {
   nodeEnv: "test",
   host: "127.0.0.1",
   port: 4_000,
   logLevel: "silent",
-  databaseUrl: databaseUrl ?? "mysql://127.0.0.1:1/unused",
   redisUrl: "redis://127.0.0.1:1",
   outboxPollIntervalMs: 1_000,
   outboxBatchSize: 25,
@@ -38,37 +30,32 @@ const config: RuntimeConfig = {
 
 const PASSWORD = "correct-horse-battery";
 
-for (const engine of ["mysql", "mongodb"] as const) {
-describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_URL ?? process.env.TEST_MONGODB_ADMIN_URL))(`auth HTTP integration (${engine})`, () => {
-  let sql: SqlTag;
-  let fixture: Awaited<ReturnType<typeof createMongoFixture>> | undefined;
+const DEFAULT_CATEGORY_KEYS = [
+  "experience",
+  "project",
+  "education_history",
+  "certification_award",
+  "academic_writing",
+  "activity_leadership",
+  "skill_tool",
+];
+
+describe.skipIf(!(process.env.TEST_MONGODB_URL ?? process.env.TEST_MONGODB_ADMIN_URL))("auth HTTP integration", () => {
+  let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
   let identityService: IdentityApi;
   let app: ReturnType<typeof buildApi>;
   const email = `signup-${crypto.randomUUID()}@example.com`;
-  const createdEmails: string[] = [email];
 
   beforeAll(async () => {
-    if (engine === "mongodb") {
-      fixture = await createMongoFixture("auth");
-      identityService = new MongoIdentityService(fixture.resource);
-      app = buildApi({ config, identityService, careerService: new MongoCareerService(fixture.resource) });
-    } else {
-      sql = createMysqlResource(databaseUrl!).sql;
-      identityService = new IdentityService(sql);
-      app = buildApi({ config, identityService, careerService: new CareerService(sql) });
-      await sql`
-      insert into plan (code, generation_quota)
-      values ('free', 3)
-      as new on duplicate key update generation_quota = plan.generation_quota
-    `;
-    }
+    fixture = await createMongoFixture("auth");
+    identityService = new MongoIdentityService(fixture.resource);
+    app = buildApi({ config, identityService, careerService: new MongoCareerService(fixture.resource) });
     await app.ready();
   }, 60_000);
 
   afterAll(async () => {
     await app?.close();
-    if (fixture) await fixture.dispose();
-    else if (sql) { await sql`delete from \`user\` where email in ${sql(createdEmails)}`; await sql.end({ timeout: 5 }); }
+    await fixture?.dispose();
   });
 
   async function signup(body: Record<string, unknown>) {
@@ -104,18 +91,30 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_U
       headers: { authorization },
     });
     expect(categories.statusCode).toBe(200);
-    const system = CareerCategoriesResponseSchema.parse(categories.json()).data
-      .filter((category) => category.isSystem);
-    expect(system).toHaveLength(7);
-    expect(system.every((category) => category.recordCount === 0)).toBe(true);
+    const owned = CareerCategoriesResponseSchema.parse(categories.json()).data;
+    expect(owned.map((category) => category.key)).toEqual(DEFAULT_CATEGORY_KEYS);
+    expect(owned.every((category) => category.recordCount === 0)).toBe(true);
+
+    // 기본 카테고리는 공유 행이 아니라 가입한 사용자 몫으로 복사된다.
+    const other = AuthSessionResponseSchema.parse((await signup({
+      email: `signup-other-${crypto.randomUUID()}@example.com`,
+      password: PASSWORD,
+      displayName: "다른 사용자",
+    })).json()).data;
+    const otherCategories = CareerCategoriesResponseSchema.parse((await app.inject({
+      method: "GET",
+      url: "/v1/career/categories",
+      headers: { authorization: `Bearer ${other.session.accessToken}` },
+    })).json()).data;
+    expect(otherCategories.map((category) => category.key)).toEqual(DEFAULT_CATEGORY_KEYS);
+    const ownedIds = new Set(owned.map((category) => category.id));
+    expect(otherCategories.some((category) => ownedIds.has(category.id))).toBe(false);
   });
 
   it("never stores the password in plaintext and rejects a duplicate email", async () => {
-    const stored = fixture ? [{ password_hash: (await mongoCollections(fixture.resource.db).users.findOne({ email }))?.passwordHash }] : await sql<{ password_hash: string | null }[]>`
-      select password_hash from \`user\` where email = ${email}
-    `;
-    expect(stored[0]?.password_hash).toMatch(/^scrypt\$\d+\$\d+\$\d+\$[0-9a-f]{32}\$[0-9a-f]{128}$/);
-    expect(stored[0]?.password_hash).not.toContain(PASSWORD);
+    const stored = (await mongoCollections(fixture.resource.db).users.findOne({ email }))?.passwordHash;
+    expect(stored).toMatch(/^scrypt\$\d+\$\d+\$\d+\$[0-9a-f]{32}\$[0-9a-f]{128}$/);
+    expect(stored).not.toContain(PASSWORD);
 
     const duplicate = await signup({
       email,
@@ -205,17 +204,17 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_U
       "VALIDATION_ERROR",
     );
 
-    const rows = fixture ? await mongoCollections(fixture.resource.db).users.find({ email: shortPassword }).toArray() : await sql`select 1 from \`user\` where email = ${shortPassword}`;
+    const rows = await mongoCollections(fixture.resource.db).users.find({ email: shortPassword }).toArray();
     expect(rows).toHaveLength(0);
   });
 
-  it.skipIf(engine !== "mongodb")("allows one concurrent signup and rejects expired or deleted-account sessions", async () => {
+  it("allows one concurrent signup and rejects expired or deleted-account sessions", async () => {
     const concurrent = { email: `concurrent-${crypto.randomUUID()}@example.com`, displayName: "Same", password: PASSWORD };
     const outcomes = await Promise.allSettled([identityService.signup(concurrent), identityService.signup(concurrent)]);
     expect(outcomes.filter(result => result.status === "fulfilled")).toHaveLength(1);
     const created = outcomes.find(result => result.status === "fulfilled")!;
     if (created.status !== "fulfilled") throw new Error("signup did not succeed");
-    const collections = mongoCollections(fixture!.resource.db);
+    const collections = mongoCollections(fixture.resource.db);
     expect(await collections.users.countDocuments({ email: concurrent.email })).toBe(1);
     await collections.identitySessions.updateOne({ _id: created.value.session.sessionId }, { $set: { expiresAt: new Date(0) } });
     expect(await identityService.verifyAccessToken(created.value.session.accessToken)).toBeNull();
@@ -225,7 +224,7 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_U
     await expect(identityService.issueSession({ userId: created.value.user.id })).rejects.toMatchObject({ statusCode: 401 });
   });
 
-  it.skipIf(engine !== "mongodb")("issues a 12-hour session when the client opts out of staying signed in", async () => {
+  it("issues a 12-hour session when the client opts out of staying signed in", async () => {
     const before = Date.now();
     const response = await app.inject({ method: "POST", url: "/v1/auth/login", payload: { email, password: PASSWORD, persistent: false } });
     expect(response.statusCode).toBe(200);
@@ -235,13 +234,13 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_U
     expect(expiresIn).toBeGreaterThan(SESSION_POLICY.ephemeral.idleMs - 60_000);
     expect(expiresIn).toBeLessThanOrEqual(SESSION_POLICY.ephemeral.idleMs + 60_000);
 
-    const stored = await mongoCollections(fixture!.resource.db).identitySessions.findOne({ _id: session.sessionId });
+    const stored = await mongoCollections(fixture.resource.db).identitySessions.findOne({ _id: session.sessionId });
     expect(stored?.idleTtlMs).toBe(SESSION_POLICY.ephemeral.idleMs);
     expect(stored?.absoluteExpiresAt?.getTime()).toBeGreaterThan(before + SESSION_POLICY.absoluteMs - 60_000);
   });
 
-  it.skipIf(engine !== "mongodb")("extends an active session from the last request and stops at the absolute cap", async () => {
-    const collections = mongoCollections(fixture!.resource.db);
+  it("extends an active session from the last request and stops at the absolute cap", async () => {
+    const collections = mongoCollections(fixture.resource.db);
     const { session } = AuthSessionResponseSchema.parse(
       (await app.inject({ method: "POST", url: "/v1/auth/login", payload: { email, password: PASSWORD } })).json(),
     ).data;
@@ -269,8 +268,8 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_U
     expect(await me()).toBe(401);
   });
 
-  it.skipIf(engine !== "mongodb")("treats sessions issued before the sliding-expiry fields as persistent", async () => {
-    const collections = mongoCollections(fixture!.resource.db);
+  it("treats sessions issued before the sliding-expiry fields as persistent", async () => {
+    const collections = mongoCollections(fixture.resource.db);
     const { session } = AuthSessionResponseSchema.parse(
       (await app.inject({ method: "POST", url: "/v1/auth/login", payload: { email, password: PASSWORD } })).json(),
     ).data;
@@ -288,8 +287,8 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_U
     expect(legacy!.expiresAt.getTime()).toBeLessThanOrEqual(createdAt.getTime() + SESSION_POLICY.absoluteMs);
   });
 
-  it.skipIf(engine !== "mongodb")("rolls back account creation if its first session cannot be inserted", async () => {
-    const db = fixture!.resource.db;
+  it("rolls back account creation if its first session cannot be inserted", async () => {
+    const db = fixture.resource.db;
     const schema = (await db.listCollections({ name: "identity_sessions" }, { nameOnly: false }).toArray())[0]!.options!.validator;
     const email = `atomic-${crypto.randomUUID()}@example.com`;
     try {
@@ -302,13 +301,13 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_U
     } finally { await db.command({ collMod: "identity_sessions", validator: schema }); }
   });
 
-  it.skipIf(engine !== "mongodb")("rechecks an active-user guard after a concurrent deletion invalidates its snapshot", async () => {
+  it("rechecks an active-user guard after a concurrent deletion invalidates its snapshot", async () => {
     const account = await identityService.signup({ email: `guard-${crypto.randomUUID()}@example.com`, displayName: "Guard", password: PASSWORD });
     let notify!: () => void;
     let release!: () => void;
     const seen = new Promise<void>(resolve => { notify = resolve; });
     const proceed = new Promise<void>(resolve => { release = resolve; });
-    const mutation = inTransaction(fixture!.resource, async tx => {
+    const mutation = inTransaction(fixture.resource, async tx => {
       await mongoCollections(tx.db).users.findOne({ _id: account.user.id }, { session: tx.session });
       notify(); await proceed;
       await requireActiveUser(tx, account.user.id);
@@ -316,9 +315,8 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_U
     });
     const rejected = expect(mutation).rejects.toMatchObject({ statusCode: 401 });
     await seen;
-    try { await mongoCollections(fixture!.resource.db).users.updateOne({ _id: account.user.id }, { $set: { deletionRequestedAt: new Date() } }); } finally { release(); }
+    try { await mongoCollections(fixture.resource.db).users.updateOne({ _id: account.user.id }, { $set: { deletionRequestedAt: new Date() } }); } finally { release(); }
     await rejected;
-    expect((await mongoCollections(fixture!.resource.db).users.findOne({ _id: account.user.id }))?.displayName).toBe("Guard");
+    expect((await mongoCollections(fixture.resource.db).users.findOne({ _id: account.user.id }))?.displayName).toBe("Guard");
   });
 });
-}
