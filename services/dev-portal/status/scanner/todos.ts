@@ -99,6 +99,7 @@ export async function rankTodos(options: {
   candidates: Candidate[]
   limit: number
   budgetUsd: number
+  timeoutMs: number
 }): Promise<{ todos: Todo[]; costUsd: number }> {
   if (!options.candidates.length) return { todos: [], costUsd: 0 }
   const byId = new Map(options.candidates.map((c) => [c.id, c]))
@@ -115,7 +116,7 @@ ${options.candidates.map((c) => `- ${c.id} | ${c.title} | ${c.facts}`).join("\n"
     schema: Output,
     tools: [],
     budgetUsd: options.budgetUsd,
-    timeoutMs: 180_000,
+    timeoutMs: options.timeoutMs,
   })
   const seen = new Set<string>()
   const todos: Todo[] = []

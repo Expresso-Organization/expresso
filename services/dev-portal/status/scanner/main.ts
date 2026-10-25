@@ -31,7 +31,7 @@ type Config = {
   plan: Array<{ name: string; from: number; to: number; owners: string[] }>
   paths: Record<string, string[]>
   judge: { model: string; maxBudgetUsdPerGroup: number; timeoutMinutes: number; minIntervalMinutes: number; fullEveryDays: number }
-  todos: { model: string; perMember: number; staleDays: number; maxBudgetUsdPerMember: number }
+  todos: { model: string; perMember: number; staleDays: number; maxBudgetUsdPerMember: number; timeoutMinutes: number }
 }
 
 const { values: args } = parseArgs({
@@ -222,6 +222,7 @@ async function main(): Promise<ScanRun> {
           candidates,
           limit: config.todos.perMember,
           budgetUsd: config.todos.maxBudgetUsdPerMember,
+          timeoutMs: config.todos.timeoutMinutes * 60_000,
         })
         costUsd += ranked.costUsd
         todos = ranked.todos

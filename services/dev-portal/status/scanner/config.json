@@ -45,5 +45,5 @@
     "minIntervalMinutes": 60,
     "fullEveryDays": 7
   },
-  "todos": { "model": "sonnet", "perMember": 6, "staleDays": 7, "maxBudgetUsdPerMember": 1.5 }
+  "todos": { "model": "sonnet", "perMember": 6, "staleDays": 7, "maxBudgetUsdPerMember": 1.5, "timeoutMinutes": 10 }
 }
