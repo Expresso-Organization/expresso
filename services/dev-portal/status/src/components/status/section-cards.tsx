@@ -8,7 +8,7 @@ import { ago, countStates, needsAction, pointBefore, totals, type Data, type Row
 const pct = (part: number, whole: number) => (whole ? Math.round((part / whole) * 100) : 0)
 
 function Delta({ now, before, unit = "%p" }: { now: number; before: number | null; unit?: string }) {
-  if (before === null) return <Badge variant="outline">이력 쌓는 중</Badge>
+  if (before === null) return <Badge variant="outline">비교 데이터 없음</Badge>
   const d = now - before
   return (
     <Badge variant={d > 0 ? "success" : d < 0 ? "destructive" : "outline"} className="tabular-nums">
