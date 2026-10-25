@@ -1,0 +1,18 @@
+{
+  "$comment": "스캐너는 Node 가 타입을 지우고 바로 실행한다. 그래서 import 에 .ts 확장자를 쓰고 지울 수 없는 문법을 막는다.",
+  "compilerOptions": {
+    "target": "es2024",
+    "lib": ["ES2024"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "types": ["node"],
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "resolveJsonModule": true,
+    "noEmit": true,
+    "strict": true,
+    "skipLibCheck": true
+  },
+  "include": ["scanner", "shared"]
+}
