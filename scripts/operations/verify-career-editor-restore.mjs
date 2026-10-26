@@ -65,8 +65,8 @@ async function rebuildComputedProjections(source, targetClient, target) {
   const mismatches = [];
   let rebuilt = 0;
   for await (const record of target.collection("career_records").find({ deletedAt: null }, { batchSize: 100 }).sort({ _id: 1 })) {
-    const category = await target.collection("career_categories").findOne({ _id: record.categoryId, $or: [{ userId: null }, { userId: record.userId }, { userId: { $exists: false } }] });
-    const definitions = category?.propertySchemaV2?.filter((definition) => definition.deletedAt === null) ?? [];
+    const category = await target.collection("career_categories").findOne({ _id: record.categoryId, userId: record.userId });
+    const definitions = category?.propertySchemaV2.filter((definition) => definition.deletedAt === null) ?? [];
     const derivedIds = definitions.filter((definition) => definition.type === "formula" || definition.type === "rollup").map((definition) => definition.id);
     if (!derivedIds.length) continue;
     const sourceRecord = await source.collection("career_records").findOne({ _id: record._id, userId: record.userId });

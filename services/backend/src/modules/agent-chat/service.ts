@@ -12,9 +12,16 @@ import { buildGapReview, gapIssues, latestReview, latestTool } from "./gap-revie
 import { buildPreparationTasks, PlanCapacityError, scheduleRemaining } from "./preparation-planner.js";
 import { PreparationPlans } from "./plans.js";
 import type { CareerDocumentApi } from "../career-editor/index.js";
-import type { CareerApi } from "../career/index.js";
+import { readableCareerProperties, type CareerApi } from "../career/index.js";
 import type { JobBoardApi } from "../jobs/index.js";
 import type { ConsentApi } from "../consent/index.js";
+
+/**
+ * 실행 중인 대화의 heartbeat 주기. 실행 인스턴스는 이 주기로 문서를 갱신하고, 갱신이 맞지
+ * 않으면(다른 인스턴스가 취소해 `running`이 아니면) 실행을 중단한다. 그래서 다른 인스턴스에서
+ * 낸 취소가 실행에 닿는 최대 지연이기도 하다. 같은 인스턴스의 취소는 즉시 전달된다.
+ */
+export const RUN_HEARTBEAT_MS = 1_000;
 
 export class AgentChatError extends Error { constructor(readonly statusCode: number, message: string) { super(message); } }
 const view = (row: AgentConversationDoc) => { const { _id, userId: _userId, heartbeatAt: _heartbeat, ...data } = row; return AgentConversationSchema.parse({ ...data, id: _id }); };
@@ -51,16 +58,19 @@ export class AgentChatService {
       }
       const record = await this.career.getRecord(userId, ref.id);
       const snapshot = await this.documents.bootstrap(userId, ref.id);
-      return { ...ref, data: { record, document: snapshot.document, documentVersion: snapshot.documentVersion } };
+      // 에이전트는 옵션 ID가 아니라 이름을 읽는다.
+      const definitions = (await this.definitions(userId)).get(record.categoryId) ?? [];
+      return { ...ref, data: { record: { ...record, properties: readableCareerProperties(record.properties, definitions) }, document: snapshot.document, documentVersion: snapshot.documentVersion } };
     }));
   }
   /** 에이전트가 읽는 기록의 글. 남의 기록 · 삭제된 기록은 getRecord가 막는다. */
   private async recordTexts(userId: string, ids: readonly string[]) {
     const rows = new Map<string, { title: string; text: string }>();
+    const definitions = await this.definitions(userId);
     for (const id of new Set(ids)) {
       try {
         const record = await this.career.getRecord(userId, id);
-        rows.set(id, { title: record.title, text: recordText(record, (await this.documents.bootstrap(userId, id)).document) });
+        rows.set(id, { title: record.title, text: recordText(record, (await this.documents.bootstrap(userId, id)).document, definitions.get(record.categoryId) ?? []) });
       } catch { /* 읽을 수 없는 기록은 없는 기록과 같다. */ }
     }
     return rows;
@@ -69,6 +79,9 @@ export class AgentChatService {
     const rows = await this.recordTexts(userId, ids);
     // 한 번에 읽는 양을 기록당 4,000자로 묶어 둔다 — 인용은 앞부분에서 나와도 전체 글 안에 있다.
     return [...rows].map(([id, row]) => ({ id, title: row.title, text: row.text.slice(0, 4_000), truncated: row.text.length > 4_000 }));
+  }
+  private async definitions(userId: string) {
+    return new Map((await this.career.listCategories(userId)).map(category => [category.id, category.propertySchemaV2]));
   }
   private async categories(userId: string) {
     return (await this.career.listCategories(userId)).map(category => ({ id: category.id, name: category.name }));
@@ -306,7 +319,7 @@ export class AgentChatService {
       if (heartbeatBusy) return;
       heartbeatBusy = true;
       void this.rows.updateOne(filter, { $set: { heartbeatAt: new Date() } }).then(result => { if (!result.matchedCount) controller.abort(); }).catch(() => controller.abort()).finally(() => { heartbeatBusy = false; });
-    }, 1_000);
+    }, RUN_HEARTBEAT_MS);
     const timeout = setTimeout(() => controller.abort(), 600_000);
     try {
       await this.runtime!.run({ messages: row.messages.slice(0, -1), context, ...(apiKey ? { apiKey } : {}), signal: controller.signal,

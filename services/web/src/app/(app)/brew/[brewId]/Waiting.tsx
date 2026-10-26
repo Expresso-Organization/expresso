@@ -1,10 +1,12 @@
 "use client";
 
 import type { BrewJobStatus } from "@expresso/contracts";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import { Icon } from "@/components/ui/Icon";
+import { CONSENT_COPY, CONSENT_SETTINGS_HREF } from "@/lib/consent-copy";
 
 import styles from "./Waiting.module.css";
 
@@ -23,6 +25,7 @@ export function Waiting({
   actionLabel,
   rejectedNote,
   brewId,
+  basisJobId,
 }: {
   title: string;
   note: string;
@@ -32,9 +35,13 @@ export function Waiting({
   /** 입력이 모자라 거절됐을 때 무엇을 하면 되는지(§13 — 에러는 다음 행동으로 끝난다). */
   rejectedNote: string;
   brewId: string;
+  /** 화면이 마지막으로 본 잡. 다시 누르면 이것을 기준으로 새 잡이 돈다. */
+  basisJobId: string | null;
 }) {
   const running = job?.status === "queued" || job?.status === "running";
   const failed = job?.status === "failed";
+  // 동의가 꺼져 실패했으면 어느 동의인지 말하고 그 자리로 보낸다.
+  const consent = job?.failure?.code === "CONSENT_REQUIRED" ? job.failure.requiredConsent : null;
   const router = useRouter();
 
   useEffect(() => {
@@ -66,7 +73,12 @@ export function Waiting({
 
         {failed ? (
           <p className={styles.failure}>
-            {job?.failure?.code === "BREW_INPUT_REJECTED"
+            {consent ? (
+              <>
+                {CONSENT_COPY[consent].title} 동의가 필요해 만들지 못했습니다. 켠 뒤 다시 눌러 주세요.{" "}
+                <Link href={CONSENT_SETTINGS_HREF} className={styles.failureLink}>동의 설정 열기</Link>
+              </>
+            ) : job?.failure?.code === "BREW_INPUT_REJECTED"
               ? rejectedNote
               : "만들지 못했습니다. 다시 시도해 주세요."}
           </p>
@@ -75,6 +87,7 @@ export function Waiting({
         {running ? null : (
           <form action={action}>
             <input type="hidden" name="brewId" value={brewId} />
+            {basisJobId ? <input type="hidden" name="basisJobId" value={basisJobId} /> : null}
             <button type="submit" className={styles.primary}>{actionLabel}</button>
           </form>
         )}

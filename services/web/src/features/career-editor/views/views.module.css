@@ -166,6 +166,9 @@
 .cellPopout>button:hover,.cellPopout>button[aria-selected="true"],.cellContextMenu>button:hover { background:var(--ex-bg-hover); color:var(--ex-fg-strong); }
 .cellPopout>button>i:last-child { margin-left:auto; color:var(--ex-accent-text); }
 .cellPopout>button:disabled,.cellContextMenu>button:disabled { opacity:.4; cursor:not-allowed; }
+.cellPopoutInput { min-height:32px; margin-top:4px; box-sizing:border-box; border:1px solid var(--ex-border-soft); border-radius:7px; background:var(--ex-bg-muted); padding:6px 9px; color:var(--ex-fg-strong); font:inherit; font-size:var(--ex-text-sm); }
+.cellPopoutInput:focus { border-color:var(--ex-accent); outline:2px solid var(--ex-focus-ring); outline-offset:1px; background:var(--ex-bg); }
+.cellPopoutInput[data-issue="true"] { border-color:var(--ex-status-danger-text); }
 .optionDot { width:8px; height:8px; flex:0 0 auto; border-radius:999px; background:var(--ex-accent); opacity:.72; }
 .datePopout { overflow:visible; padding:8px; }
 .dateFieldsInline { display:grid; grid-template-columns:1fr 1fr; gap:5px; }

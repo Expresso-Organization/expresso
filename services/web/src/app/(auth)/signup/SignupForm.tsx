@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useActionState, useState } from "react";
 
+import { TERMS_VERSION } from "@expresso/contracts";
+
 import { signupAction, type AuthFormState } from "@/app/auth-actions";
 import { Catchphrase } from "@/components/brand/Catchphrase";
 import { Icon } from "@/components/ui/Icon";
@@ -58,6 +60,17 @@ export function SignupForm({
           ) : null}
 
           <SocialSignIn googleEnabled={googleEnabled} verb="가입" />
+          <p className={styles.socialConsent}>
+            Google로 가입하면{" "}
+            <Link href="/terms" className={styles.consentLink} target="_blank" rel="noopener">
+              이용약관
+            </Link>
+            과{" "}
+            <Link href="/privacy" className={styles.consentLink} target="_blank" rel="noopener">
+              개인정보 처리방침
+            </Link>
+            에 동의하는 것입니다.
+          </p>
 
           <div className={styles.divider}>
             <span className={styles.dividerLine} />
@@ -66,6 +79,9 @@ export function SignupForm({
           </div>
 
           <form action={action}>
+            {/* 사용자가 읽고 동의한 판. 서버가 묻는 판과 같아야 가입이 된다. */}
+            <input type="hidden" name="termsVersion" value={TERMS_VERSION} />
+
             {state.error ? (
               <p className={styles.formError} role="alert">
                 {state.error}
@@ -171,9 +187,14 @@ export function SignupForm({
                 ) : null}
               </button>
               <span className={styles.consentText}>
-                <span className={styles.consentLink}>이용약관</span>과{" "}
-                <span className={styles.consentLink}>개인정보 처리방침</span>에
-                동의합니다
+                <Link href="/terms" className={styles.consentLink} target="_blank" rel="noopener">
+                  이용약관
+                </Link>
+                과{" "}
+                <Link href="/privacy" className={styles.consentLink} target="_blank" rel="noopener">
+                  개인정보 처리방침
+                </Link>
+                에 동의합니다
               </span>
             </div>
 

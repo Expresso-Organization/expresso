@@ -9,7 +9,7 @@ import { PropertyCreatePopover } from "./PropertyCreatePopover";
 const categoryId = "00000000-0000-4000-8000-000000000010";
 const definition: CareerPropertyDefinitionV2 = { id: "00000000-0000-4000-8000-000000000011", key: "note", name: "메모", type: "text", required: false, system: false, config: {}, order: 0, version: 1, deletedAt: null };
 const existingSelect: CareerPropertyDefinitionV2 = { id: "00000000-0000-4000-8000-000000000012", key: "choice", name: "선택 1", type: "select", required: false, system: false, config: { options: [] }, order: 1, version: 1, deletedAt: null };
-const category: CareerCategory = { id: categoryId, key: "test", name: "테스트", icon: "folder", defaultView: "table", isSystem: false, propertySchema: {}, propertySchemaV2: [definition], schemaVersion: 1, sortOrder: 0, recordCount: 1, version: 1 };
+const category: CareerCategory = { id: categoryId, key: "test", name: "테스트", icon: "folder", defaultView: "table", propertySchemaV2: [definition], schemaVersion: 1, sortOrder: 0, recordCount: 1, version: 1 };
 
 describe("PropertyCreatePopover", () => {
   const onChange = vi.fn();
@@ -29,7 +29,7 @@ describe("PropertyCreatePopover", () => {
       return new Response(JSON.stringify({ data: { propertySchemaV2: [definition, { ...change.property, id: crypto.randomUUID(), order: 1, version: 1, deletedAt: null }] } }), { status: 200, headers: { "content-type": "application/json" } });
     });
     vi.stubGlobal("fetch", fetchMock);
-    render(<PropertyCreatePopover categoryId={categoryId} definitions={[definition]} disabled={false} onDefinitionsChange={onChange} onVersionConflict={onConflict} />);
+    render(<PropertyCreatePopover categoryId={categoryId} definitions={[definition]} onDefinitionsChange={onChange} onVersionConflict={onConflict} />);
 
     fireEvent.click(screen.getByRole("button", { name: "속성 추가" }));
     expect(screen.queryByText("속성 관리")).toBeNull();
@@ -48,7 +48,7 @@ describe("PropertyCreatePopover", () => {
       return new Response(JSON.stringify({ data: { propertySchemaV2: [definition] } }), { status: 200, headers: { "content-type": "application/json" } });
     });
     vi.stubGlobal("fetch", fetchMock);
-    render(<PropertyCreatePopover categoryId={categoryId} definitions={[definition, existingSelect]} disabled={false} onDefinitionsChange={onChange} onVersionConflict={onConflict} />);
+    render(<PropertyCreatePopover categoryId={categoryId} definitions={[definition, existingSelect]} onDefinitionsChange={onChange} onVersionConflict={onConflict} />);
 
     fireEvent.click(screen.getByRole("button", { name: "속성 추가" }));
     fireEvent.click(screen.getByRole("option", { name: "선택" }));
@@ -66,7 +66,7 @@ describe("PropertyCreatePopover", () => {
       return new Response(JSON.stringify({ data: { propertySchemaV2: [definition, { ...change.property, id: crypto.randomUUID(), order: 1, version: 1, deletedAt: null }] } }), { status: 200, headers: { "content-type": "application/json" } });
     });
     vi.stubGlobal("fetch", fetchMock);
-    render(<PropertyCreatePopover categoryId={categoryId} definitions={[definition]} disabled={false} onDefinitionsChange={onChange} onVersionConflict={onConflict} />);
+    render(<PropertyCreatePopover categoryId={categoryId} definitions={[definition]} onDefinitionsChange={onChange} onVersionConflict={onConflict} />);
 
     fireEvent.click(screen.getByRole("button", { name: "속성 추가" }));
     fireEvent.change(screen.getByLabelText("속성 이름"), { target: { value: "연결 기록" } });

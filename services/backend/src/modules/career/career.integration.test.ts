@@ -1,15 +1,10 @@
 import { createHash, randomUUID } from "node:crypto";
 import { encodeDocumentAsYUpdate } from "@expresso/editor";
-import { createMysqlResource } from "../../platform/legacy-mysql.js";
-
-import type { SqlTag } from "../../platform/legacy-mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
 import type { RuntimeConfig } from "../../config/runtime-config.js";
-import { IdentityService } from "../identity/legacy-mysql-service.js";
 import { CareerError } from "./errors.js";
-import { CareerService } from "./legacy-mysql-service.js";
 import type { CareerApi } from "./index.js";
 import { MongoCareerService } from "./service.js";
 import { MongoIdentityService, type IdentityApi } from "../identity/index.js";
@@ -18,6 +13,16 @@ import { createMongoFixture } from "../../../test/support/mongodb.js";
 import { assertActiveRecordsForWrite, purgeTrashedCareerRecord } from "./mongo-record-guard.js";
 import { inTransaction } from "../../platform/mongo-transaction.js";
 import { CareerDocumentService } from "../career-editor/index.js";
+
+const DEFAULT_CATEGORY_KEYS = [
+  "experience",
+  "project",
+  "education_history",
+  "certification_award",
+  "academic_writing",
+  "activity_leadership",
+  "skill_tool",
+];
 
 describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB career editing", () => {
   let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
@@ -36,7 +41,13 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB career editing", () => {
   afterAll(async () => { await fixture?.dispose(); });
 
   it("scopes categories, validates properties, and replays only identical create requests", async () => {
-    expect((await service.listCategories(userId)).filter((category) => category.isSystem)).toHaveLength(7);
+    const owned = await service.listCategories(userId);
+    const others = await service.listCategories(otherId);
+    expect(owned.map((category) => category.key)).toEqual(DEFAULT_CATEGORY_KEYS);
+    expect(others.map((category) => category.key)).toEqual(DEFAULT_CATEGORY_KEYS);
+    // 같은 키라도 사용자마다 다른 카테고리다. 남의 카테고리에는 기록을 만들 수 없다.
+    expect(others.find((category) => category.key === "experience")!.id).not.toBe(categoryId);
+    await expect(service.createRecord(otherId, randomUUID(), { categoryId, title: "", properties: {}, bodyMd: "" })).rejects.toMatchObject({ statusCode: 404 });
     const input = { categoryId, title: "한국어 日本語 😀", properties: {}, bodyMd: "가".repeat(200_000) };
     const key = randomUUID();
     const created = await service.createRecord(userId, key, input);
@@ -87,27 +98,6 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB career editing", () => {
     expect((await service.getRecord(userId, record.id)).bodyMd).toContain("Yjs 변경");
     await expect(service.updateRecord(userId, record.id, legacySaved.version, { bodyMd: "# 덮어쓰기" }))
       .rejects.toMatchObject({ statusCode: 409 });
-  });
-
-  it("requires confirmation to remove populated properties and protects system fields", async () => {
-    const category = await service.createCategory(userId, { key: `custom_${randomUUID().replaceAll("-", "")}`, name: "사용자", icon: "📁", defaultView: "table", propertySchema: { note: { type: "text", label: "메모", required: false, system: false }, fixed: { type: "text", label: "고정", required: false, system: true } } });
-    const { record } = await service.createRecord(userId, randomUUID(), { categoryId: category.id, title: "", properties: { note: "남은 값" }, bodyMd: "" });
-    await expect(service.listViews(otherId, category.id)).rejects.toMatchObject({ statusCode: 404 });
-    await expect(service.updatePropertySchema(userId, category.id, 1, {}, true)).rejects.toMatchObject({ statusCode: 403 });
-    const next = { fixed: category.propertySchema.fixed! };
-    await expect(service.updatePropertySchema(userId, category.id, 1, next, false)).rejects.toMatchObject({ statusCode: 409 });
-    expect((await service.updatePropertySchema(userId, category.id, 1, next, true)).version).toBe(2);
-    expect(await service.getRecord(userId, record.id)).toMatchObject({ properties: {}, version: 2 });
-    await expect(service.updatePropertySchema(userId, category.id, 1, next, true)).rejects.toMatchObject({ statusCode: 412 });
-  });
-
-  it("limits views under concurrency and rejects foreign fields", async () => {
-    const input = { name: "기본", viewType: "table" as const, filters: [], sorts: [], visibleProperties: ["title"] };
-    await expect(service.createView(userId, categoryId, { ...input, visibleProperties: ["$where"] })).rejects.toMatchObject({ statusCode: 400 });
-    const results = await Promise.allSettled(Array.from({ length: 10 }, (_, index) => service.createView(userId, categoryId, { ...input, name: `뷰 ${index}` })));
-    expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(8);
-    expect((await service.listViews(userId, categoryId))).toHaveLength(8);
-    expect((await service.listViews(otherId, categoryId))).toHaveLength(0);
   });
 
   it("canonicalizes links, checks source spans, and replaces skill evidence atomically", async () => {
@@ -181,15 +171,11 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB career editing", () => {
   });
 });
 
-const databaseUrl = process.env.TEST_DATABASE_URL;
-const describeWithDatabase = databaseUrl ? describe : describe.skip;
-
 const config: RuntimeConfig = {
   nodeEnv: "test",
   host: "127.0.0.1",
   port: 4_000,
   logLevel: "silent",
-  databaseUrl: databaseUrl ?? "mysql://127.0.0.1:1/unused",
   redisUrl: "redis://127.0.0.1:1",
   outboxPollIntervalMs: 1_000,
   outboxBatchSize: 25,
@@ -197,22 +183,8 @@ const config: RuntimeConfig = {
   queuePrefix: "expresso-career-test",
 };
 
-interface IdRow {
-  id: string;
-}
-
-interface CategoryRow extends IdRow {
-  key: string;
-}
-
-interface CountRow {
-  count: number;
-}
-
-for (const engine of ["mysql", "mongodb"] as const) {
-describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_URL)(`career domain integration (${engine})`, () => {
-  let sql: SqlTag;
-  let fixture: Awaited<ReturnType<typeof createMongoFixture>> | undefined;
+describe.skipIf(!process.env.TEST_MONGODB_URL)("career domain integration", () => {
+  let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
   let identityService: IdentityApi;
   let careerService: CareerApi;
   let app: ReturnType<typeof buildApi>;
@@ -221,64 +193,30 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
   let firstAccessToken: string;
   let secondAccessToken: string;
   let experienceCategoryId: string;
-  const globalCleanup: Array<{ table: "job_posting" | "company" | "template"; id: string }> = [];
 
   const auth = (accessToken = firstAccessToken) => ({
     authorization: `Bearer ${accessToken}`,
   });
 
   beforeAll(async () => {
-    if (engine === "mongodb") {
-      fixture = await createMongoFixture("career-http");
-      identityService = new MongoIdentityService(fixture.resource);
-      careerService = new MongoCareerService(fixture.resource);
-      const first = await identityService.signup({ email: `career-${randomUUID()}@example.com`, displayName: "기록 A", password: "correct-horse-battery" });
-      const second = await identityService.signup({ email: `career-${randomUUID()}@example.com`, displayName: "기록 B", password: "correct-horse-battery" });
-      firstUserId = first.user.id; secondUserId = second.user.id;
-      firstAccessToken = first.session.accessToken; secondAccessToken = second.session.accessToken;
-      experienceCategoryId = (await careerService.listCategories(firstUserId)).find((category) => category.key === "experience")!.id;
-    } else {
-      sql = createMysqlResource(databaseUrl!).sql;
-      identityService = new IdentityService(sql);
-      careerService = new CareerService(sql);
-    const plans = await sql<IdRow[]>`select id from plan where code = 'free'`;
-    const planId = plans[0]?.id;
-    if (!planId) throw new Error("free plan is missing");
-    const users: IdRow[] = [{ id: randomUUID() }, { id: randomUUID() }];
-    await sql`
-      insert into \`user\` (id, email, display_name, plan_id)
-      values
-        (${users[0]!.id}, ${`career-a-${randomUUID()}@example.com`}, 'Career A', ${planId}),
-        (${users[1]!.id}, ${`career-b-${randomUUID()}@example.com`}, 'Career B', ${planId})
-    `;
-    const [first, second] = users;
-    if (!first || !second) throw new Error("career test users are missing");
-    firstUserId = first.id;
-    secondUserId = second.id;
-    firstAccessToken = (await identityService.issueSession({ userId: firstUserId })).accessToken;
-    secondAccessToken = (await identityService.issueSession({ userId: secondUserId })).accessToken;
-    const categories = await sql<CategoryRow[]>`
-      select id, \`key\` from category where is_system order by sort_order
-    `;
-    const experience = categories.find(({ key }) => key === "experience");
-    if (!experience) throw new Error("experience category is missing");
-    experienceCategoryId = experience.id;
-    }
+    fixture = await createMongoFixture("career-http");
+    identityService = new MongoIdentityService(fixture.resource);
+    careerService = new MongoCareerService(fixture.resource);
+    const first = await identityService.signup({ email: `career-${randomUUID()}@example.com`, displayName: "기록 A", password: "correct-horse-battery" });
+    const second = await identityService.signup({ email: `career-${randomUUID()}@example.com`, displayName: "기록 B", password: "correct-horse-battery" });
+    firstUserId = first.user.id; secondUserId = second.user.id;
+    firstAccessToken = first.session.accessToken; secondAccessToken = second.session.accessToken;
+    experienceCategoryId = (await careerService.listCategories(firstUserId)).find((category) => category.key === "experience")!.id;
     app = buildApi({ config, identityService, careerService });
     await app.ready();
   }, 60_000);
 
   afterAll(async () => {
     await app?.close();
-    if (fixture) await fixture.dispose();
-    else if (sql) {
-      if (firstUserId && secondUserId) await sql`delete from \`user\` where id in (${firstUserId}, ${secondUserId})`;
-      for (const item of globalCleanup.reverse()) await sql.unsafe(`delete from ${item.table} where id = $1`, [item.id]);
-      await sql.end({ timeout: 5 });
-    }
+    await fixture?.dispose();
   });
 
-  it("shows exactly seven immutable default categories idempotently", async () => {
+  it("shows each user their own seven default categories idempotently", async () => {
     const first = await app.inject({
       method: "GET",
       url: "/v1/career/categories",
@@ -289,42 +227,30 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
       url: "/v1/career/categories",
       headers: auth(),
     });
-    const expectedKeys = [
-      "experience",
-      "project",
-      "education_history",
-      "certification_award",
-      "academic_writing",
-      "activity_leadership",
-      "skill_tool",
-    ];
     expect(first.statusCode).toBe(200);
-    expect(first.json().data.map(({ key }: { key: string }) => key)).toEqual(expectedKeys);
+    expect(first.json().data.map(({ key }: { key: string }) => key)).toEqual(DEFAULT_CATEGORY_KEYS);
     expect(second.json().data.map(({ id }: { id: string }) => id)).toEqual(
       first.json().data.map(({ id }: { id: string }) => id),
     );
-    if (fixture) {
-      await expect(careerService.updatePropertySchema(firstUserId, experienceCategoryId, 1, {}, true)).rejects.toMatchObject({ statusCode: 404 });
-      expect((await careerService.listCategories(firstUserId)).find((category) => category.id === experienceCategoryId)?.name).toBe(first.json().data[0].name);
-    } else {
-    const counts = await sql<CountRow[]>`
-      select count(*) as count from category where is_system
-    `;
-    expect(counts[0]?.count).toBe(7);
-    await expect(
-      sql`update category set name = 'Changed' where id = ${experienceCategoryId}`,
-    ).rejects.toThrow(/immutable/);
-    await expect(
-      sql`delete from category where id = ${experienceCategoryId}`,
-    ).rejects.toThrow(/immutable/);    }
+    expect(first.json().data[0].id).toBe(experienceCategoryId);
 
+    // 다른 사용자는 같은 키의 카테고리를 자기 몫으로 따로 가진다.
+    const other = await app.inject({
+      method: "GET",
+      url: "/v1/career/categories",
+      headers: auth(secondAccessToken),
+    });
+    expect(other.statusCode).toBe(200);
+    expect(other.json().data.map(({ key }: { key: string }) => key)).toEqual(DEFAULT_CATEGORY_KEYS);
+    const firstIds = new Set(first.json().data.map(({ id }: { id: string }) => id));
+    expect(other.json().data.some(({ id }: { id: string }) => firstIds.has(id))).toBe(false);
   });
 
   it("provides idempotent record CRUD, ETags, stale-save rejection, and user scope", async () => {
     const body = {
       categoryId: experienceCategoryId,
       title: "API platform migration",
-      properties: { role: "Backend engineer", achievements: ["zero downtime"] },
+      properties: { period: { type: "date", value: { start: "2024-01-01", end: "2024-06-30", timezone: null } } },
       bodyMd: "Migrated the API platform with zero downtime.",
     };
     const headers = { ...auth(), "idempotency-key": "career-record:retry-0001" };
@@ -334,11 +260,8 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
     expect(replayed.statusCode).toBe(200);
     expect(replayed.json().data.id).toBe(created.json().data.id);
     const recordId = created.json().data.id as string;
-    const counts = fixture ? [{ count: await mongoCollections(fixture.resource.db).careerRecords.countDocuments({ userId: firstUserId, createIdempotencyKey: "career-record:retry-0001" }) }] : await sql<CountRow[]>`
-      select count(*) as count from record
-      where user_id = ${firstUserId} and create_idempotency_key = 'career-record:retry-0001'
-    `;
-    expect(counts[0]?.count).toBe(1);
+    const count = await mongoCollections(fixture.resource.db).careerRecords.countDocuments({ userId: firstUserId, createIdempotencyKey: "career-record:retry-0001" });
+    expect(count).toBe(1);
 
     const updated = await app.inject({
       method: "PATCH",
@@ -366,7 +289,11 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
     expect(crossUser.statusCode).toBe(404);
   });
 
-  it("validates schemas, reports removal impact, saves views, and returns links bidirectionally", async () => {
+  it("creates a category with v2 properties, validates typed values, and returns links bidirectionally", async () => {
+    const postgresOption = { id: randomUUID(), name: "PostgreSQL" };
+    const typescriptOption = { id: randomUUID(), name: "TypeScript" };
+    const definition = (key: string, name: string, type: "number" | "multi_select" | "date", order: number, config: Record<string, unknown> = {}) =>
+      ({ id: randomUUID(), key, name, type, required: false, system: false, config, order, version: 1, deletedAt: null });
     const categoryResponse = await app.inject({
       method: "POST",
       url: "/v1/career/categories",
@@ -376,64 +303,57 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
         name: "Custom projects",
         icon: "sparkles",
         defaultView: "gallery",
-        propertySchema: {
-          impact: { label: "Impact", type: "number", required: false, system: false },
-          tools: { label: "Tools", type: "tags", required: false, system: false },
-          happened: { label: "Month", type: "date", required: false, system: false },
-        },
+        propertySchemaV2: [
+          definition("impact", "Impact", "number", 0),
+          definition("tools", "Tools", "multi_select", 1, { options: [postgresOption, typescriptOption] }),
+          definition("happened", "Month", "date", 2),
+        ],
       },
     });
     expect(categoryResponse.statusCode).toBe(201);
     const category = categoryResponse.json().data;
+    expect(category.propertySchemaV2.map(({ key }: { key: string }) => key)).toEqual(["impact", "tools", "happened"]);
+    // 만든 사용자의 목록에만 보인다.
+    expect((await careerService.listCategories(firstUserId)).map(({ id }) => id)).toContain(category.id);
+    expect((await careerService.listCategories(secondUserId)).map(({ id }) => id)).not.toContain(category.id);
+
     const first = await careerService.createRecord(firstUserId, `custom:first:${randomUUID()}`, {
       categoryId: category.id,
       title: "Custom record",
-      properties: { impact: 42, tools: ["PostgreSQL"], happened: "2026-08" },
+      properties: {
+        impact: { type: "number", value: 42 },
+        tools: { type: "multi_select", value: [postgresOption.id] },
+        happened: { type: "date", value: { start: "2026-08-01", end: null, timezone: null } },
+      },
       bodyMd: "Improved throughput by 42 percent.",
     });
     const second = await careerService.createRecord(firstUserId, `custom:second:${randomUUID()}`, {
       categoryId: category.id,
       title: "Related record",
-      properties: { tools: ["TypeScript"] },
+      properties: { tools: { type: "multi_select", value: [typescriptOption.id] } },
       bodyMd: "Built a TypeScript service.",
     });
-
-    const nextSchema = {
-      tools: { label: "Tools", type: "tags", required: false, system: false },
-      happened: { label: "Month", type: "date", required: false, system: false },
-    };
-    const preview = await app.inject({
-      method: "PATCH",
-      url: `/v1/career/categories/${category.id}/property-schema`,
-      headers: { ...auth(), "if-match": categoryResponse.headers.etag as string },
-      payload: { propertySchema: nextSchema, confirmValueRemoval: false },
-    });
-    expect(preview.statusCode).toBe(409);
-    expect(preview.json().error.details.propertyValueCounts).toEqual({ impact: 1 });
-
-    const confirmed = await app.inject({
-      method: "PATCH",
-      url: `/v1/career/categories/${category.id}/property-schema`,
-      headers: { ...auth(), "if-match": categoryResponse.headers.etag as string },
-      payload: { propertySchema: nextSchema, confirmValueRemoval: true },
-    });
-    expect(confirmed.statusCode).toBe(200);
-    expect((await careerService.getRecord(firstUserId, first.record.id)).properties).not.toHaveProperty("impact");
-
-    const view = await app.inject({
-      method: "POST",
-      url: `/v1/career/categories/${category.id}/views`,
-      headers: auth(),
-      payload: {
-        name: "PostgreSQL work",
-        viewType: "gallery",
-        filters: [{ property: "tools", operator: "contains", value: "PostgreSQL" }],
-        sorts: [{ property: "happened", direction: "desc" }],
-        visibleProperties: ["tools", "happened"],
-      },
-    });
-    expect(view.statusCode).toBe(201);
-    expect((await careerService.listViews(firstUserId, category.id))).toHaveLength(1);
+    expect((await careerService.getRecord(firstUserId, first.record.id)).properties).toMatchObject({ impact: { type: "number", value: 42 } });
+    // 정의와 타입이 다른 값, 정의에 없는 키는 저장하지 않는다.
+    await expect(careerService.createRecord(firstUserId, `custom:bad-type:${randomUUID()}`, {
+      categoryId: category.id,
+      title: "Wrong type",
+      properties: { impact: { type: "text", value: "42" } },
+      bodyMd: "",
+    })).rejects.toMatchObject({ statusCode: 400 });
+    await expect(careerService.createRecord(firstUserId, `custom:unknown:${randomUUID()}`, {
+      categoryId: category.id,
+      title: "Unknown key",
+      properties: { missing: { type: "text", value: "x" } },
+      bodyMd: "",
+    })).rejects.toMatchObject({ statusCode: 400 });
+    // 다른 사용자는 이 카테고리에 기록을 만들 수 없다.
+    await expect(careerService.createRecord(secondUserId, `custom:foreign:${randomUUID()}`, {
+      categoryId: category.id,
+      title: "Foreign",
+      properties: {},
+      bodyMd: "",
+    })).rejects.toMatchObject({ statusCode: 404 });
 
     await careerService.createLink(firstUserId, first.record.id, second.record.id, "related");
     expect(await careerService.listLinks(firstUserId, first.record.id)).toMatchObject([
@@ -443,8 +363,9 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
       { relatedRecordId: first.record.id },
     ]);
 
+    const secondExperienceId = (await careerService.listCategories(secondUserId)).find((item) => item.key === "experience")!.id;
     const other = await careerService.createRecord(secondUserId, `other:${randomUUID()}`, {
-      categoryId: experienceCategoryId,
+      categoryId: secondExperienceId,
       title: "Other user record",
       properties: {},
       bodyMd: "Private evidence.",
@@ -461,80 +382,17 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
       properties: {},
       bodyMd: "This exact sentence is already materialized.",
     });
-    let portfolio: IdRow | undefined;
-    let block: IdRow | undefined;
-    let deployment: IdRow | undefined;
-    if (fixture) {
-      const db = mongoCollections(fixture.resource.db);
-      portfolio = { id: randomUUID() }; block = { id: randomUUID() }; deployment = { id: randomUUID() };
-      const sectionId = randomUUID();
-      // 이 사례는 이미 생성된 지면과 인용의 보존을 검사합니다. 생성 그래프는 생성 모듈에서 검증합니다.
-      await db.portfolios.insertOne({ _id: portfolio.id, userId: firstUserId, brewId: randomUUID(), templateId: randomUUID(), title: "Published", status: "published", createdAt: new Date(), updatedAt: new Date(), styleOverrides: {} });
-      await db.portfolioSections.insertOne({ _id: sectionId, userId: firstUserId, portfolioId: portfolio.id, orderNo: 0, visible: true });
-      await db.blocks.insertOne({ _id: block.id, userId: firstUserId, portfolioSectionId: sectionId, kind: "paragraph", content: { text: "Frozen snapshot sentence" }, style: {}, sourceRecordId: created.record.id, syncState: "synced", locked: false, orderNo: 0 });
-      await db.recordUsages.insertOne({ _id: randomUUID(), userId: firstUserId, recordId: created.record.id, blockId: block.id, quotedText: "This exact sentence", firstUsedAt: new Date() });
-      await db.deployments.insertOne({ _id: deployment.id, userId: firstUserId, portfolioId: portfolio.id, version: 1, subdomain: `career-${randomUUID()}`, seoIndexable: false, contactVisibility: "hidden", publishedAt: new Date(), hasUnpublishedChanges: false, snapshot: {}, seo: {} });
-    } else {
-    const company = (await sql<IdRow[]>`
-      insert into company (name) values (${`Career ${randomUUID()}`}) returning id
-    `)[0];
-    if (!company) throw new Error("company missing");
-    globalCleanup.push({ table: "company", id: company.id });
-    const posting = (await sql<IdRow[]>`
-      insert into job_posting (
-        company_id, source, external_id, title, description_raw, dedupe_hash
-      ) values (
-        ${company.id}, 'api', ${`career-${randomUUID()}`}, 'Engineer',
-        'Immutable posting source for career integration.', ${randomUUID()}
-      ) returning id
-    `)[0];
-    if (!posting) throw new Error("posting missing");
-    globalCleanup.push({ table: "job_posting", id: posting.id });
-    const analysis = (await sql<IdRow[]>`
-      insert into job_analysis (user_id, job_posting_id, input_type)
-      values (${firstUserId}, ${posting.id}, 'url') returning id
-    `)[0];
-    const brew = analysis && (await sql<IdRow[]>`
-      insert into brew (user_id, job_analysis_id, length_preset)
-      values (${firstUserId}, ${analysis.id}, 'single') returning id
-    `)[0];
-    const template = (await sql<IdRow[]>`
-      insert into template (code, name, plan_required)
-      values (${`career-${randomUUID()}`}, 'Career Template', 'free') returning id
-    `)[0];
-    if (!template) throw new Error("template missing");
-    globalCleanup.push({ table: "template", id: template.id });
-    if (!brew) throw new Error("brew missing");
-    portfolio = (await sql<IdRow[]>`
-      insert into portfolio (user_id, brew_id, template_id, title, status)
-      values (${firstUserId}, ${brew.id}, ${template.id}, 'Published', 'published') returning id
-    `)[0];
-    const section = portfolio && (await sql<IdRow[]>`
-      insert into portfolio_section (user_id, portfolio_id, order_no)
-      values (${firstUserId}, ${portfolio.id}, 0) returning id
-    `)[0];
-    block = section && (await sql<IdRow[]>`
-      insert into block (
-        user_id, portfolio_section_id, kind, content, source_record_id
-      ) values (
-        ${firstUserId}, ${section.id}, 'paragraph',
-        ${sql.json({ text: "Frozen snapshot sentence" })}, ${created.record.id}
-      ) returning id
-    `)[0];
-    if (!portfolio || !block) throw new Error("portfolio material missing");
-    await sql`
-      insert into record_usage (user_id, record_id, block_id, quoted_text)
-      values (${firstUserId}, ${created.record.id}, ${block.id}, 'This exact sentence')
-    `;
-    deployment = (await sql<IdRow[]>`
-      insert into deployment (user_id, portfolio_id, version, subdomain, published_at)
-      values (${firstUserId}, ${portfolio.id}, 1, ${`career-${randomUUID()}`}, now())
-      returning id
-    `)[0];
-    if (!deployment) throw new Error("deployment missing");
-
-    }
-    if (!portfolio || !block || !deployment) throw new Error("portfolio material missing");
+    const db = mongoCollections(fixture.resource.db);
+    const portfolio = { id: randomUUID() };
+    const block = { id: randomUUID() };
+    const deployment = { id: randomUUID() };
+    const sectionId = randomUUID();
+    // 이 사례는 이미 생성된 지면과 인용의 보존을 검사합니다. 생성 그래프는 생성 모듈에서 검증합니다.
+    await db.portfolios.insertOne({ _id: portfolio.id, userId: firstUserId, brewId: randomUUID(), templateId: randomUUID(), title: "Published", status: "published", createdAt: new Date(), updatedAt: new Date(), styleOverrides: {} });
+    await db.portfolioSections.insertOne({ _id: sectionId, userId: firstUserId, portfolioId: portfolio.id, orderNo: 0, visible: true });
+    await db.blocks.insertOne({ _id: block.id, userId: firstUserId, portfolioSectionId: sectionId, kind: "paragraph", content: { text: "Frozen snapshot sentence" }, style: {}, sourceRecordId: created.record.id, syncState: "synced", locked: false, orderNo: 0 });
+    await db.recordUsages.insertOne({ _id: randomUUID(), userId: firstUserId, recordId: created.record.id, blockId: block.id, quotedText: "This exact sentence", firstUsedAt: new Date() });
+    await db.deployments.insertOne({ _id: deployment.id, userId: firstUserId, portfolioId: portfolio.id, version: 1, subdomain: `career-${randomUUID()}`, seoIndexable: false, contactVisibility: "hidden", publishedAt: new Date(), hasUnpublishedChanges: false, snapshot: {}, seo: {} });
 
     const deletedAt = new Date("2026-08-09T00:00:00Z");
     await expect(
@@ -544,15 +402,12 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
     expect(impact).toMatchObject({ portfolioCount: 1, blockCount: 1 });
     expect(impact.purgeAfter).toBe("2026-09-08T00:00:00.000Z");
     await expect(careerService.getRecord(firstUserId, created.record.id)).rejects.toBeInstanceOf(CareerError);
-    const mongoBlock = fixture ? await mongoCollections(fixture.resource.db).blocks.findOne({ _id: block.id }) : null;
-    const material = fixture ? [{ content: mongoBlock?.content, source_record_id: mongoBlock?.sourceRecordId }] : await sql<{ content: { text: string }; source_record_id: string }[]>`
-      select content, source_record_id from block where id = ${block.id}
-    `;
-    expect(material[0]).toEqual({
+    const material = await db.blocks.findOne({ _id: block.id });
+    expect({ content: material?.content, sourceRecordId: material?.sourceRecordId }).toEqual({
       content: { text: "Frozen snapshot sentence" },
-      source_record_id: created.record.id,
+      sourceRecordId: created.record.id,
     });
-    expect(fixture ? (await mongoCollections(fixture.resource.db).deployments.find({ _id: deployment.id }).toArray()).map((row) => ({ id: row._id })) : (await sql<IdRow[]>`select id from deployment where id = ${deployment.id}`)).toEqual([
+    expect((await db.deployments.find({ _id: deployment.id }).toArray()).map((row) => ({ id: row._id }))).toEqual([
       { id: deployment.id },
     ]);
 
@@ -598,14 +453,7 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
       ],
     });
     expect(supported).toMatchObject({ evidenceCount: 2, strength: "supported", level: 2 });
-    const evidence = fixture ? (await careerService.listSkillEvidence(firstUserId, supported.id)).map((row) => ({ extracted_span: row.span, body_md: row.recordId === first.record.id ? firstText : secondText })) : await sql<{ extracted_span: { quote: string }; body_md: string }[]>`
-      select skill_evidence.extracted_span, record.body_md
-      from skill_evidence
-      join record on record.id = skill_evidence.record_id
-      where skill_evidence.user_id = ${firstUserId}
-        and skill_evidence.skill_id = ${supported.id}
-      order by record.id
-    `;
+    const evidence = (await careerService.listSkillEvidence(firstUserId, supported.id)).map((row) => ({ extracted_span: row.span, body_md: row.recordId === first.record.id ? firstText : secondText }));
     expect(evidence).toHaveLength(2);
     expect(evidence.every(({ extracted_span, body_md }) =>
       body_md.includes(extracted_span.quote))).toBe(true);
@@ -635,5 +483,3 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
     expect(noEvidence.statusCode).toBe(400);
   });
 });
-
-}

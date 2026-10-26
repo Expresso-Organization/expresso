@@ -12,7 +12,6 @@ import {
   AiRecordCleaner,
   RecordCleanupError,
   cleanupChangedFields,
-  cleanupProperties,
   type CleanupContext,
 } from "./record-cleaner.js";
 
@@ -97,17 +96,10 @@ describe("기록 정리 계약", () => {
     expect(ai.calls[0]?.prompt).toContain("앞서 적은 내용입니다.");
   });
 
-  it("비어 있는 항목은 속성으로 저장하지 않는다", () => {
-    // "없다"와 "안 물어봤다"가 구분되지 않으면 나중에 다시 물을 수 없다.
-    const partial: RecordCleanup = {
-      ...cleaned, task: null, result: null, metrics: [], competencies: [],
-    };
-    expect(cleanupProperties(partial)).toEqual({
-      situation: cleaned.situation,
-      action: cleaned.action,
-    });
-    expect(cleanupChangedFields(partial)).toEqual(["title", "body_md", "situation", "action"]);
-    expect(Object.keys(cleanupProperties(cleaned))).toHaveLength(6);
+  it("정리는 제목과 역량만 바꾼 칸으로 적는다", () => {
+    // STAR와 수치는 속성으로 만들지 않는다. 역량을 쓰지 못했으면 변경 칸에도 없다.
+    expect(cleanupChangedFields(true)).toEqual(["title", "body_md", "competencies"]);
+    expect(cleanupChangedFields(false)).toEqual(["title", "body_md"]);
   });
 
   it("레이트 리밋은 다시 물어보지 않는다", async () => {
