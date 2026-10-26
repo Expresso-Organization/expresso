@@ -95,7 +95,9 @@ export function describeSpecSchema(
     else optional.set(text, [...(optional.get(text) ?? []), key]);
   }
   for (const [text, keys] of optional)
-    lines.push(`elements.${keys.join(", ")} (선택, 쓰지 않으면 생략): ${text}`);
+    // 공급자 스키마는 선택 속성도 키를 요구하고 null을 허용합니다(`toToolSchema`). "생략"이라고 쓰면 모델이 키를 빼
+    // 공급자 검사에 걸리고 출력을 처음부터 다시 씁니다(2026-10-26 다듬기: "must have required property 'group-2'").
+    lines.push(`elements.${keys.join(", ")} (선택, 쓰지 않으면 null): ${text}`);
   return {
     text: lines.join("\n"),
     required: Object.keys(elements.properties).filter(
