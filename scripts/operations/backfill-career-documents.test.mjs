@@ -44,7 +44,8 @@ test("Mongo fixture dry-run/apply is idempotent", { skip: !process.env.TEST_MONG
   const supportedId = randomUUID();
   const mismatchId = randomUUID();
   const migratedId = randomUUID();
-  const categoryId = (await db.collection("career_categories").findOne({ isSystem: true }))._id;
+  // 카테고리는 사용자 소유라 기록이 가리킬 카테고리 ID만 있으면 된다.
+  const categoryId = randomUUID();
   const record = (id, bodyMd) => ({
     _id: id, userId, categoryId, title: "기록", status: "draft", origin: "manual",
     properties: {}, bodyMd, version: 1, updatedAt: new Date(), deletedAt: null,

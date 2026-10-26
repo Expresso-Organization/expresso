@@ -28,7 +28,6 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     titleId = randomUUID();
     const category = await service.createCategory(userId, {
       key: `views_${randomUUID().replaceAll("-", "")}`, name: "뷰", icon: "table", defaultView: "table",
-      propertySchema: { score: { id: scoreId, label: "점수", type: "number", required: false, system: false } },
     });
     categoryId = category.id;
     categoryVersion = category.version;

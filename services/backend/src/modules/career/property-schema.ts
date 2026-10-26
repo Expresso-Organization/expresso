@@ -1,6 +1,6 @@
 import { createHash, createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 
-import { mongoCollections, type CareerCategoryDoc, type CareerRecordDoc } from "@expresso/database";
+import { mongoCollections, type CareerRecordDoc } from "@expresso/database";
 import {
   ApplyCareerPropertyChangeSchema,
   CareerPropertyChangePreviewSchema,
@@ -49,22 +49,6 @@ function canonical(value: unknown): string {
 
 function digest(value: unknown): string {
   return createHash("sha256").update(canonical(value)).digest("hex");
-}
-
-export function stablePropertyId(categoryId: string, key: string): string {
-  const bytes = createHash("sha1").update(Buffer.from("6ba7b8109dad11d180b400c04fd430c8", "hex")).update(`${categoryId}:${key}`).digest();
-  bytes[6] = (bytes[6]! & 15) | 80;
-  bytes[8] = (bytes[8]! & 63) | 128;
-  const hex = bytes.subarray(0, 16).toString("hex");
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-}
-
-function definitions(category: CareerCategoryDoc): CareerPropertyDefinitionV2[] {
-  return category.propertySchemaV2 ?? Object.entries(category.propertySchema).map(([key, property], order) => ({
-    id: property.id ?? stablePropertyId(category._id, key), key, name: property.label,
-    type: property.type === "boolean" ? "checkbox" : property.type === "tags" ? "multi_select" : property.type,
-    required: property.required, system: property.system, config: {}, order, version: 1, deletedAt: null,
-  }));
 }
 
 function signPreview(payload: SignedPreview, signingSecret: string): string {
@@ -167,6 +151,13 @@ function validateConfiguration(type: CareerPropertyDefinitionV2["type"], config:
   }
 }
 
+/** 선택지는 더하거나 이름을 바꿀 수만 있다. 지운 옵션을 가리키는 값이 남지 않게 한다. */
+function assertOptionsKept(current: Record<string, unknown>, next: Record<string, unknown>): void {
+  const kept = new Set((next.options as { id: string }[]).map((option) => option.id));
+  const existing = Array.isArray(current.options) ? current.options as { id?: unknown }[] : [];
+  if (existing.some((option) => typeof option.id === "string" && !kept.has(option.id))) throw new CareerError(409, "property options cannot be removed");
+}
+
 export interface CareerPropertySchemaService {
   previewChange(userId: string, categoryId: string, change: CareerPropertySchemaChange): Promise<CareerPropertyChangePreview>;
   applyChange(userId: string, categoryId: string, expectedVersion: number, idempotencyKey: string, input: ApplyCareerPropertyChange): Promise<ReturnType<typeof mapMongoCategory>>;
@@ -180,9 +171,9 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
   async previewChange(userId: string, categoryId: string, raw: CareerPropertySchemaChange): Promise<CareerPropertyChangePreview> {
     const change = CareerPropertySchemaChangeSchema.parse(raw);
     const db = mongoCollections(this.context.db);
-    const category = await db.careerCategories.findOne({ _id: categoryId, userId, isSystem: false });
+    const category = await db.careerCategories.findOne({ _id: categoryId, userId });
     if (!category) throw new CareerError(404, "career category not found");
-    const current = definitions(category);
+    const current = category.propertySchemaV2;
     const propertyId = "propertyId" in change ? change.propertyId : undefined;
     const source = propertyId ? current.find((definition) => definition.id === propertyId) : undefined;
     if (propertyId && !source) throw new CareerError(404, "property not found");
@@ -223,7 +214,7 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
     return inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId);
       const db = mongoCollections(tx.db);
-      const category = await db.careerCategories.findOne({ _id: categoryId, userId, isSystem: false }, { session: tx.session });
+      const category = await db.careerCategories.findOne({ _id: categoryId, userId }, { session: tx.session });
       if (!category) throw new CareerError(404, "career category not found");
       const prior = category.propertyMutationResults?.[idempotencyField] as { category: unknown; requestHash: string } | undefined;
       if (prior) {
@@ -233,7 +224,7 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
       if (category.version !== expectedVersion) throw new CareerError(409, "category version is stale");
       if (!verifyPreview(input.previewToken, { userId, categoryId, categoryVersion: expectedVersion, change: input.change }, this.signingSecret)) throw new CareerError(409, "preview token is invalid or expired");
       const now = new Date();
-      const next = definitions(category).map((definition) => ({ ...definition, config: { ...definition.config } }));
+      const next = category.propertySchemaV2.map((definition) => ({ ...definition, config: { ...definition.config } }));
       const change = input.change;
       let recomputePropertyId: string | null = null;
       if (change.kind === "create") {
@@ -251,9 +242,15 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
         if (change.kind === "rename") { source.name = change.name; source.version += 1; }
         if (change.kind === "reorder") { source.order = change.order; source.version += 1; }
         if (change.kind === "configure") {
-          if (source.type !== "formula" && source.type !== "rollup") throw new CareerError(400, "only computed properties can be configured");
-          validateConfiguration(source.type, change.config); source.config = change.config; source.version += 1;
-          recomputePropertyId = source.id;
+          if (source.type === "select" || source.type === "multi_select") {
+            validateConfiguration(source.type, change.config);
+            assertOptionsKept(source.config, change.config);
+            source.config = { ...source.config, options: change.config.options }; source.version += 1;
+          } else {
+            if (source.type !== "formula" && source.type !== "rollup") throw new CareerError(400, "only computed and select properties can be configured");
+            validateConfiguration(source.type, change.config); source.config = change.config; source.version += 1;
+            recomputePropertyId = source.id;
+          }
         }
         if (change.kind === "delete") { if (source.deletedAt !== null) throw new CareerError(409, "property is already deleted"); await this.deleteValues(tx.session, userId, categoryId, source, input.confirmLossy, now); source.deletedAt = now.toISOString(); source.version += 1; }
         if (change.kind === "restore") { if (source.deletedAt === null) throw new CareerError(409, "property is not deleted"); await this.restoreValues(tx.session, userId, categoryId, source, now); source.deletedAt = null; source.version += 1; }
@@ -262,7 +259,7 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
       const schemaVersion = (category.schemaVersion ?? category.version) + 1;
       const mapped = mapMongoCategory({ ...category, propertySchemaV2: next, schemaVersion, version: category.version + 1, updatedAt: now }, 0);
       const update = await db.careerCategories.updateOne(
-        { _id: categoryId, userId, isSystem: false, version: expectedVersion },
+        { _id: categoryId, userId, version: expectedVersion },
         { $set: { propertySchemaV2: next, schemaVersion, updatedAt: now, [`propertyMutationResults.${idempotencyField}`]: { category: mapped, requestHash } }, $inc: { version: 1 } }, { session: tx.session },
       );
       if (update.modifiedCount !== 1) throw new CareerError(409, "category version is stale");

@@ -14,11 +14,9 @@ import {
   CreateCareerCategorySchema,
   CreateCareerRecordLinkSchema,
   CreateCareerRecordSchema,
-  CreateCareerViewSchema,
   IdempotencyKeySchema,
   ListCareerRecordsQuerySchema,
   RecomputeCareerSkillSchema,
-  UpdateCareerPropertySchemaSchema,
   UpdateCareerRecordSchema,
   CareerPropertySchemaChangeSchema,
   ApplyCareerPropertyChangeSchema,
@@ -151,26 +149,6 @@ export function registerCareerRoutes(
     });
   });
 
-  app.patch(
-    `${API_PREFIX}/career/categories/:categoryId/property-schema`,
-    { preHandler },
-    async (request, reply) => {
-      const principal = requireAuth(request);
-      const { categoryId } = parseParams(CareerCategoryIdParamsSchema, request);
-      const input = parseBody(UpdateCareerPropertySchemaSchema, request);
-      const category = await options.careerService.updatePropertySchema(
-        principal.user.id,
-        categoryId,
-        expectedVersion(request),
-        input.propertySchema,
-        input.confirmValueRemoval,
-      );
-      return reply.header("etag", formatResourceEtag(category.version)).send({
-        data: category,
-      });
-    },
-  );
-
   app.post(`${API_PREFIX}/career/categories/:categoryId/property-schema/preview`, { preHandler }, async (request) => {
     const principal = requireAuth(request);
     const { categoryId } = parseParams(CareerCategoryIdParamsSchema, request);
@@ -198,35 +176,6 @@ export function registerCareerRoutes(
     return reply.header("etag", formatResourceEtag(category.version)).send({ data: category });
   });
 
-  app.get(
-    `${API_PREFIX}/career/categories/:categoryId/views`,
-    { preHandler },
-    async (request) => {
-      const principal = requireAuth(request);
-      const { categoryId } = parseParams(CareerCategoryIdParamsSchema, request);
-      return {
-        data: await options.careerService.listViews(principal.user.id, categoryId),
-      };
-    },
-  );
-
-  app.post(
-    `${API_PREFIX}/career/categories/:categoryId/views`,
-    { preHandler },
-    async (request, reply) => {
-      const principal = requireAuth(request);
-      const { categoryId } = parseParams(CareerCategoryIdParamsSchema, request);
-      const input = parseBody(CreateCareerViewSchema, request);
-      const view = await options.careerService.createView(
-        principal.user.id,
-        categoryId,
-        input,
-      );
-      return reply.code(201).send({ data: view });
-    },
-  );
-
-  // 기존 `/views` 응답은 전환 기간 동안 그대로 둔다. 새 화면은 UUID 기반 설정 API만 사용한다.
   app.get(`${API_PREFIX}/career/categories/:categoryId/view-configurations`, { preHandler }, async (request) => {
     const principal = requireAuth(request);
     const { categoryId } = parseParams(CareerCategoryIdParamsSchema, request);

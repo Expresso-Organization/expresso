@@ -12,6 +12,21 @@ function setup(type: CareerPropertyDefinitionV2["type"], value: CareerPropertyVa
 
 describe("PropertyValueEditor", () => {
   afterEach(cleanup);
+  it("creates a chip by name and selects it together with the existing ones", async () => {
+    const created = "00000000-0000-4000-8000-000000000003";
+    const onCommit = vi.fn(async () => undefined);
+    const onCreateOption = vi.fn(async () => created);
+    render(<PropertyValueEditor definition={definition("multi_select", { options: [{ id: option, name: "선택 A" }] })} value={{ type: "multi_select", value: [option] }} onCommit={onCommit} onCreateOption={onCreateOption} />);
+    const input = screen.getByLabelText("테스트 속성 새 항목");
+    fireEvent.change(input, { target: { value: "Rust" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    await waitFor(() => expect(onCommit).toHaveBeenCalledWith({ type: "multi_select", value: [option, created] }));
+    expect(onCreateOption).toHaveBeenCalledWith("Rust");
+  });
+  it("hides the chip input when options cannot be created", () => {
+    setup("multi_select", { type: "multi_select", value: [] }, { options: [] });
+    expect(screen.queryByLabelText("테스트 속성 새 항목")).toBeNull();
+  });
   it.each(["title", "text", "url", "email", "phone"] as const)("commits %s on Enter", async (type) => { const commit = setup(type); const input = screen.getByLabelText("테스트 속성"); fireEvent.change(input, { target: { value: "새 값" } }); fireEvent.keyDown(input, { key: "Enter" }); await waitFor(() => expect(commit).toHaveBeenCalledWith({ type, value: "새 값" })); });
   it("preserves an invalid number draft and explains the issue", () => { const commit = setup("number"); const input = screen.getByLabelText("테스트 속성"); fireEvent.change(input, { target: { value: "not-a-number" } }); fireEvent.blur(input); expect(commit).not.toHaveBeenCalled(); expect(screen.getByRole("alert", { name: "숫자를 입력해 주세요." })).toBeTruthy(); expect((input as HTMLInputElement).value).toBe("not-a-number"); });
   it("commits select, multiselect and checkbox choices", async () => { const options = { options: [{ id: option, name: "선택 A" }] }; let commit = setup("select", null, options); const selectTrigger = screen.getByRole("button", { name: "테스트 속성" }); fireEvent.click(selectTrigger); fireEvent.click(screen.getByRole("option", { name: "선택 A" })); await waitFor(() => expect(commit).toHaveBeenCalledWith({ type: "select", value: option })); expect(document.querySelector("select")).toBeNull(); cleanup(); commit = setup("multi_select", { type: "multi_select", value: [] }, options); fireEvent.click(screen.getByLabelText("선택 A")); await waitFor(() => expect(commit).toHaveBeenCalledWith({ type: "multi_select", value: [option] })); cleanup(); commit = setup("checkbox", { type: "checkbox", value: false }); fireEvent.click(screen.getByLabelText("테스트 속성")); await waitFor(() => expect(commit).toHaveBeenCalledWith({ type: "checkbox", value: true })); });

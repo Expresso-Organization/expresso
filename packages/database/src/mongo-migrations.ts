@@ -14,6 +14,8 @@ import { agentCredentialSteps } from "./mongodb-migrations/0010/migration.js";
 import { preparationPlanSteps } from "./mongodb-migrations/0011/migration.js";
 import { agentConversationSteps } from "./mongodb-migrations/0009/migration.js";
 import { identitySessionSlidingExpirySteps } from "./mongodb-migrations/0012/migration.js";
+import { identityEmailAndTermsSteps } from "./mongodb-migrations/0013/migration.js";
+import { careerCategoryOwnershipSteps } from "./mongodb-migrations/0017/migration.js";
 
 
 export interface MongoMigrationStep {
@@ -55,6 +57,10 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
   const tenthHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0010/migration.ts", import.meta.url))).digest("hex");
   const eleventhHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0011/migration.ts", import.meta.url))).digest("hex");
   const twelfthHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0012/migration.ts", import.meta.url))).digest("hex");
+  const thirteenthHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0013/migration.ts", import.meta.url))).digest("hex");
+  // 0014–0016은 열린 PR이 쓰고 있어 비워 둔다. 템플릿 고정본도 실행 입력이라 함께 해시한다.
+  const ownershipHash = createHash("sha256");
+  for (const name of ["migration.ts", "templates.json"]) ownershipHash.update(await readFile(new URL(`./mongodb-migrations/0017/${name}`, import.meta.url)));
   return [
     { version: "0001", name: "initial_collections", checksum: hash.digest("hex"), steps: await initialMigrationSteps() },
     { version: "0002", name: "generation_ledger_amount_constraint", checksum: secondHash, steps: await generationLedgerConstraintSteps() },
@@ -68,5 +74,7 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
     { version: "0010", name: "agent_credentials", checksum: tenthHash, steps: await agentCredentialSteps() },
     { version: "0011", name: "preparation_plans", checksum: eleventhHash, steps: await preparationPlanSteps() },
     { version: "0012", name: "identity_session_sliding_expiry", checksum: twelfthHash, steps: await identitySessionSlidingExpirySteps() },
+    { version: "0013", name: "identity_email_and_terms", checksum: thirteenthHash, steps: await identityEmailAndTermsSteps() },
+    { version: "0017", name: "career_category_ownership", checksum: ownershipHash.digest("hex"), steps: await careerCategoryOwnershipSteps() },
   ];
 }

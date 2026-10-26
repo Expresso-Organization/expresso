@@ -182,7 +182,7 @@ export class CareerViewService {
     return inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId);
       const categories = mongoCollections(tx.db).careerCategories;
-      const category = await categories.findOne({ _id: categoryId, $or: [{ userId: null }, { userId }] }, { session: tx.session });
+      const category = await categories.findOne({ _id: categoryId, userId }, { session: tx.session });
       if (!category) throw new CareerError(404, "career category not found");
       if (category.version !== expectedCategoryVersion) throw versionConflict();
       const views = mongoCollections(tx.db).careerViews;

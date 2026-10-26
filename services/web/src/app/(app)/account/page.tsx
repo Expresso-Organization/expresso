@@ -1,27 +1,17 @@
 import { AppBody, DocumentHeader } from "@/components/shell/AppShell";
+import { HashScroll } from "@/components/shell/HashScroll";
 import { AgentKeySettings } from "@/features/agent-chat/AgentKeySettings";
 import { ThemePicker } from "@/components/ThemePicker";
 import { Icon } from "@/components/ui/Icon";
 import { ACCOUNT } from "@/lib/sample/site";
 import { consents } from "@/lib/api/endpoints";
+import { CONSENT_COPY } from "@/lib/consent-copy";
 import { requireSession } from "@/lib/require-session";
 
 import { grantConsentAction, revokeConsentAction } from "../../consent-actions";
 
 import { AccountNav } from "./AccountNav";
 import styles from "./page.module.css";
-
-/** 무엇이 나가는지를 먼저 쓴다. 켜고 끄는 스위치보다 그 문장이 중요하다. */
-const CONSENT_COPY = {
-  job_posting_analysis: {
-    title: "공고 분석",
-    what: "붙여 넣은 채용 공고의 원문이 AI 모델로 갑니다.",
-  },
-  career_records: {
-    title: "커리어 기록 사용",
-    what: "내가 쓴 기록과 대화 답변이 AI 모델로 갑니다. 끄면 제작이 돌지 않습니다.",
-  },
-} as const;
 
 export default async function AccountPage() {
   const session = await requireSession();
@@ -163,10 +153,11 @@ export default async function AccountPage() {
               ))}
             </div>
 
-            <section id="ai-chat-settings" className={styles.section}><div className={styles.sectionLabel}>AI 채팅</div><AgentKeySettings /></section>
+            <section id="ai-chat-settings" className={styles.section}><HashScroll id="ai-chat-settings" /><div className={styles.sectionLabel}>AI 채팅</div><AgentKeySettings /></section>
 
-            {/* 무엇이 나가는지 · 언제든 끌 수 있다 */}
-            <div className={styles.section}>
+            {/* 무엇이 나가는지 · 언제든 끌 수 있다. 제작 화면의 동의 실패 안내가 이 id로 온다. */}
+            <div id="ai-consent" className={styles.section}>
+              <HashScroll id="ai-consent" />
               <div className={styles.sectionLabel}>AI 사용 동의</div>
               <div className={styles.consentRows}>
                 {consent.consents.map((item) => {

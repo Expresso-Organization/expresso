@@ -20,8 +20,6 @@ const runtimeConfigSchema = z.object({
   ANALYTICS_VISITOR_SALT: z.string().min(16).default("expresso-local-analytics-salt"),
   REQUEST_TIMEOUT_MS: z.coerce.number().int().min(1_000).max(120_000).default(30_000),
   CAREER_SOCKET_ALLOWED_ORIGIN: z.url().default("http://127.0.0.1:3000"),
-  /** 출시 후보 검증 전까지 새 문서·실시간 API를 닫아 기존 career API를 보존한다. */
-  CAREER_EDITOR_V2_ENABLED: z.stringbool().default(false),
   /** E2E 전용. 운영에서 fixture 제안을 노출하지 않는다. */
   CAREER_AI_DETERMINISTIC_TEST: z.stringbool().default(false),
   /** 격리 E2E와 복구 점검에서 외부 수집 예약을 만들지 않는다. 운영 기본값은 true다. */
@@ -75,6 +73,17 @@ const runtimeConfigSchema = z.object({
    * 0건을 모으고 성공했다고 적는다.
    */
   WORK24_API_KEY: z.string().min(1).optional(),
+  /**
+   * 메일 공급자. 기본은 `off` — 보내지 않고 수신자 · 제목 · 본문을 로그로 남긴다.
+   * 개발과 CI는 이걸로 돈다. `resend`는 `RESEND_API_KEY`가 있어야 뜬다.
+   */
+  MAIL_PROVIDER: z.enum(["off", "resend"]).default("off"),
+  RESEND_API_KEY: z.string().min(1).optional(),
+  /** 발신자. Resend의 `from` 형식 — `이름 <주소>`. 도메인은 Resend에서 인증된 것이어야 한다. */
+  MAIL_FROM: z.string().min(3).default("Expresso <noreply@expresso.kr>"),
+  MAIL_TIMEOUT_MS: z.coerce.number().int().positive().default(10_000),
+  /** 메일 안의 링크가 가리키는 웹 주소. 앞단이 nginx라 요청 헤더에서 추측하지 않는다. */
+  APP_BASE_URL: z.url().default("http://localhost:3000"),
   AI_TIMEOUT_MS: z.coerce.number().int().min(1_000).max(600_000).default(180_000),
   AI_FIXTURE_DIR: z.string().min(1).default("fixtures/ai"),
   /** 호출을 픽스처로 남긴다. 탐색이 회귀 테스트를 먹여살리는 지점. */
@@ -122,7 +131,6 @@ export interface RuntimeConfig {
   analyticsVisitorSalt?: string;
   requestTimeoutMs?: number;
   careerSocketAllowedOrigin?: string;
-  careerEditorV2Enabled?: boolean;
   careerAiDeterministicTest?: boolean;
   scheduledJobsEnabled?: boolean;
   /** 없으면 Google 로그인 경로를 열지 않는다. */
@@ -137,6 +145,11 @@ export interface RuntimeConfig {
   aiPageGenerationProvider?: "claude-code" | "codex" | "fixture" | "anthropic";
   pageGenerationFormat?: "json-render" | "html";
   work24ApiKey?: string | undefined;
+  mailProvider?: "off" | "resend";
+  resendApiKey?: string | undefined;
+  mailFrom?: string;
+  mailTimeoutMs?: number;
+  appBaseUrl?: string;
   aiTimeoutMs?: number;
   aiFixtureDir?: string;
   aiRecord?: boolean;
@@ -170,7 +183,6 @@ export function loadRuntimeConfig(
     analyticsVisitorSalt: result.ANALYTICS_VISITOR_SALT,
     requestTimeoutMs: result.REQUEST_TIMEOUT_MS,
     careerSocketAllowedOrigin: result.CAREER_SOCKET_ALLOWED_ORIGIN,
-    careerEditorV2Enabled: result.CAREER_EDITOR_V2_ENABLED,
     careerAiDeterministicTest: result.CAREER_AI_DETERMINISTIC_TEST,
     scheduledJobsEnabled: result.SCHEDULED_JOBS_ENABLED,
     googleClientId: result.GOOGLE_CLIENT_ID,
@@ -184,6 +196,11 @@ export function loadRuntimeConfig(
       ? { aiPageGenerationProvider: result.AI_PROVIDER_PAGE_GENERATION }
       : {}),
     work24ApiKey: result.WORK24_API_KEY,
+    mailProvider: result.MAIL_PROVIDER,
+    resendApiKey: result.RESEND_API_KEY,
+    mailFrom: result.MAIL_FROM,
+    mailTimeoutMs: result.MAIL_TIMEOUT_MS,
+    appBaseUrl: result.APP_BASE_URL,
     aiTimeoutMs: result.AI_TIMEOUT_MS,
     aiFixtureDir: result.AI_FIXTURE_DIR,
     aiRecord: result.AI_RECORD,

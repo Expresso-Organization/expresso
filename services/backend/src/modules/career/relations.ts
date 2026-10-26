@@ -18,25 +18,9 @@ import { CareerError } from "./errors.js";
 import { requireCareerCategory } from "./mongo-categories.js";
 import { assertActiveRecordsForWrite } from "./mongo-record-guard.js";
 import { mapMongoRecord } from "./mongo-records.js";
-import { stablePropertyId } from "./property-schema.js";
-
-export function careerCategoryDefinitions(category: CareerCategoryDoc) {
-  return category.propertySchemaV2 ?? Object.entries(category.propertySchema).map(([key, property], order) => ({
-    id: property.id ?? stablePropertyId(category._id, key),
-    key,
-    name: property.label,
-    type: property.type === "boolean" ? "checkbox" : property.type === "tags" ? "multi_select" : property.type,
-    required: property.required,
-    system: property.system,
-    config: {},
-    order,
-    version: 1,
-    deletedAt: null,
-  }));
-}
 
 function relationDefinition(category: CareerCategoryDoc, propertyId: string): CareerRelationDefinition {
-  const property = careerCategoryDefinitions(category).find((definition) => definition.id === propertyId && definition.deletedAt === null);
+  const property = category.propertySchemaV2.find((definition) => definition.id === propertyId && definition.deletedAt === null);
   if (!property || property.type !== "relation") throw new CareerError(400, "relation property not found");
   const parsed = CareerRelationDefinitionSchema.safeParse(property.config);
   if (!parsed.success) throw new CareerError(400, "relation property configuration is invalid");
@@ -139,7 +123,7 @@ export class MongoRelationService implements RelationService {
         { session: tx.session, returnDocument: "after" },
       );
       if (!updated) throw new CareerError(412, "career record version is stale");
-      const computationDefinitions = careerCategoryDefinitions(sourceCategory).filter((item) => item.deletedAt === null);
+      const computationDefinitions = sourceCategory.propertySchemaV2.filter((item) => item.deletedAt === null);
       const changedPropertyIds = [...new Set([input.propertyId, ...computationDefinitions.filter((item) => item.type === "formula" || item.type === "rollup").map((item) => item.id)])];
       await addMongoOutboxEvent(tx, {
         userId, topic: "career.computation", idempotencyKey: `career-relation:${recordId}:${input.propertyId}:${recordId}:v${updated.version}`,

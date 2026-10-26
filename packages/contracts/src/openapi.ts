@@ -47,7 +47,6 @@ import {
   CareerRecordSchema,
   CareerSkillSchema,
   CareerSkillEvidenceResponseSchema,
-  CareerViewSchema,
   CreateCareerRecordSchema,
   RecomputeCareerSkillSchema,
   UpdateCareerRecordSchema,
@@ -152,7 +151,7 @@ export const expressoOpenApiDocument = {
     "/v1/career/categories/{categoryId}/properties": {
       post: { responses: { "200": { description: "Career property schema mutation" } } },
     },
-    "/v1/career/views": {
+    "/v1/career/categories/{categoryId}/view-configurations": {
       get: { responses: { "200": { description: "Saved career views" } } },
       post: { responses: { "201": { description: "Saved career view" } } },
     },
@@ -199,7 +198,6 @@ export const expressoOpenApiDocument = {
       CareerRecordResponse: jsonSchema(CareerRecordResponseSchema),
       CreateCareerRecord: jsonSchema(CreateCareerRecordSchema),
       UpdateCareerRecord: jsonSchema(UpdateCareerRecordSchema),
-      CareerView: jsonSchema(CareerViewSchema),
       CareerDeleteImpact: jsonSchema(CareerDeleteImpactSchema),
       RecomputeCareerSkill: jsonSchema(RecomputeCareerSkillSchema),
       CareerSkill: jsonSchema(CareerSkillSchema),

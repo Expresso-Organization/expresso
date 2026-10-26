@@ -5,6 +5,7 @@ import {
   TimestampSchema,
   UuidSchema,
 } from "./common.js";
+import { ConsentScopeSchema } from "./consent.js";
 
 export const JobTypeSchema = z.enum([
   "job_analysis",
@@ -109,6 +110,8 @@ export const BrewJobStatusSchema = z.strictObject({
   failure: z.strictObject({
     code: z.string().min(1).max(100),
     retryable: z.boolean(),
+    /** `CONSENT_REQUIRED`일 때 켜야 하는 동의. 화면이 이 이름으로 설정을 가리킨다. */
+    requiredConsent: ConsentScopeSchema.nullable(),
   }).nullable(),
 });
 

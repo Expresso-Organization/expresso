@@ -108,6 +108,13 @@
   color: var(--ex-accent-text);
 }
 
+.failureLink {
+  font-weight: 600;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .primary,
 .ghost {
   margin-top: 6px;

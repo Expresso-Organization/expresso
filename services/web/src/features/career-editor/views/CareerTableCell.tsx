@@ -93,8 +93,11 @@ function usePopoverPosition(open: boolean, anchorRef: React.RefObject<HTMLElemen
   return position;
 }
 
-function OptionPopout({ definition, value, anchorRef, onCommit, onClose }: { definition: CareerPropertyDefinitionV2; value: unknown; anchorRef: React.RefObject<HTMLElement | null>; onCommit(value: TableCellValue): void; onClose(): void }) {
+function OptionPopout({ definition, value, anchorRef, onCommit, onCreateOption, onClose }: { definition: CareerPropertyDefinitionV2; value: unknown; anchorRef: React.RefObject<HTMLElement | null>; onCommit(value: TableCellValue): void; onCreateOption?: ((name: string) => Promise<string>) | undefined; onClose(): void }) {
   const options = propertyOptions(definition);
+  const [newName, setNewName] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [createIssue, setCreateIssue] = useState("");
   const initial = definition.type === "multi_select" && Array.isArray(value) ? value.map(String) : [];
   const [selected, setSelected] = useState(new Set(initial));
   const panelRef = useRef<HTMLDivElement>(null);
@@ -118,6 +121,15 @@ function OptionPopout({ definition, value, anchorRef, onCommit, onClose }: { def
         } else { onCommit({ type: "select", value: option.id }); onClose(); }
       }}><span className={styles.optionDot} aria-hidden="true" /><span>{option.name}</span>{chosen ? <Icon name="check" size={14} weight="bold" /> : null}</button>;
     })}
+    {onCreateOption ? <input className={styles.cellPopoutInput} aria-label={`${definition.name} 새 항목`} placeholder="새 항목 입력 후 Enter" value={newName} disabled={creating} title={createIssue || undefined} data-issue={createIssue ? "true" : "false"} onChange={(event) => { setNewName(event.target.value); setCreateIssue(""); }} onKeyDown={(event) => {
+      if (event.key !== "Enter" || event.nativeEvent.isComposing || !newName.trim()) return;
+      event.preventDefault(); setCreating(true);
+      void onCreateOption(newName).then((optionId) => {
+        setNewName("");
+        if (definition.type === "multi_select") { const next = new Set(selected).add(optionId); setSelected(next); onCommit({ type: "multi_select", value: [...next] }); }
+        else { onCommit({ type: "select", value: optionId }); onClose(); }
+      }).catch((error: unknown) => setCreateIssue(error instanceof Error ? error.message : "항목을 추가하지 못했습니다.")).finally(() => setCreating(false));
+    }} /> : null}
   </div>, document.body);
 }
 
@@ -160,7 +172,7 @@ function DatePopout({ definition, value, anchorRef, onCommit, onClose }: { defin
   </div>, document.body);
 }
 
-export function CareerTableCell({ record, definition, active, editing, issue, cellRef, onFocus, onEdit, onCommit, onCancel, onMove, onContextMenu, onOpenRecord }: {
+export function CareerTableCell({ record, definition, active, editing, issue, cellRef, onFocus, onEdit, onCommit, onCreateOption, onCancel, onMove, onContextMenu, onOpenRecord }: {
   record: CareerRecord;
   definition: CareerPropertyDefinitionV2;
   active: boolean;
@@ -170,6 +182,8 @@ export function CareerTableCell({ record, definition, active, editing, issue, ce
   onFocus(): void;
   onEdit(): void;
   onCommit(value: TableCellValue): void;
+  /** 선택 · 다중 선택 팝업에서 새 옵션을 만든다. */
+  onCreateOption?: ((name: string) => Promise<string>) | undefined;
   onCancel(): void;
   onMove(direction: "left" | "right" | "up" | "down" | "next" | "previous"): void;
   onContextMenu(event: React.MouseEvent<HTMLElement>): void;
@@ -203,7 +217,7 @@ export function CareerTableCell({ record, definition, active, editing, issue, ce
       if (event.key === "Enter" || event.key === "Tab") { event.preventDefault(); finish(); if (event.key === "Tab") onMove(event.shiftKey ? "previous" : "next"); }
     }} /> : <CellDisplay record={record} definition={definition} />}
     {active && definition.key === "title" && !editing ? <button type="button" className={styles.cellOpenButton} onClick={(event) => { event.stopPropagation(); onOpenRecord(); }}><Icon name="arrow-square-out" size={13} />열기</button> : null}
-    {popup && (definition.type === "select" || definition.type === "multi_select") ? <OptionPopout definition={definition} value={raw} anchorRef={anchorRef} onCommit={onCommit} onClose={onCancel} /> : null}
+    {popup && (definition.type === "select" || definition.type === "multi_select") ? <OptionPopout definition={definition} value={raw} anchorRef={anchorRef} onCommit={onCommit} onCreateOption={onCreateOption} onClose={onCancel} /> : null}
     {popup && definition.type === "date" ? <DatePopout definition={definition} value={raw} anchorRef={anchorRef} onCommit={onCommit} onClose={onCancel} /> : null}
   </span>;
 }

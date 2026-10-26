@@ -1,0 +1,16 @@
+[Unit]
+Description=Expresso 개발 현황 스캔 (진행 현황 대시보드)
+# 스캐너는 GitHub 과 Claude 를 부른다. 네트워크가 선 뒤에 돈다.
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+# 실행 스크립트 원본은 infra/server/expresso-status-scan.sh 다.
+ExecStart=/usr/local/bin/expresso-status-scan
+# 전체 판정은 도메인 열넷을 차례로 본다 — 한 시간을 넘길 수 있다.
+TimeoutStartSec=3h
+# 제품 서비스보다 뒤로 물러선다. 이 기계는 공용이다.
+Nice=10
+IOSchedulingClass=idle

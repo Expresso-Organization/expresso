@@ -18,6 +18,6 @@ export class MongoCareerComputationRepository {
   }
 
   async readableCategory(userId: string, categoryId: string, session?: ClientSession): Promise<CareerCategoryDoc | null> {
-    return this.categories().findOne({ _id: categoryId, $or: [{ userId: null }, { userId }] }, session ? { session } : {});
+    return this.categories().findOne({ _id: categoryId, userId }, session ? { session } : {});
   }
 }

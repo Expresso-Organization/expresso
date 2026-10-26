@@ -5,42 +5,27 @@ import { validateCareerProperties } from "./properties.js";
 import { computeSkillAggregate, normalizeSkillName } from "./skills.js";
 
 describe("career property validation", () => {
-  const schema = {
-    role: { label: "역할", type: "text" as const, required: true, system: false },
-    impact: { label: "성과", type: "number" as const, required: false, system: false },
-    month: { label: "시기", type: "date" as const, required: false, system: false },
-    tools: { label: "기술", type: "tags" as const, required: false, system: false },
-  };
+  const definition = (id: number, key: string, type: "text" | "number" | "date" | "multi_select" | "formula" | "created_time", required = false) => ({ id: `00000000-0000-4000-8000-00000000000${id}`, key, name: key, type, required, system: false, config: {}, order: id, version: 1, deletedAt: null });
+  const definitions = [definition(1, "role", "text", true), definition(2, "impact", "number"), definition(3, "month", "date"), definition(4, "tools", "multi_select")];
 
-  it("accepts the category schema and rejects unknown, missing, or invalid values", () => {
-    expect(() => validateCareerProperties(schema, {
-      role: "Backend engineer",
-      impact: 42,
-      month: "2026-08",
-      tools: ["PostgreSQL"],
+  it("accepts typed values and rejects unknown, missing, mismatched, or deleted properties", () => {
+    expect(() => validateCareerProperties(definitions, {
+      role: { type: "text", value: "Backend engineer" },
+      impact: { type: "number", value: 42 },
+      month: { type: "date", value: { start: "2026-08-01", end: null, timezone: null } },
+      tools: { type: "multi_select", value: ["00000000-0000-4000-8000-000000000099"] },
     })).not.toThrow();
-    expect(() => validateCareerProperties(schema, { impact: 42 })).toThrow(
-      CareerError,
-    );
-    expect(() => validateCareerProperties(schema, {
-      role: "Backend engineer",
-      month: "2026-08-09",
-    })).toThrow(CareerError);
-    expect(() => validateCareerProperties(schema, {
-      role: "Backend engineer",
-      unknown: true,
-    })).toThrow(CareerError);
+    expect(() => validateCareerProperties(definitions, { impact: { type: "number", value: 42 } })).toThrow(CareerError);
+    expect(() => validateCareerProperties(definitions, { role: { type: "text", value: "x" }, impact: { type: "text", value: "42" } })).toThrow(CareerError);
+    expect(() => validateCareerProperties(definitions, { role: { type: "text", value: "x" }, unknown: { type: "checkbox", value: true } })).toThrow(CareerError);
+    expect(() => validateCareerProperties([...definitions.slice(0, 1), { ...definitions[1]!, deletedAt: "2026-09-01T00:00:00.000Z" }], { role: { type: "text", value: "x" }, impact: { type: "number", value: 1 } })).toThrow(CareerError);
   });
 
-  it("accepts matching v2 values and keeps computed fields read-only", () => {
-    const propertyId = "00000000-0000-4000-8000-000000000001";
-    const definitions = [{ id: propertyId, key: "rating", name: "평점", type: "number" as const, required: false, system: false, config: {}, order: 0, version: 1, deletedAt: null }];
-    expect(() => validateCareerProperties({}, { rating: { type: "number", value: 4.5 } }, definitions)).not.toThrow();
-    expect(() => validateCareerProperties({}, { rating: { type: "text", value: "4.5" } }, definitions)).toThrow(CareerError);
-    expect(() => validateCareerProperties({}, { formula: { type: "formula", value: 1, diagnostics: [] } }, [{ ...definitions[0]!, key: "formula", type: "formula" }])).toThrow(CareerError);
-    const timestamp = { ...definitions[0]!, key: "timestamp", type: "created_time" as const };
-    expect(() => validateCareerProperties({}, { timestamp: { type: "created_time", value: "2026-09-01T00:00:00.000Z" } }, [timestamp])).not.toThrow();
-    expect(() => validateCareerProperties({}, { timestamp: { type: "created_time", value: "2026-09-01T00:00:00.000Z" } }, [{ ...timestamp, system: true }])).toThrow(CareerError);
+  it("keeps computed fields read-only", () => {
+    expect(() => validateCareerProperties([definition(5, "formula", "formula")], { formula: { type: "formula", value: 1, diagnostics: [] } })).toThrow(CareerError);
+    const timestamp = definition(6, "timestamp", "created_time");
+    expect(() => validateCareerProperties([timestamp], { timestamp: { type: "created_time", value: "2026-09-01T00:00:00.000Z" } })).not.toThrow();
+    expect(() => validateCareerProperties([{ ...timestamp, system: true }], { timestamp: { type: "created_time", value: "2026-09-01T00:00:00.000Z" } })).toThrow(CareerError);
   });
 });
 
