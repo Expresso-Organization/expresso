@@ -52,11 +52,7 @@ export function Generating({
           <Icon name="coffee" weight="fill" size={18} color="var(--ex-accent-surface)" />
         </span>
         <h1 className={styles.gateTitle}>{running ? "추출하는 중" : "다 뽑혔습니다"}</h1>
-        <p className={styles.gateNote}>
-          {running
-            ? "3분쯤 걸립니다. 이 화면을 닫아도 계속됩니다 — 문장과 지면 세 안이 함께 나옵니다."
-            : "문장과 지면이 준비됐습니다. 04에서 고치고 08b에서 내보냅니다."}
-        </p>
+        {running ? <p className={styles.gateNote}>이 화면을 닫아도 계속 만듭니다.</p> : null}
 
         {running ? (
           <div className={styles.gateStage}>
