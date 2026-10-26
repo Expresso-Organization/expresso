@@ -5,11 +5,14 @@ import { revalidatePath } from "next/cache";
 import { brews, interview } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
+import { brewJobKey } from "./brew-job-key";
+
 /**
  * 위저드가 계약을 부르는 자리.
  *
  * 질문 생성과 레시피 생성은 **잡**이다 — 요청은 바로 돌아오고 워커가 계약을
- * 돌린다. 화면은 `brew.latestJob`을 보고 기다린다.
+ * 돌린다. 화면은 `brew.latestJob`을 보고 기다린다. 폼은 그 잡의 id를
+ * `basisJobId`로 함께 보낸다 — 키가 어떻게 정해지는지는 `brewJobKey`에 있다.
  */
 
 function reload(brewId: string): void {
@@ -21,8 +24,8 @@ export async function startInterviewAction(formData: FormData): Promise<void> {
   const brewId = formData.get("brewId");
   if (typeof brewId !== "string") return;
   const session = await requireSession();
-  // 잡 하나면 충분하다. 같은 brew에 두 번 눌러도 같은 잡을 가리킨다.
-  await brews.startInterview(session.accessToken, brewId, `interview:${brewId}`);
+  // 같은 화면에서 두 번 눌러도 같은 잡을 가리킨다.
+  await brews.startInterview(session.accessToken, brewId, brewJobKey("interview", brewId, formData.get("basisJobId")));
   reload(brewId);
 }
 
@@ -30,7 +33,7 @@ export async function createRecipeAction(formData: FormData): Promise<void> {
   const brewId = formData.get("brewId");
   if (typeof brewId !== "string") return;
   const session = await requireSession();
-  await brews.createRecipe(session.accessToken, brewId, `recipe:${brewId}`);
+  await brews.createRecipe(session.accessToken, brewId, brewJobKey("recipe", brewId, formData.get("basisJobId")));
   reload(brewId);
 }
 
