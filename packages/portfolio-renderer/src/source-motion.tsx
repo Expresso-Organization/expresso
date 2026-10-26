@@ -9,27 +9,31 @@ export const motion = new Proxy(
       if (!cache.has(tag))
         cache.set(
           tag,
-          ({
-            children,
-            className,
-            initial: _initial,
-            animate: _animate,
-            exit: _exit,
-            variants: _variants,
-            transition: _transition,
-            whileInView: _view,
-            whileHover: _hover,
-            whileTap: _tap,
-            viewport: _viewport,
-            layout: _layout,
-            layoutId: _id,
-            ...props
-          }) =>
-            jsx(tag, {
-              ...props,
-              className: `${className || ""} sp-source-motion`,
+          // sourceTag는 빈 샘플 요소 판정이 원래 태그를 알 수 있게 합니다.
+          Object.assign(
+            ({
               children,
-            }),
+              className,
+              initial: _initial,
+              animate: _animate,
+              exit: _exit,
+              variants: _variants,
+              transition: _transition,
+              whileInView: _view,
+              whileHover: _hover,
+              whileTap: _tap,
+              viewport: _viewport,
+              layout: _layout,
+              layoutId: _id,
+              ...props
+            }: Record<string, unknown>) =>
+              jsx(tag, {
+                ...props,
+                className: `${className || ""} sp-source-motion`,
+                children,
+              }),
+            { sourceTag: tag },
+          ),
         );
       return cache.get(tag);
     },

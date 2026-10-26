@@ -13,6 +13,7 @@ import { MongoCareerService } from "../career/index.js";
 import { MongoMaterialsService } from "../materials/index.js";
 import { MongoRecipeService } from "../recipe/index.js";
 import { MongoGenerationService } from "../generation/index.js";
+import { findDesignSystemRevision } from "../design-systems/index.js";
 import { MongoPublishingService } from "../publishing/service.js";
 import { PageService } from "./service.js";
 import type { PageGenerator, PageGenerationContext } from "./generator.js";
@@ -24,7 +25,8 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
       service: PageService,
       user = "",
       other = "",
-      portfolio = "";
+      portfolio = "",
+      recipeId = "";
     beforeAll(async () => {
       fixture = await createMongoFixture("structured-page");
       service = new PageService(fixture.resource);
@@ -75,6 +77,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
           randomUUID(),
         ),
         template = await db.templates.findOne({ isActive: true });
+      recipeId = recipe.id;
       const generation = new MongoGenerationService(fixture.resource),
         job = await generation.submit(user, randomUUID(), {
           recipeId: recipe.id,
@@ -233,6 +236,30 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
       expect(after?.snapshot).toEqual(before?.snapshot);
       expect(await service.document(user, portfolio)).not.toBe(document);
     });
+    it("디자인 시스템 판으로 만든 포트폴리오는 생성 문맥에 그 디자인의 이름과 토큰을 쓴다", async () => {
+      // Refero Stripe 판은 내장 Clarity 틀을 쓰지만, 이름과 토큰은 판에서 와야 합니다.
+      const revisionId = "5d8f5f2d-6d2a-4f24-9d1a-2b8f9e7c1702";
+      const revision = findDesignSystemRevision(revisionId)!;
+      const generation = new MongoGenerationService(fixture.resource);
+      const job = await generation.submit(user, randomUUID(), {
+        recipeId,
+        designSystemRevisionId: revisionId,
+      });
+      const designed = (await generation.prepareFreeHtml(job.generationJobId))
+        .portfolioId!;
+      await service.generate(user, designed, {
+        async generate(next) {
+          expect(next.style?.name).toBe(revision.spec.identity.name);
+          expect(next.style?.background).toBe(
+            revision.spec.colors.canvas.value,
+          );
+          expect(next.style?.accent).toBe(revision.spec.colors.accent.value);
+          expect(next.style?.structure).toBe(revision.spec.composition.layout);
+          return generator.generate(next);
+        },
+      });
+    });
+
     it("직접 선택한 레이아웃을 다음 생성 문맥에도 유지한다", async () => {
       const current = (await service.latest(user, portfolio))!;
       const spec = structuredClone(
@@ -255,6 +282,53 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
           return generator.generate(next);
         },
       });
+    });
+    it("컨테이너로 묶은 구성을 저장하고 문장 편집 뒤에도 보존한다", async () => {
+      const current = (await service.latest(user, portfolio))!;
+      const spec = structuredClone(
+        current.generationManifest!.structured!.spec,
+      );
+      const root = spec.elements[spec.root]!;
+      if (root.type !== "PortfolioPage") throw new Error("시험 지면 연결 오류");
+      root.children = ["intro", "group-1"];
+      spec.elements["group-1"] = {
+        type: "Columns",
+        props: { variant: "wide-end" },
+        children: ["index", "section-project-a"],
+      };
+      const grouped = await service.editComposition(user, portfolio, {
+        expectedRevision: current.revision,
+        spec,
+        patches: [],
+      });
+      expect(grouped.generationManifest?.structured?.spec).toEqual(spec);
+      expect(grouped.html).toContain(
+        'data-group="columns" data-variant="wide-end"',
+      );
+      const patched = await service.editComposition(user, portfolio, {
+        expectedRevision: grouped.revision,
+        patches: [
+          { path: "/sections/project-a/summary", value: "묶음 안 요약" },
+        ],
+      });
+      expect(patched.generationManifest?.structured?.spec).toEqual(spec);
+      expect(patched.html).toContain("묶음 안 요약");
+      const broken = structuredClone(spec);
+      (broken.elements["group-1"] as { children: string[] }).children = [
+        "intro",
+        "section-project-a",
+      ];
+      (broken.elements[broken.root] as { children: string[] }).children = [
+        "index",
+        "group-1",
+      ];
+      await expect(
+        service.editComposition(user, portfolio, {
+          expectedRevision: patched.revision,
+          spec: broken,
+          patches: [],
+        }),
+      ).rejects.toMatchObject({ statusCode: 422 });
     });
     it("수집 원본의 키·Spec·선택 해시를 저장하고 미연결 항목은 거절한다", async () => {
       const current = (await service.latest(user, portfolio))!;

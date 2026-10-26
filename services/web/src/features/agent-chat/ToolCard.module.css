@@ -1,0 +1,36 @@
+/* 요건 대조 · 보완점 카드 — 대화 안 도구 카드(.toolCard)와 같은 테두리 · 바탕을 쓴다. */
+.card { border: 1px solid var(--ex-border); border-radius: 12px; background: var(--ex-bg-sunken); padding: 12px 14px; font-family: var(--ex-font-ui); color: var(--ex-fg); }
+.head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.title { display: inline-flex; align-items: center; gap: 6px; font-size: var(--ex-text-xs); font-weight: 600; }
+.title > i { color: var(--ex-accent-text); }
+.stale { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; background: var(--ex-status-warning-surface); color: var(--ex-status-warning-text); font-size: var(--ex-text-3xs); white-space: nowrap; }
+.summary { margin: 8px 0 0; font-size: var(--ex-text-xs); line-height: var(--ex-leading-relaxed); color: var(--ex-fg-body); }
+.counts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.count { display: inline-flex; align-items: center; gap: 4px; font-size: var(--ex-text-3xs); }
+.strong { color: var(--ex-status-success-text); }
+.partial { color: var(--ex-status-warning-text); }
+.unconfirmed { color: var(--ex-status-danger-text); }
+.items { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; border-top: 1px solid var(--ex-border-inner); }
+.item { border-bottom: 1px solid var(--ex-border-inner); }
+.item:last-child { border-bottom: 0; }
+.itemHead { display: flex; align-items: flex-start; gap: 8px; width: 100%; padding: 9px 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.itemHead > i:first-child { flex-shrink: 0; margin-top: 2px; }
+.requirement { flex: 1; min-width: 0; font-size: var(--ex-text-xs); line-height: var(--ex-leading-normal); }
+.kind { flex-shrink: 0; font-size: var(--ex-text-3xs); color: var(--ex-fg-subtle); margin-top: 2px; }
+.caret { flex-shrink: 0; color: var(--ex-fg-subtle); margin-top: 3px; }
+.itemHead:hover .requirement { color: var(--ex-accent-text); }
+.detail { display: flex; flex-direction: column; gap: 8px; padding: 0 0 12px 23px; font-size: var(--ex-text-2xs); line-height: var(--ex-leading-relaxed); color: var(--ex-fg-body); }
+.detail p { margin: 0; }
+.jobQuote { margin: 0; padding-left: 8px; border-left: 2px solid var(--ex-border-firm); color: var(--ex-fg-muted); }
+.evidence { display: flex; flex-direction: column; gap: 2px; }
+.evidence a { display: inline-flex; align-items: center; gap: 4px; color: var(--ex-accent-text); font-size: var(--ex-text-3xs); text-decoration: none; }
+.evidence a:hover { text-decoration: underline; }
+.evidence q { color: var(--ex-fg-body); }
+.recommendation { display: flex; gap: 6px; color: var(--ex-fg-muted); }
+.recommendation > i { flex-shrink: 0; margin-top: 3px; }
+.status { flex-shrink: 0; margin-top: 1px; padding: 1px 6px; border-radius: 999px; font-size: var(--ex-text-3xs); white-space: nowrap; }
+.status[data-status="needs_confirmation"] { background: var(--ex-status-warning-surface); color: var(--ex-status-warning-text); }
+.status[data-status="needs_improvement"] { background: var(--ex-status-danger-surface); color: var(--ex-status-danger-text); }
+.priority { flex-shrink: 0; width: 6px; height: 6px; margin-top: 7px; border-radius: 50%; background: var(--ex-fg-subtle); }
+.priority[data-priority="high"] { background: var(--ex-accent); }
+.priority[data-priority="medium"] { background: var(--ex-accent-soft); }

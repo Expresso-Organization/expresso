@@ -1,5 +1,7 @@
 export {
   renderStructuredPortfolio,
+  validateRenderableSpec,
+  StructuredRenderError,
   structuredCatalog,
   STRUCTURED_COMPONENT_SOURCES,
 } from "./renderer.js";

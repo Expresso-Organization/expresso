@@ -1,8 +1,7 @@
-import { randomUUID } from "node:crypto";
 import { parseCareerDocument, type CareerBlock, type CareerDocument } from "./document.js";
 
 function textBlock(type: string, value: string, attrs: Record<string, unknown> = {}): CareerBlock {
-  return { id: randomUUID(), type, attrs, text: value ? [{ text: value }] : [] };
+  return { id: globalThis.crypto.randomUUID(), type, attrs, text: value ? [{ text: value }] : [] };
 }
 function escapeHtml(value: string): string {
   return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
@@ -32,7 +31,7 @@ export function markdownToCareerDocument(markdown: string): CareerDocument {
       if (fence[1] === "expresso-block") {
         try {
           const parsed = JSON.parse(body.join("\n")) as CareerBlock;
-          content.push({ ...parsed, id: parsed.id ?? randomUUID() });
+          content.push({ ...parsed, id: parsed.id ?? globalThis.crypto.randomUUID() });
         } catch { content.push(textBlock("paragraph", escapeHtml(raw))); }
       } else {
         content.push(textBlock("code", body.join("\n"), { language: fence[1] || null, sourceMarkdown: raw }));
@@ -41,11 +40,11 @@ export function markdownToCareerDocument(markdown: string): CareerDocument {
     }
     const heading = /^(#{1,3})\s+(.*)$/.exec(line);
     if (heading) { content.push(textBlock(`heading${heading[1]?.length}`, heading[2] ?? "")); index += 1; continue; }
-    if (/^\s*([-*_])(?:\s*\1){2,}\s*$/.test(line)) { content.push({ id: randomUUID(), type: "horizontalRule", attrs: {} }); index += 1; continue; }
+    if (/^\s*([-*_])(?:\s*\1){2,}\s*$/.test(line)) { content.push({ id: globalThis.crypto.randomUUID(), type: "horizontalRule", attrs: {} }); index += 1; continue; }
     const media = /^!\[([^\]]*)\]\(media:([^)]+)\)$/.exec(line);
-    if (media) { content.push({ id: randomUUID(), type: "image", attrs: { alt: media[1] ?? "", mediaId: media[2] ?? "", sourceMarkdown: line } }); index += 1; continue; }
+    if (media) { content.push({ id: globalThis.crypto.randomUUID(), type: "image", attrs: { alt: media[1] ?? "", mediaId: media[2] ?? "", sourceMarkdown: line } }); index += 1; continue; }
     const file = /^\[([^\]]+)\]\(file:([^)]+)\)$/.exec(line);
-    if (file) { content.push({ id: randomUUID(), type: "file", attrs: { name: file[1] ?? "", mediaId: file[2] ?? "", sourceMarkdown: line } }); index += 1; continue; }
+    if (file) { content.push({ id: globalThis.crypto.randomUUID(), type: "file", attrs: { name: file[1] ?? "", mediaId: file[2] ?? "", sourceMarkdown: line } }); index += 1; continue; }
     const evidence = /^>\s*\[evidence:([^\]]+)\]\s*(.*)$/.exec(line);
     if (evidence) { content.push(textBlock("evidence", evidence[2] ?? "", { source: evidence[1] ?? "", sourceMarkdown: line })); index += 1; continue; }
     if (/^\|.*\|\s*$/.test(line)) {
@@ -53,7 +52,7 @@ export function markdownToCareerDocument(markdown: string): CareerDocument {
       while (index < lines.length && /^\|.*\|\s*$/.test(lines[index] ?? "")) index += 1;
       const raw = lines.slice(start, index).join("\n");
       const rows = lines.slice(start, index).filter((row, rowIndex) => rowIndex !== 1 || !/^\|(?:\s*:?-+:?\s*\|)+$/.test(row));
-      content.push({ id: randomUUID(), type: "table", attrs: { sourceMarkdown: raw }, content: rows.map((row) => ({ id: randomUUID(), type: "tableRow", attrs: {}, content: row.slice(1, -1).split("|").map((cell) => textBlock("tableCell", cell.trim())) })) });
+      content.push({ id: globalThis.crypto.randomUUID(), type: "table", attrs: { sourceMarkdown: raw }, content: rows.map((row) => ({ id: globalThis.crypto.randomUUID(), type: "tableRow", attrs: {}, content: row.slice(1, -1).split("|").map((cell) => textBlock("tableCell", cell.trim())) })) });
       continue;
     }
     const listPattern = /^\s*(?:[-*+] |\d+[.)] |[-*+] \[[ xX]\] )/;
@@ -62,7 +61,7 @@ export function markdownToCareerDocument(markdown: string): CareerDocument {
       while (index < lines.length && listPattern.test(lines[index] ?? "")) index += 1;
       const raw = lines.slice(start, index).join("\n");
       const type = /\[[ xX]\]/.test(line) ? "taskList" : /^\s*\d/.test(line) ? "orderedList" : "bulletList";
-      content.push({ id: randomUUID(), type, attrs: { sourceMarkdown: raw }, content: lines.slice(start, index).map((item) => textBlock("listItem", item.replace(listPattern, ""))) });
+      content.push({ id: globalThis.crypto.randomUUID(), type, attrs: { sourceMarkdown: raw }, content: lines.slice(start, index).map((item) => textBlock("listItem", item.replace(listPattern, ""))) });
       continue;
     }
     if (/^>\s?/.test(line)) {

@@ -83,6 +83,14 @@ export const JobInterestSchema = z.strictObject({
   updatedAt: TimestampSchema,
 });
 
+/**
+ * `PUT /v1/jobs/postings/:id/interest` 응답. 목록 · 상세가 싣는 관심 행과 같은
+ * 모양에 어느 공고인지를 더한다.
+ */
+export const JobInterestResponseSchema = z.strictObject({
+  data: JobInterestSchema.extend({ jobPostingId: UuidSchema }),
+});
+
 /** 이 공고로 시작한 제작. 06 "관심 공고" 레일의 상태 줄이 이걸로 갈린다. */
 export const JobBrewStateSchema = z.strictObject({
   id: UuidSchema,
@@ -363,6 +371,7 @@ export type JobPostingSummary = z.infer<typeof JobPostingSummarySchema>;
 export type JobPostingDetail = z.infer<typeof JobPostingDetailSchema>;
 export type JobPostingMatch = z.infer<typeof JobPostingMatchSchema>;
 export type JobInterest = z.infer<typeof JobInterestSchema>;
+export type JobInterestResponse = z.infer<typeof JobInterestResponseSchema>;
 export type JobRequirement = z.infer<typeof JobRequirementSchema>;
 export type JobDutyGroup = z.infer<typeof JobDutyGroupSchema>;
 export type JobPostingCategory = z.infer<typeof JobPostingCategorySchema>;

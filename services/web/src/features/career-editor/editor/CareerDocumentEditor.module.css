@@ -135,6 +135,7 @@
 .menuHint { color: var(--ex-fg-subtle); font-size: var(--ex-text-2xs); }
 
 .loading,
+.notice,
 .error {
   margin: 28px;
   border-radius: 8px;
@@ -144,6 +145,7 @@
   font-size: var(--ex-text-sm);
 }
 .error { background: var(--ex-status-danger-surface); color: var(--ex-status-danger-text); }
+.content .notice { margin: 0 0 24px; }
 
 @media (max-width: 767px) {
   .toolbarRow { padding-right: 14px; padding-left: 14px; }

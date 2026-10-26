@@ -2,6 +2,8 @@
 import { useActionState, useState } from "react";
 import {
   STRUCTURED_CASE_TYPES,
+  isStructuredGroup,
+  structuredLeaves,
   type GeneratedPage,
   type PageLibraryItem,
   type StructuredPortfolioSpec,
@@ -18,6 +20,15 @@ const names: Record<string, string> = {
   CaseTechnical: "기술 설명형",
   CaseProcess: "과정형",
   ContentPanel: "내용 패널",
+};
+// 모델이 만든 지면 묶음의 이름입니다. 편집 화면은 묶음을 보존하고 표시만 합니다.
+const groupNames: Record<string, string> = {
+  "Columns:even": "두 열 묶음",
+  "Columns:wide-start": "두 열 묶음(왼쪽 넓게)",
+  "Columns:wide-end": "두 열 묶음(오른쪽 넓게)",
+  "Grid:even": "같은 폭 열 묶음",
+  "Band:panel": "면 배경 묶음",
+  "Band:accent": "강조선 묶음",
 };
 export function StructuredPageProperties({
   page,
@@ -142,9 +153,28 @@ export function StructuredPageProperties({
         </select>
       </label>
       <ol className={styles.sections}>
-        {root.children.map((key, position) => {
-          const node = spec.elements[key];
+        {structuredLeaves(spec).map(({ key, node, parent }) => {
           if (!node || !("section" in node.props)) return null;
+          const container = spec.elements[parent];
+          const siblings =
+            container && "children" in container ? container.children : [];
+          const position = siblings.indexOf(key);
+          const nested = isStructuredGroup(container);
+          // 최상위에서는 소개 앞·연락처 뒤로 가지 않고, 묶음 안에서는 그 묶음 안에서만 움직입니다.
+          const first = nested ? 0 : 1;
+          const last = nested
+            ? siblings.length - 1
+            : siblings.length - (snapshot.content.contact ? 2 : 1);
+          const move = (offset: -1 | 1) =>
+            update((next) => {
+              const target = next.elements[parent];
+              if (!target || !("children" in target)) return;
+              const list = target.children as string[];
+              [list[position], list[position + offset]] = [
+                list[position + offset]!,
+                list[position]!,
+              ];
+            });
           const reference = node.props.section.$state;
           const section = snapshot.content.sections.find(
             (item) => reference === `/sectionById/${item.id}`,
@@ -153,6 +183,12 @@ export function StructuredPageProperties({
           return (
             <li key={key}>
               <strong>{section.title}</strong>
+              {nested && (
+                <span className={styles.group}>
+                  {groupNames[`${container.type}:${container.props.variant}`] ??
+                    "지면 묶음"}
+                </span>
+              )}
               <label>
                 사례 지면
                 <select
@@ -211,39 +247,16 @@ export function StructuredPageProperties({
               <div className={styles.order}>
                 <button
                   type="button"
-                  disabled={position <= 1}
-                  onClick={() =>
-                    update((next) => {
-                      const node = next.elements[next.root];
-                      if (node?.type === "PortfolioPage")
-                        [node.children[position - 1], node.children[position]] =
-                          [
-                            node.children[position]!,
-                            node.children[position - 1]!,
-                          ];
-                    })
-                  }
+                  disabled={position <= first}
+                  onClick={() => move(-1)}
                   aria-label={`${section.title} 위로`}
                 >
                   ↑ 위로
                 </button>
                 <button
                   type="button"
-                  disabled={
-                    position >=
-                    root.children.length - (snapshot.content.contact ? 2 : 1)
-                  }
-                  onClick={() =>
-                    update((next) => {
-                      const node = next.elements[next.root];
-                      if (node?.type === "PortfolioPage")
-                        [node.children[position], node.children[position + 1]] =
-                          [
-                            node.children[position + 1]!,
-                            node.children[position]!,
-                          ];
-                    })
-                  }
+                  disabled={position >= last}
+                  onClick={() => move(1)}
                   aria-label={`${section.title} 아래로`}
                 >
                   ↓ 아래로

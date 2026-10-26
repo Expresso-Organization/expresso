@@ -143,6 +143,14 @@ export class PageGenerationError extends Error {
   }
 }
 
+/** 검사를 통과한 Spec의 렌더링 실패입니다. 모델 출력을 고쳐도 해결되지 않으므로 다시 요청하지 않습니다. */
+export class PageRenderError extends PageGenerationError {
+  constructor(message: string, options: { cause?: unknown } = {}) {
+    super(message, options);
+    this.name = "PageRenderError";
+  }
+}
+
 /**
  * 키트를 쓸 때의 시스템 프롬프트.
  *
