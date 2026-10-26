@@ -135,6 +135,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
               props: {
                 profile: { $state: "/profile" },
                 sections: { $state: "/sections" },
+                variant: "statement",
               },
               children: [],
             },
@@ -255,6 +256,8 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
           );
           expect(next.style?.accent).toBe(revision.spec.colors.accent.value);
           expect(next.style?.structure).toBe(revision.spec.composition.layout);
+          // 렌더러는 고른 판의 전체 토큰을 받습니다.
+          expect(next.design).toEqual(revision.spec);
           return generator.generate(next);
         },
       });

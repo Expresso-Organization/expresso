@@ -28,3 +28,6 @@
 @media (max-width: 768px) { .portal-docs-heading { padding: 24px 16px; } .portal-docs-heading h1 { font-size: var(--ex-text-3xl); } .portal-docs-content { padding: 24px 16px 40px; } .portal-docs-grid { gap: 14px; } }
 @media (max-width: 560px) { .portal-docs-grid { grid-template-columns: minmax(0, 1fr); } }
 @media (prefers-reduced-motion: reduce) { .portal-doc-card, .portal-doc-card footer span:last-child { transition: none; transform: none; } }
+
+/* 진행 현황 탭 — 대시보드(docs/status/)를 포털 머리 아래 남은 높이에 그대로 띄웁니다. */
+.portal-status-frame { display: block; width: 100%; height: calc(100vh - 108px); min-height: 640px; border: 0; background: var(--ex-bg-sunken); }

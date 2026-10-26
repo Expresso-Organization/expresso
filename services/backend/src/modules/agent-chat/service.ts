@@ -16,6 +16,13 @@ import { readableCareerProperties, type CareerApi } from "../career/index.js";
 import type { JobBoardApi } from "../jobs/index.js";
 import type { ConsentApi } from "../consent/index.js";
 
+/**
+ * 실행 중인 대화의 heartbeat 주기. 실행 인스턴스는 이 주기로 문서를 갱신하고, 갱신이 맞지
+ * 않으면(다른 인스턴스가 취소해 `running`이 아니면) 실행을 중단한다. 그래서 다른 인스턴스에서
+ * 낸 취소가 실행에 닿는 최대 지연이기도 하다. 같은 인스턴스의 취소는 즉시 전달된다.
+ */
+export const RUN_HEARTBEAT_MS = 1_000;
+
 export class AgentChatError extends Error { constructor(readonly statusCode: number, message: string) { super(message); } }
 const view = (row: AgentConversationDoc) => { const { _id, userId: _userId, heartbeatAt: _heartbeat, ...data } = row; return AgentConversationSchema.parse({ ...data, id: _id }); };
 export class AgentChatService {
@@ -312,7 +319,7 @@ export class AgentChatService {
       if (heartbeatBusy) return;
       heartbeatBusy = true;
       void this.rows.updateOne(filter, { $set: { heartbeatAt: new Date() } }).then(result => { if (!result.matchedCount) controller.abort(); }).catch(() => controller.abort()).finally(() => { heartbeatBusy = false; });
-    }, 1_000);
+    }, RUN_HEARTBEAT_MS);
     const timeout = setTimeout(() => controller.abort(), 600_000);
     try {
       await this.runtime!.run({ messages: row.messages.slice(0, -1), context, ...(apiKey ? { apiKey } : {}), signal: controller.signal,

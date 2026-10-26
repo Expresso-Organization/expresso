@@ -93,6 +93,7 @@ export default async function OutlinePage({
             ? "입력한 내용을 읽지 못했습니다. 자유 생성 설명을 보완한 뒤 다시 시도해 주세요."
             : "재료가 세 건보다 적습니다. 기록을 더 고른 뒤 다시 시도해 주세요."}
           brewId={brewId}
+          basisJobId={brew.latestJob?.jobId ?? null}
         />
       </BrewFrame>
     );
@@ -132,6 +133,7 @@ export default async function OutlinePage({
           <div className={styles.topRight}>
             <form action={createRecipeAction}>
               <input type="hidden" name="brewId" value={brewId} />
+              {brew.latestJob ? <input type="hidden" name="basisJobId" value={brew.latestJob.jobId} /> : null}
               <button type="submit" className={styles.outlineButton}>
                 <Icon name="arrow-counter-clockwise" size={12} />
                 구성 다시 만들기

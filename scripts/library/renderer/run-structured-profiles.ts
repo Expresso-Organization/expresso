@@ -8,6 +8,9 @@ import { StructuredPageGenerator } from "../../../services/backend/src/modules/p
 import type { AiClient } from "../../../services/backend/src/platform/ai/client.js";
 import { ClaudeCodeAiClient } from "../../../services/backend/src/platform/ai/claude-code.js";
 import { renderStructuredPortfolio } from "../../../packages/portfolio-renderer/dist/index.js";
+import { pageDocument } from "../../../packages/contracts/src/page.js";
+import { catalogEntries } from "../../../services/backend/src/modules/design-systems/catalog.js";
+import { findPortfolioDesign } from "../../../services/backend/src/modules/design-systems/generation-style.js";
 
 const root = process.cwd();
 const model = process.env.PORTFOLIO_TEST_MODEL || "qwen3.5:9b-q8_0";
@@ -32,21 +35,48 @@ const sha = (value: string) => createHash("sha256").update(value).digest("hex");
 const runs = path.join(root, "docs/library/previews/portfolio/runs");
 const htmlDocument = (name: string, rendered: { html: string; css: string }) =>
   `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>${name} 포트폴리오</title><style>html,body{margin:0} ${rendered.css}</style></head><body>${rendered.html}</body></html>`;
+// PORTFOLIO_DESIGN=<디자인 시스템 코드>를 주면 그 판의 토큰 키트로 그립니다. 결과는 실행 폴더 아래 코드별 폴더에 둡니다.
+const designCode = process.env.PORTFOLIO_DESIGN;
+const designRevision = designCode
+  ? catalogEntries().find(({ revision }) => revision.code === designCode)?.revision
+  : undefined;
+if (designCode && !designRevision)
+  throw new Error(`알 수 없는 디자인 시스템 코드입니다: ${designCode}`);
+const design = designRevision
+  ? findPortfolioDesign({ designSystemRevisionId: designRevision.revisionId })
+  : undefined;
+// 키트 재렌더에서 첫 화면 구도를 프로필마다 하나씩 배정합니다. 원본 Spec은 이 속성이 생기기 전에 만들어졌습니다.
+const INTRO_VARIANTS: Record<string, "statement" | "split" | "media"> = {
+  "robotics-engineer": "media",
+  "editorial-designer": "split",
+  "climate-analyst": "statement",
+};
 // 렌더러 변경만 비교할 때는 모델을 다시 부르지 않고 저장된 모델 Spec을 현재 렌더러로 다시 그립니다.
 const rerenderFrom = process.env.PORTFOLIO_RERENDER_FROM;
 if (rerenderFrom && !/^[a-zA-Z0-9-]+$/.test(rerenderFrom))
   throw new Error("재렌더링할 실행 식별자가 올바르지 않습니다.");
 for (const slug of rerenderFrom ? slugs : []) {
   const source = path.join(runs, rerenderFrom!, slug);
-  const out = path.join(runs, runId, slug);
+  const out = path.join(runs, runId, ...(designCode ? [designCode] : []), slug);
   if (fs.existsSync(path.join(out, "index.html")))
     throw new Error("완료된 실행을 덮어쓸 수 없습니다. 새 실행 ID를 사용하세요.");
   const run = JSON.parse(fs.readFileSync(path.join(source, "run.json"), "utf8"));
-  const { spec, content } = run.structured;
-  const document = htmlDocument(
-    content.profile.name,
-    renderStructuredPortfolio(spec, content),
-  );
+  const { content } = run.structured;
+  // 키트 경로는 수집 원본이 없는 Spec에만 적용됩니다. 원본 선택을 지우고 지운 목록을 기록합니다.
+  const spec = structuredClone(run.structured.spec);
+  const removedSourceIds: Record<string, string> = {};
+  if (design)
+    for (const [key, node] of Object.entries(spec.elements) as [string, { type: string; props: Record<string, unknown> }][]) {
+      if (typeof node.props.sourceId === "string") {
+        removedSourceIds[key] = node.props.sourceId;
+        delete node.props.sourceId;
+      }
+      if (node.type === "NameIntro" && INTRO_VARIANTS[slug]) node.props.variant = INTRO_VARIANTS[slug];
+    }
+  const rendered = renderStructuredPortfolio(spec, content, design ? { design } : {});
+  const document = design
+    ? pageDocument({ ...rendered, title: `${content.profile.name} 포트폴리오` })
+    : htmlDocument(content.profile.name, rendered);
   fs.mkdirSync(out, { recursive: true });
   fs.writeFileSync(path.join(out, "index.html"), document);
   fs.copyFileSync(
@@ -60,6 +90,17 @@ for (const slug of rerenderFrom ? slugs : []) {
         ...run,
         htmlSha256: sha(document),
         rerenderOf: { runId: rerenderFrom, htmlSha256: run.htmlSha256 },
+        ...(design
+          ? {
+              structured: { ...run.structured, spec },
+              kitRerender: {
+                designCode,
+                designRevisionId: designRevision!.revisionId,
+                removedSourceIds,
+                introVariant: INTRO_VARIANTS[slug] ?? null,
+              },
+            }
+          : {}),
       },
       null,
       2,

@@ -101,7 +101,12 @@ export class BrewJobService {
    * 계약 호출은 트랜잭션 밖이다 — 1분 넘게 걸리는 일이라 안에서 부르면 그동안
    * 커넥션을 붙들고 있게 된다. 이미 끝난 잡은 다시 돌리지 않는다.
    */
-  async process(jobId: string, runner: BrewJobRunner, classify: FailureClassifier) {
+  async process(
+    jobId: string,
+    runner: BrewJobRunner,
+    classify: FailureClassifier,
+    { finalAttempt = true }: { finalAttempt?: boolean } = {},
+  ) {
     const job = await this.#sql.begin(async (transaction) => {
       const locked = (await transaction<JobRow[]>`
         select * from brew_job where id = ${jobId} for update
@@ -135,11 +140,19 @@ export class BrewJobService {
       `;
     } catch (error) {
       const { code, retryable } = classify(error);
-      await this.#sql`
-        update brew_job set status = 'failed', stage = 'failed',
-          error_code = ${code}, failure_retryable = ${retryable}, updated_at = now(6)
-        where id = ${jobId}
-      `.catch(() => undefined);
+      // 큐가 다시 돌릴 실패는 대기로 남긴다. 끝난 실패만 `failed`다.
+      const pending = retryable && !finalAttempt;
+      await (pending
+        ? this.#sql`
+          update brew_job set status = 'queued', stage = 'queued',
+            error_code = null, failure_retryable = null, updated_at = now(6)
+          where id = ${jobId}
+        `
+        : this.#sql`
+          update brew_job set status = 'failed', stage = 'failed',
+            error_code = ${code}, failure_retryable = ${retryable}, updated_at = now(6)
+          where id = ${jobId}
+        `).catch(() => undefined);
       throw error;
     }
     return this.getStatus(job.user_id, job.id);

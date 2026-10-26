@@ -1,3 +1,4 @@
+import { TERMS_VERSION } from "@expresso/contracts";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
@@ -39,7 +40,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("커리어 프로필", () => {
     const signup = await app.inject({
       method: "POST",
       url: "/v1/auth/signup",
-      payload: { email, password: "correct-horse-battery", displayName: "프로필 테스트" },
+      payload: { email, password: "correct-horse-battery", displayName: "프로필 테스트", termsVersion: TERMS_VERSION },
     });
     expect(signup.statusCode).toBe(201);
     accessToken = signup.json().data.session.accessToken;
