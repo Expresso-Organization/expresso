@@ -145,6 +145,18 @@ describe("출력 스키마에서 만든 형식 설명", () => {
     );
     expect(prompt).not.toContain("editorial(측면 소개+기사)");
   });
+  it("직전 Spec은 모델이 내는 모양으로 보인다 — 받아들일 때 채운 페이지의 design · archetype은 뺀다", () => {
+    const previous = {
+      root: "page",
+      elements: {
+        page: { type: "PortfolioPage", props: { motion: "showcase", design: { layout: "library" }, archetype: "case-study" }, children: [] },
+      },
+    };
+    const prompt = structuredSpecPrompt(content, { schema, previous });
+    expect(prompt).toContain('직전 Spec: {"root":"page","elements":{"page":{"type":"PortfolioPage","props":{"motion":"showcase"},"children":[]}}}');
+    // 저장한 Spec은 그대로입니다.
+    expect(previous.elements.page.props).toHaveProperty("archetype", "case-study");
+  });
   it("컨테이너를 쓸 수 없는 디자인이면 컨테이너 설명 없이 배치 문단을 넣는다", () => {
     const flat = structuredModelSchema(content, { intro: [], section: [], guidance: [], groups: [] });
     const prompt = structuredSpecPrompt(content, { schema: flat, layout: "고른 디자인은 가상이고 배치는 넓은 여백입니다." });

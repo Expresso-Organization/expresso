@@ -3,7 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const submit = vi.hoisted(() => vi.fn());
 const select = vi.hoisted(() => vi.fn());
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
+const redirect = vi.hoisted(() => vi.fn());
+vi.mock("next/navigation", () => ({ redirect }));
 vi.mock("@/lib/require-session", () => ({ requireSession: async () => ({ accessToken: "test-session" }) }));
 vi.mock("@/lib/api/endpoints", () => ({ generation: { submit }, designSystems: { select } }));
 
@@ -52,6 +53,8 @@ describe("디자인 시스템으로 생성 요청", () => {
       expect.any(String),
     );
     expect(order).toEqual(["select", "submit"]);
+    // 다시 뽑기에서 시작했어도 기다림 화면 주소로 옮겨, 끝난 뒤 카탈로그가 다시 열리지 않습니다.
+    expect(redirect).toHaveBeenCalledWith(`/brew/${BREW}/design`);
   });
 
   it("레시피나 디자인 ID가 올바르지 않으면 요청하지 않는다", async () => {

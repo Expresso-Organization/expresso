@@ -55,6 +55,21 @@ import {
 } from "./structured-spec-format.js";
 import { DESIGN_FIRST_TUNING, designFirst, fitToContent, type Blueprint, type DesignFirstTuning } from "./design-first.js";
 
+/**
+ * 저장한 Spec을 모델이 내는 모양으로 되돌립니다. 페이지의 `design` · `archetype`은 모델이 고르지 않고 받아들일 때 채우는
+ * 값이라 출력 스키마에 없습니다. 직전 Spec에 그대로 두면 모델이 그 값을 베껴 공급자 스키마 검사에 걸리고, 출력을
+ * 처음부터 다시 씁니다(2026-10-26 체험 서버 다듬기: "'archetype' is not allowed").
+ */
+function modelSpec(spec: unknown): unknown {
+  const copy = structuredClone(spec) as { elements?: Record<string, { type?: string; props?: Record<string, unknown> }> };
+  for (const node of Object.values(copy.elements ?? {})) {
+    if (node.type !== "PortfolioPage" || !node.props) continue;
+    const { design: _design, archetype: _archetype, ...props } = node.props;
+    node.props = props;
+  }
+  return copy;
+}
+
 export function structuredSpecPrompt(
   content: StructuredPortfolioContent,
   options: {
@@ -70,7 +85,7 @@ export function structuredSpecPrompt(
   } = {},
 ): string {
   const instruction = options.instruction ?? "";
-  const previous = options.previous ?? null;
+  const previous = options.previous ? modelSpec(options.previous) : null;
   const schema = options.schema ?? structuredModelSchema(content);
   const layout = options.layout;
   // 요소 ID와 props 형태는 공급자에 넘기는 출력 스키마에서 만듭니다. 아래 문장은 스키마로 표현할 수 없는 규칙입니다.
