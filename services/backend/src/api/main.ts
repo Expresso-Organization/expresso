@@ -148,7 +148,7 @@ const app = buildApi({
   ...(googleIdTokenVerifier ? { googleIdTokenVerifier } : {}),
   entitlementService,
   careerService,
-  ...(config.careerEditorV2Enabled ? { careerDocumentService } : {}),
+  careerDocumentService,
   jobMarketService,
   jobIngestService,
   jobUrlImporter,

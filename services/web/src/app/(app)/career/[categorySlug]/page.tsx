@@ -8,8 +8,6 @@ import { career } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 import { CareerBrowser } from "./CareerBrowser";
-import { LegacyCareerBrowser } from "./LegacyCareerBrowser";
-import { careerEditorV2Enabled } from "@/features/career-editor/feature-flag";
 
 const SORTS: Record<string, CareerRecordSort> = {
   updated_desc: "updated_desc",
@@ -65,8 +63,7 @@ export default async function CareerCategoryPage({
     ...(search ? { q: search } : {}),
     limit: 50,
   });
-  const v2Enabled = careerEditorV2Enabled();
-  const savedViews = v2Enabled ? await career.viewConfigurations(session.accessToken, category.id) : null;
+  const savedViews = await career.viewConfigurations(session.accessToken, category.id);
 
   return (
     <>
@@ -74,7 +71,7 @@ export default async function CareerCategoryPage({
         crumbs={[{ label: "내 커리어", href: "/career/experience" as Route }, category.name]}
         actions={
           <>
-            <span style={{ fontSize: "12px", color: "var(--ex-fg-muted)" }}>{v2Enabled ? editedLabel(records.data[0]?.updatedAt) : `기록 ${category.recordCount}건`}</span>
+            <span style={{ fontSize: "12px", color: "var(--ex-fg-muted)" }}>{editedLabel(records.data[0]?.updatedAt)}</span>
             <span style={{ fontSize: "12.5px", color: "var(--ex-fg-body)" }}>
               공유
             </span>
@@ -88,7 +85,7 @@ export default async function CareerCategoryPage({
         }
       />
       <AppBody>
-        {v2Enabled ? <CareerBrowser category={category} records={records.data} initialView={savedViews?.data[0] ?? fallbackView(category)} /> : <LegacyCareerBrowser category={category} records={records.data} summary={records.summary} />}
+        <CareerBrowser category={category} records={records.data} initialView={savedViews.data[0] ?? fallbackView(category)} />
       </AppBody>
     </>
   );

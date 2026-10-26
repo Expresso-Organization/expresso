@@ -1,0 +1,134 @@
+/* 내 커리어 05 로딩 골격 — 카테고리 화면의 머리 · 보기 막대 · 표 자리 */
+
+.list {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 18px 14px 0;
+}
+
+@media (min-width: 768px) {
+  .list {
+    padding: 26px 30px 0;
+  }
+}
+
+/* 카테고리 헤더 — 34px 아이콘 타일 + 27px 제목 + 캐럿 */
+.categoryHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+/* 뷰 탭 줄 */
+.viewBar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-bottom: 1px solid var(--ex-border-hair);
+  margin-bottom: 12px;
+}
+
+.viewBarRight {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 7px;
+}
+
+/* 테이블 */
+.table {
+  border: 1px solid var(--ex-border-hair);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) 74px 110px 80px 74px 34px;
+  border-bottom: 1px solid var(--ex-border-hair);
+  align-items: center;
+}
+
+.headRow {
+  background: var(--ex-bg-header);
+}
+
+.headCell {
+  padding: 9px 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-left: 1px solid var(--ex-border-hair);
+}
+
+.headCell:first-child {
+  border-left: none;
+}
+
+.titleCell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  min-width: 0;
+}
+
+.cell {
+  padding: 9px 12px;
+  border-left: 1px solid var(--ex-border-hair);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-muted);
+  white-space: nowrap;
+}
+
+/*
+ * 좁은 화면의 표 — 칸을 가로로 늘어놓을 자리가 없다.
+ *
+ * 여섯 칸이 최소 672px을 먹으므로 폰에서는 가로 스크롤이 된다. 대신 한 줄을
+ * **카드 하나**로 접는다 — 제목이 한 줄을 차지하고 나머지는 그 아래로
+ * 흘러간다. 머리글 줄은 각 값이 무엇인지 카드 안에서 알 수 없게 되지만,
+ * 기간·태그·쓰인 횟수는 생김새로 구분된다.
+ */
+@media (max-width: 767px) {
+  .headRow {
+    display: none;
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 12px;
+    padding: 10px 12px;
+  }
+
+  .row > * {
+    padding: 0;
+    border-left: none;
+  }
+
+  .titleCell {
+    flex-basis: 100%;
+  }
+}
+
+/*
+ * 보기 막대의 오른쪽 무리(필터 · 정렬 · 속성 · 새로 만들기)는 폰에서 한 줄에
+ * 서지 못한다. 왼쪽 탭 아래로 내려보내고 그 안에서 다시 줄을 넘긴다.
+ */
+@media (max-width: 767px) {
+  .viewBar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .viewBarRight {
+    margin-left: 0;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-bottom: 0;
+  }
+}

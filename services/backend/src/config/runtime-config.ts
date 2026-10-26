@@ -20,8 +20,6 @@ const runtimeConfigSchema = z.object({
   ANALYTICS_VISITOR_SALT: z.string().min(16).default("expresso-local-analytics-salt"),
   REQUEST_TIMEOUT_MS: z.coerce.number().int().min(1_000).max(120_000).default(30_000),
   CAREER_SOCKET_ALLOWED_ORIGIN: z.url().default("http://127.0.0.1:3000"),
-  /** 출시 후보 검증 전까지 새 문서·실시간 API를 닫아 기존 career API를 보존한다. */
-  CAREER_EDITOR_V2_ENABLED: z.stringbool().default(false),
   /** E2E 전용. 운영에서 fixture 제안을 노출하지 않는다. */
   CAREER_AI_DETERMINISTIC_TEST: z.stringbool().default(false),
   /** 격리 E2E와 복구 점검에서 외부 수집 예약을 만들지 않는다. 운영 기본값은 true다. */
@@ -133,7 +131,6 @@ export interface RuntimeConfig {
   analyticsVisitorSalt?: string;
   requestTimeoutMs?: number;
   careerSocketAllowedOrigin?: string;
-  careerEditorV2Enabled?: boolean;
   careerAiDeterministicTest?: boolean;
   scheduledJobsEnabled?: boolean;
   /** 없으면 Google 로그인 경로를 열지 않는다. */
@@ -186,7 +183,6 @@ export function loadRuntimeConfig(
     analyticsVisitorSalt: result.ANALYTICS_VISITOR_SALT,
     requestTimeoutMs: result.REQUEST_TIMEOUT_MS,
     careerSocketAllowedOrigin: result.CAREER_SOCKET_ALLOWED_ORIGIN,
-    careerEditorV2Enabled: result.CAREER_EDITOR_V2_ENABLED,
     careerAiDeterministicTest: result.CAREER_AI_DETERMINISTIC_TEST,
     scheduledJobsEnabled: result.SCHEDULED_JOBS_ENABLED,
     googleClientId: result.GOOGLE_CLIENT_ID,
