@@ -285,7 +285,8 @@ export function fitToContent(rawSpec: unknown, content: StructuredPortfolioConte
       // 단계가 모자란 흐름은 설명 항목이 두 개 이상이면 과정형으로, 아니면 기사형으로 내립니다.
       if (node.type === "CaseFlow" && (section.steps?.length ?? 0) < 2) node.type = "CaseProcess";
       if (node.type === "CaseProcess" && section.details.length < 2) node.type = "CaseEssay";
-      const stage = stages.get(id);
+      // 글 · 목록형의 사례 행은 같은 모양으로 이어 붙이므로 지면 변화를 두지 않습니다(모델 스키마에도 없음).
+      const stage = node.type === "CaseRow" ? undefined : stages.get(id);
       if (stage)
         node.props = {
           ...node.props,

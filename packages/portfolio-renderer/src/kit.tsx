@@ -746,7 +746,8 @@ export function caseNumbers(
     // 사례 props.section은 {$state: "/sectionById/<id>"} 바인딩입니다.
     const binding = (node.props as { section?: { $state?: unknown } }).section?.$state;
     const id = typeof binding === "string" ? binding.match(/^\/sectionById\/(.+)$/)?.[1] : undefined;
-    if (id && projects.has(id) && !numbers.has(id)) numbers.set(id, numbers.size + 1);
+    // 큰 인용도 섹션을 참조하지만 사례가 아닙니다. 인용이 사례보다 앞에 있어도 번호는 사례의 순서로 매깁니다.
+    if (id && node.type !== "PullQuote" && projects.has(id) && !numbers.has(id)) numbers.set(id, numbers.size + 1);
     for (const child of node.children ?? []) visit(child);
   };
   visit(spec.root);

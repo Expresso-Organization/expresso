@@ -330,6 +330,19 @@ describe("시각 부품과 지면 변화", () => {
     expect(shown).toMatch(/<article id="section-a" class="xp-block xp-case xp-showcase" data-case-type="showcase" data-width="bleed" data-bleed=""><figure class="xp-showcase-art"><img src="data:image\/png;base64,AAAA" alt="가상 회로 사진"/);
   });
 
+  it("큰 인용이 사례보다 앞에 있어도 사례 번호와 목차는 사례의 순서를 따른다", () => {
+    const twoProjects: StructuredPortfolioContent = { ...rich, sections: [rich.sections[0]!, { ...rich.sections[1]!, pattern: "project", quote: "둘째 작업의 원칙입니다." }] };
+    const spec = withNodes(
+      { "quote-1": { type: "PullQuote", props: { section: { $state: "/sectionById/b" } }, children: [] } },
+      ["intro", "index", "quote-1", "section-a", "section-b", "career", "evidence"],
+    );
+    const { html } = renderStructuredPortfolio(spec, twoProjects, { design: clarity });
+    const head = (id: string) => html.slice(html.indexOf(`<article id="section-${id}"`)).match(/xp-num">(\d+)</)?.[1];
+    expect(head("a")).toBe("01");
+    expect(head("b")).toBe("02");
+    expect(html.indexOf('href="#section-a"')).toBeLessThan(html.indexOf('href="#section-b"'));
+  });
+
   it("청사진의 자리 표지처럼 숫자로 시작하지 않는 값은 막대 비율을 읽지 않고 중립 너비로 그린다", () => {
     expect(metricNumber("3.8초")).toBe(3.8);
     expect(metricNumber("1,200만 건")).toBe(1200);

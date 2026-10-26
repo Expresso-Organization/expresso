@@ -207,5 +207,8 @@ describe("내용에 맞춘 부품 내림", () => {
     const fitted = fitToContent(raw, content, { sections: [stage as never] });
     expect(fitted.elements["section-c"]?.props).toMatchObject({ scale: "lead", surface: "field", width: "bleed" });
     expect(fitToContent(raw, content).elements["section-c"]?.props).not.toHaveProperty("scale");
+    // 글 · 목록형 사례 행에는 옮기지 않습니다. 다듬기의 모델 스키마가 그 props를 받지 않습니다.
+    const rows = { ...raw, elements: { ...raw.elements, "section-c": node("CaseRow", { section: { $state: "/sectionById/c" } }) } };
+    expect(fitToContent(rows, content, { sections: [stage as never] }).elements["section-c"]?.props).toEqual({ section: { $state: "/sectionById/c" } });
   });
 });
