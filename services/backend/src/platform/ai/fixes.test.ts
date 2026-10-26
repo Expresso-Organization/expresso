@@ -108,6 +108,20 @@ describe("검사에 걸린 칸은 같은 대화에서 그 칸만 고쳐 받는�
   });
 });
 
+describe("출력 전체를 고칠 때", () => {
+  it("모델에게는 출력 전체를 / 로 보이고, / 로 온 고치기를 출력 전체로 받는다", async () => {
+    const cli = fakeCli([{ title: "제목", items: [] }, { fixes: [{ path: "/", value: { title: "새 제목", items: ["a"] } }] }]);
+    const result = await new ClaudeCodeAiClient({ cliPath: cli.cliPath }).complete(spec, schema, {
+      check: (data) => (data.items.length ? [] : [{ path: "", problem: "지면이 그대로입니다." }]),
+    });
+    expect(result.data).toEqual({ title: "새 제목", items: ["a"] });
+    const fix = cli.calls()[1]!;
+    const shape = JSON.parse(fix.args[fix.args.indexOf("--json-schema") + 1]!) as { properties: { fixes: { items: { properties: { path: { enum: string[] } } } } } };
+    expect(shape.properties.fixes.items.properties.path.enum).toEqual(["/"]);
+    expect(fix.input).toContain("- /: 지면이 그대로입니다.");
+  });
+});
+
 describe("공급자 형식은 모양만", () => {
   it("길이 · 개수 · 형식 · 범위 기준을 떼고 설명 문장으로 옮긴다", () => {
     const tool = toToolSchema(z.object({

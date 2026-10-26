@@ -2,10 +2,11 @@ import {
   JobAnalysisAiOutputSchema,
   JobAnalysisExtractionSchema,
   type ExtractedRequirement,
+  type JobAnalysisAiOutput,
   type JobAnalysisExtraction,
 } from "@expresso/contracts";
 
-import type { AiClient } from "../../platform/ai/client.js";
+import type { AiClient, AiViolation } from "../../platform/ai/client.js";
 import type { RequirementExtractor } from "./extractor.js";
 import { AnalysisEvidenceError } from "./source-span.js";
 
@@ -14,7 +15,8 @@ import { AnalysisEvidenceError } from "./source-span.js";
  *
  * 모델에게 **글자 위치를 세라고 하지 않는다.** 인용문만 받고 위치는 원문에서
  * 우리가 찾는다 — 모델은 오프셋 계산을 안정적으로 못 하고, 틀리면 DB 트리거가
- * 전부 거절해 분석이 통째로 실패한다. 인용이 원문에 없으면 그 항목만 버린다
+ * 전부 거절해 분석이 통째로 실패한다. 원문에 없는 인용은 같은 대화에서 그 칸만
+ * 고쳐 받고(`check`), 고친 뒤에도 없으면 그 항목만 버린다
  * (§8.3 환각 방지 ②: "불일치 시 해당 항목을 드롭").
  */
 
@@ -60,6 +62,13 @@ function locate(source: string, quote: string): { start: number; end: number } |
   return { start, end: start + Array.from(quote).length };
 }
 
+/** 원문에서 찾지 못한 인용의 자리. 경로는 모델 출력 기준이다. */
+function unquotedRequirements(source: string, output: JobAnalysisAiOutput): AiViolation[] {
+  return output.requirements.flatMap((item, index) => locate(source, item.quote)
+    ? []
+    : [{ path: `/requirements/${index}/quote`, problem: "원문에 이 문장이 그대로 없습니다. 공고 원문에서 한 글자도 바꾸지 않고 잘라 옵니다." }]);
+}
+
 export class AiRequirementExtractor implements RequirementExtractor {
   readonly #ai: AiClient;
 
@@ -76,13 +85,15 @@ export class AiRequirementExtractor implements RequirementExtractor {
         promptVersion: JOB_ANALYSIS_PROMPT_VERSION,
       },
       JobAnalysisAiOutputSchema,
+      // 다시 요청하지 않는다. 원문에 없는 인용만 어댑터가 같은 대화에서 고쳐 받는다.
+      { check: (output) => unquotedRequirements(source, output) },
     );
 
     const requirements: ExtractedRequirement[] = [];
     const seen = new Set<string>();
     for (const item of data.requirements) {
       const span = locate(source, item.quote);
-      // 원문에 없는 인용은 지어낸 근거다. 그 항목만 버린다.
+      // 고친 뒤에도 원문에 없는 인용은 지어낸 근거다. 그 항목만 버린다.
       if (!span) continue;
       // 같은 자리를 두 번 가리키면 한 번만 남긴다.
       const key = `${item.kind}:${span.start}:${span.end}`;

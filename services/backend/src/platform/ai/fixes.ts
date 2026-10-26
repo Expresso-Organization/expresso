@@ -76,17 +76,24 @@ export function groupViolations(violations: readonly AiViolation[]): Map<string,
   return grouped;
 }
 
+/**
+ * 모델에게 보이는 경로입니다. JSON 포인터에서 출력 전체는 `""`이지만 모델은 빈 문자열을 경로로 적지 않으므로 `/`로
+ * 보이고, 받은 고치기에서 다시 `""`로 돌립니다. 우리 출력에는 빈 이름의 키가 없어 `/`가 다른 칸과 겹치지 않습니다.
+ */
+const shownPath = (path: string) => path || "/";
+const realPath = (path: string) => (path === "/" ? "" : path);
+
 /** 고치기 요청의 출력 형식입니다. 경로는 걸린 칸의 열거형이라 다른 칸을 고칠 수 없습니다. */
 export function fixSchema(paths: readonly string[]) {
   return z.object({
-    fixes: z.array(z.object({ path: z.enum(paths as [string, ...string[]]), value: z.unknown() })),
+    fixes: z.array(z.object({ path: z.enum(paths.map(shownPath) as [string, ...string[]]), value: z.unknown() })),
   });
 }
 
 /** 고치기 요청 문장입니다. 지금 값을 함께 보여 줘 앞선 고치기 뒤의 상태를 모델이 알게 합니다. */
 export function fixPrompt(grouped: Map<string, string[]>, current: unknown): string {
   const lines = [...grouped].map(([path, problems]) =>
-    `- ${path || "/"}: ${problems.join("; ")}\n  지금 값: ${JSON.stringify(valueAt(current, path)) ?? "(없음)"}`);
+    `- ${shownPath(path)}: ${problems.join("; ")}\n  지금 값: ${JSON.stringify(valueAt(current, path)) ?? "(없음)"}`);
   return `직전에 낸 출력에서 아래 칸이 검사를 통과하지 못했습니다. 각 칸의 고친 값만 fixes로 내세요. path는 아래 경로를 그대로 쓰고, value는 그 칸에 들어갈 값 전체입니다. 나머지 칸은 그대로 쓰므로 다시 내지 않습니다.\n${lines.join("\n")}`;
 }
 
@@ -139,9 +146,10 @@ export async function runWithFixes<T>(input: {
     const received = shape.safeParse(fixed.output);
     console.error(JSON.stringify({ level: "info", event: "ai.fix_round", contract, round: round + 1, paths: [...grouped.keys()].slice(0, 20), fixed: received.success ? received.data.fixes.length : 0, durationMs: fixed.usage.durationMs }));
     if (!received.success) continue;
-    output = applyFixes(output, received.data.fixes);
+    const fixes = received.data.fixes.map((fix) => ({ path: realPath(fix.path), value: fix.value }));
+    output = applyFixes(output, fixes);
     const revised = parseToolOutput(schema, output);
-    if (revised.success) options.onRevision?.(received.data.fixes, revised.data);
+    if (revised.success) options.onRevision?.(fixes, revised.data);
   }
 }
 

@@ -1,6 +1,6 @@
 import { JobFactsAiOutputSchema, type JobFactsAiOutput } from "@expresso/contracts";
 
-import type { AiClient } from "../../../platform/ai/client.js";
+import type { AiClient, AiViolation } from "../../../platform/ai/client.js";
 
 /**
  * 공고 본문에서 연봉 · 경력 · 근무 형태를 읽는다.
@@ -22,8 +22,9 @@ import type { AiClient } from "../../../platform/ai/client.js";
  * 값에 쓴 숫자가 정말 그 인용 안에 있는지 우리가 다시 본다. 요건 추출이
  * `source_span`으로 지키는 규율과 같다(§8.3 환각 방지 ②).
  *
- * 검증에 걸리면 그 항목만 버린다. 그래서 화면은 "본문에서 찾지 못했습니다"라고
- * 말하게 되는데, 지어낸 연봉을 보여주는 것보다 그게 낫다.
+ * 검증에 걸린 항목은 같은 대화에서 그 항목만 고쳐 받고(`factViolations`), 고친 뒤에도
+ * 걸리면 그 항목만 버린다. 그래서 화면은 "본문에서 찾지 못했습니다"라고 말하게 되는데,
+ * 지어낸 연봉을 보여주는 것보다 그게 낫다.
  */
 
 export type PostingFacts = {
@@ -105,6 +106,8 @@ export class AiFactsReader implements FactsReader {
         promptVersion: JOB_FACTS_PROMPT_VERSION,
       },
       JobFactsAiOutputSchema,
+      // 다시 요청하지 않는다. 원문과 맞지 않는 항목만 어댑터가 같은 대화에서 고쳐 받는다.
+      { check: (output) => factViolations(body, output) },
     );
     return verifyFacts(body, data);
   }
@@ -125,21 +128,39 @@ export class AiFactsReader implements FactsReader {
  */
 export function verifyFacts(body: string, draft: JobFactsAiOutput): PostingFacts {
   return {
-    salaryNote: check(body, draft.salary),
-    experienceNote: check(body, draft.experience),
-    workType: check(body, draft.workType),
+    salaryNote: draft.salary && !problemOf(body, draft.salary) ? draft.salary.value.trim() : null,
+    experienceNote: draft.experience && !problemOf(body, draft.experience) ? draft.experience.value.trim() : null,
+    workType: draft.workType && !problemOf(body, draft.workType) ? draft.workType.value.trim() : null,
   };
 }
 
-function check(body: string, fact: JobFactsAiOutput["salary"]): string | null {
-  if (!fact) return null;
+const FACT_KEYS = ["salary", "experience", "workType"] as const;
+
+/**
+ * `verifyFacts`가 버릴 항목의 자리와 이유. 경로는 항목 하나(`/salary`)다 — 고치는 길이
+ * 값 · 인용 · null 셋 중 어느 것이든 될 수 있어, 항목을 통째로 고쳐 받는다.
+ */
+export function factViolations(body: string, draft: JobFactsAiOutput): AiViolation[] {
+  return FACT_KEYS.flatMap((key) => {
+    const fact = draft[key];
+    const problem = fact ? problemOf(body, fact) : null;
+    return problem ? [{ path: `/${key}`, problem }] : [];
+  });
+}
+
+/** 항목이 원문과 맞지 않는 이유. 맞으면 null이다. */
+function problemOf(body: string, fact: NonNullable<JobFactsAiOutput["salary"]>): string | null {
   const value = fact.value.trim();
-  if (!value) return null;
-  if (!quoted(body, fact.quote)) return null;
-  for (const number of numbers(value)) {
-    if (!numbers(fact.quote).includes(number)) return null;
+  if (!value) return "value가 비었습니다. 읽을 수 없으면 이 항목을 null로 둡니다.";
+  if (!quoted(body, fact.quote)) {
+    return "quote가 원문에 그대로 없습니다. 원문에서 한 글자도 바꾸지 않고 다시 잘라 오거나, 원문에 없으면 이 항목을 null로 둡니다.";
   }
-  return value;
+  const inQuote = numbers(fact.quote);
+  const missing = numbers(value).filter((number) => !inQuote.includes(number));
+  if (missing.length) {
+    return `value의 숫자 ${missing.join(" · ")}가 quote 안에 없습니다. 원문에 적힌 숫자를 그대로 쓰고, 공고의 오타를 고쳐야만 읽히는 값이면 이 항목을 null로 둡니다.`;
+  }
+  return null;
 }
 
 /**

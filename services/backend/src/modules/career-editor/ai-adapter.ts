@@ -20,11 +20,54 @@ export interface AiProposalGenerationResult {
 }
 export interface AiProposalAdapter { generate(input: AiProposalGenerationInput): Promise<AiProposalGenerationResult> }
 
-const AiProposalGenerationResultSchema = z.strictObject({
+/**
+ * 블록 · 글 조각 · 표시의 선택 칸에 모델이 적어 보낸 `null`만 걷어낸다.
+ *
+ * 공통 파서(`parseToolOutput`)는 온 그대로 실패하면 `null`을 **전부** 걷어낸다. 그러면 진짜 nullable인
+ * `afterBlockId: null`(맨 앞에 넣기)과 블록 `attrs` 안의 JSON `null`까지 사라져, `content: null` 하나 때문에
+ * 엉뚱한 칸(`afterBlockId`)이 걸리고 고치기도 같은 자리에서 멈춘다. 선택 칸만 여기서 먼저 걷어 온 그대로 통과시킨다.
+ */
+function dropOptionalNulls(output: unknown): unknown {
+  if (!isRecord(output) || !Array.isArray(output["commands"])) return output;
+  return { ...output, commands: output["commands"].map((command) => {
+    if (!isRecord(command)) return command;
+    if (Array.isArray(command["blocks"])) return { ...command, blocks: command["blocks"].map(cleanBlock) };
+    if (isRecord(command["block"])) return { ...command, block: cleanBlock(command["block"]) };
+    return command;
+  }) };
+}
+
+function cleanBlock(block: unknown): unknown {
+  if (!isRecord(block)) return block;
+  const { content, text, ...rest } = block;
+  return {
+    ...rest,
+    ...(content === null || content === undefined ? {} : { content: Array.isArray(content) ? content.map(cleanBlock) : content }),
+    ...(text === null || text === undefined ? {} : { text: Array.isArray(text) ? text.map(cleanSpan) : text }),
+  };
+}
+
+function cleanSpan(span: unknown): unknown {
+  if (!isRecord(span)) return span;
+  const { marks, ...rest } = span;
+  if (marks === null || marks === undefined) return rest;
+  return { ...rest, marks: Array.isArray(marks) ? marks.map((mark) => isRecord(mark) && mark["attrs"] === null ? withoutKey(mark, "attrs") : mark) : marks };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function withoutKey(value: Record<string, unknown>, key: string): Record<string, unknown> {
+  const { [key]: _dropped, ...rest } = value;
+  return rest;
+}
+
+export const AiProposalGenerationResultSchema = z.preprocess(dropOptionalNulls, z.strictObject({
   summary: z.string().trim().min(1).max(2_000),
   commands: z.array(CareerEditCommandSchema).max(100),
   propertyChanges: AiEditProposalSchema.shape.propertyChanges,
-});
+}));
 
 /** 키가 없는 기본 runtime은 예측하지 않고, 검토 가능한 빈 제안만 만든다. */
 export class DeterministicAiProposalAdapter implements AiProposalAdapter {

@@ -8,7 +8,8 @@ import {
   type AiClient,
   type AiResult,
 } from "../../platform/ai/client.js";
-import { AiLayoutRemixer, LayoutRemixError, type RemixContext } from "./remixer.js";
+import { ScriptedAiClient } from "../../platform/ai/scripted-client.js";
+import { AiLayoutRemixer, type RemixContext } from "./remixer.js";
 
 const usage = {
   model: "claude-sonnet-5",
@@ -101,47 +102,68 @@ describe("지면 변형 계약", () => {
     expect(next.rationale).toContain("지시대로");
   });
 
-  it("섹션을 빠뜨리면 다시 고치게 한다", async () => {
+  it("섹션을 빠뜨리면 섹션 배치만 같은 대화에서 고쳐 받는다", async () => {
     const dropped = draft({
       sections: [{ section: 1, className: "px-10 py-10", innerClassName: "grid gap-4", items: [] }],
     });
-    const ai = new StubAiClient([dropped, draft()]);
-    await new AiLayoutRemixer(ai).remix(context);
+    const ai = new ScriptedAiClient(() => dropped, () => [{ path: "/sections", value: draft().sections }]);
+    const next = await new AiLayoutRemixer(ai).remix(context);
 
-    expect(ai.calls).toHaveLength(2);
-    expect(ai.calls[1]?.prompt).toContain("2번 섹션을 빠뜨렸습니다");
+    expect(ai.calls).toHaveLength(1);
+    expect(ai.fixRequests.map(({ paths }) => paths)).toEqual([["/sections"]]);
+    expect(ai.fixRequests[0]?.prompt).toContain("2번 섹션을 빠뜨렸습니다");
+    expect(next.sections.map(({ portfolioSectionId }) => portfolioSectionId)).toEqual([ids.intro, ids.work]);
   });
 
-  it("지면이 그대로면 변형이 아니다", async () => {
-    const same = draft({
-      rhythm: current.rhythm,
-      sections: current.sections.map((placement, index) => ({
-        section: index + 1,
-        className: placement.className,
-        innerClassName: placement.innerClassName,
-        items: [],
-      })),
-      rationale: current.rationale,
-    });
-    const ai = new StubAiClient([same]);
+  /** 지금 지면을 번호로 그대로 옮긴 초안. */
+  const same = () => draft({
+    rhythm: current.rhythm,
+    sections: current.sections.map((placement, index) => ({
+      section: index + 1,
+      className: placement.className,
+      innerClassName: placement.innerClassName,
+      items: [],
+    })),
+    rationale: current.rationale,
+  });
+
+  it("지면이 그대로면 지면 전체를 같은 대화에서 고쳐 받는다", async () => {
+    const ai = new ScriptedAiClient(() => same(), () => [{ path: "/", value: draft() }]);
+    const next = await new AiLayoutRemixer(ai).remix(context);
+
+    expect(ai.calls).toHaveLength(1);
+    expect(ai.fixRequests).toHaveLength(1);
+    expect(ai.fixRequests[0]?.prompt).toContain("지면이 지금 지면과 같습니다");
+    expect(next.rhythm.density).toBe("comfortable");
+  });
+
+  it("고친 뒤에도 지면이 그대로면 변형이 아니다", async () => {
+    const ai = new ScriptedAiClient(() => same());
     await expect(new AiLayoutRemixer(ai).remix(context)).rejects.toThrow(/그대로/);
+    expect(ai.calls).toHaveLength(1);
+    expect(ai.fixRequests).toHaveLength(2);
   });
 
-  it("읽을 수 없는 지면은 거절한다", async () => {
+  it("읽을 수 없는 지면은 그 색 칸을 고쳐 받고, 못 고치면 AI_INVALID_OUTPUT으로 끝난다", async () => {
     const faded = draft({ palette: { ...current.palette, ink: "#BBBBBB" } });
-    const ai = new StubAiClient([faded]);
-    await expect(new AiLayoutRemixer(ai).remix(context)).rejects.toThrow(LayoutRemixError);
+    const ai = new ScriptedAiClient(() => faded);
+    await expect(new AiLayoutRemixer(ai).remix(context)).rejects.toMatchObject({ code: "AI_INVALID_OUTPUT" });
+    expect(ai.calls).toHaveLength(1);
+    expect(ai.fixRequests[0]?.paths).toEqual(["/palette/ink", "/palette/paper"]);
   });
 
-  it("막힌 클래스는 거절한다", async () => {
+  it("막힌 클래스는 그 칸을 고쳐 받는다", async () => {
     const escaping = draft({
       sections: [
         { section: 1, className: "absolute inset-0", innerClassName: "grid gap-4", items: [] },
         { section: 2, className: "px-10 py-10", innerClassName: "grid gap-4", items: [] },
       ],
     });
-    const ai = new StubAiClient([escaping]);
-    await expect(new AiLayoutRemixer(ai).remix(context)).rejects.toThrow(LayoutRemixError);
+    const ai = new ScriptedAiClient(() => escaping, () => [{ path: "/sections/0/className", value: "px-10 py-10" }]);
+    const next = await new AiLayoutRemixer(ai).remix(context);
+    expect(ai.calls).toHaveLength(1);
+    expect(ai.fixRequests.map(({ paths }) => paths)).toEqual([["/sections/0/className"]]);
+    expect(next.sections[0]?.className).toBe("px-10 py-10");
   });
 
   it("레이트 리밋은 다시 물어보지 않는다", async () => {

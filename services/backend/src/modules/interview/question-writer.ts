@@ -1,11 +1,14 @@
 import {
+  interviewQuestionProblems,
   InterviewQuestionDraftListSchema,
   InterviewQuestionRewriteSchema,
   type InterviewQuestionBasis,
   type InterviewQuestionRewrite,
 } from "@expresso/contracts";
+import type { z } from "zod";
 
-import { AiError, type AiClient } from "../../platform/ai/client.js";
+import { AiError, type AiClient, type AiViolation } from "../../platform/ai/client.js";
+import { jsonPointer } from "../../platform/ai/fixes.js";
 
 /**
  * §8.3 「질문 생성」 계약.
@@ -20,7 +23,7 @@ import { AiError, type AiClient } from "../../platform/ai/client.js";
  */
 
 /** 프롬프트를 고치면 올린다. */
-export const QUESTION_PROMPT_VERSION = 1;
+export const QUESTION_PROMPT_VERSION = 2;
 
 export class QuestionDraftError extends Error {
   constructor(message: string, options: { cause?: unknown } = {}) {
@@ -137,12 +140,54 @@ function buildPrompt(context: QuestionContext): string {
   }
   lines.push("", `## 물을 수 있는 자리 ${context.options.length}개`);
   lines.push(...context.options.map(describeOption));
+  // 세션 하나는 질문 3~6개다(기능 명세서 T5.1.1 · `InterviewSessionSchema`). 값어치가 없는
+  // 자리는 고르지 않아도 되지만 3개 아래로 줄이지는 않는다.
+  const fewest = Math.min(3, context.options.length);
+  const most = Math.min(6, context.options.length);
   lines.push(
     "",
-    `여기서 ${Math.min(6, context.options.length)}개까지 골라 질문을 써라.`,
-    "값어치가 없으면 적게 골라도 된다. 채우려고 억지 질문을 만들지 않는다.",
+    `여기서 ${fewest === most ? `${most}개` : `${fewest}~${most}개`}를 골라 질문을 써라.`,
+    `값어치가 큰 자리부터 고른다. ${most}개를 다 채울 필요는 없지만 ${fewest}개보다 적게 내지 않는다.`,
   );
   return lines.join("\n");
+}
+
+type QuestionDraftList = z.infer<typeof InterviewQuestionDraftListSchema>;
+
+/** 질문 하나가 01b에 실릴 수 없는 까닭. 범위 밖 번호와 앞 질문과 겹친 번호다. */
+function basisProblem(basis: number, optionCount: number, seen: ReadonlySet<number>): string | null {
+  if (basis > optionCount) return `근거 ${basis}번은 없습니다 — 1~${optionCount}번 중에서 고릅니다`;
+  if (seen.has(basis)) return `근거 ${basis}번은 앞 질문이 이미 썼습니다 — 같은 근거로 두 번 묻지 않습니다`;
+  return null;
+}
+
+/**
+ * 받은 질문 목록이 업무 규칙을 어긴 칸. 경로는 모델 출력 기준이다.
+ *
+ * 남는 질문이 모자라면 `/questions` 하나로 묻는다 — 질문을 더 써야 하므로 목록 전체를
+ * 다시 받는다. 그 안의 칸별 이유는 어댑터가 바깥 칸 이유에 붙인다(`groupViolations`).
+ */
+export function questionDraftViolations(data: QuestionDraftList, optionCount: number): AiViolation[] {
+  const found: AiViolation[] = [];
+  const seen = new Set<number>();
+  let usable = 0;
+  data.questions.forEach((question, index) => {
+    const problem = basisProblem(question.basis, optionCount, seen);
+    if (problem) found.push({ path: jsonPointer(["questions", index, "basis"]), problem });
+    else {
+      seen.add(question.basis);
+      usable += 1;
+    }
+    for (const text of interviewQuestionProblems(question.text)) {
+      found.push({ path: jsonPointer(["questions", index, "text"]), problem: text });
+    }
+  });
+  // 자리보다 많은 질문을 요구할 수는 없다 — 자리 하나에 질문 하나다.
+  const wanted = Math.min(3, optionCount);
+  if (usable < wanted) {
+    found.push({ path: "/questions", problem: `질문이 ${wanted - usable}개 더 필요합니다 — 서로 다른 근거 번호로 ${wanted}개 이상 씁니다` });
+  }
+  return found;
 }
 
 export class AiQuestionWriter implements QuestionWriter {
@@ -155,49 +200,48 @@ export class AiQuestionWriter implements QuestionWriter {
   async draft(context: QuestionContext): Promise<QuestionDraftResult[]> {
     if (context.options.length === 0) throw new QuestionDraftError("물을 자리가 없습니다");
 
-    const prompt = buildPrompt(context);
-    let lastError: unknown;
-    for (const attempt of [1, 2]) {
-      try {
-        const { data } = await this.#ai.complete(
-          {
-            contract: "question_draft",
-            system: SYSTEM,
-            prompt: attempt === 1 ? prompt : `${prompt}\n\n${retryNote(lastError)}`,
-            promptVersion: QUESTION_PROMPT_VERSION,
-          },
-          InterviewQuestionDraftListSchema,
-        );
-
-        const seen = new Set<number>();
-        const drafted: QuestionDraftResult[] = [];
-        for (const question of data.questions) {
-          // 없는 번호와 겹치는 번호는 그 질문만 버린다. 나머지는 살린다.
-          if (question.basis > context.options.length || seen.has(question.basis)) continue;
-          seen.add(question.basis);
-          drafted.push({
-            optionIndex: question.basis - 1,
-            text: question.text,
-            rationale: question.rationale,
-          });
-        }
-        // 자리보다 많은 질문을 요구할 수는 없다 — 자리 하나에 질문 하나다.
-        const wanted = Math.min(3, context.options.length);
-        if (drafted.length < wanted) {
-          throw new QuestionDraftError(
-            `근거에 붙은 질문이 ${drafted.length}개뿐입니다 (모델은 ${data.questions.length}개를 냈습니다)`,
-          );
-        }
-        return drafted;
-      } catch (error) {
-        if (error instanceof AiError && error.code !== "AI_INVALID_OUTPUT") throw error;
-        lastError = error;
+    // 다시 요청하지 않는다 — 걸린 칸은 어댑터가 같은 대화에서 고쳐 받는다(`platform/ai/fixes.ts`).
+    let data: QuestionDraftList;
+    try {
+      ({ data } = await this.#ai.complete(
+        {
+          contract: "question_draft",
+          system: SYSTEM,
+          prompt: buildPrompt(context),
+          promptVersion: QUESTION_PROMPT_VERSION,
+        },
+        InterviewQuestionDraftListSchema,
+        { check: (draft) => questionDraftViolations(draft, context.options.length) },
+      ));
+    } catch (error) {
+      // 고쳐도 계약을 못 맞춘 출력은 질문 초안의 실패로 알린다 — 작업 큐는 이 오류를 재시도하지 않는다(`classifyBrewJobFailure`).
+      if (error instanceof AiError && error.code === "AI_INVALID_OUTPUT") {
+        throw new QuestionDraftError(`질문 초안이 계약을 벗어났습니다: ${error.message}`, { cause: error });
       }
+      throw error;
     }
-    throw new QuestionDraftError(
-      `질문 초안이 두 번 모두 계약을 벗어났습니다: ${String(lastError)}`,
-      { cause: lastError },
-    );
+
+    // 고친 뒤에도 남은 위반은 그대로 온다. 없는 번호와 겹치는 번호는 01b에 붙일 근거가
+    // 없어 그 질문만 뺀다. 질문 문장 규칙을 어긴 질문은 그대로 쓴다.
+    const seen = new Set<number>();
+    const drafted: QuestionDraftResult[] = [];
+    for (const question of data.questions) {
+      if (basisProblem(question.basis, context.options.length, seen)) continue;
+      seen.add(question.basis);
+      drafted.push({
+        optionIndex: question.basis - 1,
+        text: question.text,
+        rationale: question.rationale,
+      });
+    }
+    // 세션은 질문 3개부터 저장된다(`InterviewSessionSchema`). 그보다 적게 남으면 만들 수 없다.
+    const wanted = Math.min(3, context.options.length);
+    if (drafted.length < wanted) {
+      throw new QuestionDraftError(
+        `근거에 붙은 질문이 ${drafted.length}개뿐입니다 (모델은 ${data.questions.length}개를 냈습니다)`,
+      );
+    }
+    return drafted;
   }
 
   async rewrite(input: {
@@ -212,6 +256,7 @@ export class AiQuestionWriter implements QuestionWriter {
     lines.push(...input.previousTexts.map((text) => `- ${text}`));
     lines.push("", "다른 각도에서 하나만 다시 물어라.");
 
+    // 질문 문장 규칙은 check로 본다. 고친 뒤에도 남으면 쓴 그대로 쓴다.
     const { data } = await this.#ai.complete(
       {
         contract: "question_draft",
@@ -220,14 +265,10 @@ export class AiQuestionWriter implements QuestionWriter {
         promptVersion: QUESTION_PROMPT_VERSION,
       },
       InterviewQuestionRewriteSchema,
+      { check: (rewrite) => interviewQuestionProblems(rewrite.text).map((problem) => ({ path: "/text", problem })) },
     );
     return data;
   }
-}
-
-function retryNote(error: unknown): string {
-  const detail = error instanceof Error ? error.message : String(error);
-  return `직전 시도는 거절되었다. 사유: ${detail}\n같은 실수를 반복하지 말고 다시 써라.`;
 }
 
 /**
