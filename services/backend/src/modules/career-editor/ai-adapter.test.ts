@@ -74,8 +74,10 @@ describe("partial_edit 출력의 null", () => {
     const tool = JSON.stringify(toToolSchema(AiProposalGenerationResultSchema));
     // 걷어 내는 전처리를 거쳐도 출력 형식은 계약의 모양 그대로다.
     expect(JSON.parse(tool).properties).toHaveProperty("commands");
-    expect(tool).toContain('"required":["type","afterBlockId","blocks"]');
-    expect(tool).toContain('"required":["id","type","attrs"]');
+    // 필수 칸은 공급자 형식이 아니라 설명 문장으로 갑니다(빠지면 계약 검사에 걸려 그 칸만 고쳐 받습니다).
+    expect(tool).toContain("꼭 쓰는 칸: type, afterBlockId, blocks");
+    expect(tool).toContain("꼭 쓰는 칸: id, type, attrs");
+    expect(tool).not.toContain('"required"');
   });
 });
 

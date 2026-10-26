@@ -269,10 +269,11 @@ export function logAiFailure(input: {
  * 떼어내도 안전한 것은 **모델 응답을 우리가 다시 Zod로 파싱하기 때문이다.**
  * 여기 넘기는 스키마는 모양을 알려주는 힌트이고, 진짜 문은 어댑터가 쥐고 있다.
  *
- * **모양(키 · 값의 종류 · 열거형)만 넘긴다.** 글자 수 · 개수 · 형식 · 범위 기준(`SOFT_KEYWORDS`)을 넘기면 공급자가
- * 그 기준을 어긴 출력을 통째로 돌려보내고 모델이 처음부터 다시 쓴다 — 2026-10-26 지면 채우기에서 본문 86자 > 80자
- * 하나로 약 150초가 더 들었다. 기준은 설명(`description`)에 "80자 이하"처럼 적어 요청하고, 받은 뒤 검사에 걸린
- * 칸만 같은 대화에서 고쳐 받는다(`claude-code.ts`).
+ * **모양(키와 값의 종류)만 넘긴다.** 글자 수 · 개수 · 형식 · 범위 · 고를 값 · 필수 칸 기준(`SOFT_KEYWORDS`)을
+ * 넘기면 공급자가 그 기준을 어긴 출력을 통째로 돌려보내고 모델이 처음부터 다시 쓴다 — 2026-10-26 지면 채우기에서
+ * 본문 86자 > 80자 하나로 약 150초가, 2026-10-27에는 근거 ID 하나가 목록 밖이라 같은 재작성이 일어났다. 기준은
+ * 설명(`description`)에 "80자 이하" · "값: a | b"처럼 적어 요청하고, 받은 뒤 계약(Zod)에 걸린 칸만 같은 대화에서
+ * 고쳐 받는다(`fixes.ts`).
  */
 export function toToolSchema(schema: z.ZodType): Record<string, unknown> {
   const generated = z.toJSONSchema(schema, { target: "draft-2020-12" }) as
@@ -285,6 +286,7 @@ export function toToolSchema(schema: z.ZodType): Record<string, unknown> {
 export const SOFT_KEYWORDS = [
   "minLength", "maxLength", "minItems", "maxItems", "pattern",
   "minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "multipleOf", "format",
+  "enum", "const", "required", "additionalProperties",
 ] as const;
 
 /** 기준 키워드를 떼고, 그 값을 설명 문장으로 옮깁니다. 키 · 타입 · 열거형 · 필수 여부는 그대로 둡니다. */
@@ -317,6 +319,9 @@ function describeRules(node: Record<string, unknown>): string {
   if (minimum !== undefined) rules.push(`${minimum} ${number("exclusiveMinimum") !== undefined ? "초과" : "이상"}`);
   if (maximum !== undefined) rules.push(`${maximum} ${number("exclusiveMaximum") !== undefined ? "미만" : "이하"}`);
   if (typeof node["pattern"] === "string") rules.push(`정규식 ${node["pattern"]}`);
+  if (Array.isArray(node["enum"])) rules.push(`값: ${node["enum"].map((value) => JSON.stringify(value)).join(" | ")}`);
+  if ("const" in node) rules.push(`값: ${JSON.stringify(node["const"])}`);
+  if (Array.isArray(node["required"]) && node["required"].length) rules.push(`꼭 쓰는 칸: ${(node["required"] as string[]).join(", ")}`);
   return rules.join(" · ");
 }
 

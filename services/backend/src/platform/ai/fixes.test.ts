@@ -76,8 +76,9 @@ describe("검사에 걸린 칸은 같은 대화에서 그 칸만 고쳐 받는�
     expect(fix!.args[fix!.args.indexOf("--resume") + 1]).toBe(session);
     expect(fix!.input).toContain("/title");
     expect(fix!.input).not.toContain("채우세요.");
-    const fixSchemaArg = JSON.parse(fix!.args[fix!.args.indexOf("--json-schema") + 1]!) as { properties: { fixes: { items: { properties: { path: { enum: string[] } } } } } };
-    expect(fixSchemaArg.properties.fixes.items.properties.path.enum.sort()).toEqual(["/items", "/title"]);
+    // 고칠 수 있는 경로는 공급자 형식의 설명으로 가고, 받은 뒤 계약(열거형)이 봅니다.
+    const fixSchemaArg = JSON.parse(fix!.args[fix!.args.indexOf("--json-schema") + 1]!) as { properties: { fixes: { items: { properties: { path: { description: string } } } } } };
+    expect(fixSchemaArg.properties.fixes.items.properties.path.description).toMatch(/값: "\/(title|items)" \| "\/(title|items)"/);
     // 계약을 못 지킨 첫 출력은 보여 주지 않고, 고친 뒤 처음 통과한 출력을 보여 줍니다.
     expect(drafts).toEqual([{ title: "짧은 제목", items: ["a", "b"] }]);
     expect(result.usage.costUsd).toBeCloseTo(0.02);
@@ -116,8 +117,8 @@ describe("출력 전체를 고칠 때", () => {
     });
     expect(result.data).toEqual({ title: "새 제목", items: ["a"] });
     const fix = cli.calls()[1]!;
-    const shape = JSON.parse(fix.args[fix.args.indexOf("--json-schema") + 1]!) as { properties: { fixes: { items: { properties: { path: { enum: string[] } } } } } };
-    expect(shape.properties.fixes.items.properties.path.enum).toEqual(["/"]);
+    const shape = JSON.parse(fix.args[fix.args.indexOf("--json-schema") + 1]!) as { properties: { fixes: { items: { properties: { path: { description: string } } } } } };
+    expect(shape.properties.fixes.items.properties.path.description).toBe('값: "/"');
     expect(fix.input).toContain("- /: 지면이 그대로입니다.");
   });
 });
@@ -140,8 +141,9 @@ describe("공급자 형식은 모양만", () => {
     expect(properties["tags"]?.description).toBe("1개 이상 · 3개 이하");
     expect(properties["score"]?.description).toContain("0 이상 · 10 이하");
     expect(properties).toHaveProperty("pattern");
-    // 선택 칸은 선택 칸으로 둡니다. 빼도 공급자가 거절하지 않습니다.
-    expect((tool as { required: string[] }).required).not.toContain("pattern");
+    // 필수 칸도 공급자가 거절하지 않도록 설명으로만 갑니다. 선택 칸은 그 목록에 없습니다.
+    expect((tool as { required?: string[] }).required).toBeUndefined();
+    expect((tool as { description: string }).description).toBe("꼭 쓰는 칸: body, tags, score, id");
   });
 });
 
