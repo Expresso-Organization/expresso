@@ -7,9 +7,11 @@ import {
 } from "@expresso/contracts";
 import {
   AiError,
+  type AiCallOptions,
   type AiClient,
   type AiCallSpec,
 } from "../../platform/ai/client.js";
+import { runWithFixes, valueAt } from "../../platform/ai/fixes.js";
 import { StructuredPageGenerator } from "./structured-generator.js";
 import { PageRenderError, type PageGenerationContext } from "./generator.js";
 import { findPortfolioDesign } from "../design-systems/index.js";
@@ -83,35 +85,34 @@ function stored<T>(value: T): T {
   copy.elements.page.props = { ...copy.elements.page.props, design: { layout: "library" }, archetype: "case-study" };
   return copy as T;
 }
-/** 실제 어댑터처럼 출력이 스키마에 맞지 않으면 AI_INVALID_OUTPUT을 던집니다. Error를 넣으면 그대로 던집니다. */
+/**
+ * 실제 어댑터와 같은 검사 · 고치기 순서(`runWithFixes`)로 도는 가짜 공급자입니다. 출력을 차례로 내고, 고치기 요청이
+ * 오면 다음 출력을 "고친 판"으로 보고 요청받은 칸의 값만 그 판에서 꺼내 보냅니다. Error를 넣으면 그대로 던집니다.
+ */
 class Stub implements AiClient {
   calls: AiCallSpec[] = [];
   schemas: z.ZodType[] = [];
+  fixRequests: { prompt: string; paths: string[] }[] = [];
   constructor(private outputs: unknown[]) {}
-  async complete<T>(request: AiCallSpec, schema: z.ZodType<T>) {
+  async complete<T>(request: AiCallSpec, schema: z.ZodType<T>, options: AiCallOptions<T> = {}) {
     this.calls.push(request);
     this.schemas.push(schema);
-    const output = this.outputs.shift();
-    if (output instanceof Error) throw output;
-    const parsed = schema.safeParse(output);
-    if (!parsed.success)
-      throw new AiError(
-        "AI_INVALID_OUTPUT",
-        request.contract,
-        `structured output did not match the schema: ${parsed.error.message}`,
-      );
-    return {
-      data: parsed.data,
-      usage: {
-        model: "local-test",
-        inputTokens: 10,
-        outputTokens: 20,
-        cacheReadTokens: 0,
-        cacheCreationTokens: 0,
-        durationMs: 1,
-        costUsd: null,
-      },
+    const usage = { model: "local-test", inputTokens: 10, outputTokens: 20, cacheReadTokens: 0, cacheCreationTokens: 0, durationMs: 1, costUsd: null };
+    const next = () => {
+      const output = this.outputs.shift();
+      if (output instanceof Error) throw output;
+      return output;
     };
+    return runWithFixes({
+      contract: request.contract, schema, options,
+      first: async () => ({ output: next(), usage }),
+      fix: async (prompt) => {
+        const paths = [...prompt.matchAll(/^- (\S+): /gm)].map((match) => match[1]!);
+        this.fixRequests.push({ prompt, paths });
+        const fixed = next();
+        return { output: { fixes: paths.map((path) => ({ path: path === "/" ? "" : path, value: valueAt(fixed, path === "/" ? "" : path) })) }, usage };
+      },
+    });
   }
 }
 const context: PageGenerationContext = {
@@ -163,13 +164,16 @@ describe("모델 기반 구조화 생성", () => {
         .content,
     ).toEqual(content);
   });
-  it("중복 섹션을 거절한 뒤 모델의 수정된 Spec만 렌더링한다", async () => {
+  it("중복 섹션이 있으면 출력을 거절하지 않고 같은 대화에서 요소 목록만 고쳐 받아 렌더링한다", async () => {
     const broken = structuredClone(spec);
     broken.elements.page.children[2] = "index";
     const ai = new Stub([broken, spec]);
     const result = await new StructuredPageGenerator(ai).generate(context);
-    expect(ai.calls).toHaveLength(2);
-    expect(result.manifest.repairCount).toBe(1);
+    expect(ai.calls).toHaveLength(1);
+    expect(ai.fixRequests.map((request) => request.paths)).toEqual([["/elements"]]);
+    expect(ai.fixRequests[0]!.prompt).toContain("트리의 중복 ID: index");
+    expect(result.manifest.structured?.spec).toEqual(stored(spec));
+    // 사용량은 첫 호출과 고치기 호출을 합칩니다.
     expect(result.manifest.usage.outputTokens).toBe(40);
   });
   const rawInput = (() => {
@@ -190,16 +194,15 @@ describe("모델 기반 구조화 생성", () => {
     };
   })();
 
-  it("내용 정리에서 이름이나 섹션을 두 번 연속 바꾸면 중단한다", async () => {
+  it("내용 정리에서 이름을 바꾸면 그 칸만 고쳐 받고, 두 번 고쳐도 바꾸면 중단한다", async () => {
     const changed = structuredClone(modelContent);
     changed.profile.name = "다른 이름";
-    const ai = new Stub([changed, changed]);
+    const ai = new Stub([changed, changed, changed]);
     await expect(
       new StructuredPageGenerator(ai, null, { designFirst: false }).generate(rawInput),
-    ).rejects.toThrow(
-      /내용 정리 결과가 계약 검사를 통과하지 못했습니다: 이름\(가상 민수\)/,
-    );
-    expect(ai.calls).toHaveLength(2);
+    ).rejects.toThrow(/내용 정리 결과가 계약 검사를 통과하지 못했습니다: \/profile\/name/);
+    expect(ai.calls).toHaveLength(1);
+    expect(ai.fixRequests.map((request) => request.paths)).toEqual([["/profile/name"], ["/profile/name"]]);
   });
 
   it("내용 정리 모델에게 연락처를 묻지 않고, 생성 결과의 연락처는 비어 있다", async () => {
@@ -213,31 +216,29 @@ describe("모델 기반 구조화 생성", () => {
     expect(result.manifest.structured?.content.contact).toBeNull();
   });
 
-  it("소개 문장 규칙을 어기면 오류와 직전 출력을 붙여 다시 요청하고, 사용량을 합산한다", async () => {
+  it("소개 문장 규칙을 어기면 그 칸만 지금 값과 함께 고쳐 받고, 사용량을 합산한다", async () => {
     const broken = structuredClone(modelContent);
     broken.profile.headline = "경로를 설계합니다. 시험도 합니다.";
     const ai = new Stub([broken, modelContent, spec]);
     const result = await new StructuredPageGenerator(ai, null, { designFirst: false }).generate(rawInput);
-    expect(ai.calls).toHaveLength(3);
-    expect(ai.calls[1]!.prompt).toContain("검사 오류: profile.headline:");
-    expect(ai.calls[1]!.prompt).toContain("경로를 설계합니다. 시험도 합니다.");
+    expect(ai.calls).toHaveLength(2);
+    expect(ai.fixRequests[0]!.paths).toEqual(["/profile/headline"]);
+    expect(ai.fixRequests[0]!.prompt).toContain("경로를 설계합니다. 시험도 합니다.");
     expect(result.manifest.structured?.content.profile.headline).toBe(
       content.profile.headline,
     );
     expect(result.manifest.usage.outputTokens).toBe(60);
   });
 
-  it("공급자 스키마 위반도 다시 요청하고, 연결 오류는 다시 요청하지 않는다", async () => {
+  it("계약에서 빠진 칸도 그 칸만 고쳐 받고, 연결 오류는 다시 요청하지 않는다", async () => {
     const missing = structuredClone(modelContent) as Partial<
       typeof modelContent
     >;
     delete missing.career;
     const retried = new Stub([missing, modelContent, spec]);
     await new StructuredPageGenerator(retried, null, { designFirst: false }).generate(rawInput);
-    expect(retried.calls).toHaveLength(3);
-    expect(retried.calls[1]!.prompt).toContain(
-      "검사 오류: structured output did not match the schema",
-    );
+    expect(retried.calls).toHaveLength(2);
+    expect(retried.fixRequests[0]!.paths).toEqual(["/career"]);
 
     const unavailable = new Stub([
       new AiError("AI_UNAVAILABLE", "page_generation", "claude exited with 1"),
@@ -247,7 +248,7 @@ describe("모델 기반 구조화 생성", () => {
     ).rejects.toThrow("claude exited with 1");
     expect(unavailable.calls).toHaveLength(1);
   });
-  it("모델이 컨테이너로 묶은 Spec을 받아 렌더링하고, 규칙을 어긴 컨테이너는 오류와 함께 다시 요청한다", async () => {
+  it("모델이 컨테이너로 묶은 Spec을 받아 렌더링하고, 규칙을 어긴 컨테이너는 같은 대화에서 고쳐 받는다", async () => {
     const grouped = structuredClone(spec) as unknown as {
       elements: Record<string, unknown> & { page: { children: string[] } };
     };
@@ -261,8 +262,8 @@ describe("모델 기반 구조화 생성", () => {
     (broken.elements["group-1"] as { props: { variant: string } }).props.variant = "panel";
     const ai = new Stub([broken, grouped]);
     const result = await new StructuredPageGenerator(ai).generate(context);
-    expect(ai.calls).toHaveLength(2);
-    expect(ai.calls[1]!.prompt).toContain("Columns에 사용할 수 없는 variant");
+    expect(ai.calls).toHaveLength(1);
+    expect(ai.fixRequests[0]!.prompt).toContain("Columns에 사용할 수 없는 variant");
     expect(ai.calls[0]!.prompt).toContain("컨테이너 예:");
     expect(result.html).toContain('data-group="columns" data-variant="wide-end"');
     expect(result.manifest.structured?.spec).toEqual(stored(grouped));

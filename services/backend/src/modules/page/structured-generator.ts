@@ -36,7 +36,9 @@ import {
   type AiImage,
   type AiModelTier,
   type AiUsage,
+  type AiViolation,
 } from "../../platform/ai/client.js";
+import { zodViolations } from "../../platform/ai/fixes.js";
 import type { PageMeasurer, PageScreenshot } from "../../platform/browser/page-measurer.js";
 import { ungroundedNumbers, isOrdinalLabel } from "../../platform/numbers.js";
 import {
@@ -152,56 +154,49 @@ type NormalizationInput = {
 };
 
 /**
- * 내용 정리 출력을 저장 계약 값으로 만듭니다.
- *
- * 연락처는 입력 경로가 없어 null로 정합니다. 저장 계약의 규칙(이름 아래 한 문장)과
- * 입력 보존 규칙을 검사하고, 어기면 모델이 읽을 수 있는 문장으로 던집니다.
+ * 내용 정리 출력이 저장 계약(이름 아래 한 문장 등)과 입력 보존 규칙(이름 · 섹션 ID · 제공한 근거와 이미지만)을
+ * 지키는지 봅니다. 걸린 칸은 출력을 거절하지 않고, 쓴 에이전트가 같은 대화에서 그 칸만 고칩니다.
  */
-function normalizedContent(
+function contentViolations(
   data: StructuredContentModel,
   input: NormalizationInput,
   context: PageGenerationContext,
-): StructuredPortfolioContent {
-  const parsed = StructuredPortfolioContentSchema.safeParse({
-    ...data,
-    contact: null,
-  });
-  if (!parsed.success)
-    throw new Error(
-      parsed.error.issues
-        .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
-        .join("; "),
-    );
-  const content = parsed.data;
+): AiViolation[] {
+  const parsed = StructuredPortfolioContentSchema.safeParse({ ...data, contact: null });
+  const violations: AiViolation[] = parsed.success ? [] : zodViolations(parsed.error);
+  if (data.profile.name !== input.author.name)
+    violations.push({ path: "/profile/name", problem: `이름은 ${JSON.stringify(input.author.name)}를 그대로 씁니다.` });
   const expectedIds = input.sections.map((item) => item.id).sort();
-  if (
-    content.profile.name !== input.author.name ||
-    JSON.stringify(content.sections.map((item) => item.id).sort()) !==
-      JSON.stringify(expectedIds)
-  )
-    throw new Error(
-      `이름(${input.author.name})과 섹션 ID(${expectedIds.join(", ")})를 그대로 사용해야 합니다.`,
-    );
+  if (JSON.stringify(data.sections.map((item) => item.id).sort()) !== JSON.stringify(expectedIds))
+    violations.push({ path: "/sections", problem: `섹션 ID(${expectedIds.join(", ")})를 하나씩 그대로 써야 합니다.` });
   const sources = new Set(input.evidence.map((item) => item.id));
-  const extra = content.evidence
-    .filter((item) => !sources.has(item.id))
-    .map((item) => item.id);
-  if (extra.length)
-    throw new Error(
-      `제공되지 않은 근거 ID를 추가했습니다: ${extra.join(", ")}.`,
-    );
+  data.evidence.forEach((item, index) => {
+    if (!sources.has(item.id)) violations.push({ path: `/evidence/${index}`, problem: `제공되지 않은 근거 ID(${item.id})입니다. 입력 evidence의 ID만 씁니다.` });
+  });
   const provided = new Set(context.media.map((item) => item.src));
-  if (
-    content.sections.some((section) =>
-      section.media.some(
-        (item) => !provided.has(item.src) || item.origin !== "uploaded",
-      ),
-    )
-  )
-    throw new Error(
-      "제공되지 않은 이미지를 추가했습니다. 입력 media의 src만 origin=uploaded로 사용합니다.",
-    );
-  return content;
+  data.sections.forEach((section, index) => {
+    if (section.media.some((item) => !provided.has(item.src) || item.origin !== "uploaded"))
+      violations.push({ path: `/sections/${index}/media`, problem: "제공되지 않은 이미지입니다. 입력 media의 src만 origin=uploaded로 씁니다." });
+  });
+  return violations;
+}
+
+/** 검사를 지난 내용 정리 출력을 저장 계약 값으로 만듭니다. 연락처는 입력 경로가 없어 null입니다. */
+function normalizedContent(data: StructuredContentModel): StructuredPortfolioContent {
+  return StructuredPortfolioContentSchema.parse({ ...data, contact: null });
+}
+
+/**
+ * 구성 Spec의 구조 검사(`accept`) 결과를 칸 위반으로 바꿉니다. 구조 검사는 오류에 경로가 없어 요소 목록 하나로 보고하고,
+ * 쓴 에이전트가 같은 대화에서 요소 목록을 고칩니다.
+ */
+function specViolations(setup: { accept: (data: unknown) => AcceptedSpec }, data: unknown): AiViolation[] {
+  try {
+    setup.accept(data);
+    return [];
+  } catch (error) {
+    return [{ path: "/elements", problem: errorText(error) }];
+  }
 }
 
 /** 다듬기에서 측정 결함으로 구성을 다시 요청하는 최대 횟수입니다. */
@@ -355,50 +350,24 @@ export class StructuredPageGenerator implements PageGenerator {
         plan: context.portfolioPlan,
         media: context.media,
       };
-      // 모델이 고칠 수 있는 오류는 직전 출력과 오류를 붙여 한 번 다시 요청합니다.
-      const attempts: { output: unknown; error: string }[] = [];
-      for (let attempt = 0; attempt < 2 && !content; attempt++) {
-        const last = attempts.at(-1);
-        const prompt = last
-          ? `${JSON.stringify(input)}\n직전 출력: ${JSON.stringify(last.output)}\n검사 오류: ${last.error}\n수정한 전체 결과를 출력하세요.`
-          : JSON.stringify(input);
-        let data: StructuredContentModel;
-        try {
-          const result = await this.ai.complete(
-            {
-              contract: "page_generation",
-              promptVersion: PAGE_PROMPT_VERSION,
-              ...(context.modelTier ? { modelTier: context.modelTier } : {}),
-              system:
-                "출처 자료에서 포트폴리오 표시용 내용을 정리합니다. 제공된 이름·섹션 ID·출처 ID를 그대로 사용합니다. 수치·성과·경력·연락처·이미지를 지어내지 않습니다. 이름 아래 headline은 직무와 구체적인 작업을 밝히는 짧은 한 문장입니다. 36자 안으로 작성합니다. 섹션의 period는 출처에 적힌 기간(예: 2025.08 — 2026.02)만 옮기고, 출처에 없으면 비웁니다. 입력 자료의 개인정보는 필요한 표시 내용만 추립니다. 원본 전체를 evidence.body에 복사하지 않습니다.",
-              prompt,
-            },
-            StructuredContentModelSchema,
-            sink ? { onThinking: (tokens) => sink.thinking(tokens) } : {},
-          );
-          usages.push(result.usage);
-          data = result.data;
-        } catch (error) {
-          // 공급자 스키마 위반은 출력이 남지 않으므로 오류만 붙여 다시 요청합니다.
-          if (error instanceof AiError && error.code === "AI_INVALID_OUTPUT") {
-            attempts.push({ output: null, error: error.message });
-            continue;
-          }
-          throw error;
-        }
-        try {
-          content = normalizedContent(data, input, context);
-        } catch (error) {
-          attempts.push({
-            output: data,
-            error: error instanceof Error ? error.message : String(error),
-          });
-        }
-      }
-      if (!content)
-        throw new PageGenerationError(
-          `내용 정리 결과가 계약 검사를 통과하지 못했습니다: ${attempts.at(-1)?.error}`,
-        );
+      // 한 번 부릅니다. 계약 · 입력 보존 규칙에 걸린 칸은 쓴 에이전트가 같은 대화에서 그 칸만 고칩니다.
+      const result = await this.ai.complete(
+        {
+          contract: "page_generation",
+          promptVersion: PAGE_PROMPT_VERSION,
+          ...(context.modelTier ? { modelTier: context.modelTier } : {}),
+          system:
+            "출처 자료에서 포트폴리오 표시용 내용을 정리합니다. 제공된 이름·섹션 ID·출처 ID를 그대로 사용합니다. 수치·성과·경력·연락처·이미지를 지어내지 않습니다. 이름 아래 headline은 직무와 구체적인 작업을 밝히는 짧은 한 문장입니다. 36자 안으로 작성합니다. 섹션의 period는 출처에 적힌 기간(예: 2025.08 — 2026.02)만 옮기고, 출처에 없으면 비웁니다. 입력 자료의 개인정보는 필요한 표시 내용만 추립니다. 원본 전체를 evidence.body에 복사하지 않습니다.",
+          prompt: JSON.stringify(input),
+        },
+        StructuredContentModelSchema,
+        { ...(sink ? { onThinking: (tokens: number) => sink.thinking(tokens) } : {}), check: (data) => contentViolations(data, input, context) },
+      );
+      usages.push(result.usage);
+      const remaining = contentViolations(result.data, input, context);
+      if (remaining.length)
+        throw new PageGenerationError(`내용 정리 결과가 계약 검사를 통과하지 못했습니다: ${remaining.map((item) => `${item.path} ${item.problem}`).join("; ").slice(0, 1_000)}`);
+      content = normalizedContent(result.data);
     }
     content = StructuredPortfolioContentSchema.parse(content);
     const setup = specSetup(content, context);
@@ -407,39 +376,26 @@ export class StructuredPageGenerator implements PageGenerator {
       instruction: context.instruction,
       previous: context.previous?.structured?.spec,
     });
-    // 모델이 고칠 수 있는 Spec 검사 실패만 다시 요청합니다. 렌더링은 검사를 통과한 뒤 한 번만 합니다.
-    const attempts: { output: unknown; error: string }[] = [];
-    let accepted: (AcceptedSpec & { attempt: number; usage: AiUsage }) | null = null;
-    for (let attempt = 0; attempt < 2 && !accepted; attempt++) {
-      const request = attempts.length
-        ? `${prompt}\n직전 출력: ${JSON.stringify(attempts[0]?.output)}\n검사 오류: ${attempts[0]?.error}. 수정한 전체 Spec을 출력하세요.`
-        : prompt;
-      const result = await this.ai.complete(
-        {
-          contract: "page_generation",
-          system:
-            "등록된 컴포넌트와 데이터 참조만 사용하여 json-render Spec을 만듭니다.",
-          prompt: request,
-          promptVersion: PAGE_PROMPT_VERSION,
-          ...(context.modelTier ? { modelTier: context.modelTier } : {}),
-        },
-        schema,
-        sink ? { onThinking: (tokens) => sink.thinking(tokens) } : {},
-      );
-      usages.push(result.usage);
-      try {
-        accepted = { ...setup.accept(result.data), attempt, usage: result.usage };
-      } catch (error) {
-        attempts.push({
-          output: result.data,
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
+    // 한 번 부릅니다. 구성 검사에 걸리면 쓴 에이전트가 같은 대화에서 요소 목록만 고칩니다. 렌더링은 검사를 통과한 뒤 한 번만 합니다.
+    const result = await this.ai.complete(
+      {
+        contract: "page_generation",
+        system:
+          "등록된 컴포넌트와 데이터 참조만 사용하여 json-render Spec을 만듭니다.",
+        prompt,
+        promptVersion: PAGE_PROMPT_VERSION,
+        ...(context.modelTier ? { modelTier: context.modelTier } : {}),
+      },
+      schema,
+      { ...(sink ? { onThinking: (tokens: number) => sink.thinking(tokens) } : {}), check: (data) => specViolations(setup, data) },
+    );
+    usages.push(result.usage);
+    let accepted: AcceptedSpec & { attempt: number };
+    try {
+      accepted = { ...setup.accept(result.data), attempt: 0 };
+    } catch (error) {
+      throw new PageGenerationError(`구성 계약 검사를 통과하지 못했습니다: ${errorText(error)}`);
     }
-    if (!accepted)
-      throw new PageGenerationError(
-        `구성 계약 검사를 통과하지 못했습니다: ${attempts.at(-1)?.error}`,
-      );
     const { snapshot, root, attempt } = accepted;
     const rendered = renderSpec(snapshot, context);
     // 초안은 한 번만 잽니다. 결함을 고치는 재요청과 스크린샷 검토는 초안을 저장한 뒤 다듬기(`refine`)에서 합니다.
@@ -477,7 +433,7 @@ export class StructuredPageGenerator implements PageGenerator {
                   },
                 }
               : {}),
-            ...(sink.fill ? { slot: (path, text, done) => sink.fill!(path, text, done) } : {}),
+            ...(sink.fill ? { slot: (path, text, done, revised) => sink.fill!(path, text, done, revised) } : {}),
           }
         : {},
       this.tuning,
@@ -528,10 +484,12 @@ export class StructuredPageGenerator implements PageGenerator {
     const measurer = this.measurer;
     const content = StructuredPortfolioContentSchema.parse(input.snapshot.content);
     const setup = specSetup(content, input);
-    const call = async <T>(prompt: string, schema: z.ZodType<T>, contract: "page_generation" | "page_review", system: string, images?: AiImage[]) => {
+    // 구성 검사에 걸린 판은 버리지 않고, 쓴 에이전트가 같은 대화에서 요소 목록만 고칩니다(`check`).
+    const call = async <T>(prompt: string, schema: z.ZodType<T>, contract: "page_generation" | "page_review", system: string, images?: AiImage[], check?: (data: T) => AiViolation[]) => {
       const result = await this.ai.complete(
         { contract, system, prompt, promptVersion: PAGE_PROMPT_VERSION, ...(input.modelTier ? { modelTier: input.modelTier } : {}), ...(images ? { images } : {}) },
         schema,
+        check ? { check } : {},
       );
       usages.push(result.usage);
       return result.data;
@@ -564,7 +522,7 @@ export class StructuredPageGenerator implements PageGenerator {
         instruction: `${input.instruction ? `사용자 수정 요청: ${input.instruction}\n` : ""}${describeRenderDefects(best.defects)}`,
         previous: best.snapshot.spec,
       });
-      const candidate = await tryCandidate(await call(lastPrompt, setup.schema, "page_generation", SPEC_SYSTEM));
+      const candidate = await tryCandidate(await call(lastPrompt, setup.schema, "page_generation", SPEC_SYSTEM, undefined, (data) => specViolations(setup, data)));
       if (candidate && fixableCount(candidate.defects) < fixableCount(best.defects)) best = candidate;
     }
     // (2) 스크린샷 검토 — 지적 목록과 고친 구성을 받습니다.
@@ -574,7 +532,10 @@ export class StructuredPageGenerator implements PageGenerator {
     let reason: string | undefined;
     try {
       lastPrompt = `${setup.prompt({ instruction: input.instruction, previous: best.snapshot.spec })}\n${REVIEW_GUIDE}`;
-      const reviewed = await call(lastPrompt, z.object({ critique: z.array(z.string().max(300)).min(1).max(8), spec: setup.schema }), "page_review", REVIEW_SYSTEM, screenshotImages(best.screenshots, ""));
+      const reviewed = await call(
+        lastPrompt, z.object({ critique: z.array(z.string().max(300)).min(1).max(8), spec: setup.schema }), "page_review", REVIEW_SYSTEM, screenshotImages(best.screenshots, ""),
+        (data) => specViolations(setup, data.spec).map((violation) => ({ ...violation, path: `/spec${violation.path}` })),
+      );
       critique = reviewed.critique;
       const revised = await tryCandidate(reviewed.spec);
       if (revised) revisedSpec = revised.snapshot.spec;

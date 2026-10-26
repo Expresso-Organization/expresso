@@ -158,7 +158,7 @@ export class PageService {
       delta: (value) => { void this.#publish(stream.delta(streamId, value)); },
       thinking: (tokens) => { void this.#publish(stream.thinking(streamId, tokens)); },
       blueprint: (page) => { void this.#publish(stream.blueprint(streamId, page)); },
-      fill: (path, text, done) => { void this.#publish(stream.fill(streamId, path, text, done)); },
+      fill: (path, text, done, revised) => { void this.#publish(stream.fill(streamId, path, text, done, revised ?? false)); },
       stage: (name) => { void this.#publish(stream.stage(streamId, name)); },
     } : null;
     await this.#publish(stream?.begin(streamId, JSON.stringify(context.style ?? null)));

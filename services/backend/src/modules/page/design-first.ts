@@ -10,6 +10,7 @@ import {
   STRUCTURED_WIDTHS,
   STRUCTURED_GROUP_CHILDREN,
   StructuredPortfolioContentSchema,
+  StructuredProfileSchema,
   archetypeComponents,
   isStructuredGroup,
   partialLeaves,
@@ -20,7 +21,8 @@ import {
 } from "@expresso/contracts";
 import { blueprintToken, describeArchetype, describeDesignLayout, designLayout, structuredCatalog, type BlueprintSlot } from "@expresso/portfolio-renderer";
 
-import { AiError, type AiClient, type AiUsage } from "../../platform/ai/client.js";
+import type { AiCallOptions, AiClient, AiUsage, AiViolation } from "../../platform/ai/client.js";
+import { jsonPointer, pointerParts } from "../../platform/ai/fixes.js";
 import { ungroundedNumbers } from "../../platform/numbers.js";
 import { PageGenerationError, type PageGenerationContext } from "./generator.js";
 import { describeGroupRules, describeSpecSchema } from "./structured-spec-format.js";
@@ -55,7 +57,7 @@ export const FILL_LIMITS = {
 
 /**
  * 수치 값 · 이전 값의 모양입니다. 숫자가 들어 있고 공백은 단위 앞 한 번까지입니다("1.9초" · "420KB" · "1,200만 건").
- * "10만 행 끊김 없이 스크롤"처럼 설명이 붙은 값은 거절되어 채우기가 오류 문장을 받고 다시 씁니다.
+ * "10만 행 끊김 없이 스크롤"처럼 설명이 붙은 값은 채우기 검사(`fillViolations`)에 걸려, 쓴 에이전트가 그 칸만 고칩니다.
  */
 export const METRIC_VALUE_PATTERN = /^[^\s\d]{0,2}\d\S*(?: \S{1,3})?$/;
 
@@ -81,8 +83,11 @@ export interface DesignFirstResult {
 export interface DesignFirstHooks {
   /** 설계가 끝났을 때. 청사진을 그릴 내용(글 칸마다 표지)과 글 자리 목록을 함께 받습니다. */
   designed?: (input: { plan: StructuredDesignPlan; spec: unknown; blueprint: Blueprint }) => void;
-  /** 채우는 동안 글 칸 하나의 글이 바뀌었을 때. 경로는 청사진 글 자리와 같습니다. */
-  slot?: (path: string, text: string, done: boolean) => void;
+  /**
+   * 채우는 동안 글 칸 하나의 글이 바뀌었을 때. 경로는 청사진 글 자리와 같습니다. `revised`는 검사에 걸린 칸을 쓴
+   * 에이전트가 고쳐 보낸 글이라는 뜻입니다 — 화면이 그 자리를 바뀌는 모습으로 보여 줍니다.
+   */
+  slot?: (path: string, text: string, done: boolean, revised?: boolean) => void;
   thinking?: (tokens: number) => void;
 }
 
@@ -323,29 +328,133 @@ ${groups ? `컨테이너: ${describeGroupRules()} 컨테이너 안에 컨테이�
 rationale에는 이 지면을 이렇게 설계한 이유를 씁니다. motion은 'showcase'를 씁니다.`;
 }
 
-/** 섹션 하나를 채우는 출력 스키마입니다. 설계의 예산이 최대 길이가 됩니다. */
-function sectionFillSchema(budget: StructuredDesignPlan["sections"][number]["budget"]) {
-  const LIMIT = FILL_LIMITS.section;
+/**
+ * 섹션 하나를 채우는 출력 형식입니다. 모양만 정합니다 — 설계의 칸 예산과 `FILL_LIMITS`는 받은 뒤 `fillViolations`가
+ * 검사하고, 걸린 칸만 쓴 에이전트가 같은 대화에서 고칩니다. 형식에 넣으면 조금만 넘쳐도 출력 전체가 거절됩니다.
+ */
+function sectionFillSchema() {
   return z.object({
-    title: z.string().min(1).max(budget.title),
-    summary: z.string().max(Math.max(budget.summary, 0)),
-    body: z.string().max(Math.max(budget.body, 0)),
-    period: z.string().max(LIMIT.period).optional(),
-    details: z.array(z.object({ label: z.string().min(1).max(LIMIT.detailLabel), text: z.string().min(1).max(LIMIT.detailText) })).max(budget.details),
-    metrics: z
-      .array(z.object({ label: z.string().min(1).max(LIMIT.metricLabel), value: metricValue(), before: metricValue().optional(), note: z.string().max(LIMIT.metricNote).optional() }))
-      .max(budget.metrics),
-    quote: z.string().max(Math.max(budget.quote ?? 0, 0)),
-    steps: z.array(z.object({ label: z.string().min(1).max(LIMIT.stepLabel), text: z.string().max(LIMIT.stepText) })).max(budget.steps ?? 0),
+    title: z.string().min(1),
+    summary: z.string(),
+    body: z.string(),
+    period: z.string().optional(),
+    details: z.array(z.object({ label: z.string().min(1), text: z.string().min(1) })),
+    metrics: z.array(z.object({ label: z.string().min(1), value: z.string().min(1), before: z.string().min(1).optional(), note: z.string().optional() })),
+    quote: z.string(),
+    steps: z.array(z.object({ label: z.string().min(1), text: z.string() })),
   });
 }
 
-const metricValue = () =>
-  z
-    .string()
-    .min(1)
-    .max(FILL_LIMITS.section.metricValue)
-    .regex(METRIC_VALUE_PATTERN, "수치 값은 숫자와 단위만 씁니다(예: 1.9초, 420KB, 1,200만 건). 무엇의 수치인지는 label에, 설명은 note에 씁니다.");
+type FillOutput = {
+  role: string; headline: string; intro: string; focus: string[];
+  sections: Record<string, z.infer<ReturnType<typeof sectionFillSchema>>>;
+  career: { period: string; organization: string; role: string; description: string }[];
+  evidence: { id: string; title: string; kind: string; summary: string; body: string }[];
+};
+
+const chars = (text: string) => [...text].length;
+
+/**
+ * 채운 칸이 설계의 예산 · `FILL_LIMITS` · 수치 모양 · 이름 아래 한 문장 규칙 · 출처의 숫자를 지키는지 봅니다. 걸린 칸의
+ * 경로(채우기 출력 기준)와, 쓴 에이전트가 고칠 수 있게 기준과 지금 길이를 담은 문장을 돌려줍니다.
+ */
+export function fillViolations(
+  output: FillOutput,
+  plan: Pick<StructuredDesignPlan, "profile" | "evidence" | "career">,
+  included: readonly StructuredDesignPlan["sections"][number][],
+  context: { author: string; groundSource: string; evidenceCount: number },
+): AiViolation[] {
+  const violations: AiViolation[] = [];
+  const text = (path: string, value: string | undefined, max: number, name: string) => {
+    if (value !== undefined && chars(value) > max) violations.push({ path, problem: `${name}은 ${max}자 이내여야 합니다(지금 ${chars(value)}자).` });
+  };
+  const count = (path: string, list: readonly unknown[], max: number, name: string) => {
+    if (list.length > max) violations.push({ path, problem: `${name}은 ${max}개까지입니다(지금 ${list.length}개).` });
+  };
+  const { profile: P, section: S, career: C, evidence: E } = FILL_LIMITS;
+  text("/role", output.role, P.role, "직무");
+  const headline = StructuredProfileSchema.safeParse({ name: context.author, role: output.role, headline: output.headline, intro: output.intro, focus: output.focus });
+  const sentence = StructuredPortfolioContentSchema.shape.profile.safeParse({ name: context.author, role: output.role, headline: output.headline, intro: output.intro, focus: output.focus });
+  if (headline.success && !sentence.success) violations.push({ path: "/headline", problem: sentence.error.issues.map((issue) => issue.message).join(" ") });
+  text("/intro", output.intro, plan.profile.intro, "소개");
+  count("/focus", output.focus, plan.profile.focus, "집중 분야");
+  output.focus.forEach((item, index) => text(`/focus/${index}`, item, P.focus, "집중 분야"));
+  for (const section of included) {
+    const filled = output.sections[section.id];
+    if (!filled) continue;
+    const base = `/sections${jsonPointer([section.id])}`;
+    const { budget } = section;
+    text(`${base}/title`, filled.title, budget.title, "제목");
+    text(`${base}/summary`, filled.summary, budget.summary, "요약");
+    text(`${base}/body`, filled.body, budget.body, "본문");
+    text(`${base}/quote`, filled.quote, budget.quote ?? 0, "인용");
+    text(`${base}/period`, filled.period, S.period, "기간");
+    count(`${base}/details`, filled.details, budget.details, "항목");
+    filled.details.forEach((item, index) => {
+      text(`${base}/details/${index}/label`, item.label, S.detailLabel, "항목 이름");
+      text(`${base}/details/${index}/text`, item.text, S.detailText, "항목 설명");
+    });
+    count(`${base}/metrics`, filled.metrics, budget.metrics, "수치");
+    // 출처에 없는 숫자는 수치 하나를 빼야 할 수도 있어 목록 전체를 고쳐 받습니다.
+    const ungrounded = filled.metrics.flatMap((metric, index) => {
+      const numbers = ungroundedNumbers([metric.value, metric.before ?? ""].join(" "), context.groundSource);
+      return numbers.length ? [`${index}번(${numbers.join(", ")})`] : [];
+    });
+    if (ungrounded.length)
+      violations.push({ path: `${base}/metrics`, problem: `출처에 없는 숫자가 있습니다: ${ungrounded.join(", ")}. 출처에 적힌 숫자로 고치고, 맞는 숫자가 없는 수치는 빼서 metrics 목록 전체를 보내세요.` });
+    filled.metrics.forEach((metric, index) => {
+      const at = `${base}/metrics/${index}`;
+      text(`${at}/label`, metric.label, S.metricLabel, "수치 이름");
+      text(`${at}/note`, metric.note, S.metricNote, "수치 설명");
+      for (const key of ["value", "before"] as const) {
+        const value = metric[key];
+        if (value === undefined) continue;
+        if (chars(value) > S.metricValue || !METRIC_VALUE_PATTERN.test(value))
+          violations.push({ path: `${at}/${key}`, problem: `수치 값은 숫자와 단위만 ${S.metricValue}자 이내로 씁니다(예: 1.9초, 420KB, 1,200만 건). 무엇의 수치인지는 label에, 설명은 note에 씁니다.` });
+      }
+    });
+    count(`${base}/steps`, filled.steps, budget.steps ?? 0, "단계");
+    filled.steps.forEach((step, index) => {
+      text(`${base}/steps/${index}/label`, step.label, S.stepLabel, "단계 이름");
+      text(`${base}/steps/${index}/text`, step.text, S.stepText, "단계 설명");
+    });
+  }
+  count("/career", output.career, plan.career ? C.count : 0, "경력");
+  output.career.forEach((item, index) => {
+    text(`/career/${index}/period`, item.period, C.period, "기간");
+    text(`/career/${index}/organization`, item.organization, C.organization, "조직");
+    text(`/career/${index}/role`, item.role, C.role, "역할");
+    text(`/career/${index}/description`, item.description, C.description, "설명");
+  });
+  count("/evidence", output.evidence, plan.evidence ? context.evidenceCount : 0, "근거");
+  output.evidence.forEach((item, index) => {
+    text(`/evidence/${index}/title`, item.title, E.title, "근거 제목");
+    text(`/evidence/${index}/kind`, item.kind, E.kind, "근거 종류");
+    text(`/evidence/${index}/summary`, item.summary, E.summary, "근거 요약");
+    text(`/evidence/${index}/body`, item.body, E.body, "근거 본문");
+  });
+  return violations;
+}
+
+/** 설계안이 자료의 섹션을 모두 한 번씩 다루는지 봅니다. */
+function planViolations(planned: readonly { id: string }[], sectionIds: readonly string[]): AiViolation[] {
+  const seen = planned.map((section) => section.id);
+  const missing = sectionIds.filter((id) => !seen.includes(id));
+  const repeated = [...new Set(seen.filter((id, index) => seen.indexOf(id) !== index))];
+  if (!missing.length && !repeated.length) return [];
+  return [{
+    path: "/plan/sections",
+    problem: `plan.sections에 자료의 모든 섹션을 한 번씩 적어야 합니다.${missing.length ? ` 빠진 섹션: ${missing.join(", ")}.` : ""}${repeated.length ? ` 두 번 적은 섹션: ${repeated.join(", ")}.` : ""}`,
+  }];
+}
+
+/** 고친 값 안의 글 칸을 모두 꺼냅니다. 값이 배열 · 객체면 그 안의 문자열마다 경로를 붙입니다. */
+function revisedLeaves(path: readonly (string | number)[], value: unknown): { path: (string | number)[]; text: string }[] {
+  if (typeof value === "string") return [{ path: [...path], text: value }];
+  if (Array.isArray(value)) return value.flatMap((item, index) => revisedLeaves([...path, index], item));
+  if (value && typeof value === "object") return Object.entries(value).flatMap(([key, item]) => revisedLeaves([...path, key], item));
+  return [];
+}
 
 /** 채우기 프롬프트의 섹션 한 줄입니다. 설계의 칸 예산을 칸 이름과 글자 수 · 개수로 적습니다. */
 function fillGuide(section: StructuredDesignPlan["sections"][number]) {
@@ -447,7 +556,10 @@ export async function designFirst(
   const usages: AiUsage[] = [];
   const calls: DesignFirstCall[] = [];
   const timeline: DesignFirstResult["timeline"] = [];
-  const call = async <T>(contract: "page_design" | "page_fill", system: string, prompt: string, schema: z.ZodType<T>, slots?: ReturnType<typeof slotStream>) => {
+  const call = async <T>(
+    contract: "page_design" | "page_fill", system: string, prompt: string, schema: z.ZodType<T>,
+    extra: Pick<AiCallOptions<T>, "check" | "onRevision"> & { slots?: ReturnType<typeof slotStream> } = {},
+  ) => {
     const result = await ai.complete(
       {
         contract, system, prompt, promptVersion: PAGE_PROMPT_VERSION,
@@ -457,43 +569,33 @@ export async function designFirst(
         ...(contract === "page_fill" && tuning.fillEffort ? { effort: tuning.fillEffort } : {}),
       },
       schema,
-      { ...(hooks.thinking ? { onThinking: hooks.thinking } : {}), ...(slots ? { onPartial: slots.push, onPartialRestart: slots.restart } : {}) },
+      {
+        ...(hooks.thinking ? { onThinking: hooks.thinking } : {}),
+        ...(extra.slots ? { onPartial: extra.slots.push, onPartialRestart: extra.slots.restart } : {}),
+        ...(extra.check ? { check: extra.check } : {}),
+        ...(extra.onRevision ? { onRevision: extra.onRevision } : {}),
+      },
     );
     usages.push(result.usage);
     calls.push({ contract, model: result.usage.model, durationMs: result.usage.durationMs, outputTokens: result.usage.outputTokens, costUsd: result.usage.costUsd });
     return result.data;
   };
 
-  // 1. 설계 — 계약 위반이면 오류를 붙여 한 번 다시 받습니다.
+  // 1. 설계 — 한 번 부릅니다. 계약 위반이나 빠진 섹션은 출력을 거절하지 않고, 쓴 에이전트가 같은 대화에서 그 칸만
+  //    고칩니다(`AiCallOptions.check`). 두 번 고쳐도 설계안에 없는 섹션은 지면에 싣지 않습니다.
   const archetype = context.archetype ?? DEFAULT_PORTFOLIO_ARCHETYPE;
   const layout = context.design ? designLayout(context.design) : null;
   const specSchema = structuredModelSchema(skeleton(raw, author), { intro: [], section: [], guidance: [], archetype, ...(layout ? { groups: layout.groups } : {}) });
   const sectionIds = raw.sections.map((section) => section.id) as [string, ...string[]];
-  const schema = z.object({ plan: designPlanSchema(sectionIds, raw.media.length), spec: z.unknown() });
   const prompt = designPrompt({ raw, author, context, specSchema });
-  let design: { plan: z.infer<ReturnType<typeof designPlanSchema>>; spec: unknown } | null = null;
-  let lastError = "";
-  for (let attempt = 0; attempt < 2 && !design; attempt++) {
-    let output: z.infer<typeof schema>;
-    try {
-      output = await call(
-        "page_design",
-        DESIGN_SYSTEM,
-        lastError ? `${prompt}\n직전 출력의 검사 오류: ${lastError}\n수정한 전체 결과를 출력하세요.` : prompt,
-        z.object({ plan: designPlanSchema(sectionIds, raw.media.length), spec: specSchema }),
-      ) as z.infer<typeof schema>;
-    } catch (error) {
-      if (error instanceof AiError && error.code === "AI_INVALID_OUTPUT") { lastError = error.message.slice(0, 2_000); continue; }
-      throw error;
-    }
-    const planned = new Set(output.plan.sections.map((section) => section.id));
-    if (planned.size !== sectionIds.length) { lastError = `plan.sections에 모든 섹션(${sectionIds.join(", ")})을 한 번씩 적어야 합니다.`; continue; }
-    design = output;
-  }
-  if (!design) throw new PageGenerationError(`지면 설계가 계약 검사를 통과하지 못했습니다: ${lastError}`);
+  const design = await call("page_design", DESIGN_SYSTEM, prompt, z.object({ plan: designPlanSchema(sectionIds, raw.media.length), spec: specSchema }), {
+    check: (output) => planViolations(output.plan.sections, sectionIds),
+  }) as { plan: z.infer<ReturnType<typeof designPlanSchema>>; spec: unknown };
   const plan: StructuredDesignPlan = {
     ...design.plan,
-    sections: design.plan.sections.map((section) => ({ ...section, media: section.media.map((index) => raw.media[index]!.src) })),
+    sections: design.plan.sections
+      .filter((section, index, list) => list.findIndex((other) => other.id === section.id) === index)
+      .map((section) => ({ ...section, media: section.media.map((index) => raw.media[index]!.src) })),
   };
   timeline.push({ stage: "designed", atMs: Date.now() - started });
   if (hooks.designed) hooks.designed({ plan, spec: design.spec, blueprint: blueprintContent(plan, context) });
@@ -506,14 +608,15 @@ export async function designFirst(
   const rawById = new Map(raw.sections.map((section) => [section.id, section]));
   const evidenceText = raw.evidence.map((item) => `[${item.id}] ${item.label}\n${item.text.slice(0, FILL_SOURCE_CHARS)}`).join("\n\n");
   const fillSchema = z.object({
-    role: z.string().min(1).max(FILL_LIMITS.profile.role),
-    headline: z.string().min(1).max(FILL_LIMITS.profile.headline),
-    intro: z.string().max(Math.max(plan.profile.intro, 0)),
-    focus: z.array(z.string().min(1).max(FILL_LIMITS.profile.focus)).max(plan.profile.focus),
-    sections: z.object(Object.fromEntries(included.map((section) => [section.id, sectionFillSchema(section.budget)]))),
-    career: z.array(z.object({ period: z.string().max(FILL_LIMITS.career.period), organization: z.string().min(1).max(FILL_LIMITS.career.organization), role: z.string().max(FILL_LIMITS.career.role), description: z.string().max(FILL_LIMITS.career.description) })).max(plan.career ? FILL_LIMITS.career.count : 0),
-    evidence: z.array(z.object({ id: z.enum(raw.evidence.length ? (raw.evidence.map((item) => item.id) as [string, ...string[]]) : ["-"]), title: z.string().min(1).max(FILL_LIMITS.evidence.title), kind: z.string().min(1).max(FILL_LIMITS.evidence.kind), summary: z.string().max(FILL_LIMITS.evidence.summary), body: z.string().max(FILL_LIMITS.evidence.body) })).max(plan.evidence ? raw.evidence.length : 0),
+    role: z.string().min(1),
+    headline: z.string().min(1),
+    intro: z.string(),
+    focus: z.array(z.string().min(1)),
+    sections: z.object(Object.fromEntries(included.map((section) => [section.id, sectionFillSchema()]))),
+    career: z.array(z.object({ period: z.string(), organization: z.string().min(1), role: z.string(), description: z.string() })),
+    evidence: z.array(z.object({ id: z.enum(raw.evidence.length ? (raw.evidence.map((item) => item.id) as [string, ...string[]]) : ["-"]), title: z.string().min(1), kind: z.string().min(1), summary: z.string(), body: z.string() })),
   });
+  const groundSource = [JSON.stringify(raw.sections), evidenceText].join("\n");
   const fillPrompt = `## 지면 콘셉트
 ${plan.concept}
 ## 채울 칸
@@ -523,31 +626,26 @@ ${included.map(fillGuide).join("\n")}
 ${plan.career ? "- career: 출처에 있는 경력만 적습니다.\n" : ""}${plan.evidence ? "- evidence: 출처 자료를 지면용으로 짧게 적습니다.\n" : ""}## 출처
 ${JSON.stringify(included.map((section) => { const source = rawById.get(section.id)!; return { id: section.id, title: source.title, purpose: source.purpose, goal: source.goal, points: source.points }; }))}
 ${evidenceText}`;
-  let filled: z.infer<typeof fillSchema> | null = null;
-  let fillError = "";
-  for (let attempt = 0; attempt < 2 && !filled; attempt++) {
-    let output: z.infer<typeof fillSchema>;
-    try {
-      // 다시 받는 판은 처음부터 다시 흘러오므로 읽는 상태도 새로 만듭니다.
-      output = await call("page_fill", FILL_SYSTEM, fillError ? `${fillPrompt}\n직전 출력의 검사 오류: ${fillError}\n수정한 전체 결과를 출력하세요.` : fillPrompt, fillSchema, hooks.slot ? slotStream(hooks.slot) : undefined);
-    } catch (error) {
-      if (error instanceof AiError && error.code === "AI_INVALID_OUTPUT") {
-        fillError = error.message.slice(0, 2_000);
-        console.error(JSON.stringify({ level: "warn", event: "page.fill_retry", attempt, message: fillError.slice(0, 500) }));
-        continue;
-      }
-      throw error;
-    }
-    const checked = StructuredPortfolioContentSchema.shape.profile.safeParse({ name: author, role: output.role, headline: output.headline, intro: output.intro, focus: output.focus });
-    if (checked.success) filled = output;
-    else fillError = checked.error.issues.map((issue) => issue.message).join("; ");
-    if (!filled) console.error(JSON.stringify({ level: "warn", event: "page.fill_retry", attempt, message: fillError.slice(0, 500) }));
-  }
-  if (!filled) throw new PageGenerationError(`칸 채우기가 계약 검사를 통과하지 못했습니다: ${fillError}`);
-  const groundSource = [JSON.stringify(raw.sections), evidenceText].join("\n");
+  // 한 번 부릅니다. 예산을 넘긴 칸 · 모양이 틀린 수치 · 출처에 없는 숫자는 출력을 거절하지 않고, 쓴 에이전트가 같은
+  // 대화에서 그 칸만 고칩니다. 고친 칸은 화면의 그 자리에 바뀌는 모습으로 보입니다(`revised`).
+  const filled = await call("page_fill", FILL_SYSTEM, fillPrompt, fillSchema, {
+    ...(hooks.slot ? { slots: slotStream(hooks.slot) } : {}),
+    check: (output) => fillViolations(output as FillOutput, plan, included, { author, groundSource, evidenceCount: raw.evidence.length }),
+    ...(hooks.slot
+      ? {
+          onRevision: (fixes) => {
+            for (const fix of fixes)
+              for (const leaf of revisedLeaves(pointerParts(fix.path), fix.value)) {
+                const path = contentPath(leaf.path);
+                if (path) hooks.slot!(path, leaf.text, true, true);
+              }
+          },
+        }
+      : {}),
+  }) as FillOutput;
   const sections = included.map((plannedSection) => {
-    const output = (filled!.sections as Record<string, z.infer<ReturnType<typeof sectionFillSchema>>>)[plannedSection.id]!;
-    // 출처에 없는 숫자가 들어간 수치는 버립니다.
+    const output = filled.sections[plannedSection.id]!;
+    // 쓴 에이전트가 두 번 고쳐도 출처에 없는 숫자가 남은 수치는 싣지 않습니다. 지어낸 수치를 지면에 내보내지 않는 선입니다.
     const metrics = output.metrics.filter((metric) => !ungroundedNumbers([metric.value, metric.before ?? ""].join(" "), groundSource).length);
     const section = {
       id: plannedSection.id,

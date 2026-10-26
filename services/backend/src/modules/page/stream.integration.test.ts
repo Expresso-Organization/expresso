@@ -78,14 +78,16 @@ describeWithRedis("PageStream", () => {
     await stream!.stage(portfolioId, "designed");
     await stream!.fill(portfolioId, "/profile/role", "개발", false);
     await stream!.fill(portfolioId, "/profile/role", "개발자", true);
+    await stream!.fill(portfolioId, "/profile/role", "프론트엔드 개발자", true, true);
     await stream!.done(portfolioId, "55555555-5555-4555-8555-555555555555");
 
     const seen = (await collect(portfolioId)).map(({ id: _id, ...message }) => message);
     expect(seen).toEqual([
       { event: "blueprint", html: '<p><span data-slot="/profile/role"></span></p>', css: ".a{}" },
       { event: "stage", name: "designed" },
-      { event: "fill", path: "/profile/role", text: "개발", done: false },
-      { event: "fill", path: "/profile/role", text: "개발자", done: true },
+      { event: "fill", path: "/profile/role", text: "개발", done: false, revised: false },
+      { event: "fill", path: "/profile/role", text: "개발자", done: true, revised: false },
+      { event: "fill", path: "/profile/role", text: "프론트엔드 개발자", done: true, revised: true },
       { event: "done", pageId: "55555555-5555-4555-8555-555555555555" },
     ]);
   });

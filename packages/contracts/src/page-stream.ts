@@ -45,6 +45,8 @@ export const PageStreamFillSchema = z.strictObject({
   text: z.string(),
   /** 그 칸을 다 썼는가. 블록 안의 칸이 모두 끝나면 블록에 디자인이 입혀집니다. */
   done: z.boolean(),
+  /** 검사에 걸린 칸을 쓴 에이전트가 고쳐 보낸 글인가. 화면은 그 자리가 바뀌는 모습을 보여 줍니다. */
+  revised: z.boolean().default(false),
 });
 
 /** 설계가 먼저 오는 생성의 단계입니다. `filled` 뒤에는 모델 호출 없이 렌더와 측정만 남습니다. */

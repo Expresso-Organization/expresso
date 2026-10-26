@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { AiFix, AiViolation } from "./client.js";
+import { AiError, parseToolOutput, type AiCallOptions, type AiContract, type AiFix, type AiResult, type AiUsage, type AiViolation } from "./client.js";
 
 /**
  * 검사에 걸린 칸을 쓴 에이전트가 고치게 하는 데 쓰는 도구입니다.
@@ -17,7 +17,8 @@ export function jsonPointer(path: readonly PropertyKey[]): string {
   return path.map((part) => `/${String(part).replace(/~/g, "~0").replace(/\//g, "~1")}`).join("");
 }
 
-function pointerParts(pointer: string): string[] {
+/** JSON 포인터를 경로 배열로 바꿉니다. */
+export function pointerParts(pointer: string): string[] {
   return pointer === "" ? [] : pointer.slice(1).split("/").map((part) => part.replace(/~1/g, "/").replace(/~0/g, "~"));
 }
 
@@ -57,12 +58,21 @@ export function applyFixes(root: unknown, fixes: readonly AiFix[]): unknown {
   return result;
 }
 
-/** 같은 칸의 위반을 묶고, 다른 위반 칸 안에 있는 칸은 바깥 칸에 맡깁니다(바깥 칸을 통째로 고쳐 받으므로). */
+/**
+ * 같은 칸의 위반을 묶습니다. 다른 위반 칸 안에 있는 칸은 바깥 칸을 통째로 고쳐 받으므로 따로 묻지 않고, 그 이유를
+ * 안쪽 경로와 함께 바깥 칸의 이유에 붙입니다 — 안쪽 이유가 빠지면 바깥 칸을 고치면서 같은 위반을 다시 낸다.
+ */
 export function groupViolations(violations: readonly AiViolation[]): Map<string, string[]> {
   const grouped = new Map<string, string[]>();
   for (const violation of violations) grouped.set(violation.path, [...(grouped.get(violation.path) ?? []), violation.problem]);
-  for (const path of [...grouped.keys()])
-    if ([...grouped.keys()].some((other) => other !== path && (other === "" || path.startsWith(`${other}/`)))) grouped.delete(path);
+  const paths = [...grouped.keys()];
+  const outer = (path: string) => paths.filter((other) => other !== path && (other === "" || path.startsWith(`${other}/`))).sort((a, b) => a.length - b.length)[0];
+  for (const path of paths) {
+    const parent = outer(path);
+    if (parent === undefined) continue;
+    grouped.set(parent, [...grouped.get(parent)!, ...grouped.get(path)!.map((problem) => `${path.slice(parent.length) || "/"}: ${problem}`)]);
+    grouped.delete(path);
+  }
   return grouped;
 }
 
@@ -78,4 +88,73 @@ export function fixPrompt(grouped: Map<string, string[]>, current: unknown): str
   const lines = [...grouped].map(([path, problems]) =>
     `- ${path || "/"}: ${problems.join("; ")}\n  지금 값: ${JSON.stringify(valueAt(current, path)) ?? "(없음)"}`);
   return `직전에 낸 출력에서 아래 칸이 검사를 통과하지 못했습니다. 각 칸의 고친 값만 fixes로 내세요. path는 아래 경로를 그대로 쓰고, value는 그 칸에 들어갈 값 전체입니다. 나머지 칸은 그대로 쓰므로 다시 내지 않습니다.\n${lines.join("\n")}`;
+}
+
+/**
+ * 받은 출력을 검사하고, 걸린 칸만 같은 대화에서 고쳐 받습니다. 공급자 어댑터가 첫 호출(`first`)과 같은 대화를
+ * 이어 쓰는 호출(`fix`)을 넘깁니다 — 테스트의 가짜 공급자도 이 함수를 써서 실제 어댑터와 같은 순서로 돕니다.
+ *
+ * 계약(Zod)에 걸리면 고칩니다. 계약을 지나면 화면에 먼저 보여 주고(`onDraft`) 업무 규칙(`check`)을 봅니다.
+ * `AI_FIX_ROUNDS`번 고친 뒤에도 업무 규칙 위반만 남으면 출력을 그대로 돌려주고 기록합니다. 계약 위반이 남으면
+ * 저장할 수 없는 모양이라 `AI_INVALID_OUTPUT`입니다.
+ */
+export async function runWithFixes<T>(input: {
+  contract: AiContract;
+  schema: z.ZodType<T>;
+  options: AiCallOptions<T>;
+  first: () => Promise<{ output: unknown; usage: AiUsage }>;
+  fix: (prompt: string, schema: z.ZodType) => Promise<{ output: unknown; usage: AiUsage }>;
+}): Promise<AiResult<T>> {
+  const { contract, schema, options } = input;
+  const first = await input.first();
+  const usages = [first.usage];
+  let output = first.output;
+  let drafted = false;
+  for (let round = 0; ; round += 1) {
+    const parsed = parseToolOutput(schema, output);
+    if (parsed.success && !drafted) {
+      drafted = true;
+      options.onDraft?.(parsed.data);
+    }
+    const violations = parsed.success ? (options.check?.(parsed.data) ?? []) : zodViolations(parsed.error);
+    if (!violations.length || round >= AI_FIX_ROUNDS) {
+      if (parsed.success) {
+        if (violations.length)
+          console.error(JSON.stringify({ level: "warn", event: "ai.violations_kept", contract, violations: violations.slice(0, 20) }));
+        return { data: parsed.data, usage: sumUsage(usages) };
+      }
+      throw new AiError(
+        "AI_INVALID_OUTPUT",
+        contract,
+        `structured output did not match the schema after ${round} fix rounds: ${parsed.error.message}`,
+        // 같은 대화에서 고쳐도 계약을 못 맞춘 출력이다. 같은 호출을 다시 돌려도 같은 자리에서 멈춘다.
+        { retryable: false },
+      );
+    }
+    // 거절하지 않고, 걸린 칸만 같은 대화에서 고쳐 받는다.
+    const grouped = groupViolations(violations);
+    const shape = fixSchema([...grouped.keys()]);
+    const fixed = await input.fix(fixPrompt(grouped, output), shape);
+    usages.push(fixed.usage);
+    const received = shape.safeParse(fixed.output);
+    console.error(JSON.stringify({ level: "info", event: "ai.fix_round", contract, round: round + 1, paths: [...grouped.keys()].slice(0, 20), fixed: received.success ? received.data.fixes.length : 0, durationMs: fixed.usage.durationMs }));
+    if (!received.success) continue;
+    output = applyFixes(output, received.data.fixes);
+    const revised = parseToolOutput(schema, output);
+    if (revised.success) options.onRevision?.(received.data.fixes, revised.data);
+  }
+}
+
+/** 첫 호출과 고치기 호출의 사용량을 합칩니다. 모델 이름은 첫 호출(출력을 쓴 호출)의 것입니다. */
+export function sumUsage(usages: readonly AiUsage[]): AiUsage {
+  const [first] = usages;
+  return {
+    model: first!.model,
+    inputTokens: usages.reduce((sum, usage) => sum + usage.inputTokens, 0),
+    outputTokens: usages.reduce((sum, usage) => sum + usage.outputTokens, 0),
+    cacheReadTokens: usages.reduce((sum, usage) => sum + usage.cacheReadTokens, 0),
+    cacheCreationTokens: usages.reduce((sum, usage) => sum + usage.cacheCreationTokens, 0),
+    costUsd: usages.some((usage) => usage.costUsd === null) ? null : usages.reduce((sum, usage) => sum + (usage.costUsd ?? 0), 0),
+    durationMs: usages.reduce((sum, usage) => sum + usage.durationMs, 0),
+  };
 }

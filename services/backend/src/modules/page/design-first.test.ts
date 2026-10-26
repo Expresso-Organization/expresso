@@ -1,27 +1,17 @@
 import { describe, expect, it } from "vitest";
 import type { z } from "zod";
 import { PageGenerationManifestSchema, validateStructuredPortfolio, type StructuredPortfolioContent } from "@expresso/contracts";
-import { AiError, type AiCallOptions, type AiCallSpec, type AiClient } from "../../platform/ai/client.js";
+import type { AiCallSpec, AiFix } from "../../platform/ai/client.js";
+import { ScriptedAiClient } from "../../platform/ai/scripted-client.js";
 import { StructuredPageGenerator } from "./structured-generator.js";
 import type { PageGenerationContext } from "./generator.js";
 import { findPortfolioDesign } from "../design-systems/index.js";
 import { METRIC_VALUE_PATTERN, fitToContent } from "./design-first.js";
 
-/** 계약과 프롬프트로 응답을 고르는 가짜 공급자입니다. 실제 공급자처럼 출력 스키마를 어기면 AI_INVALID_OUTPUT입니다. */
-class RoutedAi implements AiClient {
-  calls: AiCallSpec[] = [];
-  constructor(private readonly route: (request: AiCallSpec, attempt: number) => unknown) {}
-  async complete<T>(request: AiCallSpec, schema: z.ZodType<T>, options: AiCallOptions = {}) {
-    this.calls.push(request);
-    const attempt = this.calls.filter((call) => call.contract === request.contract).length - 1;
-    const parsed = schema.safeParse(this.route(request, attempt));
-    if (!parsed.success) throw new AiError("AI_INVALID_OUTPUT", request.contract, parsed.error.message);
-    // 부분 출력을 받는 호출에는 실제 공급자처럼 출력 JSON을 잘게 나눠 흘립니다.
-    if (options.onPartial) {
-      const text = JSON.stringify(parsed.data);
-      for (let at = 0; at < text.length; at += 7) options.onPartial(text.slice(at, at + 7));
-    }
-    return { data: parsed.data, usage: { model: request.contract === "page_design" ? "opus-test" : "sonnet-test", inputTokens: 1, outputTokens: 100, cacheReadTokens: 0, cacheCreationTokens: 0, durationMs: 50, costUsd: 0.01 } };
+/** 계약으로 응답을 고르는 가짜 공급자입니다. 실제 어댑터와 같은 검사 · 고치기 순서를 탑니다. */
+class RoutedAi extends ScriptedAiClient {
+  constructor(route: (request: AiCallSpec, attempt: number) => unknown, fix?: (request: AiCallSpec, paths: string[]) => AiFix[]) {
+    super(route, fix, (request) => (request.contract === "page_design" ? "opus-test" : "sonnet-test"));
   }
 }
 
@@ -136,28 +126,52 @@ describe("설계가 먼저 오는 생성", () => {
     expect(PageGenerationManifestSchema.parse(result.manifest)).toEqual(result.manifest);
   });
 
-  it("수치 값에 설명이 붙으면 채우기 출력을 거절하고 오류 문장을 붙여 다시 받는다", async () => {
-    const ai = new RoutedAi((request, attempt) => (request.contract === "page_design" ? { plan, spec } : fill(attempt === 0 ? "1.9초 절반 이하" : "1.9초")));
+  it("수치 값에 설명이 붙으면 채우기 출력을 거절하지 않고, 그 칸만 같은 대화에서 고쳐 받는다", async () => {
+    const ai = new RoutedAi(
+      (request) => (request.contract === "page_design" ? { plan, spec } : fill("1.9초 절반 이하")),
+      (request, paths) => (request.contract === "page_fill" && paths.includes("/sections/lcp/metrics") ? [{ path: "/sections/lcp/metrics", value: [{ label: "LCP", value: "1.9초", before: "3.8초" }] }] : []),
+    );
     const result = await new StructuredPageGenerator(ai).generate(context);
-    const fills = ai.calls.filter((call) => call.contract === "page_fill");
-    expect(fills).toHaveLength(2);
-    expect(fills[1]!.prompt).toContain("수치 값은 숫자와 단위만 씁니다");
+    // 채우기는 한 번만 부르고, 고치기 요청에는 걸린 칸과 기준이 갑니다(출처 자료를 다시 보내지 않습니다).
+    expect(ai.calls.filter((call) => call.contract === "page_fill")).toHaveLength(1);
+    const fixRequest = ai.fixRequests.find((request) => request.contract === "page_fill")!;
+    // 출처에 없는 숫자(99%) 때문에 수치 목록 전체를 고쳐 받고, 그 안의 값 모양 위반 이유도 함께 갑니다.
+    expect(fixRequest.paths).toContain("/sections/lcp/metrics");
+    expect(fixRequest.prompt).toContain("출처에 없는 숫자");
+    expect(fixRequest.prompt).toContain("/0/value: 수치 값은 숫자와 단위만");
+    expect(fixRequest.prompt).not.toContain("1.9초로 줄였다");
     expect(result.manifest.structured!.content.sections[0]!.metrics?.[0]?.value).toBe("1.9초");
   });
 
-  it("설계가 계약 검사에 두 번 걸리면 이전 경로(내용 정리 → 구성)로 이어 간다", async () => {
-    const ai = new RoutedAi((request) => {
-      if (request.contract === "page_design") return { plan: { ...plan, sections: plan.sections.slice(0, 1) }, spec };
-      throw new Error("이전 경로 호출");
-    });
-    await expect(new StructuredPageGenerator(ai).generate(context)).rejects.toThrow("이전 경로 호출");
-    expect(ai.calls.filter((call) => call.contract === "page_design")).toHaveLength(2);
-    // 두 번째 설계 요청에는 직전 오류가 붙습니다.
-    expect(ai.calls[1]!.prompt).toContain("plan.sections에 모든 섹션");
+  it("설계안에 빠진 섹션은 설계를 거절하지 않고 그 목록만 고쳐 받으며, 두 번 고쳐도 빠지면 그 섹션은 싣지 않는다", async () => {
+    const ai = new RoutedAi((request) => (request.contract === "page_design" ? { plan: { ...plan, sections: plan.sections.slice(0, 1) }, spec } : fill()));
+    const result = await new StructuredPageGenerator(ai).generate(context);
+    expect(ai.calls.filter((call) => call.contract === "page_design")).toHaveLength(1);
+    const designFixes = ai.fixRequests.filter((request) => request.contract === "page_design");
+    expect(designFixes).toHaveLength(2);
+    expect(designFixes[0]!.paths).toEqual(["/plan/sections"]);
+    expect(designFixes[0]!.prompt).toContain("빠진 섹션: ui, misc");
+    expect(result.manifest.structured!.content.sections.map((section) => section.id)).toEqual(["lcp"]);
   });
 });
 
 describe("청사진과 순차 채움", () => {
+  it("검사에 걸린 칸은 고친 글이 오면 그 글 자리에 고친 글로 다시 보낸다", async () => {
+    const twoSentences = { ...fill(), headline: "커머스 화면을 고칩니다. 성능도 봅니다." };
+    const ai = new RoutedAi(
+      (request) => (request.contract === "page_design" ? { plan, spec } : twoSentences),
+      (request, paths) => (request.contract === "page_fill" && paths.includes("/headline") ? [{ path: "/headline", value: "커머스 화면의 성능을 고칩니다." }] : []),
+    );
+    const fills: { path: string; text: string; revised: boolean }[] = [];
+    const sink = { delta: () => undefined, thinking: () => undefined, blueprint: () => undefined, stage: () => undefined, fill: (path: string, text: string, _done: boolean, revised?: boolean) => fills.push({ path, text, revised: revised ?? false }) };
+    const result = await new StructuredPageGenerator(ai).generate(context, sink);
+    // 처음 쓴 글이 먼저 흐르고, 고친 글이 뒤에 고친 표시와 함께 옵니다.
+    const headline = fills.filter((item) => item.path === "/profile/headline");
+    expect(headline.at(-2)).toMatchObject({ text: "커머스 화면을 고칩니다. 성능도 봅니다.", revised: false });
+    expect(headline.at(-1)).toEqual({ path: "/profile/headline", text: "커머스 화면의 성능을 고칩니다.", revised: true });
+    expect(result.manifest.structured!.content.profile.headline).toBe("커머스 화면의 성능을 고칩니다.");
+  });
+
   it("설계가 끝나면 최종 구조의 청사진을 보내고, 채우는 글을 글 자리 경로로 흘린 뒤 단계를 알린다", async () => {
     const events: { event: string; [key: string]: unknown }[] = [];
     const sink = {

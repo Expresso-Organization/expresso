@@ -5,6 +5,22 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
+import {
+  GenerationDraftSchema,
+  InterviewQuestionDraftListSchema,
+  InterviewQuestionRewriteSchema,
+  JobAnalysisAiOutputSchema,
+  JobFactsAiOutputSchema,
+  LayoutDraftCandidatesSchema,
+  LayoutDraftSchema,
+  PageDraftSchema,
+  PortfolioEditDraftSchema,
+  RecipeDraftSchema,
+  RecordCleanupSchema,
+  SearchInterpretAiOutputSchema,
+  StructuredContentModelSchema,
+} from "@expresso/contracts";
+
 import { ClaudeCodeAiClient } from "./claude-code.js";
 import { SOFT_KEYWORDS, toToolSchema, type AiFix } from "./client.js";
 import { applyFixes, groupViolations, jsonPointer, zodViolations } from "./fixes.js";
@@ -123,10 +139,36 @@ describe("고치기 도구", () => {
   it("바깥 칸을 고치면 안쪽 칸은 따로 묻지 않는다", () => {
     const grouped = groupViolations([{ path: "/items", problem: "많습니다" }, { path: "/items/3", problem: "깁니다" }, { path: "/title", problem: "깁니다" }]);
     expect([...grouped.keys()]).toEqual(["/items", "/title"]);
+    // 안쪽 칸의 이유는 바깥 칸의 이유에 경로와 함께 남습니다.
+    expect(grouped.get("/items")).toEqual(["많습니다", "/3: 깁니다"]);
   });
   it("Zod 이슈를 칸 경로와 문장으로 바꾼다", () => {
     const parsed = schema.safeParse({ title: "", items: [] });
     expect(parsed.success).toBe(false);
     expect(zodViolations(parsed.error!).map((violation) => violation.path)).toEqual(["/title"]);
   });
+});
+
+/** 스키마 노드에 남은 기준 키워드를 찾습니다. 칸 이름(`properties` · `$defs`의 키)은 기준이 아니므로 건너뜁니다. */
+function softKeywords(node: unknown, at = ""): string[] {
+  if (Array.isArray(node)) return node.flatMap((item, index) => softKeywords(item, `${at}/${index}`));
+  if (!node || typeof node !== "object") return [];
+  return Object.entries(node as Record<string, unknown>).flatMap(([key, value]) => {
+    if (key === "properties" || key === "$defs")
+      return Object.entries(value as Record<string, unknown>).flatMap(([name, child]) => softKeywords(child, `${at}/${key}/${name}`));
+    return [...((SOFT_KEYWORDS as readonly string[]).includes(key) ? [`${at}/${key}`] : []), ...softKeywords(value, `${at}/${key}`)];
+  });
+}
+
+describe("규칙: 공급자 형식에 글자 수 · 개수 · 형식 기준을 넘기지 않는다", () => {
+  // 기준을 넘기면 공급자가 조금만 어긴 출력도 통째로 돌려보내 처음부터 다시 쓴다(AGENTS.md 「지키는 선」).
+  const contracts = {
+    GenerationDraftSchema, InterviewQuestionDraftListSchema, InterviewQuestionRewriteSchema, JobAnalysisAiOutputSchema,
+    JobFactsAiOutputSchema, LayoutDraftCandidatesSchema, LayoutDraftSchema, PageDraftSchema, PortfolioEditDraftSchema,
+    RecipeDraftSchema, RecordCleanupSchema, SearchInterpretAiOutputSchema, StructuredContentModelSchema,
+  };
+  for (const [name, schema] of Object.entries(contracts))
+    it(`${name}`, () => {
+      expect(softKeywords(toToolSchema(schema))).toEqual([]);
+    });
 });

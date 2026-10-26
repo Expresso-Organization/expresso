@@ -67,6 +67,8 @@ function escapeAttribute(value: string): string {
  * 최상위 블록(`.xp-hero`, `.xp-block`) 안에 아직 다 쓰지 않은 칸이 있으면 그 블록은 설계도로 보입니다 — 격자
  * 배경, 점선 윤곽, 한 가지 선 색, 이미지 자리는 빗금. 블록의 칸이 모두 차면 규칙이 풀리며 디자인 색 · 면 · 이미지가
  * 디자인의 전환 시간으로 돌아옵니다. 색은 모두 디자인 변수에서 섞어 만들어 어두운 디자인에서도 같은 관계입니다.
+ * 검사에 걸려 쓴 에이전트가 고쳐 보낸 칸(`data-slot-revised`)은 새 글이 흐린 데서 떠오르며 잠깐 강조됩니다. 강조는 눈에 남도록
+ * 디자인의 전환 시간보다 길게 둡니다.
  * 디자인 변수는 `.xp-page`에 정의되므로 청사진 색도 거기서 만듭니다(문서 루트에서는 디자인 변수가 비어 있습니다).
  */
 export const BLUEPRINT_CSS = String.raw`
@@ -80,6 +82,8 @@ export const BLUEPRINT_CSS = String.raw`
 :root[data-stage] :is(.xp-hero,.xp-block) .xp-slot[data-slot-state="empty"]{color:transparent!important;background-color:var(--xp-bp-skel)!important;background-image:linear-gradient(90deg,transparent 30%,var(--xp-bp-skel-hi) 50%,transparent 70%);background-size:300% 100%;border-radius:.3em;-webkit-box-decoration-break:clone;box-decoration-break:clone;animation:xp-bp-shimmer 1.6s linear infinite}
 :root[data-stage] .xp-slot[data-slot-state="writing"]::after{content:"";display:inline-block;width:0;height:1em;margin-inline-start:.08em;border-inline-end:2px solid currentColor;vertical-align:-.12em;animation:xp-bp-caret 1s steps(1) infinite}
 @keyframes xp-bp-shimmer{from{background-position:100% 0}to{background-position:0 0}}
+:root[data-stage] .xp-slot[data-slot-revised]{animation:xp-bp-revised calc(var(--motion-duration) * 6) var(--motion-easing);border-radius:.2em;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+@keyframes xp-bp-revised{0%{opacity:.15;background-color:color-mix(in srgb,var(--accent) 28%,transparent)}25%{opacity:1}100%{background-color:transparent}}
 @keyframes xp-bp-caret{50%{opacity:0}}
-@media (prefers-reduced-motion:reduce){:root[data-stage] .xp-slot,:root[data-stage] .xp-slot::after{animation:none!important}}
+@media (prefers-reduced-motion:reduce){:root[data-stage] .xp-slot,:root[data-stage] .xp-slot::after,:root[data-stage] .xp-slot[data-slot-revised]{animation:none!important}}
 `;

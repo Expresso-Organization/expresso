@@ -488,7 +488,8 @@ export type GeneratedPageDeploymentSnapshot = z.infer<typeof GeneratedPageDeploy
 /** 모델이 내는 모양. 저장본과 달리 식별자와 시각이 없다. */
 export const PageDraftSchema = z.strictObject({
   html: z.string().min(1).max(PAGE_MAX_BYTES),
-  css: z.string().min(1).max(PAGE_MAX_BYTES),
+  // 키트를 쓰면 지면 CSS는 비어 있어도 됩니다(생성 프롬프트의 지시). 저장 계약도 빈 CSS를 받습니다.
+  css: z.string().max(PAGE_MAX_BYTES),
   rationale: z.string().min(1).max(400),
 });
 export type PageDraft = z.infer<typeof PageDraftSchema>;

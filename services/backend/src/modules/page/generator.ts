@@ -136,8 +136,8 @@ export interface PageStreamSink {
   thinking(estimatedTokens: number): void;
   /** 설계가 끝난 지면의 청사진 문서입니다. 설계가 먼저 오는 생성만 보냅니다. */
   blueprint?(page: { html: string; css: string }): void;
-  /** 청사진의 글 자리 하나에 지금까지 쓴 글입니다. */
-  fill?(path: string, text: string, done: boolean): void;
+  /** 청사진의 글 자리 하나에 지금까지 쓴 글입니다. `revised`는 검사에 걸려 쓴 에이전트가 고쳐 보낸 글입니다. */
+  fill?(path: string, text: string, done: boolean, revised?: boolean): void;
   stage?(name: PageStreamStage): void;
 }
 

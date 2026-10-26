@@ -126,10 +126,14 @@ export function LivePreview({
       const fill = PageStreamFillSchema.safeParse(JSON.parse((event as MessageEvent<string>).data));
       const document_ = frame.current?.contentDocument;
       if (!fill.success || !document_ || !blueprintOpen.current) return;
-      const { path, text, done } = fill.data;
+      const { path, text, done, revised } = fill.data;
       // 아직 한 글자도 안 왔으면 자리 표시를 그대로 둔다.
       if (!text && !done) return;
       for (const slot of document_.querySelectorAll<HTMLElement>(`[data-slot="${CSS.escape(path)}"]`)) {
+        if (revised) {
+          revise(slot, text);
+          continue;
+        }
         const starting = slot.dataset.slotState === "empty";
         slot.textContent = text;
         // 공급자가 출력을 처음부터 다시 쓰면 다 쓴 칸에도 글이 다시 온다. 그 칸은 글만 바꾸고 끝난 상태로 둔다 —
@@ -276,4 +280,16 @@ function follow(document_: Document, slot: HTMLElement) {
   const rect = slot.getBoundingClientRect();
   if (rect.top >= 0 && rect.bottom <= view.innerHeight) return;
   view.scrollTo({ top: view.scrollY + rect.top - (view.innerHeight - rect.height) / 2, behavior: "smooth" });
+}
+
+/**
+ * 검사에 걸려 쓴 에이전트가 고쳐 보낸 글로 바꾼다. 바뀌는 모습은 청사진 CSS(`data-slot-revised`)가 그리고, 여기서는
+ * 표시를 다시 붙여 같은 칸이 또 고쳐져도 처음부터 보이게 한다.
+ */
+function revise(slot: HTMLElement, text: string) {
+  slot.textContent = text;
+  slot.dataset.slotState = "done";
+  delete slot.dataset.slotRevised;
+  void slot.offsetWidth;
+  slot.dataset.slotRevised = "";
 }
