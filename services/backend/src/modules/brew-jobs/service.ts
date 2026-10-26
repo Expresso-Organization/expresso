@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { BrewJobStatusSchema, type BrewJobType } from "@expresso/contracts";
+import { BrewJobStatusSchema, type BrewJobStatus, type BrewJobType } from "@expresso/contracts";
 import { mongoCollections, type BrewJobDoc } from "@expresso/database";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction } from "../../platform/mongo-transaction.js";
@@ -21,6 +21,11 @@ export function brewJobOutboxKey(job: Pick<BrewJobDoc, "_id" | "status" | "attem
   return null;
 }
 
+/** 저장된 잡을 화면이 읽는 모양으로. 잡 조회와 브루 상태의 `latestJob`이 함께 쓴다. */
+export function brewJobStatus(job: BrewJobDoc): BrewJobStatus {
+  return BrewJobStatusSchema.parse({ jobId: job._id, type: job.type, status: job.status, stage: job.stage, attempts: job.attempts, resultId: job.resultId ?? null, failure: job.errorCode ? { code: job.errorCode, retryable: job.failureRetryable ?? false, requiredConsent: job.requiredConsent ?? null } : null });
+}
+
 export class BrewJobService implements BrewJobApi {
   constructor(readonly context: MongoContext) {}
   async submit(userId: string, type: BrewJobType, idempotencyKey: string, input: { brewId: string }) {
@@ -36,7 +41,7 @@ export class BrewJobService implements BrewJobApi {
       if (!outboxKey) return job._id;
       // 실패한 같은 잡을 대기로 되돌린다. 화면은 같은 잡을 보고 다시 기다린다.
       if (existing) {
-        const requeued = await db.brewJobs.updateOne({ _id: job._id, userId, status: "failed", failureRetryable: true, attempts: job.attempts }, { $set: { status: "queued", stage: "queued", errorCode: null, failureRetryable: null, updatedAt: new Date() } }, options);
+        const requeued = await db.brewJobs.updateOne({ _id: job._id, userId, status: "failed", failureRetryable: true, attempts: job.attempts }, { $set: { status: "queued", stage: "queued", errorCode: null, failureRetryable: null, requiredConsent: null, updatedAt: new Date() } }, options);
         if (!requeued.matchedCount) return job._id;
       }
       await addMongoOutboxEvent(tx, { userId, topic: type === "interview" ? "interview.draft" : "recipe.draft", payload: { brewJobId: job._id, userId }, idempotencyKey: outboxKey });
@@ -47,7 +52,7 @@ export class BrewJobService implements BrewJobApi {
   async getStatus(userId: string, jobId: string) {
     const job = await mongoCollections(this.context.db).brewJobs.findOne({ _id: jobId, userId });
     if (!job) throw new BrewJobError(404, "brew job not found");
-    return BrewJobStatusSchema.parse({ jobId, type: job.type, status: job.status, stage: job.stage, attempts: job.attempts, resultId: job.resultId ?? null, failure: job.errorCode ? { code: job.errorCode, retryable: job.failureRetryable ?? false } : null });
+    return brewJobStatus(job);
   }
   async process(jobId: string, runner: BrewJobRunner, classify: FailureClassifier, { finalAttempt = true }: { finalAttempt?: boolean } = {}) {
     const job = await inTransaction(this.context, async (tx) => {
@@ -56,7 +61,7 @@ export class BrewJobService implements BrewJobApi {
       if (!existing) throw new BrewJobError(404, "brew job not found");
       await requireActiveUser(tx, existing.userId);
       if (existing.status === "succeeded") return existing;
-      const updated = await db.brewJobs.findOneAndUpdate({ _id: jobId, userId: existing.userId }, { $set: { status: "running", stage: "drafting", errorCode: null, failureRetryable: null, updatedAt: new Date() }, $inc: { attempts: 1 } }, { ...options, returnDocument: "after" });
+      const updated = await db.brewJobs.findOneAndUpdate({ _id: jobId, userId: existing.userId }, { $set: { status: "running", stage: "drafting", errorCode: null, failureRetryable: null, requiredConsent: null, updatedAt: new Date() }, $inc: { attempts: 1 } }, { ...options, returnDocument: "after" });
       if (!updated) throw new BrewJobError(404, "brew job not found");
       return updated;
     });
@@ -69,12 +74,12 @@ export class BrewJobService implements BrewJobApi {
         await mongoCollections(tx.db).brewJobs.updateOne({ _id: jobId, userId: job.userId, status: "running", attempts: job.attempts }, { $set: { status: "succeeded", stage: "done", resultId, updatedAt: new Date() } }, { session: tx.session });
       });
     } catch (error) {
-      const { code, retryable } = classify(error);
+      const { code, retryable, requiredConsent = null } = classify(error);
       // 큐가 다시 돌릴 실패는 아직 끝난 게 아니다. `failed`로 두면 그 틈에 화면이
       // 버튼을 보여 주고, 누르면 같은 일을 하는 잡이 하나 더 생긴다.
       const outcome = retryable && !finalAttempt
-        ? { status: "queued" as const, stage: "queued", errorCode: null, failureRetryable: null }
-        : { status: "failed" as const, stage: "failed", errorCode: code, failureRetryable: retryable };
+        ? { status: "queued" as const, stage: "queued", errorCode: null, failureRetryable: null, requiredConsent: null }
+        : { status: "failed" as const, stage: "failed", errorCode: code, failureRetryable: retryable, requiredConsent };
       await inTransaction(this.context, async (tx) => {
         await requireActiveUser(tx, job.userId);
         await mongoCollections(tx.db).brewJobs.updateOne({ _id: jobId, userId: job.userId, status: "running", attempts: job.attempts }, { $set: { ...outcome, updatedAt: new Date() } }, { session: tx.session });

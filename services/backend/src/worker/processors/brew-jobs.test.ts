@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import type { BrewJobApi } from "../../modules/brew-jobs/index.js";
+import { ConsentError } from "../../modules/consent/index.js";
 import { RecipeError } from "../../modules/recipe/index.js";
-import { createBrewJobProcessor } from "./brew-jobs.js";
+import { classifyBrewJobFailure, createBrewJobProcessor } from "./brew-jobs.js";
 
 const runner = { async run() { return "unused"; } };
 
@@ -35,6 +36,17 @@ describe("brew job processor", () => {
     const { processor } = harness(original);
     const thrown = await processor(job(0)).catch((error: unknown) => error);
     expect(thrown).toMatchObject({ name: "UnrecoverableError", code: "BREW_INPUT_REJECTED", cause: original });
+  });
+
+  it("classifies a missing consent as not retryable and names the consent", () => {
+    expect(classifyBrewJobFailure(new ConsentError("career_records"))).toEqual({ code: "CONSENT_REQUIRED", retryable: false, requiredConsent: "career_records" });
+    expect(classifyBrewJobFailure(new Error("provider timeout"))).toEqual({ code: "PROVIDER_FAILED", retryable: true });
+  });
+
+  it("stops queue retries when consent is missing", async () => {
+    const original = new ConsentError("career_records");
+    const { processor } = harness(original);
+    expect(await processor(job(0)).catch((error: unknown) => error)).toMatchObject({ name: "UnrecoverableError", code: "CONSENT_REQUIRED", cause: original });
   });
 
   it("rethrows retryable failures unchanged so BullMQ retries them", async () => {
