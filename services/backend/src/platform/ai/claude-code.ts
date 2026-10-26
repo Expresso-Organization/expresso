@@ -31,6 +31,11 @@ import {
  * | `--strict-mcp-config` + 빈 cwd | 3.6s | $0.020 | 7,936 |
  * | 위 + `--system-prompt`로 교체 | 4.7s | $0.046 | 21,609 |
  *
+ * **사용자 설정을 읽지 않는다(`--setting-sources project`).** 빈 cwd라 프로젝트 설정도 없다. 사용자 설정을 읽으면
+ * 그 머신 사람의 플러그인 · 스킬 목록이 시스템 프롬프트에 실리고, `advisorModel`이 있으면 보조 모델이 호출에 끼어
+ * 사용량의 모델 이름까지 바뀐다(2026-10-26 sonnet 같은 프롬프트: 사용자 설정 포함 $0.207 · 캐시 생성 51,630,
+ * 제외 $0.047 · 10,294. 설계 호출이 opus 대신 `claude-fable-5-1`로 기록됐다).
+ *
  * `--system-prompt`는 Claude Code의 기본 프롬프트를 갈아 끼워 **캐시를 깬다**.
  * 계약이 아홉이면 캐시 항목도 아홉이 된다. `--append-system-prompt`로 공용
  * 접두사를 공유하는 쪽이 싸다.
@@ -38,7 +43,7 @@ import {
  * `--bare`는 오버헤드를 더 줄이지만 OAuth를 읽지 않는다(API 키 전용)이라
  * 구독 경로에서는 쓸 수 없다.
  *
- * **`--effort low`는 쓰지 않는다.** 첫 조각까지의 침묵을 45.5초 → 3.4초로 접고
+ * **`--effort`는 계약이 정한 호출에만 준다(`AiCallSpec.effort`).** 자유 HTML 지면에서 `--effort low`는 첫 조각까지의 침묵을 45.5초 → 3.4초로 접고
  * 값도 싸지지만, 실제 지면으로 재니 모델이 **지면을 쓰는 대신 없는 파일을
  * 가리켰다**(2026-08-14, sonnet):
  *
@@ -46,7 +51,8 @@ import {
  *
  * 61자짜리 지면이 QA 일곱 개를 전부 통과했다. 침묵은 모델이 생각하는 시간이고,
  * 그 시간을 깎으면 깎은 만큼 지면이 사라진다. 조용한 구간은 줄이는 것이 아니라
- * **보여 주는 것**이 답이다(`onThinking`).
+ * **보여 주는 것**이 답이다(`onThinking`). 설계 · 채우기(`page_design` · `page_fill`)는 칸이 출력 스키마로 정해져
+ * 있어 low로 실제 지면을 재 보고 기본값으로 두었다(`DESIGN_FIRST_TUNING`).
  *
  * 시스템 프롬프트를 `--system-prompt`로 갈아 끼우는 것도 느리다 — 같은 실측에서
  * 첫 조각 45.5초 → 78.5초였다. 붙이는 쪽(`--append-system-prompt`)이 맞다.
@@ -134,6 +140,8 @@ export class ClaudeCodeAiClient implements AiClient {
       // MCP 서버와 도구 정의가 프롬프트에 실리지 않게 한다.
       "--strict-mcp-config",
       "--mcp-config", '{"mcpServers":{}}',
+      // 이 머신 사람의 사용자 설정(플러그인 · 스킬 · 보조 모델)을 호출에 싣지 않는다. 위 주석의 실측.
+      "--setting-sources", "project",
       "--allowedTools", "",
       // 이미지는 글 입력으로 보낼 수 없습니다. stream-json 입력의 사용자 메시지 한 줄에 글과 이미지 블록을 함께 담습니다
       // (https://code.claude.com/docs/en/agent-sdk/streaming-vs-single-mode).
