@@ -333,8 +333,9 @@ export const KIT_CSS = String.raw`
 .xp-inner>.xp-showcase[data-width="bleed"] .xp-showcase-art{margin-inline:calc(var(--xp-bleed) * -1)}
 .xp-inner>.xp-showcase[data-width="bleed"] .xp-showcase-art img{border-inline:0;border-radius:0}
 .xp-inner>.xp-showcase[data-width="bleed"] .xp-showcase-art figcaption{padding-inline:var(--xp-bleed)}
-.xp-page[data-layout="wide-margin"] .xp-inner>.xp-showcase>*{grid-column:1/-1}
-.xp-page[data-layout="wide-margin"] .xp-inner>.xp-showcase{grid-template-columns:minmax(0,1fr)}
+/* 넓은 여백 배치의 "머리 아닌 자식은 2열" 규칙(우선순위 0,5,0)을 이기려고 .xp-block을 함께 씁니다 */
+.xp-page[data-layout="wide-margin"] .xp-inner>.xp-block.xp-showcase>*{grid-column:1/-1}
+.xp-page[data-layout="wide-margin"] .xp-inner>.xp-block.xp-showcase{grid-template-columns:minmax(0,1fr)}
 @container (max-width:720px){
   .xp-showcase-text{grid-template-columns:minmax(0,1fr)}
 }
