@@ -1,0 +1,49 @@
+{
+  "$comment": "스캐너 설정. 기능 목록과 담당은 설계서에서 읽으므로 여기 적지 않는다. logins 는 팀원의 GitHub 계정 — 비어 있으면 그 팀원의 PR 할 일만 빠진다.",
+  "repo": "Expresso-Organization/expresso",
+  "semester": { "week2Start": "2026-08-31", "weeks": 15 },
+  "members": [
+    { "name": "박민재", "logins": ["Nedian0Brien"] },
+    { "name": "심민규", "logins": ["urimi-kyu"] },
+    { "name": "오시건", "logins": ["dhtlrjs5"] },
+    { "name": "채서현", "logins": ["chaeseohyun"] },
+    { "name": "윤규현", "logins": ["Yoon-Kyuhyun"] }
+  ],
+  "$planComment": "제안서 「개발 일정 및 계획」의 작업 항목. 담당이 정해진 AI 모델 항목만 채서현, 나머지는 전원이다.",
+  "plan": [
+    { "name": "요구사항 분석 · 제안서 작성", "from": 2, "to": 3, "owners": ["*"] },
+    { "name": "화면 · API · DB · 시스템 설계", "from": 3, "to": 6, "owners": ["*"] },
+    { "name": "개발 환경 · 인증 · CI/CD 구축", "from": 6, "to": 7, "owners": ["*"] },
+    { "name": "도메인별 기능 개발 · 연동", "from": 6, "to": 11, "owners": ["*"] },
+    { "name": "합성 데이터 · 교사 라벨 구축", "from": 4, "to": 7, "owners": ["채서현"] },
+    { "name": "인코더 비교 · 적합도 모델 학습", "from": 7, "to": 10, "owners": ["채서현"] },
+    { "name": "추천 연동 · 성능 평가 · 통합 테스트", "from": 10, "to": 12, "owners": ["*"] },
+    { "name": "완료 보고서 · 시연 준비", "from": 12, "to": 13, "owners": ["*"] },
+    { "name": "최종 발표 · 심사 · 결과 정리", "from": 14, "to": 15, "owners": ["*"] }
+  ],
+  "$pathsComment": "도메인별로 코드가 사는 곳. main 에서 바뀐 파일이 여기 걸리면 그 도메인만 다시 판정하고, 에이전트에게 먼저 볼 곳으로도 준다.",
+  "paths": {
+    "D1": ["services/backend/src/modules/career", "services/backend/src/modules/career-editor", "services/backend/src/modules/career-computation", "services/web/src/features/career-editor", "services/web/src/app/(app)/career", "services/web/src/components/shell/SidebarCategories.tsx", "packages/editor"],
+    "D2": ["services/backend/src/modules/jobs", "services/backend/src/modules/scheduling", "services/web/src/app/(app)/jobs"],
+    "D3": ["services/backend/src/modules/job-analysis", "services/backend/src/modules/company-research", "services/web/src/app/(app)/brew/new", "services/web/src/app/(app)/brew/[brewId]/analyze"],
+    "D4": ["services/backend/src/modules/materials", "services/web/src/app/(app)/brew/[brewId]/materials"],
+    "D5": ["services/backend/src/modules/interview", "services/backend/src/modules/agent-chat", "services/web/src/app/(app)/brew/[brewId]/counter", "services/web/src/features/agent-chat"],
+    "D6": ["services/backend/src/modules/recipe", "services/backend/src/modules/brew-jobs", "services/web/src/app/(app)/brew/[brewId]/outline"],
+    "D7": ["services/backend/src/modules/generation", "services/backend/src/modules/page", "services/backend/src/modules/templates", "services/backend/src/modules/design-systems", "services/backend/src/modules/layout", "services/web/src/app/(app)/brew/[brewId]/design", "packages/portfolio-renderer"],
+    "D8": ["services/backend/src/modules/portfolio-editing", "services/backend/src/modules/portfolios", "services/web/src/app/(app)/edit/[portfolioId]"],
+    "D9": ["services/backend/src/modules/publishing", "services/web/src/app/(app)/edit/[portfolioId]/deploy", "services/web/src/app/site"],
+    "D10": ["services/backend/src/modules/analytics", "services/web/src/app/(app)/analytics"],
+    "D11": ["services/backend/src/modules/engagement", "services/web/src/app/(app)/home", "services/web/src/components/shell", "services/web/src/components/CommandPalette.tsx"],
+    "D12": ["services/backend/src/modules/entitlements", "services/backend/src/modules/account-lifecycle", "services/backend/src/modules/identity", "services/web/src/app/(app)/account", "services/web/src/app/(auth)"],
+    "AI": ["services/backend/src/modules/materials/ranking.ts", "services/backend/src/modules/jobs/match-score.ts", "scripts/ml-data"],
+    "ADM": ["services/backend/src/modules/system", "services/backend/src/modules/scheduling", "services/backend/src/api/plugins/auth-context.ts", "services/backend/src/modules/jobs/routes.ts"]
+  },
+  "judge": {
+    "model": "sonnet",
+    "maxBudgetUsdPerGroup": 10,
+    "timeoutMinutes": 20,
+    "minIntervalMinutes": 60,
+    "fullEveryDays": 7
+  },
+  "todos": { "model": "sonnet", "perMember": 6, "staleDays": 7, "maxBudgetUsdPerMember": 1.5, "timeoutMinutes": 10 }
+}

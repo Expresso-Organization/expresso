@@ -37,3 +37,6 @@ coordination/mongodb/.codex/agents/pipeline_*.toml
 coordination/mongodb/coordination/agent-mcp-profiles.json
 coordination/mongodb/**/worker-worktrees*.json
 coordination/mongodb/**/*.lock
+
+# 진행 현황 스캐너의 로컬 실행 결과(서버에서는 /var/lib/expresso-status)
+docs/status/data/
