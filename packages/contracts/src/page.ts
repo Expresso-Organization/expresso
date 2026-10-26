@@ -70,8 +70,12 @@ import { MEDIA_ASSET_PATH_PREFIX } from "./media-path.js";
  * 13 — 사용자가 고른 유형(사례 상세형 · 포스터형 · 글 · 목록형)의 문단(`describeArchetype`)을
  * 넣고, 유형에 없는 컴포넌트 설명을 뺀다. 첫 화면 구도가 고정된 유형은 구도 선택 기준을 빼고,
  * 글 · 목록형은 목차 지시를 뺀다. 내용 정리는 출처에 있는 기간만 period로 옮긴다.
+ *
+ * 14 — 설계가 먼저 오는 생성(`page_design` · `page_fill`)을 더하고, 지면 설계가 섹션마다 크기 · 배경 · 폭과
+ * 큰 인용 · 과정 흐름 · 이미지 전시 부품을 고른다. 채우기는 수치 값을 숫자와 단위로만 쓴다. 다듬기 검토도 같은
+ * 부품과 지면 변화를 바꿀 수 있다.
  */
-export const PAGE_PROMPT_VERSION = 13;
+export const PAGE_PROMPT_VERSION = 14;
 
 /**
  * 한 지면의 상한.
