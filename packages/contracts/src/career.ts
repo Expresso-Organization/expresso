@@ -16,39 +16,10 @@ export const CareerViewTypeSchema = z.enum([
   "list",
 ]);
 
-export const CareerPropertyTypeSchema = z.enum([
-  "text",
-  "number",
-  "date",
-  "tags",
-  "boolean",
-]);
-
-export const CareerPropertyDefinitionSchema = z.strictObject({
-  /** MongoDB 전환 뒤 부여되는 안정 식별자입니다. 기존 생성 요청은 생략할 수 있습니다. */
-  id: UuidSchema.optional(),
-  label: z.string().trim().min(1).max(80),
-  type: CareerPropertyTypeSchema,
-  required: z.boolean().default(false),
-  system: z.boolean().default(false),
-});
-
-export const CareerPropertySchemaSchema = z.record(
-  z.string().regex(/^[A-Za-z][A-Za-z0-9_]{0,63}$/),
-  CareerPropertyDefinitionSchema,
-);
-
-export const CareerPropertyValueSchema = z.union([
-  z.string().max(5_000),
-  z.number().finite(),
-  z.boolean(),
-  z.array(z.string().max(200)).max(100),
-  CareerPropertyValueV2Schema,
-]);
-
+/** 속성 값은 타입이 붙은 v2 값만 받습니다. 키는 카테고리 정의의 `key`입니다. */
 export const CareerPropertiesSchema = z.record(
   z.string().regex(/^[A-Za-z][A-Za-z0-9_]{0,63}$/),
-  CareerPropertyValueSchema,
+  CareerPropertyValueV2Schema,
 );
 
 export const CareerCategorySchema = z.strictObject({
@@ -57,9 +28,7 @@ export const CareerCategorySchema = z.strictObject({
   name: z.string().min(1).max(120),
   icon: z.string().min(1).max(80),
   defaultView: CareerViewTypeSchema,
-  isSystem: z.boolean(),
-  propertySchema: CareerPropertySchemaSchema,
-  propertySchemaV2: z.array(CareerPropertyDefinitionV2Schema).optional(),
+  propertySchemaV2: z.array(CareerPropertyDefinitionV2Schema),
   schemaVersion: z.number().int().positive().optional(),
   sortOrder: z.number().int().nonnegative(),
   recordCount: z.number().int().nonnegative(),
@@ -75,12 +44,8 @@ export const CreateCareerCategorySchema = z.strictObject({
   name: z.string().trim().min(1).max(120),
   icon: z.string().trim().min(1).max(80),
   defaultView: CareerViewTypeSchema,
-  propertySchema: CareerPropertySchemaSchema.default({}),
-});
-
-export const UpdateCareerPropertySchemaSchema = z.strictObject({
-  propertySchema: CareerPropertySchemaSchema,
-  confirmValueRemoval: z.boolean().default(false),
+  /** 처음부터 둘 속성. 비우면 속성 없이 만들고, 뒤에 속성 변경 API로 더합니다. */
+  propertySchemaV2: z.array(CareerPropertyDefinitionV2Schema).max(100).default([]),
 });
 
 export const CareerRecordStatusSchema = z.enum([
@@ -213,31 +178,6 @@ export const CareerRecordLinkSchema = z.strictObject({
   direction: z.enum(["outgoing", "incoming"]),
 });
 
-export const CareerViewFilterSchema = z.strictObject({
-  property: z.string().min(1).max(64),
-  operator: z.enum(["eq", "neq", "contains", "exists"]),
-  value: CareerPropertyValueSchema.optional(),
-});
-
-export const CareerViewSortSchema = z.strictObject({
-  property: z.string().min(1).max(64),
-  direction: z.enum(["asc", "desc"]),
-});
-
-export const CreateCareerViewSchema = z.strictObject({
-  name: z.string().trim().min(1).max(120),
-  viewType: CareerViewTypeSchema,
-  filters: z.array(CareerViewFilterSchema).max(20).default([]),
-  sorts: z.array(CareerViewSortSchema).max(10).default([]),
-  visibleProperties: z.array(z.string().min(1).max(64)).max(50).default([]),
-});
-
-export const CareerViewSchema = CreateCareerViewSchema.extend({
-  id: UuidSchema,
-  categoryId: UuidSchema,
-  sortOrder: z.number().int().nonnegative(),
-});
-
 export const CareerDeleteImpactSchema = z.strictObject({
   recordId: UuidSchema,
   portfolioCount: z.number().int().nonnegative(),
@@ -287,13 +227,10 @@ export type CareerViewType = z.infer<typeof CareerViewTypeSchema>;
 export type CareerRecordStatus = z.infer<typeof CareerRecordStatusSchema>;
 export type CareerRecordOrigin = z.infer<typeof CareerRecordOriginSchema>;
 export type CareerRecord = z.infer<typeof CareerRecordSchema>;
-export type CareerPropertyDefinition = z.infer<
-  typeof CareerPropertyDefinitionSchema
->;
-export type CareerPropertySchema = z.infer<typeof CareerPropertySchemaSchema>;
 export type CareerProperties = z.infer<typeof CareerPropertiesSchema>;
 export type CareerCategory = z.infer<typeof CareerCategorySchema>;
-export type CreateCareerCategory = z.infer<typeof CreateCareerCategorySchema>;
+/** 요청 본문 형태. `propertySchemaV2`는 생략할 수 있다. */
+export type CreateCareerCategory = z.input<typeof CreateCareerCategorySchema>;
 export type CreateCareerRecord = z.infer<typeof CreateCareerRecordSchema>;
 export type CareerRecordSort = z.infer<typeof CareerRecordSortSchema>;
 export type ListCareerRecordsQuery = z.infer<typeof ListCareerRecordsQuerySchema>;
@@ -303,7 +240,6 @@ export type CareerRecordListResponse = z.infer<
   typeof CareerRecordListResponseSchema
 >;
 export type UpdateCareerRecord = z.infer<typeof UpdateCareerRecordSchema>;
-export type CreateCareerView = z.infer<typeof CreateCareerViewSchema>;
 export type RecomputeCareerSkill = z.infer<typeof RecomputeCareerSkillSchema>;
 export type CareerSkill = z.infer<typeof CareerSkillSchema>;
 

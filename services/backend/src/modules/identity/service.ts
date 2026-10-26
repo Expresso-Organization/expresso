@@ -3,7 +3,7 @@ import {
   AUTH_MAIL_RESEND_INTERVAL_MS, EMAIL_VERIFICATION_TTL_MS, PASSWORD_RESET_TTL_MS, SESSION_POLICY, TERMS_VERSION,
   type AuthSession, type AuthenticatedUser, type IssuedIdentitySession, type Login, type PasswordResetConfirm, type SocialAuthSession,
 } from "@expresso/contracts";
-import { mongoCollections, type IdentityTokenDoc, type UserDoc } from "@expresso/database";
+import { defaultCareerCategories, mongoCollections, type IdentityTokenDoc, type UserDoc } from "@expresso/database";
 import type { ClientSession } from "mongodb";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction, type MongoTransaction } from "../../platform/mongo-transaction.js";
@@ -89,6 +89,7 @@ export class IdentityService implements IdentityApi {
           createdAt: new Date(), deletionRequestedAt: null, lifecycleVersion: 0, emailVerifiedAt: null, ...this.#terms(input.termsVersion),
         };
         await collections.users.insertOne(account, { session: tx.session });
+        await collections.careerCategories.insertMany(defaultCareerCategories(account._id, account.createdAt), { session: tx.session });
         return { user: await this.#user(account, tx.session), session: await this.#session(tx, { userId: account._id, persistent: input.persistent }) };
       });
     } catch (error) { if (duplicate(error)) throw new IdentityError(409, "email is already registered"); throw error; }
@@ -132,6 +133,7 @@ export class IdentityService implements IdentityApi {
           emailVerifiedAt: new Date(), ...this.#terms(TERMS_VERSION),
         };
         await collections.users.insertOne(account, { session: tx.session });
+        await collections.careerCategories.insertMany(defaultCareerCategories(account._id, account.createdAt), { session: tx.session });
         await collections.identityOauthAccounts.insertOne({ _id: randomUUID(), userId: account._id, provider: "google", providerAccountId: identity.subject, email: identity.email, linkedAt: new Date(), lastLoginAt: new Date() }, { session: tx.session });
         return { user: await this.#user(account, tx.session), session: await this.#session(tx, { userId: account._id, persistent }), created: true };
       });

@@ -36,10 +36,9 @@ function blockMap(blocks: CareerDocument["content"], map = new Map<string, Caree
   for (const block of blocks) { map.set(block.id, block); if (block.content) blockMap(block.content, map); }
   return map;
 }
-function definitionMap(category: { propertySchemaV2?: readonly { id: string; key: string; system: boolean; deletedAt: string | null }[] | undefined; propertySchema: Record<string, { id?: string | undefined; system: boolean }> }) {
+function definitionMap(category: { propertySchemaV2: readonly { id: string; key: string; system: boolean; deletedAt: string | null }[] }) {
   const map = new Map<string, { key: string; system: boolean }>();
-  if (category.propertySchemaV2) for (const definition of category.propertySchemaV2) if (definition.deletedAt === null) map.set(definition.id, { key: definition.key, system: definition.system });
-  else for (const [key, definition] of Object.entries(category.propertySchema)) if (definition.id) map.set(definition.id, { key, system: definition.system });
+  for (const definition of category.propertySchemaV2) if (definition.deletedAt === null) map.set(definition.id, { key: definition.key, system: definition.system });
   return map;
 }
 function toDetail(row: CareerAiProposalDoc): AiEditProposalDetail {
@@ -145,7 +144,7 @@ export class AiProposalService {
       await repository.insertUpdate({ _id: randomUUID(), recordId, userId, clientId: proposal._id, clientSequence: 1, serverSequence: nextVersion, update: new Binary(nextUpdate), byteLength: nextUpdate.byteLength, updateHash: hashUpdate(nextUpdate), actor: "ai", receivedAt: new Date(), compactedAt: null }, tx.session);
       update = { base64: Buffer.from(nextUpdate).toString("base64"), sequence: nextVersion };
       await repository.insertSnapshot({ _id: afterSnapshotId, userId, recordId, documentVersion: nextVersion, version: nextVersion, schemaVersion: 1, content: after as never, stateVector: new Binary(Buffer.from(encodeDocumentStateVector(after))), serverSequence: nextVersion, checksum: hashUpdate(encodeDocumentAsYUpdate(after)), actor: "ai", createdAt: new Date() }, tx.session);
-      const category = await db.careerCategories.findOne({ _id: record.categoryId, $or: [{ userId: null }, { userId }] }, { session: tx.session }); if (!category) throw new CareerDocumentError(404, "career category not found");
+      const category = await db.careerCategories.findOne({ _id: record.categoryId, userId }, { session: tx.session }); if (!category) throw new CareerDocumentError(404, "career category not found");
       const properties = { ...record.properties }; const definitions = definitionMap(category); const changedPropertyIds: string[] = [];
       for (const change of changes) { const definition = definitions.get(change.propertyId); if (!definition || definition.system || JSON.stringify(properties[definition.key] ?? null) !== JSON.stringify(change.previousValue)) throw new CareerDocumentError(409, "AI proposal property changed"); if (change.nextValue === null) delete properties[definition.key]; else properties[definition.key] = CareerPropertyValueV2Schema.parse(change.nextValue); changedPropertyIds.push(change.propertyId); }
       const propertyUpdated = await db.careerRecords.findOneAndUpdate({ _id: recordId, userId, documentVersion: nextVersion }, { $set: { properties, updatedAt: new Date() }, $inc: { version: 1 } }, { session: tx.session, returnDocument: "after" });
@@ -191,7 +190,7 @@ export class AiProposalService {
     if (!changes.length) return;
     const db = mongoCollections(this.context.db); const record = await db.careerRecords.findOne({ _id: recordId, userId, deletedAt: null });
     if (!record) throw new CareerDocumentError(404, "career record not found");
-    const category = await db.careerCategories.findOne({ _id: record.categoryId, $or: [{ userId: null }, { userId }] });
+    const category = await db.careerCategories.findOne({ _id: record.categoryId, userId });
     if (!category) throw new CareerDocumentError(404, "career category not found");
     const definitions = definitionMap(category);
     for (const change of changes) {

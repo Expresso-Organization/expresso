@@ -18,7 +18,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
   beforeAll(async () => {
     fixture = await createMongoFixture("careerai");
     const identity = new MongoIdentityService(fixture.resource); userId = (await identity.signup({ email: `ai-${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "AI" })).user.id; otherUserId = (await identity.signup({ email: `ai-other-${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "다른 AI" })).user.id;
-    const career = new CareerService(fixture.resource); categoryId = (await career.createCategory(userId, { key: `ai_${randomUUID().replaceAll("-", "")}`, name: "AI", icon: "folder", defaultView: "table", propertySchema: {} })).id;
+    const career = new CareerService(fixture.resource); categoryId = (await career.createCategory(userId, { key: `ai_${randomUUID().replaceAll("-", "")}`, name: "AI", icon: "folder", defaultView: "table" })).id;
     recordId = (await career.createRecord(userId, randomUUID(), { categoryId, title: "기록", properties: {}, bodyMd: "초기 본문" })).record.id;
     documentService = new CareerDocumentService(fixture.resource, "ai-test-secret");
     const adapter: AiProposalAdapter = { async generate(input) { return { summary: "문장 개선", commands: [{ type: "setText", blockId: input.selectionBlockIds[0]!, text: "AI 변경" }], propertyChanges: [] }; } };

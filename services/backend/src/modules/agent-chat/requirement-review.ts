@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { careerDocumentToMarkdown } from "@expresso/editor";
-import type { CareerDocumentBootstrap, CareerRecord, RequirementReview, RequirementReviewDraft } from "@expresso/contracts";
+import type { CareerDocumentBootstrap, CareerPropertyDefinitionV2, CareerRecord, RequirementReview, RequirementReviewDraft } from "@expresso/contracts";
+import { readableCareerProperties } from "../career/index.js";
 
 /**
  * 요건 대조의 근거 검증.
@@ -20,9 +21,9 @@ function propertyText(value: unknown): string[] {
   return [];
 }
 
-/** 에이전트가 읽고 인용하는 기록의 글. 대조 검증과 최신성 해시가 같은 글을 본다. */
-export function recordText(record: Pick<CareerRecord, "title" | "properties">, document: CareerDocumentBootstrap["document"]) {
-  return [record.title, careerDocumentToMarkdown(document), ...propertyText(record.properties)].filter(Boolean).join("\n\n");
+/** 에이전트가 읽고 인용하는 기록의 글. 대조 검증과 최신성 해시가 같은 글을 본다. 선택지는 이름으로 읽는다. */
+export function recordText(record: Pick<CareerRecord, "title" | "properties">, document: CareerDocumentBootstrap["document"], definitions: readonly CareerPropertyDefinitionV2[]) {
+  return [record.title, careerDocumentToMarkdown(document), ...propertyText(readableCareerProperties(record.properties, definitions))].filter(Boolean).join("\n\n");
 }
 
 /** 어긋난 항목을 사람이 읽을 문장으로 돌려준다. 비어 있으면 통과다. */

@@ -21,8 +21,7 @@ function definition(id: string, key: string, type: CareerPropertyDefinitionV2["t
 }
 
 const category: CareerCategory = {
-  id: ids.category, key: "view_test", name: "뷰", icon: "table", defaultView: "table", isSystem: false,
-  propertySchema: { score: { id: ids.score, label: "점수", type: "number", required: false, system: false } },
+  id: ids.category, key: "view_test", name: "뷰", icon: "table", defaultView: "table",
   propertySchemaV2: [
     definition(ids.title, "title", "title", 0), definition(ids.score, "score", "number", 1),
     definition(ids.tag, "tag", "multi_select", 2), definition(ids.date, "date", "date", 3),
@@ -83,13 +82,6 @@ describe("career saved view pipeline compiler", () => {
     expect(() => new CareerViewQuery().compile(category, view({ filter: { propertyId: ids.score, operator: "eq", operand: { type: "text", value: "1" } } }))).toThrow(/operand type/);
   });
 
-  it("maps migrated legacy property IDs when v2 definitions are not materialized yet", () => {
-    const legacyCategory = { ...category, propertySchemaV2: undefined };
-    expect(new CareerViewQuery().compile(legacyCategory, view({
-      visiblePropertyIds: [ids.score], propertyOrder: [ids.score], groupPropertyId: null,
-      gallery: null, board: null, filter: { propertyId: ids.score, operator: "gte", operand: { type: "number", value: 0 } },
-    })).projectionKeys).toEqual(["score"]);
-  });
 
   it("queries user-defined timestamps from properties and system timestamps from record metadata", () => {
     const custom = new CareerViewQuery().compile(category, view({ sorts: [{ propertyId: ids.customTime, direction: "asc", nulls: "last" }], visiblePropertyIds: [ids.customTime], propertyOrder: [ids.customTime], groupPropertyId: null, gallery: null, board: null }));

@@ -27,7 +27,6 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     formulaId = randomUUID();
     const category = await service.createCategory(userId, {
       key: `schema_${randomUUID().replaceAll("-", "")}`, name: "스키마", icon: "folder", defaultView: "table",
-      propertySchema: { score: { id: propertyId, label: "점수", type: "text", required: false, system: false } },
     });
     categoryId = category.id;
     const db = mongoCollections(fixture.resource.db);
@@ -36,8 +35,8 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
       { id: formulaId, key: "formula", name: "수식", type: "formula", required: false, system: false, config: { source: `prop("${propertyId}")`, ast: { expression: { propertyId } }, diagnostics: [] }, order: 1, version: 1, deletedAt: null },
       { id: randomUUID(), key: "rollup", name: "롤업", type: "rollup", required: false, system: false, config: { targetPropertyId: propertyId }, order: 2, version: 1, deletedAt: null },
     ] } });
-    const first = await service.createRecord(userId, randomUUID(), { categoryId, title: "첫째", properties: { score: "42" }, bodyMd: "" });
-    const second = await service.createRecord(userId, randomUUID(), { categoryId, title: "둘째", properties: { score: "7" }, bodyMd: "" });
+    const first = await service.createRecord(userId, randomUUID(), { categoryId, title: "첫째", properties: { score: { type: "text", value: "42" } }, bodyMd: "" });
+    const second = await service.createRecord(userId, randomUUID(), { categoryId, title: "둘째", properties: { score: { type: "text", value: "7" } }, bodyMd: "" });
     recordIds = [first.record.id, second.record.id];
     await db.careerViews.insertOne({ _id: randomUUID(), userId, categoryId, name: "점수 보기", viewType: "table", filters: [], sorts: [], visibleProperties: [propertyId], sortOrder: 0, createdAt: new Date() });
   }, 60_000);
@@ -93,5 +92,26 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const rows = await mongoCollections(fixture.resource.db).careerRecords.find({ _id: { $in: recordIds } }).toArray();
     expect(rows.map((row) => row.properties.score)).toEqual(expect.arrayContaining([{ type: "number", value: 7 }, { type: "number", value: 42 }]));
     expect(rows.every((row) => row.propertyValueTombstones?.[propertyId] === undefined)).toBe(true);
+  });
+
+  it("lets each owner change their default categories and add options without touching another user", async () => {
+    const mine = (await service.listCategories(userId)).find((category) => category.key === "project")!;
+    const theirs = (await service.listCategories(otherUserId)).find((category) => category.key === "project")!;
+    expect(mine.id).not.toBe(theirs.id);
+    const create = { kind: "create" as const, property: { key: "client", name: "고객사", type: "text" as const, required: false, system: false, config: {} } };
+    const created = await service.applyChange(userId, mine.id, mine.version, randomUUID(), { change: create, previewToken: (await service.previewChange(userId, mine.id, create)).previewToken, confirmLossy: false });
+    expect(created.propertySchemaV2.some((item) => item.key === "client")).toBe(true);
+    expect((await service.listCategories(otherUserId)).find((category) => category.id === theirs.id)!.propertySchemaV2.some((item) => item.key === "client")).toBe(false);
+
+    const technologies = created.propertySchemaV2.find((item) => item.key === "technologies")!;
+    const option = { id: randomUUID(), name: "Rust" };
+    const configure = { kind: "configure" as const, propertyId: technologies.id, config: { options: [option] } };
+    const configured = await service.applyChange(userId, mine.id, created.version, randomUUID(), { change: configure, previewToken: (await service.previewChange(userId, mine.id, configure)).previewToken, confirmLossy: false });
+    expect(configured.propertySchemaV2.find((item) => item.id === technologies.id)!.config).toEqual({ options: [option] });
+    const removal = { kind: "configure" as const, propertyId: technologies.id, config: { options: [] } };
+    await expect(service.applyChange(userId, mine.id, configured.version, randomUUID(), { change: removal, previewToken: (await service.previewChange(userId, mine.id, removal)).previewToken, confirmLossy: false })).rejects.toMatchObject({ statusCode: 409 });
+    const record = await service.createRecord(userId, randomUUID(), { categoryId: mine.id, title: "칩", properties: { technologies: { type: "multi_select", value: [option.id] } }, bodyMd: "" });
+    expect(record.record.properties.technologies).toEqual({ type: "multi_select", value: [option.id] });
+    await expect(service.createRecord(otherUserId, randomUUID(), { categoryId: mine.id, title: "남의 카테고리", properties: {}, bodyMd: "" })).rejects.toMatchObject({ statusCode: 404 });
   });
 });

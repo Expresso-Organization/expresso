@@ -1,55 +1,24 @@
 import type {
   CareerProperties,
   CareerPropertyDefinitionV2,
-  CareerPropertySchema,
 } from "@expresso/contracts";
 import { CareerPropertyValueV2Schema } from "@expresso/contracts";
 
 import { CareerError } from "./errors.js";
 
-const MONTH_VALUE = /^\d{4}-(0[1-9]|1[0-2])$/;
-
+/** 값마다 카테고리의 살아 있는 정의가 있고 타입이 맞는지 본다. 계산 속성은 쓸 수 없다. */
 export function validateCareerProperties(
-  schema: CareerPropertySchema,
+  definitions: readonly CareerPropertyDefinitionV2[],
   properties: CareerProperties,
-  schemaV2: readonly CareerPropertyDefinitionV2[] = [],
 ): void {
   for (const [key, value] of Object.entries(properties)) {
-    const definition = schema[key];
-    const definitionV2 = schemaV2.find((item) => item.key === key && item.deletedAt === null);
-    if (!definition && !definitionV2) {
-      throw new CareerError(400, `unknown category property: ${key}`);
-    }
-
-    const parsedV2 = CareerPropertyValueV2Schema.safeParse(value);
-    if (parsedV2.success) {
-      if (!definitionV2 || parsedV2.data.type !== definitionV2.type) throw new CareerError(400, `invalid value for category property: ${key}`);
-      const protectedTime = ["created_time", "updated_time"].includes(definitionV2.type) && definitionV2.system;
-      if (["formula", "rollup"].includes(definitionV2.type) || protectedTime) throw new CareerError(400, `computed category property is read-only: ${key}`);
-      continue;
-    }
-
-    if (!definition) throw new CareerError(400, `v2 value is required for category property: ${key}`);
-    const valid = definition.type === "text"
-      ? typeof value === "string"
-      : definition.type === "number"
-        ? typeof value === "number" && Number.isFinite(value)
-        : definition.type === "boolean"
-          ? typeof value === "boolean"
-          : definition.type === "tags"
-            ? Array.isArray(value) && value.every((item) => typeof item === "string")
-            : typeof value === "string" && MONTH_VALUE.test(value);
-    if (!valid) {
-      throw new CareerError(400, `invalid value for category property: ${key}`);
-    }
+    const definition = definitions.find((item) => item.key === key && item.deletedAt === null);
+    if (!definition) throw new CareerError(400, `unknown category property: ${key}`);
+    if (value.type !== definition.type) throw new CareerError(400, `invalid value for category property: ${key}`);
+    const protectedTime = ["created_time", "updated_time"].includes(definition.type) && definition.system;
+    if (["formula", "rollup"].includes(definition.type) || protectedTime) throw new CareerError(400, `computed category property is read-only: ${key}`);
   }
-
-  for (const [key, definition] of Object.entries(schema)) {
-    if (definition.required && !Object.hasOwn(properties, key)) {
-      throw new CareerError(400, `required category property is missing: ${key}`);
-    }
-  }
-  for (const definition of schemaV2) {
+  for (const definition of definitions) {
     if (definition.required && definition.deletedAt === null && !Object.hasOwn(properties, definition.key)) throw new CareerError(400, `required category property is missing: ${definition.key}`);
   }
 }

@@ -148,23 +148,11 @@ function retryNote(error: unknown): string {
 }
 
 /**
- * 정리본을 `record.properties`로 편다.
+ * 정리본이 바꾼 칸의 이름. 04c 변경 요약이 이 배열을 그대로 쓴다.
  *
- * null과 빈 배열은 넣지 않는다 — 카테고리가 선언한 자리라도 **비어 있는 값을
- * 저장하면 "없다"와 "안 물어봤다"가 구분되지 않는다.**
+ * 정리는 제목과 역량만 기록에 쓴다. STAR와 수치는 속성으로 만들지 않는다 —
+ * 그 칸들은 카테고리가 기획한 속성이 아니고, 본문 정리는 따로 다룬다.
  */
-export function cleanupProperties(cleanup: RecordCleanup): Record<string, unknown> {
-  const properties: Record<string, unknown> = {};
-  for (const key of RECORD_STAR_KEYS) {
-    const value = cleanup[key];
-    if (value) properties[key] = value;
-  }
-  if (cleanup.metrics.length > 0) properties["metrics"] = cleanup.metrics;
-  if (cleanup.competencies.length > 0) properties["competencies"] = cleanup.competencies;
-  return properties;
-}
-
-/** 정리본이 채운 칸의 이름. 04c 변경 요약이 이 배열을 그대로 쓴다. */
-export function cleanupChangedFields(cleanup: RecordCleanup): string[] {
-  return ["title", "body_md", ...Object.keys(cleanupProperties(cleanup))];
+export function cleanupChangedFields(competenciesWritten: boolean): string[] {
+  return ["title", "body_md", ...(competenciesWritten ? ["competencies"] : [])];
 }

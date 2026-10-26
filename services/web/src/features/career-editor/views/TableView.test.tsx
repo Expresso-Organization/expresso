@@ -9,7 +9,7 @@ import { TableView } from "./TableView";
 const ids = Array.from({ length: 6 }, (_, index) => `00000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`);
 const [categoryId, titleId, roleId, outcomeId, technologiesId, scoreId] = ids as [string, string, string, string, string, string];
 const category: CareerCategory = {
-  id: categoryId, key: "project", name: "프로젝트", icon: "briefcase", defaultView: "table", isSystem: true, propertySchema: {}, schemaVersion: 1, sortOrder: 0, recordCount: 2, version: 1,
+  id: categoryId, key: "project", name: "프로젝트", icon: "briefcase", defaultView: "table", schemaVersion: 1, sortOrder: 0, recordCount: 2, version: 1,
   propertySchemaV2: [
     { id: titleId, key: "title", name: "제목", type: "title", required: true, system: true, config: {}, order: 0, version: 1, deletedAt: null },
     { id: roleId, key: "role", name: "역할", type: "text", required: false, system: false, config: {}, order: 1, version: 1, deletedAt: null },
@@ -128,7 +128,7 @@ describe("TableView", () => {
   });
 
   it("renames a custom property through preview and apply", async () => {
-    const editableCategory = { ...category, isSystem: false };
+    const editableCategory = { ...category };
     const renamed = { ...editableCategory, version: 2, propertySchemaV2: editableCategory.propertySchemaV2?.map((item) => item.id === roleId ? { ...item, name: "담당 역할", version: 2 } : item) };
     const onCategoryChange = vi.fn();
     vi.stubGlobal("fetch", vi.fn()
@@ -144,7 +144,7 @@ describe("TableView", () => {
 
   it("resizes the implicit title column in a custom category", () => {
     const onViewChange = vi.fn();
-    const customCategory = { ...category, isSystem: false, propertySchemaV2: category.propertySchemaV2?.filter((item) => item.id !== titleId) };
+    const customCategory = { ...category, propertySchemaV2: category.propertySchemaV2?.filter((item) => item.id !== titleId) };
     const customView = { ...view, visiblePropertyIds: view.visiblePropertyIds.filter((id) => id !== titleId), propertyOrder: view.propertyOrder.filter((id) => id !== titleId) };
     render(<TableView records={records} view={customView} category={customCategory} activeId={records[0]!.id} openId={null} selectedIds={new Set()} onActivate={() => undefined} onCreate={() => undefined} onFillMissing={() => undefined} onToggle={() => undefined} onViewChange={onViewChange} onCategoryChange={() => undefined} />);
     fireEvent.keyDown(screen.getByRole("separator", { name: "제목 열 너비 조절" }), { key: "ArrowLeft" });

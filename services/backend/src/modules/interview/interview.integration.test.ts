@@ -121,6 +121,25 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB interview integration", 
     expect((await career.getRecord(userId, answer.answer.createdRecordId))).toMatchObject({ title: "배포 절차 문서화", status: "organized" });
     expect(await mongoCollections(fixture.resource.db).answerRecordChanges.countDocuments({ userId, answerId: answer.answer.id })).toBe(1);
   });
+
+  it("writes only the title and competency chips, leaving the other properties alone", async () => {
+    const db = mongoCollections(fixture.resource.db);
+    const questionId = (await service.getSession(userId, sessionId)).questions[1]!.id;
+    const answer = (await db.answers.findOne({ userId, questionId }))!;
+    const period = { type: "date" as const, value: { start: "2024-01-01", end: null, timezone: null } };
+    await db.careerRecords.updateOne({ _id: answer.createdRecordId! }, { $set: { "properties.period": period } });
+    const cleanup = new MongoInterviewService(fixture.resource, null, { async clean() { return { title: "장애 원인 추적", situation: "상황", task: null, action: "행동", result: null, metrics: ["3회"], competencies: ["원인 분석", "협업"] }; } });
+    await cleanup.cleanupAnswer(userId, answer._id);
+    const record = (await db.careerRecords.findOne({ _id: answer.createdRecordId! }))!;
+    const category = (await db.careerCategories.findOne({ _id: record.categoryId, userId }))!;
+    const competencies = category.propertySchemaV2.find((definition) => definition.key === "competencies")!;
+    const names = new Map((competencies.config.options as { id: string; name: string }[]).map((option) => [option.id, option.name]));
+    expect(record.title).toBe("장애 원인 추적");
+    expect(record.properties.period).toEqual(period);
+    expect(Object.keys(record.properties).sort()).toEqual(["competencies", "period"]);
+    expect((record.properties.competencies as { value: string[] }).value.map((id) => names.get(id))).toEqual(["원인 분석", "협업"]);
+    expect((await db.answerRecordChanges.findOne({ userId, answerId: answer._id }))?.changedFields).toEqual(["title", "body_md", "competencies"]);
+  });
 });
 
 const databaseUrl = process.env.TEST_DATABASE_URL;

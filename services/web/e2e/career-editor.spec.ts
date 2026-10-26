@@ -85,7 +85,7 @@ test("creates, edits, reloads, reconnects and reviews AI changes across side pee
 test("renders every property family, five saved views and relation hydration", async ({ page }) => {
   await login(page);
   const key = `e2e_properties_${randomUUID().replaceAll("-", "")}`;
-  const created = await api<{ data: { id: string; version: number } }>(page, "POST", "/v1/career/categories", { key, name: "E2E 속성", icon: "folder", defaultView: "table", propertySchema: {} });
+  const created = await api<{ data: { id: string; version: number } }>(page, "POST", "/v1/career/categories", { key, name: "E2E 속성", icon: "folder", defaultView: "table" });
   const category = { id: created.data.id, version: created.data.version };
   const ids = Object.fromEntries(["text", "number", "select", "multi_select", "date", "checkbox", "url", "email", "phone", "file", "media", "relation", "formula", "rollup", "created_time", "updated_time"].map((type) => [type, randomUUID()]));
   const option = randomUUID();
@@ -130,4 +130,36 @@ test("renders every property family, five saved views and relation hydration", a
   await propertyPopover.getByRole("option", { name: "텍스트", exact: true }).click();
   await expect(propertyList.getByText("팝오버 생성 속성", { exact: true })).toBeVisible();
   await expect(propertyPopover).toBeHidden();
+});
+
+test("adds a property and a new chip to the owner's default category", async ({ page }) => {
+  await login(page);
+  const experience = (await categories(page)).find((item) => item.key === "experience")!;
+  const record = await createRecord(page, experience.id, "E2E 역량 칩");
+  await page.goto("/career/experience");
+  await openRecordDrawer(page, "E2E 역량 칩");
+  const propertyList = page.getByLabel("문서 속성");
+  // 같은 이름이 이미 있으면 그 옵션을 고른다. 시각 비교가 같은 화면을 보도록 이름을 고정한다.
+  const chipName = "협업";
+  const saved = page.waitForResponse((response) => response.url().includes("/api/career/records/") && response.request().method() === "PATCH" && response.ok());
+  await propertyList.getByLabel("역량 새 항목", { exact: true }).fill(chipName);
+  await propertyList.getByLabel("역량 새 항목", { exact: true }).press("Enter");
+  await saved;
+  await expect(propertyList.getByLabel(chipName, { exact: true })).toBeChecked();
+  await page.reload();
+  await openRecordDrawer(page, "E2E 역량 칩");
+  await expect(page.getByLabel("문서 속성").getByLabel(chipName, { exact: true })).toBeChecked();
+
+  await page.getByLabel("문서 속성").getByRole("button", { name: "속성 추가", exact: true }).click();
+  const propertyPopover = page.getByLabel("속성 추가", { exact: true });
+  await propertyPopover.getByLabel("속성 이름", { exact: true }).fill("기본 카테고리 속성");
+  await propertyPopover.getByRole("option", { name: "텍스트", exact: true }).click();
+  await expect(page.getByLabel("문서 속성").getByText("기본 카테고리 속성", { exact: true })).toBeVisible();
+  // 시각 비교는 빈 경험 카테고리에서 새 기록을 만든다. 이 테스트의 기록과 속성은 치운다.
+  await api(page, "DELETE", `/v1/career/records/${record.id}`);
+  const current = (await categories(page)).find((item) => item.key === "experience")!;
+  const added = current.propertySchemaV2.find((item) => item.name === "기본 카테고리 속성")!;
+  const deletion = { kind: "delete", propertyId: added.id };
+  const preview = await api<{ data: { previewToken: string } }>(page, "POST", `/v1/career/categories/${current.id}/property-schema/preview`, deletion);
+  await api(page, "POST", `/v1/career/categories/${current.id}/property-schema/apply`, { change: deletion, previewToken: preview.data.previewToken, confirmLossy: true }, { "if-match": `"v${current.version}"`, "idempotency-key": `e2e-${randomUUID()}` });
 });
