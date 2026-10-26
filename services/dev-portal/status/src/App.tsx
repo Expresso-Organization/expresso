@@ -10,7 +10,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { AppSidebar } from "@/components/status/app-sidebar"
 import { ActivityChart, DomainProgress, TrendChart } from "@/components/status/charts"
-import { ListTabs } from "@/components/status/data-table"
+import { DetailSheet, ListTabs, featureDetail, type Detail } from "@/components/status/data-table"
+import { Burndown, PlanTimeline, ScopeMap, Workload } from "@/components/status/scope"
 import { SectionCards } from "@/components/status/section-cards"
 import { TeamTodos } from "@/components/status/todos"
 import { useView, type View } from "@/lib/route"
@@ -82,9 +83,10 @@ function Dashboard({ data, view, setView }: { data: Data; view: View; setView: (
   const all = useMemo(() => toRows(report), [report])
   const rows = member ? all.filter((r) => r.owner === member.name) : all
   const groups = member ? member.groups : report.groups.map((g) => g.id)
-  const week = semesterWeek(report.semester.week2Start)
+  const week = semesterWeek(report.semester.week2Start, new Date(data.loadedAt))
   const lastRun = runs.at(-1)
   const pickMember = (name: string | null) => setView({ member: name, group: null })
+  const [detail, setDetail] = useState<Detail | null>(null)
   const toList = (patch: Partial<View>) => {
     setView({ tab: "features", state: null, changed: false, q: "", ...patch })
     document.getElementById("list")?.scrollIntoView({ behavior: "smooth", block: "start" })
@@ -129,6 +131,17 @@ function Dashboard({ data, view, setView }: { data: Data; view: View; setView: (
             <TeamTodos data={data} member={member?.name ?? null} onMember={pickMember} />
           </section>
 
+          <section id="scope" className="grid scroll-mt-16 grid-cols-1 gap-4 @5xl/main:grid-cols-3">
+            <div className="@5xl/main:col-span-2">
+              <ScopeMap data={data} rows={rows} onPick={(row) => setDetail(featureDetail(row, report))} />
+            </div>
+            <Workload data={data} rows={all} member={member?.name ?? null} onMember={pickMember} />
+            <div className="grid grid-cols-1 gap-4 @5xl/main:col-span-3 @5xl/main:grid-cols-2">
+              <Burndown data={data} rows={rows} member={member?.name ?? null} />
+              <PlanTimeline data={data} member={member?.name ?? null} />
+            </div>
+          </section>
+
           <section id="progress" className="grid scroll-mt-16 grid-cols-1 gap-4 @5xl/main:grid-cols-2">
             <DomainProgress data={data} rows={rows} groups={groups} onPick={(group) => toList({ group })} />
             <TrendChart data={data} groups={groups} />
@@ -139,7 +152,7 @@ function Dashboard({ data, view, setView }: { data: Data; view: View; setView: (
           </section>
 
           <section id="list" className="scroll-mt-16">
-            <ListTabs data={data} rows={rows} view={{ ...view, member: member?.name ?? null }} setView={setView} />
+            <ListTabs data={data} rows={rows} view={{ ...view, member: member?.name ?? null }} setView={setView} onDetail={setDetail} />
           </section>
 
           <footer className="pb-2 text-xs text-muted-foreground">
@@ -147,6 +160,7 @@ function Dashboard({ data, view, setView }: { data: Data; view: View; setView: (
             전체 판정 {ago(report.scan.fullAt)} · main {report.main.commit}
           </footer>
         </div>
+        <DetailSheet detail={detail} onClose={() => setDetail(null)} />
       </SidebarInset>
     </SidebarProvider>
   )
