@@ -1,0 +1,103 @@
+/* 색 · 글꼴의 출처는 제품 웹의 토큰 한 곳입니다. shadcn 변수는 그 역할 토큰에 대응만 합니다.
+   대응표는 services/web/src/styles/agent-chat-framework.css 와 같습니다. */
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "../../../web/src/styles/tokens.css";
+
+/* 포털 테마는 html[data-theme] 로 옵니다(포털 설정 expresso_portal_theme_v1). */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme inline {
+  --font-sans: var(--ex-font-ui);
+  --font-heading: var(--ex-font-ui);
+  --font-mono: var(--ex-font-mono);
+  --font-brand: var(--ex-font-brand);
+  --color-background: var(--ex-bg-sunken);
+  --color-foreground: var(--ex-fg);
+  --color-card: var(--ex-bg);
+  --color-card-foreground: var(--ex-fg);
+  --color-popover: var(--ex-bg);
+  --color-popover-foreground: var(--ex-fg);
+  --color-primary: var(--ex-fg);
+  --color-primary-foreground: var(--ex-bg);
+  --color-secondary: var(--ex-bg-tint);
+  --color-secondary-foreground: var(--ex-fg);
+  --color-muted: var(--ex-bg-tint);
+  --color-muted-foreground: var(--ex-fg-muted);
+  --color-accent: var(--ex-bg-tint);
+  --color-accent-foreground: var(--ex-fg);
+  --color-destructive: var(--ex-status-danger-text);
+  --color-border: var(--ex-border);
+  --color-input: var(--ex-border);
+  --color-ring: var(--ex-fg-subtle);
+  --color-success: var(--ex-status-success-text);
+  --color-success-surface: var(--ex-status-success-surface);
+  --color-warning: var(--ex-status-warning-text);
+  --color-warning-surface: var(--ex-status-warning-surface);
+  --color-signature: var(--ex-accent);
+  /* 차트 색은 아래 :root 의 --viz-* 에서 옵니다(테마별 값). */
+  --color-chart-1: var(--viz-done);
+  --color-chart-2: var(--viz-partial);
+  --color-chart-3: var(--viz-api);
+  --color-chart-4: var(--viz-todo);
+  --color-series-1: var(--viz-1);
+  --color-series-2: var(--viz-2);
+  --color-series-3: var(--viz-3);
+  --color-series-4: var(--viz-4);
+  --color-series-5: var(--viz-5);
+  --color-sidebar: var(--ex-bg);
+  --color-sidebar-foreground: var(--ex-fg);
+  --color-sidebar-primary: var(--ex-fg);
+  --color-sidebar-primary-foreground: var(--ex-bg);
+  --color-sidebar-accent: var(--ex-bg-tint);
+  --color-sidebar-accent-foreground: var(--ex-fg);
+  --color-sidebar-border: var(--ex-border);
+  --color-sidebar-ring: var(--ex-fg-subtle);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* 데이터 시각화 색 — 디자인 시스템 표에서 벗어난다. 토큰의 무채색 · 갈색 계열로는 판정 넷과
+   계정 여럿이 한눈에 갈리지 않아, 사용자 요청(2026-10-25 「차트는 색을 더 자유롭게」)에 따라
+   이 대시보드의 차트에만 쓴다. 판정은 뜻이 읽히는 색(완료 초록 · 부분 주황 · API만 파랑 · 미구현 분홍)이다. */
+:root {
+  --radius: 0.625rem;
+  --viz-done: oklch(0.68 0.16 155);
+  --viz-partial: oklch(0.76 0.16 70);
+  --viz-api: oklch(0.65 0.15 245);
+  --viz-todo: oklch(0.7 0.14 10);
+  --viz-1: oklch(0.6 0.2 265);
+  --viz-2: oklch(0.7 0.16 195);
+  --viz-3: oklch(0.72 0.17 55);
+  --viz-4: oklch(0.65 0.22 330);
+  --viz-5: oklch(0.7 0.17 140);
+}
+[data-theme="dark"] {
+  --viz-done: oklch(0.74 0.15 155);
+  --viz-partial: oklch(0.8 0.15 70);
+  --viz-api: oklch(0.72 0.14 245);
+  --viz-todo: oklch(0.74 0.13 10);
+  --viz-1: oklch(0.7 0.17 265);
+  --viz-2: oklch(0.78 0.13 195);
+  --viz-3: oklch(0.78 0.15 55);
+  --viz-4: oklch(0.72 0.19 330);
+  --viz-5: oklch(0.78 0.15 140);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  html {
+    @apply font-sans;
+  }
+}
