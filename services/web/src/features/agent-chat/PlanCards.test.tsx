@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AgentPlanDraft, AgentReplanDraft, PreparationPlan } from "@expresso/contracts";
 import { PlanDraftCard } from "./PlanDraftCard";
 import { PlanCard } from "./PlanCard";
@@ -11,7 +11,10 @@ const settings = { weeklyHours: 1, weeks: 4, startDate: "2026-10-19" };
 const tasks = ["learn", "project"].map((kind, index) => ({ id: id(10 + index), gapId: id(9), requirement: "Kubernetes 운영", kind: kind as "learn", week: index + 1, date: ["2026-10-19", "2026-10-26"][index]!, minutes: 60, title: `작업 ${index + 1}`, action: "할 일", deliverable: "결과물" }));
 const draft: AgentPlanDraft = { draftId: id(1), jobPostingId: id(2), title: "Kubernetes 준비", summary: "요약", settings, tasks, status: "ready", planId: null };
 const plan: PreparationPlan = { id: id(1), conversationId: id(3), jobPostingId: id(2), title: "Kubernetes 준비", summary: "요약", settings, version: 2, scheduleVersion: 1, createdAt: "2026-10-15T00:00:00.000Z", updatedAt: "2026-10-15T00:00:00.000Z", tasks: tasks.map(task => ({ ...task, status: "not_started" as const, note: "", outcome: "", outcomeUrl: "", spentMinutes: 0, updatedAt: "2026-10-15T00:00:00.000Z" })) };
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+// 계획 카드는 오늘이 든 주만 펼친다. 오늘을 첫째 주(10-19 주) 안에 고정한다.
+// 가짜 타이머 없이 부르면 Date만 고정되어 findBy · waitFor는 실제 시간으로 돈다. 한낮(UTC)이라 어느 시간대에서도 10-21이다.
+beforeEach(() => { vi.setSystemTime("2026-10-21T12:00:00Z"); });
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.useRealTimers(); });
 
 describe("준비 계획 초안 카드", () => {
   it("주차별 작업을 보이고, 대화상자에서 고친 작업 문구로 승인한다", async () => {

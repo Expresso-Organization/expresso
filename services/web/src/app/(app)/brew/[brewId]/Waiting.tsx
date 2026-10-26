@@ -23,6 +23,7 @@ export function Waiting({
   actionLabel,
   rejectedNote,
   brewId,
+  basisJobId,
 }: {
   title: string;
   note: string;
@@ -32,6 +33,8 @@ export function Waiting({
   /** 입력이 모자라 거절됐을 때 무엇을 하면 되는지(§13 — 에러는 다음 행동으로 끝난다). */
   rejectedNote: string;
   brewId: string;
+  /** 화면이 마지막으로 본 잡. 다시 누르면 이것을 기준으로 새 잡이 돈다. */
+  basisJobId: string | null;
 }) {
   const running = job?.status === "queued" || job?.status === "running";
   const failed = job?.status === "failed";
@@ -75,6 +78,7 @@ export function Waiting({
         {running ? null : (
           <form action={action}>
             <input type="hidden" name="brewId" value={brewId} />
+            {basisJobId ? <input type="hidden" name="basisJobId" value={basisJobId} /> : null}
             <button type="submit" className={styles.primary}>{actionLabel}</button>
           </form>
         )}

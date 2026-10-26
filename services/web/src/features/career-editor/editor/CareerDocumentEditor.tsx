@@ -3,7 +3,6 @@ import { AgentChat } from "@/features/agent-chat/AgentChat";
 
 import { EditorContent, useEditor } from "@tiptap/react";
 import type { CareerCategory, CareerPropertyDefinitionV2, CareerRecordListItem } from "@expresso/contracts";
-import { markdownToCareerDocument } from "@expresso/editor";
 import { useEffect, useRef, useState } from "react";
 
 import { useCareerEditorSession } from "../session/useCareerEditorSession";
@@ -30,8 +29,8 @@ type CareerDocumentEditorProps = {
 
 export function CareerDocumentEditor(props: CareerDocumentEditorProps) {
   const session = useCareerEditorSession(props.recordId);
-  // 문서 세션이 없는 기록은 편집기 대신 기존 본문을 읽기 전용으로 보여 줍니다.
-  if (session.snapshot.status === "unavailable") return <CareerDocumentReadOnly mode={props.mode} {...(props.record ? { record: props.record } : {})} {...(props.category ? { category: props.category } : {})} />;
+  // 문서 bootstrap의 404는 서버가 이 계정에서 기록을 찾지 못했다는 뜻입니다.
+  if (session.snapshot.status === "unavailable") return <section className={styles.editor} data-mode={props.mode} aria-label="커리어 문서"><div className={styles.content}><p className={styles.notice}>이 기록을 찾을 수 없습니다. 삭제되었거나 다른 계정의 기록입니다.</p></div></section>;
   return <CareerDocumentEditorBody {...props} session={session} />;
 }
 
@@ -100,27 +99,6 @@ function CareerDocumentEditorBody({
       </div>
       <AgentChat context={{ kind: "record", id: recordId }} contextLabel="현재 기록" />
       {showAiProposal ? <details open={aiRequest != null}><summary>선택 영역 빠른 편집</summary><AiProposalPanel recordId={recordId} documentVersion={snapshot.documentVersion} selectedBlockIds={selectedBlockIds(editor, document.content[0]?.id)} announcedProposal={snapshot.proposal} requestedPrompt={aiRequest} onRequestHandled={() => setAiRequest(null)} document={document} definitions={category ? categoryDefinitions(category) : []} /></details> : null}
-    </section>
-  );
-}
-
-/** v2 문서 세션 없이 기록의 속성과 기존 Markdown 본문을 보여 줍니다. 본문은 고칠 수 없고 속성은 기존 기록 API로 저장됩니다. */
-export function CareerDocumentReadOnly({ mode, record, category }: { mode: "peek" | "page"; record?: CareerRecordListItem; category?: CareerCategory }) {
-  const bodyMd = record?.bodyMd ?? "";
-  const editor = useEditor({
-    immediatelyRender: false,
-    editable: false,
-    extensions: careerEditorExtensions,
-    content: careerDocumentToTiptap(markdownToCareerDocument(bodyMd)),
-    editorProps: { attributes: { "aria-label": "커리어 기록 본문" } },
-  }, [bodyMd]);
-  return (
-    <section className={styles.editor} data-mode={mode} aria-label="커리어 문서">
-      {record && category ? <PropertyList record={record} definitions={categoryDefinitions(category)} categoryId={category.id} schemaMutable={!category.isSystem} /> : null}
-      <div className={styles.content}>
-        <p className={styles.notice}>문서 편집기가 꺼져 있어 본문을 읽기만 할 수 있습니다.</p>
-        {bodyMd.trim() && editor ? <EditorContent editor={editor} /> : null}
-      </div>
     </section>
   );
 }
