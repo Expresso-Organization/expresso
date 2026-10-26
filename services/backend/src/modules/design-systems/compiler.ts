@@ -11,6 +11,12 @@ import {
   type ReferenceLock,
   type TokenRole,
 } from "@expresso/contracts";
+import {
+  COLOR_NAMES,
+  contrastRatio,
+  cssVariables,
+  fontLink,
+} from "@expresso/portfolio-renderer";
 
 const SAMPLE_ENTRIES: DesignSampleEntry[] = [
   { kind: "hero", label: "Hero", value: "신뢰를 만드는 제품과 시스템을 설계합니다." },
@@ -25,18 +31,6 @@ const SAMPLE_ENTRIES: DesignSampleEntry[] = [
   { kind: "link-contact", label: "연락 행동", value: "hello@example.com" },
   { kind: "footer", label: "Footer", value: "관찰하고, 설계하고, 검증한 작업" },
 ];
-
-const COLOR_NAMES = [
-  "canvas",
-  "surface",
-  "elevated",
-  "text",
-  "muted",
-  "border",
-  "accent",
-  "action",
-  "actionText",
-] as const;
 
 function normalizeLine(value: string): string {
   return value.replace(/\s+/g, " ").trim();
@@ -252,25 +246,6 @@ function escapeHtml(value: string): string {
     .replace(/'/g, "&#39;");
 }
 
-/**
- * WCAG 2.1 상대 휘도. 문서가 적는 명암비를 주장이 아니라 계산으로 만들기 위해 쓴다.
- * 임계값 0.03928은 WCAG 2.1 「relative luminance」 정의를 그대로 따른다.
- */
-function relativeLuminance(hex: string): number {
-  const channels = [1, 3, 5].map((index) => {
-    const channel = Number.parseInt(hex.slice(index, index + 2), 16) / 255;
-    return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
-  });
-  return 0.2126 * channels[0]! + 0.7152 * channels[1]! + 0.0722 * channels[2]!;
-}
-
-/** 두 색 토큰의 명암비. 계약이 6자리 16진값만 허용하므로 언제나 계산할 수 있다. */
-function contrastRatio(foreground: string, background: string): number {
-  const first = relativeLuminance(foreground);
-  const second = relativeLuminance(background);
-  return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
-}
-
 /** WCAG 2.1 본문 기준. 3:1은 큰 글자에만 통과하므로 따로 적는다. */
 function contrastLevel(ratio: number): string {
   if (ratio >= 7) return "AAA";
@@ -483,71 +458,6 @@ function avatar(index: number, large = false): string {
  * 확인했다. 없는 굵기를 섞어 요청하면 응답이 오류가 되어 서체가 통째로 빠진다.
  * Anton · Archivo Black · Poiret One · Abril Fatface 는 한 굵기뿐이라 축을 뺀다.
  */
-const WEB_FONTS: Record<string, string> = {
-  "Abril Fatface": "Abril+Fatface",
-  Anton: "Anton",
-  Archivo: "Archivo:wght@400;500;600;700",
-  "Archivo Black": "Archivo+Black",
-  Caveat: "Caveat:wght@400;500;600;700",
-  Chivo: "Chivo:wght@400;500;600;700",
-  "Cormorant Garamond": "Cormorant+Garamond:wght@400;500;600;700",
-  "EB Garamond": "EB+Garamond:wght@400;500;600;700",
-  Fraunces: "Fraunces:wght@400;500;600;700",
-  "IBM Plex Sans": "IBM+Plex+Sans:wght@400;500;600;700",
-  Inter: "Inter:wght@400;500;600;700",
-  "JetBrains Mono": "JetBrains+Mono:wght@400;500;600;700",
-  Lora: "Lora:wght@400;500;600;700",
-  Manrope: "Manrope:wght@400;500;600;700",
-  Newsreader: "Newsreader:wght@400;500;600;700",
-  Nunito: "Nunito:wght@400;500;600;700",
-  Orbitron: "Orbitron:wght@400;500;600;700",
-  Oswald: "Oswald:wght@400;500;600;700",
-  "Playfair Display": "Playfair+Display:wght@400;500;600;700",
-  "Poiret One": "Poiret+One",
-  Poppins: "Poppins:wght@400;500;600;700",
-  Quicksand: "Quicksand:wght@400;500;600;700",
-  Rajdhani: "Rajdhani:wght@400;500;600;700",
-  Roboto: "Roboto:wght@400;500;600;700",
-  Silkscreen: "Silkscreen:wght@400;700",
-  "Source Serif 4": "Source+Serif+4:wght@400;500;600;700",
-  "Space Grotesk": "Space+Grotesk:wght@400;500;600;700",
-  "Work Sans": "Work+Sans:wght@400;500;600;700",
-
-  // 한글. 라틴 가족에 없는 글자를 받는다. Google Fonts 는 한글을 `unicode-range`
-  // 로 백여 조각으로 갈라 내주므로, 문서에 실제로 쓰인 음절 조각만 내려온다.
-  "Black Han Sans": "Black+Han+Sans",
-  Diphylleia: "Diphylleia",
-  "Do Hyeon": "Do+Hyeon",
-  Gaegu: "Gaegu:wght@400;700",
-  "Gasoek One": "Gasoek+One",
-  "Gothic A1": "Gothic+A1:wght@400;500;600;700",
-  "Gowun Batang": "Gowun+Batang:wght@400;700",
-  "Gowun Dodum": "Gowun+Dodum",
-  Hahmlet: "Hahmlet:wght@400;500;600;700",
-  "IBM Plex Sans KR": "IBM+Plex+Sans+KR:wght@400;500;600;700",
-  Jua: "Jua",
-  "Nanum Gothic Coding": "Nanum+Gothic+Coding:wght@400;700",
-  "Nanum Myeongjo": "Nanum+Myeongjo:wght@400;700",
-  "Noto Sans KR": "Noto+Sans+KR:wght@400;500;600;700",
-  "Noto Serif KR": "Noto+Serif+KR:wght@400;500;600;700",
-  Orbit: "Orbit",
-  "Song Myung": "Song+Myung",
-};
-
-function fontLink(spec: DesignSystemSpecV2): string {
-  // 한글 서체는 대체 사슬에 있다 — 라틴 가족 뒤에 와야 라틴 글자를 뺏지 않는다.
-  // 그래서 이름과 대체 사슬을 함께 훑는다.
-  const declared = (["display", "body", "mono"] as const)
-    .flatMap((role) => [spec.typography[role].family, ...spec.typography[role].fallback.split(",")])
-    .map((name) => name.trim());
-  const families = declared
-    .map((family) => WEB_FONTS[family])
-    .filter((value, index, all): value is string => Boolean(value) && all.indexOf(value) === index);
-  if (families.length === 0) return "";
-  const query = families.map((family) => `family=${family}`).join("&");
-  return `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?${query}&display=swap">`;
-}
-
 /**
  * 고정 샘플 문안. 모든 디자인이 같은 내용을 쓰고, 차이는 디자인에서만 오게 한다.
  * 기준 문서 6.6 「요소와 표시 방식」.
@@ -771,47 +681,6 @@ function renderShowcaseSection(
 }
 
 /** CSS 가 그대로 읽을 수 있는 이름은 그대로 둔다. `ui-monospace` 같은 갈래말이다. */
-const BARE_FAMILIES = new Set(["ui-monospace", "ui-sans-serif", "ui-serif", "system-ui", "serif", "sans-serif", "monospace", "cursive"]);
-
-/**
- * 서체 이름을 CSS 값으로. 갈래말이 아니면 따옴표로 묶는다 — `Source Serif 4`
- * 처럼 숫자로 시작하는 낱말이 섞이면 따옴표 없이는 선언 전체가 무효가 된다.
- * 계약의 서체 이름은 자유 문자열이므로 큰따옴표는 미리 걷어낸다.
- */
-function cssFamily(family: string): string {
-  if (BARE_FAMILIES.has(family)) return family;
-  return `"${family.replaceAll('"', "")}"`;
-}
-
-function cssVariables(spec: DesignSystemSpecV2): string {
-  const colors = COLOR_NAMES.map(
-    (name) => `--${name}:${spec.colors[name].value};`,
-  ).join("");
-  const fonts = ["display", "body", "mono"].map((name) => {
-    const font = spec.typography[name as keyof Pick<typeof spec.typography, "display" | "body" | "mono">];
-    return `--font-${name}:${cssFamily(font.family)},${font.fallback};`;
-  }).join("");
-  const steps = spec.typography.scale.map(
-    (step) => `--type-${step.name}:${step.size};--line-${step.name}:${step.lineHeight};`,
-  ).join("");
-  const bodyStep = spec.typography.scale[0]!;
-  const headingStep = spec.typography.scale[Math.max(0, spec.typography.scale.length - 2)]!;
-  const displayStep = spec.typography.scale.at(-1)!;
-  const exampleSteps = `--type-example-body:${bodyStep.size};--line-example-body:${bodyStep.lineHeight};--type-example-heading:${headingStep.size};--line-example-heading:${headingStep.lineHeight};--type-example-display:${displayStep.size};--line-example-display:${displayStep.lineHeight};`;
-  // 지면 색에서 계산하므로 밝은 지면과 어두운 지면이 같은 규칙으로 자기 깊이를 얻는다.
-  const shadow = {
-    none: "none",
-    hairline: "0 1px 0 var(--border)",
-    soft: "0 12px 30px color-mix(in srgb,var(--text) 10%,transparent)",
-    layered: "0 2px 4px color-mix(in srgb,var(--text) 8%,transparent),0 18px 40px color-mix(in srgb,var(--text) 12%,transparent)",
-    offset: "6px 6px 0 var(--text)",
-    inset: "inset 0 2px 6px color-mix(in srgb,var(--text) 22%,transparent),inset 0 -1px 0 color-mix(in srgb,var(--canvas) 60%,transparent)",
-    relief: "8px 8px 20px color-mix(in srgb,var(--text) 16%,transparent),-8px -8px 20px color-mix(in srgb,var(--canvas) 90%,white)",
-    bevel: "inset 2px 2px 0 color-mix(in srgb,var(--canvas) 55%,white),inset -2px -2px 0 color-mix(in srgb,var(--text) 45%,transparent),3px 3px 0 color-mix(in srgb,var(--text) 35%,transparent)",
-  }[spec.shape.shadowStyle];
-  return `${colors}${fonts}${steps}${exampleSteps}--measure:${spec.typography.measure};--base-unit:${spec.spacing.baseUnit}px;--element-gap:${spec.spacing.elementGap}px;--component-gap:${spec.spacing.componentGap}px;--section-gap:${spec.spacing.sectionGap}px;--content-width:${spec.spacing.contentWidth}px;--card-radius:${spec.shape.cardRadius}px;--control-radius:${spec.shape.controlRadius}px;--border-width:${spec.shape.borderWidth}px;--motion-duration:${spec.motion.duration};--motion-easing:${spec.motion.easing};--shadow:${shadow};`;
-}
-
 /**
  * 문서에 심는 유일한 스크립트. 계약에서 온 문자열을 단 한 글자도 끼워 넣지 않는
  * 고정 상수다. CSP 는 이 내용의 sha256 만 script-src 에 허용하므로, 주입된

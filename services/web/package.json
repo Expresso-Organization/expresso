@@ -11,7 +11,7 @@
     "build": "next build",
     "start": "next start --port 3000",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run --passWithNoTests",
+    "test": "pnpm --filter \"@expresso/web^...\" build && vitest run --passWithNoTests",
     "test:e2e": "playwright test"
   },
   "dependencies": {

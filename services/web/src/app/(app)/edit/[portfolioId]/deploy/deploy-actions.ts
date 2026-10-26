@@ -29,6 +29,9 @@ export interface DeployResult {
 
 function message(error: unknown): string {
   if (error instanceof ApiError) {
+    if (error.status === 403 && error.details?.["reason"] === "email_verification_required") {
+      return "이메일 인증 뒤에 공개할 수 있습니다. 화면 위쪽 안내에서 인증 메일을 받아 주세요.";
+    }
     if (error.status === 403) return "이 요금제에서는 할 수 없습니다.";
     if (error.status === 404) return "포트폴리오를 찾지 못했습니다.";
     if (error.status === 409 && error.message.includes("generated page")) {

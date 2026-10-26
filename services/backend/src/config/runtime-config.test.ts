@@ -13,14 +13,13 @@ describe("loadRuntimeConfig", () => {
       outboxMaxAttempts: 5,
       queuePrefix: "expresso-mongo-v1",
       careerSocketAllowedOrigin: "http://127.0.0.1:3000",
-      careerEditorV2Enabled: false,
       scheduledJobsEnabled: true,
     });
   });
 
-  it("keeps the editor v2 gate closed unless an explicit boolean enables it", () => {
-    expect(loadRuntimeConfig({ CAREER_EDITOR_V2_ENABLED: "true" }).careerEditorV2Enabled).toBe(true);
-    expect(() => loadRuntimeConfig({ CAREER_EDITOR_V2_ENABLED: "enable-it" })).toThrow();
+  it("ignores the removed editor v2 flag left in existing .env files", () => {
+    expect(() => loadRuntimeConfig({ CAREER_EDITOR_V2_ENABLED: "false" })).not.toThrow();
+    expect(loadRuntimeConfig({ CAREER_EDITOR_V2_ENABLED: "false" })).not.toHaveProperty("careerEditorV2Enabled");
   });
 
   it("allows deterministic AI only outside production", () => {

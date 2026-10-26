@@ -8,7 +8,7 @@
   "scripts": {
     "build": "pnpm --recursive --if-present build",
     "typecheck": "pnpm --recursive --if-present typecheck",
-    "test": "pnpm --recursive --if-present test",
+    "test": "pnpm --recursive --if-present --workspace-concurrency=1 test",
     "build:portfolio-css": "node scripts/build-portfolio-css.mjs",
     "check:portfolio-css": "node scripts/build-portfolio-css.mjs --check",
     "db:migrate": "pnpm --filter @expresso/database migrate",

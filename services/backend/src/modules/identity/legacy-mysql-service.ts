@@ -1,4 +1,4 @@
-import { type IdentityPrincipal, type IssueIdentitySessionInput, IdentityError } from "./public.js";
+import { type IdentityPrincipal, type IssueIdentitySessionInput, type SignupInput, IdentityError } from "./public.js";
 export { type IdentityPrincipal, type IssueIdentitySessionInput, IdentityError } from "./public.js";
 import { randomUUID } from "node:crypto";
 import {
@@ -7,8 +7,8 @@ import {
   type AuthenticatedUser,
   type IssuedIdentitySession,
   type Login,
+  type PasswordResetConfirm,
   type PlanCode,
-  type Signup,
   type SocialAuthSession,
 } from "@expresso/contracts";
 import type { SqlTag } from "../../platform/legacy-mysql.js";
@@ -41,6 +41,8 @@ function toAuthenticatedUser(row: CredentialRow): AuthenticatedUser {
     email: row.email,
     displayName: row.display_name,
     planCode: row.plan_code,
+    // 레거시 스키마에는 인증 기록이 없다. 미인증으로 읽는다.
+    emailVerifiedAt: null,
   };
 }
 
@@ -114,7 +116,7 @@ export class IdentityService {
    * 10b 회원가입. 기본 카테고리 7종은 시스템 카테고리(user_id is null)이므로
    * 여기서 복제하지 않는다 — 가입 직후부터 목록에 그대로 보인다.
    */
-  async signup(input: Signup): Promise<AuthSession> {
+  async signup(input: SignupInput): Promise<AuthSession> {
     const passwordHash = await hashPassword(input.password);
     // 이메일이 이미 있으면 새 줄이 생기지 않는다 — 우리가 만든 id 로 다시 읽어
     // 방금 만든 계정인지 가려낸다.
@@ -353,6 +355,23 @@ export class IdentityService {
     };
   }
 
+  /* 재설정 · 인증은 Mongo 서비스에만 있다. 레거시 경로는 `IdentityApi` 타입만 맞춘다. */
+  async requestPasswordReset(_email: string): Promise<void> {
+    throw new Error("password reset is not supported on the legacy MySQL identity service");
+  }
+
+  async confirmPasswordReset(_input: PasswordResetConfirm): Promise<AuthSession> {
+    throw new Error("password reset is not supported on the legacy MySQL identity service");
+  }
+
+  async requestEmailVerification(_userId: string): Promise<void> {
+    throw new Error("email verification is not supported on the legacy MySQL identity service");
+  }
+
+  async confirmEmailVerification(_token: string): Promise<AuthenticatedUser> {
+    throw new Error("email verification is not supported on the legacy MySQL identity service");
+  }
+
   async verifyAccessToken(accessToken: string): Promise<IdentityPrincipal | null> {
     if (!isAccessToken(accessToken)) return null;
 
@@ -388,6 +407,7 @@ export class IdentityService {
         email: session.email,
         displayName: session.display_name,
         planCode: session.plan_code,
+        emailVerifiedAt: null,
       },
     };
   }

@@ -250,11 +250,11 @@ describe("구조화 포트폴리오 계약", () => {
       ]);
       // 모델 계약도 같은 트리를 받습니다.
       const { "case-a": a, "case-b": b, ...rest } = tree().elements;
-      const parsed = structuredModelSchema(content2).safeParse({
+      const modelTree = (variant: string) => ({
         root: "page",
         elements: {
           ...rest,
-          intro: { ...spec.elements.intro, props: { profile: { $state: "/profile" }, sections: { $state: "/sections" } } },
+          intro: { ...spec.elements.intro, props: { profile: { $state: "/profile" }, sections: { $state: "/sections" }, variant } },
           index: { type: "ProjectIndex", props: { sections: { $state: "/sections" }, variant: "rows" }, children: [] },
           "section-project-a": a,
           "section-project-b": b,
@@ -262,7 +262,14 @@ describe("구조화 포트폴리오 계약", () => {
           page: { ...spec.elements.page, children: ["intro", "index", "group-1", "evidence", "contact"] },
         },
       });
+      const parsed = structuredModelSchema(content2).safeParse(modelTree("split"));
       expect(parsed.error?.issues ?? []).toEqual([]);
+      // 섹션 이미지가 없으면 이미지 중심 첫 화면을 고를 수 없습니다.
+      expect(content2.sections.some((section) => section.media.length)).toBe(false);
+      expect(structuredModelSchema(content2).safeParse(modelTree("media")).success).toBe(false);
+      const withImage = structuredClone(content2);
+      withImage.sections[0]!.media = [{ src: "data:image/png;base64,AAAA", alt: "가상 이미지", origin: "fictional" }];
+      expect(structuredModelSchema(withImage).safeParse(modelTree("media")).error?.issues ?? []).toEqual([]);
     });
     it("컨테이너 규칙을 어긴 트리를 거부한다", () => {
       const cases: [string, (raw: ReturnType<typeof tree>) => void, string][] = [

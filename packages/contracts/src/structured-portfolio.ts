@@ -127,6 +127,8 @@ export const StructuredDesignSchema = z.strictObject({
   palette: z.enum(["ivory", "cobalt", "graphite", "sage", "burgundy"]),
   font: z.enum(["serif", "sans", "mono"]),
 });
+/** 첫 화면 구도: 큰 문장 · 좌우 분할 · 이미지 중심. */
+export const STRUCTURED_INTRO_VARIANTS = ["statement", "split", "media"] as const;
 export const STRUCTURED_CASE_TYPES = [
   "CaseEssay",
   "CaseGallery",
@@ -176,6 +178,8 @@ export const StructuredNodeSchema = z.union([
       profile: binding,
       sections: binding.optional(),
       sourceId: id.optional(),
+      // 키트 경로의 첫 화면 구도입니다. media는 섹션 이미지가 있을 때만 그 구도로 그립니다.
+      variant: z.enum(STRUCTURED_INTRO_VARIANTS).optional(),
     }),
   ),
   leaf(
@@ -311,6 +315,11 @@ export function structuredModelSchema(
       props: z.strictObject({
         profile: ref("profile"),
         sections: ref("sections"),
+        variant: z.enum(
+          content.sections.some((section) => section.media.length)
+            ? STRUCTURED_INTRO_VARIANTS
+            : ["statement", "split"],
+        ),
         ...(choices?.intro.length
           ? { sourceId: z.enum(choices.intro as [string, ...string[]]) }
           : {}),

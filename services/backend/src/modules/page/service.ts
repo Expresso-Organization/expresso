@@ -24,7 +24,7 @@ import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction } from "../../platform/mongo-transaction.js";
 import { withTimeout } from "../../platform/timeouts.js";
 import type { ConsentApi } from "../consent/index.js";
-import { findDesignSystemRevision } from "../design-systems/index.js";
+import { findDesignSystemRevision, findPortfolioDesign } from "../design-systems/index.js";
 import { requireActiveUser } from "../identity/index.js";
 import { DESIGN_PRINCIPLES_VERSION, type PageGenerationContext, type PageGenerator } from "./generator.js";
 import { PageServiceError } from "./public.js";
@@ -123,6 +123,7 @@ export class PageService {
       ...(author ? { author: { name: author.displayName } } : {}),
       portfolioPlan: recipe.portfolioPlan ? PortfolioPlanSchema.parse(recipe.portfolioPlan) : null,
       ...(style ? { style } : {}),
+      design: findPortfolioDesign(portfolio),
       sections: sections.map((row) => ({ id: row._id, title: row.title, purpose: row.purpose, goal: typeof row.context.goal === "string" ? row.context.goal : "", points: Array.isArray(row.context.points) ? row.context.points.filter((v): v is string => typeof v === "string") : [], targetLength: row.targetLength })),
       evidence: [...new Map(paths.map((path) => [path.sourceId, { id: path.sourceId, label: path.sourceLabel, text: sourceText(path.sourceId) }])).values()].filter(({ text }) => text.trim().length > 0),
       media, jobTitle: posting?.title ?? brew?.freeTitle ?? null,
@@ -185,11 +186,17 @@ export class PageService {
     if (current.revision !== input.expectedRevision) throw new PageServiceError(409, "다른 편집이 먼저 저장됐습니다. 새로고침해 주세요.");
     const previous = current.generationManifest?.structured;
     if (!previous) throw new PageServiceError(409, "구조화 지면에서만 구성을 편집할 수 있습니다.");
+    // 생성 때와 같은 디자인으로 다시 그립니다. 수집 원본으로 그린 판은 렌더러가 저장된 사용자 색을 씁니다.
+    const owner = await mongoCollections(this.context.db).portfolios.findOne({ _id: portfolioId, userId });
+    if (!owner) throw new PageServiceError(404, "portfolio not found");
     let snapshot, rendered;
     try {
       const content = applyStructuredTextPatches(previous.content, input.patches);
       snapshot = validateStructuredPortfolio(input.spec ?? previous.spec, content);
-      rendered = renderStructuredPortfolio(snapshot.spec, snapshot.content, current.styleSpec ?? undefined);
+      rendered = renderStructuredPortfolio(snapshot.spec, snapshot.content, {
+        design: findPortfolioDesign(owner),
+        theme: isPageStyleGrammar(current.styleSpec) ? current.styleSpec : undefined,
+      });
     } catch (error) { throw new PageServiceError(422, error instanceof Error ? error.message : "구성이 올바르지 않습니다."); }
     const row = await inTransaction(this.context, async tx => {
       await requireActiveUser(tx, userId);
