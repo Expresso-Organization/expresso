@@ -92,7 +92,7 @@ export function registerIdentityRoutes(
     const input = parseBody(GoogleSignInSchema, request);
     const identity = await readGoogleIdentity(request, input);
     return SocialAuthSessionResponseSchema.parse({
-      data: await options.identityService.signInWithGoogle(identity),
+      data: await options.identityService.signInWithGoogle(identity, input.persistent),
     });
   });
 
@@ -100,7 +100,7 @@ export function registerIdentityRoutes(
     const input = parseBody(GoogleLinkSchema, request);
     const identity = await readGoogleIdentity(request, input);
     return SocialAuthSessionResponseSchema.parse({
-      data: await options.identityService.linkGoogle(identity, input.password),
+      data: await options.identityService.linkGoogle(identity, input.password, input.persistent),
     });
   });
 

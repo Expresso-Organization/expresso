@@ -3,6 +3,7 @@ import { timingSafeEqual } from "node:crypto";
 import { ApiError } from "@/lib/api/client";
 import { auth } from "@/lib/api/endpoints";
 import { exchangeCodeForIdToken, readGoogleOAuthConfig } from "@/lib/auth/google";
+import { loginPath, safeNext } from "@/lib/auth/next-path";
 import { takeHandshake, writePendingLink } from "@/lib/auth/oauth-cookies";
 import { writeAccessToken } from "@/lib/session";
 
@@ -35,7 +36,7 @@ export async function GET(request: Request): Promise<Response> {
   const params = new URL(request.url).searchParams;
 
   // 사용자가 동의 화면에서 취소했다. 오류가 아니라 선택이므로 조용히 되돌린다.
-  if (params.get("error") === "access_denied") return seeOther("/login");
+  if (params.get("error") === "access_denied") return seeOther(loginPath(handshake?.next));
   if (params.get("error")) return seeOther("/login?error=google_failed");
 
   const code = params.get("code");
@@ -52,10 +53,14 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   try {
-    const { data } = await auth.google({ idToken, nonce: handshake.nonce });
-    await writeAccessToken(data.session.accessToken, data.session.expiresAt);
-    // 10b → 10c. 새로 만든 계정만 온보딩으로 들어간다.
-    return seeOther(data.created ? "/onboarding/goal" : "/home");
+    const { data } = await auth.google({
+      idToken,
+      nonce: handshake.nonce,
+      persistent: handshake.persistent,
+    });
+    await writeAccessToken(data.session);
+    // 10b → 10c. 새로 만든 계정만 온보딩으로 들어간다. 나머지는 보려던 자리로.
+    return seeOther(data.created ? "/onboarding/goal" : safeNext(handshake.next));
   } catch (error) {
     if (!(error instanceof ApiError)) throw error;
 
@@ -63,7 +68,13 @@ export async function GET(request: Request): Promise<Response> {
     if (error.status === 409 && error.details?.["reason"] === "password_confirmation_required") {
       const email = error.details["email"];
       if (typeof email === "string") {
-        await writePendingLink({ idToken, nonce: handshake.nonce, email });
+        await writePendingLink({
+          idToken,
+          nonce: handshake.nonce,
+          email,
+          persistent: handshake.persistent,
+          next: handshake.next,
+        });
         return seeOther("/login/connect");
       }
     }

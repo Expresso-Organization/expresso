@@ -1,32 +1,25 @@
 import { notFound } from "next/navigation";
 
 import { ApiError } from "@/lib/api/client";
-import {
-  brews,
-  designSystems,
-  entitlements,
-  templates as templateApi,
-} from "@/lib/api/endpoints";
+import { brews, designSystems, entitlements } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 import { BrewFrame } from "../BrewFrame";
 import { DesignCatalog, type DesignCatalogEntry } from "./DesignCatalog";
-import { DesignPicker } from "./DesignPicker";
 import { Generating } from "./Generating";
 
 /**
- * 01 디자인 선택.
+ * 03 디자인 선택 — 제작 흐름의 다섯째 단계.
  *
- * v2는 레시피보다 먼저 디자인을 고른다. 이미 레시피가 있는 이전 제작은
- * `legacy=1`에서 기존 추출 화면을 계속 쓸 수 있고, 진행 중인 생성도 같은
- * 기다림 화면으로 돌아간다.
+ * 레시피를 만든 뒤 디자인 시스템을 고르고 그 디자인으로 생성을 실행한다. 진행 중이거나
+ * 끝난 생성은 같은 기다림 화면으로 돌아가고, "다시 뽑기"(`again=1`)는 카탈로그를 연다.
  */
 export default async function DesignPage({
   params,
   searchParams,
 }: {
   params: Promise<{ brewId: string }>;
-  searchParams: Promise<{ tone?: string; again?: string; legacy?: string }>;
+  searchParams: Promise<{ again?: string }>;
 }) {
   const session = await requireSession();
   const { brewId } = await params;
@@ -58,32 +51,11 @@ export default async function DesignPage({
     );
   }
 
-  if (query.legacy === "1" && brew.recipeId) {
-    const useCompanyColors = query.tone === "1";
-    const [previews, quota] = await Promise.all([
-      templateApi.previews(session.accessToken, brew.recipeId, useCompanyColors),
-      entitlements.check(session.accessToken, "portfolio.generate"),
-    ]);
-    return (
-      <BrewFrame brewId={brewId} step="design" portfolioTitle={title} situation="기존 생성" tinted>
-        <DesignPicker
-          brewId={brewId}
-          recipeId={brew.recipeId}
-          previews={previews.data.previews}
-          planCode={quota.data.planCode}
-          usage={quota.data.usage ?? null}
-          allowed={quota.data.allowed}
-          companyName={brew.posting?.companyName ?? null}
-          useCompanyColors={useCompanyColors}
-          madePortfolioId={brew.portfolioId}
-          failureCode={generation?.status === "failed" ? generation.failureCode : null}
-        />
-      </BrewFrame>
-    );
-  }
-
   // 목록은 카드가 그리는 값만 받는다. 문서는 고른 판 하나만 따로 불러온다.
-  const catalog = await designSystems.list(session.accessToken);
+  const [catalog, quota] = await Promise.all([
+    designSystems.list(session.accessToken),
+    entitlements.check(session.accessToken, "portfolio.generate"),
+  ]);
   const entries: DesignCatalogEntry[] = catalog.data.items.map((item) => ({
       designSystemId: item.designSystemId,
       revisionId: item.revisionId,
@@ -117,13 +89,15 @@ export default async function DesignPage({
       step="design"
       portfolioTitle={title}
       situation={`${entries.length}개 디자인`}
-      flow="portfolio-v2"
       tinted
     >
       <DesignCatalog
         brewId={brewId}
         entries={entries}
         initialRevisionId={brew.designSelection?.designSystemRevisionId ?? null}
+        recipeId={brew.recipeId}
+        generationAllowed={quota.data.allowed}
+        failureCode={generation?.status === "failed" ? generation.failureCode : null}
       />
     </BrewFrame>
   );

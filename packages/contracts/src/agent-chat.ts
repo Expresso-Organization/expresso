@@ -8,7 +8,210 @@ import { UuidSchema, TimestampSchema } from "./common.js";
 import { AiEditProposalDetailSchema, AiEditProposalSchema } from "./career-ai.js";
 
 export const AgentContextSchema = z.strictObject({ kind: z.enum(["job", "record", "portfolio"]), id: UuidSchema });
-export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional() });
+/**
+ * 요건 대조 — 공고의 요건마다 내 기록으로 확인되는 정도.
+ *
+ * 강함 · 일부는 근거 기록 인용이 있어야 하고, 미확인은 근거가 없어야 한다. 기록에 없다는
+ * 것은 경험이 없다는 뜻이 아니므로 "없음" 대신 "미확인"이라고 부른다.
+ */
+const RequirementAssessmentSchema = z.enum(["strong", "partial", "unconfirmed"]);
+const requirementItemShape = {
+  requirement: z.string().trim().min(1).max(300),
+  jobQuote: z.string().trim().min(1).max(600),
+  kind: z.enum(["must", "nice", "responsibility"]),
+  assessment: RequirementAssessmentSchema,
+  explanation: z.string().trim().min(1).max(1_200),
+  recommendation: z.string().trim().max(600),
+};
+const evidenceShape = { recordId: UuidSchema, quote: z.string().trim().min(1).max(600) };
+const assessmentMatchesEvidence = (item: { assessment: z.infer<typeof RequirementAssessmentSchema>; evidence: unknown[] }, ctx: z.RefinementCtx) => {
+  if (item.assessment === "unconfirmed" && item.evidence.length > 0) ctx.addIssue({ code: "custom", path: ["evidence"], message: "미확인 요건에는 근거를 붙이지 않습니다." });
+  if (item.assessment !== "unconfirmed" && item.evidence.length === 0) ctx.addIssue({ code: "custom", path: ["evidence"], message: "강함 · 일부 요건에는 근거 기록 인용이 1개 이상 필요합니다." });
+};
+export const RequirementReviewDraftSchema = z.strictObject({
+  jobPostingId: UuidSchema,
+  summary: z.string().trim().min(1).max(1_500),
+  items: z.array(z.strictObject({ ...requirementItemShape, evidence: z.array(z.strictObject(evidenceShape)).max(5) }).superRefine(assessmentMatchesEvidence)).min(1).max(12),
+});
+export const RequirementReviewSchema = z.strictObject({
+  jobPostingId: UuidSchema,
+  summary: RequirementReviewDraftSchema.shape.summary,
+  items: z.array(z.strictObject({ ...requirementItemShape, evidence: z.array(z.strictObject({ ...evidenceShape, recordTitle: z.string().max(200) })).max(5) }).superRefine(assessmentMatchesEvidence)).min(1).max(12),
+  /** 대조할 때 읽은 원문의 해시. 지금 원문과 다르면 다시 대조해야 한다. */
+  snapshot: z.strictObject({ jobContentHash: z.string().length(64), records: z.array(z.strictObject({ recordId: UuidSchema, textHash: z.string().length(64) })).max(60) }),
+  createdAt: TimestampSchema,
+});
+export const AgentReviewFreshnessResponseSchema = z.strictObject({ data: z.strictObject({ stale: z.boolean(), changed: z.array(z.enum(["job", "records"])).max(2) }) });
+export type RequirementReviewDraft = z.infer<typeof RequirementReviewDraftSchema>;
+export type RequirementReview = z.infer<typeof RequirementReviewSchema>;
+/**
+ * 대화로 만드는 새 기록 초안. 출처는 이 대화에서 사용자가 한 말이어야 하고, 저장은 사용자가
+ * 카드에서 승인할 때만 일어난다.
+ */
+const recordDraftSourceSchema = z.strictObject({ messageId: UuidSchema, quote: z.string().trim().min(1).max(600) });
+export const AgentRecordDraftInputSchema = z.strictObject({
+  title: z.string().trim().min(1).max(300),
+  categoryId: UuidSchema.optional(),
+  bodyMd: z.string().trim().min(1).max(20_000),
+  sources: z.array(recordDraftSourceSchema).min(1).max(10),
+});
+export const AgentRecordDraftSchema = z.strictObject({
+  draftId: UuidSchema,
+  title: AgentRecordDraftInputSchema.shape.title,
+  categoryId: UuidSchema.nullable(),
+  bodyMd: AgentRecordDraftInputSchema.shape.bodyMd,
+  sources: AgentRecordDraftInputSchema.shape.sources,
+  /** 카드에서 고를 수 있는 카테고리. 초안을 만들 때의 목록이다. */
+  categories: z.array(z.strictObject({ id: UuidSchema, name: z.string().max(120) })).max(50),
+  status: z.enum(["ready", "approved", "rejected"]),
+  recordId: UuidSchema.nullable(),
+});
+export const AgentRecordDraftDecisionSchema = z.discriminatedUnion("action", [
+  z.strictObject({ action: z.literal("approve"), title: AgentRecordDraftInputSchema.shape.title, bodyMd: AgentRecordDraftInputSchema.shape.bodyMd, categoryId: UuidSchema }),
+  z.strictObject({ action: z.literal("reject") }),
+]);
+export type AgentRecordDraftInput = z.infer<typeof AgentRecordDraftInputSchema>;
+export type AgentRecordDraft = z.infer<typeof AgentRecordDraftSchema>;
+export type AgentRecordDraftDecision = z.infer<typeof AgentRecordDraftDecisionSchema>;
+/**
+ * 보완점 정리 — 요건 대조와 대화에서 확인한 내용으로, 이 공고를 위해 무엇을 확인하거나
+ * 준비할지 정리한 것.
+ *
+ * 기록에 없다는 것만으로는 부족하다고 보지 않는다 — 그런 요건은 "확인 필요"이고, "보완 필요"는
+ * 사용자가 대화에서 직접 부족하다고 말한 경우에만 쓴다.
+ */
+const GapTypeSchema = z.enum(["evidence", "experience", "skill", "qualification", "portfolio"]);
+const GapStatusSchema = z.enum(["needs_confirmation", "needs_improvement"]);
+const GapPrioritySchema = z.enum(["high", "medium", "low"]);
+const gapEvidenceShape = { sourceType: z.enum(["record", "user_message"]), sourceId: UuidSchema, quote: z.string().trim().min(1).max(600) };
+const gapItemShape = {
+  requirementIndex: z.number().int().min(0).max(11),
+  type: GapTypeSchema,
+  status: GapStatusSchema,
+  priority: GapPrioritySchema,
+  explanation: z.string().trim().min(1).max(1_200),
+  suggestedAction: z.string().trim().min(1).max(600),
+};
+export const GapReviewDraftSchema = z.strictObject({
+  summary: z.string().trim().min(1).max(1_500),
+  items: z.array(z.strictObject({ ...gapItemShape, evidence: z.array(z.strictObject(gapEvidenceShape)).max(7) })).min(1).max(20),
+});
+export const GapReviewSchema = z.strictObject({
+  jobPostingId: UuidSchema,
+  summary: GapReviewDraftSchema.shape.summary,
+  items: z.array(z.strictObject({
+    ...gapItemShape,
+    id: UuidSchema,
+    requirement: z.string().max(300),
+    jobQuote: z.string().max(600),
+    evidence: z.array(z.strictObject({ ...gapEvidenceShape, label: z.string().max(200) })).max(7),
+  })).min(1).max(20),
+  createdAt: TimestampSchema,
+});
+export type GapReviewDraft = z.infer<typeof GapReviewDraftSchema>;
+export type GapReview = z.infer<typeof GapReviewSchema>;
+/**
+ * 준비 계획 — 고른 보완점과 쓸 수 있는 시간으로 주차별 작업을 배치한 것.
+ *
+ * 작업은 규칙으로 만든다(AI가 시간을 정하지 않는다). 승인 전에는 대화의 도구 결과로만 있고,
+ * 승인하면 대화 밖에도 남는 계획이 되어 작업마다 진행을 기록한다.
+ */
+export const PreparationSettingsSchema = z.strictObject({
+  weeklyHours: z.number().int().min(1).max(40),
+  weeks: z.number().int().min(1).max(12),
+  startDate: z.iso.date(),
+});
+const preparationText = z.string().trim().min(1).max(2_000);
+export const PreparationTaskDraftSchema = z.strictObject({
+  id: UuidSchema,
+  gapId: UuidSchema,
+  requirement: z.string().max(300),
+  kind: z.enum(["confirm", "learn", "project", "check", "portfolio"]),
+  week: z.number().int().min(1).max(12),
+  date: z.iso.date(),
+  minutes: z.number().int().min(30).max(60),
+  title: z.string().trim().min(1).max(300),
+  action: preparationText,
+  deliverable: preparationText,
+});
+export const TaskProgressStatusSchema = z.enum(["not_started", "in_progress", "completed", "blocked"]);
+const OutcomeUrlSchema = z.union([z.literal(""), z.url().max(2_048).refine(value => ["http:", "https:"].includes(new URL(value).protocol), "http(s) 링크만 남길 수 있습니다.")]);
+export const PreparationTaskSchema = PreparationTaskDraftSchema.extend({
+  status: TaskProgressStatusSchema,
+  note: z.string().max(2_000),
+  outcome: z.string().max(2_000),
+  outcomeUrl: OutcomeUrlSchema,
+  spentMinutes: z.number().int().min(0).max(100_000),
+  updatedAt: TimestampSchema,
+});
+export const PlanProposalInputSchema = z.strictObject({
+  title: z.string().trim().min(1).max(300),
+  summary: preparationText,
+  gapIndexes: z.array(z.number().int().min(0).max(19)).min(1).max(10).refine(items => new Set(items).size === items.length, "같은 보완점을 두 번 고를 수 없습니다."),
+  settings: PreparationSettingsSchema,
+});
+export const AgentPlanDraftSchema = z.strictObject({
+  draftId: UuidSchema,
+  jobPostingId: UuidSchema,
+  title: PlanProposalInputSchema.shape.title,
+  summary: preparationText,
+  settings: PreparationSettingsSchema,
+  tasks: z.array(PreparationTaskDraftSchema).min(1).max(40),
+  status: z.enum(["ready", "approved", "rejected"]),
+  /** 승인하면 계획 id. 초안 id와 같다 — 승인을 다시 보내도 계획은 하나다. */
+  planId: UuidSchema.nullable(),
+});
+export const AgentPlanDecisionSchema = z.discriminatedUnion("action", [
+  z.strictObject({ action: z.literal("approve"), title: PlanProposalInputSchema.shape.title, summary: preparationText, taskEdits: z.array(z.strictObject({ id: UuidSchema, title: PreparationTaskDraftSchema.shape.title, action: preparationText, deliverable: preparationText })).min(1).max(40) }),
+  z.strictObject({ action: z.literal("reject") }),
+]);
+export const PreparationPlanSchema = z.strictObject({
+  id: UuidSchema,
+  conversationId: UuidSchema,
+  jobPostingId: UuidSchema,
+  title: PlanProposalInputSchema.shape.title,
+  summary: preparationText,
+  settings: PreparationSettingsSchema,
+  tasks: z.array(PreparationTaskSchema).min(1).max(40),
+  version: z.number().int().positive(),
+  scheduleVersion: z.number().int().positive(),
+  createdAt: TimestampSchema,
+  updatedAt: TimestampSchema,
+});
+export const PreparationPlanResponseSchema = z.strictObject({ data: PreparationPlanSchema });
+/** 작업 진행 기록. 완료는 결과 설명이나 링크가 있어야 한다 — 무엇을 끝냈는지 남지 않은 완료는 받지 않는다. */
+export const UpdateTaskProgressSchema = z.strictObject({
+  expectedVersion: z.number().int().positive(),
+  status: TaskProgressStatusSchema,
+  note: z.string().max(2_000),
+  outcome: z.string().max(2_000),
+  outcomeUrl: OutcomeUrlSchema,
+  spentMinutes: z.number().int().min(0).max(100_000),
+}).refine(input => input.status !== "completed" || !!input.outcome.trim() || !!input.outcomeUrl, { message: "완료하려면 결과 설명이나 링크를 남겨 주세요.", path: ["outcome"] });
+/** 남은 작업 재배치. 완료하지 않은 작업만 새 설정으로 다시 배치한다. */
+export const ReplanProposalInputSchema = z.strictObject({ planId: UuidSchema, settings: PreparationSettingsSchema });
+export const AgentReplanDraftSchema = z.strictObject({
+  draftId: UuidSchema,
+  planId: UuidSchema,
+  /** 이 초안을 만든 때의 계획 버전. 승인할 때 계획이 그 사이에 바뀌었으면 받지 않는다. */
+  baseVersion: z.number().int().positive(),
+  settings: PreparationSettingsSchema,
+  slots: z.array(z.strictObject({ taskId: UuidSchema, title: z.string().max(300), week: z.number().int().min(1).max(12), date: z.iso.date() })).min(1).max(40),
+  status: z.enum(["ready", "approved", "rejected"]),
+});
+export const AgentReplanDecisionSchema = z.strictObject({ action: z.enum(["approve", "reject"]) });
+export type UpdateTaskProgress = z.infer<typeof UpdateTaskProgressSchema>;
+export type ReplanProposalInput = z.infer<typeof ReplanProposalInputSchema>;
+export type AgentReplanDraft = z.infer<typeof AgentReplanDraftSchema>;
+export type AgentReplanDecision = z.infer<typeof AgentReplanDecisionSchema>;
+export type PreparationSettings = z.infer<typeof PreparationSettingsSchema>;
+export type PreparationTaskDraft = z.infer<typeof PreparationTaskDraftSchema>;
+export type PreparationTask = z.infer<typeof PreparationTaskSchema>;
+export type PlanProposalInput = z.infer<typeof PlanProposalInputSchema>;
+export type AgentPlanDraft = z.infer<typeof AgentPlanDraftSchema>;
+export type AgentPlanDecision = z.infer<typeof AgentPlanDecisionSchema>;
+export type PreparationPlan = z.infer<typeof PreparationPlanSchema>;
+export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional(), gapReview: GapReviewSchema.optional(), planDraft: AgentPlanDraftSchema.optional(), replanDraft: AgentReplanDraftSchema.optional() });
 export const AgentMessageSchema = z.strictObject({ id: UuidSchema, role: z.enum(["user", "assistant"]), text: z.string().max(64_000), tools: z.array(AgentToolResultSchema).max(30), createdAt: TimestampSchema });
 export const AgentRunSchema = z.strictObject({ id: UuidSchema, requestId: UuidSchema, status: z.enum(["running", "complete", "cancelled", "failed", "interrupted"]), error: z.string().max(1_000).nullable(), startedAt: TimestampSchema });
 export const AgentConversationSchema = z.strictObject({ id: UuidSchema, title: z.string().max(120), contexts: z.array(AgentContextSchema).max(10), messages: z.array(AgentMessageSchema).max(100), run: AgentRunSchema.nullable(), version: z.number().int().nonnegative(), updatedAt: TimestampSchema });

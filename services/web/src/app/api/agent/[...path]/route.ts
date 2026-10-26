@@ -1,24 +1,31 @@
-import { API_PREFIX, UuidSchema, CreateAgentConversationSchema, SendAgentMessageSchema, AddAgentContextSchema, AgentApprovalSchema, AgentConversationResponseSchema, AgentConversationListSchema, SetAgentContextsSchema } from "@expresso/contracts";
+import { API_PREFIX, AgentPlanDecisionSchema, AgentRecordDraftDecisionSchema, AgentReplanDecisionSchema, AgentReviewFreshnessResponseSchema, UuidSchema, CreateAgentConversationSchema, SendAgentMessageSchema, AddAgentContextSchema, AgentApprovalSchema, AgentConversationResponseSchema, AgentConversationListSchema, SetAgentContextsSchema } from "@expresso/contracts";
 import { API_BASE_URL } from "@/lib/api/client";
 import { readAccessToken } from "@/lib/session";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+/** 대화 안 초안의 결정(POST conversations/:id/<종류>/:draftId)과 그 입력 계약. */
+const DRAFT_DECISIONS = { "record-drafts": AgentRecordDraftDecisionSchema, "plan-drafts": AgentPlanDecisionSchema, "replan-drafts": AgentReplanDecisionSchema } as const;
+const isDraftAction = (action: string | undefined): action is keyof typeof DRAFT_DECISIONS => !!action && action in DRAFT_DECISIONS;
 async function proxy(request: Request, context: { params: Promise<{ path: string[] }> }) {
   const token = await readAccessToken(); if (!token) return Response.json({ error: { message: "로그인이 필요합니다." } }, { status: 401 });
   const { path } = await context.params;
-  if (path[0] !== "conversations" || path.length > 3 || (path[1] && !UuidSchema.safeParse(path[1]).success)) return new Response(null, { status: 404 });
   const action = path[2]; const isGet = request.method === "GET";
-  if ((isGet && action && action !== "events") || (!isGet && path.length === 2) || (!isGet && action && !["messages", "contexts", "context-selection", "approval", "cancel"].includes(action))) return new Response(null, { status: 404 });
-  let body: string | undefined = action === "cancel" ? "{}" : undefined;
+  // 경로가 넷인 것: 요건 대조 최신성(GET reviews/:toolId) · 초안 결정(POST <종류>/:draftId).
+  const nested = path.length === 4 && UuidSchema.safeParse(path[3]).success;
+  const review = isGet && action === "reviews" && nested;
+  const draftDecision = !isGet && isDraftAction(action) && nested;
+  if (path[0] !== "conversations" || (path.length > 3 && !review && !draftDecision) || (path[1] && !UuidSchema.safeParse(path[1]).success)) return new Response(null, { status: 404 });
+  if ((isGet && action && action !== "events" && !review) || (!isGet && path.length === 2) || (!isGet && action && !["messages", "contexts", "context-selection", "approval", "cancel", "retry"].includes(action) && !draftDecision)) return new Response(null, { status: 404 });
+  let body: string | undefined = action === "cancel" || action === "retry" ? "{}" : undefined;
   if (!isGet) {
-    const schema = action === "messages" ? SendAgentMessageSchema : action === "context-selection" ? SetAgentContextsSchema : action === "contexts" ? AddAgentContextSchema : action === "approval" ? AgentApprovalSchema : action === "cancel" ? null : CreateAgentConversationSchema;
+    const schema = draftDecision && isDraftAction(action) ? DRAFT_DECISIONS[action] : action === "messages" ? SendAgentMessageSchema : action === "context-selection" ? SetAgentContextsSchema : action === "contexts" ? AddAgentContextSchema : action === "approval" ? AgentApprovalSchema : action === "cancel" || action === "retry" ? null : CreateAgentConversationSchema;
     if (schema) { const result = schema.safeParse(await request.json().catch(() => null)); if (!result.success) return Response.json({ error: { message: "입력 내용을 확인해 주세요." } }, { status: 400 }); body = JSON.stringify(result.data); }
   }
   const upstream = await fetch(`${API_BASE_URL}${API_PREFIX}/agent/${path.join("/")}`, { method: request.method, headers: { authorization: `Bearer ${token}`, "content-type": "application/json" }, ...(body === undefined ? {} : { body }), signal: request.signal, cache: "no-store" });
   if (action === "events" && upstream.ok) return new Response(upstream.body, { headers: { "content-type": "text/event-stream", "cache-control": "no-cache, no-transform", "x-accel-buffering": "no" } });
   const payload: unknown = await upstream.json().catch(() => ({ error: { message: "서버에 연결하지 못했습니다." } }));
   if (!upstream.ok) return Response.json(payload, { status: upstream.status });
-  const result = (isGet && path.length === 1 ? AgentConversationListSchema : AgentConversationResponseSchema).safeParse(payload);
+  const result = (review ? AgentReviewFreshnessResponseSchema : isGet && path.length === 1 ? AgentConversationListSchema : AgentConversationResponseSchema).safeParse(payload);
   return result.success ? Response.json(result.data, { status: upstream.status }) : Response.json({ error: { message: "응답 형식을 확인할 수 없습니다." } }, { status: 502 });
 }
 export const GET = proxy;

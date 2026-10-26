@@ -16,7 +16,7 @@ import { MongoIdentityService, type IdentityApi } from "../identity/index.js";
 import { MongoCareerService, type CareerApi } from "../career/index.js";
 import { mongoCollections } from "@expresso/database";
 import { createMongoFixture } from "../../../test/support/mongodb.js";
-import { ListJobPostingsQuerySchema } from "@expresso/contracts";
+import { JobInterestResponseSchema, ListJobPostingsQuerySchema } from "@expresso/contracts";
 
 describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB job market and board", () => {
   let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
@@ -58,6 +58,12 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB job market and board", (
     await market.upsertInterest(owner, postingId, { stage: "saved", memo: "관심", deadlineAt: null });
     expect((await board.list(owner, { ...query, interested: true })).summary.total).toBe(1);
     expect((await board.list(other, { ...query, interested: true })).summary.total).toBe(0);
+    // 해제는 행을 지운다 — 단계(`closed`)로 남기면 `interested` 필터에 그대로 걸린다.
+    await market.deleteInterest(other, postingId);
+    expect((await board.list(owner, { ...query, interested: true })).summary.total).toBe(1);
+    await market.deleteInterest(owner, postingId);
+    expect((await board.list(owner, { ...query, interested: true })).summary.total).toBe(0);
+    expect((await board.get(owner, postingId)).interest).toBeNull();
     const search = await market.interpretSearch(owner, "서울 MongoDB", 1);
     expect(search).toMatchObject({ originalQuery: "서울 MongoDB", conditions: [], needsClarification: true });
     expect(await mongoCollections(fixture.resource.db).recentSearches.findOne({ _id: search.recentSearchId, userId: owner })).toMatchObject({ conditions: [], resultCount: 1 });
@@ -328,6 +334,26 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
       select count(*) as count from interest where user_id = ${secondUserId}
     `;
     expect(secondUserInterests[0]?.count).toBe(0);
+
+    // 담기 → 다른 사람의 해제는 내 관심에 닿지 않음 → 해제.
+    const interestUrl = `/v1/jobs/postings/${primaryPostingId}/interest`;
+    const ownInterests = async () => fixture
+      ? await mongoCollections(fixture.resource.db).interests.countDocuments({ userId: firstUserId, jobPostingId: primaryPostingId })
+      : Number((await sql<CountRow[]>`
+          select count(*) as count from interest where user_id = ${firstUserId} and job_posting_id = ${primaryPostingId}
+        `)[0]?.count);
+    const saved = await app.inject({ method: "PUT", url: interestUrl, headers: auth(), payload: { stage: "saved" } });
+    expect(saved.statusCode).toBe(200);
+    expect(JobInterestResponseSchema.parse(saved.json()).data).toMatchObject({ jobPostingId: primaryPostingId, stage: "saved", deadlineAt: null, memo: null });
+    expect(await ownInterests()).toBe(1);
+    expect((await app.inject({ method: "DELETE", url: interestUrl, headers: auth(secondToken) })).statusCode).toBe(204);
+    expect(await ownInterests()).toBe(1);
+    expect((await app.inject({ method: "DELETE", url: interestUrl, headers: auth() })).statusCode).toBe(204);
+    expect(await ownInterests()).toBe(0);
+    // 다시 눌러도 같은 결과다. 없는 공고와 UUID가 아닌 id만 실패한다.
+    expect((await app.inject({ method: "DELETE", url: interestUrl, headers: auth() })).statusCode).toBe(204);
+    expect((await app.inject({ method: "DELETE", url: `/v1/jobs/postings/${randomUUID()}/interest`, headers: auth() })).statusCode).toBe(404);
+    expect((await app.inject({ method: "DELETE", url: "/v1/jobs/postings/not-a-uuid/interest", headers: auth() })).statusCode).toBe(400);
   });
 
   it("requires three records, persists four-axis scores, and hides demand ratios below five jobs", async () => {

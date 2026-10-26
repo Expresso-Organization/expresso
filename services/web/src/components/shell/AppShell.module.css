@@ -46,6 +46,8 @@
   border-bottom: 1px solid var(--ex-border-hair);
   gap: 8px;
   padding: 0 12px;
+  /* 화면이 머리 폭에 맞춰 동작을 줄이고 늘릴 수 있게 크기 컨테이너로 둔다(`@container document-header`). */
+  container: document-header / inline-size;
 }
 
 @media (min-width: 768px) {

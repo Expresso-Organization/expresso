@@ -1,5 +1,6 @@
 import { ApiError } from "@/lib/api/client";
 import { auth } from "@/lib/api/endpoints";
+import { safeNext } from "@/lib/auth/next-path";
 import { writeAccessToken } from "@/lib/session";
 
 /**
@@ -31,18 +32,11 @@ function readDevLogin(): DevLogin | null {
   return { email, password, displayName: process.env.DEV_LOGIN_NAME ?? "Dev" };
 }
 
-/** 열린 리다이렉트를 만들지 않는다. 같은 출처의 경로만 받는다. */
-function safeNext(value: string | null): string {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) return "/home";
-  return value;
-}
-
 export async function GET(request: Request): Promise<Response> {
   const login = readDevLogin();
   if (!login) return new Response(null, { status: 404 });
 
-  const session = await issueSession(login);
-  await writeAccessToken(session.accessToken, session.expiresAt);
+  await writeAccessToken(await issueSession(login));
 
   const next = safeNext(new URL(request.url).searchParams.get("next"));
   return new Response(null, { status: 303, headers: { location: next } });

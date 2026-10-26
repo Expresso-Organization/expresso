@@ -384,6 +384,8 @@
 
 .interests {
   display: grid;
+  /* 암묵 열은 내용 너비로 잡혀 긴 공고 이름이 점수를 밖으로 민다. 목록 너비에 묶는다. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 1px;
 }
 

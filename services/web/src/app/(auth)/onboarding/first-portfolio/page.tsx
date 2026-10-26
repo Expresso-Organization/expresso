@@ -64,8 +64,8 @@ export default function OnboardingFirstPortfolioPage() {
           <Link href="/home" className={styles.ghost}>
             홈으로 가기
           </Link>
-          <Link href="/brew/toss/analyze" className={styles.primary}>
-            토스 공고로 시작하기
+          <Link href="/brew/new" className={styles.primary}>
+            공고 골라 시작하기
           </Link>
         </>
       }

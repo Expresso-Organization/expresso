@@ -19,10 +19,21 @@ import styles from "./auth.module.css";
 export function SocialSignIn({
   googleEnabled,
   verb = "계속",
+  persistent = true,
+  next,
 }: {
   googleEnabled: boolean;
   verb?: "계속" | "가입";
+  /** 로그인 화면의 "로그인 상태 유지". 왕복 시작 주소에 실어 보낸다. */
+  persistent?: boolean;
+  /** 로그인 뒤 돌아갈 자리. 없으면 시작 라우트의 기본값(`/home`). */
+  next?: string | undefined;
 }) {
+  const start = new URLSearchParams();
+  if (!persistent) start.set("persistent", "0");
+  if (next) start.set("next", next);
+  const startHref = `/api/auth/google/start${start.size > 0 ? `?${start}` : ""}`;
+
   return (
     <div className={styles.socials}>
       {/* GitHub은 백엔드에 경로가 아직 없다. */}
@@ -33,7 +44,7 @@ export function SocialSignIn({
 
       {googleEnabled ? (
         // 앱을 떠나는 이동이라 링크다. 라우트 핸들러가 Google로 넘긴다.
-        <a href="/api/auth/google/start" className={styles.social}>
+        <a href={startHref} className={styles.social}>
           <Icon name="google-logo" weight="fill" size={16} />
           Google로 {verb}
         </a>

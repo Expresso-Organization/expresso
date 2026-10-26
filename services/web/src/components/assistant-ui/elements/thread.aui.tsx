@@ -1,4 +1,6 @@
 // NOTE(agent-chat-framework): 원본 구조와 스타일을 유지하고 UI 문구를 한국어로 바꾸고 미지원 작업은 capabilities로 숨깁니다.
+// 최근 메시지로 버튼은 원본의 p-4 대신 size-8(Button size="icon")을 씁니다. p-4가 TooltipIconButton의 size-6 상자에서
+// 콘텐츠 폭을 0px로 만들고, 전역 svg { max-width: 100% } 규칙 때문에 화살표 아이콘의 폭이 0이 됩니다.
 "use client";
 
 import {
@@ -221,7 +223,7 @@ const ThreadMessage: FC = () => {
 
 const ThreadScrollToBottom: FC = () => {
   return (
-    <ThreadPrimitive.ScrollToBottom render={<TooltipIconButton tooltip="최근 메시지로" variant="outline" className="aui-thread-scroll-to-bottom dark:border-border dark:bg-background dark:hover:bg-accent absolute -top-12 z-10 self-center rounded-full p-4 disabled:invisible" />}><ArrowDownIcon /></ThreadPrimitive.ScrollToBottom>
+    <ThreadPrimitive.ScrollToBottom render={<TooltipIconButton tooltip="최근 메시지로" variant="outline" className="aui-thread-scroll-to-bottom dark:border-border dark:bg-background dark:hover:bg-accent absolute -top-12 z-10 self-center size-8 rounded-full disabled:invisible" />}><ArrowDownIcon /></ThreadPrimitive.ScrollToBottom>
   );
 };
 

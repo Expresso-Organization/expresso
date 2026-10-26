@@ -4992,10 +4992,10 @@
       <div data-screen-label="06b" style="width: 1440px; margin: 0 0 18px; display: flex; align-items: baseline; gap: 14px">
     <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9A4030">06b</span>
     <h2 style="margin: 0; font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 400; letter-spacing: -.025em">공고 상세</h2>
-    <span style="font-size: 13px; color: #5A6B87">공고 원문을 그대로 읽으면서, 내 기록이 어디에 닿는지 함께 봅니다</span>
+    <span style="font-size: 13px; color: #5A6B87">공고 원문을 읽으면서, 오른쪽 대화에서 이 공고를 기준으로 내 기록을 살펴봅니다</span>
   </div>
 
-  <div style="width: 1440px; height: 940px; margin: 0; background: #F7FAFE; display: flex; overflow: hidden; border-radius: 12px; box-shadow: 0 22px 54px rgba(22,34,58,.13); font-size: 13px">
+  <div style="width: 1440px; height: 1080px; margin: 0; background: #F7FAFE; display: flex; overflow: hidden; border-radius: 12px; box-shadow: 0 22px 54px rgba(22,34,58,.13); font-size: 13px">
     <aside style="width: 250px; flex-shrink: 0; background: #F7F8FA; border-right: 1px solid #E9ECF2; padding: 14px 10px; display: flex; flex-direction: column">
       <div style="display: flex; align-items: center; gap: 9px; padding: 4px 8px 14px">
         <svg width="22" height="22" viewBox="0 0 108 108" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="cn06"><circle cx="44" cy="54" r="36"></circle></clipPath><mask id="kn06"><rect x="0" y="0" width="108" height="108" fill="#fff"></rect><circle cx="44" cy="54" r="46.5" fill="#000"></circle></mask></defs><circle cx="78.2" cy="54" r="19.8" stroke="#E0B486" stroke-width="8.5" mask="url(#kn06)"></circle><rect x="0" y="58.96" width="108" height="49.04" fill="#9A4030" clip-path="url(#cn06)"></rect><circle cx="44" cy="54" r="36" stroke="#9A4030" stroke-width="10"></circle></svg>
@@ -5081,10 +5081,11 @@
         <span style="font-size: 14px; font-weight: 600">뱅크샐러드 · 데이터 파이프라인 엔지니어</span>
         <span style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; letter-spacing: .08em; color: #0E8A63; background: #E4F7F0; border-radius: 4px; padding: 3px 6px">NEW</span>
         <span style="font-size: 11.5px; color: #5A6B87">원티드 · 2일 전 등록</span>
-        <div style="margin-left: auto; display: flex; align-items: center; gap: 10px">
-          <span style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #35455F; cursor: pointer"><i class="ph ph-arrow-square-out" style="font-size: 14px; color: #5A6B87"></i>원문</span>
-          <span style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #7E3225; background: #FBEEE4; border-radius: 8px; padding: 7px 11px; cursor: pointer"><i class="ph-fill ph-bookmark-simple" style="font-size: 13px"></i>관심 공고</span>
-          <button style="font-family: inherit; font-size: 12.5px; font-weight: 600; color: #35455F; background: #fff; border: 1px solid #DCE3ED; border-radius: 9px; padding: 8px 14px; cursor: pointer; transition: border-color .16s" style-hover="border-color: #C7D2E2">공고 사이트에서 지원</button>
+        <!-- 머리 오른쪽은 버튼 세 개다: 관심 공고 · 원문 · 채팅 접기/펼치기(펼친 상태는 채운 아이콘). 머리 폭이 768px 이상이면 이름을 함께, 그보다 좁으면 아이콘만. -->
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 4px">
+          <span style="display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border-radius: 8px; font-size: 12.5px; color: #35455F"><i class="ph-fill ph-bookmark-simple" style="font-size: 16px; color: #9A4030"></i>관심 공고</span>
+          <span style="display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border-radius: 8px; font-size: 12.5px; color: #35455F"><i class="ph ph-arrow-square-out" style="font-size: 16px; color: #5A6B87"></i>원문 보기</span>
+          <span style="display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border-radius: 8px; font-size: 12.5px; color: #35455F"><i class="ph-fill ph-chat-circle-dots" style="font-size: 16px; color: #9A4030"></i>채팅 접기</span>
         </div>
       </div>
 
@@ -5183,64 +5184,43 @@
               <div style="flex: 1; min-width: 0"><div style="display: flex; align-items: center; gap: 7px; margin-bottom: 7px"><span style="width: 18px; height: 18px; border-radius: 50%; background: #16223A; display: grid; place-items: center; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #fff; flex-shrink: 0">01</span><span style="flex: 1; height: 1px; background: #EFF4FB"></span></div><div style="font-size: 11.5px; color: #16223A; font-weight: 600">서류 전형</div></div><div style="flex: 1; min-width: 0"><div style="display: flex; align-items: center; gap: 7px; margin-bottom: 7px"><span style="width: 18px; height: 18px; border-radius: 50%; background: #EFF4FB; display: grid; place-items: center; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #5A6B87; flex-shrink: 0">02</span><span style="flex: 1; height: 1px; background: #EFF4FB"></span></div><div style="font-size: 11.5px; color: #5A6B87; font-weight: 400">직무 · 기술 인터뷰</div></div><div style="flex: 1; min-width: 0"><div style="display: flex; align-items: center; gap: 7px; margin-bottom: 7px"><span style="width: 18px; height: 18px; border-radius: 50%; background: #EFF4FB; display: grid; place-items: center; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #5A6B87; flex-shrink: 0">03</span><span style="flex: 1; height: 1px; background: #EFF4FB"></span></div><div style="font-size: 11.5px; color: #5A6B87; font-weight: 400">컬처핏 인터뷰</div></div><div style="flex: 1; min-width: 0"><div style="display: flex; align-items: center; gap: 7px; margin-bottom: 7px"><span style="width: 18px; height: 18px; border-radius: 50%; background: #EFF4FB; display: grid; place-items: center; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #5A6B87; flex-shrink: 0">04</span><span style="flex: 1; height: 1px; background: #EFF4FB"></span></div><div style="font-size: 11.5px; color: #5A6B87; font-weight: 400">처우 협의 · 입사</div></div>
             </div>
             <div style="font-size: 11px; line-height: 1.75; color: #93A2BA; padding-top: 12px; border-top: 1px solid #F4F7FB">수습 3개월 후 정규직 전환 평가가 있으며 수습 기간 임금은 전액 지급됩니다 · 국가유공자 및 장애인은 관계 법령에 따라 우대합니다</div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: .14em; color: #93A2BA; margin: 22px 0 10px">이 회사의 톤</div>
+            <div style="display: flex; gap: 7px; margin-bottom: 12px">
+              <div style="text-align: center"><div style="width: 28px; height: 28px; border-radius: 7px; background: #1B2A4A"></div><div style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: #93A2BA; margin-top: 4px">#1B2A4A</div></div>
+              <div style="text-align: center"><div style="width: 28px; height: 28px; border-radius: 7px; background: #2E7CF6"></div><div style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: #93A2BA; margin-top: 4px">#2E7CF6</div></div>
+              <div style="text-align: center"><div style="width: 28px; height: 28px; border-radius: 7px; background: #EFF2F6; box-shadow: 0 0 0 1px rgba(22,34,58,.08)"></div><div style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: #93A2BA; margin-top: 4px">#EFF2F6</div></div>
+            </div>
+            <div style="display: grid; grid-template-columns: 148px minmax(0, 1fr); gap: 6px 8px; font-size: 12px"><span style="color: #5A6B87">공고 말투</span><span style="color: #16223A">담백 · 사실 위주</span><span style="color: #5A6B87">인상</span><span style="color: #16223A">정확 · 신뢰</span></div>
           </div>
         </div>
 
-        <div style="width: 344px; flex-shrink: 0; display: flex; flex-direction: column; gap: 14px">
-          <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 16px; padding: 18px 20px; flex-shrink: 0">
-            <div style="display: flex; align-items: flex-end; gap: 10px; margin-bottom: 14px">
-              <div>
-                <div style="font-size: 11.5px; color: #5A6B87; margin-bottom: 6px">내 기록과의 일치</div>
-                <div style="display: flex; align-items: baseline; gap: 4px"><span style="font-family: 'Outfit', sans-serif; font-weight: 300; font-size: 38px; line-height: 1; letter-spacing: -.03em; color: #16223A">69</span><span style="font-size: 14px; color: #5A6B87">%</span></div>
+        <div style="width: 344px; flex-shrink: 0; display: flex; flex-direction: column; position: relative">
+          <!-- 왼쪽 경계를 끌어 너비를 바꾼다(316px ~ 본문 폭 − 700px). 페이지 머리의 채팅 버튼으로 접으면 레일이 사라지고 본문이 그 자리를 쓴다. -->
+          <div title="채팅 너비 조절" style="position: absolute; left: -9px; top: 50%; transform: translateY(-50%); width: 4px; height: 36px; border-radius: 999px; background: #C9D3E3"></div>
+          <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 16px; flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 14px">
+              <span style="width: 36px; height: 36px; border-radius: 10px; background: #FBEEE4; display: grid; place-items: center; flex-shrink: 0"><i class="ph-fill ph-coffee" style="font-size: 18px; color: #9A4030"></i></span>
+              <div style="min-width: 0"><div style="font-size: 13px; font-weight: 600; color: #16223A">새 대화</div><div style="font-size: 10.5px; color: #93A2BA; margin-top: 3px">Expresso AI</div></div>
+              <div style="margin-left: auto; display: flex; gap: 10px; color: #5A6B87"><i class="ph ph-list" style="font-size: 17px"></i><i class="ph ph-arrows-out-simple" style="font-size: 16px"></i><i class="ph ph-note-pencil" style="font-size: 17px"></i></div>
+            </div>
+            <div style="padding: 0 14px 12px; border-bottom: 1px solid #F4F7FB">
+              <div style="display: flex; align-items: center; gap: 5px; font-size: 10.5px; color: #93A2BA; margin-bottom: 8px"><i class="ph ph-paperclip" style="font-size: 13px"></i>함께 보는 자료</div>
+              <span style="display: inline-flex; align-items: center; gap: 6px; border: 1px solid #E2E9F4; border-radius: 6px; padding: 5px 8px; font-size: 10.5px; color: #35455F"><i class="ph ph-target" style="font-size: 13px; color: #9A4030"></i>데이터 파이프라인 엔지니어 (Streaming · Batch)</span>
+            </div>
+            <div style="flex: 1; min-height: 0; padding: 18px 14px; display: flex; flex-direction: column; justify-content: center">
+              <div style="font-size: 11px; color: #5A6B87">뱅크샐러드</div>
+              <div style="font-size: 18px; font-weight: 600; letter-spacing: -.02em; line-height: 1.3; color: #16223A; margin: 6px 0 8px">데이터 파이프라인 엔지니어 (Streaming · Batch)</div>
+              <div style="font-size: 12px; line-height: 1.75; color: #5A6B87">이 공고를 기준으로 내 기록을 살펴봅니다.</div>
+              <div style="display: grid; gap: 6px; margin-top: 16px">
+                <div style="display: flex; align-items: center; gap: 10px; background: #F7FAFE; border: 1px solid #F4F7FB; border-radius: 10px; padding: 10px 12px; font-size: 12px; font-weight: 500; color: #16223A"><i class="ph ph-list-checks" style="font-size: 16px; color: #9A4030"></i><span style="flex: 1">요건과 내 기록 비교</span><i class="ph ph-arrow-up-right" style="font-size: 13px; color: #93A2BA"></i></div>
+                <div style="display: flex; align-items: center; gap: 10px; background: #F7FAFE; border: 1px solid #F4F7FB; border-radius: 10px; padding: 10px 12px; font-size: 12px; font-weight: 500; color: #16223A"><i class="ph ph-magnifying-glass" style="font-size: 16px; color: #9A4030"></i><span style="flex: 1">이 공고가 보는 역량</span><i class="ph ph-arrow-up-right" style="font-size: 13px; color: #93A2BA"></i></div>
+                <div style="display: flex; align-items: center; gap: 10px; background: #F7FAFE; border: 1px solid #F4F7FB; border-radius: 10px; padding: 10px 12px; font-size: 12px; font-weight: 500; color: #16223A"><i class="ph ph-chat-circle-dots" style="font-size: 16px; color: #9A4030"></i><span style="flex: 1">부족한 요건 보완 질문</span><i class="ph ph-arrow-up-right" style="font-size: 13px; color: #93A2BA"></i></div>
               </div>
-              <div style="margin-left: auto; text-align: right">
-                <div style="font-size: 11px; color: #0E8A63">충족 9</div>
-                <div style="font-size: 11px; color: #93A2BA; margin-top: 5px">미충족 4</div>
-                <div style="font-size: 11px; color: #93A2BA; margin-top: 5px">요건 13개</div>
-              </div>
             </div>
-            <div style="display: flex; gap: 3px; height: 6px; margin-bottom: 12px">
-              <div style="flex: 9; background: #12A97A; border-radius: 999px"></div>
-              <div style="flex: 4; background: #E2E9F4; border-radius: 999px"></div>
+            <div style="padding: 0 14px 12px">
+              <div style="border: 1px solid #D5DEEC; border-radius: 16px; padding: 12px 12px 10px; display: flex; flex-direction: column; gap: 14px"><span style="font-size: 12.5px; color: #93A2BA">메시지를 입력하세요…</span><span style="align-self: flex-end; width: 28px; height: 28px; border-radius: 50%; background: #EEF2F8; display: grid; place-items: center"><i class="ph ph-arrow-up" style="font-size: 14px; color: #93A2BA"></i></span></div>
+              <div style="display: flex; justify-content: center; align-items: center; gap: 5px; font-size: 10.5px; color: #93A2BA; margin-top: 10px"><i class="ph ph-check-circle" style="font-size: 12px"></i>기록의 변경은 확인 후 적용됩니다.</div>
             </div>
-            <div style="font-size: 11.5px; line-height: 1.75; color: #5A6B87">비슷한 공고 14건 중 <b style="color: #16223A">2번째로 가까운</b> 공고입니다. 스트리밍 경험만 채우면 이 조건대의 8건이 함께 열립니다.</div>
-          </div>
-
-          <div style="background: #FBEEE4; border-radius: 16px; padding: 18px 20px; flex-shrink: 0">
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 11px">
-              <i class="ph-fill ph-coffee" style="font-size: 15px; color: #9A4030"></i>
-              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: .1em; color: #9A4030">빠진 재료 하나</span>
-            </div>
-            <div style="font-size: 13px; font-weight: 600; color: #16223A; line-height: 1.6; margin-bottom: 7px">큐로 처리한 이야기가 기록에 없습니다</div>
-            <div style="font-size: 11.5px; line-height: 1.75; color: #7E3225; margin-bottom: 13px">정산 스케줄러를 큐 기반으로 바꿨다고 적어두셨는데, 그게 스트리밍 경험입니다. 질문 3개면 요건 하나가 채워집니다.</div>
-            <button style="width: 100%; font-family: inherit; font-size: 12.5px; font-weight: 600; color: #fff; background: #9A4030; border: none; border-radius: 9px; padding: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; transition: background .16s" style-hover="background: #7E3225"><i class="ph ph-chat-circle-dots" style="font-size: 14px"></i>질문 3개로 채우기</button>
-          </div>
-
-          <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 16px; padding: 18px 20px; flex-shrink: 0">
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px">
-              <i class="ph-fill ph-drop-half" style="font-size: 14px; color: #9A4030"></i>
-              <span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: .1em; color: #9A4030">이 회사의 톤</span>
-            </div>
-            <div style="display: flex; gap: 7px; margin-bottom: 13px">
-              <div style="flex: 1"><div style="height: 38px; border-radius: 8px; background: #1B2A4A"></div><div style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: #93A2BA; margin-top: 5px">#1B2A4A</div></div>
-              <div style="flex: 1"><div style="height: 38px; border-radius: 8px; background: #2E7CF6"></div><div style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: #93A2BA; margin-top: 5px">#2E7CF6</div></div>
-              <div style="flex: 1"><div style="height: 38px; border-radius: 8px; background: #EFF2F6"></div><div style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: #93A2BA; margin-top: 5px">#EFF2F6</div></div>
-            </div>
-            <div style="display: grid; gap: 8px">
-              <div style="display: flex; justify-content: space-between; font-size: 12px"><span style="color: #5A6B87">공고 말투</span><span style="color: #16223A; font-weight: 500">담백 · 사실 위주</span></div>
-              <div style="display: flex; justify-content: space-between; font-size: 12px"><span style="color: #5A6B87">인상</span><span style="color: #16223A; font-weight: 500">정확 · 신뢰</span></div>
-            </div>
-          </div>
-
-          <div style="background: #fff; border: 1px solid #E2E9F4; border-radius: 16px; padding: 18px 20px; flex: 1; min-height: 0; display: flex; flex-direction: column">
-            <div style="font-size: 13px; font-weight: 600; margin-bottom: 4px">이 공고로 만들면</div>
-            <div style="font-size: 11.5px; color: #5A6B87; margin-bottom: 13px">이 기록들이 먼저 올라갑니다</div>
-            <div style="display: grid; gap: 7px">
-              <div style="display: flex; align-items: center; gap: 10px; background: #F7FAFE; border-radius: 9px; padding: 9px 12px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #9A4030; flex-shrink: 0">01</span><span style="font-size: 12px; color: #35455F; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">정산 스케줄러 재설계</span><i class="ph ph-arrow-up" style="font-size: 12px; color: #9A4030"></i></div>
-              <div style="display: flex; align-items: center; gap: 10px; background: #F7FAFE; border-radius: 9px; padding: 9px 12px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #5A6B87; flex-shrink: 0">02</span><span style="font-size: 12px; color: #35455F; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">야간 배치 안정화</span></div>
-              <div style="display: flex; align-items: center; gap: 10px; background: #F7FAFE; border-radius: 9px; padding: 9px 12px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #5A6B87; flex-shrink: 0">03</span><span style="font-size: 12px; color: #35455F; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">데이터 품질 모니터링</span></div>
-            </div>
-            <button style="margin-top: auto; width: 100%; font-family: inherit; font-size: 13.5px; font-weight: 600; color: #fff; background: #16223A; border: none; border-radius: 10px; padding: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; flex-shrink: 0"><i class="ph-fill ph-coffee" style="font-size: 15px"></i>이 공고로 포트폴리오 만들기</button>
           </div>
         </div>
 

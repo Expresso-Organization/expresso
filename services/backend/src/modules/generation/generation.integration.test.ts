@@ -12,6 +12,7 @@ import type { GeneratedPageResult, PageGenerationContext, PageGenerator } from "
 import { PageService } from "../page/legacy-mysql-service.js";
 import { createGenerationProcessor } from "../../worker/processors/generation.js";
 import { MongoGenerationService } from "./service.js";
+import { findDesignSystemRevision } from "../design-systems/index.js";
 import { MongoIdentityService } from "../identity/index.js";
 import { MongoCareerService } from "../career/index.js";
 import { MongoMaterialsService } from "../materials/index.js";
@@ -82,6 +83,28 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB generation integration",
     await service.prepareFreeHtml(failed.generationJobId);
     expect(await service.failFreeHtml(failed.generationJobId, "PAGE_GENERATION_FAILED")).toMatchObject({ status: "failed", usageCharged: false });
     expect((await db.usageCounters.findOne({ userId }))!.used).toBe(before);
+  });
+
+  it("디자인 시스템 판으로 요청하면 판의 토큰을 스타일로 저장하고 포트폴리오에 판을 남긴다", async () => {
+    // Refero Apple 판은 템플릿과 연결되지 않아 내장 Clarity 틀을 씁니다.
+    const revisionId = "5d8f5f2d-6d2a-4f24-9d1a-2b8f9e7c1303";
+    const revision = findDesignSystemRevision(revisionId)!;
+    const submitted = await service.submit(userId, "mongo-generation-design-system", { recipeId, designSystemRevisionId: revisionId });
+    const db = mongoCollections(fixture.resource.db);
+    const job = (await db.generationJobs.findOne({ _id: submitted.generationJobId }))!;
+    expect(job.designSystemRevisionId).toBe(revisionId);
+    expect((await db.templates.findOne({ _id: job.templateId }))?.code).toBe("clarity");
+    expect(job.styleOverrides).toMatchObject({
+      background: revision.spec.colors.canvas.value,
+      text: revision.spec.colors.text.value,
+      accent: revision.spec.colors.accent.value,
+      structure: revision.spec.composition.layout,
+    });
+    const prepared = await service.prepareFreeHtml(submitted.generationJobId);
+    expect((await db.portfolios.findOne({ _id: prepared.portfolioId! }))?.designSystemRevisionId).toBe(revisionId);
+    await expect(service.submit(userId, "mongo-generation-design-system-missing", {
+      recipeId, designSystemRevisionId: "00000000-0000-4000-8000-000000000000",
+    })).rejects.toMatchObject({ statusCode: 404 });
   });
 
   it("rolls materialization back when the charge boundary rejects the transaction", async () => {
