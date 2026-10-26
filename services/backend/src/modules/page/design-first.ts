@@ -36,6 +36,17 @@ const DESIGN_SOURCE_CHARS = 1_500;
 /** 채우기 단계에 넘기는 근거 원문 길이입니다. */
 const FILL_SOURCE_CHARS = 4_000;
 
+/**
+ * 설계 예산이 정하지 않는 칸의 글자 수 상한입니다. 채우기 출력 스키마와 청사진의 글 자리 길이가 함께 씁니다.
+ * 섹션의 제목 · 요약 · 본문 길이와 항목 · 수치 개수는 설계의 칸 예산이 정합니다.
+ */
+export const FILL_LIMITS = {
+  profile: { role: 60, headline: 72, focus: 30 },
+  section: { period: 60, detailLabel: 20, detailText: 120, metricLabel: 40, metricValue: 24, metricNote: 80 },
+  career: { period: 60, organization: 80, role: 80, description: 160, count: 8 },
+  evidence: { title: 80, kind: 30, summary: 100, body: 300 },
+} as const;
+
 export interface DesignFirstCall {
   contract: string;
   model: string;
@@ -191,14 +202,15 @@ rationale에는 이 지면을 이렇게 설계한 이유를 씁니다. motion은
 
 /** 섹션 하나를 채우는 출력 스키마입니다. 설계의 예산이 최대 길이가 됩니다. */
 function sectionFillSchema(budget: StructuredDesignPlan["sections"][number]["budget"]) {
+  const LIMIT = FILL_LIMITS.section;
   return z.object({
     title: z.string().min(1).max(budget.title),
     summary: z.string().max(Math.max(budget.summary, 0)),
     body: z.string().max(Math.max(budget.body, 0)),
-    period: z.string().max(60).optional(),
-    details: z.array(z.object({ label: z.string().min(1).max(20), text: z.string().min(1).max(120) })).max(budget.details),
+    period: z.string().max(LIMIT.period).optional(),
+    details: z.array(z.object({ label: z.string().min(1).max(LIMIT.detailLabel), text: z.string().min(1).max(LIMIT.detailText) })).max(budget.details),
     metrics: z
-      .array(z.object({ label: z.string().min(1).max(40), value: z.string().min(1).max(24), before: z.string().min(1).max(24).optional(), note: z.string().max(80).optional() }))
+      .array(z.object({ label: z.string().min(1).max(LIMIT.metricLabel), value: z.string().min(1).max(LIMIT.metricValue), before: z.string().min(1).max(LIMIT.metricValue).optional(), note: z.string().max(LIMIT.metricNote).optional() }))
       .max(budget.metrics),
   });
 }
@@ -319,13 +331,13 @@ export async function designFirst(
   const rawById = new Map(raw.sections.map((section) => [section.id, section]));
   const evidenceText = raw.evidence.map((item) => `[${item.id}] ${item.label}\n${item.text.slice(0, FILL_SOURCE_CHARS)}`).join("\n\n");
   const fillSchema = z.object({
-    role: z.string().min(1).max(60),
-    headline: z.string().min(1).max(72),
+    role: z.string().min(1).max(FILL_LIMITS.profile.role),
+    headline: z.string().min(1).max(FILL_LIMITS.profile.headline),
     intro: z.string().max(Math.max(plan.profile.intro, 0)),
-    focus: z.array(z.string().min(1).max(30)).max(plan.profile.focus),
+    focus: z.array(z.string().min(1).max(FILL_LIMITS.profile.focus)).max(plan.profile.focus),
     sections: z.object(Object.fromEntries(included.map((section) => [section.id, sectionFillSchema(section.budget)]))),
-    career: z.array(z.object({ period: z.string().max(60), organization: z.string().min(1).max(80), role: z.string().max(80), description: z.string().max(160) })).max(plan.career ? 8 : 0),
-    evidence: z.array(z.object({ id: z.enum(raw.evidence.length ? (raw.evidence.map((item) => item.id) as [string, ...string[]]) : ["-"]), title: z.string().min(1).max(80), kind: z.string().min(1).max(30), summary: z.string().max(100), body: z.string().max(300) })).max(plan.evidence ? raw.evidence.length : 0),
+    career: z.array(z.object({ period: z.string().max(FILL_LIMITS.career.period), organization: z.string().min(1).max(FILL_LIMITS.career.organization), role: z.string().max(FILL_LIMITS.career.role), description: z.string().max(FILL_LIMITS.career.description) })).max(plan.career ? FILL_LIMITS.career.count : 0),
+    evidence: z.array(z.object({ id: z.enum(raw.evidence.length ? (raw.evidence.map((item) => item.id) as [string, ...string[]]) : ["-"]), title: z.string().min(1).max(FILL_LIMITS.evidence.title), kind: z.string().min(1).max(FILL_LIMITS.evidence.kind), summary: z.string().max(FILL_LIMITS.evidence.summary), body: z.string().max(FILL_LIMITS.evidence.body) })).max(plan.evidence ? raw.evidence.length : 0),
   });
   const fillPrompt = `## 지면 콘셉트
 ${plan.concept}
