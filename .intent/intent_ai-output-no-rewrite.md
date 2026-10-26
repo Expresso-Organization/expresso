@@ -2,7 +2,7 @@
 title: AI 출력 거절 · 재작성 제거
 slug: ai-output-no-rewrite
 stage: intent
-status: draft
+status: accepted
 author: Nedian0Brien
 date: 2026-10-27
 ---
