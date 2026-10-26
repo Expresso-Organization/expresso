@@ -25,3 +25,9 @@ export {
   readableColors,
   relativeLuminance,
 } from "./design-tokens.js";
+export {
+  KIT_LAYOUT,
+  designLayout,
+  describeDesignLayout,
+  type DesignLayout,
+} from "./design-layout.js";

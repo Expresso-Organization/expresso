@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 import {
   PAGE_PROMPT_VERSION,
+  STRUCTURED_GROUP_TYPES,
   StructuredContentModelSchema,
   StructuredPortfolioContentSchema,
   structuredModelSchema,
@@ -10,6 +11,8 @@ import {
   type PageGenerationManifest,
 } from "@expresso/contracts";
 import {
+  describeDesignLayout,
+  designLayout,
   designQa,
   renderStructuredPortfolio,
   validateRenderableSpec,
@@ -41,10 +44,14 @@ export function structuredSpecPrompt(
   instruction = "",
   previous: unknown = null,
   schema: z.ZodType = structuredModelSchema(content),
+  /** 고른 디자인의 배치 문단(`describeDesignLayout`). 없으면 디자인 없이 구성만 정한다고 알립니다. */
+  layout?: string,
 ): string {
   // 요소 ID와 props 형태는 공급자에 넘기는 출력 스키마에서 만듭니다. 아래 문장은 스키마로 표현할 수 없는 규칙입니다.
   const format = describeSpecSchema(schema);
   const ids = format.required;
+  // 컨테이너를 쓸 수 있는지는 출력 스키마가 정합니다. 넓은 여백 디자인은 group 요소가 없습니다.
+  const groups = format.optional.length > 0;
   const groupId = format.optional[0] ?? "group-1";
   // 예시는 첫 사례와 그 옆에 둘 보조 요소로 만듭니다. 보조 요소가 없으면 두 번째 사례를 씁니다.
   const pair = [
@@ -69,22 +76,24 @@ export function structuredSpecPrompt(
   };
   return `개인 포트폴리오의 json-render Spec을 작성하세요. HTML/CSS를 쓰지 않습니다.
 ${Object.entries(structuredCatalog.data.components)
+  .filter(([name]) => groups || !(STRUCTURED_GROUP_TYPES as readonly string[]).includes(name))
   .map(([name, component]) => `${name}: ${component.description}`)
   .join("\n")}
 입력 특징: ${JSON.stringify({ profile: content.profile, sections: content.sections.map((section) => ({ id: section.id, title: section.title, summary: section.summary, pattern: section.pattern, bodyLength: section.body.length, images: section.media.length, imageDescriptions: section.media.map((item) => item.alt), details: section.details.map((item) => ({ label: item.label, excerpt: item.text.slice(0, 160) })) })), careerCount: content.career.length, evidenceCount: content.evidence.length, contact: !!content.contact })}
-색·서체·간격은 사용자가 고른 디자인 시스템이 정합니다. 이 Spec은 구성(첫 화면 구도, 사례 유형, 목차 형태, 컨테이너 배치)을 정합니다. rationale에는 이미지·본문 길이·설명 유형을 근거로 고른 구성의 이유를 씁니다. motion은 'showcase'를 씁니다. 자료마다 사례 유형을 독립적으로 선택합니다.
+${layout ?? "색·서체·간격은 사용자가 고른 디자인 시스템이 정하고, 이 Spec은 구성만 정합니다."}
+구성은 첫 화면 구도, 사례 유형, 목차 형태${groups ? ", 컨테이너 배치" : ""}입니다. rationale에는 이미지·본문 길이·설명 유형과 위 배치를 근거로 고른 구성의 이유를 씁니다. motion은 'showcase'를 씁니다. 자료마다 사례 유형을 독립적으로 선택합니다.
 출력 형식(공급자에 넘기는 출력 스키마에서 생성):
 ${format.text}
-모든 요소 ID를 트리 전체에서 정확히 한 번씩 연결합니다. 사용할 요소 ID: ${JSON.stringify(ids)}. 요소는 page.children에 바로 두거나 컨테이너의 children에 넣습니다. 첫 ID는 intro, 연락처가 있으면 마지막 ID는 contact이며 둘은 컨테이너에 넣지 않습니다.
-컨테이너는 지면을 나누는 요소입니다. 요소 ID는 ${groupId}부터 차례로 쓰고, 각 컨테이너를 page.children에서 한 번 참조합니다. 컨테이너 안에 컨테이너를 넣지 않습니다. ${describeGroupRules()} 자료의 비중과 관계에 맞을 때만 쓰고, 쓰지 않아도 됩니다.
+모든 요소 ID를 트리 전체에서 정확히 한 번씩 연결합니다. 사용할 요소 ID: ${JSON.stringify(ids)}. ${groups ? "요소는 page.children에 바로 두거나 컨테이너의 children에 넣습니다. 첫 ID는 intro, 연락처가 있으면 마지막 ID는 contact이며 둘은 컨테이너에 넣지 않습니다." : "모든 요소를 page.children에 바로 둡니다. 첫 ID는 intro, 연락처가 있으면 마지막 ID는 contact입니다."}
+${groups ? `컨테이너는 지면을 나누는 요소입니다. 요소 ID는 ${groupId}부터 차례로 쓰고, 각 컨테이너를 page.children에서 한 번 참조합니다. 컨테이너 안에 컨테이너를 넣지 않습니다. ${describeGroupRules()} 자료의 비중과 관계에 맞을 때만 쓰고, 쓰지 않아도 됩니다.
 컨테이너 예: page.children=${JSON.stringify(example.page)}, elements["${groupId}"]=${JSON.stringify(example.group)}. 컨테이너에 넣은 ID는 page.children에 다시 쓰지 않습니다.
-NameIntro는 첫 요소로 한 번 둡니다. 이름이 가장 크고 바로 아래 한 문장을 둡니다. variant는 소개 문단이 짧고 한 문장이 강하면 'statement', 소개 문단과 집중 분야가 함께 읽혀야 하면 'split', 대표 이미지가 첫 인상을 정할 만하면 'media'를 고릅니다.
+` : ""}NameIntro는 첫 요소로 한 번 둡니다. 이름이 가장 크고 바로 아래 한 문장을 둡니다. variant는 소개 문단이 짧고 한 문장이 강하면 'statement', 소개 문단과 집중 분야가 함께 읽혀야 하면 'split', 대표 이미지가 첫 인상을 정할 만하면 'media'를 고릅니다.
 모든 section을 정확히 한 번, 알맞은 사례 타입으로 표시합니다. 이미지 없는 section에 CaseGallery를 쓰지 않습니다. CaseProcess에는 설명 두 개 이상이 필요합니다.
-ProjectIndex는 필수이며 요소 ID는 index입니다. 소개 바로 다음에 두거나, variant='rail'로 Columns에 넣어 사례 옆 목차로 씁니다.
+ProjectIndex는 필수이며 요소 ID는 index입니다. ${groups ? "소개 바로 다음에 두거나, variant='rail'로 Columns에 넣어 사례 옆 목차로 씁니다." : "소개 바로 다음에 둡니다."}
 경력·근거·사례의 순서는 자유롭게 선택할 수 있습니다. contact가 있으면 마지막에 둡니다. 형식에 없는 속성, 경로, 텍스트를 props에 추가하지 마세요.
 직전 Spec: ${JSON.stringify(previous)}
 수정 요청: ${instruction || "자료를 읽기 좋은 구성으로 조립하세요."}
-컨테이너 없이 쓰는 유효한 page.children 예시: ${JSON.stringify(ids)}. 첫 ID는 intro이며 마지막 ID는 ${content.contact ? "contact" : "자료에 맞는 요소"}입니다. 가운데 사례·경력·근거의 순서는 바꿀 수 있습니다. 연락처 뒤에 다른 요소를 추가하지 않습니다.`;
+${groups ? "컨테이너 없이 쓰는 " : ""}유효한 page.children 예시: ${JSON.stringify(ids)}. 첫 ID는 intro이며 마지막 ID는 ${content.contact ? "contact" : "자료에 맞는 요소"}입니다. 가운데 사례·경력·근거의 순서는 바꿀 수 있습니다. 연락처 뒤에 다른 요소를 추가하지 않습니다.`;
 }
 
 type NormalizationInput = {
@@ -225,22 +234,29 @@ export class StructuredPageGenerator implements PageGenerator {
             ? "library"
             : null;
     // 새 생성은 수집 원본을 고르지 않습니다. 선택지를 비우면 출력 스키마에 sourceId가 없습니다.
+    // 컨테이너 선택지와 배치 문단은 고른 디자인의 배치 계산에서 함께 나옵니다.
+    const layout = context.design ? designLayout(context.design) : null;
     const schema = structuredModelSchema(content, {
       intro: [],
       section: [],
       guidance: [],
-      layout: fixedLayout || "library",
+      ...(layout ? { groups: layout.groups } : {}),
     });
-    const prompt =
-      structuredSpecPrompt(
-        content,
-        context.instruction,
-        context.previous?.structured?.spec,
-        schema,
-      ) +
-      (context.style
-        ? `\n사용자가 고른 스타일이 우선입니다. design.layout='${fixedLayout}', design.font='${context.style.font === "serif" ? "serif" : "sans"}'를 사용하세요.`
-        : "");
+    const prompt = structuredSpecPrompt(
+      content,
+      context.instruction,
+      context.previous?.structured?.spec,
+      schema,
+      layout ? describeDesignLayout(layout, context.design!.identity.name) : undefined,
+    );
+    // 모델은 design을 고르지 않습니다. 저장 계약의 배치 이름은 편집 화면이 읽으므로 사용자 스타일에서 채웁니다.
+    const withDesign = (data: unknown) => {
+      const spec = structuredClone(data) as { elements?: Record<string, { type?: string; props?: Record<string, unknown> }> };
+      const page = spec.elements?.page;
+      if (page?.type === "PortfolioPage" && page.props)
+        page.props = { ...page.props, design: { layout: fixedLayout ?? "library" } };
+      return spec;
+    };
     // 모델이 고칠 수 있는 Spec 검사 실패만 다시 요청합니다. 렌더링은 검사를 통과한 뒤 한 번만 합니다.
     const attempts: { output: unknown; error: string }[] = [];
     let accepted: {
@@ -270,17 +286,10 @@ export class StructuredPageGenerator implements PageGenerator {
       );
       usages.push(result.usage);
       try {
-        const snapshot = validateRenderableSpec(result.data, content);
+        const snapshot = validateRenderableSpec(withDesign(result.data), content);
         const root = snapshot.spec.elements[snapshot.spec.root]!;
         if (root.type !== "PortfolioPage")
           throw new Error("페이지 루트가 필요합니다.");
-        if (
-          context.style &&
-          (root.props.design.layout !== fixedLayout ||
-            root.props.design.font !==
-              (context.style.font === "serif" ? "serif" : "sans"))
-        )
-          throw new Error("사용자가 고른 스타일을 보존해야 합니다.");
         accepted = { snapshot, root, attempt, usage: result.usage };
       } catch (error) {
         attempts.push({

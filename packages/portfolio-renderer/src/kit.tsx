@@ -149,6 +149,7 @@ function Case({ section, kind }: { section: StructuredSection; kind: CaseKind })
   else if (kind === "process")
     body = (
       <>
+        {first ? <Figure media={first} /> : null}
         <Paragraphs value={section.body} />
         <ol className="xp-steps">
           {section.details.map((item, index) => (
@@ -202,8 +203,11 @@ function Case({ section, kind }: { section: StructuredSection; kind: CaseKind })
   return (
     <article id={`section-${section.id}`} className="xp-block xp-case" data-case-type={kind}>
       <CaseHead section={section} />
-      {body}
-      <Sources section={section} />
+      {/* 본문 조각을 한 묶음으로 둡니다. 넓은 여백 배치에서 제목 칸 높이가 본문 첫 조각의 행 높이를 늘리지 않습니다. */}
+      <div className="xp-case-body">
+        {body}
+        <Sources section={section} />
+      </div>
     </article>
   );
 }

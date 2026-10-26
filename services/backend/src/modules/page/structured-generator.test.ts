@@ -13,6 +13,7 @@ import {
 import { StructuredPageGenerator } from "./structured-generator.js";
 import { PageRenderError, type PageGenerationContext } from "./generator.js";
 import { findPortfolioDesign } from "../design-systems/index.js";
+import { describeDesignLayout, designLayout } from "@expresso/portfolio-renderer";
 
 const content: StructuredPortfolioContent = {
   version: 1,
@@ -47,7 +48,6 @@ const spec = {
       type: "PortfolioPage",
       props: {
         profile: { $state: "/profile" },
-        design: { layout: "library", palette: "sage", font: "sans" },
         motion: "showcase",
         rationale: "경로 설명을 읽는 목차와 상세 구성",
       },
@@ -76,6 +76,12 @@ const spec = {
     },
   },
 };
+/** 생성기가 검사 전에 채우는 저장 계약의 배치 이름입니다. 문맥에 사용자 스타일이 없으면 library입니다. */
+function stored<T>(value: T): T {
+  const copy = structuredClone(value) as { elements: { page: { props: object } } };
+  copy.elements.page.props = { ...copy.elements.page.props, design: { layout: "library" } };
+  return copy as T;
+}
 /** 실제 어댑터처럼 출력이 스키마에 맞지 않으면 AI_INVALID_OUTPUT을 던집니다. Error를 넣으면 그대로 던집니다. */
 class Stub implements AiClient {
   calls: AiCallSpec[] = [];
@@ -145,7 +151,7 @@ describe("모델 기반 구조화 생성", () => {
       delta: (text) => deltas.push(text),
       thinking: () => {},
     });
-    expect(result.manifest.structured?.spec).toEqual(spec);
+    expect(result.manifest.structured?.spec).toEqual(stored(spec));
     expect(PageGenerationManifestSchema.parse(result.manifest)).toEqual(
       result.manifest,
     );
@@ -258,7 +264,7 @@ describe("모델 기반 구조화 생성", () => {
     expect(ai.calls[1]!.prompt).toContain("Columns에 사용할 수 없는 variant");
     expect(ai.calls[0]!.prompt).toContain("컨테이너 예:");
     expect(result.html).toContain('data-group="columns" data-variant="wide-end"');
-    expect(result.manifest.structured?.spec).toEqual(grouped);
+    expect(result.manifest.structured?.spec).toEqual(stored(grouped));
   });
   it("검사를 통과한 Spec의 렌더링 실패는 모델에 다시 요청하지 않는다", async () => {
     const large = structuredClone(content);
@@ -295,5 +301,20 @@ describe("모델 기반 구조화 생성", () => {
     );
     const failed = await new StructuredPageGenerator(new Stub([spec])).generate({ ...context, design: small });
     expect(failed.qaReport.status).toBe("failed_qa");
+  });
+  it("넓은 여백 디자인이면 컨테이너를 고를 수 없고 배치 문단을 프롬프트에 넣는다", async () => {
+    // Clarity를 넓은 여백 배치로 바꾼 사본입니다. 배치만 다르고 나머지 토큰은 같습니다.
+    const design = structuredClone(findPortfolioDesign({}));
+    design.composition.layout = "wide-margin";
+    const ai = new Stub([spec]);
+    const result = await new StructuredPageGenerator(ai).generate({ ...context, design });
+    const layout = designLayout(design);
+    expect(ai.calls[0]!.prompt).toContain(describeDesignLayout(layout, design.identity.name));
+    expect(ai.calls[0]!.prompt).not.toContain("컨테이너는 지면을 나누는 요소입니다");
+    const grouped = structuredClone(spec) as { elements: Record<string, unknown> & { page: { children: string[] } } };
+    grouped.elements["group-1"] = { type: "Columns", props: { variant: "even" }, children: ["index", "section-project-a"] };
+    grouped.elements.page.children = ["intro", "group-1"];
+    expect(ai.schemas[0]!.safeParse(grouped).success).toBe(false);
+    expect(result.html).toContain('data-layout="wide-margin"');
   });
 });

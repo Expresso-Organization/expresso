@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>정하린 포트폴리오</title>
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Nanum+Myeongjo:wght@400;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --page-sans:"Pretendard Variable",Pretendard,-apple-system,system-ui,sans-serif;
+  --page-serif:"Nanum Myeongjo","Noto Serif KR",serif;
+  --page-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --page-display:"Outfit",var(--page-sans);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font-family:var(--page-sans);word-break:keep-all;-webkit-font-smoothing:antialiased}
+img{max-width:100%;height:auto;display:block}
+svg{max-width:100%}
+/* 가로 스크롤은 폰에서 지면을 무너뜨린다. 여기서 한 번 더 막는다. */
+body{overflow-x:hidden}
+</style>
+
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Nanum+Myeongjo:wght@400;700&family=Source+Serif+4:wght@400;500;600;700&display=swap");
+.xp-page{--canvas:#ffffff;--surface:#f5f5f5;--elevated:#ebebeb;--text:#000000;--muted:#6b6b6b;--border:#cccccc;--accent:#000000;--action:#000000;--actionText:#ffffff;--font-display:"Playfair Display",Nanum Myeongjo, serif;--font-body:"Source Serif 4",Nanum Myeongjo, serif;--font-mono:ui-monospace,monospace;--type-body:1.0625rem;--line-body:1.65;--type-subheading:1.25rem;--line-subheading:1.35;--type-heading:2rem;--line-heading:1.2;--type-display:4.5rem;--line-display:1.05;--type-example-body:1.0625rem;--line-example-body:1.65;--type-example-heading:2rem;--line-example-heading:1.2;--type-example-display:4.5rem;--line-example-display:1.05;--measure:42rem;--base-unit:4px;--element-gap:16px;--component-gap:32px;--section-gap:104px;--content-width:980px;--card-radius:0px;--control-radius:0px;--border-width:1px;--motion-duration:180ms;--motion-easing:ease-out;--shadow:none;--xp-muted:#6b6b6b;--xp-muted-surface:#6b6b6b;--xp-accent-text:#000000;--xp-action-text:#ffffff;--xp-weight:600;--xp-weight-mid:600;--xp-tracking:-0.02em}
+
+.xp-page{--xp-pad:clamp(20px,5vw,56px);--xp-section:var(--section-gap);--xp-rule:var(--border-width) solid var(--border);--xp-small:max(13px,calc(var(--type-example-body) * .86));--xp-name:clamp(2.6rem,5.2vw + 1rem,calc(var(--type-example-display) * 1.3));--xp-h2:clamp(1.55rem,1.6vw + 1rem,var(--type-example-heading));
+  min-height:100vh;margin:0;background:var(--canvas);color:var(--text);font-family:var(--font-body);font-size:var(--type-example-body);line-height:var(--line-example-body);word-break:keep-all;overflow-wrap:anywhere;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+.xp-page *,.xp-page *::before,.xp-page *::after{box-sizing:border-box}
+.xp-page :is(h1,h2,h3,p,ol,ul,dl,dd,figure,blockquote){margin:0;padding:0}
+.xp-page li{list-style:none}
+.xp-page a{color:var(--xp-accent-text);text-decoration-thickness:1px;text-underline-offset:.22em}
+.xp-page a:focus-visible{outline:2px solid var(--xp-accent-text);outline-offset:3px;border-radius:2px}
+.xp-page[data-density="compact"]{--xp-section:calc(var(--section-gap) * .8)}
+.xp-page[data-density="spacious"]{--xp-section:calc(var(--section-gap) * 1.2)}
+.xp-page[data-divider="none"]{--xp-rule:0 solid transparent}
+.xp-page[data-divider="double"]{--xp-rule:3px double var(--border)}
+.xp-page[data-divider="dashed"]{--xp-rule:var(--border-width) dashed var(--border)}
+.xp-page[data-divider="dotted"]{--xp-rule:max(2px,var(--border-width)) dotted var(--border)}
+.xp-page[data-divider="thick"]{--xp-rule:2px solid var(--text)}
+
+.xp-inner{width:min(100% - var(--xp-pad) * 2,var(--content-width));margin-inline:auto;padding-block:calc(var(--xp-section) * .7) var(--xp-section);display:grid;gap:var(--xp-section)}
+
+/* 글자 */
+.xp-eyebrow{display:block;color:var(--xp-muted);font-family:var(--font-mono);font-size:12px;line-height:1.5;letter-spacing:.08em}
+.xp-name{font-family:var(--font-display);font-size:var(--xp-name);font-weight:var(--xp-weight);line-height:1.02;letter-spacing:calc(var(--xp-tracking) * 1.6)}
+.xp-headline{max-width:30ch;font-family:var(--font-display);font-size:clamp(1.2rem,.9vw + 1rem,calc(var(--type-example-heading) * .78));font-weight:var(--xp-weight-mid);line-height:var(--line-example-heading);letter-spacing:var(--xp-tracking)}
+.xp-h2{font-family:var(--font-display);font-size:var(--xp-h2);font-weight:var(--xp-weight);line-height:var(--line-example-heading);letter-spacing:var(--xp-tracking)}
+.xp-h3{font-size:calc(var(--type-example-body) * 1.06);font-weight:var(--xp-weight);line-height:1.4}
+.xp-lead{max-width:var(--measure);color:var(--xp-muted);font-size:calc(var(--type-example-body) * 1.08);line-height:var(--line-example-body)}
+.xp-body{display:grid;gap:.85em;max-width:var(--measure)}
+.xp-body p{color:var(--text)}
+.xp-small{color:var(--xp-muted);font-size:var(--xp-small);line-height:1.55}
+
+/* 표식 — 라벨 앞에 붙는 디자인별 기호 */
+.xp-page[data-marker="prompt"] .xp-eyebrow::before{content:"$ ";color:var(--xp-accent-text)}
+.xp-page[data-marker="bullet"] .xp-eyebrow::before{content:"■  ";color:var(--xp-accent-text)}
+.xp-page[data-marker="bracket"] .xp-eyebrow::before{content:"[ ";color:var(--xp-accent-text)}
+.xp-page[data-marker="bracket"] .xp-eyebrow::after{content:" ]";color:var(--xp-accent-text)}
+.xp-page[data-marker="rule"] .xp-eyebrow::before{content:"";display:inline-block;width:22px;margin-right:10px;border-top:1px solid var(--xp-accent-text);vertical-align:middle}
+.xp-page[data-marker="numbered"] .xp-eyebrow::before{content:"— ";color:var(--xp-accent-text)}
+
+/* 면 — 카드와 테두리 방식 */
+.xp-panel{position:relative;padding:clamp(20px,2.4vw,calc(var(--component-gap) * 1.35));border:var(--border-width) solid var(--border);border-radius:var(--card-radius);background:var(--surface);box-shadow:var(--shadow);--xp-muted:var(--xp-muted-surface)}
+.xp-page[data-chrome="window"] .xp-panel{padding-top:calc(clamp(20px,2.4vw,calc(var(--component-gap) * 1.35)) + 30px)}
+.xp-page[data-chrome="window"] .xp-panel::before{content:"";position:absolute;inset:0 0 auto;height:30px;border-bottom:var(--border-width) solid var(--border);border-radius:var(--card-radius) var(--card-radius) 0 0;background:var(--elevated)}
+.xp-page[data-chrome="window"] .xp-panel::after{content:"";position:absolute;top:11px;left:14px;width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:15px 0 0 var(--border),30px 0 0 var(--border)}
+.xp-page[data-chrome="masthead"] .xp-panel{padding-top:calc(clamp(20px,2.4vw,calc(var(--component-gap) * 1.35)) + 14px)}
+.xp-page[data-chrome="masthead"] .xp-panel::before{content:"";position:absolute;inset:12px clamp(20px,2.4vw,calc(var(--component-gap) * 1.35)) auto;border-top:3px double var(--text)}
+.xp-page[data-chrome="masthead"] .xp-hero{padding-top:22px;border-top:4px double var(--text)}
+.xp-page[data-chrome="sticker"] .xp-panel{transform:rotate(-.6deg)}
+.xp-page[data-chrome="sticker"] .xp-panel:nth-of-type(2n){transform:rotate(.5deg)}
+.xp-page[data-chrome="panel"] .xp-panel::before{content:"";position:absolute;inset:0 0 auto;height:1px;border-radius:var(--card-radius) var(--card-radius) 0 0;background:color-mix(in srgb,var(--canvas) 55%,white);pointer-events:none}
+.xp-page[data-chrome="frame"] .xp-panel::before{content:"";position:absolute;inset:8px;border:1px solid color-mix(in srgb,var(--accent) 55%,transparent);border-radius:max(0px,calc(var(--card-radius) - 6px));pointer-events:none}
+.xp-page[data-chrome="blob"] .xp-panel{border-radius:calc(var(--card-radius) * 2.1) calc(var(--card-radius) * .8) calc(var(--card-radius) * 2.1) calc(var(--card-radius) * .8)}
+
+/* 행동 */
+.xp-actions{display:flex;flex-wrap:wrap;align-items:center;gap:var(--element-gap) calc(var(--element-gap) * 1.6)}
+.xp-page .xp-act{display:inline-flex;align-items:center;gap:.5em;padding:.78em 1.25em;border-radius:var(--control-radius);background:var(--action);color:var(--xp-action-text);font-size:var(--xp-small);font-weight:var(--xp-weight);line-height:1;text-decoration:none;transition:transform var(--motion-duration) var(--motion-easing),background var(--motion-duration) var(--motion-easing)}
+.xp-page .xp-act:hover{transform:translateY(-1px);background:color-mix(in srgb,var(--action) 88%,var(--text))}
+.xp-quiet{font-size:var(--xp-small);font-weight:var(--xp-weight-mid)}
+.xp-tags{display:flex;flex-wrap:wrap;gap:calc(var(--element-gap) * .6)}
+.xp-case-body{display:grid;align-content:start;gap:calc(var(--component-gap) * 1.1);min-width:0}
+.xp-tags li{padding:.42em .85em;border:var(--border-width) solid var(--border);border-radius:var(--control-radius);color:var(--xp-muted);font-size:var(--xp-small);line-height:1.3}
+
+/* 첫 화면 */
+.xp-hero{display:grid;gap:calc(var(--element-gap) * 1.5);padding-top:calc(var(--xp-section) * .4)}
+.xp-hero .xp-name{margin-top:calc(var(--element-gap) * -.2)}
+.xp-hero .xp-headline{margin-top:calc(var(--element-gap) * -.4)}
+.xp-hero .xp-actions{margin-top:calc(var(--element-gap) * .5)}
+.xp-hero[data-variant="split"]{grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:var(--component-gap) calc(var(--component-gap) * 2);align-items:end}
+.xp-hero[data-variant="split"] .xp-hero-side{display:grid;gap:calc(var(--element-gap) * 1.3)}
+.xp-hero[data-variant="media"]{grid-template-columns:minmax(0,6fr) minmax(0,5fr);gap:calc(var(--component-gap) * 1.6);align-items:center}
+.xp-hero[data-variant="media"] .xp-hero-text{display:grid;gap:calc(var(--element-gap) * 1.4)}
+.xp-hero-art img{width:100%;aspect-ratio:4/3;object-fit:cover;border:var(--border-width) solid var(--border);border-radius:var(--card-radius);background:var(--surface)}
+.xp-hero-art figcaption{margin-top:10px}
+
+/* 섹션 머리 */
+.xp-block{display:grid;align-content:start;gap:calc(var(--component-gap) * 1.1);padding-top:calc(var(--xp-section) * .5);border-top:var(--xp-rule);container-type:inline-size}
+.xp-head{display:grid;gap:calc(var(--element-gap) * .7);align-content:start}
+
+/* 강조 — 번호를 세우는 방식 */
+.xp-num{font-family:var(--font-display);font-weight:var(--xp-weight);font-variant-numeric:tabular-nums}
+.xp-page[data-emphasis="boxed"] .xp-num{padding:.05em .3em;border:var(--border-width) solid var(--text);border-radius:var(--control-radius)}
+.xp-page[data-emphasis="underlined"] .xp-num{padding-bottom:.04em;border-bottom:.12em solid var(--accent)}
+.xp-page[data-emphasis="oversized"] .xp-num{font-size:1.35em}
+.xp-page[data-emphasis="bar"] .xp-num{padding-left:.4em;border-left:.14em solid var(--accent)}
+
+/* 작업 목록 */
+.xp-index-list{display:grid;border-top:var(--xp-rule)}
+.xp-index-list a{display:grid;grid-template-columns:3.2em minmax(0,1fr) auto;gap:var(--element-gap) calc(var(--element-gap) * 1.4);align-items:baseline;padding-block:calc(var(--element-gap) * 1.15);border-bottom:var(--xp-rule);color:inherit;text-decoration:none;transition:background var(--motion-duration) var(--motion-easing)}
+.xp-index-list a:hover{background:color-mix(in srgb,var(--surface) 70%,transparent)}
+.xp-index-list strong{display:block;font-family:var(--font-display);font-size:calc(var(--type-example-body) * 1.2);font-weight:var(--xp-weight);line-height:1.35;letter-spacing:var(--xp-tracking)}
+.xp-index-list small{display:block;margin-top:4px}
+.xp-index-list .xp-arrow{color:var(--xp-accent-text)}
+.xp-index[data-variant="rail"] .xp-index-list a{grid-template-columns:2.4em minmax(0,1fr);padding-block:calc(var(--element-gap) * .8)}
+.xp-index[data-variant="rail"] .xp-index-list strong{font-size:var(--type-example-body)}
+.xp-index[data-variant="rail"] .xp-index-list :is(small,.xp-arrow){display:none}
+.xp-mosaic{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:var(--component-gap)}
+.xp-mosaic a{display:grid;gap:calc(var(--element-gap) * .8);align-content:start;color:inherit;text-decoration:none}
+.xp-mosaic img{width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:max(0px,calc(var(--card-radius) - 4px))}
+.xp-mosaic strong{font-family:var(--font-display);font-size:calc(var(--type-example-body) * 1.15);font-weight:var(--xp-weight);line-height:1.35;letter-spacing:var(--xp-tracking)}
+
+/* 사례 */
+.xp-case-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:calc(var(--component-gap) * 1.4);align-items:start}
+.xp-par{display:grid;grid-template-columns:minmax(4.5em,auto) minmax(0,1fr);gap:calc(var(--element-gap) * .9) calc(var(--element-gap) * 1.3)}
+.xp-par dt{padding-top:.18em;color:var(--xp-muted);font-family:var(--font-mono);font-size:12px;letter-spacing:.04em}
+.xp-par dd{line-height:1.6}
+.xp-par dd+dt,.xp-par dd+dt+dd{padding-top:calc(var(--element-gap) * .9);border-top:var(--xp-rule)}
+.xp-notes{display:grid;gap:calc(var(--element-gap) * 1.3);max-width:var(--measure)}
+.xp-notes section{display:grid;gap:.35em}
+.xp-steps{display:grid;gap:0;border-top:var(--xp-rule)}
+.xp-steps li{display:grid;grid-template-columns:3.2em minmax(0,1fr);gap:calc(var(--element-gap) * 1.2);padding-block:calc(var(--element-gap) * 1.2);border-bottom:var(--xp-rule)}
+.xp-steps li>div{display:grid;gap:.4em;max-width:var(--measure)}
+.xp-gallery{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:var(--element-gap)}
+.xp-gallery figure:first-child{grid-row:span 2}
+.xp-gallery figure:only-child{grid-column:1/-1}
+.xp-figure img{width:100%;height:100%;min-height:180px;object-fit:cover;border:var(--border-width) solid var(--border);border-radius:var(--card-radius);background:var(--surface)}
+.xp-figure figcaption{margin-top:8px}
+.xp-sources{display:flex;flex-wrap:wrap;gap:6px calc(var(--element-gap) * 1.4);font-size:var(--xp-small)}
+
+/* 경력·근거·연락 */
+.xp-timeline{display:grid;gap:0;border-top:var(--xp-rule)}
+.xp-timeline li{display:grid;grid-template-columns:minmax(7.5em,auto) minmax(0,1fr);gap:var(--element-gap) calc(var(--element-gap) * 1.6);padding-block:calc(var(--element-gap) * 1.3);border-bottom:var(--xp-rule)}
+.xp-timeline li>div{display:grid;gap:.3em;max-width:var(--measure)}
+.xp-evidence-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:var(--element-gap)}
+.xp-evidence-list details{padding:calc(var(--element-gap) * 1.1) calc(var(--element-gap) * 1.2);border:var(--border-width) solid var(--border);border-radius:var(--card-radius);background:var(--surface);--xp-muted:var(--xp-muted-surface)}
+.xp-evidence-list summary{display:grid;gap:.3em;cursor:pointer;list-style:none}
+.xp-evidence-list summary::-webkit-details-marker{display:none}
+.xp-evidence-list summary strong{font-weight:var(--xp-weight);line-height:1.4}
+.xp-evidence-list details[open] summary{margin-bottom:calc(var(--element-gap) * .8)}
+.xp-contact{display:grid;gap:calc(var(--element-gap) * 1.2);justify-items:start}
+.xp-footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;padding-top:calc(var(--element-gap) * 1.2);border-top:var(--xp-rule)}
+
+/* 묶음 */
+.xp-group{display:grid;align-items:start;gap:calc(var(--component-gap) * 1.4);container-type:inline-size}
+.xp-group>.xp-index[data-variant="rail"]{position:sticky;top:calc(var(--element-gap) * 2)}
+.xp-group[data-group="columns"]{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.xp-group[data-group="columns"][data-variant="wide-start"]{grid-template-columns:minmax(0,1.7fr) minmax(0,1fr)}
+.xp-group[data-group="columns"][data-variant="wide-end"]{grid-template-columns:minmax(0,1fr) minmax(0,1.7fr)}
+.xp-group[data-group="grid"]{grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+.xp-group[data-group="band"]{padding:clamp(20px,3vw,calc(var(--component-gap) * 1.5));border-radius:var(--card-radius);background:var(--surface);--xp-muted:var(--xp-muted-surface)}
+.xp-group[data-group="band"][data-variant="accent"]{background:transparent;border-top:3px solid var(--accent);border-radius:0}
+.xp-group .xp-case-grid{grid-template-columns:minmax(0,1fr)}
+
+/* 배치 — 넓은 여백은 머리를 왼쪽 단에, 촘촘한 격자는 간격을 줄이고 표를 펼칩니다 */
+.xp-page[data-layout="wide-margin"] .xp-inner>.xp-block{grid-template-columns:minmax(150px,1fr) minmax(0,2.8fr);column-gap:calc(var(--component-gap) * 2)}
+.xp-page[data-layout="wide-margin"] .xp-inner>.xp-block>.xp-head{position:sticky;top:24px}
+.xp-page[data-layout="wide-margin"] .xp-inner>.xp-block>:not(.xp-head){grid-column:2}
+.xp-page[data-layout="wide-margin"] .xp-inner>.xp-block .xp-case-grid{grid-template-columns:minmax(0,1fr)}
+.xp-page[data-layout="dense-grid"] .xp-inner{gap:calc(var(--xp-section) * .75)}
+.xp-page[data-layout="dense-grid"] .xp-index[data-variant="rows"] .xp-index-list{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:var(--component-gap)}
+.xp-page[data-layout="single-column"] .xp-case-grid{grid-template-columns:minmax(0,1fr)}
+
+/* 좁은 폭 — 한 열로 접습니다 */
+@container (max-width:720px){
+  .xp-case-grid,.xp-group[data-group="columns"][data-variant]{grid-template-columns:minmax(0,1fr)}
+  .xp-par{grid-template-columns:minmax(0,1fr);gap:.25em}
+  .xp-par dd+dt,.xp-par dd+dt+dd{border-top:0}
+  .xp-par dd+dt{margin-top:calc(var(--element-gap) * .7);padding-top:calc(var(--element-gap) * .7);border-top:var(--xp-rule)}
+  .xp-timeline li{grid-template-columns:minmax(0,1fr);gap:.35em}
+}
+@media (max-width:760px){
+  .xp-hero[data-variant="split"],.xp-hero[data-variant="media"]{grid-template-columns:minmax(0,1fr)}
+  .xp-page[data-layout="wide-margin"] .xp-inner>.xp-block{grid-template-columns:minmax(0,1fr)}
+  .xp-page[data-layout="wide-margin"] .xp-inner>.xp-block>.xp-head{position:static}
+  .xp-page[data-layout="wide-margin"] .xp-inner>.xp-block>:not(.xp-head){grid-column:1}
+  .xp-page[data-layout="dense-grid"] .xp-index[data-variant="rows"] .xp-index-list{grid-template-columns:minmax(0,1fr)}
+  .xp-gallery{grid-template-columns:minmax(0,1fr)}
+  .xp-gallery figure:first-child{grid-row:auto}
+  .xp-group[data-group="columns"][data-variant]{grid-template-columns:minmax(0,1fr)}
+  .xp-group>.xp-index[data-variant="rail"]{position:static}
+}
+
+/* 모션 — 디자인의 시간·곡선. JavaScript 없이 보이고, 모션 감소·인쇄에서 꺼집니다 */
+@keyframes xp-rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:no-preference){
+  .xp-page:not([data-motion="none"]) .xp-hero>*{animation:xp-rise calc(var(--motion-duration) * 3) var(--motion-easing) both}
+  .xp-page:not([data-motion="none"]) .xp-hero>:nth-child(2){animation-delay:60ms}
+  .xp-page:not([data-motion="none"]) .xp-hero>:nth-child(3){animation-delay:120ms}
+  .xp-page:not([data-motion="none"]) .xp-hero>:nth-child(n+4){animation-delay:180ms}
+  @supports (animation-timeline:view()){
+    .xp-page[data-motion="showcase"] .xp-inner>.xp-block{animation:xp-rise linear both;animation-timeline:view();animation-range:entry 0% entry 28%}
+  }
+}
+@media print{
+  .xp-page *{animation:none!important;transition:none!important}
+  .xp-page{min-height:0}
+  .xp-page[data-layout="wide-margin"] .xp-inner>.xp-block>.xp-head{position:static}
+}
+
+</style>
+</head>
+<body>
+<main class="xp-page" data-layout="wide-margin" data-density="spacious" data-chrome="masthead" data-marker="rule" data-emphasis="underlined" data-divider="thick" data-motion="showcase" aria-label="정하린 포트폴리오"><div class="xp-inner"><header id="intro" class="xp-hero" data-variant="split"><div><p class="xp-eyebrow">기후 데이터 분석가</p><h1 class="xp-name">정하린</h1></div><div class="xp-hero-side"><p class="xp-headline">도시 열 데이터를 분석하는 기후 데이터 분석가입니다.</p><div class="xp-body xp-lead"><p>관측값의 빈틈과 비교 기준을 먼저 밝힙니다. 지도로 공간 차이를 확인하고, 차트로 시간 변화를 검토하며, 해석의 한계를 함께 기록합니다.</p></div><ul class="xp-tags" aria-label="집중하는 일"><li>도시 열</li><li>시계열 분석</li><li>공간 데이터</li></ul><div class="xp-actions"><a class="xp-act" href="#work">대표 작업 보기 <span aria-hidden="true">↓</span></a><a class="xp-quiet" href="#contact">연락하기 ↗</a></div></div></header><nav id="work" class="xp-block xp-index" data-variant="rows" aria-label="선택한 작업"><header class="xp-head"><p class="xp-eyebrow">Selected work</p><h2 class="xp-h2">선택한 작업</h2></header><ol class="xp-index-list"><li><a href="#section-block-heat"><span class="xp-num">01</span><span><strong>골목 열지도</strong><small class="xp-small">격자별 관측 밀도와 열 분포를 함께 표시하는 가상 도시 분석 지도입니다.</small></span><span class="xp-arrow" aria-hidden="true">↗</span></a></li><li><a href="#section-rain-series"><span class="xp-num">02</span><span><strong>강우 격자 노트</strong><small class="xp-small">가상 강우 기록의 변화와 자료 누락을 함께 읽는 월별 차트입니다.</small></span><span class="xp-arrow" aria-hidden="true">↗</span></a></li><li><a href="#section-green-access"><span class="xp-num">03</span><span><strong>녹지 격차 아틀라스</strong><small class="xp-small">녹지까지의 거리와 보행 접근을 나란히 보여 주는 가상 지표 지도입니다.</small></span><span class="xp-arrow" aria-hidden="true">↗</span></a></li></ol></nav><article id="section-block-heat" class="xp-block xp-case" data-case-type="technical"><header class="xp-head"><p class="xp-eyebrow"><span class="xp-num">01</span> · 프로젝트</p><h2 class="xp-h2">골목 열지도</h2><p class="xp-lead">격자별 관측 밀도와 열 분포를 함께 표시하는 가상 도시 분석 지도입니다.</p></header><div class="xp-case-body"><div class="xp-case-grid"><div class="xp-body-stack"><figure class="xp-figure"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NjAiIGhlaWdodD0iNzIwIiB2aWV3Qm94PSIwIDAgOTYwIDcyMCIgcm9sZT0iaW1nIj48cmVjdCB3aWR0aD0iOTYwIiBoZWlnaHQ9IjcyMCIgZmlsbD0iI2Y3ZmFmOSIvPjxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSI5NjAiIGhlaWdodD0iMTA0IiBmaWxsPSIjZTlmM2Y1Ii8+PHRleHQgeD0iNTIiIHk9IjYxIiBmb250LWZhbWlseT0iQXJpYWwsQXBwbGUgU0QgR290aGljIE5lbyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjIyIiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjMTczYjUyIj5DSVRZIENMSU1BVEUgLyBPUEVOIE5PVEUgMDE8L3RleHQ+PHBhdGggZD0iTTUyIDExOEw5MDggMTE4IiBmaWxsPSJub25lIiBzdHJva2U9IiNiOWQwZDgiIHN0cm9rZS13aWR0aD0iMiIvPjxyZWN0IHg9Ijg1IiB5PSIxNzQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0NyIgZmlsbD0iI2I5ZGJlMiIvPjxyZWN0IHg9IjE1MSIgeT0iMTc0IiB3aWR0aD0iNjAiIGhlaWdodD0iNDciIGZpbGw9IiNjNzVlNDIiLz48cmVjdCB4PSIyMTciIHk9IjE3NCIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQ3IiBmaWxsPSIjOWFjYmQ2Ii8+PHJlY3QgeD0iMjgzIiB5PSIxNzQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0NyIgZmlsbD0iI2E5NDgzNyIvPjxyZWN0IHg9IjM0OSIgeT0iMTc0IiB3aWR0aD0iNjAiIGhlaWdodD0iNDciIGZpbGw9IiM3M2FhYmIiLz48cmVjdCB4PSI0MTUiIHk9IjE3NCIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQ3IiBmaWxsPSIjZThiNTg2Ii8+PHJlY3QgeD0iNDgxIiB5PSIxNzQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0NyIgZmlsbD0iI2Q4YWE3OCIvPjxyZWN0IHg9IjU0NyIgeT0iMTc0IiB3aWR0aD0iNjAiIGhlaWdodD0iNDciIGZpbGw9IiNmMGQ4YWEiLz48cmVjdCB4PSI2MTMiIHk9IjE3NCIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQ3IiBmaWxsPSIjZGM4NDU3Ii8+PHJlY3QgeD0iNjc5IiB5PSIxNzQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0NyIgZmlsbD0iI2I5ZGJlMiIvPjxyZWN0IHg9Ijc0NSIgeT0iMTc0IiB3aWR0aD0iNjAiIGhlaWdodD0iNDciIGZpbGw9IiNjNzVlNDIiLz48cmVjdCB4PSI4MTEiIHk9IjE3NCIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQ3IiBmaWxsPSIjOWFjYmQ2Ii8+PHJlY3QgeD0iODUiIHk9IjIyOCIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQ3IiBmaWxsPSIjZDhhYTc4Ii8+PHJlY3QgeD0iMTUxIiB5PSIyMjgiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0NyIgZmlsbD0iI2YwZDhhYSIvPjxyZWN0IHg9IjIxNyIgeT0iMjI4IiB3aWR0aD0iNjAiIGhlaWdodD0iNDciIGZpbGw9IiNkYzg0NTciLz48cmVjdCB4PSIyODMiIHk9IjIyOCIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQ3IiBmaWxsPSIjYjlkYmUyIi8+PHJlY3QgeD0iMzQ5IiB5PSIyMjgiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0NyIgZmlsbD0iI2M3NWU0MiIvPjxyZWN0IHg9IjQxNSIgeT0iMjI4IiB3aWR0aD0iNjAiIGhlaWdodD0iNDciIGZpbGw9IiM5YWNiZDYiLz48cmVjdCB4PSI0ODEiIHk9IjIyOCIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQ3IiBmaWxsPSIjYTk0ODM3Ii8+PHJlY3QgeD0iNTQ3IiB5PSIyMjgiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0NyIgZmlsbD0iIzczYWFiYiIvPjxyZWN0IHg9IjYxMyIgeT0iMjI4IiB3aWR0aD0iNjAiIGhlaWdodD0iNDciIGZpbGw9IiNlOGI1ODYiLz48cmVjdCB4PSI2NzkiIHk9IjIyOCIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQ3IiBmaWxsPSIjZDhhYTc4Ii8+PHJlY3QgeD0iNzQ1IiB5PSIyMjgiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0NyIgZmlsbD0iI2YwZDhhYSIvPjxyZWN0IHg9IjgxMSIgeT0iMjI4IiB3aWR0aD0iNjAiIGhlaWdodD0iNDciIGZpbGw9IiNkYzg0NTciLz48cmVjdCB4PSI4NSIgeT0iMjgyIiB3aWR0aD0iNjAiIGhlaWdodD0iNDciIGZpbGw9IiNhOTQ4MzciLz48cmVjdCB4PSIxNTEiIHk9IjI4MiIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQ3IiBmaWxsPSIjNzNhYWJiIi8+PHJlY3QgeD0iMjE3IiB5PSIyODIiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0NyIgZmlsbD0iI2U4YjU4NiIvPjxyZWN0IHg9IjI4MyIgeT0iMjgyIiB3aWR0aD0iNjAiIGhlaWdodD0iNDciIGZpbGw9IiNkOGFhNzgiLz48cmVjdCB4PSIzNDkiIHk9IjI4MiIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQ3IiBmaWxsPSIjZjBkOGFhIi8+PHJlY3QgeD0iNDE1IiB5PSIyODIiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0NyIgZmlsbD0iI2RjODQ1NyIvPjxyZWN0IHg9IjQ4MSIgeT0iMjgyIiB3aWR0aD0iNjAiIGhlaWdodD0iNDciIGZpbGw9IiNiOWRiZTIiLz48cmVjdCB4PSI1NDciIHk9IjI4MiIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQ3IiBmaWxsPSIjYzc1ZTQyIi8+PHJlY3QgeD0iNjEzIiB5PSIyODIiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0NyIgZmlsbD0iIzlhY2JkNiIvPjxyZWN0IHg9IjY3OSIgeT0iMjgyIiB3aWR0aD0iNjAiIGhlaWdodD0iNDciIGZpbGw9IiNhOTQ4MzciLz48cmVjdCB4PSI3NDUiIHk9IjI4MiIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQ3IiBmaWxsPSIjNzNhYWJiIi8+PHJlY3QgeD0iODExIiB5PSIyODIiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0NyIgZmlsbD0iI2U4YjU4NiIvPjxyZWN0IHg9Ijg1IiB5PSIzMzYiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0NyIgZmlsbD0iI2I5ZGJlMiIvPjxyZWN0IHg9IjE1MSIgeT0iMzM2IiB3aWR0aD0iNjAiIGhlaWdodD0iNDciIGZpbGw9IiNjNzVlNDIiLz48cmVjdCB4PSIyMTciIHk9IjMzNiIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQ3IiBmaWxsPSIjOWFjYmQ2Ii8+PHJlY3QgeD0iMjgzIiB5PSIzMzYiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0NyIgZmlsbD0iI2E5NDgzNyIvPjxyZWN0IHg9IjM0OSIgeT0iMzM2IiB3aWR0aD0iNjAiIGhlaWdodD0iNDciIGZpbGw9IiM3M2FhYmIiLz48cmVjdCB4PSI0MTUiIHk9IjMzNiIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQ3IiBmaWxsPSIjZThiNTg2Ii8+PHJlY3QgeD0iNDgxIiB5PSIzMzYiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0NyIgZmlsbD0iI2Q4YWE3OCIvPjxyZWN0IHg9IjU0NyIgeT0iMzM2IiB3aWR0aD0iNjAiIGhlaWdodD0iNDciIGZpbGw9IiNmMGQ4YWEiLz48cmVjdCB4PSI2MTMiIHk9IjMzNiIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQ3IiBmaWxsPSIjZGM4NDU3Ii8+PHJlY3QgeD0iNjc5IiB5PSIzMzYiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0NyIgZmlsbD0iI2I5ZGJlMiIvPjxyZWN0IHg9Ijc0NSIgeT0iMzM2IiB3aWR0aD0iNjAiIGhlaWdodD0iNDciIGZpbGw9IiNjNzVlNDIiLz48cmVjdCB4PSI4MTEiIHk9IjMzNiIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQ3IiBmaWxsPSIjOWFjYmQ2Ii8+PHJlY3QgeD0iODUiIHk9IjM5MCIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQ3IiBmaWxsPSIjZDhhYTc4Ii8+PHJlY3QgeD0iMTUxIiB5PSIzOTAiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0NyIgZmlsbD0iI2YwZDhhYSIvPjxyZWN0IHg9IjIxNyIgeT0iMzkwIiB3aWR0aD0iNjAiIGhlaWdodD0iNDciIGZpbGw9IiNkYzg0NTciLz48cmVjdCB4PSIyODMiIHk9IjM5MCIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQ3IiBmaWxsPSIjYjlkYmUyIi8+PHJlY3QgeD0iMzQ5IiB5PSIzOTAiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0NyIgZmlsbD0iI2M3NWU0MiIvPjxyZWN0IHg9IjQxNSIgeT0iMzkwIiB3aWR0aD0iNjAiIGhlaWdodD0iNDciIGZpbGw9IiM5YWNiZDYiLz48cmVjdCB4PSI0ODEiIHk9IjM5MCIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQ3IiBmaWxsPSIjYTk0ODM3Ii8+PHJlY3QgeD0iNTQ3IiB5PSIzOTAiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0NyIgZmlsbD0iIzczYWFiYiIvPjxyZWN0IHg9IjYxMyIgeT0iMzkwIiB3aWR0aD0iNjAiIGhlaWdodD0iNDciIGZpbGw9IiNlOGI1ODYiLz48cmVjdCB4PSI2NzkiIHk9IjM5MCIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQ3IiBmaWxsPSIjZDhhYTc4Ii8+PHJlY3QgeD0iNzQ1IiB5PSIzOTAiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0NyIgZmlsbD0iI2YwZDhhYSIvPjxyZWN0IHg9IjgxMSIgeT0iMzkwIiB3aWR0aD0iNjAiIGhlaWdodD0iNDciIGZpbGw9IiNkYzg0NTciLz48cmVjdCB4PSI4NSIgeT0iNDQ0IiB3aWR0aD0iNjAiIGhlaWdodD0iNDciIGZpbGw9IiNhOTQ4MzciLz48cmVjdCB4PSIxNTEiIHk9IjQ0NCIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQ3IiBmaWxsPSIjNzNhYWJiIi8+PHJlY3QgeD0iMjE3IiB5PSI0NDQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0NyIgZmlsbD0iI2U4YjU4NiIvPjxyZWN0IHg9IjI4MyIgeT0iNDQ0IiB3aWR0aD0iNjAiIGhlaWdodD0iNDciIGZpbGw9IiNkOGFhNzgiLz48cmVjdCB4PSIzNDkiIHk9IjQ0NCIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQ3IiBmaWxsPSIjZjBkOGFhIi8+PHJlY3QgeD0iNDE1IiB5PSI0NDQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0NyIgZmlsbD0iI2RjODQ1NyIvPjxyZWN0IHg9IjQ4MSIgeT0iNDQ0IiB3aWR0aD0iNjAiIGhlaWdodD0iNDciIGZpbGw9IiNiOWRiZTIiLz48cmVjdCB4PSI1NDciIHk9IjQ0NCIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQ3IiBmaWxsPSIjYzc1ZTQyIi8+PHJlY3QgeD0iNjEzIiB5PSI0NDQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0NyIgZmlsbD0iIzlhY2JkNiIvPjxyZWN0IHg9IjY3OSIgeT0iNDQ0IiB3aWR0aD0iNjAiIGhlaWdodD0iNDciIGZpbGw9IiNhOTQ4MzciLz48cmVjdCB4PSI3NDUiIHk9IjQ0NCIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQ3IiBmaWxsPSIjNzNhYWJiIi8+PHJlY3QgeD0iODExIiB5PSI0NDQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0NyIgZmlsbD0iI2U4YjU4NiIvPjxyZWN0IHg9Ijg1IiB5PSI0OTgiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0NyIgZmlsbD0iI2I5ZGJlMiIvPjxyZWN0IHg9IjE1MSIgeT0iNDk4IiB3aWR0aD0iNjAiIGhlaWdodD0iNDciIGZpbGw9IiNjNzVlNDIiLz48cmVjdCB4PSIyMTciIHk9IjQ5OCIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQ3IiBmaWxsPSIjOWFjYmQ2Ii8+PHJlY3QgeD0iMjgzIiB5PSI0OTgiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0NyIgZmlsbD0iI2E5NDgzNyIvPjxyZWN0IHg9IjM0OSIgeT0iNDk4IiB3aWR0aD0iNjAiIGhlaWdodD0iNDciIGZpbGw9IiM3M2FhYmIiLz48cmVjdCB4PSI0MTUiIHk9IjQ5OCIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQ3IiBmaWxsPSIjZThiNTg2Ii8+PHJlY3QgeD0iNDgxIiB5PSI0OTgiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0NyIgZmlsbD0iI2Q4YWE3OCIvPjxyZWN0IHg9IjU0NyIgeT0iNDk4IiB3aWR0aD0iNjAiIGhlaWdodD0iNDciIGZpbGw9IiNmMGQ4YWEiLz48cmVjdCB4PSI2MTMiIHk9IjQ5OCIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQ3IiBmaWxsPSIjZGM4NDU3Ii8+PHJlY3QgeD0iNjc5IiB5PSI0OTgiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0NyIgZmlsbD0iI2I5ZGJlMiIvPjxyZWN0IHg9Ijc0NSIgeT0iNDk4IiB3aWR0aD0iNjAiIGhlaWdodD0iNDciIGZpbGw9IiNjNzVlNDIiLz48cmVjdCB4PSI4MTEiIHk9IjQ5OCIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQ3IiBmaWxsPSIjOWFjYmQ2Ii8+PHJlY3QgeD0iODUiIHk9IjU1MiIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQ3IiBmaWxsPSIjZDhhYTc4Ii8+PHJlY3QgeD0iMTUxIiB5PSI1NTIiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0NyIgZmlsbD0iI2YwZDhhYSIvPjxyZWN0IHg9IjIxNyIgeT0iNTUyIiB3aWR0aD0iNjAiIGhlaWdodD0iNDciIGZpbGw9IiNkYzg0NTciLz48cmVjdCB4PSIyODMiIHk9IjU1MiIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQ3IiBmaWxsPSIjYjlkYmUyIi8+PHJlY3QgeD0iMzQ5IiB5PSI1NTIiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0NyIgZmlsbD0iI2M3NWU0MiIvPjxyZWN0IHg9IjQxNSIgeT0iNTUyIiB3aWR0aD0iNjAiIGhlaWdodD0iNDciIGZpbGw9IiM5YWNiZDYiLz48cmVjdCB4PSI0ODEiIHk9IjU1MiIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQ3IiBmaWxsPSIjYTk0ODM3Ii8+PHJlY3QgeD0iNTQ3IiB5PSI1NTIiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0NyIgZmlsbD0iIzczYWFiYiIvPjxyZWN0IHg9IjYxMyIgeT0iNTUyIiB3aWR0aD0iNjAiIGhlaWdodD0iNDciIGZpbGw9IiNlOGI1ODYiLz48cmVjdCB4PSI2NzkiIHk9IjU1MiIgd2lkdGg9IjYwIiBoZWlnaHQ9IjQ3IiBmaWxsPSIjZDhhYTc4Ii8+PHJlY3QgeD0iNzQ1IiB5PSI1NTIiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0NyIgZmlsbD0iI2YwZDhhYSIvPjxyZWN0IHg9IjgxMSIgeT0iNTUyIiB3aWR0aD0iNjAiIGhlaWdodD0iNDciIGZpbGw9IiNkYzg0NTciLz48dGV4dCB4PSI4MiIgeT0iNjU1IiBmb250LWZhbWlseT0iQXJpYWwsQXBwbGUgU0QgR290aGljIE5lbyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjE4IiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjMTczYjUyIj5CTE9DSy1MRVZFTCBIRUFUIElOREVYPC90ZXh0Pjwvc3ZnPgo=" alt="가상 관측 격자의 열 분포 시각화" loading="lazy"/><figcaption class="xp-small">가상 관측 격자의 열 분포 시각화</figcaption></figure></div><div class="xp-panel"><dl class="xp-par"><dt>역할</dt><dd>데이터 정리 · 공간 시각화</dd><dt>기간</dt><dd>2026.03 — 2026.06</dd><dt>문제 정의</dt><dd>관측값이 적은 골목까지 같은 확신도로 칠하면 지역 차이를 과장할 수 있다는 가상 분석 과제를 설정했습니다.</dd><dt>담당 작업</dt><dd>온도 구간과 관측 밀도를 분리하고 결측 격자를 명확히 표시하는 지도를 구성했습니다.</dd><dt>결과와 한계</dt><dd>가상 데이터의 시각화와 계산 설명을 묶은 검토 페이지를 만들었습니다. 실제 도시 분석 결과는 아닙니다.</dd></dl></div></div><nav class="xp-sources" aria-label="골목 열지도 관련 자료"><a href="#source-heat-method">열지도 계산 노트 ↗</a></nav></div></article><article id="section-rain-series" class="xp-block xp-case" data-case-type="process"><header class="xp-head"><p class="xp-eyebrow"><span class="xp-num">02</span> · 프로젝트</p><h2 class="xp-h2">강우 격자 노트</h2><p class="xp-lead">가상 강우 기록의 변화와 자료 누락을 함께 읽는 월별 차트입니다.</p></header><div class="xp-case-body"><figure class="xp-figure"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NjAiIGhlaWdodD0iNzIwIiB2aWV3Qm94PSIwIDAgOTYwIDcyMCIgcm9sZT0iaW1nIj48cmVjdCB3aWR0aD0iOTYwIiBoZWlnaHQ9IjcyMCIgZmlsbD0iI2Y3ZmFmOSIvPjxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSI5NjAiIGhlaWdodD0iMTA0IiBmaWxsPSIjZTlmM2Y1Ii8+PHRleHQgeD0iNTIiIHk9IjYxIiBmb250LWZhbWlseT0iQXJpYWwsQXBwbGUgU0QgR290aGljIE5lbyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjIyIiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjMTczYjUyIj5DSVRZIENMSU1BVEUgLyBPUEVOIE5PVEUgMDI8L3RleHQ+PHBhdGggZD0iTTUyIDExOEw5MDggMTE4IiBmaWxsPSJub25lIiBzdHJva2U9IiNiOWQwZDgiIHN0cm9rZS13aWR0aD0iMiIvPjxwYXRoIGQ9Ik05MCAxOTBMODcwIDE5MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZDFlMWU1IiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNOTAgMjc1TDg3MCAyNzUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2QxZTFlNSIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTkwIDM2MEw4NzAgMzYwIiBmaWxsPSJub25lIiBzdHJva2U9IiNkMWUxZTUiIHN0cm9rZS13aWR0aD0iMiIvPjxwYXRoIGQ9Ik05MCA0NDVMODcwIDQ0NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZDFlMWU1IiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNOTAgNTMwTDg3MCA1MzAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2QxZTFlNSIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTkwIDUzNkMxOTAgNTA1IDI1MCAzOTggMzYwIDQyMFM1MjAgMjkyIDYxNiAzMzVTNzQyIDE3MCA4NzAgMjA1IiBmaWxsPSJub25lIiBzdHJva2U9IiM0MzdiOTIiIHN0cm9rZS13aWR0aD0iOSIvPjxwYXRoIGQ9Ik05MCA1ODBDMTgwIDUzMCAyNzAgNTYwIDM2MCA0OTBTNTAwIDQ4MCA2MTYgNDMwUzc3NSAzNzAgODcwIDMwMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZDQ2YjNjIiBzdHJva2Utd2lkdGg9IjkiLz48dGV4dCB4PSI5MCIgeT0iNjUwIiBmb250LWZhbWlseT0iQXJpYWwsQXBwbGUgU0QgR290aGljIE5lbyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjE4IiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjMTczYjUyIj5QUkVDSVBJVEFUSU9OIC8gMTIgTU9OVEhTPC90ZXh0Pjwvc3ZnPgo=" alt="가상 강우 시계열과 누락 구간 표시 차트" loading="lazy"/><figcaption class="xp-small">가상 강우 시계열과 누락 구간 표시 차트</figcaption></figure><ol class="xp-steps"><li><span class="xp-num" aria-hidden="true">01</span><div><h3 class="xp-h3">역할</h3><div class="xp-body"><p>시계열 정리 · 데이터 검증</p></div></div></li><li><span class="xp-num" aria-hidden="true">02</span><div><h3 class="xp-h3">기간</h3><div class="xp-body"><p>2025.08 — 2026.02</p></div></div></li><li><span class="xp-num" aria-hidden="true">03</span><div><h3 class="xp-h3">문제 정의</h3><div class="xp-body"><p>월별 강우 자료의 누락 구간이 차트에서 보이지 않으면 변화를 잘못 해석할 수 있다는 문제를 가정했습니다.</p></div></div></li><li><span class="xp-num" aria-hidden="true">04</span><div><h3 class="xp-h3">담당 작업</h3><div class="xp-body"><p>관측 시기와 누락 시기를 나누어 표시하고 변화 설명에 데이터 품질 주석을 연결했습니다.</p></div></div></li><li><span class="xp-num" aria-hidden="true">05</span><div><h3 class="xp-h3">결과와 한계</h3><div class="xp-body"><p>두 계열을 비교하는 가상 차트를 만들었습니다. 예측이나 실제 강우량 주장은 포함하지 않습니다.</p></div></div></li></ol><nav class="xp-sources" aria-label="강우 격자 노트 관련 자료"><a href="#source-rain-quality">강우 자료 점검표 ↗</a></nav></div></article><article id="section-green-access" class="xp-block xp-case" data-case-type="technical"><header class="xp-head"><p class="xp-eyebrow"><span class="xp-num">03</span> · 프로젝트</p><h2 class="xp-h2">녹지 격차 아틀라스</h2><p class="xp-lead">녹지까지의 거리와 보행 접근을 나란히 보여 주는 가상 지표 지도입니다.</p></header><div class="xp-case-body"><div class="xp-case-grid"><div class="xp-body-stack"><figure class="xp-figure"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NjAiIGhlaWdodD0iNzIwIiB2aWV3Qm94PSIwIDAgOTYwIDcyMCIgcm9sZT0iaW1nIj48cmVjdCB3aWR0aD0iOTYwIiBoZWlnaHQ9IjcyMCIgZmlsbD0iI2Y3ZmFmOSIvPjxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSI5NjAiIGhlaWdodD0iMTA0IiBmaWxsPSIjZTlmM2Y1Ii8+PHRleHQgeD0iNTIiIHk9IjYxIiBmb250LWZhbWlseT0iQXJpYWwsQXBwbGUgU0QgR290aGljIE5lbyxzYW5zLXNlcmlmIiBmb250LXNpemU9IjIyIiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjMTczYjUyIj5DSVRZIENMSU1BVEUgLyBPUEVOIE5PVEUgMDM8L3RleHQ+PHBhdGggZD0iTTUyIDExOEw5MDggMTE4IiBmaWxsPSJub25lIiBzdHJva2U9IiNiOWQwZDgiIHN0cm9rZS13aWR0aD0iMiIvPjxwYXRoIGQ9Ik05OCA1NDBMMTkwIDIyMEwyOTUgMjU1TDM1NyAxNjhMNDcxIDI5MEw1ODAgMjAzTDcwMCAzMTJMODQ5IDIxMEw4MTUgNTYyWiIgZmlsbD0iI2JmZDhkMCIgc3Ryb2tlPSIjNmFhYmEzIiBzdHJva2Utd2lkdGg9IjQiLz48cGF0aCBkPSJNMTkwIDIyMEwzNTcgMTY4TDQ3MSAyOTBMMzAwIDM5MVoiIGZpbGw9IiM4NWJjYWUiLz48cGF0aCBkPSJNNDcxIDI5MEw1ODAgMjAzTDcwMCAzMTJMNjMwIDUwMEw0MDUgNDc4WiIgZmlsbD0iI2U2Yjg3OCIvPjxwYXRoIGQ9Ik03MDAgMzEyTDg0OSAyMTBMODE1IDU2Mkw2MzAgNTAwWiIgZmlsbD0iI2NjODQ1NSIvPjxjaXJjbGUgY3g9IjE2MCIgY3k9IjI1MCIgcj0iOSIgZmlsbD0iIzE3M2I1MiIgb3BhY2l0eT0iLjgyIi8+PGNpcmNsZSBjeD0iMjM4IiBjeT0iMzQyIiByPSIxMyIgZmlsbD0iI2Q0NmIzYyIgb3BhY2l0eT0iLjgyIi8+PGNpcmNsZSBjeD0iMzE2IiBjeT0iNDM0IiByPSIxNyIgZmlsbD0iI2Q0NmIzYyIgb3BhY2l0eT0iLjgyIi8+PGNpcmNsZSBjeD0iMzk0IiBjeT0iMjUwIiByPSI5IiBmaWxsPSIjMTczYjUyIiBvcGFjaXR5PSIuODIiLz48Y2lyY2xlIGN4PSI0NzIiIGN5PSIzNDIiIHI9IjEzIiBmaWxsPSIjZDQ2YjNjIiBvcGFjaXR5PSIuODIiLz48Y2lyY2xlIGN4PSI1NTAiIGN5PSI0MzQiIHI9IjE3IiBmaWxsPSIjZDQ2YjNjIiBvcGFjaXR5PSIuODIiLz48Y2lyY2xlIGN4PSI2MjgiIGN5PSIyNTAiIHI9IjkiIGZpbGw9IiMxNzNiNTIiIG9wYWNpdHk9Ii44MiIvPjxjaXJjbGUgY3g9IjcwNiIgY3k9IjM0MiIgcj0iMTMiIGZpbGw9IiNkNDZiM2MiIG9wYWNpdHk9Ii44MiIvPjxjaXJjbGUgY3g9Ijc4NCIgY3k9IjQzNCIgcj0iMTciIGZpbGw9IiNkNDZiM2MiIG9wYWNpdHk9Ii44MiIvPjx0ZXh0IHg9IjgyIiB5PSI2NTAiIGZvbnQtZmFtaWx5PSJBcmlhbCxBcHBsZSBTRCBHb3RoaWMgTmVvLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTgiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiMxNzNiNTIiPkdSRUVOIEFDQ0VTUyAvIERJU1RSSUNUPC90ZXh0Pjwvc3ZnPgo=" alt="가상 구역별 녹지 접근성 비교 지도" loading="lazy"/><figcaption class="xp-small">가상 구역별 녹지 접근성 비교 지도</figcaption></figure></div><div class="xp-panel"><dl class="xp-par"><dt>역할</dt><dd>지표 설계 · 지도 표현</dd><dt>기간</dt><dd>2025.01 — 2025.07</dd><dt>문제 정의</dt><dd>가장 가까운 녹지의 직선거리만으로는 실제 접근성을 설명하기 어렵다는 가상 문제를 다뤘습니다.</dd><dt>담당 작업</dt><dd>거리, 연결 도로, 횡단 지점을 별도 지표로 두고 지도의 색상과 범례를 구성했습니다.</dd><dt>결과와 한계</dt><dd>지표별 차이를 비교하는 가상 아틀라스를 만들었습니다. 정책 효과를 검증한 자료는 아닙니다.</dd></dl></div></div><nav class="xp-sources" aria-label="녹지 격차 아틀라스 관련 자료"><a href="#source-green-caveat">녹지 접근성 해석 메모 ↗</a></nav></div></article><section id="career" class="xp-block xp-career"><header class="xp-head"><p class="xp-eyebrow">Experience</p><h2 class="xp-h2">경력</h2></header><ol class="xp-timeline"><li><span class="xp-small">2024.04 — 현재</span><div><h3 class="xp-h3">가상 조직 · 도시 기후 연구실</h3><p class="xp-small">기후 데이터 분석가</p><div class="xp-body"><p>가상 관측 데이터를 정리하고 공간·시간 비교 화면을 설계한 설정입니다.</p></div></div></li><li><span class="xp-small">2022.03 — 2024.03</span><div><h3 class="xp-h3">가상 조직 · 공공 데이터 팀</h3><p class="xp-small">데이터 분석가</p><div class="xp-body"><p>가상의 공개 데이터 품질 검토와 시각화 절차를 맡았다는 경력 설정입니다.</p></div></div></li></ol></section><section id="evidence" class="xp-block xp-evidence"><header class="xp-head"><p class="xp-eyebrow">Evidence</p><h2 class="xp-h2">근거 자료</h2></header><div class="xp-evidence-list"><details id="source-heat-method"><summary><span class="xp-eyebrow">분석 방법</span><strong>열지도 계산 노트</strong><span class="xp-small">격자 크기와 결측치 표시 기준</span></summary><div class="xp-body"><p>가상 관측값을 격자별로 묶고 자료가 없는 칸을 별도로 표시하는 방법을 기록했습니다. 실제 도시의 기온을 뜻하지 않습니다.</p></div></details><details id="source-rain-quality"><summary><span class="xp-eyebrow">데이터 품질</span><strong>강우 자료 점검표</strong><span class="xp-small">누락 기간과 측정 간격 확인</span></summary><div class="xp-body"><p>가상 월별 강우량 시계열에서 누락 기간, 단위, 관측 간격을 점검하는 기준입니다.</p></div></details><details id="source-green-caveat"><summary><span class="xp-eyebrow">해석 한계</span><strong>녹지 접근성 해석 메모</strong><span class="xp-small">거리와 이용 가능성의 차이</span></summary><div class="xp-body"><p>지도상의 직선거리와 실제 보행 접근은 다를 수 있다는 점을 명시한 가상 해석 메모입니다.</p></div></details></div></section><section id="contact" class="xp-block"><div class="xp-panel xp-contact"><p class="xp-eyebrow">Contact</p><h2 class="xp-h2">연락</h2><a class="xp-act" href="mailto:fictional-climate@example.com">작업을 함께 검토할 수 있습니다. ↗</a></div></section><footer class="xp-footer xp-small"><span>정하린</span><span>기후 데이터 분석가</span></footer></div></main>
+</body>
+</html>

@@ -122,10 +122,11 @@ export type StructuredPortfolioContent = z.infer<
   typeof StructuredPortfolioContentSchema
 >;
 export type StructuredSection = z.infer<typeof StructuredSectionSchema>;
+// 색 묶음과 서체 종류는 수집 원본으로 그린 저장본만 씁니다. 새 생성은 디자인 시스템의 색·서체로 그리므로 비웁니다.
 export const StructuredDesignSchema = z.strictObject({
   layout: z.enum(["editorial", "gallery", "dossier", "library"]),
-  palette: z.enum(["ivory", "cobalt", "graphite", "sage", "burgundy"]),
-  font: z.enum(["serif", "sans", "mono"]),
+  palette: z.enum(["ivory", "cobalt", "graphite", "sage", "burgundy"]).optional(),
+  font: z.enum(["serif", "sans", "mono"]).optional(),
 });
 /** 첫 화면 구도: 큰 문장 · 좌우 분할 · 이미지 중심. */
 export const STRUCTURED_INTRO_VARIANTS = ["statement", "split", "media"] as const;
@@ -296,16 +297,22 @@ export function applyStructuredTextPatches(
   }
   return StructuredPortfolioContentSchema.parse(copy);
 }
-// 요소 ID와 참조는 입력에서 고정하고 순서와 지면 유형은 모델이 선택합니다.
+/**
+ * 요소 ID와 참조는 입력에서 고정하고 순서와 지면 유형은 모델이 선택합니다.
+ *
+ * 페이지의 `design`은 모델이 고르지 않습니다. 배치는 고른 디자인 시스템이 정하고, 생성기가
+ * 검사 전에 저장 계약의 `design.layout`을 채웁니다. 그래서 이 스키마의 출력은 그대로 저장
+ * 계약(`StructuredPortfolioSpec`)이 아닙니다. `groups`가 빈 배열이면 컨테이너를 만들 수 없습니다.
+ */
 export function structuredModelSchema(
   content: StructuredPortfolioContent,
   choices?: {
     intro: string[];
     section: string[];
     guidance: string[];
-    layout?: z.infer<typeof StructuredDesignSchema>["layout"];
+    groups?: readonly StructuredGroupType[];
   },
-): z.ZodType<StructuredPortfolioSpec> {
+): z.ZodType {
   const ref = (value: string) =>
     z.strictObject({ $state: z.literal(`/${value}`) });
   const empty = z.array(z.string()).max(0);
@@ -373,12 +380,13 @@ export function structuredModelSchema(
   const groupable = nodeIds.filter(
     (key) => key !== "intro" && key !== "contact",
   ) as [string, ...string[]];
+  const groupTypes = choices?.groups ?? STRUCTURED_GROUP_TYPES;
   const groupIds = Array.from(
-    { length: STRUCTURED_MAX_GROUPS },
+    { length: groupTypes.length ? STRUCTURED_MAX_GROUPS : 0 },
     (_, index) => `group-${index + 1}`,
   );
   const group = z.strictObject({
-    type: z.enum(STRUCTURED_GROUP_TYPES),
+    type: z.enum(groupTypes as [StructuredGroupType, ...StructuredGroupType[]]),
     // type과 variant의 짝은 도메인 검사에서 확인합니다. 공급자 공통 문법을 위해 union을 쓰지 않습니다.
     props: z.strictObject({
       variant: z.enum(STRUCTURED_GROUP_VARIANT_VALUES),
@@ -389,9 +397,6 @@ export function structuredModelSchema(
     type: z.literal("PortfolioPage"),
     props: z.strictObject({
       profile: ref("profile"),
-      design: choices?.layout
-        ? StructuredDesignSchema.extend({ layout: z.literal(choices.layout) })
-        : StructuredDesignSchema,
       ...(choices?.guidance.length
         ? {
             referenceIds: z
@@ -406,7 +411,7 @@ export function structuredModelSchema(
     children: z
       .array(z.enum([...nodeIds, ...groupIds] as [string, ...string[]]))
       .min(2)
-      .max(nodeIds.length + STRUCTURED_MAX_GROUPS),
+      .max(nodeIds.length + groupIds.length),
   });
   return z.strictObject({
     root: z.literal("page"),
@@ -415,7 +420,7 @@ export function structuredModelSchema(
       ...nodes,
       ...Object.fromEntries(groupIds.map((key) => [key, group.optional()])),
     }),
-  }) as z.ZodType<StructuredPortfolioSpec>;
+  });
 }
 
 /** 모델과 직접 편집에 동일한 내용·참조·순서 검사를 적용합니다. */

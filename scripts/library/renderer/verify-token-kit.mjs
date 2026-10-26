@@ -109,6 +109,9 @@ function inspect() {
     headlineSize: parseFloat(getComputedStyle(document.querySelector(".xp-headline")).fontSize),
     introMotion: getComputedStyle(document.querySelector("#intro")).animationName,
     hiddenCases: [...document.querySelectorAll("[data-case-type]")].filter((node) => Number(getComputedStyle(node).opacity) < 1).length,
+    // 태그는 한 줄짜리 항목입니다. 줄 높이의 두 배를 넘게 늘어났으면 격자 행에 끌려 늘어난 것입니다.
+    stretchedTags: [...document.querySelectorAll(".xp-tags li")].filter((node) => node.getBoundingClientRect().height > parseFloat(getComputedStyle(node).lineHeight) * 2 + 24).map((node) => node.textContent.trim()).slice(0, 5),
+    casesWithImage: [...document.querySelectorAll("[data-case-type]")].filter((node) => node.querySelector("img")).map((node) => node.id),
     caseNumbers: [...document.querySelectorAll(".xp-case .xp-head .xp-num")].map((node) => node.textContent),
     displayFamily: firstFamily(getComputedStyle(h1).fontFamily),
     bodyFamily: firstFamily(getComputedStyle(bodyText).fontFamily),
@@ -129,7 +132,8 @@ try {
       const run = JSON.parse(fs.readFileSync(path.join(dir, "run.json"), "utf8"));
       const { content, spec } = validateStructuredPortfolio(run.structured.spec, run.structured.content);
       assert.equal(run.fictional, true);
-      assert.equal(run.kitRerender?.designCode, design);
+      // 재렌더 기록은 kitRerender에, 모델 생성 기록은 design에 디자인 코드가 있습니다.
+      assert.equal(run.kitRerender?.designCode ?? run.design?.code, design);
       assert.equal(sha(fs.readFileSync(path.join(dir, "index.html"))), run.htmlSha256);
       assert.ok(Object.values(spec.elements).every((node) => !("sourceId" in node.props)), `${design}/${slug}: 수집 원본이 남아 있음`);
       const url = pathToFileURL(path.join(dir, "index.html")).href;
@@ -156,6 +160,13 @@ try {
         assert.ok(checks.nameSize > checks.headlineSize, `${where}: 이름이 가장 크지 않음`);
         assert.equal(checks.introMotion, "none", `${where}: 모션 줄이기 무시`);
         assert.equal(checks.hiddenCases, 0, `${where}: 보이지 않는 사례`);
+        assert.deepEqual(checks.stretchedTags, [], `${where}: 늘어난 태그`);
+        // 이미지가 있는 섹션은 어느 사례 유형으로 그려도 이미지를 하나 이상 보여야 합니다.
+        assert.deepEqual(
+          content.sections.filter((section) => section.media.length).map((section) => `section-${section.id}`).filter((id) => !checks.casesWithImage.includes(id)),
+          [],
+          `${where}: 이미지가 빠진 사례`,
+        );
         assert.deepEqual(checks.caseNumbers, checks.caseNumbers.map((_, index) => String(index + 1).padStart(2, "0")), `${where}: 사례 번호`);
         assert.deepEqual(checks.contrast, [], `${where}: 글자 대비`);
         assert.deepEqual(checks.orphans, [], `${where}: 한 글자 줄바꿈`);
@@ -188,7 +199,9 @@ try {
         slug,
         name: content.profile.name,
         role: content.profile.role,
-        introVariant: run.kitRerender.introVariant,
+        introVariant: run.kitRerender?.introVariant ?? spec.elements.intro?.props.variant ?? null,
+        groups: Object.values(spec.elements).filter((node) => ["Columns", "Grid", "Band"].includes(node.type)).length,
+        specOrigin: run.specOrigin ?? "rerender",
         layout: spec.elements[spec.root].children.map((key) => spec.elements[key].type).join(" · "),
         htmlSha256: run.htmlSha256,
         screens,
@@ -208,14 +221,20 @@ try {
           .filter((item) => item.design === design)
           .map(
             (item) =>
-              `<li><a href="./${design}/${item.slug}/index.html"><img src="./${design}/${item.slug}-1440-first.png" alt="${item.name} ${design} 첫 화면" loading="lazy"></a><p><strong>${item.name}</strong> · ${item.role} · 첫 화면 ${item.introVariant}</p><p><a href="./${design}/${item.slug}-1440.png">1440 전체</a> · <a href="./${design}/${item.slug}-390.png">390 전체</a> · <a href="./${design}/${item.slug}/index.html">페이지 열기</a></p></li>`,
+              `<li><a href="./${design}/${item.slug}/index.html"><img src="./${design}/${item.slug}-1440-first.png" alt="${item.name} ${design} 첫 화면" loading="lazy"></a><p><strong>${item.name}</strong> · ${item.role} · 첫 화면 ${item.introVariant} · 컨테이너 ${item.groups}개</p><p><a href="./${design}/${item.slug}-1440.png">1440 전체</a> · <a href="./${design}/${item.slug}-390.png">390 전체</a> · <a href="./${design}/${item.slug}/index.html">페이지 열기</a></p></li>`,
           )
           .join("")}</ul></section>`,
     )
     .join("");
+  // 재렌더 실행은 원본 실행을, 모델 생성 실행은 모델이 구성을 골랐다는 사실을 적습니다.
+  const rerenderOf = JSON.parse(fs.readFileSync(path.join(folder, report[0].design, report[0].slug, "run.json"), "utf8")).rerenderOf;
+  const title = rerenderOf ? "토큰 키트 재렌더 비교" : "디자인별 모델 생성 비교";
+  const intro = rerenderOf
+    ? `모델을 다시 부르지 않고 <a href="../${rerenderOf.runId}/index.html">저장된 모델 Spec</a>에서 수집 원본 선택을 지우고 디자인 시스템 토큰 키트로 다시 그렸습니다. 첫 화면 구도는 재렌더 스크립트가 프로필마다 하나씩 배정했습니다.`
+    : "같은 가상 프로필 내용으로 디자인마다 모델이 Spec을 새로 골랐습니다. 첫 화면 구도, 사례 유형, 컨테이너 배치는 모두 모델의 선택입니다.";
   fs.writeFileSync(
     path.join(folder, "index.html"),
-    `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>토큰 키트 재렌더 비교 · Expresso</title><style>body{margin:0;font-family:system-ui,sans-serif;color:#17202a;background:#f7f8fa}main{max-width:1280px;margin:auto;padding:32px 20px}ul{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;padding:0;list-style:none}img{width:100%;height:auto;border:1px solid #d6dde6;border-radius:8px}p{margin:8px 0;font-size:14px;line-height:1.6}a{color:#1d4ed8}</style></head><body><main><h1>토큰 키트 재렌더 비교</h1><p>모델을 다시 부르지 않고 <a href="../${report.length ? JSON.parse(fs.readFileSync(path.join(folder, report[0].design, report[0].slug, "run.json"), "utf8")).rerenderOf.runId : ""}/index.html">저장된 모델 Spec</a>에서 수집 원본 선택을 지우고 디자인 시스템 토큰 키트로 다시 그렸습니다. 첫 화면 구도는 재렌더 스크립트가 프로필마다 하나씩 배정했습니다. 인물·프로젝트·이미지는 가상 시험 자료입니다. <a href="./verification.json">브라우저 검증 기록</a></p>${rows}</main></body></html>`,
+    `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>${title} · Expresso</title><style>body{margin:0;font-family:system-ui,sans-serif;color:#17202a;background:#f7f8fa}main{max-width:1280px;margin:auto;padding:32px 20px}ul{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;padding:0;list-style:none}img{width:100%;height:auto;border:1px solid #d6dde6;border-radius:8px}p{margin:8px 0;font-size:14px;line-height:1.6}a{color:#1d4ed8}</style></head><body><main><h1>${title}</h1><p>${intro} 인물·프로젝트·이미지는 가상 시험 자료입니다. <a href="./verification.json">브라우저 검증 기록</a></p>${rows}</main></body></html>`,
   );
 } finally {
   await browser.close();

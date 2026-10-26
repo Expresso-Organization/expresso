@@ -192,4 +192,19 @@ describe("사례 번호", () => {
     expect(html).toMatch(/id="section-c"[^]*?<span class="xp-num">01<\/span> · 프로젝트/);
     expect(html).toMatch(/id="section-a"[^]*?<span class="xp-num">02<\/span> · 프로젝트/);
   });
+  it("이미지가 있는 사례는 어느 사례 유형이든 이미지를 하나 이상 표시한다", () => {
+    for (const type of ["CaseEssay", "CaseGallery", "CaseTechnical", "CaseProcess", "ContentPanel"]) {
+      const spec = pageSpec();
+      (spec.elements["section-a"] as { type: string }).type = type;
+      const { html } = renderStructuredPortfolio(spec, content, { design: clarity });
+      const section = html.slice(html.indexOf('id="section-section-a"') >= 0 ? html.indexOf('id="section-section-a"') : html.indexOf('id="section-a"'));
+      expect(section.slice(0, section.indexOf("</article>")), type).toContain(`alt="${image.alt}"`);
+    }
+  });
+  it("사례 블록의 자식은 제목과 본문 묶음 둘뿐이다", () => {
+    const { html } = renderStructuredPortfolio(pageSpec(), content, { design: clarity });
+    for (const match of html.matchAll(/<article id="section-[^"]+" class="xp-block xp-case"[^>]*>(<header class="xp-head">[\s\S]*?<\/header>)(<div class="xp-case-body">)/g))
+      expect(match[2]).toBe('<div class="xp-case-body">');
+    expect([...html.matchAll(/class="xp-block xp-case"/g)].length).toBe([...html.matchAll(/class="xp-case-body"/g)].length);
+  });
 });

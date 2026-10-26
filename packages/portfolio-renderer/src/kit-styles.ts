@@ -7,6 +7,10 @@
  *
  * 접두사가 `xp-`인 이유: 문서 래퍼가 함께 싣는 지면 키트 CSS가 `.k-`를 씁니다.
  */
+import { KIT_LAYOUT } from "./design-layout.js";
+
+const { wideMargin: WM, group: GROUP, collapseBelow: COLLAPSE } = KIT_LAYOUT;
+
 export const KIT_CSS = String.raw`
 .xp-page{--xp-pad:clamp(20px,5vw,56px);--xp-section:var(--section-gap);--xp-rule:var(--border-width) solid var(--border);--xp-small:max(13px,calc(var(--type-example-body) * .86));--xp-name:clamp(2.6rem,5.2vw + 1rem,calc(var(--type-example-display) * 1.3));--xp-h2:clamp(1.55rem,1.6vw + 1rem,var(--type-example-heading));
   min-height:100vh;margin:0;background:var(--canvas);color:var(--text);font-family:var(--font-body);font-size:var(--type-example-body);line-height:var(--line-example-body);word-break:keep-all;overflow-wrap:anywhere;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
@@ -64,6 +68,7 @@ export const KIT_CSS = String.raw`
 .xp-page .xp-act:hover{transform:translateY(-1px);background:color-mix(in srgb,var(--action) 88%,var(--text))}
 .xp-quiet{font-size:var(--xp-small);font-weight:var(--xp-weight-mid)}
 .xp-tags{display:flex;flex-wrap:wrap;gap:calc(var(--element-gap) * .6)}
+.xp-case-body{display:grid;align-content:start;gap:calc(var(--component-gap) * 1.1);min-width:0}
 .xp-tags li{padding:.42em .85em;border:var(--border-width) solid var(--border);border-radius:var(--control-radius);color:var(--xp-muted);font-size:var(--xp-small);line-height:1.3}
 
 /* 첫 화면 */
@@ -136,18 +141,18 @@ export const KIT_CSS = String.raw`
 .xp-footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;padding-top:calc(var(--element-gap) * 1.2);border-top:var(--xp-rule)}
 
 /* 묶음 */
-.xp-group{display:grid;align-items:start;gap:calc(var(--component-gap) * 1.4);container-type:inline-size}
+.xp-group{display:grid;align-items:start;gap:calc(var(--component-gap) * ${GROUP.gap});container-type:inline-size}
 .xp-group>.xp-index[data-variant="rail"]{position:sticky;top:calc(var(--element-gap) * 2)}
 .xp-group[data-group="columns"]{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
-.xp-group[data-group="columns"][data-variant="wide-start"]{grid-template-columns:minmax(0,1.7fr) minmax(0,1fr)}
-.xp-group[data-group="columns"][data-variant="wide-end"]{grid-template-columns:minmax(0,1fr) minmax(0,1.7fr)}
+.xp-group[data-group="columns"][data-variant="wide-start"]{grid-template-columns:minmax(0,${GROUP.wide}fr) minmax(0,1fr)}
+.xp-group[data-group="columns"][data-variant="wide-end"]{grid-template-columns:minmax(0,1fr) minmax(0,${GROUP.wide}fr)}
 .xp-group[data-group="grid"]{grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
 .xp-group[data-group="band"]{padding:clamp(20px,3vw,calc(var(--component-gap) * 1.5));border-radius:var(--card-radius);background:var(--surface);--xp-muted:var(--xp-muted-surface)}
 .xp-group[data-group="band"][data-variant="accent"]{background:transparent;border-top:3px solid var(--accent);border-radius:0}
 .xp-group .xp-case-grid{grid-template-columns:minmax(0,1fr)}
 
 /* 배치 — 넓은 여백은 머리를 왼쪽 단에, 촘촘한 격자는 간격을 줄이고 표를 펼칩니다 */
-.xp-page[data-layout="wide-margin"] .xp-inner>.xp-block{grid-template-columns:minmax(150px,1fr) minmax(0,2.8fr);column-gap:calc(var(--component-gap) * 2)}
+.xp-page[data-layout="wide-margin"] .xp-inner>.xp-block{grid-template-columns:minmax(${WM.minHead}px,${WM.head}fr) minmax(0,${WM.body}fr);column-gap:calc(var(--component-gap) * ${WM.gap})}
 .xp-page[data-layout="wide-margin"] .xp-inner>.xp-block>.xp-head{position:sticky;top:24px}
 .xp-page[data-layout="wide-margin"] .xp-inner>.xp-block>:not(.xp-head){grid-column:2}
 .xp-page[data-layout="wide-margin"] .xp-inner>.xp-block .xp-case-grid{grid-template-columns:minmax(0,1fr)}
@@ -163,7 +168,7 @@ export const KIT_CSS = String.raw`
   .xp-par dd+dt{margin-top:calc(var(--element-gap) * .7);padding-top:calc(var(--element-gap) * .7);border-top:var(--xp-rule)}
   .xp-timeline li{grid-template-columns:minmax(0,1fr);gap:.35em}
 }
-@media (max-width:760px){
+@media (max-width:${COLLAPSE}px){
   .xp-hero[data-variant="split"],.xp-hero[data-variant="media"]{grid-template-columns:minmax(0,1fr)}
   .xp-page[data-layout="wide-margin"] .xp-inner>.xp-block{grid-template-columns:minmax(0,1fr)}
   .xp-page[data-layout="wide-margin"] .xp-inner>.xp-block>.xp-head{position:static}

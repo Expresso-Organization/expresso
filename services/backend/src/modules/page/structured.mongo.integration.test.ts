@@ -117,6 +117,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
           evidence: [],
           contact: null,
         });
+        // 모델 출력에는 design이 없습니다. 생성기처럼 저장 계약의 배치 이름을 채웁니다.
         const spec = structuredModelSchema(content).parse({
           root: "page",
           elements: {
@@ -124,7 +125,6 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
               type: "PortfolioPage",
               props: {
                 profile: { $state: "/profile" },
-                design: { layout: "gallery", palette: "ivory", font: "sans" },
                 motion: "subtle",
                 rationale: "자료 전시",
               },
@@ -150,7 +150,8 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
               children: [],
             },
           },
-        });
+        }) as { elements: { page: { props: Record<string, unknown> } } };
+        spec.elements.page.props.design = { layout: "gallery" };
         const rendered = renderStructuredPortfolio(spec, content),
           usage = {
             model: "fixture",

@@ -239,6 +239,12 @@ describe("구조화 포트폴리오 계약", () => {
         },
       } as Record<string, unknown>,
     });
+    it("색 묶음 · 서체 종류가 없는 새 판과 있는 저장본을 모두 받는다", () => {
+      const fresh = structuredClone(tree());
+      (fresh.elements.page as { props: Record<string, unknown> }).props.design = { layout: "library" };
+      expect(() => validateStructuredPortfolio(fresh, content2)).not.toThrow();
+      expect(() => validateStructuredPortfolio(tree(), content2)).not.toThrow();
+    });
     it("컨테이너 안의 사례를 한 번씩 연결한 트리를 받는다", () => {
       const result = validateStructuredPortfolio(tree(), content2);
       expect(structuredLeaves(result.spec).map((item) => [item.key, item.parent])).toEqual([
@@ -259,7 +265,11 @@ describe("구조화 포트폴리오 계약", () => {
           "section-project-a": a,
           "section-project-b": b,
           "group-1": { type: "Columns", props: { variant: "even" }, children: ["section-project-a", "section-project-b"] },
-          page: { ...spec.elements.page, children: ["intro", "index", "group-1", "evidence", "contact"] },
+          // 모델은 design을 고르지 않습니다. 생성기가 검사 전에 채웁니다.
+          page: (() => {
+            const { design: _design, ...props } = spec.elements.page.props;
+            return { ...spec.elements.page, props, children: ["intro", "index", "group-1", "evidence", "contact"] };
+          })(),
         },
       });
       const parsed = structuredModelSchema(content2).safeParse(modelTree("split"));
@@ -270,6 +280,23 @@ describe("구조화 포트폴리오 계약", () => {
       const withImage = structuredClone(content2);
       withImage.sections[0]!.media = [{ src: "data:image/png;base64,AAAA", alt: "가상 이미지", origin: "fictional" }];
       expect(structuredModelSchema(withImage).safeParse(modelTree("media")).error?.issues ?? []).toEqual([]);
+      // 넓은 여백 디자인처럼 컨테이너를 쓸 수 없으면 group 요소를 고를 수 없습니다.
+      const noGroups = structuredModelSchema(content2, { intro: [], section: [], guidance: [], groups: [] });
+      expect(noGroups.safeParse(modelTree("split")).success).toBe(false);
+      const flat = modelTree("split");
+      const { "group-1": _group, ...flatElements } = flat.elements;
+      const flatTree = {
+        ...flat,
+        elements: {
+          ...flatElements,
+          page: { ...flat.elements.page, children: ["intro", "index", "section-project-a", "section-project-b", "evidence", "contact"] },
+        },
+      };
+      expect(noGroups.safeParse(flatTree).error?.issues ?? []).toEqual([]);
+      // 모델이 design을 내면 거절합니다.
+      const withDesign = structuredClone(flatTree);
+      (withDesign.elements.page.props as Record<string, unknown>).design = { layout: "library", palette: "sage", font: "sans" };
+      expect(noGroups.safeParse(withDesign).success).toBe(false);
     });
     it("컨테이너 규칙을 어긴 트리를 거부한다", () => {
       const cases: [string, (raw: ReturnType<typeof tree>) => void, string][] = [
