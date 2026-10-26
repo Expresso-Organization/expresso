@@ -65,6 +65,29 @@ const runtimeConfigSchema = z.object({
   AI_PROVIDER_PAGE_GENERATION: z
     .enum(["claude-code", "codex", "fixture", "anthropic"])
     .optional(),
+  /**
+   * 검색 해석만 다른 프로바이더로.
+   *
+   * **사람이 결과를 기다리는 자리다.** CLI 프로바이더는 새 질의마다 프로세스를
+   * 하나 띄우고, 그 값만 3.6초가 넘는다. API 호출은 그 비용이 없다 — 그래서
+   * 나머지 계약은 `AI_PROVIDER`에 두고 **이 계약 하나만** API로 뺀다.
+   *
+   * 비우면 `AI_PROVIDER`를 그대로 쓴다.
+   */
+  AI_PROVIDER_SEARCH_INTERPRET: z
+    .enum(["claude-code", "codex", "fixture", "anthropic"])
+    .optional(),
+  /**
+   * `anthropic` 프로바이더를 쓸 때만 필요하다 — 개인 CLI 로그인이 아니라 서비스
+   * 키로 API를 직접 부르는 경로다. 없으면 그 provider를 고른 순간 바로 죽는다
+   * (키 없이 도는 척하지 않는다). `.env.example`의 빈 자리(`ANTHROPIC_API_KEY=`)는
+   * 없는 것으로 본다 — 빈 칸 하나로 서버가 뜨지 못하면 안 된다.
+   */
+  ANTHROPIC_API_KEY: z.string().optional(),
+  /** 티어(haiku·sonnet·opus)가 실제로 가리키는 Anthropic 모델 ID. 계정에 열린 모델에 맞춰 바꾼다. */
+  ANTHROPIC_MODEL_HAIKU: z.string().min(1).optional(),
+  ANTHROPIC_MODEL_SONNET: z.string().min(1).optional(),
+  ANTHROPIC_MODEL_OPUS: z.string().min(1).optional(),
   PAGE_GENERATION_FORMAT: z.enum(["json-render", "html"]).default("json-render"),
   /**
    * 고용24(워크넷) 공공 API 인증키. 공공데이터포털에서 발급받는다.
@@ -143,6 +166,12 @@ export interface RuntimeConfig {
   agentChatDeveloperUserIds?: string[];
   /** 지면 생성만 갈아 끼울 때. 비우면 `aiProvider`와 같다. */
   aiPageGenerationProvider?: "claude-code" | "codex" | "fixture" | "anthropic";
+  /** 검색 해석만 갈아 끼울 때. 비우면 `aiProvider`와 같다. */
+  aiSearchInterpretProvider?: "claude-code" | "codex" | "fixture" | "anthropic";
+  anthropicApiKey?: string;
+  anthropicModelHaiku?: string;
+  anthropicModelSonnet?: string;
+  anthropicModelOpus?: string;
   pageGenerationFormat?: "json-render" | "html";
   work24ApiKey?: string | undefined;
   mailProvider?: "off" | "resend";
@@ -195,6 +224,13 @@ export function loadRuntimeConfig(
     ...(result.AI_PROVIDER_PAGE_GENERATION
       ? { aiPageGenerationProvider: result.AI_PROVIDER_PAGE_GENERATION }
       : {}),
+    ...(result.AI_PROVIDER_SEARCH_INTERPRET
+      ? { aiSearchInterpretProvider: result.AI_PROVIDER_SEARCH_INTERPRET }
+      : {}),
+    ...(result.ANTHROPIC_API_KEY ? { anthropicApiKey: result.ANTHROPIC_API_KEY } : {}),
+    ...(result.ANTHROPIC_MODEL_HAIKU ? { anthropicModelHaiku: result.ANTHROPIC_MODEL_HAIKU } : {}),
+    ...(result.ANTHROPIC_MODEL_SONNET ? { anthropicModelSonnet: result.ANTHROPIC_MODEL_SONNET } : {}),
+    ...(result.ANTHROPIC_MODEL_OPUS ? { anthropicModelOpus: result.ANTHROPIC_MODEL_OPUS } : {}),
     work24ApiKey: result.WORK24_API_KEY,
     mailProvider: result.MAIL_PROVIDER,
     resendApiKey: result.RESEND_API_KEY,
