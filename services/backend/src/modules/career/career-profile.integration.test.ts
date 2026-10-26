@@ -1,3 +1,4 @@
+import { TERMS_VERSION } from "@expresso/contracts";
 import type { SqlTag } from "../../platform/legacy-mysql.js";
 import { createMysqlResource } from "../../platform/legacy-mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -56,7 +57,7 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
     const signup = await app.inject({
       method: "POST",
       url: "/v1/auth/signup",
-      payload: { email, password: "correct-horse-battery", displayName: "프로필 테스트" },
+      payload: { email, password: "correct-horse-battery", displayName: "프로필 테스트", termsVersion: TERMS_VERSION },
     });
     expect(signup.statusCode).toBe(201);
     accessToken = signup.json().data.session.accessToken;
