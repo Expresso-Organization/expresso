@@ -17,6 +17,8 @@ export const KitContext = React.createContext<{
   design: DesignSystemSpecV2;
   /** 읽는 순서로 매긴 프로젝트 사례 번호(섹션 ID → 1부터). 목차와 사례 머리가 같은 값을 씁니다. CSS 카운터는 컨테이너 쿼리의 style containment에 갇혀 쓰지 않습니다. */
   caseNumbers: ReadonlyMap<string, number>;
+  /** 글 · 목록형에서 읽는 순서로 첫 사례 행의 섹션 ID. 그 행 위에 목록 제목을 둡니다. */
+  firstRowId?: string | undefined;
 } | null>(null);
 
 function useKit() {
@@ -126,6 +128,111 @@ function CaseHead({ section }: { section: StructuredSection }) {
   );
 }
 
+/** 이름 글자 수 단계. 화면 폭에 가까운 크기를 쓰는 포스터 이름이 넘치지 않게 CSS가 단계마다 크기를 정합니다. */
+function nameLength(name: string): "short" | "medium" | "long" {
+  const count = [...name].length;
+  return count <= 4 ? "short" : count <= 10 ? "medium" : "long";
+}
+
+type Profile = StructuredPortfolioContent["profile"];
+
+/** 포스터형 첫 화면: 행동색 면 위에 화면 폭에 가까운 이름, 한 문장, 집중 분야 글자 띠. */
+function PosterIntro({ profile }: { profile: Profile }) {
+  const strip = profile.focus.length ? profile.focus : [profile.role];
+  return (
+    <>
+    {/* data-bleed: 본문 폭 밖까지 일부러 넓힌 면입니다. 검증의 열 이탈 검사가 이 안을 건너뜁니다(가로 넘침 검사는 그대로). */}
+    <header id="intro" className="xp-hero" data-variant="poster" data-bleed="">
+      <p className="xp-poster-role">{profile.role}</p>
+      <h1 className="xp-poster-name" data-name-length={nameLength(profile.name)}>
+        {profile.name}
+      </h1>
+      <p className="xp-poster-line">{profile.headline}</p>
+      <a className="xp-poster-cue" href="#work">
+        대표 작업 보기 <span aria-hidden="true">↓</span>
+      </a>
+      {/* 같은 띠를 두 번 이어 붙여 끊김 없이 흐르게 합니다. 두 번째 띠는 보조 기술이 읽지 않습니다. */}
+      <div className="xp-marquee" aria-label="집중하는 일">
+        {[0, 1].map((copy) => (
+          <ul key={copy} aria-hidden={copy === 1 ? "true" : undefined}>
+            {strip.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        ))}
+      </div>
+    </header>
+    {/* 첫 화면은 짧게 두고, 소개 문단은 바로 아래 큰 글자 단락으로 싣습니다. */}
+    <section className="xp-poster-about" aria-label="소개">
+      <Paragraphs value={profile.intro} className="xp-poster-about-text" />
+    </section>
+    </>
+  );
+}
+
+/** 글 · 목록형 첫 화면: 작은 이름과 직무 아래 소개를 큰 문장으로. */
+function SentenceIntro({ profile }: { profile: Profile }) {
+  const { content } = useKit();
+  return (
+    <header id="intro" className="xp-hero" data-variant="sentence">
+      <p className="xp-sentence-meta">
+        <strong>{profile.name}</strong> · {profile.role}
+      </p>
+      <h1 className="xp-sentence">{profile.headline}</h1>
+      <Paragraphs value={profile.intro} className="xp-body xp-sentence-intro" />
+      {profile.focus.length ? (
+        <ul className="xp-sentence-focus" aria-label="집중하는 일">
+          {profile.focus.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      ) : null}
+      {content.contact ? (
+        <p className="xp-small">
+          <a href="#contact">연락하기 ↗</a>
+        </p>
+      ) : null}
+    </header>
+  );
+}
+
+/** 글 · 목록형의 사례 한 줄: 기간 · 제목 · 요약. 펼치면 본문 · 항목 · 이미지 · 관련 자료가 나옵니다. */
+function CaseRow({ section }: { section: StructuredSection }) {
+  const { firstRowId } = useKit();
+  return (
+    <>
+      {firstRowId === section.id ? (
+        <header className="xp-row-heading">
+          <p className="xp-eyebrow">Work</p>
+          <h2 className="xp-h2">작업</h2>
+        </header>
+      ) : null}
+      <article id={`section-${section.id}`} className="xp-row" data-case-type="row">
+        <details>
+          <summary>
+            {section.period ? <span className="xp-row-period xp-small">{section.period}</span> : null}
+            <span className="xp-row-title">{section.title}</span>
+            <span className="xp-row-summary">{section.summary}</span>
+            <span className="xp-row-toggle" aria-hidden="true">+</span>
+          </summary>
+          <div className="xp-row-body">
+            {section.media.map((media, index) => (
+              <Figure media={media} key={`${media.src}-${index}`} />
+            ))}
+            <Paragraphs value={section.body} />
+            {section.details.map((item, index) => (
+              <p className="xp-body xp-row-detail" key={index}>
+                <strong>{item.label}</strong> {item.text}
+              </p>
+            ))}
+            <Sources section={section} />
+          </div>
+        </details>
+      </article>
+    </>
+  );
+}
+
 type CaseKind = "essay" | "technical" | "process" | "gallery" | "panel";
 
 function Case({ section, kind }: { section: StructuredSection; kind: CaseKind }) {
@@ -226,6 +333,7 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
           data-emphasis={design.componentKit.emphasis}
           data-divider={design.componentKit.divider}
           data-motion={props.motion}
+          data-archetype={props.archetype ?? "case-study"}
           aria-label={`${props.profile.name} 포트폴리오`}
         >
           <div className="xp-inner">
@@ -241,6 +349,8 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
     NameIntro: ({ props: { profile, sections, variant } }) => {
       const { content } = useKit();
       const art = sections?.find((section) => section.media.length)?.media[0];
+      if (variant === "poster") return <PosterIntro profile={profile} />;
+      if (variant === "sentence") return <SentenceIntro profile={profile} />;
       const mode = variant === "media" && art ? "media" : variant === "split" ? "split" : "statement";
       const actions = (
         <div className="xp-actions">
@@ -308,7 +418,28 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
       const { caseNumbers } = useKit();
       const number = (id: string, index: number) => twoDigits(caseNumbers.get(id) ?? index + 1);
       const projects = sections.filter((section) => section.pattern === "project");
-      const items = projects.length ? projects : sections;
+      // 목차는 페이지에서 읽는 순서를 따릅니다. 내용의 섹션 순서와 Spec의 배치 순서가 다를 수 있습니다.
+      const items = (projects.length ? projects : sections)
+        .map((section, index) => ({ section, order: caseNumbers.get(section.id) ?? Number.POSITIVE_INFINITY, index }))
+        .sort((a, b) => a.order - b.order || a.index - b.index)
+        .map(({ section }) => section);
+      if (variant === "poster")
+        return (
+          <nav id="work" className="xp-poster-index" aria-label="선택한 작업">
+            <p className="xp-eyebrow">Selected work</p>
+            <ol>
+              {items.map((section, index) => (
+                <li key={section.id}>
+                  <a href={`#section-${section.id}`}>
+                    <span className="xp-num">{number(section.id, index)}</span>
+                    <strong>{section.title}</strong>
+                    <span className="xp-small">{section.summary}</span>
+                  </a>
+                </li>
+              ))}
+            </ol>
+          </nav>
+        );
       return (
         <nav id="work" className="xp-block xp-index" data-variant={variant} aria-label="선택한 작업">
           <header className="xp-head">
@@ -350,6 +481,7 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
     CaseTechnical: ({ props }) => <Case section={props.section} kind="technical" />,
     CaseProcess: ({ props }) => <Case section={props.section} kind="process" />,
     ContentPanel: ({ props }) => <Case section={props.section} kind="panel" />,
+    CaseRow: ({ props }) => <CaseRow section={props.section} />,
     Columns: ({ props, children }) => (
       <div className="xp-group" data-group="columns" data-variant={props.variant}>
         {children}
@@ -440,4 +572,24 @@ export function caseNumbers(
   };
   visit(spec.root);
   return numbers;
+}
+
+/** 읽는 순서로 첫 사례 행(CaseRow)의 섹션 ID를 찾습니다. */
+export function firstRowId(
+  spec: { root: string; elements: Record<string, { type: string; props: unknown; children?: string[] }> },
+): string | undefined {
+  const visit = (key: string): string | undefined => {
+    const node = spec.elements[key];
+    if (!node) return undefined;
+    if (node.type === "CaseRow") {
+      const binding = (node.props as { section?: { $state?: unknown } }).section?.$state;
+      return typeof binding === "string" ? binding.match(/^\/sectionById\/(.+)$/)?.[1] : undefined;
+    }
+    for (const child of node.children ?? []) {
+      const found = visit(child);
+      if (found) return found;
+    }
+    return undefined;
+  };
+  return visit(spec.root);
 }

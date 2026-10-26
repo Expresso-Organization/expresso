@@ -13,7 +13,7 @@ import {
 import { StructuredPageGenerator } from "./structured-generator.js";
 import { PageRenderError, type PageGenerationContext } from "./generator.js";
 import { findPortfolioDesign } from "../design-systems/index.js";
-import { describeDesignLayout, designLayout } from "@expresso/portfolio-renderer";
+import { describeArchetype, describeDesignLayout, designLayout } from "@expresso/portfolio-renderer";
 
 const content: StructuredPortfolioContent = {
   version: 1,
@@ -76,10 +76,10 @@ const spec = {
     },
   },
 };
-/** 생성기가 검사 전에 채우는 저장 계약의 배치 이름입니다. 문맥에 사용자 스타일이 없으면 library입니다. */
+/** 생성기가 검사 전에 채우는 저장 계약의 배치 이름과 유형입니다. 문맥에 사용자 스타일이 없으면 library, 유형이 없으면 case-study입니다. */
 function stored<T>(value: T): T {
   const copy = structuredClone(value) as { elements: { page: { props: object } } };
-  copy.elements.page.props = { ...copy.elements.page.props, design: { layout: "library" } };
+  copy.elements.page.props = { ...copy.elements.page.props, design: { layout: "library" }, archetype: "case-study" };
   return copy as T;
 }
 /** 실제 어댑터처럼 출력이 스키마에 맞지 않으면 AI_INVALID_OUTPUT을 던집니다. Error를 넣으면 그대로 던집니다. */
@@ -316,5 +316,32 @@ describe("모델 기반 구조화 생성", () => {
     grouped.elements.page.children = ["intro", "group-1"];
     expect(ai.schemas[0]!.safeParse(grouped).success).toBe(false);
     expect(result.html).toContain('data-layout="wide-margin"');
+  });
+  it("포스터형 · 글 · 목록형은 유형 문단을 넣고 유형에 맞는 Spec만 받아 저장한다", async () => {
+    const poster = structuredClone(spec) as { elements: Record<string, { type: string; props: Record<string, unknown> }> };
+    poster.elements.intro!.props.variant = "poster";
+    poster.elements.index!.props.variant = "poster";
+    const posterAi = new Stub([poster]);
+    const posterResult = await new StructuredPageGenerator(posterAi).generate({ ...context, archetype: "poster" });
+    expect(posterAi.calls[0]!.prompt).toContain(describeArchetype("poster"));
+    expect(posterAi.calls[0]!.prompt).not.toContain("CaseRow:");
+    expect(posterAi.calls[0]!.prompt).not.toContain("컨테이너는 지면을 나누는 요소입니다");
+    const posterPage = posterResult.manifest.structured!.spec.elements.page as { props: Record<string, unknown> };
+    expect(posterPage.props.archetype).toBe("poster");
+    // 포스터형에 사례 상세형 첫 화면을 내면 스키마에서 거절합니다.
+    expect(posterAi.schemas[0]!.safeParse(spec).success).toBe(false);
+
+    const list = structuredClone(spec) as { elements: Record<string, { type: string; props: Record<string, unknown> } | undefined> & { page: { children: string[] } } };
+    list.elements.intro!.props.variant = "sentence";
+    delete list.elements.index;
+    list.elements.page.children = list.elements.page.children.filter((key) => key !== "index");
+    list.elements["section-project-a"]!.type = "CaseRow";
+    const listAi = new Stub([list]);
+    const listResult = await new StructuredPageGenerator(listAi).generate({ ...context, archetype: "list" });
+    expect(listAi.calls[0]!.prompt).toContain(describeArchetype("list"));
+    expect(listAi.calls[0]!.prompt).toContain("목차(ProjectIndex)는 두지 않습니다.");
+    expect(listAi.calls[0]!.prompt).not.toContain("ProjectIndex:");
+    // 디자인이 없는 문맥이라 저장된 판 렌더러로 그립니다. 유형은 저장 Spec에 남습니다.
+    expect((listResult.manifest.structured!.spec.elements.page as { props: Record<string, unknown> }).props.archetype).toBe("list");
   });
 });

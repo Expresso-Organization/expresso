@@ -13,7 +13,8 @@ export interface PortfolioDoc {
   updatedAt: Date;
   styleOverrides: JsonObject;
   /** 디자인 시스템 판으로 생성했으면 그 판입니다. 템플릿으로 만든 포트폴리오는 비어 있습니다. */
-  designSystemRevisionId?: string | null;
+  designSystemRevisionId?: string | null;  /** 페이지 짜임새(`PORTFOLIO_ARCHETYPES`). 유형 이전에 만든 포트폴리오는 비어 있고 사례 상세형으로 그립니다. */
+  archetype?: string | null;
 }
 
 export interface PortfolioSectionDoc {
@@ -60,7 +61,8 @@ export interface GenerationJobDoc {
   updatedAt: Date;
   styleOverrides: JsonObject;
   /** 디자인 시스템 판으로 요청한 생성이면 그 판입니다. 템플릿과 스타일 값은 이 판의 토큰에서 정했습니다. */
-  designSystemRevisionId?: string | null;
+  designSystemRevisionId?: string | null;  /** 요청한 페이지 짜임새. 생성이 포트폴리오를 만들 때 그대로 옮깁니다. */
+  archetype?: string | null;
 }
 
 export interface GenerationSentenceEvidenceDoc {

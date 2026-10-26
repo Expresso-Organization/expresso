@@ -56,8 +56,10 @@ export const KIT_CSS = String.raw`
 .xp-page[data-chrome="masthead"] .xp-panel{padding-top:calc(clamp(20px,2.4vw,calc(var(--component-gap) * 1.35)) + 14px)}
 .xp-page[data-chrome="masthead"] .xp-panel::before{content:"";position:absolute;inset:12px clamp(20px,2.4vw,calc(var(--component-gap) * 1.35)) auto;border-top:3px double var(--text)}
 .xp-page[data-chrome="masthead"] .xp-hero{padding-top:22px;border-top:4px double var(--text)}
-.xp-page[data-chrome="sticker"] .xp-panel{transform:rotate(-.6deg)}
-.xp-page[data-chrome="sticker"] .xp-panel:nth-of-type(2n){transform:rotate(.5deg)}
+/* 기울인 패널은 모서리가 제자리 밖으로 나갑니다. 높이가 폭의 두 배를 넘지 않는 목차 카드만 기울이고,
+   0.6도 기울였을 때 그 모서리가 제자리 안에 남도록 1 / (1 + 2·sin 0.6°) ≈ .979배로 줄입니다 */
+.xp-page[data-chrome="sticker"] .xp-mosaic .xp-panel{transform:rotate(-.6deg) scale(.979)}
+.xp-page[data-chrome="sticker"] .xp-mosaic .xp-panel:nth-of-type(2n){transform:rotate(.5deg) scale(.979)}
 .xp-page[data-chrome="panel"] .xp-panel::before{content:"";position:absolute;inset:0 0 auto;height:1px;border-radius:var(--card-radius) var(--card-radius) 0 0;background:color-mix(in srgb,var(--canvas) 55%,white);pointer-events:none}
 .xp-page[data-chrome="frame"] .xp-panel::before{content:"";position:absolute;inset:8px;border:1px solid color-mix(in srgb,var(--accent) 55%,transparent);border-radius:max(0px,calc(var(--card-radius) - 6px));pointer-events:none}
 .xp-page[data-chrome="blob"] .xp-panel{border-radius:calc(var(--card-radius) * 2.1) calc(var(--card-radius) * .8) calc(var(--card-radius) * 2.1) calc(var(--card-radius) * .8)}
@@ -125,6 +127,8 @@ export const KIT_CSS = String.raw`
 .xp-gallery figure:only-child{grid-column:1/-1}
 .xp-figure img{width:100%;height:100%;min-height:180px;object-fit:cover;border:var(--border-width) solid var(--border);border-radius:var(--card-radius);background:var(--surface)}
 .xp-figure figcaption{margin-top:8px}
+/* 본문 흐름의 그림은 원래 비율로 높이를 정합니다. 칸을 채우는 갤러리 · 격자 그림만 height:100%를 씁니다. */
+.xp-case-body>.xp-figure img,.xp-row-body .xp-figure img{height:auto}
 .xp-sources{display:flex;flex-wrap:wrap;gap:6px calc(var(--element-gap) * 1.4);font-size:var(--xp-small)}
 
 /* 경력·근거·연락 */
@@ -180,9 +184,77 @@ export const KIT_CSS = String.raw`
   .xp-group>.xp-index[data-variant="rail"]{position:static}
 }
 
+/* 유형 — 포스터형. 첫 화면은 창 폭 전체를 행동색 면으로 채웁니다.
+   본문 영역 바깥 폭(--xp-bleed)은 창 폭 단위로만 계산해, 면과 글자 띠가 같은 경계를 씁니다. */
+.xp-page[data-archetype="poster"]{--xp-bleed:max(var(--xp-pad),(100vw - var(--content-width)) / 2)}
+.xp-hero[data-variant="poster"]{position:relative;display:flex;flex-direction:column;gap:calc(var(--element-gap) * 1.1);min-height:min(92vh,980px);margin:calc(var(--xp-section) * -.7) calc(var(--xp-bleed) * -1) 0;padding:calc(var(--xp-section) * .5) var(--xp-bleed) 0;background-color:var(--action);background-image:repeating-linear-gradient(-45deg,color-mix(in srgb,var(--xp-action-text) 7%,transparent) 0 1px,transparent 1px 18px);color:var(--xp-action-text);overflow:hidden}
+.xp-poster-role{font-family:var(--font-mono);font-size:var(--xp-small);letter-spacing:.08em;text-transform:uppercase}
+.xp-poster-name{font-family:var(--font-display);font-weight:var(--xp-weight);letter-spacing:calc(var(--xp-tracking) - .02em);line-height:.9;font-size:clamp(4.2rem,19vw,17rem)}
+/* 문서 기본 여백 초기화(.xp-page :is(h1 …))보다 우선해야 이름이 면의 아래쪽으로 내려갑니다. */
+.xp-hero[data-variant="poster"] .xp-poster-name{margin-top:auto}
+.xp-poster-name[data-name-length="medium"]{font-size:clamp(3.2rem,11.5vw,10.5rem)}
+.xp-poster-name[data-name-length="long"]{font-size:clamp(2.5rem,7.2vw,6.8rem)}
+.xp-poster-line{max-width:30ch;font-family:var(--font-display);font-size:clamp(1.15rem,1.7vw,1.55rem);line-height:1.35}
+.xp-page .xp-poster-cue{align-self:flex-start;color:inherit;font-size:var(--xp-small);font-weight:var(--xp-weight);text-decoration:underline;text-underline-offset:.3em}
+.xp-marquee{display:flex;overflow:hidden;margin:calc(var(--element-gap) * 1.4) calc(var(--xp-bleed) * -1) 0;border-top:1px solid color-mix(in srgb,var(--xp-action-text) 40%,transparent)}
+.xp-marquee ul{display:flex;flex:none;gap:2.4rem;padding:.8em 1.2rem;font-family:var(--font-display);font-size:clamp(1rem,1.4vw,1.25rem);font-weight:var(--xp-weight);text-transform:uppercase;letter-spacing:.02em;white-space:nowrap}
+.xp-marquee li::after{content:"✦";margin-left:2.4rem}
+.xp-poster-about-text{max-width:28em;font-family:var(--font-display);font-size:clamp(1.45rem,2.7vw,2.5rem);font-weight:var(--xp-weight-mid);letter-spacing:var(--xp-tracking);line-height:1.3;text-wrap:pretty}
+.xp-poster-index{display:grid;gap:var(--element-gap)}
+.xp-poster-index ol{border-top:var(--xp-rule)}
+.xp-poster-index a{display:grid;grid-template-columns:4ch minmax(0,1fr) minmax(0,20rem);gap:var(--element-gap) var(--component-gap);align-items:baseline;padding-block:1em;border-bottom:var(--xp-rule);color:inherit;text-decoration:none;transition:color var(--motion-duration) var(--motion-easing)}
+.xp-poster-index strong{font-family:var(--font-display);font-size:clamp(1.45rem,6vw,4.2rem);text-wrap:balance;font-weight:var(--xp-weight);letter-spacing:var(--xp-tracking);line-height:1.02}
+.xp-poster-index a:hover{color:var(--xp-accent-text)}
+.xp-page[data-archetype="poster"] .xp-case .xp-h2{font-size:clamp(2.2rem,4.6vw,4.4rem);line-height:1.04;text-wrap:balance}
+/* 넓은 여백 배치에서 제목은 좁은 왼쪽 단에 놓입니다. 한글 다섯 글자 낱말이 그 단 한 줄에 들어가는 크기를 넘지 않습니다 */
+.xp-page[data-archetype="poster"][data-layout="wide-margin"] .xp-inner>.xp-block>.xp-head{container-type:inline-size}
+.xp-page[data-archetype="poster"][data-layout="wide-margin"] .xp-inner>.xp-block>.xp-head .xp-h2{font-size:clamp(1.6rem,calc(100cqi / 5),4.4rem)}
+.xp-page[data-archetype="poster"] .xp-case .xp-eyebrow .xp-num{display:block;margin-bottom:.15em;font-family:var(--font-display);font-size:clamp(3rem,7vw,6.4rem);line-height:1;color:var(--xp-accent-text)}
+.xp-page[data-archetype="poster"] .xp-contact{border:0;box-shadow:none;background:var(--action);color:var(--xp-action-text);padding:clamp(28px,6vw,84px)}
+.xp-page[data-archetype="poster"] .xp-contact .xp-eyebrow{color:inherit}
+.xp-page[data-archetype="poster"] .xp-contact .xp-h2{font-size:clamp(3rem,9vw,8rem);line-height:.95}
+.xp-page[data-archetype="poster"] .xp-contact .xp-act{background:var(--xp-action-text);color:var(--action)}
+
+/* 유형 — 글 · 목록형. 큰 소개 문장 아래 "기간 · 제목 · 요약" 행이 붙어 이어집니다. */
+.xp-hero[data-variant="sentence"]{display:grid;gap:calc(var(--element-gap) * 1.2);max-width:min(100%,54rem);padding-top:calc(var(--xp-section) * .3)}
+.xp-sentence-meta{font-size:var(--xp-small);color:var(--xp-muted)}
+.xp-sentence-meta strong{color:var(--text);font-weight:var(--xp-weight)}
+.xp-sentence{font-family:var(--font-display);font-size:clamp(1.9rem,3.3vw,3.1rem);font-weight:var(--xp-weight-mid);letter-spacing:var(--xp-tracking);line-height:1.2}
+.xp-sentence-intro{max-width:var(--measure);color:var(--xp-muted)}
+.xp-sentence-focus{display:flex;flex-wrap:wrap;gap:.3em .9em;font-size:var(--xp-small);color:var(--xp-muted)}
+.xp-sentence-focus li+li::before{content:"·";margin-right:.9em}
+.xp-inner>.xp-row-heading+.xp-row{margin-top:calc(var(--xp-section) * -1 + var(--element-gap))}
+.xp-inner>.xp-row+.xp-row{margin-top:calc(var(--xp-section) * -1)}
+.xp-row{border-bottom:var(--xp-rule)}
+.xp-row-heading+.xp-row{border-top:var(--xp-rule)}
+.xp-row summary{display:grid;grid-template-columns:9.5rem minmax(0,1fr) minmax(0,1.25fr) 1.5rem;gap:var(--element-gap) var(--component-gap);align-items:baseline;padding-block:1.05em;cursor:pointer;list-style:none}
+.xp-row summary:not(:has(.xp-row-period)){grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) 1.5rem}
+.xp-row summary::-webkit-details-marker{display:none}
+.xp-row-title{font-family:var(--font-display);font-size:calc(var(--type-example-body) * 1.15);font-weight:var(--xp-weight)}
+.xp-row-summary{color:var(--xp-muted)}
+.xp-row-toggle{justify-self:end;color:var(--xp-accent-text);transition:transform var(--motion-duration) var(--motion-easing)}
+.xp-row details[open] .xp-row-toggle{transform:rotate(45deg)}
+.xp-row summary:hover .xp-row-title{color:var(--xp-accent-text)}
+.xp-row-body{display:grid;gap:var(--element-gap);max-width:calc(var(--measure) + 10rem);padding:0 0 1.6em calc(9.5rem + var(--component-gap))}
+.xp-row summary:not(:has(.xp-row-period))+.xp-row-body{padding-left:0}
+.xp-row-body .xp-figure{max-width:40rem}
+.xp-page[data-archetype="list"] .xp-contact{border:0;box-shadow:none;background:transparent;padding:0}
+/* 유형의 좁은 폭 규칙은 유형 규칙 뒤에 둡니다. 같은 우선순위에서 앞의 좁은 폭 블록에 두면 넓은 폭 규칙이 이깁니다. */
+@media (max-width:${COLLAPSE}px){
+  .xp-hero[data-variant="poster"]{min-height:min(84vh,760px)}
+  .xp-poster-index a{grid-template-columns:3ch minmax(0,1fr)}
+  .xp-poster-index a>.xp-small{grid-column:2}
+  .xp-row summary,.xp-row summary:not(:has(.xp-row-period)){grid-template-columns:minmax(0,1fr) 1.5rem}
+  .xp-row summary>:not(.xp-row-toggle){grid-column:1}
+  .xp-row-toggle{grid-column:2;grid-row:1}
+  .xp-row-body{padding-left:0}
+}
+
 /* 모션 — 디자인의 시간·곡선. JavaScript 없이 보이고, 모션 감소·인쇄에서 꺼집니다 */
 @keyframes xp-rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes xp-marquee{from{transform:translateX(0)}to{transform:translateX(-100%)}}
 @media (prefers-reduced-motion:no-preference){
+  .xp-marquee ul{animation:xp-marquee 32s linear infinite}
   .xp-page:not([data-motion="none"]) .xp-hero>*{animation:xp-rise calc(var(--motion-duration) * 3) var(--motion-easing) both}
   .xp-page:not([data-motion="none"]) .xp-hero>:nth-child(2){animation-delay:60ms}
   .xp-page:not([data-motion="none"]) .xp-hero>:nth-child(3){animation-delay:120ms}

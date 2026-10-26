@@ -8,6 +8,14 @@ import { useActionState, useEffect, useMemo, useState, type CSSProperties } from
 import { Icon } from "@/components/ui/Icon";
 
 import { startGenerationAction, type BrewState } from "./design-actions";
+import { DEFAULT_PORTFOLIO_ARCHETYPE, type PortfolioArchetype } from "@expresso/contracts";
+
+/** 페이지 짜임새 선택지. 색 · 글꼴은 아래에서 고르는 디자인이 정하고, 짜임새는 여기서 정합니다. */
+const ARCHETYPE_OPTIONS: { key: PortfolioArchetype; label: string; description: string }[] = [
+  { key: "case-study", label: "사례 상세형", description: "목차와 프로젝트 상세" },
+  { key: "poster", label: "포스터형", description: "큰 이름과 색면" },
+  { key: "list", label: "글 · 목록형", description: "소개 문장과 기간별 목록" },
+];
 import {
   loadDesignDocumentAction,
   type DesignDocument,
@@ -200,6 +208,7 @@ export function DesignCatalog({
     { error: null },
   );
   const [category, setCategory] = useState<CatalogCategory>("recommended");
+  const [archetype, setArchetype] = useState<PortfolioArchetype>(DEFAULT_PORTFOLIO_ARCHETYPE);
   const [query, setQuery] = useState("");
   const [surface, setSurface] = useState<"all" | "light" | "dark">("all");
   const [density, setDensity] = useState<"all" | "compact" | "comfortable" | "spacious">("all");
@@ -303,6 +312,32 @@ export function DesignCatalog({
           </div>
           <span className={styles.catalogCount}>{entries.length}개 디자인</span>
         </div>
+
+        <fieldset className={styles.archetypeRow}>
+          <legend className={styles.archetypeLegend}>페이지 짜임새</legend>
+          {ARCHETYPE_OPTIONS.map((option) => (
+            <label
+              key={option.key}
+              className={`${styles.archetypeOption} ${archetype === option.key ? styles.archetypeOptionActive : ""}`}
+            >
+              <input
+                type="radio"
+                name="archetype-choice"
+                value={option.key}
+                checked={archetype === option.key}
+                onChange={() => setArchetype(option.key)}
+                className={styles.srOnly}
+              />
+              <span className={styles.archetypeSketch} data-archetype={option.key} aria-hidden="true">
+                <i /><i /><i />
+              </span>
+              <span className={styles.archetypeText}>
+                <strong>{option.label}</strong>
+                <small>{option.description}</small>
+              </span>
+            </label>
+          ))}
+        </fieldset>
 
         <div className={styles.categoryRow} role="tablist" aria-label="디자인 분류">
           {CATEGORIES.map((item) => {
@@ -621,6 +656,7 @@ export function DesignCatalog({
                 <input type="hidden" name="brewId" value={brewId} />
                 <input type="hidden" name="recipeId" value={recipeId} />
                 <input type="hidden" name="designSystemRevisionId" value={selected.revisionId} />
+                <input type="hidden" name="archetype" value={archetype} />
                 <button type="submit" disabled={pending || !generationAllowed}>
                   {pending ? "생성을 시작하는 중" : generationAllowed ? (
                     <>이 디자인으로 만들기 <Icon name="arrow-right" size={14} /></>

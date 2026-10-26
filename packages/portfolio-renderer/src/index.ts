@@ -31,3 +31,4 @@ export {
   describeDesignLayout,
   type DesignLayout,
 } from "./design-layout.js";
+export { describeArchetype } from "./archetype.js";

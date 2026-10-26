@@ -137,7 +137,7 @@ describe("출력 스키마에서 만든 형식 설명", () => {
     );
   });
   it("프롬프트의 요소 ID 목록과 형식 설명이 생성기에 넘기는 스키마와 같다", () => {
-    const prompt = structuredSpecPrompt(content, "", null, schema);
+    const prompt = structuredSpecPrompt(content, { schema });
     expect(prompt).toContain(format.text);
     expect(prompt).not.toContain("수집 목록");
     expect(prompt).toContain(
@@ -147,13 +147,13 @@ describe("출력 스키마에서 만든 형식 설명", () => {
   });
   it("컨테이너를 쓸 수 없는 디자인이면 컨테이너 설명 없이 배치 문단을 넣는다", () => {
     const flat = structuredModelSchema(content, { intro: [], section: [], guidance: [], groups: [] });
-    const prompt = structuredSpecPrompt(content, "", null, flat, "고른 디자인은 가상이고 배치는 넓은 여백입니다.");
+    const prompt = structuredSpecPrompt(content, { schema: flat, layout: "고른 디자인은 가상이고 배치는 넓은 여백입니다." });
     expect(prompt).toContain("고른 디자인은 가상이고 배치는 넓은 여백입니다.");
     expect(prompt).not.toContain("컨테이너는 지면을 나누는 요소입니다");
     expect(prompt).not.toContain("Columns:");
     expect(prompt).not.toContain("variant='rail'로 Columns");
     expect(prompt).toContain("모든 요소를 page.children에 바로 둡니다");
-    const withGroups = structuredSpecPrompt(content, "", null, schema);
+    const withGroups = structuredSpecPrompt(content, { schema });
     expect(withGroups).toContain("컨테이너는 지면을 나누는 요소입니다");
     expect(withGroups).toContain("Columns:");
   });
