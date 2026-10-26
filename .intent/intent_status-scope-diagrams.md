@@ -2,7 +2,7 @@
 title: 진행 현황 작업 범위 · 분량 다이어그램
 slug: status-scope-diagrams
 stage: intent
-status: draft
+status: accepted
 author: 박민재
 date: 2026-10-26
 ---
