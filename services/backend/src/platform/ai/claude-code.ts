@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -16,6 +17,7 @@ import {
   type AiClient,
   type AiResult,
 } from "./client.js";
+import { AI_FIX_ROUNDS, applyFixes, fixPrompt, fixSchema, groupViolations, zodViolations } from "./fixes.js";
 
 /**
  * 개발용 어댑터 — 이 머신에 로그인된 Claude Code로 호출한다.
@@ -116,11 +118,68 @@ export class ClaudeCodeAiClient implements AiClient {
   async complete<T>(
     spec: AiCallSpec,
     schema: z.ZodType<T>,
-    options: AiCallOptions = {},
+    options: AiCallOptions<T> = {},
   ): Promise<AiResult<T>> {
     const model = this.#models[spec.contract]
       ?? spec.modelTier
       ?? DEFAULT_MODEL_TIER[spec.contract];
+    /*
+     * 세션 ID를 우리가 정한다. 검사에 걸린 칸을 고칠 때 같은 대화를 `--resume`해서, 자료를 다시 보내지 않고
+     * 걸린 칸만 고쳐 받는다(`claude --help` 2.1.274의 `--session-id` · `--resume`, 2026-10-27 실측: haiku 한 문장
+     * 고치기 8.2초).
+     */
+    const sessionId = randomUUID();
+    const first = await this.#call(spec, model, toToolSchema(schema), spec.prompt, options, ["--session-id", sessionId], spec.images);
+    const usages = [first.usage];
+    let output = first.output;
+    let drafted = false;
+    for (let round = 0; ; round += 1) {
+      const parsed = parseToolOutput(schema, output);
+      if (parsed.success && !drafted) {
+        drafted = true;
+        options.onDraft?.(parsed.data);
+      }
+      const violations = parsed.success ? (options.check?.(parsed.data) ?? []) : zodViolations(parsed.error);
+      if (!violations.length || round >= AI_FIX_ROUNDS) {
+        if (parsed.success) {
+          if (violations.length)
+            console.error(JSON.stringify({ level: "warn", event: "ai.violations_kept", contract: spec.contract, violations: violations.slice(0, 20) }));
+          return { data: parsed.data, usage: sumUsage(usages) };
+        }
+        throw new AiError(
+          "AI_INVALID_OUTPUT",
+          spec.contract,
+          `structured output did not match the schema after ${round} fix rounds: ${parsed.error.message}`,
+          // 같은 대화에서 고쳐도 계약을 못 맞춘 출력이다. 같은 호출을 다시 돌려도 같은 자리에서 멈춘다.
+          { retryable: false },
+        );
+      }
+      // 거절하지 않고, 걸린 칸만 같은 대화에서 고쳐 받는다.
+      const grouped = groupViolations(violations);
+      const fixes = await this.#call(
+        spec, model, toToolSchema(fixSchema([...grouped.keys()])), fixPrompt(grouped, output),
+        options.onThinking ? { onThinking: options.onThinking } : {}, ["--resume", sessionId],
+      );
+      usages.push(fixes.usage);
+      const received = fixSchema([...grouped.keys()]).safeParse(fixes.output);
+      console.error(JSON.stringify({ level: "info", event: "ai.fix_round", contract: spec.contract, round: round + 1, paths: [...grouped.keys()].slice(0, 20), fixed: received.success ? received.data.fixes.length : 0, durationMs: fixes.usage.durationMs }));
+      if (!received.success) continue;
+      output = applyFixes(output, received.data.fixes);
+      const revised = parseToolOutput(schema, output);
+      if (revised.success) options.onRevision?.(received.data.fixes, revised.data);
+    }
+  }
+
+  /** CLI를 한 번 돌려 구조화 출력과 사용량을 받습니다. 계약 검사는 부르는 쪽(`complete`)이 합니다. */
+  async #call(
+    spec: AiCallSpec,
+    model: string,
+    toolSchema: Record<string, unknown>,
+    prompt: string,
+    options: Pick<AiCallOptions, "onPartial" | "onPartialRestart" | "onThinking">,
+    session: string[],
+    images?: AiCallSpec["images"],
+  ): Promise<{ output: unknown; usage: AiResult<unknown>["usage"] }> {
     const args = [
       // 프롬프트는 stdin으로 간다 — 위치 인자를 주지 않는다.
       "-p",
@@ -135,7 +194,7 @@ export class ClaudeCodeAiClient implements AiClient {
       "--output-format", "stream-json",
       "--verbose",
       ...(options.onPartial || options.onThinking ? ["--include-partial-messages"] : []),
-      "--json-schema", JSON.stringify(toToolSchema(schema)),
+      "--json-schema", JSON.stringify(toolSchema),
       "--append-system-prompt", spec.system,
       // MCP 서버와 도구 정의가 프롬프트에 실리지 않게 한다.
       "--strict-mcp-config",
@@ -145,17 +204,18 @@ export class ClaudeCodeAiClient implements AiClient {
       "--allowedTools", "",
       // 이미지는 글 입력으로 보낼 수 없습니다. stream-json 입력의 사용자 메시지 한 줄에 글과 이미지 블록을 함께 담습니다
       // (https://code.claude.com/docs/en/agent-sdk/streaming-vs-single-mode).
-      ...(spec.images?.length ? ["--input-format", "stream-json"] : []),
+      ...(images?.length ? ["--input-format", "stream-json"] : []),
       ...(spec.effort ? ["--effort", spec.effort] : []),
+      ...session,
     ];
-    const input = spec.images?.length
+    const input = images?.length
       ? `${JSON.stringify({
           type: "user",
           message: {
             role: "user",
             content: [
-              { type: "text", text: spec.prompt },
-              ...spec.images.flatMap((image) => [
+              { type: "text", text: prompt },
+              ...images.flatMap((image) => [
                 { type: "text", text: image.label },
                 { type: "image", source: { type: "base64", media_type: image.mediaType, data: image.data } },
               ]),
@@ -163,7 +223,7 @@ export class ClaudeCodeAiClient implements AiClient {
           },
           parent_tool_use_id: null,
         })}\n`
-      : spec.prompt;
+      : prompt;
 
     const started = Date.now();
     const { stdout, stderr, code } = await this.#run(
@@ -185,7 +245,7 @@ export class ClaudeCodeAiClient implements AiClient {
     }
 
     const parsed = this.#parseEnvelope(stdout, spec);
-    // CLI가 구조화 출력을 스키마 검사로 돌려보내면 모델이 처음부터 다시 씁니다. 시간이 그만큼 늘어 원인을 남깁니다.
+    // 공급자 형식에는 모양만 넘기므로 여기 걸리는 것은 모양이 틀린 출력뿐입니다. 남은 경로를 찾도록 기록합니다.
     for (const detail of rejectedStructuredOutputs(stdout))
       console.error(JSON.stringify({ level: "warn", event: "ai.structured_output_rejected", contract: spec.contract, model, detail: detail.slice(0, 1_500) }));
     if (parsed.is_error) {
@@ -203,17 +263,6 @@ export class ClaudeCodeAiClient implements AiClient {
       );
     }
 
-    // `--json-schema`를 주면 구조화 결과가 여기 온다. 없으면 계약 위반이다.
-    const validated = parseToolOutput(schema, parsed.structured_output);
-    if (!validated.success) {
-      throw new AiError(
-        "AI_INVALID_OUTPUT",
-        spec.contract,
-        `structured output did not match the schema: ${validated.error.message}`,
-        { retryable: true },
-      );
-    }
-
     const usage = parsed.usage ?? {};
     // 한 번의 호출에도 여러 모델이 찍힌다(보조 단계). 출력 토큰이 가장 많은
     // 것이 실제로 답을 쓴 모델이다 — 첫 키를 집으면 엉뚱한 이름이 남는다.
@@ -225,7 +274,8 @@ export class ClaudeCodeAiClient implements AiClient {
       .sort((left, right) => right.outputTokens - left.outputTokens)[0]?.name
       ?? model;
     return {
-      data: validated.data,
+      // `--json-schema`를 주면 구조화 결과가 여기 온다. 없으면 계약 검사가 빈 출력으로 위반을 낸다.
+      output: parsed.structured_output,
       usage: {
         model: modelName,
         inputTokens: usage.input_tokens ?? 0,
@@ -322,6 +372,20 @@ export class ClaudeCodeAiClient implements AiClient {
       });
     });
   }
+}
+
+/** 첫 호출과 고치기 호출의 사용량을 합칩니다. 모델 이름은 첫 호출(출력을 쓴 호출)의 것입니다. */
+function sumUsage(usages: readonly AiResult<unknown>["usage"][]): AiResult<unknown>["usage"] {
+  const [first] = usages;
+  return {
+    model: first!.model,
+    inputTokens: usages.reduce((sum, usage) => sum + usage.inputTokens, 0),
+    outputTokens: usages.reduce((sum, usage) => sum + usage.outputTokens, 0),
+    cacheReadTokens: usages.reduce((sum, usage) => sum + usage.cacheReadTokens, 0),
+    cacheCreationTokens: usages.reduce((sum, usage) => sum + usage.cacheCreationTokens, 0),
+    costUsd: usages.some((usage) => usage.costUsd === null) ? null : usages.reduce((sum, usage) => sum + (usage.costUsd ?? 0), 0),
+    durationMs: usages.reduce((sum, usage) => sum + usage.durationMs, 0),
+  };
 }
 
 /**

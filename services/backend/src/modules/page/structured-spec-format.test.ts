@@ -97,12 +97,11 @@ describe("출력 스키마에서 만든 형식 설명", () => {
       "group-4",
     ]);
   });
-  it("선택 요소는 공급자 스키마처럼 키를 두고 null로 비운다고 적는다", () => {
-    // 공급자 스키마는 선택 속성도 키를 요구합니다. 생략하라고 쓰면 그 출력이 공급자 검사에 걸립니다.
-    const tool = toToolSchema(schema) as { properties: { elements: { required: string[] } } };
-    expect(tool.properties.elements.required).toEqual(expect.arrayContaining(format.optional));
-    expect(format.text).toContain("(선택, 쓰지 않으면 null)");
-    expect(format.text).not.toContain("생략");
+  it("선택 요소는 생략하라고 적고, 공급자 형식도 그 요소를 필수로 두지 않는다", () => {
+    // 둘이 어긋나면 모델이 지시대로 뺀 출력을 공급자가 돌려보내 처음부터 다시 씁니다(2026-10-26 다듬기).
+    const tool = toToolSchema(schema) as { properties: { elements: { required?: string[] } } };
+    for (const key of format.optional) expect(tool.properties.elements.required ?? []).not.toContain(key);
+    expect(format.text).toContain("(선택, 쓰지 않으면 생략)");
   });
   it("요소마다 스키마의 props 키와 고정 참조를 모두 적는다", () => {
     for (const [key, node] of Object.entries(elements.properties)) {
