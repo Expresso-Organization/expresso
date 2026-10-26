@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useState, useTransition } from "react";
 
 import type { GeneratedPage, PortfolioDetail, PortfolioRevision, PageLibraryItem } from "@expresso/contracts";
 
@@ -79,6 +80,15 @@ export function Editor({
   libraryItems?: readonly PageLibraryItem[];
 }) {
   const [, startTransition] = useTransition();
+  const router = useRouter();
+  // 초안을 저장한 뒤 워커가 스크린샷을 보고 다듬습니다. 다듬는 동안은 다시 읽어 새 판이 오면 바꿔 보입니다.
+  const refining = generatedPage?.refinement?.status === "pending";
+  const refined = generatedPage?.generationManifest?.visualReview?.status === "adopted" && generatedPage.refinement === undefined;
+  useEffect(() => {
+    if (!refining) return;
+    const timer = setInterval(() => router.refresh(), 8_000);
+    return () => clearInterval(timer);
+  }, [refining, router]);
   const [tab, setTab] = useState<PanelTab>("chat");
   const [sectionId, setSectionId] = useState<string>(
     portfolio.sections[0]?.id ?? "",
@@ -310,7 +320,7 @@ export function Editor({
         <WizardSteps
           brewId={portfolio.brewId}
           current="edit"
-          situation={generatedPage ? `생성 완료 · 판 ${generatedPage.revision}` : "생성 전"}
+          situation={generatedPage ? `생성 완료 · 판 ${generatedPage.revision}${refining ? " · AI가 다듬는 중" : ""}` : "생성 전"}
         />
 
         <div className={styles.stage} data-pane={pane}>
@@ -442,6 +452,14 @@ export function Editor({
           </aside>
 
           <div className={styles.canvas}>
+            {refining ? (
+              <p className={styles.refineNotice} role="status">
+                <span className={styles.statusDot} />
+                초안입니다. AI가 화면을 보고 다듬고 있으며, 끝나면 다듬은 판으로 바뀝니다.
+              </p>
+            ) : refined ? (
+              <p className={styles.refineNotice} role="status">AI가 화면을 보고 다듬은 판입니다.</p>
+            ) : null}
             <div className={styles.browser}>
               <div className={styles.browserChrome}>
                 <span className={styles.browserDot} />

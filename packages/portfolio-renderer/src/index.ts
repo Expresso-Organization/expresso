@@ -32,3 +32,13 @@ export {
   type DesignLayout,
 } from "./design-layout.js";
 export { describeArchetype } from "./archetype.js";
+export {
+  RENDER_MEASURE_WIDTHS,
+  describeRenderDefects,
+  inspectRenderedPage,
+  renderDefects,
+  renderedContentValues,
+  settleRenderedPage,
+  type RenderDefect,
+  type RenderMeasurement,
+} from "./measure.js";

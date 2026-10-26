@@ -54,6 +54,11 @@ rm -rf -- \
   "$ROOT/services/web/node_modules"
 pnpm install --frozen-lockfile
 
+# 워커가 생성한 지면을 재는 브라우저입니다. 백엔드의 playwright 판에 맞는 chromium-headless-shell만 받습니다.
+# 이미 받은 판이면 건너뜁니다. 시스템 라이브러리와 한국어 폰트는 처음 한 번 설치합니다
+# — docs/operations/DEPLOYMENT.md 「측정 브라우저」.
+pnpm --filter @expresso/backend exec playwright install --only-shell chromium
+
 # 계약이 편집기의 문서 타입을, 웹과 백엔드가 계약의 타입을 그대로 쓴다.
 # 이 의존 순서를 바꾸면 깨끗한 서버 체크아웃에서 빌드가 깨진다.
 pnpm --filter @expresso/editor build

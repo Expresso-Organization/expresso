@@ -4,7 +4,7 @@ import { z } from "zod";
 import { TimestampSchema, UuidSchema } from "./common.js";
 import { PAGE_KIT_CSS, pageKitVariables } from "./page-kit.js";
 import { PortfolioDesignReferenceSchema, TemplateFontSchema } from "./templates.js";
-import { StructuredPortfolioSnapshotSchema } from "./structured-portfolio.js";
+import { StructuredPortfolioSnapshotSchema, StructuredPortfolioSpecSchema } from "./structured-portfolio.js";
 import { MEDIA_ASSET_PATH_PREFIX } from "./media-path.js";
 
 /**
@@ -321,6 +321,9 @@ export const PageQaCheckSchema = z.strictObject({
     "design-contrast",
     "design-type-size",
     "design-fonts",
+    // 생성 중 브라우저 측정입니다. 구성으로 고칠 수 있는 결함과 그 밖의 결함(대비 · 서체 · 내용 누락)을 나눕니다.
+    "rendered-layout",
+    "rendered-readability",
   ]),
   status: z.enum(["pass", "fail"]),
   severity: z.enum(["error", "warning"]),
@@ -333,6 +336,64 @@ export const PageQaReportSchema = z.strictObject({
   checks: z.array(PageQaCheckSchema),
 });
 export type PageQaReport = z.infer<typeof PageQaReportSchema>;
+
+/** 생성 중 브라우저 측정에서 나온 결함 하나입니다. `fixable`은 구성을 바꿔 피할 수 있는 결함입니다. */
+export const PageRenderDefectSchema = z.strictObject({
+  kind: z.enum([
+    "overflow", "orphan", "escaped", "caption-overlap", "stretched-tag", "missing-image",
+    "contrast", "font", "broken-image", "missing-anchor", "case-number", "missing-text",
+  ]),
+  width: z.number().int().positive(),
+  element: z.string().max(200).nullable(),
+  detail: z.string().max(500),
+  fixable: z.boolean(),
+});
+export type PageRenderDefect = z.infer<typeof PageRenderDefectSchema>;
+
+/** 판마다 잰 결과와 채택한 판입니다. 브라우저를 띄우지 못하면 건너뛴 이유만 남습니다. */
+export const PageRenderMeasureSchema = z.strictObject({
+  status: z.enum(["measured", "skipped"]),
+  reason: z.string().max(1_000).optional(),
+  /** `passes`에서 채택한 판의 위치입니다. */
+  adopted: z.number().int().nonnegative().optional(),
+  passes: z.array(z.strictObject({
+    durationMs: z.number().int().nonnegative(),
+    defects: z.array(PageRenderDefectSchema).max(300),
+    /** 재요청 Spec이 계약 검사를 지나지 못해 그리지 않았으면 그 이유입니다. */
+    rejected: z.string().max(1_000).optional(),
+  })).max(3),
+});
+export type PageRenderMeasure = z.infer<typeof PageRenderMeasureSchema>;
+
+/**
+ * 초안을 저장한 뒤 워커가 스크린샷을 보고 다듬은 기록입니다.
+ *
+ * `critique`는 모델이 지적한 점, `comparison`은 전후 스크린샷을 순서를 섞어 보여 준 비교 결과입니다.
+ */
+export const PageVisualReviewSchema = z.strictObject({
+  status: z.enum(["adopted", "kept", "skipped"]),
+  reason: z.string().max(1_000).optional(),
+  critique: z.array(z.string().max(500)).max(20),
+  comparison: z.strictObject({
+    winner: z.enum(["draft", "revised"]),
+    reason: z.string().max(1_000),
+  }).optional(),
+  /** 스크린샷 검토가 낸 구성입니다. 비교에서 져서 버려진 판도 지적과 함께 다시 볼 수 있게 남깁니다. */
+  revisedSpec: StructuredPortfolioSpecSchema.optional(),
+  durationMs: z.number().int().nonnegative(),
+  /** 다듬기에서 부른 모델 호출 수와 비용입니다. 공급자가 비용을 알려주지 않으면 null입니다. */
+  calls: z.number().int().nonnegative(),
+  costUsd: z.number().nonnegative().nullable(),
+});
+export type PageVisualReview = z.infer<typeof PageVisualReviewSchema>;
+
+/** 초안의 다듬기 상태입니다. 다듬은 판을 채택하면 그 판의 ID가 남습니다. */
+export const PageRefinementSchema = z.strictObject({
+  status: z.enum(["pending", "adopted", "kept", "superseded", "skipped", "failed"]),
+  reason: z.string().max(1_000).optional(),
+  revisionId: UuidSchema.optional(),
+});
+export type PageRefinement = z.infer<typeof PageRefinementSchema>;
 
 export const PageGenerationManifestSchema = z.strictObject({
   methodologyVersion: z.literal(1),
@@ -349,6 +410,8 @@ export const PageGenerationManifestSchema = z.strictObject({
   repairCount: z.number().int().min(0).max(1),
   structured: StructuredPortfolioSnapshotSchema.optional(),
   library: PageLibrarySelectionSchema.optional(),
+  renderMeasure: PageRenderMeasureSchema.optional(),
+  visualReview: PageVisualReviewSchema.optional(),
   usage: z.strictObject({
     inputTokens: z.number().int().nonnegative(),
     outputTokens: z.number().int().nonnegative(),
@@ -378,6 +441,8 @@ export const GeneratedPageSchema = z.strictObject({
   qaReport: PageQaReportSchema.default({ status: "ready", checks: [] }),
   generationManifest: PageGenerationManifestSchema.nullable().default(null),
   styleSpec: PageStyleGrammarSchema.nullable().default(null),
+  /** 구조화 초안이면 워커가 이어서 다듬습니다. 다듬기 전에 만든 판에는 없습니다. */
+  refinement: PageRefinementSchema.optional(),
   createdAt: TimestampSchema,
 });
 export type GeneratedPage = z.infer<typeof GeneratedPageSchema>;

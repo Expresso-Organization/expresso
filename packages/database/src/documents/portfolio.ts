@@ -1,4 +1,5 @@
 // 최종 SQL 제약 목록을 대조해 확정한 MongoDB 저장 타입입니다. API 계약은 contracts에서 가져옵니다.
+import type * as Contracts from "@expresso/contracts";
 import type { JsonValue, JsonObject } from "./common.js";
 
 export interface GeneratedPageDoc {
@@ -21,6 +22,8 @@ export interface GeneratedPageDoc {
   portfolioPlanSnapshot?: JsonObject | null;
   styleSpecSnapshot?: JsonObject | null;
   designPrinciplesVersion: number;
+  /** 구조화 초안의 다듬기 상태(`PageRefinementSchema`). */
+  refinement?: Contracts.PageRefinement;
 }
 
 export interface LayoutSpecDoc {
