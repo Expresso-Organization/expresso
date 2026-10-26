@@ -6,7 +6,8 @@ import { createMongoFixture } from "../../../test/support/mongodb.js";
 import { MongoOutboxDispatcher } from "../../platform/mongo-outbox.js";
 import { createReliableQueue } from "../../platform/queue.js";
 import { createQueueWorker } from "../../worker/create-queue-worker.js";
-import { createBrewJobProcessor } from "../../worker/processors/brew-jobs.js";
+import { classifyBrewJobFailure, createBrewJobProcessor } from "../../worker/processors/brew-jobs.js";
+import { ConsentError } from "../consent/index.js";
 import { RecipeError } from "../recipe/index.js";
 import { MongoIdentityService } from "../identity/index.js";
 import { MongoMaterialsService } from "../materials/service.js";
@@ -139,6 +140,30 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB brew job resubmission", 
     expect(await jobs.getStatus(owner, job.jobId)).toMatchObject({ status: "failed", failure: { code: "BREW_INPUT_REJECTED", retryable: false } });
   });
 
+  it("records which consent a failed job needs, in the job and in the brew state, until the page starts a new job", async () => {
+    const brewId = await newBrew();
+    const job = await jobs.submit(owner, "interview", `interview:${brewId}`, { brewId });
+    const consentMissing = { async run(): Promise<string> { throw new ConsentError("career_records"); } };
+    await expect(jobs.process(job.jobId, consentMissing, classifyBrewJobFailure, { finalAttempt: false })).rejects.toBeInstanceOf(ConsentError);
+    const failure = { code: "CONSENT_REQUIRED", retryable: false, requiredConsent: "career_records" };
+    expect(await jobs.getStatus(owner, job.jobId)).toMatchObject({ status: "failed", attempts: 1, failure });
+    expect((await materials.getState(owner, brewId)).latestJob).toEqual(await jobs.getStatus(owner, job.jobId));
+
+    // 동의를 켠 뒤 화면이 본 잡을 붙여 다시 누른다.
+    const retried = await jobs.submit(owner, "interview", `interview:${brewId}:${job.jobId}`, { brewId });
+    expect(retried).toMatchObject({ status: "queued", failure: null });
+    const resultId = randomUUID();
+    expect(await jobs.process(retried.jobId, { async run() { return resultId; } }, classifyBrewJobFailure)).toMatchObject({ status: "succeeded", resultId, failure: null });
+    expect((await materials.getState(owner, brewId)).latestJob).toMatchObject({ jobId: retried.jobId, status: "succeeded", failure: null });
+  });
+
+  it("leaves requiredConsent empty for failures that are not about consent", async () => {
+    const brewId = await newBrew();
+    const job = await jobs.submit(owner, "recipe", `recipe:${brewId}`, { brewId });
+    await fail(job.jobId, false);
+    expect((await jobs.getStatus(owner, job.jobId)).failure).toEqual({ code: "BREW_INPUT_REJECTED", retryable: false, requiredConsent: null });
+  });
+
   it("replays a succeeded job without publishing", async () => {
     const brewId = await newBrew();
     const key = `recipe:${brewId}`;
@@ -205,5 +230,12 @@ describe.skipIf(!process.env.TEST_MONGODB_URL || !process.env.TEST_REDIS_URL)("M
     await new Promise((resolve) => setTimeout(resolve, 3_000));
     expect(calls.get(brewId)).toBe(1);
     expect(await jobs.getStatus(owner, jobId)).toMatchObject({ status: "failed", attempts: 1 });
+  }, 30_000);
+
+  it("runs a consent failure once and names the consent to turn on", async () => {
+    const { brewId, jobId } = await enqueue(() => new ConsentError("career_records"));
+    expect(await waitFor(() => jobs.getStatus(owner, jobId), (status) => status.status === "failed")).toMatchObject({ attempts: 1, failure: { code: "CONSENT_REQUIRED", retryable: false, requiredConsent: "career_records" } });
+    await new Promise((resolve) => setTimeout(resolve, 3_000));
+    expect(calls.get(brewId)).toBe(1);
   }, 30_000);
 });

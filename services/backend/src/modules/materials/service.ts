@@ -3,6 +3,7 @@ import { BrewMaterialsSchema, BrewStateSchema, CreateBrewSchema, CreateFreeBrewS
 import { mongoCollections, type BrewDoc, type BrewSourceDoc, type CareerRecordDoc, type CareerCategoryDoc } from "@expresso/database";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction, type MongoTransaction } from "../../platform/mongo-transaction.js";
+import { brewJobStatus } from "../brew-jobs/index.js";
 import { requireActiveUser } from "../identity/index.js";
 import { assertActiveRecordsForWrite } from "../career/index.js";
 import { MongoEntitlementService } from "../entitlements/index.js";
@@ -105,7 +106,7 @@ export class MaterialsService implements MaterialsApi {
     const company = posting ? await db.companies.findOne({ _id: posting.companyId }) : null;
     return BrewStateSchema.parse({ brewId, jobAnalysisId: brew.jobAnalysisId, status: brew.status, lengthPreset: brew.lengthPreset, freeTitle: brew.freeTitle ?? null, freeBrief: brew.freeBrief ?? null, posting: posting && company ? { title: posting.title, companyName: company.name } : null,
       materials: { selected: sources.filter((source) => source.isSelected).length, total: sources.length }, interviewSessionId: session?._id ?? null, recipeId: recipe?._id ?? null, portfolioId: portfolio?._id ?? null,
-      latestJob: job ? { jobId: job._id, type: job.type, status: job.status, stage: job.stage, attempts: job.attempts, resultId: job.resultId ?? null, failure: job.errorCode ? { code: job.errorCode, retryable: job.failureRetryable ?? false } : null } : null,
+      latestJob: job ? brewJobStatus(job) : null,
       designSelection: brew.designSystemRevisionId && brew.referenceLockSnapshot && brew.designSelectedAt
         ? { designSystemRevisionId: brew.designSystemRevisionId, referenceLock: brew.referenceLockSnapshot, styleOverrides: brew.designStyleOverrides ?? {}, selectedAt: new Date(brew.designSelectedAt).toISOString() }
         : null,

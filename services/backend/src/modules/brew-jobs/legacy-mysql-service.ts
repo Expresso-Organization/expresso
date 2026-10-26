@@ -90,7 +90,8 @@ export class BrewJobService {
       attempts: job.attempts,
       resultId: job.result_id,
       failure: job.error_code
-        ? { code: job.error_code, retryable: job.failure_retryable ?? false }
+        // 구 MySQL 표에는 동의 열이 없다.
+        ? { code: job.error_code, retryable: job.failure_retryable ?? false, requiredConsent: null }
         : null,
     });
   }

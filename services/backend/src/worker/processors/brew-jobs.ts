@@ -1,6 +1,7 @@
 import { UnrecoverableError, type Job } from "bullmq";
 
-import { type BrewJobRunner, type BrewJobApi } from "../../modules/brew-jobs/index.js";
+import { type BrewJobRunner, type BrewJobApi, type FailureClassifier } from "../../modules/brew-jobs/index.js";
+import { ConsentError } from "../../modules/consent/index.js";
 import { InterviewError } from "../../modules/interview/index.js";
 import { QuestionDraftError } from "../../modules/interview/question-writer.js";
 import { RecipeError } from "../../modules/recipe/index.js";
@@ -17,8 +18,14 @@ import { AiError } from "../../platform/ai/client.js";
  * 큐가 세 번째로 부르면 같은 답에 쿼터만 더 쓴다. 사용자가 다시 누르는 편이
  * 낫다 — 그때는 재료나 공고가 달라져 있을 수 있다. 화면은 마지막으로 본 잡을
  * 키에 붙여 보내므로, 다시 누르면 새 잡이 돈다.
+ *
+ * 동의가 꺼져 있으면 사용자가 켜기 전까지 같은 답이다. 어느 동의인지 함께
+ * 남겨 화면이 설정으로 안내한다.
  */
-export function classifyBrewJobFailure(error: unknown): { code: string; retryable: boolean } {
+export function classifyBrewJobFailure(error: unknown): ReturnType<FailureClassifier> {
+  if (error instanceof ConsentError) {
+    return { code: "CONSENT_REQUIRED", retryable: false, requiredConsent: error.scope };
+  }
   if (error instanceof InterviewError || error instanceof RecipeError) {
     return { code: "BREW_INPUT_REJECTED", retryable: false };
   }

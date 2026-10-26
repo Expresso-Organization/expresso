@@ -1,4 +1,4 @@
-
+import type { ConsentScope } from "@expresso/contracts";
 
 /** 잡 하나가 실제로 하는 일. 결과의 식별자를 돌려준다. */
 export interface BrewJobRunner {
@@ -16,5 +16,5 @@ export class BrewJobError extends Error {
 
 /** 잡이 실패한 이유. 다시 눌러도 되는지가 여기서 갈린다. */
 export interface FailureClassifier {
-  (error: unknown): { code: string; retryable: boolean };
+  (error: unknown): { code: string; retryable: boolean; requiredConsent?: ConsentScope | null };
 }
