@@ -12,6 +12,7 @@ import {
   type ScanRun,
   type State,
 } from "../../shared/report.ts"
+import { weekPosition } from "./scope.ts"
 
 export { STATES }
 export type { Feature, HistoryPoint, Judgment, PullRequest, ScanRun, State }
@@ -27,7 +28,8 @@ async function get<T>(name: string, schema: z.ZodType<T>, optional = false): Pro
   return parsed.data
 }
 
-export type Data = { report: Report; history: HistoryPoint[]; runs: ScanRun[] }
+// loadedAt — 이 데이터를 받은 시각. 화면의 「지금」(이번 주차 · 지금 선)은 렌더 중에 시계를 읽지 않고 이 값을 쓴다.
+export type Data = { report: Report; history: HistoryPoint[]; runs: ScanRun[]; loadedAt: number }
 
 export async function loadData(): Promise<Data> {
   const [report, history, runs] = await Promise.all([
@@ -35,7 +37,7 @@ export async function loadData(): Promise<Data> {
     get("history.json", History, true),
     get("runs.json", ScanRuns, true),
   ])
-  return { report: report!, history: history ?? [], runs: runs ?? [] }
+  return { report: report!, history: history ?? [], runs: runs ?? [], loadedAt: Date.now() }
 }
 
 export const STATE_LABEL: Record<State, string> = { done: "완료", partial: "부분", api: "API만", todo: "미구현" }
@@ -81,11 +83,9 @@ export function needsAction(p: PullRequest, staleDays = 7, now = Date.now()): st
   ].filter((v): v is string => v !== null)
 }
 
-const DAY = 86_400_000
-
+// 주차 좌표는 scope.ts 한 곳에서 잰다 — 배지와 그림의 이번 주 선이 어긋나지 않게.
 export function semesterWeek(week2Start: string, now = new Date()): number {
-  const start = new Date(`${week2Start}T00:00:00`).getTime()
-  return 2 + Math.floor((now.getTime() - start) / (7 * DAY))
+  return Math.floor(weekPosition(now, week2Start))
 }
 
 export function ago(iso: string | null, now = Date.now()): string {

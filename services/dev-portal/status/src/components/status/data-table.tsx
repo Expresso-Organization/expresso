@@ -223,11 +223,55 @@ const scanColumns: ColumnDef<ScanRun>[] = [
   },
 ]
 
-type Detail = { title: string; badge: ReactNode; rows: Array<[string, ReactNode]> }
+export type Detail = { title: string; badge: ReactNode; rows: Array<[string, ReactNode]> }
 
-export function ListTabs({ data, rows, view, setView }: { data: Data; rows: Row[]; view: View; setView: (patch: Partial<View>) => void }) {
+export function featureDetail(r: Row, report: Data["report"]): Detail {
+  const j = r.judgment
+  return {
+    title: `${r.id} ${r.name}`,
+    badge: <StateBadge state={j?.state ?? null} change={changed(j)} />,
+    rows: [
+      ["도메인 · 담당", `${r.group} ${r.groupName} · ${r.owner}`],
+      ["주요기능", r.major],
+      ...(r.does ? ([["정의 — 동작", r.does]] as Array<[string, ReactNode]>) : []),
+      ...(r.rule ? ([["정의 — 규칙", r.rule]] as Array<[string, ReactNode]>) : []),
+      ["판정 뜻", j ? STATE_HELP[j.state] : "아직 판정하지 않았습니다"],
+      ["빠진 것", j ? (j.missing ?? "없음") : "—"],
+      [
+        "근거",
+        j?.evidence.length ? (
+          <ul className="flex flex-col gap-1">
+            {j.evidence.map((e) => (
+              <li key={e}>
+                <a href={githubBlob(report.repo, j.commit, e)} target="_blank" rel="noopener noreferrer" className="font-mono text-xs hover:underline">
+                  {e}
+                </a>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          "—"
+        ),
+      ],
+      ["판정", j ? `${ago(j.scannedAt)} · ${j.commit}${j.previous && j.previous !== j.state ? ` · 직전 ${STATE_LABEL[j.previous]}` : ""}` : "—"],
+    ],
+  }
+}
+
+export function ListTabs({
+  data,
+  rows,
+  view,
+  setView,
+  onDetail,
+}: {
+  data: Data
+  rows: Row[]
+  view: View
+  setView: (patch: Partial<View>) => void
+  onDetail: (detail: Detail) => void
+}) {
   const { report } = data
-  const [detail, setDetail] = useState<Detail | null>(null)
   const memberLogins = report.members.find((m) => m.name === view.member)?.logins ?? []
 
   const features = useMemo(
@@ -246,133 +290,103 @@ export function ListTabs({ data, rows, view, setView }: { data: Data; rows: Row[
   const groupItems = [{ value: ALL, label: "모든 도메인" }, ...report.groups.map((g) => ({ value: g.id, label: `${g.id} ${g.name}` }))]
   const stateItems = [{ value: ALL, label: "모든 판정" }, ...STATES.map((s) => ({ value: s, label: STATE_LABEL[s] }))]
 
-  const showFeature = (r: Row) => {
-    const j = r.judgment
-    setDetail({
-      title: `${r.id} ${r.name}`,
-      badge: <StateBadge state={j?.state ?? null} change={changed(j)} />,
-      rows: [
-        ["도메인 · 담당", `${r.group} ${r.groupName} · ${r.owner}`],
-        ["주요기능", r.major],
-        ...(r.does ? ([["정의 — 동작", r.does]] as Array<[string, ReactNode]>) : []),
-        ...(r.rule ? ([["정의 — 규칙", r.rule]] as Array<[string, ReactNode]>) : []),
-        ["판정 뜻", j ? STATE_HELP[j.state] : "아직 판정하지 않았습니다"],
-        ["빠진 것", j ? (j.missing ?? "없음") : "—"],
-        [
-          "근거",
-          j?.evidence.length ? (
-            <ul className="flex flex-col gap-1">
-              {j.evidence.map((e) => (
-                <li key={e}>
-                  <a href={githubBlob(report.repo, j.commit, e)} target="_blank" rel="noopener noreferrer" className="font-mono text-xs hover:underline">
-                    {e}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            "—"
-          ),
-        ],
-        ["판정", j ? `${ago(j.scannedAt)} · ${j.commit}${j.previous && j.previous !== j.state ? ` · 직전 ${STATE_LABEL[j.previous]}` : ""}` : "—"],
-      ],
-    })
-  }
-
   return (
-    <>
-      <Tabs value={view.tab} onValueChange={(v) => setView({ tab: v as Tab })} className="gap-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <TabsList className="max-w-full overflow-x-auto">
-            <TabsTrigger value="features">
-              기능 <Badge variant="secondary">{features.length}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="pulls">
-              열린 PR <Badge variant="secondary">{pulls.length}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="runs">
-              main 실행 <Badge variant="secondary">{report.runs.length}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="scans">
-              스캔 기록 <Badge variant="secondary">{scans.length}</Badge>
-            </TabsTrigger>
-          </TabsList>
-          <div className="flex flex-wrap items-center gap-2">
-            {view.tab === "features" && (
-              <>
-                <Select items={groupItems} value={view.group ?? ALL} onValueChange={(v) => setView({ group: v === ALL ? null : (v as string) })}>
-                  <SelectTrigger size="sm" className="w-44" aria-label="도메인">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {groupItems.map((g) => (
-                        <SelectItem key={g.value} value={g.value}>
-                          {g.label}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-                <Select items={stateItems} value={view.state ?? ALL} onValueChange={(v) => setView({ state: v === ALL ? null : (v as State) })}>
-                  <SelectTrigger size="sm" className="w-32" aria-label="판정">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {stateItems.map((s) => (
-                        <SelectItem key={s.value} value={s.value}>
-                          {s.label}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-                <Toggle variant="outline" size="sm" pressed={view.changed} onPressedChange={(pressed) => setView({ changed: pressed })}>
-                  최근 바뀐 것
-                </Toggle>
-              </>
-            )}
-            <div className="relative w-full sm:w-52">
-              <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input value={view.q} onChange={(e) => setView({ q: e.target.value })} placeholder="검색" className="h-7 pl-8" aria-label="목록 검색" />
-            </div>
-          </div>
-        </div>
-        <TabsContent value="features">
-          <DataTable data={features} columns={featureColumns} onRow={showFeature} query={view.q} empty="조건에 맞는 기능이 없습니다" />
-        </TabsContent>
-        <TabsContent value="pulls">
-          <DataTable data={pulls} columns={pullColumns} query={view.q} empty={view.member && !memberLogins.length ? `${view.member}의 GitHub 계정이 설정에 없습니다` : "열린 PR이 없습니다"} />
-        </TabsContent>
-        <TabsContent value="runs">
-          <DataTable data={report.runs} columns={runColumns} query={view.q} empty="main 실행 기록이 없습니다" />
-        </TabsContent>
-        <TabsContent value="scans">
-          <DataTable data={scans} columns={scanColumns} query={view.q} empty="스캔 기록이 없습니다" />
-        </TabsContent>
-      </Tabs>
-
-      <Sheet open={detail !== null} onOpenChange={(open) => !open && setDetail(null)}>
-        <SheetContent className="w-full overflow-y-auto sm:max-w-md">
-          {detail && (
+    <Tabs value={view.tab} onValueChange={(v) => setView({ tab: v as Tab })} className="gap-4">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <TabsList className="max-w-full overflow-x-auto">
+          <TabsTrigger value="features">
+            기능 <Badge variant="secondary">{features.length}</Badge>
+          </TabsTrigger>
+          <TabsTrigger value="pulls">
+            열린 PR <Badge variant="secondary">{pulls.length}</Badge>
+          </TabsTrigger>
+          <TabsTrigger value="runs">
+            main 실행 <Badge variant="secondary">{report.runs.length}</Badge>
+          </TabsTrigger>
+          <TabsTrigger value="scans">
+            스캔 기록 <Badge variant="secondary">{scans.length}</Badge>
+          </TabsTrigger>
+        </TabsList>
+        <div className="flex flex-wrap items-center gap-2">
+          {view.tab === "features" && (
             <>
-              <SheetHeader>
-                <SheetTitle>{detail.title}</SheetTitle>
-                <SheetDescription render={<div />}>{detail.badge}</SheetDescription>
-              </SheetHeader>
-              <dl className="flex flex-col gap-4 px-4 pb-6 text-sm">
-                {detail.rows.map(([k, v]) => (
-                  <div key={k} className="flex flex-col gap-1">
-                    <dt className="text-xs text-muted-foreground">{k}</dt>
-                    <dd>{v}</dd>
-                  </div>
-                ))}
-              </dl>
+              <Select items={groupItems} value={view.group ?? ALL} onValueChange={(v) => setView({ group: v === ALL ? null : (v as string) })}>
+                <SelectTrigger size="sm" className="w-44" aria-label="도메인">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {groupItems.map((g) => (
+                      <SelectItem key={g.value} value={g.value}>
+                        {g.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <Select items={stateItems} value={view.state ?? ALL} onValueChange={(v) => setView({ state: v === ALL ? null : (v as State) })}>
+                <SelectTrigger size="sm" className="w-32" aria-label="판정">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {stateItems.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>
+                        {s.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <Toggle variant="outline" size="sm" pressed={view.changed} onPressedChange={(pressed) => setView({ changed: pressed })}>
+                최근 바뀐 것
+              </Toggle>
             </>
           )}
-        </SheetContent>
-      </Sheet>
-    </>
+          <div className="relative w-full sm:w-52">
+            <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input value={view.q} onChange={(e) => setView({ q: e.target.value })} placeholder="검색" className="h-7 pl-8" aria-label="목록 검색" />
+          </div>
+        </div>
+      </div>
+      <TabsContent value="features">
+        <DataTable data={features} columns={featureColumns} onRow={(r) => onDetail(featureDetail(r, report))} query={view.q} empty="조건에 맞는 기능이 없습니다" />
+      </TabsContent>
+      <TabsContent value="pulls">
+        <DataTable data={pulls} columns={pullColumns} query={view.q} empty={view.member && !memberLogins.length ? `${view.member}의 GitHub 계정이 설정에 없습니다` : "열린 PR이 없습니다"} />
+      </TabsContent>
+      <TabsContent value="runs">
+        <DataTable data={report.runs} columns={runColumns} query={view.q} empty="main 실행 기록이 없습니다" />
+      </TabsContent>
+      <TabsContent value="scans">
+        <DataTable data={scans} columns={scanColumns} query={view.q} empty="스캔 기록이 없습니다" />
+      </TabsContent>
+    </Tabs>
+  )
+}
+
+// 기능 판정 상세. 목록 표와 작업 범위 지도가 같은 시트를 연다.
+export function DetailSheet({ detail, onClose }: { detail: Detail | null; onClose: () => void }) {
+  return (
+    <Sheet open={detail !== null} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent className="w-full overflow-y-auto sm:max-w-md">
+        {detail && (
+          <>
+            <SheetHeader>
+              <SheetTitle>{detail.title}</SheetTitle>
+              <SheetDescription render={<div />}>{detail.badge}</SheetDescription>
+            </SheetHeader>
+            <dl className="flex flex-col gap-4 px-4 pb-6 text-sm">
+              {detail.rows.map(([k, v]) => (
+                <div key={k} className="flex flex-col gap-1">
+                  <dt className="text-xs text-muted-foreground">{k}</dt>
+                  <dd>{v}</dd>
+                </div>
+              ))}
+            </dl>
+          </>
+        )}
+      </SheetContent>
+    </Sheet>
   )
 }

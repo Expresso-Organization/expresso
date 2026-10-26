@@ -1,4 +1,4 @@
-import { ActivityIcon, GitPullRequestIcon, ListChecksIcon, ListTodoIcon, TrendingUpIcon, UsersIcon } from "lucide-react"
+import { ActivityIcon, GitPullRequestIcon, LayoutGridIcon, ListChecksIcon, ListTodoIcon, TrendingUpIcon, UsersIcon } from "lucide-react"
 
 import {
   Sidebar,
@@ -17,6 +17,7 @@ import { ago, type Data } from "@/lib/data"
 
 const SECTIONS = [
   { id: "todos", label: "할 일", icon: ListTodoIcon },
+  { id: "scope", label: "작업 범위", icon: LayoutGridIcon },
   { id: "progress", label: "도메인 진척", icon: TrendingUpIcon },
   { id: "activity", label: "활동 · CI", icon: ActivityIcon },
   { id: "list", label: "목록", icon: ListChecksIcon },

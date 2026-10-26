@@ -12,16 +12,16 @@ date: 2026-10-26
 
 ## 바뀌는 파일
 
-모두 `services/dev-portal/status/` 아래이고, 빌드 결과만 `docs/status/`에 들어간다.
+`services/dev-portal/status/` 기준 경로다. 빌드 결과는 `docs/status/`에 들어간다.
 
 | 파일 | 무엇을 |
 |---|---|
 | `src/lib/scope.ts` | `squarify` · `weekPosition` · `pace` · `remainingOf` (새 파일) |
 | `src/lib/scope.test.ts` | 위 함수 단위 테스트 (새 파일) |
-| `src/lib/data.ts` | `semesterWeek`가 `weekPosition`을 내림해서 쓴다 |
-| `src/components/status/scope.tsx` | `ScopeMap` · `Burndown` · `Workload` · `PlanTimeline` (새 파일) |
+| `src/lib/data.ts` | `semesterWeek`가 `weekPosition`을 내림해서 쓴다. `Data.loadedAt`(데이터를 받은 시각)을 더해 화면의 「지금」으로 쓴다 — 렌더 중에 `Date.now()`를 부르면 `react-hooks/purity`에 걸린다 |
+| `src/components/status/scope.tsx` | `ScopeMap` · `Burndown` · `Workload` · `PlanTimeline` (새 파일). 번다운과 일정표에 이번 주 칸 음영을 같이 깐다 — 지금 선이 몇 주차 안에 있는지 보이게 |
 | `src/components/status/data-table.tsx` | `featureDetail` · `DetailSheet` export, `ListTabs`는 `onDetail`을 받는다 |
-| `src/App.tsx` | 상세 시트 상태를 `Dashboard`로 올리고 `#scope` 구역을 배치한다 |
+| `src/App.tsx` | 상세 시트 상태를 `Dashboard`로 올리고 `#scope` 구역을 배치한다. 주차 배지도 `loadedAt` 기준 |
 | `src/components/status/app-sidebar.tsx` | 바로가기에 「작업 범위」를 더한다 |
 | `tsconfig.app.json` · `tsconfig.scanner.json` | `src/**/*.test.ts`를 앱 설정에서 빼고 스캐너 설정에 넣는다 |
 | `package.json` | `test`에 `src/lib/*.test.ts`를 더한다 |
