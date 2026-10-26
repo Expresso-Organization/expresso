@@ -17,7 +17,9 @@ describe.skipIf(!mongoUrl)("career category ownership migration", () => {
   const db = client.db(databaseName);
   const userId = randomUUID();
   const quietId = randomUUID();
-  const ids = { recordA: randomUUID(), recordB: randomUUID(), trashed: randomUUID(), skill: randomUUID(), custom: randomUUID(), customRecord: randomUUID(), collision: randomUUID(), view: randomUUID() };
+  // 마이그레이션은 기록 _id 순서로 옵션을 만든다. A가 B보다 앞서도록 정렬해 옵션 순서를 고정한다.
+  const [recordA, recordB] = [randomUUID(), randomUUID()].sort((left, right) => left.localeCompare(right)) as [string, string];
+  const ids = { recordA, recordB, trashed: randomUUID(), skill: randomUUID(), custom: randomUUID(), customRecord: randomUUID(), collision: randomUUID(), view: randomUUID() };
   let shared: Record<string, Document> = {};
 
   beforeAll(async () => {
