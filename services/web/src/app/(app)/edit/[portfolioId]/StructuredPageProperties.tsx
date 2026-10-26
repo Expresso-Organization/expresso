@@ -16,6 +16,9 @@ const names: Record<string, string> = {
   gallery: "작품 전시",
   dossier: "목차·상세 두 열",
   CaseEssay: "기사형",
+  CaseBeforeAfter: "전후 비교형",
+  CaseFlow: "과정 흐름형",
+  CaseShowcase: "대표 이미지형",
   CaseGallery: "이미지 전시형",
   CaseTechnical: "기술 설명형",
   CaseProcess: "과정형",
@@ -154,7 +157,8 @@ export function StructuredPageProperties({
       </label>
       <ol className={styles.sections}>
         {structuredLeaves(spec).map(({ key, node, parent }) => {
-          if (!node || !("section" in node.props)) return null;
+          // 큰 인용(PullQuote)도 섹션을 참조하지만 사례가 아니므로 이 목록에서 다루지 않습니다.
+          if (!node || !("section" in node.props) || node.type === "PullQuote") return null;
           const container = spec.elements[parent];
           const siblings =
             container && "children" in container ? container.children : [];
@@ -197,7 +201,7 @@ export function StructuredPageProperties({
                   onChange={(event) =>
                     update((next) => {
                       const target = next.elements[key];
-                      if (target && "section" in target.props)
+                      if (target && "section" in target.props && target.type !== "PullQuote")
                         target.type = event.target
                           .value as (typeof STRUCTURED_CASE_TYPES)[number];
                     })
@@ -205,8 +209,10 @@ export function StructuredPageProperties({
                 >
                   {STRUCTURED_CASE_TYPES.filter(
                     (type) =>
-                      type !== "CaseGallery" || section.media.length > 0,
+                      (type !== "CaseGallery" && type !== "CaseShowcase") || section.media.length > 0,
                   )
+                    .filter((type) => type !== "CaseFlow" || (section.steps?.length ?? 0) >= 2)
+                    .filter((type) => type !== "CaseBeforeAfter" || !!section.metrics?.some((metric) => metric.before))
                     .filter(
                       (type) =>
                         type !== "CaseProcess" || section.details.length >= 2,
@@ -226,7 +232,7 @@ export function StructuredPageProperties({
                   onChange={(event) =>
                     update((next) => {
                       const target = next.elements[key];
-                      if (target && "section" in target.props) {
+                      if (target && "section" in target.props && target.type !== "PullQuote") {
                         if (event.target.value)
                           target.props.sourceId = event.target.value;
                         else delete target.props.sourceId;

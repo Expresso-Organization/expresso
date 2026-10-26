@@ -4,6 +4,10 @@ import {
   PAGE_PROMPT_VERSION,
   STRUCTURED_DESIGN_FORMS,
   STRUCTURED_GROUP_TYPES,
+  STRUCTURED_MAX_QUOTES,
+  STRUCTURED_SCALES,
+  STRUCTURED_SURFACES,
+  STRUCTURED_WIDTHS,
   STRUCTURED_GROUP_CHILDREN,
   StructuredPortfolioContentSchema,
   archetypeComponents,
@@ -42,10 +46,17 @@ const FILL_SOURCE_CHARS = 4_000;
  */
 export const FILL_LIMITS = {
   profile: { role: 60, headline: 72, focus: 30 },
-  section: { period: 60, detailLabel: 20, detailText: 120, metricLabel: 40, metricValue: 24, metricNote: 80 },
+  // 수치 값은 큰 글자로 그리므로 숫자와 단위만 담는 길이입니다("1,200만 건"이 8자). 설명은 이름표(label)와 설명(note)으로 갑니다.
+  section: { period: 60, detailLabel: 20, detailText: 120, metricLabel: 40, metricValue: 10, metricNote: 80, stepLabel: 16, stepText: 60 },
   career: { period: 60, organization: 80, role: 80, description: 160, count: 8 },
   evidence: { title: 80, kind: 30, summary: 100, body: 300 },
 } as const;
+
+/**
+ * 수치 값 · 이전 값의 모양입니다. 숫자가 들어 있고 공백은 단위 앞 한 번까지입니다("1.9초" · "420KB" · "1,200만 건").
+ * "10만 행 끊김 없이 스크롤"처럼 설명이 붙은 값은 거절되어 채우기가 오류 문장을 받고 다시 씁니다.
+ */
+export const METRIC_VALUE_PATTERN = /^[^\s\d]{0,2}\d\S*(?: \S{1,3})?$/;
 
 export interface DesignFirstCall {
   contract: string;
@@ -114,6 +125,8 @@ function skeleton(raw: ReturnType<typeof rawInput>, name: string): StructuredPor
       media: image ? [{ src: image.src, alt: image.alt || "-", origin: "uploaded" as const }] : [],
       sourceIds: [],
       metrics: [{ label: "-", value: "1", before: "2" }, { label: "-", value: "1" }],
+      quote: "-",
+      steps: [{ label: "-", text: "" }, { label: "-", text: "" }],
     })),
     career: [{ id: "career", period: "-", organization: "-", role: "-", description: "-" }],
     evidence: raw.evidence.length ? [{ id: "evidence", title: "-", kind: "-", summary: "-", body: "-" }] : [],
@@ -133,13 +146,19 @@ function designPlanSchema(sectionIds: [string, ...string[]], mediaCount: number)
           // 섹션의 성격입니다. project=작업 사례, about=자기소개, skills=역량 · 도구, career=경력 서술.
           pattern: z.enum(["project", "about", "skills", "career"]),
           form: z.enum(STRUCTURED_DESIGN_FORMS),
-          emphasis: z.enum(["lead", "standard", "compact"]),
+          // 크기 · 배경 · 폭입니다. 맞춤 단계가 Spec의 사례 요소 props(scale · surface · width)로 옮깁니다.
+          emphasis: z.enum(STRUCTURED_SCALES),
+          surface: z.enum(STRUCTURED_SURFACES),
+          width: z.enum(STRUCTURED_WIDTHS),
           budget: z.object({
             title: z.number().int().min(8).max(60),
             summary: z.number().int().min(0).max(160),
             body: z.number().int().min(0).max(600),
             details: z.number().int().min(0).max(6),
             metrics: z.number().int().min(0).max(4),
+            // 큰 인용(PullQuote)으로 보일 한 문장의 글자 수 · 과정 흐름(CaseFlow) 단계 수입니다. 쓰지 않으면 0입니다.
+            quote: z.number().int().min(0).max(60),
+            steps: z.number().int().min(0).max(6),
           }),
           /** 제공 이미지 번호(0부터)입니다. */
           media: z.array(z.number().int().min(0).max(Math.max(0, mediaCount - 1))).max(mediaCount ? 4 : 0),
@@ -166,8 +185,14 @@ function designPrompt(input: {
   const groups = format.optional.some((key) => key.startsWith("group-"));
   return `## 목표
 채용 담당자가 첫 화면 10초 안에 이 사람의 직무와 대표 성과를 읽는 포트폴리오 지면을 설계하세요. 문서가 아니라 지면입니다.
-- 섹션마다 같은 모양(제목 · 본문 · 항목표)을 반복하지 않습니다. 대표 작업 1–2개는 emphasis=lead로 크게, 나머지는 standard나 compact로 짧게 둡니다.
-- 출처에 이전 · 이후 수치가 있는 작업은 form=before-after와 CaseBeforeAfter로, 작업마다 대표 수치가 있으면 소개 바로 뒤에 MetricStrip을 둡니다. 과정이 핵심이면 form=process와 CaseProcess, 제공 이미지가 핵심이면 form=showcase와 CaseGallery입니다.
+- 섹션마다 같은 모양(제목 · 본문 · 항목표)을 반복하지 않습니다. 이웃한 두 요소는 크기 · 배경 · 폭 · 컴포넌트 중 둘 이상이 달라야 합니다.
+- 크기(emphasis): 대표 작업 1–2개만 lead입니다. lead는 사례 첫머리를 큰 번호와 큰 제목의 표지로 그립니다. 나머지는 standard, 짧게 지나가는 섹션은 compact입니다.
+- 배경(surface): canvas=기본 바탕, field=디자인의 행동색 면, inverse=바탕색과 글자색을 뒤집은 면입니다. 지면에 field나 inverse를 1–3개 두어 흐름을 끊고, 이웃한 두 요소에 같은 색면을 잇지 않습니다. compact 섹션을 field로 두면 색면 강조 카드가 됩니다.
+- 폭(width): content=본문 폭, bleed=창 폭 전체입니다. bleed는 색면 섹션 · 수치 띠 · 이미지 전시에 씁니다. 컨테이너 안의 요소는 bleed여도 본문 폭으로 그립니다.
+- 출처에 이전 · 이후 수치가 있는 작업은 form=before-after와 CaseBeforeAfter로, 작업마다 대표 수치가 있으면 소개 바로 뒤에 MetricStrip을 둡니다. MetricStrip을 inverse나 field의 bleed 띠로 두면 첫 화면 아래에서 성과가 먼저 읽힙니다.
+- 작업 순서 · 절차가 핵심인 작업은 form=flow와 CaseFlow입니다. budget.steps에 단계 수(2–6)를 정하면 채우는 단계가 단계 이름(${FILL_LIMITS.section.stepLabel}자)과 짧은 설명(${FILL_LIMITS.section.stepText}자)을 씁니다. 단계가 아니라 문제 · 작업 · 결과의 설명이면 form=process와 CaseProcess입니다.
+- 제공 이미지가 핵심이면 form=showcase입니다. 이미지 한 장은 CaseShowcase(지면 폭의 큰 이미지), 여러 장은 CaseGallery입니다.
+- 작업의 판단 · 원칙을 한 문장으로 보일 만하면 그 섹션의 budget.quote(30–60자)를 정하고 spec에 PullQuote(quote-1, quote-2)를 그 사례 앞이나 뒤에 둡니다. 지면에 ${STRUCTURED_MAX_QUOTES}개까지이고, 쓰지 않는 섹션은 budget.quote=0입니다.
 - 글은 짧게 정합니다. 본문(body) 예산은 lead 300자 이하, standard 160자 이하, compact 0–80자입니다. 요약은 60자 안팎입니다. 수치 칸(metrics)은 출처에 실제로 있는 수치 개수까지만 둡니다.
 - 지면에 보탬이 되지 않는 섹션은 include=false로 뺍니다. 근거(evidence) · 경력(career)도 지면에 필요할 때만 true입니다.
 - concept에는 지면 전체의 콘셉트를 한 문장으로 씁니다. 채우는 단계가 이 문장을 읽고 문체와 강조를 맞춥니다.
@@ -195,7 +220,7 @@ ${JSON.stringify({
 plan과 spec을 함께 냅니다. plan.sections에는 자료의 모든 섹션을 한 번씩 적습니다.
 spec 형식(공급자에 넘기는 출력 스키마에서 생성):
 ${format.text}
-첫 요소는 intro(NameIntro)입니다. 섹션마다 section-<id> 요소를 정확히 한 번 두고, 그 사례 유형은 plan의 form과 맞춥니다(before-after=CaseBeforeAfter, process=CaseProcess, showcase=CaseGallery, technical=CaseTechnical, essay=CaseEssay 또는 skills · about이면 ContentPanel, row=CaseRow). include=false인 섹션도 spec에는 두되 지면에서는 빠지므로, 컨테이너는 include=true인 요소로 짭니다.
+첫 요소는 intro(NameIntro)입니다. 섹션마다 section-<id> 요소를 정확히 한 번 두고, 그 사례 유형은 plan의 form과 맞춥니다(before-after=CaseBeforeAfter, flow=CaseFlow, process=CaseProcess, showcase=CaseShowcase 또는 CaseGallery, technical=CaseTechnical, essay=CaseEssay 또는 skills · about이면 ContentPanel, row=CaseRow). 사례 요소의 scale · surface · width는 plan의 emphasis · surface · width로 맞춰지므로 plan에서 정합니다. MetricStrip · PullQuote의 scale · surface · width는 spec에서 정합니다. include=false인 섹션도 spec에는 두되 지면에서는 빠지므로, 컨테이너는 include=true인 요소로 짭니다.
 ${groups ? `컨테이너: ${describeGroupRules()} 컨테이너 안에 컨테이너를 넣지 않고, intro는 컨테이너에 넣지 않습니다.` : "모든 요소를 page.children에 바로 둡니다."}
 rationale에는 이 지면을 이렇게 설계한 이유를 씁니다. motion은 'showcase'를 씁니다.`;
 }
@@ -210,28 +235,64 @@ function sectionFillSchema(budget: StructuredDesignPlan["sections"][number]["bud
     period: z.string().max(LIMIT.period).optional(),
     details: z.array(z.object({ label: z.string().min(1).max(LIMIT.detailLabel), text: z.string().min(1).max(LIMIT.detailText) })).max(budget.details),
     metrics: z
-      .array(z.object({ label: z.string().min(1).max(LIMIT.metricLabel), value: z.string().min(1).max(LIMIT.metricValue), before: z.string().min(1).max(LIMIT.metricValue).optional(), note: z.string().max(LIMIT.metricNote).optional() }))
+      .array(z.object({ label: z.string().min(1).max(LIMIT.metricLabel), value: metricValue(), before: metricValue().optional(), note: z.string().max(LIMIT.metricNote).optional() }))
       .max(budget.metrics),
+    quote: z.string().max(Math.max(budget.quote ?? 0, 0)),
+    steps: z.array(z.object({ label: z.string().min(1).max(LIMIT.stepLabel), text: z.string().max(LIMIT.stepText) })).max(budget.steps ?? 0),
   });
 }
 
+const metricValue = () =>
+  z
+    .string()
+    .min(1)
+    .max(FILL_LIMITS.section.metricValue)
+    .regex(METRIC_VALUE_PATTERN, "수치 값은 숫자와 단위만 씁니다(예: 1.9초, 420KB, 1,200만 건). 무엇의 수치인지는 label에, 설명은 note에 씁니다.");
+
+/** 채우기 프롬프트의 섹션 한 줄입니다. 설계의 칸 예산을 칸 이름과 글자 수 · 개수로 적습니다. */
+function fillGuide(section: StructuredDesignPlan["sections"][number]) {
+  const { budget } = section;
+  return `  - ${section.id}: ${section.form} · ${section.emphasis} · 제목 ${budget.title}자 · 요약 ${budget.summary}자 · 본문 ${budget.body}자 · 항목 ${budget.details}개 · 수치 ${budget.metrics}개${budget.quote ? ` · 인용 ${budget.quote}자` : ""}${budget.steps ? ` · 단계 ${budget.steps}개` : ""}`;
+}
+
 /**
- * 채운 내용에 맞춰 Spec을 고칩니다. 부품의 조건(이미지 · 이전 값 · 설명 두 개 · 수치 두 개)을 못 채운 요소는 한 단계 내리고,
- * 뺀 섹션 · 근거 · 경력은 트리에서 지웁니다. 컨테이너가 자식 수 조건을 잃으면 풀어서 자식을 페이지에 둡니다.
+ * 채운 내용에 맞춰 Spec을 고칩니다. 부품의 조건(이미지 · 이전 값 · 단계 두 개 · 설명 두 개 · 수치 두 개 · 인용 문장)을 못 채운
+ * 요소는 글 부품으로 내리거나 지우고, 뺀 섹션 · 근거 · 경력은 트리에서 지웁니다. 컨테이너가 자식 수 조건을 잃으면 풀어서
+ * 자식을 페이지에 둡니다. 설계안을 주면 사례 요소의 크기 · 배경 · 폭을 설계안의 emphasis · surface · width로 맞춥니다.
  */
-export function fitToContent(rawSpec: unknown, content: StructuredPortfolioContent) {
+export function fitToContent(rawSpec: unknown, content: StructuredPortfolioContent, plan?: Pick<StructuredDesignPlan, "sections">) {
   const spec = structuredClone(rawSpec) as { root: string; elements: Record<string, { type: string; props: Record<string, unknown>; children: string[] }> };
   const sections = new Map(content.sections.map((section) => [section.id, section]));
+  const stages = new Map((plan?.sections ?? []).map((section) => [section.id, section]));
   const remove = new Set<string>();
+  const quoted = new Set<string>();
   for (const [key, node] of Object.entries(spec.elements)) {
     const binding = (node.props.section as { $state?: string } | undefined)?.$state;
     const id = binding?.match(/^\/sectionById\/(.+)$/)?.[1];
+    // 큰 인용은 사례가 아니라 같은 섹션을 한 번 더 참조하는 요소입니다. 인용 문장이 없으면 지웁니다.
+    if (node.type === "PullQuote") {
+      const section = id ? sections.get(id) : undefined;
+      if (!id || !section?.quote || quoted.has(id) || quoted.size >= STRUCTURED_MAX_QUOTES) remove.add(key);
+      else quoted.add(id);
+      continue;
+    }
     if (id) {
       const section = sections.get(id);
       if (!section) { remove.add(key); continue; }
       if (node.type === "CaseBeforeAfter" && !section.metrics?.some((metric) => metric.before)) node.type = "CaseTechnical";
       if (node.type === "CaseGallery" && !section.media.length) node.type = "CaseEssay";
+      if (node.type === "CaseShowcase" && !section.media.length) node.type = "CaseEssay";
+      // 단계가 모자란 흐름은 설명 항목이 두 개 이상이면 과정형으로, 아니면 기사형으로 내립니다.
+      if (node.type === "CaseFlow" && (section.steps?.length ?? 0) < 2) node.type = "CaseProcess";
       if (node.type === "CaseProcess" && section.details.length < 2) node.type = "CaseEssay";
+      const stage = stages.get(id);
+      if (stage)
+        node.props = {
+          ...node.props,
+          scale: stage.emphasis,
+          ...(stage.surface ? { surface: stage.surface } : {}),
+          ...(stage.width ? { width: stage.width } : {}),
+        };
     }
     if (node.type === "MetricStrip" && content.sections.flatMap((section) => section.metrics ?? []).length < 2) remove.add(key);
     if (node.type === "EvidenceGrid" && !content.evidence.length) remove.add(key);
@@ -343,8 +404,8 @@ export async function designFirst(
 ${plan.concept}
 ## 채울 칸
 - 이름(${author}) 아래: 직무(role), 한 문장 headline(줄바꿈 없이 마침표 하나로 끝나는 한 문장, 한글 36자 이내, 직무와 구체적인 작업), 소개(intro, ${plan.profile.intro}자 이내, 0이면 빈 글), 집중 분야(focus, ${plan.profile.focus}개 이내).
-- sections: 섹션마다 아래 설계의 글자 수 · 개수 안에서 채웁니다. 예산이 0이면 빈 글이나 빈 배열입니다. 수치(metrics)는 출처에 적힌 숫자와 단위만 쓰고, before-after 섹션은 이전 값(before)과 이후 값(value)을 함께 적습니다. process 섹션의 항목(details)은 과정의 단계를 순서대로 두 개 이상 적습니다.
-${included.map((section) => `  - ${section.id}: ${section.form} · ${section.emphasis} · 제목 ${section.budget.title}자 · 요약 ${section.budget.summary}자 · 본문 ${section.budget.body}자 · 항목 ${section.budget.details}개 · 수치 ${section.budget.metrics}개`).join("\n")}
+- sections: 섹션마다 아래 설계의 글자 수 · 개수 안에서 채웁니다. 예산이 0이면 빈 글이나 빈 배열입니다. 수치(metrics)의 value · before는 출처에 적힌 숫자와 단위만 씁니다(예: "1.9초", "420KB", "1,200만 건"). 무엇의 수치인지는 label에, 조건 · 설명은 note에 씁니다. before-after 섹션은 이전 값(before)과 이후 값(value)을 함께 적습니다. process 섹션의 항목(details)은 과정의 단계를 순서대로 두 개 이상 적습니다. flow 섹션의 단계(steps)는 작업 순서대로 짧은 이름(label)과 한 줄 설명(text)입니다. 인용(quote)은 그 작업의 판단 · 원칙을 출처의 사실로 쓴 한 문장입니다.
+${included.map(fillGuide).join("\n")}
 ${plan.career ? "- career: 출처에 있는 경력만 적습니다.\n" : ""}${plan.evidence ? "- evidence: 출처 자료를 지면용으로 짧게 적습니다.\n" : ""}## 출처
 ${JSON.stringify(included.map((section) => { const source = rawById.get(section.id)!; return { id: section.id, title: source.title, purpose: source.purpose, goal: source.goal, points: source.points }; }))}
 ${evidenceText}`;
@@ -384,6 +445,8 @@ ${evidenceText}`;
       media: plannedSection.media.map((src) => ({ src, alt: raw.media.find((item) => item.src === src)?.alt || output.title, origin: "uploaded" as const })),
       sourceIds: rawById.get(plannedSection.id)!.sourceIds,
       ...(metrics.length ? { metrics } : {}),
+      ...(output.quote.trim() ? { quote: output.quote.trim() } : {}),
+      ...(output.steps.length ? { steps: output.steps } : {}),
     };
     hooks.filled?.({ path: `/sections/${plannedSection.id}`, value: section });
     return section;
@@ -403,5 +466,5 @@ ${evidenceText}`;
     evidence,
     contact: null,
   });
-  return { plan, spec: fitToContent(design.spec, content), content, usages, calls, timeline, prompt };
+  return { plan, spec: fitToContent(design.spec, content, plan), content, usages, calls, timeline, prompt };
 }

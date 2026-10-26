@@ -367,7 +367,8 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
       if (
         root.type !== "PortfolioPage" ||
         intro.type !== "NameIntro" ||
-        !("section" in section.props)
+        !("section" in section.props) ||
+        section.type === "PullQuote"
       )
         throw new Error("시험 지면 연결 오류");
       root.props.design.layout = "library";

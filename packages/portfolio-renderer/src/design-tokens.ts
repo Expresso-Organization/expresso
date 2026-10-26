@@ -196,16 +196,22 @@ export const TEXT_CONTRAST = 4.5;
  * 키트가 글자로 쓰는 보정 색입니다.
  *
  * 보조 글자는 바탕과 면 위에, 강조색은 글자(링크·표식)로, 행동 글자는 행동색 위에 놓입니다.
+ * 색면 · 반전 섹션의 보조 글자와 반전 섹션의 강조 글자도 여기서 정합니다.
  * 원래 토큰이 기준을 넘으면 그대로입니다.
  */
 export function readableColors(spec: DesignSystemSpecV2) {
   const { canvas, surface, text, muted, accent, action, actionText } = spec.colors;
   const mutedOnCanvas = ensureContrast(muted.value, canvas.value, TEXT_CONTRAST, text.value);
+  const fieldText = ensureContrast(actionText.value, action.value, TEXT_CONTRAST, contrastRatio("#000000", action.value) > contrastRatio("#ffffff", action.value) ? "#000000" : "#ffffff");
   return {
     mutedOnCanvas,
     mutedOnSurface: ensureContrast(mutedOnCanvas, surface.value, TEXT_CONTRAST, text.value),
     accentText: ensureContrast(accent.value, canvas.value, TEXT_CONTRAST, text.value),
-    actionText: ensureContrast(actionText.value, action.value, TEXT_CONTRAST, contrastRatio("#000000", action.value) > contrastRatio("#ffffff", action.value) ? "#000000" : "#ffffff"),
+    actionText: fieldText,
+    // 색면(행동색 바탕) · 반전(본문색 바탕) 섹션의 보조 글자는 그 바탕의 글자색을 바탕 쪽으로 30% 섞어 낮추고, 대비가 모자라면 글자색 쪽으로 되돌립니다.
+    mutedOnField: ensureContrast(mixHex(fieldText, action.value, 0.3), action.value, TEXT_CONTRAST, fieldText),
+    mutedOnInverse: ensureContrast(mixHex(canvas.value, text.value, 0.3), text.value, TEXT_CONTRAST, canvas.value),
+    accentOnInverse: ensureContrast(accent.value, text.value, TEXT_CONTRAST, canvas.value),
   };
 }
 
@@ -230,6 +236,10 @@ export function designQa(spec: DesignSystemSpecV2): PageQaCheck[] {
     ["보조/면", readable.mutedOnSurface, surface.value],
     ["강조 글자/바탕", readable.accentText, canvas.value],
     ["행동 글자/행동색", readable.actionText, action.value],
+    ["보조/색면", readable.mutedOnField, action.value],
+    ["반전 글자/반전", canvas.value, text.value],
+    ["보조/반전", readable.mutedOnInverse, text.value],
+    ["강조 글자/반전", readable.accentOnInverse, text.value],
   ];
   const weak = pairs.filter(([, fg, bg]) => contrastRatio(fg, bg) < TEXT_CONTRAST);
   const bodyPx = remToPx(spec.typography.scale[0]!.size);

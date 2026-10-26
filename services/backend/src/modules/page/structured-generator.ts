@@ -80,6 +80,9 @@ export function structuredSpecPrompt(
   const introLine = format.text.split("\n").find((line) => line.startsWith("elements.intro")) ?? "";
   const introChoices = introLine.includes('"split"');
   const groupId = format.optional.find((key) => key.startsWith("group-")) ?? "group-1";
+  // 지면 변화 props와 큰 인용도 출력 스키마에 있을 때만 설명합니다. 글 · 목록형에는 둘 다 없습니다.
+  const stages = format.text.includes("surface");
+  const quotes = format.optional.filter((key) => key.startsWith("quote-")).join(", ");
   // 예시는 첫 사례와 그 옆에 둘 보조 요소로 만듭니다. 보조 요소가 없으면 두 번째 사례를 씁니다.
   const pair = [
     `section-${content.sections[0]!.id}`,
@@ -117,7 +120,7 @@ ${groups ? `컨테이너는 지면을 나누는 요소입니다. 요소 ID는 ${
 컨테이너 예: page.children=${JSON.stringify(example.page)}, elements["${groupId}"]=${JSON.stringify(example.group)}. 컨테이너에 넣은 ID는 page.children에 다시 쓰지 않습니다.
 ` : ""}NameIntro는 첫 요소로 한 번 둡니다.${introChoices ? " 이름이 가장 크고 바로 아래 한 문장을 둡니다. variant는 소개 문단이 짧고 한 문장이 강하면 'statement', 소개 문단과 집중 분야가 함께 읽혀야 하면 'split', 대표 이미지가 첫 인상을 정할 만하면 'media'를 고릅니다." : " variant는 형식에 적힌 값 하나를 씁니다."}
 모든 section을 정확히 한 번, 알맞은 사례 타입으로 표시합니다. 이미지 없는 section에 CaseGallery를 쓰지 않습니다. CaseProcess에는 설명 두 개 이상이 필요합니다.
-${hasIndex ? `ProjectIndex는 필수이며 요소 ID는 index입니다. ${groups ? "소개 바로 다음에 두거나, variant='rail'로 Columns에 넣어 사례 옆 목차로 씁니다." : "소개 바로 다음에 둡니다."}` : "목차(ProjectIndex)는 두지 않습니다."}
+${stages ? "사례와 MetricStrip은 scale(lead=큰 번호와 제목의 표지 · standard · compact) · surface(canvas=기본 바탕 · field=디자인의 행동색 면 · inverse=바탕과 글자색을 뒤집은 면) · width(content=본문 폭 · bleed=창 폭 전체)로 지면에 변화를 줍니다. lead는 대표 작업 1–2개에만 쓰고, 이웃한 두 요소에 같은 색면을 잇지 않습니다.\n" : ""}${quotes ? `PullQuote(${quotes})는 형식에 적힌 섹션의 인용 한 문장을 큰 글자로 보입니다. 쓰지 않아도 되고, 쓰면 그 사례 앞이나 뒤에 둡니다.\n` : ""}${hasIndex ? `ProjectIndex는 필수이며 요소 ID는 index입니다. ${groups ? "소개 바로 다음에 두거나, variant='rail'로 Columns에 넣어 사례 옆 목차로 씁니다." : "소개 바로 다음에 둡니다."}` : "목차(ProjectIndex)는 두지 않습니다."}
 경력·근거·사례의 순서는 자유롭게 선택할 수 있습니다. contact가 있으면 마지막에 둡니다. 형식에 없는 속성, 경로, 텍스트를 props에 추가하지 마세요.
 직전 Spec: ${JSON.stringify(previous)}
 수정 요청: ${instruction || "자료를 읽기 좋은 구성으로 조립하세요."}
@@ -577,8 +580,8 @@ const REVIEW_SYSTEM = "포트폴리오 지면의 디자인 검토자입니다. �
 const COMPARE_SYSTEM = "포트폴리오 지면의 시각 품질을 비교하는 디자인 심사자입니다.";
 const REVIEW_GUIDE = `## 스크린샷 검토
 함께 보낸 이미지는 직전 Spec을 실제로 그린 지면입니다(1440px 첫 화면, 1440px 전체 축소본, 390px 위에서부터 조각). 이 지면의 시각 품질을 평가하고 구성을 고치세요.
-볼 것: 첫 화면이 이 사람의 직무와 대표 작업을 바로 보여 주는가 · 가장 중요한 사례가 먼저 · 크게 보이는가(위계) · 같은 모양의 사례가 이어져 단조롭지 않은가(리듬) · 여백과 밀도가 고른 디자인에 맞는가 · 390px에서도 읽기 편한가.
-글(내용)은 바꿀 수 없습니다. 첫 화면 구도, 사례 유형과 순서, 컨테이너, 목차 형태만 바꿉니다.
+볼 것: 첫 화면이 이 사람의 직무와 대표 작업을 바로 보여 주는가 · 가장 중요한 사례가 먼저 · 크게 보이는가(위계) · 같은 모양의 사례가 이어져 단조롭지 않은가, 글이 이어지는 문서처럼 읽히지 않는가(리듬) · 여백과 밀도가 고른 디자인에 맞는가 · 390px에서도 읽기 편한가.
+글(내용)은 바꿀 수 없습니다. 첫 화면 구도, 사례 유형과 순서, 컨테이너, 목차 형태, 그리고 형식에 있으면 요소의 크기(scale) · 배경(surface) · 폭(width)과 큰 인용(PullQuote)의 자리를 바꿉니다. 과정 흐름(CaseFlow) · 대표 이미지(CaseShowcase)는 형식이 그 섹션에 허용할 때만 고릅니다.
 critique에는 고칠 점을 화면에 보이는 말로 하나씩 짧게 적고, spec에는 고친 전체 Spec을 냅니다. 고칠 점이 없으면 직전 Spec을 그대로 냅니다.`;
 const COMPARE_GUIDE = `같은 내용으로 만든 포트폴리오 지면 두 판(A, B)의 스크린샷입니다. 판마다 1440px 첫 화면, 1440px 전체 축소본, 390px 위에서부터 조각을 보냅니다.
 채용 담당자가 처음 열었을 때 더 잘 읽히고 완성도가 높아 보이는 판을 고르세요. 기준: 첫 화면의 인상과 위계, 사례 강조, 리듬과 여백, 디자인 일관성, 좁은 화면 가독성.
