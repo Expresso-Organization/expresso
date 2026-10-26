@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { partialSink } from "./claude-code.js";
+import { partialSink, rejectedStructuredOutputs } from "./claude-code.js";
 
 /**
  * JSONL 한 줄에서 무엇을 골라내는가.
@@ -84,9 +84,35 @@ describe("claude-code 조각 고르기", () => {
     expect(partials.join("")).toBe('{"a":1}');
   });
 
+  it("결과 블록이 다시 열리면 멈추고, 처음부터 읽는 쪽에는 알리고 이어 준다", () => {
+    const lines = [OUT_START, out('{"a":"첫'), line({ type: "content_block_stop", index: 1 }), OUT_START, out('{"a":"둘째"}')];
+    // 이어 붙이기만 하는 쪽은 앞뒤가 다른 JSON을 받지 않도록 그 자리에서 멈춥니다.
+    expect(collect(lines).partials.join("")).toBe('{"a":"첫');
+    const partials: string[] = [];
+    let restarts = 0;
+    const sink = partialSink({ onPartial: (text) => partials.push(text), onPartialRestart: () => { restarts += 1; partials.length = 0; } });
+    for (const item of lines) sink(item);
+    expect(restarts).toBe(1);
+    expect(partials.join("")).toBe('{"a":"둘째"}');
+  });
+
   it("JSON이 아닌 줄과 모르는 이벤트는 지나간다", () => {
     const { thoughts, partials } = collect(["경고: 무언가", "", '{"type":"system","subtype":"init"}']);
     expect(thoughts).toEqual([]);
     expect(partials).toEqual([]);
+  });
+});
+
+describe("돌려보낸 구조화 출력", () => {
+  it("구조화 출력 도구 호출에 붙은 오류 결과만 꺼낸다", () => {
+    // 2026-10-26 실측(claude-code, haiku): maxLength 5 스키마에 14자를 넣게 한 호출의 출력 줄 모양입니다.
+    const stdout = [
+      JSON.stringify({ type: "assistant", message: { content: [{ type: "tool_use", id: "toolu_1", name: "StructuredOutput", input: { title: "가나다라마바사아자차카타파하" } }] } }),
+      JSON.stringify({ type: "user", message: { content: [{ type: "tool_result", tool_use_id: "toolu_1", is_error: true, content: "Output does not match required schema: /title: must NOT have more than 5 characters (got 14)" }] } }),
+      JSON.stringify({ type: "assistant", message: { content: [{ type: "tool_use", id: "toolu_2", name: "StructuredOutput", input: { title: "가나다" } }] } }),
+      JSON.stringify({ type: "user", message: { content: [{ type: "tool_result", tool_use_id: "toolu_2", content: "Structured output provided successfully" }] } }),
+      JSON.stringify({ type: "user", message: { content: [{ type: "tool_result", tool_use_id: "toolu_other", is_error: true, content: "남의 도구" }] } }),
+    ].join("\n");
+    expect(rejectedStructuredOutputs(stdout)).toEqual(["Output does not match required schema: /title: must NOT have more than 5 characters (got 14)"]);
   });
 });

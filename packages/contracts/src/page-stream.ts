@@ -20,12 +20,38 @@ import { z } from "zod";
  */
 
 /** SSE 한 줄의 이름. 받는 쪽이 `switch`로 가르는 값이다. */
-export const PAGE_STREAM_EVENTS = ["begin", "thinking", "delta", "done", "failed"] as const;
+export const PAGE_STREAM_EVENTS = ["begin", "thinking", "delta", "blueprint", "fill", "stage", "done", "failed"] as const;
 export type PageStreamEvent = (typeof PAGE_STREAM_EVENTS)[number];
 
 export const PageStreamDeltaSchema = z.strictObject({
   /** 이번에 새로 온 글자. 받는 쪽이 이어 붙인다. */
   text: z.string(),
+});
+
+/**
+ * 설계가 끝나면 한 번 오는 청사진 문서.
+ *
+ * 최종 지면과 같은 구조로 그렸고, 글 자리는 `data-slot`(편집 패치와 같은 경로) 요소입니다. 받는 쪽은 이 문서를
+ * 한 번 열고, 이후 `fill`은 그 요소의 글만 바꿉니다. 완성본은 지금처럼 `delta`로 옵니다.
+ */
+export const PageStreamBlueprintSchema = z.strictObject({
+  html: z.string(),
+  css: z.string(),
+});
+
+/** 칸 하나의 지금까지 쓴 글입니다. 조각이 아니라 그 칸의 전체 글이라, 가장 늦게 온 것만 반영하면 됩니다. */
+export const PageStreamFillSchema = z.strictObject({
+  path: z.string().min(1).max(200),
+  text: z.string(),
+  /** 그 칸을 다 썼는가. 블록 안의 칸이 모두 끝나면 블록에 디자인이 입혀집니다. */
+  done: z.boolean(),
+});
+
+/** 설계가 먼저 오는 생성의 단계입니다. `filled` 뒤에는 모델 호출 없이 렌더와 측정만 남습니다. */
+export const PAGE_STREAM_STAGES = ["designed", "filled", "rendered"] as const;
+export type PageStreamStage = (typeof PAGE_STREAM_STAGES)[number];
+export const PageStreamStageSchema = z.strictObject({
+  name: z.enum(PAGE_STREAM_STAGES),
 });
 
 export const PageStreamDoneSchema = z.strictObject({
@@ -98,6 +124,79 @@ export function renderableHtml(html: string): string {
   if (lastOpen > lastTag) return html.slice(0, lastOpen);
   return html;
 }
+
+/** 끝나지 않은 JSON에서 읽은 글 값 하나입니다. */
+export interface PartialJsonLeaf {
+  path: readonly (string | number)[];
+  text: string;
+  /** 닫는 따옴표까지 왔는가. */
+  closed: boolean;
+}
+
+/**
+ * 조각을 이어 붙인 것에서 **지금까지 온 글 값**을 경로와 함께 꺼낸다.
+ *
+ * `partialFields`의 중첩판이다. 객체 · 배열 안의 문자열도 경로(`["sections", "a", "title"]`)로 돌려준다.
+ * 숫자 · 참거짓은 글 칸이 아니라 건너뛴다. 끊긴 자리에서 멈추고, 그 앞까지 읽은 것을 돌려준다.
+ */
+export function partialLeaves(buffer: string): PartialJsonLeaf[] {
+  const leaves: PartialJsonLeaf[] = [];
+  readValue(buffer, { at: 0 }, [], leaves);
+  return leaves;
+}
+
+/** 값 하나를 읽는다. 끝까지 읽었으면 `true`, 버퍼가 그 값 안에서 끊겼으면 `false`. */
+function readValue(source: string, cursor: { at: number }, path: (string | number)[], leaves: PartialJsonLeaf[]): boolean {
+  cursor.at = skipSpace(source, cursor.at);
+  const char = source[cursor.at];
+  if (char === undefined) return false;
+  if (char === '"') {
+    const value = readString(source, cursor.at);
+    leaves.push({ path, text: value.text, closed: value.closed });
+    cursor.at = value.end;
+    return value.closed;
+  }
+  if (char === "{" || char === "[") {
+    const object = char === "{";
+    cursor.at = skipSpace(source, cursor.at + 1);
+    if (source[cursor.at] === (object ? "}" : "]")) {
+      cursor.at += 1;
+      return true;
+    }
+    for (let index = 0; ; index += 1) {
+      let key: string | number = index;
+      if (object) {
+        if (source[cursor.at] !== '"') return false;
+        const name = readString(source, cursor.at);
+        if (!name.closed) return false;
+        cursor.at = skipSpace(source, name.end);
+        if (source[cursor.at] !== ":") return false;
+        cursor.at += 1;
+        key = name.text;
+      }
+      if (!readValue(source, cursor, [...path, key], leaves)) return false;
+      cursor.at = skipSpace(source, cursor.at);
+      const next = source[cursor.at];
+      if (next === ",") {
+        cursor.at = skipSpace(source, cursor.at + 1);
+        continue;
+      }
+      if (next === (object ? "}" : "]")) {
+        cursor.at += 1;
+        return true;
+      }
+      return false;
+    }
+  }
+  LITERAL.lastIndex = cursor.at;
+  const literal = LITERAL.exec(source);
+  // 버퍼 끝에 닿은 숫자는 아직 자릿수가 더 올 수 있다.
+  if (!literal || cursor.at + literal[0].length >= source.length) return false;
+  cursor.at += literal[0].length;
+  return true;
+}
+
+const LITERAL = /-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|true|false|null/y;
 
 function skipSpace(source: string, from: number): number {
   let at = from;

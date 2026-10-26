@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { partialFields, renderableHtml } from "./page-stream.js";
+import { partialFields, partialLeaves, renderableHtml } from "./page-stream.js";
 
 /**
  * 부분 JSON 읽기.
@@ -80,5 +80,37 @@ describe("renderableHtml", () => {
 
   it("빈 것은 빈 것이다", () => {
     expect(renderableHtml("")).toBe("");
+  });
+});
+
+describe("partialLeaves", () => {
+  const full = JSON.stringify({ role: "개발자", focus: ["성능", "접근성"], sections: { a: { title: "LCP 절반", details: [], metrics: [{ label: "LCP", value: "1.9초" }] } }, count: 12 });
+
+  it("중첩된 글 값을 경로와 함께 읽고 숫자는 건너뛴다", () => {
+    expect(partialLeaves(full)).toEqual([
+      { path: ["role"], text: "개발자", closed: true },
+      { path: ["focus", 0], text: "성능", closed: true },
+      { path: ["focus", 1], text: "접근성", closed: true },
+      { path: ["sections", "a", "title"], text: "LCP 절반", closed: true },
+      { path: ["sections", "a", "metrics", 0, "label"], text: "LCP", closed: true },
+      { path: ["sections", "a", "metrics", 0, "value"], text: "1.9초", closed: true },
+    ]);
+  });
+
+  it("어느 자리에서 끊겨도 앞부분은 같고 마지막 값만 열려 있다", () => {
+    const complete = partialLeaves(full);
+    for (let end = 0; end < full.length; end += 1) {
+      const leaves = partialLeaves(full.slice(0, end));
+      const closed = leaves.filter((leaf) => leaf.closed);
+      expect(closed).toEqual(complete.slice(0, closed.length));
+      // 열린 값은 많아야 하나이고 언제나 맨 끝이다.
+      expect(leaves.slice(0, -1).every((leaf) => leaf.closed)).toBe(true);
+      const last = leaves.at(-1);
+      if (last && !last.closed) expect(complete[leaves.length - 1]!.text.startsWith(last.text)).toBe(true);
+    }
+  });
+
+  it("키가 끊긴 자리에서는 그 값을 내지 않는다", () => {
+    expect(partialLeaves('{"role":"개발자","head')).toEqual([{ path: ["role"], text: "개발자", closed: true }]);
   });
 });

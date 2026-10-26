@@ -160,7 +160,7 @@ export class ClaudeCodeAiClient implements AiClient {
     const started = Date.now();
     const { stdout, stderr, code } = await this.#run(
       args, spec, input,
-      options.onPartial || options.onThinking ? partialSink(options) : null,
+      options.onPartial || options.onThinking || options.onPartialRestart ? partialSink(options) : null,
     );
     const durationMs = Date.now() - started;
 
@@ -177,6 +177,9 @@ export class ClaudeCodeAiClient implements AiClient {
     }
 
     const parsed = this.#parseEnvelope(stdout, spec);
+    // CLI가 구조화 출력을 스키마 검사로 돌려보내면 모델이 처음부터 다시 씁니다. 시간이 그만큼 늘어 원인을 남깁니다.
+    for (const detail of rejectedStructuredOutputs(stdout))
+      console.error(JSON.stringify({ level: "warn", event: "ai.structured_output_rejected", contract: spec.contract, model, detail: detail.slice(0, 1_500) }));
     if (parsed.is_error) {
       const message = parsed.result ?? "claude reported an error";
       logAiFailure({
@@ -360,11 +363,37 @@ const STREAM_EVENT_SCHEMA = z.looseObject({
  * 0부터 다시 매겨지므로 **번호만 보면 남의 조각을 섞어 담는다.** 블록이 열릴 때
  * 이름을 보고 자리를 잡고, 닫히면 놓는다.
  *
- * 같은 이름의 블록이 두 번 열리면 **그 자리에서 멈춘다.** 이미 보낸 조각을
+ * 같은 이름의 블록이 두 번 열리면 **그 자리에서 멈춘다**(처음부터 다시 읽을 수 있는 쪽이 `onPartialRestart`를 주면
+ * 알리고 이어 받는다). 이미 보낸 조각을
  * 되돌릴 수 없으니 이어 붙이면 앞뒤가 다른 JSON이 되고, 받는 쪽은 그걸
  * 알아볼 방법이 없다. 멈추면 화면은 마지막 성한 데까지만 그린 채 결과를
  * 기다린다 — 최종 응답은 봉투에서 따로 읽으므로 영향이 없다.
  */
+/**
+ * 출력 줄에서 CLI가 돌려보낸 구조화 출력의 오류 문장을 꺼냅니다. 도구 결과는 사용자 메시지의 `tool_result`로 오고,
+ * 구조화 출력 도구의 호출 ID로 짝을 맞춥니다.
+ */
+export function rejectedStructuredOutputs(stdout: string): string[] {
+  const ids = new Set<string>();
+  const rejected: string[] = [];
+  for (const line of stdout.split("\n")) {
+    if (!line.startsWith("{")) continue;
+    let json: { type?: string; message?: { content?: unknown } };
+    try {
+      json = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    const content = Array.isArray(json.message?.content) ? (json.message!.content as Record<string, unknown>[]) : [];
+    for (const block of content) {
+      if (json.type === "assistant" && block.type === "tool_use" && block.name === STRUCTURED_OUTPUT_TOOL && typeof block.id === "string") ids.add(block.id);
+      if (json.type === "user" && block.type === "tool_result" && block.is_error === true && ids.has(String(block.tool_use_id)))
+        rejected.push(typeof block.content === "string" ? block.content : JSON.stringify(block.content));
+    }
+  }
+  return rejected;
+}
+
 export function partialSink(options: AiCallOptions): (line: string) => void {
   let activeIndex: number | null = null;
   let seen = false;
@@ -392,6 +421,11 @@ export function partialSink(options: AiCallOptions): (line: string) => void {
     if (event.type === "content_block_start") {
       const block = event.content_block;
       if (block?.type !== "tool_use" || block.name !== STRUCTURED_OUTPUT_TOOL) return;
+      if (seen && options.onPartialRestart) {
+        options.onPartialRestart();
+        activeIndex = event.index ?? null;
+        return;
+      }
       if (seen) {
         frozen = true;
         console.error(JSON.stringify({

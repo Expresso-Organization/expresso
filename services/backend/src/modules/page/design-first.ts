@@ -8,12 +8,13 @@ import {
   StructuredPortfolioContentSchema,
   archetypeComponents,
   isStructuredGroup,
+  partialLeaves,
   structuredModelSchema,
   type PageGenerationManifest,
   type StructuredDesignPlan,
   type StructuredPortfolioContent,
 } from "@expresso/contracts";
-import { describeArchetype, describeDesignLayout, designLayout, structuredCatalog } from "@expresso/portfolio-renderer";
+import { blueprintToken, describeArchetype, describeDesignLayout, designLayout, structuredCatalog, type BlueprintSlot } from "@expresso/portfolio-renderer";
 
 import { AiError, type AiClient, type AiUsage } from "../../platform/ai/client.js";
 import { ungroundedNumbers } from "../../platform/numbers.js";
@@ -67,11 +68,16 @@ export interface DesignFirstResult {
 }
 
 export interface DesignFirstHooks {
-  /** 설계가 끝났을 때. 청사진을 보내는 자리입니다. */
-  designed?: (input: { plan: StructuredDesignPlan; spec: unknown }) => void;
-  /** 섹션 하나 또는 프로필을 채웠을 때. */
-  filled?: (input: { path: string; value: unknown }) => void;
+  /** 설계가 끝났을 때. 청사진을 그릴 내용(글 칸마다 표지)과 글 자리 목록을 함께 받습니다. */
+  designed?: (input: { plan: StructuredDesignPlan; spec: unknown; blueprint: Blueprint }) => void;
+  /** 채우는 동안 글 칸 하나의 글이 바뀌었을 때. 경로는 청사진 글 자리와 같습니다. */
+  slot?: (path: string, text: string, done: boolean) => void;
   thinking?: (tokens: number) => void;
+}
+
+export interface Blueprint {
+  content: StructuredPortfolioContent;
+  slots: BlueprintSlot[];
 }
 
 type RawSection = { id: string; title: string; purpose: string; goal: string; points: string[]; sourceIds: string[] };
@@ -119,6 +125,96 @@ function skeleton(raw: ReturnType<typeof rawInput>, name: string): StructuredPor
     evidence: raw.evidence.length ? [{ id: "evidence", title: "-", kind: "-", summary: "-", body: "-" }] : [],
     contact: null,
   };
+}
+
+/**
+ * 설계안대로 글 칸마다 표지를 넣은 청사진 내용입니다. 칸의 개수와 길이는 설계의 칸 예산과 `FILL_LIMITS`를 따르므로,
+ * 채운 뒤의 지면과 같은 부품 · 같은 칸이 그려집니다. 경력은 채우기 전에는 몇 개인지 알 수 없어 한 줄만 둡니다.
+ */
+export function blueprintContent(plan: StructuredDesignPlan, context: PageGenerationContext): Blueprint {
+  const raw = rawInput(context);
+  const slots: BlueprintSlot[] = [];
+  const slot = (path: string, chars: number) => {
+    slots.push({ path, chars });
+    return blueprintToken(slots.length - 1);
+  };
+  const text = (path: string, chars: number) => (chars > 0 ? slot(path, chars) : "");
+  const count = (length: number) => Array.from({ length }, (_, index) => index);
+  const evidenceIds = new Set(plan.evidence ? raw.evidence.map((item) => item.id) : []);
+  const rawById = new Map(raw.sections.map((section) => [section.id, section]));
+  const { profile: P, section: S, career: C, evidence: E } = FILL_LIMITS;
+  const content: StructuredPortfolioContent = {
+    version: 1,
+    profile: {
+      name: context.author!.name,
+      role: slot("/profile/role", P.role),
+      // 저장 계약은 마침표로 끝나는 한 문장을 요구합니다. 자리 길이는 그 규칙의 한글 36자입니다.
+      headline: `${slot("/profile/headline", 36)}.`,
+      intro: text("/profile/intro", plan.profile.intro),
+      focus: count(plan.profile.focus).map((index) => slot(`/profile/focus/${index}`, P.focus)),
+    },
+    sections: plan.sections.filter((section) => section.include).map((section) => {
+      const base = `/sections/${section.id}`;
+      return {
+        id: section.id,
+        title: slot(`${base}/title`, section.budget.title),
+        summary: text(`${base}/summary`, section.budget.summary),
+        body: text(`${base}/body`, section.budget.body),
+        pattern: section.pattern,
+        details: count(section.budget.details).map((index) => ({ label: slot(`${base}/details/${index}/label`, S.detailLabel), text: slot(`${base}/details/${index}/text`, S.detailText) })),
+        media: section.media.map((src) => ({ src, alt: raw.media.find((item) => item.src === src)?.alt || "-", origin: "uploaded" as const })),
+        sourceIds: (rawById.get(section.id)?.sourceIds ?? []).filter((key) => evidenceIds.has(key)),
+        ...(section.budget.metrics
+          ? {
+              metrics: count(section.budget.metrics).map((index) => ({
+                label: slot(`${base}/metrics/${index}/label`, S.metricLabel),
+                value: slot(`${base}/metrics/${index}/value`, S.metricValue),
+                ...(section.form === "before-after" ? { before: slot(`${base}/metrics/${index}/before`, S.metricValue) } : {}),
+              })),
+            }
+          : {}),
+      };
+    }),
+    career: plan.career
+      ? [{ id: "career-1", period: slot("/career/0/period", C.period), organization: slot("/career/0/organization", C.organization), role: slot("/career/0/role", C.role), description: slot("/career/0/description", C.description) }]
+      : [],
+    evidence: raw.evidence
+      .filter((item) => evidenceIds.has(item.id))
+      .map((item, index) => ({ id: item.id, title: slot(`/evidence/${index}/title`, E.title), kind: slot(`/evidence/${index}/kind`, E.kind), summary: slot(`/evidence/${index}/summary`, E.summary), body: slot(`/evidence/${index}/body`, E.body) })),
+    contact: null,
+  };
+  return { content: StructuredPortfolioContentSchema.parse(content), slots };
+}
+
+/** 채우기 출력의 경로를 내용 경로로 옮깁니다. 프로필 칸만 이름이 다르고, 근거의 id는 글 칸이 아닙니다. */
+function contentPath(path: readonly (string | number)[]): string | null {
+  const [head] = path;
+  if (head === "role" || head === "headline" || head === "intro" || head === "focus") return `/profile/${path.join("/")}`;
+  if (head === "evidence" && path[2] === "id") return null;
+  if (head === "sections" || head === "career" || head === "evidence") return `/${path.join("/")}`;
+  return null;
+}
+
+/**
+ * 채우기 출력 조각을 받아, 바뀐 글 칸만 경로 · 지금까지의 글 · 다 썼는지로 알립니다. 칸마다 전체 글을 보내므로
+ * 공급자가 출력을 처음부터 다시 쓰면 쌓은 것만 버리고 이어 받으면 됩니다.
+ */
+function slotStream(notify: NonNullable<DesignFirstHooks["slot"]>) {
+  let buffer = "";
+  const sent = new Map<string, string>();
+  const restart = () => { buffer = ""; };
+  const push = (delta: string) => {
+    buffer += delta;
+    for (const leaf of partialLeaves(buffer)) {
+      const path = contentPath(leaf.path);
+      if (!path) continue;
+      const state = `${leaf.closed ? "1" : "0"}${leaf.text}`;
+      if (sent.get(path) === state) continue;
+      sent.set(path, state);
+      notify(path, leaf.text, leaf.closed);
+    }
+  };
+  return { push, restart };
 }
 
 function designPlanSchema(sectionIds: [string, ...string[]], mediaCount: number) {
@@ -253,6 +349,21 @@ export function fitToContent(rawSpec: unknown, content: StructuredPortfolioConte
   return spec;
 }
 
+export interface DesignFirstTuning {
+  designTier?: "haiku" | "sonnet" | "opus";
+  designEffort?: "low" | "medium" | "high";
+  fillTier?: "haiku" | "sonnet" | "opus";
+  fillEffort?: "low" | "medium" | "high";
+}
+
+/**
+ * 설계 · 채우기의 모델과 생각량 기본값입니다. 2026-10-26 dev01 브루 · Linear Midnight 실측(설계 · 채움):
+ * opus low · sonnet low 191초 $1.13(설계 끝 41초), sonnet low · sonnet low 222초 $0.80, opus medium · sonnet low 337초 $2.20,
+ * 생각량 기본값(sonnet · sonnet) 421초. 출력 토큰의 대부분이 생각이라 low가 시간을 가장 많이 줄였고,
+ * 설계는 opus가 sonnet보다 빨리 끝나 청사진이 먼저 뜹니다.
+ */
+export const DESIGN_FIRST_TUNING: DesignFirstTuning = { designTier: "opus", designEffort: "low", fillTier: "sonnet", fillEffort: "low" };
+
 /**
  * 설계 → 채우기를 돌려 저장 계약에 맞는 내용과 Spec(모델 출력 형태, design 미포함)을 돌려줍니다.
  * 렌더 · 측정 · 결과 조립은 호출하는 생성기가 합니다.
@@ -261,8 +372,8 @@ export async function designFirst(
   ai: AiClient,
   context: PageGenerationContext,
   hooks: DesignFirstHooks = {},
-  /** 단계별 생각량과 모델 티어입니다. 실측으로 정하려고 열어 둡니다. */
-  tuning: { designEffort?: "low" | "medium" | "high"; fillEffort?: "low" | "medium" | "high"; fillTier?: "haiku" | "sonnet" | "opus" } = {},
+  /** 단계별 모델 티어와 생각량입니다. 주지 않은 값은 공급자 기본값입니다. 제품은 `DESIGN_FIRST_TUNING`을 씁니다. */
+  tuning: DesignFirstTuning = {},
 ): Promise<DesignFirstResult> {
   const started = Date.now();
   if (!context.author?.name) throw new PageGenerationError("포트폴리오에 표시할 이름이 필요합니다.");
@@ -272,17 +383,17 @@ export async function designFirst(
   const usages: AiUsage[] = [];
   const calls: DesignFirstCall[] = [];
   const timeline: DesignFirstResult["timeline"] = [];
-  const call = async <T>(contract: "page_design" | "page_fill", system: string, prompt: string, schema: z.ZodType<T>) => {
+  const call = async <T>(contract: "page_design" | "page_fill", system: string, prompt: string, schema: z.ZodType<T>, slots?: ReturnType<typeof slotStream>) => {
     const result = await ai.complete(
       {
         contract, system, prompt, promptVersion: PAGE_PROMPT_VERSION,
-        ...(contract === "page_design" && context.modelTier ? { modelTier: context.modelTier } : {}),
+        ...(contract === "page_design" && (tuning.designTier ?? context.modelTier) ? { modelTier: tuning.designTier ?? context.modelTier! } : {}),
         ...(contract === "page_fill" && tuning.fillTier ? { modelTier: tuning.fillTier } : {}),
         ...(contract === "page_design" && tuning.designEffort ? { effort: tuning.designEffort } : {}),
         ...(contract === "page_fill" && tuning.fillEffort ? { effort: tuning.fillEffort } : {}),
       },
       schema,
-      hooks.thinking ? { onThinking: hooks.thinking } : {},
+      { ...(hooks.thinking ? { onThinking: hooks.thinking } : {}), ...(slots ? { onPartial: slots.push, onPartialRestart: slots.restart } : {}) },
     );
     usages.push(result.usage);
     calls.push({ contract, model: result.usage.model, durationMs: result.usage.durationMs, outputTokens: result.usage.outputTokens, costUsd: result.usage.costUsd });
@@ -321,7 +432,7 @@ export async function designFirst(
     sections: design.plan.sections.map((section) => ({ ...section, media: section.media.map((index) => raw.media[index]!.src) })),
   };
   timeline.push({ stage: "designed", atMs: Date.now() - started });
-  hooks.designed?.({ plan, spec: design.spec });
+  if (hooks.designed) hooks.designed({ plan, spec: design.spec, blueprint: blueprintContent(plan, context) });
 
   // 2. 채우기 — 한 번의 호출로 모든 칸을 채웁니다. 호출마다 공급자 고정 비용(CLI 기본 프롬프트)이 들어
   //    섹션별 병렬 호출은 더 비싸고 빠르지도 않았습니다(2026-10-26 실측: 7회 · 약 $1.8).
@@ -353,7 +464,8 @@ ${evidenceText}`;
   for (let attempt = 0; attempt < 2 && !filled; attempt++) {
     let output: z.infer<typeof fillSchema>;
     try {
-      output = await call("page_fill", FILL_SYSTEM, fillError ? `${fillPrompt}\n직전 출력의 검사 오류: ${fillError}\n수정한 전체 결과를 출력하세요.` : fillPrompt, fillSchema);
+      // 다시 받는 판은 처음부터 다시 흘러오므로 읽는 상태도 새로 만듭니다.
+      output = await call("page_fill", FILL_SYSTEM, fillError ? `${fillPrompt}\n직전 출력의 검사 오류: ${fillError}\n수정한 전체 결과를 출력하세요.` : fillPrompt, fillSchema, hooks.slot ? slotStream(hooks.slot) : undefined);
     } catch (error) {
       if (error instanceof AiError && error.code === "AI_INVALID_OUTPUT") {
         fillError = error.message.slice(0, 2_000);
@@ -385,11 +497,9 @@ ${evidenceText}`;
       sourceIds: rawById.get(plannedSection.id)!.sourceIds,
       ...(metrics.length ? { metrics } : {}),
     };
-    hooks.filled?.({ path: `/sections/${plannedSection.id}`, value: section });
     return section;
   });
   const profilePart = { profile: { name: author, role: filled.role, headline: filled.headline, intro: filled.intro, focus: filled.focus }, career: filled.career, evidence: filled.evidence };
-  hooks.filled?.({ path: "/profile", value: profilePart.profile });
   timeline.push({ stage: "filled", atMs: Date.now() - started });
 
   // 3. 맞춤 — 근거에 없는 출처를 지우고, 부품 조건을 다시 맞춥니다.

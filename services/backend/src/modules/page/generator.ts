@@ -11,6 +11,7 @@ import {
   type DesignSystemSpecV2,
   type PortfolioArchetype,
   type PageStyleGrammar,
+  type PageStreamStage,
   type PortfolioPlan,
   type StructuredPortfolioContent,
   type StructuredPortfolioSnapshot,
@@ -133,6 +134,11 @@ export interface PageStreamSink {
    * 「멈춤」을 구분할 수 있는 유일한 근거다.
    */
   thinking(estimatedTokens: number): void;
+  /** 설계가 끝난 지면의 청사진 문서입니다. 설계가 먼저 오는 생성만 보냅니다. */
+  blueprint?(page: { html: string; css: string }): void;
+  /** 청사진의 글 자리 하나에 지금까지 쓴 글입니다. */
+  fill?(path: string, text: string, done: boolean): void;
+  stage?(name: PageStreamStage): void;
 }
 
 export interface PageGenerator {

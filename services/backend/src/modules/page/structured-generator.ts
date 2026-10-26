@@ -26,6 +26,8 @@ import {
   renderStructuredPortfolio,
   validateRenderableSpec,
   structuredCatalog,
+  BLUEPRINT_CSS,
+  blueprintHtml,
 } from "@expresso/portfolio-renderer";
 import {
   AiError,
@@ -50,7 +52,7 @@ import {
   describeGroupRules,
   describeSpecSchema,
 } from "./structured-spec-format.js";
-import { designFirst } from "./design-first.js";
+import { DESIGN_FIRST_TUNING, designFirst, fitToContent, type Blueprint, type DesignFirstTuning } from "./design-first.js";
 
 export function structuredSpecPrompt(
   content: StructuredPortfolioContent,
@@ -252,6 +254,21 @@ function renderSpec(snapshot: Snapshot, context: SetupContext) {
   }
 }
 
+/**
+ * 설계안의 청사진을 최종 지면과 같은 렌더러로 그립니다. 글 칸의 표지는 글 자리 요소가 됩니다.
+ * 청사진은 보여 주기 위한 것이라, 그리지 못하면 기록만 남기고 생성은 이어 갑니다.
+ */
+function renderBlueprint(spec: unknown, blueprint: Blueprint, context: SetupContext): { html: string; css: string } | null {
+  try {
+    const { snapshot } = specSetup(blueprint.content, context).accept(fitToContent(spec, blueprint.content));
+    const rendered = renderSpec(snapshot, context);
+    return { html: blueprintHtml(rendered.html, blueprint.slots), css: `${rendered.css}\n${BLUEPRINT_CSS}` };
+  } catch (error) {
+    console.error(JSON.stringify({ level: "warn", event: "page.blueprint_failed", message: errorText(error) }));
+    return null;
+  }
+}
+
 /** 그린 결과를 공개 페이지와 같은 문서로 열어 잽니다. */
 async function measureRendered(
   measurer: PageMeasurer,
@@ -278,15 +295,15 @@ export class StructuredPageGenerator implements PageGenerator {
       random?: () => number;
       /** 새 생성을 설계 → 채우기로 합니다. 끄면 내용 정리 → 구성 경로만 씁니다. */
       designFirst?: boolean;
-      /** 설계 · 채우기의 생각량과 채우기 티어입니다. */
-      tuning?: Parameters<typeof designFirst>[3];
+      /** 설계 · 채우기의 모델 티어와 생각량입니다. 주지 않으면 `DESIGN_FIRST_TUNING`입니다. */
+      tuning?: DesignFirstTuning;
     } = {},
   ) {
     this.random = options.random ?? Math.random;
     this.designFirst = options.designFirst ?? true;
-    this.tuning = options.tuning ?? {};
+    this.tuning = options.tuning ?? DESIGN_FIRST_TUNING;
   }
-  private readonly tuning: NonNullable<Parameters<typeof designFirst>[3]>;
+  private readonly tuning: DesignFirstTuning;
   async generate(
     context: PageGenerationContext,
     sink: PageStreamSink | null = null,
@@ -426,10 +443,31 @@ export class StructuredPageGenerator implements PageGenerator {
 
   async #designFirstPage(context: PageGenerationContext, sink: PageStreamSink | null): Promise<GeneratedPageResult> {
     const started = Date.now();
-    const designed = await designFirst(this.ai, context, sink ? { thinking: (tokens) => sink.thinking(tokens) } : {}, this.tuning);
+    const designed = await designFirst(
+      this.ai,
+      context,
+      sink
+        ? {
+            thinking: (tokens) => sink.thinking(tokens),
+            ...(sink.blueprint
+              ? {
+                  designed: ({ spec, blueprint }) => {
+                    const page = renderBlueprint(spec, blueprint, context);
+                    if (page) sink.blueprint!(page);
+                    sink.stage?.("designed");
+                  },
+                }
+              : {}),
+            ...(sink.fill ? { slot: (path, text, done) => sink.fill!(path, text, done) } : {}),
+          }
+        : {},
+      this.tuning,
+    );
+    sink?.stage?.("filled");
     const { snapshot, root } = specSetup(designed.content, context).accept(designed.spec);
     const rendered = renderSpec(snapshot, context);
     const timeline = [...designed.timeline, { stage: "rendered" as const, atMs: Date.now() - started }];
+    sink?.stage?.("rendered");
     let renderMeasure: PageRenderMeasure | undefined;
     if (this.measurer) {
       try {

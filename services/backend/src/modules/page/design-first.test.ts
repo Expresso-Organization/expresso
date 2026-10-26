@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { z } from "zod";
 import { PageGenerationManifestSchema, validateStructuredPortfolio } from "@expresso/contracts";
-import type { AiCallSpec, AiClient } from "../../platform/ai/client.js";
+import type { AiCallOptions, AiCallSpec, AiClient } from "../../platform/ai/client.js";
 import { StructuredPageGenerator } from "./structured-generator.js";
 import type { PageGenerationContext } from "./generator.js";
 import { findPortfolioDesign } from "../design-systems/index.js";
@@ -10,9 +10,14 @@ import { findPortfolioDesign } from "../design-systems/index.js";
 class RoutedAi implements AiClient {
   calls: AiCallSpec[] = [];
   constructor(private readonly route: (request: AiCallSpec) => unknown) {}
-  async complete<T>(request: AiCallSpec, schema: z.ZodType<T>) {
+  async complete<T>(request: AiCallSpec, schema: z.ZodType<T>, options: AiCallOptions = {}) {
     this.calls.push(request);
     const data = schema.parse(this.route(request));
+    // 부분 출력을 받는 호출에는 실제 공급자처럼 출력 JSON을 잘게 나눠 흘립니다.
+    if (options.onPartial) {
+      const text = JSON.stringify(data);
+      for (let at = 0; at < text.length; at += 7) options.onPartial(text.slice(at, at + 7));
+    }
     return { data, usage: { model: request.contract === "page_design" ? "opus-test" : "sonnet-test", inputTokens: 1, outputTokens: 100, cacheReadTokens: 0, cacheCreationTokens: 0, durationMs: 50, costUsd: 0.01 } };
   }
 }
@@ -117,5 +122,39 @@ describe("설계가 먼저 오는 생성", () => {
     expect(ai.calls.filter((call) => call.contract === "page_design")).toHaveLength(2);
     // 두 번째 설계 요청에는 직전 오류가 붙습니다.
     expect(ai.calls[1]!.prompt).toContain("plan.sections에 모든 섹션");
+  });
+});
+
+describe("청사진과 순차 채움", () => {
+  it("설계가 끝나면 최종 구조의 청사진을 보내고, 채우는 글을 글 자리 경로로 흘린 뒤 단계를 알린다", async () => {
+    const events: { event: string; [key: string]: unknown }[] = [];
+    const sink = {
+      delta: (text: string) => events.push({ event: "delta", text }),
+      thinking: () => undefined,
+      blueprint: (page: { html: string; css: string }) => events.push({ event: "blueprint", ...page }),
+      fill: (path: string, text: string, done: boolean) => events.push({ event: "fill", path, text, done }),
+      stage: (name: string) => events.push({ event: "stage", name }),
+    };
+    await new StructuredPageGenerator(new RoutedAi(route)).generate(context, sink);
+
+    const order = events.map((item) => (item.event === "stage" ? `stage:${item.name}` : item.event)).filter((name, index, list) => name !== list[index - 1]);
+    expect(order).toEqual(["blueprint", "stage:designed", "fill", "stage:filled", "stage:rendered", "delta"]);
+
+    const blueprint = events.find((item) => item.event === "blueprint") as { html: string; css: string } | undefined;
+    // 표지는 하나도 남지 않고, 설계한 칸마다 글 자리가 있습니다. 뺀 섹션(misc)은 청사진에도 없습니다.
+    expect(blueprint!.html).not.toMatch(/⟦\d+⟧/);
+    for (const path of ["/profile/headline", "/sections/lcp/title", "/sections/lcp/metrics/0/before", "/sections/ui/details/1/text"])
+      expect(blueprint!.html).toContain(`data-slot="${path}"`);
+    expect(blueprint!.html).not.toContain("/sections/misc/");
+    expect(blueprint!.html).toContain("xp-metric-strip");
+    expect(blueprint!.css).toContain('[data-slot-state="empty"]');
+
+    const fills = events.filter((item) => item.event === "fill") as unknown as { path: string; text: string; done: boolean }[];
+    const last = (path: string) => { const found = fills.filter((item) => item.path === path).at(-1); return found && { path: found.path, text: found.text, done: found.done }; };
+    expect(last("/profile/headline")).toEqual({ path: "/profile/headline", text: "커머스 화면의 성능을 고칩니다.", done: true });
+    expect(last("/sections/lcp/metrics/0/before")).toEqual({ path: "/sections/lcp/metrics/0/before", text: "3.8초", done: true });
+    // 글은 조각마다 자라며 오고, 근거의 id는 글 칸이 아니라 보내지 않습니다.
+    expect(fills.filter((item) => item.path === "/sections/lcp/title").length).toBeGreaterThan(1);
+    expect(fills.some((item) => item.path.endsWith("/id"))).toBe(false);
   });
 });

@@ -1,6 +1,9 @@
 "use client";
 
 import {
+  PageStreamBlueprintSchema,
+  PageStreamFillSchema,
+  PageStreamStageSchema,
   PageStyleGrammarSchema,
   pagePreviewDocument,
   partialFields,
@@ -30,6 +33,11 @@ import styles from "./LivePreview.module.css";
  *
  * 붙는 대상은 **생성 잡**이다. 이 화면이 열릴 때 포트폴리오는 아직 없다 —
  * 워커가 문장과 배치를 다 쓴 뒤에야 생기고, 그때까지 1~2분이 지난다.
+ *
+ * **설계가 먼저 오는 생성**은 문서를 이어 쓰지 않는다. 설계가 끝나면 최종 지면과 같은 구조의 청사진(`blueprint`)이
+ * 한 번 오고, 이후 `fill`은 그 문서의 글 자리(`data-slot`) 글만 바꾼다. 블록의 글 자리가 다 차면 그 블록에
+ * 디자인이 입혀진다(CSS만으로, `BLUEPRINT_CSS`). 완성본은 `delta`로 오고, 문서를 다시 열지 않고 본문만 바꾼다 —
+ * 서체를 다시 받지 않고 읽던 자리도 그대로다.
  */
 export function LivePreview({
   jobId,
@@ -60,6 +68,15 @@ export function LivePreview({
    * 시작하면 쓰는 중이다.
    */
   const [stage, setStage] = useState<"waiting" | "thinking">("waiting");
+  /** 설계가 먼저 오는 생성의 단계. 청사진이 오기 전에는 `null`이다. */
+  const [phase, setPhase] = useState<"filling" | "filled" | "rendered" | "final" | null>(null);
+  /** 청사진을 연 문서인가. 그러면 `delta`는 이어 쓰기가 아니라 완성본으로 바꿔 끼우는 것이다. */
+  const blueprintOpen = useRef(false);
+  /** 사람이 지면을 직접 움직였는가. 그 뒤로는 쓰이는 자리를 따라 내려가지 않는다. */
+  const userMoved = useRef(false);
+  const grammarRef = useRef<PageStyleGrammar | null>(null);
+  const titleRef = useRef(title);
+  titleRef.current = title;
 
   useEffect(() => {
     const source = new EventSource(`/api/generation-jobs/${jobId}/page-stream`);
@@ -68,9 +85,12 @@ export function LivePreview({
       // 끊겼다 다시 붙으면 서버가 처음부터 다시 보낸다. 받는 쪽도 처음으로.
       written.current = 0;
       opened.current = false;
+      blueprintOpen.current = false;
+      userMoved.current = false;
       setBuffer("");
       setLive(false);
       setStage("waiting");
+      setPhase(null);
     };
 
     source.addEventListener("open", restart);
@@ -79,6 +99,56 @@ export function LivePreview({
       const { style } = JSON.parse((event as MessageEvent<string>).data) as { style: string };
       const parsed = PageStyleGrammarSchema.safeParse(JSON.parse(style));
       setGrammar(parsed.success ? parsed.data : null);
+      grammarRef.current = parsed.success ? parsed.data : null;
+    });
+    source.addEventListener("blueprint", (event) => {
+      const page = PageStreamBlueprintSchema.safeParse(JSON.parse((event as MessageEvent<string>).data));
+      const document_ = frame.current?.contentDocument;
+      if (!page.success || !document_) return;
+      const shell = pagePreviewDocument({
+        html: "",
+        css: "",
+        title: titleRef.current,
+        ...(grammarRef.current ? { grammar: grammarRef.current } : {}),
+      });
+      document_.open();
+      document_.write(`${shell.slice(0, shell.indexOf("<body>"))}<body>${page.data.html}`);
+      document_.close();
+      writeCss(document_, page.data.css);
+      document_.documentElement.dataset.stage = "blueprint";
+      for (const name of ["wheel", "touchstart", "keydown"])
+        document_.addEventListener(name, () => { userMoved.current = true; }, { passive: true });
+      blueprintOpen.current = true;
+      setPhase("filling");
+      setLive(true);
+    });
+    source.addEventListener("fill", (event) => {
+      const fill = PageStreamFillSchema.safeParse(JSON.parse((event as MessageEvent<string>).data));
+      const document_ = frame.current?.contentDocument;
+      if (!fill.success || !document_ || !blueprintOpen.current) return;
+      const { path, text, done } = fill.data;
+      // 아직 한 글자도 안 왔으면 자리 표시를 그대로 둔다.
+      if (!text && !done) return;
+      for (const slot of document_.querySelectorAll<HTMLElement>(`[data-slot="${CSS.escape(path)}"]`)) {
+        const starting = slot.dataset.slotState === "empty";
+        slot.textContent = text;
+        // 공급자가 출력을 처음부터 다시 쓰면 다 쓴 칸에도 글이 다시 온다. 그 칸은 글만 바꾸고 끝난 상태로 둔다 —
+        // 되돌리면 디자인을 입은 블록이 다시 청사진으로 깜빡인다.
+        if (slot.dataset.slotState !== "done") slot.dataset.slotState = done ? "done" : "writing";
+        if (starting && !userMoved.current) follow(document_, slot);
+      }
+    });
+    source.addEventListener("stage", (event) => {
+      const stage_ = PageStreamStageSchema.safeParse(JSON.parse((event as MessageEvent<string>).data));
+      const document_ = frame.current?.contentDocument;
+      if (!stage_.success || !document_ || !blueprintOpen.current) return;
+      if (stage_.data.name === "designed") return;
+      // 다 채웠다. 모델이 비워 둔 칸의 자리 표시를 걷어 남은 블록에도 디자인을 입힌다.
+      for (const slot of document_.querySelectorAll<HTMLElement>('[data-slot-state]:not([data-slot-state="done"])')) {
+        if (slot.dataset.slotState === "empty") slot.textContent = "";
+        slot.dataset.slotState = "done";
+      }
+      setPhase(stage_.data.name);
     });
     // 값은 쌓인 분량이지만 화면은 그 숫자를 쓰지 않는다 — 있다는 사실만 쓴다.
     source.addEventListener("thinking", () => setStage("thinking"));
@@ -111,6 +181,17 @@ export function LivePreview({
     const document_ = frame.current?.contentDocument;
     if (!document_) return;
     const fields = partialFields(buffer);
+
+    // 청사진을 연 문서에는 완성본이 한 덩어리로 온다. 본문과 CSS만 바꾸고 청사진 단계를 끝낸다.
+    if (blueprintOpen.current) {
+      if (fields.html === undefined || fields.css === undefined) return;
+      document_.body.innerHTML = fields.html;
+      writeCss(document_, fields.css);
+      delete document_.documentElement.dataset.stage;
+      setPhase("final");
+      return;
+    }
+
     const html = renderableHtml(fields.html ?? "");
 
     if (!opened.current) {
@@ -139,12 +220,7 @@ export function LivePreview({
      * 그동안 지면을 세워 주는 것은 키트다. 여기 오는 것은 그 위에 얹는 것이라
      * 늦게 와도 무너지지 않고, 올 때마다 통째로 갈아 끼우면 된다.
      */
-    if (fields.css) {
-      const id = "ex-live-css";
-      const style = document_.getElementById(id)
-        ?? document_.head.appendChild(Object.assign(document_.createElement("style"), { id }));
-      if (style.textContent !== fields.css) style.textContent = fields.css;
-    }
+    if (fields.css) writeCss(document_, fields.css);
   }, [buffer, grammar, title]);
 
   return (
@@ -156,7 +232,7 @@ export function LivePreview({
       <div className={live ? styles.stage : styles.stageHidden} aria-hidden={!live}>
         <div className={styles.bar}>
           <span className={styles.dot} />
-          <span>지면을 쓰는 중</span>
+          <span>{phase ? PHASE_LABELS[phase] : "지면을 쓰는 중"}</span>
         </div>
         <iframe
           ref={frame}
@@ -172,4 +248,32 @@ export function LivePreview({
       </div>
     </div>
   );
+}
+
+/** 설계가 먼저 오는 생성에서 지금 일어나는 일. 청사진이 뜬 뒤로는 모델 호출이 채우기 하나뿐이다. */
+const PHASE_LABELS = {
+  filling: "설계한 자리에 내용을 채우는 중",
+  filled: "디자인을 입히는 중",
+  rendered: "완성한 지면을 점검하는 중",
+  final: "초안을 저장하는 중",
+} as const;
+
+/** 지면 CSS를 한 자리에 둔다. 올 때마다 통째로 갈아 끼운다. */
+function writeCss(document_: Document, css: string) {
+  const id = "ex-live-css";
+  const style = document_.getElementById(id)
+    ?? document_.head.appendChild(Object.assign(document_.createElement("style"), { id }));
+  if (style.textContent !== css) style.textContent = css;
+}
+
+/**
+ * 쓰기 시작한 자리가 화면 밖이면 지면 안에서만 그 자리를 가운데로 옮긴다. `scrollIntoView`는 iframe 바깥의
+ * 앱 화면까지 함께 움직여 쓰지 않는다.
+ */
+function follow(document_: Document, slot: HTMLElement) {
+  const view = document_.defaultView;
+  if (!view) return;
+  const rect = slot.getBoundingClientRect();
+  if (rect.top >= 0 && rect.bottom <= view.innerHeight) return;
+  view.scrollTo({ top: view.scrollY + rect.top - (view.innerHeight - rect.height) / 2, behavior: "smooth" });
 }

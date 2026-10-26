@@ -28,7 +28,7 @@ import { withTimeout } from "../../platform/timeouts.js";
 import type { ConsentApi } from "../consent/index.js";
 import { findDesignSystemRevision, findPortfolioDesign } from "../design-systems/index.js";
 import { requireActiveUser } from "../identity/index.js";
-import { DESIGN_PRINCIPLES_VERSION, type PageGenerationContext, type PageGenerator } from "./generator.js";
+import { DESIGN_PRINCIPLES_VERSION, type PageGenerationContext, type PageGenerator, type PageStreamSink } from "./generator.js";
 import { PageServiceError } from "./public.js";
 import type { PageStream } from "./stream.js";
 import type { PageRefineInput, PageRefineOutcome } from "./structured-generator.js";
@@ -153,7 +153,14 @@ export class PageService {
     }
     await this.#consent?.require(userId, "page_generation");
     const streamId = options.streamId ?? portfolioId; const stream = this.#stream;
-    const sink = stream ? { delta: (value: string) => { void this.#publish(stream.delta(streamId, value)); }, thinking: (tokens: number) => { void this.#publish(stream.thinking(streamId, tokens)); } } : null;
+    // 쓰기는 기다리지 않고 순서대로 쌓습니다. Redis 연결 하나의 명령은 보낸 순서로 처리됩니다.
+    const sink: PageStreamSink | null = stream ? {
+      delta: (value) => { void this.#publish(stream.delta(streamId, value)); },
+      thinking: (tokens) => { void this.#publish(stream.thinking(streamId, tokens)); },
+      blueprint: (page) => { void this.#publish(stream.blueprint(streamId, page)); },
+      fill: (path, text, done) => { void this.#publish(stream.fill(streamId, path, text, done)); },
+      stage: (name) => { void this.#publish(stream.stage(streamId, name)); },
+    } : null;
     await this.#publish(stream?.begin(streamId, JSON.stringify(context.style ?? null)));
     let result;
     try { result = await withTimeout(generator.generate(context, sink), 900_000, "page generator"); }

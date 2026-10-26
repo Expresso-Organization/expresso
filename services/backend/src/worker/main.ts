@@ -56,9 +56,18 @@ const jobs = createReliableQueue<Record<string, unknown>>(
   config.redisUrl,
   config.queuePrefix,
 );
+/*
+ * 다듬기는 초안을 저장한 뒤 뒤에서 도는 일이라 따로 줄을 섭니다. 같은 줄(동시 1개)에 두면 다듬기가 끝날 때까지
+ * 사용자의 다음 생성이 기다립니다 — 2026-10-26 체험 서버에서 직전 판의 다듬기(211초) 뒤에 새 생성이 섰습니다.
+ */
+const refineJobs = createReliableQueue<Record<string, unknown>>(
+  "page-refine",
+  config.redisUrl,
+  config.queuePrefix,
+);
 const dispatcher = new MongoOutboxDispatcher({
   context: database,
-  queue: jobs.queue,
+  queue: { add: (name, payload, options) => (name === "page.refine" ? refineJobs.queue : jobs.queue).add(name, payload, options) },
   batchSize: config.outboxBatchSize,
   maxAttempts: config.outboxMaxAttempts,
 });
@@ -147,7 +156,6 @@ const queueWorker = createQueueWorker<Record<string, unknown>, Record<string, un
     if (job.name === "interview.draft") return brewJobProcessor(job);
     if (job.name === "recipe.draft") return brewJobProcessor(job);
     if (job.name === "portfolio.generate") return generationProcessor(job);
-    if (job.name === "page.refine") return pageRefineProcessor(job);
     if (job.name === "portfolio.export") return exportProcessor(job);
     if (job.name === "analytics.aggregate") return analyticsProcessor(job);
     if (job.name === "notification.deliver") return notificationProcessor(job);
@@ -163,6 +171,21 @@ const queueWorker = createQueueWorker<Record<string, unknown>, Record<string, un
       error: safeErrorSummary(error),
     }));
   },
+});
+
+const refineWorker = createQueueWorker<Record<string, unknown>, Record<string, unknown>>({
+  queueName: "page-refine",
+  redisUrl: config.redisUrl,
+  prefix: config.queuePrefix,
+  deadLetterQueue: refineJobs.deadLetterQueue,
+  processor: (job) => pageRefineProcessor(job),
+  onDeadLetterError(error) {
+    console.error(JSON.stringify({ level: "error", message: "failed to persist dead-letter job", error: safeErrorSummary(error) }));
+  },
+});
+
+refineWorker.on("error", (error) => {
+  console.error(JSON.stringify({ level: "error", message: "queue worker error", error: safeErrorSummary(error) }));
 });
 
 queueWorker.on("error", (error) => {
@@ -219,4 +242,4 @@ while (!abortController.signal.aborted) {
   }
 }
 
-await Promise.allSettled([queueWorker.close(), jobs.close(), database.close(), pageMeasurer.close()]);
+await Promise.allSettled([queueWorker.close(), refineWorker.close(), jobs.close(), refineJobs.close(), database.close(), pageMeasurer.close()]);

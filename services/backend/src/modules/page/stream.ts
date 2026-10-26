@@ -1,5 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import type { Redis } from "ioredis";
+import { PAGE_STREAM_STAGES, type PageStreamStage } from "@expresso/contracts";
 
 /**
  * 만들어지는 지면을 워커에서 브라우저까지 나르는 길.
@@ -34,6 +35,11 @@ export type PageStreamMessage =
    * 동안은 구상 중이고, `delta`가 오기 시작하면 쓰는 중이다.
    */
   | { id: string; event: "thinking"; tokens: number }
+  /** 설계가 끝난 지면의 청사진 문서. 글 자리는 비어 있고 이후 `fill`이 채운다. */
+  | { id: string; event: "blueprint"; html: string; css: string }
+  /** 글 자리 하나의 지금까지 쓴 글. 조각이 아니라 전체 글이다. */
+  | { id: string; event: "fill"; path: string; text: string; done: boolean }
+  | { id: string; event: "stage"; name: PageStreamStage }
   | { id: string; event: "done"; pageId: string }
   | { id: string; event: "failed"; code: string };
 
@@ -98,6 +104,18 @@ export class PageStream {
     await this.#append(portfolioId, ["event", "delta", "text", text]);
   }
 
+  async blueprint(portfolioId: string, page: { html: string; css: string }): Promise<void> {
+    await this.#append(portfolioId, ["event", "blueprint", "html", page.html, "css", page.css]);
+  }
+
+  async fill(portfolioId: string, path: string, text: string, done: boolean): Promise<void> {
+    await this.#append(portfolioId, ["event", "fill", "path", path, "text", text, "done", done ? "1" : "0"]);
+  }
+
+  async stage(portfolioId: string, name: PageStreamStage): Promise<void> {
+    await this.#append(portfolioId, ["event", "stage", "name", name]);
+  }
+
   async done(portfolioId: string, pageId: string): Promise<void> {
     await this.#append(portfolioId, ["event", "done", "pageId", pageId]);
   }
@@ -159,6 +177,12 @@ function toMessage(id: string, fields: string[]): PageStreamMessage | null {
   if (event === "begin") return { id, event, style: map.get("style") ?? "null" };
   if (event === "delta") return { id, event, text: map.get("text") ?? "" };
   if (event === "thinking") return { id, event, tokens: Number(map.get("tokens") ?? 0) };
+  if (event === "blueprint") return { id, event, html: map.get("html") ?? "", css: map.get("css") ?? "" };
+  if (event === "fill") return { id, event, path: map.get("path") ?? "", text: map.get("text") ?? "", done: map.get("done") === "1" };
+  if (event === "stage") {
+    const name = map.get("name");
+    return PAGE_STREAM_STAGES.includes(name as PageStreamStage) ? { id, event, name: name as PageStreamStage } : null;
+  }
   if (event === "done") return { id, event, pageId: map.get("pageId") ?? "" };
   if (event === "failed") return { id, event, code: map.get("code") ?? "" };
   return null;
