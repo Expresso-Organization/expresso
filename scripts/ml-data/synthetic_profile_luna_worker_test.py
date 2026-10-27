@@ -1,0 +1,982 @@
+import json
+import tempfile
+import threading
+import time
+import unittest
+from pathlib import Path
+from unittest.mock import patch
+
+from synthetic_profile_luna_worker import (
+    _author_luna_profiles,
+    build_luna_event_context,
+    commit_bundle,
+    find_cross_profile_sentence_repetitions,
+    find_intra_profile_sentence_repetitions,
+    materialize_luna_draft,
+    merge_luna_bundles,
+    minimum_sentences_for_repair_round,
+    parse_codex_bundle_jsonl,
+    parse_codex_bundle_attempts,
+    partition_luna_profiles,
+    replace_luna_profiles,
+    run_luna_checkpoint,
+    select_pending_luna_profile_seeds,
+    select_pending_luna_shards,
+    sentence_boost_for_body_mean,
+)
+
+
+def _profile(seed: str, *bodies: str) -> dict:
+    return {
+        "datasetMeta": {"profileSeed": seed},
+        "records": [
+            {"draftId": f"r{index}", "bodyMd": body}
+            for index, body in enumerate(bodies, start=1)
+        ],
+    }
+
+
+class SyntheticProfileLunaWorkerTest(unittest.TestCase):
+    def test_commit_preserves_valid_profiles_when_a_sibling_profile_fails(self):
+        def input_payload(seed):
+            return {
+                "profileSeed": seed,
+                "profileFamily": "family-1",
+                "split": "train",
+                "persona": {"targetRoles": ["기획"], "experienceYears": 1},
+                "targetRecordCount": 1,
+                "renderingPolicy": "skeleton-grounded-creative-v1",
+                "bodyLengthPlan": {
+                    "distributionVersion": "truncated-normal-v2",
+                    "targetMinChars": 20,
+                    "targetMaxChars": 1000,
+                    "targetMeanChars": 70,
+                    "toleranceChars": 20,
+                    "band": "very_short",
+                    "populationMeanChars": 300,
+                    "populationStdChars": 100,
+                    "recordMaxChars": 1000,
+                },
+                "propertySchema": {"project": {}},
+                "events": [
+                    {
+                        "eventId": "ev1",
+                        "categoryKey": "project",
+                        "facts": ["자료 분류 기준을 정리했다"],
+                        "propertyKeys": [],
+                        "propertyValues": {},
+                        "renderMode": "rewrite_evidence",
+                        "skeletonLead": "",
+                        "bodyLengthTarget": {
+                            "targetChars": 70,
+                            "minChars": 40,
+                            "maxChars": 100,
+                        },
+                        "provenance": {
+                            "surveyCalibration": [],
+                            "narrativeEvidence": [],
+                            "sourceFamilies": [],
+                            "syntheticFields": ["detail"],
+                        },
+                    }
+                ],
+            }
+
+        manifest = {
+            "promptVersion": "synthetic-profile-v4.5.1",
+            "shards": [{"shardId": "s1", "profiles": ["p1", "p2"]}],
+        }
+        bundle = {
+            "shardId": "s1",
+            "profiles": [
+                {
+                    "profileSeed": "p1",
+                    "records": [
+                        {
+                            "eventId": "ev1",
+                            "title": "자료 분류 기준",
+                            "detailMd": (
+                                "서로 다른 자료 형식을 비교해 공통 분류 기준을 정리했다. "
+                                "빠진 항목은 원본과 다시 맞춰 개인 메모에 판단 이유를 남겼다."
+                            ),
+                        }
+                    ],
+                },
+                {
+                    "profileSeed": "p2",
+                    "records": [{"eventId": "ev1", "title": "자료 분류 기준", "detailMd": ""}],
+                },
+            ],
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            (root / "inputs").mkdir()
+            (root / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+            (root / "bundle.json").write_text(json.dumps(bundle, ensure_ascii=False), encoding="utf-8")
+            for seed in ("p1", "p2"):
+                (root / "inputs" / f"{seed}.json").write_text(
+                    json.dumps(input_payload(seed), ensure_ascii=False),
+                    encoding="utf-8",
+                )
+
+            with self.assertRaises(ValueError):
+                commit_bundle(root / "manifest.json", "s1", root / "bundle.json")
+
+            state_path = root / "states" / "s1.json"
+            self.assertTrue(state_path.is_file())
+            state = json.loads(state_path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                state["profiles"]["p1"]["status"],
+                "complete",
+                json.dumps(state["profiles"]["p1"], ensure_ascii=False),
+            )
+            self.assertTrue((root / "profiles" / "train" / "p1.json").is_file())
+            self.assertFalse((root / "profiles" / "train" / "p2.json").exists())
+            self.assertEqual(state["completed"], 1)
+            self.assertEqual(state["failed"], 1)
+            self.assertEqual(state["profiles"]["p2"]["status"], "failed")
+
+    def test_authorship_group_keeps_agent_profile_name_separate_from_profile_rows(self):
+        context = {
+            "shardId": "s1",
+            "profiles": [
+                {
+                    "profileSeed": "p1",
+                    "events": [{"detailLength": {"targetChars": 10}}],
+                }
+            ],
+        }
+        stream = (
+            '{"type":"item.completed","item":{"type":"agent_message","text":'
+            '"{\\"shardId\\":\\"s1\\",\\"profiles\\":[{\\"profileSeed\\":\\"p1\\",\\"records\\":[]}]}"}}'
+        )
+        with tempfile.TemporaryDirectory() as temp_dir, patch(
+            "synthetic_profile_luna_worker._run_luna_group",
+            return_value=(stream, ""),
+        ) as run_group:
+            bundle = _author_luna_profiles(
+                context=context,
+                output_root=Path(temp_dir),
+                codex_path=Path("codex"),
+                profile="synthetic-profile-generator",
+                base_prompt="prompt",
+                timeout_seconds=30,
+                max_target_chars=100,
+                max_workers=1,
+                log_label="test",
+            )
+
+        self.assertEqual(bundle["profiles"][0]["profileSeed"], "p1")
+        self.assertEqual(run_group.call_args.kwargs["profile"], "synthetic-profile-generator")
+
+    def test_commit_can_defer_cross_profile_diversity_to_the_corpus_gate(self):
+        payload = {
+            "profileSeed": "p1",
+            "profileFamily": "f1",
+            "familyVariant": 1,
+            "split": "train",
+            "domain": "ICT",
+            "careerStage": "new",
+            "persona": {"targetRoles": ["백엔드"], "experienceYears": 1},
+            "targetRecordCount": 1,
+            "renderingPolicy": "semantic-rewrite-creative-v2",
+            "bodyLengthPlan": {
+                "distributionVersion": "clipped-normal-v2",
+                "targetMinChars": 40,
+                "targetMaxChars": 800,
+                "targetMeanChars": 100,
+                "toleranceChars": 100,
+                "band": "very_short",
+                "populationMeanChars": 300,
+                "populationStdChars": 160,
+                "recordMaxChars": 1000,
+            },
+            "propertySchema": {"experience": {}},
+            "events": [
+                {
+                    "eventId": "ev1",
+                    "categoryKey": "experience",
+                    "facts": ["개발 업무를 맡았다"],
+                    "propertyKeys": [],
+                    "propertyValues": {},
+                    "renderMode": "rewrite_evidence",
+                    "skeletonLead": "",
+                    "layoutMode": "single_paragraph",
+                    "bodyLengthTarget": {"targetChars": 100, "minChars": 40, "maxChars": 180},
+                    "provenance": {"surveyCalibration": [], "narrativeEvidence": [], "sourceFamilies": [], "syntheticFields": []},
+                }
+            ],
+        }
+        manifest = {
+            "promptVersion": "synthetic-profile-v4.5.2",
+            "profiles": [{"profileSeed": "p1", "split": "train", "targetRecordCount": 1}],
+            "shards": [{"shardId": "s1", "profiles": ["p1"]}],
+        }
+        bundle = {
+            "shardId": "s1",
+            "profiles": [{"profileSeed": "p1", "records": [{"eventId": "ev1", "title": "개발 담당", "detailMd": "개발 요청을 맡아 처리 흐름과 판단 근거를 개인 기록으로 정리했다."}]}],
+        }
+        issue = {"sentence": "반복 문장", "profileSeeds": ["p1", "p2", "p3"]}
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            (root / "inputs").mkdir()
+            (root / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+            (root / "inputs" / "p1.json").write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+            (root / "bundle.json").write_text(json.dumps(bundle, ensure_ascii=False), encoding="utf-8")
+            with patch("synthetic_profile_luna_worker.find_cross_profile_sentence_repetitions", return_value=[issue]):
+                result = commit_bundle(
+                    root / "manifest.json",
+                    "s1",
+                    root / "bundle.json",
+                    defer_cross_profile_diversity=True,
+                )
+
+            self.assertEqual(result["completed"], 1)
+            self.assertTrue((root / "profiles" / "train" / "p1.json").is_file())
+
+    def test_authorship_reuses_valid_group_logs_and_calls_luna_only_for_missing_groups(self):
+        context = {
+            "shardId": "s1",
+            "profiles": [
+                {
+                    "profileSeed": "p1",
+                    "events": [{"detailLength": {"targetChars": 80}}],
+                },
+                {
+                    "profileSeed": "p2",
+                    "events": [{"detailLength": {"targetChars": 80}}],
+                },
+            ],
+        }
+
+        def stream_for(seed: str) -> str:
+            payload = {
+                "shardId": "s1",
+                "profiles": [{"profileSeed": seed, "records": []}],
+            }
+            return json.dumps(
+                {
+                    "type": "item.completed",
+                    "item": {
+                        "type": "agent_message",
+                        "text": json.dumps(payload, ensure_ascii=False),
+                    },
+                },
+                ensure_ascii=False,
+            )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_root = Path(temp_dir)
+            (output_root / "luna-profile-test-part-01-attempt-01.jsonl").write_text(
+                stream_for("p1"),
+                encoding="utf-8",
+            )
+            with patch(
+                "synthetic_profile_luna_worker._run_luna_group",
+                return_value=(stream_for("p2"), ""),
+            ) as run_group:
+                bundle = _author_luna_profiles(
+                    context=context,
+                    output_root=output_root,
+                    codex_path=Path("codex"),
+                    profile="synthetic-profile-generator",
+                    base_prompt="prompt",
+                    timeout_seconds=30,
+                    max_target_chars=100,
+                    max_workers=2,
+                    log_label="test",
+                )
+
+        self.assertEqual(
+            [profile["profileSeed"] for profile in bundle["profiles"]],
+            ["p1", "p2"],
+        )
+        self.assertEqual(run_group.call_count, 1)
+
+    def test_authorship_splits_a_group_when_luna_repeatedly_omits_profiles(self):
+        context = {
+            "shardId": "s1",
+            "profiles": [
+                {
+                    "profileSeed": "p1",
+                    "events": [{"detailLength": {"targetChars": 10}}],
+                },
+                {
+                    "profileSeed": "p2",
+                    "events": [{"detailLength": {"targetChars": 10}}],
+                },
+            ],
+        }
+
+        def stream_for(*seeds: str) -> str:
+            payload = {
+                "shardId": "s1",
+                "profiles": [
+                    {"profileSeed": seed, "records": []}
+                    for seed in seeds
+                ],
+            }
+            return json.dumps(
+                {
+                    "type": "item.completed",
+                    "item": {
+                        "type": "agent_message",
+                        "text": json.dumps(payload, ensure_ascii=False),
+                    },
+                },
+                ensure_ascii=False,
+            )
+
+        responses = [
+            (stream_for("p1"), ""),
+            (stream_for("p1"), ""),
+            (stream_for("p1"), ""),
+            (stream_for("p1"), ""),
+            (stream_for("p2"), ""),
+        ]
+        with tempfile.TemporaryDirectory() as temp_dir, patch(
+            "synthetic_profile_luna_worker._run_luna_group",
+            side_effect=responses,
+        ) as run_group:
+            bundle = _author_luna_profiles(
+                context=context,
+                output_root=Path(temp_dir),
+                codex_path=Path("codex"),
+                profile="synthetic-profile-generator",
+                base_prompt="prompt",
+                timeout_seconds=30,
+                max_target_chars=100,
+                max_workers=1,
+                log_label="test",
+            )
+
+        self.assertEqual(
+            [profile["profileSeed"] for profile in bundle["profiles"]],
+            ["p1", "p2"],
+        )
+        self.assertEqual(run_group.call_count, 5)
+
+    def test_authorship_immediately_splits_a_group_with_three_cached_failures(self):
+        context = {
+            "shardId": "s1",
+            "profiles": [
+                {"profileSeed": "p1", "events": [{"detailLength": {"targetChars": 10}}]},
+                {"profileSeed": "p2", "events": [{"detailLength": {"targetChars": 10}}]},
+            ],
+        }
+
+        def stream_for(seed: str) -> str:
+            payload = {
+                "shardId": "s1",
+                "profiles": [{"profileSeed": seed, "records": []}],
+            }
+            return json.dumps(
+                {
+                    "type": "item.completed",
+                    "item": {
+                        "type": "agent_message",
+                        "text": json.dumps(payload, ensure_ascii=False),
+                    },
+                },
+                ensure_ascii=False,
+            )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_root = Path(temp_dir)
+            for attempt in range(1, 4):
+                (output_root / f"luna-profile-test-part-01-attempt-{attempt:02d}.jsonl").write_text(
+                    stream_for("p1"),
+                    encoding="utf-8",
+                )
+            with patch(
+                "synthetic_profile_luna_worker._run_luna_group",
+                side_effect=[(stream_for("p1"), ""), (stream_for("p2"), "")],
+            ) as run_group:
+                bundle = _author_luna_profiles(
+                    context=context,
+                    output_root=output_root,
+                    codex_path=Path("codex"),
+                    profile="synthetic-profile-generator",
+                    base_prompt="prompt",
+                    timeout_seconds=30,
+                    max_target_chars=100,
+                    max_workers=1,
+                    log_label="test",
+                )
+
+        self.assertEqual(
+            [profile["profileSeed"] for profile in bundle["profiles"]],
+            ["p1", "p2"],
+        )
+        self.assertEqual(run_group.call_count, 2)
+
+    def test_selects_only_pending_luna_shards_inside_checkpoint(self):
+        manifest = {
+            "promptVersion": "synthetic-profile-test",
+            "profiles": [
+                {"profileSeed": "p1", "split": "test"},
+                {"profileSeed": "p2", "split": "test"},
+                {"profileSeed": "p3", "split": "test"},
+                {"profileSeed": "p4", "split": "test"},
+            ],
+            "shards": [
+                {"shardId": "s1", "generator": "luna", "endIndex": 10, "profiles": ["p1"]},
+                {"shardId": "s2", "generator": "qwen_windows", "endIndex": 20, "profiles": ["p2"]},
+                {"shardId": "s3", "generator": "luna", "endIndex": 30, "profiles": ["p3"]},
+                {"shardId": "s4", "generator": "luna", "endIndex": 40, "profiles": ["p4"]},
+            ],
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            complete = root / "profiles" / "test" / "p1.json"
+            complete.parent.mkdir(parents=True)
+            complete.write_text(
+                json.dumps(
+                    {
+                        "datasetMeta": {
+                            "profileSeed": "p1",
+                            "promptVersion": "synthetic-profile-test",
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            pending = select_pending_luna_shards(manifest, output_root=root, checkpoint=30)
+
+        self.assertEqual([shard["shardId"] for shard in pending], ["s3"])
+
+    def test_checkpoint_runner_continues_after_one_luna_shard_fails(self):
+        manifest = {
+            "promptVersion": "synthetic-profile-test",
+            "profiles": [
+                {"profileSeed": "p1", "split": "test"},
+                {"profileSeed": "p2", "split": "test"},
+            ],
+            "shards": [
+                {"shardId": "s1", "generator": "luna", "endIndex": 10, "profiles": ["p1"]},
+                {"shardId": "s2", "generator": "luna", "endIndex": 20, "profiles": ["p2"]},
+            ],
+        }
+        calls = []
+
+        def fake_generate(manifest_path, shard_id, **kwargs):
+            calls.append(shard_id)
+            if shard_id == "s1":
+                raise ValueError("bad shard")
+            return {"shardId": shard_id, "completed": 1, "failed": 0}
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            manifest_path = Path(temp_dir) / "manifest.json"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+            summary = run_luna_checkpoint(
+                manifest_path,
+                checkpoint=20,
+                codex_path=Path("codex"),
+                generate_shard=fake_generate,
+            )
+
+        self.assertEqual(calls, ["s1", "s2"])
+        self.assertEqual(summary["completedShards"], 1)
+        self.assertEqual(summary["failedShards"], 1)
+
+    def test_checkpoint_runner_generates_only_missing_profiles_inside_a_partial_shard(self):
+        manifest = {
+            "promptVersion": "synthetic-profile-test",
+            "profiles": [
+                {"profileSeed": "p1", "split": "test"},
+                {"profileSeed": "p2", "split": "test"},
+            ],
+            "shards": [
+                {"shardId": "s1", "generator": "luna", "endIndex": 10, "profiles": ["p1", "p2"]},
+            ],
+        }
+        calls = []
+
+        def fake_generate(manifest_path, shard_id, **kwargs):
+            calls.append(kwargs["profile_seeds"])
+            return {"shardId": shard_id, "completed": len(kwargs["profile_seeds"]), "failed": 0}
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            complete = root / "profiles" / "test" / "p1.json"
+            complete.parent.mkdir(parents=True)
+            complete.write_text(
+                json.dumps(
+                    {"datasetMeta": {"profileSeed": "p1", "promptVersion": "synthetic-profile-test"}}
+                ),
+                encoding="utf-8",
+            )
+            manifest_path = root / "manifest.json"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+            self.assertEqual(
+                select_pending_luna_profile_seeds(
+                    manifest,
+                    manifest["shards"][0],
+                    output_root=root,
+                ),
+                ["p2"],
+            )
+            summary = run_luna_checkpoint(
+                manifest_path,
+                checkpoint=10,
+                codex_path=Path("codex"),
+                generate_shard=fake_generate,
+            )
+
+        self.assertEqual(calls, [["p2"]])
+        self.assertEqual(summary["completedProfiles"], 1)
+
+    def test_checkpoint_runner_can_generate_independent_shards_in_parallel(self):
+        manifest = {
+            "promptVersion": "synthetic-profile-test",
+            "profiles": [
+                {"profileSeed": "p1", "split": "test"},
+                {"profileSeed": "p2", "split": "test"},
+            ],
+            "shards": [
+                {"shardId": "s1", "generator": "luna", "endIndex": 10, "profiles": ["p1"]},
+                {"shardId": "s2", "generator": "luna", "endIndex": 20, "profiles": ["p2"]},
+            ],
+        }
+        lock = threading.Lock()
+        active = 0
+        peak = 0
+
+        def fake_generate(manifest_path, shard_id, **kwargs):
+            nonlocal active, peak
+            with lock:
+                active += 1
+                peak = max(peak, active)
+            time.sleep(0.05)
+            with lock:
+                active -= 1
+            return {"shardId": shard_id, "completed": 1, "failed": 0}
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            manifest_path = Path(temp_dir) / "manifest.json"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            summary = run_luna_checkpoint(
+                manifest_path,
+                checkpoint=20,
+                codex_path=Path("codex"),
+                generate_shard=fake_generate,
+                max_shard_workers=2,
+                max_workers=1,
+            )
+
+        self.assertEqual(peak, 2)
+        self.assertEqual(summary["completedShards"], 2)
+
+    def test_length_repairs_never_request_more_sentences_than_the_length_contract_allows(self):
+        self.assertEqual(
+            minimum_sentences_for_repair_round(
+                base=5,
+                boost=2,
+                round_number=1,
+                maximum=7,
+            ),
+            7,
+        )
+        self.assertEqual(
+            minimum_sentences_for_repair_round(
+                base=5,
+                boost=2,
+                round_number=3,
+                maximum=7,
+            ),
+            7,
+        )
+
+    def test_partitions_profiles_by_expected_detail_characters(self):
+        profiles = [
+            {"profileSeed": "p1", "events": [{"detailLength": {"targetChars": 60}}]},
+            {"profileSeed": "p2", "events": [{"detailLength": {"targetChars": 60}}]},
+            {"profileSeed": "p3", "events": [{"detailLength": {"targetChars": 30}}]},
+        ]
+
+        groups = partition_luna_profiles(profiles, max_target_chars=100)
+
+        self.assertEqual(
+            [[profile["profileSeed"] for profile in group] for group in groups],
+            [["p1"], ["p2", "p3"]],
+        )
+
+    def test_merges_partial_bundles_in_expected_profile_order(self):
+        bundles = [
+            {"shardId": "s1", "profiles": [{"profileSeed": "p2", "records": []}]},
+            {"shardId": "s1", "profiles": [{"profileSeed": "p1", "records": []}]},
+        ]
+
+        merged = merge_luna_bundles(bundles, shard_id="s1", expected_seeds=["p1", "p2"])
+
+        self.assertEqual(
+            [profile["profileSeed"] for profile in merged["profiles"]],
+            ["p1", "p2"],
+        )
+
+    def test_replaces_only_regenerated_profiles_in_an_existing_bundle(self):
+        existing = {
+            "shardId": "s1",
+            "profiles": [
+                {"profileSeed": "p1", "records": [{"title": "keep"}]},
+                {"profileSeed": "p2", "records": [{"title": "old"}]},
+            ],
+        }
+        replacements = {
+            "shardId": "s1",
+            "profiles": [{"profileSeed": "p2", "records": [{"title": "new"}]}],
+        }
+
+        merged = replace_luna_profiles(existing, replacements)
+
+        self.assertEqual(merged["profiles"][0]["records"][0]["title"], "keep")
+        self.assertEqual(merged["profiles"][1]["records"][0]["title"], "new")
+
+    def test_increases_sentence_count_for_an_underlength_profile(self):
+        self.assertEqual(
+            sentence_boost_for_body_mean(actual_mean=267, target_mean=315, tolerance=47),
+            2,
+        )
+
+    def test_reduces_sentence_count_for_an_overlength_profile(self):
+        self.assertEqual(
+            sentence_boost_for_body_mean(actual_mean=834, target_mean=666, tolerance=100),
+            -2,
+        )
+
+    def test_keeps_sentence_count_when_profile_is_inside_tolerance(self):
+        self.assertEqual(
+            sentence_boost_for_body_mean(actual_mean=630, target_mean=666, tolerance=100),
+            0,
+        )
+
+    def test_uses_larger_boost_when_length_band_still_mismatches_inside_tolerance(self):
+        self.assertEqual(
+            sentence_boost_for_body_mean(
+                actual_mean=286,
+                target_mean=315,
+                tolerance=47,
+                band_mismatch=True,
+            ),
+            2,
+        )
+
+    def test_extracts_the_last_agent_json_bundle_from_codex_jsonl(self):
+        stream = "\n".join(
+            [
+                '{"type":"thread.started","thread_id":"t1"}',
+                '{"type":"item.completed","item":{"type":"agent_message","text":"{\\"shardId\\":\\"s1\\",\\"profiles\\":[]}"}}',
+                '{"type":"turn.completed","usage":{"input_tokens":10}}',
+            ]
+        )
+
+        bundle = parse_codex_bundle_jsonl(stream)
+
+        self.assertEqual(bundle, {"shardId": "s1", "profiles": []})
+
+    def test_uses_the_next_codex_attempt_after_malformed_json(self):
+        malformed = '{"type":"item.completed","item":{"type":"agent_message","text":"{bad json}"}}'
+        valid = '{"type":"item.completed","item":{"type":"agent_message","text":"{\\"shardId\\":\\"s1\\",\\"profiles\\":[]}"}}'
+
+        bundle = parse_codex_bundle_attempts([malformed, valid])
+
+        self.assertEqual(bundle, {"shardId": "s1", "profiles": []})
+
+    def test_uses_next_attempt_when_partial_bundle_has_wrong_profile_seed(self):
+        wrong = (
+            '{"type":"item.completed","item":{"type":"agent_message","text":'
+            '"{\\"shardId\\":\\"s1\\",\\"profiles\\":[{\\"profileSeed\\":\\"wrong\\",\\"records\\":[]}]}"}}'
+        )
+        correct = (
+            '{"type":"item.completed","item":{"type":"agent_message","text":'
+            '"{\\"shardId\\":\\"s1\\",\\"profiles\\":[{\\"profileSeed\\":\\"p1\\",\\"records\\":[]}]}"}}'
+        )
+
+        bundle = parse_codex_bundle_attempts(
+            [wrong, correct],
+            expected_shard_id="s1",
+            expected_profile_seeds=["p1"],
+        )
+
+        self.assertEqual(bundle["profiles"][0]["profileSeed"], "p1")
+
+    def test_builds_a_compact_authorship_contract_with_detail_length(self):
+        event = {
+            "eventId": "ev1",
+            "categoryKey": "experience",
+            "facts": ["자료를 정리했다"],
+            "propertyValues": {},
+            "renderMode": "fixed_skeleton",
+            "skeletonLead": "자료를 정리했다.",
+            "bodyLengthTarget": {"targetChars": 100, "minChars": 80, "maxChars": 120},
+        }
+
+        context = build_luna_event_context(event)
+
+        self.assertEqual(context["eventId"], "ev1")
+        self.assertEqual(context["detailLength"], {"targetChars": 90, "minChars": 70, "maxChars": 110})
+        self.assertEqual(context["minimumSentences"], 2)
+        self.assertNotIn("provenance", context)
+
+    def test_requires_three_sentences_for_a_hundred_ten_character_detail(self):
+        event = {
+            "eventId": "ev1",
+            "categoryKey": "experience",
+            "facts": ["자료를 정리했다"],
+            "propertyValues": {},
+            "renderMode": "fixed_skeleton",
+            "skeletonLead": "자료를 정리했다.",
+            "bodyLengthTarget": {"targetChars": 130, "minChars": 120, "maxChars": 150},
+        }
+
+        context = build_luna_event_context(event)
+
+        self.assertEqual(context["detailLength"]["minChars"], 110)
+        self.assertEqual(context["minimumSentences"], 3)
+
+    def test_overwrites_rewrite_evidence_with_a_post_sanitize_length_buffer(self):
+        event = {
+            "eventId": "ev1",
+            "categoryKey": "experience",
+            "facts": ["2023년부터 개발 업무를 맡았다"],
+            "propertyValues": {},
+            "renderMode": "rewrite_evidence",
+            "skeletonLead": "",
+            "bodyLengthTarget": {"targetChars": 120, "minChars": 80, "maxChars": 150},
+        }
+
+        context = build_luna_event_context(event)
+
+        self.assertEqual(context["postSanitizeLength"]["targetChars"], 120)
+        self.assertEqual(context["detailLength"], {"targetChars": 184, "minChars": 120, "maxChars": 232})
+        self.assertEqual(context["minimumSentences"], 11)
+        self.assertEqual(context["requiredNumbers"], ["2023"])
+        self.assertEqual(context["numericFacts"], ["2023년부터 개발 업무를 맡았다"])
+
+    def test_expands_year_month_facts_into_required_date_phrases(self):
+        event = {
+            "eventId": "ev1",
+            "categoryKey": "education_history",
+            "facts": ["2018-02에 학사 과정을 마쳤다"],
+            "propertyValues": {},
+            "renderMode": "rewrite_evidence",
+            "skeletonLead": "",
+            "bodyLengthTarget": {"targetChars": 120, "minChars": 80, "maxChars": 150},
+        }
+
+        context = build_luna_event_context(event)
+
+        self.assertEqual(context["requiredDatePhrases"], ["2018년 2월"])
+
+    def test_materializes_structural_fields_from_input_instead_of_luna_output(self):
+        payload = {
+            "profileSeed": "p1",
+            "persona": {"targetRoles": ["기획"], "experienceYears": 1},
+            "targetRecordCount": 2,
+            "events": [
+                {
+                    "eventId": "ev1",
+                    "categoryKey": "experience",
+                    "propertyValues": {"role": "인턴"},
+                    "renderMode": "fixed_skeleton",
+                    "skeletonLead": "자료를 정리했다.",
+                },
+                {
+                    "eventId": "ev2",
+                    "categoryKey": "project",
+                    "propertyValues": {},
+                    "renderMode": "rewrite_evidence",
+                    "skeletonLead": "",
+                },
+            ],
+        }
+        authored = {
+            "profileSeed": "p1",
+            "records": [
+                {"eventId": "ev1", "title": "자료 정리", "detailMd": "분류 기준을 새로 세웠다."},
+                {"eventId": "ev2", "title": "팀 프로젝트", "detailMd": "팀원과 결과물을 완성했다."},
+            ],
+        }
+
+        draft = materialize_luna_draft(payload, authored)
+
+        self.assertEqual(
+            draft,
+            {
+                "status": "generated",
+                "profileSeed": "p1",
+                "persona": {"targetRoles": ["기획"], "experienceYears": 1},
+                "records": [
+                    {
+                        "draftId": "r1",
+                        "eventId": "ev1",
+                        "categoryKey": "experience",
+                        "title": "자료 정리",
+                        "properties": {"role": "인턴"},
+                        "bodyMd": "자료를 정리했다. 분류 기준을 새로 세웠다.",
+                    },
+                    {
+                        "draftId": "r2",
+                        "eventId": "ev2",
+                        "categoryKey": "project",
+                        "title": "팀 프로젝트",
+                        "properties": {},
+                        "bodyMd": "팀원과 결과물을 완성했다.",
+                    },
+                ],
+            },
+        )
+
+    def test_materialization_trims_overlong_luna_detail_to_event_target(self):
+        payload = {
+            "profileSeed": "p1",
+            "persona": {},
+            "targetRecordCount": 1,
+            "renderingPolicy": "skeleton-grounded-creative-v1",
+            "bodyLengthPlan": {"band": "moderately_short"},
+            "propertySchema": {"project": {}},
+            "events": [
+                {
+                    "eventId": "ev1",
+                    "categoryKey": "project",
+                    "facts": ["자료 분류 기준을 정리했다"],
+                    "propertyKeys": [],
+                    "propertyValues": {},
+                    "renderMode": "rewrite_evidence",
+                    "skeletonLead": "",
+                    "bodyLengthTarget": {"targetChars": 80, "minChars": 40, "maxChars": 100},
+                }
+            ],
+        }
+        authored = {
+            "profileSeed": "p1",
+            "records": [
+                {
+                    "eventId": "ev1",
+                    "title": "자료 분류 기준",
+                    "detailMd": (
+                        "자료의 분류 기준을 먼저 확인하고 서로 다른 항목을 같은 기준으로 다시 묶었다. "
+                        "검토 과정에서 빠진 항목을 찾아 표시하고 판단 이유를 별도 메모로 남겼다. "
+                        "마지막에는 전체 목록을 처음부터 읽으며 표현이 어긋난 부분도 다시 고쳤다."
+                    ),
+                }
+            ],
+        }
+
+        draft = materialize_luna_draft(payload, authored)
+
+        self.assertLessEqual(len(draft["records"][0]["bodyMd"]), 100)
+        self.assertNotIn("마지막에는", draft["records"][0]["bodyMd"])
+
+    def test_rejects_luna_records_in_the_wrong_event_order(self):
+        payload = {
+            "profileSeed": "p1",
+            "persona": {},
+            "targetRecordCount": 2,
+            "events": [
+                {"eventId": "ev1", "categoryKey": "experience", "propertyValues": {}, "renderMode": "rewrite_evidence"},
+                {"eventId": "ev2", "categoryKey": "project", "propertyValues": {}, "renderMode": "rewrite_evidence"},
+            ],
+        }
+        authored = {
+            "profileSeed": "p1",
+            "records": [
+                {"eventId": "ev2", "title": "둘째", "detailMd": "둘째 기록이다."},
+                {"eventId": "ev1", "title": "첫째", "detailMd": "첫째 기록이다."},
+            ],
+        }
+
+        with self.assertRaisesRegex(ValueError, "event order"):
+            materialize_luna_draft(payload, authored)
+
+    def test_removes_a_duplicated_fixed_skeleton_from_luna_detail(self):
+        payload = {
+            "profileSeed": "p1",
+            "persona": {},
+            "targetRecordCount": 1,
+            "events": [
+                {
+                    "eventId": "ev1",
+                    "categoryKey": "experience",
+                    "propertyValues": {},
+                    "renderMode": "fixed_skeleton",
+                    "skeletonLead": "자료를 정리했다.",
+                }
+            ],
+        }
+        authored = {
+            "profileSeed": "p1",
+            "records": [
+                {
+                    "eventId": "ev1",
+                    "title": "자료 정리",
+                    "detailMd": "자료를 정리했다. 분류 기준을 새로 세웠다.",
+                }
+            ],
+        }
+
+        draft = materialize_luna_draft(payload, authored)
+
+        self.assertEqual(draft["records"][0]["bodyMd"], "자료를 정리했다. 분류 기준을 새로 세웠다.")
+
+    def test_rejects_sentence_repeated_across_three_profiles(self):
+        repeated = "누락된 신청 내역을 확인하고 담당자별 처리 순서를 다시 정리했다."
+        profiles = [
+            _profile("p1", repeated),
+            _profile("p2", repeated),
+            _profile("p3", repeated),
+        ]
+
+        issues = find_cross_profile_sentence_repetitions(profiles, threshold=3)
+
+        self.assertEqual(len(issues), 1)
+        self.assertEqual(issues[0]["profileCount"], 3)
+        self.assertEqual(issues[0]["occurrences"], 3)
+
+    def test_allows_sentence_used_by_at_most_two_profiles(self):
+        repeated = "누락된 신청 내역을 확인하고 담당자별 처리 순서를 다시 정리했다."
+
+        issues = find_cross_profile_sentence_repetitions(
+            [_profile("p1", repeated), _profile("p2", repeated)],
+            threshold=3,
+        )
+
+        self.assertEqual(issues, [])
+
+    def test_rejects_a_repeated_sentence_even_when_it_is_an_input_skeleton(self):
+        repeated = "사업 기획 분야에서 일정 관리와 요청 검토 업무를 함께 맡았다."
+        profiles = [
+            _profile("p1", repeated + " 첫 번째 세부 작업을 기록했다."),
+            _profile("p2", repeated + " 두 번째 세부 작업을 기록했다."),
+            _profile("p3", repeated + " 세 번째 세부 작업을 기록했다."),
+        ]
+
+        issues = find_cross_profile_sentence_repetitions(
+            profiles,
+            threshold=3,
+            ignored_sentences_by_profile={
+                "p1": {repeated.rstrip(".")},
+                "p2": {repeated.rstrip(".")},
+                "p3": {repeated.rstrip(".")},
+            },
+        )
+
+        self.assertEqual(len(issues), 1)
+        self.assertEqual(issues[0]["profileCount"], 3)
+
+    def test_rejects_same_sentence_in_two_records_of_one_profile(self):
+        repeated = "검토 기준을 표로 정리해 다음 담당자가 바로 확인할 수 있게 했다."
+
+        issues = find_intra_profile_sentence_repetitions(
+            _profile("p1", repeated, repeated)
+        )
+
+        self.assertEqual(len(issues), 1)
+        self.assertEqual(issues[0]["occurrences"], 2)
+
+
+if __name__ == "__main__":
+    unittest.main()
