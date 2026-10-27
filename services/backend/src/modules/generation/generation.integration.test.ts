@@ -25,6 +25,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB generation integration",
   let service: MongoGenerationService;
   let userId = "";
   let recipeId = "";
+  let brewId = "";
   let templateId = "";
 
   beforeAll(async () => {
@@ -37,7 +38,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB generation integration",
       const record = (await career.createRecord(userId, randomUUID(), { categoryId, title: `Grounded ${index}`, properties: {}, bodyMd: `MongoDB 운영 근거 ${index + 1}건` })).record;
       await mongoCollections(fixture.resource.db).careerRecords.updateOne({ _id: record.id }, { $set: { status: "organized" } });
     }
-    const brewId = (await new MongoMaterialsService(fixture.resource).createFreeBrew(userId, { title: "Generated portfolio", brief: "MongoDB 운영 근거", lengthPreset: "single" })).brewId;
+    brewId = (await new MongoMaterialsService(fixture.resource).createFreeBrew(userId, { title: "Generated portfolio", brief: "MongoDB 운영 근거", lengthPreset: "single" })).brewId;
     recipeId = (await new MongoRecipeService(fixture.resource).generate(userId, brewId, "mongo-generation-recipe")).id;
     templateId = (await mongoCollections(fixture.resource.db).templates.findOne({ isActive: true }))!._id;
     service = new MongoGenerationService(fixture.resource);
@@ -105,6 +106,13 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB generation integration",
     await expect(service.submit(userId, "mongo-generation-design-system-missing", {
       recipeId, designSystemRevisionId: "00000000-0000-4000-8000-000000000000",
     })).rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  it("머리말에서 붙인 제작 이름이 포트폴리오 이름이 된다", async () => {
+    await new MongoMaterialsService(fixture.resource).updateBrew(userId, brewId, { title: "토스 지원용" });
+    const submitted = await service.submit(userId, "mongo-generation-brew-title", { recipeId, templateId });
+    const prepared = await service.prepareFreeHtml(submitted.generationJobId);
+    expect((await mongoCollections(fixture.resource.db).portfolios.findOne({ _id: prepared.portfolioId! }))?.title).toBe("토스 지원용");
   });
 
   it("rolls materialization back when the charge boundary rejects the transaction", async () => {

@@ -50,9 +50,17 @@ export const BrewMaterialsSchema = z.strictObject({
   materials: z.array(BrewMaterialSchema).max(50),
 });
 
-/** 01b 오른쪽 레일의 제작 모드. `collab`은 PRO다. */
+/**
+ * 제작 한 건의 설정 변경. 보낸 칸만 바꾼다.
+ *
+ * - `mode` — 01b 오른쪽 레일의 제작 모드. `collab`은 PRO다.
+ * - `title` — 위저드 머리말의 이름. 추출이 포트폴리오를 만들 때 이 이름을 쓴다.
+ */
 export const UpdateBrewSchema = z.strictObject({
-  mode: z.enum(["solo", "collab"]),
+  mode: z.enum(["solo", "collab"]).optional(),
+  title: z.string().trim().min(1).max(300).optional(),
+}).refine((input) => input.mode !== undefined || input.title !== undefined, {
+  message: "mode or title is required",
 });
 
 export const UpdateBrewMaterialsSchema = z.strictObject({
@@ -82,6 +90,12 @@ export const BrewStateSchema = z.strictObject({
   jobAnalysisId: UuidSchema,
   status: z.enum(["draft", "interviewing", "recipe", "generating", "done"]),
   lengthPreset: z.enum(["single", "double", "triple"]),
+  /**
+   * 사용자가 머리말에서 붙인 이름. 붙이기 전에는 null이고 화면은 자유 제작
+   * 제목 → 공고 제목 순으로 대신 그린다. `freeTitle`과 따로 두는 이유 —
+   * `freeTitle`이 있으면 레시피가 자유 제작으로 짜인다.
+   */
+  title: z.string().min(1).max(300).nullable(),
   freeTitle: z.string().min(1).max(300).nullable(),
   /** 비어 있을 수 있다 — v2 는 디자인부터 고르고 설명은 나중에 받는다. */
   freeBrief: z.string().max(20_000).nullable(),
