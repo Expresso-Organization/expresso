@@ -52,15 +52,6 @@
   background: var(--ex-bg-tint);
 }
 
-.railDot {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--ex-accent);
-}
 
 .railFoot {
   margin-top: auto;
@@ -80,6 +71,7 @@
   font-size: var(--ex-text-xs);
   font-weight: 600;
   color: var(--ex-fg);
+  text-decoration: none;
 }
 
 .main {

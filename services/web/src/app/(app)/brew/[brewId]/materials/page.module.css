@@ -482,16 +482,6 @@
   line-height: 1.6;
 }
 
-.proTag {
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-3xs);
-  letter-spacing: 0.1em;
-  color: var(--ex-accent-text);
-  background: var(--ex-accent-surface);
-  border-radius: 5px;
-  padding: 2px 5px;
-  margin-left: 3px;
-}
 
 .railRow {
   display: flex;

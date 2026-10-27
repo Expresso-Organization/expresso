@@ -289,7 +289,7 @@ AI는 기본적으로 `off`입니다. API 키나 로컬 CLI 로그인이 없어�
 | `fixture` | 녹화된 응답을 이용한 CI·회귀 테스트 | 없음 | 사용 가능 |
 | `claude-code` | 로그인된 Claude Code CLI를 이용한 개발 | 로컬 CLI 로그인 | 개발 전용 |
 | `codex` | 로그인된 Codex CLI를 이용한 개발 | 로컬 CLI 로그인 | 개발 전용 |
-| `anthropic` | API 키를 이용한 운영 호출 | API 키 | 아직 미구현 |
+| `anthropic` | API 키를 이용한 운영 호출 | `ANTHROPIC_API_KEY` | 사용 가능 |
 
 ```dotenv
 # services/backend/.env
@@ -299,6 +299,8 @@ AI_TIMEOUT_MS=180000
 ```
 
 지면 생성만 별도 프로바이더로 실행하려면 `AI_PROVIDER_PAGE_GENERATION`을 사용합니다.
+검색 해석만 별도 프로바이더로 실행하려면 `AI_PROVIDER_SEARCH_INTERPRET`을 사용합니다.
+사람이 결과를 기다리는 자리라, 새 질의마다 CLI를 띄우지 않도록 `anthropic`을 권장합니다.
 개발 중 성공한 호출을 픽스처로 남겨 회귀 테스트에 쓰려면 `AI_RECORD=true`를
 설정합니다. 계약별 모델은 `AI_MODEL_JOB_ANALYSIS`, `AI_MODEL_GENERATION`처럼
 개별적으로 덮어쓸 수 있습니다.

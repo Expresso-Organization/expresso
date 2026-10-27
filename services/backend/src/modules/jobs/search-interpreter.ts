@@ -1,4 +1,5 @@
 import {
+  findKoreanPlace,
   SearchInterpretAiOutputSchema,
   type JobSearchCondition,
   type JobSearchField,
@@ -105,10 +106,20 @@ function buildPrompt(query: string): string {
   return `다음 채용 공고 검색어에서 조건을 뽑아라.\n\n---\n${query}\n---`;
 }
 
-/** 사전을 다시 한 번 통과시킨다 — 모델이 규칙을 어겨도 여기서 걸린다. */
-function canonicalize(field: AiField, rawValue: string | number): string | number | null {
+/**
+ * 사전을 다시 한 번 통과시킨다 — 모델이 규칙을 어겨도 여기서 걸린다.
+ *
+ * 지역은 모델이 "경기"로 적어도 근거(quote)가 "판교"처럼 더 좁은 장소면 그
+ * 장소로 바꾼다. 목록이 그 장소에서 가까운 순으로 나오게 하려는 것이다
+ * (`ListJobPostingsQuery.location`). 모델에게 장소 이름을 직접 고르게 하지
+ * 않는 이유는, 지역 목록 하나로 이미 맞게 답하고 있고 quote는 원문 그대로라
+ * 검증할 수 있기 때문이다.
+ */
+function canonicalize(field: AiField, rawValue: string | number, quote: string): string | number | null {
   if (field === "location") {
-    return normalizeRegion(String(rawValue));
+    const region = normalizeRegion(String(rawValue));
+    const place = findKoreanPlace(quote);
+    return place && place.region === region ? place.name : region;
   }
   if (field === "technology") {
     const lowered = String(rawValue).normalize("NFKC").toLocaleLowerCase("en-US");
@@ -224,7 +235,7 @@ export class AiSearchInterpreter implements SearchInterpreter {
       if (!normalizedQuery.includes(quote)) continue;
 
       const field = item.field as AiField;
-      const value = canonicalize(field, item.value);
+      const value = canonicalize(field, item.value, quote);
       if (value === null) continue;
 
       const dedupeKey = `${field}:${value}`;

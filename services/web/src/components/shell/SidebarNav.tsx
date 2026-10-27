@@ -4,6 +4,7 @@ import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { openSearch } from "@/components/CommandPalette";
 import { GlideMenu } from "@/components/ui/GlideMenu";
 import { Icon } from "@/components/ui/Icon";
 
@@ -55,13 +56,19 @@ export function SidebarNav({ jobCount }: { jobCount?: number | undefined }) {
   return (
     <nav aria-label="주요 이동">
       <GlideMenu className={`${styles.primary} ${styles.navGroup}`}>
-        <div className={`${styles.row} ${styles.primaryItem}`} data-row title="검색">
+        <button
+          type="button"
+          className={`${styles.row} ${styles.primaryItem} ${styles.searchRow}`}
+          data-row
+          title="검색"
+          onClick={openSearch}
+        >
           <span className={styles.rowLead}>
             <Icon name="magnifying-glass" size={14} color="var(--ex-fg-muted)" />
           </span>
           <span className={`${styles.copy} ${styles.primaryLabel}`}>검색</span>
           <span className={`${styles.copy} ${styles.shortcut}`}>⌘K</span>
-        </div>
+        </button>
         {PRIMARY_ITEMS.map((item) => (
           <Link
             key={item.key}

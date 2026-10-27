@@ -91,6 +91,8 @@ export interface NotificationDoc {
   userId: string;
   kind: "deadline" | "saved_search" | "generation" | "traffic";
   targetUrl: string;
+  /** 알림이 가리키는 대상 이름. 0020 이전 알림에는 없다. */
+  subject?: string | null;
   dedupeKey: string;
   readAt?: Date | null;
   dedupeDate: string;

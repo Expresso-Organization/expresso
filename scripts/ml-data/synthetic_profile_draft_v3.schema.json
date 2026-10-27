@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://expresso.local/schemas/synthetic-profile-draft-v3.json",
+  "title": "Expresso synthetic profile draft v3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status", "profileSeed", "persona", "records", "recordEvidence"],
+  "properties": {
+    "status": {"const": "generated"},
+    "profileSeed": {"type": "string", "minLength": 1},
+    "persona": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["targetRoles", "experienceYears", "primaryGoal"],
+      "properties": {
+        "targetRoles": {
+          "type": "array",
+          "items": {"type": "string"},
+          "maxItems": 8
+        },
+        "experienceYears": {"type": "integer", "minimum": 0, "maximum": 12},
+        "primaryGoal": {"type": "string", "enum": ["explore", "build", "organize"]}
+      }
+    },
+    "records": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["draftId", "categoryKey", "title", "properties", "bodyMd"],
+        "properties": {
+          "draftId": {"type": "string", "pattern": "^r[1-6]$"},
+          "categoryKey": {
+            "type": "string",
+            "enum": [
+              "experience",
+              "project",
+              "education_history",
+              "certification_award",
+              "academic_writing",
+              "activity_leadership",
+              "skill_tool"
+            ]
+          },
+          "title": {"type": "string", "minLength": 1, "maxLength": 100},
+          "properties": {"type": "object"},
+          "bodyMd": {"type": "string", "minLength": 40, "maxLength": 450}
+        }
+      }
+    },
+    "recordEvidence": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["draftId", "evidenceIds"],
+        "properties": {
+          "draftId": {"type": "string", "pattern": "^r[1-6]$"},
+          "evidenceIds": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {"type": "string", "pattern": "^e[1-9][0-9]*$"}
+          }
+        }
+      }
+    }
+  }
+}

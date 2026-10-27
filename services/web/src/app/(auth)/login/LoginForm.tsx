@@ -164,6 +164,12 @@ export function LoginForm({
               회원가입
             </Link>
           </div>
+          {/* 삭제를 요청한 계정은 로그인할 수 없다. 받은 취소 코드로 되돌리는 자리. */}
+          <div className={styles.foot}>
+            <Link href="/login/restore" className={styles.footLink}>
+              계정 삭제 취소
+            </Link>
+          </div>
         </div>
       </div>
       {demoAccount !== undefined ? (
