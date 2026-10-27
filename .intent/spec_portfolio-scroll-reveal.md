@@ -15,6 +15,7 @@ date: 2026-10-28
 - [ ] 직계 자식이 `ul` · `ol` · `[data-reveal="stagger"]`이면 그 자식 대신 그 안의 항목이 등장 단위다.
 - [ ] 같은 부모 안 2 · 3 · 4번째 이후 단위는 등장 구간 시작이 `--component-gap`의 1 · 2 · 3배씩 늦다.
 - [ ] 단위마다 자기 `view()` 타임라인을 쓴다. 구간은 `cover 0` → `cover 25vh`(+ 차례 오프셋)이다. 단위는 화면 아래 4분의 1을 지나는 동안 나타난다.
+- [ ] 문서 끝에서 더 내릴 수 없어 선을 넘지 못한 단위는 문서 스크롤 타임라인(`scroll(root)`)의 마지막 25vh 동안 `xp-settle`(끝 상태만 있는 키프레임)로 마저 불투명해진다. 끝까지 내리면 화면 안 단위는 모두 `opacity 1`이다.
 - [ ] 떠오르는 거리는 `--element-gap`, 곡선은 `--motion-easing`이다. 키트 보정 변수 `--xp-reveal-rise` · `--xp-reveal-step`으로 둔다.
 - [ ] 등장 규칙은 `@media (prefers-reduced-motion:no-preference)` 안의 `@supports (animation-timeline:view())` 안에서만 선언한다. 둘 중 하나라도 맞지 않으면 등장 선언이 없다. 그래서 시작 상태도 없다.
 - [ ] `[data-reveal="none"]` 요소와 그 자손은 등장하지 않는다. `<html data-reveal="none">`은 문서 전체를 끈다.
@@ -66,6 +67,8 @@ flowchart TD
 ```
 
 ## 버린 대안
+
+- 문서 끝 처리로 `.xp-inner` 아래 여백을 25vh 늘리기: 지면 끝에 빈 화면이 생긴다. 구간 끝을 `entry 100%`로 바꾸기: 짧은 단위가 몇 px 스크롤에 한꺼번에 나타난다.
 
 - 블록 전체를 한 단위로 두기(지금 방식): 긴 사례에서 아래 그림이 화면 밖일 때 등장이 끝난다.
 - `animation-delay`로 차례 만들기: Chrome 151 프로브에서 스크롤 타임라인 아래 `200ms` 지연이 값만 남고 진행에 영향이 없었다. 구간 시작을 미는 방식만 동작한다.

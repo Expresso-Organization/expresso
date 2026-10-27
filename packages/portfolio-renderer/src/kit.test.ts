@@ -393,10 +393,14 @@ describe("등장 규칙(data-reveal)", () => {
     const rule = KIT_CSS.slice(supportsStart, supportsEnd);
     expect(rule).toContain(':root:not([data-stage]) .xp-page:not([data-motion="none"]) .xp-block:not([data-reveal="none"],[data-reveal="none"] *)>:not(ul,ol,[data-reveal])');
     expect(rule).toContain('>:is(ul,ol,[data-reveal="stagger"])>:not([data-reveal="none"])');
-    expect(rule).toContain("animation-range:cover 0% cover 25vh");
-    expect(rule).toContain("animation-range:cover calc(var(--xp-reveal-step) * 3) cover calc(25vh + var(--xp-reveal-step) * 3)");
+    expect(rule).toContain("animation:xp-rise var(--motion-easing) both,xp-settle linear forwards;animation-timeline:view(),scroll(root);animation-range:cover 0% cover 25vh,calc(100% - 25vh) 100%");
+    expect(rule).toContain("animation-range:cover calc(var(--xp-reveal-step) * 3) cover calc(25vh + var(--xp-reveal-step) * 3),calc(100% - 25vh) 100%");
     // 예전의 최상위 블록 단위 규칙은 그룹 안 블록을 놓쳤습니다.
     expect(KIT_CSS).not.toContain(".xp-inner>.xp-block{animation");
+  });
+
+  it("문서 끝 마무리는 끝 상태만 적어 앞 애니메이션의 현재 값에서 이어 간다", () => {
+    expect(KIT_CSS).toContain("@keyframes xp-settle{to{opacity:1;transform:none}}");
   });
 
   it("떠오르는 거리와 순서 간격을 디자인의 간격 토큰에서 가져온다", () => {

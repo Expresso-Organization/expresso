@@ -1,5 +1,5 @@
 // 저장된 지면을 지금 키트로 다시 그려 스크롤 등장(data-reveal)을 브라우저에서 잽니다.
-// 사용: pnpm --filter @expresso/backend exec tsx ../../scripts/library/renderer/verify-reveal.ts --page <generated_pages _id> [--browser chromium|webkit] [--frame] [--reduced-motion] [--no-supports] [--stage] [--editor] [--shots <폴더>]
+// 사용: pnpm --filter @expresso/backend exec tsx ../../scripts/library/renderer/verify-reveal.ts --page <generated_pages _id> [--browser chromium|webkit] [--frame] [--reduced-motion] [--no-supports] [--stage] [--editor] [--short-tail] [--shots <폴더>]
 // --frame은 공개 사이트(`/site/[slug]`)처럼 문서를 `sandbox="allow-popups"` iframe의 `srcdoc`으로 싣고 그 안에서 스크롤합니다.
 // 접속 설정은 services/backend/.env의 MONGODB_URL · MONGODB_DATABASE를 읽습니다. 값은 출력하지 않습니다.
 import fs from "node:fs";
@@ -24,6 +24,7 @@ const { values: args } = parseArgs({
     frame: { type: "boolean", default: false },
     stage: { type: "boolean", default: false },
     editor: { type: "boolean", default: false },
+    "short-tail": { type: "boolean", default: false },
     shots: { type: "string" },
   },
 });
@@ -114,6 +115,15 @@ try {
     } else {
       await page.setContent(document_, { waitUntil: "load" });
     }
+    // 문서 끝 재현: 디자인 중 가장 좁은 섹션 간격(56px)과 한 줄짜리 마지막 블록입니다. 더 내릴 수 없는 자리의 단위가 다 보이는지 봅니다.
+    if (args["short-tail"]) await target.evaluate(() => {
+      const page = document.querySelector<HTMLElement>(".xp-page")!;
+      page.style.setProperty("--section-gap", "56px");
+      const tail = document.createElement("section");
+      tail.className = "xp-block";
+      tail.innerHTML = "<p>마지막 한 줄</p><p>그다음 한 줄</p>";
+      document.querySelector(".xp-inner")!.insertBefore(tail, document.querySelector(".xp-footer"));
+    });
     // 생성 화면(`LivePreview`)이 청사진 단계에서 거는 루트 속성입니다.
     if (args.stage) await target.evaluate(() => { document.documentElement.dataset.stage = "blueprint"; });
     await target.evaluate(() => document.fonts.ready);
@@ -146,9 +156,15 @@ try {
           await page.screenshot({ path: path.join(args.shots, `${engine}-${width}-${y}.png`) });
         }
       }
-      const animated = first.units.filter((unit) => unit.animation === "xp-rise");
+      // 문서 끝에서는 더 스크롤할 수 없습니다. 끝까지 내렸을 때 화면 안의 단위는 모두 다 보여야 합니다.
+      await target.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+      await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
+      const end = await target.evaluate(snapshot);
+      for (const unit of end.units)
+        if (unit.bottom > 0 && unit.top < end.height && unit.opacity < 0.99) failures.push(`${width}px 문서 끝: ${unit.name}의 위쪽이 ${Math.round(unit.top)}px인데 불투명도 ${unit.opacity.toFixed(2)}`);
+      const animated = first.units.filter((unit) => unit.animation.split(", ").includes("xp-rise"));
       const grouped = first.units.filter((unit) => unit.grouped);
-      if (grouped.length && !grouped.every((unit) => unit.animation === "xp-rise")) failures.push(`${width}px: 그룹 안 단위에 등장이 걸리지 않았습니다`);
+      if (grouped.length && !grouped.every((unit) => unit.animation.split(", ").includes("xp-rise"))) failures.push(`${width}px: 그룹 안 단위에 등장이 걸리지 않았습니다`);
       console.log(`${width}px 단위 ${first.units.length}개 · 등장 선언 ${animated.length}개 · 그룹 안 ${grouped.length}개 · 스크롤 중 나타나는 모습을 본 단위 ${revealed.size}개`);
       if (!revealed.size) failures.push(`${width}px: 나타나는 중인 단위를 한 번도 보지 못했습니다`);
     }

@@ -38,6 +38,12 @@ const REVEAL_OFF = `[data-reveal="none"],[data-reveal="none"] *`;
  * 늘 불투명합니다. `entry` 백분율은 단위 높이에 따라 거리가 달라져 쓰지 않습니다.
  */
 const REVEAL_ZONE = "25vh";
+/**
+ * 문서 끝 마무리 구간입니다. 문서 끝에서는 더 내릴 수 없어 마지막 단위의 위쪽이 `REVEAL_ZONE` 선을 넘지 못할 수 있습니다.
+ * 그 단위는 문서 스크롤 타임라인(`scroll(root)`)의 마지막 `REVEAL_ZONE` 동안 `xp-settle`이 마저 불투명하게 만듭니다.
+ * `xp-settle`은 끝 상태만 적어 시작 값으로 앞 애니메이션의 현재 값을 이어받으므로, 이미 다 보인 단위에는 영향이 없습니다.
+ */
+const REVEAL_TAIL = `calc(100% - ${REVEAL_ZONE}) 100%`;
 /** 등장 단위 선택자입니다. `nth`는 같은 부모 안의 순서 조건입니다. 스크롤 타임라인에서는 `animation-delay`가 진행에 영향을 주지 않아 순서는 구간 시작으로 밉니다. */
 function revealUnits(nth: string): string {
   const block = `${REVEAL_ON} .xp-block:not(${REVEAL_OFF})`;
@@ -381,6 +387,7 @@ export const KIT_CSS = String.raw`
 /* 모션 — 디자인의 시간·곡선·간격. 등장 규칙은 위 REVEAL_* 주석을 봅니다 */
 .xp-page{--xp-reveal-rise:var(--element-gap);--xp-reveal-step:var(--component-gap)}
 @keyframes xp-rise{from{opacity:0;transform:translateY(var(--xp-reveal-rise))}to{opacity:1;transform:none}}
+@keyframes xp-settle{to{opacity:1;transform:none}}
 @keyframes xp-marquee{from{transform:translateX(0)}to{transform:translateX(-100%)}}
 @media (prefers-reduced-motion:no-preference){
   .xp-marquee ul{animation:xp-marquee 32s linear infinite}
@@ -389,10 +396,10 @@ export const KIT_CSS = String.raw`
   ${REVEAL_ON} .xp-hero:not(${REVEAL_OFF})>:nth-child(3){animation-delay:120ms}
   ${REVEAL_ON} .xp-hero:not(${REVEAL_OFF})>:nth-child(n+4){animation-delay:180ms}
   @supports (animation-timeline:view()){
-    ${revealUnits("")}{animation:xp-rise var(--motion-easing) both;animation-timeline:view();animation-range:cover 0% cover ${REVEAL_ZONE}}
-    ${revealUnits(":nth-child(2)")}{animation-range:cover var(--xp-reveal-step) cover calc(${REVEAL_ZONE} + var(--xp-reveal-step))}
-    ${revealUnits(":nth-child(3)")}{animation-range:cover calc(var(--xp-reveal-step) * 2) cover calc(${REVEAL_ZONE} + var(--xp-reveal-step) * 2)}
-    ${revealUnits(":nth-child(n+4)")}{animation-range:cover calc(var(--xp-reveal-step) * 3) cover calc(${REVEAL_ZONE} + var(--xp-reveal-step) * 3)}
+    ${revealUnits("")}{animation:xp-rise var(--motion-easing) both,xp-settle linear forwards;animation-timeline:view(),scroll(root);animation-range:cover 0% cover ${REVEAL_ZONE},${REVEAL_TAIL}}
+    ${revealUnits(":nth-child(2)")}{animation-range:cover var(--xp-reveal-step) cover calc(${REVEAL_ZONE} + var(--xp-reveal-step)),${REVEAL_TAIL}}
+    ${revealUnits(":nth-child(3)")}{animation-range:cover calc(var(--xp-reveal-step) * 2) cover calc(${REVEAL_ZONE} + var(--xp-reveal-step) * 2),${REVEAL_TAIL}}
+    ${revealUnits(":nth-child(n+4)")}{animation-range:cover calc(var(--xp-reveal-step) * 3) cover calc(${REVEAL_ZONE} + var(--xp-reveal-step) * 3),${REVEAL_TAIL}}
   }
 }
 @media print{
