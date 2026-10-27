@@ -625,15 +625,6 @@
   color: var(--ex-fg);
 }
 
-.proBadge {
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-3xs);
-  letter-spacing: 0.08em;
-  color: var(--ex-accent-text);
-  background: var(--ex-accent-surface);
-  border-radius: 4px;
-  padding: 2px 6px;
-}
 
 .orgRow {
   display: flex;

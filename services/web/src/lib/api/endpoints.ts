@@ -77,6 +77,10 @@ import {
   DesignSystemRevisionResponseSchema,
   DesignSelectionResponseSchema,
   GenerationJobStatusResponseSchema,
+  AccountExportSchema,
+  DeletionRequestSchema,
+  NotificationPreferenceSchema,
+  type NotificationKind,
   type CreateBrew,
   type CreateFreeBrew,
   type SubmitGeneration,
@@ -244,6 +248,42 @@ export const entitlements = {
       EntitlementDecisionResponseSchema,
       { accessToken, cache: "no-store" },
     ),
+};
+
+/** 09 설정 — 알림 종류마다 켜고 끈다. */
+export const notificationSettings = {
+  list: (accessToken: string) =>
+    request(`${API_PREFIX}/notification-preferences`, z.strictObject({ data: z.array(NotificationPreferenceSchema) }), {
+      accessToken,
+      cache: "no-store",
+    }),
+  set: (accessToken: string, kind: NotificationKind, enabled: boolean) =>
+    request(`${API_PREFIX}/notification-preferences/${kind}`, z.strictObject({ data: NotificationPreferenceSchema }), {
+      method: "PUT",
+      accessToken,
+      body: { enabled },
+    }),
+};
+
+/** 09 설정 — 내 데이터 내보내기 · 계정 삭제와 취소. */
+export const account = {
+  exportData: (accessToken: string) =>
+    request(`${API_PREFIX}/account/export`, z.strictObject({ data: AccountExportSchema }), {
+      accessToken,
+      cache: "no-store",
+    }),
+  /** 취소 코드는 이 응답에만 한 번 실린다. */
+  requestDeletion: (accessToken: string) =>
+    request(`${API_PREFIX}/account/deletion`, z.strictObject({ data: DeletionRequestSchema }), {
+      method: "POST",
+      accessToken,
+    }),
+  /** 로그인 없이 취소 코드로 되돌린다. */
+  cancelDeletion: (cancellationToken: string) =>
+    request(`${API_PREFIX}/account/deletion/cancel`, z.strictObject({ data: DeletionRequestSchema }), {
+      method: "POST",
+      body: { cancellationToken },
+    }),
 };
 
 export const publishing = {
