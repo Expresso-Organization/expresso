@@ -14,8 +14,8 @@ date: 2026-10-27
 
 | 파일 | 무엇을 |
 |---|---|
-| `services/web/src/lib/auth/dev-login.ts` | 새 파일. `readDevLogin()` · `isDevLoginEnabled()` — 조건 한 곳 |
-| `services/web/src/lib/auth/dev-login.test.ts` | 새 파일. 켜짐·꺼짐 다섯 경우 |
+| `services/web/src/lib/auth/dev-login.ts` | 새 파일. `readDevLogin()` · `isDevLoginEnabled()` · `isDevLoginAutoRedirectEnabled()` — 조건 한 곳 |
+| `services/web/src/lib/auth/dev-login.test.ts` | 새 파일. 켜짐·꺼짐과 자동 전환 경우 |
 | `services/web/src/app/(auth)/login/demo-account.ts` | 삭제 |
 | `services/web/src/app/(auth)/login/demo-account.test.ts` | 삭제 |
 | `services/web/src/app/(auth)/login/page.tsx` | `readDemoAccount()` → `isDevLoginEnabled()`, 주석의 "데모 계정" 문장 수정 |
@@ -23,7 +23,7 @@ date: 2026-10-27
 | `services/web/src/app/(auth)/auth.module.css` | 팝오버 전용 클래스 제거, `.demoButton`에 링크용 속성(`text-decoration`) 보강 |
 | `services/web/src/app/api/dev/session/route.ts` | 자체 `readDevLogin()` 제거하고 새 모듈 사용, 주석의 404 조건 수정 |
 | `services/web/src/app/api/dev/session/route.test.ts` | 프로덕션 케이스를 "세 값이 있으면 303"으로 수정 |
-| `services/web/src/proxy.ts` | `devLoginEnabled()` → `isDevLoginEnabled()` |
+| `services/web/src/proxy.ts` | `devLoginEnabled()` → `isDevLoginAutoRedirectEnabled()` — 로그인 화면 건너뛰기는 개발 서버만 |
 | `services/web/.env.example` | 프로덕션 404 문구 수정, 배포 서버에서 켜는 방법 한 줄 |
 | `AGENTS.md` | 「돌려 보기」의 프로덕션 404 문장 수정 |
 | `docs/operations/DEPLOYMENT.md` | 서버 `services/web/.env`에 넣을 세 줄과 재시작 명령 |

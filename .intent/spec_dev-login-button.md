@@ -20,7 +20,10 @@ date: 2026-10-27
 - [ ] 로그인 화면이 보내는 HTML에 비밀번호가 들어가지 않는다.
 - [ ] `/api/dev/session`은 지금처럼 `auth.login` → (401이면) `auth.signup` 순서로
       제품의 실제 로그인을 수행하고 `ex_session` 쿠키를 찍는다.
-- [ ] 프록시(`proxy.ts`)의 개발 로그인 분기는 `DEV_LOGIN=1`만 보고 열린다.
+- [ ] 프록시(`proxy.ts`)가 세션 없는 요청을 로그인 화면 대신 `/api/dev/session`으로
+      바로 보내는 전환은 **개발 서버에서만** 한다. 배포본에서는 로그인 화면이 서고
+      버튼을 누른 사람만 들어간다 — 켜 둔 배포본을 방문한 사람이 누르지 않은
+      로그인을 당하지 않아야 한다.
 
 ## 설계
 
@@ -29,10 +32,11 @@ date: 2026-10-27
 `api/dev/session/route.ts`(`NODE_ENV !== production` + `DEV_LOGIN=1` + 이메일·비밀번호),
 `proxy.ts`(`NODE_ENV !== production` + `DEV_LOGIN=1`).
 
-- `services/web/src/lib/auth/dev-login.ts`를 새로 만들고 `readDevLogin()`과
-  `isDevLoginEnabled()`를 둔다. 조건은 `DEV_LOGIN === "1"` + 이메일 + 비밀번호
-  — `NODE_ENV`를 보지 않는다. 라우트는 `readDevLogin()`, 로그인 화면과 프록시는
-  `isDevLoginEnabled()`를 쓴다.
+- `services/web/src/lib/auth/dev-login.ts`를 새로 만들고 `readDevLogin()` ·
+  `isDevLoginEnabled()` · `isDevLoginAutoRedirectEnabled()`를 둔다. 켜는 조건은
+  `DEV_LOGIN === "1"` + 이메일 + 비밀번호이고 `NODE_ENV`를 보지 않는다. 라우트는
+  `readDevLogin()`, 로그인 화면은 `isDevLoginEnabled()`, 프록시는 자동 전환만
+  판단하는 `isDevLoginAutoRedirectEnabled()`(= 켜짐 + 프로덕션 아님)를 쓴다.
 - `demo-account.ts`와 그 테스트를 지운다. `LoginPage`는 `devLoginEnabled` 불리언
   하나를 `LoginForm`에 넘긴다.
 - `LoginForm`의 `demoDock` 안을 `<a className={styles.demoButton} href=...>` 하나로

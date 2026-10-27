@@ -2,37 +2,21 @@ import { TERMS_VERSION } from "@expresso/contracts";
 
 import { ApiError } from "@/lib/api/client";
 import { auth } from "@/lib/api/endpoints";
+import { readDevLogin, type DevLogin } from "@/lib/auth/dev-login";
 import { safeNext } from "@/lib/auth/next-path";
 import { writeAccessToken } from "@/lib/session";
 
 /**
  * 개발용 세션 발급. 매번 손으로 로그인하지 않고 화면을 확인하기 위한 문이다.
  *
- * 인증을 우회하지 않는다 — 개발자가 자기 기계의 환경 변수에 적어 둔 계정으로
- * 제품의 실제 로그인을 대신 수행할 뿐이다. 그래서 여기서 만들어지는 세션은
- * 사람이 로그인해 얻는 세션과 같은 것이고, 권한도 같다.
+ * 인증을 우회하지 않는다 — 환경 변수에 적어 둔 계정으로 제품의 실제 로그인을
+ * 대신 수행할 뿐이다. 그래서 여기서 만들어지는 세션은 사람이 로그인해 얻는
+ * 세션과 같은 것이고, 권한도 같다.
  *
- * 다음 셋이 모두 참일 때만 라우트가 응답한다. 하나라도 아니면 404다.
- *  - 프로덕션 빌드가 아니다
- *  - DEV_LOGIN=1 을 명시적으로 켰다
- *  - DEV_LOGIN_EMAIL 과 DEV_LOGIN_PASSWORD 가 둘 다 있다
+ * 응답하는 조건은 `readDevLogin()` 한 곳에 있다 — `DEV_LOGIN=1` 과
+ * `DEV_LOGIN_EMAIL` · `DEV_LOGIN_PASSWORD`. 하나라도 아니면 404다.
  */
 export const dynamic = "force-dynamic";
-
-interface DevLogin {
-  email: string;
-  password: string;
-  displayName: string;
-}
-
-function readDevLogin(): DevLogin | null {
-  if (process.env.NODE_ENV === "production") return null;
-  if (process.env.DEV_LOGIN !== "1") return null;
-  const email = process.env.DEV_LOGIN_EMAIL;
-  const password = process.env.DEV_LOGIN_PASSWORD;
-  if (!email || !password) return null;
-  return { email, password, displayName: process.env.DEV_LOGIN_NAME ?? "Dev" };
-}
 
 export async function GET(request: Request): Promise<Response> {
   const login = readDevLogin();
