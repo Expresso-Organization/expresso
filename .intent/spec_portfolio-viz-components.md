@@ -57,7 +57,7 @@ flowchart TD
 
 ## 함정
 
-- 청사진(`blueprintContent`)은 기간 칸이 자리 표지라 읽지 못해 작업 기간 차트 대신 `rows`로 보입니다. 채운 뒤 차트로 바뀝니다.
+- 청사진(`blueprintContent`)의 기간 · 수치 칸은 자리 표지라 읽지 못합니다. `renderBlueprint`가 `fitToContent`를 먼저 지나므로 작업 기간 차트는 `rows`로, 경력 기간 차트는 목록으로, 막대 차트는 기술형으로 보입니다. 채운 뒤 차트로 바뀝니다.
 - `metricNumber`는 앞자리 숫자만 읽습니다. "약 3배"는 읽지 못하므로 막대 없이 그려집니다.
 - 모델 스키마의 목차 `variant`는 지금 `["rows","mosaic","rail"]`로 직접 적혀 있습니다. 여기에 `timeline`을 더해야 모델이 고를 수 있습니다.
 - 렌더 결과가 `now`에 따라 달라집니다. 테스트는 `now`를 고정해 넘깁니다.

@@ -224,6 +224,34 @@ describe("청사진과 순차 채움", () => {
   });
 });
 
+describe("차트 부품의 청사진", () => {
+  it("막대 차트 · 기간 차트를 고른 설계도 청사진을 낸다 — 표지로는 길이 · 기간을 읽지 못해 기술형 · 목록으로 그린다", async () => {
+    const charted = {
+      ...spec,
+      elements: {
+        ...spec.elements,
+        index: { ...spec.elements.index, props: { ...spec.elements.index.props, variant: "timeline" } },
+        career: { ...spec.elements.career, props: { ...spec.elements.career.props, variant: "chart" } },
+        "section-ui": { type: "CaseBars", props: { section: { $state: "/sectionById/ui" } }, children: [] },
+      },
+    };
+    const barsPlan = { ...plan, career: true, sections: plan.sections.map((item) => (item.id === "ui" ? { ...item, form: "bars", budget: { ...item.budget, metrics: 2 } } : item)) };
+    const pages: { html: string }[] = [];
+    const sink = { delta: () => undefined, thinking: () => undefined, blueprint: (page: { html: string; css: string }) => pages.push(page), stage: () => undefined };
+    const errors: string[] = [];
+    const original = console.error;
+    console.error = (line: string) => { errors.push(String(line)); };
+    try {
+      await new StructuredPageGenerator(new RoutedAi((request) => (request.contract === "page_design" ? { plan: barsPlan, spec: charted } : fill()))).generate(context, sink as never);
+    } finally {
+      console.error = original;
+    }
+    expect(errors.filter((line) => line.includes("blueprint_failed"))).toEqual([]);
+    expect(pages).toHaveLength(1);
+    expect(pages[0]!.html).toContain('data-case-type="technical"');
+  });
+});
+
 describe("기간 숫자", () => {
   it("섹션 · 경력 기간에 출처에 없는 숫자가 있으면 그 칸만 고쳐 받는다", () => {
     const filled = fill();
