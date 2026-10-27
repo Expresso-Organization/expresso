@@ -5,6 +5,7 @@ import {
   PageLibraryResultSchema,
   type PageLibrarySearch,
   type RegeneratePage,
+  type RestorePageRevision,
   type EditStructuredPage,
   type CreateMediaBlock,
   AnalyticsDashboardResponseSchema,
@@ -52,7 +53,6 @@ import {
   type EntitlementCapability,
   ApplyPortfolioEditResultSchema,
   type PublishPortfolio,
-  type SubmitExport,
   PortfolioEditProposalSchema,
   type ConsentScope,
   type PortfolioEditCommand,
@@ -102,7 +102,7 @@ import {
 } from "@expresso/contracts";
 import { z } from "zod";
 
-import { API_BASE_URL, request, requestNoContent } from "./client";
+import { API_BASE_URL, request, requestNoContent, requestText } from "./client";
 
 export const auth = {
   signup: (input: Signup) =>
@@ -358,19 +358,6 @@ export const publishing = {
       `${API_PREFIX}/portfolios/${portfolioId}/publication`,
       z.strictObject({ data: z.strictObject({ portfolioId: z.uuid(), status: z.literal("unlisted") }) }),
       { accessToken, method: "DELETE" },
-    ),
-
-  /** PDF · 덱 내보내기. 잡을 돌려주고 워커가 만든다. */
-  submitExport: (
-    accessToken: string,
-    portfolioId: string,
-    input: SubmitExport,
-    idempotencyKey: string,
-  ) =>
-    request(
-      `${API_PREFIX}/portfolios/${portfolioId}/exports`,
-      z.strictObject({ data: z.looseObject({ id: z.uuid(), status: z.string() }) }),
-      { accessToken, method: "POST", body: input, idempotencyKey },
     ),
 };
 
@@ -1125,4 +1112,16 @@ export const page = {
       z.object({ data: GeneratedPageSchema }),
       { method: "POST", accessToken, body },
     ),
+
+  /** 고른 판을 새 판으로 다시 쌓는다(되돌리기). */
+  restore: (accessToken: string, portfolioId: string, body: RestorePageRevision) =>
+    request(
+      `${API_PREFIX}/portfolios/${portfolioId}/page/restore`,
+      z.object({ data: GeneratedPageSchema }),
+      { method: "POST", accessToken, body },
+    ),
+
+  /** 지금 판의 공개 문서. 미리보기 라우트가 그대로 넘긴다. */
+  document: (accessToken: string, portfolioId: string) =>
+    requestText(`${API_PREFIX}/portfolios/${portfolioId}/page/document`, { accessToken, cache: "no-store" }),
 };

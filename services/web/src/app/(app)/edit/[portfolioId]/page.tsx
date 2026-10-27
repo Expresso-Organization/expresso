@@ -11,8 +11,7 @@ import { Editor } from "./Editor";
  * 04 · 04b · 04c 다듬기. 에디터 셸은 앱 셸을 쓰지 않고 사이드바를 56px
  * 아이콘 레일로 접는다 (§4.3).
  *
- * 섹션 · 블록 · 배포 상태 · 변경 이력은 실제 API에서 옵니다. 채팅과 속성 탭은
- * 블록 편집 API와 AI 계약이 아직 없어 예시 데이터로 둡니다.
+ * 섹션 · 블록 · 배포 상태 · 변경 이력 · 생성 지면은 모두 실제 API에서 옵니다.
  */
 export default async function EditPage({
   params,
@@ -24,6 +23,7 @@ export default async function EditPage({
 
   let portfolio;
   let revisions: readonly PortfolioRevision[] = [];
+  let revisionsCursor: string | null = null;
   let checkpoints: { id: string; label: string; createdAt: string }[] = [];
   let generatedPage: GeneratedPage | null = null;
   let libraryItems: PageLibraryItem[] = [];
@@ -36,6 +36,7 @@ export default async function EditPage({
     ]);
     portfolio = detail.data;
     revisions = history.data.revisions;
+    revisionsCursor = history.page.hasNextPage ? history.page.nextCursor : null;
     checkpoints = history.data.checkpoints.map((checkpoint) => ({
       id: checkpoint.id,
       label: checkpoint.label,
@@ -68,6 +69,7 @@ export default async function EditPage({
       displayName={session.user.displayName}
       portfolio={portfolio}
       revisions={revisions}
+      revisionsCursor={revisionsCursor}
       checkpoints={checkpoints}
       generatedPage={generatedPage}
       generatedPageHistory={generatedPageHistory}

@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { AppBody, DocumentHeader } from "@/components/shell/AppShell";
 import { Icon } from "@/components/ui/Icon";
 import { ApiError } from "@/lib/api/client";
-import { entitlements, page as pageApi, portfolios, publishing } from "@/lib/api/endpoints";
+import { page as pageApi, portfolios, publishing } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 import { DeployPanel } from "./DeployPanel";
@@ -37,9 +37,8 @@ export default async function DeployPage({
     throw error;
   }
 
-  const [{ data: deployments }, exportable, generatedPage] = await Promise.all([
+  const [{ data: deployments }, generatedPage] = await Promise.all([
     publishing.deployments(session.accessToken, portfolioId),
-    entitlements.check(session.accessToken, "export.document"),
     pageApi.latest(session.accessToken, portfolioId)
       .then(({ data }) => data)
       .catch((error: unknown) => {
@@ -91,7 +90,6 @@ export default async function DeployPage({
         crumbs={[portfolio.title, "배포"]}
         actions={
           <>
-            <span className={styles.headSaved}>저장됨</span>
             <Link href={editor} className={styles.headGhost}>
               편집으로
             </Link>
@@ -114,7 +112,6 @@ export default async function DeployPage({
               portfolio={portfolio}
               deployments={deployments}
               checks={checks}
-              canExport={exportable.data.allowed}
             />
 
             <div className={styles.footNote}>

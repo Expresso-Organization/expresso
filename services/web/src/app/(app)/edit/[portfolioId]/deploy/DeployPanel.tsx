@@ -37,12 +37,10 @@ export function DeployPanel({
   portfolio,
   deployments,
   checks,
-  canExport,
 }: {
   portfolio: PortfolioDetail;
   deployments: DeploymentSummary[];
   checks: Check[];
-  canExport: boolean;
 }) {
   const [result, run, running] = useActionState<DeployResult, FormData>(deployAction, {});
 
@@ -54,9 +52,7 @@ export function DeployPanel({
       ? `되돌렸습니다 — 지금 v${result.rolledBackTo} 사본이 공개 중입니다.`
       : result.unpublished
         ? "공개를 중단했습니다. 주소만 닫혔고 문서와 기록은 그대로입니다."
-        : result.exportQueued
-          ? `${result.exportQueued === "pdf" ? "PDF" : "덱"}을 만들고 있습니다. 다 되면 알려 드립니다.`
-          : null;
+        : null;
 
   return (
     <>
@@ -111,11 +107,6 @@ export function DeployPanel({
                   열어 보기
                 </Link>
               ) : null}
-            </div>
-            <div className={styles.customDomain}>
-              <span className={styles.customLabel}>커스텀 도메인</span>
-              <span className={styles.customHost}>{live?.customDomain ?? "연결하지 않음"}</span>
-              <span className={styles.customState}>팀 요금제</span>
             </div>
           </div>
         </div>
@@ -231,29 +222,6 @@ export function DeployPanel({
               </button>
             </form>
           ) : null}
-        </div>
-      </div>
-
-      <div className={styles.section}>
-        <div className={styles.sectionLabel}>EXPORT</div>
-        <div className={styles.exportGrid}>
-          {([
-            { kind: "pdf", icon: "file-pdf", title: "PDF로 내보내기", note: "A4 · 인쇄 여백 적용" },
-            { kind: "deck", icon: "presentation", title: "덱으로 내보내기", note: "섹션 하나가 한 장" },
-          ] as const).map((item) => (
-            <form key={item.kind} action={run}>
-              <input type="hidden" name="intent" value="export" />
-              <input type="hidden" name="portfolioId" value={portfolio.id} />
-              <input type="hidden" name="kind" value={item.kind} />
-              <button type="submit" className={styles.exportCard} disabled={!canExport}>
-                <Icon name={item.icon} size={18} color="var(--ex-fg-muted)" />
-                <span className={styles.exportTitle}>{item.title}</span>
-                <span className={styles.exportNote}>
-                  {canExport ? item.note : "PRO에서 내보낼 수 있습니다"}
-                </span>
-              </button>
-            </form>
-          ))}
         </div>
       </div>
 
