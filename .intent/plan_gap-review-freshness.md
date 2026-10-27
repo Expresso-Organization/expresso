@@ -19,7 +19,6 @@ date: 2026-10-27
 | `services/backend/src/modules/agent-chat/gap-review.ts` | `buildGapReview`가 `snapshot` 채움 |
 | `services/backend/src/modules/agent-chat/gap-review.test.ts` | `snapshot` 단위 테스트 |
 | `services/backend/src/modules/agent-chat/service.ts` | `freshness` 분기, `gapFreshness` |
-| `services/backend/src/modules/agent-chat/routes.ts` | 주석만(필요하면) |
 | `services/backend/src/modules/agent-chat/service.integration.test.ts` | 보완점 최신성 통합 테스트 |
 | `services/web/src/app/api/agent/[...path]/route.ts` | 주석 「요건 대조 · 보완점 최신성」 |
 | `services/web/src/features/agent-chat/useToolFreshness.ts` (새 파일) | 최신성 조회 훅 |

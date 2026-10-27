@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { AgentMessage, GapReview, GapReviewDraft, RequirementReview } from "@expresso/contracts";
-import { normalize } from "./requirement-review.js";
+import { hash, normalize } from "./requirement-review.js";
 
 type Records = ReadonlyMap<string, { title: string; text: string }>;
 
@@ -66,6 +66,8 @@ export function buildGapReview(draft: GapReviewDraft, review: RequirementReview,
         evidence: item.evidence.map(evidence => ({ ...evidence, label: evidence.sourceType === "record" ? records.get(evidence.sourceId)!.title.slice(0, 200) : "내 답변" })),
       };
     }),
+    // 근거로 인용한 기록의 글을 해시로 남긴다 — 대조 근거에 없던 기록도 인용할 수 있어서 따로 둔다.
+    snapshot: { records: [...new Set(draft.items.flatMap(item => item.evidence.filter(evidence => evidence.sourceType === "record").map(evidence => evidence.sourceId)))].map(recordId => ({ recordId, textHash: hash(records.get(recordId)!.text) })) },
     createdAt: now.toISOString(),
   };
 }
