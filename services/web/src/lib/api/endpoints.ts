@@ -37,6 +37,10 @@ import {
   type CareerViewConfiguration,
   CurrentUserResponseSchema,
   HomeReadModelSchema,
+  NotificationReadAllResultSchema,
+  NotificationSchema,
+  PageInfoSchema,
+  UnifiedSearchItemSchema,
   JobPostingDetailResponseSchema,
   JobInterestResponseSchema,
   BrewStateResponseSchema,
@@ -160,6 +164,10 @@ export const auth = {
 };
 
 const HomeResponseSchema = z.strictObject({ data: HomeReadModelSchema });
+const UnifiedSearchResponseSchema = z.strictObject({ data: z.array(UnifiedSearchItemSchema), page: PageInfoSchema });
+const NotificationListResponseSchema = z.strictObject({ data: z.array(NotificationSchema) });
+const NotificationResponseSchema = z.strictObject({ data: NotificationSchema });
+const NotificationReadAllResponseSchema = z.strictObject({ data: NotificationReadAllResultSchema });
 
 export const engagement = {
   /** 00 홈 — 초안 · 포트폴리오 · 추천 공고 · 지표를 한 번에 읽는다. */
@@ -167,6 +175,28 @@ export const engagement = {
     request(`${API_PREFIX}/home`, HomeResponseSchema, {
       accessToken,
       cache: "no-store",
+    }),
+  /** 00c 통합 검색 — 기록 · 포트폴리오 · 공고 제목. */
+  search: (accessToken: string, q: string, limit = 20) =>
+    request(`${API_PREFIX}/search`, UnifiedSearchResponseSchema, {
+      accessToken,
+      query: { q, limit },
+      cache: "no-store",
+    }),
+  notifications: (accessToken: string) =>
+    request(`${API_PREFIX}/notifications`, NotificationListResponseSchema, {
+      accessToken,
+      cache: "no-store",
+    }),
+  markNotificationRead: (accessToken: string, id: string) =>
+    request(`${API_PREFIX}/notifications/${id}/read`, NotificationResponseSchema, {
+      method: "POST",
+      accessToken,
+    }),
+  markAllNotificationsRead: (accessToken: string) =>
+    request(`${API_PREFIX}/notifications/read-all`, NotificationReadAllResponseSchema, {
+      method: "POST",
+      accessToken,
     }),
 };
 

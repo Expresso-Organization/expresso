@@ -1,12 +1,13 @@
 "use client";
 
-import { openNotifications, openSearch } from "@/components/CommandPalette";
+import { openNotifications, openSearch, useUnreadNotificationCount } from "@/components/CommandPalette";
 import { Icon } from "@/components/ui/Icon";
 
 import { appShellStyles as styles } from "./AppShell";
 
 /** 00 헤더의 검색 · 알림 버튼. 00c 오버레이를 연다. */
-export function SearchAndNotifications({ unread = true }: { unread?: boolean }) {
+export function SearchAndNotifications() {
+  const unread = useUnreadNotificationCount();
   return (
     <>
       <button
@@ -20,11 +21,11 @@ export function SearchAndNotifications({ unread = true }: { unread?: boolean }) 
       <button
         type="button"
         className={styles.iconButton}
-        aria-label="알림"
+        aria-label={unread > 0 ? `알림, 안 읽은 알림 ${unread}건` : "알림"}
         onClick={openNotifications}
       >
         <Icon name="bell" size={17} />
-        {unread ? <span className={styles.notificationDot} /> : null}
+        {unread > 0 ? <span className={styles.notificationDot} /> : null}
       </button>
     </>
   );
