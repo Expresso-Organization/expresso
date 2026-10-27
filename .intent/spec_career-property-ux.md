@@ -17,6 +17,8 @@ date: 2026-10-28
 - [ ] 서버 진단의 `start` · `end`는 저장 원문 기준이다. 표시 원문 위치로 옮겨 보인다.
 - [ ] 이름 토큰은 textarea 뒤 같은 글꼴 · 여백의 배경 층에 `<mark>`로 칠해 보인다. 자동완성 단추에서 UUID 줄을 지운다.
 - [ ] 수식 · 롤업 정의가 있는 카테고리에서, 기록 버전이 저장으로 바뀌거나 계산 속성 키가 `computedProperties`에 없으면 `GET /api/career/records/:id`를 다시 읽는다. 버전이 올라가고 빠진 키가 모두 생기면 멈추고 그 기록으로 패널을 갱신한다.
+- [ ] 버전이 바뀌어도 서버가 계산 작업을 넣지 않은 저장(값 차이 없음 · 제목 정의 없는 카테고리의 제목)은 기다리지 않는다. 기준은 `updateRecord`의 `changedPropertyIds`와, 필드를 바꾸지 않고 항상 계산 작업을 넣는 `replaceTargets`(관계 저장)다.
+- [ ] 값을 바꾸지 않고 칸을 떠나면 `PropertyValueEditor`가 저장하지 않는다. 그런 저장은 기록 버전만 올린다.
 - [ ] 다시 읽는 동안 문서 속성 영역은 `aria-busy="true"`이고 계산값 칸이 깜빡인다. `prefers-reduced-motion`에서는 흐리게만 보인다.
 - [ ] 속성 추가 목록에 `created_time`(생성 일시 · `clock`) · `updated_time`(최종 편집 일시 · `clock-clockwise`)이 있다. 설정 없이 `system: true`로 만든다.
 - [ ] 백엔드는 `system: true` 생성을 두 시각 유형에만 허용한다. 두 시각 유형의 `system` 속성은 `rename` · `reorder` · `delete` · `restore`를 허용한다. `title`과 다른 `system` 속성은 지금처럼 막는다.

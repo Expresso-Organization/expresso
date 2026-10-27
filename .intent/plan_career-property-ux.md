@@ -19,9 +19,10 @@ date: 2026-10-28
 | `services/web/src/features/career-editor/properties/FormulaEditor.tsx` | 표시 원문 편집 · 토큰 배경 층 · 진단 위치 옮기기 |
 | `services/web/src/features/career-editor/properties/FormulaEditor.test.tsx` | 이름 삽입 · UUID 저장 · 클라이언트 진단 시험 |
 | `services/web/src/features/career-editor/properties/computed-refresh.ts` | 새 파일. `useComputedRefresh` |
-| `services/web/src/features/career-editor/properties/computed-refresh.test.tsx` | 새 파일. 버전 · 키 대기 · 자기 갱신 무시 · 마감 |
-| `services/web/src/features/career-editor/properties/PropertyList.tsx` | 훅 호출 · `aria-busy` · 시각 속성 아이콘 |
-| `services/web/src/features/career-editor/properties/PropertyValueEditor.tsx` | 계산값에 `computed` 표시 · 시각 형식 함수 이동 |
+| `services/web/src/features/career-editor/properties/computed-refresh.test.tsx` | 새 파일. 버전 · 키 대기 · 자기 갱신 무시 · 마감 · 계산 작업 없는 저장 · 관계 저장 |
+| `services/web/src/features/career-editor/properties/PropertyList.tsx` | 훅 호출 · `aria-busy` · 시각 · 수식 · 롤업 아이콘(속성 추가 목록과 같은 아이콘) |
+| `services/web/src/features/career-editor/properties/PropertyValueEditor.tsx` | 계산값에 `computed` 표시 · 시각 형식 함수 이동 · 값을 바꾸지 않고 칸을 떠나면 저장 생략 |
+| `services/web/src/features/career-editor/properties/PropertyValueEditor.test.tsx` | 시각 형식 · 저장 생략 시험 |
 | `services/web/src/features/career-editor/properties/property-editors.tsx` | `formatTimestamp` · `ReadOnlyValue`의 시각 형식 · `data-computed` |
 | `services/web/src/features/career-editor/properties/PropertyCreatePopover.tsx` | 시각 유형 두 개 · 스크롤 조상 경계 배치 |
 | `services/web/src/features/career-editor/properties/PropertyCreatePopover.test.tsx` | 시각 유형 생성 요청 시험 |
