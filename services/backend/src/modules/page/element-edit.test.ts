@@ -60,7 +60,7 @@ const snapshot = validateStructuredPortfolio(
 describe("요소 하나 고치기", () => {
   it("요소가 보여 주는 글의 경로만 낸다", () => {
     expect(elementTextPaths(snapshot, "quote-1")).toEqual(["/sections/a/quote"]);
-    expect(elementTextPaths(snapshot, "intro")).toEqual(["/profile/role", "/profile/headline", "/profile/intro"]);
+    expect(elementTextPaths(snapshot, "intro")).toEqual(["/profile/name", "/profile/role", "/profile/headline", "/profile/intro"]);
     expect(elementTextPaths(snapshot, "section-a")).toContain("/sections/a/details/0/text");
   });
 

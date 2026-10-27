@@ -25,11 +25,11 @@ date: 2026-10-28
 | `services/backend/src/modules/page/design-first.ts` | `FILL_SYSTEM` · `sectionFillSchema` 내보내기(기록 사례 쓰기가 재사용) |
 | `services/backend/src/modules/page/element-edit.ts` (새 파일) | 요소 지시 프롬프트 · 출력 스키마 · check |
 | `services/backend/src/modules/page/record-section.ts` (새 파일) | 기록 → 섹션 (AI · 규칙) |
-| `services/backend/src/modules/page/routes.ts` | 요소 지시 · 기록 추가 · 편집용 디자인 값(`GET .../page/design`) 라우트 |
+| `services/backend/src/modules/page/routes.ts` · `routes.test.ts` (새 파일) | 요소 지시 · 기록 추가 · 편집용 디자인 값(`GET .../page/design`) · 편집용 렌더(`GET .../page/editable`) 라우트와 경로 테스트 |
 | `services/backend/src/modules/page/*.test.ts` · `structured.mongo.integration.test.ts` | 단위 · 통합 테스트 |
 | `services/backend/fixtures/ai/partial_edit/` · `page_fill/` (위치는 `fixture.ts` 설정을 따름) | 화면 확인용 fixture 출력 |
-| `services/web/src/lib/api/endpoints.ts` | `page.instructElement` · `page.addSection` |
-| `services/web/src/components/portfolio/EditablePagePreview.tsx` (새 파일) | 편집 문서 · 선택 스크립트 · 모션 끔 |
+| `services/web/src/lib/api/endpoints.ts` | `page.instructElement` · `page.addSection` · `page.design` · `page.editable` |
+| `services/web/src/components/portfolio/EditablePagePreview.tsx` · `.test.ts` (새 파일) | 편집 문서 · 선택 스크립트 · 모션 끔(`data-motion="none"`) · 글자 크기 재기, 스크립트 문법 테스트 |
 | `services/web/src/app/(app)/edit/[portfolioId]/Editor.tsx` | 구조화 지면 분기 · 선택 상태 · 좌우 패널 배치 |
 | `.../edit/[portfolioId]/PageOutline.tsx` · `RecordLibrary.tsx` (새 파일) | 왼쪽 목차 · 기록 |
 | `.../edit/[portfolioId]/ElementChat.tsx` · `ElementProperties.tsx` (새 파일) | 오른쪽 채팅 · 속성 |

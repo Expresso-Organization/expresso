@@ -458,24 +458,33 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
       (spec.elements["section-project-a"]!.props as Record<string, unknown>).style = { title: { size: "giant" } };
       await expect(service.editComposition(user, portfolio, { expectedRevision: styled.revision, spec, patches: [] })).rejects.toMatchObject({ statusCode: 422 });
 
+      // 지시를 붙여 다시 만들어도 직접 고친 글자 모양은 같은 키 · 부품 요소로 옮깁니다.
+      (spec.elements["section-project-a"]!.props as Record<string, unknown>).style = { title: { color: "accent" } };
+      const restyled = await service.editComposition(user, portfolio, { expectedRevision: styled.revision, spec, patches: [] });
+      const regenerated = await service.generate(user, portfolio, generator, { instruction: "다시" });
+      expect((regenerated.generationManifest!.structured!.spec.elements["section-project-a"]!.props as { style?: unknown }).style).toEqual({ title: { color: "accent" } });
+      expect(regenerated.css).toContain('[data-xp-key="section-project-a"] :is(.xp-head .xp-h2){color:var(--xp-accent-text)}');
+      expect(restyled.revision + 1).toBe(regenerated.revision);
+      const base2 = regenerated;
+
       // AI가 없으면 말로 고칠 수 없습니다.
-      await expect(service.instructElement(user, portfolio, "section-project-a", { expectedRevision: styled.revision, instruction: "짧게" }, null)).rejects.toMatchObject({ statusCode: 503 });
+      await expect(service.instructElement(user, portfolio, "section-project-a", { expectedRevision: base2.revision, instruction: "짧게" }, null)).rejects.toMatchObject({ statusCode: 503 });
       const ai = new ScriptedAiClient(
         () => ({ note: "요약을 바꿨습니다.", text: [{ path: "/sections/project-a/summary", value: "요약 77건" }], style: { summary: { color: "muted" } } }),
         (_request, paths) => paths.map((path) => ({ path, value: "짧은 요약" })),
       );
-      const instructed = await service.instructElement(user, portfolio, "section-project-a", { expectedRevision: styled.revision, instruction: "요약 짧게" }, new PageElementEditor(ai));
+      const instructed = await service.instructElement(user, portfolio, "section-project-a", { expectedRevision: base2.revision, instruction: "요약 짧게" }, new PageElementEditor(ai));
       expect(ai.fixRequests).toHaveLength(1);
       expect(instructed.changes).toEqual([
         { label: "요약 모양", before: "기본", after: "흐린색" },
         { label: "요약", before: "초기 요약", after: "짧은 요약" },
       ]);
-      expect(instructed.page.revision).toBe(styled.revision + 1);
+      expect(instructed.page.revision).toBe(base2.revision + 1);
       expect(instructed.page.rationale).toBe("요약을 바꿨습니다.");
       const after = instructed.page.generationManifest!.structured!;
       expect(after.spec.elements["intro"]).toEqual(base.generationManifest!.structured!.spec.elements["intro"]);
       // 앞서 고친 제목 모양은 그대로 두고 요약 모양만 더합니다.
-      expect((after.spec.elements["section-project-a"]!.props as { style?: unknown }).style).toEqual({ title: { color: "accent", size: step }, summary: { color: "muted" } });
+      expect((after.spec.elements["section-project-a"]!.props as { style?: unknown }).style).toEqual({ title: { color: "accent" }, summary: { color: "muted" } });
       await expect(service.instructElement(user, portfolio, "missing", { expectedRevision: instructed.page.revision, instruction: "x" }, new PageElementEditor(ai))).rejects.toMatchObject({ statusCode: 404 });
 
       // 기록 추가: AI가 없으면 기록 글을 그대로 씁니다. 같은 기록은 두 번 더하지 않습니다.

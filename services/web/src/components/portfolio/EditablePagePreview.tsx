@@ -22,6 +22,9 @@ export const EDITOR_SCRIPT = `(function(){
   var base = document.createElement("style"), mark = document.createElement("style"), live = document.createElement("style");
   document.head.append(base, live, mark);
   base.textContent = ".xp-page *,.xp-page *::before,.xp-page *::after{animation:none!important;transition:none!important}[" + KEY + "]{cursor:pointer}";
+  // 등장 애니메이션은 지면 루트의 data-motion을 신호로 삼는다. 편집 중에는 none으로 둔다.
+  var root = document.querySelector(".xp-page");
+  if (root) root.setAttribute("data-motion", "none");
   function post(message){ message.source = "${CHANNEL}"; parent.postMessage(message, "*"); }
   function paint(){
     mark.textContent = "[" + KEY + "]:hover{outline:1px dashed " + color + ";outline-offset:4px}"

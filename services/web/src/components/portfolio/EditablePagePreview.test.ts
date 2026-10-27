@@ -8,6 +8,10 @@ describe("편집 미리보기 스크립트", () => {
     expect(() => new Function(EDITOR_SCRIPT)).not.toThrow();
   });
 
+  it("지면 루트의 등장 애니메이션 신호를 끈다", () => {
+    expect(EDITOR_SCRIPT).toContain('setAttribute("data-motion", "none")');
+  });
+
   it("요소 키 선택자를 따옴표가 맞는 모양으로 만든다", () => {
     for (const line of EDITOR_SCRIPT.split("\n").filter((text) => text.includes("querySelector(")))
       expect(line).not.toMatch(/="" \+/);

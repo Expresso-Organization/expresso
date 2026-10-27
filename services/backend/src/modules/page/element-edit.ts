@@ -135,7 +135,8 @@ export class PageElementEditor {
     const fields = editableFields(node.type);
     const parts = Object.entries(STRUCTURED_PARTS[node.type] ?? {});
     const steps = design.typography.scale.map((step) => step.name) as [string, ...string[]];
-    const paths = elementTextPaths(snapshot, key);
+    // 이름은 사용자가 직접만 고칩니다. 말로 고치기는 이름을 바꾸지 않습니다.
+    const paths = elementTextPaths(snapshot, key).filter((path) => path !== "/profile/name");
     const partStyle = z.object({
       color: z.enum(STRUCTURED_STYLE_COLORS).optional(),
       font: z.enum(STRUCTURED_STYLE_FONTS).optional(),

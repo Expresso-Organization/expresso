@@ -254,7 +254,7 @@ export function elementTextPaths(snapshot: Snapshot, key: string): string[] {
   const node = snapshot.spec.elements[key];
   if (!node) return [];
   const sections = snapshot.content.sections;
-  if (node.type === "NameIntro") return ["/profile/role", "/profile/headline", "/profile/intro"];
+  if (node.type === "NameIntro") return ["/profile/name", "/profile/role", "/profile/headline", "/profile/intro"];
   if (node.type === "ProjectIndex") return sections.flatMap((section) => [`/sections/${section.id}/title`, `/sections/${section.id}/summary`]);
   if (node.type === "MetricStrip")
     return sections.flatMap((section) => (section.metrics ?? []).slice(0, 1).flatMap(() => [`/sections/${section.id}/metrics/0/label`, `/sections/${section.id}/metrics/0/value`]));
