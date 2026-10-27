@@ -11,7 +11,7 @@ date: 2026-10-28
 
 ## 요구사항
 
-- [ ] 사례 유형 `CaseBars`(설계 form `bars`)가 계약 · 카탈로그 · 키트 · 수집 원본 렌더러에 있습니다. 섹션 `metrics`가 2개 이상일 때만 모델 스키마에 열리고, `validateStructuredPortfolio`가 2개 미만이면 거절합니다.
+- [ ] 사례 유형 `CaseBars`(설계 form `bars`)가 계약 · 카탈로그 · 키트 · 수집 원본 렌더러에 있습니다. 섹션 `metrics`가 같은 단위로 시작하는 수치 2개 이상(`comparableMetrics`, 계약에 둠)일 때만 모델 스키마 · 편집 화면에 열리고, `validateStructuredPortfolio`가 그 밖이면 거절합니다. 설계 · 다듬기 · 편집이 같은 기준을 씁니다.
 - [ ] `CaseBars`는 수치마다 이름 · 막대 · 값 글자 한 줄입니다. 막대 길이는 가장 큰 값을 100%로 둔 비율입니다. 값이 모두 `%`이면 0–100% 눈금을 채웁니다. 단위가 다르거나 숫자를 읽지 못하면 막대 없이 이름과 값만 그립니다(`data-bars="neutral"`).
 - [ ] `ProjectIndex`의 `variant`에 `timeline`이 있습니다. 섹션 `period`를 두 개 이상 읽으면 작업 기간 차트로 그리고, 아니면 `rows`로 그립니다.
 - [ ] `CareerTimeline`에 선택 속성 `variant: "list" | "chart"`가 있습니다. 기간을 두 개 이상 읽으면 경력 기간 차트로 그리고, 아니면 지금 목록으로 그립니다. 속성이 없는 옛 저장본은 목록입니다.
@@ -28,7 +28,7 @@ date: 2026-10-28
 부품 본문은 `packages/portfolio-renderer/src/viz/`에 파일마다 나눕니다. 공유 파일(`catalog.ts` · `kit.tsx` · `design-first.ts`)에는 등록 줄만 더합니다. 배경 오브젝트 세션과 같은 파일에서 겹치는 줄을 줄이려는 배치입니다.
 
 - `viz/period.ts`: `parsePeriod(text, now)` → `{ start, end, open, startText, endText } | null`. 월 단위 정수로 읽습니다. 받는 모양은 `2024.04` · `2024-04` · `2024/04` · `2024년 4월` · `2024`이고 구분자는 `—` · `–` · `-` · `~`입니다. `readablePeriods(texts, now)`는 백엔드의 내림 판정과 렌더러가 함께 씁니다.
-- `viz/bars.tsx`: `barScale(metrics)`(같은 단위 판정 · 비율 · % 눈금)와 `Bars` 부품. 단위는 `metricNumber`가 읽은 숫자 뒤의 나머지 글자입니다. 값 읽기는 `kit.tsx`의 `metricNumber`를 재사용합니다.
+- `viz/bars.tsx`: `barScale(metrics)`(비율 · % 눈금)와 `Bars` 부품. 같은 단위 판정(`comparableMetrics`)과 값 읽기(`metricNumber` · `metricUnit`)는 계약으로 옮겨 렌더러 · 모델 스키마 · 편집 화면이 함께 씁니다. 단위는 앞자리 숫자 뒤의 나머지 글자입니다.
 - `viz/period-chart.tsx`: `PeriodChart({ rows, now })`. 행마다 제목 · 기간 글자 · 막대(`left` · `width` %)입니다. 작업 기간 차트와 경력 기간 차트가 함께 씁니다.
 - `viz/styles.ts`: `VIZ_CSS`. `kitCss`가 `KIT_CSS` 뒤에 붙입니다. 좁은 폭 전환은 키트와 같은 `@container (max-width:720px)`입니다.
 - 재사용: `Compare`의 막대 구조와 `data-bars` 규칙, `stageAttributes`, `CaseHead`, `caseNumbers`(목차 순서), `ungroundedNumbers`.

@@ -2,7 +2,8 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { DesignSystemSpecV2Schema, type StructuredPortfolioContent } from "@expresso/contracts";
 import { renderStructuredPortfolio } from "../renderer.js";
-import { barScale } from "./bars.js";
+import { renderToStaticMarkup } from "react-dom/server";
+import { Bars, barScale } from "./bars.js";
 import { parsePeriod, readablePeriods } from "./period.js";
 
 const designs = JSON.parse(readFileSync(new URL("../fixtures/designs.json", import.meta.url), "utf8"));
@@ -136,12 +137,13 @@ describe("차트 부품", () => {
     expect(render(pageSpec("rows", {}))).toContain('class="xp-timeline"');
   });
 
-  it("단위가 다른 수치는 막대 없이 이름과 값만 그린다", () => {
+  it("단위가 다른 수치는 막대 차트로 받지 않고, 길이를 잴 수 없는 값은 막대 없이 이름과 값만 그린다", () => {
     const mixed: StructuredPortfolioContent = {
       ...content,
       sections: content.sections.map((section) => (section.metrics ? { ...section, metrics: [{ label: "LCP", value: "1.9초" }, { label: "JS", value: "180KB" }] } : section)),
     };
-    const html = render(pageSpec("rows", {}), mixed);
+    expect(() => render(pageSpec("rows", {}), mixed)).toThrow("같은 단위");
+    const html = renderToStaticMarkup(Bars({ metrics: [{ label: "A", value: "0건" }, { label: "B", value: "0건" }] }));
     expect(html).toContain('data-bars="neutral"');
     expect(html).not.toContain("xp-barlist-fill");
   });

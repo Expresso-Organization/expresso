@@ -415,10 +415,13 @@ describe("시각 부품과 지면 변화 계약", () => {
     };
     expect(() => validateStructuredPortfolio(withCase({ type: "CaseBars" }), measured)).not.toThrow();
     expect(() => validateStructuredPortfolio(withCase({ type: "CaseBars" }), content)).toThrow("수치가 두 개 이상");
+    const mixed: StructuredPortfolioContent = { ...measured, sections: [{ ...measured.sections[0]!, metrics: [{ label: "LCP", value: "1.9초" }, { label: "JS", value: "180KB" }] }] };
+    expect(() => validateStructuredPortfolio(withCase({ type: "CaseBars" }), mixed)).toThrow("같은 단위");
     const shape = (value: StructuredPortfolioContent) =>
       JSON.stringify(z.toJSONSchema(structuredModelSchema(value, { intro: [], section: [], guidance: [] })));
     expect(shape(content)).not.toContain("CaseBars");
     expect(shape(measured)).toContain("CaseBars");
+    expect(shape(mixed)).not.toContain("CaseBars");
     expect(shape(measured)).toContain('"timeline"');
     expect(StructuredNodeSchema.safeParse({ type: "ProjectIndex", props: { sections: { $state: "/sections" }, variant: "timeline" }, children: [] }).success).toBe(true);
     expect(StructuredNodeSchema.safeParse({ type: "CareerTimeline", props: { career: { $state: "/career" }, variant: "chart" }, children: [] }).success).toBe(true);

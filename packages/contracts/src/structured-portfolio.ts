@@ -69,6 +69,33 @@ export const StructuredSectionSchema = z.strictObject({
     .max(6)
     .optional(),
 });
+type StructuredMetric = NonNullable<z.infer<typeof StructuredSectionSchema>["metrics"]>[number];
+const LEADING_NUMBER = /^[+\-−~≈]?\s?(\d+(?:\.\d+)?)/;
+
+/**
+ * "3.8초" · "420KB" · "1,200만 건"처럼 숫자로 시작하는 값에서 그 숫자를 읽습니다. 숫자로 시작하지 않으면 null입니다.
+ * 글 중간의 숫자는 읽지 않습니다. 청사진의 자리 표지(`⟦12⟧`)나 "약 3배" 같은 값에서 엉뚱한 비율이 나오지 않습니다.
+ */
+export function metricNumber(value: string): number | null {
+  const match = value.replace(/,/g, "").match(LEADING_NUMBER);
+  return match ? Number(match[1]) : null;
+}
+
+/** 값에서 앞자리 숫자를 뗀 나머지(단위)입니다. "1,200만 건" → "만 건", "80%" → "%". */
+export function metricUnit(value: string): string {
+  return value.replace(/,/g, "").replace(LEADING_NUMBER, "").trim();
+}
+
+/** 막대 길이로 견줄 수 있는 수치 목록인지 봅니다. 두 개 이상이고, 모두 숫자로 시작하고, 단위가 같아야 합니다. */
+export function comparableMetrics(metrics: readonly StructuredMetric[] | undefined): boolean {
+  return (
+    !!metrics &&
+    metrics.length >= 2 &&
+    metrics.every((metric) => metricNumber(metric.value) !== null) &&
+    new Set(metrics.map((metric) => metricUnit(metric.value))).size === 1
+  );
+}
+
 /** 프로필의 모양입니다. 이름 아래 한 문장 규칙은 저장 계약에서 따로 검사합니다. */
 export const StructuredProfileSchema = z.strictObject({
   name: z.string().min(1).max(200),
@@ -170,7 +197,7 @@ export const STRUCTURED_CASE_TYPES = [
   "CaseBeforeAfter",
   // 단계(steps) 두 개 이상을 가로 흐름으로 그립니다.
   "CaseFlow",
-  // 같은 단위 수치 두 개 이상을 가로 막대 차트로 그립니다.
+  // 같은 단위 수치 두 개 이상(`comparableMetrics`)을 가로 막대 차트로 그립니다.
   "CaseBars",
   // 제공 이미지 한 장을 크게 두고 제목 · 요약을 그 아래 띠에 둡니다.
   "CaseShowcase",
@@ -480,7 +507,7 @@ export function structuredModelSchema(
           (type) =>
             (section.media.length || (type !== "CaseGallery" && type !== "CaseShowcase")) &&
             (type !== "CaseBeforeAfter" || !!section.metrics?.some((metric) => metric.before)) &&
-            (type !== "CaseBars" || (section.metrics?.length ?? 0) >= 2) &&
+            (type !== "CaseBars" || comparableMetrics(section.metrics)) &&
             (type !== "CaseFlow" || (section.steps?.length ?? 0) >= 2),
         ) as [string, ...string[]],
       ),
@@ -704,8 +731,8 @@ export function validateStructuredPortfolio(
         throw new Error("과정 사례에는 두 개 이상의 설명이 필요합니다.");
       if (node.type === "CaseBeforeAfter" && !section.metrics?.some((metric) => metric.before))
         throw new Error("전후 비교 사례에는 이전 값이 있는 수치가 필요합니다.");
-      if (node.type === "CaseBars" && (section.metrics?.length ?? 0) < 2)
-        throw new Error("막대 차트 사례에는 수치가 두 개 이상 필요합니다.");
+      if (node.type === "CaseBars" && !comparableMetrics(section.metrics))
+        throw new Error("막대 차트 사례에는 같은 단위로 시작하는 수치가 두 개 이상 필요합니다.");
       if (node.type === "CaseFlow" && (section.steps?.length ?? 0) < 2)
         throw new Error("과정 흐름 사례에는 두 개 이상의 단계가 필요합니다.");
       if (node.type === "CaseShowcase" && !section.media.length)

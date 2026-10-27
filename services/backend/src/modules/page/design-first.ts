@@ -494,7 +494,7 @@ function revisedLeaves(path: readonly (string | number)[], value: unknown): { pa
 /** 채우기 프롬프트의 섹션 한 줄입니다. 설계의 칸 예산을 칸 이름과 글자 수 · 개수로 적습니다. */
 function fillGuide(section: StructuredDesignPlan["sections"][number]) {
   const { budget } = section;
-  return `  - ${section.id}: ${section.form} · ${section.emphasis} · 제목 ${budget.title}자 · 요약 ${budget.summary}자 · 본문 ${budget.body}자 · 항목 ${budget.details}개 · 수치 ${budget.metrics}개${budget.quote ? ` · 인용 ${budget.quote}자` : ""}${budget.steps ? ` · 단계 ${budget.steps}개` : ""}`;
+  return `  - ${section.id}: ${section.form} · ${section.emphasis}${section.pattern === "project" ? " · 기간(출처에 적혀 있으면 그 글자 그대로)" : ""} · 제목 ${budget.title}자 · 요약 ${budget.summary}자 · 본문 ${budget.body}자 · 항목 ${budget.details}개 · 수치 ${budget.metrics}개${budget.quote ? ` · 인용 ${budget.quote}자` : ""}${budget.steps ? ` · 단계 ${budget.steps}개` : ""}`;
 }
 
 /**

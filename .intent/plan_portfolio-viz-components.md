@@ -27,7 +27,7 @@ date: 2026-10-28
 | `packages/portfolio-renderer/src/index.ts` | `readablePeriods` · `barScale` 내보내기 |
 | `services/backend/src/modules/page/design-first.ts` | 설계 · 채우기 지침 줄, 기간 숫자 검사, 내림 규칙, 설계 트리 연결 검사(6단계에서 추가) |
 | `services/backend/src/modules/page/design-first.test.ts` | 기간 검사 · 내림 규칙 |
-| `services/web/src/app/(app)/edit/[portfolioId]/StructuredPageProperties.tsx` | `CaseBars` 이름표 한 줄, 수치 두 개 이상일 때만 고를 수 있게 거르는 줄 |
+| `services/web/src/app/(app)/edit/[portfolioId]/StructuredPageProperties.tsx` | `CaseBars` 이름표 한 줄, `comparableMetrics`일 때만 고를 수 있게 거르는 줄 |
 
 ## 작업 순서
 
@@ -38,6 +38,7 @@ date: 2026-10-28
 5. 편집 화면 이름표, `pnpm typecheck` · `pnpm test` · `pnpm test:infra`.
 6. 체험 서버 실제 생성: dev01로 새 지면을 만들고 1440 · 390 스크린샷과 `renderDefects`를 확인합니다. 모델이 새 부품을 고르지 않으면 디자인과 유형을 바꿔 다시 생성합니다. 그래도 고르지 않으면 설계 프롬프트의 지침 줄을 고칩니다.
    - 2026-10-28 실행: 설계 모델이 목차 · 컨테이너를 정의만 하고 트리에 연결하지 않아 두 번 연속 `page.generation_failed`가 났습니다. 설계 호출의 `check`가 섹션 목록만 보고 트리 연결은 보지 않았기 때문입니다. `treeViolations`로 연결하지 않은 요소를 같은 대화에서 고쳐 받고, 고쳐도 남으면 `fitToContent`가 선택 요소는 지우고 나머지는 페이지에 붙입니다.
+   - 같은 실행에서 다듬기 판이 단위가 다른 수치("1.9초" · "180KB") 섹션에 `CaseBars`를 골랐습니다. 다듬기 경로는 `fitToContent`를 지나지 않습니다. 그래서 같은 단위 판정을 계약(`comparableMetrics`)으로 옮겨 모델 스키마 · 저장 검사 · 편집 화면이 함께 씁니다. 채우기 지침에는 프로젝트 섹션의 기간 칸을 적었습니다.
 7. origin/main 재병합 후 PR.
 
 ## 가장 위험한 단계

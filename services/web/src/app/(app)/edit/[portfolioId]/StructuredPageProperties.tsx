@@ -2,6 +2,7 @@
 import { useActionState, useState } from "react";
 import {
   STRUCTURED_CASE_TYPES,
+  comparableMetrics,
   isStructuredGroup,
   structuredLeaves,
   type GeneratedPage,
@@ -214,7 +215,7 @@ export function StructuredPageProperties({
                   )
                     .filter((type) => type !== "CaseFlow" || (section.steps?.length ?? 0) >= 2)
                     .filter((type) => type !== "CaseBeforeAfter" || !!section.metrics?.some((metric) => metric.before))
-                    .filter((type) => type !== "CaseBars" || (section.metrics?.length ?? 0) >= 2)
+                    .filter((type) => type !== "CaseBars" || comparableMetrics(section.metrics))
                     .filter(
                       (type) =>
                         type !== "CaseProcess" || section.details.length >= 2,
