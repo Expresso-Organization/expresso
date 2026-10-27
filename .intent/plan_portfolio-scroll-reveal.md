@@ -21,7 +21,7 @@ date: 2026-10-28
 | `packages/contracts/src/contracts.test.ts` | `reveal: false` 문서의 루트 속성 단언. 인자 없는 문서는 그대로 |
 | `services/web/src/components/portfolio/PagePreview.tsx` | `reveal` 속성을 `pageDocument`로 전달 |
 | `services/web/src/app/(app)/edit/[portfolioId]/Editor.tsx` | 가운데 지면 `PagePreview`에 `reveal={false}` |
-| `scripts/library/renderer/verify-reveal.mjs` (새 파일) | 헤드리스 Chrome · WebKit 스크롤 측정 스크립트 |
+| `scripts/library/renderer/verify-reveal.ts` (새 파일) | 헤드리스 Chrome · WebKit 스크롤 측정 스크립트. 편집 저장과 같은 `findPortfolioDesign`으로 다시 그리려고 `.mjs` 대신 백엔드 `tsx`로 돌린다 |
 
 ## 작업 순서
 
@@ -39,7 +39,7 @@ flowchart TD
   A["1단계: 키트 CSS 등장 규칙<br/>kit-styles.ts · kit.tsx"]:::risk --> B["2단계: 키트 테스트<br/>kit.test.ts"]
   B --> C["3단계: pageDocument reveal 인자<br/>contracts page.ts · 테스트"]
   C --> D["4단계: 편집 화면 끄기<br/>PagePreview.tsx · Editor.tsx"]
-  D --> E["5단계: 다시 그린 지면 측정<br/>verify-reveal.mjs · Chrome 3폭"]
+  D --> E["5단계: 다시 그린 지면 측정<br/>verify-reveal.ts · Chrome 3폭"]
   E --> F["6단계: 실제 화면<br/>편집 → 배포 → /site 스크롤"]
   F --> G["7단계: WebKit · reduce · 미지원 문서"]
   G --> H["8단계: typecheck · test · main 병합 · PR"]
@@ -57,10 +57,10 @@ flowchart TD
 ```
 pnpm typecheck
 pnpm test
-node scripts/library/renderer/verify-reveal.mjs --page <generated_pages _id> --browser chromium
-node scripts/library/renderer/verify-reveal.mjs --page <id> --browser webkit
-node scripts/library/renderer/verify-reveal.mjs --page <id> --browser chromium --reduced-motion
-node scripts/library/renderer/verify-reveal.mjs --page <id> --browser chromium --no-supports
+pnpm --filter @expresso/backend exec tsx ../../scripts/library/renderer/verify-reveal.ts --page <generated_pages _id> --browser chromium
+pnpm --filter @expresso/backend exec tsx ../../scripts/library/renderer/verify-reveal.ts --page <id> --browser webkit
+pnpm --filter @expresso/backend exec tsx ../../scripts/library/renderer/verify-reveal.ts --page <id> --browser chromium --reduced-motion
+pnpm --filter @expresso/backend exec tsx ../../scripts/library/renderer/verify-reveal.ts --page <id> --browser chromium --no-supports
 ```
 
 WebKit 검증에는 Playwright WebKit 빌드가 필요하다. 지금 이 기기에는 Chromium만 있다(`~/Library/Caches/ms-playwright`). `pnpm --filter @expresso/backend exec playwright install webkit`으로 받는다(사용자 허용 2026-10-28).
