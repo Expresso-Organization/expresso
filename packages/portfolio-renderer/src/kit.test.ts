@@ -6,6 +6,7 @@ import {
 } from "@expresso/contracts";
 import { renderStructuredPortfolio } from "./renderer.js";
 import { retrievePageLibrary } from "./library.js";
+import { metricNumber } from "./kit.js";
 
 // 백엔드 기본 디자인(Clarity · Signal)의 스펙을 그대로 떠 둔 고정 자료입니다.
 const designs = JSON.parse(readFileSync(new URL("./fixtures/designs.json", import.meta.url), "utf8"));
@@ -272,5 +273,91 @@ describe("포트폴리오 유형", () => {
   it("유형이 없는 옛 판은 사례 상세형으로 그린다", () => {
     const { html } = renderStructuredPortfolio(pageSpec(), content, { design: clarity });
     expect(html).toContain('data-archetype="case-study"');
+  });
+});
+
+describe("시각 부품과 지면 변화", () => {
+  const rich: StructuredPortfolioContent = {
+    ...content,
+    sections: [
+      {
+        ...content.sections[0]!,
+        quote: "멈추지 않는 경로가 먼저입니다.",
+        steps: [
+          { label: "관찰", text: "교차로 정체 기록" },
+          { label: "설계", text: "" },
+          { label: "검증", text: "현장 주행 시험" },
+        ],
+        metrics: [{ label: "정지 시간", value: "12분", before: "40분" }],
+      },
+      content.sections[1]!,
+    ],
+  };
+  const withNodes = (nodes: Record<string, unknown>, children: string[]) => {
+    const spec = pageSpec();
+    Object.assign(spec.elements, nodes);
+    (spec.elements.page as { children: string[] }).children = children;
+    return spec;
+  };
+
+  it("크기 · 배경 · 폭을 최상위 블록의 data 속성으로 그리고 기본값에는 속성을 달지 않는다", () => {
+    const spec = pageSpec();
+    (spec.elements["section-a"] as { props: Record<string, unknown> }).props = { section: { $state: "/sectionById/a" }, scale: "lead", surface: "inverse", width: "bleed" };
+    (spec.elements["section-b"] as { props: Record<string, unknown> }).props = { section: { $state: "/sectionById/b" }, scale: "standard", surface: "canvas", width: "content" };
+    const { html, css } = renderStructuredPortfolio(spec, content, { design: clarity });
+    expect(html).toMatch(/<article id="section-a" class="xp-block xp-case" data-case-type="technical" data-scale="lead" data-surface="inverse" data-width="bleed" data-bleed="">/);
+    expect(html).toMatch(/<article id="section-b" class="xp-block xp-case" data-case-type="panel">/);
+    for (const name of ["--xp-muted-field:", "--xp-muted-inverse:", "--xp-accent-inverse:"]) expect(css).toContain(name);
+  });
+
+  it("과정 흐름 · 큰 인용 · 이미지 전시를 최상위 블록으로 그리고 글은 받은 그대로 둔다", () => {
+    const spec = withNodes(
+      {
+        "section-a": { type: "CaseFlow", props: { section: { $state: "/sectionById/a" } }, children: [] },
+        "quote-1": { type: "PullQuote", props: { section: { $state: "/sectionById/a" }, surface: "field" }, children: [] },
+      },
+      ["intro", "index", "section-a", "quote-1", "section-b", "career", "evidence"],
+    );
+    const { html } = renderStructuredPortfolio(spec, rich, { design: clarity });
+    // 단계 번호는 배열 순서로 매깁니다.
+    expect(html).toMatch(/xp-flow-num">01<[\s\S]*관찰[\s\S]*xp-flow-num">02<[\s\S]*설계[\s\S]*xp-flow-num">03<[\s\S]*검증/);
+    expect(html).toContain('<ol class="xp-flow" data-count="3">');
+    expect(html).toContain('<figure class="xp-block xp-quote" data-surface="field"><blockquote class="xp-quote-text"><p>멈추지 않는 경로가 먼저입니다.</p>');
+    expect(html).toContain('<a href="#section-a">창고 로봇 경로 재설계</a>');
+
+    const showcase = withNodes({ "section-a": { type: "CaseShowcase", props: { section: { $state: "/sectionById/a" }, width: "bleed" }, children: [] } }, ["intro", "index", "section-a", "section-b", "career", "evidence"]);
+    const shown = renderStructuredPortfolio(showcase, rich, { design: clarity }).html;
+    expect(shown).toMatch(/<article id="section-a" class="xp-block xp-case xp-showcase" data-case-type="showcase" data-width="bleed" data-bleed=""><figure class="xp-showcase-art"><img src="data:image\/png;base64,AAAA" alt="가상 회로 사진"/);
+  });
+
+  it("큰 인용이 사례보다 앞에 있어도 사례 번호와 목차는 사례의 순서를 따른다", () => {
+    const twoProjects: StructuredPortfolioContent = { ...rich, sections: [rich.sections[0]!, { ...rich.sections[1]!, pattern: "project", quote: "둘째 작업의 원칙입니다." }] };
+    const spec = withNodes(
+      { "quote-1": { type: "PullQuote", props: { section: { $state: "/sectionById/b" } }, children: [] } },
+      ["intro", "index", "quote-1", "section-a", "section-b", "career", "evidence"],
+    );
+    const { html } = renderStructuredPortfolio(spec, twoProjects, { design: clarity });
+    const head = (id: string) => html.slice(html.indexOf(`<article id="section-${id}"`)).match(/xp-num">(\d+)</)?.[1];
+    expect(head("a")).toBe("01");
+    expect(head("b")).toBe("02");
+    expect(html.indexOf('href="#section-a"')).toBeLessThan(html.indexOf('href="#section-b"'));
+  });
+
+  it("청사진의 자리 표지처럼 숫자로 시작하지 않는 값은 막대 비율을 읽지 않고 중립 너비로 그린다", () => {
+    expect(metricNumber("3.8초")).toBe(3.8);
+    expect(metricNumber("1,200만 건")).toBe(1200);
+    expect(metricNumber("-40%")).toBe(40);
+    expect(metricNumber("⟦12⟧")).toBeNull();
+    expect(metricNumber("약 3배")).toBeNull();
+    const marked: StructuredPortfolioContent = { ...rich, sections: [{ ...rich.sections[0]!, metrics: [{ label: "⟦3⟧", value: "⟦4⟧", before: "⟦5⟧" }] }, rich.sections[1]!] };
+    const spec = withNodes({ "section-a": { type: "CaseBeforeAfter", props: { section: { $state: "/sectionById/a" } }, children: [] } }, ["intro", "index", "section-a", "section-b", "career", "evidence"]);
+    const { html } = renderStructuredPortfolio(spec, marked, { design: clarity });
+    expect(html).toContain('data-bars="neutral"');
+    expect(html).toContain('<span class="xp-bar-value">⟦5⟧</span>');
+    expect(html).toContain('<span class="xp-bar-value">⟦4⟧</span>');
+    expect(html).not.toContain("--w:");
+    const real = renderStructuredPortfolio(spec, rich, { design: clarity }).html;
+    expect(real).toContain('data-bars="on"');
+    expect(real).toContain("--w:30%");
   });
 });

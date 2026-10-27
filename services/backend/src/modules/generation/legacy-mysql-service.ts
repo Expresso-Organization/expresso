@@ -15,7 +15,6 @@ import {
 } from "../layout/designer.js";
 import { GenerationValidationError, validateGenerationOutput } from "./validator.js";
 import { SentenceWriterUnavailableError, type SentenceWriter, type WriterContext } from "./writer.js";
-import { withTimeout } from "../../platform/timeouts.js";
 import { type ConsentApi } from "../consent/index.js";
 
 interface JobRow {
@@ -56,6 +55,8 @@ export class GenerationService {
   async submit(userId: string, idempotencyKey: string, input: SubmitGeneration) {
     // MySQL 경로는 템플릿 요청만 받습니다. 디자인 시스템 판 요청은 MongoDB 서비스가 처리합니다.
     if (!input.templateId) throw new GenerationError(400, "templateId is required");
+    // 구성을 기다리는 생성(`brewId`만 보낸 요청)은 MongoDB 서비스만 받는다.
+    if (!input.recipeId) throw new GenerationError(400, "recipeId is required");
     const templateId = input.templateId;
     const hash = requestHash(input);
     const jobId = await this.#sql.begin(async (transaction) => {
@@ -121,6 +122,7 @@ export class GenerationService {
     try {
       const titles = new Map(context.sections.map((section) => [section.recipeSectionId, section.title]));
       const design: LayoutDesignContext = {
+        userId: job.user_id,
         // 블록 번호는 `output.blocks`의 자리다 — 아래 적재 순서와 같아야
         // 초안이 가리킨 번호가 실제 블록에 닿는다.
         sections: sectionIds.map((sectionId) => ({
@@ -151,7 +153,7 @@ export class GenerationService {
       // 실제 한계는 어댑터가 쥐고 있고(claude-code 기본 180초), 재시도까지
       // 하면 두 배가 되므로 여기서 먼저 끊으면 재시도가 잘린다.
       await this.#consent?.require(job.user_id, "layout_draft");
-      return await withTimeout(designer.design(design), 420_000, "layout designer");
+      return await designer.design(design);
     } catch (error) {
       console.error(JSON.stringify({
         level: "warn",
@@ -161,6 +163,15 @@ export class GenerationService {
       }));
       return [];
     }
+  }
+
+  /** MySQL 경로에는 구성을 기다리는 생성이 없다(`submit`이 `recipeId`를 요구한다). */
+  async attachRecipe(_userId: string, _brewId: string): Promise<number> {
+    return 0;
+  }
+
+  async failWaiting(_userId: string, _brewId: string, _code: string): Promise<number> {
+    return 0;
   }
 
   async getStatus(userId: string, jobId: string) {
@@ -339,13 +350,14 @@ export class GenerationService {
       if (writer.usesContract) await this.#consent?.require(job.user_id, "generation");
       const subject = await this.#subject(job);
       const context = buildWriterContext({
+        userId: job.user_id,
         items,
         evidence,
         subject,
         lockedTexts: locked.flatMap(({ text }) => (text ? [text] : [])),
       });
       const output = validateGenerationOutput(
-        await withTimeout(writer.write(context), 420_000, "sentence writer"),
+        await writer.write(context),
         evidence.map(({ id, source_type, source_label, source_text }) => ({
           id, sourceType: source_type, sourceLabel: source_label, sourceText: source_text,
         })),

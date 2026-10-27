@@ -3,14 +3,13 @@ import {
   LayoutCandidatesSchema,
   LayoutDraftCandidatesSchema,
   classNameRules,
-  draftBlockNumbers,
   type LayoutDraft,
   type LayoutDraftItem,
   type LayoutItem,
   type LayoutSpec,
 } from "@expresso/contracts";
 
-import { AiError, type AiClient } from "../../platform/ai/client.js";
+import type { AiClient, AiViolation } from "../../platform/ai/client.js";
 
 /**
  * §8.3 「지면 생성」 계약.
@@ -51,6 +50,8 @@ export interface LayoutSectionContext {
 }
 
 export interface LayoutDesignContext {
+  /** 사용량을 남길 사용자. 사용자가 없는 작업만 null이다. */
+  userId: string | null;
   /** 배치 순서 그대로. 프롬프트의 번호가 이 배열의 자리다. */
   sections: LayoutSectionContext[];
   company: {
@@ -230,46 +231,42 @@ export class AiLayoutDesigner implements LayoutDesigner {
       throw new LayoutDesignError("배치할 섹션이 없습니다");
     }
 
-    const prompt = buildPrompt(context);
-    let lastError: unknown;
-    // §8.3: 기준을 벗어난 값은 무효이며 1회 재생성한다. 대비 · 클래스 · 섹션
-    // 누락이 모두 여기서 걸린다 — 도구 쪽 JSON Schema로는 표현할 수 없다.
-    for (const attempt of [1, 2]) {
-      try {
-        const { data } = await this.#ai.complete(
-          {
-            contract: "layout_draft",
-            system: SYSTEM,
-            prompt: attempt === 1 ? prompt : `${prompt}\n\n${retryNote(lastError)}`,
-            promptVersion: LAYOUT_PROMPT_VERSION,
-          },
-          LayoutDraftCandidatesSchema,
-        );
-
-        const incomplete = data.candidates.flatMap((draft, index) => {
-          const missing = missingSections(draft, context.sections.length);
-          return missing.length === 0 ? [] : [`${index + 1}안이 ${missing.join(" · ")}번 섹션을 빠뜨렸습니다`];
-        });
-        if (incomplete.length > 0) throw new LayoutDesignError(incomplete.join(", "));
-
-        return data.candidates;
-      } catch (error) {
-        // 레이트 리밋과 실행 실패는 다시 물어도 같은 답이다. 바로 올린다.
-        if (error instanceof AiError && error.code !== "AI_INVALID_OUTPUT") throw error;
-        lastError = error;
-      }
-    }
-    throw new LayoutDesignError(
-      `지면 초안이 두 번 모두 기준을 벗어났습니다: ${String(lastError)}`,
-      { cause: lastError },
+    // 다시 요청하지 않는다. 대비 · 클래스 · 후보끼리 같음(계약)과 섹션 누락(`check`)에 걸린 칸만 어댑터가 같은
+    // 대화에서 고쳐 받는다 — 도구 쪽 JSON Schema로는 표현할 수 없는 기준이다.
+    const { data } = await this.#ai.complete(
+      {
+        contract: "layout_draft",
+        system: SYSTEM,
+        prompt: buildPrompt(context),
+        promptVersion: LAYOUT_PROMPT_VERSION,
+      },
+      LayoutDraftCandidatesSchema,
+      { userId: context.userId, check: (output) => missingSectionViolations(output, context.sections.length) },
     );
+
+    // 고친 뒤에도 섹션을 빠뜨린 안은 그 내용이 지면에서 사라진다. 그 지면은 낼 수 없다.
+    const incomplete = data.candidates.flatMap((draft, index) => {
+      const missing = missingSections(draft, context.sections.length);
+      return missing.length === 0 ? [] : [`${index + 1}안이 ${missing.join(" · ")}번 섹션을 빠뜨렸습니다`];
+    });
+    if (incomplete.length > 0) throw new LayoutDesignError(incomplete.join(", "));
+
+    return data.candidates;
   }
 }
 
-/** 두 번째 시도에는 무엇이 틀렸는지 붙여 준다. 같은 실수를 반복시키지 않는다. */
-function retryNote(error: unknown): string {
-  const detail = error instanceof Error ? error.message : String(error);
-  return `직전 시도는 거절되었다. 사유: ${detail}\n같은 실수를 반복하지 말고 다시 짜라.`;
+/** 섹션을 빠뜨린 안의 자리와 이유. 경로는 모델 출력 기준이다. */
+function missingSectionViolations(
+  output: { candidates: readonly LayoutDraft[] },
+  sectionCount: number,
+): AiViolation[] {
+  return output.candidates.flatMap((draft, index) => {
+    const missing = missingSections(draft, sectionCount);
+    return missing.length === 0 ? [] : [{
+      path: `/candidates/${index}/sections`,
+      problem: `${missing.join(" · ")}번 섹션을 빠뜨렸습니다. 모든 섹션을 정확히 한 번씩 배치합니다.`,
+    }];
+  });
 }
 
 /**
@@ -353,9 +350,4 @@ function placeItems(
 /** 초안이 모든 섹션을 한 번씩 배치했는지. 빠뜨리면 내용이 사라진다. */
 export function unplacedSections(draft: LayoutDraft, sectionCount: number): number[] {
   return missingSections(draft, sectionCount);
-}
-
-/** 초안이 자리를 정해 준 블록 번호. 프롬프트 재시도 메모에 쓴다. */
-export function placedBlockNumbers(draft: LayoutDraft): number[] {
-  return draft.sections.flatMap(({ items }) => draftBlockNumbers(items));
 }

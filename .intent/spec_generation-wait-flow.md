@@ -1,0 +1,61 @@
+---
+title: 생성 기다림 화면과 다듬기 바로 넘어가기
+slug: generation-wait-flow
+stage: spec
+status: accepted
+intent: .intent/intent_generation-wait-flow.md
+date: 2026-10-27
+---
+
+# 생성 기다림 화면과 다듬기 바로 넘어가기 — 명세
+
+## 요구사항
+
+- [ ] `BrewState.latestGeneration`에 `createdAt`이 있다. Mongo(`materials/service.ts`)와 MySQL(`legacy-mysql-service.ts`) 둘 다 채운다.
+- [ ] 생성 중(`queued` · `running`)인 03 화면은 시작 시각(`createdAt`) 뒤 10초까지 브루잉, 그 뒤 입력 묶음을 보인다. 10은 사용자가 정한 값이다(2026-10-27 요청).
+- [ ] 브루잉 줄은 이 브루에서 고른 기록(`brews.materials` 중 `selected`)이고, 기록이 없으면 빈 잔만 그린다.
+- [ ] 브루잉은 처음 10초 동안 화면 가운데에, 그 뒤로는 기록 줄 없이 잔만 화면 위에 선다(`Brewing`의 `quiet`).
+- [ ] 잔 아래 한 줄: 처음 10초는 "사용자 기록 정리 중..." · "디자인 스타일 확인 중..." · "채용 공고 분석 중..."(공고가 있을 때만) · "레시피 섹션 확인 중..."을 10초에 한 번씩 다 돌고, 그 뒤는 "포트폴리오 생성 중..." 등 넷을 4.5초(세 칸)마다 돈다. "추출하는 중" 제목 · 차례 문구는 없다.
+- [ ] 입력 묶음은 구역 넷이다. 채용 공고(`brew.posting` + `jobAnalyses.get`의 요건 · 종류), 디자인(`designSystems.list`에서 고른 판의 `DesignThumb` 표지 · 이름 · 설명 · 특징), 섹션(제목 · 목적 · `context.points`), 기록(고른 재료의 서랍 · 제목 · 순위 이유). 빈 구역과 못 읽은 구역은 그리지 않는다.
+- [ ] 10초가 되면 흰 지면(`.sheet`)이 화면 아래에서 올라온다. 지면 위로 구역이 1.5초마다 하나씩 올라오고(`data-shown`, 구역 안 제목 · 카드는 `WAVE_MS` 간격), 새 구역이 칸 아래로 넘치면 아래 끝이 보이게, 칸보다 길면 위 끝에 맞춰 지면 안을 0.6초 동안 올린다. 이미 올린 구역에 다 안 보인 카드 줄이 있으면 그 줄을 먼저 보인다(`feedSnaps`). 다 쌓이면 지면을 비우고(`data-turning`) 처음부터 다시 쌓는다.
+- [ ] 움직임은 반동이 없다. 지면 · 잔 · 구역은 `--wait-rise`(`--ex-motion-panel`의 곡선, 700ms), 지면 안 이동은 `--ex-motion-panel`의 곡선, 잔 아래 줄은 `--ex-motion-glide`.
+- [ ] 사용자가 스크롤하면 멈추고 남은 구역을 모두 보인다. `scrollend`에서 그 자리부터 다시 센다. `prefers-reduced-motion`이면 처음부터 모두 보이고 움직이지 않는다.
+- [ ] 전환: 10초가 되면 브루잉 그림이 화면 위로 옮겨 가고(잔이 내려가는 결 `--ex-fall`), 구역이 아래에서 차례로 올라온다(`--ex-motion-panel`, 간격 `WAVE_MS`). `prefers-reduced-motion`이면 바로 바꾼다.
+- [ ] 청사진(`blueprint` 이벤트)이 오면 `LivePreview`가 지금처럼 카드를 지면으로 바꾼다. 브루잉 중에 와도 같다.
+- [ ] 끝난 생성(`done`, `again` 아님)의 03 화면은 `/edit/{portfolioId}`로 `redirect`한다. 생성 중 `done` 이벤트 뒤 `router.refresh()`가 같은 분기를 타서 편집 화면으로 간다.
+- [ ] "다 뽑혔습니다" 카드와 `openPortfolioAction`이 없다.
+- [ ] 편집 화면 머리줄에 `/brew/{brewId}/design?again=1` 링크 "디자인을 바꿔 다시 뽑기"가 있다.
+
+## 설계
+
+- **재사용:** `docs/portfolio-creation-flow-v2`의 `recipe/Brewing.tsx` · `Brewing.module.css`(3e16ed04 · cae5637d · bbd4cb74)를 `design/Brewing.tsx`로 옮긴다. 레시피 전용 `ReadingPanel`과 단계 문장(`STAGES`)은 버리고 잔과 기록 줄(`Brewing`)만 내보낸다. 디자인 표지는 카탈로그의 `DesignThumb`을 내보내 쓴다. 요건 종류의 말은 01 공고 분석과 같은 표(`requirement-kind.ts`)를 쓴다.
+- **`design/GenerationWait.tsx`(새 파일):**
+  - `brewingLeftMs`, `reading`, `actions`(새로고침)를 받는다. 남은 시간은 `page.tsx`가 서버 시계로 잡 시작 시각과 견줘 계산한다(`wait-timing.ts`의 `brewingLeftMs`). 브라우저 시계와 섞지 않아 시계 차이가 생기지 않고, 서버 렌더와 첫 화면이 같은 단계로 그려진다.
+  - `phase`는 `brewing`이나 `reading`이다. 남은 시간만큼 `setTimeout`을 걸고, 바꾸기 직전에 브루잉 그림의 위치와 잔의 결을 잰 뒤, 바뀐 자리에서 Web Animations API로 위치 차이를 거꾸로 걸었다가 푼다(FLIP). 브루잉 그림은 같은 노드로 남아 잔과 줄이 끊기지 않는다.
+  - `useSheetBuild`: 1.5초 타이머마다 한 가지(안 보인 줄 보이기 · 다음 구역 올리기 · 지면 비우기)를 한다. 지면 안 이동은 rAF로 `scrollTop`을 옮긴다. 시작 시각도 rAF 시각으로 잡는다(`performance.now()`와 섞으면 프레임 시각이 앞설 때 진행이 음수에 묶인다). 우리가 쓴 값과 다른 위치가 읽히면 사람이 움직인 것으로 보고 멈춘다.
+  - 잔 아래 한 줄은 나가는 줄이 `--ex-motion-instant`로 먼저 빠지고, 그 뒤 들어오는 줄이 `--ex-motion-glide`로 올라와 앉는다.
+- **`Generating.tsx`:** 생성 중 분기만 남는다. `LivePreview`의 `children`으로 `GenerationWait`과 새로고침 버튼을 준다.
+- **`LivePreview`:** `thinking` 문장(`.thought`)을 지운다.
+- **`page.tsx`:** 생성 중이면 `brews.materials` · `recipes.get` · `designSystems.list` · `jobAnalyses.get`을 함께 불러 `reading`을 만든다. 뒤의 둘은 실패해도 그 구역만 빠진다. 끝났으면 `redirect`한다.
+- **편집 화면:** `Editor.tsx`의 `toolbarRight`, "테마" 앞에 `Link`를 둔다. 모양은 `themeAction`과 같다. 다듬기 안내(`refining` · 8초 `router.refresh`)는 이미 있으므로 그대로 둔다.
+
+## 버린 대안
+
+- 레시피 대기 화면 브랜치를 merge하는 방법: main과 36커밋이 갈렸고 `recipe/` 흐름이 이미 바뀌어 충돌만 늘어난다. 컴포넌트만 옮긴다.
+- 첫 시안: 상태 줄 · 제목 · 안내 문구를 단 한 장짜리 문서와, 기록 줄을 기록 목록 행으로 옮기는 전환. 사용자가 시각적으로 지루하다고 해서 구역별 그리드와 흐르는 묶음으로 바꿨다. 위의 브루잉이 계속 남으므로 기록 줄을 옮길 곳도 없어졌다.
+- 클라이언트 마운트 시각으로 10초를 세는 방법: 새로고침마다 브루잉이 다시 뜬다(intent의 "다시 열면 이어서"에 어긋난다).
+- `done` 이벤트에서 클라이언트가 직접 `/edit`로 옮기는 방법: `done`에는 `pageId`만 있고 `portfolioId`가 없다. 서버 분기 하나로 모은다.
+
+## 함정
+
+- 숨긴 브라우저 창에서는 애니메이션과 rAF가 멈춘다. 전환 확인은 창을 보이게 하거나 headless Chrome으로 한다.
+- 서버 시각과 브라우저 시각이 다르면 남은 시간이 틀어진다. 그래서 서버가 남은 시간을 계산해 넘기고, 0~10초로 자른다.
+- 옛 CSS가 지금 `tokens.css`에 없는 변수를 쓸 수 있다. 옮길 때 확인한다.
+- `brew.posting`이 없는 자유 브루는 채용 공고 구역이 빠진다. 체험 DB의 실측 브루가 그렇다.
+- `scrollTop`에 소수를 써도 브라우저가 화면 픽셀로 맞춰 읽는다. 사람의 스크롤을 가르는 기준은 그 차이(1px)보다 크게 둔다.
+- Turbopack이 컴파일 오류를 보여 주다 한글 글자 경계에서 패닉으로 죽은 적이 있다(next 16.3.0). 체험 서버가 내려가면 다시 띄운다.
+
+## 완료 기준
+
+- `pnpm typecheck`, `pnpm test`(web · contracts · backend), `pnpm test:infra` 통과.
+- 체험 서버(3107 · 4007)에서 생성을 눌러 0초 브루잉, 10초 전환, 입력 묶음, 청사진, 완성 후 `/edit` 이동을 스크린샷으로 확인한다.

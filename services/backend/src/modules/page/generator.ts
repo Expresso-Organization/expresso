@@ -11,6 +11,7 @@ import {
   type DesignSystemSpecV2,
   type PortfolioArchetype,
   type PageStyleGrammar,
+  type PageStreamStage,
   type PortfolioPlan,
   type StructuredPortfolioContent,
   type StructuredPortfolioSnapshot,
@@ -57,6 +58,8 @@ export interface PageMedia {
 }
 
 export interface PageGenerationContext {
+  /** 사용량을 남길 사용자. 사용자가 없는 작업만 null이다. */
+  userId: string | null;
   author?: { name: string };
   structuredContent?: StructuredPortfolioContent;
   /** 1단계에서 보존한 편집 가능한 맥락 초안. */
@@ -133,6 +136,11 @@ export interface PageStreamSink {
    * 「멈춤」을 구분할 수 있는 유일한 근거다.
    */
   thinking(estimatedTokens: number): void;
+  /** 설계가 끝난 지면의 청사진 문서입니다. 설계가 먼저 오는 생성만 보냅니다. */
+  blueprint?(page: { html: string; css: string }): void;
+  /** 청사진의 글 자리 하나에 지금까지 쓴 글입니다. `revised`는 검사에 걸려 쓴 에이전트가 고쳐 보낸 글입니다. */
+  fill?(path: string, text: string, done: boolean, revised?: boolean): void;
+  stage?(name: PageStreamStage): void;
 }
 
 export interface PageGenerator {
@@ -368,9 +376,15 @@ export class AiPageGenerator implements PageGenerator {
         ...(context.modelTier ? { modelTier: context.modelTier } : {}),
       },
       PageDraftSchema,
-      sink
-        ? { onPartial: (text) => sink.delta(text), onThinking: (tokens) => sink.thinking(tokens) }
-        : {},
+      {
+        userId: context.userId,
+        // 마크업이 없는 지면은 버리지 않고 같은 대화에서 고쳐 받는다. 고친 뒤에도 없으면 아래 QA가 실패로 남긴다.
+        check: (draft) => {
+          const problem = markupProblem(draft.html, useKit);
+          return problem ? [{ path: "/html", problem }] : [];
+        },
+        ...(sink ? { onPartial: (text: string) => sink.delta(text), onThinking: (tokens: number) => sink.thinking(tokens) } : {}),
+      },
     );
 
     const clean = sanitizePage(data);
@@ -428,6 +442,13 @@ export class AiPageGenerator implements PageGenerator {
   }
 }
 
+/** 지면이 마크업인가. 아니면 그 이유. 생성 호출의 `check`(같은 대화에서 고치기)와 QA가 같은 판정을 쓴다. */
+function markupProblem(html: string, useKit: boolean): string | null {
+  if (!/<[a-zA-Z]/.test(html)) return "지면에 태그가 하나도 없습니다 — 마크업 대신 설명을 냈습니다";
+  if (useKit && !html.includes("k-page")) return "최상위 `k-page`가 없습니다";
+  return null;
+}
+
 /**
  * 만든 지면을 무엇으로 판단하는가.
  *
@@ -466,16 +487,8 @@ function pageQa(input: {
    * 그때 있던 검사 일곱 개가 전부 통과하고 `ready`로 저장됐다 — 나머지가 전부
    * **지면이 있다는 전제** 위에 서 있었기 때문이다.
    */
-  const hasElement = /<[a-zA-Z]/.test(input.html);
-  const hasRoot = !input.useKit || input.html.includes("k-page");
-  check(
-    "has-markup",
-    hasElement && hasRoot,
-    "error",
-    !hasElement
-      ? "지면에 태그가 하나도 없습니다 — 마크업 대신 설명을 냈습니다"
-      : hasRoot ? "지면이 마크업으로 되어 있음" : "최상위 `k-page`가 없습니다",
-  );
+  const problem = markupProblem(input.html, input.useKit);
+  check("has-markup", problem === null, "error", problem ?? "지면이 마크업으로 되어 있음");
   check(
     "grounded-numbers",
     input.ungrounded.length === 0,

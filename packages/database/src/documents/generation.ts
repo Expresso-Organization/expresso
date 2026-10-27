@@ -46,7 +46,8 @@ export interface GenerationJobDoc {
   _id: string;
   userId: string;
   brewId: string;
-  recipeId: string;
+  /** 구성(레시피)이 끝나기 전에 맡긴 생성은 null이다. 구성이 끝나면 워커가 붙이고 그때 시작한다. */
+  recipeId: string | null;
   templateId: string;
   status: "queued" | "running" | "done" | "failed";
   usageCharged: boolean;
@@ -84,5 +85,25 @@ export interface GenerationUsageLedgerDoc {
   usageCounterId?: string | null;
   amount: -1 | 1;
   reason: string;
+  createdAt: Date;
+}
+
+/**
+ * AI 호출 한 건의 사용량.
+ *
+ * 성공한 호출만 쌓는다(화면 정의서: 실패한 작업은 차감하지 않는다). 사용자가 없는
+ * 작업(공고 적재)은 `userId`가 null이다.
+ */
+export interface AiUsageEventDoc {
+  _id: string;
+  userId: string | null;
+  contract: string;
+  model: string;
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  cacheCreationTokens: number;
+  costUsd: number | null;
+  durationMs: number;
   createdAt: Date;
 }

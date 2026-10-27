@@ -28,7 +28,7 @@ date: 2026-10-28
 ## 설계
 
 **주소 소유 (R1–R3).** 주소는 `portfolios.publicSlug`(새 필드)가 가집니다. `deployments.subdomain`은 그 버전을 배포할 때의 주소를 남기는 기록이 됩니다.
-- 마이그레이션 0022 `portfolio_public_slug`는 네 가지를 합니다.
+- 마이그레이션 0023 `portfolio_public_slug`는 네 가지를 합니다.
   - 검증기에 `publicSlug: string|null`을 넣습니다.
   - `currentDeploymentId`의 `subdomain`으로 값을 채웁니다.
   - unique partial 인덱스 `portfolio_public_slug_key`(`publicSlug`가 string일 때)를 만듭니다.

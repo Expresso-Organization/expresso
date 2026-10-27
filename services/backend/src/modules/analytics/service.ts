@@ -68,7 +68,7 @@ export class AnalyticsService {
       try {
         await this.#consent?.require(userId, "insight_note");
         const { sections, referrers } = await this.#breakdown(userId, await this.#countedVisits(userId, deploymentIds, start, end));
-        generated = await this.#writer.write({ period: { start, end }, sampleSize, metrics: Object.fromEntries(metricMap), sections: sections.map(({ title, position, views, dwellMs }) => ({ title: title || (position ? `${position}번째 섹션` : ""), views, dwellMs })), referrers: referrers.map(({ origin, visits }) => ({ origin: origin ?? "직접 방문", visits })), domains: [] });
+        generated = await this.#writer.write({ userId, period: { start, end }, sampleSize, metrics: Object.fromEntries(metricMap), sections: sections.map(({ title, position, views, dwellMs }) => ({ title: title || (position ? `${position}번째 섹션` : ""), views, dwellMs })), referrers: referrers.map(({ origin, visits }) => ({ origin: origin ?? "직접 방문", visits })), domains: [] });
       }
       catch { generated = undefined; }
     }

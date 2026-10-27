@@ -49,6 +49,7 @@ interface SourceRow {
   selected_by: "auto" | "user";
   excluded_reason: string | null;
   category_name: string;
+  category_key: string;
   category_icon: string;
   period_from: string | null;
   period_to: string | null;
@@ -67,6 +68,7 @@ function mapSource(row: SourceRow): BrewMaterial {
     selectedBy: row.selected_by,
     excludedReason: row.excluded_reason,
     categoryName: row.category_name,
+    categoryKey: row.category_key,
     categoryIcon: row.category_icon,
     periodFrom: row.period_from,
     periodTo: row.period_to,
@@ -247,9 +249,9 @@ export class MaterialsService {
       sql<{
         id: string; status: "queued" | "running" | "done" | "failed";
         stage: "queued" | "validating" | "materializing" | "charging" | "done" | "failed";
-        portfolio_id: string | null; error_code: string | null;
+        portfolio_id: string | null; error_code: string | null; created_at: Date | string;
       }[]>`
-        select id, status, stage, portfolio_id, error_code
+        select id, status, stage, portfolio_id, error_code, created_at
         from generation_job
         where user_id = ${userId} and brew_id = ${brewId}
         order by created_at desc limit 1
@@ -294,6 +296,7 @@ export class MaterialsService {
           stage: generation[0].stage,
           portfolioId: generation[0].portfolio_id,
           failureCode: generation[0].error_code,
+          createdAt: new Date(generation[0].created_at).toISOString(),
         }
         : null,
       updatedAt: new Date(brew.updated_at).toISOString(),
@@ -311,7 +314,7 @@ export class MaterialsService {
       select brew_source.record_id, record.title, record.status, record.origin,
              brew_source.score, brew_source.\`rank\`, brew_source.is_selected,
              brew_source.selected_by, brew_source.excluded_reason, brew_source.reason_text,
-             category.name as category_name, category.icon as category_icon,
+             category.name as category_name, category.\`key\` as category_key, category.icon as category_icon,
              record.period_start as period_from,
              record.period_end as period_to
       from brew_source

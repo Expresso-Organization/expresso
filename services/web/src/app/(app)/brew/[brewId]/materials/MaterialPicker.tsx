@@ -375,19 +375,24 @@ export function MaterialPicker({
           {quota ? (
             <>
               <div className={styles.quotaHead}>
-                <span className={styles.quotaLabel}>이번 달 추출</span>
+                <span className={styles.quotaLabel}>이번 달 크레딧</span>
                 <span className={styles.quotaValue}>
-                  {quota.used} / {quota.limit ?? "무제한"}
+                  {quota.used.toLocaleString("ko-KR")} / {quota.limit?.toLocaleString("ko-KR") ?? "무제한"}
                 </span>
               </div>
               {quota.limit === null ? null : (
-                <div className={styles.quotaSlots}>
-                  {Array.from({ length: quota.limit }, (_, index) => (
-                    <span
-                      key={index}
-                      className={`${styles.quotaSlot} ${index < quota.used ? styles.quotaSlotUsed : ""}`}
-                    />
-                  ))}
+                <div
+                  className={styles.quotaTrack}
+                  role="meter"
+                  aria-valuenow={quota.used}
+                  aria-valuemin={0}
+                  aria-valuemax={quota.limit}
+                  aria-label={`이번 달 크레딧 ${quota.limit} 중 ${quota.used} 사용`}
+                >
+                  <div
+                    className={styles.quotaFill}
+                    style={{ width: `${Math.min(1, quota.used / Math.max(quota.limit, 1)) * 100}%` }}
+                  />
                 </div>
               )}
             </>

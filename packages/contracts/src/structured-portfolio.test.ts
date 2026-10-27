@@ -374,3 +374,57 @@ describe("포트폴리오 유형별 모델 스키마", () => {
     expect(() => validateStructuredPortfolio(stored(), { ...value, sections: [section] })).not.toThrow();
   });
 });
+
+describe("시각 부품과 지면 변화 계약", () => {
+  const rich: StructuredPortfolioContent = {
+    ...content,
+    sections: [
+      {
+        ...content.sections[0]!,
+        quote: "막히면 돌아갑니다.",
+        steps: [
+          { label: "관찰", text: "" },
+          { label: "우회", text: "계획" },
+        ],
+      },
+    ],
+  };
+  const withCase = (node: Record<string, unknown>, extra: Record<string, unknown> = {}, children = ["intro", "evidence", "case-a"]) => ({
+    ...spec,
+    elements: { ...spec.elements, page: { ...spec.elements.page, children }, "case-a": { ...spec.elements["case-a"], ...node }, ...extra },
+  });
+  const quote = (id = "project-a", props: Record<string, unknown> = {}) => ({ type: "PullQuote", props: { section: { $state: `/sectionById/${id}` }, ...props }, children: [] });
+
+  it("과정 흐름은 단계 두 개, 이미지 전시는 이미지, 큰 인용은 인용 문장이 있어야 한다", () => {
+    expect(() => validateStructuredPortfolio(withCase({ type: "CaseFlow" }), rich)).not.toThrow();
+    expect(() => validateStructuredPortfolio(withCase({ type: "CaseFlow" }), content)).toThrow("두 개 이상의 단계");
+    expect(() => validateStructuredPortfolio(withCase({ type: "CaseShowcase" }), rich)).toThrow("제공 이미지");
+    const quoted = withCase({}, { "quote-1": quote() }, ["intro", "evidence", "case-a", "quote-1"]);
+    expect(() => validateStructuredPortfolio(quoted, rich)).not.toThrow();
+    expect(() => validateStructuredPortfolio(quoted, content)).toThrow("quote가 필요");
+    const twice = withCase({}, { "quote-1": quote(), "quote-2": quote() }, ["intro", "evidence", "case-a", "quote-1", "quote-2"]);
+    expect(() => validateStructuredPortfolio(twice, rich)).toThrow("중복");
+    expect(() => validateStructuredPortfolio(withCase({}, { "quote-1": quote("missing") }, ["intro", "evidence", "case-a", "quote-1"]), rich)).toThrow("섹션 참조");
+  });
+
+  it("크기 · 배경 · 폭은 정해진 값만 받고 없어도 된다", () => {
+    const staged = withCase({ props: { section: { $state: "/sectionById/project-a" }, scale: "lead", surface: "inverse", width: "bleed" } });
+    expect(() => validateStructuredPortfolio(staged, rich)).not.toThrow();
+    expect(() => validateStructuredPortfolio(withCase({ props: { section: { $state: "/sectionById/project-a" }, surface: "accent" } }), rich)).toThrow();
+    expect(() => validateStructuredPortfolio(spec, content)).not.toThrow();
+  });
+
+  it("모델 스키마는 내용이 허용하는 부품만 열고, 글 · 목록형에는 지면 변화와 큰 인용이 없다", () => {
+    const shape = (value: StructuredPortfolioContent, archetype: "case-study" | "list" = "case-study") =>
+      JSON.stringify(z.toJSONSchema(structuredModelSchema(value, { intro: [], section: [], guidance: [], archetype })));
+    expect(shape(content)).not.toContain("CaseFlow");
+    expect(shape(content)).not.toContain("quote-1");
+    expect(shape(rich)).toContain("CaseFlow");
+    expect(shape(rich)).toContain("quote-1");
+    expect(shape(rich)).not.toContain("quote-2");
+    expect(shape(rich)).not.toContain("CaseShowcase");
+    expect(shape(rich)).toContain('"inverse"');
+    expect(shape(rich, "list")).not.toContain('"inverse"');
+    expect(shape(rich, "list")).not.toContain("PullQuote");
+  });
+});

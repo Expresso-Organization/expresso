@@ -16,8 +16,8 @@ date: 2026-10-28
 |---|---|
 | `packages/contracts/src/publishing.ts` | 예약어 검사(`PublicSlugSchema`), `FreeHtmlDeploymentSnapshotSchema.outline` |
 | `packages/contracts/src/analytics.ts` | 섹션 `position`, 추이 점의 클릭 세 필드, 대시보드 `portfolio.status` |
-| `packages/database/src/mongodb-migrations/0022/migration.ts` (새 파일) | `publicSlug` 검증기 · 값 채우기 · 인덱스, `deployment_subdomain_key` 교체 |
-| `packages/database/src/mongo-migrations.ts` | 0022 등록 |
+| `packages/database/src/mongodb-migrations/0023/migration.ts` (새 파일) | `publicSlug` 검증기 · 값 채우기 · 인덱스, `deployment_subdomain_key` 교체 |
+| `packages/database/src/mongo-migrations.ts` | 0023 등록 |
 | `packages/database/src/documents/generation.ts` | `PortfolioDoc.publicSlug` |
 | `services/backend/package.json` | `htmlparser2` 명시 의존성(잠금 파일에 이미 있는 10.1.0) |
 | `services/backend/src/modules/publishing/outline.ts` (새 파일) · `outline.test.ts` | 문서에서 섹션 목록 뽑기 |
@@ -46,7 +46,7 @@ date: 2026-10-28
 ## 작업 순서
 
 1. 같은 slug 재배포 통합 테스트를 먼저 씁니다. 지금 코드에서 409로 실패하는 것을 확인합니다.
-2. 계약 · 마이그레이션 0022 · `PortfolioDoc`를 바꿉니다. 로컬 DB에 `pnpm db:migrate`를 돌리고 `portfolios` 인덱스 목록을 봅니다. 번호는 원격 브랜치 최대값 0021 다음으로 정했고, 로컬 DB(`--port 57017`)의 적용 목록에서 0022가 비어 있는지 다시 확인합니다.
+2. 계약 · 마이그레이션 0023 · `PortfolioDoc`를 바꿉니다. 로컬 DB에 `pnpm db:migrate`를 돌리고 `portfolios` 인덱스 목록을 봅니다. 번호는 main이 0021 · 0022를 쓰고 있어 0023으로 정했고, 로컬 DB(`--port 57017`)의 적용 목록에서 0023가 비어 있는지 다시 확인합니다.
 3. `outline.ts`와 단위 테스트를 만듭니다. 중첩 section, 제목 없는 section, section이 없는 문서를 다룹니다.
 4. `PublishingService`를 고칩니다. 1단계 테스트와 rollback 테스트가 통과해야 합니다.
 5. `AnalyticsService` · `metrics.ts`를 고치고 통합 테스트를 더합니다. `pnpm test:infra`가 통과해야 합니다.
@@ -70,7 +70,7 @@ date: 2026-10-28
 
 2단계 마이그레이션이 가장 위험합니다. 운영 DB의 unique 인덱스를 지우고 새로 만듭니다.
 - 값 채우기가 끝나기 전에 새 인덱스를 만들면 중복은 없지만 빈 값이 생길 수 있습니다. 그래서 채우기 → 인덱스 순서로 단계를 나눕니다.
-- 실패하면 되돌리는 순서는 다음과 같습니다. 0022 단계를 역순으로 수동 실행합니다: `portfolio_public_slug_key`를 drop하고, `deployment_subdomain_idx`를 drop한 뒤 `deployment_subdomain_key`를 다시 만듭니다. 그다음 이전 코드를 배포합니다. `publicSlug` 필드는 남아도 이전 코드가 읽지 않습니다.
+- 실패하면 되돌리는 순서는 다음과 같습니다. 0023 단계를 역순으로 수동 실행합니다: `portfolio_public_slug_key`를 drop하고, `deployment_subdomain_idx`를 drop한 뒤 `deployment_subdomain_key`를 다시 만듭니다. 그다음 이전 코드를 배포합니다. `publicSlug` 필드는 남아도 이전 코드가 읽지 않습니다.
 
 7단계는 보안상 위험합니다. iframe에 `allow-scripts`를 줍니다. 브라우저 콘솔에서 두 가지를 확인합니다.
 - iframe 안에서 `document.cookie`와 `parent.document` 접근이 막혀 있어야 합니다.

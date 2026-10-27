@@ -6,6 +6,9 @@ import {
   STRUCTURED_GROUP_VARIANTS,
   STRUCTURED_INDEX_VARIANTS,
   STRUCTURED_INTRO_ALL_VARIANTS,
+  STRUCTURED_SCALES,
+  STRUCTURED_SURFACES,
+  STRUCTURED_WIDTHS,
   StructuredDesignSchema,
   StructuredPortfolioContentSchema as content,
   StructuredSectionSchema,
@@ -15,9 +18,16 @@ import {
  * 구조화 지면의 json-render 카탈로그입니다(계약). 수집 원본 렌더러와 토큰 키트가 같은
  * 카탈로그에 각자의 레지스트리(구현)를 붙입니다.
  */
+/** 요소 하나의 지면 변화(크기 · 배경 · 폭)입니다. 없으면 standard · canvas · content로 그립니다. */
+const stageProps = {
+  scale: z.enum(STRUCTURED_SCALES).optional(),
+  surface: z.enum(STRUCTURED_SURFACES).optional(),
+  width: z.enum(STRUCTURED_WIDTHS).optional(),
+};
 const projectProps = z.object({
   section: StructuredSectionSchema,
   sourceId: z.string().optional(),
+  ...stageProps,
 });
 export const structuredCatalog = defineCatalog(schema, {
   components: {
@@ -51,6 +61,26 @@ export const structuredCatalog = defineCatalog(schema, {
       }),
       description:
         "rows=짧은 목록, mosaic=이미지 중심 비대칭 타일, rail=측면 목차, poster=번호와 큰 글자 제목 행.",
+    },
+    CaseBeforeAfter: {
+      props: projectProps,
+      description: "이전 값과 이후 값을 막대 두 줄로 비교하고 옆에 짧은 설명을 둡니다. 개선 폭이 핵심인 작업에 사용합니다. 이전 값이 있는 수치가 필요합니다.",
+    },
+    MetricStrip: {
+      props: z.object({ sections: content.shape.sections, ...stageProps }),
+      description: "작업마다 대표 수치 하나를 큰 숫자로 한 줄에 4개까지 보입니다. 소개 바로 뒤에 두면 첫 화면에서 성과가 먼저 읽힙니다. surface=inverse · width=bleed로 두면 지면을 가로지르는 띠가 됩니다.",
+    },
+    PullQuote: {
+      props: z.object({ section: StructuredSectionSchema, ...stageProps }),
+      description: "한 작업의 판단 · 원칙 한 문장(quote)을 큰 글자로 보이고 그 작업으로 가는 링크를 붙입니다. 사례 사이에 두어 글이 이어지는 흐름을 끊습니다. quote가 있는 섹션만 고릅니다.",
+    },
+    CaseFlow: {
+      props: projectProps,
+      description: "단계(steps) 두 개 이상을 번호와 연결선이 있는 가로 흐름으로 그립니다. 좁은 화면에서는 세로 흐름입니다. 작업 순서 · 파이프라인 · 전환 절차가 핵심인 작업에 사용합니다.",
+    },
+    CaseShowcase: {
+      props: projectProps,
+      description: "제공 이미지 한 장을 지면 폭으로 크게 두고 제목 · 요약 · 본문을 그 아래에 둡니다. 화면 결과물이 핵심인 작업에 사용합니다. 이미지가 필요합니다.",
     },
     CaseEssay: {
       props: projectProps,

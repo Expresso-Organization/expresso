@@ -88,6 +88,7 @@ export class LayoutService {
     let remixed;
     try {
       remixed = await this.#remixer.remix({
+        userId,
         instruction,
         current: spec,
         sections: spec.sections.map(({ portfolioSectionId }) => ({

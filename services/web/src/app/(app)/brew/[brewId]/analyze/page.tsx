@@ -9,6 +9,7 @@ import { brews, jobAnalyses } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 import { BrewFrame } from "../BrewFrame";
+import { REQUIREMENT_KIND_LABEL } from "../requirement-kind";
 import { Reanalyze } from "./Reanalyze";
 import styles from "./page.module.css";
 
@@ -31,8 +32,6 @@ const COVERAGE_CLASS = {
   partial: styles.coverageWeak,
   missing: styles.coverageNone,
 } as const;
-
-const KIND_LABEL = { must: "필수", nice: "우대", tone: "톤" } as const;
 
 const AXIS_LABEL = {
   technology: "기술",
@@ -57,7 +56,7 @@ function summarize(requirements: RequirementCoverage[]): string {
   const kindPart = kinds
     .map((kind) => ({ kind, count: requirements.filter((one) => one.kind === kind).length }))
     .filter(({ count }) => count > 0)
-    .map(({ kind, count }) => `${KIND_LABEL[kind]} ${count}`)
+    .map(({ kind, count }) => `${REQUIREMENT_KIND_LABEL[kind]} ${count}`)
     .join(" · ");
   const axes = (Object.keys(AXIS_LABEL) as (keyof typeof AXIS_LABEL)[])
     .map((axis) => ({ axis, count: requirements.filter((one) => one.axis === axis).length }))
@@ -150,7 +149,7 @@ export default async function AnalyzePage({
                   <div className={styles.requirementHead}>
                     <span className={styles.requirementLabel}>{requirement.label}</span>
                     <span className={styles.requirementMentions}>
-                      {KIND_LABEL[requirement.kind]}
+                      {REQUIREMENT_KIND_LABEL[requirement.kind]}
                       {requirement.axis ? ` · ${AXIS_LABEL[requirement.axis]}` : ""}
                     </span>
                     <span className={`${styles.coverage} ${COVERAGE_CLASS[requirement.coverage]}`}>

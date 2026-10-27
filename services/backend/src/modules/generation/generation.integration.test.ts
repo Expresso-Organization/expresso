@@ -107,18 +107,57 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB generation integration",
     })).rejects.toMatchObject({ statusCode: 404 });
   });
 
-  it("rolls materialization back when the charge boundary rejects the transaction", async () => {
+  it("구성 전에 맡긴 생성은 구성이 끝나면 붙어서 시작하고, 구성이 실패하면 함께 끝난다", async () => {
     const db = mongoCollections(fixture.resource.db);
-    await db.usageCounters.updateOne({ userId }, { $set: { used: 3 } });
-    const submitted = await service.submit(userId, "mongo-generation-quota-fault", { recipeId, templateId });
-    await expect(service.process(submitted.generationJobId, new StubSentenceWriter())).rejects.toMatchObject({ statusCode: 409 });
-    const status = await service.getStatus(userId, submitted.generationJobId);
-    expect(status).toMatchObject({ status: "failed", usageCharged: false, portfolioId: expect.any(String) });
-    const portfolioId = status.portfolioId!;
-    expect(await db.portfolioSections.countDocuments({ userId, portfolioId })).toBe(0);
-    expect(await db.portfolioSnapshots.countDocuments({ userId, portfolioId })).toBe(0);
-    expect(await db.generationUsageLedger.countDocuments({ userId, generationJobId: submitted.generationJobId })).toBe(0);
-    expect((await db.usageCounters.findOne({ userId }))?.used).toBe(3);
+    const materials = new MongoMaterialsService(fixture.resource);
+    const recipes = new MongoRecipeService(fixture.resource);
+    const brewId = (await materials.createFreeBrew(userId, { title: "구성 대기", brief: "MongoDB 운영 근거", lengthPreset: "single" })).brewId;
+    const started = (topic: string, jobId: string) => db.outboxEvents.countDocuments({ topic, "payload.generationJobId": jobId });
+
+    // 구성이 없으면 저장만 하고 시작하지 않는다.
+    const waiting = await service.submit(userId, "mongo-generation-waiting", { brewId, templateId });
+    expect((await db.generationJobs.findOne({ _id: waiting.generationJobId }))).toMatchObject({ recipeId: null, status: "queued" });
+    expect(await started("portfolio.generate", waiting.generationJobId)).toBe(0);
+    await expect(service.prepareFreeHtml(waiting.generationJobId)).rejects.toMatchObject({ statusCode: 409 });
+
+    // 구성이 끝나면 붙고 한 번만 시작한다.
+    const recipe = (await recipes.generate(userId, brewId, "mongo-generation-waiting-recipe")).id;
+    expect(await service.attachRecipe(userId, brewId)).toBe(1);
+    expect(await service.attachRecipe(userId, brewId)).toBe(0);
+    expect((await db.generationJobs.findOne({ _id: waiting.generationJobId }))?.recipeId).toBe(recipe);
+    expect(await started("portfolio.generate", waiting.generationJobId)).toBe(1);
+
+    // 구성이 이미 있으면 브루만 보내도 바로 그 구성으로 시작한다.
+    const ready = await service.submit(userId, "mongo-generation-waiting-ready", { brewId, templateId });
+    expect((await db.generationJobs.findOne({ _id: ready.generationJobId }))?.recipeId).toBe(recipe);
+    expect(await started("portfolio.generate", ready.generationJobId)).toBe(1);
+
+    // 구성이 끝내 실패하면 기다리던 생성도 그 코드로 끝난다.
+    const failingBrew = (await materials.createFreeBrew(userId, { title: "구성 실패", brief: "MongoDB 운영 근거", lengthPreset: "single" })).brewId;
+    const doomed = await service.submit(userId, "mongo-generation-waiting-failed", { brewId: failingBrew, templateId });
+    expect(await service.failWaiting(userId, failingBrew, "BREW_INPUT_REJECTED")).toBe(1);
+    expect(await service.getStatus(userId, doomed.generationJobId)).toMatchObject({ status: "failed", failure: { code: "BREW_INPUT_REJECTED", retryable: false } });
+    expect(await service.attachRecipe(userId, failingBrew)).toBe(0);
+  });
+
+  it("finishes a generation that started under the limit even when its own calls pass the limit", async () => {
+    const db = mongoCollections(fixture.resource.db);
+    const submitted = await service.submit(userId, "mongo-generation-credit-crossing", { recipeId, templateId });
+    // 시작한 뒤에 쌓인 호출이 한도를 넘긴다. 끝난 작업은 그래도 결과를 남긴다.
+    await db.aiUsageEvents.insertOne({
+      _id: randomUUID(), userId, contract: "page_generation", model: "claude-opus-4-5",
+      inputTokens: 0, outputTokens: 1_000_000, cacheReadTokens: 0, cacheCreationTokens: 0,
+      costUsd: null, durationMs: 1, createdAt: new Date(),
+    });
+    await service.process(submitted.generationJobId, new StubSentenceWriter());
+    expect(await service.getStatus(userId, submitted.generationJobId)).toMatchObject({ status: "done", usageCharged: true });
+  });
+
+  it("refuses to start a new generation once the month's AI credits are used up", async () => {
+    const db = mongoCollections(fixture.resource.db);
+    const jobs = await db.generationJobs.countDocuments({ userId });
+    await expect(service.submit(userId, "mongo-generation-credit-exhausted", { recipeId, templateId })).rejects.toMatchObject({ statusCode: 403 });
+    expect(await db.generationJobs.countDocuments({ userId })).toBe(jobs);
   });
 });
 

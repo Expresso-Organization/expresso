@@ -83,7 +83,7 @@ export class JobMarketService implements JobMarketApi {
 
   async interpretSearch(userId: string, query: string, resultCount: number) {
     if (this.searchPromptVersion > 0) await this.consent?.require(userId, "search_interpret");
-    const conditions = await this.interpreter.interpret(query);
+    const conditions = await this.interpreter.interpret(query, userId);
     return this.#write(userId, async (tx) => {
       const searches = mongoCollections(tx.db).recentSearches; const options = { session: tx.session };
       const latest = await searches.findOne({ userId }, { ...options, sort: { createdAt: -1, _id: -1 } });

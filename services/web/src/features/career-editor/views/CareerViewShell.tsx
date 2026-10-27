@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DocumentPanel } from "@/app/(app)/career/[categorySlug]/DocumentPanel";
 import { Icon } from "@/components/ui/Icon";
 import type { AiPromptRequest } from "@/features/career-editor/ai/AiProposalPanel";
+import { CAREER_CATEGORY_ICONS } from "@/lib/career-category-icons";
 
 import { AiRecordInterview, type AiInterviewResult } from "./AiRecordInterview";
 import { BoardView } from "./BoardView";
@@ -35,7 +36,6 @@ const BLURB: Record<string, string> = {
   activity_leadership: "조직에서 맡은 역할과 규모를 남깁니다.",
   skill_tool: "직접 고르지 않아도 됩니다. 기록에 등장한 도구를 세어 자동으로 채웠고, 숙련도는 근거 개수로 계산합니다.",
 };
-const CATEGORY_ICON: Record<string, string> = { experience: "chat-circle-dots", project: "briefcase", education_history: "graduation-cap", certification_award: "certificate", academic_writing: "article", activity_leadership: "users-three", skill_tool: "code" };
 
 function unwrap(value: unknown): unknown {
   return value && typeof value === "object" && "value" in value ? (value as { value: unknown }).value : value;
@@ -304,7 +304,7 @@ export function CareerViewShell({ category: initialCategory, initialView, initia
 
   return <div className={styles.shell}>
     <main className={styles.viewArea}>
-      <div className={styles.categoryIntro}><span className={styles.categoryIcon}><Icon name={CATEGORY_ICON[category.key] ?? "file-text"} weight="fill" size={18} /></span><h1>{category.name}</h1><span className={styles.caret} aria-hidden="true" /></div>
+      <div className={styles.categoryIntro}><span className={styles.categoryIcon}><Icon name={CAREER_CATEGORY_ICONS[category.key] ?? "file-text"} weight="fill" size={18} /></span><h1>{category.name}</h1><span className={styles.caret} aria-hidden="true" /></div>
       <p className={styles.categoryBlurb}>{BLURB[category.key] ?? "이 카테고리의 기록입니다."}</p>
       <ViewToolbar category={category} view={view} onChange={updateView} onCreate={() => void create()} onAiCreate={() => setInterview({ mode: "create" })} onDuplicate={duplicate} />
       {records.length ? <QuickFilterBar records={records} categoryKey={category.key} value={quickFilter} onChange={setQuickFilter} /> : null}

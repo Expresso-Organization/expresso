@@ -391,7 +391,7 @@ export function Editor({
             <Link
               href={`/brew/${portfolio.brewId}/design?again=1`}
               className={styles.themeAction}
-              title="디자인을 바꿔 새로 만듭니다 · 생성 1회를 씁니다"
+              title="디자인을 바꿔 새로 만듭니다 · 이번 달 크레딧을 씁니다"
             >
               <Icon name="palette" size={14} />
               다시 뽑기
@@ -597,7 +597,7 @@ export function Editor({
 
                 {portfolio.sections.length === 0 ? (
                   <div className={styles.heroLede}>
-                    아직 섹션이 없습니다. 레시피로 돌아가 구성을 만든 뒤 추출하면
+                    아직 섹션이 없습니다. 디자인 선택으로 돌아가 다시 만들면
                     이 자리에 문장이 채워집니다.
                   </div>
                 ) : (
