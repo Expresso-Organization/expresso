@@ -46,9 +46,6 @@ export function SidebarCategories({
             }`}
             aria-current={isActive ? "page" : undefined}
           >
-            <span className={styles.categoryCaret}>
-              <Icon name="caret-right" size={10} color="var(--ex-border-firm)" />
-            </span>
             <span className={styles.rowLead}>
               <Icon
                 name={CATEGORY_ICONS[category.key] ?? "file-text"}

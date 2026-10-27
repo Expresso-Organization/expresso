@@ -30,9 +30,6 @@ export function SidebarSkeleton() {
                 <Skel w={44} h={10} />
               </div>
               <div className={styles.quotaTrack} />
-              <Link href="/account" className={styles.upgradeLink}>
-                Double Shot 추가
-              </Link>
             </div>
           </div>
           <Link href="/account" className={`${styles.row} ${styles.userLink}`} title="설정">

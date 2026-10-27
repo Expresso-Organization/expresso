@@ -150,6 +150,15 @@
  * 좌우 패딩을 아이콘 폭에서 계산한다 — 줄마다 다른 값을 손으로 적지 않는다.
  * `--ex-row-lead`는 그 줄의 선행 아이콘 폭이다.
  */
+/* 검색 줄은 이동이 아니라 오버레이를 여는 버튼이다. 다른 줄과 같게 그린다. */
+.searchRow {
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+}
+
 .row {
   --ex-row-lead: 14px;
 
@@ -354,11 +363,6 @@
   flex-shrink: 0;
 }
 
-.portfolioVisits {
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-fg);
-}
 
 .portfolioDelta {
   font-size: var(--ex-text-3xs);
@@ -450,22 +454,6 @@
   padding: 6px 8px;
 }
 
-/*
- * 트리의 꺾쇠. 접히면 폭까지 0으로 줄인다 — 흐릿해지기만 하고 자리를 차지하면
- * 그만큼 아이콘이 오른쪽으로 밀려 잘린다.
- */
-.categoryCaret {
-  width: 10px;
-  margin-right: 7px;
-  flex-shrink: 0;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  transition:
-    width var(--ex-motion-quick),
-    margin-right var(--ex-motion-quick),
-    opacity var(--ex-motion-quick);
-}
 
 .categoryName {
   margin-left: 7px;
@@ -557,11 +545,6 @@
   border-radius: 999px;
 }
 
-.upgradeLink {
-  font-size: var(--ex-text-xs);
-  font-weight: 600;
-  color: var(--ex-accent-text);
-}
 
 /*
  * 사용자 줄.
@@ -680,12 +663,6 @@
     padding-right: calc((var(--ex-sidebar-rail-row) - var(--ex-row-lead)) / 2);
   }
 
-  /* 트리의 꺾쇠는 폭까지 0이 된다 — 흐려지기만 하면 아이콘을 밀어낸다 */
-  [data-sidebar-collapsed="true"] .categoryCaret {
-    width: 0;
-    margin-right: 0;
-    opacity: 0;
-  }
 
   /* 묶음 머리말과 쿼터 카드는 높이째 접힌다 */
   [data-sidebar-collapsed="true"] .groupHead,

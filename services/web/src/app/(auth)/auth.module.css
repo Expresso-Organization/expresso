@@ -413,6 +413,42 @@
   color: var(--ex-status-danger-text);
 }
 
+/* 계정 삭제 직후 — 취소 코드를 한 번 보인다 */
+.issuedCode {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 22px;
+  padding: 14px 16px;
+  border: 1px solid var(--ex-status-danger-surface-deep);
+  border-radius: 10px;
+  background: var(--ex-status-danger-surface);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-body);
+}
+
+.issuedCodeValue {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--ex-bg);
+  font-family: var(--ex-font-mono);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg);
+  word-break: break-all;
+  user-select: all;
+}
+
+.issuedCodeDismiss {
+  justify-self: start;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: var(--ex-text-sm);
+  font-weight: 600;
+  color: var(--ex-fg);
+  text-decoration: underline;
+}
+
 .foot {
   text-align: center;
   font-size: var(--ex-text-sm);
