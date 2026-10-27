@@ -2,11 +2,11 @@
 
 import type { Route } from "next";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
 
 import { Icon } from "@/components/ui/Icon";
 
 import styles from "./page.module.css";
+import { usePopover } from "./use-popover";
 
 /** 아무것도 안 건 상태의 이름. 버튼에도 목록에도 같은 말이 서야 한다. */
 export const ALL = "전체";
@@ -39,26 +39,7 @@ export interface FilterSection {
  * 스택은 **0건**이라 두지 않았다 — 만들면 눌러도 아무것도 안 걸리는 칸이 된다.
  */
 export function JobFilter({ sections }: { sections: FilterSection[] }) {
-  const [open, setOpen] = useState(false);
-  const box = useRef<HTMLDivElement>(null);
-
-  // 바깥을 누르거나 Esc를 치면 닫는다. 팝아웃을 열어 둔 채로 다른 곳을 눌렀을
-  // 때 그대로 떠 있으면, 닫으려고 한 번 더 눌러야 한다.
-  useEffect(() => {
-    if (!open) return;
-    const close = (event: MouseEvent) => {
-      if (!box.current?.contains(event.target as Node)) setOpen(false);
-    };
-    const escape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("mousedown", close);
-    document.addEventListener("keydown", escape);
-    return () => {
-      document.removeEventListener("mousedown", close);
-      document.removeEventListener("keydown", escape);
-    };
-  }, [open]);
+  const { open, setOpen, box } = usePopover();
 
   const on = sections.filter((section) => section.active !== null);
 

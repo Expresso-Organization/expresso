@@ -184,8 +184,14 @@
   white-space: nowrap;
 }
 
-.parsedSave {
+.parsedSaveForm {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.parsedSave {
   display: flex;
   align-items: center;
   gap: 7px;
@@ -195,6 +201,16 @@
   font-size: var(--ex-text-xs);
   color: var(--ex-accent-text);
   white-space: nowrap;
+}
+
+/* 저장했으면 다시 누를 수 없다. 글자색만 낮춰 눌리지 않는 것을 보인다. */
+.parsedSave:disabled {
+  color: var(--ex-fg-muted);
+}
+
+.parsedSaveError {
+  font-size: var(--ex-text-xs);
+  color: var(--ex-status-danger-text);
 }
 
 /*
@@ -545,6 +561,10 @@
 
 .brewCta {
   width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   font-size: var(--ex-text-sm);
   font-weight: 600;
   color: var(--ex-fg-on-accent);
@@ -630,8 +650,12 @@
   margin-bottom: 12px;
 }
 
-.railHeadAction {
+.railHeadForm {
   margin-left: auto;
+  display: flex;
+}
+
+.railHeadAction {
   font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
   border: none;
@@ -640,7 +664,20 @@
 }
 
 .railHeadLink {
+  margin-left: auto;
   font-size: var(--ex-text-xs);
+}
+
+/* 관심 공고 레일 제목 옆 "마감 순" — 목록이 이미 그 순서다. 누르는 것이 아니다. */
+.railHeadNote {
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
+}
+
+.railError {
+  margin: 0 0 9px;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-status-danger-text);
 }
 
 .recentList {
@@ -712,16 +749,6 @@
   color: var(--ex-fg-subtle);
 }
 
-.searchShortcut {
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-fg-subtle);
-  background: var(--ex-bg-sunken);
-  border-radius: 6px;
-  padding: 5px 9px;
-  flex-shrink: 0;
-}
-
 /* 카테고리 탭 */
 .categoryTabs {
   display: flex;
@@ -758,9 +785,13 @@
   margin-left: 5px;
 }
 
-.sortSelect {
+.sortMenu {
+  position: relative;
   margin-left: auto;
   padding-bottom: 7px;
+}
+
+.sortSelect {
   display: flex;
   align-items: center;
   gap: 6px;
