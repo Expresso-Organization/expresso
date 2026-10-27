@@ -1082,7 +1082,14 @@ function SearchQueryCard({
           />
         ))}
         {addSections.length > 0 ? <AddCondition sections={addSections} /> : null}
-        <SaveSearchButton query={query} conditions={savedConditions} saved={saved} />
+        {/* 검색어가 바뀌면 저장 상태를 처음부터 다시 받는다. 같은 화면 안에서
+            링크로 옮겨 가면 컴포넌트가 남아 앞 검색의 상태를 들고 간다. */}
+        <SaveSearchButton
+          key={query}
+          query={query}
+          conditions={savedConditions}
+          saved={saved}
+        />
       </div>
     </div>
   );
@@ -1182,7 +1189,8 @@ function SearchRail({
         </div>
       </div>
 
-      <RecentSearches recent={recent} query={query} />
+      {/* 지운 상태도 검색어마다 새로 시작한다 — 저장 버튼과 같은 이유다. */}
+      <RecentSearches key={query} recent={recent} query={query} />
     </>
   );
 }
