@@ -1,4 +1,24 @@
-import { API_PREFIX, CareerViewConfigurationSchema } from "@expresso/contracts"; import { z } from "zod";
-import { API_BASE_URL } from "@/lib/api/client"; import { readAccessToken } from "@/lib/session";
-async function proxy(request:Request,viewId:string,method:"PATCH"|"DELETE"){const token=await readAccessToken();if(!token)return new Response(null,{status:401});const upstream=await fetch(`${API_BASE_URL}${API_PREFIX}/career/view-configurations/${encodeURIComponent(viewId)}`,{method,headers:{authorization:`Bearer ${token}`,accept:"application/json","content-type":"application/json","if-match":request.headers.get("if-match")??""},...(method==="PATCH"?{body:await request.text()}:{}),cache:"no-store"});if(!upstream.ok)return new Response(null,{status:upstream.status});if(method==="DELETE")return new Response(null,{status:204});try{return Response.json(z.strictObject({data:CareerViewConfigurationSchema}).parse(await upstream.json()))}catch{return new Response(null,{status:502})}}
-export async function PATCH(request:Request,{params}:{params:Promise<{viewId:string}>}){return proxy(request,(await params).viewId,"PATCH")} export async function DELETE(request:Request,{params}:{params:Promise<{viewId:string}>}){return proxy(request,(await params).viewId,"DELETE")}
+import { API_PREFIX, CareerViewConfigurationSchema } from "@expresso/contracts";
+import { z } from "zod";
+
+import { API_BASE_URL } from "@/lib/api/client";
+import { readAccessToken } from "@/lib/session";
+
+/** DELETE에는 본문이 없다. content-type을 붙이면 Fastify가 빈 JSON 본문으로 보고 400을 낸다. */
+async function proxy(request: Request, viewId: string, method: "PATCH" | "DELETE"): Promise<Response> {
+  const token = await readAccessToken();
+  if (!token) return new Response(null, { status: 401 });
+  const upstream = await fetch(`${API_BASE_URL}${API_PREFIX}/career/view-configurations/${encodeURIComponent(viewId)}`, {
+    method,
+    headers: { authorization: `Bearer ${token}`, accept: "application/json", "if-match": request.headers.get("if-match") ?? "", ...(method === "PATCH" ? { "content-type": "application/json" } : {}) },
+    ...(method === "PATCH" ? { body: await request.text() } : {}),
+    cache: "no-store",
+  });
+  if (!upstream.ok) return new Response(null, { status: upstream.status });
+  if (method === "DELETE") return new Response(null, { status: 204 });
+  try { return Response.json(z.strictObject({ data: CareerViewConfigurationSchema }).parse(await upstream.json())); }
+  catch { return new Response(null, { status: 502 }); }
+}
+
+export async function PATCH(request: Request, { params }: { params: Promise<{ viewId: string }> }) { return proxy(request, (await params).viewId, "PATCH"); }
+export async function DELETE(request: Request, { params }: { params: Promise<{ viewId: string }> }) { return proxy(request, (await params).viewId, "DELETE"); }

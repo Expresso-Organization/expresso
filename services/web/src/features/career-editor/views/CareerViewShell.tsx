@@ -296,6 +296,7 @@ export function CareerViewShell({ category: initialCategory, initialViews, initi
   }, [replaceViews]);
 
   async function createView(type: CareerViewType) {
+    setNotice(null);
     await materialize();
     const draft = defaultViewDraft(categoryRef.current, type, uniqueViewName(VIEW_TYPE_LABELS[type], viewsRef.current), recordsRef.current);
     const created = await postView(draft);
@@ -305,6 +306,7 @@ export function CareerViewShell({ category: initialCategory, initialViews, initi
   }
 
   async function duplicateView(id: string) {
+    setNotice(null);
     await materialize();
     const source = viewsRef.current.find((item) => item.id === serverId(id));
     if (!source) return;
@@ -317,6 +319,7 @@ export function CareerViewShell({ category: initialCategory, initialViews, initi
 
   async function deleteView(id: string) {
     if (viewsRef.current.length <= 1) return;
+    setNotice(null);
     await materialize();
     const target = viewsRef.current.find((item) => item.id === serverId(id));
     if (!target || isLocalView(target)) return;
@@ -332,6 +335,7 @@ export function CareerViewShell({ category: initialCategory, initialViews, initi
    * 보내는 동안 쌓인 순서는 마지막 것만 이어서 보낸다.
    */
   async function reorderViews(ids: string[]) {
+    setNotice(null);
     const byId = new Map(viewsRef.current.map((item) => [item.id, item]));
     replaceViews(() => ids.flatMap((id, order) => { const item = byId.get(id); return item ? [{ ...item, order }] : []; }));
     reorderState.current.next = ids;
@@ -361,6 +365,7 @@ export function CareerViewShell({ category: initialCategory, initialViews, initi
   // ── 기록 ──────────────────────────────────────────────────────────
 
   async function create(draft: { title?: string; bodyMd?: string; properties?: Record<string, unknown> } = {}, options: { open?: boolean } = {}): Promise<CareerRecordListItem | null> {
+    setNotice(null);
     const response = await fetch("/api/career/records", { method: "POST", headers: { "content-type": "application/json", "idempotency-key": crypto.randomUUID() }, body: JSON.stringify({ categoryId: category.id, title: draft.title ?? "", properties: draft.properties ?? {}, bodyMd: draft.bodyMd ?? "" }) });
     if (!response.ok) { setNotice({ text: "기록을 만들지 못했습니다." }); return null; }
     const payload = await response.json() as { data: CareerRecord };
