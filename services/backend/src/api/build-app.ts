@@ -4,6 +4,7 @@ import Fastify, { LogController, type FastifyInstance } from "fastify";
 import type { RuntimeConfig } from "../config/runtime-config.js";
 import type { ReadinessCheck } from "../modules/system/readiness.js";
 import { registerSystemRoutes } from "../modules/system/routes.js";
+import { type AdminService, registerAdminRoutes } from "../modules/admin/index.js";
 import { type IdentityApi } from "../modules/identity/index.js";
 import { registerIdentityRoutes } from "../modules/identity/routes.js";
 import type { GoogleIdTokenVerifier } from "../modules/identity/google.js";
@@ -104,6 +105,7 @@ export interface BuildApiOptions {
   engagementService?: EngagementApi;
   accountLifecycleService?: AccountLifecycleApi;
   careerDocumentService?: CareerDocumentApi;
+  adminService?: AdminService;
 }
 
 export function buildApi(options: BuildApiOptions): FastifyInstance {
@@ -159,6 +161,7 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
       });
     }
     if (options.careerDocumentService) registerCareerDocumentRoutes(app, { service: options.careerDocumentService, authenticateRequest: createAuthenticateRequest(options.identityService) });
+    if (options.adminService) registerAdminRoutes(app, { service: options.adminService, authenticateRequest: createAuthenticateRequest(options.identityService) });
     if (options.jobMarketService) {
       registerJobMarketRoutes(app, {
         jobMarketService: options.jobMarketService,

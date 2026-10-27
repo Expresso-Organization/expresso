@@ -23,7 +23,10 @@ date: 2026-10-28
 | `services/backend/src/modules/account-lifecycle/mongo-purge.ts` · `index.ts` | `purgeUserNow` 내보내기. 기존 삭제 목록에 빠져 있던 `userId` 컬렉션 7종(`career_record_relations` · `career_document_snapshots` 등)을 채운다 |
 | `services/backend/src/modules/account-lifecycle/mongo.integration.test.ts` | 스키마의 `userId` 컬렉션이 모두 삭제 목록에 있는지 검사 |
 | `packages/database/src/mongo-build.mjs` | dist에 0022 원본 복사 |
-| `services/backend/src/modules/admin/` (새) | `personas/*.ts` 5개, `service.ts`, `routes.ts`, `cli.ts`, `index.ts`, 테스트 |
+| `services/backend/src/modules/admin/` (새) | `personas/*.ts` 5개, `service.ts`, `routes.ts`, `index.ts`, 테스트 |
+| `services/backend/src/cli/admin.ts` (새) | `admin grant` · `revoke` CLI. API · 워커 진입점(`api/` · `worker/`)과 같은 층에 둔다 |
+| `services/backend/src/modules/career/select-options.ts` · `index.ts` | 단일 선택 값 도우미 `selectValueByName`. 다중 선택과 같은 선택지 추가 규칙을 쓴다 |
+| `services/backend/src/modules/identity/service.ts` | `createDummyAccount` · `setRole` · `actAs` · `stopActing` |
 | `services/backend/src/api/build-app.ts` · `package.json` | 라우트 등록, `admin` 스크립트 |
 | `services/web/src/lib/api/endpoints.ts` | `admin` 호출 묶음 |
 | `services/web/src/app/(app)/admin/` (새) | 화면 · 서버 액션 · 스타일 |

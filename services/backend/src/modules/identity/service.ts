@@ -299,6 +299,41 @@ export class IdentityService implements IdentityApi {
   }
 
   /**
+   * 더미 계정을 만든다. 비밀번호가 없어 로그인으로는 들어올 수 없고, 관리자의 대신 로그인으로만 쓴다.
+   * `.test` 주소라 메일을 보낼 수 없으므로 인증과 약관 동의를 만들 때 함께 적는다. 기본 카테고리는
+   * 가입과 같은 것을 복사한다. 같은 키가 이미 있으면 409.
+   */
+  async createDummyAccount(input: { id: string; dummyKey: string; email: string; displayName: string; planCode: "free" | "pro" | "team" }): Promise<string> {
+    try {
+      return await inTransaction(this.context, async tx => {
+        const collections = mongoCollections(tx.db);
+        const plan = await collections.plans.findOne({ code: input.planCode }, { session: tx.session });
+        if (!plan) throw new Error(`${input.planCode} plan is not installed`);
+        const now = new Date();
+        const account: UserDoc = {
+          _id: input.id, email: input.email, displayName: input.displayName, planId: plan._id, passwordHash: null,
+          createdAt: now, deletionRequestedAt: null, lifecycleVersion: 0, emailVerifiedAt: now, ...this.#terms(TERMS_VERSION),
+          role: "user", dummyKey: input.dummyKey,
+        };
+        await collections.users.insertOne(account, { session: tx.session });
+        await collections.careerCategories.insertMany(defaultCareerCategories(account._id, now), { session: tx.session });
+        return account._id;
+      });
+    } catch (error) { if (duplicate(error)) throw new IdentityError(409, "dummy account already exists"); throw error; }
+  }
+
+  /** 권한을 바꾼다. 백엔드 CLI만 부른다. 계정이 없으면 404, 바뀐 것이 없으면 null을 돌려준다. */
+  async setRole(email: string, role: "user" | "admin"): Promise<{ userId: string } | null> {
+    const users = mongoCollections(this.context.db).users;
+    const account = await users.findOne({ email, deletionRequestedAt: null }, { collation: emailCollation });
+    if (!account) throw new IdentityError(404, "account not found");
+    if (account.dummyKey) throw new IdentityError(409, "dummy accounts cannot hold a role");
+    if ((account.role ?? "user") === role) return null;
+    await users.updateOne({ _id: account._id }, { $set: { role } });
+    return { userId: account._id };
+  }
+
+  /**
    * 관리자 본인 세션을 더미 계정으로 돌린다. 새 토큰을 만들지 않는다 — 쿠키는 그대로이고,
    * 이 세션으로 들어오는 요청이 대상 계정으로 해석된다. 대상이 더미가 아니면 404.
    */
