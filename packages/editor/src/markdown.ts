@@ -55,13 +55,14 @@ export function markdownToCareerDocument(markdown: string): CareerDocument {
       content.push({ id: globalThis.crypto.randomUUID(), type: "table", attrs: { sourceMarkdown: raw }, content: rows.map((row) => ({ id: globalThis.crypto.randomUUID(), type: "tableRow", attrs: {}, content: row.slice(1, -1).split("|").map((cell) => textBlock("tableCell", cell.trim())) })) });
       continue;
     }
-    const listPattern = /^\s*(?:[-*+] |\d+[.)] |[-*+] \[[ xX]\] )/;
+    // 할 일 표시를 먼저 맞춰야 `- `만 잘리고 `[x]`가 본문에 남지 않습니다.
+    const listPattern = /^\s*(?:[-*+] \[[ xX]\] |[-*+] |\d+[.)] )/;
     if (listPattern.test(line)) {
       const start = index;
       while (index < lines.length && listPattern.test(lines[index] ?? "")) index += 1;
       const raw = lines.slice(start, index).join("\n");
       const type = /\[[ xX]\]/.test(line) ? "taskList" : /^\s*\d/.test(line) ? "orderedList" : "bulletList";
-      content.push({ id: globalThis.crypto.randomUUID(), type, attrs: { sourceMarkdown: raw }, content: lines.slice(start, index).map((item) => textBlock("listItem", item.replace(listPattern, ""))) });
+      content.push({ id: globalThis.crypto.randomUUID(), type, attrs: { sourceMarkdown: raw }, content: lines.slice(start, index).map((item) => textBlock("listItem", item.replace(listPattern, ""), type === "taskList" ? { checked: /^\s*[-*+] \[[xX]\]/.test(item) } : {})) });
       continue;
     }
     if (/^>\s?/.test(line)) {
