@@ -7,6 +7,8 @@ export interface PortfolioDoc {
   brewId: string;
   templateId: string;
   currentDeploymentId?: string | null;
+  /** 이 포트폴리오의 공개 주소입니다. 한 주소는 한 포트폴리오만 씁니다(0023 unique 인덱스). 공개를 중단해도 남습니다. */
+  publishedSlug?: string | null;
   title: string;
   status: "draft" | "published" | "unlisted";
   createdAt: Date;

@@ -28,7 +28,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB analytics", () => {
     portfolioId = randomUUID(); deploymentId = randomUUID(); sectionId = randomUUID();
     const now = new Date("2026-08-09T00:00:00.000Z");
     const db = mongoCollections(fixture.resource.db);
-    await db.portfolios.insertOne({ _id: portfolioId, userId, brewId: randomUUID(), templateId: randomUUID(), currentDeploymentId: deploymentId, title: "Analytics", status: "published", createdAt: now, updatedAt: now, styleOverrides: {} });
+    await db.portfolios.insertOne({ _id: portfolioId, userId, brewId: randomUUID(), templateId: randomUUID(), currentDeploymentId: deploymentId, publishedSlug: slug, title: "Analytics", status: "published", createdAt: now, updatedAt: now, styleOverrides: {} });
     await db.deployments.insertOne({ _id: deploymentId, userId, portfolioId, version: 1, subdomain: slug, seoIndexable: false, contactVisibility: "hidden", publishedAt: now, hasUnpublishedChanges: false, snapshot: { kind: "inline", value: { sections: [{ id: sectionId }] } }, seo: {} });
     service = new MongoAnalyticsService(fixture.resource, { visitorSalt: "mongo-analytics", rateLimit: 10 });
   });

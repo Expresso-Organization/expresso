@@ -20,6 +20,7 @@ date: 2026-10-28
 | `services/backend/src/modules/publishing/service.ts` | `publish` · `rollback` · `getPublic` |
 | `services/backend/src/modules/publishing/mongodb.integration.test.ts` | 재배포 · 주소 소유 · 옛 주소 이동 · 되돌리기 테스트 |
 | `services/backend/src/modules/portfolios/service.ts` | `#summary` 변경 여부 계산 |
+| `services/backend/src/modules/analytics/service.ts` | 공개 주소로 방문을 기록할 때 포트폴리오 주소 → 현재 배포로 찾기(같은 주소 배포 행이 여럿) |
 | `services/backend/src/modules/portfolios/*.test.ts` (통합 테스트) | 변경 여부 테스트 |
 | `services/web/src/app/(app)/edit/[portfolioId]/deploy/page.tsx` · `DeployPanel.tsx` · `deploy-actions.ts` | 「지면 판」 문구 · `pattern` · 안내 문구 |
 

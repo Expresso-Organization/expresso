@@ -37,12 +37,16 @@ export class PublishingService {
       const row = await inTransaction(this.context, async (tx) => {
         await requireActiveUser(tx, userId); const db = mongoCollections(tx.db); const options = { session: tx.session };
         const portfolio = await db.portfolios.findOne({ _id: portfolioId, userId }, options); if (!portfolio) throw new PublishingError(404, "portfolio not found");
+        // 다른 포트폴리오의 옛 주소가 이동 중이면 그 주소를 비워 둡니다. 주소 자체의 주인은 아래 portfolios unique 인덱스가 지킵니다.
+        const moving = await db.deploymentSlugRedirects.findOne({ oldSlug: input.slug, expiresAt: { $gt: at }, portfolioId: { $ne: portfolioId } }, options);
+        if (moving) throw new PublishingError(409, "slug is already reserved");
         const snapshotValue = await this.#snapshot(tx, userId, portfolioId); const snapshot = await writeSnapshot(tx, userId, snapshotValue);
         const current = portfolio.currentDeploymentId ? await db.deployments.findOne({ _id: portfolio.currentDeploymentId, userId, portfolioId }, options) : null;
         const previous = await db.deployments.find({ userId, portfolioId }, options).sort({ version: -1 }).limit(1).next();
-        const deployment: DeploymentDoc = { _id: randomUUID(), userId, portfolioId, version: (previous?.version ?? 0) + 1, subdomain: input.slug, customDomain: null, seoIndexable: input.seo.indexable, contactVisibility: input.contactVisibility, publishedAt: at, hasUnpublishedChanges: false, snapshot: snapshot as unknown as JsonObject, seo: input.seo as JsonObject };
+        const deployment: DeploymentDoc = { _id: randomUUID(), userId, portfolioId, version: (previous?.version ?? 0) + 1, subdomain: input.slug, customDomain: null, seoIndexable: input.seo.indexable, contactVisibility: input.contactVisibility, publishedAt: at, hasUnpublishedChanges: false, generatedPageId: snapshotValue.generatedPage.id, snapshot: snapshot as unknown as JsonObject, seo: input.seo as JsonObject };
         await db.deployments.insertOne(deployment, options);
-        const changed = await db.portfolios.updateOne({ _id: portfolioId, userId }, { $set: { currentDeploymentId: deployment._id, status: "published", updatedAt: at } }, options); if (changed.matchedCount !== 1) throw new PublishingError(404, "portfolio not found");
+        // 주소는 포트폴리오가 가집니다. 같은 주소를 다른 포트폴리오가 쓰면 unique 인덱스가 막아 409가 됩니다.
+        const changed = await db.portfolios.updateOne({ _id: portfolioId, userId }, { $set: { currentDeploymentId: deployment._id, publishedSlug: input.slug, status: "published", updatedAt: at } }, options); if (changed.matchedCount !== 1) throw new PublishingError(404, "portfolio not found");
         if (current && current.subdomain !== input.slug) {
           const expiresAt = new Date(at.getTime() + 30 * 24 * 60 * 60 * 1000);
           await db.deploymentSlugRedirects.updateMany({ userId, portfolioId, expiresAt: { $gt: at } }, { $set: { newSlug: input.slug } }, options);
@@ -61,15 +65,20 @@ export class PublishingService {
   }
 
   async getPublic(slug: string, at = new Date()) {
-    const db = mongoCollections(this.context.db); const direct = await db.deployments.findOne({ subdomain: slug });
-    if (direct) { const portfolio = await db.portfolios.findOne({ _id: direct.portfolioId, currentDeploymentId: direct._id, status: "published" }); if (portfolio) return PublicPortfolioSchema.parse({ kind: "portfolio", deployment: await this.#dto(direct) }); }
+    const db = mongoCollections(this.context.db);
+    // 주소의 주인은 포트폴리오입니다. 같은 주소의 배포 행이 여러 개라도 그 포트폴리오의 현재 배포만 엽니다.
+    const owner = await db.portfolios.findOne({ publishedSlug: slug, status: "published" });
+    const direct = owner?.currentDeploymentId ? await db.deployments.findOne({ _id: owner.currentDeploymentId, portfolioId: owner._id, subdomain: slug }) : null;
+    if (direct) return PublicPortfolioSchema.parse({ kind: "portfolio", deployment: await this.#dto(direct) });
     const redirect = await db.deploymentSlugRedirects.findOne({ oldSlug: slug, expiresAt: { $gt: at } });
     if (redirect) { const portfolio = await db.portfolios.findOne({ _id: redirect.portfolioId, userId: redirect.userId, status: "published" }); const deployment = portfolio?.currentDeploymentId ? await db.deployments.findOne({ _id: portfolio.currentDeploymentId, subdomain: redirect.newSlug }) : null; if (deployment) return PublicPortfolioSchema.parse({ kind: "redirect", from: redirect.oldSlug, to: redirect.newSlug, expiresAt: redirect.expiresAt.toISOString() }); }
     throw new PublishingError(404, "published portfolio not found");
   }
 
   async unpublish(userId: string, portfolioId: string) { const result = await inTransaction(this.context, async (tx) => { await requireActiveUser(tx, userId); return mongoCollections(tx.db).portfolios.updateOne({ _id: portfolioId, userId, currentDeploymentId: { $ne: null } }, { $set: { status: "unlisted", updatedAt: new Date() } }, { session: tx.session }); }); if (result.matchedCount !== 1) throw new PublishingError(404, "published portfolio not found"); return { portfolioId, status: "unlisted" as const }; }
-  async rollback(userId: string, portfolioId: string, deploymentId: string) { const row = await inTransaction(this.context, async (tx) => { await requireActiveUser(tx, userId); const db = mongoCollections(tx.db); const options = { session: tx.session }; const target = await db.deployments.findOne({ _id: deploymentId, userId, portfolioId }, options); if (!target) throw new PublishingError(404, "deployment not found"); const changed = await db.portfolios.updateOne({ _id: portfolioId, userId }, { $set: { currentDeploymentId: target._id, status: "published", updatedAt: new Date() } }, options); if (changed.matchedCount !== 1) throw new PublishingError(404, "portfolio not found"); return target; }); return this.#dto(row); }
+  async rollback(userId: string, portfolioId: string, deploymentId: string) { try { return await this.#rollback(userId, portfolioId, deploymentId); } catch (error) { if (duplicate(error)) throw new PublishingError(409, "slug is already reserved"); throw error; } }
+  /** 그 배포의 주소를 포트폴리오 주소로 되돌립니다. 그사이 다른 포트폴리오가 그 주소를 쓰면 unique 인덱스가 막습니다. */
+  async #rollback(userId: string, portfolioId: string, deploymentId: string) { const row = await inTransaction(this.context, async (tx) => { await requireActiveUser(tx, userId); const db = mongoCollections(tx.db); const options = { session: tx.session }; const target = await db.deployments.findOne({ _id: deploymentId, userId, portfolioId }, options); if (!target) throw new PublishingError(404, "deployment not found"); const changed = await db.portfolios.updateOne({ _id: portfolioId, userId }, { $set: { currentDeploymentId: target._id, publishedSlug: target.subdomain, status: "published", updatedAt: new Date() } }, options); if (changed.matchedCount !== 1) throw new PublishingError(404, "portfolio not found"); return target; }); return this.#dto(row); }
 
   async replaceResume(userId: string, portfolioId: string, fileUrl: string) { return inTransaction(this.context, async (tx) => { await requireActiveUser(tx, userId); const entitlement = await new MongoEntitlementService(tx).check(userId, "export.document"); if (!entitlement.allowed) throw new PublishingError(403, "resume asset entitlement required"); const db = mongoCollections(tx.db); const options = { session: tx.session }; if (!await db.portfolios.findOne({ _id: portfolioId, userId }, options)) throw new PublishingError(404, "portfolio not found"); const previous = await db.exportAssets.find({ userId, portfolioId, kind: "resume_file" }).sort({ version: -1 }).limit(1).next(); await db.exportAssets.updateMany({ userId, portfolioId, kind: "resume_file", revokedAt: null }, { $set: { revokedAt: new Date(), accessNonce: randomUUID() } }, options); const asset: ExportAssetDoc = { _id: randomUUID(), userId, portfolioId, kind: "resume_file", fileUrl, pageFormat: null, downloadCount: 0, version: (previous?.version ?? 0) + 1, accessNonce: randomUUID(), revokedAt: null, createdAt: new Date() }; await db.exportAssets.insertOne(asset, options); return { id: asset._id, portfolioId, kind: asset.kind, version: asset.version }; }); }
   #signature(asset: ExportAssetDoc, expires: number) { return createHmac("sha256", this.#signingSecret).update(`${asset._id}:${asset.version}:${asset.accessNonce}:${expires}`).digest("hex"); }

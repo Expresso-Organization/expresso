@@ -40,11 +40,19 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
     }
   });
 
+  it("한 주소는 한 포트폴리오만 쓰고, 같은 주소로 배포 행을 여러 개 둔다", async () => {
+    const deploymentIndexes = await mongo.collection("deployments").indexes();
+    expect(deploymentIndexes.map(({ name }) => name)).not.toContain("deployment_subdomain_key");
+    expect(deploymentIndexes.find(({ name }) => name === "deployment_subdomain_idx")?.unique).toBeFalsy();
+    const slugKey = (await mongo.collection("portfolios").indexes()).find(({ name }) => name === "portfolio_published_slug_key");
+    expect(slugKey).toMatchObject({ unique: true, key: { publishedSlug: 1 }, partialFilterExpression: { publishedSlug: { $type: "string" } } });
+  });
+
   it("reruns without replacing existing seed changes", async () => {
     await collections.plans.updateOne({ code: "free" }, { $set: { monthlyCredits: 17 } });
     const result = await migrateMongo({ databaseUrl: mongoUrl!, databaseName });
     expect(result.applied).toEqual([]);
-    expect(result.existing).toEqual(["0001_initial_collections", "0002_generation_ledger_amount_constraint", "0003_analytics_rate_and_notification_preferences", "0004_job_import_metadata", "0005_job_source_ats_providers", "0006_career_record_editor", "0007_job_source_boards", "0008_career_view_configurations", "0009_agent_conversations", "0010_agent_credentials", "0011_preparation_plans", "0012_identity_session_sliding_expiry", "0013_identity_email_and_terms", "0017_career_category_ownership", "0020_notification_producers", "0021_generation_waiting_recipe", "0022_ai_usage_and_plan_credits"]);
+    expect(result.existing).toEqual(["0001_initial_collections", "0002_generation_ledger_amount_constraint", "0003_analytics_rate_and_notification_preferences", "0004_job_import_metadata", "0005_job_source_ats_providers", "0006_career_record_editor", "0007_job_source_boards", "0008_career_view_configurations", "0009_agent_conversations", "0010_agent_credentials", "0011_preparation_plans", "0012_identity_session_sliding_expiry", "0013_identity_email_and_terms", "0017_career_category_ownership", "0020_notification_producers", "0021_generation_waiting_recipe", "0022_ai_usage_and_plan_credits", "0023_publishing_slug_ownership"]);
     expect((await collections.plans.findOne({ code: "free" }))?.monthlyCredits).toBe(17);
   });
 
