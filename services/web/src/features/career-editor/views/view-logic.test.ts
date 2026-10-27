@@ -83,6 +83,8 @@ describe("view-logic", () => {
     expect(timelineDefaults(category, filled)).toMatchObject({ startPropertyId: id(5), endPropertyId: null });
     const both = [record(1, { period: { type: "date", value: { start: "2015-03-01", end: null, timezone: null } }, ended: { type: "date", value: { start: "2021-02-01", end: null, timezone: null } } })];
     expect(timelineDefaults(category, both)).toMatchObject({ startPropertyId: id(4), endPropertyId: id(5) });
+    const reversed = { ...category, propertySchemaV2: definitions.map((item) => item.key === "ended" ? { ...item, order: 0 } : item) };
+    expect(timelineDefaults(reversed, both)).toMatchObject({ startPropertyId: id(4), endPropertyId: id(5) });
   });
 
   it("follows the screen definition for default tabs and skips timeline without dates", () => {

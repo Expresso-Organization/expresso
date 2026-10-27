@@ -314,22 +314,25 @@ export function withinAxis(range: TimelineRange, view: CareerViewConfiguration):
 // ── 뷰 만들기 ────────────────────────────────────────────────────────
 
 /**
- * 타임라인의 기본 시작 · 종료 속성. 시작은 기록이 가장 많이 채운 날짜 속성이다(같으면 앞 순서).
+ * 타임라인의 기본 시작 · 종료 속성. 시작은 기록이 가장 많이 채운 날짜 속성이다.
  * 종료는 시작과 함께 채운 기록마다 시작 이후 날짜인 다른 날짜 속성이다. 없으면 시작 값의 종료를 쓴다.
+ * 가장 많이 채운 속성이 여럿이면 종료 짝이 있는 쪽을 시작으로 고른다(「시작 월」 · 「종료 월」).
  */
 export function timelineDefaults(category: CareerCategory, records: readonly CareerRecord[]): NonNullable<CareerViewConfiguration["timeline"]> | null {
   const dates = dateDefinitions(category);
-  const starts = (definition: CareerPropertyDefinitionV2) => records.map((record) => dateRange(record.properties[definition.key])?.start ?? null);
-  const filled = (definition: CareerPropertyDefinitionV2) => starts(definition).filter(Boolean).length;
-  const start = [...dates].sort((left, right) => filled(right) - filled(left))[0];
-  if (!start) return null;
-  const startValues = starts(start);
-  const end = dates.find((candidate) => {
+  const values = new Map(dates.map((definition) => [definition.id, records.map((record) => dateRange(record.properties[definition.key])?.start ?? null)]));
+  const filled = (definition: CareerPropertyDefinitionV2) => values.get(definition.id)!.filter(Boolean).length;
+  const endFor = (start: CareerPropertyDefinitionV2) => dates.find((candidate) => {
     if (candidate.id === start.id) return false;
-    const pairs = starts(candidate).map((value, index) => [startValues[index], value] as const).filter(([from, to]) => from && to);
-    return pairs.length > 0 && pairs.every(([from, to]) => to! >= from!);
-  });
-  return { startPropertyId: start.id, endPropertyId: end?.id ?? null, axisStart: null, axisEnd: null };
+    const from = values.get(start.id)!;
+    const pairs = values.get(candidate.id)!.map((to, index) => [from[index], to] as const).filter(([left, right]) => left && right);
+    return pairs.length > 0 && pairs.every(([left, right]) => right! >= left!);
+  }) ?? null;
+  const most = Math.max(0, ...dates.map(filled));
+  const candidates = dates.filter((definition) => filled(definition) === most);
+  const start = candidates.find((definition) => endFor(definition)) ?? candidates[0];
+  if (!start) return null;
+  return { startPropertyId: start.id, endPropertyId: endFor(start)?.id ?? null, axisStart: null, axisEnd: null };
 }
 
 /** 종류를 바꿀 때 그 종류에 필요한 설정을 채운다. 타임라인 속성은 `timelineDefaults`로 잡는다. */
