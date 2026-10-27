@@ -33,7 +33,7 @@ const BlockNoteBody = dynamic(() => import("./BlockNoteBody"), { ssr: false });
 
 export function CareerDocumentEditor(props: CareerDocumentEditorProps) {
   const session = useCareerEditorSession(props.recordId);
-  const yDocument = session.session.getYDocument();
+  const { yDocument } = session;
   if (yDocument) {
     return (
       <section className={styles.editor} data-mode={props.mode} aria-label="커리어 문서 편집기">
