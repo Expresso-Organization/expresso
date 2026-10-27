@@ -1,5 +1,5 @@
 // 저장된 지면을 지금 키트로 다시 그려 스크롤 등장(data-reveal)을 브라우저에서 잽니다.
-// 사용: pnpm --filter @expresso/backend exec tsx ../../scripts/library/renderer/verify-reveal.ts --page <generated_pages _id> [--browser chromium|webkit] [--frame] [--reduced-motion] [--no-supports] [--stage] [--shots <폴더>]
+// 사용: pnpm --filter @expresso/backend exec tsx ../../scripts/library/renderer/verify-reveal.ts --page <generated_pages _id> [--browser chromium|webkit] [--frame] [--reduced-motion] [--no-supports] [--stage] [--editor] [--shots <폴더>]
 // --frame은 공개 사이트(`/site/[slug]`)처럼 문서를 `sandbox="allow-popups"` iframe의 `srcdoc`으로 싣고 그 안에서 스크롤합니다.
 // 접속 설정은 services/backend/.env의 MONGODB_URL · MONGODB_DATABASE를 읽습니다. 값은 출력하지 않습니다.
 import fs from "node:fs";
@@ -23,6 +23,7 @@ const { values: args } = parseArgs({
     "no-supports": { type: "boolean", default: false },
     frame: { type: "boolean", default: false },
     stage: { type: "boolean", default: false },
+    editor: { type: "boolean", default: false },
     shots: { type: "string" },
   },
 });
@@ -51,7 +52,8 @@ try {
     design: findPortfolioDesign(portfolio),
     theme: isPageStyleGrammar(row.styleSpecSnapshot) ? row.styleSpecSnapshot : undefined,
   });
-  document_ = pageDocument({ html: rendered.html, css: rendered.css, title: portfolio.title, ...(isPageStyleGrammar(row.styleSpecSnapshot) ? { grammar: row.styleSpecSnapshot } : {}) });
+  // --editor는 편집 화면 가운데 지면(`PagePreview reveal={false}`)과 같은 문서입니다.
+  document_ = pageDocument({ html: rendered.html, css: rendered.css, title: portfolio.title, ...(isPageStyleGrammar(row.styleSpecSnapshot) ? { grammar: row.styleSpecSnapshot } : {}), ...(args.editor ? { reveal: false } : {}) });
 } finally {
   await client.close();
 }
@@ -65,7 +67,9 @@ const HEIGHTS: Record<number, number> = { 390: 844, 926: 428, 1440: 900 };
 function snapshot() {
   const units: Element[] = [];
   for (const block of document.querySelectorAll(".xp-block")) {
-    if (block.closest('[data-reveal="none"]')) continue;
+    // 루트의 끄기 속성은 문서 전체를 재는 조건이므로 단위에서 빼지 않습니다.
+    const excluded = block.closest('[data-reveal="none"]');
+    if (excluded && excluded !== document.documentElement) continue;
     for (const child of block.children) {
       if (child.matches('ul,ol,[data-reveal="stagger"]')) units.push(...[...child.children].filter((item) => !item.matches('[data-reveal="none"]')));
       else if (!child.matches("[data-reveal]")) units.push(child);
@@ -94,14 +98,14 @@ function snapshot() {
 const browser = await playwright[engine].launch({ headless: true });
 const failures: string[] = [];
 try {
-  console.log(`${engine} ${browser.version()}${args.frame ? " · 공개 사이트 iframe" : ""} · 움직임 줄이기 ${args["reduced-motion"] ? "켬" : "끔"} · 지원 조건 ${args["no-supports"] ? "막음" : "그대로"}${args.stage ? " · 청사진 단계" : ""}`);
+  console.log(`${engine} ${browser.version()}${args.frame ? " · 공개 사이트 iframe" : ""} · 움직임 줄이기 ${args["reduced-motion"] ? "켬" : "끔"} · 지원 조건 ${args["no-supports"] ? "막음" : "그대로"}${args.stage ? " · 청사진 단계" : ""}${args.editor ? " · 편집 화면" : ""}`);
   for (const width of RENDER_MEASURE_WIDTHS) {
     const context = await browser.newContext({ viewport: { width, height: HEIGHTS[width]! }, reducedMotion: args["reduced-motion"] ? "reduce" : "no-preference" });
     const page = await context.newPage();
     let target: import("playwright").Page | import("playwright").Frame = page;
     if (args.frame) {
       // 공개 사이트 페이지(`services/web/src/app/site/[slug]`)의 iframe과 같은 속성 · 크기입니다.
-      await page.setContent('<!doctype html><style>body{margin:0}iframe{display:block;width:100%;min-height:100dvh;border:0}</style><iframe title="site" sandbox="allow-popups"></iframe>');
+      await page.setContent(`<!doctype html><style>body{margin:0}iframe{display:block;width:100%;min-height:100dvh;border:0}</style><iframe title="site" sandbox="${args.editor ? "" : "allow-popups"}"></iframe>`);
       await page.evaluate((html) => { document.querySelector("iframe")!.srcdoc = html; }, document_);
       await page.waitForTimeout(300);
       target = page.frames().find((frame) => frame !== page.mainFrame())!;
@@ -114,7 +118,7 @@ try {
     if (args.stage) await target.evaluate(() => { document.documentElement.dataset.stage = "blueprint"; });
     await target.evaluate(() => document.fonts.ready);
     const first = await target.evaluate(snapshot);
-    const off = args["reduced-motion"] || args["no-supports"] || args.stage;
+    const off = args["reduced-motion"] || args["no-supports"] || args.stage || args.editor;
     const revealed = new Set<string>();
     if (off) {
       // 등장이 꺼진 문서는 스크롤 전에도 모든 단위가 불투명하고 애니메이션이 없어야 합니다.

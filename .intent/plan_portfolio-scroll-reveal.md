@@ -32,7 +32,7 @@ date: 2026-10-28
 5. 측정 스크립트: 저장된 지면의 Spec · 내용(`generationManifest.structured`)과 디자인을 새 키트로 다시 그려 문서를 만들고 세 폭에서 스크롤하며 단위별 `opacity` · `animationName`을 기록 — Chrome 결과가 spec 완료 기준을 만족.
 6. 실제 화면: 웹 3203 · API 4203 · `reveal.localhost`로 띄워 dev01 지면 하나를 편집해 다시 그린 뒤 배포. `/site/<slug>`를 내장 브라우저로 열어 스크롤 화면을 확인. 편집 화면 가운데 지면에서 화면 밖 블록이 보이는지 확인.
    - 실행 기록(2026-10-28): dev01은 이메일 미인증이라 배포 API가 403이다. 계정 상태를 바꾸지 않고, 구성 편집 API로 판을 다시 그린 뒤 새 탭 미리보기(`/edit/<id>/preview`, 배포 문서와 같은 API 문서)를 열어 확인했다. 공개 사이트의 iframe 조건은 측정 스크립트 `--frame`(같은 `sandbox` · `srcdoc` · 크기)으로 잰다.
-7. WebKit · 끄는 조건: 측정 스크립트를 WebKit, `--frame`, `reducedMotion: "reduce"`, `@supports`를 막은 문서, 청사진 루트 속성(`--stage`)으로 각각 돌림 — 모든 단위가 스크롤 없이 `opacity 1`.
+7. WebKit · 끄는 조건: 측정 스크립트를 WebKit, `--frame`, `reducedMotion: "reduce"`, `@supports`를 막은 문서, 청사진 루트 속성(`--stage`), 편집 화면 문서(`--editor`)로 각각 돌림 — 모든 단위가 스크롤 없이 `opacity 1`.
 8. 마무리: `pnpm typecheck` · `pnpm test`, origin/main 병합, 커밋 · 푸시 · PR.
 
 ```mermaid
@@ -64,6 +64,7 @@ pnpm --filter @expresso/backend exec tsx ../../scripts/library/renderer/verify-r
 pnpm --filter @expresso/backend exec tsx ../../scripts/library/renderer/verify-reveal.ts --page <id> --browser chromium --no-supports
 pnpm --filter @expresso/backend exec tsx ../../scripts/library/renderer/verify-reveal.ts --page <id> --browser webkit --frame
 pnpm --filter @expresso/backend exec tsx ../../scripts/library/renderer/verify-reveal.ts --page <id> --browser webkit --frame --stage
+pnpm --filter @expresso/backend exec tsx ../../scripts/library/renderer/verify-reveal.ts --page <id> --browser webkit --frame --editor
 ```
 
 WebKit 검증에는 Playwright WebKit 빌드가 필요하다. 지금 이 기기에는 Chromium만 있다(`~/Library/Caches/ms-playwright`). `pnpm --filter @expresso/backend exec playwright install webkit`으로 받는다(사용자 허용 2026-10-28).
