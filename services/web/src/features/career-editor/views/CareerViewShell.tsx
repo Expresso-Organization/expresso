@@ -77,6 +77,7 @@ export function CareerViewShell({ category: initialCategory, initialViews, initi
   const viewSaves = useRef(new Map<string, { inFlight: boolean; next: CareerViewConfiguration | null }>());
   const materializing = useRef<Promise<void> | null>(null);
   const localIds = useRef(new Map<string, string>());
+  const reorderState = useRef<{ inFlight: boolean; next: string[] | null }>({ inFlight: false, next: null });
 
   const activeViewIdRef = useRef(activeViewId);
   useEffect(() => { recordsRef.current = records; }, [records]);
@@ -326,19 +327,35 @@ export function CareerViewShell({ category: initialCategory, initialViews, initi
     setActiveViewId((current) => current === target.id ? (viewsRef.current[Math.max(0, index - 1)]?.id ?? viewsRef.current[0]!.id) : current);
   }
 
-  /** 순서를 바꾸면 서버가 모든 뷰와 카테고리의 버전을 올린다. */
+  /**
+   * 순서를 바꾸면 서버가 모든 뷰와 카테고리의 버전을 올린다. 그래서 요청은 하나씩 보내고,
+   * 보내는 동안 쌓인 순서는 마지막 것만 이어서 보낸다.
+   */
   async function reorderViews(ids: string[]) {
     const byId = new Map(viewsRef.current.map((item) => [item.id, item]));
     replaceViews(() => ids.flatMap((id, order) => { const item = byId.get(id); return item ? [{ ...item, order }] : []; }));
-    await materialize();
-    const orderedIds = ids.map(serverId);
-    const send = (version: number) => fetch(`/api/career/categories/${categoryRef.current.id}/view-configurations/reorder`, { method: "POST", headers: { "content-type": "application/json", "if-match": `"v${version}"` }, body: JSON.stringify({ orderedIds }) });
-    let response = await send(categoryRef.current.version);
-    if (response.status === 412) response = await send(await refreshCategoryVersion());
-    if (!response.ok) { setNotice({ text: "뷰 순서를 바꾸지 못했습니다." }); await reloadViews(); return; }
-    const saved = (await response.json() as { data: CareerViewConfiguration[] }).data;
-    replaceViews((items) => saved.map((item) => { const local = items.find((entry) => entry.id === item.id); return local ? { ...local, version: item.version, order: item.order, updatedAt: item.updatedAt } : item; }));
-    replaceCategory({ ...categoryRef.current, version: categoryRef.current.version + 1 });
+    reorderState.current.next = ids;
+    if (reorderState.current.inFlight) return;
+    reorderState.current.inFlight = true;
+    try {
+      await materialize();
+      while (reorderState.current.next) {
+        const orderedIds = reorderState.current.next.map(serverId);
+        reorderState.current.next = null;
+        const send = (version: number) => fetch(`/api/career/categories/${categoryRef.current.id}/view-configurations/reorder`, { method: "POST", headers: { "content-type": "application/json", "if-match": `"v${version}"` }, body: JSON.stringify({ orderedIds }) });
+        let response = await send(categoryRef.current.version);
+        if (response.status === 412) response = await send(await refreshCategoryVersion());
+        if (!response.ok) { setNotice({ text: "뷰 순서를 바꾸지 못했습니다." }); reorderState.current.next = null; await reloadViews(); return; }
+        const saved = (await response.json() as { data: CareerViewConfiguration[] }).data;
+        replaceCategory({ ...categoryRef.current, version: categoryRef.current.version + 1 });
+        replaceViews((items) => {
+          const versions = new Map(saved.map((item) => [item.id, item]));
+          return items.map((item) => { const latest = versions.get(item.id); return latest ? { ...item, version: latest.version, updatedAt: latest.updatedAt } : item; });
+        });
+      }
+    } finally {
+      reorderState.current.inFlight = false;
+    }
   }
 
   // ── 기록 ──────────────────────────────────────────────────────────

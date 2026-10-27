@@ -126,6 +126,18 @@ describe("CareerViewShell", () => {
     await waitFor(() => expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).toEqual(["두 번째"]));
   });
 
+  it("sends only the latest tab order and uses the bumped category version next time", async () => {
+    renderShell({ initialViews: [base, { ...base, id: viewId(1), name: "둘", order: 1 }, { ...base, id: viewId(2), name: "셋", order: 2 }] });
+    fireEvent.keyDown(screen.getByRole("tab", { name: "테이블" }), { key: "ArrowRight", altKey: true });
+    fireEvent.keyDown(screen.getByRole("tab", { name: "테이블" }), { key: "ArrowRight", altKey: true });
+    await waitFor(() => expect(calls((url) => url.endsWith("/reorder")).length).toBe(1));
+    fireEvent.keyDown(screen.getByRole("tab", { name: "테이블" }), { key: "ArrowLeft", altKey: true });
+    await waitFor(() => expect(calls((url) => url.endsWith("/reorder")).length).toBe(2));
+    const sent = calls((url) => url.endsWith("/reorder")).map(([, init]) => [(init!.headers as Record<string, string>)["if-match"], JSON.parse(String(init!.body)).orderedIds]);
+    expect(sent).toEqual([["\"v1\"", [viewId(1), viewId(2), viewId(0)]], ["\"v2\"", [viewId(1), viewId(0), viewId(2)]]]);
+    expect(screen.getAllByRole("tab").map((item) => item.textContent)).toEqual(["둘", "테이블", "셋"]);
+  });
+
   it("builds an and/or filter tree that the contract accepts", async () => {
     renderShell();
     fireEvent.click(screen.getByRole("button", { name: /^필터/ }));

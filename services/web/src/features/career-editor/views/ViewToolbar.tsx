@@ -138,7 +138,6 @@ export function ViewToolbar({ category, view, records, search, onSearch, onChang
         />
       </div>
       <div className={styles.popoverSection}>
-        <span className={styles.popoverSectionTitle}>그룹</span>
         <label className={styles.popoverField}>그룹 속성<PropertySelect label="그룹 속성" value={view.groupPropertyId ?? ""} placeholder={groupOptions[0]!.label} options={groupOptions} onChange={(propertyId) => patch({ groupPropertyId: propertyId || null, groupOrder: [], ...(view.board ? { board: { hiddenGroupIds: [], cardOrder: {} } } : {}) })} /></label>
         {groups.length ? <ReorderList
           label="그룹 순서"

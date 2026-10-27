@@ -17,7 +17,7 @@ function TabMenu({ view, anchorRef, types, canDelete, onRename, onType, onDuplic
   const [confirming, setConfirming] = useState(false);
   const commitName = () => { const next = name.trim(); if (next && next !== view.name) onRename(next.slice(0, 120)); };
   return <AnchoredMenu anchorRef={anchorRef} label={`${view.name} 뷰 메뉴`} onClose={() => { commitName(); onClose(); }}>
-    <input className={styles.tabMenuName} aria-label="뷰 이름" value={name} maxLength={120} autoFocus onChange={(event) => setName(event.target.value)} onBlur={commitName} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); commitName(); onClose(); } }} />
+    <input className={styles.tabMenuName} aria-label="뷰 이름" value={name} maxLength={120} autoFocus onFocus={(event) => event.currentTarget.select()} onChange={(event) => setName(event.target.value)} onBlur={commitName} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); commitName(); onClose(); } }} />
     <div className={styles.tabMenuSection} role="group" aria-label="보기 종류">
       {types.map((type) => <button key={type} type="button" role="menuitemradio" aria-checked={view.type === type} onClick={() => onType(type)}><Icon name={VIEW_TYPE_ICONS[type]} size={14} /><span>{VIEW_TYPE_LABELS[type]}</span>{view.type === type ? <Icon name="check" size={13} weight="bold" /> : null}</button>)}
     </div>
