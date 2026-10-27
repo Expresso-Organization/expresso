@@ -189,16 +189,6 @@ export function Sidebar({
         </>
       ) : null}
 
-      <div className={styles.groupHead}>
-        <div className={`${styles.copy} ${styles.groupHeadRow}`}>
-          <span className={styles.groupLabel}>내 커리어</span>
-          <div className={styles.groupActions}>
-            <button type="button" className={styles.groupAction} aria-label="카테고리 추가">
-              <Icon name="plus" size={13} />
-            </button>
-          </div>
-        </div>
-      </div>
       <SidebarCategories categories={categories} />
     </SidebarFrame>
   );

@@ -14,7 +14,7 @@ afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 it("이름을 넣고 Enter를 누르면 카테고리를 만들고 그 화면으로 간다", async () => {
   fetchMock.mockResolvedValueOnce(new Response("{}", { status: 201 }));
   render(<SidebarCategories categories={[]} />);
-  fireEvent.click(screen.getByRole("button", { name: "카테고리 추가" }));
+  fireEvent.click(screen.getByTitle("카테고리 추가"));
   const input = screen.getByRole("textbox", { name: "새 카테고리 이름" });
   fireEvent.change(input, { target: { value: "  사이드 프로젝트 " } });
   fireEvent.submit(input);
@@ -24,12 +24,12 @@ it("이름을 넣고 Enter를 누르면 카테고리를 만들고 그 화면으�
   expect(body.key).toMatch(/^custom_[0-9a-f]{8}$/);
   expect(router.push).toHaveBeenCalledWith(`/career/${body.key}`);
   expect(router.refresh).toHaveBeenCalled();
-  expect(screen.getByRole("button", { name: "카테고리 추가" })).toBeTruthy();
+  expect(screen.getByTitle("카테고리 추가")).toBeTruthy();
 });
 
 it("Escape는 입력을 닫고 아무것도 만들지 않는다", () => {
   render(<SidebarCategories categories={[]} />);
-  fireEvent.click(screen.getByRole("button", { name: "카테고리 추가" }));
+  fireEvent.click(screen.getByTitle("카테고리 추가"));
   fireEvent.change(screen.getByRole("textbox"), { target: { value: "활동" } });
   fireEvent.keyDown(screen.getByRole("textbox"), { key: "Escape" });
   expect(screen.queryByRole("textbox")).toBeNull();
@@ -39,10 +39,18 @@ it("Escape는 입력을 닫고 아무것도 만들지 않는다", () => {
 it("만들지 못하면 입력을 남기고 오류로 표시한다", async () => {
   fetchMock.mockResolvedValueOnce(new Response(null, { status: 409 }));
   render(<SidebarCategories categories={[]} />);
-  fireEvent.click(screen.getByRole("button", { name: "카테고리 추가" }));
+  fireEvent.click(screen.getByTitle("카테고리 추가"));
   fireEvent.change(screen.getByRole("textbox"), { target: { value: "활동" } });
   fireEvent.submit(screen.getByRole("textbox"));
   await waitFor(() => expect(screen.getByRole("textbox").getAttribute("aria-invalid")).toBe("true"));
   expect((screen.getByRole("textbox") as HTMLInputElement).value).toBe("활동");
   expect(router.push).not.toHaveBeenCalled();
+});
+
+it("머리말 +도 같은 입력을 연다", () => {
+  render(<SidebarCategories categories={[]} />);
+  const [headerAdd] = screen.getAllByRole("button", { name: "카테고리 추가" });
+  fireEvent.click(headerAdd!);
+  expect(screen.getByRole("textbox", { name: "새 카테고리 이름" })).toBeTruthy();
+  expect(headerAdd!.getAttribute("aria-expanded")).toBe("true");
 });

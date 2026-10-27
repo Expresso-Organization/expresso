@@ -23,6 +23,7 @@ date: 2026-10-28
 | `services/web/src/features/career-editor/editor/CareerDocumentEditor.tsx` · `.module.css` | 본문 위 줄 |
 | `services/web/src/app/api/career/categories/route.ts` | `POST` 프록시 |
 | `services/web/src/components/shell/SidebarCategories.tsx` · `Sidebar.module.css` (+ test) | 카테고리 추가 입력 |
+| `services/web/src/components/shell/Sidebar.tsx` | 「내 커리어」 머리말을 `SidebarCategories`로 옮겨 머리말 `+`도 같은 입력을 연다 |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
 
