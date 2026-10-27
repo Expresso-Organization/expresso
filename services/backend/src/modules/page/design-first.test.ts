@@ -15,7 +15,7 @@ class RoutedAi extends ScriptedAiClient {
   }
 }
 
-const context: PageGenerationContext = {
+const context: PageGenerationContext = { userId: null,
   author: { name: "가상 하린" },
   portfolioPlan: null,
   sections: [

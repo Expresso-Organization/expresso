@@ -130,6 +130,7 @@ export class PageService {
     const assets = await db.mediaAssets.find({ userId, _id: { $in: supplied.map(item => item.id) }, storageKey: { $ne: "" } }).toArray();
     const media = [...new Map(supplied.flatMap(item => { const asset = assets.find(value => value._id === item.id); return asset ? [[item.id, { src: `${PAGE_IMAGE_SRC_PREFIX}${asset._id}`, srcSet: "", alt: item.alt, width: asset.width, height: asset.height }] as const] : []; })).values()];
     return {
+      userId,
       ...(author ? { author: { name: author.displayName } } : {}),
       portfolioPlan: recipe.portfolioPlan ? PortfolioPlanSchema.parse(recipe.portfolioPlan) : null,
       ...(style ? { style } : {}),
@@ -230,6 +231,7 @@ export class PageService {
     let outcome: PageRefineOutcome;
     try {
       outcome = await refiner.refine({
+        userId,
         snapshot: structured,
         design: findPortfolioDesign(owner),
         style: isPageStyleGrammar(draft.styleSpecSnapshot) ? draft.styleSpecSnapshot : undefined,

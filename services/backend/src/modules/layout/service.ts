@@ -55,7 +55,7 @@ export class LayoutService {
     const blockIds = spec.sections.flatMap(({ portfolioSectionId }) => blockRows.filter((row) => row.portfolioSectionId === portfolioSectionId).map(({ _id }) => _id));
     let remixed;
     try {
-      remixed = await this.#remixer.remix({ instruction, current: spec, sections: spec.sections.map(({ portfolioSectionId }) => ({ portfolioSectionId, title: titles.get(portfolioSectionId) ?? "" })), blockIds });
+      remixed = await this.#remixer.remix({ userId, instruction, current: spec, sections: spec.sections.map(({ portfolioSectionId }) => ({ portfolioSectionId, title: titles.get(portfolioSectionId) ?? "" })), blockIds });
     } catch (error) {
       if (error instanceof LayoutRemixError) throw new LayoutError(422, error.message);
       throw error;

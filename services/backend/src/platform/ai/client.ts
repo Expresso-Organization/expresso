@@ -149,6 +149,13 @@ export interface AiCallOptions<T = unknown> {
   /** 고친 칸이 왔을 때입니다. `data`는 고친 칸을 넣고 계약을 통과한 출력입니다. */
   onRevision?: (fixes: readonly AiFix[], data: T) => void;
   /**
+   * 이 호출의 사용량을 누구 몫으로 남길지.
+   *
+   * 사용자가 없는 작업(공고 적재)만 비운다. 비우면 사용량이 누구에게도 잡히지 않아
+   * 한도 판단에서 빠진다 — 사용자의 요청으로 도는 호출은 반드시 넘긴다.
+   */
+  userId?: string | null;
+  /**
    * 모델이 쓰는 동안 지금까지 쌓인 것을 준다.
    *
    * 넘어오는 것은 완성된 값이 아니라 **끝나지 않은 JSON 조각**이다 —

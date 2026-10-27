@@ -130,6 +130,7 @@ export class InterviewService {
     if (!context) return;
 
     const cleaned = await this.#cleaner.clean({
+        userId,
         question: context.question_text,
         transcript: context.transcript,
         // 이미 정리된 적이 있으면 그 위에 덧쓴다. 원문 그대로면 참고할 것이 없다.
@@ -314,6 +315,7 @@ export class InterviewService {
     ];
 
     const context: QuestionContext = {
+      userId,
       options,
       company: subject[0]
         ? {
@@ -504,6 +506,7 @@ export class InterviewService {
           && basis.recordId === question.basis.recordId));
 
     return this.#writer.rewrite({
+        userId,
         // 자리가 이미 채워져 목록에서 빠졌을 수도 있다. 그때는 옛 근거를 그대로 쓴다.
         option: option ?? {
           basis: question.basis,

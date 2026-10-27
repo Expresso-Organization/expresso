@@ -115,7 +115,7 @@ class Stub implements AiClient {
     });
   }
 }
-const context: PageGenerationContext = {
+const context: PageGenerationContext = { userId: null,
   structuredContent: content,
   portfolioPlan: null,
   sections: [],
@@ -376,7 +376,7 @@ describe("모델 기반 구조화 생성", () => {
       next.elements.index.props.variant = variant;
       return next;
     };
-    const input = { snapshot: { spec: stored(spec), content } };
+    const input = { userId: null, snapshot: { spec: stored(spec), content } };
 
     it("초안은 한 번만 재고 측정 결함이 있어도 다시 요청하지 않는다", async () => {
       const ai = new Stub([spec]);
