@@ -16,13 +16,16 @@ date: 2026-10-28
 |---|---|
 | `packages/contracts/src/structured-portfolio.ts` | style 스키마 · 부분 표 · 글 경로 표 · 요청 스키마 |
 | `packages/contracts/src/structured-portfolio.test.ts` (새 파일 또는 기존 테스트) | 경로 표 · style 검사 테스트 |
-| `packages/portfolio-renderer/src/catalog.ts` | leaf `style` prop · `parts` · 선택지 이름 · `editableFields` |
+| `packages/portfolio-renderer/src/editing.ts` (새 파일) | 글자 부분 선택자 표 · 선택지 이름 · `editableFields`(카탈로그 props에서 읽음) · `elementStyleCss` · `elementTextPaths` |
 | `packages/portfolio-renderer/src/kit.tsx` · `kit-styles.ts` | `data-xp-key` · `data-xp-part` · style 속성과 CSS |
 | `packages/portfolio-renderer/src/kit.test.ts` | 표시 속성 · style CSS · 카탈로그와 계약 일치 테스트 |
-| `services/backend/src/modules/page/service.ts` | `nextRevision` · `instructElement` · `addRecordSection` · size 단계 검사 |
+| `services/backend/src/modules/page/service.ts` | `nextRevision` · `instructElement` · `addRecordSection` · `editorDesign` · size 단계 검사 · 지시 재생성 때 글자 모양 옮기기(`#carryStyles`) |
+| `packages/contracts/src/page.ts` | 요소 지시 결과 · 편집용 디자인 값 응답 스키마 |
+| `services/backend/src/api/build-app.ts` · `main.ts` | `PageElementEditor` 주입 |
+| `services/backend/src/modules/page/design-first.ts` | `FILL_SYSTEM` · `sectionFillSchema` 내보내기(기록 사례 쓰기가 재사용) |
 | `services/backend/src/modules/page/element-edit.ts` (새 파일) | 요소 지시 프롬프트 · 출력 스키마 · check |
 | `services/backend/src/modules/page/record-section.ts` (새 파일) | 기록 → 섹션 (AI · 규칙) |
-| `services/backend/src/modules/page/routes.ts` | 두 라우트 |
+| `services/backend/src/modules/page/routes.ts` | 요소 지시 · 기록 추가 · 편집용 디자인 값(`GET .../page/design`) 라우트 |
 | `services/backend/src/modules/page/*.test.ts` · `structured.mongo.integration.test.ts` | 단위 · 통합 테스트 |
 | `services/backend/fixtures/ai/partial_edit/` · `page_fill/` (위치는 `fixture.ts` 설정을 따름) | 화면 확인용 fixture 출력 |
 | `services/web/src/lib/api/endpoints.ts` | `page.instructElement` · `page.addSection` |

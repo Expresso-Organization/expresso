@@ -48,6 +48,7 @@ import { registerPublishingRoutes } from "../modules/publishing/routes.js";
 import { type MediaApi } from "../modules/media/index.js";
 import { registerMediaRoutes } from "../modules/media/routes.js";
 import { registerPageRoutes } from "../modules/page/routes.js";
+import type { PageElementEditor } from "../modules/page/element-edit.js";
 import type { PageStream } from "../modules/page/stream.js";
 import type { PageGenerator } from "../modules/page/generator.js";
 import { type PageApi } from "../modules/page/index.js";
@@ -98,6 +99,8 @@ export interface BuildApiOptions {
   pageService?: PageApi;
   /** 자유 생성 지면을 쓰려면 서비스와 생성기가 **둘 다** 있어야 한다. */
   pageGenerator?: PageGenerator;
+  /** 다듬기 화면의 요소 지시 · 기록 사례 쓰기 AI입니다. */
+  pageEditor?: PageElementEditor | null;
   /** 만들어지는 지면을 흘려보내는 통로. 없으면 그 자리가 503이다. */
   pageStream?: PageStream | null;
   analyticsService?: AnalyticsApi;
@@ -266,6 +269,7 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
       registerPageRoutes(app, {
         service: options.pageService,
         ...(options.pageGenerator ? { generator: options.pageGenerator } : {}),
+        editor: options.pageEditor ?? null,
         stream: options.pageStream ?? null,
         authenticateRequest: createAuthenticateRequest(options.identityService),
       });

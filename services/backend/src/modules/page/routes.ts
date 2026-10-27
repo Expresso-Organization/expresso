@@ -5,7 +5,10 @@ import {
   RestorePageRevisionSchema,
   EditStructuredPageSchema,
   PageLibrarySearchSchema,
+  InstructStructuredElementSchema,
+  AddStructuredSectionSchema,
 } from "@expresso/contracts";
+import { z } from "zod";
 import { searchPageLibrary } from "@expresso/portfolio-renderer";
 import type { FastifyInstance, preHandlerHookHandler } from "fastify";
 
@@ -13,10 +16,13 @@ import { HttpStatusError, requireAuth } from "../../api/plugins/auth-context.js"
 import { PageGenerationError, type PageGenerator } from "./generator.js";
 import { PageServiceError, type PageApi } from "./index.js";
 import { writePageStream, type PageStream } from "./stream.js";
+import type { PageElementEditor } from "./element-edit.js";
 
 export interface RegisterPageRoutesOptions {
   service: PageApi;
   generator?: PageGenerator;
+  /** 요소 지시와 기록 사례 쓰기의 AI입니다. 없으면 요소 지시는 503이고, 기록 추가는 규칙으로 씁니다. */
+  editor?: PageElementEditor | null;
   /** 없으면 흘려보내는 자리를 열지 않는다. */
   stream?: PageStream | null;
   authenticateRequest: preHandlerHookHandler;
@@ -60,6 +66,31 @@ export function registerPageRoutes(
     const input = EditStructuredPageSchema.parse(request.body);
     if (!options.service.editComposition) throw new HttpStatusError(503, "구성 편집을 사용할 수 없습니다.");
     return { data: await lift(() => options.service.editComposition!(principal.user.id, portfolioId, input)) };
+  });
+
+  app.get(`${path}/design`, { preHandler: options.authenticateRequest }, async (request) => {
+    const principal = requireAuth(request);
+    const { id: portfolioId } = PortfolioIdParamsSchema.parse(request.params);
+    if (!options.service.editorDesign) throw new HttpStatusError(503, "디자인 값을 읽을 수 없습니다.");
+    return { data: await lift(() => options.service.editorDesign!(principal.user.id, portfolioId)) };
+  });
+
+  app.post(`${path}/elements/:key/instruct`, { preHandler: options.authenticateRequest }, async (request) => {
+    const principal = requireAuth(request);
+    const { id: portfolioId } = PortfolioIdParamsSchema.parse(request.params);
+    const { key } = z.object({ key: z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9-]{0,99}$/) }).parse(request.params);
+    const input = InstructStructuredElementSchema.parse(request.body);
+    if (!options.service.instructElement) throw new HttpStatusError(503, "요소 편집을 사용할 수 없습니다.");
+    return { data: await lift(() => options.service.instructElement!(principal.user.id, portfolioId, key, input, options.editor ?? null)) };
+  });
+
+  app.post(`${path}/sections`, { preHandler: options.authenticateRequest }, async (request, reply) => {
+    const principal = requireAuth(request);
+    const { id: portfolioId } = PortfolioIdParamsSchema.parse(request.params);
+    const input = AddStructuredSectionSchema.parse(request.body);
+    if (!options.service.addRecordSection) throw new HttpStatusError(503, "기록 추가를 사용할 수 없습니다.");
+    const page = await lift(() => options.service.addRecordSection!(principal.user.id, portfolioId, input, options.editor ?? null));
+    return reply.code(201).send({ data: page });
   });
 
   app.post(`${path}/restore`, { preHandler: options.authenticateRequest }, async (request, reply) => {

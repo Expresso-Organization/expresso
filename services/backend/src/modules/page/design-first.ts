@@ -101,7 +101,7 @@ type RawEvidence = { id: string; label: string; text: string };
 
 const DESIGN_SYSTEM =
   "포트폴리오 지면을 설계하는 아트 디렉터입니다. 등록된 컴포넌트만으로 지면을 구성하고 칸마다 글자 수를 정합니다. 글은 쓰지 않습니다. 출처에 없는 수치나 성과를 전제로 설계하지 않습니다.";
-const FILL_SYSTEM =
+export const FILL_SYSTEM =
   "포트폴리오 지면의 정해진 칸을 출처 자료로 채웁니다. 칸의 글자 수를 넘기지 않고, 출처에 없는 수치 · 성과 · 경력 · 이미지를 만들지 않습니다. 출처의 표현을 짧게 다듬되 사실은 그대로 둡니다.";
 
 function rawInput(context: PageGenerationContext) {
@@ -332,7 +332,7 @@ rationale에는 이 지면을 이렇게 설계한 이유를 씁니다. motion은
  * 섹션 하나를 채우는 출력 형식입니다. 모양만 정합니다 — 설계의 칸 예산과 `FILL_LIMITS`는 받은 뒤 `fillViolations`가
  * 검사하고, 걸린 칸만 쓴 에이전트가 같은 대화에서 고칩니다. 형식에 넣으면 조금만 넘쳐도 출력 전체가 거절됩니다.
  */
-function sectionFillSchema() {
+export function sectionFillSchema() {
   return z.object({
     title: z.string().min(1),
     summary: z.string(),

@@ -16,6 +16,8 @@ import { MongoGenerationService } from "../generation/index.js";
 import { findDesignSystemRevision } from "../design-systems/index.js";
 import { MongoPublishingService } from "../publishing/service.js";
 import { PageService } from "./service.js";
+import { PageElementEditor } from "./element-edit.js";
+import { ScriptedAiClient } from "../../platform/ai/scripted-client.js";
 import type { PageGenerator, PageGenerationContext } from "./generator.js";
 
 describe.skipIf(!process.env.TEST_MONGODB_URL)(
@@ -26,7 +28,9 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
       user = "",
       other = "",
       portfolio = "",
-      recipeId = "";
+      recipeId = "",
+      recordId = "",
+      categoryId = "";
     beforeAll(async () => {
       fixture = await createMongoFixture("structured-page");
       service = new PageService(fixture.resource);
@@ -60,6 +64,8 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
           properties: {},
         })
       ).record;
+      recordId = record.id;
+      categoryId = category.id;
       await db.careerRecords.updateOne(
         { _id: record.id },
         { $set: { status: "organized" } },
@@ -425,6 +431,8 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
 
       const second = await service.generate(user, portfolio, generator);
       const edited = await service.editComposition(user, portfolio, { expectedRevision: second.revision, patches: [{ path: "/sections/project-a/summary", value: "사용자 편집" }] });
+      // 다듬는 중인 초안을 고친 새 판은 다듬기 표시를 옮기지 않습니다. 옮기면 화면의 「다듬는 중」이 끝나지 않습니다.
+      expect(edited.refinement).toBeUndefined();
       await service.refine(user, second.id, refiner);
       expect(inputs).toHaveLength(1);
       expect((await service.latest(user, portfolio))!.id).toBe(edited.id);
@@ -433,6 +441,60 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
       const third = await service.generate(user, portfolio, generator);
       await service.refine(user, third.id, null);
       expect((await service.latest(user, portfolio))!.refinement).toEqual({ status: "skipped", reason: "AI가 꺼져 있습니다." });
+    });
+    it("고른 요소를 말로 · 직접 고치고, 기록을 사례로 더한다", async () => {
+      const db = mongoCollections(fixture.resource.db);
+      const base = await service.generate(user, portfolio, generator);
+      const owner = await db.portfolios.findOne({ _id: portfolio });
+      const design = (await import("../design-systems/index.js")).findPortfolioDesign(owner!);
+      const step = design.typography.scale.at(-1)!.name;
+
+      // 직접 고친 글자 모양은 요소 키로 좁힌 규칙으로 그립니다. 디자인에 없는 단계는 받지 않습니다.
+      const spec = structuredClone(base.generationManifest!.structured!.spec);
+      (spec.elements["section-project-a"]!.props as Record<string, unknown>).style = { title: { color: "accent", size: step } };
+      const styled = await service.editComposition(user, portfolio, { expectedRevision: base.revision, spec, patches: [] });
+      expect(styled.html).toContain('data-xp-key="section-project-a"');
+      expect(styled.css).toContain(`[data-xp-key="section-project-a"] :is(.xp-head .xp-h2){color:var(--xp-accent-text)`);
+      (spec.elements["section-project-a"]!.props as Record<string, unknown>).style = { title: { size: "giant" } };
+      await expect(service.editComposition(user, portfolio, { expectedRevision: styled.revision, spec, patches: [] })).rejects.toMatchObject({ statusCode: 422 });
+
+      // AI가 없으면 말로 고칠 수 없습니다.
+      await expect(service.instructElement(user, portfolio, "section-project-a", { expectedRevision: styled.revision, instruction: "짧게" }, null)).rejects.toMatchObject({ statusCode: 503 });
+      const ai = new ScriptedAiClient(
+        () => ({ note: "요약을 바꿨습니다.", text: [{ path: "/sections/project-a/summary", value: "요약 77건" }], style: { summary: { color: "muted" } } }),
+        (_request, paths) => paths.map((path) => ({ path, value: "짧은 요약" })),
+      );
+      const instructed = await service.instructElement(user, portfolio, "section-project-a", { expectedRevision: styled.revision, instruction: "요약 짧게" }, new PageElementEditor(ai));
+      expect(ai.fixRequests).toHaveLength(1);
+      expect(instructed.changes).toEqual([
+        { label: "요약 모양", before: "기본", after: "흐린색" },
+        { label: "경로 연구 · 요약", before: "초기 요약", after: "짧은 요약" },
+      ]);
+      expect(instructed.page.revision).toBe(styled.revision + 1);
+      expect(instructed.page.rationale).toBe("요약을 바꿨습니다.");
+      const after = instructed.page.generationManifest!.structured!;
+      expect(after.spec.elements["intro"]).toEqual(base.generationManifest!.structured!.spec.elements["intro"]);
+      // 앞서 고친 제목 모양은 그대로 두고 요약 모양만 더합니다.
+      expect((after.spec.elements["section-project-a"]!.props as { style?: unknown }).style).toEqual({ title: { color: "accent", size: step }, summary: { color: "muted" } });
+      await expect(service.instructElement(user, portfolio, "missing", { expectedRevision: instructed.page.revision, instruction: "x" }, new PageElementEditor(ai))).rejects.toMatchObject({ statusCode: 404 });
+
+      // 기록 추가: AI가 없으면 기록 글을 그대로 씁니다. 같은 기록은 두 번 더하지 않습니다.
+      const added = await service.addRecordSection(user, portfolio, { expectedRevision: instructed.page.revision, recordId }, null);
+      const structured = added.generationManifest!.structured!;
+      expect(structured.content.sections.at(-1)).toMatchObject({ id: recordId, title: "가상 경로 연구", body: "통로 경로를 검토했습니다." });
+      expect(structured.spec.elements[`section-${recordId}`]).toMatchObject({ type: "CaseEssay" });
+      expect(added.html).toContain("통로 경로를 검토했습니다.");
+      await expect(service.addRecordSection(user, portfolio, { expectedRevision: added.revision, recordId }, null)).rejects.toMatchObject({ statusCode: 409 });
+      await expect(service.addRecordSection(other, portfolio, { expectedRevision: added.revision, recordId }, null)).rejects.toMatchObject({ statusCode: 404 });
+
+      // AI가 있으면 기록을 읽고 사례 글을 씁니다.
+      const career = new MongoCareerService(fixture.resource);
+      const second = (await career.createRecord(user, randomUUID(), { categoryId, title: "배치 재설계", bodyMd: "야간 배치를 24분으로 줄였다.", properties: {} })).record;
+      const writer = new ScriptedAiClient(() => ({ title: "배치 재설계", summary: "24분으로 줄인 배치", body: "본문", details: [], metrics: [], quote: "", steps: [] }));
+      const written = await service.addRecordSection(user, portfolio, { expectedRevision: added.revision, recordId: second.id }, new PageElementEditor(writer));
+      expect(writer.calls[0]!.contract).toBe("page_fill");
+      expect(written.generationManifest!.structured!.content.sections.at(-1)).toMatchObject({ id: second.id, summary: "24분으로 줄인 배치" });
+      await expect(service.addRecordSection(user, portfolio, { expectedRevision: added.revision, recordId: randomUUID() }, null)).rejects.toMatchObject({ statusCode: 409 });
     });
   },
 );

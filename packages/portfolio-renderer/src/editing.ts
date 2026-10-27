@@ -1,7 +1,9 @@
 import type {
   DesignSystemSpecV2,
   StructuredElementStyle,
+  StructuredPortfolioSnapshot,
   StructuredPortfolioSpec,
+  StructuredSection,
 } from "@expresso/contracts";
 import { z } from "zod";
 
@@ -204,3 +206,61 @@ export function elementStyleCss(spec: StructuredPortfolioSpec): string {
   }
   return rules.join("\n");
 }
+
+type Snapshot = StructuredPortfolioSnapshot;
+type Node = Snapshot["spec"]["elements"][string];
+
+const TEXT_LABELS: Record<string, string> = {
+  name: "이름", role: "직무", headline: "한 문장 소개", intro: "소개 글",
+  title: "제목", summary: "요약", body: "본문", period: "기간", quote: "인용",
+  label: "이름표", text: "설명", value: "값", before: "이전 값", note: "설명",
+};
+const LIST_LABELS: Record<string, string> = { details: "항목", steps: "단계", metrics: "수치" };
+
+function sectionIdOf(node: Node | undefined): string | undefined {
+  const binding = (node?.props as { section?: { $state?: string } } | undefined)?.section?.$state;
+  return binding?.match(/^\/sectionById\/(.+)$/)?.[1];
+}
+
+/** 경로를 사람이 읽는 이름으로 바꿉니다. 예: `/sections/a/metrics/0/value` → `경로 재설계 · 수치 1 값`. */
+export function textPathLabel(snapshot: Snapshot, path: string): string {
+  const parts = path.split("/").slice(1);
+  if (parts[0] === "profile") return TEXT_LABELS[parts[1]!] ?? parts[1]!;
+  const section = snapshot.content.sections.find((item) => item.id === parts[1]);
+  const prefix = section ? `${section.title} · ` : "";
+  if (parts.length === 3) return `${prefix}${TEXT_LABELS[parts[2]!] ?? parts[2]}`;
+  return `${prefix}${LIST_LABELS[parts[2]!] ?? parts[2]} ${Number(parts[3]) + 1} ${TEXT_LABELS[parts[4]!] ?? parts[4]}`;
+}
+
+function sectionTextPaths(section: StructuredSection, withQuote: boolean): string[] {
+  const base = `/sections/${section.id}`;
+  return [
+    `${base}/title`, `${base}/summary`, `${base}/body`,
+    ...(section.period !== undefined ? [`${base}/period`] : []),
+    ...(withQuote && section.quote !== undefined ? [`${base}/quote`] : []),
+    ...section.details.flatMap((_, index) => [`${base}/details/${index}/label`, `${base}/details/${index}/text`]),
+    ...(section.steps ?? []).flatMap((_, index) => [`${base}/steps/${index}/label`, `${base}/steps/${index}/text`]),
+    ...(section.metrics ?? []).flatMap((metric, index) => [
+      `${base}/metrics/${index}/label`, `${base}/metrics/${index}/value`,
+      ...(metric.before !== undefined ? [`${base}/metrics/${index}/before`] : []),
+      ...(metric.note !== undefined ? [`${base}/metrics/${index}/note`] : []),
+    ]),
+  ];
+}
+
+/** 이 요소가 보여 주는 글의 경로입니다. 요소 지시는 이 경로만 고칠 수 있습니다. */
+export function elementTextPaths(snapshot: Snapshot, key: string): string[] {
+  const node = snapshot.spec.elements[key];
+  if (!node) return [];
+  const sections = snapshot.content.sections;
+  if (node.type === "NameIntro") return ["/profile/role", "/profile/headline", "/profile/intro"];
+  if (node.type === "ProjectIndex") return sections.flatMap((section) => [`/sections/${section.id}/title`, `/sections/${section.id}/summary`]);
+  if (node.type === "MetricStrip")
+    return sections.flatMap((section) => (section.metrics ?? []).slice(0, 1).flatMap(() => [`/sections/${section.id}/metrics/0/label`, `/sections/${section.id}/metrics/0/value`]));
+  const id = sectionIdOf(node);
+  const section = id ? sections.find((item) => item.id === id) : undefined;
+  if (!section) return [];
+  if (node.type === "PullQuote") return section.quote !== undefined ? [`/sections/${section.id}/quote`] : [];
+  return sectionTextPaths(section, true);
+}
+
