@@ -1,0 +1,276 @@
+/* 관리 — 더미 계정. 줄 모양은 설정(09)의 테두리 있는 줄을 따른다. */
+
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: 26px 16px 34px;
+  overflow: auto;
+}
+
+.title {
+  font-size: var(--ex-text-3xl);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  margin-bottom: 18px;
+}
+
+.rows {
+  display: grid;
+  gap: 9px;
+  max-width: 1080px;
+}
+
+/*
+ * 한 줄 = 사람 · 기록 양 · 마지막 대신 로그인 · 동작. 좁은 폭에서는 사람과 동작이
+ * 위아래로 쌓이고, 넓어지면 네 칸이 한 줄로 선다.
+ */
+.row {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  grid-template-areas:
+    "avatar who"
+    "volume volume"
+    "last last"
+    "actions actions";
+  align-items: center;
+  column-gap: 14px;
+  row-gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--ex-border);
+  border-radius: 12px;
+  background: var(--ex-bg);
+  transition: border-color var(--ex-motion-instant), background var(--ex-motion-instant);
+}
+
+/* 아직 만들지 않은 계정 — 원본만 있다. 비어 있는 자리처럼 보인다. */
+.rowEmpty {
+  border-style: dashed;
+  border-color: var(--ex-border-firm);
+  background: var(--ex-bg-sunken);
+}
+
+.rowEmpty .avatar,
+.rowEmpty .name,
+.rowEmpty .count {
+  color: var(--ex-fg-subtle);
+}
+
+.rowEmpty .fill {
+  background: var(--ex-border-firm);
+}
+
+/* 지금 보고 있는 계정. */
+.rowActing {
+  border-color: var(--ex-accent);
+  background: var(--ex-accent-surface);
+}
+
+.avatar {
+  grid-area: avatar;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--ex-bg-tint-strong);
+  color: var(--ex-fg);
+  font-size: var(--ex-text-sm);
+  font-weight: 600;
+}
+
+.who {
+  grid-area: who;
+  min-width: 0;
+}
+
+.name {
+  font-size: var(--ex-text-md);
+  font-weight: 600;
+  color: var(--ex-fg);
+}
+
+.headline {
+  margin-top: 2px;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-body);
+}
+
+.email {
+  margin-top: 2px;
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-subtle);
+  overflow-wrap: anywhere;
+}
+
+.volume {
+  grid-area: volume;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.count {
+  min-width: 52px;
+  font-size: var(--ex-text-xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ex-fg);
+  font-variant-numeric: tabular-nums;
+}
+
+.countUnit {
+  margin-left: 1px;
+  font-size: var(--ex-text-2xs);
+  font-weight: 500;
+  color: var(--ex-fg-muted);
+}
+
+.track {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--ex-bg-track);
+  overflow: hidden;
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ex-fg);
+}
+
+.last {
+  grid-area: last;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.lastBy {
+  color: var(--ex-fg-body);
+}
+
+.actions {
+  grid-area: actions;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.actions form {
+  display: contents;
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.action {
+  font-size: var(--ex-text-sm);
+  font-weight: 600;
+  color: var(--ex-fg-body);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border-soft);
+  border-radius: 9px;
+  padding: 8px 14px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.action:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.actionPrimary {
+  color: var(--ex-fg-on-inverse);
+  background: var(--ex-bg-inverse);
+  border-color: var(--ex-bg-inverse);
+}
+
+.actionPrimary:hover:not(:disabled) {
+  background: var(--ex-bg-inverse-hover);
+}
+
+.actionDanger {
+  color: var(--ex-status-danger-text);
+  border-color: rgba(226, 84, 58, 0.32);
+}
+
+/* 되돌릴 수 없는 두 동작. 앞 버튼보다 물러나 있고, 누르면 눌린 채로 줄 아래 확인을 연다. */
+.iconAction {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  color: var(--ex-fg-muted);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border-soft);
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background var(--ex-motion-instant), color var(--ex-motion-instant);
+}
+
+.iconAction:hover {
+  color: var(--ex-fg);
+  background: var(--ex-bg-tint);
+}
+
+.iconActionDanger:hover,
+.iconActionDanger.iconActionOn {
+  color: var(--ex-status-danger-text);
+}
+
+.iconActionOn {
+  color: var(--ex-fg);
+  background: var(--ex-bg-tint-strong);
+}
+
+/* 확인은 줄 아래 한 줄을 다 쓴다 — 경고 문장이 버튼 칸에 눌리지 않게. */
+.confirm {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 8px;
+}
+
+.warning {
+  font-size: var(--ex-text-xs);
+  line-height: var(--ex-leading-tight);
+  color: var(--ex-status-danger-text);
+  background: var(--ex-status-danger-surface);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.error {
+  grid-column: 1 / -1;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-status-danger-text);
+}
+
+@media (min-width: 768px) {
+  .row {
+    grid-template-columns: 36px minmax(0, 1.3fr) minmax(0, 1fr) auto;
+    grid-template-areas:
+      "avatar who volume actions"
+      "avatar who last actions";
+    row-gap: 4px;
+  }
+
+  .avatar {
+    align-self: start;
+  }
+}
+
+@media (min-width: 1024px) {
+  .main {
+    padding: 26px 32px 34px;
+  }
+}

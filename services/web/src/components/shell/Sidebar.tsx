@@ -43,6 +43,8 @@ export interface SidebarProps {
   /** 공고 탐색 배지 = 관심 + 추천 건수. */
   jobCount?: number | undefined;
   displayName: string;
+  /** 세션 주인이 관리자일 때만 관리 화면으로 가는 줄이 선다. */
+  admin?: boolean;
   quotaUsed: number;
   /** 무제한 요금제는 상한이 없다. 없는 상한을 999로 적으면 그것도 거짓말이다. */
   quotaLimit: number | null;
@@ -55,6 +57,7 @@ export function Sidebar({
   interestTotal,
   jobCount,
   displayName,
+  admin = false,
   quotaUsed,
   quotaLimit,
 }: SidebarProps) {
@@ -89,6 +92,12 @@ export function Sidebar({
               </div>
             </div>
           </div>
+          {admin ? (
+            <Link href="/admin" className={`${styles.row} ${styles.userLink}`} title="관리">
+              <span className={styles.adminIcon}><Icon name="user-switch" size={15} /></span>
+              <span className={`${styles.copy} ${styles.userName}`}>관리</span>
+            </Link>
+          ) : null}
           <Link
             href="/account"
             className={`${styles.row} ${styles.userLink}`}

@@ -46,6 +46,8 @@ import {
   JobInterestResponseSchema,
   BrewStateResponseSchema,
   ConsentListResponseSchema,
+  DummyAccountListResponseSchema,
+  DummyAccountResponseSchema,
   DeploymentListResponseSchema,
   DeploymentSchema,
   PublicPortfolioSchema,
@@ -317,6 +319,26 @@ export const account = {
       method: "POST",
       body: { cancellationToken },
     }),
+};
+
+/**
+ * 관리 — 더미 계정과 대신 로그인. 세션 주인이 관리자가 아니면 모두 404다.
+ *
+ * 대신 로그인은 토큰을 새로 받지 않는다. 같은 세션이 더미 계정으로 해석되므로 쿠키를 건드리지 않는다.
+ */
+export const admin = {
+  dummies: (accessToken: string) =>
+    request(`${API_PREFIX}/admin/dummy-accounts`, DummyAccountListResponseSchema, { accessToken, cache: "no-store" }),
+  create: (accessToken: string, key: string) =>
+    request(`${API_PREFIX}/admin/dummy-accounts/${encodeURIComponent(key)}`, DummyAccountResponseSchema, { accessToken, method: "POST" }),
+  refill: (accessToken: string, key: string) =>
+    request(`${API_PREFIX}/admin/dummy-accounts/${encodeURIComponent(key)}/refill`, DummyAccountResponseSchema, { accessToken, method: "POST" }),
+  remove: (accessToken: string, key: string) =>
+    request(`${API_PREFIX}/admin/dummy-accounts/${encodeURIComponent(key)}`, DummyAccountResponseSchema, { accessToken, method: "DELETE" }),
+  impersonate: (accessToken: string, key: string) =>
+    requestNoContent(`${API_PREFIX}/admin/dummy-accounts/${encodeURIComponent(key)}/impersonation`, { accessToken, method: "POST" }),
+  endImpersonation: (accessToken: string) =>
+    requestNoContent(`${API_PREFIX}/admin/impersonation`, { accessToken, method: "DELETE" }),
 };
 
 export const publishing = {
