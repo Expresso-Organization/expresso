@@ -1,4 +1,6 @@
 import {
+  MonthlyUsageResponseSchema,
+  PlanListResponseSchema,
   AnalyticsAggregationResponseSchema,
   MediaAssetResponseSchema,
   GeneratedPageSchema,
@@ -286,6 +288,14 @@ export const entitlements = {
       EntitlementDecisionResponseSchema,
       { accessToken, cache: "no-store" },
     ),
+};
+
+/** 09 설정 — 이번 달 AI 사용량과 요금제. */
+export const usage = {
+  monthly: (accessToken: string) =>
+    request(`${API_PREFIX}/me/usage`, MonthlyUsageResponseSchema, { accessToken, cache: "no-store" }),
+  plans: (accessToken: string) =>
+    request(`${API_PREFIX}/plans`, PlanListResponseSchema, { accessToken, cache: "no-store" }),
 };
 
 /** 09 설정 — 알림 종류마다 켜고 끈다. */

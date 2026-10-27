@@ -40,6 +40,7 @@ export class GenerationError extends Error {
  * 모델은 그 번호로만 가리킨다 — UUID를 옮겨 적게 하지 않는다.
  */
 export function buildWriterContext(input: {
+  userId: string | null;
   items: ContextRow[];
   evidence: PathRow[];
   subject: BrewSubjectRow | null;
@@ -80,6 +81,7 @@ export function buildWriterContext(input: {
   }
 
   return {
+    userId: input.userId,
     sections,
     evidence: input.evidence.map((path) => ({
       id: path.id,

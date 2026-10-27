@@ -197,7 +197,7 @@ export class JobAnalysisService {
       `;
       let extraction: JobAnalysisExtraction | null = null;
       if (stored.length === 0) {
-        extraction = JobAnalysisExtractionSchema.parse(await extractor.extract(source));
+        extraction = JobAnalysisExtractionSchema.parse(await extractor.extract(source, userId));
         await this.#sql`
           update job_analysis set progress_stage = 'validating'
           where id = ${jobAnalysisId} and result_version < target_version

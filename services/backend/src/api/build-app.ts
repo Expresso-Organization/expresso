@@ -9,6 +9,8 @@ import { registerIdentityRoutes } from "../modules/identity/routes.js";
 import type { GoogleIdTokenVerifier } from "../modules/identity/google.js";
 import { type EntitlementApi } from "../modules/entitlements/index.js";
 import { registerEntitlementRoutes } from "../modules/entitlements/routes.js";
+import { type UsageApi } from "../modules/usage/index.js";
+import { registerUsageRoutes } from "../modules/usage/routes.js";
 import { createAuthenticateRequest } from "./plugins/auth-context.js";
 import { type CareerApi } from "../modules/career/index.js";
 import { registerCareerRoutes } from "../modules/career/routes.js";
@@ -75,6 +77,7 @@ export interface BuildApiOptions {
   /** 없으면 Google 로그인 경로가 503으로 답한다. */
   googleIdTokenVerifier?: GoogleIdTokenVerifier;
   entitlementService?: EntitlementApi;
+  usageService?: UsageApi;
   careerService?: CareerApi;
   jobMarketService?: JobMarketApi;
   jobIngestService?: JobIngestApi;
@@ -152,6 +155,12 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
     if (options.entitlementService) {
       registerEntitlementRoutes(app, {
         entitlementService: options.entitlementService,
+        authenticateRequest: createAuthenticateRequest(options.identityService),
+      });
+    }
+    if (options.usageService) {
+      registerUsageRoutes(app, {
+        usageService: options.usageService,
         authenticateRequest: createAuthenticateRequest(options.identityService),
       });
     }

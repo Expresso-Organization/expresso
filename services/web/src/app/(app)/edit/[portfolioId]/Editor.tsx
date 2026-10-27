@@ -428,7 +428,7 @@ export function Editor({
             <Link
               href={`/brew/${portfolio.brewId}/design?again=1`}
               className={styles.themeAction}
-              title="디자인을 바꿔 새로 만듭니다 · 생성 1회를 씁니다"
+              title="디자인을 바꿔 새로 만듭니다 · 이번 달 크레딧을 씁니다"
             >
               <Icon name="palette" size={14} />
               다시 뽑기

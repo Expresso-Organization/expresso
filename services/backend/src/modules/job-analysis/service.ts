@@ -52,7 +52,7 @@ export class JobAnalysisService implements JobAnalysisApi {
       const attempt = claimed.attempts;
       const stored = await mongoCollections(this.context.db).jobPostingRequirements.find({ jobPostingId, extractorVersion: EXTRACTOR_VERSION }).sort({ orderNo: 1, _id: 1 }).toArray();
       // 외부 호출은 상태를 먼저 확정한 뒤 트랜잭션 밖에서 실행합니다.
-      const extraction: JobAnalysisExtraction | null = stored.length ? null : JobAnalysisExtractionSchema.parse(await extractor.extract(start.posting.descriptionRaw));
+      const extraction: JobAnalysisExtraction | null = stored.length ? null : JobAnalysisExtractionSchema.parse(await extractor.extract(start.posting.descriptionRaw, userId));
       if (extraction) {
         await this.#progress(claimed, "validating");
         validateExtractionSource(start.posting.descriptionRaw, extraction);
