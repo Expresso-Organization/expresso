@@ -24,7 +24,7 @@ date: 2026-10-28
 ## 작업 순서
 
 1. 두 compose 파일에 설정을 넣는다. — `docker compose config`로 `mongodb`에만 들어간 것을 본다.
-2. 로컬에서 `pnpm infra:up` 뒤 `pnpm test:infra`. — 통과.
+2. 바꾼 `infra/compose.yaml`을 다른 Compose 프로젝트 · 다른 포트(57117)로 띄우고 `pnpm test:infra`. — 통과. `pnpm infra:up`은 다른 워크트리의 개발 서버가 쓰는 공용 MongoDB(57017)를 다시 만들기 때문에 쓰지 않았다. 테스트는 `directConnection=true`로 붙인다 — replica set 주소가 `localhost:57017`이라 그대로 두면 공용 인스턴스로 간다.
 3. CI에 실패 로그 단계를 넣는다.
 4. `infra/README.md`에 한 단락.
 5. PR을 열고 CI를 돌린다. — 실행의 러너 커널을 확인한다. 6.x에 걸렸으면 다시 돌려 7.0 커널에서 통과하는 것을 본다.
@@ -32,7 +32,7 @@ date: 2026-10-28
 
 ```mermaid
 flowchart TD
-  S1["1단계: compose 두 파일<br/>GLIBC_TUNABLES"] --> S2["2단계: 로컬 infra:up · test:infra"]
+  S1["1단계: compose 두 파일<br/>GLIBC_TUNABLES"] --> S2["2단계: 별도 인스턴스 · test:infra"]
   S2 --> S3["3단계: backend-ci.yml<br/>실패 로그 단계"]
   S3 --> S4["4단계: infra/README.md"]
   S4 --> S5["5단계: PR · 7.0 커널 러너에서 통과 확인"]:::risk
