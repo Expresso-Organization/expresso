@@ -1,17 +1,24 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createEmptyCareerDocument, encodeDocumentAsYUpdate } from "@expresso/editor";
+import { createEmptyCareerDocument } from "@expresso/editor";
 import * as Y from "yjs";
 import { CareerEditorSession } from "./CareerEditorSession";
 
 const recordId = "11111111-1111-4111-8111-111111111111";
-const sessionId = "22222222-2222-4222-8222-222222222222";
 const serverId = "33333333-3333-4333-8333-333333333333";
 const token = "t".repeat(40);
-const document = createEmptyCareerDocument();
-const bootstrap = {
-  record: { id: recordId, categoryId: serverId, title: "기록", status: "draft", origin: "manual", properties: {}, bodyMd: "", version: 1, updatedAt: "2026-09-01T00:00:00.000Z" },
-  document, snapshotVersion: 0, documentVersion: 0, stateVectorBase64: "", pendingUpdateCount: 0, sessionToken: token,
-};
+
+function baseState(text = "시작"): Uint8Array {
+  const document = new Y.Doc();
+  document.getXmlFragment("document-store").insert(0, [new Y.XmlText(text)]);
+  return Y.encodeStateAsUpdate(document);
+}
+function bootstrapBody(documentVersion = 0, state = baseState()) {
+  return {
+    record: { id: recordId, categoryId: serverId, title: "기록", status: "draft", origin: "manual", properties: {}, bodyMd: "", version: 1, updatedAt: "2026-09-01T00:00:00.000Z" },
+    document: createEmptyCareerDocument(), snapshotVersion: 0, documentVersion, stateVectorBase64: "", pendingUpdateCount: 0, sessionToken: token,
+    editor: "blocknote", stateBase64: Buffer.from(state).toString("base64"),
+  };
+}
 
 class FakeSocket {
   static instances: FakeSocket[] = [];
@@ -29,62 +36,60 @@ class FakeSocket {
 }
 
 afterEach(() => { FakeSocket.instances = []; vi.restoreAllMocks(); vi.useRealTimers(); });
-const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+const updatesSent = (socket: FakeSocket) => socket.sent.filter((frame) => JSON.parse(frame).type === "update");
+const text = (session: CareerEditorSession) => (session.getYDocument()!.getXmlFragment("document-store").get(0) as Y.XmlText);
 
 describe("CareerEditorSession", () => {
-  it("parses bootstrap, queues updates, and removes only one pending update per ack", async () => {
-    const fetcher = vi.fn(async () => new Response(JSON.stringify(bootstrap), { status: 200 }));
+  it("starts from the server state and removes one pending batch per ack", async () => {
+    vi.useFakeTimers();
+    const fetcher = vi.fn(async () => new Response(JSON.stringify(bootstrapBody(4)), { status: 200 }));
     const session = new CareerEditorSession(recordId, { fetch: fetcher as typeof fetch, WebSocket: FakeSocket as unknown as typeof WebSocket });
-    await flush();
+    await vi.waitFor(() => expect(FakeSocket.instances).toHaveLength(1));
     const socket = FakeSocket.instances[0]!;
     socket.open();
-    expect(JSON.parse(socket.sent[0]!).type).toBe("sync");
-    const next = createEmptyCareerDocument();
-    session.updateDocument(next);
+    const sync = JSON.parse(socket.sent[0]!);
+    expect(sync).toMatchObject({ type: "sync", lastAckSequence: 4 });
+    expect(text(session).toString()).toBe("시작");
+    text(session).insert(2, "!");
     expect(session.getSnapshot().status).toBe("saving");
-    socket.receive({ protocolVersion: 1, recordId, sessionId: JSON.parse(socket.sent[0]!).sessionId, type: "ready", sequence: 0, documentVersion: 0 });
-    socket.receive({ protocolVersion: 1, recordId, sessionId: JSON.parse(socket.sent[0]!).sessionId, type: "ack", sequence: 1, documentVersion: 1 });
-    expect(session.getSnapshot().status).toBe("saved");
-    socket.receive({ protocolVersion: 1, recordId, sessionId: JSON.parse(socket.sent[0]!).sessionId, type: "ack", sequence: 1, documentVersion: 1 });
-    expect(session.getSnapshot().lastAckSequence).toBe(1);
+    vi.advanceTimersByTime(300);
+    expect(updatesSent(socket)).toHaveLength(1);
+    socket.receive({ protocolVersion: 1, recordId, sessionId: sync.sessionId, type: "ack", sequence: 5, documentVersion: 5 });
+    expect(session.getSnapshot()).toMatchObject({ status: "saved", documentVersion: 5 });
+    socket.receive({ protocolVersion: 1, recordId, sessionId: sync.sessionId, type: "ack", sequence: 5, documentVersion: 5 });
+    expect(session.hasPendingUpdates()).toBe(false);
     session.dispose();
   });
 
-  it("resends unacknowledged updates after reconnect and caps the delay", async () => {
-    const delays: number[] = [];
-    const fetcher = vi.fn(async () => new Response(JSON.stringify(bootstrap), { status: 200 }));
-    const session = new CareerEditorSession(recordId, {
-      fetch: fetcher as typeof fetch,
-      WebSocket: FakeSocket as unknown as typeof WebSocket,
-      reconnectDelay: (attempt) => { const value = Math.min(250 * 2 ** attempt, 10_000); delays.push(value); return 0; },
-    });
-    await flush();
+  it("resends unacknowledged batches after reconnect", async () => {
+    vi.useFakeTimers();
+    const fetcher = vi.fn(async () => new Response(JSON.stringify(bootstrapBody()), { status: 200 }));
+    const session = new CareerEditorSession(recordId, { fetch: fetcher as typeof fetch, WebSocket: FakeSocket as unknown as typeof WebSocket, reconnectDelay: () => 0 });
+    await vi.waitFor(() => expect(FakeSocket.instances).toHaveLength(1));
     const first = FakeSocket.instances[0]!;
-    session.updateDocument(createEmptyCareerDocument());
     first.open();
-    expect(first.sent.filter((frame) => JSON.parse(frame).type === "update")).toHaveLength(1);
+    text(session).insert(0, "끊기기 전 ");
+    vi.advanceTimersByTime(300);
+    expect(updatesSent(first)).toHaveLength(1);
     first.close();
-    await flush();
+    expect(session.getSnapshot().status).toBe("offline");
+    vi.advanceTimersByTime(0);
     const second = FakeSocket.instances[1]!;
     second.open();
-    expect(second.sent.filter((frame) => JSON.parse(frame).type === "update")).toHaveLength(1);
-    expect(Math.max(...Array.from({ length: 12 }, (_, attempt) => Math.min(250 * 2 ** attempt, 10_000)))).toBe(10_000);
-    expect(delays[0]).toBe(250);
+    expect(updatesSent(second)).toHaveLength(1);
     session.dispose();
   });
 
-  it("stops after a 404 bootstrap and ignores local edits", async () => {
-    const fetcher = vi.fn(async () => new Response(null, { status: 404 }));
-    const session = new CareerEditorSession(recordId, { fetch: fetcher as typeof fetch, WebSocket: FakeSocket as unknown as typeof WebSocket, reconnectDelay: () => 0 });
-    for (let index = 0; index < 5; index += 1) await flush();
-    expect(fetcher).toHaveBeenCalledTimes(1);
-    expect(session.getSnapshot().status).toBe("unavailable");
-    expect(session.getDocument()).toBeNull();
-    session.updateDocument(createEmptyCareerDocument());
-    expect(session.getSnapshot().status).toBe("unavailable");
-    expect(session.hasPendingUpdates()).toBe(false);
-    expect(FakeSocket.instances).toHaveLength(0);
-    session.dispose();
+  it("stops after a 404 bootstrap and for a non-BlockNote document", async () => {
+    for (const respond of [async () => new Response(null, { status: 404 }), async () => new Response(JSON.stringify({ ...bootstrapBody(), editor: undefined, stateBase64: undefined }), { status: 200 })]) {
+      const fetcher = vi.fn(respond);
+      const session = new CareerEditorSession(recordId, { fetch: fetcher as typeof fetch, WebSocket: FakeSocket as unknown as typeof WebSocket, reconnectDelay: () => 0 });
+      await vi.waitFor(() => expect(session.getSnapshot().status).toBe("unavailable"));
+      expect(fetcher).toHaveBeenCalledTimes(1);
+      expect(session.getYDocument()).toBeNull();
+      expect(FakeSocket.instances).toHaveLength(0);
+      session.dispose();
+    }
   });
 
   it.each([
@@ -93,25 +98,27 @@ describe("CareerEditorSession", () => {
   ])("keeps retrying the bootstrap after %s", async (_label, respond) => {
     const fetcher = vi.fn(respond);
     const session = new CareerEditorSession(recordId, { fetch: fetcher as typeof fetch, WebSocket: FakeSocket as unknown as typeof WebSocket, reconnectDelay: () => 0 });
-    for (let index = 0; index < 5; index += 1) await flush();
-    expect(fetcher.mock.calls.length).toBeGreaterThan(1);
+    await vi.waitFor(() => expect(fetcher.mock.calls.length).toBeGreaterThan(1));
     expect(session.getSnapshot().status).toBe("offline");
     session.dispose();
   });
 
-  it("applies remote updates and exposes conflict state", async () => {
-    const fetcher = vi.fn(async () => new Response(JSON.stringify(bootstrap), { status: 200 }));
+  it("applies remote updates without echoing them and exposes proposal and conflict state", async () => {
+    vi.useFakeTimers();
+    const state = baseState();
+    const fetcher = vi.fn(async () => new Response(JSON.stringify(bootstrapBody(0, state)), { status: 200 }));
     const session = new CareerEditorSession(recordId, { fetch: fetcher as typeof fetch, WebSocket: FakeSocket as unknown as typeof WebSocket });
-    await flush();
+    await vi.waitFor(() => expect(FakeSocket.instances).toHaveLength(1));
     const socket = FakeSocket.instances[0]!;
     socket.open();
     const sync = JSON.parse(socket.sent[0]!);
-    socket.receive({ protocolVersion: 1, recordId, sessionId: sync.sessionId, type: "ready", sequence: 0, documentVersion: 0 });
-    const next = createEmptyCareerDocument();
-    next.content[0]!.text = [{ text: "remote" }];
-    const update = encodeDocumentAsYUpdate(next, [encodeDocumentAsYUpdate(document)]);
-    socket.receive({ protocolVersion: 1, recordId, sessionId: sync.sessionId, type: "update", sequence: 1, updateBase64: Buffer.from(update).toString("base64"), actor: "user" });
-    expect(session.getDocument()?.content[0]?.text?.[0]?.text).toBe("remote");
+    const remote = new Y.Doc(); Y.applyUpdate(remote, state);
+    const before = Y.encodeStateVector(remote);
+    (remote.getXmlFragment("document-store").get(0) as Y.XmlText).insert(0, "[원격]");
+    socket.receive({ protocolVersion: 1, recordId, sessionId: sync.sessionId, type: "update", sequence: 1, updateBase64: Buffer.from(Y.encodeStateAsUpdate(remote, before)).toString("base64"), actor: "ai" });
+    vi.advanceTimersByTime(300);
+    expect(text(session).toString()).toBe("[원격]시작");
+    expect(updatesSent(socket)).toHaveLength(0);
     expect(session.getSnapshot().lastAckSequence).toBe(1);
     socket.receive({ protocolVersion: 1, recordId, sessionId: sync.sessionId, type: "proposal", proposalId: serverId, baseDocumentVersion: 1, status: "streaming", progress: { phase: "generating", completed: 1, total: 3 } });
     expect(session.getSnapshot().proposal).toEqual({ proposalId: serverId, baseDocumentVersion: 1, status: "streaming", progress: { phase: "generating", completed: 1, total: 3 } });
@@ -120,38 +127,16 @@ describe("CareerEditorSession", () => {
     session.dispose();
   });
 
-  it("streams BlockNote Yjs updates in 300ms batches and applies remote frames without echo", async () => {
-    vi.useFakeTimers();
-    const base = new Y.Doc();
-    base.getXmlFragment("document-store").insert(0, [new Y.XmlText("시작")]);
-    const state = Y.encodeStateAsUpdate(base);
-    const blocknoteBootstrap = { ...bootstrap, documentVersion: 7, editor: "blocknote", stateBase64: Buffer.from(state).toString("base64") };
-    const fetcher = vi.fn(async () => new Response(JSON.stringify(blocknoteBootstrap), { status: 200 }));
-    const session = new CareerEditorSession(recordId, { fetch: fetcher as typeof fetch, WebSocket: FakeSocket as unknown as typeof WebSocket, reconnectDelay: () => 0 });
-    await vi.waitFor(() => expect(FakeSocket.instances).toHaveLength(1));
-    const socket = FakeSocket.instances[0]!;
-    socket.open();
-    const sync = JSON.parse(socket.sent[0]!);
-    expect(sync.lastAckSequence).toBe(7);
-    const yDocument = session.getYDocument()!;
-    expect((yDocument.getXmlFragment("document-store").get(0) as Y.XmlText).toString()).toBe("시작");
-    const text = yDocument.getXmlFragment("document-store").get(0) as Y.XmlText;
-    text.insert(2, "a"); text.insert(3, "b"); text.insert(4, "c");
-    expect(socket.sent.filter((frame) => JSON.parse(frame).type === "update")).toHaveLength(0);
-    vi.advanceTimersByTime(300);
-    const updates = socket.sent.filter((frame) => JSON.parse(frame).type === "update");
-    expect(updates).toHaveLength(1);
-    // 보낸 묶음 하나로 서버 쪽 사본이 같은 글이 됩니다.
-    const server = new Y.Doc(); Y.applyUpdate(server, state); Y.applyUpdate(server, Buffer.from(JSON.parse(updates[0]!).updateBase64, "base64"));
-    expect((server.getXmlFragment("document-store").get(0) as Y.XmlText).toString()).toBe("시작abc");
-    // 원격 프레임은 적용하되 다시 보내지 않습니다.
-    const remote = new Y.Doc(); Y.applyUpdate(remote, Y.encodeStateAsUpdate(server));
-    const before = Y.encodeStateVector(remote);
-    (remote.getXmlFragment("document-store").get(0) as Y.XmlText).insert(0, "[원격]");
-    socket.receive({ protocolVersion: 1, recordId, sessionId: sync.sessionId, type: "update", sequence: 8, updateBase64: Buffer.from(Y.encodeStateAsUpdate(remote, before)).toString("base64"), actor: "user" });
-    vi.advanceTimersByTime(300);
-    expect(text.toString()).toBe("[원격]시작abc");
-    expect(socket.sent.filter((frame) => JSON.parse(frame).type === "update")).toHaveLength(1);
+  it("publishes the editor's document copy to listeners", async () => {
+    const fetcher = vi.fn(async () => new Response(JSON.stringify(bootstrapBody()), { status: 200 }));
+    const session = new CareerEditorSession(recordId, { fetch: fetcher as typeof fetch, WebSocket: FakeSocket as unknown as typeof WebSocket });
+    await vi.waitFor(() => expect(session.getYDocument()).not.toBeNull());
+    const listener = vi.fn();
+    session.subscribe(listener);
+    const next = createEmptyCareerDocument();
+    session.publishDocument(next);
+    expect(session.getDocument()).toBe(next);
+    expect(listener).toHaveBeenCalled();
     session.dispose();
   });
 });

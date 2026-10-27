@@ -99,17 +99,20 @@ export default function BlockNoteBody({ yDocument, userName, onAiRequest, onDocu
   const blockEditor = editor as unknown as BlockNoteEditor;
   // 처음 열 때도 사본을 한 번 올립니다. 이후에는 원격 업데이트를 포함한 모든 변경 때 올립니다.
   useEffect(() => { onDocumentChange?.(blockNoteToCareerDocument(editor.document)); }, [editor, onDocumentChange]);
-  // 기본 메뉴에 커스텀 콜아웃 블록을 더합니다.
-  const slashItems = async (query: string) => filterSuggestionItems([
-    ...getDefaultReactSlashMenuItems(editor),
-    {
+  // 콜아웃을 인용과 같은 묶음 끝에 넣습니다. 묶음이 이어지지 않으면 메뉴에 묶음 머리가 두 번 나옵니다.
+  const slashItems = async (query: string) => {
+    const items = getDefaultReactSlashMenuItems(editor);
+    const group = ko.slash_menu.quote.group;
+    const callout = {
       title: "콜아웃",
       subtext: "아이콘과 함께 강조할 문장",
       aliases: ["callout", "강조"],
-      group: "기본 블록",
+      ...(group ? { group } : {}),
       onItemClick: () => { insertOrUpdateBlockForSlashMenu(editor, { type: "callout" } as never); },
-    },
-  ], query);
+    };
+    const last = group ? items.findLastIndex((item) => item.group === group) : items.length - 1;
+    return filterSuggestionItems([...items.slice(0, last + 1), callout, ...items.slice(last + 1)], query);
+  };
   return (
     <div className={styles.body}>
       <BlockNoteView
