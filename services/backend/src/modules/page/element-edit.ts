@@ -99,10 +99,13 @@ export function elementChanges(before: Snapshot, after: Snapshot, key: string): 
       if (was !== now) changes.push({ label: `${parts[part]?.label ?? part} 모양`, before: was, after: now });
     }
   }
-  for (const path of elementTextPaths(after, key)) {
+  const paths = elementTextPaths(after, key);
+  // 한 섹션만 보이는 요소의 줄 이름에는 섹션 제목을 붙이지 않습니다.
+  const section = new Set(paths.filter((path) => path.startsWith("/sections/")).map((path) => path.split("/")[2])).size > 1;
+  for (const path of paths) {
     const was = readStructuredText(before.content, path) ?? "";
     const now = readStructuredText(after.content, path) ?? "";
-    if (was !== now) changes.push({ label: textPathLabel(after, path), before: was, after: now });
+    if (was !== now) changes.push({ label: textPathLabel(after, path, { section }), before: was, after: now });
   }
   return changes;
 }

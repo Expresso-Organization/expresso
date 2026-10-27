@@ -468,7 +468,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
       expect(ai.fixRequests).toHaveLength(1);
       expect(instructed.changes).toEqual([
         { label: "요약 모양", before: "기본", after: "흐린색" },
-        { label: "경로 연구 · 요약", before: "초기 요약", after: "짧은 요약" },
+        { label: "요약", before: "초기 요약", after: "짧은 요약" },
       ]);
       expect(instructed.page.revision).toBe(styled.revision + 1);
       expect(instructed.page.rationale).toBe("요약을 바꿨습니다.");
@@ -483,6 +483,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
       const structured = added.generationManifest!.structured!;
       expect(structured.content.sections.at(-1)).toMatchObject({ id: recordId, title: "가상 경로 연구", body: "통로 경로를 검토했습니다." });
       expect(structured.spec.elements[`section-${recordId}`]).toMatchObject({ type: "CaseEssay" });
+      expect(structured.spec.elements[structured.spec.root]!.children!.at(-1)).toBe(`section-${recordId}`);
       expect(added.html).toContain("통로 경로를 검토했습니다.");
       await expect(service.addRecordSection(user, portfolio, { expectedRevision: added.revision, recordId }, null)).rejects.toMatchObject({ statusCode: 409 });
       await expect(service.addRecordSection(other, portfolio, { expectedRevision: added.revision, recordId }, null)).rejects.toMatchObject({ statusCode: 404 });

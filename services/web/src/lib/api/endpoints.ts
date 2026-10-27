@@ -11,6 +11,7 @@ import {
   type AddStructuredSection,
   InstructStructuredElementResultSchema,
   PageEditorDesignSchema,
+  PageEditableRenderSchema,
   type CreateMediaBlock,
   AnalyticsDashboardResponseSchema,
   API_PREFIX,
@@ -1102,6 +1103,9 @@ export const page = {
   /** 커리어 기록 하나를 지면의 새 사례로 더합니다. */
   addSection: (accessToken: string, portfolioId: string, body: AddStructuredSection) =>
     request(`${API_PREFIX}/portfolios/${portfolioId}/page/sections`, z.object({ data: GeneratedPageSchema }), { method: "POST", accessToken, body }),
+  /** 편집 화면이 그릴 최신 판. 요소 키 표시가 있는 렌더 결과다. */
+  editable: (accessToken: string, portfolioId: string) =>
+    request(`${API_PREFIX}/portfolios/${portfolioId}/page/editable`, z.object({ data: PageEditableRenderSchema }), { accessToken }),
   /** 편집 화면이 고를 이 포트폴리오 디자인의 글자 크기 단계 · 색 · 서체입니다. */
   design: (accessToken: string, portfolioId: string) =>
     request(`${API_PREFIX}/portfolios/${portfolioId}/page/design`, z.object({ data: PageEditorDesignSchema }), { accessToken }),

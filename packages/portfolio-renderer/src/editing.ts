@@ -223,11 +223,12 @@ function sectionIdOf(node: Node | undefined): string | undefined {
 }
 
 /** 경로를 사람이 읽는 이름으로 바꿉니다. 예: `/sections/a/metrics/0/value` → `경로 재설계 · 수치 1 값`. */
-export function textPathLabel(snapshot: Snapshot, path: string): string {
+export function textPathLabel(snapshot: Snapshot, path: string, options: { section?: boolean } = {}): string {
   const parts = path.split("/").slice(1);
   if (parts[0] === "profile") return TEXT_LABELS[parts[1]!] ?? parts[1]!;
   const section = snapshot.content.sections.find((item) => item.id === parts[1]);
-  const prefix = section ? `${section.title} · ` : "";
+  // 한 섹션만 보이는 요소의 칸에서는 섹션 제목을 붙이지 않습니다.
+  const prefix = section && options.section !== false ? `${section.title} · ` : "";
   if (parts.length === 3) return `${prefix}${TEXT_LABELS[parts[2]!] ?? parts[2]}`;
   return `${prefix}${LIST_LABELS[parts[2]!] ?? parts[2]} ${Number(parts[3]) + 1} ${TEXT_LABELS[parts[4]!] ?? parts[4]}`;
 }

@@ -17,7 +17,7 @@ import { useEffect, useMemo, useRef } from "react";
 const CHANNEL = "xp-editor";
 
 /** iframe 안에서 도는 편집 스크립트. 문자열로 들어가므로 바깥 변수를 쓰지 않는다. */
-const EDITOR_SCRIPT = `(function(){
+export const EDITOR_SCRIPT = `(function(){
   var KEY = "data-xp-key", parts = {}, selected = null, color = "currentColor";
   var base = document.createElement("style"), mark = document.createElement("style"), live = document.createElement("style");
   document.head.append(base, live, mark);
@@ -26,6 +26,17 @@ const EDITOR_SCRIPT = `(function(){
   function paint(){
     mark.textContent = "[" + KEY + "]:hover{outline:1px dashed " + color + ";outline-offset:4px}"
       + (selected ? "[" + KEY + "=\\"" + selected + "\\"],[" + KEY + "=\\"" + selected + "\\"]:hover{outline:2px solid " + color + ";outline-offset:4px}" : "");
+  }
+  // 고른 요소의 글자 부분마다 지금 글자 크기(px)를 알린다. 크기 조절이 가장 가까운 단계에서 시작한다.
+  function measure(){
+    if (!selected) return;
+    var element = document.querySelector("[" + KEY + "='" + selected + "']"), list = parts[selected] || {}, sizes = {};
+    if (!element) return;
+    for (var name in list) {
+      var hit = element.querySelector(list[name]);
+      if (hit) sizes[name] = parseFloat(getComputedStyle(hit).fontSize);
+    }
+    post({ type: "measure", key: selected, sizes: sizes });
   }
   document.addEventListener("click", function(event){
     var target = event.target instanceof Element ? event.target : null;
@@ -50,6 +61,7 @@ const EDITOR_SCRIPT = `(function(){
     if ("css" in data) live.textContent = data.css || "";
     if ("selected" in data) {
       selected = data.selected;
+      measure();
       if (data.scroll && selected) {
         var element = document.querySelector("[" + KEY + "=\\"" + selected + "\\"]");
         if (element) element.scrollIntoView({ block: "center" });
@@ -69,6 +81,7 @@ export function EditablePagePreview({
   scrollRequest,
   draftCss,
   onSelect,
+  onMeasure,
 }: {
   page: GeneratedPage;
   title: string;
@@ -81,11 +94,13 @@ export function EditablePagePreview({
   /** 저장하기 전 글자 모양. 저장된 CSS 위에 덧입힌다. */
   draftCss: string;
   onSelect: (key: string, part: string | null) => void;
+  /** 고른 요소의 글자 부분별 지금 크기(px). */
+  onMeasure?: (key: string, sizes: Record<string, number>) => void;
 }) {
   const frame = useRef<HTMLIFrameElement>(null);
   // iframe이 다시 읽힐 때(새 판) 지금 고른 것과 임시 모양을 다시 보낸다. 받는 쪽 핸들러가 최신 값을 읽도록 둔다.
-  const state = useRef({ parts, selected, draftCss, onSelect });
-  useEffect(() => { state.current = { parts, selected, draftCss, onSelect }; });
+  const state = useRef({ parts, selected, draftCss, onSelect, onMeasure });
+  useEffect(() => { state.current = { parts, selected, draftCss, onSelect, onMeasure }; });
 
   const srcDoc = useMemo(() => {
     const document = pageDocument({
@@ -106,7 +121,7 @@ export function EditablePagePreview({
   useEffect(() => {
     function receive(event: MessageEvent) {
       if (!frame.current || event.source !== frame.current.contentWindow) return;
-      const data = event.data as { source?: string; type?: string; key?: string; part?: string | null };
+      const data = event.data as { source?: string; type?: string; key?: string; part?: string | null; sizes?: Record<string, number> };
       if (data?.source !== CHANNEL) return;
       if (data.type === "ready") {
         // 고른 테두리 색은 편집 화면 CSS가 정한다(`--xp-selection`).
@@ -115,6 +130,7 @@ export function EditablePagePreview({
         send({ parts: current.parts, color, css: current.draftCss, selected: current.selected });
       }
       if (data.type === "select" && typeof data.key === "string") state.current.onSelect(data.key, data.part ?? null);
+      if (data.type === "measure" && typeof data.key === "string" && data.sizes) state.current.onMeasure?.(data.key, data.sizes);
     }
     window.addEventListener("message", receive);
     return () => window.removeEventListener("message", receive);

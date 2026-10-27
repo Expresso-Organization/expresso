@@ -80,6 +80,16 @@ function nextRevision(base: GeneratedPageDoc, changes: Partial<GeneratedPageDoc>
   };
 }
 
+/** 지면 끝에 모이는 보조 요소입니다. 기록으로 더한 사례는 이 요소들 앞에 둡니다. */
+const SUPPORT_TYPES = new Set(["CareerTimeline", "EvidenceGrid", "Contact"]);
+
+/** `1rem` · `18px` 같은 길이를 px로 읽습니다. 읽지 못하면 무한대로 두어 맨 뒤에 놓습니다. */
+function cssPixels(value: string): number {
+  const match = /^(\d*\.?\d+)(rem|em|px)$/.exec(value.trim());
+  if (!match) return Number.POSITIVE_INFINITY;
+  return Number(match[1]) * (match[2] === "px" ? 1 : 16);
+}
+
 function isPageStyleGrammar(value: unknown): value is PageStyleGrammar { return PageStyleGrammarSchema.safeParse(value).success; }
 
 export class PageService {
@@ -367,7 +377,7 @@ export class PageService {
   }
 
   /**
-   * 커리어 기록 하나를 지면의 새 사례로 더합니다. 사례는 최상위의 연락처 앞에 둡니다. AI가 있으면 기록을 읽고 사례 글을 쓰고,
+   * 커리어 기록 하나를 지면의 새 사례로 더합니다. 사례는 최상위의 경력 · 근거 자료 · 연락처 앞에 둡니다. AI가 있으면 기록을 읽고 사례 글을 쓰고,
    * 없으면 기록 제목과 본문을 그대로 넣습니다.
    */
   async addRecordSection(userId: string, portfolioId: string, raw: AddStructuredSection, editor: PageElementEditor | null): Promise<GeneratedPage> {
@@ -391,8 +401,9 @@ export class PageService {
     if (root?.type !== "PortfolioPage") throw new PageServiceError(409, "페이지 루트가 없습니다.");
     const key = `section-${record._id}`;
     spec.elements[key] = { type: recordCaseType(root.props.archetype), props: { section: { $state: `/sectionById/${record._id}` } }, children: [] } as (typeof spec.elements)[string];
-    const contactAt = root.children.findIndex((child) => spec.elements[child]?.type === "Contact");
-    root.children.splice(contactAt === -1 ? root.children.length : contactAt, 0, key);
+    // 사례들 뒤, 경력 · 근거 자료 · 연락처 같은 보조 요소 앞에 둡니다.
+    const supportAt = root.children.findIndex((child) => SUPPORT_TYPES.has(spec.elements[child]?.type ?? ""));
+    root.children.splice(supportAt === -1 ? root.children.length : supportAt, 0, key);
     // 근거 자료 목록이 있는 지면이면 기록을 근거로도 더해 사례에서 이어지게 합니다. 없는 지면에 목록을 새로 만들지 않습니다.
     const hasEvidence = Object.values(spec.elements).some((node) => node.type === "EvidenceGrid");
     const content = {
@@ -414,10 +425,36 @@ export class PageService {
     if (!owner) throw new PageServiceError(404, "portfolio not found");
     const design = findPortfolioDesign(owner);
     return {
-      steps: design.typography.scale.map((step) => ({ name: step.name, size: step.size })),
+      // 디자인의 단계는 역할 순서(본문 · 눈썹 · 제목 …)로 적혀 있습니다. 화면의 크기 조절은 작은 것부터 큰 것으로 걷습니다.
+      steps: design.typography.scale
+        .map((step) => ({ name: step.name, size: step.size }))
+        .sort((a, b) => cssPixels(a.size) - cssPixels(b.size)),
       colors: { text: design.colors.text.value, muted: design.colors.muted.value, accent: design.colors.accent.value },
       fonts: { display: design.typography.display.family, body: design.typography.body.family, mono: design.typography.mono.family },
     };
+  }
+
+  /**
+   * 편집 화면이 그릴 최신 판입니다. 저장된 스냅샷을 지금 렌더러로 다시 그려 요소 키 표시(`data-xp-key`)를 답니다.
+   * 표시가 생기기 전에 저장된 판도 지면에서 바로 고를 수 있습니다. 아무것도 저장하지 않습니다. 다음 편집이 같은 렌더러로
+   * 새 판을 저장하므로, 배포 문서와 이 그림은 첫 편집부터 같습니다.
+   */
+  async editableRender(userId: string, portfolioId: string): Promise<{ revision: number; html: string; css: string } | null> {
+    const current = await this.latest(userId, portfolioId);
+    const snapshot = current?.generationManifest?.structured;
+    if (!current || !snapshot) return null;
+    if (current.html.includes("data-xp-key=")) return { revision: current.revision, html: current.html, css: current.css };
+    const owner = await mongoCollections(this.context.db).portfolios.findOne({ _id: portfolioId, userId });
+    if (!owner) return null;
+    try {
+      const rendered = renderStructuredPortfolio(snapshot.spec, snapshot.content, {
+        design: findPortfolioDesign(owner),
+        theme: isPageStyleGrammar(current.styleSpec) ? current.styleSpec : undefined,
+      });
+      return { revision: current.revision, ...rendered };
+    } catch {
+      return { revision: current.revision, html: current.html, css: current.css };
+    }
   }
 
   /** 구조화 지면을 고치기 전 확인입니다. 최신 판 번호가 맞고 구조화 지면이어야 합니다. */

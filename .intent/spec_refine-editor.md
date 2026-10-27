@@ -18,7 +18,7 @@ date: 2026-10-28
 - [ ] 직접 편집 패치 경로가 `period`, `quote`, `details/N/label`, `steps/N/{label,text}`, `metrics/N/{label,value,before,note}`, `profile/{role,intro}`, 섹션 `title`을 받는다. 빈 값을 보낸 선택 칸(`quote`, `period`, `before`, `note`)은 지운다.
 - [ ] 편집 패널의 모양 선택지와 글자 부분 목록은 `structuredCatalog`에서 읽는다. 카탈로그에 enum prop이 있는 새 부품을 더하면 코드 수정 없이 편집 칸이 나타난다.
 - [ ] `POST /v1/portfolios/:id/page/elements/:key/instruct`는 그 요소의 props · style · 묶인 글만 바꾼 새 판과 바뀐 곳 목록을 돌려준다. 다른 요소의 spec과 글은 바이트 단위로 같다.
-- [ ] `POST /v1/portfolios/:id/page/sections`는 기록 하나로 섹션과 사례 요소를 만들어 최상위 연락처 앞에 넣은 새 판을 돌려준다. 이미 쓰인 기록이면 409다.
+- [ ] `POST /v1/portfolios/:id/page/sections`는 기록 하나로 섹션과 사례 요소를 만들어 최상위의 경력 · 근거 자료 · 연락처 앞에 넣은 새 판을 돌려준다. 이미 쓰인 기록이면 409다.
 - [ ] 새 판을 만드는 모든 경로(`editComposition`, 요소 지시, 기록 추가)는 `refinement.status === "pending"`을 새 판에 옮기지 않는다.
 - [ ] 세 경로 모두 `expectedRevision`이 다르면 409다.
 - [ ] 편집 화면의 구조화 지면에서 「전체 배치」, 「첫 화면 원본」, 「사례 원본」 선택이 사라진다.

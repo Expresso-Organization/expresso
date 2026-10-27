@@ -490,6 +490,13 @@ export const PageEditorDesignSchema = z.strictObject({
 });
 export type PageEditorDesign = z.infer<typeof PageEditorDesignSchema>;
 
+/** 편집 화면이 그릴 최신 판의 HTML · CSS입니다. 요소 키 표시가 있는 렌더 결과입니다. */
+export const PageEditableRenderSchema = z.strictObject({
+  revision: z.number().int().nonnegative(),
+  html: z.string(),
+  css: z.string(),
+});
+
 /**
  * 배포 순간 고정하는 자유 HTML 판.
  *

@@ -74,7 +74,7 @@ describe("요소 하나 고치기", () => {
     expect(elementChanges(snapshot, next, "section-a")).toEqual([
       { label: "크기", before: "기본", after: "크게" },
       { label: "제목 모양", before: "기본", after: `강조색 · ${step}` },
-      { label: "경로 다시 짜기 · 제목", before: "경로 재설계", after: "경로 다시 짜기" },
+      { label: "제목", before: "경로 재설계", after: "경로 다시 짜기" },
     ]);
   });
 

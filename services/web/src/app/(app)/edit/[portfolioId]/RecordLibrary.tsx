@@ -17,7 +17,7 @@ export interface LibraryRecord {
 
 /**
  * 04 왼쪽 기록 목록. 내 커리어 기록을 갈래별로 보이고, 이 지면에 쓰인 기록은 표시한다. 쓰이지 않은 기록을 더하면 그 기록으로
- * 쓴 사례가 연락처 앞에 새 판으로 들어온다.
+ * 쓴 사례가 다른 사례 뒤, 경력 · 근거 자료 · 연락처 앞에 새 판으로 들어온다.
  */
 export function RecordLibrary({
   records,
@@ -25,7 +25,8 @@ export function RecordLibrary({
   portfolioId,
   revision,
 }: {
-  records: readonly LibraryRecord[];
+  /** 읽지 못했으면 null이다. */
+  records: readonly LibraryRecord[] | null;
   snapshot: StructuredPortfolioSnapshot;
   portfolioId: string;
   revision: number;
@@ -39,7 +40,7 @@ export function RecordLibrary({
     ...snapshot.content.evidence.map((item) => item.id),
   ]);
   const needle = query.trim().toLowerCase();
-  const shown = records.filter((record) => !needle || record.title.toLowerCase().includes(needle));
+  const shown = (records ?? []).filter((record) => !needle || record.title.toLowerCase().includes(needle));
   const groups = [...new Set(shown.map((record) => record.category))];
 
   function addRecord(id: string) {
@@ -62,6 +63,7 @@ export function RecordLibrary({
         aria-label="기록 찾기"
       />
       {state.error ? <p className={styles.sectionError}>{state.error}</p> : null}
+      {records === null ? <p className={styles.sectionError}>기록을 불러오지 못했습니다.</p> : null}
       {groups.map((group) => (
         <section key={group} className={styles.libraryGroup} aria-label={group}>
           <span className={styles.sectionsLabel}>{group}</span>

@@ -103,6 +103,7 @@ export function Editor({
   generatedPage,
   generatedPageHistory,
   design = null,
+  editableRender = null,
   records = [],
 }: {
   displayName: string;
@@ -115,8 +116,10 @@ export function Editor({
   generatedPageHistory: readonly GeneratedPage[];
   /** 구조화 지면이 고를 수 있는 디자인 값. 구조화 지면이 아니면 없다. */
   design?: PageEditorDesign | null;
-  /** 왼쪽 기록 목록. 구조화 지면에서만 쓴다. */
-  records?: readonly LibraryRecord[];
+  /** 편집 미리보기가 그릴 HTML · CSS. 요소 키 표시가 있는 렌더 결과이고, 없으면 저장된 판을 그린다. */
+  editableRender?: { html: string; css: string } | null;
+  /** 왼쪽 기록 목록. 구조화 지면에서만 쓴다. 읽지 못했으면 null이다. */
+  records?: readonly LibraryRecord[] | null;
 }) {
   const [, startTransition] = useTransition();
   const router = useRouter();
@@ -135,6 +138,8 @@ export function Editor({
   const pickedKey = picked && structured?.spec.elements[picked.key] ? picked.key : null;
   const [scrollRequest, setScrollRequest] = useState(0);
   const [draftCss, setDraftCss] = useState("");
+  const [measured, setMeasured] = useState<{ key: string; sizes: Record<string, number> } | null>(null);
+  const measure = useCallback((key: string, sizes: Record<string, number>) => setMeasured({ key, sizes }), []);
   const [leftTab, setLeftTab] = useState<"outline" | "records">("outline");
   const elementParts = useMemo(() => Object.fromEntries(
     Object.entries(structured?.spec.elements ?? {}).map(([key, node]) => [
@@ -148,10 +153,10 @@ export function Editor({
   }, []);
   const pickedNode = pickedKey ? structured?.spec.elements[pickedKey] : undefined;
   const pickedBinding = (pickedNode?.props as { section?: { $state?: string } } | undefined)?.section?.$state;
-  const pickedLabel = pickedNode
-    ? structured?.content.sections.find((section) => pickedBinding === `/sectionById/${section.id}`)?.title
-      ?? STRUCTURED_TYPE_LABELS[pickedNode.type] ?? pickedNode.type
-    : null;
+  // 사례는 섹션 제목으로, 나머지(큰 인용 · 수치 띠 · 목차 …)는 부품 이름으로 부른다.
+  const pickedSection = pickedNode?.type === "PullQuote" ? undefined
+    : structured?.content.sections.find((section) => pickedBinding === `/sectionById/${section.id}`);
+  const pickedLabel = pickedNode ? pickedSection?.title ?? STRUCTURED_TYPE_LABELS[pickedNode.type] ?? pickedNode.type : null;
   const [sectionId, setSectionId] = useState<string>(
     portfolio.sections[0]?.id ?? "",
   );
@@ -452,7 +457,7 @@ export function Editor({
         <WizardSteps
           brewId={portfolio.brewId}
           current="edit"
-          situation={generatedPage ? `생성 완료 · 판 ${generatedPage.revision}${refining ? " · AI가 다듬는 중" : ""}` : "생성 전"}
+          situation={generatedPage ? `생성 완료 · 판 ${generatedPage.revision + 1}${refining ? " · AI가 다듬는 중" : ""}` : "생성 전"}
         />
 
         <div className={styles.stage} data-pane={pane}>
@@ -641,7 +646,7 @@ export function Editor({
               >
               {generatedPage && structured ? (
                 <EditablePagePreview
-                  page={generatedPage}
+                  page={editableRender ? { ...generatedPage, ...editableRender } : generatedPage}
                   title={portfolio.title}
                   className={styles.freePagePreview!}
                   parts={elementParts}
@@ -649,6 +654,7 @@ export function Editor({
                   scrollRequest={scrollRequest}
                   draftCss={draftCss}
                   onSelect={pickElement}
+                  onMeasure={measure}
                 />
               ) : generatedPage ? (
                 <PagePreview
@@ -921,6 +927,7 @@ export function Editor({
                     snapshot={structured}
                     elementKey={pickedKey}
                     part={picked?.part ?? null}
+                    naturalSizes={measured?.key === pickedKey ? measured.sizes : {}}
                     design={design}
                     portfolioId={portfolio.id}
                     revision={generatedPage.revision}

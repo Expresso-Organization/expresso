@@ -25,6 +25,12 @@ import { Icon } from "@/components/ui/Icon";
 import { structuredPageAction } from "./edit-actions";
 import styles from "./page.module.css";
 
+/** 디자인 단계의 길이를 px로 읽는다. rem · em은 문서 기본 16px 기준이다. 읽지 못하면 null이다. */
+function pixels(value: string): number | null {
+  const match = /^(\d*\.?\d+)(rem|em|px)$/.exec(value.trim());
+  return match ? Number(match[1]) * (match[2] === "px" ? 1 : 16) : null;
+}
+
 const FONT_LABELS: Record<string, string> = { display: "제목", body: "본문", mono: "고정폭" };
 
 /** 여러 줄로 고치는 칸. 나머지는 한 줄이다. */
@@ -41,6 +47,7 @@ export function ElementProperties({
   snapshot,
   elementKey,
   part,
+  naturalSizes,
   design,
   portfolioId,
   revision,
@@ -50,6 +57,8 @@ export function ElementProperties({
   elementKey: string;
   /** 미리보기에서 누른 글자 부분. 그 부분을 맨 위에 둔다. */
   part: string | null;
+  /** 미리보기가 잰 글자 부분별 지금 크기(px). 크기 조절이 이 크기와 가장 가까운 단계에서 시작한다. */
+  naturalSizes: Record<string, number>;
   design: PageEditorDesign | null;
   portfolioId: string;
   revision: number;
@@ -67,6 +76,8 @@ export function ElementProperties({
   const fields = node ? editableFields(node.type) : [];
   const parts = Object.entries(STRUCTURED_PARTS[node?.type ?? ""] ?? {}).sort(([a], [b]) => Number(b === part) - Number(a === part));
   const paths = elementTextPaths(snapshot, elementKey);
+  // 여러 섹션의 글을 보이는 요소(목차 · 수치 띠)만 칸 이름에 섹션 제목을 붙인다.
+  const spansSections = new Set(paths.filter((path) => path.startsWith("/sections/")).map((path) => path.split("/")[2])).size > 1;
   const styleChanged = JSON.stringify(style) !== JSON.stringify(savedStyle);
   const propsChanged = Object.entries(props).some(([name, value]) => value !== savedProps[name]);
   const patches = Object.entries(texts)
@@ -165,6 +176,10 @@ export function ElementProperties({
       {parts.map(([name, partInfo]) => {
         const value = style[name] ?? {};
         const at = value.size ? steps.findIndex((step) => step.name === value.size) : -1;
+        // 기본 크기에서 한 단계 움직이면 지금 크기보다 바로 크거나 작은 단계로 간다.
+        const natural = naturalSizes[name];
+        const larger = at >= 0 ? at + 1 : natural === undefined ? 0 : steps.findIndex((step) => (pixels(step.size) ?? Infinity) > natural + 0.5);
+        const smaller = at >= 0 ? at - 1 : natural === undefined ? -1 : steps.findLastIndex((step) => (pixels(step.size) ?? Infinity) < natural - 0.5);
         return (
           <div key={name} className={`${styles.propGroup} ${name === part ? styles.propGroupPicked : ""}`}>
             <div className={styles.propGroupHead}>
@@ -221,8 +236,8 @@ export function ElementProperties({
                     type="button"
                     className={styles.stepperButton}
                     aria-label="한 단계 작게"
-                    disabled={at < 0}
-                    onClick={() => setPart(name, { size: at > 0 ? steps[at - 1]!.name : undefined })}
+                    disabled={smaller < 0 && at < 0}
+                    onClick={() => setPart(name, { size: smaller >= 0 ? steps[smaller]!.name : undefined })}
                   >
                     −
                   </button>
@@ -231,13 +246,13 @@ export function ElementProperties({
                     type="button"
                     className={`${styles.stepperButton} ${styles.stepperRight}`}
                     aria-label="한 단계 크게"
-                    disabled={at >= steps.length - 1}
-                    onClick={() => setPart(name, { size: steps[at + 1]!.name })}
+                    disabled={larger < 0 || larger >= steps.length}
+                    onClick={() => setPart(name, { size: steps[larger]!.name })}
                   >
                     ＋
                   </button>
                 </span>
-                {at >= 0 ? <span className={styles.propNote}>{steps[at]!.size}</span> : null}
+                <span className={styles.propNote}>{at >= 0 ? steps[at]!.size : natural !== undefined ? `${Math.round(natural)}px` : null}</span>
               </div>
             </div>
           </div>
@@ -252,7 +267,7 @@ export function ElementProperties({
           </div>
           <div className={styles.propRows}>
             {paths.map((path) => {
-              const label = textPathLabel(snapshot, path);
+              const label = textPathLabel(snapshot, path, { section: spansSections });
               const value = texts[path] ?? readStructuredText(snapshot.content, path) ?? "";
               const change = (next: string) => setTexts((previous) => ({ ...previous, [path]: next }));
               return (
