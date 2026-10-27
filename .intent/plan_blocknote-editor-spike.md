@@ -27,6 +27,7 @@ date: 2026-10-28
 | `services/backend/src/modules/career-editor/compaction.ts` · `ai-proposals.ts` · `index.ts` | v2 압축, v2 AI 제안 409, 복원 함수 노출 |
 | `services/backend/src/modules/career/service.ts` · `agent-chat/requirement-review.ts` | v2 기록 본문을 `career-editor` 진입점으로 읽기 |
 | 새 `services/backend/src/modules/career-editor/spike-migrate-report.ts` | 복사본 DB 기록 전부 dry-run 대응표 · 손실 글자 수 |
+| `services/web/src/features/career-editor/session/useCareerEditorSession.ts` | 훅이 `yDocument`를 직접 돌려준다. 편집기가 세션 내부를 열지 않게 한다 |
 | `services/web/src/features/career-editor/session/CareerEditorSession.ts` (+ test) | v2 모드: `Y.Doc` 보유, 300ms 묶음 전송, 원격 프레임 적용 |
 | 새 `services/web/src/features/career-editor/editor/BlockNoteBody.tsx` · `.module.css` | BlockNote 편집기(ariakit), `--bn-*` → `--ex-*` 연결 |
 | 새 `services/web/src/features/career-editor/editor/media-actions.ts` | 본문 이미지 업로드 서버 액션 |
