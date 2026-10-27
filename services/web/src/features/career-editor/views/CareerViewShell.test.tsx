@@ -235,6 +235,15 @@ describe("CareerViewShell", () => {
     expect(within(screen.getByRole("region", { name: "날짜 없는 기록" })).getByText("날짜 빈 기록")).toBeTruthy();
   });
 
+  it("fills the start date of timeline views saved without one", async () => {
+    renderShell({ initialViews: [{ ...base, type: "timeline", timeline: null }] });
+    expect([...screen.getByRole("list", { name: "커리어 타임라인" }).querySelectorAll("time strong")].map((item) => item.textContent)).toEqual(["2025.09.02", "2024.09.01"]);
+    fireEvent.click(screen.getByRole("button", { name: /^정렬/ }));
+    fireEvent.click(screen.getByRole("button", { name: /정렬 추가/ }));
+    await waitFor(() => expect(calls((url, init) => url.endsWith(viewId(0)) && init?.method === "PATCH").length).toBe(1));
+    expect(JSON.parse(String(calls((url, init) => url.endsWith(viewId(0)) && init?.method === "PATCH")[0]![1]!.body)).timeline).toMatchObject({ startPropertyId: dateId });
+  });
+
   it("moves deleted records to the trash with an undo", async () => {
     renderShell();
     const row = screen.getByRole("row", { name: /기록 1/ });

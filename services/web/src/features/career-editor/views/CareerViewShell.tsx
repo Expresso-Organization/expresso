@@ -55,7 +55,10 @@ type Notice = { text: string; action?: { label: string; run(): void } };
 export function CareerViewShell({ category: initialCategory, initialViews, initialViewId, initialPage, initialSearch = "", trashOpen = false, onTrashClose }: CareerViewShellProps) {
   const router = useRouter();
   const [category, setCategory] = useState(initialCategory);
-  const [views, setViews] = useState<CareerViewConfiguration[]>(() => initialViews.length ? [...initialViews].sort((left, right) => left.order - right.order) : localDefaultViews(initialCategory, initialPage.data));
+  // 예전 툴바는 종류만 바꿔 저장해 시작 속성이 없는 타임라인 뷰가 남아 있다. 화면에서 채우고 다음 저장 때 함께 보낸다.
+  const [views, setViews] = useState<CareerViewConfiguration[]>(() => initialViews.length
+    ? [...initialViews].sort((left, right) => left.order - right.order).map((view) => view.type === "timeline" && !view.timeline ? withType(view, "timeline", initialCategory, initialPage.data) : view)
+    : localDefaultViews(initialCategory, initialPage.data));
   const [activeViewId, setActiveViewId] = useState(() => views.some((view) => view.id === initialViewId) ? initialViewId! : views[0]!.id);
   const [records, setRecords] = useState(() => initialPage.data.map(listItem));
   const [page, setPage] = useState(initialPage.page);
