@@ -81,12 +81,6 @@ export default async function JobDetailPage({
   const coveredCount = musts.filter((item) => item.coverage === "covered").length;
   const haveStack = job.technologies.filter((tool) => tool.matched === true).length;
   const rows = facts(job);
-  // 뽑아 놓은 것이 하나라도 있나. 없으면 원문을 펴서 보여준다.
-  const hasStructure = job.duties.length > 0
-    || job.preferred.length > 0
-    || job.hiringProcess.length > 0
-    || musts.length > 0
-    || job.technologies.length > 0;
 
   return (
     // 머리의 채팅 버튼과 본문의 레일이 접힘 상태를 함께 본다.
@@ -292,25 +286,17 @@ export default async function JobDetailPage({
               * 아직 그 칸이 비어 있어서, 이게 없으면 3,883자짜리 공고를 열고도
               * **빈 화면**을 본다.
               *
-              * 뽑아 놓은 것이 있으면 접어 두고, 없으면 펴 둔다. 여기 온 사람이
-              * 하려던 일은 공고를 읽는 것이다.
+              * 뽑아 놓은 것이 있어도 접지 않는다. 그것은 원문의 일부만 옮긴
+              * 것이고, 회사 소개 · 복지 · 근무 조건은 원문에만 있다. 여기 온
+              * 사람이 하려던 일은 공고를 읽는 것이다.
               */}
             {job.descriptionRaw ? (
-              <details className={styles.rawSection} open={!hasStructure}>
-                <summary className={styles.rawSummary}>
-                  공고 원문
-                  <span className={styles.rawNote}>
-                    {hasStructure
-                      ? `${job.descriptionRaw.length.toLocaleString("ko-KR")}자`
-                      : "아직 요건을 뽑지 않아 원문 그대로 보여드립니다"}
-                  </span>
-                </summary>
-                {/* 글자 수는 원문의 것을 세고, 그리는 것만 편다 — 위의 `1,234자`가
-                    우리가 손댄 길이를 말하면 안 된다. */}
+              <div className={styles.rawSection}>
+                <div className={styles.rawTitle}>공고 원문</div>
                 <StackMarkdown className={styles.rawBody}>
                   {mendEmphasis(job.descriptionRaw)}
                 </StackMarkdown>
-              </details>
+              </div>
             ) : null}
 
             {job.company.brandColors.length > 0 || job.company.toneSummary || job.company.toneImpression ? (

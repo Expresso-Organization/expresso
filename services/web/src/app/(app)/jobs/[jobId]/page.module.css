@@ -577,35 +577,10 @@
   padding-top: 18px;
 }
 
-.rawSummary {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
+.rawTitle {
   font-size: var(--ex-text-md);
   font-weight: 600;
   color: var(--ex-fg);
-  cursor: pointer;
-  list-style: none;
-}
-
-.rawSummary::-webkit-details-marker {
-  display: none;
-}
-
-.rawSummary::before {
-  content: "▸";
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-fg-muted);
-}
-
-.rawSection[open] .rawSummary::before {
-  content: "▾";
-}
-
-.rawNote {
-  font-size: var(--ex-text-xs);
-  font-weight: 400;
-  color: var(--ex-fg-muted);
 }
 
 .rawBody {
