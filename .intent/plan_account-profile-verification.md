@@ -24,9 +24,10 @@ date: 2026-10-27
 | `services/web/src/app/(app)/account/AccountNav.tsx` | `active` 속성 추가, 앞 두 탭을 `Link`로 |
 | `services/web/src/app/(app)/account/page.tsx` | `<AccountNav active="plan" />` |
 | `services/web/src/app/(app)/account/loading.tsx` | `<AccountNav active="plan" />` |
-| `services/web/src/app/(app)/account/page.module.css` | 링크가 된 탭의 호버 색이 어긋날 때만 — `.navItem:hover`에 `color` 명시 |
+| `services/web/src/app/(app)/account/page.module.css` | `.dataAction:disabled`와 로그인 주소 줄의 `.verifyRow` · `.verifyResult` 추가. 링크가 된 탭의 호버 색이 어긋나면 `.navItem:hover`에 `color`도 명시 |
 | `services/web/src/app/(app)/edit/[portfolioId]/deploy/deploy-actions.ts` | 403 문장을 "설정 → 프로필"로 |
 | `packages/contracts/src/identity.ts` | `emailVerifiedAt` 주석의 "인증 안내 띠" 수정 |
+| `docs/architecture/frontend.md` | 「재설정 · 인증 · 동의」의 띠 설명을 프로필 화면으로 |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
 
@@ -81,3 +82,21 @@ pnpm test
    "설정 → 프로필에서 인증 메일을 받아 주세요"로 끝난다.
 6. 인증을 마친 계정(`dev01@expresso.test`)으로 `/account/profile` — 버튼이 없고 확인한
    날짜가 `2026.10.20` 형식으로 보인다.
+
+## 검증 결과 (2026-10-27)
+
+- `pnpm typecheck` — 6개 프로젝트 모두 통과.
+- `pnpm test` — Test Files 71 passed / 60 skipped, Tests 412 passed / 384 skipped.
+- 화면 — API 4009 · 웹 `profile.localhost:3109`, 미인증 계정
+  `profile-check@expresso.test`로 확인.
+  1. `/home` 본문 위에 띠 없음.
+  2. 좌측 「프로필」 → `/account/profile`, 「요금제 · 사용량」 → `/account`.
+  3. 「인증 메일 보내기」 → "메일을 보냈습니다"(비활성) + 줄 아래 "받은 편지함을 확인해
+     주세요. 링크는 24시간 동안 유효합니다." 1분 안에 다시 누르면 같은 자리에 429 문장.
+  4. 인증 확정 뒤 같은 화면 — 버튼 없이 `2026.10.27 확인됨`.
+  5. 밝은 지면 · 어두운 지면 모두 토큰 색으로 그려짐.
+- 배포 403 — 미인증 토큰으로 `POST /v1/portfolios/<id>/deployments`가
+  `403 {"reason":"email_verification_required"}`. 이 분기가 웹에서 고친 문장으로
+  이어진다. 포트폴리오를 실제로 만들어 배포 화면에서 그 줄을 눈으로 보지는 않았다.
+- 계획에서 벗어난 것 — 좌측 탭 두 개가 `a`가 되면서 전역 `a:hover`가 글자색을 바꿨다.
+  `.navItem:hover`에 `color`를 명시해 나머지 세 탭과 맞췄다(조건부로 적어 둔 항목).

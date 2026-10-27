@@ -22,7 +22,7 @@ export default async function AccountPage() {
       <DocumentHeader crumbs={["설정", "요금제"]} />
       <AppBody>
         <div className={styles.body}>
-          <AccountNav />
+          <AccountNav active="plan" />
 
           <div className={styles.main}>
             <h1 className={styles.title}>요금제 · 사용량</h1>

@@ -27,7 +27,7 @@ export default function Loading() {
       <DocumentHeader crumbs={["설정", "요금제"]} />
       <AppBody>
         <div className={styles.body}>
-          <AccountNav />
+          <AccountNav active="plan" />
           <SkelRegion label="설정을 불러오는 중" className={styles.main}>
             <h1 className={styles.title}>요금제 · 사용량</h1>
             <p className={styles.intro}>{ACCOUNT.intro}</p>
