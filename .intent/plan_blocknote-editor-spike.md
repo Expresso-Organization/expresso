@@ -17,7 +17,7 @@ date: 2026-10-28
 | 파일 | 무엇을 |
 |---|---|
 | `services/web/package.json` · `services/backend/package.json` · `pnpm-lock.yaml` | BlockNote 0.56.0 고정(web: core · react · ariakit, backend: server-util · core · react · react-dom) |
-| `packages/contracts/src/career-editor.ts` | bootstrap에 `schemaVersion` · `stateBase64` 추가, `document`를 v1 · BlockNote 합집합으로 |
+| `packages/contracts/src/career-editor.ts` | bootstrap에 선택 필드 `editor` · `stateBase64` 추가. `document`는 v1 모양 그대로 둔다(v2는 Markdown 투영 사본) |
 | `packages/database/src/documents/career-editor.ts` | 스냅샷 `state?: Binary` |
 | 새 `services/backend/src/modules/career-editor/blocknote-document.ts` | v1 → BlockNote 변환, v2 복원, Markdown 투영 |
 | 새 `services/backend/src/modules/career-editor/blocknote-document.test.ts` | 대응표 전 항목 · 머리글 표 · 서식 · 중첩 목록 |

@@ -16,6 +16,7 @@ date: 2026-10-28
 - [ ] 머리글 행 표, `Shift+Enter` 줄바꿈, 밑줄, 구분선, 콜아웃(커스텀 블록)이 새로고침 뒤 같은 모양으로 열린다.
 - [ ] 본문 이미지를 놓으면 `POST /v1/media`로 올라가고 `/v1/media/:id` 주소로 보인다.
 - [ ] 두 탭에서 서로 다른 문단을 동시에 고치면 두 수정이 모두 저장된다. 연결이 끊긴 동안의 입력은 재연결 뒤 저장된다.
+- [ ] bootstrap 계약은 추가 필드(`editor` · `stateBase64`)만 늘린다. v2 기록의 `document`는 Markdown 투영에서 만든 v1 모양 사본이라 기존 소비자(에이전트 채팅)가 그대로 읽는다.
 - [ ] 저장 통로는 기존 WebSocket 프레임(`sync` · `update` · `ack`)과 `career_document_updates` 원장을 그대로 쓴다.
 - [ ] 본문 저장 뒤 3초 안에 `career_records.bodyMd`가 BlockNote 본문의 Markdown으로 바뀐다.
 - [ ] 기존 v1 문서(`schemaVersion: 1`)를 처음 열면 BlockNote 문서(`schemaVersion: 2`)로 바뀐다. 옮기기 보고 스크립트가 기록별 블록 종류 대응과 사라진 글자 수를 낸다.
