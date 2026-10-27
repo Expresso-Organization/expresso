@@ -108,16 +108,21 @@ export class AdminService {
     this.#persona(key);
     const account = await mongoCollections(this.context.db).users.findOne({ dummyKey: key, deletionRequestedAt: null });
     if (!account) throw new AdminError(404, "dummy account not found");
-    await this.deps.identity.actAs(actor.sessionId, account._id);
+    const previous = await this.deps.identity.actAs(actor.sessionId, account._id);
+    // 다른 더미 계정에서 바로 옮겨 왔으면 그 대신 로그인은 여기서 끝난 것이다.
+    if (previous) await this.#auditEnd(actor, previous);
     await this.#audit({ actorUserId: actor.owner.userId, action: "impersonation.start", targetUserId: account._id, dummyKey: key });
+  }
+
+  async #auditEnd(actor: IdentityPrincipal, targetUserId: string): Promise<void> {
+    const target = await mongoCollections(this.context.db).users.findOne({ _id: targetUserId }, { projection: { dummyKey: 1 } });
+    await this.#audit({ actorUserId: actor.owner.userId, action: "impersonation.end", targetUserId, dummyKey: target?.dummyKey ?? null });
   }
 
   /** 대신 로그인을 끝낸다. 대신 로그인 중이 아니었으면 아무것도 하지 않는다. */
   async endImpersonation(actor: IdentityPrincipal): Promise<void> {
     const targetUserId = await this.deps.identity.stopActing(actor.sessionId);
-    if (!targetUserId) return;
-    const target = await mongoCollections(this.context.db).users.findOne({ _id: targetUserId }, { projection: { dummyKey: 1 } });
-    await this.#audit({ actorUserId: actor.owner.userId, action: "impersonation.end", targetUserId, dummyKey: target?.dummyKey ?? null });
+    if (targetUserId) await this.#auditEnd(actor, targetUserId);
   }
 
   /** CLI 전용. 행위자가 서버 운영자이므로 `actorUserId`는 null로 남긴다. */

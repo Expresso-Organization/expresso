@@ -161,4 +161,13 @@ describe.skipIf(!(process.env.TEST_MONGODB_URL ?? process.env.TEST_MONGODB_ADMIN
       expect(DummyAccountResponseSchema.parse(response.json()).data.account?.recordCount, persona.key).toBe(persona.records.length);
     }
   }, 300_000);
+
+  it("records the end of one impersonation when switching straight to another dummy", async () => {
+    expect((await call("POST", "/admin/dummy-accounts/dummy-newgrad/impersonation", adminToken)).statusCode).toBe(204);
+    expect((await call("POST", "/admin/dummy-accounts/dummy-career-switch/impersonation", adminToken)).statusCode).toBe(204);
+    expect(await me(adminToken)).toMatchObject({ email: "dummy-career-switch@expresso.test" });
+    expect((await audits("dummy-newgrad")).at(-1)?.action).toBe("impersonation.end");
+    expect((await call("DELETE", "/admin/impersonation", adminToken)).statusCode).toBe(204);
+    expect((await audits("dummy-career-switch")).map(({ action }) => action).slice(-2)).toEqual(["impersonation.start", "impersonation.end"]);
+  });
 });

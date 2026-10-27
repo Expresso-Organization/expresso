@@ -336,9 +336,10 @@ export class IdentityService implements IdentityApi {
   /**
    * 관리자 본인 세션을 더미 계정으로 돌린다. 새 토큰을 만들지 않는다 — 쿠키는 그대로이고,
    * 이 세션으로 들어오는 요청이 대상 계정으로 해석된다. 대상이 더미가 아니면 404.
+   * 다른 더미 계정을 보던 중이었으면 그 계정 ID를 돌려준다 — 부르는 쪽이 그 대신 로그인의 끝을 기록한다.
    */
-  async actAs(sessionId: string, targetUserId: string): Promise<void> {
-    await inTransaction(this.context, async tx => {
+  async actAs(sessionId: string, targetUserId: string): Promise<string | null> {
+    return inTransaction(this.context, async tx => {
       const collections = mongoCollections(tx.db);
       const session = await collections.identitySessions.findOne({ _id: sessionId, revokedAt: null }, { session: tx.session });
       const owner = session ? await collections.users.findOne({ _id: session.userId, deletionRequestedAt: null }, { session: tx.session }) : null;
@@ -346,6 +347,7 @@ export class IdentityService implements IdentityApi {
       const target = await collections.users.findOne({ _id: targetUserId, deletionRequestedAt: null, dummyKey: { $type: "string" } }, { session: tx.session });
       if (!target) throw new IdentityError(404, "dummy account not found");
       await collections.identitySessions.updateOne({ _id: sessionId }, { $set: { actingAsUserId: target._id, actingSince: new Date() } }, { session: tx.session });
+      return session.actingAsUserId && session.actingAsUserId !== target._id ? session.actingAsUserId : null;
     });
   }
 
