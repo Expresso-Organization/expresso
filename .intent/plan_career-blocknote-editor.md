@@ -27,10 +27,11 @@ date: 2026-10-28
 | `services/backend/src/modules/career/service.ts` (+ `career.integration.test.ts`) | v2 옛 `bodyMd` 쓰기 허용, 시험을 v2 의미로 |
 | `services/backend/src/api/main.ts` · `worker/main.ts` · 새 `worker/processors/career-document-projection.ts` | 투영 작업 연결 |
 | `services/backend/src/modules/career-editor/spike-migrate-report.ts` → `migration-report.ts` | 운영 dry-run 보고 도구 |
+| 새 `services/backend/src/modules/career-editor/blocknote-rollback.ts` | v2 → v1 되돌리기 도구(이전 버전 재배포 전 실행) |
 | `services/web/src/features/career-editor/editor/BlockNoteBody.tsx` | AI 편집 툴바, 문서 변경 알림 |
-| `services/web/src/features/career-editor/editor/CareerDocumentEditor.tsx` | v2 제안 패널 |
+| `services/web/src/features/career-editor/editor/CareerDocumentEditor.tsx` | v2 제안 패널. 요청 뒤에도 패널을 열어 둔다(옛 편집기는 처리 직후 접혀 적용 단추가 숨었다) |
 | 새 `services/web/src/features/career-editor/ai/ai-actions.ts` · `editor/SelectionToolbar.tsx` | AI 지시 목록 공용화 |
-| `docs/operations/CAREER_EDITOR_MIGRATION.md` | BlockNote 옮기기 dry-run 절차 |
+| `docs/operations/CAREER_EDITOR_MIGRATION.md` | BlockNote 옮기기 dry-run 절차와 되돌리기 |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
 

@@ -35,3 +35,51 @@
   flex: 1;
   min-width: 0;
 }
+
+.aiMenu {
+  position: relative;
+  display: inline-flex;
+}
+
+.aiLabel {
+  color: var(--ex-accent-text);
+  font-size: var(--ex-text-2xs);
+  font-weight: 600;
+}
+
+.aiActions {
+  position: absolute;
+  z-index: 8;
+  top: 100%;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  width: max-content;
+  margin-top: 4px;
+  border: 1px solid var(--ex-border);
+  border-radius: 9px;
+  padding: 5px;
+  background: var(--ex-bg);
+  box-shadow: var(--ex-elevation-overlay);
+}
+
+.aiActions button {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  padding: 5px 8px;
+  color: var(--ex-fg-body);
+  font: inherit;
+  font-size: var(--ex-text-2xs);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.aiActions button:hover {
+  background: var(--ex-bg-hover);
+  color: var(--ex-fg-strong);
+}

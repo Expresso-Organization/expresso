@@ -1,5 +1,5 @@
 /**
- * BlockNote 교체 검증용 dry-run 보고입니다. DB에 쓰지 않습니다.
+ * BlockNote 옮기기 dry-run 보고입니다. DB에 쓰지 않습니다. 운영 절차는 docs/operations/CAREER_EDITOR_MIGRATION.md를 따릅니다.
  *
  * 기록마다 v1 본문(스냅샷 + 업데이트, 없으면 bodyMd)을 복원해 BlockNote로 바꾸고,
  * 블록 종류별 대응, 문단으로 낮춘 블록, 사라진 글자 수, Markdown 투영 길이를 출력합니다.

@@ -4,7 +4,8 @@ import { AgentChat } from "@/features/agent-chat/AgentChat";
 import { EditorContent, useEditor } from "@tiptap/react";
 import dynamic from "next/dynamic";
 import type { CareerCategory, CareerPropertyDefinitionV2, CareerRecordListItem } from "@expresso/contracts";
-import { useEffect, useRef, useState } from "react";
+import type { CareerDocument } from "@expresso/editor/document";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useCareerEditorSession } from "../session/useCareerEditorSession";
 import { BlockHandle } from "./BlockHandle";
@@ -33,19 +34,42 @@ const BlockNoteBody = dynamic(() => import("./BlockNoteBody"), { ssr: false });
 
 export function CareerDocumentEditor(props: CareerDocumentEditorProps) {
   const session = useCareerEditorSession(props.recordId);
-  const { yDocument } = session;
-  if (yDocument) {
-    return (
-      <section className={styles.editor} data-mode={props.mode} aria-label="커리어 문서 편집기">
-        {props.record && props.category ? <PropertyList record={props.record} definitions={props.category.propertySchemaV2} categoryId={props.category.id} /> : null}
-        <div className={styles.content}><BlockNoteBody yDocument={yDocument} userName="나" /></div>
-        <AgentChat context={{ kind: "record", id: props.recordId }} contextLabel="현재 기록" />
-      </section>
-    );
-  }
+  if (session.yDocument) return <BlockNoteDocumentEditor {...props} session={session} yDocument={session.yDocument} />;
   // 문서 bootstrap의 404는 서버가 이 계정에서 기록을 찾지 못했다는 뜻입니다.
   if (session.snapshot.status === "unavailable") return <section className={styles.editor} data-mode={props.mode} aria-label="커리어 문서"><div className={styles.content}><p className={styles.notice}>이 기록을 찾을 수 없습니다. 삭제되었거나 다른 계정의 기록입니다.</p></div></section>;
   return <CareerDocumentEditorBody {...props} session={session} />;
+}
+
+function BlockNoteDocumentEditor({
+  recordId,
+  mode,
+  record,
+  category,
+  showAiProposal = true,
+  onAiRequest,
+  session,
+  yDocument,
+}: CareerDocumentEditorProps & { session: ReturnType<typeof useCareerEditorSession>; yDocument: NonNullable<ReturnType<typeof useCareerEditorSession>["yDocument"]> }) {
+  const [document, setDocument] = useState<CareerDocument | null>(null);
+  const [selection, setSelection] = useState<string[]>([]);
+  const [aiRequest, setAiRequest] = useState<AiPromptRequest | null>(null);
+  // 요청이 처리된 뒤에도 제안을 검토할 수 있게 패널은 사용자가 접을 때까지 열어 둡니다.
+  const [panelOpen, setPanelOpen] = useState(false);
+  const requestAi = useCallback((prompt: string, blockIds: string[]) => {
+    const request = { id: crypto.randomUUID(), recordId, prompt, blockIds };
+    if (onAiRequest) onAiRequest(request); else { setAiRequest(request); setPanelOpen(true); }
+  }, [onAiRequest, recordId]);
+  const firstBlockId = document?.content[0]?.id;
+  return (
+    <section className={styles.editor} data-mode={mode} aria-label="커리어 문서 편집기">
+      {record && category ? <PropertyList record={record} definitions={category.propertySchemaV2} categoryId={category.id} /> : null}
+      <div className={styles.content}>
+        <BlockNoteBody yDocument={yDocument} userName="나" onAiRequest={showAiProposal ? requestAi : undefined} onDocumentChange={setDocument} onSelectionChange={setSelection} />
+      </div>
+      <AgentChat context={{ kind: "record", id: recordId }} contextLabel="현재 기록" />
+      {showAiProposal && document ? <details open={panelOpen} onToggle={(event) => setPanelOpen(event.currentTarget.open)}><summary>선택 영역 빠른 편집</summary><AiProposalPanel recordId={recordId} documentVersion={session.snapshot.documentVersion} selectedBlockIds={selection.length ? selection : firstBlockId ? [firstBlockId] : []} announcedProposal={session.snapshot.proposal} requestedPrompt={aiRequest} onRequestHandled={() => setAiRequest(null)} document={document} definitions={category?.propertySchemaV2 ?? []} /></details> : null}
+    </section>
+  );
 }
 
 function CareerDocumentEditorBody({
