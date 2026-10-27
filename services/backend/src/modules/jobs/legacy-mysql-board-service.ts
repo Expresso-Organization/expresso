@@ -846,6 +846,8 @@ export class JobBoardService {
             id: analysis.id,
             status: analysis.status,
             progressStage: analysis.progress_stage,
+            // MySQL 경로는 실패 코드를 싣지 않는다. 계약 자리만 채운다.
+            failure: null,
             analyzedAt: analysis.analyzed_at ? iso(analysis.analyzed_at) : null,
           }
         : null,
