@@ -32,7 +32,8 @@ date: 2026-10-28
 | `services/web/src/app/(app)/admin/` (새) | 화면 · 서버 액션 · 스타일 |
 | `services/web/src/components/shell/ImpersonationBar.tsx` (새) · `AppChrome.tsx` · `Sidebar.tsx` | 띠, 관리 항목 |
 | `docs/operations/DEPLOYMENT.md` | 관리자 지정 절차 |
-| `docs/` 설계서 8.2 | 스크립트로 다시 생성 |
+| `docs/` 설계서 8.2 | 이번에 다시 만들지 않는다. 영역 표에 main의 컬렉션 다섯 개(`ai_usage_events` · `identity_tokens` 등)가 이미 빠져 있어 `dump-collection-spec.mjs`가 멈춘다. 영역 배정은 사람이 정하는 부분이라 후속 작업으로 둔다 |
+| `services/web/src/app/admin-actions.ts` (새) | 관리 서버 액션. `account-actions.ts`와 같은 자리에 둔다 |
 
 ## 작업 순서
 
@@ -43,7 +44,7 @@ date: 2026-10-28
 5. 가상 인물 원본 5종 — 원본이 템플릿 키 · 선택지 안에 있는지 단위 테스트로 검사.
 6. `AdminService` · 라우트 · CLI — `admin.integration.test.ts`(요구사항 전부).
 7. 웹 엔드포인트 · `/admin` 화면 · 서버 액션 · 띠 · 사이드바 항목 — `pnpm --filter @expresso/web typecheck`, 화면 확인.
-8. 문서 — DEPLOYMENT.md 관리자 지정 절차, 설계서 8.2 재생성.
+8. 문서 — DEPLOYMENT.md 관리자 지정 절차. 설계서 8.2는 영역 표 누락 때문에 후속 작업으로 둔다.
 9. 검증 — 아래 명령과 화면 확인, origin/main 재병합 뒤 PR.
 
 ```mermaid
@@ -54,7 +55,7 @@ flowchart TD
   S4 --> S5["5단계: 가상 인물 원본 5종<br/>modules/admin/personas"]
   S5 --> S6["6단계: AdminService · 라우트 · CLI<br/>modules/admin"]
   S6 --> S7["7단계: /admin 화면 · 띠 · 사이드바<br/>services/web"]
-  S7 --> S8["8단계: 배포 문서 · 설계서 8.2<br/>docs"]
+  S7 --> S8["8단계: 배포 문서<br/>docs/operations"]
   S8 --> S9["9단계: 검증<br/>typecheck · test · test:infra · 화면"]
   classDef risk fill:#FCEBEB,stroke:#A32D2D,color:#501313
 ```

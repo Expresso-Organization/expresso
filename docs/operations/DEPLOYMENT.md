@@ -78,6 +78,26 @@ scripts/operations/deploy.sh <검증된-commit>
 실행하지 않습니다. schema migration과 readiness가 통과하지 않으면 API를 준비된
 것으로 취급하지 않습니다.
 
+## 관리자와 더미 계정
+
+관리자는 서버에서 명령으로만 지정합니다. 웹에는 관리자를 지정하는 화면이 없습니다.
+
+```bash
+cd ~/expresso
+pnpm --filter @expresso/backend admin grant <email>
+pnpm --filter @expresso/backend admin revoke <email>
+```
+
+- 명령은 빌드된 `services/backend/dist/cli/admin.js`를 실행하고 `services/backend/.env`의
+  `MONGODB_URL`로 붙습니다. 배포 스크립트가 빌드를 마친 뒤에 실행합니다.
+- 대상 계정은 미리 가입해 있어야 합니다. 지정과 해제는 `admin_audit_events`에 남습니다.
+- 관리자가 로그인하면 사이드바에 「관리」가 생깁니다. `/admin`에서 더미 계정 5종을 만들고,
+  그 계정으로 대신 로그인합니다. 원본 데이터는 `services/backend/src/modules/admin/personas/`에
+  있습니다.
+
+주의: 남길 포트폴리오가 있으면 그 더미 계정의 「다시 채우기」와 「지우기」를 누르지 않습니다.
+그 계정의 기록과 포트폴리오가 모두 지워지고 되돌릴 수 없습니다.
+
 ## 실패와 복구
 
 사용자 쓰기를 열기 전 실패하면 새 프로세스를 중단하고 이전 artifact와 설정으로
