@@ -17,6 +17,7 @@ import { identitySessionSlidingExpirySteps } from "./mongodb-migrations/0012/mig
 import { identityEmailAndTermsSteps } from "./mongodb-migrations/0013/migration.js";
 import { careerCategoryOwnershipSteps } from "./mongodb-migrations/0017/migration.js";
 import { notificationProducerSteps } from "./mongodb-migrations/0020/migration.js";
+import { portfolioPublicSlugSteps } from "./mongodb-migrations/0022/migration.js";
 
 
 export interface MongoMigrationStep {
@@ -64,6 +65,8 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
   for (const name of ["migration.ts", "templates.json"]) ownershipHash.update(await readFile(new URL(`./mongodb-migrations/0017/${name}`, import.meta.url)));
   // 0018 · 0019도 열린 PR이 쓰고 있다.
   const notificationProducerHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0020/migration.ts", import.meta.url))).digest("hex");
+  // 0021은 열린 PR이 쓰고 있다.
+  const publicSlugHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0022/migration.ts", import.meta.url))).digest("hex");
   return [
     { version: "0001", name: "initial_collections", checksum: hash.digest("hex"), steps: await initialMigrationSteps() },
     { version: "0002", name: "generation_ledger_amount_constraint", checksum: secondHash, steps: await generationLedgerConstraintSteps() },
@@ -80,5 +83,6 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
     { version: "0013", name: "identity_email_and_terms", checksum: thirteenthHash, steps: await identityEmailAndTermsSteps() },
     { version: "0017", name: "career_category_ownership", checksum: ownershipHash.digest("hex"), steps: await careerCategoryOwnershipSteps() },
     { version: "0020", name: "notification_producers", checksum: notificationProducerHash, steps: await notificationProducerSteps() },
+    { version: "0022", name: "portfolio_public_slug", checksum: publicSlugHash, steps: await portfolioPublicSlugSteps() },
   ];
 }
