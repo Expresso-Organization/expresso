@@ -11,10 +11,10 @@ date: 2026-10-28
 
 ## 요구사항
 
-- [ ] 키트로 그린 지면의 leaf 요소마다 최상위 DOM에 `data-xp-key="<spec 요소 ID>"`가 붙고, 글자 부분마다 `data-xp-part="<부분 이름>"`이 붙는다.
+- [ ] 키트로 그린 지면의 요소마다 최상위 DOM에 `data-xp-key="<spec 요소 ID>"`가 붙는다. 글자 부분은 렌더러의 부분 표가 선택자로 정한다.
 - [ ] 편집 미리보기에서 요소를 누르면 부모 창이 `{ key, part }`를 받는다. 배포 문서(`pageDocument`)에는 스크립트가 들어가지 않는다.
 - [ ] 편집 미리보기는 `.xp-page`의 등장 애니메이션을 끈다. 배포 문서는 바뀌지 않는다.
-- [ ] leaf 요소의 `props.style`에 부분별 `{ color, font, size }`를 저장한다. color는 `text|muted|accent|action`, font는 `display|body|mono`, size는 그 디자인 시스템 `typography.scale`의 단계 이름만 받는다. 없는 단계 이름은 422다.
+- [ ] leaf 요소의 `props.style`에 부분별 `{ color, font, size }`를 저장한다. color는 `text|muted|accent`, font는 `display|body|mono`, size는 그 디자인 시스템 `typography.scale`의 단계 이름만 받는다. 없는 단계 이름은 422다.
 - [ ] 직접 편집 패치 경로가 `period`, `quote`, `details/N/label`, `steps/N/{label,text}`, `metrics/N/{label,value,before,note}`, `profile/{role,intro}`, 섹션 `title`을 받는다. 빈 값을 보낸 선택 칸(`quote`, `period`, `before`, `note`)은 지운다.
 - [ ] 편집 패널의 모양 선택지와 글자 부분 목록은 `structuredCatalog`에서 읽는다. 카탈로그에 enum prop이 있는 새 부품을 더하면 코드 수정 없이 편집 칸이 나타난다.
 - [ ] `POST /v1/portfolios/:id/page/elements/:key/instruct`는 그 요소의 props · style · 묶인 글만 바꾼 새 판과 바뀐 곳 목록을 돌려준다. 다른 요소의 spec과 글은 바이트 단위로 같다.
@@ -50,14 +50,14 @@ flowchart TD
 ```
 
 **계약** (`packages/contracts/src/structured-portfolio.ts`)
-- `STRUCTURED_STYLE_PARTS: Record<leaf 타입, readonly string[]>` — 예: `NameIntro: ["name","headline","intro"]`, `Case*: ["title","summary","body"]`, `PullQuote: ["quote"]`, `MetricStrip: ["value","label"]`. leaf 스키마에 `style: z.record(부분, StructuredPartStyleSchema).optional()`를 더한다. 키는 그 타입의 부분 목록만 받는다.
+- leaf 스키마에 `style: z.record(부분 이름, StructuredPartStyleSchema).optional()`를 더한다. 계약은 토큰 이름의 모양만 검사한다. 부분 이름이 그 요소에 있는지, 크기 단계가 그 디자인에 있는지는 편집 서비스가 렌더러의 부분 표(`STRUCTURED_PARTS`)와 디자인 스펙으로 검사한다. 부분은 DOM 선택자로 정의하므로 렌더러에 둔다.
 - 모델 출력 스키마(`structuredModelSchema`)에는 `style`을 넣지 않는다. 생성은 지금과 같다.
 - `applyStructuredTextPatches`를 경로 표(`STRUCTURED_TEXT_PATHS`) 기반으로 바꾼다. 정규식과 적용 코드가 같은 표를 쓴다.
 - 요청 스키마: `InstructStructuredElementSchema { expectedRevision, instruction }`, `AddStructuredSectionSchema { expectedRevision, recordId }`. 응답은 `GeneratedPage`와 `changes: { label, before, after }[]`.
 
 **렌더러** (`packages/portfolio-renderer`)
-- 키트 레지스트리를 감싸 요소 객체 → spec 키 맵(컨텍스트)으로 `data-xp-key`를 단다. json-render가 같은 객체를 넘기지 않으면, 렌더 전에 복사한 spec의 props에 내부 키를 넣고 감싼 컴포넌트가 읽은 뒤 지운다.
-- 글자 부분 노드에 `data-xp-part`, `props.style`에 따라 `data-xp-color` · `data-xp-font` · `data-xp-size`를 단다. 규칙은 `kitCss(design)`가 낸다. size 규칙은 `design.typography.scale`에서 만든다.
+- json-render는 요소 키를 컴포넌트에 넘기지 않고 props를 풀어 새 객체로 넘긴다(0.21.0 `ElementRenderer`). 그래서 렌더 전에 복사한 spec의 props에 내부 키(`xpKey`)를 넣고, 감싼 레지스트리가 컨텍스트로 내려 각 컴포넌트 루트가 `data-xp-key`로 단다.
+- 글자 부분은 요소 루트 기준 CSS 선택자로 정의한다(`STRUCTURED_PARTS`, 예: 사례 제목 = `.xp-head .xp-h2`). 컴포넌트 마크업에 부분 속성을 달지 않는다. `props.style`은 `[data-xp-key="k"] <선택자>{color:var(--xp-accent-text)}` 같은 규칙으로 바뀌어 `renderStructuredPortfolio`의 css 뒤에 붙는다. 편집 미리보기는 같은 선택자로 클릭한 부분을 찾는다.
 - 카탈로그 각 leaf에 `style` prop과 `parts`, 선택지 표시 이름(`STRUCTURED_OPTION_LABELS`)을 더하고 `editableFields(type)`를 내보낸다.
 
 **백엔드** (`services/backend/src/modules/page`)

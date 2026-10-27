@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
   applyStructuredTextPatches,
   EditStructuredPageSchema,
+  readStructuredText,
   StructuredContentModelSchema,
   StructuredMediaSchema,
   StructuredPortfolioContentSchema,
@@ -204,6 +205,59 @@ describe("구조화 포트폴리오 계약", () => {
         ],
       }),
     ).toThrow();
+  });
+  it("인용 · 단계 · 수치 · 기간 · 설명 이름표를 고치고, 비운 선택 칸은 지운다", () => {
+    const rich: StructuredPortfolioContent = {
+      ...content,
+      sections: [
+        {
+          ...content.sections[0]!,
+          period: "2025.08 — 2026.02",
+          quote: "막히면 돌아갑니다.",
+          steps: [{ label: "관찰", text: "" }, { label: "우회", text: "계획" }],
+          metrics: [{ label: "지연", value: "24분", before: "3시간", note: "야간 배치" }],
+        },
+      ],
+    };
+    const edit = EditStructuredPageSchema.parse({
+      expectedRevision: 0,
+      patches: [
+        { path: "/sections/project-a/quote", value: "돌아가도 닿습니다." },
+        { path: "/sections/project-a/steps/1/text", value: "새 계획" },
+        { path: "/sections/project-a/metrics/0/value", value: "20분" },
+        { path: "/sections/project-a/metrics/0/note", value: " " },
+        { path: "/sections/project-a/details/0/label", value: "막힌 곳" },
+        { path: "/sections/project-a/period", value: "" },
+        { path: "/profile/role", value: "설계자" },
+      ],
+    });
+    const result = applyStructuredTextPatches(rich, edit.patches);
+    const section = result.sections[0]!;
+    expect(section.quote).toBe("돌아가도 닿습니다.");
+    expect(section.steps?.[1]?.text).toBe("새 계획");
+    expect(section.metrics?.[0]).toEqual({ label: "지연", value: "20분", before: "3시간" });
+    expect(section.details[0]?.label).toBe("막힌 곳");
+    expect(section).not.toHaveProperty("period");
+    expect(result.profile.role).toBe("설계자");
+    expect(readStructuredText(rich, "/sections/project-a/metrics/0/before")).toBe("3시간");
+    expect(readStructuredText(rich, "/sections/project-a/steps/9/text")).toBeNull();
+    // 목록마다 정해진 칸만 받습니다. 단계에는 수치 칸이 없습니다.
+    expect(() => applyStructuredTextPatches(rich, [{ path: "/sections/project-a/steps/0/value", value: "x" }])).toThrow("편집할 글");
+    expect(() => applyStructuredTextPatches(rich, [{ path: "/sections/project-a/metrics/0/value", value: "" }])).toThrow();
+  });
+  it("요소의 글자 부분 모양은 토큰 이름만 받는다", () => {
+    const styled = {
+      ...spec,
+      elements: {
+        ...spec.elements,
+        "case-a": { ...spec.elements["case-a"], props: { ...spec.elements["case-a"].props, style: { title: { color: "accent", font: "display", size: "h2" } } } },
+      },
+    };
+    expect(() => validateStructuredPortfolio(styled, content)).not.toThrow();
+    const raw = (style: unknown) => ({ ...styled, elements: { ...styled.elements, "case-a": { ...styled.elements["case-a"], props: { ...styled.elements["case-a"].props, style } } } });
+    expect(() => validateStructuredPortfolio(raw({ title: { color: "#ff0000" } }), content)).toThrow();
+    expect(() => validateStructuredPortfolio(raw({ title: { size: "32px" } }), content)).toThrow();
+    expect(() => validateStructuredPortfolio(raw({ title: { weight: 700 } }), content)).toThrow();
   });
   describe("컨테이너 트리", () => {
     const content2 = {
