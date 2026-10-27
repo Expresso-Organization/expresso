@@ -157,15 +157,15 @@ describe("설계가 먼저 오는 생성", () => {
 });
 
 describe("설계 트리 연결", () => {
-  it("연결하지 않은 요소가 있으면 설계를 거절하지 않고 elements만 같은 대화에서 고쳐 받는다", async () => {
+  it("연결하지 않은 요소가 있으면 설계를 거절하지 않고 page.children만 같은 대화에서 고쳐 받는다", async () => {
     const loose = { ...spec, elements: { ...spec.elements, page: { ...spec.elements.page, children: spec.elements.page.children.filter((key) => key !== "index") } } };
     const ai = new RoutedAi((request) => (request.contract === "page_design" ? { plan, spec: loose } : fill()), (request, paths) =>
-      request.contract === "page_design" ? paths.map((path) => ({ path, value: spec.elements })) : [],
+      request.contract === "page_design" ? paths.map((path) => ({ path, value: spec.elements.page.children })) : [],
     );
     const result = await new StructuredPageGenerator(ai).generate(context);
     const designFixes = ai.fixRequests.filter((request) => request.contract === "page_design");
     expect(designFixes).toHaveLength(1);
-    expect(designFixes[0]!.paths).toEqual(["/spec/elements"]);
+    expect(designFixes[0]!.paths).toEqual(["/spec/elements/page/children"]);
     expect(designFixes[0]!.prompt).toContain("트리에 연결하지 않은 요소가 있습니다: index");
     expect(result.manifest.structured!.spec.elements.index?.type).toBe("ProjectIndex");
   });

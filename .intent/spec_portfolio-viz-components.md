@@ -20,7 +20,7 @@ date: 2026-10-28
 - [ ] 차트 글자는 모두 HTML입니다. SVG를 쓰는 곳에는 글자가 없습니다. 색은 `var(--action)` · `var(--border)` · `--xp-*`만 쓰고, `field` · `inverse` 면에서도 읽힙니다. 스크립트가 없습니다.
 - [ ] 채우기 검사(`fillViolations`)가 섹션 `period`와 경력 `period`의 숫자를 `ungroundedNumbers`로 봅니다. 고쳐도 남으면 섹션 기간은 빼고 경력 기간은 빈 글로 둡니다.
 - [ ] `fitToContent`가 조건을 못 채운 차트를 내립니다. `CaseBars` → `CaseTechnical`(같은 단위 수치 2개 미만), `timeline` → `rows`, `chart` → `list`.
-- [ ] 설계 출력의 Spec이 정의만 하고 트리에 연결하지 않은 요소가 있으면, 설계 호출의 `check`가 `/spec/elements`를 같은 대화에서 고쳐 받습니다. 고쳐도 남으면 `fitToContent`가 선택 요소(컨테이너 · 큰 인용 · 수치 강조 줄)는 지우고 나머지는 페이지에 붙입니다. 실제 생성 확인 중에 이 빈틈으로 생성이 두 번 실패해 더했습니다.
+- [ ] 설계 출력의 Spec이 정의만 하고 트리에 연결하지 않은 요소가 있으면, 설계 호출의 `check`가 `page.children`(ID 목록)만 같은 대화에서 고쳐 받습니다. 두 번 연결한 요소도 같은 자리에서 봅니다. 고쳐도 남으면 `fitToContent`가 선택 요소(컨테이너 · 큰 인용 · 수치 강조 줄)는 지우고 나머지는 페이지에 붙입니다. 실제 생성 확인 중에 이 빈틈으로 생성이 두 번 실패해 더했습니다.
 - [ ] `services/backend/src/platform/ai/fixes.test.ts`의 「공급자 형식은 모양만」 검사를 새 출력 스키마가 통과합니다.
 
 ## 설계

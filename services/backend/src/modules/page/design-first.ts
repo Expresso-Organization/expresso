@@ -471,16 +471,30 @@ function unlinkedElements(spec: SpecTree): string[] {
 }
 
 /**
- * 설계의 Spec이 정의한 요소를 모두 트리에 연결했는지 봅니다. 연결하지 않은 요소가 있으면 출력을 거절하지 않고, 쓴 에이전트가
- * 같은 대화에서 elements만 고칩니다. 쓰지 않을 선택 요소(컨테이너 · 큰 인용 · 수치 강조 줄)는 지워도 됩니다.
+ * 설계의 Spec이 정의한 요소를 모두 트리에 한 번씩 연결했는지 봅니다. 어기면 출력을 거절하지 않고, 쓴 에이전트가 같은 대화에서
+ * page.children만 고칩니다. 고칠 값이 ID 목록이라 짧습니다. elements 전체를 고쳐 받으면 긴 값의 문법이 깨질 수 있습니다
+ * (2026-10-28 실측). 고쳐도 남은 미연결 요소는 `fitToContent`가 정리합니다.
  */
 function treeViolations(spec: unknown): AiViolation[] {
   const tree = spec as SpecTree;
-  if (!tree?.elements?.[tree.root]) return [];
+  const root = tree?.elements?.[tree.root];
+  if (!root) return [];
   const missing = unlinkedElements(tree);
-  return missing.length
-    ? [{ path: "/spec/elements", problem: `트리에 연결하지 않은 요소가 있습니다: ${missing.join(", ")}. 각 요소를 page.children이나 컨테이너 children에 한 번씩 연결하고, 쓰지 않을 선택 요소(group-* · quote-* · metrics)는 elements에서 지우세요.` }]
-    : [];
+  const inGroups = new Set(
+    (root.children ?? []).flatMap((key) => {
+      const node = tree.elements[key];
+      return node && isStructuredGroup(node as never) ? node.children ?? [] : [];
+    }),
+  );
+  const twice = (root.children ?? []).filter((key, index, list) => inGroups.has(key) || list.indexOf(key) !== index);
+  if (!missing.length && !twice.length) return [];
+  return [{
+    path: `/spec/elements/${tree.root}/children`,
+    problem: [
+      missing.length ? `트리에 연결하지 않은 요소가 있습니다: ${missing.join(", ")}. page.children에 넣거나, 컨테이너(group-*)면 그 컨테이너를 page.children에 넣으세요.` : "",
+      twice.length ? `두 번 연결한 요소가 있습니다: ${[...new Set(twice)].join(", ")}. 컨테이너 안에 있는 요소는 page.children에서 빼세요.` : "",
+    ].filter(Boolean).join(" "),
+  }];
 }
 
 /** 고친 값 안의 글 칸을 모두 꺼냅니다. 값이 배열 · 객체면 그 안의 문자열마다 경로를 붙입니다. */
