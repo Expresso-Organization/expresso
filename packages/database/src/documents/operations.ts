@@ -25,7 +25,7 @@ export interface AccountDeletionEventDoc {
 }
 
 export interface ScheduledJobDefinitionDoc {
-  _id: "saved_searches" | "expire_postings" | "notification_batch" | "analytics_daily" | "deletion_grace" | "retention" | "job_ingest" | "posting_facts";
+  _id: "saved_searches" | "expire_postings" | "notification_batch" | "analytics_daily" | "deletion_grace" | "retention" | "job_ingest" | "posting_facts" | "deadline_reminders";
   intervalSeconds: number;
   nextRunAt: Date;
   lastStartedAt?: Date | null;

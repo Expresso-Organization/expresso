@@ -41,11 +41,12 @@ function panelTarget(tab: PanelTab, revisionCount: number, chosen: string | null
   return chosen ?? "고른 것 없음";
 }
 
+// 편집 화면은 사이드바의 「새 포트폴리오」 묶음에 속한다(`sectionForPath`의 /edit).
 const RAIL_ITEMS = [
-  { icon: "house", label: "홈", href: "/home" as const, active: false, dot: false },
-  { icon: "coffee", label: "새 포트폴리오", href: "/brew/new" as const, active: true, dot: false },
-  { icon: "target", label: "공고 탐색", href: "/jobs" as const, active: false, dot: false },
-  { icon: "chart-bar", label: "분석", href: "/analytics" as const, active: false, dot: true },
+  { icon: "house", label: "홈", href: "/home" as const, active: false },
+  { icon: "coffee", label: "새 포트폴리오", href: "/brew/new" as const, active: true },
+  { icon: "target", label: "공고 탐색", href: "/jobs" as const, active: false },
+  { icon: "chart-bar", label: "분석", href: "/analytics" as const, active: false },
 ];
 
 export interface EditorCheckpoint {
@@ -217,14 +218,12 @@ export function Editor({
               size={17}
               color={item.active ? "var(--ex-fg)" : "var(--ex-fg-muted)"}
             />
-            {item.dot ? <span className={styles.railDot} /> : null}
           </Link>
         ))}
         <div className={styles.railFoot}>
-          <button type="button" className={styles.railButton} aria-label="도움말">
-            <Icon name="question" size={17} color="var(--ex-fg-muted)" />
-          </button>
-          <span className={styles.railAvatar}>{displayName.slice(0, 1)}</span>
+          <Link href="/account" className={styles.railAvatar} aria-label={`${displayName} · 설정`}>
+            {displayName.slice(0, 1)}
+          </Link>
         </div>
       </nav>
 
