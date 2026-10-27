@@ -479,8 +479,28 @@
 }
 
 .addCategory {
+  border: 0;
   padding: 6px 8px;
+  background: transparent;
+  font: inherit;
+  text-align: left;
 }
+.addCategory:focus-visible { outline: none; box-shadow: var(--ex-focus-ring); }
+
+.addCategoryInput {
+  flex: 1;
+  min-width: 0;
+  margin-left: 7px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--ex-fg);
+  font: inherit;
+  font-size: var(--ex-text-sm);
+  outline: none;
+}
+.addCategoryInput::placeholder { color: var(--ex-fg-faint); }
+.addCategory[data-state="failed"] { box-shadow: inset 0 0 0 1px var(--ex-status-danger); }
 
 .addCategoryLabel {
   margin-left: 8px;
