@@ -94,7 +94,7 @@
 | 표가 든 기록을 다시 열면 탭이 멈춤 | 슬래시 메뉴 「표」 삽입 → 새로고침 → 기록 열기 | 슬래시 메뉴가 머리글 행 표를 넣습니다([SlashMenu.tsx:17](../../services/web/src/features/career-editor/editor/SlashMenu.tsx)). 저장 변환이 `tableHeader`를 알 수 없는 블록 타입으로 저장합니다([extensions.ts:168](../../services/web/src/features/career-editor/editor/extensions.ts)). 다시 열 때 호환 블록이 `tableRow` 안에 들어가 ProseMirror 스키마 검사(`Invalid content for node tableRow`)에 걸립니다. |
 | 줄바꿈이 새로고침 뒤 사라짐 | `Shift+Enter` 입력 → 새로고침 | `hardBreak`가 문단의 자식 블록으로 저장되고 위치를 잃습니다. 읽을 때 문단은 `text`만 써서 줄바꿈이 빠집니다. |
 | 밑줄 단축키가 예외를 던짐 | 글자 선택 → `Cmd+U` | StarterKit이 `underline`을 켜지만 계약의 mark는 5종뿐입니다([document.ts:21](../../packages/editor/src/document.ts)). |
-| AI 적용 결과가 열린 편집기에 반영되지 않음 | 제안 적용 → 본문 그대로 → 새로고침하면 반영 | 원격 변경 반영 경로([CareerDocumentEditor.tsx:80](../../services/web/src/features/career-editor/editor/CareerDocumentEditor.tsx))가 이 경우를 받지 못합니다. 원인은 확정하지 않았습니다. 이 상태에서 입력을 계속하면 문서 전체를 보내므로 AI 변경을 덮어씁니다. |
+| AI 적용 결과가 열린 편집기에 반영되지 않음 | 제안 적용 → 본문 그대로 → 새로고침하면 반영 | 서버는 적용 뒤 `update` 프레임을 보냅니다([socket.ts:53](../../services/backend/src/modules/career-editor/socket.ts)). 클라이언트가 이 프레임을 합친 결과에 AI 문서가 남지 않습니다. 문서 전체를 Map 키 하나에 쓰는 구조에서 동시 쓰기 판정에 AI 쪽이 진 것으로 추정합니다. 원인은 확정하지 않았습니다. 이 상태에서 입력을 계속하면 문서 전체를 보내므로 AI 변경을 덮어씁니다. |
 
 위 세 결함의 공통 원인은 Tiptap 스키마와 `CareerDocument` 변환을 손으로 따로
 유지하는 구조입니다. Tiptap의 모든 노드와 mark를 왕복시키는 시험이 없습니다.
@@ -154,7 +154,7 @@
 ### 편집 화면 · 반응형
 
 - 375px에서 필터 · 정렬 · 속성 · 새로 만들기 단추 글자가 두 줄로 꺾입니다.
-- 머리말의 「공유」, 시계 아이콘, 「…」은 동작이 없습니다.
+- 머리말의 「공유」, 시계 아이콘, 「…」과 사이드바 「카테고리 추가」는 동작이 없습니다.
 - 기록이 하나도 없는 카테고리에서 「조건에 맞는 기록이 없습니다」와 「전체 기록 보기」가
   나옵니다. 필터가 없는데 필터 결과 문구가 나옵니다.
 
@@ -169,7 +169,7 @@
 | 블록 끌어 옮기기 · 타입 변환 | 없음 |
 | 변경 이력 보기 · 복원 화면 | API만 있음(`/document/revisions`, `/restore`) |
 | 휴지통 · 기록 복원 화면 | API만 있음(`trashRecord` · `restoreRecord`) |
-| 카테고리 추가 | 사이드바 항목은 있으나 웹 프록시가 GET만 엽니다 |
+| 카테고리 추가 | 사이드바 항목이 클릭 처리 없는 `div`입니다. 웹 프록시도 GET만 엽니다. 생성 API는 있습니다 |
 | 여러 뷰 전환 · 관리 | 없음 |
 | 필터 tree · 다중 정렬 화면 | 없음 |
 | 보드 카드 이동 · 타임라인 축 | 없음 |
