@@ -726,11 +726,10 @@ function Organizations({
     <>
       <div className={styles.chartHead}>
         <span className={styles.chartTitle}>기업 도메인 방문</span>
-        <span className={styles.proBadge}>PRO</span>
       </div>
       {!organizations.entitled ? (
         <p className={styles.blankBody}>
-          어느 회사에서 내 포트폴리오를 봤는지는 PRO에서 볼 수 있습니다.
+          지금 요금제에서는 어느 회사에서 내 포트폴리오를 봤는지 볼 수 없습니다.
         </p>
       ) : organizations.domains.length === 0 ? (
         <p className={styles.blankBody}>기업 네트워크에서 온 방문이 아직 없습니다.</p>
@@ -1085,7 +1084,7 @@ function MetricLibrary({
                   </span>
                   {entry.availability !== "ready" ? (
                     <span className={entry.availability === "plan_required" ? styles.statePro : styles.stateNone}>
-                      {entry.availability === "plan_required" ? "PRO" : "없음"}
+                      {entry.availability === "plan_required" ? "요금제 밖" : "없음"}
                     </span>
                   ) : used.has(entry.key) ? (
                     <WidgetForm

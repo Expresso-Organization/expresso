@@ -26,7 +26,7 @@ PR 다섯 개. 1번은 이 브랜치(`feat/dead-ui-wiring`)에서 intent · spec
 | 2 공고 | `app/(app)/jobs/page.tsx` · 새 `jobs-actions.ts` · `browse-copy.ts` | 조건 · 칩 · 정렬 · 검색 저장 · 지우기 · 진입 버튼, 샘플 제거 |
 | 3 홈 · 온보딩 | `home/page.tsx` · `HomeChrome.tsx`, `onboarding/first-portfolio` · `materials` · 단계 정의, `SocialSignIn.tsx`, 브루 제목(계약 `UpdateBrewSchema` · brew 서비스 · `WizardShell`, 「자동 저장됨」 제거 포함) | 진입 연결, 온보딩 실데이터, 이력서 단계 · GitHub 제거, 제목 변경 |
 | 4 편집 · 배포 | `edit/[portfolioId]/Editor.tsx` · `EditorPanels.tsx` · `page.tsx` · `edit-actions.ts` · 새 미리보기 라우트, `deploy/DeployPanel.tsx` · `deploy/page.tsx`, `brew/[brewId]/materials/page.tsx`, `modules/portfolio-editing/service.ts`(묻고 나서), 내보내기 경로 | 보기 상태 · 되돌리기 · HTML · 미리보기 · 가져오기 · 이력, actor 기록, 내보내기 · 도메인 · 장식 제거 |
-| 5 설정 | `account/page.tsx` · `AccountNav.tsx` · `loading.tsx` · 새 `account-actions.ts` · 내보내기 라우트, PRO 잠금 표시(`MaterialPicker` · `Dashboard`), `lib/sample` 삭제 | 사용량 · 내보내기 · 삭제 · 알림 설정, 요금제 · 결제 제거 |
+| 5 설정 | `account/page.tsx` · `AccountNav.tsx` · `loading.tsx` · 새 `DataSection.tsx` · 새 `export/route.ts`, 새 `app/account-actions.ts` · `lib/auth/deletion-code.ts`, 새 `(auth)/login/restore`, `LoginForm.tsx` 링크, `lib/api/endpoints.ts`, PRO 표시(`MaterialPicker` · `analytics/Dashboard`), 쓰지 않는 `lib/sample/analytics.ts` · `brew/new/screen-definition-01.generated.ts` 삭제 | 사용량 · 알림 설정 · 내보내기 · 삭제 요청과 취소, 요금제 · 결제 제거. `lib/sample/site.ts` · `jobs.ts`는 #115 · PR 2 머지 뒤 지운다 |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
 
