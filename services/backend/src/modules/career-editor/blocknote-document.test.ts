@@ -1,4 +1,5 @@
 import { blockNoteText, careerDocumentText } from "@expresso/editor/blocknote";
+import { markdownToCareerDocument } from "@expresso/editor";
 import type { CareerBlock, CareerDocument } from "@expresso/editor/document";
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
@@ -67,7 +68,10 @@ describe("BlockNote Yjs document", () => {
     const restored = restoreBlockNote(migrated.state).blocks;
     expect(restored[0]).toMatchObject({ type: "evidence", props: { source: "job:1" } });
     expect(migrated.degraded).toEqual({});
-    expect(await blockNoteMarkdown(restored)).toContain("> 트래픽 10배 대응");
+    const markdown = await blockNoteMarkdown(restored);
+    expect(markdown).toContain("트래픽 10배 대응");
+    // 내보낸 Markdown을 다시 읽으면 같은 출처의 근거 블록입니다.
+    expect(markdownToCareerDocument(markdown).content[0]).toMatchObject({ type: "evidence", attrs: { source: "job:1" }, text: [{ text: "트래픽 10배 대응" }] });
   });
 });
 

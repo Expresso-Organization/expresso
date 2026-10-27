@@ -74,9 +74,13 @@ const createEvidenceBlockSpec = createBlockSpec(createEvidenceBlockConfig, {
     root.append(label, contentDOM);
     return { dom: root, contentDOM } as never;
   },
-  toExternalHTML() {
+  // Markdown에서는 v1 문법 `> [evidence:출처] 문장`으로 내보냅니다. markdownToCareerDocument가 같은 문법을 근거 블록으로 읽습니다.
+  toExternalHTML(block) {
     const quote = dom().createElement("blockquote");
-    return { dom: quote, contentDOM: quote } as never;
+    const prefix = (globalThis as unknown as { document: { createTextNode(text: string): MinimalElement } }).document.createTextNode(`[evidence:${block.props.source}] `);
+    const contentDOM = dom().createElement("span");
+    quote.append(prefix, contentDOM);
+    return { dom: quote, contentDOM } as never;
   },
 });
 
