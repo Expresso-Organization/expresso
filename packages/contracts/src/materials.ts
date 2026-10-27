@@ -31,6 +31,8 @@ export const BrewMaterialSchema = z.strictObject({
   excludedReason: z.string().min(1).max(300).nullable(),
   /** 01b 표가 그리는 것 — 어느 서랍의 기록인지, 언제 일인지, 어디서 온 글인지. */
   categoryName: z.string().min(1).max(80),
+  /** 서랍의 고정 키(`project` 등). 화면은 이 키로 아이콘을 고른다 — `categoryIcon`은 저장된 이름 그대로라 웹 아이콘 묶음과 다를 수 있다. */
+  categoryKey: z.string().min(1).max(80),
   categoryIcon: z.string().min(1).max(40),
   periodFrom: z.iso.date().nullable(),
   periodTo: z.iso.date().nullable(),

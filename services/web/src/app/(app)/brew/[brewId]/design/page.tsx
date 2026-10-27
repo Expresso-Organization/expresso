@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { ApiError } from "@/lib/api/client";
 import { brews, designSystems, entitlements, jobAnalyses, recipes } from "@/lib/api/endpoints";
+import { CAREER_CATEGORY_ICONS } from "@/lib/career-category-icons";
 import { requireSession } from "@/lib/require-session";
 
 import { BrewFrame } from "../BrewFrame";
@@ -151,6 +152,12 @@ async function waitReading(accessToken: string, brew: BrewState): Promise<WaitRe
     })),
     records: materials.data.materials
       .filter(({ selected }) => selected)
-      .map(({ recordId, title, categoryIcon, categoryName, reason }) => ({ recordId, title, categoryIcon, categoryName, reason })),
+      .map(({ recordId, title, categoryKey, categoryName, reason }) => ({
+        recordId,
+        title,
+        categoryIcon: CAREER_CATEGORY_ICONS[categoryKey] ?? "file-text",
+        categoryName,
+        reason,
+      })),
   };
 }

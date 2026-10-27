@@ -49,6 +49,7 @@ interface SourceRow {
   selected_by: "auto" | "user";
   excluded_reason: string | null;
   category_name: string;
+  category_key: string;
   category_icon: string;
   period_from: string | null;
   period_to: string | null;
@@ -67,6 +68,7 @@ function mapSource(row: SourceRow): BrewMaterial {
     selectedBy: row.selected_by,
     excludedReason: row.excluded_reason,
     categoryName: row.category_name,
+    categoryKey: row.category_key,
     categoryIcon: row.category_icon,
     periodFrom: row.period_from,
     periodTo: row.period_to,
@@ -311,7 +313,7 @@ export class MaterialsService {
       select brew_source.record_id, record.title, record.status, record.origin,
              brew_source.score, brew_source.\`rank\`, brew_source.is_selected,
              brew_source.selected_by, brew_source.excluded_reason, brew_source.reason_text,
-             category.name as category_name, category.icon as category_icon,
+             category.name as category_name, category.\`key\` as category_key, category.icon as category_icon,
              record.period_start as period_from,
              record.period_end as period_to
       from brew_source

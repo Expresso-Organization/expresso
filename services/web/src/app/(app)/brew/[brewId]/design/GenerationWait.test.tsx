@@ -62,9 +62,20 @@ describe("생성 기다림 화면", () => {
     expect(visible()).toHaveLength(4);
   });
 
-  it("무엇을 하는 중인지 적는 문구를 두지 않는다", () => {
-    render(<GenerationWait reading={reading} brewingLeftMs={0} actions={null} />);
-    expect(screen.queryByText(/중입니다|하는 중/)).toBeNull();
+  it("처음 10초는 잔 아래에서 읽는 입력을 짚고, 입력 묶음이 뜬 뒤에는 만드는 일을 적는다", () => {
+    render(<GenerationWait reading={reading} brewingLeftMs={BREWING_MS} actions={null} />);
+    expect(screen.getByText("사용자 기록 정리 중...")).toBeTruthy();
+    expect(screen.getByText("채용 공고 분석 중...")).toBeTruthy();
+    expect(screen.queryByText("포트폴리오 생성 중...")).toBeNull();
+
+    act(() => vi.advanceTimersByTime(BREWING_MS));
+    expect(screen.getByText("포트폴리오 생성 중...")).toBeTruthy();
+    expect(screen.queryByText("사용자 기록 정리 중...")).toBeNull();
+  });
+
+  it("공고 없이 시작한 제작에서는 공고를 분석한다고 적지 않는다", () => {
+    render(<GenerationWait reading={{ ...reading, posting: null }} brewingLeftMs={BREWING_MS} actions={null} />);
+    expect(screen.queryByText("채용 공고 분석 중...")).toBeNull();
   });
 
   it("공고 없이 시작했거나 디자인을 못 찾았으면 그 구역만 빠진다", () => {

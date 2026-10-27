@@ -256,6 +256,7 @@ describeWithDatabase("brew materials integration", () => {
     // 01b 표가 그리는 것이 다 들어 있다 — 어느 서랍, 언제 일, 어디서 온 글, 왜 이 순위.
     expect(created.materials[0]).toMatchObject({
       categoryName: expect.any(String),
+      categoryKey: expect.any(String),
       categoryIcon: expect.any(String),
       origin: expect.any(String),
       reason: expect.any(String),

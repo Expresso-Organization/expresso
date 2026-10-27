@@ -60,7 +60,14 @@ export interface BrewingRecord {
  *
  * 위로 올라갈 때 `GenerationWait`이 잔(`data-brew-cup`)에서 내려가는 결(`--ex-fall`)을 읽어 같은 결로 옮긴다.
  */
-export function Brewing({ records }: { records: readonly BrewingRecord[] }) {
+export function Brewing({
+  records,
+  quiet = false,
+}: {
+  records: readonly BrewingRecord[];
+  /** 입력 묶음이 뜬 뒤. 기록 줄은 걷히고 잔만 남아 계속 찼다 비웠다 한다 — 기록은 아래 묶음이 보여 준다. */
+  quiet?: boolean;
+}) {
   /** 몇 번째 기록까지 들어갔는가. 계속 는다 — 나머지로 자리를 정한다. */
   const [at, setAt] = useState(0);
   /** 이번 걸음에서 잔을 비웠는가. 기록이 들어온 뒤 다음 기록 전에만 선다. */
@@ -89,7 +96,7 @@ export function Brewing({ records }: { records: readonly BrewingRecord[] }) {
 
   if (count === 0) {
     return (
-      <div className={styles.brew} aria-hidden="true">
+      <div className={styles.brew} data-quiet={quiet ? "" : undefined} aria-hidden="true">
         <span className={styles.bloom} />
         <span className={styles.mark} data-brew-cup=""><LogoMark size={94} /></span>
       </div>
@@ -112,7 +119,7 @@ export function Brewing({ records }: { records: readonly BrewingRecord[] }) {
   const fill = at === 0 || drained ? FILL_FROM : FILL_FROM + (lap + 1) * FILL_STEP;
 
   return (
-    <div className={styles.brew} aria-hidden="true">
+    <div className={styles.brew} data-quiet={quiet ? "" : undefined} aria-hidden="true">
       <div className={styles.lane}>
         {rows.map(({ seq, slot, record }) => (
           <span
