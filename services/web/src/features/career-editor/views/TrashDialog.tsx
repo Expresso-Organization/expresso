@@ -6,14 +6,19 @@ import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Icon } from "@/components/ui/Icon";
 
-import { formatDate } from "./view-logic";
 import styles from "./views.module.css";
 
 const DAY_MS = 86_400_000;
 
-/** 영구 삭제까지 남은 날. 하루가 안 남았으면 0일이다. */
+/** 영구 삭제까지 남은 날. 지운 직후는 보관 기간 30일이 그대로 보이도록 올림한다. */
 function daysLeft(purgeAfter: string, now: number): number {
-  return Math.max(0, Math.floor((new Date(purgeAfter).getTime() - now) / DAY_MS));
+  return Math.max(1, Math.ceil((new Date(purgeAfter).getTime() - now) / DAY_MS));
+}
+
+/** 지운 날짜는 사용자 시간대의 날짜로 보인다. */
+function localDate(timestamp: string): string {
+  const date = new Date(timestamp);
+  return [date.getFullYear(), date.getMonth() + 1, date.getDate()].map((part) => String(part).padStart(2, "0")).join(".");
 }
 
 /** 이 카테고리에서 지운 기록. 복원하면 목록에서 빠지고 뷰에 다시 나온다. */
@@ -57,7 +62,7 @@ export function TrashDialog({ open, categoryId, categoryName, onClose, onRestore
         : items.length === 0 ? <p className={styles.trashEmpty}>비어 있습니다.</p>
           : <ul className={styles.trashList} aria-label="지운 기록">
             {items.map((item) => <li key={item.id}>
-              <span className={styles.trashRecord}><strong>{item.title || "제목 없음"}</strong><small>{formatDate(item.deletedAt)} 삭제 · {daysLeft(item.purgeAfter, loadedAt)}일 뒤 영구 삭제</small></span>
+              <span className={styles.trashRecord}><strong>{item.title || "제목 없음"}</strong><small>{localDate(item.deletedAt)} 삭제 · {daysLeft(item.purgeAfter, loadedAt)}일 뒤 영구 삭제</small></span>
               <button type="button" disabled={busy === item.id} onClick={() => void restore(item)}><Icon name="arrow-counter-clockwise" size={13} />복원</button>
             </li>)}
           </ul>}
