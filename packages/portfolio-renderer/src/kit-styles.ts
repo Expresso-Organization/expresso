@@ -11,6 +11,39 @@ import { KIT_LAYOUT } from "./design-layout.js";
 
 const { wideMargin: WM, group: GROUP, collapseBelow: COLLAPSE } = KIT_LAYOUT;
 
+/**
+ * 등장 규칙(`data-reveal`) — 키트 공통 스크롤 등장입니다. 스크립트 없이 CSS 스크롤 타임라인(`animation-timeline:view()`)만 씁니다.
+ *
+ * 등장 단위는 `.xp-block`의 직계 자식입니다. 블록이 `.xp-inner` 바로 아래든 `.xp-group` 안이든 같습니다. 직계 자식이 `ul` · `ol` ·
+ * `[data-reveal="stagger"]`이면 그 자식 대신 안의 항목이 단위가 됩니다. 단위는 자기가 화면에 들어올 때 디자인의 요소 간격만큼
+ * 아래에서 떠오르고, 같은 부모 안 2 · 3 · 4번째 이후 단위는 디자인의 컴포넌트 간격만큼씩 늦게 시작합니다.
+ *
+ * 새 부품을 만들 때:
+ * - 바깥 요소에 `xp-block` 클래스를 주면 따로 할 일이 없습니다.
+ * - 나란한 항목을 차례로 보이려면 `ul` · `ol`을 쓰거나, 그 묶음 요소에 `data-reveal="stagger"`를 붙입니다. 블록의 직계 자식이어야 합니다.
+ * - 배경처럼 움직이면 안 되는 요소에는 `data-reveal="none"`을 붙입니다. 그 요소와 자손이 모두 빠집니다.
+ *   문서 루트(`<html data-reveal="none">`)에 붙이면 첫 화면을 포함한 지면 전체가 빠집니다(`pageDocument({ reveal: false })`).
+ *
+ * 등장 선언은 움직임 줄이기가 아니고(`no-preference`) 브라우저가 스크롤 타임라인을 지원할 때(`@supports`)만 있습니다. 둘 중 하나가
+ * 아니면 시작 상태(투명)도 선언되지 않아 내용이 처음부터 보입니다. 덮어쓰는 규칙(`animation:none`)으로 끄지 않습니다.
+ * 청사진 단계(`:root[data-stage]`)와 `data-motion="none"` 지면에서도 꺼집니다.
+ *
+ * 지원 근거: MDN browser-compat-data 8.1.7(2026-10-22) — `animation-timeline` · `view()` · `animation-range`가
+ * Chrome · Edge 115, Safari 26, Firefox 159부터입니다.
+ */
+const REVEAL_ON = `:root:not([data-stage]) .xp-page:not([data-motion="none"])`;
+const REVEAL_OFF = `[data-reveal="none"],[data-reveal="none"] *`;
+/**
+ * 단위가 다 나타나는 지점입니다. 단위의 위쪽이 화면 아래쪽 25vh를 지나는 동안 나타나므로, 읽는 자리인 위쪽 4분의 3에서는
+ * 늘 불투명합니다. `entry` 백분율은 단위 높이에 따라 거리가 달라져 쓰지 않습니다.
+ */
+const REVEAL_ZONE = "25vh";
+/** 등장 단위 선택자입니다. `nth`는 같은 부모 안의 순서 조건입니다. 스크롤 타임라인에서는 `animation-delay`가 진행에 영향을 주지 않아 순서는 구간 시작으로 밉니다. */
+function revealUnits(nth: string): string {
+  const block = `${REVEAL_ON} .xp-block:not(${REVEAL_OFF})`;
+  return `${block}>:not(ul,ol,[data-reveal])${nth},${block}>:is(ul,ol,[data-reveal="stagger"])>:not([data-reveal="none"])${nth}`;
+}
+
 export const KIT_CSS = String.raw`
 .xp-page{--xp-pad:clamp(20px,5vw,56px);--xp-bleed:max(var(--xp-pad),(100vw - var(--content-width)) / 2);--xp-section:var(--section-gap);--xp-rule:var(--border-width) solid var(--border);--xp-small:max(13px,calc(var(--type-example-body) * .86));--xp-name:clamp(2.6rem,5.2vw + 1rem,calc(var(--type-example-display) * 1.3));--xp-h2:clamp(1.55rem,1.6vw + 1rem,var(--type-example-heading));
   min-height:100vh;margin:0;overflow-x:clip;background:var(--canvas);color:var(--text);font-family:var(--font-body);font-size:var(--type-example-body);line-height:var(--line-example-body);word-break:keep-all;overflow-wrap:anywhere;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
@@ -345,17 +378,21 @@ export const KIT_CSS = String.raw`
   .xp-showcase-text{grid-template-columns:minmax(0,1fr)}
 }
 
-/* 모션 — 디자인의 시간·곡선. JavaScript 없이 보이고, 모션 감소·인쇄에서 꺼집니다 */
-@keyframes xp-rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+/* 모션 — 디자인의 시간·곡선·간격. 등장 규칙은 위 REVEAL_* 주석을 봅니다 */
+.xp-page{--xp-reveal-rise:var(--element-gap);--xp-reveal-step:var(--component-gap)}
+@keyframes xp-rise{from{opacity:0;transform:translateY(var(--xp-reveal-rise))}to{opacity:1;transform:none}}
 @keyframes xp-marquee{from{transform:translateX(0)}to{transform:translateX(-100%)}}
 @media (prefers-reduced-motion:no-preference){
   .xp-marquee ul{animation:xp-marquee 32s linear infinite}
-  .xp-page:not([data-motion="none"]) .xp-hero>*{animation:xp-rise calc(var(--motion-duration) * 3) var(--motion-easing) both}
-  .xp-page:not([data-motion="none"]) .xp-hero>:nth-child(2){animation-delay:60ms}
-  .xp-page:not([data-motion="none"]) .xp-hero>:nth-child(3){animation-delay:120ms}
-  .xp-page:not([data-motion="none"]) .xp-hero>:nth-child(n+4){animation-delay:180ms}
+  ${REVEAL_ON} .xp-hero:not(${REVEAL_OFF})>*{animation:xp-rise calc(var(--motion-duration) * 3) var(--motion-easing) both}
+  ${REVEAL_ON} .xp-hero:not(${REVEAL_OFF})>:nth-child(2){animation-delay:60ms}
+  ${REVEAL_ON} .xp-hero:not(${REVEAL_OFF})>:nth-child(3){animation-delay:120ms}
+  ${REVEAL_ON} .xp-hero:not(${REVEAL_OFF})>:nth-child(n+4){animation-delay:180ms}
   @supports (animation-timeline:view()){
-    .xp-page[data-motion="showcase"] .xp-inner>.xp-block{animation:xp-rise linear both;animation-timeline:view();animation-range:entry 0% entry 28%}
+    ${revealUnits("")}{animation:xp-rise var(--motion-easing) both;animation-timeline:view();animation-range:cover 0% cover ${REVEAL_ZONE}}
+    ${revealUnits(":nth-child(2)")}{animation-range:cover var(--xp-reveal-step) cover calc(${REVEAL_ZONE} + var(--xp-reveal-step))}
+    ${revealUnits(":nth-child(3)")}{animation-range:cover calc(var(--xp-reveal-step) * 2) cover calc(${REVEAL_ZONE} + var(--xp-reveal-step) * 2)}
+    ${revealUnits(":nth-child(n+4)")}{animation-range:cover calc(var(--xp-reveal-step) * 3) cover calc(${REVEAL_ZONE} + var(--xp-reveal-step) * 3)}
   }
 }
 @media print{
