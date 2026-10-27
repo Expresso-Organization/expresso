@@ -87,12 +87,17 @@ export const AnalyticsTrendPointSchema = z.strictObject({
   date: z.iso.date(),
   visits: z.number().int().nonnegative(),
   completes: z.number().int().nonnegative(),
+  contactClicks: z.number().int().nonnegative(),
+  fileDownloads: z.number().int().nonnegative(),
+  linkClicks: z.number().int().nonnegative(),
 });
 
 export const AnalyticsSectionDwellSchema = z.strictObject({
   sectionId: UuidSchema,
-  /** 레시피가 지은 섹션 제목. 없으면 빈 문자열 — 화면이 순번으로 부른다. */
+  /** 배포한 지면에서 뽑은 섹션 제목. 없으면 빈 문자열 — 화면이 `position`으로 부른다. */
   title: z.string().max(300),
+  /** 지면 안에서 몇 번째 섹션인가(1부터). 어느 배포의 섹션인지 모르면 null. */
+  position: z.number().int().positive().nullable(),
   views: z.number().int().nonnegative(),
   dwellMs: z.number().int().nonnegative(),
 });
