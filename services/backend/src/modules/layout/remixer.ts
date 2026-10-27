@@ -34,6 +34,8 @@ export class LayoutRemixError extends Error {
 }
 
 export interface RemixContext {
+  /** 사용량을 남길 사용자. 사용자가 없는 작업만 null이다. */
+  userId: string | null;
   instruction: string;
   /** 지금 선 지면. */
   current: LayoutSpec;
@@ -170,7 +172,7 @@ export class AiLayoutRemixer implements LayoutRemixer {
         promptVersion: REMIX_PROMPT_VERSION,
       },
       LayoutDraftSchema,
-      { check: (output) => remixViolations(output, context, place) },
+      { userId: context.userId, check: (output) => remixViolations(output, context, place) },
     );
 
     // 고친 뒤에도 남은 것은 변형 결과가 아니다 — 섹션이 빠지면 그 내용이 사라지고, 그대로인 지면은 바꾼 것이 없다.

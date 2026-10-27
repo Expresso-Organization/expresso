@@ -60,7 +60,7 @@ export class AnalyticsService {
     if (sampleSize < this.#minimumSample) return InsightSchema.parse({ visibility: "hidden", reason: "INSUFFICIENT_SAMPLE", sampleSize, minimumSample: this.#minimumSample });
     let generated = draft;
     if (!generated && this.#writer) {
-      try { await this.#consent?.require(userId, "insight_note"); generated = await this.#writer.write({ period: { start, end }, sampleSize, metrics: Object.fromEntries(metricMap), sections: [], referrers: [], domains: [] }); }
+      try { await this.#consent?.require(userId, "insight_note"); generated = await this.#writer.write({ userId, period: { start, end }, sampleSize, metrics: Object.fromEntries(metricMap), sections: [], referrers: [], domains: [] }); }
       catch { generated = undefined; }
     }
     generated ??= { narrative: `${start}부터 ${end}까지 방문 ${sampleSize}건 중 완독 ${metricMap.get("completes") ?? 0}건이 집계되었습니다.`, evidenceMetrics: ["visits", "completes"], suggestions: [] };

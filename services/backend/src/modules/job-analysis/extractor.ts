@@ -12,7 +12,8 @@ import type { JobAnalysisExtraction } from "@expresso/contracts";
  * 있으면 본문을 아예 읽지 않는다). 정확도가 조용히 갈리는 두 경로를 두지 않는다.
  */
 export interface RequirementExtractor {
-  extract(source: string): Promise<JobAnalysisExtraction>;
+  /** `userId`는 사용량을 남길 사용자다. 같은 공고의 요건은 처음 분석을 요청한 사용자 몫으로 한 번 잡힌다. */
+  extract(source: string, userId: string | null): Promise<JobAnalysisExtraction>;
 }
 
 export class RequirementExtractorUnavailableError extends Error {

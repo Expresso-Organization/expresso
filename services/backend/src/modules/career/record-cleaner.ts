@@ -24,6 +24,8 @@ import { ungroundedNumbers } from "../../platform/numbers.js";
 export const RECORD_CLEANUP_PROMPT_VERSION = 2;
 
 export interface CleanupContext {
+  /** 사용량을 남길 사용자. 사용자가 없는 작업만 null이다. */
+  userId: string | null;
   /** 무엇을 물었나. 답변만으로는 무엇에 대한 이야기인지 모를 때가 있다. */
   question: string;
   /** 사용자가 말한 것. 이 글 밖의 수치는 존재하지 않는다. */
@@ -120,7 +122,7 @@ export class AiRecordCleaner implements RecordCleaner {
         promptVersion: RECORD_CLEANUP_PROMPT_VERSION,
       },
       RecordCleanupSchema,
-      { check: (cleanup) => cleanupViolations(cleanup, source) },
+      { userId: context.userId, check: (cleanup) => cleanupViolations(cleanup, source) },
     );
     const invented = new Set(cleanupViolations(data, source).map((violation) => violation.path));
     if (!invented.size) return data;

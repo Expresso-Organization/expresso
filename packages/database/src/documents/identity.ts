@@ -6,7 +6,13 @@ import type { CareerProfileDoc } from "./career.js";
 export interface PlanDoc {
   _id: string;
   code: Contracts.PlanCode;
-  generationQuota: number;
+  /** 화면에 서는 이름(Single Shot · Double Shot · Extra Shot). */
+  displayName: string;
+  monthlyPriceKrw: number;
+  /** 한 달에 쓸 수 있는 크레딧. 1 크레딧은 `TOKENS_PER_CREDIT` 토큰이다. */
+  monthlyCredits: number;
+  /** 요금제 카드를 세우는 순서. */
+  sortOrder: number;
   features: JsonObject;
   isPublicListed: boolean;
 }

@@ -184,6 +184,7 @@ export class PortfolioEditingService {
     `)[0];
 
     const editContext: EditContext = {
+      userId,
       instruction,
       block: { kind: block.kind, fields: blockFields(block.kind, block.content) },
       section: context?.title
