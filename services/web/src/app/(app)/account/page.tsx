@@ -290,13 +290,6 @@ export default async function AccountPage() {
               </div>
             </div>
 
-            {/* 한도는 숨기지 않는다 */}
-            {usage.creditsRemaining !== null ? (
-              <div className={styles.footNote}>
-                <Icon name="info" size={13} color="var(--ex-accent-text)" />
-                남은 크레딧은 {usage.creditsRemaining.toLocaleString("ko-KR")}입니다. 실패한 작업은 차감하지 않습니다.
-              </div>
-            ) : null}
           </div>
         </div>
       </AppBody>

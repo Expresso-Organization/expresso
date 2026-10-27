@@ -561,18 +561,6 @@
   color: var(--ex-fg-muted);
 }
 
-.footNote {
-  display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  padding: 13px 15px;
-  background: var(--ex-accent-surface);
-  border-radius: 12px;
-  font-size: var(--ex-text-xs);
-  line-height: 1.7;
-  color: var(--ex-accent-ink);
-}
-
 /* ── AI 사용 동의 ─────────────────────────────────────────── */
 
 .consentRows {
