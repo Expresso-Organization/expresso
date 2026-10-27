@@ -3,7 +3,7 @@ import type { CareerBlock, CareerDocument } from "@expresso/editor/document";
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
 
-import { blockNoteMarkdown, careerDocumentToBlockNoteState, restoreBlockNote } from "./blocknote-document.js";
+import { blockNoteMarkdown, careerDocumentToBlockNoteState, openBlockNote, restoreBlockNote, syncBlockNoteDocument } from "./blocknote-document.js";
 
 const id = () => crypto.randomUUID();
 const cell = (type: string, value: string): CareerBlock => ({ id: id(), type, attrs: {}, content: [{ id: id(), type: "paragraph", attrs: {}, text: [{ text: value }] }] });
@@ -59,5 +59,49 @@ describe("BlockNote Yjs document", () => {
     expect(markdown).toContain("* 트레이스 삽입");
     // 콜아웃은 인용으로 내보내 앞뒤 블록과 섞이지 않습니다.
     expect(markdown).toContain("> 계측이 먼저");
+  });
+});
+
+describe("syncBlockNoteDocument", () => {
+  const paragraph = (value: string) => ({ id: crypto.randomUUID(), type: "paragraph", attrs: {}, text: [{ text: value }] });
+  const base = () => careerDocumentToBlockNoteState({ schemaVersion: 1, type: "doc", content: [paragraph("하나"), paragraph("둘"), paragraph("셋")] });
+  const texts = (blocks: readonly unknown[]) => blocks.map((block) => blockNoteText([block]));
+
+  it("keeps ids and makes no structural change when the target equals the document", () => {
+    const start = base();
+    const result = syncBlockNoteDocument(start.state, [], start.blocks);
+    expect(result.changed).toBe(false);
+    expect(result.blocks.map((block) => block.id)).toEqual(start.blocks.map((block) => block.id));
+  });
+
+  it("replaces, inserts, deletes and moves top-level blocks", () => {
+    const start = base();
+    const [one, two, three] = start.blocks;
+    const inserted = { id: crypto.randomUUID(), type: "paragraph", content: "넷" };
+    const target = [three!, { ...one!, content: "하나(고침)" }, inserted];
+    const result = syncBlockNoteDocument(start.state, [], target);
+    expect(texts(result.blocks)).toEqual(["셋", "하나(고침)", "넷"]);
+    expect(result.blocks.map((block) => block.id)).toEqual([three!.id, one!.id, inserted.id]);
+    expect(result.blocks.some((block) => block.id === two!.id)).toBe(false);
+  });
+
+  it("merges with a concurrent edit to an untouched block", () => {
+    const start = base();
+    // 다른 클라이언트가 같은 상태에서 「셋」 문단을 고칩니다.
+    const other = openBlockNote(start.state);
+    const vector = Y.encodeStateVector(other);
+    const group = other.getXmlFragment("document-store").get(0) as Y.XmlElement;
+    (((group.get(2) as Y.XmlElement).get(0) as Y.XmlElement).get(0) as Y.XmlText).insert(0, "[동시]");
+    const concurrent = Y.encodeStateAsUpdate(other, vector);
+    // 서버는 「하나」 문단만 바꾸는 업데이트를 만듭니다.
+    const synced = syncBlockNoteDocument(start.state, [], [{ ...start.blocks[0]!, content: "하나(AI)" }, start.blocks[1]!, start.blocks[2]!]);
+    const merged = restoreBlockNote(start.state, [synced.update, concurrent]).blocks;
+    expect(texts(merged)).toEqual(["하나(AI)", "둘", "[동시]셋"]);
+  });
+
+  it("leaves one empty paragraph for an empty target", () => {
+    const start = base();
+    const result = syncBlockNoteDocument(start.state, [], []);
+    expect(result.blocks.map((block) => block.type)).toEqual(["paragraph"]);
   });
 });
