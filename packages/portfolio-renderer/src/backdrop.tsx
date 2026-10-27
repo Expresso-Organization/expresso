@@ -160,6 +160,7 @@ export function backdropCss(spec: DesignSystemSpecV2): string {
  * 배경 층의 모양입니다. 색은 `--xp-bd-1` · `--xp-bd-2`(바탕에 세기만큼 섞은 불투명 잉크)와 투명 사이만 씁니다.
  * 투명 쪽으로 번지는 그림은 바탕과 잉크를 섞은 색이 되므로 `backdropColors`가 잰 표본 안에 있습니다.
  * 빛 두 개는 표본과 같은 순서(1 위에 2)로 겹칩니다. `mask-image`는 알파만 읽으므로 불투명한 잉크 변수를 씁니다.
+ * 배경 층은 첫 화면 등장 애니메이션(`.xp-hero>*`)에서 뺍니다. 등장 규칙의 선택자가 바뀌어도 빠지도록 `!important`를 씁니다.
  */
 export const BACKDROP_CSS = `
 .xp-hero[data-backdrop]{position:relative;isolation:isolate}
@@ -182,7 +183,7 @@ export const BACKDROP_CSS = `
 .xp-bd-glow-2{left:24%;right:24%;bottom:12%;height:42%;transform-origin:50% 100%;background:radial-gradient(closest-side,var(--xp-bd-2),transparent)}
 .xp-bd-aurora-1{top:-30%;left:30%;width:min(90vw,980px);aspect-ratio:1.6;background:radial-gradient(closest-side,var(--xp-bd-1),transparent)}
 .xp-bd-aurora-2{top:-10%;left:-12%;width:min(80vw,820px);aspect-ratio:1.4;background:radial-gradient(closest-side,var(--xp-bd-2),transparent)}
-.xp-page:not([data-motion="none"]) .xp-hero>.xp-backdrop{animation:none}
+.xp-hero>.xp-backdrop{animation:none!important}
 .xp-scene-canvas{position:absolute;inset:0;display:block;width:100%;height:100%;background:var(--xp-bd-base)}
 .xp-backdrop[data-scene-live]>:not(.xp-scene-canvas),.xp-backdrop[data-scene-live]::before{display:none}
 @keyframes xp-bd-spin{to{transform:rotate(360deg)}}

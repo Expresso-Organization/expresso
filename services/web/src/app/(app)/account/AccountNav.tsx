@@ -6,6 +6,8 @@ import styles from "./page.module.css";
 export const ACCOUNT_SECTIONS = [
   { id: "profile", label: "프로필", icon: "user" },
   { id: "usage", label: "사용량", icon: "gauge" },
+  { id: "plans", label: "요금제", icon: "coffee" },
+  { id: "billing", label: "결제", icon: "receipt" },
   { id: "notifications", label: "알림", icon: "bell" },
   { id: "surface", label: "지면", icon: "sun" },
   { id: "data", label: "데이터 관리", icon: "database" },

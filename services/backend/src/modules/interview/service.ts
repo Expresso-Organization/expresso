@@ -27,7 +27,7 @@ export class InterviewService implements InterviewApi {
     const expectedRecordVersion = answer.recordVersion;
     const [question, record] = await Promise.all([db.questions.findOne({ _id: answer.questionId, userId }), db.careerRecords.findOne({ _id: answer.createdRecordId, userId, origin: "interview", deletedAt: null })]);
     if (!question || !record) return;
-    const cleaned = await this.cleaner.clean({ question: question.text, transcript: answer.transcript, existing: record.status === "draft" ? null : { title: record.title, bodyMd: record.bodyMd } });
+    const cleaned = await this.cleaner.clean({ userId, question: question.text, transcript: answer.transcript, existing: record.status === "draft" ? null : { title: record.title, bodyMd: record.bodyMd } });
     await inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId);
       const collections = mongoCollections(tx.db); const options = { session: tx.session }; const now = new Date();
@@ -67,6 +67,7 @@ export class InterviewService implements InterviewApi {
       return [{ ...requirement, coverage, quote: span.data }];
     });
     const context: QuestionContext = {
+      userId,
       options: [
         ...requirementRows.filter(({ coverage }) => coverage !== "covered").map((row) => ({ basis: { type: "requirement" as const, requirementId: row._id, coverage: row.coverage as "missing" | "partial", evidence: row.quote }, label: `[공고 요건 · ${row.coverage === "missing" ? "안 채움" : "일부만"}] ${row.label}`, detail: row.quote, mentions: posting ? countMentions(row.label, posting.descriptionRaw) : null })),
         ...orderedRecords.filter((record) => !hasMetric(recordText(record))).map((record) => ({ basis: { type: "record_gap" as const, recordId: record._id, gap: "metric" as const, evidence: record.title }, label: `[기록 · 수치 없음] ${record.title}`, detail: record.bodyMd, mentions: null })),
@@ -130,7 +131,7 @@ export class InterviewService implements InterviewApi {
     const previous = await db.questions.find({ userId, interviewSessionId: sessionId, orderNo: question.orderNo }).sort({ variant: 1 }).project<{ text: string }>({ text: 1 }).toArray();
     const { context } = await this.#questionOptions(userId, session.brewId); const basis = InterviewQuestionBasisSchema.parse(question.basis);
     const option = context.options.find(({ basis: item }) => item.type === basis.type && (item.type === "requirement" && basis.type === "requirement" ? item.requirementId === basis.requirementId : item.type === "record_gap" && basis.type === "record_gap" && item.recordId === basis.recordId));
-    return this.writer.rewrite({ option: option ?? { basis, label: basis.evidence, detail: basis.evidence, mentions: null }, previousTexts: previous.map(({ text }) => text), company: context.company, jobTitle: context.jobTitle });
+    return this.writer.rewrite({ userId, option: option ?? { basis, label: basis.evidence, detail: basis.evidence, mentions: null }, previousTexts: previous.map(({ text }) => text), company: context.company, jobTitle: context.jobTitle });
   }
 
   async replaceQuestion(userId: string, sessionId: string, questionId: string) {

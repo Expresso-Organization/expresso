@@ -97,17 +97,20 @@ export const careerEditorExtensions = [
   CareerCompatibilityBlock,
 ];
 
+/** 문단 안 줄바꿈은 span 텍스트의 `\n`으로 저장하고, 열 때 hardBreak 노드로 되돌립니다. */
 function textContent(spans: readonly CareerTextSpan[] | undefined): JSONContent[] {
-  return (spans ?? []).map((span) => ({
-    type: "text",
-    text: span.text,
-    ...(span.marks?.length ? {
+  return (spans ?? []).flatMap((span) => {
+    const marks = span.marks?.length ? {
       marks: span.marks.map((mark) => ({
         type: mark.type,
         ...(mark.attrs ? { attrs: mark.attrs } : {}),
       })),
-    } : {}),
-  }));
+    } : {};
+    return span.text.split("\n").flatMap((part, index): JSONContent[] => [
+      ...(index > 0 ? [{ type: "hardBreak" }] : []),
+      ...(part ? [{ type: "text", text: part, ...marks }] : []),
+    ]);
+  });
 }
 
 function blockToTiptap(block: CareerBlock): JSONContent {
@@ -117,7 +120,8 @@ function blockToTiptap(block: CareerBlock): JSONContent {
   if (/^heading[1-3]$/.test(block.type)) return { type: "heading", attrs: { ...attrs, level: Number(block.type.at(-1)) }, content: textContent(block.text) };
   if (block.type === "bulletList" || block.type === "orderedList") return { type: block.type, attrs, ...(children ? { content: children } : {}) };
   if (block.type === "taskList") {
-    const items = children?.map((item) => ({ ...item, type: "taskItem", attrs: { ...item.attrs, checked: Boolean(item.attrs?.checked) } }));
+    // 완료 표시는 v1 listItem 블록의 attrs에 있으므로 원본 블록에서 읽습니다.
+    const items = children?.map((item, index) => ({ ...item, type: "taskItem", attrs: { ...item.attrs, checked: Boolean(block.content?.[index]?.attrs["checked"]) } }));
     return { type: "taskList", attrs, ...(items ? { content: items } : {}) };
   }
   if (block.type === "listItem") return { type: "listItem", attrs, content: children?.length ? children : [{ type: "paragraph", attrs: { careerId: crypto.randomUUID() }, content: textContent(block.text) }] };
@@ -126,8 +130,8 @@ function blockToTiptap(block: CareerBlock): JSONContent {
   if (block.type === "horizontalRule") return { type: "horizontalRule", attrs };
   if (block.type === "image") return { type: "image", attrs: { ...attrs, src: `media:${String(block.attrs.mediaId ?? "")}`, alt: String(block.attrs.alt ?? "") } };
   if (block.type === "table" || block.type === "tableRow") return { type: block.type, attrs, ...(children ? { content: children } : {}) };
-  if (block.type === "tableCell") return {
-    type: "tableCell",
+  if (block.type === "tableCell" || block.type === "tableHeader") return {
+    type: block.type,
     attrs,
     content: children?.length ? children : [{ type: "paragraph", attrs: { careerId: crypto.randomUUID() }, content: textContent(block.text) }],
   };
@@ -146,10 +150,12 @@ export function careerDocumentToTiptap(document: CareerDocument): JSONContent {
   return { type: "doc", content: parseCareerDocument(document).content.map(blockToTiptap) };
 }
 
+const INLINE_NODES = new Set(["text", "hardBreak"]);
+
 function spans(node: JSONContent): CareerTextSpan[] | undefined {
-  const values = node.content?.filter((child) => child.type === "text").map((child) => ({
+  const values = node.content?.filter((child) => INLINE_NODES.has(child.type ?? "")).map((child) => child.type === "hardBreak" ? { text: "\n" } : ({
     text: child.text ?? "",
-    ...(child.marks?.length ? { marks: child.marks.map((mark) => ({ type: mark.type as "bold" | "italic" | "strike" | "code" | "link", ...(mark.attrs ? { attrs: mark.attrs } : {}) })) } : {}),
+    ...(child.marks?.length ? { marks: child.marks.map((mark) => ({ type: mark.type as NonNullable<CareerTextSpan["marks"]>[number]["type"], ...(mark.attrs ? { attrs: mark.attrs } : {}) })) } : {}),
   }));
   return values?.length ? values : undefined;
 }
@@ -159,7 +165,7 @@ function tiptapToBlock(node: JSONContent, seen: Set<string>): CareerBlock {
   if (seen.has(blockId)) blockId = crypto.randomUUID();
   seen.add(blockId);
   if (node.type === "careerCompatibility" && node.attrs?.original) return { ...(node.attrs.original as CareerBlock), id: blockId };
-  const content = node.content?.filter((child) => child.type !== "text").map((child) => tiptapToBlock(child, seen));
+  const content = node.content?.filter((child) => !INLINE_NODES.has(child.type ?? "")).map((child) => tiptapToBlock(child, seen));
   const base = { id: blockId, attrs: {}, ...(content?.length ? { content } : {}), ...(spans(node) ? { text: spans(node) } : {}) };
   if (node.type === "heading") return { ...base, type: `heading${node.attrs?.level ?? 1}` };
   if (node.type === "codeBlock") return { ...base, type: "code", attrs: { language: node.attrs?.language ?? null } };
