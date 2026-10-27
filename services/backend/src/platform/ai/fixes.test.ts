@@ -29,7 +29,7 @@ import { applyFixes, groupViolations, jsonPointer, runWithFixes, zodViolations }
  * 가짜 CLI. 응답 목록을 차례로 내고, 받은 인자를 줄마다 기록합니다. 실제 CLI처럼 `stream-json` 마지막 줄에
  * `result` 봉투를 내고, 답은 글(`result`)입니다(`--json-schema`를 쓰지 않으므로 `structured_output`이 없다).
  * 응답이 문자열이면 그 글을 그대로, 아니면 JSON으로 적은 글을 냅니다. `{ delayMs, beats }`를 주면 그 간격으로 출력
- * 줄을 `beats`번 흘린 뒤 답합니다(출력이 흐르는 긴 호출).
+ * 줄을 `beats`번 흘린 뒤 답합니다(출력이 흐르는 긴 호출). `{ text, stop }`을 주면 그 글과 끝낸 이유(`stop_reason`)를 냅니다.
  */
 function fakeCli(responses: unknown[]) {
   const dir = mkdtempSync(join(tmpdir(), "fake-claude-"));
@@ -46,8 +46,10 @@ process.stdin.on("end", () => {
   fs.appendFileSync(dir + "/calls.jsonl", JSON.stringify({ args: process.argv.slice(2), input }) + "\\n");
   const response = JSON.parse(fs.readFileSync(dir + "/responses.json", "utf8"))[calls];
   const pace = response && typeof response === "object" && "beats" in response ? response : null;
-  const output = pace ? pace.output : response;
-  const finish = () => process.stdout.write(JSON.stringify({ type: "result", subtype: "success", is_error: false, duration_ms: 10, total_cost_usd: 0.01, result: typeof output === "string" ? output : JSON.stringify(output), usage: { input_tokens: 1, output_tokens: 5 }, modelUsage: { "claude-test": { outputTokens: 5 } } }) + "\\n");
+  const stopped = response && typeof response === "object" && "stop" in response ? response : null;
+  const output = pace ? pace.output : stopped ? stopped.text : response;
+  const stop = stopped ? stopped.stop : "end_turn";
+  const finish = () => process.stdout.write(JSON.stringify({ type: "result", subtype: "success", is_error: false, duration_ms: 10, total_cost_usd: 0.01, stop_reason: stop, result: typeof output === "string" ? output : JSON.stringify(output), usage: { input_tokens: 1, output_tokens: 5 }, modelUsage: { "claude-test": { outputTokens: 5 } } }) + "\\n");
   if (!pace) return finish();
   let beat = 0;
   const timer = setInterval(() => {
@@ -208,11 +210,19 @@ describe("CLI에 출력 검증을 맡기지 않는다", () => {
     expect(fix!.input).not.toContain("채우세요.");
   });
 
-  it("중간에 끊긴 출력은 끊긴 곳 다음부터 이어 받는다", async () => {
-    const cli = fakeCli(['{"title":"제목","items":["a"', ',"b"]}']);
+  it("출력 한도에 닿아 끊긴 출력은 끊긴 곳 다음부터 이어 받는다", async () => {
+    const cli = fakeCli([{ text: '{"title":"제목","items":["a"', stop: "max_tokens" }, ',"b"]}']);
     const result = await new ClaudeCodeAiClient({ cliPath: cli.cliPath }).complete(spec, schema);
     expect(result.data).toEqual({ title: "제목", items: ["a", "b"] });
     expect(cli.calls()[1]!.input).toContain("이어서 쓰세요");
+  });
+
+  it("다 썼는데 끝에서 막혔으면(닫는 괄호가 빠짐) 이어 쓰기가 아니라 끝부분 조각을 고쳐 받는다", async () => {
+    const cli = fakeCli(['{"title":"제목","items":["a"]', { edits: [{ find: '["a"]', replace: '["a"]}' }] }]);
+    const result = await new ClaudeCodeAiClient({ cliPath: cli.cliPath }).complete(spec, schema);
+    expect(result.data).toEqual({ title: "제목", items: ["a"] });
+    expect(cli.calls()[1]!.input).toContain("문법이 깨져");
+    expect(cli.calls()[1]!.input).not.toContain("이어서 쓰세요");
   });
 
   it("고쳐도 같은 자리에서 막히면 멈춘다", async () => {

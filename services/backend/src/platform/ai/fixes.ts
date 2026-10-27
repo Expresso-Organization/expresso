@@ -105,16 +105,22 @@ export function fixPrompt(grouped: Map<string, string[]>, current: unknown): str
   return `직전에 낸 출력에서 아래 칸이 검사를 통과하지 못했습니다. 각 칸의 고친 값만 {"fixes":[{"path":"경로","value":값}]} 모양의 JSON 하나로 내세요. path는 아래 경로를 그대로 쓰고, value는 그 칸에 들어갈 값 전체입니다. 나머지 칸은 그대로 쓰므로 다시 내지 않습니다.\n${lines.join("\n")}`;
 }
 
-/** 공급자가 돌려준 한 번의 답. 글(`text`)이면 서버가 JSON으로 읽고, 이미 읽은 값(`output`)이면 그대로 씁니다. */
-export type AiTurn = { usage: AiUsage } & ({ text: string } | { output: unknown });
+/**
+ * 공급자가 돌려준 한 번의 답. 글(`text`)이면 서버가 JSON으로 읽고, 이미 읽은 값(`output`)이면 그대로 씁니다.
+ * `stopReason`은 모델이 답을 끝낸 이유입니다. `max_tokens`일 때만 출력이 한도에 닿아 끊긴 것입니다.
+ */
+export type AiTurn = { usage: AiUsage } & ({ text: string; stopReason?: string | null } | { output: unknown });
 
 export type JsonRead =
   | { ok: true; value: unknown }
   | {
       ok: false;
-      /** 글 전체에서 문법이 깨진 위치(0부터). 끊긴 글이면 글의 끝입니다. */
+      /** 글 전체에서 문법이 깨진 위치(0부터). 글 끝에서 막혔으면 글의 끝입니다. */
       at: number;
-      /** 글이 중간에 끊겼는가. 그러면 고칠 조각이 아니라 이어지는 글을 받습니다. */
+      /**
+       * 글 끝에서 막혔는가. 출력 한도에 닿아 끊겼거나(`stopReason` `max_tokens`) 닫는 괄호가 빠진 것이다. 앞의 경우만
+       * 이어지는 글을 받고, 뒤의 경우는 끝부분 조각을 고쳐 받는다.
+       */
       truncated: boolean;
       message: string;
     };
@@ -126,7 +132,7 @@ export type JsonRead =
  * 바꾸는 일이 아니라 JSON이 어디서 시작하고 끝나는지 정하는 일입니다.
  *
  * 문법 오류의 위치는 `JSON.parse`가 알려 줍니다(Node 26 V8: `… in JSON at position N`). 위치가 읽은 글의 끝이면
- * 글이 중간에 끊긴 것입니다. "after JSON at position N"이면 JSON 뒤에 글이 더 붙은 것이라 그 앞까지만 읽습니다.
+ * 글 끝에서 막힌 것입니다. "after JSON at position N"이면 JSON 뒤에 글이 더 붙은 것이라 그 앞까지만 읽습니다.
  */
 export function readJsonText(text: string): JsonRead {
   const start = text.search(/[{[]/);
@@ -145,7 +151,7 @@ export function readJsonText(text: string): JsonRead {
       }
       const position = /position (\d+)/.exec(message);
       const at = position ? Number(position[1]) : candidate.length;
-      // 읽은 글의 끝에서 막혔으면 뒤가 없는 것이다. 마지막 괄호 뒤에 남은 글이 있어도, 그 글은 끊긴 출력의 일부다.
+      // 읽은 글의 끝에서 막혔으면 뒤가 없는 것이다. 마지막 괄호 뒤에 남은 글이 있어도, 그 글은 막힌 출력의 일부다.
       if (at >= candidate.length) return { ok: false, at: text.length, truncated: true, message };
       return { ok: false, at: start + at, truncated: false, message };
     }
@@ -220,19 +226,25 @@ export async function runWithFixes<T>(input: {
     usages.push(turn.usage);
     if (!("text" in turn)) return turn.output;
     let text = turn.text;
+    let stopReason = turn.stopReason ?? null;
     let lastAt = -1;
+    /** 막힌 자리 앞뒤 글. 고치기가 왜 안 됐는지 로그만 보고 알 수 있게 남긴다. */
+    const around = (at: number) => ({ before: text.slice(Math.max(0, at - 80), at), after: text.slice(at, at + 80), length: text.length });
     for (;;) {
       const result = readJsonText(text);
       if (result.ok) return result.value;
       // 앞선 고치기 뒤에도 같은 자리(또는 더 앞)에서 막혔으면 진전이 없다.
       if (result.at <= lastAt) {
+        console.error(JSON.stringify({ level: "warn", event: "ai.syntax_unfixed", contract, at: result.at, message: result.message.slice(0, 200), ...around(result.at) }));
         throw new AiError("AI_INVALID_OUTPUT", contract, `output is not JSON after syntax fixes: ${result.message}`, { retryable: false });
       }
       lastAt = result.at;
-      if (result.truncated) {
+      // 출력 한도에 닿아 끊긴 글만 이어 쓰게 한다. 다 썼는데 끝에서 막혔으면(닫는 괄호가 빠짐) 끝부분 조각을 고쳐 받는다.
+      if (result.truncated && stopReason === "max_tokens") {
         const more = await input.fix(continuePrompt(text), null);
         usages.push(more.usage);
         const added = "text" in more ? more.text : JSON.stringify(more.output ?? "");
+        stopReason = "text" in more ? more.stopReason ?? null : null;
         console.error(JSON.stringify({ level: "info", event: "ai.continuation", contract, at: result.at, added: added.length, durationMs: more.usage.durationMs }));
         text += added;
         continue;
@@ -242,7 +254,7 @@ export async function runWithFixes<T>(input: {
       const replyValue = "text" in reply ? readJsonText(reply.text) : { ok: true as const, value: reply.output };
       const edits = replyValue.ok ? SYNTAX_EDITS_SCHEMA.safeParse(replyValue.value) : null;
       const applied = edits?.success ? applySyntaxEdits(text, edits.data.edits) : { text, applied: 0 };
-      console.error(JSON.stringify({ level: "info", event: "ai.syntax_fix", contract, at: result.at, message: result.message.slice(0, 200), applied: applied.applied, durationMs: reply.usage.durationMs }));
+      console.error(JSON.stringify({ level: "info", event: "ai.syntax_fix", contract, at: result.at, message: result.message.slice(0, 200), applied: applied.applied, durationMs: reply.usage.durationMs, ...around(result.at) }));
       text = applied.text;
     }
   };

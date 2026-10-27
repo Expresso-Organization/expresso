@@ -94,6 +94,8 @@ const RESULT_SCHEMA = z.looseObject({
   total_cost_usd: z.number().optional(),
   structured_output: z.unknown().optional(),
   result: z.string().optional(),
+  /** 모델이 답을 끝낸 이유. `max_tokens`면 출력 한도에 닿아 끊긴 것이다(2026-10-27 실측, claude-code 2.1.274). */
+  stop_reason: z.string().nullable().optional(),
   usage: z
     .looseObject({
       input_tokens: z.number().optional(),
@@ -161,7 +163,7 @@ export class ClaudeCodeAiClient implements AiClient {
     options: Pick<AiCallOptions, "onPartial" | "onPartialRestart" | "onThinking">,
     session: string[],
     images?: AiCallSpec["images"],
-  ): Promise<{ text: string; usage: AiResult<unknown>["usage"] }> {
+  ): Promise<{ text: string; stopReason: string | null; usage: AiResult<unknown>["usage"] }> {
     const args = [
       // 프롬프트는 stdin으로 간다 — 위치 인자를 주지 않는다.
       "-p",
@@ -247,8 +249,9 @@ export class ClaudeCodeAiClient implements AiClient {
       .sort((left, right) => right.outputTokens - left.outputTokens)[0]?.name
       ?? model;
     return {
-      // 마지막 답의 글. 비어 있으면 `runWithFixes`가 이어 쓰기를 요청한다.
+      // 마지막 답의 글과 끝낸 이유. 출력 한도에 닿아 끊겼으면 `runWithFixes`가 이어 쓰기를 요청한다.
       text: parsed.result ?? "",
+      stopReason: parsed.stop_reason ?? null,
       usage: {
         model: modelName,
         inputTokens: usage.input_tokens ?? 0,
