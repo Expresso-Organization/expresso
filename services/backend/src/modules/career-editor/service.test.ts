@@ -114,4 +114,18 @@ describe("career document service", () => {
     await service.appendUpdate(userId, updateInput(recordId, randomUUID(), 1, 99));
     expect(enqueue).toHaveBeenCalledWith(recordId, 100);
   });
+
+  it("records an edit revision at most once every ten minutes", async () => {
+    const userId = randomUUID(); const recordId = randomUUID(); const repository = new MemoryRepository(userId, recordId);
+    const service = new CareerDocumentService(context(), "secret-that-is-long-enough", repository);
+    await service.bootstrap(userId, recordId);
+    const start = new Date("2026-10-28T00:00:00.000Z");
+    expect(await service.recordEditRevision(userId, recordId, start)).toBe(true);
+    expect(await service.recordEditRevision(userId, recordId, new Date(start.getTime() + 60_000))).toBe(false);
+    expect(await service.recordEditRevision(userId, recordId, new Date(start.getTime() + 11 * 60_000))).toBe(true);
+    const edits = repository.revisionRows.filter((row) => row.summary === "편집");
+    expect(edits).toHaveLength(2);
+    // 이력마다 그 시점 본문을 담은 BlockNote 스냅샷을 가리킵니다.
+    for (const edit of edits) expect(repository.snapshots.find((row) => row._id === edit.snapshotId)?.schemaVersion).toBe(2);
+  });
 });
