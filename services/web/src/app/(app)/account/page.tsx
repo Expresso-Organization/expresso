@@ -3,10 +3,11 @@ import { HashScroll } from "@/components/shell/HashScroll";
 import { AgentKeySettings } from "@/features/agent-chat/AgentKeySettings";
 import { ThemePicker } from "@/components/ThemePicker";
 import { Icon } from "@/components/ui/Icon";
-import type { NotificationKind } from "@expresso/contracts";
-import { consents, entitlements, notificationSettings } from "@/lib/api/endpoints";
+import type { EntitlementCapability, NotificationKind, PlanSummary } from "@expresso/contracts";
+import { consents, notificationSettings, usage as usageApi } from "@/lib/api/endpoints";
 import { CONSENT_COPY } from "@/lib/consent-copy";
 import { requireSession } from "@/lib/require-session";
+import { CAPABILITY_LABEL } from "@/lib/usage-copy";
 
 import { setNotificationPreferenceAction } from "../../account-actions";
 import { grantConsentAction, revokeConsentAction } from "../../consent-actions";
@@ -14,6 +15,7 @@ import { grantConsentAction, revokeConsentAction } from "../../consent-actions";
 import { AccountNav } from "./AccountNav";
 import { DataSection } from "./DataSection";
 import { ResendVerificationForm } from "./ResendVerificationForm";
+import { UsageCharts } from "./UsageCharts";
 import styles from "./page.module.css";
 
 /** 지금 만들어지는 알림만 켜고 끈다. 나머지 종류는 보내는 코드가 없다. */
@@ -27,19 +29,50 @@ function formatDay(timestamp: string): string {
   return timestamp.slice(0, 10).replace(/-/g, ".");
 }
 
-/** 다음 초기화 날짜. 「3월 12일」처럼 적는다. */
+/** 다음 초기화 날짜. 「3월 12일」처럼 적는다. 기간이 한국 시각이라 날짜도 한국 시각으로 읽는다. */
 function formatReset(at: string): string {
-  return new Date(at).toLocaleDateString("ko-KR", { month: "long", day: "numeric" });
+  return new Date(at).toLocaleDateString("ko-KR", { month: "long", day: "numeric", timeZone: "Asia/Seoul" });
+}
+
+function formatPrice(plan: PlanSummary): string {
+  return plan.monthlyPriceKrw === 0 ? "무료" : `₩${plan.monthlyPriceKrw.toLocaleString("ko-KR")} / 월`;
+}
+
+/**
+ * 결제 내역 줄.
+ *
+ * 결제는 아직 붙어 있지 않다. 지금 플랜의 월 구독을 이번 달과 지난달 두 줄로
+ * 세운다. 무료 플랜은 낸 돈이 없으므로 줄이 없다.
+ */
+function billingRows(plan: PlanSummary | undefined, periodStart: string) {
+  if (!plan || plan.monthlyPriceKrw === 0) return [];
+  const [year, month] = periodStart.split("-").map(Number) as [number, number];
+  return [0, 1].map((back) => {
+    const at = new Date(Date.UTC(year, month - 1 - back, 1));
+    return {
+      date: `${at.getUTCFullYear()}.${String(at.getUTCMonth() + 1).padStart(2, "0")}.01`,
+      item: `${plan.displayName} 월 구독`,
+      amount: `₩${plan.monthlyPriceKrw.toLocaleString("ko-KR")}`,
+    };
+  });
 }
 
 export default async function AccountPage() {
   const session = await requireSession();
-  const [consent, generate, preferences] = await Promise.all([
+  const [consent, usage, plans, preferences] = await Promise.all([
     consents.list(session.accessToken).then(({ data }) => data),
-    entitlements.check(session.accessToken, "portfolio.generate").then(({ data }) => data),
+    usageApi.monthly(session.accessToken).then(({ data }) => data),
+    usageApi.plans(session.accessToken).then(({ data }) => data),
     notificationSettings.list(session.accessToken).then(({ data }) => data),
   ]);
-  const usage = generate.usage ?? null;
+  const currentPlan = plans.find((plan) => plan.code === usage.planCode);
+  // 모든 플랜이 여는 기능은 카드를 가르지 않는다. 다른 것만 적는다.
+  const shared = new Set<EntitlementCapability>(
+    (Object.keys(CAPABILITY_LABEL) as EntitlementCapability[]).filter((capability) =>
+      plans.every((plan) => plan.capabilities.includes(capability)),
+    ),
+  );
+  const billing = billingRows(currentPlan, usage.periodStart);
   const notifications = preferences.filter((item) => NOTIFICATION_COPY[item.kind]);
   const verifiedAt = session.user.emailVerifiedAt;
 
@@ -81,34 +114,87 @@ export default async function AccountPage() {
             <section id="usage" className={styles.section}>
               <HashScroll id="usage" />
               <div className={styles.sectionLabel}>사용량</div>
-              <div className={styles.usageGrid}>
-                <div className={styles.usageCard}>
-                  <div className={styles.usageHead}>
-                    <span className={styles.usageLabel}>포트폴리오 생성</span>
-                    <span className={styles.usageValue}>
-                      {usage ? `${usage.used} / ${usage.limit ?? "무제한"}` : "기록 없음"}
-                    </span>
-                  </div>
-                  {usage && usage.limit !== null ? (
-                    <div
-                      className={styles.usageSlots}
-                      role="meter"
-                      aria-valuenow={usage.used}
-                      aria-valuemin={0}
-                      aria-valuemax={usage.limit}
-                      aria-label={`포트폴리오 생성 ${usage.limit}회 중 ${usage.used}회 사용`}
-                    >
-                      {Array.from({ length: usage.limit }, (_, index) => (
-                        <span
-                          key={index}
-                          className={`${styles.usageSlot} ${index < usage.used ? styles.usageSlotUsed : ""}`}
-                        />
-                      ))}
-                    </div>
-                  ) : null}
-                  {usage ? <div className={styles.usageResets}>{formatReset(usage.resetsAt)} 초기화</div> : null}
+              <div className={styles.creditCard}>
+                <div className={styles.creditHead}>
+                  <span className={styles.usageLabel}>이번 달 크레딧</span>
+                  <span className={styles.usageResets}>{formatReset(usage.resetsAt)} 초기화</span>
                 </div>
+                <div className={styles.creditFigure}>
+                  <span className={styles.creditUsed}>{usage.creditsUsed.toLocaleString("ko-KR")}</span>
+                  <span className={styles.creditLimit}>
+                    / {usage.creditLimit === null ? "무제한" : usage.creditLimit.toLocaleString("ko-KR")}
+                  </span>
+                </div>
+                {usage.creditLimit === null ? null : (
+                  <div
+                    className={styles.creditTrack}
+                    role="meter"
+                    aria-valuenow={usage.creditsUsed}
+                    aria-valuemin={0}
+                    aria-valuemax={usage.creditLimit}
+                    aria-label={`이번 달 크레딧 ${usage.creditLimit} 중 ${usage.creditsUsed} 사용`}
+                  >
+                    <div
+                      className={styles.creditFill}
+                      style={{ width: `${Math.min(1, usage.creditsUsed / Math.max(usage.creditLimit, 1)) * 100}%` }}
+                    />
+                  </div>
+                )}
               </div>
+              {usage.calls === 0 ? (
+                <div className={styles.usageEmpty}>이번 달 사용 없음</div>
+              ) : (
+                <UsageCharts usage={usage} />
+              )}
+            </section>
+
+            {/* 지금 쓰는 플랜만 테두리가 선다. 바꾸는 버튼은 없다 — 결제가 붙어 있지 않다. */}
+            <section id="plans" className={styles.section}>
+              <HashScroll id="plans" />
+              <div className={styles.sectionLabel}>요금제</div>
+              <div className={styles.plans}>
+                {plans.map((plan) => (
+                  <div
+                    key={plan.code}
+                    className={`${styles.plan} ${plan.code === usage.planCode ? styles.planCurrent : ""}`}
+                  >
+                    <div className={styles.planHead}>
+                      <span className={styles.planName}>{plan.displayName}</span>
+                      {plan.code === usage.planCode ? <span className={styles.planBadge}>사용 중</span> : null}
+                    </div>
+                    <div className={styles.planPrice}>{formatPrice(plan)}</div>
+                    <div className={styles.planFeature}>
+                      <Icon name="coffee" size={12} color="var(--ex-fg-subtle)" />
+                      월 {plan.monthlyCredits.toLocaleString("ko-KR")} 크레딧
+                    </div>
+                    {plan.capabilities
+                      .filter((capability) => CAPABILITY_LABEL[capability] && !shared.has(capability))
+                      .map((capability) => (
+                        <div key={capability} className={styles.planFeature}>
+                          <Icon name="check" size={12} color="var(--ex-fg-subtle)" />
+                          {CAPABILITY_LABEL[capability]}
+                        </div>
+                      ))}
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section id="billing" className={styles.section}>
+              <HashScroll id="billing" />
+              <div className={styles.sectionLabel}>결제</div>
+              {billing.length === 0 ? (
+                <div className={styles.usageEmpty}>결제 내역 없음</div>
+              ) : (
+                billing.map((entry) => (
+                  <div key={entry.date} className={styles.billingRow}>
+                    <span className={styles.billingDate}>{entry.date}</span>
+                    <span className={styles.billingItem}>{entry.item}</span>
+                    <span className={styles.billingAmount}>{entry.amount}</span>
+                    <span className={styles.billingState}>결제 완료</span>
+                  </div>
+                ))
+              )}
             </section>
 
             <section id="notifications" className={styles.section}>
@@ -205,10 +291,10 @@ export default async function AccountPage() {
             </div>
 
             {/* 한도는 숨기지 않는다 */}
-            {usage && usage.remaining !== null ? (
+            {usage.creditsRemaining !== null ? (
               <div className={styles.footNote}>
                 <Icon name="info" size={13} color="var(--ex-accent-text)" />
-                이번 달 생성 {usage.remaining}회가 남았습니다. {formatReset(usage.resetsAt)}에 초기화됩니다.
+                남은 크레딧은 {usage.creditsRemaining.toLocaleString("ko-KR")}입니다. 실패한 작업은 차감하지 않습니다.
               </div>
             ) : null}
           </div>

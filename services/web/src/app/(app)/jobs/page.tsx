@@ -819,7 +819,7 @@ export default async function JobsPage({
                 <Pagination page={listing.page} href={pageHref} />
                 {q ? (
                   <span className={styles.footQuota}>
-                    이번 달 추출 {session.quota.used} / {session.quota.limit ?? "무제한"}
+                    이번 달 크레딧 {session.quota.used.toLocaleString("ko-KR")} / {session.quota.limit?.toLocaleString("ko-KR") ?? "무제한"}
                   </span>
                 ) : null}
               </div>

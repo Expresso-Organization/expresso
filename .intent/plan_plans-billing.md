@@ -71,6 +71,8 @@ date: 2026-10-27
 | `services/web/src/app/(app)/jobs/page.tsx` | 같은 문구 |
 | `services/web/src/app/(app)/brew/[brewId]/materials/MaterialPicker.tsx` | 칸 → 비율 막대 · 문구 |
 | `services/web/src/app/(app)/edit/[portfolioId]/Editor.tsx` | 「생성 1회」 문구 |
+| `services/web/src/app/(app)/brew/{new,[brewId]/design}/*-actions.ts` | 한도 소진 문구를 크레딧으로 |
+| `services/web/src/app/(app)/account/UsageCharts.tsx` | 날짜별 쌓은 막대 · 기능별 · 모델별 |
 | `services/web/src/lib/sample/site.ts` | `ACCOUNT` 삭제 — 요금제는 `GET /v1/plans`, 결제 줄은 현재 플랜에서 만든다 |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
