@@ -1,0 +1,337 @@
+{
+  "models": {
+    "bm25": {
+      "test": {
+        "mae": 14.95151507321945,
+        "mapAt10": 0.43706349206349204,
+        "mrrAt10": 0.46474358974358976,
+        "ndcgAt10": 0.8634796655106668,
+        "pairs": 700,
+        "pairwiseAccuracy": 0.5827192336035372,
+        "pairwiseComparisons": 2714,
+        "profiles": 70,
+        "profilesWithRelevant": 13,
+        "recallAt10": 1.0,
+        "rmse": 17.71389362582326,
+        "spearman": 0.2675132414932936
+      },
+      "valid": {
+        "mae": 13.954230140706652,
+        "mapAt10": 0.4579737103174603,
+        "mrrAt10": 0.4822916666666667,
+        "ndcgAt10": 0.8489325041576093,
+        "pairs": 900,
+        "pairwiseAccuracy": 0.5440767519466073,
+        "pairwiseComparisons": 3596,
+        "profiles": 90,
+        "profilesWithRelevant": 16,
+        "recallAt10": 1.0,
+        "rmse": 16.915287018982845,
+        "spearman": 0.18966746608463791
+      }
+    },
+    "char_tfidf": {
+      "test": {
+        "mae": 14.90555080837223,
+        "mapAt10": 0.527967032967033,
+        "mrrAt10": 0.6252747252747253,
+        "ndcgAt10": 0.879903512915441,
+        "pairs": 700,
+        "pairwiseAccuracy": 0.633382461311717,
+        "pairwiseComparisons": 2714,
+        "profiles": 70,
+        "profilesWithRelevant": 13,
+        "recallAt10": 1.0,
+        "rmse": 17.569559405711527,
+        "spearman": 0.31887188554676654
+      },
+      "valid": {
+        "mae": 13.949030941344413,
+        "mapAt10": 0.39522569444444444,
+        "mrrAt10": 0.4429563492063492,
+        "ndcgAt10": 0.8843463076691822,
+        "pairs": 900,
+        "pairwiseAccuracy": 0.5934371523915462,
+        "pairwiseComparisons": 3596,
+        "profiles": 90,
+        "profilesWithRelevant": 16,
+        "recallAt10": 1.0,
+        "rmse": 16.963168463542093,
+        "spearman": 0.18853186749183
+      }
+    },
+    "expresso-e5-mlp-llm-v1": {
+      "test": {
+        "mae": 10.537442075184414,
+        "mapAt10": 0.6909035409035409,
+        "mrrAt10": 0.7225274725274725,
+        "ndcgAt10": 0.9554599198327216,
+        "pairs": 700,
+        "pairwiseAccuracy": 0.8025055268975682,
+        "pairwiseComparisons": 2714,
+        "profiles": 70,
+        "profilesWithRelevant": 13,
+        "recallAt10": 1.0,
+        "rmse": 13.438192114509341,
+        "spearman": 0.6832455786001416
+      },
+      "valid": {
+        "mae": 10.413420739041435,
+        "mapAt10": 0.7458333333333333,
+        "mrrAt10": 0.7572916666666667,
+        "ndcgAt10": 0.9406448369353586,
+        "pairs": 900,
+        "pairwiseAccuracy": 0.7416573971078977,
+        "pairwiseComparisons": 3596,
+        "profiles": 90,
+        "profilesWithRelevant": 16,
+        "recallAt10": 1.0,
+        "rmse": 13.509885676644943,
+        "spearman": 0.6648214883818868
+      }
+    },
+    "frozen-e5-cosine": {
+      "test": {
+        "mae": 15.288723710127742,
+        "mapAt10": 0.41117216117216115,
+        "mrrAt10": 0.49645909645909647,
+        "ndcgAt10": 0.8370499199816823,
+        "pairs": 700,
+        "pairwiseAccuracy": 0.5151068533529846,
+        "pairwiseComparisons": 2714,
+        "profiles": 70,
+        "profilesWithRelevant": 13,
+        "recallAt10": 1.0,
+        "rmse": 17.97908887298485,
+        "spearman": 0.16051810810426376
+      },
+      "valid": {
+        "mae": 13.829120123430993,
+        "mapAt10": 0.3978608630952381,
+        "mrrAt10": 0.45944940476190477,
+        "ndcgAt10": 0.869537069081222,
+        "pairs": 900,
+        "pairwiseAccuracy": 0.5914905450500556,
+        "pairwiseComparisons": 3596,
+        "profiles": 90,
+        "profilesWithRelevant": 16,
+        "recallAt10": 1.0,
+        "rmse": 16.59858925853518,
+        "spearman": 0.3700718260951938
+      }
+    },
+    "word_tfidf": {
+      "test": {
+        "mae": 15.04140010591995,
+        "mapAt10": 0.49548229548229544,
+        "mrrAt10": 0.5581196581196581,
+        "ndcgAt10": 0.8652669985992038,
+        "pairs": 700,
+        "pairwiseAccuracy": 0.5869565217391305,
+        "pairwiseComparisons": 2714,
+        "profiles": 70,
+        "profilesWithRelevant": 13,
+        "recallAt10": 1.0,
+        "rmse": 17.76455800633217,
+        "spearman": 0.2522194973983258
+      },
+      "valid": {
+        "mae": 14.089607026324124,
+        "mapAt10": 0.4098834325396825,
+        "mrrAt10": 0.44035218253968256,
+        "ndcgAt10": 0.8602604374648766,
+        "pairs": 900,
+        "pairwiseAccuracy": 0.550333704115684,
+        "pairwiseComparisons": 3596,
+        "profiles": 90,
+        "profilesWithRelevant": 16,
+        "recallAt10": 1.0,
+        "rmse": 17.111205722997695,
+        "spearman": 0.12386337819568569
+      }
+    },
+    "bge-reranker-v2-m3-zero-shot": {
+      "test": {
+        "mae": 15.40641209063073,
+        "mapAt10": 0.43022588522588523,
+        "mrrAt10": 0.48235653235653236,
+        "ndcgAt10": 0.8534972475984798,
+        "pairs": 700,
+        "pairwiseAccuracy": 0.5685335298452469,
+        "pairwiseComparisons": 2714,
+        "profiles": 70,
+        "profilesWithRelevant": 13,
+        "recallAt10": 1.0,
+        "rmse": 18.056320632593604,
+        "spearman": 0.23147457676012992
+      },
+      "valid": {
+        "mae": 14.192183838617638,
+        "mapAt10": 0.3574590773809524,
+        "mrrAt10": 0.423139880952381,
+        "ndcgAt10": 0.8479564425726461,
+        "pairs": 900,
+        "pairwiseAccuracy": 0.5597886540600667,
+        "pairwiseComparisons": 3596,
+        "profiles": 90,
+        "profilesWithRelevant": 16,
+        "recallAt10": 1.0,
+        "rmse": 17.08719474786549,
+        "spearman": 0.2654962945777799
+      }
+    },
+    "expresso-bge-cross-encoder-llm-v1": {
+      "test": {
+        "mae": 10.506428571428572,
+        "mapAt10": 0.7463522588522588,
+        "mrrAt10": 0.760989010989011,
+        "ndcgAt10": 0.9608378611532505,
+        "pairs": 700,
+        "pairwiseAccuracy": 0.790346352247605,
+        "pairwiseComparisons": 2714,
+        "profiles": 70,
+        "profilesWithRelevant": 13,
+        "recallAt10": 1.0,
+        "rmse": 12.931538481557405,
+        "spearman": 0.6818577960471295
+      },
+      "valid": {
+        "mae": 10.35326388888889,
+        "mapAt10": 0.6365389384920634,
+        "mrrAt10": 0.6302083333333334,
+        "ndcgAt10": 0.9382512794008908,
+        "pairs": 900,
+        "pairwiseAccuracy": 0.7399888765294772,
+        "pairwiseComparisons": 3596,
+        "profiles": 90,
+        "profilesWithRelevant": 16,
+        "recallAt10": 1.0,
+        "rmse": 12.751468971749881,
+        "spearman": 0.6694517062273047
+      }
+    }
+  },
+  "labelSources": {
+    "claude-code-sonnet-5": 740,
+    "gpt-5.6-luna": 9260
+  },
+  "profileSplits": {
+    "train": 840,
+    "valid": 90,
+    "test": 70
+  },
+  "jobSplits": {
+    "train": 2366,
+    "test": 228,
+    "valid": 292
+  },
+  "segments": [
+    {
+      "model": "char_tfidf",
+      "bucket": "role",
+      "pairs": 350,
+      "mae": 15.312870928571428
+    },
+    {
+      "model": "char_tfidf",
+      "bucket": "adjacent",
+      "pairs": 210,
+      "mae": 14.584952176190477
+    },
+    {
+      "model": "char_tfidf",
+      "bucket": "random",
+      "pairs": 140,
+      "mae": 14.36814842857143
+    },
+    {
+      "model": "expresso-e5-mlp-llm-v1",
+      "bucket": "role",
+      "pairs": 350,
+      "mae": 11.187794411428571
+    },
+    {
+      "model": "expresso-e5-mlp-llm-v1",
+      "bucket": "adjacent",
+      "pairs": 210,
+      "mae": 10.424074057142859
+    },
+    {
+      "model": "expresso-e5-mlp-llm-v1",
+      "bucket": "random",
+      "pairs": 140,
+      "mae": 9.08161322142857
+    },
+    {
+      "model": "expresso-bge-cross-encoder-llm-v1",
+      "bucket": "role",
+      "pairs": 350,
+      "mae": 11.448035714285714
+    },
+    {
+      "model": "expresso-bge-cross-encoder-llm-v1",
+      "bucket": "adjacent",
+      "pairs": 210,
+      "mae": 10.491369047619047
+    },
+    {
+      "model": "expresso-bge-cross-encoder-llm-v1",
+      "bucket": "random",
+      "pairs": 140,
+      "mae": 8.175
+    }
+  ],
+  "bootstrap": {
+    "replicates": 20000,
+    "seed": 42,
+    "unit": "test profile",
+    "profiles": 70,
+    "comparisons": {
+      "expresso-e5-mlp-llm-v1__char_tfidf__ndcgAt10": {
+        "delta": 0.07555640691728069,
+        "lower": 0.054756768962335514,
+        "upper": 0.09669918537406648
+      },
+      "expresso-e5-mlp-llm-v1__char_tfidf__mae": {
+        "delta": -4.368108735714285,
+        "lower": -5.653304113071428,
+        "upper": -3.0150046728571445
+      },
+      "expresso-bge-cross-encoder-llm-v1__char_tfidf__ndcgAt10": {
+        "delta": 0.08093434823780954,
+        "lower": 0.05968955953674282,
+        "upper": 0.10359193491254572
+      },
+      "expresso-bge-cross-encoder-llm-v1__char_tfidf__mae": {
+        "delta": -4.399122231428572,
+        "lower": -5.246338725749999,
+        "upper": -3.528750308535714
+      },
+      "expresso-bge-cross-encoder-llm-v1__expresso-e5-mlp-llm-v1__ndcgAt10": {
+        "delta": 0.0053779413205288324,
+        "lower": -0.0045941550773790606,
+        "upper": 0.01604182645931425
+      },
+      "expresso-bge-cross-encoder-llm-v1__expresso-e5-mlp-llm-v1__mae": {
+        "delta": -0.031013495714285775,
+        "lower": -0.9380749140000001,
+        "upper": 0.8490821272857139
+      }
+    }
+  },
+  "hashes": {
+    "candidates": "1042e4740fbe660674c7fa4c67f26586c2301eb8faeff028ab1871ed82362e62",
+    "jobs": "6160c26b57071b6faa13f6b3d919beae59728123b9a56beab3d7db7e5aff8605",
+    "labels": "cbf35b5357d70452c486a6b803c65cf31eed92f44b3b91cca8abb660e769e56f",
+    "profiles": "d6b23abd6ad7d0d93981e18fd267c6c9443c0ce4e02f589d1994cab41dce6ee8"
+  },
+  "validation": "Saved six-decimal score rows reproduce evaluation metrics within 1e-5, except Spearman within 5e-5 due to rounded ties; original full-precision metrics remain authoritative. Profile and job IDs are disjoint between splits.",
+  "roundingDifferences": [
+    {
+      "model": "bm25",
+      "split": "test",
+      "metric": "spearman",
+      "absoluteDifference": 1.6933580230527046e-05
+    }
+  ]
+}
