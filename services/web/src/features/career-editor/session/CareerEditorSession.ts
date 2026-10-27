@@ -15,7 +15,7 @@ import {
 } from "@expresso/editor/yjs";
 
 const EMPTY_STATE_VECTOR = "";
-// unavailable은 문서 bootstrap이 404인 상태입니다. v2 꺼짐과 기록 없음을 구분할 수 없어 둘을 함께 뜻합니다.
+// unavailable은 문서 bootstrap이 404인 상태입니다. 서버가 이 계정에서 기록을 찾지 못했다는 뜻입니다.
 type SessionStatus = "loading" | "saving" | "saved" | "offline" | "conflict" | "unavailable";
 export interface CareerEditorSnapshot {
   status: SessionStatus;

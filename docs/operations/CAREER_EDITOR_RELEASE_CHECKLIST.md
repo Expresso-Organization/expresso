@@ -3,6 +3,10 @@
 검증 기준 브랜치는 `codex/career-record-editor`다. 이 문서는 병합 승인 자료이며
 운영 기능 플래그를 켜는 승인 자료와 분리한다. 검증일은 2026-09-01(KST)이다.
 
+> 2026-10-25부터 `CAREER_EDITOR_V2_ENABLED` 플래그와 기존 목록 화면은 없다. 웹과 API는
+> 늘 v2 화면 · REST · WebSocket을 연다. 서버 `.env`에 남은 이 줄은 무시된다. 아래 표와
+> 검증 항목은 출시 후보 당시의 기록이고, 되돌리기는 「rollback」을 따른다.
+
 ## 출시 상태
 
 | 항목 | 값 |
@@ -136,7 +140,8 @@ WebSocket `VERSION_CONFLICT`·`SIZE`·재연결 횟수, autosave ack p95, Worker
 
 ## rollback
 
-1. 전체 사용자 활성화 전 오류가 발생하면 `CAREER_EDITOR_V2_ENABLED=false`로 배포한다.
+1. v2를 끄는 플래그는 없다. 오류가 발생하면 플래그를 지운 커밋을 되돌려 배포한다 —
+   그 커밋이 기존 목록 화면과 `CAREER_EDITOR_V2_ENABLED` 분기를 함께 되살린다.
 2. 새 편집이 발생한 뒤에는 컬렉션과 update를 삭제하지 않는다. 기존 record API가 최신
    JSON 문서를 Markdown으로 projection하는지 확인한 뒤 기존 화면으로 전환한다.
 3. `career_document_*`, `career_record_relations`, `career_views`, AI proposal 컬렉션은

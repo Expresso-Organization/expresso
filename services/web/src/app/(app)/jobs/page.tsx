@@ -1,3 +1,4 @@
+import { koreanPlace } from "@expresso/contracts";
 import type {
   JobSource,
   JobPostingCategory,
@@ -13,14 +14,18 @@ import { AppBody, AppHeader } from "@/components/shell/AppShell";
 import { Icon } from "@/components/ui/Icon";
 import { jobs as jobsApi } from "@/lib/api/endpoints";
 import { watchedJobs } from "@/lib/app-data";
-import { BROWSE_QUERY_PLACEHOLDER, SIMILAR_SEARCHES } from "@/lib/sample/jobs";
 import { requireSession } from "@/lib/require-session";
 
+import { AddCondition, type AddConditionSection } from "./AddCondition";
+import { BROWSE_QUERY_PLACEHOLDER } from "./browse-copy";
 import { JobRowList, deadlineLabel } from "./JobRows";
-import { ConditionChip } from "./ConditionChip";
+import { ConditionChip, type ConditionChipOption } from "./ConditionChip";
 import { currentListQuery, detailHref, isInterestedList } from "./list-query";
 import { Pagination } from "./Pagination";
 import { ALL, JobFilter, type FilterSection } from "./JobFilter";
+import { RecentSearches } from "./RecentSearches";
+import { SaveSearchButton } from "./SaveSearchButton";
+import { SortMenu } from "./SortMenu";
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import styles from "./page.module.css";
 
@@ -62,14 +67,31 @@ function experienceChipLabel(years: number): string {
   return years === 0 ? "신입 이상" : `${years}년 이상`;
 }
 
-const CONDITION_AXIS: Record<JobSearchCondition["field"], string> = {
-  role: "직무",
+/**
+ * 해석 칩이 서는 축과 그 이름. 칩마다 주소의 파라미터 하나를 바꾸거나 끈다.
+ *
+ * 연봉 · 규모는 해석은 되지만 공고 목록에 그 축의 필터가 없다. 칩을 세우면
+ * 결과에 반영되지 않은 조건이 걸린 것처럼 보이므로 세우지 않는다.
+ */
+type ChipAxis = "location" | "experience" | "technology" | "family" | "workType";
+
+const CHIP_AXES: readonly ChipAxis[] = ["family", "experience", "workType", "location", "technology"];
+
+const CHIP_AXIS_LABEL: Record<ChipAxis, string> = {
+  family: "직무",
   experience: "경력",
-  work_type: "근무",
+  workType: "근무",
   location: "지역",
-  salary: "연봉",
-  company_size: "규모",
   technology: "기술",
+};
+
+/** 칩의 축이 저장할 때 어느 해석 필드로 돌아가는지. */
+const CHIP_AXIS_FIELD: Record<ChipAxis, JobSearchCondition["field"]> = {
+  family: "role",
+  experience: "experience",
+  workType: "work_type",
+  location: "location",
+  technology: "technology",
 };
 
 /**
@@ -111,7 +133,6 @@ const WORK_TYPE_LABEL: Record<string, string> = {
 function conditionValue(condition: JobSearchCondition): string {
   const raw = String(condition.value);
   if (condition.field === "experience") return `${raw}년 이상`;
-  if (condition.field === "salary") return `${Number(raw).toLocaleString("ko-KR")}만 이상`;
   if (condition.field === "work_type") return WORK_TYPE_LABEL[raw] ?? raw;
   if (condition.field === "technology") return raw.charAt(0).toUpperCase() + raw.slice(1);
   return raw;
@@ -188,7 +209,7 @@ export default async function JobsPage({
   /**
    * 해석 칩에서 축 하나를 "끄기"로 누르면 그 축 값을 `off`로 적는다 —
    * 파라미터를 그냥 지우면 검색어가 다시 그 축을 읽어내 되살아나므로,
-   * "안 골랐음"과 "꺼 버림"을 구분해야 한다. 아래 네 축(경력·지역·기술·직무)이
+   * "안 골랐음"과 "꺼 버림"을 구분해야 한다. 경력·근무·지역·기술·직무가
    * 모두 같은 규칙을 쓴다.
    */
   const experienceParam = typeof params.experience === "string" ? params.experience.trim() : "";
@@ -197,9 +218,9 @@ export default async function JobsPage({
   const experienceYears = !experienceOff && Number.isInteger(experienceParsed) && experienceParsed >= 0
     ? experienceParsed
     : undefined;
-  const workType = typeof params.workType === "string" && params.workType.trim()
-    ? params.workType.trim()
-    : undefined;
+  const workTypeParam = typeof params.workType === "string" ? params.workType.trim() : "";
+  const workTypeOff = workTypeParam === "off";
+  const workType = !workTypeOff && workTypeParam ? workTypeParam : undefined;
   const company = typeof params.company === "string" && params.company.trim()
     ? params.company.trim()
     : undefined;
@@ -237,7 +258,7 @@ export default async function JobsPage({
    * 00b는 말로 쓴 조건을 먼저 해석하고, 그 결과를 실제 필터로 옮겨 찾는다.
    * 문장을 그대로 이름 매칭에 넣으면 아무것도 걸리지 않는다.
    */
-  const [interpreted, watched, recent, sourceList] = await Promise.all([
+  const [interpreted, watched, recent, sourceList, savedSearches] = await Promise.all([
     q ? jobsApi.interpret(session.accessToken, q, 0) : Promise.resolve(null),
     // 사이드바 "관심 공고"와 같은 목록이다. 한 요청 안에서 한 번만 부른다.
     watchedJobs(session.accessToken),
@@ -247,6 +268,8 @@ export default async function JobsPage({
     // 4,182건"이 적혀 있었는데, 셋 다 우리가 모을 수 없는 곳이고 4,182는
     // 지어낸 수였다.
     jobsApi.sources(session.accessToken),
+    // 「이 검색 저장」이 이미 저장한 검색인지 알아야 같은 줄을 두 번 만들지 않는다.
+    q ? jobsApi.savedSearches(session.accessToken) : Promise.resolve(null),
   ]);
 
   const sources = sourceList.data.filter((source) => source.active);
@@ -286,6 +309,12 @@ export default async function JobsPage({
     : familyOff
       ? undefined
       : derived.family;
+  /**
+   * 근무 칩. 근무 형태를 주소에 골라 두었거나 껐으면 검색어가 읽어낸 리모트는
+   * 걸지 않는다 — 안 그러면 "출근"을 골랐는데 리모트도 함께 걸려 아무것도 안
+   * 나온다.
+   */
+  const effectiveRemote = !workTypeParam && derived.remote === true;
 
   const listing = await jobsApi.postings(session.accessToken, {
     ...(interested ? { interested: true } : {}),
@@ -300,8 +329,10 @@ export default async function JobsPage({
           experience: undefined,
           technology: undefined,
           family: undefined,
+          remote: undefined,
         }
       : categoryFilter(category)),
+    ...(effectiveRemote ? { remote: true as const } : {}),
     ...(effectiveCountry ? { country: effectiveCountry } : {}),
     ...(effectiveLocation ? { location: effectiveLocation } : {}),
     ...(effectiveExperience === undefined ? {} : { experience: effectiveExperience }),
@@ -356,7 +387,7 @@ export default async function JobsPage({
     if (nextExperience !== undefined && nextExperience !== null) {
       search.set("experience", String(nextExperience));
     }
-    const nextWorkType = "workType" in patch ? patch.workType : workType;
+    const nextWorkType = "workType" in patch ? patch.workType : workTypeParam;
     if (nextWorkType) search.set("workType", nextWorkType);
     const nextCompany = "company" in patch ? patch.company : company;
     if (nextCompany) search.set("company", nextCompany);
@@ -364,18 +395,38 @@ export default async function JobsPage({
     return listHref(search);
   };
 
-  /** 쪽만 바꾸고 나머지 조건은 그대로 들고 간다. 필터가 풀리면 다른 목록이 된다. */
-  const pageHref = (next: number): Route => {
+  /**
+   * 지금 걸린 조건 전부. 칩에서 끈 축(`off`)과 「조건 추가」로 고른 축까지
+   * 주소에 적힌 그대로 옮긴다 — 하나라도 빠지면 쪽이나 정렬을 바꾸는 순간 그
+   * 조건이 풀린다. 쪽은 넣지 않는다.
+   */
+  const currentSearch = (): URLSearchParams => {
     const search = new URLSearchParams();
     if (q) search.set("q", q);
     if (category) search.set("category", category);
     if (country !== defaultCountry) search.set("country", country);
-    if (locationExplicit) search.set("location", locationExplicit);
-    if (experienceYears !== undefined) search.set("experience", String(experienceYears));
-    if (workType) search.set("workType", workType);
+    if (locationParam) search.set("location", locationParam);
+    if (experienceParam) search.set("experience", experienceParam);
+    if (technologyParam) search.set("technology", technologyParam);
+    if (familyParam) search.set("family", familyParam);
+    if (workTypeParam) search.set("workType", workTypeParam);
     if (company) search.set("company", company);
     if (sort !== "match") search.set("sort", sort);
+    return search;
+  };
+
+  /** 쪽만 바꾸고 나머지 조건은 그대로 들고 간다. 필터가 풀리면 다른 목록이 된다. */
+  const pageHref = (next: number): Route => {
+    const search = currentSearch();
     if (next > 1) search.set("page", String(next));
+    return listHref(search);
+  };
+
+  /** 정렬만 바꾼 주소. 순서가 바뀌므로 쪽은 1로 되돌린다. */
+  const sortHref = (next: typeof sort): Route => {
+    const search = currentSearch();
+    if (next === "match") search.delete("sort");
+    else search.set("sort", next);
     return listHref(search);
   };
   /**
@@ -385,20 +436,18 @@ export default async function JobsPage({
    * 있으면 off, 골라 뒀으면 그 값)를 그대로 옮겨 적어, 다른 축을 바꿀 때 이
    * 축이 조용히 풀리지 않게 한다.
    */
-  const conditionHref = (
-    patch: {
-      location?: string | null;
-      experience?: number | null;
-      technology?: string | null;
-      family?: string | null;
-    },
-  ): Route => {
+  const conditionHref = (patch: ConditionPatch): Route => {
     const search = new URLSearchParams();
     if (q) search.set("q", q);
     if (sort !== "match") search.set("sort", sort);
     if (country !== defaultCountry) search.set("country", country);
-    if (workType) search.set("workType", workType);
     if (company) search.set("company", company);
+
+    if ("workType" in patch) {
+      search.set("workType", patch.workType === null || patch.workType === undefined ? "off" : patch.workType);
+    } else if (workTypeParam) {
+      search.set("workType", workTypeParam);
+    }
 
     if ("location" in patch) {
       search.set("location", patch.location === null || patch.location === undefined ? "off" : patch.location);
@@ -460,7 +509,12 @@ export default async function JobsPage({
    * 집계(`summary.countries`)만 있고 지역 단위 집계는 없어서, 건수 없이
    * 국내 지역 이름만 늘어놓는다.
    */
-  const locationOptions = [...KOREAN_REGIONS].map((region) => ({ label: region, value: region }));
+  // 검색어가 "판교"처럼 지역보다 좁은 장소로 읽혔으면 그 장소를 맨 앞에 둔다 —
+  // 지역 목록에는 없어서, 안 두면 팝오버에서 지금 걸린 값이 안 보인다.
+  const locationOptions = [
+    ...(effectiveLocation && koreanPlace(effectiveLocation) ? [{ label: `${effectiveLocation} 근처`, value: effectiveLocation }] : []),
+    ...[...KOREAN_REGIONS].map((region) => ({ label: region, value: region })),
+  ];
   const experienceOptions = summary.experienceLevels.map((one) => ({
     label: one.label,
     value: experienceValue(one.label),
@@ -474,6 +528,103 @@ export default async function JobsPage({
     value: one.label,
     count: one.count,
   }));
+  // 근무 형태 집계는 근무 축을 빼고 센 수라, 다른 값을 골랐을 때의 건수로 읽힌다.
+  const workTypeOptions = summary.workTypes.map((one) => ({
+    label: one.label,
+    value: one.label,
+    count: one.count,
+  }));
+  const optionsByAxis: Record<ChipAxis, ChipOptionSource[]> = {
+    location: locationOptions,
+    experience: experienceOptions,
+    technology: technologyOptions,
+    family: familyOptions,
+    workType: workTypeOptions,
+  };
+
+  /** 주소에 직접 적힌 값. 칩에서 고르거나 「조건 추가」로 더한 값이다. */
+  const explicitByAxis: Record<ChipAxis, string | number | undefined> = {
+    location: locationExplicit,
+    experience: experienceYears,
+    technology: technologyExplicit,
+    family: familyExplicit,
+    workType,
+  };
+  /** 실제로 걸린 값. 칩이 켜져 있는지, 무엇이라고 적을지를 정한다. */
+  const effectiveByAxis: Record<ChipAxis, string | number | undefined> = {
+    location: effectiveLocation,
+    experience: effectiveExperience,
+    technology: effectiveTechnology,
+    family: effectiveFamily,
+    workType: workType ?? (effectiveRemote ? "remote" : undefined),
+  };
+
+  /**
+   * 해석 칩. 검색어가 읽어낸 조건마다 하나, 그리고 검색어에는 없지만
+   * 「조건 추가」로 주소에 더한 축마다 하나. 필터가 없는 축(연봉 · 규모)은 뺀다.
+   */
+  const parsedChips = (interpreted?.conditions ?? []).flatMap((condition) => {
+    const axis = CHIP_AXIS_PARAM[condition.field];
+    return axis ? [{ axis, condition }] : [];
+  });
+  const parsedAxes = new Set(parsedChips.map((chip) => chip.axis));
+  const chips: { axis: ChipAxis; condition: JobSearchCondition | null }[] = [
+    ...parsedChips,
+    ...CHIP_AXES.filter(
+      (axis) => !parsedAxes.has(axis) && explicitByAxis[axis] !== undefined,
+    ).map((axis) => ({ axis, condition: null })),
+  ];
+  const chippedAxes = new Set(chips.map((chip) => chip.axis));
+
+  const queryChips: QueryChip[] = chips.map(({ axis, condition }) => {
+    const effectiveValue = effectiveByAxis[axis];
+    return {
+      key: condition ? `${condition.field}-${condition.value}` : `added-${axis}`,
+      axisLabel: CHIP_AXIS_LABEL[axis],
+      valueLabel: chipValueLabel(axis, effectiveValue, condition),
+      enabled: effectiveValue !== undefined,
+      offHref: chipOffHref(axis, conditionHref),
+      options: optionsByAxis[axis].map((option) => ({
+        label: option.label,
+        active: option.value === effectiveValue,
+        href: chipOptionHref(axis, option.value, conditionHref),
+        ...(option.count === undefined ? {} : { count: option.count }),
+      })),
+    };
+  });
+
+  /** 칩이 없는 축만 「조건 추가」에 선다. 0건짜리 값은 골라도 아무것도 안 걸린다. */
+  const addSections: AddConditionSection[] = CHIP_AXES.filter((axis) => !chippedAxes.has(axis))
+    .map((axis) => ({
+      key: axis,
+      title: CHIP_AXIS_LABEL[axis],
+      options: optionsByAxis[axis]
+        .filter((option) => option.count === undefined || option.count > 0)
+        .map((option) => ({
+          label: option.label,
+          href: chipOptionHref(axis, option.value, conditionHref),
+          ...(option.count === undefined ? {} : { count: option.count }),
+        })),
+    }))
+    .filter((section) => section.options.length > 0);
+
+  /**
+   * 저장할 조건은 칩이 지금 보여 주는 것이다. 칩에서 바꾼 값은 그 값으로,
+   * 끈 칩은 `enabled: false`로 남는다.
+   */
+  const savedConditions: JobSearchCondition[] = chips.flatMap(({ axis, condition }) => {
+    const value = explicitByAxis[axis] ?? condition?.value;
+    if (value === undefined) return [];
+    return [{
+      field: condition?.field ?? CHIP_AXIS_FIELD[axis],
+      value,
+      enabled: effectiveByAxis[axis] !== undefined,
+      confidence: condition?.confidence ?? 1,
+    }];
+  });
+  const searchSaved = Boolean(
+    q && savedSearches?.data.some((search) => search.originalQuery === q),
+  );
 
   const sections: FilterSection[] = [
     {
@@ -564,10 +715,11 @@ export default async function JobsPage({
             관심 공고 {watched.summary.total}
           </Link>
           <span className={styles.headRule} />
-          <button type="button" className={styles.headAction}>
+          {/* 마감 · 생성 알림을 켜고 끄는 곳은 설정 화면의 알림 항목이다. */}
+          <Link href={"/account#notifications" as Route} className={styles.headAction}>
             <Icon name="bell-simple" size={14} color="var(--ex-fg-muted)" />
             알림 설정
-          </button>
+          </Link>
         </>
       }
     />
@@ -581,20 +733,10 @@ export default async function JobsPage({
           {q ? (
             <SearchQueryCard
               query={q}
-              conditions={interpreted?.conditions ?? []}
-              effectiveByAxis={{
-                location: effectiveLocation,
-                experience: effectiveExperience,
-                technology: effectiveTechnology,
-                family: effectiveFamily,
-              }}
-              optionsByAxis={{
-                location: locationOptions,
-                experience: experienceOptions,
-                technology: technologyOptions,
-                family: familyOptions,
-              }}
-              conditionHref={conditionHref}
+              chips={queryChips}
+              addSections={addSections}
+              savedConditions={savedConditions}
+              saved={searchSaved}
               clearHref={listHref(new URLSearchParams())}
               interested={interested}
             />
@@ -607,7 +749,7 @@ export default async function JobsPage({
               {listing.summary.categories.map((chip) => (
                 <Link
                   key={chip.key}
-                  href={listHref(chipQuery(chip))}
+                  href={listHref(chipQuery(chip, sort))}
                   className={`${styles.categoryTab} ${
                     (category ?? "all") === chip.key ? styles.categoryTabActive : ""
                   }`}
@@ -616,10 +758,14 @@ export default async function JobsPage({
                   <span className={styles.categoryCount}>{chip.count}</span>
                 </Link>
               ))}
-              <button type="button" className={styles.sortSelect}>
-                내 기록과 가까운 순
-                <Icon name="caret-down" size={10} />
-              </button>
+              <SortMenu
+                options={SORTS.map(([key, , browseLabel]) => ({
+                  key,
+                  label: browseLabel,
+                  href: sortHref(key),
+                  active: sort === key,
+                }))}
+              />
             </div>
           )}
 
@@ -635,18 +781,10 @@ export default async function JobsPage({
                 {q ? (
                   <>
                     <div className={styles.sorts}>
-                      {(
-                        [
-                          ["match", "일치도 순"],
-                          ["deadline", "마감 순"],
-                          ["recent", "최신 순"],
-                        ] as const
-                      ).map(([key, label]) => (
+                      {SORTS.map(([key, label]) => (
                         <Link
                           key={key}
-                          href={listHref(
-                            new URLSearchParams(key === "match" ? { q } : { q, sort: key }),
-                          )}
+                          href={sortHref(key)}
                           className={`${styles.sort} ${sort === key ? styles.sortActive : ""}`}
                         >
                           {label}
@@ -786,8 +924,10 @@ function searchFilters(
     ...(remote ? { remote: true as const } : {}),
     // 국내 지역은 country(한국)와 location(경기 등)을 함께 보낸다 — location이
     // 더 좁혀 걸고, country는 근무지 필터 칩 표시를 예전과 그대로 맞춘다.
+    // "판교"처럼 지역보다 좁은 국내 장소도 `location`으로 보낸다 — 백엔드가
+    // 그 장소에서 가까운 순으로 건다.
     ...(locationValue
-      ? KOREAN_REGIONS.has(locationValue)
+      ? KOREAN_REGIONS.has(locationValue) || koreanPlace(locationValue)
         ? { country: "한국", location: locationValue }
         : { country: locationValue }
       : {}),
@@ -808,19 +948,62 @@ function categoryFilter(key: string | undefined) {
   return {};
 }
 
-/** 칩 하나가 거는 조건. 주소의 끝부분은 화면의 `listHref`가 붙인다. */
-function chipQuery(chip: JobPostingCategory): URLSearchParams {
-  return new URLSearchParams(chip.key === "all" ? {} : { category: chip.key });
+/**
+ * 칩 하나가 거는 조건. 고른 정렬은 카테고리를 바꿔도 유지한다. 주소의 끝부분은
+ * 화면의 `listHref`가 붙인다.
+ */
+function chipQuery(chip: JobPostingCategory, sort: string): URLSearchParams {
+  const search = new URLSearchParams(chip.key === "all" ? {} : { category: chip.key });
+  if (sort !== "match") search.set("sort", sort);
+  return search;
 }
 
+/**
+ * 정렬 셋. 00b는 결과 머리에 나란히, 06은 카테고리 줄 오른쪽 메뉴에 세운다.
+ * 일치도는 내 기록과 비교한 점수라 06에서는 그 뜻을 이름으로 적는다(정의서).
+ */
+const SORTS = [
+  ["match", "일치도 순", "내 기록과 가까운 순"],
+  ["deadline", "마감 순", "마감 순"],
+  ["recent", "최신 순", "최신 순"],
+] as const;
+
 /** 해석 칩 중 다른 값으로 바꾸거나 끌 수 있는 축과, 그 값이 채워 넣는 질의 파라미터. */
-const CHIP_AXIS_PARAM: Partial<
-  Record<JobSearchCondition["field"], "location" | "experience" | "technology" | "family">
-> = {
+const CHIP_AXIS_PARAM: Partial<Record<JobSearchCondition["field"], ChipAxis>> = {
   location: "location",
   experience: "experience",
   role: "family",
   technology: "technology",
+  work_type: "workType",
+};
+
+/** 칩에 적는 값. 걸려 있으면 걸린 값을, 꺼져 있으면 검색어가 읽어낸 값을 적는다. */
+function chipValueLabel(
+  axis: ChipAxis,
+  effectiveValue: string | number | undefined,
+  condition: JobSearchCondition | null,
+): string {
+  if (effectiveValue === undefined) return condition ? conditionValue(condition) : "";
+  if (axis === "experience") return experienceChipLabel(Number(effectiveValue));
+  if (axis === "workType") return WORK_TYPE_LABEL[String(effectiveValue)] ?? String(effectiveValue);
+  return String(effectiveValue);
+}
+
+interface QueryChip {
+  key: string;
+  axisLabel: string;
+  valueLabel: string;
+  enabled: boolean;
+  offHref: Route;
+  options: ConditionChipOption[];
+}
+
+type ConditionPatch = {
+  location?: string | null;
+  experience?: number | null;
+  technology?: string | null;
+  family?: string | null;
+  workType?: string | null;
 };
 
 interface ChipOptionSource {
@@ -831,56 +1014,44 @@ interface ChipOptionSource {
 
 /** `conditionHref`는 patch의 키마다 값 타입이 달라, 축별로 나눠 불러야 한다. */
 function chipOffHref(
-  axis: "location" | "experience" | "technology" | "family",
-  conditionHref: (patch: {
-    location?: string | null;
-    experience?: number | null;
-    technology?: string | null;
-    family?: string | null;
-  }) => Route,
+  axis: ChipAxis,
+  conditionHref: (patch: ConditionPatch) => Route,
 ): Route {
   if (axis === "location") return conditionHref({ location: null });
   if (axis === "experience") return conditionHref({ experience: null });
   if (axis === "technology") return conditionHref({ technology: null });
+  if (axis === "workType") return conditionHref({ workType: null });
   return conditionHref({ family: null });
 }
 
 function chipOptionHref(
-  axis: "location" | "experience" | "technology" | "family",
+  axis: ChipAxis,
   value: string | number,
-  conditionHref: (patch: {
-    location?: string | null;
-    experience?: number | null;
-    technology?: string | null;
-    family?: string | null;
-  }) => Route,
+  conditionHref: (patch: ConditionPatch) => Route,
 ): Route {
   if (axis === "location") return conditionHref({ location: String(value) });
   if (axis === "experience") return conditionHref({ experience: Number(value) });
   if (axis === "technology") return conditionHref({ technology: String(value) });
+  if (axis === "workType") return conditionHref({ workType: String(value) });
   return conditionHref({ family: String(value) });
 }
 
 /** 순서를 정한 근거는 가장 잘 맞은 공고의 일치 기술에서 나온다. */
 function SearchQueryCard({
   query,
-  conditions,
-  effectiveByAxis,
-  optionsByAxis,
-  conditionHref,
+  chips,
+  addSections,
+  savedConditions,
+  saved,
   clearHref,
   interested,
 }: {
   query: string;
-  conditions: readonly JobSearchCondition[];
-  effectiveByAxis: Record<"location" | "experience" | "technology" | "family", string | number | undefined>;
-  optionsByAxis: Record<"location" | "experience" | "technology" | "family", ChipOptionSource[]>;
-  conditionHref: (patch: {
-    location?: string | null;
-    experience?: number | null;
-    technology?: string | null;
-    family?: string | null;
-  }) => Route;
+  chips: readonly QueryChip[];
+  addSections: AddConditionSection[];
+  savedConditions: JobSearchCondition[];
+  /** 같은 검색 문장을 이미 저장했는지. */
+  saved: boolean;
   /** 검색어만 지운 목록. 관심 공고 목록이면 그 목록으로 돌아간다. */
   clearHref: Route;
   interested: boolean;
@@ -904,58 +1075,29 @@ function SearchQueryCard({
         </button>
       </form>
 
-      {/* 해석 칩 — 확신이 낮은 조건도 칩으로 만들되 지울 수 있게 둔다. 지역 ·
-          경력 · 직무 · 기술은 눌러서 다른 값을 고르거나 끌 수 있다. */}
+      {/* 해석 칩 — 확신이 낮은 조건도 칩으로 만들되 끌 수 있게 둔다. 칩마다
+          눌러서 다른 값을 고르거나 끌 수 있다. */}
       <div className={styles.parsedRow}>
         <span className={styles.parsedLabel}>이렇게 이해했습니다</span>
-        {conditions.map((condition) => {
-          const axis = CHIP_AXIS_PARAM[condition.field];
-          if (!axis) {
-            return (
-              <button
-                key={`${condition.field}-${condition.value}`}
-                type="button"
-                className={styles.parsedChip}
-              >
-                {CONDITION_AXIS[condition.field]} · {conditionValue(condition)}
-                <Icon
-                  name={condition.enabled ? "caret-down" : "x"}
-                  size={10}
-                  color={condition.enabled ? undefined : "var(--ex-accent-text)"}
-                />
-              </button>
-            );
-          }
-          const effectiveValue = effectiveByAxis[axis];
-          const enabled = effectiveValue !== undefined;
-          const valueLabel = effectiveValue === undefined
-            ? conditionValue(condition)
-            : axis === "experience"
-              ? experienceChipLabel(Number(effectiveValue))
-              : String(effectiveValue);
-          return (
-            <ConditionChip
-              key={`${condition.field}-${condition.value}`}
-              axisLabel={CONDITION_AXIS[condition.field]}
-              valueLabel={valueLabel}
-              enabled={enabled}
-              offHref={chipOffHref(axis, conditionHref)}
-              options={optionsByAxis[axis].map((option) => ({
-                label: option.label,
-                active: option.value === effectiveValue,
-                href: chipOptionHref(axis, option.value, conditionHref),
-                ...(option.count === undefined ? {} : { count: option.count }),
-              }))}
-            />
-          );
-        })}
-        <button type="button" className={styles.parsedAdd}>
-          <Icon name="plus" size={11} />
-          조건 추가
-        </button>
-        <button type="button" className={styles.parsedSave}>
-          <Icon name="bell-simple" size={14} />이 검색 저장
-        </button>
+        {chips.map((chip) => (
+          <ConditionChip
+            key={chip.key}
+            axisLabel={chip.axisLabel}
+            valueLabel={chip.valueLabel}
+            enabled={chip.enabled}
+            offHref={chip.offHref}
+            options={chip.options}
+          />
+        ))}
+        {addSections.length > 0 ? <AddCondition sections={addSections} /> : null}
+        {/* 검색어가 바뀌면 저장 상태를 처음부터 다시 받는다. 같은 화면 안에서
+            링크로 옮겨 가면 컴포넌트가 남아 앞 검색의 상태를 들고 간다. */}
+        <SaveSearchButton
+          key={query}
+          query={query}
+          conditions={savedConditions}
+          saved={saved}
+        />
       </div>
     </div>
   );
@@ -977,7 +1119,6 @@ function BrowseSearchBar({ interested }: { interested: boolean }) {
         placeholder={BROWSE_QUERY_PLACEHOLDER}
         aria-label="공고 검색"
       />
-      <span className={styles.searchShortcut}>⌘↵</span>
       <button type="submit" className={styles.querySubmit}>
         찾기
       </button>
@@ -999,7 +1140,6 @@ function SearchRail({
   query: string;
 }) {
   const top = missing[0];
-  const similar = recent.filter((search) => search.query !== query).slice(0, 3);
 
   return (
     <>
@@ -1033,9 +1173,9 @@ function SearchRail({
             ))}
           </div>
         ) : null}
-        <button type="button" className={styles.brewCta}>
+        <Link href={RECORD_EXPERIENCE_HREF} className={styles.brewCta}>
           이 경험 기록하기
-        </button>
+        </Link>
       </div>
 
       <div className={styles.railCard}>
@@ -1057,47 +1197,8 @@ function SearchRail({
         </div>
       </div>
 
-      <div className={styles.railCard}>
-        <div className={styles.railTitle}>비슷한 검색</div>
-        <div className={styles.chipWrap}>
-          {(similar.length > 0
-            ? similar.map((search) => search.query)
-            : SIMILAR_SEARCHES
-          ).map((search) => (
-            <Link
-              key={search}
-              href={{ pathname: "/jobs", query: { q: search } }}
-              className={styles.railChip}
-            >
-              {search}
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      <div className={styles.railCard}>
-        <div className={styles.railHeadRow}>
-          <span className={styles.railTitle} style={{ marginBottom: 0 }}>
-            최근 검색
-          </span>
-          <button type="button" className={styles.railHeadAction}>
-            지우기
-          </button>
-        </div>
-        <div className={styles.recentList}>
-          {recent.slice(0, 2).map((search) => (
-            <Link
-              key={search.id}
-              href={{ pathname: "/jobs", query: { q: search.query } }}
-              className={styles.recentRow}
-            >
-              <Icon name="clock-counter-clockwise" size={14} color="var(--ex-fg-muted)" />
-              <span className={styles.recentText}>{search.query}</span>
-              <span className={styles.recentCount}>{search.resultCount}건</span>
-            </Link>
-          ))}
-        </div>
-      </div>
+      {/* 지운 상태도 검색어마다 새로 시작한다 — 저장 버튼과 같은 이유다. */}
+      <RecentSearches key={query} recent={recent} query={query} />
     </>
   );
 }
@@ -1155,9 +1256,9 @@ function BrowseRail({
             {gap.count}건이 {gap.label}을 요구합니다. 이미 적어 둔 이야기 안에 그
             부분이 있다면, 그것만 따로 기록해두면 됩니다.
           </p>
-          <button type="button" className={styles.brewCta}>
+          <Link href={RECORD_EXPERIENCE_HREF} className={styles.brewCta}>
             이 경험 기록하기
-          </button>
+          </Link>
         </div>
       ) : null}
 
@@ -1166,9 +1267,8 @@ function BrowseRail({
           <span className={styles.railTitle} style={{ marginBottom: 0 }}>
             관심 공고
           </span>
-          <button type="button" className={styles.railHeadAction}>
-            마감 순
-          </button>
+          {/* 이 목록은 늘 마감이 가까운 순으로 받아 온다(`watchedJobs`). 고르는 버튼이 아니다. */}
+          <span className={styles.railHeadNote}>마감 순</span>
           <Link href={"/jobs?interested=true" as Route} className={styles.railHeadLink}>
             전체
           </Link>
@@ -1194,8 +1294,12 @@ function BrowseRail({
           ))}
         </div>
         <div className={styles.railCtaWrap}>
-          <button
-            type="button"
+          {/*
+           * 공고를 여기서 고르지 않는다. 새 포트폴리오 화면이 관심 공고 · 모아 둔
+           * 공고 · 붙여넣기 중에서 고르게 한다.
+           */}
+          <Link
+            href="/brew/new"
             className={styles.brewCta}
             /*
              * 이 단추만 시그니처가 아니라 잉크 지면이다. 지면이 어두운 테마에서
@@ -1207,8 +1311,9 @@ function BrowseRail({
               color: "var(--ex-fg-on-inverse)",
             }}
           >
-            선택한 공고로 포트폴리오 만들기
-          </button>
+            새 포트폴리오 만들기
+            <Icon name="arrow-right" size={14} />
+          </Link>
         </div>
       </div>
       {/* now는 JobRowList와 같은 기준 시각을 쓰기 위해 받는다. */}
@@ -1216,6 +1321,9 @@ function BrowseRail({
     </>
   );
 }
+
+/** 「이 경험 기록하기」가 여는 곳 — 내 커리어의 경험 카테고리. */
+const RECORD_EXPERIENCE_HREF = "/career/experience" as Route;
 
 /** "백엔드 엔지니어 (Core Banking)" → "백엔드". 레일은 한 줄만 준다. */
 function shortTitle(title: string): string {

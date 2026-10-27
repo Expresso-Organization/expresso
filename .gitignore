@@ -21,10 +21,12 @@ coverage/
 
 # 올린 이미지(로컬 저장소 어댑터). MEDIA_DIR로 옮길 수 있다.
 var/
+__pycache__/
 
 # 독립 실험 저장소 — 자체 Git 이력으로 관리한다.
 sites/portfolio-qd-demo/
 .archive/
+.worktree/
 .worktrees/
 
 # 서버에만 두는 인프라 override — 포트 바인딩과 비밀번호가 들어간다
@@ -37,3 +39,6 @@ coordination/mongodb/.codex/agents/pipeline_*.toml
 coordination/mongodb/coordination/agent-mcp-profiles.json
 coordination/mongodb/**/worker-worktrees*.json
 coordination/mongodb/**/*.lock
+
+# 진행 현황 스캐너의 로컬 실행 결과(서버에서는 /var/lib/expresso-status)
+docs/status/data/

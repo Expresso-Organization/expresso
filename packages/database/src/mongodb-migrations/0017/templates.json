@@ -1,0 +1,207 @@
+[
+  {
+    "key": "experience",
+    "name": "경험",
+    "icon": "briefcase",
+    "defaultView": "table",
+    "properties": [
+      {
+        "key": "competencies",
+        "name": "역량",
+        "type": "multi_select",
+        "options": []
+      },
+      {
+        "key": "period",
+        "name": "시기",
+        "type": "date"
+      }
+    ]
+  },
+  {
+    "key": "project",
+    "name": "프로젝트",
+    "icon": "folder-kanban",
+    "defaultView": "gallery",
+    "properties": [
+      {
+        "key": "role",
+        "name": "역할",
+        "type": "text"
+      },
+      {
+        "key": "technologies",
+        "name": "기술",
+        "type": "multi_select",
+        "options": []
+      },
+      {
+        "key": "period",
+        "name": "기간",
+        "type": "date"
+      },
+      {
+        "key": "outcome",
+        "name": "성과",
+        "type": "text"
+      },
+      {
+        "key": "experiences",
+        "name": "연결된 경험",
+        "type": "relation",
+        "targetKey": "experience"
+      }
+    ]
+  },
+  {
+    "key": "education_history",
+    "name": "학력 · 이력",
+    "icon": "graduation-cap",
+    "defaultView": "timeline",
+    "properties": [
+      {
+        "key": "employmentType",
+        "name": "고용 형태",
+        "type": "select",
+        "options": [
+          "정규직"
+        ]
+      },
+      {
+        "key": "period",
+        "name": "기간",
+        "type": "date"
+      },
+      {
+        "key": "organization",
+        "name": "소속",
+        "type": "text"
+      },
+      {
+        "key": "projects",
+        "name": "연결된 프로젝트",
+        "type": "relation",
+        "targetKey": "project"
+      },
+      {
+        "key": "experiences",
+        "name": "연결된 경험",
+        "type": "relation",
+        "targetKey": "experience"
+      }
+    ]
+  },
+  {
+    "key": "certification_award",
+    "name": "자격증 · 수상",
+    "icon": "award",
+    "defaultView": "table",
+    "properties": [
+      {
+        "key": "issuer",
+        "name": "발급·수여 기관",
+        "type": "text"
+      },
+      {
+        "key": "issuedMonth",
+        "name": "취득 월",
+        "type": "date"
+      }
+    ]
+  },
+  {
+    "key": "academic_writing",
+    "name": "학술 · 집필",
+    "icon": "book-open",
+    "defaultView": "list",
+    "properties": [
+      {
+        "key": "kind",
+        "name": "유형",
+        "type": "select",
+        "options": [
+          "기술 글",
+          "논문"
+        ]
+      },
+      {
+        "key": "publication",
+        "name": "게재처",
+        "type": "text"
+      },
+      {
+        "key": "publishedMonth",
+        "name": "게재 월",
+        "type": "date"
+      },
+      {
+        "key": "url",
+        "name": "원문 링크",
+        "type": "url"
+      }
+    ]
+  },
+  {
+    "key": "activity_leadership",
+    "name": "활동 · 리더십",
+    "icon": "users",
+    "defaultView": "table",
+    "properties": [
+      {
+        "key": "role",
+        "name": "역할",
+        "type": "text"
+      },
+      {
+        "key": "outcome",
+        "name": "성과",
+        "type": "text"
+      },
+      {
+        "key": "organization",
+        "name": "조직",
+        "type": "text"
+      }
+    ]
+  },
+  {
+    "key": "skill_tool",
+    "name": "스킬 · 도구",
+    "icon": "wrench",
+    "defaultView": "board",
+    "properties": [
+      {
+        "key": "group",
+        "name": "분류",
+        "type": "select",
+        "options": [
+          "언어 · 쿼리",
+          "데이터 · 파이프라인",
+          "인프라 · 운영"
+        ]
+      },
+      {
+        "key": "firstUsedMonth",
+        "name": "처음 사용",
+        "type": "date"
+      },
+      {
+        "key": "lastUsedMonth",
+        "name": "최근 사용",
+        "type": "date"
+      },
+      {
+        "key": "projects",
+        "name": "연결된 프로젝트",
+        "type": "relation",
+        "targetKey": "project"
+      },
+      {
+        "key": "experiences",
+        "name": "연결된 경험",
+        "type": "relation",
+        "targetKey": "experience"
+      }
+    ]
+  }
+]

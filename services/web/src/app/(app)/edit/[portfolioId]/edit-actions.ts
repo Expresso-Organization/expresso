@@ -1,10 +1,10 @@
 "use server";
 
-import { EditStructuredPageSchema, type PortfolioEditPatch } from "@expresso/contracts";
+import { EditStructuredPageSchema, type PortfolioEditPatch, type PortfolioRevision } from "@expresso/contracts";
 import { revalidatePath } from "next/cache";
 
 import { ApiError } from "@/lib/api/client";
-import { page, portfolioEditing, portfolios } from "@/lib/api/endpoints";
+import { career, page, portfolioEditing, portfolios } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 /**
@@ -155,6 +155,80 @@ export async function historyAction(
     }
     return { error: message(error) };
   }
+}
+
+/**
+ * 04 생성 지면 되돌리기 — 고른 판을 새 판으로 다시 쌓는다.
+ *
+ * 지금 보는 판 번호를 함께 보낸다. 그 사이 다른 편집이 먼저 쌓였으면 서버가
+ * 409로 막고, 화면은 새로고침을 권한다.
+ */
+export async function restorePageAction(
+  _previous: { error?: string; revision?: number },
+  formData: FormData,
+): Promise<{ error?: string; revision?: number }> {
+  const portfolioId = formData.get("portfolioId");
+  const revision = Number(formData.get("revision"));
+  const expectedRevision = Number(formData.get("expectedRevision"));
+  if (typeof portfolioId !== "string" || !Number.isInteger(revision) || !Number.isInteger(expectedRevision)) return {};
+  const session = await requireSession();
+  try {
+    const { data } = await page.restore(session.accessToken, portfolioId, { revision, expectedRevision });
+    revalidatePath(`/edit/${portfolioId}`);
+    return { revision: data.revision };
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 409) return { error: "그 사이 판이 바뀌었습니다. 새로고침한 뒤 다시 눌러 주세요." };
+    return { error: "되돌리지 못했습니다. 다시 시도해 주세요." };
+  }
+}
+
+/** 04 「내 커리어에서 가져오기」가 고를 수 있는 기록. 본문이 빈 기록은 가져올 글이 없다. */
+export async function careerRecordOptionsAction(): Promise<{ id: string; title: string }[]> {
+  const session = await requireSession();
+  const { data } = await career.records(session.accessToken, { sort: "updated_desc", limit: 100 });
+  return data.filter((record) => !record.isEmpty && record.bodyMd.trim()).map((record) => ({ id: record.id, title: record.title || "제목 없는 기록" }));
+}
+
+/**
+ * 04 고른 블록의 글을 기록 본문으로 바꾼다. 사용자가 기록을 직접 골랐으므로 제안을
+ * 만들고 바로 반영한다. 반영된 블록은 그 기록과 이어지고 잠긴다.
+ */
+export async function insertRecordAction(
+  _previous: { error?: string; done?: boolean },
+  formData: FormData,
+): Promise<{ error?: string; done?: boolean }> {
+  const portfolioId = formData.get("portfolioId");
+  const blockId = formData.get("blockId");
+  const recordId = formData.get("recordId");
+  if (typeof portfolioId !== "string" || typeof blockId !== "string" || typeof recordId !== "string" || !recordId) {
+    return { error: "가져올 기록을 골라 주세요." };
+  }
+  const session = await requireSession();
+  try {
+    const { data } = await portfolioEditing.edit(session.accessToken, portfolioId, blockId, { operation: "insert_record", recordId });
+    await portfolioEditing.apply(session.accessToken, data.id);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return { error: "그 기록이나 블록을 찾지 못했습니다." };
+    if (error instanceof ApiError && error.status === 409) return { error: "그 사이 블록이 바뀌었습니다. 다시 골라 주세요." };
+    return { error: "가져오지 못했습니다. 다시 시도해 주세요." };
+  }
+  revalidatePath(`/edit/${portfolioId}`);
+  return { done: true };
+}
+
+/** 04c 이력 — 고른 종류(AI · 직접)와 다음 장을 읽는다. */
+export async function revisionsAction(
+  portfolioId: string,
+  actor: PortfolioRevision["actor"] | null,
+  cursor: string | null,
+): Promise<{ revisions: PortfolioRevision[]; nextCursor: string | null }> {
+  const session = await requireSession();
+  const { data, page: info } = await portfolios.revisions(session.accessToken, portfolioId, {
+    limit: 20,
+    ...(actor ? { actor } : {}),
+    ...(cursor ? { cursor } : {}),
+  });
+  return { revisions: data.revisions, nextCursor: info.hasNextPage ? info.nextCursor : null };
 }
 
 /**

@@ -2,6 +2,7 @@ import type { z } from "zod";
 
 import type { RuntimeConfig } from "../../config/runtime-config.js";
 import type { AiCallOptions, AiCallSpec, AiClient, AiResult } from "./client.js";
+import { AnthropicAiClient } from "./anthropic.js";
 import { ClaudeCodeAiClient } from "./claude-code.js";
 import { CodexAiClient } from "./codex.js";
 import { FixtureAiClient, RecordingAiClient } from "./fixture.js";
@@ -17,10 +18,18 @@ export function createAiClient(config: RuntimeConfig): AiClient | null {
   const base = build(config, config.aiProvider ?? "off");
   if (!base) return null;
 
-  const forPage = config.aiPageGenerationProvider;
-  if (!forPage || forPage === config.aiProvider) return base;
-  const page = build(config, forPage);
-  return page ? new ContractRoutedAiClient(base, { page_generation: page }) : base;
+  // 계약 하나 때문에 전부를 옮기지 않는다 — 따로 정했고 기본과 다를 때만 길을 낸다.
+  const routes: Partial<Record<string, AiClient>> = {};
+  const overrides = {
+    page_generation: config.aiPageGenerationProvider,
+    search_interpret: config.aiSearchInterpretProvider,
+  };
+  for (const [contract, provider] of Object.entries(overrides)) {
+    if (!provider || provider === config.aiProvider) continue;
+    const routed = build(config, provider);
+    if (routed) routes[contract] = routed;
+  }
+  return Object.keys(routes).length > 0 ? new ContractRoutedAiClient(base, routes) : base;
 }
 
 /**
@@ -29,6 +38,10 @@ export function createAiClient(config: RuntimeConfig): AiClient | null {
  * 하나 때문에 전부를 바꾸지 않으려고 있다. 지면 생성만 **부분 출력이 필요하고**
  * 그걸 낼 수 있는 프로바이더는 값이 더 든다 — 163건을 도는 본문 읽기까지 같이
  * 옮기면 그 값을 쓸 이유가 없는 자리에까지 낸다.
+ *
+ * 검색 해석은 반대 이유로 갈린다 — **사람이 결과를 기다리는 자리다.** CLI
+ * 프로바이더는 새 질의마다 프로세스를 띄워 3.6초 넘게 쓰고, API 호출은 그
+ * 값이 없다. 그래서 이 계약만 API로 보낸다.
  */
 class ContractRoutedAiClient implements AiClient {
   readonly #base: AiClient;
@@ -89,6 +102,33 @@ function build(
     return config.aiRecord ? new RecordingAiClient(client, fixtureDir) : client;
   }
 
-  // `anthropic`은 API 어댑터 자리다. 아직 없다 — 운영에 올리기 전에 채운다.
+  // `anthropic` — 운영 경로. 서비스 키로 직접 API를 부른다(개인 CLI 로그인이
+  // 아니다). 키가 없으면 여기서 바로 죽는다 — 키 없이 도는 척하면 이 provider를
+  // 고른 이유(운영에 올리는 것) 자체가 조용히 무너진다.
+  if (provider === "anthropic") {
+    if (!config.anthropicApiKey) {
+      throw new Error(
+        "AI provider \"anthropic\" requires ANTHROPIC_API_KEY (console.anthropic.com에서 발급)",
+      );
+    }
+    const client = new AnthropicAiClient({
+      apiKey: config.anthropicApiKey,
+      models: {
+        // anthropic.ts는 tool_choice {type:"tool"}로 도구 호출을 강제한다.
+        // Claude Haiku 5.5는 이걸 받고(그때 thinking을 건너뛰어 빠르다),
+        // Claude Sonnet 5.5 · Opus 5.5는 400으로 거절한다. 그래서 sonnet·opus는
+        // 이전 세대에 둔다 — 올리려면 먼저 tool_choice auto나
+        // output_config.format으로 바꾼다.
+        haiku: config.anthropicModelHaiku ?? "claude-haiku-5-5",
+        sonnet: config.anthropicModelSonnet ?? "claude-sonnet-5",
+        opus: config.anthropicModelOpus ?? "claude-opus-4-5",
+      },
+      ...(config.aiModelOverrides ? { modelOverrides: config.aiModelOverrides } : {}),
+      ...(config.aiTimeoutMs ? { timeoutMs: config.aiTimeoutMs } : {}),
+    });
+    return config.aiRecord ? new RecordingAiClient(client, fixtureDir) : client;
+  }
+
+  provider satisfies never;
   throw new Error(`AI provider "${provider}" is not implemented yet`);
 }

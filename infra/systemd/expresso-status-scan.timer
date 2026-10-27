@@ -1,0 +1,11 @@
+[Unit]
+Description=Expresso 개발 현황 스캔 15분 간격
+
+[Timer]
+# 사실(PR · CI)은 매번 모으고, 기능 판정은 스캐너가 스스로 시간당 한 번까지로 줄인다.
+OnBootSec=5min
+OnUnitActiveSec=15min
+# 앞선 실행이 끝나지 않았으면 systemd 가 겹쳐 띄우지 않는다(oneshot). 스캐너도 잠금 파일로 한 번 더 막는다.
+
+[Install]
+WantedBy=timers.target

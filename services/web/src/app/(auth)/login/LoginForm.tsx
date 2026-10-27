@@ -107,7 +107,9 @@ export function LoginForm({
                 <label className={styles.fieldLabel} htmlFor="password">
                   비밀번호
                 </label>
-                <span className={styles.fieldAside}>잊으셨나요?</span>
+                <Link href="/login/forgot" className={styles.fieldAside}>
+                  잊으셨나요?
+                </Link>
               </div>
               <input
                 id="password"
@@ -160,6 +162,12 @@ export function LoginForm({
             계정이 없으신가요?{" "}
             <Link href="/signup" className={styles.footLink}>
               회원가입
+            </Link>
+          </div>
+          {/* 삭제를 요청한 계정은 로그인할 수 없다. 받은 취소 코드로 되돌리는 자리. */}
+          <div className={styles.foot}>
+            <Link href="/login/restore" className={styles.footLink}>
+              계정 삭제 취소
             </Link>
           </div>
         </div>

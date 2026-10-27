@@ -56,12 +56,10 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB publishing, media and ex
     await service.rollback(firstUser, firstPortfolio, first.id); await expect(service.getPublic(one)).resolves.toMatchObject({ kind: "portfolio" }); await service.unpublish(firstUser, firstPortfolio); await expect(service.getPublic(one)).rejects.toMatchObject({ statusCode: 404 });
   });
 
-  it("commits export outbox once and invalidates expired or replaced asset links", async () => {
-    const queued = await service.submitExport(firstUser, firstPortfolio, "mongo-export", { kind: "deck", pageFormat: null }); const repeated = await service.submitExport(firstUser, firstPortfolio, "mongo-export", { kind: "deck", pageFormat: null }); expect(repeated.id).toBe(queued.id);
-    expect(await mongoCollections(fixture.resource.db).outboxEvents.countDocuments({ topic: "portfolio.export", "payload.exportJobId": queued.id })).toBe(1);
-    await Promise.all([service.processExport(queued.id), service.processExport(queued.id)]); const done = await service.getExport(firstUser, queued.id); expect(done).toMatchObject({ status: "done", attempts: 1, assetId: expect.any(String) });
-    const link = await service.signAsset(firstUser, done.assetId!, 60, new Date("2026-08-09T00:00:00Z")); const url = new URL(link.url, "https://example.test"); await expect(service.resolveAsset(done.assetId!, Number(url.searchParams.get("version")), Number(url.searchParams.get("expires")), url.searchParams.get("signature")!, new Date("2026-08-09T00:01:01Z"))).rejects.toMatchObject({ statusCode: 403 });
-    const resume = await service.replaceResume(firstUser, firstPortfolio, "resume/one.pdf"); const old = new URL((await service.signAsset(firstUser, resume.id)).url, "https://example.test"); await service.replaceResume(firstUser, firstPortfolio, "resume/two.pdf"); await expect(service.resolveAsset(resume.id, Number(old.searchParams.get("version")), Number(old.searchParams.get("expires")), old.searchParams.get("signature")!)).rejects.toMatchObject({ statusCode: 404 });
+  it("invalidates expired or replaced asset links", async () => {
+    const resume = await service.replaceResume(firstUser, firstPortfolio, "resume/one.pdf");
+    const link = await service.signAsset(firstUser, resume.id, 60, new Date("2026-08-09T00:00:00Z")); const url = new URL(link.url, "https://example.test"); await expect(service.resolveAsset(resume.id, Number(url.searchParams.get("version")), Number(url.searchParams.get("expires")), url.searchParams.get("signature")!, new Date("2026-08-09T00:01:01Z"))).rejects.toMatchObject({ statusCode: 403 });
+    const old = new URL((await service.signAsset(firstUser, resume.id)).url, "https://example.test"); await service.replaceResume(firstUser, firstPortfolio, "resume/two.pdf"); await expect(service.resolveAsset(resume.id, Number(old.searchParams.get("version")), Number(old.searchParams.get("expires")), old.searchParams.get("signature")!)).rejects.toMatchObject({ statusCode: 404 });
   });
 
   it("deduplicates media by checksum, keeps unique widths and guards placement ownership", async () => {

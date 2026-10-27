@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { MongoClient, Decimal128, Binary } from "mongodb";
 import { migrateMongo } from "./mongo-migrate.js";
 import { mongoCollections } from "./collections.js";
+import { defaultCareerCategories } from "./career-category-templates.js";
 const mongoUrl = process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB_URL;
 describe.skipIf(!mongoUrl)("MongoDB schema", () => {
   const databaseName = `expresso_test_schema_${randomUUID().replaceAll("-", "")}`;
@@ -17,13 +18,14 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
 
   it("creates every product collection and preserves the seeded IDs and all 30 additional designs", async () => {
     const names = (await mongo.listCollections({}, { nameOnly: true }).toArray()).map(item => item.name);
-    expect(names).toHaveLength(85);
+    expect(names).toHaveLength(86);
+    expect(names).toContain("identity_tokens");
     expect(names).toContain("agent_conversations");
     expect(names).toContain("agent_credentials");
     expect(await collections.plans.countDocuments()).toBe(3);
     expect((await collections.plans.findOne({ code: "free" }))?._id).toBe("aa09f35f-bde6-4e18-b9cd-7b32759bf43b");
-    expect(await collections.careerCategories.countDocuments({ isSystem: true })).toBe(7);
-    expect(await collections.scheduledJobDefinitions.countDocuments()).toBe(8);
+    expect(await collections.careerCategories.countDocuments()).toBe(0);
+    expect(await collections.scheduledJobDefinitions.countDocuments()).toBe(9);
     expect(await collections.templates.countDocuments()).toBe(33);
     for (let i = 1; i <= 30; i++) {
       expect(await collections.templates.findOne({ _id: `d3510000-0000-4000-8000-${String(i).padStart(12, "0")}` })).not.toBeNull();
@@ -34,7 +36,7 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
     await collections.plans.updateOne({ code: "free" }, { $set: { generationQuota: 17 } });
     const result = await migrateMongo({ databaseUrl: mongoUrl!, databaseName });
     expect(result.applied).toEqual([]);
-    expect(result.existing).toEqual(["0001_initial_collections", "0002_generation_ledger_amount_constraint", "0003_analytics_rate_and_notification_preferences", "0004_job_import_metadata", "0005_job_source_ats_providers", "0006_career_record_editor", "0007_job_source_boards", "0008_career_view_configurations", "0009_agent_conversations", "0010_agent_credentials", "0011_preparation_plans", "0012_identity_session_sliding_expiry", "0021_generation_waiting_recipe"]);
+    expect(result.existing).toEqual(["0001_initial_collections", "0002_generation_ledger_amount_constraint", "0003_analytics_rate_and_notification_preferences", "0004_job_import_metadata", "0005_job_source_ats_providers", "0006_career_record_editor", "0007_job_source_boards", "0008_career_view_configurations", "0009_agent_conversations", "0010_agent_credentials", "0011_preparation_plans", "0012_identity_session_sliding_expiry", "0013_identity_email_and_terms", "0017_career_category_ownership", "0020_notification_producers", "0021_generation_waiting_recipe"]);
     expect((await collections.plans.findOne({ code: "free" }))?.generationQuota).toBe(17);
   });
 
@@ -63,14 +65,14 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
     await insert("Case"); await insert("case");
   });
 
-  it("enforces system category uniqueness independently of user category keys", async () => {
-    const category = await collections.careerCategories.findOne({ key: "experience", isSystem: true });
-    expect(category).not.toBeNull();
-    await expect(collections.careerCategories.insertOne({ ...category!, _id: randomUUID() })).rejects.toMatchObject({ code: 11000 });
+  it("keeps career categories owned by one user with unique keys per user", async () => {
     const userId = randomUUID();
-    await collections.careerCategories.insertOne({ ...category!, _id: randomUUID(), isSystem: false, userId });
-    await collections.careerCategories.insertOne({ ...category!, _id: randomUUID(), isSystem: false, userId: randomUUID() });
-    await expect(collections.careerCategories.insertOne({ ...category!, _id: randomUUID(), isSystem: false, userId })).rejects.toMatchObject({ code: 11000 });
+    const [experience] = defaultCareerCategories(userId, new Date());
+    await collections.careerCategories.insertOne(experience!);
+    await collections.careerCategories.insertOne(defaultCareerCategories(randomUUID(), new Date())[0]!);
+    await expect(collections.careerCategories.insertOne({ ...experience!, _id: randomUUID() })).rejects.toMatchObject({ code: 11000 });
+    await expect(mongo.collection("career_categories").insertOne({ ...experience!, _id: randomUUID() as never, userId: null, key: "shared" })).rejects.toMatchObject({ code: 121 });
+    await expect(mongo.collection("career_categories").insertOne({ ...experience!, _id: randomUUID() as never, userId: randomUUID(), propertySchemaV2: undefined })).rejects.toMatchObject({ code: 121 });
   });
 
   it("round trips BSON Date and Decimal128 while retaining date-only strings", async () => {
@@ -79,12 +81,13 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
     const loaded = await collections.metricsDaily.findOne({ _id: metric._id });
     expect(loaded?.date).toBe("2026-08-29");
     expect(loaded?.value.toString()).toBe("0.123456");
-    const category = await collections.careerCategories.findOne({ key: "experience", isSystem: true });
-    expect(category?.updatedAt).toBeInstanceOf(Date);
+    const [category] = defaultCareerCategories(randomUUID(), new Date());
+    await collections.careerCategories.insertOne(category!);
+    expect((await collections.careerCategories.findOne({ _id: category!._id }))?.updatedAt).toBeInstanceOf(Date);
   });
 
   it("validates arbitrary record properties and only reserves ranks for selected sources", async () => {
-    const record = { _id: randomUUID(), userId: randomUUID(), categoryId: "475106fc-bf88-4a73-9c27-66c648733936", title: "Work", status: "draft" as const, origin: "manual" as const, properties: { organization: "Team", metrics: ["25%"], years: 2 }, bodyMd: "# Work", version: 1, updatedAt: new Date() };
+    const record = { _id: randomUUID(), userId: randomUUID(), categoryId: randomUUID(), title: "Work", status: "draft" as const, origin: "manual" as const, properties: { organization: { type: "text" as const, value: "Team" }, years: { type: "number" as const, value: 2 } }, bodyMd: "# Work", version: 1, updatedAt: new Date() };
     await collections.careerRecords.insertOne(record);
     await expect(mongo.collection("career_records").updateOne({ _id: record._id as never }, { $set: { properties: [] } })).rejects.toMatchObject({ code: 121 });
     await expect(collections.careerRecords.updateOne({ _id: record._id }, { $set: { version: 0 } })).rejects.toMatchObject({ code: 121 });
@@ -112,12 +115,6 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
     expect(await indexes("career_ai_proposals")).toContainEqual({ key: { expiresAt: 1 }, unique: undefined, expireAfterSeconds: 0 });
     const update = { _id: randomUUID(), recordId: randomUUID(), userId: randomUUID(), clientId: "test", clientSequence: 1, serverSequence: 1, update: new Binary(Buffer.alloc(0)), byteLength: 1_048_577, updateHash: "a".repeat(64), actor: "user" as const, receivedAt: new Date(), compactedAt: null };
     await expect(collections.careerDocumentUpdates.insertOne(update)).rejects.toMatchObject({ code: 121 });
-    const category = await collections.careerCategories.findOne({ key: "experience", isSystem: true });
-    expect(category).not.toBeNull();
-    const ids = Object.fromEntries(Object.entries(category!.propertySchema).map(([key, value]) => [key, value.id]));
-    expect(Object.values(ids).every((value) => typeof value === "string")).toBe(true);
-    await migrateMongo({ databaseUrl: mongoUrl!, databaseName });
-    const rerunCategory = await collections.careerCategories.findOne({ _id: category!._id });
-    expect(Object.fromEntries(Object.entries(rerunCategory!.propertySchema).map(([key, value]) => [key, value.id]))).toEqual(ids);
+    expect((await migrateMongo({ databaseUrl: mongoUrl!, databaseName })).applied).toEqual([]);
   });
 });

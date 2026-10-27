@@ -53,9 +53,14 @@ pnpm test
 ```
 
 - **테스트는 `dist`를 봅니다.** `@expresso/contracts`와 `@expresso/database`를
-  먼저 지어야 vitest가 찾습니다. 각 패키지의 `test` 스크립트가 그 둘을 먼저
-  짓게 되어 있고, CI와 `scripts/operations/deploy.sh`도 같은 순서입니다. 순서가
-  갈리면 한쪽에서만 깨집니다.
+  먼저 지어야 vitest가 찾습니다. 각 패키지의 `test` 스크립트가 자기가 쓰는
+  워크스페이스 패키지를 먼저 짓게 되어 있고(`pnpm --filter "<자기>^..." build`),
+  CI와 `scripts/operations/deploy.sh`도 같은 순서입니다. 순서가 갈리면 한쪽에서만
+  깨집니다. 예전 dist가 남아 있으면 타입 검사는 `src`를 봐서 통과하고 테스트만
+  깨집니다.
+- **루트 `pnpm test`는 패키지를 하나씩 돌립니다**(`--workspace-concurrency=1`).
+  각 스크립트가 테스트 전에 dist를 다시 쓰므로, 동시에 돌리면 한 패키지가
+  vitest로 dist를 읽는 동안 다른 패키지가 같은 파일을 다시 씁니다.
 - 백엔드를 고쳤으면 실제 인프라까지 씁니다 — `pnpm test:infra`. 루트 스크립트가
   `TEST_MONGODB_URL`과 `TEST_REDIS_URL`을 `infra:up`이 띄운 포트로 넘깁니다.
 - CI가 도는 순서는 `.github/workflows/backend-ci.yml` · `web-ci.yml`에 있습니다 —

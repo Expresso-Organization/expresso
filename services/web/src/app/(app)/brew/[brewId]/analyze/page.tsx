@@ -96,7 +96,7 @@ export default async function AnalyzePage({
   const quoted = requirements.filter((one) => one.sourceSpan.quote.trim() !== one.label.trim());
 
   return (
-    <BrewFrame brewId={brewId} step="analyze" situation="예상 3분">
+    <BrewFrame brewId={brewId} step="analyze" situation={`요건 ${requirements.length}개 · 빈 곳 ${open.length}개`}>
       <div className={styles.body}>
         <div className={styles.left}>
           <div className={styles.head}>

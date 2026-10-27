@@ -57,6 +57,7 @@ export default async function CounterPage({
           actionLabel="질문 만들기"
           rejectedNote="물어볼 자리가 모자랍니다. 공고를 분석하면 요건이 자리가 되고, 수치가 빠진 기록도 자리가 됩니다."
           brewId={brewId}
+          basisJobId={brew.latestJob?.jobId ?? null}
         />
       </BrewFrame>
     );

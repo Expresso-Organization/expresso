@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 
 import { encodeDocumentAsYUpdate } from "@expresso/editor";
-import { mongoCollections } from "@expresso/database";
+import { defaultCareerCategories, mongoCollections } from "@expresso/database";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { createMongoFixture } from "../../../test/support/mongodb.js";
@@ -20,7 +20,8 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
       service = new CareerDocumentService(fixture.resource, "integration-signing-secret");
       userId = randomUUID();
       recordId = randomUUID();
-      const category = await mongoCollections(fixture.resource.db).careerCategories.findOne({ isSystem: true });
+      const [category] = defaultCareerCategories(userId, new Date());
+      await mongoCollections(fixture.resource.db).careerCategories.insertOne(category!);
       await mongoCollections(fixture.resource.db).careerRecords.insertOne({
         _id: recordId, userId, categoryId: category!._id, title: "원본", status: "draft",
         origin: "manual", properties: {}, bodyMd: "# 원본\n\n본문", version: 1,

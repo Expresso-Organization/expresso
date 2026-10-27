@@ -501,6 +501,17 @@ export const RegeneratePageSchema = z.strictObject({
 export type RegeneratePage = z.infer<typeof RegeneratePageSchema>;
 
 /**
+ * 이전 판으로 되돌리기. 판은 고치지 않고 쌓으므로, 고른 판의 내용을 새 판으로 다시
+ * 쌓는다. `expectedRevision`은 지금 보고 있는 최신 판 — 그 사이 다른 편집이 먼저
+ * 쌓였으면 409로 되묻는다.
+ */
+export const RestorePageRevisionSchema = z.strictObject({
+  revision: z.number().int().nonnegative(),
+  expectedRevision: z.number().int().nonnegative(),
+});
+export type RestorePageRevision = z.infer<typeof RestorePageRevisionSchema>;
+
+/**
  * 지면을 감싸는 껍데기.
  *
  * **배포되는 문서와 앱 안의 미리보기가 같은 함수를 쓴다.** 미리보기가 실제와

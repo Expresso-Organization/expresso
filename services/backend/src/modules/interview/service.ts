@@ -1,12 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { InterviewQuestionBasisSchema, InterviewSessionSchema, type InterviewQuestionBasis, type SaveInterviewAnswer } from "@expresso/contracts";
-import { mongoCollections, type CareerRecordDoc, type QuestionDoc } from "@expresso/database";
+import { mongoCollections, type QuestionDoc } from "@expresso/database";
 import type { ClientSession } from "mongodb";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction } from "../../platform/mongo-transaction.js";
 import { requireActiveUser } from "../identity/index.js";
 import type { ConsentApi } from "../consent/index.js";
-import { cleanupChangedFields, cleanupProperties, type RecordCleaner } from "../career/record-cleaner.js";
+import { careerRecordTextReader, cleanupChangedFields, multiSelectValueByNames, type RecordCleaner } from "../career/index.js";
 import { generateQuestionDrafts, hasMetric, questionTextForBasis } from "./questions.js";
 import { countMentions, type QuestionBasisOption, type QuestionContext, type QuestionWriter } from "./question-writer.js";
 import type { InterviewApi } from "./index.js";
@@ -31,12 +31,16 @@ export class InterviewService implements InterviewApi {
     await inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId);
       const collections = mongoCollections(tx.db); const options = { session: tx.session }; const now = new Date();
+      const current = await collections.careerRecords.findOne({ _id: record._id, userId, origin: "interview", deletedAt: null, status: { $ne: "verified" }, version: expectedRecordVersion }, options);
+      if (!current) return;
+      // 역량만 속성에 쓴다. 다른 속성은 사용자가 넣은 값이라 건드리지 않는다.
+      const competencies = cleaned.competencies.length ? await multiSelectValueByNames(tx, userId, current.categoryId, "competencies", cleaned.competencies) : null;
       const updated = await collections.careerRecords.updateOne(
-        { _id: record._id, userId, origin: "interview", deletedAt: null, status: { $ne: "verified" }, version: expectedRecordVersion },
-        { $set: { title: cleaned.title, properties: cleanupProperties(cleaned) as CareerRecordDoc["properties"], status: "organized", updatedAt: now }, $inc: { version: 1, referenceVersion: 1 } }, options,
+        { _id: record._id, userId, version: expectedRecordVersion },
+        { $set: { title: cleaned.title, status: "organized", updatedAt: now, ...(competencies ? { "properties.competencies": competencies } : {}) }, $inc: { version: 1, referenceVersion: 1 } }, options,
       );
       if (!updated.matchedCount) return;
-      await collections.answerRecordChanges.updateOne({ userId, answerId, recordId: record._id }, { $set: { changedFields: cleanupChangedFields(cleaned), createdAt: now } }, options);
+      await collections.answerRecordChanges.updateOne({ userId, answerId, recordId: record._id }, { $set: { changedFields: cleanupChangedFields(competencies !== null), createdAt: now } }, options);
     });
   }
 
@@ -53,6 +57,7 @@ export class InterviewService implements InterviewApi {
     const records = await db.careerRecords.find({ userId, _id: { $in: sources.map(({ recordId }) => recordId) }, deletedAt: null }, options).toArray();
     const recordsById = new Map(records.map((record) => [record._id, record]));
     const orderedRecords = sources.flatMap(({ recordId }) => recordsById.get(recordId) ? [recordsById.get(recordId)!] : []);
+    const recordText = await careerRecordTextReader(this.context.db, userId, session);
     const posting = analysis.jobPostingId ? await db.jobPostings.findOne({ _id: analysis.jobPostingId }, options) : null;
     const company = posting ? await db.companies.findOne({ _id: posting.companyId }, options) : null;
     const requirementRows = requirements.flatMap((requirement) => {
@@ -64,24 +69,24 @@ export class InterviewService implements InterviewApi {
     const context: QuestionContext = {
       options: [
         ...requirementRows.filter(({ coverage }) => coverage !== "covered").map((row) => ({ basis: { type: "requirement" as const, requirementId: row._id, coverage: row.coverage as "missing" | "partial", evidence: row.quote }, label: `[공고 요건 · ${row.coverage === "missing" ? "안 채움" : "일부만"}] ${row.label}`, detail: row.quote, mentions: posting ? countMentions(row.label, posting.descriptionRaw) : null })),
-        ...orderedRecords.filter((record) => !hasMetric(`${record.title} ${record.bodyMd} ${JSON.stringify(record.properties)}`)).map((record) => ({ basis: { type: "record_gap" as const, recordId: record._id, gap: "metric" as const, evidence: record.title }, label: `[기록 · 수치 없음] ${record.title}`, detail: record.bodyMd, mentions: null })),
+        ...orderedRecords.filter((record) => !hasMetric(recordText(record))).map((record) => ({ basis: { type: "record_gap" as const, recordId: record._id, gap: "metric" as const, evidence: record.title }, label: `[기록 · 수치 없음] ${record.title}`, detail: record.bodyMd, mentions: null })),
       ],
       company: company ? { name: company.name, industry: company.industry ?? null, toneSummary: company.toneSummary ?? null } : null,
       jobTitle: posting?.title ?? null,
       materials: orderedRecords.map(({ title }) => title),
     };
-    return { context, requirements: requirementRows, records: orderedRecords };
+    return { context, requirements: requirementRows, records: orderedRecords, recordText };
   }
 
   async #planQuestions(userId: string, brewId: string): Promise<PlannedQuestion[]> {
-    const { context, requirements, records } = await this.#questionOptions(userId, brewId);
+    const { context, requirements, records, recordText } = await this.#questionOptions(userId, brewId);
     if (context.options.length < 3) throw new InterviewError(409, "at least three grounded question bases are required");
     if (this.writer) {
       await this.consent?.require(userId, "question_draft");
       const drafted = await this.writer.draft(context);
       return drafted.map((question) => { const option = context.options[question.optionIndex]!; return { text: question.text, basis: option.basis, requirementId: option.basis.type === "requirement" ? option.basis.requirementId : null, variant: 0, rationale: question.rationale }; });
     }
-    return generateQuestionDrafts(requirements.map((row) => ({ id: row._id, label: row.label, coverage: row.coverage, evidence: row.quote })), records.map((record) => ({ id: record._id, title: record.title, text: `${record.title}\n${record.bodyMd}\n${JSON.stringify(record.properties)}` }))).map((draft) => ({ ...draft, rationale: null }));
+    return generateQuestionDrafts(requirements.map((row) => ({ id: row._id, label: row.label, coverage: row.coverage, evidence: row.quote })), records.map((record) => ({ id: record._id, title: record.title, text: recordText(record) }))).map((draft) => ({ ...draft, rationale: null }));
   }
 
   async start(userId: string, brewId: string, idempotencyKey: string) {

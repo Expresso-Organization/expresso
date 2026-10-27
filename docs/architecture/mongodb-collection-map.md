@@ -124,7 +124,7 @@ erDiagram
 - 날짜만 나타내는 값은 `YYYY-MM-DD` 문자열로 유지합니다. 시점은 BSON Date로 저장하고 기존 ISO 응답으로 직렬화합니다. MySQL 마이크로초가 있는 보존 필드는 원본 문자열도 보관해 밀리초 변환에 따른 손실을 검증 보고서에서 구분합니다.
 - 기존 DECIMAL 값은 Decimal128로 저장합니다. API에서 숫자로 반환하던 필드는 범위를 확인한 뒤 기존 숫자 형식으로 변환합니다. 차감 횟수는 정수입니다. 근거 없이 소수 정밀도를 낮추지 않습니다.
 - `null`, 필드 미존재, 빈 문자열, 빈 배열을 구분합니다. 원문·프로퍼티 JSON은 내용을 임의로 정규화하지 않습니다. 검색용 파생 값은 별도 필드에 저장합니다.
-- 시스템 카테고리는 이번 작업에서 기존 7개 정의와 불변 정책을 유지합니다. 사용자별 수정 가능한 시작 템플릿은 후속 편집기 작업입니다.
+- 카테고리는 모두 한 사용자의 것입니다. 가입하면 `packages/database/src/career-category-templates.ts`의 기본 7종이 그 사용자 카테고리로 복사되고, 사용자는 기본 카테고리의 속성도 고칠 수 있습니다. 템플릿을 바꿔도 이미 만든 카테고리는 바뀌지 않습니다. 공용 카테고리를 쓰던 기존 데이터는 `0017`이 사용자별로 옮겼습니다.
 
 ## 운영용 컬렉션
 
@@ -149,7 +149,7 @@ erDiagram
 | `identity_oauth_accounts` | `(provider, providerAccountId)`, `(userId, provider)` unique입니다. |
 | `identity_sessions` | tokenHash unique와 `(userId, expiresAt)`입니다. TTL은 정리용이며 인증은 expiresAt·revokedAt을 직접 검사합니다. |
 | `career_records` | `(userId, deletedAt, categoryId, updatedAt, _id)`와 실제 목록 정렬별 인덱스입니다. 공개 version과 참조 경쟁용 referenceVersion을 구분합니다. |
-| `career_categories` · `career_views` | 시스템 key와 뷰의 `(userId, categoryId, name)` 고유성을 유지합니다. 사용자가 정의한 key의 고유 범위를 새로 강화하지 않습니다. |
+| `career_categories` · `career_views` | 카테고리 key는 `(userId, key)`로 사용자마다 고유합니다. 뷰는 `(userId, categoryId, name)` 고유성을 유지합니다. |
 | `record_links` · `record_usages` | `(userId, fromRecordId, toRecordId, relation)`, `(userId, recordId, blockId)` unique입니다. 역방향 조회 인덱스도 둡니다. |
 | `job_sources` · `job_postings` | `(provider, token)`, 값이 있는 `(source, externalId)`의 고유성을 유지합니다. 원문 검색과 facets는 같은 조건식을 사용합니다. |
 | `match_scores` · `requirement_coverages` | 사용자·공고 또는 사용자·요구사항별 unique입니다. |

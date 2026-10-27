@@ -3,29 +3,20 @@ import {
   ApiErrorResponseSchema,
   CareerRecordListResponseSchema,
 } from "@expresso/contracts";
-import type { SqlTag } from "../../platform/legacy-mysql.js";
-import { createMysqlResource } from "../../platform/legacy-mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
 import type { RuntimeConfig } from "../../config/runtime-config.js";
-import { IdentityService } from "../identity/legacy-mysql-service.js";
-import { CareerService } from "./legacy-mysql-service.js";
-
 import { MongoCareerService } from "./service.js";
 import { MongoIdentityService, type IdentityApi } from "../identity/index.js";
 import { mongoCollections } from "@expresso/database";
 import { createMongoFixture } from "../../../test/support/mongodb.js";
-
-const databaseUrl = process.env.TEST_DATABASE_URL;
-const describeWithDatabase = databaseUrl ? describe : describe.skip;
 
 const config: RuntimeConfig = {
   nodeEnv: "test",
   host: "127.0.0.1",
   port: 4_000,
   logLevel: "silent",
-  databaseUrl: databaseUrl ?? "mysql://127.0.0.1:1/unused",
   redisUrl: "redis://127.0.0.1:1",
   outboxPollIntervalMs: 1_000,
   outboxBatchSize: 25,
@@ -33,19 +24,8 @@ const config: RuntimeConfig = {
   queuePrefix: "expresso-career-list-test",
 };
 
-interface IdRow {
-  id: string;
-}
-
-interface CategoryKeyRow {
-  id: string;
-  key: string;
-}
-
-for (const engine of ["mysql", "mongodb"] as const) {
-describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_URL)(`career record list HTTP integration (${engine})`, () => {
-  let sql: SqlTag;
-  let fixture: Awaited<ReturnType<typeof createMongoFixture>> | undefined;
+describe.skipIf(!process.env.TEST_MONGODB_URL)("career record list HTTP integration", () => {
+  let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
   let identityService: IdentityApi;
   let app: ReturnType<typeof buildApi>;
 
@@ -56,81 +36,29 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
   let projectId: string;
 
   beforeAll(async () => {
-    if (engine === "mongodb") {
-      fixture = await createMongoFixture("career-list");
-      identityService = new MongoIdentityService(fixture.resource);
-      const career = new MongoCareerService(fixture.resource);
-      app = buildApi({ config, identityService, careerService: career });
-      userId = (await identityService.signup({ email: `list-${randomUUID()}@example.com`, displayName: "목록", password: "correct-horse-battery" })).user.id;
-      otherUserId = (await identityService.signup({ email: `list-${randomUUID()}@example.com`, displayName: "다른 사용자", password: "correct-horse-battery" })).user.id;
-      const categories = await career.listCategories(userId);
-      experienceId = categories.find((category) => category.key === "experience")!.id;
-      projectId = categories.find((category) => category.key === "project")!.id;
-      const db = mongoCollections(fixture.resource.db);
-      const pipelineId = randomUUID();
-      const monitoringId = randomUUID();
-      await db.careerRecords.insertMany([
-        { _id: pipelineId, userId, categoryId: experienceId, title: "적재 파이프라인 구축", status: "organized", origin: "manual", properties: { role: "백엔드" }, bodyMd: "3천만 건을 매일 적재했습니다.", periodStart: "2024-01-01", periodEnd: "2024-12-31", updatedAt: new Date("2026-03-01T00:00:00Z"), version: 1 },
-        { _id: randomUUID(), userId, categoryId: experienceId, title: "정산 스케줄러 안정화", status: "draft", origin: "interview", properties: {}, bodyMd: "", periodStart: "2023-01-01", periodEnd: "2023-06-30", updatedAt: new Date("2026-03-01T00:00:00Z"), version: 1 },
-        { _id: randomUUID(), userId, categoryId: experienceId, title: "장애 대응 3일", status: "organized", origin: "ai", properties: {}, bodyMd: "로그 없이 원인을 좁혔습니다.", updatedAt: new Date("2026-04-01T00:00:00Z"), version: 1 },
-        { _id: monitoringId, userId, categoryId: projectId, title: "데이터 품질 모니터링", status: "verified", origin: "manual", properties: {}, bodyMd: "자동화했습니다.", periodStart: "2025-01-01", periodEnd: "2025-08-31", updatedAt: new Date("2026-05-01T00:00:00Z"), version: 1 },
-        { _id: randomUUID(), userId: otherUserId, categoryId: experienceId, title: "남의 기록", status: "organized", origin: "manual", properties: {}, bodyMd: "보이면 안 됩니다.", updatedAt: new Date("2026-06-01T00:00:00Z"), version: 1 },
-      ]);
-      await career.createLink(userId, pipelineId, monitoringId, "related");
-    } else {
-      sql = createMysqlResource(databaseUrl!).sql;
-      identityService = new IdentityService(sql);
-      app = buildApi({ config, identityService, careerService: new CareerService(sql) });
-    const plans = await sql<IdRow[]>`select id from plan where code = 'free'`;
-    const planId = plans[0]?.id;
-    if (!planId) throw new Error("test plan was not available");
-
-    const users: IdRow[] = [{ id: randomUUID() }, { id: randomUUID() }];
-    await sql`
-      insert into \`user\` (id, email, display_name, plan_id)
-      values
-        (${users[0]!.id}, ${`career-list-${crypto.randomUUID()}@example.com`}, '목록 사용자', ${planId}),
-        (${users[1]!.id}, ${`career-other-${crypto.randomUUID()}@example.com`}, '다른 사용자', ${planId})
-    `;
-    const [owner, other] = users;
-    if (!owner || !other) throw new Error("test users were not persisted");
-    userId = owner.id;
-    otherUserId = other.id;
-
-    const categories = await sql<CategoryKeyRow[]>`
-      select id, \`key\` from category
-      where user_id is null and \`key\` in ('experience', 'project')
-    `;
-    experienceId = categories.find((row) => row.key === "experience")!.id;
-    projectId = categories.find((row) => row.key === "project")!.id;
-
-    // 정렬·페이지네이션 경계를 보려면 updated_at이 동률인 행이 필요하다.
-    const sharedUpdatedAt = "2026-03-01T00:00:00Z";
-    await sql`
-      insert into record (user_id, category_id, title, status, origin, properties, body_md, period_start, period_end, updated_at)
-      values
-        (${userId}, ${experienceId}, '적재 파이프라인 구축', 'organized', 'manual', '{"role":"백엔드"}', '3천만 건을 매일 적재했습니다.', '2024-01-01', '2024-12-31', ${sharedUpdatedAt}),
-        (${userId}, ${experienceId}, '정산 스케줄러 안정화', 'draft', 'interview', '{}', '', '2023-01-01', '2023-06-30', ${sharedUpdatedAt}),
-        (${userId}, ${experienceId}, '장애 대응 3일', 'organized', 'ai', '{}', '로그 없이 원인을 좁혔습니다.', null, null, '2026-04-01 00:00:00'),
-        (${userId}, ${projectId}, '데이터 품질 모니터링', 'verified', 'manual', '{}', '자동화했습니다.', '2025-01-01', '2025-08-31', '2026-05-01 00:00:00'),
-        (${otherUserId}, ${experienceId}, '남의 기록', 'organized', 'manual', '{}', '보이면 안 됩니다.', null, null, '2026-06-01 00:00:00')
-    `;
-
-    const owned = await sql<{ id: string; title: string }[]>`
-      select id, title from record where user_id = ${userId}
-    `;
-    experienceId = experienceId;
-    projectId = projectId;
-    const pipeline = owned.find((row) => row.title === "적재 파이프라인 구축");
-    const monitoring = owned.find((row) => row.title === "데이터 품질 모니터링");
-    if (!pipeline || !monitoring) throw new Error("test records were not persisted");
-
-    await sql`
-      insert into record_link (user_id, from_record_id, to_record_id, relation, created_by)
-      values (${userId}, ${pipeline.id}, ${monitoring.id}, 'related', 'user')
-    `;
-
-    }
+    fixture = await createMongoFixture("career-list");
+    identityService = new MongoIdentityService(fixture.resource);
+    const career = new MongoCareerService(fixture.resource);
+    app = buildApi({ config, identityService, careerService: career });
+    userId = (await identityService.signup({ email: `list-${randomUUID()}@example.com`, displayName: "목록", password: "correct-horse-battery" })).user.id;
+    otherUserId = (await identityService.signup({ email: `list-${randomUUID()}@example.com`, displayName: "다른 사용자", password: "correct-horse-battery" })).user.id;
+    const categories = await career.listCategories(userId);
+    experienceId = categories.find((category) => category.key === "experience")!.id;
+    projectId = categories.find((category) => category.key === "project")!.id;
+    // 카테고리는 사용자마다 따로 있다. 다른 사용자의 기록은 그 사용자의 경험 카테고리에 둔다.
+    const otherExperienceId = (await career.listCategories(otherUserId)).find((category) => category.key === "experience")!.id;
+    const db = mongoCollections(fixture.resource.db);
+    const pipelineId = randomUUID();
+    const monitoringId = randomUUID();
+    // 정렬·페이지네이션 경계를 보려면 updatedAt이 동률인 행이 필요하다.
+    await db.careerRecords.insertMany([
+      { _id: pipelineId, userId, categoryId: experienceId, title: "적재 파이프라인 구축", status: "organized", origin: "manual", properties: { period: { type: "date", value: { start: "2024-01-01", end: "2024-12-31", timezone: null } } }, bodyMd: "3천만 건을 매일 적재했습니다.", periodStart: "2024-01-01", periodEnd: "2024-12-31", updatedAt: new Date("2026-03-01T00:00:00Z"), version: 1 },
+      { _id: randomUUID(), userId, categoryId: experienceId, title: "정산 스케줄러 안정화", status: "draft", origin: "interview", properties: {}, bodyMd: "", periodStart: "2023-01-01", periodEnd: "2023-06-30", updatedAt: new Date("2026-03-01T00:00:00Z"), version: 1 },
+      { _id: randomUUID(), userId, categoryId: experienceId, title: "장애 대응 3일", status: "organized", origin: "ai", properties: {}, bodyMd: "로그 없이 원인을 좁혔습니다.", updatedAt: new Date("2026-04-01T00:00:00Z"), version: 1 },
+      { _id: monitoringId, userId, categoryId: projectId, title: "데이터 품질 모니터링", status: "verified", origin: "manual", properties: {}, bodyMd: "자동화했습니다.", periodStart: "2025-01-01", periodEnd: "2025-08-31", updatedAt: new Date("2026-05-01T00:00:00Z"), version: 1 },
+      { _id: randomUUID(), userId: otherUserId, categoryId: otherExperienceId, title: "남의 기록", status: "organized", origin: "manual", properties: {}, bodyMd: "보이면 안 됩니다.", updatedAt: new Date("2026-06-01T00:00:00Z"), version: 1 },
+    ]);
+    await career.createLink(userId, pipelineId, monitoringId, "related");
 
     const session = await identityService.issueSession({ userId });
     authorization = `Bearer ${session.accessToken}`;
@@ -139,8 +67,7 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
 
   afterAll(async () => {
     await app?.close();
-    if (fixture) await fixture.dispose();
-    else if (sql) { await sql`delete from \`user\` where id in (${userId}, ${otherUserId})`; await sql.end({ timeout: 5 }); }
+    await fixture?.dispose();
   });
 
   async function list(query: string) {
@@ -284,5 +211,3 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
     expect((await list("?limit=0")).statusCode).toBe(400);
   });
 });
-
-}

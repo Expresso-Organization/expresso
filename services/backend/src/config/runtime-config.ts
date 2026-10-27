@@ -20,8 +20,6 @@ const runtimeConfigSchema = z.object({
   ANALYTICS_VISITOR_SALT: z.string().min(16).default("expresso-local-analytics-salt"),
   REQUEST_TIMEOUT_MS: z.coerce.number().int().min(1_000).max(120_000).default(30_000),
   CAREER_SOCKET_ALLOWED_ORIGIN: z.url().default("http://127.0.0.1:3000"),
-  /** 출시 후보 검증 전까지 새 문서·실시간 API를 닫아 기존 career API를 보존한다. */
-  CAREER_EDITOR_V2_ENABLED: z.stringbool().default(false),
   /** E2E 전용. 운영에서 fixture 제안을 노출하지 않는다. */
   CAREER_AI_DETERMINISTIC_TEST: z.stringbool().default(false),
   /** 격리 E2E와 복구 점검에서 외부 수집 예약을 만들지 않는다. 운영 기본값은 true다. */
@@ -67,6 +65,29 @@ const runtimeConfigSchema = z.object({
   AI_PROVIDER_PAGE_GENERATION: z
     .enum(["claude-code", "codex", "fixture", "anthropic"])
     .optional(),
+  /**
+   * 검색 해석만 다른 프로바이더로.
+   *
+   * **사람이 결과를 기다리는 자리다.** CLI 프로바이더는 새 질의마다 프로세스를
+   * 하나 띄우고, 그 값만 3.6초가 넘는다. API 호출은 그 비용이 없다 — 그래서
+   * 나머지 계약은 `AI_PROVIDER`에 두고 **이 계약 하나만** API로 뺀다.
+   *
+   * 비우면 `AI_PROVIDER`를 그대로 쓴다.
+   */
+  AI_PROVIDER_SEARCH_INTERPRET: z
+    .enum(["claude-code", "codex", "fixture", "anthropic"])
+    .optional(),
+  /**
+   * `anthropic` 프로바이더를 쓸 때만 필요하다 — 개인 CLI 로그인이 아니라 서비스
+   * 키로 API를 직접 부르는 경로다. 없으면 그 provider를 고른 순간 바로 죽는다
+   * (키 없이 도는 척하지 않는다). `.env.example`의 빈 자리(`ANTHROPIC_API_KEY=`)는
+   * 없는 것으로 본다 — 빈 칸 하나로 서버가 뜨지 못하면 안 된다.
+   */
+  ANTHROPIC_API_KEY: z.string().optional(),
+  /** 티어(haiku·sonnet·opus)가 실제로 가리키는 Anthropic 모델 ID. 계정에 열린 모델에 맞춰 바꾼다. */
+  ANTHROPIC_MODEL_HAIKU: z.string().min(1).optional(),
+  ANTHROPIC_MODEL_SONNET: z.string().min(1).optional(),
+  ANTHROPIC_MODEL_OPUS: z.string().min(1).optional(),
   PAGE_GENERATION_FORMAT: z.enum(["json-render", "html"]).default("json-render"),
   /**
    * 고용24(워크넷) 공공 API 인증키. 공공데이터포털에서 발급받는다.
@@ -75,6 +96,17 @@ const runtimeConfigSchema = z.object({
    * 0건을 모으고 성공했다고 적는다.
    */
   WORK24_API_KEY: z.string().min(1).optional(),
+  /**
+   * 메일 공급자. 기본은 `off` — 보내지 않고 수신자 · 제목 · 본문을 로그로 남긴다.
+   * 개발과 CI는 이걸로 돈다. `resend`는 `RESEND_API_KEY`가 있어야 뜬다.
+   */
+  MAIL_PROVIDER: z.enum(["off", "resend"]).default("off"),
+  RESEND_API_KEY: z.string().min(1).optional(),
+  /** 발신자. Resend의 `from` 형식 — `이름 <주소>`. 도메인은 Resend에서 인증된 것이어야 한다. */
+  MAIL_FROM: z.string().min(3).default("Expresso <noreply@expresso.kr>"),
+  MAIL_TIMEOUT_MS: z.coerce.number().int().positive().default(10_000),
+  /** 메일 안의 링크가 가리키는 웹 주소. 앞단이 nginx라 요청 헤더에서 추측하지 않는다. */
+  APP_BASE_URL: z.url().default("http://localhost:3000"),
   AI_TIMEOUT_MS: z.coerce.number().int().min(1_000).max(600_000).default(180_000),
   AI_FIXTURE_DIR: z.string().min(1).default("fixtures/ai"),
   /** 호출을 픽스처로 남긴다. 탐색이 회귀 테스트를 먹여살리는 지점. */
@@ -122,7 +154,6 @@ export interface RuntimeConfig {
   analyticsVisitorSalt?: string;
   requestTimeoutMs?: number;
   careerSocketAllowedOrigin?: string;
-  careerEditorV2Enabled?: boolean;
   careerAiDeterministicTest?: boolean;
   scheduledJobsEnabled?: boolean;
   /** 없으면 Google 로그인 경로를 열지 않는다. */
@@ -135,8 +166,19 @@ export interface RuntimeConfig {
   agentChatDeveloperUserIds?: string[];
   /** 지면 생성만 갈아 끼울 때. 비우면 `aiProvider`와 같다. */
   aiPageGenerationProvider?: "claude-code" | "codex" | "fixture" | "anthropic";
+  /** 검색 해석만 갈아 끼울 때. 비우면 `aiProvider`와 같다. */
+  aiSearchInterpretProvider?: "claude-code" | "codex" | "fixture" | "anthropic";
+  anthropicApiKey?: string;
+  anthropicModelHaiku?: string;
+  anthropicModelSonnet?: string;
+  anthropicModelOpus?: string;
   pageGenerationFormat?: "json-render" | "html";
   work24ApiKey?: string | undefined;
+  mailProvider?: "off" | "resend";
+  resendApiKey?: string | undefined;
+  mailFrom?: string;
+  mailTimeoutMs?: number;
+  appBaseUrl?: string;
   aiTimeoutMs?: number;
   aiFixtureDir?: string;
   aiRecord?: boolean;
@@ -170,7 +212,6 @@ export function loadRuntimeConfig(
     analyticsVisitorSalt: result.ANALYTICS_VISITOR_SALT,
     requestTimeoutMs: result.REQUEST_TIMEOUT_MS,
     careerSocketAllowedOrigin: result.CAREER_SOCKET_ALLOWED_ORIGIN,
-    careerEditorV2Enabled: result.CAREER_EDITOR_V2_ENABLED,
     careerAiDeterministicTest: result.CAREER_AI_DETERMINISTIC_TEST,
     scheduledJobsEnabled: result.SCHEDULED_JOBS_ENABLED,
     googleClientId: result.GOOGLE_CLIENT_ID,
@@ -183,7 +224,19 @@ export function loadRuntimeConfig(
     ...(result.AI_PROVIDER_PAGE_GENERATION
       ? { aiPageGenerationProvider: result.AI_PROVIDER_PAGE_GENERATION }
       : {}),
+    ...(result.AI_PROVIDER_SEARCH_INTERPRET
+      ? { aiSearchInterpretProvider: result.AI_PROVIDER_SEARCH_INTERPRET }
+      : {}),
+    ...(result.ANTHROPIC_API_KEY ? { anthropicApiKey: result.ANTHROPIC_API_KEY } : {}),
+    ...(result.ANTHROPIC_MODEL_HAIKU ? { anthropicModelHaiku: result.ANTHROPIC_MODEL_HAIKU } : {}),
+    ...(result.ANTHROPIC_MODEL_SONNET ? { anthropicModelSonnet: result.ANTHROPIC_MODEL_SONNET } : {}),
+    ...(result.ANTHROPIC_MODEL_OPUS ? { anthropicModelOpus: result.ANTHROPIC_MODEL_OPUS } : {}),
     work24ApiKey: result.WORK24_API_KEY,
+    mailProvider: result.MAIL_PROVIDER,
+    resendApiKey: result.RESEND_API_KEY,
+    mailFrom: result.MAIL_FROM,
+    mailTimeoutMs: result.MAIL_TIMEOUT_MS,
+    appBaseUrl: result.APP_BASE_URL,
     aiTimeoutMs: result.AI_TIMEOUT_MS,
     aiFixtureDir: result.AI_FIXTURE_DIR,
     aiRecord: result.AI_RECORD,

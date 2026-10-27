@@ -51,9 +51,18 @@ function isNew(job: JobPostingSummary, now: number): boolean {
  */
 function companyLine(job: JobPostingSummary, tail: "workType" | "experience"): string {
   const last = tail === "workType" ? job.workType : job.experienceLabel;
-  return [job.company.name, job.location ?? job.workType, last]
+  return [job.company.name, job.location ?? job.workType, nearbyLabel(job), last]
     .filter((part, index, parts) => part && parts.indexOf(part) === index)
     .join(" · ");
+}
+
+/**
+ * 장소로 찾았을 때 그 장소가 아닌 공고에 붙는 거리. 그 장소의 공고(0km)는
+ * 원문이 이미 장소를 말하므로 붙이지 않는다.
+ */
+function nearbyLabel(job: JobPostingSummary): string | null {
+  if (!job.nearby || job.nearby.distanceKm === 0) return null;
+  return `근처 약 ${Math.max(1, Math.round(job.nearby.distanceKm))}km`;
 }
 
 export function JobRowList({

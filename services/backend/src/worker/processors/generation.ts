@@ -5,12 +5,14 @@ import { type GenerationApi } from "../../modules/generation/index.js";
 import type { SentenceWriter } from "../../modules/generation/writer.js";
 import type { PageGenerator } from "../../modules/page/generator.js";
 import { type PageApi } from "../../modules/page/index.js";
+import { type EngagementApi } from "../../modules/engagement/index.js";
 
 export function createGenerationProcessor(
   service: GenerationApi,
   writer: SentenceWriter,
   designer?: LayoutDesigner | null,
   page?: { service: PageApi; generator: PageGenerator } | null,
+  notifier?: Pick<EngagementApi, "notifyGeneration"> | null,
 ) {
   return async (job: Job<Record<string, unknown>>) => {
     const id = job.data.generationJobId;
@@ -43,8 +45,9 @@ export function createGenerationProcessor(
       }
       // 사용량 확정 실패는 페이지 호출 실패가 아니다. ready 판은 남기되, quota 같은
       // 작업 전이 오류를 정확히 기록한다. 재전달이 와도 저장된 판을 다시 만들지 않는다.
+      let completed: Awaited<ReturnType<GenerationApi["completeFreeHtml"]>>;
       try {
-        return await service.completeFreeHtml(id, generated);
+        completed = await service.completeFreeHtml(id, generated);
       } catch (error) {
         console.error(JSON.stringify({
           level: "warn",
@@ -54,6 +57,20 @@ export function createGenerationProcessor(
         }));
         return service.failFreeHtml(id, "GENERATION_REJECTED");
       }
+      // 알림은 생성 결과에 딸린 일이다. 실패해도 완료된 생성을 되돌리지 않는다.
+      if (completed.status === "done" && notifier) {
+        try {
+          await notifier.notifyGeneration(prepared.userId, prepared.portfolioId, id);
+        } catch (error) {
+          console.error(JSON.stringify({
+            level: "warn",
+            event: "generation.notification_failed",
+            generationJobId: id,
+            message: error instanceof Error ? error.message : String(error),
+          }));
+        }
+      }
+      return completed;
     }
     // 자유 HTML 생성기가 없는 이전 배포만 블록·문장 경로를 유지한다. 정식 워커
     // 흐름에서는 이 분기로 들어오지 않는다.

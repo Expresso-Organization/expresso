@@ -13,7 +13,6 @@ import type { SqlTag, JSONValue } from "../../platform/legacy-mysql.js";
 import { generateQuestionDrafts, hasMetric, questionTextForBasis } from "./questions.js";
 import {
   cleanupChangedFields,
-  cleanupProperties,
   type RecordCleaner,
 } from "../career/record-cleaner.js";
 import {
@@ -151,7 +150,6 @@ export class InterviewService {
       await transaction`
         update record
         set title = ${cleaned.title},
-            properties = ${transaction.json(cleanupProperties(cleaned) as JSONValue)},
             -- 정리된 기록은 재료로 고를 수 있다. 원문만 남은 초안은 못 고른다.
             status = 'organized',
             updated_at = now(6)
@@ -159,7 +157,7 @@ export class InterviewService {
       `;
       await transaction`
         update answer_record_change
-        set changed_fields = ${transaction.json(cleanupChangedFields(cleaned) as JSONValue)}
+        set changed_fields = ${transaction.json(cleanupChangedFields(false) as JSONValue)}
         where user_id = ${userId} and answer_id = ${answerId}
       `;
     });

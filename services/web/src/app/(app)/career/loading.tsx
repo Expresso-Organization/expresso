@@ -2,7 +2,7 @@ import { AppBody, DocumentHeader } from "@/components/shell/AppShell";
 import { Skel, SkelRegion, skelKeys } from "@/components/shell/Skeleton";
 
 import panelStyles from "./[categorySlug]/DocumentPanel.module.css";
-import styles from "./[categorySlug]/page.module.css";
+import styles from "./loading.module.css";
 
 /**
  * 05 내 커리어가 기록을 기다리는 동안.

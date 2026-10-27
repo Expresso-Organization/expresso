@@ -6,16 +6,20 @@ import type {
   PortfolioBlock,
   PortfolioRevision,
 } from "@expresso/contracts";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState, useTransition } from "react";
 
 import { Icon } from "@/components/ui/Icon";
 
 import type { EditorCheckpoint } from "./Editor";
 import {
   applyProposalAction,
+  careerRecordOptionsAction,
   editBlockAction,
   historyAction,
+  insertRecordAction,
   instructAction,
+  restorePageAction,
+  revisionsAction,
   type EditResult,
   type HistoryResult,
 } from "./edit-actions";
@@ -42,8 +46,11 @@ export function ChatPanel({
   blocks,
   freePage = false,
   structured = false,
+  initialTarget = null,
 }: {
   portfolioId: string;
+  /** 캔버스에서 「이 부분만 AI에게」로 고른 블록. 고칠 수 없는 블록이면 기본 대상으로 연다. */
+  initialTarget?: string | null;
   /** 말로 고칠 수 있는 블록. 미디어는 없고, 잠근 것은 계약이 거절한다. */
   blocks: { id: string; label: string }[];
   /** 자유 HTML이 최종 지면이면 블록 대신 페이지 전체를 새 판으로 고친다. */
@@ -56,7 +63,14 @@ export function ChatPanel({
   const [applied, apply, applying] = useActionState<EditResult, FormData>(
     applyProposalAction, {},
   );
-  const [target, setTarget] = useState(freePage ? "page" : (blocks[0]?.id ?? "layout"));
+  const [target, setTarget] = useState(
+    freePage
+      ? "page"
+      : initialTarget && blocks.some(({ id }) => id === initialTarget)
+        ? initialTarget
+        : (blocks[0]?.id ?? "layout"),
+  );
+  const isBlockTarget = !freePage && target !== "layout";
   const targetLabel = target === "page"
     ? (structured ? "지면 구성" : "웹페이지 전체")
     : target === "layout"
@@ -183,6 +197,13 @@ export function ChatPanel({
         <div className={styles.inputBox}>
           <input
             name="instruction"
+            onKeyDown={(event) => {
+              // ⌘↵ · Ctrl↵로도 보낸다. 한글 조합 중의 Enter는 글자를 끝내는 것이다.
+              if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && !event.nativeEvent.isComposing) {
+                event.preventDefault();
+                event.currentTarget.form?.requestSubmit();
+              }
+            }}
             className={styles.input}
             placeholder={target === "page" || target === "layout"
               ? "더 차분하게 · 여백을 줄여 주세요"
@@ -203,7 +224,69 @@ export function ChatPanel({
           </div>
         </div>
       </form>
+      {isBlockTarget ? <RecordImport portfolioId={portfolioId} blockId={target} /> : null}
     </>
+  );
+}
+
+/**
+ * 04 「내 커리어에서 가져오기」 — 고른 블록의 글을 내 기록 본문으로 바꾼다.
+ * 기록 목록은 처음 펼칠 때 읽는다.
+ */
+function RecordImport({ portfolioId, blockId }: { portfolioId: string; blockId: string }) {
+  const [open, setOpen] = useState(false);
+  const [records, setRecords] = useState<{ id: string; title: string }[] | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [result, run, running] = useActionState(insertRecordAction, {});
+  const [, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (!open || records !== null) return;
+    let alive = true;
+    careerRecordOptionsAction()
+      .then((rows) => { if (alive) setRecords(rows); })
+      .catch(() => { if (alive) setLoadFailed(true); });
+    return () => { alive = false; };
+  }, [open, records]);
+
+  if (!open) {
+    return (
+      <button type="button" className={styles.recordImportToggle} onClick={() => setOpen(true)}>
+        <Icon name="tray-arrow-down" size={12} />
+        내 커리어에서 가져오기
+      </button>
+    );
+  }
+
+  return (
+    <form
+      className={styles.recordImport}
+      action={(formData) => startTransition(() => run(formData))}
+    >
+      <input type="hidden" name="portfolioId" value={portfolioId} />
+      <input type="hidden" name="blockId" value={blockId} />
+      {loadFailed ? (
+        <p className={styles.panelError}>기록을 불러오지 못했습니다.</p>
+      ) : records === null ? (
+        <p className={styles.panelEmpty}>기록을 불러오는 중입니다.</p>
+      ) : records.length === 0 ? (
+        <p className={styles.panelEmpty}>본문이 있는 기록이 없습니다.</p>
+      ) : (
+        <>
+          <select name="recordId" className={styles.quick} aria-label="가져올 기록" defaultValue="">
+            <option value="" disabled>기록을 고르세요</option>
+            {records.map((record) => (
+              <option key={record.id} value={record.id}>{record.title}</option>
+            ))}
+          </select>
+          <button type="submit" className={styles.keepButton} disabled={running}>
+            {running ? "바꾸는 중…" : "이 기록 글로 바꾸기"}
+          </button>
+        </>
+      )}
+      {result.error ? <p className={styles.panelError}>{result.error}</p> : null}
+      {result.done ? <p className={styles.panelEmpty}>블록 글을 기록 본문으로 바꿨습니다. 이 블록은 기록과 이어져 잠깁니다.</p> : null}
+    </form>
   );
 }
 
@@ -244,9 +327,12 @@ export function FreePageProperties({ page }: { page: GeneratedPage }) {
 }
 
 /** 자유 HTML 이력은 원본을 지우지 않고 쌓인 판 목록이다. */
-export function FreePageHistoryPanel({ pages }: { pages: readonly GeneratedPage[] }) {
+export function FreePageHistoryPanel({ pages, portfolioId }: { pages: readonly GeneratedPage[]; portfolioId: string }) {
+  const [result, run, running] = useActionState(restorePageAction, {});
+  const current = pages[0]?.revision ?? 0;
   return (
     <div className={styles.history}>
+      {result.error ? <p className={styles.panelError}>{result.error}</p> : null}
       {pages.map((page, index) => (
         <div key={page.id} className={styles.revision}>
           <span className={index === 0 ? styles.revisionAi : styles.revisionUser}>
@@ -259,38 +345,22 @@ export function FreePageHistoryPanel({ pages }: { pages: readonly GeneratedPage[
               {index === 0 ? " · 현재" : ""}
             </div>
           </div>
+          {index === 0 ? null : (
+            <form action={run}>
+              <input type="hidden" name="portfolioId" value={portfolioId} />
+              <input type="hidden" name="revision" value={page.revision} />
+              <input type="hidden" name="expectedRevision" value={current} />
+              <button type="submit" className={styles.revisionRevert} disabled={running}>
+                이 판으로 되돌리기
+              </button>
+            </form>
+          )}
         </div>
       ))}
     </div>
   );
 }
 
-function Stepper({
-  value,
-  unit,
-  label,
-}: {
-  value: string;
-  unit?: string;
-  label: string;
-}) {
-  return (
-    <span className={styles.stepper} role="group" aria-label={label}>
-      <button type="button" className={styles.stepperButton} aria-label={`${label} 줄이기`}>
-        −
-      </button>
-      <span className={styles.stepperValue}>{value}</span>
-      {unit ? <span className={styles.stepperUnit}>{unit}</span> : null}
-      <button
-        type="button"
-        className={`${styles.stepperButton} ${styles.stepperRight}`}
-        aria-label={`${label} 늘리기`}
-      >
-        ＋
-      </button>
-    </span>
-  );
-}
 
 /**
  * 04b 속성 탭 — 고른 블록을 직접 고친다.
@@ -669,19 +739,78 @@ function fieldValue(block: PortfolioBlock, path: string): string {
   return typeof value === "string" ? value : typeof value === "number" ? String(value) : "";
 }
 
+/** 이력을 날짜로 묶는 이름. 오늘 · 어제 · 그 밖은 월일. */
+function dayLabel(at: string, today: Date): string {
+  const day = new Date(at);
+  const start = (value: Date) => new Date(value.getFullYear(), value.getMonth(), value.getDate()).getTime();
+  const diff = Math.round((start(today) - start(day)) / 86_400_000);
+  if (diff === 0) return "오늘";
+  if (diff === 1) return "어제";
+  return day.toLocaleDateString("ko-KR", { month: "long", day: "numeric" });
+}
+
+const HISTORY_FILTERS: ReadonlyArray<{ key: PortfolioRevision["actor"] | null; label: string }> = [
+  { key: null, label: "전체" },
+  { key: "ai", label: "AI 편집" },
+  { key: "user", label: "직접 편집" },
+];
+
 /** 04c 이력 탭 — AI가 고친 것과 내가 고친 것을 나눠서 되돌린다. */
 export function HistoryPanel({
   portfolioId,
-  revisions,
+  displayName,
+  revisions: initialRevisions,
+  nextCursor: initialCursor = null,
   checkpoints,
 }: {
   portfolioId: string;
+  displayName: string;
   revisions: readonly PortfolioRevision[];
+  nextCursor?: string | null;
   checkpoints: readonly EditorCheckpoint[];
 }) {
   const [result, run, running] = useActionState<HistoryResult, FormData>(historyAction, {});
   /** 되물은 자리. 한 번 더 누르면 그때는 덮는다 — 상태를 따로 두지 않고 결과에서 읽는다. */
   const asked = result.conflict?.revisionId ?? null;
+  const [filter, setFilter] = useState<PortfolioRevision["actor"] | null>(null);
+  const [list, setList] = useState<{ revisions: readonly PortfolioRevision[]; nextCursor: string | null }>({
+    revisions: initialRevisions,
+    nextCursor: initialCursor,
+  });
+  const [loading, setLoading] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
+  /** 날짜 묶음과 「N분 전」의 기준 시각. 렌더마다 시계를 읽지 않는다. */
+  const [loadedAt, setLoadedAt] = useState(() => Date.now());
+
+  // 서버가 새 이력을 내려주면(되돌리기 · 편집 뒤) 첫 장을 다시 맞춘다.
+  useEffect(() => {
+    if (filter !== null) return;
+    setList({ revisions: initialRevisions, nextCursor: initialCursor });
+    setLoadedAt(Date.now());
+  }, [initialRevisions, initialCursor, filter]);
+
+  async function load(nextFilter: PortfolioRevision["actor"] | null, cursor: string | null) {
+    setLoading(true);
+    setLoadFailed(false);
+    try {
+      const page = await revisionsAction(portfolioId, nextFilter, cursor);
+      setList((current) => ({
+        revisions: cursor ? [...current.revisions, ...page.revisions] : page.revisions,
+        nextCursor: page.nextCursor,
+      }));
+      setLoadedAt(Date.now());
+    } catch {
+      setLoadFailed(true);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function chooseFilter(next: PortfolioRevision["actor"] | null) {
+    if (next === filter) return;
+    setFilter(next);
+    void load(next, null);
+  }
 
   function revert(revisionId: string, force: boolean) {
     const formData = new FormData();
@@ -698,10 +827,7 @@ export function HistoryPanel({
     run(formData);
   }
   const relative = (at: string) => {
-    const minutes = Math.max(
-      0,
-      Math.round((Date.now() - new Date(at).getTime()) / 60_000),
-    );
+    const minutes = Math.max(0, Math.round((loadedAt - new Date(at).getTime()) / 60_000));
     if (minutes < 1) return "방금";
     if (minutes < 60) return `${minutes}분 전`;
     const hours = Math.round(minutes / 60);
@@ -709,18 +835,33 @@ export function HistoryPanel({
     return `${Math.round(hours / 24)}일 전`;
   };
 
+  /*
+   * 서버의 `isCurrent`는 받은 목록의 첫 줄이다. 종류로 거른 목록에서는 그 줄이 최신이
+   * 아닐 수 있어, 거르지 않은 첫 장의 첫 줄을 「지금 보는 상태」로 삼는다.
+   */
+  const latestId = initialRevisions[0]?.id ?? null;
+  const today = new Date(loadedAt);
+  const groups: { label: string; revisions: PortfolioRevision[] }[] = [];
+  for (const revision of list.revisions) {
+    const label = dayLabel(revision.createdAt, today);
+    const last = groups.at(-1);
+    if (last?.label === label) last.revisions.push(revision);
+    else groups.push({ label, revisions: [revision] });
+  }
+
   return (
     <div className={styles.history}>
-      <div className={styles.historyFilters}>
-        {["전체", "AI 편집", "직접 편집"].map((filter, index) => (
+      <div className={styles.historyFilters} role="group" aria-label="이력 종류">
+        {HISTORY_FILTERS.map((item) => (
           <button
-            key={filter}
+            key={item.label}
             type="button"
-            className={`${styles.historyFilter} ${
-              index === 0 ? styles.historyFilterActive : ""
-            }`}
+            aria-pressed={filter === item.key}
+            disabled={loading}
+            onClick={() => chooseFilter(item.key)}
+            className={`${styles.historyFilter} ${filter === item.key ? styles.historyFilterActive : ""}`}
           >
-            {filter}
+            {item.label}
           </button>
         ))}
       </div>
@@ -732,45 +873,64 @@ export function HistoryPanel({
           누르면 그때는 덮습니다.
         </p>
       ) : null}
+      {loadFailed ? <p className={styles.panelError}>이력을 불러오지 못했습니다.</p> : null}
 
-      <div className={styles.historyDay}>오늘</div>
-
-      {revisions.length === 0 ? (
-        <div className={styles.revisionMeta}>아직 변경 이력이 없습니다</div>
+      {list.revisions.length === 0 && !loading ? (
+        <div className={styles.revisionMeta}>
+          {filter === "ai" ? "AI가 고친 이력이 없습니다" : filter === "user" ? "직접 고친 이력이 없습니다" : "아직 변경 이력이 없습니다"}
+        </div>
       ) : null}
 
-      {revisions.map((revision) => (
-        <div key={revision.id} className={styles.revision}>
-          {revision.actor === "ai" ? (
-            <span className={styles.revisionAi}>
-              <Icon name="coffee" weight="fill" size={11} color="var(--ex-accent-surface)" />
-            </span>
-          ) : (
-            <span className={styles.revisionUser}>지</span>
-          )}
-          <div className={styles.revisionBody}>
-            <div className={styles.revisionSummary}>{revision.summary}</div>
-            <div className={styles.revisionMeta}>
-              {relative(revision.createdAt)}
-              {revision.isCurrent ? " · 지금 보는 상태" : ""}
+      {groups.map((group) => (
+        <div key={group.label}>
+          <div className={styles.historyDay}>{group.label}</div>
+          {group.revisions.map((revision) => (
+            <div key={revision.id} className={styles.revision}>
+              {revision.actor === "ai" ? (
+                <span className={styles.revisionAi} aria-label="AI 편집">
+                  <Icon name="coffee" weight="fill" size={11} color="var(--ex-accent-surface)" />
+                </span>
+              ) : (
+                <span className={styles.revisionUser} aria-label={`${displayName} 직접 편집`}>
+                  {displayName.slice(0, 1)}
+                </span>
+              )}
+              <div className={styles.revisionBody}>
+                <div className={styles.revisionSummary}>{revision.summary}</div>
+                <div className={styles.revisionMeta}>
+                  {relative(revision.createdAt)}
+                  {revision.id === latestId ? " · 지금 보는 상태" : ""}
+                </div>
+              </div>
+              {/* 최신 항목은 되돌리기 버튼을 숨긴다. 섹션 변경은 블록이 없어 복원으로만 되돌린다. */}
+              {revision.id === latestId || revision.blockId === null ? null : (
+                <button
+                  type="button"
+                  className={styles.revisionRevert}
+                  disabled={running}
+                  onClick={() => {
+                    if (asked === revision.id) revert(revision.id, true);
+                    else revert(revision.id, false);
+                  }}
+                >
+                  {asked === revision.id ? "그래도 되돌리기" : "되돌리기"}
+                </button>
+              )}
             </div>
-          </div>
-          {/* 최신 항목은 되돌리기 버튼을 숨긴다. 섹션 변경은 블록이 없어 복원으로만 되돌린다. */}
-          {revision.isCurrent || revision.blockId === null ? null : (
-            <button
-              type="button"
-              className={styles.revisionRevert}
-              disabled={running}
-              onClick={() => {
-                if (asked === revision.id) revert(revision.id, true);
-                else revert(revision.id, false);
-              }}
-            >
-              {asked === revision.id ? "그래도 되돌리기" : "되돌리기"}
-            </button>
-          )}
+          ))}
         </div>
       ))}
+
+      {list.nextCursor ? (
+        <button
+          type="button"
+          className={styles.historyMore}
+          disabled={loading}
+          onClick={() => void load(filter, list.nextCursor)}
+        >
+          {loading ? "불러오는 중…" : "이전 이력 더 보기"}
+        </button>
+      ) : null}
 
       <div className={styles.checkpointHead}>되돌릴 수 있는 지점</div>
       {checkpoints.map((checkpoint) => (
@@ -802,7 +962,7 @@ export function HistoryPanel({
       <div className={styles.lockNote}>
         <Icon name="info" size={13} color="var(--ex-accent-text)" />
         <span className={styles.lockNoteText}>
-          직접 고친 부분은 AI가 다시 쓸 때 그대로 둡니다. 잠금을 풀면 함께 고칩니다.
+          직접 고친 부분은 AI가 다시 쓸 때 그대로 둡니다.
         </span>
       </div>
     </div>

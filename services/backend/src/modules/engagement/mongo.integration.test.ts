@@ -25,6 +25,29 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB engagement", () => {
     expect(await mongoCollections(fixture.resource.db).outboxEvents.countDocuments({ topic: "notification.deliver" })).toBe(1);
   });
 
+  it("names the generated portfolio and marks only the owner's notifications read", async () => {
+    const db = mongoCollections(fixture.resource.db);
+    // 홈 집계 시험과 섞이지 않도록 사용자를 따로 둔다.
+    const userId = (await new MongoIdentityService(fixture.resource).signup({ email: `engagement-read-${randomUUID()}@example.com`, displayName: "Reader", password: "correct-horse-battery" })).user.id;
+    const now = new Date("2026-08-10T00:00:00Z");
+    const portfolioId = randomUUID();
+    await db.portfolios.insertOne({ _id: portfolioId, userId, brewId: randomUUID(), templateId: randomUUID(), title: "백엔드 포트폴리오", status: "draft", createdAt: now, updatedAt: now, styleOverrides: {} });
+    const generated = await service.notifyGeneration(userId, portfolioId, "job-1", now);
+    expect(generated.notification).toMatchObject({ kind: "generation", targetUrl: `/edit/${portfolioId}`, subject: "백엔드 포트폴리오", readAt: null });
+    await expect(service.notifyGeneration(userId, portfolioId, "job-1", now)).resolves.toMatchObject({ created: false, reason: "DUPLICATE" });
+
+    const id = generated.notification!.id;
+    const firstRead = new Date("2026-08-10T01:00:00Z");
+    await expect(service.markRead(userId, id, firstRead)).resolves.toMatchObject({ readAt: firstRead.toISOString() });
+    await expect(service.markRead(userId, id, new Date("2026-08-10T02:00:00Z"))).resolves.toMatchObject({ readAt: firstRead.toISOString() });
+    await expect(service.markRead(randomUUID(), id)).rejects.toMatchObject({ statusCode: 404 });
+
+    await service.notify(userId, "traffic", "/analytics", "traffic:read-all", now);
+    await service.notify(userId, "saved_search", "/jobs", "saved-search:read-all", now);
+    await expect(service.markAllRead(userId)).resolves.toEqual({ updated: 2 });
+    expect((await service.listNotifications(userId)).every((row) => row.readAt !== null)).toBe(true);
+  });
+
   it("keeps delivery retry state and returns empty home/search models", async () => {
     const created = await service.notify(userId, "traffic", "/analytics", "traffic:retry", new Date("2026-08-09T02:00:00Z"));
     const id = created.notification!.id;

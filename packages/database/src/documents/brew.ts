@@ -1,4 +1,5 @@
 // 최종 SQL 제약 목록을 대조해 확정한 MongoDB 저장 타입입니다. API 계약은 contracts에서 가져옵니다.
+import type { ConsentScope } from "@expresso/contracts";
 import type { Decimal128 } from "mongodb";
 import type { JsonValue, JsonObject } from "./common.js";
 
@@ -54,6 +55,8 @@ export interface BrewJobDoc {
   resultId?: string | null;
   errorCode?: string | null;
   failureRetryable?: boolean | null;
+  /** `CONSENT_REQUIRED`로 실패했을 때 켜야 하는 동의. */
+  requiredConsent?: ConsentScope | null;
   inputIdempotencyKey?: string | null;
   createdAt: Date;
   updatedAt: Date;

@@ -63,7 +63,7 @@ export async function listMongoRecords(context: MongoContext, userId: string, qu
     summary: { total: number; draft: number; organized: number; verified: number; empty: number }[];
   }>([
     { $match: match },
-    { $lookup: { from: "career_categories", localField: "categoryId", foreignField: "_id", pipeline: [{ $match: { $or: [{ userId: null }, { userId }] } }], as: "category" } },
+    { $lookup: { from: "career_categories", localField: "categoryId", foreignField: "_id", pipeline: [{ $match: { userId } }], as: "category" } },
     { $unwind: "$category" }, { $set: { sortKey } },
     { $facet: { data: pageStages, summary: [{ $group: {
       _id: null, total: { $sum: 1 },

@@ -1,6 +1,7 @@
-import type { Job } from "bullmq";
+import { UnrecoverableError, type Job } from "bullmq";
 
-import { type BrewJobRunner, type BrewJobApi } from "../../modules/brew-jobs/index.js";
+import { type BrewJobRunner, type BrewJobApi, type FailureClassifier } from "../../modules/brew-jobs/index.js";
+import { ConsentError } from "../../modules/consent/index.js";
 import { InterviewError } from "../../modules/interview/index.js";
 import { QuestionDraftError } from "../../modules/interview/question-writer.js";
 import { RecipeError } from "../../modules/recipe/index.js";
@@ -10,13 +11,21 @@ import { AiError } from "../../platform/ai/client.js";
 /**
  * 왜 실패했는지, 다시 눌러도 되는지.
  *
- * 도메인 거절(재료가 모자람 · 근거가 없음)은 **다시 눌러도 같은 답**이다.
+ * 도메인 거절(재료가 모자람 · 근거가 없음)은 입력이 그대로면 **같은 답**이다.
+ * 큐가 다시 돌리지 않는다.
  *
- * 계약 거절도 마찬가지로 재시도하지 않는다. 계약은 이미 안에서 두 번 물었고,
+ * 계약 거절도 마찬가지로 재시도하지 않는다. 계약은 이미 같은 대화에서 고쳐 받았고,
  * 큐가 세 번째로 부르면 같은 답에 쿼터만 더 쓴다. 사용자가 다시 누르는 편이
- * 낫다 — 그때는 재료나 공고가 달라져 있을 수 있다.
+ * 낫다 — 그때는 재료나 공고가 달라져 있을 수 있다. 화면은 마지막으로 본 잡을
+ * 키에 붙여 보내므로, 다시 누르면 새 잡이 돈다.
+ *
+ * 동의가 꺼져 있으면 사용자가 켜기 전까지 같은 답이다. 어느 동의인지 함께
+ * 남겨 화면이 설정으로 안내한다.
  */
-export function classifyBrewJobFailure(error: unknown): { code: string; retryable: boolean } {
+export function classifyBrewJobFailure(error: unknown): ReturnType<FailureClassifier> {
+  if (error instanceof ConsentError) {
+    return { code: "CONSENT_REQUIRED", retryable: false, requiredConsent: error.scope };
+  }
   if (error instanceof InterviewError || error instanceof RecipeError) {
     return { code: "BREW_INPUT_REJECTED", retryable: false };
   }
@@ -60,17 +69,22 @@ export function createBrewJobProcessor(
         return runner.run(input);
       },
     };
+    // `attemptsMade`는 끝난 시도 수다. BullMQ의 `shouldRetryJob`과 같은 식이다.
+    const finalAttempt = job.attemptsMade + 1 >= (job.opts.attempts ?? 1);
     try {
-      const status = await service.process(id, tracked, classifyBrewJobFailure);
+      const status = await service.process(id, tracked, classifyBrewJobFailure, { finalAttempt });
       // 구성이 생겼으니 기다리던 생성에 붙여 시작한다. 이미 성공한 잡이 다시 배달되면 실행이 없어 `target`도 없다 —
       // 그때는 처음 성공했을 때 이미 붙였다.
       if (recipe && waiting && seen.target) await waiting.attachRecipe(seen.target.userId, seen.target.brewId);
       return status;
     } catch (error) {
+      const { code, retryable } = classifyBrewJobFailure(error);
       if (recipe && waiting && seen.target && isFinalBrewJobFailure(job, error)) {
-        await waiting.failWaiting(seen.target.userId, seen.target.brewId, classifyBrewJobFailure(error).code).catch(() => undefined);
+        await waiting.failWaiting(seen.target.userId, seen.target.brewId, code).catch(() => undefined);
       }
-      throw error;
+      if (retryable) throw error;
+      // 남은 횟수가 있어도 큐가 다시 돌리지 않게 한다. 사유는 로그의 `code`로 남는다.
+      throw Object.assign(new UnrecoverableError(code), { code, cause: error });
     }
   };
 }

@@ -84,7 +84,7 @@ export function PropertyHeaderMenu({ category, definition, view, sortDirection, 
   const nameRef = useRef<HTMLInputElement>(null);
   const meta = typeMeta(definition.type);
   const editableType = TYPES.some((item) => item.value === definition.type);
-  const schemaEditable = !category.isSystem && !definition.system;
+  const schemaEditable = !definition.system;
   const typeEditable = schemaEditable && editableType;
 
   useEffect(() => setName(definition.name), [definition.name]);
@@ -278,9 +278,9 @@ export function PropertyHeaderMenu({ category, definition, view, sortDirection, 
       <MenuAction icon="eye-slash" disabled={busy || definition.type === "title"} onClick={hideProperty}>숨기기</MenuAction>
     </div>
     <div className={styles.columnMenuSection}>
-      <MenuAction icon="arrow-line-left" disabled={busy || category.isSystem} onClick={() => void createProperty("insert-left")}>왼쪽에 삽입</MenuAction>
-      <MenuAction icon="arrow-line-right" disabled={busy || category.isSystem} onClick={() => void createProperty("insert-right")}>오른쪽에 삽입</MenuAction>
-      <MenuAction icon="copy" disabled={busy || category.isSystem || definition.system} onClick={() => void createProperty("duplicate")}>속성 복제</MenuAction>
+      <MenuAction icon="arrow-line-left" disabled={busy} onClick={() => void createProperty("insert-left")}>왼쪽에 삽입</MenuAction>
+      <MenuAction icon="arrow-line-right" disabled={busy} onClick={() => void createProperty("insert-right")}>오른쪽에 삽입</MenuAction>
+      <MenuAction icon="copy" disabled={busy || definition.system} onClick={() => void createProperty("duplicate")}>속성 복제</MenuAction>
       <MenuAction icon="trash" danger disabled={busy || !schemaEditable} onClick={() => void requestDelete()}>속성 삭제</MenuAction>
     </div>
     {pending ? <div className={styles.columnMenuConfirm} role="alertdialog" aria-label={pending.title}>

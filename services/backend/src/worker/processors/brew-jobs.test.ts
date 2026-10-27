@@ -2,8 +2,9 @@ import type { Job } from "bullmq";
 import { describe, expect, it } from "vitest";
 
 import type { BrewJobApi, BrewJobRunner } from "../../modules/brew-jobs/index.js";
+import { ConsentError } from "../../modules/consent/index.js";
 import { RecipeError } from "../../modules/recipe/index.js";
-import { createBrewJobProcessor, type WaitingGenerations } from "./brew-jobs.js";
+import { classifyBrewJobFailure, createBrewJobProcessor, type WaitingGenerations } from "./brew-jobs.js";
 
 const target = { userId: "u1", brewId: "b1" };
 
@@ -55,5 +56,56 @@ describe("구성 잡과 구성을 기다리는 생성", () => {
     const rejecting = runners({ run: async () => { throw new RecipeError(422, "재료가 모자랍니다"); } });
     await expect(createBrewJobProcessor(service, rejecting, api)(job("recipe.draft", 0, 3))).rejects.toThrow();
     expect(calls).toEqual(["fail:u1:b1:BREW_INPUT_REJECTED"]);
+  });
+});
+
+const unusedRunner = { async run() { return "unused"; } };
+
+function harness(failure: unknown) {
+  const calls: { finalAttempt: boolean | undefined }[] = [];
+  const service = {
+    async process(_id: string, _runner: unknown, _classify: unknown, options?: { finalAttempt?: boolean }) {
+      calls.push({ finalAttempt: options?.finalAttempt });
+      if (failure) throw failure;
+      return { status: "succeeded" };
+    },
+  } as unknown as BrewJobApi;
+  return { calls, processor: createBrewJobProcessor(service, { interview: unusedRunner, recipe: unusedRunner }) };
+}
+
+const attempt = (attemptsMade: number, attempts = 5) => ({ name: "recipe.draft", data: { brewJobId: "job" }, attemptsMade, opts: { attempts } }) as never;
+
+describe("brew job processor", () => {
+  it("tells the service whether BullMQ will try again", async () => {
+    const { calls, processor } = harness(null);
+    await processor(attempt(0));
+    await processor(attempt(3));
+    await processor(attempt(4));
+    await processor(attempt(0, 1));
+    expect(calls.map(({ finalAttempt }) => finalAttempt)).toEqual([false, false, true, true]);
+  });
+
+  it("stops queue retries for failures classified as not retryable", async () => {
+    const original = new RecipeError(422, "fewer than three materials");
+    const { processor } = harness(original);
+    const thrown = await processor(attempt(0)).catch((error: unknown) => error);
+    expect(thrown).toMatchObject({ name: "UnrecoverableError", code: "BREW_INPUT_REJECTED", cause: original });
+  });
+
+  it("classifies a missing consent as not retryable and names the consent", () => {
+    expect(classifyBrewJobFailure(new ConsentError("career_records"))).toEqual({ code: "CONSENT_REQUIRED", retryable: false, requiredConsent: "career_records" });
+    expect(classifyBrewJobFailure(new Error("provider timeout"))).toEqual({ code: "PROVIDER_FAILED", retryable: true });
+  });
+
+  it("stops queue retries when consent is missing", async () => {
+    const original = new ConsentError("career_records");
+    const { processor } = harness(original);
+    expect(await processor(attempt(0)).catch((error: unknown) => error)).toMatchObject({ name: "UnrecoverableError", code: "CONSENT_REQUIRED", cause: original });
+  });
+
+  it("rethrows retryable failures unchanged so BullMQ retries them", async () => {
+    const original = new Error("consent missing");
+    const { processor } = harness(original);
+    await expect(processor(attempt(0))).rejects.toBe(original);
   });
 });

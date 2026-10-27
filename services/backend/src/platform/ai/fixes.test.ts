@@ -232,16 +232,17 @@ describe("CLI에 출력 검증을 맡기지 않는다", () => {
   });
 });
 
+// 상한은 가짜 CLI가 뜨는 시간(테스트를 함께 돌리면 수백 ms)보다 넉넉해야 한다. 400ms에서는 첫 출력 전에 끊긴 적이 있다.
 describe("시간 상한은 출력이 멈춘 시간이다", () => {
-  it("출력이 계속 흐르면 상한을 넘겨도 끝까지 받는다", async () => {
-    const cli = fakeCli([{ delayMs: 100, beats: 8, output: { title: "제목", items: [] } }]);
-    const result = await new ClaudeCodeAiClient({ cliPath: cli.cliPath, timeoutMs: 400 }).complete(spec, schema);
+  it("출력이 계속 흐르면 상한을 넘겨도 끝까지 받는다", { timeout: 15_000 }, async () => {
+    const cli = fakeCli([{ delayMs: 300, beats: 10, output: { title: "제목", items: [] } }]);
+    const result = await new ClaudeCodeAiClient({ cliPath: cli.cliPath, timeoutMs: 1_500 }).complete(spec, schema);
     expect(result.data.title).toBe("제목");
   });
 
-  it("출력이 상한보다 오래 멈추면 끊는다", async () => {
-    const cli = fakeCli([{ delayMs: 1_500, beats: 1, output: { title: "제목", items: [] } }]);
-    await expect(new ClaudeCodeAiClient({ cliPath: cli.cliPath, timeoutMs: 400 }).complete(spec, schema)).rejects.toMatchObject({ code: "AI_TIMEOUT" });
+  it("출력이 상한보다 오래 멈추면 끊는다", { timeout: 15_000 }, async () => {
+    const cli = fakeCli([{ delayMs: 5_000, beats: 1, output: { title: "제목", items: [] } }]);
+    await expect(new ClaudeCodeAiClient({ cliPath: cli.cliPath, timeoutMs: 1_500 }).complete(spec, schema)).rejects.toMatchObject({ code: "AI_TIMEOUT" });
   });
 });
 
