@@ -61,7 +61,11 @@ QUEUE_PREFIX=expresso-mongo-v1
 DEV_LOGIN=1
 DEV_LOGIN_EMAIL=dev01@expresso.test
 DEV_LOGIN_PASSWORD=...
+DEV_LOGIN_NAME=윤하린
 ```
+
+`DEV_LOGIN_NAME`은 그 계정이 아직 없을 때 가입에 쓰는 표시 이름입니다. 적지 않으면
+`Dev`로 가입합니다.
 
 ```bash
 sudo systemctl restart expresso-web

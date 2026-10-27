@@ -76,8 +76,10 @@ pnpm typecheck
 pnpm test
 ```
 
-- 새 `dev-login.test.ts`가 다섯 경우를 덮는다 — 세 값이 모두 있으면 켜짐,
-  `DEV_LOGIN`이 없거나 `0`이면 꺼짐, 이메일만 없으면 꺼짐, 비밀번호만 없으면 꺼짐,
-  `NODE_ENV=production`이어도 세 값이 있으면 켜짐.
-- `api/dev/session/route.test.ts`가 프로덕션에서 404가 아니라 303을 내는 것으로 바뀐다.
+- 새 `dev-login.test.ts`가 덮는 것 — 세 값이 모두 있으면 켜짐, `DEV_LOGIN`이
+  비었거나 `0`이면 꺼짐, 이메일·비밀번호가 하나라도 비면 꺼짐,
+  `NODE_ENV=production`이어도 세 값이 있으면 켜짐, 자동 전환은 개발 서버에서만 참.
+- `api/dev/session/route.test.ts`의 프로덕션 케이스가 "프로덕션 빌드 + 스위치 끔
+  → 404"로 바뀐다. 303은 `auth.login`을 가짜로 세워야 해서 여기서 재지 않는다 —
+  화면 확인으로 대신한다.
 - 로컬 프로덕션 빌드에서 `/login?next=/home`을 열어 버튼을 누르면 `/home`이 열린다.
