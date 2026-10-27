@@ -152,6 +152,8 @@ function filterExpression(
   validateFilterOperator(filter, definition);
   const value = fieldExpression(definition);
   const operand = operandValue(filter.operand);
+  // 값을 아직 고르지 않은 조건은 무시합니다. 화면에서 조건 줄을 만든 직후에도 저장되기 때문입니다.
+  if (operand === null && filter.operator !== "is_empty" && filter.operator !== "is_not_empty") return { $eq: [1, 1] };
   switch (filter.operator) {
     case "eq": return { $eq: [value, operand] };
     case "neq": return { $ne: [value, operand] };
