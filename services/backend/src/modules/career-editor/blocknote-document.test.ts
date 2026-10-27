@@ -57,5 +57,7 @@ describe("BlockNote Yjs document", () => {
     expect(markdown).toContain("**굵게**");
     expect(markdown).toMatch(/\| *지표 *\| *값 *\|/);
     expect(markdown).toContain("* 트레이스 삽입");
+    // 콜아웃은 인용으로 내보내 앞뒤 블록과 섞이지 않습니다.
+    expect(markdown).toContain("> 계측이 먼저");
   });
 });

@@ -41,6 +41,11 @@ const createCalloutBlockSpec = createBlockSpec(createCalloutBlockConfig, {
     root.append(icon, contentDOM);
     return { dom: root, contentDOM } as never;
   },
+  // 내보내기(HTML · Markdown)에서는 인용으로 씁니다. 없으면 다음 블록 글과 한 문단으로 붙습니다.
+  toExternalHTML() {
+    const quote = dom().createElement("blockquote");
+    return { dom: quote, contentDOM: quote } as never;
+  },
 });
 
 // BlockNote 스키마 제네릭은 exactOptionalPropertyTypes를 통과하지 못해 기본 블록 타입으로 좁혀 넘깁니다.

@@ -5,7 +5,9 @@ import "@blocknote/ariakit/style.css";
 
 import { BlockNoteView } from "@blocknote/ariakit";
 import { ko } from "@blocknote/core/locales";
-import { useCreateBlockNote } from "@blocknote/react";
+import { CollaborationExtension } from "@blocknote/core/yjs";
+import { filterSuggestionItems, insertOrUpdateBlockForSlashMenu } from "@blocknote/core";
+import { getDefaultReactSlashMenuItems, SuggestionMenuController, useCreateBlockNote } from "@blocknote/react";
 import { mediaAssetUrl } from "@expresso/contracts";
 import { BLOCKNOTE_FRAGMENT, careerBlockNoteSchema } from "@expresso/editor/blocknote";
 import type * as Y from "yjs";
@@ -31,18 +33,35 @@ async function resolveFileUrl(url: string): Promise<string> {
 
 export default function BlockNoteBody({ yDocument, userName }: { yDocument: Y.Doc; userName: string }) {
   const editor = useCreateBlockNote({
-    schema: careerBlockNoteSchema,
+    // 공용 스키마는 exactOptionalPropertyTypes 때문에 넓은 타입으로 만들어졌습니다. 이 한 곳만 좁힙니다.
+    schema: careerBlockNoteSchema as never,
     dictionary: ko,
     uploadFile,
     resolveFileUrl,
-    collaboration: {
+    // v1 표의 머리글 행을 그대로 열고 새 표에서도 머리글을 켤 수 있게 합니다.
+    tables: { headers: true },
+    // 0.56은 협업을 확장으로 켭니다. 전송은 CareerEditorSession이 Y.Doc 업데이트를 받아 맡습니다.
+    extensions: [CollaborationExtension({
       fragment: yDocument.getXmlFragment(BLOCKNOTE_FRAGMENT),
       user: { name: userName, color: "var(--ex-accent)" },
+    })],
+  }, [yDocument]);
+  // 기본 메뉴에 커스텀 콜아웃 블록을 더합니다.
+  const slashItems = async (query: string) => filterSuggestionItems([
+    ...getDefaultReactSlashMenuItems(editor),
+    {
+      title: "콜아웃",
+      subtext: "아이콘과 함께 강조할 문장",
+      aliases: ["callout", "강조"],
+      group: "기본 블록",
+      onItemClick: () => { insertOrUpdateBlockForSlashMenu(editor, { type: "callout" } as never); },
     },
-  } as never, [yDocument]);
+  ], query);
   return (
     <div className={styles.body}>
-      <BlockNoteView editor={editor} />
+      <BlockNoteView editor={editor} slashMenu={false}>
+        <SuggestionMenuController triggerCharacter="/" getItems={slashItems} />
+      </BlockNoteView>
     </div>
   );
 }

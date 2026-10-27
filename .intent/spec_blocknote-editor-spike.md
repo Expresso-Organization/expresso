@@ -40,7 +40,7 @@ date: 2026-10-28
 | evidence · 알 수 없는 블록 | 원문을 담은 paragraph. 보고서에 손실로 센다 |
 | mark bold · italic · strike · code · link | styles bold · italic · strike · code, link 인라인 |
 
-**웹.** `CareerDocumentEditor`의 본문 자리를 새 `BlockNoteBody`로 바꾼다. `next/dynamic`(`ssr: false`)로 불러온다. UI 변형은 `@blocknote/ariakit`을 쓴다. Mantine이나 Tailwind 의존을 새로 들이지 않고, `--bn-*` 변수를 `tokens.css`의 `--ex-*`에 연결한다. 협업은 `collaboration: { provider, fragment: doc.getXmlFragment("document-store"), user }`로 켠다. `provider`는 `awareness`만 가진 객체다. BlockNote는 `awareness`가 없어도 동작한다(`YCursorPlugin.ts` 74행 확인). 전송은 `CareerEditorSession`이 맡는다. `Y.Doc`의 `update` 이벤트를 받아 원격 출처가 아닌 것만 기존 `update` 프레임으로 보낸다. 받은 프레임은 원격 출처로 `Y.applyUpdate`한다. 300ms 동안 모인 업데이트는 `Y.mergeUpdates`로 하나로 보낸다.
+**웹.** `CareerDocumentEditor`의 본문 자리를 새 `BlockNoteBody`로 바꾼다. `next/dynamic`(`ssr: false`)로 불러온다. UI 변형은 `@blocknote/ariakit`을 쓴다. Mantine이나 Tailwind 의존을 새로 들이지 않고, `--bn-*` 변수를 `tokens.css`의 `--ex-*`에 연결한다. 협업은 0.56 방식대로 `extensions: [CollaborationExtension({ fragment: doc.getXmlFragment("document-store"), user })]`로 켠다(`@blocknote/core/yjs`). `provider`는 선택이라 넘기지 않는다(`YCursorPlugin.ts` 74행 확인). 머리글 행은 `tables: { headers: true }`로 켠다. 콜아웃은 슬래시 메뉴에 항목을 더하고, 내보내기에서는 인용으로 쓴다. 전송은 `CareerEditorSession`이 맡는다. `Y.Doc`의 `update` 이벤트를 받아 원격 출처가 아닌 것만 기존 `update` 프레임으로 보낸다. 받은 프레임은 원격 출처로 `Y.applyUpdate`한다. 300ms 동안 모인 업데이트는 `Y.mergeUpdates`로 하나로 보낸다.
 
 **`bodyMd` 투영.** `appendUpdate`가 커밋된 뒤 기록별로 2초 debounce 타이머를 건다. 타이머가 돌면 문서를 복원하고 `blocksToMarkdownLossy` 결과를 `bodyMd`에 쓴다. 단일 API 프로세스 가정이다. 운영용 방식(outbox · Worker)은 보고서에 적는다.
 
