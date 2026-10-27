@@ -23,7 +23,7 @@ import {
 
 import { ClaudeCodeAiClient } from "./claude-code.js";
 import { SOFT_KEYWORDS, toToolSchema, type AiFix } from "./client.js";
-import { applyFixes, groupViolations, jsonPointer, zodViolations } from "./fixes.js";
+import { applyFixes, groupViolations, jsonPointer, runWithFixes, zodViolations } from "./fixes.js";
 
 /**
  * 가짜 CLI. 응답 목록을 차례로 내고, 받은 인자를 줄마다 기록합니다. 실제 CLI처럼 `stream-json` 마지막 줄에
@@ -128,6 +128,37 @@ describe("검사에 걸린 칸은 같은 대화에서 그 칸만 고쳐 받는�
     });
     expect(result.data.items).toEqual(["ok", "ok"]);
     expect(cli.calls()).toHaveLength(3);
+  });
+});
+
+describe("걸린 수가 줄지 않아도 모델이 값을 바꾸는 동안", () => {
+  const usage = (durationMs: number) => ({ model: "m", inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheCreationTokens: 0, costUsd: 0, durationMs });
+  const run = (firstMs: number, values: string[]) => {
+    let fixes = 0;
+    return runWithFixes({
+      contract: "page_fill",
+      schema,
+      options: { check: (data) => (data.title === "맞음" ? [] : [{ path: "/title", problem: "아직 맞지 않습니다." }]) },
+      first: async () => ({ text: JSON.stringify({ title: "처음", items: [] }), usage: usage(firstMs) }),
+      fix: async () => ({ output: { fixes: [{ path: "/title", value: values[fixes++] ?? "그대로" }] }, usage: usage(10) }),
+    }).then((result) => ({ result, fixes }));
+  };
+
+  it("고치기에 쓴 시간이 첫 호출 시간보다 짧은 동안은 계속 고쳐 받는다", async () => {
+    const { result, fixes } = await run(100, ["둘째", "셋째", "맞음"]);
+    expect(result.data.title).toBe("맞음");
+    expect(fixes).toBe(3);
+  });
+
+  it("첫 호출 시간을 다 쓰면 멈추고 출력을 그대로 돌려준다 — 그보다 오래 고치면 다시 쓰는 편이 싸다", async () => {
+    const { result, fixes } = await run(20, ["둘째", "셋째", "넷째", "맞음"]);
+    expect(fixes).toBe(2);
+    expect(result.data.title).toBe("셋째");
+  });
+
+  it("값을 바꾸지 않았으면 시간이 남아도 멈춘다", async () => {
+    const { fixes } = await run(1_000, ["처음"]);
+    expect(fixes).toBe(1);
   });
 });
 

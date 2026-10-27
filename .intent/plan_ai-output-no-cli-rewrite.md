@@ -20,6 +20,7 @@ date: 2026-10-27
 | `services/backend/src/platform/ai/fixes.test.ts` | 가짜 CLI를 글 출력으로, 문법 수정 · 이어 쓰기 · 멈춘 시간 · `--json-schema` 없음 |
 | `services/backend/src/modules/{interview,recipe,generation,page}/service.ts` · 각 `legacy-mysql-service.ts` · `analytics/legacy-mysql-service.ts` | AI 호출 시간 상한 제거 |
 | `services/backend/src/modules/page/generator.ts` | `has-markup`을 `check`로 |
+| `services/backend/src/modules/page/structured-generator.ts` | 옛 경로 대체 제거(실측에서 찾음) |
 | 고치기 횟수에 기대던 테스트(`record-cleaner.test.ts` 등) | 진전 기준에 맞게 |
 | `AGENTS.md` | 「지키는 선」 규칙 갱신 |
 

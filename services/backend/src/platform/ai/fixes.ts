@@ -12,8 +12,12 @@ import { AiError, parseToolOutput, type AiCallOptions, type AiContract, type AiF
  *   조각(`edits`)으로, 중간에 끊긴 글은 이어지는 글로 받습니다.
  * - 계약(Zod)과 업무 규칙(`check`): 걸린 칸의 경로와 이유를 보내고 그 칸의 새 값(`fixes`)을 받습니다.
  *
- * 고치기는 진전이 있는 동안 계속합니다(intent `ai-output-no-cli-rewrite`, 2026-10-27 수락). 문법은 오류 위치가
- * 앞으로 가야, 칸은 걸린 경로 수가 줄어야 진전입니다. 둘 다 유한한 값이 줄기만 하므로 고치기는 반드시 끝납니다.
+ * 고치기는 진전이 있는 동안 계속합니다(intent `ai-output-no-cli-rewrite`, 2026-10-27 수락).
+ *
+ * - 문법: 오류 위치가 앞으로 가야 진전입니다. 위치는 글 길이를 넘지 못하므로 반드시 끝납니다.
+ * - 칸: 걸린 경로 수가 줄면 진전입니다. 줄지 않아도 모델이 값을 바꿨으면, 고치기에 쓴 시간이 첫 호출 시간보다 짧은
+ *   동안은 계속합니다. 그보다 오래 고치면 처음부터 다시 쓰는 것보다 비싸다. 값을 바꾸지 않았으면 그 자리에서 멈춥니다.
+ *   (2026-10-27 실측: 소개 한 줄이 세 번 고쳐도 규칙을 못 맞췄다. 걸린 수만 보면 거기서 멈춰 지면 전체가 실패했다.)
  */
 
 /** 경로 배열을 JSON 포인터로 바꿉니다(RFC 6901의 `~0` · `~1` 이스케이프). */
@@ -243,10 +247,16 @@ export async function runWithFixes<T>(input: {
     }
   };
 
-  let output = await read(await input.first());
+  const firstTurn = await input.first();
+  /** 첫 호출에 쓴 시간. 걸린 수가 줄지 않는 고치기는 이 시간 안에서만 계속합니다. */
+  const firstMs = firstTurn.usage.durationMs;
+  let fixMs = 0;
+  let output = await read(firstTurn);
   let drafted = false;
-  /** 앞선 고치기 전에 걸린 경로 수. 이보다 줄지 않으면 멈춥니다. */
+  /** 앞선 고치기 전에 걸린 경로 수. */
   let previous = Number.POSITIVE_INFINITY;
+  /** 앞선 고치기가 출력을 바꿨는가. */
+  let changed = true;
   for (let round = 0; ; round += 1) {
     const parsed = parseToolOutput(schema, output);
     if (parsed.success && !drafted) {
@@ -255,7 +265,8 @@ export async function runWithFixes<T>(input: {
     }
     const violations = parsed.success ? (options.check?.(parsed.data) ?? []) : zodViolations(parsed.error);
     const grouped = groupViolations(violations);
-    if (!violations.length || grouped.size >= previous) {
+    const progressing = grouped.size < previous || (changed && fixMs < firstMs);
+    if (!violations.length || !progressing) {
       if (parsed.success) {
         if (violations.length)
           console.error(JSON.stringify({ level: "warn", event: "ai.violations_kept", contract, violations: violations.slice(0, 20) }));
@@ -273,11 +284,15 @@ export async function runWithFixes<T>(input: {
     // 거절하지 않고, 걸린 칸만 같은 대화에서 고쳐 받는다.
     const shape = fixSchema([...grouped.keys()]);
     const reply = await input.fix(fixPrompt(grouped, output), shape);
+    fixMs += reply.usage.durationMs;
     const received = shape.safeParse(await read(reply));
     console.error(JSON.stringify({ level: "info", event: "ai.fix_round", contract, round: round + 1, paths: [...grouped.keys()].slice(0, 20), fixed: received.success ? received.data.fixes.length : 0, durationMs: reply.usage.durationMs }));
+    changed = false;
     if (!received.success) continue;
     const fixes = received.data.fixes.map((fix) => ({ path: realPath(fix.path), value: fix.value }));
-    output = applyFixes(output, fixes);
+    const next = applyFixes(output, fixes);
+    changed = JSON.stringify(next) !== JSON.stringify(output);
+    output = next;
     const revised = parseToolOutput(schema, output);
     if (revised.success) options.onRevision?.(fixes, revised.data);
   }

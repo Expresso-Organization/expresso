@@ -324,16 +324,12 @@ export class StructuredPageGenerator implements PageGenerator {
   ): Promise<GeneratedPageResult> {
     const usages: AiUsage[] = [];
     let content = context.structuredContent;
-    // 새 생성은 지면을 먼저 설계하고 그 칸을 채웁니다. 실패하면 이전 경로(내용 정리 → 구성)로 이어 갑니다.
-    // 지시를 받아 직전 지면을 고치는 재생성은 직전 구성을 보고 고치는 이전 경로를 그대로 씁니다.
-    if (!content && !context.previous?.structured && this.designFirst) {
-      try {
-        return await this.#designFirstPage(context, sink);
-      } catch (error) {
-        if (error instanceof PageRenderError) throw error;
-        console.error(JSON.stringify({ level: "warn", event: "page.design_first_failed", message: errorText(error) }));
-      }
-    }
+    // 새 생성은 지면을 먼저 설계하고 그 칸을 채웁니다. 지시를 받아 직전 지면을 고치는 재생성은 직전 구성을 보고 고치는
+    // 이전 경로(내용 정리 → 구성)를 씁니다.
+    //
+    // 설계가 먼저 오는 생성이 실패해도 이전 경로로 넘어가지 않습니다. 넘어가면 쓴 지면을 버리고 내용과 구성을 처음부터
+    // 다시 만듭니다(intent `ai-output-no-cli-rewrite`). 걸린 칸은 각 호출이 같은 대화에서 고칩니다.
+    if (!content && !context.previous?.structured && this.designFirst) return this.#designFirstPage(context, sink);
     if (!content) {
       if (!context.author?.name)
         throw new PageGenerationError("포트폴리오에 표시할 이름이 필요합니다.");
