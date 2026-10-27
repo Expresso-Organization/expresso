@@ -20,7 +20,12 @@ const DOMAIN_COLLECTIONS = [
   "recent_searches", "recipe_revisions", "recipe_unused_sources", "record_links", "record_usages",
   "requirement_coverages", "revisions", "saved_searches", "skills", "skill_evidence", "snapshot_chunks",
   "brews", "job_analyses", "portfolios", "deployments",
+  "career_ai_proposals", "career_document_snapshots", "career_document_updates", "career_record_relations",
+  "career_record_revisions", "identity_tokens", "widgets",
 ] as const;
+
+/** 사용자 삭제가 `userId`로 지우는 컬렉션 전부. 스키마에 `userId`가 있는 컬렉션과 같아야 한다(통합 테스트가 본다). */
+export const PURGED_COLLECTIONS: readonly string[] = [...RAW_COLLECTIONS, ...AGGREGATE_COLLECTIONS, ...DOMAIN_COLLECTIONS];
 
 async function erase(tx: MongoTransaction, names: readonly string[], userId: string) {
   let affected = 0;
@@ -47,4 +52,14 @@ export async function purgePhase(tx: MongoTransaction, requestId: string, userId
   }
   await mongoCollections(tx.db).accountDeletionRequests.updateOne({ _id: requestId, status: "pending", phase }, { $set: { phase: next } }, { session: tx.session });
   return true;
+}
+
+/**
+ * 유예 기간 없이 한 사용자의 데이터와 사용자 문서를 지금 지운다. 관리자가 더미 계정을 지우거나
+ * 다시 채울 때 쓴다. 지우는 컬렉션은 유예 삭제의 단계 목록과 같다 — 목록을 따로 두면 한쪽에만
+ * 새 컬렉션이 더해진다.
+ */
+export async function purgeUserNow(tx: MongoTransaction, userId: string): Promise<void> {
+  await erase(tx, PURGED_COLLECTIONS, userId);
+  await mongoCollections(tx.db).users.deleteOne({ _id: userId }, { session: tx.session });
 }

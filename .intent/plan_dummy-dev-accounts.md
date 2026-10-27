@@ -20,7 +20,9 @@ date: 2026-10-28
 | `packages/database/src/migrations.test.ts` · `schema.test.ts` | 0022 적용 확인 |
 | `packages/contracts/src/identity.ts` · `admin.ts` (새) · `index.ts` | `role` · `impersonation`, 관리 응답 스키마 |
 | `services/backend/src/modules/identity/*` | `owner` 주체, `actingAsUserId` 해석, 로그아웃 기준, 더미 재설정 메일 차단, legacy 구현 맞춤 |
-| `services/backend/src/modules/account-lifecycle/mongo-purge.ts` · `index.ts` | `purgeUserNow` 내보내기 |
+| `services/backend/src/modules/account-lifecycle/mongo-purge.ts` · `index.ts` | `purgeUserNow` 내보내기. 기존 삭제 목록에 빠져 있던 `userId` 컬렉션 7종(`career_record_relations` · `career_document_snapshots` 등)을 채운다 |
+| `services/backend/src/modules/account-lifecycle/mongo.integration.test.ts` | 스키마의 `userId` 컬렉션이 모두 삭제 목록에 있는지 검사 |
+| `packages/database/src/mongo-build.mjs` | dist에 0022 원본 복사 |
 | `services/backend/src/modules/admin/` (새) | `personas/*.ts` 5개, `service.ts`, `routes.ts`, `cli.ts`, `index.ts`, 테스트 |
 | `services/backend/src/api/build-app.ts` · `package.json` | 라우트 등록, `admin` 스크립트 |
 | `services/web/src/lib/api/endpoints.ts` | `admin` 호출 묶음 |
