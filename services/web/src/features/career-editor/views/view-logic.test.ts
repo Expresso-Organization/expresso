@@ -2,7 +2,7 @@ import type { CareerCategory, CareerPropertyDefinitionV2, CareerRecord, CareerVi
 import { CareerViewConfigurationSchema } from "@expresso/contracts";
 import { describe, expect, it } from "vitest";
 
-import { EMPTY_GROUP, defaultViewDraft, filterRoot, groupColumns, groupKeyOf, localDefaultViews, matchesFilter, normalizeFilter, operandFor, operatorsFor, sortRecords, timelineRange, withType, withinAxis } from "./view-logic";
+import { EMPTY_GROUP, defaultViewDraft, filterRoot, groupColumns, groupKeyOf, localDefaultViews, matchesFilter, normalizeFilter, operandFor, operatorsFor, sortRecords, timelineDefaults, timelineRange, withType, withinAxis } from "./view-logic";
 
 const id = (index: number) => `00000000-0000-4000-8000-${String(index).padStart(12, "0")}`;
 function definition(index: number, key: string, type: CareerPropertyDefinitionV2["type"], config: Record<string, unknown> = {}): CareerPropertyDefinitionV2 {
@@ -76,6 +76,13 @@ describe("view-logic", () => {
     const separate = { ...base, timeline: { ...base.timeline!, endPropertyId: id(5) } };
     expect(timelineRange(item, separate, category)).toEqual({ start: "2023-03-01", end: "2025-01-01" });
     expect(withinAxis({ start: "2023-03-01", end: "2024-02-01" }, { ...base, timeline: { ...base.timeline!, axisStart: "2024-03-01" } })).toBe(false);
+  });
+
+  it("starts the timeline on the date property records actually fill", () => {
+    const filled = [record(1, { ended: { type: "date", value: { start: "2021-02-01", end: null, timezone: null } } }), record(2, {})];
+    expect(timelineDefaults(category, filled)).toMatchObject({ startPropertyId: id(5), endPropertyId: null });
+    const both = [record(1, { period: { type: "date", value: { start: "2015-03-01", end: null, timezone: null } }, ended: { type: "date", value: { start: "2021-02-01", end: null, timezone: null } } })];
+    expect(timelineDefaults(category, both)).toMatchObject({ startPropertyId: id(4), endPropertyId: id(5) });
   });
 
   it("follows the screen definition for default tabs and skips timeline without dates", () => {

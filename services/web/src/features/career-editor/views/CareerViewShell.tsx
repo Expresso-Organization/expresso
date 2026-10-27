@@ -55,7 +55,7 @@ type Notice = { text: string; action?: { label: string; run(): void } };
 export function CareerViewShell({ category: initialCategory, initialViews, initialViewId, initialPage, initialSearch = "", trashOpen = false, onTrashClose }: CareerViewShellProps) {
   const router = useRouter();
   const [category, setCategory] = useState(initialCategory);
-  const [views, setViews] = useState<CareerViewConfiguration[]>(() => initialViews.length ? [...initialViews].sort((left, right) => left.order - right.order) : localDefaultViews(initialCategory));
+  const [views, setViews] = useState<CareerViewConfiguration[]>(() => initialViews.length ? [...initialViews].sort((left, right) => left.order - right.order) : localDefaultViews(initialCategory, initialPage.data));
   const [activeViewId, setActiveViewId] = useState(() => views.some((view) => view.id === initialViewId) ? initialViewId! : views[0]!.id);
   const [records, setRecords] = useState(() => initialPage.data.map(listItem));
   const [page, setPage] = useState(initialPage.page);
@@ -296,7 +296,7 @@ export function CareerViewShell({ category: initialCategory, initialViews, initi
 
   async function createView(type: CareerViewType) {
     await materialize();
-    const draft = defaultViewDraft(categoryRef.current, type, uniqueViewName(VIEW_TYPE_LABELS[type], viewsRef.current));
+    const draft = defaultViewDraft(categoryRef.current, type, uniqueViewName(VIEW_TYPE_LABELS[type], viewsRef.current), recordsRef.current);
     const created = await postView(draft);
     if (!created) return;
     replaceViews((items) => [...items, created]);
@@ -466,7 +466,7 @@ export function CareerViewShell({ category: initialCategory, initialViews, initi
         onSelect={setActiveViewId}
         onCreate={(type) => void createView(type)}
         onRename={(id, name) => { const target = viewsRef.current.find((item) => item.id === id); if (target) updateView({ ...target, name }); }}
-        onType={(id, type) => { const target = viewsRef.current.find((item) => item.id === id); if (target) updateView(withType(target, type, categoryRef.current)); }}
+        onType={(id, type) => { const target = viewsRef.current.find((item) => item.id === id); if (target) updateView(withType(target, type, categoryRef.current, recordsRef.current)); }}
         onDuplicate={(id) => void duplicateView(id)}
         onDelete={(id) => void deleteView(id)}
         onReorder={(ids) => void reorderViews(ids)}

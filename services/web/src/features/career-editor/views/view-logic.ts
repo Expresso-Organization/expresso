@@ -313,23 +313,41 @@ export function withinAxis(range: TimelineRange, view: CareerViewConfiguration):
 
 // ── 뷰 만들기 ────────────────────────────────────────────────────────
 
-/** 종류를 바꿀 때 그 종류에 필요한 설정을 채운다. 타임라인은 첫 날짜 속성을 시작으로 잡는다. */
-export function withType<T extends ViewDraft>(view: T, type: CareerViewType, category: CareerCategory): T {
+/**
+ * 타임라인의 기본 시작 · 종료 속성. 시작은 기록이 가장 많이 채운 날짜 속성이다(같으면 앞 순서).
+ * 종료는 시작과 함께 채운 기록마다 시작 이후 날짜인 다른 날짜 속성이다. 없으면 시작 값의 종료를 쓴다.
+ */
+export function timelineDefaults(category: CareerCategory, records: readonly CareerRecord[]): NonNullable<CareerViewConfiguration["timeline"]> | null {
+  const dates = dateDefinitions(category);
+  const starts = (definition: CareerPropertyDefinitionV2) => records.map((record) => dateRange(record.properties[definition.key])?.start ?? null);
+  const filled = (definition: CareerPropertyDefinitionV2) => starts(definition).filter(Boolean).length;
+  const start = [...dates].sort((left, right) => filled(right) - filled(left))[0];
+  if (!start) return null;
+  const startValues = starts(start);
+  const end = dates.find((candidate) => {
+    if (candidate.id === start.id) return false;
+    const pairs = starts(candidate).map((value, index) => [startValues[index], value] as const).filter(([from, to]) => from && to);
+    return pairs.length > 0 && pairs.every(([from, to]) => to! >= from!);
+  });
+  return { startPropertyId: start.id, endPropertyId: end?.id ?? null, axisStart: null, axisEnd: null };
+}
+
+/** 종류를 바꿀 때 그 종류에 필요한 설정을 채운다. 타임라인 속성은 `timelineDefaults`로 잡는다. */
+export function withType<T extends ViewDraft>(view: T, type: CareerViewType, category: CareerCategory, records: readonly CareerRecord[] = []): T {
   const definitions = activeDefinitions(category);
-  const date = dateDefinitions(category)[0];
   const startValid = view.timeline && definitionById(category, view.timeline.startPropertyId)?.type === "date";
   return {
     ...view,
     type,
     gallery: view.gallery ?? (type === "gallery" ? { coverPropertyId: null, previewPropertyIds: definitions.filter((item) => item.type !== "title").slice(0, 3).map((item) => item.id) } : null),
     board: view.board ?? (type === "board" ? { hiddenGroupIds: [], cardOrder: {} } : null),
-    timeline: startValid ? view.timeline : type === "timeline" && date ? { startPropertyId: date.id, endPropertyId: null, axisStart: null, axisEnd: null } : null,
+    timeline: startValid ? view.timeline : type === "timeline" ? timelineDefaults(category, records) : null,
   };
 }
 
-export function defaultViewDraft(category: CareerCategory, type: CareerViewType, name: string): ViewDraft {
+export function defaultViewDraft(category: CareerCategory, type: CareerViewType, name: string, records: readonly CareerRecord[] = []): ViewDraft {
   const ids = activeDefinitions(category).map((item) => item.id);
-  return withType({ name, type, filter: null, sorts: [], groupPropertyId: null, groupOrder: [], recordOrder: [], visiblePropertyIds: ids, propertyOrder: ids, columnWidths: {}, gallery: null, board: null, timeline: null }, type, category);
+  return withType({ name, type, filter: null, sorts: [], groupPropertyId: null, groupOrder: [], recordOrder: [], visiblePropertyIds: ids, propertyOrder: ids, columnWidths: {}, gallery: null, board: null, timeline: null }, type, category, records);
 }
 
 /** 이미 쓰는 이름이면 뒤에 번호를 붙인다. */
@@ -344,11 +362,11 @@ export function isLocalView(view: Pick<CareerViewConfiguration, "id">): boolean 
 }
 
 /** 저장된 뷰가 없는 카테고리에 보일 기본 탭. 처음 바꿀 때 모두 저장한다. */
-export function localDefaultViews(category: CareerCategory): CareerViewConfiguration[] {
+export function localDefaultViews(category: CareerCategory, records: readonly CareerRecord[] = []): CareerViewConfiguration[] {
   const offered = (OFFERED[category.key] ?? [category.defaultView]).filter((type) => availableViewTypes(category).includes(type));
   const types = offered.length ? offered : ["table" as const];
   const now = new Date(0).toISOString();
-  return types.map((type, order) => ({ ...defaultViewDraft(category, type, VIEW_TYPE_LABELS[type]), id: `local-${type}`, categoryId: category.id, version: 1, order, createdAt: now, updatedAt: now }));
+  return types.map((type, order) => ({ ...defaultViewDraft(category, type, VIEW_TYPE_LABELS[type], records), id: `local-${type}`, categoryId: category.id, version: 1, order, createdAt: now, updatedAt: now }));
 }
 
 /** PATCH · POST 본문. 계약이 받는 칸만 보낸다. */
