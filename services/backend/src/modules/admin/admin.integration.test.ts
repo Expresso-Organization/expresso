@@ -11,7 +11,7 @@ import { CareerService } from "../career/index.js";
 import { ConsentService } from "../consent/index.js";
 import { IdentityService } from "../identity/index.js";
 import { PERSONAS } from "./personas/index.js";
-import { AdminService } from "./service.js";
+import { AdminService, type AdminServiceDependencies } from "./service.js";
 
 const config: RuntimeConfig = {
   nodeEnv: "test", host: "127.0.0.1", port: 4_000, logLevel: "silent", databaseUrl: "mysql://127.0.0.1:1/unused",
@@ -136,6 +136,22 @@ describe.skipIf(!(process.env.TEST_MONGODB_URL ?? process.env.TEST_MONGODB_ADMIN
     await call("POST", "/admin/dummy-accounts/dummy-newgrad/impersonation", token);
     expect((await call("POST", "/auth/logout", token)).statusCode).toBe(204);
     expect(await me(token)).toBe(401);
+  });
+
+  it("keeps building when a worker bumps record versions in between", async () => {
+    // 실제 서버에서는 워커의 계산이 기록 버전을 올린다. 관계를 잇기 직전에 같은 일을 흉내 낸다.
+    const records = mongoCollections(fixture.resource.db).careerRecords;
+    const bumped = new Set<string>();
+    const racing: AdminServiceDependencies["career"] = Object.assign(Object.create(career) as CareerService, {
+      replaceTargets: async (...args: Parameters<CareerService["replaceTargets"]>) => {
+        if (!bumped.has(args[1])) { bumped.add(args[1]); await records.updateOne({ _id: args[1] }, { $inc: { version: 1 } }); }
+        return career.replaceTargets(...args);
+      },
+    });
+    const raced = new AdminService(fixture.resource, { identity, career: racing, consent: new ConsentService(fixture.resource) });
+    const principal = { sessionId: randomUUID(), user: null as never, owner: { userId: ((await me(adminToken)) as { id: string }).id, displayName: "운영자", role: "admin" as const } };
+    expect((await raced.refillDummy(principal, "dummy-newgrad")).account?.recordCount).toBe(3);
+    expect(bumped.size).toBeGreaterThan(0);
   });
 
   it("builds every persona to its source record count", async () => {

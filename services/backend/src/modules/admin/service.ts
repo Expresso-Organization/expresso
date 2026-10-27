@@ -6,7 +6,7 @@ import { mongoCollections, stableCareerId, type AdminAuditEventDoc } from "@expr
 import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction } from "../../platform/mongo-transaction.js";
 import { purgeUserNow } from "../account-lifecycle/index.js";
-import { multiSelectValueByNames, selectValueByName, type CareerService } from "../career/index.js";
+import { CareerError, multiSelectValueByNames, selectValueByName, type CareerService } from "../career/index.js";
 import type { ConsentService } from "../consent/index.js";
 import type { IdentityPrincipal, IdentityService } from "../identity/index.js";
 import { PERSONAS, personaEmail, type Persona, type PersonaPropertyValue, type PersonaRecord } from "./personas/index.js";
@@ -20,7 +20,7 @@ export class AdminError extends Error {
 
 export interface AdminServiceDependencies {
   identity: Pick<IdentityService, "createDummyAccount" | "setRole" | "actAs" | "stopActing">;
-  career: Pick<CareerService, "listCategories" | "createRecord" | "updateRecord" | "saveProfile" | "replaceTargets">;
+  career: Pick<CareerService, "listCategories" | "createRecord" | "getRecord" | "updateRecord" | "saveProfile" | "replaceTargets">;
   consent: Pick<ConsentService, "grant">;
 }
 
@@ -142,7 +142,7 @@ export class AdminService {
     await this.deps.career.saveProfile(userId, { ...persona.profile, targetRoles: [...persona.profile.targetRoles] });
 
     const categoryByKey = new Map((await this.deps.career.listCategories(userId)).map((category) => [category.key, category]));
-    const created = new Map<PersonaRecord, { id: string; title: string; version: number }>();
+    const created = new Map<PersonaRecord, string>();
     for (const [index, record] of persona.records.entries()) {
       const category = categoryByKey.get(record.category);
       if (!category) throw new Error(`category ${record.category} is missing for ${persona.key}`);
@@ -150,8 +150,8 @@ export class AdminService {
       // 같은 원본 줄은 같은 키 — 중간에 끊긴 만들기를 다시 돌려도 기록이 겹치지 않는다.
       const { record: saved } = await this.deps.career.createRecord(userId, `${persona.key}:${index}`, { categoryId: category.id, title: record.title, properties, bodyMd: record.body });
       const status = record.status ?? "organized";
-      const current = status === saved.status ? saved : await this.deps.career.updateRecord(userId, saved.id, saved.version, { status });
-      created.set(record, { id: current.id, title: current.title, version: current.version });
+      if (status !== saved.status) await this.#write(userId, saved.id, saved.version, (version) => this.deps.career.updateRecord(userId, saved.id, version, { status }));
+      created.set(record, saved.id);
     }
 
     const byRef = new Map(persona.records.flatMap((record) => record.ref ? [[record.ref, created.get(record)!] as const] : []));
@@ -160,10 +160,27 @@ export class AdminService {
       for (const [key, value] of Object.entries(record.props ?? {})) {
         const definition = category.propertySchemaV2.find((item) => item.key === key && item.deletedAt === null);
         if (definition?.type !== "relation") continue;
-        const source = created.get(record)!;
-        const targetIds = (value as { refs: readonly string[] }).refs.map((ref) => byRef.get(ref)!.id);
-        const updated = await this.deps.career.replaceTargets(userId, source.id, definition.id, targetIds, source.version);
-        source.version = updated.version;
+        const sourceId = created.get(record)!;
+        const targetIds = (value as { refs: readonly string[] }).refs.map((ref) => byRef.get(ref)!);
+        const current = await this.deps.career.getRecord(userId, sourceId);
+        await this.#write(userId, sourceId, current.version, (version) => this.deps.career.replaceTargets(userId, sourceId, definition.id, targetIds, version));
+      }
+    }
+  }
+
+  /**
+   * 기록 버전을 조건으로 쓴다. 만드는 동안에도 워커의 계산(`career.computation`)과 관계 연결이
+   * 기록 버전을 올린다. 412를 받으면 최신 버전을 다시 읽어 쓴다. 다시 읽은 버전이 실패한 버전과
+   * 같으면 버전 때문이 아니므로 오류를 그대로 낸다.
+   */
+  async #write<T>(userId: string, recordId: string, version: number, write: (version: number) => Promise<T>): Promise<T> {
+    for (let current = version; ;) {
+      try { return await write(current); }
+      catch (error) {
+        if (!(error instanceof CareerError) || error.statusCode !== 412) throw error;
+        const latest = (await this.deps.career.getRecord(userId, recordId)).version;
+        if (latest === current) throw error;
+        current = latest;
       }
     }
   }
