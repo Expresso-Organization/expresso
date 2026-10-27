@@ -1,4 +1,4 @@
-import { type EntitlementCapability, type PlanCode } from "@expresso/contracts";
+import { BILLABLE_TOKEN_FIELDS, type EntitlementCapability, type PlanCode } from "@expresso/contracts";
 import { mongoCollections } from "@expresso/database";
 import type { ClientSession, Db } from "mongodb";
 
@@ -85,11 +85,14 @@ export function kstPeriodStartsAt(period: KstMonthlyPeriod): Date {
   return new Date(Date.parse(`${period.periodStart}T00:00:00.000Z`) - KST_OFFSET_MS);
 }
 
+/** 크레딧에 들어가는 토큰의 합. 어느 종류를 넣는지는 `BILLABLE_TOKEN_FIELDS` 한 곳이 정한다. */
+export const BILLABLE_TOKENS = { $add: BILLABLE_TOKEN_FIELDS.map((field) => `$${field}`) };
+
 /**
- * 기간 안에서 한 사용자가 쓴 토큰 합계.
+ * 기간 안에서 한 사용자가 크레딧에 들어가는 토큰을 쓴 합계.
  *
- * 네 종류를 모두 더한다. 캐시 읽기가 입력보다 네 자리 크다 — 측정한 생성 한 번이
- * 입력 8 · 캐시 읽기 81,423 토큰이었다. 입력만 세면 실제 사용량과 전혀 다른 값이 된다.
+ * 캐시 읽기가 입력보다 네 자리 크다 — 측정한 생성 한 번이 입력 8 · 캐시 읽기 81,423
+ * 토큰이었다. 입력만 세면 실제 사용량과 전혀 다른 값이 된다.
  */
 export async function tokensUsedInPeriod(
   db: Db,
@@ -99,7 +102,7 @@ export async function tokensUsedInPeriod(
 ): Promise<number> {
   const [row] = await mongoCollections(db).aiUsageEvents.aggregate<{ total: number }>([
     { $match: { userId, createdAt: { $gte: kstPeriodStartsAt(period), $lt: new Date(period.resetsAt) } } },
-    { $group: { _id: null, total: { $sum: { $add: ["$inputTokens", "$outputTokens", "$cacheReadTokens", "$cacheCreationTokens"] } } } },
+    { $group: { _id: null, total: { $sum: BILLABLE_TOKENS } } },
   ], options).toArray();
   return row?.total ?? 0;
 }

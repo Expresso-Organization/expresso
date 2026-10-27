@@ -129,11 +129,16 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_U
     await app.ready();
   }, 60_000);
 
-  /** 측정한 생성 한 번의 평균 토큰(출력 16,647 · 캐시 생성 136,562 · 캐시 읽기 81,423 · 입력 8). */
-  const usage = (userId: string | null, totalTokens: number, createdAt: Date) =>
+  /**
+   * 크레딧에 들어가는 토큰이 `billableTokens`인 호출 한 건.
+   *
+   * 모양은 측정한 생성 한 번의 평균이다(입력 8 · 캐시 읽기 81,423 · 나머지는 출력). 캐시
+   * 생성 136,562 토큰은 언제나 함께 넣는다 — 크레딧에 들어가면 아래 기대값이 모두 틀린다.
+   */
+  const usage = (userId: string | null, billableTokens: number, createdAt: Date) =>
     mongoCollections(fixture!.resource.db).aiUsageEvents.insertOne({
       _id: randomUUID(), userId, contract: "page_generation", model: "claude-opus-4-5",
-      inputTokens: 8, outputTokens: 16_647, cacheReadTokens: 81_423, cacheCreationTokens: totalTokens - 8 - 16_647 - 81_423,
+      inputTokens: 8, outputTokens: billableTokens - 8 - 81_423, cacheReadTokens: 81_423, cacheCreationTokens: 136_562,
       costUsd: null, durationMs: 1_000, createdAt,
     });
 
@@ -223,17 +228,18 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_U
     `;
     expect(records).toEqual([{ id: preservedRecordId }]);
   });
-  it.skipIf(engine === "mysql")("allows four average generations on the free plan and blocks the fifth", async () => {
+  it.skipIf(engine === "mysql")("allows ten average generations on the free plan and blocks the eleventh", async () => {
     const userId = randomUUID();
-    await mongoCollections(fixture!.resource.db).users.insertOne({ _id: userId, email: `${userId}@example.com`, displayName: "four", planId: planIds.free, createdAt: new Date() });
+    await mongoCollections(fixture!.resource.db).users.insertOne({ _id: userId, email: `${userId}@example.com`, displayName: "ten", planId: planIds.free, createdAt: new Date() });
     const at = new Date("2026-10-20T03:00:00Z");
-    for (let index = 0; index < 4; index++) await usage(userId, 235_000, new Date("2026-10-10T03:00:00Z"));
+    // 평균 생성 한 번은 캐시 생성을 빼면 98,078 토큰이다.
+    for (let index = 0; index < 10; index++) await usage(userId, 98_078, new Date("2026-10-10T03:00:00Z"));
     await expect(entitlementService.check(userId, "portfolio.generate", at)).resolves.toMatchObject({
-      allowed: true, reason: "ENTITLED", usage: { used: 94, limit: 100, remaining: 6 },
+      allowed: true, reason: "ENTITLED", usage: { used: 99, limit: 100, remaining: 1 },
     });
-    await usage(userId, 235_000, new Date("2026-10-11T03:00:00Z"));
+    await usage(userId, 98_078, new Date("2026-10-11T03:00:00Z"));
     await expect(entitlementService.check(userId, "portfolio.generate", at)).resolves.toMatchObject({
-      allowed: false, reason: "QUOTA_EXHAUSTED", usage: { used: 118, limit: 100, remaining: 0 },
+      allowed: false, reason: "QUOTA_EXHAUSTED", usage: { used: 108, limit: 100, remaining: 0 },
     });
   });
 

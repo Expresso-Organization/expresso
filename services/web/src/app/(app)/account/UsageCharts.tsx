@@ -6,7 +6,7 @@ import styles from "./page.module.css";
 
 /** 기능별 · 모델별에서 이름을 세우는 줄 수. 나머지는 한 줄로 묶는다. */
 const RANK_ROWS = 6;
-const SEGMENT_CLASS = [styles.seg1, styles.seg2, styles.seg3, styles.seg4];
+const SEGMENT_CLASS = [styles.seg1, styles.seg2, styles.seg3];
 
 /** 토큰을 크레딧으로. 한도와 같은 단위로 읽게 한다. */
 function credits(tokens: number, perCredit: number): string {

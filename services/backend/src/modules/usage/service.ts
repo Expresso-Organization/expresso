@@ -12,7 +12,7 @@ import {
 import { mongoCollections } from "@expresso/database";
 
 import type { MongoContext } from "../../platform/mongodb.js";
-import { capabilityEnabled, kstMonthlyPeriod, kstPeriodStartsAt, KST_OFFSET_MS } from "../entitlements/index.js";
+import { BILLABLE_TOKENS, capabilityEnabled, kstMonthlyPeriod, kstPeriodStartsAt, KST_OFFSET_MS } from "../entitlements/index.js";
 
 export class UsageSubjectNotFoundError extends Error {
   constructor() {
@@ -21,11 +21,9 @@ export class UsageSubjectNotFoundError extends Error {
   }
 }
 
-const TOTAL = { $add: ["$inputTokens", "$outputTokens", "$cacheReadTokens", "$cacheCreationTokens"] };
 const TOKEN_SUMS = {
   inputTokens: { $sum: "$inputTokens" },
   outputTokens: { $sum: "$outputTokens" },
-  cacheCreationTokens: { $sum: "$cacheCreationTokens" },
   cacheReadTokens: { $sum: "$cacheReadTokens" },
   calls: { $sum: 1 },
 };
@@ -40,7 +38,7 @@ interface Facets {
   byModel: { _id: string; totalTokens: number; calls: number }[];
 }
 
-const ZERO: UsageTokens = { inputTokens: 0, outputTokens: 0, cacheCreationTokens: 0, cacheReadTokens: 0 };
+const ZERO: UsageTokens = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0 };
 
 /** 한국 시각 날짜(`YYYY-MM-DD`). 기간과 같은 기준으로 하루를 나눈다. */
 function kstDate(at: Date): string {
@@ -52,7 +50,6 @@ function tokensOf(row: TokenRow | undefined): UsageTokens {
   return {
     inputTokens: row.inputTokens,
     outputTokens: row.outputTokens,
-    cacheCreationTokens: row.cacheCreationTokens,
     cacheReadTokens: row.cacheReadTokens,
   };
 }
@@ -83,12 +80,12 @@ export class UsageService {
         totals: [{ $group: { _id: null, ...TOKEN_SUMS } }],
         daily: [{ $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: "+09:00" } }, ...TOKEN_SUMS } }],
         byContract: [
-          { $group: { _id: "$contract", totalTokens: { $sum: TOTAL }, calls: { $sum: 1 } } },
+          { $group: { _id: "$contract", totalTokens: { $sum: BILLABLE_TOKENS }, calls: { $sum: 1 } } },
           { $sort: { totalTokens: -1, _id: 1 } },
           { $limit: GROUP_LIMIT },
         ],
         byModel: [
-          { $group: { _id: "$model", totalTokens: { $sum: TOTAL }, calls: { $sum: 1 } } },
+          { $group: { _id: "$model", totalTokens: { $sum: BILLABLE_TOKENS }, calls: { $sum: 1 } } },
           { $sort: { totalTokens: -1, _id: 1 } },
           { $limit: GROUP_LIMIT },
         ],
@@ -97,7 +94,7 @@ export class UsageService {
 
     const totals = facets?.totals[0];
     const tokens = tokensOf(totals);
-    const creditsUsed = creditsFromTokens(tokens.inputTokens + tokens.outputTokens + tokens.cacheCreationTokens + tokens.cacheReadTokens);
+    const creditsUsed = creditsFromTokens(tokens.inputTokens + tokens.outputTokens + tokens.cacheReadTokens);
     const creditLimit = plan.monthlyCredits ?? null;
 
     // 호출이 없던 날도 0으로 채운다. 막대 사이가 비면 그날을 건너뛴 것처럼 읽힌다.

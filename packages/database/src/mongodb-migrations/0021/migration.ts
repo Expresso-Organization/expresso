@@ -16,8 +16,7 @@ const count = { bsonType: ["int", "long", "double"], minimum: 0, multipleOf: 1 }
  *   값을 읽지 않으므로 남겨 두지 않는다.
  *
  * 크레딧 하나의 크기(10,000 토큰)는 `@expresso/contracts`의 `TOKENS_PER_CREDIT`에
- * 근거와 함께 있다. 저장된 생성 40건의 평균이 약 235,000 토큰이어서 무료 플랜
- * 100 크레딧으로 네 번 생성한다.
+ * 근거와 함께 있다. 어느 토큰을 크레딧에 넣는지는 `BILLABLE_TOKEN_FIELDS`가 정한다.
  *
  * 0001의 `schema.json`은 고치지 않는다. 그 파일은 0001의 체크섬에 들어가서, 고치면
  * 이미 적용한 데이터베이스에서 마이그레이션이 멈춘다. 번호가 0021인 이유는

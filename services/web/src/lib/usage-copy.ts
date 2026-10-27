@@ -27,11 +27,15 @@ export function contractLabel(contract: string): string {
   return CONTRACT_LABEL[contract] ?? contract;
 }
 
-/** 쌓는 순서이자 범례 순서. 차트 계열 색은 이 순서로 `--ex-chart-1`부터 붙는다. */
+/**
+ * 크레딧에 들어가는 토큰 종류. 쌓는 순서이자 범례 순서다.
+ *
+ * 차트 계열 색은 이 순서로 `--ex-chart-1`부터 붙는다. 캐시 생성 토큰은 크레딧에
+ * 넣지 않으므로 여기에도 없다(`BILLABLE_TOKEN_FIELDS`).
+ */
 export const TOKEN_KINDS: readonly { key: keyof UsageTokens; label: string }[] = [
   { key: "inputTokens", label: "입력" },
   { key: "outputTokens", label: "출력" },
-  { key: "cacheCreationTokens", label: "캐시 생성" },
   { key: "cacheReadTokens", label: "캐시 읽기" },
 ];
 

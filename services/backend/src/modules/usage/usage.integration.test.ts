@@ -64,16 +64,16 @@ describe.skipIf(!(process.env.TEST_MONGODB_URL ?? process.env.TEST_MONGODB_ADMIN
       planCode: "free",
       tokensPerCredit: 10_000,
       calls: 3,
-      tokens: { inputTokens: 1_508, outputTokens: 18_347, cacheCreationTokens: 139_562, cacheReadTokens: 86_423 },
-      // 245,840 토큰 → 24.584 → 25
-      creditsUsed: 25,
+      tokens: { inputTokens: 1_508, outputTokens: 18_347, cacheReadTokens: 86_423 },
+      // 캐시 생성(139,562)은 빼고 106,278 토큰 → 10.6278 → 11
+      creditsUsed: 11,
       creditLimit: 100,
-      creditsRemaining: 75,
+      creditsRemaining: 89,
     });
     expect(usage.byContract.map(({ key }) => key)).toEqual(["page_generation", "agent_chat", "search_interpret"]);
     expect(usage.byModel).toEqual([
-      { key: "claude-opus-4-5", totalTokens: 234_640, calls: 1 },
-      { key: "claude-sonnet-5", totalTokens: 10_000, calls: 1 },
+      { key: "claude-opus-4-5", totalTokens: 98_078, calls: 1 },
+      { key: "claude-sonnet-5", totalTokens: 7_000, calls: 1 },
       { key: "claude-haiku-5-5", totalTokens: 1_200, calls: 1 },
     ]);
   });

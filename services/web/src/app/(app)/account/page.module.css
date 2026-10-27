@@ -200,10 +200,6 @@
   background: var(--ex-chart-3);
 }
 
-.seg4 {
-  background: var(--ex-chart-4);
-}
-
 .plot {
   display: flex;
   gap: 8px;
@@ -262,7 +258,7 @@
   opacity: 0.8;
 }
 
-/* 막대 위 말풍선 — 그날의 네 종류와 호출 수 */
+/* 막대 위 말풍선 — 그날의 토큰 종류별 크레딧과 호출 수 */
 .dayTip {
   position: absolute;
   bottom: calc(100% + 6px);

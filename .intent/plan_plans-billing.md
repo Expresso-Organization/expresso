@@ -66,7 +66,7 @@ date: 2026-10-27
 | `services/web/src/app/(app)/account/AccountNav.tsx` | 목록에 두 항목 |
 | `services/web/src/app/(app)/account/loading.tsx` | 세 구획 대기 모양 |
 | `services/web/src/app/(app)/account/page.module.css` | 차트 · `.plan*` · `.billing*` |
-| `services/web/src/styles/tokens.css` | `--ex-chart-1`~`4` 역할 토큰 · 두 어두운 지면 블록 |
+| `services/web/src/styles/tokens.css` | `--ex-chart-1`~`3` 역할 토큰 · 두 어두운 지면 블록 |
 | `services/web/src/components/shell/{Sidebar,SidebarSkeleton}.tsx` | 「이번 달 크레딧」 |
 | `services/web/src/app/(app)/jobs/page.tsx` | 같은 문구 |
 | `services/web/src/app/(app)/brew/[brewId]/materials/MaterialPicker.tsx` | 칸 → 비율 막대 · 문구 |
@@ -104,8 +104,8 @@ date: 2026-10-27
 크레딧이 크게 잡히면 모든 계정이 첫 생성에서 막히고, 작게 잡히면 한도가 사라진다.
 
 막는 방법 — 환산 함수를 `public.ts`에 따로 두고 단위 테스트를 먼저 쓴다. 측정한
-평균 생성(235,000 토큰)이 23.5 크레딧으로 나오는지, 무료 플랜 100으로 네 번까지
-통과하고 다섯 번째에 막히는지 그 테스트에서 확인한다.
+평균 생성(캐시 생성을 뺀 98,078 토큰)이 9.8 크레딧으로 나오는지, 무료 플랜 100으로 열 번까지
+통과하고 열한 번째에 막히는지 그 테스트에서 확인한다.
 
 되돌리기 — `entitlements/service.ts`만 `origin/main`에서 되돌리면 횟수 기준으로
 돌아간다. 그때 `plans.generationQuota`가 이미 지워져 있으므로 마이그레이션 0021도

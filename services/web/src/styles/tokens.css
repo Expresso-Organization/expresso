@@ -75,15 +75,14 @@
   /*
    * 차트 계열 — 서로 다른 것을 가르는 색.
    *
-   * dataviz 스킬의 기본 범주 팔레트 앞 네 칸이다. 순서가 색각 이상 구분을 맡으므로
+   * dataviz 스킬의 기본 범주 팔레트 앞 세 칸이다. 순서가 색각 이상 구분을 맡으므로
    * 바꾸지 않는다. 이 저장소의 지면(#ffffff · #171719)에서 `validate_palette.js`로
-   * 검사했다 — 인접 쌍 색각 이상 ΔE 9.1(밝음) · 8.4(어두움). 밝은 지면에서 3 · 4번은
+   * 검사했다 — 인접 쌍 색각 이상 ΔE 9.2(밝음) · 9.4(어두움). 밝은 지면에서 3번은
    * 대비가 3:1에 못 미치므로 값을 글로도 적는다.
    */
   --ex-viz-blue: #2a78d6;
   --ex-viz-orange: #eb6834;
   --ex-viz-aqua: #1baf7a;
-  --ex-viz-yellow: #eda100;
 
   color-scheme: light;
 
@@ -188,7 +187,6 @@
   --ex-chart-1: var(--ex-viz-blue);
   --ex-chart-2: var(--ex-viz-orange);
   --ex-chart-3: var(--ex-viz-aqua);
-  --ex-chart-4: var(--ex-viz-yellow);
 
   /* ── 깊이 — 어두운 지면에서는 값이 달라진다 ──────────────── */
   --ex-elevation-raised: 0 2px 10px rgba(22, 34, 58, 0.05);
@@ -326,7 +324,6 @@
     --ex-chart-1: #3987e5;
     --ex-chart-2: #d95926;
     --ex-chart-3: #199e70;
-    --ex-chart-4: #c98500;
 
     /* 어두운 지면에서는 그림자가 보이지 않는다 — 훨씬 진하게 */
     --ex-elevation-raised: 0 2px 10px rgba(0, 0, 0, 0.4);
@@ -392,7 +389,6 @@
   --ex-chart-1: #3987e5;
   --ex-chart-2: #d95926;
   --ex-chart-3: #199e70;
-  --ex-chart-4: #c98500;
 
   --ex-elevation-raised: 0 2px 10px rgba(0, 0, 0, 0.4);
   --ex-elevation-overlay: 0 18px 44px rgba(0, 0, 0, 0.55);
