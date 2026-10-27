@@ -26,7 +26,9 @@ const COVERAGE = {
     color: "var(--ex-status-success-text)",
     label: "있음",
     row: "",
-    note: "",
+    // 충족도 제 클래스로 색을 집는다. 기본값에 기대면 판정이 없는 줄이
+    // 충족 색으로 그려진다 — 실제로 그렇게 새어 나갔다.
+    note: styles.requirementNoteCovered ?? "",
   },
   partial: {
     icon: "warning-circle",
@@ -196,11 +198,17 @@ export default async function JobDetailPage({
                     ),
                   )}
                 </div>
-                <div className={styles.stackNote}>
-                  {job.match
-                    ? `표시된 ${haveStack}개는 내 기록에 이미 있는 것입니다`
-                    : "아직 내 기록과 대조하지 않았습니다"}
-                </div>
+                {/*
+                  * 일치도를 낸 공고에서만 센다. 내지 않았으면 아무 말도 하지 않는다 —
+                  * `matched`가 전부 null이라 "표시된 0개"가 되고, 그건 사실이 아니다.
+                  * 일치도는 커리어 기록이 3건 미만이면 대조를 마쳐도 null이므로
+                  * 이 자리는 자격 요건의 대조 상태와 다른 것을 본다.
+                  */}
+                {job.match ? (
+                  <div className={styles.stackNote}>
+                    표시된 {haveStack}개는 내 기록에 이미 있는 것입니다
+                  </div>
+                ) : null}
               </div>
             ) : null}
 
@@ -212,7 +220,7 @@ export default async function JobDetailPage({
                   </span>
                   <span className={styles.blockTitleNote}>
                     {comparedCount === 0
-                      ? `${musts.length}개 · 아직 대조하지 않았습니다`
+                      ? "아직 대조하지 않았습니다"
                       : `${musts.length}개 중 ${coveredCount}개 충족`}
                   </span>
                 </div>
@@ -371,13 +379,19 @@ function RequirementRow({ requirement }: { requirement: JobRequirement }) {
       />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div className={styles.requirementLabel}>{requirement.label}</div>
-        <div className={`${styles.requirementNote} ${state?.note ?? ""}`}>
-          {state === null
-            ? "아직 내 기록과 대조하지 않았습니다"
-            : requirement.coveredBy.length > 0
+        {/*
+          * 이 줄은 근거를 적는 자리다. 대조한 적이 없으면 근거가 없으므로 줄
+          * 자체를 만들지 않는다 — 전에는 여기에 "아직 대조하지 않았습니다"가
+          * 들어가, 요건 여섯 줄이 우리 처리 상태를 여섯 번 말했다. 대조했는지는
+          * 블록 머리가 한 번 말한다.
+          */}
+        {state === null ? null : (
+          <div className={`${styles.requirementNote} ${state.note}`}>
+            {requirement.coveredBy.length > 0
               ? requirement.coveredBy.map((record) => record.title).join(" · ")
               : "기록에 없습니다 · 질문 3개로 채울 수 있습니다"}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

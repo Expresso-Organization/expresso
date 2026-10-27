@@ -152,6 +152,77 @@
   color: var(--ex-fg-muted);
 }
 
+/*
+ * 대조 상태가 쓰는 자리 — 자격 요건 라벨 바로 옆, 충족 수가 끝나고 서는 그 자리다.
+ * 네 상태가 같은 자리를 쓴다. 누를 것 · 진행 · 숫자 · 실패가 서로 다른 자리에
+ * 서면 상태가 바뀔 때마다 어디를 볼지 다시 찾아야 한다.
+ */
+.compareForm {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.compareButton {
+  border: 0;
+  border-radius: 999px;
+  padding: 5px 12px;
+  background: var(--ex-accent-surface);
+  color: var(--ex-accent-text);
+  font-size: var(--ex-text-xs);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.compareButton:hover {
+  background: var(--ex-accent-surface-hover);
+}
+
+.compareButton:focus-visible {
+  outline: 2px solid var(--ex-accent-soft);
+  outline-offset: 1px;
+}
+
+.compareButton:disabled {
+  cursor: progress;
+}
+
+.compareFailure {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-status-danger-text);
+}
+
+.compareError {
+  font-size: var(--ex-text-xs);
+  color: var(--ex-status-danger-text);
+}
+
+.compareProgress {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.compareTrack {
+  display: block;
+  width: 72px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--ex-border);
+  overflow: hidden;
+}
+
+.compareFill {
+  display: block;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--ex-accent-text);
+  transition: width 0.4s ease;
+}
+
 .dutyGroup {
   margin-bottom: 16px;
 }
@@ -245,8 +316,14 @@
   margin-bottom: 5px;
 }
 
+/* 근거 줄. 판정마다 색이 다르므로 기본값은 중립이고 셋 다 제 클래스를 쓴다.
+   충족이 기본값을 쓰던 동안, 판정이 없는 줄도 충족 색으로 그려졌다. */
 .requirementNote {
   font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
+}
+
+.requirementNoteCovered {
   color: var(--ex-status-success-text);
 }
 
