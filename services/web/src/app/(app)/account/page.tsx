@@ -3,117 +3,115 @@ import { HashScroll } from "@/components/shell/HashScroll";
 import { AgentKeySettings } from "@/features/agent-chat/AgentKeySettings";
 import { ThemePicker } from "@/components/ThemePicker";
 import { Icon } from "@/components/ui/Icon";
-import { ACCOUNT } from "@/lib/sample/site";
-import { consents } from "@/lib/api/endpoints";
+import type { NotificationKind } from "@expresso/contracts";
+import { consents, entitlements, notificationSettings } from "@/lib/api/endpoints";
 import { CONSENT_COPY } from "@/lib/consent-copy";
 import { requireSession } from "@/lib/require-session";
 
+import { setNotificationPreferenceAction } from "../../account-actions";
 import { grantConsentAction, revokeConsentAction } from "../../consent-actions";
 
 import { AccountNav } from "./AccountNav";
+import { DataSection } from "./DataSection";
 import styles from "./page.module.css";
+
+/** 지금 만들어지는 알림만 켜고 끈다. 나머지 종류는 보내는 코드가 없다. */
+const NOTIFICATION_COPY: Partial<Record<NotificationKind, { title: string; what: string }>> = {
+  deadline: { title: "관심 공고 마감", what: "담아 둔 공고의 마감이 3일 안으로 다가오면 한 번 알립니다" },
+  generation: { title: "포트폴리오 생성 완료", what: "생성이 끝나면 알리고, 누르면 편집 화면으로 갑니다" },
+};
+
+/** 다음 초기화 날짜. 「3월 12일」처럼 적는다. */
+function formatReset(at: string): string {
+  return new Date(at).toLocaleDateString("ko-KR", { month: "long", day: "numeric" });
+}
 
 export default async function AccountPage() {
   const session = await requireSession();
-  const consent = (await consents.list(session.accessToken)).data;
+  const [consent, generate, preferences] = await Promise.all([
+    consents.list(session.accessToken).then(({ data }) => data),
+    entitlements.check(session.accessToken, "portfolio.generate").then(({ data }) => data),
+    notificationSettings.list(session.accessToken).then(({ data }) => data),
+  ]);
+  const usage = generate.usage ?? null;
+  const notifications = preferences.filter((item) => NOTIFICATION_COPY[item.kind]);
 
   return (
     <>
-      <DocumentHeader crumbs={["설정", "요금제"]} />
+      <DocumentHeader crumbs={["설정"]} />
       <AppBody>
         <div className={styles.body}>
           <AccountNav />
 
           <div className={styles.main}>
-            <h1 className={styles.title}>요금제 · 사용량</h1>
-            <p className={styles.intro}>{ACCOUNT.intro}</p>
+            <h1 className={styles.title}>설정</h1>
 
-            <div className={styles.section}>
+            <section id="usage" className={styles.section}>
+              <HashScroll id="usage" />
+              <div className={styles.sectionLabel}>사용량</div>
               <div className={styles.usageGrid}>
-                {ACCOUNT.usage.map((usage) => (
-                  <div key={usage.label} className={styles.usageCard}>
-                    <div className={styles.usageHead}>
-                      <span className={styles.usageLabel}>{usage.label}</span>
-                      <span className={styles.usageValue}>
-                        {usage.used} / {usage.limit}
-                      </span>
-                    </div>
+                <div className={styles.usageCard}>
+                  <div className={styles.usageHead}>
+                    <span className={styles.usageLabel}>포트폴리오 생성</span>
+                    <span className={styles.usageValue}>
+                      {usage ? `${usage.used} / ${usage.limit ?? "무제한"}` : "기록 없음"}
+                    </span>
+                  </div>
+                  {usage && usage.limit !== null ? (
                     <div
                       className={styles.usageSlots}
                       role="meter"
                       aria-valuenow={usage.used}
                       aria-valuemin={0}
                       aria-valuemax={usage.limit}
-                      aria-label={`${usage.label} ${usage.limit}회 중 ${usage.used}회 사용`}
+                      aria-label={`포트폴리오 생성 ${usage.limit}회 중 ${usage.used}회 사용`}
                     >
                       {Array.from({ length: usage.limit }, (_, index) => (
                         <span
                           key={index}
-                          className={`${styles.usageSlot} ${
-                            index < usage.used ? styles.usageSlotUsed : ""
-                          }`}
+                          className={`${styles.usageSlot} ${index < usage.used ? styles.usageSlotUsed : ""}`}
                         />
                       ))}
                     </div>
-                    <div className={styles.usageResets}>{usage.resets}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className={styles.section}>
-              <div className={styles.sectionLabel}>PLANS</div>
-              <div className={styles.plans}>
-                {ACCOUNT.plans.map((plan) => (
-                  <div
-                    key={plan.name}
-                    className={`${styles.plan} ${plan.current ? styles.planCurrent : ""}`}
-                  >
-                    <div className={styles.planHead}>
-                      <span className={styles.planName}>{plan.name}</span>
-                      {plan.current ? (
-                        <span className={styles.planBadge}>사용 중</span>
-                      ) : null}
-                    </div>
-                    <div className={styles.planPrice}>{plan.price}</div>
-                    {plan.features.map((feature) => (
-                      <div key={feature} className={styles.planFeature}>
-                        <Icon name="check" size={12} color="var(--ex-fg-subtle)" />
-                        {feature}
-                      </div>
-                    ))}
-                    <div className={styles.planCta}>
-                      <button
-                        type="button"
-                        className={`${styles.planButton} ${
-                          plan.current ? styles.planButtonCurrent : ""
-                        }`}
-                      >
-                        {plan.cta}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className={styles.section}>
-              <div className={styles.sectionLabel}>BILLING</div>
-              {ACCOUNT.billing.map((entry) => (
-                <div key={entry.date} className={styles.billingRow}>
-                  <span className={styles.billingDate}>{entry.date}</span>
-                  <span className={styles.billingItem}>{entry.item}</span>
-                  <span className={styles.billingAmount}>{entry.amount}</span>
-                  <span className={styles.billingState}>{entry.state}</span>
-                  <button type="button" className={styles.billingReceipt}>
-                    영수증
-                  </button>
+                  ) : null}
+                  {usage ? <div className={styles.usageResets}>{formatReset(usage.resetsAt)} 초기화</div> : null}
                 </div>
-              ))}
-            </div>
+              </div>
+            </section>
+
+            <section id="notifications" className={styles.section}>
+              <HashScroll id="notifications" />
+              <div className={styles.sectionLabel}>알림</div>
+              <div className={styles.consentRows}>
+                {notifications.map((item) => {
+                  const copy = NOTIFICATION_COPY[item.kind]!;
+                  return (
+                    <div key={item.kind} className={styles.consentRow}>
+                      <div style={{ minWidth: 0 }}>
+                        <div className={styles.consentName}>{copy.title}</div>
+                        <div className={styles.consentWhat}>{copy.what}</div>
+                      </div>
+                      <form action={setNotificationPreferenceAction}>
+                        <input type="hidden" name="kind" value={item.kind} />
+                        <input type="hidden" name="enabled" value={item.enabled ? "false" : "true"} />
+                        <button
+                          type="submit"
+                          className={item.enabled ? styles.consentOff : styles.consentOn}
+                          aria-label={`${copy.title} 알림 ${item.enabled ? "끄기" : "켜기"}`}
+                        >
+                          {item.enabled ? "끄기" : "켜기"}
+                        </button>
+                      </form>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className={styles.consentNote}>알림은 오른쪽 위 종 모양 버튼에서 봅니다.</div>
+            </section>
 
             {/* 지면을 밝게 볼지 어둡게 볼지 — 이 기기에만 남는다 */}
-            <div className={styles.section}>
+            <section id="surface" className={styles.section}>
+              <HashScroll id="surface" />
               <div className={styles.sectionLabel}>지면</div>
               <div className={styles.themeRow}>
                 <div style={{ minWidth: 0 }}>
@@ -125,33 +123,13 @@ export default async function AccountPage() {
                 </div>
                 <ThemePicker />
               </div>
-            </div>
+            </section>
 
-            <div className={styles.section}>
-              <div className={styles.sectionLabel}>DATA</div>
-              {ACCOUNT.data.map((item) => (
-                <div key={item.title} className={styles.dataRow}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div
-                      className={`${styles.dataTitle} ${
-                        "danger" in item && item.danger ? styles.dataTitleDanger : ""
-                      }`}
-                    >
-                      {item.title}
-                    </div>
-                    <div className={styles.dataNote}>{item.note}</div>
-                  </div>
-                  <button
-                    type="button"
-                    className={`${styles.dataAction} ${
-                      "danger" in item && item.danger ? styles.dataActionDanger : ""
-                    }`}
-                  >
-                    {"danger" in item && item.danger ? "삭제 요청" : "내보내기"}
-                  </button>
-                </div>
-              ))}
-            </div>
+            <section id="data" className={styles.section}>
+              <HashScroll id="data" />
+              <div className={styles.sectionLabel}>데이터 관리</div>
+              <DataSection />
+            </section>
 
             <section id="ai-chat-settings" className={styles.section}><HashScroll id="ai-chat-settings" /><div className={styles.sectionLabel}>AI 채팅</div><AgentKeySettings /></section>
 
@@ -195,10 +173,12 @@ export default async function AccountPage() {
             </div>
 
             {/* 한도는 숨기지 않는다 */}
-            <div className={styles.footNote}>
-              <Icon name="info" size={13} color="var(--ex-accent-text)" />
-              {ACCOUNT.footNote}
-            </div>
+            {usage && usage.remaining !== null ? (
+              <div className={styles.footNote}>
+                <Icon name="info" size={13} color="var(--ex-accent-text)" />
+                이번 달 생성 {usage.remaining}회가 남았습니다. {formatReset(usage.resetsAt)}에 초기화됩니다.
+              </div>
+            ) : null}
           </div>
         </div>
       </AppBody>

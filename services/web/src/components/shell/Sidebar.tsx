@@ -1,4 +1,5 @@
 import type { CareerCategory } from "@expresso/contracts";
+import type { Route } from "next";
 import Link from "next/link";
 
 import { GlideMenu } from "@/components/ui/GlideMenu";
@@ -18,7 +19,7 @@ export interface SidebarPortfolio {
   /** 배포됨이면 도메인, 초안이면 "작성 중 · 질문 4/6" 같은 진행 문구. */
   meta: string;
   status: "published" | "draft";
-  visits?: number;
+  /** 배포 판 번호(`v3`). */
   delta?: string;
   deltaTone?: "up" | "quiet";
 }
@@ -86,9 +87,6 @@ export function Sidebar({
                   style={{ width: `${quotaRatio * 100}%` }}
                 />
               </div>
-              <Link href="/account" className={styles.upgradeLink}>
-                Double Shot 추가
-              </Link>
             </div>
           </div>
           <Link
@@ -114,16 +112,22 @@ export function Sidebar({
               <span className={styles.groupLabel}>내 포트폴리오</span>
               <div className={styles.groupActions}>
                 <span className={styles.groupCount}>{portfolios.length}</span>
-                <button type="button" className={styles.groupAction} aria-label="포트폴리오 추가">
+                <Link
+                  href="/brew/new"
+                  className={styles.groupAction}
+                  aria-label="포트폴리오 추가"
+                  title="새 포트폴리오 만들기"
+                >
                   <Icon name="plus" size={13} />
-                </button>
+                </Link>
               </div>
             </div>
           </div>
           <GlideMenu className={`${styles.portfolios} ${styles.navGroup}`}>
             {portfolios.map((portfolio) => (
-              <div
+              <Link
                 key={portfolio.id}
+                href={`/edit/${portfolio.id}` as Route}
                 data-row
                 title={portfolio.name}
                 className={`${styles.row} ${styles.portfolioItem}`}
@@ -143,11 +147,8 @@ export function Sidebar({
                 </div>
                 {portfolio.status === "draft" ? (
                   <span className={`${styles.copy} ${styles.draftChip}`}>초안</span>
-                ) : (
+                ) : portfolio.delta ? (
                   <div className={`${styles.copy} ${styles.portfolioStat}`}>
-                    <div className={styles.portfolioVisits}>
-                      {portfolio.visits?.toLocaleString("ko-KR") ?? "—"}
-                    </div>
                     <div
                       className={`${styles.portfolioDelta} ${
                         portfolio.deltaTone === "quiet"
@@ -158,8 +159,8 @@ export function Sidebar({
                       {portfolio.delta}
                     </div>
                   </div>
-                )}
-              </div>
+                ) : null}
+              </Link>
             ))}
           </GlideMenu>
         </>
@@ -192,9 +193,6 @@ export function Sidebar({
         <div className={`${styles.copy} ${styles.groupHeadRow}`}>
           <span className={styles.groupLabel}>내 커리어</span>
           <div className={styles.groupActions}>
-            <button type="button" className={styles.groupAction} aria-label="카테고리 더 보기">
-              <Icon name="dots-three" size={13} />
-            </button>
             <button type="button" className={styles.groupAction} aria-label="카테고리 추가">
               <Icon name="plus" size={13} />
             </button>

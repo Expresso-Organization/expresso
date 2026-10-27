@@ -1,3 +1,4 @@
+import { koreanPlace } from "@expresso/contracts";
 import type {
   JobSource,
   JobPostingCategory,
@@ -508,7 +509,12 @@ export default async function JobsPage({
    * 집계(`summary.countries`)만 있고 지역 단위 집계는 없어서, 건수 없이
    * 국내 지역 이름만 늘어놓는다.
    */
-  const locationOptions = [...KOREAN_REGIONS].map((region) => ({ label: region, value: region }));
+  // 검색어가 "판교"처럼 지역보다 좁은 장소로 읽혔으면 그 장소를 맨 앞에 둔다 —
+  // 지역 목록에는 없어서, 안 두면 팝오버에서 지금 걸린 값이 안 보인다.
+  const locationOptions = [
+    ...(effectiveLocation && koreanPlace(effectiveLocation) ? [{ label: `${effectiveLocation} 근처`, value: effectiveLocation }] : []),
+    ...[...KOREAN_REGIONS].map((region) => ({ label: region, value: region })),
+  ];
   const experienceOptions = summary.experienceLevels.map((one) => ({
     label: one.label,
     value: experienceValue(one.label),
@@ -918,8 +924,10 @@ function searchFilters(
     ...(remote ? { remote: true as const } : {}),
     // 국내 지역은 country(한국)와 location(경기 등)을 함께 보낸다 — location이
     // 더 좁혀 걸고, country는 근무지 필터 칩 표시를 예전과 그대로 맞춘다.
+    // "판교"처럼 지역보다 좁은 국내 장소도 `location`으로 보낸다 — 백엔드가
+    // 그 장소에서 가까운 순으로 건다.
     ...(locationValue
-      ? KOREAN_REGIONS.has(locationValue)
+      ? KOREAN_REGIONS.has(locationValue) || koreanPlace(locationValue)
         ? { country: "한국", location: locationValue }
         : { country: locationValue }
       : {}),

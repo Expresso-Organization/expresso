@@ -341,12 +341,11 @@ export function MaterialPicker({
               <span style={{ minWidth: 0 }}>
                 <span className={styles.modeName} style={{ display: "block" }}>
                   Cowork 모드
-                  {coworkAllowed ? null : <span className={styles.proTag}>PRO</span>}
                 </span>
                 <span className={styles.modeDesc} style={{ display: "block" }}>
                   {coworkAllowed
                     ? "섹션마다 함께 고칩니다. 결과는 더 내 것에 가깝습니다"
-                    : "PRO에서 섹션마다 함께 고칠 수 있습니다"}
+                    : "지금 요금제에서는 섹션마다 함께 고치기를 쓸 수 없습니다"}
                 </span>
               </span>
             </button>

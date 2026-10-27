@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
 import { loadRuntimeConfig, type RuntimeConfig } from "../../config/runtime-config.js";
@@ -16,6 +16,7 @@ import {
   type AiClient,
   type AiResult,
 } from "./client.js";
+import { AnthropicAiClient } from "./anthropic.js";
 import { createAiClient } from "./create-client.js";
 import { CodexAiClient } from "./codex.js";
 import { FixtureAiClient, RecordingAiClient, type FixtureRecord } from "./fixture.js";
@@ -154,9 +155,19 @@ describe("AI 클라이언트 만들기", () => {
     expect(client).toBeInstanceOf(CodexAiClient);
   });
 
-  it("아직 없는 프로바이더는 조용히 넘어가지 않는다", () => {
+  it("anthropic은 키가 없으면 조용히 넘어가지 않는다", () => {
     expect(() => createAiClient(loadRuntimeConfig({ AI_PROVIDER: "anthropic" })))
-      .toThrow(/not implemented/);
+      .toThrow(/ANTHROPIC_API_KEY/);
+    // `.env.example`의 빈 자리도 없는 것으로 본다.
+    expect(() => createAiClient(loadRuntimeConfig({ AI_PROVIDER: "anthropic", ANTHROPIC_API_KEY: "" })))
+      .toThrow(/ANTHROPIC_API_KEY/);
+  });
+
+  it("anthropic은 키가 있으면 API 어댑터를 만든다", () => {
+    const client = createAiClient(
+      loadRuntimeConfig({ AI_PROVIDER: "anthropic", ANTHROPIC_API_KEY: "sk-ant-test" }),
+    );
+    expect(client).toBeInstanceOf(AnthropicAiClient);
   });
 });
 
@@ -175,6 +186,10 @@ describe("toToolSchema", () => {
 
 describe("계약별 프로바이더 가르기", () => {
   const base = { aiFixtureDir: "fixtures/ai" } as RuntimeConfig;
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
   it("따로 지정하지 않으면 하나만 만든다", () => {
     const client = createAiClient({ ...base, aiProvider: "fixture" });
@@ -196,6 +211,54 @@ describe("계약별 프로바이더 가르기", () => {
       { contract: "job_facts", system: "s", prompt: "p", promptVersion: 1 },
       z.string(),
     )).rejects.toThrow(/녹화된 응답이 없습니다/);
+  });
+
+  it("검색 해석만 Anthropic API로 보낸다", async () => {
+    // 네트워크로 나가지 않는다 — 어느 어댑터가 받았는지만 본다.
+    const complete = vi.spyOn(AnthropicAiClient.prototype, "complete")
+      .mockResolvedValue({ data: "해석", usage } as AiResult<never>);
+    const client = createAiClient(loadRuntimeConfig({
+      AI_PROVIDER: "codex",
+      AI_PROVIDER_SEARCH_INTERPRET: "anthropic",
+      ANTHROPIC_API_KEY: "sk-ant-test",
+      CODEX_CLI_PATH: "/nonexistent/codex",
+    }));
+    expect(client).not.toBeInstanceOf(CodexAiClient);
+
+    const result = await client!.complete(
+      { contract: "search_interpret", system: "s", prompt: "서울 백엔드 신입", promptVersion: 1 },
+      z.string(),
+    );
+    expect(result.data).toBe("해석");
+    expect(complete).toHaveBeenCalledTimes(1);
+    expect(complete.mock.calls[0]?.[0]).toMatchObject({ contract: "search_interpret" });
+
+    // 다른 계약은 그대로 codex로 간다 — 없는 실행 파일 때문에 실패한다.
+    await expect(client!.complete(
+      { contract: "job_facts", system: "s", prompt: "p", promptVersion: 1 },
+      z.string(),
+    )).rejects.toThrow();
+    expect(complete).toHaveBeenCalledTimes(1);
+  });
+
+  it("검색 해석에 anthropic을 고르고 키가 없으면 바로 죽는다", () => {
+    expect(() => createAiClient(loadRuntimeConfig({
+      AI_PROVIDER: "codex", AI_PROVIDER_SEARCH_INTERPRET: "anthropic",
+    }))).toThrow(/ANTHROPIC_API_KEY/);
+  });
+
+  it("지면 생성과 검색 해석을 함께 가를 수 있다 — 지면 생성 기준으로 스트리밍을 답한다", () => {
+    // 기본(codex)과 검색 해석(anthropic)은 조각을 못 내고, 지면 생성(claude-code)만 낸다.
+    const client = createAiClient({
+      ...base,
+      aiProvider: "codex",
+      aiPageGenerationProvider: "claude-code",
+      aiSearchInterpretProvider: "anthropic",
+      anthropicApiKey: "sk-ant-test",
+      codexCliPath: "/nonexistent/codex",
+    });
+    expect(client).not.toBeInstanceOf(CodexAiClient);
+    expect(client!.streams).toBe(true);
   });
 
   it("같은 프로바이더를 지정하면 가르지 않는다", () => {

@@ -21,12 +21,12 @@ PR 다섯 개. 1번은 이 브랜치(`feat/dead-ui-wiring`)에서 intent · spec
 | | `modules/engagement` service · routes | `subject` 저장, `POST /notifications/:id/read` · `/notifications/read-all` |
 | | `modules/scheduling` service · public | `deadline_reminders` 실행 |
 | | `worker/processors/generation.ts` · `worker/main.ts` | 생성 완료 알림 |
-| | `components/CommandPalette.tsx` · 새 `palette-actions.ts` | 검색 · 알림 실데이터, 장식 제거 |
-| | `components/shell/Sidebar*.tsx` · `SidebarNav.tsx` · `WizardShell.tsx`, `edit/[portfolioId]/Editor.tsx` 레일 | 링크 · 팔레트 열기 · 장식 제거 · 레일 활성 계산 |
+| | `components/CommandPalette.tsx` · 새 `palette-actions.ts` · `shell/HeaderActions.tsx`, `lib/api/endpoints.ts` | 검색 · 알림 실데이터, 헤더 알림 점을 안 읽은 수로, 장식 제거 |
+| | `components/shell/Sidebar*.tsx` · `SidebarNav.tsx`, `edit/[portfolioId]/Editor.tsx` 레일 | 링크 · 팔레트 열기 · 장식 제거(방문 수 · 꺾쇠 · Double Shot · 도움말 · 빨간 점) |
 | 2 공고 | `app/(app)/jobs/page.tsx` · `page.module.css` · `ConditionChip.tsx` · `JobFilter.tsx` · 새 `jobs-actions.ts` · `browse-copy.ts` · `AddCondition.tsx` · `SortMenu.tsx` · `SaveSearchButton.tsx` · `RecentSearches.tsx` · `use-popover.ts`, `lib/api/endpoints.ts`, 계약 `job-market.ts`(저장한 검색 응답), `lib/sample/jobs.ts` 삭제 | 조건 · 칩 · 정렬 · 검색 저장 · 지우기 · 진입 버튼, 샘플 제거 |
-| 3 홈 · 온보딩 | `home/page.tsx` · `HomeChrome.tsx`, `onboarding/first-portfolio` · `materials` · 단계 정의, `SocialSignIn.tsx`, 브루 제목(계약 `UpdateBrewSchema` · brew 서비스 · `WizardShell`) | 진입 연결, 온보딩 실데이터, 이력서 단계 · GitHub 제거, 제목 변경 |
+| 3 홈 · 온보딩 | `home/page.tsx` · `HomeChrome.tsx`, `onboarding/first-portfolio` · `materials` · 단계 정의, `SocialSignIn.tsx`, 브루 제목(계약 `UpdateBrewSchema` · brew 서비스 · `WizardShell`, 「자동 저장됨」 제거 포함) | 진입 연결, 온보딩 실데이터, 이력서 단계 · GitHub 제거, 제목 변경 |
 | 4 편집 · 배포 | `edit/[portfolioId]/Editor.tsx` · `EditorPanels.tsx` · `page.tsx` · `edit-actions.ts` · 새 미리보기 라우트, `deploy/DeployPanel.tsx` · `deploy/page.tsx`, `brew/[brewId]/materials/page.tsx`, `modules/portfolio-editing/service.ts`(묻고 나서), 내보내기 경로 | 보기 상태 · 되돌리기 · HTML · 미리보기 · 가져오기 · 이력, actor 기록, 내보내기 · 도메인 · 장식 제거 |
-| 5 설정 | `account/page.tsx` · `AccountNav.tsx` · `loading.tsx` · 새 `account-actions.ts` · 내보내기 라우트, PRO 잠금 표시(`MaterialPicker` · `Dashboard`), `lib/sample` 삭제 | 사용량 · 내보내기 · 삭제 · 알림 설정, 요금제 · 결제 제거 |
+| 5 설정 | `account/page.tsx` · `AccountNav.tsx` · `loading.tsx` · 새 `DataSection.tsx` · 새 `export/route.ts`, 새 `app/account-actions.ts` · `lib/auth/deletion-code.ts`, 새 `(auth)/login/restore`, `LoginForm.tsx` 링크, `lib/api/endpoints.ts`, PRO 표시(`MaterialPicker` · `analytics/Dashboard`), 쓰지 않는 `lib/sample/analytics.ts` · `brew/new/screen-definition-01.generated.ts` 삭제 | 사용량 · 알림 설정 · 내보내기 · 삭제 요청과 취소, 요금제 · 결제 제거. `lib/sample/site.ts` · `jobs.ts`는 #115 · PR 2 머지 뒤 지운다 |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
 
