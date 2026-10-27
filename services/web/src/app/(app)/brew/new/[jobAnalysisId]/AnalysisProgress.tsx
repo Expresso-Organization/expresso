@@ -3,16 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
+import { ANALYSIS_PROGRESS } from "@/lib/analysis-stage";
+
 import styles from "../page.module.css";
 
-const PROGRESS = {
-  queued: 10,
-  extracting: 38,
-  validating: 66,
-  covering: 88,
-  done: 100,
-  failed: 100,
-} as const;
+const PROGRESS = ANALYSIS_PROGRESS;
 
 export function AnalysisProgress({
   stage,

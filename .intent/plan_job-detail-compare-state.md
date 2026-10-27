@@ -20,6 +20,10 @@ date: 2026-10-27
 | `services/backend/src/modules/jobs/legacy-mysql-board-service.ts` | 같은 자리에 `failure: null` 채움 |
 | `services/backend/src/modules/jobs/service.ts` | `analyzePosting`이 재시도 가능한 실패를 다시 큐에 넣음 |
 | `services/backend/src/modules/jobs/jobs.integration.test.ts` | 재시도 재적재 테스트 추가 |
+| `docs/screen-map.js` | 개발 포털이 06c를 이름으로 부르도록 등록 |
+| `services/web/src/lib/analysis-stage.ts` | 새 파일. 분석 단계 이름과 진행률을 한곳에 둠 |
+| `services/web/src/app/(app)/brew/new/[jobAnalysisId]/page.tsx` | 단계 이름을 공용 모듈에서 가져옴 |
+| `services/web/src/app/(app)/brew/new/[jobAnalysisId]/AnalysisProgress.tsx` | 진행률을 공용 모듈에서 가져옴 |
 | `services/web/src/app/(app)/jobs/[jobId]/compare-actions.ts` | 새 파일. 대조 시작 서버 액션 |
 | `services/web/src/app/(app)/jobs/[jobId]/CompareControl.tsx` | 새 파일. 버튼 · 진행 막대 · 실패 표시 |
 | `services/web/src/app/(app)/jobs/[jobId]/CompareControl.test.tsx` | 새 파일. 네 상태 렌더 테스트 |
@@ -36,16 +40,18 @@ date: 2026-10-27
 2. 계약에 `failure`를 더하고 백엔드 매퍼 둘을 채운다 — `pnpm --filter @expresso/contracts build`가 통과한다.
 3. `analyzePosting`에 재시도 재적재를 넣고 통합 테스트를 더한다 —
    `pnpm --filter @expresso/backend test` 에서 새 테스트가 통과한다.
-4. `compare-actions.ts`와 `CompareControl.tsx`를 만든다 — 단위 테스트로 네 상태를 확인한다.
-5. `page.tsx`에서 문장 셋을 지우고 근거 줄을 조건부로 바꾸고 머리에 컨트롤을 붙인다 —
+4. 단계 이름과 진행률을 `lib/analysis-stage.ts`로 올리고 01 분석 대기 화면이 그것을 쓰게 한다.
+   같은 진행을 가리키는 말이 두 벌로 갈리지 않게 하려는 것이다.
+5. `compare-actions.ts`와 `CompareControl.tsx`를 만든다 — 단위 테스트로 네 상태를 확인한다.
+6. `page.tsx`에서 문장 셋을 지우고 근거 줄을 조건부로 바꾸고 머리에 컨트롤을 붙인다 —
    `pnpm typecheck`가 통과한다.
-6. CSS에서 `.requirementNote` 기본색을 중립으로 내리고 `.requirementNoteCovered`를 만든다 —
+7. CSS에서 `.requirementNote` 기본색을 중립으로 내리고 `.requirementNoteCovered`를 만든다 —
    `COVERAGE.covered.note`가 그 클래스를 가리킨다.
-7. 개발 서버로 실제 화면을 확인한다 — 아래 검증 절차.
+8. 개발 서버로 실제 화면을 확인한다 — 아래 검증 절차.
 
 ## 가장 위험한 단계
 
-3번이다. `analyzePosting`은 제작 시작 경로(`brew/new`)도 쓴다.
+3번이다. (단계 번호는 위 목록 기준이다.) `analyzePosting`은 제작 시작 경로(`brew/new`)도 쓴다.
 재적재 조건을 잘못 걸면 이미 끝난 분석이 다시 큐에 들어가 기존 커버리지를 덮어쓴다.
 조건을 `status === "failed" && failureRetryable === true` 둘 다로 묶고,
 기존 통합 테스트(`jobs.integration.test.ts`의 `reused` 검사)가 그대로 통과하는지 먼저 본다.

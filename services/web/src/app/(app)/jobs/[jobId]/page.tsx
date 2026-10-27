@@ -15,6 +15,7 @@ import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { mendEmphasis } from "@/components/ui/mend-emphasis";
 import { StackChip, StackMarkdown } from "@/components/ui/StackMarkdown";
 import { findStacks, resolveStack } from "@/components/ui/stacks";
+import { CompareControl, type CompareView } from "./CompareControl";
 import { InterestButton } from "./InterestButton";
 import styles from "./page.module.css";
 
@@ -77,7 +78,6 @@ export default async function JobDetailPage({
   // 사람마다 다르고, 대조 전이면 null이다.
   const musts = job.criteria.filter((item) => item.kind === "must");
   const coveredCount = musts.filter((item) => item.coverage === "covered").length;
-  const comparedCount = musts.filter((item) => item.coverage !== null).length;
   const haveStack = job.technologies.filter((tool) => tool.matched === true).length;
   const rows = facts(job);
   // 뽑아 놓은 것이 하나라도 있나. 없으면 원문을 펴서 보여준다.
@@ -218,11 +218,10 @@ export default async function JobDetailPage({
                   <span className={styles.blockTitle} style={{ marginBottom: 0 }}>
                     자격 요건
                   </span>
-                  <span className={styles.blockTitleNote}>
-                    {comparedCount === 0
-                      ? "아직 대조하지 않았습니다"
-                      : `${musts.length}개 중 ${coveredCount}개 충족`}
-                  </span>
+                  <CompareControl
+                    jobPostingId={job.id}
+                    view={compareView(job, musts.length, coveredCount)}
+                  />
                 </div>
                 {musts.map((requirement) => (
                   <RequirementRow key={requirement.id} requirement={requirement} />
@@ -363,6 +362,31 @@ export default async function JobDetailPage({
       </AppBody>
     </JobChatRailProvider>
   );
+}
+
+/**
+ * 자격 요건 머리가 무엇을 가리킬지.
+ *
+ * **출처는 `job.analysis` 하나다.** 요건마다 붙은 `coverage`를 세어 판단하면,
+ * 추출기 버전이 올라가 커버리지가 없는 옛 요건 행이 섞였을 때 끝난 대조를
+ * 안 한 것으로 말하게 된다.
+ */
+function compareView(
+  job: JobPostingDetail,
+  total: number,
+  covered: number,
+): CompareView {
+  const analysis = job.analysis;
+  if (analysis === null) return { kind: "idle" };
+  if (analysis.status === "done") return { kind: "done", total, covered };
+  if (analysis.status === "failed") {
+    return {
+      kind: "failed",
+      code: analysis.failure?.code ?? "EXTRACTION_FAILED",
+      retryable: analysis.failure?.retryable ?? false,
+    };
+  }
+  return { kind: "running", stage: analysis.progressStage };
 }
 
 function RequirementRow({ requirement }: { requirement: JobRequirement }) {
