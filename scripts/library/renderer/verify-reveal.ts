@@ -1,5 +1,6 @@
 // 저장된 지면을 지금 키트로 다시 그려 스크롤 등장(data-reveal)을 브라우저에서 잽니다.
-// 사용: pnpm --filter @expresso/backend exec tsx ../../scripts/library/renderer/verify-reveal.ts --page <generated_pages _id> [--browser chromium|webkit] [--reduced-motion] [--no-supports] [--shots <폴더>]
+// 사용: pnpm --filter @expresso/backend exec tsx ../../scripts/library/renderer/verify-reveal.ts --page <generated_pages _id> [--browser chromium|webkit] [--frame] [--reduced-motion] [--no-supports] [--stage] [--shots <폴더>]
+// --frame은 공개 사이트(`/site/[slug]`)처럼 문서를 `sandbox="allow-popups"` iframe의 `srcdoc`으로 싣고 그 안에서 스크롤합니다.
 // 접속 설정은 services/backend/.env의 MONGODB_URL · MONGODB_DATABASE를 읽습니다. 값은 출력하지 않습니다.
 import fs from "node:fs";
 import path from "node:path";
@@ -20,6 +21,8 @@ const { values: args } = parseArgs({
     browser: { type: "string", default: "chromium" },
     "reduced-motion": { type: "boolean", default: false },
     "no-supports": { type: "boolean", default: false },
+    frame: { type: "boolean", default: false },
+    stage: { type: "boolean", default: false },
     shots: { type: "string" },
   },
 });
@@ -91,14 +94,27 @@ function snapshot() {
 const browser = await playwright[engine].launch({ headless: true });
 const failures: string[] = [];
 try {
-  console.log(`${engine} ${browser.version()} · 움직임 줄이기 ${args["reduced-motion"] ? "켬" : "끔"} · 지원 조건 ${args["no-supports"] ? "막음" : "그대로"}`);
+  console.log(`${engine} ${browser.version()}${args.frame ? " · 공개 사이트 iframe" : ""} · 움직임 줄이기 ${args["reduced-motion"] ? "켬" : "끔"} · 지원 조건 ${args["no-supports"] ? "막음" : "그대로"}${args.stage ? " · 청사진 단계" : ""}`);
   for (const width of RENDER_MEASURE_WIDTHS) {
     const context = await browser.newContext({ viewport: { width, height: HEIGHTS[width]! }, reducedMotion: args["reduced-motion"] ? "reduce" : "no-preference" });
     const page = await context.newPage();
-    await page.setContent(document_, { waitUntil: "load" });
-    await page.evaluate(() => document.fonts.ready);
-    const first = await page.evaluate(snapshot);
-    const off = args["reduced-motion"] || args["no-supports"];
+    let target: import("playwright").Page | import("playwright").Frame = page;
+    if (args.frame) {
+      // 공개 사이트 페이지(`services/web/src/app/site/[slug]`)의 iframe과 같은 속성 · 크기입니다.
+      await page.setContent('<!doctype html><style>body{margin:0}iframe{display:block;width:100%;min-height:100dvh;border:0}</style><iframe title="site" sandbox="allow-popups"></iframe>');
+      await page.evaluate((html) => { document.querySelector("iframe")!.srcdoc = html; }, document_);
+      await page.waitForTimeout(300);
+      target = page.frames().find((frame) => frame !== page.mainFrame())!;
+      await target.waitForLoadState("load");
+      await target.waitForSelector(".xp-page");
+    } else {
+      await page.setContent(document_, { waitUntil: "load" });
+    }
+    // 생성 화면(`LivePreview`)이 청사진 단계에서 거는 루트 속성입니다.
+    if (args.stage) await target.evaluate(() => { document.documentElement.dataset.stage = "blueprint"; });
+    await target.evaluate(() => document.fonts.ready);
+    const first = await target.evaluate(snapshot);
+    const off = args["reduced-motion"] || args["no-supports"] || args.stage;
     const revealed = new Set<string>();
     if (off) {
       // 등장이 꺼진 문서는 스크롤 전에도 모든 단위가 불투명하고 애니메이션이 없어야 합니다.
@@ -106,13 +122,15 @@ try {
       if (hidden.length) failures.push(`${width}px: 스크롤 전 ${hidden.length}개 단위가 투명하거나 움직입니다 — ${hidden.slice(0, 3).map((unit) => unit.name).join(", ")}`);
       console.log(`${width}px 단위 ${first.units.length}개 · 스크롤 전 모두 불투명: ${hidden.length === 0}`);
     } else {
-      const total = await page.evaluate(() => document.documentElement.scrollHeight);
+      const total = await target.evaluate(() => document.documentElement.scrollHeight);
       // 등장이 끝나는 선: 화면 아래 25vh와 차례 오프셋 3단계를 뺀 높이입니다(`REVEAL_ZONE` · `--xp-reveal-step`).
       const line = first.height * 0.75 - first.step * 3;
       for (let y = 0; y <= total; y += Math.round(first.height / 3)) {
-        await page.evaluate((top) => scrollTo(0, top), y);
-        await page.waitForTimeout(60);
-        const now = await page.evaluate(snapshot);
+        await target.evaluate((top) => scrollTo(0, top), y);
+        // 스크롤 타임라인은 렌더링 갱신 때 진행합니다. 프레임 두 번이 지난 뒤에 읽어 이전 프레임 값을 읽지 않게 합니다.
+        // 스크립트를 막은 sandbox iframe 안에서는 프레임 콜백이 돌지 않아 바깥 문서의 프레임을 기다립니다.
+        await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
+        const now = await target.evaluate(snapshot);
         if (now.overflow) failures.push(`${width}px y=${y}: 가로 넘침`);
         for (const unit of now.units) {
           if (unit.bottom < 0 || unit.top > now.height) continue;
