@@ -56,8 +56,10 @@
   display: none;
 }
 
+/* 키보드로 스크롤하려고 초점을 받는 칸이다. 위아래 끝은 흐리게 지워지므로 초점 링을 안쪽에 그려 옆선이 보이게 한다. */
 .feed:focus-visible {
   outline: none;
+  box-shadow: var(--ex-focus-ring) inset;
 }
 
 .feed[data-still] .inputs[data-copy] {
