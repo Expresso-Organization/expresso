@@ -19,15 +19,16 @@ date: 2026-10-28
 | `services/web/package.json` · `services/backend/package.json` · `pnpm-lock.yaml` | BlockNote 0.56.0 고정(web: core · react · ariakit, backend: server-util · core · react · react-dom) |
 | `packages/contracts/src/career-editor.ts` | bootstrap에 선택 필드 `editor` · `stateBase64` 추가. `document`는 v1 모양 그대로 둔다(v2는 Markdown 투영 사본) |
 | `packages/database/src/documents/career-editor.ts` | 스냅샷 `state?: Binary` |
-| 새 `services/backend/src/modules/career-editor/blocknote-document.ts` | v1 → BlockNote 변환, v2 복원, Markdown 투영 |
-| 새 `services/backend/src/modules/career-editor/blocknote-document.test.ts` | 대응표 전 항목 · 머리글 표 · 서식 · 중첩 목록 |
+| 새 `packages/editor/src/blocknote.ts` (+ test) · `package.json` · `tsconfig.json` | 웹 · 서버 공용 BlockNote 스키마(콜아웃 포함)와 v1 → BlockNote 변환. 렌더에 DOM이 필요해 `lib`에 `DOM` 추가 |
+| `pnpm-workspace.yaml` | `yjs` 13.6.33 단일화. 두 벌이면 BlockNote가 두 번 로드되어 중단된다 |
+| 새 `services/backend/src/modules/career-editor/blocknote-document.ts` | v2 Yjs 복원, 상태 생성, Markdown 투영 |
+| 새 `services/backend/src/modules/career-editor/blocknote-document.test.ts` | 머리글 표 · 줄바꿈 복원, 두 클라이언트 병합, Markdown 투영 |
 | `services/backend/src/modules/career-editor/service.ts` | bootstrap v2 분기와 v1 → v2 옮기기, `bodyMd` debounce 투영 |
 | `services/backend/src/modules/career-editor/compaction.ts` · `ai-proposals.ts` · `index.ts` | v2 압축, v2 AI 제안 409, 복원 함수 노출 |
 | `services/backend/src/modules/career/service.ts` · `agent-chat/requirement-review.ts` | v2 기록 본문을 `career-editor` 진입점으로 읽기 |
 | 새 `services/backend/src/modules/career-editor/spike-migrate-report.ts` | 복사본 DB 기록 전부 dry-run 대응표 · 손실 글자 수 |
 | `services/web/src/features/career-editor/session/CareerEditorSession.ts` (+ test) | v2 모드: `Y.Doc` 보유, 300ms 묶음 전송, 원격 프레임 적용 |
 | 새 `services/web/src/features/career-editor/editor/BlockNoteBody.tsx` · `.module.css` | BlockNote 편집기(ariakit), `--bn-*` → `--ex-*` 연결 |
-| 새 `services/web/src/features/career-editor/editor/blocknote-schema.ts` | 기본 스키마 + `callout` 커스텀 블록 |
 | 새 `services/web/src/features/career-editor/editor/media-actions.ts` | 본문 이미지 업로드 서버 액션 |
 | `services/web/src/features/career-editor/editor/CareerDocumentEditor.tsx` | v2면 `BlockNoteBody`를 `next/dynamic`으로 렌더 |
 | 새 `docs/architecture/career-editor-blocknote-spike.md` | 검증 보고서 |
