@@ -15,11 +15,13 @@ import {
 } from "@expresso/contracts";
 import { applyCareerCommands, encodeDocumentAsYUpdate, encodeDocumentStateVector, parseCareerDocument, reconstructYDocument, type CareerDocument, type CareerEditCommand } from "@expresso/editor";
 import { mongoCollections, type CareerAiProposalDoc } from "@expresso/database";
+import { BLOCKNOTE_SCHEMA_VERSION, blockNoteToCareerDocument, careerDocumentToBlockNote } from "@expresso/editor/blocknote";
 import { Binary } from "mongodb";
 
 import { inTransaction, type MongoTransaction } from "../../platform/mongo-transaction.js";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
+import { restoreBlockNote } from "./blocknote-document.js";
 import { CareerDocumentError } from "./errors.js";
 import { binaryBytes, hashUpdate, MongoCareerDocumentRepository } from "./repository.js";
 import type { CareerDocumentService } from "./service.js";
@@ -62,8 +64,6 @@ export class AiProposalService {
   async create(userId: string, recordId: string, raw: CreateAiEditProposal): Promise<AiEditProposalDetail> {
     const input = CreateAiEditProposalSchema.parse(raw);
     const bootstrap = await this.documentService.bootstrap(userId, recordId);
-    // BlockNote 본문에는 아직 블록 명령 적용기가 없습니다. 검증 브랜치에서는 제안 생성을 막습니다.
-    if (bootstrap.editor === "blocknote") throw new CareerDocumentError(409, "AI proposals are not available for BlockNote documents yet");
     const blocks = blockMap(bootstrap.document.content);
     if (input.selection.blockIds.some((id) => !blocks.has(id))) throw new CareerDocumentError(409, "selected block no longer exists");
     const now = new Date();
@@ -131,7 +131,11 @@ export class AiProposalService {
       if (!record || (record.documentVersion ?? 0) !== input.expectedDocumentVersion) throw new CareerDocumentError(409, "document version is stale");
       const snapshot = await repository.snapshot(recordId, tx.session); if (!snapshot) throw new CareerDocumentError(409, "career document is not initialized");
       const updates = await repository.updates(recordId, snapshot.serverSequence, tx.session);
-      const before = reconstructYDocument([encodeDocumentAsYUpdate(parseCareerDocument(snapshot.content)), ...updates.map((update) => binaryBytes(update.update))]);
+      const blockNote = snapshot.schemaVersion === BLOCKNOTE_SCHEMA_VERSION && snapshot.state !== undefined;
+      // BlockNote 문서는 v1 모양 사본에 명령을 적용하고, 결과를 블록 단위 Yjs 업데이트로 바꿉니다.
+      const before = blockNote
+        ? blockNoteToCareerDocument(restoreBlockNote(binaryBytes(snapshot.state!), updates.map((update) => binaryBytes(update.update))).blocks)
+        : reconstructYDocument([encodeDocumentAsYUpdate(parseCareerDocument(snapshot.content)), ...updates.map((update) => binaryBytes(update.update))]);
       const existingBlocks = blockMap(before.content);
       const commands = input.commandIndexes.map((index) => proposal.commands[index] as unknown as CareerEditCommand | undefined).filter((command): command is CareerEditCommand => command !== undefined);
       const changes = input.propertyChangeIndexes.map((index) => proposal.propertyChanges[index] as unknown as { propertyId: string; previousValue: unknown; nextValue: unknown } | undefined).filter((change): change is { propertyId: string; previousValue: unknown; nextValue: unknown } => change !== undefined);
@@ -139,13 +143,23 @@ export class AiProposalService {
       if (input.expectedDocumentVersion !== proposal.baseDocumentVersion && commands.some((command) => changedCommandIds(command).some((id) => !existingBlocks.has(id)))) { proposal.status = "conflicted"; proposal.updatedAt = new Date(); await db.careerAiProposals.updateOne({ _id: proposal._id }, { $set: { status: proposal.status, updatedAt: proposal.updatedAt } }, { session: tx.session }); publishRow = proposal; return; }
       await this.validateProposal(before, commands, proposal.selection.blockIds);
       const after = applyCareerCommands(before, commands);
-      const beforeSnapshotId = randomUUID(); const afterSnapshotId = randomUUID(); const beforeChecksum = checksum(before); const afterChecksum = checksum(after);
-      const canonicalBefore = encodeDocumentAsYUpdate(before); const nextUpdate = encodeDocumentAsYUpdate(after, [canonicalBefore], `ai:${proposal._id}:apply`);
-      await repository.insertSnapshot({ _id: beforeSnapshotId, userId, recordId, documentVersion: input.expectedDocumentVersion, version: input.expectedDocumentVersion, schemaVersion: 1, content: before as never, stateVector: new Binary(Buffer.from(encodeDocumentStateVector(before))), serverSequence: input.expectedDocumentVersion, checksum: hashUpdate(canonicalBefore), actor: "ai", createdAt: new Date() }, tx.session);
-      const nextVersion = await repository.bumpDocumentVersion(recordId, userId, input.expectedDocumentVersion, afterSnapshotId, tx.session); if (nextVersion === null) throw new CareerDocumentError(409, "document version is stale");
-      await repository.insertUpdate({ _id: randomUUID(), recordId, userId, clientId: proposal._id, clientSequence: 1, serverSequence: nextVersion, update: new Binary(nextUpdate), byteLength: nextUpdate.byteLength, updateHash: hashUpdate(nextUpdate), actor: "ai", receivedAt: new Date(), compactedAt: null }, tx.session);
-      update = { base64: Buffer.from(nextUpdate).toString("base64"), sequence: nextVersion };
-      await repository.insertSnapshot({ _id: afterSnapshotId, userId, recordId, documentVersion: nextVersion, version: nextVersion, schemaVersion: 1, content: after as never, stateVector: new Binary(Buffer.from(encodeDocumentStateVector(after))), serverSequence: nextVersion, checksum: hashUpdate(encodeDocumentAsYUpdate(after)), actor: "ai", createdAt: new Date() }, tx.session);
+      let beforeSnapshotId: string; let afterSnapshotId: string; let nextVersion: number;
+      const beforeChecksum = checksum(before); const afterChecksum = checksum(after);
+      if (blockNote) {
+        const captured = await this.documentService.captureBlockNoteSnapshot(userId, recordId, tx.session);
+        const applied = await this.documentService.appendServerUpdate(userId, recordId, input.expectedDocumentVersion, careerDocumentToBlockNote(after).blocks, "ai", tx.session, { snapshot: true });
+        if (!applied?.snapshotId) throw new CareerDocumentError(409, "AI proposal produced no change");
+        beforeSnapshotId = captured.snapshotId; afterSnapshotId = applied.snapshotId; nextVersion = applied.sequence;
+        update = { base64: applied.base64, sequence: applied.sequence };
+      } else {
+        beforeSnapshotId = randomUUID(); afterSnapshotId = randomUUID();
+        const canonicalBefore = encodeDocumentAsYUpdate(before); const nextUpdate = encodeDocumentAsYUpdate(after, [canonicalBefore], `ai:${proposal._id}:apply`);
+        await repository.insertSnapshot({ _id: beforeSnapshotId, userId, recordId, documentVersion: input.expectedDocumentVersion, version: input.expectedDocumentVersion, schemaVersion: 1, content: before as never, stateVector: new Binary(Buffer.from(encodeDocumentStateVector(before))), serverSequence: input.expectedDocumentVersion, checksum: hashUpdate(canonicalBefore), actor: "ai", createdAt: new Date() }, tx.session);
+        const bumped = await repository.bumpDocumentVersion(recordId, userId, input.expectedDocumentVersion, afterSnapshotId, tx.session); if (bumped === null) throw new CareerDocumentError(409, "document version is stale"); nextVersion = bumped;
+        await repository.insertUpdate({ _id: randomUUID(), recordId, userId, clientId: proposal._id, clientSequence: 1, serverSequence: nextVersion, update: new Binary(nextUpdate), byteLength: nextUpdate.byteLength, updateHash: hashUpdate(nextUpdate), actor: "ai", receivedAt: new Date(), compactedAt: null }, tx.session);
+        update = { base64: Buffer.from(nextUpdate).toString("base64"), sequence: nextVersion };
+        await repository.insertSnapshot({ _id: afterSnapshotId, userId, recordId, documentVersion: nextVersion, version: nextVersion, schemaVersion: 1, content: after as never, stateVector: new Binary(Buffer.from(encodeDocumentStateVector(after))), serverSequence: nextVersion, checksum: hashUpdate(encodeDocumentAsYUpdate(after)), actor: "ai", createdAt: new Date() }, tx.session);
+      }
       const category = await db.careerCategories.findOne({ _id: record.categoryId, userId }, { session: tx.session }); if (!category) throw new CareerDocumentError(404, "career category not found");
       const properties = { ...record.properties }; const definitions = definitionMap(category); const changedPropertyIds: string[] = [];
       for (const change of changes) { const definition = definitions.get(change.propertyId); if (!definition || definition.system || JSON.stringify(properties[definition.key] ?? null) !== JSON.stringify(change.previousValue)) throw new CareerDocumentError(409, "AI proposal property changed"); if (change.nextValue === null) delete properties[definition.key]; else properties[definition.key] = CareerPropertyValueV2Schema.parse(change.nextValue); changedPropertyIds.push(change.propertyId); }
@@ -168,9 +182,12 @@ export class AiProposalService {
     if (!proposal?.revisionId || !proposal.beforeSnapshotId || proposal.appliedDocumentVersion !== input.expectedDocumentVersion) throw new CareerDocumentError(409, "AI proposal undo is stale");
     const beforeSnapshot = await mongoCollections(this.context.db).careerDocumentSnapshots.findOne({ _id: proposal.beforeSnapshotId, userId, recordId });
     if (!beforeSnapshot) throw new CareerDocumentError(409, "AI proposal before snapshot is missing");
-    const before = parseCareerDocument(beforeSnapshot.content);
     const current = await this.documentService.bootstrap(userId, recordId);
-    const bootstrap = await this.documentService.restoreRevision(userId, proposal.revisionId, input.expectedDocumentVersion, recordId);
+    // BlockNote 문서는 복원이 만든 증분 업데이트를 이 서비스의 발행 경로로 열린 편집기에 보냅니다.
+    const publish = current.editor === "blocknote" ? this.updatePublisher : undefined;
+    const bootstrap = await this.documentService.restoreRevision(userId, proposal.revisionId, input.expectedDocumentVersion, recordId, publish);
+    if (current.editor === "blocknote") return bootstrap;
+    const before = parseCareerDocument(beforeSnapshot.content);
     const canonicalBefore = encodeDocumentAsYUpdate(before);
     const appliedUpdate = encodeDocumentAsYUpdate(current.document, [canonicalBefore], `ai:${proposal._id}:apply`);
     const update = encodeDocumentAsYUpdate(bootstrap.document, [canonicalBefore, appliedUpdate], `ai:${proposal._id}:undo:${bootstrap.documentVersion}`);

@@ -20,10 +20,11 @@ date: 2026-10-28
 | `packages/database/src/documents/career.ts` | `documentBodyHash` |
 | `services/backend/src/modules/career-editor/blocknote-document.ts` (+ test) | `syncBlockNoteDocument`, `openBlockNote` |
 | `services/backend/src/modules/career-editor/service.ts` (+ test) | v1 모양 사본, 외부 `bodyMd` 동기화, 투영 큐, `appendServerUpdate`, v2 `restoreRevision` |
-| `services/backend/src/modules/career-editor/ai-proposals.ts` | v2 적용 · 되돌리기, 409 차단 제거 |
+| `services/backend/src/modules/career-editor/ai-proposals.ts` (+ `ai-proposals.integration.test.ts`) | v2 적용 · 되돌리기, 409 차단 제거. 시험의 사용자 편집을 BlockNote 업데이트로 |
+| `services/backend/src/modules/career-editor/index.ts` | `syncBlockNoteDocument` 노출(career 모듈 시험이 진입점으로 씀) |
 | `services/backend/src/modules/career-editor/compaction.ts` | 변경 없음 확인(v2 분기 있음) |
 | `services/backend/src/modules/career-editor/repository.ts` | `setBodyMarkdown` 해시 기록 |
-| `services/backend/src/modules/career/service.ts` | v2 옛 `bodyMd` 쓰기 허용 |
+| `services/backend/src/modules/career/service.ts` (+ `career.integration.test.ts`) | v2 옛 `bodyMd` 쓰기 허용, 시험을 v2 의미로 |
 | `services/backend/src/api/main.ts` · `worker/main.ts` · 새 `worker/processors/career-document-projection.ts` | 투영 작업 연결 |
 | `services/backend/src/modules/career-editor/spike-migrate-report.ts` → `migration-report.ts` | 운영 dry-run 보고 도구 |
 | `services/web/src/features/career-editor/editor/BlockNoteBody.tsx` | AI 편집 툴바, 문서 변경 알림 |

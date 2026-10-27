@@ -29,7 +29,7 @@ export interface CareerDocumentRepository {
   insertRevision(row: CareerRecordRevisionDoc, session?: ClientSession): Promise<void>;
   /** BlockNote 옮기기 표시와 bodyMd 투영입니다. 메모리 저장소 시험은 구현하지 않아도 됩니다. */
   markBlockNote?(recordId: string, userId: string, session?: ClientSession): Promise<void>;
-  setBodyMarkdown?(recordId: string, userId: string, bodyMd: string): Promise<void>;
+  setBodyMarkdown?(recordId: string, userId: string, bodyMd: string, options?: { session?: ClientSession | undefined; expectedBodyMd?: string }): Promise<void>;
 }
 
 export const hashUpdate = (bytes: Uint8Array): string =>
@@ -124,9 +124,15 @@ export class MongoCareerDocumentRepository implements CareerDocumentRepository {
   async markBlockNote(recordId: string, userId: string, session?: ClientSession) {
     await this.collections().careerRecords.updateOne({ _id: recordId, userId }, { $set: { documentSchemaVersion: 2 } }, this.options(session));
   }
-  async setBodyMarkdown(recordId: string, userId: string, bodyMd: string) {
-    await this.collections().careerRecords.updateOne({ _id: recordId, userId, deletedAt: null }, { $set: { bodyMd } });
+  async setBodyMarkdown(recordId: string, userId: string, bodyMd: string, options: { session?: ClientSession | undefined; expectedBodyMd?: string } = {}) {
+    // expectedBodyMd가 있으면 그 사이 편집기 밖에서 bodyMd가 바뀐 경우 덮지 않습니다.
+    await this.collections().careerRecords.updateOne(
+      { _id: recordId, userId, deletedAt: null, ...(options.expectedBodyMd === undefined ? {} : { bodyMd: options.expectedBodyMd }) },
+      { $set: { bodyMd, documentBodyHash: createHash("sha256").update(bodyMd).digest("hex") } },
+      this.options(options.session),
+    );
   }
+
   revisions(userId: string, recordId: string, session?: ClientSession) {
     return this.collections().careerRecordRevisions
       .find({ userId, recordId }, this.options(session))

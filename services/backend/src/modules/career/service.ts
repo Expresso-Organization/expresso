@@ -137,11 +137,9 @@ export class CareerService implements CareerApi {
       const existing = await records.findOne({ _id: recordId, userId, deletedAt: null }, { session: tx.session });
       if (!existing) throw new CareerError(404, "career record not found");
       if (existing.version !== expectedVersion) throw new CareerError(412, "career record version is stale");
-      if (input.bodyMd !== undefined && existing.documentSchemaVersion === 2) {
-        // BlockNote 본문에 Markdown을 덮어쓰면 편집 중인 Yjs 문서와 갈라집니다. 검증 브랜치에서는 막습니다.
-        throw new CareerError(409, "BlockNote document body is edited only through the editor");
-      }
-      if (input.bodyMd !== undefined) {
+      // BlockNote 문서는 bodyMd만 바꿉니다. 편집기 문서는 다음 bootstrap이 documentBodyHash 비교로 이 내용에 맞춥니다.
+      const blockNoteBody = existing.documentSchemaVersion === 2;
+      if (input.bodyMd !== undefined && !blockNoteBody) {
         const latestSnapshot = await mongoCollections(tx.db).careerDocumentSnapshots.findOne(
           { recordId },
           { sort: { documentVersion: -1 }, session: tx.session },
@@ -162,7 +160,7 @@ export class CareerService implements CareerApi {
       }).map((definition) => definition.id);
       const updated = await records.findOneAndUpdate({ _id: recordId, userId, deletedAt: null, version: expectedVersion }, { $set: { title: input.title ?? existing.title, status: input.status ?? existing.status, bodyMd: input.bodyMd ?? existing.bodyMd, properties, updatedAt: new Date() }, $inc: { version: 1 } }, { session: tx.session, returnDocument: "after" });
       if (!updated) throw new CareerError(412, "career record version is stale");
-      if (input.bodyMd !== undefined) {
+      if (input.bodyMd !== undefined && !blockNoteBody) {
         // 레거시 저장도 편집기 리비전으로 남기며, 동시 Yjs 변경이 있으면 충돌시킨다.
         const repository = new MongoCareerDocumentRepository(this.context);
         const current = existing.documentVersion ?? 0;
