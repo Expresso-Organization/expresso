@@ -9,7 +9,6 @@ import { z } from "zod";
 import {
   AiError,
   DEFAULT_MODEL_TIER,
-  parseToolOutput,
   logAiFailure,
   toToolSchema,
   type AiCallOptions,
@@ -58,6 +57,19 @@ import { runWithFixes } from "./fixes.js";
  *
  * 시스템 프롬프트를 `--system-prompt`로 갈아 끼우는 것도 느리다 — 같은 실측에서
  * 첫 조각 45.5초 → 78.5초였다. 붙이는 쪽(`--append-system-prompt`)이 맞다.
+ *
+ * **CLI에 출력 검증을 맡기지 않는다(`--json-schema`를 쓰지 않는다).** `--json-schema`를 주면 CLI가 출력 전체를 도구 하나의
+ * 입력(`StructuredOutput`)으로 받아 검증하고, 문법 · 모양이 틀리면 모델이 그 도구를 다시 부른다. 도구 입력은 출력
+ * 전체라 모델은 틀린 곳만 보낼 수 없고 처음부터 다시 쓴다(2026-10-27 구성 실측: 11,078자를 138초에 쓴 뒤 "could not be
+ * parsed as JSON"으로 거절, 146초를 더 들여 다시 씀, 출력 토큰 21,598). 이 재시도를 끄는 옵션은 공식 문서
+ * (code.claude.com/docs/en/agent-sdk/structured-outputs)와 `claude --help` 2.1.274에 없다. 그래서 내장 도구를 모두 끄고
+ * (`--tools ""`) 모델이 JSON을 마지막 답의 글로 쓰게 한다. CLI는 글을 검증하지 않는다. 출력 모양은 프롬프트 끝의 출력 형식
+ * 절(`outputFormatPrompt`)로 알리고, 읽기 · 검사 · 고치기는 `runWithFixes`가 같은 대화에서 한다.
+ *
+ * **시간 상한은 출력이 멈춘 시간이다.** 마지막 출력 뒤 `timeoutMs` 동안 아무것도 오지 않을 때만 끊는다. 전체 시간으로
+ * 끊으면 쓰고 있던 출력을 버리고, `AI_TIMEOUT`이 다시 시도할 수 있는 오류라 큐가 처음부터 다시 돌린다(운영 문서
+ * `docs/operations/ORACLE_HOSTING.md`의 180초 사례). 멈춤을 알려면 생각 · 글 조각이 흘러야 하므로
+ * `--include-partial-messages`를 늘 켠다.
  *
  * 프롬프트는 **argv가 아니라 stdin으로** 넘긴다. 공고 원문은 계약상 100만 자까지
  * 허용되는데(`SubmitJobPostingSchema`), argv 한 항목은 Linux에서 ~128KB,
@@ -133,43 +145,42 @@ export class ClaudeCodeAiClient implements AiClient {
       contract: spec.contract,
       schema,
       options,
-      first: () => this.#call(spec, model, toToolSchema(schema), spec.prompt, options, ["--session-id", sessionId], spec.images),
-      fix: (prompt, fixes) => this.#call(spec, model, toToolSchema(fixes), prompt, options.onThinking ? { onThinking: options.onThinking } : {}, ["--resume", sessionId]),
+      first: () => this.#call(spec, model, `${spec.prompt}\n\n${outputFormatPrompt(schema)}`, options, ["--session-id", sessionId], spec.images),
+      fix: (prompt, shape) => this.#call(
+        spec, model, shape ? `${prompt}\n\n${outputFormatPrompt(shape)}` : prompt,
+        options.onThinking ? { onThinking: options.onThinking } : {}, ["--resume", sessionId],
+      ),
     });
   }
 
-  /** CLI를 한 번 돌려 구조화 출력과 사용량을 받습니다. 계약 검사는 부르는 쪽(`complete`)이 합니다. */
+  /** CLI를 한 번 돌려 마지막 답의 글과 사용량을 받습니다. JSON 읽기 · 계약 검사는 부르는 쪽(`runWithFixes`)이 합니다. */
   async #call(
     spec: AiCallSpec,
     model: string,
-    toolSchema: Record<string, unknown>,
     prompt: string,
     options: Pick<AiCallOptions, "onPartial" | "onPartialRestart" | "onThinking">,
     session: string[],
     images?: AiCallSpec["images"],
-  ): Promise<{ output: unknown; usage: AiResult<unknown>["usage"] }> {
+  ): Promise<{ text: string; usage: AiResult<unknown>["usage"] }> {
     const args = [
       // 프롬프트는 stdin으로 간다 — 위치 인자를 주지 않는다.
       "-p",
       "--model", model,
       /*
-       * `stream-json`은 부분 출력을 받을 때만 필요하지만 **항상 쓴다.**
-       *
-       * 최종 `result` 봉투는 두 형식이 같고(`#parseEnvelope`가 뒤에서부터
-       * 찾는다), 형식을 갈라 두면 스트리밍 경로만 다른 버그를 갖게 된다.
-       * 대신 값이 드는 `--include-partial-messages`는 받을 사람이 있을 때만 켠다.
+       * `stream-json`과 `--include-partial-messages`를 **항상 쓴다.** 최종 `result` 봉투는 두 형식이 같고(`#parseEnvelope`가
+       * 뒤에서부터 찾는다), 생각 · 글 조각이 흘러야 출력이 멈춘 시간을 잴 수 있다(`#run`).
        */
       "--output-format", "stream-json",
       "--verbose",
-      ...(options.onPartial || options.onThinking ? ["--include-partial-messages"] : []),
-      "--json-schema", JSON.stringify(toolSchema),
+      "--include-partial-messages",
       "--append-system-prompt", spec.system,
       // MCP 서버와 도구 정의가 프롬프트에 실리지 않게 한다.
       "--strict-mcp-config",
       "--mcp-config", '{"mcpServers":{}}',
       // 이 머신 사람의 사용자 설정(플러그인 · 스킬 · 보조 모델)을 호출에 싣지 않는다. 위 주석의 실측.
       "--setting-sources", "project",
-      "--allowedTools", "",
+      // 내장 도구를 모두 끈다(`claude --help` 2.1.274의 `--tools ""`). 모델이 파일을 쓰는 대신 답을 글로 낸다.
+      "--tools", "",
       // 이미지는 글 입력으로 보낼 수 없습니다. stream-json 입력의 사용자 메시지 한 줄에 글과 이미지 블록을 함께 담습니다
       // (https://code.claude.com/docs/en/agent-sdk/streaming-vs-single-mode).
       ...(images?.length ? ["--input-format", "stream-json"] : []),
@@ -194,10 +205,7 @@ export class ClaudeCodeAiClient implements AiClient {
       : prompt;
 
     const started = Date.now();
-    const { stdout, stderr, code } = await this.#run(
-      args, spec, input,
-      options.onPartial || options.onThinking || options.onPartialRestart ? partialSink(options) : null,
-    );
+    const { stdout, stderr, code } = await this.#run(args, spec, input, partialSink(options));
     const durationMs = Date.now() - started;
 
     if (code !== 0) {
@@ -213,9 +221,6 @@ export class ClaudeCodeAiClient implements AiClient {
     }
 
     const parsed = this.#parseEnvelope(stdout, spec);
-    // 공급자 형식에는 모양만 넘기므로 여기 걸리는 것은 모양이 틀린 출력뿐입니다. 남은 경로를 찾도록 기록합니다.
-    for (const detail of rejectedStructuredOutputs(stdout))
-      console.error(JSON.stringify({ level: "warn", event: "ai.structured_output_rejected", contract: spec.contract, model, detail: detail.slice(0, 1_500) }));
     if (parsed.is_error) {
       const message = parsed.result ?? "claude reported an error";
       logAiFailure({
@@ -242,8 +247,8 @@ export class ClaudeCodeAiClient implements AiClient {
       .sort((left, right) => right.outputTokens - left.outputTokens)[0]?.name
       ?? model;
     return {
-      // `--json-schema`를 주면 구조화 결과가 여기 온다. 없으면 계약 검사가 빈 출력으로 위반을 낸다.
-      output: parsed.structured_output,
+      // 마지막 답의 글. 비어 있으면 `runWithFixes`가 이어 쓰기를 요청한다.
+      text: parsed.result ?? "",
       usage: {
         model: modelName,
         inputTokens: usage.input_tokens ?? 0,
@@ -305,10 +310,16 @@ export class ClaudeCodeAiClient implements AiClient {
       child.stdin.end(prompt, "utf8");
       let stdout = "";
       let stderr = "";
-      const timer = setTimeout(() => {
-        child.kill("SIGKILL");
-        reject(new AiError("AI_TIMEOUT", spec.contract, `${spec.contract} timed out`));
-      }, this.#timeoutMs);
+      // 마지막 출력 뒤 `timeoutMs` 동안 아무것도 오지 않으면 끊는다. 출력이 올 때마다 다시 센다.
+      let timer: NodeJS.Timeout;
+      const arm = () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          child.kill("SIGKILL");
+          reject(new AiError("AI_TIMEOUT", spec.contract, `${spec.contract} produced no output for ${this.#timeoutMs}ms`));
+        }, this.#timeoutMs);
+      };
+      arm();
 
       /*
        * 줄 경계는 우리가 잡는다. `data` 하나가 JSONL 한 줄이라는 보장이 없다 —
@@ -316,6 +327,7 @@ export class ClaudeCodeAiClient implements AiClient {
        */
       let pending = "";
       child.stdout.on("data", (chunk: Buffer) => {
+        arm();
         const text = chunk.toString("utf8");
         stdout += text;
         if (!onLine) return;
@@ -343,13 +355,16 @@ export class ClaudeCodeAiClient implements AiClient {
 }
 
 /**
- * 구조화 출력이 오는 도구 블록의 이름.
- *
- * `--json-schema`를 주면 CLI가 이 이름의 도구를 하나 물려 주고, 모델이 그
- * 도구를 부르는 것이 곧 최종 응답이다. **이름은 CLI 쪽 사정이라 바뀔 수 있다** —
- * 그래서 못 찾으면 조각을 안 보낼 뿐, 호출 자체는 그대로 성공한다.
+ * 프롬프트 끝에 붙이는 출력 형식 절. 모양은 공급자 형식(`toToolSchema`)과 같다 — 키 · 값 종류 · 설명 문장만 있고, 글자
+ * 수 · 개수 기준은 설명 문장으로 들어 있다. CLI는 이 형식으로 출력을 검증하지 않는다.
  */
-const STRUCTURED_OUTPUT_TOOL = "StructuredOutput";
+export function outputFormatPrompt(schema: z.ZodType): string {
+  return [
+    "## 출력 형식",
+    "답은 아래 JSON Schema 모양의 JSON 값 하나다. 첫 글자는 { 또는 [ 다. 코드 블록 표시나 설명 글을 붙이지 않는다. 문자열 안의 큰따옴표는 \\\" 로, 줄바꿈은 \\n 으로 쓴다.",
+    JSON.stringify(toToolSchema(schema)),
+  ].join("\n");
+}
 
 /**
  * 생각이 얼마나 쌓였는가.
@@ -372,58 +387,33 @@ const STREAM_EVENT_SCHEMA = z.looseObject({
     index: z.number().optional(),
     content_block: z.looseObject({
       type: z.string(),
-      name: z.string().optional(),
     }).optional(),
     delta: z.looseObject({
       type: z.string(),
-      partial_json: z.string().optional(),
+      text: z.string().optional(),
     }).optional(),
   }),
 });
 
 /**
- * JSONL 한 줄에서 **구조화 출력 조각만** 골라낸다.
+ * JSONL 한 줄에서 **답의 글 조각만** 골라낸다.
  *
- * 한 번의 호출에도 블록은 여럿 열린다 — 생각(`thinking`), 하려다 거절당한 도구
- * (`Write` · `Artifact`), 그리고 마지막의 `StructuredOutput`. `index`는 메시지마다
- * 0부터 다시 매겨지므로 **번호만 보면 남의 조각을 섞어 담는다.** 블록이 열릴 때
- * 이름을 보고 자리를 잡고, 닫히면 놓는다.
+ * 도구를 모두 껐으므로(`--tools ""`) 답은 글 블록(`text`)으로 온다(2026-10-27 실측, claude-code 2.1.274: 생각 블록 뒤
+ * `content_block_start` type `text`, 이어서 `text_delta`). `index`는 메시지마다 0부터 다시 매겨지므로 블록이 열릴 때 종류를
+ * 보고 자리를 잡고, 닫히면 놓는다.
  *
- * 같은 이름의 블록이 두 번 열리면 **그 자리에서 멈춘다**(처음부터 다시 읽을 수 있는 쪽이 `onPartialRestart`를 주면
- * 알리고 이어 받는다). 이미 보낸 조각을
- * 되돌릴 수 없으니 이어 붙이면 앞뒤가 다른 JSON이 되고, 받는 쪽은 그걸
- * 알아볼 방법이 없다. 멈추면 화면은 마지막 성한 데까지만 그린 채 결과를
- * 기다린다 — 최종 응답은 봉투에서 따로 읽으므로 영향이 없다.
+ * 첫 `{` · `[` 앞의 글은 흘리지 않는다. 받는 쪽(부분 JSON 읽기)은 JSON의 처음부터 읽기 때문이다.
+ *
+ * 글 블록이 두 번 열리면 **그 자리에서 멈춘다**(처음부터 다시 읽을 수 있는 쪽이 `onPartialRestart`를 주면 알리고 이어
+ * 받는다). 이미 보낸 조각을 되돌릴 수 없으니 이어 붙이면 앞뒤가 다른 JSON이 된다. 최종 응답은 봉투에서 따로 읽으므로
+ * 영향이 없다.
  */
-/**
- * 출력 줄에서 CLI가 돌려보낸 구조화 출력의 오류 문장을 꺼냅니다. 도구 결과는 사용자 메시지의 `tool_result`로 오고,
- * 구조화 출력 도구의 호출 ID로 짝을 맞춥니다.
- */
-export function rejectedStructuredOutputs(stdout: string): string[] {
-  const ids = new Set<string>();
-  const rejected: string[] = [];
-  for (const line of stdout.split("\n")) {
-    if (!line.startsWith("{")) continue;
-    let json: { type?: string; message?: { content?: unknown } };
-    try {
-      json = JSON.parse(line);
-    } catch {
-      continue;
-    }
-    const content = Array.isArray(json.message?.content) ? (json.message!.content as Record<string, unknown>[]) : [];
-    for (const block of content) {
-      if (json.type === "assistant" && block.type === "tool_use" && block.name === STRUCTURED_OUTPUT_TOOL && typeof block.id === "string") ids.add(block.id);
-      if (json.type === "user" && block.type === "tool_result" && block.is_error === true && ids.has(String(block.tool_use_id)))
-        rejected.push(typeof block.content === "string" ? block.content : JSON.stringify(block.content));
-    }
-  }
-  return rejected;
-}
-
 export function partialSink(options: AiCallOptions): (line: string) => void {
   let activeIndex: number | null = null;
   let seen = false;
   let frozen = false;
+  /** 이번 글 블록에서 JSON이 시작됐는가. 그 전 글은 흘리지 않는다. */
+  let started = false;
 
   return (line) => {
     if (!line.startsWith("{")) return;
@@ -445,20 +435,16 @@ export function partialSink(options: AiCallOptions): (line: string) => void {
     const event = parsed.data.event;
 
     if (event.type === "content_block_start") {
-      const block = event.content_block;
-      if (block?.type !== "tool_use" || block.name !== STRUCTURED_OUTPUT_TOOL) return;
+      if (event.content_block?.type !== "text") return;
       if (seen && options.onPartialRestart) {
         options.onPartialRestart();
         activeIndex = event.index ?? null;
+        started = false;
         return;
       }
       if (seen) {
         frozen = true;
-        console.error(JSON.stringify({
-          level: "warn",
-          event: "ai.partial_restarted",
-          detail: `${STRUCTURED_OUTPUT_TOOL} block opened twice — partial output stopped`,
-        }));
+        console.error(JSON.stringify({ level: "warn", event: "ai.partial_restarted", detail: "text block opened twice — partial output stopped" }));
         return;
       }
       activeIndex = event.index ?? null;
@@ -468,8 +454,14 @@ export function partialSink(options: AiCallOptions): (line: string) => void {
 
     if (event.type === "content_block_delta") {
       if (frozen || event.index !== activeIndex || activeIndex === null) return;
-      if (event.delta?.type !== "input_json_delta") return;
-      const text = event.delta.partial_json;
+      if (event.delta?.type !== "text_delta") return;
+      let text = event.delta.text ?? "";
+      if (!started) {
+        const at = text.search(/[{[]/);
+        if (at < 0) return;
+        started = true;
+        text = text.slice(at);
+      }
       if (text) options.onPartial?.(text);
       return;
     }

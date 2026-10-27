@@ -143,12 +143,13 @@ describe("설계가 먼저 오는 생성", () => {
     expect(result.manifest.structured!.content.sections[0]!.metrics?.[0]?.value).toBe("1.9초");
   });
 
-  it("설계안에 빠진 섹션은 설계를 거절하지 않고 그 목록만 고쳐 받으며, 두 번 고쳐도 빠지면 그 섹션은 싣지 않는다", async () => {
+  it("설계안에 빠진 섹션은 설계를 거절하지 않고 그 목록만 고쳐 받으며, 고쳐도 빠지면 그 섹션은 싣지 않는다", async () => {
     const ai = new RoutedAi((request) => (request.contract === "page_design" ? { plan: { ...plan, sections: plan.sections.slice(0, 1) }, spec } : fill()));
     const result = await new StructuredPageGenerator(ai).generate(context);
     expect(ai.calls.filter((call) => call.contract === "page_design")).toHaveLength(1);
     const designFixes = ai.fixRequests.filter((request) => request.contract === "page_design");
-    expect(designFixes).toHaveLength(2);
+    // 걸린 칸이 줄지 않으면 한 번 고친 뒤 멈춘다(진전 기준).
+    expect(designFixes).toHaveLength(1);
     expect(designFixes[0]!.paths).toEqual(["/plan/sections"]);
     expect(designFixes[0]!.prompt).toContain("빠진 섹션: ui, misc");
     expect(result.manifest.structured!.content.sections.map((section) => section.id)).toEqual(["lcp"]);

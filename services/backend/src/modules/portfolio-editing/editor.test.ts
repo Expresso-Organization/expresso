@@ -90,7 +90,8 @@ describe("부분 편집 계약", () => {
     const patches = await new AiBlockEditor(ai).edit(context);
 
     expect(ai.calls).toHaveLength(1);
-    expect(ai.fixRequests).toHaveLength(2);
+    // 걸린 칸이 줄지 않으면 한 번 고친 뒤 멈춘다(진전 기준, intent `ai-output-no-cli-rewrite`).
+    expect(ai.fixRequests).toHaveLength(1);
     expect(patches[0]?.after).toBe(banned.patches[0]!.after);
   });
 

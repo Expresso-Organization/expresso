@@ -67,13 +67,14 @@ describe("기록 정리 계약", () => {
     expect(cleanupViolations(invented, context.transcript).map(({ path }) => path)).toEqual(["/metrics/1"]);
   });
 
-  it("두 번 고쳐도 답변에 없는 수치가 남은 칸만 싣지 않고 나머지는 그대로 쓴다", async () => {
+  it("고쳐도 답변에 없는 수치가 남은 칸만 싣지 않고 나머지는 그대로 쓴다", async () => {
     const invented = { ...cleaned, metrics: ["99.9% 가용성"] };
     const ai = scripted(invented);
     const result = await new AiRecordCleaner(ai).clean(context);
 
     expect(ai.calls).toHaveLength(1);
-    expect(ai.fixRequests).toHaveLength(2);
+    // 걸린 칸이 줄지 않으면 한 번 고친 뒤 멈춘다(진전 기준, intent `ai-output-no-cli-rewrite`).
+    expect(ai.fixRequests).toHaveLength(1);
     expect(result.metrics).toEqual([]);
     expect(result.title).toBe(cleaned.title);
   });

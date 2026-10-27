@@ -194,7 +194,7 @@ describe("모델 기반 구조화 생성", () => {
     };
   })();
 
-  it("내용 정리에서 이름을 바꾸면 그 칸만 고쳐 받고, 두 번 고쳐도 바꾸면 중단한다", async () => {
+  it("내용 정리에서 이름을 바꾸면 그 칸만 고쳐 받고, 고쳐도 바꾸면 중단한다", async () => {
     const changed = structuredClone(modelContent);
     changed.profile.name = "다른 이름";
     const ai = new Stub([changed, changed, changed]);
@@ -202,7 +202,7 @@ describe("모델 기반 구조화 생성", () => {
       new StructuredPageGenerator(ai, null, { designFirst: false }).generate(rawInput),
     ).rejects.toThrow(/내용 정리 결과가 계약 검사를 통과하지 못했습니다: \/profile\/name/);
     expect(ai.calls).toHaveLength(1);
-    expect(ai.fixRequests.map((request) => request.paths)).toEqual([["/profile/name"], ["/profile/name"]]);
+    expect(ai.fixRequests.map((request) => request.paths)).toEqual([["/profile/name"]]);
   });
 
   it("내용 정리 모델에게 연락처를 묻지 않고, 생성 결과의 연락처는 비어 있다", async () => {

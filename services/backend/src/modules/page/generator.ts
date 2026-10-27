@@ -374,9 +374,14 @@ export class AiPageGenerator implements PageGenerator {
         ...(context.modelTier ? { modelTier: context.modelTier } : {}),
       },
       PageDraftSchema,
-      sink
-        ? { onPartial: (text) => sink.delta(text), onThinking: (tokens) => sink.thinking(tokens) }
-        : {},
+      {
+        // 마크업이 없는 지면은 버리지 않고 같은 대화에서 고쳐 받는다. 고친 뒤에도 없으면 아래 QA가 실패로 남긴다.
+        check: (draft) => {
+          const problem = markupProblem(draft.html, useKit);
+          return problem ? [{ path: "/html", problem }] : [];
+        },
+        ...(sink ? { onPartial: (text: string) => sink.delta(text), onThinking: (tokens: number) => sink.thinking(tokens) } : {}),
+      },
     );
 
     const clean = sanitizePage(data);
@@ -434,6 +439,13 @@ export class AiPageGenerator implements PageGenerator {
   }
 }
 
+/** 지면이 마크업인가. 아니면 그 이유. 생성 호출의 `check`(같은 대화에서 고치기)와 QA가 같은 판정을 쓴다. */
+function markupProblem(html: string, useKit: boolean): string | null {
+  if (!/<[a-zA-Z]/.test(html)) return "지면에 태그가 하나도 없습니다 — 마크업 대신 설명을 냈습니다";
+  if (useKit && !html.includes("k-page")) return "최상위 `k-page`가 없습니다";
+  return null;
+}
+
 /**
  * 만든 지면을 무엇으로 판단하는가.
  *
@@ -472,16 +484,8 @@ function pageQa(input: {
    * 그때 있던 검사 일곱 개가 전부 통과하고 `ready`로 저장됐다 — 나머지가 전부
    * **지면이 있다는 전제** 위에 서 있었기 때문이다.
    */
-  const hasElement = /<[a-zA-Z]/.test(input.html);
-  const hasRoot = !input.useKit || input.html.includes("k-page");
-  check(
-    "has-markup",
-    hasElement && hasRoot,
-    "error",
-    !hasElement
-      ? "지면에 태그가 하나도 없습니다 — 마크업 대신 설명을 냈습니다"
-      : hasRoot ? "지면이 마크업으로 되어 있음" : "최상위 `k-page`가 없습니다",
-  );
+  const problem = markupProblem(input.html, input.useKit);
+  check("has-markup", problem === null, "error", problem ?? "지면이 마크업으로 되어 있음");
   check(
     "grounded-numbers",
     input.ungrounded.length === 0,

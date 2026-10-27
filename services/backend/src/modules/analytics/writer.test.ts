@@ -86,7 +86,8 @@ describe("분석 해설 계약", () => {
     const written = await new AiInsightWriter(ai).write(context);
 
     expect(ai.calls).toHaveLength(1);
-    expect(ai.fixRequests).toHaveLength(2);
+    // 걸린 칸이 줄지 않으면 한 번 고친 뒤 멈춘다(진전 기준, intent `ai-output-no-cli-rewrite`).
+    expect(ai.fixRequests).toHaveLength(1);
     expect(written.narrative).toBe(wordy.narrative);
   });
 
@@ -107,7 +108,8 @@ describe("분석 해설 계약", () => {
     const ai = scripted({ ...note, evidenceMetrics: ["bounce_rate"] });
     await expect(new AiInsightWriter(ai).write(context)).rejects.toThrow(/집계에 없는 지표/);
     expect(ai.calls).toHaveLength(1);
-    expect(ai.fixRequests).toHaveLength(2);
+    // 걸린 칸이 줄지 않으면 한 번 고친 뒤 멈춘다(진전 기준, intent `ai-output-no-cli-rewrite`).
+    expect(ai.fixRequests).toHaveLength(1);
   });
 
   it("제안이 없는 지표를 가리키면 그 target을 고쳐 받고, 남으면 만들 수 없다", async () => {

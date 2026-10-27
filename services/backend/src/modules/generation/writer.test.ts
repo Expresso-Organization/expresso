@@ -152,7 +152,8 @@ describe("추출 계약", () => {
     const output = await new AiSentenceWriter(ai).write(context);
 
     expect(ai.calls).toHaveLength(1);
-    expect(ai.fixRequests).toHaveLength(2);
+    // 걸린 칸이 줄지 않으면 한 번 고친 뒤 멈춘다(진전 기준, intent `ai-output-no-cli-rewrite`).
+    expect(ai.fixRequests).toHaveLength(1);
     expect(output.blocks.map(({ recipeSectionId }) => recipeSectionId)).toEqual([ids.intro]);
   });
 

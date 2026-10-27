@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { partialSink, rejectedStructuredOutputs } from "./claude-code.js";
+import { partialSink } from "./claude-code.js";
 
 /**
  * JSONL 한 줄에서 무엇을 골라내는가.
  *
- * 여기 쓰는 줄들은 **실제로 관찰된 모양 그대로**다(2026-08-14, claude-code
- * 2.1.228). 지어낸 모양으로 재면 CLI가 조금만 달라져도 테스트만 통과한다.
+ * 여기 쓰는 줄들은 **실제로 관찰된 모양 그대로**다(생각 줄 2026-08-14 claude-code 2.1.228, 글 블록 줄 2026-10-27
+ * claude-code 2.1.274 `--tools ""`). 지어낸 모양으로 재면 CLI가 조금만 달라져도 테스트만 통과한다.
  *
  * 이 파싱이 조용히 틀어지면 화면은 그냥 아무것도 안 보여 준다 — 실제로 한 번
  * 그랬고, 그때 서버 로그에는 아무 흔적이 없었다.
@@ -32,16 +32,8 @@ const EMPTY_THINKING = JSON.stringify({
     delta: { type: "thinking_delta", thinking: "", estimated_tokens: 50 },
   },
 });
-const OUT_START = line({
-  type: "content_block_start",
-  index: 1,
-  content_block: { type: "tool_use", id: "toolu_x", name: "StructuredOutput", input: {} },
-});
-const out = (text: string) => line({
-  type: "content_block_delta",
-  index: 1,
-  delta: { type: "input_json_delta", partial_json: text },
-});
+const OUT_START = line({ type: "content_block_start", index: 1, content_block: { type: "text", text: "" } });
+const out = (text: string) => line({ type: "content_block_delta", index: 1, delta: { type: "text_delta", text } });
 
 function collect(lines: string[]) {
   const thoughts: number[] = [];
@@ -64,22 +56,24 @@ describe("claude-code 조각 고르기", () => {
     expect(partials.join("")).toBe('{"html":"<p>안녕</p>"}');
   });
 
-  it("우리 것이 아닌 도구의 조각은 안 받는다", () => {
+  it("글 블록이 아닌 블록의 조각은 안 받는다", () => {
     const { partials } = collect([
-      line({
-        type: "content_block_start", index: 0,
-        content_block: { type: "tool_use", id: "t", name: "Write", input: {} },
-      }),
-      line({ type: "content_block_delta", index: 0, delta: { type: "input_json_delta", partial_json: '{"file_path"' } }),
+      line({ type: "content_block_start", index: 0, content_block: { type: "thinking", thinking: "", signature: "" } }),
+      line({ type: "content_block_delta", index: 0, delta: { type: "thinking_delta", thinking: "{생각", estimated_tokens: 50 } }),
     ]);
     expect(partials).toEqual([]);
+  });
+
+  it("JSON 앞에 붙은 글은 흘리지 않는다", () => {
+    const { partials } = collect([OUT_START, out("다음은 결과입니다.\n```json\n"), out('{"a":'), out("1}")]);
+    expect(partials.join("")).toBe('{"a":1}');
   });
 
   it("결과 블록이 닫히면 그 번호의 조각을 더 안 받는다", () => {
     // 번호는 메시지마다 0부터 다시 매겨진다. 닫고 놓지 않으면 남의 조각을 담는다.
     const { partials } = collect([
       OUT_START, out('{"a":1}'), line({ type: "content_block_stop", index: 1 }),
-      line({ type: "content_block_delta", index: 1, delta: { type: "input_json_delta", partial_json: "쓰레기" } }),
+      line({ type: "content_block_delta", index: 1, delta: { type: "text_delta", text: "쓰레기" } }),
     ]);
     expect(partials.join("")).toBe('{"a":1}');
   });
@@ -100,19 +94,5 @@ describe("claude-code 조각 고르기", () => {
     const { thoughts, partials } = collect(["경고: 무언가", "", '{"type":"system","subtype":"init"}']);
     expect(thoughts).toEqual([]);
     expect(partials).toEqual([]);
-  });
-});
-
-describe("돌려보낸 구조화 출력", () => {
-  it("구조화 출력 도구 호출에 붙은 오류 결과만 꺼낸다", () => {
-    // 2026-10-26 실측(claude-code, haiku): maxLength 5 스키마에 14자를 넣게 한 호출의 출력 줄 모양입니다.
-    const stdout = [
-      JSON.stringify({ type: "assistant", message: { content: [{ type: "tool_use", id: "toolu_1", name: "StructuredOutput", input: { title: "가나다라마바사아자차카타파하" } }] } }),
-      JSON.stringify({ type: "user", message: { content: [{ type: "tool_result", tool_use_id: "toolu_1", is_error: true, content: "Output does not match required schema: /title: must NOT have more than 5 characters (got 14)" }] } }),
-      JSON.stringify({ type: "assistant", message: { content: [{ type: "tool_use", id: "toolu_2", name: "StructuredOutput", input: { title: "가나다" } }] } }),
-      JSON.stringify({ type: "user", message: { content: [{ type: "tool_result", tool_use_id: "toolu_2", content: "Structured output provided successfully" }] } }),
-      JSON.stringify({ type: "user", message: { content: [{ type: "tool_result", tool_use_id: "toolu_other", is_error: true, content: "남의 도구" }] } }),
-    ].join("\n");
-    expect(rejectedStructuredOutputs(stdout)).toEqual(["Output does not match required schema: /title: must NOT have more than 5 characters (got 14)"]);
   });
 });

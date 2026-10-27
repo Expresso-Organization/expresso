@@ -15,7 +15,6 @@ import {
 import type { MongoContext } from "../../platform/mongodb.js";
 import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { inTransaction, type MongoTransaction } from "../../platform/mongo-transaction.js";
-import { withTimeout } from "../../platform/timeouts.js";
 import { writeSnapshot } from "../../platform/snapshot-payload.js";
 import { assertActiveRecordsForWrite } from "../career/index.js";
 import type { ConsentApi } from "../consent/index.js";
@@ -275,7 +274,7 @@ export class GenerationService {
         jobTitle: subject?.job_title ?? subject?.free_title ?? null, jobFamily: subject?.job_family ?? null,
       };
       await this.#consent?.require(job.userId, "layout_draft");
-      return await withTimeout(designer.design(design), 420_000, "layout designer");
+      return await designer.design(design);
     } catch (error) {
       console.error(JSON.stringify({ level: "warn", event: "layout.design_failed", generationJobId: job._id, message: error instanceof Error ? error.message : String(error) }));
       return [];
@@ -348,7 +347,7 @@ export class GenerationService {
       const subject = await this.#subject(claimed);
       const context = buildWriterContext({ items: prepared.contextRows, evidence: prepared.evidence, subject, lockedTexts: prepared.lockedTexts });
       const output = validateGenerationOutput(
-        await withTimeout(writer.write(context), 420_000, "sentence writer"),
+        await writer.write(context),
         prepared.evidence.map(({ id, source_type, source_label, source_text }) => ({ id, sourceType: source_type, sourceLabel: source_label, sourceText: source_text })),
         prepared.contextRows.flatMap(({ context: sectionContext }) => sectionContext.exclude ?? []), context.lockedTexts,
       );

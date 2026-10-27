@@ -141,7 +141,8 @@ describe("지면 변형 계약", () => {
     const ai = new ScriptedAiClient(() => same());
     await expect(new AiLayoutRemixer(ai).remix(context)).rejects.toThrow(/그대로/);
     expect(ai.calls).toHaveLength(1);
-    expect(ai.fixRequests).toHaveLength(2);
+    // 걸린 칸이 줄지 않으면 한 번 고친 뒤 멈춘다(진전 기준, intent `ai-output-no-cli-rewrite`).
+    expect(ai.fixRequests).toHaveLength(1);
   });
 
   it("읽을 수 없는 지면은 그 색 칸을 고쳐 받고, 못 고치면 AI_INVALID_OUTPUT으로 끝난다", async () => {

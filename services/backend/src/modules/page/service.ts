@@ -24,7 +24,6 @@ import { mongoCollections, type GeneratedPageDoc, type JsonObject } from "@expre
 import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction } from "../../platform/mongo-transaction.js";
 import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
-import { withTimeout } from "../../platform/timeouts.js";
 import type { ConsentApi } from "../consent/index.js";
 import { findDesignSystemRevision, findPortfolioDesign } from "../design-systems/index.js";
 import { requireActiveUser } from "../identity/index.js";
@@ -163,7 +162,7 @@ export class PageService {
     } : null;
     await this.#publish(stream?.begin(streamId, JSON.stringify(context.style ?? null)));
     let result;
-    try { result = await withTimeout(generator.generate(context, sink), 900_000, "page generator"); }
+    try { result = await generator.generate(context, sink); }
     catch (error) { await this.#publish(stream?.failed(streamId, error instanceof Error ? error.name : "PAGE_GENERATION_FAILED")); throw error; }
     const row = await inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId);
@@ -228,13 +227,13 @@ export class PageService {
     const archetype = PortfolioArchetypeSchema.safeParse(root?.props?.archetype);
     let outcome: PageRefineOutcome;
     try {
-      outcome = await withTimeout(refiner.refine({
+      outcome = await refiner.refine({
         snapshot: structured,
         design: findPortfolioDesign(owner),
         style: isPageStyleGrammar(draft.styleSpecSnapshot) ? draft.styleSpecSnapshot : undefined,
         archetype: archetype.success ? archetype.data : undefined,
         instruction: draft.instruction ?? undefined,
-      }), 900_000, "page refiner");
+      });
     } catch (error) {
       await mark({ status: "failed", reason: (error instanceof Error ? error.message : String(error)).slice(0, 1_000) });
       return;

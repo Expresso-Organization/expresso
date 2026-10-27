@@ -131,9 +131,8 @@ describe("지면 생성 계약", () => {
     const ai = new ScriptedAiClient(() => batch([[1], [1], [1]]));
     await expect(new AiLayoutDesigner(ai).design(context)).rejects.toThrow(LayoutDesignError);
     expect(ai.calls).toHaveLength(1);
-    // 고치기는 2번까지다. 세 안의 빠진 자리를 한 번에 묻는다.
+    // 세 안의 빠진 자리를 한 번에 묻는다. 고쳐도 줄지 않으면 거기서 멈춘다.
     expect(ai.fixRequests.map(({ paths }) => paths)).toEqual([
-      ["/candidates/0/sections", "/candidates/1/sections", "/candidates/2/sections"],
       ["/candidates/0/sections", "/candidates/1/sections", "/candidates/2/sections"],
     ]);
   });

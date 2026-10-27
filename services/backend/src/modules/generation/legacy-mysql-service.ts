@@ -15,7 +15,6 @@ import {
 } from "../layout/designer.js";
 import { GenerationValidationError, validateGenerationOutput } from "./validator.js";
 import { SentenceWriterUnavailableError, type SentenceWriter, type WriterContext } from "./writer.js";
-import { withTimeout } from "../../platform/timeouts.js";
 import { type ConsentApi } from "../consent/index.js";
 
 interface JobRow {
@@ -153,7 +152,7 @@ export class GenerationService {
       // 실제 한계는 어댑터가 쥐고 있고(claude-code 기본 180초), 재시도까지
       // 하면 두 배가 되므로 여기서 먼저 끊으면 재시도가 잘린다.
       await this.#consent?.require(job.user_id, "layout_draft");
-      return await withTimeout(designer.design(design), 420_000, "layout designer");
+      return await designer.design(design);
     } catch (error) {
       console.error(JSON.stringify({
         level: "warn",
@@ -356,7 +355,7 @@ export class GenerationService {
         lockedTexts: locked.flatMap(({ text }) => (text ? [text] : [])),
       });
       const output = validateGenerationOutput(
-        await withTimeout(writer.write(context), 420_000, "sentence writer"),
+        await writer.write(context),
         evidence.map(({ id, source_type, source_label, source_text }) => ({
           id, sourceType: source_type, sourceLabel: source_label, sourceText: source_text,
         })),
