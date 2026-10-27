@@ -18,7 +18,7 @@ date: 2026-10-27
 | `docs/architecture/*.md` 7개 · `docs/superpowers/plans/*.md` 5개 | p5 병합 |
 | `docs/p5-model-training-results-2026-09-06.html` · `docs/assets/p5-training-results-2026-09-06/*` | p5 병합. 그림 일부는 이미 main에 같은 내용으로 있다 |
 | `docs/index.html` · `docs/operations/P5_ML_DATA_COLLECTION_REPORT.md` | p5 병합. 대비 목록에 리포트 카드가 붙는다 |
-| `package.json` | p5 병합. `ml:data:test` · `ml:model:test` · `ml:data:collect` · `ml:data:profile` · `ml:eval` |
+| `package.json` | p5 병합. `ml:data:test` · `ml:model:test` · `ml:data:collect` · `ml:data:profile` · `ml:eval`. 병합본은 9/4 이후 추가된 테스트 8개(`llm_suitability_*` 6개 · `synthetic_profile_v452_repair` · `job_analysis_local_benchmark`)를 돌리지 않으므로 두 스크립트에 더한다. `llm_suitability_train_test.py`는 torch가 필요해 `ml:model:test`에 둔다 |
 | `.gitignore` | 충돌 해소. main 줄 + `__pycache__/` · `.worktree/` |
 | `docs/architecture/match-model-training-v1.md` | 계획 브랜치 병합 후 4절 주차와 역할 줄 정정 |
 
