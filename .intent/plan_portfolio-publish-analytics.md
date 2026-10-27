@@ -14,8 +14,8 @@ date: 2026-10-28
 
 | 파일 | 무엇을 |
 |---|---|
-| `packages/contracts/src/publishing.ts` | `SlugSchema` 예약어 검사, `FreeHtmlDeploymentSnapshotSchema.outline` |
-| `packages/contracts/src/analytics.ts` | 섹션 `position`, 추이 점의 클릭 세 필드 |
+| `packages/contracts/src/publishing.ts` | 예약어 검사(`PublicSlugSchema`), `FreeHtmlDeploymentSnapshotSchema.outline` |
+| `packages/contracts/src/analytics.ts` | 섹션 `position`, 추이 점의 클릭 세 필드, 대시보드 `portfolio.status` |
 | `packages/database/src/mongodb-migrations/0022/migration.ts` (새 파일) | `publicSlug` 검증기 · 값 채우기 · 인덱스, `deployment_subdomain_key` 교체 |
 | `packages/database/src/mongo-migrations.ts` | 0022 등록 |
 | `packages/database/src/documents/generation.ts` | `PortfolioDoc.publicSlug` |
@@ -24,18 +24,22 @@ date: 2026-10-28
 | `services/backend/src/modules/publishing/service.ts` | 주소 소유 · `outline` 저장 · 공개 조회 |
 | `services/backend/src/modules/publishing/mongodb.integration.test.ts` | 같은 slug 재배포, slug 변경 뒤 rollback |
 | `services/backend/src/modules/analytics/service.ts` | slug로 찾기, 날짜 해시, 포트폴리오 단위 합산, 섹션 제목, 해설 입력 |
-| `services/backend/src/modules/analytics/metrics.ts` | `org_domains` 수집 안 함, 기본 지면에서 제외 |
+| `services/backend/src/modules/analytics/metrics.ts` | `org_domains` 수집 안 함, 기본 지면에서 제외, 섹션별 체류 너비 8 |
+| `services/backend/src/modules/analytics/legacy-mysql-service.ts` | 대시보드 `portfolio.status` |
+| `services/backend/src/modules/portfolios/service.ts` | 목록의 배포 주소를 `publicSlug`로 |
 | `services/backend/src/modules/analytics/mongo.integration.test.ts` | 수집 순서, 두 deployment 합산, 해설 입력 |
 | `services/backend/src/modules/jobs/ingest/adapter.ts` | User-Agent 주소를 `expresso.ai.kr`로 |
 | `services/web/src/lib/public-site.ts` (새 파일) | 공개 주소 함수 |
-| `services/web/src/lib/site-tracker.ts` (새 파일) | 추적 스크립트 문자열 · 해시 · 메시지 타입 |
-| `services/web/src/proxy.ts` | 서브도메인 rewrite, matcher |
+| `services/web/src/lib/site-tracker.ts` (새 파일) | 추적 스크립트 문자열 · 해시 · 문서에 붙이기 |
+| `services/web/src/lib/site-tracker-message.ts` (새 파일) | iframe → 부모 알림 계약 |
+| `services/web/src/proxy.ts` · `proxy.test.ts` | 서브도메인 rewrite, matcher |
 | `services/web/src/app/site/[slug]/page.tsx` · `SiteFrame.tsx` (새 파일) | 스크립트 · CSP 주입, 메시지 중계 |
 | `services/web/src/app/api/analytics/events/route.ts` (새 파일) | 백엔드로 넘기는 웹 라우트 |
 | `services/web/src/app/(app)/analytics/page.tsx` · `Dashboard.tsx` · `page.module.css` | 목록 범위, Spark · 추이 · 섹션 목록 |
 | `DeployPanel.tsx` · `Editor.tsx` · `home/page.tsx` · `AppChrome.tsx` · `lib/sample/site.ts` | 주소 표기 |
 | `services/web/.env.example` | `NEXT_PUBLIC_SITE_HOST` |
 | `infra/nginx/sites.expresso.ai.kr.conf` (새 파일) · `docs/operations/ORACLE_HOSTING.md` | 와일드카드 vhost, DNS · 인증서 절차 |
+| `infra/server/expresso-acme/auth.sh` · `cleanup.sh` (새 파일) | 와일드카드 인증서 DNS-01 확인 훅(서버 사본과 같은 내용) |
 
 구현 중에 이 표를 벗어나면 같은 커밋에서 이 파일을 고칩니다.
 
@@ -51,6 +55,16 @@ date: 2026-10-28
 8. `proxy.ts` 서브도메인 처리를 넣습니다. `jiwon.site.localhost:<포트>/`는 사이트가 보이고 `/home`은 404여야 합니다.
 9. 대시보드 그림을 고칩니다. 화면에서 Spark · 완독 선 · 섹션 목록을 확인합니다.
 10. nginx 파일과 운영 문서를 씁니다. 로컬에 nginx가 없으므로 `nginx -t`는 서버에서 돌립니다. 이 사실은 PR에 적습니다.
+
+## 구현 중 바뀐 것
+
+- 예약어 검사는 `SlugSchema`가 아니라 새 배포가 받는 `PublicSlugSchema`에 둔다. 이미 저장된 주소를 읽는 쪽은 그대로 통과해야 한다.
+- 섹션 id는 무작위가 아니라 포트폴리오 · 자리 · 제목에서 만든다. 무작위면 같은 섹션이 판마다 다른 줄로 집계된다.
+- 섹션 체류는 iframe이 아니라 부모가 잰다. 탭을 닫는 순간 iframe이 보낸 알림은 부모에 닿지 못해 마지막 섹션이 빠졌다.
+- 옛 주소 리다이렉트는 `x-forwarded-host`로 공개 주소인지 가린다. 프록시가 다시 쓴 요청의 `host`는 서버 자신이고, rewrite에 붙인 요청 헤더는 페이지까지 가지 않았다.
+- 대시보드 계약에 `portfolio.status`를 더했다. 공개를 멈춘 포트폴리오에 "배포됨"이 보였다.
+- 하루치 추이를 점으로 찍고, 섹션 막대 채움(`dwellFill`)을 블록으로 바꿨다. 막대 채움은 이전부터 보이지 않았다.
+- 포트폴리오 목록의 배포 주소도 `publicSlug`를 읽는다. 되돌린 판의 주소가 보였다.
 
 ## 가장 위험한 단계
 

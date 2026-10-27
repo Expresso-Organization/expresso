@@ -289,6 +289,8 @@ export const AnalyticsDashboardSchema = z.strictObject({
   portfolio: z.strictObject({
     id: UuidSchema,
     title: z.string().min(1).max(300),
+    /** 공개를 멈춘 포트폴리오도 지난 방문은 볼 수 있다. 화면이 지금 공개 중인지 가린다. */
+    status: z.enum(["published", "unlisted"]),
   }),
   deployment: z.strictObject({
     id: UuidSchema,

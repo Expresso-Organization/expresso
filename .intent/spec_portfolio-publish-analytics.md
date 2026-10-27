@@ -39,7 +39,7 @@ date: 2026-10-28
   3. 기존 redirect 로직은 `portfolio.publicSlug`를 기준으로 돌립니다.
   4. 경합으로 생기는 E11000 오류는 지금처럼 409로 바꿉니다.
 - `getPublic` · `collect`는 `portfolios.findOne({ publicSlug, status: "published" })`에서 `currentDeploymentId`를 찾습니다.
-- 예약어 검사는 `SlugSchema`의 `refine`에 둡니다.
+- 예약어 검사는 새 배포가 받는 `PublicSlugSchema`(`SlugSchema.refine`)에 둡니다. 저장된 주소를 읽는 `SlugSchema`는 그대로입니다.
 
 **서브도메인 (R4).**
 - 웹 `lib/public-site.ts`에 공개 주소를 만드는 함수 두 개를 둡니다. `publicSiteHost(slug)`와 `publicSiteUrl(slug)`이고, 둘 다 `NEXT_PUBLIC_SITE_HOST`를 읽습니다. 기본값은 `expresso.ai.kr`입니다.
