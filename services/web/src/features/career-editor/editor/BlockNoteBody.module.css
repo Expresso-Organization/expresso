@@ -83,3 +83,21 @@
   background: var(--ex-bg-hover);
   color: var(--ex-fg-strong);
 }
+
+.body :global([data-evidence]) {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  border-left: 3px solid var(--ex-accent-soft);
+  padding: 4px 0 4px 12px;
+}
+
+.body :global([data-evidence-source]) {
+  color: var(--ex-fg-muted);
+  font-size: var(--ex-text-2xs);
+}
+
+.body :global([data-evidence-content]) {
+  min-width: 0;
+}
