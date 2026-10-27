@@ -5,6 +5,7 @@ import {
   RestorePageRevisionSchema,
   EditStructuredPageSchema,
   PageLibrarySearchSchema,
+  pageDocumentPolicy,
 } from "@expresso/contracts";
 import { searchPageLibrary } from "@expresso/portfolio-renderer";
 import type { FastifyInstance, preHandlerHookHandler } from "fastify";
@@ -20,6 +21,8 @@ export interface RegisterPageRoutesOptions {
   /** 없으면 흘려보내는 자리를 열지 않는다. */
   stream?: PageStream | null;
   authenticateRequest: preHandlerHookHandler;
+  /** 장면 런타임을 내보내는 웹 주소(`APP_BASE_URL`)입니다. 문서 응답의 CSP가 이 주소의 런타임만 허용합니다. */
+  webOrigin: string;
 }
 
 /**
@@ -114,8 +117,9 @@ export function registerPageRoutes(
    *
    * 배포 미리보기와 내려받기가 이걸 본다. **`text/html`로 나가지만 우리 출처가
    * 아니다** — 소독을 지났어도 남의 지면을 우리 오리진에서 열게 하지 않는다.
-   * `Content-Security-Policy: sandbox`가 스크립트와 폼을 다시 한 번 막고,
-   * 이 응답이 우리 쿠키에 닿을 길을 없앤다.
+   * `Content-Security-Policy: sandbox`가 폼을 막고 출처를 불투명하게 만들어
+   * 이 응답이 우리 쿠키에 닿을 길을 없앤다. 스크립트는 웹이 내보내는 장면 런타임만 돈다(`pageDocumentPolicy`).
+   * 이 문서는 API 출처에서 열려 상대 경로의 런타임을 받지 못하므로 장면 대신 대체 그림이 보인다.
    */
   app.get(`${path}/document`, { preHandler: options.authenticateRequest }, async (request, reply) => {
     const principal = requireAuth(request);
@@ -124,7 +128,7 @@ export function registerPageRoutes(
     if (!document) throw new HttpStatusError(404, "아직 지면을 만들지 않았습니다");
     return reply
       .header("content-type", "text/html; charset=utf-8")
-      .header("content-security-policy", "sandbox allow-popups; script-src 'none'; form-action 'none'")
+      .header("content-security-policy", pageDocumentPolicy(options.webOrigin))
       .header("x-content-type-options", "nosniff")
       .send(document);
   });

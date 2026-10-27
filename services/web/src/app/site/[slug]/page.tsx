@@ -9,6 +9,9 @@ import styles from "./page.module.css";
 /**
  * 08 공개 사이트. 방문자는 편집 중인 포트폴리오가 아니라 배포 순간 고정한
  * 자유 HTML 문서를 본다. 앱 CSS와 모델 CSS가 섞이지 않도록 iframe으로 격리한다.
+ *
+ * 문서는 `./document` 주소로 연다. 그 응답 헤더가 스크립트 정책을 건다(장면 런타임만 허용).
+ * `allow-same-origin`을 주지 않아 문서는 불투명 출처라 이 화면 · 쿠키에 닿지 못한다.
  */
 export default async function PublicSitePage({
   params,
@@ -35,8 +38,8 @@ export default async function PublicSitePage({
       <iframe
         className={styles.publicDocument!}
         title={snapshot.data.title}
-        sandbox="allow-popups"
-        srcDoc={snapshot.data.generatedPage.document}
+        sandbox="allow-scripts allow-popups"
+        src={`/site/${encodeURIComponent(slug)}/document`}
       />
     </div>
   );

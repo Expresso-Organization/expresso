@@ -514,6 +514,33 @@ export const RestorePageRevisionSchema = z.strictObject({
 export type RestorePageRevision = z.infer<typeof RestorePageRevisionSchema>;
 
 /**
+ * 장면 런타임 조각이 놓이는 경로입니다. 웹이 `public/scene-runtime/v1`에서 내보냅니다.
+ *
+ * `v1`은 런타임과 키트의 `data-scene` 약속의 판입니다. 배포 스냅샷은 문서를 고정하므로 약속을 깨는 변경은
+ * `v2` 경로를 새로 두고 `v1`을 남깁니다.
+ */
+export const SCENE_RUNTIME_DIRECTORY = "/scene-runtime/v1/";
+export const SCENE_RUNTIME_ENTRY = `${SCENE_RUNTIME_DIRECTORY}main.js`;
+
+/**
+ * 완성된 지면 문서를 내보내는 응답의 CSP입니다. 공개 지면 · 편집 미리보기 · 배포 미리보기가 같은 문자열을 헤더로 겁니다.
+ *
+ * - `sandbox`에 `allow-same-origin`이 없어 문서는 불투명 출처가 됩니다. 우리 쿠키 · 저장소 · 바깥 화면에 닿지 못합니다.
+ * - 스크립트는 `origin`의 장면 런타임 폴더만 허용합니다. 슬래시로 끝나는 경로는 그 아래 파일만 맞습니다(CSP host-source 경로 규칙).
+ *   모델이 쓴 `<script>`는 소독기가 먼저 지우고, 지우지 못한 인라인 · 바깥 스크립트도 여기서 막힙니다.
+ * - 응답 헤더라 이 정책이 생기기 전에 배포한 스냅샷도 같은 정책으로 열립니다.
+ */
+export function pageDocumentPolicy(origin: string): string {
+  return [
+    "sandbox allow-scripts allow-popups",
+    `script-src ${new URL(SCENE_RUNTIME_DIRECTORY, origin).href}`,
+    "base-uri 'none'",
+    "object-src 'none'",
+    "form-action 'none'",
+  ].join("; ");
+}
+
+/**
  * 지면을 감싸는 껍데기.
  *
  * **배포되는 문서와 앱 안의 미리보기가 같은 함수를 쓴다.** 미리보기가 실제와
@@ -561,6 +588,7 @@ ${input.css}
 </head>
 <body>
 ${input.html}
+${/\sdata-scene="/.test(input.html) ? `<script type="module" src="${SCENE_RUNTIME_ENTRY}"></script>` : ""}
 </body>
 </html>`;
 }

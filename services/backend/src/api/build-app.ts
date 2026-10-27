@@ -268,6 +268,7 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
         ...(options.pageGenerator ? { generator: options.pageGenerator } : {}),
         stream: options.pageStream ?? null,
         authenticateRequest: createAuthenticateRequest(options.identityService),
+        webOrigin: options.config.appBaseUrl ?? "http://localhost:3000",
       });
     }
     if (options.publishingService) {

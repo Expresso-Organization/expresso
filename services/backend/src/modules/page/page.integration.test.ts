@@ -332,7 +332,7 @@ describeWithDatabase("free page generation integration", () => {
     expect(generated.styleSpec?.antiPatterns).toContain("color-only-variation");
   });
 
-  it("문서 라우트는 스크립트를 막는 헤더와 함께 나간다", async () => {
+  it("문서 라우트는 장면 런타임 밖의 스크립트를 막는 헤더와 함께 나간다", async () => {
     const session = await identity.issueSession({ userId: ownerId });
     const response = await app.inject({
       method: "GET",
@@ -342,8 +342,10 @@ describeWithDatabase("free page generation integration", () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.headers["content-type"]).toContain("text/html");
-    // 소독을 지났어도 우리 오리진에서 스크립트가 돌 길을 한 번 더 막는다.
-    expect(response.headers["content-security-policy"]).toContain("script-src 'none'");
+    // 소독을 지났어도 불투명 출처로 열고, 스크립트는 웹의 장면 런타임 폴더만 허용한다.
+    expect(response.headers["content-security-policy"]).toContain("sandbox allow-scripts allow-popups;");
+    expect(response.headers["content-security-policy"]).not.toContain("allow-same-origin");
+    expect(response.headers["content-security-policy"]).toMatch(/script-src https?:\/\/[^ ;]+\/scene-runtime\/v1\/;/);
     expect(response.headers["x-content-type-options"]).toBe("nosniff");
   });
 
