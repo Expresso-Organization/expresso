@@ -13,6 +13,7 @@ import {
   elementChanges,
   elementTextPaths,
   markdownToText,
+  recordInsertIndex,
   recordSectionByRule,
 } from "./element-edit.js";
 
@@ -130,5 +131,23 @@ describe("기록으로 사례 쓰기", () => {
     expect(ai.fixRequests).toHaveLength(1);
     expect(section.metrics).toEqual([{ label: "소요", value: "24분" }]);
     expect(section).not.toHaveProperty("quote");
+  });
+});
+
+describe("기록 사례를 넣을 자리", () => {
+  const node = (type: string, children: string[] = []) => ({ type, props: {}, children });
+  const spec = (children: string[], extra: Record<string, ReturnType<typeof node>> = {}) => ({
+    root: "page",
+    elements: { page: node("PortfolioPage", children), intro: node("NameIntro"), a: node("CaseEssay"), career: node("CareerTimeline"), evidence: node("EvidenceGrid"), contact: node("Contact"), ...extra },
+  }) as never;
+
+  it("사례 뒤, 경력 · 근거 자료 · 연락처 앞에 둔다", () => {
+    expect(recordInsertIndex(spec(["intro", "a", "career", "evidence", "contact"]))).toBe(2);
+    expect(recordInsertIndex(spec(["intro", "a"]))).toBe(2);
+  });
+
+  it("보조 요소만 담은 묶음도 보조 요소로 본다", () => {
+    expect(recordInsertIndex(spec(["intro", "a", "group-1"], { "group-1": node("Columns", ["career", "evidence"]) }))).toBe(2);
+    expect(recordInsertIndex(spec(["intro", "group-1", "contact"], { "group-1": node("Columns", ["a", "career"]) }))).toBe(2);
   });
 });

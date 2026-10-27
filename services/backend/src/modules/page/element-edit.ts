@@ -315,3 +315,24 @@ export function recordSectionByRule(input: { id: string; title: string; text: st
 export function recordCaseType(archetype: PortfolioArchetype | undefined): "CaseRow" | "CaseEssay" {
   return archetype === "list" ? "CaseRow" : "CaseEssay";
 }
+
+/** 지면 끝에 모이는 보조 요소입니다. 기록으로 더한 사례는 이 요소들 앞에 둡니다. */
+const SUPPORT_TYPES = new Set(["CareerTimeline", "EvidenceGrid", "Contact"]);
+
+/**
+ * 기록으로 더한 사례를 넣을 최상위 자리입니다. 사례들 뒤, 경력 · 근거 자료 · 연락처 앞입니다. 보조 요소만 담은 묶음
+ * (예: 경력과 근거 자료를 나란히 둔 두 열)도 보조 요소로 봅니다.
+ */
+export function recordInsertIndex(spec: Snapshot["spec"]): number {
+  const root = spec.elements[spec.root];
+  if (!root || !("children" in root)) return 0;
+  const children = root.children as string[];
+  const support = (key: string): boolean => {
+    const node = spec.elements[key];
+    if (!node) return false;
+    if (isStructuredGroup(node)) return node.children.length > 0 && node.children.every(support);
+    return SUPPORT_TYPES.has(node.type);
+  };
+  const at = children.findIndex(support);
+  return at === -1 ? children.length : at;
+}

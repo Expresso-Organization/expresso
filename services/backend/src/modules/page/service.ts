@@ -45,6 +45,7 @@ import {
   elementChanges,
   markdownToText,
   recordCaseType,
+  recordInsertIndex,
   recordSectionByRule,
   type ElementChange,
   type PageElementEditor,
@@ -79,9 +80,6 @@ function nextRevision(base: GeneratedPageDoc, changes: Partial<GeneratedPageDoc>
     ...changes,
   };
 }
-
-/** 지면 끝에 모이는 보조 요소입니다. 기록으로 더한 사례는 이 요소들 앞에 둡니다. */
-const SUPPORT_TYPES = new Set(["CareerTimeline", "EvidenceGrid", "Contact"]);
 
 /** `1rem` · `18px` 같은 길이를 px로 읽습니다. 읽지 못하면 무한대로 두어 맨 뒤에 놓습니다. */
 function cssPixels(value: string): number {
@@ -403,9 +401,7 @@ export class PageService {
     if (root?.type !== "PortfolioPage") throw new PageServiceError(409, "페이지 루트가 없습니다.");
     const key = `section-${record._id}`;
     spec.elements[key] = { type: recordCaseType(root.props.archetype), props: { section: { $state: `/sectionById/${record._id}` } }, children: [] } as (typeof spec.elements)[string];
-    // 사례들 뒤, 경력 · 근거 자료 · 연락처 같은 보조 요소 앞에 둡니다.
-    const supportAt = root.children.findIndex((child) => SUPPORT_TYPES.has(spec.elements[child]?.type ?? ""));
-    root.children.splice(supportAt === -1 ? root.children.length : supportAt, 0, key);
+    root.children.splice(recordInsertIndex(spec), 0, key);
     // 근거 자료 목록이 있는 지면이면 기록을 근거로도 더해 사례에서 이어지게 합니다. 없는 지면에 목록을 새로 만들지 않습니다.
     const hasEvidence = Object.values(spec.elements).some((node) => node.type === "EvidenceGrid");
     const content = {
