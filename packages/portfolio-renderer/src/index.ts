@@ -34,6 +34,7 @@ export {
   type DesignLayout,
 } from "./design-layout.js";
 export { describeArchetype } from "./archetype.js";
+export { describeBackdrops } from "./backdrop.js";
 export {
   RENDER_MEASURE_WIDTHS,
   describeRenderDefects,
