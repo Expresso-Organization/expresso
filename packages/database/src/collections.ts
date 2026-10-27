@@ -56,6 +56,7 @@ export interface MongoCollections {
   identityOauthAccounts: Collection<Docs.IdentityOauthAccountDoc>;
   identitySessions: Collection<Docs.IdentitySessionDoc>;
   identityTokens: Collection<Docs.IdentityTokenDoc>;
+  adminAuditEvents: Collection<Docs.AdminAuditEventDoc>;
   insights: Collection<Docs.InsightDoc>;
   interests: Collection<Docs.InterestDoc>;
   jobSources: Collection<Docs.JobSourceDoc>;
@@ -146,6 +147,7 @@ export function mongoCollections(db: Db): MongoCollections {
     identityOauthAccounts: db.collection<Docs.IdentityOauthAccountDoc>("identity_oauth_accounts"),
     identitySessions: db.collection<Docs.IdentitySessionDoc>("identity_sessions"),
     identityTokens: db.collection<Docs.IdentityTokenDoc>("identity_tokens"),
+    adminAuditEvents: db.collection<Docs.AdminAuditEventDoc>("admin_audit_events"),
     insights: db.collection<Docs.InsightDoc>("insights"),
     interests: db.collection<Docs.InterestDoc>("interests"),
     jobSources: db.collection<Docs.JobSourceDoc>("job_sources"),
