@@ -29,7 +29,7 @@ class MemoryRepository implements CareerDocumentRepository {
   }
   async record(userId: string, recordId: string) { return this.recordValue.userId === userId && this.recordValue._id === recordId ? this.recordValue : null; }
   async recordById(recordId: string) { return this.recordValue._id === recordId ? this.recordValue : null; }
-  async snapshot(recordId: string) { return this.snapshots.filter((row) => row.recordId === recordId).sort((a, b) => b.documentVersion - a.documentVersion)[0] ?? null; }
+  async snapshot(recordId: string) { return this.snapshots.filter((row) => row.recordId === recordId).sort((a, b) => b.documentVersion - a.documentVersion || b.schemaVersion - a.schemaVersion)[0] ?? null; }
   async snapshotById(userId: string, recordId: string, snapshotId: string) { return this.snapshots.find((row) => row._id === snapshotId && row.userId === userId && row.recordId === recordId) ?? null; }
   async updates(recordId: string, afterSequence = 0) { return this.updateRows.filter((row) => row.recordId === recordId && row.serverSequence > afterSequence && row.compactedAt === null).sort((a, b) => a.serverSequence - b.serverSequence); }
   async byClient(recordId: string, clientId: string, clientSequence: number) { return this.updateRows.find((row) => row.recordId === recordId && row.clientId === clientId && row.clientSequence === clientSequence) ?? null; }
@@ -72,10 +72,13 @@ describe("career document service", () => {
   it("creates one migration snapshot and isolates the owner", async () => {
     const userId = randomUUID(); const recordId = randomUUID(); const repository = new MemoryRepository(userId, recordId);
     const service = new CareerDocumentService(context(), "secret-that-is-long-enough", repository);
-    expect((await service.bootstrap(userId, recordId)).document.content[0]?.type).toBe("heading1");
-    expect(repository.snapshots).toHaveLength(1);
+    const first = await service.bootstrap(userId, recordId);
+    expect(first.document.content[0]?.type).toBe("heading1");
+    expect(first.editor).toBe("blocknote");
+    // bodyMd에서 만든 v1 스냅샷과 BlockNote 옮기기 스냅샷 두 개가 생기고, 다시 열어도 늘지 않습니다.
+    expect(repository.snapshots.map((row) => row.schemaVersion)).toEqual([1, 2]);
     await service.bootstrap(userId, recordId);
-    expect(repository.snapshots).toHaveLength(1);
+    expect(repository.snapshots).toHaveLength(2);
     await expect(service.bootstrap(randomUUID(), recordId)).rejects.toMatchObject({ statusCode: 404 });
   });
 

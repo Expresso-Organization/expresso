@@ -1,9 +1,8 @@
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 
 import type { Page } from "@playwright/test";
-import { encodeDocumentAsYUpdate, type CareerBlock, type CareerDocument } from "@expresso/editor";
 
-export const API_URL = "http://127.0.0.1:4100";
+export const API_URL = `http://127.0.0.1:${process.env.CAREER_E2E_API_PORT ?? "4100"}`;
 
 export async function login(page: Page, next = "/career/experience") {
   await page.goto(`/api/dev/session?next=${encodeURIComponent(next)}`);
@@ -30,8 +29,8 @@ export async function categories(page: Page) {
   return (await api<{ data: Array<{ id: string; key: string; name: string; version: number; propertySchemaV2: Array<{ id: string; key: string; name: string; type: string }> }> }>(page, "GET", "/v1/career/categories")).data;
 }
 
-export async function createRecord(page: Page, categoryId: string, title: string, properties: Record<string, unknown> = {}) {
-  return (await api<{ data: { id: string; version: number; title: string } }>(page, "POST", "/v1/career/records", { categoryId, title, properties, bodyMd: "" }, { "idempotency-key": `e2e-${randomUUID()}` })).data;
+export async function createRecord(page: Page, categoryId: string, title: string, properties: Record<string, unknown> = {}, bodyMd = "") {
+  return (await api<{ data: { id: string; version: number; title: string } }>(page, "POST", "/v1/career/records", { categoryId, title, properties, bodyMd }, { "idempotency-key": `e2e-${randomUUID()}` })).data;
 }
 
 export async function openRecordDrawer(page: Page, title: string) {
@@ -40,28 +39,17 @@ export async function openRecordDrawer(page: Page, title: string) {
   await titleCell.click();
 }
 
-const block = (type: string, text?: string, attrs: Record<string, unknown> = {}, content?: CareerBlock[]): CareerBlock => ({ id: randomUUID(), type, attrs, ...(text === undefined ? {} : { text: [{ text }] }), ...(content ? { content } : {}) });
-export function allBlockDocument(): CareerDocument {
-  const paragraph = (text: string) => block("paragraph", text);
-  const listItem = (text: string, checked?: boolean) => block("listItem", undefined, checked === undefined ? {} : { checked }, [paragraph(text)]);
-  const row = () => block("tableRow", undefined, {}, [block("tableCell", undefined, {}, [paragraph("셀")]), block("tableCell", undefined, {}, [paragraph("값")])]);
-  return { schemaVersion: 1, type: "doc", content: [
-    block("paragraph", "문단"), block("heading1", "제목 1"), block("heading2", "제목 2"), block("heading3", "제목 3"),
-    block("bulletList", undefined, {}, [listItem("글머리")]), block("orderedList", undefined, {}, [listItem("번호")]),
-    block("taskList", undefined, {}, [listItem("할 일", true)]), block("blockquote", undefined, {}, [paragraph("인용")]),
-    block("code", "const answer = 42", { language: "typescript" }), block("callout", "호출"), block("horizontalRule"),
-    block("image", undefined, { mediaId: randomUUID(), alt: "증빙 이미지" }), block("file", undefined, { mediaId: randomUUID(), name: "증빙.pdf" }),
-    block("table", undefined, {}, [row(), row()]), block("evidence", "근거"), block("futureBlock", "미래 블록"),
-  ] };
-}
-
-export async function replaceDocument(page: Page, recordId: string, document: CareerDocument) {
-  const bootstrap = await api<{ document: CareerDocument; documentVersion: number }>(page, "GET", `/v1/career/records/${recordId}/document`);
-  const update = encodeDocumentAsYUpdate(document, [encodeDocumentAsYUpdate(bootstrap.document)], `e2e:${randomUUID()}`);
-  return api(page, "POST", `/v1/career/records/${recordId}/document/updates`, {
-    clientId: randomUUID(), clientSequence: 1, expectedSequence: bootstrap.documentVersion,
-    updateBase64: Buffer.from(update).toString("base64"), checksum: createHash("sha256").update(update).digest("hex"),
-  });
+/**
+ * 편집기 블록을 모두 담은 본문입니다. 첫 bootstrap이 이 Markdown을 BlockNote 문서로 옮깁니다.
+ * 콜아웃은 Markdown 문법이 없어 expresso-block 울타리로 적습니다.
+ */
+export function allBlockMarkdown(): string {
+  const callout = JSON.stringify({ type: "callout", attrs: {}, text: [{ text: "호출" }] });
+  return [
+    "문단", "# 제목 1", "## 제목 2", "### 제목 3", "- 글머리", "1. 번호", "- [x] 할 일", "> 인용",
+    "```typescript\nconst answer = 42\n```", `\`\`\`expresso-block\n${callout}\n\`\`\``, "---",
+    "| 셀 | 값 |\n| --- | --- |\n| 셀 | 값 |",
+  ].join("\n\n");
 }
 
 export async function createProperty(page: Page, category: { id: string; version: number }, property: { id: string; key: string; name: string; type: string; config: Record<string, unknown> }) {

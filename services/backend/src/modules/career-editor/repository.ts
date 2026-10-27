@@ -27,6 +27,9 @@ export interface CareerDocumentRepository {
   revisions(userId: string, recordId: string, session?: ClientSession): Promise<CareerRecordRevisionDoc[]>;
   revision(id: string, userId: string, session?: ClientSession): Promise<CareerRecordRevisionDoc | null>;
   insertRevision(row: CareerRecordRevisionDoc, session?: ClientSession): Promise<void>;
+  /** BlockNote 옮기기 표시와 bodyMd 투영입니다. 메모리 저장소 시험은 구현하지 않아도 됩니다. */
+  markBlockNote?(recordId: string, userId: string, session?: ClientSession): Promise<void>;
+  setBodyMarkdown?(recordId: string, userId: string, bodyMd: string, options?: { session?: ClientSession | undefined; expectedBodyMd?: string }): Promise<void>;
 }
 
 export const hashUpdate = (bytes: Uint8Array): string =>
@@ -46,7 +49,8 @@ export class MongoCareerDocumentRepository implements CareerDocumentRepository {
   snapshot(recordId: string, session?: ClientSession) {
     return this.collections().careerDocumentSnapshots.findOne(
       { recordId },
-      { sort: { documentVersion: -1 }, ...this.options(session) },
+      // v1 → v2 옮기기 스냅샷은 같은 documentVersion을 가지므로 schemaVersion이 높은 쪽을 고릅니다.
+      { sort: { documentVersion: -1, schemaVersion: -1 }, ...this.options(session) },
     );
   }
   snapshotById(userId: string, recordId: string, snapshotId: string, session?: ClientSession) {
@@ -117,6 +121,18 @@ export class MongoCareerDocumentRepository implements CareerDocumentRepository {
     );
     return result.matchedCount === 1;
   }
+  async markBlockNote(recordId: string, userId: string, session?: ClientSession) {
+    await this.collections().careerRecords.updateOne({ _id: recordId, userId }, { $set: { documentSchemaVersion: 2 } }, this.options(session));
+  }
+  async setBodyMarkdown(recordId: string, userId: string, bodyMd: string, options: { session?: ClientSession | undefined; expectedBodyMd?: string } = {}) {
+    // expectedBodyMd가 있으면 그 사이 편집기 밖에서 bodyMd가 바뀐 경우 덮지 않습니다.
+    await this.collections().careerRecords.updateOne(
+      { _id: recordId, userId, deletedAt: null, ...(options.expectedBodyMd === undefined ? {} : { bodyMd: options.expectedBodyMd }) },
+      { $set: { bodyMd, documentBodyHash: createHash("sha256").update(bodyMd).digest("hex") } },
+      this.options(options.session),
+    );
+  }
+
   revisions(userId: string, recordId: string, session?: ClientSession) {
     return this.collections().careerRecordRevisions
       .find({ userId, recordId }, this.options(session))

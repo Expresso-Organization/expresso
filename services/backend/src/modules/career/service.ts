@@ -117,8 +117,9 @@ export class CareerService implements CareerApi {
   async getRecord(userId: string, recordId: string) {
     const record = await mongoCollections(this.context.db).careerRecords.findOne({ _id: recordId, userId, deletedAt: null });
     if (!record) throw new CareerError(404, "career record not found");
-    const snapshot = await mongoCollections(this.context.db).careerDocumentSnapshots.findOne({ recordId }, { sort: { documentVersion: -1 } });
-    if (!snapshot) return mapMongoRecord(record);
+    const snapshot = await mongoCollections(this.context.db).careerDocumentSnapshots.findOne({ recordId }, { sort: { documentVersion: -1, schemaVersion: -1 } });
+    // BlockNote 문서(schemaVersion 2)는 편집기가 저장 뒤 bodyMd를 직접 투영합니다.
+    if (!snapshot || snapshot.schemaVersion === 2) return mapMongoRecord(record);
     try {
       const updates = await mongoCollections(this.context.db).careerDocumentUpdates.find({ recordId, serverSequence: { $gt: snapshot.serverSequence }, compactedAt: null }).sort({ serverSequence: 1 }).limit(10_001).toArray();
       if (updates.length > 10_000) throw new CareerError(503, "document compaction is required before legacy projection");
@@ -136,7 +137,9 @@ export class CareerService implements CareerApi {
       const existing = await records.findOne({ _id: recordId, userId, deletedAt: null }, { session: tx.session });
       if (!existing) throw new CareerError(404, "career record not found");
       if (existing.version !== expectedVersion) throw new CareerError(412, "career record version is stale");
-      if (input.bodyMd !== undefined) {
+      // BlockNote 문서는 bodyMd만 바꿉니다. 편집기 문서는 다음 bootstrap이 documentBodyHash 비교로 이 내용에 맞춥니다.
+      const blockNoteBody = existing.documentSchemaVersion === 2;
+      if (input.bodyMd !== undefined && !blockNoteBody) {
         const latestSnapshot = await mongoCollections(tx.db).careerDocumentSnapshots.findOne(
           { recordId },
           { sort: { documentVersion: -1 }, session: tx.session },
@@ -157,7 +160,7 @@ export class CareerService implements CareerApi {
       }).map((definition) => definition.id);
       const updated = await records.findOneAndUpdate({ _id: recordId, userId, deletedAt: null, version: expectedVersion }, { $set: { title: input.title ?? existing.title, status: input.status ?? existing.status, bodyMd: input.bodyMd ?? existing.bodyMd, properties, updatedAt: new Date() }, $inc: { version: 1 } }, { session: tx.session, returnDocument: "after" });
       if (!updated) throw new CareerError(412, "career record version is stale");
-      if (input.bodyMd !== undefined) {
+      if (input.bodyMd !== undefined && !blockNoteBody) {
         // 레거시 저장도 편집기 리비전으로 남기며, 동시 Yjs 변경이 있으면 충돌시킨다.
         const repository = new MongoCareerDocumentRepository(this.context);
         const current = existing.documentVersion ?? 0;
