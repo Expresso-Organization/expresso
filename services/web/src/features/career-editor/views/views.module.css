@@ -20,7 +20,7 @@
 .viewTabs>button:not([role="tab"]) { flex:0 0 auto; white-space:nowrap; }
 .toolbarActions>button { display:inline-flex; flex:0 0 auto; align-items:center; gap:5px; border-color:transparent; white-space:nowrap; }
 .toolbarActions>button[data-active="true"] { color:var(--ex-accent-text); }
-.toolbarActions>button small { min-width:16px; border-radius:999px; background:var(--ex-accent-soft); padding:0 5px; color:var(--ex-accent-text); font-size:var(--ex-text-3xs); text-align:center; }
+.toolbarActions>button small { min-width:16px; border-radius:999px; background:var(--ex-accent-surface); padding:0 5px; color:var(--ex-accent-text); font-size:var(--ex-text-3xs); text-align:center; }
 .createSplit { flex:0 0 auto; }
 .createSplit button { display:inline-flex; align-items:center; gap:5px; white-space:nowrap; }
 .searchField { display:inline-flex; min-height:32px; flex:0 1 220px; min-width:140px; align-items:center; gap:6px; border:1px solid var(--ex-border-soft); border-radius:6px; background:var(--ex-bg-tint); padding:0 4px 0 9px; color:var(--ex-fg-muted); }
@@ -74,7 +74,7 @@
 .bulk { position:sticky; top:53px; z-index:4; padding:8px 16px; border-top:1px solid var(--ex-border-soft); border-bottom:1px solid var(--ex-border-soft); background:var(--ex-bg-muted); color:var(--ex-fg-muted); }
 .message { display:flex; align-items:center; gap:10px; margin:8px 16px; color:var(--ex-fg-muted); font-size:var(--ex-text-sm); }
 .message button { min-height:28px; border:0; border-radius:6px; background:transparent; padding:3px 7px; color:var(--ex-accent-text); font:inherit; font-weight:600; cursor:pointer; }
-.message button:hover { background:var(--ex-accent-soft); }
+.message button:hover { background:var(--ex-accent-surface); }
 .emptyFilter { display:grid; min-height:260px; place-items:center; align-content:center; gap:12px; color:var(--ex-fg-muted); }
 .emptyFilter strong { color:var(--ex-fg-body); font-size:var(--ex-text-sm); }
 .emptyFilter>div { display:flex; flex-wrap:wrap; justify-content:center; gap:6px; }
@@ -350,6 +350,7 @@
 .filterGroup .filterActions { justify-content:space-between; }
 .iconButton { display:grid; width:28px; height:28px; place-items:center; border:0; border-radius:6px; background:transparent; padding:0; color:var(--ex-fg-muted); cursor:pointer; }
 .iconButton:hover { background:var(--ex-bg-hover); color:var(--ex-fg-strong); }
+.sortEditor .reorderList { gap:6px; }
 .sortRow { display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr) 28px; align-items:center; gap:6px; }
 .tabMenu { position:fixed; z-index:130; display:grid; width:240px; gap:6px; border:1px solid var(--ex-border); border-radius:11px; background:var(--ex-bg); padding:6px; box-shadow:var(--ex-elevation-overlay); }
 .tabMenuName { width:100%; min-height:34px; box-sizing:border-box; border:1px solid var(--ex-border-soft); border-radius:7px; background:var(--ex-bg-tint); padding:6px 9px; color:var(--ex-fg-strong); font:inherit; font-size:var(--ex-text-sm); font-weight:600; }
