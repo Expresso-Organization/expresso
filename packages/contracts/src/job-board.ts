@@ -124,15 +124,6 @@ export const JobPostingSummarySchema = z.strictObject({
   match: JobPostingMatchSchema.nullable(),
   interest: JobInterestSchema.nullable(),
   brew: JobBrewStateSchema.nullable(),
-  /**
-   * 장소로 찾았을 때(`location=판교`) 이 공고가 그 장소에서 얼마나 떨어져
-   * 있는가. `place`는 원문에서 읽은 장소이고, 찾은 장소와 같으면 거리가 0이다.
-   * 장소로 찾지 않았거나 원문에서 장소를 못 읽었으면 null.
-   */
-  nearby: z.strictObject({
-    place: z.string().min(1).max(60),
-    distanceKm: z.number().nonnegative(),
-  }).nullable(),
   createdAt: TimestampSchema,
 });
 
@@ -217,12 +208,6 @@ export const ListJobPostingsQuerySchema = z.strictObject({
    * `REGION_RULES`가 정한 지역명 그대로다(예: "경기"). 공고 수집 때 이미 그
    * 지역으로 정규화해 저장해 두므로, "경기"로 걸면 "판교"·"성남"처럼 다른
    * 표기로 들어온 공고도 함께 걸린다 — 둘 다 같은 `location_region`을 쓴다.
-   *
-   * **지역보다 좁은 장소(`KOREAN_PLACES`의 "판교" · "강남" 등)를 주면 거리로
-   * 건다.** 그 장소의 공고가 먼저, 그다음 `NEARBY_RADIUS_KM` 안의 공고가
-   * 가까운 순으로 오고(지역이 달라도 든다 — 판교에서 서울 강남), 원문에서
-   * 장소를 못 읽은 같은 지역 공고가 맨 뒤에 붙는다. 이때 순서는 `sort`보다
-   * 앞선다 — `sort`는 같은 칸 안에서만 쓰인다.
    */
   location: z.string().trim().min(1).max(60).optional(),
   /**

@@ -7,13 +7,9 @@ import type { MongoContext } from "../../platform/mongodb.js";
 import type { JobBoardApi } from "./index.js";
 import { JobMarketError } from "./errors.js";
 import { countryOf } from "./ingest/classify.js";
-import { jobBoardFilter, jobBoardJoins, nearbyPlaceOf, nearbyRank, nearbyStages, type FilterAxis } from "./mongo-queries.js";
+import { jobBoardFilter, jobBoardJoins, type FilterAxis } from "./mongo-queries.js";
 
-type BoardRow = JobPostingDoc & {
-  company: CompanyDoc; match?: MatchScoreDoc; interest?: InterestDoc;
-  /** 장소로 찾을 때만 `nearbyStages`가 붙인다. */
-  nearbyPlace?: { name: string } | null; nearbyDistanceKm?: number | null;
-};
+type BoardRow = JobPostingDoc & { company: CompanyDoc; match?: MatchScoreDoc; interest?: InterestDoc };
 type Facet = { label: string; count: number };
 const experienceLevels = [0, 3, 5, 7, 10, 15];
 const workTypes = ["재택", "하이브리드", "출근"];
@@ -32,10 +28,7 @@ function summary(row: BoardRow, brew: JobBrewState | undefined, at: Date) {
     technologies: requirements.technologies.map((name) => ({ name, matched: match ? match.axes.technology.matched.includes(name) : null })),
     expiresAt: row.expiresAt?.toISOString() ?? null, daysLeft: row.expiresAt ? Math.floor(row.expiresAt.getTime() / 86_400_000) - Math.floor(at.getTime() / 86_400_000) : null, deadlineNote: row.deadlineNote ?? null, match,
     interest: row.interest ? { id: row.interest._id, stage: row.interest.stage, deadlineAt: row.interest.deadlineAt?.toISOString() ?? null, memo: row.interest.memo ?? null, updatedAt: row.interest.updatedAt.toISOString() } : null,
-    brew: brew ?? null,
-    // 0.1km 단위로 자른다 — 좌표가 대략값이라 그보다 잘게 말할 근거가 없다.
-    nearby: row.nearbyPlace && row.nearbyDistanceKm != null ? { place: row.nearbyPlace.name, distanceKm: Math.round(row.nearbyDistanceKm * 10) / 10 } : null,
-    createdAt: row.createdAt.toISOString(),
+    brew: brew ?? null, createdAt: row.createdAt.toISOString(),
   };
 }
 
@@ -65,16 +58,12 @@ export class JobBoardService implements JobBoardApi {
     const urgent = { $and: [{ $gte: ["$expiresAt", at] }, { $lt: ["$expiresAt", new Date(at.getTime() + 7 * 86_400_000)] }] };
     const direction = query.sort === "deadline" ? 1 : -1;
     const sortKey = query.sort === "match" ? { $ifNull: ["$match.total", -1] } : query.sort === "deadline" ? { $ifNull: ["$expiresAt", new Date("9999-12-31T00:00:00Z")] } : "$createdAt";
-    const place = nearbyPlaceOf(query);
-    const order: Document[] = place
-      ? [{ $set: { sortKey, nearbyRank: nearbyRank(place) } }, { $sort: { nearbyRank: 1, nearbyDistanceKm: 1, sortKey: direction, _id: direction } }]
-      : [{ $set: { sortKey } }, { $sort: { sortKey: direction, _id: direction } }];
     const [result] = await mongoCollections(this.context.db).jobPostings.aggregate<{
       data: BoardRow[]; total: { count: number }[]; categories: { total: number; remote: number; urgent: number }[];
       families: Facet[]; regions: Facet[]; companies: { key: string; label: string; count: number }[];
       levels: Record<string, number>[]; workTypes: Record<string, number>[]; common: Facet[]; missing: Facet[];
-    }>([...jobBoardJoins(userId), ...nearbyStages(place), { $facet: {
-      data: [filter(), ...order, { $skip: (query.page - 1) * query.limit }, { $limit: query.limit }],
+    }>([...jobBoardJoins(userId), { $facet: {
+      data: [filter(), { $set: { sortKey } }, { $sort: { sortKey: direction, _id: direction } }, { $skip: (query.page - 1) * query.limit }, { $limit: query.limit }],
       total: [filter(), { $count: "count" }],
       categories: [filter("category"), { $group: { _id: null, total: { $sum: 1 }, remote: countIf(remote), urgent: countIf(urgent) } }],
       families: [filter("category"), ...group("jobFamily")], regions: [filter("country"), ...group("locationRegion")],

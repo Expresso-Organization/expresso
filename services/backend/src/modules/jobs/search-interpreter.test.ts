@@ -53,26 +53,6 @@ describe("search interpreters", () => {
     expect(client.calls[0]?.prompt).toContain(query);
   });
 
-  it("지역보다 좁은 장소를 적으면 그 장소로 건다 — 판교는 경기가 아니라 판교다", async () => {
-    const client = new StubAiClient([{ conditions: [
-      { field: "location", value: "경기", quote: "판교" },
-      { field: "role", value: "프론트엔드", quote: "프론트엔드" },
-    ] }]);
-    await expect(new AiSearchInterpreter(client).interpret("판교 프론트엔드")).resolves.toEqual([
-      { field: "location", value: "판교", enabled: true, confidence: 0.85 },
-      { field: "role", value: "프론트엔드", enabled: true, confidence: 0.9 },
-    ]);
-  });
-
-  it("장소의 지역과 모델이 고른 지역이 다르면 지역만 쓴다", async () => {
-    const client = new StubAiClient([{ conditions: [
-      { field: "location", value: "부산", quote: "부산 강서" },
-    ] }]);
-    await expect(new AiSearchInterpreter(client).interpret("부산 강서 백엔드")).resolves.toEqual([
-      { field: "location", value: "부산", enabled: true, confidence: 0.85 },
-    ]);
-  });
-
   it("잘못된 AI 응답은 한 번 재시도한다", async () => {
     const client = new StubAiClient([
       new AiError("AI_INVALID_OUTPUT", "search_interpret", "invalid"),

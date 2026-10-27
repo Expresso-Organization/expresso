@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { KOREAN_PLACES } from "@expresso/contracts";
-
-import { classifyFamily, isOpening, normalizeRegion, REGION_SUBAREA_HINTS } from "./classify.js";
+import { classifyFamily, isOpening } from "./classify.js";
 
 describe("직군 분류", () => {
   it("한글 낱말이 실제로 발화한다", () => {
@@ -58,19 +56,5 @@ describe("직군 분류", () => {
     expect(isOpening({ title: "인재풀 등록", team: null, location: null })).toBe(false);
     expect(isOpening({ title: "백엔드 개발자", team: "zz-Evergreen Requisition", location: null })).toBe(false);
     expect(isOpening({ title: "백엔드 개발자", team: "Platform", location: null })).toBe(true);
-  });
-});
-
-describe("장소 사전과 지역 규칙", () => {
-  // 장소 표(`KOREAN_PLACES`)는 contracts에, 지역 규칙은 여기 있다. 한쪽에만
-  // 더하면 "판교"를 판교로 거는데 공고는 경기로 못 읽는 식으로 어긋난다.
-  it("동네 힌트와 장소 표가 같은 이름 · 같은 지역이다", () => {
-    const hinted = Object.entries(REGION_SUBAREA_HINTS).flatMap(([region, names]) => names.map((name) => `${region}:${name}`)).sort();
-    const placed = KOREAN_PLACES.map((place) => `${place.region}:${place.name}`).sort();
-    expect(placed).toEqual(hinted);
-  });
-
-  it("장소 이름마다 지역 규칙이 그 지역으로 읽는다", () => {
-    for (const place of KOREAN_PLACES) expect(normalizeRegion(place.name), place.name).toBe(place.region);
   });
 });

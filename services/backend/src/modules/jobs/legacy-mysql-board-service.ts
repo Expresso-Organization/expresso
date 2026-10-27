@@ -272,8 +272,6 @@ function mapSummary(row: PostingRow, brew: BrewRow | undefined) {
           portfolioId: brew.portfolio_id,
         }
       : null,
-    // 장소 거리 정렬은 Mongo 경로에만 있다.
-    nearby: null,
     createdAt: iso(row.created_at),
   };
 }

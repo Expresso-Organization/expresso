@@ -42,7 +42,6 @@ export * from "./jobs.js";
 export * from "./job-market.js";
 export * from "./job-ingest.js";
 export * from "./job-board.js";
-export * from "./job-places.js";
 export * from "./job-analysis.js";
 export * from "./materials.js";
 export * from "./interview.js";
