@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { cubicBezier, feedSnaps, nextSnap, parseCubicBezier } from "./feed-steps";
+import { cubicBezier, feedSnaps, nextSnap, parseCubicBezier, parseMotion } from "./feed-steps";
 
 describe("입력 묶음이 멈출 자리", () => {
   it("구역마다 한 번 멈춘다", () => {
@@ -20,7 +20,7 @@ describe("입력 묶음이 멈출 자리", () => {
     expect(feedSnaps(groups, 400)).toEqual([0, 290, 550, 840]);
   });
 
-  it("마지막 자리를 지나면 다음 벌의 처음으로 간다", () => {
+  it("마지막 자리를 지나면 정해 준 자리로 간다", () => {
     expect(nextSnap([0, 240, 600], 0, 900)).toBe(240);
     expect(nextSnap([0, 240, 600], 600, 900)).toBe(900);
   });
@@ -37,6 +37,17 @@ describe("한 칸 움직이는 곡선", () => {
     expect(ease(0)).toBe(0);
     expect(ease(1)).toBe(1);
     expect(Math.max(...[0.5, 0.6, 0.7, 0.8].map(ease))).toBeGreaterThan(1);
+  });
+
+  it("반동 없는 패널 곡선은 1을 넘지 않는다", () => {
+    const ease = cubicBezier(0.32, 0.72, 0, 1);
+    expect(Math.max(...Array.from({ length: 21 }, (_, i) => ease(i / 20)))).toBeLessThanOrEqual(1);
+  });
+
+  it("움직임 값을 시간과 곡선으로 나눈다", () => {
+    expect(parseMotion("700ms cubic-bezier(0.32, 0.72, 0, 1)")).toEqual({ duration: 700, easing: "cubic-bezier(0.32, 0.72, 0, 1)" });
+    expect(parseMotion(".2s ease")).toEqual({ duration: 200, easing: "ease" });
+    expect(parseMotion("")).toEqual({ duration: 0, easing: "ease" });
   });
 
   it("직선 곡선은 시간과 같은 비율로 간다", () => {

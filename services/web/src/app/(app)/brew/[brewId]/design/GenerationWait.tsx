@@ -8,7 +8,7 @@ import { Icon } from "@/components/ui/Icon";
 import { REQUIREMENT_KIND_LABEL } from "../requirement-kind";
 import { Brewing, WAVE_MS, type BrewingRecord } from "./Brewing";
 import { DesignThumb, type DesignCatalogEntry } from "./DesignCatalog";
-import { cubicBezier, FEED_MOVE_MS, FEED_STEP_MS, feedSnaps, nextSnap, parseCubicBezier } from "./feed-steps";
+import { cubicBezier, FEED_MOVE_MS, FEED_STEP_MS, feedSnaps, nextSnap, parseCubicBezier, parseMotion } from "./feed-steps";
 import styles from "./GenerationWait.module.css";
 import { BREWING_MS } from "./wait-timing";
 
@@ -39,19 +39,22 @@ const BREWING_LINES: { text: string; needsPosting?: true }[] = [
   { text: "레시피 섹션 확인 중..." },
 ];
 const READING_LINES = ["포트폴리오 생성 중...", "지면 구성 설계 중...", "섹션별 형태 고르는 중...", "섹션별 분량 정하는 중..."];
-/** 입력 묶음이 뜬 뒤 한 줄이 바뀌는 간격. 묶음이 세 칸 올라갈 때마다 한 번이라 읽기 전에 넘어가지 않는다. */
+/** 입력 묶음이 뜬 뒤 한 줄이 바뀌는 간격. 지면에 구역이 세 번 올라올 때마다 한 번이라 읽기 전에 넘어가지 않는다. */
 const READING_LINE_MS = FEED_STEP_MS * 3;
 
 /**
  * 생성을 맡긴 뒤 설계 출력이 오기까지.
  *
  * 처음 10초는 고른 기록이 잔으로 내려가는 그림(`Brewing`)이 화면 가운데에 서고, 잔 아래에서 지금 읽는 입력을
- * 한 줄씩 짚는다. 그 뒤 기록 줄은 걷히고 잔만 위로 올라가며, 아래에서 **입력 묶음**이 올라온다 — 채용 공고 ·
- * 디자인 · 섹션 · 기록을 구역마다 카드로 그린 것. 묶음은 1.5초마다 다음 구역으로 한 칸씩 올라간다. 설계 호출은 생각을 마쳐야 한 글자를 내고(2026-10-27 실측 약 61초), 그동안 화면이 정직하게
+ * 한 줄씩 짚는다. 그 뒤 기록 줄은 걷히고 잔만 위로 올라가며, 아래에서 빈 **지면**이 올라온다. 그 지면 위로
+ * 입력 묶음 — 채용 공고 · 디자인 · 섹션 · 기록 — 이 1.5초마다 한 구역씩 올라와 쌓인다. 다 쌓이면 지면을 비우고
+ * 다시 쌓는다. 설계 호출은 생각을 마쳐야 한 글자를 내고(2026-10-27 실측 약 61초), 그동안 화면이 정직하게
  * 보여 줄 수 있는 것은 모델에게 지금 가 있는 것뿐이다. 설계가 오면 `LivePreview`가 이 화면을 지면으로 바꾼다.
  *
+ * 움직임은 반동 없이 끝에서 천천히 멈춘다(`--ex-motion-panel`의 곡선, 사용자 결정 2026-10-27 "너무 반동이 크다").
+ *
  * 남은 시간(`brewingLeftMs`)은 서버가 잡을 만든 시각에서 잰다. 다시 열었을 때 10초가 지났으면 처음부터
- * 입력 묶음이 서 있다.
+ * 지면이 서 있다.
  */
 export function GenerationWait({
   reading,
@@ -65,6 +68,7 @@ export function GenerationWait({
   const [phase, setPhase] = useState<"brewing" | "reading">(brewingLeftMs > 0 ? "brewing" : "reading");
   /** 브루잉에서 넘어온 입력 묶음인가. 처음부터 입력 묶음이면 올라오는 동작이 없다. */
   const [entering, setEntering] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
   const top = useRef<HTMLDivElement>(null);
   const feed = useRef<HTMLDivElement>(null);
   /** 넘어가기 직전 잔의 자리와 결. 위로 올라간 뒤 그 자리에서부터 옮긴다(FLIP). */
@@ -73,7 +77,7 @@ export function GenerationWait({
   useEffect(() => {
     if (phase !== "brewing") return;
     const timer = window.setTimeout(() => {
-      before.current = top.current ? measure(top.current) : null;
+      before.current = top.current && root.current ? measure(top.current, root.current) : null;
       setEntering(true);
       setPhase("reading");
     }, brewingLeftMs);
@@ -94,12 +98,18 @@ export function GenerationWait({
     );
   }, [entering]);
 
-  useFeedSteps(feed, phase === "reading");
+  useSheetBuild(feed, phase === "reading", entering);
 
   const brewingLines = BREWING_LINES.filter(({ needsPosting }) => !needsPosting || reading.posting).map(({ text }) => text);
 
   return (
-    <div className={styles.wait} data-phase={phase} data-entering={entering ? "" : undefined}>
+    <div
+      ref={root}
+      className={styles.wait}
+      data-phase={phase}
+      data-entering={entering ? "" : undefined}
+      style={{ "--ex-wave": `${WAVE_MS}ms` } as CSSProperties}
+    >
       <div ref={top} className={styles.top}>
         <Brewing records={reading.records} quiet={phase === "reading"} />
         {phase === "brewing"
@@ -108,24 +118,18 @@ export function GenerationWait({
       </div>
       <div className={styles.actions}>{actions}</div>
       {phase === "reading" ? (
-        <div
-          ref={feed}
-          className={styles.feed}
-          style={{ "--ex-wave": `${WAVE_MS}ms` } as CSSProperties}
-          aria-label="지면 설계에 들어가는 입력"
-          tabIndex={0}
-        >
-          <Inputs reading={reading} />
-          {/* 끝에서 처음으로 이어지게 같은 묶음을 한 번 더 둔다. 읽는 쪽과 초점은 첫 묶음만 본다. */}
-          <Inputs reading={reading} copy />
+        <div className={styles.sheet}>
+          <div ref={feed} className={styles.feed} aria-label="지면 설계에 들어가는 입력" tabIndex={0}>
+            <Inputs reading={reading} />
+          </div>
         </div>
       ) : null}
     </div>
   );
 }
 
-/** 입력 묶음 한 벌. 구역은 채용 공고 · 디자인 · 섹션 · 기록 순서다. 비어 있는 구역은 그리지 않는다. */
-function Inputs({ reading, copy = false }: { reading: WaitReading; copy?: boolean }) {
+/** 입력 묶음. 구역은 채용 공고 · 디자인 · 섹션 · 기록 순서다. 비어 있는 구역은 그리지 않는다. */
+function Inputs({ reading }: { reading: WaitReading }) {
   const groups: { key: string; icon: string; label: string; body: ReactNode }[] = [];
 
   if (reading.posting) {
@@ -220,9 +224,9 @@ function Inputs({ reading, copy = false }: { reading: WaitReading; copy?: boolea
   }
 
   return (
-    <div className={styles.inputs} data-copy={copy ? "" : undefined} aria-hidden={copy || undefined} inert={copy || undefined}>
-      {groups.map((group, index) => (
-        <section key={group.key} className={styles.group} style={{ "--i": index } as CSSProperties} aria-label={group.label} data-feed-group="">
+    <div className={styles.inputs}>
+      {groups.map((group) => (
+        <section key={group.key} className={styles.group} aria-label={group.label} data-feed-group="">
           <h2 className={styles.groupLabel}>
             <Icon name={group.icon} size={14} color="var(--ex-fg-subtle)" />
             {group.label}
@@ -234,23 +238,10 @@ function Inputs({ reading, copy = false }: { reading: WaitReading; copy?: boolea
   );
 }
 
-/** 넘어가기 직전, 잔의 위치와 잔이 내려가는 결(`--ex-fall` · `--ex-fall-ease`)을 잰다. 같은 결로 올린다. */
-function measure(node: HTMLElement) {
+/** 넘어가기 직전, 잔의 위치와 지면이 올라오는 결(`--wait-rise`)을 잰다. 잔도 같은 결로 올린다. */
+function measure(node: HTMLElement, root: HTMLElement) {
   const cup = node.querySelector<HTMLElement>("[data-brew-cup]");
-  const style = cup ? getComputedStyle(cup) : null;
-  return {
-    top: (cup ?? node).getBoundingClientRect().top,
-    duration: milliseconds(style?.getPropertyValue("--ex-fall") ?? ""),
-    easing: style?.getPropertyValue("--ex-fall-ease").trim() || "ease",
-  };
-}
-
-/** `950ms` · `0.95s`를 밀리초로. 못 읽으면 0이고, 그러면 옮기지 않고 바로 선다. */
-function milliseconds(value: string): number {
-  const text = value.trim();
-  const number = Number.parseFloat(text);
-  if (!Number.isFinite(number)) return 0;
-  return text.endsWith("ms") ? number : number * 1000;
+  return { top: (cup ?? node).getBoundingClientRect().top, ...parseMotion(getComputedStyle(root).getPropertyValue("--wait-rise")) };
 }
 
 /**
@@ -276,115 +267,156 @@ function Caption({ lines, every }: { lines: readonly string[]; every: number }) 
 }
 
 /**
- * 입력 묶음을 1.5초마다 다음 구역으로 한 칸씩 올린다(`feed-steps.ts`). 같은 묶음 두 벌이 이어 서 있어, 첫 벌의
- * 끝을 지나면 그만큼 되돌려 끝없이 돈다.
+ * 지면에 구역을 1.5초마다 하나씩 올린다.
  *
- * 한 칸은 0.6초에 끝나고, 곡선은 조금 지나쳤다가 돌아와 앉는 `--ex-motion-spring`의 곡선이다.
+ * 한 번에 하는 일은 하나다(`FEED_STEP_MS`마다).
+ * 1. 이미 올린 구역 가운데 아직 끝까지 안 보인 카드 줄이 있으면 그 줄이 보이게 지면 안을 올린다.
+ * 2. 없으면 다음 구역을 올리고(`data-shown`), 그 구역이 칸 아래로 넘치면 아래 끝이 보이게 지면 안을 올린다.
+ *    칸보다 긴 구역은 위 끝에 맞춘다.
+ * 3. 다 올렸으면 지면을 비우고(`data-turning` 뒤 처음으로) 다시 쌓는다.
  *
- * 사용자가 스크롤하면 멈추고, 스크롤이 끝나면(`scrollend`) 그 자리에서 다시 센다. 우리가 쓴 값과 다른 스크롤
- * 위치가 읽히면 사용자가 움직인 것이다 — 휠 · 터치 · 스크롤바 · 키보드를 따로 듣지 않는다. `scrollend`는
- * 2025년 12월부터 주요 브라우저가 모두 지원한다(MDN Baseline 2025). 없는 브라우저에서는 사용자가 한 번
- * 스크롤한 뒤로 멈춘 채 남는다.
+ * 지면 안을 올리는 데는 0.6초, 곡선은 반동 없는 `--ex-motion-panel`이다.
  *
- * 묶음이 화면보다 짧으면 움직이지 않고, 두 번째 벌도 감춘다(`data-still`). 동작 줄이기 설정에서도 움직이지 않는다.
+ * 사용자가 스크롤하면 멈추고, 남은 구역을 모두 보여 준다 — 손으로 읽는 동안 빈 자리가 나오면 안 된다.
+ * 스크롤이 끝나면(`scrollend`) 그 자리에서 1번부터 이어 간다. 우리가 쓴 값과 다른 스크롤 위치가 읽히면 사용자가
+ * 움직인 것이다. `scrollend`는 2025년 12월부터 주요 브라우저가 모두 지원한다(MDN Baseline 2025).
+ *
+ * 동작 줄이기 설정에서는 처음부터 모두 보이고 움직이지 않는다.
  */
-function useFeedSteps(feed: RefObject<HTMLDivElement | null>, enabled: boolean) {
+function useSheetBuild(feed: RefObject<HTMLDivElement | null>, enabled: boolean, entering: boolean) {
   useEffect(() => {
     const node = feed.current;
     if (!enabled || !node) return;
-    const second = node.querySelector<HTMLElement>("[data-copy]");
-    const first = second?.previousElementSibling as HTMLElement | null;
-    if (!first || !second) return;
+    const groups = [...node.querySelectorAll<HTMLElement>("[data-feed-group]")];
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const ease = cubicBezier(...(parseCubicBezier(getComputedStyle(node).getPropertyValue("--ex-motion-spring")) ?? [0, 0, 1, 1]));
+    const root = node.closest<HTMLElement>("[data-phase]") ?? node;
+    const ease = cubicBezier(...(parseCubicBezier(getComputedStyle(node).getPropertyValue("--ex-motion-panel")) ?? [0, 0, 1, 1]));
 
-    let snaps: number[] = [];
-    /** 두 번째 벌이 첫 벌과 같은 자리에 오기까지의 거리. 이만큼 올리면 처음과 같은 그림이다. */
-    let period = 0;
+    // 구역 안의 제목과 카드가 위에서부터 `--ex-wave` 간격으로 따라 올라오도록 순서를 매긴다.
+    for (const group of groups)
+      [...group.querySelectorAll<HTMLElement>(":scope > h2, [data-feed-card]")].forEach((item, index) => item.style.setProperty("--j", String(index)));
+
+    let shown = 0;
     let written = node.scrollTop;
     let paused = false;
     let timer = 0;
+    let turn = 0;
     let frame = 0;
 
-    const fit = () => {
-      // 위아래 끝을 흐리게 지우는 폭(`--feed-fade`)만큼은 읽히지 않으므로, 구역 제목이 그 아래에 서게 멈춘다.
-      const fade = Number.parseFloat(getComputedStyle(node).getPropertyValue("--feed-fade")) || 0;
-      period = within(second, node) - within(first, node);
-      snaps = feedSnaps(
-        [...first.querySelectorAll<HTMLElement>("[data-feed-group]")].map((group) => {
-          const rows = new Map<number, number>();
-          for (const card of group.querySelectorAll<HTMLElement>("[data-feed-card]")) {
-            const cardTop = within(card, node);
-            rows.set(cardTop, Math.max(rows.get(cardTop) ?? 0, cardTop + card.offsetHeight));
-          }
-          return {
-            top: within(group, node) - fade,
-            rows: [...rows].map(([rowTop, bottom]) => ({ top: rowTop - fade, bottom: bottom - fade })),
-          };
-        }),
-        node.clientHeight - fade * 2,
-      );
-      if (!reduced && first.offsetHeight > node.clientHeight) delete node.dataset.still;
-      else node.dataset.still = "";
+    const reveal = (count: number) => {
+      shown = count;
+      groups.forEach((group, index) => {
+        if (index < count) group.dataset.shown = "";
+        else delete group.dataset.shown;
+      });
     };
-    fit();
-    const resize = new ResizeObserver(fit);
-    resize.observe(node);
-    resize.observe(first);
+    if (reduced) {
+      reveal(groups.length);
+      return;
+    }
+    node.dataset.building = "";
 
+    /** 위아래 끝을 흐리게 지우는 폭(`--feed-fade`)과 그 안쪽 읽히는 높이. */
+    const view = () => {
+      const fade = Number.parseFloat(getComputedStyle(node).getPropertyValue("--feed-fade")) || 0;
+      return { fade, visible: node.clientHeight - fade * 2, max: node.scrollHeight - node.clientHeight };
+    };
     const write = (value: number) => {
       node.scrollTop = value;
       written = node.scrollTop;
     };
-    const schedule = () => {
-      window.clearTimeout(timer);
-      timer = window.setTimeout(step, FEED_STEP_MS);
-    };
-    function step() {
-      schedule();
-      if (paused || node!.dataset.still !== undefined || period <= 0) return;
+    const move = (to: number) => {
       window.cancelAnimationFrame(frame);
-      const from = node!.scrollTop;
-      const to = nextSnap(snaps, from, period);
+      const from = node.scrollTop;
+      const target = Math.max(0, Math.min(to, view().max));
+      if (Math.abs(target - from) < 1) return;
       // 시작도 프레임 시각으로 잡는다. `performance.now()`와 섞으면 프레임 시각이 그보다 앞설 때 진행이 음수에 묶인다.
       let start = -1;
       const run = (now: number) => {
         if (paused) return;
         if (start < 0) start = now;
         const progress = Math.min(1, (now - start) / FEED_MOVE_MS);
-        write(from + (to - from) * ease(progress));
+        write(from + (target - from) * ease(progress));
         if (progress < 1) frame = window.requestAnimationFrame(run);
-        // 다음 벌의 처음에 닿았으면 첫 벌의 처음으로 되돌린다. 두 벌이 같아 그림은 그대로다.
-        else if (to >= period) write(node!.scrollTop - period);
       };
       frame = window.requestAnimationFrame(run);
-    }
+    };
+
+    const step = () => {
+      const { fade, visible } = view();
+      const scrolled = node.scrollTop;
+      // 1. 올린 구역에 아직 다 안 보인 줄이 있으면 그 줄로.
+      const revealed = groups.slice(0, shown).map((group) => {
+        const rows = new Map<number, number>();
+        for (const card of group.querySelectorAll<HTMLElement>("[data-feed-card]")) {
+          const cardTop = within(card, node);
+          rows.set(cardTop, Math.max(rows.get(cardTop) ?? 0, cardTop + card.offsetHeight));
+        }
+        return { top: within(group, node) - fade, rows: [...rows].map(([rowTop, bottom]) => ({ top: rowTop - fade, bottom: bottom - fade })) };
+      });
+      const lastBottom = revealed.at(-1)?.rows.reduce((bottom, row) => Math.max(bottom, row.bottom), 0) ?? 0;
+      if (lastBottom > scrolled + visible + 1) {
+        move(nextSnap(feedSnaps(revealed, visible), scrolled, lastBottom - visible));
+        return;
+      }
+      // 2. 다음 구역을 올린다.
+      const next = groups[shown];
+      if (next) {
+        reveal(shown + 1);
+        const groupTop = within(next, node) - fade;
+        const groupBottom = groupTop + next.offsetHeight;
+        if (groupBottom > scrolled + visible) move(next.offsetHeight > visible ? groupTop : groupBottom - visible);
+        return;
+      }
+      // 3. 지면을 비우고 처음부터.
+      node.dataset.turning = "";
+      turn = window.setTimeout(() => {
+        if (paused) return;
+        node.dataset.resetting = "";
+        reveal(0);
+        write(0);
+        delete node.dataset.turning;
+        void node.offsetHeight;
+        delete node.dataset.resetting;
+      }, FEED_MOVE_MS);
+    };
+    const schedule = (delay: number) => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        if (!paused) step();
+        schedule(FEED_STEP_MS);
+      }, delay);
+    };
+
     const onScroll = () => {
       // 소수점 위치는 브라우저가 화면 픽셀로 맞춰 읽어 준다. 그 차이보다 크면 사람이 움직인 것이다.
       if (paused || Math.abs(node.scrollTop - written) <= 1) return;
       paused = true;
       window.cancelAnimationFrame(frame);
       window.clearTimeout(timer);
+      window.clearTimeout(turn);
+      delete node.dataset.turning;
+      reveal(groups.length);
     };
     const onScrollEnd = () => {
       if (!paused) return;
       paused = false;
-      if (period > 0 && node.scrollTop >= period) write(node.scrollTop - period);
-      else written = node.scrollTop;
-      schedule();
+      written = node.scrollTop;
+      schedule(FEED_STEP_MS);
     };
 
     node.addEventListener("scroll", onScroll, { passive: true });
     node.addEventListener("scrollend", onScrollEnd);
-    schedule();
+    // 브루잉에서 넘어왔으면 빈 지면이 다 올라온 뒤 첫 구역을 올린다. 다시 열었으면 바로 올린다.
+    schedule(entering ? parseMotion(getComputedStyle(root).getPropertyValue("--wait-rise")).duration : 0);
     return () => {
       window.clearTimeout(timer);
+      window.clearTimeout(turn);
       window.cancelAnimationFrame(frame);
-      resize.disconnect();
       node.removeEventListener("scroll", onScroll);
       node.removeEventListener("scrollend", onScrollEnd);
     };
-  }, [feed, enabled]);
+  }, [feed, enabled, entering]);
 }
 
 /**

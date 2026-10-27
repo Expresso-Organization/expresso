@@ -19,8 +19,8 @@ date: 2026-10-27
 | `services/web/src/lib/career-category-icons.ts` · `components/shell/SidebarCategories.tsx` · `features/career-editor/views/CareerViewShell.tsx` | 서랍 아이콘 표(§3.5)를 한 곳으로 모음. 저장된 아이콘 이름(lucide)이 웹 아이콘 묶음(Phosphor)에 없어 기록 카드 아이콘이 비던 것을 서랍 키로 고친다 |
 | `services/backend/src/modules/materials/materials.integration.test.ts` | `createdAt` 확인 |
 | `services/web/src/app/(app)/brew/[brewId]/design/Brewing.tsx` · `Brewing.module.css` | 옛 브랜치에서 옮겨 온 잔 · 기록 줄 |
-| `services/web/src/app/(app)/brew/[brewId]/design/GenerationWait.tsx` · `GenerationWait.module.css` | 위의 브루잉과 잔 아래 한 줄, 구역별 그리드로 한 칸씩 올라가는 입력 묶음, 전환 |
-| `services/web/src/app/(app)/brew/[brewId]/design/feed-steps.ts` · `feed-steps.test.ts` | 멈출 자리 계산과 곡선 |
+| `services/web/src/app/(app)/brew/[brewId]/design/GenerationWait.tsx` · `GenerationWait.module.css` | 위의 브루잉과 잔 아래 한 줄, 구역이 하나씩 올라와 쌓이는 지면, 전환 |
+| `services/web/src/app/(app)/brew/[brewId]/design/feed-steps.ts` · `feed-steps.test.ts` | 멈출 자리 계산, 곡선, 움직임 값 읽기 |
 | `services/web/src/app/(app)/brew/[brewId]/design/wait-timing.ts` | 브루잉 시간(10초)과 남은 시간 계산 |
 | `services/web/src/app/(app)/brew/[brewId]/design/GenerationWait.test.tsx` | 10초 분기 · 다시 열기 · 구역 · 문구 없음 · 남은 시간 |
 | `services/web/src/app/(app)/brew/[brewId]/design/DesignCatalog.tsx` | `DesignThumb` 내보내기 |
@@ -45,7 +45,7 @@ date: 2026-10-27
 
 ## 가장 위험한 단계
 
-입력 묶음 한 칸 이동. 사람의 스크롤과 우리가 쓴 스크롤을 위치 차이로 가르므로, 브라우저가 소수 위치를 반올림하는 폭보다 기준이 작으면 스스로 멈춘다. headless Chrome으로 0.25초마다 위치를 재서 1.5초마다 계단처럼 오르는지, 휠 뒤 멈췄다가 다시 오르는지 본다. 어긋나면 흐름을 끄고 손 스크롤만 남긴 뒤 spec을 고친다.
+입력 묶음 한 칸 이동. 사람의 스크롤과 우리가 쓴 스크롤을 위치 차이로 가르므로, 브라우저가 소수 위치를 반올림하는 폭보다 기준이 작으면 스스로 멈춘다. headless Chrome으로 0.25초마다 위치와 올라온 구역 수를 재서 1.5초마다 하나씩 쌓이는지, 다 쌓인 뒤 비우고 다시 쌓는지, 휠 뒤 멈췄다가 이어 가는지 본다. 어긋나면 흐름을 끄고 손 스크롤만 남긴 뒤 spec을 고친다.
 
 ## 검증
 

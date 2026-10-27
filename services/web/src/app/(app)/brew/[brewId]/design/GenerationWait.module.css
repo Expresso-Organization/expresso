@@ -1,10 +1,15 @@
 /*
- * 생성을 맡긴 뒤 설계 출력이 오기까지 — 위에는 브루잉과 한 줄, 아래에는 한 칸씩 올라가는 입력 묶음.
+ * 생성을 맡긴 뒤 설계 출력이 오기까지 — 위에는 브루잉과 한 줄, 아래에는 구역이 하나씩 올라와 쌓이는 지면.
  *
- * `LivePreview`의 카드 자리(`display: contents`)에 바로 선다. 화면 높이를 넘지 않고, 넘치는 것은 입력 묶음
- * 칸(`.feed`) 안에서 흐른다.
+ * `LivePreview`의 카드 자리(`display: contents`)에 바로 선다. 화면 높이를 넘지 않고, 넘치는 것은 지면 안
+ * (`.feed`)에서 움직인다.
  */
 .wait {
+  /*
+   * 큰 것이 올라오는 결 — 잔이 위로, 빈 지면이 아래에서, 구역이 지면 위로. 곡선은 `--ex-motion-panel`과 같고
+   * 반동이 없다. 패널 토큰(280ms)보다 훨씬 먼 거리(지면은 화면 높이의 반 넘게)를 가므로 시간만 늘렸다.
+   */
+  --wait-rise: 700ms cubic-bezier(0.32, 0.72, 0, 1);
   position: relative;
   flex: 1;
   min-height: 0;
@@ -24,8 +29,8 @@
 /*
  * 잔 아래에 도는 한 줄. 줄을 모두 겹쳐 세우고 투명도와 자리만 오간다.
  *
- * 나가는 줄이 먼저 위로 빠지고(`--ex-motion-instant`), 그 시간(140ms)이 지난 뒤 들어오는 줄이 아래에서 조금
- * 넘쳐 올라와 앉는다(`--ex-motion-spring`). 둘이 같이 움직이면 두 글이 겹쳐 흐리게 읽힌다.
+ * 나가는 줄이 먼저 위로 빠지고(`--ex-motion-instant`), 그 시간(140ms)이 지난 뒤 들어오는 줄이 아래에서 올라와
+ * 반동 없이 앉는다(`--ex-motion-glide`). 둘이 같이 움직이면 두 글이 겹쳐 흐리게 읽힌다.
  */
 .caption {
   display: inline-grid;
@@ -47,18 +52,18 @@
 .captionLine[data-on] {
   opacity: 1;
   transform: none;
-  animation: caption-in var(--ex-motion-spring) 140ms both;
+  animation: caption-in var(--ex-motion-glide) 140ms both;
   transition: none;
 }
 
 @keyframes caption-in {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(8px);
   }
 }
 
-/* 입력 묶음이 올라오면 위에 붙는다. 옮겨 가는 길은 `GenerationWait`이 잔이 내려가는 결로 잇는다. */
+/* 지면이 올라오면 위에 붙는다. 옮겨 가는 길은 `GenerationWait`이 잔의 자리를 재서 `--wait-rise`로 잇는다. */
 .wait[data-phase="reading"] .top {
   margin: 0;
 }
@@ -75,21 +80,49 @@
   margin-top: 0;
 }
 
-/* ── 입력 묶음 ─────────────────────────────────────────── */
+/* ── 지면 ──────────────────────────────────────────────── */
 
 /*
- * 위아래 끝은 흐리게 지운다 — 카드가 칸 끝에서 잘려 나가는 대신 들어오고 나가는 것처럼 보인다.
- * 스크롤은 사람이 할 수 있게 열어 두고, 막대만 감춘다. 저절로 올라가는 칸에 막대가 서 있으면 칸마다 움직여 눈에 걸린다.
+ * 빈 지면. 아래 끝은 화면 밖에 닿아 있어 위 모서리만 둥글다. 브루잉에서 넘어오면 화면 아래에서 올라온다.
+ */
+.sheet {
+  flex: 1;
+  min-height: 0;
+  width: calc(100% - 48px);
+  max-width: 1168px;
+  margin: 8px auto 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--ex-border);
+  border-bottom: none;
+  border-radius: 18px 18px 0 0;
+  background: var(--ex-bg);
+  box-shadow: var(--ex-elevation-frame);
+}
+
+.wait[data-entering] .sheet {
+  animation: sheet-rise var(--wait-rise) both;
+}
+
+@keyframes sheet-rise {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+/*
+ * 지면 안. 위아래 끝은 흐리게 지운다 — 카드가 끝에서 잘려 나가는 대신 들어오고 나가는 것처럼 보인다.
+ * 스크롤은 사람이 할 수 있게 열어 두고, 막대만 감춘다. 저절로 올라가는 칸에 막대가 서 있으면 움직일 때마다 눈에 걸린다.
  */
 .feed {
-  /* 흐리게 지우는 폭. 한 칸씩 올릴 때 구역 제목이 이 폭 아래에 서도록 `GenerationWait`도 이 값을 읽는다. */
-  --feed-fade: 48px;
+  /* 흐리게 지우는 폭. 지면 안을 올릴 때 구역이 이 폭 안쪽에 서도록 `GenerationWait`도 이 값을 읽는다. */
+  --feed-fade: 32px;
   position: relative;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   scrollbar-width: none;
-  padding: 8px 24px 0;
+  padding: 4px 28px 0;
   mask-image: linear-gradient(to bottom, transparent, #000 var(--feed-fade), #000 calc(100% - var(--feed-fade)), transparent);
 }
 
@@ -103,18 +136,46 @@
   box-shadow: var(--ex-focus-ring) inset;
 }
 
-.feed[data-still] .inputs[data-copy] {
-  display: none;
-}
-
 .inputs {
   width: 100%;
-  max-width: 1120px;
-  margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 36px;
-  padding: 24px 0 36px;
+  padding: 28px 0 48px;
+}
+
+/*
+ * 구역이 하나씩 올라온다. 쌓는 동안 아직 차례가 안 온 구역은 자리만 잡고 보이지 않는다 — 지면이 비어 있다가 위에서부터
+ * 채워진다. 구역 안의 제목과 카드는 `--ex-wave` 간격으로 따라 올라온다(`--j`는 `GenerationWait`이 매긴다).
+ */
+.feed[data-building] .group > h2,
+.feed[data-building] .group [data-feed-card] {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity var(--wait-rise),
+    transform var(--wait-rise);
+  transition-delay: calc(var(--j, 0) * var(--ex-wave, 0ms));
+}
+
+.feed[data-building] .group[data-shown] > h2,
+.feed[data-building] .group[data-shown] [data-feed-card] {
+  opacity: 1;
+  transform: none;
+}
+
+/* 다 쌓였으면 지면을 비운다. 위로 조금 비켜나며 한꺼번에 사라진다. */
+.feed[data-building][data-turning] .group > h2,
+.feed[data-building][data-turning] .group [data-feed-card] {
+  opacity: 0;
+  transform: translateY(-12px);
+  transition-delay: 0ms;
+}
+
+/* 비운 뒤 처음 자리로 되돌릴 때는 움직이지 않는다. */
+.feed[data-resetting] .group > h2,
+.feed[data-resetting] .group [data-feed-card] {
+  transition: none;
 }
 
 .group {
@@ -151,7 +212,6 @@
   border: 1px solid var(--ex-border);
   border-radius: 14px;
   background: var(--ex-bg);
-  box-shadow: var(--ex-elevation-raised);
 }
 
 .cardBody {
@@ -293,23 +353,15 @@
   background: var(--ex-accent-surface);
 }
 
-/*
- * 브루잉에서 넘어올 때 구역이 아래에서 차례로 올라온다. 간격은 브루잉 줄이 따라붙는 간격과 같다
- * (`--ex-wave`, `Brewing.tsx`의 `WAVE_MS`).
- */
-.wait[data-entering] .inputs:not([data-copy]) .group {
-  animation: rise var(--ex-motion-panel) both;
-  animation-delay: calc(var(--i, 0) * var(--ex-wave, 0ms));
-}
-
-@keyframes rise {
-  from {
-    opacity: 0;
-    transform: translateY(32px);
-  }
-}
-
 @media (max-width: 767px) {
+  .sheet {
+    width: calc(100% - 24px);
+  }
+
+  .feed {
+    padding: 4px 16px 0;
+  }
+
   .postingCard,
   .designCard {
     grid-column: auto;
@@ -325,7 +377,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .wait[data-entering] .inputs:not([data-copy]) .group {
+  .wait[data-entering] .sheet {
     animation: none;
   }
 

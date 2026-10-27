@@ -1,9 +1,9 @@
-/** 입력 묶음이 한 칸 올라가는 주기. 사용자가 정한 값이다(2026-10-27 "1.5초 주기로 한번씩 다음 섹션으로"). */
+/** 지면에 구역이 하나씩 올라오는 주기. 사용자가 정한 값이다(2026-10-27 "1.5초 주기로 한번씩 다음 섹션으로"). */
 export const FEED_STEP_MS = 1_500;
 
 /**
- * 한 칸 올라가는 데 쓰는 시간. 1.5초 주기에서 머무는 시간(0.9초)이 움직이는 시간보다 길어야 카드가 멈춘 것으로
- * 읽히고, 그 사이에 다음 구역의 제목을 읽을 수 있다.
+ * 지면 안을 한 번 올리는 데 쓰는 시간. 1.5초 주기에서 머무는 시간(0.9초)이 움직이는 시간보다 길어야 카드가 멈춘
+ * 것으로 읽히고, 그 사이에 새 구역의 제목을 읽을 수 있다.
  */
 export const FEED_MOVE_MS = 600;
 
@@ -37,9 +37,9 @@ export function feedSnaps(groups: readonly FeedGroup[], visible: number): number
   return snaps;
 }
 
-/** 지금 자리 다음에 멈출 곳. 마지막 자리를 지났으면 한 바퀴 거리(`period`), 곧 다음 벌의 처음이다. */
-export function nextSnap(snaps: readonly number[], position: number, period: number): number {
-  return snaps.find((snap) => snap > position + 1) ?? period;
+/** 지금 자리 다음에 멈출 곳. 마지막 자리를 지났으면 `fallback`이다. */
+export function nextSnap(snaps: readonly number[], position: number, fallback: number): number {
+  return snaps.find((snap) => snap > position + 1) ?? fallback;
 }
 
 /**
@@ -87,4 +87,16 @@ export function parseCubicBezier(value: string): [number, number, number, number
   if (!match) return null;
   const numbers = match.slice(1).map(Number) as [number, number, number, number];
   return numbers.every(Number.isFinite) ? numbers : null;
+}
+
+/**
+ * `700ms cubic-bezier(…)` 같은 움직임 값을 Web Animations API가 받는 꼴로. 시간을 못 읽으면 0이고, 그러면 옮기지
+ * 않고 바로 선다.
+ */
+export function parseMotion(value: string): { duration: number; easing: string } {
+  const text = value.trim();
+  const time = /^(-?[\d.]+)(ms|s)\b/.exec(text);
+  const duration = time ? Number(time[1]) * (time[2] === "s" ? 1000 : 1) : 0;
+  const curve = /cubic-bezier\([^)]*\)|ease(?:-in-out|-in|-out)?|linear/.exec(text);
+  return { duration: Number.isFinite(duration) ? duration : 0, easing: curve?.[0] ?? "ease" };
 }

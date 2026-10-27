@@ -28,7 +28,7 @@ const reading: WaitReading = {
   ],
 };
 
-/** 읽는 쪽에 보이는 첫 묶음. 끝없이 돌리려고 둔 두 번째 묶음은 읽는 쪽에서 감춘다. */
+/** 지면 위의 구역. */
 const visible = () => screen.queryAllByRole("region");
 
 beforeEach(() => {
@@ -53,8 +53,8 @@ describe("생성 기다림 화면", () => {
 
     act(() => vi.advanceTimersByTime(1));
     expect(visible().map((group) => group.getAttribute("aria-label"))).toEqual(["채용 공고", "디자인", "섹션", "기록"]);
-    expect(screen.getAllByText("React 실무 3년 이상")).toHaveLength(2);
-    expect(screen.getAllByText("필수")[0]).toBeTruthy();
+    expect(screen.getByText("React 실무 3년 이상")).toBeTruthy();
+    expect(screen.getByText("필수")).toBeTruthy();
   });
 
   it("10초가 지난 뒤 다시 열면 처음부터 입력 묶음이 서 있다", () => {
