@@ -93,38 +93,9 @@
   color: var(--ex-fg-body);
 }
 
-.customDomain {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding-top: 12px;
-  border-top: 1px solid var(--ex-border-hair);
-}
 
-.customLabel {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
-  width: 84px;
-  flex-shrink: 0;
-}
 
-.customHost {
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-sm);
-  color: var(--ex-fg);
-}
 
-.customState {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: var(--ex-text-xs);
-  color: var(--ex-status-warning-text);
-  background: var(--ex-status-warning-surface);
-  border-radius: 6px;
-  padding: 4px 9px;
-  white-space: nowrap;
-}
 
 /* 사전 확인 */
 .checkRow {
@@ -262,39 +233,10 @@
 }
 
 /* 내보내기 */
-.exportGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-}
 
-.exportCard {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 15px 16px;
-  border: 1px solid var(--ex-border);
-  border-radius: 12px;
-  background: var(--ex-bg);
-  text-align: left;
-  transition: border-color var(--ex-motion-quick);
-}
 
-.exportCard:hover {
-  border-color: var(--ex-border-firm);
-}
 
-.exportTitle {
-  font-size: var(--ex-text-sm);
-  font-weight: 600;
-  color: var(--ex-fg);
-}
 
-.exportNote {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
-  line-height: 1.6;
-}
 
 .footNote {
   display: flex;
@@ -309,10 +251,6 @@
 }
 
 /* 헤더 액션 */
-.headSaved {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
-}
 
 .headGhost {
   font-size: var(--ex-text-sm);
@@ -395,10 +333,6 @@
   color: var(--ex-fg-subtle);
 }
 
-.exportCard:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
 
 .dangerRow {
   display: flex;
@@ -415,13 +349,6 @@
   padding: 7px 12px;
   font-size: var(--ex-text-sm);
   white-space: nowrap;
-}
-
-/* 좁은 화면 — 나란히 선 셋이 한 줄에 하나씩 */
-@media (max-width: 767px) {
-  .exportGrid {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 
 /* 넓어지면 정의서의 여백으로 돌아간다 */

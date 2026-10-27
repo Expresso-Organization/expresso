@@ -70,6 +70,14 @@ export async function requestNoContent(
   await fetchRaw(path, options);
 }
 
+/** JSON이 아닌 응답(공개 HTML 문서). 오류는 다른 요청과 같은 `ApiError`로 낸다. */
+export async function requestText(
+  path: string,
+  options: RequestOptions = {},
+): Promise<string> {
+  return (await fetchRaw(path, options)).text();
+}
+
 async function fetchRaw(
   path: string,
   options: RequestOptions,

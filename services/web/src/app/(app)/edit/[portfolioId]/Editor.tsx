@@ -2,14 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useState, useTransition } from "react";
+import { useActionState, useEffect, useLayoutEffect, useRef, useState, useTransition } from "react";
 
-import type { GeneratedPage, PortfolioDetail, PortfolioRevision, PageLibraryItem } from "@expresso/contracts";
+import { pageDocument, type GeneratedPage, type PortfolioDetail, type PortfolioRevision, type PageLibraryItem } from "@expresso/contracts";
 
 import { LogoMark } from "@/components/brand/Logo";
 import { WizardSteps } from "@/components/shell/WizardShell";
 import { Icon } from "@/components/ui/Icon";
-import { EDITOR_SUGGESTION } from "@/lib/sample/editor";
 
 import { PagePreview } from "@/components/portfolio/PagePreview";
 import { StructuredPageProperties } from "./StructuredPageProperties";
@@ -24,7 +23,7 @@ import {
   PropertiesPanel,
   StyleControls,
 } from "./EditorPanels";
-import { blockAction, editBlockAction, sectionAction, type EditResult } from "./edit-actions";
+import { blockAction, editBlockAction, historyAction, restorePageAction, sectionAction, type EditResult, type HistoryResult } from "./edit-actions";
 import { MediaDrop } from "./MediaDrop";
 import styles from "./page.module.css";
 
@@ -48,6 +47,32 @@ const RAIL_ITEMS = [
   { icon: "chart-bar", label: "분석", href: "/analytics" as const, active: false, dot: true },
 ];
 
+/** 캔버스가 흉내 내는 기기 폭. 지면은 이 폭으로 그린 뒤 배율만큼 줄여 보인다. */
+const DEVICE_WIDTH = { desktop: 1440, mobile: 390 } as const;
+const DEVICE_LABEL = { desktop: "데스크톱", mobile: "모바일" } as const;
+const ZOOM_STEP = 0.1;
+const ZOOM_MIN = 0.25;
+const ZOOM_MAX = 1.5;
+
+/** 요소 크기를 따라간다. 캔버스가 맞춤 배율을 계산할 때 쓴다. */
+function useElementSize<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  const [size, setSize] = useState({ width: 0, height: 0 });
+  // 그리기 전에 한 번 잰다. 재기 전 배율(100%)로 한 번 그렸다가 줄어드는 것을 막는다.
+  useLayoutEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    const first = node.getBoundingClientRect();
+    setSize({ width: first.width, height: first.height });
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry) setSize({ width: entry.contentRect.width, height: entry.contentRect.height });
+    });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+  return [ref, size] as const;
+}
+
 export interface EditorCheckpoint {
   id: string;
   label: string;
@@ -66,6 +91,7 @@ export function Editor({
   displayName,
   portfolio,
   revisions,
+  revisionsCursor = null,
   checkpoints,
   generatedPage,
   generatedPageHistory,
@@ -74,6 +100,8 @@ export function Editor({
   displayName: string;
   portfolio: PortfolioDetail;
   revisions: readonly PortfolioRevision[];
+  /** 이력 다음 장. 없으면 끝이다. */
+  revisionsCursor?: string | null;
   checkpoints: readonly EditorCheckpoint[];
   generatedPage: GeneratedPage | null;
   generatedPageHistory: readonly GeneratedPage[];
@@ -104,6 +132,62 @@ export function Editor({
     useActionState<EditResult, FormData>(editBlockAction, {});
   /** 지우기 전에 되물은 블록. */
   const [asking, setAsking] = useState<string | null>(null);
+  /** 캔버스 보기 — 기기 폭, 배율(null이면 화면에 맞춤), 지면/HTML. */
+  const [device, setDevice] = useState<keyof typeof DEVICE_WIDTH>("desktop");
+  const [zoom, setZoom] = useState<number | null>(null);
+  const [canvasView, setCanvasView] = useState<"page" | "html">("page");
+  const [panelWide, setPanelWide] = useState(false);
+  /** 「이 부분만 AI에게」로 고른 블록. 채팅 패널이 이 블록을 대상으로 열린다. */
+  const [chatTarget, setChatTarget] = useState<string | null>(null);
+  const [areaRef, area] = useElementSize<HTMLDivElement>();
+  const [undoBlockResult, runUndoBlock, undoBlockPending] =
+    useActionState<HistoryResult, FormData>(historyAction, {});
+  const [undoPageResult, runUndoPage, undoPagePending] =
+    useActionState<{ error?: string; revision?: number }, FormData>(restorePageAction, {});
+
+  const deviceWidth = DEVICE_WIDTH[device];
+  // 맞춤 배율은 기기 폭이 캔버스에 들어가는 비율이다. 원래 크기보다 키우지는 않는다.
+  const fitZoom = area.width > 0 ? Math.min(1, area.width / deviceWidth) : 1;
+  const scale = zoom ?? fitZoom;
+
+  function stepZoom(direction: -1 | 1) {
+    const next = Math.round((scale + direction * ZOOM_STEP) * 100) / 100;
+    setZoom(Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, next)));
+  }
+
+  function chooseDevice(next: keyof typeof DEVICE_WIDTH) {
+    setDevice(next);
+    setZoom(null);
+  }
+
+  /*
+   * 되돌리기. 생성 지면은 바로 앞 판을 새 판으로 다시 쌓고, 블록 지면은 가장 최근
+   * 블록 변경 한 번을 무른다(섹션 변경은 블록이 없어 이력의 복원 지점으로 되돌린다).
+   */
+  const lastBlockRevision = revisions[0]?.blockId ? revisions[0] : null;
+  const canUndo = generatedPage ? generatedPage.revision > 0 : lastBlockRevision !== null;
+  const undoPending = undoBlockPending || undoPagePending;
+  const undoError = generatedPage ? undoPageResult.error : undoBlockResult.error
+    ?? (undoBlockResult.conflict ? "그 뒤에 이 블록을 또 고쳤습니다. 이력 탭에서 되돌려 주세요." : undefined);
+
+  function undo() {
+    const formData = new FormData();
+    formData.set("portfolioId", portfolio.id);
+    if (generatedPage) {
+      formData.set("revision", String(generatedPage.revision - 1));
+      formData.set("expectedRevision", String(generatedPage.revision));
+      startTransition(() => runUndoPage(formData));
+      return;
+    }
+    if (!lastBlockRevision) return;
+    formData.set("revisionId", lastBlockRevision.id);
+    startTransition(() => runUndoBlock(formData));
+  }
+
+  function askAi(id: string) {
+    setChatTarget(id);
+    setTab("chat");
+  }
 
   function toggleSection(id: string, visible: boolean) {
     const formData = new FormData();
@@ -262,30 +346,34 @@ export function Editor({
 
           <div className={styles.toolbarRight}>
             <div className={styles.viewport}>
-              <button
-                type="button"
-                aria-label="데스크톱"
-                aria-pressed="true"
-                className={`${styles.viewportButton} ${styles.viewportButtonActive}`}
-              >
-                <Icon name="desktop" size={15} color="var(--ex-fg)" />
-              </button>
-              <button type="button" aria-label="모바일" className={styles.viewportButton}>
-                <Icon name="device-mobile" size={15} color="var(--ex-fg-muted)" />
-              </button>
+              {(["desktop", "mobile"] as const).map((one) => (
+                <button
+                  key={one}
+                  type="button"
+                  aria-label={DEVICE_LABEL[one]}
+                  aria-pressed={device === one}
+                  className={`${styles.viewportButton} ${device === one ? styles.viewportButtonActive : ""}`}
+                  onClick={() => chooseDevice(one)}
+                >
+                  <Icon
+                    name={one === "desktop" ? "desktop" : "device-mobile"}
+                    size={15}
+                    color={device === one ? "var(--ex-fg)" : "var(--ex-fg-muted)"}
+                  />
+                </button>
+              ))}
             </div>
             <span className={styles.toolbarRule} />
             <div className={styles.historyButtons}>
-              <button type="button" className={styles.iconAction} aria-label="되돌리기">
-                <Icon name="arrow-counter-clockwise" size={15} />
-              </button>
               <button
                 type="button"
-                className={`${styles.iconAction} ${styles.iconActionDisabled}`}
-                aria-label="다시 실행"
-                disabled
+                className={`${styles.iconAction} ${!canUndo || undoPending ? styles.iconActionDisabled : ""}`}
+                aria-label={generatedPage ? "이전 판으로 되돌리기" : "마지막 변경 되돌리기"}
+                title={undoError ?? (generatedPage ? "바로 앞 판을 새 판으로 다시 쌓습니다" : "마지막 블록 변경 한 번을 무릅니다")}
+                disabled={!canUndo || undoPending}
+                onClick={undo}
               >
-                <Icon name="arrow-clockwise" size={15} />
+                <Icon name="arrow-counter-clockwise" size={15} />
               </button>
             </div>
             <span className={styles.toolbarRule} />
@@ -299,13 +387,25 @@ export function Editor({
               })}{" "}
               저장
             </span>
-            <button type="button" className={styles.themeAction}>
+            {/* 지금 판의 디자인을 바꾸는 API는 없다. 다른 디자인으로 다시 뽑는 단계로 간다. */}
+            <Link
+              href={`/brew/${portfolio.brewId}/design?again=1`}
+              className={styles.themeAction}
+              title="디자인을 바꿔 새로 만듭니다 · 생성 1회를 씁니다"
+            >
               <Icon name="palette" size={14} />
-              테마
-            </button>
-            <button type="button" className={styles.previewButton}>
-              미리보기
-            </button>
+              다시 뽑기
+            </Link>
+            {generatedPage ? (
+              <a
+                href={`/edit/${portfolio.id}/preview`}
+                target="_blank"
+                rel="noreferrer"
+                className={styles.previewButton}
+              >
+                미리보기
+              </a>
+            ) : null}
             <Link
               href={`/edit/${portfolio.id}/deploy`}
               className={styles.publishButton}
@@ -330,11 +430,6 @@ export function Editor({
               <span className={styles.sectionsCount}>
                 {generatedPage ? `판 ${generatedPage.revision + 1}` : portfolio.visibleSectionCount}
               </span>
-              {!generatedPage ? (
-                <button type="button" className={styles.panelHeadAction} aria-label="섹션 추가">
-                  <Icon name="plus" size={13} />
-                </button>
-              ) : null}
             </div>
 
             <div className={styles.sectionList}>
@@ -387,7 +482,7 @@ export function Editor({
                     <span className={styles.sectionMeta} style={{ display: "block" }}>
                       {section.visible
                         ? `블록 ${section.blocks.length}개`
-                        : `숨김 · ${section.hiddenReason ?? "사유 없음"}`}
+                        : "숨김"}
                     </span>
                   </span>
                   {!generatedPage ? <button
@@ -412,43 +507,32 @@ export function Editor({
               <p className={styles.sectionError}>{sectionResult.error}</p>
             ) : null}
 
-            {/* AI 제안 카드는 항상 한 건만 노출 */}
-            <div className={styles.suggestion}>
+            {/* 생성 지면의 자동 검사 결과를 한 건만 보인다 */}
+            {generatedPage ? <div className={styles.suggestion}>
               <div className={styles.suggestionCard}>
                 <div className={styles.suggestionHead}>
                   <Icon name="lightbulb" size={14} color="var(--ex-accent-text)" />
                   <span className={styles.suggestionTitle}>한 가지 제안</span>
                 </div>
                 <div className={styles.suggestionBody}>
-                  {generatedPage
-                    ? attention?.detail ?? "자동 검사는 참고 정보입니다. 페이지를 바꾸지 않았습니다."
-                    : EDITOR_SUGGESTION.text}
+                  {attention?.detail ?? "자동 검사는 참고 정보입니다. 페이지를 바꾸지 않았습니다."}
                 </div>
-                {!generatedPage ? (
-                  <div className={styles.suggestionActions}>
-                    <button type="button" className={styles.suggestionAccept}>올리기</button>
-                    <button type="button" className={styles.suggestionDismiss}>그대로 두기</button>
-                  </div>
-                ) : null}
               </div>
-            </div>
+            </div> : null}
 
-            <div className={styles.sectionsFoot}>
-              <button type="button" className={styles.footRow}>
-                <Icon name="palette" size={14} color="var(--ex-fg-muted)" />
-                <span className={styles.footLabel}>테마 · 글꼴</span>
-                <span className={styles.footSwatch} />
-              </button>
-              <button type="button" className={styles.footRow}>
-                <Icon name="ruler" size={14} color="var(--ex-fg-muted)" />
-                <span className={styles.footLabel}>간격 · 여백 기준</span>
-                <span className={styles.footValue}>보통</span>
-              </button>
-              <button type="button" className={styles.footRow}>
-                <Icon name="code-simple" size={14} color="var(--ex-fg-muted)" />
-                <span className={styles.footLabel}>HTML 직접 보기</span>
-              </button>
-            </div>
+            {generatedPage ? (
+              <div className={styles.sectionsFoot}>
+                <button
+                  type="button"
+                  className={styles.footRow}
+                  aria-pressed={canvasView === "html"}
+                  onClick={() => setCanvasView((view) => (view === "html" ? "page" : "html"))}
+                >
+                  <Icon name={canvasView === "html" ? "browser" : "code-simple"} size={14} color="var(--ex-fg-muted)" />
+                  <span className={styles.footLabel}>{canvasView === "html" ? "지면으로 돌아가기" : "HTML 직접 보기"}</span>
+                </button>
+              </div>
+            ) : null}
           </aside>
 
           <div className={styles.canvas}>
@@ -460,7 +544,8 @@ export function Editor({
             ) : refined ? (
               <p className={styles.refineNotice} role="status">AI가 화면을 보고 다듬은 판입니다.</p>
             ) : null}
-            <div className={styles.browser}>
+            <div ref={areaRef} className={styles.canvasArea}>
+            <div className={styles.browser} style={{ width: Math.round(deviceWidth * scale) }}>
               <div className={styles.browserChrome}>
                 <span className={styles.browserDot} />
                 <span className={styles.browserDot} />
@@ -468,6 +553,23 @@ export function Editor({
                 <span className={styles.browserAddress}>{address}</span>
               </div>
 
+              <div className={styles.browserBody}>
+              {canvasView === "html" && generatedPage ? (
+                <pre className={styles.htmlSource} aria-label="배포될 HTML">
+                  {pageDocument({
+                    html: generatedPage.html,
+                    css: generatedPage.css,
+                    title: portfolio.title,
+                    description: generatedPage.rationale,
+                    ...(generatedPage.styleSpec ? { grammar: generatedPage.styleSpec } : {}),
+                  })}
+                </pre>
+              ) : (
+              /* 지면을 기기 폭으로 그린 뒤 배율만큼 줄인다. 모바일이면 지면이 좁은 화면 배치로 바뀐다. */
+              <div
+                className={styles.deviceFrame}
+                style={{ width: deviceWidth, height: `${100 / scale}%`, transform: `scale(${scale})` }}
+              >
               {generatedPage ? (
                 <PagePreview
                   page={generatedPage}
@@ -537,7 +639,7 @@ export function Editor({
                               <button
                                 type="button"
                                 className={styles.toolAi}
-                                onClick={(event) => { event.stopPropagation(); setTab("chat"); }}
+                                onClick={(event) => { event.stopPropagation(); askAi(block.id); }}
                               >
                                 <Icon name="coffee" weight="fill" size={11} />
                                 AI로 다듬기
@@ -552,6 +654,10 @@ export function Editor({
                 )}
               </div>
               )}
+              </div>
+              )}
+              </div>
+            </div>
             </div>
 
             <div className={styles.statusBar}>
@@ -633,26 +739,47 @@ export function Editor({
                   type="button"
                   className={styles.statusAi}
                   disabled={!chosen}
-                  onClick={() => { setTab("chat"); }}
+                  onClick={() => { if (chosen) askAi(chosen.block.id); }}
                 >
                   <Icon name="coffee" weight="fill" size={11} />이 부분만 AI에게
                 </button>
               </div> : null}
-              <span className={styles.statusViewport}>데스크톱 1440</span>
+              {undoError ? <span className={styles.statusError}>{undoError}</span> : null}
+              <span className={styles.statusViewport}>{DEVICE_LABEL[device]} {deviceWidth}</span>
               <span className={styles.statusRule} />
               <div className={styles.zoom}>
-                <button type="button" className={styles.iconAction} aria-label="축소">
+                <button
+                  type="button"
+                  className={styles.iconAction}
+                  aria-label="축소"
+                  disabled={scale <= ZOOM_MIN}
+                  onClick={() => stepZoom(-1)}
+                >
                   <Icon name="minus" size={12} color="var(--ex-fg-muted)" />
                 </button>
-                <span className={styles.zoomValue}>72%</span>
-                <button type="button" className={styles.iconAction} aria-label="확대">
+                <button
+                  type="button"
+                  className={styles.zoomValue}
+                  title={zoom === null ? "화면에 맞춘 배율입니다" : "눌러서 화면에 맞추기"}
+                  aria-label={`배율 ${Math.round(scale * 100)}%${zoom === null ? " · 화면에 맞춤" : " · 눌러서 화면에 맞추기"}`}
+                  onClick={() => setZoom(null)}
+                >
+                  {Math.round(scale * 100)}%
+                </button>
+                <button
+                  type="button"
+                  className={styles.iconAction}
+                  aria-label="확대"
+                  disabled={scale >= ZOOM_MAX}
+                  onClick={() => stepZoom(1)}
+                >
                   <Icon name="plus" size={12} color="var(--ex-fg-muted)" />
                 </button>
               </div>
             </div>
           </div>
 
-          <aside className={styles.panel} aria-label="편집 패널">
+          <aside className={`${styles.panel} ${panelWide ? styles.panelWide : ""}`} aria-label="편집 패널">
             <div className={styles.panelHead}>
               <span className={styles.panelTitle}>편집</span>
               <span className={styles.panelTarget}>
@@ -660,8 +787,14 @@ export function Editor({
                   ? (tab === "history" ? `판 ${generatedPageHistory.length}개` : generatedPage.generationManifest?.structured ? "구성·문장" : "웹페이지 전체")
                   : panelTarget(tab, revisions.length, chosen?.path ?? null)}
               </span>
-              <button type="button" className={styles.panelHeadAction} aria-label="넓게 보기">
-                <Icon name="arrow-square-out" size={14} />
+              <button
+                type="button"
+                className={`${styles.panelHeadAction} ${styles.panelWideToggle}`}
+                aria-label={panelWide ? "좁게 보기" : "넓게 보기"}
+                aria-pressed={panelWide}
+                onClick={() => setPanelWide((wide) => !wide)}
+              >
+                <Icon name={panelWide ? "arrows-in-simple" : "arrows-out-simple"} size={14} />
               </button>
             </div>
 
@@ -684,6 +817,8 @@ export function Editor({
 
             {tab === "chat" ? (
               <ChatPanel
+                key={chatTarget ?? "default"}
+                initialTarget={chatTarget}
                 portfolioId={portfolio.id}
                 blocks={editableBlocks}
                 freePage={generatedPage !== null}
@@ -720,10 +855,12 @@ export function Editor({
             ) : null}
             {tab === "history" ? (
               generatedPage ? (
-                <FreePageHistoryPanel pages={generatedPageHistory} />
+                <FreePageHistoryPanel pages={generatedPageHistory} portfolioId={portfolio.id} />
               ) : (
                 <HistoryPanel
                   portfolioId={portfolio.id}
+                  displayName={displayName}
+                  nextCursor={revisionsCursor}
                   revisions={revisions}
                   checkpoints={checkpoints}
                 />

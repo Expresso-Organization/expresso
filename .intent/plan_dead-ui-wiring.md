@@ -25,7 +25,7 @@ PR 다섯 개. 1번은 이 브랜치(`feat/dead-ui-wiring`)에서 intent · spec
 | | `components/shell/Sidebar*.tsx` · `SidebarNav.tsx` · `WizardShell.tsx`, `edit/[portfolioId]/Editor.tsx` 레일 | 링크 · 팔레트 열기 · 장식 제거 · 레일 활성 계산 |
 | 2 공고 | `app/(app)/jobs/page.tsx` · 새 `jobs-actions.ts` · `browse-copy.ts` | 조건 · 칩 · 정렬 · 검색 저장 · 지우기 · 진입 버튼, 샘플 제거 |
 | 3 홈 · 온보딩 | `home/page.tsx` · `HomeChrome.tsx`, `onboarding/first-portfolio` · `materials` · 단계 정의, `SocialSignIn.tsx`, 브루 제목(계약 `UpdateBrewSchema` · brew 서비스 · `WizardShell`) | 진입 연결, 온보딩 실데이터, 이력서 단계 · GitHub 제거, 제목 변경 |
-| 4 편집 · 배포 | `edit/[portfolioId]/Editor.tsx` · `EditorPanels.tsx` · `page.tsx` · `edit-actions.ts` · 새 미리보기 라우트, `deploy/DeployPanel.tsx` · `deploy/page.tsx`, `brew/[brewId]/materials/page.tsx`, `modules/portfolio-editing/service.ts`(묻고 나서), 내보내기 경로 | 보기 상태 · 되돌리기 · HTML · 미리보기 · 가져오기 · 이력, actor 기록, 내보내기 · 도메인 · 장식 제거 |
+| 4 편집 · 배포 | `edit/[portfolioId]/Editor.tsx` · `EditorPanels.tsx` · `page.tsx` · `page.module.css` · `edit-actions.ts` · 새 `preview/route.ts`, `deploy/DeployPanel.tsx` · `deploy/page.tsx` · `deploy-actions.ts`, `brew/[brewId]/materials` · `analyze/page.tsx`, `lib/api/client.ts` · `endpoints.ts`, `modules/portfolio-editing/service.ts`(승인받음), `modules/page`(판 되돌리기 `POST /page/restore` · 계약 `RestorePageRevisionSchema`), `modules/publishing` · `worker/processors/export.ts`(내보내기 제거) | 기기 · 배율 · 넓게 보기 · 되돌리기(생성 지면은 이전 판 복원) · HTML · 미리보기 · 가져오기 · 이력 필터, AI 적용 이력 actor, 내보내기 · 도메인 · 장식 제거 |
 | 5 설정 | `account/page.tsx` · `AccountNav.tsx` · `loading.tsx` · 새 `account-actions.ts` · 내보내기 라우트, PRO 잠금 표시(`MaterialPicker` · `Dashboard`), `lib/sample` 삭제 | 사용량 · 내보내기 · 삭제 · 알림 설정, 요금제 · 결제 제거 |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
