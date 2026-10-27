@@ -10,13 +10,13 @@ date: 2026-10-27
 
 # 동작하지 않는 화면 요소 정리 — 구현 계획
 
-PR 다섯 개. 1번은 이 브랜치(`feat/dead-ui-wiring`)에서 intent · spec · plan과 함께 연다. 2–5번은 이 plan 커밋에서 브랜치를 따고, 시작할 때 main을 받는다. 웹 경로는 `services/web/src/`, 백엔드는 `services/backend/src/` 기준.
+PR 다섯 개. 1번은 이 브랜치(`feat/dead-ui-wiring`)에서 intent · spec · plan과 함께 연다. 2번(공고) · 3번(홈 · 온보딩)은 1번과 파일이 겹치지 않아 각자 워크트리를 가진 세션으로 나눠 제안한다. 4번은 1번과 `Editor.tsx`를 함께 쓰고 5번은 `lib/sample`을 지우므로 1–3번 뒤에 이 세션에서 한다. 새 브랜치는 이 plan 커밋에서 따고, 시작할 때 main을 받는다. 웹 경로는 `services/web/src/`, 백엔드는 `services/backend/src/` 기준.
 
 ## 바뀌는 파일
 
 | PR | 파일 | 무엇을 |
 |---|---|---|
-| 1 셸 · 검색 · 알림 | `packages/database` `documents/analytics.ts` · 새 마이그레이션 | `NotificationDoc.subject`, `deadline_reminders` 정의 upsert |
+| 1 셸 · 검색 · 알림 | `packages/database` `documents/analytics.ts` · `mongodb-migrations/0020` · `schema.test.ts` | `NotificationDoc.subject`, `deadline_reminders` enum · 정의 upsert |
 | | `packages/contracts` 알림 계약 | `subject`, 읽음 응답 |
 | | `modules/engagement` service · routes | `subject` 저장, `POST /notifications/:id/read` · `/notifications/read-all` |
 | | `modules/scheduling` service · public | `deadline_reminders` 실행 |

@@ -26,8 +26,9 @@ date: 2026-10-27
 
 - **알림 생성 자리.** 모듈 사이 호출은 진입점(`modules/engagement/index.ts`)으로만 한다.
   - 생성: `worker/processors/generation.ts`가 `completeFreeHtml` 성공 뒤 `EngagementService.notify(userId, "generation", "/edit/{portfolioId}", "generation:{jobId}")`. 알림 실패는 로그만 남기고 생성 결과를 바꾸지 않는다.
-  - 마감: `scheduling`에 `deadline_reminders` 키(하루 1회)를 더하고, 정의는 새 마이그레이션이 upsert한다(0007이 `job_sources`를 심는 방식). 대상 `deadlineAt ?? posting.expiresAt`가 지금~72시간. `dedupeKey = deadline:{postingId}`로 날짜와 관계없이 한 번만 만든다.
-- **`notify()`가 이미 하는 것**을 그대로 쓴다: 설정 꺼짐 → 만들지 않음, 하루 단위 중복 막기, `notification.deliver` 아웃박스. 이번에 `subject`(nullable)만 문서 · 계약 · `dto`에 더한다. 검증기에 `additionalProperties` 제한이 없어 컬렉션 변경은 필요 없다.
+  - 마감: `scheduling`에 `deadline_reminders` 키(하루 1회)를 더한다. `expire_postings`처럼 `db.interests` · `db.jobPostings` · `db.companies`를 직접 읽는다. 대상은 `stage = saved`이고 `deadlineAt ?? posting.expiresAt`가 지금~72시간인 관심 공고. 실행기가 `notifications.findOne({ userId, dedupeKey: "deadline:{postingId}" })`를 먼저 보고 없을 때만 `notify`를 불러 날짜와 관계없이 한 번만 만든다. 줄마다 try/catch로 감싸 삭제된 사용자 하나가 실행 전체를 실패시키지 않게 한다.
+  - 마이그레이션 `0020`(0014–0019는 열린 PR이 잡고 있다): `scheduled_job_definitions._id` enum에 `deadline_reminders`를 더하는 `collMod`, 정의 upsert(0007이 `job_sources`를 심는 방식), `notifications` 검증기에 `subject`.
+- **`notify()`의 동작은 바꾸지 않는다**: 설정 꺼짐 → 만들지 않음, `(userId, dedupeKey, dedupeDate)` 하루 단위 중복 막기, `notification.deliver` 아웃박스. `subject`(nullable) 인자만 더해 문서 · 계약 · `dto`에 싣는다.
 - **웹 호출**은 화면별 서버 액션(`*-actions.ts`)과 `lib/api/endpoints.ts`. 응답은 `request(path, Schema)`로 파싱한다. 클라이언트 컴포넌트(`CommandPalette`)는 서버 액션으로 읽는다.
 - **편집 화면 보기 상태**(기기 · 배율 · 넓게)는 `Editor` 안의 상태다. 배율 칸 수치는 상태에서 계산한다. 미리보기는 `GET /portfolios/:id/page/document`를 세션 쿠키로 대신 부르는 웹 라우트를 새 탭으로 연다.
 - **되돌리기**는 가장 최근 이력이 `revert`할 수 있는 블록 변경일 때만 켠다.
@@ -43,8 +44,8 @@ date: 2026-10-27
 ## 함정
 
 - `portfolio-editing/service.ts`는 #76(오시건)이 같은 파일 59–83행을 고친다. actor 기록은 다른 줄이지만 **손대기 전에 사용자에게 묻는다.**
-- `worker/main.ts`는 #111이 고친다(사용자 본인 PR). 충돌은 머지 쪽에서 푼다.
-- 마이그레이션 번호는 저장소 폴더가 아니라 DB `schema_migrations`에서 확인한다(0014–0016은 다른 브랜치가 잡고 있을 수 있다).
+- `worker/main.ts`에서 `generationProcessor`(88행)가 `engagementService`(120행)보다 먼저 만들어진다. engagement 생성을 위로 옮긴다. #111(사용자 본인 PR)도 이 파일을 고친다.
+- `schema.test.ts`가 정의 수(8)와 적용된 마이그레이션 목록을 고정해 둔다. 0020을 넣으면 함께 고친다.
 - `notificationPreferences` 검증기 모양과 서비스가 쓰는 모양이 다르다(기존 문제). 이번에 고치지 않는다.
 - 공고 상세(#65 · #70), 커리어 보드 · 타임라인 · 문서 패널(#76), 카테고리 추가 · 트리 ＋(T1.1.2 · T1.1.4)는 손대지 않는다.
 
