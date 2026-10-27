@@ -16,7 +16,7 @@ date: 2026-10-28
 |---|---|
 | `packages/editor/src/document.ts` | 블록 타입 `tableHeader`, mark `underline` 추가 |
 | `packages/editor/src/document.test.ts` | 두 값이 계약을 통과하는지 |
-| `services/web/src/features/career-editor/editor/extensions.ts` | `tableHeader` · `hardBreak` 왕복 |
+| `services/web/src/features/career-editor/editor/extensions.ts` | `tableHeader` · `hardBreak` · 할 일 완료 표시 왕복 |
 | 새 `services/web/src/features/career-editor/editor/extensions.test.ts` | 스키마 전체 왕복 · 처리 목록 누락 검사 |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
