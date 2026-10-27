@@ -127,7 +127,7 @@ const INSTRUCT_SYSTEM =
 export class PageElementEditor {
   constructor(private readonly ai: AiClient) {}
 
-  async instruct(input: { snapshot: Snapshot; key: string; instruction: string; design: DesignSystemSpecV2 }): Promise<{ edit: ElementEdit; note: string; usage: AiUsage }> {
+  async instruct(input: { userId: string; snapshot: Snapshot; key: string; instruction: string; design: DesignSystemSpecV2 }): Promise<{ edit: ElementEdit; note: string; usage: AiUsage }> {
     const { snapshot, key, design } = input;
     const node = snapshot.spec.elements[key];
     if (!node || node.type === "PortfolioPage" || isStructuredGroup(node) && editableFields(node.type).length === 0)
@@ -196,13 +196,13 @@ note에 무엇을 바꿨는지 한두 문장으로 씁니다. 바꿀 칸만 prop
     const result = await this.ai.complete<Output>(
       { contract: "partial_edit", system: INSTRUCT_SYSTEM, prompt, promptVersion: PAGE_PROMPT_VERSION },
       schema as unknown as z.ZodType<Output>,
-      { check },
+      { check, userId: input.userId },
     );
     return { edit: toEdit(result.data), note: result.data.note, usage: result.usage };
   }
 
   /** 기록 하나를 지면의 사례 섹션으로 씁니다. 칸 길이 · 수치 모양 · 근거는 같은 대화에서 그 칸만 고쳐 받습니다. */
-  async writeSection(input: { id: string; title: string; text: string }): Promise<{ section: StructuredSection; usage: AiUsage }> {
+  async writeSection(input: { userId: string; id: string; title: string; text: string }): Promise<{ section: StructuredSection; usage: AiUsage }> {
     const S = FILL_LIMITS.section;
     const budget = RECORD_SECTION_BUDGET;
     const schema = sectionFillSchema();
@@ -254,7 +254,7 @@ ${input.text.slice(0, 6_000)}`;
     const result = await this.ai.complete<Output>(
       { contract: "page_fill", system: FILL_SYSTEM, prompt, promptVersion: PAGE_PROMPT_VERSION },
       schema,
-      { check },
+      { check, userId: input.userId },
     );
     return { section: toSection(input.id, result.data), usage: result.usage };
   }

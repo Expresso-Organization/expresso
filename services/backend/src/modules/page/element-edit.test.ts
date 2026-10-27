@@ -92,7 +92,7 @@ describe("요소 지시 AI", () => {
       () => ({ note: "요약을 줄였습니다.", text: [{ path: "/sections/a/summary", value: "배치를 99분 줄였습니다" }] }),
       (_request, paths) => paths.map((path) => ({ path, value: "배치를 24분으로 줄였습니다" })),
     );
-    const result = await new PageElementEditor(ai).instruct({ snapshot, key: "section-a", instruction: "요약을 짧게", design });
+    const result = await new PageElementEditor(ai).instruct({ userId: "u1", snapshot, key: "section-a", instruction: "요약을 짧게", design });
     expect(ai.calls).toHaveLength(1);
     expect(ai.calls[0]!.contract).toBe("partial_edit");
     expect(ai.fixRequests.map((request) => request.paths)).toEqual([["/text/0/value"]]);
@@ -106,7 +106,7 @@ describe("요소 지시 AI", () => {
       () => ({ note: "인용을 지웠습니다.", text: [{ path: "/sections/a/quote", value: "" }] }),
       () => [{ path: "/text", value: [{ path: "/sections/a/quote", value: "돌아가도 닿습니다." }] }],
     );
-    const result = await new PageElementEditor(ai).instruct({ snapshot, key: "quote-1", instruction: "인용 바꿔", design });
+    const result = await new PageElementEditor(ai).instruct({ userId: "u1", snapshot, key: "quote-1", instruction: "인용 바꿔", design });
     expect(ai.fixRequests).toHaveLength(1);
     expect(result.edit.text).toEqual([{ path: "/sections/a/quote", value: "돌아가도 닿습니다." }]);
   });
@@ -125,7 +125,7 @@ describe("기록으로 사례 쓰기", () => {
       () => ({ title: "배치 재설계", summary: "요약", body: "본문", details: [], metrics: [{ label: "소요", value: "5분" }], quote: "", steps: [] }),
       () => [{ path: "/metrics", value: [{ label: "소요", value: "24분" }] }],
     );
-    const { section } = await new PageElementEditor(ai).writeSection({ id: "r1", title: "배치", text: "야간 배치를 24분으로 줄였다." });
+    const { section } = await new PageElementEditor(ai).writeSection({ userId: "u1", id: "r1", title: "배치", text: "야간 배치를 24분으로 줄였다." });
     expect(ai.calls[0]!.contract).toBe("page_fill");
     expect(ai.fixRequests).toHaveLength(1);
     expect(section.metrics).toEqual([{ label: "소요", value: "24분" }]);

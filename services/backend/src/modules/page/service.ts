@@ -367,7 +367,7 @@ export class PageService {
     const { previous, design } = await this.#structured(userId, portfolioId, input.expectedRevision);
     if (!previous.spec.elements[key] || key === previous.spec.root) throw new PageServiceError(404, "고칠 요소가 없습니다.");
     await this.#consent?.require(userId, "partial_edit");
-    const { edit, note } = await editor.instruct({ snapshot: previous, key, instruction: input.instruction, design });
+    const { edit, note } = await editor.instruct({ userId, snapshot: previous, key, instruction: input.instruction, design });
     let snapshot;
     // 같은 대화에서 고친 뒤에도 남은 위반은 저장하지 않고 알립니다. 출력을 버리고 다시 쓰게 하지 않습니다.
     try { snapshot = applyElementEdit(previous, key, edit, design); }
@@ -396,7 +396,7 @@ export class PageService {
     let section;
     if (editor) {
       await this.#consent?.require(userId, "page_generation");
-      section = (await editor.writeSection(source)).section;
+      section = (await editor.writeSection({ userId, ...source })).section;
     } else section = recordSectionByRule(source);
     const spec = structuredClone(previous.spec);
     const root = spec.elements[spec.root];
