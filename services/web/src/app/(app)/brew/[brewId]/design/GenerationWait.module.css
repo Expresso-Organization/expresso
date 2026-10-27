@@ -1,0 +1,288 @@
+/*
+ * 생성을 맡긴 뒤 설계 출력이 오기까지 — 위에는 브루잉, 아래에는 올라가는 입력 묶음.
+ *
+ * `LivePreview`의 카드 자리(`display: contents`)에 바로 선다. 화면 높이를 넘지 않고, 넘치는 것은 입력 묶음
+ * 칸(`.feed`) 안에서 흐른다.
+ */
+.wait {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 처음 10초는 화면 가운데. `auto` 마진 둘이 남는 높이를 반씩 나눠 갖는다. */
+.top {
+  flex-shrink: 0;
+  margin: auto 0;
+  padding-top: 24px;
+}
+
+/* 입력 묶음이 올라오면 위에 붙는다. 옮겨 가는 길은 `GenerationWait`이 잔이 내려가는 결로 잇는다. */
+.wait[data-phase="reading"] .top {
+  margin: 0;
+}
+
+/* 새로고침. 끝났다는 신호를 보내는 워커가 죽으면 아무 신호도 안 오므로 사람이 누를 버튼이 있어야 한다. */
+.actions {
+  position: absolute;
+  z-index: 1;
+  top: 16px;
+  right: 20px;
+}
+
+.actions button {
+  margin-top: 0;
+}
+
+/* ── 입력 묶음 ─────────────────────────────────────────── */
+
+/*
+ * 위아래 끝은 흐리게 지운다 — 카드가 칸 끝에서 잘려 나가는 대신 들어오고 나가는 것처럼 보인다.
+ * 스크롤은 사람이 할 수 있게 열어 두고, 막대만 감춘다. 저절로 올라가는 칸에 막대가 서 있으면 계속 움직여 눈에 걸린다.
+ */
+.feed {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding: 8px 24px 0;
+  mask-image: linear-gradient(to bottom, transparent, #000 48px, #000 calc(100% - 64px), transparent);
+}
+
+.feed::-webkit-scrollbar {
+  display: none;
+}
+
+.feed:focus-visible {
+  outline: none;
+}
+
+.feed[data-still] .inputs[data-copy] {
+  display: none;
+}
+
+.inputs {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+  padding: 24px 0 36px;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.groupLabel {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ex-fg-subtle);
+  font-size: var(--ex-text-xs);
+  font-weight: 600;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+/* 섹션은 읽을 것이 많아 한 칸을 더 넓게 쓴다. */
+.grid[data-group="sections"] {
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+}
+
+.card {
+  min-width: 0;
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--ex-border);
+  border-radius: 14px;
+  background: var(--ex-bg);
+  box-shadow: var(--ex-elevation-raised);
+}
+
+.cardBody {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cardMeta {
+  color: var(--ex-fg-subtle);
+  font-size: var(--ex-text-3xs);
+}
+
+.cardTitle {
+  color: var(--ex-fg);
+  font-size: var(--ex-text-sm);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.cardText {
+  color: var(--ex-fg-muted);
+  font-size: var(--ex-text-xs);
+  line-height: 1.65;
+}
+
+/* 채용 공고 — 회사와 제목이 한 칸, 요건이 한 칸씩. */
+.postingCard {
+  grid-column: span 2;
+  align-items: center;
+  background: var(--ex-bg-tint);
+}
+
+.postingMark {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-family: var(--ex-font-brand);
+  font-size: var(--ex-text-md);
+  font-weight: 600;
+}
+
+.requirementCard {
+  flex-direction: column;
+  gap: 8px;
+}
+
+.badge {
+  align-self: flex-start;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--ex-bg-muted);
+  color: var(--ex-fg-muted);
+  font-size: var(--ex-text-3xs);
+  font-weight: 600;
+}
+
+.badge[data-kind="must"] {
+  background: var(--ex-accent-surface);
+  color: var(--ex-accent-text);
+}
+
+.requirementText {
+  color: var(--ex-fg-body);
+  font-size: var(--ex-text-xs);
+  line-height: 1.6;
+}
+
+/* 디자인 — 카탈로그와 같은 표지를 왼쪽에 크게. */
+.designCard {
+  grid-column: span 2;
+  align-items: stretch;
+}
+
+.designThumb {
+  position: relative;
+  flex-shrink: 0;
+  width: 168px;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+.traits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.trait {
+  padding: 2px 9px;
+  border: 1px solid var(--ex-border);
+  border-radius: 999px;
+  color: var(--ex-fg-muted);
+  font-size: var(--ex-text-3xs);
+}
+
+/* 섹션 — 번호가 먼저 읽힌다. */
+.sectionCard {
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sectionNo {
+  color: var(--ex-accent-text);
+  font-family: var(--ex-font-brand);
+  font-size: var(--ex-text-2xl);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.points {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 4px;
+  padding-left: 16px;
+  color: var(--ex-fg-muted);
+  font-size: var(--ex-text-2xs);
+  line-height: 1.65;
+}
+
+/* 기록 — 서랍 아이콘 칸. 위의 잔으로 내려가던 그 기록들이다. */
+.recordIcon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--ex-accent-surface);
+}
+
+/*
+ * 브루잉에서 넘어올 때 구역이 아래에서 차례로 올라온다. 간격은 브루잉 줄이 따라붙는 간격과 같다
+ * (`--ex-wave`, `Brewing.tsx`의 `WAVE_MS`).
+ */
+.wait[data-entering] .inputs:not([data-copy]) .group {
+  animation: rise var(--ex-motion-panel) both;
+  animation-delay: calc(var(--i, 0) * var(--ex-wave, 0ms));
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(32px);
+  }
+}
+
+@media (max-width: 767px) {
+  .postingCard,
+  .designCard {
+    grid-column: auto;
+  }
+
+  .designCard {
+    flex-direction: column;
+  }
+
+  .designThumb {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wait[data-entering] .inputs:not([data-copy]) .group {
+    animation: none;
+  }
+}

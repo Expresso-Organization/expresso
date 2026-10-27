@@ -56,18 +56,6 @@ export function LivePreview({
   const [buffer, setBuffer] = useState("");
   const [grammar, setGrammar] = useState<PageStyleGrammar | null>(null);
   const [live, setLive] = useState(false);
-  /**
-   * 어느 단계인가.
-   *
-   * 실측에서 첫 조각까지 126초였다. 그 사이 화면이 정직하게 말할 수 있는 것은
-   * **무슨 일이 일어나는 중인가** 하나다 — 얼마나 남았는지는 우리도 모르고,
-   * 모델도 알려 주지 않는다.
-   *
-   * `thinking`은 분량만 실려 온다(모델이 내용을 안 준다). 숫자를 보여 주는
-   * 대신 단계를 가르는 데 쓴다 — 그게 오는 동안은 구상 중이고, 조각이 오기
-   * 시작하면 쓰는 중이다.
-   */
-  const [stage, setStage] = useState<"waiting" | "thinking">("waiting");
   /** 설계가 먼저 오는 생성의 단계. 청사진이 오기 전에는 `null`이다. */
   const [phase, setPhase] = useState<"filling" | "filled" | "rendered" | "final" | null>(null);
   /** 청사진을 연 문서인가. 그러면 `delta`는 이어 쓰기가 아니라 완성본으로 바꿔 끼우는 것이다. */
@@ -89,7 +77,6 @@ export function LivePreview({
       userMoved.current = false;
       setBuffer("");
       setLive(false);
-      setStage("waiting");
       setPhase(null);
     };
 
@@ -154,8 +141,6 @@ export function LivePreview({
       }
       setPhase(stage_.data.name);
     });
-    // 값은 쌓인 분량이지만 화면은 그 숫자를 쓰지 않는다 — 있다는 사실만 쓴다.
-    source.addEventListener("thinking", () => setStage("thinking"));
     source.addEventListener("delta", (event) => {
       const { text } = JSON.parse((event as MessageEvent<string>).data) as { text: string };
       setBuffer((current) => current + text);
@@ -231,7 +216,6 @@ export function LivePreview({
     <div className={styles.wrap}>
       <div className={live ? styles.cardHidden : styles.card}>
         {children}
-        {stage === "thinking" ? <p className={styles.thought}>지면을 구상하는 중</p> : null}
       </div>
       <div className={live ? styles.stage : styles.stageHidden} aria-hidden={!live}>
         <div className={styles.bar}>

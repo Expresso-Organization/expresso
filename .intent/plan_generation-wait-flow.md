@@ -18,8 +18,12 @@ date: 2026-10-27
 | `services/backend/src/modules/materials/service.ts` · `legacy-mysql-service.ts` | `createdAt` 채우기 |
 | `services/backend/src/modules/materials/materials.integration.test.ts` | `createdAt` 확인 |
 | `services/web/src/app/(app)/brew/[brewId]/design/Brewing.tsx` · `Brewing.module.css` | 옛 브랜치에서 옮겨 온 잔 · 기록 줄 |
-| `services/web/src/app/(app)/brew/[brewId]/design/GenerationWait.tsx` · `GenerationWait.module.css` | 브루잉 → 입력 묶음과 전환 |
-| `services/web/src/app/(app)/brew/[brewId]/design/GenerationWait.test.tsx` | 10초 분기 · 다시 열기 · 동작 줄이기 |
+| `services/web/src/app/(app)/brew/[brewId]/design/GenerationWait.tsx` · `GenerationWait.module.css` | 위의 브루잉, 구역별 그리드로 흐르는 입력 묶음, 전환 |
+| `services/web/src/app/(app)/brew/[brewId]/design/wait-timing.ts` | 브루잉 시간(10초)과 남은 시간 계산 |
+| `services/web/src/app/(app)/brew/[brewId]/design/GenerationWait.test.tsx` | 10초 분기 · 다시 열기 · 구역 · 문구 없음 · 남은 시간 |
+| `services/web/src/app/(app)/brew/[brewId]/design/DesignCatalog.tsx` | `DesignThumb` 내보내기 |
+| `services/web/src/app/(app)/brew/[brewId]/requirement-kind.ts` · `analyze/page.tsx` | 요건 종류의 말을 두 화면이 함께 쓰게 옮김 |
+| `services/web/src/app/(app)/brew/[brewId]/design/page.module.css` | 쓰지 않게 된 완료 카드 스타일 제거 |
 | `services/web/src/app/(app)/brew/[brewId]/design/Generating.tsx` | 완료 카드 제거, 기다림 화면 연결 |
 | `services/web/src/app/(app)/brew/[brewId]/design/LivePreview.tsx` · `.module.css` | `thinking` 문장 제거 |
 | `services/web/src/app/(app)/brew/[brewId]/design/page.tsx` | 완료 시 `redirect`, 입력 묶음 데이터 |
@@ -32,14 +36,14 @@ date: 2026-10-27
 
 1. 계약 · 백엔드 `createdAt`: contracts 빌드 후 `pnpm --filter @expresso/backend test:infra`의 materials 통합 테스트가 통과한다.
 2. `Brewing` 옮기기: 옛 CSS 변수가 `tokens.css`에 있는지 확인하고, 없는 것은 지금 토큰으로 바꾼다.
-3. `GenerationWait`와 테스트: 가짜 시계로 9초에는 브루잉, 10초에는 입력 묶음, `startedAt`이 30초 전이면 처음부터 입력 묶음이 보이는지 확인한다.
+3. `GenerationWait`와 테스트: 가짜 시계로 9초에는 브루잉만, 10초에는 구역 넷, 남은 시간이 0이면 처음부터 구역이 보이는지, 진행 문구가 없는지 확인한다.
 4. `Generating` · `page.tsx` · `LivePreview` · `design-actions` 연결: `pnpm --filter @expresso/web typecheck`.
 5. 편집 화면 링크.
 6. 체험 서버에서 실제 생성 한 번: 보이는 창에서 0초 · 10초 · 청사진 · 완성 후 `/edit`를 스크린샷으로 남긴다.
 
 ## 가장 위험한 단계
 
-3번 전환. 브루잉 줄은 `transform` · `opacity` · `blur`가 걸린 채 움직이고 있어서, 잰 위치가 줄의 실제 자리와 다를 수 있다. `getBoundingClientRect`는 `transform`이 반영된 값을 주므로 그대로 쓴다. 어긋나면 기록 이동을 빼고 나타나기만 남긴다. 그때는 이 plan과 spec을 같은 커밋에서 고친다.
+입력 묶음 흐름. 사람의 스크롤과 우리가 쓴 스크롤을 위치 차이로 가르므로, 브라우저가 소수 위치를 반올림하는 폭보다 기준이 작으면 흐름이 스스로 멈춘다. headless Chrome으로 3초 동안 위치가 오르는지, 휠 뒤 멈췄다가 다시 오르는지 잰다. 어긋나면 흐름을 끄고 손 스크롤만 남긴 뒤 spec을 고친다.
 
 ## 검증
 
@@ -49,4 +53,4 @@ pnpm test
 pnpm test:infra
 ```
 
-화면: 03 디자인 선택에서 생성을 누른다. 브루잉 10초, 전환, 입력 묶음, 청사진 채우기, 완성 후 편집 화면 이동, 편집 화면 "디자인을 바꿔 다시 뽑기"까지 따라간다. 생성 중 30초쯤 새로고침도 한 번 한다.
+화면: 03 디자인 선택에서 생성을 누른다. 브루잉 10초, 전환, 흐르는 입력 묶음, 휠로 멈추기, 청사진 채우기, 완성 후 편집 화면 이동, 편집 화면 "디자인을 바꿔 다시 뽑기"까지 따라간다. 생성 중 새로고침도 한 번 한다.

@@ -1,91 +1,46 @@
 import type { BrewState } from "@expresso/contracts";
-import type { Route } from "next";
-import Link from "next/link";
 
-import { Icon } from "@/components/ui/Icon";
-
-import { openPortfolioAction, refreshGenerationAction } from "./design-actions";
+import { refreshGenerationAction } from "./design-actions";
+import { GenerationWait, type WaitReading } from "./GenerationWait";
 import { LivePreview } from "./LivePreview";
 import styles from "./page.module.css";
 
-/** 추출이 지나는 자리. `generation_job.stage`가 그대로 문장이 된다. */
-const STAGE = {
-  queued: "차례를 기다리는 중",
-  validating: "근거와 맞춰 보는 중",
-  materializing: "문장과 지면을 앉히는 중",
-  charging: "마무리하는 중",
-  done: "다 됐습니다",
-  failed: "실패",
-} as const;
-
 /**
- * 추출 중 · 추출 끝.
+ * 추출 중.
  *
- * 01b·02b의 `Waiting`과 같은 자리지만 잡 표가 다르다(`generation_job`). 끝나면
- * 스스로 넘어가지 않고 **눌러서** 간다 — 3분을 기다린 사람이 다른 탭에 있는
- * 동안 화면이 멋대로 바뀌면 무엇이 만들어졌는지 못 본다.
+ * 설계 출력이 오기 전까지는 `GenerationWait`이 선다 — 위에는 브루잉, 10초 뒤부터 그 아래에 모델이 읽고
+ * 있는 입력 묶음. 설계가 오면 `LivePreview`가 그 자리에 **만들어지는 지면을 그대로 세운다.**
  *
- * 만드는 동안에는 `LivePreview`가 이 카드를 넘겨받는다. 지면 조각이 흐르면
- * 그 자리에 **만들어지는 지면이 그대로 선다.** 조각이 안 오면(프로바이더가 못
- * 내거나 아직 문장 단계) 이 카드가 그대로 남는다 — 진행률을 지어내지 않는다.
+ * 끝나면 이 화면을 거치지 않는다. 03 화면이 끝난 생성을 06 다듬기로 넘긴다(`page.tsx`).
  *
- * 새로고침 버튼은 남겨 둔다. 끝났다는 신호는 워커가 보내는데, 그 워커가
- * 죽으면 아무 신호도 안 온다. 그때 사람이 쥘 것이 있어야 한다.
+ * 새로고침 버튼은 남겨 둔다. 끝났다는 신호는 워커가 보내는데, 그 워커가 죽으면 아무 신호도
+ * 안 온다. 그때 사람이 누를 버튼이 있어야 한다.
  */
 export function Generating({
   brewId,
   generation,
-  portfolioId,
   title,
+  reading,
+  brewingLeftMs,
 }: {
   brewId: string;
   generation: NonNullable<BrewState["latestGeneration"]>;
-  portfolioId: string | null;
   title: string;
+  reading: WaitReading;
+  brewingLeftMs: number;
 }) {
-  const running = generation.status === "queued" || generation.status === "running";
-
-  const card = (
-    <div className={styles.gate}>
-      <div className={styles.gateCard}>
-        <span className={`${styles.gateBadge} ${running ? "ex-anim-bob" : ""}`}>
-          <Icon name="coffee" weight="fill" size={18} color="var(--ex-accent-surface)" />
-        </span>
-        <h1 className={styles.gateTitle}>{running ? "추출하는 중" : "다 뽑혔습니다"}</h1>
-        {running ? <p className={styles.gateNote}>이 화면을 닫아도 계속 만듭니다.</p> : null}
-
-        {running ? (
-          <div className={styles.gateStage}>
-            <span className={styles.gateDot} />
-            <span>{STAGE[generation.stage]}</span>
-          </div>
-        ) : null}
-
-        {running ? (
+  return (
+    <LivePreview jobId={generation.id} title={title}>
+      <GenerationWait
+        reading={reading}
+        brewingLeftMs={brewingLeftMs}
+        actions={
           <form action={refreshGenerationAction}>
             <input type="hidden" name="brewId" value={brewId} />
             <button type="submit" className={styles.gateGhost}>새로고침</button>
           </form>
-        ) : (
-          <>
-            {portfolioId ? (
-              <form action={openPortfolioAction}>
-                <input type="hidden" name="portfolioId" value={portfolioId} />
-                <button type="submit" className={styles.gateAction}>포트폴리오 열기</button>
-              </form>
-            ) : null}
-            {/* 다시 뽑는 것은 이번 달 횟수를 한 번 더 쓰는 일이라 따로 세운다. */}
-            <Link href={`/brew/${brewId}/design?again=1` as Route} className={styles.gateGhost}>
-              디자인을 바꿔 다시 뽑기
-            </Link>
-          </>
-        )}
-      </div>
-    </div>
+        }
+      />
+    </LivePreview>
   );
-
-  if (running) {
-    return <LivePreview jobId={generation.id} title={title}>{card}</LivePreview>;
-  }
-  return card;
 }

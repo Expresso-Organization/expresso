@@ -109,7 +109,7 @@ export class MaterialsService implements MaterialsApi {
       designSelection: brew.designSystemRevisionId && brew.referenceLockSnapshot && brew.designSelectedAt
         ? { designSystemRevisionId: brew.designSystemRevisionId, referenceLock: brew.referenceLockSnapshot, styleOverrides: brew.designStyleOverrides ?? {}, selectedAt: new Date(brew.designSelectedAt).toISOString() }
         : null,
-      latestGeneration: generation ? { id: generation._id, status: generation.status, stage: generation.stage, portfolioId: generation.portfolioId ?? null, failureCode: generation.errorCode ?? null } : null, updatedAt: brew.updatedAt.toISOString(),
+      latestGeneration: generation ? { id: generation._id, status: generation.status, stage: generation.stage, portfolioId: generation.portfolioId ?? null, failureCode: generation.errorCode ?? null, createdAt: generation.createdAt.toISOString() } : null, updatedAt: brew.updatedAt.toISOString(),
     });
   }
 }

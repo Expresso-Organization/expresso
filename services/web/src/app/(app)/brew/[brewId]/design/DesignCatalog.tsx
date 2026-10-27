@@ -56,7 +56,8 @@ const TITLE_BREAKS = new Map<string, number[]>([
   ["web3", [3]],          // Web + 3
 ]);
 
-function DesignThumb({ code, name, preview }: {
+/** 디자인 한 벌의 표지. 카탈로그 카드와 생성 기다림 화면(`GenerationWait`)이 함께 쓴다. */
+export function DesignThumb({ code, name, preview }: {
   code: string;
   name: string;
   preview: DesignCatalogEntry["preview"];

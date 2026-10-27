@@ -117,6 +117,8 @@ export const BrewStateSchema = z.strictObject({
     stage: z.enum(["queued", "validating", "materializing", "charging", "done", "failed"]),
     portfolioId: UuidSchema.nullable(),
     failureCode: z.string().min(1).max(100).nullable(),
+    /** 생성을 맡긴 시각. 기다리는 화면이 다시 열려도 처음 몇 초의 그림을 다시 그리지 않도록 이 시각부터 센다. */
+    createdAt: TimestampSchema,
   }).nullable(),
   designSelection: DesignSelectionSchema.nullable(),
   updatedAt: TimestampSchema,

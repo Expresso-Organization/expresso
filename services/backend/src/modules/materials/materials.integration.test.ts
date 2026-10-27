@@ -373,6 +373,7 @@ describeWithDatabase("brew materials integration", () => {
         stage: "done",
         portfolioId: portfolio?.id,
         failureCode: null,
+        createdAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
       },
     });
   });

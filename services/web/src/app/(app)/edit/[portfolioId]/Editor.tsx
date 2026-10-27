@@ -299,6 +299,11 @@ export function Editor({
               })}{" "}
               저장
             </span>
+            {/* 생성 화면의 완료 카드가 하던 일이다. 다시 뽑는 것은 이번 달 횟수를 한 번 더 쓰므로 카탈로그에서 고르고 누른다. */}
+            <Link href={`/brew/${portfolio.brewId}/design?again=1`} className={styles.themeAction}>
+              <Icon name="arrows-clockwise" size={14} />
+              디자인을 바꿔 다시 뽑기
+            </Link>
             <button type="button" className={styles.themeAction}>
               <Icon name="palette" size={14} />
               테마

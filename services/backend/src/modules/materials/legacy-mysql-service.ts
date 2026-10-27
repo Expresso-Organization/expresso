@@ -247,9 +247,9 @@ export class MaterialsService {
       sql<{
         id: string; status: "queued" | "running" | "done" | "failed";
         stage: "queued" | "validating" | "materializing" | "charging" | "done" | "failed";
-        portfolio_id: string | null; error_code: string | null;
+        portfolio_id: string | null; error_code: string | null; created_at: Date | string;
       }[]>`
-        select id, status, stage, portfolio_id, error_code
+        select id, status, stage, portfolio_id, error_code, created_at
         from generation_job
         where user_id = ${userId} and brew_id = ${brewId}
         order by created_at desc limit 1
@@ -293,6 +293,7 @@ export class MaterialsService {
           stage: generation[0].stage,
           portfolioId: generation[0].portfolio_id,
           failureCode: generation[0].error_code,
+          createdAt: new Date(generation[0].created_at).toISOString(),
         }
         : null,
       updatedAt: new Date(brew.updated_at).toISOString(),

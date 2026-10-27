@@ -61,12 +61,6 @@ export async function startGenerationAction(
   return { error: null };
 }
 
-/** 다 뽑혔으면 04로 간다. 기다리는 화면이 스스로 넘어가지는 않는다 — 눌러서 간다. */
-export async function openPortfolioAction(formData: FormData): Promise<void> {
-  await requireSession();
-  redirect(`/edit/${String(formData.get("portfolioId") ?? "")}`);
-}
-
 /** 기다리는 동안 다시 읽어 온다. 01b·02b의 "새로고침"과 같은 자리다. */
 export async function refreshGenerationAction(formData: FormData): Promise<void> {
   await requireSession();
