@@ -21,34 +21,33 @@ export const WIZARD_STEPS = [
 
 export type WizardStepKey = (typeof WIZARD_STEPS)[number]["key"];
 
-export function WizardHeader({
-  portfolioTitle,
-  saveState = "자동 저장됨",
-}: {
-  portfolioTitle: ReactNode;
-  saveState?: ReactNode;
-}) {
+/**
+ * 제작 머리말. 제목 자리는 부르는 쪽이 채운다 — 제작을 아는 화면은 고칠 수 있는
+ * 칩(`WizardTitleEditor`)을, 아직 모르는 `loading.tsx`는 `WizardTitle`을 넣는다.
+ */
+export function WizardHeader({ title }: { title: ReactNode }) {
   return (
     <div className={styles.buildHeader}>
       <Link href="/home" className={styles.back} aria-label="뒤로">
         <Icon name="caret-left" size={15} />
       </Link>
       <span className={styles.buildLabel}>새 포트폴리오</span>
-      <button type="button" className={styles.titleChip}>
-        <span className={styles.titleChipText}>{portfolioTitle}</span>
-        <Icon name="pencil-simple" size={11} color="var(--ex-fg-subtle)" />
-      </button>
+      {title}
       <div className={styles.buildRight}>
-        <span className={styles.saveState}>
-          <Icon name="cloud-check" size={14} />
-          {saveState}
-        </span>
-        <span className={styles.headerRule} />
         <Link href="/home" className={styles.back} aria-label="닫기">
           <Icon name="x" size={16} />
         </Link>
       </div>
     </div>
+  );
+}
+
+/** 고칠 수 없는 제목 칩. */
+export function WizardTitle({ children }: { children: ReactNode }) {
+  return (
+    <span className={styles.titleChip}>
+      <span className={styles.titleChipText}>{children}</span>
+    </span>
   );
 }
 

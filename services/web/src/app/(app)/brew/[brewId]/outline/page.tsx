@@ -9,6 +9,7 @@ import { brews, recipes } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 import { BrewFrame } from "../BrewFrame";
+import { brewTitle } from "../brew-title";
 import { Waiting } from "../Waiting";
 import { createRecipeAction } from "../brew-actions";
 import styles from "./page.module.css";
@@ -75,7 +76,7 @@ export default async function OutlinePage({
   }
 
   const drafting = brew.latestJob?.type === "recipe" && brew.latestJob.status !== "succeeded";
-  const portfolioTitle = brew.freeTitle ?? brew.posting?.title ?? null;
+  const portfolioTitle = brewTitle(brew);
   const isFreeBrew = brew.freeTitle !== null;
   if (!brew.recipeId || drafting) {
     return (

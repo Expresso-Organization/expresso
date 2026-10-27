@@ -5,6 +5,7 @@ import { brews, designSystems, entitlements } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 import { BrewFrame } from "../BrewFrame";
+import { brewTitle } from "../brew-title";
 import { DesignCatalog, type DesignCatalogEntry } from "./DesignCatalog";
 import { Generating } from "./Generating";
 
@@ -33,7 +34,7 @@ export default async function DesignPage({
     throw error;
   }
 
-  const title = brew.freeTitle ?? brew.posting?.title ?? null;
+  const title = brewTitle(brew);
   const generation = brew.latestGeneration;
   const running = generation?.status === "queued" || generation?.status === "running";
   const again = query.again === "1";

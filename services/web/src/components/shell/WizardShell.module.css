@@ -40,6 +40,7 @@
 /* 편집 가능한 제목 — 회색 pill + 연필 */
 .titleChip {
   display: flex;
+  min-width: 0;
   align-items: center;
   gap: 7px;
   background: var(--ex-bg-sunken);
@@ -51,6 +52,64 @@
 .titleChipText {
   font-size: var(--ex-text-sm);
   color: var(--ex-fg-body);
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 이름이 아직 없을 때 */
+.titleChipEmpty {
+  color: var(--ex-fg-subtle);
+}
+
+/* 고치는 중 — 칩 자리에 입력칸이 선다 */
+.titleForm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.titleInput {
+  width: min(320px, 40vw);
+  min-width: 0;
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg);
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border-firm);
+  border-radius: 8px;
+  padding: 5px 10px;
+}
+
+.titleSave {
+  font-size: var(--ex-text-xs);
+  font-weight: 600;
+  color: var(--ex-fg-on-accent);
+  background: var(--ex-accent);
+  border: none;
+  border-radius: 7px;
+  padding: 6px 10px;
+  white-space: nowrap;
+}
+
+.titleSave:disabled {
+  opacity: 0.6;
+}
+
+.titleCancel {
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
+  background: none;
+  border: none;
+  padding: 6px 4px;
+  white-space: nowrap;
+}
+
+.titleError {
+  font-size: var(--ex-text-xs);
+  color: var(--ex-status-danger-text);
+  white-space: nowrap;
 }
 
 .buildRight {
@@ -58,20 +117,6 @@
   display: flex;
   align-items: center;
   gap: 12px;
-}
-
-.saveState {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
-}
-
-.headerRule {
-  width: 1px;
-  height: 18px;
-  background: var(--ex-bg-track);
 }
 
 /* ② 스텝 인디케이터 */
@@ -235,25 +280,23 @@
 @media (max-width: 767px) {
   .step:not(.stepCurrent),
   .connector,
-  .buildLabel,
-  .headerRule {
+  .buildLabel {
     display: none;
   }
 
-  .saveState {
-    /* 아이콘만 남긴다 — "자동 저장됨"까지 넣을 자리가 없다 */
-    font-size: 0;
-    gap: 0;
+  /* 좁은 화면에서는 고치는 동안 머리말 한 줄을 입력칸이 차지한다. */
+  .titleForm {
+    flex: 1;
+    flex-wrap: wrap;
   }
 
-  .titleChip {
-    min-width: 0;
+  .titleInput {
+    flex: 1;
+    width: auto;
   }
 
-  .titleChipText {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  .titleError {
+    white-space: normal;
   }
 }
 
