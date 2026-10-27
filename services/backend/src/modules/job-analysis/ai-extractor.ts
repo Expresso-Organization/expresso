@@ -67,7 +67,7 @@ export class AiRequirementExtractor implements RequirementExtractor {
     this.#ai = ai;
   }
 
-  async extract(source: string): Promise<JobAnalysisExtraction> {
+  async extract(source: string, userId: string | null): Promise<JobAnalysisExtraction> {
     const { data } = await this.#ai.complete(
       {
         contract: "job_analysis",
@@ -76,6 +76,7 @@ export class AiRequirementExtractor implements RequirementExtractor {
         promptVersion: JOB_ANALYSIS_PROMPT_VERSION,
       },
       JobAnalysisAiOutputSchema,
+      { userId },
     );
 
     const requirements: ExtractedRequirement[] = [];

@@ -105,6 +105,8 @@ export class AiFactsReader implements FactsReader {
         promptVersion: JOB_FACTS_PROMPT_VERSION,
       },
       JobFactsAiOutputSchema,
+      // 공고 적재는 사용자가 없는 작업이다. 사용량은 누구의 한도에도 잡히지 않는다.
+      { userId: null },
     );
     return verifyFacts(body, data);
   }

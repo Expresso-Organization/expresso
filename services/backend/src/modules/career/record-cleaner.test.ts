@@ -25,7 +25,7 @@ const usage = {
   durationMs: 9_000,
 };
 
-const context: CleanupContext = {
+const context: CleanupContext = { userId: null,
   question: "정산 스케줄러를 재설계하면서 어떤 문제를 푸셨나요?",
   transcript:
     "매일 도는 정산 배치가 새벽에 자주 밀렸습니다. 큐 단위로 쪼개고 재시도를 붙여서 일 1,200만 건을 처리하도록 만들었습니다.",

@@ -18,12 +18,20 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
 
   it("creates every product collection and preserves the seeded IDs and all 30 additional designs", async () => {
     const names = (await mongo.listCollections({}, { nameOnly: true }).toArray()).map(item => item.name);
-    expect(names).toHaveLength(86);
+    expect(names).toHaveLength(87);
+    expect(names).toContain("ai_usage_events");
     expect(names).toContain("identity_tokens");
     expect(names).toContain("agent_conversations");
     expect(names).toContain("agent_credentials");
     expect(await collections.plans.countDocuments()).toBe(3);
     expect((await collections.plans.findOne({ code: "free" }))?._id).toBe("aa09f35f-bde6-4e18-b9cd-7b32759bf43b");
+    const plans = await collections.plans.find({}, { sort: { sortOrder: 1 } }).toArray();
+    expect(plans.map(({ code, displayName, monthlyPriceKrw, monthlyCredits }) => ({ code, displayName, monthlyPriceKrw, monthlyCredits }))).toEqual([
+      { code: "free", displayName: "Single Shot", monthlyPriceKrw: 0, monthlyCredits: 100 },
+      { code: "pro", displayName: "Double Shot", monthlyPriceKrw: 9_900, monthlyCredits: 1_000 },
+      { code: "team", displayName: "Extra Shot", monthlyPriceKrw: 19_900, monthlyCredits: 2_500 },
+    ]);
+    expect(plans.every((plan) => !("generationQuota" in plan) && !("generation.unlimited" in plan.features))).toBe(true);
     expect(await collections.careerCategories.countDocuments()).toBe(0);
     expect(await collections.scheduledJobDefinitions.countDocuments()).toBe(9);
     expect(await collections.templates.countDocuments()).toBe(33);
@@ -33,18 +41,18 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
   });
 
   it("reruns without replacing existing seed changes", async () => {
-    await collections.plans.updateOne({ code: "free" }, { $set: { generationQuota: 17 } });
+    await collections.plans.updateOne({ code: "free" }, { $set: { monthlyCredits: 17 } });
     const result = await migrateMongo({ databaseUrl: mongoUrl!, databaseName });
     expect(result.applied).toEqual([]);
-    expect(result.existing).toEqual(["0001_initial_collections", "0002_generation_ledger_amount_constraint", "0003_analytics_rate_and_notification_preferences", "0004_job_import_metadata", "0005_job_source_ats_providers", "0006_career_record_editor", "0007_job_source_boards", "0008_career_view_configurations", "0009_agent_conversations", "0010_agent_credentials", "0011_preparation_plans", "0012_identity_session_sliding_expiry", "0013_identity_email_and_terms", "0017_career_category_ownership", "0020_notification_producers"]);
-    expect((await collections.plans.findOne({ code: "free" }))?.generationQuota).toBe(17);
+    expect(result.existing).toEqual(["0001_initial_collections", "0002_generation_ledger_amount_constraint", "0003_analytics_rate_and_notification_preferences", "0004_job_import_metadata", "0005_job_source_ats_providers", "0006_career_record_editor", "0007_job_source_boards", "0008_career_view_configurations", "0009_agent_conversations", "0010_agent_credentials", "0011_preparation_plans", "0012_identity_session_sliding_expiry", "0013_identity_email_and_terms", "0017_career_category_ownership", "0020_notification_producers", "0021_ai_usage_and_plan_credits"]);
+    expect((await collections.plans.findOne({ code: "free" }))?.monthlyCredits).toBe(17);
   });
 
   it("enforces required fields, enums and accent/case insensitive email uniqueness", async () => {
     const user = { _id: randomUUID(), email: "Café@example.com", displayName: "Tester", planId: "aa09f35f-bde6-4e18-b9cd-7b32759bf43b", createdAt: new Date() };
     await collections.users.insertOne(user);
     await expect(collections.users.insertOne({ ...user, _id: randomUUID(), email: "CAFE@example.com" })).rejects.toMatchObject({ code: 11000 });
-    await expect(mongo.collection("plans").insertOne({ _id: randomUUID() as never, code: "invalid", generationQuota: 0, features: {}, isPublicListed: true })).rejects.toMatchObject({ code: 121 });
+    await expect(mongo.collection("plans").insertOne({ _id: randomUUID() as never, code: "invalid", displayName: "Invalid", monthlyPriceKrw: 0, monthlyCredits: 0, sortOrder: 9, features: {}, isPublicListed: true })).rejects.toMatchObject({ code: 121 });
     await expect(mongo.collection("users").insertOne({ _id: randomUUID() as never })).rejects.toMatchObject({ code: 121 });
   });
 

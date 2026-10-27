@@ -1,5 +1,6 @@
 import {
   EntitlementDecisionResponseSchema,
+  TOKENS_PER_CREDIT,
   type PlanCode,
 } from "@expresso/contracts";
 import { randomUUID } from "node:crypto";
@@ -63,7 +64,7 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_U
       const collections = mongoCollections(fixture.resource.db);
       const plans = await collections.plans.find().toArray();
       planIds = Object.fromEntries(plans.map(plan => [plan.code, plan._id])) as Record<PlanCode, string>;
-      freeQuota = plans.find(plan => plan.code === "free")!.generationQuota;
+      freeQuota = plans.find(plan => plan.code === "free")!.monthlyCredits;
       for (const planCode of ["free", "pro", "team"] as const) {
         const userId = randomUUID(); userIds[planCode] = userId;
         await collections.users.insertOne({ _id: userId, email: `${userId}@example.com`, displayName: planCode, planId: planIds[planCode], createdAt: new Date() });
@@ -128,6 +129,14 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_U
     await app.ready();
   }, 60_000);
 
+  /** 측정한 생성 한 번의 평균 토큰(출력 16,647 · 캐시 생성 136,562 · 캐시 읽기 81,423 · 입력 8). */
+  const usage = (userId: string | null, totalTokens: number, createdAt: Date) =>
+    mongoCollections(fixture!.resource.db).aiUsageEvents.insertOne({
+      _id: randomUUID(), userId, contract: "page_generation", model: "claude-opus-4-5",
+      inputTokens: 8, outputTokens: 16_647, cacheReadTokens: 81_423, cacheCreationTokens: totalTokens - 8 - 16_647 - 81_423,
+      costUsd: null, durationMs: 1_000, createdAt,
+    });
+
   afterAll(async () => {
     await app?.close();
     if (fixture) { await fixture.dispose(); return; }
@@ -159,7 +168,7 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_U
   it("resets exhausted generation quota at the KST month boundary", async () => {
     const freeUserId = userIds.free;
     if (!freeUserId) throw new Error("free user is missing");
-    if (fixture) await mongoCollections(fixture.resource.db).usageCounters.insertOne({ _id: randomUUID(), userId: freeUserId, periodStart: "2026-08-01", used: freeQuota, resetsAt: new Date("2026-08-31T15:00:00Z") });
+    if (fixture) await usage(freeUserId, freeQuota * TOKENS_PER_CREDIT, new Date("2026-08-15T03:00:00Z"));
     else await sql`
       insert into usage_counter (user_id, period_start, used, resets_at)
       values (${freeUserId}, '2026-08-01', ${freeQuota}, '2026-08-31 15:00:00')
@@ -213,6 +222,45 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_U
       where id = ${preservedRecordId} and user_id = ${teamUserId}
     `;
     expect(records).toEqual([{ id: preservedRecordId }]);
+  });
+  it.skipIf(engine === "mysql")("allows four average generations on the free plan and blocks the fifth", async () => {
+    const userId = randomUUID();
+    await mongoCollections(fixture!.resource.db).users.insertOne({ _id: userId, email: `${userId}@example.com`, displayName: "four", planId: planIds.free, createdAt: new Date() });
+    const at = new Date("2026-10-20T03:00:00Z");
+    for (let index = 0; index < 4; index++) await usage(userId, 235_000, new Date("2026-10-10T03:00:00Z"));
+    await expect(entitlementService.check(userId, "portfolio.generate", at)).resolves.toMatchObject({
+      allowed: true, reason: "ENTITLED", usage: { used: 94, limit: 100, remaining: 6 },
+    });
+    await usage(userId, 235_000, new Date("2026-10-11T03:00:00Z"));
+    await expect(entitlementService.check(userId, "portfolio.generate", at)).resolves.toMatchObject({
+      allowed: false, reason: "QUOTA_EXHAUSTED", usage: { used: 118, limit: 100, remaining: 0 },
+    });
+  });
+
+  it.skipIf(engine === "mysql")("caps the paid plans with their monthly credits", async () => {
+    const userId = randomUUID();
+    await mongoCollections(fixture!.resource.db).users.insertOne({ _id: userId, email: `${userId}@example.com`, displayName: "pro", planId: planIds.pro, createdAt: new Date() });
+    await usage(userId, 1_001 * TOKENS_PER_CREDIT, new Date("2026-10-10T03:00:00Z"));
+    await expect(entitlementService.check(userId, "portfolio.generate", new Date("2026-10-20T03:00:00Z"))).resolves.toMatchObject({
+      planCode: "pro", allowed: false, reason: "QUOTA_EXHAUSTED", usage: { used: 1_001, limit: 1_000 },
+    });
+  });
+
+  it.skipIf(engine === "mysql")("counts only the account's own calls and rounds up once per period", async () => {
+    const userId = randomUUID();
+    await mongoCollections(fixture!.resource.db).users.insertOne({ _id: userId, email: `${userId}@example.com`, displayName: "small", planId: planIds.free, createdAt: new Date() });
+    for (let index = 0; index < 50; index++) {
+      await mongoCollections(fixture!.resource.db).aiUsageEvents.insertOne({
+        _id: randomUUID(), userId, contract: "search_interpret", model: "claude-haiku-5-5",
+        inputTokens: 100, outputTokens: 100, cacheReadTokens: 0, cacheCreationTokens: 0,
+        costUsd: null, durationMs: 10, createdAt: new Date("2026-10-10T03:00:00Z"),
+      });
+    }
+    await usage(null, 5_000_000, new Date("2026-10-10T03:00:00Z"));
+    await usage(userIds.pro!, 5_000_000, new Date("2026-10-10T03:00:00Z"));
+    await expect(entitlementService.check(userId, "portfolio.generate", new Date("2026-10-20T03:00:00Z"))).resolves.toMatchObject({
+      allowed: true, usage: { used: 1, remaining: 99 },
+    });
   });
 });
 }

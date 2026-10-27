@@ -55,6 +55,8 @@ export interface WriterEvidence {
 }
 
 export interface WriterContext {
+  /** 사용량을 남길 사용자. 사용자가 없는 작업만 null이다. */
+  userId: string | null;
   sections: WriterSection[];
   evidence: WriterEvidence[];
   company: {
@@ -250,6 +252,7 @@ export class AiSentenceWriter implements SentenceWriter {
             promptVersion: GENERATION_PROMPT_VERSION,
           },
           GenerationDraftSchema,
+          { userId: context.userId },
         );
 
         const empty = emptySections(data, context.sections.length);

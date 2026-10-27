@@ -107,18 +107,24 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB generation integration",
     })).rejects.toMatchObject({ statusCode: 404 });
   });
 
-  it("rolls materialization back when the charge boundary rejects the transaction", async () => {
+  it("finishes a generation that started under the limit even when its own calls pass the limit", async () => {
     const db = mongoCollections(fixture.resource.db);
-    await db.usageCounters.updateOne({ userId }, { $set: { used: 3 } });
-    const submitted = await service.submit(userId, "mongo-generation-quota-fault", { recipeId, templateId });
-    await expect(service.process(submitted.generationJobId, new StubSentenceWriter())).rejects.toMatchObject({ statusCode: 409 });
-    const status = await service.getStatus(userId, submitted.generationJobId);
-    expect(status).toMatchObject({ status: "failed", usageCharged: false, portfolioId: expect.any(String) });
-    const portfolioId = status.portfolioId!;
-    expect(await db.portfolioSections.countDocuments({ userId, portfolioId })).toBe(0);
-    expect(await db.portfolioSnapshots.countDocuments({ userId, portfolioId })).toBe(0);
-    expect(await db.generationUsageLedger.countDocuments({ userId, generationJobId: submitted.generationJobId })).toBe(0);
-    expect((await db.usageCounters.findOne({ userId }))?.used).toBe(3);
+    const submitted = await service.submit(userId, "mongo-generation-credit-crossing", { recipeId, templateId });
+    // 시작한 뒤에 쌓인 호출이 한도를 넘긴다. 끝난 작업은 그래도 결과를 남긴다.
+    await db.aiUsageEvents.insertOne({
+      _id: randomUUID(), userId, contract: "page_generation", model: "claude-opus-4-5",
+      inputTokens: 0, outputTokens: 1_000_000, cacheReadTokens: 0, cacheCreationTokens: 0,
+      costUsd: null, durationMs: 1, createdAt: new Date(),
+    });
+    await service.process(submitted.generationJobId, new StubSentenceWriter());
+    expect(await service.getStatus(userId, submitted.generationJobId)).toMatchObject({ status: "done", usageCharged: true });
+  });
+
+  it("refuses to start a new generation once the month's AI credits are used up", async () => {
+    const db = mongoCollections(fixture.resource.db);
+    const jobs = await db.generationJobs.countDocuments({ userId });
+    await expect(service.submit(userId, "mongo-generation-credit-exhausted", { recipeId, templateId })).rejects.toMatchObject({ statusCode: 403 });
+    expect(await db.generationJobs.countDocuments({ userId })).toBe(jobs);
   });
 });
 

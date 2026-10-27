@@ -33,6 +33,8 @@ export class LayoutRemixError extends Error {
 }
 
 export interface RemixContext {
+  /** 사용량을 남길 사용자. 사용자가 없는 작업만 null이다. */
+  userId: string | null;
   instruction: string;
   /** 지금 선 지면. */
   current: LayoutSpec;
@@ -169,6 +171,7 @@ export class AiLayoutRemixer implements LayoutRemixer {
             promptVersion: REMIX_PROMPT_VERSION,
           },
           LayoutDraftSchema,
+          { userId: context.userId },
         );
 
         const missing = unplacedSections(data, context.sections.length);

@@ -62,7 +62,7 @@ const options: QuestionBasisOption[] = [
   },
 ];
 
-const context: QuestionContext = {
+const context: QuestionContext = { userId: null,
   options,
   company: { name: "뱅크샐러드", industry: "핀테크", toneSummary: "담백한 존댓말" },
   jobTitle: "데이터 파이프라인 엔지니어",
@@ -166,7 +166,7 @@ describe("질문 생성 계약", () => {
       text: "그 배치가 멈췄을 때 어떻게 되돌리셨나요?",
       rationale: "운영 경험을 확인합니다.",
     }]);
-    const rewritten = await new AiQuestionWriter(ai).rewrite({
+    const rewritten = await new AiQuestionWriter(ai).rewrite({ userId: null,
       option: options[0]!,
       previousTexts: ["Airflow로 어떤 배치를 돌려 보셨나요?"],
       company: context.company,

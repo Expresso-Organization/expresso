@@ -43,6 +43,8 @@ export const EDITABLE_PATHS: Record<string, readonly string[]> = {
 };
 
 export interface EditContext {
+  /** 사용량을 남길 사용자. 사용자가 없는 작업만 null이다. */
+  userId: string | null;
   instruction: string;
   block: {
     kind: string;
@@ -175,6 +177,7 @@ export class AiBlockEditor implements BlockEditor {
             promptVersion: EDIT_PROMPT_VERSION,
           },
           PortfolioEditDraftSchema,
+          { userId: context.userId },
         );
         const found = complaints(data.patches, context, paths);
         if (found.length > 0) throw new BlockEditError(found.join(", "));

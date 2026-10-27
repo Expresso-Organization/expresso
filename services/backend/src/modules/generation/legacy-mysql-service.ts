@@ -121,6 +121,7 @@ export class GenerationService {
     try {
       const titles = new Map(context.sections.map((section) => [section.recipeSectionId, section.title]));
       const design: LayoutDesignContext = {
+        userId: job.user_id,
         // 블록 번호는 `output.blocks`의 자리다 — 아래 적재 순서와 같아야
         // 초안이 가리킨 번호가 실제 블록에 닿는다.
         sections: sectionIds.map((sectionId) => ({
@@ -339,6 +340,7 @@ export class GenerationService {
       if (writer.usesContract) await this.#consent?.require(job.user_id, "generation");
       const subject = await this.#subject(job);
       const context = buildWriterContext({
+        userId: job.user_id,
         items,
         evidence,
         subject,

@@ -28,7 +28,7 @@ const DRAFT = {
 };
 
 /** 지면이 소독 · 근거 대조를 지나되 수치는 없는, 가장 순한 입력. */
-const context: PageGenerationContext = {
+const context: PageGenerationContext = { userId: null,
   portfolioPlan: null,
   sections: [{ title: "소개", purpose: "누구인지", goal: "", points: [], targetLength: 200 }],
   evidence: [{ label: "기록", text: "박민재는 백엔드를 만든다." }],

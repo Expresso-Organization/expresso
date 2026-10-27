@@ -57,6 +57,8 @@ export interface PageMedia {
 }
 
 export interface PageGenerationContext {
+  /** 사용량을 남길 사용자. 사용자가 없는 작업만 null이다. */
+  userId: string | null;
   author?: { name: string };
   structuredContent?: StructuredPortfolioContent;
   /** 1단계에서 보존한 편집 가능한 맥락 초안. */
@@ -369,8 +371,8 @@ export class AiPageGenerator implements PageGenerator {
       },
       PageDraftSchema,
       sink
-        ? { onPartial: (text) => sink.delta(text), onThinking: (tokens) => sink.thinking(tokens) }
-        : {},
+        ? { userId: context.userId, onPartial: (text) => sink.delta(text), onThinking: (tokens) => sink.thinking(tokens) }
+        : { userId: context.userId },
     );
 
     const clean = sanitizePage(data);

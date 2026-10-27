@@ -41,6 +41,8 @@ export const InsightNoteSchema = z.strictObject({
 export type InsightNote = z.infer<typeof InsightNoteSchema>;
 
 export interface InsightContext {
+  /** 사용량을 남길 사용자. 사용자가 없는 작업만 null이다. */
+  userId: string | null;
   period: { start: string; end: string };
   sampleSize: number;
   /** 기간 합계. 키가 곧 evidenceMetrics에 쓸 수 있는 이름이다. */
@@ -152,6 +154,7 @@ export class AiInsightWriter implements InsightWriter {
             promptVersion: INSIGHT_PROMPT_VERSION,
           },
           InsightNoteSchema,
+          { userId: context.userId },
         );
         const found = complaints(data, context);
         if (found.length > 0) throw new InsightDraftError(found.join(", "));

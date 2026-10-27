@@ -39,7 +39,7 @@ describe("search interpreters", () => {
       { field: "technology", value: "UnknownTech", quote: "UnknownTech" },
       { field: "technology", value: "python", quote: "Python" },
     ] }]);
-    await expect(new AiSearchInterpreter(client).interpret(query)).resolves.toEqual([
+    await expect(new AiSearchInterpreter(client).interpret(query, null)).resolves.toEqual([
       { field: "location", value: "서울", enabled: true, confidence: 0.85 },
       { field: "experience", value: 3, enabled: true, confidence: 0.9 },
       { field: "technology", value: "typescript", enabled: true, confidence: 0.95 },
@@ -58,7 +58,7 @@ describe("search interpreters", () => {
       { field: "location", value: "경기", quote: "판교" },
       { field: "role", value: "프론트엔드", quote: "프론트엔드" },
     ] }]);
-    await expect(new AiSearchInterpreter(client).interpret("판교 프론트엔드")).resolves.toEqual([
+    await expect(new AiSearchInterpreter(client).interpret("판교 프론트엔드", null)).resolves.toEqual([
       { field: "location", value: "판교", enabled: true, confidence: 0.85 },
       { field: "role", value: "프론트엔드", enabled: true, confidence: 0.9 },
     ]);
@@ -68,7 +68,7 @@ describe("search interpreters", () => {
     const client = new StubAiClient([{ conditions: [
       { field: "location", value: "부산", quote: "부산 강서" },
     ] }]);
-    await expect(new AiSearchInterpreter(client).interpret("부산 강서 백엔드")).resolves.toEqual([
+    await expect(new AiSearchInterpreter(client).interpret("부산 강서 백엔드", null)).resolves.toEqual([
       { field: "location", value: "부산", enabled: true, confidence: 0.85 },
     ]);
   });
@@ -78,7 +78,7 @@ describe("search interpreters", () => {
       new AiError("AI_INVALID_OUTPUT", "search_interpret", "invalid"),
       { conditions: [{ field: "technology", value: "TypeScript", quote: "TypeScript" }] },
     ]);
-    await expect(new AiSearchInterpreter(client).interpret("TypeScript")).resolves.toEqual([
+    await expect(new AiSearchInterpreter(client).interpret("TypeScript", null)).resolves.toEqual([
       { field: "technology", value: "typescript", enabled: true, confidence: 0.95 },
     ]);
     expect(client.calls).toHaveLength(2);
@@ -86,13 +86,13 @@ describe("search interpreters", () => {
 
   it.each(["AI_TIMEOUT", "AI_RATE_LIMITED", "AI_UNAVAILABLE"] as const)("%s이면 빈 조건으로 반환한다", async (code) => {
     const client = new StubAiClient([new AiError(code, "search_interpret", "unavailable")]);
-    await expect(new AiSearchInterpreter(client).interpret("TypeScript")).resolves.toEqual([]);
+    await expect(new AiSearchInterpreter(client).interpret("TypeScript", null)).resolves.toEqual([]);
     expect(client.calls).toHaveLength(1);
   });
 
   it("두 번째 응답도 잘못되면 빈 조건으로 반환한다", async () => {
     const client = new StubAiClient(Array.from({ length: 2 }, () => new AiError("AI_INVALID_OUTPUT", "search_interpret", "invalid")));
-    await expect(new AiSearchInterpreter(client).interpret("TypeScript")).resolves.toEqual([]);
+    await expect(new AiSearchInterpreter(client).interpret("TypeScript", null)).resolves.toEqual([]);
     expect(client.calls).toHaveLength(2);
   });
 
@@ -101,14 +101,14 @@ describe("search interpreters", () => {
       { conditions: [{ field: "technology", value: "TypeScript", quote: "TypeScript" }] },
     ]);
     const interpreter = new AiSearchInterpreter(client);
-    const first = await interpreter.interpret("TypeScript 백엔드");
+    const first = await interpreter.interpret("TypeScript 백엔드", null);
     // 대소문자·공백만 다른 검색어도 같은 해석으로 본다.
-    const second = await interpreter.interpret("  typescript   백엔드 ");
+    const second = await interpreter.interpret("  typescript   백엔드 ", null);
     expect(second).toEqual(first);
     expect(client.calls).toHaveLength(1);
     // 돌려준 배열을 고쳐도 캐시가 오염되지 않는다.
     second[0]!.enabled = false;
-    await expect(interpreter.interpret("TypeScript 백엔드")).resolves.toEqual(first);
+    await expect(interpreter.interpret("TypeScript 백엔드", null)).resolves.toEqual(first);
   });
 
   it("동시에 들어온 같은 검색어는 모델 호출 하나를 나눠 쓴다", async () => {
@@ -116,7 +116,7 @@ describe("search interpreters", () => {
       { conditions: [{ field: "technology", value: "TypeScript", quote: "TypeScript" }] },
     ]);
     const interpreter = new AiSearchInterpreter(client);
-    const [a, b] = await Promise.all([interpreter.interpret("TypeScript"), interpreter.interpret("TypeScript")]);
+    const [a, b] = await Promise.all([interpreter.interpret("TypeScript", null), interpreter.interpret("TypeScript", null)]);
     expect(a).toEqual(b);
     expect(client.calls).toHaveLength(1);
   });
@@ -127,8 +127,8 @@ describe("search interpreters", () => {
       { conditions: [{ field: "technology", value: "TypeScript", quote: "TypeScript" }] },
     ]);
     const interpreter = new AiSearchInterpreter(client);
-    await expect(interpreter.interpret("TypeScript")).resolves.toEqual([]);
-    await expect(interpreter.interpret("TypeScript")).resolves.toEqual([
+    await expect(interpreter.interpret("TypeScript", null)).resolves.toEqual([]);
+    await expect(interpreter.interpret("TypeScript", null)).resolves.toEqual([
       { field: "technology", value: "typescript", enabled: true, confidence: 0.95 },
     ]);
     expect(client.calls).toHaveLength(2);
@@ -139,13 +139,13 @@ describe("search interpreters", () => {
     const answer = { conditions: [{ field: "technology", value: "TypeScript", quote: "TypeScript" }] };
     const client = new StubAiClient([answer, answer, answer, answer]);
     const interpreter = new AiSearchInterpreter(client, { cacheTtlMs: 1_000, cacheMaxEntries: 1, now: () => now });
-    await interpreter.interpret("TypeScript");
+    await interpreter.interpret("TypeScript", null);
     now = 1_000;
-    await interpreter.interpret("TypeScript");
+    await interpreter.interpret("TypeScript", null);
     expect(client.calls).toHaveLength(2);
     // 항목이 하나뿐이라 다른 검색어가 들어오면 앞의 것이 밀려난다.
-    await interpreter.interpret("TypeScript 서울");
-    await interpreter.interpret("TypeScript");
+    await interpreter.interpret("TypeScript 서울", null);
+    await interpreter.interpret("TypeScript", null);
     expect(client.calls).toHaveLength(4);
   });
 });

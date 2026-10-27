@@ -22,9 +22,11 @@ date: 2026-10-27
 | `packages/database/src/documents/identity.ts` | `PlanDoc` — `monthlyCredits` · `displayName` · `monthlyPriceKrw` · `sortOrder` 추가, `generationQuota` 삭제 |
 | `packages/database/src/collections.ts` | `aiUsageEvents` 등록 |
 | `packages/database/src/mongodb-migrations/0021/migration.ts` | 신규 — 컬렉션 · 인덱스 · 플랜 세 건 갱신 |
-| `packages/database/src/mongodb-migrations/0001/schema.json` | `plans` 검증 규칙 |
 | `packages/database/src/mongo-migrations.ts` | 0021 등록 |
 | `packages/database/src/migrations.test.ts` | 개수 15 → 16 |
+| `packages/database/src/mongo-build.mjs` | dist에 0021 원본을 복사 — 체크섬이 dist에서 원본을 읽는다 |
+| `packages/database/src/schema.test.ts` | 적용 목록에 0021 · `generationQuota` 대신 `monthlyCredits` |
+| `services/backend/src/platform/outbox.integration.test.ts` | 같은 교체 |
 
 ### 계측
 
@@ -45,9 +47,13 @@ date: 2026-10-27
 | `services/backend/src/modules/entitlements/service.ts` | 크레딧 집계로 판단 |
 | `services/backend/src/modules/entitlements/public.ts` | 크레딧 환산 함수 |
 | `services/backend/src/modules/entitlements/{service,entitlements.integration}.test.ts` | 크레딧 기준으로 다시 |
-| `services/backend/src/modules/generation/mongo-usage.ts` | 한도와 무관해졌다는 주석 |
+| `services/backend/src/modules/generation/mongo-usage.ts` | 한도 판단을 걷어내고 생성 횟수만 센다 |
 | `services/backend/src/modules/usage/{index,service,routes}.ts` | 신규 — 월 사용량 집계 |
 | `services/backend/src/modules/usage/usage.integration.test.ts` | 신규 |
+| `services/backend/src/modules/usage/routes.ts` | `GET /v1/me/usage` · `GET /v1/plans` |
+| `services/backend/src/platform/agent/runtime.ts` | 에이전트 채팅은 `AiClient`를 지나지 않는다. 결과 메시지의 `modelUsage`를 모델마다 남긴다 |
+| `services/backend/src/modules/generation/service.ts` | 한도 판단을 `submit`으로 — 완료 시점에서 다시 막으면 토큰을 쓴 지면을 버린다 |
+| `services/backend/src/modules/*/legacy-mysql-service.ts` 8곳 | 타입 검사를 지나도록 `userId`를 넘긴다 |
 
 ### 화면
 
@@ -61,14 +67,18 @@ date: 2026-10-27
 | `services/web/src/app/(app)/account/loading.tsx` | 세 구획 대기 모양 |
 | `services/web/src/app/(app)/account/page.module.css` | 차트 · `.plan*` · `.billing*` |
 | `services/web/src/styles/tokens.css` | `--ex-chart-1`~`4` 역할 토큰 · 두 어두운 지면 블록 |
-| `services/web/src/lib/sample/site.ts` | `ACCOUNT.plans` 정리, `billing` 유지 |
+| `services/web/src/components/shell/{Sidebar,SidebarSkeleton}.tsx` | 「이번 달 크레딧」 |
+| `services/web/src/app/(app)/jobs/page.tsx` | 같은 문구 |
+| `services/web/src/app/(app)/brew/[brewId]/materials/MaterialPicker.tsx` | 칸 → 비율 막대 · 문구 |
+| `services/web/src/app/(app)/edit/[portfolioId]/Editor.tsx` | 「생성 1회」 문구 |
+| `services/web/src/lib/sample/site.ts` | `ACCOUNT` 삭제 — 요금제는 `GET /v1/plans`, 결제 줄은 현재 플랜에서 만든다 |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
 
 ## 작업 순서
 
 1. 계약 `usage.ts`를 쓴다. — `pnpm --filter @expresso/contracts typecheck` 통과.
-2. 문서 타입 · 컬렉션 · 마이그레이션 0021 · `schema.json`을 고친다. —
+2. 문서 타입 · 컬렉션 · 마이그레이션 0021을 쓴다. —
    `pnpm db:migrate`가 `applied 0021_ai_usage_and_plan_credits`를 찍고
    `pnpm --filter @expresso/database test` 통과.
 3. `AiUsageSink` · `MeteredAiClient`를 쓰고 `createAiClient`에 연결한다. —

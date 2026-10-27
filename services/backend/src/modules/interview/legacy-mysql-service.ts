@@ -132,6 +132,7 @@ export class InterviewService {
 
     const cleaned = await withTimeout(
       this.#cleaner.clean({
+        userId,
         question: context.question_text,
         transcript: context.transcript,
         // 이미 정리된 적이 있으면 그 위에 덧쓴다. 원문 그대로면 참고할 것이 없다.
@@ -319,6 +320,7 @@ export class InterviewService {
     ];
 
     const context: QuestionContext = {
+      userId,
       options,
       company: subject[0]
         ? {

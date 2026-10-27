@@ -16,8 +16,8 @@ date: 2026-10-27
 - [ ] AI 호출이 끝나면 `ai_usage_events`에 한 건이 쌓인다 — `userId`(없으면 `null`) ·
       `contract` · `model` · 입력 · 출력 · 캐시 읽기 · 캐시 생성 토큰 · `costUsd` ·
       `durationMs` · `createdAt`.
-- [ ] 호출이 실패해도 토큰을 쓴 만큼 기록한다. 기록이 실패해도 호출 결과는 그대로
-      돌아간다 — 계측이 기능을 막지 않는다.
+- [ ] 성공한 호출만 기록한다. 화면 정의서가 "실패한 작업은 차감하지 않습니다"라고
+      정한다. 기록이 실패해도 호출 결과는 그대로 돌아간다 — 계측이 기능을 막지 않는다.
 - [ ] `AI_PROVIDER=off`면 호출이 없으므로 기록도 없다.
 - [ ] 기존 모듈의 호출 코드가 결과를 쓰는 방식은 바뀌지 않는다.
 
@@ -27,6 +27,9 @@ date: 2026-10-27
 - [ ] 1 크레딧 = 10,000 토큰(입력 + 출력 + 캐시 생성 + 캐시 읽기).
 - [ ] `entitlements.check("portfolio.generate")`가 이번 달 누적 크레딧과
       `monthlyCredits`를 비교한다. 넘었으면 `QUOTA_EXHAUSTED`.
+- [ ] 세 플랜 모두 크레딧 한도가 걸린다. `plans.features`에서 `generation.unlimited`를
+      지우고 서비스의 `plan.code !== "free"` 대체 규칙을 지운다. 정의서가 Double Shot 계정에
+      "620 / 1,000"을 그린다 — 유료 플랜도 한도가 있다.
 - [ ] `usage`의 `used` · `limit` · `remaining`은 크레딧 단위다.
 - [ ] 생성 횟수로 막는 길이 남아 있지 않다 — `usage_counters`와
       `generation_usage_ledger`는 기록으로 남기되 한도 판단에 쓰지 않는다.
@@ -38,6 +41,9 @@ date: 2026-10-27
 - [ ] 날짜별 사용 추이(토큰 종류별로 쌓음) · 기능별 사용량 · 모델별 사용량 세 그림이 선다.
 - [ ] 이번 달 호출이 없으면 세 그림 자리에 "이번 달 사용 없음" 한 줄이 선다.
 - [ ] 설정에 「요금제」 · 「결제」 구획이 있고 `ACCOUNT_SECTIONS`에 들어 있다.
+- [ ] 횟수를 전제로 쓴 화면 문구가 크레딧으로 바뀐다 — 사이드바 · 사이드바 대기 모양 ·
+      공고 화면 · 재료 고르기 · 편집기의 「생성 1회」. 한도만큼 칸을 그리던 두 자리
+      (재료 고르기 · 설정)는 비율 막대가 된다. 1,000칸을 그리지 않는다.
 - [ ] `pnpm typecheck` · `pnpm test` · `pnpm test:infra`가 통과한다.
 
 ## 설계
@@ -68,7 +74,11 @@ platform/ai/usage-sink.ts  AiUsageSink 인터페이스 { record(event): Promise<
 
 - 컬렉션 `ai_usage_events` 신설. 인덱스 `{ userId: 1, createdAt: -1 }`.
 - `plans`에 `monthlyCredits` · `displayName` · `monthlyPriceKrw` · `sortOrder`를 더하고
-  `generationQuota`를 지운다. `0001/schema.json`의 `plans` 규칙도 함께 고친다.
+  `generationQuota`를 지운다. `features["generation.unlimited"]`를 지운다.
+- `0001`은 고치지 않는다. `loadMongoMigrations`가 `0001`의 `schema.json`을 체크섬에
+  넣으므로 고치면 이미 적용한 데이터베이스에서 마이그레이션이 "modified"로 멈춘다.
+  0013 · 0020처럼 0021이 `collMod`로 `plans` 검증 규칙을 바꾼다. 순서는 검증 규칙 →
+  값 `$set` · `$unset` 이다. 규칙을 먼저 바꾸지 않으면 `$unset`이 엄격 검증에 걸린다.
 
 | code | displayName | monthlyPriceKrw | monthlyCredits | sortOrder |
 |---|---|---|---|---|
@@ -89,8 +99,11 @@ platform/ai/usage-sink.ts  AiUsageSink 인터페이스 { record(event): Promise<
 creditsUsed = ceil(sum(input + output + cacheRead + cacheCreation) / 10000)
 ```
 
-기간은 지금 쓰는 `kstMonthlyPeriod(at)` 그대로다. `generation.unlimited` 기능 값이
-켜진 플랜은 지금처럼 한도가 없다(`limit: null`).
+기간은 지금 쓰는 `kstMonthlyPeriod(at)` 그대로다. 토큰을 기간 전체에서 먼저 더하고
+올림은 한 번만 한다. 호출마다 올리면 작은 호출 50건이 50 크레딧이 된다.
+
+`limit: null`은 플랜에 `monthlyCredits`가 없을 때만 나온다. 0021 이후에는 세 플랜
+모두 값이 있다.
 
 ### 읽기 API — `modules/usage` (신규)
 
@@ -101,8 +114,16 @@ GET /v1/me/usage          이번 달 요약 + 날짜별 · 계약별 · 모델�
 한 번에 돌려준다. 화면이 세 그림과 요약을 함께 그리므로 호출을 나눌 이유가 없다.
 집계는 `$group`으로 데이터베이스에서 한다.
 
-계약: `packages/contracts/src/usage.ts` — `UsageSummarySchema` ·
-`UsageTrendPointSchema` · `UsageByKeySchema` · `MonthlyUsageResponseSchema`.
+계약: `packages/contracts/src/usage.ts` — 날짜별 점은 토큰 네 종류를 따로 담는다(쌓은
+막대를 그리려면 합계만으로는 안 된다). 날짜는 `kstMonthlyPeriod`와 같은 한국 시각
+기준으로 나눈다.
+
+```
+GET /v1/plans            공개 플랜 목록 — 이름 · 월 가격 · 월 크레딧 · 기능 값
+```
+
+요금제 카드의 기능 줄은 `features`의 켜진 값에서 만든다. 집행하지 않는 한도(동시 배포
+개수)는 적지 않는다.
 
 ### 화면 — 사용량 구획
 
@@ -165,14 +186,22 @@ GET /v1/me/usage          이번 달 요약 + 날짜별 · 계약별 · 모델�
   (`anthropic.ts:176`). 비용을 화면의 기준값으로 쓰지 않는다 — 한도는 토큰으로 센다.
 - 캐시 읽기 토큰이 평균 81,423으로 입력 토큰(평균 8)보다 네 자리 크다. 입력만 세면
   실제 사용량과 전혀 다른 값이 된다.
-- `entitlements`가 `usageCounters`를 쓰지 않게 되면 `generation/mongo-usage.ts`의
-  차감·환불 경로가 한도와 무관해진다. 그 코드는 기록으로 남기되, 한도 판단에서
-  빠졌다는 것을 주석에 적는다.
+- 지금은 `submit`에 한도 검사가 없고, 끝난 작업을 `chargeMongoGenerationUsage`가
+  막는다. 크레딧 기준에서는 끝난 작업의 토큰이 이미 합계에 들어 있어서, 한도 근처에서
+  시작한 생성이 다 만들어진 뒤 버려진다. 한도 검사를 `submit`으로 옮기고
+  `chargeMongoGenerationUsage`는 생성 횟수만 센다. 막히면 403이다 — 웹은 402 · 403을
+  한도 문구로 받는다.
 - `entitlements.integration.test.ts`와 `service.test.ts`가 횟수 기준으로 쓰여 있다.
   크레딧 기준으로 다시 쓴다.
 - `AiCallOptions`에 `userId`를 더해도 넘기지 않으면 타입이 통과한다. 호출 지점
   14곳을 `git grep "\.complete("`으로 세어 하나씩 확인한다.
 - `MeteredAiClient`가 던지면 호출이 실패한다. `record`는 기다리지 않고 띄워 보낸다.
+- `MeteredAiClient`는 `createAiClient`가 돌려줄 마지막 클라이언트를 감싼다. 계약별
+  경로를 하나씩 감싸지 않는다. `streams`를 그대로 넘긴다.
+- 생성 작업이 중간에 실패하면 그 전에 성공한 호출은 기록에 남는다. 작업 단위 환불은
+  이번 범위가 아니다.
+- 1–6단계 커밋만 머지하면 재료 고르기가 크레딧 수만큼 칸을 그린다. 두 커밋을 한 PR로
+  낸다.
 - 분석 화면의 `formatDate`는 연도를 버린다(`slice(5)`). 사용량 추이는 이번 달
   안이므로 같은 형식이 맞다.
 

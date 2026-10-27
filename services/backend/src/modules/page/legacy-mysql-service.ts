@@ -277,6 +277,7 @@ export class PageService {
     `;
 
     return {
+      userId,
       portfolioPlan: recipe.portfolio_plan
         ? PortfolioPlanSchema.parse(recipe.portfolio_plan)
         : null,

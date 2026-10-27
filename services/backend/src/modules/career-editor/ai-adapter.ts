@@ -6,6 +6,8 @@ import { z } from "zod";
 import type { AiClient } from "../../platform/ai/client.js";
 
 export interface AiProposalGenerationInput {
+  /** 사용량을 남길 사용자. */
+  readonly userId: string;
   readonly recordId: string;
   readonly documentVersion: number;
   readonly selectionBlockIds: readonly string[];
@@ -64,7 +66,7 @@ export class AiClientProposalAdapter implements AiProposalAdapter {
       promptVersion: 1,
       system: "선택된 커리어 기록 블록만 고치는 JSON 변경 제안을 작성합니다. 선택 밖의 블록 ID를 만들거나 원문에 없는 사실과 수치를 추가하지 마십시오.",
       prompt,
-    }, AiProposalGenerationResultSchema);
+    }, AiProposalGenerationResultSchema, { userId: input.userId });
     if (input.signal.aborted) throw new DOMException("AI proposal cancelled", "AbortError");
     return result.data;
   }

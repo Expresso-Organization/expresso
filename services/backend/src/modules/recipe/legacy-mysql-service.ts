@@ -365,6 +365,7 @@ export class RecipeService {
       })),
     ];
     const context: PlannerContext = {
+      userId,
       sources,
       company: subject[0]
         ? {

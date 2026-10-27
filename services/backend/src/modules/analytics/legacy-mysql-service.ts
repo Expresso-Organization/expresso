@@ -319,6 +319,7 @@ export class AnalyticsService {
       ]);
 
       const note = await withTimeout(this.#writer.write({
+        userId,
         period: { start, end },
         sampleSize,
         metrics: Object.fromEntries(metricMap),

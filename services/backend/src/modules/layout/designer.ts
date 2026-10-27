@@ -51,6 +51,8 @@ export interface LayoutSectionContext {
 }
 
 export interface LayoutDesignContext {
+  /** 사용량을 남길 사용자. 사용자가 없는 작업만 null이다. */
+  userId: string | null;
   /** 배치 순서 그대로. 프롬프트의 번호가 이 배열의 자리다. */
   sections: LayoutSectionContext[];
   company: {
@@ -244,6 +246,7 @@ export class AiLayoutDesigner implements LayoutDesigner {
             promptVersion: LAYOUT_PROMPT_VERSION,
           },
           LayoutDraftCandidatesSchema,
+          { userId: context.userId },
         );
 
         const incomplete = data.candidates.flatMap((draft, index) => {

@@ -84,3 +84,23 @@ export interface GenerationUsageLedgerDoc {
   reason: string;
   createdAt: Date;
 }
+
+/**
+ * AI 호출 한 건의 사용량.
+ *
+ * 성공한 호출만 쌓는다(화면 정의서: 실패한 작업은 차감하지 않는다). 사용자가 없는
+ * 작업(공고 적재)은 `userId`가 null이다.
+ */
+export interface AiUsageEventDoc {
+  _id: string;
+  userId: string | null;
+  contract: string;
+  model: string;
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  cacheCreationTokens: number;
+  costUsd: number | null;
+  durationMs: number;
+  createdAt: Date;
+}

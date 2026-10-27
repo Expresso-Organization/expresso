@@ -28,7 +28,7 @@ export class InterviewService implements InterviewApi {
     const expectedRecordVersion = answer.recordVersion;
     const [question, record] = await Promise.all([db.questions.findOne({ _id: answer.questionId, userId }), db.careerRecords.findOne({ _id: answer.createdRecordId, userId, origin: "interview", deletedAt: null })]);
     if (!question || !record) return;
-    const cleaned = await withTimeout(this.cleaner.clean({ question: question.text, transcript: answer.transcript, existing: record.status === "draft" ? null : { title: record.title, bodyMd: record.bodyMd } }), 420_000, "record cleaner");
+    const cleaned = await withTimeout(this.cleaner.clean({ userId, question: question.text, transcript: answer.transcript, existing: record.status === "draft" ? null : { title: record.title, bodyMd: record.bodyMd } }), 420_000, "record cleaner");
     await inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId);
       const collections = mongoCollections(tx.db); const options = { session: tx.session }; const now = new Date();
@@ -68,6 +68,7 @@ export class InterviewService implements InterviewApi {
       return [{ ...requirement, coverage, quote: span.data }];
     });
     const context: QuestionContext = {
+      userId,
       options: [
         ...requirementRows.filter(({ coverage }) => coverage !== "covered").map((row) => ({ basis: { type: "requirement" as const, requirementId: row._id, coverage: row.coverage as "missing" | "partial", evidence: row.quote }, label: `[공고 요건 · ${row.coverage === "missing" ? "안 채움" : "일부만"}] ${row.label}`, detail: row.quote, mentions: posting ? countMentions(row.label, posting.descriptionRaw) : null })),
         ...orderedRecords.filter((record) => !hasMetric(recordText(record))).map((record) => ({ basis: { type: "record_gap" as const, recordId: record._id, gap: "metric" as const, evidence: record.title }, label: `[기록 · 수치 없음] ${record.title}`, detail: record.bodyMd, mentions: null })),

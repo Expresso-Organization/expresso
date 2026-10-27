@@ -44,6 +44,8 @@ export interface QuestionBasisOption {
 }
 
 export interface QuestionContext {
+  /** 사용량을 남길 사용자. 사용자가 없는 작업만 null이다. */
+  userId: string | null;
   options: QuestionBasisOption[];
   company: { name: string; industry: string | null; toneSummary: string | null } | null;
   jobTitle: string | null;
@@ -167,6 +169,7 @@ export class AiQuestionWriter implements QuestionWriter {
             promptVersion: QUESTION_PROMPT_VERSION,
           },
           InterviewQuestionDraftListSchema,
+          { userId: context.userId },
         );
 
         const seen = new Set<number>();
@@ -201,6 +204,7 @@ export class AiQuestionWriter implements QuestionWriter {
   }
 
   async rewrite(input: {
+    userId: string | null;
     option: QuestionBasisOption;
     previousTexts: string[];
     company: QuestionContext["company"];
@@ -220,6 +224,7 @@ export class AiQuestionWriter implements QuestionWriter {
         promptVersion: QUESTION_PROMPT_VERSION,
       },
       InterviewQuestionRewriteSchema,
+      { userId: input.userId },
     );
     return data;
   }

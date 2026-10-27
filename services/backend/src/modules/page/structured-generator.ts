@@ -314,7 +314,7 @@ export class StructuredPageGenerator implements PageGenerator {
               prompt,
             },
             StructuredContentModelSchema,
-            sink ? { onThinking: (tokens) => sink.thinking(tokens) } : {},
+            sink ? { userId: context.userId, onThinking: (tokens) => sink.thinking(tokens) } : { userId: context.userId },
           );
           usages.push(result.usage);
           data = result.data;
@@ -364,7 +364,7 @@ export class StructuredPageGenerator implements PageGenerator {
           ...(context.modelTier ? { modelTier: context.modelTier } : {}),
         },
         schema,
-        sink ? { onThinking: (tokens) => sink.thinking(tokens) } : {},
+        sink ? { userId: context.userId, onThinking: (tokens) => sink.thinking(tokens) } : { userId: context.userId },
       );
       usages.push(result.usage);
       try {
@@ -427,6 +427,7 @@ export class StructuredPageGenerator implements PageGenerator {
       const result = await this.ai.complete(
         { contract, system, prompt, promptVersion: PAGE_PROMPT_VERSION, ...(input.modelTier ? { modelTier: input.modelTier } : {}), ...(images ? { images } : {}) },
         schema,
+        { userId: input.userId },
       );
       usages.push(result.usage);
       return result.data;
@@ -512,6 +513,8 @@ export class StructuredPageGenerator implements PageGenerator {
 
 /** 다듬기 입력입니다. 저장된 초안에서 만듭니다. */
 export interface PageRefineInput extends SetupContext {
+  /** 사용량을 남길 사용자. */
+  userId: string | null;
   snapshot: { spec: unknown; content: unknown };
   instruction?: string | undefined;
   modelTier?: AiModelTier | undefined;

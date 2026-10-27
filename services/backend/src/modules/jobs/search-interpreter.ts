@@ -32,7 +32,8 @@ import { TECHNOLOGIES, CANONICAL } from "./search-parser.js";
 export const SEARCH_INTERPRET_PROMPT_VERSION = 3;
 
 export interface SearchInterpreter {
-  interpret(query: string): Promise<JobSearchCondition[]>;
+  /** `userId`는 사용량을 남길 사용자다. 캐시에서 답하면 호출이 없어 아무에게도 잡히지 않는다. */
+  interpret(query: string, userId: string | null): Promise<JobSearchCondition[]>;
 }
 
 type AiField = Exclude<JobSearchField, "company_size">;
@@ -164,7 +165,7 @@ export class AiSearchInterpreter implements SearchInterpreter {
     this.#now = options.now ?? Date.now;
   }
 
-  async interpret(query: string): Promise<JobSearchCondition[]> {
+  async interpret(query: string, userId: string | null): Promise<JobSearchCondition[]> {
     const key = `${SEARCH_INTERPRET_PROMPT_VERSION}\0${query.normalize("NFKC").toLocaleLowerCase("en-US").trim().replace(/\s+/g, " ")}`;
 
     const cached = this.#cache.get(key);
@@ -178,7 +179,7 @@ export class AiSearchInterpreter implements SearchInterpreter {
 
     let pending = this.#inFlight.get(key);
     if (!pending) {
-      pending = this.#interpretUncached(query, key).finally(() => this.#inFlight.delete(key));
+      pending = this.#interpretUncached(query, key, userId).finally(() => this.#inFlight.delete(key));
       this.#inFlight.set(key, pending);
     }
     const conditions = await pending;
@@ -194,7 +195,7 @@ export class AiSearchInterpreter implements SearchInterpreter {
     }
   }
 
-  async #interpretUncached(query: string, key: string): Promise<JobSearchCondition[]> {
+  async #interpretUncached(query: string, key: string, userId: string | null): Promise<JobSearchCondition[]> {
     const normalizedQuery = query.normalize("NFKC").toLocaleLowerCase("en-US");
 
     // AI 호출은 실패할 수 있다(레이트 리밋·타임아웃·스키마 이탈) — 그런데
@@ -216,6 +217,7 @@ export class AiSearchInterpreter implements SearchInterpreter {
             promptVersion: SEARCH_INTERPRET_PROMPT_VERSION,
           },
           SearchInterpretAiOutputSchema,
+          { userId },
         );
         data = result.data;
         break;

@@ -1,4 +1,6 @@
 import { type EntitlementCapability, type PlanCode } from "@expresso/contracts";
+import { mongoCollections } from "@expresso/database";
+import type { ClientSession, Db } from "mongodb";
 
 export interface KstMonthlyPeriod {
   periodStart: string;
@@ -77,6 +79,30 @@ export function kstMonthlyPeriod(at: Date): KstMonthlyPeriod {
 }
 
 
+
+/** 기간이 시작하는 순간. `periodStart`는 한국 시각 1일 0시다. */
+export function kstPeriodStartsAt(period: KstMonthlyPeriod): Date {
+  return new Date(Date.parse(`${period.periodStart}T00:00:00.000Z`) - KST_OFFSET_MS);
+}
+
+/**
+ * 기간 안에서 한 사용자가 쓴 토큰 합계.
+ *
+ * 네 종류를 모두 더한다. 캐시 읽기가 입력보다 네 자리 크다 — 측정한 생성 한 번이
+ * 입력 8 · 캐시 읽기 81,423 토큰이었다. 입력만 세면 실제 사용량과 전혀 다른 값이 된다.
+ */
+export async function tokensUsedInPeriod(
+  db: Db,
+  userId: string,
+  period: KstMonthlyPeriod,
+  options: { session?: ClientSession } = {},
+): Promise<number> {
+  const [row] = await mongoCollections(db).aiUsageEvents.aggregate<{ total: number }>([
+    { $match: { userId, createdAt: { $gte: kstPeriodStartsAt(period), $lt: new Date(period.resetsAt) } } },
+    { $group: { _id: null, total: { $sum: { $add: ["$inputTokens", "$outputTokens", "$cacheReadTokens", "$cacheCreationTokens"] } } } },
+  ], options).toArray();
+  return row?.total ?? 0;
+}
 
 export function configuredBoolean(
   features: Record<string, unknown>,
