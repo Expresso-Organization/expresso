@@ -305,8 +305,8 @@ describe("시각 부품과 지면 변화", () => {
     (spec.elements["section-a"] as { props: Record<string, unknown> }).props = { section: { $state: "/sectionById/a" }, scale: "lead", surface: "inverse", width: "bleed" };
     (spec.elements["section-b"] as { props: Record<string, unknown> }).props = { section: { $state: "/sectionById/b" }, scale: "standard", surface: "canvas", width: "content" };
     const { html, css } = renderStructuredPortfolio(spec, content, { design: clarity });
-    expect(html).toMatch(/<article id="section-a" class="xp-block xp-case" data-case-type="technical" data-scale="lead" data-surface="inverse" data-width="bleed" data-bleed="">/);
-    expect(html).toMatch(/<article id="section-b" class="xp-block xp-case" data-case-type="panel">/);
+    expect(html).toMatch(/<article id="section-a" class="xp-block xp-case" data-case-type="technical" data-scale="lead" data-surface="inverse" data-width="bleed" data-bleed="" data-xp-key="section-a">/);
+    expect(html).toMatch(/<article id="section-b" class="xp-block xp-case" data-case-type="panel" data-xp-key="section-b">/);
     for (const name of ["--xp-muted-field:", "--xp-muted-inverse:", "--xp-accent-inverse:"]) expect(css).toContain(name);
   });
 
@@ -322,12 +322,12 @@ describe("시각 부품과 지면 변화", () => {
     // 단계 번호는 배열 순서로 매깁니다.
     expect(html).toMatch(/xp-flow-num">01<[\s\S]*관찰[\s\S]*xp-flow-num">02<[\s\S]*설계[\s\S]*xp-flow-num">03<[\s\S]*검증/);
     expect(html).toContain('<ol class="xp-flow" data-count="3">');
-    expect(html).toContain('<figure class="xp-block xp-quote" data-surface="field"><blockquote class="xp-quote-text"><p>멈추지 않는 경로가 먼저입니다.</p>');
+    expect(html).toContain('<figure class="xp-block xp-quote" data-surface="field" data-xp-key="quote-1"><blockquote class="xp-quote-text"><p>멈추지 않는 경로가 먼저입니다.</p>');
     expect(html).toContain('<a href="#section-a">창고 로봇 경로 재설계</a>');
 
     const showcase = withNodes({ "section-a": { type: "CaseShowcase", props: { section: { $state: "/sectionById/a" }, width: "bleed" }, children: [] } }, ["intro", "index", "section-a", "section-b", "career", "evidence"]);
     const shown = renderStructuredPortfolio(showcase, rich, { design: clarity }).html;
-    expect(shown).toMatch(/<article id="section-a" class="xp-block xp-case xp-showcase" data-case-type="showcase" data-width="bleed" data-bleed=""><figure class="xp-showcase-art"><img src="data:image\/png;base64,AAAA" alt="가상 회로 사진"/);
+    expect(shown).toMatch(/<article id="section-a" class="xp-block xp-case xp-showcase" data-case-type="showcase" data-width="bleed" data-bleed="" data-xp-key="section-a"><figure class="xp-showcase-art"><img src="data:image\/png;base64,AAAA" alt="가상 회로 사진"/);
   });
 
   it("큰 인용이 사례보다 앞에 있어도 사례 번호와 목차는 사례의 순서를 따른다", () => {

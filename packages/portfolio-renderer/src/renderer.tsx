@@ -29,7 +29,8 @@ import {
 } from "./library.js";
 import { STRUCTURED_PORTFOLIO_CSS } from "./styles.js";
 import { structuredCatalog } from "./catalog.js";
-import { KitContext, caseNumbers, firstRowId, kitCss, kitRegistry } from "./kit.js";
+import { ELEMENT_KEY_PROP, KitContext, caseNumbers, firstRowId, kitCss, kitRegistry } from "./kit.js";
+import { elementStyleCss } from "./editing.js";
 
 export { structuredCatalog };
 
@@ -474,6 +475,16 @@ function usesCollectedSources(spec: StructuredPortfolioSnapshot["spec"]): boolea
   );
 }
 
+/** 요소 props에 Spec 키를 넣은 사본입니다. 키트가 그 키를 최상위 DOM의 `data-xp-key`로 답니다(`kit.tsx`). */
+function keyedSpec(spec: StructuredPortfolioSnapshot["spec"]): StructuredPortfolioSnapshot["spec"] {
+  return {
+    root: spec.root,
+    elements: Object.fromEntries(
+      Object.entries(spec.elements).map(([key, node]) => [key, { ...node, props: { ...node.props, [ELEMENT_KEY_PROP]: key } }]),
+    ) as StructuredPortfolioSnapshot["spec"]["elements"],
+  };
+}
+
 export type RenderStructuredOptions = {
   /** 키트 경로의 디자인 시스템 스펙입니다. 사용자 색 덮어쓰기는 호출하는 쪽이 이미 반영해 넘깁니다. */
   design?: DesignSystemSpecV2 | undefined;
@@ -508,7 +519,7 @@ export function renderStructuredPortfolio(
           <ActionProvider handlers={{}}>
             {design ? (
               <KitContext.Provider value={{ content: snapshot.content, evidenceTitles, design, caseNumbers: caseNumbers(snapshot.spec, snapshot.content), firstRowId: firstRowId(snapshot.spec) }}>
-                <Renderer spec={snapshot.spec} registry={kitRegistry} />
+                <Renderer spec={keyedSpec(snapshot.spec)} registry={kitRegistry} />
               </KitContext.Provider>
             ) : (
               <EvidenceTitles.Provider value={evidenceTitles}>
@@ -533,7 +544,8 @@ export function renderStructuredPortfolio(
       "지면이 저장 크기 제한을 넘었습니다. 내용을 줄여 주세요.",
     );
   if (design) {
-    const css = kitCss(design);
+    const styles = elementStyleCss(snapshot.spec);
+    const css = styles ? `${kitCss(design)}\n${styles}` : kitCss(design);
     if (css.length > PAGE_MAX_BYTES)
       throw new StructuredRenderError("PAGE_TOO_LARGE", "스타일이 저장 크기 제한을 넘었습니다.");
     return { html, css };
