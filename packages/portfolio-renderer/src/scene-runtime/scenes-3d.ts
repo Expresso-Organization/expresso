@@ -27,7 +27,30 @@ import type { Scene, SceneColors, SceneFactory, SceneFrame } from "./host.js";
  * 비어 있는 픽셀은 층의 CSS 바탕색(`--xp-bd-base`)이 그대로 보입니다.
  */
 
-/** Ashima Arts 3D 심플렉스 노이즈(MIT, github.com/ashima/webgl-noise)입니다. 표면 일렁임과 지형 높이에 씁니다. */
+/*! webgl-noise (github.com/ashima/webgl-noise) — 아래 NOISE 셰이더의 출처입니다.
+Copyright (C) 2011 by Ashima Arts (Simplex noise)
+Copyright (C) 2011-2016 by Stefan Gustavson (Classic noise and others)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+*/
+
+/** Ashima Arts 3D 심플렉스 노이즈입니다. 표면 일렁임과 지형 높이에 씁니다. 라이선스 고지는 위 주석이고, 묶은 파일 끝에도 남습니다. */
 const NOISE = `
 vec3 mod289(vec3 x){return x-floor(x*(1.0/289.0))*289.0;}
 vec4 mod289(vec4 x){return x-floor(x*(1.0/289.0))*289.0;}

@@ -76,8 +76,10 @@ import { MEDIA_ASSET_PATH_PREFIX } from "./media-path.js";
  * 부품과 지면 변화를 바꿀 수 있다.
  *
  * 15 — 설계 · 다듬기가 첫 화면 배경(intro의 backdrop)을 고른다. 프롬프트가 배경마다 쓰임을 알린다(`describeBackdrops`).
+ *
+ * 16 — 첫 화면 배경 목록에 포인터에 반응하는 장면 여섯 종(orb · terrain · knot · constellation · flow · ripple)과 그 쓰임을 더한다.
  */
-export const PAGE_PROMPT_VERSION = 15;
+export const PAGE_PROMPT_VERSION = 16;
 
 /**
  * 한 지면의 상한.
