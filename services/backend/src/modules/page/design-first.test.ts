@@ -120,6 +120,10 @@ describe("설계가 먼저 오는 생성", () => {
     expect(result.html).toContain('data-surface="inverse"');
     expect(result.html).toContain("xp-flow");
     expect(result.html).toContain("측정한 수치로만 개선을 말합니다.");
+    // 설계 모델이 고른 첫 화면 배경을 그대로 그립니다. 설계 프롬프트가 배경마다 쓰임을 알립니다.
+    expect(ai.calls[0]!.prompt).toContain("contour=등고선");
+    expect(structured.spec.elements.intro?.props).toMatchObject({ backdrop: "contour" });
+    expect(result.html).toContain('data-backdrop="contour"');
     expect(result.manifest.designPlan?.concept).toBe("성능 수치를 앞세운 지면");
     expect(result.manifest.calls?.map((call) => call.model)).toEqual(["opus-test", "sonnet-test"]);
     expect(result.manifest.timeline?.map((item) => item.stage)).toEqual(["designed", "filled", "rendered"]);

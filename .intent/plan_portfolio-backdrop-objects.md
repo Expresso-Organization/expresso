@@ -28,7 +28,7 @@ date: 2026-10-28
 | `services/web/src/app/site/[slug]/page.tsx` · `document/route.ts` (새) | B | iframe `src` 전환, 공개 문서 라우트 |
 | `services/web/src/app/(app)/edit/[portfolioId]/preview/route.ts` | B | 공유 정책으로 교체 |
 | `services/backend/src/modules/page/routes.ts` | B | `/document` 공유 정책 + `APP_BASE_URL` 런타임 주소 |
-| `services/backend/src/modules/page/design-first.ts` · `structured-generator.ts` · `design-first.test.ts` | A | 프롬프트 한 줄씩, 테스트 |
+| `services/backend/src/modules/page/design-first.ts` · `structured-generator.ts` · `design-first.test.ts` · `structured-generator.test.ts` · `structured.mongo.integration.test.ts` | A | 프롬프트 한 줄씩, 테스트(가짜 모델 출력에 필수가 된 배경 칸 추가) |
 | `services/backend/src/modules/design-systems/design-qa.test.ts` | A | 38종 배경 세기 유지 |
 | `scripts/operations/deploy.sh` · `.github/workflows/web-ci.yml` | B | 웹 빌드 전에 런타임 빌드가 도는지 확인하고, 안 돌면 추가 |
 

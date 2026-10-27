@@ -74,8 +74,10 @@ import { MEDIA_ASSET_PATH_PREFIX } from "./media-path.js";
  * 14 — 설계가 먼저 오는 생성(`page_design` · `page_fill`)을 더하고, 지면 설계가 섹션마다 크기 · 배경 · 폭과
  * 큰 인용 · 과정 흐름 · 이미지 전시 부품을 고른다. 채우기는 수치 값을 숫자와 단위로만 쓴다. 다듬기 검토도 같은
  * 부품과 지면 변화를 바꿀 수 있다.
+ *
+ * 15 — 설계 · 다듬기가 첫 화면 배경(intro의 backdrop)을 고른다. 프롬프트가 배경마다 쓰임을 알린다(`describeBackdrops`).
  */
-export const PAGE_PROMPT_VERSION = 14;
+export const PAGE_PROMPT_VERSION = 15;
 
 /**
  * 한 지면의 상한.
