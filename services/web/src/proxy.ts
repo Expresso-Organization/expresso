@@ -6,7 +6,7 @@ import {
   SESSION_KEEP_COOKIE,
   sessionCookieOptions,
 } from "@/lib/auth/session-cookie";
-import { publicSiteFromHost } from "@/lib/public-site";
+import { publicSiteFromHost, publicSiteUrl } from "@/lib/public-site";
 
 /**
  * 개발 로그인이 켜져 있으면 로그인 대신 그 문으로 보낸다.
@@ -61,6 +61,10 @@ function servePublicSite(request: NextRequest, slug: string | null): NextRespons
   const path = request.nextUrl.pathname;
   if (slug && path === "/") return NextResponse.rewrite(new URL(`/site/${slug}${request.nextUrl.search}`, request.url));
   if (slug && (path === "/api/analytics/events" || path.startsWith("/_next/"))) return NextResponse.next();
+  // 앱 경로로 다른 사이트를 가리키면(옛 주소가 앱 경로로 넘긴 경우 등) 그 사이트의 공개 주소로 보낸다.
+  const other = /^\/site\/([a-z0-9-]+)$/.exec(path)?.[1];
+  const target = other ? publicSiteFromHost(new URL(publicSiteUrl(other)).host) : null;
+  if (other && target?.site && target.slug) return NextResponse.redirect(publicSiteUrl(other), 308);
   return new NextResponse(null, { status: 404 });
 }
 

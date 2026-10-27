@@ -52,7 +52,14 @@ describe("public site host", () => {
   it("방문 기록 라우트만 더 통과시키고 앱 화면은 열지 않는다", () => {
     expect(onHost("jiwon.expresso.ai.kr", "/api/analytics/events").headers.get("x-middleware-next")).toBe("1");
     expect(onHost("jiwon.expresso.ai.kr", "/home", { [SESSION_COOKIE]: TOKEN }).status).toBe(404);
-    expect(onHost("jiwon.expresso.ai.kr", "/site/other").status).toBe(404);
+    expect(onHost("jiwon.expresso.ai.kr", "/site/other/candidates").status).toBe(404);
+  });
+
+  it("공개 주소에서 앱 경로로 다른 사이트를 가리키면 그 사이트의 공개 주소로 보낸다", () => {
+    const response = onHost("jiwon.expresso.ai.kr", "/site/jiwon-new");
+    expect(response.status).toBe(308);
+    expect(response.headers.get("location")).toBe("https://jiwon-new.expresso.ai.kr/");
+    expect(onHost("jiwon.expresso.ai.kr", "/site/dev").status).toBe(404);
   });
 
   it("예약어와 주소 규칙에 맞지 않는 이름에는 사이트가 없다", () => {
