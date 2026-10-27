@@ -84,6 +84,14 @@ export const SavedJobSearchSchema = SaveJobSearchSchema.extend({
   createdAt: TimestampSchema,
 });
 
+export const SavedJobSearchResponseSchema = z.strictObject({
+  data: SavedJobSearchSchema,
+});
+
+export const SavedJobSearchListResponseSchema = z.strictObject({
+  data: z.array(SavedJobSearchSchema),
+});
+
 export const UpsertJobInterestSchema = z.strictObject({
   stage: z.enum(["saved", "applied", "closed"]),
   deadlineAt: TimestampSchema.nullable().default(null),
@@ -183,6 +191,7 @@ export type JobSearchField = z.infer<typeof JobSearchFieldSchema>;
 export type JobSearchCondition = z.infer<typeof JobSearchConditionSchema>;
 export type SearchInterpretAiOutput = z.infer<typeof SearchInterpretAiOutputSchema>;
 export type SaveJobSearch = z.infer<typeof SaveJobSearchSchema>;
+export type SavedJobSearch = z.infer<typeof SavedJobSearchSchema>;
 export type UpsertJobInterest = z.infer<typeof UpsertJobInterestSchema>;
 export type JobRequirements = z.infer<typeof JobRequirementsSchema>;
 export type ExplainableMatch = z.infer<typeof ExplainableMatchSchema>;
