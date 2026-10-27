@@ -11,7 +11,7 @@ date: 2026-10-27
 
 ## 요구사항
 
-- [ ] 쿠키 없는 fetch 서버 액션(`POST` + `next-action` 헤더)에 3xx를 내지 않는다. `200` · 빈 본문 · `x-action-redirect: <로그인 주소>;replace`를 낸다.
+- [ ] 쿠키 없는 fetch 서버 액션(`POST` + `next-action` 헤더)에 3xx를 내지 않는다. `200` · 빈 본문 · `x-action-redirect: <로그인 경로>;replace`를 낸다.
 - [ ] 쿠키 없는 그 밖의 `POST`(스크립트 없는 폼)는 `303` + `Location`으로 같은 로그인 주소에 보낸다.
 - [ ] `GET`은 지금처럼 `307`이다. 로그인 주소 규칙(`loginPath(target)`, 개발 로그인이면 `/api/dev/session?next=`)은 세 경우 모두 같다.
 
@@ -26,7 +26,7 @@ date: 2026-10-27
 
 ## 함정
 
-- `x-action-redirect`의 주소는 클라이언트가 지금 화면 주소 기준으로 푼다. 절대 URL로 넣는다.
+- `x-action-redirect`의 주소는 클라이언트가 지금 화면 주소 기준으로 푼다. **경로만 넣는다** — 프록시의 `request.url` 호스트가 브라우저 주소와 달라(개발 서버는 `localhost`로 보았다) 절대 URL이면 다른 호스트로 이동해 쿠키가 따라가지 않는다. Next 서버의 `redirect()`도 경로를 넣는다.
 - `next`는 요청 경로(= 액션을 부른 화면 경로)다. 액션 POST의 경로는 화면 경로와 같다.
 
 ## 완료 기준
