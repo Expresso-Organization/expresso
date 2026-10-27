@@ -302,7 +302,11 @@ export class PageService {
     return toPage(row);
   }
 
-  /** 고른 판의 내용을 새 판으로 쌓는다. 다듬기 상태는 옮기지 않는다 — 옛 판을 다시 다듬지 않는다. */
+  /**
+   * 고른 판의 내용을 새 판으로 쌓는다. 다듬는 중(pending)이던 판은 그 상태를 옮기지
+   * 않는다 — 옛 판을 다시 다듬지 않는다. 끝난 다듬기 상태는 그대로 옮겨, 다듬기 전
+   * 초안을 되돌린 판이 「다듬은 판」으로 보이지 않게 한다.
+   */
   async restoreRevision(userId: string, portfolioId: string, raw: RestorePageRevision): Promise<GeneratedPage> {
     const input = RestorePageRevisionSchema.parse(raw);
     const row = await inTransaction(this.context, async tx => {
@@ -314,8 +318,8 @@ export class PageService {
       if (input.revision === latest.revision) throw new PageServiceError(409, "지금 보고 있는 판입니다.");
       const source = await db.generatedPages.findOne({ userId, portfolioId, revision: input.revision }, options);
       if (!source) throw new PageServiceError(404, "그 판이 없습니다.");
-      const { refinement: _refinement, ...rest } = source;
-      const created: GeneratedPageDoc = { ...rest, _id: randomUUID(), generationJobId: null, revision: latest.revision + 1, instruction: `판 ${input.revision + 1}로 되돌림`, rationale: `판 ${input.revision + 1}로 되돌렸습니다.`, createdAt: new Date() };
+      const { refinement, ...rest } = source;
+      const created: GeneratedPageDoc = { ...rest, ...(refinement && refinement.status !== "pending" ? { refinement } : {}), _id: randomUUID(), generationJobId: null, revision: latest.revision + 1, instruction: `판 ${input.revision + 1}로 되돌림`, rationale: `판 ${input.revision + 1}로 되돌렸습니다.`, createdAt: new Date() };
       await db.generatedPages.insertOne(created, options);
       await db.portfolios.updateOne({ _id: portfolioId, userId }, { $set: { updatedAt: new Date() } }, options);
       return created;

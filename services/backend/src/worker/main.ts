@@ -25,7 +25,6 @@ import { AiRecipePlanner } from "../modules/recipe/planner.js";
 import { createBrewJobProcessor } from "./processors/brew-jobs.js";
 import { createRecordCleanupProcessor } from "./processors/record-cleanup.js";
 import { PublishingService } from "../modules/publishing/index.js";
-import { createExportProcessor } from "./processors/export.js";
 import { AnalyticsService } from "../modules/analytics/index.js";
 import { createAnalyticsProcessor } from "./processors/analytics.js";
 import { EngagementService } from "../modules/engagement/index.js";
@@ -114,7 +113,6 @@ const brewJobProcessor = createBrewJobProcessor(brewJobService, {
 });
 const recordCleanupProcessor = createRecordCleanupProcessor(interviewService);
 const publishingService = new PublishingService(database, config.assetSigningSecret);
-const exportProcessor = createExportProcessor(publishingService);
 const analyticsService = new AnalyticsService(database, config.analyticsVisitorSalt ? { visitorSalt: config.analyticsVisitorSalt } : {});
 const analyticsProcessor = createAnalyticsProcessor(analyticsService);
 const engagementService = new EngagementService(database);
@@ -148,7 +146,6 @@ const queueWorker = createQueueWorker<Record<string, unknown>, Record<string, un
     if (job.name === "recipe.draft") return brewJobProcessor(job);
     if (job.name === "portfolio.generate") return generationProcessor(job);
     if (job.name === "page.refine") return pageRefineProcessor(job);
-    if (job.name === "portfolio.export") return exportProcessor(job);
     if (job.name === "analytics.aggregate") return analyticsProcessor(job);
     if (job.name === "notification.deliver") return notificationProcessor(job);
     if (job.name === "scheduled.execute") return scheduledJobProcessor(job);
