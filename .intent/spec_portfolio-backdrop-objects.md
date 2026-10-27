@@ -12,7 +12,7 @@ date: 2026-10-28
 ## 요구사항
 
 **계약 · 생성**
-- [ ] `STRUCTURED_BACKDROPS`는 `none` + 정적 일곱(`grid` `dots` `stripes` `contour` `rings` `glow` `aurora`) + 장면 여섯(`orb` `terrain` `knot` `constellation` `flow` `ripple`)입니다. `BACKDROP_FALLBACK`이 장면마다 정적 값 하나를 정합니다.
+- [ ] `STRUCTURED_BACKDROPS`는 `none` + 정적 일곱(`grid` `dots` `stripes` `contour` `rings` `glow` `aurora`) + 장면 여섯(`orb` `terrain` `knot` `constellation` `flow` `ripple`)입니다. 렌더러의 `SCENE_FALLBACK`이 장면마다 정적 값 하나를 정하고, 장면은 그 대체 배경의 잉크 부류를 씁니다(orb만 빛, 나머지는 선).
 - [ ] 저장 계약 `NameIntro.props.backdrop`은 선택 칸입니다. 옛 저장본은 그대로 통과합니다. 모델 스키마 `intro.props.backdrop`은 모든 유형에서 필수 enum이고 `check`를 더하지 않습니다.
 - [ ] 설계 프롬프트 · 다듬기 Spec 프롬프트가 `describeBackdrops()` 한 줄로 종류마다 쓰임을 알립니다. `PAGE_PROMPT_VERSION` 15.
 
@@ -23,8 +23,8 @@ date: 2026-10-28
 - [ ] 반복 모션은 `@media (prefers-reduced-motion:no-preference)`와 `.xp-page:not([data-motion="none"])` 안에서만 돕니다.
 
 **장면 런타임**
-- [ ] 키트는 장면에 `div.xp-scene[data-scene="orb"]`만 냅니다. `<canvas>` · `<script>`는 내지 않습니다. 대체 정적 층은 그 아래에 그대로 둡니다.
-- [ ] `pageDocument`가 `data-scene`이 있는 문서에만 `<script src="/scene-runtime/v1.js" defer>`를 붙입니다.
+- [ ] 키트는 장면에 배경 층의 `data-scene="orb"` 속성만 답니다. 층 안에는 대체 정적 그림을 그리고, `<canvas>` · `<script>`는 내지 않습니다.
+- [ ] `pageDocument`가 `data-scene`이 있는 문서에만 `<script type="module" src="/scene-runtime/v1/main.js">`를 붙입니다. 모듈 스크립트는 CORS로 받으므로 웹이 `/scene-runtime/*`에 `Access-Control-Allow-Origin: *`를 답니다.
 - [ ] 런타임은 캔버스를 만들고 색을 CSS 변수(바탕 · `--xp-bd-1` · `--xp-bd-2`)에서만 읽습니다. 모든 픽셀은 `mix(바탕, 잉크, f)`, `f∈[0,1]`입니다. 가산 혼합 · 하이라이트를 쓰지 않습니다.
 - [ ] 움직임 줄이기면 루프 없이 한 장면만 그립니다. `IntersectionObserver` · `visibilitychange`로 멈춥니다. 픽셀 배율은 2를 넘지 않습니다. WebGL이 없거나 문맥을 잃으면 캔버스를 지우고 대체 그림이 남습니다.
 - [ ] 포인터는 첫 화면의 `pointermove`를 읽습니다. 스크롤과 연동하지 않습니다.
@@ -45,7 +45,7 @@ date: 2026-10-28
 
 **새로 만드는 것**
 - `packages/portfolio-renderer/src/backdrop.tsx`: 정적 일곱 종 마크업 · `BACKDROP_CSS` · `describeBackdrops()`. 등고선 · 동심원 SVG는 고정 좌표.
-- `packages/portfolio-renderer/src/scene-runtime/`: 런타임 진입점, 장면 여섯(3D는 three.js `WebGLRenderer` + `ShaderMaterial`, 2D는 canvas 2D), 공통 루프(배율 · 멈춤 · 포인터), 색 함수 `inkMix()`. esbuild로 한 파일로 묶어 `services/web/public/scene-runtime/v1.js`에 둡니다(빌드 산출물, git 제외).
+- `packages/portfolio-renderer/src/scene-runtime/`: 런타임 진입점, 장면 여섯(3D는 three.js `WebGLRenderer` + `ShaderMaterial`, 2D는 canvas 2D), 공통 루프(배율 · 멈춤 · 포인터), 색 함수 `inkMix()`. esbuild로 진입 파일과 조각(2D · 3D)으로 나눠 `services/web/public/scene-runtime/v1/`에 둡니다(빌드 산출물, git 제외). 웹의 `dev` · `build`가 `build:scene`을 먼저 부르므로 CI · 배포 스크립트는 고치지 않습니다.
 - `services/web/src/app/site/[slug]/document/route.ts`: 공개 문서 라우트.
 
 **표면별로 보이는 것**

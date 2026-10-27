@@ -217,12 +217,17 @@ const stageProps = {
   width: z.enum(STRUCTURED_WIDTHS).optional(),
 };
 /**
- * 첫 화면 뒤에 까는 배경입니다. 키트가 CSS · SVG로 그리고 색은 디자인 토큰에서만 가져옵니다.
- * grid=선 격자, dots=점 격자, stripes=사선 줄무늬, contour=등고선, rings=동심원 궤도, glow=아래에서 번지는 빛,
- * aurora=두 색 빛이 천천히 흐르는 면. 옛 저장본에는 없고, 없으면 포스터 첫 화면은 stripes, 나머지는 none입니다.
+ * 첫 화면 뒤에 까는 배경입니다. 색은 디자인 토큰에서만 가져옵니다.
+ * 정적 배경은 키트가 CSS · SVG로 그립니다. grid=선 격자, dots=점 격자, stripes=사선 줄무늬, contour=등고선,
+ * rings=동심원 궤도, glow=아래에서 번지는 빛, aurora=두 색 빛이 천천히 흐르는 면.
+ * 장면(`STRUCTURED_SCENES`)은 공개 지면의 장면 런타임이 three.js · 캔버스 2D로 그리고 포인터에 반응합니다. 스크립트가
+ * 돌지 않는 자리에서는 키트가 정한 정적 배경이 대신 보입니다.
+ * 옛 저장본에는 없고, 없으면 포스터 첫 화면은 stripes, 나머지는 none입니다.
  */
-export const STRUCTURED_BACKDROPS = ["none", "grid", "dots", "stripes", "contour", "rings", "glow", "aurora"] as const;
+export const STRUCTURED_SCENES = ["orb", "terrain", "knot", "constellation", "flow", "ripple"] as const;
+export const STRUCTURED_BACKDROPS = ["none", "grid", "dots", "stripes", "contour", "rings", "glow", "aurora", ...STRUCTURED_SCENES] as const;
 export type StructuredBackdrop = (typeof STRUCTURED_BACKDROPS)[number];
+export type StructuredScene = (typeof STRUCTURED_SCENES)[number];
 /** 지면에 둘 수 있는 큰 인용(`PullQuote`)의 최대 개수입니다. */
 export const STRUCTURED_MAX_QUOTES = 2;
 const leaf =<T extends string, P extends z.ZodType>(type: T, props: P) =>

@@ -3,12 +3,13 @@ import { describe, expect, it } from "vitest";
 import {
   DesignSystemSpecV2Schema,
   STRUCTURED_BACKDROPS,
+  STRUCTURED_SCENES,
   type StructuredPortfolioContent,
 } from "@expresso/contracts";
 import { renderStructuredPortfolio } from "./renderer.js";
 import { retrievePageLibrary } from "./library.js";
 import { metricNumber } from "./kit.js";
-import { BACKDROP_CSS } from "./backdrop.js";
+import { BACKDROP_CSS, backdropInk, SCENE_FALLBACK } from "./backdrop.js";
 
 // 백엔드 기본 디자인(Clarity · Signal)의 스펙을 그대로 떠 둔 고정 자료입니다.
 const designs = JSON.parse(readFileSync(new URL("./fixtures/designs.json", import.meta.url), "utf8"));
@@ -377,7 +378,7 @@ describe("첫 화면 배경", () => {
         continue;
       }
       expect(head).toContain(`data-backdrop="${backdrop}"`);
-      expect(head).toMatch(/<div class="xp-backdrop" data-shape="[a-z]+" aria-hidden="true" data-bleed="">[\s\S]*<\/div><\/header>$/);
+      expect(head).toMatch(/<div class="xp-backdrop" data-shape="[a-z]+"(?: data-scene="[a-z]+")? aria-hidden="true" data-bleed="">[\s\S]*<\/div><\/header>$/);
       expect(html).not.toContain("<script");
     }
   });
@@ -390,11 +391,27 @@ describe("첫 화면 배경", () => {
     expect(hero(renderStructuredPortfolio(pageSpec({ variant: "statement" }), content, { design: clarity }).html)).not.toContain("xp-backdrop");
   });
 
+  it("장면은 표식과 대체 정적 배경을 함께 그리고, 대체 배경과 같은 잉크 부류를 쓴다", () => {
+    for (const scene of STRUCTURED_SCENES) {
+      const fallback = SCENE_FALLBACK[scene];
+      const head = hero(renderStructuredPortfolio(pageSpec({ variant: "statement", backdrop: scene }), content, { design: clarity }).html);
+      expect(head).toContain(`data-backdrop="${scene}"`);
+      expect(head).toContain(`data-shape="${fallback}" data-scene="${scene}"`);
+      expect(head).toContain(`data-backdrop-ink="${backdropInk(fallback)}"`);
+      // 캔버스와 스크립트는 런타임이 붙입니다. 키트는 표식만 냅니다.
+      expect(head).not.toMatch(/<canvas|<script/);
+    }
+    // 정적 배경에는 장면 표식이 없습니다.
+    expect(hero(renderStructuredPortfolio(pageSpec({ variant: "statement", backdrop: "glow" }), content, { design: clarity }).html)).not.toContain("data-scene");
+    // 첫 프레임을 그린 뒤에만 대체 그림을 가립니다.
+    expect(BACKDROP_CSS).toContain(".xp-backdrop[data-scene-live]>:not(.xp-scene-canvas)");
+  });
+
   it("배경 CSS는 새 색을 만들지 않고 디자인에서 계산한 잉크 변수만 쓴다", () => {
     expect(BACKDROP_CSS).not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(|\b(?:black|white)\b/);
     expect(BACKDROP_CSS).not.toMatch(/filter\s*:|backdrop-filter/);
     const { css } = renderStructuredPortfolio(pageSpec({ variant: "statement", backdrop: "grid" }), content, { design: clarity });
-    expect(css).toMatch(/\.xp-hero\[data-backdrop-ink="line"\]\{--xp-bd-1:#[0-9a-f]{6};--xp-bd-2:#[0-9a-f]{6};color:#[0-9a-f]{6};--xp-muted:#[0-9a-f]{6}/);
+    expect(css).toMatch(/\.xp-hero\[data-backdrop-ink="line"\]\{--xp-bd-base:#[0-9a-f]{6};--xp-bd-1:#[0-9a-f]{6};--xp-bd-2:#[0-9a-f]{6};color:#[0-9a-f]{6};--xp-muted:#[0-9a-f]{6}/);
     // 옛 포스터 면의 줄무늬는 배경 층으로 옮겼습니다. 첫 화면 조상에 배경 이미지가 없어야 렌더 대비 검사가 글자를 잽니다.
     expect(css).not.toContain("repeating-linear-gradient(-45deg,color-mix(in srgb,var(--xp-action-text)");
   });

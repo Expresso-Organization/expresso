@@ -1,19 +1,23 @@
 import React from "react";
-import type { DesignSystemSpecV2, StructuredBackdrop } from "@expresso/contracts";
+import type { DesignSystemSpecV2, StructuredBackdrop, StructuredScene } from "@expresso/contracts";
 
 import { backdropColors, type BackdropInk } from "./design-tokens.js";
 
 /**
  * 첫 화면 배경입니다. 첫 화면 header의 마지막 자식으로 깔리고, 색은 `backdropColors`가 계산한 잉크 변수만 씁니다.
  *
- * 스크립트 없이 CSS · SVG로만 그립니다. 공개 지면은 스크립트가 막혀 있기 때문입니다.
+ * 정적 배경은 스크립트 없이 CSS · SVG로만 그립니다. 생성 중 미리보기 · 내려받은 HTML처럼 스크립트가 돌지 않는 자리에서도
+ * 보여야 하기 때문입니다. 장면은 층에 `data-scene`만 달고, 공개 지면의 장면 런타임(`scene-runtime/`)이 그 위에 캔버스를
+ * 얹습니다. 캔버스가 첫 프레임을 그리기 전과 그리지 못할 때는 장면의 대체 정적 배경이 보입니다.
  * glow는 componentry `gradient-hero-01`(MIT, `collected/LICENSE.componentry.txt`)의 아래에서 번지는 빛 구도를 옮겼습니다.
  * 원본의 `blur-3xl`은 휴대폰에서 비싸므로 `radial-gradient(closest-side, …)`의 부드러운 끝으로 대신합니다.
  * 빛 타원은 층 안에 완전히 들어가 가장자리가 투명이므로 아래쪽 마스크 없이 바탕에 이어집니다.
  */
 
-/** 배경마다 잉크 부류입니다. 선 부류는 글자색 한 가지, 빛 부류는 두 색을 씁니다. */
-export const BACKDROP_INK: Record<Exclude<StructuredBackdrop, "none">, BackdropInk> = {
+type StaticBackdrop = Exclude<StructuredBackdrop, "none" | StructuredScene>;
+
+/** 정적 배경마다 잉크 부류입니다. 선 부류는 글자색 한 가지, 빛 부류는 두 색을 씁니다. */
+const STATIC_INK: Record<StaticBackdrop, BackdropInk> = {
   grid: "line",
   dots: "line",
   stripes: "line",
@@ -23,6 +27,31 @@ export const BACKDROP_INK: Record<Exclude<StructuredBackdrop, "none">, BackdropI
   aurora: "light",
 };
 
+/**
+ * 장면마다 대체 정적 배경입니다. 장면은 대체 그림과 같은 잉크 부류를 쓰므로 같은 대비 계산을 받습니다.
+ * 구체는 번지는 빛, 지형은 등고선, 매듭은 궤도, 별자리는 점 격자, 흐름은 등고선, 물결은 선 격자로 대신합니다.
+ */
+export const SCENE_FALLBACK: Record<StructuredScene, StaticBackdrop> = {
+  orb: "glow",
+  terrain: "contour",
+  knot: "rings",
+  constellation: "dots",
+  flow: "contour",
+  ripple: "grid",
+};
+
+const isScene = (backdrop: StructuredBackdrop): backdrop is StructuredScene => backdrop in SCENE_FALLBACK;
+
+/** 배경을 그릴 정적 모양입니다. 장면이면 그 대체 그림입니다. */
+export function backdropShape(backdrop: Exclude<StructuredBackdrop, "none">): StaticBackdrop {
+  return isScene(backdrop) ? SCENE_FALLBACK[backdrop] : backdrop;
+}
+
+/** 배경마다 잉크 부류입니다. */
+export function backdropInk(backdrop: Exclude<StructuredBackdrop, "none">): BackdropInk {
+  return STATIC_INK[backdropShape(backdrop)];
+}
+
 /** 저장본에 배경이 없을 때의 값입니다. 포스터 첫 화면은 배경 칸이 생기기 전부터 사선 줄무늬였습니다. */
 export function resolveBackdrop(backdrop: StructuredBackdrop | undefined, variant: string | undefined): StructuredBackdrop {
   return backdrop ?? (variant === "poster" ? "stripes" : "none");
@@ -31,7 +60,7 @@ export function resolveBackdrop(backdrop: StructuredBackdrop | undefined, varian
 /** 첫 화면 header에 다는 속성입니다. 배경이 없으면 아무것도 달지 않습니다. */
 export function backdropAttributes(backdrop: StructuredBackdrop): Record<string, string> {
   if (backdrop === "none") return {};
-  return { "data-backdrop": backdrop, "data-backdrop-ink": BACKDROP_INK[backdrop] };
+  return { "data-backdrop": backdrop, "data-backdrop-ink": backdropInk(backdrop) };
 }
 
 /** 등고선입니다. 한 중심을 도는 닫힌 곡선 열 개를 고정 식으로 만들어 렌더마다 같은 경로가 나옵니다. */
@@ -53,7 +82,7 @@ const RING_DOTS = [
   { ring: 4, angle: 1.3 },
 ];
 
-function BackdropShape({ backdrop }: { backdrop: Exclude<StructuredBackdrop, "none"> }) {
+function BackdropShape({ backdrop }: { backdrop: StaticBackdrop }) {
   if (backdrop === "contour")
     return (
       <svg className="xp-bd-svg" viewBox="0 0 1000 600" preserveAspectRatio="xMaxYMin slice">
@@ -102,10 +131,11 @@ function BackdropShape({ backdrop }: { backdrop: Exclude<StructuredBackdrop, "no
 /** 첫 화면 header의 마지막 자식으로 두는 배경 층입니다. 마지막에 두어 등장 애니메이션의 순번이 바뀌지 않습니다. */
 export function Backdrop({ backdrop }: { backdrop: StructuredBackdrop }) {
   if (backdrop === "none") return null;
+  const shape = backdropShape(backdrop);
   return (
     // data-bleed: 창 폭으로 넓힌 층이라 측정의 열 이탈 검사가 건너뜁니다.
-    <div className="xp-backdrop" data-shape={backdrop} aria-hidden="true" data-bleed="">
-      <BackdropShape backdrop={backdrop} />
+    <div className="xp-backdrop" data-shape={shape} data-scene={isScene(backdrop) ? backdrop : undefined} aria-hidden="true" data-bleed="">
+      <BackdropShape backdrop={shape} />
     </div>
   );
 }
@@ -117,7 +147,7 @@ export function Backdrop({ backdrop }: { backdrop: StructuredBackdrop }) {
 export function backdropCss(spec: DesignSystemSpecV2): string {
   const colors = backdropColors(spec);
   const rule = (selector: string, palette: (typeof colors)["canvas"]["line"]) =>
-    `${selector}{--xp-bd-1:${palette.inks[0]};--xp-bd-2:${palette.inks[1]};color:${palette.primary};--xp-muted:${palette.muted};--xp-muted-surface:${palette.muted};--xp-accent-text:${palette.accent}}`;
+    `${selector}{--xp-bd-base:${palette.background};--xp-bd-1:${palette.inks[0]};--xp-bd-2:${palette.inks[1]};color:${palette.primary};--xp-muted:${palette.muted};--xp-muted-surface:${palette.muted};--xp-accent-text:${palette.accent}}`;
   return [
     rule('.xp-hero[data-backdrop-ink="line"]', colors.canvas.line),
     rule('.xp-hero[data-backdrop-ink="light"]', colors.canvas.light),
@@ -153,6 +183,8 @@ export const BACKDROP_CSS = `
 .xp-bd-aurora-1{top:-30%;left:30%;width:min(90vw,980px);aspect-ratio:1.6;background:radial-gradient(closest-side,var(--xp-bd-1),transparent)}
 .xp-bd-aurora-2{top:-10%;left:-12%;width:min(80vw,820px);aspect-ratio:1.4;background:radial-gradient(closest-side,var(--xp-bd-2),transparent)}
 .xp-page:not([data-motion="none"]) .xp-hero>.xp-backdrop{animation:none}
+.xp-scene-canvas{position:absolute;inset:0;display:block;width:100%;height:100%;background:var(--xp-bd-base)}
+.xp-backdrop[data-scene-live]>:not(.xp-scene-canvas),.xp-backdrop[data-scene-live]::before{display:none}
 @keyframes xp-bd-spin{to{transform:rotate(360deg)}}
 @keyframes xp-bd-breathe{from{transform:scale(1)}to{transform:scale(1.08) translateY(-3%)}}
 @keyframes xp-bd-drift-1{from{transform:translate(0,0) rotate(0deg)}to{transform:translate(-12%,8%) rotate(14deg)}}
@@ -172,6 +204,10 @@ export function describeBackdrops(): string {
     "첫 화면 배경(intro의 backdrop): 디자인 색으로 옅게 깔리고 글자 대비는 키트가 맞춥니다. 지면의 인상과 직무에 맞는 하나를 고릅니다.",
     "none=배경 없음, grid=가는 선 격자(설계 · 엔지니어링), dots=점 격자(글 중심의 차분한 지면), stripes=사선 줄무늬(포스터 · 강한 인상),",
     "contour=등고선(연구 · 분석 · 데이터), rings=천천히 도는 동심원 궤도(시스템 · 인프라 · 과학), glow=아래에서 번지는 빛(제품 · 서비스 · 브랜드),",
-    "aurora=두 색 빛이 천천히 흐르는 면(디자인 · 크리에이티브). 첫 화면이 이미지 중심(media)이면 선 배경이나 none이 어울립니다.",
+    "aurora=두 색 빛이 천천히 흐르는 면(디자인 · 크리에이티브).",
+    "아래는 포인터에 반응하는 움직이는 장면입니다. 첫 화면을 가장 강하게 기억시킬 지면에 씁니다.",
+    "orb=일렁이는 3D 구체(제품 · 브랜드 · AI), terrain=흐르는 3D 점 지형(데이터 · 지도 · 연구), knot=도는 3D 선 매듭(시스템 · 그래픽스 · 수학),",
+    "constellation=점이 선으로 이어지는 별자리(네트워크 · 백엔드 · 협업), flow=흐르는 선(디자인 · 모션 · 프론트엔드), ripple=점 격자의 물결(인터랙션 · 하드웨어 · 신호).",
+    "첫 화면이 이미지 중심(media)이면 선 배경이나 none이 어울립니다.",
   ].join("\n");
 }
