@@ -52,6 +52,7 @@ import {
   pageKitVariables,
   PAGE_KIT_CSS,
   pageKitPrompt,
+  pageDocument,
   PortfolioPlanSchema,
   RecipeDraftSchema,
 } from "./index.js";
@@ -917,5 +918,14 @@ describe("생성 요청 스타일 출처", () => {
         styleOverrides: { font: "serif" },
       }).success,
     ).toBe(false);
+  });
+});
+
+describe("지면 문서 껍데기", () => {
+  it("등장을 끄면 문서 루트에 data-reveal=\"none\"을 달고, 기본은 지금 문서 그대로다", () => {
+    const base = { html: "<main></main>", css: "", title: "가상 지면" };
+    expect(pageDocument(base)).toContain('<html lang="ko">\n');
+    expect(pageDocument({ ...base, reveal: true })).toBe(pageDocument(base));
+    expect(pageDocument({ ...base, reveal: false })).toContain('<html lang="ko" data-reveal="none">\n');
   });
 });
