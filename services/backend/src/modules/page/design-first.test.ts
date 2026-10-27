@@ -51,7 +51,7 @@ const spec = {
   root: "page",
   elements: {
     page: { type: "PortfolioPage", props: { profile: { $state: "/profile" }, motion: "showcase", rationale: "수치를 먼저 보입니다." }, children: ["intro", "metrics", "group-1", "quote-1", "section-misc", "evidence", "career"] },
-    intro: { type: "NameIntro", props: { profile: { $state: "/profile" }, sections: { $state: "/sections" }, variant: "statement" }, children: [] },
+    intro: { type: "NameIntro", props: { profile: { $state: "/profile" }, sections: { $state: "/sections" }, variant: "statement", backdrop: "contour" }, children: [] },
     index: { type: "ProjectIndex", props: { sections: { $state: "/sections" }, variant: "rows" }, children: [] },
     metrics: { type: "MetricStrip", props: { sections: { $state: "/sections" }, surface: "inverse", width: "bleed" }, children: [] },
     "group-1": { type: "Columns", props: { variant: "wide-start" }, children: ["section-lcp", "section-ui"] },

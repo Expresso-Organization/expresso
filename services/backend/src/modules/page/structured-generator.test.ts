@@ -62,6 +62,7 @@ const spec = {
         profile: { $state: "/profile" },
         sections: { $state: "/sections" },
         variant: "statement",
+        backdrop: "grid",
       },
       children: [],
     },

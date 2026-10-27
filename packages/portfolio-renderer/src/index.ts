@@ -12,8 +12,10 @@ export { kitCss } from "./kit.js";
 
 export {searchPageLibrary,retrievePageLibrary,librarySelection,LIBRARY_TOTAL,LIBRARY_COUNTS,LIBRARY_INVENTORY_HASH} from "./library.js";
 export {
+  BACKDROP_STRENGTH,
   COLOR_NAMES,
   WEB_FONTS,
+  backdropColors,
   contrastRatio,
   cssFamily,
   cssVariables,
