@@ -32,6 +32,8 @@ export {
   type DesignLayout,
 } from "./design-layout.js";
 export { describeArchetype } from "./archetype.js";
+export { barScale } from "./viz/bars.js";
+export { parsePeriod, readablePeriods, type PeriodSpan } from "./viz/period.js";
 export {
   RENDER_MEASURE_WIDTHS,
   describeRenderDefects,

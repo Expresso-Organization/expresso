@@ -6,7 +6,7 @@ import { ScriptedAiClient } from "../../platform/ai/scripted-client.js";
 import { StructuredPageGenerator } from "./structured-generator.js";
 import type { PageGenerationContext } from "./generator.js";
 import { findPortfolioDesign } from "../design-systems/index.js";
-import { METRIC_VALUE_PATTERN, fitToContent } from "./design-first.js";
+import { METRIC_VALUE_PATTERN, fillViolations, fitToContent } from "./design-first.js";
 
 /** 계약으로 응답을 고르는 가짜 공급자입니다. 실제 어댑터와 같은 검사 · 고치기 순서를 탑니다. */
 class RoutedAi extends ScriptedAiClient {
@@ -209,6 +209,20 @@ describe("청사진과 순차 채움", () => {
   });
 });
 
+describe("기간 숫자", () => {
+  it("섹션 · 경력 기간에 출처에 없는 숫자가 있으면 그 칸만 고쳐 받는다", () => {
+    const filled = fill();
+    const output = {
+      ...filled,
+      sections: { ...filled.sections, lcp: { ...filled.sections.lcp, metrics: [], period: "2019.01 — 2020.12" }, ui: { ...filled.sections.ui, period: "" } },
+      career: [{ period: "2023.03 — 현재", organization: "모아마켓", role: "-", description: "-" }],
+    };
+    const groundSource = "상품 상세 LCP 3.8초 1.9초 컴포넌트 48개 2023.03 — 현재";
+    const violations = fillViolations(output, { ...plan, career: true } as never, plan.sections.filter((item) => item.include) as never, { author: "가상 하린", groundSource, evidenceCount: 1 });
+    expect(violations.filter((item) => item.path.endsWith("/period")).map((item) => item.path)).toEqual(["/sections/lcp/period"]);
+  });
+});
+
 describe("수치 값 모양", () => {
   it("숫자와 단위만 받고 설명이 붙은 값은 거절한다", () => {
     for (const value of ["1.9초", "420KB", "1,200만 건", "-40%", "10만 행", "~3배"]) expect(METRIC_VALUE_PATTERN.test(value), value).toBe(true);
@@ -257,6 +271,40 @@ describe("내용에 맞춘 부품 내림", () => {
     expect(fitted.elements["quote-2"]?.type).toBe("PullQuote");
     // 인용을 잃은 묶음도 자식 수 조건(Band 1–3개)을 지키므로 남습니다.
     expect(fitted.elements["group-1"]?.children).toEqual(["section-a"]);
+  });
+
+  it("같은 단위 수치가 없는 막대 차트와 기간을 두 개 읽지 못한 기간 차트를 내린다", () => {
+    const years = [{ label: "TypeScript", value: "5년" }, { label: "Next.js", value: "2년" }];
+    const mixed = [{ label: "LCP", value: "1.9초" }, { label: "JS", value: "180KB" }];
+    const charts = (value: StructuredPortfolioContent) =>
+      fitToContent(
+        {
+          root: "page",
+          elements: {
+            page: { type: "PortfolioPage", props: {}, children: ["intro", "index", "section-a", "section-b", "career"] },
+            intro: node("NameIntro", { profile: { $state: "/profile" } }),
+            index: node("ProjectIndex", { sections: { $state: "/sections" }, variant: "timeline" }),
+            "section-a": node("CaseBars", { section: { $state: "/sectionById/a" } }),
+            "section-b": node("CaseBars", { section: { $state: "/sectionById/b" } }),
+            career: node("CareerTimeline", { career: { $state: "/career" }, variant: "chart" }),
+          },
+        },
+        value,
+      ).elements;
+    const career = (period: string, id: string) => ({ id, period, organization: id, role: "-", description: "-" });
+    const dated: StructuredPortfolioContent = {
+      ...content,
+      sections: [section("a", { metrics: years, period: "2024.04 — 2024.11" }), section("b", { metrics: mixed, period: "2023.03 — 현재" })],
+      career: [career("2023.03 — 현재", "c1"), career("2021.01 — 2023.02", "c2")],
+    };
+    let fitted = charts(dated);
+    expect(fitted["section-a"]?.type).toBe("CaseBars");
+    expect(fitted["section-b"]?.type).toBe("CaseTechnical");
+    expect(fitted.index?.props.variant).toBe("timeline");
+    expect(fitted.career?.props.variant).toBe("chart");
+    fitted = charts({ ...dated, sections: dated.sections.map((item, index) => (index ? { ...item, period: "6개월" } : item)), career: [career("", "c1"), career("2021.01 — 2023.02", "c2")] });
+    expect(fitted.index?.props.variant).toBe("rows");
+    expect(fitted.career?.props.variant).toBe("list");
   });
 
   it("설계안의 크기 · 배경 · 폭을 사례 요소에 옮기고 설계안이 없으면 그대로 둔다", () => {
