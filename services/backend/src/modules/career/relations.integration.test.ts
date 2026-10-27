@@ -10,7 +10,6 @@ import { CareerService } from "./service.js";
 
 const value = (type: CareerPropertyDefinitionV2["type"], raw: unknown) => ({ type, value: raw } as CareerPropertyValueV2);
 const definition = (id: string, key: string, type: CareerPropertyDefinitionV2["type"], config: Record<string, unknown> = {}): CareerPropertyDefinitionV2 => ({ id, key, name: key, type, required: false, system: false, config, order: 0, version: 1, deletedAt: null });
-const legacy = (label: string, type: "text" | "number" | "tags") => ({ label, type, required: false, system: false });
 
 describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB_URL))("career relations and category moves in a replica set", () => {
   let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
@@ -33,8 +32,8 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const identity = new MongoIdentityService(fixture.resource);
     userId = (await identity.signup({ email: `relations-${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "관계" })).user.id;
     otherUserId = (await identity.signup({ email: `relations-other-${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "다른 관계" })).user.id;
-    const source = await service.createCategory(userId, { key: `source_${randomUUID().replaceAll("-", "")}`, name: "원본", icon: "folder", defaultView: "table", propertySchema: { exact: legacy("exact", "text"), numberText: legacy("numberText", "text"), tags: legacy("tags", "tags"), lost: legacy("lost", "text") } });
-    const target = await service.createCategory(userId, { key: `target_${randomUUID().replaceAll("-", "")}`, name: "대상", icon: "folder", defaultView: "table", propertySchema: { exact: legacy("exact", "text"), numberText: legacy("numberText", "number"), tags: legacy("tags", "text") } });
+    const source = await service.createCategory(userId, { key: `source_${randomUUID().replaceAll("-", "")}`, name: "원본", icon: "folder", defaultView: "table" });
+    const target = await service.createCategory(userId, { key: `target_${randomUUID().replaceAll("-", "")}`, name: "대상", icon: "folder", defaultView: "table" });
     sourceCategoryId = source.id; targetCategoryId = target.id;
     relationId = randomUUID(); inverseRelationId = randomUUID(); singleRelationId = randomUUID(); lostPropertyId = randomUUID(); formulaId = randomUUID();
     const exactId = randomUUID(); const numberId = randomUUID(); const tagsId = randomUUID();

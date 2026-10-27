@@ -469,6 +469,18 @@
   overflow: hidden;
 }
 
+/* 초안 다듬기 안내 — 미리보기 바로 위 한 줄 */
+.refineNotice {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  max-width: 700px;
+  margin: 0 0 10px;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-accent-text);
+}
+
 .browser {
   width: 100%;
   max-width: 700px;

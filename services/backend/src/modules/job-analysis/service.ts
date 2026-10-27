@@ -6,7 +6,7 @@ import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction } from "../../platform/mongo-transaction.js";
 import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { requireActiveUser } from "../identity/index.js";
-import { assertActiveRecordsForWrite } from "../career/index.js";
+import { assertActiveRecordsForWrite, careerRecordTextReader } from "../career/index.js";
 import { calculateExplainableMatch } from "../jobs/index.js";
 import type { JobAnalysisApi } from "./index.js";
 import { JobAnalysisNotFoundError } from "./public.js";
@@ -83,7 +83,8 @@ export class JobAnalysisService implements JobAnalysisApi {
         }
         const records = await db.careerRecords.find({ userId, deletedAt: null }, options).toArray();
         await assertActiveRecordsForWrite(tx, userId, records.map((record) => record._id));
-        const recordTexts = records.map((record) => ({ id: record._id, text: `${record.title}\n${record.bodyMd}\n${JSON.stringify(record.properties)}` }));
+        const recordText = await careerRecordTextReader(tx.db, userId, tx.session);
+        const recordTexts = records.map((record) => ({ id: record._id, text: recordText(record) }));
         const targetIds = targets.map((target) => target._id);
         await db.requirementCoverages.deleteMany({ userId, requirementId: { $in: targetIds } }, options);
         for (const target of targets) {

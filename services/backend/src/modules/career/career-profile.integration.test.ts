@@ -1,25 +1,17 @@
-import type { SqlTag } from "../../platform/legacy-mysql.js";
-import { createMysqlResource } from "../../platform/legacy-mysql.js";
+import { TERMS_VERSION } from "@expresso/contracts";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
 import type { RuntimeConfig } from "../../config/runtime-config.js";
-import { IdentityService } from "../identity/legacy-mysql-service.js";
-import { CareerService } from "./legacy-mysql-service.js";
-
 import { MongoCareerService } from "./service.js";
 import { MongoIdentityService } from "../identity/index.js";
 import { createMongoFixture } from "../../../test/support/mongodb.js";
-
-const databaseUrl = process.env.TEST_DATABASE_URL;
-const describeWithDatabase = databaseUrl ? describe : describe.skip;
 
 const config: RuntimeConfig = {
   nodeEnv: "test",
   host: "127.0.0.1",
   port: 4_000,
   logLevel: "silent",
-  databaseUrl: databaseUrl ?? "mysql://127.0.0.1:1/unused",
   redisUrl: "redis://127.0.0.1:1",
   outboxPollIntervalMs: 1_000,
   outboxBatchSize: 25,
@@ -27,10 +19,8 @@ const config: RuntimeConfig = {
   queuePrefix: "expresso-career-profile-test",
 };
 
-for (const engine of ["mysql", "mongodb"] as const) {
-describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_URL)(`커리어 프로필 (${engine})`, () => {
-  let sql: SqlTag;
-  let fixture: Awaited<ReturnType<typeof createMongoFixture>> | undefined;
+describe.skipIf(!process.env.TEST_MONGODB_URL)("커리어 프로필", () => {
+  let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
   let app: ReturnType<typeof buildApi>;
 
   const email = `career-profile-${crypto.randomUUID()}@example.com`;
@@ -44,19 +34,13 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
     await app.inject({ method: "GET", url: "/v1/career/profile", headers: auth() });
 
   beforeAll(async () => {
-    if (engine === "mongodb") {
-      fixture = await createMongoFixture("career-profile");
-      app = buildApi({ config, identityService: new MongoIdentityService(fixture.resource), careerService: new MongoCareerService(fixture.resource) });
-    } else {
-      sql = createMysqlResource(databaseUrl!).sql;
-      app = buildApi({ config, identityService: new IdentityService(sql), careerService: new CareerService(sql) });
-      await sql`insert into plan (code, generation_quota) values ('free', 3) as new on duplicate key update generation_quota = plan.generation_quota`;
-    }
+    fixture = await createMongoFixture("career-profile");
+    app = buildApi({ config, identityService: new MongoIdentityService(fixture.resource), careerService: new MongoCareerService(fixture.resource) });
     await app.ready();
     const signup = await app.inject({
       method: "POST",
       url: "/v1/auth/signup",
-      payload: { email, password: "correct-horse-battery", displayName: "프로필 테스트" },
+      payload: { email, password: "correct-horse-battery", displayName: "프로필 테스트", termsVersion: TERMS_VERSION },
     });
     expect(signup.statusCode).toBe(201);
     accessToken = signup.json().data.session.accessToken;
@@ -64,8 +48,7 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
 
   afterAll(async () => {
     await app?.close();
-    if (fixture) await fixture.dispose();
-    else if (sql) { await sql`delete from \`user\` where email = ${email}`; await sql.end({ timeout: 5 }); }
+    await fixture?.dispose();
   });
 
   it("온보딩을 지나기 전에는 null이다 — 없는 것을 기본값으로 꾸미지 않는다", async () => {
@@ -151,5 +134,3 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
     ).toBe(401);
   });
 });
-
-}

@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { PortfolioArchetypeSchema } from "@expresso/contracts";
 
 import { ApiError } from "@/lib/api/client";
 import { designSystems, generation } from "@/lib/api/endpoints";
@@ -25,19 +26,29 @@ export async function startGenerationAction(
 ): Promise<BrewState> {
   const session = await requireSession();
   const ids = z
-    .object({ brewId: z.uuid(), recipeId: z.uuid(), designSystemRevisionId: z.uuid() })
+    .object({
+      brewId: z.uuid(),
+      recipeId: z.uuid(),
+      designSystemRevisionId: z.uuid(),
+      archetype: PortfolioArchetypeSchema.optional(),
+    })
     .safeParse({
       brewId: formData.get("brewId"),
       recipeId: formData.get("recipeId"),
       designSystemRevisionId: formData.get("designSystemRevisionId"),
+      archetype: formData.get("archetype") ?? undefined,
     });
   if (!ids.success) return { error: "디자인과 레시피를 확인하고 다시 눌러 주세요." };
-  const { brewId, recipeId, designSystemRevisionId } = ids.data;
+  const { brewId, recipeId, designSystemRevisionId, archetype } = ids.data;
 
   try {
     // 선택을 먼저 남긴다. 생성이 실패해도 다시 열면 같은 디자인이 골라져 있다.
     await designSystems.select(session.accessToken, brewId, { revisionId: designSystemRevisionId });
-    await generation.submit(session.accessToken, { recipeId, designSystemRevisionId }, randomUUID());
+    await generation.submit(
+      session.accessToken,
+      { recipeId, designSystemRevisionId, ...(archetype ? { archetype } : {}) },
+      randomUUID(),
+    );
   } catch (error) {
     if (error instanceof ApiError) return { error: submitFailure(error) };
     throw error;

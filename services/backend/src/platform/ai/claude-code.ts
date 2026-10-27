@@ -135,11 +135,30 @@ export class ClaudeCodeAiClient implements AiClient {
       "--strict-mcp-config",
       "--mcp-config", '{"mcpServers":{}}',
       "--allowedTools", "",
+      // 이미지는 글 입력으로 보낼 수 없습니다. stream-json 입력의 사용자 메시지 한 줄에 글과 이미지 블록을 함께 담습니다
+      // (https://code.claude.com/docs/en/agent-sdk/streaming-vs-single-mode).
+      ...(spec.images?.length ? ["--input-format", "stream-json"] : []),
     ];
+    const input = spec.images?.length
+      ? `${JSON.stringify({
+          type: "user",
+          message: {
+            role: "user",
+            content: [
+              { type: "text", text: spec.prompt },
+              ...spec.images.flatMap((image) => [
+                { type: "text", text: image.label },
+                { type: "image", source: { type: "base64", media_type: image.mediaType, data: image.data } },
+              ]),
+            ],
+          },
+          parent_tool_use_id: null,
+        })}\n`
+      : spec.prompt;
 
     const started = Date.now();
     const { stdout, stderr, code } = await this.#run(
-      args, spec, spec.prompt,
+      args, spec, input,
       options.onPartial || options.onThinking ? partialSink(options) : null,
     );
     const durationMs = Date.now() - started;

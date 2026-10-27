@@ -1,4 +1,3 @@
-import { retrievePageLibrary } from "@expresso/portfolio-renderer";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import {
@@ -13,6 +12,9 @@ import {
 } from "../../platform/ai/client.js";
 import { StructuredPageGenerator } from "./structured-generator.js";
 import { PageRenderError, type PageGenerationContext } from "./generator.js";
+import { findPortfolioDesign } from "../design-systems/index.js";
+import { describeArchetype, describeDesignLayout, designLayout, renderedContentValues, type RenderMeasurement } from "@expresso/portfolio-renderer";
+import type { PageMeasurer, PageMeasurement, PageScreenshot } from "../../platform/browser/page-measurer.js";
 
 const content: StructuredPortfolioContent = {
   version: 1,
@@ -40,7 +42,6 @@ const content: StructuredPortfolioContent = {
   contact: null,
 };
 const { contact: _contact, ...modelContent } = content;
-const choices = retrievePageLibrary(content);
 const spec = {
   root: "page",
   elements: {
@@ -48,9 +49,7 @@ const spec = {
       type: "PortfolioPage",
       props: {
         profile: { $state: "/profile" },
-        design: { layout: "library", palette: "sage", font: "sans" },
         motion: "showcase",
-        referenceIds: [],
         rationale: "경로 설명을 읽는 목차와 상세 구성",
       },
       children: ["intro", "index", "section-project-a"],
@@ -60,7 +59,7 @@ const spec = {
       props: {
         profile: { $state: "/profile" },
         sections: { $state: "/sections" },
-        sourceId: choices.intro[0]!.renderKey!,
+        variant: "statement",
       },
       children: [],
     },
@@ -73,13 +72,17 @@ const spec = {
       type: "CaseTechnical",
       props: {
         section: { $state: "/sectionById/project-a" },
-        sourceId: choices.section.find((i) => i.sourceItemId === "card")!
-          .renderKey!,
       },
       children: [],
     },
   },
 };
+/** 생성기가 검사 전에 채우는 저장 계약의 배치 이름과 유형입니다. 문맥에 사용자 스타일이 없으면 library, 유형이 없으면 case-study입니다. */
+function stored<T>(value: T): T {
+  const copy = structuredClone(value) as { elements: { page: { props: object } } };
+  copy.elements.page.props = { ...copy.elements.page.props, design: { layout: "library" }, archetype: "case-study" };
+  return copy as T;
+}
 /** 실제 어댑터처럼 출력이 스키마에 맞지 않으면 AI_INVALID_OUTPUT을 던집니다. Error를 넣으면 그대로 던집니다. */
 class Stub implements AiClient {
   calls: AiCallSpec[] = [];
@@ -149,7 +152,7 @@ describe("모델 기반 구조화 생성", () => {
       delta: (text) => deltas.push(text),
       thinking: () => {},
     });
-    expect(result.manifest.structured?.spec).toEqual(spec);
+    expect(result.manifest.structured?.spec).toEqual(stored(spec));
     expect(PageGenerationManifestSchema.parse(result.manifest)).toEqual(
       result.manifest,
     );
@@ -262,7 +265,7 @@ describe("모델 기반 구조화 생성", () => {
     expect(ai.calls[1]!.prompt).toContain("Columns에 사용할 수 없는 variant");
     expect(ai.calls[0]!.prompt).toContain("컨테이너 예:");
     expect(result.html).toContain('data-group="columns" data-variant="wide-end"');
-    expect(result.manifest.structured?.spec).toEqual(grouped);
+    expect(result.manifest.structured?.spec).toEqual(stored(grouped));
   });
   it("검사를 통과한 Spec의 렌더링 실패는 모델에 다시 요청하지 않는다", async () => {
     const large = structuredClone(content);
@@ -282,5 +285,171 @@ describe("모델 기반 구조화 생성", () => {
     expect((failure as Error).message).toMatch(
       /^지면 렌더링에 실패했습니다: .*저장 크기 제한/,
     );
+  });
+  it("디자인 스펙을 받으면 토큰 키트로 그리고 디자인 검사를 QA에 넣는다", async () => {
+    const design = findPortfolioDesign({});
+    const result = await new StructuredPageGenerator(new Stub([spec])).generate({ ...context, design });
+    expect(result.html).toContain('class="xp-page"');
+    expect(result.css.startsWith("@import url(")).toBe(true);
+    expect(result.qaReport.status).toBe("ready");
+    expect(result.qaReport.checks.map((check) => check.name)).toEqual(
+      expect.arrayContaining(["design-contrast", "design-type-size", "design-fonts"]),
+    );
+    // 본문이 15px보다 작은 디자인은 검토 대상으로 남깁니다.
+    const small = structuredClone(design);
+    small.typography.scale = small.typography.scale.map((step) =>
+      step.name === "body" ? { ...step, size: "0.8rem" } : step,
+    );
+    const failed = await new StructuredPageGenerator(new Stub([spec])).generate({ ...context, design: small });
+    expect(failed.qaReport.status).toBe("failed_qa");
+  });
+  it("넓은 여백 디자인이면 컨테이너를 고를 수 없고 배치 문단을 프롬프트에 넣는다", async () => {
+    // Clarity를 넓은 여백 배치로 바꾼 사본입니다. 배치만 다르고 나머지 토큰은 같습니다.
+    const design = structuredClone(findPortfolioDesign({}));
+    design.composition.layout = "wide-margin";
+    const ai = new Stub([spec]);
+    const result = await new StructuredPageGenerator(ai).generate({ ...context, design });
+    const layout = designLayout(design);
+    expect(ai.calls[0]!.prompt).toContain(describeDesignLayout(layout, design.identity.name));
+    expect(ai.calls[0]!.prompt).not.toContain("컨테이너는 지면을 나누는 요소입니다");
+    const grouped = structuredClone(spec) as { elements: Record<string, unknown> & { page: { children: string[] } } };
+    grouped.elements["group-1"] = { type: "Columns", props: { variant: "even" }, children: ["index", "section-project-a"] };
+    grouped.elements.page.children = ["intro", "group-1"];
+    expect(ai.schemas[0]!.safeParse(grouped).success).toBe(false);
+    expect(result.html).toContain('data-layout="wide-margin"');
+  });
+  it("포스터형 · 글 · 목록형은 유형 문단을 넣고 유형에 맞는 Spec만 받아 저장한다", async () => {
+    const poster = structuredClone(spec) as { elements: Record<string, { type: string; props: Record<string, unknown> }> };
+    poster.elements.intro!.props.variant = "poster";
+    poster.elements.index!.props.variant = "poster";
+    const posterAi = new Stub([poster]);
+    const posterResult = await new StructuredPageGenerator(posterAi).generate({ ...context, archetype: "poster" });
+    expect(posterAi.calls[0]!.prompt).toContain(describeArchetype("poster"));
+    expect(posterAi.calls[0]!.prompt).not.toContain("CaseRow:");
+    expect(posterAi.calls[0]!.prompt).not.toContain("컨테이너는 지면을 나누는 요소입니다");
+    const posterPage = posterResult.manifest.structured!.spec.elements.page as { props: Record<string, unknown> };
+    expect(posterPage.props.archetype).toBe("poster");
+    // 포스터형에 사례 상세형 첫 화면을 내면 스키마에서 거절합니다.
+    expect(posterAi.schemas[0]!.safeParse(spec).success).toBe(false);
+
+    const list = structuredClone(spec) as { elements: Record<string, { type: string; props: Record<string, unknown> } | undefined> & { page: { children: string[] } } };
+    list.elements.intro!.props.variant = "sentence";
+    delete list.elements.index;
+    list.elements.page.children = list.elements.page.children.filter((key) => key !== "index");
+    list.elements["section-project-a"]!.type = "CaseRow";
+    const listAi = new Stub([list]);
+    const listResult = await new StructuredPageGenerator(listAi).generate({ ...context, archetype: "list" });
+    expect(listAi.calls[0]!.prompt).toContain(describeArchetype("list"));
+    expect(listAi.calls[0]!.prompt).toContain("목차(ProjectIndex)는 두지 않습니다.");
+    expect(listAi.calls[0]!.prompt).not.toContain("ProjectIndex:");
+    // 디자인이 없는 문맥이라 저장된 판 렌더러로 그립니다. 유형은 저장 Spec에 남습니다.
+    expect((listResult.manifest.structured!.spec.elements.page as { props: Record<string, unknown> }).props.archetype).toBe("list");
+  });
+
+  describe("초안 측정과 다듬기", () => {
+    /** 결함이 없는 측정값입니다. 지면 글에는 내용 값을 모두 넣어 본문 누락이 나오지 않게 합니다. */
+    const clean = (overrides: Partial<RenderMeasurement> = {}): RenderMeasurement => ({
+      overflow: false, brokenImages: 0, missingAnchors: [], h1: 1, nameSize: 60, headlineSize: 20, introMotion: "none", hiddenCases: 0,
+      stretchedTags: [], overlappedCaptions: [], orphans: [], escaped: [], casesWithImage: [], caseNumbers: ["01"],
+      displayFamily: "system-ui", bodyFamily: "system-ui", loadedFamilies: [], contrast: [],
+      text: renderedContentValues(content).join(" "), ...overrides,
+    });
+    const orphan = clean({ orphans: [{ element: "section-project-a", text: "경로 설계 사례" }] });
+    const shots = (tag: string): PageScreenshot[] => [
+      ...[1, 2].map((part) => ({ name: "390-part" as const, mediaType: "image/jpeg" as const, data: Buffer.from(`${tag}-390-${part}`).toString("base64"), part, parts: 2, truncated: false })),
+      ...(["1440-first", "1440-full"] as const).map((name) => ({ name, mediaType: name === "1440-first" ? "image/png" as const : "image/jpeg" as const, data: Buffer.from(`${tag}-${name}`).toString("base64"), part: 1, parts: 1, truncated: false })),
+    ];
+    /** 부를 때마다 다음 측정값을 세 너비에 똑같이 돌려주는 가짜 측정기입니다. 스크린샷은 몇 번째 측정인지 적힌 가짜 바이트입니다. */
+    class FakeMeasurer implements PageMeasurer {
+      documents: string[] = [];
+      constructor(private readonly results: (RenderMeasurement | Error)[]) {}
+      async measure(html: string, options: { screenshots?: boolean } = {}): Promise<PageMeasurement> {
+        this.documents.push(html);
+        const next = this.results.shift();
+        if (next instanceof Error) throw next;
+        return { durationMs: 5, widths: [390, 926, 1440].map((width) => ({ width, measurement: next! })), screenshots: options.screenshots ? shots(`m${this.documents.length}`) : [] };
+      }
+    }
+    const changed = (variant = "rows") => {
+      const next = structuredClone(spec);
+      next.elements.index.props.variant = variant;
+      return next;
+    };
+    const input = { snapshot: { spec: stored(spec), content } };
+
+    it("초안은 한 번만 재고 측정 결함이 있어도 다시 요청하지 않는다", async () => {
+      const ai = new Stub([spec]);
+      const measurer = new FakeMeasurer([orphan]);
+      const result = await new StructuredPageGenerator(ai, measurer).generate(context);
+      expect(ai.calls).toHaveLength(1);
+      expect(measurer.documents[0]).toContain("<!doctype html>");
+      expect(result.manifest.renderMeasure).toMatchObject({ status: "measured", adopted: 0, passes: [{ defects: [{ kind: "orphan" }, { kind: "orphan" }, { kind: "orphan" }] }] });
+      expect(result.qaReport.status).toBe("ready");
+      expect(result.qaReport.checks.find((check) => check.name === "rendered-layout")).toMatchObject({ status: "fail", severity: "warning" });
+      expect(PageGenerationManifestSchema.parse(result.manifest)).toEqual(result.manifest);
+    });
+
+    it("초안 측정이 실패하면 생성은 이어가고 건너뛴 이유를 남긴다", async () => {
+      const result = await new StructuredPageGenerator(new Stub([spec]), new FakeMeasurer([new Error("browser missing")])).generate(context);
+      expect(result.manifest.renderMeasure).toEqual({ status: "skipped", reason: "browser missing", passes: [] });
+      expect(result.qaReport.checks.some((check) => check.name.startsWith("rendered-"))).toBe(false);
+    });
+
+    it("다듬기: 측정 결함을 고친 뒤 스크린샷 검토로 고친 판이 비교에서 이기면 채택한다", async () => {
+      const ai = new Stub([changed("rows"), { critique: ["첫 화면 아래 목차가 사례를 밀어냅니다."], spec: changed("mosaic") }, { winner: "A", reason: "사례가 첫 화면에 보입니다." }]);
+      // random() < 0.5 이면 고친 판을 A에 둡니다.
+      const generator = new StructuredPageGenerator(ai, new FakeMeasurer([orphan, clean(), clean()]), () => 0.1);
+      const outcome = await generator.refine(input);
+      expect(outcome.status).toBe("adopted");
+      expect(ai.calls.map((call) => call.contract)).toEqual(["page_generation", "page_review", "page_review"]);
+      expect(ai.calls[0]!.prompt).toContain('section-project-a: "경로 설계 사례"의 마지막 줄에 한 글자만 남습니다.');
+      // 검토는 결함을 고친 판(두 번째 측정)의 스크린샷을, 비교는 A(고친 판) · B(직전 판)를 봅니다.
+      expect(ai.calls[1]!.images!.map((image) => [image.label, Buffer.from(image.data, "base64").toString()])).toEqual([
+        ["1440px 첫 화면", "m2-1440-first"], ["1440px 전체(축소)", "m2-1440-full"], ["390px 1/2", "m2-390-1"], ["390px 2/2", "m2-390-2"],
+      ]);
+      expect(ai.calls[2]!.images!.map((image) => image.label.slice(0, 1))).toEqual(["A", "A", "A", "A", "B", "B", "B", "B"]);
+      expect(Buffer.from(ai.calls[2]!.images![0]!.data, "base64").toString()).toBe("m3-1440-first");
+      expect(outcome.review).toMatchObject({ status: "adopted", critique: ["첫 화면 아래 목차가 사례를 밀어냅니다."], comparison: { winner: "revised", reason: "사례가 첫 화면에 보입니다." } });
+      expect(outcome.result!.manifest.renderMeasure).toMatchObject({ adopted: 2 });
+      expect((outcome.result!.manifest.structured!.spec.elements.index as { props: { variant: string } }).props.variant).toBe("mosaic");
+      expect(PageGenerationManifestSchema.parse(outcome.result!.manifest)).toEqual(outcome.result!.manifest);
+    });
+
+    it("다듬기: 비교에서 직전 판이 이기면 결함을 고친 판까지만 채택한다", async () => {
+      const ai = new Stub([changed("rows"), { critique: ["목차를 카드로 바꿉니다."], spec: changed("mosaic") }, { winner: "A", reason: "직전 판이 더 차분합니다." }]);
+      // random() >= 0.5 이면 고친 판을 B에 두므로 A 승리는 직전 판 승리입니다.
+      const outcome = await new StructuredPageGenerator(ai, new FakeMeasurer([orphan, clean(), clean()]), () => 0.9).refine(input);
+      expect(outcome.status).toBe("adopted");
+      expect(outcome.review.comparison).toEqual({ winner: "draft", reason: "직전 판이 더 차분합니다." });
+      expect((outcome.result!.manifest.structured!.spec.elements.index as { props: { variant: string } }).props.variant).toBe("rows");
+    });
+
+    it("다듬기: 비교에서 초안이 이기면 초안을 유지한다", async () => {
+      const ai = new Stub([{ critique: ["목차를 카드로 바꿉니다."], spec: changed("mosaic") }, { winner: "B", reason: "초안이 낫습니다." }]);
+      const outcome = await new StructuredPageGenerator(ai, new FakeMeasurer([clean(), clean()]), () => 0.1).refine(input);
+      expect(outcome).toMatchObject({ status: "kept", review: { status: "kept", comparison: { winner: "draft" }, calls: 2, costUsd: null } });
+      // 진 판의 구성도 다시 볼 수 있게 남습니다.
+      expect((outcome.review.revisedSpec!.elements.index as { props: { variant: string } }).props.variant).toBe("mosaic");
+      expect(outcome.result).toBeUndefined();
+    });
+
+    it("다듬기: 고친 구성이 측정 결함을 늘리면 비교 없이 초안을 유지한다", async () => {
+      const ai = new Stub([{ critique: ["사례를 두 칸으로 나눕니다."], spec: changed("mosaic") }]);
+      const outcome = await new StructuredPageGenerator(ai, new FakeMeasurer([clean(), orphan])).refine(input);
+      expect(ai.calls).toHaveLength(1);
+      expect(outcome.review.reason).toBe("고친 구성이 측정 결함을 늘렸습니다.");
+      expect(outcome.status).toBe("kept");
+    });
+
+    it("다듬기: 이미지를 받지 못하는 공급자면 검토를 건너뛴다", async () => {
+      const ai = new Stub([new AiError("AI_UNAVAILABLE", "page_review", "codex provider does not accept image input")]);
+      const outcome = await new StructuredPageGenerator(ai, new FakeMeasurer([clean()])).refine(input);
+      expect(outcome.status).toBe("skipped");
+      expect(outcome.review.reason).toContain("스크린샷 검토를 하지 못했습니다");
+    });
+
+    it("다듬기: 측정기가 없으면 건너뛴다", async () => {
+      expect((await new StructuredPageGenerator(new Stub([])).refine(input)).status).toBe("skipped");
+    });
   });
 });

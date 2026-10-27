@@ -38,6 +38,8 @@ export const CONTRACT_CONSENT: Record<AiContract, ConsentScope | null> = {
   // 지면 계약 중 유일하게 **기록 본문이 통째로 나간다.** 문장을 이쪽이 직접
   // 쓰기 때문이다. 나가는 양으로 보면 generation과 같은 자리다.
   page_generation: "career_records",
+  // 기록으로 만든 지면의 스크린샷과 구성을 보냅니다. 화면에 기록 내용이 보이므로 같은 범위입니다.
+  page_review: "career_records",
   partial_edit: "career_records",
   style_remix: "career_records",
   insight_note: "career_records",

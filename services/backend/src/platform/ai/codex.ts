@@ -145,6 +145,8 @@ export class CodexAiClient implements AiClient {
   readonly streams = false;
 
   async complete<T>(spec: AiCallSpec, schema: z.ZodType<T>): Promise<AiResult<T>> {
+    // 이 공급자로 이미지를 보내는 경로는 확인하지 않았습니다. 이미지가 필요한 계약(지면 다듬기)은 건너뛰게 합니다.
+    if (spec.images?.length) throw new AiError("AI_UNAVAILABLE", spec.contract, "codex provider does not accept image input", { retryable: false });
     const tier = spec.modelTier ?? DEFAULT_MODEL_TIER[spec.contract];
     const model = this.#models[spec.contract] ?? DEFAULT_CODEX_MODEL[tier];
     const schemaPath = join(this.#cwd, `schema-${randomUUID()}.json`);

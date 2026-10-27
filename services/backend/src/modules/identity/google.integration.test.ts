@@ -1,7 +1,7 @@
 import { generateKeyPairSync, sign as signWith } from "node:crypto";
 import { createMysqlResource } from "../../platform/legacy-mysql.js";
 
-import { ApiErrorResponseSchema, SocialAuthSessionResponseSchema } from "@expresso/contracts";
+import { ApiErrorResponseSchema, SocialAuthSessionResponseSchema, TERMS_VERSION } from "@expresso/contracts";
 import type { SqlTag } from "../../platform/legacy-mysql.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
@@ -119,6 +119,7 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_U
         email: passwordEmail,
         password: "correct-horse-battery",
         displayName: "이미 있는 사람",
+        termsVersion: TERMS_VERSION,
       },
     });
     expect(signup.statusCode).toBe(201);

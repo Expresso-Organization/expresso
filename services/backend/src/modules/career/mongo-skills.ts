@@ -26,7 +26,7 @@ export async function recomputeMongoSkill(context: MongoContext, userId: string,
     const options = { session: tx.session };
     const records = await db.careerRecords.find({ userId, _id: { $in: ids }, deletedAt: null }, options).limit(1_000).toArray();
     for (const record of records) {
-      if (!await db.careerCategories.findOne({ _id: record.categoryId, isSystem: true }, options)) throw new CareerError(404, "skill evidence record not found");
+      if (!await db.careerCategories.findOne({ _id: record.categoryId, userId }, options)) throw new CareerError(404, "skill evidence record not found");
     }
     const byId = new Map(records.map((record) => [record._id, record]));
     for (const evidence of input.evidence) {

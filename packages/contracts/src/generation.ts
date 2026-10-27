@@ -4,6 +4,7 @@ import { UuidSchema } from "./common.js";
 import { PortfolioChartSchema } from "./portfolio-chart.js";
 import { ListItemSchema, TextRunsSchema, flattenRuns } from "./portfolio-text.js";
 import { TemplateStyleOverrideSchema } from "./templates.js";
+import { PortfolioArchetypeSchema } from "./portfolio-archetype.js";
 
 /**
  * 생성 요청은 템플릿 또는 디자인 시스템 판 중 정확히 하나로 스타일을 정한다.
@@ -17,6 +18,8 @@ export const SubmitGenerationSchema = z
     templateId: UuidSchema.optional(),
     styleOverrides: TemplateStyleOverrideSchema.optional(),
     designSystemRevisionId: UuidSchema.optional(),
+    // 페이지 짜임새. 보내지 않으면 사례 상세형(case-study)입니다.
+    archetype: PortfolioArchetypeSchema.optional(),
   })
   .refine(
     (value) => (value.templateId === undefined) !== (value.designSystemRevisionId === undefined),

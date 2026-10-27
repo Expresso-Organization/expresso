@@ -6,15 +6,11 @@ import {
   structuredModelSchema,
   type StructuredPortfolioContent,
 } from "@expresso/contracts";
-import { retrievePageLibrary } from "@expresso/portfolio-renderer";
 import {
   describeGroupRules,
   describeSpecSchema,
 } from "./structured-spec-format.js";
-import {
-  libraryChoices,
-  structuredSpecPrompt,
-} from "./structured-generator.js";
+import { structuredSpecPrompt } from "./structured-generator.js";
 
 const content: StructuredPortfolioContent = {
   version: 1,
@@ -73,11 +69,11 @@ const content: StructuredPortfolioContent = {
   ],
   contact: { label: "메일", href: "mailto:a@example.com" },
 };
-const library = retrievePageLibrary(content);
-const choices = libraryChoices(library);
+// 생성기와 같이 수집 원본 선택지를 비운 출력 스키마입니다.
 const schema = structuredModelSchema(content, {
-  ...choices,
-  layout: "library",
+  intro: [],
+  section: [],
+  guidance: [],
 });
 type JsonObject = {
   properties: Record<string, JsonObject>;
@@ -88,9 +84,7 @@ const elements = (
 ).properties.elements;
 
 describe("출력 스키마에서 만든 형식 설명", () => {
-  const format = describeSpecSchema(schema, [
-    { values: choices.intro, label: "intro 선택지 ID" },
-  ]);
+  const format = describeSpecSchema(schema);
   it("요소 ID 집합이 출력 스키마의 elements 키와 같다", () => {
     expect(new Set([...format.required, ...format.optional, "page"])).toEqual(
       new Set(Object.keys(elements.properties)),
@@ -117,7 +111,9 @@ describe("출력 스키마에서 만든 형식 설명", () => {
         expect(line, `${key}.${prop}`).toContain(`${prop}`);
     }
     expect(format.text).toContain('section: {$state: "/sectionById/route"}');
-    expect(format.text).toContain('layout: "library"');
+    // 모델은 design을 고르지 않습니다.
+    expect(format.text).not.toContain("palette");
+    expect(format.text).not.toContain("design");
   });
   it("이미지가 없는 사례에는 CaseGallery를 적지 않는다", () => {
     const gripper = format.text
@@ -125,9 +121,12 @@ describe("출력 스키마에서 만든 형식 설명", () => {
       .find((line) => line.startsWith("elements.section-gripper"));
     expect(gripper).not.toContain("CaseGallery");
   });
-  it("이름을 붙인 선택지 enum은 ID 목록 대신 이름으로 적는다", () => {
-    expect(format.text).toContain("sourceId: <intro 선택지 ID>");
-    expect(format.text).not.toContain(JSON.stringify(choices.intro[0]));
+  it("수집 원본 ID를 적지 않고 첫 화면 구도를 적는다", () => {
+    expect(format.text).not.toContain("sourceId");
+    expect(format.text).not.toContain("referenceIds");
+    const intro = format.text.split("\n").find((line) => line.startsWith("elements.intro"));
+    // route 사례에 이미지가 있어 이미지 중심 구도까지 고를 수 있습니다.
+    expect(intro).toContain('variant: "statement"|"split"|"media"');
   });
   it("컨테이너 규칙을 계약 상수에서 만든다", () => {
     const rules = describeGroupRules();
@@ -138,16 +137,24 @@ describe("출력 스키마에서 만든 형식 설명", () => {
     );
   });
   it("프롬프트의 요소 ID 목록과 형식 설명이 생성기에 넘기는 스키마와 같다", () => {
-    const prompt = structuredSpecPrompt(content, "", null, library, schema);
-    const full = describeSpecSchema(schema, [
-      { values: choices.intro, label: "intro 선택지 ID" },
-      { values: choices.section, label: "section 선택지 ID" },
-      { values: choices.guidance, label: "guidance 선택지 ID" },
-    ]);
-    expect(prompt).toContain(full.text);
+    const prompt = structuredSpecPrompt(content, { schema });
+    expect(prompt).toContain(format.text);
+    expect(prompt).not.toContain("수집 목록");
     expect(prompt).toContain(
       `사용할 요소 ID: ${JSON.stringify(format.required)}`,
     );
     expect(prompt).not.toContain("editorial(측면 소개+기사)");
+  });
+  it("컨테이너를 쓸 수 없는 디자인이면 컨테이너 설명 없이 배치 문단을 넣는다", () => {
+    const flat = structuredModelSchema(content, { intro: [], section: [], guidance: [], groups: [] });
+    const prompt = structuredSpecPrompt(content, { schema: flat, layout: "고른 디자인은 가상이고 배치는 넓은 여백입니다." });
+    expect(prompt).toContain("고른 디자인은 가상이고 배치는 넓은 여백입니다.");
+    expect(prompt).not.toContain("컨테이너는 지면을 나누는 요소입니다");
+    expect(prompt).not.toContain("Columns:");
+    expect(prompt).not.toContain("variant='rail'로 Columns");
+    expect(prompt).toContain("모든 요소를 page.children에 바로 둡니다");
+    const withGroups = structuredSpecPrompt(content, { schema });
+    expect(withGroups).toContain("컨테이너는 지면을 나누는 요소입니다");
+    expect(withGroups).toContain("Columns:");
   });
 });

@@ -282,7 +282,8 @@ export class MaterialsService {
           attempts: job[0].attempts,
           resultId: job[0].result_id,
           failure: job[0].error_code
-            ? { code: job[0].error_code, retryable: job[0].failure_retryable ?? false }
+            // 구 MySQL 표에는 동의 열이 없다.
+            ? { code: job[0].error_code, retryable: job[0].failure_retryable ?? false, requiredConsent: null }
             : null,
         }
         : null,

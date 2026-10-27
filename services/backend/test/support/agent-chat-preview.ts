@@ -21,7 +21,7 @@ import { AgentCredentials } from "../../src/modules/agent-chat/index.js";
 import { AgentChatService } from "../../src/modules/agent-chat/index.js";
 
 if (process.env.NODE_ENV !== "test" || !process.env.DEV_LOGIN_PASSWORD) throw new Error("테스트 실행과 개발 로그인 설정이 필요합니다.");
-const config = loadRuntimeConfig({ ...process.env, MONGODB_DATABASE: "expresso_agent_chat_preview", PORT: "4010", CAREER_EDITOR_V2_ENABLED: "true" });
+const config = loadRuntimeConfig({ ...process.env, MONGODB_DATABASE: "expresso_agent_chat_preview", PORT: "4010" });
 await migrateMongo({ databaseUrl: config.mongodbUrl!, databaseName: config.mongodbDatabase! });
 const db = createMongoResource(config.mongodbUrl!, { databaseName: config.mongodbDatabase! });
 const identityService = new IdentityService(db); const careerService = new CareerService(db); const careerDocumentService = new CareerDocumentService(db, config.assetSigningSecret); const consentService = new ConsentService(db); const jobBoardService = new JobBoardService(db);

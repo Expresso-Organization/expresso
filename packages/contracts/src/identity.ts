@@ -9,6 +9,13 @@ export const AuthenticatedUserSchema = z.strictObject({
   email: z.email(),
   displayName: z.string().min(1).max(200),
   planCode: PlanCodeSchema,
+  /**
+   * 이 주소가 본인 것임을 확인한 시각. 아직이면 null.
+   *
+   * 화면은 이걸로 인증 안내 띠를 그리고, 발행 라우트는 이걸로 문을 연다 — 인증 전에는
+   * 포트폴리오를 공개 주소에 올릴 수 없다.
+   */
+  emailVerifiedAt: TimestampSchema.nullable(),
 });
 
 export const CurrentUserResponseSchema = z.strictObject({
@@ -50,6 +57,14 @@ export const IssuedIdentitySessionSchema = z.strictObject({
 export const EmailSchema = z.email().max(320);
 
 /**
+ * 이용약관 · 개인정보 처리방침의 현재 판. 문구가 바뀌면 올린다.
+ *
+ * 가입 요청은 사용자가 읽고 동의한 판을 그대로 보낸다. 서버가 지금 묻는 판과 같아야
+ * 가입이 된다 — 사용자가 승낙한 것은 "약관" 일반이 아니라 그때 읽은 그 문장이다.
+ */
+export const TERMS_VERSION = 1;
+
+/**
  * 10b 회원가입. 소셜 로그인이 1순위지만 이메일 경로를 대안으로 둔다(화면 정의서 10).
  * 최소 길이는 NIST SP 800-63B의 8자보다 한 단계 위인 10자로 잡는다.
  */
@@ -58,6 +73,8 @@ export const SignupSchema = z.strictObject({
   password: z.string().min(10).max(200),
   displayName: z.string().trim().min(1).max(200),
   persistent: SessionPersistenceSchema,
+  /** 동의한 약관의 판. 없거나 다르면 400 — 동의 없는 가입은 받지 않는다. */
+  termsVersion: z.literal(TERMS_VERSION),
 });
 
 export const LoginSchema = z.strictObject({
@@ -106,6 +123,41 @@ export const GoogleLinkSchema = z.strictObject({
   persistent: SessionPersistenceSchema,
 });
 
+/* ── 비밀번호 재설정 · 이메일 인증 ── */
+
+/**
+ * 일회용 토큰. 세션 토큰(`exps_`)과 같은 방식으로 만들고 서버는 해시만 둔다.
+ * 접두어로 종류를 구분해 재설정 링크를 인증 자리에 밀어 넣을 수 없게 한다.
+ */
+export const PasswordResetTokenSchema = z.string().regex(/^exrt_[A-Za-z0-9_-]{43}$/);
+export const EmailVerificationTokenSchema = z.string().regex(/^exvt_[A-Za-z0-9_-]{43}$/);
+
+/** 링크 수명. 재설정은 짧게(남의 메일함에 남아도 쓸모가 없게), 인증은 하루. */
+export const PASSWORD_RESET_TTL_MS = 30 * 60_000;
+export const EMAIL_VERIFICATION_TTL_MS = 24 * 3_600_000;
+/** 같은 사람에게 같은 종류의 메일을 다시 보내기까지의 최소 간격. */
+export const AUTH_MAIL_RESEND_INTERVAL_MS = 60_000;
+
+/** 응답은 가입 여부와 무관하게 202 하나다 — 이메일 존재를 흘리지 않는다. */
+export const PasswordResetRequestSchema = z.strictObject({
+  email: EmailSchema,
+});
+
+export const PasswordResetConfirmSchema = z.strictObject({
+  token: PasswordResetTokenSchema,
+  password: z.string().min(10).max(200),
+  persistent: SessionPersistenceSchema,
+});
+
+export const EmailVerificationConfirmSchema = z.strictObject({
+  token: EmailVerificationTokenSchema,
+});
+
+/** 발행 라우트 403의 `error.details`. 화면은 이걸 보고 인증을 안내한다. */
+export const EmailVerificationRequiredSchema = z.strictObject({
+  reason: z.literal("email_verification_required"),
+});
+
 /** `created`는 이 요청이 계정을 새로 만들었는지다 — 온보딩으로 보낼지가 여기서 갈린다. */
 export const SocialAuthSessionSchema = z.strictObject({
   user: AuthenticatedUserSchema,
@@ -135,6 +187,10 @@ export type PasswordConfirmationRequired = z.infer<
   typeof PasswordConfirmationRequiredSchema
 >;
 export type Signup = z.infer<typeof SignupSchema>;
+export type PasswordResetRequest = z.infer<typeof PasswordResetRequestSchema>;
+export type PasswordResetConfirm = z.infer<typeof PasswordResetConfirmSchema>;
+export type EmailVerificationConfirm = z.infer<typeof EmailVerificationConfirmSchema>;
+export type EmailVerificationRequired = z.infer<typeof EmailVerificationRequiredSchema>;
 export type Login = z.infer<typeof LoginSchema>;
 export type AuthSession = z.infer<typeof AuthSessionSchema>;
 export type AuthenticatedUser = z.infer<typeof AuthenticatedUserSchema>;

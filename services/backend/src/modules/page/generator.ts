@@ -8,6 +8,8 @@ import {
   pageStyleGrammarPrompt,
   type PageGenerationManifest,
   type PageQaReport,
+  type DesignSystemSpecV2,
+  type PortfolioArchetype,
   type PageStyleGrammar,
   type PortfolioPlan,
   type StructuredPortfolioContent,
@@ -66,6 +68,10 @@ export interface PageGenerationContext {
    * 성격을 정해 두면 한 장으로 충분하다. 없으면(옛 포트폴리오) 모델이 알아서 정한다.
    */
   style?: PageStyleGrammar | undefined;
+  /** 구조화 지면을 그릴 디자인 시스템 스펙. 사용자 색 조정이 이미 반영되어 있다. */
+  design?: DesignSystemSpecV2 | undefined;
+  /** 사용자가 고른 페이지 짜임새. 없으면 사례 상세형. */
+  archetype?: PortfolioArchetype | undefined;
   sections: PageSection[];
   evidence: PageEvidence[];
   media: PageMedia[];

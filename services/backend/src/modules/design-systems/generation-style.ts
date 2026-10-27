@@ -1,6 +1,8 @@
 import {
+  TemplateStyleOverrideSchema,
   TemplateStyleSchema,
   type DesignSystemRevision,
+  type DesignSystemSpecV2,
   type TemplateStyle,
 } from "@expresso/contracts";
 
@@ -64,4 +66,41 @@ export function generationStyleFor(revision: DesignSystemRevision): {
       structure: composition.layout,
     }),
   };
+}
+
+/**
+ * 포트폴리오를 그릴 디자인 시스템 스펙을 정합니다. 생성기와 직접 편집이 같은 함수를 씁니다.
+ *
+ * 1. 판 ID가 있으면 그 판
+ * 2. 없으면 템플릿과 연결된 판
+ * 3. 둘 다 없으면 Clarity
+ *
+ * 사용자 조정(`styleOverrides`)의 배경·글자·강조 색은 스펙 색에 덮어씁니다. 판으로 만든
+ * 포트폴리오의 조정 값은 그 판의 색에서 온 것이라 결과가 같습니다.
+ */
+export function findPortfolioDesign(input: {
+  designSystemRevisionId?: string | null | undefined;
+  templateId?: string | null | undefined;
+  styleOverrides?: unknown;
+}): DesignSystemSpecV2 {
+  const entries = catalogEntries();
+  const revision =
+    (input.designSystemRevisionId
+      ? findDesignSystemRevision(input.designSystemRevisionId)
+      : null) ??
+    (input.templateId
+      ? entries.find(({ revision }) => revision.legacyTemplateId === input.templateId)?.revision
+      : null) ??
+    entries.find(({ revision }) => revision.code === "clarity")?.revision;
+  if (!revision) throw new Error("내장 Clarity 디자인이 없습니다.");
+  const spec = structuredClone(revision.spec);
+  // 조정이 깨졌으면 템플릿 해석(composeTemplateStyle)과 같이 무시합니다.
+  const overrides = TemplateStyleOverrideSchema.safeParse(input.styleOverrides ?? {});
+  if (overrides.success) {
+    const { background, text, accent } = overrides.data;
+    if (background) spec.colors.canvas.value = background;
+    if (text) spec.colors.text.value = text;
+    if (accent) spec.colors.accent.value = accent;
+  }
+  return spec;
 }

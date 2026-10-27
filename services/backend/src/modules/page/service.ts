@@ -4,6 +4,7 @@ import {
   GeneratedPageSchema,
   PAGE_PROMPT_VERSION,
   PageStyleGrammarSchema,
+  PortfolioArchetypeSchema,
   PortfolioPlanSchema,
   composeTemplateStyle,
   findPortfolioStyle,
@@ -22,13 +23,20 @@ import { mongoCollections, type GeneratedPageDoc, type JsonObject } from "@expre
 
 import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction } from "../../platform/mongo-transaction.js";
+import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { withTimeout } from "../../platform/timeouts.js";
 import type { ConsentApi } from "../consent/index.js";
-import { findDesignSystemRevision } from "../design-systems/index.js";
+import { findDesignSystemRevision, findPortfolioDesign } from "../design-systems/index.js";
 import { requireActiveUser } from "../identity/index.js";
 import { DESIGN_PRINCIPLES_VERSION, type PageGenerationContext, type PageGenerator } from "./generator.js";
 import { PageServiceError } from "./public.js";
 import type { PageStream } from "./stream.js";
+import type { PageRefineInput, PageRefineOutcome } from "./structured-generator.js";
+
+/** 저장한 초안을 다듬는 쪽입니다. 워커가 `StructuredPageGenerator`를 넘깁니다. */
+export interface PageRefiner {
+  refine(input: PageRefineInput): Promise<PageRefineOutcome>;
+}
 
 function toPage(row: GeneratedPageDoc): GeneratedPage {
   return GeneratedPageSchema.parse({
@@ -37,6 +45,7 @@ function toPage(row: GeneratedPageDoc): GeneratedPage {
     revision: row.revision, qualityStatus: row.qualityStatus, qaReport: row.qaReport,
     generationManifest: Object.keys(row.generationManifest).length > 0 ? row.generationManifest : null,
     styleSpec: row.styleSpecSnapshot ?? null, createdAt: row.createdAt.toISOString(),
+    ...(row.refinement ? { refinement: row.refinement } : {}),
   });
 }
 
@@ -123,6 +132,8 @@ export class PageService {
       ...(author ? { author: { name: author.displayName } } : {}),
       portfolioPlan: recipe.portfolioPlan ? PortfolioPlanSchema.parse(recipe.portfolioPlan) : null,
       ...(style ? { style } : {}),
+      design: findPortfolioDesign(portfolio),
+      ...(PortfolioArchetypeSchema.safeParse(portfolio.archetype).success ? { archetype: PortfolioArchetypeSchema.parse(portfolio.archetype) } : {}),
       sections: sections.map((row) => ({ id: row._id, title: row.title, purpose: row.purpose, goal: typeof row.context.goal === "string" ? row.context.goal : "", points: Array.isArray(row.context.points) ? row.context.points.filter((v): v is string => typeof v === "string") : [], targetLength: row.targetLength })),
       evidence: [...new Map(paths.map((path) => [path.sourceId, { id: path.sourceId, label: path.sourceLabel, text: sourceText(path.sourceId) }])).values()].filter(({ text }) => text.trim().length > 0),
       media, jobTitle: posting?.title ?? brew?.freeTitle ?? null,
@@ -166,8 +177,12 @@ export class PageService {
         portfolioPlanSnapshot: context.portfolioPlan as unknown as JsonObject | null,
         styleSpecSnapshot: context.style as unknown as JsonObject | null,
         designPrinciplesVersion: DESIGN_PRINCIPLES_VERSION, createdAt: now,
+        // 구조화 초안은 저장과 함께 다듬기를 예약합니다. 사용자는 초안을 먼저 보고, 워커가 이어서 다듬습니다.
+        ...(result.manifest.structured ? { refinement: { status: "pending" as const } } : {}),
       };
-      await db.generatedPages.insertOne(created, transactionOptions); return created;
+      await db.generatedPages.insertOne(created, transactionOptions);
+      if (created.refinement) await addMongoOutboxEvent(tx, { userId, topic: "page.refine", payload: { userId, pageId: created._id }, idempotencyKey: `page-refine:${created._id}` });
+      return created;
     });
     await this.#publish(stream?.done(streamId, row._id));
     if (result.removed.length > 0) console.error(JSON.stringify({ level: "warn", event: "page.sanitized", portfolioId, removed: result.removed }));
@@ -179,17 +194,92 @@ export class PageService {
     try { await work; } catch (error) { console.error(JSON.stringify({ level: "warn", event: "page.stream_failed", detail: error instanceof Error ? error.message : String(error) })); }
   }
 
+  /**
+   * 예약된 초안을 다듬습니다(워커 `page.refine`).
+   *
+   * 초안이 더는 최신 판이 아니면(사용자가 고쳤거나 다시 뽑았으면) 손대지 않습니다. 채택하면 새 판을 저장하고,
+   * 아니면 초안에 결과와 이유만 남깁니다. 재전달로 다시 와도 `pending`이 아니면 바로 끝냅니다.
+   */
+  async refine(userId: string, pageId: string, refiner: PageRefiner | null): Promise<void> {
+    const db = mongoCollections(this.context.db);
+    const draft = await db.generatedPages.findOne({ _id: pageId, userId });
+    if (!draft || draft.refinement?.status !== "pending") return;
+    const mark = (refinement: NonNullable<GeneratedPageDoc["refinement"]>, review?: PageRefineOutcome["review"]) =>
+      db.generatedPages.updateOne(
+        { _id: pageId, userId, "refinement.status": "pending" },
+        { $set: { refinement, ...(review ? { "generationManifest.visualReview": review as unknown as JsonObject } : {}) } },
+      );
+    const latestId = async () => (await db.generatedPages.find({ userId, portfolioId: draft.portfolioId }).sort({ revision: -1 }).limit(1).next())?._id;
+    if (await latestId() !== draft._id) { await mark({ status: "superseded" }); return; }
+    if (!refiner) { await mark({ status: "skipped", reason: "AI가 꺼져 있습니다." }); return; }
+    const structured = toPage(draft).generationManifest?.structured;
+    const owner = await db.portfolios.findOne({ _id: draft.portfolioId, userId });
+    if (!structured || !owner) { await mark({ status: "skipped", reason: "구조화 지면이 아닙니다." }); return; }
+    try { await this.#consent?.require(userId, "page_review"); }
+    catch (error) { await mark({ status: "skipped", reason: error instanceof Error ? error.message.slice(0, 1_000) : "동의가 필요합니다." }); return; }
+    const root = structured.spec.elements[structured.spec.root] as { props?: { archetype?: unknown } } | undefined;
+    const archetype = PortfolioArchetypeSchema.safeParse(root?.props?.archetype);
+    let outcome: PageRefineOutcome;
+    try {
+      outcome = await withTimeout(refiner.refine({
+        snapshot: structured,
+        design: findPortfolioDesign(owner),
+        style: isPageStyleGrammar(draft.styleSpecSnapshot) ? draft.styleSpecSnapshot : undefined,
+        archetype: archetype.success ? archetype.data : undefined,
+        instruction: draft.instruction ?? undefined,
+      }), 900_000, "page refiner");
+    } catch (error) {
+      await mark({ status: "failed", reason: (error instanceof Error ? error.message : String(error)).slice(0, 1_000) });
+      return;
+    }
+    const result = outcome.result;
+    if (outcome.status !== "adopted" || !result) {
+      await mark({ status: outcome.status, ...(outcome.review.reason ? { reason: outcome.review.reason.slice(0, 1_000) } : {}) }, outcome.review);
+      return;
+    }
+    const saved = await inTransaction(this.context, async (tx) => {
+      await requireActiveUser(tx, userId);
+      const collections = mongoCollections(tx.db); const options = { session: tx.session };
+      const latest = await collections.generatedPages.find({ userId, portfolioId: draft.portfolioId }, options).sort({ revision: -1 }).limit(1).next();
+      // 다듬는 동안 사용자가 지면을 고쳤으면 덮지 않습니다.
+      if (!latest || latest._id !== draft._id) return null;
+      const created: GeneratedPageDoc = {
+        _id: randomUUID(), userId, portfolioId: draft.portfolioId, generationJobId: null,
+        html: result.html, css: result.css, rationale: result.rationale, revision: draft.revision + 1,
+        instruction: draft.instruction ?? null, promptVersion: PAGE_PROMPT_VERSION,
+        ungroundedNumbers: result.ungrounded, removed: result.removed, qualityStatus: result.qaReport.status,
+        qaReport: result.qaReport as unknown as JsonObject, generationManifest: result.manifest as unknown as JsonObject,
+        portfolioPlanSnapshot: draft.portfolioPlanSnapshot ?? null, styleSpecSnapshot: draft.styleSpecSnapshot ?? null,
+        designPrinciplesVersion: DESIGN_PRINCIPLES_VERSION, createdAt: new Date(),
+      };
+      await collections.generatedPages.insertOne(created, options);
+      await collections.generatedPages.updateOne(
+        { _id: draft._id, userId },
+        { $set: { refinement: { status: "adopted", revisionId: created._id }, "generationManifest.visualReview": outcome.review as unknown as JsonObject } },
+        options,
+      );
+      return created;
+    });
+    if (!saved) await mark({ status: "superseded" }, outcome.review);
+  }
+
   async editComposition(userId: string, portfolioId: string, raw: EditStructuredPage): Promise<GeneratedPage> {
     const input = EditStructuredPageSchema.parse(raw), current = await this.latest(userId, portfolioId);
     if (!current) throw new PageServiceError(404, "지면이 없습니다.");
     if (current.revision !== input.expectedRevision) throw new PageServiceError(409, "다른 편집이 먼저 저장됐습니다. 새로고침해 주세요.");
     const previous = current.generationManifest?.structured;
     if (!previous) throw new PageServiceError(409, "구조화 지면에서만 구성을 편집할 수 있습니다.");
+    // 생성 때와 같은 디자인으로 다시 그립니다. 수집 원본으로 그린 판은 렌더러가 저장된 사용자 색을 씁니다.
+    const owner = await mongoCollections(this.context.db).portfolios.findOne({ _id: portfolioId, userId });
+    if (!owner) throw new PageServiceError(404, "portfolio not found");
     let snapshot, rendered;
     try {
       const content = applyStructuredTextPatches(previous.content, input.patches);
       snapshot = validateStructuredPortfolio(input.spec ?? previous.spec, content);
-      rendered = renderStructuredPortfolio(snapshot.spec, snapshot.content, current.styleSpec ?? undefined);
+      rendered = renderStructuredPortfolio(snapshot.spec, snapshot.content, {
+        design: findPortfolioDesign(owner),
+        theme: isPageStyleGrammar(current.styleSpec) ? current.styleSpec : undefined,
+      });
     } catch (error) { throw new PageServiceError(422, error instanceof Error ? error.message : "구성이 올바르지 않습니다."); }
     const row = await inTransaction(this.context, async tx => {
       await requireActiveUser(tx, userId);

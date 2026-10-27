@@ -117,6 +117,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
           evidence: [],
           contact: null,
         });
+        // 모델 출력에는 design이 없습니다. 생성기처럼 저장 계약의 배치 이름을 채웁니다.
         const spec = structuredModelSchema(content).parse({
           root: "page",
           elements: {
@@ -124,7 +125,6 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
               type: "PortfolioPage",
               props: {
                 profile: { $state: "/profile" },
-                design: { layout: "gallery", palette: "ivory", font: "sans" },
                 motion: "subtle",
                 rationale: "자료 전시",
               },
@@ -135,6 +135,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
               props: {
                 profile: { $state: "/profile" },
                 sections: { $state: "/sections" },
+                variant: "statement",
               },
               children: [],
             },
@@ -149,7 +150,8 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
               children: [],
             },
           },
-        });
+        }) as { elements: { page: { props: Record<string, unknown> } } };
+        spec.elements.page.props.design = { layout: "gallery" };
         const rendered = renderStructuredPortfolio(spec, content),
           usage = {
             model: "fixture",
@@ -255,6 +257,30 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
           );
           expect(next.style?.accent).toBe(revision.spec.colors.accent.value);
           expect(next.style?.structure).toBe(revision.spec.composition.layout);
+          // 렌더러는 고른 판의 전체 토큰을 받습니다.
+          expect(next.design).toEqual(revision.spec);
+          return generator.generate(next);
+        },
+      });
+    });
+
+    it("생성 요청의 유형을 포트폴리오에 남기고 생성 문맥에 넘긴다", async () => {
+      const revisionId = "5d8f5f2d-6d2a-4f24-9d1a-2b8f9e7c1702";
+      const generation = new MongoGenerationService(fixture.resource);
+      const job = await generation.submit(user, randomUUID(), { recipeId, designSystemRevisionId: revisionId, archetype: "list" });
+      const created = (await generation.prepareFreeHtml(job.generationJobId)).portfolioId!;
+      await service.generate(user, created, {
+        async generate(next) {
+          expect(next.archetype).toBe("list");
+          return generator.generate(next);
+        },
+      });
+      // 유형 없이 요청하면 문맥에도 없고, 생성기는 사례 상세형으로 만듭니다.
+      const plain = await generation.submit(user, randomUUID(), { recipeId, designSystemRevisionId: revisionId });
+      const plainPortfolio = (await generation.prepareFreeHtml(plain.generationJobId)).portfolioId!;
+      await service.generate(user, plainPortfolio, {
+        async generate(next) {
+          expect(next.archetype).toBeUndefined();
           return generator.generate(next);
         },
       });
@@ -371,6 +397,41 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
       expect((await service.latest(user, portfolio))?.revision).toBe(
         edited.revision,
       );
+    });
+    it("구조화 초안은 다듬기를 예약하고, 채택한 판을 새 판으로 저장하며, 그사이 고친 판은 덮지 않는다", async () => {
+      const db = mongoCollections(fixture.resource.db);
+      const draft = await service.generate(user, portfolio, generator);
+      expect(draft.refinement).toEqual({ status: "pending" });
+      expect(await db.outboxEvents.findOne({ topic: "page.refine", idempotencyKey: `page-refine:${draft.id}` })).toMatchObject({ payload: { userId: user, pageId: draft.id } });
+      const improved = await generator.generate({ author: { name: "가상 작성자" } } as PageGenerationContext);
+      const inputs: unknown[] = [];
+      const review = { status: "adopted" as const, critique: ["사례를 첫 화면 가까이 올립니다."], comparison: { winner: "revised" as const, reason: "사례가 먼저 보입니다." }, durationMs: 10, calls: 3, costUsd: 0.5 };
+      const refiner = { refine: async (input: unknown) => { inputs.push(input); return { status: "adopted" as const, review, result: { ...improved, html: `${improved.html}<p>다듬은 판</p>` } }; } };
+      await service.refine(other, draft.id, refiner);
+      expect(inputs).toHaveLength(0);
+      await service.refine(user, draft.id, refiner);
+      expect(inputs[0]).toMatchObject({ snapshot: draft.generationManifest!.structured });
+      const latest = (await service.latest(user, portfolio))!;
+      expect(latest.revision).toBe(draft.revision + 1);
+      expect(latest.html).toContain("다듬은 판");
+      expect(latest.refinement).toBeUndefined();
+      const marked = (await service.history(user, portfolio)).find((page) => page.id === draft.id)!;
+      expect(marked.refinement).toEqual({ status: "adopted", revisionId: latest.id });
+      expect(marked.generationManifest!.visualReview).toEqual(review);
+      // 재전달이 와도 다시 다듬지 않습니다.
+      await service.refine(user, draft.id, refiner);
+      expect(inputs).toHaveLength(1);
+
+      const second = await service.generate(user, portfolio, generator);
+      const edited = await service.editComposition(user, portfolio, { expectedRevision: second.revision, patches: [{ path: "/sections/project-a/summary", value: "사용자 편집" }] });
+      await service.refine(user, second.id, refiner);
+      expect(inputs).toHaveLength(1);
+      expect((await service.latest(user, portfolio))!.id).toBe(edited.id);
+      expect((await service.history(user, portfolio)).find((page) => page.id === second.id)!.refinement).toEqual({ status: "superseded" });
+
+      const third = await service.generate(user, portfolio, generator);
+      await service.refine(user, third.id, null);
+      expect((await service.latest(user, portfolio))!.refinement).toEqual({ status: "skipped", reason: "AI가 꺼져 있습니다." });
     });
   },
 );

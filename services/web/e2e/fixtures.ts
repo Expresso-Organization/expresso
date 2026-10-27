@@ -16,7 +16,7 @@ export async function accessToken(page: Page): Promise<string> {
   return cookie.value;
 }
 
-export async function api<T>(page: Page, method: "GET" | "POST" | "PATCH" | "PUT", path: string, body?: unknown, headers: Record<string, string> = {}): Promise<T> {
+export async function api<T>(page: Page, method: "GET" | "POST" | "PATCH" | "PUT" | "DELETE", path: string, body?: unknown, headers: Record<string, string> = {}): Promise<T> {
   const response = await page.request.fetch(`${API_URL}${path}`, {
     method,
     headers: { authorization: `Bearer ${await accessToken(page)}`, accept: "application/json", ...(body === undefined ? {} : { "content-type": "application/json" }), ...headers },
@@ -27,7 +27,7 @@ export async function api<T>(page: Page, method: "GET" | "POST" | "PATCH" | "PUT
 }
 
 export async function categories(page: Page) {
-  return (await api<{ data: Array<{ id: string; key: string; name: string; version: number; propertySchemaV2?: Array<{ id: string; key: string; type: string }> }> }>(page, "GET", "/v1/career/categories")).data;
+  return (await api<{ data: Array<{ id: string; key: string; name: string; version: number; propertySchemaV2: Array<{ id: string; key: string; name: string; type: string }> }> }>(page, "GET", "/v1/career/categories")).data;
 }
 
 export async function createRecord(page: Page, categoryId: string, title: string, properties: Record<string, unknown> = {}) {

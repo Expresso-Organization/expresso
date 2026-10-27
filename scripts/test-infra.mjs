@@ -72,9 +72,8 @@ function runPnpm(pnpmArgs) {
 }
 
 for (const command of [
-  ["--filter", "@expresso/contracts", "build"],
-  ["--filter", "@expresso/database", "build"],
-  ["--filter", "@expresso/portfolio-renderer", "build"],
+  // backend가 쓰는 워크스페이스 패키지를 의존 순서대로 짓습니다(editor → contracts → …).
+  ["--filter", "@expresso/backend^...", "build"],
   ["--filter", "@expresso/backend", "exec", "vitest", "run", ...testFiles],
 ]) {
   const exitCode = await runPnpm(command);

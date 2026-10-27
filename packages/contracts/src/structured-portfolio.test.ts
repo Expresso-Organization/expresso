@@ -239,6 +239,12 @@ describe("구조화 포트폴리오 계약", () => {
         },
       } as Record<string, unknown>,
     });
+    it("색 묶음 · 서체 종류가 없는 새 판과 있는 저장본을 모두 받는다", () => {
+      const fresh = structuredClone(tree());
+      (fresh.elements.page as { props: Record<string, unknown> }).props.design = { layout: "library" };
+      expect(() => validateStructuredPortfolio(fresh, content2)).not.toThrow();
+      expect(() => validateStructuredPortfolio(tree(), content2)).not.toThrow();
+    });
     it("컨테이너 안의 사례를 한 번씩 연결한 트리를 받는다", () => {
       const result = validateStructuredPortfolio(tree(), content2);
       expect(structuredLeaves(result.spec).map((item) => [item.key, item.parent])).toEqual([
@@ -250,19 +256,47 @@ describe("구조화 포트폴리오 계약", () => {
       ]);
       // 모델 계약도 같은 트리를 받습니다.
       const { "case-a": a, "case-b": b, ...rest } = tree().elements;
-      const parsed = structuredModelSchema(content2).safeParse({
+      const modelTree = (variant: string) => ({
         root: "page",
         elements: {
           ...rest,
-          intro: { ...spec.elements.intro, props: { profile: { $state: "/profile" }, sections: { $state: "/sections" } } },
+          intro: { ...spec.elements.intro, props: { profile: { $state: "/profile" }, sections: { $state: "/sections" }, variant } },
           index: { type: "ProjectIndex", props: { sections: { $state: "/sections" }, variant: "rows" }, children: [] },
           "section-project-a": a,
           "section-project-b": b,
           "group-1": { type: "Columns", props: { variant: "even" }, children: ["section-project-a", "section-project-b"] },
-          page: { ...spec.elements.page, children: ["intro", "index", "group-1", "evidence", "contact"] },
+          // 모델은 design을 고르지 않습니다. 생성기가 검사 전에 채웁니다.
+          page: (() => {
+            const { design: _design, ...props } = spec.elements.page.props;
+            return { ...spec.elements.page, props, children: ["intro", "index", "group-1", "evidence", "contact"] };
+          })(),
         },
       });
+      const parsed = structuredModelSchema(content2).safeParse(modelTree("split"));
       expect(parsed.error?.issues ?? []).toEqual([]);
+      // 섹션 이미지가 없으면 이미지 중심 첫 화면을 고를 수 없습니다.
+      expect(content2.sections.some((section) => section.media.length)).toBe(false);
+      expect(structuredModelSchema(content2).safeParse(modelTree("media")).success).toBe(false);
+      const withImage = structuredClone(content2);
+      withImage.sections[0]!.media = [{ src: "data:image/png;base64,AAAA", alt: "가상 이미지", origin: "fictional" }];
+      expect(structuredModelSchema(withImage).safeParse(modelTree("media")).error?.issues ?? []).toEqual([]);
+      // 넓은 여백 디자인처럼 컨테이너를 쓸 수 없으면 group 요소를 고를 수 없습니다.
+      const noGroups = structuredModelSchema(content2, { intro: [], section: [], guidance: [], groups: [] });
+      expect(noGroups.safeParse(modelTree("split")).success).toBe(false);
+      const flat = modelTree("split");
+      const { "group-1": _group, ...flatElements } = flat.elements;
+      const flatTree = {
+        ...flat,
+        elements: {
+          ...flatElements,
+          page: { ...flat.elements.page, children: ["intro", "index", "section-project-a", "section-project-b", "evidence", "contact"] },
+        },
+      };
+      expect(noGroups.safeParse(flatTree).error?.issues ?? []).toEqual([]);
+      // 모델이 design을 내면 거절합니다.
+      const withDesign = structuredClone(flatTree);
+      (withDesign.elements.page.props as Record<string, unknown>).design = { layout: "library", palette: "sage", font: "sans" };
+      expect(noGroups.safeParse(withDesign).success).toBe(false);
     });
     it("컨테이너 규칙을 어긴 트리를 거부한다", () => {
       const cases: [string, (raw: ReturnType<typeof tree>) => void, string][] = [
@@ -280,5 +314,63 @@ describe("구조화 포트폴리오 계약", () => {
         expect(() => validateStructuredPortfolio(raw, content2), name).toThrow(message);
       }
     });
+  });
+});
+
+describe("포트폴리오 유형별 모델 스키마", () => {
+  const value: StructuredPortfolioContent = {
+    version: 1,
+    profile: { name: "가상 인물", role: "엔지니어", headline: "경로를 설계하는 엔지니어입니다.", intro: "설명", focus: [] },
+    sections: [
+      { id: "a", title: "시험", summary: "요약", body: "본문", pattern: "project", period: "2025.01 — 2025.05", details: [], media: [], sourceIds: [] },
+    ],
+    career: [],
+    evidence: [],
+    contact: null,
+  };
+  const page = (children: string[]) => ({ type: "PortfolioPage", props: { profile: { $state: "/profile" }, motion: "showcase", rationale: "근거" }, children });
+  const intro = (variant: string) => ({ type: "NameIntro", props: { profile: { $state: "/profile" }, sections: { $state: "/sections" }, variant }, children: [] });
+  const index = (variant: string) => ({ type: "ProjectIndex", props: { sections: { $state: "/sections" }, variant }, children: [] });
+  const caseNode = (type: string) => ({ type, props: { section: { $state: "/sectionById/a" } }, children: [] });
+  const schema = (archetype: "case-study" | "poster" | "list") => structuredModelSchema(value, { intro: [], section: [], guidance: [], archetype });
+
+  it("포스터형은 포스터 첫 화면과 포스터 목차만 고르고 컨테이너가 없다", () => {
+    const ok = { root: "page", elements: { page: page(["intro", "index", "section-a"]), intro: intro("poster"), index: index("poster"), "section-a": caseNode("CaseEssay") } };
+    expect(schema("poster").safeParse(ok).error?.issues ?? []).toEqual([]);
+    expect(schema("poster").safeParse({ ...ok, elements: { ...ok.elements, intro: intro("statement") } }).success).toBe(false);
+    expect(schema("poster").safeParse({ ...ok, elements: { ...ok.elements, index: index("rows") } }).success).toBe(false);
+    expect(schema("poster").safeParse({ ...ok, elements: { ...ok.elements, "section-a": caseNode("CaseRow") } }).success).toBe(false);
+    const grouped = { ...ok, elements: { ...ok.elements, page: page(["intro", "group-1"]), "group-1": { type: "Columns", props: { variant: "even" }, children: ["index", "section-a"] } } };
+    expect(schema("poster").safeParse(grouped).success).toBe(false);
+  });
+
+  it("글 · 목록형은 목차 없이 문장 첫 화면과 사례 행만 쓴다", () => {
+    const ok = { root: "page", elements: { page: page(["intro", "section-a"]), intro: intro("sentence"), "section-a": caseNode("CaseRow") } };
+    expect(schema("list").safeParse(ok).error?.issues ?? []).toEqual([]);
+    expect(schema("list").safeParse({ ...ok, elements: { ...ok.elements, index: index("rows"), page: page(["intro", "index", "section-a"]) } }).success).toBe(false);
+    expect(schema("list").safeParse({ ...ok, elements: { ...ok.elements, "section-a": caseNode("CaseEssay") } }).success).toBe(false);
+  });
+
+  it("사례 상세형은 지금과 같고 새 변형 · 사례 행을 고를 수 없다", () => {
+    const ok = { root: "page", elements: { page: page(["intro", "index", "section-a"]), intro: intro("split"), index: index("rows"), "section-a": caseNode("CaseTechnical") } };
+    expect(schema("case-study").safeParse(ok).error?.issues ?? []).toEqual([]);
+    expect(structuredModelSchema(value).safeParse(ok).error?.issues ?? []).toEqual([]);
+    expect(schema("case-study").safeParse({ ...ok, elements: { ...ok.elements, intro: intro("poster") } }).success).toBe(false);
+    expect(schema("case-study").safeParse({ ...ok, elements: { ...ok.elements, "section-a": caseNode("CaseRow") } }).success).toBe(false);
+  });
+
+  it("저장 계약은 유형 · 기간이 있는 새 판과 없는 옛 판을 모두 받는다", () => {
+    const stored = (archetype?: string) => ({
+      root: "page",
+      elements: {
+        page: { ...page(["intro", "section-a"]), props: { ...page([]).props, design: { layout: "library" }, ...(archetype ? { archetype } : {}) } },
+        intro: intro("sentence"),
+        "section-a": caseNode("CaseRow"),
+      },
+    });
+    expect(() => validateStructuredPortfolio(stored("list"), value)).not.toThrow();
+    expect(() => validateStructuredPortfolio(stored(), value)).not.toThrow();
+    const { period: _period, ...section } = value.sections[0]!;
+    expect(() => validateStructuredPortfolio(stored(), { ...value, sections: [section] })).not.toThrow();
   });
 });

@@ -3,23 +3,19 @@ import type * as Contracts from "@expresso/contracts";
 import type { Decimal128 } from "mongodb";
 import type { JsonValue, JsonObject } from "./common.js";
 
-export type CareerPropertyDefinitionDoc = Contracts.CareerPropertyDefinition;
-
 export interface CareerCategoryDoc {
   _id: string;
-  userId?: string | null;
+  /** 카테고리는 모두 한 사용자의 것이다. 기본 7종도 가입 때 사용자마다 복사된다. */
+  userId: string;
   key: string;
-  isSystem: boolean;
-  propertySchema: Contracts.CareerPropertySchema;
   sortOrder: number;
   name: string;
   icon: string;
   defaultView: Contracts.CareerViewType;
   version: number;
   updatedAt: Date;
-  propertySchemaV2?: Contracts.CareerPropertyDefinitionV2[];
+  propertySchemaV2: Contracts.CareerPropertyDefinitionV2[];
   schemaVersion?: number;
-  propertySchemaTombstones?: Contracts.CareerPropertyDefinitionV2[];
   propertyMutationResults?: Record<string, unknown>;
 }
 

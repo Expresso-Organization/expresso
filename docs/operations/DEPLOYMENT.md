@@ -51,6 +51,21 @@ QUEUE_PREFIX=expresso-mongo-v1
 비밀번호를 저장소, 명령 인자 또는 로그에 기록하지 않습니다. 서버의 환경 파일은
 소유자만 읽을 수 있어야 합니다.
 
+## 측정 브라우저
+
+워커는 생성한 포트폴리오 지면을 Playwright Chromium(chromium-headless-shell)으로 열어 390 · 926 · 1440px에서 잽니다.
+브라우저 바이너리는 배포 스크립트가 `ubuntu` 계정의 `~/.cache/ms-playwright`에 받습니다. 시스템 라이브러리와
+한국어 폰트는 서버마다 처음 한 번 설치합니다. 한국어 폰트가 없으면 대체 서체로 재므로 한 글자 줄바꿈 판정이 실제 화면과 달라집니다.
+
+```bash
+cd ~/expresso/services/backend
+sudo env "PATH=$PATH" npx playwright install-deps chromium
+sudo apt-get install -y fonts-noto-cjk
+```
+
+브라우저를 띄우지 못하면 워커는 측정 없이 생성을 이어 가고, 생성 기록(`generationManifest.renderMeasure`)에
+`status: "skipped"`와 이유가 남습니다.
+
 ## 실행
 
 운영 승인 후 GitHub Actions가 다음과 같은 서버 명령을 실행합니다.

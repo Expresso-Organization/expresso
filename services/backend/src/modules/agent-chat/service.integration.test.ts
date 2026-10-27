@@ -11,7 +11,7 @@ import { PageService } from "../page/index.js";
 import { AgentCredentials } from "./credentials.js";
 import { ConsentService } from "../consent/index.js";
 import { AgentToolRejection, type AgentRuntime } from "../../platform/agent/runtime.js";
-import { AgentChatService } from "./service.js";
+import { AgentChatService, RUN_HEARTBEAT_MS } from "./service.js";
 import { PreparationPlans } from "./plans.js";
 
 describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB_URL))("공통 에이전트 대화", () => {
@@ -94,7 +94,9 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     await expect(service.send(userId, row.id, { requestId: randomUUID(), text: "겹치는 요청" })).rejects.toMatchObject({ statusCode: 409 });
     await expect(service.cancel(other, row.id)).rejects.toMatchObject({ statusCode: 404 });
     await make(null).cancel(userId, row.id);
-    await expect.poll(() => stopped).toBe(true);
+    // 다른 인스턴스의 취소는 실행 인스턴스의 다음 heartbeat에서 전달된다. 한 주기와 그 갱신의
+    // 왕복이 걸리므로, 타이머 · DB 지연을 받을 한 주기를 더 기다린다.
+    await expect.poll(() => stopped, { timeout: RUN_HEARTBEAT_MS * 2 }).toBe(true);
     expect((await service.get(userId, row.id)).run?.status).toBe("cancelled");
   });
   it("서버가 사라진 실행을 중단 상태로 복원한다", async () => {

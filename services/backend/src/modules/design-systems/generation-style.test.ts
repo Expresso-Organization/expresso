@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { catalogEntries } from "./catalog.js";
 import {
   findDesignSystemRevision,
+  findPortfolioDesign,
   generationStyleFor,
 } from "./generation-style.js";
 
@@ -95,5 +96,34 @@ describe("디자인 시스템 판의 생성 스타일 변환", () => {
     expect(
       findDesignSystemRevision("00000000-0000-4000-8000-000000000000"),
     ).toBeNull();
+  });
+});
+
+describe("포트폴리오 디자인 해석", () => {
+  const clarity = revisions.find((revision) => revision.code === "clarity")!;
+  const signal = revisions.find((revision) => revision.code === "signal")!;
+  it("판 ID → 템플릿 연결 판 → Clarity 순서로 스펙을 정한다", () => {
+    expect(findPortfolioDesign({ designSystemRevisionId: signal.revisionId, templateId: clarity.legacyTemplateId })).toEqual(signal.spec);
+    expect(findPortfolioDesign({ templateId: signal.legacyTemplateId })).toEqual(signal.spec);
+    expect(findPortfolioDesign({ templateId: "없는 템플릿" })).toEqual(clarity.spec);
+    expect(findPortfolioDesign({ designSystemRevisionId: "없는 판" })).toEqual(clarity.spec);
+  });
+  it("사용자 조정의 배경·글자·강조 색만 덮어쓰고 카탈로그 원본은 바꾸지 않는다", () => {
+    const spec = findPortfolioDesign({
+      templateId: clarity.legacyTemplateId,
+      styleOverrides: { background: "#101010", text: "#fafafa", accent: "#ff5500", font: "serif" },
+    });
+    expect([spec.colors.canvas.value, spec.colors.text.value, spec.colors.accent.value]).toEqual(["#101010", "#fafafa", "#ff5500"]);
+    expect(spec.colors.surface.value).toBe(clarity.spec.colors.surface.value);
+    expect(spec.typography).toEqual(clarity.spec.typography);
+    expect(findDesignSystemRevision(clarity.revisionId)!.spec.colors.canvas.value).toBe("#ffffff");
+    // 깨진 조정은 무시합니다.
+    expect(findPortfolioDesign({ templateId: clarity.legacyTemplateId, styleOverrides: { background: "검정" } })).toEqual(clarity.spec);
+  });
+  it("판으로 만든 포트폴리오의 조정 값은 그 판의 색과 같아 결과가 바뀌지 않는다", () => {
+    for (const revision of revisions) {
+      const { templateId, styleOverrides } = generationStyleFor(revision);
+      expect(findPortfolioDesign({ designSystemRevisionId: revision.revisionId, templateId, styleOverrides })).toEqual(revision.spec);
+    }
   });
 });

@@ -61,33 +61,18 @@ describe("CareerDocumentEditor", () => {
     await waitFor(() => expect(screen.queryByRole("menu", { name: "블록 명령" })).toBeNull());
   });
 
-  it("shows the stored Markdown body read-only when the document session is unavailable", async () => {
+  it("says the record is missing instead of opening the editor when the document session is unavailable", () => {
     mocks.useSession.mockReturnValue({
       snapshot: { status: "unavailable", documentVersion: 0, lastAckSequence: 0, proposal: null },
       document: null,
       updateDocument: mocks.updateDocument,
     });
-    const record = { id: "11111111-1111-4111-8111-111111111111", bodyMd: "## 배경\n\n기존 Markdown 본문입니다." } as CareerRecordListItem;
+    const record = { id: "11111111-1111-4111-8111-111111111111", bodyMd: "## 배경\n\n지난 본문입니다." } as CareerRecordListItem;
     render(<CareerDocumentEditor recordId={record.id} mode="page" record={record} />);
-    const body = await screen.findByLabelText("커리어 기록 본문");
-    expect(body.getAttribute("contenteditable")).toBe("false");
-    expect(body.querySelector("h2")?.textContent).toBe("배경");
-    expect(screen.getByText("기존 Markdown 본문입니다.")).toBeTruthy();
-    expect(screen.getByText("문서 편집기가 꺼져 있어 본문을 읽기만 할 수 있습니다.")).toBeTruthy();
-    expect(screen.queryByRole("toolbar", { name: "텍스트 서식" })).toBeNull();
-    expect(screen.queryByText("문서를 불러오고 있습니다.")).toBeNull();
-  });
-
-  it("leaves the body area out when the unavailable record has no Markdown body", () => {
-    mocks.useSession.mockReturnValue({
-      snapshot: { status: "unavailable", documentVersion: 0, lastAckSequence: 0, proposal: null },
-      document: null,
-      updateDocument: mocks.updateDocument,
-    });
-    const record = { id: "11111111-1111-4111-8111-111111111111", bodyMd: "" } as CareerRecordListItem;
-    render(<CareerDocumentEditor recordId={record.id} mode="peek" record={record} />);
-    expect(screen.getByText("문서 편집기가 꺼져 있어 본문을 읽기만 할 수 있습니다.")).toBeTruthy();
+    expect(screen.getByText("이 기록을 찾을 수 없습니다. 삭제되었거나 다른 계정의 기록입니다.")).toBeTruthy();
     expect(screen.queryByLabelText("커리어 기록 본문")).toBeNull();
+    expect(screen.queryByText("지난 본문입니다.")).toBeNull();
+    expect(screen.queryByText("문서를 불러오고 있습니다.")).toBeNull();
   });
 
   it("removes the redundant body status bar and keeps accessible formatting controls", async () => {
