@@ -7,19 +7,9 @@ import { usePathname } from "next/navigation";
 
 import { GlideMenu } from "@/components/ui/GlideMenu";
 import { Icon } from "@/components/ui/Icon";
+import { CAREER_CATEGORY_ICONS } from "@/lib/career-category-icons";
 
 import styles from "./Sidebar.module.css";
-
-/** §3.5 카테고리 7종의 아이콘은 고정 매핑이다. 다른 아이콘으로 대체하지 않는다. */
-const CATEGORY_ICONS: Record<string, string> = {
-  experience: "chat-circle-dots",
-  project: "briefcase",
-  education_history: "graduation-cap",
-  certification_award: "certificate",
-  academic_writing: "article",
-  activity_leadership: "users-three",
-  skill_tool: "code",
-};
 
 /** 열려 있는 카테고리도 주소가 안다 — `/career/{key}`. */
 export function SidebarCategories({
@@ -48,7 +38,7 @@ export function SidebarCategories({
           >
             <span className={styles.rowLead}>
               <Icon
-                name={CATEGORY_ICONS[category.key] ?? "file-text"}
+                name={CAREER_CATEGORY_ICONS[category.key] ?? "file-text"}
                 weight={isActive ? "fill" : "regular"}
                 size={14}
                 color={isActive ? "var(--ex-fg)" : "var(--ex-fg-muted)"}

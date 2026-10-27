@@ -40,6 +40,9 @@ export const CONTRACT_CONSENT: Record<AiContract, ConsentScope | null> = {
   page_generation: "career_records",
   // 기록으로 만든 지면의 스크린샷과 구성을 보냅니다. 화면에 기록 내용이 보이므로 같은 범위입니다.
   page_review: "career_records",
+  // 설계 · 채우기 모두 기록 본문을 읽습니다.
+  page_design: "career_records",
+  page_fill: "career_records",
   partial_edit: "career_records",
   style_remix: "career_records",
   insight_note: "career_records",

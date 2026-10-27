@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { createQueueWorker } from "../worker/create-queue-worker.js";
 import { createReliableQueue } from "./queue.js";
+import { AiError } from "./ai/client.js";
 
 const redisUrl = process.env.TEST_REDIS_URL;
 const describeWithRedis = redisUrl ? describe : describe.skip;
@@ -86,5 +87,31 @@ describeWithRedis("reliable queue integration", () => {
     });
     expect(JSON.stringify(deadLetter.data)).not.toContain("provider secret");
     expect(deadLetterError).toBeUndefined();
+  });
+
+  it("계약을 못 맞춘 AI 출력 실패는 다시 돌리지 않고 바로 DLQ로 보낸다", async () => {
+    const prefix = `expresso-test-${randomUUID()}`;
+    const resources = createReliableQueue<{ value: number }>("reliable-job", redisUrl!, prefix);
+    let attempts = 0;
+    const worker = createQueueWorker<{ value: number }, never>({
+      queueName: "reliable-job",
+      redisUrl: redisUrl!,
+      prefix,
+      concurrency: 1,
+      deadLetterQueue: resources.deadLetterQueue,
+      async processor() {
+        attempts += 1;
+        throw new AiError("AI_INVALID_OUTPUT", "recipe_draft", "고쳐도 계약을 못 맞춤");
+      },
+    });
+    cleanups.push(async () => {
+      await worker.close();
+      await Promise.all([resources.queue.obliterate({ force: true }), resources.deadLetterQueue.obliterate({ force: true })]);
+      await resources.close();
+    });
+    const job = await resources.queue.add("contract-fails", { value: 1 }, { jobId: randomUUID(), attempts: 5, backoff: { type: "fixed", delay: 25 } });
+    const deadLetter = await waitFor(async () => (await resources.deadLetterQueue.getJob(`${job.id}-dead-letter`)) ?? undefined);
+    expect(attempts).toBe(1);
+    expect(deadLetter.data).toMatchObject({ originalName: "contract-fails", attemptsMade: 1, failedReason: "UnrecoverableError" });
   });
 });

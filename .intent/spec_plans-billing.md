@@ -67,9 +67,9 @@ platform/ai/usage-sink.ts  AiUsageSink 인터페이스 { record(event): Promise<
 `userId`를 넘긴다. 사용자가 없는 작업(공고 적재 `jobs/ingest/facts.ts`)은 넘기지
 않고 `null`로 쌓인다.
 
-### 데이터베이스 — 마이그레이션 `0021`
+### 데이터베이스 — 마이그레이션 `0022`
 
-0014–0016 · 0018 · 0019는 열린 PR이 쓰고 있다. 다음 빈 번호는 0021이다.
+0014–0016 · 0018 · 0019는 열린 PR이, 0021은 main(`generation_waiting_recipe`)이 쓰고 있다. 다음 빈 번호는 0022다(2026-10-28 main 병합 때 0021에서 옮겼다).
 `migrations.test.ts`의 개수 기대값(15)도 함께 올린다.
 
 - 컬렉션 `ai_usage_events` 신설. 인덱스 `{ userId: 1, createdAt: -1 }`.
@@ -77,7 +77,7 @@ platform/ai/usage-sink.ts  AiUsageSink 인터페이스 { record(event): Promise<
   `generationQuota`를 지운다. `features["generation.unlimited"]`를 지운다.
 - `0001`은 고치지 않는다. `loadMongoMigrations`가 `0001`의 `schema.json`을 체크섬에
   넣으므로 고치면 이미 적용한 데이터베이스에서 마이그레이션이 "modified"로 멈춘다.
-  0013 · 0020처럼 0021이 `collMod`로 `plans` 검증 규칙을 바꾼다. 순서는 검증 규칙 →
+  0013 · 0020처럼 0022가 `collMod`로 `plans` 검증 규칙을 바꾼다. 순서는 검증 규칙 →
   값 `$set` · `$unset` 이다. 규칙을 먼저 바꾸지 않으면 `$unset`이 엄격 검증에 걸린다.
 
 | code | displayName | monthlyPriceKrw | monthlyCredits | sortOrder |
@@ -104,7 +104,7 @@ creditsUsed = ceil(sum(input + output + cacheRead) / 10000)
 기간은 지금 쓰는 `kstMonthlyPeriod(at)` 그대로다. 토큰을 기간 전체에서 먼저 더하고
 올림은 한 번만 한다. 호출마다 올리면 작은 호출 50건이 50 크레딧이 된다.
 
-`limit: null`은 플랜에 `monthlyCredits`가 없을 때만 나온다. 0021 이후에는 세 플랜
+`limit: null`은 플랜에 `monthlyCredits`가 없을 때만 나온다. 0022 이후에는 세 플랜
 모두 값이 있다.
 
 ### 읽기 API — `modules/usage` (신규)

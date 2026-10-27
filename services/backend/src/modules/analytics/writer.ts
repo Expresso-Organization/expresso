@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-import { AiError, type AiClient } from "../../platform/ai/client.js";
+import type { AiClient, AiViolation } from "../../platform/ai/client.js";
+import { jsonPointer } from "../../platform/ai/fixes.js";
 
 /**
  * §8.3 「분석 해설」 계약.
@@ -12,7 +13,8 @@ import { AiError, type AiClient } from "../../platform/ai/client.js";
  * 이 자리에서 지켜야 하는 것은 **집계에 있는 것만 말하기**다. 방문자 분석은
  * 표본이 작으면 아무 말이나 할 수 있게 되는데, 그래서 §8.3이 두 가지를 못 박았다 —
  * **표본 30 미만이면 해설 자체를 내지 않고**, 해설은 **두 문장 이내**다.
- * 앞의 것은 서비스가 막고(계약을 아예 부르지 않는다), 뒤의 것은 여기서 막는다.
+ * 앞의 것은 서비스가 막고(계약을 아예 부르지 않는다), 뒤의 것은 여기서 검사해
+ * 쓴 모델에게 그 칸만 고쳐 받는다.
  */
 
 /** 프롬프트를 고치면 올린다. */
@@ -116,21 +118,24 @@ function sentenceCount(text: string): number {
   return text.split(/[.!?。](?:\s|$)/).filter((part) => part.trim()).length;
 }
 
-function complaints(note: InsightNote, context: InsightContext): string[] {
-  const found: string[] = [];
-  if (sentenceCount(note.narrative) > 2) found.push("해설은 두 문장 이내입니다");
+/** 받은 해설이 업무 규칙을 어긴 칸. 경로는 모델 출력 기준이다. */
+export function insightViolations(note: InsightNote, context: InsightContext): AiViolation[] {
+  const found: AiViolation[] = [];
+  const count = sentenceCount(note.narrative);
+  if (count > 2) found.push({ path: "/narrative", problem: `해설은 두 문장 이내입니다(지금 ${count}문장)` });
 
   const keys = new Set(Object.keys(context.metrics));
-  const unknownEvidence = note.evidenceMetrics.filter((key) => !keys.has(key));
-  if (unknownEvidence.length > 0) {
-    found.push(`집계에 없는 지표입니다: ${unknownEvidence.join(", ")}`);
-  }
-  const unknownTarget = note.suggestions
-    .map(({ target }) => target)
-    .filter((target) => !keys.has(target));
-  if (unknownTarget.length > 0) {
-    found.push(`제안이 가리키는 지표가 집계에 없습니다: ${unknownTarget.join(", ")}`);
-  }
+  const allowed = [...keys].join(" · ");
+  note.evidenceMetrics.forEach((key, index) => {
+    if (!keys.has(key)) {
+      found.push({ path: jsonPointer(["evidenceMetrics", index]), problem: `집계에 없는 지표입니다: ${key}. 쓸 수 있는 지표 이름: ${allowed}` });
+    }
+  });
+  note.suggestions.forEach(({ target }, index) => {
+    if (!keys.has(target)) {
+      found.push({ path: jsonPointer(["suggestions", index, "target"]), problem: `제안이 가리키는 지표가 집계에 없습니다: ${target}. 쓸 수 있는 지표 이름: ${allowed}` });
+    }
+  });
   return found;
 }
 
@@ -142,36 +147,22 @@ export class AiInsightWriter implements InsightWriter {
   }
 
   async write(context: InsightContext): Promise<InsightNote> {
-    const prompt = buildPrompt(context);
-    let lastError: unknown;
-    for (const attempt of [1, 2]) {
-      try {
-        const { data } = await this.#ai.complete(
-          {
-            contract: "insight_note",
-            system: SYSTEM,
-            prompt: attempt === 1 ? prompt : `${prompt}\n\n${retryNote(lastError)}`,
-            promptVersion: INSIGHT_PROMPT_VERSION,
-          },
-          InsightNoteSchema,
-          { userId: context.userId },
-        );
-        const found = complaints(data, context);
-        if (found.length > 0) throw new InsightDraftError(found.join(", "));
-        return data;
-      } catch (error) {
-        if (error instanceof AiError && error.code !== "AI_INVALID_OUTPUT") throw error;
-        lastError = error;
-      }
-    }
-    throw new InsightDraftError(
-      `해설이 두 번 모두 계약을 벗어났습니다: ${String(lastError)}`,
-      { cause: lastError },
+    // 다시 요청하지 않는다 — 걸린 칸은 어댑터가 같은 대화에서 고쳐 받는다(`platform/ai/fixes.ts`).
+    const { data } = await this.#ai.complete(
+      {
+        contract: "insight_note",
+        system: SYSTEM,
+        prompt: buildPrompt(context),
+        promptVersion: INSIGHT_PROMPT_VERSION,
+      },
+      InsightNoteSchema,
+      { userId: context.userId, check: (note) => insightViolations(note, context) },
     );
+    // 고친 뒤에도 남은 위반은 그대로 온다. 문장 수는 그대로 쓴다. 집계에 없는 지표 이름은
+    // 저장할 수 없으므로(`validateInsightDraft`) 그때만 해설을 만들지 못한 것으로 끝낸다 —
+    // 서비스가 규칙 기반 해설로 대신한다.
+    const unknown = insightViolations(data, context).filter(({ path }) => path !== "/narrative");
+    if (unknown.length > 0) throw new InsightDraftError(unknown.map(({ problem }) => problem).join(", "));
+    return data;
   }
-}
-
-function retryNote(error: unknown): string {
-  const detail = error instanceof Error ? error.message : String(error);
-  return `직전 시도는 거절되었다. 사유: ${detail}\n같은 실수를 반복하지 말고 다시 써라.`;
 }

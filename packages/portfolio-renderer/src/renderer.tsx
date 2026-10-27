@@ -348,6 +348,19 @@ const { registry } = defineRegistry(structuredCatalog, {
         </div>
       </nav>
     ),
+    // 전후 비교 · 과정 흐름 · 이미지 전시 · 수치 강조 줄 · 큰 인용은 토큰 키트 부품입니다. 수집 원본 렌더러에서는
+    // 사례를 기사형(이미지 전시는 갤러리형)으로 그리고, 수치 줄과 인용은 사례 안의 글과 겹치므로 그리지 않습니다.
+    CaseBeforeAfter: ({ props }) => (
+      <Case section={props.section} sourceId={props.sourceId} kind="essay" />
+    ),
+    CaseFlow: ({ props }) => (
+      <Case section={props.section} sourceId={props.sourceId} kind="essay" />
+    ),
+    CaseShowcase: ({ props }) => (
+      <Case section={props.section} sourceId={props.sourceId} kind="gallery" />
+    ),
+    MetricStrip: () => null,
+    PullQuote: () => null,
     CaseEssay: ({ props }) => (
       <Case section={props.section} sourceId={props.sourceId} kind="essay" />
     ),

@@ -26,7 +26,6 @@ import {
   supports,
 } from "./metrics.js";
 import type { InsightWriter } from "./writer.js";
-import { withTimeout } from "../../platform/timeouts.js";
 import { type ConsentApi } from "../consent/index.js";
 import { type EntitlementApi } from "../entitlements/index.js";
 
@@ -318,7 +317,7 @@ export class AnalyticsService {
         `,
       ]);
 
-      const note = await withTimeout(this.#writer.write({
+      const note = await this.#writer.write({
         userId,
         period: { start, end },
         sampleSize,
@@ -328,7 +327,7 @@ export class AnalyticsService {
         })),
         referrers,
         domains,
-      }), 120_000, "insight writer");
+      });
       return note;
     } catch (error) {
       console.error(JSON.stringify({

@@ -44,7 +44,8 @@ export interface GenerationJobDoc {
   _id: string;
   userId: string;
   brewId: string;
-  recipeId: string;
+  /** 구성(레시피)이 끝나기 전에 맡긴 생성은 null이다. 구성이 끝나면 워커가 붙이고 그때 시작한다. */
+  recipeId: string | null;
   templateId: string;
   status: "queued" | "running" | "done" | "failed";
   usageCharged: boolean;

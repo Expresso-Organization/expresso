@@ -18,6 +18,8 @@ const CONTRACT_LABEL: Record<string, string> = {
   layout_draft: "레이아웃 설계",
   page_generation: "지면 생성",
   page_review: "지면 다듬기",
+  page_design: "지면 설계",
+  page_fill: "설계도 칸 채우기",
   partial_edit: "부분 수정",
   style_remix: "스타일 바꾸기",
   insight_note: "방문 분석 해설",

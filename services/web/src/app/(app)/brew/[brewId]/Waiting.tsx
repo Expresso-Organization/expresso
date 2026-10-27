@@ -2,18 +2,17 @@
 
 import type { BrewJobStatus } from "@expresso/contracts";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 
 import { Icon } from "@/components/ui/Icon";
 import { CONSENT_COPY, CONSENT_SETTINGS_HREF } from "@/lib/consent-copy";
 
+import { useRefreshWhile } from "./use-refresh-while";
 import styles from "./Waiting.module.css";
 
 /**
  * 만들어지는 중 · 아직 시작 전 · 실패.
  *
- * 01b·02b가 같은 자리에서 쓰는 화면이다. 계약이 도는 데 1분쯤 걸리므로
+ * 01b가 쓰는 화면이다. 계약이 도는 데 1분쯤 걸리므로
  * **얼마나 걸리는지 먼저 말한다** — 기다리는 사람에게 필요한 것은 스피너가
  * 아니라 언제 끝나는지다.
  */
@@ -40,15 +39,9 @@ export function Waiting({
 }) {
   const running = job?.status === "queued" || job?.status === "running";
   const failed = job?.status === "failed";
+  useRefreshWhile(running);
   // 동의가 꺼져 실패했으면 어느 동의인지 말하고 그 자리로 보낸다.
   const consent = job?.failure?.code === "CONSENT_REQUIRED" ? job.failure.requiredConsent : null;
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!running) return;
-    const timer = window.setInterval(() => router.refresh(), 1_500);
-    return () => window.clearInterval(timer);
-  }, [router, running]);
 
   return (
     <div className={styles.wrap}>

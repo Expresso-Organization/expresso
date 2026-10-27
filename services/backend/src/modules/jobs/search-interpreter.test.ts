@@ -73,27 +73,20 @@ describe("search interpreters", () => {
     ]);
   });
 
-  it("잘못된 AI 응답은 한 번 재시도한다", async () => {
+  it("잘못된 AI 응답은 다시 요청하지 않고 빈 조건으로 반환한다", async () => {
+    // 계약을 벗어난 칸은 어댑터가 같은 대화에서 고쳐 받는다. 그래도 남아 AI_INVALID_OUTPUT이 오면 다시 보내도 같다.
     const client = new StubAiClient([
       new AiError("AI_INVALID_OUTPUT", "search_interpret", "invalid"),
       { conditions: [{ field: "technology", value: "TypeScript", quote: "TypeScript" }] },
     ]);
-    await expect(new AiSearchInterpreter(client).interpret("TypeScript", null)).resolves.toEqual([
-      { field: "technology", value: "typescript", enabled: true, confidence: 0.95 },
-    ]);
-    expect(client.calls).toHaveLength(2);
+    await expect(new AiSearchInterpreter(client).interpret("TypeScript", null)).resolves.toEqual([]);
+    expect(client.calls).toHaveLength(1);
   });
 
   it.each(["AI_TIMEOUT", "AI_RATE_LIMITED", "AI_UNAVAILABLE"] as const)("%s이면 빈 조건으로 반환한다", async (code) => {
     const client = new StubAiClient([new AiError(code, "search_interpret", "unavailable")]);
     await expect(new AiSearchInterpreter(client).interpret("TypeScript", null)).resolves.toEqual([]);
     expect(client.calls).toHaveLength(1);
-  });
-
-  it("두 번째 응답도 잘못되면 빈 조건으로 반환한다", async () => {
-    const client = new StubAiClient(Array.from({ length: 2 }, () => new AiError("AI_INVALID_OUTPUT", "search_interpret", "invalid")));
-    await expect(new AiSearchInterpreter(client).interpret("TypeScript", null)).resolves.toEqual([]);
-    expect(client.calls).toHaveLength(2);
   });
 
   it("같은 검색어는 다시 해석하지 않고 앞서 받은 조건을 쓴다", async () => {

@@ -6,7 +6,8 @@ import {
   type GenerationOutput,
 } from "@expresso/contracts";
 
-import { AiError, type AiClient } from "../../platform/ai/client.js";
+import type { AiClient, AiViolation } from "../../platform/ai/client.js";
+import { jsonPointer } from "../../platform/ai/fixes.js";
 
 /**
  * §8.3 「추출(brew)」 계약 — 레시피를 실제 문장으로 바꾼다.
@@ -21,7 +22,7 @@ import { AiError, type AiClient } from "../../platform/ai/client.js";
  */
 
 /** 프롬프트를 고치면 올린다. */
-export const GENERATION_PROMPT_VERSION = 3;
+export const GENERATION_PROMPT_VERSION = 4;
 
 export class SentenceDraftError extends Error {
   constructor(message: string, options: { cause?: unknown } = {}) {
@@ -112,8 +113,8 @@ const SYSTEM = [
   "자기가 쓴 근거 번호를 단다. 근거를 달지 않은 블록은 만들 수 없다.",
   "",
   "## 지어내지 않는다",
-  "- **숫자는 근거에 있는 것만 쓴다.** 근거에 없는 수치가 하나라도 있으면 그 추출은",
-  "  통째로 버려진다. \"약 30%\" · \"수백만 건\"처럼 없는 값을 지어내거나 어림하지 않는다.",
+  "- **숫자는 근거에 있는 것만 쓴다.** 근거에 없는 수치는 검증에 걸린다.",
+  "  \"약 30%\" · \"수백만 건\"처럼 없는 값을 지어내거나 어림하지 않는다.",
   "- **근거가 쓴 형태 그대로 옮긴다.** 근거가 \"3,000만 건\"이면 \"3천만 건\"으로 바꾸지 않고,",
   "  \"두 시간\"이라고 적혀 있으면 \"2시간\"으로 고치지 않는다.",
   "- 도구 · 회사 · 팀 이름도 근거에 있는 것만. 근거에 없는 성과 · 역할 · 기간을 덧붙이지 않는다.",
@@ -216,14 +217,34 @@ function buildPrompt(context: WriterContext): string {
   return lines.join("\n");
 }
 
-/** 초안이 모든 섹션을 채웠는지. 빈 섹션이 있으면 지면에 구멍이 난다. */
-function emptySections(draft: GenerationDraft, sectionCount: number): number[] {
-  const filled = new Set(draft.blocks.map(({ section }) => section));
-  const empty: number[] = [];
-  for (let number = 1; number <= sectionCount; number += 1) {
-    if (!filled.has(number)) empty.push(number);
+/**
+ * 받은 초안이 업무 규칙을 어긴 칸. 경로는 모델 출력 기준이다.
+ *
+ * 기준은 `toGenerationOutput`이 버리는 것과 같다 — 없는 섹션 번호, 남는 근거가 없는 블록.
+ * 그 블록을 빼고 세어 빈 섹션이 있으면 블록 목록 전체(`/blocks`)를 다시 받는다.
+ */
+export function generationViolations(
+  draft: GenerationDraft,
+  context: Pick<WriterContext, "sections" | "evidence">,
+): AiViolation[] {
+  const found: AiViolation[] = [];
+  const filled = new Set<number>();
+  draft.blocks.forEach((block, index) => {
+    if (!context.sections[block.section - 1]) {
+      found.push({ path: jsonPointer(["blocks", index, "section"]), problem: `섹션 ${block.section}번은 없습니다 — 1~${context.sections.length}번 중 하나입니다` });
+      return;
+    }
+    if (!block.sources.some((number) => context.evidence[number - 1])) {
+      found.push({ path: jsonPointer(["blocks", index, "sources"]), problem: `근거 번호가 없습니다 — 1~${context.evidence.length}번 중 이 블록이 쓴 근거를 답니다` });
+      return;
+    }
+    filled.add(block.section);
+  });
+  const empty = context.sections.flatMap((_, index) => filled.has(index + 1) ? [] : [index + 1]);
+  if (empty.length > 0) {
+    found.push({ path: "/blocks", problem: `${empty.join(" · ")}번 섹션이 비었습니다 — 섹션마다 블록을 하나 이상 씁니다` });
   }
-  return empty;
+  return found;
 }
 
 export class AiSentenceWriter implements SentenceWriter {
@@ -238,43 +259,22 @@ export class AiSentenceWriter implements SentenceWriter {
     if (context.sections.length === 0) throw new SentenceDraftError("채울 섹션이 없습니다");
     if (context.evidence.length === 0) throw new SentenceDraftError("근거가 없습니다");
 
-    const prompt = buildPrompt(context);
-    let lastError: unknown;
-    // 계약을 벗어나면 무엇이 틀렸는지 붙여 1회 다시 쓴다. 근거 검증(수치)은
-    // 이 뒤에 `validateGenerationOutput`이 한 번 더 본다.
-    for (const attempt of [1, 2]) {
-      try {
-        const { data } = await this.#ai.complete(
-          {
-            contract: "generation",
-            system: SYSTEM,
-            prompt: attempt === 1 ? prompt : `${prompt}\n\n${retryNote(lastError)}`,
-            promptVersion: GENERATION_PROMPT_VERSION,
-          },
-          GenerationDraftSchema,
-          { userId: context.userId },
-        );
-
-        const empty = emptySections(data, context.sections.length);
-        if (empty.length > 0) {
-          throw new SentenceDraftError(`${empty.join(" · ")}번 섹션이 비었습니다`);
-        }
-        return toGenerationOutput(data, context);
-      } catch (error) {
-        if (error instanceof AiError && error.code !== "AI_INVALID_OUTPUT") throw error;
-        lastError = error;
-      }
-    }
-    throw new SentenceDraftError(
-      `추출 초안이 두 번 모두 계약을 벗어났습니다: ${String(lastError)}`,
-      { cause: lastError },
+    // 다시 요청하지 않는다 — 걸린 칸은 어댑터가 같은 대화에서 고쳐 받는다(`platform/ai/fixes.ts`).
+    // 근거 검증(수치)은 이 뒤에 `validateGenerationOutput`이 본다.
+    const { data } = await this.#ai.complete(
+      {
+        contract: "generation",
+        system: SYSTEM,
+        prompt: buildPrompt(context),
+        promptVersion: GENERATION_PROMPT_VERSION,
+      },
+      GenerationDraftSchema,
+      { userId: context.userId, check: (draft) => generationViolations(draft, context) },
     );
+    // 고친 뒤에도 남은 위반은 그대로 온다. 빈 섹션은 그대로 두고, 섹션이나 근거를 잃은
+    // 블록은 원래대로 `toGenerationOutput`이 뺀다. 블록이 하나도 안 남으면 거기서 `SentenceDraftError`로 끝난다.
+    return toGenerationOutput(data, context);
   }
-}
-
-function retryNote(error: unknown): string {
-  const detail = error instanceof Error ? error.message : String(error);
-  return `직전 시도는 거절되었다. 사유: ${detail}\n같은 실수를 반복하지 말고 다시 써라.`;
 }
 
 /**

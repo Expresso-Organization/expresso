@@ -21,11 +21,11 @@ date: 2026-10-27
 | `packages/database/src/documents/generation.ts` | `AiUsageEventDoc` 신설 |
 | `packages/database/src/documents/identity.ts` | `PlanDoc` — `monthlyCredits` · `displayName` · `monthlyPriceKrw` · `sortOrder` 추가, `generationQuota` 삭제 |
 | `packages/database/src/collections.ts` | `aiUsageEvents` 등록 |
-| `packages/database/src/mongodb-migrations/0021/migration.ts` | 신규 — 컬렉션 · 인덱스 · 플랜 세 건 갱신 |
-| `packages/database/src/mongo-migrations.ts` | 0021 등록 |
-| `packages/database/src/migrations.test.ts` | 개수 15 → 16 |
-| `packages/database/src/mongo-build.mjs` | dist에 0021 원본을 복사 — 체크섬이 dist에서 원본을 읽는다 |
-| `packages/database/src/schema.test.ts` | 적용 목록에 0021 · `generationQuota` 대신 `monthlyCredits` |
+| `packages/database/src/mongodb-migrations/0022/migration.ts` | 신규 — 컬렉션 · 인덱스 · 플랜 세 건 갱신 |
+| `packages/database/src/mongo-migrations.ts` | 0022 등록 |
+| `packages/database/src/migrations.test.ts` | 개수 16 → 17 |
+| `packages/database/src/mongo-build.mjs` | dist에 0022 원본을 복사 — 체크섬이 dist에서 원본을 읽는다 |
+| `packages/database/src/schema.test.ts` | 적용 목록에 0022 · `generationQuota` 대신 `monthlyCredits` |
 | `services/backend/src/platform/outbox.integration.test.ts` | 같은 교체 |
 
 ### 계측
@@ -80,8 +80,8 @@ date: 2026-10-27
 ## 작업 순서
 
 1. 계약 `usage.ts`를 쓴다. — `pnpm --filter @expresso/contracts typecheck` 통과.
-2. 문서 타입 · 컬렉션 · 마이그레이션 0021을 쓴다. —
-   `pnpm db:migrate`가 `applied 0021_ai_usage_and_plan_credits`를 찍고
+2. 문서 타입 · 컬렉션 · 마이그레이션 0022를 쓴다. —
+   `pnpm db:migrate`가 `applied 0022_ai_usage_and_plan_credits`를 찍고
    `pnpm --filter @expresso/database test` 통과.
 3. `AiUsageSink` · `MeteredAiClient`를 쓰고 `createAiClient`에 연결한다. —
    `metered.test.ts`에서 성공·실패 양쪽에 기록이 남고, 기록이 던져도 호출 결과가
@@ -108,7 +108,7 @@ date: 2026-10-27
 통과하고 열한 번째에 막히는지 그 테스트에서 확인한다.
 
 되돌리기 — `entitlements/service.ts`만 `origin/main`에서 되돌리면 횟수 기준으로
-돌아간다. 그때 `plans.generationQuota`가 이미 지워져 있으므로 마이그레이션 0021도
+돌아간다. 그때 `plans.generationQuota`가 이미 지워져 있으므로 마이그레이션 0022도
 함께 되돌려야 한다. 두 되돌리기는 한 쌍이다.
 
 두 번째 위험은 4단계다. `userId`를 빠뜨린 호출은 타입 검사를 통과하고 조용히

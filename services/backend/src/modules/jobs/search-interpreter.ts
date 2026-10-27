@@ -6,7 +6,7 @@ import {
   type SearchInterpretAiOutput,
 } from "@expresso/contracts";
 
-import { AiError, type AiClient } from "../../platform/ai/client.js";
+import type { AiClient } from "../../platform/ai/client.js";
 import { normalizeRegion, COUNTRY_OF_REGION, REGION_SUBAREA_HINTS } from "./ingest/classify.js";
 // 기술 사전만 가져온다 — 질의 해석(interpretSearchQuery)은 더 이상 쓰지 않는다.
 import { TECHNOLOGIES, CANONICAL } from "./search-parser.js";
@@ -200,31 +200,27 @@ export class AiSearchInterpreter implements SearchInterpreter {
 
     // AI 호출은 실패할 수 있다(레이트 리밋·타임아웃·스키마 이탈) — 그런데
     // 이 계약은 다른 AI 계약과 달리 실패해도 화면 전체를 죽일 이유가 없다.
-    // 검색 결과 자체는 해석 없이도 보여줄 수 있으니, 두 번째 시도까지도
-    // 안 되면 NullSearchInterpreter와 똑같이 빈 조건으로 넘어간다 — 검색창
+    // 검색 결과 자체는 해석 없이도 보여줄 수 있으니, 실패하면
+    // NullSearchInterpreter와 똑같이 빈 조건으로 넘어간다 — 검색창
     // 위에 "이렇게 이해했습니다" 줄만 안 뜨고, 나머지 화면은 그대로 산다.
-    // AI_INVALID_OUTPUT(모델이 스키마를 벗어남)만 한 번 재시도한다 —
-    // question-writer.ts 등 다른 계약과 같은 기준이다. 레이트 리밋·타임아웃은
-    // 지금 다시 불러도 똑같이 실패하므로 바로 포기한다.
+    // 다시 요청하지 않는다. 계약을 벗어난 칸은 어댑터가 같은 대화에서 고쳐 받고, 그래도 못 맞춘 출력은 다시 보내도 같다.
+    // 근거 · 사전 검사는 `check`로 보내지 않는다 — 근거 없는 조건과 사전에 없는 값은 고칠 칸이 아니라 빼야 할 조건이고,
+    // 사람이 검색창 앞에서 기다리는 호출에 고치기 한 번(실측 약 8초)을 더하지 않는다. 아래에서 그 조건만 버린다.
     let data: SearchInterpretAiOutput | null = null;
-    for (const attempt of [1, 2]) {
-      try {
-        const result = await this.#ai.complete(
-          {
-            contract: "search_interpret",
-            system: buildSystem(),
-            prompt: buildPrompt(query),
-            promptVersion: SEARCH_INTERPRET_PROMPT_VERSION,
-          },
-          SearchInterpretAiOutputSchema,
-          { userId },
-        );
-        data = result.data;
-        break;
-      } catch (error) {
-        if (error instanceof AiError && error.code !== "AI_INVALID_OUTPUT") break;
-        if (attempt === 2) break;
-      }
+    try {
+      const result = await this.#ai.complete(
+        {
+          contract: "search_interpret",
+          system: buildSystem(),
+          prompt: buildPrompt(query),
+          promptVersion: SEARCH_INTERPRET_PROMPT_VERSION,
+        },
+        SearchInterpretAiOutputSchema,
+        { userId },
+      );
+      data = result.data;
+    } catch {
+      data = null;
     }
     // 실패는 기억하지 않는다 — 레이트 리밋이 풀리면 다음 검색에서 다시 해석해야 한다.
     if (!data) return [];

@@ -15,7 +15,6 @@ import {
 import type { MongoContext } from "../../platform/mongodb.js";
 import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { inTransaction, type MongoTransaction } from "../../platform/mongo-transaction.js";
-import { withTimeout } from "../../platform/timeouts.js";
 import { writeSnapshot } from "../../platform/snapshot-payload.js";
 import { assertActiveRecordsForWrite } from "../career/index.js";
 import type { ConsentApi } from "../consent/index.js";
@@ -39,6 +38,16 @@ import {
 } from "./public.js";
 import { GenerationValidationError, validateGenerationOutput } from "./validator.js";
 import { SentenceWriterUnavailableError, type SentenceWriter, type WriterContext } from "./writer.js";
+
+/** 브루의 가장 최근 구성(레시피). 구성 잡이 다시 만들면 새 판이 생기므로 만든 시각이 가장 늦은 것을 쓴다. */
+async function latestRecipe(tx: MongoTransaction, userId: string, brewId: string) {
+  const [recipe] = await mongoCollections(tx.db).recipes
+    .find({ userId, brewId }, { session: tx.session })
+    .sort({ generatedAt: -1, _id: -1 })
+    .limit(1)
+    .toArray();
+  return recipe ?? null;
+}
 
 /**
  * 요청의 스타일 출처를 템플릿과 스타일 값으로 정합니다.
@@ -69,13 +78,25 @@ export class GenerationService {
     this.#consent = consent ?? null;
   }
 
+  /**
+   * 생성을 맡긴다.
+   *
+   * `recipeId` 대신 `brewId`가 오면 그 브루의 가장 최근 구성(레시피)으로 시작한다. 구성이 아직 없으면
+   * `recipeId: null`로 저장만 하고 `portfolio.generate`는 내지 않는다 — 구성 잡이 끝나면 워커가
+   * `attachRecipe`로 붙이고 그때 시작한다. 저장한 뒤 한 번 더 붙여 본다: 구성 잡이 이 요청과 엇갈려
+   * 끝났으면 워커의 `attachRecipe`는 이 잡을 못 봤을 수 있다.
+   */
   async submit(userId: string, idempotencyKey: string, input: SubmitGeneration) {
     const hash = requestHash(input);
-    const jobId = await inTransaction(this.context, async (tx) => {
+    const { jobId, waitingBrewId } = await inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId);
       const db = mongoCollections(tx.db); const options = { session: tx.session };
-      const recipe = await db.recipes.findOne({ _id: input.recipeId, userId }, options);
-      if (!recipe) throw new GenerationError(404, "recipe not found");
+      const recipe = input.recipeId
+        ? await db.recipes.findOne({ _id: input.recipeId, userId }, options)
+        : await latestRecipe(tx, userId, input.brewId!);
+      if (input.recipeId && !recipe) throw new GenerationError(404, "recipe not found");
+      const brewId = recipe?.brewId ?? input.brewId!;
+      if (!recipe && !await db.brews.findOne({ _id: brewId, userId }, options)) throw new GenerationError(404, "brew not found");
       const style = resolveStyle(input);
       if (!await db.templates.findOne({ _id: style.templateId, isActive: true }, options)) {
         throw new GenerationError(404, "template not found");
@@ -83,7 +104,7 @@ export class GenerationService {
       const existing = await db.generationJobs.findOne({ userId, inputIdempotencyKey: idempotencyKey }, options);
       if (existing) {
         if (existing.requestHash !== hash) throw new GenerationError(409, "idempotency key reused for another generation");
-        return existing._id;
+        return { jobId: existing._id, waitingBrewId: existing.recipeId === null ? existing.brewId : null };
       }
       // 한도는 생성을 시작할 때 본다. 이번 달 AI 사용량(크레딧)이 플랜 한도에 닿았으면
       // 새 생성만 막는다 — 편집 · 배포 · 기록 관리는 그대로 열린다(기능 명세서 T12.1.1).
@@ -91,7 +112,7 @@ export class GenerationService {
       if (!decision.allowed) throw new GenerationError(403, "monthly AI credits are exhausted");
       const now = new Date(); const id = randomUUID();
       await db.generationJobs.insertOne({
-        _id: id, userId, brewId: recipe.brewId, recipeId: recipe._id, templateId: style.templateId,
+        _id: id, userId, brewId, recipeId: recipe?._id ?? null, templateId: style.templateId,
         status: "queued", usageCharged: false, stage: "queued", attempts: 0,
         inputIdempotencyKey: idempotencyKey, requestHash: hash, portfolioId: null,
         errorCode: null, failureRetryable: null, runToken: null,
@@ -100,13 +121,57 @@ export class GenerationService {
         designSystemRevisionId: style.designSystemRevisionId,
         archetype: input.archetype ?? null,
       }, options);
+      if (!recipe) return { jobId: id, waitingBrewId: brewId };
       await addMongoOutboxEvent(tx, {
         userId, topic: "portfolio.generate", payload: { generationJobId: id, userId },
         idempotencyKey: `portfolio-generation:${id}`,
       });
-      return id;
+      return { jobId: id, waitingBrewId: null };
     });
+    if (waitingBrewId) await this.attachRecipe(userId, waitingBrewId);
     return this.getStatus(userId, jobId);
+  }
+
+  /**
+   * 구성을 기다리던 생성에 그 브루의 가장 최근 구성을 붙이고 시작한다. 붙인 잡 수를 돌려준다.
+   *
+   * 구성 잡이 성공한 뒤 워커가 부르고, `submit`도 구성을 기다리는 잡을 저장한 뒤 부른다. `recipeId: null`인
+   * 잡만 바꾸므로 두 번 불려도 한 번만 붙고 `portfolio.generate`도 한 번만 나간다.
+   */
+  async attachRecipe(userId: string, brewId: string): Promise<number> {
+    return inTransaction(this.context, async (tx) => {
+      const db = mongoCollections(tx.db); const options = { session: tx.session };
+      const recipe = await latestRecipe(tx, userId, brewId);
+      if (!recipe) return 0;
+      const waiting = await db.generationJobs.find({ userId, brewId, recipeId: null, status: "queued" }, options).toArray();
+      let attached = 0;
+      for (const job of waiting) {
+        const updated = await db.generationJobs.updateOne(
+          { _id: job._id, userId, recipeId: null, status: "queued" },
+          { $set: { recipeId: recipe._id, updatedAt: new Date() } },
+          options,
+        );
+        if (updated.modifiedCount !== 1) continue;
+        attached += 1;
+        await addMongoOutboxEvent(tx, {
+          userId, topic: "portfolio.generate", payload: { generationJobId: job._id, userId },
+          idempotencyKey: `portfolio-generation:${job._id}`,
+        });
+      }
+      return attached;
+    });
+  }
+
+  /**
+   * 구성 잡이 끝내 실패하면 그 구성을 기다리던 생성도 끝낸다. 코드는 구성 잡의 실패 코드다 — 화면은 그 이유를
+   * 디자인 선택의 실패 줄에 보인다. 다시 돌 수 있는 실패에서는 부르지 않는다(워커가 마지막 시도인지 본다).
+   */
+  async failWaiting(userId: string, brewId: string, code: string): Promise<number> {
+    const result = await mongoCollections(this.context.db).generationJobs.updateMany(
+      { userId, brewId, recipeId: null, status: "queued" },
+      { $set: { status: "failed", stage: "failed", errorCode: code, failureRetryable: false, updatedAt: new Date() } },
+    );
+    return result.modifiedCount;
   }
 
   async getStatus(userId: string, jobId: string) {
@@ -126,6 +191,8 @@ export class GenerationService {
       if (!job) throw new GenerationError(404, "generation job not found");
       await requireActiveUser(tx, job.userId);
       if (job.status === "done" || job.status === "failed") return { job, portfolioId: job.portfolioId ?? null };
+      // 구성이 붙기 전에는 `portfolio.generate`가 나가지 않는다. 그래도 들어왔다면 순서가 어긋난 것이다.
+      if (job.recipeId === null) throw new GenerationError(409, "generation is waiting for its recipe");
       let portfolioId = job.portfolioId ?? null;
       if (!portfolioId) {
         portfolioId = randomUUID(); const now = new Date();
@@ -213,7 +280,7 @@ export class GenerationService {
         jobTitle: subject?.job_title ?? subject?.free_title ?? null, jobFamily: subject?.job_family ?? null,
       };
       await this.#consent?.require(job.userId, "layout_draft");
-      return await withTimeout(designer.design(design), 420_000, "layout designer");
+      return await designer.design(design);
     } catch (error) {
       console.error(JSON.stringify({ level: "warn", event: "layout.design_failed", generationJobId: job._id, message: error instanceof Error ? error.message : String(error) }));
       return [];
@@ -222,7 +289,9 @@ export class GenerationService {
 
   async #context(job: GenerationJobDoc) {
     const db = mongoCollections(this.context.db);
-    const sections = await db.recipeSections.find({ userId: job.userId, recipeId: job.recipeId }).sort({ orderNo: 1, _id: 1 }).toArray();
+    const recipeId = job.recipeId;
+    if (recipeId === null) throw new GenerationError(409, "generation is waiting for its recipe");
+    const sections = await db.recipeSections.find({ userId: job.userId, recipeId }).sort({ orderNo: 1, _id: 1 }).toArray();
     const sectionIds = sections.map(({ _id }) => _id);
     const items = await db.recipeItems.find({ userId: job.userId, recipeSectionId: { $in: sectionIds } }).sort({ orderNo: 1, _id: 1 }).toArray();
     const contextRows: ContextRow[] = sections.flatMap((section) => items
@@ -232,7 +301,7 @@ export class GenerationService {
         target_length: section.targetLength, item_id: item._id, point_text: item.pointText,
         context: section.context,
       }) as ContextRow));
-    const paths = await db.recipeEvidencePaths.find({ userId: job.userId, recipeId: job.recipeId }).sort({ createdAt: 1, _id: 1 }).toArray();
+    const paths = await db.recipeEvidencePaths.find({ userId: job.userId, recipeId }).sort({ createdAt: 1, _id: 1 }).toArray();
     const [records, answers, requirements] = await Promise.all([
       db.careerRecords.find({ _id: { $in: paths.filter((p) => p.sourceType === "record").map((p) => p.sourceId) }, userId: job.userId }).toArray(),
       db.answers.find({ _id: { $in: paths.filter((p) => p.sourceType === "answer").map((p) => p.sourceId) }, userId: job.userId }).toArray(),
@@ -256,7 +325,7 @@ export class GenerationService {
       const locked = await db.blocks.find({ userId: job.userId, portfolioSectionId: { $in: portfolioSections.map(({ _id }) => _id) }, locked: true }).toArray();
       lockedTexts = locked.flatMap(({ content }) => typeof content.text === "string" ? [content.text] : []);
     }
-    return { contextRows, evidence, lockedTexts, recipeEditVersion: (await db.recipes.findOne({ _id: job.recipeId, userId: job.userId }))?.editVersion ?? 0 };
+    return { contextRows, evidence, lockedTexts, recipeEditVersion: (await db.recipes.findOne({ _id: recipeId, userId: job.userId }))?.editVersion ?? 0 };
   }
 
   async process(jobId: string, writer: SentenceWriter, designer?: LayoutDesigner | null) {
@@ -284,7 +353,7 @@ export class GenerationService {
       const subject = await this.#subject(claimed);
       const context = buildWriterContext({ userId: claimed.userId, items: prepared.contextRows, evidence: prepared.evidence, subject, lockedTexts: prepared.lockedTexts });
       const output = validateGenerationOutput(
-        await withTimeout(writer.write(context), 420_000, "sentence writer"),
+        await writer.write(context),
         prepared.evidence.map(({ id, source_type, source_label, source_text }) => ({ id, sourceType: source_type, sourceLabel: source_label, sourceText: source_text })),
         prepared.contextRows.flatMap(({ context: sectionContext }) => sectionContext.exclude ?? []), context.lockedTexts,
       );
@@ -309,6 +378,7 @@ export class GenerationService {
         if (await db.generationJobs.findOne({ _id: job._id, userId: job.userId, status: "done" }, options)) return;
         throw new GenerationError(409, "generation ownership was lost");
       }
+      if (job.recipeId === null) throw new GenerationError(409, "generation is waiting for its recipe");
       const recipe = await db.recipes.findOne({ _id: job.recipeId, userId: job.userId, editVersion: recipeEditVersion }, options);
       if (!recipe) throw new GenerationError(409, "recipe changed during generation");
       const recordIds = evidence.filter(({ source_type }) => source_type === "record").map(({ source_id }) => source_id);

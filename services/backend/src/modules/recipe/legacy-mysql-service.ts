@@ -15,7 +15,6 @@ import {
   type PlannerSource,
   type RecipePlanner,
 } from "./planner.js";
-import { withTimeout } from "../../platform/timeouts.js";
 import { type ConsentApi } from "../consent/index.js";
 
 interface IdRow { id: string }
@@ -75,7 +74,7 @@ export class RecipeService {
     // 규칙 폴백(promptVersion 0)은 아무것도 밖으로 보내지 않는다. 묻지 않는다.
     if (this.#promptVersion > 0) await this.#consent?.require(userId, "recipe_draft");
     const { context, brew } = await this.#plannerContext(userId, brewId);
-    const planned = await withTimeout(this.#planner.plan(context), 420_000, "recipe planner");
+    const planned = await this.#planner.plan(context);
     const { draft } = planned;
 
     const recipeId = await this.#sql.begin(async (transaction) => {

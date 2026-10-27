@@ -1,12 +1,13 @@
 import {
   LayoutDraftSchema,
+  type LayoutDraft,
   LayoutSpecSchema,
   classNameRules,
   type LayoutItem,
   type LayoutSpec,
 } from "@expresso/contracts";
 
-import { AiError, type AiClient } from "../../platform/ai/client.js";
+import type { AiClient, AiViolation } from "../../platform/ai/client.js";
 import { placeSections, unplacedSections } from "./designer.js";
 
 /**
@@ -157,51 +158,56 @@ export class AiLayoutRemixer implements LayoutRemixer {
   async remix(context: RemixContext): Promise<LayoutSpec> {
     if (context.sections.length === 0) throw new LayoutRemixError("배치할 섹션이 없습니다");
 
-    const prompt = buildPrompt(context);
     const sectionIds = context.sections.map(({ portfolioSectionId }) => portfolioSectionId);
-    let lastError: unknown;
+    const place = (draft: LayoutDraft) =>
+      LayoutSpecSchema.safeParse(placeSections(draft, sectionIds, context.blockIds));
 
-    for (const attempt of [1, 2]) {
-      try {
-        const { data } = await this.#ai.complete(
-          {
-            contract: "style_remix",
-            system: SYSTEM,
-            prompt: attempt === 1 ? prompt : `${prompt}\n\n${retryNote(lastError)}`,
-            promptVersion: REMIX_PROMPT_VERSION,
-          },
-          LayoutDraftSchema,
-          { userId: context.userId },
-        );
-
-        const missing = unplacedSections(data, context.sections.length);
-        if (missing.length > 0) {
-          throw new LayoutRemixError(`${missing.join(" · ")}번 섹션을 빠뜨렸습니다`);
-        }
-
-        const parsed = LayoutSpecSchema.safeParse(
-          placeSections(data, sectionIds, context.blockIds),
-        );
-        if (!parsed.success) {
-          throw new LayoutRemixError(`지면이 계약을 벗어났습니다: ${parsed.error.message}`);
-        }
-        if (unchanged(context.current, parsed.data)) {
-          throw new LayoutRemixError("지면이 그대로입니다");
-        }
-        return parsed.data;
-      } catch (error) {
-        if (error instanceof AiError && error.code !== "AI_INVALID_OUTPUT") throw error;
-        lastError = error;
-      }
-    }
-    throw new LayoutRemixError(
-      `지면 변형이 두 번 모두 계약을 벗어났습니다: ${String(lastError)}`,
-      { cause: lastError },
+    // 다시 요청하지 않는다. 대비 · 클래스(계약)와 섹션 누락 · 그대로인 지면(`check`)에 걸린 칸만 어댑터가 같은 대화에서
+    // 고쳐 받는다.
+    const { data } = await this.#ai.complete(
+      {
+        contract: "style_remix",
+        system: SYSTEM,
+        prompt: buildPrompt(context),
+        promptVersion: REMIX_PROMPT_VERSION,
+      },
+      LayoutDraftSchema,
+      { userId: context.userId, check: (output) => remixViolations(output, context, place) },
     );
+
+    // 고친 뒤에도 남은 것은 변형 결과가 아니다 — 섹션이 빠지면 그 내용이 사라지고, 그대로인 지면은 바꾼 것이 없다.
+    const missing = unplacedSections(data, context.sections.length);
+    if (missing.length > 0) {
+      throw new LayoutRemixError(`${missing.join(" · ")}번 섹션을 빠뜨렸습니다`);
+    }
+    const parsed = place(data);
+    if (!parsed.success) {
+      throw new LayoutRemixError(`지면이 계약을 벗어났습니다: ${parsed.error.message}`);
+    }
+    if (unchanged(context.current, parsed.data)) {
+      throw new LayoutRemixError("지면이 그대로입니다");
+    }
+    return parsed.data;
   }
 }
 
-function retryNote(error: unknown): string {
-  const detail = error instanceof Error ? error.message : String(error);
-  return `직전 시도는 거절되었다. 사유: ${detail}\n같은 실수를 반복하지 말고 다시 고쳐라.`;
+/** 변형 초안이 어긴 업무 규칙의 자리와 이유. 경로는 모델 출력 기준이다. */
+function remixViolations(
+  draft: LayoutDraft,
+  context: RemixContext,
+  place: (draft: LayoutDraft) => ReturnType<typeof LayoutSpecSchema.safeParse>,
+): AiViolation[] {
+  const missing = unplacedSections(draft, context.sections.length);
+  if (missing.length > 0) {
+    return [{
+      path: "/sections",
+      problem: `${missing.join(" · ")}번 섹션을 빠뜨렸습니다. 모든 섹션을 정확히 한 번씩 배치합니다.`,
+    }];
+  }
+  const placed = place(draft);
+  // 무엇을 바꿔야 하는지는 지시가 정하므로 지면 전체를 고쳐 받는다.
+  if (placed.success && unchanged(context.current, placed.data)) {
+    return [{ path: "", problem: `지면이 지금 지면과 같습니다. 지시(${context.instruction})대로 바꾼 지면을 냅니다.` }];
+  }
+  return [];
 }

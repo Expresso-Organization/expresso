@@ -107,6 +107,39 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB generation integration",
     })).rejects.toMatchObject({ statusCode: 404 });
   });
 
+  it("구성 전에 맡긴 생성은 구성이 끝나면 붙어서 시작하고, 구성이 실패하면 함께 끝난다", async () => {
+    const db = mongoCollections(fixture.resource.db);
+    const materials = new MongoMaterialsService(fixture.resource);
+    const recipes = new MongoRecipeService(fixture.resource);
+    const brewId = (await materials.createFreeBrew(userId, { title: "구성 대기", brief: "MongoDB 운영 근거", lengthPreset: "single" })).brewId;
+    const started = (topic: string, jobId: string) => db.outboxEvents.countDocuments({ topic, "payload.generationJobId": jobId });
+
+    // 구성이 없으면 저장만 하고 시작하지 않는다.
+    const waiting = await service.submit(userId, "mongo-generation-waiting", { brewId, templateId });
+    expect((await db.generationJobs.findOne({ _id: waiting.generationJobId }))).toMatchObject({ recipeId: null, status: "queued" });
+    expect(await started("portfolio.generate", waiting.generationJobId)).toBe(0);
+    await expect(service.prepareFreeHtml(waiting.generationJobId)).rejects.toMatchObject({ statusCode: 409 });
+
+    // 구성이 끝나면 붙고 한 번만 시작한다.
+    const recipe = (await recipes.generate(userId, brewId, "mongo-generation-waiting-recipe")).id;
+    expect(await service.attachRecipe(userId, brewId)).toBe(1);
+    expect(await service.attachRecipe(userId, brewId)).toBe(0);
+    expect((await db.generationJobs.findOne({ _id: waiting.generationJobId }))?.recipeId).toBe(recipe);
+    expect(await started("portfolio.generate", waiting.generationJobId)).toBe(1);
+
+    // 구성이 이미 있으면 브루만 보내도 바로 그 구성으로 시작한다.
+    const ready = await service.submit(userId, "mongo-generation-waiting-ready", { brewId, templateId });
+    expect((await db.generationJobs.findOne({ _id: ready.generationJobId }))?.recipeId).toBe(recipe);
+    expect(await started("portfolio.generate", ready.generationJobId)).toBe(1);
+
+    // 구성이 끝내 실패하면 기다리던 생성도 그 코드로 끝난다.
+    const failingBrew = (await materials.createFreeBrew(userId, { title: "구성 실패", brief: "MongoDB 운영 근거", lengthPreset: "single" })).brewId;
+    const doomed = await service.submit(userId, "mongo-generation-waiting-failed", { brewId: failingBrew, templateId });
+    expect(await service.failWaiting(userId, failingBrew, "BREW_INPUT_REJECTED")).toBe(1);
+    expect(await service.getStatus(userId, doomed.generationJobId)).toMatchObject({ status: "failed", failure: { code: "BREW_INPUT_REJECTED", retryable: false } });
+    expect(await service.attachRecipe(userId, failingBrew)).toBe(0);
+  });
+
   it("finishes a generation that started under the limit even when its own calls pass the limit", async () => {
     const db = mongoCollections(fixture.resource.db);
     const submitted = await service.submit(userId, "mongo-generation-credit-crossing", { recipeId, templateId });
