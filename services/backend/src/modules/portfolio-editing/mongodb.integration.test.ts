@@ -77,6 +77,21 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB portfolio read, edit, la
     const stale = results.find(({ status }) => status === "rejected"); if (stale?.status === "rejected") expect(stale.reason).toMatchObject({ statusCode: 409 });
   });
 
+  it("records instructed edits as AI revisions and direct edits as user revisions", async () => {
+    const db = mongoCollections(fixture.resource.db);
+    const target = await db.blocks.findOne({ userId, kind: "paragraph", locked: { $ne: true } });
+    if (!target) throw new Error("unlocked paragraph block missing");
+    const instructed = new MongoPortfolioEditingService(fixture.resource, {
+      async edit(context) { return [{ path: "content.text", before: context.block.fields.text ?? "", after: "AI가 다듬은 문장", label: "다듬음" }]; },
+    });
+    const proposal = await instructed.preview(userId, portfolioId, target._id, { operation: "instruct", instruction: "더 짧게" });
+    const applied = await instructed.apply(userId, proposal.id);
+    expect((await db.revisions.findOne({ _id: applied.revisionId }))?.actor).toBe("ai");
+    const direct = await editor.preview(userId, portfolioId, target._id, { operation: "update_text", text: "직접 고친 문장" });
+    const second = await editor.apply(userId, direct.id);
+    expect((await db.revisions.findOne({ _id: second.revisionId }))?.actor).toBe("user");
+  });
+
   it("updates block and section structure atomically and restores a deleted block", async () => {
     const before = await reader.get(userId, portfolioId); const section = before.sections[0]!;
     const duplicated = await editor.duplicateBlock(userId, portfolioId, section.blocks[0]!.id);
