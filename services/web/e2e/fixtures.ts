@@ -49,6 +49,7 @@ export function allBlockMarkdown(): string {
     "문단", "# 제목 1", "## 제목 2", "### 제목 3", "- 글머리", "1. 번호", "- [x] 할 일", "> 인용",
     "```typescript\nconst answer = 42\n```", `\`\`\`expresso-block\n${callout}\n\`\`\``, "---",
     "| 셀 | 값 |\n| --- | --- |\n| 셀 | 값 |",
+    "> [evidence:record-1#block-2] 근거",
   ].join("\n\n");
 }
 
