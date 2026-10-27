@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 const sdk = vi.hoisted(() => ({ query: vi.fn(), tool: vi.fn((name, description, schema, handler) => ({ name, description, schema, handler })), createSdkMcpServer: vi.fn(input => input) }));
 vi.mock("@anthropic-ai/claude-agent-sdk", () => sdk);
+import type { AiUsageEvent } from "../ai/usage-sink.js";
 import { AgentToolRejection, ClaudeAgentRuntime, conversationForModel, type AgentEvent } from "./runtime.js";
-const base = () => ({ records: { list: vi.fn(async () => ({ categories: [], records: [] })), read: vi.fn(async () => []) }, review: vi.fn(), draftRecord: vi.fn(), gapReview: vi.fn(), planDraft: vi.fn(), replanDraft: vi.fn(), readPlan: vi.fn(), propose: vi.fn() });
+const base = () => ({ userId: "00000000-0000-4000-8000-0000000000aa", records: { list: vi.fn(async () => ({ categories: [], records: [] })), read: vi.fn(async () => []) }, review: vi.fn(), draftRecord: vi.fn(), gapReview: vi.fn(), planDraft: vi.fn(), replanDraft: vi.fn(), readPlan: vi.fn(), propose: vi.fn() });
 describe("Claude 채팅 실행 어댑터", () => {
   it("제품 도구만 노출하고 부분 텍스트만 한 번 전달한다", async () => {
     const events: AgentEvent[] = [];
@@ -55,5 +56,25 @@ describe("Claude 채팅 실행 어댑터", () => {
     const draft = { draftId: "00000000-0000-4000-8000-000000000004", title: "새 기록", categoryId: null, bodyMd: "본문", sources: [{ messageId: "00000000-0000-4000-8000-000000000003", quote: "말" }], categories: [], status: "approved" as const, recordId: "00000000-0000-4000-8000-000000000005" };
     expect(conversationForModel([{ id: "00000000-0000-4000-8000-000000000006", role: "assistant", text: "", createdAt: "2026-10-15T00:00:00.000Z", tools: [{ id: "d", name: "새 기록 초안", status: "complete", summary: "새 기록", recordDraft: draft }] }])[0]!.tools).toEqual([{ name: "새 기록 초안", summary: "새 기록", recordDraft: { title: "새 기록", status: "approved", recordId: draft.recordId } }]);
     expect(conversationForModel([{ id: "00000000-0000-4000-8000-000000000003", role: "user", text: "질문", createdAt: "2026-10-15T00:00:00.000Z", tools: [] }])).toEqual([{ id: "00000000-0000-4000-8000-000000000003", role: "user", text: "질문" }]);
+  });
+  it("성공한 실행의 사용량을 모델마다 한 줄씩 사용자 몫으로 남긴다", async () => {
+    sdk.query.mockReturnValue((async function* () {
+      yield { type: "result", is_error: false, duration_ms: 4_200, modelUsage: {
+        "claude-haiku-5-5": { inputTokens: 10, outputTokens: 20, cacheReadInputTokens: 0, cacheCreationInputTokens: 0, costUSD: 0.001 },
+        "claude-sonnet-5": { inputTokens: 12, outputTokens: 900, cacheReadInputTokens: 3_000, cacheCreationInputTokens: 4_000, costUSD: 0.05 },
+      } };
+    })());
+    const record = vi.fn(async (_event: AiUsageEvent) => undefined);
+    await new ClaudeAgentRuntime(undefined, { record }).run({ messages: [], context: [], signal: new AbortController().signal, emit: vi.fn(), ...base() });
+    expect(record.mock.calls.map(([event]) => event)).toEqual([
+      { userId: "00000000-0000-4000-8000-0000000000aa", contract: "agent_chat", model: "claude-sonnet-5", inputTokens: 12, outputTokens: 900, cacheReadTokens: 3_000, cacheCreationTokens: 4_000, costUsd: 0.05, durationMs: 4_200 },
+      { userId: "00000000-0000-4000-8000-0000000000aa", contract: "agent_chat", model: "claude-haiku-5-5", inputTokens: 10, outputTokens: 20, cacheReadTokens: 0, cacheCreationTokens: 0, costUsd: 0.001, durationMs: 0 },
+    ]);
+  });
+  it("실패한 실행은 사용량을 남기지 않는다", async () => {
+    sdk.query.mockReturnValue((async function* () { yield { type: "result", is_error: true, duration_ms: 10, modelUsage: { "claude-sonnet-5": { inputTokens: 1, outputTokens: 1, cacheReadInputTokens: 0, cacheCreationInputTokens: 0, costUSD: 0 } } }; })());
+    const record = vi.fn(async (_event: AiUsageEvent) => undefined);
+    await expect(new ClaudeAgentRuntime(undefined, { record }).run({ messages: [], context: [], signal: new AbortController().signal, emit: vi.fn(), ...base() })).rejects.toThrow("agent execution failed");
+    expect(record).not.toHaveBeenCalled();
   });
 });

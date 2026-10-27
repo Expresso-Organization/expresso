@@ -47,6 +47,8 @@ export interface QuestionBasisOption {
 }
 
 export interface QuestionContext {
+  /** 사용량을 남길 사용자. 사용자가 없는 작업만 null이다. */
+  userId: string | null;
   options: QuestionBasisOption[];
   company: { name: string; industry: string | null; toneSummary: string | null } | null;
   jobTitle: string | null;
@@ -65,6 +67,8 @@ export interface QuestionWriter {
   draft(context: QuestionContext): Promise<QuestionDraftResult[]>;
   /** 같은 근거를 다른 각도에서 다시 묻는다(01b "다른 질문으로"). */
   rewrite(input: {
+    /** 사용량을 남길 사용자. */
+    userId: string | null;
     option: QuestionBasisOption;
     previousTexts: string[];
     company: QuestionContext["company"];
@@ -211,7 +215,7 @@ export class AiQuestionWriter implements QuestionWriter {
           promptVersion: QUESTION_PROMPT_VERSION,
         },
         InterviewQuestionDraftListSchema,
-        { check: (draft) => questionDraftViolations(draft, context.options.length) },
+        { userId: context.userId, check: (draft) => questionDraftViolations(draft, context.options.length) },
       ));
     } catch (error) {
       // 고쳐도 계약을 못 맞춘 출력은 질문 초안의 실패로 알린다 — 작업 큐는 이 오류를 재시도하지 않는다(`classifyBrewJobFailure`).
@@ -245,6 +249,7 @@ export class AiQuestionWriter implements QuestionWriter {
   }
 
   async rewrite(input: {
+    userId: string | null;
     option: QuestionBasisOption;
     previousTexts: string[];
     company: QuestionContext["company"];
@@ -265,7 +270,7 @@ export class AiQuestionWriter implements QuestionWriter {
         promptVersion: QUESTION_PROMPT_VERSION,
       },
       InterviewQuestionRewriteSchema,
-      { check: (rewrite) => interviewQuestionProblems(rewrite.text).map((problem) => ({ path: "/text", problem })) },
+      { userId: input.userId, check: (rewrite) => interviewQuestionProblems(rewrite.text).map((problem) => ({ path: "/text", problem })) },
     );
     return data;
   }

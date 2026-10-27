@@ -56,6 +56,8 @@ export interface WriterEvidence {
 }
 
 export interface WriterContext {
+  /** 사용량을 남길 사용자. 사용자가 없는 작업만 null이다. */
+  userId: string | null;
   sections: WriterSection[];
   evidence: WriterEvidence[];
   company: {
@@ -267,7 +269,7 @@ export class AiSentenceWriter implements SentenceWriter {
         promptVersion: GENERATION_PROMPT_VERSION,
       },
       GenerationDraftSchema,
-      { check: (draft) => generationViolations(draft, context) },
+      { userId: context.userId, check: (draft) => generationViolations(draft, context) },
     );
     // 고친 뒤에도 남은 위반은 그대로 온다. 빈 섹션은 그대로 두고, 섹션이나 근거를 잃은
     // 블록은 원래대로 `toGenerationOutput`이 뺀다. 블록이 하나도 안 남으면 거기서 `SentenceDraftError`로 끝난다.

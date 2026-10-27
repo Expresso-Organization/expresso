@@ -43,6 +43,8 @@ export const InsightNoteSchema = z.strictObject({
 export type InsightNote = z.infer<typeof InsightNoteSchema>;
 
 export interface InsightContext {
+  /** 사용량을 남길 사용자. 사용자가 없는 작업만 null이다. */
+  userId: string | null;
   period: { start: string; end: string };
   sampleSize: number;
   /** 기간 합계. 키가 곧 evidenceMetrics에 쓸 수 있는 이름이다. */
@@ -154,7 +156,7 @@ export class AiInsightWriter implements InsightWriter {
         promptVersion: INSIGHT_PROMPT_VERSION,
       },
       InsightNoteSchema,
-      { check: (note) => insightViolations(note, context) },
+      { userId: context.userId, check: (note) => insightViolations(note, context) },
     );
     // 고친 뒤에도 남은 위반은 그대로 온다. 문장 수는 그대로 쓴다. 집계에 없는 지표 이름은
     // 저장할 수 없으므로(`validateInsightDraft`) 그때만 해설을 만들지 못한 것으로 끝낸다 —

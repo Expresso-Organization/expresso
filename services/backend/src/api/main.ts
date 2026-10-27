@@ -8,6 +8,7 @@ import { createRedisResource, createStreamRedis } from "../platform/redis.js";
 import { IdentityService } from "../modules/identity/index.js";
 import { RemoteGoogleIdTokenVerifier } from "../modules/identity/google.js";
 import { EntitlementService } from "../modules/entitlements/index.js";
+import { UsageService } from "../modules/usage/index.js";
 import { CareerService } from "../modules/career/index.js";
 import { JobMarketService } from "../modules/jobs/index.js";
 import { AiSearchInterpreter } from "../modules/jobs/search-interpreter.js";
@@ -24,6 +25,7 @@ import { AiBlockEditor } from "../modules/portfolio-editing/editor.js";
 import { AiLayoutRemixer } from "../modules/layout/remixer.js";
 import { AiInsightWriter } from "../modules/analytics/writer.js";
 import { createAiClient } from "../platform/ai/create-client.js";
+import { MongoAiUsageSink } from "../platform/ai/usage-sink.js";
 import { createMailer } from "../platform/mail/create-mailer.js";
 import { DesignSystemService } from "../modules/design-systems/service.js";
 import { TemplateService } from "../modules/templates/index.js";
@@ -56,6 +58,7 @@ const googleIdTokenVerifier = config.googleClientId
   ? new RemoteGoogleIdTokenVerifier({ clientId: config.googleClientId })
   : null;
 const entitlementService = new EntitlementService(database);
+const usageService = new UsageService(database);
 const careerService = new CareerService(database);
 const jobUrlImporter = new JobUrlImporter();
 const jobBoardService = new JobBoardService(database);
@@ -70,7 +73,8 @@ const generationService = new GenerationService(database);
 // 04b "말로 고치기"만 요청 안에서 계약을 부른다 — 사용자가 결과를 보고
 // 적용할지 정하는 대화형 편집이라 뒤로 미룰 수 없다(§8.3은 이 화면을
 // 스트리밍으로 그린다. 지금은 한 번에 받는다).
-const ai = createAiClient(config);
+const aiUsage = new MongoAiUsageSink(database);
+const ai = createAiClient(config, aiUsage);
 
 // 수집은 매일 아침 워커가 돌린다. API에는 목록·수동 실행과 주소 읽기만 있으면 된다.
 const jobIngestService = new JobIngestService(
@@ -139,7 +143,7 @@ const careerDocumentService = new CareerDocumentService(
   },
   config.careerAiDeterministicTest ? new SelectedBlockTextAiProposalAdapter() : ai ? new AiClientProposalAdapter(ai) : undefined,
 );
-const agentChatService = new AgentChatService(database, config.agentChatEnabled ? new ClaudeAgentRuntime(config.agentChatModel) : null, careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(database, config.agentCredentialEncryptionKey), portfolioReadService, pageService);
+const agentChatService = new AgentChatService(database, config.agentChatEnabled ? new ClaudeAgentRuntime(config.agentChatModel, aiUsage) : null, careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(database, config.agentCredentialEncryptionKey), portfolioReadService, pageService);
 const app = buildApi({
   agentChatService,
   config,
@@ -147,6 +151,7 @@ const app = buildApi({
   identityService,
   ...(googleIdTokenVerifier ? { googleIdTokenVerifier } : {}),
   entitlementService,
+  usageService,
   careerService,
   careerDocumentService,
   jobMarketService,

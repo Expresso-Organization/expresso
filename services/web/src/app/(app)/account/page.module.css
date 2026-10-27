@@ -66,25 +66,18 @@
   margin-bottom: 28px;
 }
 
-/* 사용량 3칸 */
-.usageGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-}
-
-.usageCard {
+/* 사용량 — 이번 달 크레딧 하나가 가장 크게 선다 */
+.creditCard {
   background: var(--ex-bg);
   border: 1px solid var(--ex-border);
   border-radius: 14px;
   padding: 16px 18px;
 }
 
-.usageHead {
+.creditHead {
   display: flex;
   align-items: baseline;
   gap: 9px;
-  margin-bottom: 11px;
 }
 
 .usageLabel {
@@ -92,56 +85,395 @@
   color: var(--ex-fg-muted);
 }
 
-.usageValue {
-  margin-left: auto;
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-sm);
-  color: var(--ex-fg);
-}
-
-.usageSlots {
-  display: flex;
-  gap: 3px;
-  margin-bottom: 10px;
-}
-
-.usageSlot {
-  flex: 1;
-  height: 5px;
-  border-radius: 999px;
-  background: var(--ex-border);
-}
-
-.usageSlotUsed {
-  background: var(--ex-accent);
-}
-
 .usageResets {
+  margin-left: auto;
   font-size: var(--ex-text-2xs);
   color: var(--ex-fg-subtle);
 }
 
-/* 요금제 3단 */
+.creditFigure {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 6px 0 12px;
+}
 
+.creditUsed {
+  font-family: var(--ex-font-brand);
+  font-size: var(--ex-text-4xl);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--ex-fg);
+}
+
+.creditLimit {
+  font-family: var(--ex-font-brand);
+  font-size: var(--ex-text-md);
+  color: var(--ex-fg-muted);
+}
+
+.creditTrack {
+  height: 6px;
+  background: var(--ex-bg-track);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.creditFill {
+  height: 100%;
+  background: var(--ex-accent);
+  border-radius: 999px;
+}
+
+.usageEmpty {
+  margin-top: 12px;
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-muted);
+}
+
+/* 차트 카드 — 분석 화면과 같은 머리 줄 */
+.chartCard {
+  margin-top: 14px;
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  min-width: 0;
+}
+
+.chartHead {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.chartTitle {
+  font-size: var(--ex-text-sm);
+  font-weight: 600;
+}
+
+.chartUnit {
+  margin-left: auto;
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-subtle);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-bottom: 14px;
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-muted);
+  white-space: nowrap;
+}
+
+.legendValue {
+  font-family: var(--ex-font-brand);
+  color: var(--ex-fg);
+}
+
+.legendSwatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* 계열 색은 토큰 순서 그대로 붙는다 — 순서가 색각 이상 구분을 맡는다 */
+.seg1 {
+  background: var(--ex-chart-1);
+}
+
+.seg2 {
+  background: var(--ex-chart-2);
+}
+
+.seg3 {
+  background: var(--ex-chart-3);
+}
+
+.plot {
+  display: flex;
+  gap: 8px;
+  height: 160px;
+}
+
+.plotAxis {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-family: var(--ex-font-brand);
+  font-size: var(--ex-text-3xs);
+  color: var(--ex-fg-subtle);
+  text-align: right;
+  min-width: 20px;
+  /* 숫자 줄의 가운데가 눈금에 맞도록 위아래 반 줄씩 넘친다 */
+  margin: -6px 0;
+}
+
+/* 날짜마다 막대 하나. 바닥선에 붙고 위 끝만 둥글다. */
+.dayColumns {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  border-bottom: 1px solid var(--ex-border);
+}
+
+.dayColumn {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  outline: none;
+}
+
+.dayStack {
+  width: 100%;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 2px;
+  border-radius: 4px 4px 0 0;
+  overflow: hidden;
+}
+
+.daySegment {
+  flex-basis: 0;
+  min-height: 0;
+}
+
+.dayColumn:hover .dayStack,
+.dayColumn:focus-visible .dayStack {
+  opacity: 0.8;
+}
+
+/* 막대 위 말풍선 — 그날의 토큰 종류별 크레딧과 호출 수 */
+.dayTip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  display: none;
+  min-width: 132px;
+  padding: 9px 11px;
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
+  border-radius: 10px;
+  box-shadow: var(--ex-elevation-overlay);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-muted);
+  pointer-events: none;
+}
+
+.dayTipEnd {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+.dayColumn:hover .dayTip,
+.dayColumn:focus-visible .dayTip {
+  display: block;
+}
+
+.dayTipHead,
+.dayTipRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.dayTipHead {
+  margin-bottom: 5px;
+  font-weight: 600;
+  color: var(--ex-fg);
+}
+
+.dayTipRow + .dayTipRow {
+  margin-top: 3px;
+}
+
+.dayTipHead > span:last-child,
+.dayTipRow > span:last-child {
+  margin-left: auto;
+  padding-left: 12px;
+  font-family: var(--ex-font-brand);
+  color: var(--ex-fg);
+}
+
+.plotDates {
+  display: flex;
+  justify-content: space-between;
+  margin: 6px 0 0 28px;
+  font-family: var(--ex-font-brand);
+  font-size: var(--ex-text-3xs);
+  color: var(--ex-fg-subtle);
+}
+
+/* 기능별 · 모델별 — 이름은 왼쪽, 막대는 한 가지 색, 값은 오른쪽 */
+.rankGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+}
+
+.rankRows {
+  display: grid;
+  gap: 9px;
+}
+
+.rankRow {
+  display: grid;
+  grid-template-columns: minmax(0, 7.5rem) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.rankLabel {
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-body);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 모델 이름은 브랜드 서체 */
+.rankLabelModel {
+  font-family: var(--ex-font-brand);
+}
+
+.rankTrack {
+  height: 8px;
+}
+
+.rankFill {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  background: var(--ex-fg);
+  border-radius: 0 4px 4px 0;
+}
+
+.rankValue {
+  font-family: var(--ex-font-brand);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg);
+  text-align: right;
+  min-width: 2.5rem;
+}
+
+/* 요금제 3단 */
+.plans {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+}
+
+.plan {
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
+  border-radius: 16px;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+}
 
 /* 사용 중인 플랜만 espresso 보더 — 시그니처 문맥 */
+.planCurrent {
+  border: 1.5px solid var(--ex-accent);
+  background: var(--ex-accent-surface);
+}
 
+.planHead {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  margin-bottom: 5px;
+}
 
+.planName {
+  font-family: var(--ex-font-brand);
+  font-size: var(--ex-text-xl);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
 
+.planBadge {
+  white-space: nowrap;
+  font-size: var(--ex-text-3xs);
+  font-weight: 600;
+  color: var(--ex-accent-text);
+  background: var(--ex-bg);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
 
+.planPrice {
+  font-size: var(--ex-text-md);
+  color: var(--ex-fg-muted);
+  margin-bottom: 16px;
+}
 
-
-
-
-
-
+.planFeature {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-body);
+}
 
 /* 결제 내역 */
+.billingRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--ex-border-hair);
+}
 
+.billingDate {
+  font-family: var(--ex-font-brand);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
+  width: 92px;
+  flex-shrink: 0;
+}
 
+.billingItem {
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg);
+  flex: 1;
+  min-width: 0;
+}
 
+.billingAmount {
+  font-family: var(--ex-font-brand);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg);
+}
 
-
+.billingState {
+  font-size: var(--ex-text-xs);
+  color: var(--ex-status-success-text);
+  background: var(--ex-status-success-surface);
+  border-radius: 6px;
+  padding: 4px 9px;
+  white-space: nowrap;
+}
 
 /* 데이터 관리 */
 .dataRow {
@@ -223,18 +555,6 @@
   flex-basis: 100%;
   font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
-}
-
-.footNote {
-  display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  padding: 13px 15px;
-  background: var(--ex-accent-surface);
-  border-radius: 12px;
-  font-size: var(--ex-text-xs);
-  line-height: 1.7;
-  color: var(--ex-accent-ink);
 }
 
 /* ── AI 사용 동의 ─────────────────────────────────────────── */
@@ -361,9 +681,18 @@
   }
 }
 
-/* 좁은 화면 — 사용량 카드가 한 줄에 하나씩 */
-@media (max-width: 1023px) {
-  .usageGrid {
-    grid-template-columns: minmax(0, 1fr);
+/*
+ * 넓은 화면 — 요금제 카드 세 장과 기능별 · 모델별이 나란히 선다.
+ *
+ * 설정 본문은 사이드바 · 설정 목록을 뺀 자리라 1024px 화면에서도 774px뿐이다.
+ * 거기서 둘로 나누면 막대가 30px로 줄어 비교가 안 된다.
+ */
+@media (min-width: 1280px) {
+  .plans {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .rankGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

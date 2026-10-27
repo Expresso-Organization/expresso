@@ -107,7 +107,8 @@ export class AiFactsReader implements FactsReader {
       },
       JobFactsAiOutputSchema,
       // 다시 요청하지 않는다. 원문과 맞지 않는 항목만 어댑터가 같은 대화에서 고쳐 받는다.
-      { check: (output) => factViolations(body, output) },
+      // 공고 적재는 사용자가 없는 작업이다. 사용량은 누구의 한도에도 잡히지 않는다.
+      { userId: null, check: (output) => factViolations(body, output) },
     );
     return verifyFacts(body, data);
   }

@@ -46,6 +46,7 @@ export class RecipeService implements RecipeApi {
       ...orderedAnswers.map((answer) => ({ type: "answer" as const, id: answer._id, label: answer.prompt, text: answer.transcript })),
     ];
     const plannerContext: PlannerContext = {
+      userId,
       sources,
       company: company ? { name: company.name, industry: company.industry ?? null, toneSummary: company.toneSummary ?? null } : null,
       jobTitle: posting?.title ?? null,

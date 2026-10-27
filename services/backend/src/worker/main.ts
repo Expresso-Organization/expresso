@@ -10,6 +10,7 @@ import { JobAnalysisService } from "../modules/job-analysis/index.js";
 import { UnavailableRequirementExtractor } from "../modules/job-analysis/extractor.js";
 import { AiRequirementExtractor } from "../modules/job-analysis/ai-extractor.js";
 import { createAiClient } from "../platform/ai/create-client.js";
+import { MongoAiUsageSink } from "../platform/ai/usage-sink.js";
 import { createJobAnalysisProcessor } from "./processors/job-analysis.js";
 import { GenerationService } from "../modules/generation/index.js";
 import { AiSentenceWriter, UnavailableSentenceWriter } from "../modules/generation/writer.js";
@@ -72,7 +73,8 @@ const dispatcher = new MongoOutboxDispatcher({
 });
 const abortController = new AbortController();
 // AI가 꺼져 있으면(`AI_PROVIDER=off`) 요건 추출과 문장 생성은 멈춘다.
-const ai = createAiClient(config);
+const aiUsage = new MongoAiUsageSink(database);
+const ai = createAiClient(config, aiUsage);
 // 계약을 부르기 전에 지나는 문. 워커에서 도는 계약도 예외가 아니다.
 const consentService = new ConsentService(database);
 const jobAnalysisService = new JobAnalysisService(database);

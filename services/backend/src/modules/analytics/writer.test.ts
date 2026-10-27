@@ -10,7 +10,7 @@ import {
   type InsightNote,
 } from "./writer.js";
 
-const context: InsightContext = {
+const context: InsightContext = { userId: null,
   period: { start: "2026-07-01", end: "2026-07-31" },
   sampleSize: 48,
   metrics: {
