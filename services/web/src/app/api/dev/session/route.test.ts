@@ -24,8 +24,8 @@ describe("개발용 세션 라우트", () => {
     expect((await GET(request)).status).toBe(404);
   });
 
-  it("프로덕션에서는 켜도 응답하지 않는다", async () => {
-    set({ NODE_ENV: "production", DEV_LOGIN: "1", DEV_LOGIN_EMAIL: "a@b.co", DEV_LOGIN_PASSWORD: "0123456789" });
+  it("프로덕션 빌드에서도 스위치를 끄면 응답하지 않는다", async () => {
+    set({ NODE_ENV: "production", DEV_LOGIN: "0", DEV_LOGIN_EMAIL: "a@b.co", DEV_LOGIN_PASSWORD: "0123456789" });
     expect((await GET(request)).status).toBe(404);
   });
 

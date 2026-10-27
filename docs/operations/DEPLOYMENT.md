@@ -51,6 +51,31 @@ QUEUE_PREFIX=expresso-mongo-v1
 비밀번호를 저장소, 명령 인자 또는 로그에 기록하지 않습니다. 서버의 환경 파일은
 소유자만 읽을 수 있어야 합니다.
 
+### 개발 계정 접속 버튼
+
+`services/web/.env`에 아래 셋을 적으면 로그인 화면 오른쪽 아래에 "개발 계정으로
+접속" 버튼이 서고, 누르면 그 계정으로 로그인됩니다. 셋 중 하나라도 없으면 버튼이
+없고 `/api/dev/session`은 404입니다.
+
+```dotenv
+DEV_LOGIN=1
+DEV_LOGIN_EMAIL=dev01@expresso.test
+DEV_LOGIN_PASSWORD=...
+DEV_LOGIN_NAME=윤하린
+```
+
+`DEV_LOGIN_NAME`은 그 계정이 아직 없을 때 가입에 쓰는 표시 이름입니다. 적지 않으면
+`Dev`로 가입합니다.
+
+```bash
+sudo systemctl restart expresso-web
+```
+
+배포본에서는 버튼을 누른 사람만 들어갑니다 — 로그인 화면을 건너뛰고 바로 보내는
+전환은 개발 서버에서만 일어납니다. 그래도 이 스위치가 유일한 안전장치입니다 —
+켜 두면 로그인 화면을 여는 누구나 그 버튼을 누릅니다. 공개돼도 괜찮은 계정만 적고, 확인이 끝나면 세 줄을 지우고 다시
+재시작합니다. 비밀번호는 이 파일에만 두고 저장소에 올리지 않습니다.
+
 ## 측정 브라우저
 
 워커는 생성한 포트폴리오 지면을 Playwright Chromium(chromium-headless-shell)으로 열어 390 · 926 · 1440px에서 잽니다.

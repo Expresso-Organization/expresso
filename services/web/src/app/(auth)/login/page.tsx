@@ -1,12 +1,12 @@
 import { redirect } from "next/navigation";
 
+import { isDevLoginEnabled } from "@/lib/auth/dev-login";
 import { isGoogleSignInEnabled } from "@/lib/auth/google";
 import { safeNext } from "@/lib/auth/next-path";
 import { readAccessToken } from "@/lib/session";
 
 import { socialNotice } from "../social-notice";
 import { LoginForm } from "./LoginForm";
-import { readDemoAccount } from "./demo-account";
 
 /**
  * 10 로그인 — "소셜 우선. 이메일은 대안으로 둡니다".
@@ -15,7 +15,7 @@ import { readDemoAccount } from "./demo-account";
  * 시크릿이 있어야 왕복이 돌고, 없으면 버튼을 켜 두지 않는다. **이미 로그인한
  * 사람인가** — 쿠키가 있으면 폼을 보이지 않고 보려던 자리로 보낸다. 쿠키만 보는
  * 낙관적 판단이라 만료된 세션이면 그쪽 화면이 401을 받아 쿠키를 지우고 다시 여기로 온다.
- * 그리고 개발용 데모 계정을 보일지.
+ * 그리고 개발 계정 접속 버튼을 세울지.
  */
 export default async function LoginPage({
   searchParams,
@@ -30,7 +30,7 @@ export default async function LoginPage({
       googleEnabled={isGoogleSignInEnabled()}
       notice={socialNotice(error)}
       next={safeNext(next)}
-      demoAccount={readDemoAccount()}
+      devLoginEnabled={isDevLoginEnabled()}
     />
   );
 }
