@@ -17,6 +17,8 @@ import {
   type EditStructuredPage,
   PortfolioMediaSchema,
   PAGE_IMAGE_SRC_PREFIX,
+  RestorePageRevisionSchema,
+  type RestorePageRevision,
 } from "@expresso/contracts";
 import { renderStructuredPortfolio, librarySelection } from "@expresso/portfolio-renderer";
 import { mongoCollections, type GeneratedPageDoc, type JsonObject } from "@expresso/database";
@@ -295,6 +297,27 @@ export class PageService {
       if (!latest || latest.revision !== input.expectedRevision) throw new PageServiceError(409, "다른 편집이 먼저 저장됐습니다.");
       const created: GeneratedPageDoc = { ...latest, _id: randomUUID(), generationJobId: null, revision: latest.revision + 1, html: rendered.html, css: rendered.css, styleSpecSnapshot: latest.styleSpecSnapshot ? { ...latest.styleSpecSnapshot, structure } : null, instruction: "구성·문장 직접 편집", createdAt: new Date(), generationManifest: { ...latest.generationManifest, structured: snapshot, library: librarySelection(snapshot.spec) } as unknown as JsonObject };
       await db.generatedPages.insertOne(created, options);
+      return created;
+    });
+    return toPage(row);
+  }
+
+  /** 고른 판의 내용을 새 판으로 쌓는다. 다듬기 상태는 옮기지 않는다 — 옛 판을 다시 다듬지 않는다. */
+  async restoreRevision(userId: string, portfolioId: string, raw: RestorePageRevision): Promise<GeneratedPage> {
+    const input = RestorePageRevisionSchema.parse(raw);
+    const row = await inTransaction(this.context, async tx => {
+      await requireActiveUser(tx, userId);
+      const db = mongoCollections(tx.db), options = { session: tx.session };
+      const latest = await db.generatedPages.find({ userId, portfolioId }, options).sort({ revision: -1 }).limit(1).next();
+      if (!latest) throw new PageServiceError(404, "지면이 없습니다.");
+      if (latest.revision !== input.expectedRevision) throw new PageServiceError(409, "다른 편집이 먼저 저장됐습니다. 새로고침해 주세요.");
+      if (input.revision === latest.revision) throw new PageServiceError(409, "지금 보고 있는 판입니다.");
+      const source = await db.generatedPages.findOne({ userId, portfolioId, revision: input.revision }, options);
+      if (!source) throw new PageServiceError(404, "그 판이 없습니다.");
+      const { refinement: _refinement, ...rest } = source;
+      const created: GeneratedPageDoc = { ...rest, _id: randomUUID(), generationJobId: null, revision: latest.revision + 1, instruction: `판 ${input.revision + 1}로 되돌림`, rationale: `판 ${input.revision + 1}로 되돌렸습니다.`, createdAt: new Date() };
+      await db.generatedPages.insertOne(created, options);
+      await db.portfolios.updateOne({ _id: portfolioId, userId }, { $set: { updatedAt: new Date() } }, options);
       return created;
     });
     return toPage(row);

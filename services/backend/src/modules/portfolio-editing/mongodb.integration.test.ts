@@ -129,4 +129,14 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB portfolio read, edit, la
     expect(history[1]?.html).toBe(first.html); expect(second.styleSpec).toEqual(generator.seen[1]?.style ?? null);
     expect(await pages.document(userId, portfolioId)).toContain("<!doctype html>");
   });
+
+  it("restores an earlier page by stacking it as a new revision", async () => {
+    const history = await pages.history(userId, portfolioId); const latest = history[0]!; const earlier = history.at(-1)!;
+    await expect(pages.restoreRevision(userId, portfolioId, { revision: earlier.revision, expectedRevision: latest.revision - 1 })).rejects.toMatchObject({ statusCode: 409 });
+    await expect(pages.restoreRevision(userId, portfolioId, { revision: latest.revision, expectedRevision: latest.revision })).rejects.toMatchObject({ statusCode: 409 });
+    const restored = await pages.restoreRevision(userId, portfolioId, { revision: earlier.revision, expectedRevision: latest.revision });
+    expect(restored).toMatchObject({ revision: latest.revision + 1, html: earlier.html, rationale: `판 ${earlier.revision + 1}로 되돌렸습니다.` });
+    expect((await pages.latest(userId, portfolioId))?.revision).toBe(restored.revision);
+    expect((await pages.history(userId, portfolioId)).find(({ revision }) => revision === latest.revision)?.html).toBe(latest.html);
+  });
 });
