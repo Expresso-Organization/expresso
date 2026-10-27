@@ -60,6 +60,15 @@ describe("BlockNote Yjs document", () => {
     // 콜아웃은 인용으로 내보내 앞뒤 블록과 섞이지 않습니다.
     expect(markdown).toContain("> 계측이 먼저");
   });
+
+  it("keeps an evidence block with its source through the Yjs state and exports it as a quote", async () => {
+    const evidence: CareerDocument = { schemaVersion: 1, type: "doc", content: [{ id: id(), type: "evidence", attrs: { source: "job:1" }, text: [{ text: "트래픽 10배 대응" }] }] };
+    const migrated = careerDocumentToBlockNoteState(evidence);
+    const restored = restoreBlockNote(migrated.state).blocks;
+    expect(restored[0]).toMatchObject({ type: "evidence", props: { source: "job:1" } });
+    expect(migrated.degraded).toEqual({});
+    expect(await blockNoteMarkdown(restored)).toContain("> 트래픽 10배 대응");
+  });
 });
 
 describe("syncBlockNoteDocument", () => {

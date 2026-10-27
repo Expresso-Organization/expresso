@@ -49,8 +49,39 @@ const createCalloutBlockSpec = createBlockSpec(createCalloutBlockConfig, {
 });
 
 // BlockNote 스키마 제네릭은 exactOptionalPropertyTypes를 통과하지 못해 기본 블록 타입으로 좁혀 넘깁니다.
+const createEvidenceBlockConfig = createBlockConfig(() => ({
+  type: "evidence" as const,
+  propSchema: { source: { default: "" } },
+  content: "inline" as const,
+}) as const);
+
+// 공고 · 다른 기록에서 인용한 문장입니다. 출처는 편집하지 않는 표시로 두고 본문만 고칩니다.
+const createEvidenceBlockSpec = createBlockSpec(createEvidenceBlockConfig, {
+  meta: { isolating: false },
+  parse(element) {
+    const source = (element as unknown as { getAttribute(name: string): string | null }).getAttribute("data-evidence");
+    return source === null ? undefined : { source };
+  },
+  render(block) {
+    const root = dom().createElement("div");
+    root.setAttribute("data-evidence", block.props.source);
+    const label = dom().createElement("span");
+    label.setAttribute("data-evidence-source", "true");
+    label.contentEditable = "false";
+    label.textContent = block.props.source;
+    const contentDOM = dom().createElement("div");
+    contentDOM.setAttribute("data-evidence-content", "true");
+    root.append(label, contentDOM);
+    return { dom: root, contentDOM } as never;
+  },
+  toExternalHTML() {
+    const quote = dom().createElement("blockquote");
+    return { dom: quote, contentDOM: quote } as never;
+  },
+});
+
 export const careerBlockNoteSchema = BlockNoteSchema.create({
-  blockSpecs: { ...defaultBlockSpecs, callout: createCalloutBlockSpec() } as unknown as BlockSpecs,
+  blockSpecs: { ...defaultBlockSpecs, callout: createCalloutBlockSpec(), evidence: createEvidenceBlockSpec() } as unknown as BlockSpecs,
 });
 // BlockNote의 PartialBlock 제네릭은 exactOptionalPropertyTypes에서 제약을 만족하지 못해 JSON 모양을 직접 적습니다.
 export interface CareerBlockNoteBlock {
@@ -131,6 +162,7 @@ export function careerDocumentToBlockNote(document: CareerDocument): BlockNoteCo
       case "code": return [{ id: block.id, type: "codeBlock", props: { language: typeof block.attrs["language"] === "string" ? block.attrs["language"] : "text" }, content: plain(block) } as CareerBlockNoteBlock];
       case "horizontalRule": return [{ id: block.id, type: "divider" } as CareerBlockNoteBlock];
       case "callout": return [{ id: block.id, type: "callout", content: inlineOf(block) } as CareerBlockNoteBlock];
+      case "evidence": return [{ id: block.id, type: "evidence", props: { source: String(block.attrs["source"] ?? "") }, content: inlineOf(block) } as CareerBlockNoteBlock];
       case "image": return [{ id: block.id, type: "image", props: { url: mediaUrl(block.attrs["mediaId"]), caption: String(block.attrs["alt"] ?? "") } } as CareerBlockNoteBlock];
       case "file": return [{ id: block.id, type: "file", props: { url: mediaUrl(block.attrs["mediaId"]), name: String(block.attrs["name"] ?? "") } } as CareerBlockNoteBlock];
       case "table": {
@@ -266,6 +298,7 @@ export function blockNoteToCareerDocument(blocks: readonly unknown[]): CareerDoc
       case "codeBlock": return withChildren({ id, type: "code", attrs: { language: typeof node.props?.["language"] === "string" ? node.props["language"] : null }, text: inlineToSpans(node.content).map(({ text }) => ({ text })) });
       case "divider": return withChildren({ id, type: "horizontalRule", attrs: {} });
       case "callout": return withChildren({ id, type: "callout", attrs: {}, text: inlineToSpans(node.content) });
+      case "evidence": return withChildren({ id, type: "evidence", attrs: { source: String(node.props?.["source"] ?? "") }, text: inlineToSpans(node.content) });
       case "image": return withChildren({ id, type: "image", attrs: { mediaId: mediaId(node.props?.["url"]), alt: String(node.props?.["caption"] ?? "") } });
       case "file": case "video": case "audio":
         return withChildren({ id, type: "file", attrs: { mediaId: mediaId(node.props?.["url"]), name: String(node.props?.["name"] ?? "") } });

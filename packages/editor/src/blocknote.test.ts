@@ -51,10 +51,12 @@ describe("careerDocumentToBlockNote", () => {
     ]);
   });
 
-  it("degrades unknown blocks to paragraphs and counts them", () => {
+  it("keeps evidence blocks with their source and degrades unknown blocks", () => {
     const { blocks, degraded } = careerDocumentToBlockNote(doc(text("evidence", "근거 문장", { source: "job:1" }), text("future.widget", "미래")));
-    expect(blocks.map((block) => block.content)).toEqual(["근거 문장", "미래"]);
-    expect(degraded).toEqual({ evidence: 1, "future.widget": 1 });
+    expect(blocks.map((block) => [block.type, block.props?.["source"] ?? null])).toEqual([["evidence", "job:1"], ["paragraph", null]]);
+    expect(degraded).toEqual({ "future.widget": 1 });
+    const back = blockNoteToCareerDocument(blocks);
+    expect(back.content[0]).toMatchObject({ type: "evidence", attrs: { source: "job:1" }, text: [{ text: "근거 문장" }] });
   });
 });
 
