@@ -90,6 +90,8 @@ export default function BlockNoteBody({ yDocument, userName, onAiRequest, onDocu
     resolveFileUrl,
     // v1 표의 머리글 행을 그대로 열고 새 표에서도 머리글을 켤 수 있게 합니다.
     tables: { headers: true },
+    // 편집 영역에 이름을 붙여 보조 기술과 E2E가 본문을 찾게 합니다.
+    domAttributes: { editor: { "aria-label": "커리어 기록 본문" } },
     // 0.56은 협업을 확장으로 켭니다. 전송은 CareerEditorSession이 Y.Doc 업데이트를 받아 맡습니다.
     extensions: [CollaborationExtension({
       fragment: yDocument.getXmlFragment(BLOCKNOTE_FRAGMENT),
