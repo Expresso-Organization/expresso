@@ -12,8 +12,8 @@ import { KIT_LAYOUT } from "./design-layout.js";
 const { wideMargin: WM, group: GROUP, collapseBelow: COLLAPSE } = KIT_LAYOUT;
 
 export const KIT_CSS = String.raw`
-.xp-page{--xp-pad:clamp(20px,5vw,56px);--xp-section:var(--section-gap);--xp-rule:var(--border-width) solid var(--border);--xp-small:max(13px,calc(var(--type-example-body) * .86));--xp-name:clamp(2.6rem,5.2vw + 1rem,calc(var(--type-example-display) * 1.3));--xp-h2:clamp(1.55rem,1.6vw + 1rem,var(--type-example-heading));
-  min-height:100vh;margin:0;background:var(--canvas);color:var(--text);font-family:var(--font-body);font-size:var(--type-example-body);line-height:var(--line-example-body);word-break:keep-all;overflow-wrap:anywhere;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+.xp-page{--xp-pad:clamp(20px,5vw,56px);--xp-bleed:max(var(--xp-pad),(100vw - var(--content-width)) / 2);--xp-section:var(--section-gap);--xp-rule:var(--border-width) solid var(--border);--xp-small:max(13px,calc(var(--type-example-body) * .86));--xp-name:clamp(2.6rem,5.2vw + 1rem,calc(var(--type-example-display) * 1.3));--xp-h2:clamp(1.55rem,1.6vw + 1rem,var(--type-example-heading));
+  min-height:100vh;margin:0;overflow-x:clip;background:var(--canvas);color:var(--text);font-family:var(--font-body);font-size:var(--type-example-body);line-height:var(--line-example-body);word-break:keep-all;overflow-wrap:anywhere;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 .xp-page *,.xp-page *::before,.xp-page *::after{box-sizing:border-box}
 .xp-page :is(h1,h2,h3,p,ol,ul,dl,dd,figure,blockquote){margin:0;padding:0}
 .xp-page li{list-style:none}
@@ -119,6 +119,20 @@ export const KIT_CSS = String.raw`
 .xp-par dd+dt,.xp-par dd+dt+dd{padding-top:calc(var(--element-gap) * .9);border-top:var(--xp-rule)}
 .xp-notes{display:grid;gap:calc(var(--element-gap) * 1.3);max-width:var(--measure)}
 .xp-notes section{display:grid;gap:.35em}
+.xp-metrics{padding-block:calc(var(--section-gap) * .5)}
+.xp-metric-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr));gap:var(--component-gap);border-block:var(--xp-rule);padding-block:calc(var(--element-gap) * 1.6)}
+.xp-metric-strip a{display:grid;gap:.35em;color:inherit;text-decoration:none}
+.xp-metric-value{font-family:var(--font-display);font-weight:var(--xp-weight);letter-spacing:var(--xp-tracking);font-size:clamp(2rem,4.2vw,3.4rem);line-height:1;color:var(--xp-accent-text)}
+.xp-metric-label{font-weight:var(--xp-weight-mid)}
+.xp-compare-list{display:grid;gap:calc(var(--element-gap) * 1.6);align-content:start}
+.xp-compare{display:grid;gap:.5em}
+.xp-compare-label{font-weight:var(--xp-weight-mid)}
+.xp-bar{display:grid;grid-template-columns:3.2em minmax(0,1fr) minmax(4.5em,auto);align-items:center;gap:.6em;min-height:2em}
+/* 칸을 명시합니다. 막대가 2열을 먼저 차지하면 자동 배치가 이름표를 3열로, 값을 다음 줄로 밀어냅니다 */
+.xp-bar>.xp-small{grid-column:1;grid-row:1}
+.xp-bar-fill{grid-column:2;grid-row:1;height:1.4em;width:var(--w,100%);border-radius:var(--control-radius);background:var(--border)}
+.xp-bar-value{grid-column:3;grid-row:1;font-family:var(--font-display);font-weight:var(--xp-weight);white-space:nowrap}
+.xp-bar[data-tone="after"] .xp-bar-value{color:var(--xp-accent-text)}
 .xp-steps{display:grid;gap:0;border-top:var(--xp-rule)}
 .xp-steps li{display:grid;grid-template-columns:3.2em minmax(0,1fr);gap:calc(var(--element-gap) * 1.2);padding-block:calc(var(--element-gap) * 1.2);border-bottom:var(--xp-rule)}
 .xp-steps li>div{display:grid;gap:.4em;max-width:var(--measure)}
@@ -185,8 +199,7 @@ export const KIT_CSS = String.raw`
 }
 
 /* 유형 — 포스터형. 첫 화면은 창 폭 전체를 행동색 면으로 채웁니다.
-   본문 영역 바깥 폭(--xp-bleed)은 창 폭 단위로만 계산해, 면과 글자 띠가 같은 경계를 씁니다. */
-.xp-page[data-archetype="poster"]{--xp-bleed:max(var(--xp-pad),(100vw - var(--content-width)) / 2)}
+   본문 영역 바깥 폭(--xp-bleed, .xp-page에 정의)은 창 폭 단위로만 계산해, 면과 글자 띠가 같은 경계를 씁니다. */
 .xp-hero[data-variant="poster"]{position:relative;display:flex;flex-direction:column;gap:calc(var(--element-gap) * 1.1);min-height:min(92vh,980px);margin:calc(var(--xp-section) * -.7) calc(var(--xp-bleed) * -1) 0;padding:calc(var(--xp-section) * .5) var(--xp-bleed) 0;background-color:var(--action);background-image:repeating-linear-gradient(-45deg,color-mix(in srgb,var(--xp-action-text) 7%,transparent) 0 1px,transparent 1px 18px);color:var(--xp-action-text);overflow:hidden}
 .xp-poster-role{font-family:var(--font-mono);font-size:var(--xp-small);letter-spacing:.08em;text-transform:uppercase}
 .xp-poster-name{font-family:var(--font-display);font-weight:var(--xp-weight);letter-spacing:calc(var(--xp-tracking) - .02em);line-height:.9;font-size:clamp(4.2rem,19vw,17rem)}
@@ -248,6 +261,88 @@ export const KIT_CSS = String.raw`
   .xp-row summary>:not(.xp-row-toggle){grid-column:1}
   .xp-row-toggle{grid-column:2;grid-row:1}
   .xp-row-body{padding-left:0}
+}
+
+/* 지면 변화 — 크기(data-scale) · 배경(data-surface) · 폭(data-width). 섹션마다 값을 달리해 같은 모양이 반복되지 않게 합니다.
+   유형 규칙과 같은 우선순위이므로 유형 규칙 뒤에 둡니다. */
+/* 크기: lead는 사례 첫머리를 크게 그리는 표지, compact는 작게 줄인 사례입니다 */
+.xp-block[data-scale="lead"]{gap:calc(var(--component-gap) * 1.5);padding-bottom:calc(var(--xp-section) * .3)}
+.xp-block[data-scale="lead"]>.xp-head{gap:calc(var(--element-gap) * 1.1)}
+.xp-block[data-scale="lead"]>.xp-head .xp-eyebrow .xp-num{display:block;margin-bottom:.12em;font-family:var(--font-display);font-size:clamp(3.4rem,9vw,8rem);line-height:.9;letter-spacing:calc(var(--xp-tracking) * 2);color:var(--xp-accent-text)}
+.xp-block[data-scale="lead"]>.xp-head .xp-h2{max-width:20ch;font-size:clamp(2.2rem,4.6vw,calc(var(--type-example-display) * 1.2));line-height:1.05;text-wrap:balance}
+.xp-block[data-scale="lead"]>.xp-head .xp-lead{max-width:38ch;font-family:var(--font-display);font-size:clamp(1.15rem,1.5vw,1.5rem);line-height:1.4}
+.xp-block[data-scale="compact"]{gap:var(--component-gap)}
+.xp-block[data-scale="compact"] .xp-h2{font-size:calc(var(--xp-h2) * .78)}
+.xp-block[data-scale="compact"] .xp-lead{font-size:var(--type-example-body)}
+.xp-page[data-layout="wide-margin"] .xp-inner>.xp-block[data-scale="lead"]>.xp-head{grid-column:1/-1;position:static}
+/* 배경: field는 디자인의 행동색 면, inverse는 본문색과 바탕색을 뒤집은 면입니다. 글자 · 선 · 막대 색을 그 면에 맞춰 다시 정합니다 */
+.xp-block:is([data-surface="field"],[data-surface="inverse"]){padding:clamp(24px,3.6vw,calc(var(--component-gap) * 2));border-top:0;border-radius:var(--card-radius)}
+.xp-block[data-surface="field"]{--xp-on:var(--xp-action-text);background:var(--action);color:var(--xp-action-text);--xp-muted:var(--xp-muted-field);--xp-muted-surface:var(--xp-muted-field);--xp-accent-text:var(--xp-action-text);--xp-bar-after:var(--xp-action-text);--xp-num-bg:var(--xp-action-text);--xp-num-text:var(--action)}
+.xp-block[data-surface="inverse"]{--xp-on:var(--canvas);background:var(--text);color:var(--canvas);--xp-muted:var(--xp-muted-inverse);--xp-muted-surface:var(--xp-muted-inverse);--xp-accent-text:var(--xp-accent-inverse);--xp-bar-after:var(--xp-accent-inverse);--xp-num-bg:var(--xp-accent-inverse);--xp-num-text:var(--text)}
+.xp-block:is([data-surface="field"],[data-surface="inverse"]) *{border-color:color-mix(in srgb,var(--xp-on) 28%,transparent)}
+.xp-block:is([data-surface="field"],[data-surface="inverse"]) :is(.xp-body p,.xp-par dd,.xp-h3){color:inherit}
+.xp-block:is([data-surface="field"],[data-surface="inverse"]) .xp-panel{background:color-mix(in srgb,var(--xp-on) 7%,transparent);box-shadow:none}
+.xp-block:is([data-surface="field"],[data-surface="inverse"]) .xp-bar-fill{background:color-mix(in srgb,var(--xp-on) 30%,transparent)}
+/* 폭: bleed는 창 폭 전체로 넓히고 안쪽 여백을 본문 폭 경계에 맞춥니다. 최상위 블록에서만 넓힙니다 */
+.xp-inner>.xp-block[data-width="bleed"]{margin-inline:calc(var(--xp-bleed) * -1);padding-inline:var(--xp-bleed);border-radius:0}
+.xp-inner>.xp-block[data-width="bleed"]:not([data-surface]){border-bottom:var(--xp-rule)}
+
+/* 큰 인용 */
+.xp-quote{gap:calc(var(--element-gap) * 1.2);padding-block:calc(var(--xp-section) * .45)}
+.xp-quote-text p{max-width:24ch;font-family:var(--font-display);font-size:clamp(1.7rem,3.4vw,3.1rem);font-weight:var(--xp-weight-mid);letter-spacing:var(--xp-tracking);line-height:1.22;text-wrap:balance}
+.xp-quote-text p::before{content:"“";display:block;height:.55em;margin-bottom:.1em;color:var(--xp-accent-text);font-size:1.9em;line-height:1}
+.xp-quote[data-scale="lead"] .xp-quote-text p{max-width:20ch;font-size:clamp(2.2rem,5.4vw,5rem);line-height:1.1}
+.xp-quote[data-scale="compact"] .xp-quote-text p{max-width:34ch;font-size:clamp(1.3rem,2.2vw,1.9rem)}
+.xp-quote figcaption a{color:inherit}
+.xp-page[data-layout="wide-margin"] .xp-inner>.xp-block:is(.xp-quote,.xp-metrics)>*{grid-column:1/-1}
+.xp-page[data-layout="wide-margin"] .xp-inner>.xp-block:is(.xp-quote,.xp-metrics){grid-template-columns:minmax(0,1fr)}
+
+/* 수치 강조 줄 — 색면 · 반전 띠 위에서는 위아래 선을 걷습니다 */
+.xp-metrics:is([data-surface="field"],[data-surface="inverse"]) .xp-metric-strip{border-block:0;padding-block:0}
+
+/* 전후 막대 — 숫자를 못 읽은 값은 같은 너비의 외곽선으로 그립니다 */
+.xp-bar[data-tone="after"] .xp-bar-fill{background:var(--xp-bar-after,var(--action))}
+.xp-compare[data-bars="neutral"] .xp-bar-fill{background:transparent;border:var(--border-width) dashed var(--border);border-color:color-mix(in srgb,currentColor 35%,transparent)}
+
+/* 과정 흐름 — 번호 · 연결선을 가로로 잇고, 좁은 폭에서는 세로로 잇습니다 */
+.xp-flow{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:calc(var(--element-gap) * .8)}
+.xp-flow li{display:grid;align-content:start;gap:.5em}
+.xp-flow-mark{display:flex;align-items:center;gap:.6em;margin-bottom:.35em}
+.xp-flow-num{display:inline-grid;place-items:center;min-width:2.4em;height:2.4em;padding-inline:.3em;border-radius:var(--control-radius);background:var(--xp-num-bg,var(--action));color:var(--xp-num-text,var(--xp-action-text));font-family:var(--font-display);font-size:var(--xp-small);font-weight:var(--xp-weight);font-variant-numeric:tabular-nums}
+.xp-flow-line{position:relative;flex:1;height:0;border-top:2px solid var(--border)}
+.xp-flow-line::after{content:"";position:absolute;right:0;top:-1px;width:.5em;height:.5em;border-top:2px solid var(--border);border-right:2px solid var(--border);transform:translateY(-50%) rotate(45deg)}
+.xp-flow li:last-child .xp-flow-line{visibility:hidden}
+.xp-flow-label{font-family:var(--font-display);font-size:calc(var(--type-example-body) * 1.08);font-weight:var(--xp-weight);line-height:1.3}
+.xp-flow-text{color:var(--xp-muted);font-size:var(--xp-small);line-height:1.55}
+.xp-block[data-scale="lead"] .xp-flow-label{font-size:calc(var(--type-example-body) * 1.25)}
+@container (max-width:720px){
+  .xp-flow{grid-auto-flow:row;gap:0}
+  .xp-flow li{grid-template-columns:2.4em minmax(0,1fr);column-gap:calc(var(--element-gap) * 1.1);padding-bottom:calc(var(--element-gap) * 1.2)}
+  .xp-flow-mark{grid-row:1/span 2;flex-direction:column;align-self:stretch;margin:0}
+  .xp-flow-num{font-size:12px}
+  .xp-flow-line{width:0;height:auto;min-height:1.2em;border-top:0;border-left:2px solid var(--border)}
+  .xp-flow-line::after{display:none}
+  .xp-flow-label,.xp-flow-text{grid-column:2}
+}
+
+/* 이미지 전시 — 첫 이미지를 지면 폭으로, 머리와 본문을 그 아래 두 단으로 둡니다 */
+.xp-showcase{gap:calc(var(--component-gap) * 1.3)}
+.xp-showcase-art img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;border:var(--border-width) solid var(--border);border-radius:var(--card-radius);background:var(--surface)}
+.xp-showcase-art figcaption{margin-top:8px}
+.xp-showcase-text{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:calc(var(--component-gap) * 1.6);align-items:start}
+.xp-inner>.xp-showcase[data-width="bleed"] .xp-showcase-art{margin-inline:calc(var(--xp-bleed) * -1)}
+.xp-inner>.xp-showcase[data-width="bleed"] .xp-showcase-art img{border-inline:0;border-radius:0}
+.xp-inner>.xp-showcase[data-width="bleed"] .xp-showcase-art figcaption{padding-inline:var(--xp-bleed)}
+/* 넓은 여백 배치의 "머리 아닌 자식은 2열" 규칙(우선순위 0,5,0)을 이기려고 .xp-block을 함께 씁니다 */
+.xp-page[data-layout="wide-margin"] .xp-inner>.xp-block.xp-showcase>*{grid-column:1/-1}
+.xp-page[data-layout="wide-margin"] .xp-inner>.xp-block.xp-showcase{grid-template-columns:minmax(0,1fr)}
+@container (max-width:720px){
+  .xp-showcase-text{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:${COLLAPSE}px){
+  .xp-block:is([data-surface="field"],[data-surface="inverse"]){padding:clamp(20px,6vw,32px)}
+  .xp-inner>.xp-block[data-width="bleed"]{padding-inline:var(--xp-bleed)}
+  .xp-showcase-text{grid-template-columns:minmax(0,1fr)}
 }
 
 /* 모션 — 디자인의 시간·곡선. JavaScript 없이 보이고, 모션 감소·인쇄에서 꺼집니다 */

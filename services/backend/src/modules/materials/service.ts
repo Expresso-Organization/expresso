@@ -61,7 +61,7 @@ export class MaterialsService implements MaterialsApi {
       { $lookup: { from: "career_categories", localField: "record.categoryId", foreignField: "_id", pipeline: [{ $match: { userId } }], as: "category" } }, { $unwind: "$category" },
     ]).toArray();
     return BrewMaterialsSchema.parse({ brewId, jobAnalysisId: brew.jobAnalysisId, updatedAt: brew.updatedAt.toISOString(), selectionLimit: 10, mode: brew.mode, lengthPreset: brew.lengthPreset,
-      materials: rows.map((row) => ({ recordId: row.recordId, title: row.record.title, status: row.record.status, score: row.score, rank: row.rank, selected: row.isSelected, selectedBy: row.selectedBy, excludedReason: row.excludedReason ?? null, categoryName: row.category.name, categoryIcon: row.category.icon, periodFrom: row.record.periodStart ?? null, periodTo: row.record.periodEnd ?? null, origin: row.record.origin, reason: row.reasonText })),
+      materials: rows.map((row) => ({ recordId: row.recordId, title: row.record.title, status: row.record.status, score: row.score, rank: row.rank, selected: row.isSelected, selectedBy: row.selectedBy, excludedReason: row.excludedReason ?? null, categoryName: row.category.name, categoryKey: row.category.key, categoryIcon: row.category.icon, periodFrom: row.record.periodStart ?? null, periodTo: row.record.periodEnd ?? null, origin: row.record.origin, reason: row.reasonText })),
     });
   }
 
@@ -111,7 +111,7 @@ export class MaterialsService implements MaterialsApi {
       designSelection: brew.designSystemRevisionId && brew.referenceLockSnapshot && brew.designSelectedAt
         ? { designSystemRevisionId: brew.designSystemRevisionId, referenceLock: brew.referenceLockSnapshot, styleOverrides: brew.designStyleOverrides ?? {}, selectedAt: new Date(brew.designSelectedAt).toISOString() }
         : null,
-      latestGeneration: generation ? { id: generation._id, status: generation.status, stage: generation.stage, portfolioId: generation.portfolioId ?? null, failureCode: generation.errorCode ?? null } : null, updatedAt: brew.updatedAt.toISOString(),
+      latestGeneration: generation ? { id: generation._id, status: generation.status, stage: generation.stage, portfolioId: generation.portfolioId ?? null, failureCode: generation.errorCode ?? null, createdAt: generation.createdAt.toISOString() } : null, updatedAt: brew.updatedAt.toISOString(),
     });
   }
 }

@@ -11,6 +11,7 @@ import {
   describeSpecSchema,
 } from "./structured-spec-format.js";
 import { structuredSpecPrompt } from "./structured-generator.js";
+import { toToolSchema } from "../../platform/ai/client.js";
 
 const content: StructuredPortfolioContent = {
   version: 1,
@@ -96,6 +97,12 @@ describe("출력 스키마에서 만든 형식 설명", () => {
       "group-4",
     ]);
   });
+  it("선택 요소는 생략하라고 적고, 공급자 형식도 그 요소를 필수로 두지 않는다", () => {
+    // 둘이 어긋나면 모델이 지시대로 뺀 출력을 공급자가 돌려보내 처음부터 다시 씁니다(2026-10-26 다듬기).
+    const tool = toToolSchema(schema) as { properties: { elements: { required?: string[] } } };
+    for (const key of format.optional) expect(tool.properties.elements.required ?? []).not.toContain(key);
+    expect(format.text).toContain("(선택, 쓰지 않으면 생략)");
+  });
   it("요소마다 스키마의 props 키와 고정 참조를 모두 적는다", () => {
     for (const [key, node] of Object.entries(elements.properties)) {
       // 줄 머리(콜론 앞)에 적힌 요소 ID로 찾습니다. 묶인 컨테이너는 "elements.group-1, group-2"처럼 적힙니다.
@@ -144,6 +151,18 @@ describe("출력 스키마에서 만든 형식 설명", () => {
       `사용할 요소 ID: ${JSON.stringify(format.required)}`,
     );
     expect(prompt).not.toContain("editorial(측면 소개+기사)");
+  });
+  it("직전 Spec은 모델이 내는 모양으로 보인다 — 받아들일 때 채운 페이지의 design · archetype은 뺀다", () => {
+    const previous = {
+      root: "page",
+      elements: {
+        page: { type: "PortfolioPage", props: { motion: "showcase", design: { layout: "library" }, archetype: "case-study" }, children: [] },
+      },
+    };
+    const prompt = structuredSpecPrompt(content, { schema, previous });
+    expect(prompt).toContain('직전 Spec: {"root":"page","elements":{"page":{"type":"PortfolioPage","props":{"motion":"showcase"},"children":[]}}}');
+    // 저장한 Spec은 그대로입니다.
+    expect(previous.elements.page.props).toHaveProperty("archetype", "case-study");
   });
   it("컨테이너를 쓸 수 없는 디자인이면 컨테이너 설명 없이 배치 문단을 넣는다", () => {
     const flat = structuredModelSchema(content, { intro: [], section: [], guidance: [], groups: [] });

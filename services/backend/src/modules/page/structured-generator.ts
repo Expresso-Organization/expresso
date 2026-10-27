@@ -10,6 +10,7 @@ import {
   StructuredPortfolioContentSchema,
   structuredModelSchema,
   type StructuredContentModel,
+  type StructuredDesignPlan,
   type StructuredPortfolioContent,
   type PageGenerationManifest,
   type PageRenderDefect,
@@ -26,6 +27,8 @@ import {
   renderStructuredPortfolio,
   validateRenderableSpec,
   structuredCatalog,
+  BLUEPRINT_CSS,
+  blueprintHtml,
 } from "@expresso/portfolio-renderer";
 import {
   AiError,
@@ -33,7 +36,9 @@ import {
   type AiImage,
   type AiModelTier,
   type AiUsage,
+  type AiViolation,
 } from "../../platform/ai/client.js";
+import { zodViolations } from "../../platform/ai/fixes.js";
 import type { PageMeasurer, PageScreenshot } from "../../platform/browser/page-measurer.js";
 import { ungroundedNumbers, isOrdinalLabel } from "../../platform/numbers.js";
 import {
@@ -50,6 +55,22 @@ import {
   describeGroupRules,
   describeSpecSchema,
 } from "./structured-spec-format.js";
+import { DESIGN_FIRST_TUNING, designFirst, fitToContent, type Blueprint, type DesignFirstTuning } from "./design-first.js";
+
+/**
+ * 저장한 Spec을 모델이 내는 모양으로 되돌립니다. 페이지의 `design` · `archetype`은 모델이 고르지 않고 받아들일 때 채우는
+ * 값이라 출력 스키마에 없습니다. 직전 Spec에 그대로 두면 모델이 그 값을 베껴 공급자 스키마 검사에 걸리고, 출력을
+ * 처음부터 다시 씁니다(2026-10-26 체험 서버 다듬기: "'archetype' is not allowed").
+ */
+function modelSpec(spec: unknown): unknown {
+  const copy = structuredClone(spec) as { elements?: Record<string, { type?: string; props?: Record<string, unknown> }> };
+  for (const node of Object.values(copy.elements ?? {})) {
+    if (node.type !== "PortfolioPage" || !node.props) continue;
+    const { design: _design, archetype: _archetype, ...props } = node.props;
+    node.props = props;
+  }
+  return copy;
+}
 
 export function structuredSpecPrompt(
   content: StructuredPortfolioContent,
@@ -66,19 +87,22 @@ export function structuredSpecPrompt(
   } = {},
 ): string {
   const instruction = options.instruction ?? "";
-  const previous = options.previous ?? null;
+  const previous = options.previous ? modelSpec(options.previous) : null;
   const schema = options.schema ?? structuredModelSchema(content);
   const layout = options.layout;
   // 요소 ID와 props 형태는 공급자에 넘기는 출력 스키마에서 만듭니다. 아래 문장은 스키마로 표현할 수 없는 규칙입니다.
   const format = describeSpecSchema(schema);
   const ids = format.required;
   // 컨테이너를 쓸 수 있는지는 출력 스키마가 정합니다. 넓은 여백 디자인은 group 요소가 없습니다.
-  const groups = format.optional.length > 0;
+  const groups = format.optional.some((key) => key.startsWith("group-"));
   // 목차와 첫 화면 구도 선택도 출력 스키마가 정합니다. 글 · 목록형은 목차가 없고, 포스터 · 글 · 목록형은 첫 화면 구도가 하나로 고정됩니다.
   const hasIndex = ids.includes("index");
   const introLine = format.text.split("\n").find((line) => line.startsWith("elements.intro")) ?? "";
   const introChoices = introLine.includes('"split"');
-  const groupId = format.optional[0] ?? "group-1";
+  const groupId = format.optional.find((key) => key.startsWith("group-")) ?? "group-1";
+  // 지면 변화 props와 큰 인용도 출력 스키마에 있을 때만 설명합니다. 글 · 목록형에는 둘 다 없습니다.
+  const stages = format.text.includes("surface");
+  const quotes = format.optional.filter((key) => key.startsWith("quote-")).join(", ");
   // 예시는 첫 사례와 그 옆에 둘 보조 요소로 만듭니다. 보조 요소가 없으면 두 번째 사례를 씁니다.
   const pair = [
     `section-${content.sections[0]!.id}`,
@@ -116,7 +140,7 @@ ${groups ? `컨테이너는 지면을 나누는 요소입니다. 요소 ID는 ${
 컨테이너 예: page.children=${JSON.stringify(example.page)}, elements["${groupId}"]=${JSON.stringify(example.group)}. 컨테이너에 넣은 ID는 page.children에 다시 쓰지 않습니다.
 ` : ""}NameIntro는 첫 요소로 한 번 둡니다.${introChoices ? " 이름이 가장 크고 바로 아래 한 문장을 둡니다. variant는 소개 문단이 짧고 한 문장이 강하면 'statement', 소개 문단과 집중 분야가 함께 읽혀야 하면 'split', 대표 이미지가 첫 인상을 정할 만하면 'media'를 고릅니다." : " variant는 형식에 적힌 값 하나를 씁니다."}
 모든 section을 정확히 한 번, 알맞은 사례 타입으로 표시합니다. 이미지 없는 section에 CaseGallery를 쓰지 않습니다. CaseProcess에는 설명 두 개 이상이 필요합니다.
-${hasIndex ? `ProjectIndex는 필수이며 요소 ID는 index입니다. ${groups ? "소개 바로 다음에 두거나, variant='rail'로 Columns에 넣어 사례 옆 목차로 씁니다." : "소개 바로 다음에 둡니다."}` : "목차(ProjectIndex)는 두지 않습니다."}
+${stages ? "사례와 MetricStrip은 scale(lead=큰 번호와 제목의 표지 · standard · compact) · surface(canvas=기본 바탕 · field=디자인의 행동색 면 · inverse=바탕과 글자색을 뒤집은 면) · width(content=본문 폭 · bleed=창 폭 전체)로 지면에 변화를 줍니다. lead는 대표 작업 1–2개에만 쓰고, 이웃한 두 요소에 같은 색면을 잇지 않습니다.\n" : ""}${quotes ? `PullQuote(${quotes})는 형식에 적힌 섹션의 인용 한 문장을 큰 글자로 보입니다. 쓰지 않아도 되고, 쓰면 그 사례 앞이나 뒤에 둡니다.\n` : ""}${hasIndex ? `ProjectIndex는 필수이며 요소 ID는 index입니다. ${groups ? "소개 바로 다음에 두거나, variant='rail'로 Columns에 넣어 사례 옆 목차로 씁니다." : "소개 바로 다음에 둡니다."}` : "목차(ProjectIndex)는 두지 않습니다."}
 경력·근거·사례의 순서는 자유롭게 선택할 수 있습니다. contact가 있으면 마지막에 둡니다. 형식에 없는 속성, 경로, 텍스트를 props에 추가하지 마세요.
 직전 Spec: ${JSON.stringify(previous)}
 수정 요청: ${instruction || "자료를 읽기 좋은 구성으로 조립하세요."}
@@ -130,56 +154,49 @@ type NormalizationInput = {
 };
 
 /**
- * 내용 정리 출력을 저장 계약 값으로 만듭니다.
- *
- * 연락처는 입력 경로가 없어 null로 정합니다. 저장 계약의 규칙(이름 아래 한 문장)과
- * 입력 보존 규칙을 검사하고, 어기면 모델이 읽을 수 있는 문장으로 던집니다.
+ * 내용 정리 출력이 저장 계약(이름 아래 한 문장 등)과 입력 보존 규칙(이름 · 섹션 ID · 제공한 근거와 이미지만)을
+ * 지키는지 봅니다. 걸린 칸은 출력을 거절하지 않고, 쓴 에이전트가 같은 대화에서 그 칸만 고칩니다.
  */
-function normalizedContent(
+function contentViolations(
   data: StructuredContentModel,
   input: NormalizationInput,
   context: PageGenerationContext,
-): StructuredPortfolioContent {
-  const parsed = StructuredPortfolioContentSchema.safeParse({
-    ...data,
-    contact: null,
-  });
-  if (!parsed.success)
-    throw new Error(
-      parsed.error.issues
-        .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
-        .join("; "),
-    );
-  const content = parsed.data;
+): AiViolation[] {
+  const parsed = StructuredPortfolioContentSchema.safeParse({ ...data, contact: null });
+  const violations: AiViolation[] = parsed.success ? [] : zodViolations(parsed.error);
+  if (data.profile.name !== input.author.name)
+    violations.push({ path: "/profile/name", problem: `이름은 ${JSON.stringify(input.author.name)}를 그대로 씁니다.` });
   const expectedIds = input.sections.map((item) => item.id).sort();
-  if (
-    content.profile.name !== input.author.name ||
-    JSON.stringify(content.sections.map((item) => item.id).sort()) !==
-      JSON.stringify(expectedIds)
-  )
-    throw new Error(
-      `이름(${input.author.name})과 섹션 ID(${expectedIds.join(", ")})를 그대로 사용해야 합니다.`,
-    );
+  if (JSON.stringify(data.sections.map((item) => item.id).sort()) !== JSON.stringify(expectedIds))
+    violations.push({ path: "/sections", problem: `섹션 ID(${expectedIds.join(", ")})를 하나씩 그대로 써야 합니다.` });
   const sources = new Set(input.evidence.map((item) => item.id));
-  const extra = content.evidence
-    .filter((item) => !sources.has(item.id))
-    .map((item) => item.id);
-  if (extra.length)
-    throw new Error(
-      `제공되지 않은 근거 ID를 추가했습니다: ${extra.join(", ")}.`,
-    );
+  data.evidence.forEach((item, index) => {
+    if (!sources.has(item.id)) violations.push({ path: `/evidence/${index}`, problem: `제공되지 않은 근거 ID(${item.id})입니다. 입력 evidence의 ID만 씁니다.` });
+  });
   const provided = new Set(context.media.map((item) => item.src));
-  if (
-    content.sections.some((section) =>
-      section.media.some(
-        (item) => !provided.has(item.src) || item.origin !== "uploaded",
-      ),
-    )
-  )
-    throw new Error(
-      "제공되지 않은 이미지를 추가했습니다. 입력 media의 src만 origin=uploaded로 사용합니다.",
-    );
-  return content;
+  data.sections.forEach((section, index) => {
+    if (section.media.some((item) => !provided.has(item.src) || item.origin !== "uploaded"))
+      violations.push({ path: `/sections/${index}/media`, problem: "제공되지 않은 이미지입니다. 입력 media의 src만 origin=uploaded로 씁니다." });
+  });
+  return violations;
+}
+
+/** 검사를 지난 내용 정리 출력을 저장 계약 값으로 만듭니다. 연락처는 입력 경로가 없어 null입니다. */
+function normalizedContent(data: StructuredContentModel): StructuredPortfolioContent {
+  return StructuredPortfolioContentSchema.parse({ ...data, contact: null });
+}
+
+/**
+ * 구성 Spec의 구조 검사(`accept`) 결과를 칸 위반으로 바꿉니다. 구조 검사는 오류에 경로가 없어 요소 목록 하나로 보고하고,
+ * 쓴 에이전트가 같은 대화에서 요소 목록을 고칩니다.
+ */
+function specViolations(setup: { accept: (data: unknown) => AcceptedSpec }, data: unknown): AiViolation[] {
+  try {
+    setup.accept(data);
+    return [];
+  } catch (error) {
+    return [{ path: "/elements", problem: errorText(error) }];
+  }
 }
 
 /** 다듬기에서 측정 결함으로 구성을 다시 요청하는 최대 횟수입니다. */
@@ -251,6 +268,21 @@ function renderSpec(snapshot: Snapshot, context: SetupContext) {
   }
 }
 
+/**
+ * 설계안의 청사진을 최종 지면과 같은 렌더러로 그립니다. 글 칸의 표지는 글 자리 요소가 됩니다.
+ * 청사진은 보여 주기 위한 것이라, 그리지 못하면 기록만 남기고 생성은 이어 갑니다.
+ */
+function renderBlueprint(spec: unknown, plan: StructuredDesignPlan, blueprint: Blueprint, context: SetupContext): { html: string; css: string } | null {
+  try {
+    const { snapshot } = specSetup(blueprint.content, context).accept(fitToContent(spec, blueprint.content, plan));
+    const rendered = renderSpec(snapshot, context);
+    return { html: blueprintHtml(rendered.html, blueprint.slots), css: `${rendered.css}\n${BLUEPRINT_CSS}` };
+  } catch (error) {
+    console.error(JSON.stringify({ level: "warn", event: "page.blueprint_failed", message: errorText(error) }));
+    return null;
+  }
+}
+
 /** 그린 결과를 공개 페이지와 같은 문서로 열어 잽니다. */
 async function measureRendered(
   measurer: PageMeasurer,
@@ -267,18 +299,37 @@ const fixableCount = (defects: readonly PageRenderDefect[]) => defects.filter((i
 
 export class StructuredPageGenerator implements PageGenerator {
   /** 측정기가 없으면(API 프로세스 · 브라우저 없는 환경) 그린 결과를 재지 않습니다. */
+  private readonly random: () => number;
+  private readonly designFirst: boolean;
   constructor(
     private readonly ai: AiClient,
     private readonly measurer: PageMeasurer | null = null,
-    /** 전후 비교에서 고친 판을 A · B 중 어디에 둘지 정합니다. 테스트가 고정합니다. */
-    private readonly random: () => number = Math.random,
-  ) {}
+    options: {
+      /** 전후 비교에서 고친 판을 A · B 중 어디에 둘지 정합니다. 테스트가 고정합니다. */
+      random?: () => number;
+      /** 새 생성을 설계 → 채우기로 합니다. 끄면 내용 정리 → 구성 경로만 씁니다. */
+      designFirst?: boolean;
+      /** 설계 · 채우기의 모델 티어와 생각량입니다. 주지 않으면 `DESIGN_FIRST_TUNING`입니다. */
+      tuning?: DesignFirstTuning;
+    } = {},
+  ) {
+    this.random = options.random ?? Math.random;
+    this.designFirst = options.designFirst ?? true;
+    this.tuning = options.tuning ?? DESIGN_FIRST_TUNING;
+  }
+  private readonly tuning: DesignFirstTuning;
   async generate(
     context: PageGenerationContext,
     sink: PageStreamSink | null = null,
   ): Promise<GeneratedPageResult> {
     const usages: AiUsage[] = [];
     let content = context.structuredContent;
+    // 새 생성은 지면을 먼저 설계하고 그 칸을 채웁니다. 지시를 받아 직전 지면을 고치는 재생성은 직전 구성을 보고 고치는
+    // 이전 경로(내용 정리 → 구성)를 씁니다.
+    //
+    // 설계가 먼저 오는 생성이 실패해도 이전 경로로 넘어가지 않습니다. 넘어가면 쓴 지면을 버리고 내용과 구성을 처음부터
+    // 다시 만듭니다(intent `ai-output-no-cli-rewrite`). 걸린 칸은 각 호출이 같은 대화에서 고칩니다.
+    if (!content && !context.previous?.structured && this.designFirst) return this.#designFirstPage(context, sink);
     if (!content) {
       if (!context.author?.name)
         throw new PageGenerationError("포트폴리오에 표시할 이름이 필요합니다.");
@@ -295,50 +346,24 @@ export class StructuredPageGenerator implements PageGenerator {
         plan: context.portfolioPlan,
         media: context.media,
       };
-      // 모델이 고칠 수 있는 오류는 직전 출력과 오류를 붙여 한 번 다시 요청합니다.
-      const attempts: { output: unknown; error: string }[] = [];
-      for (let attempt = 0; attempt < 2 && !content; attempt++) {
-        const last = attempts.at(-1);
-        const prompt = last
-          ? `${JSON.stringify(input)}\n직전 출력: ${JSON.stringify(last.output)}\n검사 오류: ${last.error}\n수정한 전체 결과를 출력하세요.`
-          : JSON.stringify(input);
-        let data: StructuredContentModel;
-        try {
-          const result = await this.ai.complete(
-            {
-              contract: "page_generation",
-              promptVersion: PAGE_PROMPT_VERSION,
-              ...(context.modelTier ? { modelTier: context.modelTier } : {}),
-              system:
-                "출처 자료에서 포트폴리오 표시용 내용을 정리합니다. 제공된 이름·섹션 ID·출처 ID를 그대로 사용합니다. 수치·성과·경력·연락처·이미지를 지어내지 않습니다. 이름 아래 headline은 직무와 구체적인 작업을 밝히는 짧은 한 문장입니다. 36자 안으로 작성합니다. 섹션의 period는 출처에 적힌 기간(예: 2025.08 — 2026.02)만 옮기고, 출처에 없으면 비웁니다. 입력 자료의 개인정보는 필요한 표시 내용만 추립니다. 원본 전체를 evidence.body에 복사하지 않습니다.",
-              prompt,
-            },
-            StructuredContentModelSchema,
-            sink ? { onThinking: (tokens) => sink.thinking(tokens) } : {},
-          );
-          usages.push(result.usage);
-          data = result.data;
-        } catch (error) {
-          // 공급자 스키마 위반은 출력이 남지 않으므로 오류만 붙여 다시 요청합니다.
-          if (error instanceof AiError && error.code === "AI_INVALID_OUTPUT") {
-            attempts.push({ output: null, error: error.message });
-            continue;
-          }
-          throw error;
-        }
-        try {
-          content = normalizedContent(data, input, context);
-        } catch (error) {
-          attempts.push({
-            output: data,
-            error: error instanceof Error ? error.message : String(error),
-          });
-        }
-      }
-      if (!content)
-        throw new PageGenerationError(
-          `내용 정리 결과가 계약 검사를 통과하지 못했습니다: ${attempts.at(-1)?.error}`,
-        );
+      // 한 번 부릅니다. 계약 · 입력 보존 규칙에 걸린 칸은 쓴 에이전트가 같은 대화에서 그 칸만 고칩니다.
+      const result = await this.ai.complete(
+        {
+          contract: "page_generation",
+          promptVersion: PAGE_PROMPT_VERSION,
+          ...(context.modelTier ? { modelTier: context.modelTier } : {}),
+          system:
+            "출처 자료에서 포트폴리오 표시용 내용을 정리합니다. 제공된 이름·섹션 ID·출처 ID를 그대로 사용합니다. 수치·성과·경력·연락처·이미지를 지어내지 않습니다. 이름 아래 headline은 직무와 구체적인 작업을 밝히는 짧은 한 문장입니다. 36자 안으로 작성합니다. 섹션의 period는 출처에 적힌 기간(예: 2025.08 — 2026.02)만 옮기고, 출처에 없으면 비웁니다. 입력 자료의 개인정보는 필요한 표시 내용만 추립니다. 원본 전체를 evidence.body에 복사하지 않습니다.",
+          prompt: JSON.stringify(input),
+        },
+        StructuredContentModelSchema,
+        { ...(sink ? { onThinking: (tokens: number) => sink.thinking(tokens) } : {}), check: (data) => contentViolations(data, input, context) },
+      );
+      usages.push(result.usage);
+      const remaining = contentViolations(result.data, input, context);
+      if (remaining.length)
+        throw new PageGenerationError(`내용 정리 결과가 계약 검사를 통과하지 못했습니다: ${remaining.map((item) => `${item.path} ${item.problem}`).join("; ").slice(0, 1_000)}`);
+      content = normalizedContent(result.data);
     }
     content = StructuredPortfolioContentSchema.parse(content);
     const setup = specSetup(content, context);
@@ -347,39 +372,26 @@ export class StructuredPageGenerator implements PageGenerator {
       instruction: context.instruction,
       previous: context.previous?.structured?.spec,
     });
-    // 모델이 고칠 수 있는 Spec 검사 실패만 다시 요청합니다. 렌더링은 검사를 통과한 뒤 한 번만 합니다.
-    const attempts: { output: unknown; error: string }[] = [];
-    let accepted: (AcceptedSpec & { attempt: number; usage: AiUsage }) | null = null;
-    for (let attempt = 0; attempt < 2 && !accepted; attempt++) {
-      const request = attempts.length
-        ? `${prompt}\n직전 출력: ${JSON.stringify(attempts[0]?.output)}\n검사 오류: ${attempts[0]?.error}. 수정한 전체 Spec을 출력하세요.`
-        : prompt;
-      const result = await this.ai.complete(
-        {
-          contract: "page_generation",
-          system:
-            "등록된 컴포넌트와 데이터 참조만 사용하여 json-render Spec을 만듭니다.",
-          prompt: request,
-          promptVersion: PAGE_PROMPT_VERSION,
-          ...(context.modelTier ? { modelTier: context.modelTier } : {}),
-        },
-        schema,
-        sink ? { onThinking: (tokens) => sink.thinking(tokens) } : {},
-      );
-      usages.push(result.usage);
-      try {
-        accepted = { ...setup.accept(result.data), attempt, usage: result.usage };
-      } catch (error) {
-        attempts.push({
-          output: result.data,
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
+    // 한 번 부릅니다. 구성 검사에 걸리면 쓴 에이전트가 같은 대화에서 요소 목록만 고칩니다. 렌더링은 검사를 통과한 뒤 한 번만 합니다.
+    const result = await this.ai.complete(
+      {
+        contract: "page_generation",
+        system:
+          "등록된 컴포넌트와 데이터 참조만 사용하여 json-render Spec을 만듭니다.",
+        prompt,
+        promptVersion: PAGE_PROMPT_VERSION,
+        ...(context.modelTier ? { modelTier: context.modelTier } : {}),
+      },
+      schema,
+      { ...(sink ? { onThinking: (tokens: number) => sink.thinking(tokens) } : {}), check: (data) => specViolations(setup, data) },
+    );
+    usages.push(result.usage);
+    let accepted: AcceptedSpec & { attempt: number };
+    try {
+      accepted = { ...setup.accept(result.data), attempt: 0 };
+    } catch (error) {
+      throw new PageGenerationError(`구성 계약 검사를 통과하지 못했습니다: ${errorText(error)}`);
     }
-    if (!accepted)
-      throw new PageGenerationError(
-        `구성 계약 검사를 통과하지 못했습니다: ${attempts.at(-1)?.error}`,
-      );
     const { snapshot, root, attempt } = accepted;
     const rendered = renderSpec(snapshot, context);
     // 초안은 한 번만 잽니다. 결함을 고치는 재요청과 스크린샷 검토는 초안을 저장한 뒤 다듬기(`refine`)에서 합니다.
@@ -398,6 +410,51 @@ export class StructuredPageGenerator implements PageGenerator {
       ? JSON.stringify(context.structuredContent)
       : context.evidence.map((item) => item.text).join("\n");
     return pageResult({ rendered, snapshot, root, usages, prompt, attempt, source, design: context.design, renderMeasure });
+  }
+
+  async #designFirstPage(context: PageGenerationContext, sink: PageStreamSink | null): Promise<GeneratedPageResult> {
+    const started = Date.now();
+    const designed = await designFirst(
+      this.ai,
+      context,
+      sink
+        ? {
+            thinking: (tokens) => sink.thinking(tokens),
+            ...(sink.blueprint
+              ? {
+                  designed: ({ plan, spec, blueprint }) => {
+                    const page = renderBlueprint(spec, plan, blueprint, context);
+                    if (page) sink.blueprint!(page);
+                    sink.stage?.("designed");
+                  },
+                }
+              : {}),
+            ...(sink.fill ? { slot: (path, text, done, revised) => sink.fill!(path, text, done, revised) } : {}),
+          }
+        : {},
+      this.tuning,
+    );
+    sink?.stage?.("filled");
+    const { snapshot, root } = specSetup(designed.content, context).accept(designed.spec);
+    const rendered = renderSpec(snapshot, context);
+    const timeline = [...designed.timeline, { stage: "rendered" as const, atMs: Date.now() - started }];
+    sink?.stage?.("rendered");
+    let renderMeasure: PageRenderMeasure | undefined;
+    if (this.measurer) {
+      try {
+        const measured = await measureRendered(this.measurer, rendered, snapshot.content, context.style);
+        renderMeasure = { status: "measured", adopted: 0, passes: [{ durationMs: measured.durationMs, defects: measured.defects }] };
+      } catch (error) {
+        renderMeasure = { status: "skipped", reason: errorText(error), passes: [] };
+      }
+      timeline.push({ stage: "measured", atMs: Date.now() - started });
+    }
+    sink?.delta(JSON.stringify(rendered));
+    const source = [...context.sections.map((section) => [section.title, section.purpose, section.goal, ...section.points].join("\n")), ...context.evidence.map((item) => item.text)].join("\n");
+    return pageResult({
+      rendered, snapshot, root, usages: designed.usages, prompt: designed.prompt, attempt: 0, source, design: context.design, renderMeasure,
+      extra: { designPlan: designed.plan, calls: designed.calls, timeline },
+    });
   }
 
   /**
@@ -423,10 +480,12 @@ export class StructuredPageGenerator implements PageGenerator {
     const measurer = this.measurer;
     const content = StructuredPortfolioContentSchema.parse(input.snapshot.content);
     const setup = specSetup(content, input);
-    const call = async <T>(prompt: string, schema: z.ZodType<T>, contract: "page_generation" | "page_review", system: string, images?: AiImage[]) => {
+    // 구성 검사에 걸린 판은 버리지 않고, 쓴 에이전트가 같은 대화에서 요소 목록만 고칩니다(`check`).
+    const call = async <T>(prompt: string, schema: z.ZodType<T>, contract: "page_generation" | "page_review", system: string, images?: AiImage[], check?: (data: T) => AiViolation[]) => {
       const result = await this.ai.complete(
         { contract, system, prompt, promptVersion: PAGE_PROMPT_VERSION, ...(input.modelTier ? { modelTier: input.modelTier } : {}), ...(images ? { images } : {}) },
         schema,
+        check ? { check } : {},
       );
       usages.push(result.usage);
       return result.data;
@@ -459,7 +518,7 @@ export class StructuredPageGenerator implements PageGenerator {
         instruction: `${input.instruction ? `사용자 수정 요청: ${input.instruction}\n` : ""}${describeRenderDefects(best.defects)}`,
         previous: best.snapshot.spec,
       });
-      const candidate = await tryCandidate(await call(lastPrompt, setup.schema, "page_generation", SPEC_SYSTEM));
+      const candidate = await tryCandidate(await call(lastPrompt, setup.schema, "page_generation", SPEC_SYSTEM, undefined, (data) => specViolations(setup, data)));
       if (candidate && fixableCount(candidate.defects) < fixableCount(best.defects)) best = candidate;
     }
     // (2) 스크린샷 검토 — 지적 목록과 고친 구성을 받습니다.
@@ -469,7 +528,10 @@ export class StructuredPageGenerator implements PageGenerator {
     let reason: string | undefined;
     try {
       lastPrompt = `${setup.prompt({ instruction: input.instruction, previous: best.snapshot.spec })}\n${REVIEW_GUIDE}`;
-      const reviewed = await call(lastPrompt, z.object({ critique: z.array(z.string().max(300)).min(1).max(8), spec: setup.schema }), "page_review", REVIEW_SYSTEM, screenshotImages(best.screenshots, ""));
+      const reviewed = await call(
+        lastPrompt, z.object({ critique: z.array(z.string().max(300)).min(1).max(8), spec: setup.schema }), "page_review", REVIEW_SYSTEM, screenshotImages(best.screenshots, ""),
+        (data) => specViolations(setup, data.spec).map((violation) => ({ ...violation, path: `/spec${violation.path}` })),
+      );
       critique = reviewed.critique;
       const revised = await tryCandidate(reviewed.spec);
       if (revised) revisedSpec = revised.snapshot.spec;
@@ -529,8 +591,8 @@ const REVIEW_SYSTEM = "포트폴리오 지면의 디자인 검토자입니다. �
 const COMPARE_SYSTEM = "포트폴리오 지면의 시각 품질을 비교하는 디자인 심사자입니다.";
 const REVIEW_GUIDE = `## 스크린샷 검토
 함께 보낸 이미지는 직전 Spec을 실제로 그린 지면입니다(1440px 첫 화면, 1440px 전체 축소본, 390px 위에서부터 조각). 이 지면의 시각 품질을 평가하고 구성을 고치세요.
-볼 것: 첫 화면이 이 사람의 직무와 대표 작업을 바로 보여 주는가 · 가장 중요한 사례가 먼저 · 크게 보이는가(위계) · 같은 모양의 사례가 이어져 단조롭지 않은가(리듬) · 여백과 밀도가 고른 디자인에 맞는가 · 390px에서도 읽기 편한가.
-글(내용)은 바꿀 수 없습니다. 첫 화면 구도, 사례 유형과 순서, 컨테이너, 목차 형태만 바꿉니다.
+볼 것: 첫 화면이 이 사람의 직무와 대표 작업을 바로 보여 주는가 · 가장 중요한 사례가 먼저 · 크게 보이는가(위계) · 같은 모양의 사례가 이어져 단조롭지 않은가, 글이 이어지는 문서처럼 읽히지 않는가(리듬) · 여백과 밀도가 고른 디자인에 맞는가 · 390px에서도 읽기 편한가.
+글(내용)은 바꿀 수 없습니다. 첫 화면 구도, 사례 유형과 순서, 컨테이너, 목차 형태, 그리고 형식에 있으면 요소의 크기(scale) · 배경(surface) · 폭(width)과 큰 인용(PullQuote)의 자리를 바꿉니다. 과정 흐름(CaseFlow) · 대표 이미지(CaseShowcase)는 형식이 그 섹션에 허용할 때만 고릅니다.
 critique에는 고칠 점을 화면에 보이는 말로 하나씩 짧게 적고, spec에는 고친 전체 Spec을 냅니다. 고칠 점이 없으면 직전 Spec을 그대로 냅니다.`;
 const COMPARE_GUIDE = `같은 내용으로 만든 포트폴리오 지면 두 판(A, B)의 스크린샷입니다. 판마다 1440px 첫 화면, 1440px 전체 축소본, 390px 위에서부터 조각을 보냅니다.
 채용 담당자가 처음 열었을 때 더 잘 읽히고 완성도가 높아 보이는 판을 고르세요. 기준: 첫 화면의 인상과 위계, 사례 강조, 리듬과 여백, 디자인 일관성, 좁은 화면 가독성.
@@ -559,6 +621,8 @@ function pageResult(input: {
   design: PageGenerationContext["design"];
   renderMeasure: PageRenderMeasure | undefined;
   visualReview?: PageVisualReview;
+  /** 설계가 먼저 오는 생성의 설계 · 호출별 기록 · 단계 시각입니다. */
+  extra?: Pick<PageGenerationManifest, "designPlan" | "calls" | "timeline">;
 }): GeneratedPageResult {
   const { rendered, snapshot, root, renderMeasure } = input;
   const usage = input.usages.reduce(
@@ -594,6 +658,7 @@ function pageResult(input: {
     structured: snapshot,
     ...(renderMeasure ? { renderMeasure } : {}),
     ...(input.visualReview ? { visualReview: input.visualReview } : {}),
+    ...(input.extra ?? {}),
   };
   // 디자인 토큰의 정적 검사입니다. 오류 하나라도 실패하면 지면을 검토 대상으로 표시합니다.
   const designChecks = input.design ? designQa(input.design) : [];

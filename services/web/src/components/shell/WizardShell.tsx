@@ -7,14 +7,14 @@ import { Icon } from "@/components/ui/Icon";
 import styles from "./WizardShell.module.css";
 
 /**
- * 포트폴리오 제작의 여섯 단계. 설계서 2.1 이용 절차의 3–8단계이며 화면 01 · 01b · 02 ·
- * 02b · 03 · 04에 해당한다.
+ * 포트폴리오 제작의 다섯 단계. 설계서 2.1 이용 절차의 3–8단계이며 화면 01 · 01b · 02 · 03 · 04에
+ * 해당한다. 02b 레시피는 화면 단계에서 뺐다 — 구성은 AI 대화를 마치면 뒤에서 만들고, 생성 기다림
+ * 화면의 지면에 보인다(2026-10-27 사용자 결정).
  */
 export const WIZARD_STEPS = [
   { key: "analyze", label: "공고 분석", segment: "analyze" },
   { key: "materials", label: "재료 고르기", segment: "materials" },
   { key: "counter", label: "AI 대화", segment: "counter" },
-  { key: "outline", label: "레시피", segment: "outline" },
   { key: "design", label: "디자인 선택", segment: "design" },
   { key: "edit", label: "다듬기", segment: "edit" },
 ] as const;

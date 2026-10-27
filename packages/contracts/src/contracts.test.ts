@@ -904,6 +904,11 @@ describe("생성 요청 스타일 출처", () => {
       SubmitGenerationSchema.safeParse({ recipeId, templateId: id, designSystemRevisionId: id }).success,
     ).toBe(false);
   });
+  it("구성(recipeId) 또는 브루(brewId) 중 정확히 하나를 받는다", () => {
+    expect(SubmitGenerationSchema.safeParse({ brewId: recipeId, designSystemRevisionId: id }).success).toBe(true);
+    expect(SubmitGenerationSchema.safeParse({ designSystemRevisionId: id }).success).toBe(false);
+    expect(SubmitGenerationSchema.safeParse({ recipeId, brewId: recipeId, designSystemRevisionId: id }).success).toBe(false);
+  });
   it("디자인 시스템 판 요청에는 스타일 덮어쓰기를 받지 않는다", () => {
     expect(
       SubmitGenerationSchema.safeParse({

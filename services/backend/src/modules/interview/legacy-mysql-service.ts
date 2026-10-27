@@ -21,7 +21,6 @@ import {
   type QuestionContext,
   type QuestionWriter,
 } from "./question-writer.js";
-import { withTimeout } from "../../platform/timeouts.js";
 import { addOutboxEvent } from "../../platform/legacy-mysql-outbox.js";
 import { type ConsentApi } from "../consent/index.js";
 
@@ -130,18 +129,14 @@ export class InterviewService {
     `)[0];
     if (!context) return;
 
-    const cleaned = await withTimeout(
-      this.#cleaner.clean({
+    const cleaned = await this.#cleaner.clean({
         question: context.question_text,
         transcript: context.transcript,
         // 이미 정리된 적이 있으면 그 위에 덧쓴다. 원문 그대로면 참고할 것이 없다.
         existing: context.record_status === "draft"
           ? null
           : { title: context.record_title, bodyMd: context.record_body ?? "" },
-      }),
-      420_000,
-      "record cleaner",
-    );
+      });
 
     await this.#sql.begin(async (transaction) => {
       // 사용자가 직접 고친 기록은 건드리지 않는다(P3).
@@ -347,9 +342,7 @@ export class InterviewService {
     if (this.#writer) {
       // 기록과 공고를 모델에 보내기 전에 묻는다. 규칙 폴백은 이 문을 지나지 않는다.
       await this.#consent?.require(userId, "question_draft");
-      const drafted = await withTimeout(
-        this.#writer.draft(context), 420_000, "question writer",
-      );
+      const drafted = await this.#writer.draft(context);
       return drafted.map((question) => {
         const option = context.options[question.optionIndex]!;
         return {
@@ -510,8 +503,7 @@ export class InterviewService {
         : basis.type === "record_gap" && question.basis.type === "record_gap"
           && basis.recordId === question.basis.recordId));
 
-    return withTimeout(
-      this.#writer.rewrite({
+    return this.#writer.rewrite({
         // 자리가 이미 채워져 목록에서 빠졌을 수도 있다. 그때는 옛 근거를 그대로 쓴다.
         option: option ?? {
           basis: question.basis,
@@ -522,10 +514,7 @@ export class InterviewService {
         previousTexts: previous.map(({ text }) => text),
         company: context.company,
         jobTitle: context.jobTitle,
-      }),
-      420_000,
-      "question writer",
-    );
+      });
   }
 
   async #brewOf(sessionId: string, userId: string): Promise<string> {

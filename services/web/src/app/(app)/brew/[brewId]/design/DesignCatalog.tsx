@@ -1,12 +1,11 @@
 "use client";
 
 import type { DesignSystemSpecV2, ReferenceLock } from "@expresso/contracts";
-import type { Route } from "next";
-import Link from "next/link";
 import { useActionState, useEffect, useMemo, useState, type CSSProperties } from "react";
 
 import { Icon } from "@/components/ui/Icon";
 
+import { useRefreshWhile } from "../use-refresh-while";
 import { startGenerationAction, type BrewState } from "./design-actions";
 import { DEFAULT_PORTFOLIO_ARCHETYPE, type PortfolioArchetype } from "@expresso/contracts";
 
@@ -56,7 +55,8 @@ const TITLE_BREAKS = new Map<string, number[]>([
   ["web3", [3]],          // Web + 3
 ]);
 
-function DesignThumb({ code, name, preview }: {
+/** 디자인 한 벌의 표지. 카탈로그 카드와 생성 기다림 화면(`GenerationWait`)이 함께 쓴다. */
+export function DesignThumb({ code, name, preview }: {
   code: string;
   name: string;
   preview: DesignCatalogEntry["preview"];
@@ -187,18 +187,25 @@ export function DesignCatalog({
   initialRevisionId,
   recipeId,
   generationAllowed,
-  failureCode,
+  recipeBuilding,
+  notice,
 }: {
   brewId: string;
   entries: DesignCatalogEntry[];
   initialRevisionId: string | null;
-  /** 레시피가 있어야 생성할 수 있다. 없으면 레시피 단계로 돌려보낸다. */
+  /**
+   * 구성(레시피). 아직 없어도 만들기를 누를 수 있다 — 그때는 브루로 요청하고, 서버가 구성이 끝나는 대로 생성을
+   * 이어서 시작한다.
+   */
   recipeId: string | null;
   /** 이번 달 생성 한도 안인가. */
   generationAllowed: boolean;
-  /** 지난 생성이 실패했으면 그 코드. */
-  failureCode: string | null;
+  /** 구성 잡이 도는가. 도는 동안 다시 읽어 끝나면 안내 줄이 바뀐다. */
+  recipeBuilding: boolean;
+  /** 만들기 버튼 옆에 적을 한 줄. 구성을 만드는 중이거나 지난 생성 · 구성이 실패했을 때다. 화면이 문장을 정한다. */
+  notice: { tone: "info" | "error"; text: string } | null;
 }) {
+  useRefreshWhile(recipeBuilding);
   const firstAvailableRevisionId = initialRevisionId
     && entries.some((entry) => entry.revisionId === initialRevisionId)
     ? initialRevisionId
@@ -640,30 +647,21 @@ export function DesignCatalog({
             <div className={styles.selectionSummary}>
               <span>{selectedIsSaved ? "지난번에 고른 디자인" : "선택한 디자인"}</span>
               <strong>{selected.name}</strong>
-              {actionState.error ? <em role="alert">{actionState.error}</em> : failureCode ? (
-                <em role="alert">지난 생성이 실패했습니다({failureCode}). 다시 만들 수 있습니다.</em>
+              {actionState.error ? <em role="alert">{actionState.error}</em> : notice ? (
+                <em role={notice.tone === "error" ? "alert" : "status"} data-tone={notice.tone}>{notice.text}</em>
               ) : null}
             </div>
-            {recipeId === null ? (
-              <Link
-                href={`/brew/${brewId}/outline` as Route}
-                className={styles.continueLink}
-              >
-                레시피 먼저 만들기 <Icon name="arrow-right" size={13} />
-              </Link>
-            ) : (
-              <form action={startGeneration}>
-                <input type="hidden" name="brewId" value={brewId} />
-                <input type="hidden" name="recipeId" value={recipeId} />
-                <input type="hidden" name="designSystemRevisionId" value={selected.revisionId} />
-                <input type="hidden" name="archetype" value={archetype} />
-                <button type="submit" disabled={pending || !generationAllowed}>
-                  {pending ? "생성을 시작하는 중" : generationAllowed ? (
-                    <>이 디자인으로 만들기 <Icon name="arrow-right" size={14} /></>
-                  ) : "이번 달 생성 횟수를 다 썼습니다"}
-                </button>
-              </form>
-            )}
+            <form action={startGeneration}>
+              <input type="hidden" name="brewId" value={brewId} />
+              {recipeId ? <input type="hidden" name="recipeId" value={recipeId} /> : null}
+              <input type="hidden" name="designSystemRevisionId" value={selected.revisionId} />
+              <input type="hidden" name="archetype" value={archetype} />
+              <button type="submit" disabled={pending || !generationAllowed}>
+                {pending ? "생성을 시작하는 중" : generationAllowed ? (
+                  <>이 디자인으로 만들기 <Icon name="arrow-right" size={14} /></>
+                ) : "이번 달 생성 횟수를 다 썼습니다"}
+              </button>
+            </form>
           </footer>
         </aside>
       ) : (

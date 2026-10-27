@@ -29,6 +29,9 @@ export const AI_CONTRACTS = [
   "page_generation",
   // 완성된 지면의 스크린샷을 보고 구성을 고치고, 고치기 전후를 비교합니다.
   "page_review",
+  // 설계가 먼저 오는 생성: 지면 설계와 설계도의 칸 채우기.
+  "page_design",
+  "page_fill",
   "partial_edit",
   "style_remix",
   "insight_note",
@@ -56,6 +59,9 @@ export const DEFAULT_MODEL_TIER: Record<AiContract, AiModelTier> = {
   page_generation: "opus",
   // 지면을 고치는 판단이라 생성과 같은 모델을 씁니다. 다듬기는 초안을 보여 준 뒤에 돌아 사람이 기다리지 않습니다.
   page_review: "opus",
+  // 지면 설계는 생성의 판단 전부라 비싼 모델을 씁니다. 칸 채우기는 정해진 칸에 원문을 옮겨 적는 일이라 빠른 모델로 시작합니다.
+  page_design: "opus",
+  page_fill: "sonnet",
   question_draft: "sonnet",
   record_cleanup: "sonnet",
   generation: "sonnet",
@@ -81,6 +87,11 @@ export interface AiCallSpec {
   modelTier?: AiModelTier;
   /** 프롬프트와 함께 보낼 이미지(base64). 이미지를 받지 못하는 공급자는 `AI_UNAVAILABLE`을 냅니다. */
   images?: readonly AiImage[];
+  /**
+   * 생각하는 양입니다. 출력 토큰의 대부분이 생각이라 시간이 이 값에 따라 달라집니다. 주지 않으면 공급자 기본값입니다.
+   * Claude Code는 `--effort`로 넘기고, 지원하지 않는 공급자는 무시합니다.
+   */
+  effort?: "low" | "medium" | "high";
 }
 
 export interface AiImage {
@@ -110,7 +121,33 @@ export interface AiResult<T> {
 /**
  * 한 번의 호출에 붙는 것. 계약이 아니라 **부르는 쪽의 사정**이다.
  */
-export interface AiCallOptions {
+/**
+ * 받은 출력에서 검사를 통과하지 못한 칸 하나입니다. `path`는 출력 JSON의 JSON 포인터(`/sections/a/body`)이고,
+ * `problem`은 모델에게 그대로 보이는 문장입니다(무엇을 어겼는지, 기준이 무엇인지).
+ */
+export interface AiViolation {
+  path: string;
+  problem: string;
+}
+
+/** 모델이 고쳐 보낸 칸 하나입니다. 그 경로의 값을 통째로 바꿉니다. */
+export interface AiFix {
+  path: string;
+  value: unknown;
+}
+
+export interface AiCallOptions<T = unknown> {
+  /**
+   * 계약(Zod)을 통과한 출력에 업무 규칙을 검사합니다(근거 없는 수치, 지면 칸 예산 등).
+   *
+   * 걸린 칸은 출력을 거절하지 않고, 같은 대화에서 그 칸만 고쳐 받습니다. 걸린 칸이 줄어드는 동안 계속합니다. 고친 뒤에도 남은
+   * 위반은 출력을 그대로 돌려주고 기록합니다. 계약 자체(저장할 수 있는 모양)를 어긴 칸도 같은 방식으로 고쳐 받습니다.
+   */
+  check?: (data: T) => AiViolation[];
+  /** 계약을 처음 통과한 출력입니다. 고치기 전에 화면에 바로 보여 주는 자리입니다. */
+  onDraft?: (data: T) => void;
+  /** 고친 칸이 왔을 때입니다. `data`는 고친 칸을 넣고 계약을 통과한 출력입니다. */
+  onRevision?: (fixes: readonly AiFix[], data: T) => void;
   /**
    * 모델이 쓰는 동안 지금까지 쌓인 것을 준다.
    *
@@ -122,6 +159,13 @@ export interface AiCallOptions {
    * 넘기면 지면 하나에 같은 글자를 수십 번 다시 보낸다.
    */
   onPartial?: (delta: string) => void;
+  /**
+   * 구조화 출력이 처음부터 다시 시작됐다(공급자가 출력 블록을 한 번 더 열었다).
+   *
+   * 이것을 주면 다시 시작한 블록의 조각도 `onPartial`로 계속 받는다. 받는 쪽은 쌓은 것을 버리고 처음부터 읽어야
+   * 한다. 주지 않으면 지금처럼 그 자리에서 조각을 멈춘다 — 이어 붙이기만 하는 쪽은 되돌릴 방법이 없다.
+   */
+  onPartialRestart?: () => void;
   /**
    * 모델이 생각하는 동안 쌓인 분량(토큰).
    *
@@ -141,7 +185,7 @@ export interface AiClient {
   complete<T>(
     spec: AiCallSpec,
     schema: z.ZodType<T>,
-    options?: AiCallOptions,
+    options?: AiCallOptions<T>,
   ): Promise<AiResult<T>>;
   /**
    * 이 프로바이더가 부분 출력을 낼 수 있는가.
@@ -224,74 +268,68 @@ export function logAiFailure(input: {
  *
  * 떼어내도 안전한 것은 **모델 응답을 우리가 다시 Zod로 파싱하기 때문이다.**
  * 여기 넘기는 스키마는 모양을 알려주는 힌트이고, 진짜 문은 어댑터가 쥐고 있다.
+ *
+ * **모양(키와 값의 종류)만 넘긴다.** 글자 수 · 개수 · 형식 · 범위 · 고를 값 · 필수 칸 기준(`SOFT_KEYWORDS`)을
+ * 넘기면 공급자가 그 기준을 어긴 출력을 통째로 돌려보내고 모델이 처음부터 다시 쓴다 — 2026-10-26 지면 채우기에서
+ * 본문 86자 > 80자 하나로 약 150초가, 2026-10-27에는 근거 ID 하나가 목록 밖이라 같은 재작성이 일어났다. 기준은
+ * 설명(`description`)에 "80자 이하" · "값: a | b"처럼 적어 요청하고, 받은 뒤 계약(Zod)에 걸린 칸만 같은 대화에서
+ * 고쳐 받는다(`fixes.ts`).
  */
 export function toToolSchema(schema: z.ZodType): Record<string, unknown> {
   const generated = z.toJSONSchema(schema, { target: "draft-2020-12" }) as
     Record<string, unknown>;
   const { $schema: _ignored, ...rest } = generated;
-  return normalize(rest) as Record<string, unknown>;
+  return shapeOnly(rest) as Record<string, unknown>;
 }
 
-/**
- * 프로바이더 방언에 맞춘다. 계약은 건드리지 않는다.
- *
- * 구조화 출력의 strict 모드는 두 가지를 더 요구한다 —
- *
- * - **모든 속성이 `required`**여야 한다. 선택 필드는 빼는 게 아니라 `null`을
- *   허용해서 표현한다(`'required' … Missing 'mark'`로 400).
- * - 모르는 `format`은 거절한다(위 주석).
- *
- * 그래서 선택 필드를 nullable로 바꿔 내보내고, 돌아온 `null`은 파싱 전에
- * 걷어낸다(`dropNulls`). 계약이 진짜로 nullable인 자리는 Zod가 그 null을
- * 받으므로 먼저 그대로 파싱해 보고, 실패할 때만 걷어낸 것으로 다시 본다.
- */
-function normalize(node: unknown): unknown {
-  if (Array.isArray(node)) return node.map(normalize);
+/** 공급자 형식에서 떼는 기준 키워드입니다. `format`은 위 주석의 400 때문에 함께 뗍니다. */
+export const SOFT_KEYWORDS = [
+  "minLength", "maxLength", "minItems", "maxItems", "pattern",
+  "minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "multipleOf", "format",
+  "enum", "const", "required", "additionalProperties",
+] as const;
+
+/** 기준 키워드를 떼고, 그 값을 설명 문장으로 옮깁니다. 키 · 타입 · 열거형 · 필수 여부는 그대로 둡니다. */
+function shapeOnly(node: unknown): unknown {
+  if (Array.isArray(node)) return node.map(shapeOnly);
   if (!node || typeof node !== "object") return node;
-
   const source = node as Record<string, unknown>;
-  const properties = source["properties"] as Record<string, unknown> | undefined;
-  const required = new Set(
-    Array.isArray(source["required"]) ? (source["required"] as string[]) : [],
-  );
-
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(source)) {
-    if (key === "format") continue;
-    if (key === "properties" && properties) {
-      result[key] = Object.fromEntries(
-        Object.entries(properties).map(([name, property]) => [
-          name,
-          required.has(name) ? normalize(property) : nullable(normalize(property)),
-        ]),
-      );
-      continue;
-    }
-    result[key] = normalize(value);
+    if ((SOFT_KEYWORDS as readonly string[]).includes(key)) continue;
+    // 속성 이름이 기준 키워드와 같을 수 있어(`pattern` 같은 칸 이름) 이름으로 묶인 자리는 값만 줄인다.
+    result[key] = (key === "properties" || key === "$defs") && value && typeof value === "object"
+      ? Object.fromEntries(Object.entries(value).map(([name, property]) => [name, shapeOnly(property)]))
+      : shapeOnly(value);
   }
-
-  if (properties) result["required"] = Object.keys(properties);
+  const rules = describeRules(source);
+  if (rules) result["description"] = typeof source["description"] === "string" ? `${source["description"]} (${rules})` : rules;
   return result;
 }
 
-/** 선택 필드를 "값 아니면 null"로 넓힌다. */
-function nullable(node: unknown): unknown {
-  if (!node || typeof node !== "object") return node;
-  const source = node as Record<string, unknown>;
-  const type = source["type"];
-  if (typeof type === "string") return { ...source, type: [type, "null"] };
-  if (Array.isArray(type)) {
-    return type.includes("null") ? source : { ...source, type: [...type, "null"] };
-  }
-  // enum · anyOf · $ref처럼 type이 없는 모양은 감싸서 넓힌다.
-  return { anyOf: [source, { type: "null" }] };
+function describeRules(node: Record<string, unknown>): string {
+  const rules: string[] = [];
+  const number = (key: string) => (typeof node[key] === "number" ? (node[key] as number) : undefined);
+  const [minLength, maxLength, minItems, maxItems] = [number("minLength"), number("maxLength"), number("minItems"), number("maxItems")];
+  if (minLength !== undefined && minLength > 1) rules.push(`${minLength}자 이상`);
+  if (maxLength !== undefined) rules.push(`${maxLength}자 이하`);
+  if (minItems !== undefined && minItems > 0) rules.push(`${minItems}개 이상`);
+  if (maxItems !== undefined) rules.push(`${maxItems}개 이하`);
+  const [minimum, maximum] = [number("minimum") ?? number("exclusiveMinimum"), number("maximum") ?? number("exclusiveMaximum")];
+  if (minimum !== undefined) rules.push(`${minimum} ${number("exclusiveMinimum") !== undefined ? "초과" : "이상"}`);
+  if (maximum !== undefined) rules.push(`${maximum} ${number("exclusiveMaximum") !== undefined ? "미만" : "이하"}`);
+  if (typeof node["pattern"] === "string") rules.push(`정규식 ${node["pattern"]}`);
+  if (Array.isArray(node["enum"])) rules.push(`값: ${node["enum"].map((value) => JSON.stringify(value)).join(" | ")}`);
+  if ("const" in node) rules.push(`값: ${JSON.stringify(node["const"])}`);
+  if (Array.isArray(node["required"]) && node["required"].length) rules.push(`꼭 쓰는 칸: ${(node["required"] as string[]).join(", ")}`);
+  return rules.join(" · ");
 }
 
 /**
  * `null`을 걷어낸다.
  *
- * strict 모드 때문에 넓혀 둔 선택 필드가 `null`로 돌아온다. 계약에서 그 자리는
- * "없음"이지 "null"이 아니라, 그대로 파싱하면 계약이 거절한다.
+ * 모델이 선택 필드를 `null`로 적어 보낼 때가 있다. 계약에서 그 자리는 "없음"이지 "null"이 아니라, 그대로
+ * 파싱하면 계약이 거절한다.
  */
 export function dropNulls(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(dropNulls);
@@ -324,6 +362,7 @@ export function callKey(spec: AiCallSpec, schema: z.ZodType): string {
     spec.system,
     spec.prompt,
     shape,
+    spec.effort ?? "",
     // 같은 글이라도 다른 화면을 보여 주면 다른 호출입니다.
     ...(spec.images ?? []).map((image) => `${image.label}:${createHash("sha256").update(image.data).digest("hex")}`),
   ].join("\0");

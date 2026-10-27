@@ -15,7 +15,6 @@ import {
 import type { SqlTag, JSONValue } from "../../platform/legacy-mysql.js";
 
 import { type ConsentApi } from "../consent/index.js";
-import { withTimeout } from "../../platform/timeouts.js";
 import type {
   PageGenerationContext,
   PageGenerator,
@@ -390,7 +389,7 @@ export class PageService {
     try {
       // 멈춘 프로바이더를 막는 backstop이다. 실제 한계는 어댑터가 쥐고 있고,
       // 재시도까지 하면 두 배가 되므로 여기서 먼저 끊으면 재시도가 잘린다.
-      result = await withTimeout(generator.generate(context, sink), 900_000, "page generator");
+      result = await generator.generate(context, sink);
     } catch (error) {
       // 보고 있던 사람에게 끝났다고 말한다. 말하지 않으면 화면이 영원히 기다린다.
       await this.#publish(stream?.failed(
