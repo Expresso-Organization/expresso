@@ -6,7 +6,13 @@ import type { CareerProfileDoc } from "./career.js";
 export interface PlanDoc {
   _id: string;
   code: Contracts.PlanCode;
-  generationQuota: number;
+  /** 화면에 서는 이름(Single Shot · Double Shot · Extra Shot). */
+  displayName: string;
+  monthlyPriceKrw: number;
+  /** 한 달에 쓸 수 있는 크레딧. 1 크레딧은 `TOKENS_PER_CREDIT` 토큰이다. */
+  monthlyCredits: number;
+  /** 요금제 카드를 세우는 순서. */
+  sortOrder: number;
   features: JsonObject;
   isPublicListed: boolean;
 }
@@ -28,9 +34,9 @@ export interface UserDoc {
   /** 약관·개인정보 처리방침에 동의한 시각과 그때의 판. 0010 이전 사용자에게는 없다. */
   termsAcceptedAt?: Date | null;
   termsVersion?: number | null;
-  /** 없으면 일반 사용자다. 관리자는 백엔드 CLI(`admin grant`)로만 지정한다. 0022. */
+  /** 없으면 일반 사용자다. 관리자는 백엔드 CLI(`admin grant`)로만 지정한다. 0024. */
   role?: "user" | "admin";
-  /** 저장소의 가상 인물 원본 키. 이 값이 있는 계정만 관리자가 대신 로그인할 수 있다. 0022. */
+  /** 저장소의 가상 인물 원본 키. 이 값이 있는 계정만 관리자가 대신 로그인할 수 있다. 0024. */
   dummyKey?: string;
 }
 
@@ -78,7 +84,7 @@ export interface IdentitySessionDoc {
   idleTtlMs?: number;
   /** 활동으로도 넘지 못하는 절대 상한. 없으면 `createdAt + 90일`로 본다. */
   absoluteExpiresAt?: Date;
-  /** 관리자가 이 세션으로 대신 보고 있는 더미 계정. 세션 주인은 그대로 `userId`다. 0022. */
+  /** 관리자가 이 세션으로 대신 보고 있는 더미 계정. 세션 주인은 그대로 `userId`다. 0024. */
   actingAsUserId?: string | null;
   actingSince?: Date | null;
 }

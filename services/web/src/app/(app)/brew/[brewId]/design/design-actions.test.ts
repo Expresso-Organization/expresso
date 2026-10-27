@@ -84,6 +84,6 @@ describe("디자인 시스템으로 생성 요청", () => {
   it("생성 한도를 넘으면 한도 문구를 돌려준다", async () => {
     submit.mockRejectedValue(new ApiError({ status: 402, code: "FORBIDDEN", message: "limit", requestId: "test" }));
     const result = await startGenerationAction({ error: null }, form());
-    expect(result.error).toContain("추출 횟수");
+    expect(result.error).toContain("크레딧");
   });
 });

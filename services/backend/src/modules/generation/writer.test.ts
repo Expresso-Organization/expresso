@@ -19,7 +19,7 @@ const ids = {
   requirement: "44444444-4444-4444-8444-444444444444",
 };
 
-const context: WriterContext = {
+const context: WriterContext = { userId: null,
   sections: [
     {
       recipeSectionId: ids.intro,

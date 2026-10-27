@@ -99,7 +99,7 @@ export interface ImportCheckpointDoc {
 
 /**
  * 관리 동작 기록. `actorUserId`가 null이면 서버의 CLI가 한 일이다. 더미 계정을 지워도
- * 남기므로 `dummyKey`를 함께 적는다. 0022.
+ * 남기므로 `dummyKey`를 함께 적는다. 0024.
  */
 export interface AdminAuditEventDoc {
   _id: string;

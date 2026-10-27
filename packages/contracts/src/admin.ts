@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { TimestampSchema, UuidSchema } from "./common.js";
 
-/** 저장소의 가상 인물 원본 키. `users.dummyKey`와 같은 규칙이다(0022). */
+/** 저장소의 가상 인물 원본 키. `users.dummyKey`와 같은 규칙이다(0024). */
 export const DummyAccountKeySchema = z.string().regex(/^[a-z][a-z0-9-]{0,63}$/);
 
 export const DummyAccountKeyParamsSchema = z.strictObject({ key: DummyAccountKeySchema });

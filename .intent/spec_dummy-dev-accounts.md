@@ -35,7 +35,7 @@ date: 2026-10-28
 
 **새로 만드는 것**
 
-- `packages/database` 0022 `admin_dummy_accounts`
+- `packages/database` 0024 `admin_dummy_accounts` (처음 0022로 잡았으나 main이 요금제 크레딧에 먼저 썼고 0023은 열린 PR이 쓴다)
   - `users`: `role` enum `["user","admin"]`, `dummyKey` string. `dummyKey`에 unique partial index.
   - `identity_sessions`: `actingAsUserId` uuid|null, `actingSince` date|null.
   - `admin_audit_events` 컬렉션: `{_id, actorUserId, action, targetUserId|null, dummyKey|null, at}`. 인덱스 `{at:-1}`, `{dummyKey:1, at:-1}`.

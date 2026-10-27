@@ -113,7 +113,7 @@ describe("AiRequirementExtractor", () => {
       normalized,
     };
     const ai = new StubAiClient(reply);
-    const extraction = await new AiRequirementExtractor(ai).extract(source);
+    const extraction = await new AiRequirementExtractor(ai).extract(source, null);
 
     expect(ai.calls).toHaveLength(1);
     const check = ai.calls[0]!.options?.check;
@@ -137,7 +137,7 @@ describe("AiRequirementExtractor", () => {
       ],
       normalized,
     });
-    await expect(new AiRequirementExtractor(ai).extract(source)).rejects.toThrow(AnalysisEvidenceError);
+    await expect(new AiRequirementExtractor(ai).extract(source, null)).rejects.toThrow(AnalysisEvidenceError);
     expect(ai.calls).toHaveLength(1);
   });
 });

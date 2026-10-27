@@ -26,7 +26,7 @@ const usage = {
   durationMs: 24_000,
 };
 
-const context: LayoutDesignContext = {
+const context: LayoutDesignContext = { userId: null,
   sections: [
     {
       title: "핵심 소개",

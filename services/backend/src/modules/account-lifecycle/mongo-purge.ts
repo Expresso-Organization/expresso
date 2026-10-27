@@ -21,7 +21,7 @@ const DOMAIN_COLLECTIONS = [
   "requirement_coverages", "revisions", "saved_searches", "skills", "skill_evidence", "snapshot_chunks",
   "brews", "job_analyses", "portfolios", "deployments",
   "career_ai_proposals", "career_document_snapshots", "career_document_updates", "career_record_relations",
-  "career_record_revisions", "identity_tokens", "widgets",
+  "career_record_revisions", "identity_tokens", "widgets", "ai_usage_events",
 ] as const;
 
 /** 사용자 삭제가 `userId`로 지우는 컬렉션 전부. 스키마에 `userId`가 있는 컬렉션과 같아야 한다(통합 테스트가 본다). */

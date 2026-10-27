@@ -12,7 +12,7 @@ const ROW_SECTIONS = [
 ] as const;
 
 /**
- * 09 설정이 사용량 · 알림 설정 · 동의 상태를 기다리는 동안.
+ * 09 설정이 사용량 · 요금제 · 알림 설정 · 동의 상태를 기다리는 동안.
  *
  * 좌측 목록 · 제목 · 구획 이름은 응답과 무관하다. 덮어 두면 어느 설정을 열었는지도
  * 잠깐 사라지므로 그대로 그린다.
@@ -41,12 +41,27 @@ export default function Loading() {
 
             <div className={styles.section}>
               <div className={styles.sectionLabel}>사용량</div>
-              <div className={styles.usageGrid}>
-                <div className={styles.usageCard}>
-                  <Skel w={96} h={12} />
-                  <Skel h={6} radius={999} style={{ marginTop: 14 }} />
-                  <Skel w={104} h={10} style={{ marginTop: 12 }} />
-                </div>
+              <div className={styles.creditCard}>
+                <Skel w={96} h={12} />
+                <Skel w={88} h={28} style={{ marginTop: 12 }} />
+                <Skel h={6} radius={999} style={{ marginTop: 12 }} />
+              </div>
+              <div className={styles.chartCard}>
+                <Skel w={64} h={12} />
+                <Skel h={160} radius={8} style={{ marginTop: 14 }} />
+              </div>
+            </div>
+
+            <div className={styles.section}>
+              <div className={styles.sectionLabel}>요금제</div>
+              <div className={styles.plans}>
+                {skelKeys(3).map((card) => (
+                  <div key={card} className={styles.plan}>
+                    <Skel w={96} h={16} />
+                    <Skel w={72} h={12} style={{ marginTop: 10 }} />
+                    <Skel w="70%" h={11} style={{ marginTop: 16 }} />
+                  </div>
+                ))}
               </div>
             </div>
 

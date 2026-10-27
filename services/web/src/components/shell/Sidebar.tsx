@@ -70,9 +70,9 @@ export function Sidebar({
           <div className={styles.quotaSlot}>
             <div className={`${styles.copy} ${styles.quotaCard}`}>
               <div className={styles.quotaHead}>
-                <span className={styles.quotaLabel}>이번 달 추출</span>
+                <span className={styles.quotaLabel}>이번 달 크레딧</span>
                 <span className={styles.quotaValue}>
-                  {quotaUsed} / {quotaLimit ?? "무제한"}
+                  {quotaUsed.toLocaleString("ko-KR")} / {quotaLimit?.toLocaleString("ko-KR") ?? "무제한"}
                 </span>
               </div>
               <div
@@ -82,8 +82,8 @@ export function Sidebar({
                 aria-valuemin={0}
                 aria-valuemax={quotaLimit ?? undefined}
                 aria-label={quotaLimit === null
-                  ? `이번 달 추출 ${quotaUsed}회 · 상한 없음`
-                  : `이번 달 추출 ${quotaLimit}회 중 ${quotaUsed}회 사용`}
+                  ? `이번 달 크레딧 ${quotaUsed} 사용 · 상한 없음`
+                  : `이번 달 크레딧 ${quotaLimit} 중 ${quotaUsed} 사용`}
               >
                 <div
                   className={styles.quotaFill}

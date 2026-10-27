@@ -21,7 +21,7 @@ describe("AiClientProposalAdapter", () => {
   it("sends canonical selected-block context through the partial_edit contract", async () => {
     const client = new StubAiClient(); const adapter = new AiClientProposalAdapter(client);
     const recordId = randomUUID(); const blockId = randomUUID();
-    await expect(adapter.generate({ recordId, documentVersion: 7, selectionBlockIds: [blockId], selectedBlocks: [{ id: blockId, type: "paragraph", attrs: {}, text: [{ text: "원문" }] }], prompt: "성과 중심으로", signal: new AbortController().signal })).resolves.toMatchObject({ summary: "성과를 선명하게 정리" });
+    await expect(adapter.generate({ userId: "00000000-0000-4000-8000-0000000000aa", recordId, documentVersion: 7, selectionBlockIds: [blockId], selectedBlocks: [{ id: blockId, type: "paragraph", attrs: {}, text: [{ text: "원문" }] }], prompt: "성과 중심으로", signal: new AbortController().signal })).resolves.toMatchObject({ summary: "성과를 선명하게 정리" });
     expect(client.spec).toMatchObject({ contract: "partial_edit", promptVersion: 1 });
     expect(JSON.parse(client.spec!.prompt)).toEqual({ recordId, documentVersion: 7, selectionBlockIds: [blockId], selectedBlocks: [{ id: blockId, type: "paragraph", attrs: {}, text: [{ text: "원문" }] }], instruction: "성과 중심으로" });
   });
@@ -29,7 +29,7 @@ describe("AiClientProposalAdapter", () => {
   it("does not publish a live result after cancellation", async () => {
     const controller = new AbortController(); controller.abort();
     const adapter = new AiClientProposalAdapter(new StubAiClient());
-    await expect(adapter.generate({ recordId: randomUUID(), documentVersion: 1, selectionBlockIds: [], selectedBlocks: [], prompt: "취소", signal: controller.signal })).rejects.toMatchObject({ name: "AbortError" });
+    await expect(adapter.generate({ userId: "00000000-0000-4000-8000-0000000000aa", recordId: randomUUID(), documentVersion: 1, selectionBlockIds: [], selectedBlocks: [], prompt: "취소", signal: controller.signal })).rejects.toMatchObject({ name: "AbortError" });
   });
 
   it("한 번만 부르고, 업무 규칙 검사(check)를 걸지 않는다", async () => {
@@ -40,8 +40,9 @@ describe("AiClientProposalAdapter", () => {
         return { data: schema.parse({ summary: "정리", commands: [], propertyChanges: [] }), usage: { model: "fixture", inputTokens: 1, outputTokens: 1, cacheReadTokens: 0, cacheCreationTokens: 0, costUsd: null, durationMs: 1 } };
       },
     };
-    await new AiClientProposalAdapter(client).generate({ recordId: randomUUID(), documentVersion: 1, selectionBlockIds: [], selectedBlocks: [], prompt: "정리", signal: new AbortController().signal });
-    expect(calls).toEqual([undefined]);
+    await new AiClientProposalAdapter(client).generate({ userId: "00000000-0000-4000-8000-0000000000aa", recordId: randomUUID(), documentVersion: 1, selectionBlockIds: [], selectedBlocks: [], prompt: "정리", signal: new AbortController().signal });
+    // 사용량을 남길 사용자만 넘긴다.
+    expect(calls).toEqual([{ userId: "00000000-0000-4000-8000-0000000000aa" }]);
   });
 });
 

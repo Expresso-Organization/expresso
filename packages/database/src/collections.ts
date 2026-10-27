@@ -53,6 +53,7 @@ export interface MongoCollections {
   generationSentenceEvidence: Collection<Docs.GenerationSentenceEvidenceDoc>;
   usageCounters: Collection<Docs.UsageCounterDoc>;
   generationUsageLedger: Collection<Docs.GenerationUsageLedgerDoc>;
+  aiUsageEvents: Collection<Docs.AiUsageEventDoc>;
   identityOauthAccounts: Collection<Docs.IdentityOauthAccountDoc>;
   identitySessions: Collection<Docs.IdentitySessionDoc>;
   identityTokens: Collection<Docs.IdentityTokenDoc>;
@@ -144,6 +145,7 @@ export function mongoCollections(db: Db): MongoCollections {
     generationSentenceEvidence: db.collection<Docs.GenerationSentenceEvidenceDoc>("generation_sentence_evidence"),
     usageCounters: db.collection<Docs.UsageCounterDoc>("usage_counters"),
     generationUsageLedger: db.collection<Docs.GenerationUsageLedgerDoc>("generation_usage_ledger"),
+    aiUsageEvents: db.collection<Docs.AiUsageEventDoc>("ai_usage_events"),
     identityOauthAccounts: db.collection<Docs.IdentityOauthAccountDoc>("identity_oauth_accounts"),
     identitySessions: db.collection<Docs.IdentitySessionDoc>("identity_sessions"),
     identityTokens: db.collection<Docs.IdentityTokenDoc>("identity_tokens"),

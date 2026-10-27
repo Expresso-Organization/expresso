@@ -40,7 +40,7 @@ const current: LayoutSpec = {
   rationale: "서사가 길어 읽기 좋은 좁은 폭으로 세웠습니다.",
 };
 
-const context: RemixContext = {
+const context: RemixContext = { userId: null,
   instruction: "더 차분하게, 간격을 좁혀 주세요",
   current,
   sections: [

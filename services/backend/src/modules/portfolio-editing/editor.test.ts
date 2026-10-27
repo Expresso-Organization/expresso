@@ -15,7 +15,7 @@ import {
 const before =
   "매일 도는 정산 스케줄러를 다시 만들어 일 1,200만 건을 처리하도록 했습니다. 큐로 나눠 처리하는 구조로 바꾸고, 재처리 절차를 문서로 남겼습니다.";
 
-const context: EditContext = {
+const context: EditContext = { userId: null,
   instruction: "한 문장으로 줄여 주세요",
   block: { kind: "paragraph", fields: { "content.text": before } },
   section: {

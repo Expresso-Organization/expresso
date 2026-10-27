@@ -76,7 +76,7 @@ export class AiRequirementExtractor implements RequirementExtractor {
     this.#ai = ai;
   }
 
-  async extract(source: string): Promise<JobAnalysisExtraction> {
+  async extract(source: string, userId: string | null): Promise<JobAnalysisExtraction> {
     const { data } = await this.#ai.complete(
       {
         contract: "job_analysis",
@@ -86,7 +86,7 @@ export class AiRequirementExtractor implements RequirementExtractor {
       },
       JobAnalysisAiOutputSchema,
       // 다시 요청하지 않는다. 원문에 없는 인용만 어댑터가 같은 대화에서 고쳐 받는다.
-      { check: (output) => unquotedRequirements(source, output) },
+      { userId, check: (output) => unquotedRequirements(source, output) },
     );
 
     const requirements: ExtractedRequirement[] = [];
