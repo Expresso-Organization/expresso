@@ -54,18 +54,21 @@
 }
 .content .notice { margin: 0 0 24px; }
 
-/* 전체 페이지에서 본문 위 오른쪽에 저장 상태를 둡니다. 패널은 머리말이 맡습니다. */
-.pageState {
+/* 본문 위 오른쪽 줄입니다. 저장 상태는 전체 페이지에서만 두고, 패널은 머리말이 맡습니다. */
+.topRow {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: 10px;
   max-width: 760px;
   margin: 0 auto;
   padding: 12px 44px 0;
   color: var(--ex-fg-muted);
   font-size: var(--ex-text-2xs);
 }
+.editor[data-mode="peek"] .topRow { padding-right: 32px; padding-left: 32px; }
 
 @media (max-width: 767px) {
   .content { padding: 32px 22px 96px; }
-  .pageState { padding: 12px 22px 0; }
+  .topRow { padding: 12px 22px 0; }
 }
