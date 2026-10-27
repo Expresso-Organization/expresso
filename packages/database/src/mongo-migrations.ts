@@ -14,6 +14,7 @@ import { agentCredentialSteps } from "./mongodb-migrations/0010/migration.js";
 import { preparationPlanSteps } from "./mongodb-migrations/0011/migration.js";
 import { agentConversationSteps } from "./mongodb-migrations/0009/migration.js";
 import { identitySessionSlidingExpirySteps } from "./mongodb-migrations/0012/migration.js";
+import { generationWaitingRecipeSteps } from "./mongodb-migrations/0021/migration.js";
 
 
 export interface MongoMigrationStep {
@@ -55,6 +56,7 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
   const tenthHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0010/migration.ts", import.meta.url))).digest("hex");
   const eleventhHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0011/migration.ts", import.meta.url))).digest("hex");
   const twelfthHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0012/migration.ts", import.meta.url))).digest("hex");
+  const generationWaitingHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0021/migration.ts", import.meta.url))).digest("hex");
   return [
     { version: "0001", name: "initial_collections", checksum: hash.digest("hex"), steps: await initialMigrationSteps() },
     { version: "0002", name: "generation_ledger_amount_constraint", checksum: secondHash, steps: await generationLedgerConstraintSteps() },
@@ -68,5 +70,6 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
     { version: "0010", name: "agent_credentials", checksum: tenthHash, steps: await agentCredentialSteps() },
     { version: "0011", name: "preparation_plans", checksum: eleventhHash, steps: await preparationPlanSteps() },
     { version: "0012", name: "identity_session_sliding_expiry", checksum: twelfthHash, steps: await identitySessionSlidingExpirySteps() },
+    { version: "0021", name: "generation_waiting_recipe", checksum: generationWaitingHash, steps: await generationWaitingRecipeSteps() },
   ];
 }

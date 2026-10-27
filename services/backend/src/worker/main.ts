@@ -120,7 +120,8 @@ const brewJobProcessor = createBrewJobProcessor(brewJobService, {
       return (await recipeService.generate(userId, brewId, idempotencyKey)).id;
     },
   },
-});
+  // 구성이 끝나면 그 구성을 기다리던 생성을 이어서 시작한다(구성 전에 맡긴 생성).
+}, generationService);
 const recordCleanupProcessor = createRecordCleanupProcessor(interviewService);
 const publishingService = new PublishingService(database, config.assetSigningSecret);
 const exportProcessor = createExportProcessor(publishingService);

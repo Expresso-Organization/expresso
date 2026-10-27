@@ -27,14 +27,50 @@ export function classifyBrewJobFailure(error: unknown): { code: string; retryabl
   return { code: "PROVIDER_FAILED", retryable: true };
 }
 
+/** 구성(레시피)을 기다리는 생성. 생성 모듈의 진입점(`GenerationApi`)이 준다. */
+export interface WaitingGenerations {
+  attachRecipe(userId: string, brewId: string): Promise<number>;
+  failWaiting(userId: string, brewId: string, code: string): Promise<number>;
+}
+
+/**
+ * 구성 잡이 마지막으로 실패했는가. 큐는 `attemptsMade + 1 < attempts`일 때만 다시 돌린다(BullMQ 6
+ * `Job.shouldRetryJob`). 다시 돌아도 같은 답인 거절(`retryable: false`)도 마지막으로 본다 — 기다리는 사람에게
+ * 실패를 늦게 알릴 까닭이 없다.
+ */
+export function isFinalBrewJobFailure(job: Pick<Job, "attemptsMade" | "opts">, error: unknown): boolean {
+  return !classifyBrewJobFailure(error).retryable || job.attemptsMade + 1 >= (job.opts.attempts ?? 1);
+}
+
 export function createBrewJobProcessor(
   service: BrewJobApi,
   runners: { interview: BrewJobRunner; recipe: BrewJobRunner },
+  waiting?: WaitingGenerations,
 ) {
   return async (job: Job<Record<string, unknown>>) => {
     const id = job.data.brewJobId;
     if (typeof id !== "string") throw new Error(`${job.name} payload is missing brewJobId`);
-    const runner = job.name === "interview.draft" ? runners.interview : runners.recipe;
-    return service.process(id, runner, classifyBrewJobFailure);
+    const recipe = job.name !== "interview.draft";
+    const runner = recipe ? runners.recipe : runners.interview;
+    // 잡 문서에만 있는 사용자 · 브루를 실행이 넘겨받는 자리에서 기억해 둔다. 구성을 기다리던 생성을 찾는 열쇠다.
+    const seen: { target?: { userId: string; brewId: string } } = {};
+    const tracked: BrewJobRunner = {
+      run(input) {
+        seen.target = { userId: input.userId, brewId: input.brewId };
+        return runner.run(input);
+      },
+    };
+    try {
+      const status = await service.process(id, tracked, classifyBrewJobFailure);
+      // 구성이 생겼으니 기다리던 생성에 붙여 시작한다. 이미 성공한 잡이 다시 배달되면 실행이 없어 `target`도 없다 —
+      // 그때는 처음 성공했을 때 이미 붙였다.
+      if (recipe && waiting && seen.target) await waiting.attachRecipe(seen.target.userId, seen.target.brewId);
+      return status;
+    } catch (error) {
+      if (recipe && waiting && seen.target && isFinalBrewJobFailure(job, error)) {
+        await waiting.failWaiting(seen.target.userId, seen.target.brewId, classifyBrewJobFailure(error).code).catch(() => undefined);
+      }
+      throw error;
+    }
   };
 }
