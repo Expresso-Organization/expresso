@@ -382,9 +382,11 @@ describe("첫 화면 배경", () => {
     }
   });
 
-  it("다섯 구도 모두 배경을 그리고, 배경이 없는 옛 저장본은 배경 층이 없다", () => {
+  it("다섯 구도 모두 배경을 그리고, 배경이 없는 옛 포스터는 사선 줄무늬다", () => {
     for (const variant of ["statement", "split", "media", "sentence", "poster"])
       expect(hero(renderStructuredPortfolio(pageSpec({ variant, backdrop: "rings" }), content, { design: clarity }).html)).toContain('data-shape="rings"');
+    expect(hero(renderStructuredPortfolio(pageSpec({ variant: "poster" }), content, { design: clarity }).html)).toContain('data-backdrop="stripes"');
+    expect(hero(renderStructuredPortfolio(pageSpec({ variant: "poster", backdrop: "none" }), content, { design: clarity }).html)).not.toContain("xp-backdrop");
     expect(hero(renderStructuredPortfolio(pageSpec({ variant: "statement" }), content, { design: clarity }).html)).not.toContain("xp-backdrop");
   });
 
@@ -393,6 +395,8 @@ describe("첫 화면 배경", () => {
     expect(BACKDROP_CSS).not.toMatch(/filter\s*:|backdrop-filter/);
     const { css } = renderStructuredPortfolio(pageSpec({ variant: "statement", backdrop: "grid" }), content, { design: clarity });
     expect(css).toMatch(/\.xp-hero\[data-backdrop-ink="line"\]\{--xp-bd-1:#[0-9a-f]{6};--xp-bd-2:#[0-9a-f]{6};color:#[0-9a-f]{6};--xp-muted:#[0-9a-f]{6}/);
+    // 옛 포스터 면의 줄무늬는 배경 층으로 옮겼습니다. 첫 화면 조상에 배경 이미지가 없어야 렌더 대비 검사가 글자를 잽니다.
+    expect(css).not.toContain("repeating-linear-gradient(-45deg,color-mix(in srgb,var(--xp-action-text)");
   });
 
   it("반복 모션은 움직임 줄이기를 고르지 않았고 모션 없음 지면이 아닐 때만 돈다", () => {

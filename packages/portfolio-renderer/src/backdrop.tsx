@@ -23,9 +23,9 @@ export const BACKDROP_INK: Record<Exclude<StructuredBackdrop, "none">, BackdropI
   aurora: "light",
 };
 
-/** 저장본에 배경이 없을 때의 값입니다. */
-export function resolveBackdrop(backdrop: StructuredBackdrop | undefined, _variant: string | undefined): StructuredBackdrop {
-  return backdrop ?? "none";
+/** 저장본에 배경이 없을 때의 값입니다. 포스터 첫 화면은 배경 칸이 생기기 전부터 사선 줄무늬였습니다. */
+export function resolveBackdrop(backdrop: StructuredBackdrop | undefined, variant: string | undefined): StructuredBackdrop {
+  return backdrop ?? (variant === "poster" ? "stripes" : "none");
 }
 
 /** 첫 화면 header에 다는 속성입니다. 배경이 없으면 아무것도 달지 않습니다. */
