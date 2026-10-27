@@ -27,7 +27,7 @@ date: 2026-10-28
 | `packages/portfolio-renderer/src/index.ts` | `readablePeriods` · `barScale` 내보내기 |
 | `services/backend/src/modules/page/design-first.ts` | 설계 · 채우기 지침 줄, 기간 숫자 검사, 내림 규칙 |
 | `services/backend/src/modules/page/design-first.test.ts` | 기간 검사 · 내림 규칙 |
-| `services/web/src/app/(app)/edit/[portfolioId]/StructuredPageProperties.tsx` | `CaseBars` 이름표 한 줄 |
+| `services/web/src/app/(app)/edit/[portfolioId]/StructuredPageProperties.tsx` | `CaseBars` 이름표 한 줄, 수치 두 개 이상일 때만 고를 수 있게 거르는 줄 |
 
 ## 작업 순서
 

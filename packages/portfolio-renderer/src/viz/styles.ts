@@ -20,9 +20,11 @@ export const VIZ_CSS = String.raw`
 .xp-period{display:grid;gap:calc(var(--element-gap) * .6)}
 .xp-period-rows{display:grid;border-top:var(--xp-rule)}
 .xp-period-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:var(--element-gap) calc(var(--component-gap) * 1.2);align-items:start;padding-block:calc(var(--element-gap) * 1.1);border-bottom:var(--xp-rule);color:inherit;text-decoration:none;transition:background var(--motion-duration) var(--motion-easing)}
-a.xp-period-row:hover{background:color-mix(in srgb,var(--surface) 70%,transparent)}
+.xp-page a.xp-period-row{color:inherit;text-decoration:none}
+.xp-page a.xp-period-row:hover{background:color-mix(in srgb,var(--surface) 70%,transparent)}
 .xp-period-text{display:grid;gap:.25em;min-width:0}
 .xp-period-text strong{font-family:var(--font-display);font-weight:var(--xp-weight);line-height:1.35;letter-spacing:var(--xp-tracking)}
+.xp-index .xp-period-text strong{font-size:calc(var(--type-example-body) * 1.2)}
 .xp-period-track{position:relative;display:block;height:.8em;margin-top:.45em;border-radius:var(--control-radius);background:color-mix(in srgb,currentColor 10%,transparent)}
 .xp-period-bar{position:absolute;inset-block:0;left:var(--l,0);width:var(--w,0);min-width:6px;border-radius:var(--control-radius);background:var(--xp-bar-after,var(--action))}
 .xp-period-bar[data-open]{border-start-end-radius:0;border-end-end-radius:0;-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 2.5em),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 2.5em),transparent)}
