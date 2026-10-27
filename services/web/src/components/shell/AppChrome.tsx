@@ -5,7 +5,6 @@ import { homeEngagement, recentPortfolios, watchedJobs } from "@/lib/app-data";
 import { requireSession } from "@/lib/require-session";
 
 import { AppShell } from "./AppShell";
-import { EmailVerificationNotice } from "./EmailVerificationNotice";
 import { Sidebar } from "./Sidebar";
 import { SidebarSkeleton } from "./SidebarSkeleton";
 
@@ -25,10 +24,6 @@ export function AppChrome({ children }: { children: ReactNode }) {
         </Suspense>
       }
     >
-      {/* 미인증 계정의 안내 띠. 세션을 기다리는 동안 본문을 막지 않게 Suspense 안에 둔다. */}
-      <Suspense fallback={null}>
-        <EmailVerificationNotice />
-      </Suspense>
       {children}
     </AppShell>
   );

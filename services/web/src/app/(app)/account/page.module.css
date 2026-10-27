@@ -188,6 +188,12 @@
   flex-shrink: 0;
 }
 
+/* 보낸 뒤에는 같은 버튼이 결과를 말한다 — 다시 누를 것이 없다. */
+.dataAction:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .dataActions {
   display: flex;
   gap: 6px;
@@ -200,12 +206,23 @@
   color: var(--ex-status-danger-text);
 }
 
-
-
-
 .dataActionDanger {
   color: var(--ex-status-danger-text);
   border-color: rgba(226, 84, 58, 0.32);
+}
+
+/*
+ * 프로필의 로그인 주소 줄. 인증 메일을 보낸 결과가 버튼 옆이 아니라 줄 전체를
+ * 쓰는 세 번째 칸으로 내려선다 — 옆에 두면 주소가 밀린다.
+ */
+.verifyRow {
+  flex-wrap: wrap;
+}
+
+.verifyResult {
+  flex-basis: 100%;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
 }
 
 .footNote {

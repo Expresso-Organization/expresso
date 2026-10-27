@@ -13,6 +13,7 @@ import { grantConsentAction, revokeConsentAction } from "../../consent-actions";
 
 import { AccountNav } from "./AccountNav";
 import { DataSection } from "./DataSection";
+import { ResendVerificationForm } from "./ResendVerificationForm";
 import styles from "./page.module.css";
 
 /** 지금 만들어지는 알림만 켜고 끈다. 나머지 종류는 보내는 코드가 없다. */
@@ -20,6 +21,11 @@ const NOTIFICATION_COPY: Partial<Record<NotificationKind, { title: string; what:
   deadline: { title: "관심 공고 마감", what: "담아 둔 공고의 마감이 3일 안으로 다가오면 한 번 알립니다" },
   generation: { title: "포트폴리오 생성 완료", what: "생성이 끝나면 알리고, 누르면 편집 화면으로 갑니다" },
 };
+
+/** ISO 시각에서 날짜만. 결제 내역 줄과 같은 `2026.07.12` 형식이다. */
+function formatDay(timestamp: string): string {
+  return timestamp.slice(0, 10).replace(/-/g, ".");
+}
 
 /** 다음 초기화 날짜. 「3월 12일」처럼 적는다. */
 function formatReset(at: string): string {
@@ -35,6 +41,7 @@ export default async function AccountPage() {
   ]);
   const usage = generate.usage ?? null;
   const notifications = preferences.filter((item) => NOTIFICATION_COPY[item.kind]);
+  const verifiedAt = session.user.emailVerifiedAt;
 
   return (
     <>
@@ -45,6 +52,31 @@ export default async function AccountPage() {
 
           <div className={styles.main}>
             <h1 className={styles.title}>설정</h1>
+
+            {/* 계정에 붙어 있는 사실. 확인된 주소는 날짜만 남고, 아직이면 보낼 것이 선다. */}
+            <section id="profile" className={styles.section}>
+              <HashScroll id="profile" />
+              <div className={styles.sectionLabel}>프로필</div>
+              <div className={styles.dataRow}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className={styles.dataTitle}>{session.user.displayName}</div>
+                  <div className={styles.dataNote}>표시 이름</div>
+                </div>
+              </div>
+              <div className={`${styles.dataRow} ${styles.verifyRow}`}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className={styles.dataTitle}>{session.user.email}</div>
+                  {verifiedAt ? (
+                    <div className={styles.dataNote}>{formatDay(verifiedAt)} 확인됨</div>
+                  ) : (
+                    <div className={styles.consentRenew}>
+                      인증 전에는 포트폴리오를 공개 주소에 올릴 수 없습니다
+                    </div>
+                  )}
+                </div>
+                {verifiedAt ? null : <ResendVerificationForm />}
+              </div>
+            </section>
 
             <section id="usage" className={styles.section}>
               <HashScroll id="usage" />

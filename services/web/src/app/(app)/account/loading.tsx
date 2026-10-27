@@ -28,6 +28,18 @@ export default function Loading() {
             <h1 className={styles.title}>설정</h1>
 
             <div className={styles.section}>
+              <div className={styles.sectionLabel}>프로필</div>
+              {skelKeys(2).map((row) => (
+                <div key={row} className={styles.dataRow} style={{ marginBottom: 9 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <Skel w={row === 0 ? 112 : 196} h={13} />
+                    <Skel w={64} h={11} style={{ marginTop: 7 }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className={styles.section}>
               <div className={styles.sectionLabel}>사용량</div>
               <div className={styles.usageGrid}>
                 <div className={styles.usageCard}>
