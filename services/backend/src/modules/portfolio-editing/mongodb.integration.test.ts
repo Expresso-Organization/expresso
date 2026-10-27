@@ -77,6 +77,21 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB portfolio read, edit, la
     const stale = results.find(({ status }) => status === "rejected"); if (stale?.status === "rejected") expect(stale.reason).toMatchObject({ statusCode: 409 });
   });
 
+  it("records instructed edits as AI revisions and direct edits as user revisions", async () => {
+    const db = mongoCollections(fixture.resource.db);
+    const target = await db.blocks.findOne({ userId, kind: "paragraph", locked: { $ne: true } });
+    if (!target) throw new Error("unlocked paragraph block missing");
+    const instructed = new MongoPortfolioEditingService(fixture.resource, {
+      async edit(context) { return [{ path: "content.text", before: context.block.fields.text ?? "", after: "AI가 다듬은 문장", label: "다듬음" }]; },
+    });
+    const proposal = await instructed.preview(userId, portfolioId, target._id, { operation: "instruct", instruction: "더 짧게" });
+    const applied = await instructed.apply(userId, proposal.id);
+    expect((await db.revisions.findOne({ _id: applied.revisionId }))?.actor).toBe("ai");
+    const direct = await editor.preview(userId, portfolioId, target._id, { operation: "update_text", text: "직접 고친 문장" });
+    const second = await editor.apply(userId, direct.id);
+    expect((await db.revisions.findOne({ _id: second.revisionId }))?.actor).toBe("user");
+  });
+
   it("updates block and section structure atomically and restores a deleted block", async () => {
     const before = await reader.get(userId, portfolioId); const section = before.sections[0]!;
     const duplicated = await editor.duplicateBlock(userId, portfolioId, section.blocks[0]!.id);
@@ -113,5 +128,15 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB portfolio read, edit, la
     const history = await pages.history(userId, portfolioId); expect(history.map(({ revision }) => revision)).toEqual([second.revision, first.revision]);
     expect(history[1]?.html).toBe(first.html); expect(second.styleSpec).toEqual(generator.seen[1]?.style ?? null);
     expect(await pages.document(userId, portfolioId)).toContain("<!doctype html>");
+  });
+
+  it("restores an earlier page by stacking it as a new revision", async () => {
+    const history = await pages.history(userId, portfolioId); const latest = history[0]!; const earlier = history.at(-1)!;
+    await expect(pages.restoreRevision(userId, portfolioId, { revision: earlier.revision, expectedRevision: latest.revision - 1 })).rejects.toMatchObject({ statusCode: 409 });
+    await expect(pages.restoreRevision(userId, portfolioId, { revision: latest.revision, expectedRevision: latest.revision })).rejects.toMatchObject({ statusCode: 409 });
+    const restored = await pages.restoreRevision(userId, portfolioId, { revision: earlier.revision, expectedRevision: latest.revision });
+    expect(restored).toMatchObject({ revision: latest.revision + 1, html: earlier.html, rationale: `판 ${earlier.revision + 1}로 되돌렸습니다.` });
+    expect((await pages.latest(userId, portfolioId))?.revision).toBe(restored.revision);
+    expect((await pages.history(userId, portfolioId)).find(({ revision }) => revision === latest.revision)?.html).toBe(latest.html);
   });
 });

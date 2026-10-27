@@ -2,6 +2,7 @@ import {
   API_PREFIX,
   PortfolioIdParamsSchema,
   RegeneratePageSchema,
+  RestorePageRevisionSchema,
   EditStructuredPageSchema,
   PageLibrarySearchSchema,
 } from "@expresso/contracts";
@@ -59,6 +60,16 @@ export function registerPageRoutes(
     const input = EditStructuredPageSchema.parse(request.body);
     if (!options.service.editComposition) throw new HttpStatusError(503, "구성 편집을 사용할 수 없습니다.");
     return { data: await lift(() => options.service.editComposition!(principal.user.id, portfolioId, input)) };
+  });
+
+  app.post(`${path}/restore`, { preHandler: options.authenticateRequest }, async (request, reply) => {
+    const principal = requireAuth(request);
+    const { id: portfolioId } = PortfolioIdParamsSchema.parse(request.params);
+    const input = RestorePageRevisionSchema.safeParse(request.body);
+    if (!input.success) throw new HttpStatusError(400, "invalid page revision");
+    if (!options.service.restoreRevision) throw new HttpStatusError(503, "판 되돌리기를 사용할 수 없습니다.");
+    const page = await lift(() => options.service.restoreRevision!(principal.user.id, portfolioId, input.data));
+    return reply.code(201).send({ data: page });
   });
 
   /**

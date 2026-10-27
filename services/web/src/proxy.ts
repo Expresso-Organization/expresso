@@ -56,13 +56,36 @@ export function proxy(request: NextRequest) {
     return response;
   }
 
-  if (devLoginEnabled()) {
-    const dev = new URL("/api/dev/session", request.url);
-    dev.searchParams.set("next", target);
-    return NextResponse.redirect(dev);
-  }
+  return redirectToLogin(request, target);
+}
 
-  return NextResponse.redirect(new URL(loginPath(target), request.url));
+/**
+ * 로그인 주소로 보낸다. 주소는 하나이고, 요청 종류에 따라 응답 모양만 다르다.
+ *
+ * **서버 액션 POST에는 3xx를 내지 않는다.** 307은 POST를 그대로 GET 전용 로그인
+ * 경로로 넘겨 405가 나거나, fetch가 따라간 로그인 화면 HTML을 받은 클라이언트가
+ * "unexpected response"로 오류 경계에 빠진다. Next 서버가 액션 안의 `redirect()`를
+ * 낼 때와 같은 형식을 쓴다(`next/dist/server/app-render/action-handler.js`) —
+ * fetch 액션(`next-action` 헤더)은 200 + `x-action-redirect`, 스크립트 없는 폼
+ * POST는 303 + `Location`. 클라이언트는 그 헤더를 보고 로그인으로 전체 이동한다.
+ */
+function redirectToLogin(request: NextRequest, target: string): NextResponse {
+  const destination = devLoginEnabled()
+    ? new URL(`/api/dev/session?${new URLSearchParams({ next: target })}`, request.url)
+    : new URL(loginPath(target), request.url);
+
+  if (request.method === "GET" || request.method === "HEAD") {
+    return NextResponse.redirect(destination);
+  }
+  if (request.headers.has("next-action")) {
+    // 경로만 넣는다. 클라이언트가 지금 화면 주소 기준으로 풀어 브라우저의 호스트를
+    // 그대로 쓴다 — 프록시가 보는 `request.url`의 호스트는 브라우저 주소와 다를 수 있다.
+    return new NextResponse(null, {
+      status: 200,
+      headers: { "x-action-redirect": `${destination.pathname}${destination.search};replace` },
+    });
+  }
+  return NextResponse.redirect(destination, 303);
 }
 
 export const config = {

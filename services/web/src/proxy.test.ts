@@ -70,3 +70,40 @@ describe("session proxy", () => {
     }
   });
 });
+
+/** 쿠키 없는 POST. `action`이 있으면 Next 클라이언트가 보내는 fetch 서버 액션이다. */
+function post(path: string, action?: string): NextRequest {
+  return new NextRequest(`http://localhost:3000${path}`, {
+    method: "POST",
+    headers: action ? { "next-action": action, accept: "text/x-component" } : { "content-type": "multipart/form-data; boundary=x" },
+  });
+}
+
+describe("session proxy for server actions", () => {
+  it("fetch 서버 액션에는 3xx 대신 x-action-redirect로 로그인 주소를 준다", () => {
+    delete process.env.DEV_LOGIN;
+    const response = proxy(post("/edit/abc?tab=chat", "7f00aa"));
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
+    const [location, type] = response.headers.get("x-action-redirect")!.split(";");
+    expect(type).toBe("replace");
+    // 경로만 준다 — 클라이언트가 브라우저 주소의 호스트로 푼다.
+    expect(location!.startsWith("/login?")).toBe(true);
+    expect(new URL(location!, "http://browser.test").searchParams.get("next")).toBe("/edit/abc?tab=chat");
+  });
+
+  it("스크립트 없는 폼 POST는 303으로 GET 이동시킨다", () => {
+    delete process.env.DEV_LOGIN;
+    const response = proxy(post("/account"));
+    expect(response.status).toBe(303);
+    expect(new URL(response.headers.get("location")!).searchParams.get("next")).toBe("/account");
+  });
+
+  it("개발 로그인이 켜져 있으면 액션도 개발 로그인으로 보낸다", () => {
+    process.env.DEV_LOGIN = "1";
+    const response = proxy(post("/edit/abc", "7f00aa"));
+    const location = new URL(response.headers.get("x-action-redirect")!.split(";")[0]!, "http://browser.test");
+    expect(location.pathname).toBe("/api/dev/session");
+    expect(location.searchParams.get("next")).toBe("/edit/abc");
+  });
+});
