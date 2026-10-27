@@ -58,7 +58,7 @@ export function registerMaterialsRoutes(
     };
   });
 
-  /** 01b 레일의 제작 모드. Cowork는 PRO라 자격을 여기서 본다. */
+  /** 01b 레일의 제작 모드와 위저드 머리말의 이름. Cowork는 PRO라 자격을 여기서 본다. */
   app.patch(`${API_PREFIX}/brews/:id`, { preHandler }, async (request) => {
     const principal = requireAuth(request);
     const params = ParamsSchema.safeParse(request.params);

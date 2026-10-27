@@ -261,6 +261,8 @@ export class MaterialsService {
       jobAnalysisId: brew.job_analysis_id,
       status: brew.status,
       lengthPreset: brew.length_preset,
+      // MySQL 표에는 이름 칸이 없다.
+      title: null,
       freeTitle: brew.free_title,
       freeBrief: brew.free_brief,
       posting: posting[0]
@@ -339,6 +341,8 @@ export class MaterialsService {
    * 말하려면 서버도 같은 답을 해야 한다.
    */
   async updateBrew(userId: string, brewId: string, input: UpdateBrew) {
+    if (input.title !== undefined) throw new MaterialsError(501, "brew title is not supported by the legacy store");
+    if (input.mode === undefined) throw new MaterialsError(400, "invalid brew change");
     if (input.mode === "collab") {
       const decision = await new EntitlementService(this.#sql).check(userId, "brew.cowork");
       if (!decision.allowed) throw new MaterialsError(403, "cowork mode requires an upgraded plan");

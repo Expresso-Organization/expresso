@@ -449,6 +449,14 @@ export const brews = {
       method: "PATCH",
       body: { mode },
     }),
+
+  /** 위저드 머리말의 이름. 추출이 포트폴리오를 만들 때 이 이름을 쓴다. */
+  rename: (accessToken: string, brewId: string, title: string) =>
+    request(`${API_PREFIX}/brews/${brewId}`, BrewMaterialsResponseSchema, {
+      accessToken,
+      method: "PATCH",
+      body: { title },
+    }),
 };
 
 export const templates = {

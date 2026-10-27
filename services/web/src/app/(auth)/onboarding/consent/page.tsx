@@ -7,7 +7,7 @@ import { consents } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 import { grantConsentAction } from "../../../consent-actions";
-import { OnboardingShell, onboardingStyles as styles } from "../OnboardingShell";
+import { OnboardingShell, OnboardingStepLabel, onboardingStyles as styles } from "../OnboardingShell";
 
 /**
  * 10d 직전 — 무엇을 어디로 보내는지 묻는다.
@@ -61,7 +61,7 @@ export default async function OnboardingConsentPage() {
         </button>
       }
     >
-      <div className={styles.stepLabelMono}>STEP 2 / 4</div>
+      <OnboardingStepLabel step={2} />
       <h1 className={styles.title}>무엇을 보내는지 먼저 말씀드립니다</h1>
       <p className={styles.lede}>
         Expresso는 AI 모델을 씁니다. 무엇이 이 서비스 밖으로 나가는지 아셔야
@@ -70,7 +70,7 @@ export default async function OnboardingConsentPage() {
 
       <form action={grantConsentAction} id="consent" className={styles.consentList}>
         <input type="hidden" name="policyVersion" value={data.policyVersion} />
-        <input type="hidden" name="next" value="/onboarding/materials" />
+        <input type="hidden" name="next" value="/onboarding/first-portfolio" />
 
         {SCOPES.map((item) => {
           const state = byScope.get(item.scope);

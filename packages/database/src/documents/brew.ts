@@ -27,6 +27,11 @@ export interface BrewDoc {
   _id: string;
   userId: string;
   jobAnalysisId: string;
+  /**
+   * 사용자가 위저드 머리말에서 붙인 이름. 붙이기 전에는 없다.
+   * 0001 검증기가 추가 필드를 막지 않아 `designSystemRevisionId`처럼 마이그레이션 없이 쓴다.
+   */
+  title?: string | null;
   freeTitle?: string | null;
   freeBrief?: string | null;
   mode: "solo" | "collab";

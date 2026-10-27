@@ -7,7 +7,9 @@ import { Icon } from "@/components/ui/Icon";
 import { homeEngagement, recentPortfolios } from "@/lib/app-data";
 import { requireSession } from "@/lib/require-session";
 
-import { HomeHeader, HomeSearch } from "./HomeChrome";
+import { analyzePostingAction } from "../brew/new/new-brew-actions";
+import { resumeStep } from "../brew/new/resume-step";
+import { HomeHeader, HomeSearch, SavedSearches } from "./HomeChrome";
 import { MidRowSkeleton, PortfolioGridSkeleton } from "./HomeSkeleton";
 import styles from "./page.module.css";
 
@@ -44,7 +46,14 @@ export default async function HomePage() {
       <HomeHeader />
       <AppBody>
         <div className={styles.content}>
-          <HomeSearch />
+          <HomeSearch
+            savedSearches={
+              // 저장한 검색이 늦어도 검색 바는 먼저 선다. 기다리는 동안은 자리를 비운다.
+              <Suspense fallback={null}>
+                <SavedSearches accessToken={session.accessToken} />
+              </Suspense>
+            }
+          />
 
           {/*
             00 빈 상태 — 기록 0건이면 추천·일치도 UI를 모두 숨기고
@@ -130,27 +139,23 @@ async function Recommended({
           <div className={styles.card}>
             <div className={styles.cardHead}>
               <span className={styles.cardTitle}>지금 나에게 맞는 공고</span>
-              <div className={styles.segment}>
-                <button
-                  type="button"
-                  className={`${styles.segmentItem} ${styles.segmentItemActive}`}
-                >
-                  추천 {home.recommendedJobs.length}
-                </button>
-              </div>
               <span className={styles.cardNote}>
-                기록 {recordTotal}건 기준
+                추천 {home.recommendedJobs.length} · 기록 {recordTotal}건 기준
               </span>
               <Link href="/jobs" className={styles.cardLink}>
                 전체
               </Link>
             </div>
+            {/*
+              행은 공고 상세로, 「만들기」는 그 공고로 바로 분석을 시작한다(01 바로 시작과 같은 액션).
+              폼을 링크 안에 넣을 수 없어 둘을 나란히 둔다.
+            */}
             {home.recommendedJobs.slice(0, 3).map((job) => (
               <div key={job.id} className={styles.jobRow}>
                 <span className={styles.jobInitial}>
                   {job.company.slice(0, 1)}
                 </span>
-                <div className={styles.jobBody}>
+                <Link href={`/jobs/${job.id}` as Route} className={styles.jobBody}>
                   <div className={styles.jobHead}>
                     <span className={styles.jobName}>
                       {job.company} · {job.title}
@@ -163,42 +168,57 @@ async function Recommended({
                       {job.score}
                     </span>
                   </div>
-                </div>
-                <button type="button" className={styles.jobCta}>
-                  만들기
-                </button>
+                </Link>
+                <form action={analyzePostingAction}>
+                  <input type="hidden" name="jobPostingId" value={job.id} />
+                  <button type="submit" className={styles.jobCta}>
+                    만들기
+                  </button>
+                </form>
               </div>
             ))}
           </div>
 
           <div className={styles.sideColumn}>
             {home.activeBrews.slice(0, 1).map((brew) => (
-              <div key={brew.id} className={styles.plainCard}>
-                <div className={styles.draftHead}>
-                  <span className={styles.workingChip}>
-                    <span className={`${styles.workingDot} ex-anim-pulse`} />
-                    작성 중
-                  </span>
-                </div>
-                <div className={styles.draftTitle}>진행 중인 포트폴리오</div>
-                <div className={styles.draftMeta}>
-                  마지막 작업{" "}
-                  {new Date(brew.updatedAt).toLocaleString("ko-KR", {
-                    month: "long",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}
-                </div>
-                <button type="button" className={styles.draftCta}>
-                  이어서 답하기
-                </button>
-              </div>
+              <ActiveBrewCard key={brew.id} brew={brew} />
             ))}
           </div>
         </div>
       ) : null}
     </>
+  );
+}
+
+/** 진행 중인 제작 한 건. 멈춘 단계로 바로 돌아간다 — 01 「이어서 만들기」와 같은 규칙이다. */
+function ActiveBrewCard({ brew }: { brew: { id: string; status: string; updatedAt: string } }) {
+  const step = resumeStep(brew.status);
+  return (
+    <div className={styles.plainCard}>
+      <div className={styles.draftHead}>
+        <span className={styles.workingChip}>
+          <span className={`${styles.workingDot} ex-anim-pulse`} />
+          작성 중
+        </span>
+      </div>
+      <div className={styles.draftTitle}>진행 중인 포트폴리오</div>
+      <div className={styles.draftMeta}>
+        마지막 작업{" "}
+        {new Date(brew.updatedAt).toLocaleString("ko-KR", {
+          month: "long",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        })}
+      </div>
+      <Link
+        href={`/brew/${brew.id}/${step.segment}` as Route}
+        className={styles.draftCta}
+      >
+        {/* 질문 단계가 아니면 답할 것이 없다. 01 배너와 같은 말로 돌아간다. */}
+        {step.key === "counter" ? "이어서 답하기" : "이어서 만들기"}
+      </Link>
+    </div>
   );
 }
 
@@ -219,11 +239,6 @@ async function Portfolios({ accessToken }: { accessToken: string }) {
                   portfolioList.data.filter((item) => item.deployment).length
                 }개`}
           </span>
-          {portfolioList.page.hasNextPage ? (
-            <Link href="/home" className={styles.sectionLink}>
-              전체 보기
-            </Link>
-          ) : null}
         </div>
         <div className={styles.portfolioGrid}>
           {portfolioList.data.map((portfolio) => (

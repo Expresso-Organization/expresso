@@ -8,6 +8,7 @@ import { brews, interview } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 import { BrewFrame } from "../BrewFrame";
+import { brewTitle } from "../brew-title";
 import { Waiting } from "../Waiting";
 import {
   answerQuestionAction,
@@ -47,7 +48,7 @@ export default async function CounterPage({
   const drafting = brew.latestJob?.type === "interview" && brew.latestJob.status !== "succeeded";
   if (!brew.interviewSessionId || drafting) {
     return (
-      <BrewFrame brewId={brewId} step="counter" portfolioTitle={brew.posting?.title ?? null}
+      <BrewFrame brewId={brewId} step="counter" portfolioTitle={brewTitle(brew)}
         situation="아직 없음" tinted>
         <Waiting
           title="질문"
@@ -75,7 +76,7 @@ export default async function CounterPage({
     <BrewFrame
       brewId={brewId}
       step="counter"
-      portfolioTitle={brew.posting?.title ?? null}
+      portfolioTitle={brewTitle(brew)}
       situation={`남은 질문 ${talk.questionCount - talk.answeredCount}개`}
       tinted
     >

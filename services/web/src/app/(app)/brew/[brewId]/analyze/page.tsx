@@ -9,6 +9,7 @@ import { brews, jobAnalyses } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 import { BrewFrame } from "../BrewFrame";
+import { brewTitle } from "../brew-title";
 import { Reanalyze } from "./Reanalyze";
 import styles from "./page.module.css";
 
@@ -97,7 +98,7 @@ export default async function AnalyzePage({
   const quoted = requirements.filter((one) => one.sourceSpan.quote.trim() !== one.label.trim());
 
   return (
-    <BrewFrame brewId={brewId} step="analyze" situation={`요건 ${requirements.length}개 · 빈 곳 ${open.length}개`}>
+    <BrewFrame brewId={brewId} step="analyze" portfolioTitle={brewTitle(brew)} situation={`요건 ${requirements.length}개 · 빈 곳 ${open.length}개`}>
       <div className={styles.body}>
         <div className={styles.left}>
           <div className={styles.head}>
