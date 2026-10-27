@@ -18,7 +18,8 @@ import {
   type AgentEditDraft,
   type CreateAiEditProposal,
 } from "@expresso/contracts";
-import type { CareerRecordRevisionDoc, JsonValue } from "@expresso/database";
+import { type CareerDocumentSnapshotDoc, type CareerRecordRevisionDoc, type JsonValue } from "@expresso/database";
+import { BLOCKNOTE_SCHEMA_VERSION } from "@expresso/editor/blocknote";
 import { Binary } from "mongodb";
 
 import { inTransaction } from "../../platform/mongo-transaction.js";
@@ -32,6 +33,7 @@ import {
   type CareerDocumentRepository,
 } from "./repository.js";
 import { AiProposalService } from "./ai-proposals.js";
+import { blockNoteMarkdown, blockNoteStateVector, careerDocumentToBlockNoteState, restoreBlockNote } from "./blocknote-document.js";
 import type { AiProposalAdapter } from "./ai-adapter.js";
 
 type CreateRevisionInput = CareerRevision & { userId: string };
@@ -128,37 +130,76 @@ export class CareerDocumentService implements CareerDocumentApi {
         };
         await this.repository.insertSnapshot(snapshot, tx.session);
       }
-      const pending = await this.repository.updates(recordId, snapshot.serverSequence, tx.session);
-      if (pending.length > 10_000) throw new CareerDocumentError(503, "document compaction is required before bootstrap");
-      let document;
-      try {
-        document = reconstructYDocument([
-          encodeDocumentAsYUpdate(parseCareerDocument(snapshot.content)),
-          ...pending.map((row) => binaryBytes(row.update)),
-        ]);
-      } catch {
-        throw new CareerDocumentError(422, "invalid document update");
-      }
-      const documentVersion = record.documentVersion ?? snapshot.documentVersion + pending.length;
-      return CareerDocumentBootstrapSchema.parse({
-        record: {
-          id: record._id,
-          categoryId: record.categoryId,
-          title: record.title,
-          status: record.status,
-          origin: record.origin,
-          properties: record.properties,
-          bodyMd: record.bodyMd,
-          version: record.version,
-          updatedAt: record.updatedAt.toISOString(),
-        },
-        document,
-        snapshotVersion: snapshot.documentVersion,
-        documentVersion,
-        stateVectorBase64: Buffer.from(encodeDocumentStateVector(document)).toString("base64"),
-        pendingUpdateCount: pending.length,
-        sessionToken: this.token(userId, recordId),
-      });
+      if (snapshot.schemaVersion !== BLOCKNOTE_SCHEMA_VERSION) snapshot = await this.migrateToBlockNote(record, snapshot, tx.session);
+      return this.blockNoteBootstrap(userId, record, snapshot, tx.session);
+    });
+  }
+
+  /** v1 문서를 처음 열 때 BlockNote 스냅샷으로 옮깁니다. 이후 v1 업데이트는 압축 처리해 다시 보내지 않습니다. */
+  private async migrateToBlockNote(
+    record: { _id: string; userId: string; documentVersion?: number | null },
+    snapshot: CareerDocumentSnapshotDoc,
+    session: Parameters<CareerDocumentRepository["snapshot"]>[1],
+  ): Promise<CareerDocumentSnapshotDoc> {
+    const pending = await this.repository.updates(record._id, snapshot.serverSequence, session);
+    let source;
+    try {
+      source = reconstructYDocument([encodeDocumentAsYUpdate(parseCareerDocument(snapshot.content)), ...pending.map((row) => binaryBytes(row.update))]);
+    } catch {
+      throw new CareerDocumentError(422, "invalid document update");
+    }
+    const migrated = careerDocumentToBlockNoteState(source);
+    const documentVersion = record.documentVersion ?? 0;
+    const through = pending.at(-1)?.serverSequence ?? snapshot.serverSequence;
+    const next: CareerDocumentSnapshotDoc = {
+      _id: randomUUID(), userId: record.userId, recordId: record._id, documentVersion, version: documentVersion,
+      schemaVersion: BLOCKNOTE_SCHEMA_VERSION, content: migrated.blocks as unknown as JsonValue,
+      stateVector: new Binary(Buffer.from(blockNoteStateVector(migrated.state))), state: new Binary(Buffer.from(migrated.state)),
+      serverSequence: through, checksum: hashUpdate(migrated.state), actor: "migration", createdAt: new Date(),
+    };
+    await this.repository.insertSnapshot(next, session);
+    if (!await this.repository.setLatestSnapshot(record._id, record.userId, documentVersion, next._id, session)) {
+      throw new CareerDocumentError(409, "career document migration conflicted");
+    }
+    await this.repository.markCompacted(record._id, through, session);
+    // 옛 bodyMd 쓰기 경로(career 모듈)가 BlockNote 기록을 알아보게 표시합니다.
+    await this.repository.markBlockNote?.(record._id, record.userId, session);
+    return next;
+  }
+
+  private async restoreBlockNoteSnapshot(recordId: string, snapshot: CareerDocumentSnapshotDoc, session?: Parameters<CareerDocumentRepository["snapshot"]>[1]) {
+    if (!snapshot.state) throw new CareerDocumentError(422, "BlockNote snapshot has no state");
+    const pending = await this.repository.updates(recordId, snapshot.serverSequence, session);
+    if (pending.length > 10_000) throw new CareerDocumentError(503, "document compaction is required before bootstrap");
+    try {
+      return { pending, ...restoreBlockNote(binaryBytes(snapshot.state), pending.map((row) => binaryBytes(row.update))) };
+    } catch {
+      throw new CareerDocumentError(422, "invalid document update");
+    }
+  }
+
+  private async blockNoteBootstrap(
+    userId: string,
+    record: NonNullable<Awaited<ReturnType<CareerDocumentRepository["record"]>>>,
+    snapshot: CareerDocumentSnapshotDoc,
+    session?: Parameters<CareerDocumentRepository["snapshot"]>[1],
+  ): Promise<CareerDocumentBootstrap> {
+    const restored = await this.restoreBlockNoteSnapshot(record._id, snapshot, session);
+    // 기존 소비자(에이전트 채팅 등)는 v1 모양 document를 읽으므로 Markdown 투영에서 사본을 만듭니다.
+    const document = markdownToCareerDocument(await blockNoteMarkdown(restored.blocks));
+    return CareerDocumentBootstrapSchema.parse({
+      record: {
+        id: record._id, categoryId: record.categoryId, title: record.title, status: record.status, origin: record.origin,
+        properties: record.properties, bodyMd: record.bodyMd, version: record.version, updatedAt: record.updatedAt.toISOString(),
+      },
+      document,
+      snapshotVersion: snapshot.documentVersion,
+      documentVersion: record.documentVersion ?? snapshot.documentVersion + restored.pending.length,
+      stateVectorBase64: Buffer.from(blockNoteStateVector(restored.state)).toString("base64"),
+      pendingUpdateCount: restored.pending.length,
+      sessionToken: this.token(userId, record._id),
+      editor: "blocknote",
+      stateBase64: Buffer.from(restored.state).toString("base64"),
     });
   }
 
@@ -204,6 +245,7 @@ export class CareerDocumentService implements CareerDocumentApi {
       };
     });
 
+    this.scheduleBodyProjection(userId, input.recordId);
     if (this.enqueueCompaction) {
       const pending = await this.repository.updates(input.recordId);
       const byteLength = pending.reduce((total, update) => total + update.byteLength, 0);
@@ -212,6 +254,29 @@ export class CareerDocumentService implements CareerDocumentApi {
       }
     }
     return acknowledgement;
+  }
+
+  private readonly projectionTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  /** 본문 저장 2초 뒤 bodyMd를 BlockNote 본문의 Markdown으로 맞춥니다. 단일 API 프로세스 가정입니다. */
+  private scheduleBodyProjection(userId: string, recordId: string) {
+    if (!this.repository.setBodyMarkdown) return;
+    const previous = this.projectionTimers.get(recordId);
+    if (previous) clearTimeout(previous);
+    const timer = setTimeout(() => {
+      this.projectionTimers.delete(recordId);
+      void this.projectBodyMarkdown(userId, recordId).catch(() => undefined);
+    }, 2_000);
+    timer.unref?.();
+    this.projectionTimers.set(recordId, timer);
+  }
+
+  async projectBodyMarkdown(userId: string, recordId: string): Promise<string | null> {
+    const snapshot = await this.repository.snapshot(recordId);
+    if (!snapshot || snapshot.schemaVersion !== BLOCKNOTE_SCHEMA_VERSION) return null;
+    const restored = await this.restoreBlockNoteSnapshot(recordId, snapshot);
+    const markdown = await blockNoteMarkdown(restored.blocks);
+    await this.repository.setBodyMarkdown?.(recordId, userId, markdown);
+    return markdown;
   }
 
   async updatesSince(userId: string, recordId: string, afterSequence: number) {

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createEmptyCareerDocument, encodeDocumentAsYUpdate } from "@expresso/editor";
+import * as Y from "yjs";
 import { CareerEditorSession } from "./CareerEditorSession";
 
 const recordId = "11111111-1111-4111-8111-111111111111";
@@ -116,6 +117,41 @@ describe("CareerEditorSession", () => {
     expect(session.getSnapshot().proposal).toEqual({ proposalId: serverId, baseDocumentVersion: 1, status: "streaming", progress: { phase: "generating", completed: 1, total: 3 } });
     socket.receive({ protocolVersion: 1, recordId, sessionId: sync.sessionId, type: "error", code: "VERSION_CONFLICT", message: "stale" });
     expect(session.getSnapshot().status).toBe("conflict");
+    session.dispose();
+  });
+
+  it("streams BlockNote Yjs updates in 300ms batches and applies remote frames without echo", async () => {
+    vi.useFakeTimers();
+    const base = new Y.Doc();
+    base.getXmlFragment("document-store").insert(0, [new Y.XmlText("시작")]);
+    const state = Y.encodeStateAsUpdate(base);
+    const blocknoteBootstrap = { ...bootstrap, documentVersion: 7, editor: "blocknote", stateBase64: Buffer.from(state).toString("base64") };
+    const fetcher = vi.fn(async () => new Response(JSON.stringify(blocknoteBootstrap), { status: 200 }));
+    const session = new CareerEditorSession(recordId, { fetch: fetcher as typeof fetch, WebSocket: FakeSocket as unknown as typeof WebSocket, reconnectDelay: () => 0 });
+    await vi.waitFor(() => expect(FakeSocket.instances).toHaveLength(1));
+    const socket = FakeSocket.instances[0]!;
+    socket.open();
+    const sync = JSON.parse(socket.sent[0]!);
+    expect(sync.lastAckSequence).toBe(7);
+    const yDocument = session.getYDocument()!;
+    expect((yDocument.getXmlFragment("document-store").get(0) as Y.XmlText).toString()).toBe("시작");
+    const text = yDocument.getXmlFragment("document-store").get(0) as Y.XmlText;
+    text.insert(2, "a"); text.insert(3, "b"); text.insert(4, "c");
+    expect(socket.sent.filter((frame) => JSON.parse(frame).type === "update")).toHaveLength(0);
+    vi.advanceTimersByTime(300);
+    const updates = socket.sent.filter((frame) => JSON.parse(frame).type === "update");
+    expect(updates).toHaveLength(1);
+    // 보낸 묶음 하나로 서버 쪽 사본이 같은 글이 됩니다.
+    const server = new Y.Doc(); Y.applyUpdate(server, state); Y.applyUpdate(server, Buffer.from(JSON.parse(updates[0]!).updateBase64, "base64"));
+    expect((server.getXmlFragment("document-store").get(0) as Y.XmlText).toString()).toBe("시작abc");
+    // 원격 프레임은 적용하되 다시 보내지 않습니다.
+    const remote = new Y.Doc(); Y.applyUpdate(remote, Y.encodeStateAsUpdate(server));
+    const before = Y.encodeStateVector(remote);
+    (remote.getXmlFragment("document-store").get(0) as Y.XmlText).insert(0, "[원격]");
+    socket.receive({ protocolVersion: 1, recordId, sessionId: sync.sessionId, type: "update", sequence: 8, updateBase64: Buffer.from(Y.encodeStateAsUpdate(remote, before)).toString("base64"), actor: "user" });
+    vi.advanceTimersByTime(300);
+    expect(text.toString()).toBe("[원격]시작abc");
+    expect(socket.sent.filter((frame) => JSON.parse(frame).type === "update")).toHaveLength(1);
     session.dispose();
   });
 });

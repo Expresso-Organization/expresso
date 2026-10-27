@@ -62,6 +62,8 @@ export class AiProposalService {
   async create(userId: string, recordId: string, raw: CreateAiEditProposal): Promise<AiEditProposalDetail> {
     const input = CreateAiEditProposalSchema.parse(raw);
     const bootstrap = await this.documentService.bootstrap(userId, recordId);
+    // BlockNote 본문에는 아직 블록 명령 적용기가 없습니다. 검증 브랜치에서는 제안 생성을 막습니다.
+    if (bootstrap.editor === "blocknote") throw new CareerDocumentError(409, "AI proposals are not available for BlockNote documents yet");
     const blocks = blockMap(bootstrap.document.content);
     if (input.selection.blockIds.some((id) => !blocks.has(id))) throw new CareerDocumentError(409, "selected block no longer exists");
     const now = new Date();

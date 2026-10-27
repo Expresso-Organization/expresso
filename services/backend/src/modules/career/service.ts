@@ -117,8 +117,9 @@ export class CareerService implements CareerApi {
   async getRecord(userId: string, recordId: string) {
     const record = await mongoCollections(this.context.db).careerRecords.findOne({ _id: recordId, userId, deletedAt: null });
     if (!record) throw new CareerError(404, "career record not found");
-    const snapshot = await mongoCollections(this.context.db).careerDocumentSnapshots.findOne({ recordId }, { sort: { documentVersion: -1 } });
-    if (!snapshot) return mapMongoRecord(record);
+    const snapshot = await mongoCollections(this.context.db).careerDocumentSnapshots.findOne({ recordId }, { sort: { documentVersion: -1, schemaVersion: -1 } });
+    // BlockNote 문서(schemaVersion 2)는 편집기가 저장 뒤 bodyMd를 직접 투영합니다.
+    if (!snapshot || snapshot.schemaVersion === 2) return mapMongoRecord(record);
     try {
       const updates = await mongoCollections(this.context.db).careerDocumentUpdates.find({ recordId, serverSequence: { $gt: snapshot.serverSequence }, compactedAt: null }).sort({ serverSequence: 1 }).limit(10_001).toArray();
       if (updates.length > 10_000) throw new CareerError(503, "document compaction is required before legacy projection");
@@ -136,6 +137,10 @@ export class CareerService implements CareerApi {
       const existing = await records.findOne({ _id: recordId, userId, deletedAt: null }, { session: tx.session });
       if (!existing) throw new CareerError(404, "career record not found");
       if (existing.version !== expectedVersion) throw new CareerError(412, "career record version is stale");
+      if (input.bodyMd !== undefined && existing.documentSchemaVersion === 2) {
+        // BlockNote 본문에 Markdown을 덮어쓰면 편집 중인 Yjs 문서와 갈라집니다. 검증 브랜치에서는 막습니다.
+        throw new CareerError(409, "BlockNote document body is edited only through the editor");
+      }
       if (input.bodyMd !== undefined) {
         const latestSnapshot = await mongoCollections(tx.db).careerDocumentSnapshots.findOne(
           { recordId },

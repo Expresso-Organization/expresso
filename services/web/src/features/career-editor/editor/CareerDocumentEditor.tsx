@@ -2,6 +2,7 @@
 import { AgentChat } from "@/features/agent-chat/AgentChat";
 
 import { EditorContent, useEditor } from "@tiptap/react";
+import dynamic from "next/dynamic";
 import type { CareerCategory, CareerPropertyDefinitionV2, CareerRecordListItem } from "@expresso/contracts";
 import { useEffect, useRef, useState } from "react";
 
@@ -27,8 +28,21 @@ type CareerDocumentEditorProps = {
   onAiRequest?: ((request: AiPromptRequest) => void) | undefined;
 };
 
+// BlockNote는 브라우저 DOM이 있어야 그려지므로 서버 렌더에서 뺍니다.
+const BlockNoteBody = dynamic(() => import("./BlockNoteBody"), { ssr: false });
+
 export function CareerDocumentEditor(props: CareerDocumentEditorProps) {
   const session = useCareerEditorSession(props.recordId);
+  const { yDocument } = session;
+  if (yDocument) {
+    return (
+      <section className={styles.editor} data-mode={props.mode} aria-label="커리어 문서 편집기">
+        {props.record && props.category ? <PropertyList record={props.record} definitions={props.category.propertySchemaV2} categoryId={props.category.id} /> : null}
+        <div className={styles.content}><BlockNoteBody yDocument={yDocument} userName="나" /></div>
+        <AgentChat context={{ kind: "record", id: props.recordId }} contextLabel="현재 기록" />
+      </section>
+    );
+  }
   // 문서 bootstrap의 404는 서버가 이 계정에서 기록을 찾지 못했다는 뜻입니다.
   if (session.snapshot.status === "unavailable") return <section className={styles.editor} data-mode={props.mode} aria-label="커리어 문서"><div className={styles.content}><p className={styles.notice}>이 기록을 찾을 수 없습니다. 삭제되었거나 다른 계정의 기록입니다.</p></div></section>;
   return <CareerDocumentEditorBody {...props} session={session} />;

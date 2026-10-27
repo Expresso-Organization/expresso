@@ -50,7 +50,7 @@ export function useCareerEditorSession(recordId: string) {
     }
     return () => release(recordId, session);
   }, [recordId, session]);
-  return { session, snapshot, document: session.getDocument(), updateDocument: session.updateDocument };
+  return { session, snapshot, document: session.getDocument(), yDocument: session.getYDocument(), updateDocument: session.updateDocument };
 }
 
 export { CareerEditorSession };
