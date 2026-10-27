@@ -119,6 +119,22 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB career editing", () => {
     await expect(service.listSkillEvidence(otherId, skill.id)).rejects.toMatchObject({ statusCode: 404 });
   });
 
+  it("lists the category trash newest first and drops restored or expired records", async () => {
+    const first = (await service.createRecord(userId, randomUUID(), { categoryId, title: "먼저 지움", properties: {}, bodyMd: "" })).record;
+    const second = (await service.createRecord(userId, randomUUID(), { categoryId, title: "나중에 지움", properties: {}, bodyMd: "" })).record;
+    await service.trashRecord(userId, first.id, new Date("2026-08-01T00:00:00Z"));
+    await service.trashRecord(userId, second.id, new Date("2026-08-02T00:00:00Z"));
+    const listed = await service.listTrashedRecords(userId, categoryId, new Date("2026-08-03T00:00:00Z"));
+    expect(listed.filter((item) => [first.id, second.id].includes(item.id)).map((item) => [item.title, item.purgeAfter])).toEqual([
+      ["나중에 지움", "2026-09-01T00:00:00.000Z"],
+      ["먼저 지움", "2026-08-31T00:00:00.000Z"],
+    ]);
+    expect((await service.listTrashedRecords(userId, categoryId, new Date("2026-08-31T00:00:00Z"))).some((item) => item.id === first.id)).toBe(false);
+    await service.restoreRecord(userId, second.id, new Date("2026-08-03T00:00:00Z"));
+    expect((await service.listTrashedRecords(userId, categoryId, new Date("2026-08-03T00:00:00Z"))).some((item) => item.id === second.id)).toBe(false);
+    await expect(service.listTrashedRecords(userId, randomUUID())).rejects.toMatchObject({ statusCode: 404 });
+  });
+
   it("keeps quoted snapshots through trash, but refuses physical purge while cited", async () => {
     const record = (await service.createRecord(userId, randomUUID(), { categoryId, title: "보존", properties: {}, bodyMd: "본문" })).record;
     const db = mongoCollections(fixture.resource.db);

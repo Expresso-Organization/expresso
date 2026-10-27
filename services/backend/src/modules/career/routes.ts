@@ -10,6 +10,7 @@ import {
   CareerSkillIdParamsSchema,
   CareerRecordResponseSchema,
   CareerRecordSchema,
+  CareerTrashListResponseSchema,
   CareerViewConfigurationSchema,
   CreateCareerCategorySchema,
   CreateCareerRecordLinkSchema,
@@ -190,6 +191,13 @@ export function registerCareerRoutes(
     if (!options.careerService.createViewConfiguration) throw new HttpStatusError(501, "career view configurations are unavailable");
     const view = await options.careerService.createViewConfiguration(principal.user.id, categoryId, expectedVersion(request), input);
     return reply.code(201).header("etag", formatResourceEtag(view.version)).send(CareerViewResponseSchema.parse({ data: view }));
+  });
+
+  app.get(`${API_PREFIX}/career/categories/:categoryId/trash`, { preHandler }, async (request) => {
+    const principal = requireAuth(request);
+    const { categoryId } = parseParams(CareerCategoryIdParamsSchema, request);
+    if (!options.careerService.listTrashedRecords) throw new HttpStatusError(501, "career trash is unavailable");
+    return CareerTrashListResponseSchema.parse({ data: await options.careerService.listTrashedRecords(principal.user.id, categoryId) });
   });
 
   app.post(`${API_PREFIX}/career/categories/:categoryId/view-configurations/reorder`, { preHandler }, async (request) => {

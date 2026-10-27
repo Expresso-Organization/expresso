@@ -155,6 +155,9 @@ export const expressoOpenApiDocument = {
       get: { responses: { "200": { description: "Saved career views" } } },
       post: { responses: { "201": { description: "Saved career view" } } },
     },
+    "/v1/career/categories/{categoryId}/trash": {
+      get: { responses: { "200": { description: "Trashed career records in a category" } } },
+    },
     "/v1/career/records/{recordId}/relations": {
       put: { responses: { "200": { description: "Career relation replacement" } } },
     },
