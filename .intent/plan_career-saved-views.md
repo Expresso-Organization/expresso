@@ -30,6 +30,9 @@ date: 2026-10-28
 | `services/web/src/features/career-editor/views/{CareerViewShell,ViewToolbar,BoardView,TimelineView}.tsx` | 뷰 목록 · 검색 · 빈 화면 · 보드 · 타임라인 |
 | `services/web/src/features/career-editor/views/views.module.css` | 새 부품 · 375px |
 | `services/web/src/features/career-editor/views/*.test.tsx` | 탭 · 필터 · 보드 · 타임라인 · 검색 · 휴지통 시험 |
+| `services/backend/src/modules/career/{view-query,views.test}.ts` | 구현 중 추가: 값을 고르지 않은 필터 조건을 서버도 무시(화면과 같은 결과) |
+| `services/web/src/app/api/career/view-configurations/[viewId]/route.ts` (+ test) | 구현 중 추가: 본문 없는 DELETE에 content-type을 붙여 400이 나던 결함 |
+| `services/web/src/features/career-editor/views/{TableView,GalleryView,AnchoredMenu,CategoryMenu}.tsx` | 구현 중 추가: 빈 그룹 키 공유, 갤러리 기술 태그 옵션 이름, 탭 · 머리말 메뉴 |
 
 ## 작업 순서
 
@@ -44,6 +47,11 @@ date: 2026-10-28
 9. `pnpm typecheck` · `pnpm test` · `pnpm test:infra`, 검증 서버 화면 확인, PR.
 
 각 단계는 `feat:` · `fix:` 명사형 제목으로 따로 커밋한다.
+
+구현 중 바뀐 결정:
+
+- 타임라인 기본 시작 속성은 「첫 날짜 속성」이 아니라 「기록이 가장 많이 채운 날짜 속성」이다. 체험 DB의 학력 · 이력은 「기간」이 비어 있고 「시작 월」 · 「종료 월」에 값이 있어, 첫 속성을 고르면 다시 「날짜 없음」이 된다. 종료는 모든 기록에서 시작 이후인 다른 날짜 속성이다.
+- 뷰 순서 변경은 한 번에 하나만 보내고, 보내는 동안 쌓인 순서는 마지막 것만 보낸다. 연속 이동이 카테고리 버전 412를 내던 경쟁을 없앤다.
 
 ## 가장 위험한 단계
 
