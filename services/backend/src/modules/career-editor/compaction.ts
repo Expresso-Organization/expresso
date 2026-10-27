@@ -20,6 +20,8 @@ export async function compactDocument(
 ) {
   const snapshot = await repository.snapshot(recordId, session);
   if (snapshot && snapshot.serverSequence >= expectedSequence) {
+    // AI 적용 전 · 편집 이력처럼 다른 경로가 먼저 스냅샷을 남겼어도, 그 스냅샷이 덮은 업데이트는 압축된 것입니다.
+    await repository.markCompacted(recordId, snapshot.serverSequence, session);
     return { recordId, serverSequence: snapshot.serverSequence, snapshotId: snapshot._id };
   }
   const record = await repository.recordById(recordId, session);
