@@ -6,6 +6,7 @@ import {
   SESSION_KEEP_COOKIE,
   sessionCookieOptions,
 } from "@/lib/auth/session-cookie";
+import { publicSiteFromHost } from "@/lib/public-site";
 
 /**
  * 개발 로그인이 켜져 있으면 로그인 대신 그 문으로 보낸다.
@@ -39,8 +40,36 @@ function devLoginEnabled(): boolean {
  * 로그아웃처럼 보인다. 유지 플래그(`ex_session_keep`)가 있는 요청은 두 쿠키를 같은
  * 규칙으로 다시 찍는다. 플래그가 없는 세션은 브라우저 세션 쿠키라 손대지 않는다.
  */
+/**
+ * 세션이 필요한 구간. 로그인·가입·온보딩 도입부는 세션 없이 열려야 하고, `/`는
+ * 스스로 로그인 여부를 보고 갈 곳을 정한다. 발행된 `/site/:slug`는 누구나 읽고,
+ * 소유자 후보자 화면만 세션이 필요하다.
+ */
+const SESSION_PATHS = [
+  /^\/(?:home|jobs|analytics|career|account|brew|edit)(?:\/|$)/,
+  /^\/site\/[^/]+\/candidates(?:\/|$)/,
+  /^\/onboarding\/consent$/,
+];
+
+/**
+ * 공개 사이트 호스트(`{slug}.expresso.ai.kr`)의 요청.
+ *
+ * 그 호스트에서 열리는 것은 사이트 첫 화면과 방문 기록을 받는 라우트뿐이다. 앱 화면이
+ * 남의 이름 아래에서 열리면 안 된다. 사이트 화면이 부르는 `/_next/` 파일은 통과시킨다.
+ */
+function servePublicSite(request: NextRequest, slug: string | null): NextResponse {
+  const path = request.nextUrl.pathname;
+  if (slug && path === "/") return NextResponse.rewrite(new URL(`/site/${slug}${request.nextUrl.search}`, request.url));
+  if (slug && (path === "/api/analytics/events" || path.startsWith("/_next/"))) return NextResponse.next();
+  return new NextResponse(null, { status: 404 });
+}
+
 export function proxy(request: NextRequest) {
+  const site = publicSiteFromHost(request.headers.get("host"));
+  if (site.site) return servePublicSite(request, site.slug);
+
   const target = request.nextUrl.pathname + request.nextUrl.search;
+  if (!SESSION_PATHS.some((pattern) => pattern.test(request.nextUrl.pathname))) return NextResponse.next();
   const token = request.cookies.get(SESSION_COOKIE)?.value;
 
   if (token) {
@@ -90,19 +119,8 @@ function redirectToLogin(request: NextRequest, target: string): NextResponse {
 
 export const config = {
   /**
-   * 세션이 필요한 구간만 건다. 로그인·가입·온보딩 도입부는 세션 없이 열려야
-   * 하고, `/`는 스스로 로그인 여부를 보고 갈 곳을 정한다.
+   * 공개 사이트 호스트는 경로가 아니라 호스트로 갈리므로 모든 요청을 받는다. 호스트는
+   * 실행할 때 정해지는 값이라 matcher에 넣을 수 없다. 세션 구간은 `SESSION_PATHS`가 고른다.
    */
-  matcher: [
-    "/home/:path*",
-    "/jobs/:path*",
-    "/analytics/:path*",
-    "/career/:path*",
-    "/account/:path*",
-    "/brew/:path*",
-    "/edit/:path*",
-    // 발행된 `/site/:slug`는 누구나 읽는다. 소유자 후보자 화면만 세션이 필요하다.
-    "/site/:slug/candidates/:path*",
-    "/onboarding/consent",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.png|apple-icon.png).*)"],
 };

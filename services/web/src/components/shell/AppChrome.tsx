@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Suspense } from "react";
 
 import { homeEngagement, recentPortfolios, watchedJobs } from "@/lib/app-data";
+import { publicSiteHost } from "@/lib/public-site";
 import { requireSession } from "@/lib/require-session";
 
 import { AppShell } from "./AppShell";
@@ -45,7 +46,7 @@ async function AppSidebar() {
         name: portfolio.title,
         // 배포된 것은 주소를, 작성 중인 것은 진행 상황을 보여준다.
         meta: portfolio.deployment
-          ? `${portfolio.deployment.subdomain}.xpresso.me`
+          ? publicSiteHost(portfolio.deployment.subdomain)
           : `작성 중 · 섹션 ${portfolio.sectionCount}개`,
         status: portfolio.deployment ? "published" : "draft",
         ...(portfolio.deployment

@@ -24,8 +24,40 @@ function request(path: string, cookies: Record<string, string> = {}): NextReques
 
 describe("session proxy matcher", () => {
   it("공개 포트폴리오는 열고 후보자 편집 화면만 보호한다", () => {
-    expect(config.matcher).not.toContain("/site/:path*");
-    expect(config.matcher).toContain("/site/:slug/candidates/:path*");
+    delete process.env.DEV_LOGIN;
+    expect(proxy(request("/site/jiwon")).headers.get("location")).toBeNull();
+    expect(proxy(request("/site/jiwon/candidates")).status).toBe(307);
+  });
+
+  it("정적 파일은 프록시를 거치지 않는다", () => {
+    const [pattern] = config.matcher;
+    const matches = (path: string) => new RegExp(`^${pattern!}$`).test(path);
+    expect(matches("/_next/static/chunk.js")).toBe(false);
+    expect(matches("/favicon.ico")).toBe(false);
+    expect(matches("/home")).toBe(true);
+  });
+});
+
+describe("public site host", () => {
+  function onHost(host: string, path: string, cookies: Record<string, string> = {}) {
+    const cookie = Object.entries(cookies).map(([name, value]) => `${name}=${value}`).join("; ");
+    return proxy(new NextRequest(`https://${host}${path}`, { headers: { host, ...(cookie ? { cookie } : {}) } }));
+  }
+
+  it("주소의 첫 화면을 그 포트폴리오의 공개 사이트로 그린다", () => {
+    const response = onHost("jiwon.expresso.ai.kr", "/");
+    expect(new URL(response.headers.get("x-middleware-rewrite")!).pathname).toBe("/site/jiwon");
+  });
+
+  it("방문 기록 라우트만 더 통과시키고 앱 화면은 열지 않는다", () => {
+    expect(onHost("jiwon.expresso.ai.kr", "/api/analytics/events").headers.get("x-middleware-next")).toBe("1");
+    expect(onHost("jiwon.expresso.ai.kr", "/home", { [SESSION_COOKIE]: TOKEN }).status).toBe(404);
+    expect(onHost("jiwon.expresso.ai.kr", "/site/other").status).toBe(404);
+  });
+
+  it("예약어와 주소 규칙에 맞지 않는 이름에는 사이트가 없다", () => {
+    expect(onHost("dev.expresso.ai.kr", "/").status).toBe(404);
+    expect(onHost("a.b.expresso.ai.kr", "/").status).toBe(404);
   });
 });
 
