@@ -8,10 +8,11 @@ import {
 import type { CareerDocument } from "@expresso/editor/document";
 import * as Y from "yjs";
 
-let serverEditor: ServerBlockNoteEditor | undefined;
+const createEditor = () => ServerBlockNoteEditor.create({ schema: careerBlockNoteSchema } as never);
+let serverEditor: ReturnType<typeof createEditor> | undefined;
 // 서버 편집기는 jsdom을 띄우므로 한 번만 만듭니다.
-function editor(): ServerBlockNoteEditor {
-  serverEditor ??= ServerBlockNoteEditor.create({ schema: careerBlockNoteSchema } as never);
+function editor() {
+  serverEditor ??= createEditor();
   return serverEditor;
 }
 

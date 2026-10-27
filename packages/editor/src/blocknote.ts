@@ -19,23 +19,27 @@ const createCalloutBlockConfig = createBlockConfig(() => ({
   content: "inline" as const,
 }) as const);
 
+// 백엔드는 DOM 타입 없이 이 파일을 컴파일하므로 쓰는 DOM 기능만 좁혀 적습니다.
+interface MinimalElement { setAttribute(name: string, value: string): void; append(...nodes: MinimalElement[]): void; contentEditable: string; textContent: string | null }
+const dom = () => (globalThis as unknown as { document: { createElement(tag: string): MinimalElement } }).document;
+
 // 서버(jsdom)와 브라우저가 같은 DOM 구조를 쓰도록 React 없이 정의합니다.
 const createCalloutBlockSpec = createBlockSpec(createCalloutBlockConfig, {
   meta: { isolating: false },
   parse(element) {
-    return element.getAttribute("data-callout") === "true" ? {} : undefined;
+    return (element as unknown as { getAttribute(name: string): string | null }).getAttribute("data-callout") === "true" ? {} : undefined;
   },
   render(block) {
-    const dom = document.createElement("div");
-    dom.setAttribute("data-callout", "true");
-    const icon = document.createElement("span");
+    const root = dom().createElement("div");
+    root.setAttribute("data-callout", "true");
+    const icon = dom().createElement("span");
     icon.setAttribute("data-callout-icon", "true");
     icon.contentEditable = "false";
     icon.textContent = block.props.icon;
-    const contentDOM = document.createElement("div");
+    const contentDOM = dom().createElement("div");
     contentDOM.setAttribute("data-callout-content", "true");
-    dom.append(icon, contentDOM);
-    return { dom, contentDOM };
+    root.append(icon, contentDOM);
+    return { dom: root, contentDOM } as never;
   },
 });
 

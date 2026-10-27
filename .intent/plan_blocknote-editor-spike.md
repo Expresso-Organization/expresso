@@ -19,7 +19,7 @@ date: 2026-10-28
 | `services/web/package.json` · `services/backend/package.json` · `pnpm-lock.yaml` | BlockNote 0.56.0 고정(web: core · react · ariakit, backend: server-util · core · react · react-dom) |
 | `packages/contracts/src/career-editor.ts` | bootstrap에 선택 필드 `editor` · `stateBase64` 추가. `document`는 v1 모양 그대로 둔다(v2는 Markdown 투영 사본) |
 | `packages/database/src/documents/career-editor.ts` | 스냅샷 `state?: Binary` |
-| 새 `packages/editor/src/blocknote.ts` (+ test) · `package.json` · `tsconfig.json` | 웹 · 서버 공용 BlockNote 스키마(콜아웃 포함)와 v1 → BlockNote 변환. 렌더에 DOM이 필요해 `lib`에 `DOM` 추가 |
+| 새 `packages/editor/src/blocknote.ts` (+ test) · `package.json` · `tsconfig.json` | 웹 · 서버 공용 BlockNote 스키마(콜아웃 포함)와 v1 → BlockNote 변환. DOM 타입은 쓰는 기능만 좁혀 적어 백엔드 컴파일에 DOM lib가 필요 없다 |
 | `pnpm-workspace.yaml` | `yjs` 13.6.33 단일화. 두 벌이면 BlockNote가 두 번 로드되어 중단된다 |
 | 새 `services/backend/src/modules/career-editor/blocknote-document.ts` | v2 Yjs 복원, 상태 생성, Markdown 투영 |
 | 새 `services/backend/src/modules/career-editor/blocknote-document.test.ts` | 머리글 표 · 줄바꿈 복원, 두 클라이언트 병합, Markdown 투영 |
