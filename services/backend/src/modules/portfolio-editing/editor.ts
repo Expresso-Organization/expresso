@@ -44,6 +44,8 @@ export const EDITABLE_PATHS: Record<string, readonly string[]> = {
 };
 
 export interface EditContext {
+  /** 사용량을 남길 사용자. 사용자가 없는 작업만 null이다. */
+  userId: string | null;
   instruction: string;
   block: {
     kind: string;
@@ -183,7 +185,7 @@ export class AiBlockEditor implements BlockEditor {
           promptVersion: EDIT_PROMPT_VERSION,
         },
         PortfolioEditDraftSchema,
-        { check: (draft) => editViolations(draft.patches, context, paths) },
+        { userId: context.userId, check: (draft) => editViolations(draft.patches, context, paths) },
       ));
     } catch (error) {
       // 고쳐도 계약을 못 맞춘 출력은 편집 실패(422)로 알린다.

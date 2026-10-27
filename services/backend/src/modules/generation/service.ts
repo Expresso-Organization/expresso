@@ -19,6 +19,7 @@ import { writeSnapshot } from "../../platform/snapshot-payload.js";
 import { assertActiveRecordsForWrite } from "../career/index.js";
 import type { ConsentApi } from "../consent/index.js";
 import { findDesignSystemRevision, generationStyleFor } from "../design-systems/index.js";
+import { MongoEntitlementService } from "../entitlements/index.js";
 import { requireActiveUser } from "../identity/index.js";
 import {
   LAYOUT_PROMPT_VERSION,
@@ -105,6 +106,10 @@ export class GenerationService {
         if (existing.requestHash !== hash) throw new GenerationError(409, "idempotency key reused for another generation");
         return { jobId: existing._id, waitingBrewId: existing.recipeId === null ? existing.brewId : null };
       }
+      // 한도는 생성을 시작할 때 본다. 이번 달 AI 사용량(크레딧)이 플랜 한도에 닿았으면
+      // 새 생성만 막는다 — 편집 · 배포 · 기록 관리는 그대로 열린다(기능 명세서 T12.1.1).
+      const decision = await new MongoEntitlementService(tx).check(userId, "portfolio.generate");
+      if (!decision.allowed) throw new GenerationError(403, "monthly AI credits are exhausted");
       const now = new Date(); const id = randomUUID();
       await db.generationJobs.insertOne({
         _id: id, userId, brewId, recipeId: recipe?._id ?? null, templateId: style.templateId,
@@ -263,6 +268,7 @@ export class GenerationService {
     try {
       const titles = new Map(context.sections.map((section) => [section.recipeSectionId, section.title]));
       const design: LayoutDesignContext = {
+        userId: job.userId,
         sections: sectionIds.map((sectionId) => ({
           title: titles.get(sectionId) ?? "",
           blocks: output.blocks.flatMap((block, index) => block.recipeSectionId === sectionId ? [{
@@ -345,7 +351,7 @@ export class GenerationService {
       const prepared = await this.#context(claimed);
       if (writer.usesContract) await this.#consent?.require(claimed.userId, "generation");
       const subject = await this.#subject(claimed);
-      const context = buildWriterContext({ items: prepared.contextRows, evidence: prepared.evidence, subject, lockedTexts: prepared.lockedTexts });
+      const context = buildWriterContext({ userId: claimed.userId, items: prepared.contextRows, evidence: prepared.evidence, subject, lockedTexts: prepared.lockedTexts });
       const output = validateGenerationOutput(
         await writer.write(context),
         prepared.evidence.map(({ id, source_type, source_label, source_text }) => ({ id, sourceType: source_type, sourceLabel: source_label, sourceText: source_text })),

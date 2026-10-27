@@ -6,6 +6,8 @@ import { AnthropicAiClient } from "./anthropic.js";
 import { ClaudeCodeAiClient } from "./claude-code.js";
 import { CodexAiClient } from "./codex.js";
 import { FixtureAiClient, RecordingAiClient } from "./fixture.js";
+import { MeteredAiClient } from "./metered.js";
+import type { AiUsageSink } from "./usage-sink.js";
 
 /**
  * 설정에서 AI 클라이언트를 만든다.
@@ -13,8 +15,11 @@ import { FixtureAiClient, RecordingAiClient } from "./fixture.js";
  * `off`면 **null을 돌려준다** — 도메인은 그때 지금 쓰는 규칙 기반 구현을 그대로
  * 쓴다. 규칙 구현은 죽은 코드가 아니라 폴백이고, 그래서 키가 없어도 앱 전체가
  * 돈다. 테스트 122개가 오프라인으로 도는 이유이기도 하다.
+ *
+ * 싱크를 넘기면 돌려줄 클라이언트를 통째로 감싸 호출마다 사용량을 남긴다. 계약별
+ * 경로를 하나씩 감싸지 않는다 — 어느 경로로 가든 이 바깥 한 겹을 지난다.
  */
-export function createAiClient(config: RuntimeConfig): AiClient | null {
+export function createAiClient(config: RuntimeConfig, sink?: AiUsageSink): AiClient | null {
   const base = build(config, config.aiProvider ?? "off");
   if (!base) return null;
 
@@ -29,7 +34,8 @@ export function createAiClient(config: RuntimeConfig): AiClient | null {
     const routed = build(config, provider);
     if (routed) routes[contract] = routed;
   }
-  return Object.keys(routes).length > 0 ? new ContractRoutedAiClient(base, routes) : base;
+  const client = Object.keys(routes).length > 0 ? new ContractRoutedAiClient(base, routes) : base;
+  return sink ? new MeteredAiClient(client, sink) : client;
 }
 
 /**

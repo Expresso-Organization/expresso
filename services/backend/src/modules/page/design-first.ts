@@ -571,6 +571,7 @@ export async function designFirst(
       },
       schema,
       {
+        userId: context.userId,
         ...(hooks.thinking ? { onThinking: hooks.thinking } : {}),
         ...(extra.slots ? { onPartial: extra.slots.push, onPartialRestart: extra.slots.restart } : {}),
         ...(extra.check ? { check: extra.check } : {}),

@@ -78,7 +78,7 @@ export class AiProposalService {
     };
     const controller = new AbortController(); this.controllers.set(row._id, controller);
     let generated;
-    try { generated = await this.adapter.generate({ recordId, documentVersion: bootstrap.documentVersion, selectionBlockIds: input.selection.blockIds, selectedBlocks: input.selection.blockIds.map((id) => blocks.get(id)!), prompt: input.prompt, signal: controller.signal }); }
+    try { generated = await this.adapter.generate({ userId, recordId, documentVersion: bootstrap.documentVersion, selectionBlockIds: input.selection.blockIds, selectedBlocks: input.selection.blockIds.map((id) => blocks.get(id)!), prompt: input.prompt, signal: controller.signal }); }
     catch (error) { if (controller.signal.aborted) return this.get(userId, recordId, row._id); await markConflicted(); throw error; }
     finally { this.controllers.delete(row._id); }
     let proposal: AiEditProposal;

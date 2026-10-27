@@ -1,5 +1,6 @@
 import {
   EntitlementDecisionResponseSchema,
+  TOKENS_PER_CREDIT,
   type PlanCode,
 } from "@expresso/contracts";
 import { randomUUID } from "node:crypto";
@@ -63,7 +64,7 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_U
       const collections = mongoCollections(fixture.resource.db);
       const plans = await collections.plans.find().toArray();
       planIds = Object.fromEntries(plans.map(plan => [plan.code, plan._id])) as Record<PlanCode, string>;
-      freeQuota = plans.find(plan => plan.code === "free")!.generationQuota;
+      freeQuota = plans.find(plan => plan.code === "free")!.monthlyCredits;
       for (const planCode of ["free", "pro", "team"] as const) {
         const userId = randomUUID(); userIds[planCode] = userId;
         await collections.users.insertOne({ _id: userId, email: `${userId}@example.com`, displayName: planCode, planId: planIds[planCode], createdAt: new Date() });
@@ -128,6 +129,19 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_U
     await app.ready();
   }, 60_000);
 
+  /**
+   * 크레딧에 들어가는 토큰이 `billableTokens`인 호출 한 건.
+   *
+   * 모양은 측정한 생성 한 번의 평균이다(입력 8 · 캐시 읽기 81,423 · 나머지는 출력). 캐시
+   * 생성 136,562 토큰은 언제나 함께 넣는다 — 크레딧에 들어가면 아래 기대값이 모두 틀린다.
+   */
+  const usage = (userId: string | null, billableTokens: number, createdAt: Date) =>
+    mongoCollections(fixture!.resource.db).aiUsageEvents.insertOne({
+      _id: randomUUID(), userId, contract: "page_generation", model: "claude-opus-4-5",
+      inputTokens: 8, outputTokens: billableTokens - 8 - 81_423, cacheReadTokens: 81_423, cacheCreationTokens: 136_562,
+      costUsd: null, durationMs: 1_000, createdAt,
+    });
+
   afterAll(async () => {
     await app?.close();
     if (fixture) { await fixture.dispose(); return; }
@@ -159,7 +173,7 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_U
   it("resets exhausted generation quota at the KST month boundary", async () => {
     const freeUserId = userIds.free;
     if (!freeUserId) throw new Error("free user is missing");
-    if (fixture) await mongoCollections(fixture.resource.db).usageCounters.insertOne({ _id: randomUUID(), userId: freeUserId, periodStart: "2026-08-01", used: freeQuota, resetsAt: new Date("2026-08-31T15:00:00Z") });
+    if (fixture) await usage(freeUserId, freeQuota * TOKENS_PER_CREDIT, new Date("2026-08-15T03:00:00Z"));
     else await sql`
       insert into usage_counter (user_id, period_start, used, resets_at)
       values (${freeUserId}, '2026-08-01', ${freeQuota}, '2026-08-31 15:00:00')
@@ -213,6 +227,46 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_U
       where id = ${preservedRecordId} and user_id = ${teamUserId}
     `;
     expect(records).toEqual([{ id: preservedRecordId }]);
+  });
+  it.skipIf(engine === "mysql")("allows ten average generations on the free plan and blocks the eleventh", async () => {
+    const userId = randomUUID();
+    await mongoCollections(fixture!.resource.db).users.insertOne({ _id: userId, email: `${userId}@example.com`, displayName: "ten", planId: planIds.free, createdAt: new Date() });
+    const at = new Date("2026-10-20T03:00:00Z");
+    // 평균 생성 한 번은 캐시 생성을 빼면 98,078 토큰이다.
+    for (let index = 0; index < 10; index++) await usage(userId, 98_078, new Date("2026-10-10T03:00:00Z"));
+    await expect(entitlementService.check(userId, "portfolio.generate", at)).resolves.toMatchObject({
+      allowed: true, reason: "ENTITLED", usage: { used: 99, limit: 100, remaining: 1 },
+    });
+    await usage(userId, 98_078, new Date("2026-10-11T03:00:00Z"));
+    await expect(entitlementService.check(userId, "portfolio.generate", at)).resolves.toMatchObject({
+      allowed: false, reason: "QUOTA_EXHAUSTED", usage: { used: 108, limit: 100, remaining: 0 },
+    });
+  });
+
+  it.skipIf(engine === "mysql")("caps the paid plans with their monthly credits", async () => {
+    const userId = randomUUID();
+    await mongoCollections(fixture!.resource.db).users.insertOne({ _id: userId, email: `${userId}@example.com`, displayName: "pro", planId: planIds.pro, createdAt: new Date() });
+    await usage(userId, 1_001 * TOKENS_PER_CREDIT, new Date("2026-10-10T03:00:00Z"));
+    await expect(entitlementService.check(userId, "portfolio.generate", new Date("2026-10-20T03:00:00Z"))).resolves.toMatchObject({
+      planCode: "pro", allowed: false, reason: "QUOTA_EXHAUSTED", usage: { used: 1_001, limit: 1_000 },
+    });
+  });
+
+  it.skipIf(engine === "mysql")("counts only the account's own calls and rounds up once per period", async () => {
+    const userId = randomUUID();
+    await mongoCollections(fixture!.resource.db).users.insertOne({ _id: userId, email: `${userId}@example.com`, displayName: "small", planId: planIds.free, createdAt: new Date() });
+    for (let index = 0; index < 50; index++) {
+      await mongoCollections(fixture!.resource.db).aiUsageEvents.insertOne({
+        _id: randomUUID(), userId, contract: "search_interpret", model: "claude-haiku-5-5",
+        inputTokens: 100, outputTokens: 100, cacheReadTokens: 0, cacheCreationTokens: 0,
+        costUsd: null, durationMs: 10, createdAt: new Date("2026-10-10T03:00:00Z"),
+      });
+    }
+    await usage(null, 5_000_000, new Date("2026-10-10T03:00:00Z"));
+    await usage(userIds.pro!, 5_000_000, new Date("2026-10-10T03:00:00Z"));
+    await expect(entitlementService.check(userId, "portfolio.generate", new Date("2026-10-20T03:00:00Z"))).resolves.toMatchObject({
+      allowed: true, usage: { used: 1, remaining: 99 },
+    });
   });
 });
 }

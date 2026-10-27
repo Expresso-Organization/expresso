@@ -58,6 +58,8 @@ export interface PageMedia {
 }
 
 export interface PageGenerationContext {
+  /** 사용량을 남길 사용자. 사용자가 없는 작업만 null이다. */
+  userId: string | null;
   author?: { name: string };
   structuredContent?: StructuredPortfolioContent;
   /** 1단계에서 보존한 편집 가능한 맥락 초안. */
@@ -375,6 +377,7 @@ export class AiPageGenerator implements PageGenerator {
       },
       PageDraftSchema,
       {
+        userId: context.userId,
         // 마크업이 없는 지면은 버리지 않고 같은 대화에서 고쳐 받는다. 고친 뒤에도 없으면 아래 QA가 실패로 남긴다.
         check: (draft) => {
           const problem = markupProblem(draft.html, useKit);

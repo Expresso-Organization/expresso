@@ -359,7 +359,7 @@ export class StructuredPageGenerator implements PageGenerator {
           prompt: JSON.stringify(input),
         },
         StructuredContentModelSchema,
-        { ...(sink ? { onThinking: (tokens: number) => sink.thinking(tokens) } : {}), check: (data) => contentViolations(data, input, context) },
+        { userId: context.userId, ...(sink ? { onThinking: (tokens: number) => sink.thinking(tokens) } : {}), check: (data) => contentViolations(data, input, context) },
       );
       usages.push(result.usage);
       const remaining = contentViolations(result.data, input, context);
@@ -385,7 +385,7 @@ export class StructuredPageGenerator implements PageGenerator {
         ...(context.modelTier ? { modelTier: context.modelTier } : {}),
       },
       schema,
-      { ...(sink ? { onThinking: (tokens: number) => sink.thinking(tokens) } : {}), check: (data) => specViolations(setup, data) },
+      { userId: context.userId, ...(sink ? { onThinking: (tokens: number) => sink.thinking(tokens) } : {}), check: (data) => specViolations(setup, data) },
     );
     usages.push(result.usage);
     let accepted: AcceptedSpec & { attempt: number };
@@ -487,7 +487,7 @@ export class StructuredPageGenerator implements PageGenerator {
       const result = await this.ai.complete(
         { contract, system, prompt, promptVersion: PAGE_PROMPT_VERSION, ...(input.modelTier ? { modelTier: input.modelTier } : {}), ...(images ? { images } : {}) },
         schema,
-        check ? { check } : {},
+        { userId: input.userId, ...(check ? { check } : {}) },
       );
       usages.push(result.usage);
       return result.data;
@@ -576,6 +576,8 @@ export class StructuredPageGenerator implements PageGenerator {
 
 /** 다듬기 입력입니다. 저장된 초안에서 만듭니다. */
 export interface PageRefineInput extends SetupContext {
+  /** 사용량을 남길 사용자. */
+  userId: string | null;
   snapshot: { spec: unknown; content: unknown };
   instruction?: string | undefined;
   modelTier?: AiModelTier | undefined;
