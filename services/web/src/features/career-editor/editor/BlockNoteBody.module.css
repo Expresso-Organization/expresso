@@ -1,0 +1,37 @@
+/* BlockNote 테마 변수를 디자인 토큰에 연결합니다. 값은 tokens.css에서만 옵니다. */
+.body {
+  padding: 8px 0 48px;
+}
+
+.body :global(.bn-container) {
+  --bn-font-family: var(--ex-font-ui);
+  --bn-colors-editor-text: var(--ex-fg-body);
+  --bn-colors-editor-background: var(--ex-bg);
+  --bn-colors-menu-text: var(--ex-fg);
+  --bn-colors-menu-background: var(--ex-bg-chrome);
+  --bn-colors-tooltip-text: var(--ex-fg-on-inverse);
+  --bn-colors-tooltip-background: var(--ex-bg-inverse);
+  --bn-colors-hovered-text: var(--ex-fg-strong);
+  --bn-colors-hovered-background: var(--ex-bg-hover);
+  --bn-colors-selected-text: var(--ex-fg-on-accent);
+  --bn-colors-selected-background: var(--ex-accent);
+  --bn-colors-disabled-text: var(--ex-fg-faint);
+  --bn-colors-disabled-background: var(--ex-bg-muted);
+  --bn-colors-border: var(--ex-border);
+  --bn-colors-side-menu: var(--ex-fg-faint);
+}
+
+.body :global([data-callout]) {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--ex-border-soft);
+  border-radius: 6px;
+  background: var(--ex-bg-tint);
+}
+
+.body :global([data-callout-content]) {
+  flex: 1;
+  min-width: 0;
+}
