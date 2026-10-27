@@ -25,7 +25,6 @@ import { AiRecipePlanner } from "../modules/recipe/planner.js";
 import { createBrewJobProcessor } from "./processors/brew-jobs.js";
 import { createRecordCleanupProcessor } from "./processors/record-cleanup.js";
 import { PublishingService } from "../modules/publishing/index.js";
-import { createExportProcessor } from "./processors/export.js";
 import { AnalyticsService } from "../modules/analytics/index.js";
 import { createAnalyticsProcessor } from "./processors/analytics.js";
 import { EngagementService } from "../modules/engagement/index.js";
@@ -84,12 +83,15 @@ const analysisProcessor = createJobAnalysisProcessor(
   jobAnalysisService,
   ai ? new AiRequirementExtractor(ai) : new UnavailableRequirementExtractor(),
 );
+// 생성 완료 알림을 생성 처리기가 만들기 때문에 먼저 둔다.
+const engagementService = new EngagementService(database);
 // AI가 없으면 여기서 멈춘다 — 규칙으로 흉내 낸 문장과 요건을 제품에 두지 않는다.
 const generationProcessor = createGenerationProcessor(
   generationService,
   ai ? new AiSentenceWriter(ai) : new UnavailableSentenceWriter(),
   ai ? new AiLayoutDesigner(ai) : null,
   ai ? { service: pageService, generator: config.pageGenerationFormat === "html" ? new AiPageGenerator(ai) : structuredPageGenerator! } : null,
+  engagementService,
 );
 // 질문 생성 · 레시피 생성도 여기서 돈다. HTTP 요청은 잡만 만들고 바로 돌아간다.
 const brewJobService = new BrewJobService(database);
@@ -114,10 +116,8 @@ const brewJobProcessor = createBrewJobProcessor(brewJobService, {
 });
 const recordCleanupProcessor = createRecordCleanupProcessor(interviewService);
 const publishingService = new PublishingService(database, config.assetSigningSecret);
-const exportProcessor = createExportProcessor(publishingService);
 const analyticsService = new AnalyticsService(database, config.analyticsVisitorSalt ? { visitorSalt: config.analyticsVisitorSalt } : {});
 const analyticsProcessor = createAnalyticsProcessor(analyticsService);
-const engagementService = new EngagementService(database);
 const notificationProcessor = createNotificationProcessor(engagementService, new ConsoleNotificationProvider());
 const accountLifecycleService = new AccountLifecycleService(database);
 const careerDocumentService = new CareerDocumentService(database, config.assetSigningSecret);
@@ -134,7 +134,7 @@ const jobIngestService = new JobIngestService(
   // 저장소에 넣어 둔 파일이 있으면 그것이 먼저다(받아 올 수 없는 회사가 있다).
   new BundledMarkReader(new SiteMarkReader()),
 );
-const schedulingService = new SchedulingService(database, { analytics: analyticsService, accounts: accountLifecycleService, ingest: jobIngestService });
+const schedulingService = new SchedulingService(database, { analytics: analyticsService, accounts: accountLifecycleService, ingest: jobIngestService, notifications: engagementService });
 const scheduledJobProcessor = createScheduledJobProcessor(schedulingService);
 const queueWorker = createQueueWorker<Record<string, unknown>, Record<string, unknown>>({
   queueName: "domain-jobs",
@@ -148,7 +148,6 @@ const queueWorker = createQueueWorker<Record<string, unknown>, Record<string, un
     if (job.name === "recipe.draft") return brewJobProcessor(job);
     if (job.name === "portfolio.generate") return generationProcessor(job);
     if (job.name === "page.refine") return pageRefineProcessor(job);
-    if (job.name === "portfolio.export") return exportProcessor(job);
     if (job.name === "analytics.aggregate") return analyticsProcessor(job);
     if (job.name === "notification.deliver") return notificationProcessor(job);
     if (job.name === "scheduled.execute") return scheduledJobProcessor(job);

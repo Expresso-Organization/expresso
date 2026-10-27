@@ -35,7 +35,7 @@ export default async function MaterialsPage({
   ]);
 
   return (
-    <BrewFrame brewId={brewId} step="materials" situation="예상 3분">
+    <BrewFrame brewId={brewId} step="materials" situation={`기록 최대 ${materials.selectionLimit}건`}>
       <MaterialPicker
         brewId={brewId}
         materials={materials}

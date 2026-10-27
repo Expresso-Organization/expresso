@@ -100,3 +100,17 @@ pnpm test
   이어진다. 포트폴리오를 실제로 만들어 배포 화면에서 그 줄을 눈으로 보지는 않았다.
 - 계획에서 벗어난 것 — 좌측 탭 두 개가 `a`가 되면서 전역 `a:hover`가 글자색을 바꿨다.
   `.navItem:hover`에 `color`를 명시해 나머지 세 탭과 맞췄다(조건부로 적어 둔 항목).
+
+## 병합으로 바뀐 파일 (2026-10-27)
+
+`origin/main`(PR #121 이후)을 병합하면서 아래가 달라졌다.
+
+| 파일 | 무엇을 |
+|---|---|
+| `account/profile/page.tsx` · `loading.tsx` | 만들지 않는다 — 설정 지면의 구획으로 들어간다 |
+| `account/ResendVerificationForm.tsx` | `account/profile/`에서 올라왔다 |
+| `account/page.tsx` | `<section id="profile">`을 사용량 구획 앞에 추가, `formatDay` 추가 |
+| `account/loading.tsx` | 프로필 구획 두 줄을 대기 모양으로 추가 |
+| `account/AccountNav.tsx` | `ACCOUNT_SECTIONS` 맨 앞에 `profile` 항목 추가 (`active` 속성 없음) |
+| `account/page.module.css` | `.navItem:hover`의 `color` 명시 철회. `.dataAction:disabled` · `.verifyRow` · `.verifyResult`는 유지 |
+| `docs/architecture/frontend.md` · `packages/contracts/src/identity.ts` | 주소를 `/account#profile`로 |

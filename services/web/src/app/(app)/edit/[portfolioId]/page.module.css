@@ -52,15 +52,6 @@
   background: var(--ex-bg-tint);
 }
 
-.railDot {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--ex-accent);
-}
 
 .railFoot {
   margin-top: auto;
@@ -80,6 +71,7 @@
   font-size: var(--ex-text-xs);
   font-weight: 600;
   color: var(--ex-fg);
+  text-decoration: none;
 }
 
 .main {
@@ -390,27 +382,8 @@
   margin-bottom: 10px;
 }
 
-.suggestionActions {
-  display: flex;
-  gap: 8px;
-}
 
-.suggestionAccept {
-  border: none;
-  background: none;
-  padding: 0;
-  font-size: var(--ex-text-xs);
-  font-weight: 600;
-  color: #354da8;
-}
 
-.suggestionDismiss {
-  border: none;
-  background: none;
-  padding: 0;
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
-}
 
 .sectionsFoot {
   margin-top: 12px;
@@ -444,18 +417,7 @@
   white-space: nowrap;
 }
 
-.footSwatch {
-  width: 11px;
-  height: 11px;
-  border-radius: 3px;
-  background: #ff6f0f;
-}
 
-.footValue {
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-3xs);
-  color: var(--ex-fg-subtle);
-}
 
 /* ④ 캔버스 */
 .canvas {
@@ -467,6 +429,17 @@
   flex-direction: column;
   align-items: center;
   overflow: hidden;
+}
+
+/* 기기 폭 지면이 놓이는 자리. 배율을 키워 넘치면 이 안에서 옆으로 넘긴다. */
+.canvasArea {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  justify-content: safe center;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 /* 초안 다듬기 안내 — 미리보기 바로 위 한 줄 */
@@ -482,9 +455,8 @@
 }
 
 .browser {
-  width: 100%;
-  max-width: 700px;
-  flex: 1;
+  flex-shrink: 0;
+  height: 100%;
   min-height: 0;
   background: var(--ex-bg);
   border-radius: 10px;
@@ -530,6 +502,39 @@
   padding: 0 38px;
   overflow: auto;
   position: relative;
+}
+
+/* 기기 폭으로 그린 지면을 배율만큼 줄여 이 안에 채운다 */
+.browserBody {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.deviceFrame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  transform-origin: top left;
+}
+
+/* HTML 직접 보기 — 배포될 문서를 그대로 보인다 */
+.htmlSource {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 16px 18px;
+  overflow: auto;
+  font-family: var(--ex-font-mono);
+  font-size: var(--ex-text-2xs);
+  line-height: 1.6;
+  color: var(--ex-fg-body);
+  background: var(--ex-bg);
+  white-space: pre-wrap;
+  word-break: break-all;
 }
 
 .freePagePreview {
@@ -985,9 +990,14 @@
 }
 
 .zoomValue {
+  min-width: 40px;
+  border: none;
+  background: none;
+  padding: 0;
   font-family: var(--ex-font-mono);
   font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
+  text-align: center;
 }
 
 /* ⑤ 우측 패널 320px */
@@ -998,6 +1008,11 @@
   border-left: 1px solid var(--ex-border);
   display: flex;
   flex-direction: column;
+}
+
+/* 넓게 보기 — 채팅 · 속성이 길 때 패널을 키운다 */
+.panelWide {
+  width: 480px;
 }
 
 .panelHead {
@@ -1531,11 +1546,6 @@
   text-align: center;
 }
 
-.stepperUnit {
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-fg-subtle);
-  padding-right: 5px;
-}
 
 .propNote {
   font-size: var(--ex-text-2xs);
@@ -1712,6 +1722,37 @@
   color: var(--ex-fg);
   background: var(--ex-bg);
   box-shadow: 0 1px 2px rgba(22, 34, 58, 0.08);
+}
+
+.historyMore {
+  width: 100%;
+  margin: 4px 0 14px;
+  padding: 7px 0;
+  border: 1px solid var(--ex-border);
+  border-radius: 8px;
+  background: none;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-body);
+}
+
+/* 04 내 커리어에서 가져오기 */
+.recordImportToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 14px 12px;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-body);
+}
+
+.recordImport {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 14px 14px;
 }
 
 .historyDay {
@@ -2151,6 +2192,11 @@
 
   .stage[data-pane="sections"] .canvas,
   .stage[data-pane="panel"] .canvas {
+    display: none;
+  }
+
+  /* 좁은 화면에서는 패널이 이미 지면 폭을 다 쓴다 */
+  .panelWideToggle {
     display: none;
   }
 }

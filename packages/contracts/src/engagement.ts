@@ -7,11 +7,15 @@ export const NotificationSchema = z.strictObject({
   id: UuidSchema,
   kind: NotificationKindSchema,
   targetUrl: z.string().min(1).max(2_000),
+  /** 알림이 가리키는 대상 이름(포트폴리오 제목, 「회사 · 공고 제목」). 문장은 화면이 만든다. */
+  subject: z.string().max(300).nullable(),
   readAt: TimestampSchema.nullable(),
   deliveryStatus: z.enum(["queued", "sending", "sent", "failed", "suppressed"]),
   attempts: z.number().int().nonnegative(),
   createdAt: TimestampSchema,
 });
+
+export const NotificationReadAllResultSchema = z.strictObject({ updated: z.number().int().nonnegative() });
 
 export const UnifiedSearchQuerySchema = z.strictObject({
   q: z.string().min(1).max(200),
@@ -39,6 +43,7 @@ export const HomeReadModelSchema = z.strictObject({
 });
 
 export type NotificationKind = z.infer<typeof NotificationKindSchema>;
+export type Notification = z.infer<typeof NotificationSchema>;
 export type UnifiedSearchQuery = z.infer<typeof UnifiedSearchQuerySchema>;
 export type HomeReadModel = z.infer<typeof HomeReadModelSchema>;
 

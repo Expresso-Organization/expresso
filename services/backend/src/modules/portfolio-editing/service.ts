@@ -99,7 +99,8 @@ export class PortfolioEditingService {
       await db.blocks.updateOne({ _id: block._id, userId }, { $set: { content: after.content, style: after.style, sourceRecordId: after.sourceRecordId, syncState: after.syncState, locked: true } }, options);
       if (after.sourceRecordId) await db.recordUsages.updateOne({ userId, recordId: after.sourceRecordId, blockId: block._id }, { $set: { quotedText: String(after.content.text ?? "") }, $setOnInsert: { _id: randomUUID(), userId, recordId: after.sourceRecordId, blockId: block._id, firstUsedAt: new Date() } }, { ...options, upsert: true });
       const revisionId = randomUUID();
-      await db.revisions.insertOne({ _id: revisionId, userId, portfolioId: proposal.portfolioId, blockId: block._id, actor: "user", before: proposal.beforeState, after: proposal.afterState, proposalId: proposal._id, changeKind: "edit", summary: OPERATION_SUMMARY[proposal.operation], createdAt: new Date() }, options);
+      // 말로 시킨 고치기는 AI가 쓴 문장이다. 이력 필터 「AI 편집」이 이 값으로 거른다.
+      await db.revisions.insertOne({ _id: revisionId, userId, portfolioId: proposal.portfolioId, blockId: block._id, actor: proposal.operation === "instruct" ? "ai" : "user", before: proposal.beforeState, after: proposal.afterState, proposalId: proposal._id, changeKind: "edit", summary: OPERATION_SUMMARY[proposal.operation], createdAt: new Date() }, options);
       const changed = await db.portfolioEditProposals.findOneAndUpdate({ _id: proposal._id, userId, status: "pending" }, { $set: { status: "applied", appliedAt: new Date() } }, { ...options, returnDocument: "after" });
       if (!changed) throw new PortfolioEditingError(409, "edit proposal is no longer applicable");
       return { proposal: changed, revisionId };

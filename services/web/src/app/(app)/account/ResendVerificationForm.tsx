@@ -4,7 +4,7 @@ import { useActionState } from "react";
 
 import { resendVerificationAction, type ResendVerificationState } from "@/app/auth-actions";
 
-import styles from "../page.module.css";
+import styles from "./page.module.css";
 
 const INITIAL: ResendVerificationState = {};
 

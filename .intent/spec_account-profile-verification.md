@@ -171,3 +171,19 @@ pnpm test
 2. `/account`에서 좌측 「프로필」을 누르면 `/account/profile`이 열린다.
 3. 로그인 주소 줄의 「인증 메일 보내기」를 누르면 "메일을 보냈습니다"가 된다.
 4. 인증된 계정으로 같은 화면을 열면 버튼이 없고 확인 날짜가 보인다.
+
+## 병합 뒤 수정 (2026-10-27)
+
+`main`의 설정 화면이 한 지면 + 구획 링크 구조로 바뀌어(PR #121) 아래가 달라졌다.
+
+- `/account/profile` 라우트와 그 `loading.tsx`를 만들지 않는다. 「프로필」은
+  `account/page.tsx` 안의 `<section id="profile">`이고, `HashScroll`로 다른 구획과
+  같은 방식으로 이동한다.
+- `AccountNav`에 `active` 속성을 넣지 않는다. `ACCOUNT_SECTIONS` 맨 앞에
+  `{ id: "profile", label: "프로필", icon: "user" }`를 더하는 것으로 끝난다.
+- `ResendVerificationForm`은 `account/ResendVerificationForm.tsx`에 두고
+  `./page.module.css`를 쓴다.
+- `.navItem:hover`의 `color` 명시를 되돌렸다. 목록 항목이 모두 `a`가 되어 링크만
+  색이 달라지는 어긋남이 없어졌다 — 근거가 사라진 규칙은 남기지 않는다.
+- 줄의 구성과 문구는 그대로다. 값이 `dataTitle`, 상태가 `dataNote`,
+  미인증 경고가 `consentRenew`, 보낸 결과가 `verifyResult`.

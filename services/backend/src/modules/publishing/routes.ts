@@ -1,10 +1,8 @@
 import {
   API_PREFIX,
-  IdempotencyKeySchema,
   PublishPortfolioSchema,
   ReplaceResumeSchema,
   SlugSchema,
-  SubmitExportSchema,
 } from "@expresso/contracts";
 import type { FastifyInstance, preHandlerHookHandler } from "fastify";
 import { z } from "zod";
@@ -70,22 +68,6 @@ export function registerPublishingRoutes(app: FastifyInstance, options: {
     const params = PortfolioParams.safeParse(request.params);
     if (!params.success) throw new HttpStatusError(400, "invalid portfolio ID");
     return { data: await options.service.unpublish(user.id, params.data.id) };
-  });
-
-  app.post(`${API_PREFIX}/portfolios/:id/exports`, { preHandler: options.authenticateRequest }, async (request, reply) => {
-    const user = requireAuth(request).user;
-    const params = PortfolioParams.safeParse(request.params);
-    const body = SubmitExportSchema.safeParse(request.body);
-    const key = IdempotencyKeySchema.safeParse(request.headers["idempotency-key"]);
-    if (!params.success || !body.success || !key.success) throw new HttpStatusError(400, "invalid export request");
-    return reply.code(202).send({ data: await options.service.submitExport(user.id, params.data.id, key.data, body.data) });
-  });
-
-  app.get(`${API_PREFIX}/export-jobs/:id`, { preHandler: options.authenticateRequest }, async (request) => {
-    const user = requireAuth(request).user;
-    const params = JobParams.safeParse(request.params);
-    if (!params.success) throw new HttpStatusError(400, "invalid export job ID");
-    return { data: await options.service.getExport(user.id, params.data.id) };
   });
 
   app.post(`${API_PREFIX}/portfolios/:id/resume-assets`, { preHandler: options.authenticateRequest }, async (request, reply) => {

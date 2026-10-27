@@ -12,7 +12,7 @@ export const AuthenticatedUserSchema = z.strictObject({
   /**
    * 이 주소가 본인 것임을 확인한 시각. 아직이면 null.
    *
-   * 설정 · 프로필 화면이 이걸로 인증 안내를 그리고, 발행 라우트는 이걸로 문을 연다 — 인증 전에는
+   * 설정 화면의 프로필 구획이 이걸로 인증 안내를 그리고, 발행 라우트는 이걸로 문을 연다 — 인증 전에는
    * 포트폴리오를 공개 주소에 올릴 수 없다.
    */
   emailVerifiedAt: TimestampSchema.nullable(),

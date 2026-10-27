@@ -1,17 +1,15 @@
-import { createHash, createHmac, randomUUID, timingSafeEqual } from "node:crypto";
+import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 
-import { DeploymentSchema, DeploymentSummarySchema, GeneratedPageDeploymentSnapshotSchema, PageStyleGrammarSchema, PublicPortfolioSchema, SignedAssetSchema, pageDocument, type PublishPortfolio, type SubmitExport } from "@expresso/contracts";
-import { mongoCollections, type DeploymentDoc, type ExportAssetDoc, type ExportJobDoc, type JsonObject } from "@expresso/database";
+import { DeploymentSchema, DeploymentSummarySchema, GeneratedPageDeploymentSnapshotSchema, PageStyleGrammarSchema, PublicPortfolioSchema, SignedAssetSchema, pageDocument, type PublishPortfolio } from "@expresso/contracts";
+import { mongoCollections, type DeploymentDoc, type ExportAssetDoc, type JsonObject } from "@expresso/database";
 
 import type { MongoContext } from "../../platform/mongodb.js";
-import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { inTransaction, type MongoTransaction } from "../../platform/mongo-transaction.js";
 import { readSnapshot, snapshotRefFromStored, writeSnapshot } from "../../platform/snapshot-payload.js";
 import { MongoEntitlementService } from "../entitlements/index.js";
 import { requireActiveUser } from "../identity/index.js";
 import { PublishingError } from "./public.js";
 
-const digest = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 const duplicate = (error: unknown) => typeof error === "object" && error !== null && "code" in error && error.code === 11000;
 
 export class PublishingService {
@@ -72,19 +70,6 @@ export class PublishingService {
 
   async unpublish(userId: string, portfolioId: string) { const result = await inTransaction(this.context, async (tx) => { await requireActiveUser(tx, userId); return mongoCollections(tx.db).portfolios.updateOne({ _id: portfolioId, userId, currentDeploymentId: { $ne: null } }, { $set: { status: "unlisted", updatedAt: new Date() } }, { session: tx.session }); }); if (result.matchedCount !== 1) throw new PublishingError(404, "published portfolio not found"); return { portfolioId, status: "unlisted" as const }; }
   async rollback(userId: string, portfolioId: string, deploymentId: string) { const row = await inTransaction(this.context, async (tx) => { await requireActiveUser(tx, userId); const db = mongoCollections(tx.db); const options = { session: tx.session }; const target = await db.deployments.findOne({ _id: deploymentId, userId, portfolioId }, options); if (!target) throw new PublishingError(404, "deployment not found"); const changed = await db.portfolios.updateOne({ _id: portfolioId, userId }, { $set: { currentDeploymentId: target._id, status: "published", updatedAt: new Date() } }, options); if (changed.matchedCount !== 1) throw new PublishingError(404, "portfolio not found"); return target; }); return this.#dto(row); }
-
-  #exportDto(row: ExportJobDoc) { return { id: row._id, portfolioId: row.portfolioId, kind: row.kind, pageFormat: row.pageFormat ?? null, status: row.status, attempts: row.attempts, assetId: row.assetId ?? null, errorCode: row.errorCode ?? null }; }
-  async submitExport(userId: string, portfolioId: string, key: string, input: SubmitExport) {
-    const hash = digest(input); const row = await inTransaction(this.context, async (tx) => {
-      await requireActiveUser(tx, userId); const entitlement = await new MongoEntitlementService(tx).check(userId, "export.document"); if (!entitlement.allowed) throw new PublishingError(403, "document export entitlement required");
-      const db = mongoCollections(tx.db); const options = { session: tx.session }; const portfolio = await db.portfolios.findOne({ _id: portfolioId, userId }, options); if (!portfolio) throw new PublishingError(404, "portfolio not found");
-      const existing = await db.exportJobs.findOne({ userId, idempotencyKey: key }, options); if (existing) { if (existing.requestHash !== hash) throw new PublishingError(409, "idempotency key reused for another export"); return existing; }
-      const now = new Date(); const job: ExportJobDoc = { _id: randomUUID(), userId, portfolioId, deploymentId: portfolio.currentDeploymentId ?? null, kind: input.kind, pageFormat: input.pageFormat ?? null, status: "queued", attempts: 0, idempotencyKey: key, requestHash: hash, assetId: null, errorCode: null, createdAt: now, updatedAt: now };
-      await db.exportJobs.insertOne(job, options); await addMongoOutboxEvent(tx, { userId, topic: "portfolio.export", payload: { exportJobId: job._id, userId }, idempotencyKey: `portfolio-export:${job._id}` }); return job;
-    }); return this.#exportDto(row);
-  }
-  async getExport(userId: string, id: string) { const row = await mongoCollections(this.context.db).exportJobs.findOne({ _id: id, userId }); if (!row) throw new PublishingError(404, "export job not found"); return this.#exportDto(row); }
-  async processExport(id: string) { await inTransaction(this.context, async (tx) => { const db = mongoCollections(tx.db); const options = { session: tx.session }; const job = await db.exportJobs.findOne({ _id: id }, options); if (!job) throw new PublishingError(404, "export job not found"); await requireActiveUser(tx, job.userId); if (job.status === "done") return; const asset: ExportAssetDoc = { _id: randomUUID(), userId: job.userId, portfolioId: job.portfolioId, kind: job.kind, fileUrl: `exports/${job.userId}/${id}.${job.kind}`, pageFormat: job.pageFormat ?? null, downloadCount: 0, version: 1, accessNonce: randomUUID(), revokedAt: null, createdAt: new Date() }; await db.exportAssets.insertOne(asset, options); await db.exportJobs.updateOne({ _id: id, attempts: job.attempts, status: { $ne: "done" } }, { $set: { status: "done", attempts: job.attempts + 1, assetId: asset._id, errorCode: null, updatedAt: new Date() } }, options); }); const row = await mongoCollections(this.context.db).exportJobs.findOne({ _id: id }); if (!row) throw new Error("export job missing"); return this.#exportDto(row); }
 
   async replaceResume(userId: string, portfolioId: string, fileUrl: string) { return inTransaction(this.context, async (tx) => { await requireActiveUser(tx, userId); const entitlement = await new MongoEntitlementService(tx).check(userId, "export.document"); if (!entitlement.allowed) throw new PublishingError(403, "resume asset entitlement required"); const db = mongoCollections(tx.db); const options = { session: tx.session }; if (!await db.portfolios.findOne({ _id: portfolioId, userId }, options)) throw new PublishingError(404, "portfolio not found"); const previous = await db.exportAssets.find({ userId, portfolioId, kind: "resume_file" }).sort({ version: -1 }).limit(1).next(); await db.exportAssets.updateMany({ userId, portfolioId, kind: "resume_file", revokedAt: null }, { $set: { revokedAt: new Date(), accessNonce: randomUUID() } }, options); const asset: ExportAssetDoc = { _id: randomUUID(), userId, portfolioId, kind: "resume_file", fileUrl, pageFormat: null, downloadCount: 0, version: (previous?.version ?? 0) + 1, accessNonce: randomUUID(), revokedAt: null, createdAt: new Date() }; await db.exportAssets.insertOne(asset, options); return { id: asset._id, portfolioId, kind: asset.kind, version: asset.version }; }); }
   #signature(asset: ExportAssetDoc, expires: number) { return createHmac("sha256", this.#signingSecret).update(`${asset._id}:${asset.version}:${asset.accessNonce}:${expires}`).digest("hex"); }

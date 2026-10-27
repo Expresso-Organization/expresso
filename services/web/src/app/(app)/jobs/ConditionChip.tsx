@@ -2,11 +2,11 @@
 
 import type { Route } from "next";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
 
 import { Icon } from "@/components/ui/Icon";
 
 import styles from "./page.module.css";
+import { usePopover } from "./use-popover";
 
 export interface ConditionChipOption {
   label: string;
@@ -36,24 +36,7 @@ export function ConditionChip({
   options: ConditionChipOption[];
   offHref: Route;
 }) {
-  const [open, setOpen] = useState(false);
-  const box = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const close = (event: MouseEvent) => {
-      if (!box.current?.contains(event.target as Node)) setOpen(false);
-    };
-    const escape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("mousedown", close);
-    document.addEventListener("keydown", escape);
-    return () => {
-      document.removeEventListener("mousedown", close);
-      document.removeEventListener("keydown", escape);
-    };
-  }, [open]);
+  const { open, setOpen, box } = usePopover();
 
   return (
     <div className={styles.parsedChipBox} ref={box}>

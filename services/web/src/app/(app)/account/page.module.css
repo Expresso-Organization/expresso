@@ -19,6 +19,7 @@
 }
 
 .navItem {
+  text-decoration: none;
   display: flex;
   align-items: center;
   gap: 9px;
@@ -33,19 +34,10 @@
   transition: background var(--ex-motion-instant);
 }
 
-/* 색을 다시 적는 이유 — 화면이 있는 탭은 `a`라서 전역 `a:hover`가 글자색을 바꾼다.
-   그대로 두면 링크가 된 탭만 호버에서 진해져 나머지와 어긋난다. */
 .navItem:hover {
   background: var(--ex-bg-sunken);
-  color: var(--ex-fg-body);
 }
 
-.navItemActive,
-.navItemActive:hover {
-  background: var(--ex-bg-tint);
-  font-weight: 600;
-  color: var(--ex-fg);
-}
 
 .main {
   flex: 1;
@@ -61,13 +53,6 @@
   margin-bottom: 8px;
 }
 
-.intro {
-  font-size: var(--ex-text-md);
-  line-height: 1.75;
-  color: var(--ex-fg-muted);
-  max-width: 640px;
-  margin-bottom: 24px;
-}
 
 .sectionLabel {
   font-family: var(--ex-font-mono);
@@ -137,144 +122,26 @@
 }
 
 /* 요금제 3단 */
-.plans {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-}
 
-.plan {
-  background: var(--ex-bg);
-  border: 1px solid var(--ex-border);
-  border-radius: 16px;
-  padding: 20px 22px;
-  display: flex;
-  flex-direction: column;
-}
 
 /* 사용 중인 플랜만 espresso 보더 — 시그니처 문맥 */
-.planCurrent {
-  border: 1.5px solid var(--ex-accent);
-  background: var(--ex-accent-surface);
-}
 
-.planHead {
-  display: flex;
-  align-items: baseline;
-  gap: 9px;
-  margin-bottom: 5px;
-}
 
-.planName {
-  font-family: var(--ex-font-brand);
-  font-size: var(--ex-text-xl);
-  font-weight: 500;
-  letter-spacing: -0.02em;
-}
 
-.planBadge {
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-3xs);
-  letter-spacing: 0.08em;
-  color: var(--ex-accent-text);
-  background: var(--ex-accent-surface);
-  border-radius: 4px;
-  padding: 2px 6px;
-}
 
-.planPrice {
-  font-size: var(--ex-text-md);
-  color: var(--ex-fg-muted);
-  margin-bottom: 16px;
-}
 
-.planFeature {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 0;
-  font-size: var(--ex-text-sm);
-  color: var(--ex-fg-body);
-}
 
-.planCta {
-  margin-top: auto;
-  padding-top: 18px;
-}
 
-.planButton {
-  width: 100%;
-  font-size: var(--ex-text-sm);
-  font-weight: 600;
-  color: var(--ex-fg-body);
-  background: var(--ex-bg);
-  border: 1px solid var(--ex-border-soft);
-  border-radius: 9px;
-  padding: 10px;
-  transition: border-color var(--ex-motion-quick);
-}
 
-.planButton:hover {
-  border-color: var(--ex-border-firm);
-}
 
-.planButtonCurrent {
-  color: var(--ex-accent-text);
-  background: none;
-  border-color: rgba(154, 64, 48, 0.32);
-}
 
-.planButtonCurrent:hover {
-  border-color: var(--ex-accent);
-}
 
 /* 결제 내역 */
-.billingRow {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--ex-border-hair);
-}
 
-.billingDate {
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
-  width: 92px;
-  flex-shrink: 0;
-}
 
-.billingItem {
-  font-size: var(--ex-text-sm);
-  color: var(--ex-fg);
-  flex: 1;
-  min-width: 0;
-}
 
-.billingAmount {
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-sm);
-  color: var(--ex-fg);
-}
 
-.billingState {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-status-success-text);
-  background: var(--ex-status-success-surface);
-  border-radius: 6px;
-  padding: 4px 9px;
-  white-space: nowrap;
-}
 
-.billingReceipt {
-  border: none;
-  background: none;
-  padding: 0;
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-body);
-  white-space: nowrap;
-}
 
 /* 데이터 관리 */
 .dataRow {
@@ -308,6 +175,7 @@
 }
 
 .dataAction {
+  text-decoration: none;
   margin-left: auto;
   font-size: var(--ex-text-sm);
   font-weight: 600;
@@ -324,6 +192,18 @@
 .dataAction:disabled {
   opacity: 0.6;
   cursor: default;
+}
+
+.dataActions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.dataError {
+  margin-top: 6px;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-status-danger-text);
 }
 
 .dataActionDanger {
@@ -481,10 +361,9 @@
   }
 }
 
-/* 좁은 화면 — 사용량 카드와 요금제가 한 줄에 하나씩 */
+/* 좁은 화면 — 사용량 카드가 한 줄에 하나씩 */
 @media (max-width: 1023px) {
-  .usageGrid,
-  .plans {
+  .usageGrid {
     grid-template-columns: minmax(0, 1fr);
   }
 }

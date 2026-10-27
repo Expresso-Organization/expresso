@@ -5,6 +5,7 @@ import {
   PageLibraryResultSchema,
   type PageLibrarySearch,
   type RegeneratePage,
+  type RestorePageRevision,
   type EditStructuredPage,
   type CreateMediaBlock,
   AnalyticsDashboardResponseSchema,
@@ -37,6 +38,10 @@ import {
   type CareerViewConfiguration,
   CurrentUserResponseSchema,
   HomeReadModelSchema,
+  NotificationReadAllResultSchema,
+  NotificationSchema,
+  PageInfoSchema,
+  UnifiedSearchItemSchema,
   JobPostingDetailResponseSchema,
   JobInterestResponseSchema,
   BrewStateResponseSchema,
@@ -48,7 +53,6 @@ import {
   type EntitlementCapability,
   ApplyPortfolioEditResultSchema,
   type PublishPortfolio,
-  type SubmitExport,
   PortfolioEditProposalSchema,
   type ConsentScope,
   type PortfolioEditCommand,
@@ -68,6 +72,8 @@ import {
   PortfolioListResponseSchema,
   PortfolioRevisionsResponseSchema,
   RecentJobSearchListResponseSchema,
+  SavedJobSearchListResponseSchema,
+  SavedJobSearchResponseSchema,
   AnalyzedJobPostingResponseSchema,
   ImportedJobPostingResponseSchema,
   JobSourceListResponseSchema,
@@ -77,10 +83,15 @@ import {
   DesignSystemRevisionResponseSchema,
   DesignSelectionResponseSchema,
   GenerationJobStatusResponseSchema,
+  AccountExportSchema,
+  DeletionRequestSchema,
+  NotificationPreferenceSchema,
+  type NotificationKind,
   type CreateBrew,
   type CreateFreeBrew,
   type SubmitGeneration,
   type SubmitJobPosting,
+  type SaveJobSearch,
   type SaveDesignSelection,
   type ListJobPostingsQuery,
   type ListPortfolioRevisionsQuery,
@@ -91,7 +102,7 @@ import {
 } from "@expresso/contracts";
 import { z } from "zod";
 
-import { API_BASE_URL, request, requestNoContent } from "./client";
+import { API_BASE_URL, request, requestNoContent, requestText } from "./client";
 
 export const auth = {
   signup: (input: Signup) =>
@@ -160,6 +171,10 @@ export const auth = {
 };
 
 const HomeResponseSchema = z.strictObject({ data: HomeReadModelSchema });
+const UnifiedSearchResponseSchema = z.strictObject({ data: z.array(UnifiedSearchItemSchema), page: PageInfoSchema });
+const NotificationListResponseSchema = z.strictObject({ data: z.array(NotificationSchema) });
+const NotificationResponseSchema = z.strictObject({ data: NotificationSchema });
+const NotificationReadAllResponseSchema = z.strictObject({ data: NotificationReadAllResultSchema });
 
 export const engagement = {
   /** 00 홈 — 초안 · 포트폴리오 · 추천 공고 · 지표를 한 번에 읽는다. */
@@ -167,6 +182,28 @@ export const engagement = {
     request(`${API_PREFIX}/home`, HomeResponseSchema, {
       accessToken,
       cache: "no-store",
+    }),
+  /** 00c 통합 검색 — 기록 · 포트폴리오 · 공고 제목. */
+  search: (accessToken: string, q: string, limit = 20) =>
+    request(`${API_PREFIX}/search`, UnifiedSearchResponseSchema, {
+      accessToken,
+      query: { q, limit },
+      cache: "no-store",
+    }),
+  notifications: (accessToken: string) =>
+    request(`${API_PREFIX}/notifications`, NotificationListResponseSchema, {
+      accessToken,
+      cache: "no-store",
+    }),
+  markNotificationRead: (accessToken: string, id: string) =>
+    request(`${API_PREFIX}/notifications/${id}/read`, NotificationResponseSchema, {
+      method: "POST",
+      accessToken,
+    }),
+  markAllNotificationsRead: (accessToken: string) =>
+    request(`${API_PREFIX}/notifications/read-all`, NotificationReadAllResponseSchema, {
+      method: "POST",
+      accessToken,
     }),
 };
 
@@ -246,6 +283,42 @@ export const entitlements = {
     ),
 };
 
+/** 09 설정 — 알림 종류마다 켜고 끈다. */
+export const notificationSettings = {
+  list: (accessToken: string) =>
+    request(`${API_PREFIX}/notification-preferences`, z.strictObject({ data: z.array(NotificationPreferenceSchema) }), {
+      accessToken,
+      cache: "no-store",
+    }),
+  set: (accessToken: string, kind: NotificationKind, enabled: boolean) =>
+    request(`${API_PREFIX}/notification-preferences/${kind}`, z.strictObject({ data: NotificationPreferenceSchema }), {
+      method: "PUT",
+      accessToken,
+      body: { enabled },
+    }),
+};
+
+/** 09 설정 — 내 데이터 내보내기 · 계정 삭제와 취소. */
+export const account = {
+  exportData: (accessToken: string) =>
+    request(`${API_PREFIX}/account/export`, z.strictObject({ data: AccountExportSchema }), {
+      accessToken,
+      cache: "no-store",
+    }),
+  /** 취소 코드는 이 응답에만 한 번 실린다. */
+  requestDeletion: (accessToken: string) =>
+    request(`${API_PREFIX}/account/deletion`, z.strictObject({ data: DeletionRequestSchema }), {
+      method: "POST",
+      accessToken,
+    }),
+  /** 로그인 없이 취소 코드로 되돌린다. */
+  cancelDeletion: (cancellationToken: string) =>
+    request(`${API_PREFIX}/account/deletion/cancel`, z.strictObject({ data: DeletionRequestSchema }), {
+      method: "POST",
+      body: { cancellationToken },
+    }),
+};
+
 export const publishing = {
   /** 방문자가 읽는 불변 배포 사본. 인증된 편집본을 다시 읽지 않는다. */
   public: (slug: string) =>
@@ -285,19 +358,6 @@ export const publishing = {
       `${API_PREFIX}/portfolios/${portfolioId}/publication`,
       z.strictObject({ data: z.strictObject({ portfolioId: z.uuid(), status: z.literal("unlisted") }) }),
       { accessToken, method: "DELETE" },
-    ),
-
-  /** PDF · 덱 내보내기. 잡을 돌려주고 워커가 만든다. */
-  submitExport: (
-    accessToken: string,
-    portfolioId: string,
-    input: SubmitExport,
-    idempotencyKey: string,
-  ) =>
-    request(
-      `${API_PREFIX}/portfolios/${portfolioId}/exports`,
-      z.strictObject({ data: z.looseObject({ id: z.uuid(), status: z.string() }) }),
-      { accessToken, method: "POST", body: input, idempotencyKey },
     ),
 };
 
@@ -818,6 +878,28 @@ export const jobs = {
       query: limit ? { limit } : {},
     }),
 
+  /** 최근 검색 한 건을 지운다. 남의 것이나 없는 것은 404. */
+  deleteRecentSearch: (accessToken: string, recentSearchId: string) =>
+    requestNoContent(`${API_PREFIX}/jobs/recent-searches/${recentSearchId}`, {
+      accessToken,
+      method: "DELETE",
+    }),
+
+  /** 저장한 검색. 같은 검색을 두 번 저장하지 않도록 화면이 저장 전에 본다. */
+  savedSearches: (accessToken: string) =>
+    request(`${API_PREFIX}/jobs/saved-searches`, SavedJobSearchListResponseSchema, {
+      accessToken,
+      cache: "no-store",
+    }),
+
+  /** 검색을 저장한다(201). 한 사람당 10개를 넘으면 409. */
+  saveSearch: (accessToken: string, input: SaveJobSearch) =>
+    request(`${API_PREFIX}/jobs/saved-searches`, SavedJobSearchResponseSchema, {
+      accessToken,
+      method: "POST",
+      body: input,
+    }),
+
   /**
    * 공고를 직접 붙여넣는다. 공고와 분석이 함께 생긴다(202).
    *
@@ -1030,4 +1112,16 @@ export const page = {
       z.object({ data: GeneratedPageSchema }),
       { method: "POST", accessToken, body },
     ),
+
+  /** 고른 판을 새 판으로 다시 쌓는다(되돌리기). */
+  restore: (accessToken: string, portfolioId: string, body: RestorePageRevision) =>
+    request(
+      `${API_PREFIX}/portfolios/${portfolioId}/page/restore`,
+      z.object({ data: GeneratedPageSchema }),
+      { method: "POST", accessToken, body },
+    ),
+
+  /** 지금 판의 공개 문서. 미리보기 라우트가 그대로 넘긴다. */
+  document: (accessToken: string, portfolioId: string) =>
+    requestText(`${API_PREFIX}/portfolios/${portfolioId}/page/document`, { accessToken, cache: "no-store" }),
 };

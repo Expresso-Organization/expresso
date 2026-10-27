@@ -1,7 +1,6 @@
 "use server";
 
 import { SlugSchema } from "@expresso/contracts";
-import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 
 import { ApiError } from "@/lib/api/client";
@@ -15,7 +14,7 @@ import { requireSession } from "@/lib/require-session";
  * 주소를 바꿔도 옛 주소가 30일간 새 주소로 넘어간다. 공개 중단조차 문서를
  * 지우지 않는다 — 여기서 되돌릴 수 없는 일은 없다.
  *
- * 네 가지를 **한 문으로** 받는다. 따로 두면 각자 마지막 결과를 들고 있어서,
+ * 세 가지(배포 · 되돌리기 · 공개 중단)를 **한 문으로** 받는다. 따로 두면 각자 마지막 결과를 들고 있어서,
  * 되돌린 뒤에도 "배포했습니다"가 화면에 남는다.
  */
 export interface DeployResult {
@@ -23,7 +22,6 @@ export interface DeployResult {
   published?: { version: number; slug: string };
   rolledBackTo?: number;
   unpublished?: boolean;
-  exportQueued?: "pdf" | "deck";
   error?: string;
 }
 
@@ -84,18 +82,6 @@ export async function deployAction(
       await publishing.unpublish(session.accessToken, portfolioId);
       refresh();
       return { unpublished: true };
-    }
-
-    if (intent === "export") {
-      const kind = formData.get("kind");
-      if (kind !== "pdf" && kind !== "deck") return {};
-      await publishing.submitExport(
-        session.accessToken,
-        portfolioId,
-        { kind, pageFormat: kind === "pdf" ? "a4" : null },
-        randomUUID(),
-      );
-      return { exportQueued: kind };
     }
   } catch (error) {
     return { error: message(error) };

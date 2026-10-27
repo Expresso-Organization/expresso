@@ -23,7 +23,7 @@ export default function Loading() {
               되돌릴 수 있습니다.
             </p>
 
-            {skelKeys(4).map((section) => (
+            {skelKeys(3).map((section) => (
               <div key={section} className={styles.section}>
                 <Skel w={78} h={9} style={{ marginBottom: 12 }} />
                 <div className={styles.card}>
