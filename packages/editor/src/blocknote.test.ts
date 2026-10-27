@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { blockNoteText, careerDocumentText, careerDocumentToBlockNote } from "./blocknote.js";
-import type { CareerBlock, CareerDocument } from "./document.js";
+import { blockNoteText, blockNoteToCareerDocument, careerDocumentText, careerDocumentToBlockNote, deterministicUuid } from "./blocknote.js";
+import { parseCareerDocument, type CareerBlock, type CareerDocument } from "./document.js";
 
 const id = () => crypto.randomUUID();
 const text = (type: string, value: string, attrs: Record<string, unknown> = {}): CareerBlock => ({ id: id(), type, attrs, text: [{ text: value }] });
@@ -55,5 +55,43 @@ describe("careerDocumentToBlockNote", () => {
     const { blocks, degraded } = careerDocumentToBlockNote(doc(text("evidence", "근거 문장", { source: "job:1" }), text("future.widget", "미래")));
     expect(blocks.map((block) => block.content)).toEqual(["근거 문장", "미래"]);
     expect(degraded).toEqual({ evidence: 1, "future.widget": 1 });
+  });
+});
+
+describe("blockNoteToCareerDocument", () => {
+  it("keeps block ids and groups list items under a stable list id", () => {
+    const listItemId = id();
+    const source = doc(
+      text("paragraph", "문단"),
+      { id: id(), type: "bulletList", attrs: {}, content: [{ id: listItemId, type: "listItem", attrs: {}, text: [{ text: "항목" }] }] },
+      { id: id(), type: "taskList", attrs: {}, content: [text("listItem", "끝", { checked: true })] },
+    );
+    const first = blockNoteToCareerDocument(careerDocumentToBlockNote(source).blocks);
+    const second = blockNoteToCareerDocument(careerDocumentToBlockNote(source).blocks);
+    expect(first.content.map((block) => block.type)).toEqual(["paragraph", "bulletList", "taskList"]);
+    expect(first.content[0]?.id).toBe(source.content[0]?.id);
+    expect(first.content[1]?.content?.[0]?.id).toBe(listItemId);
+    expect(first.content[1]?.id).toBe(second.content[1]?.id);
+    expect(first.content[2]?.content?.[0]?.attrs).toEqual({ checked: true });
+  });
+
+  it("maps styles, links, header rows and media back", () => {
+    const blocks = [
+      { id: id(), type: "paragraph", content: [{ type: "text", text: "밑줄", styles: { underline: true, textColor: "red" } }, { type: "link", href: "https://e.x", content: [{ type: "text", text: "링크", styles: {} }] }] },
+      { id: id(), type: "table", content: { type: "tableContent", headerRows: 1, rows: [{ cells: [[{ type: "text", text: "머리", styles: {} }]] }, { cells: [{ type: "tableCell", content: [{ type: "text", text: "값", styles: {} }] }] }] } },
+      { id: id(), type: "image", props: { url: "/v1/media/11111111-1111-4111-8111-111111111111", caption: "그림" } },
+    ];
+    const result = blockNoteToCareerDocument(blocks);
+    expect(result.content[0]?.text).toEqual([{ text: "밑줄", marks: [{ type: "underline" }] }, { text: "링크", marks: [{ type: "link", attrs: { href: "https://e.x" } }] }]);
+    expect(result.content[1]?.content?.map((row) => row.content?.map((cell) => `${cell.type}:${cell.text?.[0]?.text}`))).toEqual([["tableHeader:머리"], ["tableCell:값"]]);
+    expect(result.content[2]?.attrs).toEqual({ mediaId: "11111111-1111-4111-8111-111111111111", alt: "그림" });
+    // 계약(UUID · 중복 없는 ID)을 통과해야 AI 제안 · 비교 화면이 읽을 수 있습니다.
+    expect(() => parseCareerDocument(result)).not.toThrow();
+  });
+
+  it("makes valid and repeatable ids", () => {
+    expect(deterministicUuid("a")).toBe(deterministicUuid("a"));
+    expect(deterministicUuid("a")).not.toBe(deterministicUuid("b"));
+    expect(deterministicUuid("a")).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-8[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
   });
 });
