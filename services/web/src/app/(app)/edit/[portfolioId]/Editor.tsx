@@ -500,7 +500,7 @@ export function Editor({
 
                 {portfolio.sections.length === 0 ? (
                   <div className={styles.heroLede}>
-                    아직 섹션이 없습니다. 레시피로 돌아가 구성을 만든 뒤 추출하면
+                    아직 섹션이 없습니다. 디자인 선택으로 돌아가 다시 만들면
                     이 자리에 문장이 채워집니다.
                   </div>
                 ) : (

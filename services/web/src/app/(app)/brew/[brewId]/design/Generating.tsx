@@ -8,7 +8,8 @@ import styles from "./page.module.css";
 /**
  * 추출 중.
  *
- * 설계 출력이 오기 전까지는 `GenerationWait`이 선다 — 위에는 브루잉, 10초 뒤부터 그 아래에 모델이 읽고
+ * 구성(레시피)이 끝나기 전에 맡겼으면 먼저 구성을 기다린다(`recipePending`). 설계 출력이 오기 전까지는
+ * `GenerationWait`이 선다 — 위에는 브루잉, 10초 뒤부터 그 아래에 모델이 읽고
  * 있는 입력 묶음. 설계가 오면 `LivePreview`가 그 자리에 **만들어지는 지면을 그대로 세운다.**
  *
  * 끝나면 이 화면을 거치지 않는다. 03 화면이 끝난 생성을 06 다듬기로 넘긴다(`page.tsx`).
@@ -22,18 +23,22 @@ export function Generating({
   title,
   reading,
   brewingLeftMs,
+  recipePending,
 }: {
   brewId: string;
   generation: NonNullable<BrewState["latestGeneration"]>;
   title: string;
   reading: WaitReading;
   brewingLeftMs: number;
+  /** 구성(레시피)이 끝나기 전에 맡긴 생성이고 구성 잡이 아직 도는가. */
+  recipePending: boolean;
 }) {
   return (
     <LivePreview jobId={generation.id} title={title}>
       <GenerationWait
         reading={reading}
         brewingLeftMs={brewingLeftMs}
+        recipePending={recipePending}
         actions={
           <form action={refreshGenerationAction}>
             <input type="hidden" name="brewId" value={brewId} />

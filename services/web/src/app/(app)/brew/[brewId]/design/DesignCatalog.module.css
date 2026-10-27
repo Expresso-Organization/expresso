@@ -1084,8 +1084,12 @@
   color: var(--ex-status-danger-text);
 }
 
-.inspectorFooter form button,
-.continueLink {
+/* 구성을 만드는 중 — 알리는 말이지 오류가 아니다. */
+.selectionSummary em[data-tone="info"] {
+  color: var(--ex-fg-muted);
+}
+
+.inspectorFooter form button {
   height: 40px;
   display: inline-flex;
   align-items: center;
@@ -1108,11 +1112,6 @@
 .inspectorFooter form button:disabled {
   background: var(--ex-bg-muted);
   color: var(--ex-fg-faint);
-}
-
-.continueLink {
-  border: 1px solid var(--ex-border);
-  color: var(--ex-fg-body);
 }
 
 .inspectorFullscreen {
@@ -1271,7 +1270,6 @@
     width: 100%;
   }
 
-  .continueLink,
   .inspectorFooter form,
   .inspectorFooter form button {
     flex: 1;

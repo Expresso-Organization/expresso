@@ -2,6 +2,8 @@
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+
 import { GenerationWait, type WaitReading } from "./GenerationWait";
 import { BREWING_MS, brewingLeftMs } from "./wait-timing";
 
@@ -76,6 +78,20 @@ describe("생성 기다림 화면", () => {
   it("공고 없이 시작한 제작에서는 공고를 분석한다고 적지 않는다", () => {
     render(<GenerationWait reading={{ ...reading, posting: null }} brewingLeftMs={BREWING_MS} actions={null} />);
     expect(screen.queryByText("채용 공고 분석 중...")).toBeNull();
+  });
+
+  it("구성을 기다리는 동안에는 10초가 지나도 브루잉에 머물고 구성 문장을 돌린다", () => {
+    const waiting = { ...reading, sections: [] };
+    const { rerender } = render(<GenerationWait reading={waiting} brewingLeftMs={0} recipePending actions={null} />);
+    expect(visible()).toHaveLength(0);
+    expect(screen.getByText("고른 기록 읽는 중...")).toBeTruthy();
+    act(() => vi.advanceTimersByTime(BREWING_MS * 3));
+    expect(visible()).toHaveLength(0);
+
+    // 구성이 끝나 다시 읽으면 지금처럼 지면으로 넘어간다.
+    rerender(<GenerationWait reading={reading} brewingLeftMs={0} recipePending={false} actions={null} />);
+    act(() => vi.advanceTimersByTime(0));
+    expect(visible().map((group) => group.getAttribute("aria-label"))).toEqual(["채용 공고", "디자인", "섹션", "기록"]);
   });
 
   it("공고 없이 시작했거나 디자인을 못 찾았으면 그 구역만 빠진다", () => {

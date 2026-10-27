@@ -632,6 +632,7 @@
   border-radius: 9px;
   padding: 9px 14px;
   white-space: nowrap;
+  cursor: pointer;
   transition: border-color var(--ex-motion-quick);
 }
 

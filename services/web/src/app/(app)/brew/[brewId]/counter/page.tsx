@@ -1,4 +1,3 @@
-import type { Route } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -11,6 +10,7 @@ import { BrewFrame } from "../BrewFrame";
 import { Waiting } from "../Waiting";
 import {
   answerQuestionAction,
+  continueToDesignAction,
   replaceQuestionAction,
   startInterviewAction,
 } from "../brew-actions";
@@ -163,7 +163,7 @@ export default async function CounterPage({
                   <h1 className={styles.questionText}>다 답하셨습니다.</h1>
                   <div className={styles.questionRationale}>
                     <Icon name="info" size={13} />
-                    <span>이제 이 대화와 기록으로 레시피를 짤 수 있습니다.</span>
+                    <span>이제 이 대화와 기록으로 포트폴리오를 구성할 수 있습니다.</span>
                   </div>
                 </div>
               </div>
@@ -273,12 +273,16 @@ export default async function CounterPage({
           <div className={styles.sideFoot}>
             <span className={styles.sideFootText}>
               {talk.answeredCount === 0
-                ? "한 개만 답해도\n레시피를 만들 수 있습니다"
-                : "언제든 레시피로\n넘어갈 수 있습니다"}
+                ? "한 개만 답해도\n디자인을 고를 수 있습니다"
+                : "언제든 디자인 선택으로\n넘어갈 수 있습니다"}
             </span>
-            <Link href={`/brew/${brewId}/outline` as Route} className={styles.skip}>
-              {talk.answeredCount === talk.questionCount ? "레시피 만들기" : "건너뛰고 진행"}
-            </Link>
+            {/* 구성(레시피)은 여기서 맡기고 바로 디자인을 고른다. 화면 단계는 없다. */}
+            <form action={continueToDesignAction}>
+              <input type="hidden" name="brewId" value={brewId} />
+              <button type="submit" className={styles.skip}>
+                {talk.answeredCount === talk.questionCount ? "디자인 고르기" : "건너뛰고 진행"}
+              </button>
+            </form>
           </div>
         </aside>
       </div>

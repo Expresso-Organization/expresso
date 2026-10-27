@@ -160,7 +160,7 @@ export const NOTIFICATIONS = {
   unread: 3,
   filters: ["전체", "마감", "생성", "방문"],
   items: [
-    { title: "당근 · 서버 지원 마감 D-2", body: "레시피까지 끝냈습니다. 생성만 남았습니다", at: "10분 전", unread: true },
+    { title: "당근 · 서버 지원 마감 D-2", body: "구성까지 끝냈습니다. 생성만 남았습니다", at: "10분 전", unread: true },
     { title: "토스 지원용 생성 완료", body: "6개 섹션 · 편집으로 이동하기", at: "2시간 전", unread: true },
     { title: "토스 도메인에서 방문 4건", body: "정산 섹션에서 평균 42초 머물렀습니다", at: "어제", unread: true },
     { title: "새 공고 7건이 조건과 맞습니다", body: '저장한 검색 "정산 · 백엔드"', at: "2일 전", unread: false },

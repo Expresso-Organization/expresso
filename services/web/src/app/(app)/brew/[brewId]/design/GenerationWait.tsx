@@ -6,6 +6,7 @@ import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { Icon } from "@/components/ui/Icon";
 
 import { REQUIREMENT_KIND_LABEL } from "../requirement-kind";
+import { useRefreshWhile } from "../use-refresh-while";
 import { Brewing, WAVE_MS, type BrewingRecord } from "./Brewing";
 import { DesignThumb, type DesignCatalogEntry } from "./DesignCatalog";
 import { cubicBezier, FEED_MOVE_MS, FEED_STEP_MS, feedSnaps, nextSnap, parseCubicBezier, parseMotion } from "./feed-steps";
@@ -36,7 +37,19 @@ const BREWING_LINES: { text: string; needsPosting?: true }[] = [
   { text: "사용자 기록 정리 중..." },
   { text: "디자인 스타일 확인 중..." },
   { text: "채용 공고 분석 중...", needsPosting: true },
-  { text: "레시피 섹션 확인 중..." },
+  { text: "섹션 구성 확인 중..." },
+];
+/**
+ * 구성(레시피)이 끝나기 전에 맡긴 생성. 지금 도는 것은 구성 잡이라, 그 잡이 하는 일을 적는다 — 무엇을 담을지 ·
+ * 어떤 순서로 · 무슨 메시지로(`RecipeV2Section`). 단계가 아니라 한 가지 일을 나눠 적은 것이라 어느 줄이 떠 있어도
+ * 그 순간 사실이다.
+ */
+const RECIPE_LINES: { text: string; needsPosting?: true }[] = [
+  { text: "고른 기록 읽는 중..." },
+  { text: "기록을 공고 요건과 맞추는 중...", needsPosting: true },
+  { text: "담을 섹션 고르는 중..." },
+  { text: "섹션 순서 정하는 중..." },
+  { text: "섹션마다 핵심 메시지 고르는 중..." },
 ];
 const READING_LINES = ["포트폴리오 생성 중...", "지면 구성 설계 중...", "섹션별 형태 고르는 중...", "섹션별 분량 정하는 중..."];
 /** 입력 묶음이 뜬 뒤 한 줄이 바뀌는 간격. 지면에 구역이 세 번 올라올 때마다 한 번이라 읽기 전에 넘어가지 않는다. */
@@ -59,13 +72,20 @@ const READING_LINE_MS = FEED_STEP_MS * 3;
 export function GenerationWait({
   reading,
   brewingLeftMs,
+  recipePending = false,
   actions,
 }: {
   reading: WaitReading;
   brewingLeftMs: number;
+  /**
+   * 구성(레시피)이 끝나기 전에 맡긴 생성이고 구성 잡이 아직 도는가. 그동안은 지면에 올릴 섹션이 없으므로 브루잉이
+   * 시간과 상관없이 가운데에 머물고, 1.5초마다 다시 읽어 구성이 끝나면 지금처럼 지면으로 넘어간다.
+   */
+  recipePending?: boolean;
   actions: ReactNode;
 }) {
-  const [phase, setPhase] = useState<"brewing" | "reading">(brewingLeftMs > 0 ? "brewing" : "reading");
+  // 구성을 기다리는 동안에는 시작한 지 10초가 지났어도 브루잉이다 — 지면에 올릴 섹션이 아직 없다.
+  const [phase, setPhase] = useState<"brewing" | "reading">(brewingLeftMs > 0 || recipePending ? "brewing" : "reading");
   /** 브루잉에서 넘어온 입력 묶음인가. 처음부터 입력 묶음이면 올라오는 동작이 없다. */
   const [entering, setEntering] = useState(false);
   const root = useRef<HTMLDivElement>(null);
@@ -74,15 +94,17 @@ export function GenerationWait({
   /** 넘어가기 직전 잔의 자리와 결. 위로 올라간 뒤 그 자리에서부터 옮긴다(FLIP). */
   const before = useRef<{ top: number; duration: number; easing: string } | null>(null);
 
+  useRefreshWhile(recipePending);
+
   useEffect(() => {
-    if (phase !== "brewing") return;
+    if (phase !== "brewing" || recipePending) return;
     const timer = window.setTimeout(() => {
       before.current = top.current && root.current ? measure(top.current, root.current) : null;
       setEntering(true);
       setPhase("reading");
     }, brewingLeftMs);
     return () => window.clearTimeout(timer);
-  }, [phase, brewingLeftMs]);
+  }, [phase, brewingLeftMs, recipePending]);
 
   useLayoutEffect(() => {
     const first = before.current;
@@ -100,7 +122,9 @@ export function GenerationWait({
 
   useSheetBuild(feed, phase === "reading", entering);
 
-  const brewingLines = BREWING_LINES.filter(({ needsPosting }) => !needsPosting || reading.posting).map(({ text }) => text);
+  const brewingLines = (recipePending ? RECIPE_LINES : BREWING_LINES)
+    .filter(({ needsPosting }) => !needsPosting || reading.posting)
+    .map(({ text }) => text);
 
   return (
     <div
@@ -112,7 +136,9 @@ export function GenerationWait({
     >
       <div ref={top} className={styles.top}>
         <Brewing records={reading.records} quiet={phase === "reading"} />
-        {phase === "brewing"
+        {phase === "brewing" && recipePending
+          ? <Caption key="recipe" lines={brewingLines} every={READING_LINE_MS} />
+          : phase === "brewing"
           ? <Caption key="brewing" lines={brewingLines} every={BREWING_MS / brewingLines.length} />
           : <Caption key="reading" lines={READING_LINES} every={READING_LINE_MS} />}
       </div>

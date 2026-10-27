@@ -2,11 +2,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const submit = vi.hoisted(() => vi.fn());
 const select = vi.hoisted(() => vi.fn());
+const createRecipe = vi.hoisted(() => vi.fn());
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 const redirect = vi.hoisted(() => vi.fn());
 vi.mock("next/navigation", () => ({ redirect }));
 vi.mock("@/lib/require-session", () => ({ requireSession: async () => ({ accessToken: "test-session" }) }));
-vi.mock("@/lib/api/endpoints", () => ({ generation: { submit }, designSystems: { select } }));
+vi.mock("@/lib/api/endpoints", () => ({ generation: { submit }, designSystems: { select }, brews: { createRecipe } }));
 
 import { ApiError } from "@/lib/api/client";
 
@@ -28,6 +29,7 @@ describe("디자인 시스템으로 생성 요청", () => {
   beforeEach(() => {
     submit.mockReset();
     select.mockReset();
+    createRecipe.mockReset();
   });
 
   it("고른 페이지 짜임새를 생성 요청에 함께 보낸다", async () => {
@@ -57,8 +59,23 @@ describe("디자인 시스템으로 생성 요청", () => {
     expect(redirect).toHaveBeenCalledWith(`/brew/${BREW}/design`);
   });
 
-  it("레시피나 디자인 ID가 올바르지 않으면 요청하지 않는다", async () => {
-    expect((await startGenerationAction({ error: null }, form({ recipeId: "" }))).error).toBeTruthy();
+  it("구성이 아직이면 구성 잡을 먼저 맡기고 브루로 생성을 요청한다", async () => {
+    const order: string[] = [];
+    createRecipe.mockImplementation(async () => { order.push("recipe"); });
+    submit.mockImplementation(async () => { order.push("submit"); });
+    expect(await startGenerationAction({ error: null }, form({ recipeId: "" }))).toEqual({ error: null });
+    expect(createRecipe).toHaveBeenCalledWith("test-session", BREW, `recipe:${BREW}`);
+    expect(submit).toHaveBeenCalledWith("test-session", { brewId: BREW, designSystemRevisionId: REVISION }, expect.any(String));
+    expect(order).toEqual(["recipe", "submit"]);
+  });
+
+  it("구성이 있으면 구성 잡을 다시 맡기지 않는다", async () => {
+    await startGenerationAction({ error: null }, form());
+    expect(createRecipe).not.toHaveBeenCalled();
+  });
+
+  it("구성이나 디자인 ID가 올바르지 않으면 요청하지 않는다", async () => {
+    expect((await startGenerationAction({ error: null }, form({ recipeId: "x" }))).error).toBeTruthy();
     expect((await startGenerationAction({ error: null }, form({ designSystemRevisionId: "x" }))).error).toBeTruthy();
     expect(select).not.toHaveBeenCalled();
     expect(submit).not.toHaveBeenCalled();
