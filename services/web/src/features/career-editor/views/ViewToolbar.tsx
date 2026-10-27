@@ -104,7 +104,7 @@ export function ViewToolbar({ category, view, records, search, onSearch, onChang
     <div className={styles.toolbarActions}>
       {searching
         ? <span className={styles.searchField}><Icon name="magnifying-glass" size={13} /><input ref={searchRef} type="search" aria-label="기록 검색" value={search} onChange={(event) => onSearch(event.target.value)} onKeyDown={(event) => { if (event.key === "Escape") closeSearch(); }} onBlur={() => { if (!search) setSearching(false); }} /><button type="button" aria-label="검색 닫기" onClick={closeSearch}><Icon name="x" size={12} /></button></span>
-        : <button type="button" aria-label="검색" onClick={() => setSearching(true)}><Icon name="magnifying-glass" size={13} /></button>}
+        : <button type="button" aria-label="기록 검색" onClick={() => setSearching(true)}><Icon name="magnifying-glass" size={13} /></button>}
       <button type="button" onClick={() => toggleMenu("filter")} aria-expanded={activeMenu === "filter"} aria-controls="career-filter-popover" data-active={filterCount ? "true" : undefined}><Icon name="funnel" size={12} />필터{filterCount ? <small>{filterCount}</small> : null}</button>
       <button type="button" onClick={() => toggleMenu("sort")} aria-expanded={activeMenu === "sort"} aria-controls="career-sort-popover" data-active={view.sorts.length ? "true" : undefined}><Icon name="sort-ascending" size={12} />정렬{view.sorts.length ? <small>{view.sorts.length}</small> : null}</button>
       <button type="button" onClick={() => toggleMenu("properties")} aria-expanded={activeMenu === "properties"} aria-controls="career-properties-popover"><Icon name="sliders-horizontal" size={12} />속성</button>

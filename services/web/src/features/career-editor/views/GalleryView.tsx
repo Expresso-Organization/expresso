@@ -1,9 +1,12 @@
 "use client";
 
-import type { CareerRecord, CareerRecordListItem } from "@expresso/contracts";
+import type { CareerCategory, CareerRecord, CareerRecordListItem } from "@expresso/contracts";
+
+import { propertyOptions } from "@/features/career-editor/properties/property-editors";
 
 import type { CareerViewRendererProps } from "./view-types";
 import { displayValue, keyboardActivate, propertyKey, rawValue } from "./view-types";
+import { activeDefinitions } from "./view-logic";
 import styles from "./views.module.css";
 
 const COVER_BARS = [18, 30, 24, 41, 33, 52, 45, 61, 49, 70, 58, 76, 66, 82];
@@ -19,10 +22,13 @@ function textProperty(record: CareerRecord, key: string): string | null {
   return null;
 }
 
-function projectTags(record: CareerRecord): string[] {
+/** 기술은 다중 선택이라 옵션 ID로 저장된다. 화면에는 옵션 이름을 보인다. */
+function projectTags(record: CareerRecord, category: CareerCategory): string[] {
+  const definition = activeDefinitions(category).find((item) => item.key === "technologies");
   const value = rawValue(record, "technologies");
-  if (!Array.isArray(value)) return [];
-  return value.flatMap((item) => typeof item === "string" && item.trim() ? [item.trim()] : []).slice(0, 4);
+  if (!definition || !Array.isArray(value)) return [];
+  const names = new Map(propertyOptions(definition).map((option) => [option.id, option.name]));
+  return value.flatMap((id) => { const name = names.get(String(id)); return name ? [name] : []; }).slice(0, 4);
 }
 
 function projectPeriod(record: CareerRecord): string {
@@ -56,7 +62,7 @@ function ProjectGallery(props: CareerViewRendererProps) {
       <ul className={styles.projectGallery} aria-label="커리어 갤러리">
         {props.records.map((record, index) => {
           const summary = plainText(record);
-          const tags = projectTags(record);
+          const tags = projectTags(record, props.category);
           const outcome = textProperty(record, "outcome");
           return (
             <li key={record.id}>

@@ -199,7 +199,7 @@ describe("CareerViewShell", () => {
 
   it("searches title and body text and keeps the query in the address", () => {
     renderShell();
-    fireEvent.click(screen.getByRole("button", { name: "검색" }));
+    fireEvent.click(screen.getByRole("button", { name: "기록 검색" }));
     fireEvent.change(screen.getByRole("searchbox", { name: "기록 검색" }), { target: { value: "장애" } });
     expect(screen.getByRole("row", { name: /기록 2/ })).toBeTruthy();
     expect(screen.queryByRole("row", { name: /기록 1/ })).toBeNull();
