@@ -14,10 +14,10 @@ date: 2026-10-28
 
 | 파일 | 무엇을 |
 |---|---|
-| `services/web/src/app/(app)/jobs/[jobId]/page.module.css` | 행 · 근거 줄 modifier 다섯 개 삭제 |
+| `services/web/src/app/(app)/jobs/[jobId]/page.module.css` | 행 · 근거 줄 modifier 다섯 개 삭제, 줄 사이 여백을 요건 글에서 근거 줄로 옮김 |
 | `services/web/src/app/(app)/jobs/[jobId]/page.tsx` | `COVERAGE`에서 `row` · `note` 제거, 없음 아이콘 중립화, 근거 줄 조건 변경 |
 | `services/web/src/styles/tokens.css` | 두 토큰의 "06b 요건 행" 주석 삭제 |
-| `docs/Expresso Screens.dc.html` | 06b 요건 행 지면색 셋을 같게, 근거 줄 색을 본문 보조색으로 |
+| `docs/Expresso Screens.dc.html` | 06b 요건 행 지면색 셋을 같게, 근거 줄 색을 본문 보조색으로, 없음 행의 문구 삭제, 우대 사항 "없음" 색 중립화 |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
 

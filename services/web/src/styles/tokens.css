@@ -66,11 +66,11 @@
   --ex-success-text: #0e8a63;
   --ex-success-surface: #e4f7f0;
   --ex-warning-text: #8a6412; /* 중간 구간 일치도 */
-  --ex-warning-surface: #fbf4e2; /* 06b "약함" 요건 행 */
+  --ex-warning-surface: #fbf4e2; /* 06 목록 미보유 스택 칩 · 도구 카드 경고 */
   --ex-danger: #e2543a;
   --ex-danger-text: #c6402a;
   --ex-danger-surface: #fef5f3;
-  --ex-danger-surface-deep: #fceeea; /* 06b "없음" 요건 행 */
+  --ex-danger-surface-deep: #fceeea; /* 06 목록 비어 있는 재료 칩 · 되돌릴 수 없는 동작의 테두리 */
 
   color-scheme: light;
 

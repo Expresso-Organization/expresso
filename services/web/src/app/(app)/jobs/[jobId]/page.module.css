@@ -301,38 +301,21 @@
   margin-bottom: 7px;
 }
 
-.requirementPartial {
-  background: var(--ex-status-warning-surface);
-}
-
-.requirementMissing {
-  background: var(--ex-status-danger-surface-deep);
-}
-
 .requirementLabel {
   font-size: var(--ex-text-sm);
   line-height: 1.65;
   color: var(--ex-fg);
-  margin-bottom: 5px;
 }
 
-/* 근거 줄. 판정마다 색이 다르므로 기본값은 중립이고 셋 다 제 클래스를 쓴다.
-   충족이 기본값을 쓰던 동안, 판정이 없는 줄도 충족 색으로 그려졌다. */
+/*
+ * 근거 줄 — 이 요건을 덮는 기록의 제목이다. 덮는 기록이 없으면 줄 자체가 없으므로
+ * 사이 여백은 요건 글이 아니라 이 줄이 든다. 색은 하나다. 그 줄이 담는 것은
+ * 기록 제목이라는 내용이지 판정이 아니고, 판정은 왼쪽 아이콘이 이미 말했다.
+ */
 .requirementNote {
   font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
-}
-
-.requirementNoteCovered {
-  color: var(--ex-status-success-text);
-}
-
-.requirementNotePartial {
-  color: var(--ex-status-warning-text);
-}
-
-.requirementNoteMissing {
-  color: var(--ex-status-danger-text);
+  margin-top: 5px;
 }
 
 .preferredList {

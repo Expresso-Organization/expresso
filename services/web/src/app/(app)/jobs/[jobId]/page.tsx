@@ -19,33 +19,34 @@ import { CompareControl, type CompareView } from "./CompareControl";
 import { InterestButton } from "./InterestButton";
 import styles from "./page.module.css";
 
-/** §3.5 요건 충족 / 약함 / 없음은 아이콘이 고정 매핑이다. */
+/**
+ * §3.5 요건 충족 / 약함 / 없음은 아이콘이 고정 매핑이다.
+ *
+ * 판정은 이 아이콘 하나가 말한다. 행 지면색도 근거 줄 색도 두지 않는다 —
+ * 한 행에서 같은 판정을 색으로 세 번 되풀이하면 요건 글보다 색이 먼저 보인다.
+ *
+ * 자격 요건과 우대 사항이 이 표를 함께 본다.
+ */
 const COVERAGE = {
   covered: {
     icon: "check-circle",
     weight: "fill" as const,
     color: "var(--ex-status-success-text)",
     label: "있음",
-    row: "",
-    // 충족도 제 클래스로 색을 집는다. 기본값에 기대면 판정이 없는 줄이
-    // 충족 색으로 그려진다 — 실제로 그렇게 새어 나갔다.
-    note: styles.requirementNoteCovered ?? "",
   },
   partial: {
     icon: "warning-circle",
     weight: "fill" as const,
     color: "var(--ex-status-warning-text)",
     label: "약함",
-    row: styles.requirementPartial ?? "",
-    note: styles.requirementNotePartial ?? "",
   },
   missing: {
     icon: "circle-dashed",
     weight: "regular" as const,
-    color: "var(--ex-status-danger-text)",
+    // 기록에 없는 것은 잘못이 아니라 이 제품이 채우러 온 자리다. 위험색을 쓰지
+    // 않는다 — 기록이 하나도 없는 계정에서는 요건 전부가 이 판정이다.
+    color: "var(--ex-fg-subtle)",
     label: "없음",
-    row: styles.requirementMissing ?? "",
-    note: styles.requirementNoteMissing ?? "",
   },
 } as const;
 
@@ -390,10 +391,10 @@ function compareView(
 }
 
 function RequirementRow({ requirement }: { requirement: JobRequirement }) {
-  // 대조한 적이 없으면 판정 색도 근거 줄도 붙이지 않는다.
+  // 대조한 적이 없으면 판정 아이콘을 붙이지 않는다.
   const state = requirement.coverage ? COVERAGE[requirement.coverage] : null;
   return (
-    <div className={`${styles.requirement} ${state?.row ?? ""}`}>
+    <div className={styles.requirement}>
       <Icon
         name={state?.icon ?? "circle"}
         weight={state?.weight ?? "regular"}
@@ -404,18 +405,16 @@ function RequirementRow({ requirement }: { requirement: JobRequirement }) {
       <div style={{ flex: 1, minWidth: 0 }}>
         <div className={styles.requirementLabel}>{requirement.label}</div>
         {/*
-          * 이 줄은 근거를 적는 자리다. 대조한 적이 없으면 근거가 없으므로 줄
-          * 자체를 만들지 않는다 — 전에는 여기에 "아직 대조하지 않았습니다"가
-          * 들어가, 요건 여섯 줄이 우리 처리 상태를 여섯 번 말했다. 대조했는지는
-          * 블록 머리가 한 번 말한다.
+          * 이 줄은 근거를 적는 자리다. 덮는 기록이 있을 때만 만든다 — 전에는
+          * 근거가 없을 때 "기록에 없습니다 · 질문 3개로 채울 수 있습니다"가
+          * 들어가, 요건마다 같은 문장이 반복됐다. 없다는 것은 아이콘이 이미
+          * 말하고, 질문을 받는 동작은 오른쪽 레일이 가지고 있다.
           */}
-        {state === null ? null : (
-          <div className={`${styles.requirementNote} ${state.note}`}>
-            {requirement.coveredBy.length > 0
-              ? requirement.coveredBy.map((record) => record.title).join(" · ")
-              : "기록에 없습니다 · 질문 3개로 채울 수 있습니다"}
+        {requirement.coveredBy.length > 0 ? (
+          <div className={styles.requirementNote}>
+            {requirement.coveredBy.map((record) => record.title).join(" · ")}
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
