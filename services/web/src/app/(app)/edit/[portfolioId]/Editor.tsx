@@ -2,17 +2,23 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useLayoutEffect, useRef, useState, useTransition } from "react";
+import { useActionState, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition } from "react";
 
-import { pageDocument, type GeneratedPage, type PortfolioDetail, type PortfolioRevision, type PageLibraryItem } from "@expresso/contracts";
+import { pageDocument, type GeneratedPage, type PageEditorDesign, type PortfolioDetail, type PortfolioRevision } from "@expresso/contracts";
+import { STRUCTURED_PARTS, STRUCTURED_TYPE_LABELS } from "@expresso/portfolio-renderer/editing";
 
 import { LogoMark } from "@/components/brand/Logo";
 import { WizardSteps } from "@/components/shell/WizardShell";
 import { Icon } from "@/components/ui/Icon";
 
+import { EditablePagePreview } from "@/components/portfolio/EditablePagePreview";
 import { PagePreview } from "@/components/portfolio/PagePreview";
-import { StructuredPageProperties } from "./StructuredPageProperties";
 import { PortfolioPage } from "@/components/portfolio/PortfolioPage";
+
+import { ElementChat } from "./ElementChat";
+import { ElementProperties } from "./ElementProperties";
+import { PageOutline } from "./PageOutline";
+import { RecordLibrary, type LibraryRecord } from "./RecordLibrary";
 
 import {
   baseStep,
@@ -96,7 +102,8 @@ export function Editor({
   checkpoints,
   generatedPage,
   generatedPageHistory,
-  libraryItems = [],
+  design = null,
+  records = [],
 }: {
   displayName: string;
   portfolio: PortfolioDetail;
@@ -106,7 +113,10 @@ export function Editor({
   checkpoints: readonly EditorCheckpoint[];
   generatedPage: GeneratedPage | null;
   generatedPageHistory: readonly GeneratedPage[];
-  libraryItems?: readonly PageLibraryItem[];
+  /** 구조화 지면이 고를 수 있는 디자인 값. 구조화 지면이 아니면 없다. */
+  design?: PageEditorDesign | null;
+  /** 왼쪽 기록 목록. 구조화 지면에서만 쓴다. */
+  records?: readonly LibraryRecord[];
 }) {
   const [, startTransition] = useTransition();
   const router = useRouter();
@@ -119,6 +129,29 @@ export function Editor({
     return () => clearInterval(timer);
   }, [refining, router]);
   const [tab, setTab] = useState<PanelTab>("chat");
+  /** 구조화 지면에서 고른 요소(Spec 키)와 미리보기에서 누른 글자 부분. */
+  const structured = generatedPage?.generationManifest?.structured ?? null;
+  const [picked, setPicked] = useState<{ key: string; part: string | null } | null>(null);
+  const pickedKey = picked && structured?.spec.elements[picked.key] ? picked.key : null;
+  const [scrollRequest, setScrollRequest] = useState(0);
+  const [draftCss, setDraftCss] = useState("");
+  const [leftTab, setLeftTab] = useState<"outline" | "records">("outline");
+  const elementParts = useMemo(() => Object.fromEntries(
+    Object.entries(structured?.spec.elements ?? {}).map(([key, node]) => [
+      key,
+      Object.fromEntries(Object.entries(STRUCTURED_PARTS[node.type] ?? {}).map(([name, part]) => [name, part.selector])),
+    ]),
+  ), [structured]);
+  const pickElement = useCallback((key: string, part: string | null, scroll = false) => {
+    setPicked({ key, part });
+    if (scroll) setScrollRequest((count) => count + 1);
+  }, []);
+  const pickedNode = pickedKey ? structured?.spec.elements[pickedKey] : undefined;
+  const pickedBinding = (pickedNode?.props as { section?: { $state?: string } } | undefined)?.section?.$state;
+  const pickedLabel = pickedNode
+    ? structured?.content.sections.find((section) => pickedBinding === `/sectionById/${section.id}`)?.title
+      ?? STRUCTURED_TYPE_LABELS[pickedNode.type] ?? pickedNode.type
+    : null;
   const [sectionId, setSectionId] = useState<string>(
     portfolio.sections[0]?.id ?? "",
   );
@@ -424,83 +457,120 @@ export function Editor({
 
         <div className={styles.stage} data-pane={pane}>
           <aside className={styles.sections} aria-label="섹션">
-            <div className={styles.sectionsHead}>
-              <span className={styles.sectionsLabel}>{generatedPage ? "구성" : "섹션"}</span>
-              <span className={styles.sectionsCount}>
-                {generatedPage ? `판 ${generatedPage.revision + 1}` : portfolio.visibleSectionCount}
-              </span>
-            </div>
-
-            <div className={styles.sectionList}>
-              {portfolio.sections.map((section, index) => (
-                <div
-                  key={section.id}
-                  role={generatedPage ? undefined : "button"}
-                  tabIndex={generatedPage ? undefined : 0}
-                  onClick={() => { if (!generatedPage) setSectionId(section.id); }}
-                  onKeyDown={(event) => {
-                    if (generatedPage) return;
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      setSectionId(section.id);
-                    }
-                  }}
-                  className={[
-                    styles.sectionRow,
-                    section.id === selectedSection?.id ? styles.sectionRowActive : null,
-                    !section.visible ? styles.sectionHidden : null,
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                >
-                  {/* 순서는 지면 전체의 차례를 통째로 보낸다 — 하나만 바꾸면 자리가 부딪힌다. */}
-                  {!generatedPage ? <span className={styles.sectionMove}>
+            {structured && generatedPage ? (
+              <>
+                <div className={styles.sectionsHead} role="tablist" aria-label="왼쪽 목록">
+                  {([["outline", "목차"], ["records", "기록"]] as const).map(([key, label]) => (
                     <button
+                      key={key}
                       type="button"
-                      className={styles.sectionMoveButton}
-                      aria-label={`${section.title ?? "섹션"} 위로`}
-                      disabled={index === 0 || sectionPending}
-                      onClick={(event) => { event.stopPropagation(); moveSection(index, -1); }}
+                      role="tab"
+                      aria-selected={leftTab === key}
+                      className={`${styles.leftTab} ${leftTab === key ? styles.leftTabOn : ""}`}
+                      onClick={() => setLeftTab(key)}
                     >
-                      ↑
+                      {label}
                     </button>
-                    <button
-                      type="button"
-                      className={styles.sectionMoveButton}
-                      aria-label={`${section.title ?? "섹션"} 아래로`}
-                      disabled={index === portfolio.sections.length - 1 || sectionPending}
-                      onClick={(event) => { event.stopPropagation(); moveSection(index, 1); }}
-                    >
-                      ↓
-                    </button>
-                  </span> : null}
-                  <span style={{ flex: 1, minWidth: 0 }}>
-                    <span className={styles.sectionTitle} style={{ display: "block" }}>
-                      {section.title ?? "제목 없는 섹션"}
-                    </span>
-                    <span className={styles.sectionMeta} style={{ display: "block" }}>
-                      {section.visible
-                        ? `블록 ${section.blocks.length}개`
-                        : "숨김"}
-                    </span>
-                  </span>
-                  {!generatedPage ? <button
-                    type="button"
-                    className={styles.sectionEye}
-                    aria-label={section.visible ? "숨기기" : "다시 꺼내기"}
-                    aria-pressed={!section.visible}
-                    disabled={sectionPending}
-                    onClick={(event) => { event.stopPropagation(); toggleSection(section.id, !section.visible); }}
-                  >
-                    <Icon
-                      name={section.visible ? "eye" : "eye-slash"}
-                      size={13}
-                      color={section.visible ? "var(--ex-border-firm)" : "var(--ex-fg-subtle)"}
-                    />
-                  </button> : null}
+                  ))}
                 </div>
-              ))}
-            </div>
+                {leftTab === "outline" ? (
+                  <PageOutline
+                    snapshot={structured}
+                    portfolioId={portfolio.id}
+                    revision={generatedPage.revision}
+                    selected={pickedKey}
+                    onSelect={(key) => pickElement(key, null, true)}
+                  />
+                ) : (
+                  <RecordLibrary
+                    records={records}
+                    snapshot={structured}
+                    portfolioId={portfolio.id}
+                    revision={generatedPage.revision}
+                  />
+                )}
+              </>
+            ) : (
+              <>
+            <div className={styles.sectionsHead}>
+                <span className={styles.sectionsLabel}>{generatedPage ? "구성" : "섹션"}</span>
+                <span className={styles.sectionsCount}>
+                  {generatedPage ? `판 ${generatedPage.revision + 1}` : portfolio.visibleSectionCount}
+                </span>
+              </div>
+
+              <div className={styles.sectionList}>
+                {portfolio.sections.map((section, index) => (
+                  <div
+                    key={section.id}
+                    role={generatedPage ? undefined : "button"}
+                    tabIndex={generatedPage ? undefined : 0}
+                    onClick={() => { if (!generatedPage) setSectionId(section.id); }}
+                    onKeyDown={(event) => {
+                      if (generatedPage) return;
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        setSectionId(section.id);
+                      }
+                    }}
+                    className={[
+                      styles.sectionRow,
+                      section.id === selectedSection?.id ? styles.sectionRowActive : null,
+                      !section.visible ? styles.sectionHidden : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                  >
+                    {/* 순서는 지면 전체의 차례를 통째로 보낸다 — 하나만 바꾸면 자리가 부딪힌다. */}
+                    {!generatedPage ? <span className={styles.sectionMove}>
+                      <button
+                        type="button"
+                        className={styles.sectionMoveButton}
+                        aria-label={`${section.title ?? "섹션"} 위로`}
+                        disabled={index === 0 || sectionPending}
+                        onClick={(event) => { event.stopPropagation(); moveSection(index, -1); }}
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.sectionMoveButton}
+                        aria-label={`${section.title ?? "섹션"} 아래로`}
+                        disabled={index === portfolio.sections.length - 1 || sectionPending}
+                        onClick={(event) => { event.stopPropagation(); moveSection(index, 1); }}
+                      >
+                        ↓
+                      </button>
+                    </span> : null}
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span className={styles.sectionTitle} style={{ display: "block" }}>
+                        {section.title ?? "제목 없는 섹션"}
+                      </span>
+                      <span className={styles.sectionMeta} style={{ display: "block" }}>
+                        {section.visible
+                          ? `블록 ${section.blocks.length}개`
+                          : "숨김"}
+                      </span>
+                    </span>
+                    {!generatedPage ? <button
+                      type="button"
+                      className={styles.sectionEye}
+                      aria-label={section.visible ? "숨기기" : "다시 꺼내기"}
+                      aria-pressed={!section.visible}
+                      disabled={sectionPending}
+                      onClick={(event) => { event.stopPropagation(); toggleSection(section.id, !section.visible); }}
+                    >
+                      <Icon
+                        name={section.visible ? "eye" : "eye-slash"}
+                        size={13}
+                        color={section.visible ? "var(--ex-border-firm)" : "var(--ex-fg-subtle)"}
+                      />
+                    </button> : null}
+                  </div>
+                ))}
+              </div>
+              </>
+            )}
 
             {sectionResult.error ? (
               <p className={styles.sectionError}>{sectionResult.error}</p>
@@ -569,7 +639,18 @@ export function Editor({
                 className={styles.deviceFrame}
                 style={{ width: deviceWidth, height: `${100 / scale}%`, transform: `scale(${scale})` }}
               >
-              {generatedPage ? (
+              {generatedPage && structured ? (
+                <EditablePagePreview
+                  page={generatedPage}
+                  title={portfolio.title}
+                  className={styles.freePagePreview!}
+                  parts={elementParts}
+                  selected={pickedKey}
+                  scrollRequest={scrollRequest}
+                  draftCss={draftCss}
+                  onSelect={pickElement}
+                />
+              ) : generatedPage ? (
                 <PagePreview
                   page={generatedPage}
                   title={portfolio.title}
@@ -783,7 +864,7 @@ export function Editor({
               <span className={styles.panelTitle}>편집</span>
               <span className={styles.panelTarget}>
                 {generatedPage
-                  ? (tab === "history" ? `판 ${generatedPageHistory.length}개` : generatedPage.generationManifest?.structured ? "구성·문장" : "웹페이지 전체")
+                  ? (tab === "history" ? `판 ${generatedPageHistory.length}개` : structured ? (pickedLabel ?? "지면 전체") : "웹페이지 전체")
                   : panelTarget(tab, revisions.length, chosen?.path ?? null)}
               </span>
               <button
@@ -814,7 +895,15 @@ export function Editor({
               ))}
             </div>
 
-            {tab === "chat" ? (
+            {tab === "chat" && structured && generatedPage && pickedKey ? (
+              <ElementChat
+                key={pickedKey}
+                portfolioId={portfolio.id}
+                elementKey={pickedKey}
+                label={pickedLabel ?? pickedKey}
+                revision={generatedPage.revision}
+              />
+            ) : tab === "chat" ? (
               <ChatPanel
                 key={chatTarget ?? "default"}
                 initialTarget={chatTarget}
@@ -825,11 +914,25 @@ export function Editor({
               />
             ) : null}
             {tab === "properties" ? (
-              generatedPage ? (
-                <div className={styles.propertiesStack}>
-                  <StructuredPageProperties key={generatedPage.revision} page={generatedPage} portfolioId={portfolio.id} libraryItems={libraryItems} />
-                  <FreePageProperties page={generatedPage} />
-                </div>
+              structured && generatedPage ? (
+                pickedKey ? (
+                  <ElementProperties
+                    key={`${pickedKey}:${generatedPage.revision}`}
+                    snapshot={structured}
+                    elementKey={pickedKey}
+                    part={picked?.part ?? null}
+                    design={design}
+                    portfolioId={portfolio.id}
+                    revision={generatedPage.revision}
+                    onDraftCss={setDraftCss}
+                  />
+                ) : (
+                  <div className={styles.properties}>
+                    <p className={styles.panelEmpty}>지면이나 목차에서 요소를 고르세요.</p>
+                  </div>
+                )
+              ) : generatedPage ? (
+                <FreePageProperties page={generatedPage} />
               ) : <>
                 <PropertiesPanel
                   portfolioId={portfolio.id}

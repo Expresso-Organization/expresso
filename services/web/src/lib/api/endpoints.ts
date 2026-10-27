@@ -7,6 +7,10 @@ import {
   type RegeneratePage,
   type RestorePageRevision,
   type EditStructuredPage,
+  type InstructStructuredElement,
+  type AddStructuredSection,
+  InstructStructuredElementResultSchema,
+  PageEditorDesignSchema,
   type CreateMediaBlock,
   AnalyticsDashboardResponseSchema,
   API_PREFIX,
@@ -1092,6 +1096,15 @@ export const page = {
   library: (accessToken: string, query: Partial<PageLibrarySearch> = {}) => request(`${API_PREFIX}/page-library?${new URLSearchParams(Object.entries(query).map(([key,value])=>[key,String(value)]))}`, z.object({data:PageLibraryResultSchema}), {accessToken}),
   editComposition: (accessToken: string, portfolioId: string, body: EditStructuredPage) =>
     request(`${API_PREFIX}/portfolios/${portfolioId}/page/composition`, z.object({ data: GeneratedPageSchema }), { method: "PATCH", accessToken, body }),
+  /** 고른 요소 하나를 말로 고칩니다. 새 판과 바뀐 곳 목록이 옵니다. */
+  instructElement: (accessToken: string, portfolioId: string, key: string, body: InstructStructuredElement) =>
+    request(`${API_PREFIX}/portfolios/${portfolioId}/page/elements/${encodeURIComponent(key)}/instruct`, z.object({ data: InstructStructuredElementResultSchema }), { method: "POST", accessToken, body }),
+  /** 커리어 기록 하나를 지면의 새 사례로 더합니다. */
+  addSection: (accessToken: string, portfolioId: string, body: AddStructuredSection) =>
+    request(`${API_PREFIX}/portfolios/${portfolioId}/page/sections`, z.object({ data: GeneratedPageSchema }), { method: "POST", accessToken, body }),
+  /** 편집 화면이 고를 이 포트폴리오 디자인의 글자 크기 단계 · 색 · 서체입니다. */
+  design: (accessToken: string, portfolioId: string) =>
+    request(`${API_PREFIX}/portfolios/${portfolioId}/page/design`, z.object({ data: PageEditorDesignSchema }), { accessToken }),
   latest: (accessToken: string, portfolioId: string) =>
     request(
       `${API_PREFIX}/portfolios/${portfolioId}/page`,

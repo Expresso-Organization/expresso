@@ -211,6 +211,9 @@ importers:
       '@expresso/editor':
         specifier: workspace:*
         version: link:../../packages/editor
+      '@expresso/portfolio-renderer':
+        specifier: workspace:*
+        version: link:../../packages/portfolio-renderer
       '@phosphor-icons/web':
         specifier: ^2.1.2
         version: 2.1.2

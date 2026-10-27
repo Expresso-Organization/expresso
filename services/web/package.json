@@ -20,6 +20,7 @@
     "@base-ui/react": "1.8.0",
     "@expresso/contracts": "workspace:*",
     "@expresso/editor": "workspace:*",
+    "@expresso/portfolio-renderer": "workspace:*",
     "@phosphor-icons/web": "^2.1.2",
     "@tiptap/core": "3.31.0",
     "@tiptap/extension-image": "3.31.0",
