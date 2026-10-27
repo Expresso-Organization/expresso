@@ -26,7 +26,7 @@ export class PublishingService {
     if (!page) throw new PublishingError(409, "ready generated page is required for publication");
     const grammar = PageStyleGrammarSchema.safeParse(page.styleSpecSnapshot).success ? PageStyleGrammarSchema.parse(page.styleSpecSnapshot) : undefined;
     const document = pageDocument({ html: page.html, css: page.css, title: portfolio.title, description: page.rationale, ...(grammar ? { grammar } : {}) });
-    return { portfolioId, title: portfolio.title, templateId: portfolio.templateId, sections: sections.map((section) => ({ id: section._id, order: section.orderNo, visible: section.visible, blocks: blocks.filter(({ portfolioSectionId: id }) => id === section._id).map((block) => ({ id: block._id, kind: block.kind, content: block.content, style: block.style, locked: block.locked })) })), generatedPage: GeneratedPageDeploymentSnapshotSchema.parse({ id: page._id, revision: page.revision, document }), outline: pageOutline(document) };
+    return { portfolioId, title: portfolio.title, templateId: portfolio.templateId, sections: sections.map((section) => ({ id: section._id, order: section.orderNo, visible: section.visible, blocks: blocks.filter(({ portfolioSectionId: id }) => id === section._id).map((block) => ({ id: block._id, kind: block.kind, content: block.content, style: block.style, locked: block.locked })) })), generatedPage: GeneratedPageDeploymentSnapshotSchema.parse({ id: page._id, revision: page.revision, document }), outline: pageOutline(document, portfolioId) };
   }
 
   async #dto(row: DeploymentDoc) {
