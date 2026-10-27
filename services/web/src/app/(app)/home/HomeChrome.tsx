@@ -1,9 +1,11 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 import { logoutAction } from "@/app/auth-actions";
 import { AppHeader, appShellStyles } from "@/components/shell/AppShell";
 import { SearchAndNotifications } from "@/components/shell/HeaderActions";
 import { Icon } from "@/components/ui/Icon";
+import { jobs } from "@/lib/api/endpoints";
 
 import styles from "./page.module.css";
 
@@ -44,7 +46,12 @@ export function HomeHeader() {
   );
 }
 
-export function HomeSearch() {
+export function HomeSearch({
+  savedSearches = null,
+}: {
+  /** 저장한 검색 목록. 응답을 기다리는 부분이라 화면이 Suspense로 감싸 넘긴다. */
+  savedSearches?: ReactNode;
+}) {
   return (
     <>
       <form className={styles.searchBar} action="/jobs">
@@ -55,7 +62,6 @@ export function HomeSearch() {
           placeholder='"내 파이프라인 경험을 살릴 수 있는 자리" 처럼 문장으로 물어보세요'
           aria-label="공고 검색"
         />
-        <span className={styles.searchShortcut}>⌘K</span>
         <button type="submit" className={styles.searchSubmit}>
           물어보기
         </button>
@@ -72,11 +78,42 @@ export function HomeSearch() {
             {query}
           </Link>
         ))}
-        <button type="button" className={styles.savedSearches}>
-          <Icon name="bell-simple" size={14} color="var(--ex-fg-muted)" />
-          저장한 검색
-        </button>
+        {savedSearches}
       </div>
     </>
+  );
+}
+
+/**
+ * 06에서 저장한 검색(`GET /jobs/saved-searches`). 누르면 목록이 펼쳐지고, 고르면
+ * 그 문장으로 다시 검색한다 — 조건은 검색 화면이 문장을 해석해 다시 세운다.
+ *
+ * 저장한 것이 없으면 아무것도 그리지 않는다. 비어 있는 단추는 누를 이유가 없다.
+ */
+export async function SavedSearches({ accessToken }: { accessToken: string }) {
+  const { data: searches } = await jobs.savedSearches(accessToken);
+  if (searches.length === 0) return null;
+
+  return (
+    <details className={styles.savedSearches}>
+      <summary className={styles.savedSummary}>
+        <Icon name="bell-simple" size={14} color="var(--ex-fg-muted)" />
+        저장한 검색 {searches.length}
+      </summary>
+      <div className={styles.savedPanel}>
+        <div className={styles.savedList}>
+          {searches.map((search) => (
+            <Link
+              key={search.id}
+              href={{ pathname: "/jobs", query: { q: search.originalQuery } }}
+              className={styles.savedRow}
+            >
+              <Icon name="magnifying-glass" size={13} color="var(--ex-fg-muted)" />
+              <span className={styles.savedName}>{search.name}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </details>
   );
 }

@@ -68,6 +68,7 @@ import {
   PortfolioListResponseSchema,
   PortfolioRevisionsResponseSchema,
   RecentJobSearchListResponseSchema,
+  SavedJobSearchListResponseSchema,
   AnalyzedJobPostingResponseSchema,
   ImportedJobPostingResponseSchema,
   JobSourceListResponseSchema,
@@ -816,6 +817,13 @@ export const jobs = {
       accessToken,
       cache: "no-store",
       query: limit ? { limit } : {},
+    }),
+
+  /** 저장한 검색. 같은 검색을 두 번 저장하지 않도록 화면이 저장 전에 본다. */
+  savedSearches: (accessToken: string) =>
+    request(`${API_PREFIX}/jobs/saved-searches`, SavedJobSearchListResponseSchema, {
+      accessToken,
+      cache: "no-store",
     }),
 
   /**

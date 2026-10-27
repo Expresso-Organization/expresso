@@ -45,16 +45,6 @@
   color: var(--ex-fg-subtle);
 }
 
-.searchShortcut {
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-fg-subtle);
-  background: var(--ex-bg-sunken);
-  border-radius: 6px;
-  padding: 5px 9px;
-  flex-shrink: 0;
-}
-
 .searchSubmit {
   font-size: var(--ex-text-md);
   font-weight: 600;
@@ -104,15 +94,36 @@
 }
 
 .savedSearches {
+  position: relative;
   margin-left: auto;
+}
+
+.savedSummary {
   display: flex;
   align-items: center;
   gap: 7px;
   font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
-  border: none;
-  background: none;
-  padding: 0;
+  cursor: pointer;
+  list-style: none;
+}
+
+.savedSummary::-webkit-details-marker {
+  display: none;
+}
+
+/* 펼친 목록. 예시 칩 줄 아래로 겹쳐 뜬다. */
+.savedPanel {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 260px;
+  padding: 12px;
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
+  border-radius: 12px;
+  box-shadow: var(--ex-elevation-overlay);
 }
 
 /* 영역 2·3 — 공고 + 사이드 카드 */
@@ -142,28 +153,6 @@
   font-size: var(--ex-text-md);
   font-weight: 600;
   white-space: nowrap;
-}
-
-.segment {
-  display: flex;
-  background: var(--ex-bg-sunken);
-  border-radius: 8px;
-  padding: 2px;
-}
-
-.segmentItem {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
-  border: none;
-  background: none;
-  border-radius: 6px;
-  padding: 5px 11px;
-}
-
-.segmentItemActive {
-  font-weight: 600;
-  color: var(--ex-fg);
-  background: var(--ex-bg);
 }
 
 .cardNote {
@@ -376,7 +365,9 @@
 }
 
 .draftCta {
+  display: block;
   width: 100%;
+  text-align: center;
   font-size: var(--ex-text-md);
   font-weight: 600;
   color: var(--ex-fg-on-accent);
@@ -390,23 +381,12 @@
 }
 
 .draftCta:hover {
+  color: var(--ex-fg-on-accent);
   background: var(--ex-accent-hover);
   transform: translateY(-1px);
 }
 
-/* 저장한 검색 카드 */
-.savedHead {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  margin-bottom: 12px;
-}
-
-.savedTitle {
-  font-size: var(--ex-text-sm);
-  font-weight: 600;
-}
-
+/* 저장한 검색 목록 */
 .savedList {
   display: grid;
   gap: 9px;
@@ -418,6 +398,10 @@
   gap: 9px;
 }
 
+.savedRow:hover .savedName {
+  color: var(--ex-fg);
+}
+
 .savedName {
   font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
@@ -426,19 +410,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.savedCount {
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-accent-text);
-}
-
-.savedFoot {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-subtle);
-  margin-top: 11px;
-  line-height: 1.65;
 }
 
 /* 영역 4 — 내 포트폴리오 */
