@@ -3,7 +3,7 @@
 // ── 08 공개 사이트 ────────────────────────────────────────────────────
 
 export const PUBLIC_SITE = {
-  version: "v3 · 2일 전 배포 · jiwon.xpresso.me",
+  version: "v3 · 2일 전 배포 · jiwon.expresso.ai.kr",
   name: "Jiwon Kim",
   nav: ["경험", "프로젝트", "스킬", "연락하기"],
   eyebrow: "BACKEND ENGINEER · SEOUL",
@@ -34,7 +34,7 @@ export const PUBLIC_SITE = {
   share: {
     title: "Jiwon Kim · Backend",
     headline: "결제 트래픽을 견디는 서버를 만듭니다",
-    domain: "jiwon.xpresso.me",
+    domain: "jiwon.expresso.ai.kr",
     ogTitle: "김지원 — 백엔드 엔지니어",
     ogDescription: "정산·결제 시스템 5년. 초당 4천 건 트래픽 처리.",
     note: "og:image는 첫 배포 시 자동 생성됩니다",
@@ -47,7 +47,7 @@ export const DEPLOY = {
   intro:
     "주소를 발급하고 버전 단위로 공개합니다. 배포하면 이전 버전은 남고, 언제든 되돌릴 수 있습니다.",
   slug: "jiwon",
-  domain: ".xpresso.me",
+  domain: ".expresso.ai.kr",
   slugState: "사용 가능",
   customDomain: { host: "jiwon.dev", state: "DNS 확인 중" },
   /** 배포 전 확인 3항목. 하나라도 실패하면 고치기 링크가 붙는다. */

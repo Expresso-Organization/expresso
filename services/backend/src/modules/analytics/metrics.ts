@@ -116,6 +116,7 @@ const DEFINITIONS: Definition[] = [
     label: "기업 도메인 방문", description: "회사 네트워크 접속만 · 개인 식별 안 함",
     visualizations: ["list"], defaultSpan: 4,
     capability: "analytics.organization_domains",
+    missing: "방문자의 IP를 받지 않아 어느 회사 네트워크에서 왔는지 알 수 없습니다.",
   },
   {
     key: "org_returning", group: "채용담당자",
@@ -179,7 +180,7 @@ export function metricIsCollected(key: MetricKey): boolean {
 }
 
 /**
- * 기본 지면 — 화면 정의서 07이 그리는 그대로.
+ * 기본 지면 — 화면 정의서 07에서 세지 않는 기업 도메인 방문을 뺀 것.
  *
  * DB에 없다. 사용자가 편집을 시작하는 순간 이 목록이 그대로 굳고, 그 위에서
  * 고친다. 아무것도 안 한 사람의 계정에 위젯 아홉 줄을 미리 심어 둘 이유가 없다.
@@ -191,7 +192,6 @@ export const DEFAULT_LAYOUT: Omit<Widget, "id">[] = [
   { metricKey: "contact_clicks", visualization: "number", span: 3, compareTo: "prev_period", order: 3 },
   { metricKey: "visits_trend", visualization: "line", span: 8, compareTo: null, order: 4 },
   { metricKey: "insight", visualization: "note", span: 4, compareTo: null, order: 5 },
-  { metricKey: "section_dwell", visualization: "bar", span: 4, compareTo: null, order: 6 },
+  { metricKey: "section_dwell", visualization: "bar", span: 8, compareTo: null, order: 6 },
   { metricKey: "referrers", visualization: "donut", span: 4, compareTo: null, order: 7 },
-  { metricKey: "org_domains", visualization: "list", span: 4, compareTo: null, order: 8 },
 ];

@@ -44,7 +44,7 @@ export class PortfolioReadService {
     const pageChanged = deployment && latestPage
       ? deployment.generatedPageId
         ? deployment.generatedPageId !== latestPage._id
-        // 실린 판을 남기기 전(0025 이전)의 배포는 배포 뒤에 만든 판이 있는지로 봅니다.
+        // 실린 판을 남기기 전의 배포는 배포 뒤에 만든 판이 있는지로 봅니다.
         : !!deployment.publishedAt && latestPage.createdAt > deployment.publishedAt
       : false;
     return {
@@ -53,7 +53,8 @@ export class PortfolioReadService {
       sectionCount: sections.length, visibleSectionCount: sections.filter(({ visible }) => visible).length,
       blockCount, createdAt: portfolio.createdAt.toISOString(), updatedAt: portfolio.updatedAt.toISOString(),
       deployment: deployment ? {
-        id: deployment._id, version: deployment.version, subdomain: deployment.subdomain,
+        // 주소는 포트폴리오의 것이다. 되돌린 판의 주소가 아니라 지금 열리는 주소를 보여 준다.
+        id: deployment._id, version: deployment.version, subdomain: portfolio.publicSlug ?? deployment.subdomain,
         customDomain: deployment.customDomain ?? null, seoIndexable: deployment.seoIndexable,
         contactVisibility: deployment.contactVisibility,
         publishedAt: deployment.publishedAt?.toISOString() ?? null,

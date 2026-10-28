@@ -6,6 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createMongoFixture } from "../../../test/support/mongodb.js";
 import { MongoCareerService } from "../career/index.js";
 import { MongoIdentityService } from "../identity/index.js";
+import { PURGED_COLLECTIONS } from "./mongo-purge.js";
 import { MongoAccountLifecycleService } from "./service.js";
 
 describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB account lifecycle", () => {
@@ -28,6 +29,14 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB account lifecycle", () =
 
   beforeAll(async () => { fixture = await createMongoFixture("accountlifecycle"); service = new MongoAccountLifecycleService(fixture.resource); });
   afterAll(async () => fixture?.dispose());
+
+  it("purges every collection whose schema carries a userId", async () => {
+    // 삭제 요청 자체는 단계 진행 기록이라 남긴다. 그 밖의 `userId` 컬렉션이 목록에 없으면 데이터가 남는다.
+    const owned = (await fixture.resource.db.listCollections({}, { nameOnly: false }).toArray())
+      .filter((info) => "userId" in ((info as { options?: { validator?: { $jsonSchema?: { properties?: object } } } }).options?.validator?.$jsonSchema?.properties ?? {}))
+      .map((info) => info.name).filter((name) => name !== "account_deletion_requests");
+    expect(owned.filter((name) => !PURGED_COLLECTIONS.includes(name))).toEqual([]);
+  });
 
   it("exports owned documents using the existing versioned contract", async () => {
     const item = await graph("export"); const exported = await service.exportData(item.userId, new Date("2026-08-09T00:00:00Z"));

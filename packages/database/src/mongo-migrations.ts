@@ -19,7 +19,8 @@ import { careerCategoryOwnershipSteps } from "./mongodb-migrations/0017/migratio
 import { notificationProducerSteps } from "./mongodb-migrations/0020/migration.js";
 import { generationWaitingRecipeSteps } from "./mongodb-migrations/0021/migration.js";
 import { aiUsageAndPlanCreditSteps } from "./mongodb-migrations/0022/migration.js";
-import { publishingSlugOwnershipSteps } from "./mongodb-migrations/0025/migration.js";
+import { portfolioPublicSlugSteps } from "./mongodb-migrations/0023/migration.js";
+import { adminDummyAccountSteps } from "./mongodb-migrations/0024/migration.js";
 
 
 export interface MongoMigrationStep {
@@ -69,7 +70,8 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
   const notificationProducerHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0020/migration.ts", import.meta.url))).digest("hex");
   const generationWaitingHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0021/migration.ts", import.meta.url))).digest("hex");
   const aiUsageHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0022/migration.ts", import.meta.url))).digest("hex");
-  const slugOwnershipHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0025/migration.ts", import.meta.url))).digest("hex");
+  const publicSlugHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0023/migration.ts", import.meta.url))).digest("hex");
+  const adminDummyHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0024/migration.ts", import.meta.url))).digest("hex");
   return [
     { version: "0001", name: "initial_collections", checksum: hash.digest("hex"), steps: await initialMigrationSteps() },
     { version: "0002", name: "generation_ledger_amount_constraint", checksum: secondHash, steps: await generationLedgerConstraintSteps() },
@@ -88,6 +90,7 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
     { version: "0020", name: "notification_producers", checksum: notificationProducerHash, steps: await notificationProducerSteps() },
     { version: "0021", name: "generation_waiting_recipe", checksum: generationWaitingHash, steps: await generationWaitingRecipeSteps() },
     { version: "0022", name: "ai_usage_and_plan_credits", checksum: aiUsageHash, steps: await aiUsageAndPlanCreditSteps() },
-    { version: "0025", name: "publishing_slug_ownership", checksum: slugOwnershipHash, steps: await publishingSlugOwnershipSteps() },
+    { version: "0023", name: "portfolio_public_slug", checksum: publicSlugHash, steps: await portfolioPublicSlugSteps() },
+    { version: "0024", name: "admin_dummy_accounts", checksum: adminDummyHash, steps: await adminDummyAccountSteps() },
   ];
 }

@@ -4,6 +4,7 @@ import { z } from "zod";
 import {
   PortfolioArchetypeSchema,
   STRUCTURED_GROUP_VARIANTS,
+  STRUCTURED_BACKDROPS,
   STRUCTURED_INDEX_VARIANTS,
   STRUCTURED_INTRO_ALL_VARIANTS,
   STRUCTURED_SCALES,
@@ -50,9 +51,10 @@ export const structuredCatalog = defineCatalog(schema, {
         sections: content.shape.sections.optional(),
         sourceId: z.string().optional(),
         variant: z.enum(STRUCTURED_INTRO_ALL_VARIANTS).optional(),
+        backdrop: z.enum(STRUCTURED_BACKDROPS).optional(),
       }),
       description:
-        "이름을 가장 크게, 그 아래 짧은 자기 정의를 표시합니다. statement=큰 이름과 한 문장, split=이름과 소개를 좌우로 나눔, media=제공된 대표 이미지와 함께, poster=행동색 면 위에 화면 폭에 가까운 이름과 한 문장, sentence=작은 이름 아래 소개를 큰 문장으로.",
+        "이름을 가장 크게, 그 아래 짧은 자기 정의를 표시합니다. statement=큰 이름과 한 문장, split=이름과 소개를 좌우로 나눔, media=제공된 대표 이미지와 함께, poster=행동색 면 위에 화면 폭에 가까운 이름과 한 문장, sentence=작은 이름 아래 소개를 큰 문장으로. backdrop=첫 화면 뒤에 까는 배경.",
     },
     ProjectIndex: {
       props: z.object({

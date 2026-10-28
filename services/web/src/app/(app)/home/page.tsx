@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { AppBody } from "@/components/shell/AppShell";
 import { Icon } from "@/components/ui/Icon";
 import { homeEngagement, recentPortfolios } from "@/lib/app-data";
+import { publicSiteHost } from "@/lib/public-site";
 import { requireSession } from "@/lib/require-session";
 
 import { HomeHeader, HomeSearch } from "./HomeChrome";
@@ -236,7 +237,7 @@ async function Portfolios({ accessToken }: { accessToken: string }) {
               <span className={styles.categoryCardName}>{portfolio.title}</span>
               <span className={styles.sectionNote}>
                 {portfolio.deployment
-                  ? `${portfolio.deployment.subdomain}.xpresso.me · v${portfolio.deployment.version}`
+                  ? `${publicSiteHost(portfolio.deployment.subdomain)} · v${portfolio.deployment.version}`
                   : `초안 · 섹션 ${portfolio.sectionCount}개`}
               </span>
               <span className={styles.sectionNote}>

@@ -2,11 +2,14 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   DesignSystemSpecV2Schema,
+  STRUCTURED_BACKDROPS,
   type StructuredPortfolioContent,
 } from "@expresso/contracts";
 import { renderStructuredPortfolio } from "./renderer.js";
 import { retrievePageLibrary } from "./library.js";
 import { metricNumber } from "./kit.js";
+import { BACKDROP_CSS } from "./backdrop.js";
+import { KIT_CSS } from "./kit-styles.js";
 
 // 백엔드 기본 디자인(Clarity · Signal)의 스펙을 그대로 떠 둔 고정 자료입니다.
 const designs = JSON.parse(readFileSync(new URL("./fixtures/designs.json", import.meta.url), "utf8"));
@@ -359,5 +362,100 @@ describe("시각 부품과 지면 변화", () => {
     const real = renderStructuredPortfolio(spec, rich, { design: clarity }).html;
     expect(real).toContain('data-bars="on"');
     expect(real).toContain("--w:30%");
+  });
+});
+
+describe("첫 화면 배경", () => {
+  const hero = (html: string) => html.slice(html.indexOf('<header id="intro"'), html.indexOf("</header>", html.indexOf('<header id="intro"')) + 9);
+
+  it("고른 배경을 첫 화면의 마지막 자식 층으로 그리고, none이면 층을 두지 않는다", () => {
+    for (const backdrop of STRUCTURED_BACKDROPS) {
+      const { html } = renderStructuredPortfolio(pageSpec({ variant: "statement", backdrop }), content, { design: clarity });
+      const head = hero(html);
+      if (backdrop === "none") {
+        expect(head).not.toContain("xp-backdrop");
+        expect(head).not.toContain("data-backdrop");
+        continue;
+      }
+      expect(head).toContain(`data-backdrop="${backdrop}"`);
+      expect(head).toMatch(/<div class="xp-backdrop" data-shape="[a-z]+" aria-hidden="true" data-bleed="">[\s\S]*<\/div><\/header>$/);
+      expect(html).not.toContain("<script");
+    }
+  });
+
+  it("다섯 구도 모두 배경을 그리고, 배경이 없는 옛 포스터는 사선 줄무늬다", () => {
+    for (const variant of ["statement", "split", "media", "sentence", "poster"])
+      expect(hero(renderStructuredPortfolio(pageSpec({ variant, backdrop: "rings" }), content, { design: clarity }).html)).toContain('data-shape="rings"');
+    expect(hero(renderStructuredPortfolio(pageSpec({ variant: "poster" }), content, { design: clarity }).html)).toContain('data-backdrop="stripes"');
+    expect(hero(renderStructuredPortfolio(pageSpec({ variant: "poster", backdrop: "none" }), content, { design: clarity }).html)).not.toContain("xp-backdrop");
+    expect(hero(renderStructuredPortfolio(pageSpec({ variant: "statement" }), content, { design: clarity }).html)).not.toContain("xp-backdrop");
+  });
+
+  it("배경 CSS는 새 색을 만들지 않고 디자인에서 계산한 잉크 변수만 쓴다", () => {
+    expect(BACKDROP_CSS).not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(|\b(?:black|white)\b/);
+    expect(BACKDROP_CSS).not.toMatch(/filter\s*:|backdrop-filter/);
+    const { css } = renderStructuredPortfolio(pageSpec({ variant: "statement", backdrop: "grid" }), content, { design: clarity });
+    expect(css).toMatch(/\.xp-hero\[data-backdrop-ink="line"\]\{--xp-bd-1:#[0-9a-f]{6};--xp-bd-2:#[0-9a-f]{6};color:#[0-9a-f]{6};--xp-muted:#[0-9a-f]{6}/);
+    // 옛 포스터 면의 줄무늬는 배경 층으로 옮겼습니다. 첫 화면 조상에 배경 이미지가 없어야 렌더 대비 검사가 글자를 잽니다.
+    expect(css).not.toContain("repeating-linear-gradient(-45deg,color-mix(in srgb,var(--xp-action-text)");
+  });
+
+  it("반복 모션은 움직임 줄이기를 고르지 않았고 모션 없음 지면이 아닐 때만 돈다", () => {
+    const [still, moving] = BACKDROP_CSS.split("@media (prefers-reduced-motion:no-preference){");
+    expect(still).not.toMatch(/animation:xp-bd-/);
+    const lines = moving!.split("\n").filter((line) => line.includes("animation:xp-bd-"));
+    expect(lines.length).toBeGreaterThanOrEqual(5);
+    for (const line of lines) expect(line.trim().startsWith('.xp-page:not([data-motion="none"])')).toBe(true);
+  });
+});
+
+/** `start`로 시작하는 at-규칙 블록의 범위입니다. 중괄호 짝으로 닫는 자리를 찾습니다. */
+function blockRange(css: string, start: string, from = 0): [number, number] {
+  const open = css.indexOf(start, from);
+  expect(open, `${start} 블록이 없습니다`).toBeGreaterThanOrEqual(0);
+  let depth = 0;
+  for (let index = css.indexOf("{", open); index < css.length; index++) {
+    if (css[index] === "{") depth++;
+    if (css[index] === "}" && --depth === 0) return [open, index];
+  }
+  throw new Error(`${start} 블록이 닫히지 않습니다`);
+}
+const positions = (css: string, needle: string) => [...css.matchAll(new RegExp(needle.replace(/[()[\]]/g, "\\$&"), "g"))].map((match) => match.index!);
+
+describe("등장 규칙(data-reveal)", () => {
+  it("스크롤 등장 선언은 움직임 줄이기가 아닐 때 · 스크롤 타임라인을 지원할 때만 있다", () => {
+    const [motionStart, motionEnd] = blockRange(KIT_CSS, "@media (prefers-reduced-motion:no-preference)");
+    const [supportsStart, supportsEnd] = blockRange(KIT_CSS, "@supports (animation-timeline:view())", motionStart);
+    expect(supportsEnd).toBeLessThan(motionEnd);
+    const timelines = positions(KIT_CSS, "animation-timeline:view()").filter((index) => index !== supportsStart + "@supports (".length);
+    expect(timelines.length).toBeGreaterThan(0);
+    for (const index of timelines) expect(index > supportsStart && index < supportsEnd).toBe(true);
+    // 투명한 시작 상태를 쓰는 애니메이션은 모두 움직임 줄이기 조건 안에 있습니다.
+    for (const index of positions(KIT_CSS, "animation:xp-rise")) expect(index > motionStart && index < motionEnd).toBe(true);
+  });
+
+  it("그룹 안 블록까지 직계 자식과 목록 항목을 단위로 잡고, 청사진 · 끈 지면 · 빠진 요소는 제외한다", () => {
+    const [supportsStart, supportsEnd] = blockRange(KIT_CSS, "@supports (animation-timeline:view())");
+    const rule = KIT_CSS.slice(supportsStart, supportsEnd);
+    expect(rule).toContain(':root:not([data-stage]) .xp-page:not([data-motion="none"]) .xp-block:not([data-reveal="none"],[data-reveal="none"] *)>:not(ul,ol,[data-reveal])');
+    expect(rule).toContain('>:is(ul,ol,[data-reveal="stagger"])>:not([data-reveal="none"])');
+    expect(rule).toContain("animation:xp-rise var(--motion-easing) both,xp-settle linear forwards;animation-timeline:view(),scroll(root);animation-range:cover 0% cover 25vh,calc(100% - 25vh) 100%");
+    expect(rule).toContain("animation-range:cover calc(var(--xp-reveal-step) * 3) cover calc(25vh + var(--xp-reveal-step) * 3),calc(100% - 25vh) 100%");
+    // 예전의 최상위 블록 단위 규칙은 그룹 안 블록을 놓쳤습니다.
+    expect(KIT_CSS).not.toContain(".xp-inner>.xp-block{animation");
+  });
+
+  it("문서 끝 마무리는 끝 상태만 적어 앞 애니메이션의 현재 값에서 이어 간다", () => {
+    expect(KIT_CSS).toContain("@keyframes xp-settle{to{opacity:1;transform:none}}");
+  });
+
+  it("떠오르는 거리와 순서 간격을 디자인의 간격 토큰에서 가져온다", () => {
+    expect(KIT_CSS).toContain("--xp-reveal-rise:var(--element-gap);--xp-reveal-step:var(--component-gap)");
+    expect(KIT_CSS).toContain("translateY(var(--xp-reveal-rise))");
+  });
+
+  it("목록 요소가 아닌 근거 자료 묶음은 차례 등장 속성을 단다", () => {
+    const { html } = renderStructuredPortfolio(pageSpec(), content, { design: clarity });
+    expect(html).toContain('class="xp-evidence-list" data-reveal="stagger"');
   });
 });

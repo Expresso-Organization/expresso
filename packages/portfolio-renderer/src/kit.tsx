@@ -2,10 +2,12 @@ import React from "react";
 import { defineRegistry } from "@json-render/react";
 import type {
   DesignSystemSpecV2,
+  StructuredBackdrop,
   StructuredPortfolioContent,
   StructuredSection,
 } from "@expresso/contracts";
 
+import { Backdrop, BACKDROP_CSS, backdropAttributes, backdropCss, resolveBackdrop } from "./backdrop.js";
 import { structuredCatalog } from "./catalog.js";
 import { cssVariables, fontImportCss, readableColors } from "./design-tokens.js";
 import { KIT_CSS } from "./kit-styles.js";
@@ -35,7 +37,7 @@ export function kitCss(spec: DesignSystemSpecV2): string {
   const mid = weights.find((weight) => weight >= 500 && weight < strong) ?? strong;
   // 자간은 디자인이 고른 값 중 가장 좁은 것을 제목에 씁니다.
   const tracking = spec.typography.letterSpacing.find((value) => value.trim().startsWith("-")) ?? "-0.01em";
-  return `${fontImportCss(spec)}.xp-page{${cssVariables(spec)}--xp-muted:${readable.mutedOnCanvas};--xp-muted-surface:${readable.mutedOnSurface};--xp-accent-text:${readable.accentText};--xp-action-text:${readable.actionText};--xp-muted-field:${readable.mutedOnField};--xp-muted-inverse:${readable.mutedOnInverse};--xp-accent-inverse:${readable.accentOnInverse};--xp-weight:${strong};--xp-weight-mid:${mid};--xp-tracking:${tracking}}\n${KIT_CSS}`;
+  return `${fontImportCss(spec)}.xp-page{${cssVariables(spec)}--xp-muted:${readable.mutedOnCanvas};--xp-muted-surface:${readable.mutedOnSurface};--xp-accent-text:${readable.accentText};--xp-action-text:${readable.actionText};--xp-muted-field:${readable.mutedOnField};--xp-muted-inverse:${readable.mutedOnInverse};--xp-accent-inverse:${readable.accentOnInverse};--xp-weight:${strong};--xp-weight-mid:${mid};--xp-tracking:${tracking}}\n${KIT_CSS}\n${backdropCss(spec)}\n${BACKDROP_CSS}`;
 }
 
 const PATTERN_LABEL: Record<StructuredSection["pattern"], string> = {
@@ -137,12 +139,12 @@ function nameLength(name: string): "short" | "medium" | "long" {
 type Profile = StructuredPortfolioContent["profile"];
 
 /** 포스터형 첫 화면: 행동색 면 위에 화면 폭에 가까운 이름, 한 문장, 집중 분야 글자 띠. */
-function PosterIntro({ profile }: { profile: Profile }) {
+function PosterIntro({ profile, backdrop }: { profile: Profile; backdrop: StructuredBackdrop }) {
   const strip = profile.focus.length ? profile.focus : [profile.role];
   return (
     <>
     {/* data-bleed: 본문 폭 밖까지 일부러 넓힌 면입니다. 검증의 열 이탈 검사가 이 안을 건너뜁니다(가로 넘침 검사는 그대로). */}
-    <header id="intro" className="xp-hero" data-variant="poster" data-bleed="">
+    <header id="intro" className="xp-hero" data-variant="poster" data-bleed="" {...backdropAttributes(backdrop)}>
       <p className="xp-poster-role">{profile.role}</p>
       <h1 className="xp-poster-name" data-name-length={nameLength(profile.name)}>
         {profile.name}
@@ -161,6 +163,7 @@ function PosterIntro({ profile }: { profile: Profile }) {
           </ul>
         ))}
       </div>
+      <Backdrop backdrop={backdrop} />
     </header>
     {/* 첫 화면은 짧게 두고, 소개 문단은 바로 아래 큰 글자 단락으로 싣습니다. */}
     <section className="xp-poster-about" aria-label="소개">
@@ -171,10 +174,10 @@ function PosterIntro({ profile }: { profile: Profile }) {
 }
 
 /** 글 · 목록형 첫 화면: 작은 이름과 직무 아래 소개를 큰 문장으로. */
-function SentenceIntro({ profile }: { profile: Profile }) {
+function SentenceIntro({ profile, backdrop }: { profile: Profile; backdrop: StructuredBackdrop }) {
   const { content } = useKit();
   return (
-    <header id="intro" className="xp-hero" data-variant="sentence">
+    <header id="intro" className="xp-hero" data-variant="sentence" {...backdropAttributes(backdrop)}>
       <p className="xp-sentence-meta">
         <strong>{profile.name}</strong> · {profile.role}
       </p>
@@ -192,6 +195,7 @@ function SentenceIntro({ profile }: { profile: Profile }) {
           <a href="#contact">연락하기 ↗</a>
         </p>
       ) : null}
+      <Backdrop backdrop={backdrop} />
     </header>
   );
 }
@@ -497,11 +501,14 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
         </main>
       );
     },
-    NameIntro: ({ props: { profile, sections, variant } }) => {
+    NameIntro: ({ props: { profile, sections, variant, backdrop: chosen } }) => {
       const { content } = useKit();
       const art = sections?.find((section) => section.media.length)?.media[0];
-      if (variant === "poster") return <PosterIntro profile={profile} />;
-      if (variant === "sentence") return <SentenceIntro profile={profile} />;
+      const backdrop = resolveBackdrop(chosen, variant);
+      const layer = <Backdrop backdrop={backdrop} />;
+      const attributes = backdropAttributes(backdrop);
+      if (variant === "poster") return <PosterIntro profile={profile} backdrop={backdrop} />;
+      if (variant === "sentence") return <SentenceIntro profile={profile} backdrop={backdrop} />;
       const mode = variant === "media" && art ? "media" : variant === "split" ? "split" : "statement";
       const actions = (
         <div className="xp-actions">
@@ -524,7 +531,7 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
       ) : null;
       if (mode === "split")
         return (
-          <header id="intro" className="xp-hero" data-variant="split">
+          <header id="intro" className="xp-hero" data-variant="split" {...attributes}>
             <div>
               <p className="xp-eyebrow">{profile.role}</p>
               <h1 className="xp-name">{profile.name}</h1>
@@ -535,11 +542,12 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
               {focus}
               {actions}
             </div>
+            {layer}
           </header>
         );
       if (mode === "media")
         return (
-          <header id="intro" className="xp-hero" data-variant="media">
+          <header id="intro" className="xp-hero" data-variant="media" {...attributes}>
             <div className="xp-hero-text">
               <p className="xp-eyebrow">{profile.role}</p>
               <h1 className="xp-name">{profile.name}</h1>
@@ -552,16 +560,18 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
               <img src={art!.src} alt={art!.alt} />
               <figcaption className="xp-small">{art!.alt}</figcaption>
             </figure>
+            {layer}
           </header>
         );
       return (
-        <header id="intro" className="xp-hero" data-variant="statement">
+        <header id="intro" className="xp-hero" data-variant="statement" {...attributes}>
           <p className="xp-eyebrow">{profile.role}</p>
           <h1 className="xp-name">{profile.name}</h1>
           <p className="xp-headline">{profile.headline}</p>
           <Paragraphs value={profile.intro} className="xp-body xp-lead" />
           {focus}
           {actions}
+          {layer}
         </header>
       );
     },
@@ -702,7 +712,7 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
           <p className="xp-eyebrow">Evidence</p>
           <h2 className="xp-h2">근거 자료</h2>
         </header>
-        <div className="xp-evidence-list">
+        <div className="xp-evidence-list" data-reveal="stagger">
           {evidence.map((item) => (
             <details id={`source-${item.id}`} key={item.id}>
               <summary>

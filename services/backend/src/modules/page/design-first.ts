@@ -19,7 +19,7 @@ import {
   type StructuredDesignPlan,
   type StructuredPortfolioContent,
 } from "@expresso/contracts";
-import { blueprintToken, describeArchetype, describeDesignLayout, designLayout, structuredCatalog, type BlueprintSlot } from "@expresso/portfolio-renderer";
+import { blueprintToken, describeArchetype, describeBackdrops, describeDesignLayout, designLayout, structuredCatalog, type BlueprintSlot } from "@expresso/portfolio-renderer";
 
 import type { AiCallOptions, AiClient, AiUsage, AiViolation } from "../../platform/ai/client.js";
 import { jsonPointer, pointerParts } from "../../platform/ai/fixes.js";
@@ -303,6 +303,7 @@ function designPrompt(input: {
 ## 디자인
 ${layout ? describeDesignLayout(layout, context.design!.identity.name) : "색 · 서체 · 간격은 사용자가 고른 디자인 시스템이 정합니다."}
 ${describeArchetype(archetype)}
+${describeBackdrops()}
 
 ## 컴포넌트
 ${Object.entries(structuredCatalog.data.components)

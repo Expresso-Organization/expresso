@@ -6,7 +6,9 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { createMongoFixture } from "../../../test/support/mongodb.js";
 import { MongoIdentityService } from "../identity/index.js";
+import { analyticsDigest } from "./mongo-events.js";
 import { MongoAnalyticsService } from "./service.js";
+import type { InsightContext } from "./writer.js";
 
 describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB analytics", () => {
   let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
@@ -28,7 +30,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB analytics", () => {
     portfolioId = randomUUID(); deploymentId = randomUUID(); sectionId = randomUUID();
     const now = new Date("2026-08-09T00:00:00.000Z");
     const db = mongoCollections(fixture.resource.db);
-    await db.portfolios.insertOne({ _id: portfolioId, userId, brewId: randomUUID(), templateId: randomUUID(), currentDeploymentId: deploymentId, publishedSlug: slug, title: "Analytics", status: "published", createdAt: now, updatedAt: now, styleOverrides: {} });
+    await db.portfolios.insertOne({ _id: portfolioId, userId, brewId: randomUUID(), templateId: randomUUID(), currentDeploymentId: deploymentId, publicSlug: slug, title: "Analytics", status: "published", createdAt: now, updatedAt: now, styleOverrides: {} });
     await db.deployments.insertOne({ _id: deploymentId, userId, portfolioId, version: 1, subdomain: slug, seoIndexable: false, contactVisibility: "hidden", publishedAt: now, hasUnpublishedChanges: false, snapshot: { kind: "inline", value: { sections: [{ id: sectionId }] } }, seo: {} });
     service = new MongoAnalyticsService(fixture.resource, { visitorSalt: "mongo-analytics", rateLimit: 10 });
   });
@@ -59,6 +61,41 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB analytics", () => {
     expect(first).toMatchObject({ visits: 6, completes: 2, contact_clicks: 1, eligible_section_views: 4, total_section_dwell_ms: 4_800 });
     expect(await service.aggregateDay(deploymentId, date)).toEqual(first);
     expect(await mongoCollections(fixture.resource.db).metricsDaily.countDocuments({ deploymentId, date })).toBe(7);
+  });
+
+  it("hashes the session with the day it arrived", async () => {
+    const visit = event({ sessionId: "daily-hash-session-0001" });
+    await service.collect(visit);
+    const today = new Date().toISOString().slice(0, 10);
+    expect((await mongoCollections(fixture.resource.db).visitEvents.findOne({ eventId: visit.eventId }))?.sessionId).toBe(analyticsDigest(`mongo-analytics:${today}:daily-hash-session-0001`));
+  });
+
+  it("follows the address to the new version and keeps the old version's visits on the dashboard", async () => {
+    const db = mongoCollections(fixture.resource.db); const next = randomUUID(); const outlined = randomUUID(); const later = "2026-08-10"; const at = new Date(`${later}T00:00:00.000Z`);
+    await db.deployments.insertOne({ _id: next, userId, portfolioId, version: 2, subdomain: slug, seoIndexable: false, contactVisibility: "hidden", publishedAt: at, hasUnpublishedChanges: false, snapshot: { kind: "inline", value: { sections: [], outline: [{ id: randomUUID(), title: null }, { id: outlined, title: "협업과 리드" }] } }, seo: {} });
+    await db.portfolios.updateOne({ _id: portfolioId }, { $set: { currentDeploymentId: next } });
+    const sessionId = "second-version-session-01";
+    await service.collect(event({ sessionId, occurredAt: `${later}T01:00:00.000Z`, referrer: "https://www.linkedin.com/in/someone" }));
+    await service.collect(event({ sessionId, type: "section_view", sectionId: outlined, dwellMs: 4_000, scrollDepth: 0.5, occurredAt: `${later}T01:01:00.000Z` }));
+    await service.collect(event({ sessionId, type: "contact_click", target: "mailto", occurredAt: `${later}T01:02:00.000Z` }));
+    // 앞 판의 섹션은 이 판의 섹션 목록에 없다.
+    await expect(service.collect(event({ sessionId, type: "section_view", sectionId, dwellMs: 2_000, scrollDepth: 0.5 }))).rejects.toMatchObject({ statusCode: 400 });
+    expect(await db.visitEvents.countDocuments({ deploymentId: next })).toBe(1);
+    await service.aggregateDay(next, later);
+
+    const dashboard = await service.dashboard(userId, portfolioId, "all");
+    expect(dashboard.metrics).toMatchObject({ visits: 7, contactClicks: 2 });
+    expect(dashboard.trend.find((point) => point.date === later)).toMatchObject({ visits: 1, contactClicks: 1, fileDownloads: 0, linkClicks: 0 });
+    expect(dashboard.sections.find((section) => section.sectionId === outlined)).toMatchObject({ title: "협업과 리드", position: 2, views: 1, dwellMs: 4_000 });
+    expect(dashboard.sections.find((section) => section.sectionId === sectionId)).toMatchObject({ title: "", position: 1 });
+    expect(dashboard.widgets.map(({ metricKey }) => metricKey)).not.toContain("org_domains");
+
+    let seen: InsightContext | null = null;
+    const writer = { async write(context: InsightContext) { seen = context; return { narrative: "협업과 리드에서 가장 오래 머물렀습니다.", evidenceMetrics: ["visits"], suggestions: [] }; } };
+    const insight = await new MongoAnalyticsService(fixture.resource, { visitorSalt: "mongo-analytics", minimumSample: 1, writer }).insightForPortfolio(userId, portfolioId, "all");
+    expect(insight).toMatchObject({ visibility: "visible", sampleSize: 7 });
+    expect(seen!.sections).toContainEqual({ title: "협업과 리드", views: 1, dwellMs: 4_000 });
+    expect(seen!.referrers).toContainEqual({ origin: "https://www.linkedin.com", visits: 1 });
   });
 
   it("admits exactly ten requests for one hot visitor", async () => {

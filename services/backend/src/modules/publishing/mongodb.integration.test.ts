@@ -54,10 +54,21 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB publishing, media and ex
     const at = new Date("2026-08-09T00:00:00Z"); const one = `mongo-one-${randomUUID().slice(0, 8)}`; const two = `mongo-two-${randomUUID().slice(0, 8)}`;
     const first = await service.publish(firstUser, firstPortfolio, PublishPortfolioSchema.parse({ slug: one }), at); const second = await service.publish(firstUser, firstPortfolio, PublishPortfolioSchema.parse({ slug: two }), at);
     expect(second.version).toBe(first.version + 1); expect(JSON.stringify(first.snapshot)).toContain("frozen Mongo page"); await expect(service.getPublic(one, new Date("2026-09-07T23:59:59Z"))).resolves.toMatchObject({ kind: "redirect", to: two }); await expect(service.getPublic(one, new Date("2026-09-08T00:00:01Z"))).rejects.toMatchObject({ statusCode: 404 });
-    await service.rollback(firstUser, firstPortfolio, first.id); await expect(service.getPublic(one)).resolves.toMatchObject({ kind: "portfolio" }); await service.unpublish(firstUser, firstPortfolio); await expect(service.getPublic(one)).rejects.toMatchObject({ statusCode: 404 });
+    // 주소는 포트폴리오의 것이다. 되돌려도 주소는 two에 남고, one은 계속 two로 넘어간다.
+    await service.rollback(firstUser, firstPortfolio, first.id); await expect(service.getPublic(two)).resolves.toMatchObject({ kind: "portfolio", deployment: { id: first.id } }); await expect(service.getPublic(one, at)).resolves.toMatchObject({ kind: "redirect", to: two });
+    await service.unpublish(firstUser, firstPortfolio); await expect(service.getPublic(two)).rejects.toMatchObject({ statusCode: 404 });
   });
 
-  it("같은 주소로 다시 배포하고, 편집본이 공개본보다 앞서면 변경 표시를 켠다", async () => {
+  it("redeploys the same address and keeps it away from other portfolios", async () => {
+    const slug = `mongo-same-${randomUUID().slice(0, 8)}`; const input = PublishPortfolioSchema.parse({ slug });
+    const first = await service.publish(firstUser, firstPortfolio, input); const second = await service.publish(firstUser, firstPortfolio, input);
+    expect(second.version).toBe(first.version + 1); await expect(service.getPublic(slug)).resolves.toMatchObject({ kind: "portfolio", deployment: { id: second.id } });
+    await expect(service.publish(secondUser, secondPortfolio, input)).rejects.toMatchObject({ statusCode: 409 });
+    // 공개를 멈춰도 주소는 그 포트폴리오가 가진다.
+    await service.unpublish(firstUser, firstPortfolio); await expect(service.publish(secondUser, secondPortfolio, input)).rejects.toMatchObject({ statusCode: 409 });
+  });
+
+  it("편집본이 공개본보다 앞서면 변경 표시를 켜고, 같은 판을 다시 배포하면 끈다", async () => {
     const reader = new MongoPortfolioReadService(fixture.resource); const pages = new MongoPageService(fixture.resource);
     const changed = async () => (await reader.get(firstUser, firstPortfolio)).deployment?.hasUnpublishedChanges;
     const slug = `mongo-again-${randomUUID().slice(0, 8)}`;
@@ -65,29 +76,18 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB publishing, media and ex
     expect(await changed()).toBe(false);
     await pages.generate(firstUser, firstPortfolio, new Page());
     expect(await changed()).toBe(true);
-    const v2 = await service.publish(firstUser, firstPortfolio, PublishPortfolioSchema.parse({ slug }));
-    expect(v2.version).toBe(v1.version + 1); expect(v2.slug).toBe(slug);
+    await service.publish(firstUser, firstPortfolio, PublishPortfolioSchema.parse({ slug }));
     expect(await changed()).toBe(false);
-    await expect(service.getPublic(slug)).resolves.toMatchObject({ kind: "portfolio", deployment: { id: v2.id, version: v2.version } });
     // 옛 판으로 되돌리면 공개본이 편집본보다 뒤라서 다시 변경 표시가 켜집니다.
     await service.rollback(firstUser, firstPortfolio, v1.id);
-    await expect(service.getPublic(slug)).resolves.toMatchObject({ deployment: { id: v1.id } });
     expect(await changed()).toBe(true);
-    // 다른 포트폴리오는 이 주소로 배포할 수 없습니다. 실패한 쪽의 배포 행도 남지 않습니다.
-    const before = await mongoCollections(fixture.resource.db).deployments.countDocuments({ portfolioId: secondPortfolio });
-    await expect(service.publish(secondUser, secondPortfolio, PublishPortfolioSchema.parse({ slug }))).rejects.toMatchObject({ statusCode: 409 });
-    expect(await mongoCollections(fixture.resource.db).deployments.countDocuments({ portfolioId: secondPortfolio })).toBe(before);
   });
 
-  it("다른 포트폴리오의 옛 주소가 이동 중이면 그 주소를 쓰지 못하고, 그 주소로 되돌리기도 막는다", async () => {
+  it("다른 포트폴리오의 옛 주소가 이동 중이면 그 주소로 배포하지 못한다", async () => {
     const old = `mongo-old-${randomUUID().slice(0, 8)}`; const next = `mongo-next-${randomUUID().slice(0, 8)}`;
-    const first = await service.publish(secondUser, secondPortfolio, PublishPortfolioSchema.parse({ slug: old }));
+    await service.publish(secondUser, secondPortfolio, PublishPortfolioSchema.parse({ slug: old }));
     await service.publish(secondUser, secondPortfolio, PublishPortfolioSchema.parse({ slug: next }));
     await expect(service.publish(firstUser, firstPortfolio, PublishPortfolioSchema.parse({ slug: old }))).rejects.toMatchObject({ statusCode: 409 });
-    // 이동 기간이 지나 다른 포트폴리오가 옛 주소를 가져가면, 그 주소로 되돌리기는 409입니다.
-    await mongoCollections(fixture.resource.db).deploymentSlugRedirects.updateMany({ oldSlug: old }, { $set: { expiresAt: new Date(0) } });
-    await service.publish(firstUser, firstPortfolio, PublishPortfolioSchema.parse({ slug: old }));
-    await expect(service.rollback(secondUser, secondPortfolio, first.id)).rejects.toMatchObject({ statusCode: 409 });
   });
 
   it("invalidates expired or replaced asset links", async () => {

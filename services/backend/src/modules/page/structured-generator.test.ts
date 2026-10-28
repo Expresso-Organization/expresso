@@ -15,7 +15,7 @@ import { runWithFixes, valueAt } from "../../platform/ai/fixes.js";
 import { StructuredPageGenerator } from "./structured-generator.js";
 import { PageRenderError, type PageGenerationContext } from "./generator.js";
 import { findPortfolioDesign } from "../design-systems/index.js";
-import { describeArchetype, describeDesignLayout, designLayout, renderedContentValues, type RenderMeasurement } from "@expresso/portfolio-renderer";
+import { describeArchetype, describeBackdrops, describeDesignLayout, designLayout, renderedContentValues, type RenderMeasurement } from "@expresso/portfolio-renderer";
 import type { PageMeasurer, PageMeasurement, PageScreenshot } from "../../platform/browser/page-measurer.js";
 
 const content: StructuredPortfolioContent = {
@@ -62,6 +62,7 @@ const spec = {
         profile: { $state: "/profile" },
         sections: { $state: "/sections" },
         variant: "statement",
+        backdrop: "grid",
       },
       children: [],
     },
@@ -313,6 +314,8 @@ describe("모델 기반 구조화 생성", () => {
     const layout = designLayout(design);
     expect(ai.calls[0]!.prompt).toContain(describeDesignLayout(layout, design.identity.name));
     expect(ai.calls[0]!.prompt).not.toContain("컨테이너는 지면을 나누는 요소입니다");
+    // 다듬기 · 다시 뽑기의 Spec 프롬프트도 첫 화면 배경의 쓰임을 알립니다.
+    expect(ai.calls[0]!.prompt).toContain(describeBackdrops());
     const grouped = structuredClone(spec) as { elements: Record<string, unknown> & { page: { children: string[] } } };
     grouped.elements["group-1"] = { type: "Columns", props: { variant: "even" }, children: ["index", "section-project-a"] };
     grouped.elements.page.children = ["intro", "group-1"];
