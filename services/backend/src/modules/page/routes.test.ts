@@ -24,7 +24,7 @@ describe("다듬기 경로", () => {
     registerPageRoutes(server, {
       service: service as unknown as PageApi,
       authenticateRequest: async (request) => {
-        request.auth = { sessionId: "session", user: { id: user, email: "test@example.com", displayName: "test", planCode: "free", emailVerifiedAt: null } };
+        request.auth = { sessionId: "session", user: { id: user, email: "test@example.com", displayName: "test", planCode: "free", emailVerifiedAt: null, role: "user", impersonation: null }, owner: { userId: user, displayName: "test", role: "user" } };
       },
     });
     return { server, service };

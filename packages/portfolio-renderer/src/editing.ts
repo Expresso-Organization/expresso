@@ -38,6 +38,7 @@ export const STRUCTURED_PARTS: Record<string, Record<string, StructuredPart>> = 
     summary: { label: "작업 요약", selector: "li .xp-small:not(.xp-num), .xp-mosaic .xp-small:not(.xp-num)" },
   },
   CaseBeforeAfter: CASE_PARTS,
+  CaseBars: CASE_PARTS,
   CaseFlow: CASE_PARTS,
   CaseShowcase: CASE_PARTS,
   CaseEssay: CASE_PARTS,
@@ -75,6 +76,7 @@ export const STRUCTURED_TYPE_LABELS: Record<string, string> = {
   NameIntro: "첫 화면",
   ProjectIndex: "작업 목차",
   CaseBeforeAfter: "전후 비교",
+  CaseBars: "막대 차트",
   CaseFlow: "과정 흐름",
   CaseShowcase: "대표 이미지",
   CaseEssay: "기사형 사례",
@@ -98,6 +100,7 @@ const PROP_LABELS: Record<string, string> = {
   scale: "크기",
   surface: "배경",
   width: "폭",
+  backdrop: "첫 화면 배경",
 };
 
 const OPTION_LABELS: Record<string, Record<string, string>> = {
@@ -115,7 +118,12 @@ const OPTION_LABELS: Record<string, Record<string, string>> = {
     "wide-end": "오른쪽 넓게",
     panel: "면 배경",
     accent: "강조선",
+    timeline: "작업 기간 차트",
+    list: "목록",
+    chart: "경력 기간 차트",
   },
+  // 계약 STRUCTURED_BACKDROPS의 설명을 따릅니다.
+  backdrop: { none: "없음", grid: "선 격자", dots: "점 격자", stripes: "사선 줄무늬", contour: "등고선", rings: "동심원 궤도", glow: "아래에서 번지는 빛", aurora: "흐르는 두 색 빛" },
   scale: { lead: "크게", standard: "보통", compact: "작게" },
   surface: { canvas: "기본", field: "색 면", inverse: "반전" },
   width: { content: "본문 폭", bleed: "창 폭 전체" },

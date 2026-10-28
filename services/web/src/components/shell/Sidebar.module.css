@@ -598,6 +598,16 @@
   flex-shrink: 0;
 }
 
+/* 관리 줄의 아이콘 자리. 아바타와 같은 폭이라 아래 사용자 줄과 글자가 나란히 선다. */
+.adminIcon {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  color: var(--ex-fg-muted);
+  flex-shrink: 0;
+}
+
 .userName {
   margin-left: 9px;
   font-size: var(--ex-text-sm);

@@ -14,6 +14,7 @@ import { Icon } from "@/components/ui/Icon";
 import { EditablePagePreview } from "@/components/portfolio/EditablePagePreview";
 import { PagePreview } from "@/components/portfolio/PagePreview";
 import { PortfolioPage } from "@/components/portfolio/PortfolioPage";
+import { publicSiteHost } from "@/lib/public-site";
 
 import { ElementChat } from "./ElementChat";
 import { ElementProperties } from "./ElementProperties";
@@ -308,7 +309,7 @@ export function Editor({
       path: `${section.title ?? "섹션"} › ${index + 1}번`,
     }))).find((entry) => entry.block.id === blockId) ?? null;
   const address = portfolio.deployment
-    ? `${portfolio.deployment.subdomain}.xpresso.me`
+    ? publicSiteHost(portfolio.deployment.subdomain)
     : "아직 주소가 없습니다";
   const attention = generatedPage?.qaReport.checks.find(({ status }) => status === "fail");
 
@@ -661,6 +662,7 @@ export function Editor({
                   page={generatedPage}
                   title={portfolio.title}
                   className={styles.freePagePreview!}
+                  reveal={false}
                 />
               ) : (
               <div className={styles.page}>

@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import {
+  STRUCTURED_BACKDROPS,
   applyStructuredTextPatches,
   EditStructuredPageSchema,
   readStructuredText,
   StructuredContentModelSchema,
   StructuredMediaSchema,
+  StructuredNodeSchema,
   StructuredPortfolioContentSchema,
   structuredModelSchema,
   structuredLeaves,
@@ -314,7 +316,7 @@ describe("구조화 포트폴리오 계약", () => {
         root: "page",
         elements: {
           ...rest,
-          intro: { ...spec.elements.intro, props: { profile: { $state: "/profile" }, sections: { $state: "/sections" }, variant } },
+          intro: { ...spec.elements.intro, props: { profile: { $state: "/profile" }, sections: { $state: "/sections" }, variant, backdrop: "none" } },
           index: { type: "ProjectIndex", props: { sections: { $state: "/sections" }, variant: "rows" }, children: [] },
           "section-project-a": a,
           "section-project-b": b,
@@ -383,7 +385,7 @@ describe("포트폴리오 유형별 모델 스키마", () => {
     contact: null,
   };
   const page = (children: string[]) => ({ type: "PortfolioPage", props: { profile: { $state: "/profile" }, motion: "showcase", rationale: "근거" }, children });
-  const intro = (variant: string) => ({ type: "NameIntro", props: { profile: { $state: "/profile" }, sections: { $state: "/sections" }, variant }, children: [] });
+  const intro = (variant: string, backdrop: string | null = "grid") => ({ type: "NameIntro", props: { profile: { $state: "/profile" }, sections: { $state: "/sections" }, variant, ...(backdrop ? { backdrop } : {}) }, children: [] });
   const index = (variant: string) => ({ type: "ProjectIndex", props: { sections: { $state: "/sections" }, variant }, children: [] });
   const caseNode = (type: string) => ({ type, props: { section: { $state: "/sectionById/a" } }, children: [] });
   const schema = (archetype: "case-study" | "poster" | "list") => structuredModelSchema(value, { intro: [], section: [], guidance: [], archetype });
@@ -413,15 +415,40 @@ describe("포트폴리오 유형별 모델 스키마", () => {
     expect(schema("case-study").safeParse({ ...ok, elements: { ...ok.elements, "section-a": caseNode("CaseRow") } }).success).toBe(false);
   });
 
+  it("모델은 모든 유형에서 첫 화면 배경을 목록 안에서 하나 고른다", () => {
+    const ok = (archetype: "case-study" | "poster" | "list", backdrop: string | null) => {
+      const variant = archetype === "poster" ? "poster" : archetype === "list" ? "sentence" : "statement";
+      const children = archetype === "list" ? ["intro", "section-a"] : ["intro", "index", "section-a"];
+      return {
+        root: "page",
+        elements: {
+          page: page(children),
+          intro: intro(variant, backdrop),
+          ...(archetype === "list" ? {} : { index: index(archetype === "poster" ? "poster" : "rows") }),
+          "section-a": caseNode(archetype === "list" ? "CaseRow" : "CaseEssay"),
+        },
+      };
+    };
+    for (const archetype of ["case-study", "poster", "list"] as const) {
+      for (const backdrop of STRUCTURED_BACKDROPS) expect(schema(archetype).safeParse(ok(archetype, backdrop)).error?.issues ?? [], `${archetype} ${backdrop}`).toEqual([]);
+      expect(schema(archetype).safeParse(ok(archetype, null)).success, archetype).toBe(false);
+      expect(schema(archetype).safeParse(ok(archetype, "sparkles")).success, archetype).toBe(false);
+    }
+  });
+
   it("저장 계약은 유형 · 기간이 있는 새 판과 없는 옛 판을 모두 받는다", () => {
     const stored = (archetype?: string) => ({
       root: "page",
       elements: {
         page: { ...page(["intro", "section-a"]), props: { ...page([]).props, design: { layout: "library" }, ...(archetype ? { archetype } : {}) } },
-        intro: intro("sentence"),
+        intro: intro("sentence", backdrop),
         "section-a": caseNode("CaseRow"),
       },
     });
+    let backdrop: string | null = "dots";
+    expect(() => validateStructuredPortfolio(stored("list"), value)).not.toThrow();
+    // 첫 화면 배경 칸이 생기기 전 저장본입니다.
+    backdrop = null;
     expect(() => validateStructuredPortfolio(stored("list"), value)).not.toThrow();
     expect(() => validateStructuredPortfolio(stored(), value)).not.toThrow();
     const { period: _period, ...section } = value.sections[0]!;
@@ -459,6 +486,27 @@ describe("시각 부품과 지면 변화 계약", () => {
     const twice = withCase({}, { "quote-1": quote(), "quote-2": quote() }, ["intro", "evidence", "case-a", "quote-1", "quote-2"]);
     expect(() => validateStructuredPortfolio(twice, rich)).toThrow("중복");
     expect(() => validateStructuredPortfolio(withCase({}, { "quote-1": quote("missing") }, ["intro", "evidence", "case-a", "quote-1"]), rich)).toThrow("섹션 참조");
+  });
+
+  it("막대 차트는 수치 두 개, 목차 기간 차트 · 경력 기간 차트는 정해진 형태 값만 받는다", () => {
+    const measured: StructuredPortfolioContent = {
+      ...content,
+      sections: [{ ...content.sections[0]!, metrics: [{ label: "TypeScript", value: "5년" }, { label: "Next.js", value: "2년" }] }],
+    };
+    expect(() => validateStructuredPortfolio(withCase({ type: "CaseBars" }), measured)).not.toThrow();
+    expect(() => validateStructuredPortfolio(withCase({ type: "CaseBars" }), content)).toThrow("수치가 두 개 이상");
+    const mixed: StructuredPortfolioContent = { ...measured, sections: [{ ...measured.sections[0]!, metrics: [{ label: "LCP", value: "1.9초" }, { label: "JS", value: "180KB" }] }] };
+    expect(() => validateStructuredPortfolio(withCase({ type: "CaseBars" }), mixed)).toThrow("같은 단위");
+    const shape = (value: StructuredPortfolioContent) =>
+      JSON.stringify(z.toJSONSchema(structuredModelSchema(value, { intro: [], section: [], guidance: [] })));
+    expect(shape(content)).not.toContain("CaseBars");
+    expect(shape(measured)).toContain("CaseBars");
+    expect(shape(mixed)).not.toContain("CaseBars");
+    expect(shape(measured)).toContain('"timeline"');
+    expect(StructuredNodeSchema.safeParse({ type: "ProjectIndex", props: { sections: { $state: "/sections" }, variant: "timeline" }, children: [] }).success).toBe(true);
+    expect(StructuredNodeSchema.safeParse({ type: "CareerTimeline", props: { career: { $state: "/career" }, variant: "chart" }, children: [] }).success).toBe(true);
+    expect(StructuredNodeSchema.safeParse({ type: "CareerTimeline", props: { career: { $state: "/career" } }, children: [] }).success).toBe(true);
+    expect(StructuredNodeSchema.safeParse({ type: "CareerTimeline", props: { career: { $state: "/career" }, variant: "gantt" }, children: [] }).success).toBe(false);
   });
 
   it("크기 · 배경 · 폭은 정해진 값만 받고 없어도 된다", () => {

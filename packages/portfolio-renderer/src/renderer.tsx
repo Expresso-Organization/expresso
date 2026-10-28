@@ -316,7 +316,7 @@ const { registry } = defineRegistry(structuredCatalog, {
       <nav
         id="work"
         className="sp-index"
-        data-variant={variant}
+        data-variant={variant === "timeline" ? "rows" : variant}
         aria-label="프로젝트 목차"
       >
         <p className="sp-kicker">SELECTED WORK</p>
@@ -349,9 +349,12 @@ const { registry } = defineRegistry(structuredCatalog, {
         </div>
       </nav>
     ),
-    // 전후 비교 · 과정 흐름 · 이미지 전시 · 수치 강조 줄 · 큰 인용은 토큰 키트 부품입니다. 수집 원본 렌더러에서는
-    // 사례를 기사형(이미지 전시는 갤러리형)으로 그리고, 수치 줄과 인용은 사례 안의 글과 겹치므로 그리지 않습니다.
+    // 전후 비교 · 막대 차트 · 과정 흐름 · 이미지 전시 · 수치 강조 줄 · 큰 인용 · 기간 차트는 토큰 키트 부품입니다. 수집 원본 렌더러에서는
+    // 사례를 기사형(이미지 전시는 갤러리형)으로, 기간 차트를 목록으로 그리고, 수치 줄과 인용은 사례 안의 글과 겹치므로 그리지 않습니다.
     CaseBeforeAfter: ({ props }) => (
+      <Case section={props.section} sourceId={props.sourceId} kind="essay" />
+    ),
+    CaseBars: ({ props }) => (
       <Case section={props.section} sourceId={props.sourceId} kind="essay" />
     ),
     CaseFlow: ({ props }) => (
@@ -490,6 +493,8 @@ export type RenderStructuredOptions = {
   design?: DesignSystemSpecV2 | undefined;
   /** 수집 원본으로 그리는 저장된 판의 사용자 색입니다. 키트 경로에서는 쓰지 않습니다. */
   theme?: { background: string; text: string; accent: string } | undefined;
+  /** 렌더 시각입니다. 기간 차트가 "현재"로 끝나는 기간을 여기까지 그립니다. 주지 않으면 호출 시각입니다. */
+  now?: Date | undefined;
 };
 
 export function renderStructuredPortfolio(
@@ -518,7 +523,7 @@ export function renderStructuredPortfolio(
         <VisibilityProvider>
           <ActionProvider handlers={{}}>
             {design ? (
-              <KitContext.Provider value={{ content: snapshot.content, evidenceTitles, design, caseNumbers: caseNumbers(snapshot.spec, snapshot.content), firstRowId: firstRowId(snapshot.spec) }}>
+              <KitContext.Provider value={{ content: snapshot.content, evidenceTitles, design, caseNumbers: caseNumbers(snapshot.spec, snapshot.content), firstRowId: firstRowId(snapshot.spec), now: options.now ?? new Date() }}>
                 <Renderer spec={keyedSpec(snapshot.spec)} registry={kitRegistry} />
               </KitContext.Provider>
             ) : (

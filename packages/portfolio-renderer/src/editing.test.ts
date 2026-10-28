@@ -94,7 +94,7 @@ describe("카탈로그에서 읽는 편집 칸", () => {
   it("선택지가 정해진 props만 편집 칸으로 낸다", () => {
     expect(editableFields("CaseEssay").map((field) => field.name)).toEqual(["scale", "surface", "width"]);
     const intro = editableFields("NameIntro");
-    expect(intro.map((field) => field.name)).toEqual(["variant"]);
+    expect(intro.map((field) => field.name)).toEqual(["variant", "backdrop"]);
     expect(intro[0]!.options.find((option) => option.value === "split")?.label).toBe("좌우 분할");
     expect(editableFields("Columns")[0]!.options.map((option) => option.value)).toEqual(["even", "wide-start", "wide-end"]);
     expect(editableFields("Contact")).toEqual([]);

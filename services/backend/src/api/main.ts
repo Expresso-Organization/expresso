@@ -43,6 +43,7 @@ import { createMediaStorage } from "../platform/storage/create-storage.js";
 import { AnalyticsService } from "../modules/analytics/index.js";
 import { EngagementService } from "../modules/engagement/index.js";
 import { AccountLifecycleService } from "../modules/account-lifecycle/index.js";
+import { AdminService } from "../modules/admin/index.js";
 import { CareerDocumentService } from "../modules/career-editor/index.js";
 import { AiClientProposalAdapter, SelectedBlockTextAiProposalAdapter } from "../modules/career-editor/ai-adapter.js";
 import { createReliableQueue } from "../platform/queue.js";
@@ -154,7 +155,9 @@ const careerDocumentService = new CareerDocumentService(
   },
 );
 const agentChatService = new AgentChatService(database, config.agentChatEnabled ? new ClaudeAgentRuntime(config.agentChatModel, aiUsage) : null, careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(database, config.agentCredentialEncryptionKey), portfolioReadService, pageService);
+const adminService = new AdminService(database, { identity: identityService, career: careerService, consent: consentService });
 const app = buildApi({
+  adminService,
   agentChatService,
   config,
   readinessChecks: [database.readinessCheck, redis.readinessCheck],
