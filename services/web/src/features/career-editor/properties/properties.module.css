@@ -65,6 +65,10 @@
 .dateFields { grid-template-columns: 1fr 1fr; }
 .dateFields label { display: grid; gap: 4px; color: var(--ex-fg-muted); font-size: var(--ex-text-xs); }
 .readOnlyValue { display: block; min-height: 32px; padding: 7px 8px; color: var(--ex-fg-muted); font-size: var(--ex-text-sm); overflow-wrap: anywhere; }
+/* Worker가 수식 · 롤업을 다시 계산하는 동안(`useComputedRefresh`) 계산값 칸만 깜빡인다. 주기는 브루 대기 화면(`Waiting.module.css`)과 같다. */
+.propertyList[aria-busy="true"] [data-computed] { animation: computing 1.2s ease-in-out infinite; }
+@keyframes computing { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .propertyList[aria-busy="true"] [data-computed] { animation: none; opacity: .5; } }
 .assetList { display: flex; flex-wrap: wrap; gap: 4px; }
 .assetList button { border: 1px solid var(--ex-border-soft); border-radius: 999px; background: var(--ex-bg-muted); padding: 3px 8px; color: var(--ex-fg-body); }
 .relationEditor { position: relative; display: grid; gap: 6px; }
@@ -75,13 +79,19 @@
 .relationResults button:hover, .relationResults button:focus { background: var(--ex-bg-hover); }
 .formulaEditor, .rollupEditor { display: grid; gap: 10px; padding: 10px; border: 1px solid var(--ex-border-soft); border-radius: 8px; background: var(--ex-bg-muted); }
 .formulaEditor > label, .rollupEditor label { display: grid; gap: 4px; color: var(--ex-fg-body); font-size: var(--ex-text-xs); }
-.formulaSource { min-height: 112px; resize: vertical; border: 1px solid var(--ex-border-soft); border-radius: 6px; background: var(--ex-bg); padding: 8px; color: var(--ex-fg-strong); font: var(--ex-text-sm)/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.formulaField { position: relative; display: grid; border-radius: 6px; background: var(--ex-bg); }
+/* 배경 층과 textarea는 상자 · 글꼴 · 줄바꿈이 같아야 토큰이 글자와 겹친다. 한글 이름이 들어가므로 mono 글꼴을 쓰지 않는다. */
+.formulaSource, .formulaBackdrop { box-sizing: border-box; margin: 0; border: 1px solid var(--ex-border-soft); border-radius: 6px; padding: 8px; font-family: inherit; font-size: var(--ex-text-sm); line-height: 1.5; letter-spacing: normal; white-space: pre-wrap; overflow-wrap: break-word; scrollbar-gutter: stable; }
+.formulaSource { position: relative; min-height: 112px; resize: vertical; background: transparent; color: var(--ex-fg-strong); }
+.formulaBackdrop { position: absolute; inset: 0; overflow: hidden; border-color: transparent; color: transparent; pointer-events: none; }
+.formulaToken { border-radius: 3px; background: var(--ex-accent-surface-hover); box-shadow: 0 0 0 2px var(--ex-accent-surface-hover), inset 0 -1px 0 var(--ex-accent); color: transparent; }
 .formulaSource:focus { border-color: var(--ex-accent); outline: 2px solid var(--ex-focus-ring); outline-offset: 1px; }
 .propertyAutocomplete { display: flex; gap: 6px; overflow-x: auto; }
-.propertyAutocomplete button { display: grid; flex: 0 0 auto; justify-items: start; border: 1px solid var(--ex-border-soft); border-radius: 6px; background: var(--ex-bg); padding: 5px 7px; color: var(--ex-fg-body); font-size: var(--ex-text-xs); }
-.propertyAutocomplete small { max-width: 120px; overflow: hidden; color: var(--ex-fg-muted); font-size: var(--ex-text-xs); text-overflow: ellipsis; }
+.propertyAutocomplete button { flex: 0 0 auto; max-width: 160px; overflow: hidden; border: 1px solid var(--ex-border-soft); border-radius: 6px; background: var(--ex-accent-surface); padding: 5px 7px; color: var(--ex-accent-ink); font-size: var(--ex-text-xs); text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.propertyAutocomplete button:hover { background: var(--ex-accent-surface-hover); }
 .formulaActions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
 .formulaActions span { margin-right: auto; color: var(--ex-fg-muted); font-size: var(--ex-text-xs); }
+.formulaActions span[data-over] { color: var(--ex-status-danger-text); }
 .formulaActions button { min-height: 30px; border: 1px solid var(--ex-border-soft); border-radius: 6px; background: var(--ex-bg); padding: 5px 8px; color: var(--ex-fg-body); }
 .formulaDiagnostics { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
 .formulaDiagnostics li { display: flex; gap: 5px; color: var(--ex-status-danger-text); font-size: var(--ex-text-xs); }

@@ -4,18 +4,11 @@ import {
   CareerSocketServerMessageSchema,
   type CareerSocketServerMessage,
 } from "@expresso/contracts";
-import {
-  createEmptyCareerDocument,
-  type CareerDocument,
-} from "@expresso/editor/document";
-import {
-  encodeDocumentAsYUpdate,
-  encodeDocumentStateVector,
-  reconstructYDocument,
-} from "@expresso/editor/yjs";
+import type { CareerDocument } from "@expresso/editor/document";
+import * as Y from "yjs";
 
 const EMPTY_STATE_VECTOR = "";
-// unavailable은 문서 bootstrap이 404인 상태입니다. 서버가 이 계정에서 기록을 찾지 못했다는 뜻입니다.
+// unavailable은 문서 bootstrap이 404이거나 BlockNote 문서가 아닌 상태입니다.
 type SessionStatus = "loading" | "saving" | "saved" | "offline" | "conflict" | "unavailable";
 export interface CareerEditorSnapshot {
   status: SessionStatus;
@@ -30,6 +23,9 @@ export interface CareerEditorSessionOptions {
 }
 type Listener = () => void;
 type Pending = { clientSequence: number; updateBase64: string };
+/** 서버에서 받은 Yjs 업데이트의 출처 표시입니다. 이 출처의 변경은 다시 보내지 않습니다. */
+const REMOTE_ORIGIN = Symbol("career-remote");
+const BLOCKNOTE_BATCH_MS = 300;
 
 function encode(bytes: Uint8Array): string {
   let value = "";
@@ -62,12 +58,14 @@ export class CareerEditorSession {
   private reconnectAttempt = 0;
   private sessionId = uuid();
   private sessionToken = "";
-  private updates: Uint8Array[] = [];
   private pending = new Map<number, Pending>();
   private acknowledgedServerSequences = new Set<number>();
   private nextSequence = 1;
   private snapshot: CareerEditorSnapshot = { status: "loading", documentVersion: 0, lastAckSequence: 0, proposal: null };
   private document: CareerDocument | null = null;
+  private yDocument: Y.Doc | null = null;
+  private localYUpdates: Uint8Array[] = [];
+  private batchTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(recordId: string, options: CareerEditorSessionOptions = {}) {
     this.recordId = recordId;
@@ -80,23 +78,20 @@ export class CareerEditorSession {
   subscribe = (listener: Listener) => { this.listeners.add(listener); return () => this.listeners.delete(listener); };
   getSnapshot = () => this.snapshot;
   getDocument = () => this.document;
-  hasPendingUpdates = () => this.pending.size > 0;
-  updateDocument = (next: CareerDocument) => {
-    // 문서 세션이 없으면 보낼 곳이 없으므로 입력을 pending에 쌓지 않습니다.
-    if (this.disposed || this.snapshot.status === "unavailable") return;
-    const parsed = CareerDocumentBootstrapSchema.shape.document.parse(next);
-    const clientSequence = this.nextSequence++;
-    const update = encodeDocumentAsYUpdate(parsed, this.updates, `${this.clientId}:${clientSequence}`);
-    const updateBase64 = encode(update);
-    this.updates.push(update);
-    this.document = reconstructYDocument(this.updates);
-    this.pending.set(clientSequence, { clientSequence, updateBase64 });
-    this.setSnapshot({ status: "saving" });
-    this.sendPending();
+  hasPendingUpdates = () => this.pending.size > 0 || this.localYUpdates.length > 0;
+  /** 서버 상태로 시작한 Y.Doc입니다. bootstrap 전에는 null입니다. */
+  getYDocument = () => this.yDocument;
+  /** 편집기가 본문을 바꿀 때 v1 모양 사본을 알립니다. 같은 기록을 보는 AI 비교 화면이 이 값을 읽습니다. */
+  publishDocument = (next: CareerDocument) => {
+    if (this.disposed) return;
+    this.document = next;
+    this.emit();
   };
   dispose() {
     this.disposed = true;
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+    if (this.batchTimer) clearTimeout(this.batchTimer);
+    this.yDocument?.destroy();
     this.socket?.close();
     this.socket = null;
     this.listeners.clear();
@@ -111,14 +106,16 @@ export class CareerEditorSession {
       if (response.status === 404) { this.setSnapshot({ status: "unavailable" }); return; }
       if (!response.ok) throw new Error(`bootstrap failed: ${response.status}`);
       const bootstrap = CareerDocumentBootstrapSchema.parse(await response.json());
+      // 서버는 모든 기록을 BlockNote로 엽니다. 그렇지 않은 응답은 이 클라이언트가 편집할 수 없습니다.
+      if (bootstrap.editor !== "blocknote" || !bootstrap.stateBase64) { this.setSnapshot({ status: "unavailable" }); return; }
       this.sessionToken = bootstrap.sessionToken;
       this.document = bootstrap.document;
-      this.updates = [encodeDocumentAsYUpdate(bootstrap.document)];
-      this.snapshot = { ...this.snapshot, status: "offline", documentVersion: bootstrap.documentVersion };
+      this.startBlockNote(decode(bootstrap.stateBase64));
+      // 받은 상태에 documentVersion까지의 업데이트가 이미 들어 있으므로 그 뒤만 요청합니다.
+      this.snapshot = { ...this.snapshot, status: "offline", documentVersion: bootstrap.documentVersion, lastAckSequence: bootstrap.documentVersion };
       this.emit();
       this.connect();
     } catch {
-      this.document ??= createEmptyCareerDocument();
       this.setSnapshot({ status: "offline" });
       this.scheduleReconnect();
     }
@@ -131,7 +128,7 @@ export class CareerEditorSession {
     this.socket = socket;
     socket.onopen = () => {
       this.reconnectAttempt = 0;
-      const stateVectorBase64 = this.document ? encode(encodeDocumentStateVector(this.document)) : EMPTY_STATE_VECTOR;
+      const stateVectorBase64 = this.yDocument ? encode(Y.encodeStateVector(this.yDocument)) : EMPTY_STATE_VECTOR;
       const sync = clientFrame({ protocolVersion: 1, recordId: this.recordId, sessionId: this.sessionId, type: "sync", stateVectorBase64, lastAckSequence: this.snapshot.lastAckSequence });
       // 짧은 수명 세션 토큰은 첫 sync에만 붙이고, 쿠키나 저장소에는 남기지 않습니다.
       socket.send(sync.replace("}", `,"sessionToken":${JSON.stringify(this.sessionToken)}}`));
@@ -146,7 +143,11 @@ export class CareerEditorSession {
       const message: CareerSocketServerMessage = CareerSocketServerMessageSchema.parse(typeof raw === "string" ? JSON.parse(raw) : raw);
       if (message.recordId !== this.recordId || message.sessionId !== this.sessionId) return;
       if (message.type === "ready") { this.snapshot = { ...this.snapshot, status: this.pending.size ? "saving" : "saved", documentVersion: message.documentVersion, lastAckSequence: Math.max(this.snapshot.lastAckSequence, message.sequence) }; this.emit(); return; }
-      if (message.type === "update") { this.updates.push(decode(message.updateBase64)); this.document = reconstructYDocument(this.updates); this.setSnapshot({ documentVersion: Math.max(this.snapshot.documentVersion, message.sequence), lastAckSequence: Math.max(this.snapshot.lastAckSequence, message.sequence) }); return; }
+      if (message.type === "update" && this.yDocument) {
+        Y.applyUpdate(this.yDocument, decode(message.updateBase64), REMOTE_ORIGIN);
+        this.setSnapshot({ documentVersion: Math.max(this.snapshot.documentVersion, message.sequence), lastAckSequence: Math.max(this.snapshot.lastAckSequence, message.sequence) });
+        return;
+      }
       if (message.type === "ack") {
         // 서버 sequence가 같은 ack는 재연결 중 중복 도착할 수 있으므로 한 번만 pending을 줄입니다.
         if (!this.acknowledgedServerSequences.has(message.sequence)) {
@@ -160,6 +161,27 @@ export class CareerEditorSession {
       if (message.type === "proposal") { this.setSnapshot({ proposal: { proposalId: message.proposalId, baseDocumentVersion: message.baseDocumentVersion, status: message.status, progress: message.progress } }); return; }
       if (message.type === "error") this.setSnapshot({ status: message.code === "VERSION_CONFLICT" ? "conflict" : "offline" });
     } catch { this.setSnapshot({ status: "conflict" }); }
+  }
+  private startBlockNote(state: Uint8Array) {
+    const yDocument = new Y.Doc();
+    Y.applyUpdate(yDocument, state, REMOTE_ORIGIN);
+    yDocument.on("update", (update: Uint8Array, origin: unknown) => {
+      if (origin === REMOTE_ORIGIN || this.disposed || this.snapshot.status === "unavailable") return;
+      this.localYUpdates.push(update);
+      this.setSnapshot({ status: "saving" });
+      // 키 입력마다 프레임을 만들지 않고 300ms 동안 모인 업데이트를 하나로 합쳐 보냅니다.
+      this.batchTimer ??= setTimeout(() => this.flushBlockNote(), BLOCKNOTE_BATCH_MS);
+    });
+    this.yDocument = yDocument;
+  }
+  private flushBlockNote() {
+    this.batchTimer = null;
+    if (!this.localYUpdates.length) return;
+    const merged = Y.mergeUpdates(this.localYUpdates);
+    this.localYUpdates = [];
+    const clientSequence = this.nextSequence++;
+    this.pending.set(clientSequence, { clientSequence, updateBase64: encode(merged) });
+    this.sendPending();
   }
   private sendPending() {
     if (!this.socket || this.socket.readyState !== 1) return;

@@ -13,17 +13,38 @@ function property(id: string, name: string, type: CareerPropertyDefinitionV2["ty
 
 describe("formula and rollup editors", () => {
   afterEach(cleanup);
-  it("inserts a stable property ID, displays positioned diagnostics and keeps an invalid draft", async () => {
-    const preview = vi.fn(async () => ({ diagnostics: [{ code: "TYPE_MISMATCH", message: "숫자가 필요합니다.", severity: "error" as const, start: 0, end: 4 }], value: null, dependencies: [propertyId] }));
+  it("shows a property name token, sends the stable property ID and moves diagnostics onto the shown source", async () => {
+    // 서버 진단은 저장 원문(UUID) 기준이다. `+ x`의 x는 저장 원문의 마지막 글자다.
+    const stored = `prop("${propertyId}") + x`;
+    const preview = vi.fn(async () => ({ diagnostics: [{ code: "TYPE_MISMATCH", message: "숫자가 필요합니다.", severity: "error" as const, start: stored.length - 1, end: stored.length }], value: null, dependencies: [propertyId] }));
     const commit = vi.fn(async () => undefined);
-    render(<FormulaEditor source="" properties={[property(propertyId, "성과", "number")]} preview={preview} onCommit={commit} />);
-    fireEvent.click(screen.getByRole("button", { name: new RegExp("성과") }));
-    expect((screen.getByLabelText("수식") as HTMLTextAreaElement).value).toBe(`prop("${propertyId}")`);
+    const { container } = render(<FormulaEditor source="" properties={[property(propertyId, "성과", "number")]} preview={preview} onCommit={commit} />);
+    fireEvent.click(screen.getByRole("button", { name: "성과" }));
+    const textarea = screen.getByLabelText("수식") as HTMLTextAreaElement;
+    expect(textarea.value).toBe('prop("성과")');
+    expect(container.querySelector("mark")?.textContent).toBe('prop("성과")');
+    fireEvent.change(textarea, { target: { value: 'prop("성과") + x' } });
     fireEvent.click(screen.getByRole("button", { name: "수식 저장" }));
     await waitFor(() => expect(screen.getByText("TYPE_MISMATCH")).toBeTruthy());
-    expect(screen.getByText("1–5")).toBeTruthy();
+    expect(preview).toHaveBeenCalledWith(stored);
+    expect(screen.getByText("14–15")).toBeTruthy();
     expect(commit).not.toHaveBeenCalled();
-    expect((screen.getByLabelText("수식") as HTMLTextAreaElement).value).toContain(propertyId);
+    expect(textarea.value).toBe('prop("성과") + x');
+  });
+
+  it("shows stored formulas by name, reports unknown names without asking the server and commits UUIDs", async () => {
+    const preview = vi.fn(async () => ({ diagnostics: [], value: null, dependencies: [propertyId] }));
+    const commit = vi.fn(async () => undefined);
+    render(<FormulaEditor source={`prop("${propertyId}") * 2`} properties={[property(propertyId, "매출", "number")]} preview={preview} onCommit={commit} />);
+    const textarea = screen.getByLabelText("수식") as HTMLTextAreaElement;
+    expect(textarea.value).toBe('prop("매출") * 2');
+    fireEvent.change(textarea, { target: { value: 'prop("없는 속성") * 2' } });
+    fireEvent.click(screen.getByRole("button", { name: "미리 보기" }));
+    await waitFor(() => expect(screen.getByText("unknown_property")).toBeTruthy());
+    expect(preview).not.toHaveBeenCalled();
+    fireEvent.change(textarea, { target: { value: 'prop("매출") * 3' } });
+    fireEvent.click(screen.getByRole("button", { name: "수식 저장" }));
+    await waitFor(() => expect(commit).toHaveBeenCalledWith(`prop("${propertyId}") * 3`));
   });
 
   it("shows cycle diagnostics and saves a valid formula", async () => {
