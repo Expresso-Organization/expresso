@@ -1,87 +1,69 @@
 // @vitest-environment jsdom
 
 import type { CareerRecordListItem } from "@expresso/contracts";
-import { createEmptyCareerDocument, parseCareerDocument } from "@expresso/editor";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { createEmptyCareerDocument } from "@expresso/editor";
+import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import * as Y from "yjs";
 
 // 채팅의 네트워크·스크롤은 별도 테스트와 실제 브라우저에서 검증합니다.
 vi.mock("@/features/agent-chat/AgentChat", () => ({ AgentChat: () => null }));
-const mocks = vi.hoisted(() => ({ useSession: vi.fn(), updateDocument: vi.fn() }));
+vi.mock("../ai/AiProposalPanel", () => ({ AiProposalPanel: () => <div>제안 패널</div> }));
+// BlockNote는 실제 브라우저에서 검증합니다. 여기서는 편집기가 받는 값만 확인합니다.
+const body = vi.hoisted(() => ({ props: null as null | Record<string, unknown> }));
+vi.mock("next/dynamic", () => ({
+  default: () => (props: Record<string, unknown>) => { body.props = props; return <div>BlockNote 본문</div>; },
+}));
+const mocks = vi.hoisted(() => ({ useSession: vi.fn(), publishDocument: vi.fn() }));
 vi.mock("../session/useCareerEditorSession", () => ({
   useCareerEditorSession: (recordId: string) => mocks.useSession(recordId),
 }));
 
 import { CareerDocumentEditor } from "./CareerDocumentEditor";
-import { careerDocumentToTiptap, tiptapToCareerDocument } from "./extensions";
+
+const record = { id: "11111111-1111-4111-8111-111111111111", bodyMd: "## 배경\n\n지난 본문입니다." } as CareerRecordListItem;
+const session = (status: string, yDocument: Y.Doc | null) => ({
+  snapshot: { status, documentVersion: 1, lastAckSequence: 1, proposal: null },
+  document: yDocument ? createEmptyCareerDocument() : null,
+  yDocument,
+  publishDocument: mocks.publishDocument,
+});
 
 describe("CareerDocumentEditor", () => {
   afterEach(cleanup);
-  beforeEach(() => {
-    mocks.updateDocument.mockReset();
-    mocks.useSession.mockReturnValue({
-      snapshot: { status: "saved", documentVersion: 1, lastAckSequence: 1, proposal: null },
-      document: createEmptyCareerDocument(),
-      updateDocument: mocks.updateDocument,
-    });
-  });
-
-  it("preserves nested and unknown neutral blocks through the Tiptap boundary", () => {
-    const unknown = { id: crypto.randomUUID(), type: "futureWidget", attrs: { version: 2 }, text: [{ text: "future" }] };
-    const document = parseCareerDocument({
-      schemaVersion: 1,
-      type: "doc",
-      content: [
-        { id: crypto.randomUUID(), type: "bulletList", attrs: {}, content: [{ id: crypto.randomUUID(), type: "listItem", attrs: {}, text: [{ text: "항목" }] }] },
-        unknown,
-      ],
-    });
-    const result = tiptapToCareerDocument(careerDocumentToTiptap(document));
-    expect(result.content[0]?.type).toBe("bulletList");
-    expect(result.content[1]).toEqual(unknown);
-  });
-
-  it("repairs duplicated career IDs created by split or paste before serialization", () => {
-    const duplicate = crypto.randomUUID();
-    const result = tiptapToCareerDocument({ type: "doc", content: [
-      { type: "paragraph", attrs: { careerId: duplicate }, content: [{ type: "text", text: "첫째" }] },
-      { type: "paragraph", attrs: { careerId: duplicate }, content: [{ type: "text", text: "둘째" }] },
-    ] });
-    expect(result.content[0]?.id).toBe(duplicate);
-    expect(result.content[1]?.id).not.toBe(duplicate);
-  });
-
-  it("opens the keyboard slash menu and restores focus on escape", async () => {
-    render(<CareerDocumentEditor recordId="11111111-1111-4111-8111-111111111111" mode="peek" />);
-    const editor = await screen.findByLabelText("커리어 기록 본문");
-    fireEvent.keyDown(editor, { key: "/" });
-    expect(await screen.findByRole("menu", { name: "블록 명령" })).toBeTruthy();
-    expect(document.activeElement).toBe(screen.getByRole("menuitem", { name: /본문/ }));
-    fireEvent.keyDown(screen.getByRole("menu", { name: "블록 명령" }), { key: "Escape" });
-    await waitFor(() => expect(screen.queryByRole("menu", { name: "블록 명령" })).toBeNull());
-  });
+  beforeEach(() => { body.props = null; mocks.publishDocument.mockReset(); });
 
   it("says the record is missing instead of opening the editor when the document session is unavailable", () => {
-    mocks.useSession.mockReturnValue({
-      snapshot: { status: "unavailable", documentVersion: 0, lastAckSequence: 0, proposal: null },
-      document: null,
-      updateDocument: mocks.updateDocument,
-    });
-    const record = { id: "11111111-1111-4111-8111-111111111111", bodyMd: "## 배경\n\n지난 본문입니다." } as CareerRecordListItem;
+    mocks.useSession.mockReturnValue(session("unavailable", null));
     render(<CareerDocumentEditor recordId={record.id} mode="page" record={record} />);
     expect(screen.getByText("이 기록을 찾을 수 없습니다. 삭제되었거나 다른 계정의 기록입니다.")).toBeTruthy();
-    expect(screen.queryByLabelText("커리어 기록 본문")).toBeNull();
+    expect(screen.queryByText("BlockNote 본문")).toBeNull();
     expect(screen.queryByText("지난 본문입니다.")).toBeNull();
-    expect(screen.queryByText("문서를 불러오고 있습니다.")).toBeNull();
   });
 
-  it("removes the redundant body status bar and keeps accessible formatting controls", async () => {
-    render(<CareerDocumentEditor recordId="11111111-1111-4111-8111-111111111111" mode="page" />);
-    expect(screen.queryByText("본문 편집")).toBeNull();
-    expect(screen.getByRole("toolbar", { name: "텍스트 서식" })).toBeTruthy();
-    const bold = screen.getByRole("button", { name: "굵게" });
-    expect(bold.getAttribute("aria-pressed")).toBe("false");
-    expect(bold.textContent).toBe("");
-    expect(bold.querySelector(".ph-text-b")).toBeTruthy();
+  it("waits for the document session before mounting the editor", () => {
+    mocks.useSession.mockReturnValue(session("loading", null));
+    render(<CareerDocumentEditor recordId={record.id} mode="peek" />);
+    expect(screen.getByText("문서를 불러오고 있습니다.")).toBeTruthy();
+    expect(body.props).toBeNull();
+  });
+
+  it("mounts BlockNote on the session Y.Doc and publishes document copies to the session", () => {
+    const yDocument = new Y.Doc();
+    mocks.useSession.mockReturnValue(session("saved", yDocument));
+    render(<CareerDocumentEditor recordId={record.id} mode="page" />);
+    expect(screen.getByText("BlockNote 본문")).toBeTruthy();
+    expect(body.props?.["yDocument"]).toBe(yDocument);
+    expect(body.props?.["onDocumentChange"]).toBe(mocks.publishDocument);
+    expect(typeof body.props?.["onAiRequest"]).toBe("function");
+  });
+
+  it("shows the save state above the body only on the full page", () => {
+    mocks.useSession.mockReturnValue(session("offline", new Y.Doc()));
+    const { unmount } = render(<CareerDocumentEditor recordId={record.id} mode="page" />);
+    expect(screen.getByRole("status").textContent).toBe("오프라인");
+    unmount();
+    render(<CareerDocumentEditor recordId={record.id} mode="peek" showAiProposal={false} />);
+    expect(screen.queryByRole("status")).toBeNull();
   });
 });

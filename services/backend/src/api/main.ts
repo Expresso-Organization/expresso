@@ -142,6 +142,15 @@ const careerDocumentService = new CareerDocumentService(
     );
   },
   config.careerAiDeterministicTest ? new SelectedBlockTextAiProposalAdapter() : ai ? new AiClientProposalAdapter(ai) : undefined,
+  async (userId, recordId) => {
+    // 2초 단위 작업 ID로 연달아 들어온 저장을 하나의 투영으로 합칩니다. 투영은 늘 최신 문서를 읽습니다.
+    const window = Math.floor(Date.now() / 2_000);
+    await careerDocumentJobs.queue.add(
+      "career.document.project",
+      { userId, recordId },
+      { jobId: `career-document-project-${recordId}-${window}`, delay: 2_000, priority: 50 },
+    );
+  },
 );
 const agentChatService = new AgentChatService(database, config.agentChatEnabled ? new ClaudeAgentRuntime(config.agentChatModel, aiUsage) : null, careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(database, config.agentCredentialEncryptionKey), portfolioReadService, pageService);
 const app = buildApi({

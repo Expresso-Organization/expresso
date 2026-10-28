@@ -2,13 +2,25 @@ import { randomUUID } from "node:crypto";
 import { createHash } from "node:crypto";
 
 import { mongoCollections } from "@expresso/database";
-import { encodeDocumentAsYUpdate, reconstructYDocument } from "@expresso/editor";
+import type { CareerDocument } from "@expresso/editor";
+import { blockNoteToCareerDocument, careerDocumentToBlockNote } from "@expresso/editor/blocknote";
+import type { CareerDocumentBootstrap } from "@expresso/contracts";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { createMongoFixture } from "../../../test/support/mongodb.js";
 import { MongoIdentityService } from "../identity/index.js";
 import { CareerService } from "../career/service.js";
 import { AiProposalService } from "./ai-proposals.js";
+import { restoreBlockNote, syncBlockNoteDocument } from "./blocknote-document.js";
+
+/** 브라우저 편집기가 보내는 것과 같은 BlockNote Yjs 업데이트를 만듭니다. */
+function userEdit(bootstrap: CareerDocumentBootstrap, mutate: (document: CareerDocument) => void): Uint8Array {
+  const next = structuredClone(bootstrap.document); mutate(next);
+  return syncBlockNoteDocument(Buffer.from(bootstrap.stateBase64!, "base64"), [], careerDocumentToBlockNote(next).blocks).update;
+}
+function firstText(state: string, updates: readonly Uint8Array[]): string | undefined {
+  return blockNoteToCareerDocument(restoreBlockNote(Buffer.from(state, "base64"), updates).blocks).content[0]?.text?.[0]?.text;
+}
 import type { AiProposalAdapter } from "./ai-adapter.js";
 import { CareerDocumentService } from "./service.js";
 
@@ -35,8 +47,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect(proposal.status).toBe("ready");
     expect(progress).toEqual(expect.arrayContaining(["draft", "streaming", "ready"]));
     expect(await mongoCollections(fixture.resource.db).careerDocumentUpdates.countDocuments({ recordId })).toBe(0);
-    const external = structuredClone(initial.document); external.content[0]!.text = [{ text: "사용자 변경" }];
-    const update = encodeDocumentAsYUpdate(external, [encodeDocumentAsYUpdate(initial.document)]);
+    const update = userEdit(initial, (document) => { document.content[0]!.text = [{ text: "사용자 변경" }]; });
     await documentService.appendUpdate(userId, { recordId, clientId: randomUUID(), clientSequence: 1, expectedSequence: initial.documentVersion, updateBase64: Buffer.from(update).toString("base64"), checksum: createHash("sha256").update(update).digest("hex") });
     const applied = await local.apply(userId, recordId, { recordId, proposalId: proposal.proposalId, expectedDocumentVersion: 1, commandIndexes: [0], propertyChangeIndexes: [] });
     expect(applied).toMatchObject({ status: "applied", appliedDocumentVersion: 2 });
@@ -44,14 +55,15 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect(await local.apply(userId, recordId, { recordId, proposalId: proposal.proposalId, expectedDocumentVersion: 1, commandIndexes: [0], propertyChangeIndexes: [] })).toMatchObject({ status: "applied" });
     expect(await mongoCollections(fixture.resource.db).careerDocumentUpdates.findOne({ recordId, actor: "ai" })).toBeTruthy();
     expect(updates[0]).toMatchObject({ sequence: 2 });
-    const liveUpdates = [encodeDocumentAsYUpdate(initial.document), update, Buffer.from(updates[0]!.base64, "base64")];
-    expect(reconstructYDocument(liveUpdates).content[0]?.text?.[0]?.text).toBe("AI 변경");
+    // 열린 편집기는 처음 받은 상태에 사용자 · AI 업데이트를 차례로 적용합니다.
+    const liveUpdates = [update, Buffer.from(updates[0]!.base64, "base64")];
+    expect(firstText(initial.stateBase64!, liveUpdates)).toBe("AI 변경");
     await expect(local.get(otherUserId, recordId, proposal.proposalId)).rejects.toMatchObject({ statusCode: 404 });
     await expect(local.undo(userId, recordId, { recordId, proposalId: proposal.proposalId, expectedDocumentVersion: 1 })).rejects.toMatchObject({ statusCode: 409 });
     const restored = await local.undo(userId, recordId, { recordId, proposalId: proposal.proposalId, expectedDocumentVersion: 2 });
     expect(restored.document.content[0]?.text?.[0]?.text).toBe("사용자 변경");
     expect(updates).toHaveLength(2);
-    expect(reconstructYDocument([...liveUpdates, Buffer.from(updates[1]!.base64, "base64")]).content[0]?.text?.[0]?.text).toBe("사용자 변경");
+    expect(firstText(initial.stateBase64!, [...liveUpdates, Buffer.from(updates[1]!.base64, "base64")])).toBe("사용자 변경");
   });
 
   it("rejects inaccessible selection and keeps a cancellation that races the adapter", async () => {
@@ -87,8 +99,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const adapter: AiProposalAdapter = { async generate() { return { summary: "삭제 충돌", commands: [{ type: "setText", blockId, text: "변경" }], propertyChanges: [] }; } };
     const local = new AiProposalService(fixture.resource, documentService, adapter);
     const proposal = await local.create(userId, recordId, { selection: { blockIds: [blockId] }, prompt: "변경" });
-    const deleted = structuredClone(current.document); deleted.content = [];
-    const update = encodeDocumentAsYUpdate(deleted, [encodeDocumentAsYUpdate(current.document)]);
+    const update = userEdit(current, (document) => { document.content = []; });
     await documentService.appendUpdate(userId, { recordId, clientId: randomUUID(), clientSequence: 9, expectedSequence: current.documentVersion, updateBase64: Buffer.from(update).toString("base64"), checksum: createHash("sha256").update(update).digest("hex") });
     await expect(local.apply(userId, recordId, { recordId, proposalId: proposal.proposalId, expectedDocumentVersion: current.documentVersion + 1, commandIndexes: [0], propertyChangeIndexes: [] })).rejects.toMatchObject({ statusCode: 409 });
     expect((await local.get(userId, recordId, proposal.proposalId)).status).toBe("conflicted");
