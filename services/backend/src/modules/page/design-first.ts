@@ -89,6 +89,11 @@ export interface DesignFirstHooks {
    */
   slot?: (path: string, text: string, done: boolean, revised?: boolean) => void;
   thinking?: (tokens: number) => void;
+  /**
+   * 설계 Spec의 구조 검사. 경로는 설계 출력 기준(`/spec/...`)입니다. 걸리면 설계 호출이 같은 대화에서 그 칸을 고칩니다.
+   * 검사기(`specSetup.accept`)는 생성기에 있어 생성기가 넘깁니다 — 이 파일이 생성기를 가져오면 순환이 생긴다.
+   */
+  checkSpec?: (spec: unknown, plan: StructuredDesignPlan) => AiViolation[];
 }
 
 export interface Blueprint {
@@ -436,6 +441,16 @@ export function fillViolations(
   return violations;
 }
 
+/** 설계 출력의 설계안을 저장 모양으로 바꿉니다. 두 번 적은 섹션은 앞의 것만 두고, 이미지 번호는 src로 바꿉니다. */
+function resolvePlan(planned: z.infer<ReturnType<typeof designPlanSchema>>, raw: ReturnType<typeof rawInput>): StructuredDesignPlan {
+  return {
+    ...planned,
+    sections: planned.sections
+      .filter((section, index, list) => list.findIndex((other) => other.id === section.id) === index)
+      .map((section) => ({ ...section, media: section.media.map((index) => raw.media[index]!.src) })),
+  };
+}
+
 /** 설계안이 자료의 섹션을 모두 한 번씩 다루는지 봅니다. */
 function planViolations(planned: readonly { id: string }[], sectionIds: readonly string[]): AiViolation[] {
   const seen = planned.map((section) => section.id);
@@ -589,15 +604,14 @@ export async function designFirst(
   const specSchema = structuredModelSchema(skeleton(raw, author), { intro: [], section: [], guidance: [], archetype, ...(layout ? { groups: layout.groups } : {}) });
   const sectionIds = raw.sections.map((section) => section.id) as [string, ...string[]];
   const prompt = designPrompt({ raw, author, context, specSchema });
+  // 구조 검사(트리 연결 · 컨테이너 규칙)도 설계 호출에서 합니다. 그리는 단계에서야 걸리면 고칠 대화가 없어 생성 전체가 멈춘다.
   const design = await call("page_design", DESIGN_SYSTEM, prompt, z.object({ plan: designPlanSchema(sectionIds, raw.media.length), spec: specSchema }), {
-    check: (output) => planViolations(output.plan.sections, sectionIds),
+    check: (output) => [
+      ...planViolations(output.plan.sections, sectionIds),
+      ...(hooks.checkSpec?.(output.spec, resolvePlan(output.plan, raw)) ?? []),
+    ],
   }) as { plan: z.infer<ReturnType<typeof designPlanSchema>>; spec: unknown };
-  const plan: StructuredDesignPlan = {
-    ...design.plan,
-    sections: design.plan.sections
-      .filter((section, index, list) => list.findIndex((other) => other.id === section.id) === index)
-      .map((section) => ({ ...section, media: section.media.map((index) => raw.media[index]!.src) })),
-  };
+  const plan = resolvePlan(design.plan, raw);
   timeline.push({ stage: "designed", atMs: Date.now() - started });
   if (hooks.designed) hooks.designed({ plan, spec: design.spec, blueprint: blueprintContent(plan, context) });
 

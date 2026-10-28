@@ -11,11 +11,11 @@ date: 2026-10-28
 
 ## 요구사항
 
-- [ ] 설계 먼저 생성(`designFirst`)의 설계 호출 `check`가 섹션 목록 위반(`planViolations`)과 함께 Spec 구조 위반을 냅니다. 구조 위반은 트리 연결 · 중복 · 컨테이너 규칙 · 루트 · 첫 요소 등 `validateRenderableSpec`이 거는 오류입니다. 위반 경로는 `/spec/elements`이고 이유는 검사기의 문장입니다.
-- [ ] 구조 검사는 최종 렌더와 같은 함수(`specSetup(...).accept`)로, 설계안이 만든 청사진 내용(`blueprintContent`)에 `fitToContent`를 거친 Spec을 봅니다. 청사진이 통과한 Spec은 최종 렌더의 구조 검사도 통과합니다.
-- [ ] `runWithFixes`의 칸 고치기 회차에서 고친 답을 JSON으로 읽지 못하면 예외를 던지지 않습니다. 그 회차는 `changed = false`로 두고 기존 진전 기준으로 다음을 정합니다. 본 출력(첫 답) 읽기 실패는 지금처럼 `AI_INVALID_OUTPUT`입니다.
-- [ ] 로그: 고친 답을 읽지 못한 회차는 `ai.fix_unreadable`(계약 · 회차 · 메시지), 적용되지 않은 문법 고치기는 `ai.syntax_fix`에 `edits`(find · replace 앞 80자)를 함께 남깁니다.
-- [ ] 출력 거절 · 전체 다시 요청 루프를 더하지 않습니다. `fixes.test.ts`의 규칙 테스트가 그대로 통과합니다.
+- [x] 설계 먼저 생성(`designFirst`)의 설계 호출 `check`가 섹션 목록 위반(`planViolations`)과 함께 Spec 구조 위반을 냅니다. 구조 위반은 트리 연결 · 중복 · 컨테이너 규칙 · 루트 · 첫 요소 등 `validateRenderableSpec`이 거는 오류입니다. 위반 경로는 `/spec/elements`이고 이유는 검사기의 문장입니다.
+- [x] 구조 검사는 최종 렌더와 같은 함수(`specSetup(...).accept`)로, 설계안이 만든 청사진 내용(`blueprintContent`)에 `fitToContent`를 거친 Spec을 봅니다. 청사진이 통과한 Spec은 최종 렌더의 구조 검사도 통과합니다.
+- [x] `runWithFixes`의 칸 고치기 회차에서 고친 답을 JSON으로 읽지 못하면 예외를 던지지 않습니다. 그 회차는 `changed = false`로 두고 기존 진전 기준으로 다음을 정합니다. 본 출력(첫 답) 읽기 실패는 지금처럼 `AI_INVALID_OUTPUT`입니다.
+- [x] 로그: 고친 답을 읽지 못한 회차는 `ai.fix_unreadable`(계약 · 회차 · 메시지)를 남깁니다. 적용되지 않은 문법 고치기는 `ai.syntax_fix`에 `skipped`(find · replace 앞 80자)를 함께 남깁니다. 문법 고치기 답 자체를 읽지 못했으면 그 답의 앞 160자(`reply`)를 남깁니다.
+- [x] 출력 거절 · 전체 다시 요청 루프를 더하지 않습니다. `fixes.test.ts`의 규칙 테스트가 그대로 통과합니다.
 
 ## 설계
 
@@ -25,7 +25,7 @@ date: 2026-10-28
 - `fixes.ts`의 진전 기준(걸린 칸 수 감소 · 값 변화 · 첫 호출 시간).
 
 **바꾸는 것**
-- `designFirst`에 선택 인자 `checkSpec(spec, plan) => AiViolation[]`를 더합니다(`DesignFirstHooks` 옆). 설계 `check`는 `[...planViolations, ...checkSpec(...)]`입니다. `design-first.ts`는 `structured-generator.ts`를 가져오지 않습니다(그쪽이 이쪽을 가져와 순환이 생깁니다). 그래서 검사 함수는 생성기가 넘깁니다.
+- `DesignFirstHooks`에 선택 칸 `checkSpec(spec, plan) => AiViolation[]`를 더합니다. 설계 `check`는 `[...planViolations, ...checkSpec(...)]`입니다. `design-first.ts`는 `structured-generator.ts`를 가져오지 않습니다(그쪽이 이쪽을 가져와 순환이 생깁니다). 그래서 검사 함수는 생성기가 넘깁니다.
 - 설계 출력의 `plan.sections[].media`는 이미지 번호입니다. 청사진 내용을 만들려면 src로 바꾼 설계안이 필요하므로, 지금 호출 뒤에 하던 변환을 `resolvePlan(designPlan, raw)` 함수로 빼서 `check`와 호출 뒤가 같이 씁니다.
 - `StructuredPageGenerator.#designFirstPage`가 `checkSpec`으로 `specViolations(specSetup(blueprint.content, context), fitToContent(spec, blueprint.content, plan))`를 넘기고, 경로에 `/spec`을 붙입니다.
 - `runWithFixes`: 칸 고치기 회차의 `read(reply)`를 `try`로 감쌉니다. `AiError`(`AI_INVALID_OUTPUT`)면 기록하고 그 회차를 고친 것 없음으로 처리합니다. `read` 안의 문법 고치기 로그에 적용되지 않은 edits를 더합니다.

@@ -55,7 +55,7 @@ import {
   describeGroupRules,
   describeSpecSchema,
 } from "./structured-spec-format.js";
-import { DESIGN_FIRST_TUNING, designFirst, fitToContent, type Blueprint, type DesignFirstTuning } from "./design-first.js";
+import { DESIGN_FIRST_TUNING, blueprintContent, designFirst, fitToContent, type Blueprint, type DesignFirstTuning } from "./design-first.js";
 
 /**
  * 저장한 Spec을 모델이 내는 모양으로 되돌립니다. 페이지의 `design` · `archetype`은 모델이 고르지 않고 받아들일 때 채우는
@@ -417,21 +417,32 @@ export class StructuredPageGenerator implements PageGenerator {
     const designed = await designFirst(
       this.ai,
       context,
-      sink
-        ? {
-            thinking: (tokens) => sink.thinking(tokens),
-            ...(sink.blueprint
-              ? {
-                  designed: ({ plan, spec, blueprint }) => {
-                    const page = renderBlueprint(spec, plan, blueprint, context);
-                    if (page) sink.blueprint!(page);
-                    sink.stage?.("designed");
-                  },
-                }
-              : {}),
-            ...(sink.fill ? { slot: (path, text, done, revised) => sink.fill!(path, text, done, revised) } : {}),
-          }
-        : {},
+      {
+        // 설계 Spec을 청사진과 같은 조합(청사진 내용 · fitToContent · accept)으로 검사합니다. 청사진이 통과한 구조는
+        // 채운 뒤 그릴 때도 통과합니다.
+        checkSpec: (spec, plan) =>
+          specViolations({
+            accept: (data) => {
+              const { content } = blueprintContent(plan, context);
+              return specSetup(content, context).accept(fitToContent(data, content, plan));
+            },
+          }, spec).map((violation) => ({ ...violation, path: `/spec${violation.path}` })),
+        ...(sink
+          ? {
+              thinking: (tokens: number) => sink.thinking(tokens),
+              ...(sink.blueprint
+                ? {
+                    designed: ({ plan, spec, blueprint }: { plan: StructuredDesignPlan; spec: unknown; blueprint: Blueprint }) => {
+                      const page = renderBlueprint(spec, plan, blueprint, context);
+                      if (page) sink.blueprint!(page);
+                      sink.stage?.("designed");
+                    },
+                  }
+                : {}),
+              ...(sink.fill ? { slot: (path: string, text: string, done: boolean, revised?: boolean) => sink.fill!(path, text, done, revised) } : {}),
+            }
+          : {}),
+      },
       this.tuning,
     );
     sink?.stage?.("filled");
