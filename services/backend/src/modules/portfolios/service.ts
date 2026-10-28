@@ -42,7 +42,8 @@ export class PortfolioReadService {
       sectionCount: sections.length, visibleSectionCount: sections.filter(({ visible }) => visible).length,
       blockCount, createdAt: portfolio.createdAt.toISOString(), updatedAt: portfolio.updatedAt.toISOString(),
       deployment: deployment ? {
-        id: deployment._id, version: deployment.version, subdomain: deployment.subdomain,
+        // 주소는 포트폴리오의 것이다. 되돌린 판의 주소가 아니라 지금 열리는 주소를 보여 준다.
+        id: deployment._id, version: deployment.version, subdomain: portfolio.publicSlug ?? deployment.subdomain,
         customDomain: deployment.customDomain ?? null, seoIndexable: deployment.seoIndexable,
         contactVisibility: deployment.contactVisibility,
         publishedAt: deployment.publishedAt?.toISOString() ?? null,

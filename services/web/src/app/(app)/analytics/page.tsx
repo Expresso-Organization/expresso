@@ -10,7 +10,7 @@ import { NothingPublished } from "./NothingPublished";
 /**
  * 07 · 07b · 07c 분석.
  *
- * 배포한 포트폴리오만 볼 것이 있다 — 방문은 공개 사이트에서만 생긴다. 아직
+ * 배포한 적 있는 포트폴리오만 볼 것이 있다 — 방문은 공개 사이트에서만 생긴다. 아직
  * 배포한 것이 없으면 빈 대시보드 대신 왜 비었는지를 보여준다.
  *
  * §2.1의 `?edit=1`은 대시보드 편집 모드이고, 위젯을 고르면 07c 설정 드로어로
@@ -30,10 +30,13 @@ export default async function AnalyticsPage({
   const query = await searchParams;
 
   // 위젯 목록은 어느 포트폴리오를 고르든 같다 — 고르기를 기다릴 이유가 없다.
-  const [{ data: published }, { data: catalog }] = await Promise.all([
+  // 공개를 멈춘 포트폴리오도 지난 방문 기록은 그대로 있다. 한 번이라도 배포한 것을 모두 고를 수 있다.
+  const [{ data: live }, { data: closed }, { data: catalog }] = await Promise.all([
     portfolios.list(session.accessToken, { status: "published" }),
+    portfolios.list(session.accessToken, { status: "unlisted" }),
     analytics.metrics(session.accessToken),
   ]);
+  const published = [...live, ...closed.filter(({ deployment }) => deployment !== null)];
 
   const asked = typeof query.portfolio === "string" ? query.portfolio : null;
   const selected = published.find(({ id }) => id === asked) ?? published[0];
