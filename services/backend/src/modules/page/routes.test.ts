@@ -23,6 +23,7 @@ describe("다듬기 경로", () => {
     registerErrorHandler(server);
     registerPageRoutes(server, {
       service: service as unknown as PageApi,
+      webOrigin: "http://localhost:3000",
       authenticateRequest: async (request) => {
         request.auth = { sessionId: "session", user: { id: user, email: "test@example.com", displayName: "test", planCode: "free", emailVerifiedAt: null, role: "user", impersonation: null }, owner: { userId: user, displayName: "test", role: "user" } };
       },
