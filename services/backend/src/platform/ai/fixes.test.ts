@@ -23,7 +23,7 @@ import {
 
 import { ClaudeCodeAiClient } from "./claude-code.js";
 import { SOFT_KEYWORDS, toToolSchema, type AiFix } from "./client.js";
-import { applyFixes, groupViolations, jsonPointer, runWithFixes, zodViolations } from "./fixes.js";
+import { applyFixes, closeOpenBrackets, groupViolations, jsonPointer, runWithFixes, zodViolations } from "./fixes.js";
 
 /**
  * 가짜 CLI. 응답 목록을 차례로 내고, 받은 인자를 줄마다 기록합니다. 실제 CLI처럼 `stream-json` 마지막 줄에
@@ -217,12 +217,33 @@ describe("CLI에 출력 검증을 맡기지 않는다", () => {
     expect(cli.calls()[1]!.input).toContain("이어서 쓰세요");
   });
 
-  it("다 썼는데 끝에서 막혔으면(닫는 괄호가 빠짐) 이어 쓰기가 아니라 끝부분 조각을 고쳐 받는다", async () => {
-    const cli = fakeCli(['{"title":"제목","items":["a"]', { edits: [{ find: '["a"]', replace: '["a"]}' }] }]);
+  it("다 썼는데 닫는 괄호만 빠졌으면 서버가 닫는다 — 모델을 다시 부르지 않는다", async () => {
+    const cli = fakeCli(['{"title":"제목","items":["a"]\n```']);
+    const result = await new ClaudeCodeAiClient({ cliPath: cli.cliPath }).complete(spec, schema);
+    expect(result.data).toEqual({ title: "제목", items: ["a"] });
+    expect(cli.calls()).toHaveLength(1);
+  });
+
+  it("빠진 괄호는 열린 순서의 반대로 붙이고, 문자열 안의 괄호 · 따옴표는 세지 않는다", () => {
+    expect(closeOpenBrackets('{"a":"x\\"]","b":[{"c":1}')).toEqual({ text: '{"a":"x\\"]","b":[{"c":1}]}', added: "]}" });
+    expect(closeOpenBrackets('{"a":[1]}')).toBeNull();
+    expect(closeOpenBrackets('{"a":[1}')).toBeNull();
+    expect(closeOpenBrackets('{"a":')).toBeNull();
+  });
+
+  it("문자열 안에서 끝났으면 닫지 않고 끝부분 조각을 고쳐 받는다", async () => {
+    const cli = fakeCli(['{"title":"제목","items":["a', { edits: [{ find: '["a', replace: '["a"]}' }] }]);
     const result = await new ClaudeCodeAiClient({ cliPath: cli.cliPath }).complete(spec, schema);
     expect(result.data).toEqual({ title: "제목", items: ["a"] });
     expect(cli.calls()[1]!.input).toContain("문법이 깨져");
     expect(cli.calls()[1]!.input).not.toContain("이어서 쓰세요");
+  });
+
+  it("쉼표로 끝났으면 닫지 않고 끝부분 조각을 고쳐 받는다 — 뒤에 올 값이 빠졌다", async () => {
+    const cli = fakeCli(['{"title":"제목","items":["a",', { edits: [{ find: '["a",', replace: '["a","b"]}' }] }]);
+    const result = await new ClaudeCodeAiClient({ cliPath: cli.cliPath }).complete(spec, schema);
+    expect(result.data).toEqual({ title: "제목", items: ["a", "b"] });
+    expect(cli.calls()[1]!.input).toContain("문법이 깨져");
   });
 
   it("고쳐도 같은 자리에서 막히면 멈춘다", async () => {
