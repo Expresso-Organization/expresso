@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Icon } from "@/components/ui/Icon";
 import { CareerDocumentEditor } from "@/features/career-editor/editor/CareerDocumentEditor";
+import { SaveState } from "@/features/career-editor/editor/SaveState";
 import { AiProposalPanel, type AiPromptRequest } from "@/features/career-editor/ai/AiProposalPanel";
 import { useCareerEditorSession } from "@/features/career-editor/session/useCareerEditorSession";
 
@@ -121,7 +122,7 @@ export function DocumentPanel({
         </button>
         <span className={styles.headLabel}>{category.name} · 문서</span>
         <div className={styles.headRight}>
-          <span className={styles.headLabel}>{panelRecord ? "저장됨" : ""}</span>
+          {panelRecord ? <SaveState key={panelRecord.id} recordId={panelRecord.id} className={styles.headLabel} /> : null}
           <button type="button" className={styles.headAction} aria-label="닫기" onClick={onClose}>
             <Icon name="x" size={15} />
           </button>

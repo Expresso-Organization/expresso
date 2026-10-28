@@ -20,3 +20,11 @@ volume도 삭제하지 않으며, 운영 절차에서도 `down -v`를 사용하�
 MongoDB만 필요한 격리 검증에는 `infra/compose.mongodb.yaml`과
 `pnpm infra:mongodb:up`을 사용할 수 있습니다. 테스트는 자신이 만든 무작위 DB만
 삭제합니다.
+
+로컬 · CI compose의 `mongodb`는 `GLIBC_TUNABLES=glibc.pthread.rseq=1`로 뜹니다.
+리눅스 커널 6.19~7.0.13에서는 MongoDB 8.0이 내장한 TCMalloc이 커널의 rseq와 맞지
+않아 `mongod`가 시작 직후 "MongoDB cannot start: Linux kernel versions 6.19 and newer"를
+남기고 멈춥니다(SERVER-121912, MongoDB Production Notes). GitHub 러너 일부가 7.0.0
+커널이라 2026-10-27부터 백엔드 CI가 이 이유로 실패했습니다. 이 설정은 glibc가 rseq를
+쥐게 해 TCMalloc이 rseq를 쓰지 않게 합니다. 서버 compose(`compose.server.yaml`)에는
+넣지 않았습니다. 서버 커널이 이 범위로 올라가면 그때 같은 설정이 필요합니다.

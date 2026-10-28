@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { Icon } from "@/components/ui/Icon";
 
-import { commitOnEnter, propertyOptions, ReadOnlyValue } from "./property-editors";
+import { commitOnEnter, formatTimestamp, propertyOptions, ReadOnlyValue } from "./property-editors";
 import { PropertySelect } from "./PropertySelect";
 import styles from "./properties.module.css";
 
@@ -33,11 +33,7 @@ function IssueBadge({ issue }: { issue: string | null }) {
 function initialDraft(value: CareerPropertyValueV2 | null): string {
   if (!value) return "";
   if (value.type === "date") return value.value.start;
-  if (value.type === "created_time" || value.type === "updated_time") {
-    const timestamp = new Date(value.value);
-    const local = new Date(timestamp.getTime() - timestamp.getTimezoneOffset() * 60_000);
-    return local.toISOString().slice(0, 16).replace("T", " ");
-  }
+  if (value.type === "created_time" || value.type === "updated_time") return formatTimestamp(value.value);
   if (Array.isArray(value.value)) return "";
   return String(value.value ?? "");
 }
@@ -62,7 +58,7 @@ export function PropertyValueEditor({ definition, value, onCommit, onCreateOptio
     finally { setSaving(false); }
   }
 
-  if (readOnlyTypes.has(definition.type) || ((definition.type === "created_time" || definition.type === "updated_time") && definition.system)) return <ReadOnlyValue value={value} />;
+  if (readOnlyTypes.has(definition.type) || ((definition.type === "created_time" || definition.type === "updated_time") && definition.system)) return <ReadOnlyValue value={value} computed={definition.type === "formula" || definition.type === "rollup"} />;
   if (definition.type === "created_time" || definition.type === "updated_time") {
     const timestampType = definition.type;
     const commitTimestamp = (nextDraft: string) => {
@@ -97,7 +93,10 @@ export function PropertyValueEditor({ definition, value, onCommit, onCreateOptio
     return <div className={styles.fieldEditor}><div className={styles.multiSelect} aria-label={definition.name}>{options.map((option) => <label key={option.id} className={styles.optionCheck}><input type="checkbox" checked={selected.has(option.id)} disabled={disabled || saving} onChange={() => { const next = new Set(selected); if (next.has(option.id)) next.delete(option.id); else next.add(option.id); void commit({ type: "multi_select", value: [...next] }); }} />{option.name}</label>)}</div>{optionInput((optionId) => commit({ type: "multi_select", value: [...new Set([...selected, optionId])] }))}</div>;
   }
   if (definition.type === "date") {
-    const commitDate = () => draft ? void commit({ type: "date", value: { start: draft, end: dateEnd || null, timezone: null } }) : void commit(null);
+    const commitDate = () => {
+      if (draft === initialDraft(value) && dateEnd === (value?.type === "date" ? value.value.end ?? "" : "")) return;
+      return draft ? void commit({ type: "date", value: { start: draft, end: dateEnd || null, timezone: null } }) : void commit(null);
+    };
     return <div className={styles.dateFields}><label><span>시작</span><input className={styles.input} aria-label={`${definition.name} 시작`} type="date" value={draft} disabled={disabled || saving} onChange={(event) => setDraft(event.target.value)} onBlur={commitDate} /></label><label><span>종료</span><div className={styles.fieldRow}><input className={styles.input} aria-label={`${definition.name} 종료`} type="date" value={dateEnd} disabled={disabled || saving} onChange={(event) => setDateEnd(event.target.value)} onBlur={commitDate} /><IssueBadge issue={issue} /></div></label></div>;
   }
   if (definition.type === "file" || definition.type === "media") {
@@ -108,6 +107,8 @@ export function PropertyValueEditor({ definition, value, onCommit, onCreateOptio
 
   const inputType = definition.type === "email" ? "email" : definition.type === "url" ? "url" : definition.type === "phone" ? "tel" : "text";
   const commitDraft = () => {
+    // 값을 바꾸지 않고 칸을 떠나면 저장하지 않는다. 저장은 기록 버전을 올리고 계산 작업을 부른다.
+    if (draft === initialDraft(value)) return;
     if (!draft && !definition.required) return void commit(null);
     if (definition.type === "number") {
       if (draft.trim() === "" || !Number.isFinite(Number(draft))) { setIssue("숫자를 입력해 주세요."); return; }
