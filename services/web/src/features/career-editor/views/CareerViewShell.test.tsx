@@ -213,8 +213,8 @@ describe("CareerViewShell", () => {
   it("shows the first-record screen for an empty category", async () => {
     renderShell({ initialPage: { data: [], page: { hasNextPage: false, nextCursor: null } } });
     expect(screen.queryByText("조건에 맞는 기록이 없습니다.")).toBeNull();
-    const buttons = screen.getAllByRole("button", { name: /새로 만들기/ });
-    fireEvent.click(buttons.at(-1)!);
+    expect(screen.getAllByRole("button", { name: "새로 만들기" })).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "첫 기록 만들기" }));
     await waitFor(() => expect(screen.getByRole("grid", { name: "커리어 테이블" })).toBeTruthy());
   });
 

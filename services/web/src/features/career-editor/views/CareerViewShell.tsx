@@ -503,8 +503,8 @@ export function CareerViewShell({ category: initialCategory, initialViews, initi
         ? <div className={styles.firstRecord}>
           <span className={styles.firstRecordIcon}><Icon name={CAREER_CATEGORY_ICONS[category.key] ?? "file-text"} weight="fill" size={26} /></span>
           <div className={styles.createSplit}>
-            <button type="button" onClick={() => void create()}><Icon name="plus" size={13} />새로 만들기</button>
-            <button type="button" onClick={() => setInterview({ mode: "create" })}><Icon name="coffee" size={13} />AI로 만들기</button>
+            <button type="button" onClick={() => void create()}><Icon name="plus" size={13} />첫 기록 만들기</button>
+            <button type="button" onClick={() => setInterview({ mode: "create" })}><Icon name="coffee" size={13} />AI로 첫 기록 만들기</button>
           </div>
         </div>
         : visibleRecords.length || !filtered ? renderer
