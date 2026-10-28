@@ -154,6 +154,27 @@ describe("설계가 먼저 오는 생성", () => {
     expect(designFixes[0]!.prompt).toContain("빠진 섹션: ui, misc");
     expect(result.manifest.structured!.content.sections.map((section) => section.id)).toEqual(["lcp"]);
   });
+
+  it("설계 Spec에서 트리에 연결되지 않은 요소는 설계 호출에서 요소 목록을 고쳐 받고, 고친 구조로 지면을 만든다", async () => {
+    // 2026-10-28 체험 서버: 경력 · 근거를 묶은 컨테이너가 빠진 설계가 그리는 단계에서 "누락 ID: career, evidence"로 멈췄다.
+    const detached = structuredClone(spec);
+    detached.elements.page.children = detached.elements.page.children.filter((id) => id !== "evidence");
+    const ai = new RoutedAi(
+      (request) => (request.contract === "page_design" ? { plan, spec: detached } : fill()),
+      (request, paths) => (request.contract === "page_design" && paths.includes("/spec/elements") ? [{ path: "/spec/elements", value: spec.elements }] : []),
+    );
+    const result = await new StructuredPageGenerator(ai).generate(context);
+    const designFixes = ai.fixRequests.filter((request) => request.contract === "page_design");
+    expect(designFixes.map((request) => request.paths)).toEqual([["/spec/elements"]]);
+    expect(designFixes[0]!.prompt).toContain("누락 ID: evidence");
+    expect(result.manifest.structured!.spec.elements.page?.children).toContain("evidence");
+  });
+
+  it("구조가 맞는 설계는 설계 고치기를 부르지 않는다", async () => {
+    const ai = new RoutedAi(route);
+    await new StructuredPageGenerator(ai).generate(context);
+    expect(ai.fixRequests.filter((request) => request.contract === "page_design")).toEqual([]);
+  });
 });
 
 describe("청사진과 순차 채움", () => {

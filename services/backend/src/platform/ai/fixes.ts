@@ -186,17 +186,23 @@ export function continuePrompt(text: string): string {
   ].join("\n");
 }
 
-/** `find`가 원문에 정확히 한 번 있는 고치기만 적용합니다. 몇 개를 적용했는지 함께 돌려줍니다. */
-export function applySyntaxEdits(text: string, edits: readonly { find: string; replace: string }[]): { text: string; applied: number } {
+type SyntaxEdit = { find: string; replace: string };
+
+/** `find`가 원문에 정확히 한 번 있는 고치기만 적용합니다. 몇 개를 적용했는지와 적용하지 못한 고치기를 함께 돌려줍니다. */
+export function applySyntaxEdits(text: string, edits: readonly SyntaxEdit[]): { text: string; applied: number; skipped: SyntaxEdit[] } {
   let result = text;
   let applied = 0;
+  const skipped: SyntaxEdit[] = [];
   for (const edit of edits) {
     const first = result.indexOf(edit.find);
-    if (first < 0 || result.indexOf(edit.find, first + 1) >= 0) continue;
+    if (first < 0 || result.indexOf(edit.find, first + 1) >= 0) {
+      skipped.push(edit);
+      continue;
+    }
     result = result.slice(0, first) + edit.replace + result.slice(first + edit.find.length);
     applied += 1;
   }
-  return { text: result, applied };
+  return { text: result, applied, skipped };
 }
 
 /**
@@ -209,7 +215,7 @@ export function applySyntaxEdits(text: string, edits: readonly { find: string; r
  * 1. 글로 온 답을 JSON으로 읽습니다. 문법이 깨졌으면 그 자리만, 끊겼으면 이어지는 글만 받습니다.
  * 2. 계약(Zod)에 걸리면 고칩니다. 계약을 지나면 화면에 먼저 보여 주고(`onDraft`) 업무 규칙(`check`)을 봅니다.
  * 3. 진전이 없으면 멈춥니다. 업무 규칙 위반만 남으면 출력을 그대로 돌려주고 기록합니다. 계약 위반이 남으면 저장할
- *    수 없는 모양이라 `AI_INVALID_OUTPUT`입니다.
+ *    수 없는 모양이라 `AI_INVALID_OUTPUT`입니다. 고친 답을 읽지 못한 회차는 고친 것 없음으로 셉니다.
  */
 export async function runWithFixes<T>(input: {
   contract: AiContract;
@@ -253,8 +259,12 @@ export async function runWithFixes<T>(input: {
       usages.push(reply.usage);
       const replyValue = "text" in reply ? readJsonText(reply.text) : { ok: true as const, value: reply.output };
       const edits = replyValue.ok ? SYNTAX_EDITS_SCHEMA.safeParse(replyValue.value) : null;
-      const applied = edits?.success ? applySyntaxEdits(text, edits.data.edits) : { text, applied: 0 };
-      console.error(JSON.stringify({ level: "info", event: "ai.syntax_fix", contract, at: result.at, message: result.message.slice(0, 200), applied: applied.applied, durationMs: reply.usage.durationMs, ...around(result.at) }));
+      const applied = edits?.success ? applySyntaxEdits(text, edits.data.edits) : { text, applied: 0, skipped: [] };
+      // 적용하지 못한 고치기를 남긴다. 원문에 없는 조각인지 두 번 있는 조각인지 로그만 보고 알 수 있게 한다.
+      const skipped = applied.skipped.slice(0, 5).map((edit) => ({ find: edit.find.slice(0, 80), replace: edit.replace.slice(0, 80) }));
+      // 고친 답을 읽지 못했으면 그 답의 앞부분을 남긴다.
+      const unread = "text" in reply && !edits?.success ? { reply: reply.text.slice(0, 160) } : {};
+      console.error(JSON.stringify({ level: "info", event: "ai.syntax_fix", contract, at: result.at, message: result.message.slice(0, 200), applied: applied.applied, ...(skipped.length ? { skipped } : {}), ...unread, durationMs: reply.usage.durationMs, ...around(result.at) }));
       text = applied.text;
     }
   };
@@ -297,9 +307,19 @@ export async function runWithFixes<T>(input: {
     const shape = fixSchema([...grouped.keys()]);
     const reply = await input.fix(fixPrompt(grouped, output), shape);
     fixMs += reply.usage.durationMs;
-    const received = shape.safeParse(await read(reply));
-    console.error(JSON.stringify({ level: "info", event: "ai.fix_round", contract, round: round + 1, paths: [...grouped.keys()].slice(0, 20), fixed: received.success ? received.data.fixes.length : 0, durationMs: reply.usage.durationMs }));
     changed = false;
+    // 고친 답을 읽지 못해도 앞서 받은 출력은 그대로다. 그 회차를 고친 것 없음으로 두고 진전 기준이 다음을 정한다.
+    // 본 출력(첫 답)은 읽지 못하면 쓸 것이 없으므로 위에서 그대로 멈춘다.
+    let value: unknown;
+    try {
+      value = await read(reply);
+    } catch (error) {
+      if (!(error instanceof AiError && error.code === "AI_INVALID_OUTPUT")) throw error;
+      console.error(JSON.stringify({ level: "warn", event: "ai.fix_unreadable", contract, round: round + 1, message: error.message.slice(0, 200) }));
+      continue;
+    }
+    const received = shape.safeParse(value);
+    console.error(JSON.stringify({ level: "info", event: "ai.fix_round", contract, round: round + 1, paths: [...grouped.keys()].slice(0, 20), fixed: received.success ? received.data.fixes.length : 0, durationMs: reply.usage.durationMs }));
     if (!received.success) continue;
     const fixes = received.data.fixes.map((fix) => ({ path: realPath(fix.path), value: fix.value }));
     const next = applyFixes(output, fixes);

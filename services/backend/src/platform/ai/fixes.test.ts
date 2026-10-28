@@ -225,6 +225,30 @@ describe("CLI에 출력 검증을 맡기지 않는다", () => {
     expect(cli.calls()[1]!.input).not.toContain("이어서 쓰세요");
   });
 
+  it("고친 답을 읽지 못해도 앞서 받은 출력을 버리지 않는다 — 업무 규칙 위반만 남았으면 그 출력을 돌려준다", async () => {
+    // 2026-10-28 체험 서버: 칸 두 개를 고친 짧은 답에 닫는 괄호가 빠졌고, 문법 고치기도 적용되지 않아 지면 전체가 실패했다.
+    const cli = fakeCli([
+      { title: "제목", items: ["근거 없음"] },
+      '{"fixes":[{"path":"/items/0","value":"근거 있음"}]',
+      { edits: [{ find: "원문에 없는 조각", replace: "x" }] },
+    ]);
+    const result = await new ClaudeCodeAiClient({ cliPath: cli.cliPath }).complete(spec, schema, {
+      check: (data) => data.items.flatMap((item, index) => (item.includes("없음") ? [{ path: `/items/${index}`, problem: "근거가 없습니다." }] : [])),
+    });
+    expect(result.data).toEqual({ title: "제목", items: ["근거 없음"] });
+    expect(cli.calls()).toHaveLength(3);
+  });
+
+  it("고친 답을 읽지 못하고 계약 위반이 남으면 지금처럼 AI_INVALID_OUTPUT이다", async () => {
+    const cli = fakeCli([
+      { title: "열 글자를 훨씬 넘는 제목입니다", items: [] },
+      '{"fixes":[{"path":"/title","value":"짧은 제목"}]',
+      { edits: [{ find: "원문에 없는 조각", replace: "x" }] },
+    ]);
+    await expect(new ClaudeCodeAiClient({ cliPath: cli.cliPath }).complete(spec, schema)).rejects.toMatchObject({ code: "AI_INVALID_OUTPUT" });
+    expect(cli.calls()).toHaveLength(3);
+  });
+
   it("고쳐도 같은 자리에서 막히면 멈춘다", async () => {
     const cli = fakeCli(['{"title":"제목","items":["a" "b"]}', { edits: [{ find: "원문에 없는 조각", replace: "x" }] }]);
     await expect(new ClaudeCodeAiClient({ cliPath: cli.cliPath }).complete(spec, schema)).rejects.toMatchObject({ code: "AI_INVALID_OUTPUT" });
