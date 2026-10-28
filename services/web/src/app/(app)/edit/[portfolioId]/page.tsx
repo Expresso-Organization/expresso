@@ -1,11 +1,12 @@
-import type { GeneratedPage, PortfolioRevision, PageLibraryItem } from "@expresso/contracts";
+import type { GeneratedPage, PageEditorDesign, PortfolioRevision } from "@expresso/contracts";
 import { notFound } from "next/navigation";
 
 import { ApiError } from "@/lib/api/client";
-import { page as pageApi, portfolios } from "@/lib/api/endpoints";
+import { career, page as pageApi, portfolios } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 import { Editor } from "./Editor";
+import type { LibraryRecord } from "./RecordLibrary";
 
 /**
  * 04 · 04b · 04c 다듬기. 에디터 셸은 앱 셸을 쓰지 않고 사이드바를 56px
@@ -26,7 +27,6 @@ export default async function EditPage({
   let revisionsCursor: string | null = null;
   let checkpoints: { id: string; label: string; createdAt: string }[] = [];
   let generatedPage: GeneratedPage | null = null;
-  let libraryItems: PageLibraryItem[] = [];
   let generatedPageHistory: GeneratedPage[] = [];
 
   try {
@@ -51,17 +51,44 @@ export default async function EditPage({
   }
 
   try {
-    const [latest, history, library] = await Promise.all([
+    const [latest, history] = await Promise.all([
       pageApi.latest(session.accessToken, portfolioId),
       pageApi.history(session.accessToken, portfolioId),
-      pageApi.library(session.accessToken, {status:"renderable",limit:100}),
     ]);
     generatedPage = latest.data;
-    libraryItems = library.data.items;
     generatedPageHistory = history.data;
   } catch (error) {
     // 자유 지면은 v1 생성부터 생긴다. 옛 포트폴리오의 404는 정상 호환 경로다.
     if (!(error instanceof ApiError && error.status === 404)) throw error;
+  }
+
+  // 구조화 지면은 요소를 직접 고칠 디자인 값과, 지면에 더할 커리어 기록 목록을 함께 읽는다.
+  let design: PageEditorDesign | null = null;
+  let editableRender: { html: string; css: string } | null = null;
+  let records: LibraryRecord[] | null = [];
+  if (generatedPage?.generationManifest?.structured) {
+    const [designResult, editable, library] = await Promise.all([
+      pageApi.design(session.accessToken, portfolioId),
+      pageApi.editable(session.accessToken, portfolioId),
+      // 기록 목록을 읽지 못해도 지면 편집은 연다. 기록 탭만 그 사실을 보인다.
+      Promise.all([
+        career.records(session.accessToken, { sort: "updated_desc", limit: 100 }),
+        career.categories(session.accessToken),
+      ]).catch(() => null),
+    ]);
+    design = designResult.data;
+    // 편집 미리보기는 요소 키 표시가 있는 렌더 결과로 그린다. 같은 판일 때만 쓴다.
+    if (editable.data.revision === generatedPage.revision) editableRender = { html: editable.data.html, css: editable.data.css };
+    const [recordList, categories] = library ?? [null, null];
+    const names = new Map(categories?.data.map((category) => [category.id, category.name]));
+    records = recordList === null ? null : recordList.data
+      .filter((record) => !record.isEmpty && record.bodyMd.trim())
+      .map((record) => ({
+        id: record.id,
+        title: record.title || "제목 없는 기록",
+        category: names.get(record.categoryId) ?? "기록",
+        period: record.periodFrom ? `${record.periodFrom.slice(0, 7).replace("-", ".")} — ${record.periodTo ? record.periodTo.slice(0, 7).replace("-", ".") : "진행 중"}` : null,
+      }));
   }
 
   return (
@@ -73,7 +100,9 @@ export default async function EditPage({
       checkpoints={checkpoints}
       generatedPage={generatedPage}
       generatedPageHistory={generatedPageHistory}
-      libraryItems={libraryItems}
+      design={design}
+      editableRender={editableRender}
+      records={records}
     />
   );
 }

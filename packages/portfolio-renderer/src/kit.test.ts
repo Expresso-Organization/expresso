@@ -3,12 +3,13 @@ import { describe, expect, it } from "vitest";
 import {
   DesignSystemSpecV2Schema,
   STRUCTURED_BACKDROPS,
+  STRUCTURED_SCENES,
   type StructuredPortfolioContent,
 } from "@expresso/contracts";
 import { renderStructuredPortfolio } from "./renderer.js";
 import { retrievePageLibrary } from "./library.js";
 import { metricNumber } from "./kit.js";
-import { BACKDROP_CSS } from "./backdrop.js";
+import { BACKDROP_CSS, backdropInk, SCENE_FALLBACK } from "./backdrop.js";
 import { KIT_CSS } from "./kit-styles.js";
 
 // 백엔드 기본 디자인(Clarity · Signal)의 스펙을 그대로 떠 둔 고정 자료입니다.
@@ -308,8 +309,8 @@ describe("시각 부품과 지면 변화", () => {
     (spec.elements["section-a"] as { props: Record<string, unknown> }).props = { section: { $state: "/sectionById/a" }, scale: "lead", surface: "inverse", width: "bleed" };
     (spec.elements["section-b"] as { props: Record<string, unknown> }).props = { section: { $state: "/sectionById/b" }, scale: "standard", surface: "canvas", width: "content" };
     const { html, css } = renderStructuredPortfolio(spec, content, { design: clarity });
-    expect(html).toMatch(/<article id="section-a" class="xp-block xp-case" data-case-type="technical" data-scale="lead" data-surface="inverse" data-width="bleed" data-bleed="">/);
-    expect(html).toMatch(/<article id="section-b" class="xp-block xp-case" data-case-type="panel">/);
+    expect(html).toMatch(/<article id="section-a" class="xp-block xp-case" data-case-type="technical" data-scale="lead" data-surface="inverse" data-width="bleed" data-bleed="" data-xp-key="section-a">/);
+    expect(html).toMatch(/<article id="section-b" class="xp-block xp-case" data-case-type="panel" data-xp-key="section-b">/);
     for (const name of ["--xp-muted-field:", "--xp-muted-inverse:", "--xp-accent-inverse:"]) expect(css).toContain(name);
   });
 
@@ -325,12 +326,12 @@ describe("시각 부품과 지면 변화", () => {
     // 단계 번호는 배열 순서로 매깁니다.
     expect(html).toMatch(/xp-flow-num">01<[\s\S]*관찰[\s\S]*xp-flow-num">02<[\s\S]*설계[\s\S]*xp-flow-num">03<[\s\S]*검증/);
     expect(html).toContain('<ol class="xp-flow" data-count="3">');
-    expect(html).toContain('<figure class="xp-block xp-quote" data-surface="field"><blockquote class="xp-quote-text"><p>멈추지 않는 경로가 먼저입니다.</p>');
+    expect(html).toContain('<figure class="xp-block xp-quote" data-surface="field" data-xp-key="quote-1"><blockquote class="xp-quote-text"><p>멈추지 않는 경로가 먼저입니다.</p>');
     expect(html).toContain('<a href="#section-a">창고 로봇 경로 재설계</a>');
 
     const showcase = withNodes({ "section-a": { type: "CaseShowcase", props: { section: { $state: "/sectionById/a" }, width: "bleed" }, children: [] } }, ["intro", "index", "section-a", "section-b", "career", "evidence"]);
     const shown = renderStructuredPortfolio(showcase, rich, { design: clarity }).html;
-    expect(shown).toMatch(/<article id="section-a" class="xp-block xp-case xp-showcase" data-case-type="showcase" data-width="bleed" data-bleed=""><figure class="xp-showcase-art"><img src="data:image\/png;base64,AAAA" alt="가상 회로 사진"/);
+    expect(shown).toMatch(/<article id="section-a" class="xp-block xp-case xp-showcase" data-case-type="showcase" data-width="bleed" data-bleed="" data-xp-key="section-a"><figure class="xp-showcase-art"><img src="data:image\/png;base64,AAAA" alt="가상 회로 사진"/);
   });
 
   it("큰 인용이 사례보다 앞에 있어도 사례 번호와 목차는 사례의 순서를 따른다", () => {
@@ -378,7 +379,7 @@ describe("첫 화면 배경", () => {
         continue;
       }
       expect(head).toContain(`data-backdrop="${backdrop}"`);
-      expect(head).toMatch(/<div class="xp-backdrop" data-shape="[a-z]+" aria-hidden="true" data-bleed="">[\s\S]*<\/div><\/header>$/);
+      expect(head).toMatch(/<div class="xp-backdrop" data-shape="[a-z]+"(?: data-scene="[a-z]+")? aria-hidden="true" data-bleed="">[\s\S]*<\/div><\/header>$/);
       expect(html).not.toContain("<script");
     }
   });
@@ -391,11 +392,27 @@ describe("첫 화면 배경", () => {
     expect(hero(renderStructuredPortfolio(pageSpec({ variant: "statement" }), content, { design: clarity }).html)).not.toContain("xp-backdrop");
   });
 
+  it("장면은 표식과 대체 정적 배경을 함께 그리고, 대체 배경과 같은 잉크 부류를 쓴다", () => {
+    for (const scene of STRUCTURED_SCENES) {
+      const fallback = SCENE_FALLBACK[scene];
+      const head = hero(renderStructuredPortfolio(pageSpec({ variant: "statement", backdrop: scene }), content, { design: clarity }).html);
+      expect(head).toContain(`data-backdrop="${scene}"`);
+      expect(head).toContain(`data-shape="${fallback}" data-scene="${scene}"`);
+      expect(head).toContain(`data-backdrop-ink="${backdropInk(fallback)}"`);
+      // 캔버스와 스크립트는 런타임이 붙입니다. 키트는 표식만 냅니다.
+      expect(head).not.toMatch(/<canvas|<script/);
+    }
+    // 정적 배경에는 장면 표식이 없습니다.
+    expect(hero(renderStructuredPortfolio(pageSpec({ variant: "statement", backdrop: "glow" }), content, { design: clarity }).html)).not.toContain("data-scene");
+    // 첫 프레임을 그린 뒤에만 대체 그림을 가립니다.
+    expect(BACKDROP_CSS).toContain(".xp-backdrop[data-scene-live]>:not(.xp-scene-canvas)");
+  });
+
   it("배경 CSS는 새 색을 만들지 않고 디자인에서 계산한 잉크 변수만 쓴다", () => {
     expect(BACKDROP_CSS).not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(|\b(?:black|white)\b/);
     expect(BACKDROP_CSS).not.toMatch(/filter\s*:|backdrop-filter/);
     const { css } = renderStructuredPortfolio(pageSpec({ variant: "statement", backdrop: "grid" }), content, { design: clarity });
-    expect(css).toMatch(/\.xp-hero\[data-backdrop-ink="line"\]\{--xp-bd-1:#[0-9a-f]{6};--xp-bd-2:#[0-9a-f]{6};color:#[0-9a-f]{6};--xp-muted:#[0-9a-f]{6}/);
+    expect(css).toMatch(/\.xp-hero\[data-backdrop-ink="line"\]\{--xp-bd-base:#[0-9a-f]{6};--xp-bd-1:#[0-9a-f]{6};--xp-bd-2:#[0-9a-f]{6};color:#[0-9a-f]{6};--xp-muted:#[0-9a-f]{6}/);
     // 옛 포스터 면의 줄무늬는 배경 층으로 옮겼습니다. 첫 화면 조상에 배경 이미지가 없어야 렌더 대비 검사가 글자를 잽니다.
     expect(css).not.toContain("repeating-linear-gradient(-45deg,color-mix(in srgb,var(--xp-action-text)");
   });

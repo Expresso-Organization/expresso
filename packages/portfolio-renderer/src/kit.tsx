@@ -11,6 +11,12 @@ import { Backdrop, BACKDROP_CSS, backdropAttributes, backdropCss, resolveBackdro
 import { structuredCatalog } from "./catalog.js";
 import { cssVariables, fontImportCss, readableColors } from "./design-tokens.js";
 import { KIT_CSS } from "./kit-styles.js";
+import { Bars, metricNumber } from "./viz/bars.js";
+import { PeriodChart } from "./viz/period-chart.js";
+import { readablePeriods } from "./viz/period.js";
+import { VIZ_CSS } from "./viz/styles.js";
+
+export { metricNumber };
 
 /** 키트 컴포넌트가 함께 읽는 문맥입니다. 연락처 유무와 근거 제목처럼 한 요소의 props 밖에 있는 값입니다. */
 export const KitContext = React.createContext<{
@@ -21,7 +27,23 @@ export const KitContext = React.createContext<{
   caseNumbers: ReadonlyMap<string, number>;
   /** 글 · 목록형에서 읽는 순서로 첫 사례 행의 섹션 ID. 그 행 위에 목록 제목을 둡니다. */
   firstRowId?: string | undefined;
+  /** 렌더 시각입니다. "현재"로 끝나는 기간을 여기까지 그립니다. */
+  now: Date;
 } | null>(null);
+
+/**
+ * 지금 그리는 요소의 Spec 키입니다. 편집 화면이 이 키로 요소를 고릅니다(`editing.ts`).
+ * 키트 컴포넌트는 최상위 DOM에 `{...useMark()}`를 펼칩니다. 새 부품도 같은 방식으로 답니다.
+ */
+const ElementKey = React.createContext<string | undefined>(undefined);
+
+/** 렌더러가 요소 props에 넣어 두는 키 이름입니다. 계약의 props가 아니라 렌더링 중에만 있습니다. */
+export const ELEMENT_KEY_PROP = "xpKey";
+
+function useMark(): Record<string, string> {
+  const key = React.useContext(ElementKey);
+  return key ? { "data-xp-key": key } : {};
+}
 
 function useKit() {
   const value = React.useContext(KitContext);
@@ -37,7 +59,7 @@ export function kitCss(spec: DesignSystemSpecV2): string {
   const mid = weights.find((weight) => weight >= 500 && weight < strong) ?? strong;
   // 자간은 디자인이 고른 값 중 가장 좁은 것을 제목에 씁니다.
   const tracking = spec.typography.letterSpacing.find((value) => value.trim().startsWith("-")) ?? "-0.01em";
-  return `${fontImportCss(spec)}.xp-page{${cssVariables(spec)}--xp-muted:${readable.mutedOnCanvas};--xp-muted-surface:${readable.mutedOnSurface};--xp-accent-text:${readable.accentText};--xp-action-text:${readable.actionText};--xp-muted-field:${readable.mutedOnField};--xp-muted-inverse:${readable.mutedOnInverse};--xp-accent-inverse:${readable.accentOnInverse};--xp-weight:${strong};--xp-weight-mid:${mid};--xp-tracking:${tracking}}\n${KIT_CSS}\n${backdropCss(spec)}\n${BACKDROP_CSS}`;
+  return `${fontImportCss(spec)}.xp-page{${cssVariables(spec)}--xp-muted:${readable.mutedOnCanvas};--xp-muted-surface:${readable.mutedOnSurface};--xp-accent-text:${readable.accentText};--xp-action-text:${readable.actionText};--xp-muted-field:${readable.mutedOnField};--xp-muted-inverse:${readable.mutedOnInverse};--xp-accent-inverse:${readable.accentOnInverse};--xp-weight:${strong};--xp-weight-mid:${mid};--xp-tracking:${tracking}}\n${KIT_CSS}${VIZ_CSS}\n${backdropCss(spec)}\n${BACKDROP_CSS}`;
 }
 
 const PATTERN_LABEL: Record<StructuredSection["pattern"], string> = {
@@ -140,11 +162,12 @@ type Profile = StructuredPortfolioContent["profile"];
 
 /** 포스터형 첫 화면: 행동색 면 위에 화면 폭에 가까운 이름, 한 문장, 집중 분야 글자 띠. */
 function PosterIntro({ profile, backdrop }: { profile: Profile; backdrop: StructuredBackdrop }) {
+  const mark = useMark();
   const strip = profile.focus.length ? profile.focus : [profile.role];
   return (
     <>
     {/* data-bleed: 본문 폭 밖까지 일부러 넓힌 면입니다. 검증의 열 이탈 검사가 이 안을 건너뜁니다(가로 넘침 검사는 그대로). */}
-    <header id="intro" className="xp-hero" data-variant="poster" data-bleed="" {...backdropAttributes(backdrop)}>
+    <header id="intro" className="xp-hero" data-variant="poster" data-bleed="" {...mark} {...backdropAttributes(backdrop)}>
       <p className="xp-poster-role">{profile.role}</p>
       <h1 className="xp-poster-name" data-name-length={nameLength(profile.name)}>
         {profile.name}
@@ -166,7 +189,7 @@ function PosterIntro({ profile, backdrop }: { profile: Profile; backdrop: Struct
       <Backdrop backdrop={backdrop} />
     </header>
     {/* 첫 화면은 짧게 두고, 소개 문단은 바로 아래 큰 글자 단락으로 싣습니다. */}
-    <section className="xp-poster-about" aria-label="소개">
+    <section className="xp-poster-about" aria-label="소개" {...mark}>
       <Paragraphs value={profile.intro} className="xp-poster-about-text" />
     </section>
     </>
@@ -176,8 +199,9 @@ function PosterIntro({ profile, backdrop }: { profile: Profile; backdrop: Struct
 /** 글 · 목록형 첫 화면: 작은 이름과 직무 아래 소개를 큰 문장으로. */
 function SentenceIntro({ profile, backdrop }: { profile: Profile; backdrop: StructuredBackdrop }) {
   const { content } = useKit();
+  const mark = useMark();
   return (
-    <header id="intro" className="xp-hero" data-variant="sentence" {...backdropAttributes(backdrop)}>
+    <header id="intro" className="xp-hero" data-variant="sentence" {...mark} {...backdropAttributes(backdrop)}>
       <p className="xp-sentence-meta">
         <strong>{profile.name}</strong> · {profile.role}
       </p>
@@ -203,6 +227,7 @@ function SentenceIntro({ profile, backdrop }: { profile: Profile; backdrop: Stru
 /** 글 · 목록형의 사례 한 줄: 기간 · 제목 · 요약. 펼치면 본문 · 항목 · 이미지 · 관련 자료가 나옵니다. */
 function CaseRow({ section }: { section: StructuredSection }) {
   const { firstRowId } = useKit();
+  const mark = useMark();
   return (
     <>
       {firstRowId === section.id ? (
@@ -211,7 +236,7 @@ function CaseRow({ section }: { section: StructuredSection }) {
           <h2 className="xp-h2">작업</h2>
         </header>
       ) : null}
-      <article id={`section-${section.id}`} className="xp-row" data-case-type="row">
+      <article id={`section-${section.id}`} className="xp-row" data-case-type="row" {...mark}>
         <details>
           <summary>
             {section.period ? <span className="xp-row-period xp-small">{section.period}</span> : null}
@@ -237,7 +262,7 @@ function CaseRow({ section }: { section: StructuredSection }) {
   );
 }
 
-type CaseKind = "essay" | "technical" | "process" | "gallery" | "panel" | "before-after" | "flow" | "showcase";
+type CaseKind = "essay" | "technical" | "process" | "gallery" | "panel" | "before-after" | "bars" | "flow" | "showcase";
 
 /** 요소 하나의 지면 변화입니다. 계약 `STRUCTURED_SCALES` · `STRUCTURED_SURFACES` · `STRUCTURED_WIDTHS`와 같은 값입니다. */
 type Stage = { scale?: "lead" | "standard" | "compact" | undefined; surface?: "canvas" | "field" | "inverse" | undefined; width?: "content" | "bleed" | undefined };
@@ -255,15 +280,6 @@ function stageAttributes(stage: Stage): Record<string, string> {
 }
 
 type Metric = NonNullable<StructuredSection["metrics"]>[number];
-
-/**
- * "3.8초" · "420KB" · "1,200만 건"처럼 숫자로 시작하는 값에서 그 숫자를 읽습니다. 숫자로 시작하지 않으면 null입니다.
- * 글 중간의 숫자는 읽지 않습니다. 청사진의 자리 표지(`⟦12⟧`)나 "약 3배" 같은 값에서 엉뚱한 비율이 나오지 않습니다.
- */
-export function metricNumber(value: string): number | null {
-  const match = value.replace(/,/g, "").match(/^[+\-−~≈]?\s?(\d+(?:\.\d+)?)/);
-  return match ? Number(match[1]) : null;
-}
 
 /**
  * 전후 수치를 막대 두 줄로 비교합니다. 막대 길이는 둘 중 큰 값을 100%로 둔 비율이고, 값은 막대 옆 글자로 둡니다.
@@ -297,6 +313,7 @@ function Compare({ metric }: { metric: Metric }) {
 }
 
 function Case({ section, kind, stage = {} }: { section: StructuredSection; kind: CaseKind; stage?: Stage }) {
+  const mark = useMark();
   const first = section.media[0];
   const isSkills = section.pattern === "skills";
   if (kind === "showcase") return <Showcase section={section} stage={stage} />;
@@ -318,6 +335,17 @@ function Case({ section, kind, stage = {} }: { section: StructuredSection; kind:
             <Compare metric={metric} key={index} />
           ))}
         </div>
+        <div className="xp-body-stack">
+          {first ? <Figure media={first} /> : null}
+          <Paragraphs value={section.body} />
+          <Details details={section.details} />
+        </div>
+      </div>
+    );
+  else if (kind === "bars")
+    body = (
+      <div className="xp-case-grid" data-form="bars">
+        <Bars metrics={section.metrics ?? []} />
         <div className="xp-body-stack">
           {first ? <Figure media={first} /> : null}
           <Paragraphs value={section.body} />
@@ -394,7 +422,7 @@ function Case({ section, kind, stage = {} }: { section: StructuredSection; kind:
       </>
     );
   return (
-    <article id={`section-${section.id}`} className="xp-block xp-case" data-case-type={kind} {...stageAttributes(stage)}>
+    <article id={`section-${section.id}`} className="xp-block xp-case" data-case-type={kind} {...stageAttributes(stage)} {...mark}>
       <CaseHead section={section} />
       {/* 본문 조각을 한 묶음으로 둡니다. 넓은 여백 배치에서 제목 칸 높이가 본문 첫 조각의 행 높이를 늘리지 않습니다. */}
       <div className="xp-case-body">
@@ -429,9 +457,10 @@ function Flow({ steps }: { steps: NonNullable<StructuredSection["steps"]> }) {
 
 /** 이미지 전시: 첫 이미지를 지면 폭으로 크게 두고, 그 아래 머리와 본문을 두 단으로 둡니다. */
 function Showcase({ section, stage }: { section: StructuredSection; stage: Stage }) {
+  const mark = useMark();
   const [first, ...rest] = section.media;
   return (
-    <article id={`section-${section.id}`} className="xp-block xp-case xp-showcase" data-case-type="showcase" {...stageAttributes(stage)}>
+    <article id={`section-${section.id}`} className="xp-block xp-case xp-showcase" data-case-type="showcase" {...stageAttributes(stage)} {...mark}>
       {first ? (
         <figure className="xp-showcase-art">
           <img src={first.src} alt={first.alt} loading="lazy" />
@@ -459,9 +488,10 @@ function Showcase({ section, stage }: { section: StructuredSection; stage: Stage
 
 /** 큰 인용: 한 섹션의 quote를 큰 글자로, 그 작업으로 가는 링크를 아래에 둡니다. 글은 받은 그대로 둡니다. */
 function PullQuote({ section, stage }: { section: StructuredSection; stage: Stage }) {
+  const mark = useMark();
   if (!section.quote) return null;
   return (
-    <figure className="xp-block xp-quote" {...stageAttributes(stage)}>
+    <figure className="xp-block xp-quote" {...stageAttributes(stage)} {...mark}>
       <blockquote className="xp-quote-text">
         <p>{section.quote}</p>
       </blockquote>
@@ -472,9 +502,14 @@ function PullQuote({ section, stage }: { section: StructuredSection; stage: Stag
   );
 }
 
+/** 훅을 쓸 수 없는 화살표 컴포넌트의 최상위 DOM에 요소 키를 답니다. */
+function Marked({ as: Tag, ...rest }: { as: "div" | "section" } & React.HTMLAttributes<HTMLElement> & Record<`data-${string}`, string>) {
+  return <Tag {...rest} {...useMark()} />;
+}
+
 const stageOf = (props: Stage): Stage => ({ scale: props.scale, surface: props.surface, width: props.width });
 
-const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
+const { registry: baseRegistry } = defineRegistry(structuredCatalog, {
   components: {
     PortfolioPage: ({ props, children }) => {
       const { design } = useKit();
@@ -503,6 +538,7 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
     },
     NameIntro: ({ props: { profile, sections, variant, backdrop: chosen } }) => {
       const { content } = useKit();
+      const mark = useMark();
       const art = sections?.find((section) => section.media.length)?.media[0];
       const backdrop = resolveBackdrop(chosen, variant);
       const layer = <Backdrop backdrop={backdrop} />;
@@ -531,7 +567,7 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
       ) : null;
       if (mode === "split")
         return (
-          <header id="intro" className="xp-hero" data-variant="split" {...attributes}>
+          <header id="intro" className="xp-hero" data-variant="split" {...mark} {...attributes}>
             <div>
               <p className="xp-eyebrow">{profile.role}</p>
               <h1 className="xp-name">{profile.name}</h1>
@@ -547,7 +583,7 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
         );
       if (mode === "media")
         return (
-          <header id="intro" className="xp-hero" data-variant="media" {...attributes}>
+          <header id="intro" className="xp-hero" data-variant="media" {...mark} {...attributes}>
             <div className="xp-hero-text">
               <p className="xp-eyebrow">{profile.role}</p>
               <h1 className="xp-name">{profile.name}</h1>
@@ -564,7 +600,7 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
           </header>
         );
       return (
-        <header id="intro" className="xp-hero" data-variant="statement" {...attributes}>
+        <header id="intro" className="xp-hero" data-variant="statement" {...mark} {...attributes}>
           <p className="xp-eyebrow">{profile.role}</p>
           <h1 className="xp-name">{profile.name}</h1>
           <p className="xp-headline">{profile.headline}</p>
@@ -575,8 +611,9 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
         </header>
       );
     },
-    ProjectIndex: ({ props: { sections, variant } }) => {
-      const { caseNumbers } = useKit();
+    ProjectIndex: ({ props: { sections, variant: chosen } }) => {
+      const { caseNumbers, now } = useKit();
+      const mark = useMark();
       const number = (id: string, index: number) => twoDigits(caseNumbers.get(id) ?? index + 1);
       const projects = sections.filter((section) => section.pattern === "project");
       // 목차는 페이지에서 읽는 순서를 따릅니다. 내용의 섹션 순서와 Spec의 배치 순서가 다를 수 있습니다.
@@ -584,9 +621,12 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
         .map((section, index) => ({ section, order: caseNumbers.get(section.id) ?? Number.POSITIVE_INFINITY, index }))
         .sort((a, b) => a.order - b.order || a.index - b.index)
         .map(({ section }) => section);
+      // 작업 기간 차트는 기간을 두 개 이상 읽을 때만 그리고, 아니면 짧은 목록으로 그립니다.
+      const timeline = chosen === "timeline" && readablePeriods(items.map((section) => section.period), now) >= 2;
+      const variant = chosen === "timeline" && !timeline ? "rows" : chosen;
       if (variant === "poster")
         return (
-          <nav id="work" className="xp-poster-index" aria-label="선택한 작업">
+          <nav id="work" className="xp-poster-index" aria-label="선택한 작업" {...mark}>
             <p className="xp-eyebrow">Selected work</p>
             <ol>
               {items.map((section, index) => (
@@ -602,12 +642,28 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
           </nav>
         );
       return (
-        <nav id="work" className="xp-block xp-index" data-variant={variant} aria-label="선택한 작업">
+        <nav id="work" className="xp-block xp-index" data-variant={variant} aria-label="선택한 작업" {...mark}>
           <header className="xp-head">
             <p className="xp-eyebrow">Selected work</p>
             <h2 className="xp-h2">선택한 작업</h2>
           </header>
-          {variant === "mosaic" ? (
+          {timeline ? (
+            <PeriodChart
+              now={now}
+              rows={items.map((section, index) => ({
+                key: section.id,
+                period: section.period,
+                href: `#section-${section.id}`,
+                text: (
+                  <>
+                    <span className="xp-num xp-small">{number(section.id, index)}</span>
+                    <strong>{section.title}</strong>
+                    {section.period ? <span className="xp-small">{section.period}</span> : null}
+                  </>
+                ),
+              }))}
+            />
+          ) : variant === "mosaic" ? (
             <div className="xp-mosaic">
               {items.map((section, index) => (
                 <a href={`#section-${section.id}`} key={section.id} className="xp-panel">
@@ -638,19 +694,21 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
       );
     },
     CaseBeforeAfter: ({ props }) => <Case section={props.section} kind="before-after" stage={stageOf(props)} />,
+    CaseBars: ({ props }) => <Case section={props.section} kind="bars" stage={stageOf(props)} />,
     CaseFlow: ({ props }) => <Case section={props.section} kind="flow" stage={stageOf(props)} />,
     CaseShowcase: ({ props }) => <Case section={props.section} kind="showcase" stage={stageOf(props)} />,
     PullQuote: ({ props }) => <PullQuote section={props.section} stage={stageOf(props)} />,
     MetricStrip: ({ props }) => {
       const { sections } = props;
       const { caseNumbers } = useKit();
+      const mark = useMark();
       // 섹션마다 첫 수치 하나를, 페이지에서 읽는 순서로 네 개까지 보입니다.
       const items = sections
         .flatMap((section, index) => (section.metrics?.[0] ? [{ section, metric: section.metrics[0], order: caseNumbers.get(section.id) ?? 100 + index }] : []))
         .sort((a, b) => a.order - b.order)
         .slice(0, 4);
       return (
-        <section className="xp-block xp-metrics" aria-label="주요 수치" {...stageAttributes(stageOf(props))}>
+        <section className="xp-block xp-metrics" aria-label="주요 수치" {...stageAttributes(stageOf(props))} {...mark}>
           <ul className="xp-metric-strip">
             {items.map(({ section, metric }) => (
               <li key={section.id}>
@@ -672,42 +730,65 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
     ContentPanel: ({ props }) => <Case section={props.section} kind="panel" stage={stageOf(props)} />,
     CaseRow: ({ props }) => <CaseRow section={props.section} />,
     Columns: ({ props, children }) => (
-      <div className="xp-group" data-group="columns" data-variant={props.variant}>
+      <Marked as="div" className="xp-group" data-group="columns" data-variant={props.variant}>
         {children}
-      </div>
+      </Marked>
     ),
     Grid: ({ props, children }) => (
-      <div className="xp-group" data-group="grid" data-variant={props.variant}>
+      <Marked as="div" className="xp-group" data-group="grid" data-variant={props.variant}>
         {children}
-      </div>
+      </Marked>
     ),
     Band: ({ props, children }) => (
-      <div className="xp-group" data-group="band" data-variant={props.variant}>
+      <Marked as="div" className="xp-group" data-group="band" data-variant={props.variant}>
         {children}
-      </div>
+      </Marked>
     ),
-    CareerTimeline: ({ props: { career } }) => (
-      <section id="career" className="xp-block xp-career">
-        <header className="xp-head">
-          <p className="xp-eyebrow">Experience</p>
-          <h2 className="xp-h2">경력</h2>
-        </header>
-        <ol className="xp-timeline">
-          {career.map((item) => (
-            <li key={item.id}>
-              <span className="xp-small">{item.period}</span>
-              <div>
-                <h3 className="xp-h3">{item.organization}</h3>
-                <p className="xp-small">{item.role}</p>
-                <Paragraphs value={item.description} />
-              </div>
-            </li>
-          ))}
-        </ol>
-      </section>
-    ),
+    CareerTimeline: ({ props: { career, variant } }) => {
+      const { now } = useKit();
+      // 경력 기간 차트는 기간을 두 개 이상 읽을 때만 그립니다. 아니면(옛 저장본 포함) 목록입니다.
+      const chart =
+        variant === "chart"
+          ? PeriodChart({
+              now,
+              rows: career.map((item) => ({
+                key: item.id,
+                period: item.period,
+                text: (
+                  <>
+                    <strong>{item.organization}</strong>
+                    <span className="xp-small">{[item.role, item.period].filter(Boolean).join(" · ")}</span>
+                    <Paragraphs value={item.description} />
+                  </>
+                ),
+              })),
+            })
+          : null;
+      return (
+        <Marked as="section" id="career" className="xp-block xp-career" {...(chart ? { "data-variant": "chart" } : {})}>
+          <header className="xp-head">
+            <p className="xp-eyebrow">Experience</p>
+            <h2 className="xp-h2">경력</h2>
+          </header>
+          {chart ?? (
+            <ol className="xp-timeline">
+              {career.map((item) => (
+                <li key={item.id}>
+                  <span className="xp-small">{item.period}</span>
+                  <div>
+                    <h3 className="xp-h3">{item.organization}</h3>
+                    <p className="xp-small">{item.role}</p>
+                    <Paragraphs value={item.description} />
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
+        </Marked>
+      );
+    },
     EvidenceGrid: ({ props: { evidence } }) => (
-      <section id="evidence" className="xp-block xp-evidence">
+      <Marked as="section" id="evidence" className="xp-block xp-evidence">
         <header className="xp-head">
           <p className="xp-eyebrow">Evidence</p>
           <h2 className="xp-h2">근거 자료</h2>
@@ -724,11 +805,11 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
             </details>
           ))}
         </div>
-      </section>
+      </Marked>
     ),
     Contact: ({ props: { contact } }) =>
       contact ? (
-        <section id="contact" className="xp-block">
+        <Marked as="section" id="contact" className="xp-block">
           <div className="xp-panel xp-contact">
             <p className="xp-eyebrow">Contact</p>
             <h2 className="xp-h2">연락</h2>
@@ -736,10 +817,28 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
               {contact.label} ↗
             </a>
           </div>
-        </section>
+        </Marked>
       ) : null,
   },
 });
+
+/**
+ * 요소 키를 컨텍스트로 내리는 레지스트리입니다. json-render는 요소 키를 컴포넌트에 넘기지 않고 props를 풀어 새 객체로 넘깁니다
+ * (0.21.0 `ElementRenderer`). 그래서 렌더러가 props에 넣어 둔 `xpKey`를 여기서 읽습니다.
+ */
+const kitRegistry = Object.fromEntries(
+  Object.entries(baseRegistry).map(([type, Component]) => {
+    const Keyed: typeof Component = (input) => {
+      const key = (input.element.props as Record<string, unknown>)[ELEMENT_KEY_PROP];
+      return (
+        <ElementKey.Provider value={typeof key === "string" ? key : undefined}>
+          <Component {...input} />
+        </ElementKey.Provider>
+      );
+    };
+    return [type, Keyed];
+  }),
+) as typeof baseRegistry;
 
 export { kitRegistry };
 

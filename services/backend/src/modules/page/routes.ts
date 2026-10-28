@@ -5,7 +5,11 @@ import {
   RestorePageRevisionSchema,
   EditStructuredPageSchema,
   PageLibrarySearchSchema,
+  pageDocumentPolicy,
+  InstructStructuredElementSchema,
+  AddStructuredSectionSchema,
 } from "@expresso/contracts";
+import { z } from "zod";
 import { searchPageLibrary } from "@expresso/portfolio-renderer";
 import type { FastifyInstance, preHandlerHookHandler } from "fastify";
 
@@ -13,13 +17,21 @@ import { HttpStatusError, requireAuth } from "../../api/plugins/auth-context.js"
 import { PageGenerationError, type PageGenerator } from "./generator.js";
 import { PageServiceError, type PageApi } from "./index.js";
 import { writePageStream, type PageStream } from "./stream.js";
+import type { PageElementEditor } from "./element-edit.js";
+
+/** 요소 경로의 인자입니다. 요소 키는 Spec의 요소 ID 모양입니다. */
+const PortfolioElementParamsSchema = PortfolioIdParamsSchema.extend({ key: z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9-]{0,99}$/) });
 
 export interface RegisterPageRoutesOptions {
   service: PageApi;
   generator?: PageGenerator;
+  /** 요소 지시와 기록 사례 쓰기의 AI입니다. 없으면 요소 지시는 503이고, 기록 추가는 규칙으로 씁니다. */
+  editor?: PageElementEditor | null;
   /** 없으면 흘려보내는 자리를 열지 않는다. */
   stream?: PageStream | null;
   authenticateRequest: preHandlerHookHandler;
+  /** 장면 런타임을 내보내는 웹 주소(`APP_BASE_URL`)입니다. 문서 응답의 CSP가 이 주소의 런타임만 허용합니다. */
+  webOrigin: string;
 }
 
 /**
@@ -60,6 +72,39 @@ export function registerPageRoutes(
     const input = EditStructuredPageSchema.parse(request.body);
     if (!options.service.editComposition) throw new HttpStatusError(503, "구성 편집을 사용할 수 없습니다.");
     return { data: await lift(() => options.service.editComposition!(principal.user.id, portfolioId, input)) };
+  });
+
+  app.get(`${path}/design`, { preHandler: options.authenticateRequest }, async (request) => {
+    const principal = requireAuth(request);
+    const { id: portfolioId } = PortfolioIdParamsSchema.parse(request.params);
+    if (!options.service.editorDesign) throw new HttpStatusError(503, "디자인 값을 읽을 수 없습니다.");
+    return { data: await lift(() => options.service.editorDesign!(principal.user.id, portfolioId)) };
+  });
+
+  app.get(`${path}/editable`, { preHandler: options.authenticateRequest }, async (request) => {
+    const principal = requireAuth(request);
+    const { id: portfolioId } = PortfolioIdParamsSchema.parse(request.params);
+    if (!options.service.editableRender) throw new HttpStatusError(503, "편집용 지면을 그릴 수 없습니다.");
+    const rendered = await lift(() => options.service.editableRender!(principal.user.id, portfolioId));
+    if (!rendered) throw new HttpStatusError(404, "구조화 지면이 없습니다.");
+    return { data: rendered };
+  });
+
+  app.post(`${path}/elements/:key/instruct`, { preHandler: options.authenticateRequest }, async (request) => {
+    const principal = requireAuth(request);
+    const { id: portfolioId, key } = PortfolioElementParamsSchema.parse(request.params);
+    const input = InstructStructuredElementSchema.parse(request.body);
+    if (!options.service.instructElement) throw new HttpStatusError(503, "요소 편집을 사용할 수 없습니다.");
+    return { data: await lift(() => options.service.instructElement!(principal.user.id, portfolioId, key, input, options.editor ?? null)) };
+  });
+
+  app.post(`${path}/sections`, { preHandler: options.authenticateRequest }, async (request, reply) => {
+    const principal = requireAuth(request);
+    const { id: portfolioId } = PortfolioIdParamsSchema.parse(request.params);
+    const input = AddStructuredSectionSchema.parse(request.body);
+    if (!options.service.addRecordSection) throw new HttpStatusError(503, "기록 추가를 사용할 수 없습니다.");
+    const page = await lift(() => options.service.addRecordSection!(principal.user.id, portfolioId, input, options.editor ?? null));
+    return reply.code(201).send({ data: page });
   });
 
   app.post(`${path}/restore`, { preHandler: options.authenticateRequest }, async (request, reply) => {
@@ -114,8 +159,9 @@ export function registerPageRoutes(
    *
    * 배포 미리보기와 내려받기가 이걸 본다. **`text/html`로 나가지만 우리 출처가
    * 아니다** — 소독을 지났어도 남의 지면을 우리 오리진에서 열게 하지 않는다.
-   * `Content-Security-Policy: sandbox`가 스크립트와 폼을 다시 한 번 막고,
-   * 이 응답이 우리 쿠키에 닿을 길을 없앤다.
+   * `Content-Security-Policy: sandbox`가 폼을 막고 출처를 불투명하게 만들어
+   * 이 응답이 우리 쿠키에 닿을 길을 없앤다. 스크립트는 웹이 내보내는 장면 런타임만 돈다(`pageDocumentPolicy`).
+   * 이 문서는 API 출처에서 열려 상대 경로의 런타임을 받지 못하므로 장면 대신 대체 그림이 보인다.
    */
   app.get(`${path}/document`, { preHandler: options.authenticateRequest }, async (request, reply) => {
     const principal = requireAuth(request);
@@ -124,7 +170,7 @@ export function registerPageRoutes(
     if (!document) throw new HttpStatusError(404, "아직 지면을 만들지 않았습니다");
     return reply
       .header("content-type", "text/html; charset=utf-8")
-      .header("content-security-policy", "sandbox allow-popups; script-src 'none'; form-action 'none'")
+      .header("content-security-policy", pageDocumentPolicy(options.webOrigin))
       .header("x-content-type-options", "nosniff")
       .send(document);
   });

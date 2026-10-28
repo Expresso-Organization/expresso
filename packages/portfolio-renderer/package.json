@@ -7,6 +7,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./editing": {
+      "types": "./dist/editing.d.ts",
+      "default": "./dist/editing.js"
     }
   },
   "scripts": {
@@ -20,12 +24,15 @@
     "@json-render/react": "0.21.0",
     "react": "19.2.7",
     "react-dom": "19.2.7",
+    "three": "0.186.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@types/three": "0.186.0",
+    "esbuild": "0.28.1",
     "typescript": "^7.0.2",
     "vitest": "^4.1.10"
   }

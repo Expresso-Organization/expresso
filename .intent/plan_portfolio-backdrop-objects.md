@@ -16,21 +16,21 @@ date: 2026-10-28
 
 | 파일 | 묶음 | 무엇을 |
 |---|---|---|
-| `packages/contracts/src/structured-portfolio.ts` · `.test.ts` | A · B | `STRUCTURED_BACKDROPS` · `BACKDROP_FALLBACK`, 저장 칸(선택) · 모델 칸(필수). B에서 장면 값 추가 |
+| `packages/contracts/src/structured-portfolio.ts` · `.test.ts` | A · B | `STRUCTURED_BACKDROPS`, 저장 칸(선택) · 모델 칸(필수). B에서 `STRUCTURED_SCENES` 추가 |
 | `packages/contracts/src/page.ts` | A · B | A: `PAGE_PROMPT_VERSION` 15. B: `pageDocumentPolicy()`, `pageDocument`의 런타임 `<script>` |
 | `packages/portfolio-renderer/src/backdrop.tsx` (새) | A | 정적 일곱 종 · `BACKDROP_CSS` · `describeBackdrops()` |
 | `packages/portfolio-renderer/src/design-tokens.ts` | A | `backdropColors()`, `designQa` 배경 쌍 |
-| `packages/portfolio-renderer/src/kit.tsx` · `kit-styles.ts` · `catalog.ts` · `index.ts` | A · B | 첫 화면 배경 층, 포스터 줄무늬 이전, NameIntro 칸. B에서 `xp-scene` 표식 |
+| `packages/portfolio-renderer/src/kit.tsx` · `kit-styles.ts` · `catalog.ts` · `index.ts` | A · B | 첫 화면 배경 층, 포스터 줄무늬 이전, NameIntro 칸. B에서 `data-scene` 표식 · `SCENE_FALLBACK` · `--xp-bd-base` |
 | `packages/portfolio-renderer/src/kit.test.ts` | A · B | 구도 × 배경 렌더, 새 색 없음, 모션 조건, 장면 표식 |
-| `packages/portfolio-renderer/src/scene-runtime/*` (새) | B | 진입점 · 공통 루프 · 장면 여섯 · `inkMix()` · 테스트 |
+| `packages/portfolio-renderer/src/scene-runtime/*` (새) · `scripts/build-scene.mjs` (새) · `tsconfig.build.json` | B | 진입점 · 공통 루프 · 장면 여섯 · `inkMix()` · 테스트, esbuild 묶기, 런타임은 tsc 산출물에서 뺌 |
 | `packages/portfolio-renderer/package.json` | B | `three@0.186.1` · `esbuild` 의존성, `build:scene` 스크립트 |
-| `services/web/package.json` · `.gitignore` | B | `predev` · `prebuild`에서 런타임 빌드, `public/scene-runtime/` 제외 |
-| `services/web/src/app/site/[slug]/page.tsx` · `document/route.ts` (새) | B | iframe `src` 전환, 공개 문서 라우트 |
+| `services/web/package.json` · `.gitignore` · `next.config.ts` · `src/lib/page-document.ts` (새) | B | `dev` · `build` 앞에 `build:scene`, `public/scene-runtime/` 제외, 런타임 CORS 헤더, 문서 응답 공용 함수 |
+| `services/web/src/app/site/[slug]/page.tsx` · `SiteFrame.tsx` · `document/route.ts` (새) · `src/lib/site-tracker.ts` · `src/proxy.ts` | B | iframe `src` 전환, 공개 문서 라우트(추적 스크립트 · 해시를 헤더 CSP로), 공개 주소의 `/document` · `/scene-runtime/` 통과 |
 | `services/web/src/app/(app)/edit/[portfolioId]/preview/route.ts` | B | 공유 정책으로 교체 |
 | `services/backend/src/modules/page/routes.ts` | B | `/document` 공유 정책 + `APP_BASE_URL` 런타임 주소 |
 | `services/backend/src/modules/page/design-first.ts` · `structured-generator.ts` · `design-first.test.ts` · `structured-generator.test.ts` · `structured.mongo.integration.test.ts` | A | 프롬프트 한 줄씩, 테스트(가짜 모델 출력에 필수가 된 배경 칸 추가) |
 | `services/backend/src/modules/design-systems/design-qa.test.ts` | A | 38종 배경 세기 유지 |
-| `scripts/operations/deploy.sh` · `.github/workflows/web-ci.yml` | B | 웹 빌드 전에 런타임 빌드가 도는지 확인하고, 안 돌면 추가 |
+| `services/backend/src/api/build-app.ts` · `page.integration.test.ts` · `stream-route.integration.test.ts` · `packages/contracts/src/page-document.test.ts` (새) | B | 문서 라우트에 웹 출처 전달, 정책 테스트. 배포 · CI는 웹 `build`가 런타임을 묶으므로 고치지 않음 |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
 
@@ -45,9 +45,9 @@ date: 2026-10-28
 
 **묶음 B — 스크립트 허용 · 장면**
 6. 정책 — `pageDocumentPolicy()`, 세 라우트, 공개 사이트 iframe 전환. 브라우저에서 인라인 스크립트가 막히고 CSP 위반이 기록되는지 확인.
-7. 런타임 골격 — 공통 루프 · `inkMix()` · 빌드 파이프라인. `inkMix` 단위 테스트, 웹 `pnpm dev`에서 `/scene-runtime/v1.js` 200 확인.
+7. 런타임 골격 — 공통 루프 · `inkMix()` · 빌드 파이프라인. `inkMix` 단위 테스트, 웹 `pnpm dev`에서 `/scene-runtime/v1/main.js` 200 확인.
 8. 장면 여섯 — 2D 셋, 3D 셋. 견본에서 포인터 이동 전후 스크린샷, headless 픽셀 표본으로 바탕 · 잉크 사이 색인지 확인.
-9. 키트 · 계약 연결 — 장면 값, `xp-scene` 표식, `pageDocument` 스크립트 태그.
+9. 키트 · 계약 연결 — 장면 값, `data-scene` 표식, `pageDocument` 스크립트 태그.
 
 **마무리**
 10. 전체 검사 — `pnpm typecheck`, `pnpm test`, `pnpm infra:up` 뒤 `pnpm test:infra`.
@@ -64,7 +64,7 @@ date: 2026-10-28
 pnpm typecheck
 pnpm test
 pnpm infra:up && pnpm test:infra
-pnpm --filter @expresso/portfolio-renderer build:scene && gzip -c services/web/public/scene-runtime/v1.js | wc -c
+pnpm --filter @expresso/web build:scene && for f in services/web/public/scene-runtime/v1/*.js; do gzip -c $f | wc -c; done
 ```
 
 화면 확인:

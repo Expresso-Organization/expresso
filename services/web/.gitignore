@@ -19,4 +19,6 @@ build/
 out/
 next-env.d.ts.bak
 playwright-report/
+# 장면 런타임은 dev · build가 packages/portfolio-renderer에서 묶어 둡니다.
+public/scene-runtime/
 test-results/

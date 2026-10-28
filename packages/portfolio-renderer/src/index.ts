@@ -9,6 +9,22 @@ export {
 export { STRUCTURED_PORTFOLIO_CSS } from "./styles.js";
 export { KIT_CSS } from "./kit-styles.js";
 export { kitCss } from "./kit.js";
+export {
+  ELEMENT_KEY_ATTRIBUTE,
+  STRUCTURED_PARTS,
+  STRUCTURED_TYPE_LABELS,
+  STYLE_COLOR_LABELS,
+  STYLE_FONT_LABELS,
+  editableFields,
+  elementStyleCss,
+  elementTextPaths,
+  styleProblems,
+  textPathLabel,
+  typeSteps,
+  type EditableField,
+  type EditableOption,
+  type StructuredPart,
+} from "./editing.js";
 
 export {searchPageLibrary,retrievePageLibrary,librarySelection,LIBRARY_TOTAL,LIBRARY_COUNTS,LIBRARY_INVENTORY_HASH} from "./library.js";
 export {
@@ -35,6 +51,8 @@ export {
 } from "./design-layout.js";
 export { describeArchetype } from "./archetype.js";
 export { describeBackdrops } from "./backdrop.js";
+export { barScale } from "./viz/bars.js";
+export { parsePeriod, readablePeriods, type PeriodSpan } from "./viz/period.js";
 export {
   RENDER_MEASURE_WIDTHS,
   describeRenderDefects,

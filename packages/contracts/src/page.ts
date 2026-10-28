@@ -76,8 +76,10 @@ import { MEDIA_ASSET_PATH_PREFIX } from "./media-path.js";
  * 부품과 지면 변화를 바꿀 수 있다.
  *
  * 15 — 설계 · 다듬기가 첫 화면 배경(intro의 backdrop)을 고른다. 프롬프트가 배경마다 쓰임을 알린다(`describeBackdrops`).
+ *
+ * 16 — 첫 화면 배경 목록에 포인터에 반응하는 장면 여섯 종(orb · terrain · knot · constellation · flow · ripple)과 그 쓰임을 더한다.
  */
-export const PAGE_PROMPT_VERSION = 15;
+export const PAGE_PROMPT_VERSION = 16;
 
 /**
  * 한 지면의 상한.
@@ -473,6 +475,32 @@ export const GeneratedPageSchema = z.strictObject({
 });
 export type GeneratedPage = z.infer<typeof GeneratedPageSchema>;
 
+/** 요소 하나를 말로 고친 결과입니다. 새 판과 화면에 보일 「바뀐 곳」 목록입니다. */
+export const InstructStructuredElementResultSchema = z.strictObject({
+  page: GeneratedPageSchema,
+  changes: z.array(z.strictObject({ label: z.string(), before: z.string(), after: z.string() })),
+  note: z.string(),
+});
+export type InstructStructuredElementResult = z.infer<typeof InstructStructuredElementResultSchema>;
+
+/**
+ * 편집 화면이 고를 수 있는 디자인 값입니다. 글자 크기 단계 · 색 역할 · 서체 역할의 실제 값이라, 화면은 견본을 그리기만 하고
+ * 저장하는 값은 단계 이름 · 역할 이름입니다.
+ */
+export const PageEditorDesignSchema = z.strictObject({
+  steps: z.array(z.strictObject({ name: z.string(), size: z.string() })),
+  colors: z.strictObject({ text: z.string(), muted: z.string(), accent: z.string() }),
+  fonts: z.strictObject({ display: z.string(), body: z.string(), mono: z.string() }),
+});
+export type PageEditorDesign = z.infer<typeof PageEditorDesignSchema>;
+
+/** 편집 화면이 그릴 최신 판의 HTML · CSS입니다. 요소 키 표시가 있는 렌더 결과입니다. */
+export const PageEditableRenderSchema = z.strictObject({
+  revision: z.number().int().nonnegative(),
+  html: z.string(),
+  css: z.string(),
+});
+
 /**
  * 배포 순간 고정하는 자유 HTML 판.
  *
@@ -512,6 +540,36 @@ export const RestorePageRevisionSchema = z.strictObject({
   expectedRevision: z.number().int().nonnegative(),
 });
 export type RestorePageRevision = z.infer<typeof RestorePageRevisionSchema>;
+
+/**
+ * 장면 런타임 조각이 놓이는 경로입니다. 웹이 `public/scene-runtime/v1`에서 내보냅니다.
+ *
+ * `v1`은 런타임과 키트의 `data-scene` 약속의 판입니다. 배포 스냅샷은 문서를 고정하므로 약속을 깨는 변경은
+ * `v2` 경로를 새로 두고 `v1`을 남깁니다.
+ */
+export const SCENE_RUNTIME_DIRECTORY = "/scene-runtime/v1/";
+export const SCENE_RUNTIME_ENTRY = `${SCENE_RUNTIME_DIRECTORY}main.js`;
+
+/**
+ * 완성된 지면 문서를 내보내는 응답의 CSP입니다. 공개 지면 · 편집 미리보기 · 배포 미리보기가 같은 문자열을 헤더로 겁니다.
+ *
+ * - `sandbox`에 `allow-same-origin`이 없어 문서는 불투명 출처가 됩니다. 우리 쿠키 · 저장소 · 바깥 화면에 닿지 못합니다.
+ * - 스크립트는 `origin`의 장면 런타임 폴더만 허용합니다. 슬래시로 끝나는 경로는 그 아래 파일만 맞습니다(CSP host-source 경로 규칙).
+ *   모델이 쓴 `<script>`는 소독기가 먼저 지우고, 지우지 못한 인라인 · 바깥 스크립트도 여기서 막힙니다.
+ * - `scripts`는 그 밖에 허용할 스크립트 출처입니다. 공개 지면이 붙이는 추적 스크립트의 해시(`'sha256-…'`)가 여기 옵니다.
+ * - 문서는 요청을 보내지 않습니다. 장면 런타임은 조각을 모듈로만 받고(`script-src`), 추적 스크립트는 부모에게 알리기만 합니다.
+ * - 응답 헤더라 이 정책이 생기기 전에 배포한 스냅샷도 같은 정책으로 열립니다.
+ */
+export function pageDocumentPolicy(origin: string, scripts: readonly string[] = []): string {
+  return [
+    "sandbox allow-scripts allow-popups",
+    `script-src ${[new URL(SCENE_RUNTIME_DIRECTORY, origin).href, ...scripts].join(" ")}`,
+    "connect-src 'none'",
+    "base-uri 'none'",
+    "object-src 'none'",
+    "form-action 'none'",
+  ].join("; ");
+}
 
 /**
  * 지면을 감싸는 껍데기.
@@ -566,6 +624,7 @@ ${input.css}
 </head>
 <body>
 ${input.html}
+${/\sdata-scene="/.test(input.html) ? `<script type="module" src="${SCENE_RUNTIME_ENTRY}"></script>` : ""}
 </body>
 </html>`;
 }

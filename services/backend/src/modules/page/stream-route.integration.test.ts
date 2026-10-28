@@ -58,6 +58,7 @@ describeWithRedis("지면 스트림 라우트", () => {
       service,
       generator: {} as PageGenerator,
       stream,
+      webOrigin: "http://localhost:3000",
       authenticateRequest: async (request) => {
         const userId = request.headers["x-test-user"];
         if (typeof userId !== "string") throw new Error("no user");

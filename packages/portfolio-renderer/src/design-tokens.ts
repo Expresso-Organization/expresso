@@ -328,6 +328,8 @@ export function backdropSamples(background: string, inks: readonly string[]): st
 }
 
 type BackdropPalette = {
+  /** 잉크를 섞은 바탕색입니다. 장면 캔버스가 이 색을 바탕으로 칠합니다. */
+  background: string;
   /** 잉크 두 개. 선 부류는 둘이 같습니다. 바탕에 세기만큼 섞은 불투명 색입니다. */
   inks: [string, string];
   /** 바탕에 섞은 비율. 본문 글자를 검정 · 흰색까지 진하게 해도 대비가 모자랄 때만 기본 세기보다 낮아집니다. */
@@ -350,6 +352,7 @@ function backdropPalette(background: string, raw: readonly [string, string], ink
     if (!samples.every((sample) => contrastRatio(extreme, sample) >= TEXT_CONTRAST)) continue;
     const primary = ensureContrastAll(text.primary, samples, TEXT_CONTRAST, extreme);
     return {
+      background,
       inks,
       strength,
       primary,
@@ -358,7 +361,7 @@ function backdropPalette(background: string, raw: readonly [string, string], ink
       samples,
     };
   }
-  return { inks: [background, background], strength: 0, ...text, samples: [background] };
+  return { background, inks: [background, background], strength: 0, ...text, samples: [background] };
 }
 
 /**

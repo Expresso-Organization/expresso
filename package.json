@@ -7,7 +7,7 @@
   },
   "scripts": {
     "build": "pnpm --recursive --if-present build",
-    "typecheck": "pnpm --recursive --if-present typecheck",
+    "typecheck": "pnpm --recursive --if-present --workspace-concurrency=1 typecheck",
     "test": "pnpm --recursive --if-present --workspace-concurrency=1 test",
     "build:portfolio-css": "node scripts/build-portfolio-css.mjs",
     "check:portfolio-css": "node scripts/build-portfolio-css.mjs --check",
