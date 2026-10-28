@@ -43,6 +43,7 @@ import { createMediaStorage } from "../platform/storage/create-storage.js";
 import { AnalyticsService } from "../modules/analytics/index.js";
 import { EngagementService } from "../modules/engagement/index.js";
 import { AccountLifecycleService } from "../modules/account-lifecycle/index.js";
+import { AdminService } from "../modules/admin/index.js";
 import { CareerDocumentService } from "../modules/career-editor/index.js";
 import { AiClientProposalAdapter, SelectedBlockTextAiProposalAdapter } from "../modules/career-editor/ai-adapter.js";
 import { createReliableQueue } from "../platform/queue.js";
@@ -142,9 +143,20 @@ const careerDocumentService = new CareerDocumentService(
     );
   },
   config.careerAiDeterministicTest ? new SelectedBlockTextAiProposalAdapter() : ai ? new AiClientProposalAdapter(ai) : undefined,
+  async (userId, recordId) => {
+    // 2초 단위 작업 ID로 연달아 들어온 저장을 하나의 투영으로 합칩니다. 투영은 늘 최신 문서를 읽습니다.
+    const window = Math.floor(Date.now() / 2_000);
+    await careerDocumentJobs.queue.add(
+      "career.document.project",
+      { userId, recordId },
+      { jobId: `career-document-project-${recordId}-${window}`, delay: 2_000, priority: 50 },
+    );
+  },
 );
 const agentChatService = new AgentChatService(database, config.agentChatEnabled ? new ClaudeAgentRuntime(config.agentChatModel, aiUsage) : null, careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(database, config.agentCredentialEncryptionKey), portfolioReadService, pageService);
+const adminService = new AdminService(database, { identity: identityService, career: careerService, consent: consentService });
 const app = buildApi({
+  adminService,
   agentChatService,
   config,
   readinessChecks: [database.readinessCheck, redis.readinessCheck],

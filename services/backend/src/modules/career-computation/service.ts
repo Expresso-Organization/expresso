@@ -117,6 +117,9 @@ function orderedDerived(definitions_: readonly DerivedDefinition[]): readonly De
 function valueFor(record: CareerRecordDoc, definitions_: readonly CareerPropertyDefinitionV2[], propertyId: string, computed: Record<string, unknown>): FormulaPropertyValue | null {
   const definition = definitions_.find((item) => item.id === propertyId);
   if (!definition) return null;
+  // system 시각 속성은 값을 저장하지 않고 기록 메타데이터에서 읽는다(`career/view-query.ts`와 같은 규칙).
+  if (definition.system && definition.type === "created_time") return { type: "created_time", value: (record.createdAt ?? record.updatedAt).toISOString() };
+  if (definition.system && definition.type === "updated_time") return { type: "updated_time", value: record.updatedAt.toISOString() };
   return asValue(record.properties[definition.key] ?? computed[definition.key], definition);
 }
 function parseComputed(value: FormulaPropertyValue | null, type: "formula" | "rollup"): CareerPropertyValueV2 | null {

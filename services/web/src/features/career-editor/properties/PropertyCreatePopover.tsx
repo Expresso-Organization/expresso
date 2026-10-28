@@ -18,7 +18,10 @@ import { PropertySelect } from "./PropertySelect";
 import { RollupEditor, type RollupConfiguration } from "./RollupEditor";
 import styles from "./properties.module.css";
 
-type CreatableType = Exclude<CareerPropertyDefinitionV2["type"], "title" | "created_time" | "updated_time">;
+type CreatableType = Exclude<CareerPropertyDefinitionV2["type"], "title">;
+
+/** 기록의 생성 · 수정 시각을 읽는 속성이다. 값을 저장하지 않으므로 `system`으로 만든다. */
+const RECORD_TIME_TYPES: ReadonlySet<CreatableType> = new Set(["created_time", "updated_time"]);
 
 const PROPERTY_TYPES: ReadonlyArray<{ value: CreatableType; label: string; icon: string; needsSetup?: boolean }> = [
   { value: "text", label: "텍스트", icon: "text-aa" },
@@ -35,9 +38,22 @@ const PROPERTY_TYPES: ReadonlyArray<{ value: CreatableType; label: string; icon:
   { value: "relation", label: "관계", icon: "arrow-up-right", needsSetup: true },
   { value: "formula", label: "수식", icon: "function", needsSetup: true },
   { value: "rollup", label: "롤업", icon: "magnifying-glass", needsSetup: true },
+  { value: "created_time", label: "생성 일시", icon: "clock" },
+  { value: "updated_time", label: "최종 편집 일시", icon: "clock-clockwise" },
 ];
 
-interface PopoverPosition { top: number; left: number; width: number; maxHeight: number }
+interface PopoverPosition { top?: number; bottom?: number; left: number; width: number; maxHeight: number }
+
+const VIEWPORT_GAP = 12;
+const ANCHOR_GAP = 7;
+
+/** 트리거를 품은 가장 가까운 세로 스크롤 영역. 그 영역 밖(문서 패널의 AI 입력란 등)으로 목록을 내지 않는다. */
+function scrollBoundary(element: HTMLElement): DOMRect | null {
+  for (let parent = element.parentElement; parent; parent = parent.parentElement) {
+    if (/(auto|scroll|overlay)/u.test(window.getComputedStyle(parent).overflowY)) return parent.getBoundingClientRect();
+  }
+  return null;
+}
 
 export function PropertyCreatePopover({ categoryId, definitions, onDefinitionsChange, onVersionConflict }: {
   categoryId: string;
@@ -64,17 +80,20 @@ export function PropertyCreatePopover({ categoryId, definitions, onDefinitionsCh
     const popover = popoverRef.current;
     if (!trigger) return;
     const anchor = trigger.getBoundingClientRect();
-    const viewportGap = 12;
-    const gap = 7;
-    const width = Math.min(320, window.innerWidth - viewportGap * 2);
-    const measuredHeight = Math.min(popover?.scrollHeight ?? 520, window.innerHeight - viewportGap * 2);
-    const roomBelow = window.innerHeight - anchor.bottom - gap - viewportGap;
-    const roomAbove = anchor.top - gap - viewportGap;
-    const openAbove = roomBelow < Math.min(measuredHeight, 360) && roomAbove > roomBelow;
-    const maxHeight = Math.max(220, openAbove ? roomAbove : roomBelow);
-    const top = openAbove ? Math.max(viewportGap, anchor.top - Math.min(measuredHeight, maxHeight) - gap) : anchor.bottom + gap;
-    const left = Math.min(Math.max(viewportGap, anchor.left), window.innerWidth - width - viewportGap);
-    setPosition({ top: Math.round(top), left: Math.round(left), width: Math.round(width), maxHeight: Math.round(maxHeight) });
+    const boundary = scrollBoundary(trigger);
+    const upper = Math.max(VIEWPORT_GAP, boundary?.top ?? 0);
+    const lower = Math.min(window.innerHeight - VIEWPORT_GAP, boundary?.bottom ?? window.innerHeight);
+    const width = Math.min(320, window.innerWidth - VIEWPORT_GAP * 2);
+    const contentHeight = popover?.scrollHeight ?? 0;
+    const roomBelow = Math.max(0, lower - anchor.bottom - ANCHOR_GAP);
+    const roomAbove = Math.max(0, anchor.top - ANCHOR_GAP - upper);
+    const openAbove = roomBelow < contentHeight && roomAbove > roomBelow;
+    const left = Math.min(Math.max(VIEWPORT_GAP, anchor.left), window.innerWidth - width - VIEWPORT_GAP);
+    // 위로 열 때는 아래 끝을 트리거에 붙인다. 수식 진단처럼 내용이 늘어나도 트리거를 덮지 않고 위로 자란다.
+    setPosition({
+      ...(openAbove ? { bottom: Math.round(window.innerHeight - anchor.top + ANCHOR_GAP) } : { top: Math.round(anchor.bottom + ANCHOR_GAP) }),
+      left: Math.round(left), width: Math.round(width), maxHeight: Math.round(openAbove ? roomAbove : roomBelow),
+    });
   }, []);
 
   useLayoutEffect(() => {
@@ -145,7 +164,7 @@ export function PropertyCreatePopover({ categoryId, definitions, onDefinitionsCh
         name: propertyName(type),
         type,
         required: false,
-        system: false,
+        system: RECORD_TIME_TYPES.has(type),
         config,
       },
     };
@@ -208,7 +227,7 @@ export function PropertyCreatePopover({ categoryId, definitions, onDefinitionsCh
   const popover = open ? <section
     ref={popoverRef}
     className={styles.propertyCreatePopover}
-    style={position ? { top: position.top, left: position.left, width: position.width, maxHeight: position.maxHeight } as CSSProperties : { visibility: "hidden" }}
+    style={position ? { top: position.top, bottom: position.bottom, left: position.left, width: position.width, maxHeight: position.maxHeight } as CSSProperties : { visibility: "hidden" }}
     role="dialog"
     aria-modal="false"
     aria-label="속성 추가"

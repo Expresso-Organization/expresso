@@ -565,12 +565,17 @@ export function pageDocument(input: {
    * 끼우면 우리 규칙이 그쪽 규칙과 싸운다. 그래서 판마다 갈린다.
    */
   grammar?: PageStyleGrammar;
+  /**
+   * `false`면 문서 루트에 `data-reveal="none"`을 달아 지면 키트의 등장 애니메이션을 모두 끈다.
+   * 편집 화면처럼 고친 곳이 스크롤 위치와 상관없이 바로 보여야 하는 자리에서 쓴다. 기본은 켜짐이다.
+   */
+  reveal?: boolean;
 }): string {
   const escape = (value: string) => value
     .replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
   return `<!doctype html>
-<html lang="ko">
+<html lang="ko"${input.reveal === false ? ' data-reveal="none"' : ""}>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">

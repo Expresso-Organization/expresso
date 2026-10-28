@@ -17,6 +17,9 @@ services:
       MONGO_INITDB_DATABASE: ${EXPRESSO_MONGODB_DATABASE:-expresso}
       MONGO_INITDB_ROOT_USERNAME: ${EXPRESSO_MONGODB_ADMIN_USERNAME:-admin}
       MONGO_INITDB_ROOT_PASSWORD: ${EXPRESSO_MONGODB_ADMIN_PASSWORD:-expresso-admin}
+      # 리눅스 커널 6.19~7.0.13에서 mongod가 시작 직후 멈추는 문제를 피한다.
+      # 근거는 compose.mongodb.yaml의 같은 줄 주석.
+      GLIBC_TUNABLES: glibc.pthread.rseq=1
     ports: ["127.0.0.1:57017:57017"]
     healthcheck:
       test: ["CMD-SHELL", "mongosh --quiet --host 127.0.0.1 --port 57017 --username \"$${MONGO_INITDB_ROOT_USERNAME}\" --password \"$${MONGO_INITDB_ROOT_PASSWORD}\" --authenticationDatabase admin --eval \"db.adminCommand({ ping: 1 }).ok\" | grep -q '^1$'"]

@@ -712,7 +712,7 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
           <p className="xp-eyebrow">Evidence</p>
           <h2 className="xp-h2">근거 자료</h2>
         </header>
-        <div className="xp-evidence-list">
+        <div className="xp-evidence-list" data-reveal="stagger">
           {evidence.map((item) => (
             <details id={`source-${item.id}`} key={item.id}>
               <summary>
