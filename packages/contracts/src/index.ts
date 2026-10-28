@@ -37,6 +37,7 @@ export type { CareerViewConfiguration } from "./career-views.js";
 export * from "./career-ai.js";
 export * from "./entitlements.js";
 export * from "./identity.js";
+export * from "./admin.js";
 export * from "./consent.js";
 export * from "./jobs.js";
 export * from "./job-market.js";

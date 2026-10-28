@@ -1,4 +1,4 @@
-import type { AuthenticatedUser, Signup } from "@expresso/contracts";
+import type { AuthenticatedUser, Signup, UserRole } from "@expresso/contracts";
 
 /**
  * 서비스가 받는 가입 입력. HTTP 계약(`SignupSchema`)은 `termsVersion`을 필수로 요구해
@@ -9,7 +9,13 @@ export type SignupInput = Omit<Signup, "termsVersion"> & { termsVersion?: Signup
 
 export interface IdentityPrincipal {
   sessionId: string;
+  /** 이 요청이 그리는 사용자. 관리자가 대신 로그인 중이면 더미 계정이다. */
   user: AuthenticatedUser;
+  /**
+   * 세션 주인. 보통은 `user`와 같은 사람이다. 대신 로그인 중에는 관리자다 — 로그아웃 · 세션 취소와
+   * 관리 경로의 권한은 이 사람을 기준으로 판단한다.
+   */
+  owner: { userId: string; displayName: string; role: UserRole };
 }
 
 export interface IssueIdentitySessionInput {

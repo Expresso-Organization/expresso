@@ -9,6 +9,7 @@ import { renderStructuredPortfolio } from "./renderer.js";
 import { retrievePageLibrary } from "./library.js";
 import { metricNumber } from "./kit.js";
 import { BACKDROP_CSS } from "./backdrop.js";
+import { KIT_CSS } from "./kit-styles.js";
 
 // 백엔드 기본 디자인(Clarity · Signal)의 스펙을 그대로 떠 둔 고정 자료입니다.
 const designs = JSON.parse(readFileSync(new URL("./fixtures/designs.json", import.meta.url), "utf8"));
@@ -405,5 +406,56 @@ describe("첫 화면 배경", () => {
     const lines = moving!.split("\n").filter((line) => line.includes("animation:xp-bd-"));
     expect(lines.length).toBeGreaterThanOrEqual(5);
     for (const line of lines) expect(line.trim().startsWith('.xp-page:not([data-motion="none"])')).toBe(true);
+  });
+});
+
+/** `start`로 시작하는 at-규칙 블록의 범위입니다. 중괄호 짝으로 닫는 자리를 찾습니다. */
+function blockRange(css: string, start: string, from = 0): [number, number] {
+  const open = css.indexOf(start, from);
+  expect(open, `${start} 블록이 없습니다`).toBeGreaterThanOrEqual(0);
+  let depth = 0;
+  for (let index = css.indexOf("{", open); index < css.length; index++) {
+    if (css[index] === "{") depth++;
+    if (css[index] === "}" && --depth === 0) return [open, index];
+  }
+  throw new Error(`${start} 블록이 닫히지 않습니다`);
+}
+const positions = (css: string, needle: string) => [...css.matchAll(new RegExp(needle.replace(/[()[\]]/g, "\\$&"), "g"))].map((match) => match.index!);
+
+describe("등장 규칙(data-reveal)", () => {
+  it("스크롤 등장 선언은 움직임 줄이기가 아닐 때 · 스크롤 타임라인을 지원할 때만 있다", () => {
+    const [motionStart, motionEnd] = blockRange(KIT_CSS, "@media (prefers-reduced-motion:no-preference)");
+    const [supportsStart, supportsEnd] = blockRange(KIT_CSS, "@supports (animation-timeline:view())", motionStart);
+    expect(supportsEnd).toBeLessThan(motionEnd);
+    const timelines = positions(KIT_CSS, "animation-timeline:view()").filter((index) => index !== supportsStart + "@supports (".length);
+    expect(timelines.length).toBeGreaterThan(0);
+    for (const index of timelines) expect(index > supportsStart && index < supportsEnd).toBe(true);
+    // 투명한 시작 상태를 쓰는 애니메이션은 모두 움직임 줄이기 조건 안에 있습니다.
+    for (const index of positions(KIT_CSS, "animation:xp-rise")) expect(index > motionStart && index < motionEnd).toBe(true);
+  });
+
+  it("그룹 안 블록까지 직계 자식과 목록 항목을 단위로 잡고, 청사진 · 끈 지면 · 빠진 요소는 제외한다", () => {
+    const [supportsStart, supportsEnd] = blockRange(KIT_CSS, "@supports (animation-timeline:view())");
+    const rule = KIT_CSS.slice(supportsStart, supportsEnd);
+    expect(rule).toContain(':root:not([data-stage]) .xp-page:not([data-motion="none"]) .xp-block:not([data-reveal="none"],[data-reveal="none"] *)>:not(ul,ol,[data-reveal])');
+    expect(rule).toContain('>:is(ul,ol,[data-reveal="stagger"])>:not([data-reveal="none"])');
+    expect(rule).toContain("animation:xp-rise var(--motion-easing) both,xp-settle linear forwards;animation-timeline:view(),scroll(root);animation-range:cover 0% cover 25vh,calc(100% - 25vh) 100%");
+    expect(rule).toContain("animation-range:cover calc(var(--xp-reveal-step) * 3) cover calc(25vh + var(--xp-reveal-step) * 3),calc(100% - 25vh) 100%");
+    // 예전의 최상위 블록 단위 규칙은 그룹 안 블록을 놓쳤습니다.
+    expect(KIT_CSS).not.toContain(".xp-inner>.xp-block{animation");
+  });
+
+  it("문서 끝 마무리는 끝 상태만 적어 앞 애니메이션의 현재 값에서 이어 간다", () => {
+    expect(KIT_CSS).toContain("@keyframes xp-settle{to{opacity:1;transform:none}}");
+  });
+
+  it("떠오르는 거리와 순서 간격을 디자인의 간격 토큰에서 가져온다", () => {
+    expect(KIT_CSS).toContain("--xp-reveal-rise:var(--element-gap);--xp-reveal-step:var(--component-gap)");
+    expect(KIT_CSS).toContain("translateY(var(--xp-reveal-rise))");
+  });
+
+  it("목록 요소가 아닌 근거 자료 묶음은 차례 등장 속성을 단다", () => {
+    const { html } = renderStructuredPortfolio(pageSpec(), content, { design: clarity });
+    expect(html).toContain('class="xp-evidence-list" data-reveal="stagger"');
   });
 });
