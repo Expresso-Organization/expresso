@@ -530,12 +530,15 @@ export const SCENE_RUNTIME_ENTRY = `${SCENE_RUNTIME_DIRECTORY}main.js`;
  * - `sandbox`에 `allow-same-origin`이 없어 문서는 불투명 출처가 됩니다. 우리 쿠키 · 저장소 · 바깥 화면에 닿지 못합니다.
  * - 스크립트는 `origin`의 장면 런타임 폴더만 허용합니다. 슬래시로 끝나는 경로는 그 아래 파일만 맞습니다(CSP host-source 경로 규칙).
  *   모델이 쓴 `<script>`는 소독기가 먼저 지우고, 지우지 못한 인라인 · 바깥 스크립트도 여기서 막힙니다.
+ * - `scripts`는 그 밖에 허용할 스크립트 출처입니다. 공개 지면이 붙이는 추적 스크립트의 해시(`'sha256-…'`)가 여기 옵니다.
+ * - 문서는 요청을 보내지 않습니다. 장면 런타임은 조각을 모듈로만 받고(`script-src`), 추적 스크립트는 부모에게 알리기만 합니다.
  * - 응답 헤더라 이 정책이 생기기 전에 배포한 스냅샷도 같은 정책으로 열립니다.
  */
-export function pageDocumentPolicy(origin: string): string {
+export function pageDocumentPolicy(origin: string, scripts: readonly string[] = []): string {
   return [
     "sandbox allow-scripts allow-popups",
-    `script-src ${new URL(SCENE_RUNTIME_DIRECTORY, origin).href}`,
+    `script-src ${[new URL(SCENE_RUNTIME_DIRECTORY, origin).href, ...scripts].join(" ")}`,
+    "connect-src 'none'",
     "base-uri 'none'",
     "object-src 'none'",
     "form-action 'none'",

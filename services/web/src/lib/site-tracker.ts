@@ -70,25 +70,18 @@ export const SITE_TRACKER_SCRIPT = `(function () {
   }, true);
 })();`;
 
-const SCRIPT_HASH = createHash("sha256").update(SITE_TRACKER_SCRIPT).digest("base64");
+/** 공개 문서 응답의 `script-src`에 넣는 이 스크립트의 해시. */
+export const SITE_TRACKER_SCRIPT_SOURCE = `'sha256-${createHash("sha256").update(SITE_TRACKER_SCRIPT).digest("base64")}'`;
 
 /**
  * 공개할 문서에 추적 스크립트를 붙인다.
  *
- * iframe에 `allow-scripts`를 주는 대신 CSP로 **이 스크립트 하나만** 돌게 묶는다. 저장된
- * 지면은 소독을 거쳐 스크립트가 없지만, 소독기가 놓친 것이 있어도 여기서 막힌다.
- * 그림 · 글꼴 · 스타일은 지금처럼 열어 둔다 — 상대 경로 그림은 부모 주소를 따라 풀린다.
+ * 스크립트 정책은 문서 안이 아니라 공개 문서 응답의 헤더 하나가 건다(`pageDocumentResponse`). 그 정책이 장면
+ * 런타임과 **이 스크립트 하나만**(`SITE_TRACKER_SCRIPT_SOURCE`) 허용한다. 문서 안에 `<meta>` 정책을 더 두면
+ * 헤더 정책과 둘 다 걸려 장면 런타임이 막힌다.
  */
 export function withSiteTracker(document: string, sectionCount: number): string {
-  const policy = [
-    `script-src 'sha256-${SCRIPT_HASH}'`,
-    "connect-src 'none'",
-    "object-src 'none'",
-    "base-uri 'none'",
-    "form-action 'none'",
-  ].join("; ");
-  const head = `<meta http-equiv="Content-Security-Policy" content="${policy}">\n<meta name="expresso-sections" content="${sectionCount}">`;
-  const withHead = document.replace("<head>", `<head>\n${head}`);
+  const withHead = document.replace("<head>", `<head>\n<meta name="expresso-sections" content="${sectionCount}">`);
   const end = withHead.lastIndexOf("</body>");
   const script = `<script>${SITE_TRACKER_SCRIPT}</script>\n`;
   return end === -1 ? `${withHead}${script}` : `${withHead.slice(0, end)}${script}${withHead.slice(end)}`;

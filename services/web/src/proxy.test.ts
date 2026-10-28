@@ -49,6 +49,15 @@ describe("public site host", () => {
     expect(new URL(response.headers.get("x-middleware-rewrite")!).pathname).toBe("/site/jiwon");
   });
 
+  it("첫 화면이 여는 문서를 그 포트폴리오의 공개 문서로 내보낸다", () => {
+    const response = onHost("jiwon.expresso.ai.kr", "/document");
+    expect(new URL(response.headers.get("x-middleware-rewrite")!).pathname).toBe("/site/jiwon/document");
+    // 문서가 상대 경로로 부르는 장면 런타임은 이 호스트에서 받는다.
+    expect(onHost("jiwon.expresso.ai.kr", "/scene-runtime/v1/main.js").headers.get("x-middleware-next")).toBe("1");
+    expect(onHost("jiwon.expresso.ai.kr", "/site/jiwon/document").status).toBe(404);
+    expect(onHost("dev.expresso.ai.kr", "/document").status).toBe(404);
+  });
+
   it("방문 기록 라우트만 더 통과시키고 앱 화면은 열지 않는다", () => {
     expect(onHost("jiwon.expresso.ai.kr", "/api/analytics/events").headers.get("x-middleware-next")).toBe("1");
     expect(onHost("jiwon.expresso.ai.kr", "/home", { [SESSION_COOKIE]: TOKEN }).status).toBe(404);

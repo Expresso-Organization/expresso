@@ -38,10 +38,11 @@ function send(event: AnalyticsEvent): Promise<void> {
  * 방문이 먼저 저장되어야 나머지가 받아지므로 요청은 하나씩 차례로 보낸다. 알림은 이
  * iframe에서 온 것만 받는다.
  */
-export function SiteFrame({ slug, title, document, outline }: {
+export function SiteFrame({ slug, title, src, outline }: {
   slug: string;
   title: string;
-  document: string;
+  /** 추적 스크립트를 붙인 공개 문서의 주소. 스크립트 정책은 그 응답 헤더가 건다. */
+  src: string;
   /** 섹션 목록의 id. 추적 스크립트가 알리는 순번이 이 배열의 자리다. */
   outline: string[];
 }) {
@@ -131,10 +132,10 @@ export function SiteFrame({ slug, title, document, outline }: {
       ref={frame}
       className={styles.publicDocument!}
       title={title}
-      // 스크립트는 문서 안의 CSP가 추적 스크립트 하나로 묶는다. allow-same-origin은 주지 않는다 —
+      // 스크립트는 문서 응답의 CSP가 장면 런타임과 추적 스크립트로 묶는다. allow-same-origin은 주지 않는다 —
       // 둘을 함께 주면 문서가 sandbox를 풀 수 있다.
       sandbox="allow-scripts allow-popups"
-      srcDoc={document}
+      src={src}
     />
   );
 }

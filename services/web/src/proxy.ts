@@ -1,3 +1,4 @@
+import { SCENE_RUNTIME_DIRECTORY } from "@expresso/contracts";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { loginPath, PATHNAME_HEADER } from "@/lib/auth/next-path";
@@ -54,13 +55,17 @@ const SESSION_PATHS = [
 /**
  * 공개 사이트 호스트(`{slug}.expresso.ai.kr`)의 요청.
  *
- * 그 호스트에서 열리는 것은 사이트 첫 화면과 방문 기록을 받는 라우트뿐이다. 앱 화면이
- * 남의 이름 아래에서 열리면 안 된다. 사이트 화면이 부르는 `/_next/` 파일은 통과시킨다.
+ * 그 호스트에서 열리는 것은 사이트 첫 화면 · 그 화면이 iframe으로 여는 문서(`/document`) ·
+ * 방문 기록을 받는 라우트뿐이다. 앱 화면이 남의 이름 아래에서 열리면 안 된다. 사이트 화면이
+ * 부르는 `/_next/` 파일과 문서가 부르는 장면 런타임(`/scene-runtime/`)은 통과시킨다.
  */
 function servePublicSite(request: NextRequest, slug: string | null): NextResponse {
   const path = request.nextUrl.pathname;
   if (slug && path === "/") return NextResponse.rewrite(new URL(`/site/${slug}${request.nextUrl.search}`, request.url));
-  if (slug && (path === "/api/analytics/events" || path.startsWith("/_next/"))) return NextResponse.next();
+  if (slug && path === "/document") return NextResponse.rewrite(new URL(`/site/${slug}/document`, request.url));
+  if (slug && (path === "/api/analytics/events" || path.startsWith("/_next/") || path.startsWith(SCENE_RUNTIME_DIRECTORY))) {
+    return NextResponse.next();
+  }
   // 앱 경로로 다른 사이트를 가리키면(옛 주소가 앱 경로로 넘긴 경우 등) 그 사이트의 공개 주소로 보낸다.
   const other = /^\/site\/([a-z0-9-]+)$/.exec(path)?.[1];
   const target = other ? publicSiteFromHost(new URL(publicSiteUrl(other)).host) : null;

@@ -17,7 +17,13 @@ describe("지면 문서 껍데기와 스크립트 정책", () => {
     expect(policy).toContain("script-src https://expresso.ai.kr/scene-runtime/v1/;");
     expect(policy).not.toMatch(/'unsafe-inline'|'self'|\*/);
     expect(policy).toContain("form-action 'none'");
+    expect(policy).toContain("connect-src 'none'");
     expect(pageDocumentPolicy("http://backdrop.localhost:3204/")).toContain("script-src http://backdrop.localhost:3204/scene-runtime/v1/;");
+  });
+
+  it("공개 지면은 장면 런타임과 함께 추적 스크립트 해시를 허용한다", () => {
+    const policy = pageDocumentPolicy("https://jiwon.expresso.ai.kr", ["'sha256-abc='"]);
+    expect(policy).toContain("script-src https://jiwon.expresso.ai.kr/scene-runtime/v1/ 'sha256-abc=';");
   });
 
   it("생성 중 미리보기는 지금처럼 스크립트를 모두 막는다", () => {
