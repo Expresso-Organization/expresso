@@ -74,8 +74,10 @@ import { MEDIA_ASSET_PATH_PREFIX } from "./media-path.js";
  * 14 — 설계가 먼저 오는 생성(`page_design` · `page_fill`)을 더하고, 지면 설계가 섹션마다 크기 · 배경 · 폭과
  * 큰 인용 · 과정 흐름 · 이미지 전시 부품을 고른다. 채우기는 수치 값을 숫자와 단위로만 쓴다. 다듬기 검토도 같은
  * 부품과 지면 변화를 바꿀 수 있다.
+ *
+ * 15 — 설계 · 다듬기가 첫 화면 배경(intro의 backdrop)을 고른다. 프롬프트가 배경마다 쓰임을 알린다(`describeBackdrops`).
  */
-export const PAGE_PROMPT_VERSION = 14;
+export const PAGE_PROMPT_VERSION = 15;
 
 /**
  * 한 지면의 상한.
@@ -534,12 +536,17 @@ export function pageDocument(input: {
    * 끼우면 우리 규칙이 그쪽 규칙과 싸운다. 그래서 판마다 갈린다.
    */
   grammar?: PageStyleGrammar;
+  /**
+   * `false`면 문서 루트에 `data-reveal="none"`을 달아 지면 키트의 등장 애니메이션을 모두 끈다.
+   * 편집 화면처럼 고친 곳이 스크롤 위치와 상관없이 바로 보여야 하는 자리에서 쓴다. 기본은 켜짐이다.
+   */
+  reveal?: boolean;
 }): string {
   const escape = (value: string) => value
     .replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
   return `<!doctype html>
-<html lang="ko">
+<html lang="ko"${input.reveal === false ? ' data-reveal="none"' : ""}>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">

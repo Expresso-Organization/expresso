@@ -19,6 +19,7 @@ import { careerCategoryOwnershipSteps } from "./mongodb-migrations/0017/migratio
 import { notificationProducerSteps } from "./mongodb-migrations/0020/migration.js";
 import { generationWaitingRecipeSteps } from "./mongodb-migrations/0021/migration.js";
 import { aiUsageAndPlanCreditSteps } from "./mongodb-migrations/0022/migration.js";
+import { adminDummyAccountSteps } from "./mongodb-migrations/0024/migration.js";
 
 
 export interface MongoMigrationStep {
@@ -68,6 +69,8 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
   const notificationProducerHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0020/migration.ts", import.meta.url))).digest("hex");
   const generationWaitingHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0021/migration.ts", import.meta.url))).digest("hex");
   const aiUsageHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0022/migration.ts", import.meta.url))).digest("hex");
+  // 0023은 열린 PR이 쓰고 있다.
+  const adminDummyHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0024/migration.ts", import.meta.url))).digest("hex");
   return [
     { version: "0001", name: "initial_collections", checksum: hash.digest("hex"), steps: await initialMigrationSteps() },
     { version: "0002", name: "generation_ledger_amount_constraint", checksum: secondHash, steps: await generationLedgerConstraintSteps() },
@@ -86,5 +89,6 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
     { version: "0020", name: "notification_producers", checksum: notificationProducerHash, steps: await notificationProducerSteps() },
     { version: "0021", name: "generation_waiting_recipe", checksum: generationWaitingHash, steps: await generationWaitingRecipeSteps() },
     { version: "0022", name: "ai_usage_and_plan_credits", checksum: aiUsageHash, steps: await aiUsageAndPlanCreditSteps() },
+    { version: "0024", name: "admin_dummy_accounts", checksum: adminDummyHash, steps: await adminDummyAccountSteps() },
   ];
 }

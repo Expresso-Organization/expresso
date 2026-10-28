@@ -574,6 +574,7 @@ export function Editor({
                   page={generatedPage}
                   title={portfolio.title}
                   className={styles.freePagePreview!}
+                  reveal={false}
                 />
               ) : (
               <div className={styles.page}>

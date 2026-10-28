@@ -51,7 +51,7 @@ const spec = {
   root: "page",
   elements: {
     page: { type: "PortfolioPage", props: { profile: { $state: "/profile" }, motion: "showcase", rationale: "수치를 먼저 보입니다." }, children: ["intro", "metrics", "group-1", "quote-1", "section-misc", "evidence", "career"] },
-    intro: { type: "NameIntro", props: { profile: { $state: "/profile" }, sections: { $state: "/sections" }, variant: "statement" }, children: [] },
+    intro: { type: "NameIntro", props: { profile: { $state: "/profile" }, sections: { $state: "/sections" }, variant: "statement", backdrop: "contour" }, children: [] },
     index: { type: "ProjectIndex", props: { sections: { $state: "/sections" }, variant: "rows" }, children: [] },
     metrics: { type: "MetricStrip", props: { sections: { $state: "/sections" }, surface: "inverse", width: "bleed" }, children: [] },
     "group-1": { type: "Columns", props: { variant: "wide-start" }, children: ["section-lcp", "section-ui"] },
@@ -120,6 +120,10 @@ describe("설계가 먼저 오는 생성", () => {
     expect(result.html).toContain('data-surface="inverse"');
     expect(result.html).toContain("xp-flow");
     expect(result.html).toContain("측정한 수치로만 개선을 말합니다.");
+    // 설계 모델이 고른 첫 화면 배경을 그대로 그립니다. 설계 프롬프트가 배경마다 쓰임을 알립니다.
+    expect(ai.calls[0]!.prompt).toContain("contour=등고선");
+    expect(structured.spec.elements.intro?.props).toMatchObject({ backdrop: "contour" });
+    expect(result.html).toContain('data-backdrop="contour"');
     expect(result.manifest.designPlan?.concept).toBe("성능 수치를 앞세운 지면");
     expect(result.manifest.calls?.map((call) => call.model)).toEqual(["opus-test", "sonnet-test"]);
     expect(result.manifest.timeline?.map((item) => item.stage)).toEqual(["designed", "filled", "rendered"]);

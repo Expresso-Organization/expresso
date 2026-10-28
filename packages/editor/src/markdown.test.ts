@@ -23,6 +23,12 @@ describe("career Markdown conversion", () => {
     expect(careerDocumentToMarkdown(markdownToCareerDocument(source))).toBe(source);
   });
 
+  it("reads task list check marks into item state instead of item text", () => {
+    const [list] = markdownToCareerDocument("- [x] 완료\n- [ ] 남음").content;
+    expect(list?.type).toBe("taskList");
+    expect(list?.content?.map((item) => [item.text?.map((span) => span.text).join(""), item.attrs["checked"]])).toEqual([["완료", true], ["남음", false]]);
+  });
+
   it("round trips deterministic generated documents", () => {
     for (let index = 0; index < 100; index += 1) {
       const source = `## 항목 ${index}\n\n문장 ${index}\n둘째 줄`;

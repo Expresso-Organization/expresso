@@ -21,10 +21,13 @@ export function PagePreview({
   page,
   title,
   className,
+  reveal = true,
 }: {
   page: GeneratedPage;
   title: string;
   className?: string;
+  /** `false`면 지면 키트의 등장 애니메이션을 끈다. 편집 화면처럼 고친 곳이 바로 보여야 하는 자리에서 쓴다. */
+  reveal?: boolean;
 }) {
   return (
     <iframe
@@ -38,6 +41,7 @@ export function PagePreview({
         title,
         description: page.rationale,
         ...(page.styleSpec ? { grammar: page.styleSpec } : {}),
+        reveal,
       })}
     />
   );

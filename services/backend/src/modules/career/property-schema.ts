@@ -28,6 +28,12 @@ const PREVIEW_EXAMPLE_LIMIT = 20;
 const PREVIEW_SCAN_LIMIT = 10_000;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const READ_ONLY_TYPES = new Set(["formula", "rollup", "created_time", "updated_time"]);
+/**
+ * `system` 시각 속성은 값을 기록의 `createdAt` · `updatedAt`에서 읽는다(`properties.ts` · `view-query.ts`).
+ * 사용자가 속성 추가 메뉴에서 만들 수 있고, 값과 유형만 보호한다. 이름 · 순서 · 삭제는 다른 속성과 같다.
+ */
+const RECORD_TIME_TYPES = new Set(["created_time", "updated_time"]);
+const RECORD_TIME_CHANGES = new Set(["rename", "reorder", "delete", "restore"]);
 
 type ConversionKind = "exact" | "safe" | "lossy" | "unmapped";
 interface ConversionResult { value?: unknown; kind: ConversionKind }
@@ -228,7 +234,7 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
       const change = input.change;
       let recomputePropertyId: string | null = null;
       if (change.kind === "create") {
-        if (change.property.system) throw new CareerError(403, "system properties cannot be created by users");
+        if (change.property.system && !RECORD_TIME_TYPES.has(change.property.type)) throw new CareerError(403, "system properties cannot be created by users");
         validateConfiguration(change.property.type, change.property.config);
         if (next.some((definition) => definition.key === change.property.key && definition.deletedAt === null)) throw new CareerError(409, "property key already exists");
         const created = { ...change.property, id: change.property.id ?? randomUUID(), order: change.property.order ?? next.length, version: 1, deletedAt: null };
@@ -238,7 +244,8 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
       } else {
         const source = next.find((definition) => definition.id === change.propertyId);
         if (!source) throw new CareerError(404, "property not found");
-        if (source.system && change.kind !== "restore") throw new CareerError(403, "system property cannot be changed");
+        const changeable = change.kind === "restore" || (RECORD_TIME_TYPES.has(source.type) && RECORD_TIME_CHANGES.has(change.kind));
+        if (source.system && !changeable) throw new CareerError(403, "system property cannot be changed");
         if (change.kind === "rename") { source.name = change.name; source.version += 1; }
         if (change.kind === "reorder") { source.order = change.order; source.version += 1; }
         if (change.kind === "configure") {

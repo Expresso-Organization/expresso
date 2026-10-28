@@ -5,6 +5,7 @@ import { homeEngagement, recentPortfolios, watchedJobs } from "@/lib/app-data";
 import { requireSession } from "@/lib/require-session";
 
 import { AppShell } from "./AppShell";
+import { ImpersonationBar } from "./ImpersonationBar";
 import { Sidebar } from "./Sidebar";
 import { SidebarSkeleton } from "./SidebarSkeleton";
 
@@ -18,6 +19,11 @@ import { SidebarSkeleton } from "./SidebarSkeleton";
 export function AppChrome({ children }: { children: ReactNode }) {
   return (
     <AppShell
+      banner={
+        <Suspense fallback={null}>
+          <ImpersonationBar />
+        </Suspense>
+      }
       sidebar={
         <Suspense fallback={<SidebarSkeleton />}>
           <AppSidebar />
@@ -68,6 +74,8 @@ async function AppSidebar() {
         home.recommendedJobs.length > 0 ? home.recommendedJobs.length : undefined
       }
       displayName={session.user.displayName}
+      // 대신 로그인 중이면 세션 주인이 관리자다.
+      admin={session.user.role === "admin" || session.user.impersonation !== null}
       quotaUsed={session.quota.used}
       quotaLimit={session.quota.limit}
     />
