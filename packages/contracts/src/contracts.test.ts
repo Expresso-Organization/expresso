@@ -151,6 +151,8 @@ describe("identity contracts", () => {
           displayName: "User",
           planCode: "free",
           emailVerifiedAt: null,
+          role: "user",
+          impersonation: null,
         },
       }).data.planCode,
     ).toBe("free");

@@ -18,8 +18,9 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
 
   it("creates every product collection and preserves the seeded IDs and all 30 additional designs", async () => {
     const names = (await mongo.listCollections({}, { nameOnly: true }).toArray()).map(item => item.name);
-    expect(names).toHaveLength(87);
+    expect(names).toHaveLength(88);
     expect(names).toContain("ai_usage_events");
+    expect(names).toContain("admin_audit_events");
     expect(names).toContain("identity_tokens");
     expect(names).toContain("agent_conversations");
     expect(names).toContain("agent_credentials");
@@ -44,7 +45,7 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
     await collections.plans.updateOne({ code: "free" }, { $set: { monthlyCredits: 17 } });
     const result = await migrateMongo({ databaseUrl: mongoUrl!, databaseName });
     expect(result.applied).toEqual([]);
-    expect(result.existing).toEqual(["0001_initial_collections", "0002_generation_ledger_amount_constraint", "0003_analytics_rate_and_notification_preferences", "0004_job_import_metadata", "0005_job_source_ats_providers", "0006_career_record_editor", "0007_job_source_boards", "0008_career_view_configurations", "0009_agent_conversations", "0010_agent_credentials", "0011_preparation_plans", "0012_identity_session_sliding_expiry", "0013_identity_email_and_terms", "0017_career_category_ownership", "0020_notification_producers", "0021_generation_waiting_recipe", "0022_ai_usage_and_plan_credits"]);
+    expect(result.existing).toEqual(["0001_initial_collections", "0002_generation_ledger_amount_constraint", "0003_analytics_rate_and_notification_preferences", "0004_job_import_metadata", "0005_job_source_ats_providers", "0006_career_record_editor", "0007_job_source_boards", "0008_career_view_configurations", "0009_agent_conversations", "0010_agent_credentials", "0011_preparation_plans", "0012_identity_session_sliding_expiry", "0013_identity_email_and_terms", "0017_career_category_ownership", "0020_notification_producers", "0021_generation_waiting_recipe", "0022_ai_usage_and_plan_credits", "0024_admin_dummy_accounts"]);
     expect((await collections.plans.findOne({ code: "free" }))?.monthlyCredits).toBe(17);
   });
 
@@ -54,6 +55,14 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
     await expect(collections.users.insertOne({ ...user, _id: randomUUID(), email: "CAFE@example.com" })).rejects.toMatchObject({ code: 11000 });
     await expect(mongo.collection("plans").insertOne({ _id: randomUUID() as never, code: "invalid", displayName: "Invalid", monthlyPriceKrw: 0, monthlyCredits: 0, sortOrder: 9, features: {}, isPublicListed: true })).rejects.toMatchObject({ code: 121 });
     await expect(mongo.collection("users").insertOne({ _id: randomUUID() as never })).rejects.toMatchObject({ code: 121 });
+  });
+
+  it("accepts only known user roles and one account per dummy key", async () => {
+    const base = { displayName: "Dummy", planId: "aa09f35f-bde6-4e18-b9cd-7b32759bf43b", createdAt: new Date() };
+    await collections.users.insertOne({ _id: randomUUID(), email: `${randomUUID()}@expresso.test`, ...base, dummyKey: "dummy-schema" });
+    await expect(collections.users.insertOne({ _id: randomUUID(), email: `${randomUUID()}@expresso.test`, ...base, dummyKey: "dummy-schema" })).rejects.toMatchObject({ code: 11000 });
+    await expect(mongo.collection("users").insertOne({ _id: randomUUID() as never, email: `${randomUUID()}@expresso.test`, ...base, role: "owner" })).rejects.toMatchObject({ code: 121 });
+    await expect(mongo.collection("admin_audit_events").insertOne({ _id: randomUUID() as never, actorUserId: null, action: "unknown", at: new Date() })).rejects.toMatchObject({ code: 121 });
   });
 
   it("keeps generation usage ledger amounts as signed integers", async () => {
