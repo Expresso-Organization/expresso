@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { expect, test } from "@playwright/test";
 
-import { allBlockDocument, api, categories, createProperty, createRecord, login, openRecordDrawer, replaceDocument } from "./fixtures";
+import { allBlockMarkdown, api, categories, createProperty, createRecord, login, openRecordDrawer } from "./fixtures";
 
 test.describe.configure({ mode: "serial" });
 
@@ -11,20 +11,23 @@ test("creates, edits, reloads, reconnects and reviews AI changes across side pee
   const categoryList = await categories(page);
   const experience = categoryList.find((item) => item.key === "experience")!;
   const project = categoryList.find((item) => item.key === "project")!;
-  const record = await createRecord(page, experience.id, "E2E 전체 블록 경험");
-  await replaceDocument(page, record.id, allBlockDocument());
+  const record = await createRecord(page, experience.id, "E2E 전체 블록 경험", {}, allBlockMarkdown());
   await page.goto("/career/experience");
   await openRecordDrawer(page, "E2E 전체 블록 경험");
   const editor = page.getByLabel("커리어 기록 본문");
+  const block = (type: string) => editor.locator(`[data-content-type="${type}"]`);
   await expect(editor.getByRole("heading", { name: "제목 1" })).toBeVisible();
-  await expect(editor.locator("ul:not([data-type=taskList])").first()).toContainText("글머리");
-  await expect(editor.locator("ol")).toContainText("번호");
-  await expect(editor.locator("ul[data-type=taskList]")).toContainText("할 일");
-  await expect(editor.locator("blockquote")).toContainText("인용");
+  await expect(editor.getByRole("heading", { name: "제목 3" })).toBeVisible();
+  await expect(block("bulletListItem")).toContainText("글머리");
+  await expect(block("numberedListItem")).toContainText("번호");
+  await expect(block("checkListItem")).toContainText("할 일");
+  await expect(block("checkListItem").getByRole("checkbox")).toBeChecked();
+  await expect(block("quote")).toContainText("인용");
   await expect(editor.locator("pre")).toContainText("const answer = 42");
+  await expect(block("callout")).toContainText("호출");
   await expect(editor.locator("hr")).toHaveCount(1);
-  await expect(editor.locator("table")).toContainText("셀");
-  await expect(editor.getByRole("note")).toHaveCount(4);
+  await expect(editor.locator("table")).toContainText("값");
+  await expect(block("evidence")).toContainText("근거");
 
   const title = page.getByRole("textbox", { name: "제목", exact: true });
   await title.fill("E2E 저장된 경험");
@@ -46,8 +49,9 @@ test("creates, edits, reloads, reconnects and reviews AI changes across side pee
   await expect(page.getByLabel("커리어 기록 본문")).toContainText("오프라인 입력");
 
   await page.getByLabel("커리어 기록 본문").click(); await page.keyboard.press("ControlOrMeta+End"); await page.keyboard.press("Enter"); await page.keyboard.type("/");
-  const slash = page.getByRole("menu", { name: "블록 명령" });
-  await expect(slash.getByRole("menuitem")).toHaveCount(9);
+  const slash = page.locator(".bn-suggestion-menu");
+  await expect(slash).toBeVisible();
+  await expect(slash).toContainText("콜아웃");
   await page.keyboard.press("ArrowDown"); await page.keyboard.press("Escape");
   await expect(slash).toBeHidden();
   await expect(editor).toBeFocused();

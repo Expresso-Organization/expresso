@@ -39,6 +39,8 @@ export interface CareerRecordDoc {
   createRequestHash?: string | null;
   referenceVersion?: number;
   documentSchemaVersion?: number | null;
+  /** 편집기가 마지막으로 쓴 bodyMd의 sha256입니다. 현재 bodyMd 해시와 다르면 편집기 밖에서 바뀐 것입니다. */
+  documentBodyHash?: string | null;
   documentVersion?: number | null;
   latestSnapshotId?: string | null;
   computedProperties?: JsonObject | null;

@@ -150,8 +150,9 @@ export function registerIdentityRoutes(
     { preHandler: authenticateRequest },
     async (request, reply) => {
       const principal = requireAuth(request);
+      // 대신 로그인 중에도 세션 주인은 관리자다. 주인 기준으로 취소해야 세션이 닫힌다.
       await options.identityService.revokeOwnedSession(
-        principal.user.id,
+        principal.owner.userId,
         principal.sessionId,
       );
       return reply.code(204).send();
@@ -176,7 +177,7 @@ export function registerIdentityRoutes(
 
       const principal = requireAuth(request);
       const revoked = await options.identityService.revokeOwnedSession(
-        principal.user.id,
+        principal.owner.userId,
         parsed.data.sessionId,
       );
       if (!revoked) throw new HttpStatusError(404, "session not found");

@@ -29,4 +29,12 @@ describe("career document", () => {
     wide.content = Array.from({ length: 20_001 }, () => ({ id: crypto.randomUUID(), type: "paragraph", attrs: {}, text: [] }));
     expect(() => CareerDocumentSchema.parse(wide)).toThrow();
   });
+
+  it("accepts table header cells, underline and line breaks inside text", () => {
+    const id = () => crypto.randomUUID();
+    expect(() => parseCareerDocument({ schemaVersion: 1, type: "doc", content: [
+      { id: id(), type: "table", attrs: {}, content: [{ id: id(), type: "tableRow", attrs: {}, content: [{ id: id(), type: "tableHeader", attrs: {}, text: [{ text: "머리" }] }] }] },
+      { id: id(), type: "paragraph", attrs: {}, text: [{ text: "첫 줄\n둘째 줄", marks: [{ type: "underline" }] }] },
+    ] })).not.toThrow();
+  });
 });
