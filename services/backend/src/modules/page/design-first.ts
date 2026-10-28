@@ -19,7 +19,7 @@ import {
   type StructuredDesignPlan,
   type StructuredPortfolioContent,
 } from "@expresso/contracts";
-import { blueprintToken, describeArchetype, describeBackdrops, describeDesignLayout, designLayout, structuredCatalog, type BlueprintSlot } from "@expresso/portfolio-renderer";
+import { barScale, blueprintToken, describeArchetype, describeBackdrops, describeDesignLayout, designLayout, readablePeriods, structuredCatalog, type BlueprintSlot } from "@expresso/portfolio-renderer";
 
 import type { AiCallOptions, AiClient, AiUsage, AiViolation } from "../../platform/ai/client.js";
 import { jsonPointer, pointerParts } from "../../platform/ai/fixes.js";
@@ -293,6 +293,8 @@ function designPrompt(input: {
 - 배경(surface): canvas=기본 바탕, field=디자인의 행동색 면, inverse=바탕색과 글자색을 뒤집은 면입니다. 지면에 field나 inverse를 1–3개 두어 흐름을 끊고, 이웃한 두 요소에 같은 색면을 잇지 않습니다. compact 섹션을 field로 두면 색면 강조 카드가 됩니다.
 - 폭(width): content=본문 폭, bleed=창 폭 전체입니다. bleed는 색면 섹션 · 수치 띠 · 이미지 전시에 씁니다. 컨테이너 안의 요소는 bleed여도 본문 폭으로 그립니다.
 - 출처에 이전 · 이후 수치가 있는 작업은 form=before-after와 CaseBeforeAfter로, 작업마다 대표 수치가 있으면 소개 바로 뒤에 MetricStrip을 둡니다. MetricStrip을 inverse나 field의 bleed 띠로 두면 첫 화면 아래에서 성과가 먼저 읽힙니다.
+- 이전 값 없이 같은 단위로 견줄 수치가 2–4개인 작업 · 역량(예: 기술별 사용 연수, 항목별 비율 %)은 form=bars와 CaseBars입니다. budget.metrics에 그 개수를 정합니다.
+- 출처에 작업마다 기간이 적혀 있으면 ProjectIndex를 variant=timeline(작업 기간 차트)으로 둘 수 있습니다. 경력 기간이 두 개 이상 적혀 있으면 CareerTimeline을 variant=chart(경력 기간 차트)로 둘 수 있습니다.
 - 작업 순서 · 절차가 핵심인 작업은 form=flow와 CaseFlow입니다. budget.steps에 단계 수(2–6)를 정하면 채우는 단계가 단계 이름(${FILL_LIMITS.section.stepLabel}자)과 짧은 설명(${FILL_LIMITS.section.stepText}자)을 씁니다. 단계가 아니라 문제 · 작업 · 결과의 설명이면 form=process와 CaseProcess입니다.
 - 제공 이미지가 핵심이면 form=showcase입니다. 이미지 한 장은 CaseShowcase(지면 폭의 큰 이미지), 여러 장은 CaseGallery입니다.
 - 작업의 판단 · 원칙을 한 문장으로 보일 만하면 그 섹션의 budget.quote(30–60자)를 정하고 spec에 PullQuote(quote-1, quote-2)를 그 사례 앞이나 뒤에 둡니다. 지면에 ${STRUCTURED_MAX_QUOTES}개까지이고, 쓰지 않는 섹션은 budget.quote=0입니다.
@@ -324,7 +326,7 @@ ${JSON.stringify({
 plan과 spec을 함께 냅니다. plan.sections에는 자료의 모든 섹션을 한 번씩 적습니다.
 spec 형식(공급자에 넘기는 출력 스키마에서 생성):
 ${format.text}
-첫 요소는 intro(NameIntro)입니다. 섹션마다 section-<id> 요소를 정확히 한 번 두고, 그 사례 유형은 plan의 form과 맞춥니다(before-after=CaseBeforeAfter, flow=CaseFlow, process=CaseProcess, showcase=CaseShowcase 또는 CaseGallery, technical=CaseTechnical, essay=CaseEssay 또는 skills · about이면 ContentPanel, row=CaseRow). 사례 요소의 scale · surface · width는 plan의 emphasis · surface · width로 맞춰지므로 plan에서 정합니다. MetricStrip · PullQuote의 scale · surface · width는 spec에서 정합니다. include=false인 섹션도 spec에는 두되 지면에서는 빠지므로, 컨테이너는 include=true인 요소로 짭니다.
+첫 요소는 intro(NameIntro)입니다. 섹션마다 section-<id> 요소를 정확히 한 번 두고, 그 사례 유형은 plan의 form과 맞춥니다(before-after=CaseBeforeAfter, bars=CaseBars, flow=CaseFlow, process=CaseProcess, showcase=CaseShowcase 또는 CaseGallery, technical=CaseTechnical, essay=CaseEssay 또는 skills · about이면 ContentPanel, row=CaseRow). 사례 요소의 scale · surface · width는 plan의 emphasis · surface · width로 맞춰지므로 plan에서 정합니다. MetricStrip · PullQuote의 scale · surface · width는 spec에서 정합니다. include=false인 섹션도 spec에는 두되 지면에서는 빠지므로, 컨테이너는 include=true인 요소로 짭니다.
 ${groups ? `컨테이너: ${describeGroupRules()} 컨테이너 안에 컨테이너를 넣지 않고, intro는 컨테이너에 넣지 않습니다.` : "모든 요소를 page.children에 바로 둡니다."}
 rationale에는 이 지면을 이렇게 설계한 이유를 씁니다. motion은 'showcase'를 씁니다.`;
 }
@@ -372,6 +374,11 @@ export function fillViolations(
   const count = (path: string, list: readonly unknown[], max: number, name: string) => {
     if (list.length > max) violations.push({ path, problem: `${name}은 ${max}개까지입니다(지금 ${list.length}개).` });
   };
+  // 기간은 기간 차트의 막대 위치가 되므로 수치와 같이 출처의 숫자만 받습니다.
+  const ungroundedPeriod = (path: string, value: string | undefined) => {
+    const numbers = value ? ungroundedNumbers(value, context.groundSource) : [];
+    if (numbers.length) violations.push({ path, problem: `기간에 출처에 없는 숫자가 있습니다: ${numbers.join(", ")}. 출처에 적힌 기간을 그 글자 그대로 쓰고, 출처에 없으면 비우세요.` });
+  };
   const { profile: P, section: S, career: C, evidence: E } = FILL_LIMITS;
   text("/role", output.role, P.role, "직무");
   const headline = StructuredProfileSchema.safeParse({ name: context.author, role: output.role, headline: output.headline, intro: output.intro, focus: output.focus });
@@ -390,6 +397,7 @@ export function fillViolations(
     text(`${base}/body`, filled.body, budget.body, "본문");
     text(`${base}/quote`, filled.quote, budget.quote ?? 0, "인용");
     text(`${base}/period`, filled.period, S.period, "기간");
+    ungroundedPeriod(`${base}/period`, filled.period);
     count(`${base}/details`, filled.details, budget.details, "항목");
     filled.details.forEach((item, index) => {
       text(`${base}/details/${index}/label`, item.label, S.detailLabel, "항목 이름");
@@ -423,6 +431,7 @@ export function fillViolations(
   count("/career", output.career, plan.career ? C.count : 0, "경력");
   output.career.forEach((item, index) => {
     text(`/career/${index}/period`, item.period, C.period, "기간");
+    ungroundedPeriod(`/career/${index}/period`, item.period);
     text(`/career/${index}/organization`, item.organization, C.organization, "조직");
     text(`/career/${index}/role`, item.role, C.role, "역할");
     text(`/career/${index}/description`, item.description, C.description, "설명");
@@ -449,6 +458,46 @@ function planViolations(planned: readonly { id: string }[], sectionIds: readonly
   }];
 }
 
+type SpecTree = { root: string; elements: Record<string, { type: string; children?: string[] }> };
+
+/** 페이지 · 컨테이너의 children에 한 번도 연결되지 않은 요소의 ID입니다. 루트는 빼고 셉니다. */
+function unlinkedElements(spec: SpecTree): string[] {
+  const linked = new Set<string>();
+  for (const key of spec.elements[spec.root]?.children ?? []) {
+    linked.add(key);
+    const node = spec.elements[key];
+    if (node && isStructuredGroup(node as never)) for (const child of node.children ?? []) linked.add(child);
+  }
+  return Object.keys(spec.elements).filter((key) => key !== spec.root && !linked.has(key));
+}
+
+/**
+ * 설계의 Spec이 정의한 요소를 모두 트리에 한 번씩 연결했는지 봅니다. 어기면 출력을 거절하지 않고, 쓴 에이전트가 같은 대화에서
+ * page.children만 고칩니다. 고칠 값이 ID 목록이라 짧습니다. elements 전체를 고쳐 받으면 긴 값의 문법이 깨질 수 있습니다
+ * (2026-10-28 실측). 고쳐도 남은 미연결 요소는 `fitToContent`가 정리합니다.
+ */
+function treeViolations(spec: unknown): AiViolation[] {
+  const tree = spec as SpecTree;
+  const root = tree?.elements?.[tree.root];
+  if (!root) return [];
+  const missing = unlinkedElements(tree);
+  const inGroups = new Set(
+    (root.children ?? []).flatMap((key) => {
+      const node = tree.elements[key];
+      return node && isStructuredGroup(node as never) ? node.children ?? [] : [];
+    }),
+  );
+  const twice = (root.children ?? []).filter((key, index, list) => inGroups.has(key) || list.indexOf(key) !== index);
+  if (!missing.length && !twice.length) return [];
+  return [{
+    path: `/spec/elements/${tree.root}/children`,
+    problem: [
+      missing.length ? `트리에 연결하지 않은 요소가 있습니다: ${missing.join(", ")}. page.children에 넣거나, 컨테이너(group-*)면 그 컨테이너를 page.children에 넣으세요.` : "",
+      twice.length ? `두 번 연결한 요소가 있습니다: ${[...new Set(twice)].join(", ")}. 컨테이너 안에 있는 요소는 page.children에서 빼세요.` : "",
+    ].filter(Boolean).join(" "),
+  }];
+}
+
 /** 고친 값 안의 글 칸을 모두 꺼냅니다. 값이 배열 · 객체면 그 안의 문자열마다 경로를 붙입니다. */
 function revisedLeaves(path: readonly (string | number)[], value: unknown): { path: (string | number)[]; text: string }[] {
   if (typeof value === "string") return [{ path: [...path], text: value }];
@@ -460,12 +509,12 @@ function revisedLeaves(path: readonly (string | number)[], value: unknown): { pa
 /** 채우기 프롬프트의 섹션 한 줄입니다. 설계의 칸 예산을 칸 이름과 글자 수 · 개수로 적습니다. */
 function fillGuide(section: StructuredDesignPlan["sections"][number]) {
   const { budget } = section;
-  return `  - ${section.id}: ${section.form} · ${section.emphasis} · 제목 ${budget.title}자 · 요약 ${budget.summary}자 · 본문 ${budget.body}자 · 항목 ${budget.details}개 · 수치 ${budget.metrics}개${budget.quote ? ` · 인용 ${budget.quote}자` : ""}${budget.steps ? ` · 단계 ${budget.steps}개` : ""}`;
+  return `  - ${section.id}: ${section.form} · ${section.emphasis}${section.pattern === "project" ? " · 기간(출처에 적혀 있으면 그 글자 그대로)" : ""} · 제목 ${budget.title}자 · 요약 ${budget.summary}자 · 본문 ${budget.body}자 · 항목 ${budget.details}개 · 수치 ${budget.metrics}개${budget.quote ? ` · 인용 ${budget.quote}자` : ""}${budget.steps ? ` · 단계 ${budget.steps}개` : ""}`;
 }
 
 /**
  * 채운 내용에 맞춰 Spec을 고칩니다. 부품의 조건(이미지 · 이전 값 · 단계 두 개 · 설명 두 개 · 수치 두 개 · 인용 문장)을 못 채운
- * 요소는 글 부품으로 내리거나 지우고, 뺀 섹션 · 근거 · 경력은 트리에서 지웁니다. 컨테이너가 자식 수 조건을 잃으면 풀어서
+ * 요소는 글 부품으로 내리거나 지우고(같은 단위 수치가 없는 막대 차트 · 기간을 못 읽은 기간 차트 포함), 뺀 섹션 · 근거 · 경력은 트리에서 지웁니다. 컨테이너가 자식 수 조건을 잃으면 풀어서
  * 자식을 페이지에 둡니다. 설계안을 주면 사례 요소의 크기 · 배경 · 폭을 설계안의 emphasis · surface · width로 맞춥니다.
  */
 export function fitToContent(rawSpec: unknown, content: StructuredPortfolioContent, plan?: Pick<StructuredDesignPlan, "sections">) {
@@ -474,6 +523,7 @@ export function fitToContent(rawSpec: unknown, content: StructuredPortfolioConte
   const stages = new Map((plan?.sections ?? []).map((section) => [section.id, section]));
   const remove = new Set<string>();
   const quoted = new Set<string>();
+  const now = new Date();
   for (const [key, node] of Object.entries(spec.elements)) {
     const binding = (node.props.section as { $state?: string } | undefined)?.$state;
     const id = binding?.match(/^\/sectionById\/(.+)$/)?.[1];
@@ -488,6 +538,7 @@ export function fitToContent(rawSpec: unknown, content: StructuredPortfolioConte
       const section = sections.get(id);
       if (!section) { remove.add(key); continue; }
       if (node.type === "CaseBeforeAfter" && !section.metrics?.some((metric) => metric.before)) node.type = "CaseTechnical";
+      if (node.type === "CaseBars" && !barScale(section.metrics ?? [])) node.type = "CaseTechnical";
       if (node.type === "CaseGallery" && !section.media.length) node.type = "CaseEssay";
       if (node.type === "CaseShowcase" && !section.media.length) node.type = "CaseEssay";
       // 단계가 모자란 흐름은 설명 항목이 두 개 이상이면 과정형으로, 아니면 기사형으로 내립니다.
@@ -504,11 +555,29 @@ export function fitToContent(rawSpec: unknown, content: StructuredPortfolioConte
         };
     }
     if (node.type === "MetricStrip" && content.sections.flatMap((section) => section.metrics ?? []).length < 2) remove.add(key);
+    // 기간 차트는 기간을 두 개 이상 읽을 때만 둡니다. 목차는 렌더러처럼 프로젝트 섹션(없으면 전체)의 기간을 셉니다.
+    if (node.type === "ProjectIndex" && node.props.variant === "timeline") {
+      const projects = content.sections.filter((section) => section.pattern === "project");
+      if (readablePeriods((projects.length ? projects : content.sections).map((section) => section.period), now) < 2) node.props.variant = "rows";
+    }
+    if (node.type === "CareerTimeline" && node.props.variant === "chart" && readablePeriods(content.career.map((item) => item.period), now) < 2) node.props.variant = "list";
     if (node.type === "EvidenceGrid" && !content.evidence.length) remove.add(key);
     if (node.type === "CareerTimeline" && !content.career.length) remove.add(key);
   }
   for (const key of remove) delete spec.elements[key];
   const root = spec.elements[spec.root]!;
+  // 고쳐도 트리에 연결되지 않은 요소가 남으면, 선택 요소(컨테이너 · 큰 인용 · 수치 강조 줄)는 지우고 나머지는 페이지에 붙입니다.
+  // 목차는 소개 바로 뒤, 그 밖의 요소는 연락처 앞입니다.
+  for (const key of unlinkedElements(spec)) {
+    const node = spec.elements[key]!;
+    if (isStructuredGroup(node as never) || node.type === "PullQuote" || node.type === "MetricStrip") {
+      delete spec.elements[key];
+      continue;
+    }
+    const contact = root.children.findIndex((child) => spec.elements[child]?.type === "Contact");
+    const at = node.type === "ProjectIndex" ? 1 : contact >= 0 ? contact : root.children.length;
+    root.children.splice(at, 0, key);
+  }
   const children: string[] = [];
   for (const key of root.children) {
     const node = spec.elements[key];
@@ -591,7 +660,7 @@ export async function designFirst(
   const sectionIds = raw.sections.map((section) => section.id) as [string, ...string[]];
   const prompt = designPrompt({ raw, author, context, specSchema });
   const design = await call("page_design", DESIGN_SYSTEM, prompt, z.object({ plan: designPlanSchema(sectionIds, raw.media.length), spec: specSchema }), {
-    check: (output) => planViolations(output.plan.sections, sectionIds),
+    check: (output) => [...planViolations(output.plan.sections, sectionIds), ...treeViolations(output.spec)],
   }) as { plan: z.infer<ReturnType<typeof designPlanSchema>>; spec: unknown };
   const plan: StructuredDesignPlan = {
     ...design.plan,
@@ -623,9 +692,9 @@ export async function designFirst(
 ${plan.concept}
 ## 채울 칸
 - 이름(${author}) 아래: 직무(role), 한 문장 headline(줄바꿈 없이 마침표 하나로 끝나는 한 문장, 한글 36자 이내, 직무와 구체적인 작업), 소개(intro, ${plan.profile.intro}자 이내, 0이면 빈 글), 집중 분야(focus, ${plan.profile.focus}개 이내).
-- sections: 섹션마다 아래 설계의 글자 수 · 개수 안에서 채웁니다. 예산이 0이면 빈 글이나 빈 배열입니다. 수치(metrics)의 value · before는 출처에 적힌 숫자와 단위만 씁니다(예: "1.9초", "420KB", "1,200만 건"). 무엇의 수치인지는 label에, 조건 · 설명은 note에 씁니다. before-after 섹션은 이전 값(before)과 이후 값(value)을 함께 적습니다. process 섹션의 항목(details)은 과정의 단계를 순서대로 두 개 이상 적습니다. flow 섹션의 단계(steps)는 작업 순서대로 짧은 이름(label)과 한 줄 설명(text)입니다. 인용(quote)은 그 작업의 판단 · 원칙을 출처의 사실로 쓴 한 문장입니다.
+- sections: 섹션마다 아래 설계의 글자 수 · 개수 안에서 채웁니다. 예산이 0이면 빈 글이나 빈 배열입니다. 수치(metrics)의 value · before는 출처에 적힌 숫자와 단위만 씁니다(예: "1.9초", "420KB", "1,200만 건"). 무엇의 수치인지는 label에, 조건 · 설명은 note에 씁니다. before-after 섹션은 이전 값(before)과 이후 값(value)을 함께 적습니다. bars 섹션의 수치는 모두 같은 단위로 적습니다(예: "5년" · "5년" · "2년"). 기간(period)은 출처에 적힌 기간을 그 글자 그대로 적고(예: "2024.04 — 2024.11", "2023.03 — 현재"), 출처에 없으면 비웁니다. process 섹션의 항목(details)은 과정의 단계를 순서대로 두 개 이상 적습니다. flow 섹션의 단계(steps)는 작업 순서대로 짧은 이름(label)과 한 줄 설명(text)입니다. 인용(quote)은 그 작업의 판단 · 원칙을 출처의 사실로 쓴 한 문장입니다.
 ${included.map(fillGuide).join("\n")}
-${plan.career ? "- career: 출처에 있는 경력만 적습니다.\n" : ""}${plan.evidence ? "- evidence: 출처 자료를 지면용으로 짧게 적습니다.\n" : ""}## 출처
+${plan.career ? "- career: 출처에 있는 경력만 적습니다. 기간(period)은 출처에 적힌 글자 그대로입니다.\n" : ""}${plan.evidence ? "- evidence: 출처 자료를 지면용으로 짧게 적습니다.\n" : ""}## 출처
 ${JSON.stringify(included.map((section) => { const source = rawById.get(section.id)!; return { id: section.id, title: source.title, purpose: source.purpose, goal: source.goal, points: source.points }; }))}
 ${evidenceText}`;
   // 한 번 부릅니다. 예산을 넘긴 칸 · 모양이 틀린 수치 · 출처에 없는 숫자는 출력을 거절하지 않고, 쓴 에이전트가 같은
@@ -655,7 +724,7 @@ ${evidenceText}`;
       summary: output.summary,
       body: output.body,
       pattern: plannedSection.pattern,
-      ...(output.period ? { period: output.period } : {}),
+      ...(output.period && !ungroundedNumbers(output.period, groundSource).length ? { period: output.period } : {}),
       details: output.details,
       media: plannedSection.media.map((src) => ({ src, alt: raw.media.find((item) => item.src === src)?.alt || output.title, origin: "uploaded" as const })),
       sourceIds: rawById.get(plannedSection.id)!.sourceIds,
@@ -665,7 +734,9 @@ ${evidenceText}`;
     };
     return section;
   });
-  const profilePart = { profile: { name: author, role: filled.role, headline: filled.headline, intro: filled.intro, focus: filled.focus }, career: filled.career, evidence: filled.evidence };
+  // 고쳐도 출처에 없는 숫자가 남은 기간은 싣지 않습니다. 섹션 기간은 빼고, 경력 기간은 빈 글로 둡니다.
+  const career = filled.career.map((item) => (ungroundedNumbers(item.period, groundSource).length ? { ...item, period: "" } : item));
+  const profilePart = { profile: { name: author, role: filled.role, headline: filled.headline, intro: filled.intro, focus: filled.focus }, career, evidence: filled.evidence };
   timeline.push({ stage: "filled", atMs: Date.now() - started });
 
   // 3. 맞춤 — 근거에 없는 출처를 지우고, 부품 조건을 다시 맞춥니다.

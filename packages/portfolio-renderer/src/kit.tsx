@@ -11,6 +11,12 @@ import { Backdrop, BACKDROP_CSS, backdropAttributes, backdropCss, resolveBackdro
 import { structuredCatalog } from "./catalog.js";
 import { cssVariables, fontImportCss, readableColors } from "./design-tokens.js";
 import { KIT_CSS } from "./kit-styles.js";
+import { Bars, metricNumber } from "./viz/bars.js";
+import { PeriodChart } from "./viz/period-chart.js";
+import { readablePeriods } from "./viz/period.js";
+import { VIZ_CSS } from "./viz/styles.js";
+
+export { metricNumber };
 
 /** 키트 컴포넌트가 함께 읽는 문맥입니다. 연락처 유무와 근거 제목처럼 한 요소의 props 밖에 있는 값입니다. */
 export const KitContext = React.createContext<{
@@ -21,6 +27,8 @@ export const KitContext = React.createContext<{
   caseNumbers: ReadonlyMap<string, number>;
   /** 글 · 목록형에서 읽는 순서로 첫 사례 행의 섹션 ID. 그 행 위에 목록 제목을 둡니다. */
   firstRowId?: string | undefined;
+  /** 렌더 시각입니다. "현재"로 끝나는 기간을 여기까지 그립니다. */
+  now: Date;
 } | null>(null);
 
 function useKit() {
@@ -37,7 +45,7 @@ export function kitCss(spec: DesignSystemSpecV2): string {
   const mid = weights.find((weight) => weight >= 500 && weight < strong) ?? strong;
   // 자간은 디자인이 고른 값 중 가장 좁은 것을 제목에 씁니다.
   const tracking = spec.typography.letterSpacing.find((value) => value.trim().startsWith("-")) ?? "-0.01em";
-  return `${fontImportCss(spec)}.xp-page{${cssVariables(spec)}--xp-muted:${readable.mutedOnCanvas};--xp-muted-surface:${readable.mutedOnSurface};--xp-accent-text:${readable.accentText};--xp-action-text:${readable.actionText};--xp-muted-field:${readable.mutedOnField};--xp-muted-inverse:${readable.mutedOnInverse};--xp-accent-inverse:${readable.accentOnInverse};--xp-weight:${strong};--xp-weight-mid:${mid};--xp-tracking:${tracking}}\n${KIT_CSS}\n${backdropCss(spec)}\n${BACKDROP_CSS}`;
+  return `${fontImportCss(spec)}.xp-page{${cssVariables(spec)}--xp-muted:${readable.mutedOnCanvas};--xp-muted-surface:${readable.mutedOnSurface};--xp-accent-text:${readable.accentText};--xp-action-text:${readable.actionText};--xp-muted-field:${readable.mutedOnField};--xp-muted-inverse:${readable.mutedOnInverse};--xp-accent-inverse:${readable.accentOnInverse};--xp-weight:${strong};--xp-weight-mid:${mid};--xp-tracking:${tracking}}\n${KIT_CSS}${VIZ_CSS}\n${backdropCss(spec)}\n${BACKDROP_CSS}`;
 }
 
 const PATTERN_LABEL: Record<StructuredSection["pattern"], string> = {
@@ -237,7 +245,7 @@ function CaseRow({ section }: { section: StructuredSection }) {
   );
 }
 
-type CaseKind = "essay" | "technical" | "process" | "gallery" | "panel" | "before-after" | "flow" | "showcase";
+type CaseKind = "essay" | "technical" | "process" | "gallery" | "panel" | "before-after" | "bars" | "flow" | "showcase";
 
 /** 요소 하나의 지면 변화입니다. 계약 `STRUCTURED_SCALES` · `STRUCTURED_SURFACES` · `STRUCTURED_WIDTHS`와 같은 값입니다. */
 type Stage = { scale?: "lead" | "standard" | "compact" | undefined; surface?: "canvas" | "field" | "inverse" | undefined; width?: "content" | "bleed" | undefined };
@@ -255,15 +263,6 @@ function stageAttributes(stage: Stage): Record<string, string> {
 }
 
 type Metric = NonNullable<StructuredSection["metrics"]>[number];
-
-/**
- * "3.8초" · "420KB" · "1,200만 건"처럼 숫자로 시작하는 값에서 그 숫자를 읽습니다. 숫자로 시작하지 않으면 null입니다.
- * 글 중간의 숫자는 읽지 않습니다. 청사진의 자리 표지(`⟦12⟧`)나 "약 3배" 같은 값에서 엉뚱한 비율이 나오지 않습니다.
- */
-export function metricNumber(value: string): number | null {
-  const match = value.replace(/,/g, "").match(/^[+\-−~≈]?\s?(\d+(?:\.\d+)?)/);
-  return match ? Number(match[1]) : null;
-}
 
 /**
  * 전후 수치를 막대 두 줄로 비교합니다. 막대 길이는 둘 중 큰 값을 100%로 둔 비율이고, 값은 막대 옆 글자로 둡니다.
@@ -318,6 +317,17 @@ function Case({ section, kind, stage = {} }: { section: StructuredSection; kind:
             <Compare metric={metric} key={index} />
           ))}
         </div>
+        <div className="xp-body-stack">
+          {first ? <Figure media={first} /> : null}
+          <Paragraphs value={section.body} />
+          <Details details={section.details} />
+        </div>
+      </div>
+    );
+  else if (kind === "bars")
+    body = (
+      <div className="xp-case-grid" data-form="bars">
+        <Bars metrics={section.metrics ?? []} />
         <div className="xp-body-stack">
           {first ? <Figure media={first} /> : null}
           <Paragraphs value={section.body} />
@@ -575,8 +585,8 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
         </header>
       );
     },
-    ProjectIndex: ({ props: { sections, variant } }) => {
-      const { caseNumbers } = useKit();
+    ProjectIndex: ({ props: { sections, variant: chosen } }) => {
+      const { caseNumbers, now } = useKit();
       const number = (id: string, index: number) => twoDigits(caseNumbers.get(id) ?? index + 1);
       const projects = sections.filter((section) => section.pattern === "project");
       // 목차는 페이지에서 읽는 순서를 따릅니다. 내용의 섹션 순서와 Spec의 배치 순서가 다를 수 있습니다.
@@ -584,6 +594,9 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
         .map((section, index) => ({ section, order: caseNumbers.get(section.id) ?? Number.POSITIVE_INFINITY, index }))
         .sort((a, b) => a.order - b.order || a.index - b.index)
         .map(({ section }) => section);
+      // 작업 기간 차트는 기간을 두 개 이상 읽을 때만 그리고, 아니면 짧은 목록으로 그립니다.
+      const timeline = chosen === "timeline" && readablePeriods(items.map((section) => section.period), now) >= 2;
+      const variant = chosen === "timeline" && !timeline ? "rows" : chosen;
       if (variant === "poster")
         return (
           <nav id="work" className="xp-poster-index" aria-label="선택한 작업">
@@ -607,7 +620,23 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
             <p className="xp-eyebrow">Selected work</p>
             <h2 className="xp-h2">선택한 작업</h2>
           </header>
-          {variant === "mosaic" ? (
+          {timeline ? (
+            <PeriodChart
+              now={now}
+              rows={items.map((section, index) => ({
+                key: section.id,
+                period: section.period,
+                href: `#section-${section.id}`,
+                text: (
+                  <>
+                    <span className="xp-num xp-small">{number(section.id, index)}</span>
+                    <strong>{section.title}</strong>
+                    {section.period ? <span className="xp-small">{section.period}</span> : null}
+                  </>
+                ),
+              }))}
+            />
+          ) : variant === "mosaic" ? (
             <div className="xp-mosaic">
               {items.map((section, index) => (
                 <a href={`#section-${section.id}`} key={section.id} className="xp-panel">
@@ -638,6 +667,7 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
       );
     },
     CaseBeforeAfter: ({ props }) => <Case section={props.section} kind="before-after" stage={stageOf(props)} />,
+    CaseBars: ({ props }) => <Case section={props.section} kind="bars" stage={stageOf(props)} />,
     CaseFlow: ({ props }) => <Case section={props.section} kind="flow" stage={stageOf(props)} />,
     CaseShowcase: ({ props }) => <Case section={props.section} kind="showcase" stage={stageOf(props)} />,
     PullQuote: ({ props }) => <PullQuote section={props.section} stage={stageOf(props)} />,
@@ -686,26 +716,49 @@ const { registry: kitRegistry } = defineRegistry(structuredCatalog, {
         {children}
       </div>
     ),
-    CareerTimeline: ({ props: { career } }) => (
-      <section id="career" className="xp-block xp-career">
-        <header className="xp-head">
-          <p className="xp-eyebrow">Experience</p>
-          <h2 className="xp-h2">경력</h2>
-        </header>
-        <ol className="xp-timeline">
-          {career.map((item) => (
-            <li key={item.id}>
-              <span className="xp-small">{item.period}</span>
-              <div>
-                <h3 className="xp-h3">{item.organization}</h3>
-                <p className="xp-small">{item.role}</p>
-                <Paragraphs value={item.description} />
-              </div>
-            </li>
-          ))}
-        </ol>
-      </section>
-    ),
+    CareerTimeline: ({ props: { career, variant } }) => {
+      const { now } = useKit();
+      // 경력 기간 차트는 기간을 두 개 이상 읽을 때만 그립니다. 아니면(옛 저장본 포함) 목록입니다.
+      const chart =
+        variant === "chart"
+          ? PeriodChart({
+              now,
+              rows: career.map((item) => ({
+                key: item.id,
+                period: item.period,
+                text: (
+                  <>
+                    <strong>{item.organization}</strong>
+                    <span className="xp-small">{[item.role, item.period].filter(Boolean).join(" · ")}</span>
+                    <Paragraphs value={item.description} />
+                  </>
+                ),
+              })),
+            })
+          : null;
+      return (
+        <section id="career" className="xp-block xp-career" {...(chart ? { "data-variant": "chart" } : {})}>
+          <header className="xp-head">
+            <p className="xp-eyebrow">Experience</p>
+            <h2 className="xp-h2">경력</h2>
+          </header>
+          {chart ?? (
+            <ol className="xp-timeline">
+              {career.map((item) => (
+                <li key={item.id}>
+                  <span className="xp-small">{item.period}</span>
+                  <div>
+                    <h3 className="xp-h3">{item.organization}</h3>
+                    <p className="xp-small">{item.role}</p>
+                    <Paragraphs value={item.description} />
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
+      );
+    },
     EvidenceGrid: ({ props: { evidence } }) => (
       <section id="evidence" className="xp-block xp-evidence">
         <header className="xp-head">

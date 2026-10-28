@@ -2,6 +2,7 @@
 import { useActionState, useState } from "react";
 import {
   STRUCTURED_CASE_TYPES,
+  comparableMetrics,
   isStructuredGroup,
   structuredLeaves,
   type GeneratedPage,
@@ -17,6 +18,7 @@ const names: Record<string, string> = {
   dossier: "목차·상세 두 열",
   CaseEssay: "기사형",
   CaseBeforeAfter: "전후 비교형",
+  CaseBars: "막대 차트형",
   CaseFlow: "과정 흐름형",
   CaseShowcase: "대표 이미지형",
   CaseGallery: "이미지 전시형",
@@ -213,6 +215,7 @@ export function StructuredPageProperties({
                   )
                     .filter((type) => type !== "CaseFlow" || (section.steps?.length ?? 0) >= 2)
                     .filter((type) => type !== "CaseBeforeAfter" || !!section.metrics?.some((metric) => metric.before))
+                    .filter((type) => type !== "CaseBars" || comparableMetrics(section.metrics))
                     .filter(
                       (type) =>
                         type !== "CaseProcess" || section.details.length >= 2,
