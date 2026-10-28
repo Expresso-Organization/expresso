@@ -20,6 +20,8 @@
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "0.3.261",
     "@anthropic-ai/sdk": "^1.3.0",
+    "@blocknote/core": "0.56.0",
+    "@blocknote/server-util": "0.56.0",
     "@expresso/contracts": "workspace:*",
     "@expresso/editor": "workspace:*",
     "@expresso/portfolio-renderer": "workspace:*",
@@ -29,10 +31,15 @@
     "ioredis": "^6.0.0",
     "mongodb": "7.5.0",
     "playwright": "1.62.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
     "sanitize-html": "^2.17.6",
     "sharp": "^0.35.3",
     "turndown": "^7.2.4",
     "ws": "^8.21.3",
+    "y-prosemirror": "^1.3.7",
+    "y-protocols": "^1.0.7",
+    "yjs": "^13.6.33",
     "zod": "^4.4.3"
   },
   "devDependencies": {

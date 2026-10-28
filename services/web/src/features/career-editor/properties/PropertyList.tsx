@@ -9,6 +9,7 @@ import {
 } from "@expresso/contracts";
 import { useEffect, useMemo, useState } from "react";
 
+import { useComputedRefresh } from "./computed-refresh";
 import { PropertyCreatePopover } from "./PropertyCreatePopover";
 import { createPropertyOption } from "./property-options";
 import { PropertyValueEditor } from "./PropertyValueEditor";
@@ -47,6 +48,7 @@ export function PropertyList({
   // 표 · 보드에서 고친 값이 더 새 버전으로 들어오면 패널도 그 값을 보인다.
   useEffect(() => { if (record.version > current.version) setCurrent(record); }, [record]);
   const visible = useMemo(() => items.filter((item) => item.deletedAt === null).sort((left, right) => left.order - right.order), [items]);
+  const computing = useComputedRefresh(current, items, setCurrent);
 
   async function savePatch(patch: { title?: string; properties?: Record<string, unknown> }) {
     const response = await fetch(`/api/career/records/${current.id}`, {
@@ -91,7 +93,7 @@ export function PropertyList({
     await attempt(current, true);
   }
 
-  return <section className={styles.propertyList} aria-label="문서 속성">
+  return <section className={styles.propertyList} aria-label="문서 속성" aria-busy={computing}>
     <div className={styles.titleEditor}>
       <PropertyValueEditor definition={{ id: "00000000-0000-4000-8000-000000000000", key: "title", name: "제목", type: "title", required: false, system: true, config: {}, order: 0, version: 1, deletedAt: null }} value={{ type: "title", value: current.title }} onCommit={async (value) => { if (value?.type === "title") await savePatch({ title: value.value }); }} />
     </div>
@@ -105,7 +107,11 @@ export function PropertyList({
 }
 
 function propertyIcon(type: CareerPropertyDefinitionV2["type"]): string {
-  if (type === "date" || type === "created_time" || type === "updated_time") return "calendar-blank";
+  if (type === "created_time") return "clock";
+  if (type === "updated_time") return "clock-clockwise";
+  if (type === "date") return "calendar-blank";
+  if (type === "formula") return "function";
+  if (type === "rollup") return "magnifying-glass";
   if (type === "relation" || type === "url") return "link-simple";
   if (type === "select" || type === "multi_select") return "tag";
   if (type === "number") return "hash";

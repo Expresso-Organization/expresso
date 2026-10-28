@@ -42,6 +42,22 @@ describe("PropertyCreatePopover", () => {
     expect(screen.queryByLabelText("속성 유형")).toBeNull();
   });
 
+  it("creates record-time properties as read-only system properties without setup", async () => {
+    const fetchMock = vi.fn(async (url: string, _init?: RequestInit) => {
+      if (url.includes("/preview")) return new Response(JSON.stringify({ data: { categoryVersion: 1, previewToken: "preview-token" } }), { status: 200, headers: { "content-type": "application/json" } });
+      return new Response(JSON.stringify({ data: { propertySchemaV2: [definition] } }), { status: 200, headers: { "content-type": "application/json" } });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<PropertyCreatePopover categoryId={categoryId} definitions={[definition]} onDefinitionsChange={onChange} onVersionConflict={onConflict} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "속성 추가" }));
+    fireEvent.click(screen.getByRole("option", { name: "최종 편집 일시" }));
+
+    await waitFor(() => expect(onChange).toHaveBeenCalledOnce());
+    const previewBody = JSON.parse(String(fetchMock.mock.calls.find(([url]) => String(url).includes("/preview"))?.[1]?.body));
+    expect(previewBody.property).toMatchObject({ name: "최종 편집 일시 1", type: "updated_time", system: true, config: {} });
+  });
+
   it("uses valid empty options for a select property", async () => {
     const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
       if (url.includes("/preview")) return new Response(JSON.stringify({ data: { categoryVersion: 1, previewToken: "preview-token" } }), { status: 200, headers: { "content-type": "application/json" } });

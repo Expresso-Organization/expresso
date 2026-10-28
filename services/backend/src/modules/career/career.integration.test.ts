@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { encodeDocumentAsYUpdate } from "@expresso/editor";
+import { careerDocumentToBlockNote } from "@expresso/editor/blocknote";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
@@ -12,7 +12,7 @@ import { mongoCollections } from "@expresso/database";
 import { createMongoFixture } from "../../../test/support/mongodb.js";
 import { assertActiveRecordsForWrite, purgeTrashedCareerRecord } from "./mongo-record-guard.js";
 import { inTransaction } from "../../platform/mongo-transaction.js";
-import { CareerDocumentService } from "../career-editor/index.js";
+import { CareerDocumentService, syncBlockNoteDocument } from "../career-editor/index.js";
 
 const DEFAULT_CATEGORY_KEYS = [
   "experience",
@@ -68,7 +68,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB career editing", () => {
     await expect(service.updateRecord(otherId, record.id, 2, { title: "침입" })).rejects.toMatchObject({ statusCode: 404 });
   });
 
-  it("projects editor documents to legacy bodyMd and rejects a legacy overwrite with pending Yjs updates", async () => {
+  it("projects BlockNote documents to bodyMd and syncs the document after a legacy overwrite", async () => {
     const { record } = await service.createRecord(userId, randomUUID(), {
       categoryId,
       title: "호환",
@@ -83,10 +83,11 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB career editing", () => {
 
     const documentService = new CareerDocumentService(fixture.resource, "legacy-compatibility-secret");
     const bootstrap = await documentService.bootstrap(userId, record.id);
+    expect(bootstrap.editor).toBe("blocknote");
+    // 브라우저 편집기가 보내는 것과 같은 BlockNote 업데이트로 제목 문장을 고칩니다.
     const next = structuredClone(bootstrap.document);
     next.content[0]!.text = [{ text: "Yjs 변경" }];
-    const base = encodeDocumentAsYUpdate(bootstrap.document);
-    const update = encodeDocumentAsYUpdate(next, [base]);
+    const update = syncBlockNoteDocument(Buffer.from(bootstrap.stateBase64!, "base64"), [], careerDocumentToBlockNote(next).blocks).update;
     await documentService.appendUpdate(userId, {
       recordId: record.id,
       clientId: randomUUID(),
@@ -95,9 +96,15 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB career editing", () => {
       updateBase64: Buffer.from(update).toString("base64"),
       checksum: createHash("sha256").update(update).digest("hex"),
     });
-    expect((await service.getRecord(userId, record.id)).bodyMd).toContain("Yjs 변경");
-    await expect(service.updateRecord(userId, record.id, legacySaved.version, { bodyMd: "# 덮어쓰기" }))
-      .rejects.toMatchObject({ statusCode: 409 });
+    await documentService.projectBodyMarkdown(userId, record.id);
+    const projected = await service.getRecord(userId, record.id);
+    expect(projected.bodyMd).toContain("Yjs 변경");
+
+    // 편집기 밖의 bodyMd 쓰기는 막지 않고, 다음 bootstrap이 문서를 그 내용으로 맞춥니다.
+    await service.updateRecord(userId, record.id, projected.version, { bodyMd: "# 덮어쓰기" });
+    const synced = await documentService.bootstrap(userId, record.id);
+    expect(synced.document.content[0]?.text?.[0]?.text).toBe("덮어쓰기");
+    expect(await collections.careerDocumentUpdates.countDocuments({ recordId: record.id, actor: "migration" })).toBe(1);
   });
 
   it("canonicalizes links, checks source spans, and replaces skill evidence atomically", async () => {
