@@ -3,6 +3,7 @@ import { schema } from "@json-render/react/schema";
 import { z } from "zod";
 import {
   PortfolioArchetypeSchema,
+  STRUCTURED_CAREER_VARIANTS,
   STRUCTURED_GROUP_VARIANTS,
   STRUCTURED_BACKDROPS,
   STRUCTURED_INDEX_VARIANTS,
@@ -62,11 +63,15 @@ export const structuredCatalog = defineCatalog(schema, {
         variant: z.enum(STRUCTURED_INDEX_VARIANTS),
       }),
       description:
-        "rows=짧은 목록, mosaic=이미지 중심 비대칭 타일, rail=측면 목차, poster=번호와 큰 글자 제목 행.",
+        "rows=짧은 목록, mosaic=이미지 중심 비대칭 타일, rail=측면 목차, poster=번호와 큰 글자 제목 행, timeline=작업 기간을 한 시간축의 막대로 그린 기간 차트(섹션 기간 period가 두 개 이상일 때. 아니면 rows로 그립니다).",
     },
     CaseBeforeAfter: {
       props: projectProps,
       description: "이전 값과 이후 값을 막대 두 줄로 비교하고 옆에 짧은 설명을 둡니다. 개선 폭이 핵심인 작업에 사용합니다. 이전 값이 있는 수치가 필요합니다.",
+    },
+    CaseBars: {
+      props: projectProps,
+      description: "한 작업의 같은 단위 수치 2–4개(예: 5년 · 5년 · 2년, 92% · 80%)를 가로 막대 차트로 비교하고 옆에 짧은 설명을 둡니다. 값이 모두 %이면 0–100% 눈금입니다. 이전 값 없이 여러 항목을 견주는 작업 · 역량에 사용합니다.",
     },
     MetricStrip: {
       props: z.object({ sections: content.shape.sections, ...stageProps }),
@@ -129,8 +134,8 @@ export const structuredCatalog = defineCatalog(schema, {
         "1–3개 요소를 한 묶음으로 구분합니다. panel=면 배경, accent=강조색 상단 선. 지면의 흐름을 나눌 때 사용합니다.",
     },
     CareerTimeline: {
-      props: z.object({ career: content.shape.career }),
-      description: "제공된 경력을 시간순으로 표시합니다.",
+      props: z.object({ career: content.shape.career, variant: z.enum(STRUCTURED_CAREER_VARIANTS).optional() }),
+      description: "제공된 경력을 시간순으로 표시합니다. list=기간 · 조직 · 설명 목록, chart=조직마다 기간을 한 시간축의 막대로 그린 경력 기간 차트(기간이 두 개 이상 적혀 있을 때. 아니면 list로 그립니다).",
     },
     EvidenceGrid: {
       props: z.object({ evidence: content.shape.evidence }),

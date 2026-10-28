@@ -6,6 +6,7 @@ import {
   EditStructuredPageSchema,
   StructuredContentModelSchema,
   StructuredMediaSchema,
+  StructuredNodeSchema,
   StructuredPortfolioContentSchema,
   structuredModelSchema,
   structuredLeaves,
@@ -431,6 +432,27 @@ describe("시각 부품과 지면 변화 계약", () => {
     const twice = withCase({}, { "quote-1": quote(), "quote-2": quote() }, ["intro", "evidence", "case-a", "quote-1", "quote-2"]);
     expect(() => validateStructuredPortfolio(twice, rich)).toThrow("중복");
     expect(() => validateStructuredPortfolio(withCase({}, { "quote-1": quote("missing") }, ["intro", "evidence", "case-a", "quote-1"]), rich)).toThrow("섹션 참조");
+  });
+
+  it("막대 차트는 수치 두 개, 목차 기간 차트 · 경력 기간 차트는 정해진 형태 값만 받는다", () => {
+    const measured: StructuredPortfolioContent = {
+      ...content,
+      sections: [{ ...content.sections[0]!, metrics: [{ label: "TypeScript", value: "5년" }, { label: "Next.js", value: "2년" }] }],
+    };
+    expect(() => validateStructuredPortfolio(withCase({ type: "CaseBars" }), measured)).not.toThrow();
+    expect(() => validateStructuredPortfolio(withCase({ type: "CaseBars" }), content)).toThrow("수치가 두 개 이상");
+    const mixed: StructuredPortfolioContent = { ...measured, sections: [{ ...measured.sections[0]!, metrics: [{ label: "LCP", value: "1.9초" }, { label: "JS", value: "180KB" }] }] };
+    expect(() => validateStructuredPortfolio(withCase({ type: "CaseBars" }), mixed)).toThrow("같은 단위");
+    const shape = (value: StructuredPortfolioContent) =>
+      JSON.stringify(z.toJSONSchema(structuredModelSchema(value, { intro: [], section: [], guidance: [] })));
+    expect(shape(content)).not.toContain("CaseBars");
+    expect(shape(measured)).toContain("CaseBars");
+    expect(shape(mixed)).not.toContain("CaseBars");
+    expect(shape(measured)).toContain('"timeline"');
+    expect(StructuredNodeSchema.safeParse({ type: "ProjectIndex", props: { sections: { $state: "/sections" }, variant: "timeline" }, children: [] }).success).toBe(true);
+    expect(StructuredNodeSchema.safeParse({ type: "CareerTimeline", props: { career: { $state: "/career" }, variant: "chart" }, children: [] }).success).toBe(true);
+    expect(StructuredNodeSchema.safeParse({ type: "CareerTimeline", props: { career: { $state: "/career" } }, children: [] }).success).toBe(true);
+    expect(StructuredNodeSchema.safeParse({ type: "CareerTimeline", props: { career: { $state: "/career" }, variant: "gantt" }, children: [] }).success).toBe(false);
   });
 
   it("크기 · 배경 · 폭은 정해진 값만 받고 없어도 된다", () => {
