@@ -84,7 +84,8 @@ export function DeployPanel({
                 defaultValue={live?.subdomain ?? ""}
                 placeholder="주소를 정하세요"
                 aria-label="주소"
-                pattern="[a-z0-9][a-z0-9-]*[a-z0-9]"
+                // 브라우저는 pattern을 v 플래그로 읽습니다. 문자 집합 안의 하이픈은 이스케이프해야 유효합니다.
+                pattern="[a-z0-9][a-z0-9\-]*[a-z0-9]"
                 minLength={3}
                 maxLength={63}
                 required

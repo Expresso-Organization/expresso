@@ -54,8 +54,8 @@ export default async function DeployPage({
     {
       ok: generatedPage !== null,
       title: generatedPage
-        ? `자유 HTML 판 ${generatedPage.revision + 1}이 나갑니다`
-        : "배포할 자유 HTML 판이 없습니다",
+        ? `지면 판 ${generatedPage.revision + 1}이 나갑니다`
+        : "배포할 지면 판이 없습니다",
       note: generatedPage?.rationale ?? "편집 화면에서 먼저 페이지를 만들어 주세요.",
       ...(generatedPage ? {} : { fix: editor }),
     },
