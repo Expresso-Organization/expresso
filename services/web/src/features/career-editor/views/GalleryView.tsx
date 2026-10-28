@@ -6,13 +6,14 @@ import { propertyOptions } from "@/features/career-editor/properties/property-ed
 
 import type { CareerViewRendererProps } from "./view-types";
 import { displayValue, keyboardActivate, propertyKey, rawValue } from "./view-types";
+import { markdownPreview } from "./markdown-preview";
 import { activeDefinitions } from "./view-logic";
 import styles from "./views.module.css";
 
 const COVER_BARS = [18, 30, 24, 41, 33, 52, 45, 61, 49, 70, 58, 76, 66, 82];
 
 function plainText(record: CareerRecord): string {
-  return record.bodyMd.replace(/[#*_`>\[\]]/g, "").replace(/\s+/g, " ").trim();
+  return markdownPreview(record.bodyMd);
 }
 
 function textProperty(record: CareerRecord, key: string): string | null {
