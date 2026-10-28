@@ -36,6 +36,17 @@ export class PortfolioReadService {
       portfolio.currentDeploymentId ? db.deployments.findOne({ _id: portfolio.currentDeploymentId, userId: portfolio.userId }) : null,
     ]);
     const blockCount = await db.blocks.countDocuments({ userId: portfolio.userId, portfolioSectionId: { $in: sections.map(({ _id }) => _id) } });
+    // 공개본과 편집본이 다른지는 읽을 때 정합니다. 배포가 실은 지면 판과 지금 배포하면 실릴 판(최신 ready 판)을 비교합니다.
+    // 판을 만드는 경로(생성 · 다듬기 · 편집 · 되돌리기)를 모두 고치지 않아도 되고, 옛 배포로 되돌린 뒤에도 맞습니다.
+    const latestPage = deployment
+      ? await db.generatedPages.find({ userId: portfolio.userId, portfolioId: portfolio._id, qualityStatus: "ready" }, { projection: { _id: 1, createdAt: 1 } }).sort({ revision: -1 }).limit(1).next()
+      : null;
+    const pageChanged = deployment && latestPage
+      ? deployment.generatedPageId
+        ? deployment.generatedPageId !== latestPage._id
+        // 실린 판을 남기기 전의 배포는 배포 뒤에 만든 판이 있는지로 봅니다.
+        : !!deployment.publishedAt && latestPage.createdAt > deployment.publishedAt
+      : false;
     return {
       id: portfolio._id, brewId: portfolio.brewId, title: portfolio.title, status: portfolio.status,
       templateCode: template?.code ?? "", templateName: template?.name ?? "",
@@ -47,7 +58,7 @@ export class PortfolioReadService {
         customDomain: deployment.customDomain ?? null, seoIndexable: deployment.seoIndexable,
         contactVisibility: deployment.contactVisibility,
         publishedAt: deployment.publishedAt?.toISOString() ?? null,
-        hasUnpublishedChanges: deployment.hasUnpublishedChanges,
+        hasUnpublishedChanges: deployment.hasUnpublishedChanges || pageChanged,
       } : null,
     };
   }

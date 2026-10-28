@@ -49,7 +49,7 @@ export class PublishingService {
         if (holder || forwarding) throw new PublishingError(409, "slug is already reserved");
         const snapshotValue = await this.#snapshot(tx, userId, portfolioId); const snapshot = await writeSnapshot(tx, userId, snapshotValue);
         const previous = await db.deployments.find({ userId, portfolioId }, options).sort({ version: -1 }).limit(1).next();
-        const deployment: DeploymentDoc = { _id: randomUUID(), userId, portfolioId, version: (previous?.version ?? 0) + 1, subdomain: input.slug, customDomain: null, seoIndexable: input.seo.indexable, contactVisibility: input.contactVisibility, publishedAt: at, hasUnpublishedChanges: false, snapshot: snapshot as unknown as JsonObject, seo: input.seo as JsonObject };
+        const deployment: DeploymentDoc = { _id: randomUUID(), userId, portfolioId, version: (previous?.version ?? 0) + 1, subdomain: input.slug, customDomain: null, seoIndexable: input.seo.indexable, contactVisibility: input.contactVisibility, publishedAt: at, hasUnpublishedChanges: false, generatedPageId: snapshotValue.generatedPage.id, snapshot: snapshot as unknown as JsonObject, seo: input.seo as JsonObject };
         await db.deployments.insertOne(deployment, options);
         const changed = await db.portfolios.updateOne({ _id: portfolioId, userId }, { $set: { currentDeploymentId: deployment._id, publicSlug: input.slug, status: "published", updatedAt: at } }, options); if (changed.matchedCount !== 1) throw new PublishingError(404, "portfolio not found");
         const previousSlug = portfolio.publicSlug ?? null;

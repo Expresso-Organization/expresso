@@ -8,10 +8,10 @@
   },
   "scripts": {
     "dev": "pnpm run build:scene && next dev --port 3000",
-    "build": "pnpm run build:scene && next build",
+    "build": "pnpm --filter @expresso/portfolio-renderer build && pnpm run build:scene && next build",
     "build:scene": "node ../../packages/portfolio-renderer/scripts/build-scene.mjs public/scene-runtime/v1",
     "start": "next start --port 3000",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "pnpm --filter @expresso/portfolio-renderer build && tsc -p tsconfig.json --noEmit",
     "test": "pnpm --filter \"@expresso/web^...\" build && vitest run --passWithNoTests",
     "test:e2e": "playwright test"
   },
@@ -24,6 +24,7 @@
     "@blocknote/react": "0.56.0",
     "@expresso/contracts": "workspace:*",
     "@expresso/editor": "workspace:*",
+    "@expresso/portfolio-renderer": "workspace:*",
     "@phosphor-icons/web": "^2.1.2",
     "class-variance-authority": "0.7.1",
     "cn": "0.2.5",

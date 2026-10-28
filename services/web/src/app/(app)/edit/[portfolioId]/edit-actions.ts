@@ -40,6 +40,16 @@ function message(error: unknown): string {
   return "고치지 못했습니다. 다시 시도해 주세요.";
 }
 
+/** 구조화 지면의 판 충돌 · 검사 실패를 화면 문장으로 바꿉니다. */
+function pageMessage(error: unknown, fallback: string): string {
+  if (error instanceof ApiError) {
+    if (error.status === 409) return error.message || "그 사이 판이 바뀌었습니다. 새로고침한 뒤 다시 해 주세요.";
+    if (error.status === 403) return "AI 사용 동의가 필요합니다. 설정에서 켜 주세요.";
+    if (error.status === 422 || error.status === 404 || error.status === 503) return error.message;
+  }
+  return fallback;
+}
+
 export async function structuredPageAction(_previous: { error?: string; saved?: boolean }, form: FormData): Promise<{ error?: string; saved?: boolean }> {
   const portfolioId = form.get("portfolioId"), payload = form.get("payload");
   if (typeof portfolioId !== "string" || typeof payload !== "string") return { error: "저장할 구성이 없습니다." };
@@ -49,7 +59,47 @@ export async function structuredPageAction(_previous: { error?: string; saved?: 
     await page.editComposition(session.accessToken, portfolioId, input);
     revalidatePath(`/edit/${portfolioId}`);
     return { saved: true };
-  } catch (error) { return { error: error instanceof ApiError ? error.message : "저장하지 못했습니다. 입력을 확인해 주세요." }; }
+  } catch (error) { return { error: pageMessage(error, "저장하지 못했습니다. 입력을 확인해 주세요.") }; }
+}
+
+export interface ElementInstructResult {
+  instruction?: string;
+  target?: string;
+  note?: string;
+  changes?: { label: string; before: string; after: string }[];
+  /** 지시로 생긴 판. 되돌리기는 이 판의 바로 앞 판을 새 판으로 쌓습니다. */
+  revision?: number;
+  error?: string;
+}
+
+/** 04 고른 요소 하나를 말로 고칩니다. 결과는 바로 새 판이고, 화면은 바뀐 곳과 되돌리기를 보입니다. */
+export async function instructElementAction(_previous: ElementInstructResult, form: FormData): Promise<ElementInstructResult> {
+  const portfolioId = form.get("portfolioId"), key = form.get("key"), label = form.get("label");
+  const instruction = form.get("instruction"), expectedRevision = Number(form.get("expectedRevision"));
+  if (typeof portfolioId !== "string" || typeof key !== "string" || typeof instruction !== "string" || !instruction.trim() || !Number.isInteger(expectedRevision))
+    return { error: "무엇을 고칠지 적어 주세요." };
+  const said = instruction.trim();
+  const target = typeof label === "string" ? label : key;
+  const session = await requireSession();
+  try {
+    const { data } = await page.instructElement(session.accessToken, portfolioId, key, { expectedRevision, instruction: said });
+    revalidatePath(`/edit/${portfolioId}`);
+    return { instruction: said, target, note: data.note, changes: data.changes, revision: data.page.revision };
+  } catch (error) {
+    return { instruction: said, target, error: pageMessage(error, "고치지 못했습니다. 다시 시도해 주세요.") };
+  }
+}
+
+/** 04 왼쪽 기록 목록에서 기록 하나를 지면의 새 사례로 더합니다. */
+export async function addRecordSectionAction(_previous: { error?: string; added?: string }, form: FormData): Promise<{ error?: string; added?: string }> {
+  const portfolioId = form.get("portfolioId"), recordId = form.get("recordId"), expectedRevision = Number(form.get("expectedRevision"));
+  if (typeof portfolioId !== "string" || typeof recordId !== "string" || !Number.isInteger(expectedRevision)) return { error: "더할 기록이 없습니다." };
+  const session = await requireSession();
+  try {
+    await page.addSection(session.accessToken, portfolioId, { expectedRevision, recordId });
+    revalidatePath(`/edit/${portfolioId}`);
+    return { added: recordId };
+  } catch (error) { return { error: pageMessage(error, "기록을 더하지 못했습니다. 다시 시도해 주세요.") }; }
 }
 
 export async function instructAction(

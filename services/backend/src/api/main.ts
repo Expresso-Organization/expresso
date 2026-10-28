@@ -35,7 +35,7 @@ import { PortfolioReadService } from "../modules/portfolios/index.js";
 import { LayoutService } from "../modules/layout/index.js";
 import { PublishingService } from "../modules/publishing/index.js";
 import { MediaService } from "../modules/media/index.js";
-import { PageService } from "../modules/page/index.js";
+import { PageElementEditor, PageService } from "../modules/page/index.js";
 import { PageStream } from "../modules/page/stream.js";
 import { AiPageGenerator } from "../modules/page/generator.js";
 import { StructuredPageGenerator } from "../modules/page/structured-generator.js";
@@ -116,6 +116,7 @@ const pageStream = new PageStream(createStreamRedis(config.redisUrl), {
 const pageService = new PageService(database, consentService, pageStream);
 // AI가 켜져 있을 때 모델이 내용·Spec 또는 HTML을 생성합니다.
 const pageGenerator = ai ? (config.pageGenerationFormat === "html" ? new AiPageGenerator(ai) : new StructuredPageGenerator(ai)) : null;
+const pageEditor = ai ? new PageElementEditor(ai) : null;
 const analyticsService = new AnalyticsService(database, {
   ...(config.analyticsVisitorSalt ? { visitorSalt: config.analyticsVisitorSalt } : {}),
   // 해설은 07에서 사용자가 누를 때만 쓴다. 없으면 숫자를 다시 읽어 주는 한 문장이 남는다.
@@ -188,6 +189,7 @@ const app = buildApi({
   pageService,
   pageStream,
   ...(pageGenerator ? { pageGenerator } : {}),
+  pageEditor,
   analyticsService,
   engagementService,
   accountLifecycleService,
