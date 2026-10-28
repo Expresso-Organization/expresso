@@ -30,8 +30,8 @@ date: 2026-10-28
 - [ ] 포인터는 첫 화면의 `pointermove`를 읽습니다. 스크롤과 연동하지 않습니다.
 
 **스크립트 허용 정책**
-- [ ] `page.ts`의 `pageDocumentPolicy(runtimeUrl)` 문자열 하나를 세 라우트(백엔드 `/document`, 웹 편집 미리보기, 웹 공개 문서)가 응답 헤더로 겁니다. 내용: `sandbox allow-scripts allow-popups`(allow-same-origin 없음), `script-src <런타임 절대 주소>`, `form-action 'none'`.
-- [ ] 공개 사이트 iframe은 `src="/site/<slug>/document"`와 `sandbox="allow-scripts allow-popups"`로 엽니다. 새 라우트가 배포 스냅샷 문서를 헤더와 함께 냅니다.
+- [ ] `page.ts`의 `pageDocumentPolicy(origin, scripts)` 문자열 하나를 세 라우트(백엔드 `/document`, 웹 편집 미리보기, 웹 공개 문서)가 응답 헤더로 겁니다. 내용: `sandbox allow-scripts allow-popups`(allow-same-origin 없음), `script-src <런타임 절대 주소> <scripts>`, `connect-src 'none'`, `form-action 'none'`.
+- [ ] 공개 사이트 iframe은 앱 주소에서 `src="/site/<slug>/document"`, 공개 주소(`{slug}.expresso.ai.kr`)에서 `src="/document"`와 `sandbox="allow-scripts allow-popups"`로 엽니다. 새 라우트가 배포 스냅샷 문서에 방문 추적 스크립트를 붙여 헤더와 함께 냅니다. 추적 스크립트 해시는 같은 헤더의 `script-src`에 들어가고, 문서 안 `<meta>` CSP는 두지 않습니다(헤더와 함께 걸려 런타임을 막음). 공개 주소에서는 런타임 출처도 그 주소입니다.
 - [ ] 모델 출력의 `<script>`는 소독기(`sanitizePage`)가 계속 지웁니다. 인라인 스크립트를 넣은 문서를 공개 라우트로 열면 실행되지 않습니다.
 
 **대비 · 검증**
