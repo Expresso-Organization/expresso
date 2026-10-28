@@ -216,6 +216,13 @@ const stageProps = {
   surface: z.enum(STRUCTURED_SURFACES).optional(),
   width: z.enum(STRUCTURED_WIDTHS).optional(),
 };
+/**
+ * 첫 화면 뒤에 까는 배경입니다. 키트가 CSS · SVG로 그리고 색은 디자인 토큰에서만 가져옵니다.
+ * grid=선 격자, dots=점 격자, stripes=사선 줄무늬, contour=등고선, rings=동심원 궤도, glow=아래에서 번지는 빛,
+ * aurora=두 색 빛이 천천히 흐르는 면. 옛 저장본에는 없고, 없으면 포스터 첫 화면은 stripes, 나머지는 none입니다.
+ */
+export const STRUCTURED_BACKDROPS = ["none", "grid", "dots", "stripes", "contour", "rings", "glow", "aurora"] as const;
+export type StructuredBackdrop = (typeof STRUCTURED_BACKDROPS)[number];
 /** 지면에 둘 수 있는 큰 인용(`PullQuote`)의 최대 개수입니다. */
 export const STRUCTURED_MAX_QUOTES = 2;
 const leaf =<T extends string, P extends z.ZodType>(type: T, props: P) =>
@@ -246,6 +253,8 @@ export const StructuredNodeSchema = z.union([
       sourceId: id.optional(),
       // 키트 경로의 첫 화면 구도입니다. media는 섹션 이미지가 있을 때만 그 구도로 그립니다.
       variant: z.enum(STRUCTURED_INTRO_ALL_VARIANTS).optional(),
+      // 첫 화면 배경입니다. 이 칸이 생기기 전 저장본에는 없습니다.
+      backdrop: z.enum(STRUCTURED_BACKDROPS).optional(),
     }),
   ),
   leaf(
@@ -449,6 +458,7 @@ export function structuredModelSchema(
             : archetype === "list"
               ? z.literal("sentence")
               : z.enum(hasMedia ? STRUCTURED_INTRO_VARIANTS : ["statement", "split"]),
+        backdrop: z.enum(STRUCTURED_BACKDROPS),
         ...(choices?.intro.length
           ? { sourceId: z.enum(choices.intro as [string, ...string[]]) }
           : {}),

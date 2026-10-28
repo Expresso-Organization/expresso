@@ -2,11 +2,13 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   DesignSystemSpecV2Schema,
+  STRUCTURED_BACKDROPS,
   type StructuredPortfolioContent,
 } from "@expresso/contracts";
 import { renderStructuredPortfolio } from "./renderer.js";
 import { retrievePageLibrary } from "./library.js";
 import { metricNumber } from "./kit.js";
+import { BACKDROP_CSS } from "./backdrop.js";
 import { KIT_CSS } from "./kit-styles.js";
 
 // 백엔드 기본 디자인(Clarity · Signal)의 스펙을 그대로 떠 둔 고정 자료입니다.
@@ -360,6 +362,50 @@ describe("시각 부품과 지면 변화", () => {
     const real = renderStructuredPortfolio(spec, rich, { design: clarity }).html;
     expect(real).toContain('data-bars="on"');
     expect(real).toContain("--w:30%");
+  });
+});
+
+describe("첫 화면 배경", () => {
+  const hero = (html: string) => html.slice(html.indexOf('<header id="intro"'), html.indexOf("</header>", html.indexOf('<header id="intro"')) + 9);
+
+  it("고른 배경을 첫 화면의 마지막 자식 층으로 그리고, none이면 층을 두지 않는다", () => {
+    for (const backdrop of STRUCTURED_BACKDROPS) {
+      const { html } = renderStructuredPortfolio(pageSpec({ variant: "statement", backdrop }), content, { design: clarity });
+      const head = hero(html);
+      if (backdrop === "none") {
+        expect(head).not.toContain("xp-backdrop");
+        expect(head).not.toContain("data-backdrop");
+        continue;
+      }
+      expect(head).toContain(`data-backdrop="${backdrop}"`);
+      expect(head).toMatch(/<div class="xp-backdrop" data-shape="[a-z]+" aria-hidden="true" data-bleed="">[\s\S]*<\/div><\/header>$/);
+      expect(html).not.toContain("<script");
+    }
+  });
+
+  it("다섯 구도 모두 배경을 그리고, 배경이 없는 옛 포스터는 사선 줄무늬다", () => {
+    for (const variant of ["statement", "split", "media", "sentence", "poster"])
+      expect(hero(renderStructuredPortfolio(pageSpec({ variant, backdrop: "rings" }), content, { design: clarity }).html)).toContain('data-shape="rings"');
+    expect(hero(renderStructuredPortfolio(pageSpec({ variant: "poster" }), content, { design: clarity }).html)).toContain('data-backdrop="stripes"');
+    expect(hero(renderStructuredPortfolio(pageSpec({ variant: "poster", backdrop: "none" }), content, { design: clarity }).html)).not.toContain("xp-backdrop");
+    expect(hero(renderStructuredPortfolio(pageSpec({ variant: "statement" }), content, { design: clarity }).html)).not.toContain("xp-backdrop");
+  });
+
+  it("배경 CSS는 새 색을 만들지 않고 디자인에서 계산한 잉크 변수만 쓴다", () => {
+    expect(BACKDROP_CSS).not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(|\b(?:black|white)\b/);
+    expect(BACKDROP_CSS).not.toMatch(/filter\s*:|backdrop-filter/);
+    const { css } = renderStructuredPortfolio(pageSpec({ variant: "statement", backdrop: "grid" }), content, { design: clarity });
+    expect(css).toMatch(/\.xp-hero\[data-backdrop-ink="line"\]\{--xp-bd-1:#[0-9a-f]{6};--xp-bd-2:#[0-9a-f]{6};color:#[0-9a-f]{6};--xp-muted:#[0-9a-f]{6}/);
+    // 옛 포스터 면의 줄무늬는 배경 층으로 옮겼습니다. 첫 화면 조상에 배경 이미지가 없어야 렌더 대비 검사가 글자를 잽니다.
+    expect(css).not.toContain("repeating-linear-gradient(-45deg,color-mix(in srgb,var(--xp-action-text)");
+  });
+
+  it("반복 모션은 움직임 줄이기를 고르지 않았고 모션 없음 지면이 아닐 때만 돈다", () => {
+    const [still, moving] = BACKDROP_CSS.split("@media (prefers-reduced-motion:no-preference){");
+    expect(still).not.toMatch(/animation:xp-bd-/);
+    const lines = moving!.split("\n").filter((line) => line.includes("animation:xp-bd-"));
+    expect(lines.length).toBeGreaterThanOrEqual(5);
+    for (const line of lines) expect(line.trim().startsWith('.xp-page:not([data-motion="none"])')).toBe(true);
   });
 });
 

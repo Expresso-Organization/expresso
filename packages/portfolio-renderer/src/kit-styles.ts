@@ -239,7 +239,7 @@ export const KIT_CSS = String.raw`
 
 /* 유형 — 포스터형. 첫 화면은 창 폭 전체를 행동색 면으로 채웁니다.
    본문 영역 바깥 폭(--xp-bleed, .xp-page에 정의)은 창 폭 단위로만 계산해, 면과 글자 띠가 같은 경계를 씁니다. */
-.xp-hero[data-variant="poster"]{position:relative;display:flex;flex-direction:column;gap:calc(var(--element-gap) * 1.1);min-height:min(92vh,980px);margin:calc(var(--xp-section) * -.7) calc(var(--xp-bleed) * -1) 0;padding:calc(var(--xp-section) * .5) var(--xp-bleed) 0;background-color:var(--action);background-image:repeating-linear-gradient(-45deg,color-mix(in srgb,var(--xp-action-text) 7%,transparent) 0 1px,transparent 1px 18px);color:var(--xp-action-text);overflow:hidden}
+.xp-hero[data-variant="poster"]{position:relative;display:flex;flex-direction:column;gap:calc(var(--element-gap) * 1.1);min-height:min(92vh,980px);margin:calc(var(--xp-section) * -.7) calc(var(--xp-bleed) * -1) 0;padding:calc(var(--xp-section) * .5) var(--xp-bleed) 0;background-color:var(--action);color:var(--xp-action-text);overflow:hidden}
 .xp-poster-role{font-family:var(--font-mono);font-size:var(--xp-small);letter-spacing:.08em;text-transform:uppercase}
 .xp-poster-name{font-family:var(--font-display);font-weight:var(--xp-weight);letter-spacing:calc(var(--xp-tracking) - .02em);line-height:.9;font-size:clamp(4.2rem,19vw,17rem)}
 /* 문서 기본 여백 초기화(.xp-page :is(h1 …))보다 우선해야 이름이 면의 아래쪽으로 내려갑니다. */

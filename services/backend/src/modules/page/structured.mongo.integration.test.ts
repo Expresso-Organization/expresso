@@ -136,6 +136,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
                 profile: { $state: "/profile" },
                 sections: { $state: "/sections" },
                 variant: "statement",
+                backdrop: "glow",
               },
               children: [],
             },

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import {
+  STRUCTURED_BACKDROPS,
   applyStructuredTextPatches,
   EditStructuredPageSchema,
   StructuredContentModelSchema,
@@ -260,7 +261,7 @@ describe("구조화 포트폴리오 계약", () => {
         root: "page",
         elements: {
           ...rest,
-          intro: { ...spec.elements.intro, props: { profile: { $state: "/profile" }, sections: { $state: "/sections" }, variant } },
+          intro: { ...spec.elements.intro, props: { profile: { $state: "/profile" }, sections: { $state: "/sections" }, variant, backdrop: "none" } },
           index: { type: "ProjectIndex", props: { sections: { $state: "/sections" }, variant: "rows" }, children: [] },
           "section-project-a": a,
           "section-project-b": b,
@@ -329,7 +330,7 @@ describe("포트폴리오 유형별 모델 스키마", () => {
     contact: null,
   };
   const page = (children: string[]) => ({ type: "PortfolioPage", props: { profile: { $state: "/profile" }, motion: "showcase", rationale: "근거" }, children });
-  const intro = (variant: string) => ({ type: "NameIntro", props: { profile: { $state: "/profile" }, sections: { $state: "/sections" }, variant }, children: [] });
+  const intro = (variant: string, backdrop: string | null = "grid") => ({ type: "NameIntro", props: { profile: { $state: "/profile" }, sections: { $state: "/sections" }, variant, ...(backdrop ? { backdrop } : {}) }, children: [] });
   const index = (variant: string) => ({ type: "ProjectIndex", props: { sections: { $state: "/sections" }, variant }, children: [] });
   const caseNode = (type: string) => ({ type, props: { section: { $state: "/sectionById/a" } }, children: [] });
   const schema = (archetype: "case-study" | "poster" | "list") => structuredModelSchema(value, { intro: [], section: [], guidance: [], archetype });
@@ -359,15 +360,40 @@ describe("포트폴리오 유형별 모델 스키마", () => {
     expect(schema("case-study").safeParse({ ...ok, elements: { ...ok.elements, "section-a": caseNode("CaseRow") } }).success).toBe(false);
   });
 
+  it("모델은 모든 유형에서 첫 화면 배경을 목록 안에서 하나 고른다", () => {
+    const ok = (archetype: "case-study" | "poster" | "list", backdrop: string | null) => {
+      const variant = archetype === "poster" ? "poster" : archetype === "list" ? "sentence" : "statement";
+      const children = archetype === "list" ? ["intro", "section-a"] : ["intro", "index", "section-a"];
+      return {
+        root: "page",
+        elements: {
+          page: page(children),
+          intro: intro(variant, backdrop),
+          ...(archetype === "list" ? {} : { index: index(archetype === "poster" ? "poster" : "rows") }),
+          "section-a": caseNode(archetype === "list" ? "CaseRow" : "CaseEssay"),
+        },
+      };
+    };
+    for (const archetype of ["case-study", "poster", "list"] as const) {
+      for (const backdrop of STRUCTURED_BACKDROPS) expect(schema(archetype).safeParse(ok(archetype, backdrop)).error?.issues ?? [], `${archetype} ${backdrop}`).toEqual([]);
+      expect(schema(archetype).safeParse(ok(archetype, null)).success, archetype).toBe(false);
+      expect(schema(archetype).safeParse(ok(archetype, "sparkles")).success, archetype).toBe(false);
+    }
+  });
+
   it("저장 계약은 유형 · 기간이 있는 새 판과 없는 옛 판을 모두 받는다", () => {
     const stored = (archetype?: string) => ({
       root: "page",
       elements: {
         page: { ...page(["intro", "section-a"]), props: { ...page([]).props, design: { layout: "library" }, ...(archetype ? { archetype } : {}) } },
-        intro: intro("sentence"),
+        intro: intro("sentence", backdrop),
         "section-a": caseNode("CaseRow"),
       },
     });
+    let backdrop: string | null = "dots";
+    expect(() => validateStructuredPortfolio(stored("list"), value)).not.toThrow();
+    // 첫 화면 배경 칸이 생기기 전 저장본입니다.
+    backdrop = null;
     expect(() => validateStructuredPortfolio(stored("list"), value)).not.toThrow();
     expect(() => validateStructuredPortfolio(stored(), value)).not.toThrow();
     const { period: _period, ...section } = value.sections[0]!;
