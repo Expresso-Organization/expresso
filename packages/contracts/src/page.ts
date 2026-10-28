@@ -473,6 +473,32 @@ export const GeneratedPageSchema = z.strictObject({
 });
 export type GeneratedPage = z.infer<typeof GeneratedPageSchema>;
 
+/** 요소 하나를 말로 고친 결과입니다. 새 판과 화면에 보일 「바뀐 곳」 목록입니다. */
+export const InstructStructuredElementResultSchema = z.strictObject({
+  page: GeneratedPageSchema,
+  changes: z.array(z.strictObject({ label: z.string(), before: z.string(), after: z.string() })),
+  note: z.string(),
+});
+export type InstructStructuredElementResult = z.infer<typeof InstructStructuredElementResultSchema>;
+
+/**
+ * 편집 화면이 고를 수 있는 디자인 값입니다. 글자 크기 단계 · 색 역할 · 서체 역할의 실제 값이라, 화면은 견본을 그리기만 하고
+ * 저장하는 값은 단계 이름 · 역할 이름입니다.
+ */
+export const PageEditorDesignSchema = z.strictObject({
+  steps: z.array(z.strictObject({ name: z.string(), size: z.string() })),
+  colors: z.strictObject({ text: z.string(), muted: z.string(), accent: z.string() }),
+  fonts: z.strictObject({ display: z.string(), body: z.string(), mono: z.string() }),
+});
+export type PageEditorDesign = z.infer<typeof PageEditorDesignSchema>;
+
+/** 편집 화면이 그릴 최신 판의 HTML · CSS입니다. 요소 키 표시가 있는 렌더 결과입니다. */
+export const PageEditableRenderSchema = z.strictObject({
+  revision: z.number().int().nonnegative(),
+  html: z.string(),
+  css: z.string(),
+});
+
 /**
  * 배포 순간 고정하는 자유 HTML 판.
  *

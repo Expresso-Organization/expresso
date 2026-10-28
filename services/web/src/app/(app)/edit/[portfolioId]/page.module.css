@@ -538,6 +538,8 @@
 }
 
 .freePagePreview {
+  /* 편집 미리보기에서 고른 요소의 테두리 색. 블록 지면의 .selected와 같은 값이다. */
+  --xp-selection: #4562ce;
   flex: 1;
   width: 100%;
   min-height: 0;
@@ -1418,12 +1420,6 @@
 
 /* ── 속성 탭 (04b) ────────────────────────────────────────── */
 
-.propertiesStack {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-}
-
 .properties {
   flex: 1;
   min-height: 0;
@@ -2280,4 +2276,94 @@
   .zoom {
     margin-left: auto;
   }
+}
+
+/* ── 구조화 지면 왼쪽 목록 (04) ───────────────────────────── */
+
+.leftTab {
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-muted);
+  padding: 4px 2px 5px;
+  border: none;
+  background: none;
+  white-space: nowrap;
+  transition: color var(--ex-motion-quick);
+}
+
+.leftTab:hover {
+  color: var(--ex-fg-body);
+}
+
+.leftTabOn {
+  font-weight: 600;
+  color: var(--ex-fg);
+  border-bottom: 1.5px solid var(--ex-fg);
+}
+
+.outlineNested {
+  padding-left: 24px;
+}
+
+.outlineText {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.outlineText .sectionTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.library {
+  display: grid;
+  gap: 14px;
+  padding: 0 4px;
+  overflow-y: auto;
+}
+
+.libraryGroup {
+  display: grid;
+  gap: 2px;
+}
+
+.libraryGroup .sectionsLabel {
+  padding: 0 10px 4px;
+}
+
+.libraryUsed .sectionTitle {
+  color: var(--ex-fg-subtle);
+}
+
+/* ── 구조화 지면 속성 (04b) ───────────────────────────────── */
+
+.propGroupPicked .propGroupLabel {
+  color: var(--ex-fg);
+}
+
+.propField {
+  display: grid;
+  gap: 5px;
+}
+
+.propField .propLabel {
+  width: auto;
+}
+
+.propActions {
+  display: flex;
+  gap: 8px;
+  position: sticky;
+  bottom: 0;
+  padding: 10px 0 2px;
+  background: var(--ex-bg);
+}
+
+.propActions .propSave {
+  flex: 1;
+}
+
+.inheritOn {
+  color: var(--ex-fg);
+  font-weight: 600;
 }
