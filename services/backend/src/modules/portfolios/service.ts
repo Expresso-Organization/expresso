@@ -44,7 +44,7 @@ export class PortfolioReadService {
     const pageChanged = deployment && latestPage
       ? deployment.generatedPageId
         ? deployment.generatedPageId !== latestPage._id
-        // 실린 판을 남기기 전(0023 이전)의 배포는 배포 뒤에 만든 판이 있는지로 봅니다.
+        // 실린 판을 남기기 전(0025 이전)의 배포는 배포 뒤에 만든 판이 있는지로 봅니다.
         : !!deployment.publishedAt && latestPage.createdAt > deployment.publishedAt
       : false;
     return {

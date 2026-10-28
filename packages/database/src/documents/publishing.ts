@@ -12,7 +12,7 @@ export interface DeploymentDoc {
   contactVisibility: "public" | "on_request" | "hidden";
   publishedAt?: Date | null;
   hasUnpublishedChanges: boolean;
-  /** 이 배포에 실린 지면 판입니다. 편집본과 공개본이 다른지 이 값으로 봅니다. 0023 이전 배포에는 없습니다. */
+  /** 이 배포에 실린 지면 판입니다. 편집본과 공개본이 다른지 이 값으로 봅니다. 0025 이전 배포에는 없습니다. */
   generatedPageId?: string | null;
   snapshot: JsonObject;
   seo: JsonObject;

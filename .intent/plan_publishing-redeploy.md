@@ -14,8 +14,8 @@ date: 2026-10-28
 
 | 파일 | 무엇을 |
 |---|---|
-| `packages/database/src/mongodb-migrations/0023/migration.ts` (새 파일) | 주소 채우기 · 인덱스 교체 |
-| `packages/database/src/mongo-migrations.ts` · `mongo-build.mjs` · `schema.test.ts` | 0023 등록 |
+| `packages/database/src/mongodb-migrations/0025/migration.ts` (새 파일) | 주소 채우기 · 인덱스 교체 |
+| `packages/database/src/mongo-migrations.ts` · `mongo-build.mjs` · `schema.test.ts` | 0025 등록 |
 | `packages/database/src/documents/generation.ts` · `publishing.ts` | `PortfolioDoc.publishedSlug` · `DeploymentDoc.generatedPageId` |
 | `services/backend/src/modules/publishing/service.ts` | `publish` · `rollback` · `getPublic` |
 | `services/backend/src/modules/publishing/mongodb.integration.test.ts` | 재배포 · 주소 소유 · 옛 주소 이동 · 되돌리기 테스트 |
@@ -30,18 +30,18 @@ date: 2026-10-28
 
 ```mermaid
 flowchart TD
-  A["1단계: 문서 타입 · 마이그레이션 0023<br/>database"]:::risk
+  A["1단계: 문서 타입 · 마이그레이션 0025<br/>database"]:::risk
   B["2단계: publish · rollback · getPublic<br/>publishing/service.ts"]
   C["3단계: 변경 여부 계산<br/>portfolios/service.ts"]
   D["4단계: 배포 화면 문구 · pattern<br/>deploy/page.tsx · DeployPanel.tsx"]
   E["5단계: 통합 테스트<br/>publishing · portfolios"]
-  F["6단계: 복사본 DB에 0023 · 화면 확인"]
+  F["6단계: 복사본 DB에 0025 · 화면 확인"]
   G["7단계: 검증<br/>typecheck · test · test:infra"]
   A --> B --> C --> D --> E --> F --> G
   classDef risk fill:#FCEBEB,stroke:#A32D2D,color:#501313
 ```
 
-1. 문서 타입과 0023 — `schema.test.ts`가 0023까지 적용된 목록을 확인한다. 두 번 돌려도 같은지 본다.
+1. 문서 타입과 0025 — `schema.test.ts`가 0025까지 적용된 목록을 확인한다. 두 번 돌려도 같은지 본다.
 2. 배포 서비스 — 같은 slug 재배포 · 다른 포트폴리오 409 · 경합 하나만 성공을 통합 테스트로 본다.
 3. 변경 여부 — 배포 직후 false, 새 판 뒤 true, 재배포 뒤 false, 옛 배포(판 id 없음)의 시각 비교를 본다.
 4. 배포 화면 — 문구와 콘솔 오류가 사라졌는지 화면에서 본다.
