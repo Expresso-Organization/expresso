@@ -8,6 +8,7 @@ import { useCallback, useState } from "react";
 import { useCareerEditorSession } from "../session/useCareerEditorSession";
 import styles from "./CareerDocumentEditor.module.css";
 import { SaveState } from "./SaveState";
+import { RevisionHistory } from "../history/RevisionHistory";
 import { PropertyList } from "../properties/PropertyList";
 import { AiProposalPanel, type AiPromptRequest } from "../ai/AiProposalPanel";
 
@@ -53,7 +54,7 @@ function BlockNoteDocumentEditor({
   const firstBlockId = document?.content[0]?.id;
   return (
     <section className={styles.editor} data-mode={mode} aria-label="커리어 문서 편집기">
-      {mode === "page" ? <div className={styles.pageState}><SaveState recordId={recordId} /></div> : null}
+      <div className={styles.topRow}>{mode === "page" ? <SaveState recordId={recordId} /> : null}<RevisionHistory recordId={recordId} /></div>
       {record && category ? <PropertyList record={record} definitions={category.propertySchemaV2} categoryId={category.id} /> : null}
       <div className={styles.content}>
         <BlockNoteBody yDocument={yDocument} userName="나" onAiRequest={showAiProposal || onAiRequest ? requestAi : undefined} onDocumentChange={publishDocument} onSelectionChange={setSelection} />

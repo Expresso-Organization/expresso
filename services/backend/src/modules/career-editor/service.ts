@@ -41,6 +41,9 @@ type Session = Parameters<CareerDocumentRepository["snapshot"]>[1];
 type UpdatePublisher = (recordId: string, updateBase64: string, serverSequence: number) => void;
 
 /** bodyMd를 편집기가 마지막으로 쓴 값인지 가리는 해시입니다. 다르면 편집기 밖에서 바뀐 것입니다. */
+const EDIT_REVISION_SUMMARY = "편집";
+const EDIT_REVISION_INTERVAL_MS = 10 * 60_000;
+
 export function bodyHash(bodyMd: string): string { return createHash("sha256").update(bodyMd).digest("hex"); }
 
 export interface CareerDocumentApi {
@@ -196,6 +199,27 @@ export class CareerDocumentService implements CareerDocumentApi {
     return { base64: Buffer.from(result.update).toString("base64"), sequence: nextVersion, result, snapshotId };
   }
 
+  /**
+   * 사용자 편집을 「편집」 이력으로 남깁니다. 마지막 「편집」 이력이 10분 안이면 남기지 않습니다.
+   * 이력의 스냅샷은 그 시점의 본문이라, 복원하면 그 시점으로 돌아갑니다.
+   */
+  async recordEditRevision(userId: string, recordId: string, now = new Date()): Promise<boolean> {
+    const last = (await this.repository.revisions(userId, recordId)).find((row) => row.summary === EDIT_REVISION_SUMMARY);
+    if (last && now.getTime() - last.createdAt.getTime() < EDIT_REVISION_INTERVAL_MS) return false;
+    return inTransaction(this.context, async (tx) => {
+      const record = await this.repository.record(userId, recordId, tx.session);
+      const snapshot = await this.repository.snapshot(recordId, tx.session);
+      if (!record || snapshot?.schemaVersion !== BLOCKNOTE_SCHEMA_VERSION) return false;
+      const { snapshotId } = await this.captureBlockNoteSnapshot(userId, recordId, tx.session);
+      const version = record.documentVersion ?? 0;
+      await this.repository.insertRevision({
+        _id: randomUUID(), userId, recordId, actor: "user", summary: EDIT_REVISION_SUMMARY,
+        beforeVersion: version, afterVersion: version, snapshotId, createdAt: now,
+      }, tx.session);
+      return true;
+    });
+  }
+
   /** 지금 문서 상태를 v2 스냅샷으로 남깁니다. AI 적용 전 상태처럼 나중에 되돌릴 지점에 씁니다. */
   async captureBlockNoteSnapshot(userId: string, recordId: string, session: Session): Promise<{ snapshotId: string; blocks: CareerBlockNoteBlock[] }> {
     const record = await this.repository.record(userId, recordId, session);
@@ -328,6 +352,8 @@ export class CareerDocumentService implements CareerDocumentApi {
     });
 
     this.scheduleBodyProjection(userId, input.recordId);
+    // 이력은 보조 기능이라 저장 응답을 기다리게 하지 않고, 실패해도 저장을 실패시키지 않습니다.
+    void this.recordEditRevision(userId, input.recordId).catch(() => undefined);
     if (this.enqueueCompaction) {
       const pending = await this.repository.updates(input.recordId);
       const byteLength = pending.reduce((total, update) => total + update.byteLength, 0);

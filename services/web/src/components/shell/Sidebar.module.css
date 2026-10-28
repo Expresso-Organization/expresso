@@ -166,6 +166,8 @@
   /* 글라이드 하이라이트(z-index 0) 위에 선다 */
   z-index: 1;
   width: 100%;
+  /* 묶음이 grid라 줄의 최소 내용 폭이 열을 늘린다. 긴 이름은 줄 안에서 말줄임한다 */
+  min-width: 0;
   display: flex;
   align-items: center;
   border-radius: 7px;
@@ -479,8 +481,28 @@
 }
 
 .addCategory {
+  border: 0;
   padding: 6px 8px;
+  background: transparent;
+  font: inherit;
+  text-align: left;
 }
+.addCategory:focus-visible { outline: none; box-shadow: var(--ex-focus-ring); }
+
+.addCategoryInput {
+  flex: 1;
+  min-width: 0;
+  margin-left: 7px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--ex-fg);
+  font: inherit;
+  font-size: var(--ex-text-sm);
+  outline: none;
+}
+.addCategoryInput::placeholder { color: var(--ex-fg-faint); }
+.addCategory[data-state="failed"] { box-shadow: inset 0 0 0 1px var(--ex-status-danger); }
 
 .addCategoryLabel {
   margin-left: 8px;

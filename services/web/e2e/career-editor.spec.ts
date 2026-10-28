@@ -27,6 +27,7 @@ test("creates, edits, reloads, reconnects and reviews AI changes across side pee
   await expect(block("callout")).toContainText("호출");
   await expect(editor.locator("hr")).toHaveCount(1);
   await expect(editor.locator("table")).toContainText("값");
+  await expect(block("evidence")).toContainText("근거");
 
   const title = page.getByRole("textbox", { name: "제목", exact: true });
   await title.fill("E2E 저장된 경험");
