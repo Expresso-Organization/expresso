@@ -2,6 +2,7 @@ import type { ErrorCode } from "@expresso/contracts";
 import type { FastifyInstance } from "fastify";
 
 import { safeErrorSummary } from "../platform/observability.js";
+import { WorkflowError } from "../modules/career-workflow/claim-review.js";
 
 function errorCodeForStatus(statusCode: number): ErrorCode {
   if (statusCode === 400) return "VALIDATION_ERROR";
@@ -56,19 +57,34 @@ export function registerErrorHandler(app: FastifyInstance): void {
       : 500;
     const code = errorCodeForStatus(statusCode);
 
+    // 작업 계획의 409 충돌 원인만 개발 환경 로그에 표시합니다.
+    if (
+      process.env.NODE_ENV !== "production" &&
+      statusCode === 409 &&
+      request.url.startsWith("/v1/agent/conversations/") &&
+      request.url.includes("/workflows")
+    ) {
+      request.log.warn(
+        {
+          requestId: request.id,
+          reason: errorValue.message,
+        },
+      " career workflow conflict",
+      );
+    }
+
     request.log.error(
       { requestId: request.id, error: safeErrorSummary(error) },
       "request failed",
     );
 
-    return reply.code(statusCode).send({
-      error: {
-        code,
-        message: publicMessageForStatus(statusCode),
-        requestId: request.id,
-        ...(errorValue.publicDetails
-          ? { details: errorValue.publicDetails }
-          : {}),
+  return reply.code(statusCode).send({
+    error: {
+      code,
+      message:
+      errorValue instanceof WorkflowError && statusCode < 500
+        ? errorValue.message
+        : publicMessageForStatus(statusCode),
       },
     });
   });

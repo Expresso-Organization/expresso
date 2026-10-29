@@ -1,3 +1,4 @@
+import { GroundingReviewError } from "../../platform/ai/grounding-review.js";
 import { createHash, randomUUID } from "node:crypto";
 
 import {
@@ -443,8 +444,8 @@ export class GenerationService {
   async #recordFailure(job: GenerationJobDoc, error: unknown) {
     const runToken = job.runToken;
     if (!runToken) return;
-    const retryable = !(error instanceof GenerationValidationError || error instanceof GenerationError || error instanceof SentenceWriterUnavailableError);
-    const code = error instanceof GenerationValidationError ? "EVIDENCE_INVALID" : error instanceof GenerationError ? "GENERATION_REJECTED" : error instanceof SentenceWriterUnavailableError ? "WRITER_UNAVAILABLE" : "PROVIDER_FAILED";
+    const retryable = !(error instanceof GenerationValidationError || error instanceof GroundingReviewError || error instanceof GenerationError || error instanceof SentenceWriterUnavailableError);
+    const code = error instanceof GenerationValidationError || error instanceof GroundingReviewError ? "EVIDENCE_INVALID" : error instanceof GenerationError ? "GENERATION_REJECTED" : error instanceof SentenceWriterUnavailableError ? "WRITER_UNAVAILABLE" : "PROVIDER_FAILED";
     await inTransaction(this.context, async (tx: MongoTransaction) => {
       const db = mongoCollections(tx.db); const options = { session: tx.session };
       await requireActiveUser(tx, job.userId);
