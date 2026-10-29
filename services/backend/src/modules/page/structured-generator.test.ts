@@ -12,8 +12,9 @@ import {
   type AiCallSpec,
 } from "../../platform/ai/client.js";
 import { runWithFixes, valueAt } from "../../platform/ai/fixes.js";
+import { ungroundedNumbers } from "../../platform/numbers.js";
 import { StructuredPageGenerator } from "./structured-generator.js";
-import { PageRenderError, type PageGenerationContext } from "./generator.js";
+import { PageRenderError, visibleText, type PageGenerationContext } from "./generator.js";
 import { findPortfolioDesign } from "../design-systems/index.js";
 import { describeArchetype, describeBackdrops, describeDesignLayout, designLayout, renderedContentValues, type RenderMeasurement } from "@expresso/portfolio-renderer";
 import type { PageMeasurer, PageMeasurement, PageScreenshot } from "../../platform/browser/page-measurer.js";
@@ -125,6 +126,18 @@ const context: PageGenerationContext = { userId: null,
   jobTitle: null,
   company: null,
 };
+describe("지면의 보이는 글", () => {
+  it("렌더러가 낸 따옴표 표기(&#x27;)의 숫자를 출처 없는 수치로 잡지 않는다", () => {
+    const html = "<p>&#x27;모아 UI&#x27; 디자인 시스템으로 화면 220개를 옮겼다</p>";
+    expect(visibleText(html)).toBe("'모아 UI' 디자인 시스템으로 화면 220개를 옮겼다");
+    expect(ungroundedNumbers(visibleText(html), "모아 UI로 화면 220개를 옮겼다")).toEqual([]);
+  });
+
+  it("태그를 지운 뒤에 푼다 — 글로 적힌 &lt;script&gt;는 글로 남는다", () => {
+    expect(visibleText("<p>&lt;script&gt; 태그를 막았다</p>")).toBe("<script> 태그를 막았다");
+  });
+});
+
 describe("모델 기반 구조화 생성", () => {
   it("선택 자료를 내용 계약으로 정리한 뒤 Spec 생성으로 이어간다", async () => {
     const ai = new Stub([modelContent, spec]);

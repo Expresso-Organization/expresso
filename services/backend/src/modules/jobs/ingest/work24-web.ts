@@ -1,5 +1,6 @@
 import type { JobSourceProvider } from "@expresso/contracts";
 
+import { decodeHtmlEntities } from "../../../platform/html/entities.js";
 import {
   createPacer, fetchText, htmlToMarkdown, mapWithLimit,
   type FetchResult, type FetchScope, type JobSourceAdapter,
@@ -117,12 +118,7 @@ export interface ListRow {
 function decode(value: string): string {
   let source = value;
   for (let pass = 0; pass < 3; pass += 1) {
-    const next = source
-      .replace(/&nbsp;/g, " ")
-      .replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-      .replace(/&quot;/g, '"').replace(/&#0?39;|&apos;/g, "'")
-      // `&amp;`는 마지막이다 — 먼저 풀면 `&amp;lt;`가 `<`까지 가 버린다.
-      .replace(/&amp;/g, "&");
+    const next = decodeHtmlEntities(source);
     if (next === source) break;
     source = next;
   }
