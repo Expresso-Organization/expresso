@@ -1,8 +1,8 @@
 import type { ErrorCode } from "@expresso/contracts";
 import type { FastifyInstance } from "fastify";
 
-import { safeErrorSummary } from "../platform/observability.js";
 import { WorkflowError } from "../modules/career-workflow/claim-review.js";
+import { safeErrorSummary } from "../platform/observability.js";
 
 function errorCodeForStatus(statusCode: number): ErrorCode {
   if (statusCode === 400) return "VALIDATION_ERROR";
@@ -30,6 +30,11 @@ function publicMessageForStatus(statusCode: number): string {
   return "Internal server error";
 }
 
+type RequestError = Error & {
+  statusCode?: number;
+  publicDetails?: Record<string, unknown>;
+};
+
 export function registerErrorHandler(app: FastifyInstance): void {
   app.setNotFoundHandler(async (request, reply) =>
     reply.code(404).send({
@@ -42,22 +47,22 @@ export function registerErrorHandler(app: FastifyInstance): void {
   );
 
   app.setErrorHandler(async (error, request, reply) => {
-    const errorValue: Error & {
-      statusCode?: number;
-      publicDetails?: Record<string, unknown>;
-    } = error instanceof Error
-      ? error as Error & {
-          statusCode?: number;
-          publicDetails?: Record<string, unknown>;
-        }
-      : new Error("Unknown request error");
+    const errorValue: RequestError =
+      error instanceof Error
+        ? (error as RequestError)
+        : new Error("Unknown request error");
+
     const candidateStatus = errorValue.statusCode ?? 500;
-    const statusCode = candidateStatus >= 400 && candidateStatus < 600
-      ? candidateStatus
-      : 500;
+    const statusCode =
+      Number.isInteger(candidateStatus) &&
+      candidateStatus >= 400 &&
+      candidateStatus < 600
+        ? candidateStatus
+        : 500;
+
     const code = errorCodeForStatus(statusCode);
 
-    // 작업 계획의 409 충돌 원인만 개발 환경 로그에 표시합니다.
+    // 작업 계획의 충돌 원인은 개발 환경에서만 추가로 기록합니다.
     if (
       process.env.NODE_ENV !== "production" &&
       statusCode === 409 &&
@@ -69,22 +74,31 @@ export function registerErrorHandler(app: FastifyInstance): void {
           requestId: request.id,
           reason: errorValue.message,
         },
-      " career workflow conflict",
+        "career workflow conflict",
       );
     }
 
     request.log.error(
-      { requestId: request.id, error: safeErrorSummary(error) },
+      {
+        requestId: request.id,
+        error: safeErrorSummary(error),
+      },
       "request failed",
     );
 
-  return reply.code(statusCode).send({
-    error: {
-      code,
-      message:
+    const message =
       errorValue instanceof WorkflowError && statusCode < 500
         ? errorValue.message
-        : publicMessageForStatus(statusCode),
+        : publicMessageForStatus(statusCode);
+
+    return reply.code(statusCode).send({
+      error: {
+        code,
+        message,
+        requestId: request.id,
+        ...(statusCode < 500 && errorValue.publicDetails
+          ? { details: errorValue.publicDetails }
+          : {}),
       },
     });
   });
