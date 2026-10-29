@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { UpdateTaskProgressSchema, PlanProposalInputSchema, PreparationTaskSchema, GapReviewDraftSchema, AgentRecordDraftDecisionSchema, AgentRecordDraftInputSchema, RequirementReviewDraftSchema } from "./agent-chat.js";
+import { UpdateTaskProgressSchema, PlanProposalInputSchema, PreparationTaskSchema, GapReviewDraftSchema, GapReviewSchema, AgentRecordDraftDecisionSchema, AgentRecordDraftInputSchema, RequirementReviewDraftSchema } from "./agent-chat.js";
 
 const jobPostingId = "00000000-0000-4000-8000-000000000001";
 const recordId = "00000000-0000-4000-8000-000000000002";
@@ -39,6 +39,12 @@ describe("보완점 정리", () => {
     const item = { requirementIndex: 0, type: "skill" as const, status: "needs_confirmation" as const, priority: "high" as const, explanation: "설명", suggestedAction: "확인", evidence: [] };
     expect(GapReviewDraftSchema.safeParse({ summary: "요약", items: [item] }).success).toBe(true);
     expect(GapReviewDraftSchema.safeParse({ summary: "요약", items: [{ ...item, requirementIndex: 12 }] }).success).toBe(false);
+  });
+  it("근거 기록 스냅샷이 없는 예전 보완점도 읽는다", () => {
+    const gap = { jobPostingId: recordId, summary: "요약", createdAt: "2026-10-15T00:00:00.000Z", items: [{ id: recordId, requirementIndex: 0, requirement: "요건", jobQuote: "인용", type: "skill", status: "needs_confirmation", priority: "high", explanation: "설명", suggestedAction: "확인", evidence: [] }] };
+    expect(GapReviewSchema.safeParse(gap).success).toBe(true);
+    expect(GapReviewSchema.safeParse({ ...gap, snapshot: { records: [{ recordId, textHash: "a".repeat(64) }] } }).success).toBe(true);
+    expect(GapReviewSchema.safeParse({ ...gap, snapshot: { records: [{ recordId, textHash: "짧음" }] } }).success).toBe(false);
   });
 });
 

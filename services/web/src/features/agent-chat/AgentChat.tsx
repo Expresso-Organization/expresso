@@ -85,7 +85,7 @@ const RecordTool: ToolCallMessagePartComponent = props => {
   const tool = state.conversation?.messages.flatMap(message => message.tools).find(tool => tool.id === props.toolCallId);
   const busy = state.pending || state.conversation?.run?.status === "running";
   if (tool?.review) return <RequirementReviewCard conversationId={state.id} toolId={tool.id} review={tool.review} />;
-  if (tool?.gapReview) return <GapReviewCard gapReview={tool.gapReview} />;
+  if (tool?.gapReview) return <GapReviewCard conversationId={state.id} toolId={tool.id} gapReview={tool.gapReview} />;
   if (tool?.recordDraft) { const draftId = tool.recordDraft.draftId; return <RecordDraftCard draft={tool.recordDraft} disabled={busy} onDecide={decision => state.decideDraft(draftId, decision)} />; }
   if (tool?.planDraft) {
     const { draftId, planId, status } = tool.planDraft;

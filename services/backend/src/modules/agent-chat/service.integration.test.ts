@@ -263,6 +263,52 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect(rejected[0]).toContain("요건 대조를 먼저 다시");
     await documents.undoAiProposal(userId, recordId, { recordId, proposalId: proposal.proposalId, expectedDocumentVersion: (await documents.getAiProposal(userId, recordId, proposal.proposalId)).appliedDocumentVersion! });
   });
+  it("보완점이 인용한 기록이나 바탕이 된 대조가 바뀌면 보완점도 다시 대조할 것을 알린다", async () => {
+    const jobId = randomUUID();
+    const jobs = { get: async () => ({ descriptionRaw: "자격 요건\n\n원래 본문을 다룬 경험" }) as never };
+    const category = (await career.listCategories(userId))[0]!;
+    const create = async (title: string, bodyMd: string) => (await career.createRecord(userId, randomUUID(), { categoryId: category.id, title, bodyMd, properties: {} })).record.id;
+    const cited = await create("보완점 근거 기록", "보완점에만 인용한 본문");
+    const unrelated = await create("관계없는 기록", "관계없는 본문");
+    const rewrite = async (id: string, text: string) => {
+      const current = await documents.bootstrap(userId, id);
+      const proposal = await documents.createPreparedAiProposal(userId, id, { prompt: "수정", selection: { blockIds: current.document.content.map(block => block.id) } }, { summary: "수정", commands: [{ type: "setText", blockId: current.document.content[0]!.id, text }], propertyChanges: [] });
+      await documents.applyAiProposal(userId, id, { recordId: id, proposalId: proposal.proposalId, expectedDocumentVersion: proposal.baseDocumentVersion, commandIndexes: [0], propertyChangeIndexes: [] });
+      return async () => documents.undoAiProposal(userId, id, { recordId: id, proposalId: proposal.proposalId, expectedDocumentVersion: (await documents.getAiProposal(userId, id, proposal.proposalId)).appliedDocumentVersion! });
+    };
+    let step = 0;
+    const service = new AgentChatService(fixture.resource, { run: async input => {
+      step += 1;
+      if (step === 1) {
+        const read = await input.records.read([recordId]);
+        const review = await input.review({ jobPostingId: jobId, summary: "요약", items: [{ requirement: "본문 경험", jobQuote: "원래 본문을 다룬 경험", kind: "must", assessment: "partial", explanation: "설명", recommendation: "", evidence: [{ recordId, quote: read[0]!.text.split("\n\n")[1]!.slice(0, 4) }] }] });
+        await input.emit({ type: "tool", tool: { id: randomUUID(), name: "요건 대조", status: "complete", summary: "", review } });
+        return;
+      }
+      const gapReview = await input.gapReview({ summary: "요약", items: [{ requirementIndex: 0, type: "experience", status: "needs_confirmation", priority: "high", explanation: "설명", suggestedAction: "확인", evidence: [{ sourceType: "record", sourceId: cited, quote: "보완점에만 인용한" }] }] });
+      await input.emit({ type: "tool", tool: { id: randomUUID(), name: "보완점 정리", status: "complete", summary: "", gapReview } });
+    } }, career, jobs, documents, consent, new AgentCredentials(fixture.resource));
+    services.push(service);
+    const row = await service.create(userId, [{ kind: "job", id: jobId }]);
+    const finish = async (text: string) => { await service.send(userId, row.id, { requestId: randomUUID(), text }); await expect.poll(async () => (await service.get(userId, row.id)).run?.status).toBe("complete"); };
+    await finish("대조해 줘");
+    await finish("보완점 정리해 줘");
+    const toolId = (await service.get(userId, row.id)).messages.at(-1)!.tools[0]!.id;
+    const fresh = { stale: false, changed: [] };
+    expect(await service.freshness(userId, row.id, toolId)).toEqual(fresh);
+    await expect(service.freshness(other, row.id, toolId)).rejects.toMatchObject({ statusCode: 404 });
+    await expect(service.freshness(userId, row.id, randomUUID())).rejects.toMatchObject({ statusCode: 404 });
+    const undoUnrelated = await rewrite(unrelated, "다른 본문");
+    expect(await service.freshness(userId, row.id, toolId)).toEqual(fresh);
+    await undoUnrelated();
+    const undoCited = await rewrite(cited, "다른 본문");
+    expect(await service.freshness(userId, row.id, toolId)).toEqual({ stale: true, changed: ["records"] });
+    await undoCited();
+    expect(await service.freshness(userId, row.id, toolId)).toEqual(fresh);
+    const undoBase = await rewrite(recordId, "다른 본문");
+    expect(await service.freshness(userId, row.id, toolId)).toEqual({ stale: true, changed: ["records"] });
+    await undoBase();
+  });
   it("보완점에서 고른 번호로 준비 계획 초안을 만들고, 승인하면 계획이 하나 생긴다", async () => {
     const jobId = randomUUID();
     const jobs = { get: async () => ({ descriptionRaw: "자격 요건\n\n원래 본문을 다룬 경험" }) as never };
