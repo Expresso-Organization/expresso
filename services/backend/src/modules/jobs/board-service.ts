@@ -126,7 +126,7 @@ export class JobBoardService implements JobBoardApi {
       descriptionRaw: posting.descriptionRaw, employmentType: posting.employmentType ?? null, salaryNote: posting.salaryNote ?? null, duties: posting.duties, preferred: posting.preferred.map((label) => ({ label, coverage: typeof label === "string" ? niceCoverage.get(label) ?? null : null })), hiringProcess: posting.hiringProcess.map((label) => ({ label })), processNote: posting.processNote ?? null, notice: posting.notice ?? null,
       requirements: JobRequirementsSchema.parse(posting.requirements),
       criteria: requirements.map((row) => ({ id: row._id, orderNo: row.orderNo, label: row.label, kind: row.kind, coverage: row.coverage?.coverage ?? null, coveredBy: (Array.isArray(row.coverage?.coveredBy) ? row.coverage.coveredBy : []).flatMap((id) => typeof id === "string" && titles.get(id) ? [{ id, title: titles.get(id)! }] : []), sourceSpan: row.sourceSpan })),
-      analysis: analysis ? { id: analysis._id, status: analysis.status, progressStage: analysis.progressStage, analyzedAt: analysis.analyzedAt?.toISOString() ?? null } : null, rank, topRecords,
+      analysis: analysis ? { id: analysis._id, status: analysis.status, progressStage: analysis.progressStage, failure: analysis.failureCode ? { code: analysis.failureCode, retryable: analysis.failureRetryable ?? false } : null, analyzedAt: analysis.analyzedAt?.toISOString() ?? null } : null, rank, topRecords,
     });
   }
 

@@ -300,6 +300,19 @@ export const JobAnalysisSummarySchema = z.strictObject({
     "done",
     "failed",
   ]),
+  /**
+   * 실패한 이유. 끝났거나 도는 중이면 null이다.
+   *
+   * `retryable`이 false인 실패(`EXTRACTOR_UNAVAILABLE` · `INVALID_SOURCE_SPAN`)는
+   * 같은 입력으로 다시 돌려도 같은 자리에서 멈춘다. 06c가 이 값으로 다시 시도
+   * 버튼을 그릴지 정한다. 모양은 `JobAnalysisStatusSchema.failure`와 같다.
+   */
+  failure: z
+    .strictObject({
+      code: z.string().min(1).max(100),
+      retryable: z.boolean(),
+    })
+    .nullable(),
   analyzedAt: TimestampSchema.nullable(),
 });
 

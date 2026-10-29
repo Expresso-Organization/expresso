@@ -15,34 +15,38 @@ import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { mendEmphasis } from "@/components/ui/mend-emphasis";
 import { StackChip, StackMarkdown } from "@/components/ui/StackMarkdown";
 import { findStacks, resolveStack } from "@/components/ui/stacks";
+import { CompareControl, type CompareView } from "./CompareControl";
 import { InterestButton } from "./InterestButton";
 import styles from "./page.module.css";
 
-/** §3.5 요건 충족 / 약함 / 없음은 아이콘이 고정 매핑이다. */
+/**
+ * §3.5 요건 충족 / 약함 / 없음은 아이콘이 고정 매핑이다.
+ *
+ * 판정은 이 아이콘 하나가 말한다. 행 지면색도 근거 줄 색도 두지 않는다 —
+ * 한 행에서 같은 판정을 색으로 세 번 되풀이하면 요건 글보다 색이 먼저 보인다.
+ *
+ * 자격 요건과 우대 사항이 이 표를 함께 본다.
+ */
 const COVERAGE = {
   covered: {
     icon: "check-circle",
     weight: "fill" as const,
     color: "var(--ex-status-success-text)",
     label: "있음",
-    row: "",
-    note: "",
   },
   partial: {
     icon: "warning-circle",
     weight: "fill" as const,
     color: "var(--ex-status-warning-text)",
     label: "약함",
-    row: styles.requirementPartial ?? "",
-    note: styles.requirementNotePartial ?? "",
   },
   missing: {
     icon: "circle-dashed",
     weight: "regular" as const,
-    color: "var(--ex-status-danger-text)",
+    // 기록에 없는 것은 잘못이 아니라 이 제품이 채우러 온 자리다. 위험색을 쓰지
+    // 않는다 — 기록이 하나도 없는 계정에서는 요건 전부가 이 판정이다.
+    color: "var(--ex-fg-subtle)",
     label: "없음",
-    row: styles.requirementMissing ?? "",
-    note: styles.requirementNoteMissing ?? "",
   },
 } as const;
 
@@ -75,15 +79,8 @@ export default async function JobDetailPage({
   // 사람마다 다르고, 대조 전이면 null이다.
   const musts = job.criteria.filter((item) => item.kind === "must");
   const coveredCount = musts.filter((item) => item.coverage === "covered").length;
-  const comparedCount = musts.filter((item) => item.coverage !== null).length;
   const haveStack = job.technologies.filter((tool) => tool.matched === true).length;
   const rows = facts(job);
-  // 뽑아 놓은 것이 하나라도 있나. 없으면 원문을 펴서 보여준다.
-  const hasStructure = job.duties.length > 0
-    || job.preferred.length > 0
-    || job.hiringProcess.length > 0
-    || musts.length > 0
-    || job.technologies.length > 0;
 
   return (
     // 머리의 채팅 버튼과 본문의 레일이 접힘 상태를 함께 본다.
@@ -196,11 +193,17 @@ export default async function JobDetailPage({
                     ),
                   )}
                 </div>
-                <div className={styles.stackNote}>
-                  {job.match
-                    ? `표시된 ${haveStack}개는 내 기록에 이미 있는 것입니다`
-                    : "아직 내 기록과 대조하지 않았습니다"}
-                </div>
+                {/*
+                  * 일치도를 낸 공고에서만 센다. 내지 않았으면 아무 말도 하지 않는다 —
+                  * `matched`가 전부 null이라 "표시된 0개"가 되고, 그건 사실이 아니다.
+                  * 일치도는 커리어 기록이 3건 미만이면 대조를 마쳐도 null이므로
+                  * 이 자리는 자격 요건의 대조 상태와 다른 것을 본다.
+                  */}
+                {job.match ? (
+                  <div className={styles.stackNote}>
+                    표시된 {haveStack}개는 내 기록에 이미 있는 것입니다
+                  </div>
+                ) : null}
               </div>
             ) : null}
 
@@ -210,11 +213,10 @@ export default async function JobDetailPage({
                   <span className={styles.blockTitle} style={{ marginBottom: 0 }}>
                     자격 요건
                   </span>
-                  <span className={styles.blockTitleNote}>
-                    {comparedCount === 0
-                      ? `${musts.length}개 · 아직 대조하지 않았습니다`
-                      : `${musts.length}개 중 ${coveredCount}개 충족`}
-                  </span>
+                  <CompareControl
+                    jobPostingId={job.id}
+                    view={compareView(job, musts.length, coveredCount)}
+                  />
                 </div>
                 {musts.map((requirement) => (
                   <RequirementRow key={requirement.id} requirement={requirement} />
@@ -284,25 +286,17 @@ export default async function JobDetailPage({
               * 아직 그 칸이 비어 있어서, 이게 없으면 3,883자짜리 공고를 열고도
               * **빈 화면**을 본다.
               *
-              * 뽑아 놓은 것이 있으면 접어 두고, 없으면 펴 둔다. 여기 온 사람이
-              * 하려던 일은 공고를 읽는 것이다.
+              * 뽑아 놓은 것이 있어도 접지 않는다. 그것은 원문의 일부만 옮긴
+              * 것이고, 회사 소개 · 복지 · 근무 조건은 원문에만 있다. 여기 온
+              * 사람이 하려던 일은 공고를 읽는 것이다.
               */}
             {job.descriptionRaw ? (
-              <details className={styles.rawSection} open={!hasStructure}>
-                <summary className={styles.rawSummary}>
-                  공고 원문
-                  <span className={styles.rawNote}>
-                    {hasStructure
-                      ? `${job.descriptionRaw.length.toLocaleString("ko-KR")}자`
-                      : "아직 요건을 뽑지 않아 원문 그대로 보여드립니다"}
-                  </span>
-                </summary>
-                {/* 글자 수는 원문의 것을 세고, 그리는 것만 편다 — 위의 `1,234자`가
-                    우리가 손댄 길이를 말하면 안 된다. */}
+              <div className={styles.rawSection}>
+                <div className={styles.rawTitle}>공고 원문</div>
                 <StackMarkdown className={styles.rawBody}>
                   {mendEmphasis(job.descriptionRaw)}
                 </StackMarkdown>
-              </details>
+              </div>
             ) : null}
 
             {job.company.brandColors.length > 0 || job.company.toneSummary || job.company.toneImpression ? (
@@ -357,11 +351,36 @@ export default async function JobDetailPage({
   );
 }
 
+/**
+ * 자격 요건 머리가 무엇을 가리킬지.
+ *
+ * **출처는 `job.analysis` 하나다.** 요건마다 붙은 `coverage`를 세어 판단하면,
+ * 추출기 버전이 올라가 커버리지가 없는 옛 요건 행이 섞였을 때 끝난 대조를
+ * 안 한 것으로 말하게 된다.
+ */
+function compareView(
+  job: JobPostingDetail,
+  total: number,
+  covered: number,
+): CompareView {
+  const analysis = job.analysis;
+  if (analysis === null) return { kind: "idle" };
+  if (analysis.status === "done") return { kind: "done", total, covered };
+  if (analysis.status === "failed") {
+    return {
+      kind: "failed",
+      code: analysis.failure?.code ?? "EXTRACTION_FAILED",
+      retryable: analysis.failure?.retryable ?? false,
+    };
+  }
+  return { kind: "running", stage: analysis.progressStage };
+}
+
 function RequirementRow({ requirement }: { requirement: JobRequirement }) {
-  // 대조한 적이 없으면 판정 색도 근거 줄도 붙이지 않는다.
+  // 대조한 적이 없으면 판정 아이콘을 붙이지 않는다.
   const state = requirement.coverage ? COVERAGE[requirement.coverage] : null;
   return (
-    <div className={`${styles.requirement} ${state?.row ?? ""}`}>
+    <div className={styles.requirement}>
       <Icon
         name={state?.icon ?? "circle"}
         weight={state?.weight ?? "regular"}
@@ -371,13 +390,17 @@ function RequirementRow({ requirement }: { requirement: JobRequirement }) {
       />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div className={styles.requirementLabel}>{requirement.label}</div>
-        <div className={`${styles.requirementNote} ${state?.note ?? ""}`}>
-          {state === null
-            ? "아직 내 기록과 대조하지 않았습니다"
-            : requirement.coveredBy.length > 0
-              ? requirement.coveredBy.map((record) => record.title).join(" · ")
-              : "기록에 없습니다 · 질문 3개로 채울 수 있습니다"}
-        </div>
+        {/*
+          * 이 줄은 근거를 적는 자리다. 덮는 기록이 있을 때만 만든다 — 전에는
+          * 근거가 없을 때 "기록에 없습니다 · 질문 3개로 채울 수 있습니다"가
+          * 들어가, 요건마다 같은 문장이 반복됐다. 없다는 것은 아이콘이 이미
+          * 말하고, 질문을 받는 동작은 오른쪽 레일이 가지고 있다.
+          */}
+        {requirement.coveredBy.length > 0 ? (
+          <div className={styles.requirementNote}>
+            {requirement.coveredBy.map((record) => record.title).join(" · ")}
+          </div>
+        ) : null}
       </div>
     </div>
   );

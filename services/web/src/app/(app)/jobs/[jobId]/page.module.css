@@ -152,6 +152,77 @@
   color: var(--ex-fg-muted);
 }
 
+/*
+ * 대조 상태가 쓰는 자리 — 자격 요건 라벨 바로 옆, 충족 수가 끝나고 서는 그 자리다.
+ * 네 상태가 같은 자리를 쓴다. 누를 것 · 진행 · 숫자 · 실패가 서로 다른 자리에
+ * 서면 상태가 바뀔 때마다 어디를 볼지 다시 찾아야 한다.
+ */
+.compareForm {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.compareButton {
+  border: 0;
+  border-radius: 999px;
+  padding: 5px 12px;
+  background: var(--ex-accent-surface);
+  color: var(--ex-accent-text);
+  font-size: var(--ex-text-xs);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.compareButton:hover {
+  background: var(--ex-accent-surface-hover);
+}
+
+.compareButton:focus-visible {
+  outline: 2px solid var(--ex-accent-soft);
+  outline-offset: 1px;
+}
+
+.compareButton:disabled {
+  cursor: progress;
+}
+
+.compareFailure {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-status-danger-text);
+}
+
+.compareError {
+  font-size: var(--ex-text-xs);
+  color: var(--ex-status-danger-text);
+}
+
+.compareProgress {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.compareTrack {
+  display: block;
+  width: 72px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--ex-border);
+  overflow: hidden;
+}
+
+.compareFill {
+  display: block;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--ex-accent-text);
+  transition: width 0.4s ease;
+}
+
 .dutyGroup {
   margin-bottom: 16px;
 }
@@ -230,32 +301,21 @@
   margin-bottom: 7px;
 }
 
-.requirementPartial {
-  background: var(--ex-status-warning-surface);
-}
-
-.requirementMissing {
-  background: var(--ex-status-danger-surface-deep);
-}
-
 .requirementLabel {
   font-size: var(--ex-text-sm);
   line-height: 1.65;
   color: var(--ex-fg);
-  margin-bottom: 5px;
 }
 
+/*
+ * 근거 줄 — 이 요건을 덮는 기록의 제목이다. 덮는 기록이 없으면 줄 자체가 없으므로
+ * 사이 여백은 요건 글이 아니라 이 줄이 든다. 색은 하나다. 그 줄이 담는 것은
+ * 기록 제목이라는 내용이지 판정이 아니고, 판정은 왼쪽 아이콘이 이미 말했다.
+ */
 .requirementNote {
   font-size: var(--ex-text-xs);
-  color: var(--ex-status-success-text);
-}
-
-.requirementNotePartial {
-  color: var(--ex-status-warning-text);
-}
-
-.requirementNoteMissing {
-  color: var(--ex-status-danger-text);
+  color: var(--ex-fg-muted);
+  margin-top: 5px;
 }
 
 .preferredList {
@@ -517,35 +577,10 @@
   padding-top: 18px;
 }
 
-.rawSummary {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
+.rawTitle {
   font-size: var(--ex-text-md);
   font-weight: 600;
   color: var(--ex-fg);
-  cursor: pointer;
-  list-style: none;
-}
-
-.rawSummary::-webkit-details-marker {
-  display: none;
-}
-
-.rawSummary::before {
-  content: "▸";
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-fg-muted);
-}
-
-.rawSection[open] .rawSummary::before {
-  content: "▾";
-}
-
-.rawNote {
-  font-size: var(--ex-text-xs);
-  font-weight: 400;
-  color: var(--ex-fg-muted);
 }
 
 .rawBody {

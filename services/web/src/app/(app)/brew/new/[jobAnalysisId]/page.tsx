@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { AppBody, AppHeader } from "@/components/shell/AppShell";
 import { WizardSteps } from "@/components/shell/WizardShell";
 import { Icon } from "@/components/ui/Icon";
+import { ANALYSIS_STAGE } from "@/lib/analysis-stage";
 import { ApiError } from "@/lib/api/client";
 import { jobAnalyses } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
@@ -13,15 +14,8 @@ import { AnalysisProgress } from "./AnalysisProgress";
 import { StartBrew } from "./StartBrew";
 import styles from "../page.module.css";
 
-/** 분석이 지나는 자리. `job_analysis.progress_stage`가 그대로 문장이 된다. */
-const STAGE = {
-  queued: "차례를 기다리는 중",
-  extracting: "요건을 뽑는 중",
-  validating: "원문과 맞춰 보는 중",
-  covering: "내 기록과 대조하는 중",
-  done: "분석 끝",
-  failed: "분석 실패",
-} as const;
+/** 분석이 지나는 자리. 06b 대조 컨트롤과 같은 말을 쓴다. */
+const STAGE = ANALYSIS_STAGE;
 
 /**
  * 공고를 읽는 동안 기다리는 자리.
