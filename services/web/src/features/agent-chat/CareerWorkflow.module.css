@@ -1,0 +1,8 @@
+.root { display: grid; gap: var(--ex-text-lg); padding: calc(var(--ex-text-lg) * 1.25); color: var(--ex-fg); background: var(--ex-bg); border: 1px solid var(--ex-border); }
+.root label, .card, .claim { display: grid; gap: calc(var(--ex-text-lg) / 2); }
+.card { border-top: 1px solid var(--ex-border); padding-block: var(--ex-text-lg); }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: calc(var(--ex-text-lg) * .75); }
+.option { display: flex !important; align-items: center; gap: calc(var(--ex-text-lg) / 2); }
+.source { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; }
+.root textarea, .root select { color: var(--ex-fg); background: var(--ex-bg); border: 1px solid var(--ex-border); padding: calc(var(--ex-text-lg) / 2); width: 100%; }
+.error { color: var(--ex-status-danger-text); }
