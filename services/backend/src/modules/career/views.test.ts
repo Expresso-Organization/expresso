@@ -77,6 +77,16 @@ describe("career saved view pipeline compiler", () => {
     expect(() => new CareerViewQuery().compile(category, view({ filter: { operator: "and", filters: [{ operator: "or", filters: leaves }, { operator: "or", filters: leaves }] } }))).toThrow(/filter limit/);
   });
 
+  it("ignores conditions whose value has not been chosen yet", () => {
+    const compiled = new CareerViewQuery().compile(category, view({ filter: { operator: "or", filters: [
+      { propertyId: ids.title, operator: "contains", operand: null },
+      { propertyId: ids.score, operator: "is_empty", operand: null },
+    ] } }));
+    const match = compiled.pipeline.find((stage) => "$match" in stage)?.$match as { $expr: { $or: unknown[] } };
+    expect(match.$expr.$or[0]).toEqual({ $eq: [1, 1] });
+    expect(JSON.stringify(match.$expr.$or[1])).toContain("$size");
+  });
+
   it("rejects operators and operands that do not match the property type", () => {
     expect(() => new CareerViewQuery().compile(category, view({ filter: { propertyId: ids.score, operator: "contains", operand: { type: "number", value: 1 } } }))).toThrow(/operator/);
     expect(() => new CareerViewQuery().compile(category, view({ filter: { propertyId: ids.score, operator: "eq", operand: { type: "text", value: "1" } } }))).toThrow(/operand type/);

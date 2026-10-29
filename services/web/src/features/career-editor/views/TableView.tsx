@@ -13,6 +13,7 @@ import { CareerTableCell, type TableCellValue } from "./CareerTableCell";
 import { PropertyHeaderMenu } from "./PropertyHeaderMenu";
 import type { CareerViewRendererProps } from "./view-types";
 import { displayValue, keyboardActivate, propertyKey, propertyName, rawValue } from "./view-types";
+import { EMPTY_GROUP } from "./view-logic";
 import styles from "./views.module.css";
 
 const SELECT_WIDTH = 96;
@@ -21,7 +22,6 @@ const PROPERTY_WIDTH = 160;
 const ROW_HEIGHT = 42;
 const WINDOW_ROWS = 22;
 const OVERSCAN = 5;
-const EMPTY_GROUP = "__empty__";
 
 interface TableGroup { key: string; label: string; records: CareerRecord[]; empty: boolean; optionOrder: number }
 type DropPlacement = "before" | "after";

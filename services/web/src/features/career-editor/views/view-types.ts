@@ -1,4 +1,4 @@
-import type { CareerCategory, CareerPropertyDefinitionV2, CareerPropertyValueV2, CareerRecord, CareerViewConfiguration } from "@expresso/contracts";
+import type { CareerCategory, CareerPropertyDefinitionV2, CareerPropertyValueV2, CareerRecord, CareerRecordStatus, CareerViewConfiguration } from "@expresso/contracts";
 
 export interface CareerViewRendererProps {
   records: readonly CareerRecord[];
@@ -16,6 +16,8 @@ export interface CareerViewRendererProps {
   onViewChange(next: CareerViewConfiguration): void;
   onCellCommit?(recordId: string, definition: CareerPropertyDefinitionV2, value: CareerPropertyValueV2 | null): Promise<void>;
   onCellRetry?(recordId: string, propertyId: string): void;
+  /** 상태는 속성 정의가 없는 기록 칸이라 셀 저장과 따로 둔다. 같은 기록 저장 순서를 따른다. */
+  onStatusChange?(recordId: string, status: CareerRecordStatus): Promise<void>;
   onDuplicateRecord?(recordId: string): Promise<CareerRecord | null>;
   onDeleteRecord?(recordId: string): Promise<void>;
   cellIssues?: ReadonlyMap<string, string>;

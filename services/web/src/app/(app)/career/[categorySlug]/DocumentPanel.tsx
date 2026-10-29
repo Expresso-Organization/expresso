@@ -1,13 +1,14 @@
 "use client";
 
-import type { CareerCategory, CareerRecordListItem } from "@expresso/contracts";
+import type { CareerCategory, CareerRecord, CareerRecordListItem } from "@expresso/contracts";
 import type { CSSProperties, KeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Icon } from "@/components/ui/Icon";
 import { CareerDocumentEditor } from "@/features/career-editor/editor/CareerDocumentEditor";
 import { SaveState } from "@/features/career-editor/editor/SaveState";
 import { AiProposalPanel, type AiPromptRequest } from "@/features/career-editor/ai/AiProposalPanel";
+import { CareerRecordSyncProvider } from "@/features/career-editor/properties/record-sync";
 import { useCareerEditorSession } from "@/features/career-editor/session/useCareerEditorSession";
 
 import styles from "./DocumentPanel.module.css";
@@ -22,6 +23,8 @@ export function DocumentPanel({
   onExpand,
   aiRequest,
   onAiRequestHandled,
+  onRecordChange,
+  onCategoryChange,
 }: {
   record: CareerRecordListItem | null;
   category: CareerCategory;
@@ -29,6 +32,9 @@ export function DocumentPanel({
   onExpand?: () => void;
   aiRequest?: AiPromptRequest | null | undefined;
   onAiRequestHandled?: (() => void) | undefined;
+  /** 패널에서 저장한 기록 · 카테고리를 뷰에 반영한다. */
+  onRecordChange?: ((record: CareerRecord) => void) | undefined;
+  onCategoryChange?: ((category: CareerCategory) => void) | undefined;
 }) {
   const [width, setWidth] = useState(DEFAULT_PANEL_WIDTH);
   const [visibleRecord, setVisibleRecord] = useState(record);
@@ -36,6 +42,7 @@ export function DocumentPanel({
   const [editorAiRequest, setEditorAiRequest] = useState<AiPromptRequest | null>(null);
   const drag = useRef<{ pointerId: number; startX: number; startWidth: number } | null>(null);
   const panelRecord = record ?? visibleRecord;
+  const sync = useMemo(() => ({ onRecordChange: (next: CareerRecord) => onRecordChange?.(next), onCategoryChange: (next: CareerCategory) => onCategoryChange?.(next) }), [onCategoryChange, onRecordChange]);
 
   useEffect(() => {
     if (record) setVisibleRecord(record);
@@ -133,7 +140,9 @@ export function DocumentPanel({
         <>
           <div className={styles.body}>
             <div className={styles.blocks}>
-              <CareerDocumentEditor key={panelRecord.id} recordId={panelRecord.id} mode="peek" record={panelRecord} category={category} showAiProposal={false} onAiRequest={setEditorAiRequest} />
+              <CareerRecordSyncProvider value={sync}>
+                <CareerDocumentEditor key={panelRecord.id} recordId={panelRecord.id} mode="peek" record={panelRecord} category={category} showAiProposal={false} onAiRequest={setEditorAiRequest} />
+              </CareerRecordSyncProvider>
             </div>
           </div>
 

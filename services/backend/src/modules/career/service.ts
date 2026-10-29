@@ -12,7 +12,7 @@ import { mapMongoCategory, requireCareerCategory } from "./mongo-categories.js";
 import { careerRequestHash, listMongoRecords, mapMongoRecord } from "./mongo-records.js";
 import type { CareerApi } from "./index.js";
 import type { RecomputeCareerSkill } from "@expresso/contracts";
-import { createMongoLink, listMongoLinks, mongoDeleteImpact, trashMongoRecord, restoreMongoRecord } from "./mongo-links.js";
+import { createMongoLink, listMongoLinks, mongoDeleteImpact, trashMongoRecord, restoreMongoRecord, listTrashedMongoRecords } from "./mongo-links.js";
 import { recomputeMongoSkill, listMongoSkills, listMongoSkillEvidence } from "./mongo-skills.js";
 import { MongoCareerDocumentRepository, hashUpdate } from "../career-editor/repository.js";
 import { Binary } from "mongodb";
@@ -53,6 +53,7 @@ export class CareerService implements CareerApi {
   getDeleteImpact(userId: string, recordId: string, at = new Date()) { return mongoDeleteImpact(this.context, userId, recordId, at); }
   trashRecord(userId: string, recordId: string, at = new Date()) { return trashMongoRecord(this.context, userId, recordId, at); }
   restoreRecord(userId: string, recordId: string, at = new Date()) { return restoreMongoRecord(this.context, userId, recordId, at); }
+  listTrashedRecords(userId: string, categoryId: string, at = new Date()) { return listTrashedMongoRecords(this.context, userId, categoryId, at); }
   recomputeSkill(userId: string, input: RecomputeCareerSkill, computedAt = new Date()) { return recomputeMongoSkill(this.context, userId, input, computedAt); }
   listSkills(userId: string) { return listMongoSkills(this.context, userId); }
   listSkillEvidence(userId: string, skillId: string) { return listMongoSkillEvidence(this.context, userId, skillId); }
