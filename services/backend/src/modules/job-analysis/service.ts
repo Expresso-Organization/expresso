@@ -7,6 +7,7 @@ import { inTransaction } from "../../platform/mongo-transaction.js";
 import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { requireActiveUser } from "../identity/index.js";
 import { assertActiveRecordsForWrite, careerRecordTextReader } from "../career/index.js";
+import { AiError } from "../../platform/ai/client.js";
 import { calculateExplainableMatch } from "../jobs/index.js";
 import type { JobAnalysisApi } from "./index.js";
 import { JobAnalysisNotFoundError } from "./public.js";
@@ -15,8 +16,15 @@ import { RequirementExtractorUnavailableError, type RequirementExtractor } from 
 import { AnalysisEvidenceError, validateExtractionSource } from "./source-span.js";
 
 const EXTRACTOR_VERSION = 2;
-const failureOf = (error: unknown) => error instanceof AnalysisEvidenceError ? { code: "INVALID_SOURCE_SPAN", retryable: false }
-  : error instanceof RequirementExtractorUnavailableError ? { code: "EXTRACTOR_UNAVAILABLE", retryable: false } : { code: "EXTRACTION_FAILED", retryable: true };
+/**
+ * 분석이 멈춘 이유와 다시 시도해도 되는지.
+ *
+ * AI 호출 오류는 어댑터가 알린 코드와 `retryable`을 그대로 남긴다 — 타임아웃 · 레이트 리밋 · 출력 오류 · 사용 불가를
+ * 하나로 합치면 화면과 기록만 보고는 설정 오류인지 일시 장애인지 알 수 없다(브루 작업의 `brew-jobs.ts`와 같은 기준).
+ */
+export const failureOf = (error: unknown) => error instanceof AnalysisEvidenceError ? { code: "INVALID_SOURCE_SPAN", retryable: false }
+  : error instanceof RequirementExtractorUnavailableError ? { code: "EXTRACTOR_UNAVAILABLE", retryable: false }
+    : error instanceof AiError ? { code: error.code, retryable: error.retryable } : { code: "EXTRACTION_FAILED", retryable: true };
 
 export class JobAnalysisService implements JobAnalysisApi {
   constructor(readonly context: MongoContext) {}
