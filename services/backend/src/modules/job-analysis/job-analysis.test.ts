@@ -5,9 +5,11 @@ import { describe, expect, it } from "vitest";
 import type { ExtractedRequirement } from "@expresso/contracts";
 import type { z } from "zod";
 
-import type { AiCallOptions, AiCallSpec, AiClient, AiResult } from "../../platform/ai/client.js";
+import { AiError, type AiCallOptions, type AiCallSpec, type AiClient, type AiResult } from "../../platform/ai/client.js";
 import { AiRequirementExtractor } from "./ai-extractor.js";
 import { calculateRequirementCoverage } from "./coverage.js";
+import { RequirementExtractorUnavailableError } from "./extractor.js";
+import { failureOf } from "./service.js";
 import {
   AnalysisEvidenceError,
   codePointSlice,
@@ -139,5 +141,30 @@ describe("AiRequirementExtractor", () => {
     });
     await expect(new AiRequirementExtractor(ai).extract(source, null)).rejects.toThrow(AnalysisEvidenceError);
     expect(ai.calls).toHaveLength(1);
+  });
+});
+
+describe("failureOf", () => {
+  it("AI 호출 오류는 어댑터가 알린 코드와 재시도 가능 여부를 그대로 남긴다", () => {
+    expect(failureOf(new AiError("AI_TIMEOUT", "job_analysis", "timeout", { retryable: true })))
+      .toEqual({ code: "AI_TIMEOUT", retryable: true });
+    expect(failureOf(new AiError("AI_RATE_LIMITED", "job_analysis", "limit", { retryable: false })))
+      .toEqual({ code: "AI_RATE_LIMITED", retryable: false });
+    expect(failureOf(new AiError("AI_INVALID_OUTPUT", "job_analysis", "shape", { retryable: false })))
+      .toEqual({ code: "AI_INVALID_OUTPUT", retryable: false });
+    expect(failureOf(new AiError("AI_UNAVAILABLE", "job_analysis", "400 invalid_json_schema", { retryable: false })))
+      .toEqual({ code: "AI_UNAVAILABLE", retryable: false });
+  });
+
+  it("원문 근거 불일치와 추출기 없음은 AI 오류와 따로 남긴다", () => {
+    expect(failureOf(new AnalysisEvidenceError("근거가 원문에 없습니다")))
+      .toEqual({ code: "INVALID_SOURCE_SPAN", retryable: false });
+    expect(failureOf(new RequirementExtractorUnavailableError()))
+      .toEqual({ code: "EXTRACTOR_UNAVAILABLE", retryable: false });
+  });
+
+  it("그 밖의 예외는 EXTRACTION_FAILED로 남기고 재시도를 허용한다", () => {
+    expect(failureOf(new Error("connection reset")))
+      .toEqual({ code: "EXTRACTION_FAILED", retryable: true });
   });
 });
