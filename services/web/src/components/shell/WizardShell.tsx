@@ -119,10 +119,13 @@ export function WizardSteps({
         return (
           <span key={step.key} style={{ display: "contents" }}>
             {index > 0 ? <span className={styles.connector} aria-hidden="true" /> : null}
-            {/* 완료 단계만 클릭으로 되돌아갈 수 있다. 미래 단계는 비활성. */}
+            {/*
+              완료 단계만 클릭으로 되돌아갈 수 있다. 미래 단계는 비활성.
+              디자인 선택은 끝난 생성을 다듬기로 되돌려 보내므로 `again=1`로 카탈로그를 연다.
+            */}
             {done && brewId ? (
               <Link
-                href={`/brew/${brewId}/${step.segment}` as Route}
+                href={`/brew/${brewId}/${step.segment}${step.key === "design" ? "?again=1" : ""}` as Route}
                 className={className}
               >
                 {mark}
