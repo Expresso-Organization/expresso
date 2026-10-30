@@ -20,13 +20,14 @@ function fallbackTitle(transcript: string) {
 export async function refreshMongoInterviewProgress(tx: MongoTransaction, userId: string, sessionId: string) {
   const db = mongoCollections(tx.db); const options = { session: tx.session };
   const questions = await db.questions.find({ userId, interviewSessionId: sessionId, active: true }, options).sort({ orderNo: 1, _id: 1 }).toArray();
-  const answers = await db.answers.find({ userId, questionId: { $in: questions.map(({ _id }) => _id) } }, options).project<{ questionId: string }>({ questionId: 1 }).toArray();
+  const answers = await db.answers.find({ userId, writerPending: { $ne: true }, questionId: { $in: questions.map(({ _id }) => _id) } }, options).project<{ questionId: string }>({ questionId: 1 }).toArray();
   const answered = new Set(answers.map(({ questionId }) => questionId));
   const next = questions.find((question) => !question.skipped && !answered.has(question._id));
   const finished = questions.every((question) => question.skipped || answered.has(question._id));
+  const currentSession = await db.interviewSessions.findOne({ _id: sessionId, userId }, options);
   await db.interviewSessions.updateOne(
     { _id: sessionId, userId },
-    { $set: { answeredCount: answered.size, currentOrder: next?.orderNo ?? questions.length, ...(finished ? { status: "done" as const } : {}), updatedAt: new Date() }, $inc: { version: 1 } },
+    { $set: { answeredCount: answered.size, currentOrder: next?.orderNo ?? questions.length, status: finished ? "done" as const : currentSession?.status === "paused" ? "paused" as const : "open" as const, updatedAt: new Date() }, $inc: { version: 1 } },
     options,
   );
 }
@@ -38,13 +39,16 @@ export async function getMongoAnswerResult(context: MongoContext, userId: string
     db.answerRecordChanges.findOne({ userId, answerId }),
     db.interviewSessions.findOne({ _id: sessionId, userId }),
   ]);
+  if (answer?.writerPending) throw new InterviewError(409, "answer operation is pending");
   if (!answer || !change || !session || !answer.createdRecordId) throw new InterviewError(404, "answer not found");
   const question = await db.questions.findOne({ _id: answer.questionId, userId, interviewSessionId: sessionId });
   if (!question) throw new InterviewError(404, "answer not found");
+  const activeQuestions = await db.questions.find({ userId, interviewSessionId: sessionId, active: true }).project<{ _id: string }>({ _id: 1 }).toArray();
+  const completedCount = await db.answers.countDocuments({ userId, writerPending: { $ne: true }, questionId: { $in: activeQuestions.map(row => row._id) } });
   return InterviewAnswerResultSchema.parse({
     answer: { id: answer._id, questionId: answer.questionId, inputType: answer.inputType, transcript: answer.transcript, createdRecordId: answer.createdRecordId, version: answer.version, updatedAt: answer.updatedAt.toISOString() },
     recordChange: { type: change.changeType, recordId: change.recordId, changedFields: change.changedFields, sourceQuote: change.sourceQuote },
-    progress: { answered: session.answeredCount, total: session.questionCount },
+    progress: { answered: completedCount, total: session.questionCount },
   });
 }
 

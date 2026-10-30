@@ -7,6 +7,7 @@ import { inTransaction, type MongoTransaction } from "../../platform/mongo-trans
 import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { requireActiveUser } from "../identity/index.js";
 import { careerRecordTextReader } from "../career/index.js";
+import type { CanonicalCareerReadService } from "../career/index.js";
 import { JobMarketError } from "./errors.js";
 import type { JobMarketApi } from "./index.js";
 import { calculateExplainableMatch } from "./match-score.js";
@@ -30,6 +31,7 @@ export class JobMarketService implements JobMarketApi {
     readonly context: MongoContext,
     interpreter?: SearchInterpreter | null,
     readonly consent: ConsentApi | null = null,
+    readonly careerReads?: CanonicalCareerReadService,
   ) {
     this.interpreter = interpreter ?? new NullSearchInterpreter();
     // AI가 꺼져 있으면(interpreter가 안 주어지면) 동의를 묻지 않는다 — 아무것도 밖으로 안 나간다.
@@ -142,7 +144,9 @@ export class JobMarketService implements JobMarketApi {
       if (!posting) throw new JobMarketError(404, "job posting not found");
       const records = await db.careerRecords.find({ userId, deletedAt: null }, options).sort({ _id: 1 }).toArray();
       if (records.length < 3) throw new JobMarketError(409, "more career records are required", { required: 3, actual: records.length });
-      const match = calculateExplainableMatch(jobPostingId, JobRequirementsSchema.parse(posting.requirements), records.map(await careerRecordTextReader(tx.db, userId, tx.session)).join("\n"), at);
+      const recordText = await careerRecordTextReader(tx.db, userId, tx.session);
+      const recordTexts = await Promise.all(records.map((record) => this.careerReads ? this.careerReads.searchableRecordText(record,tx.session) : recordText(record)));
+      const match = calculateExplainableMatch(jobPostingId, JobRequirementsSchema.parse(posting.requirements), recordTexts.join("\n"), at);
       if (!match) throw new JobMarketError(409, "job posting requirements are not extracted yet", { jobPostingId });
       await db.matchScores.updateOne({ userId, jobPostingId }, { $set: { total: Decimal128.fromString(String(match.total)), axes: match.axes, reasonText: match.reason, nextAction: match.nextAction, computedAt: at }, $setOnInsert: { _id: randomUUID(), userId, jobPostingId } }, { ...options, upsert: true });
       return ExplainableMatchSchema.parse(match);

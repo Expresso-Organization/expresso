@@ -7,13 +7,14 @@ import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction } from "../../platform/mongo-transaction.js";
 import { AccountLifecycleError } from "./public.js";
 import { purgePhase } from "./mongo-purge.js";
+import type { CanonicalCareerReadService } from "../career/index.js";
 
 const tokenHash = (value: string) => createHash("sha256").update(value).digest("hex");
 const iso = (value: Date) => value.toISOString();
 function row(value: Record<string, unknown>) { return Object.fromEntries(Object.entries(value).map(([key, item]) => [key === "_id" ? "id" : key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`), item])); }
 
 export class AccountLifecycleService {
-  constructor(readonly context: MongoContext) {}
+  constructor(readonly context: MongoContext, readonly careerReads?: CanonicalCareerReadService) {}
 
   async exportData(userId: string, at = new Date()) {
     const db = mongoCollections(this.context.db); const account = await db.users.findOne({ _id: userId });
@@ -24,7 +25,9 @@ export class AccountLifecycleService {
       db.brews.find({ userId }).sort({ _id: 1 }).toArray(), db.recipes.find({ userId }).sort({ _id: 1 }).toArray(), db.portfolios.find({ userId }).sort({ _id: 1 }).toArray(),
       db.deployments.find({ userId }).sort({ portfolioId: 1, version: 1 }).toArray(), db.exportAssets.find({ userId }).sort({ createdAt: 1, _id: 1 }).toArray(), db.metricsDaily.find({ userId }).sort({ date: 1, metricKey: 1 }).toArray(), db.insights.find({ userId }).sort({ generatedAt: 1, _id: 1 }).toArray(),
     ]);
-    return AccountExportSchema.parse(JSON.parse(JSON.stringify({ schemaVersion: 1, generatedAt: at.toISOString(), account: row(account), career: { categories: categories.map(row), records: records.map(row), skills: skills.map(row) }, jobs: { analyses: analyses.map(row), savedSearches: savedSearches.map(row), interests: interests.map(row) }, brewing: { brews: brews.map(row), recipes: recipes.map(row) }, publishing: { portfolios: portfolios.map(row), deployments: deployments.map(row), assets: assets.map(row) }, analytics: { metrics: metrics.map(row), insights: insights.map(row) } })));
+    const exportCategories=this.careerReads?await Promise.all(categories.map(async category=>({...category,propertySchemaV2:await this.careerReads!.definitions(userId,category)}))):categories;
+    const exportRecords=this.careerReads?await Promise.all(records.map(async record=>{const canonical=await this.careerReads!.mapRecord(record);return {...record,properties:canonical.properties,propertyValues:canonical.propertyValues,bodyMd:canonical.bodyMd};})):records;
+    return AccountExportSchema.parse(JSON.parse(JSON.stringify({ schemaVersion: 1, generatedAt: at.toISOString(), account: row(account), career: { categories: exportCategories.map(row), records: exportRecords.map(row), skills: skills.map(row) }, jobs: { analyses: analyses.map(row), savedSearches: savedSearches.map(row), interests: interests.map(row) }, brewing: { brews: brews.map(row), recipes: recipes.map(row) }, publishing: { portfolios: portfolios.map(row), deployments: deployments.map(row), assets: assets.map(row) }, analytics: { metrics: metrics.map(row), insights: insights.map(row) } })));
   }
 
   async requestDeletion(userId: string, at = new Date()) {

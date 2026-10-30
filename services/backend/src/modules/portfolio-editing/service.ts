@@ -7,7 +7,7 @@ import type { z } from "zod";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction, type MongoTransaction } from "../../platform/mongo-transaction.js";
 import { deleteSnapshotPayload, readSnapshot, snapshotRefFromStored, writeSnapshot } from "../../platform/snapshot-payload.js";
-import { assertActiveRecordsForWrite } from "../career/index.js";
+import { assertActiveRecordsForWrite, type CanonicalCareerReadService } from "../career/index.js";
 import type { ConsentApi } from "../consent/index.js";
 import { requireActiveUser } from "../identity/index.js";
 import { applyPatches, blockFields, BlockEditError, EDITABLE_PATHS, type BlockEditor, type EditContext } from "./editor.js";
@@ -29,7 +29,7 @@ function mapProposal(row: PortfolioEditProposalDoc) {
 
 export class PortfolioEditingService {
   readonly #editor: BlockEditor | null; readonly #consent: ConsentApi | null;
-  constructor(readonly context: MongoContext, editor?: BlockEditor | null, consent?: ConsentApi | null) { this.#editor = editor ?? null; this.#consent = consent ?? null; }
+  constructor(readonly context: MongoContext, editor?: BlockEditor | null, consent?: ConsentApi | null, readonly careerReads?: CanonicalCareerReadService) { this.#editor = editor ?? null; this.#consent = consent ?? null; }
 
   async #ownedBlock(context: MongoContext | MongoTransaction, userId: string, portfolioId: string, blockId: string) {
     const options = "session" in context ? { session: context.session } : {};
@@ -59,7 +59,8 @@ export class PortfolioEditingService {
     } else {
       const record = await mongoCollections(this.context.db).careerRecords.findOne({ _id: command.recordId, userId, deletedAt: null });
       if (!record) throw new PortfolioEditingError(404, "source record not found");
-      sourceRecordId = record._id; after = { ...after, content: { ...block.content, text: record.bodyMd }, sourceRecordId, syncState: "synced", locked: true };
+      const sourceText = this.careerReads ? (await this.careerReads.mapRecord(record)).bodyMd : record.bodyMd;
+      sourceRecordId = record._id; after = { ...after, content: { ...block.content, text: sourceText }, sourceRecordId, syncState: "synced", locked: true };
     }
     const proposal = await inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId); const current = await this.#ownedBlock(tx, userId, portfolioId, blockId);
@@ -80,7 +81,8 @@ export class PortfolioEditingService {
     const db = mongoCollections(this.context.db); const section = await db.portfolioSections.findOne({ _id: block.portfolioSectionId, userId });
     const recipeSection = section?.recipeSectionId ? await db.recipeSections.findOne({ _id: section.recipeSectionId, userId }) : null;
     const record = block.sourceRecordId ? await db.careerRecords.findOne({ _id: block.sourceRecordId, userId }) : null;
-    const editContext: EditContext = { userId, instruction, block: { kind: block.kind, fields: blockFields(block.kind, block.content) }, section: recipeSection ? { title: recipeSection.title, purpose: recipeSection.purpose, goal: typeof recipeSection.context.goal === "string" ? recipeSection.context.goal : "", tone: typeof recipeSection.context.tone === "string" ? recipeSection.context.tone : "", exclude: Array.isArray(recipeSection.context.exclude) ? recipeSection.context.exclude.filter((v): v is string => typeof v === "string") : [] } : null, sourceText: record?.bodyMd ?? "" };
+    const sourceText = record ? this.careerReads ? (await this.careerReads.mapRecord(record)).bodyMd : record.bodyMd : "";
+    const editContext: EditContext = { userId, instruction, block: { kind: block.kind, fields: blockFields(block.kind, block.content) }, section: recipeSection ? { title: recipeSection.title, purpose: recipeSection.purpose, goal: typeof recipeSection.context.goal === "string" ? recipeSection.context.goal : "", tone: typeof recipeSection.context.tone === "string" ? recipeSection.context.tone : "", exclude: Array.isArray(recipeSection.context.exclude) ? recipeSection.context.exclude.filter((v): v is string => typeof v === "string") : [] } : null, sourceText };
     try { return await this.#editor!.edit(editContext); } catch (error) { if (error instanceof BlockEditError) throw new PortfolioEditingError(422, error.message); throw error; }
   }
 
