@@ -18,7 +18,7 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
 
   it("creates every product collection and preserves the seeded IDs and all 30 additional designs", async () => {
     const names = (await mongo.listCollections({}, { nameOnly: true }).toArray()).map(item => item.name);
-    expect(names).toHaveLength(88);
+    expect(names).toHaveLength(95);
     expect(names).toContain("ai_usage_events");
     expect(names).toContain("admin_audit_events");
     expect(names).toContain("identity_tokens");
@@ -45,7 +45,7 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
     await collections.plans.updateOne({ code: "free" }, { $set: { monthlyCredits: 17 } });
     const result = await migrateMongo({ databaseUrl: mongoUrl!, databaseName });
     expect(result.applied).toEqual([]);
-    expect(result.existing).toEqual(["0001_initial_collections", "0002_generation_ledger_amount_constraint", "0003_analytics_rate_and_notification_preferences", "0004_job_import_metadata", "0005_job_source_ats_providers", "0006_career_record_editor", "0007_job_source_boards", "0008_career_view_configurations", "0009_agent_conversations", "0010_agent_credentials", "0011_preparation_plans", "0012_identity_session_sliding_expiry", "0013_identity_email_and_terms", "0017_career_category_ownership", "0020_notification_producers", "0021_generation_waiting_recipe", "0022_ai_usage_and_plan_credits", "0023_portfolio_public_slug", "0024_admin_dummy_accounts"]);
+    expect(result.existing).toEqual(["0001_initial_collections", "0002_generation_ledger_amount_constraint", "0003_analytics_rate_and_notification_preferences", "0004_job_import_metadata", "0005_job_source_ats_providers", "0006_career_record_editor", "0007_job_source_boards", "0008_career_view_configurations", "0009_agent_conversations", "0010_agent_credentials", "0011_preparation_plans", "0012_identity_session_sliding_expiry", "0013_identity_email_and_terms", "0017_career_category_ownership", "0020_notification_producers", "0021_generation_waiting_recipe", "0022_ai_usage_and_plan_credits", "0023_portfolio_public_slug", "0024_admin_dummy_accounts", "0025_career_business_writer_preparation", "0026_career_property_mutation_preparation", "0027_career_producer_preparation", "0028_career_canonical_preparation", "0029_career_relation_property_mutation_preparation", "0030_career_product_owner_preparation"]);
     expect((await collections.plans.findOne({ code: "free" }))?.monthlyCredits).toBe(17);
   });
 

@@ -1,0 +1,1333 @@
+[
+  {
+    "name": "identity text",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "text",
+      "value": "문자"
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "text",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "exact",
+      "value": {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "text",
+        "value": "문자"
+      }
+    }
+  },
+  {
+    "name": "identity number",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "number",
+      "value": "12345678901234567890.123400"
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "number",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "exact",
+      "value": {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "number",
+        "value": "12345678901234567890.123400"
+      }
+    }
+  },
+  {
+    "name": "identity checkbox",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "checkbox",
+      "value": false
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "checkbox",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "exact",
+      "value": {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "checkbox",
+        "value": false
+      }
+    }
+  },
+  {
+    "name": "identity select",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "select",
+      "value": "00000000-0000-4000-8000-000000000081"
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "select",
+      "required": false,
+      "system": false,
+      "config": {
+        "options": [
+          {
+            "id": "00000000-0000-4000-8000-000000000081",
+            "name": "00000000-0000-4000-8000-000000000081"
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000082",
+            "name": "00000000-0000-4000-8000-000000000082"
+          }
+        ]
+      },
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "exact",
+      "value": {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "select",
+        "value": "00000000-0000-4000-8000-000000000081"
+      }
+    }
+  },
+  {
+    "name": "identity multi_select",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "multi_select",
+      "value": [
+        "00000000-0000-4000-8000-000000000081",
+        "00000000-0000-4000-8000-000000000082"
+      ]
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "multi_select",
+      "required": false,
+      "system": false,
+      "config": {
+        "options": [
+          {
+            "id": "00000000-0000-4000-8000-000000000081",
+            "name": "00000000-0000-4000-8000-000000000081"
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000082",
+            "name": "00000000-0000-4000-8000-000000000082"
+          }
+        ]
+      },
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "exact",
+      "value": {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "multi_select",
+        "value": [
+          "00000000-0000-4000-8000-000000000081",
+          "00000000-0000-4000-8000-000000000082"
+        ]
+      }
+    }
+  },
+  {
+    "name": "identity date",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "date",
+      "value": {
+        "precision": "datetime",
+        "start": "2026-09-01T03:02:01.123456789+09:00",
+        "end": null,
+        "timezone": "Asia/Seoul"
+      }
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "date",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "exact",
+      "value": {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "date",
+        "value": {
+          "precision": "datetime",
+          "start": "2026-09-01T03:02:01.123456789+09:00",
+          "end": null,
+          "timezone": "Asia/Seoul"
+        }
+      }
+    }
+  },
+  {
+    "name": "datetime text timezone metadata loss with exact offset and fraction",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "date",
+      "value": {
+        "precision": "datetime",
+        "start": "2026-09-01T03:02:01.123456789+09:00",
+        "end": null,
+        "timezone": "Asia/Seoul"
+      }
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "text",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "lossy",
+      "value": {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "text",
+        "value": "2026-09-01T03:02:01.123456789+09:00"
+      }
+    }
+  },
+  {
+    "name": "datetime text null timezone remains safe with exact offset and fraction",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "date",
+      "value": {
+        "precision": "datetime",
+        "start": "2026-09-01T03:02:01.123456789+09:00",
+        "end": null,
+        "timezone": null
+      }
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "text",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "safe",
+      "value": {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "text",
+        "value": "2026-09-01T03:02:01.123456789+09:00"
+      }
+    }
+  },
+  {
+    "name": "datetime number conversion remains unsupported with timezone",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "date",
+      "value": {
+        "precision": "datetime",
+        "start": "2026-09-01T03:02:01.123456789+09:00",
+        "end": null,
+        "timezone": "Asia/Seoul"
+      }
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "number",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "unmapped"
+    }
+  },
+  {
+    "name": "identity url",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "url",
+      "value": "https://example.com"
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "url",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "exact",
+      "value": {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "url",
+        "value": "https://example.com"
+      }
+    }
+  },
+  {
+    "name": "identity email",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "email",
+      "value": "a@example.com"
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "email",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "exact",
+      "value": {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "email",
+        "value": "a@example.com"
+      }
+    }
+  },
+  {
+    "name": "identity phone",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "phone",
+      "value": "+82-10-1234"
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "phone",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "exact",
+      "value": {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "phone",
+        "value": "+82-10-1234"
+      }
+    }
+  },
+  {
+    "name": "identity file",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "file",
+      "value": [
+        "00000000-0000-4000-8000-000000000081"
+      ]
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "file",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "exact",
+      "value": {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "file",
+        "value": [
+          "00000000-0000-4000-8000-000000000081"
+        ]
+      }
+    }
+  },
+  {
+    "name": "identity media",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "media",
+      "value": [
+        "00000000-0000-4000-8000-000000000082"
+      ]
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "media",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "exact",
+      "value": {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "media",
+        "value": [
+          "00000000-0000-4000-8000-000000000082"
+        ]
+      }
+    }
+  },
+  {
+    "name": "decimal trailing zero",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "text",
+      "value": "42.1200"
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "number",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "safe",
+      "value": {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "number",
+        "value": "42.1200"
+      }
+    }
+  },
+  {
+    "name": "scientific exact",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "text",
+      "value": "1.2300e2"
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "number",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "safe",
+      "value": {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "number",
+        "value": "123.00"
+      }
+    }
+  },
+  {
+    "name": "decimal text exact digits",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "number",
+      "value": "12345678901234567890.123400"
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "text",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "safe",
+      "value": {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "text",
+        "value": "12345678901234567890.123400"
+      }
+    }
+  },
+  {
+    "name": "invalid decimal",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "text",
+      "value": "unknown"
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "number",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "unmapped"
+    }
+  },
+  {
+    "name": "decimal overflow",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "text",
+      "value": "12345678901234567890123456789012345"
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "number",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "unmapped"
+    }
+  },
+  {
+    "name": "nonfinite decimal",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "text",
+      "value": "NaN"
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "number",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "unmapped"
+    }
+  },
+  {
+    "name": "boolean decimal",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "checkbox",
+      "value": true
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "number",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "safe",
+      "value": {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "number",
+        "value": "1"
+      }
+    }
+  },
+  {
+    "name": "number checkbox lossy",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "number",
+      "value": "2.00"
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "checkbox",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "lossy",
+      "value": {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "checkbox",
+        "value": true
+      }
+    }
+  },
+  {
+    "name": "negative zero checkbox",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "number",
+      "value": "0.000"
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "checkbox",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "lossy",
+      "value": {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "checkbox",
+        "value": false
+      }
+    }
+  },
+  {
+    "name": "case boolean text",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "text",
+      "value": " FALSE "
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "checkbox",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "safe",
+      "value": {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "checkbox",
+        "value": false
+      }
+    }
+  },
+  {
+    "name": "select multi",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "select",
+      "value": "00000000-0000-4000-8000-000000000081"
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "multi_select",
+      "required": false,
+      "system": false,
+      "config": {
+        "options": [
+          {
+            "id": "00000000-0000-4000-8000-000000000081",
+            "name": "00000000-0000-4000-8000-000000000081"
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000082",
+            "name": "00000000-0000-4000-8000-000000000082"
+          }
+        ]
+      },
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "safe",
+      "value": {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "multi_select",
+        "value": [
+          "00000000-0000-4000-8000-000000000081"
+        ]
+      }
+    }
+  },
+  {
+    "name": "select null multi",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "select",
+      "value": null
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "multi_select",
+      "required": false,
+      "system": false,
+      "config": {
+        "options": [
+          {
+            "id": "00000000-0000-4000-8000-000000000081",
+            "name": "00000000-0000-4000-8000-000000000081"
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000082",
+            "name": "00000000-0000-4000-8000-000000000082"
+          }
+        ]
+      },
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "safe",
+      "value": {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "multi_select",
+        "value": []
+      }
+    }
+  },
+  {
+    "name": "multi select lossy",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "multi_select",
+      "value": [
+        "00000000-0000-4000-8000-000000000081",
+        "00000000-0000-4000-8000-000000000082"
+      ]
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "select",
+      "required": false,
+      "system": false,
+      "config": {
+        "options": [
+          {
+            "id": "00000000-0000-4000-8000-000000000081",
+            "name": "00000000-0000-4000-8000-000000000081"
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000082",
+            "name": "00000000-0000-4000-8000-000000000082"
+          }
+        ]
+      },
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "lossy",
+      "value": {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "select",
+        "value": "00000000-0000-4000-8000-000000000081"
+      }
+    }
+  },
+  {
+    "name": "option removed select",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "select",
+      "value": "00000000-0000-4000-8000-000000000081"
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "select",
+      "required": false,
+      "system": false,
+      "config": {
+        "options": [
+          {
+            "id": "00000000-0000-4000-8000-000000000082",
+            "name": "00000000-0000-4000-8000-000000000082"
+          }
+        ]
+      },
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "lossy",
+      "value": {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "select",
+        "value": null
+      }
+    }
+  },
+  {
+    "name": "option removed multi",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "multi_select",
+      "value": [
+        "00000000-0000-4000-8000-000000000081",
+        "00000000-0000-4000-8000-000000000082"
+      ]
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "multi_select",
+      "required": false,
+      "system": false,
+      "config": {
+        "options": [
+          {
+            "id": "00000000-0000-4000-8000-000000000082",
+            "name": "00000000-0000-4000-8000-000000000082"
+          }
+        ]
+      },
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "lossy",
+      "value": {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "multi_select",
+        "value": [
+          "00000000-0000-4000-8000-000000000082"
+        ]
+      }
+    }
+  },
+  {
+    "name": "select null is not text missing",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "select",
+      "value": null
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "text",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "unmapped"
+    }
+  },
+  {
+    "name": "file media ID preservation",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "file",
+      "value": [
+        "00000000-0000-4000-8000-000000000081",
+        "00000000-0000-4000-8000-000000000082"
+      ]
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "media",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "safe",
+      "value": {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "media",
+        "value": [
+          "00000000-0000-4000-8000-000000000081",
+          "00000000-0000-4000-8000-000000000082"
+        ]
+      }
+    }
+  },
+  {
+    "name": "month legacy conversion lossy",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "text",
+      "value": "2026-09"
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "date",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "lossy",
+      "value": {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "date",
+        "value": {
+          "precision": "day",
+          "start": "2026-09-01",
+          "end": null
+        }
+      }
+    }
+  },
+  {
+    "name": "day text conversion",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "date",
+      "value": {
+        "precision": "day",
+        "start": "2026-09-01",
+        "end": null
+      }
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "text",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "safe",
+      "value": {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "text",
+        "value": "2026-09-01"
+      }
+    }
+  },
+  {
+    "name": "range text lossy",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "date",
+      "value": {
+        "precision": "day",
+        "start": "2026-09-01",
+        "end": "2026-09-02"
+      }
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "text",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "lossy",
+      "value": {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "text",
+        "value": "2026-09-01"
+      }
+    }
+  },
+  {
+    "name": "invalid calendar date",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "text",
+      "value": "2026-02-31"
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "date",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "unmapped"
+    }
+  },
+  {
+    "name": "text asset unsupported",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "text",
+      "value": "abc"
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "file",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "unmapped"
+    }
+  },
+  {
+    "name": "text length exceeds target",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "text",
+      "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "url",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "unmapped"
+    }
+  },
+  {
+    "name": "decimal fractional trailing zeros exceed exact scale",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "text",
+      "value": "1.0000000000000000000000000000000000"
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "number",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "unmapped"
+    }
+  },
+  {
+    "name": "decimal zero exponent would clamp scale",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "text",
+      "value": "0e-6177"
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "number",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "unmapped"
+    }
+  },
+  {
+    "name": "decimal signed zero preserves fractional scale",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "text",
+      "value": "-0.00"
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "number",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "safe",
+      "value": {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "number",
+        "value": "0.00"
+      }
+    }
+  },
+  {
+    "name": "decimal leading zeros and plus preserve fractional scale",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "text",
+      "value": "+001.2300"
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "number",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "safe",
+      "value": {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "number",
+        "value": "1.2300"
+      }
+    }
+  },
+  {
+    "name": "decimal non-ASCII digits are unsupported",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "text",
+      "value": "١.٢"
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "number",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "unmapped"
+    }
+  },
+  {
+    "name": "decimal non-breaking space is unsupported",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "text",
+      "value": " 1.20 "
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "number",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "unmapped"
+    }
+  },
+  {
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "checkbox",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "text",
+      "value": " true "
+    },
+    "result": {
+      "kind": "unmapped"
+    },
+    "name": "boolean non-breaking space is unsupported"
+  },
+  {
+    "name": "decimal fractional exponent preserves trailing zeros",
+    "before": {
+      "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+      "type": "text",
+      "value": "0.0500e1"
+    },
+    "target": {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "key": "p",
+      "name": "속성",
+      "type": "number",
+      "required": false,
+      "system": false,
+      "config": {},
+      "order": 0,
+      "version": 1,
+      "deletedAt": null
+    },
+    "result": {
+      "kind": "safe",
+      "value": {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "number",
+        "value": "0.500"
+      }
+    }
+  }
+]

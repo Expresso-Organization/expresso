@@ -1,0 +1,97 @@
+[
+  {
+    "version": "0001",
+    "name": "initial_collections",
+    "checksum": "7c81bedd5bac9488e40f27fb0d9de82d7b6cab6878108ef2fd58559d7c3088a7"
+  },
+  {
+    "version": "0002",
+    "name": "generation_ledger_amount_constraint",
+    "checksum": "394b18fd931de92ed152a40c20dfea288f426750f4b5eaa923d384d6c6797dca"
+  },
+  {
+    "version": "0003",
+    "name": "analytics_rate_and_notification_preferences",
+    "checksum": "f4df1c62d27eeb368aa1e91daf7083dd9191e58bf9290746be194b8f862e19c9"
+  },
+  {
+    "version": "0004",
+    "name": "job_import_metadata",
+    "checksum": "ec98bc289d6289910e4840791a4f62dff6e2d889d00f145de6c95884920f9da5"
+  },
+  {
+    "version": "0005",
+    "name": "job_source_ats_providers",
+    "checksum": "95f34fe3c07e0206befd82583b9a3b787b307554b8f99b22954bf6a40b6bf064"
+  },
+  {
+    "version": "0006",
+    "name": "career_record_editor",
+    "checksum": "2dca952d62cdd8004e24f4b4e82d941ea53e7aa7e6535ba186382c8617ea8f14"
+  },
+  {
+    "version": "0007",
+    "name": "job_source_boards",
+    "checksum": "2522da0b6fff0deea43cd58bb4d226ebfee1447a00b4caeda273fa5275f28add"
+  },
+  {
+    "version": "0008",
+    "name": "career_view_configurations",
+    "checksum": "990235953ca8cf3c935837434a9f65073c8876551eccc5f40a35b64bf6483308"
+  },
+  {
+    "version": "0009",
+    "name": "agent_conversations",
+    "checksum": "8b49d9c95833da5fd8a9a8be4bd11fdedf0ce3f0dd89b72cc1ccdd098d46ec99"
+  },
+  {
+    "version": "0010",
+    "name": "agent_credentials",
+    "checksum": "e7683e185324955e5f301b0712b841b633b6faa23a653f05b1a8390048201203"
+  },
+  {
+    "version": "0011",
+    "name": "preparation_plans",
+    "checksum": "fe4858967097ed78f3e775abbe2be6bed1bcd8e4bdc056492160c24ed4af65e0"
+  },
+  {
+    "version": "0012",
+    "name": "identity_session_sliding_expiry",
+    "checksum": "ee72a09c26ca744bf64d4a3be973a061ee360e5af7e3e3b7c3313ed532b08464"
+  },
+  {
+    "version": "0013",
+    "name": "identity_email_and_terms",
+    "checksum": "98574cd415d0da585923ca27dccc364b202b369423887f3698966250a2b49a8c"
+  },
+  {
+    "version": "0017",
+    "name": "career_category_ownership",
+    "checksum": "ee130d66f62f20e1955aefe72b05d85162059becff388968dd44f9890969e803"
+  },
+  {
+    "version": "0020",
+    "name": "notification_producers",
+    "checksum": "edc252b8b2119ac2b71ec224b0cc78576bb5e2e322154f915dd9d9352368e7bf"
+  },
+  {
+    "version": "0021",
+    "name": "generation_waiting_recipe",
+    "checksum": "c413e4776b6222bff59a80f178b7604616b8e3da3fed0a5903e3bdb06c2faf81"
+  },
+  {
+    "version": "0022",
+    "name": "ai_usage_and_plan_credits",
+    "checksum": "a79441fca58673dd516efed55791f2f434251b8b7db6d214f8a172c75040141c"
+  },
+  {
+    "version": "0023",
+    "name": "portfolio_public_slug",
+    "checksum": "ccf23671976723847ca22c325c89e3360ce605fad07d4d8a8a293cebb4c4fd42"
+  },
+  {
+    "version": "0024",
+    "name": "admin_dummy_accounts",
+    "checksum": "5dfefb7d37f022aa614528cf8b7958739d59df0fdc2409a38c45485189a67923"
+  }
+]

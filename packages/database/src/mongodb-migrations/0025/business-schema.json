@@ -1,0 +1,446 @@
+{
+  "recordProperties": {
+    "propertyValues": {
+      "bsonType": "array",
+      "maxItems": 50,
+      "items": {
+        "oneOf": [
+          {
+            "bsonType": "object",
+            "required": [
+              "propertyDefinitionId",
+              "type",
+              "value"
+            ],
+            "properties": {
+              "propertyDefinitionId": {
+                "bsonType": "string",
+                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                "maxLength": 36
+              },
+              "type": {
+                "enum": [
+                  "text"
+                ]
+              },
+              "value": {
+                "bsonType": "string",
+                "maxLength": 50000
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "bsonType": "object",
+            "required": [
+              "propertyDefinitionId",
+              "type",
+              "value"
+            ],
+            "properties": {
+              "propertyDefinitionId": {
+                "bsonType": "string",
+                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                "maxLength": 36
+              },
+              "type": {
+                "enum": [
+                  "number"
+                ]
+              },
+              "value": {
+                "bsonType": "decimal"
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "bsonType": "object",
+            "required": [
+              "propertyDefinitionId",
+              "type",
+              "value"
+            ],
+            "properties": {
+              "propertyDefinitionId": {
+                "bsonType": "string",
+                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                "maxLength": 36
+              },
+              "type": {
+                "enum": [
+                  "checkbox"
+                ]
+              },
+              "value": {
+                "bsonType": "bool"
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "bsonType": "object",
+            "required": [
+              "propertyDefinitionId",
+              "type",
+              "value"
+            ],
+            "properties": {
+              "propertyDefinitionId": {
+                "bsonType": "string",
+                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                "maxLength": 36
+              },
+              "type": {
+                "enum": [
+                  "select"
+                ]
+              },
+              "value": {
+                "anyOf": [
+                  {
+                    "bsonType": "string",
+                    "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                    "maxLength": 36
+                  },
+                  {
+                    "bsonType": "null"
+                  }
+                ]
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "bsonType": "object",
+            "required": [
+              "propertyDefinitionId",
+              "type",
+              "value"
+            ],
+            "properties": {
+              "propertyDefinitionId": {
+                "bsonType": "string",
+                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                "maxLength": 36
+              },
+              "type": {
+                "enum": [
+                  "multi_select"
+                ]
+              },
+              "value": {
+                "bsonType": "array",
+                "maxItems": 100,
+                "items": {
+                  "bsonType": "string",
+                  "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                  "maxLength": 36
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "bsonType": "object",
+            "required": [
+              "propertyDefinitionId",
+              "type",
+              "value"
+            ],
+            "properties": {
+              "propertyDefinitionId": {
+                "bsonType": "string",
+                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                "maxLength": 36
+              },
+              "type": {
+                "enum": [
+                  "date"
+                ]
+              },
+              "value": {
+                "oneOf": [
+                  {
+                    "bsonType": "object",
+                    "required": [
+                      "precision",
+                      "start",
+                      "end"
+                    ],
+                    "properties": {
+                      "precision": {
+                        "enum": [
+                          "month"
+                        ]
+                      },
+                      "start": {
+                        "bsonType": "string"
+                      },
+                      "end": {
+                        "anyOf": [
+                          {
+                            "bsonType": "string"
+                          },
+                          {
+                            "bsonType": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  {
+                    "bsonType": "object",
+                    "required": [
+                      "precision",
+                      "start",
+                      "end"
+                    ],
+                    "properties": {
+                      "precision": {
+                        "enum": [
+                          "day"
+                        ]
+                      },
+                      "start": {
+                        "bsonType": "string"
+                      },
+                      "end": {
+                        "anyOf": [
+                          {
+                            "bsonType": "string"
+                          },
+                          {
+                            "bsonType": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  {
+                    "bsonType": "object",
+                    "required": [
+                      "precision",
+                      "start",
+                      "end",
+                      "timezone"
+                    ],
+                    "properties": {
+                      "precision": {
+                        "enum": [
+                          "datetime"
+                        ]
+                      },
+                      "start": {
+                        "bsonType": "string"
+                      },
+                      "end": {
+                        "anyOf": [
+                          {
+                            "bsonType": "string"
+                          },
+                          {
+                            "bsonType": "null"
+                          }
+                        ]
+                      },
+                      "timezone": {
+                        "anyOf": [
+                          {
+                            "bsonType": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          {
+                            "bsonType": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "bsonType": "object",
+            "required": [
+              "propertyDefinitionId",
+              "type",
+              "value"
+            ],
+            "properties": {
+              "propertyDefinitionId": {
+                "bsonType": "string",
+                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                "maxLength": 36
+              },
+              "type": {
+                "enum": [
+                  "url"
+                ]
+              },
+              "value": {
+                "bsonType": "string",
+                "maxLength": 2000
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "bsonType": "object",
+            "required": [
+              "propertyDefinitionId",
+              "type",
+              "value"
+            ],
+            "properties": {
+              "propertyDefinitionId": {
+                "bsonType": "string",
+                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                "maxLength": 36
+              },
+              "type": {
+                "enum": [
+                  "email"
+                ]
+              },
+              "value": {
+                "bsonType": "string",
+                "maxLength": 2000
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "bsonType": "object",
+            "required": [
+              "propertyDefinitionId",
+              "type",
+              "value"
+            ],
+            "properties": {
+              "propertyDefinitionId": {
+                "bsonType": "string",
+                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                "maxLength": 36
+              },
+              "type": {
+                "enum": [
+                  "phone"
+                ]
+              },
+              "value": {
+                "bsonType": "string",
+                "maxLength": 2000
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "bsonType": "object",
+            "required": [
+              "propertyDefinitionId",
+              "type",
+              "value"
+            ],
+            "properties": {
+              "propertyDefinitionId": {
+                "bsonType": "string",
+                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                "maxLength": 36
+              },
+              "type": {
+                "enum": [
+                  "file"
+                ]
+              },
+              "value": {
+                "bsonType": "array",
+                "maxItems": 100,
+                "items": {
+                  "bsonType": "string",
+                  "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                  "maxLength": 36
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "bsonType": "object",
+            "required": [
+              "propertyDefinitionId",
+              "type",
+              "value"
+            ],
+            "properties": {
+              "propertyDefinitionId": {
+                "bsonType": "string",
+                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                "maxLength": 36
+              },
+              "type": {
+                "enum": [
+                  "media"
+                ]
+              },
+              "value": {
+                "bsonType": "array",
+                "maxItems": 100,
+                "items": {
+                  "bsonType": "string",
+                  "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+                  "maxLength": 36
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      }
+    }
+  },
+  "idempotencyValidator": {
+    "$jsonSchema": {
+      "bsonType": "object",
+      "required": [
+        "_id",
+        "userId",
+        "key",
+        "requestHash",
+        "response",
+        "createdAt"
+      ],
+      "properties": {
+        "_id": {
+          "bsonType": "string"
+        },
+        "userId": {
+          "bsonType": "string",
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "maxLength": 36
+        },
+        "key": {
+          "bsonType": "string",
+          "minLength": 16,
+          "maxLength": 128
+        },
+        "requestHash": {
+          "bsonType": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "response": {
+          "bsonType": "object"
+        },
+        "createdAt": {
+          "bsonType": "date"
+        }
+      }
+    }
+  }
+}

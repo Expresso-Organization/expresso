@@ -12,6 +12,7 @@ export const ErrorCodeSchema = z.enum([
   "NOT_FOUND",
   "VALIDATION_ERROR",
   "CONFLICT",
+  "BULK_SCHEMA_CHANGE_UNSUPPORTED",
   "PRECONDITION_FAILED",
   /** 요청은 읽었고 뜻도 알았는데 그대로는 할 수 없다. 422. */
   "UNPROCESSABLE",
