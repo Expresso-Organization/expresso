@@ -167,7 +167,13 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("inactive canonical schema orches
   it("accepts exact label option spelling and rejects conflicting name/label metadata",async()=>{
     await setup();const optionId=randomUUID(),createdId=randomUUID(),change:CareerPropertySchemaChange={kind:"create",property:{id:createdId,key:"pick",name:"pick",type:"select",required:false,system:false,config:{options:[{id:optionId,label:"Exact"}]}}};
     await apply(change);
-    expect((await mongoCollections(fixture.resource.db).careerCategories.findOne({_id:categoryId}))!.propertySchemaV2!.find(definition=>definition.id===createdId)!.config.options).toEqual([{id:optionId,label:"Exact"}]);
+    expect((await mongoCollections(fixture.resource.db).careerCategories.findOne({_id:categoryId}))!.propertySchemaV2!.find(definition=>definition.id===createdId)!.config.options).toEqual([{id:optionId,name:"Exact"}]);
+    const records=await mongoCollections(fixture.resource.db).careerRecords.find({categoryId}).toArray();
+    await apply({kind:"configure",propertyId:createdId,config:{options:[{id:optionId,label:" Renamed ",color:"blue"}]}});
+    expect((await mongoCollections(fixture.resource.db).careerCategories.findOne({_id:categoryId}))!.propertySchemaV2.find(d=>d.id===createdId)!.config.options).toEqual([{id:optionId,name:" Renamed ",color:"blue"}]);
+    await apply({kind:"type-change",propertyId:createdId,type:"multi_select",config:{options:[{id:optionId,label:" Renamed ",name:" Renamed ",color:"blue"}]}});
+    expect((await mongoCollections(fixture.resource.db).careerCategories.findOne({_id:categoryId}))!.propertySchemaV2.find(d=>d.id===createdId)!.config.options).toEqual([{id:optionId,name:" Renamed ",color:"blue"}]);
+    expect(await mongoCollections(fixture.resource.db).careerRecords.find({categoryId}).toArray()).toEqual(records);
     const invalid:CareerPropertySchemaChange={kind:"create",property:{...change.property,id:randomUUID(),key:"conflict",config:{options:[{id:optionId,label:"A",name:"B"}]}}};
     const before=await mongoCollections(fixture.resource.db).careerCategories.findOne({_id:categoryId});
     await expect(apply(invalid)).rejects.toMatchObject({statusCode:400});

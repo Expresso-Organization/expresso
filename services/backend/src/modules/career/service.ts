@@ -18,7 +18,7 @@ import { recomputeMongoSkill, listMongoSkills, listMongoSkillEvidence } from "./
 import { MongoCareerDocumentRepository, hashUpdate } from "../career-editor/repository.js";
 import { Binary } from "mongodb";
 import { readCareerPropertyMutationStatus,resumeCareerPropertyMutation } from "./property-mutation-status.js";
-import { registerCanonicalCareerPropertyOption } from "./canonical-property-schema.js";
+import { normalizeCanonicalConfiguration, registerCanonicalCareerPropertyOption } from "./canonical-property-schema.js";
 import { MongoCareerPropertySchemaService } from "./property-schema.js";
 import { CareerViewService } from "./views.js";
 import { MongoCategoryMoveService } from "./category-move.js";
@@ -77,6 +77,8 @@ export class CareerService implements CareerApi {
 
   async createCategory(userId: string, inputValue: CreateCareerCategory) {
     const input = CreateCareerCategorySchema.parse(inputValue);
+    input.propertySchemaV2=input.propertySchemaV2.map(definition=>definition.type==="select" || definition.type==="multi_select"
+      ? {...definition,config:normalizeCanonicalConfiguration(definition.type,definition.config)} : definition);
     const keys = new Set(input.propertySchemaV2.map((definition) => definition.key));
     const ids = new Set(input.propertySchemaV2.map((definition) => definition.id));
     if (keys.size !== input.propertySchemaV2.length || ids.size !== input.propertySchemaV2.length) throw new CareerError(400, "property keys and IDs must be unique");

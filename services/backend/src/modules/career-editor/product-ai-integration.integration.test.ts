@@ -1,4 +1,5 @@
 import {randomUUID} from "node:crypto";
+import Fastify from "fastify";
 import {afterAll,beforeAll,describe,expect,it,vi} from "vitest";
 import {Decimal128} from "mongodb";
 import {mongoCollections} from "@expresso/database";
@@ -11,6 +12,8 @@ import {CareerDocumentService} from "./service.js";
 import {PreparedCareerDocumentWriter} from "./prepared-document-writer.js";
 import {ProductAiProposalIntegration} from "./product-ai-integration.js";
 import {AiProposalService} from "./ai-proposals.js";
+import {registerCareerDocumentRoutes} from "./routes.js";
+import {registerErrorHandler} from "../../api/error-handler.js";
 
 describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL??process.env.TEST_MONGODB_URL))("actual product AI producer integration",()=>{
  let fixture:Awaited<ReturnType<typeof createMongoFixture>>,user:string,other:string;
@@ -29,6 +32,31 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL??process.env.TEST_MONGODB_U
   const bootstrap=await docs.bootstrap(user,record.id),proposal=await docs.createAiProposal(user,record.id,{selection:{blockIds:[bootstrap.document.content[0]!.id]},prompt:"정리"});
   const input={recordId:record.id,proposalId:proposal.proposalId,expectedDocumentVersion:0,commandIndexes:mode==="mixed"?[0]:[],propertyChangeIndexes:[0]};return{record,property,keep,docs,integration,input,proposal,calls:()=>calls};
  }
+ it("signals a proven selected-property rejection before preparation and allows a new body-only selection",async()=>{
+  const s=await scenario("mixed"),db=mongoCollections(fixture.resource.db);
+  await db.careerRecords.updateOne({_id:s.record.id},{$set:{"propertyValues.0.value":"human change"}});
+  const before=await db.careerRecords.findOne({_id:s.record.id});
+  await expect(s.docs.applyAiProposalOperation(user,s.record.id,s.input,"pre-prepare-refusal-key")).rejects.toMatchObject({statusCode:409,publicDetails:{aiApplyRejection:{recordId:s.record.id,proposalId:s.proposal.proposalId,state:"not-prepared"}}});
+  const app=Fastify({logger:false});app.decorateRequest("auth",null);registerErrorHandler(app);registerCareerDocumentRoutes(app,{service:s.docs,authenticateRequest:async request=>{request.auth={user:{id:user}} as never;}});
+  try {
+   const response=await app.inject({method:"POST",url:`/v1/career/records/${s.record.id}/ai-proposals/${s.proposal.proposalId}/apply`,headers:{"idempotency-key":"pre-prepare-http-refusal-key"},payload:s.input});
+   expect(response.statusCode).toBe(409);expect(response.json().error).toMatchObject({code:"CONFLICT",details:{aiApplyRejection:{recordId:s.record.id,proposalId:s.proposal.proposalId,state:"not-prepared"}}});
+   expect(Object.keys(response.json().error.details)).toEqual(["aiApplyRejection"]);expect(response.body).not.toContain("human change");expect(response.body).not.toContain(user);
+  } finally {await app.close();}
+  expect((await db.careerAiProposals.findOne({_id:s.proposal.proposalId}))?.writerIntegration).toBeUndefined();expect(s.calls()).toBe(0);expect(await db.careerRecords.findOne({_id:s.record.id})).toEqual(before);
+  expect((await s.docs.applyAiProposalOperation(user,s.record.id,{...s.input,propertyChangeIndexes:[]},"body-only-after-refusal-key")).status).toBe(200);
+  expect(s.calls()).toBe(0);expect((await s.docs.bootstrap(user,s.record.id)).document.content[0]?.text?.[0]?.text).toBe("AI 본문");
+  const after=await db.careerRecords.findOne({_id:s.record.id});expect(after?.propertyValues).toEqual(before?.propertyValues);expect(after?.version).toBe(before?.version);
+ });
+ it("returns the existing owner for a changed request instead of treating owner409 as pre-prepare rejection",async()=>{
+  const s=await scenario("mixed","before"),db=mongoCollections(fixture.resource.db);
+  expect((await s.docs.applyAiProposalOperation(user,s.record.id,s.input,"original-owner-key")).status).toBe(202);
+  const before=await db.careerAiProposals.findOne({_id:s.proposal.proposalId});
+  const error=await s.docs.applyAiProposalOperation(user,s.record.id,{...s.input,propertyChangeIndexes:[]},"changed-owner-key").catch(error=>error);
+  expect(error).toMatchObject({statusCode:409,publicDetails:{operation:{operationId:before!.writerIntegration!.operationId,producer:"ai-proposal",recordId:s.record.id}}});expect(error.publicDetails.aiApplyRejection).toBeUndefined();
+  expect((await db.careerAiProposals.findOne({_id:s.proposal.proposalId}))?.writerIntegration).toEqual(before?.writerIntegration);expect(s.calls()).toBe(1);
+  expect((await s.docs.applyAiProposalOperation(user,s.record.id,s.input,"original-owner-key")).status).toBe(200);expect(s.calls()).toBe(2);
+ });
  it("uses one canonical business owner, keeps exact unselected values and old completed response",async()=>{
   const s=await scenario(),legacy=vi.spyOn(AiProposalService.prototype,"apply");try{const first=await s.docs.applyAiProposalOperation(user,s.record.id,s.input);expect(first.status).toBe(200);expect(first.body).toMatchObject({data:{status:"applied",undoScope:"none",businessChangesRetained:true}});expect(await s.docs.applyAiProposalOperation(user,s.record.id,s.input)).toEqual(first);expect(s.calls()).toBe(1);expect(legacy).not.toHaveBeenCalled();const record=await mongoCollections(fixture.resource.db).careerRecords.findOne({_id:s.record.id});expect(record?.version).toBe(2);expect(record?.properties.note).toEqual({type:"text",value:"stale compatibility"});expect(record?.propertyValues?.find(value=>value.propertyDefinitionId===s.keep)?.value?.toString()).toBe("12345678901234567890.123400");expect(await mongoCollections(fixture.resource.db).careerDocumentUpdates.countDocuments({recordId:s.record.id})).toBe(0);}finally{legacy.mockRestore();}
  });

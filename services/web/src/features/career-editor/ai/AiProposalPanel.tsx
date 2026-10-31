@@ -4,7 +4,7 @@ import { compareCareerProposalOrder, AiProposalApplyRequestSchema, AiEditProposa
 import type { CareerDocument } from "@expresso/editor";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
-import { publicWriteOperationFromError } from "@/lib/api/write-operation-errors";
+import { publicAiApplyRejectionFromError, publicWriteOperationFromError } from "@/lib/api/write-operation-errors";
 import { Icon } from "@/components/ui/Icon";
 
 import { AiProposalDiff } from "./AiProposalDiff";
@@ -81,13 +81,16 @@ function savedApplyInput(recordId:string,proposalId:string):ApplyInput|null {
 function saveApplyInput(recordId:string,proposalId:string,input:ApplyInput|null):void {
   try {const key=applyRequestStorageKey(recordId,proposalId);if(input)sessionStorage.setItem(key,JSON.stringify(input));else sessionStorage.removeItem(key);}catch{}
 }
+class AiApplyPreparationRejectedError extends Error {}
 async function ownerRequest(recordId: string, proposalId: string, kind: "apply" | "undo", input: unknown) {
   const key = await durableWriteKey(operationScope(recordId, proposalId, kind), input);
   const response = await fetch("/api/career/records/" + recordId + "/ai-proposals/" + proposalId + "/" + kind, { method: "POST", headers: { "content-type": "application/json", "idempotency-key": key }, body: JSON.stringify(input) });
   if (response.status === 202) return CareerWriteOperationResponseSchema.parse(await response.json()).data;
   if (!response.ok) {
-    const operation = response.status === 409 ? publicWriteOperationFromError(await response.clone().json().catch(() => null), "ai-proposal", recordId) : null;
+    const value:unknown=await response.clone().json().catch(() => null);
+    const operation = response.status === 409 || response.status === 412 ? publicWriteOperationFromError(value, "ai-proposal", recordId) : null;
     if (operation) return operation;
+    if(kind==="apply" && response.status===409 && publicAiApplyRejectionFromError(value,recordId,proposalId))throw new AiApplyPreparationRejectedError("사람의 편집 내용과 충돌했습니다. 선택한 변경을 확인해 다시 적용해 주세요.");
     return data<never>(response);
   }
   const body: unknown = await response.json();
@@ -275,16 +278,28 @@ export function AiProposalPanel({ recordId, documentVersion, selectedBlockIds = 
     const requestContext = context.current;
     setIssue(null); setBusy(true); rememberFocusIfMissing();
     let ownerCompleted = false;
+    let attemptedInput:ApplyInput|undefined;
     try {
       // 응답 유실 뒤에도 최초 선택과 문서 버전으로 같은 owner intent를 확인합니다.
       const prior=frozenApply.current;
       const input=prior?.recordId===recordId&&prior.proposalId===proposal.proposalId?prior.input:savedApplyInput(recordId,proposal.proposalId)??{expectedDocumentVersion:documentVersion,commandIndexes:[...commandIndexes].sort((a,b)=>a-b),propertyChangeIndexes:[...propertyIndexes].sort((a,b)=>a-b)};
+      attemptedInput=input;
       frozenApply.current={recordId,proposalId:proposal.proposalId,input};saveApplyInput(recordId,proposal.proposalId,input);
       const result = await client.apply(recordId, proposal.proposalId, input);
       if (requestContext !== context.current) return;
       if ("operationId" in result) startPending(result, "apply");
       else { if (result.recordId !== recordId || result.proposalId !== proposal.proposalId) throw new Error("제안이 요청한 기록과 일치하지 않습니다."); ownerCompleted = true; saveApplyInput(recordId,proposal.proposalId,null); frozenApply.current=null; if (proposalRef.current?.proposalId === proposal.proposalId) { proposalRef.current = result; setProposal(result); setStatus(result.status ?? "applied"); } await onApplied?.(); }
-    } catch (error) { if (requestContext !== context.current) return; if (!ownerCompleted) setStatus("conflicted"); setIssue(error instanceof Error ? error.message : "제안을 적용하지 못했습니다."); }
+    } catch (error) {
+      if(!ownerCompleted && error instanceof AiApplyPreparationRejectedError) {
+        const current=frozenApply.current;
+        const sameScope=current?.recordId===recordId && current.proposalId===proposal.proposalId;
+        // 이전 응답이 같은 기록으로 돌아온 뒤 시작한 새 replay의 입력을 지우지 않습니다.
+        if((!sameScope || current.input===attemptedInput) && JSON.stringify(savedApplyInput(recordId,proposal.proposalId))===JSON.stringify(attemptedInput))saveApplyInput(recordId,proposal.proposalId,null);
+        if(sameScope && current.input===attemptedInput)frozenApply.current=null;
+      }
+      if (requestContext !== context.current || proposalRef.current?.proposalId!==proposal.proposalId) return;
+      if (!ownerCompleted) setStatus("conflicted"); setIssue(error instanceof Error ? error.message : "제안을 적용하지 못했습니다.");
+    }
     finally { if (requestContext === context.current) { setBusy(false); restoreFocus(); } }
   }
   async function reject() {

@@ -27,6 +27,7 @@ public interface CareerCommandRepository {
         void guardCategory(Category category);
         void guardActive(List<String> ids);
         void insert(CareerRecord record);
+        default void validateUnmappedMove(StoredRecord before, Map<String, CareerUnmappedPropertyEnvelope> unmapped) {}
         void save(StoredRecord before, CareerRecord after, Instant deletedAt, Instant purgeAfter,
                   Map<String, CareerUnmappedPropertyEnvelope> unmapped, boolean move);
         Replay replay(String key);

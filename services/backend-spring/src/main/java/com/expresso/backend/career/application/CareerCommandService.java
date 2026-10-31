@@ -108,6 +108,7 @@ public final class CareerCommandService {
             var now = clock.instant();
             var plan = planner.plan(stored.business(), source.business(), target.business(), stored.unmapped(), now);
             validateMove(target, plan);
+            tx.validateUnmappedMove(stored, plan.unmappedProperties());
             return new MovePreview(tokens.sign(binding(actor, stored, source, target), now), targetId, expected, now.plusSeconds(900),
                     plan.conversions(), plan.unmappedProperties().keySet().stream().sorted().toList());
         });
@@ -125,6 +126,7 @@ public final class CareerCommandService {
             var issued = tokens.verify(token, binding(actor, stored, source, target), clock.instant());
             var plan = planner.plan(stored.business(), source.business(), target.business(), stored.unmapped(), issued);
             validateMove(target, plan);
+            tx.validateUnmappedMove(stored, plan.unmappedProperties());
             // preview와 같은 plan의 unmapped 값에만 명시적인 삭제를 적용합니다.
             var unmapped=new TreeMap<>(plan.unmappedProperties());
             if(discard.stream().anyMatch(propertyId -> !unmapped.containsKey(propertyId)))throw new IllegalArgumentException("discard ID가 preview의 unmapped 범위를 벗어났습니다");

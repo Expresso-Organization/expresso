@@ -12,7 +12,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ rec
   const key = request.headers.get("idempotency-key");
   if (!UuidSchema.safeParse(recordId).success || !UuidSchema.safeParse(proposalId).success || (key !== null && !IdempotencyKeySchema.safeParse(key).success)) return new Response(null, { status: 400 });
   const upstream = await fetch(`${API_BASE_URL}${API_PREFIX}/career/records/${encodeURIComponent(recordId)}/ai-proposals/${encodeURIComponent(proposalId)}/apply`, { method: "POST", headers: { ...(key ? { "idempotency-key": key } : {}), authorization: `Bearer ${token}`, accept: "application/json", "content-type": "application/json" }, body: JSON.stringify(input.data), cache: "no-store" });
-  if (!upstream.ok) return forwardWriteOperationError(upstream, "ai-proposal", recordId);
+  if (!upstream.ok) return forwardWriteOperationError(upstream, "ai-proposal", recordId, proposalId);
   if (upstream.status === 202) {
     try {
       const body = CareerWriteOperationResponseSchema.parse(await upstream.json());

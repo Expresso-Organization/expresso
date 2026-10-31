@@ -233,12 +233,26 @@ public final class CareerCategoryMovePlanner {
 
 	private static List<Map<String, Object>> options(PropertyDefinition definition) {
 		var raw = definition.config().get("options");
-		if (!(raw instanceof List<?> list)) return List.of();
+		if (!(raw instanceof List<?> list)) {
+			throw new CareerRecordDataIntegrityException(new IllegalStateException("select options는 배열이어야 합니다"));
+		}
 		var result = new ArrayList<Map<String, Object>>();
+		var ids = new java.util.HashSet<String>();
 		for (var item : list) {
-			if (!(item instanceof Map<?, ?> map) || !(map.get("id") instanceof String) || !(map.get("name") instanceof String)) {
+			if (!(item instanceof Map<?, ?> map) || !(map.get("id") instanceof String id)) {
 				throw new CareerRecordDataIntegrityException(new IllegalStateException("select option shape가 올바르지 않습니다"));
 			}
+			var name = map.get("name");
+			var label = map.get("label");
+			if ((map.containsKey("name") && !(name instanceof String))
+					|| (map.containsKey("label") && !(label instanceof String))
+					|| (name != null && label != null && !name.equals(label))
+					|| (name == null && label == null)) {
+				throw new CareerRecordDataIntegrityException(new IllegalStateException("select option 표시 이름이 올바르지 않습니다"));
+			}
+			try { PropertyValue.requireUuid(id, "optionId"); }
+			catch (IllegalArgumentException error) { throw new CareerRecordDataIntegrityException(error); }
+			if (!ids.add(id)) throw new CareerRecordDataIntegrityException(new IllegalStateException("select option ID가 중복되어 있습니다"));
 			var option = new LinkedHashMap<String, Object>();
 			for (var entry : map.entrySet()) {
 				if (!(entry.getKey() instanceof String key)) {
@@ -246,6 +260,8 @@ public final class CareerCategoryMovePlanner {
 				}
 				option.put(key, entry.getValue());
 			}
+			// 기존 label 전용 데이터도 표시 원문을 바꾸지 않고 변환용 복사본에서 읽습니다.
+			option.put("name", name != null ? name : label);
 			result.add(option);
 		}
 		return result;

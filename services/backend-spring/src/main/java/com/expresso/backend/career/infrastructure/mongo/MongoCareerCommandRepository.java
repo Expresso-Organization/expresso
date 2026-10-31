@@ -121,7 +121,11 @@ public final class MongoCareerCommandRepository implements CareerCommandReposito
             guardBusinessCategory(before.business().categoryId());guardBusinessCategory(after.categoryId());
             var update=writer.writeUpdate(after);
             var set=update.get("$set",Document.class);
-            if(move) {set.append("categoryId",after.categoryId()).append("unmappedProperties",writeUnmapped(unmapped));}
+            if(move) {
+                set.append("categoryId",after.categoryId());
+                var preserved=moveUnmapped(before,unmapped);
+                if(preserved!=null)set.append("unmappedProperties",preserved);
+            }
             if(!Objects.equals(before.deletedAt(),deletedAt)) {
                 set.append("deletedAt",deletedAt==null?null:Date.from(deletedAt)).append("purgeAfter",purgeAfter==null?null:Date.from(purgeAfter));
                 update.append("$inc",new Document("referenceVersion",1L));
@@ -137,6 +141,23 @@ public final class MongoCareerCommandRepository implements CareerCommandReposito
                         .append("idempotencyKey","spring-career-target-state:"+after.id()+":v"+after.version()).append("state","pending").append("attempts",0)
                         .append("availableAt",now).append("createdAt",now).append("updatedAt",now));
             }
+        }
+        @Override public void validateUnmappedMove(StoredRecord before,Map<String,CareerUnmappedPropertyEnvelope> unmapped) {
+            moveUnmapped(before,unmapped);
+        }
+        private Document moveUnmapped(StoredRecord before,Map<String,CareerUnmappedPropertyEnvelope> unmapped) {
+            var raw=records().find(session,new Document("_id",before.business().id()).append("userId",user).append("version",before.business().version()))
+                    .projection(new Document("unmappedProperties",1)).first();
+            if(raw==null)throw CareerCommandException.stale();
+            var stored=readUnmappedStorage(raw.get("unmappedProperties"));
+            if(stored.legacy().keySet().stream().anyMatch(unmapped::containsKey))throw new CareerCommandException(409,"LEGACY_UNMAPPED_PROPERTY_CONFLICT");
+            // 구형 값은 출처를 추정하지 않고 같은 BSON 값으로 유지합니다.
+            var result=new Document(stored.legacy());
+            unmapped.forEach((id,envelope)->result.put(id,Objects.equals(stored.envelopes().get(id),envelope)
+                    ? ((Document)raw.get("unmappedProperties")).get(id)
+                    : writeUnmapped(Map.of(id,envelope)).get(id)));
+            // 원래 없거나 null인 필드도 새 값이 없으면 그대로 둡니다.
+            return raw.get("unmappedProperties")==null&&result.isEmpty()?null:result;
         }
         @Override public Replay replay(String key) {
             var raw=db.getCollection("career_command_idempotency").find(session,new Document("userId",user).append("key",key)).first();
@@ -203,15 +224,27 @@ public final class MongoCareerCommandRepository implements CareerCommandReposito
         }
     }
     private static Map<String,CareerUnmappedPropertyEnvelope> readUnmapped(Object value) {
-        if(value==null) return Map.of();
-        if(!(value instanceof Document raw)) throw new IllegalStateException("unmapped shape가 올바르지 않습니다");
+        return readUnmappedStorage(value).envelopes();
+    }
+    private record UnmappedStorage(Map<String,CareerUnmappedPropertyEnvelope> envelopes,Document legacy) {}
+    private static UnmappedStorage readUnmappedStorage(Object value) {
+        if(value==null)return new UnmappedStorage(Map.of(),new Document());
+        if(!(value instanceof Document raw))throw new CareerCommandException(409,"UNMAPPED_PROPERTY_FORMAT_UNSUPPORTED");
         var result=new TreeMap<String,CareerUnmappedPropertyEnvelope>();
-        raw.forEach((id,item) -> {
-            var envelope=(Document)item; var provenance=envelope.get("provenance",Document.class);
-            result.put(id,new CareerUnmappedPropertyEnvelope(envelope.getString("sourceCategoryId"),MongoCareerRecordProjector.projectPropertyValue(envelope.get("propertyValue",Document.class)),
-                    new CareerUnmappedPropertyProvenance(provenance.getString("sourcePropertyKey"),provenance.getString("sourcePropertyName"),((Number)provenance.get("sourcePropertyDefinitionVersion")).longValue(),Instant.parse(provenance.getString("preservedAt")),((Number)provenance.get("sourceRecordVersion")).longValue(),CareerUnmappedPropertyReason.fromWireName(provenance.getString("reason")))));
-        });
-        return new CareerUnmappedProperties(result).values();
+        var legacy=new Document();
+        try {
+            raw.forEach((id,item) -> {
+                if(!(item instanceof Document envelope)||Collections.disjoint(envelope.keySet(),Set.of("sourceCategoryId","propertyValue","provenance"))) {
+                    legacy.put(id,item);return;
+                }
+                var provenance=envelope.get("provenance",Document.class);
+                result.put(id,new CareerUnmappedPropertyEnvelope(envelope.getString("sourceCategoryId"),MongoCareerRecordProjector.projectPropertyValue(envelope.get("propertyValue",Document.class)),
+                        new CareerUnmappedPropertyProvenance(provenance.getString("sourcePropertyKey"),provenance.getString("sourcePropertyName"),((Number)provenance.get("sourcePropertyDefinitionVersion")).longValue(),Instant.parse(provenance.getString("preservedAt")),((Number)provenance.get("sourceRecordVersion")).longValue(),CareerUnmappedPropertyReason.fromWireName(provenance.getString("reason")))));
+            });
+            return new UnmappedStorage(new CareerUnmappedProperties(result).values(),legacy);
+        } catch(RuntimeException error) {
+            throw new CareerCommandException(409,"UNMAPPED_PROPERTY_FORMAT_UNSUPPORTED");
+        }
     }
     private static Document writeUnmapped(Map<String,CareerUnmappedPropertyEnvelope> values) {
         var raw=new Document(); values.forEach((id,envelope) -> {

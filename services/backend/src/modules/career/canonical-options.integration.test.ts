@@ -1,6 +1,6 @@
 import {randomUUID} from "node:crypto";
 import {afterAll,beforeAll,describe,expect,it} from "vitest";
-import {API_PREFIX,CareerPropertyOptionResponseSchema} from "@expresso/contracts";
+import {API_PREFIX,CareerPropertyOptionResponseSchema,CreateCareerCategorySchema,UuidSchema} from "@expresso/contracts";
 import {mongoCollections} from "@expresso/database";
 import {buildApi} from "../../api/build-app.js";
 import type {RuntimeConfig} from "../../config/runtime-config.js";
@@ -39,5 +39,46 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("private freeform options actual 
   expect((await app.inject({method:"POST",url:path(),headers:{authorization:`Bearer ${tokenA}`},payload:{label:"x",userId:userB}})).statusCode).toBe(400);
   expect((await app.inject({method:"POST",url:path(),payload:{label:"x"}})).statusCode).toBe(401);
   expect(await fixture.resource.db.collection("career_property_options").countDocuments({})).toBe(count);
+ });
+ it.each(["name","label","both"])("stores new option %s aliases as name without changing IDs or metadata",async field=>{
+  const optionId=randomUUID(),propertyId=randomUUID(),text=" Exact 😀 ";
+  const option={id:optionId,color:"blue",...(field!=="label"?{name:text}:{}),...(field!=="name"?{label:text}:{})};
+  const response=await app.inject({method:"POST",url:`${API_PREFIX}/career/categories`,headers:{authorization:`Bearer ${tokenA}`},payload:{key:`pick_${randomUUID().replaceAll("-","")}`,name:"Pick",icon:"note",defaultView:"table",propertySchemaV2:[{id:propertyId,key:"pick",name:"Pick",type:"select",required:false,system:false,config:{options:[option]},order:0,version:1,deletedAt:null}]}});
+  expect(response.statusCode).toBe(201);
+  const stored=await mongoCollections(fixture.resource.db).careerCategories.findOne({_id:response.json().data.id});
+  expect(stored!.propertySchemaV2[0]!.config.options).toEqual([{id:optionId,name:text,color:"blue"}]);
+ });
+ it("rejects conflicting option aliases on category creation without any write",async()=>{
+  const db=mongoCollections(fixture.resource.db),before=await db.careerCategories.countDocuments({userId:userA});
+  const response=await app.inject({method:"POST",url:`${API_PREFIX}/career/categories`,headers:{authorization:`Bearer ${tokenA}`},payload:{key:"conflicting_options",name:"Pick",icon:"note",defaultView:"table",propertySchemaV2:[{id:randomUUID(),key:"pick",name:"Pick",type:"select",required:false,system:false,config:{options:[{id:randomUUID(),name:"A",label:"B"}]},order:0,version:1,deletedAt:null}]}});
+  expect(response.statusCode).toBe(400);expect(await db.careerCategories.countDocuments({userId:userA})).toBe(before);
+ });
+ it.each(["name","label"])("keeps a contract-valid UUIDv7 option ID when normalizing %s",async field=>{
+  const optionId="019a3370-0000-7000-8000-000000000001";expect(UuidSchema.safeParse(optionId).success).toBe(true);
+  const input={key:`v7_${randomUUID().replaceAll("-","")}`,name:"UUIDv7",icon:"note",defaultView:"table",propertySchemaV2:[{id:randomUUID(),key:"pick",name:"Pick",type:"select",required:false,system:false,config:{options:[{id:optionId,[field]:" Exact ",color:"blue"}]},order:0,version:1,deletedAt:null}]};
+  expect(CreateCareerCategorySchema.safeParse(input).success).toBe(true);
+  const response=await app.inject({method:"POST",url:`${API_PREFIX}/career/categories`,headers:{authorization:`Bearer ${tokenA}`},payload:input});
+  expect(response.statusCode).toBe(201);
+  expect((await mongoCollections(fixture.resource.db).careerCategories.findOne({_id:response.json().data.id}))!.propertySchemaV2[0]!.config.options).toEqual([{id:optionId,name:" Exact ",color:"blue"}]);
+ });
+ it("rejects invalid option configurations before any category write with an otherwise valid request",async()=>{
+  const optionId=randomUUID(),db=mongoCollections(fixture.resource.db),before=await db.careerCategories.countDocuments({userId:userA});
+  for(const options of ["not an array",[{id:"not-a-uuid",name:"A"}],[{id:optionId,name:5}],[{id:optionId,name:" "}],[{id:optionId,name:"A",label:"B"}],[{id:optionId,name:"A"},{id:optionId,name:"B"}]]) {
+   const input={key:`bad_${randomUUID().replaceAll("-","")}`,name:"Invalid",icon:"note",defaultView:"table",propertySchemaV2:[{id:randomUUID(),key:"pick",name:"Pick",type:"select",required:false,system:false,config:{options},order:0,version:1,deletedAt:null}]};
+   expect(CreateCareerCategorySchema.safeParse(input).success).toBe(true);
+   const response=await app.inject({method:"POST",url:`${API_PREFIX}/career/categories`,headers:{authorization:`Bearer ${tokenA}`},payload:input});
+   expect(response.statusCode).toBe(400);expect(await db.careerCategories.countDocuments({userId:userA})).toBe(before);
+  }
+ });
+ it("normalizes legacy label options when adding an ordinary option without changing records",async()=>{
+  const propertyId=randomUUID(),optionId=randomUUID(),career=new CareerService(fixture.resource);
+  const category=await career.createCategory(userA,{key:`ordinary_${randomUUID().replaceAll("-","")}`,name:"Ordinary",icon:"note",defaultView:"table",propertySchemaV2:[{id:propertyId,key:"pick",name:"Pick",type:"select",required:false,system:false,config:{options:[{id:optionId,name:" Existing ",color:"blue"}]},order:0,version:1,deletedAt:null}]});
+  const db=mongoCollections(fixture.resource.db);
+  await db.careerCategories.updateOne({_id:category.id},{$set:{"propertySchemaV2.0.config.options":[{id:optionId,label:" Existing ",color:"blue"}]}});
+  const records=await db.careerRecords.find({userId:userA}).toArray();
+  const response=await app.inject({method:"POST",url:`${API_PREFIX}/career/categories/${category.id}/property-schema/${propertyId}/options`,headers:{authorization:`Bearer ${tokenA}`},payload:{label:" Added "}});
+  expect(response.statusCode).toBe(200);const added=CareerPropertyOptionResponseSchema.parse(response.json());
+  expect((await db.careerCategories.findOne({_id:category.id}))!.propertySchemaV2[0]!.config.options).toEqual([{id:optionId,name:" Existing ",color:"blue"},{id:added.data.id,name:" Added "}]);
+  expect(await db.careerRecords.find({userId:userA}).toArray()).toEqual(records);
  });
 });

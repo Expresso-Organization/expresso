@@ -606,6 +606,34 @@ class CareerWriterMongoIntegrationTest {
             assertEquals(0,db.getCollection("career_records").countDocuments());assertEquals(0,db.getCollection("career_command_idempotency").countDocuments());assertEquals(0,db.getCollection("outbox_events").countDocuments());
         }
     }
+    @Test void moveMapsLegacyNameAndLabelOptionsWithAndWithoutPrivateOverlay() throws Exception {
+        for(var sourceField:List.of("name","label"))for(var targetField:List.of("name","label"))for(var privateOverlay:List.of(false,true)) {
+            seed();
+            var sourceOption=new Document("id",id(81)).append(sourceField," Exact ").append("color","blue");
+            var targetOption=new Document("id",id(82)).append(targetField," Exact ").append("color","green");
+            var sourceDefs=List.of(def(id(15),"choice","select",new Document("options",List.of(sourceOption))),def(id(16),"keep","text",new Document()));
+            var targetDefs=List.of(def(id(25),"choice","select",new Document("options",List.of(targetOption))),def(id(26),"keep","text",new Document()));
+            db.getCollection("career_categories").updateOne(new Document("_id",CATEGORY),new Document("$set",new Document("propertySchemaV2",sourceDefs)));
+            db.getCollection("career_categories").updateOne(new Document("_id",TARGET),new Document("$set",new Document("propertySchemaV2",targetDefs)));
+            if(privateOverlay)db.getCollection("career_property_options").insertMany(List.of(privateOption(USER,CATEGORY,id(15),id(81)," Exact "),privateOption(USER,TARGET,id(25),id(82)," Exact ")));
+            // 업무 fence의 writeVersion 증가는 정상이며 스키마/사용자 데이터만 불변이어야 합니다.
+            var categories=db.getCollection("career_categories").find(new Document("_id",new Document("$in",List.of(CATEGORY,TARGET)))).projection(new Document("writeVersion",0)).sort(new Document("_id",1)).into(new ArrayList<>());
+            var ledger=db.getCollection("career_property_options").find().sort(new Document("_id",1)).into(new ArrayList<>());
+            var created=call(post(PATH).header("Idempotency-Key","option-alias-move-key").content(new Document("categoryId",CATEGORY).append("title","Kept title").append("propertyValues",List.of(new Document("propertyDefinitionId",id(15)).append("type","select").append("value",id(81)),new Document("propertyDefinitionId",id(16)).append("type","text").append("value"," Kept text "))).toJson()),201).get("data");
+            var rid=created.get("id").asText();protectDocument(rid);var before=stored(rid);
+            var preview=call(post(PATH+"/"+rid+"/move/preview").header("If-Match","\"v1\"").content(new Document("targetCategoryId",TARGET).toJson()),200).get("data");
+            assertEquals(before,stored(rid));
+            var moved=call(post(PATH+"/"+rid+"/move").header("If-Match","\"v1\"").content(new Document("targetCategoryId",TARGET).append("previewToken",preview.get("previewToken").asText()).toJson()),200).get("data");
+            for(var conversion:preview.get("conversions")) {
+                boolean found=false;for(var value:moved.get("propertyValues"))if(value.equals(conversion.get("sampleAfter")))found=true;
+                assertTrue(found,conversion.toString());
+            }
+            assertEquals(JSON.readTree("[{\"propertyDefinitionId\":\""+id(25)+"\",\"type\":\"select\",\"value\":\""+id(82)+"\"},{\"propertyDefinitionId\":\""+id(26)+"\",\"type\":\"text\",\"value\":\" Kept text \"}]"),moved.get("propertyValues"));
+            assertEquals("Kept title",moved.get("title").asText());assertEquals(2,moved.get("version").asLong());assertDocument(rid);
+            assertEquals(categories,db.getCollection("career_categories").find(new Document("_id",new Document("$in",List.of(CATEGORY,TARGET)))).projection(new Document("writeVersion",0)).sort(new Document("_id",1)).into(new ArrayList<>()));
+            assertEquals(ledger,db.getCollection("career_property_options").find().sort(new Document("_id",1)).into(new ArrayList<>()));
+        }
+    }
     @Test void moveMapsOwnerPrivateOptionsByExactWireLabelWithoutNormalizing() throws Exception {
         privateOptionsCategory();var target=def(id(406),"tags","multi_select",new Document("legacyFreeformTags",true).append("options",List.of()));
         db.getCollection("career_categories").updateOne(new Document("_id",TARGET),new Document("$set",new Document("propertySchemaV2",List.of(target))));

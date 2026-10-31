@@ -52,8 +52,8 @@ function defaultValue(definition: CareerPropertyDefinitionV2) {
   if(converted.kind!=="exact") throw new CareerError(400,"default option IDs are invalid");
   return parsed.data;
 }
-function validateCanonicalConfiguration(type:CareerPropertyDefinitionV2["type"],config:Record<string,unknown>):void {
-  if(type!=="select" && type!=="multi_select"){validateCareerPropertyConfiguration(type,config);return;}
+export function normalizeCanonicalConfiguration(type:CareerPropertyDefinitionV2["type"],config:Record<string,unknown>):Record<string,unknown> {
+  if(type!=="select" && type!=="multi_select"){validateCareerPropertyConfiguration(type,config);return config;}
   if(!Array.isArray(config.options))throw new CareerError(400,"select properties require options");
   const ids=new Set<string>(),labels=new Set<string>();
   const normalized=config.options.map(raw=>{
@@ -62,16 +62,19 @@ function validateCanonicalConfiguration(type:CareerPropertyDefinitionV2["type"],
     if(!UuidSchema.safeParse(option.id).success || typeof label!=="string" || (option.label!==undefined && typeof option.label!=="string") || (option.name!==undefined && typeof option.name!=="string") || (typeof option.label==="string" && typeof option.name==="string" && option.label!==option.name) || (config.legacyFreeformTags===true?label.length>200:!label.trim()))throw new CareerError(400,"property option is invalid");
     const id=option.id as string;
     if(ids.has(id) || (config.legacyFreeformTags===true && labels.has(label)))throw new CareerError(400,"property option mapping is ambiguous");
-    ids.add(id);labels.add(label);return {...option,name:label};
+    // 신규 쓰기는 name 하나로 저장하되 ID·표시 원문·기타 메타데이터는 유지합니다.
+    const {label:_label,...metadata}=option;
+    ids.add(id);labels.add(label);return {...metadata,name:label};
   });
-  if(config.legacyFreeformTags!==true)validateCareerPropertyConfiguration(type,{...config,options:normalized});
+  // UUID는 위 UuidSchema를 기준으로 하며 구형 v1~v5 검사로 다시 제한하지 않습니다.
+  return {...config,options:normalized};
 }
 function prepare(category: CareerCategoryDoc,change: CareerPropertySchemaChange,now: Date) {
   const next=structuredClone(definitions(category));let operation: CareerPropertyMutationPlan|null=null;const recomputePropertyIds:string[]=[];
   if(change.kind==="create") {
     if(change.property.system && !["created_time","updated_time"].includes(change.property.type)) throw new CareerError(403,"system properties cannot be created");
-    validateCanonicalConfiguration(change.property.type,change.property.config);
-    const created=CareerPropertyDefinitionV2Schema.parse({...change.property,id:change.property.id??randomUUID(),order:change.property.order??next.length,version:1,deletedAt:null});
+    const config=normalizeCanonicalConfiguration(change.property.type,change.property.config);
+    const created=CareerPropertyDefinitionV2Schema.parse({...change.property,config,id:change.property.id??randomUUID(),order:change.property.order??next.length,version:1,deletedAt:null});
     if(next.some(d=>d.id===created.id || d.key===created.key)) throw new CareerError(409,"property ID or key already exists");
     next.push(created);const value=defaultValue(created);
     if(value) operation={kind:"default",source:null,target:created,defaultValue:value,confirmLossy:false};
@@ -87,13 +90,13 @@ function prepare(category: CareerCategoryDoc,change: CareerPropertySchemaChange,
     if(change.kind==="reorder") target.order=change.order;
     if(change.kind==="configure") {
       if(source.type === "select" || source.type === "multi_select") {
-        validateCanonicalConfiguration(source.type,change.config);
+        const config=normalizeCanonicalConfiguration(source.type,change.config);
         const ids = (config:Record<string,unknown>) => Array.isArray(config.options) ? config.options.map(option=>(option as {id:string}).id) : [];
         if(ids(source.config).some(id=>!ids(change.config).includes(id))) throw new CareerError(409,"existing options cannot be removed");
-        target.config={...source.config,options:change.config.options};
+        target.config={...source.config,options:config.options};
       } else {
         if(source.type!=="formula" && source.type!=="rollup") throw new CareerError(400,"only computed and select properties can be configured");
-        validateCanonicalConfiguration(source.type,change.config);target.config=change.config;recomputePropertyIds.push(target.id);
+        target.config=normalizeCanonicalConfiguration(source.type,change.config);recomputePropertyIds.push(target.id);
       }
     }
     if(change.kind==="delete") {
@@ -104,13 +107,13 @@ function prepare(category: CareerCategoryDoc,change: CareerPropertySchemaChange,
     if(change.kind==="restore") {
       if(source.deletedAt===null) throw new CareerError(409,"property is not deleted");
       if(next.some(d=>d.id!==source.id && d.key===source.key)) throw new CareerError(409,"restored property key is in use");
-      validateCanonicalConfiguration(source.type,source.config);target.deletedAt=null;
+      normalizeCanonicalConfiguration(source.type,source.config);target.deletedAt=null;
       if(WRITABLE.has(source.type) || customTimestamp(source) || source.type==="relation") operation={kind:"restoration",source,target,defaultValue:null,confirmLossy:false};
       recomputePropertyIds.push(source.id);
     }
     if(change.kind==="type-change") {
       if(!WRITABLE.has(source.type) || !WRITABLE.has(change.type)) throw new CareerError(403,"property type is protected");
-      target.type=change.type;target.config=change.config??source.config;validateCanonicalConfiguration(target.type,target.config);
+      target.type=change.type;target.config=normalizeCanonicalConfiguration(target.type,change.config??source.config);
       const optionIds=(d: CareerPropertyDefinitionV2)=>Array.isArray(d.config.options)?d.config.options.map(option=>(option as {id:string}).id):[];
       if(source.type!==target.type || optionIds(source).some(id=>!optionIds(target).includes(id))) operation={kind:"conversion",source,target,defaultValue:null,confirmLossy:false};
       recomputePropertyIds.push(target.id);
@@ -134,11 +137,10 @@ export async function registerCanonicalCareerPropertyOption(context:MongoContext
    if(!current||!source||!["select","multi_select"].includes(source.type))throw new CareerError(404,"career property not found");
    if(source.system)throw new CareerError(403,"system property cannot be changed");
    if(await db.careerPropertyMutations.findOne({userId,categoryId,active:true},options))throw new CareerError(409,"category property mutation is active");
-   const configured=Array.isArray(source.config.options)?source.config.options as {id:string;name?:string;label?:string}[]:[];
-   const existing=configured.find(option=>(option.name??option.label)===input.label);
+   const configured=normalizeCanonicalConfiguration(source.type,source.config).options as {id:string;name:string}[];
+   const existing=configured.find(option=>option.name===input.label);
    if(existing)return CareerPropertyOptionResponseSchema.parse({data:{id:existing.id,name:input.label},version:1});
-   const added={id:randomUUID(),name:input.label},config={...source.config,options:[...configured,added]};
-   validateCanonicalConfiguration(source.type,config);
+   const added={id:randomUUID(),name:input.label},config=normalizeCanonicalConfiguration(source.type,{...source.config,options:[...configured,added]});
    const propertySchemaV2=current.propertySchemaV2.map(item=>item.id===propertyId?{...item,config,version:nextVersion(item.version)}:item);
    const changed=await db.careerCategories.updateOne({_id:categoryId,userId,version:current.version},{$set:{propertySchemaV2,updatedAt:new Date()},$inc:{version:1,schemaVersion:1}},options);
    if(!changed.matchedCount)throw new CareerError(409,"category version is stale");

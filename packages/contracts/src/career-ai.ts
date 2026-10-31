@@ -32,6 +32,10 @@ export const AiProposalApplyRequestSchema = z.strictObject({
   recordId: UuidSchema, proposalId: UuidSchema, expectedDocumentVersion: z.number().int().nonnegative(),
   commandIndexes: z.array(z.number().int().nonnegative()).max(100), propertyChangeIndexes: z.array(z.number().int().nonnegative()).max(50),
 });
+/** owner intent가 없는 transaction의 선택 검증에서만 발행하는 확정 거부 신호입니다. */
+export const AiProposalApplyRejectionSchema = z.strictObject({
+  recordId: UuidSchema, proposalId: UuidSchema, state: z.literal("not-prepared"),
+});
 export const AiProposalRejectRequestSchema = AiProposalPreviewRequestSchema;
 export const AiProposalCancelRequestSchema = AiProposalPreviewRequestSchema;
 export const AiProposalUndoRequestSchema = z.strictObject({

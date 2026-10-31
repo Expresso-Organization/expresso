@@ -1,6 +1,6 @@
 import {
   CareerBusinessPropertyValueSchema,
-  AiEditProposalSchema, CareerProducerScopeSchema, CareerProducerSelectedPropertyChangeSchema,
+  AiEditProposalSchema, AiProposalApplyRejectionSchema, CareerProducerScopeSchema, CareerProducerSelectedPropertyChangeSchema,
   PrepareCareerAiProposalSchema, PrepareCareerAiProposalUndoSchema,
   type CareerProducerScope, type CareerProducerIntent, type CareerProducerSelectedPropertyChange,
   type PrepareCareerAiProposal, type PrepareCareerAiProposalUndo,
@@ -16,7 +16,7 @@ import { mongoCollections, overlayCareerPropertyOptions, type CareerAiProposalDo
 import { inTransaction } from "../../platform/mongo-transaction.js";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { requireActiveUser } from "../identity/index.js";
-import { createCareerProducerIntent, validateCareerProducerIntent, careerProducerScopeFilter, type CareerProducerCoordinator } from "../career/index.js";
+import { createCareerProducerIntent, validateCareerProducerIntent, careerProducerScopeFilter, publicCareerWriteOperation, type CareerProducerCoordinator } from "../career/index.js";
 import type { CareerDocumentApi } from "./service.js";
 import { CareerDocumentError } from "./errors.js";
 
@@ -121,10 +121,14 @@ export class PreparedAiProposalService {
         if (prior.operationId !== input.operationId) throw new CareerDocumentError(409, "proposal already has a prepared operation");
         const business = changes.length && prior.business?.kind === "patch" ? { ...prior.business, patches: [{ propertyValues: selectedNextDelta(changes, overrides) }] } : null;
         const replay = createCareerProducerIntent({ producer: "ai-proposal", userId, sourceId: proposal._id, operationId: input.operationId, business, document });
-        if (replay.fingerprint !== prior.fingerprint) throw new CareerDocumentError(409, "prepared selection changed");
+        if (replay.fingerprint !== prior.fingerprint) throw Object.assign(new CareerDocumentError(409, "prepared selection changed"), {
+          ...(current?.operationId===prior.operationId ? {publicDetails:{operation:publicCareerWriteOperation(current)}} : {}),
+        });
         return CareerProducerScopeSchema.parse(prior);
       }
-      if (current) throw new CareerDocumentError(409, "proposal already has a prepared operation");
+      if (current) throw Object.assign(new CareerDocumentError(409, "proposal already has a prepared operation"), {
+        publicDetails:{operation:publicCareerWriteOperation(current)},
+      });
       if (proposal.status !== "ready" || proposal.expiresAt.getTime() <= Date.now()) throw new CareerDocumentError(409, "AI proposal is unavailable");
       let business: CareerProducerIntent["business"] = null;
       if (changes.length) {
@@ -134,7 +138,15 @@ export class PreparedAiProposalService {
         if (!category) throw new CareerDocumentError(404, "career category not found");
         const definitions = "propertyDefinitions" in category && Array.isArray(category.propertyDefinitions) ? category.propertyDefinitions as CareerPropertyDefinitionV2[] : category.propertySchemaV2 ?? [];
         const optionScope={userId,categoryId:category._id};const options=await db.careerPropertyOptions.find(optionScope,{session:tx.session}).toArray();const effective=overlayCareerPropertyOptions(definitions,options,optionScope);
-        const delta = selectAiCanonicalDelta(effective, record.propertyValues, changes, overrides);
+        let delta;
+        try { delta = selectAiCanonicalDelta(effective, record.propertyValues, changes, overrides); }
+        catch(error) {
+          // current가 없는 같은 transaction에서 intent 저장 전의 순수 검증만 확정 거부로 알립니다.
+          if(error instanceof CareerDocumentError && error.statusCode===409)throw Object.assign(error,{
+            publicDetails:{aiApplyRejection:AiProposalApplyRejectionSchema.parse({recordId,proposalId:input.proposalId,state:"not-prepared"})},
+          });
+          throw error;
+        }
         business = { kind: "patch", recordId, expectedVersion: record.version, expectedCategoryVersion: category.version, patches: [{ propertyValues: delta }] };
       }
       const intent = createCareerProducerIntent({ producer: "ai-proposal", userId, sourceId: proposal._id, operationId: input.operationId, business, document });
