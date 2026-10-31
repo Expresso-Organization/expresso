@@ -2,7 +2,7 @@ import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
 import {
@@ -24,6 +24,17 @@ import {
 import { ClaudeCodeAiClient } from "./claude-code.js";
 import { SOFT_KEYWORDS, toToolSchema, type AiFix } from "./client.js";
 import { applyFixes, groupViolations, jsonPointer, runWithFixes, zodViolations } from "./fixes.js";
+
+// Windows는 확장자 없는 shebang 파일을 실행하지 않습니다. 이 시험의 가짜 CLI만 Node로 실행합니다.
+// 실제 자식 프로세스·표준 입출력·종료와 시간 제한은 그대로 검증하며 제품 CLI 경로는 바꾸지 않습니다.
+vi.mock("node:child_process",async importOriginal=>{
+  const actual=await importOriginal<typeof import("node:child_process")>();
+  return {...actual,spawn(command:string,args:readonly string[],options:import("node:child_process").SpawnOptions){
+    return process.platform === "win32" && /[\\/]fake-claude-[^\\/]+[\\/]claude$/.test(command)
+      ? actual.spawn(process.execPath,[command,...args],options)
+      : actual.spawn(command,args,options);
+  }};
+});
 
 /**
  * 가짜 CLI. 응답 목록을 차례로 내고, 받은 인자를 줄마다 기록합니다. 실제 CLI처럼 `stream-json` 마지막 줄에

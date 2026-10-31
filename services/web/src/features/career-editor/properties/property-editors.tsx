@@ -10,7 +10,12 @@ export interface PropertyOption { id: string; name: string }
 export function propertyOptions(definition: CareerPropertyDefinitionV2): PropertyOption[] {
   const options = definition.config.options;
   if (!Array.isArray(options)) return [];
-  return options.flatMap((option) => option && typeof option === "object" && typeof (option as { id?: unknown }).id === "string" && typeof (option as { name?: unknown }).name === "string" ? [{ id: (option as { id: string }).id, name: (option as { name: string }).name }] : []);
+  return options.flatMap((option) => {
+    if (!option || typeof option !== "object") return [];
+    const item = option as { id?: unknown; name?: unknown; label?: unknown };
+    const name = typeof item.name === "string" ? item.name : item.label;
+    return typeof item.id === "string" && typeof name === "string" ? [{ id: item.id, name }] : [];
+  });
 }
 
 export function commitOnEnter(event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>, commit: () => void) {

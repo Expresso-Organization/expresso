@@ -13,7 +13,11 @@ import { configDefaults, defineConfig } from "vitest/config";
  * paths에만 적혀 있어 번들러에게 따로 알려야 합니다.
  */
 export default defineConfig({
-  test: { exclude: [...configDefaults.exclude, "e2e/**"] },
+  test: {
+    exclude: [...configDefaults.exclude, "e2e/**"],
+    // jsdom·편집기 변환의 자원 경합을 줄이고 로컬과 CI에 같은 병렬 예산을 적용합니다.
+    maxWorkers: 2,
+  },
   oxc: { jsx: { runtime: "automatic" } },
   resolve: {
     alias: {

@@ -1,8 +1,9 @@
 import { createHash, randomUUID } from "node:crypto";
 import { performance } from "node:perf_hooks";
+import { writeFile } from "node:fs/promises";
 
 import { applyCareerCommands, encodeDocumentAsYUpdate, reconstructYDocument } from "@expresso/editor";
-import { mongoCollections, type CareerRecordDoc } from "@expresso/database";
+import { mongoCollections, prepareCanonicalCareerRecord, type CareerRecordDoc } from "@expresso/database";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { createMongoFixture } from "../../../test/support/mongodb.js";
@@ -11,8 +12,10 @@ import { CareerService } from "../career/service.js";
 import { CareerViewService } from "../career/views.js";
 import { MongoCareerComputationService } from "../career-computation/service.js";
 import { CareerDocumentService } from "./service.js";
+import { documentState, encodeDocumentAsYUpdate as encodeClientUpdate } from "../../../test/support/career-document-client.js";
 
 const enabled = process.env.EXPRESSO_LOAD_TEST === "1" && Boolean(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB_URL);
+const measurements: unknown[] = [];
 function percentile(values: readonly number[], value: number) { return values[Math.ceil(values.length * value) - 1]!; }
 async function budget(name: string, quantile: "p50" | "p75" | "p95", limitMs: number, work: () => Promise<void> | void) {
   await work(); // warmup
@@ -20,8 +23,9 @@ async function budget(name: string, quantile: "p50" | "p75" | "p95", limitMs: nu
   for (let sample = 0; sample < 30; sample += 1) { const started = performance.now(); await work(); samples.push(performance.now() - started); }
   samples.sort((left, right) => left - right);
   const report = { metric: name, p50: percentile(samples, .5), p75: percentile(samples, .75), p95: percentile(samples, .95), limitMs, quantile };
+  measurements.push(report);
   console.info(JSON.stringify({ event: "career_editor.performance", ...report }));
-  expect(report[quantile]).toBeLessThanOrEqual(limitMs);
+  expect.soft(report[quantile], name).toBeLessThanOrEqual(limitMs);
 }
 
 describe.skipIf(!enabled)("career editor performance budgets", () => {
@@ -45,8 +49,24 @@ describe.skipIf(!enabled)("career editor performance budgets", () => {
     rollupRecordId = (await career.createRecord(userId, randomUUID(), { categoryId: sourceCategory.id, title: "롤업", properties: {}, bodyMd: "" })).record.id;
     const targets = await Promise.all(Array.from({ length: 100 }, (_, index) => career.createRecord(userId, randomUUID(), { categoryId: targetCategory.id, title: `대상 ${index}`, properties: { score: { type: "number", value: index } }, bodyMd: "" })));
     await mongoCollections(fixture.resource.db).careerRecordRelations.insertMany(targets.map(({ record }) => ({ _id: randomUUID(), userId, sourceRecordId: rollupRecordId, sourcePropertyId: relationId, targetRecordId: record.id, inversePropertyId: null, cardinality: "multiple" as const, deletePolicy: "restrict" as const, createdBy: "user" as const, createdAt: new Date(), updatedAt: new Date() })));
+    // 읽기 성능 fixture도 migration 이후의 실제 저장 계약을 지킵니다. 검증을 끄거나 legacy fallback을 쓰지 않습니다.
+    const collections = mongoCollections(fixture.resource.db);
+    for (const record of await collections.careerRecords.find({userId}).toArray()) {
+      const owner = await collections.careerCategories.findOne({_id:record.categoryId,userId});
+      const prepared = prepareCanonicalCareerRecord(record,owner!.propertySchemaV2);
+      expect(prepared.conflicts).toEqual([]);
+      await collections.careerRecords.updateOne({_id:record._id,userId},{$set:prepared.set});
+    }
   }, 60_000);
-  afterAll(async () => { await fixture?.dispose(); });
+  afterAll(async () => {
+    await fixture?.dispose();
+    if(process.env.EXPRESSO_PERFORMANCE_REPORT) await writeFile(process.env.EXPRESSO_PERFORMANCE_REPORT,JSON.stringify(measurements,null,2));
+  });
+
+  it("prepares all canonical view fixtures before measuring performance", async () => {
+    const result = await viewService.query(userId, viewId, null, 100);
+    expect(result.data).toHaveLength(100);
+  });
 
   it("prints warmup+30-sample p50/p75/p95 and enforces editor budgets", async () => {
     await budget("bootstrap_200kb", "p95", 300, async () => { await service.bootstrap(userId, recordId); });
@@ -63,9 +83,11 @@ describe.skipIf(!enabled)("career editor performance budgets", () => {
     await budget("snapshot_restore_1mb", "p95", 2_000, () => { reconstructYDocument([snapshotUpdate]); });
     let sequence = bootstrap.documentVersion;
     await budget("autosave_ack", "p95", 500, async () => {
-      const current = await service.bootstrap(userId, recordId); const next = structuredClone(current.document); next.content[0]!.text = [{ text: `저장 ${sequence}` }];
-      const update = encodeDocumentAsYUpdate(next, [encodeDocumentAsYUpdate(current.document)]); sequence = current.documentVersion;
+      const current = await service.bootstrap(userId, recordId); sequence = current.documentVersion;
+      const next = structuredClone(current.document); next.content[0]!.text = [{ text: `저장 ${sequence}` }];
+      const update = encodeClientUpdate(next, [documentState(current)]);
       await service.appendUpdate(userId, { recordId, clientId: randomUUID(), clientSequence: 1, expectedSequence: sequence, updateBase64: Buffer.from(update).toString("base64"), checksum: createHash("sha256").update(update).digest("hex") });
     });
+    expect((await service.bootstrap(userId,recordId)).document.content[0]?.text?.[0]?.text).toBe(`저장 ${sequence}`);
   }, 90_000);
 });

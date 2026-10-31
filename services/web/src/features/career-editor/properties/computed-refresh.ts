@@ -11,7 +11,7 @@ export const COMPUTED_REFRESH_INTERVAL_MS = 1_000;
  */
 export const COMPUTED_REFRESH_DEADLINE_MS = 1_000 + 1_000 + 2_000 + 4_000 + COMPUTED_REFRESH_INTERVAL_MS;
 
-type RecordLike = Pick<CareerRecord, "id" | "version" | "title" | "properties" | "computedProperties">;
+type RecordLike = Pick<CareerRecord, "id" | "version" | "title" | "properties" | "computedProperties" | "propertyValues">;
 
 /**
  * 서버가 이 저장에 계산 작업을 넣었는지 본다. 넣지 않았으면 Worker가 버전을 올리지 않으므로 기다리지 않는다.
@@ -20,9 +20,12 @@ type RecordLike = Pick<CareerRecord, "id" | "version" | "title" | "properties" |
  */
 export function savedComputationInput(previous: RecordLike, next: RecordLike, definitions: readonly CareerPropertyDefinitionV2[]): boolean {
   const live = definitions.filter((definition) => definition.deletedAt === null);
+  const input = (record: RecordLike, definition: CareerPropertyDefinitionV2) => record.propertyValues !== undefined && definition.type !== "relation"
+    ? record.propertyValues.find(value => value.propertyDefinitionId === definition.id) ?? null
+    : record.properties[definition.key] ?? null;
   const changed = live.some((definition) => definition.type === "title"
     ? previous.title !== next.title
-    : JSON.stringify(previous.properties[definition.key] ?? null) !== JSON.stringify(next.properties[definition.key] ?? null));
+    : JSON.stringify(input(previous, definition)) !== JSON.stringify(input(next, definition)));
   if (changed) return true;
   return previous.title === next.title && live.some((definition) => definition.type === "relation");
 }

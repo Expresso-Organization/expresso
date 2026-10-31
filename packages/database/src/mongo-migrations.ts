@@ -9,6 +9,9 @@ import { jobSourceProviderSteps } from "./mongodb-migrations/0005/migration.js";
 import { careerEditorLedgerSteps } from "./mongodb-migrations/0006/migration.js";
 import { jobSourceSeedSteps } from "./mongodb-migrations/0007/migration.js";
 import { careerViewConfigurationSteps } from "./mongodb-migrations/0008/migration.js";
+import { careerBusinessWriterPreparationSteps } from "./mongodb-migrations/0025/migration.js";
+import { careerProducerPreparationSteps } from "./mongodb-migrations/0027/migration.js";
+import { careerPropertyMutationPreparationSteps } from "./mongodb-migrations/0026/migration.js";
 
 import { agentCredentialSteps } from "./mongodb-migrations/0010/migration.js";
 import { preparationPlanSteps } from "./mongodb-migrations/0011/migration.js";
@@ -22,6 +25,9 @@ import { aiUsageAndPlanCreditSteps } from "./mongodb-migrations/0022/migration.j
 import { portfolioPublicSlugSteps } from "./mongodb-migrations/0023/migration.js";
 import { adminDummyAccountSteps } from "./mongodb-migrations/0024/migration.js";
 
+import { careerCanonicalPreparationSteps } from "./mongodb-migrations/0028/migration.js";
+import { careerRelationPropertyMutationPreparationSteps } from "./mongodb-migrations/0029/migration.js";
+import { careerProductOwnerPreparationSteps } from "./mongodb-migrations/0030/migration.js";
 
 export interface MongoMigrationStep {
   id: string;
@@ -63,15 +69,34 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
   const eleventhHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0011/migration.ts", import.meta.url))).digest("hex");
   const twelfthHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0012/migration.ts", import.meta.url))).digest("hex");
   const thirteenthHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0013/migration.ts", import.meta.url))).digest("hex");
-  // 0014–0016은 열린 PR이 쓰고 있어 비워 둔다. 템플릿 고정본도 실행 입력이라 함께 해시한다.
+  // 0014–0016의 옛 PR 이력과 충돌하지 않도록 새 준비는 0025부터 등록한다. 소유권 템플릿도 실행 입력으로 해시한다.
   const ownershipHash = createHash("sha256");
   for (const name of ["migration.ts", "templates.json"]) ownershipHash.update(await readFile(new URL(`./mongodb-migrations/0017/${name}`, import.meta.url)));
-  // 0018 · 0019도 열린 PR이 쓰고 있다.
+  // 0018 · 0019의 옛 PR 입력은 보존하되 실행 registry에는 등록하지 않는다.
   const notificationProducerHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0020/migration.ts", import.meta.url))).digest("hex");
   const generationWaitingHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0021/migration.ts", import.meta.url))).digest("hex");
   const aiUsageHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0022/migration.ts", import.meta.url))).digest("hex");
   const publicSlugHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0023/migration.ts", import.meta.url))).digest("hex");
   const adminDummyHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0024/migration.ts", import.meta.url))).digest("hex");
+  const forward = await Promise.all([
+    ["0025", "career_business_writer_preparation", careerBusinessWriterPreparationSteps],
+    ["0026", "career_property_mutation_preparation", careerPropertyMutationPreparationSteps],
+    ["0027", "career_producer_preparation", careerProducerPreparationSteps],
+    ["0028", "career_canonical_preparation", careerCanonicalPreparationSteps],
+    ["0029", "career_relation_property_mutation_preparation", careerRelationPropertyMutationPreparationSteps],
+    ["0030", "career_product_owner_preparation", careerProductOwnerPreparationSteps],
+  ].map(async ([version, name, steps]) => {
+    const directory = new URL(`./mongodb-migrations/${version}/`, import.meta.url);
+    const manifest = await readFile(new URL("checksum-manifest.json", directory));
+    const files = (JSON.parse(manifest.toString("utf8")) as { files: string[] }).files;
+    if (new Set(files).size !== files.length || files.some(file => !/^[a-z-]+\.(ts|json)$/.test(file))) throw new Error("invalid forward checksum manifest");
+    const hash = createHash("sha256").update(`checksum-manifest.json\0${manifest.byteLength}\0`).update(manifest);
+    for (const file of files) {
+      const source = await readFile(new URL(file, directory));
+      hash.update(`${file}\0${source.byteLength}\0`).update(source);
+    }
+    return { version: version as string, name: name as string, checksum: hash.digest("hex"), steps: await (steps as () => Promise<MongoMigrationStep[]>)() };
+  }));
   return [
     { version: "0001", name: "initial_collections", checksum: hash.digest("hex"), steps: await initialMigrationSteps() },
     { version: "0002", name: "generation_ledger_amount_constraint", checksum: secondHash, steps: await generationLedgerConstraintSteps() },
@@ -92,5 +117,6 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
     { version: "0022", name: "ai_usage_and_plan_credits", checksum: aiUsageHash, steps: await aiUsageAndPlanCreditSteps() },
     { version: "0023", name: "portfolio_public_slug", checksum: publicSlugHash, steps: await portfolioPublicSlugSteps() },
     { version: "0024", name: "admin_dummy_accounts", checksum: adminDummyHash, steps: await adminDummyAccountSteps() },
+    ...forward,
   ];
 }

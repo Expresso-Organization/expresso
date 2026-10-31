@@ -101,6 +101,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const proposal = await local.create(userId, recordId, { selection: { blockIds: [blockId] }, prompt: "변경" });
     const update = userEdit(current, (document) => { document.content = []; });
     await documentService.appendUpdate(userId, { recordId, clientId: randomUUID(), clientSequence: 9, expectedSequence: current.documentVersion, updateBase64: Buffer.from(update).toString("base64"), checksum: createHash("sha256").update(update).digest("hex") });
+    expect((await documentService.bootstrap(userId, recordId)).document.content.some(block=>block.id===blockId)).toBe(false);
     await expect(local.apply(userId, recordId, { recordId, proposalId: proposal.proposalId, expectedDocumentVersion: current.documentVersion + 1, commandIndexes: [0], propertyChangeIndexes: [] })).rejects.toMatchObject({ statusCode: 409 });
     expect((await local.get(userId, recordId, proposal.proposalId)).status).toBe("conflicted");
   });
