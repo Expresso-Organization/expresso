@@ -1,6 +1,8 @@
+import { EvidenceSearchService, HttpSearchEmbedding } from "../modules/evidence-search/index.js";
+import { CareerWorkflowService } from "../modules/career-workflow/index.js";
 import { AgentCredentials } from "../modules/agent-chat/index.js";
 import { AgentChatService } from "../modules/agent-chat/index.js";
-import { ClaudeAgentRuntime } from "../platform/agent/runtime.js";
+import { createAgentRuntime } from "../platform/agent/create-runtime.js";
 import { buildApi } from "./build-app.js";
 import { loadRuntimeConfig } from "../config/runtime-config.js";
 import { createMongoResource } from "../platform/mongodb.js";
@@ -154,11 +156,16 @@ const careerDocumentService = new CareerDocumentService(
     );
   },
 );
-const agentChatService = new AgentChatService(database, config.agentChatEnabled ? new ClaudeAgentRuntime(config.agentChatModel, aiUsage) : null, careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(database, config.agentCredentialEncryptionKey), portfolioReadService, pageService);
+const evidenceSearchService = new EvidenceSearchService(database, careerService, careerDocumentService, jobBoardService, consentService,
+  config.searchEmbeddingUrl && config.searchEmbeddingModel ? new HttpSearchEmbedding(config.searchEmbeddingUrl, config.searchEmbeddingModel, config.searchEmbeddingApiKey) : null);
+const agentChatService = new AgentChatService(database, createAgentRuntime(config, ai, aiUsage), careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(database, config.agentCredentialEncryptionKey), portfolioReadService, pageService, config.agentChatProvider ?? "anthropic", evidenceSearchService);
+const careerWorkflowService = new CareerWorkflowService(database, agentChatService, careerService, jobBoardService, jobMarketService, materialsService, consentService, ai);
 const adminService = new AdminService(database, { identity: identityService, career: careerService, consent: consentService });
 const app = buildApi({
+  evidenceSearchService,
   adminService,
   agentChatService,
+  careerWorkflowService,
   config,
   readinessChecks: [database.readinessCheck, redis.readinessCheck],
   identityService,

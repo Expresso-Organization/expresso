@@ -1,3 +1,5 @@
+import { evidenceSearchSteps } from "./mongodb-migrations/0026/migration.js";
+import { careerWorkflowSteps } from "./mongodb-migrations/0025/migration.js";
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import type { Db } from "mongodb";
@@ -72,6 +74,9 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
   const aiUsageHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0022/migration.ts", import.meta.url))).digest("hex");
   const publicSlugHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0023/migration.ts", import.meta.url))).digest("hex");
   const adminDummyHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0024/migration.ts", import.meta.url))).digest("hex");
+  const workflowHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0025/migration.ts", import.meta.url))).digest("hex");
+  const evidenceSource = await readFile(new URL("./mongodb-migrations/0026/migration.ts", import.meta.url));
+  const evidenceHash = createHash("sha256").update(`migration.ts\0${evidenceSource.byteLength}\0`).update(evidenceSource).digest("hex");
   return [
     { version: "0001", name: "initial_collections", checksum: hash.digest("hex"), steps: await initialMigrationSteps() },
     { version: "0002", name: "generation_ledger_amount_constraint", checksum: secondHash, steps: await generationLedgerConstraintSteps() },
@@ -92,5 +97,7 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
     { version: "0022", name: "ai_usage_and_plan_credits", checksum: aiUsageHash, steps: await aiUsageAndPlanCreditSteps() },
     { version: "0023", name: "portfolio_public_slug", checksum: publicSlugHash, steps: await portfolioPublicSlugSteps() },
     { version: "0024", name: "admin_dummy_accounts", checksum: adminDummyHash, steps: await adminDummyAccountSteps() },
+    { version: "0025", name: "career_workflows", checksum: workflowHash, steps: await careerWorkflowSteps() },
+    { version: "0026", name: "evidence_search_indexes", checksum: evidenceHash, steps: await evidenceSearchSteps() },
   ];
 }

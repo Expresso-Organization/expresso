@@ -14,16 +14,29 @@ import { rankMaterials } from "./ranking.js";
 export class MaterialsService implements MaterialsApi {
   constructor(readonly context: MongoContext) {}
 
-  async #create(tx: MongoTransaction, userId: string, input: { jobAnalysisId: string; lengthPreset: BrewDoc["lengthPreset"]; freeTitle?: string; freeBrief?: string }, labels: string[]) {
+  async #create(tx: MongoTransaction, userId: string, input: { jobAnalysisId: string; lengthPreset: BrewDoc["lengthPreset"]; freeTitle?: string; freeBrief?: string }, labels: string[], selection?: { brewId: string; recordIds: string[] }) {
     const db = mongoCollections(tx.db); const options = { session: tx.session };
-    const records = await db.careerRecords.find({ userId, deletedAt: null, status: { $in: ["organized", "verified"] } }, options).toArray();
+    const records = await db.careerRecords.find({ userId, ...(selection ? { _id: { $in: selection.recordIds } } : {}), deletedAt: null, status: { $in: ["organized", "verified"] } }, options).toArray();
     const recordText = await careerRecordTextReader(tx.db, userId, tx.session);
+    if (selection && records.length !== selection.recordIds.length) throw new MaterialsError(409, "정리됨·검증됨 상태의 활성 기록만 제작에 사용할 수 있습니다.");
     const ranked = rankMaterials(records.flatMap((record) => record.status === "organized" || record.status === "verified" ? [{ id: record._id, title: record.title, status: record.status, text: recordText(record) }] : []), labels).slice(0, 50);
     await assertActiveRecordsForWrite(tx, userId, ranked.map((record) => record.id));
-    const brew: BrewDoc = { _id: randomUUID(), userId, ...input, mode: "solo", status: "draft", createdAt: new Date(), updatedAt: new Date() };
+    const brew: BrewDoc = { _id: selection?.brewId ?? randomUUID(), userId, ...input, mode: "solo", status: "draft", createdAt: new Date(), updatedAt: new Date() };
     await db.brews.insertOne(brew, options);
-    if (ranked.length) await db.brewSources.insertMany(ranked.map((record, rank) => ({ _id: randomUUID(), userId, brewId: brew._id, recordId: record.id, rank, selectedBy: "auto" as const, excludedReason: rank < 10 ? null : "AUTO_LIMIT", score: record.score, reasonText: record.reason, isSelected: rank < 10, updatedAt: new Date() })), options);
+    if (ranked.length) await db.brewSources.insertMany(ranked.map((record, rank) => ({ _id: randomUUID(), userId, brewId: brew._id, recordId: record.id, rank, selectedBy: selection ? "user" as const : "auto" as const, excludedReason: rank < 10 ? null : "AUTO_LIMIT", score: record.score, reasonText: record.reason, isSelected: rank < 10, updatedAt: new Date() })), options);
     return brew._id;
+  }
+
+  /** Agent 승인과 제작 연결을 같은 트랜잭션으로 저장합니다. AI·배포는 실행하지 않습니다. */
+  async createAgentBrew(tx: MongoTransaction, userId: string, brewId: string, jobPostingId: string, recordIds: string[]) {
+    if (!recordIds.length || recordIds.length > 8 || new Set(recordIds).size !== recordIds.length) throw new MaterialsError(400, "기록은 1~8개 선택하세요.");
+    const db = mongoCollections(tx.db); const options = { session: tx.session };
+    const existing = await db.brews.findOne({ _id: brewId, userId }, options);
+    if (existing) return existing._id;
+    const analysis = await db.jobAnalyses.findOne({ userId, jobPostingId, status: "done" }, { ...options, sort: { analyzedAt: -1, _id: -1 } });
+    if (!analysis) throw new MaterialsError(409, "공고 원문 분석을 먼저 완료하세요. 개발 환경에서는 Worker도 실행해야 합니다.");
+    const requirements = await db.jobPostingRequirements.find({ jobPostingId }, options).sort({ orderNo: 1, _id: 1 }).toArray();
+    return this.#create(tx, userId, { jobAnalysisId: analysis._id, lengthPreset: "single" }, requirements.map(item => item.label), { brewId, recordIds });
   }
 
   async createBrew(userId: string, inputValue: CreateBrew) {

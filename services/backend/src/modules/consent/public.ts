@@ -26,6 +26,7 @@ import type { AiContract } from "../../platform/ai/client.js";
  * 요구하는 것처럼 보이기 때문이다. 대신 **null도 한 줄을 적어야 한다.**
  */
 export const CONTRACT_CONSENT: Record<AiContract, ConsentScope | null> = {
+  agent_chat_codex: "career_records",
   job_analysis: "job_posting_analysis",
   search_interpret: "job_posting_analysis",
   // 우리가 모아 온 공개 공고를 읽는다. 사용자 데이터가 나가지 않는다.
@@ -46,6 +47,7 @@ export const CONTRACT_CONSENT: Record<AiContract, ConsentScope | null> = {
   partial_edit: "career_records",
   style_remix: "career_records",
   insight_note: "career_records",
+  career_claim_review: "career_records",
 };
 
 
