@@ -41,6 +41,9 @@ const runtimeConfigSchema = z.object({
    * `claude-code`와 `codex`는 **개발 전용**이다. 이 머신에 로그인된 CLI로 부르고,
    * CI·컨테이너에서는 별도 인증 없이는 동작하지 않는다.
    */
+  SEARCH_EMBEDDING_URL: z.string().url().optional(),
+  SEARCH_EMBEDDING_MODEL: z.string().min(1).optional(),
+  SEARCH_EMBEDDING_API_KEY: z.string().min(1).optional(),
   AI_PROVIDER: z.enum(["off", "claude-code", "codex", "fixture", "anthropic"]).default("off"),
   /** 공통 채팅은 기존 구조화 AI 호출과 별도로 활성화합니다. */
   AGENT_CREDENTIAL_ENCRYPTION_KEY: z.string().regex(/^[a-fA-F0-9]{64}$/).optional(),
@@ -135,6 +138,9 @@ const runtimeConfigSchema = z.object({
 }).refine((value) => value.NODE_ENV !== "production" || !value.CAREER_AI_DETERMINISTIC_TEST, { message: "CAREER_AI_DETERMINISTIC_TEST is forbidden in production", path: ["CAREER_AI_DETERMINISTIC_TEST"] });
 
 export interface RuntimeConfig {
+  searchEmbeddingUrl?: string;
+  searchEmbeddingModel?: string;
+  searchEmbeddingApiKey?: string;
   agentChatProvider?: "anthropic" | "codex";
   nodeEnv: z.infer<typeof runtimeConfigSchema>["NODE_ENV"];
   host: string;
@@ -195,6 +201,7 @@ export function loadRuntimeConfig(
   environment: NodeJS.ProcessEnv = process.env,
 ): RuntimeConfig {
   const result = runtimeConfigSchema.parse(environment);
+  if (!!result.SEARCH_EMBEDDING_URL !== !!result.SEARCH_EMBEDDING_MODEL) throw new Error("SEARCH_EMBEDDING_URL과 SEARCH_EMBEDDING_MODEL을 함께 설정하세요.");
 
   if (result.AGENT_CHAT_PROVIDER === "codex" && result.NODE_ENV === "production") {
     throw new Error("AGENT_CHAT_PROVIDER=codex is development/test only");
@@ -204,6 +211,9 @@ export function loadRuntimeConfig(
   }
 
   return {
+    ...(result.SEARCH_EMBEDDING_URL ? { searchEmbeddingUrl: result.SEARCH_EMBEDDING_URL } : {}),
+    ...(result.SEARCH_EMBEDDING_MODEL ? { searchEmbeddingModel: result.SEARCH_EMBEDDING_MODEL } : {}),
+    ...(result.SEARCH_EMBEDDING_API_KEY ? { searchEmbeddingApiKey: result.SEARCH_EMBEDDING_API_KEY } : {}),
     nodeEnv: result.NODE_ENV,
     host: result.HOST,
     port: result.PORT,

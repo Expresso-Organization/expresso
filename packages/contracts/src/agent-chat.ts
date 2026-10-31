@@ -1,3 +1,4 @@
+import { EvidenceSearchResultSchema, SemanticJobResultSchema } from "./evidence-search.js";
 import { JobPostingDetailSchema } from "./job-board.js";
 import { CareerRecordSchema } from "./career.js";
 import { PortfolioDetailSchema } from "./portfolios.js";
@@ -211,7 +212,9 @@ export type PlanProposalInput = z.infer<typeof PlanProposalInputSchema>;
 export type AgentPlanDraft = z.infer<typeof AgentPlanDraftSchema>;
 export type AgentPlanDecision = z.infer<typeof AgentPlanDecisionSchema>;
 export type PreparationPlan = z.infer<typeof PreparationPlanSchema>;
-export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional(), gapReview: GapReviewSchema.optional(), planDraft: AgentPlanDraftSchema.optional(), replanDraft: AgentReplanDraftSchema.optional() });
+export const AgentToolResultSchema = z.strictObject({
+  evidenceSearch: EvidenceSearchResultSchema.optional(),
+  jobSearch: SemanticJobResultSchema.optional(), id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional(), gapReview: GapReviewSchema.optional(), planDraft: AgentPlanDraftSchema.optional(), replanDraft: AgentReplanDraftSchema.optional() });
 export const AgentMessageSchema = z.strictObject({ id: UuidSchema, role: z.enum(["user", "assistant"]), text: z.string().max(64_000), tools: z.array(AgentToolResultSchema).max(30), createdAt: TimestampSchema });
 export const AgentRunSchema = z.strictObject({ id: UuidSchema, requestId: UuidSchema, status: z.enum(["running", "complete", "cancelled", "failed", "interrupted"]), error: z.string().max(1_000).nullable(), startedAt: TimestampSchema });
 export const AgentConversationSchema = z.strictObject({ id: UuidSchema, title: z.string().max(120), contexts: z.array(AgentContextSchema).max(10), messages: z.array(AgentMessageSchema).max(100), run: AgentRunSchema.nullable(), version: z.number().int().nonnegative(), updatedAt: TimestampSchema });

@@ -45,6 +45,7 @@ export async function trashMongoRecord(context: MongoContext, userId: string, re
     await assertActiveRecordsForWrite(tx, userId, [recordId]);
     const impact = await mongoDeleteImpact(tx, userId, recordId, at);
     await mongoCollections(tx.db).careerRecords.updateOne({ _id: recordId, userId, deletedAt: null }, { $set: { deletedAt: at, purgeAfter: new Date(impact.purgeAfter), updatedAt: new Date() }, $inc: { version: 1 } }, { session: tx.session });
+    await tx.db.collection("career_evidence_index").deleteMany({ userId, recordId }, { session: tx.session });
     return impact;
   });
 }

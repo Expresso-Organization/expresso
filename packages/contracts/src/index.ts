@@ -79,3 +79,5 @@ export * from "./portfolio-archetype.js";
 export * from "./usage.js";
 
 export * from "./career-workflow.js";
+
+export * from "./evidence-search.js";

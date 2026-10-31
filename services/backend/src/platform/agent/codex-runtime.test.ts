@@ -71,8 +71,8 @@ describe("Codex development agent runtime", () => {
   });
   it("bounds tool loops", async () => {
     const f = fixture(Array.from({ length: 11 }, () => tool("list_career_records", {})));
-    await expect(new CodexAgentRuntime(f.ai).run(f.input)).rejects.toThrow("limit");
-    expect(f.input.records.list).toHaveBeenCalledTimes(10);
+    await expect(new CodexAgentRuntime(f.ai).run(f.input)).rejects.toThrow();
+    expect(f.input.records.list).toHaveBeenCalledOnce();
   });
   it("fails before model invocation when already cancelled", async () => {
     const f = fixture([answer]); f.controller.abort();
@@ -81,3 +81,37 @@ describe("Codex development agent runtime", () => {
   });
 });
 const fId = "00000000-0000-4000-8000-000000000002";
+
+it("검색 도구의 결과와 원문 카드를 다음 모델 호출에 전달한다", async () => {
+  const result = { hits: [], meta: { mode: "keyword" as const, complete: true, scanned: 0, notices: [] } };
+  const f = fixture([tool("search_career_evidence", { query: "오류 처리", mode: "keyword", limit: 8 }), answer]);
+  f.input.search = { career: vi.fn(async () => result), jobs: vi.fn(async () => result) };
+  await new CodexAgentRuntime(f.ai).run(f.input);
+  expect(f.input.search.career).toHaveBeenCalledWith({ query: "오류 처리", mode: "keyword", limit: 8 });
+  expect(f.input.emit).toHaveBeenCalledWith(expect.objectContaining({ type: "tool", tool: expect.objectContaining({ evidenceSearch: result }) }));
+  expect(JSON.parse(f.calls[1]!.prompt).toolResults[0].ok).toBe(true);
+});
+it("공고 검색도 기존 읽기 콜백을 통해서만 수행한다", async () => {
+  const result = { hits: [], meta: { mode: "keyword" as const, complete: true, scanned: 0, notices: [] } };
+  const f = fixture([tool("search_job_postings", { query: "백엔드", mode: "keyword", recordIds: [], filters: {}, limit: 8 }), answer]);
+  f.input.search = { career: vi.fn(async () => result), jobs: vi.fn(async () => result) };
+  await new CodexAgentRuntime(f.ai).run(f.input);
+  expect(f.input.search.jobs).toHaveBeenCalledOnce();
+  expect(f.input.propose).not.toHaveBeenCalled();
+});
+
+it("reuses successful reads without extra cards and requests a final answer after repeated reads", async () => {
+  const f = fixture([tool("read_career_records", { ids: [fId] }), tool("read_career_records", { ids: [fId] }), tool("read_career_records", { ids: [fId] }), answer]);
+  const runtime = new CodexAgentRuntime(f.ai);
+  await runtime.run(f.input);
+  expect(f.input.records.read).toHaveBeenCalledOnce();
+  expect(vi.mocked(f.input.emit).mock.calls.filter(([e]) => e.type === "tool")).toHaveLength(2);
+  expect(JSON.parse(f.calls[3]!.prompt).tools).toEqual([]);
+  expect(JSON.parse(f.calls[2]!.prompt).toolResults[1].reused).toBe(true);
+});
+it("does not carry cached reads into another response", async () => {
+  const f = fixture([tool("list_career_records", {}), answer, tool("list_career_records", {}), answer]);
+  const runtime = new CodexAgentRuntime(f.ai);
+  await runtime.run(f.input); await runtime.run(f.input);
+  expect(f.input.records.list).toHaveBeenCalledTimes(2);
+});

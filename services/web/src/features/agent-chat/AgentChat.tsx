@@ -1,4 +1,5 @@
 "use client";
+import EvidenceSearch, { SearchResults } from "./EvidenceSearch";
 import CareerWorkflow from "./CareerWorkflow";
 import { createContext, useContext, useState, useRef, useEffect } from "react";
 import Link from "next/link";
@@ -86,6 +87,7 @@ const RecordTool: ToolCallMessagePartComponent = props => {
   const tool = state.conversation?.messages.flatMap(message => message.tools).find(tool => tool.id === props.toolCallId);
   const busy = state.pending || state.conversation?.run?.status === "running";
   if (tool?.review) return <RequirementReviewCard conversationId={state.id} toolId={tool.id} review={tool.review} />;
+  if (tool?.evidenceSearch || tool?.jobSearch) return <SearchResults {...(tool.evidenceSearch ? { evidence: tool.evidenceSearch } : {})} {...(tool.jobSearch ? { jobs: tool.jobSearch } : {})} />;
   if (tool?.gapReview) return <GapReviewCard gapReview={tool.gapReview} />;
   if (tool?.recordDraft) { const draftId = tool.recordDraft.draftId; return <RecordDraftCard draft={tool.recordDraft} disabled={busy} onDecide={decision => state.decideDraft(draftId, decision)} />; }
   if (tool?.planDraft) {
@@ -195,6 +197,7 @@ export function AgentChat({ job, standalone = false, onRunningChange, ...props }
       </div>
       {standalone ? <ConversationSwitcher contexts={state.conversation?.contexts ?? []} contextDisabled={contextDisabled} onToggleContext={toggleContext} onPreview={setPreview} inline currentId={state.id} conversations={state.list} disabled={state.pending} onSelect={state.select} /> : null}
     </section>
+    <EvidenceSearch key={`search:${state.id ?? "new"}`} disabled={state.pending || running || !!preview} contexts={state.conversation?.contexts ?? []} onAttach={toggleContext} />
     {state.id && state.conversation ? (
       <CareerWorkflow
         key={`workflow:${state.id}`}

@@ -15,7 +15,7 @@ describe("Claude 채팅 실행 어댑터", () => {
     await new ClaudeAgentRuntime().run({ messages: [], context: [], signal: new AbortController().signal, emit: async event => { events.push(event); }, ...base() });
     expect(events).toEqual([{ type: "text", text: "안녕하세요" }]);
     expect(sdk.query.mock.lastCall![0].options).toMatchObject({ tools: [], settingSources: [], strictMcpConfig: true, persistSession: false, permissionMode: "dontAsk" });
-    expect(sdk.query.mock.lastCall![0].options.allowedTools).toEqual(["mcp__expresso__propose_record_edit", "mcp__expresso__list_career_records", "mcp__expresso__read_career_records", "mcp__expresso__record_requirement_review", "mcp__expresso__propose_new_record", "mcp__expresso__record_gap_review", "mcp__expresso__propose_preparation_plan", "mcp__expresso__read_preparation_plan", "mcp__expresso__propose_replan"]);
+    expect(sdk.query.mock.lastCall![0].options.allowedTools).toEqual(["mcp__expresso__search_career_evidence", "mcp__expresso__search_job_postings","mcp__expresso__propose_record_edit", "mcp__expresso__list_career_records", "mcp__expresso__read_career_records", "mcp__expresso__record_requirement_review", "mcp__expresso__propose_new_record", "mcp__expresso__record_gap_review", "mcp__expresso__propose_preparation_plan", "mcp__expresso__read_preparation_plan", "mcp__expresso__propose_replan"]);
   });
   it("중단 신호를 SDK에 전달한다", async () => {
     const controller = new AbortController(); let stopped = false;
@@ -77,4 +77,28 @@ describe("Claude 채팅 실행 어댑터", () => {
     await expect(new ClaudeAgentRuntime(undefined, { record }).run({ messages: [], context: [], signal: new AbortController().signal, emit: vi.fn(), ...base() })).rejects.toThrow("agent execution failed");
     expect(record).not.toHaveBeenCalled();
   });
+});
+
+it("Anthropic 검색 도구도 서비스 검색과 같은 결과를 사용한다", async () => {
+  const result = { hits: [], meta: { mode: "keyword" as const, complete: true, scanned: 0, notices: [] } };
+  sdk.query.mockReturnValue((async function* () { yield { type: "result", is_error: false }; })());
+  const search = { career: vi.fn(async () => result), jobs: vi.fn(async () => result) };
+  const emit = vi.fn();
+  await new ClaudeAgentRuntime().run({ messages: [], context: [], signal: new AbortController().signal, emit, ...base(), search });
+  const server = sdk.createSdkMcpServer.mock.lastCall![0];
+  await server.tools.find((item: { name: string }) => item.name === "search_career_evidence").handler({ query: "404", mode: "keyword", limit: 8 });
+  expect(search.career).toHaveBeenCalledWith({ query: "404", mode: "keyword", limit: 8 });
+  expect(emit).toHaveBeenCalledWith(expect.objectContaining({ tool: expect.objectContaining({ evidenceSearch: result }) }));
+});
+
+it("Anthropic reuses a concurrent search within a response without duplicate cards", async () => {
+ const emit = vi.fn();
+ const career = vi.fn(async () => ({ hits: [], meta: { mode: "keyword" } }));
+ sdk.query.mockImplementation(({ options }) => (async function* () {
+   const handler = options.mcpServers.expresso.tools.find((t: {name: string}) => t.name === "search_career_evidence").handler;
+   await Promise.all([handler({ query: "404" }), handler({ query: "404" })]);
+   yield { type: "result", is_error: false };
+ })());
+ await new ClaudeAgentRuntime().run({ ...base(), search: { career, jobs: vi.fn() } as never, messages: [], context: [], signal: new AbortController().signal, emit });
+ expect(career).toHaveBeenCalledOnce(); expect(emit).toHaveBeenCalledOnce();
 });
