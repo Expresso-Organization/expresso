@@ -19,7 +19,8 @@ import {
 import { mediaAssetUrl } from "@expresso/contracts";
 import type { CareerDocument } from "@expresso/editor/document";
 import { BLOCKNOTE_FRAGMENT, blockNoteToCareerDocument, careerBlockNoteSchema } from "@expresso/editor/blocknote";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type * as Y from "yjs";
 
 import { Icon } from "@/components/ui/Icon";
@@ -49,23 +50,46 @@ function selectedBlockIds(editor: BlockNoteEditor): string[] {
   return selection ? selection.blocks.map((block) => block.id) : [editor.getTextCursorPosition().block.id];
 }
 
+/**
+ * 선택 영역 AI 편집 메뉴입니다. BlockNote 서식 툴바는 가로로 넘치면 스크롤하도록 `overflow`를 두므로,
+ * 툴바 안에 메뉴를 두면 툴바 아래로 잘려 보이지 않습니다. 메뉴는 body에 붙이고 단추 위치로 놓습니다.
+ */
 function AiMenu({ editor, onAiRequest }: { editor: BlockNoteEditor; onAiRequest(prompt: string, blockIds: string[]): void }) {
   const Components = useComponentsContext();
-  const [open, setOpen] = useState(false);
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState<{ top: number; right: number } | null>(null);
+  useEffect(() => {
+    if (!position) return;
+    const close = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (!menuRef.current?.contains(target) && !anchorRef.current?.contains(target)) setPosition(null);
+    };
+    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") setPosition(null); };
+    document.addEventListener("pointerdown", close);
+    document.addEventListener("keydown", escape);
+    return () => { document.removeEventListener("pointerdown", close); document.removeEventListener("keydown", escape); };
+  }, [position]);
   if (!Components) return null;
+  const toggle = () => {
+    if (position) { setPosition(null); return; }
+    const rect = anchorRef.current?.getBoundingClientRect();
+    if (rect) setPosition({ top: rect.bottom + 4, right: Math.max(8, window.innerWidth - rect.right) });
+  };
   return (
-    <div className={styles.aiMenu}>
-      <Components.FormattingToolbar.Button label="AI 편집" mainTooltip="선택 영역 AI 편집" icon={<Icon name="sparkle" size={14} />} isSelected={open} onClick={() => setOpen((current) => !current)}>
+    <div ref={anchorRef} className={styles.aiMenu}>
+      <Components.FormattingToolbar.Button label="AI 편집" mainTooltip="선택 영역 AI 편집" icon={<Icon name="sparkle" size={14} />} isSelected={position !== null} onClick={toggle}>
         <span className={styles.aiLabel}>AI 편집</span>
       </Components.FormattingToolbar.Button>
-      {open ? (
-        <div className={styles.aiActions} role="menu" aria-label="선택 영역 AI 편집">
+      {position ? createPortal(
+        <div ref={menuRef} className={styles.aiActions} role="menu" aria-label="선택 영역 AI 편집" style={{ top: position.top, right: position.right }}>
           {AI_ACTIONS.map((item) => (
-            <button key={item.label} type="button" role="menuitem" onMouseDown={(event) => event.preventDefault()} onClick={() => { onAiRequest(item.prompt, selectedBlockIds(editor)); setOpen(false); }}>
+            <button key={item.label} type="button" role="menuitem" onMouseDown={(event) => event.preventDefault()} onClick={() => { onAiRequest(item.prompt, selectedBlockIds(editor)); setPosition(null); }}>
               <Icon name={item.icon} size={13} />{item.label}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body,
       ) : null}
     </div>
   );
