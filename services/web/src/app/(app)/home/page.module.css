@@ -376,7 +376,10 @@
 }
 
 .draftCta {
+  display: block;
   width: 100%;
+  box-sizing: border-box;
+  text-align: center;
   font-size: var(--ex-text-md);
   font-weight: 600;
   color: var(--ex-fg-on-accent);

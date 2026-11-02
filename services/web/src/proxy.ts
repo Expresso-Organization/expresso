@@ -60,7 +60,8 @@ const SESSION_PATHS = [
 function servePublicSite(request: NextRequest, slug: string | null): NextResponse {
   const path = request.nextUrl.pathname;
   if (slug && path === "/") return NextResponse.rewrite(new URL(`/site/${slug}${request.nextUrl.search}`, request.url));
-  if (slug && (path === "/api/analytics/events" || path.startsWith("/_next/"))) return NextResponse.next();
+  // 수집기는 사이트 호스트에서도 `/robots.txt`를 먼저 읽는다. 앱의 robots가 그대로 답한다.
+  if (slug && (path === "/api/analytics/events" || path === "/robots.txt" || path.startsWith("/_next/"))) return NextResponse.next();
   // 앱 경로로 다른 사이트를 가리키면(옛 주소가 앱 경로로 넘긴 경우 등) 그 사이트의 공개 주소로 보낸다.
   const other = /^\/site\/([a-z0-9-]+)$/.exec(path)?.[1];
   const target = other ? publicSiteFromHost(new URL(publicSiteUrl(other)).host) : null;

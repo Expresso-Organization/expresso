@@ -100,27 +100,6 @@
   max-width: 400px;
 }
 
-.stats {
-  margin-top: 40px;
-  display: flex;
-  gap: 26px;
-  position: relative;
-}
-
-.statValue {
-  font-family: var(--ex-font-brand);
-  font-size: var(--ex-text-xl);
-  font-weight: 400;
-  color: var(--ex-fg);
-  margin-bottom: 4px;
-}
-
-.statLabel {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
-  white-space: nowrap;
-}
-
 /* 우측 폼 패널 */
 .formPane {
   flex: 1;
