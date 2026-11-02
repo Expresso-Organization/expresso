@@ -376,9 +376,6 @@ export function Editor({
               title={generationSummary(generatedPage)}
             >
               {generatedPage.qualityStatus === "ready" ? "웹 QA 통과" : "웹 QA 확인 필요"}
-              {generatedPage.generationManifest?.usage.costUsd != null
-                ? ` · $${generatedPage.generationManifest.usage.costUsd.toFixed(4)}`
-                : ""}
             </span>
           ) : null}
 

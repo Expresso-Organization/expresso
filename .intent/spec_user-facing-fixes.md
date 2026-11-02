@@ -12,7 +12,7 @@ date: 2026-11-02
 ## 요구사항
 
 - [ ] `AuthAside`에 `stats` 블록이 없고, `auth.module.css`의 `.stats` · `.statValue` · `.statLabel` 규칙도 없다.
-- [ ] `app/site/[slug]/page.tsx`가 `generateMetadata`를 내보낸다. `title`은 배포 `seo.title`, 없으면 스냅샷 `title`. `description`은 `seo.description`이 있을 때만 넣는다. `openGraph`는 `title` · `description` · `url`(`publicSiteUrl(slug)`) · `type: "website"`. `robots`는 `seo.indexable`이 거짓이면 `{ index: false, follow: false }`.
+- [ ] `app/site/[slug]/page.tsx`가 `generateMetadata`를 내보낸다. `title`은 배포 `seo.title`, 없으면 스냅샷 `title`. `description`은 `seo.description`이 있으면 그 값, 없으면 `null`이다. 비워 두면 루트 레이아웃의 제품 소개 문장이 얕은 병합으로 내려와 `og:description`까지 채운다(2026-11-02 확인). `openGraph`는 `title` · `description` · `url`(`publicSiteUrl(slug)`) · `type: "website"`. `robots`는 `seo.indexable`이 거짓이면 `{ index: false, follow: false }`.
 - [ ] 옛 주소(`kind: "redirect"`)와 404는 `generateMetadata`에서도 페이지와 같은 결과다. 옛 주소는 새 주소의 메타를 내지 않고 제목만 "Expresso"로 둔다. 페이지가 어차피 리다이렉트한다.
 - [ ] `app/robots.ts`가 `User-Agent: *`에 대해 `/`를 허용하고 `/home` · `/jobs` · `/analytics` · `/career` · `/account` · `/brew` · `/edit` · `/onboarding` · `/api` · `/admin` · `/login` · `/signup` · `/verify-email`을 금지한다. `sitemap`은 적지 않는다.
 - [ ] 공개 호스트(`{slug}.expresso.ai.kr`)에서 `/robots.txt`가 404가 아니라 같은 robots 응답이다. `proxy.ts`의 `servePublicSite`가 그 경로를 통과시킨다.

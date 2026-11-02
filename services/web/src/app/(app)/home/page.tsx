@@ -8,6 +8,8 @@ import { homeEngagement, recentPortfolios } from "@/lib/app-data";
 import { publicSiteHost } from "@/lib/public-site";
 import { requireSession } from "@/lib/require-session";
 
+import { analyzePostingAction } from "../brew/new/new-brew-actions";
+import { resumeStep } from "../brew/new/resume-step";
 import { HomeHeader, HomeSearch } from "./HomeChrome";
 import { MidRowSkeleton, PortfolioGridSkeleton } from "./HomeSkeleton";
 import styles from "./page.module.css";
@@ -146,12 +148,16 @@ async function Recommended({
                 전체
               </Link>
             </div>
+            {/*
+              행은 공고 상세로, 「만들기」는 그 공고로 바로 분석을 시작한다(01 바로 시작과 같은 액션).
+              폼을 링크 안에 넣을 수 없어 둘을 나란히 둔다.
+            */}
             {home.recommendedJobs.slice(0, 3).map((job) => (
               <div key={job.id} className={styles.jobRow}>
                 <span className={styles.jobInitial}>
                   {job.company.slice(0, 1)}
                 </span>
-                <div className={styles.jobBody}>
+                <Link href={`/jobs/${job.id}` as Route} className={styles.jobBody}>
                   <div className={styles.jobHead}>
                     <span className={styles.jobName}>
                       {job.company} · {job.title}
@@ -164,37 +170,20 @@ async function Recommended({
                       {job.score}
                     </span>
                   </div>
-                </div>
-                <button type="button" className={styles.jobCta}>
-                  만들기
-                </button>
+                </Link>
+                <form action={analyzePostingAction}>
+                  <input type="hidden" name="jobPostingId" value={job.id} />
+                  <button type="submit" className={styles.jobCta}>
+                    만들기
+                  </button>
+                </form>
               </div>
             ))}
           </div>
 
           <div className={styles.sideColumn}>
             {home.activeBrews.slice(0, 1).map((brew) => (
-              <div key={brew.id} className={styles.plainCard}>
-                <div className={styles.draftHead}>
-                  <span className={styles.workingChip}>
-                    <span className={`${styles.workingDot} ex-anim-pulse`} />
-                    작성 중
-                  </span>
-                </div>
-                <div className={styles.draftTitle}>진행 중인 포트폴리오</div>
-                <div className={styles.draftMeta}>
-                  마지막 작업{" "}
-                  {new Date(brew.updatedAt).toLocaleString("ko-KR", {
-                    month: "long",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}
-                </div>
-                <button type="button" className={styles.draftCta}>
-                  이어서 답하기
-                </button>
-              </div>
+              <ActiveBrewCard key={brew.id} brew={brew} />
             ))}
           </div>
         </div>
@@ -267,5 +256,33 @@ async function Portfolios({ accessToken }: { accessToken: string }) {
         </div>
       </div>
     </>
+  );
+}
+
+/** 진행 중인 제작 한 건. 멈춘 단계로 바로 돌아간다 — 01 「이어서 만들기」와 같은 규칙이다. */
+function ActiveBrewCard({ brew }: { brew: { id: string; status: string; updatedAt: string } }) {
+  const step = resumeStep(brew.status);
+  return (
+    <div className={styles.plainCard}>
+      <div className={styles.draftHead}>
+        <span className={styles.workingChip}>
+          <span className={`${styles.workingDot} ex-anim-pulse`} />
+          작성 중
+        </span>
+      </div>
+      <div className={styles.draftTitle}>진행 중인 포트폴리오</div>
+      <div className={styles.draftMeta}>
+        마지막 작업{" "}
+        {new Date(brew.updatedAt).toLocaleString("ko-KR", {
+          month: "long",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        })}
+      </div>
+      <Link href={`/brew/${brew.id}/${step.segment}` as Route} className={styles.draftCta}>
+        이어서 답하기
+      </Link>
+    </div>
   );
 }

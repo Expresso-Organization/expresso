@@ -334,6 +334,26 @@
     width: auto;
     flex: 1;
   }
+
+  /* 좁은 머리에서는 수집처 안내를 접고, 남은 두 액션은 글자가 세로로 떨어지지 않게 한 줄로 둔다. */
+  .headNote {
+    display: none;
+  }
+
+  .headAction {
+    white-space: nowrap;
+  }
+
+  /* 카테고리 탭은 줄을 바꾸지 않고 가로로 민다. */
+  .categoryTabs {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .categoryTab {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
 }
 
 .rowRole {

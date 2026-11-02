@@ -418,7 +418,9 @@ function facts(job: JobPostingDetail): {
   icon: string;
 }[] {
   const place = [job.location, job.workType].filter(Boolean).join(" · ");
-  const stacks = mentionedStacks(job);
+  // 요건을 뽑은 공고는 본문의 「기술 스택」 섹션이 대조 상태와 함께 같은 칩을 보여 준다.
+  // 그때는 여기서 한 번 더 세우지 않는다. 아직 요건이 없는 공고만 본문에서 읽은 칩을 이 표에 둔다.
+  const stacks = job.technologies.length === 0 ? mentionedStacks(job) : [];
   const rows = [
     {
       label: "기술 스택",
