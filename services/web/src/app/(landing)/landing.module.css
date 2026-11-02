@@ -1,0 +1,751 @@
+/*
+ * 랜딩.
+ *
+ * 디자인 시스템 v0.3(`docs/Expresso Design System.dc.html`)을 따른다. 밝은 지면 · 무채색 시스템 ·
+ * Espresso 하나의 채도. 눈에 남을 것은 스크롤 모션그래픽(story.module.css) 하나이고, 그 아래
+ * 구획은 조용히 둔다. 구획마다 떠오르는 등장 효과나 카드마다 붙는 호버 효과를 쓰지 않는다.
+ *
+ * 움직임의 곡선과 길이는 디자인 시스템의 motion 토큰 값(panel 280ms cubic-bezier(.32,.72,0,1))이다.
+ * 늘 어두운 구획(마지막 권유 · 바닥글)은 `data-theme="dark"`를 고정하고 그 테마의 역할 토큰만 쓴다.
+ * 디자인 시스템 §01 THEMES — 어두운 지면은 중성 진회색이고, 색기가 있는 어두운 지면(남색 등)은 쓰지 않는다.
+ */
+
+.page {
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --quick: 160ms;
+  --standard: 280ms;
+  min-height: 100dvh;
+  background: var(--ex-bg-sunken);
+  color: var(--ex-fg);
+}
+
+.container {
+  box-sizing: border-box;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 40px;
+}
+
+/* ── 머리 메뉴 ─────────────────────────────────────────────── */
+
+/* 모션그래픽 무대가 화면에 붙어 있는 동안에도 보이도록 흐름 밖에 둔다. */
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: color-mix(in srgb, var(--ex-bg-sunken) 88%, transparent);
+  backdrop-filter: saturate(1.4) blur(12px);
+  border-bottom: 1px solid var(--ex-border-inner);
+}
+
+.headerInner {
+  box-sizing: border-box;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 14px 40px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.headerInner .authLinks {
+  margin-left: auto;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.anchors {
+  display: flex;
+  gap: 26px;
+  margin-left: 44px;
+}
+
+.anchors a {
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-body);
+  transition: color var(--quick) var(--ease);
+}
+
+.anchors a:hover {
+  color: var(--ex-fg);
+}
+
+/* ── 로그인 · 회원가입 ─────────────────────────────────────── */
+
+.authLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.cta {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  font-weight: 600;
+  white-space: nowrap;
+  transition:
+    transform var(--quick) var(--ease),
+    background var(--quick) var(--ease),
+    border-color var(--quick) var(--ease),
+    color var(--quick) var(--ease);
+}
+
+.cta:focus-visible {
+  outline: none;
+  box-shadow: var(--ex-focus-ring);
+}
+
+.cta:active {
+  transform: scale(0.97);
+}
+
+/* 디자인 시스템에서 끝까지 둥근 버튼은 Brew CTA 하나다. 이 페이지의 Brew CTA는 회원가입이다. */
+.ctaPrimary,
+.ctaPrimary:hover {
+  border-radius: 999px;
+  background: var(--ex-accent);
+  border-color: var(--ex-accent);
+  color: var(--ex-fg-on-accent);
+}
+
+.ctaPrimary:hover {
+  background: var(--ex-accent-hover);
+  border-color: var(--ex-accent-hover);
+}
+
+.ctaSecondary {
+  background: var(--ex-bg);
+  border-color: var(--ex-border-firm);
+  color: var(--ex-fg);
+}
+
+.ctaSecondary:hover {
+  border-color: var(--ex-fg);
+  color: var(--ex-fg);
+}
+
+.ctaSmall {
+  padding: 8px 18px;
+  font-size: var(--ex-text-sm);
+}
+
+/* 첫 화면 · 마지막 권유의 한 쌍은 같은 크기다. 채움과 테두리로만 무게가 갈린다. */
+.ctaLarge {
+  min-width: 136px;
+  padding: 15px 30px;
+  font-size: var(--ex-text-lg);
+}
+
+.ctaNote {
+  margin: 14px 0 0;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-subtle);
+}
+
+/* ── 첫 화면 — 모션그래픽 무대의 첫 장면(Story.tsx의 hero) ─── */
+
+.heroCopy {
+  max-width: 620px;
+}
+
+.headline {
+  --line: 76px;
+  margin: 0 0 28px;
+  font-family: var(--ex-font-brand);
+  font-weight: 300;
+  font-size: var(--ex-text-display-lg);
+  letter-spacing: -0.035em;
+  color: var(--ex-fg);
+}
+
+.headlineVisual {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.headlineLead {
+  line-height: var(--line);
+}
+
+.headlineYour {
+  display: inline-block;
+}
+
+.rollWindow {
+  display: block;
+  height: var(--line);
+  overflow: hidden;
+  margin-left: 0.26em;
+}
+
+.rollTrack {
+  display: block;
+}
+
+.rollWord {
+  display: block;
+  height: var(--line);
+  line-height: var(--line);
+  color: var(--ex-accent-text);
+}
+
+/*
+ * 정의서의 굴림 6초 한 바퀴. 단어마다 1.33초 멈췄다가 0.67초 동안 올라간다.
+ * self 차례(66.6–89%)에는 단어 창이 왼쪽으로, "your"가 오른쪽으로 0.115em씩 다가가
+ * "yourself"가 된다. 마지막 work.는 첫 work.와 같은 자리라 이음매 없이 처음으로 돌아간다.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .rollTrack {
+    animation: landingRoll 6s linear infinite;
+    will-change: transform;
+  }
+
+  .rollWindow {
+    animation: landingMerge 6s linear infinite;
+  }
+
+  .headlineYour {
+    animation: landingYour 6s linear infinite;
+    will-change: transform;
+  }
+}
+
+@keyframes landingRoll {
+  0% { transform: translate3d(0, 0, 0); }
+  22.3% { transform: translate3d(0, 0, 0); animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
+  33.3% { transform: translate3d(0, calc(var(--line) * -1), 0); }
+  55.6% { transform: translate3d(0, calc(var(--line) * -1), 0); animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
+  66.6% { transform: translate3d(0, calc(var(--line) * -2), 0); }
+  89% { transform: translate3d(0, calc(var(--line) * -2), 0); animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
+  100% { transform: translate3d(0, calc(var(--line) * -3), 0); }
+}
+
+@keyframes landingMerge {
+  0%, 55.6% { transform: translate3d(0, 0, 0); animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
+  66.6%, 89% { transform: translate3d(-0.115em, 0, 0); animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+@keyframes landingYour {
+  0%, 55.6% { transform: translate3d(0, 0, 0); color: var(--ex-fg); animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
+  66.6%, 89% { transform: translate3d(0.115em, 0, 0); color: var(--ex-accent-text); animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
+  100% { transform: translate3d(0, 0, 0); color: var(--ex-fg); }
+}
+
+.lede {
+  max-width: 560px;
+  margin: 0 0 32px;
+  font-size: var(--ex-text-xl);
+  line-height: var(--ex-leading-relaxed);
+  color: var(--ex-fg-body);
+  text-wrap: pretty;
+  word-break: keep-all;
+}
+
+/* ── 절 공통 ───────────────────────────────────────────────── */
+
+.section {
+  padding: 120px 0 0;
+  scroll-margin-top: 72px;
+}
+
+.h2 {
+  max-width: 760px;
+  margin: 0 0 18px;
+  font-size: var(--ex-text-display-sm);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: var(--ex-leading-tight);
+  color: var(--ex-fg);
+  text-wrap: balance;
+  word-break: keep-all;
+}
+
+.body {
+  max-width: 620px;
+  margin: 0;
+  font-size: var(--ex-text-lg);
+  line-height: var(--ex-leading-relaxed);
+  color: var(--ex-fg-muted);
+  text-wrap: pretty;
+  word-break: keep-all;
+}
+
+/* ── 제작 과정 둘러보기 ────────────────────────────────────── */
+
+.browser {
+  overflow: hidden;
+  border: 1px solid var(--ex-border);
+  border-radius: 14px;
+  background: var(--ex-bg);
+}
+
+.browserChrome {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--ex-border-inner);
+}
+
+.browserDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--ex-border);
+}
+
+.browserAddress {
+  overflow: hidden;
+  margin-left: 12px;
+  padding: 4px 12px;
+  border-radius: 8px;
+  background: var(--ex-bg-sunken);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.browserBody {
+  position: relative;
+}
+
+.shot {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.tour {
+  display: grid;
+  grid-template-columns: minmax(0, 340px) minmax(0, 1fr);
+  align-items: start;
+  gap: 32px;
+  margin-top: 40px;
+}
+
+.tourTabs {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tourTab {
+  position: relative;
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  align-items: baseline;
+  gap: 4px 10px;
+  overflow: hidden;
+  padding: 14px 16px;
+  border: none;
+  border-radius: 10px;
+  background: none;
+  font: inherit;
+  color: var(--ex-fg-muted);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--quick) var(--ease), color var(--quick) var(--ease);
+}
+
+.tourTab:hover {
+  color: var(--ex-fg);
+}
+
+.tourTab:focus-visible {
+  outline: none;
+  box-shadow: var(--ex-focus-ring);
+}
+
+.tourTab[data-active="true"] {
+  background: var(--ex-bg);
+  color: var(--ex-fg);
+}
+
+.tourNumber {
+  font-size: var(--ex-text-xs);
+  font-weight: 600;
+  color: var(--ex-fg-subtle);
+}
+
+.tourTab[data-active="true"] .tourNumber {
+  color: var(--ex-accent-text);
+}
+
+.tourTitle {
+  font-size: var(--ex-text-md);
+  font-weight: 600;
+}
+
+.tourBody {
+  grid-column: 2;
+  display: none;
+  font-size: var(--ex-text-sm);
+  line-height: var(--ex-leading-normal);
+  color: var(--ex-fg-muted);
+  word-break: keep-all;
+}
+
+.tourTab[data-active="true"] .tourBody {
+  display: block;
+}
+
+.tourProgress {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 0;
+  height: 2px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--ex-border-inner);
+}
+
+.tourProgressFill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--ex-accent);
+  transform-origin: left center;
+  animation: landingProgress linear forwards;
+}
+
+@keyframes landingProgress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.tourStage {
+  position: relative;
+  display: grid;
+}
+
+/* 패널을 한 칸에 겹쳐 두고 고른 것만 보인다. 높이는 가장 큰 패널이 정한다. */
+.tourPanel {
+  grid-area: 1 / 1;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.tourPanel[data-active="true"] {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 나가는 화면은 빨리, 들어오는 화면은 조금 길게(motion-design: Enter > Exit). */
+@media (prefers-reduced-motion: no-preference) {
+  .tourPanel {
+    transform: translate3d(0, -8px, 0);
+    transition:
+      opacity 260ms var(--ease),
+      transform 260ms var(--ease),
+      visibility 0s linear 260ms;
+  }
+
+  .tourPanel[data-active="true"] {
+    transform: none;
+    transition:
+      opacity var(--standard) var(--ease),
+      transform var(--standard) var(--ease),
+      visibility 0s;
+  }
+}
+
+.tourPanel > .browser {
+  box-shadow: var(--ex-elevation-raised);
+}
+
+.tourCaption {
+  display: none;
+  margin: 16px 0 0;
+  font-size: var(--ex-text-md);
+  line-height: var(--ex-leading-normal);
+  color: var(--ex-fg-body);
+  word-break: keep-all;
+}
+
+/* ── 포트폴리오 예시 ───────────────────────────────────────── */
+
+.showcase {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 32px;
+  margin-top: 44px;
+  padding-bottom: 20px;
+}
+
+.siteFrame {
+  box-shadow: var(--ex-elevation-raised);
+}
+
+/* 창 높이만 보이고 나머지는 아래에 있다. 아래쪽을 흐려 이어진다는 것을 보인다. */
+.siteWindow {
+  position: relative;
+  aspect-ratio: 16 / 11;
+  overflow: hidden;
+  outline: none;
+}
+
+.siteWindow::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 22%;
+  background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--ex-bg) 85%, transparent));
+  pointer-events: none;
+  transition: opacity var(--standard) var(--ease);
+}
+
+.siteWindow:focus-visible {
+  box-shadow: inset var(--ex-focus-ring);
+}
+
+.siteImage {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* 1440×2700 이미지를 16:11 창으로 본다. 끝까지 내리는 거리는 이미지 높이의 63%다 —
+   (1.875 − 0.6875) ÷ 1.875. 내릴 때는 천천히 읽게, 돌아올 때는 빠르게. */
+@media (prefers-reduced-motion: no-preference) {
+  .siteImage {
+    transition: transform 900ms var(--ease);
+  }
+
+  .siteWindow:hover .siteImage,
+  .siteWindow:focus-visible .siteImage {
+    transform: translate3d(0, -63%, 0);
+    transition: transform 7s cubic-bezier(0.45, 0, 0.55, 1);
+  }
+
+  .siteWindow:hover::after,
+  .siteWindow:focus-visible::after {
+    opacity: 0;
+  }
+}
+
+.showcasePair {
+  position: relative;
+  margin-top: 64px;
+}
+
+.showcasePhone {
+  position: absolute;
+  right: -14px;
+  bottom: -36px;
+  width: 150px;
+  overflow: hidden;
+  border: 5px solid var(--ex-fg);
+  border-radius: 24px;
+  background: var(--ex-bg);
+  box-shadow: var(--ex-elevation-overlay);
+}
+
+.showcasePhoneImage {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* ── 마지막 권유 · 바닥글 — 늘 어두운 한 덩어리 ────────────── */
+
+.closing {
+  margin-top: 140px;
+  padding: 96px 0 88px;
+  background: var(--ex-bg);
+  color: var(--ex-fg);
+}
+
+.closingTitle {
+  margin: 0 0 16px;
+  font-family: var(--ex-font-ui);
+  font-size: var(--ex-text-display-md);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: var(--ex-leading-tight);
+  word-break: keep-all;
+}
+
+.closingBody {
+  max-width: 520px;
+  margin: 0 0 32px;
+  font-size: var(--ex-text-lg);
+  line-height: var(--ex-leading-relaxed);
+  color: var(--ex-fg-muted);
+  word-break: keep-all;
+}
+
+.footer {
+  padding: 0 0 32px;
+  background: var(--ex-bg);
+  color: var(--ex-fg);
+}
+
+.footerInner {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 32px 48px;
+  padding-top: 40px;
+  padding-bottom: 32px;
+  border-top: 1px solid var(--ex-border);
+  border-bottom: 1px solid var(--ex-border);
+}
+
+.footerBrand {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 320px;
+}
+
+.footerLine {
+  margin: 0;
+  font-size: var(--ex-text-xs);
+  line-height: var(--ex-leading-relaxed);
+  color: var(--ex-fg-muted);
+}
+
+.footerLinks {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 12px 28px;
+}
+
+.footerLinks a {
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-body);
+}
+
+.footerLinks a:hover {
+  color: var(--ex-fg);
+}
+
+.copyright {
+  padding-top: 20px;
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-subtle);
+}
+
+/* ── 좁은 폭 ───────────────────────────────────────────────── */
+
+@media (max-width: 1023px) {
+  /* 마크 자리를 뺀 글 폭에 머리글이 한 줄로 들어가게 한다. 줄이 갈리면 your · self가 붙는 굴림이 깨진다. */
+  .headline {
+    --line: 52px;
+    font-size: var(--ex-text-display-md);
+  }
+
+  .tour {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* 단계 목록은 가로로 밀고, 고른 단계의 설명은 화면 아래에 둔다. */
+  .tourTabs {
+    flex-direction: row;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .tourTab {
+    flex-shrink: 0;
+    grid-template-columns: auto auto;
+  }
+
+  .tourTab[data-active="true"] .tourBody {
+    display: none;
+  }
+
+  .tourCaption {
+    display: block;
+  }
+
+  .showcase {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .showcasePair {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 767px) {
+  .container {
+    padding: 0 16px;
+  }
+
+  .headerInner {
+    padding: 12px 16px;
+  }
+
+  .anchors {
+    display: none;
+  }
+
+  .headline {
+    --line: 44px;
+    margin-bottom: 18px;
+    font-size: var(--ex-text-display-sm);
+  }
+
+  .lede {
+    margin-bottom: 22px;
+    font-size: var(--ex-text-md);
+  }
+
+  .ctaLarge {
+    flex: 1;
+    min-width: 0;
+    padding: 14px 20px;
+  }
+
+  .authLinks:has(.ctaLarge) {
+    width: 100%;
+    flex-wrap: nowrap;
+  }
+
+  .section {
+    padding-top: 80px;
+  }
+
+  .h2 {
+    font-size: var(--ex-text-3xl);
+  }
+
+  .body,
+  .closingBody {
+    font-size: var(--ex-text-md);
+  }
+
+  .showcasePhone {
+    width: 104px;
+    right: 6px;
+    bottom: -24px;
+    border-width: 4px;
+    border-radius: 18px;
+  }
+
+  .closing {
+    margin-top: 96px;
+    padding: 72px 0 64px;
+  }
+
+  .closingTitle {
+    font-size: var(--ex-text-3xl);
+  }
+}
