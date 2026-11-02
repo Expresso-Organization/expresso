@@ -126,4 +126,11 @@ describe("markdownToBlockNoteBlocks", () => {
     expect(blocks.map((block) => block.type)).toEqual(["codeBlock", "callout", "evidence"]);
     expect(JSON.stringify(blocks[1])).toContain("호출");
   });
+
+  it("reads a fence that follows a paragraph line without a blank line", async () => {
+    const callout = JSON.stringify({ type: "callout", attrs: {}, text: [{ text: "호출" }] });
+    const blocks = await markdownToBlockNoteBlocks(`문단\n\`\`\`expresso-block\n${callout}\n\`\`\`\n다음`);
+    expect(blocks.map((block) => block.type)).toEqual(["paragraph", "callout", "paragraph"]);
+    expect(JSON.stringify(blocks)).not.toContain("EXPRESSOBLOCK");
+  });
 });

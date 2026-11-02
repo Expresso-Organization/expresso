@@ -58,7 +58,8 @@ export async function markdownToBlockNoteBlocks(markdown: string): Promise<Caree
   const customs: CareerBlockNoteBlock[][] = [];
   const unfenced = markdown.replaceAll("\r\n", "\n").replace(CUSTOM_FENCE, (fence) => {
     customs.push(careerDocumentToBlockNote(markdownToCareerDocument(fence)).blocks);
-    return `${CUSTOM_TOKEN}${customs.length - 1}`;
+    // 앞뒤에 빈 줄을 두어, 울타리가 문단 바로 뒤에 붙어 있어도 자리 표시가 따로 한 문단이 되게 합니다.
+    return `\n\n${CUSTOM_TOKEN}${customs.length - 1}\n\n`;
   });
   const prepared = unfenced.split("\n").map((line) => {
     const evidence = EVIDENCE_LINE.exec(line);
