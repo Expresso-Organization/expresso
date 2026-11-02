@@ -123,7 +123,13 @@ export function DocumentPanel({
     <aside
       ref={panelRef}
       tabIndex={-1}
-      onKeyDown={(event) => { if (event.key === "Escape" && !event.defaultPrevented && record) { event.preventDefault(); close(); } }}
+      onKeyDown={(event) => {
+        // 본문 · 입력 칸 안의 Escape는 그 칸의 메뉴와 선택을 닫는 데 씁니다. 패널은 칸 밖에서 누를 때만 닫습니다.
+        const target = event.target as HTMLElement;
+        if (event.key !== "Escape" || event.defaultPrevented || !record || target.isContentEditable || target.closest("input, textarea, select")) return;
+        event.preventDefault();
+        close();
+      }}
       className={styles.panel}
       aria-label="문서 패널"
       aria-hidden={record ? undefined : true}

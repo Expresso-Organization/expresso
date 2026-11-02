@@ -4,7 +4,7 @@ import type { CareerBlock, CareerDocument } from "@expresso/editor/document";
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
 
-import { blockNoteMarkdown, careerDocumentToBlockNoteState, openBlockNote, restoreBlockNote, syncBlockNoteDocument } from "./blocknote-document.js";
+import { blockNoteMarkdown, careerDocumentToBlockNoteState, markdownToBlockNoteBlocks, openBlockNote, restoreBlockNote, syncBlockNoteDocument } from "./blocknote-document.js";
 
 const id = () => crypto.randomUUID();
 const cell = (type: string, value: string): CareerBlock => ({ id: id(), type, attrs: {}, content: [{ id: id(), type: "paragraph", attrs: {}, text: [{ text: value }] }] });
@@ -116,5 +116,14 @@ describe("syncBlockNoteDocument", () => {
     const start = base();
     const result = syncBlockNoteDocument(start.state, [], []);
     expect(result.blocks.map((block) => block.type)).toEqual(["paragraph"]);
+  });
+});
+
+describe("markdownToBlockNoteBlocks", () => {
+  it("reads an expresso-block fence as its block and keeps code fences as code", async () => {
+    const callout = JSON.stringify({ type: "callout", attrs: {}, text: [{ text: "호출" }] });
+    const blocks = await markdownToBlockNoteBlocks(["```typescript\nconst answer = 42\n```", `\`\`\`expresso-block\n${callout}\n\`\`\``, "> [evidence:record-1] 근거"].join("\n\n"));
+    expect(blocks.map((block) => block.type)).toEqual(["codeBlock", "callout", "evidence"]);
+    expect(JSON.stringify(blocks[1])).toContain("호출");
   });
 });

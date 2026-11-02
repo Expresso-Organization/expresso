@@ -6,6 +6,7 @@ import {
   type CareerBlockNoteBlock,
 } from "@expresso/editor/blocknote";
 import type { CareerDocument } from "@expresso/editor/document";
+import { markdownToCareerDocument } from "@expresso/editor";
 import * as Y from "yjs";
 
 const createEditor = () => ServerBlockNoteEditor.create({ schema: careerBlockNoteSchema } as never);
@@ -43,6 +44,8 @@ export function restoreBlockNote(state: Uint8Array, updates: readonly Uint8Array
 
 const EVIDENCE_LINE = /^>\s*\[evidence:([^\]]+)\]\s*(.*)$/;
 const EVIDENCE_TOKEN = "EXPRESSOEVIDENCE";
+const CUSTOM_FENCE = /^```expresso-block\n[\s\S]*?\n```$/gm;
+const CUSTOM_TOKEN = "EXPRESSOBLOCK";
 
 /**
  * Markdown을 BlockNote 블록으로 읽습니다. 서식 · 링크 · 중첩 목록 · 표 · 그림은 BlockNote 파서가 지킵니다.
@@ -50,7 +53,14 @@ const EVIDENCE_TOKEN = "EXPRESSOEVIDENCE";
  */
 export async function markdownToBlockNoteBlocks(markdown: string): Promise<CareerBlockNoteBlock[]> {
   const sources: string[] = [];
-  const prepared = markdown.split("\n").map((line) => {
+  // 콜아웃처럼 Markdown 문법이 없는 블록은 `expresso-block` 울타리에 v1 블록 JSON으로 적혀 있습니다.
+  // BlockNote 파서는 이 울타리를 코드 블록으로 읽으므로, 자리 표시 문단으로 바꿔 두고 v1 변환으로 되살립니다.
+  const customs: CareerBlockNoteBlock[][] = [];
+  const unfenced = markdown.replaceAll("\r\n", "\n").replace(CUSTOM_FENCE, (fence) => {
+    customs.push(careerDocumentToBlockNote(markdownToCareerDocument(fence)).blocks);
+    return `${CUSTOM_TOKEN}${customs.length - 1}`;
+  });
+  const prepared = unfenced.split("\n").map((line) => {
     const evidence = EVIDENCE_LINE.exec(line);
     if (evidence) { sources.push(evidence[1] ?? ""); return `> ${EVIDENCE_TOKEN}${sources.length - 1} ${evidence[2] ?? ""}`; }
     return line
@@ -58,7 +68,11 @@ export async function markdownToBlockNoteBlocks(markdown: string): Promise<Caree
       .replace(/\[([^\]]+)\]\(file:([0-9a-f-]{36})\)/gi, "[$1](/v1/media/$2)");
   }).join("\n");
   const parsed = await editor().tryParseMarkdownToBlocks(prepared) as unknown as CareerBlockNoteBlock[];
-  return parsed.map((block) => restoreEvidence(block, sources));
+  return parsed.flatMap((block) => {
+    const content = (block as unknown as { type: string; content?: InlineNode[] }).content;
+    const token = block.type === "paragraph" && content?.length === 1 ? new RegExp(`^${CUSTOM_TOKEN}(\\d+)$`).exec(content[0]?.text ?? "") : null;
+    return token ? customs[Number(token[1])] ?? [] : [restoreEvidence(block, sources)];
+  });
 }
 
 type InlineNode = { type?: string; text?: string; styles?: unknown; content?: unknown };
