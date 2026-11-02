@@ -732,9 +732,13 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ── 동작 줄이기 — 위치 이동을 없애고 나타나고 사라지는 것만 남긴다 ── */
+/*
+ * ── 동작 줄이기 — 등장할 때의 이동과 물결을 없앤다 ──
+ * 마크의 자리 옮김과 기록 순위의 재정렬은 남긴다. 둘 다 내용이고, 보간 없이 스크롤 위치에 바로 맞는다.
+ */
 
 @media (prefers-reduced-motion: reduce) {
+  .hero,
   .panel,
   .archiveCard,
   .bubbleRow,

@@ -93,6 +93,7 @@ const TAILORED = [3, 2, 5, 1, 0, 4];
 export function Story({ hero }: { hero: ReactNode }) {
   const section = useRef<HTMLElement>(null);
   const stage = useRef<HTMLDivElement>(null);
+  const heroBox = useRef<HTMLDivElement>(null);
   const percent = useRef<HTMLSpanElement>(null);
   const extractPercent = useRef<HTMLSpanElement>(null);
   const panels = useRef<(HTMLDivElement | null)[]>([]);
@@ -110,6 +111,8 @@ export function Story({ hero }: { hero: ReactNode }) {
     const apply = (p: number) => {
       const intro = clamp(p / INTRO);
       board.style.setProperty("--intro", intro.toFixed(4));
+      // 글이 다 사라지면(story.module.css .hero의 1 − intro × 2.4) 링크도 탭 순서와 클릭에서 뺀다.
+      if (heroBox.current) heroBox.current.style.visibility = 1 - intro * 2.4 > 0.001 ? "visible" : "hidden";
       let active = -1;
       let level = 0;
       CHAPTERS.forEach((chapter, index) => {
@@ -166,7 +169,9 @@ export function Story({ hero }: { hero: ReactNode }) {
   return (
     <section ref={section} id="story" className={styles.story} aria-label="Expresso 소개">
       <div ref={stage} className={styles.stage}>
-        <div className={styles.hero}>{hero}</div>
+        <div ref={heroBox} className={styles.hero}>
+          {hero}
+        </div>
 
         <div className={styles.markColumn}>
           <div className={styles.markBox}>

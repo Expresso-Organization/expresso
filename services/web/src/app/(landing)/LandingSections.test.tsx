@@ -60,7 +60,7 @@ it("앵커는 같은 페이지의 서비스 소개 · 제품 화면 · 포트폴
 
 it("제품 화면에서 단계를 누르면 그 단계의 화면이 보인다", () => {
   render(<Landing />);
-  const tabs = within(screen.getByRole("tablist", { name: "제작 과정" })).getAllByRole("tab");
+  const tabs = within(screen.getByRole("tablist", { name: "제품 화면" })).getAllByRole("tab");
   expect(tabs.map((tab) => tab.querySelector("span:nth-child(2)")?.textContent)).toEqual([
     "재료 고르기", "디자인 선택", "다듬기", "배포",
   ]);
@@ -110,6 +110,8 @@ it("스크롤 위치에 따라 지금 장이 바뀌고, 되돌리면 앞 장으�
   await scrollTo(0.61);
   expect(states()).toEqual(["done", "done", "done", "active", "todo", "todo"]);
   expect(visible()).toEqual([false, false, false, true, false, false]);
+  // 첫 화면 글이 사라진 뒤에는 그 회원가입 · 로그인이 탭 순서에서 빠진다. 머리 메뉴 · 마지막 권유만 남는다.
+  expect(screen.getAllByRole("link", { name: "회원가입" })).toHaveLength(2);
 
   await scrollTo(0.17);
   expect(states()).toEqual(["active", "todo", "todo", "todo", "todo", "todo"]);

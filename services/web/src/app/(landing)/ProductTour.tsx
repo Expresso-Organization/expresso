@@ -27,7 +27,7 @@ function useReducedMotion() {
 }
 
 /**
- * 제작 과정 둘러보기. 단계가 저절로 넘어가고, 단계를 누르면 그 화면에 머문다.
+ * 제품 화면 둘러보기. 단계가 저절로 넘어가고, 단계를 누르면 그 화면에 머문다.
  *
  * 마우스를 올리거나 포커스가 들어오면 멈춘다. 한 번 직접 고른 뒤에는 다시 저절로 넘기지 않는다.
  */
@@ -65,7 +65,7 @@ export function ProductTour({ steps }: { steps: TourStep[] }) {
       onFocus={() => setHovering(true)}
       onBlur={() => setHovering(false)}
     >
-      <div ref={tabList} className={styles.tourTabs} role="tablist" aria-label="제작 과정">
+      <div ref={tabList} className={styles.tourTabs} role="tablist" aria-label="제품 화면">
         {steps.map((step, index) => {
           const selected = index === active;
           return (
