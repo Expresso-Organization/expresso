@@ -1,10 +1,11 @@
 import { randomUUID } from "node:crypto";
-import { CareerDeleteImpactSchema } from "@expresso/contracts";
+import { CareerDeleteImpactSchema, CareerTrashedRecordSchema } from "@expresso/contracts";
 import { mongoCollections, type RecordLinkDoc } from "@expresso/database";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction, type MongoTransaction } from "../../platform/mongo-transaction.js";
 import { requireActiveUser } from "../identity/index.js";
 import { CareerError } from "./errors.js";
+import { requireCareerCategory } from "./mongo-categories.js";
 import { assertActiveRecordsForWrite } from "./mongo-record-guard.js";
 import { mapMongoRecord, usageLookup } from "./mongo-records.js";
 
@@ -56,4 +57,15 @@ export async function restoreMongoRecord(context: MongoContext, userId: string, 
     if (!record) throw new CareerError(404, "restorable career record not found");
     return mapMongoRecord(record);
   });
+}
+
+// 휴지통 목록은 최근에 지운 순서로 보입니다. 보관 기간이 지난 기록은 복원할 수 없어 뺍니다.
+export async function listTrashedMongoRecords(context: MongoContext, userId: string, categoryId: string, at: Date) {
+  await requireCareerCategory(context, userId, categoryId);
+  const rows = await mongoCollections(context.db).careerRecords
+    .find({ userId, categoryId, deletedAt: { $ne: null }, purgeAfter: { $gt: at } })
+    .sort({ deletedAt: -1, _id: 1 })
+    .limit(200)
+    .toArray();
+  return rows.map((row) => CareerTrashedRecordSchema.parse({ ...mapMongoRecord(row), deletedAt: row.deletedAt!.toISOString(), purgeAfter: row.purgeAfter!.toISOString() }));
 }

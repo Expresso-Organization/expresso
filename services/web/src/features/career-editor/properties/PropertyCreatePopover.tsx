@@ -58,7 +58,8 @@ function scrollBoundary(element: HTMLElement): DOMRect | null {
 export function PropertyCreatePopover({ categoryId, definitions, onDefinitionsChange, onVersionConflict }: {
   categoryId: string;
   definitions: readonly CareerPropertyDefinitionV2[];
-  onDefinitionsChange(definitions: CareerPropertyDefinitionV2[]): void;
+  /** 두 번째 인자는 속성을 더한 뒤의 카테고리 전체다. 카테고리 버전이 필요한 쪽이 쓴다. */
+  onDefinitionsChange(definitions: CareerPropertyDefinitionV2[], category: CareerCategory): void;
   onVersionConflict(): void;
 }) {
   const [open, setOpen] = useState(false);
@@ -186,8 +187,8 @@ export function PropertyCreatePopover({ categoryId, definitions, onDefinitionsCh
         return;
       }
       if (!applyResponse.ok) throw new Error("속성을 추가하지 못했습니다.");
-      const payload = await applyResponse.json() as { data: { propertySchemaV2?: CareerPropertyDefinitionV2[] } };
-      if (payload.data.propertySchemaV2) onDefinitionsChange(payload.data.propertySchemaV2);
+      const payload = await applyResponse.json() as { data: CareerCategory };
+      if (payload.data.propertySchemaV2) onDefinitionsChange(payload.data.propertySchemaV2, payload.data);
       setOpen(false);
     } catch (error) {
       setIssue(error instanceof Error ? error.message : "속성을 추가하지 못했습니다.");
