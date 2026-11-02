@@ -377,18 +377,41 @@ export function viewBody(view: ViewDraft): ViewDraft {
   return { name: view.name, type: view.type, filter: view.filter, sorts: view.sorts, groupPropertyId: view.groupPropertyId, groupOrder: view.groupOrder, recordOrder: view.recordOrder, visiblePropertyIds: view.visiblePropertyIds, propertyOrder: view.propertyOrder, columnWidths: view.columnWidths, gallery: view.gallery, board: view.board, timeline: view.timeline };
 }
 
-/** 카드에 보일 값. 선택 값은 옵션 이름으로, 날짜는 `YYYY.MM.DD`로 바꾼다. */
+const OPTION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * 칩 하나하나로 보일 값. 선택 · 다중 선택 값은 옵션 ID로 저장되므로 옵션 이름으로 바꾸고,
+ * 지운 옵션을 가리키는 ID는 버린다 — ID를 그대로 보이면 화면에 UUID가 뜬다.
+ * 관계 값은 연결된 기록의 제목이다. 표 · 갤러리 · 목록 · 타임라인이 모두 이 함수를 거친다.
+ */
+export function propertyLabels(record: CareerRecord, definition: CareerPropertyDefinitionV2): string[] {
+  const value = fieldValue(record, definition);
+  if (isEmptyValue(value)) return [];
+  if (definition.type === "select" || definition.type === "multi_select") {
+    const names = new Map(propertyOptions(definition).map((option) => [option.id, option.name]));
+    return (Array.isArray(value) ? value : [value]).flatMap((id) => {
+      const name = names.get(String(id));
+      if (name) return [name];
+      // 계약은 옵션 ID지만 옛 기록에는 이름이 그대로 들어 있을 수 있다. 이름은 보이고, 옵션에 없는 ID만 버린다.
+      return typeof id === "string" && id.trim() && !OPTION_ID.test(id) ? [id] : [];
+    });
+  }
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => item && typeof item === "object" && "title" in item ? [String(item.title)] : typeof item === "object" ? [] : [String(item)]);
+  }
+  const label = propertyLabel(record, definition);
+  return label ? [label] : [];
+}
+
+/** 카드에 보일 값 한 줄. 선택 값은 옵션 이름으로, 날짜는 `YYYY.MM.DD`로 바꾼다. */
 export function propertyLabel(record: CareerRecord, definition: CareerPropertyDefinitionV2): string | null {
   const value = fieldValue(record, definition);
   if (isEmptyValue(value)) return null;
-  if (definition.type === "select" || definition.type === "multi_select") {
-    const names = new Map(propertyOptions(definition).map((option) => [option.id, option.name]));
-    const ids = Array.isArray(value) ? value : [value];
-    return ids.map((id) => names.get(String(id)) ?? null).filter(Boolean).join(", ") || null;
+  if (definition.type === "select" || definition.type === "multi_select" || Array.isArray(value)) {
+    return propertyLabels(record, definition).join(", ") || null;
   }
   if (definition.type === "checkbox") return value === true ? definition.name : null;
   if (definition.type === "date") return formatDate(String(value));
-  if (Array.isArray(value)) return value.map((item) => item && typeof item === "object" && "title" in item ? String(item.title) : String(item)).join(", ");
   return typeof value === "object" ? null : String(value);
 }
 

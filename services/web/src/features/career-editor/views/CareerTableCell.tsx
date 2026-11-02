@@ -8,6 +8,7 @@ import { Icon } from "@/components/ui/Icon";
 import { propertyOptions } from "@/features/career-editor/properties/property-editors";
 
 import { displayValue, rawValue } from "./view-types";
+import { propertyLabel, propertyLabels } from "./view-logic";
 import styles from "./views.module.css";
 
 export type TableCellValue = CareerPropertyValueV2 | null;
@@ -54,21 +55,19 @@ function toValue(definition: CareerPropertyDefinitionV2, draft: string): TableCe
 
 function CellDisplay({ record, definition }: { record: CareerRecord; definition: CareerPropertyDefinitionV2 }) {
   const value = valueFor(record, definition);
-  const options = propertyOptions(definition);
-  const labels = new Map(options.map((option) => [option.id, option.name]));
   if (definition.type === "checkbox") {
     const checked = value === true;
     return <span className={styles.tableBoolean} data-checked={checked ? "true" : "false"}><span aria-hidden="true">{checked ? <Icon name="check" size={11} weight="bold" /> : null}</span>{checked ? "예" : "아니요"}</span>;
   }
   if (Array.isArray(value)) {
-    const items = value.map((item) => labels.get(String(item)) ?? (item && typeof item === "object" && "title" in item ? String(item.title) : String(item)));
+    const items = definition.type === "multi_select" || definition.type === "relation" ? propertyLabels(record, definition) : value.map((item) => item && typeof item === "object" && "title" in item ? String(item.title) : String(item));
     return items.length ? <span className={styles.tableTags}>{items.slice(0, 4).map((label, index) => <small key={`${label}-${index}`}>{label}</small>)}</span> : <span className={styles.emptyCell}>—</span>;
   }
   if (definition.type === "date" && value && typeof value === "object" && "start" in value) {
     const range = value as { start: unknown; end?: unknown };
     return <span>{String(range.start)}{range.end ? ` – ${String(range.end)}` : ""}</span>;
   }
-  const text = typeof value === "string" ? labels.get(value) ?? displayValue(value) : displayValue(value);
+  const text = definition.type === "select" ? propertyLabel(record, definition) ?? "—" : displayValue(value);
   if (definition.key === "title") return <span className={styles.tableTitleValue}><Icon name="file" size={17} /><span>{text === "—" ? "제목 없음" : text}</span></span>;
   return text === "—" ? <span className={styles.emptyCell}>—</span> : <span>{text}</span>;
 }
