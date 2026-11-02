@@ -27,6 +27,7 @@ date: 2026-11-03
 | `services/web/src/app/(app)/home/HomePortfolios.tsx`(새로) | 제작 · 포트폴리오 카드와 썸네일 |
 | `services/web/src/app/(app)/home/HomeInsights.tsx`(새로) | 차트 카드. 시안 `draft/HomeCharts.tsx`를 옮긴다 |
 | `services/web/src/app/(app)/home/home-model.ts` · `.test.ts`(새로) | 직군 대응표 · 예시 질문 · 격자 병합 · 이탈 지점 계산과 테스트 |
+| `services/web/src/app/(app)/home/home-data.ts`(새로) | 목표 직군 · 공고 · 사이트 대시보드 · 지면 유무를 `cache()`로 읽기 |
 | `services/web/src/app/(app)/home/HomeInsights.test.tsx`(새로) | 순환 · 멈춤 · 움직임 줄이기 테스트 |
 | `services/web/src/app/(app)/home/HomeChrome.tsx` | 「⌘K」 · 라벨 · 「저장한 검색」 제거, 예시 질문을 인자로 받기 |
 | `services/web/src/app/(app)/home/HomeSkeleton.tsx` · `loading.tsx` | 새 배치에 맞춘 뼈대. 「내 커리어」 뼈대 제거 |
@@ -56,9 +57,14 @@ flowchart TD
   classDef risk fill:#FCEBEB,stroke:#A32D2D,color:#501313
 ```
 
+구현하며 바뀐 것:
+- 마감일을 모르는 공고는 「상시」 대신 아무것도 적지 않는다. 06 공고 목록의 `deadlineLabel`을 가져다 쓴다.
+- 썸네일 틀을 세우기 전에 `page.latest`로 지면이 있는지 확인한다(`portfoliosWithPage`). 없으면 빗금.
+- 같은 날 배포한 사이트는 차트 바닥 눈금을 나란히 세우고 판 번호를 한 줄로 묶는다.
+
 ## 가장 위험한 단계
 
-5단계, 썸네일 iframe이 가장 위험하다. 미리보기 문서는 `script-src 'none'` 아래에서 열린다. 지면 키트의 등장 애니메이션이 스크립트로 내용을 드러내는 방식이면 썸네일이 빈 채로 보인다.
+5단계, 썸네일 iframe이 가장 위험하다. (2026-11-03 확인: 미리보기 문서가 세션 쿠키로 열리고, 등장 애니메이션이 CSS 스크롤 타임라인이라 내용이 숨지 않았다. 되돌리지 않았다.) 미리보기 문서는 `script-src 'none'` 아래에서 열린다. 지면 키트의 등장 애니메이션이 스크립트로 내용을 드러내는 방식이면 썸네일이 빈 채로 보인다.
 
 - 확인 방법: dev01의 지면 3개를 iframe으로 붙여 1440px 화면에서 본다.
 - 되돌리는 방법: 비어 보이면 시안이 썼던 `PagePreview`(`srcDoc` · `reveal={false}`)로 바꾼다. 이때 홈 응답이 커지는 것을 막기 위해 썸네일 수를 격자 5칸으로 제한한다. 바꿨다면 같은 커밋에서 이 plan과 spec의 「버린 대안」을 고친다.

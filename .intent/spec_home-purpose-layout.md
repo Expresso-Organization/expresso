@@ -13,11 +13,11 @@ date: 2026-11-03
 
 - [ ] 공고 카드 첫 탭은 `CareerProfile.targetRoles[0]`을 공고 직군으로 바꿔 `jobs.postings({ family, sort: "match", limit: 5 })`로 채운다. 대응하는 직군이 없거나 프로필이 없으면 탭 이름이 「전체 공고」가 되고 `sort: "recent"`로 채운다.
 - [ ] 공고 카드 둘째 탭 「관심 N」은 `watchedJobs`로 채운다. 관심 공고가 0건이면 탭을 그리지 않는다. 탭 전환은 `?tab=interested` 링크로 하고 클라이언트 상태를 두지 않는다.
-- [ ] 공고 행에는 `company.logoUrl`, `title`, `daysLeft`(null이면 「상시」), `location` · `experienceLabel`을 보인다. `match`가 있으면 `total`, `covered/required`, 네 축의 `missing`을 합친 앞쪽 태그를 보인다.
+- [ ] 공고 행에는 `company.logoUrl`, `title`, 마감(`daysLeft`), `location` · `experienceLabel`을 보인다. 마감일을 모르면(`daysLeft` null) 아무것도 적지 않는다 — 06 공고 목록(`jobs/JobRows.tsx`의 `deadlineLabel`)이 정한 규칙을 그대로 쓴다. 모아 온 공고는 마감이 거의 비어 있어 「상시」라고 적으면 틀린 말이 된다. `match`가 있으면 `total`, `covered/required`, 네 축의 `missing`을 합친 앞쪽 태그를 보인다.
 - [ ] `HomeReadModel.activeBrews` 항목에 `title`(string|null)과 `company`(`{ name, logoUrl }`|null)를 더한다. 제목은 `brews.freeTitle`, 공고 제목 순서로 고른다.
 - [ ] `PortfolioSummary`에 `target`(`{ company: { name, logoUrl }, postingTitle }`|null)을 더한다. 경로는 포트폴리오 → 제작 → 공고 분석 → 공고 → 회사다. 공고 없이 만든 포트폴리오는 null이다.
 - [ ] 포트폴리오 격자는 진행 중 제작과 최근 포트폴리오를 `updatedAt` 내림차순으로 섞어 5칸을 채우고, 마지막 칸에 「새 포트폴리오」를 둔다. 제작 카드는 `resumeStep(status)`의 경로로 가고, 단계 이름을 배지로 보인다.
-- [ ] 포트폴리오 썸네일은 `/edit/{id}/preview`를 `loading="lazy"` iframe으로 1/4 축소해 보인다. 지면을 받지 못하면 빗금을 보인다.
+- [ ] 포트폴리오 썸네일은 `/edit/{id}/preview`를 `loading="lazy"` iframe으로 1/4 축소해 보인다. 서버가 `page.latest`로 지면이 있는지 먼저 확인하고, 없으면 틀을 세우지 않고 빗금을 보인다(오류 문서가 축소되어 보이지 않게).
 - [ ] 배포한 사이트(`status: "published"`, 최근 배포 순 최대 3개)마다 `analytics.dashboard(id, "30d")`를 부른다. 그 결과로 카드별 방문 · 연락처 수와 차트 카드 세 개를 만든다. 배포한 사이트가 0개면 차트 카드와 오른쪽 열을 그리지 않는다.
 - [ ] 차트 카드는 8초마다 넘어간다. 포인터나 초점이 카드 안에 있으면 멈춘다. `prefers-reduced-motion: reduce`에서는 넘기지 않는다.
 - [ ] 기록 0건이면 검색창을 그리지 않고 첫 기록 카드를 그린다. 「내 커리어」 칸, 「저장한 검색」 단추, 「추천 N」 단추, `/home`으로 가는 「전체 보기」, 검색창의 「⌘K」를 지운다.
