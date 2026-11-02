@@ -19,8 +19,13 @@
 .stage {
   --intro: 0;
   --level: 0;
-  /* 도입부에서 마크가 머무는 자리(오른쪽 큰 잔)와 왼쪽 기둥 사이의 거리 */
-  --mx: min(46vw, 600px);
+  /*
+   * 도입부에서 마크는 무대 오른쪽 끝에 크게(--ms배) 앉는다. --mark-w는 그때의 너비다.
+   * 무대 안쪽 폭(min(1240px, 100vw) − 좌우 여백 80px)에서 그 너비를 뺀 만큼 왼쪽 기둥에서 옮겨 둔다.
+   * 첫 화면 글은 그 자리를 뺀 폭만 쓴다(.hero > div). 그래서 어느 폭에서도 마크가 글에 올라앉지 않는다.
+   */
+  --mark-w: 320px;
+  --mx: calc(min(1240px, 100vw) - 80px - var(--mark-w));
   --my: 18vh;
   --ms: 0.6;
   position: sticky;
@@ -55,6 +60,10 @@
   pointer-events: auto;
 }
 
+.hero > div {
+  max-width: min(620px, calc(100% - var(--mark-w) - 48px));
+}
+
 /* ── 마크 기둥 ────────────────────────────────────────────── */
 
 .markColumn {
@@ -66,8 +75,8 @@
 }
 
 .markBox {
-  /* 도입부 뒤쪽 4분의 3 동안 옮겨 가고 부드럽게 멎는다(smoothstep) */
-  --a: clamp(0, calc((var(--intro) - 0.25) / 0.75), 1);
+  /* 첫 화면 글이 다 사라진 뒤(intro 0.42, .hero의 1 − intro × 2.4)에 옮겨 가고 부드럽게 멎는다(smoothstep) */
+  --a: clamp(0, calc((var(--intro) - 0.42) / 0.58), 1);
   --e: calc(var(--a) * var(--a) * (3 - 2 * var(--a)));
   width: 200px;
   transform-origin: top left;
@@ -94,26 +103,15 @@
 }
 
 /*
- * 수위 — 0이면 빈 잔, 1이면 가득. 링 안쪽 가장자리는 y 23~85(반지름 36 − 획 절반 5)다.
- * 수면(y 18)을 1일 때 그대로 두어 물결 골(진폭 2.4)까지 가장자리 위로 올린다. 0일 때는 89에 두어 물결 꼭대기까지 획 아래로 숨긴다.
+ * 수위 — 채움 윗변(y 18)을 (1 − level) × 71만큼 내린다. 0이면 y 89(획 아래), 1이면 y 18(가득).
+ * 42%면 y 58.96으로 로고(Logo.tsx)의 채움과 같다.
  */
 .markLiquid {
   transform: translate3d(0, calc((1 - var(--level)) * 71px), 0);
 }
 
-.markWave {
+.markFill {
   fill: var(--ex-accent);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .markWave {
-    animation: storyWave 3.2s linear infinite;
-  }
-}
-
-@keyframes storyWave {
-  from { transform: translate3d(0, 0, 0); }
-  to { transform: translate3d(36px, 0, 0); }
 }
 
 .markMeta,
@@ -756,6 +754,10 @@
     gap: 36px;
   }
 
+  .stage {
+    --mark-w: 240px;
+  }
+
   .markBox {
     width: 150px;
   }
@@ -772,6 +774,7 @@
 
   /* 마크는 위쪽 띠에 작게, 장은 그 아래. 도입부에서는 마크가 글 아래 가운데에 크게 앉는다. */
   .stage {
+    --mark-w: 0px;
     --mx: calc(50vw - 16px - 60px);
     --my: 52svh;
     --ms: 1.4;
@@ -784,6 +787,10 @@
   .hero {
     align-items: flex-start;
     padding: 92px 16px 0;
+  }
+
+  .hero > div {
+    max-width: none;
   }
 
   .markColumn {

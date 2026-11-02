@@ -6,8 +6,8 @@
  * 구획은 조용히 둔다. 구획마다 떠오르는 등장 효과나 카드마다 붙는 호버 효과를 쓰지 않는다.
  *
  * 움직임의 곡선과 길이는 디자인 시스템의 motion 토큰 값(panel 280ms cubic-bezier(.32,.72,0,1))이다.
- * 늘 어두운 구획(마지막 권유 · 바닥글)은 #16223a(Ink 900, `tokens.test.ts` 허용 목록)에
- * `data-theme="dark"`를 고정한다.
+ * 늘 어두운 구획(마지막 권유 · 바닥글)은 `data-theme="dark"`를 고정하고 그 테마의 역할 토큰만 쓴다.
+ * 디자인 시스템 §01 THEMES — 어두운 지면은 중성 진회색이고, 색기가 있는 어두운 지면(남색 등)은 쓰지 않는다.
  */
 
 .page {
@@ -566,7 +566,7 @@
 .closing {
   margin-top: 140px;
   padding: 96px 0 88px;
-  background: #16223a;
+  background: var(--ex-bg);
   color: var(--ex-fg);
 }
 
@@ -591,7 +591,7 @@
 
 .footer {
   padding: 0 0 32px;
-  background: #16223a;
+  background: var(--ex-bg);
   color: var(--ex-fg);
 }
 
@@ -645,6 +645,12 @@
 /* ── 좁은 폭 ───────────────────────────────────────────────── */
 
 @media (max-width: 1023px) {
+  /* 마크 자리를 뺀 글 폭에 머리글이 한 줄로 들어가게 한다. 줄이 갈리면 your · self가 붙는 굴림이 깨진다. */
+  .headline {
+    --line: 52px;
+    font-size: var(--ex-text-display-md);
+  }
+
   .tour {
     grid-template-columns: minmax(0, 1fr);
   }

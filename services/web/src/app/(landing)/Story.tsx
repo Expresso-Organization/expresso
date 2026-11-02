@@ -32,7 +32,7 @@ const CHAPTERS = [
     name: "커리어 기록",
     title: "기록을 쌓아 둡니다",
     body: "경험 · 프로젝트 · 스킬을 카테고리로 남겨 두면, 지원할 때마다 다시 꺼내 쓰는 재료가 됩니다.",
-    level: [0, 0.18],
+    level: 0.52,
   },
   {
     icon: "magnifying-glass",
@@ -40,7 +40,7 @@ const CHAPTERS = [
     name: "공고 분석",
     title: "공고에서 요건을 뽑습니다",
     body: "공고를 붙여 넣으면 자격 요건을 정리하고, 내 기록으로 채운 요건과 비어 있는 요건을 나눠 보여 줍니다.",
-    level: [0.18, 0.42],
+    level: 0.62,
   },
   {
     icon: "chat-circle-dots",
@@ -48,7 +48,7 @@ const CHAPTERS = [
     name: "AI 대화",
     title: "비어 있는 요건은 물어봅니다",
     body: "기록만으로 부족한 요건은 AI 바리스타가 질문합니다. 답변은 포트폴리오 문장의 근거가 됩니다.",
-    level: [0.42, 0.6],
+    level: 0.72,
   },
   {
     icon: "target",
@@ -56,7 +56,7 @@ const CHAPTERS = [
     name: "기업 맞춤",
     title: "공고에 맞춰 다시 고릅니다",
     body: "같은 기록이라도 공고마다 관련 있는 경험이 다릅니다. 요건을 기준으로 기록의 순서를 다시 매깁니다.",
-    level: [0.6, 0.77],
+    level: 0.82,
   },
   {
     icon: "coffee",
@@ -64,7 +64,7 @@ const CHAPTERS = [
     name: "포트폴리오 추출",
     title: "포트폴리오를 추출합니다",
     body: "고른 기록과 답변에 디자인을 입혀 포트폴리오 페이지를 만듭니다. 고치고 싶은 부분은 말로 요청합니다.",
-    level: [0.77, 0.92],
+    level: 0.91,
   },
   {
     icon: "paper-plane-tilt",
@@ -72,11 +72,16 @@ const CHAPTERS = [
     name: "배포 · 방문 분석",
     title: "링크 하나로 보냅니다",
     body: "완성한 포트폴리오는 개인 주소로 바로 공개됩니다. 방문자가 어느 섹션을 오래 봤는지도 알려 줍니다.",
-    level: [0.92, 1],
+    level: 1,
   },
 ] as const;
 
 const LENGTH = (END - INTRO) / CHAPTERS.length;
+/**
+ * 첫 화면의 수위. 로고(`components/brand/Logo.tsx`)의 채움 윗변 y 58.96과 같다 — 아이콘 문서의 기본 수위 42%.
+ * 장마다의 `level`은 여기서부터 100%까지 오른다.
+ */
+const LOGO_LEVEL = 1 - (58.96 - 18) / 71;
 /** 장 하나의 장면이 처음부터 끝까지 재생되는 시간(초). 엇갈린 요소 여섯 개가 차례로 들어올 시간이다. */
 const PLAY_SECONDS = 1.4;
 /** 장 전환의 시간 상수(초). 약 세 배(0.5초)에 끝난다. */
@@ -116,7 +121,7 @@ export function Story({ hero }: { hero: ReactNode }) {
     // 스크롤이 고른 장. -1은 도입부(첫 화면)다.
     let chosen = -1;
     let intro = 0;
-    let level = 0;
+    let level = LOGO_LEVEL;
     const play = new Array<number>(count).fill(0);
     const seen = new Array<number>(count).fill(0);
     let frame = 0;
@@ -137,10 +142,11 @@ export function Story({ hero }: { hero: ReactNode }) {
       };
 
       intro = settle(intro, chosen >= 0 ? 1 : 0, FADE_TAU);
-      level = settle(level, chosen >= 0 ? CHAPTERS[chosen]!.level[1] : 0, LEVEL_TAU);
+      level = settle(level, chosen >= 0 ? CHAPTERS[chosen]!.level : LOGO_LEVEL, LEVEL_TAU);
       for (let index = 0; index < count; index += 1) {
-        // 첫 장은 도입부의 글이 물러난 뒤에 들어온다.
-        const show = index === chosen && (index > 0 || intro > 0.6);
+        // 앞 장이 거의 사라진 뒤에 들어온다. 두 장의 글이 겹쳐 보이지 않게 한다. 첫 장은 도입부의 글이 물러난 뒤다.
+        const othersGone = seen.every((value, other) => other === index || value < 0.05);
+        const show = index === chosen && othersGone && (index > 0 || intro > 0.6);
         seen[index] = settle(seen[index]!, show ? 1 : 0, FADE_TAU);
         // 지난 장은 끝난 상태로, 고른 장은 보이기 시작하면 재생하고, 다음 장은 처음으로 감는다.
         const goal = index < chosen ? 1 : index === chosen ? (seen[index]! > 0.5 ? 1 : play[index]!) : 0;
@@ -170,7 +176,7 @@ export function Story({ hero }: { hero: ReactNode }) {
 
     const settled = () =>
       intro === (chosen >= 0 ? 1 : 0) &&
-      level === (chosen >= 0 ? CHAPTERS[chosen]!.level[1] : 0) &&
+      level === (chosen >= 0 ? CHAPTERS[chosen]!.level : LOGO_LEVEL) &&
       seen.every((value, index) => value === (index === chosen ? 1 : 0)) &&
       play.every((value, index) => value === (index <= chosen ? 1 : 0));
 
@@ -217,7 +223,7 @@ export function Story({ hero }: { hero: ReactNode }) {
           </div>
           <div className={styles.markMeta} aria-hidden="true">
             <span ref={percent} className={styles.markPercent}>
-              0%
+              {Math.round(LOGO_LEVEL * 100)}%
             </span>
             <span className={styles.markCaption}>포트폴리오 완성도</span>
           </div>
@@ -270,8 +276,8 @@ export function Story({ hero }: { hero: ReactNode }) {
 }
 
 /**
- * 브랜드 마크 — 원 · 수위 · 겹쳐진 손잡이(아이콘 문서 §01). 로고와 같은 좌표계(108)를 쓰고,
- * 수위만 `--level`(0~1)로 움직인다. 수면은 획에 맞닿고, 잔잔한 물결이 옆으로 흐른다.
+ * 브랜드 마크 — 원 · 수위 · 겹쳐진 손잡이(아이콘 문서 §01). 로고와 같은 좌표계(108) · 같은 도형이고,
+ * 수위만 `--level`로 움직인다. 첫 화면에서는 로고와 똑같이 42%에 있다.
  */
 function LevelMark() {
   const uid = useId().replace(/:/g, "");
@@ -291,10 +297,7 @@ function LevelMark() {
       <circle cx="78.2" cy="54" r="19.8" className={styles.markHandle} strokeWidth="8.5" mask={`url(#${mask})`} />
       <g clipPath={`url(#${clip})`}>
         <g className={styles.markLiquid}>
-          <path
-            className={styles.markWave}
-            d="M-36 18 Q-27 15.6 -18 18 T0 18 T18 18 T36 18 T54 18 T72 18 T90 18 T108 18 T126 18 T144 18 V130 H-36 Z"
-          />
+          <rect x="0" y="18" width="108" height="112" className={styles.markFill} />
         </g>
       </g>
       <circle cx="44" cy="54" r="36" className={styles.markRing} strokeWidth="10" />

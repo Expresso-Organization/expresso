@@ -159,7 +159,7 @@ it("스크롤을 장 가운데에서 멈춰도 장면은 시간에 따라 끝까
   frames(200);
   expect(panel.style.getPropertyValue("--t")).toBe("1.0000");
   expect(panel.style.getPropertyValue("--v")).toBe("1.0000");
-  // 마크 수위는 이 장의 끝 수위(42%)에 닿는다.
-  expect(within(story).getByText("42%")).toBeTruthy();
+  // 마크 수위는 이 장의 수위(62%)에 닿는다.
+  expect(within(story).getByText("62%")).toBeTruthy();
   expect(queue).toHaveLength(0);
 });
