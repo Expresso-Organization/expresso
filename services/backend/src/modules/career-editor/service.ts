@@ -33,7 +33,7 @@ import {
   type CareerDocumentRepository,
 } from "./repository.js";
 import { AiProposalService } from "./ai-proposals.js";
-import { blockNoteMarkdown, blockNoteStateVector, careerDocumentToBlockNoteState, restoreBlockNote, syncBlockNoteDocument, type BlockNoteSyncResult } from "./blocknote-document.js";
+import { blockNoteMarkdown, blockNoteStateFromBlocks, blockNoteStateVector, careerDocumentToBlockNoteState, clampBodyMarkdown, markdownToBlockNoteBlocks, restoreBlockNote, syncBlockNoteDocument, type BlockNoteSyncResult } from "./blocknote-document.js";
 import type { AiProposalAdapter } from "./ai-adapter.js";
 
 type CreateRevisionInput = CareerRevision & { userId: string };
@@ -43,6 +43,27 @@ type UpdatePublisher = (recordId: string, updateBase64: string, serverSequence: 
 /** bodyMd를 편집기가 마지막으로 쓴 값인지 가리는 해시입니다. 다르면 편집기 밖에서 바뀐 것입니다. */
 const EDIT_REVISION_SUMMARY = "편집";
 const EDIT_REVISION_INTERVAL_MS = 10 * 60_000;
+/** 편집기 밖(인터뷰 재답변 · API)에서 본문이 바뀌기 직전 상태입니다. */
+const EXTERNAL_REVISION_SUMMARY = "외부 변경 전";
+/** 이력 복원 직전 상태입니다. 복원을 되돌릴 수 있게 남깁니다. */
+const BEFORE_RESTORE_SUMMARY = "복원 전";
+
+/** 블록 안 글 조각의 HTML 엔티티 세 가지를 원래 글자로 되돌립니다. `&amp;`를 마지막에 풀어야 `&amp;lt;`가 `<`가 되지 않습니다. */
+function unescapeBlocks(blocks: readonly CareerBlockNoteBlock[]): CareerBlockNoteBlock[] {
+  const visit = (value: unknown): unknown => {
+    if (Array.isArray(value)) return value.map(visit);
+    if (!value || typeof value !== "object") return value;
+    const node = value as Record<string, unknown>;
+    const next: Record<string, unknown> = {};
+    for (const [key, child] of Object.entries(node)) {
+      next[key] = key === "text" && node["type"] === "text" && typeof child === "string"
+        ? child.replaceAll("&lt;", "<").replaceAll("&gt;", ">").replaceAll("&amp;", "&")
+        : visit(child);
+    }
+    return next;
+  };
+  return visit(blocks) as CareerBlockNoteBlock[];
+}
 
 export function bodyHash(bodyMd: string): string { return createHash("sha256").update(bodyMd).digest("hex"); }
 
@@ -54,6 +75,7 @@ export interface CareerDocumentApi {
   createRevision(input: CreateRevisionInput): Promise<CareerRevision>;
   restoreRevision(userId: string, revisionId: string, expectedVersion: number, expectedRecordId?: string, publish?: UpdatePublisher): Promise<CareerDocumentBootstrap>;
   listRevisions(userId: string, recordId: string): Promise<CareerRevision[]>;
+  syncExternalBody(userId: string, recordId: string): Promise<boolean>;
   updatesSince(userId: string, recordId: string, afterSequence: number): Promise<Array<{ serverSequence: number; updateBase64: string; actor: "user" | "ai" | "migration" }>>;
   createPreparedAiProposal(userId: string, recordId: string, input: CreateAiEditProposal, draft: AgentEditDraft): Promise<AiEditProposalDetail>;
   createAiProposal(userId: string, recordId: string, input: CreateAiEditProposal): Promise<AiEditProposalDetail>;
@@ -119,34 +141,29 @@ export class CareerDocumentService implements CareerDocumentApi {
       if (!record) throw new CareerDocumentError(404, "career record not found");
       let snapshot = await this.repository.snapshot(recordId, tx.session);
       if (!snapshot) {
-        const document = markdownToCareerDocument(record.bodyMd);
-        const canonicalUpdate = encodeDocumentAsYUpdate(document);
+        // 편집기에서 처음 여는 기록입니다. bodyMd를 BlockNote 파서로 읽어 바로 BlockNote 스냅샷을 만듭니다.
+        // v1 문서를 거치면 인라인 서식 · 중첩 목록을 잃고 글이 HTML 이스케이프되어 저장됩니다(2026-11-02 감사 H6).
+        const initial = blockNoteStateFromBlocks(await markdownToBlockNoteBlocks(record.bodyMd));
         const snapshotId = randomUUID();
         if (!await this.repository.initializeDocument(recordId, userId, snapshotId, tx.session)) {
           throw new CareerDocumentError(409, "career document initialization conflicted");
         }
         snapshot = {
-          _id: snapshotId,
-          userId,
-          recordId,
-          documentVersion: 0,
-          version: 0,
-          schemaVersion: 1,
-          content: document as unknown as JsonValue,
-          stateVector: new Binary(Buffer.from(encodeDocumentStateVector(document))),
-          serverSequence: 0,
-          checksum: hashUpdate(canonicalUpdate),
-          actor: "migration",
-          createdAt: new Date(),
+          _id: snapshotId, userId, recordId, documentVersion: 0, version: 0, schemaVersion: BLOCKNOTE_SCHEMA_VERSION,
+          content: initial.blocks as unknown as JsonValue, stateVector: new Binary(Buffer.from(blockNoteStateVector(initial.state))),
+          state: new Binary(Buffer.from(initial.state)), serverSequence: 0, checksum: hashUpdate(initial.state),
+          actor: "migration", createdAt: new Date(),
         };
         await this.repository.insertSnapshot(snapshot, tx.session);
+        await this.repository.markBlockNote?.(recordId, userId, tx.session);
+        await this.repository.setBodyMarkdown?.(recordId, userId, clampBodyMarkdown(await blockNoteMarkdown(initial.blocks)), { session: tx.session });
+        const initialized = await this.repository.record(userId, recordId, tx.session);
+        if (initialized) return this.blockNoteBootstrap(userId, initialized, snapshot, tx.session);
       }
       if (snapshot.schemaVersion !== BLOCKNOTE_SCHEMA_VERSION) snapshot = await this.migrateToBlockNote(record, snapshot, tx.session);
-      // 인터뷰 답변처럼 편집기 밖에서 bodyMd가 바뀌었으면 문서를 그 내용으로 맞춥니다.
+      // 편집기 밖 쓰기는 syncExternalBody가 곧바로 문서에 넣습니다. 그 호출이 실패했을 때만 여기서 맞춥니다.
       if (record.documentBodyHash && record.documentBodyHash !== bodyHash(record.bodyMd)) {
-        const target = careerDocumentToBlockNote(markdownToCareerDocument(record.bodyMd)).blocks;
-        const applied = await this.appendServerUpdate(userId, recordId, record.documentVersion ?? 0, target, "migration", tx.session);
-        await this.repository.setBodyMarkdown?.(recordId, userId, record.bodyMd, { session: tx.session });
+        const applied = await this.applyExternalBody(userId, record, tx.session);
         if (applied) published.push(applied);
         const latest = await this.repository.record(userId, recordId, tx.session);
         const latestSnapshot = await this.repository.snapshot(recordId, tx.session);
@@ -156,6 +173,71 @@ export class CareerDocumentService implements CareerDocumentApi {
     }).finally(() => {
       for (const update of published.splice(0)) this.updatePublisher?.(recordId, update.base64, update.sequence);
     });
+  }
+
+  /**
+   * 2026-11-02 이전의 첫 열기 변환은 문단 글을 HTML 이스케이프해 저장했습니다(`R&D` → `R&amp;D`).
+   * 그 흔적을 원래 글자로 되돌립니다. apply가 false면 바꿀 기록인지만 알려 줍니다. 되돌리기 전 본문은 이력으로 남깁니다.
+   */
+  async repairEscapedText(userId: string, recordId: string, apply: boolean): Promise<boolean> {
+    let changed = false;
+    const published: Array<{ base64: string; sequence: number }> = [];
+    await inTransaction(this.context, async (tx) => {
+      const record = await this.repository.record(userId, recordId, tx.session);
+      const snapshot = await this.repository.snapshot(recordId, tx.session);
+      if (!record || snapshot?.schemaVersion !== BLOCKNOTE_SCHEMA_VERSION) return;
+      const current = await this.restoreBlockNoteSnapshot(recordId, snapshot, tx.session);
+      const target = unescapeBlocks(current.blocks);
+      changed = JSON.stringify(target) !== JSON.stringify(current.blocks);
+      if (!changed || !apply) return;
+      const version = record.documentVersion ?? 0;
+      const { snapshotId } = await this.captureBlockNoteSnapshot(userId, recordId, tx.session);
+      await this.repository.insertRevision({
+        _id: randomUUID(), userId, recordId, actor: "user", summary: "깨진 글 복구 전",
+        beforeVersion: version, afterVersion: version, snapshotId, createdAt: new Date(),
+      }, tx.session);
+      const applied = await this.appendServerUpdate(userId, recordId, version, target, "migration", tx.session);
+      if (applied) published.push(applied);
+      await this.repository.setBodyMarkdown?.(recordId, userId, clampBodyMarkdown(await blockNoteMarkdown(target)), { session: tx.session });
+    });
+    for (const update of published) this.updatePublisher?.(recordId, update.base64, update.sequence);
+    return changed;
+  }
+
+  /**
+   * 편집기 밖에서 bodyMd를 쓴 뒤 부릅니다(인터뷰 재답변 · API PATCH). 바뀐 본문을 Yjs 문서에 넣고 열린 편집기에 보냅니다.
+   * 바뀌기 직전 본문은 이력 「외부 변경 전」으로 남습니다. 아직 편집기에서 연 적 없는 기록은 첫 열기가 bodyMd에서 만드므로 할 일이 없습니다.
+   */
+  async syncExternalBody(userId: string, recordId: string): Promise<boolean> {
+    const published: Array<{ base64: string; sequence: number }> = [];
+    await inTransaction(this.context, async (tx) => {
+      const record = await this.repository.record(userId, recordId, tx.session);
+      if (!record?.documentBodyHash || record.documentBodyHash === bodyHash(record.bodyMd)) return;
+      const snapshot = await this.repository.snapshot(recordId, tx.session);
+      if (snapshot?.schemaVersion !== BLOCKNOTE_SCHEMA_VERSION) return;
+      const applied = await this.applyExternalBody(userId, record, tx.session);
+      if (applied) published.push(applied);
+    });
+    for (const update of published) this.updatePublisher?.(recordId, update.base64, update.sequence);
+    return published.length > 0;
+  }
+
+  private async applyExternalBody(
+    userId: string,
+    record: NonNullable<Awaited<ReturnType<CareerDocumentRepository["record"]>>>,
+    session: Session,
+  ) {
+    const version = record.documentVersion ?? 0;
+    const { snapshotId } = await this.captureBlockNoteSnapshot(userId, record._id, session);
+    await this.repository.insertRevision({
+      _id: randomUUID(), userId, recordId: record._id, actor: "user", summary: EXTERNAL_REVISION_SUMMARY,
+      beforeVersion: version, afterVersion: version, snapshotId, createdAt: new Date(),
+    }, session);
+    const target = await markdownToBlockNoteBlocks(record.bodyMd);
+    const applied = await this.appendServerUpdate(userId, record._id, version, target, "migration", session);
+    // 바깥 글을 그대로 둔 채 해시만 맞춥니다. 이후 편집기 저장이 다시 bodyMd를 투영합니다.
+    await this.repository.setBodyMarkdown?.(record._id, userId, record.bodyMd, { session });
+    return applied;
   }
 
   /**
@@ -269,7 +351,7 @@ export class CareerDocumentService implements CareerDocumentApi {
     // 옛 bodyMd 쓰기 경로(career 모듈)가 BlockNote 기록을 알아보게 표시합니다.
     await this.repository.markBlockNote?.(record._id, record.userId, session);
     // v1 편집기는 bodyMd를 갱신하지 않았으므로 옮기는 자리에서 본문 텍스트를 맞춥니다.
-    await this.repository.setBodyMarkdown?.(record._id, record.userId, await blockNoteMarkdown(migrated.blocks), { session });
+    await this.repository.setBodyMarkdown?.(record._id, record.userId, clampBodyMarkdown(await blockNoteMarkdown(migrated.blocks)), { session });
     return next;
   }
 
@@ -386,7 +468,7 @@ export class CareerDocumentService implements CareerDocumentApi {
     // 편집기 밖에서 바뀐 bodyMd는 덮지 않습니다. 다음 bootstrap이 문서를 그 내용으로 맞춥니다.
     if (record.documentBodyHash && record.documentBodyHash !== bodyHash(record.bodyMd)) return null;
     const restored = await this.restoreBlockNoteSnapshot(recordId, snapshot);
-    const markdown = await blockNoteMarkdown(restored.blocks);
+    const markdown = clampBodyMarkdown(await blockNoteMarkdown(restored.blocks));
     await this.repository.setBodyMarkdown?.(recordId, userId, markdown, { expectedBodyMd: record.bodyMd });
     return markdown;
   }
@@ -460,6 +542,12 @@ export class CareerDocumentService implements CareerDocumentApi {
         const target = source.schemaVersion === BLOCKNOTE_SCHEMA_VERSION
           ? source.content as unknown as CareerBlockNoteBlock[]
           : careerDocumentToBlockNote(parseCareerDocument(source.content)).blocks;
+        // 복원은 최근 입력을 덮습니다. 덮기 직전 본문을 「복원 전」 이력으로 남겨 복원을 되돌릴 수 있게 합니다.
+        const before = await this.captureBlockNoteSnapshot(userId, record._id, tx.session);
+        await this.repository.insertRevision({
+          _id: randomUUID(), userId, recordId: record._id, actor: "user", summary: BEFORE_RESTORE_SUMMARY,
+          beforeVersion: expectedVersion, afterVersion: expectedVersion, snapshotId: before.snapshotId, createdAt: new Date(),
+        }, tx.session);
         const applied = await this.appendServerUpdate(userId, record._id, expectedVersion, target, "user", tx.session, { snapshot: true });
         if (!applied) throw new CareerDocumentError(409, "career revision restore produced no change");
         await this.repository.insertRevision({

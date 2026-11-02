@@ -19,7 +19,7 @@ date: 2026-11-02
 | 1 | `infra/nginx/expresso.ai.kr.conf`, `scripts/operations/deploy.sh`, `docs/operations/DEPLOYMENT.md` | Upgrade 전달 · 101 확인 · 서버 적용 절차 |
 | 2 | `services/web/src/app/(app)/career/records/[recordId]/page.tsx` · `page.module.css`, `services/web/src/features/career-editor/editor/BlockNoteBody.tsx` · `.module.css` | 스크롤 영역, AI 메뉴 portal |
 | 3 | `services/web/src/features/career-editor/session/CareerEditorSession.ts` · `useCareerEditorSession.ts` · `editor/SaveState.tsx`, `services/backend/src/modules/career-editor/session-registry.ts` · `socket.ts` | 재 bootstrap, 재시도 간격, 거절 처리, beforeunload, 등록 토큰 |
-| 4 | `services/backend/src/modules/career-editor/service.ts` · `blocknote-document.ts` · `index.ts`, `services/backend/src/modules/interview/mongo-answers.ts`, `services/backend/src/modules/career/service.ts`, `packages/editor/src/markdown.ts` · `blocknote.ts` (+ 시험), `services/web/src/features/career-editor/history/RevisionHistory.tsx` | 본문 원본 단일화, Markdown 읽기, 긴 글, 복원 전 이력 |
+| 4 | `services/backend/src/modules/career-editor/service.ts` · `blocknote-document.ts` · 새 `external-body.integration.test.ts`, `services/backend/src/modules/interview/service.ts`, `services/backend/src/modules/career/service.ts`, `services/backend/src/api/main.ts`, `packages/editor/src/markdown.ts` · `blocknote.ts` (+ 시험), `services/web/src/features/career-editor/history/RevisionHistory.tsx`, `editor/BlockNoteBody.tsx`, 새 `services/backend/src/cli/career-repair-escaped.ts` · `package.json` 스크립트 | 본문 원본 단일화(콜백 주입), Markdown 읽기, 긴 글, 복원 전 이력, 이미 깨진 글 복구 명령 |
 | 5 | `services/backend/src/modules/career-editor/ai-proposals.ts` · `ai-adapter.ts`, `packages/contracts/src/career-ai.ts`, `services/web/src/features/career-editor/ai/AiProposalPanel.tsx` | 대상 블록만 적용, 기준 해시, undone 상태, 속성 검사 |
 | 6 | `services/web/next.config.ts`, `editor/BlockNoteBody.tsx` | 업로드 상한, 메뉴 거르기 |
 | 7 | `services/backend/src/worker/main.ts`, 새 `worker/processors/career-property-mutation.ts`, `career/property-schema.ts`, `scheduling/service.ts`, `career/mongo-record-guard.ts`, `career/views.ts` · `view-query.ts` · `routes.ts` · `category-move.ts` · `mongo-links.ts`, `career-editor/routes.ts`, `career-computation/service.ts`, 새 마이그레이션(스냅샷 인덱스) | R11 · R12 · R14 |
@@ -41,6 +41,11 @@ date: 2026-11-02
 9. 회귀 시험 · 마무리 — 전체 검증 명령, PR 갱신, 감사 보고서 재현 절차 재확인.
 
 각 단계 끝에 커밋하고 푸시한다. 1단계가 끝나면 PR을 연다.
+
+## 구현 중 바뀐 것
+
+- 4단계: 인터뷰는 `mongo-answers.ts`가 아니라 `InterviewService.saveAnswer`에서 콜백을 부른다. 모듈 경계를 지키려고 career · interview가 career-editor를 가져오지 않고 `api/main.ts`가 콜백을 연결한다.
+- 4단계: 2026-11-02 이전 첫 열기 변환이 이미 깨뜨린 글(`R&amp;D`)을 고치는 운영 명령 `career-repair-escaped`를 더했다. 기본은 점검만 하고 `--apply`로 고친다.
 
 ## 가장 위험한 단계
 

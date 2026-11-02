@@ -30,6 +30,9 @@ import { AI_ACTIONS } from "../ai/ai-actions";
 import styles from "./BlockNoteBody.module.css";
 import { uploadCareerMediaAction } from "./media-actions";
 
+/** 본문 글자 상한입니다. Markdown 기호를 더해도 bodyMd 계약 상한 20만 자 안에 들게 둡니다. */
+const BODY_TEXT_LIMIT = 150_000;
+
 async function uploadFile(file: File): Promise<string> {
   const form = new FormData();
   form.set("file", file);
@@ -106,7 +109,15 @@ export interface BlockNoteBodyProps {
 }
 
 export default function BlockNoteBody({ yDocument, userName, onAiRequest, onDocumentChange, onSelectionChange }: BlockNoteBodyProps) {
+  const [limitNotice, setLimitNotice] = useState(false);
   const editor = useCreateBlockNote({
+    // 본문은 bodyMd(20만 자)로 투영되어 매칭 · 생성에 쓰입니다. 붙여 넣은 뒤 본문이 상한을 넘으면 붙여 넣지 않고 이유를 보입니다.
+    pasteHandler: ({ event, editor: target, defaultPasteHandler }) => {
+      const pasted = event.clipboardData?.getData("text/plain") ?? "";
+      if (target.prosemirrorState.doc.textContent.length + pasted.length > BODY_TEXT_LIMIT) { setLimitNotice(true); return true; }
+      setLimitNotice(false);
+      return defaultPasteHandler();
+    },
     // 공용 스키마는 exactOptionalPropertyTypes 때문에 넓은 타입으로 만들어졌습니다. 이 한 곳만 좁힙니다.
     schema: careerBlockNoteSchema as never,
     dictionary: ko,
@@ -141,6 +152,7 @@ export default function BlockNoteBody({ yDocument, userName, onAiRequest, onDocu
   };
   return (
     <div className={styles.body}>
+      {limitNotice ? <p className={styles.limitNotice} role="alert">본문은 {BODY_TEXT_LIMIT.toLocaleString("ko-KR")}자까지 쓸 수 있습니다. 붙여 넣은 글이 길어 넣지 않았습니다.</p> : null}
       <BlockNoteView
         editor={editor}
         slashMenu={false}

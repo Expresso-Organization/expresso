@@ -80,3 +80,5 @@
 @media (hover: none) {
   .restore { opacity: 1; }
 }
+
+.restore[data-confirming] { background: var(--ex-danger-surface); color: var(--ex-danger-text); }

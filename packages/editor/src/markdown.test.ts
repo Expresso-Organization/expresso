@@ -16,8 +16,10 @@ describe("career Markdown conversion", () => {
     expect(careerDocumentToMarkdown(markdownToCareerDocument(source))).toBe(source);
   });
 
-  it("escapes unsupported HTML and preserves unknown blocks", () => {
-    expect(careerDocumentToMarkdown(markdownToCareerDocument("<script>alert(1)</script>"))).toBe("&lt;script&gt;alert(1)&lt;/script&gt;");
+  it("keeps HTML-like text as plain text and preserves unknown blocks", () => {
+    // 글은 텍스트로만 그려지므로 원문 그대로 남깁니다. 이스케이프하면 `R&D`가 `R&amp;D`로 저장됩니다(2026-11-02 감사 H6).
+    expect(careerDocumentToMarkdown(markdownToCareerDocument("<script>alert(1)</script>"))).toBe("<script>alert(1)</script>");
+    expect(careerDocumentToMarkdown(markdownToCareerDocument("R&D 예산 <30%"))).toBe("R&D 예산 <30%");
     const unknown = { id: crypto.randomUUID(), type: "futureWidget", attrs: { version: 2 }, text: [{ text: "future" }] };
     const source = `\`\`\`expresso-block\n${JSON.stringify(unknown)}\n\`\`\``;
     expect(careerDocumentToMarkdown(markdownToCareerDocument(source))).toBe(source);

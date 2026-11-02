@@ -25,6 +25,9 @@ export function RevisionHistory({ recordId, className }: { recordId: string; cla
   const [open, setOpen] = useState(false);
   const [list, setList] = useState<ListState>({ status: "idle" });
   const [restoring, setRestoring] = useState<string | null>(null);
+  // 복원은 최근 입력을 덮으므로 한 번 더 누르게 합니다. 처음 누른 행의 단추가 「복원 확인」으로 바뀝니다.
+  const [confirming, setConfirming] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setList({ status: "loading" });
@@ -34,6 +37,8 @@ export function RevisionHistory({ recordId, className }: { recordId: string; cla
   }, [recordId]);
 
   const restore = async (revision: CareerRevision) => {
+    if (confirming !== revision.id) { setConfirming(revision.id); setNotice(null); return; }
+    setConfirming(null);
     setRestoring(revision.id);
     const response = await fetch(`/api/career/records/${encodeURIComponent(recordId)}/revisions/${encodeURIComponent(revision.id)}/restore`, {
       method: "POST",
@@ -43,6 +48,7 @@ export function RevisionHistory({ recordId, className }: { recordId: string; cla
     setRestoring(null);
     // 성공하면 본문은 WebSocket으로 편집기에 들어옵니다. 목록에는 새 「복원」 행이 생깁니다.
     // 409는 그 사이 본문이 바뀌었다는 뜻이라 최신 목록을 다시 보여 줍니다.
+    if (response?.status === 409) setNotice("그 사이 본문이 바뀌었습니다. 최신 이력에서 다시 골라 주세요.");
     if (response?.ok || response?.status === 409) await load();
     else setList({ status: "failed" });
   };
@@ -50,12 +56,13 @@ export function RevisionHistory({ recordId, className }: { recordId: string; cla
   // 저장이 끝나지 않은 동안 복원하면 버전이 어긋나므로 저장된 상태에서만 복원합니다.
   const canRestore = snapshot.status === "saved" && restoring === null;
   return (
-    <Popover open={open} onOpenChange={(next) => { setOpen(next); if (next) void load(); }}>
+    <Popover open={open} onOpenChange={(next) => { setOpen(next); setConfirming(null); setNotice(null); if (next) void load(); }}>
       <PopoverTrigger className={[styles.trigger, className].filter(Boolean).join(" ")}>
         <Icon name="clock-counter-clockwise" size={14} />이력
       </PopoverTrigger>
       <PopoverContent className={styles.panel} align="end" sideOffset={8}>
         <PopoverTitle className={styles.title}>이력</PopoverTitle>
+        {notice ? <p className={styles.notice} role="status">{notice}</p> : null}
         {list.status === "ready" && list.data.length ? (
           <ol className={styles.list}>
             {list.data.map((revision) => (
@@ -65,7 +72,7 @@ export function RevisionHistory({ recordId, className }: { recordId: string; cla
                   <span className={styles.rowLabel}>{revisionLabel(revision)}</span>
                   <time className={styles.rowTime} dateTime={revision.createdAt}>{TIME.format(new Date(revision.createdAt))}</time>
                 </span>
-                <button type="button" className={styles.restore} disabled={!canRestore} aria-busy={restoring === revision.id} onClick={() => void restore(revision)}>복원</button>
+                <button type="button" className={styles.restore} data-confirming={confirming === revision.id || undefined} disabled={!canRestore} aria-busy={restoring === revision.id} onClick={() => void restore(revision)}>{confirming === revision.id ? "복원 확인" : "복원"}</button>
               </li>
             ))}
           </ol>

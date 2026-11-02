@@ -26,8 +26,14 @@ const duplicate = (error: unknown) => (error as { code?: number })?.code === 110
 /** 기본 7종과 사용자가 더한 카테고리 100개. */
 const CATEGORY_LIMIT = 107;
 
+/** 편집기 밖에서 본문(bodyMd)을 쓴 뒤 부르는 콜백입니다. 커리어 문서 모듈이 Yjs 문서를 맞추고 열린 편집기에 알립니다. */
+export type ExternalBodyListener = (userId: string, recordId: string) => Promise<unknown>;
+
 export class CareerService implements CareerApi {
+  private externalBodyListener: ExternalBodyListener | undefined;
   constructor(readonly context: MongoContext) {}
+  /** 커리어 문서 모듈이 뜬 뒤 연결합니다. 모듈끼리 내부 파일을 가져오지 않도록 콜백으로 받습니다. */
+  setExternalBodyListener(listener: ExternalBodyListener) { this.externalBodyListener = listener; }
 
   previewChange(userId: string, categoryId: string, change: import("@expresso/contracts").CareerPropertySchemaChange) { return new MongoCareerPropertySchemaService(this.context).previewChange(userId, categoryId, change); }
   applyChange(userId: string, categoryId: string, expectedVersion: number, idempotencyKey: string, input: import("@expresso/contracts").ApplyCareerPropertyChange) { return new MongoCareerPropertySchemaService(this.context).applyChange(userId, categoryId, expectedVersion, idempotencyKey, input); }
@@ -131,7 +137,14 @@ export class CareerService implements CareerApi {
   }
 
   async updateRecord(userId: string, recordId: string, expectedVersion: number, inputValue: UpdateCareerRecord) {
-      const input = UpdateCareerRecordSchema.parse(inputValue);
+    const input = UpdateCareerRecordSchema.parse(inputValue);
+    const updated = await this.updateRecordInTransaction(userId, recordId, expectedVersion, input);
+    // BlockNote 기록의 본문을 바꿨으면 문서에도 넣습니다. 실패해도 다음 열기(bootstrap)가 같은 일을 하므로 저장은 성공으로 둡니다.
+    if (input.bodyMd !== undefined) await this.externalBodyListener?.(userId, recordId).catch(() => undefined);
+    return updated;
+  }
+
+  private updateRecordInTransaction(userId: string, recordId: string, expectedVersion: number, input: UpdateCareerRecord) {
     return inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId);
       const records = mongoCollections(tx.db).careerRecords;
