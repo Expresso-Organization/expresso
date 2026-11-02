@@ -4,7 +4,7 @@ import { parseToolOutput, toToolSchema, type AiCallSpec, type AiClient, type AiR
 import type { z } from "zod";
 import { describe, expect, it } from "vitest";
 
-import { AiClientProposalAdapter, AiProposalGenerationResultSchema } from "./ai-adapter.js";
+import { AiClientProposalAdapter, proposalViolations, AiProposalGenerationResultSchema } from "./ai-adapter.js";
 
 class StubAiClient implements AiClient {
   spec: AiCallSpec | null = null;
@@ -32,7 +32,7 @@ describe("AiClientProposalAdapter", () => {
     await expect(adapter.generate({ userId: "00000000-0000-4000-8000-0000000000aa", recordId: randomUUID(), documentVersion: 1, selectionBlockIds: [], selectedBlocks: [], prompt: "취소", signal: controller.signal })).rejects.toMatchObject({ name: "AbortError" });
   });
 
-  it("한 번만 부르고, 업무 규칙 검사(check)를 걸지 않는다", async () => {
+  it("한 번 부르고, 선택 밖 블록을 고친 명령만 같은 대화에서 고쳐 받게 check를 건다", async () => {
     const calls: unknown[] = [];
     const client: AiClient = {
       async complete(spec, schema, options) {
@@ -41,8 +41,12 @@ describe("AiClientProposalAdapter", () => {
       },
     };
     await new AiClientProposalAdapter(client).generate({ userId: "00000000-0000-4000-8000-0000000000aa", recordId: randomUUID(), documentVersion: 1, selectionBlockIds: [], selectedBlocks: [], prompt: "정리", signal: new AbortController().signal });
-    // 사용량을 남길 사용자만 넘긴다.
-    expect(calls).toEqual([{ userId: "00000000-0000-4000-8000-0000000000aa" }]);
+    expect(calls).toHaveLength(1);
+    const options = calls[0] as { userId: string; check: (data: unknown) => unknown[] };
+    expect(options.userId).toBe("00000000-0000-4000-8000-0000000000aa");
+    const inside = randomUUID(); const outside = randomUUID();
+    expect(proposalViolations({ summary: "s", commands: [{ type: "setText", blockId: inside, text: "a" }], propertyChanges: [] } as never, [inside])).toEqual([]);
+    expect(proposalViolations({ summary: "s", commands: [{ type: "setText", blockId: inside, text: "a" }, { type: "setText", blockId: outside, text: "b" }], propertyChanges: [] } as never, [inside])).toEqual([{ path: "/commands/1", problem: expect.stringContaining(outside) }]);
   });
 });
 

@@ -3,7 +3,8 @@ import { CareerEditCommandSchema } from "@expresso/editor/commands";
 import { AiEditProposalSchema, type AiEditProposal } from "@expresso/contracts";
 import { z } from "zod";
 
-import type { AiClient } from "../../platform/ai/client.js";
+import type { AiClient, AiViolation } from "../../platform/ai/client.js";
+import { jsonPointer } from "../../platform/ai/fixes.js";
 
 export interface AiProposalGenerationInput {
   /** 사용량을 남길 사용자. */
@@ -92,6 +93,19 @@ export class SelectedBlockTextAiProposalAdapter implements AiProposalAdapter {
   }
 }
 
+/**
+ * 선택 밖 블록을 고친 명령을 찾습니다. 제안 전체를 실패시키지 않고, 걸린 명령만 같은 대화에서 고쳐 받습니다(AGENTS.md AI 출력 규칙).
+ */
+export function proposalViolations(data: AiProposalGenerationResult, selectionBlockIds: readonly string[]): AiViolation[] {
+  const allowed = new Set(selectionBlockIds);
+  return data.commands.flatMap((command, index) => {
+    const value = command as { blockId?: string; blockIds?: string[]; afterBlockId?: string | null };
+    const ids = [value.blockId, ...(value.blockIds ?? []), value.afterBlockId].filter((id): id is string => typeof id === "string");
+    const outside = ids.filter((id) => !allowed.has(id));
+    return outside.length ? [{ path: jsonPointer(["commands", index]), problem: `선택하지 않은 블록 ID입니다: ${outside.join(", ")}. 선택한 블록 ID(${[...allowed].join(", ")})만 씁니다` }] : [];
+  });
+}
+
 /** 기존 구조화 AI 포트에 선택 블록과 현재 문서 버전만 전달하는 운영 어댑터입니다. */
 export class AiClientProposalAdapter implements AiProposalAdapter {
   constructor(private readonly client: AiClient) {}
@@ -109,7 +123,7 @@ export class AiClientProposalAdapter implements AiProposalAdapter {
       promptVersion: 1,
       system: "선택된 커리어 기록 블록만 고치는 JSON 변경 제안을 작성합니다. 선택 밖의 블록 ID를 만들거나 원문에 없는 사실과 수치를 추가하지 마십시오.",
       prompt,
-    }, AiProposalGenerationResultSchema, { userId: input.userId });
+    }, AiProposalGenerationResultSchema, { userId: input.userId, check: (data) => proposalViolations(data, input.selectionBlockIds) });
     if (input.signal.aborted) throw new DOMException("AI proposal cancelled", "AbortError");
     return result.data;
   }

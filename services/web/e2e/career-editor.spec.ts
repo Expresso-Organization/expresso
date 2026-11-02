@@ -61,9 +61,14 @@ test("creates, edits, reloads, reconnects and reviews AI changes across side pee
   await expect(page.getByLabel("AI 제안 변경 목록")).toBeVisible();
   await page.getByRole("button", { name: /개 변경 적용/ }).click();
   await expect(page.getByRole("button", { name: "변경 되돌리기" })).toBeVisible();
+  // 적용 결과가 열린 본문에 들어와야 합니다(감사 T2).
+  await expect(page.getByLabel("커리어 기록 본문")).toContainText("AI 제안:");
   await page.getByRole("button", { name: "변경 되돌리기" }).click();
   await page.getByRole("button", { name: "되돌리기 확인" }).click();
-  await expect(page.getByRole("button", { name: /개 변경 적용/ })).toBeVisible();
+  await expect(page.getByLabel("커리어 기록 본문")).not.toContainText("AI 제안:");
+  // 되돌린 제안을 다시 적용하면 실제로 다시 바뀝니다.
+  await page.getByRole("button", { name: /개 변경 적용/ }).click();
+  await expect(page.getByLabel("커리어 기록 본문")).toContainText("AI 제안:");
 
   await page.getByRole("button", { name: "넓게 보기" }).click();
   await expect(page).toHaveURL(new RegExp(`/career/records/${record.id}$`));
