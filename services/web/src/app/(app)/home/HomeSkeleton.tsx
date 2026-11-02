@@ -10,86 +10,49 @@ import styles from "./page.module.css";
  * 오는가"뿐이고, 그 수는 화면이 실제로 자르는 만큼이다.
  */
 
-/** 영역 2·3 — 추천 공고 3건(`slice(0, 3)`)과 진행 중 1건(`slice(0, 1)`). */
+/**
+ * 공고 카드(`roleJobs`의 `limit: 5`). 오른쪽 차트 카드는 배포한 사이트가 있어야
+ * 서므로, 기다리는 동안에는 공고 카드만 한 줄을 다 쓴다.
+ */
 export function MidRowSkeleton() {
   return (
-    <SkelRegion label="추천 공고를 불러오는 중" className={styles.midRow}>
+    <SkelRegion label="공고를 불러오는 중" className={`${styles.midRow} ${styles.midRowSingle}`}>
       <div className={styles.card}>
         <div className={styles.cardHead}>
-          <Skel w={126} h={14} />
-          <Skel w={64} h={26} radius={8} />
-          <Skel w={88} h={11} style={{ marginLeft: "auto" }} />
+          <Skel w={132} h={26} radius={8} />
+          <Skel w={28} h={11} style={{ marginLeft: "auto" }} />
         </div>
-        {skelKeys(3).map((row) => (
+        {skelKeys(5).map((row) => (
           <div key={row} className={styles.jobRow}>
-            <Skel w={28} circle />
+            <Skel w={28} h={28} radius={8} />
             <div className={styles.jobBody}>
-              <div className={styles.jobHead}>
-                <Skel w={`${58 - row * 7}%`} h={13} />
-              </div>
+              <Skel w={`${58 - row * 6}%`} h={13} />
+              <Skel w="34%" h={11} style={{ marginTop: 8 }} />
             </div>
             <Skel w={62} h={34} radius={9} />
           </div>
         ))}
       </div>
-
-      <div className={styles.sideColumn}>
-        <div className={styles.plainCard}>
-          <div className={styles.draftHead}>
-            <Skel w={62} h={21} radius={999} />
-          </div>
-          <Skel w={168} h={15} style={{ marginTop: 12 }} />
-          <Skel w={132} h={11} style={{ marginTop: 9 }} />
-          <Skel h={38} radius={10} style={{ marginTop: 16 }} />
-        </div>
-      </div>
     </SkelRegion>
   );
 }
 
-/** 영역 4 — 내 포트폴리오. 격자가 3열이라 한 줄이 세 칸이다. */
+/** 내 포트폴리오 — 카드 다섯과 「새 포트폴리오」 칸(`GRID_ITEMS`). 썸네일 자리는 16:10이다. */
 export function PortfolioGridSkeleton() {
   return (
     <SkelRegion label="포트폴리오를 불러오는 중">
       <div className={styles.sectionHead}>
         <Skel w={82} h={14} />
-        <Skel w={96} h={11} />
       </div>
       <div className={styles.portfolioGrid}>
         {skelKeys(3).map((card) => (
-          <div
-            key={card}
-            className={styles.categoryCard}
-            style={{ alignItems: "flex-start", flexDirection: "column", gap: "6px" }}
-          >
-            <Skel w={`${72 - card * 9}%`} h={13} />
-            <Skel w="58%" h={11} />
-            <Skel w="44%" h={11} />
-          </div>
-        ))}
-      </div>
-    </SkelRegion>
-  );
-}
-
-/**
- * 내 커리어 요약 — 기본 분류 7개(`0002_seed.sql`)가 4열 격자에 두 줄로 앉는다.
- * 사용자가 분류를 더 만들면 그만큼 길어지지만, 기다리는 동안 알 수 있는 것은
- * 모두가 가지고 시작하는 7개까지다.
- */
-export function CareerGridSkeleton() {
-  return (
-    <SkelRegion label="커리어 요약을 불러오는 중">
-      <div className={styles.sectionHead}>
-        <Skel w={64} h={14} />
-        <Skel w={70} h={11} />
-      </div>
-      <div className={styles.categoryGrid}>
-        {skelKeys(7).map((card) => (
-          <div key={card} className={styles.categoryCard}>
-            <Skel w={30} h={30} radius={8} />
-            <Skel w="62%" h={12} />
-            <Skel w={22} h={20} />
+          <div key={card} className={styles.portfolioCard}>
+            <div className={styles.portfolioThumb} />
+            <div className={styles.portfolioBody}>
+              <Skel w={`${72 - card * 9}%`} h={13} />
+              <Skel w="58%" h={11} />
+              <Skel w="44%" h={11} style={{ marginTop: 8 }} />
+            </div>
           </div>
         ))}
       </div>
