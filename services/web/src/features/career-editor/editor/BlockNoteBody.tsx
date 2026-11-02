@@ -16,7 +16,7 @@ import {
   useComponentsContext,
   useCreateBlockNote,
 } from "@blocknote/react";
-import { mediaAssetUrl } from "@expresso/contracts";
+import { MEDIA_MAX_BYTES, MEDIA_MIME_TYPES, mediaAssetUrl } from "@expresso/contracts";
 import type { CareerDocument } from "@expresso/editor/document";
 import { BLOCKNOTE_FRAGMENT, blockNoteToCareerDocument, careerBlockNoteSchema } from "@expresso/editor/blocknote";
 import { useEffect, useRef, useState } from "react";
@@ -32,8 +32,12 @@ import { uploadCareerMediaAction } from "./media-actions";
 
 /** 본문 글자 상한입니다. Markdown 기호를 더해도 bodyMd 계약 상한 20만 자 안에 들게 둡니다. */
 const BODY_TEXT_LIMIT = 150_000;
+const UNSUPPORTED_SLASH_ITEMS = new Set(["video", "audio", "file"]);
 
+/** 본문에 올릴 수 있는 것은 미디어 계약이 받는 그림뿐입니다. 서버에 보내기 전에 이유를 알려 줍니다. */
 async function uploadFile(file: File): Promise<string> {
+  if (!(MEDIA_MIME_TYPES as readonly string[]).includes(file.type)) throw new Error("PNG · JPEG · WebP · GIF 그림만 올릴 수 있습니다.");
+  if (file.size > MEDIA_MAX_BYTES) throw new Error(`그림은 ${MEDIA_MAX_BYTES / 1024 / 1024}MB까지 올릴 수 있습니다.`);
   const form = new FormData();
   form.set("file", file);
   const result = await uploadCareerMediaAction(form);
@@ -138,7 +142,8 @@ export default function BlockNoteBody({ yDocument, userName, onAiRequest, onDocu
   useEffect(() => { onDocumentChange?.(blockNoteToCareerDocument(editor.document)); }, [editor, onDocumentChange]);
   // 콜아웃을 인용과 같은 묶음 끝에 넣습니다. 묶음이 이어지지 않으면 메뉴에 묶음 머리가 두 번 나옵니다.
   const slashItems = async (query: string) => {
-    const items = getDefaultReactSlashMenuItems(editor);
+    // 미디어 계약은 그림만 받습니다. 올릴 수 없는 동영상 · 오디오 · 파일 블록은 메뉴에서 뺍니다.
+    const items = getDefaultReactSlashMenuItems(editor).filter((item) => !UNSUPPORTED_SLASH_ITEMS.has((item as { key?: string }).key ?? ""));
     const group = ko.slash_menu.quote.group;
     const callout = {
       title: "콜아웃",
