@@ -138,7 +138,7 @@ async function handleSocket(
         if (!sessionToken || !options.service.verifySessionToken(principal.user.id, recordId, sessionToken)) {
           fail(CLOSE.auth, "invalid session token"); return;
         }
-        if (registry.count(principal.user.id, recordId) >= 3) {
+        if (registry.count(principal.user.id, recordId, sessionId) >= 3) {
           fail(CLOSE.rate, "too many sessions"); return;
         }
         joined = registry.join({

@@ -9,7 +9,8 @@ import * as Y from "yjs";
 
 const EMPTY_STATE_VECTOR = "";
 // unavailable은 문서 bootstrap이 404이거나 BlockNote 문서가 아닌 상태입니다.
-type SessionStatus = "loading" | "saving" | "saved" | "offline" | "conflict" | "unavailable";
+// error는 다시 보내도 서버가 받지 않는 상태입니다(문서 손상 · 크기 초과 · 프로토콜 위반). 재연결을 멈추고 새로고침을 안내합니다.
+type SessionStatus = "loading" | "saving" | "saved" | "offline" | "conflict" | "error" | "unavailable";
 export interface CareerEditorSnapshot {
   status: SessionStatus;
   documentVersion: number;
@@ -26,6 +27,9 @@ type Pending = { clientSequence: number; updateBase64: string };
 /** 서버에서 받은 Yjs 업데이트의 출처 표시입니다. 이 출처의 변경은 다시 보내지 않습니다. */
 const REMOTE_ORIGIN = Symbol("career-remote");
 const BLOCKNOTE_BATCH_MS = 300;
+/** 서버 socket.ts의 종료 코드입니다. */
+const CLOSE_AUTH = 4401;
+const CLOSE_FATAL = new Set([4400, 4409]);
 
 function encode(bytes: Uint8Array): string {
   let value = "";
@@ -79,6 +83,7 @@ export class CareerEditorSession {
   getSnapshot = () => this.snapshot;
   getDocument = () => this.document;
   hasPendingUpdates = () => this.pending.size > 0 || this.localYUpdates.length > 0;
+  private settledStatus(): SessionStatus { return this.hasPendingUpdates() ? "saving" : "saved"; }
   /** 서버 상태로 시작한 Y.Doc입니다. bootstrap 전에는 null입니다. */
   getYDocument = () => this.yDocument;
   /** 편집기가 본문을 바꿀 때 v1 모양 사본을 알립니다. 같은 기록을 보는 AI 비교 화면이 이 값을 읽습니다. */
@@ -104,15 +109,23 @@ export class CareerEditorSession {
       const response = await this.fetcher(`/api/career/records/${encodeURIComponent(this.recordId)}/document`, { credentials: "same-origin", cache: "no-store" });
       // 404는 다시 불러도 같으므로 재연결하지 않고 멈춥니다. 네트워크 오류와 5xx만 catch에서 재시도합니다.
       if (response.status === 404) { this.setSnapshot({ status: "unavailable" }); return; }
+      // 422(깨진 업데이트) · 413(크기)은 다시 불러도 같습니다. 끝없이 재시도하지 않고 오류로 멈춥니다.
+      if (response.status === 422 || response.status === 413) { this.setSnapshot({ status: "error" }); return; }
       if (!response.ok) throw new Error(`bootstrap failed: ${response.status}`);
       const bootstrap = CareerDocumentBootstrapSchema.parse(await response.json());
       // 서버는 모든 기록을 BlockNote로 엽니다. 그렇지 않은 응답은 이 클라이언트가 편집할 수 없습니다.
       if (bootstrap.editor !== "blocknote" || !bootstrap.stateBase64) { this.setSnapshot({ status: "unavailable" }); return; }
       this.sessionToken = bootstrap.sessionToken;
-      this.document = bootstrap.document;
-      this.startBlockNote(decode(bootstrap.stateBase64));
+      if (this.yDocument) {
+        // 토큰이 만료되어 다시 bootstrap한 경우입니다. 편집기가 쥔 Y.Doc을 바꾸지 않고 서버 상태만 합칩니다.
+        // 보내지 못한 로컬 업데이트는 pending에 남아 연결 뒤 다시 갑니다.
+        Y.applyUpdate(this.yDocument, decode(bootstrap.stateBase64), REMOTE_ORIGIN);
+      } else {
+        this.document = bootstrap.document;
+        this.startBlockNote(decode(bootstrap.stateBase64));
+      }
       // 받은 상태에 documentVersion까지의 업데이트가 이미 들어 있으므로 그 뒤만 요청합니다.
-      this.snapshot = { ...this.snapshot, status: "offline", documentVersion: bootstrap.documentVersion, lastAckSequence: bootstrap.documentVersion };
+      this.snapshot = { ...this.snapshot, status: "offline", documentVersion: Math.max(this.snapshot.documentVersion, bootstrap.documentVersion), lastAckSequence: Math.max(this.snapshot.lastAckSequence, bootstrap.documentVersion) };
       this.emit();
       this.connect();
     } catch {
@@ -127,7 +140,7 @@ export class CareerEditorSession {
     const socket = new this.Socket(url.href);
     this.socket = socket;
     socket.onopen = () => {
-      this.reconnectAttempt = 0;
+      // 재시도 간격은 서버가 ready를 보낸 뒤에만 처음으로 돌립니다. 열리자마자 거절되는 연결이 짧은 간격으로 반복되지 않게 합니다.
       const stateVectorBase64 = this.yDocument ? encode(Y.encodeStateVector(this.yDocument)) : EMPTY_STATE_VECTOR;
       const sync = clientFrame({ protocolVersion: 1, recordId: this.recordId, sessionId: this.sessionId, type: "sync", stateVectorBase64, lastAckSequence: this.snapshot.lastAckSequence });
       // 짧은 수명 세션 토큰은 첫 sync에만 붙이고, 쿠키나 저장소에는 남기지 않습니다.
@@ -136,13 +149,21 @@ export class CareerEditorSession {
     };
     socket.onmessage = (event) => this.receive(event.data);
     socket.onerror = () => socket.close();
-    socket.onclose = () => { if (this.socket === socket) this.socket = null; if (!this.disposed) { this.setSnapshot({ status: "offline" }); this.scheduleReconnect(); } };
+    socket.onclose = (event?: CloseEvent) => {
+      if (this.socket === socket) this.socket = null;
+      if (this.disposed) return;
+      if (event && CLOSE_FATAL.has(event.code)) { this.setSnapshot({ status: "error" }); return; }
+      // 세션 토큰은 15분짜리입니다. 인증으로 닫히면 토큰을 버리고 다시 bootstrap해 새 토큰을 받습니다.
+      if (event?.code === CLOSE_AUTH) this.sessionToken = "";
+      this.setSnapshot({ status: "offline" });
+      this.scheduleReconnect();
+    };
   }
   private receive(raw: unknown) {
     try {
       const message: CareerSocketServerMessage = CareerSocketServerMessageSchema.parse(typeof raw === "string" ? JSON.parse(raw) : raw);
       if (message.recordId !== this.recordId || message.sessionId !== this.sessionId) return;
-      if (message.type === "ready") { this.snapshot = { ...this.snapshot, status: this.pending.size ? "saving" : "saved", documentVersion: message.documentVersion, lastAckSequence: Math.max(this.snapshot.lastAckSequence, message.sequence) }; this.emit(); return; }
+      if (message.type === "ready") { this.reconnectAttempt = 0; this.snapshot = { ...this.snapshot, status: this.settledStatus(), documentVersion: message.documentVersion, lastAckSequence: Math.max(this.snapshot.lastAckSequence, message.sequence) }; this.emit(); return; }
       if (message.type === "update" && this.yDocument) {
         Y.applyUpdate(this.yDocument, decode(message.updateBase64), REMOTE_ORIGIN);
         this.setSnapshot({ documentVersion: Math.max(this.snapshot.documentVersion, message.sequence), lastAckSequence: Math.max(this.snapshot.lastAckSequence, message.sequence) });
@@ -155,11 +176,13 @@ export class CareerEditorSession {
           const first = this.pending.keys().next().value as number | undefined;
           if (first !== undefined) this.pending.delete(first);
         }
-        this.snapshot = { ...this.snapshot, status: this.pending.size ? "saving" : "saved", documentVersion: message.documentVersion, lastAckSequence: Math.max(this.snapshot.lastAckSequence, message.sequence) };
+        this.snapshot = { ...this.snapshot, status: this.settledStatus(), documentVersion: message.documentVersion, lastAckSequence: Math.max(this.snapshot.lastAckSequence, message.sequence) };
         this.emit(); return;
       }
       if (message.type === "proposal") { this.setSnapshot({ proposal: { proposalId: message.proposalId, baseDocumentVersion: message.baseDocumentVersion, status: message.status, progress: message.progress } }); return; }
-      if (message.type === "error") this.setSnapshot({ status: message.code === "VERSION_CONFLICT" ? "conflict" : "offline" });
+      // 오류 뒤에는 서버가 소켓을 닫습니다. 다음 동작(재연결 · 멈춤)은 onclose가 종료 코드로 정합니다.
+      // 동시 쓰기 경합(VERSION_CONFLICT)은 다시 보내면 들어가므로 잠깐 「충돌」로 보이고 재연결합니다.
+      if (message.type === "error" && message.code === "VERSION_CONFLICT") this.setSnapshot({ status: "conflict" });
     } catch { this.setSnapshot({ status: "conflict" }); }
   }
   private startBlockNote(state: Uint8Array) {
@@ -168,7 +191,8 @@ export class CareerEditorSession {
     yDocument.on("update", (update: Uint8Array, origin: unknown) => {
       if (origin === REMOTE_ORIGIN || this.disposed || this.snapshot.status === "unavailable") return;
       this.localYUpdates.push(update);
-      this.setSnapshot({ status: "saving" });
+      // 연결이 없을 때는 「저장 중」이 아니라 「오프라인」입니다. 오류 상태는 새로고침 전까지 유지합니다.
+      if (this.snapshot.status !== "error") this.setSnapshot({ status: this.socket?.readyState === 1 ? "saving" : "offline" });
       // 키 입력마다 프레임을 만들지 않고 300ms 동안 모인 업데이트를 하나로 합쳐 보냅니다.
       this.batchTimer ??= setTimeout(() => this.flushBlockNote(), BLOCKNOTE_BATCH_MS);
     });

@@ -26,11 +26,11 @@ class FakeSocket {
   onopen: (() => void) | null = null;
   onmessage: ((event: { data: string }) => void) | null = null;
   onerror: (() => void) | null = null;
-  onclose: (() => void) | null = null;
+  onclose: ((event?: { code: number }) => void) | null = null;
   sent: string[] = [];
   constructor(_url: string) { FakeSocket.instances.push(this); }
   send(value: string) { this.sent.push(value); }
-  close() { this.readyState = 3; this.onclose?.(); }
+  close(code?: number) { this.readyState = 3; this.onclose?.(code === undefined ? undefined : { code }); }
   open() { this.readyState = 1; this.onopen?.(); }
   receive(value: unknown) { this.onmessage?.({ data: JSON.stringify(value) }); }
 }
@@ -137,6 +137,67 @@ describe("CareerEditorSession", () => {
     session.publishDocument(next);
     expect(session.getDocument()).toBe(next);
     expect(listener).toHaveBeenCalled();
+    session.dispose();
+  });
+  it("re-bootstraps after the session token expires, keeps the editor document and resends pending updates", async () => {
+    vi.useFakeTimers();
+    const fetcher = vi.fn(async () => new Response(JSON.stringify(bootstrapBody()), { status: 200 }));
+    const session = new CareerEditorSession(recordId, { fetch: fetcher as typeof fetch, WebSocket: FakeSocket as unknown as typeof WebSocket, reconnectDelay: () => 0 });
+    await vi.waitFor(() => expect(FakeSocket.instances).toHaveLength(1));
+    const first = FakeSocket.instances[0]!;
+    first.open();
+    const yDocument = session.getYDocument();
+    first.close(4401);
+    text(session).insert(0, "만료 뒤 ");
+    expect(session.getSnapshot().status).toBe("offline");
+    vi.advanceTimersByTime(300);
+    vi.advanceTimersByTime(0);
+    await vi.waitFor(() => expect(fetcher).toHaveBeenCalledTimes(2));
+    await vi.waitFor(() => expect(FakeSocket.instances).toHaveLength(2));
+    expect(session.getYDocument()).toBe(yDocument);
+    expect(text(session).toString()).toBe("만료 뒤 시작");
+    const second = FakeSocket.instances[1]!;
+    second.open();
+    expect(updatesSent(second)).toHaveLength(1);
+    session.dispose();
+  });
+
+  it("stops reconnecting when the server rejects an update as too large", async () => {
+    vi.useFakeTimers();
+    const fetcher = vi.fn(async () => new Response(JSON.stringify(bootstrapBody()), { status: 200 }));
+    const session = new CareerEditorSession(recordId, { fetch: fetcher as typeof fetch, WebSocket: FakeSocket as unknown as typeof WebSocket, reconnectDelay: () => 0 });
+    await vi.waitFor(() => expect(FakeSocket.instances).toHaveLength(1));
+    FakeSocket.instances[0]!.open();
+    FakeSocket.instances[0]!.close(4409);
+    vi.advanceTimersByTime(1_000);
+    expect(session.getSnapshot().status).toBe("error");
+    expect(FakeSocket.instances).toHaveLength(1);
+    session.dispose();
+  });
+
+  it("does not reset the reconnect backoff until the server says ready", async () => {
+    vi.useFakeTimers();
+    const attempts: number[] = [];
+    const fetcher = vi.fn(async () => new Response(JSON.stringify(bootstrapBody()), { status: 200 }));
+    const session = new CareerEditorSession(recordId, { fetch: fetcher as typeof fetch, WebSocket: FakeSocket as unknown as typeof WebSocket, reconnectDelay: (attempt) => { attempts.push(attempt); return 0; } });
+    await vi.waitFor(() => expect(FakeSocket.instances).toHaveLength(1));
+    for (let index = 0; index < 3; index += 1) {
+      const socket = FakeSocket.instances[index]!;
+      socket.open();
+      socket.close();
+      vi.advanceTimersByTime(0);
+    }
+    expect(attempts).toEqual([0, 1, 2]);
+    session.dispose();
+  });
+
+  it("shows offline instead of saving when the user types without a connection", async () => {
+    vi.useFakeTimers();
+    const fetcher = vi.fn(async () => new Response(JSON.stringify(bootstrapBody()), { status: 200 }));
+    const session = new CareerEditorSession(recordId, { fetch: fetcher as typeof fetch, WebSocket: FakeSocket as unknown as typeof WebSocket, reconnectDelay: () => 60_000 });
+    await vi.waitFor(() => expect(FakeSocket.instances).toHaveLength(1));
+    text(session).insert(0, "오프라인 ");
+    expect(session.getSnapshot().status).toBe("offline");
     session.dispose();
   });
 });
