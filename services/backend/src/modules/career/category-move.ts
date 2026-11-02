@@ -194,16 +194,42 @@ export class MongoCategoryMoveService implements CategoryMoveService {
       const unmapped = { ...plan.unmappedRaw };
       for (const propertyId of input.discardUnmappedPropertyIds) delete unmapped[propertyId];
       const now = new Date();
+      const targetDefinitions = target.propertySchemaV2.filter((definition) => definition.deletedAt === null);
+      // 대상 카테고리의 필수 속성이 비면 그 뒤 모든 저장이 400입니다. 기본값이 있으면 채우고, 없으면 옮기지 않고 이유를 돌려줍니다.
+      const nextProperties = { ...(plan.nextProperties as CareerRecordDoc["properties"]) };
+      const missing: string[] = [];
+      for (const definition of targetDefinitions) {
+        if (!definition.required || definition.system || ["title", "formula", "rollup", "relation", "created_time", "updated_time"].includes(definition.type) || Object.hasOwn(nextProperties, definition.key)) continue;
+        const fallback = CareerPropertyValueV2Schema.safeParse(definition.config.defaultValue);
+        if (fallback.success && fallback.data.type === definition.type) nextProperties[definition.key] = fallback.data as never;
+        else missing.push(definition.name);
+      }
+      if (missing.length) throw new CareerError(409, "target category requires properties", { missingProperties: missing });
       const updated = await db.careerRecords.findOneAndUpdate(
         { _id: recordId, userId, categoryId: source._id, deletedAt: null, version: input.expectedVersion },
-        { $set: { categoryId: target._id, properties: plan.nextProperties as CareerRecordDoc["properties"], unmappedProperties: Object.keys(unmapped).length ? unmapped as NonNullable<CareerRecordDoc["unmappedProperties"]> : null, updatedAt: now }, $inc: { version: 1, referenceVersion: 1 } },
+        // 옛 카테고리의 수식 · 롤업 값은 새 카테고리에서 뜻이 없으므로 비우고 다시 계산합니다.
+        { $set: { categoryId: target._id, properties: nextProperties, computedProperties: {}, unmappedProperties: Object.keys(unmapped).length ? unmapped as NonNullable<CareerRecordDoc["unmappedProperties"]> : null, updatedAt: now }, $inc: { version: 1, referenceVersion: 1 } },
         { session: tx.session, returnDocument: "after" },
       );
       if (!updated) throw new CareerError(412, "career record version is stale");
+      // 관계는 설계상 이동 뒤에도 유지합니다(career-record-editor-design.md 105행). 이 기록을 가리키는 상대 기록의 롤업은 대상 속성이 바뀌었으므로 다시 계산합니다.
+      const incoming = await db.careerRecordRelations.find({ userId, targetRecordId: recordId }, { session: tx.session }).toArray();
+      const affectedSources = new Set(incoming.map((edge) => edge.sourceRecordId));
+      const computed = targetDefinitions.filter((definition) => definition.type === "formula" || definition.type === "rollup").map((definition) => definition.id);
       await addMongoOutboxEvent(tx, {
         userId, topic: "career.computation", idempotencyKey: `career-category-move:${recordId}:v${updated.version}`,
-        payload: { userId, recordId, changedPropertyIds: [], sourceRecordVersion: updated.version },
+        payload: { userId, recordId, changedPropertyIds: [...new Set([...computed, ...targetDefinitions.filter((definition) => Object.hasOwn(nextProperties, definition.key)).map((definition) => definition.id)])], sourceRecordVersion: updated.version },
       });
+      for (const sourceId of affectedSources) {
+        const sourceRecord = await db.careerRecords.findOne({ _id: sourceId, userId }, { session: tx.session });
+        if (!sourceRecord) continue;
+        const sourceCategory = await db.careerCategories.findOne({ _id: sourceRecord.categoryId, userId }, { session: tx.session });
+        const sourceComputed = sourceCategory?.propertySchemaV2.filter((definition) => definition.deletedAt === null && (definition.type === "formula" || definition.type === "rollup")).map((definition) => definition.id) ?? [];
+        if (sourceComputed.length) await addMongoOutboxEvent(tx, {
+          userId, topic: "career.computation", idempotencyKey: `career-category-move-inbound:${recordId}:${sourceId}:v${sourceRecord.version}:${now.getTime()}`,
+          payload: { userId, recordId: sourceId, changedPropertyIds: sourceComputed, sourceRecordVersion: sourceRecord.version },
+        });
+      }
       return mapMongoRecord(updated);
     });
   }

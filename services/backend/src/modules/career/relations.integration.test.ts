@@ -96,6 +96,23 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect(await mongoCollections(fixture.resource.db).careerRecordRelations.countDocuments({ userId, $or: [{ sourceRecordId }, { targetRecordId: sourceRecordId }] })).toBe(edgeCount);
   });
 
+  it("recomputes the target category's formulas after a move and refuses a move that leaves a required property empty", async () => {
+    const db = mongoCollections(fixture.resource.db);
+    const record = (await service.createRecord(userId, randomUUID(), { categoryId: sourceCategoryId, title: "계산", properties: { exact: value("text", "y") }, bodyMd: "" })).record;
+    await db.careerRecords.updateOne({ _id: record.id }, { $set: { computedProperties: { constant: value("formula", 3) } as never } });
+    const preview = await service.previewCategoryMove(userId, record.id, targetCategoryId);
+    const moved = await service.commitCategoryMove(userId, record.id, { recordId: record.id, targetCategoryId, previewToken: preview.previewToken, expectedVersion: record.version, discardUnmappedPropertyIds: [] });
+    expect(moved.computedProperties ?? {}).toEqual({});
+    expect(await db.outboxEvents.findOne({ topic: "career.computation", "payload.recordId": record.id, idempotencyKey: { $regex: "^career-category-move:" } })).toBeTruthy();
+
+    const requiredId = randomUUID();
+    await db.careerCategories.updateOne({ _id: sourceCategoryId }, { $push: { propertySchemaV2: { ...definition(requiredId, "mustHave", "text"), required: true } } as never });
+    const second = (await service.createRecord(userId, randomUUID(), { categoryId: targetCategoryId, title: "필수 없음", properties: {}, bodyMd: "" })).record;
+    const back = await service.previewCategoryMove(userId, second.id, sourceCategoryId);
+    await expect(service.commitCategoryMove(userId, second.id, { recordId: second.id, targetCategoryId: sourceCategoryId, previewToken: back.previewToken, expectedVersion: second.version, discardUnmappedPropertyIds: [] })).rejects.toMatchObject({ statusCode: 409 });
+    await db.careerCategories.updateOne({ _id: sourceCategoryId }, { $pull: { propertySchemaV2: { id: requiredId } } as never });
+  });
+
   it("rejects a move token after target schema drift", async () => {
     const record = (await service.createRecord(userId, randomUUID(), { categoryId: sourceCategoryId, title: "드리프트", properties: { exact: value("text", "x") }, bodyMd: "본문" })).record;
     const preview = await service.previewCategoryMove(userId, record.id, targetCategoryId);

@@ -170,8 +170,9 @@ export function registerCareerRoutes(
   });
   app.post(`${API_PREFIX}/career/categories/:categoryId/property-schema/:propertyId/restore`, { preHandler }, async (request, reply) => {
     const principal = requireAuth(request);
-    const { categoryId } = parseParams(CareerCategoryIdParamsSchema, request);
+    // 경로 파라미터에 propertyId가 함께 오므로 categoryId만 받는 strict 스키마로 읽으면 늘 400입니다.
     const params = parseParams(CareerCategoryIdParamsSchema.extend({ propertyId: UuidSchema }), request);
+    const { categoryId } = params;
     if (!options.careerService.restoreProperty) throw new HttpStatusError(501, "property schema v2 is unavailable");
     const category = await options.careerService.restoreProperty(principal.user.id, categoryId, params.propertyId, expectedVersion(request));
     return reply.header("etag", formatResourceEtag(category.version)).send({ data: category });

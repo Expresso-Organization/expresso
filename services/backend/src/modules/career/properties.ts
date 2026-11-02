@@ -27,3 +27,12 @@ export function validateCareerProperties(
 export function validateCareerPropertyValueV2(value: unknown) {
   return CareerPropertyValueV2Schema.parse(value);
 }
+
+/**
+ * 관계 값은 관계 원장(career_record_relations)이 원본입니다. 기록 생성 · 수정으로 들어온 관계 값은 저장하지 않습니다.
+ * 응답에는 원장 값을 붙여 보내므로, 화면이 받은 속성을 그대로 돌려보내도 관계가 두 곳에 갈라지지 않게 합니다.
+ */
+export function withoutRelationValues(definitions: readonly CareerPropertyDefinitionV2[], properties: CareerProperties): CareerProperties {
+  const relationKeys = new Set(definitions.filter((definition) => definition.type === "relation").map((definition) => definition.key));
+  return Object.fromEntries(Object.entries(properties).filter(([key]) => !relationKeys.has(key))) as CareerProperties;
+}

@@ -7,9 +7,9 @@ import { inTransaction } from "../../platform/mongo-transaction.js";
 import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { requireActiveUser } from "../identity/index.js";
 import { CareerError } from "./errors.js";
-import { validateCareerProperties } from "./properties.js";
+import { validateCareerProperties, withoutRelationValues } from "./properties.js";
 import { mapMongoCategory, requireCareerCategory } from "./mongo-categories.js";
-import { careerRequestHash, listMongoRecords, mapMongoRecord } from "./mongo-records.js";
+import { attachRelationValues, careerRequestHash, listMongoRecords, mapMongoRecord } from "./mongo-records.js";
 import type { CareerApi } from "./index.js";
 import type { RecomputeCareerSkill } from "@expresso/contracts";
 import { createMongoLink, listMongoLinks, mongoDeleteImpact, trashMongoRecord, restoreMongoRecord, listTrashedMongoRecords } from "./mongo-links.js";
@@ -101,7 +101,8 @@ export class CareerService implements CareerApi {
     return inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId);
       const category = await requireCareerCategory(tx, userId, input.categoryId, tx.session);
-      validateCareerProperties(category.propertySchemaV2, input.properties);
+      const createdProperties = withoutRelationValues(category.propertySchemaV2, input.properties);
+      validateCareerProperties(category.propertySchemaV2, createdProperties);
       const records = mongoCollections(tx.db).careerRecords;
       const existing = await records.findOne({ userId, createIdempotencyKey: idempotencyKey }, { session: tx.session });
       if (existing) {
@@ -109,7 +110,7 @@ export class CareerService implements CareerApi {
         return { record: mapMongoRecord(existing), created: false };
       }
       const now = new Date();
-      const record: CareerRecordDoc = { _id: randomUUID(), userId, ...input, status: "draft", origin: "manual", version: 1, createdAt: now, updatedAt: now, deletedAt: null, purgeAfter: null, createIdempotencyKey: idempotencyKey, createRequestHash: hash };
+      const record: CareerRecordDoc = { _id: randomUUID(), userId, ...input, properties: createdProperties, status: "draft", origin: "manual", version: 1, createdAt: now, updatedAt: now, deletedAt: null, purgeAfter: null, createIdempotencyKey: idempotencyKey, createRequestHash: hash };
       await records.insertOne(record, { session: tx.session });
       const definitions = category.propertySchemaV2.filter((definition) => definition.deletedAt === null);
       const changedPropertyIds = definitions.filter((definition) => definition.type === "formula" || definition.type === "rollup" || Object.hasOwn(input.properties, definition.key) || (definition.type === "title" && input.title !== "")).map((definition) => definition.id);
@@ -122,7 +123,10 @@ export class CareerService implements CareerApi {
   }
 
   async getRecord(userId: string, recordId: string) {
-    const record = await mongoCollections(this.context.db).careerRecords.findOne({ _id: recordId, userId, deletedAt: null });
+    const found = await mongoCollections(this.context.db).careerRecords.findOne({ _id: recordId, userId, deletedAt: null });
+    if (!found) throw new CareerError(404, "career record not found");
+    const category = await mongoCollections(this.context.db).careerCategories.findOne({ _id: found.categoryId, userId });
+    const [record] = category ? await attachRelationValues(this.context.db, userId, [found], new Map([[found.categoryId, category]])) : [found];
     if (!record) throw new CareerError(404, "career record not found");
     const snapshot = await mongoCollections(this.context.db).careerDocumentSnapshots.findOne({ recordId }, { sort: { documentVersion: -1, schemaVersion: -1 } });
     // BlockNote 문서(schemaVersion 2)는 편집기가 저장 뒤 bodyMd를 직접 투영합니다.
@@ -165,7 +169,7 @@ export class CareerService implements CareerApi {
         if (pending > 0) throw new CareerError(409, "document has unacknowledged updates");
       }
       const category = await requireCareerCategory(tx, userId, existing.categoryId, tx.session);
-      const properties = input.properties ?? existing.properties;
+      const properties = withoutRelationValues(category.propertySchemaV2, input.properties ?? existing.properties);
       validateCareerProperties(category.propertySchemaV2, properties);
       const computationDefinitions = category.propertySchemaV2.filter((definition) => definition.deletedAt === null);
       const changedPropertyIds = computationDefinitions.filter((definition) => {
