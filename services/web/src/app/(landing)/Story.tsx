@@ -16,8 +16,10 @@ import styles from "./story.module.css";
  * - 장 여섯 개는 기능 아이콘(커리어 아카이브 · 기업 맞춤 · Brew · 배포 · AI 인사이트)과
  *   브랜드 순간(EXTRACTING · BARISTA'S COUNTER)을 그대로 쓴다.
  *
- * 진행도 하나(`p`)가 모든 장면을 몬다. 이 컴포넌트는 그 값을 무대와 장마다 CSS 변수로 쓰기만 하고,
- * 움직임은 전부 CSS가 그 값에서 계산한다. 스크롤을 되돌리면 그대로 거꾸로 재생된다.
+ * 스크롤 위치는 지금 장(도입부 · 여섯 장)을 고르기만 한다. 장이 바뀌면 장면은 시간에 따라 끝까지
+ * 재생되고, 앞 장은 물러난다. 그래서 스크롤을 어디서 멈춰도 장면이 중간 상태로 남지 않는다.
+ * 이 컴포넌트는 그 값(`--intro` · `--level` · 장마다 `--t` · `--v`)을 CSS 변수로 쓰기만 하고,
+ * 요소마다의 움직임은 CSS가 그 값에서 계산한다. 위로 스크롤하면 앞 장으로 거꾸로 돌아간다.
  */
 
 const INTRO = 0.1;
@@ -75,6 +77,12 @@ const CHAPTERS = [
 ] as const;
 
 const LENGTH = (END - INTRO) / CHAPTERS.length;
+/** 장 하나의 장면이 처음부터 끝까지 재생되는 시간(초). 엇갈린 요소 여섯 개가 차례로 들어올 시간이다. */
+const PLAY_SECONDS = 1.4;
+/** 장 전환의 시간 상수(초). 약 세 배(0.5초)에 끝난다. */
+const FADE_TAU = 0.16;
+/** 수위가 새 목표에 닿는 시간 상수(초). */
+const LEVEL_TAU = 0.3;
 const clamp = (value: number) => Math.min(1, Math.max(0, value));
 
 /** 예시 인물 윤하린의 기록(체험 DB 복사본의 더미 데이터와 같은 제목). */
@@ -104,55 +112,85 @@ export function Story({ hero }: { hero: ReactNode }) {
     const board = stage.current;
     if (!element || !board) return;
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let target = 0;
-    let current = -1;
+    const count = CHAPTERS.length;
+    // 스크롤이 고른 장. -1은 도입부(첫 화면)다.
+    let chosen = -1;
+    let intro = 0;
+    let level = 0;
+    const play = new Array<number>(count).fill(0);
+    const seen = new Array<number>(count).fill(0);
     let frame = 0;
+    let last = 0;
 
-    const apply = (p: number) => {
-      const intro = clamp(p / INTRO);
+    const step = (dt: number) => {
+      // 들어오기 · 물러나기 · 수위는 목표에 감속하며 닿는다(지수 감쇠). 동작 줄이기면 바로 맞춘다.
+      const settle = (value: number, goal: number, tau: number) => {
+        if (reduce) return goal;
+        const next = goal + (value - goal) * Math.exp(-dt / tau);
+        return Math.abs(next - goal) < 0.001 ? goal : next;
+      };
+      // 장 안의 장면은 일정한 속도로 흐르는 시간축이다. CSS가 이 값을 요소마다 엇갈려 나눠 쓴다.
+      const advance = (value: number, goal: number) => {
+        if (reduce) return goal;
+        const delta = dt / PLAY_SECONDS;
+        return goal > value ? Math.min(goal, value + delta) : Math.max(goal, value - delta);
+      };
+
+      intro = settle(intro, chosen >= 0 ? 1 : 0, FADE_TAU);
+      level = settle(level, chosen >= 0 ? CHAPTERS[chosen]!.level[1] : 0, LEVEL_TAU);
+      for (let index = 0; index < count; index += 1) {
+        // 첫 장은 도입부의 글이 물러난 뒤에 들어온다.
+        const show = index === chosen && (index > 0 || intro > 0.6);
+        seen[index] = settle(seen[index]!, show ? 1 : 0, FADE_TAU);
+        // 지난 장은 끝난 상태로, 고른 장은 보이기 시작하면 재생하고, 다음 장은 처음으로 감는다.
+        const goal = index < chosen ? 1 : index === chosen ? (seen[index]! > 0.5 ? 1 : play[index]!) : 0;
+        play[index] = advance(play[index]!, goal);
+      }
+    };
+
+    const paint = () => {
       board.style.setProperty("--intro", intro.toFixed(4));
       // 글이 다 사라지면(story.module.css .hero의 1 − intro × 2.4) 링크도 탭 순서와 클릭에서 뺀다.
       if (heroBox.current) heroBox.current.style.visibility = 1 - intro * 2.4 > 0.001 ? "visible" : "hidden";
-      let active = -1;
-      let level = 0;
-      CHAPTERS.forEach((chapter, index) => {
-        const start = INTRO + index * LENGTH;
-        const t = clamp((p - start) / LENGTH);
-        // 앞 장이 물러나는 동안 다음 장이 들어온다. 첫 장은 도입부 끝에, 마지막 장은 물러나지 않는다.
-        const enter = index === 0 ? clamp((intro - 0.55) / 0.45) : clamp(t / 0.12);
-        const exit = index === CHAPTERS.length - 1 ? 0 : clamp((t - 0.88) / 0.12);
-        const visible = enter * (1 - exit);
-        const panel = panels.current[index];
-        if (panel) {
-          panel.style.setProperty("--t", t.toFixed(4));
-          panel.style.setProperty("--v", visible.toFixed(4));
-          panel.style.visibility = visible > 0.001 ? "visible" : "hidden";
-        }
-        if (p >= start && (index === 0 || p > start)) active = index;
-        if (p >= start) level = chapter.level[0] + (chapter.level[1] - chapter.level[0]) * t;
-        if (index === 1 && extractPercent.current) {
-          extractPercent.current.textContent = `${Math.round(clamp(t * 1.25) * 100)}%`;
-        }
-      });
       board.style.setProperty("--level", level.toFixed(4));
       if (percent.current) percent.current.textContent = `${Math.round(level * 100)}%`;
+      panels.current.forEach((panel, index) => {
+        if (!panel) return;
+        panel.style.setProperty("--t", play[index]!.toFixed(4));
+        panel.style.setProperty("--v", seen[index]!.toFixed(4));
+        panel.style.visibility = seen[index]! > 0.001 ? "visible" : "hidden";
+      });
+      if (extractPercent.current) {
+        extractPercent.current.textContent = `${Math.round(clamp(play[1]! * 1.25) * 100)}%`;
+      }
       rows.current.forEach((row, index) => {
-        if (row) row.dataset.state = index < active ? "done" : index === active ? "active" : "todo";
+        if (row) row.dataset.state = index < chosen ? "done" : index === chosen ? "active" : "todo";
       });
     };
 
-    const tick = () => {
+    const settled = () =>
+      intro === (chosen >= 0 ? 1 : 0) &&
+      level === (chosen >= 0 ? CHAPTERS[chosen]!.level[1] : 0) &&
+      seen.every((value, index) => value === (index === chosen ? 1 : 0)) &&
+      play.every((value, index) => value === (index <= chosen ? 1 : 0));
+
+    const tick = (now: number) => {
       frame = 0;
-      // 휠 한 번에 진행도가 크게 뛰어도 장면은 따라붙듯 움직인다. 동작 줄이기면 바로 맞춘다.
-      current = current < 0 || reduce ? target : current + (target - current) * 0.2;
-      if (Math.abs(target - current) < 0.0004) current = target;
-      apply(current);
-      if (current !== target) frame = requestAnimationFrame(tick);
+      // 창이 가려졌다 돌아오면 간격이 길다. 한 번에 0.1초까지만 진행해 장면이 건너뛰지 않게 한다.
+      const dt = last ? Math.min(0.1, (now - last) / 1000) : 1 / 60;
+      last = now;
+      step(dt);
+      paint();
+      if (settled()) last = 0;
+      else frame = requestAnimationFrame(tick);
     };
+
     const measure = () => {
       const rect = element.getBoundingClientRect();
       const travel = Math.max(1, rect.height - window.innerHeight);
-      target = clamp(-rect.top / travel);
+      const p = clamp(-rect.top / travel);
+      // 스크롤은 장만 고른다. 장면은 고른 뒤에 시간으로 끝까지 재생되므로, 어디서 멈춰도 중간 상태로 남지 않는다.
+      chosen = p < INTRO / 2 ? -1 : Math.min(count - 1, Math.max(0, Math.floor((p - INTRO) / LENGTH)));
       if (!frame) frame = requestAnimationFrame(tick);
     };
 

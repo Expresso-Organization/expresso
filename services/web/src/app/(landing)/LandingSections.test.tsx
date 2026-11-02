@@ -117,3 +117,49 @@ it("스크롤 위치에 따라 지금 장이 바뀌고, 되돌리면 앞 장으�
   expect(states()).toEqual(["active", "todo", "todo", "todo", "todo", "todo"]);
   expect(visible()).toEqual([true, false, false, false, false, false]);
 });
+
+it("스크롤을 장 가운데에서 멈춰도 장면은 시간에 따라 끝까지 재생된다", async () => {
+  // 동작 줄이기를 끄고, 화면 갱신을 손으로 한 프레임(16ms)씩 넘긴다.
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: false,
+    media: query,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  }));
+  let queue: FrameRequestCallback[] = [];
+  let now = 0;
+  vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+    queue.push(callback);
+    return queue.length;
+  });
+  const frames = (count: number) => {
+    for (let index = 0; index < count && queue.length > 0; index += 1) {
+      const pending = queue;
+      queue = [];
+      now += 16;
+      act(() => pending.forEach((callback) => callback(now)));
+    }
+  };
+
+  render(<Landing />);
+  const story = screen.getByRole("region", { name: "Expresso 소개" });
+  const panel = within(story).getAllByRole("heading", { level: 2, hidden: true })[1]!.closest("div")!.parentElement!;
+  const height = 10_000;
+  story.getBoundingClientRect = () => ({ top: -0.3 * (height - window.innerHeight), height }) as DOMRect;
+  act(() => {
+    window.dispatchEvent(new Event("scroll"));
+  });
+
+  // 0.3은 둘째 장(공고 분석) 구간의 앞쪽이다. 스크롤은 여기서 멈추고 시간만 흐른다.
+  frames(20);
+  const midway = Number(panel.style.getPropertyValue("--t"));
+  expect(midway).toBeGreaterThan(0);
+  expect(midway).toBeLessThan(1);
+
+  frames(200);
+  expect(panel.style.getPropertyValue("--t")).toBe("1.0000");
+  expect(panel.style.getPropertyValue("--v")).toBe("1.0000");
+  // 마크 수위는 이 장의 끝 수위(42%)에 닿는다.
+  expect(within(story).getByText("42%")).toBeTruthy();
+  expect(queue).toHaveLength(0);
+});

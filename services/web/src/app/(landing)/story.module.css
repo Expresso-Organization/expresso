@@ -6,14 +6,14 @@
  * - 카드 18px · 칩 8px 모서리, 얕고 넓은 그림자(--ex-elevation-raised).
  * - Outfit Light는 큰 수치에만, 라벨은 Mono 대문자 11px · 자간 .12em.
  *
- * 움직임의 출처는 둘뿐이다. 무대의 --intro · --level, 장마다의 --t(그 장의 진행도)와
- * --v(보이는 정도). 모두 Story.tsx가 스크롤에서 계산해 쓴다. 여기서는 그 값을 clamp()로
+ * 움직임의 출처는 둘뿐이다. 무대의 --intro · --level, 장마다의 --t(그 장의 장면 시간축)와
+ * --v(보이는 정도). 모두 Story.tsx가 쓴다. 스크롤은 장을 고르고, 장면은 시간에 따라 끝까지 재생된다. 여기서는 그 값을 clamp()로
  * 잘라 각 요소의 위치 · 투명도 · 크기로 바꾼다.
  */
 
 .story {
   position: relative;
-  height: 760vh;
+  height: 520vh;
 }
 
 .stage {
@@ -767,7 +767,7 @@
 
 @media (max-width: 767px) {
   .story {
-    height: 720vh;
+    height: 480vh;
   }
 
   /* 마크는 위쪽 띠에 작게, 장은 그 아래. 도입부에서는 마크가 글 아래 가운데에 크게 앉는다. */
