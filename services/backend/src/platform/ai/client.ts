@@ -18,6 +18,7 @@ import { redactedDetail } from "../observability.js";
 
 /** §8.3의 AI 계약. 모델 티어와 픽스처 경로가 이걸로 갈린다. */
 export const AI_CONTRACTS = [
+  "agent_chat_codex",
   "job_analysis",
   "job_facts",
   "search_interpret",
@@ -35,6 +36,7 @@ export const AI_CONTRACTS = [
   "partial_edit",
   "style_remix",
   "insight_note",
+  "career_claim_review",
 ] as const;
 
 export type AiContract = (typeof AI_CONTRACTS)[number];
@@ -51,6 +53,7 @@ export type AiModelTier = (typeof AI_MODEL_TIERS)[number];
  * 추출 한 번에 한 번 돌고, 그 결과가 사람들이 실제로 보는 페이지가 된다.
  */
 export const DEFAULT_MODEL_TIER: Record<AiContract, AiModelTier> = {
+  agent_chat_codex: "sonnet",
   job_analysis: "opus",
   recipe_draft: "opus",
   layout_draft: "opus",
@@ -73,6 +76,7 @@ export const DEFAULT_MODEL_TIER: Record<AiContract, AiModelTier> = {
   style_remix: "sonnet",
   search_interpret: "haiku",
   insight_note: "haiku",
+  career_claim_review: "sonnet",
 };
 
 export interface AiCallSpec {

@@ -34,7 +34,7 @@ import { applyFixes, groupViolations, jsonPointer, runWithFixes, zodViolations }
 function fakeCli(responses: unknown[]) {
   const dir = mkdtempSync(join(tmpdir(), "fake-claude-"));
   const log = join(dir, "calls.jsonl");
-  const script = join(dir, "claude");
+  const script = join(dir, "claude.cjs");
   writeFileSync(join(dir, "responses.json"), JSON.stringify(responses));
   writeFileSync(script, `#!/usr/bin/env node
 const fs = require("node:fs");
@@ -60,7 +60,7 @@ process.stdin.on("end", () => {
 `);
   chmodSync(script, 0o755);
   const calls = () => readFileSync(log, "utf8").trim().split("\n").map((line) => JSON.parse(line) as { args: string[]; input: string });
-  return { cliPath: script, calls };
+  return { cliPath: process.execPath, cliArgs: [script], calls };
 }
 
 const spec = { contract: "page_fill" as const, system: "칸을 채웁니다.", prompt: "채우세요.", promptVersion: 1 };
@@ -77,7 +77,7 @@ describe("검사에 걸린 칸은 같은 대화에서 그 칸만 고쳐 받는�
     ]);
     const drafts: unknown[] = [];
     const revisions: AiFix[][] = [];
-    const result = await new ClaudeCodeAiClient({ cliPath: cli.cliPath }).complete(spec, schema, {
+    const result = await new ClaudeCodeAiClient({ cliPath: cli.cliPath, cliArgs: cli.cliArgs }).complete(spec, schema, {
       onDraft: (data) => drafts.push(data),
       onRevision: (fixes) => revisions.push([...fixes]),
     });
@@ -101,7 +101,7 @@ describe("검사에 걸린 칸은 같은 대화에서 그 칸만 고쳐 받는�
       { fixes: [{ path: "/items/0", value: "근거 있음" }] },
     ]);
     const events: string[] = [];
-    const result = await new ClaudeCodeAiClient({ cliPath: cli.cliPath }).complete(spec, schema, {
+    const result = await new ClaudeCodeAiClient({ cliPath: cli.cliPath, cliArgs: cli.cliArgs }).complete(spec, schema, {
       check: (data) => data.items.flatMap((item, index) => (item.includes("없음") ? [{ path: `/items/${index}`, problem: "근거가 없습니다." }] : [])),
       onDraft: (data) => events.push(`draft:${data.items[0]}`),
       onRevision: (fixes) => events.push(`revised:${fixes.map((fix) => fix.path).join(",")}`),
@@ -112,7 +112,7 @@ describe("검사에 걸린 칸은 같은 대화에서 그 칸만 고쳐 받는�
 
   it("고쳐도 걸린 칸이 줄지 않으면 멈추고, 업무 규칙 위반만 남은 출력은 그대로 돌려준다", async () => {
     const cli = fakeCli([{ title: "제목", items: ["x"] }, { fixes: [] }, { fixes: [] }]);
-    const result = await new ClaudeCodeAiClient({ cliPath: cli.cliPath }).complete(spec, schema, {
+    const result = await new ClaudeCodeAiClient({ cliPath: cli.cliPath, cliArgs: cli.cliArgs }).complete(spec, schema, {
       check: () => [{ path: "/items/0", problem: "여전히 맞지 않습니다." }],
     });
     expect(result.data).toEqual({ title: "제목", items: ["x"] });
@@ -125,7 +125,7 @@ describe("검사에 걸린 칸은 같은 대화에서 그 칸만 고쳐 받는�
       { fixes: [{ path: "/items/0", value: "ok" }] },
       { fixes: [{ path: "/items/1", value: "ok" }] },
     ]);
-    const result = await new ClaudeCodeAiClient({ cliPath: cli.cliPath }).complete(spec, schema, {
+    const result = await new ClaudeCodeAiClient({ cliPath: cli.cliPath, cliArgs: cli.cliArgs }).complete(spec, schema, {
       check: (data) => data.items.flatMap((item, index) => (item === "ok" ? [] : [{ path: `/items/${index}`, problem: "아직입니다." }])),
     });
     expect(result.data.items).toEqual(["ok", "ok"]);
@@ -167,7 +167,7 @@ describe("걸린 수가 줄지 않아도 모델이 값을 바꾸는 동안", () 
 describe("출력 전체를 고칠 때", () => {
   it("모델에게는 출력 전체를 / 로 보이고, / 로 온 고치기를 출력 전체로 받는다", async () => {
     const cli = fakeCli([{ title: "제목", items: [] }, { fixes: [{ path: "/", value: { title: "새 제목", items: ["a"] } }] }]);
-    const result = await new ClaudeCodeAiClient({ cliPath: cli.cliPath }).complete(spec, schema, {
+    const result = await new ClaudeCodeAiClient({ cliPath: cli.cliPath, cliArgs: cli.cliArgs }).complete(spec, schema, {
       check: (data) => (data.items.length ? [] : [{ path: "", problem: "지면이 그대로입니다." }]),
     });
     expect(result.data).toEqual({ title: "새 제목", items: ["a"] });
@@ -180,7 +180,7 @@ describe("출력 전체를 고칠 때", () => {
 describe("CLI에 출력 검증을 맡기지 않는다", () => {
   it("어느 호출에도 --json-schema를 넘기지 않고 내장 도구를 모두 끈다", async () => {
     const cli = fakeCli([{ title: "열 글자를 훨씬 넘는 제목입니다", items: [] }, { fixes: [{ path: "/title", value: "짧은 제목" }] }]);
-    await new ClaudeCodeAiClient({ cliPath: cli.cliPath }).complete(spec, schema);
+    await new ClaudeCodeAiClient({ cliPath: cli.cliPath, cliArgs: cli.cliArgs }).complete(spec, schema);
     for (const call of cli.calls()) {
       expect(call.args).not.toContain("--json-schema");
       expect(call.args[call.args.indexOf("--tools") + 1]).toBe("");
@@ -191,7 +191,7 @@ describe("CLI에 출력 검증을 맡기지 않는다", () => {
 
   it("JSON 앞뒤의 설명 글과 코드 블록 표시는 읽지 않는다", async () => {
     const cli = fakeCli(['다음은 결과입니다.\n```json\n{"title":"제목","items":["a"]}\n```\n이상입니다.']);
-    const result = await new ClaudeCodeAiClient({ cliPath: cli.cliPath }).complete(spec, schema);
+    const result = await new ClaudeCodeAiClient({ cliPath: cli.cliPath, cliArgs: cli.cliArgs }).complete(spec, schema);
     expect(result.data).toEqual({ title: "제목", items: ["a"] });
     expect(cli.calls()).toHaveLength(1);
   });
@@ -201,7 +201,7 @@ describe("CLI에 출력 검증을 맡기지 않는다", () => {
       '{"title":"제목","items":["a" "b"]}',
       { edits: [{ find: '"a" "b"', replace: '"a", "b"' }] },
     ]);
-    const result = await new ClaudeCodeAiClient({ cliPath: cli.cliPath }).complete(spec, schema);
+    const result = await new ClaudeCodeAiClient({ cliPath: cli.cliPath, cliArgs: cli.cliArgs }).complete(spec, schema);
     expect(result.data).toEqual({ title: "제목", items: ["a", "b"] });
     const [first, fix] = cli.calls();
     expect(fix!.args[fix!.args.indexOf("--resume") + 1]).toBe(first!.args[first!.args.indexOf("--session-id") + 1]);
@@ -212,14 +212,14 @@ describe("CLI에 출력 검증을 맡기지 않는다", () => {
 
   it("출력 한도에 닿아 끊긴 출력은 끊긴 곳 다음부터 이어 받는다", async () => {
     const cli = fakeCli([{ text: '{"title":"제목","items":["a"', stop: "max_tokens" }, ',"b"]}']);
-    const result = await new ClaudeCodeAiClient({ cliPath: cli.cliPath }).complete(spec, schema);
+    const result = await new ClaudeCodeAiClient({ cliPath: cli.cliPath, cliArgs: cli.cliArgs }).complete(spec, schema);
     expect(result.data).toEqual({ title: "제목", items: ["a", "b"] });
     expect(cli.calls()[1]!.input).toContain("이어서 쓰세요");
   });
 
   it("다 썼는데 끝에서 막혔으면(닫는 괄호가 빠짐) 이어 쓰기가 아니라 끝부분 조각을 고쳐 받는다", async () => {
     const cli = fakeCli(['{"title":"제목","items":["a"]', { edits: [{ find: '["a"]', replace: '["a"]}' }] }]);
-    const result = await new ClaudeCodeAiClient({ cliPath: cli.cliPath }).complete(spec, schema);
+    const result = await new ClaudeCodeAiClient({ cliPath: cli.cliPath, cliArgs: cli.cliArgs }).complete(spec, schema);
     expect(result.data).toEqual({ title: "제목", items: ["a"] });
     expect(cli.calls()[1]!.input).toContain("문법이 깨져");
     expect(cli.calls()[1]!.input).not.toContain("이어서 쓰세요");
@@ -227,7 +227,7 @@ describe("CLI에 출력 검증을 맡기지 않는다", () => {
 
   it("고쳐도 같은 자리에서 막히면 멈춘다", async () => {
     const cli = fakeCli(['{"title":"제목","items":["a" "b"]}', { edits: [{ find: "원문에 없는 조각", replace: "x" }] }]);
-    await expect(new ClaudeCodeAiClient({ cliPath: cli.cliPath }).complete(spec, schema)).rejects.toMatchObject({ code: "AI_INVALID_OUTPUT" });
+    await expect(new ClaudeCodeAiClient({ cliPath: cli.cliPath, cliArgs: cli.cliArgs }).complete(spec, schema)).rejects.toMatchObject({ code: "AI_INVALID_OUTPUT" });
     expect(cli.calls()).toHaveLength(2);
   });
 });
@@ -236,13 +236,13 @@ describe("CLI에 출력 검증을 맡기지 않는다", () => {
 describe("시간 상한은 출력이 멈춘 시간이다", () => {
   it("출력이 계속 흐르면 상한을 넘겨도 끝까지 받는다", { timeout: 15_000 }, async () => {
     const cli = fakeCli([{ delayMs: 300, beats: 10, output: { title: "제목", items: [] } }]);
-    const result = await new ClaudeCodeAiClient({ cliPath: cli.cliPath, timeoutMs: 1_500 }).complete(spec, schema);
+    const result = await new ClaudeCodeAiClient({ cliPath: cli.cliPath, cliArgs: cli.cliArgs, timeoutMs: 1_500 }).complete(spec, schema);
     expect(result.data.title).toBe("제목");
   });
 
   it("출력이 상한보다 오래 멈추면 끊는다", { timeout: 15_000 }, async () => {
     const cli = fakeCli([{ delayMs: 5_000, beats: 1, output: { title: "제목", items: [] } }]);
-    await expect(new ClaudeCodeAiClient({ cliPath: cli.cliPath, timeoutMs: 1_500 }).complete(spec, schema)).rejects.toMatchObject({ code: "AI_TIMEOUT" });
+    await expect(new ClaudeCodeAiClient({ cliPath: cli.cliPath, cliArgs: cli.cliArgs, timeoutMs: 1_500 }).complete(spec, schema)).rejects.toMatchObject({ code: "AI_TIMEOUT" });
   });
 });
 

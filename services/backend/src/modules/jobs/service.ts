@@ -69,15 +69,53 @@ export class JobMarketService implements JobMarketApi {
 
   async analyzePosting(userId: string, jobPostingId: string) {
     return this.#write(userId, async (tx) => {
-      const db = mongoCollections(tx.db); const options = { session: tx.session };
-      if (!await db.jobPostings.findOne({ _id: jobPostingId }, options)) throw new JobMarketError(404, "job posting not found");
-      const existing = await db.jobAnalyses.findOne({ userId, jobPostingId }, { ...options, sort: { _id: 1 } });
-      const analysis = existing ?? queuedAnalysis(userId, jobPostingId, "board");
-      if (!existing) {
-        await db.jobAnalyses.insertOne(analysis, options);
-        await addMongoOutboxEvent(tx, { userId, topic: "job.normalize", payload: { jobAnalysisId: analysis._id, jobPostingId, userId }, idempotencyKey: `job-normalize:${analysis._id}` });
+      const db = mongoCollections(tx.db);
+      const options = { session: tx.session };
+
+      const posting = await db.jobPostings.findOne(
+        { _id: jobPostingId },
+        options,
+      );
+
+      if (!posting) {
+        throw new JobMarketError(404, "job posting not found");
       }
-      return AnalyzedJobPostingSchema.parse({ jobPostingId, jobAnalysisId: analysis._id, status: analysis.status, reused: !!existing });
+
+      const existing = await db.jobAnalyses.findOne(
+        { userId, jobPostingId },
+        { ...options, sort: { _id: 1 } },
+      );
+
+      if (existing) {
+        return AnalyzedJobPostingSchema.parse({
+          jobPostingId,
+          jobAnalysisId: existing._id,
+          status: existing.status,
+          reused: true,
+        });
+      }
+
+      const analysis = queuedAnalysis(userId, jobPostingId, "board");
+
+      await db.jobAnalyses.insertOne(analysis, options);
+
+      await addMongoOutboxEvent(tx, {
+        userId,
+        topic: "job.normalize",
+        payload: {
+          jobAnalysisId: analysis._id,
+          jobPostingId,
+          userId,
+        },
+        idempotencyKey: `job-normalize:${analysis._id}`,
+      });
+
+      return AnalyzedJobPostingSchema.parse({
+        jobPostingId,
+        jobAnalysisId: analysis._id,
+        status: analysis.status,
+        reused: false,
+      });
     });
   }
 

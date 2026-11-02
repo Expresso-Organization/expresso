@@ -11,7 +11,6 @@ import {
   DEFAULT_MODEL_TIER,
   parseToolOutput,
   logAiFailure,
-  toToolSchema,
   type AiCallSpec,
   type AiClient,
   type AiModelTier,
@@ -150,7 +149,21 @@ export class CodexAiClient implements AiClient {
     const tier = spec.modelTier ?? DEFAULT_MODEL_TIER[spec.contract];
     const model = this.#models[spec.contract] ?? DEFAULT_CODEX_MODEL[tier];
     const schemaPath = join(this.#cwd, `schema-${randomUUID()}.json`);
-    writeFileSync(schemaPath, JSON.stringify(toToolSchema(schema)), "utf8");
+
+    // Codex에는 출력용 JSON Schema를 전달합니다.
+// 일반 Zod 객체의 additionalProperties: false를 유지합니다.
+    const generatedSchema = z.toJSONSchema(schema, {
+      target: "draft-2020-12",
+      io: "output",
+    });
+
+    const { $schema: _schemaVersion, ...outputSchema } = generatedSchema;
+
+    writeFileSync(
+      schemaPath,
+      JSON.stringify(outputSchema),
+      "utf8",
+    );
 
     const args = [
       "exec",

@@ -100,7 +100,7 @@ const engagementService = new EngagementService(database);
 // AI가 없으면 여기서 멈춘다 — 규칙으로 흉내 낸 문장과 요건을 제품에 두지 않는다.
 const generationProcessor = createGenerationProcessor(
   generationService,
-  ai ? new AiSentenceWriter(ai) : new UnavailableSentenceWriter(),
+  ai ? new AiSentenceWriter(ai, true) : new UnavailableSentenceWriter(),
   ai ? new AiLayoutDesigner(ai) : null,
   ai ? { service: pageService, generator: config.pageGenerationFormat === "html" ? new AiPageGenerator(ai) : structuredPageGenerator! } : null,
   engagementService,
