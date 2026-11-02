@@ -51,6 +51,34 @@ QUEUE_PREFIX=expresso-mongo-v1
 비밀번호를 저장소, 명령 인자 또는 로그에 기록하지 않습니다. 서버의 환경 파일은
 소유자만 읽을 수 있어야 합니다.
 
+## nginx
+
+호스트 nginx 설정의 출처는 `infra/nginx/expresso.ai.kr.conf`입니다. 배포 스크립트는 이 파일을 서버에 복사하지 않습니다. 저장소 파일을 바꾼 뒤에는 서버 파일에 같은 변경을 직접 적용합니다. 서버 파일은 인증서 경로가 저장소와 다를 수 있으므로 통째로 덮어쓰지 않습니다.
+
+`location /v1/`은 WebSocket 업그레이드를 넘겨야 합니다. 커리어 본문 저장 소켓(`/v1/career/records/:id/session`)이 이 경로로 들어옵니다. 헤더가 빠지면 API가 일반 GET으로 받아 404를 내고, 편집기는 「오프라인」에서 재연결만 반복합니다. 2026-11-02 운영이 이 상태였습니다.
+
+```nginx
+# http 블록 안(사이트 파일 맨 위)
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
+# location /v1/ 안
+proxy_set_header Upgrade $http_upgrade;
+proxy_set_header Connection $connection_upgrade;
+```
+
+적용과 확인:
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+curl -4 --http1.1 -s -o /dev/null -w '%{http_code}\n' -H 'Connection: Upgrade' -H 'Upgrade: websocket' -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' https://expresso.ai.kr/v1/career/records/00000000-0000-4000-8000-000000000000/session
+```
+
+마지막 명령은 101을 내야 합니다. `deploy.sh`도 배포 끝에 같은 요청을 보내고, 101이 아니면 실패로 끝납니다. API `.env`의 `CAREER_SOCKET_ALLOWED_ORIGIN`은 `https://expresso.ai.kr`이어야 합니다. 이 값이 틀리면 핸드셰이크는 101이지만 소켓이 곧바로 닫힙니다.
+
 ## 측정 브라우저
 
 워커는 생성한 포트폴리오 지면을 Playwright Chromium(chromium-headless-shell)으로 열어 390 · 926 · 1440px에서 잽니다.
