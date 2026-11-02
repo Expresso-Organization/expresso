@@ -68,9 +68,19 @@ const refineJobs = createReliableQueue<Record<string, unknown>>(
   config.redisUrl,
   config.queuePrefix,
 );
+/*
+ * 커리어 문서 투영 · 압축 · 계산 · 속성 변경은 몇 초 안에 끝나야 화면 값이 맞습니다. 동시 1개인 domain-jobs에 두면
+ * 포트폴리오 생성(수 분) 뒤에서 기다리느라 bodyMd와 수식 값이 그동안 낡습니다(2026-11-02 감사). 따로 줄을 섭니다.
+ */
+const careerJobs = createReliableQueue<Record<string, unknown>>(
+  "career-jobs",
+  config.redisUrl,
+  config.queuePrefix,
+);
+const queueFor = (name: string) => (name === "page.refine" ? refineJobs.queue : name.startsWith("career.") ? careerJobs.queue : jobs.queue);
 const dispatcher = new MongoOutboxDispatcher({
   context: database,
-  queue: { add: (name, payload, options) => (name === "page.refine" ? refineJobs.queue : jobs.queue).add(name, payload, options) },
+  queue: { add: (name, payload, options) => queueFor(name).add(name, payload, options) },
   batchSize: config.outboxBatchSize,
   maxAttempts: config.outboxMaxAttempts,
 });
@@ -183,6 +193,28 @@ const queueWorker = createQueueWorker<Record<string, unknown>, Record<string, un
   },
 });
 
+const careerProcessor = async (job: Parameters<typeof careerDocumentCompactionProcessor>[0]): Promise<Record<string, unknown>> => {
+  if (job.name === "career.document.compact") return careerDocumentCompactionProcessor(job) as Promise<Record<string, unknown>>;
+  if (job.name === "career.document.project") return careerDocumentProjectionProcessor(job) as Promise<Record<string, unknown>>;
+  if (job.name === "career.computation") return careerComputationProcessor(job) as unknown as Promise<Record<string, unknown>>;
+  if (CAREER_PROPERTY_MUTATION_JOBS.has(job.name)) return careerPropertyMutationProcessor(job);
+  throw new Error(`Unsupported career job: ${job.name}`);
+};
+const careerWorker = createQueueWorker<Record<string, unknown>, Record<string, unknown>>({
+  queueName: "career-jobs",
+  redisUrl: config.redisUrl,
+  prefix: config.queuePrefix,
+  deadLetterQueue: careerJobs.deadLetterQueue,
+  concurrency: 4,
+  processor: careerProcessor,
+  onDeadLetterError(error) {
+    console.error(JSON.stringify({ level: "error", message: "failed to persist dead-letter job", error: safeErrorSummary(error) }));
+  },
+});
+careerWorker.on("error", (error) => {
+  console.error(JSON.stringify({ level: "error", message: "queue worker error", error: safeErrorSummary(error) }));
+});
+
 const refineWorker = createQueueWorker<Record<string, unknown>, Record<string, unknown>>({
   queueName: "page-refine",
   redisUrl: config.redisUrl,
@@ -252,4 +284,4 @@ while (!abortController.signal.aborted) {
   }
 }
 
-await Promise.allSettled([queueWorker.close(), refineWorker.close(), jobs.close(), refineJobs.close(), database.close(), pageMeasurer.close()]);
+await Promise.allSettled([queueWorker.close(), refineWorker.close(), careerWorker.close(), jobs.close(), refineJobs.close(), careerJobs.close(), database.close(), pageMeasurer.close()]);

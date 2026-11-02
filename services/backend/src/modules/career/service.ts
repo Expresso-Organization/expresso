@@ -7,14 +7,14 @@ import { inTransaction } from "../../platform/mongo-transaction.js";
 import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { requireActiveUser } from "../identity/index.js";
 import { CareerError } from "./errors.js";
-import { validateCareerProperties, withoutRelationValues } from "./properties.js";
+import { changedMediaIds, validateCareerProperties, withoutRelationValues } from "./properties.js";
 import { mapMongoCategory, requireCareerCategory } from "./mongo-categories.js";
 import { attachRelationValues, careerRequestHash, listMongoRecords, mapMongoRecord } from "./mongo-records.js";
 import type { CareerApi } from "./index.js";
 import type { RecomputeCareerSkill } from "@expresso/contracts";
 import { createMongoLink, listMongoLinks, mongoDeleteImpact, trashMongoRecord, restoreMongoRecord, listTrashedMongoRecords } from "./mongo-links.js";
 import { recomputeMongoSkill, listMongoSkills, listMongoSkillEvidence } from "./mongo-skills.js";
-import { MongoCareerDocumentRepository, hashUpdate } from "../career-editor/repository.js";
+import { MongoCareerDocumentRepository, hashUpdate } from "../career-editor/index.js";
 import { Binary } from "mongodb";
 import { MongoCareerPropertySchemaService } from "./property-schema.js";
 import { CareerViewService } from "./views.js";
@@ -25,6 +25,13 @@ import { MongoCareerComputationService } from "../career-computation/index.js";
 const duplicate = (error: unknown) => (error as { code?: number })?.code === 11000;
 /** 기본 7종과 사용자가 더한 카테고리 100개. */
 const CATEGORY_LIMIT = 107;
+
+/** 기록 속성에 건 파일 · 미디어가 이 사용자의 것인지 확인합니다. 남의 미디어 ID를 걸 수 없게 합니다. */
+async function requireOwnedMedia(tx: { db: Parameters<typeof mongoCollections>[0]; session: import("mongodb").ClientSession }, userId: string, mediaIds: readonly string[]) {
+  if (!mediaIds.length) return;
+  const owned = await mongoCollections(tx.db).mediaAssets.countDocuments({ _id: { $in: [...mediaIds] }, userId }, { session: tx.session });
+  if (owned !== mediaIds.length) throw new CareerError(400, "career property references media the user does not own");
+}
 
 /** 편집기 밖에서 본문(bodyMd)을 쓴 뒤 부르는 콜백입니다. 커리어 문서 모듈이 Yjs 문서를 맞추고 열린 편집기에 알립니다. */
 export type ExternalBodyListener = (userId: string, recordId: string) => Promise<unknown>;
@@ -81,6 +88,10 @@ export class CareerService implements CareerApi {
     const keys = new Set(input.propertySchemaV2.map((definition) => definition.key));
     const ids = new Set(input.propertySchemaV2.map((definition) => definition.id));
     if (keys.size !== input.propertySchemaV2.length || ids.size !== input.propertySchemaV2.length) throw new CareerError(400, "property keys and IDs must be unique");
+    // 수식 · 롤업 · 관계 설정과 시스템 속성은 속성 변경 API가 검사합니다. 생성 요청으로 바로 넣으면 그 검사를 건너뜁니다.
+    if (input.propertySchemaV2.some((definition) => definition.system || ["formula", "rollup", "relation", "created_time", "updated_time"].includes(definition.type))) {
+      throw new CareerError(400, "computed, relation and system properties must be added through the property schema API");
+    }
     try {
       return await inTransaction(this.context, async (tx) => {
         await requireActiveUser(tx, userId);
@@ -103,6 +114,7 @@ export class CareerService implements CareerApi {
       const category = await requireCareerCategory(tx, userId, input.categoryId, tx.session);
       const createdProperties = withoutRelationValues(category.propertySchemaV2, input.properties);
       validateCareerProperties(category.propertySchemaV2, createdProperties);
+      await requireOwnedMedia(tx, userId, changedMediaIds(createdProperties));
       const records = mongoCollections(tx.db).careerRecords;
       const existing = await records.findOne({ userId, createIdempotencyKey: idempotencyKey }, { session: tx.session });
       if (existing) {
@@ -128,7 +140,7 @@ export class CareerService implements CareerApi {
     const category = await mongoCollections(this.context.db).careerCategories.findOne({ _id: found.categoryId, userId });
     const [record] = category ? await attachRelationValues(this.context.db, userId, [found], new Map([[found.categoryId, category]])) : [found];
     if (!record) throw new CareerError(404, "career record not found");
-    const snapshot = await mongoCollections(this.context.db).careerDocumentSnapshots.findOne({ recordId }, { sort: { documentVersion: -1, schemaVersion: -1 } });
+    const snapshot = await mongoCollections(this.context.db).careerDocumentSnapshots.findOne({ recordId }, { sort: { version: -1, schemaVersion: -1 } });
     // BlockNote 문서(schemaVersion 2)는 편집기가 저장 뒤 bodyMd를 직접 투영합니다.
     if (!snapshot || snapshot.schemaVersion === 2) return mapMongoRecord(record);
     try {
@@ -160,7 +172,7 @@ export class CareerService implements CareerApi {
       if (input.bodyMd !== undefined && !blockNoteBody) {
         const latestSnapshot = await mongoCollections(tx.db).careerDocumentSnapshots.findOne(
           { recordId },
-          { sort: { documentVersion: -1 }, session: tx.session },
+          { sort: { version: -1 }, session: tx.session },
         );
         const pending = await mongoCollections(tx.db).careerDocumentUpdates.countDocuments(
           { recordId, serverSequence: { $gt: latestSnapshot?.serverSequence ?? 0 }, compactedAt: null },
@@ -170,7 +182,8 @@ export class CareerService implements CareerApi {
       }
       const category = await requireCareerCategory(tx, userId, existing.categoryId, tx.session);
       const properties = withoutRelationValues(category.propertySchemaV2, input.properties ?? existing.properties);
-      validateCareerProperties(category.propertySchemaV2, properties);
+      validateCareerProperties(category.propertySchemaV2, properties, existing.properties);
+      await requireOwnedMedia(tx, userId, changedMediaIds(properties, existing.properties));
       const computationDefinitions = category.propertySchemaV2.filter((definition) => definition.deletedAt === null);
       const changedPropertyIds = computationDefinitions.filter((definition) => {
         if (definition.type === "title") return input.title !== undefined && input.title !== existing.title;

@@ -4,18 +4,18 @@ import type {
   CareerCategory,
   CareerPropertyDefinitionV2,
   CareerViewConfiguration,
+  CareerViewFilterV2,
 } from "@expresso/contracts";
 import type { Document } from "mongodb";
 
 import { CareerError } from "./errors.js";
+import { derivedSecret } from "../../platform/secrets.js";
 
 const CURSOR_LIFETIME_MS = 15 * 60_000;
-const CURSOR_SECRET = process.env.CAREER_VIEW_CURSOR_SECRET ?? "expresso-career-view-cursor-secret";
+const CURSOR_SECRET = process.env.CAREER_VIEW_CURSOR_SECRET ?? derivedSecret("career-view-cursor");
 
 type SortPart = { field: string; direction: 1 | -1 };
-type CareerViewFilterV2 =
-  | { operator: "and" | "or"; filters: CareerViewFilterV2[] }
-  | { propertyId: string; operator: "eq" | "neq" | "contains" | "not_contains" | "gt" | "gte" | "lt" | "lte" | "is_empty" | "is_not_empty"; operand: unknown };
+
 
 export interface CompiledCareerView {
   pipeline: Document[];

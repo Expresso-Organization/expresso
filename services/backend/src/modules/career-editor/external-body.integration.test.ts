@@ -108,5 +108,15 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
       const snapshot = await collections.careerDocumentSnapshots.findOne({ _id: before!.snapshotId! });
       expect(JSON.stringify(snapshot?.content)).toContain("복원으로 사라질 문장");
     }, 30_000);
+    it("gives a reconnecting tab the changes it missed even after they were compacted (state vector sync)", async () => {
+      const recordId = await createRecord("재연결 전 본문");
+      const opened = await service.bootstrap(userId, recordId);
+      const ack = await appendParagraph(recordId, "다른 탭에서 쓴 문장", 1);
+      await service.compact(recordId, ack.serverSequence);
+      const diff = await service.syncDiff(userId, recordId, opened.stateVectorBase64);
+      expect(diff?.updateBase64).toBeTruthy();
+      const rebuilt = restoreBlockNote(Buffer.from(opened.stateBase64!, "base64"), [Buffer.from(diff!.updateBase64, "base64")]);
+      expect(textOf(rebuilt.blocks)).toContain("다른 탭에서 쓴 문장");
+    }, 30_000);
   },
 );

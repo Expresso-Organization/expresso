@@ -37,10 +37,11 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     sourceCategoryId = source.id; targetCategoryId = target.id;
     relationId = randomUUID(); inverseRelationId = randomUUID(); singleRelationId = randomUUID(); lostPropertyId = randomUUID(); formulaId = randomUUID();
     const exactId = randomUUID(); const numberId = randomUUID(); const tagsId = randomUUID();
+    const optionA = randomUUID(); const optionB = randomUUID();
     const targetExactId = randomUUID(); const targetNumberId = randomUUID(); const targetTagsId = randomUUID();
     const db = mongoCollections(fixture.resource.db);
     await db.careerCategories.updateOne({ _id: sourceCategoryId }, { $set: { schemaVersion: 1, propertySchemaV2: [
-      definition(exactId, "exact", "text"), definition(numberId, "numberText", "text"), definition(tagsId, "tags", "multi_select"), definition(lostPropertyId, "lost", "text"),
+      definition(exactId, "exact", "text"), definition(numberId, "numberText", "text"), definition(tagsId, "tags", "multi_select", { options: [{ id: optionA, name: "A" }, { id: optionB, name: "B" }] }), definition(lostPropertyId, "lost", "text"),
       definition(relationId, "related", "relation", { targetCategoryId, inversePropertyId: inverseRelationId, cardinality: "multiple", deletePolicy: "restrict" }),
       definition(singleRelationId, "singleRelated", "relation", { targetCategoryId, inversePropertyId: null, cardinality: "single", deletePolicy: "restrict" }),
       definition(formulaId, "constant", "formula", { source: "1 + 2", ast: null, diagnostics: [] }),
@@ -49,7 +50,6 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
       definition(targetExactId, "exact", "text"), definition(targetNumberId, "numberText", "number"), definition(targetTagsId, "tags", "select"),
       definition(inverseRelationId, "back", "relation", { targetCategoryId: sourceCategoryId, inversePropertyId: relationId, cardinality: "multiple", deletePolicy: "restrict" }),
     ] } });
-    const optionA = randomUUID(); const optionB = randomUUID();
     const sourceRecord = await service.createRecord(userId, randomUUID(), { categoryId: sourceCategoryId, title: "본문 보존", properties: { exact: value("text", "같음"), numberText: value("text", "42"), tags: value("multi_select", [optionA, optionB]), lost: value("text", "남겨 둠") }, bodyMd: "# 본문은 이동해도 남는다" });
     sourceRecordId = sourceRecord.record.id;
     targetRecordIds = await Promise.all(["대상 A", "대상 B"].map(async (title) => (await service.createRecord(userId, randomUUID(), { categoryId: targetCategoryId, title, properties: {}, bodyMd: "" })).record.id));

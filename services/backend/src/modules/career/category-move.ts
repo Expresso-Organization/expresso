@@ -20,6 +20,7 @@ import { CareerError } from "./errors.js";
 import { requireCareerCategory } from "./mongo-categories.js";
 import { mapMongoRecord } from "./mongo-records.js";
 import { convertCareerPropertyValue } from "./property-schema.js";
+import { derivedSecret } from "../../platform/secrets.js";
 
 const PREVIEW_LIFETIME_MS = 15 * 60_000;
 
@@ -157,7 +158,7 @@ export interface CategoryMoveService {
 /** 이동은 소속과 값 projection만 바꾼다. 문서 본문과 관계 원장은 recordId에 결속되어 유지된다. */
 export class MongoCategoryMoveService implements CategoryMoveService {
   readonly signingSecret: string;
-  constructor(readonly context: MongoContext, signingSecret = process.env.CAREER_MOVE_PREVIEW_SECRET ?? "expresso-career-move-preview") { this.signingSecret = signingSecret; }
+  constructor(readonly context: MongoContext, signingSecret = process.env.CAREER_MOVE_PREVIEW_SECRET ?? derivedSecret("career-move-preview")) { this.signingSecret = signingSecret; }
 
   async preview(userId: string, recordId: string, rawTargetCategoryId: string): Promise<CareerCategoryMovePreview> {
     const input: PreviewCareerCategoryMove = PreviewCareerCategoryMoveSchema.parse({ targetCategoryId: rawTargetCategoryId });

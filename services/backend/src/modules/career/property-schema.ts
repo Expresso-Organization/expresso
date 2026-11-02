@@ -21,6 +21,7 @@ import type { MongoContext } from "../../platform/mongodb.js";
 import { requireActiveUser } from "../identity/index.js";
 import { CareerError } from "./errors.js";
 import { mapMongoCategory } from "./mongo-categories.js";
+import { derivedSecret } from "../../platform/secrets.js";
 
 const PREVIEW_LIFETIME_MS = 15 * 60_000;
 const INLINE_MUTATION_LIMIT = 100;
@@ -172,7 +173,7 @@ export interface CareerPropertySchemaService {
 
 export class MongoCareerPropertySchemaService implements CareerPropertySchemaService {
   readonly signingSecret: string;
-  constructor(readonly context: MongoContext, signingSecret = process.env.CAREER_SCHEMA_PREVIEW_SECRET ?? "expresso-career-schema-preview") { this.signingSecret = signingSecret; }
+  constructor(readonly context: MongoContext, signingSecret = process.env.CAREER_SCHEMA_PREVIEW_SECRET ?? derivedSecret("career-schema-preview")) { this.signingSecret = signingSecret; }
 
   async previewChange(userId: string, categoryId: string, raw: CareerPropertySchemaChange): Promise<CareerPropertyChangePreview> {
     const change = CareerPropertySchemaChangeSchema.parse(raw);

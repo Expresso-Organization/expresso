@@ -2,8 +2,16 @@ import { randomUUID } from "node:crypto";
 
 import {
   CareerViewConfigurationSchema,
+  CareerViewQueryInputSchema,
   CareerRecordSchema,
+  CreateCareerViewConfigurationSchema,
+  DuplicateCareerViewSchema,
+  ReorderCareerViewsSchema,
+  UpdateCareerViewConfigurationSchema,
   type CareerViewConfiguration,
+  type CareerViewPage,
+  type CreateCareerViewConfiguration,
+  type UpdateCareerViewConfiguration,
 } from "@expresso/contracts";
 import { mongoCollections, type CareerViewDoc } from "@expresso/database";
 import type { ClientSession, Document } from "mongodb";
@@ -17,26 +25,16 @@ import { mapMongoCategory, requireCareerCategory } from "./mongo-categories.js";
 import { attachRelationValues } from "./mongo-records.js";
 import { CareerViewQuery } from "./view-query.js";
 
-const ViewCreateSchema = CareerViewConfigurationSchema.omit({
-  id: true, categoryId: true, version: true, order: true, createdAt: true, updatedAt: true,
-});
 const CURSOR_LIFETIME_MS = 15 * 60_000;
-const ViewUpdateSchema = CareerViewConfigurationSchema.omit({
-  id: true, categoryId: true, version: true, order: true, createdAt: true, updatedAt: true,
-}).partial().refine((value) => Object.keys(value).length > 0, "at least one view field is required");
-
-export const CareerViewCreateSchema = ViewCreateSchema;
-export const CareerViewUpdateSchema = ViewUpdateSchema;
-export const CareerViewDuplicateSchema = z.strictObject({ name: z.string().trim().min(1).max(120) });
-export const CareerViewReorderSchema = z.strictObject({ orderedIds: z.array(z.string().uuid()).min(1).max(100) });
-export const CareerViewQueryInputSchema = z.strictObject({ cursor: z.string().min(1).max(4096).nullable().default(null), limit: z.coerce.number().int().min(1).max(100).default(50) });
-
-export type CreateCareerViewConfiguration = z.infer<typeof ViewCreateSchema>;
-export type UpdateCareerViewConfiguration = z.infer<typeof ViewUpdateSchema>;
-export type CareerViewPage = {
-  data: ReturnType<typeof CareerRecordSchema.parse>[];
-  page: { hasNextPage: boolean; nextCursor: string | null };
-};
+// 요청 · 응답 스키마는 계약(packages/contracts)이 소유합니다. 예전 이름은 라우트가 그대로 쓰도록 다시 내보냅니다.
+const ViewCreateSchema = CreateCareerViewConfigurationSchema;
+const ViewUpdateSchema = UpdateCareerViewConfigurationSchema;
+export const CareerViewCreateSchema = CreateCareerViewConfigurationSchema;
+export const CareerViewUpdateSchema = UpdateCareerViewConfigurationSchema;
+export const CareerViewDuplicateSchema = DuplicateCareerViewSchema;
+export const CareerViewReorderSchema = ReorderCareerViewsSchema;
+export { CareerViewQueryInputSchema };
+export type { CreateCareerViewConfiguration, UpdateCareerViewConfiguration, CareerViewPage };
 
 function configuration(view: CareerViewDoc): CareerViewConfiguration {
   if (!view.configuration) throw new CareerError(404, "career view configuration not found");

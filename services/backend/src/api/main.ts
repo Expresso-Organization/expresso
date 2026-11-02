@@ -127,8 +127,9 @@ const analyticsService = new AnalyticsService(database, {
 });
 const engagementService = new EngagementService(database);
 const accountLifecycleService = new AccountLifecycleService(database);
+// 커리어 문서 작업은 Worker의 career-jobs 줄에서 처리합니다(포트폴리오 생성과 줄을 나눔).
 const careerDocumentJobs = createReliableQueue<Record<string, unknown>>(
-  "domain-jobs",
+  "career-jobs",
   config.redisUrl,
   config.queuePrefix,
 );

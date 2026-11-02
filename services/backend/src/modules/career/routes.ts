@@ -1,4 +1,7 @@
 import {
+  CareerViewListResponseSchema,
+  CareerViewPageResponseSchema,
+  CareerViewResponseSchema,
   API_PREFIX,
   CareerCategoriesResponseSchema,
   CareerCategoryIdParamsSchema,
@@ -54,12 +57,6 @@ import {
 } from "./views.js";
 
 const CareerViewIdParamsSchema = z.strictObject({ viewId: UuidSchema });
-const CareerViewResponseSchema = z.strictObject({ data: CareerViewConfigurationSchema });
-const CareerViewListResponseSchema = z.strictObject({ data: z.array(CareerViewConfigurationSchema) });
-const CareerViewPageResponseSchema = z.strictObject({
-  data: z.array(CareerRecordSchema),
-  page: z.strictObject({ hasNextPage: z.boolean(), nextCursor: z.string().nullable() }),
-});
 
 export interface RegisterCareerRoutesOptions {
   careerService: CareerApi;

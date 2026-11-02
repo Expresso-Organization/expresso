@@ -6,7 +6,14 @@ import { computeSkillAggregate, normalizeSkillName } from "./skills.js";
 
 describe("career property validation", () => {
   const definition = (id: number, key: string, type: "text" | "number" | "date" | "multi_select" | "formula" | "created_time", required = false) => ({ id: `00000000-0000-4000-8000-00000000000${id}`, key, name: key, type, required, system: false, config: {}, order: id, version: 1, deletedAt: null });
-  const definitions = [definition(1, "role", "text", true), definition(2, "impact", "number"), definition(3, "month", "date"), definition(4, "tools", "multi_select")];
+  const definitions = [definition(1, "role", "text", true), definition(2, "impact", "number"), definition(3, "month", "date"), { ...definition(4, "tools", "multi_select"), config: { options: [{ id: "00000000-0000-4000-8000-000000000099", name: "도구" }] } }];
+
+  it("rejects an option ID the property does not have, but only when the value changed", () => {
+    const stray = { tools: { type: "multi_select" as const, value: ["00000000-0000-4000-8000-0000000000aa"] } };
+    const base = { role: { type: "text" as const, value: "개발" } };
+    expect(() => validateCareerProperties(definitions, { ...base, ...stray })).toThrow(/unknown option/);
+    expect(() => validateCareerProperties(definitions, { ...base, ...stray }, { ...base, ...stray })).not.toThrow();
+  });
 
   it("accepts typed values and rejects unknown, missing, mismatched, or deleted properties", () => {
     expect(() => validateCareerProperties(definitions, {

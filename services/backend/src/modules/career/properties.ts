@@ -10,11 +10,18 @@ import { CareerError } from "./errors.js";
 export function validateCareerProperties(
   definitions: readonly CareerPropertyDefinitionV2[],
   properties: CareerProperties,
+  previous: CareerProperties = {},
 ): void {
   for (const [key, value] of Object.entries(properties)) {
     const definition = definitions.find((item) => item.key === key && item.deletedAt === null);
     if (!definition) throw new CareerError(400, `unknown category property: ${key}`);
     if (value.type !== definition.type) throw new CareerError(400, `invalid value for category property: ${key}`);
+    // 선택 값은 그 속성의 옵션 ID여야 합니다. 바뀐 값에만 검사해, 옛 기록이 저장할 때마다 막히지 않게 합니다.
+    if ((value.type === "select" || value.type === "multi_select") && JSON.stringify(previous[key] ?? null) !== JSON.stringify(value)) {
+      const options = new Set((Array.isArray(definition.config.options) ? definition.config.options : []).map((option) => (option as { id?: unknown }).id));
+      const chosen = value.type === "select" ? (value.value === null ? [] : [value.value]) : value.value;
+      if (chosen.some((id) => !options.has(id))) throw new CareerError(400, `unknown option for category property: ${key}`);
+    }
     const protectedTime = ["created_time", "updated_time"].includes(definition.type) && definition.system;
     if (["formula", "rollup"].includes(definition.type) || protectedTime) throw new CareerError(400, `computed category property is read-only: ${key}`);
   }
@@ -35,4 +42,11 @@ export function validateCareerPropertyValueV2(value: unknown) {
 export function withoutRelationValues(definitions: readonly CareerPropertyDefinitionV2[], properties: CareerProperties): CareerProperties {
   const relationKeys = new Set(definitions.filter((definition) => definition.type === "relation").map((definition) => definition.key));
   return Object.fromEntries(Object.entries(properties).filter(([key]) => !relationKeys.has(key))) as CareerProperties;
+}
+
+/** 바뀐 파일 · 미디어 값의 미디어 ID입니다. 소유권은 저장하는 쪽이 DB로 확인합니다. */
+export function changedMediaIds(properties: CareerProperties, previous: CareerProperties = {}): string[] {
+  return [...new Set(Object.entries(properties).flatMap(([key, value]) => (
+    (value.type === "file" || value.type === "media") && JSON.stringify(previous[key] ?? null) !== JSON.stringify(value) ? value.value : []
+  )))];
 }

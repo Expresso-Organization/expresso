@@ -21,6 +21,7 @@ import {
 import { type CareerDocumentSnapshotDoc, type CareerRecordRevisionDoc, type JsonValue } from "@expresso/database";
 import { BLOCKNOTE_SCHEMA_VERSION, blockNoteToCareerDocument, careerDocumentToBlockNote, type CareerBlockNoteBlock } from "@expresso/editor/blocknote";
 import { Binary } from "mongodb";
+import * as Y from "yjs";
 
 import { inTransaction } from "../../platform/mongo-transaction.js";
 import type { MongoContext } from "../../platform/mongodb.js";
@@ -76,6 +77,7 @@ export interface CareerDocumentApi {
   restoreRevision(userId: string, revisionId: string, expectedVersion: number, expectedRecordId?: string, publish?: UpdatePublisher): Promise<CareerDocumentBootstrap>;
   listRevisions(userId: string, recordId: string): Promise<CareerRevision[]>;
   syncExternalBody(userId: string, recordId: string): Promise<boolean>;
+  syncDiff(userId: string, recordId: string, stateVectorBase64: string): Promise<{ updateBase64: string; documentVersion: number } | null>;
   updatesSince(userId: string, recordId: string, afterSequence: number): Promise<Array<{ serverSequence: number; updateBase64: string; actor: "user" | "ai" | "migration" }>>;
   createPreparedAiProposal(userId: string, recordId: string, input: CreateAiEditProposal, draft: AgentEditDraft): Promise<AiEditProposalDetail>;
   createAiProposal(userId: string, recordId: string, input: CreateAiEditProposal): Promise<AiEditProposalDetail>;
@@ -396,6 +398,8 @@ export class CareerDocumentService implements CareerDocumentApi {
     const bytes = Buffer.from(input.updateBase64, "base64");
     if (bytes.length > 1_048_576) throw new CareerDocumentError(413, "document update exceeds 1MB");
     if (hashUpdate(bytes) !== input.checksum) throw new CareerDocumentError(422, "document update checksum mismatch");
+    // 깨진 Yjs 업데이트 한 건을 받아 두면 그 뒤 bootstrap · 압축 · 투영이 모두 실패해 기록이 열리지 않습니다. 저장 전에 읽어 봅니다.
+    try { Y.decodeUpdate(bytes); } catch { throw new CareerDocumentError(422, "document update is malformed"); }
 
     const acknowledgement = await inTransaction(this.context, async (tx) => {
       const record = await this.repository.record(userId, input.recordId, tx.session);
@@ -462,15 +466,35 @@ export class CareerDocumentService implements CareerDocumentApi {
   }
 
   async projectBodyMarkdown(userId: string, recordId: string): Promise<string | null> {
+    // 스냅샷과 업데이트를 한 트랜잭션에서 읽습니다. 따로 읽는 사이 압축이 끝나면 중간 업데이트가 빠진 본문이 투영됩니다.
+    return inTransaction(this.context, async (tx) => {
+      const record = await this.repository.record(userId, recordId, tx.session);
+      const snapshot = await this.repository.snapshot(recordId, tx.session);
+      if (!record || !snapshot || snapshot.schemaVersion !== BLOCKNOTE_SCHEMA_VERSION) return null;
+      // 편집기 밖에서 바뀐 bodyMd는 덮지 않습니다. syncExternalBody(또는 다음 bootstrap)가 문서를 그 내용으로 맞춥니다.
+      if (record.documentBodyHash && record.documentBodyHash !== bodyHash(record.bodyMd)) return null;
+      const restored = await this.restoreBlockNoteSnapshot(recordId, snapshot, tx.session);
+      const markdown = clampBodyMarkdown(await blockNoteMarkdown(restored.blocks));
+      await this.repository.setBodyMarkdown?.(recordId, userId, markdown, { expectedBodyMd: record.bodyMd, session: tx.session });
+      return markdown;
+    });
+  }
+
+  /** 재연결한 클라이언트가 가진 상태(state vector) 뒤의 변경을 한 업데이트로 만듭니다. 압축된 변경도 빠지지 않습니다. */
+  async syncDiff(userId: string, recordId: string, stateVectorBase64: string): Promise<{ updateBase64: string; documentVersion: number } | null> {
     const record = await this.repository.record(userId, recordId);
     const snapshot = await this.repository.snapshot(recordId);
-    if (!record || !snapshot || snapshot.schemaVersion !== BLOCKNOTE_SCHEMA_VERSION) return null;
-    // 편집기 밖에서 바뀐 bodyMd는 덮지 않습니다. 다음 bootstrap이 문서를 그 내용으로 맞춥니다.
-    if (record.documentBodyHash && record.documentBodyHash !== bodyHash(record.bodyMd)) return null;
+    if (!record || snapshot?.schemaVersion !== BLOCKNOTE_SCHEMA_VERSION || !snapshot.state) return null;
+    // 상태 벡터가 없는 클라이언트는 원장 순서대로 받습니다(null을 돌려 socket이 updatesSince를 씁니다).
+    if (!stateVectorBase64) return null;
     const restored = await this.restoreBlockNoteSnapshot(recordId, snapshot);
-    const markdown = clampBodyMarkdown(await blockNoteMarkdown(restored.blocks));
-    await this.repository.setBodyMarkdown?.(recordId, userId, markdown, { expectedBodyMd: record.bodyMd });
-    return markdown;
+    let diff: Uint8Array;
+    try { diff = Y.diffUpdate(restored.state, new Uint8Array(Buffer.from(stateVectorBase64, "base64"))); }
+    catch { return null; }
+    const decoded = Y.decodeUpdate(diff);
+    // 보낼 변경이 없으면 빈 업데이트를 보내지 않습니다.
+    if (!decoded.structs.length && !decoded.ds.clients.size) return { updateBase64: "", documentVersion: record.documentVersion ?? 0 };
+    return { updateBase64: Buffer.from(diff).toString("base64"), documentVersion: record.documentVersion ?? 0 };
   }
 
   async updatesSince(userId: string, recordId: string, afterSequence: number) {
