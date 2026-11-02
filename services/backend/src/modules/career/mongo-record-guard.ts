@@ -28,6 +28,12 @@ export async function purgeTrashedCareerRecord(context: MongoContext, userId: st
     await db.recipeUnusedSources.deleteMany({ userId, recordId }, options);
     await db.portfolioEditProposals.deleteMany({ userId, sourceRecordId: recordId }, options);
     await db.brewSources.deleteMany({ userId, recordId }, options);
+    // 편집기 문서 · 이력 · 관계 · AI 제안도 지웁니다. 남기면 지운 기록의 본문이 DB에 그대로 남습니다.
+    await db.careerDocumentSnapshots.deleteMany({ recordId }, options);
+    await db.careerDocumentUpdates.deleteMany({ recordId }, options);
+    await db.careerRecordRevisions.deleteMany({ userId, recordId }, options);
+    await db.careerAiProposals.deleteMany({ userId, recordId }, options);
+    await db.careerRecordRelations.deleteMany({ userId, $or: [{ sourceRecordId: recordId }, { targetRecordId: recordId }] }, options);
     await db.careerRecords.deleteOne({ _id: recordId, userId }, options);
   });
 }

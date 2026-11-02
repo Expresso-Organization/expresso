@@ -44,8 +44,10 @@ import { ChromiumPageMeasurer } from "../platform/browser/page-measurer.js";
 import { createPageRefineProcessor } from "./processors/page-refine.js";
 import { createMediaStorage } from "../platform/storage/create-storage.js";
 import { CareerDocumentService } from "../modules/career-editor/index.js";
+import { MongoCareerPropertySchemaService } from "../modules/career/index.js";
 import { createCareerDocumentCompactionProcessor } from "./processors/career-document-compaction.js";
 import { createCareerDocumentProjectionProcessor } from "./processors/career-document-projection.js";
+import { CAREER_PROPERTY_MUTATION_JOBS, createCareerPropertyMutationProcessor } from "./processors/career-property-mutation.js";
 import { MongoCareerComputationService } from "../modules/career-computation/index.js";
 import { createCareerComputationProcessor } from "./processors/career-computation.js";
 
@@ -134,6 +136,7 @@ const analyticsProcessor = createAnalyticsProcessor(analyticsService);
 const notificationProcessor = createNotificationProcessor(engagementService, new ConsoleNotificationProvider());
 const accountLifecycleService = new AccountLifecycleService(database);
 const careerDocumentService = new CareerDocumentService(database, config.assetSigningSecret);
+const careerPropertyMutationProcessor = createCareerPropertyMutationProcessor(new MongoCareerPropertySchemaService(database));
 const careerDocumentCompactionProcessor = createCareerDocumentCompactionProcessor(careerDocumentService);
 const careerDocumentProjectionProcessor = createCareerDocumentProjectionProcessor(careerDocumentService);
 const careerComputationProcessor = createCareerComputationProcessor(new MongoCareerComputationService(database));
@@ -168,6 +171,7 @@ const queueWorker = createQueueWorker<Record<string, unknown>, Record<string, un
     if (job.name === "career.document.compact") return careerDocumentCompactionProcessor(job) as Promise<Record<string, unknown>>;
     if (job.name === "career.document.project") return careerDocumentProjectionProcessor(job) as Promise<Record<string, unknown>>;
     if (job.name === "career.computation") return careerComputationProcessor(job) as unknown as Promise<Record<string, unknown>>;
+    if (CAREER_PROPERTY_MUTATION_JOBS.has(job.name)) return careerPropertyMutationProcessor(job);
     throw new Error(`Unsupported domain job: ${job.name}`);
   },
   onDeadLetterError(error) {
