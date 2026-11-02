@@ -1,0 +1,839 @@
+/*
+ * 스크롤 모션그래픽. 디자인 시스템 v0.3을 따른다.
+ *
+ * - 밝은 지면, 시스템은 무채색(Ink · Slate), 채도는 Espresso 계열 하나. 장식 그러데이션을 쓰지 않는다.
+ *   (아래 형광펜 칠은 단색 배경을 넓혀 가는 장치라 그러데이션 장식이 아니다.)
+ * - 카드 18px · 칩 8px 모서리, 얕고 넓은 그림자(--ex-elevation-raised).
+ * - Outfit Light는 큰 수치에만, 라벨은 Mono 대문자 11px · 자간 .12em.
+ *
+ * 움직임의 출처는 둘뿐이다. 무대의 --intro · --level, 장마다의 --t(그 장의 진행도)와
+ * --v(보이는 정도). 모두 Story.tsx가 스크롤에서 계산해 쓴다. 여기서는 그 값을 clamp()로
+ * 잘라 각 요소의 위치 · 투명도 · 크기로 바꾼다.
+ */
+
+.story {
+  position: relative;
+  height: 760vh;
+}
+
+.stage {
+  --intro: 0;
+  --level: 0;
+  /* 도입부에서 마크가 머무는 자리(오른쪽 큰 잔)와 왼쪽 기둥 사이의 거리 */
+  --mx: min(46vw, 600px);
+  --my: 18vh;
+  --ms: 0.6;
+  position: sticky;
+  top: 0;
+  box-sizing: border-box;
+  height: 100svh;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 104px 40px 48px;
+  display: grid;
+  grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
+  gap: 64px;
+}
+
+/* ── 도입부 — 첫 화면 ─────────────────────────────────────── */
+
+.hero {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  box-sizing: border-box;
+  padding: 0 40px;
+  display: flex;
+  align-items: center;
+  /* 글이 먼저 물러난다. 마크는 글이 거의 사라진 뒤에 자리를 옮긴다. */
+  opacity: clamp(0, calc(1 - var(--intro) * 2.4), 1);
+  transform: translate3d(0, calc(var(--intro) * -48px), 0);
+  pointer-events: none;
+}
+
+.hero > * {
+  pointer-events: auto;
+}
+
+/* ── 마크 기둥 ────────────────────────────────────────────── */
+
+.markColumn {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.markBox {
+  /* 도입부 뒤쪽 4분의 3 동안 옮겨 가고 부드럽게 멎는다(smoothstep) */
+  --a: clamp(0, calc((var(--intro) - 0.25) / 0.75), 1);
+  --e: calc(var(--a) * var(--a) * (3 - 2 * var(--a)));
+  width: 200px;
+  transform-origin: top left;
+  transform:
+    translate3d(calc((1 - var(--e)) * var(--mx)), calc((1 - var(--e)) * var(--my)), 0)
+    scale(calc(1 + (1 - var(--e)) * var(--ms)));
+}
+
+.mark {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.markRing {
+  fill: none;
+  stroke: var(--ex-accent);
+}
+
+.markHandle {
+  fill: none;
+  stroke: var(--ex-accent-soft);
+}
+
+/*
+ * 수위 — 0이면 빈 잔, 1이면 가득. 링 안쪽 가장자리는 y 23~85(반지름 36 − 획 절반 5)다.
+ * 수면(y 18)을 1일 때 그대로 두어 물결 골(진폭 2.4)까지 가장자리 위로 올린다. 0일 때는 89에 두어 물결 꼭대기까지 획 아래로 숨긴다.
+ */
+.markLiquid {
+  transform: translate3d(0, calc((1 - var(--level)) * 71px), 0);
+}
+
+.markWave {
+  fill: var(--ex-accent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .markWave {
+    animation: storyWave 3.2s linear infinite;
+  }
+}
+
+@keyframes storyWave {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(36px, 0, 0); }
+}
+
+.markMeta,
+.index {
+  opacity: clamp(0, calc((var(--intro) - 0.6) * 2.5), 1);
+}
+
+.markMeta {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.markPercent {
+  font-family: var(--ex-font-brand);
+  font-size: var(--ex-text-display-md);
+  font-weight: 300;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--ex-fg);
+  font-variant-numeric: tabular-nums;
+}
+
+.label {
+  font-family: var(--ex-font-mono);
+  font-size: var(--ex-text-3xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* 한글이라 Mono를 쓰지 않는다. */
+.markCaption {
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-subtle);
+}
+
+.index {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.indexRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border-radius: 12px;
+  font-size: var(--ex-text-sm);
+  font-weight: 500;
+  color: var(--ex-fg-subtle);
+  transition:
+    color var(--ex-motion-instant),
+    background var(--ex-motion-quick);
+}
+
+.indexIcon {
+  color: var(--ex-fg-faint);
+  transition: color var(--ex-motion-instant);
+}
+
+.indexRow[data-state="done"] {
+  color: var(--ex-fg-muted);
+}
+
+.indexRow[data-state="done"] .indexIcon {
+  color: var(--ex-fg-muted);
+}
+
+.indexRow[data-state="active"] {
+  background: var(--ex-bg);
+  color: var(--ex-fg);
+  box-shadow: var(--ex-elevation-raised);
+}
+
+/* 기능 아이콘의 Espresso는 지금 장에만 — 아이콘 문서 §05 COLOR MAPPING */
+.indexRow[data-state="active"] .indexIcon {
+  color: var(--ex-accent);
+}
+
+/* ── 장 ───────────────────────────────────────────────────── */
+
+.panels {
+  position: relative;
+  min-width: 0;
+}
+
+.panel {
+  --t: 0;
+  --v: 0;
+  position: absolute;
+  inset: 0;
+  display: grid;
+  /* 열을 고정하지 않으면 줄바꿈하지 않는 주소 글자가 열을 화면 밖까지 늘린다 */
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  align-content: start;
+  gap: 32px;
+  opacity: var(--v);
+  transform: translate3d(0, calc((1 - var(--v)) * 28px), 0);
+}
+
+.copy {
+  max-width: 560px;
+}
+
+.label {
+  color: var(--ex-accent-text);
+}
+
+.title {
+  margin: 12px 0 12px;
+  font-size: var(--ex-text-display-sm);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: var(--ex-leading-tight);
+  color: var(--ex-fg);
+  word-break: keep-all;
+}
+
+.body {
+  margin: 0;
+  font-size: var(--ex-text-md);
+  line-height: 1.8;
+  color: var(--ex-fg-body);
+  word-break: keep-all;
+}
+
+.visual {
+  position: relative;
+  min-height: 0;
+}
+
+.card {
+  box-sizing: border-box;
+  border: 1px solid var(--ex-border);
+  border-radius: 18px;
+  background: var(--ex-bg);
+  box-shadow: var(--ex-elevation-raised);
+}
+
+/* ── 01 커리어 기록 — 기록 카드가 한 장씩 쌓인다 ─────────── */
+
+.archive {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  max-width: 640px;
+}
+
+.archiveCard {
+  --a: clamp(0, calc((var(--t) * 1.5 - var(--k) * 0.12) * 5), 1);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 18px;
+  border: 1px solid var(--ex-border);
+  border-radius: 18px;
+  background: var(--ex-bg);
+  box-shadow: var(--ex-elevation-raised);
+  opacity: var(--a);
+  transform: translate3d(0, calc((1 - var(--a)) * 26px), 0) scale(calc(0.96 + var(--a) * 0.04));
+}
+
+.archiveCategory {
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-subtle);
+}
+
+.archiveTitle {
+  font-size: var(--ex-text-sm);
+  font-weight: 600;
+  color: var(--ex-fg);
+  word-break: keep-all;
+}
+
+.archiveStatus {
+  align-self: flex-start;
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: var(--ex-status-success-surface);
+  font-size: var(--ex-text-3xs);
+  color: var(--ex-status-success-text);
+}
+
+/* ── 02 공고 분석 — 형광펜이 요건을 칠하고 진행률이 찬다 ─── */
+
+.extract {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+  max-width: 760px;
+}
+
+.posting {
+  padding: 22px 22px 16px;
+}
+
+.postingTitle {
+  margin: 0 0 10px;
+  font-size: var(--ex-text-md);
+  font-weight: 600;
+}
+
+.postingLine {
+  margin: 0 0 8px;
+  font-size: var(--ex-text-sm);
+  line-height: 1.7;
+  color: var(--ex-fg-body);
+}
+
+.highlight {
+  --h: clamp(0, calc((var(--t) * 1.8 - 0.15 - var(--k) * 0.16) * 4), 1);
+  padding: 1px 2px;
+  border-radius: 4px;
+  background-image: linear-gradient(var(--ex-accent-surface), var(--ex-accent-surface));
+  background-repeat: no-repeat;
+  background-size: calc(var(--h) * 100%) 100%;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  color: var(--ex-fg);
+}
+
+.progress {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 22px 22px;
+}
+
+.progressHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.progressPercent {
+  font-family: var(--ex-font-brand);
+  font-size: var(--ex-text-3xl);
+  font-weight: 300;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.progressTrack {
+  height: 4px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--ex-bg-track);
+}
+
+.progressFill {
+  display: block;
+  width: calc(clamp(0, var(--t) * 1.25, 1) * 100%);
+  height: 100%;
+  background: var(--ex-accent);
+}
+
+.step {
+  --s: clamp(0, calc((var(--t) * 1.25 - (var(--k) + 1) * 0.3) * 8), 1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-body);
+  opacity: calc(0.45 + var(--s) * 0.55);
+}
+
+.stepDot {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ex-border-firm);
+  background: color-mix(in srgb, var(--ex-status-success) calc(var(--s) * 100%), transparent);
+  border-color: color-mix(in srgb, var(--ex-status-success) calc(var(--s) * 100%), var(--ex-border-firm));
+}
+
+.stepCheck {
+  color: var(--ex-fg-on-accent);
+  opacity: var(--s);
+}
+
+/* ── 03 AI 대화 — 말풍선이 번갈아 들어온다 ──────────────── */
+
+.chat {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 560px;
+  padding: 22px;
+}
+
+.bubbleRow {
+  --b: clamp(0, calc((var(--t) * 1.6 - var(--k) * 0.32) * 4), 1);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  opacity: var(--b);
+  transform: translate3d(0, calc((1 - var(--b)) * 14px), 0) scale(calc(0.97 + var(--b) * 0.03));
+  transform-origin: left center;
+}
+
+.bubbleRowMine {
+  justify-content: flex-end;
+  transform-origin: right center;
+}
+
+.avatar {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--ex-accent);
+}
+
+/* AI 말풍선만 Bean 50, 사용자 말풍선은 Ink — 색으로 화자를 구분한다(디자인 시스템 §05). */
+.bubbleAi,
+.bubbleMine {
+  max-width: 82%;
+  margin: 0;
+  padding: 12px 15px;
+  font-size: var(--ex-text-sm);
+  line-height: 1.65;
+  word-break: keep-all;
+}
+
+.bubbleAi {
+  border-radius: 4px 16px 16px 16px;
+  background: var(--ex-accent-surface);
+  color: var(--ex-fg);
+}
+
+.bubbleMine {
+  border-radius: 16px 4px 16px 16px;
+  background: var(--ex-bg-inverse);
+  color: var(--ex-fg-on-inverse);
+}
+
+/* ── 04 기업 맞춤 — 같은 기록이 공고 순서로 다시 선다 ────── */
+
+.tailor {
+  max-width: 600px;
+  padding: 20px 20px 16px;
+}
+
+.tailorHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.tailorCompany {
+  font-size: var(--ex-text-sm);
+  font-weight: 600;
+  color: var(--ex-fg);
+}
+
+.tailorChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tailorChips span {
+  padding: 3px 9px;
+  border-radius: 8px;
+  background: var(--ex-bg-sunken);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-body);
+}
+
+.rank {
+  --row: 50px;
+  position: relative;
+  height: calc(var(--row) * 6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rankRow {
+  /* 정렬이 공고를 읽은 뒤에 시작해 부드럽게 멎는다(smoothstep) */
+  --e: clamp(0, calc((var(--t) - 0.18) * 2.2), 1);
+  --es: calc(var(--e) * var(--e) * (3 - 2 * var(--e)));
+  box-sizing: border-box;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  height: calc(var(--row) - 8px);
+  padding: 0 14px;
+  border-radius: 12px;
+  background: var(--ex-bg-sunken);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-body);
+  transform: translate3d(0, calc((var(--from) + (var(--to) - var(--from)) * var(--es)) * var(--row)), 0);
+}
+
+.rankRow[data-picked="true"] {
+  background: color-mix(in srgb, var(--ex-accent-surface) calc(var(--es) * 100%), var(--ex-bg-sunken));
+  color: var(--ex-fg);
+  font-weight: calc(400 + var(--es) * 200);
+}
+
+.rankRow[data-picked="false"] {
+  opacity: calc(1 - var(--es) * 0.45);
+}
+
+.rankNumber {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--ex-bg);
+  font-size: var(--ex-text-3xs);
+  font-weight: 600;
+  opacity: var(--es);
+}
+
+.rankRow[data-picked="true"] .rankNumber {
+  background: var(--ex-accent);
+  color: var(--ex-fg-on-accent);
+}
+
+.rankTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── 05 Brew — 뼈대가 서고 실제 지면으로 바뀐다 ───────────── */
+
+.brew {
+  overflow: hidden;
+  max-width: 560px;
+}
+
+.browserBar {
+  display: flex;
+  gap: 6px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--ex-border-inner);
+}
+
+.browserBar span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ex-border);
+}
+
+.brewCanvas {
+  /* 뼈대가 다 선 뒤에 실제 지면이 그 자리를 넘겨받는다 */
+  --s: clamp(0, calc((var(--t) - 0.6) * 4), 1);
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+
+.wire {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 34px 40px;
+  opacity: calc(1 - var(--s));
+}
+
+.wireLine,
+.wireTitle,
+.wireBlock {
+  --a: clamp(0, calc((var(--t) * 1.6 - var(--k) * 0.1) * 5), 1);
+}
+
+.wireLine {
+  width: var(--w);
+  height: 8px;
+  border-radius: 4px;
+  background: var(--ex-bg-track);
+  transform: scaleX(var(--a));
+  transform-origin: left center;
+}
+
+.wireTitle {
+  font-size: var(--ex-text-3xl);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  opacity: var(--a);
+  transform: translate3d(0, calc((1 - var(--a)) * 10px), 0);
+}
+
+.wireBlock {
+  height: 48px;
+  border-radius: 12px;
+  background: var(--ex-bg-sunken);
+  opacity: var(--a);
+  transform: scaleY(var(--a));
+  transform-origin: top center;
+}
+
+.brewShot {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+  opacity: var(--s);
+  transform: scale(calc(1.04 - var(--s) * 0.04));
+}
+
+/* ── 06 배포 — 주소가 찍히고 방문 기록이 쌓인다 ───────────── */
+
+.publish {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 600px;
+}
+
+.address {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+}
+
+.addressIcon {
+  color: var(--ex-fg-muted);
+}
+
+.addressText {
+  --ty: clamp(0, calc(var(--t) * 2.4), 1);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--ex-font-mono);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  clip-path: inset(0 calc((1 - var(--ty)) * 100%) 0 0);
+}
+
+.badge {
+  --bd: clamp(0, calc((var(--t) - 0.38) * 6), 1);
+  padding: 3px 9px;
+  border-radius: 8px;
+  background: var(--ex-status-success-surface);
+  font-family: var(--ex-font-mono);
+  font-size: var(--ex-text-3xs);
+  letter-spacing: 0.12em;
+  color: var(--ex-status-success-text);
+  opacity: var(--bd);
+  transform: scale(calc(0.85 + var(--bd) * 0.15));
+}
+
+.insight {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px 22px;
+}
+
+.dwell {
+  --g: clamp(0, calc((var(--t) - 0.45 - var(--k) * 0.08) * 3), 1);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 120px 44px;
+  align-items: center;
+  gap: 12px;
+  font-size: var(--ex-text-xs);
+}
+
+.dwellName {
+  overflow: hidden;
+  color: var(--ex-fg-body);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dwellTrack {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--ex-bg-track);
+}
+
+.dwellFill {
+  display: block;
+  width: calc(var(--w) * var(--g));
+  height: 100%;
+  background: var(--ex-fg);
+}
+
+.dwellTime {
+  font-family: var(--ex-font-brand);
+  font-size: var(--ex-text-md);
+  font-weight: 300;
+  text-align: right;
+  opacity: var(--g);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 동작 줄이기 — 위치 이동을 없애고 나타나고 사라지는 것만 남긴다 ── */
+
+@media (prefers-reduced-motion: reduce) {
+  .panel,
+  .archiveCard,
+  .bubbleRow,
+  .wireTitle,
+  .brewShot {
+    transform: none;
+  }
+}
+
+/* ── 좁은 폭 ───────────────────────────────────────────────── */
+
+@media (max-width: 1023px) {
+  .stage {
+    grid-template-columns: minmax(0, 220px) minmax(0, 1fr);
+    gap: 36px;
+  }
+
+  .markBox {
+    width: 150px;
+  }
+
+  .extract {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .story {
+    height: 720vh;
+  }
+
+  /* 마크는 위쪽 띠에 작게, 장은 그 아래. 도입부에서는 마크가 글 아래 가운데에 크게 앉는다. */
+  .stage {
+    --mx: calc(50vw - 16px - 60px);
+    --my: 52svh;
+    --ms: 1.4;
+    padding: 76px 16px 24px;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 20px;
+  }
+
+  .hero {
+    align-items: flex-start;
+    padding: 92px 16px 0;
+  }
+
+  .markColumn {
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .markBox {
+    width: 52px;
+  }
+
+  .markPercent {
+    font-size: var(--ex-text-3xl);
+  }
+
+  .index {
+    display: none;
+  }
+
+  .panel {
+    gap: 18px;
+  }
+
+  .title {
+    font-size: var(--ex-text-3xl);
+  }
+
+  .body {
+    font-size: var(--ex-text-sm);
+  }
+
+  .archive {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .archiveCard {
+    padding: 12px 14px;
+  }
+
+  .archiveCard:nth-child(n + 5) {
+    display: none;
+  }
+
+  .extract .posting {
+    display: none;
+  }
+
+  .rank {
+    --row: 44px;
+  }
+
+  .dwell {
+    grid-template-columns: minmax(0, 1fr) 70px 38px;
+  }
+}

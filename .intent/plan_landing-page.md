@@ -66,3 +66,17 @@ curl -s http://landing.localhost:3120/ | grep -o '<title>[^<]*'
 순서: 스킬 설치 · 원문 검토 → 셰이더를 `check-shader.mjs`로 검증하고 `render-headless.mjs`로 시작 · 끝 · 좁은 화면 구도를 렌더해 확인 → 컴포넌트 → 1280px · 375px · 스크롤 0 · 35% · 끝 · 공고 전환을 브라우저에서 확인 → 검증 명령.
 
 가장 위험한 단계: WebGPU 장면. 지원하지 않는 브라우저나 GPU 실패에서 빈 화면이 되면 첫 화면이 사라진다. 포스터를 캔버스 아래에 깔아 두고, 실패는 콘솔 경고로만 남긴다. 되돌릴 때는 `HeroPassage`의 엔진 호출만 빼면 포스터 첫 화면이 된다.
+
+## 3차 개편 (2026-11-03) — 바뀌는 파일
+
+| 파일 | 무엇을 |
+|---|---|
+| `services/web/src/app/(landing)/Story.tsx` · `story.module.css` | 새로 · 스크롤 모션그래픽 |
+| `services/web/src/app/(landing)/HeroPassage.tsx` · `LandingHeader.tsx` · `BrewDemo.tsx` | 삭제 |
+| `services/web/src/app/(landing)/motion/` · `images/hero-cup.jpg` | 삭제 |
+| `services/web/src/app/(landing)/LandingSections.tsx` · `landing.module.css` | 첫 화면을 `Story`로 · 둘러보기 네 단계 · 3D와 데모 규칙 삭제 · 버튼 반경 |
+| `services/web/src/app/(landing)/LandingSections.test.tsx` | 앵커 · 둘러보기 단계 · 여섯 장 순서 · 스크롤 위치별 지금 장 |
+
+순서: 아이콘 문서 · 디자인 시스템 정독 → `Story` · CSS → 랜딩 연결 → 테스트 → 1280px · 375px · 라이트 · 다크에서 도입부와 여섯 장을 스크롤 위치별로 확인 → 타입 검사 · 테스트 · 빌드.
+
+가장 위험한 단계: 진행도 계산. 장 경계에서 두 장이 동시에 보이거나 아무 장도 안 보이면 장면이 끊긴다. 들어오기와 물러나기 구간을 겹치지 않게 두고, 스크롤 위치별 지금 장과 보이는 장을 테스트로 고정한다.

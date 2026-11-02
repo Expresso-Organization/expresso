@@ -1,22 +1,19 @@
 /*
  * 랜딩.
  *
- * 설계 기준 — frontend-design: 눈에 남을 것은 첫 화면의 에스프레소 잔 하나다. 나머지
- * 구획은 조용히 두고, 구획마다 떠오르는 등장 효과나 카드마다 붙는 호버 효과를 쓰지 않는다.
- * motion-design: Premium 성격. 서명 곡선 하나(--ease)와 길이 셋(빠름 · 보통 · 느림)만 쓴다.
- * 움직임은 모두 `prefers-reduced-motion: no-preference` 안에 둔다.
+ * 디자인 시스템 v0.3(`docs/Expresso Design System.dc.html`)을 따른다. 밝은 지면 · 무채색 시스템 ·
+ * Espresso 하나의 채도. 눈에 남을 것은 스크롤 모션그래픽(story.module.css) 하나이고, 그 아래
+ * 구획은 조용히 둔다. 구획마다 떠오르는 등장 효과나 카드마다 붙는 호버 효과를 쓰지 않는다.
  *
- * 색 · 글자 크기는 `--ex-*` 역할 토큰이다. 늘 어두운 구획(마지막 권유 · 바닥글)은 로그인
- * aside 그러데이션의 첫 색(#16223a, `tokens.test.ts` 허용 목록)에 `data-theme="dark"`를
- * 고정한다. 첫 화면 바탕은 셰이더가 칠한다.
+ * 움직임의 곡선과 길이는 디자인 시스템의 motion 토큰 값(panel 280ms cubic-bezier(.32,.72,0,1))이다.
+ * 늘 어두운 구획(마지막 권유 · 바닥글)은 #16223a(Ink 900, `tokens.test.ts` 허용 목록)에
+ * `data-theme="dark"`를 고정한다.
  */
 
 .page {
-  --ease: cubic-bezier(0.4, 0, 0.2, 1);
-  --ease-enter: cubic-bezier(0.05, 0.7, 0.1, 1);
-  --quick: 180ms;
-  --standard: 420ms;
-  --slow: 700ms;
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --quick: 160ms;
+  --standard: 280ms;
   min-height: 100dvh;
   background: var(--ex-bg-sunken);
   color: var(--ex-fg);
@@ -31,7 +28,7 @@
 
 /* ── 머리 메뉴 ─────────────────────────────────────────────── */
 
-/* 첫 화면 위에 떠 있어야 하므로 흐름 밖에 둔다. */
+/* 모션그래픽 무대가 화면에 붙어 있는 동안에도 보이도록 흐름 밖에 둔다. */
 .header {
   position: fixed;
   top: 0;
@@ -41,16 +38,6 @@
   background: color-mix(in srgb, var(--ex-bg-sunken) 88%, transparent);
   backdrop-filter: saturate(1.4) blur(12px);
   border-bottom: 1px solid var(--ex-border-inner);
-  transition:
-    background var(--standard) var(--ease),
-    border-color var(--standard) var(--ease);
-}
-
-/* 첫 화면 위에서는 바탕 대신 위에서 아래로 흐려지는 그늘을 깐다. 크레마가 화면을 채워도 글자가 읽힌다. */
-.header[data-over-hero="true"] {
-  background: linear-gradient(to bottom, color-mix(in srgb, var(--ex-bg) 72%, transparent), transparent);
-  backdrop-filter: none;
-  border-bottom-color: transparent;
 }
 
 .headerInner {
@@ -102,7 +89,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 999px;
+  border-radius: 12px;
   border: 1px solid transparent;
   font-weight: 600;
   white-space: nowrap;
@@ -122,8 +109,10 @@
   transform: scale(0.97);
 }
 
+/* 디자인 시스템에서 끝까지 둥근 버튼은 Brew CTA 하나다. 이 페이지의 Brew CTA는 회원가입이다. */
 .ctaPrimary,
 .ctaPrimary:hover {
+  border-radius: 999px;
   background: var(--ex-accent);
   border-color: var(--ex-accent);
   color: var(--ex-fg-on-accent);
@@ -135,7 +124,7 @@
 }
 
 .ctaSecondary {
-  background: color-mix(in srgb, var(--ex-bg) 70%, transparent);
+  background: var(--ex-bg);
   border-color: var(--ex-border-firm);
   color: var(--ex-fg);
 }
@@ -163,70 +152,10 @@
   color: var(--ex-fg-subtle);
 }
 
-/* ── 첫 화면 — 에스프레소 잔 ───────────────────────────────── */
-
-/* 구간이 화면보다 길고, 무대는 그 안에서 화면에 붙는다. 남는 길이가 크레마 속으로 내려가는 거리다. */
-.heroPassage {
-  position: relative;
-  height: 230vh;
-  background: var(--ex-bg-canvas);
-}
-
-.heroStage {
-  --p: 0;
-  position: sticky;
-  top: 0;
-  height: 100svh;
-  overflow: hidden;
-  background: var(--ex-bg-sunken);
-}
-
-.heroPoster,
-.heroCanvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.heroPoster {
-  object-fit: cover;
-  object-position: 72% 85%;
-}
-
-.heroCanvas {
-  opacity: 0;
-  transition: opacity var(--slow) var(--ease);
-}
-
-.heroCanvas[data-live="true"] {
-  opacity: 1;
-}
-
-.heroContent {
-  position: relative;
-  z-index: 1;
-  box-sizing: border-box;
-  max-width: 1240px;
-  height: 100%;
-  margin: 0 auto;
-  padding: 0 40px;
-  display: flex;
-  align-items: center;
-  pointer-events: none;
-}
+/* ── 첫 화면 — 모션그래픽 무대의 첫 장면(Story.tsx의 hero) ─── */
 
 .heroCopy {
   max-width: 620px;
-  pointer-events: auto;
-}
-
-/* 같은 진행도(--p)로 글이 위로 물러나며 사라진다. 카메라가 내려가는 것과 한 시계다. */
-@media (prefers-reduced-motion: no-preference) {
-  .heroCopy {
-    opacity: clamp(0, calc(1 - var(--p) * 2.3), 1);
-    transform: translate3d(0, calc(var(--p) * -90px), 0);
-  }
 }
 
 .headline {
@@ -268,7 +197,7 @@
   display: block;
   height: var(--line);
   line-height: var(--line);
-  color: var(--ex-accent-soft);
+  color: var(--ex-accent-text);
 }
 
 /*
@@ -310,7 +239,7 @@
 
 @keyframes landingYour {
   0%, 55.6% { transform: translate3d(0, 0, 0); color: var(--ex-fg); animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
-  66.6%, 89% { transform: translate3d(0.115em, 0, 0); color: var(--ex-accent-soft); animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
+  66.6%, 89% { transform: translate3d(0.115em, 0, 0); color: var(--ex-accent-text); animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
   100% { transform: translate3d(0, 0, 0); color: var(--ex-fg); }
 }
 
@@ -351,295 +280,6 @@
   color: var(--ex-fg-muted);
   text-wrap: pretty;
   word-break: keep-all;
-}
-
-/* ── 기업 맞춤 — 크레마 빛 바탕에서 시작한다 ──────────────── */
-
-/* 첫 화면이 크레마 속으로 내려간 끝에 이 구획이 올라온다. 그래서 크레마 빛 바탕을 잇는다. */
-.tailorSection {
-  padding-bottom: 120px;
-  background: linear-gradient(to bottom, var(--ex-accent-surface), var(--ex-bg-sunken) 85%);
-}
-
-.brew {
-  --brew-accent: var(--ex-accent);
-  display: grid;
-  grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
-  gap: 28px;
-  margin-top: 48px;
-}
-
-.brewOrders {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-/* 공고는 주문서처럼 위아래 이음선이 있는 종이다. 고른 주문서만 왼쪽 띠가 강조색이 된다. */
-.brewOrder {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 16px 18px 16px 22px;
-  border: 1px solid var(--ex-border);
-  border-radius: 6px;
-  background: var(--ex-bg);
-  font: inherit;
-  color: var(--ex-fg-muted);
-  text-align: left;
-  cursor: pointer;
-  transition:
-    border-color var(--quick) var(--ease),
-    color var(--quick) var(--ease),
-    transform var(--quick) var(--ease);
-}
-
-.brewOrder::before {
-  content: "";
-  position: absolute;
-  top: 10px;
-  bottom: 10px;
-  left: 8px;
-  width: 3px;
-  border-radius: 3px;
-  background: var(--ex-border);
-  transition: background var(--standard) var(--ease);
-}
-
-.brewOrder:hover {
-  border-color: var(--ex-border-firm);
-  color: var(--ex-fg);
-}
-
-.brewOrder:focus-visible {
-  outline: none;
-  box-shadow: var(--ex-focus-ring);
-}
-
-.brewOrder[data-active="true"] {
-  border-color: var(--ex-fg);
-  color: var(--ex-fg);
-}
-
-.brewOrder[data-active="true"]::before {
-  background: var(--brew-accent);
-}
-
-.brewOrderCompany {
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-fg-subtle);
-}
-
-.brewOrderTitle {
-  font-size: var(--ex-text-md);
-  font-weight: 600;
-}
-
-.brewOrderAsks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 4px;
-}
-
-.brewOrderAsks span {
-  padding: 3px 8px;
-  border-radius: 4px;
-  background: var(--ex-bg-sunken);
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-fg-body);
-}
-
-.brewResult {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
-  align-items: start;
-  gap: 28px;
-}
-
-/* 줄은 모두 같은 자리에 겹쳐 두고 순위만큼 내린다. 순위가 바뀌면 그 거리만큼 미끄러진다. */
-.brewRank {
-  --row: 58px;
-  position: relative;
-  height: calc(var(--row) * 6);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.brewRankRow {
-  box-sizing: border-box;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  display: grid;
-  grid-template-columns: 26px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 12px;
-  height: calc(var(--row) - 8px);
-  padding: 0 14px;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--ex-bg) 55%, transparent);
-  color: var(--ex-fg-subtle);
-}
-
-.brewRankRow[data-picked="true"] {
-  background: var(--ex-bg);
-  color: var(--ex-fg);
-  box-shadow: var(--ex-elevation-raised);
-}
-
-.brewRankNumber {
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: var(--ex-bg-tint);
-  font-size: var(--ex-text-2xs);
-  font-weight: 600;
-}
-
-.brewRankRow[data-picked="true"] .brewRankNumber {
-  background: var(--brew-accent);
-  color: var(--ex-fg-on-accent);
-}
-
-.brewRankTitle {
-  overflow: hidden;
-  font-size: var(--ex-text-sm);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.brewRankCategory {
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-fg-subtle);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .brewRankRow {
-    transition:
-      transform 560ms var(--ease),
-      background var(--standard) var(--ease),
-      color var(--standard) var(--ease),
-      box-shadow var(--standard) var(--ease);
-  }
-
-  .brewRankNumber {
-    transition: background var(--standard) var(--ease), color var(--standard) var(--ease);
-  }
-}
-
-/* 포트폴리오 미리보기 — 고른 공고의 강조색과 한 줄 소개, 앞에 둘 사례 셋. */
-.brewPreview {
-  overflow: hidden;
-  border: 1px solid var(--ex-border);
-  border-radius: 14px;
-  background: var(--ex-bg);
-  box-shadow: var(--ex-elevation-overlay);
-}
-
-.brewPreviewBar {
-  display: flex;
-  gap: 6px;
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--ex-border-inner);
-}
-
-.brewPreviewBar span {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--ex-border);
-}
-
-.brewPreviewBody {
-  position: relative;
-  padding: 28px 26px 26px;
-}
-
-/* 강조색 띠가 미리보기 머리에 깔린다. 색만 바뀌므로 옮겨 다니지 않고 번진다. */
-.brewPreviewBody::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto;
-  height: 6px;
-  background: var(--brew-accent);
-  transition: background var(--standard) var(--ease);
-}
-
-.brewPreviewName {
-  display: block;
-  font-size: var(--ex-text-3xl);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-
-.brewPreviewHeadline {
-  margin: 10px 0 22px;
-  font-size: var(--ex-text-lg);
-  line-height: var(--ex-leading-snug);
-  color: var(--brew-accent);
-  font-weight: 600;
-  word-break: keep-all;
-  transition: color var(--standard) var(--ease);
-}
-
-.brewPreviewCases {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.brewPreviewCase {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 12px 14px;
-  border-left: 3px solid var(--brew-accent);
-  border-radius: 0;
-  background: var(--ex-bg-sunken);
-  transition: border-color var(--standard) var(--ease);
-}
-
-.brewPreviewCaseTitle {
-  font-size: var(--ex-text-sm);
-  font-weight: 600;
-}
-
-.brewPreviewCaseResult {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
-}
-
-/* 새 한 줄 소개와 사례는 아래에서 들어온다. 사례는 60ms씩 엇갈려 순위표보다 조금 늦게 도착한다. */
-@media (prefers-reduced-motion: no-preference) {
-  .brewPreviewHeadline {
-    animation: brewEnter var(--standard) var(--ease-enter) both;
-  }
-
-  .brewPreviewCase {
-    animation: brewEnter var(--standard) var(--ease-enter) both;
-    animation-delay: calc(120ms + var(--i, 0) * 60ms);
-  }
-}
-
-@keyframes brewEnter {
-  from {
-    opacity: 0;
-    transform: translate3d(0, 14px, 0);
-  }
-
-  to {
-    opacity: 1;
-    transform: none;
-  }
 }
 
 /* ── 제작 과정 둘러보기 ────────────────────────────────────── */
@@ -817,8 +457,8 @@
   .tourPanel[data-active="true"] {
     transform: none;
     transition:
-      opacity var(--standard) var(--ease-enter),
-      transform var(--standard) var(--ease-enter),
+      opacity var(--standard) var(--ease),
+      transform var(--standard) var(--ease),
       visibility 0s;
   }
 }
@@ -834,160 +474,6 @@
   line-height: var(--ex-leading-normal);
   color: var(--ex-fg-body);
   word-break: keep-all;
-}
-
-/* 실제 화면이 없는 단계의 그림. 화면 이미지와 같은 판 안에 둔다. */
-.figure {
-  box-sizing: border-box;
-  display: grid;
-  place-items: center;
-  aspect-ratio: 16 / 10.6;
-  padding: 32px;
-  border: 1px solid var(--ex-border);
-  border-radius: 14px;
-  background: var(--ex-bg-tint);
-}
-
-.panel {
-  width: 100%;
-  max-width: 560px;
-  padding: 18px 18px 12px;
-  border: 1px solid var(--ex-border);
-  border-radius: 12px;
-  background: var(--ex-bg);
-  box-shadow: var(--ex-elevation-raised);
-}
-
-.panelHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-
-.panelTitle {
-  font-size: var(--ex-text-sm);
-  font-weight: 600;
-}
-
-.panelBadge {
-  padding: 3px 9px;
-  border-radius: 999px;
-  background: var(--ex-accent-surface);
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-accent-ink);
-  white-space: nowrap;
-}
-
-.reqRow {
-  display: grid;
-  grid-template-columns: 16px 1fr auto;
-  align-items: start;
-  gap: 12px;
-  margin-top: 4px;
-  padding: 11px 10px;
-  border-radius: 8px;
-}
-
-.reqText {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 0;
-}
-
-.reqLabel {
-  font-size: var(--ex-text-sm);
-  color: var(--ex-fg);
-}
-
-.reqEvidence {
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-fg-muted);
-}
-
-.reqState {
-  font-size: var(--ex-text-2xs);
-  font-weight: 600;
-}
-
-.req_covered .reqIcon,
-.req_covered .reqState {
-  color: var(--ex-status-success-text);
-}
-
-.req_partial {
-  background: var(--ex-status-warning-surface);
-}
-
-.req_partial .reqIcon,
-.req_partial .reqState {
-  color: var(--ex-status-warning-text);
-}
-
-.req_missing {
-  background: var(--ex-status-danger-surface);
-}
-
-.req_missing .reqIcon,
-.req_missing .reqState {
-  color: var(--ex-status-danger-text);
-}
-
-.chat {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  width: 100%;
-  max-width: 560px;
-}
-
-.chatRow {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-}
-
-.chatRowMine {
-  justify-content: flex-end;
-}
-
-.chatAvatar {
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--ex-bg);
-  box-shadow: var(--ex-elevation-raised);
-}
-
-.chatBubble {
-  max-width: 82%;
-  padding: 13px 15px;
-  border-radius: 4px 16px 16px 16px;
-  background: var(--ex-bg);
-  box-shadow: var(--ex-elevation-raised);
-  font-size: var(--ex-text-sm);
-  line-height: var(--ex-leading-normal);
-  color: var(--ex-fg);
-  word-break: keep-all;
-}
-
-.chatRequirement {
-  display: block;
-  margin-bottom: 4px;
-  font-size: var(--ex-text-2xs);
-  font-weight: 600;
-  color: var(--ex-accent-text);
-}
-
-.chatBubbleMine {
-  border-radius: 16px 4px 16px 16px;
-  background: var(--ex-accent);
-  color: var(--ex-fg-on-accent);
 }
 
 /* ── 포트폴리오 예시 ───────────────────────────────────────── */
@@ -1156,31 +642,9 @@
   color: var(--ex-fg-subtle);
 }
 
-/* ── 동작 줄이기 — 첫 화면 구간을 한 화면으로 ─────────────── */
-
-@media (prefers-reduced-motion: reduce) {
-  .heroPassage {
-    height: 100svh;
-  }
-}
-
 /* ── 좁은 폭 ───────────────────────────────────────────────── */
 
 @media (max-width: 1023px) {
-  .brew {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .brewOrders {
-    flex-direction: row;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .brewOrder {
-    flex: 0 0 240px;
-  }
-
   .tour {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1215,8 +679,7 @@
 }
 
 @media (max-width: 767px) {
-  .container,
-  .heroContent {
+  .container {
     padding: 0 16px;
   }
 
@@ -1226,20 +689,6 @@
 
   .anchors {
     display: none;
-  }
-
-  .heroPassage {
-    height: 180vh;
-  }
-
-  /* 좁은 화면에서 잔은 아래쪽에 앉는다. 글은 위쪽 3분의 2 안에 둔다. */
-  .heroContent {
-    align-items: flex-start;
-    padding-top: 92px;
-  }
-
-  .heroPoster {
-    object-position: 70% 100%;
   }
 
   .headline {
@@ -1268,10 +717,6 @@
     padding-top: 80px;
   }
 
-  .tailorSection {
-    padding-bottom: 80px;
-  }
-
   .h2 {
     font-size: var(--ex-text-3xl);
   }
@@ -1279,23 +724,6 @@
   .body,
   .closingBody {
     font-size: var(--ex-text-md);
-  }
-
-  .brewResult {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .brewRank {
-    --row: 54px;
-  }
-
-  .brewRankCategory {
-    display: none;
-  }
-
-  .figure {
-    padding: 16px;
-    aspect-ratio: auto;
   }
 
   .showcasePhone {

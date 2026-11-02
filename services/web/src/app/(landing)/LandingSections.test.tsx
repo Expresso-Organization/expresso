@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 // next/image의 최적화는 Next 서버가 한다. 여기서는 대체 글만 확인한다.
@@ -16,6 +16,12 @@ beforeEach(() => {
     addEventListener: () => {},
     removeEventListener: () => {},
   }));
+  // jsdom에는 화면 갱신 주기가 없다. 다음 마이크로태스크에 한 번 부른다.
+  vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+    queueMicrotask(() => callback(0));
+    return 1;
+  });
+  vi.stubGlobal("cancelAnimationFrame", () => {});
 });
 
 afterEach(() => {
@@ -43,35 +49,69 @@ it("굴러가는 단어는 가리고 머리글을 한 문장으로 읽힌다", (
   expect(heading.querySelector('[aria-hidden="true"]')?.textContent).toContain("idea.");
 });
 
-it("앵커는 같은 페이지의 제작 과정 · 기업 맞춤 · 포트폴리오 예시로 간다", () => {
+it("앵커는 같은 페이지의 서비스 소개 · 제품 화면 · 포트폴리오 예시로 간다", () => {
   const { container } = render(<Landing />);
   const nav = screen.getByRole("navigation", { name: "소개" });
-  for (const [name, id] of [["제작 과정", "flow"], ["기업 맞춤", "tailor"], ["포트폴리오 예시", "showcase"]] as const) {
+  for (const [name, id] of [["서비스 소개", "story"], ["제품 화면", "flow"], ["포트폴리오 예시", "showcase"]] as const) {
     expect(within(nav).getByRole("link", { name }).getAttribute("href")).toBe(`#${id}`);
     expect(container.querySelector(`#${id}`)).not.toBeNull();
   }
 });
 
-it("제작 과정에서 단계를 누르면 그 단계의 화면이 보인다", () => {
+it("제품 화면에서 단계를 누르면 그 단계의 화면이 보인다", () => {
   render(<Landing />);
   const tabs = within(screen.getByRole("tablist", { name: "제작 과정" })).getAllByRole("tab");
   expect(tabs.map((tab) => tab.querySelector("span:nth-child(2)")?.textContent)).toEqual([
-    "공고 분석", "재료 고르기", "AI 대화", "디자인 선택", "다듬기", "배포",
+    "재료 고르기", "디자인 선택", "다듬기", "배포",
   ]);
   expect(tabs[0]?.getAttribute("aria-selected")).toBe("true");
-  fireEvent.click(tabs[4]!);
-  expect(tabs[4]?.getAttribute("aria-selected")).toBe("true");
-  const panel = document.getElementById(tabs[4]!.getAttribute("aria-controls")!);
+  fireEvent.click(tabs[2]!);
+  expect(tabs[2]?.getAttribute("aria-selected")).toBe("true");
+  const panel = document.getElementById(tabs[2]!.getAttribute("aria-controls")!);
   expect(panel?.getAttribute("data-active")).toBe("true");
   expect(within(panel!).getByAltText(/편집기 화면/)).toBeTruthy();
 });
 
-it("기업 맞춤에서 공고를 바꾸면 기록의 순위가 바뀐다", () => {
+it("소개 모션그래픽은 여섯 장을 순서대로 담는다", () => {
   render(<Landing />);
-  const list = screen.getByRole("list", { name: "공고에 맞춘 기록 순서" });
-  const rank = (title: RegExp) => within(list).getByText(title).closest("li")?.getAttribute("aria-posinset");
-  expect(rank(/App Router 전환/)).toBe("1");
-  fireEvent.click(screen.getByRole("tab", { name: /디자인 시스템 엔지니어/ }));
-  expect(rank(/모아 UI/)).toBe("1");
-  expect(rank(/App Router 전환/)).toBe("4");
+  const story = screen.getByRole("region", { name: "Expresso 소개" });
+  expect(within(story).getAllByRole("heading", { level: 2, hidden: true }).map((heading) => heading.textContent)).toEqual([
+    "기록을 쌓아 둡니다",
+    "공고에서 요건을 뽑습니다",
+    "비어 있는 요건은 물어봅니다",
+    "공고에 맞춰 다시 고릅니다",
+    "포트폴리오를 추출합니다",
+    "링크 하나로 보냅니다",
+  ]);
+  const index = within(story).getByRole("list", { name: "소개 순서" });
+  expect(within(index).getAllByRole("listitem").map((row) => row.textContent)).toEqual([
+    "커리어 기록", "공고 분석", "AI 대화", "기업 맞춤", "포트폴리오 추출", "배포 · 방문 분석",
+  ]);
+});
+
+it("스크롤 위치에 따라 지금 장이 바뀌고, 되돌리면 앞 장으로 돌아간다", async () => {
+  render(<Landing />);
+  const story = screen.getByRole("region", { name: "Expresso 소개" });
+  const rows = within(within(story).getByRole("list", { name: "소개 순서" })).getAllByRole("listitem");
+  const panels = within(story).getAllByRole("heading", { level: 2, hidden: true }).map((heading) => heading.closest("div")!.parentElement!);
+  const height = 10_000;
+  const travel = height - window.innerHeight;
+  const scrollTo = async (progress: number) => {
+    story.getBoundingClientRect = () => ({ top: -progress * travel, height }) as DOMRect;
+    await act(async () => {
+      window.dispatchEvent(new Event("scroll"));
+      await Promise.resolve();
+    });
+  };
+  const states = () => rows.map((row) => row.getAttribute("data-state"));
+  const visible = () => panels.map((panel) => panel.style.visibility === "visible");
+
+  // 도입부 0.1 뒤로 여섯 장이 0.145씩 차지한다. 0.61은 넷째 장(기업 맞춤)의 가운데다.
+  await scrollTo(0.61);
+  expect(states()).toEqual(["done", "done", "done", "active", "todo", "todo"]);
+  expect(visible()).toEqual([false, false, false, true, false, false]);
+
+  await scrollTo(0.17);
+  expect(states()).toEqual(["active", "todo", "todo", "todo", "todo", "todo"]);
+  expect(visible()).toEqual([true, false, false, false, false, false]);
 });
