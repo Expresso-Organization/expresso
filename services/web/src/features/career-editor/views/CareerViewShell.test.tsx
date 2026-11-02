@@ -5,7 +5,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testi
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const push = vi.fn();
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push, refresh: vi.fn() }) }));
 const panel: { onRecordChange?: (record: CareerRecord) => void; onCategoryChange?: (category: CareerCategory) => void } = {};
 vi.mock("@/app/(app)/career/[categorySlug]/DocumentPanel", () => ({
   DocumentPanel: ({ record, onExpand, onRecordChange, onCategoryChange }: { record: CareerRecord | null; onExpand?: () => void; onRecordChange?: (record: CareerRecord) => void; onCategoryChange?: (category: CareerCategory) => void }) => {

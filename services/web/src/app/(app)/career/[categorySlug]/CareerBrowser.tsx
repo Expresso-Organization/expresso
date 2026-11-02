@@ -22,7 +22,7 @@ export function CareerBrowser({ category, records, page, views, viewId, search, 
     <DocumentHeader
       crumbs={[{ label: "내 커리어", href: "/career/experience" as Route }, category.name]}
       actions={<>
-        <span style={{ fontSize: "12px", color: "var(--ex-fg-muted)" }}>{editedLabel}</span>
+        <span style={{ fontSize: "var(--ex-text-2xs)", color: "var(--ex-fg-muted)" }}>{editedLabel}</span>
         <CategoryMenu categoryName={category.name} onOpenTrash={() => setTrashOpen(true)} />
       </>}
     />

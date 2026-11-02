@@ -14,7 +14,6 @@ import { EMPTY_GROUP, activeDefinitions, dateDefinitions, definitionById, filter
 import { displayValue, rawValue } from "./view-types";
 import styles from "./views.module.css";
 
-const SPECIAL: Record<string, string> = { skill_tool: "수요 비교", academic_writing: "인용 지표" };
 type ToolbarMenu = "filter" | "sort" | "properties";
 
 /** 그룹 순서 목록에 보일 값. 선택 · 체크박스 · 상태는 정의에서, 나머지는 불러온 기록에서 모은다. */
@@ -100,7 +99,7 @@ export function ViewToolbar({ category, view, records, search, onSearch, onChang
   const closeSearch = () => { onSearch(""); setSearching(false); };
 
   return <div ref={toolbarRef} className={styles.toolbar} data-menu-open={activeMenu ? "true" : "false"}>
-    <ViewTabs {...tabs} activeId={view.id} special={SPECIAL[category.key]} />
+    <ViewTabs {...tabs} activeId={view.id} />
     <div className={styles.toolbarActions}>
       {searching
         ? <span className={styles.searchField}><Icon name="magnifying-glass" size={13} /><input ref={searchRef} type="search" aria-label="기록 검색" value={search} onChange={(event) => onSearch(event.target.value)} onKeyDown={(event) => { if (event.key === "Escape") closeSearch(); }} onBlur={() => { if (!search) setSearching(false); }} /><button type="button" aria-label="검색 닫기" onClick={closeSearch}><Icon name="x" size={12} /></button></span>

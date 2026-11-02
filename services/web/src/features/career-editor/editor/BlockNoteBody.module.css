@@ -99,4 +99,4 @@
   min-width: 0;
 }
 
-.limitNotice { margin: 0 0 8px; border-radius: 8px; padding: 8px 10px; background: var(--ex-danger-surface); color: var(--ex-danger-text); font-size: var(--ex-text-2xs); }
+.limitNotice { margin: 0 0 8px; border-radius: 8px; padding: 8px 10px; background: var(--ex-status-danger-surface); color: var(--ex-status-danger-text); font-size: var(--ex-text-2xs); }

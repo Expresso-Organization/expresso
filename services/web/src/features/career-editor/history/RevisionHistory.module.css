@@ -81,4 +81,4 @@
   .restore { opacity: 1; }
 }
 
-.restore[data-confirming] { background: var(--ex-danger-surface); color: var(--ex-danger-text); }
+.restore[data-confirming] { background: var(--ex-status-danger-surface); color: var(--ex-status-danger-text); }

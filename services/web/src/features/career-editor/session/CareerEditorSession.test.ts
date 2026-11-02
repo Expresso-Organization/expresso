@@ -141,7 +141,9 @@ describe("CareerEditorSession", () => {
   });
   it("re-bootstraps after the session token expires, keeps the editor document and resends pending updates", async () => {
     vi.useFakeTimers();
-    const fetcher = vi.fn(async () => new Response(JSON.stringify(bootstrapBody()), { status: 200 }));
+    // 서버는 같은 문서 상태를 다시 돌려줍니다. 호출마다 새 Y.Doc을 만들면 다른 문서가 섞여 결과가 흔들립니다.
+    const state = baseState();
+    const fetcher = vi.fn(async () => new Response(JSON.stringify(bootstrapBody(0, state)), { status: 200 }));
     const session = new CareerEditorSession(recordId, { fetch: fetcher as typeof fetch, WebSocket: FakeSocket as unknown as typeof WebSocket, reconnectDelay: () => 0 });
     await vi.waitFor(() => expect(FakeSocket.instances).toHaveLength(1));
     const first = FakeSocket.instances[0]!;
