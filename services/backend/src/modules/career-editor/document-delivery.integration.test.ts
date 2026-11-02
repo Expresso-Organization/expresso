@@ -1,0 +1,106 @@
+import {documentState, encodeDocumentAsYUpdate, reconstructYDocument} from "../../../test/support/career-document-client.js";
+import {randomUUID} from "node:crypto";
+import {beforeAll,afterAll,describe,expect,it} from "vitest";
+import {mongoCollections} from "@expresso/database";
+import {} from "@expresso/editor";
+import type {CareerSocketServerMessage} from "@expresso/contracts";
+import {createMongoFixture} from "../../../test/support/mongodb.js";
+import {MongoIdentityService} from "../identity/index.js";
+import {CareerService,CareerProducerCoordinator,PreparedCareerProductWrites} from "../career/index.js";
+import {CareerDocumentService} from "./service.js";
+import {PreparedCareerDocumentWriter} from "./prepared-document-writer.js";
+import {InMemoryCareerDocumentSessionRegistry} from "./session-registry.js";
+import {createCareerDocumentDelivery} from "./document-delivery.js";
+import {PreparedAiProposalService} from "./prepared-ai-proposals.js";
+describe.skipIf(!process.env.TEST_MONGODB_URL)("durable cross-process document delivery",()=>{
+ let fixture:Awaited<ReturnType<typeof createMongoFixture>>,userId:string;
+ beforeAll(async()=>{fixture=await createMongoFixture("b2docdelivery");userId=(await new MongoIdentityService(fixture.resource).signup({email:randomUUID()+"@example.com",displayName:"Document",password:"correct-horse-battery"})).user.id;},60000);afterAll(async()=>fixture?.dispose());
+ it("delivers committed worker Yjs bytes to active owner sessions once even after compaction",async()=>{
+  const legacy=new CareerService(fixture.resource),cat=await legacy.createCategory(userId,{key:"d_"+randomUUID().replaceAll("-",""),name:"Document",icon:"folder",defaultView:"table",propertySchemaV2:[]}),db=mongoCollections(fixture.resource.db);
+  await db.careerCategories.updateOne({_id:cat.id},{$set:{propertySchemaV2:[],schemaVersion:1}});const record=(await legacy.createRecord(userId,randomUUID(),{categoryId:cat.id,title:"Keep",properties:{},bodyMd:"Before"})).record;
+  const documents=new CareerDocumentService(fixture.resource),bootstrap=await documents.bootstrap(userId,record.id),registry=new InMemoryCareerDocumentSessionRegistry(),messages:CareerSocketServerMessage[]=[],foreign:CareerSocketServerMessage[]=[];
+  registry.join({sessionId:randomUUID(),userId,recordId:record.id,lastAckSequence:bootstrap.documentVersion,send:value=>messages.push(value)});
+  registry.join({sessionId:randomUUID(),userId:randomUUID(),recordId:record.id,send:value=>foreign.push(value)});
+  const delivery=createCareerDocumentDelivery(fixture.resource,registry),owner=new PreparedCareerDocumentWriter(fixture.resource),writer=new PreparedCareerProductWrites(fixture.resource,new CareerProducerCoordinator(fixture.resource,{commit:async()=>{throw new Error("no business owner for body-only");}},owner));
+  const scope=await writer.prepare(userId,randomUUID(),"a".repeat(64),null,{kind:"markdown",recordId:record.id,expectedVersion:bootstrap.documentVersion,markdown:"Worker change",summary:"본문"},{kind:"patch",recordId:record.id,expectedBusinessVersion:1});
+  await writer.execute(scope);await documents.compact(record.id,bootstrap.documentVersion+1);const before=await db.careerRecords.findOne({_id:record.id});
+  expect(await delivery.pollOnce()).toMatchObject({updates:1});expect(await delivery.pollOnce()).toMatchObject({updates:0});
+  const updates=messages.filter(value=>value.type==="update");expect(updates).toHaveLength(1);expect(foreign).toEqual([]);
+  const bytes=updates.map(value=>Buffer.from(value.type==="update"?value.updateBase64:"","base64"));expect(reconstructYDocument([documentState(bootstrap),...bytes])).toEqual((await documents.bootstrap(userId,record.id)).document);
+  expect(await db.careerRecords.findOne({_id:record.id})).toEqual(before);expect(before).toMatchObject({title:"Keep",version:1});await delivery.stop();
+ });
+ async function proposalScenario(){
+  const db=mongoCollections(fixture.resource.db),career=new CareerService(fixture.resource);
+  const category=await career.createCategory(userId,{key:"replay_"+randomUUID().replaceAll("-",""),name:"Replay",icon:"folder",defaultView:"table",propertySchemaV2:[]});
+  await db.careerCategories.updateOne({_id:category.id},{$set:{propertySchemaV2:[],schemaVersion:1}});
+  const record=(await career.createRecord(userId,randomUUID(),{categoryId:category.id,title:"Replay",properties:{},bodyMd:"Before"})).record;
+  const documents=new CareerDocumentService(fixture.resource,"disposable-proposal-secret",undefined,undefined,{async generate(input){return {summary:input.prompt,commands:[{type:"setText",blockId:input.selectionBlockIds[0]!,text:input.prompt}],propertyChanges:[]};}});
+  const bootstrap=await documents.bootstrap(userId,record.id),blockId=bootstrap.document.content[0]!.id;
+  const create=(prompt:string)=>documents.createAiProposal(userId,record.id,{selection:{blockIds:[blockId]},prompt});
+  return {db,record,documents,create};
+ }
+ it("replays the current durable pending proposal to a newly joined connection while the first stays connected",async()=>{
+  const {db,record,documents,create}=await proposalScenario(),proposal=await create("Pending current");
+  const scope=await new PreparedAiProposalService(fixture.resource,documents).prepare(userId,record.id,{recordId:record.id,proposalId:proposal.proposalId,operationId:randomUUID(),expectedDocumentVersion:0,commandIndexes:[0],propertyChangeIndexes:[]});
+  const registry=new InMemoryCareerDocumentSessionRegistry(),first:CareerSocketServerMessage[]=[],second:CareerSocketServerMessage[]=[],foreign:CareerSocketServerMessage[]=[];
+  registry.join({sessionId:randomUUID(),userId,recordId:record.id,send:message=>first.push(message)});
+  const delivery=createCareerDocumentDelivery(fixture.resource,registry);
+  expect(await delivery.pollOnce()).toMatchObject({proposals:1});
+  registry.join({sessionId:randomUUID(),userId,recordId:record.id,send:message=>second.push(message)});
+  registry.join({sessionId:randomUUID(),userId:randomUUID(),recordId:record.id,send:message=>foreign.push(message)});
+  const before=await db.careerAiProposals.findOne({_id:proposal.proposalId});
+  await delivery.pollOnce();
+  expect(second.filter(message=>message.type==="proposal")).toEqual([expect.objectContaining({proposalId:proposal.proposalId,status:"ready"})]);
+  expect(foreign).toEqual([]);
+  expect(await db.careerAiProposals.findOne({_id:proposal.proposalId})).toEqual(before);
+  expect(before!.writerIntegration).toMatchObject({operationId:scope.operationId,state:"pending"});
+  expect(await delivery.pollOnce()).toMatchObject({proposals:0});
+  await delivery.stop();
+ },30_000);
+ it("replays pending proposal after same-ID reconnect between polls without removing the newer socket",async()=>{
+  const {db,record,create}=await proposalScenario(),proposal=await create("Same-ID pending");
+  const registry=new InMemoryCareerDocumentSessionRegistry(),oldMessages:CareerSocketServerMessage[]=[],newMessages:CareerSocketServerMessage[]=[],stable:CareerSocketServerMessage[]=[];
+  registry.join({sessionId:randomUUID(),userId,recordId:record.id,send:message=>stable.push(message)});
+  const reusedId=randomUUID(),leaveOld=registry.join({sessionId:reusedId,userId,recordId:record.id,send:message=>oldMessages.push(message)});
+  const delivery=createCareerDocumentDelivery(fixture.resource,registry);
+  await delivery.pollOnce();expect(oldMessages.filter(message=>message.type==="proposal")).toHaveLength(1);
+  // 첫 frame을 받지 못한 클라이언트가 같은 ID로 다시 연결하며 이전 socket 종료는 지연됩니다.
+  registry.join({sessionId:reusedId,userId,recordId:record.id,send:message=>newMessages.push(message)});
+  const before=await db.careerAiProposals.findOne({_id:proposal.proposalId});
+  await delivery.pollOnce();
+  expect(newMessages.filter(message=>message.type==="proposal")).toEqual([expect.objectContaining({proposalId:proposal.proposalId})]);
+  leaveOld();expect(registry.count(userId,record.id)).toBe(2);
+  expect(await delivery.pollOnce()).toMatchObject({proposals:0});
+  expect(await db.careerAiProposals.findOne({_id:proposal.proposalId})).toEqual(before);await delivery.stop();
+ },30_000);
+  it("uses the replay selection rule for live notifications after an older proposal completes",async()=>{
+  const {db,record,documents,create}=await proposalScenario(),live:Array<{proposalId:string;createdAt:string}>=[];
+  documents.setAiProposalPublisher((_recordId,proposal)=>live.push(proposal));
+  const older=await create("Older live"),latest=await create("Latest live");
+  await db.careerAiProposals.updateOne({_id:older.proposalId},{$set:{createdAt:new Date(1000)}});
+  await db.careerAiProposals.updateOne({_id:latest.proposalId},{$set:{createdAt:new Date(2000)}});
+  const registry=new InMemoryCareerDocumentSessionRegistry(),replay:CareerSocketServerMessage[]=[];
+  registry.join({sessionId:randomUUID(),userId,recordId:record.id,send:message=>replay.push(message)});
+  const delivery=createCareerDocumentDelivery(fixture.resource,registry);await delivery.pollOnce();
+  live.length=0;await documents.rejectAiProposal(userId,record.id,{recordId:record.id,proposalId:older.proposalId});
+  expect(live).toEqual([]);
+  expect(replay.filter(message=>message.type==="proposal")).toEqual([expect.objectContaining({proposalId:latest.proposalId,createdAt:new Date(2000).toISOString()})]);
+  await documents.rejectAiProposal(userId,record.id,{recordId:record.id,proposalId:latest.proposalId});
+  expect(live.map(message=>message.proposalId)).toEqual([latest.proposalId]);
+  expect(live[0]!.createdAt).toBe(new Date(2000).toISOString());
+  await delivery.stop();
+ },30_000);
+ it("announces only the latest-created proposal and never replaces it with older changed history",async()=>{
+  const {db,record,create}=await proposalScenario();
+  const older=await create("Older applied"),rejected=await create("Older rejected"),latest=await create("Latest pending");
+  for(const [proposal,index,status] of [[older,0,"applied"],[rejected,1,"rejected"],[latest,2,"ready"]] as const)await db.careerAiProposals.updateOne({_id:proposal.proposalId},{$set:{createdAt:new Date(1000+index),updatedAt:new Date(index===0?9000:2000+index),status}});
+  const registry=new InMemoryCareerDocumentSessionRegistry(),messages:CareerSocketServerMessage[]=[];
+  registry.join({sessionId:randomUUID(),userId,recordId:record.id,send:message=>messages.push(message)});
+  const delivery=createCareerDocumentDelivery(fixture.resource,registry);
+  await delivery.pollOnce();
+  expect(messages.filter(message=>message.type==="proposal").map(message=>message.proposalId)).toEqual([latest.proposalId]);
+  messages.length=0;
+  await db.careerAiProposals.updateOne({_id:older.proposalId},{$set:{updatedAt:new Date(12000)}});
+  expect(await delivery.pollOnce()).toMatchObject({proposals:0});
+  expect(messages).toEqual([]);await delivery.stop();
+ },30_000);});

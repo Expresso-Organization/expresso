@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { TimestampSchema, UuidSchema } from "./common.js";
+import { CareerBusinessPropertyValueSchema } from "./career-business.js";
 
 export const CareerPropertyTypeV2Schema = z.enum([
   "title", "text", "number", "select", "multi_select", "date", "checkbox", "url", "email",
@@ -13,11 +14,25 @@ export const CareerComputedValueSchema = z.union([
   z.string().max(50_000), z.number().finite(), z.boolean(), z.iso.date(),
   z.array(z.union([z.string().max(5_000), z.number().finite(), z.boolean(), UuidSchema])).max(1_000), z.null(),
 ]);
+// 원래 표기는 그대로 두고 UTC 초와 소수 자릿수를 비교합니다.
+function dateRangeOrdered(start: string, end: string | null): boolean {
+  if (end === null) return true;
+  const parts = (value: string) => {
+    const fraction = /\.([0-9]+)(?=Z|[+-])/.exec(value)?.[1] ?? "";
+    const seconds = Date.parse(value.replace(/\.[0-9]+(?=Z|[+-])/, "")) / 1_000;
+    return Number.isFinite(seconds) ? { seconds: BigInt(seconds), fraction } : null;
+  };
+  const a = parts(start), b = parts(end);
+  if (a === null || b === null) return false;
+  const digits = Math.max(a.fraction.length, b.fraction.length);
+  const scale = 10n ** BigInt(digits);
+  return b.seconds * scale + BigInt(b.fraction.padEnd(digits, "0") || "0") >= a.seconds * scale + BigInt(a.fraction.padEnd(digits, "0") || "0");
+}
 const DateRangeSchema = z.strictObject({
-  start: z.union([z.iso.date(), z.iso.datetime({ offset: true })]),
-  end: z.union([z.iso.date(), z.iso.datetime({ offset: true })]).nullable(),
+  start: z.union([z.iso.date(), z.iso.datetime({ offset: true }).max(200)]),
+  end: z.union([z.iso.date(), z.iso.datetime({ offset: true }).max(200)]).nullable(),
   timezone: z.string().min(1).max(64).nullable(),
-}).refine((value) => value.end === null || value.end >= value.start, { message: "date end must follow start" });
+}).refine((value) => dateRangeOrdered(value.start, value.end), { message: "date end must follow start" });
 export const CareerRelationTargetSchema = z.strictObject({ recordId: UuidSchema, title: z.string().max(300) });
 export const CareerPropertyValueV2Schema = z.discriminatedUnion("type", [
   z.strictObject({ type: z.literal("title"), value: z.string().max(300) }),
@@ -65,7 +80,7 @@ export const CareerCategoryMovePreviewSchema = z.strictObject({
   recordId: UuidSchema, sourceCategoryId: UuidSchema, targetCategoryId: UuidSchema,
   recordVersion: z.number().int().positive(), sourceSchemaVersion: z.number().int().positive(),
   targetSchemaVersion: z.number().int().positive(), conversions: z.array(CareerPropertyConversionSchema).max(200),
-  unmappedProperties: z.record(UuidSchema, CareerPropertyValueV2Schema), previewToken: z.string().min(32).max(4096),
+  unmappedProperties: z.record(UuidSchema, z.union([CareerPropertyValueV2Schema, CareerBusinessPropertyValueSchema])).refine(values => Object.entries(values).every(([id, value]) => !("propertyDefinitionId" in value) || value.propertyDefinitionId === id), { message: "canonical unmapped value ID must match its key" }), previewToken: z.string().min(32).max(4096),
 });
 export const CareerCategoryMoveCommitSchema = z.strictObject({
   recordId: UuidSchema, targetCategoryId: UuidSchema, previewToken: z.string().min(32).max(4096),

@@ -1,6 +1,6 @@
 import type { Job } from "bullmq";
 
-import { type InterviewApi } from "../../modules/interview/index.js";
+import { InterviewCleanupSourceSchema, type InterviewApi } from "../../modules/interview/index.js";
 
 /**
  * §8.3 「기록 정리」.
@@ -15,7 +15,13 @@ export function createRecordCleanupProcessor(service: InterviewApi) {
     if (typeof answerId !== "string" || typeof userId !== "string") {
       throw new Error("record.cleanup payload is missing answerId or userId");
     }
-    await service.cleanupAnswer(userId, answerId);
+    if (service.cleanupAnswerOperation && job.data.operationId !== undefined) {
+      const source = InterviewCleanupSourceSchema.parse({ answerId, operationId: job.data.operationId,
+        answerVersion: job.data.answerVersion, recordVersion: job.data.recordVersion });
+      await service.cleanupAnswerOperation(userId, source);
+    } else {
+      await service.cleanupAnswer(userId, answerId);
+    }
     return {};
   };
 }

@@ -1,0 +1,26 @@
+import {randomUUID} from "node:crypto";
+import Fastify from "fastify";
+import {describe,expect,it,vi} from "vitest";
+import {registerCareerDocumentRoutes} from "./routes.js";
+import type {CareerDocumentApi} from "./service.js";
+import {registerErrorHandler} from "../../api/error-handler.js";
+
+describe("AI product operation public routes",()=>{
+ it("returns202 status and Location without invoking legacy apply, forwarding optional idempotency",async()=>{
+  const user=randomUUID(),record=randomUUID(),proposal=randomUUID(),operation=randomUUID();
+  const pending={data:{operationId:operation,producer:"ai-proposal",state:"retry",recordId:record,owners:{business:"completed",document:"pending"},statusUrl:`/v1/career/write-operations/${operation}`,retryable:true,updatedAt:new Date().toISOString()}};
+  const apply=vi.fn(async()=>({status:202,body:pending})),legacy=vi.fn(async()=>{throw new Error("legacy fallback forbidden")});
+  const app=Fastify();app.decorateRequest("auth",null);registerCareerDocumentRoutes(app,{service:{applyAiProposalOperation:apply,applyAiProposal:legacy} as unknown as CareerDocumentApi,authenticateRequest:async(request)=>{request.auth={user:{id:user}} as never;}});
+  try{const input={expectedDocumentVersion:0,commandIndexes:[],propertyChangeIndexes:[0]},response=await app.inject({method:"POST",url:`/v1/career/records/${record}/ai-proposals/${proposal}/apply`,headers:{"idempotency-key":"optional-client-key"},payload:input});expect(response.statusCode).toBe(202);expect(response.headers.location).toBe(pending.data.statusUrl);expect(response.json()).toEqual(pending);expect(apply).toHaveBeenCalledWith(user,record,{...input,recordId:record,proposalId:proposal},"optional-client-key");expect(legacy).not.toHaveBeenCalled();}finally{await app.close();}
+ });
+ it("returns wrapped no-document-target and preserves completed old apply shapes",async()=>{
+  const user=randomUUID(),record=randomUUID(),proposal=randomUUID(),now=new Date().toISOString();const detail={proposalId:proposal,recordId:record,baseDocumentVersion:0,selection:{blockIds:[]},summary:"업무 값 적용",commands:[],propertyChanges:[],createdAt:now,expiresAt:now,status:"applied",progress:null,appliedDocumentVersion:null,revisionId:null,undoScope:"none",businessChangesRetained:true};const none={data:{outcome:"no-document-target",scope:"none",businessChangesRetained:true}};
+  const app=Fastify();app.decorateRequest("auth",null);registerCareerDocumentRoutes(app,{service:{applyAiProposalOperation:async()=>({status:200,body:{data:detail}}),undoAiProposalOperation:async()=>({status:200,body:none}),applyAiProposal:async()=>{throw new Error("legacy fallback forbidden")},undoAiProposal:async()=>{throw new Error("legacy fallback forbidden")}} as unknown as CareerDocumentApi,authenticateRequest:async(request)=>{request.auth={user:{id:user}} as never;}});
+  try{const apply=await app.inject({method:"POST",url:`/v1/career/records/${record}/ai-proposals/${proposal}/apply`,payload:{expectedDocumentVersion:0,commandIndexes:[],propertyChangeIndexes:[0]}});expect(apply.statusCode).toBe(200);expect(apply.json()).toEqual({data:detail});const undo=await app.inject({method:"POST",url:`/v1/career/records/${record}/ai-proposals/${proposal}/undo`,payload:{expectedDocumentVersion:0}});expect(undo.statusCode).toBe(200);expect(undo.json()).toEqual(none);}finally{await app.close();}
+ });
+ it("publishes safe terminal409 operation details and genuine pending undo202 Location",async()=>{
+  const user=randomUUID(),record=randomUUID(),proposal=randomUUID(),operationId=randomUUID(),operation={operationId,producer:"ai-proposal",state:"recovery-required",recordId:record,owners:{business:"completed",document:"pending"},statusUrl:`/v1/career/write-operations/${operationId}`,retryable:false,updatedAt:new Date().toISOString()},pending={data:{...operation,state:"retry",retryable:true}};
+  const app=Fastify({logger:false,genReqId:()=>randomUUID()});app.decorateRequest("auth",null);registerErrorHandler(app);registerCareerDocumentRoutes(app,{service:{applyAiProposalOperation:async()=>{throw Object.assign(new Error("private owner detail"),{statusCode:409,publicErrorCode:"RECOVERY_REQUIRED",publicDetails:{operation}});},undoAiProposalOperation:async()=>({status:202,body:pending}),applyAiProposal:async()=>{throw new Error("legacy fallback forbidden")}} as unknown as CareerDocumentApi,authenticateRequest:async(request)=>{request.auth={user:{id:user}} as never;}});
+  try{const conflict=await app.inject({method:"POST",url:`/v1/career/records/${record}/ai-proposals/${proposal}/apply`,payload:{expectedDocumentVersion:0,commandIndexes:[0],propertyChangeIndexes:[0]}});expect(conflict.statusCode).toBe(409);expect(conflict.json().error).toMatchObject({code:"CONFLICT",details:{operation}});expect(conflict.body).not.toContain("private owner detail");expect(conflict.body).not.toContain(user);expect(conflict.headers.location).toBeUndefined();const undo=await app.inject({method:"POST",url:`/v1/career/records/${record}/ai-proposals/${proposal}/undo`,payload:{expectedDocumentVersion:1}});expect(undo.statusCode).toBe(202);expect(undo.headers.location).toBe(operation.statusUrl);expect(undo.json()).toEqual(pending);}finally{await app.close();}
+ });
+});

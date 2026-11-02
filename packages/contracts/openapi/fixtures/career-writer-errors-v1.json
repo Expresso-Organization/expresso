@@ -1,0 +1,8 @@
+{
+  "authenticationFailure": {
+    "error": { "code": "AUTH_REQUIRED", "message": "Authentication required", "requestId": "00000000-0000-4000-8000-000000000001" }
+  },
+  "infrastructureFailure": {
+    "error": { "code": "INTERNAL_ERROR", "message": "Career command failed", "requestId": "00000000-0000-4000-8000-000000000002" }
+  }
+}

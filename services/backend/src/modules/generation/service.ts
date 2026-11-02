@@ -16,7 +16,7 @@ import type { MongoContext } from "../../platform/mongodb.js";
 import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { inTransaction, type MongoTransaction } from "../../platform/mongo-transaction.js";
 import { writeSnapshot } from "../../platform/snapshot-payload.js";
-import { assertActiveRecordsForWrite } from "../career/index.js";
+import { assertActiveRecordsForWrite, type CanonicalCareerReadService } from "../career/index.js";
 import type { ConsentApi } from "../consent/index.js";
 import { findDesignSystemRevision, generationStyleFor } from "../design-systems/index.js";
 import { MongoEntitlementService } from "../entitlements/index.js";
@@ -74,7 +74,7 @@ function requestHash(input: SubmitGeneration): string {
 
 export class GenerationService {
   readonly #consent: ConsentApi | null;
-  constructor(readonly context: MongoContext, consent?: ConsentApi | null) {
+  constructor(readonly context: MongoContext, consent?: ConsentApi | null, readonly careerReads?: CanonicalCareerReadService) {
     this.#consent = consent ?? null;
   }
 
@@ -307,7 +307,8 @@ export class GenerationService {
       db.answers.find({ _id: { $in: paths.filter((p) => p.sourceType === "answer").map((p) => p.sourceId) }, userId: job.userId }).toArray(),
       db.jobPostingRequirements.find({ _id: { $in: paths.filter((p) => p.sourceType === "requirement").map((p) => p.sourceId) } }).toArray(),
     ]);
-    const recordById = new Map(records.map((row) => [row._id, row]));
+    const projectedRecords = this.careerReads ? await Promise.all(records.map(async record => { const canonical=await this.careerReads!.mapRecord(record);return {...record,title:canonical.title,bodyMd:canonical.bodyMd}; })) : records;
+    const recordById = new Map(projectedRecords.map((row) => [row._id, row]));
     const answerById = new Map(answers.map((row) => [row._id, row]));
     const requirementById = new Map(requirements.map((row) => [row._id, row]));
     const evidence: PathRow[] = paths.map((path) => {

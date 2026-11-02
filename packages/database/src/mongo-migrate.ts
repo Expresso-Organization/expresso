@@ -30,6 +30,14 @@ export async function migrateMongo(options: MongoMigrateOptions): Promise<Migrat
       }
       versions.add(migration.version); lastVersion = migration.version;
     }
+    // 이 후보는 main 이력에서만 자동 전진한다. 열린 PR의 다른 번호 체계는 수동 대조가 필요하다.
+    const recorded = await db.collection<SchemaMigrationDoc>("schema_migrations").find({}).toArray();
+    for (const previous of recorded) {
+      const migration = migrations.find(item => item.version === previous._id);
+      if (!migration || previous.name !== migration.name || previous.checksum !== migration.checksum) {
+        throw new Error(`MIGRATION_HISTORY_CONFLICT: ${previous._id}_${previous.name} is unknown or modified; reconcile the ledger before migration`);
+      }
+    }
     const lease = await acquireMigrationLease(db);
     const history = db.collection<SchemaMigrationDoc>("schema_migrations");
     for (const migration of migrations) {

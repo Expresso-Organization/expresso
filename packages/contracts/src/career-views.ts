@@ -1,13 +1,22 @@
 import { z } from "zod";
 import { TimestampSchema, UuidSchema } from "./common.js";
 import { CareerPropertyValueV2Schema } from "./career-properties.js";
+import { CareerBusinessPropertyValueSchema } from "./career-business.js";
+
+/** 기존 저장 뷰를 유지하며 정본 숫자·날짜의 정밀한 필터 값을 허용합니다. */
+export const CareerViewOperandSchema = z.union([
+  CareerPropertyValueV2Schema,
+  CareerBusinessPropertyValueSchema.options[1].omit({ propertyDefinitionId: true }),
+  CareerBusinessPropertyValueSchema.options[5].omit({ propertyDefinitionId: true }),
+]);
+export type CareerViewOperand = z.infer<typeof CareerViewOperandSchema>;
 
 export const CareerViewFilterV2Schema: z.ZodType<unknown> = z.lazy(() => z.union([
   z.strictObject({ operator: z.enum(["and", "or"]), filters: z.array(CareerViewFilterV2Schema).min(1).max(20) }),
   z.strictObject({
     propertyId: UuidSchema,
     operator: z.enum(["eq", "neq", "contains", "not_contains", "gt", "gte", "lt", "lte", "is_empty", "is_not_empty"]),
-    operand: CareerPropertyValueV2Schema.nullable(),
+    operand: CareerViewOperandSchema.nullable(),
   }),
 ]));
 export const CareerSortV2Schema = z.strictObject({ propertyId: UuidSchema, direction: z.enum(["asc", "desc"]), nulls: z.enum(["first", "last"]) });

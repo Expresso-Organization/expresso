@@ -1,0 +1,3 @@
+{
+  "files": ["migration.ts", "business-schema.json"]
+}

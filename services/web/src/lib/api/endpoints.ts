@@ -111,7 +111,7 @@ import {
 } from "@expresso/contracts";
 import { z } from "zod";
 
-import { API_BASE_URL, request, requestNoContent, requestText } from "./client";
+import { API_BASE_URL, request, requestNoContent, requestText, requestWithPendingOperation } from "./client";
 
 export const auth = {
   signup: (input: Signup) =>
@@ -828,10 +828,10 @@ export const interview = {
     input: { inputType: "text" | "voice"; transcript: string },
     idempotencyKey: string,
   ) =>
-    request(
+    requestWithPendingOperation(
       `${API_PREFIX}/interview-sessions/${sessionId}/answers/${questionId}`,
       z.strictObject({ data: InterviewAnswerResultSchema }),
-      { accessToken, method: "PUT", body: input, idempotencyKey },
+      { accessToken, method: "PUT", body: input, idempotencyKey }, "interview",
     ),
 
   /** 01b "질문 바꾸기". 같은 근거를 다른 각도에서 다시 묻는다. */

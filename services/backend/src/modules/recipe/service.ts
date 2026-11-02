@@ -5,7 +5,7 @@ import { mongoCollections, type JsonObject, type JsonValue, type RecipeDoc, type
 import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction, type MongoTransaction } from "../../platform/mongo-transaction.js";
 import { requireActiveUser } from "../identity/index.js";
-import { assertActiveRecordsForWrite } from "../career/index.js";
+import { assertActiveRecordsForWrite, type CanonicalCareerReadService } from "../career/index.js";
 import type { ConsentApi } from "../consent/index.js";
 import { DeterministicRecipePlanner, RECIPE_PROMPT_VERSION, type PlannerContext, type PlannerSource, type RecipePlanner } from "./planner.js";
 import type { RecipeApi } from "./index.js";
@@ -19,7 +19,7 @@ const DEFAULT_CONTEXT = { goal: "선택한 근거로 핵심 경험을 설명", p
 export class RecipeService implements RecipeApi {
   readonly planner: RecipePlanner;
   readonly promptVersion: number;
-  constructor(readonly context: MongoContext, planner?: RecipePlanner | null, readonly consent: ConsentApi | null = null) {
+  constructor(readonly context: MongoContext, planner?: RecipePlanner | null, readonly consent: ConsentApi | null = null, readonly careerReads?: CanonicalCareerReadService) {
     this.planner = planner ?? new DeterministicRecipePlanner();
     this.promptVersion = planner ? RECIPE_PROMPT_VERSION : 0;
   }
@@ -31,7 +31,8 @@ export class RecipeService implements RecipeApi {
     if (!analysis) throw new RecipeError(404, "job analysis not found");
     const brewSources = await db.brewSources.find({ userId, brewId, isSelected: true }).sort({ rank: 1, _id: 1 }).limit(8).toArray();
     const records = await db.careerRecords.find({ userId, _id: { $in: brewSources.map(({ recordId }) => recordId) }, deletedAt: null }).toArray();
-    const byId = new Map(records.map((record) => [record._id, record])); const orderedRecords = brewSources.flatMap(({ recordId }) => byId.get(recordId) ? [byId.get(recordId)!] : []);
+    const projectedRecords = this.careerReads ? await Promise.all(records.map(async record => { const canonical=await this.careerReads!.mapRecord(record);return {...record,title:canonical.title,bodyMd:canonical.bodyMd}; })) : records;
+    const byId = new Map(projectedRecords.map((record) => [record._id, record])); const orderedRecords = brewSources.flatMap(({ recordId }) => byId.get(recordId) ? [byId.get(recordId)!] : []);
     const requirements = analysis.jobPostingId ? await db.jobPostingRequirements.find({ jobPostingId: analysis.jobPostingId }).sort({ orderNo: 1, _id: 1 }).toArray() : [];
     const interview = await db.interviewSessions.findOne({ userId, brewId });
     const questions = interview ? await db.questions.find({ userId, interviewSessionId: interview._id, active: true }).sort({ orderNo: 1, _id: 1 }).limit(6).toArray() : [];

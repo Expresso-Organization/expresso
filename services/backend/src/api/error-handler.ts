@@ -43,10 +43,12 @@ export function registerErrorHandler(app: FastifyInstance): void {
   app.setErrorHandler(async (error, request, reply) => {
     const errorValue: Error & {
       statusCode?: number;
+      publicErrorCode?: unknown;
       publicDetails?: Record<string, unknown>;
     } = error instanceof Error
       ? error as Error & {
           statusCode?: number;
+          publicErrorCode?: unknown;
           publicDetails?: Record<string, unknown>;
         }
       : new Error("Unknown request error");
@@ -54,7 +56,8 @@ export function registerErrorHandler(app: FastifyInstance): void {
     const statusCode = candidateStatus >= 400 && candidateStatus < 600
       ? candidateStatus
       : 500;
-    const code = errorCodeForStatus(statusCode);
+    const bulkUnsupported = statusCode === 409 && errorValue.publicErrorCode === "BULK_SCHEMA_CHANGE_UNSUPPORTED";
+    const code:ErrorCode = bulkUnsupported ? "BULK_SCHEMA_CHANGE_UNSUPPORTED" : errorCodeForStatus(statusCode);
 
     request.log.error(
       { requestId: request.id, error: safeErrorSummary(error) },
@@ -64,7 +67,7 @@ export function registerErrorHandler(app: FastifyInstance): void {
     return reply.code(statusCode).send({
       error: {
         code,
-        message: publicMessageForStatus(statusCode),
+        message: bulkUnsupported ? "Bulk schema changes are unsupported; use the documented preview/apply/restore operations" : publicMessageForStatus(statusCode),
         requestId: request.id,
         ...(errorValue.publicDetails
           ? { details: errorValue.publicDetails }

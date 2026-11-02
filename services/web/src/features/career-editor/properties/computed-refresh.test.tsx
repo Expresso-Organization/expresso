@@ -121,3 +121,18 @@ describe("useComputedRefresh", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });
+
+
+it("refreshes formula values after a canonical write even when physical typed projections have not changed", async () => {
+  vi.useFakeTimers();
+  const initial = { ...record(2, 6), propertyValues: [{ propertyDefinitionId: score.id, type: "number" as const, value: "3.0000" }] };
+  const saved = { ...initial, version: 3, propertyValues: [{ propertyDefinitionId: score.id, type: "number" as const, value: "9007199254740993.0000" }] };
+  const computed = { ...saved, version: 4, computedProperties: { double: { type: "formula" as const, value: 18014398509481986, diagnostics: [] } } };
+  const fetcher = vi.fn(async () => respond(computed)); vi.stubGlobal("fetch", fetcher);
+  const view = mount(initial, [score, formula]);
+  act(() => view.result.current.setCurrent(saved));
+  await tick();
+  expect(fetcher).toHaveBeenCalledTimes(1);
+  expect(view.result.current.current.version).toBe(4);
+  cleanup(); vi.useRealTimers(); vi.unstubAllGlobals();
+});

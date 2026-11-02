@@ -1,0 +1,61 @@
+// @vitest-environment jsdom
+import { webcrypto } from "node:crypto";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, expect, it, vi } from "vitest";
+const refresh = vi.hoisted(() => vi.fn());
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh }) }));
+import { InterviewAnswerForm } from "./InterviewAnswerForm";
+const id = "00000000-0000-4000-8000-000000000001";
+const pending = { data: { operationId: id, producer: "interview", state: "pending", recordId: null, owners: { business: "pending", document: "pending" }, statusUrl: "/v1/career/write-operations/" + id, retryable: true, updatedAt: "2026-10-09T00:00:00Z" } };
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.clearAllMocks(); sessionStorage.clear(); });
+it("keeps the exact draft while pending and refreshes the brew only after completed receipts", async () => {
+  vi.stubGlobal("crypto", webcrypto);
+  let resolve!: (value: Response) => void;
+  vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>(done => { resolve = done; })));
+  const action = vi.fn(async (_form: FormData) => pending);
+  render(<InterviewAnswerForm brewId={id} sessionId={id} questionId={id} submit={action as never} />);
+  fireEvent.change(screen.getByLabelText("답변"), { target: { value: "Only verified facts" } });
+  fireEvent.click(screen.getByRole("button", { name: "보내기" }));
+  expect(await screen.findByText(/변경 적용 중/)).toBeTruthy();
+  expect(refresh).not.toHaveBeenCalled();
+  expect((screen.getByLabelText("답변") as HTMLTextAreaElement).value).toBe("Only verified facts");
+  expect((screen.getByRole("button", { name: "보내기" }) as HTMLButtonElement).disabled).toBe(true);
+  expect(action.mock.calls[0]?.[0].get("idempotencyKey")).toMatch(/^[a-f0-9-]{36}$/);
+  expect(Object.values(sessionStorage).join(" ")).not.toContain("Only verified facts");
+  await waitFor(() => expect(resolve).toBeTypeOf("function"));
+  resolve(Response.json({ data: { ...pending.data, state: "completed", recordId: id, retryable: false, owners: { business: "completed", document: "completed" } } }));
+  await waitFor(() => expect(refresh).toHaveBeenCalledOnce());
+});
+it("does not adopt an earlier question's delayed response", async () => {
+  vi.stubGlobal("crypto", webcrypto);
+  let resolve!: (value: typeof pending) => void;
+  const action = vi.fn((_form: FormData) => new Promise<typeof pending>(done => { resolve = done; }));
+  const view = render(<InterviewAnswerForm brewId={id} sessionId={id} questionId={id} submit={action as never} />);
+  fireEvent.change(screen.getByLabelText("답변"), { target: { value: "Prior question answer" } });
+  fireEvent.click(screen.getByRole("button", { name: "보내기" }));
+  await waitFor(() => expect(action).toHaveBeenCalledOnce());
+  view.rerender(<InterviewAnswerForm brewId={id} sessionId={id} questionId="00000000-0000-4000-8000-000000000002" submit={action as never} />);
+  resolve(pending);
+  await waitFor(() => expect((screen.getByLabelText("답변") as HTMLTextAreaElement).value).toBe(""));
+  expect(screen.queryByText(/변경 적용 중/)).toBeNull();
+  expect(refresh).not.toHaveBeenCalled();
+});
+it("resumes an owner-scoped pending question after reload without a stored client reference", async () => {
+  vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>(() => {})));
+  const action = vi.fn();
+  render(<InterviewAnswerForm brewId={id} sessionId={id} questionId={id} pendingOperation={pending.data as never} submit={action as never} />);
+  expect(await screen.findByText(/변경 적용 중/)).toBeTruthy();
+  expect((screen.getByRole("button", { name: "보내기" }) as HTMLButtonElement).disabled).toBe(true);
+  expect(action).not.toHaveBeenCalled();
+});
+it("shows terminal recovery without clearing the draft, counting progress or submitting again",async()=>{
+ const terminal={...pending.data,state:"recovery-required",retryable:false,owners:{business:"completed",document:"pending"}};
+ vi.stubGlobal("crypto",webcrypto);vi.stubGlobal("fetch",vi.fn(async()=>Response.json({data:terminal})));
+ const action=vi.fn(async(_form:FormData)=>({data:terminal}));
+ render(<InterviewAnswerForm brewId={id} sessionId={id} questionId={id} submit={action as never}/>);
+ fireEvent.change(screen.getByLabelText("답변"),{target:{value:"Original recovery draft"}});fireEvent.click(screen.getByRole("button",{name:"보내기"}));
+ expect((await screen.findByRole("alert")).textContent).toContain("복구 확인");
+ expect((screen.getByLabelText("답변") as HTMLTextAreaElement).value).toBe("Original recovery draft");
+ expect((screen.getByRole("button",{name:"보내기"}) as HTMLButtonElement).disabled).toBe(true);
+ expect(action).toHaveBeenCalledOnce();expect(refresh).not.toHaveBeenCalled();
+});

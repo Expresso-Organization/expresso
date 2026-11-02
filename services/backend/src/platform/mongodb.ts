@@ -30,6 +30,7 @@ export function createMongoResource(
     minPoolSize: 8,
   });
   const db = client.db(options?.databaseName);
+  const expectedReplicaSet = new URL(uri).searchParams.get("replicaSet") ?? "rs0";
 
   client.on("error", () => {
     // 연결 오류는 readiness 결과로만 확인하며 인증 정보가 포함될 수 있는 오류를 출력하지 않습니다.
@@ -42,7 +43,7 @@ export function createMongoResource(
       name: "mongodb",
       async run() {
         const hello = await db.command({ hello: 1 });
-        if (hello.setName !== "rs0" || !hello.isWritablePrimary) {
+        if (hello.setName !== expectedReplicaSet || !hello.isWritablePrimary) {
           throw new Error("MongoDB primary is unavailable");
         }
         const latest = await db.collection<{ _id: string; state: string }>("schema_migrations").findOne({ _id: "0004", state: "applied" });

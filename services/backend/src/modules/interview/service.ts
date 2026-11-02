@@ -1,24 +1,26 @@
 import { randomUUID } from "node:crypto";
 import { InterviewQuestionBasisSchema, InterviewSessionSchema, type InterviewQuestionBasis, type SaveInterviewAnswer } from "@expresso/contracts";
-import { mongoCollections, type QuestionDoc } from "@expresso/database";
+import { type CareerRecordDoc, mongoCollections, type QuestionDoc } from "@expresso/database";
 import type { ClientSession } from "mongodb";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction } from "../../platform/mongo-transaction.js";
 import { requireActiveUser } from "../identity/index.js";
 import type { ConsentApi } from "../consent/index.js";
-import { careerRecordTextReader, cleanupChangedFields, multiSelectValueByNames, type RecordCleaner } from "../career/index.js";
+import { careerRecordTextReader, cleanupChangedFields, multiSelectValueByNames, publicCareerWriteOperation, validateCareerProducerIntent, type RecordCleaner } from "../career/index.js";
 import { generateQuestionDrafts, hasMetric, questionTextForBasis } from "./questions.js";
 import { countMentions, type QuestionBasisOption, type QuestionContext, type QuestionWriter } from "./question-writer.js";
 import type { InterviewApi } from "./index.js";
 import { InterviewError } from "./public.js";
+import type { InterviewCleanupSource, InterviewProductCareerIntegration } from "./product-career-integration.js";
 import { getMongoAnswerResult, refreshMongoInterviewProgress, saveMongoAnswer } from "./mongo-answers.js";
 
 interface PlannedQuestion { text: string; basis: InterviewQuestionBasis; requirementId: string | null; variant: number; rationale: string | null }
 
 export class InterviewService implements InterviewApi {
-  constructor(readonly context: MongoContext, readonly writer: QuestionWriter | null = null, readonly cleaner: RecordCleaner | null = null, readonly consent: ConsentApi | null = null) {}
+  constructor(readonly context: MongoContext, readonly writer: QuestionWriter | null = null, readonly cleaner: RecordCleaner | null = null, readonly consent: ConsentApi | null = null, readonly productCareer: InterviewProductCareerIntegration | null = null) {}
 
   async cleanupAnswer(userId: string, answerId: string) {
+    if (this.productCareer) throw new InterviewError(409, "product cleanup requires the original answer event");
     if (!this.cleaner) return;
     await this.consent?.require(userId, "record_cleanup");
     const db = mongoCollections(this.context.db);
@@ -54,10 +56,17 @@ export class InterviewService implements InterviewApi {
     const coverages = await db.requirementCoverages.find({ userId, requirementId: { $in: requirements.map(({ _id }) => _id) } }, options).toArray();
     const coverageById = new Map(coverages.map((coverage) => [coverage.requirementId, coverage.coverage]));
     const sources = await db.brewSources.find({ userId, brewId, isSelected: true }, options).sort({ rank: 1, _id: 1 }).toArray();
-    const records = await db.careerRecords.find({ userId, _id: { $in: sources.map(({ recordId }) => recordId) }, deletedAt: null }, options).toArray();
+    let records = await db.careerRecords.find({ userId, _id: { $in: sources.map(({ recordId }) => recordId) }, deletedAt: null }, options).toArray();
+    const recordText = new Map<string, string>();
+    if (this.productCareer) records = await Promise.all(records.map(async record => {
+      const canonical = await this.productCareer!.readRecord(userId, record._id);
+      // 옵션 UUID의 숫자 대신 소유자 label과 정본 본문을 동일한 질문 근거로 씁니다.
+      recordText.set(record._id, await this.productCareer!.reader.searchableRecordText(record, session));
+      return { ...record, title: canonical.title, bodyMd: canonical.bodyMd, properties: canonical.properties as CareerRecordDoc["properties"] };
+    }));
+    else { const readable = await careerRecordTextReader(this.context.db,userId,session); for (const record of records) recordText.set(record._id,readable(record)); }
     const recordsById = new Map(records.map((record) => [record._id, record]));
     const orderedRecords = sources.flatMap(({ recordId }) => recordsById.get(recordId) ? [recordsById.get(recordId)!] : []);
-    const recordText = await careerRecordTextReader(this.context.db, userId, session);
     const posting = analysis.jobPostingId ? await db.jobPostings.findOne({ _id: analysis.jobPostingId }, options) : null;
     const company = posting ? await db.companies.findOne({ _id: posting.companyId }, options) : null;
     const requirementRows = requirements.flatMap((requirement) => {
@@ -70,7 +79,7 @@ export class InterviewService implements InterviewApi {
       userId,
       options: [
         ...requirementRows.filter(({ coverage }) => coverage !== "covered").map((row) => ({ basis: { type: "requirement" as const, requirementId: row._id, coverage: row.coverage as "missing" | "partial", evidence: row.quote }, label: `[공고 요건 · ${row.coverage === "missing" ? "안 채움" : "일부만"}] ${row.label}`, detail: row.quote, mentions: posting ? countMentions(row.label, posting.descriptionRaw) : null })),
-        ...orderedRecords.filter((record) => !hasMetric(recordText(record))).map((record) => ({ basis: { type: "record_gap" as const, recordId: record._id, gap: "metric" as const, evidence: record.title }, label: `[기록 · 수치 없음] ${record.title}`, detail: record.bodyMd, mentions: null })),
+        ...orderedRecords.filter((record) => !hasMetric(recordText.get(record._id)!)).map((record) => ({ basis: { type: "record_gap" as const, recordId: record._id, gap: "metric" as const, evidence: record.title }, label: `[기록 · 수치 없음] ${record.title}`, detail: record.bodyMd, mentions: null })),
       ],
       company: company ? { name: company.name, industry: company.industry ?? null, toneSummary: company.toneSummary ?? null } : null,
       jobTitle: posting?.title ?? null,
@@ -87,7 +96,7 @@ export class InterviewService implements InterviewApi {
       const drafted = await this.writer.draft(context);
       return drafted.map((question) => { const option = context.options[question.optionIndex]!; return { text: question.text, basis: option.basis, requirementId: option.basis.type === "requirement" ? option.basis.requirementId : null, variant: 0, rationale: question.rationale }; });
     }
-    return generateQuestionDrafts(requirements.map((row) => ({ id: row._id, label: row.label, coverage: row.coverage, evidence: row.quote })), records.map((record) => ({ id: record._id, title: record.title, text: recordText(record) }))).map((draft) => ({ ...draft, rationale: null }));
+    return generateQuestionDrafts(requirements.map((row) => ({ id: row._id, label: row.label, coverage: row.coverage, evidence: row.quote })), records.map((record) => ({ id: record._id, title: record.title, text: recordText.get(record._id)! }))).map((draft) => ({ ...draft, rationale: null }));
   }
 
   async start(userId: string, brewId: string, idempotencyKey: string) {
@@ -116,8 +125,27 @@ export class InterviewService implements InterviewApi {
     const db = mongoCollections(this.context.db); const session = await db.interviewSessions.findOne({ _id: sessionId, userId });
     if (!session) throw new InterviewError(404, "interview session not found");
     const questions = await db.questions.find({ userId, interviewSessionId: sessionId, active: true }).sort({ orderNo: 1, _id: 1 }).toArray();
-    const answers = await db.answers.find({ userId, questionId: { $in: questions.map(({ _id }) => _id) } }).project<{ questionId: string }>({ questionId: 1 }).toArray(); const answered = new Set(answers.map(({ questionId }) => questionId));
-    return InterviewSessionSchema.parse({ id: session._id, brewId: session.brewId, status: session.status, currentOrder: session.currentOrder, answeredCount: session.answeredCount, questionCount: session.questionCount, questionsMayAdapt: true, questions: questions.map((question) => ({ id: question._id, order: question.orderNo, text: question.text, basis: InterviewQuestionBasisSchema.parse(question.basis), rationale: question.rationale ?? null, replacedFromId: question.replacedFromId ?? null, skipped: question.skipped, answered: answered.has(question._id) })) });
+    const answers = await db.answers.find({ userId, questionId: { $in: questions.map(({ _id }) => _id) } }).toArray();
+    const answered = new Set(answers.filter(answer => !answer.writerPending).map(answer => answer.questionId));
+    const pending = new Map<string, ReturnType<typeof publicCareerWriteOperation>>();
+    for (const answer of answers.filter(answer => answer.writerPending)) {
+      if (!answer.writerOperationId) throw new InterviewError(409, "pending answer operation binding missing");
+      const operation = await db.interviewCareerOperations.findOne({ _id: answer.writerOperationId, userId, kind: "answer",
+        questionId: answer.questionId, answerId: answer._id, answerVersion: answer.version });
+      if (!operation) throw new InterviewError(409, "pending answer operation binding changed");
+      const intent = validateCareerProducerIntent(operation.writerIntegration);
+      if (intent.userId !== userId || intent.sourceId !== operation._id || intent.producer !== "interview" || intent.state === "completed") throw new InterviewError(409, "pending answer owner state changed");
+      pending.set(answer.questionId, publicCareerWriteOperation(intent));
+    }
+    const next = questions.find(question => pending.has(question._id) || !question.skipped && !answered.has(question._id));
+    const finished = questions.every(question => !pending.has(question._id) && (question.skipped || answered.has(question._id)));
+    return InterviewSessionSchema.parse({ id: session._id, brewId: session.brewId,
+      status: finished ? "done" : session.status === "paused" ? "paused" : "open", currentOrder: next?.orderNo ?? questions.length,
+      answeredCount: answered.size, questionCount: session.questionCount, questionsMayAdapt: true,
+      questions: questions.map(question => ({ id: question._id, order: question.orderNo, text: question.text,
+        basis: InterviewQuestionBasisSchema.parse(question.basis), rationale: question.rationale ?? null, replacedFromId: question.replacedFromId ?? null,
+        skipped: pending.has(question._id) ? false : question.skipped, answered: answered.has(question._id),
+        ...(pending.has(question._id) ? { pendingOperation: pending.get(question._id) } : {}) })) });
   }
 
   async setPaused(userId: string, sessionId: string, paused: boolean) {
@@ -136,12 +164,13 @@ export class InterviewService implements InterviewApi {
 
   async replaceQuestion(userId: string, sessionId: string, questionId: string) {
     const db = mongoCollections(this.context.db); const current = await db.questions.findOne({ _id: questionId, userId, interviewSessionId: sessionId, active: true }); if (!current) throw new InterviewError(404, "question not found");
+    if (await db.interviewCareerOperations.findOne({ userId, questionId, active: true })) throw new InterviewError(409, "question has a pending Career operation");
     if (await db.answers.findOne({ userId, questionId })) throw new InterviewError(409, "answered question cannot be replaced");
     const rewritten = await this.#rewrite(userId, sessionId, current, current.variant + 1);
     await inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId); const collections = mongoCollections(tx.db); const options = { session: tx.session };
       const session = await collections.interviewSessions.findOne({ _id: sessionId, userId }, options); const question = await collections.questions.findOne({ _id: questionId, userId, interviewSessionId: sessionId, active: true }, options);
-      if (!session || !question) throw new InterviewError(404, "question not found"); if (await collections.answers.findOne({ userId, questionId }, options)) throw new InterviewError(409, "answered question cannot be replaced");
+      if (!session || !question) throw new InterviewError(404, "question not found"); if (await collections.interviewCareerOperations.findOne({ userId, questionId, active: true }, options)) throw new InterviewError(409, "question has a pending Career operation"); if (await collections.answers.findOne({ userId, questionId }, options)) throw new InterviewError(409, "answered question cannot be replaced");
       const guarded = await collections.interviewSessions.updateOne({ _id: sessionId, userId, version: session.version ?? 1 }, { $set: { updatedAt: new Date() }, $inc: { version: 1 } }, options); if (!guarded.matchedCount) throw new InterviewError(409, "interview session changed concurrently");
       await collections.questions.updateOne({ _id: questionId, userId, active: true }, { $set: { active: false, skipped: true } }, options);
       await collections.questions.insertOne({ _id: randomUUID(), userId, interviewSessionId: sessionId, requirementId: question.requirementId ?? null, replacedFromId: question._id, orderNo: question.orderNo, text: rewritten.text, skipped: false, basis: question.basis, active: true, variant: question.variant + 1, rationale: rewritten.rationale, createdAt: new Date() }, options);
@@ -150,11 +179,24 @@ export class InterviewService implements InterviewApi {
   }
 
   async skipQuestion(userId: string, sessionId: string, questionId: string) {
-    await inTransaction(this.context, async (tx) => { await requireActiveUser(tx, userId); const db = mongoCollections(tx.db); const updated = await db.questions.updateOne({ _id: questionId, userId, interviewSessionId: sessionId, active: true }, { $set: { skipped: true } }, { session: tx.session }); if (!updated.matchedCount) throw new InterviewError(404, "question not found"); await refreshMongoInterviewProgress(tx, userId, sessionId); });
+    await inTransaction(this.context, async (tx) => { await requireActiveUser(tx, userId); const db = mongoCollections(tx.db); if (await db.interviewCareerOperations.findOne({ userId, questionId, active: true }, { session: tx.session })) throw new InterviewError(409, "question has a pending Career operation"); const updated = await db.questions.updateOne({ _id: questionId, userId, interviewSessionId: sessionId, active: true }, { $set: { skipped: true } }, { session: tx.session }); if (!updated.matchedCount) throw new InterviewError(404, "question not found"); await refreshMongoInterviewProgress(tx, userId, sessionId); });
     return this.getSession(userId, sessionId);
   }
 
-  saveAnswer(userId: string, sessionId: string, questionId: string, idempotencyKey: string, input: SaveInterviewAnswer) { return saveMongoAnswer(this.context, userId, sessionId, questionId, idempotencyKey, input); }
+  async saveAnswer(userId: string, sessionId: string, questionId: string, idempotencyKey: string, input: SaveInterviewAnswer) {
+    if (!this.productCareer) return saveMongoAnswer(this.context, userId, sessionId, questionId, idempotencyKey, input);
+    const result = await this.productCareer.saveAnswerOperation(userId, sessionId, questionId, idempotencyKey, input);
+    if (result.status !== 200) throw new InterviewError(503, "answer operation is pending; read its public status");
+    return result.body.data;
+  }
+  async saveAnswerOperation(userId: string, sessionId: string, questionId: string, key: string, input: SaveInterviewAnswer) {
+    if (this.productCareer) return this.productCareer.saveAnswerOperation(userId, sessionId, questionId, key, input);
+    return { status: 200 as const, body: { data: await saveMongoAnswer(this.context, userId, sessionId, questionId, key, input) } };
+  }
+  async cleanupAnswerOperation(userId: string, source: InterviewCleanupSource) {
+    if (this.productCareer) return this.productCareer.cleanupAnswer(userId, source);
+    return this.cleanupAnswer(userId, source.answerId);
+  }
   getAnswerResult(userId: string, sessionId: string, answerId: string) { return getMongoAnswerResult(this.context, userId, sessionId, answerId); }
 }
 

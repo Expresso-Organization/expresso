@@ -1,0 +1,138 @@
+name: Spring Boot CI
+
+on:
+  pull_request:
+    paths:
+      - "services/backend-spring/**"
+      - "scripts/operations/spring-runtime*.mjs"
+      - "services/backend/src/modules/career*/**"
+      - "services/backend/src/platform/career-*.ts"
+      - "services/backend/test/support/**"
+      - "packages/contracts/**"
+      - "packages/database/**"
+      - "packages/editor/**"
+      - "packages/portfolio-renderer/**"
+      - "infra/compose.mongodb.yaml"
+      - "infra/mongodb/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/spring-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "services/backend-spring/**"
+      - "scripts/operations/spring-runtime*.mjs"
+      - "services/backend/src/modules/career*/**"
+      - "services/backend/src/platform/career-*.ts"
+      - "services/backend/test/support/**"
+      - "packages/contracts/**"
+      - "packages/database/**"
+      - "packages/editor/**"
+      - "packages/portfolio-renderer/**"
+      - "infra/compose.mongodb.yaml"
+      - "infra/mongodb/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/spring-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: spring-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Spring ${{ matrix.mode }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [unit, mongo]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+          cache-dependency-path: |
+            services/backend-spring/*.gradle.kts
+            services/backend-spring/gradle/wrapper/gradle-wrapper.properties
+      - if: matrix.mode == 'mongo'
+        uses: pnpm/action-setup@v4
+      - if: matrix.mode == 'mongo'
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: pnpm
+      - name: 통합 테스트 계약·스키마·Fastify 빌드
+        if: matrix.mode == 'mongo'
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm --filter @expresso/editor build
+          pnpm --filter @expresso/contracts build
+          pnpm --filter @expresso/database build
+          pnpm --filter @expresso/portfolio-renderer build
+          pnpm --filter @expresso/backend build
+      # GitHub 전용 runner의 새 컨테이너·볼륨만 사용합니다. 외부 DB에 연결하지 않습니다.
+      - name: 격리된 인증 MongoDB replica set 준비
+        if: matrix.mode == 'mongo'
+        run: pnpm infra:mongodb:up
+      - name: Spring 준비용 migration 최초 적용·재실행 검증
+        if: matrix.mode == 'mongo'
+        env:
+          TEST_MONGODB_URL: mongodb://admin:expresso-admin@127.0.0.1:57017/?authSource=admin&replicaSet=rs0
+          TEST_MONGODB_ADMIN_URL: mongodb://admin:expresso-admin@127.0.0.1:57017/?authSource=admin&replicaSet=rs0
+        run: pnpm --filter @expresso/database exec vitest run src/migrations.test.ts src/schema.test.ts --maxWorkers=2
+      - name: Linux 운영 CLI 보안·배포·Rollback 회귀
+        if: matrix.mode == 'mongo'
+        run: node --test scripts/operations/spring-runtime.test.mjs
+      - name: JDK 21 Gradle clean build와 전체 Spring 테스트
+        working-directory: services/backend-spring
+        env:
+          B1_TEST_MONGO_URL: ${{ matrix.mode == 'mongo' && 'mongodb://admin:expresso-admin@127.0.0.1:57017/?authSource=admin&replicaSet=rs0' || '' }}
+          B1_TEST_NODE: node
+        run: bash ./gradlew --no-daemon clean build
+      - name: PASS·FAIL·SKIP 결과 기록
+        if: always()
+        env:
+          SPRING_TEST_MODE: ${{ matrix.mode }}
+        run: |
+          python3 - <<'PY'
+          import glob, os, pathlib, xml.etree.ElementTree as ET
+          files = glob.glob('services/backend-spring/build/test-results/test/TEST-*.xml')
+          if not files:
+              raise SystemExit('Spring JUnit results missing')
+          suites = [ET.parse(path).getroot() for path in files]
+          total = sum(int(s.get('tests', '0')) for s in suites)
+          failures = sum(int(s.get('failures', '0')) + int(s.get('errors', '0')) for s in suites)
+          skipped = sum(int(s.get('skipped', '0')) for s in suites)
+          result = f"Spring {os.environ['SPRING_TEST_MODE']}: PASS {total-failures-skipped}, FAIL {failures}, SKIP {skipped}\n"
+          print(result)
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+              summary.write(result)
+          if failures or total == 0:
+              raise SystemExit('Spring tests did not pass')
+          if os.environ['SPRING_TEST_MODE'] == 'mongo':
+              required = {'CareerWriterMongoIntegrationTest', 'CareerPropertyMutationMongoIntegrationTest', 'CareerPropertyMutationHttpMongoIntegrationTest', 'CareerProducerMongoIntegrationTest', 'CareerPrivateOptionsHttpMongoIntegrationTest', 'CareerLegacyRecordLinksMongoIntegrationTest', 'OperationsMongoIntegrationTest'}
+              executed = {s.get('name', '').split('.')[-1] for s in suites if int(s.get('tests', '0')) > int(s.get('skipped', '0'))}
+              if required - executed:
+                  raise SystemExit('Required Mongo suites did not execute: ' + ', '.join(sorted(required-executed)))
+          PY
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: spring-${{ matrix.mode }}-results
+          path: |
+            services/backend-spring/build/test-results/test/
+            services/backend-spring/build/reports/tests/test/
+          if-no-files-found: warn
+      - name: runner 전용 MongoDB 자원 정리
+        if: always() && matrix.mode == 'mongo'
+        run: docker compose -f infra/compose.mongodb.yaml down --volumes

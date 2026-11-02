@@ -1,3 +1,4 @@
+import type { CareerProducerIntent } from "@expresso/contracts";
 import type { Binary } from "mongodb";
 import type { JsonValue } from "./common.js";
 
@@ -15,6 +16,8 @@ export interface CareerDocumentSnapshotDoc {
   stateVector: Binary;
   /** schemaVersion 2(BlockNote)의 Yjs 상태 전체입니다. content에서 Yjs를 다시 만들면 클라이언트 ID가 달라 대기 업데이트가 중복 삽입됩니다. */
   state?: Binary;
+  /** 압축 전후에도 같은 CRDT item을 유지하는 실제 Yjs 상태입니다. */
+  stateUpdate?: Binary;
   serverSequence: number;
   checksum: string;
   actor: CareerEditorActor;
@@ -65,6 +68,8 @@ export interface CareerRecordRelationDoc {
 }
 
 export interface CareerAiProposalDoc {
+  writerIntegration?: CareerProducerIntent;
+  writerIntegrationHistory?: CareerProducerIntent[];
   _id: string;
   userId: string;
   recordId: string;

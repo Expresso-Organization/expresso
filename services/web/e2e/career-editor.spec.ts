@@ -59,11 +59,16 @@ test("creates, edits, reloads, reconnects and reviews AI changes across side pee
   await page.getByLabel("AI에게 편집 요청").fill("문장 다듬기");
   await page.getByRole("button", { name: "제안 만들기" }).click();
   await expect(page.getByLabel("AI 제안 변경 목록")).toBeVisible();
+  const beforeAi = await api<{ documentVersion: number; document: unknown }>(page, "GET", `/v1/career/records/${record.id}/document`);
   await page.getByRole("button", { name: /개 변경 적용/ }).click();
   await expect(page.getByRole("button", { name: "변경 되돌리기" })).toBeVisible();
+  const afterAi = await api<{ documentVersion: number }>(page, "GET", `/v1/career/records/${record.id}/document`);
+  expect(afterAi.documentVersion).toBeGreaterThan(beforeAi.documentVersion);
   await page.getByRole("button", { name: "변경 되돌리기" }).click();
   await page.getByRole("button", { name: "되돌리기 확인" }).click();
-  await expect(page.getByRole("button", { name: /개 변경 적용/ })).toBeVisible();
+  await expect(page.getByText("본문을 되돌렸습니다.", { exact: true })).toBeVisible();
+  await expect.poll(async () => (await api<{ document: unknown }>(page, "GET", `/v1/career/records/${record.id}/document`)).document).toEqual(beforeAi.document);
+  expect((await api<{ documentVersion: number }>(page, "GET", `/v1/career/records/${record.id}/document`)).documentVersion).toBeGreaterThan(afterAi.documentVersion);
 
   await page.getByRole("button", { name: "넓게 보기" }).click();
   await expect(page).toHaveURL(new RegExp(`/career/records/${record.id}$`));

@@ -23,6 +23,23 @@ export function encodeDocumentAsYUpdate(document: CareerDocument, baseUpdates: r
   return Y.encodeStateAsUpdate(yDocument);
 }
 
+/** JSON으로 다시 생성하지 않고 실제 CRDT item과 삭제 이력을 하나의 상태로 합칩니다. */
+export function mergeDocumentYUpdates(updates: readonly Uint8Array[]): Uint8Array {
+  const yDocument = new Y.Doc();
+  try {
+    for (const update of updates) Y.applyUpdate(yDocument, update);
+    return Y.encodeStateAsUpdate(yDocument);
+  } finally { yDocument.destroy(); }
+}
+
+export function encodeDocumentUpdatesStateVector(updates: readonly Uint8Array[]): Uint8Array {
+  const yDocument = new Y.Doc();
+  try {
+    for (const update of updates) Y.applyUpdate(yDocument, update);
+    return Y.encodeStateVector(yDocument);
+  } finally { yDocument.destroy(); }
+}
+
 export function encodeDocumentStateVector(document: CareerDocument): Uint8Array {
   const yDocument = new Y.Doc();
   Y.applyUpdate(yDocument, encodeDocumentAsYUpdate(document));

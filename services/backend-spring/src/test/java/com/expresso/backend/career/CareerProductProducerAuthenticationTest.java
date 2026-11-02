@@ -1,0 +1,16 @@
+package com.expresso.backend.career;
+import static org.junit.jupiter.api.Assertions.*;
+import java.time.*;
+import java.lang.reflect.InvocationTargetException;
+import org.bson.Document;
+import org.junit.jupiter.api.Test;
+import com.expresso.backend.career.application.CareerCommandException;
+import com.expresso.backend.career.integration.CareerProducerCredentials;
+class CareerProductProducerAuthenticationTest {
+    static final String SECRET="disposable-product-secret-at-least-32-bytes";
+    CareerProducerCredentials credentials(String product) throws Exception {try{return (CareerProducerCredentials)CareerProducerCredentials.class.getConstructor(String.class,String.class,String.class,Clock.class).newInstance(CareerProducerMongoIntegrationTest.AI_SECRET,CareerProducerMongoIntegrationTest.INTERVIEW_SECRET,product,Clock.systemUTC());}catch(InvocationTargetException error){throw (RuntimeException)error.getCause();}}
+    Document claims(){return new Document("producer","career-product").append("userId",CareerProducerMongoIntegrationTest.USER).append("sourceId",CareerProducerMongoIntegrationTest.OP).append("operationId",CareerProducerMongoIntegrationTest.OP).append("fingerprint","a".repeat(64)).append("audience","career-producer").append("expiresAt",Instant.now().plusSeconds(60).toString());}
+    @Test void dedicatedProductKeyAuthenticatesOnlyItsExactServiceScope() throws Exception {var auth=credentials(SECRET);var scope=auth.authenticate(CareerProducerMongoIntegrationTest.sign(claims(),SECRET)).scope();assertEquals("career_product_operations",scope.collection());assertEquals(scope.operationId(),scope.sourceId());for(var secret:java.util.List.of(CareerProducerMongoIntegrationTest.AI_SECRET,CareerProducerMongoIntegrationTest.INTERVIEW_SECRET))assertThrows(CareerCommandException.class,()->auth.authenticate(CareerProducerMongoIntegrationTest.sign(claims(),secret)));}
+    @Test void absentShortOrReusedProductKeyCannotAuthorizeProduct() throws Exception {var old=new CareerProducerCredentials(CareerProducerMongoIntegrationTest.AI_SECRET,CareerProducerMongoIntegrationTest.INTERVIEW_SECRET,Clock.systemUTC());assertThrows(CareerCommandException.class,()->old.authenticate(CareerProducerMongoIntegrationTest.sign(claims(),SECRET)));assertThrows(IllegalArgumentException.class,()->credentials("short"));assertThrows(IllegalArgumentException.class,()->credentials(CareerProducerMongoIntegrationTest.AI_SECRET));assertThrows(IllegalArgumentException.class,()->credentials(CareerProducerMongoIntegrationTest.INTERVIEW_SECRET));}
+    @Test void expiredWrongAudienceAndNonProductCredentialsAreRejectedWithoutTokenDisclosure() throws Exception {var auth=credentials(SECRET);for(var invalid:java.util.List.of(claims().append("expiresAt",Instant.EPOCH.toString()),claims().append("expiresAt",Instant.now().plusSeconds(301).toString()),claims().append("audience","career-property-mutation"))) {var token=CareerProducerMongoIntegrationTest.sign(invalid,SECRET);var error=assertThrows(CareerCommandException.class,()->auth.authenticate(token));assertFalse(error.getMessage().contains(token));}for(var token:java.util.List.of("exps_"+"A".repeat(43),"exmi.payload."+"A".repeat(43)))assertThrows(CareerCommandException.class,()->auth.authenticate(token));}
+}

@@ -22,6 +22,7 @@ const ROW_HEIGHT = 42;
 const WINDOW_ROWS = 22;
 const OVERSCAN = 5;
 const EMPTY_GROUP = "__empty__";
+const PENDING_GROUP = "__pending_relation__";
 
 interface TableGroup { key: string; label: string; records: CareerRecord[]; empty: boolean; optionOrder: number }
 type DropPlacement = "before" | "after";
@@ -56,7 +57,8 @@ function groupedRecords(records: readonly CareerRecord[], category: CareerCatego
   };
 
   for (const record of records) {
-    const raw = key === "title" ? record.title : rawValue(record, key);
+    if(record.pendingRelationPropertyIds?.includes(propertyId)){add(PENDING_GROUP,`${definition?.name ?? "속성"} 확인 중`,record);continue;}
+    const raw = key === "title" ? record.title : rawValue(record, key, category);
     if (Array.isArray(raw)) {
       const values = [...new Set(raw.flatMap((item) => typeof item === "string" || typeof item === "number" ? [String(item)] : item && typeof item === "object" && "id" in item ? [String(item.id)] : []))];
       if (!values.length) add(EMPTY_GROUP, emptyLabel, record, true);
@@ -346,7 +348,7 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
     const active = activeCell?.recordId === record.id && activeCell.propertyId === definition.id && activeCell.instanceKey === instanceKey;
     const editing = editingCell?.recordId === record.id && editingCell.propertyId === definition.id && editingCell.instanceKey === instanceKey;
     const issue = props.cellIssues?.get(key);
-    return <CareerTableCell key={definition.id} record={record} definition={definition} active={active} editing={editing} {...(issue ? { issue } : {})} cellRef={(node) => { if (node) cellRefs.current.set(refKey, node); else cellRefs.current.delete(refKey); }} onFocus={() => setActiveCell({ recordId: record.id, propertyId: definition.id, instanceKey })} onEdit={() => { const next = { recordId: record.id, propertyId: definition.id, instanceKey }; setActiveCell(next); setEditingCell(next); }} onCommit={(value: TableCellValue) => {
+    return <CareerTableCell key={definition.id} record={record} businessPending={props.pendingBusinessRecordIds?.has(record.id) ?? false} definition={definition} {...(props.onEnsureOption ? { onEnsureOption: (label: string) => props.onEnsureOption!(definition, label) } : {})} active={active} editing={editing} {...(issue ? { issue } : {})} cellRef={(node) => { if (node) cellRefs.current.set(refKey, node); else cellRefs.current.delete(refKey); }} onFocus={() => setActiveCell({ recordId: record.id, propertyId: definition.id, instanceKey })} onEdit={() => { const next = { recordId: record.id, propertyId: definition.id, instanceKey }; setActiveCell(next); setEditingCell(next); }} onCommit={(value: TableCellValue) => {
       if (!["multi_select", "date"].includes(definition.type)) setEditingCell(null);
       void props.onCellCommit?.(record.id, definition, value);
     }} onCreateOption={definition.type === "select" || definition.type === "multi_select" ? (name) => createOption(definition, name) : undefined} onCancel={() => setEditingCell(null)} onMove={(direction) => moveCell(record.id, definition.id, direction, instanceKey, keyboardRecords)} onContextMenu={(event) => showCellMenu(event, record.id, definition.id, instanceKey)} onOpenRecord={() => props.onActivate(record.id)} />;
@@ -370,8 +372,10 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
     <strong role="gridcell">{props.records.length}개 기록</strong>
     {columns.map((id) => {
       const key = propertyKey(props.category, id);
-      const missing = key ? props.records.filter((record) => displayValue(rawValue(record, key)) === "—").length : props.records.length;
-      return <span role="gridcell" key={id}>{missing ? `빈 값 ${missing}` : "모두 입력됨"}</span>;
+      const pending=props.records.filter(record=>record.pendingRelationPropertyIds?.includes(id)).length;
+      const missing = key ? props.records.filter((record) => !record.pendingRelationPropertyIds?.includes(id) && displayValue(rawValue(record, key, props.category)) === "—").length : props.records.length-pending;
+      const summary=[...(missing?[`빈 값 ${missing}`]:[]),...(pending?[`확인 중 ${pending}`]:[])].join(" · ")||"모두 입력됨";
+      return <span role="gridcell" key={id}>{summary}</span>;
     })}
   </div>;
 
@@ -386,8 +390,8 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
     const record = props.records.find((item) => item.id === cellMenu.recordId);
     const definition = cellMenu.propertyId === titleColumnId ? titleDefinition : definitionsById.get(cellMenu.propertyId);
     if (!record || !definition) return null;
-    const raw = definition.key === "title" ? record.title : rawValue(record, definition.key);
-    const canEdit = !["formula", "rollup", "relation", "file", "media"].includes(definition.type) && !(definition.system && ["created_time", "updated_time"].includes(definition.type));
+    const raw = definition.key === "title" ? record.title : rawValue(record, definition.key, definition);
+    const canEdit = !props.pendingBusinessRecordIds?.has(record.id) && !record.pendingPropertyMutation && !["formula", "rollup", "relation", "file", "media"].includes(definition.type) && !(definition.system && ["created_time", "updated_time"].includes(definition.type));
     const close = () => setCellMenu(null);
     return createPortal(<section className={styles.cellContextMenu} data-cell-context-menu role="menu" aria-label={`${definition.name} 셀 메뉴`} style={{ top: Math.min(cellMenu.y, window.innerHeight - 270), left: Math.min(cellMenu.x, window.innerWidth - 230) }} onContextMenu={(event) => event.preventDefault()}>
       <button type="button" role="menuitem" disabled={!canEdit} onClick={() => { close(); focusCell(record.id, definition.id, true, cellMenu.instanceKey); }}><Icon name="pencil-simple" size={15} />셀 편집</button>

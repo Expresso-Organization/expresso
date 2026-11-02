@@ -153,7 +153,7 @@ export class AdminService {
       if (!category) throw new Error(`category ${record.category} is missing for ${persona.key}`);
       const properties = await this.#properties(userId, category, record);
       // 같은 원본 줄은 같은 키 — 중간에 끊긴 만들기를 다시 돌려도 기록이 겹치지 않는다.
-      const { record: saved } = await this.deps.career.createRecord(userId, `${persona.key}:${index}`, { categoryId: category.id, title: record.title, properties, bodyMd: record.body });
+      const { record: saved } = await this.deps.career.createRecord(userId, stableCareerId(`dummy-record:${persona.key}:${index}`), { categoryId: category.id, title: record.title, properties, bodyMd: record.body });
       const status = record.status ?? "organized";
       if (status !== saved.status) await this.#write(userId, saved.id, saved.version, (version) => this.deps.career.updateRecord(userId, saved.id, version, { status }));
       created.set(record, saved.id);

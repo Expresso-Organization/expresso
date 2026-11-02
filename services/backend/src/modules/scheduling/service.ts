@@ -8,6 +8,7 @@ import { inTransaction } from "../../platform/mongo-transaction.js";
 import { MongoAccountLifecycleService } from "../account-lifecycle/index.js";
 import { MongoAnalyticsService } from "../analytics/index.js";
 import { MongoEngagementService } from "../engagement/index.js";
+import { CareerError,purgeTrashedCareerRecord } from "../career/index.js";
 import type { JobIngestApi } from "../jobs/ingest/index.js";
 import { SCHEDULED_JOB_KEYS, type ScheduledJobKey } from "./public.js";
 
@@ -64,7 +65,17 @@ export class SchedulingService {
     if (key === "posting_facts") return this.#ingest ? this.#ingest.readPendingFacts(undefined, at) as unknown as Record<string, unknown> : { skipped: "ingest service is not wired" };
     if (key === "deadline_reminders") return this.#deadlineReminders(at);
     if (key === "deletion_grace") return this.#accounts.purgeExpired(at);
-    if (key === "retention") { const [records, redirects, receipts] = await Promise.all([db.careerRecords.deleteMany({ purgeAfter: { $lte: at } }), db.deploymentSlugRedirects.deleteMany({ expiresAt: { $lte: at } }), db.analyticsEventReceipts.deleteMany({ receivedAt: { $lt: new Date(at.getTime() - 90 * 86_400_000) } })]); return { records: records.deletedCount, redirects: redirects.deletedCount, analyticsReceipts: receipts.deletedCount }; }
+    if (key === "retention") {
+      let records=0,blockedRecords=0;
+      // 기존 purge transaction의 reference fence와 인용 RESTRICT 정책을 유지합니다.
+      const expired=db.careerRecords.find({deletedAt:{$ne:null},purgeAfter:{$lte:at}}).project<{_id:string;userId:string}>({_id:1,userId:1}).sort({_id:1}).batchSize(100);
+      for await(const record of expired) {
+        try{await purgeTrashedCareerRecord(this.context,record.userId,record._id,at);records++;}
+        catch(error){if(error instanceof CareerError&&[401,404,409].includes(error.statusCode))blockedRecords++;else throw error;}
+      }
+      const [redirects,receipts]=await Promise.all([db.deploymentSlugRedirects.deleteMany({expiresAt:{$lte:at}}),db.analyticsEventReceipts.deleteMany({receivedAt:{$lt:new Date(at.getTime()-90*86_400_000)}})]);
+      return {records,blockedRecords,redirects:redirects.deletedCount,analyticsReceipts:receipts.deletedCount};
+    }
     throw new Error(`unsupported scheduled job key: ${key satisfies never}`);
   }
 

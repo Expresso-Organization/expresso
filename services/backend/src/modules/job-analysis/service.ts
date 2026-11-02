@@ -6,7 +6,7 @@ import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction } from "../../platform/mongo-transaction.js";
 import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { requireActiveUser } from "../identity/index.js";
-import { assertActiveRecordsForWrite, careerRecordTextReader } from "../career/index.js";
+import { assertActiveRecordsForWrite, careerRecordTextReader, type CanonicalCareerReadService } from "../career/index.js";
 import { AiError } from "../../platform/ai/client.js";
 import { calculateExplainableMatch } from "../jobs/index.js";
 import type { JobAnalysisApi } from "./index.js";
@@ -27,7 +27,7 @@ export const failureOf = (error: unknown) => error instanceof AnalysisEvidenceEr
     : error instanceof AiError ? { code: error.code, retryable: error.retryable } : { code: "EXTRACTION_FAILED", retryable: true };
 
 export class JobAnalysisService implements JobAnalysisApi {
-  constructor(readonly context: MongoContext) {}
+  constructor(readonly context: MongoContext, readonly careerReads?: CanonicalCareerReadService) {}
 
   async #requirements(userId: string, jobPostingId: string, session?: ClientSession) {
     const rows = await mongoCollections(this.context.db).jobPostingRequirements.aggregate<JobPostingRequirementDoc & { coverage: RequirementCoverageDoc }>([
@@ -92,7 +92,7 @@ export class JobAnalysisService implements JobAnalysisApi {
         const records = await db.careerRecords.find({ userId, deletedAt: null }, options).toArray();
         await assertActiveRecordsForWrite(tx, userId, records.map((record) => record._id));
         const recordText = await careerRecordTextReader(tx.db, userId, tx.session);
-        const recordTexts = records.map((record) => ({ id: record._id, text: recordText(record) }));
+        const recordTexts = await Promise.all(records.map(async (record) => ({ id: record._id, text: this.careerReads ? await this.careerReads.searchableRecordText(record,tx.session) : recordText(record) })));
         const targetIds = targets.map((target) => target._id);
         await db.requirementCoverages.deleteMany({ userId, requirementId: { $in: targetIds } }, options);
         for (const target of targets) {

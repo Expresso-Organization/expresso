@@ -17,6 +17,7 @@ import {
   type EditStructuredPage,
   PortfolioMediaSchema,
   PAGE_IMAGE_SRC_PREFIX,
+  UuidSchema,
   RestorePageRevisionSchema,
   type RestorePageRevision,
   AddStructuredSectionSchema,
@@ -28,6 +29,7 @@ import {
   type PageEditorDesign,
 } from "@expresso/contracts";
 import { renderStructuredPortfolio, librarySelection, styleProblems } from "@expresso/portfolio-renderer";
+import { markdownToCareerDocument, type CareerBlock } from "@expresso/editor";
 import { mongoCollections, type GeneratedPageDoc, type JsonObject } from "@expresso/database";
 
 import type { MongoContext } from "../../platform/mongodb.js";
@@ -36,6 +38,7 @@ import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import type { ConsentApi } from "../consent/index.js";
 import { findDesignSystemRevision, findPortfolioDesign } from "../design-systems/index.js";
 import { requireActiveUser } from "../identity/index.js";
+import type { CanonicalCareerReadService } from "../career/index.js";
 import { DESIGN_PRINCIPLES_VERSION, type PageGenerationContext, type PageGenerator, type PageStreamSink } from "./generator.js";
 import { PageServiceError } from "./public.js";
 import type { PageStream } from "./stream.js";
@@ -90,9 +93,25 @@ function cssPixels(value: string): number {
 
 function isPageStyleGrammar(value: unknown): value is PageStyleGrammar { return PageStyleGrammarSchema.safeParse(value).success; }
 
+function careerRecordImages(bodyMd: string, title: string): { id: string; alt: string }[] {
+  const images = [...bodyMd.matchAll(/\/v1\/media\/([a-f0-9-]{36})/gi)].map(match => ({ id: match[1]!, alt: title }));
+  const visit = (blocks: readonly CareerBlock[]) => {
+    for (const block of blocks) {
+      if (block.type === "image" && UuidSchema.safeParse(block.attrs.mediaId).success) {
+        images.push({ id: block.attrs.mediaId as string, alt: typeof block.attrs.alt === "string" && block.attrs.alt.trim() ? block.attrs.alt : title });
+      }
+      if (block.content) visit(block.content);
+    }
+  };
+  // 정본 Markdown의 native 이미지와 이전 media: 형식을 같은 입력으로 읽습니다.
+  try { visit(markdownToCareerDocument(bodyMd).content); }
+  catch { /* 이전 본문에 지원하지 않는 블록이 있어도 URL 이미지 수집은 유지합니다. */ }
+  return images;
+}
+
 export class PageService {
   readonly #consent: ConsentApi | null; readonly #stream: PageStream | null;
-  constructor(readonly context: MongoContext, consent?: ConsentApi | null, stream?: PageStream | null) {
+  constructor(readonly context: MongoContext, consent?: ConsentApi | null, stream?: PageStream | null, readonly careerReads?: CanonicalCareerReadService) {
     this.#consent = consent ?? null; this.#stream = stream ?? null;
   }
 
@@ -133,8 +152,9 @@ export class PageService {
       db.jobPostingRequirements.find({ _id: { $in: paths.filter((p) => p.sourceType === "requirement").map((p) => p.sourceId) } }).toArray(),
       db.templates.findOne({ _id: portfolio.templateId }), db.brews.findOne({ _id: portfolio.brewId, userId }), db.users.findOne({ _id: userId }),
     ]);
+    const projectedRecords = this.careerReads ? await Promise.all(records.map(async record => { const canonical=await this.careerReads!.mapRecord(record);return {...record,title:canonical.title,bodyMd:canonical.bodyMd}; })) : records;
     const sourceText = (sourceId: string) => {
-      const record = records.find(({ _id }) => _id === sourceId); if (record) return `${record.title}\n${record.bodyMd}`;
+      const record = projectedRecords.find(({ _id }) => _id === sourceId); if (record) return `${record.title}\n${record.bodyMd}`;
       const answer = answers.find(({ _id }) => _id === sourceId); if (answer) return answer.transcript;
       const requirement = requirements.find(({ _id }) => _id === sourceId);
       return requirement ? `${requirement.label}\n${typeof requirement.sourceSpan.quote === "string" ? requirement.sourceSpan.quote : ""}` : "";
@@ -164,7 +184,7 @@ export class PageService {
     const pageSections = await db.portfolioSections.find({ userId, portfolioId }).toArray();
     const mediaBlocks = await db.blocks.find({ userId, portfolioSectionId: { $in: pageSections.map(item => item._id) }, kind: "media" }).toArray();
     const supplied = mediaBlocks.flatMap(item => { const parsed = PortfolioMediaSchema.safeParse(item.content); return parsed.success ? [{ id: parsed.data.assetId, alt: parsed.data.alt }] : []; });
-    for (const record of records) for (const match of record.bodyMd.matchAll(/\/v1\/media\/([a-f0-9-]{36})/gi)) supplied.push({ id: match[1]!, alt: record.title });
+    for (const record of projectedRecords) supplied.push(...careerRecordImages(record.bodyMd, record.title));
     const assets = await db.mediaAssets.find({ userId, _id: { $in: supplied.map(item => item.id) }, storageKey: { $ne: "" } }).toArray();
     const media = [...new Map(supplied.flatMap(item => { const asset = assets.find(value => value._id === item.id); return asset ? [[item.id, { src: `${PAGE_IMAGE_SRC_PREFIX}${asset._id}`, srcSet: "", alt: item.alt, width: asset.width, height: asset.height }] as const] : []; })).values()];
     return {

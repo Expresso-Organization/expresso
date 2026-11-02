@@ -1,7 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { MongoClient } from "mongodb";
 
+import mainChecksums from "./main-migration-checksums.json" with { type: "json" };
 import { loadMongoMigrations } from "./mongo-migrations.js";
 import { migrateMongo } from "./mongo-migrate.js";
 import { acquireMigrationLease, recoverMigrationLease } from "./migration-lease.js";
@@ -14,6 +16,23 @@ describe.skipIf(!mongoUrl)("MongoDB migration recovery", () => {
   const confirmed = { executionStopped: true, pendingCommandsTerminated: true };
   beforeAll(async () => { await client.connect(); });
   afterAll(async () => { try { await db.dropDatabase(); } finally { await client.close(); } });
+
+  it.each([
+    { version: "0017", name: "career_canonical_preparation" },
+    { version: "0014", name: "career_business_writer_preparation" },
+    { version: "0099", name: "unreconciled_future" },
+  ])("rejects conflicting deployed history $version before any lock, checkpoint or DDL", async ({ version, name }) => {
+    const collisionName = `expresso_test_collision_${randomUUID().replaceAll("-", "")}`;
+    const isolated = client.db(collisionName);
+    try {
+      const recorded = { _id: version, name, checksum: "c".repeat(64), state: "applied", completedSteps: [], appliedAt: new Date() };
+      await isolated.collection("schema_migrations").insertOne(recorded as never);
+      const before = await isolated.collection("schema_migrations").find({}).toArray();
+      await expect(migrateMongo({ databaseUrl: mongoUrl!, databaseName: collisionName })).rejects.toThrow("MIGRATION_HISTORY_CONFLICT");
+      expect(await isolated.collection("schema_migrations").find({}).toArray()).toEqual(before);
+      expect(await isolated.listCollections({}, { nameOnly: true }).toArray()).toEqual([expect.objectContaining({ name: "schema_migrations" })]);
+    } finally { await isolated.dropDatabase(); }
+  });
 
   it("never steals an expired lease and requires termination confirmation plus the exact token", async () => {
     const lease = await acquireMigrationLease(db, -1);
@@ -47,16 +66,40 @@ describe.skipIf(!mongoUrl)("MongoDB migration recovery", () => {
 });
 
 describe("MongoDB migration sources", () => {
+  it("keeps forward checksum inputs in LF form across Windows staging and deployment", async () => {
+    for (const version of ["0025", "0026", "0027", "0028", "0029", "0030"]) {
+      const directory = new URL(`./mongodb-migrations/${version}/`, import.meta.url);
+      const manifest = await readFile(new URL("checksum-manifest.json", directory));
+      const { files } = JSON.parse(manifest.toString("utf8")) as { files: string[] };
+      for (const file of ["checksum-manifest.json", ...files]) {
+        expect((await readFile(new URL(file, directory))).includes(13), `${version}/${file} must contain LF only`).toBe(false);
+      }
+    }
+  });
+
+  it("preserves all migration identities and checksums already recorded by main", async () => {
+    const list = await loadMongoMigrations();
+    expect(list.filter(item => item.version < "0025").map(({ version, name, checksum }) => ({ version, name, checksum }))).toEqual(mainChecksums);
+    expect(list.filter(item => item.version >= "0025").map(item => item.version)).toEqual(["0025", "0026", "0027", "0028", "0029", "0030"]);
+  });
   it("loads versioned original sources with stable checksums", async () => {
     const first = await loadMongoMigrations();
     const second = await loadMongoMigrations();
     expect(first.map(({ version, checksum }) => ({ version, checksum }))).toEqual(
       second.map(({ version, checksum }) => ({ version, checksum })),
     );
-    expect(first).toHaveLength(19);
+    expect(first).toHaveLength(25);
     expect(first.every(({ checksum }) => /^[a-f0-9]{64}$/.test(checksum))).toBe(true);
     for (const migration of first) {
       expect(new Set(migration.steps.map(({ id }) => id)).size).toBe(migration.steps.length);
     }
+  });
+
+  it("preserves every migration checksum in the deployed build", async () => {
+    const source = await loadMongoMigrations();
+    const builtModule = await import(new URL("../dist/mongo-migrations.js", import.meta.url).href) as typeof import("./mongo-migrations.js");
+    const built = await builtModule.loadMongoMigrations();
+    const identity = ({ version, name, checksum }: typeof source[number]) => ({ version, name, checksum });
+    expect(built.map(identity)).toEqual(source.map(identity));
   });
 });

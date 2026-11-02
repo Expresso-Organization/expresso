@@ -1,0 +1,32 @@
+# 각 @@...@@ 자리는 spring-runtime.mjs render-unit으로만 채웁니다.
+[Unit]
+Description=Expresso Spring career runtime (@@SERVICE_NAME@@)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=@@SERVICE_USER@@
+WorkingDirectory=@@RELEASE_ROOT@@/current
+EnvironmentFile=@@ENV_FILE@@
+ExecStart=@@JAVA@@ -jar @@RELEASE_ROOT@@/current/backend-spring.jar --spring.profiles.active=operations
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=45s
+KillSignal=SIGTERM
+SuccessExitStatus=143
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=@@SERVICE_NAME@@
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+LimitCORE=0
+
+[Install]
+WantedBy=multi-user.target

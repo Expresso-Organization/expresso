@@ -2,6 +2,7 @@
 import type { JsonValue, JsonObject } from "./common.js";
 
 export interface InterviewSessionDoc {
+  writeVersion?: number;
   /** 질문 교체·진행 갱신의 낙관적 잠금 값입니다. */
   version?: number;
   _id: string;
@@ -19,6 +20,7 @@ export interface InterviewSessionDoc {
 }
 
 export interface QuestionDoc {
+  writeVersion?: number;
   _id: string;
   userId: string;
   interviewSessionId: string;
@@ -35,6 +37,9 @@ export interface QuestionDoc {
 }
 
 export interface AnswerDoc {
+  writeVersion?: number;
+  writerPending?: boolean;
+  writerOperationId?: string;
   /** 정리 작업이 덮어써도 되는 기록 version입니다. */
   recordVersion?: number;
   _id: string;
@@ -58,4 +63,14 @@ export interface AnswerRecordChangeDoc {
   changedFields: JsonValue[];
   sourceQuote: string;
   createdAt: Date;
+}
+
+export interface InterviewCareerOperationDoc {
+  _id:string; userId:string; sessionId:string; questionId:string; answerId:string;
+  recordId:string|null; expectedAnswerVersion:number|null; answerVersion:number;
+  inputIdempotencyKey:string; requestHash:string; kind:"answer"|"cleanup";
+  input:{inputType:"text"|"voice";transcript:string}; active:boolean;
+  writerIntegration:import("@expresso/contracts").CareerProducerIntent;
+  result:import("@expresso/contracts").InterviewAnswerResult|null;
+  createdAt:Date;updatedAt:Date;
 }

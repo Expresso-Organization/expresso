@@ -35,6 +35,9 @@ const READ_ONLY_TYPES = new Set(["formula", "rollup", "created_time", "updated_t
 const RECORD_TIME_TYPES = new Set(["created_time", "updated_time"]);
 const RECORD_TIME_CHANGES = new Set(["rename", "reorder", "delete", "restore"]);
 
+export const careerPropertyDefinitions = (category: import("@expresso/database").CareerCategoryDoc) => category.propertySchemaV2;
+export { validateConfiguration as validateCareerPropertyConfiguration };
+
 type ConversionKind = "exact" | "safe" | "lossy" | "unmapped";
 interface ConversionResult { value?: unknown; kind: ConversionKind }
 interface SignedPreview {

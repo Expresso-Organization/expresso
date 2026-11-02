@@ -1,3 +1,8 @@
+import { CanonicalCareerReadService } from "../modules/career/index.js";
+import { createCareerWriterRuntime } from "../platform/career-writer-runtime.js";
+import { createCareerPropertyMutationProcessor,createCareerPropertyMutationRecovery } from "./processors/career-property-mutation.js";
+import { createCareerWriteOperationProcessor,createCareerWriteOperationRecovery } from "./processors/career-write-operation.js";
+import { createCareerComputationTargetStateProcessor } from "./processors/career-computation-target-state.js";
 import { setTimeout as delay } from "node:timers/promises";
 
 import { loadRuntimeConfig } from "../config/runtime-config.js";
@@ -20,7 +25,7 @@ import { BrewJobService } from "../modules/brew-jobs/index.js";
 import { ConsentService } from "../modules/consent/index.js";
 import { InterviewService } from "../modules/interview/index.js";
 import { AiQuestionWriter } from "../modules/interview/question-writer.js";
-import { AiRecordCleaner } from "../modules/career/record-cleaner.js";
+import { AiRecordCleaner } from "../modules/career/index.js";
 import { RecipeService } from "../modules/recipe/index.js";
 import { AiRecipePlanner } from "../modules/recipe/planner.js";
 import { createBrewJobProcessor } from "./processors/brew-jobs.js";
@@ -52,6 +57,7 @@ import { createCareerComputationProcessor } from "./processors/career-computatio
 const config = loadRuntimeConfig();
 if (!config.mongodbUrl || !config.mongodbDatabase) throw new Error("MongoDB runtime configuration is missing");
 const database = createMongoResource(config.mongodbUrl, { databaseName: config.mongodbDatabase });
+const careerReads = new CanonicalCareerReadService(database);
 const jobs = createReliableQueue<Record<string, unknown>>(
   "domain-jobs",
   config.redisUrl,
@@ -78,13 +84,13 @@ const aiUsage = new MongoAiUsageSink(database);
 const ai = createAiClient(config, aiUsage);
 // 계약을 부르기 전에 지나는 문. 워커에서 도는 계약도 예외가 아니다.
 const consentService = new ConsentService(database);
-const jobAnalysisService = new JobAnalysisService(database);
-const generationService = new GenerationService(database, consentService);
+const jobAnalysisService = new JobAnalysisService(database,careerReads);
+const generationService = new GenerationService(database, consentService,careerReads);
 // 지면을 만드는 쪽이 여기다 — 조각은 전부 이 프로세스에서 나간다.
 const pageStream = new PageStream(createStreamRedis(config.redisUrl), {
   prefix: config.queuePrefix,
 });
-const pageService = new PageService(database, consentService, pageStream);
+const pageService = new PageService(database, consentService, pageStream, careerReads);
 // 생성한 지면을 실제 브라우저로 재는 측정기입니다. 브라우저는 처음 잴 때 띄우고, 띄우지 못하면 생성은 측정 없이 이어갑니다.
 const mediaService = new MediaService(database, createMediaStorage(config));
 const pageMeasurer = new ChromiumPageMeasurer((assetId, width) => mediaService.read(assetId, width).catch(() => null));
@@ -107,13 +113,16 @@ const generationProcessor = createGenerationProcessor(
 );
 // 질문 생성 · 레시피 생성도 여기서 돈다. HTTP 요청은 잡만 만들고 바로 돌아간다.
 const brewJobService = new BrewJobService(database);
+const careerDocumentService = new CareerDocumentService(database,config.assetSigningSecret);
+const careerWriterRuntime=createCareerWriterRuntime(database,config,careerDocumentService,{cleaner:ai?new AiRecordCleaner(ai):null,consent:consentService});
 const interviewService = new InterviewService(
   database,
   ai ? new AiQuestionWriter(ai) : null,
   ai ? new AiRecordCleaner(ai) : null,
   consentService,
+  careerWriterRuntime.interview,
 );
-const recipeService = new RecipeService(database, ai ? new AiRecipePlanner(ai) : null, consentService);
+const recipeService = new RecipeService(database, ai ? new AiRecipePlanner(ai) : null, consentService,careerReads);
 const brewJobProcessor = createBrewJobProcessor(brewJobService, {
   interview: {
     async run({ userId, brewId, idempotencyKey }) {
@@ -132,11 +141,17 @@ const publishingService = new PublishingService(database, config.assetSigningSec
 const analyticsService = new AnalyticsService(database, config.analyticsVisitorSalt ? { visitorSalt: config.analyticsVisitorSalt } : {});
 const analyticsProcessor = createAnalyticsProcessor(analyticsService);
 const notificationProcessor = createNotificationProcessor(engagementService, new ConsoleNotificationProvider());
-const accountLifecycleService = new AccountLifecycleService(database);
-const careerDocumentService = new CareerDocumentService(database, config.assetSigningSecret);
+const accountLifecycleService = new AccountLifecycleService(database,careerReads);
+
 const careerDocumentCompactionProcessor = createCareerDocumentCompactionProcessor(careerDocumentService);
 const careerDocumentProjectionProcessor = createCareerDocumentProjectionProcessor(careerDocumentService);
-const careerComputationProcessor = createCareerComputationProcessor(new MongoCareerComputationService(database));
+const careerComputationService=new MongoCareerComputationService(database,"canonical");
+const careerComputationProcessor=createCareerComputationProcessor(careerComputationService);
+const careerTargetStateProcessor=createCareerComputationTargetStateProcessor(careerComputationService);
+const careerMutationProcessor=createCareerPropertyMutationProcessor(careerWriterRuntime.mutation);
+const careerWriteProcessor=createCareerWriteOperationProcessor(database,{"career-product":careerWriterRuntime.execute,"ai-proposal":careerWriterRuntime.execute,interview:careerWriterRuntime.execute});
+const careerMutationRecovery=createCareerPropertyMutationRecovery(database,jobs.queue,{onError:()=>{console.error(JSON.stringify({level:"error",event:"career.mutation.recovery_failed"}));}});
+const careerWriteRecovery=createCareerWriteOperationRecovery(database,jobs.queue,{onError:()=>{console.error(JSON.stringify({level:"error",event:"career.write.recovery_failed"}));}});
 // 수집은 여기서만 돈다 — 바깥을 부르는 일은 요청 경로가 아니라 워커의 일이다.
 const jobIngestService = new JobIngestService(
   database,
@@ -167,6 +182,9 @@ const queueWorker = createQueueWorker<Record<string, unknown>, Record<string, un
     if (job.name === "scheduled.execute") return scheduledJobProcessor(job);
     if (job.name === "career.document.compact") return careerDocumentCompactionProcessor(job) as Promise<Record<string, unknown>>;
     if (job.name === "career.document.project") return careerDocumentProjectionProcessor(job) as Promise<Record<string, unknown>>;
+    if(job.name==="career.property-mutation")return {result:await careerMutationProcessor(job)};
+    if(job.name==="career.write-operation")return careerWriteProcessor(job);
+    if(job.name==="career.computation.target-state")return {result:await careerTargetStateProcessor(job)};
     if (job.name === "career.computation") return careerComputationProcessor(job) as unknown as Promise<Record<string, unknown>>;
     throw new Error(`Unsupported domain job: ${job.name}`);
   },
@@ -220,6 +238,7 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
   });
 }
 
+careerMutationRecovery.start();careerWriteRecovery.start();
 while (!abortController.signal.aborted) {
   try {
     if (config.scheduledJobsEnabled !== false) await schedulingService.scheduleDue();
@@ -248,4 +267,5 @@ while (!abortController.signal.aborted) {
   }
 }
 
+await Promise.allSettled([careerMutationRecovery.stop(),careerWriteRecovery.stop()]);
 await Promise.allSettled([queueWorker.close(), refineWorker.close(), jobs.close(), refineJobs.close(), database.close(), pageMeasurer.close()]);

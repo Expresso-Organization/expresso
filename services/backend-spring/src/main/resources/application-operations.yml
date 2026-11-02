@@ -1,0 +1,33 @@
+spring:
+  main:
+    web-application-type: servlet
+  autoconfigure:
+    exclude: org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+server:
+  address: ${SPRING_BIND_ADDRESS:127.0.0.1}
+  port: ${SPRING_PORT}
+  shutdown: graceful
+career:
+  runtime:
+    mongo-uri: ${MONGODB_URL}
+    database: ${MONGODB_DATABASE}
+    replica-set: ${MONGODB_REPLICA_SET:rs0}
+  writer:
+    enabled: ${CAREER_WRITER_ENABLED:false}
+    mongo-uri: ${MONGODB_URL}
+    database: ${MONGODB_DATABASE}
+    move-secret: ${CAREER_WRITER_MOVE_SECRET:}
+  product:
+    service-secret: ${CAREER_PRODUCT_SERVICE_SECRET:}
+  property-mutation:
+    enabled: ${CAREER_PROPERTY_MUTATION_ENABLED:false}
+    secret: ${CAREER_PROPERTY_MUTATION_SECRET:}
+  integration:
+    enabled: ${CAREER_INTEGRATION_ENABLED:false}
+    ai-secret: ${CAREER_INTEGRATION_AI_SECRET:}
+    interview-secret: ${CAREER_INTEGRATION_INTERVIEW_SECRET:}
+logging:
+  level:
+    org.mongodb.driver: ERROR

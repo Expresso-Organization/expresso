@@ -1,8 +1,11 @@
 "use server";
 
+import { IdempotencyKeySchema } from "@expresso/contracts";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { ApiError } from "@/lib/api/client";
+import { publicWriteOperationFromError } from "@/lib/api/write-operation-errors";
 import { brews, interview } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
@@ -53,7 +56,7 @@ export async function createRecipeAction(formData: FormData): Promise<void> {
   reload(brewId);
 }
 
-export async function answerQuestionAction(formData: FormData): Promise<void> {
+export async function answerQuestionAction(formData: FormData): Promise<Awaited<ReturnType<typeof interview.answer>> | null> {
   const brewId = formData.get("brewId");
   const sessionId = formData.get("sessionId");
   const questionId = formData.get("questionId");
@@ -62,18 +65,29 @@ export async function answerQuestionAction(formData: FormData): Promise<void> {
     typeof brewId !== "string" || typeof sessionId !== "string"
     || typeof questionId !== "string" || typeof transcript !== "string"
     || !transcript.trim()
-  ) return;
+  ) return null;
 
   const session = await requireSession();
-  await interview.answer(
+  const suppliedKey = formData.get("idempotencyKey");
+  const key = typeof suppliedKey === "string" ? IdempotencyKeySchema.parse(suppliedKey) : "answer:" + questionId;
+  try {
+  const result = await interview.answer(
     session.accessToken,
     sessionId,
     questionId,
     { inputType: "text", transcript: transcript.trim() },
     // 같은 질문에 두 번 보내면 답이 갱신된다 — 새 답이 아니라 고친 답이다.
-    `answer:${questionId}`,
+    key,
   );
-  reload(brewId);
+  if (!("operationId" in result.data)) reload(brewId);
+  return result;
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 409) {
+      const operation = publicWriteOperationFromError({ error: { code: error.code, message: error.message, requestId: error.requestId, details: error.details } }, "interview");
+      if (operation) return { data: operation };
+    }
+    throw error;
+  }
 }
 
 export async function replaceQuestionAction(formData: FormData): Promise<void> {

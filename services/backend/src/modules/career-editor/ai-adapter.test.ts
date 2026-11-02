@@ -82,3 +82,10 @@ describe("partial_edit 출력의 null", () => {
   });
 });
 
+it("adds exact canonical property and private option context without converting decimal digits",async()=>{
+ const client=new StubAiClient(),adapter=new AiClientProposalAdapter(client),propertyId=randomUUID();
+ const canonicalPropertyValues=[{propertyDefinitionId:propertyId,type:"number" as const,value:"12345678901234567890.123400"}];
+ const propertyDefinitions=[{id:propertyId,key:"amount",name:"수치",type:"number" as const,required:false,system:false,config:{},order:0,version:1,deletedAt:null}];
+ await adapter.generate({userId:randomUUID(),recordId:randomUUID(),documentVersion:0,selectionBlockIds:[],selectedBlocks:[],prompt:"검토",signal:new AbortController().signal,canonicalPropertyValues,propertyDefinitions});
+ expect(JSON.parse(client.spec!.prompt)).toMatchObject({canonicalPropertyValues,propertyDefinitions});
+});

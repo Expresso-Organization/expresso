@@ -1,0 +1,248 @@
+{
+  "career_property_mutations": {
+    "$jsonSchema": {
+      "bsonType": "object",
+      "additionalProperties": false,
+      "required": [
+        "_id",
+        "userId",
+        "categoryId",
+        "propertyId",
+        "planJson",
+        "operationFingerprint",
+        "status",
+        "active",
+        "cursor",
+        "processedCount",
+        "skippedCount",
+        "attempts",
+        "leaseToken",
+        "leaseUntil",
+        "lastError",
+        "createdAt",
+        "updatedAt",
+        "completedAt",
+        "commitFence"
+      ],
+      "properties": {
+        "_id": {
+          "bsonType": "string",
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89ab][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+        },
+        "userId": {
+          "bsonType": "string",
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89ab][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+        },
+        "categoryId": {
+          "bsonType": "string",
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89ab][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+        },
+        "propertyId": {
+          "bsonType": "string",
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89ab][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+        },
+        "planJson": {
+          "bsonType": "string",
+          "minLength": 2,
+          "maxLength": 2097152
+        },
+        "operationFingerprint": {
+          "bsonType": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "status": {
+          "bsonType": "string",
+          "enum": [
+            "pending",
+            "running",
+            "failed",
+            "completed"
+          ]
+        },
+        "active": {
+          "bsonType": "bool"
+        },
+        "cursor": {
+          "bsonType": [
+            "int",
+            "long",
+            "double"
+          ],
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "multipleOf": 1
+        },
+        "processedCount": {
+          "bsonType": [
+            "int",
+            "long",
+            "double"
+          ],
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "multipleOf": 1
+        },
+        "skippedCount": {
+          "bsonType": [
+            "int",
+            "long",
+            "double"
+          ],
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "multipleOf": 1
+        },
+        "attempts": {
+          "bsonType": [
+            "int",
+            "long",
+            "double"
+          ],
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "multipleOf": 1
+        },
+        "leaseToken": {
+          "bsonType": [
+            "string",
+            "null"
+          ]
+        },
+        "leaseUntil": {
+          "bsonType": [
+            "date",
+            "null"
+          ]
+        },
+        "lastError": {
+          "bsonType": [
+            "string",
+            "null"
+          ],
+          "maxLength": 64
+        },
+        "createdAt": {
+          "bsonType": "date"
+        },
+        "updatedAt": {
+          "bsonType": "date"
+        },
+        "completedAt": {
+          "bsonType": [
+            "date",
+            "null"
+          ]
+        },
+        "commitFence": {
+          "bsonType": [
+            "int",
+            "long",
+            "double"
+          ],
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "multipleOf": 1
+        }
+      }
+    }
+  },
+  "career_property_mutation_receipts": {
+    "$jsonSchema": {
+      "bsonType": "object",
+      "additionalProperties": false,
+      "required": [
+        "_id",
+        "userId",
+        "mutationId",
+        "recordId",
+        "operationFingerprint",
+        "response",
+        "changed",
+        "createdAt"
+      ],
+      "properties": {
+        "_id": {
+          "bsonType": "string",
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89ab][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+        },
+        "userId": {
+          "bsonType": "string",
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89ab][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+        },
+        "mutationId": {
+          "bsonType": "string",
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89ab][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+        },
+        "recordId": {
+          "bsonType": "string",
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89ab][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+        },
+        "operationFingerprint": {
+          "bsonType": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "response": {
+          "bsonType": "object",
+          "required": [
+            "_id",
+            "userId",
+            "categoryId",
+            "title",
+            "propertyValues",
+            "status",
+            "version",
+            "updatedAt"
+          ],
+          "properties": {
+            "_id": {
+              "bsonType": "string",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89ab][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+            },
+            "userId": {
+              "bsonType": "string",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89ab][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+            },
+            "categoryId": {
+              "bsonType": "string",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89ab][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+            },
+            "title": {
+              "bsonType": "string"
+            },
+            "propertyValues": {
+              "bsonType": "array"
+            },
+            "status": {
+              "bsonType": "string",
+              "enum": [
+                "draft",
+            "organized",
+            "verified"
+              ]
+            },
+            "version": {
+              "bsonType": [
+                "int",
+                "long",
+                "double"
+              ],
+              "minimum": 1,
+              "maximum": 9007199254740991,
+              "multipleOf": 1
+            },
+            "updatedAt": {
+              "bsonType": "date"
+            }
+          },
+          "additionalProperties": false
+        },
+        "changed": {
+          "bsonType": "bool"
+        },
+        "createdAt": {
+          "bsonType": "date"
+        }
+      }
+    }
+  }
+}

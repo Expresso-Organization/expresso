@@ -103,12 +103,18 @@ export function registerInterviewRoutes(
     };
   });
 
-  app.put(`${API_PREFIX}/interview-sessions/:id/answers/:questionId`, { preHandler }, async (request) => {
+  app.put(`${API_PREFIX}/interview-sessions/:id/answers/:questionId`, { preHandler }, async (request, reply) => {
     const principal = requireAuth(request);
     const params = QuestionParamsSchema.safeParse(request.params);
     const input = SaveInterviewAnswerSchema.safeParse(request.body);
     if (!params.success || !input.success) {
       throw new HttpStatusError(400, "invalid interview answer");
+    }
+    if (options.interviewService.saveAnswerOperation) {
+      const result = await options.interviewService.saveAnswerOperation(principal.user.id, params.data.id, params.data.questionId,
+        idempotencyKey(request.headers["idempotency-key"]), input.data);
+      if (result.status === 202) reply.header("location", result.body.data.statusUrl).header("cache-control", "no-store");
+      return reply.code(result.status).send(result.body);
     }
     return {
       data: await options.interviewService.saveAnswer(

@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: backend-spring
+  main:
+    web-application-type: none
