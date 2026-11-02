@@ -100,9 +100,9 @@ export class JobAnalysisService implements JobAnalysisApi {
           const coverage = calculateRequirementCoverage(requirement, recordTexts);
           await db.requirementCoverages.insertOne({ _id: `${userId}:${target._id}`, userId, requirementId: target._id, ...coverage, computedAt: new Date() }, options);
         }
-        // 커버리지와 일치도를 같은 기록 snapshot으로 저장합니다. 근거가 부족하면 이전 점수를 남기지 않습니다.
+        // 커버리지와 일치도를 같은 기록 snapshot으로 저장합니다. 비교할 기록이 없으면 이전 점수를 남기지 않습니다.
         const normalizedInput = JobAnalysisExtractionSchema.shape.normalized.parse(normalized);
-        const match = records.length >= 3 ? calculateExplainableMatch(jobPostingId, normalizedInput, recordTexts.map((record) => record.text).join("\n"), new Date()) : null;
+        const match = records.length > 0 ? calculateExplainableMatch(jobPostingId, normalizedInput, recordTexts.map((record) => record.text).join("\n"), new Date()) : null;
         if (match) await db.matchScores.updateOne({ userId, jobPostingId }, { $set: { total: Decimal128.fromString(String(match.total)), axes: match.axes, reasonText: match.reason, nextAction: match.nextAction, computedAt: new Date(match.computedAt) }, $setOnInsert: { _id: randomUUID(), userId, jobPostingId } }, { ...options, upsert: true });
         else await db.matchScores.deleteOne({ userId, jobPostingId }, options);
         await db.jobAnalyses.updateOne({ _id: jobAnalysisId, userId, status: "running", targetVersion, attempts: attempt }, { $set: { status: "done", progressStage: "done", resultVersion: targetVersion, analyzedAt: new Date(), failureCode: null, failureRetryable: null, ...(previous ? { history: { userId, previousVersion: analysis.resultVersion, requirements: previous, archivedAt: new Date() } } : {}) } }, options);

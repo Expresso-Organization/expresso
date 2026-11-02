@@ -56,11 +56,9 @@ export default async function HomePage() {
           {recordTotal === 0 ? (
             <div className={styles.firstRun}>
               <p className={styles.firstRunTitle}>
-                기록 3건만 있으면 추천이 시작됩니다
+                첫 기록을 남기면 공고와 맞춰 볼 수 있습니다
               </p>
               <p className={styles.firstRunBody}>
-                먼저 경험 하나를 적어 두면, 공고에 맞춰 다시 골라 드립니다.
-                <br />
                 직접 쓰거나 바리스타에게 질문을 받아 채울 수 있습니다.
               </p>
               <Link href="/career/experience" className={styles.firstRunCta}>

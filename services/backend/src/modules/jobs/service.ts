@@ -141,7 +141,8 @@ export class JobMarketService implements JobMarketApi {
       const posting = await db.jobPostings.findOne({ _id: jobPostingId }, options);
       if (!posting) throw new JobMarketError(404, "job posting not found");
       const records = await db.careerRecords.find({ userId, deletedAt: null }, options).sort({ _id: 1 }).toArray();
-      if (records.length < 3) throw new JobMarketError(409, "more career records are required", { required: 3, actual: records.length });
+      // 기록이 하나도 없을 때만 막는다. 일치도는 요건 충족률이라 기록 수에 기대는 기준이 없다.
+      if (records.length === 0) throw new JobMarketError(409, "more career records are required", { required: 1, actual: 0 });
       const match = calculateExplainableMatch(jobPostingId, JobRequirementsSchema.parse(posting.requirements), records.map(await careerRecordTextReader(tx.db, userId, tx.session)).join("\n"), at);
       if (!match) throw new JobMarketError(409, "job posting requirements are not extracted yet", { jobPostingId });
       await db.matchScores.updateOne({ userId, jobPostingId }, { $set: { total: Decimal128.fromString(String(match.total)), axes: match.axes, reasonText: match.reason, nextAction: match.nextAction, computedAt: at }, $setOnInsert: { _id: randomUUID(), userId, jobPostingId } }, { ...options, upsert: true });
