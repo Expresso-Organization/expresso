@@ -5,9 +5,9 @@ import { readAccessToken } from "@/lib/session";
 
 import { Landing } from "./LandingSections";
 
-const TITLE = "Expresso — 공고에 맞춘 포트폴리오";
+const TITLE = "Expresso — 채용 공고에 맞춘 포트폴리오";
 const DESCRIPTION =
-  "채용 공고와 내 커리어 기록을 대조해 지원하는 곳마다 맞춘 포트폴리오 사이트를 만들고, 링크 하나로 보냅니다.";
+  "채용 공고에 맞춘 포트폴리오 사이트를 만들어 드립니다. 공고를 붙여 넣으면 내 커리어 기록 중 관련 있는 경험을 골라 사이트로 만들고, 나만의 주소로 배포합니다.";
 
 /** 링크를 메신저에 붙였을 때 뜨는 머리. 주소는 요청 호스트가 아니라 앱의 공개 주소다. */
 export function generateMetadata(): Metadata {

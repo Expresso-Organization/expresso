@@ -7,6 +7,8 @@
  * - 짙은 남색 구획 · 바닥글은 테마와 상관없이 늘 어둡다. 로그인 aside 그러데이션의 첫 색
  *   (#16223a, `tokens.test.ts` 허용 목록)을 그대로 쓰고, 안쪽 글자는 `data-theme="dark"`로
  *   고정한 역할 토큰을 쓴다. 팔레트 토큰은 화면에서 직접 쓰지 않는다.
+ *
+ * 움직임은 모두 `prefers-reduced-motion: no-preference` 안에 둔다.
  */
 
 .page {
@@ -20,6 +22,21 @@
   max-width: 1240px;
   margin: 0 auto;
   padding: 0 40px;
+}
+
+/* ── 스크롤 등장 ───────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: no-preference) {
+  .reveal {
+    transition:
+      opacity 700ms cubic-bezier(0.16, 1, 0.3, 1),
+      transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .reveal[data-state="waiting"] {
+    opacity: 0;
+    transform: translateY(28px);
+  }
 }
 
 /* ── 머리 메뉴 ─────────────────────────────────────────────── */
@@ -132,6 +149,12 @@
   font-size: var(--ex-text-lg);
 }
 
+.ctaNote {
+  margin: 14px 0 0;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-subtle);
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .cta:hover {
     transform: translateY(-2px);
@@ -238,64 +261,319 @@
   text-wrap: pretty;
 }
 
-.lede strong {
-  font-weight: 600;
-  color: var(--ex-fg);
+/* 첫 화면 그림 — 실제로 만든 포트폴리오 사이트가 창 안에서 천천히 내려간다. */
+.heroVisual {
+  position: relative;
+  margin-top: 56px;
+  padding-bottom: 40px;
 }
 
-/* ── 첫 화면 그림 — 공고 요건 대조와 만들어진 지면 ─────────── */
-
-.frame {
-  margin-top: 56px;
-  padding: 13px;
-  background: var(--ex-bg);
-  border: 1px solid var(--ex-border);
-  border-radius: 20px;
+.heroBrowser {
   box-shadow: var(--ex-elevation-frame);
 }
 
-.frameChrome {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 8px 13px;
+.heroScroll {
+  aspect-ratio: 16 / 9.6;
+  overflow: hidden;
 }
 
-.frameDot {
+.heroScrollImage {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/*
+ * 이미지는 1440×2700이라 높이가 폭의 1.875배다. 창은 폭의 0.6배라서
+ * 끝까지 내리려면 이미지 높이의 68%(= (1.875 - 0.6) / 1.875)를 올린다.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .heroScrollImage {
+    animation: landingSiteScroll 22s ease-in-out infinite;
+  }
+}
+
+@keyframes landingSiteScroll {
+  0%, 10% { transform: translateY(0); }
+  45%, 58% { transform: translateY(-68%); }
+  92%, 100% { transform: translateY(0); }
+}
+
+.phone {
+  position: absolute;
+  right: -12px;
+  bottom: 0;
+  width: 200px;
+  overflow: hidden;
+  border: 6px solid var(--ex-fg);
+  border-radius: 30px;
+  background: var(--ex-bg);
+  box-shadow: var(--ex-elevation-overlay);
+}
+
+.phoneImage {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .phone {
+    animation: landingFloat 6s ease-in-out infinite;
+  }
+}
+
+@keyframes landingFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+/* ── 브라우저 창 틀 · 화면 이미지 ──────────────────────────── */
+
+.browser {
+  overflow: hidden;
+  border: 1px solid var(--ex-border);
+  border-radius: 16px;
+  background: var(--ex-bg);
+}
+
+.browserChrome {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--ex-border-inner);
+}
+
+.browserDot {
   width: 9px;
   height: 9px;
   border-radius: 50%;
   background: var(--ex-border);
 }
 
-.frameAddress {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-left: 14px;
-  padding: 6px 12px;
+.browserAddress {
+  overflow: hidden;
+  margin-left: 12px;
+  padding: 4px 12px;
   border-radius: 8px;
   background: var(--ex-bg-sunken);
-  font-size: var(--ex-text-2xs);
+  font-family: var(--ex-font-mono);
+  font-size: var(--ex-text-3xs);
   color: var(--ex-fg-muted);
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.frameBody {
+.browserBody {
+  position: relative;
+}
+
+.shot {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* ── 절 공통 ───────────────────────────────────────────────── */
+
+.section {
+  padding: 112px 0 0;
+  scroll-margin-top: 72px;
+}
+
+.h2 {
+  margin: 0 0 20px;
+  font-size: var(--ex-text-display-sm);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: var(--ex-leading-tight);
+  color: var(--ex-fg);
+  text-wrap: balance;
+}
+
+.body {
+  max-width: 640px;
+  margin: 0;
+  font-size: var(--ex-text-lg);
+  line-height: var(--ex-leading-relaxed);
+  color: var(--ex-fg-muted);
+  text-wrap: pretty;
+}
+
+/* ── 제작 과정 둘러보기 ────────────────────────────────────── */
+
+.tour {
   display: grid;
-  grid-template-columns: 1.35fr 1fr;
-  gap: 12px;
-  padding: 16px;
-  border: 1px solid var(--ex-border-inner);
-  border-radius: 12px;
-  background: var(--ex-bg-sunken);
+  grid-template-columns: minmax(0, 340px) minmax(0, 1fr);
+  align-items: start;
+  gap: 32px;
+  margin-top: 36px;
+}
+
+.tourTabs {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tourTab {
+  position: relative;
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  align-items: baseline;
+  gap: 4px 10px;
+  overflow: hidden;
+  padding: 14px 16px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  background: none;
+  font: inherit;
+  color: var(--ex-fg-muted);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background var(--ex-motion-quick),
+    border-color var(--ex-motion-quick),
+    color var(--ex-motion-quick);
+}
+
+.tourTab:hover {
+  color: var(--ex-fg);
+}
+
+.tourTab:focus-visible {
+  outline: none;
+  box-shadow: var(--ex-focus-ring);
+}
+
+.tourTab[data-active="true"] {
+  border-color: var(--ex-border);
+  background: var(--ex-bg);
+  color: var(--ex-fg);
+}
+
+.tourNumber {
+  font-family: var(--ex-font-mono);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-subtle);
+}
+
+.tourTab[data-active="true"] .tourNumber {
+  color: var(--ex-accent-text);
+}
+
+.tourTitle {
+  font-size: var(--ex-text-md);
+  font-weight: 600;
+}
+
+/* 설명은 고른 단계에서만 펼친다. 높이 대신 grid 행으로 펼쳐 글자가 잘리지 않는다. */
+.tourBody {
+  grid-column: 2;
+  display: none;
+  font-size: var(--ex-text-sm);
+  line-height: var(--ex-leading-normal);
+  color: var(--ex-fg-muted);
+}
+
+.tourTab[data-active="true"] .tourBody {
+  display: block;
+}
+
+.tourProgress {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 0;
+  height: 2px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--ex-border-inner);
+}
+
+.tourProgressFill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--ex-accent);
+  transform-origin: left center;
+  animation: landingProgress linear forwards;
+}
+
+@keyframes landingProgress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.tourStage {
+  position: relative;
+  display: grid;
+}
+
+/* 패널을 한 칸에 겹쳐 두고 고른 것만 보인다. 높이는 가장 큰 패널이 정한다. */
+.tourPanel {
+  grid-area: 1 / 1;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.tourPanel[data-active="true"] {
+  opacity: 1;
+  visibility: visible;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tourPanel {
+    transform: translateY(10px) scale(0.99);
+    transition:
+      opacity 420ms ease,
+      transform 520ms cubic-bezier(0.16, 1, 0.3, 1),
+      visibility 0s linear 420ms;
+  }
+
+  .tourPanel[data-active="true"] {
+    transform: none;
+    transition:
+      opacity 420ms ease,
+      transform 520ms cubic-bezier(0.16, 1, 0.3, 1),
+      visibility 0s;
+  }
+}
+
+.tourPanel > .browser {
+  box-shadow: var(--ex-elevation-raised);
+}
+
+/* 넓은 화면에서는 단계 목록이 설명을 펼치므로 화면 아래 설명은 좁은 화면에서만 보인다. */
+.tourCaption {
+  display: none;
+  margin: 16px 0 0;
+  font-size: var(--ex-text-md);
+  line-height: var(--ex-leading-normal);
+  color: var(--ex-fg-body);
+}
+
+/* 실제 화면이 없는 단계의 그림. 화면 이미지와 같은 16:10 판 안에 둔다. */
+.figure {
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 16 / 10.6;
+  padding: 32px;
+  border: 1px solid var(--ex-border);
+  border-radius: 16px;
+  background: var(--ex-bg-tint);
 }
 
 .panel {
-  padding: 16px 16px 10px;
+  width: 100%;
+  max-width: 560px;
+  padding: 18px 18px 12px;
   border: 1px solid var(--ex-border);
-  border-radius: 12px;
+  border-radius: 14px;
   background: var(--ex-bg);
+  box-shadow: var(--ex-elevation-raised);
 }
 
 .panelHead {
@@ -375,116 +653,12 @@
   color: var(--ex-status-danger-text);
 }
 
-.sitePreview {
+.chat {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  padding: 14px;
-  border: 1px solid var(--ex-border);
-  border-radius: 12px;
-  background: var(--ex-bg);
-}
-
-.siteAddress {
-  align-self: flex-start;
-  padding: 4px 8px;
-  border-radius: 6px;
-  background: var(--ex-bg-sunken);
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-3xs);
-  color: var(--ex-fg-subtle);
-}
-
-.siteHero {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 10px 2px 14px;
-  border-bottom: 1px solid var(--ex-border-inner);
-}
-
-.siteName {
-  font-size: var(--ex-text-lg);
-  font-weight: 600;
-}
-
-.siteTagline {
-  font-size: var(--ex-text-sm);
-  line-height: var(--ex-leading-snug);
-  color: var(--ex-fg-body);
-}
-
-.siteSection {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-
-.siteSectionTitle {
-  font-size: var(--ex-text-xs);
-  font-weight: 600;
-}
-
-.siteLine {
-  display: block;
-  height: 6px;
-  border-radius: 3px;
-  background: var(--ex-bg-track);
-}
-
-.siteLineShort {
-  width: 62%;
-}
-
-/* ── 절 공통 ───────────────────────────────────────────────── */
-
-.section {
-  padding: 100px 0 0;
-  scroll-margin-top: 72px;
-}
-
-.h2 {
-  margin: 0 0 20px;
-  font-size: var(--ex-text-display-sm);
-  font-weight: 600;
-  letter-spacing: -0.03em;
-  line-height: var(--ex-leading-tight);
-  color: var(--ex-fg);
-  text-wrap: balance;
-}
-
-.h3 {
-  margin: 0 0 12px;
-  font-size: var(--ex-text-xl);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
-
-.body {
-  margin: 0;
-  font-size: var(--ex-text-lg);
-  line-height: var(--ex-leading-relaxed);
-  color: var(--ex-fg-muted);
-  text-wrap: pretty;
-}
-
-.card {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 24px;
-  border: 1px solid var(--ex-border);
-  border-radius: 20px;
-  background: var(--ex-bg);
-}
-
-/* ── 바리스타 대화 ─────────────────────────────────────────── */
-
-.split {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  align-items: center;
-  gap: 48px;
+  width: 100%;
+  max-width: 560px;
 }
 
 .chatRow {
@@ -501,17 +675,19 @@
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: var(--ex-accent-surface);
+  background: var(--ex-bg);
+  box-shadow: var(--ex-elevation-raised);
 }
 
 .chatBubble {
-  max-width: 85%;
-  padding: 12px 14px;
-  border-radius: 4px 14px 14px 14px;
-  background: var(--ex-bg-sunken);
+  max-width: 82%;
+  padding: 13px 15px;
+  border-radius: 4px 16px 16px 16px;
+  background: var(--ex-bg);
+  box-shadow: var(--ex-elevation-raised);
   font-size: var(--ex-text-sm);
   line-height: var(--ex-leading-normal);
   color: var(--ex-fg);
@@ -520,94 +696,22 @@
 .chatRequirement {
   display: block;
   margin-bottom: 4px;
-  font-size: var(--ex-text-3xs);
+  font-size: var(--ex-text-2xs);
   font-weight: 600;
   color: var(--ex-accent-text);
 }
 
 .chatBubbleMine {
-  border-radius: 14px 4px 14px 14px;
+  border-radius: 16px 4px 16px 16px;
   background: var(--ex-accent);
   color: var(--ex-fg-on-accent);
-}
-
-.caution {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding-top: 14px;
-  border-top: 1px solid var(--ex-border-inner);
-}
-
-.cautionHead {
-  font-size: var(--ex-text-2xs);
-  font-weight: 600;
-  color: var(--ex-fg-subtle);
-}
-
-.cautionBody {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 9px 11px;
-  border-radius: 8px;
-  background: var(--ex-status-warning-surface);
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-body);
-}
-
-/* ── 만드는 순서 ───────────────────────────────────────────── */
-
-.steps {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 24px;
-  margin: 12px 0 0;
-  padding: 28px;
-  list-style: none;
-  border: 1px solid var(--ex-border);
-  border-radius: 20px;
-  background: var(--ex-bg);
-}
-
-.step {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.stepNumber {
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-3xs);
-  color: var(--ex-fg-subtle);
-}
-
-.stepIcon {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  margin-bottom: 4px;
-  border-radius: 10px;
-  background: var(--ex-accent-surface);
-}
-
-.stepTitle {
-  font-size: var(--ex-text-md);
-  font-weight: 600;
-}
-
-.stepBody {
-  font-size: var(--ex-text-xs);
-  line-height: var(--ex-leading-normal);
-  color: var(--ex-fg-muted);
 }
 
 /* ── 기업 맞춤 — 반전 지면 ─────────────────────────────────── */
 
 .inverse {
   display: grid;
-  grid-template-columns: 1fr 1.1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
   align-items: center;
   gap: 48px;
   padding: 56px;
@@ -624,175 +728,147 @@
   text-wrap: pretty;
 }
 
-.tailorFigure {
+.tailorDemo {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
 }
 
-.pool {
+.tailorTabs {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  padding: 16px;
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--ex-fg) 5%, transparent);
 }
 
-.poolChip {
-  padding: 6px 11px;
+.tailorTab {
+  padding: 8px 14px;
+  border: 1px solid color-mix(in srgb, var(--ex-fg) 16%, transparent);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--ex-fg) 8%, transparent);
-  font-size: var(--ex-text-2xs);
+  background: none;
+  font: inherit;
+  font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
+  cursor: pointer;
+  transition:
+    background var(--ex-motion-quick),
+    color var(--ex-motion-quick),
+    border-color var(--ex-motion-quick);
 }
 
-.targets {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.target {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  padding: 16px;
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--ex-fg) 6%, transparent);
-}
-
-.targetTitle {
-  margin-bottom: 3px;
-  font-size: var(--ex-text-xs);
-  font-weight: 600;
-  color: var(--ex-accent-soft);
-}
-
-.targetPick {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  font-size: var(--ex-text-xs);
+.tailorTab:hover {
+  border-color: color-mix(in srgb, var(--ex-fg) 40%, transparent);
   color: var(--ex-fg);
 }
 
-.targetRank {
+.tailorTab:focus-visible {
+  outline: none;
+  box-shadow: var(--ex-focus-ring);
+}
+
+.tailorTab[data-active="true"] {
+  border-color: var(--ex-accent-soft);
+  background: var(--ex-accent-soft);
+  color: #16223a;
+  font-weight: 600;
+}
+
+/* 줄은 모두 같은 자리에 겹쳐 두고 순위만큼 내린다. 순위가 바뀌면 그 거리만큼 미끄러진다. */
+.tailorList {
+  --row: 52px;
+  position: relative;
+  height: calc(var(--row) * 6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tailorRow {
+  box-sizing: border-box;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  height: calc(var(--row) - 6px);
+  padding: 0 14px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ex-fg) 5%, transparent);
+  color: var(--ex-fg-subtle);
+}
+
+.tailorRow[data-picked="true"] {
+  background: color-mix(in srgb, var(--ex-fg) 11%, transparent);
+  color: var(--ex-fg);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tailorRow {
+    transition:
+      transform 620ms cubic-bezier(0.34, 1.2, 0.64, 1),
+      background 300ms ease,
+      color 300ms ease;
+  }
+}
+
+.tailorRank {
   display: grid;
   place-items: center;
-  flex-shrink: 0;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--ex-fg) 12%, transparent);
+  background: color-mix(in srgb, var(--ex-fg) 10%, transparent);
   font-family: var(--ex-font-mono);
   font-size: var(--ex-text-3xs);
 }
 
-/* ── 기능 셋 ───────────────────────────────────────────────── */
-
-.features {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 24px;
+.tailorRow[data-picked="true"] .tailorRank {
+  background: var(--ex-accent-soft);
+  color: #16223a;
 }
 
-.feature {
-  display: flex;
-  flex-direction: column;
-  padding: 32px;
-  border: 1px solid var(--ex-border);
-  border-radius: 20px;
-  background: var(--ex-bg);
-}
-
-.featureIcon {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  margin-bottom: 24px;
-  border-radius: 14px;
-  background: var(--ex-accent-surface);
-}
-
-.featureBody {
-  margin: 0 0 22px;
-  font-size: var(--ex-text-sm);
-  line-height: var(--ex-leading-relaxed);
-  color: var(--ex-fg-muted);
-}
-
-.featureFigure {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin-top: auto;
-}
-
-.tag {
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: var(--ex-bg-sunken);
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-fg-body);
-}
-
-.editTarget {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 9px;
-  border-radius: 999px;
-  background: var(--ex-bg-sunken);
-  font-size: var(--ex-text-3xs);
-  color: var(--ex-fg-muted);
-}
-
-.editInput {
-  box-sizing: border-box;
-  flex-basis: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--ex-border);
-  border-radius: 10px;
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-body);
-}
-
-.dwellRow {
-  display: grid;
-  flex-basis: 100%;
-  grid-template-columns: minmax(0, 1fr) 72px auto;
-  align-items: center;
-  gap: 10px;
-  font-size: var(--ex-text-2xs);
-}
-
-.dwellLabel {
+.tailorTitle {
   overflow: hidden;
-  color: var(--ex-fg-body);
+  font-size: var(--ex-text-sm);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.dwellTrack {
-  height: 5px;
-  overflow: hidden;
-  border-radius: 3px;
-  background: var(--ex-bg-track);
+.tailorCategory {
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-subtle);
 }
 
-.dwellFill {
-  display: block;
-  height: 100%;
-  background: var(--ex-accent);
+/* ── 포트폴리오 예시 ───────────────────────────────────────── */
+
+.showcase {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  margin-top: 36px;
 }
 
-.dwellTime {
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-3xs);
-  color: var(--ex-fg-muted);
+.showcaseItem {
+  box-shadow: var(--ex-elevation-raised);
+  transition:
+    transform var(--ex-motion-panel),
+    box-shadow var(--ex-motion-panel);
+}
+
+/* 두 사이트를 같은 비율로 자른다. 첫 화면이 보이도록 위에 맞춘다. */
+.showcaseItem .shot {
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  object-position: top;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .showcaseItem:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--ex-elevation-card-hover);
+  }
 }
 
 /* ── 마지막 권유 ───────────────────────────────────────────── */
@@ -804,6 +880,7 @@
 }
 
 .closingBody {
+  max-width: 560px;
   margin: 0 0 28px;
   font-size: var(--ex-text-lg);
   line-height: var(--ex-leading-relaxed);
@@ -811,7 +888,7 @@
 }
 
 main > .section:last-child {
-  padding-bottom: 100px;
+  padding-bottom: 112px;
 }
 
 /* ── 바닥글 ────────────────────────────────────────────────── */
@@ -870,16 +947,38 @@ main > .section:last-child {
 /* ── 좁은 폭 ───────────────────────────────────────────────── */
 
 @media (max-width: 1023px) {
-  .steps {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .tour {
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .features {
-    grid-template-columns: minmax(0, 1fr);
+  /* 단계 목록은 가로로 밀고, 고른 단계의 설명은 화면 아래에 둔다. */
+  .tourTabs {
+    flex-direction: row;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .tourTab {
+    flex-shrink: 0;
+    grid-template-columns: auto auto;
+  }
+
+  .tourTab[data-active="true"] .tourBody {
+    display: none;
+  }
+
+  .tourCaption {
+    display: block;
   }
 
   .inverse {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .phone {
+    width: 150px;
+    border-width: 5px;
+    border-radius: 24px;
   }
 }
 
@@ -922,24 +1021,20 @@ main > .section:last-child {
     flex-wrap: nowrap;
   }
 
-  .frame {
+  .heroVisual {
     margin-top: 40px;
-    padding: 8px;
+    padding-bottom: 28px;
   }
 
-  .frameAddress {
-    margin-left: 6px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .frameBody {
-    grid-template-columns: minmax(0, 1fr);
-    padding: 10px;
+  .phone {
+    right: 4px;
+    width: 104px;
+    border-width: 4px;
+    border-radius: 18px;
   }
 
   .section {
-    padding-top: 64px;
+    padding-top: 72px;
   }
 
   .h2 {
@@ -952,15 +1047,9 @@ main > .section:last-child {
     font-size: var(--ex-text-md);
   }
 
-  .split {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 28px;
-  }
-
-  .steps {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 20px;
-    padding: 20px;
+  .figure {
+    padding: 16px;
+    aspect-ratio: auto;
   }
 
   .inverse,
@@ -969,15 +1058,19 @@ main > .section:last-child {
     border-radius: 20px;
   }
 
-  .targets {
+  .tailorList {
+    --row: 50px;
+  }
+
+  .tailorCategory {
+    display: none;
+  }
+
+  .showcase {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .feature {
-    padding: 24px;
-  }
-
   main > .section:last-child {
-    padding-bottom: 64px;
+    padding-bottom: 72px;
   }
 }

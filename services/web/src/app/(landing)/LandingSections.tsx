@@ -1,17 +1,27 @@
+import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
 
 import { LogoMark, Wordmark } from "@/components/brand/Logo";
 import { Icon } from "@/components/ui/Icon";
 
+import designShot from "./images/design.jpg";
+import editorShot from "./images/editor.jpg";
+import materialsShot from "./images/materials.jpg";
+import siteFlowShot from "./images/site-flow.jpg";
+import siteGridLongShot from "./images/site-grid-long.jpg";
+import siteGridPhoneShot from "./images/site-grid-phone.jpg";
+import siteGridShot from "./images/site-grid.jpg";
+import { ProductTour, type TourStep } from "./ProductTour";
+import { Reveal } from "./Reveal";
+import { TailorDemo } from "./TailorDemo";
 import styles from "./landing.module.css";
 
 /**
- * 랜딩 구획. 화면 정의서(`docs/Expresso Landing.dc.html`)의 배치 · 색 · 머리글 애니메이션을
- * 따르고, 문구와 그림은 지금 제품이 실제로 하는 일로 바꿨다.
+ * 랜딩. 화면 정의서(`docs/Expresso Landing.dc.html`)의 배치 · 색 · 머리글 굴림을 따른다.
  *
- * 그림은 모두 가상의 공고 · 기록으로 그린 정적 마크업이다. 실제 화면의 상태 이름과 문구
- * (요건 있음 · 약함 · 없음, "근거에서 확인하지 못한 수", 단계 이름)를 그대로 쓴다.
- * 그림은 `aria-hidden`이고 뜻은 옆의 제목과 본문이 맡는다.
+ * 화면 이미지는 실제 제품을 찍은 것이다. 로컬 개발 서버와 체험 DB 복사본에서 예시 인물
+ * 윤하린의 계정으로 찍었고, 개발 주소만 운영 주소 형식으로 바꿨다. 공고 분석 · AI 대화
+ * 단계는 그 화면을 찍을 데이터가 없어 실제 화면의 상태 이름과 문구로 그린 그림을 쓴다.
  */
 export function Landing() {
   return (
@@ -19,10 +29,9 @@ export function Landing() {
       <Header />
       <main>
         <Hero />
-        <Barista />
         <Flow />
         <Tailor />
-        <Features />
+        <Showcase />
         <Closing />
       </main>
       <Footer />
@@ -54,12 +63,49 @@ function Header() {
           <Wordmark size={21} />
         </Link>
         <nav className={styles.anchors} aria-label="소개">
-          <a href="#flow">만드는 순서</a>
+          <a href="#flow">제작 과정</a>
           <a href="#tailor">기업 맞춤</a>
+          <a href="#showcase">포트폴리오 예시</a>
         </nav>
         <AuthLinks size="small" />
       </div>
     </header>
+  );
+}
+
+/** 브라우저 창 틀. 안에 실제 화면 이미지나 그림을 넣는다. */
+function BrowserFrame({
+  address,
+  children,
+  className,
+}: {
+  address: string;
+  children: React.ReactNode;
+  className?: string | undefined;
+}) {
+  return (
+    <div className={`${styles.browser} ${className ?? ""}`}>
+      <div className={styles.browserChrome} aria-hidden="true">
+        <span className={styles.browserDot} />
+        <span className={styles.browserDot} />
+        <span className={styles.browserDot} />
+        <span className={styles.browserAddress}>{address}</span>
+      </div>
+      <div className={styles.browserBody}>{children}</div>
+    </div>
+  );
+}
+
+function Shot({ src, alt, priority }: { src: StaticImageData; alt: string; priority?: boolean }) {
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      placeholder="blur"
+      sizes="(max-width: 767px) 100vw, (max-width: 1240px) 70vw, 860px"
+      className={styles.shot}
+      priority={priority ?? false}
+    />
   );
 }
 
@@ -85,21 +131,39 @@ function Hero() {
           </span>
         </h1>
         <p className={styles.lede}>
-          <strong>공고가 묻는 것과 내 기록이 가진 것을 먼저 맞춰 봅니다.</strong> 맞는 기록과 몇 개의 질문으로
-          지원하는 곳에 맞춘 포트폴리오 사이트를 만들고, 링크 하나로 보냅니다.
+          채용 공고에 맞춘 포트폴리오 사이트를 만들어 드립니다. 공고를 붙여 넣으면 내 커리어 기록 중 공고와 관련 있는
+          경험을 골라 사이트로 만들고, 나만의 주소로 배포합니다.
         </p>
         <AuthLinks size="large" />
-        <HeroFigure />
+        <p className={styles.ctaNote}>가입과 기본 사용은 무료입니다.</p>
+
+        <div className={styles.heroVisual}>
+          <BrowserFrame address="harin-backdrop-grid.expresso.ai.kr" className={styles.heroBrowser}>
+            <div className={styles.heroScroll}>
+              <Image
+                src={siteGridLongShot}
+                alt="Expresso로 만든 예시 인물 윤하린의 포트폴리오 사이트. 이름과 소개, 대표 프로젝트, 성과 수치 비교 차트가 차례로 이어진다."
+                placeholder="blur"
+                priority
+                sizes="(max-width: 1240px) 100vw, 1160px"
+                className={styles.heroScrollImage}
+              />
+            </div>
+          </BrowserFrame>
+          <div className={styles.phone} aria-hidden="true">
+            <Image src={siteGridPhoneShot} alt="" sizes="200px" className={styles.phoneImage} />
+          </div>
+        </div>
       </div>
     </section>
   );
 }
 
 const REQUIREMENTS = [
-  { label: "Kotlin 또는 Java 서버 개발", evidence: "정산 배치 재작성", state: "covered" },
-  { label: "대용량 트래픽 장애 대응", evidence: "결제 장애 원인 추적", state: "covered" },
-  { label: "Kafka 기반 이벤트 처리", evidence: "주문 알림 큐 도입", state: "partial" },
-  { label: "테스트 자동화 문화", evidence: null, state: "missing" },
+  { label: "React와 TypeScript로 서비스를 개발한 경험", evidence: "상품 상세 App Router 전환과 성능 개선", state: "covered" },
+  { label: "Core Web Vitals 지표를 측정하고 개선한 경험", evidence: "상품 상세 App Router 전환과 성능 개선", state: "covered" },
+  { label: "디자인 시스템을 구축하고 운영한 경험", evidence: "사내 디자인 시스템 '모아 UI' 구축", state: "partial" },
+  { label: "프론트엔드 테스트 자동화 경험", evidence: null, state: "missing" },
 ] as const;
 
 const COVERAGE = {
@@ -108,247 +172,163 @@ const COVERAGE = {
   missing: { icon: "circle-dashed", weight: "regular", label: "없음" },
 } as const;
 
-/** 공고 요건과 내 기록의 대조(공고 상세)와, 그 결과로 만들어지는 지면. */
-function HeroFigure() {
+/** 공고 분석 — 공고 상세의 요건 대조 표와 같은 상태 이름 · 아이콘으로 그린 그림. */
+function AnalysisFigure() {
   return (
-    <div className={styles.frame} aria-hidden="true">
-      <div className={styles.frameChrome}>
-        <span className={styles.frameDot} />
-        <span className={styles.frameDot} />
-        <span className={styles.frameDot} />
-        <span className={styles.frameAddress}>
-          <Icon name="briefcase" size={12} color="var(--ex-accent)" />
-          백엔드 엔지니어 · 결제 플랫폼
-        </span>
-      </div>
-      <div className={styles.frameBody}>
-        <div className={styles.panel}>
-          <div className={styles.panelHead}>
-            <span className={styles.panelTitle}>필수 요건</span>
-            <span className={styles.panelBadge}>4개 중 2개 충족</span>
-          </div>
-          {REQUIREMENTS.map((row) => {
-            const coverage = COVERAGE[row.state];
-            return (
-              <div key={row.label} className={`${styles.reqRow} ${styles[`req_${row.state}`] ?? ""}`}>
-                <Icon name={coverage.icon} weight={coverage.weight} size={16} className={styles.reqIcon} />
-                <span className={styles.reqText}>
-                  <span className={styles.reqLabel}>{row.label}</span>
-                  <span className={styles.reqEvidence}>{row.evidence ?? "기록 없음 · 대화에서 묻습니다"}</span>
-                </span>
-                <span className={styles.reqState}>{coverage.label}</span>
-              </div>
-            );
-          })}
+    <div className={styles.figure} role="img" aria-label="공고의 자격 요건 네 개 중 두 개는 기록으로 충족하고, 하나는 약하고, 하나는 기록이 없는 분석 결과">
+      <div className={styles.panel} aria-hidden="true">
+        <div className={styles.panelHead}>
+          <span className={styles.panelTitle}>프론트엔드 개발자 · 라온커머스(가상)</span>
+          <span className={styles.panelBadge}>4개 중 2개 충족</span>
         </div>
-        <div className={styles.sitePreview}>
-          <div className={styles.siteAddress}>seojun.expresso.ai.kr</div>
-          <div className={styles.siteHero}>
-            <span className={styles.siteName}>이서준</span>
-            <span className={styles.siteTagline}>결제가 멈추지 않게 만드는 백엔드 개발자</span>
+        {REQUIREMENTS.map((row) => {
+          const coverage = COVERAGE[row.state];
+          return (
+            <div key={row.label} className={`${styles.reqRow} ${styles[`req_${row.state}`] ?? ""}`}>
+              <Icon name={coverage.icon} weight={coverage.weight} size={16} className={styles.reqIcon} />
+              <span className={styles.reqText}>
+                <span className={styles.reqLabel}>{row.label}</span>
+                <span className={styles.reqEvidence}>{row.evidence ?? "관련 기록 없음"}</span>
+              </span>
+              <span className={styles.reqState}>{coverage.label}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** AI 대화 — 기록이 없는 요건을 묻는 질문과 답. 편집기의 수치 확인 문구를 함께 보인다. */
+function ChatFigure() {
+  return (
+    <div className={styles.figure} role="img" aria-label="AI가 테스트 자동화 경험을 묻고 사용자가 답하는 대화">
+      <div className={styles.chat} aria-hidden="true">
+        <div className={styles.chatRow}>
+          <span className={styles.chatAvatar}>
+            <LogoMark size={18} />
+          </span>
+          <div className={styles.chatBubble}>
+            <span className={styles.chatRequirement}>프론트엔드 테스트 자동화 경험</span>
+            테스트 자동화를 직접 도입하거나 개선한 적이 있나요? 어떤 화면에 적용했는지 알려 주세요.
           </div>
-          <div className={styles.siteSection}>
-            <span className={styles.siteSectionTitle}>결제 장애 원인 추적</span>
-            <span className={styles.siteLine} />
-            <span className={`${styles.siteLine} ${styles.siteLineShort}`} />
+        </div>
+        <div className={`${styles.chatRow} ${styles.chatRowMine}`}>
+          <div className={`${styles.chatBubble} ${styles.chatBubbleMine}`}>
+            장바구니와 결제 화면에 Playwright 테스트를 붙여서 배포 전에 깨지는 화면을 잡았어요.
           </div>
-          <div className={styles.siteSection}>
-            <span className={styles.siteSectionTitle}>정산 배치 재작성</span>
-            <span className={styles.siteLine} />
-            <span className={`${styles.siteLine} ${styles.siteLineShort}`} />
-          </div>
+        </div>
+        <div className={styles.chatRow}>
+          <span className={styles.chatAvatar}>
+            <LogoMark size={18} />
+          </span>
+          <div className={styles.chatBubble}>테스트를 붙이기 전과 후에 달라진 점이 있었나요?</div>
         </div>
       </div>
     </div>
   );
 }
 
-function Barista() {
-  return (
-    <section className={styles.section}>
-      <div className={`${styles.container} ${styles.split}`}>
-        <div className={styles.splitCopy}>
-          <h2 className={styles.h2}>
-            기록에 없는 것은 묻고,
-            <br />
-            답은 근거로 씁니다
-          </h2>
-          <p className={styles.body}>
-            바리스타는 공고 요건 중 기록이 비는 자리를 골라 질문합니다. 답한 내용은 포트폴리오 문장의 근거가 됩니다.
-            근거에서 확인하지 못한 수치가 지면에 들어가면 편집기가 짚어 줍니다.
-          </p>
-        </div>
-        <div className={styles.card} aria-hidden="true">
-          <div className={styles.chatRow}>
-            <span className={styles.chatAvatar}>
-              <LogoMark size={18} />
-            </span>
-            <div className={styles.chatBubble}>
-              <span className={styles.chatRequirement}>테스트 자동화 문화</span>
-              테스트 자동화를 직접 도입하거나 고친 적이 있나요?
-            </div>
-          </div>
-          <div className={`${styles.chatRow} ${styles.chatRowMine}`}>
-            <div className={`${styles.chatBubble} ${styles.chatBubbleMine}`}>
-              주문 서비스에 계약 테스트를 붙여서 배포 전에 깨지는 걸 잡았어요.
-            </div>
-          </div>
-          <div className={styles.caution}>
-            <span className={styles.cautionHead}>확인할 곳</span>
-            <span className={styles.cautionBody}>
-              <Icon name="warning-circle" weight="fill" size={14} color="var(--ex-status-warning-text)" />
-              근거에서 확인하지 못한 수: 40%
-            </span>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-const STEPS = [
-  { icon: "magnifying-glass", title: "공고 분석", body: "공고 주소나 본문을 붙이면 요건을 뽑아 내 기록과 대조합니다." },
-  { icon: "check-square", title: "재료 고르기", body: "요건에 맞춰 줄 세운 기록 중 담을 것을 체크합니다." },
-  { icon: "chat-circle-dots", title: "AI 대화", body: "기록이 비는 요건을 바리스타가 질문으로 채웁니다." },
-  { icon: "palette", title: "디자인 선택", body: "디자인 시스템을 하나 고르면 지면을 만듭니다." },
-  { icon: "cursor-click", title: "다듬기", body: "요소를 집어 말로 고치고, 이력에서 되돌립니다." },
-  { icon: "link-simple", title: "배포", body: "내 이름의 주소로 배포하고 링크 하나를 보냅니다." },
-] as const;
+const STEPS: TourStep[] = [
+  {
+    title: "공고 분석",
+    body: "공고 주소나 본문을 붙여 넣으면 자격 요건을 정리하고, 내 기록으로 충족하는 요건과 부족한 요건을 나눠 보여 줍니다.",
+    media: <AnalysisFigure />,
+  },
+  {
+    title: "재료 고르기",
+    body: "공고와 관련이 깊은 순서로 기록을 정렬합니다. 포트폴리오에 넣을 기록을 체크하면 됩니다.",
+    media: (
+      <BrowserFrame address="expresso.ai.kr">
+        <Shot src={materialsShot} alt="재료 고르기 화면. 기록 19건이 공고 매칭도 순으로 정렬되어 있고 그중 10건이 체크되어 있다." />
+      </BrowserFrame>
+    ),
+  },
+  {
+    title: "AI 대화",
+    body: "기록만으로 부족한 요건은 AI가 질문합니다. 답변 내용은 포트폴리오를 쓸 때 근거로 사용됩니다.",
+    media: <ChatFigure />,
+  },
+  {
+    title: "디자인 선택",
+    body: "디자인 목록에서 원하는 스타일을 고르면 그 디자인으로 포트폴리오 페이지를 만듭니다.",
+    media: (
+      <BrowserFrame address="expresso.ai.kr">
+        <Shot src={designShot} alt="디자인 선택 화면. 왼쪽에 디자인 목록이, 오른쪽에 고른 디자인 Modern Dark의 미리보기가 있다." />
+      </BrowserFrame>
+    ),
+  },
+  {
+    title: "다듬기",
+    body: "수정하고 싶은 부분을 선택하고 요청 사항을 입력하면 바로 반영됩니다. 이전 버전으로 되돌릴 수도 있습니다.",
+    media: (
+      <BrowserFrame address="expresso.ai.kr">
+        <Shot src={editorShot} alt="편집기 화면. 가운데에 생성된 포트폴리오가, 오른쪽 채팅 칸에 수정 요청이 입력되어 있다." />
+      </BrowserFrame>
+    ),
+  },
+  {
+    title: "배포",
+    body: "완성한 포트폴리오는 개인 주소로 바로 공개됩니다. 방문자가 어느 부분을 오래 봤는지도 확인할 수 있습니다.",
+    media: (
+      <BrowserFrame address="harin-backdrop-flow.expresso.ai.kr">
+        <Shot src={siteFlowShot} alt="배포된 포트폴리오 사이트의 첫 화면. 보라색 바탕에 이름 윤하린이 크게 쓰여 있다." />
+      </BrowserFrame>
+    ),
+  },
+];
 
 function Flow() {
   return (
     <section id="flow" className={styles.section}>
-      <div className={styles.container}>
-        <h2 className={styles.h2}>공고 하나로 시작해 링크 하나로 끝납니다</h2>
-        <ol className={styles.steps}>
-          {STEPS.map((step, index) => (
-            <li key={step.title} className={styles.step}>
-              <span className={styles.stepNumber}>{String(index + 1).padStart(2, "0")}</span>
-              <span className={styles.stepIcon} aria-hidden="true">
-                <Icon name={step.icon} size={18} color="var(--ex-accent)" />
-              </span>
-              <span className={styles.stepTitle}>{step.title}</span>
-              <span className={styles.stepBody}>{step.body}</span>
-            </li>
-          ))}
-        </ol>
-      </div>
+      <Reveal className={styles.container}>
+        <h2 className={styles.h2}>포트폴리오가 만들어지는 과정</h2>
+        <ProductTour steps={STEPS} />
+      </Reveal>
     </section>
   );
 }
-
-const RECORDS = ["정산 배치 재작성", "결제 장애 원인 추적", "주문 알림 큐 도입", "검색 랭킹 실험", "사내 디자인 시스템", "계약 테스트 도입"];
-
-const TARGETS = [
-  { title: "결제 플랫폼 · 백엔드", picks: ["결제 장애 원인 추적", "정산 배치 재작성", "계약 테스트 도입"] },
-  { title: "커머스 검색 · 백엔드", picks: ["검색 랭킹 실험", "주문 알림 큐 도입", "정산 배치 재작성"] },
-];
 
 function Tailor() {
   return (
     <section id="tailor" className={styles.section}>
-      <div className={styles.container}>
+      <Reveal className={styles.container}>
         <div className={styles.inverse} data-theme="dark">
           <div className={styles.inverseCopy}>
             <h2 className={styles.h2}>
-              지원하는 곳이 바뀌면
+              지원하는 회사마다
               <br />
-              고르는 기록이 바뀝니다
+              다른 포트폴리오
             </h2>
             <p className={styles.inverseBody}>
-              같은 기록 묶음을 공고마다 요건에 맞춰 다시 줄 세웁니다. 문장만 바꾸는 것이 아니라 무엇을 담을지부터 다시
-              고릅니다.
+              같은 커리어 기록이라도 공고마다 관련 있는 경험이 다릅니다. Expresso는 공고의 요건을 기준으로 기록의 순서를
+              다시 매기기 때문에, 공고에 맞는 경험부터 포트폴리오에 담을 수 있습니다.
             </p>
           </div>
-          <div className={styles.tailorFigure} aria-hidden="true">
-            <div className={styles.pool}>
-              {RECORDS.map((record) => (
-                <span key={record} className={styles.poolChip}>
-                  {record}
-                </span>
-              ))}
-            </div>
-            <div className={styles.targets}>
-              {TARGETS.map((target) => (
-                <div key={target.title} className={styles.target}>
-                  <span className={styles.targetTitle}>{target.title}</span>
-                  {target.picks.map((pick, index) => (
-                    <span key={pick} className={styles.targetPick}>
-                      <span className={styles.targetRank}>{index + 1}</span>
-                      {pick}
-                    </span>
-                  ))}
-                </div>
-              ))}
-            </div>
-          </div>
+          <TailorDemo />
         </div>
-      </div>
+      </Reveal>
     </section>
   );
 }
 
-function Features() {
+function Showcase() {
   return (
-    <section className={styles.section}>
-      <div className={`${styles.container} ${styles.features}`}>
-        <article className={styles.feature}>
-          <span className={styles.featureIcon} aria-hidden="true">
-            <Icon name="stack" size={22} color="var(--ex-accent)" />
-          </span>
-          <h3 className={styles.h3}>쌓아 두는 커리어 기록</h3>
-          <p className={styles.featureBody}>
-            경험 · 프로젝트 · 자격증을 카테고리로 남겨 두면, 공고가 바뀔 때마다 다시 고르는 재료가 됩니다.
-          </p>
-          <div className={styles.featureFigure} aria-hidden="true">
-            <span className={styles.tag}>경험</span>
-            <span className={styles.tag}>프로젝트</span>
-            <span className={styles.tag}>자격증 · 수상</span>
-            <span className={styles.tag}>스킬 · 도구</span>
-          </div>
-        </article>
-        <article className={styles.feature}>
-          <span className={styles.featureIcon} aria-hidden="true">
-            <Icon name="cursor-click" size={22} color="var(--ex-accent)" />
-          </span>
-          <h3 className={styles.h3}>집어서, 말로 고칩니다</h3>
-          <p className={styles.featureBody}>
-            지면에서 요소를 집어 &ldquo;이 문장 더 짧게&rdquo;라고 적으면 고친 판이 생깁니다. 이전 판은 이력에서 되돌립니다.
-          </p>
-          <div className={styles.featureFigure} aria-hidden="true">
-            <span className={styles.editTarget}>
-              <Icon name="cursor-click" size={11} color="var(--ex-fg-muted)" />
-              소개 문단
-            </span>
-            <span className={styles.editInput}>이 문장 더 짧게</span>
-          </div>
-        </article>
-        <article className={styles.feature}>
-          <span className={styles.featureIcon} aria-hidden="true">
-            <Icon name="chart-bar" size={22} color="var(--ex-accent)" />
-          </span>
-          <h3 className={styles.h3}>누가 어디를 오래 봤는지</h3>
-          <p className={styles.featureBody}>
-            방문자가 섹션마다 머문 시간을 보여 줍니다. 면접 전에 무엇을 준비할지 알 수 있습니다.
-          </p>
-          <div className={styles.featureFigure} aria-hidden="true">
-            <span className={styles.dwellRow}>
-              <span className={styles.dwellLabel}>결제 장애 원인 추적</span>
-              <span className={styles.dwellTrack}>
-                <span className={styles.dwellFill} style={{ width: "100%" }} />
-              </span>
-              <span className={styles.dwellTime}>1:52</span>
-            </span>
-            <span className={styles.dwellRow}>
-              <span className={styles.dwellLabel}>정산 배치 재작성</span>
-              <span className={styles.dwellTrack}>
-                <span className={styles.dwellFill} style={{ width: "43%" }} />
-              </span>
-              <span className={styles.dwellTime}>0:48</span>
-            </span>
-          </div>
-        </article>
-      </div>
+    <section id="showcase" className={styles.section}>
+      <Reveal className={styles.container}>
+        <h2 className={styles.h2}>Expresso로 만든 포트폴리오</h2>
+        <p className={styles.body}>
+          예시 인물 윤하린의 같은 커리어 기록으로 만든 두 사이트입니다. 고른 디자인에 따라 구성과 분위기가 달라집니다.
+        </p>
+        <div className={styles.showcase}>
+          <BrowserFrame address="harin-backdrop-flow.expresso.ai.kr" className={styles.showcaseItem}>
+            <Shot src={siteFlowShot} alt="보라색 등고선 배경 위에 이름을 크게 둔 포트폴리오 사이트" />
+          </BrowserFrame>
+          <BrowserFrame address="harin-backdrop-grid.expresso.ai.kr" className={styles.showcaseItem}>
+            <Shot src={siteGridShot} alt="흰 격자 배경 위에 이름과 대표 프로젝트를 둔 포트폴리오 사이트" />
+          </BrowserFrame>
+        </div>
+      </Reveal>
     </section>
   );
 }
@@ -356,17 +336,15 @@ function Features() {
 function Closing() {
   return (
     <section className={styles.section}>
-      <div className={styles.container}>
+      <Reveal className={styles.container}>
         <div className={styles.closing}>
-          <h2 className={styles.h2}>
-            오늘 저녁,
-            <br />
-            당신의 링크가 생깁니다
-          </h2>
-          <p className={styles.closingBody}>기록이 완벽하지 않아도 됩니다. 비어 있는 자리는 질문 몇 개로 채웁니다.</p>
+          <h2 className={styles.h2}>첫 포트폴리오를 만들어 보세요</h2>
+          <p className={styles.closingBody}>
+            커리어 기록이 아직 많지 않아도 괜찮습니다. 부족한 내용은 AI의 질문에 답하면서 채울 수 있습니다.
+          </p>
           <AuthLinks size="large" />
         </div>
-      </div>
+      </Reveal>
     </section>
   );
 }
@@ -380,11 +358,12 @@ function Footer() {
             <LogoMark size={24} tone="dark" />
             <Wordmark size={19} tone="dark" />
           </span>
-          <p className={styles.footerLine}>커리어 기록을 모아 채용 공고에 맞춘 포트폴리오를 만들고 링크 하나로 배포합니다.</p>
+          <p className={styles.footerLine}>커리어 기록으로 채용 공고에 맞춘 포트폴리오를 만들고 배포합니다.</p>
         </div>
         <nav className={styles.footerLinks} aria-label="바닥글">
-          <a href="#flow">만드는 순서</a>
+          <a href="#flow">제작 과정</a>
           <a href="#tailor">기업 맞춤</a>
+          <a href="#showcase">포트폴리오 예시</a>
           <Link href="/terms">이용약관</Link>
           <Link href="/privacy">개인정보 처리방침</Link>
         </nav>

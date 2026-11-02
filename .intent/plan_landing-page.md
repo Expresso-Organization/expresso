@@ -15,25 +15,30 @@ date: 2026-11-02
 | 파일 | 무엇을 |
 |---|---|
 | `services/web/src/app/page.tsx` | 삭제 |
-| `services/web/src/app/(landing)/page.tsx` | 새로 · 로그인 분기 · 메타 · 구획 조립 |
-| `services/web/src/app/(landing)/LandingSections.tsx` | 새로 · 구획 서버 컴포넌트 |
-| `services/web/src/app/(landing)/LandingSections.test.tsx` | 새로 · 세 자리 로그인 · 회원가입 링크, 머리글 접근성 이름, 앵커 |
-| `services/web/src/app/(landing)/landing.module.css` | 새로 · 단어 회전 키프레임 포함 |
+| `services/web/src/app/(landing)/page.tsx` | 새로 · 로그인 분기 · 메타 |
+| `services/web/src/app/(landing)/LandingSections.tsx` | 새로 · 구획 서버 컴포넌트 · 둘러보기 단계 · 그림 둘 |
+| `services/web/src/app/(landing)/ProductTour.tsx` | 새로 · 제작 과정 둘러보기 |
+| `services/web/src/app/(landing)/TailorDemo.tsx` | 새로 · 공고별 기록 순서 데모 |
+| `services/web/src/app/(landing)/Reveal.tsx` | 새로 · 스크롤 등장 |
+| `services/web/src/app/(landing)/landing.module.css` | 새로 |
+| `services/web/src/app/(landing)/images/*.jpg` | 새로 · 실제 화면 7장 |
+| `services/web/src/app/(landing)/LandingSections.test.tsx` | 새로 · 링크 세 쌍, 머리글 이름, 앵커, 단계 전환, 순서 바꾸기 |
 
 ## 작업 순서
 
 1. 브랜치 `feat/landing-page`를 `origin/main`에서 딴다.
-2. 정의서 CSS에서 구획별 간격 · 크기 · 색을 뽑아 토큰과 짝을 맞춘다 — 토큰에 없는 값은 가장 가까운 토큰으로 정하고 목록을 남긴다.
+2. 정의서 CSS에서 구획별 간격 · 크기 · 색을 뽑아 토큰과 짝을 맞춘다.
 3. `page.tsx` 이동과 로그인 분기 — 로그인 · 로그아웃 각각 `/` 응답 확인.
-4. 머리 메뉴 · 첫 화면 · 단어 회전 키프레임 — 1280px · 375px에서 스크롤 전에 「로그인」 · 「회원가입」이 보이는지 `getBoundingClientRect`로 확인.
-5. 나머지 구획 — 1280px · 375px · 어두운 화면 확인.
-6. 메타 — `curl`로 `<title>` · `og:*` 확인.
-7. 문구 점검 — 화면의 모든 문장이 지금 제품에 있는 기능인지 대조하고, 레이아웃이 이미 말하는 문장은 지운다.
-8. 검증 명령 · 커밋 · 푸시 · PR.
+4. 문체 · 랜딩 모범 사례를 검색해 문구 원칙과 구성을 정한다(요청자 지적 뒤 추가한 단계).
+5. 로컬 서버에서 실제 화면을 찍는다 — 찍은 이미지를 열어 개발 표시 · 개발 주소 · 실제 회사 이름이 없는지 본다.
+6. 구획 · 클라이언트 컴포넌트 · CSS — 1280px · 375px · 밝은 · 어두운 화면 확인.
+7. 메타 — `curl`로 `<title>` · `og:*` 확인.
+8. 문구 점검 — 사물을 사람처럼 쓴 문장, 대구 · 잠언, 번역투, 개수 세기가 없는지 문장마다 본다.
+9. 검증 명령 · 커밋 · 푸시 · PR.
 
 ## 가장 위험한 단계
 
-5단계. 그림 넷이 정의서 구성을 따르면서 지금 제품의 화면을 그려야 한다. 그림이 실제 화면과 다르면 다시 거짓 소개가 된다. 각 그림은 대응하는 실제 화면(공고 상세 요건 대조, AI 대화, 재료 고르기, 편집기 · 분석)을 로컬 서버에서 열어 놓고 맞춘다. 어긋나면 그 그림만 고친다.
+5단계. 찍은 화면에 실제 회사 이름, 개발 주소, 깨진 데이터(관계 속성의 UUID 등)가 섞이면 그대로 소개 화면에 나간다. 화면마다 이미지를 열어 확인하고, 문제가 있는 화면(공고 상세 · 커리어 목록 · 분석)은 쓰지 않는다. 되돌릴 때는 `images/`의 해당 파일과 그 `import`만 지우면 된다.
 
 ## 검증
 
@@ -41,7 +46,7 @@ date: 2026-11-02
 pnpm --filter @expresso/web typecheck
 pnpm --filter @expresso/web test
 pnpm --filter @expresso/web build
-curl -s http://product.localhost:3120/ | grep -o '<title>[^<]*'
+curl -s http://landing.localhost:3120/ | grep -o '<title>[^<]*'
 ```
 
-화면: 로그아웃 상태 `/`를 1280px · 375px · 밝은 · 어두운 화면으로 연다. 스크롤 전에 「로그인」 · 「회원가입」이 보인다. 「회원가입」 → `/signup`, 「로그인」 → `/login`, 앵커 두 개가 해당 구획으로 간다. 로그인 상태 `/` → `/home`.
+화면: 로그아웃 상태 `/`를 1280px · 375px · 밝은 · 어두운 화면으로 연다. 스크롤 전에 「회원가입」 · 「로그인」이 보인다. 둘러보기 단계를 눌러 화면이 바뀌는지, 기업 맞춤 공고를 눌러 순서가 움직이는지 본다. 로그인 상태 `/` → `/home`.
