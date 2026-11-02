@@ -1,4 +1,6 @@
 "use client";
+import EvidenceSearch, { SearchResults } from "./EvidenceSearch";
+import CareerWorkflow from "./CareerWorkflow";
 import { createContext, useContext, useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { LogoMark } from "@/components/brand/Logo";
@@ -85,6 +87,7 @@ const RecordTool: ToolCallMessagePartComponent = props => {
   const tool = state.conversation?.messages.flatMap(message => message.tools).find(tool => tool.id === props.toolCallId);
   const busy = state.pending || state.conversation?.run?.status === "running";
   if (tool?.review) return <RequirementReviewCard conversationId={state.id} toolId={tool.id} review={tool.review} />;
+  if (tool?.evidenceSearch || tool?.jobSearch) return <SearchResults {...(tool.evidenceSearch ? { evidence: tool.evidenceSearch } : {})} {...(tool.jobSearch ? { jobs: tool.jobSearch } : {})} />;
   if (tool?.gapReview) return <GapReviewCard gapReview={tool.gapReview} />;
   if (tool?.recordDraft) { const draftId = tool.recordDraft.draftId; return <RecordDraftCard draft={tool.recordDraft} disabled={busy} onDecide={decision => state.decideDraft(draftId, decision)} />; }
   if (tool?.planDraft) {
@@ -166,6 +169,7 @@ export function AgentChat({ job, standalone = false, onRunningChange, ...props }
   return <ChatContext.Provider value={state}><JobContext.Provider value={job ?? null}><AssistantRuntimeProvider runtime={runtime}>
     {preview ? <ResourcePreview resource={preview} onClose={() => setPreview(null)} selected={!!state.conversation?.contexts.some(ref => ref.kind === preview.kind && ref.id === preview.id)} disabled={contextDisabled} onToggle={toggleContext} /> : null}
     <AgentConsentDialog consentRequired={access?.consentRequired ?? true} requiresKey={!!access && !access.serverCredentialAllowed && !access.apiKeyConfigured} onKeySaved={() => setAccess(current => current ? { ...current, apiKeyConfigured: true } : current)} open={consentOpen} onOpenChange={setConsentOpen} onConsented={() => setAccess(current => current ? { ...current, consentRequired: false } : current)} />
+    <div className={styles.workspace}>
     <section className={`acf-scope ${styles.root} ${job ? styles.rail : standalone ? styles.standalone : styles.panel}`} aria-label="에이전트 채팅">
       <div className={styles.main}>
         <header className={styles.header}>
@@ -193,5 +197,25 @@ export function AgentChat({ job, standalone = false, onRunningChange, ...props }
       </div>
       {standalone ? <ConversationSwitcher contexts={state.conversation?.contexts ?? []} contextDisabled={contextDisabled} onToggleContext={toggleContext} onPreview={setPreview} inline currentId={state.id} conversations={state.list} disabled={state.pending} onSelect={state.select} /> : null}
     </section>
-  </AssistantRuntimeProvider></JobContext.Provider></ChatContext.Provider>;
+    <EvidenceSearch key={`search:${state.id ?? "new"}`} disabled={state.pending || running || !!preview} contexts={state.conversation?.contexts ?? []} onAttach={toggleContext} />
+    {state.id && state.conversation ? (
+      <CareerWorkflow
+        key={`workflow:${state.id}`}
+        conversationId={state.id}
+        lastUserText={
+          [...state.conversation.messages]
+            .reverse()
+            .find((message) => message.role === "user")
+            ?.text ?? ""
+        }
+        disabled={state.pending || running || !!preview}
+        onSend={(text) => {
+          void state.send(text);
+        }}
+      />
+    ) : null}
+  </div>
+  </AssistantRuntimeProvider>
+  </JobContext.Provider>
+  </ChatContext.Provider>;
 }

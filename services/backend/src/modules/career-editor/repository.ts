@@ -105,6 +105,7 @@ export class MongoCareerDocumentRepository implements CareerDocumentRepository {
       { $set: { documentVersion: expected + 1, ...(latestSnapshotId ? { latestSnapshotId } : {}) } },
       { returnDocument: "after", ...this.options(session) },
     );
+    if (row) await this.context.db.collection("career_evidence_index").deleteMany({ userId, recordId }, this.options(session));
     return row?.documentVersion ?? null;
   }
   async setLatestSnapshot(

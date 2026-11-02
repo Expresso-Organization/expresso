@@ -1,3 +1,5 @@
+import { registerEvidenceSearchRoutes, type EvidenceSearchService } from "../modules/evidence-search/index.js";
+import { registerCareerWorkflowRoutes, type CareerWorkflowService } from "../modules/career-workflow/index.js";
 import { type AgentChatService, registerAgentChatRoutes } from "../modules/agent-chat/index.js";
 import Fastify, { LogController, type FastifyInstance } from "fastify";
 
@@ -87,7 +89,9 @@ export interface BuildApiOptions {
   jobAnalysisService?: JobAnalysisApi;
   materialsService?: MaterialsApi;
   interviewService?: InterviewApi;
+  evidenceSearchService?: EvidenceSearchService;
   agentChatService?: AgentChatService;
+  careerWorkflowService?: CareerWorkflowService;
   recipeService?: RecipeApi;
   companyResearchService?: CompanyResearchApi;
   brewJobService?: BrewJobApi;
@@ -182,6 +186,8 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
         authenticateRequest: createAuthenticateRequest(options.identityService),
       });
     }
+    if (options.careerWorkflowService) registerCareerWorkflowRoutes(app, options.careerWorkflowService, createAuthenticateRequest(options.identityService));
+    if (options.evidenceSearchService) registerEvidenceSearchRoutes(app, options.evidenceSearchService, createAuthenticateRequest(options.identityService));
     if (options.agentChatService) registerAgentChatRoutes(app, options.agentChatService, createAuthenticateRequest(options.identityService), options.config.agentChatDeveloperUserIds);
     // 읽기 라우트를 먼저 건다 — `/jobs/postings/:id`가 쓰기 라우트와 같은 자리다.
     if (options.jobBoardService) {
