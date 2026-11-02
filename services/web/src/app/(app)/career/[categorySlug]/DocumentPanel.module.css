@@ -281,3 +281,6 @@
 @media (prefers-reduced-motion: reduce) {
   .panel { filter: none; transition: none !important; }
 }
+
+/* 패널은 열 때 포커스를 받지만 화면을 막는 대화상자가 아니므로 테두리를 그리지 않습니다. */
+.panel:focus { outline: none; }

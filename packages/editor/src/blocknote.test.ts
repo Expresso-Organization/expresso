@@ -61,6 +61,14 @@ describe("careerDocumentToBlockNote", () => {
 });
 
 describe("blockNoteToCareerDocument", () => {
+  it("splits text longer than the v1 span limit so the copy still parses", () => {
+    const long = "가".repeat(120_000);
+    const document = blockNoteToCareerDocument([{ id: "11111111-1111-4111-8111-111111111111", type: "paragraph", props: {}, content: [{ type: "text", text: long, styles: {} }], children: [] }] as never);
+    const spans = document.content[0]?.text ?? [];
+    expect(spans.map((span) => span.text.length)).toEqual([50_000, 50_000, 20_000]);
+    expect(spans.map((span) => span.text).join("")).toBe(long);
+  });
+
   it("keeps block ids and groups list items under a stable list id", () => {
     const listItemId = id();
     const source = doc(

@@ -8,6 +8,7 @@ export { CareerService } from "./service.js";
 export { MongoCareerService } from "./service.js";
 export { assertActiveRecordsForWrite, purgeTrashedCareerRecord } from "./mongo-record-guard.js";
 export { CareerError } from "./errors.js";
+export { MongoCareerPropertySchemaService } from "./property-schema.js";
 export { cleanupChangedFields, type RecordCleaner } from "./record-cleaner.js";
 export { multiSelectValueByNames, selectValueByName } from "./select-options.js";
 export { careerRecordText, careerRecordTextReader, readableCareerProperties } from "./record-text.js";

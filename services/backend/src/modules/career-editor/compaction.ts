@@ -47,6 +47,9 @@ export async function compactDocument(
       throw new CareerDocumentError(409, "document sequence is stale");
     }
     await repository.markCompacted(recordId, through, session);
+    // 압축된 업데이트는 스냅샷에 들어 있습니다. 하루가 지난 것은 지워 원장이 끝없이 늘지 않게 합니다.
+    // AI 제안 충돌 검사(30분 수명)는 하루 안의 업데이트만 다시 읽습니다.
+    await repository.pruneCompacted?.(recordId, new Date(Date.now() - 86_400_000), session);
     return { recordId, serverSequence: through, snapshotId };
   }
   const base = snapshot

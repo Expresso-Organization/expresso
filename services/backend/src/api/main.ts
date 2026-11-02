@@ -127,8 +127,9 @@ const analyticsService = new AnalyticsService(database, {
 });
 const engagementService = new EngagementService(database);
 const accountLifecycleService = new AccountLifecycleService(database);
+// 커리어 문서 작업은 Worker의 career-jobs 줄에서 처리합니다(포트폴리오 생성과 줄을 나눔).
 const careerDocumentJobs = createReliableQueue<Record<string, unknown>>(
-  "domain-jobs",
+  "career-jobs",
   config.redisUrl,
   config.queuePrefix,
 );
@@ -154,6 +155,9 @@ const careerDocumentService = new CareerDocumentService(
     );
   },
 );
+// 편집기 밖 본문 쓰기(PATCH bodyMd · 인터뷰 재답변)가 곧바로 편집기 문서와 열린 편집기에 들어가게 연결합니다.
+careerService.setExternalBodyListener((userId, recordId) => careerDocumentService.syncExternalBody(userId, recordId));
+interviewService.setExternalBodyListener((userId, recordId) => careerDocumentService.syncExternalBody(userId, recordId));
 const agentChatService = new AgentChatService(database, config.agentChatEnabled ? new ClaudeAgentRuntime(config.agentChatModel, aiUsage) : null, careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(database, config.agentCredentialEncryptionKey), portfolioReadService, pageService);
 const adminService = new AdminService(database, { identity: identityService, career: careerService, consent: consentService });
 const app = buildApi({

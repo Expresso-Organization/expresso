@@ -57,6 +57,30 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     columnWidths: { [scoreId]: 140 }, gallery: null, board: null, timeline: null,
   });
 
+  it("pages through every record when the view sorts by updated time (2026-11-02 감사)", async () => {
+    const updatedId = randomUUID();
+    const db = mongoCollections(fixture.resource.db);
+    const category = await db.careerCategories.findOne({ _id: categoryId });
+    await db.careerCategories.updateOne({ _id: categoryId }, { $push: { propertySchemaV2: { id: updatedId, key: "updated", name: "수정 시각", type: "updated_time", required: false, system: true, config: {}, order: 9, version: 1, deletedAt: null } } as never });
+    const timeCategoryId = categoryId;
+    const records = await db.careerRecords.find({ categoryId: timeCategoryId }).project({ _id: 1 }).limit(5).toArray();
+    for (const [index, record] of records.entries()) await db.careerRecords.updateOne({ _id: record._id }, { $set: { updatedAt: new Date(Date.UTC(2030, 0, 1, 0, 0, index)) } });
+    const view = await service.createViewConfiguration(userId, categoryId, (await db.careerCategories.findOne({ _id: categoryId }))!.version, {
+      ...input(), name: "수정순", filter: null, sorts: [{ propertyId: updatedId, direction: "desc" as const, nulls: "last" as const }],
+    });
+    const seen = new Set<string>(); let cursor: string | null = null;
+    for (let page = 0; page < 200; page += 1) {
+      const result = await service.queryViewConfiguration(userId, view.id, cursor, 7);
+      for (const row of result.data) seen.add(row.id);
+      cursor = result.page.nextCursor;
+      if (!cursor) break;
+    }
+    expect(seen.size).toBe(await db.careerRecords.countDocuments({ categoryId, deletedAt: null }));
+    expect(category).toBeTruthy();
+    // 뒤 시험이 뷰 목록을 그대로 비교하므로 이 시험의 뷰는 지웁니다.
+    await db.careerViews.deleteOne({ _id: view.id });
+  });
+
   it("keeps 100 records stable across signed cursor pages and stays under the warmed p95 budget", async () => {
     const view = await service.createViewConfiguration(userId, categoryId, categoryVersion, input());
     viewId = view.id;

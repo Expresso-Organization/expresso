@@ -7,6 +7,7 @@ import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { inTransaction } from "../../platform/mongo-transaction.js";
 import { MongoAccountLifecycleService } from "../account-lifecycle/index.js";
 import { MongoAnalyticsService } from "../analytics/index.js";
+import { purgeTrashedCareerRecord } from "../career/index.js";
 import { MongoEngagementService } from "../engagement/index.js";
 import type { JobIngestApi } from "../jobs/ingest/index.js";
 import { SCHEDULED_JOB_KEYS, type ScheduledJobKey } from "./public.js";
@@ -64,7 +65,18 @@ export class SchedulingService {
     if (key === "posting_facts") return this.#ingest ? this.#ingest.readPendingFacts(undefined, at) as unknown as Record<string, unknown> : { skipped: "ingest service is not wired" };
     if (key === "deadline_reminders") return this.#deadlineReminders(at);
     if (key === "deletion_grace") return this.#accounts.purgeExpired(at);
-    if (key === "retention") { const [records, redirects, receipts] = await Promise.all([db.careerRecords.deleteMany({ purgeAfter: { $lte: at } }), db.deploymentSlugRedirects.deleteMany({ expiresAt: { $lte: at } }), db.analyticsEventReceipts.deleteMany({ receivedAt: { $lt: new Date(at.getTime() - 90 * 86_400_000) } })]); return { records: records.deletedCount, redirects: redirects.deletedCount, analyticsReceipts: receipts.deletedCount }; }
+    if (key === "retention") {
+      // 휴지통 기록은 정리 절차(purgeTrashedCareerRecord)로 하나씩 지웁니다. 포트폴리오가 인용 중이면 409로 남기고,
+      // 블록의 출처 연결과 문서 · 이력 · 관계를 함께 정리합니다. deleteMany로 바로 지우면 이 절차를 건너뜁니다(2026-11-02 감사 H10).
+      const expired = await db.careerRecords.find({ deletedAt: { $ne: null }, purgeAfter: { $lte: at } }, { projection: { _id: 1, userId: 1 } }).limit(1_000).toArray();
+      let records = 0; let skipped = 0;
+      for (const record of expired) {
+        try { await purgeTrashedCareerRecord(this.context, record.userId, record._id, at); records += 1; }
+        catch { skipped += 1; }
+      }
+      const [redirects, receipts] = await Promise.all([db.deploymentSlugRedirects.deleteMany({ expiresAt: { $lte: at } }), db.analyticsEventReceipts.deleteMany({ receivedAt: { $lt: new Date(at.getTime() - 90 * 86_400_000) } })]);
+      return { records, skippedRecords: skipped, redirects: redirects.deletedCount, analyticsReceipts: receipts.deletedCount };
+    }
     throw new Error(`unsupported scheduled job key: ${key satisfies never}`);
   }
 
