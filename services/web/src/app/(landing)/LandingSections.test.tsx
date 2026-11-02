@@ -71,7 +71,7 @@ it("기업 맞춤에서 공고를 바꾸면 기록의 순위가 바뀐다", () =
   const list = screen.getByRole("list", { name: "공고에 맞춘 기록 순서" });
   const rank = (title: RegExp) => within(list).getByText(title).closest("li")?.getAttribute("aria-posinset");
   expect(rank(/App Router 전환/)).toBe("1");
-  fireEvent.click(screen.getByRole("tab", { name: "디자인 시스템 엔지니어" }));
+  fireEvent.click(screen.getByRole("tab", { name: /디자인 시스템 엔지니어/ }));
   expect(rank(/모아 UI/)).toBe("1");
   expect(rank(/App Router 전환/)).toBe("4");
 });

@@ -1,17 +1,22 @@
 /*
- * 랜딩. 배치 · 간격은 화면 정의서(`docs/Expresso Landing.dc.html`)의 값이고, 색 · 글자 크기는
- * 정의서의 hex · px를 가장 가까운 `--ex-*` 토큰으로 옮겼다.
+ * 랜딩.
  *
- * - 머리글 78px → --ex-text-display-lg(66px), 절 제목 40px → --ex-text-display-sm(36px)
- * - 소개 19px → --ex-text-xl(18px)
- * - 짙은 남색 구획 · 바닥글은 테마와 상관없이 늘 어둡다. 로그인 aside 그러데이션의 첫 색
- *   (#16223a, `tokens.test.ts` 허용 목록)을 그대로 쓰고, 안쪽 글자는 `data-theme="dark"`로
- *   고정한 역할 토큰을 쓴다. 팔레트 토큰은 화면에서 직접 쓰지 않는다.
- *
+ * 설계 기준 — frontend-design: 눈에 남을 것은 첫 화면의 에스프레소 잔 하나다. 나머지
+ * 구획은 조용히 두고, 구획마다 떠오르는 등장 효과나 카드마다 붙는 호버 효과를 쓰지 않는다.
+ * motion-design: Premium 성격. 서명 곡선 하나(--ease)와 길이 셋(빠름 · 보통 · 느림)만 쓴다.
  * 움직임은 모두 `prefers-reduced-motion: no-preference` 안에 둔다.
+ *
+ * 색 · 글자 크기는 `--ex-*` 역할 토큰이다. 늘 어두운 구획(마지막 권유 · 바닥글)은 로그인
+ * aside 그러데이션의 첫 색(#16223a, `tokens.test.ts` 허용 목록)에 `data-theme="dark"`를
+ * 고정한다. 첫 화면 바탕은 셰이더가 칠한다.
  */
 
 .page {
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-enter: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --quick: 180ms;
+  --standard: 420ms;
+  --slow: 700ms;
   min-height: 100dvh;
   background: var(--ex-bg-sunken);
   color: var(--ex-fg);
@@ -24,30 +29,28 @@
   padding: 0 40px;
 }
 
-/* ── 스크롤 등장 ───────────────────────────────────────────── */
-
-@media (prefers-reduced-motion: no-preference) {
-  .reveal {
-    transition:
-      opacity 700ms cubic-bezier(0.16, 1, 0.3, 1),
-      transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  .reveal[data-state="waiting"] {
-    opacity: 0;
-    transform: translateY(28px);
-  }
-}
-
 /* ── 머리 메뉴 ─────────────────────────────────────────────── */
 
+/* 첫 화면 위에 떠 있어야 하므로 흐름 밖에 둔다. */
 .header {
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 10;
-  background: color-mix(in srgb, var(--ex-bg-sunken) 86%, transparent);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: color-mix(in srgb, var(--ex-bg-sunken) 88%, transparent);
   backdrop-filter: saturate(1.4) blur(12px);
   border-bottom: 1px solid var(--ex-border-inner);
+  transition:
+    background var(--standard) var(--ease),
+    border-color var(--standard) var(--ease);
+}
+
+/* 첫 화면 위에서는 바탕 대신 위에서 아래로 흐려지는 그늘을 깐다. 크레마가 화면을 채워도 글자가 읽힌다. */
+.header[data-over-hero="true"] {
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--ex-bg) 72%, transparent), transparent);
+  backdrop-filter: none;
+  border-bottom-color: transparent;
 }
 
 .headerInner {
@@ -79,6 +82,7 @@
 .anchors a {
   font-size: var(--ex-text-sm);
   color: var(--ex-fg-body);
+  transition: color var(--quick) var(--ease);
 }
 
 .anchors a:hover {
@@ -103,15 +107,19 @@
   font-weight: 600;
   white-space: nowrap;
   transition:
-    transform var(--ex-motion-spring),
-    background var(--ex-motion-quick),
-    border-color var(--ex-motion-quick),
-    color var(--ex-motion-quick);
+    transform var(--quick) var(--ease),
+    background var(--quick) var(--ease),
+    border-color var(--quick) var(--ease),
+    color var(--quick) var(--ease);
 }
 
 .cta:focus-visible {
   outline: none;
   box-shadow: var(--ex-focus-ring);
+}
+
+.cta:active {
+  transform: scale(0.97);
 }
 
 .ctaPrimary,
@@ -127,7 +135,7 @@
 }
 
 .ctaSecondary {
-  background: var(--ex-bg);
+  background: color-mix(in srgb, var(--ex-bg) 70%, transparent);
   border-color: var(--ex-border-firm);
   color: var(--ex-fg);
 }
@@ -155,20 +163,74 @@
   color: var(--ex-fg-subtle);
 }
 
+/* ── 첫 화면 — 에스프레소 잔 ───────────────────────────────── */
+
+/* 구간이 화면보다 길고, 무대는 그 안에서 화면에 붙는다. 남는 길이가 크레마 속으로 내려가는 거리다. */
+.heroPassage {
+  position: relative;
+  height: 230vh;
+  background: var(--ex-bg-canvas);
+}
+
+.heroStage {
+  --p: 0;
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+  background: var(--ex-bg-sunken);
+}
+
+.heroPoster,
+.heroCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.heroPoster {
+  object-fit: cover;
+  object-position: 72% 85%;
+}
+
+.heroCanvas {
+  opacity: 0;
+  transition: opacity var(--slow) var(--ease);
+}
+
+.heroCanvas[data-live="true"] {
+  opacity: 1;
+}
+
+.heroContent {
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  max-width: 1240px;
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 40px;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.heroCopy {
+  max-width: 620px;
+  pointer-events: auto;
+}
+
+/* 같은 진행도(--p)로 글이 위로 물러나며 사라진다. 카메라가 내려가는 것과 한 시계다. */
 @media (prefers-reduced-motion: no-preference) {
-  .cta:hover {
-    transform: translateY(-2px);
+  .heroCopy {
+    opacity: clamp(0, calc(1 - var(--p) * 2.3), 1);
+    transform: translate3d(0, calc(var(--p) * -90px), 0);
   }
 }
 
-/* ── 첫 화면 ───────────────────────────────────────────────── */
-
-.hero {
-  padding: 88px 0 0;
-}
-
 .headline {
-  --line: 72px;
+  --line: 76px;
   margin: 0 0 28px;
   font-family: var(--ex-font-brand);
   font-weight: 300;
@@ -206,7 +268,7 @@
   display: block;
   height: var(--line);
   line-height: var(--line);
-  color: var(--ex-accent-text);
+  color: var(--ex-accent-soft);
 }
 
 /*
@@ -248,92 +310,344 @@
 
 @keyframes landingYour {
   0%, 55.6% { transform: translate3d(0, 0, 0); color: var(--ex-fg); animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
-  66.6%, 89% { transform: translate3d(0.115em, 0, 0); color: var(--ex-accent-text); animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
+  66.6%, 89% { transform: translate3d(0.115em, 0, 0); color: var(--ex-accent-soft); animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
   100% { transform: translate3d(0, 0, 0); color: var(--ex-fg); }
 }
 
 .lede {
-  max-width: 640px;
+  max-width: 560px;
   margin: 0 0 32px;
   font-size: var(--ex-text-xl);
   line-height: var(--ex-leading-relaxed);
   color: var(--ex-fg-body);
   text-wrap: pretty;
+  word-break: keep-all;
 }
 
-/* 첫 화면 그림 — 실제로 만든 포트폴리오 사이트가 창 안에서 천천히 내려간다. */
-.heroVisual {
+/* ── 절 공통 ───────────────────────────────────────────────── */
+
+.section {
+  padding: 120px 0 0;
+  scroll-margin-top: 72px;
+}
+
+.h2 {
+  max-width: 760px;
+  margin: 0 0 18px;
+  font-size: var(--ex-text-display-sm);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: var(--ex-leading-tight);
+  color: var(--ex-fg);
+  text-wrap: balance;
+  word-break: keep-all;
+}
+
+.body {
+  max-width: 620px;
+  margin: 0;
+  font-size: var(--ex-text-lg);
+  line-height: var(--ex-leading-relaxed);
+  color: var(--ex-fg-muted);
+  text-wrap: pretty;
+  word-break: keep-all;
+}
+
+/* ── 기업 맞춤 — 크레마 빛 바탕에서 시작한다 ──────────────── */
+
+/* 첫 화면이 크레마 속으로 내려간 끝에 이 구획이 올라온다. 그래서 크레마 빛 바탕을 잇는다. */
+.tailorSection {
+  padding-bottom: 120px;
+  background: linear-gradient(to bottom, var(--ex-accent-surface), var(--ex-bg-sunken) 85%);
+}
+
+.brew {
+  --brew-accent: var(--ex-accent);
+  display: grid;
+  grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
+  gap: 28px;
+  margin-top: 48px;
+}
+
+.brewOrders {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* 공고는 주문서처럼 위아래 이음선이 있는 종이다. 고른 주문서만 왼쪽 띠가 강조색이 된다. */
+.brewOrder {
   position: relative;
-  margin-top: 56px;
-  padding-bottom: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 18px 16px 22px;
+  border: 1px solid var(--ex-border);
+  border-radius: 6px;
+  background: var(--ex-bg);
+  font: inherit;
+  color: var(--ex-fg-muted);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--quick) var(--ease),
+    color var(--quick) var(--ease),
+    transform var(--quick) var(--ease);
 }
 
-.heroBrowser {
-  box-shadow: var(--ex-elevation-frame);
+.brewOrder::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 8px;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--ex-border);
+  transition: background var(--standard) var(--ease);
 }
 
-.heroScroll {
-  aspect-ratio: 16 / 9.6;
+.brewOrder:hover {
+  border-color: var(--ex-border-firm);
+  color: var(--ex-fg);
+}
+
+.brewOrder:focus-visible {
+  outline: none;
+  box-shadow: var(--ex-focus-ring);
+}
+
+.brewOrder[data-active="true"] {
+  border-color: var(--ex-fg);
+  color: var(--ex-fg);
+}
+
+.brewOrder[data-active="true"]::before {
+  background: var(--brew-accent);
+}
+
+.brewOrderCompany {
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-subtle);
+}
+
+.brewOrderTitle {
+  font-size: var(--ex-text-md);
+  font-weight: 600;
+}
+
+.brewOrderAsks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.brewOrderAsks span {
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--ex-bg-sunken);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-body);
+}
+
+.brewResult {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  align-items: start;
+  gap: 28px;
+}
+
+/* 줄은 모두 같은 자리에 겹쳐 두고 순위만큼 내린다. 순위가 바뀌면 그 거리만큼 미끄러진다. */
+.brewRank {
+  --row: 58px;
+  position: relative;
+  height: calc(var(--row) * 6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.brewRankRow {
+  box-sizing: border-box;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  height: calc(var(--row) - 8px);
+  padding: 0 14px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ex-bg) 55%, transparent);
+  color: var(--ex-fg-subtle);
+}
+
+.brewRankRow[data-picked="true"] {
+  background: var(--ex-bg);
+  color: var(--ex-fg);
+  box-shadow: var(--ex-elevation-raised);
+}
+
+.brewRankNumber {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--ex-bg-tint);
+  font-size: var(--ex-text-2xs);
+  font-weight: 600;
+}
+
+.brewRankRow[data-picked="true"] .brewRankNumber {
+  background: var(--brew-accent);
+  color: var(--ex-fg-on-accent);
+}
+
+.brewRankTitle {
   overflow: hidden;
+  font-size: var(--ex-text-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.heroScrollImage {
-  display: block;
-  width: 100%;
-  height: auto;
+.brewRankCategory {
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-subtle);
 }
 
-/*
- * 이미지는 1440×2700이라 높이가 폭의 1.875배다. 창은 폭의 0.6배라서
- * 끝까지 내리려면 이미지 높이의 68%(= (1.875 - 0.6) / 1.875)를 올린다.
- */
 @media (prefers-reduced-motion: no-preference) {
-  .heroScrollImage {
-    animation: landingSiteScroll 22s ease-in-out infinite;
+  .brewRankRow {
+    transition:
+      transform 560ms var(--ease),
+      background var(--standard) var(--ease),
+      color var(--standard) var(--ease),
+      box-shadow var(--standard) var(--ease);
+  }
+
+  .brewRankNumber {
+    transition: background var(--standard) var(--ease), color var(--standard) var(--ease);
   }
 }
 
-@keyframes landingSiteScroll {
-  0%, 10% { transform: translateY(0); }
-  45%, 58% { transform: translateY(-68%); }
-  92%, 100% { transform: translateY(0); }
-}
-
-.phone {
-  position: absolute;
-  right: -12px;
-  bottom: 0;
-  width: 200px;
+/* 포트폴리오 미리보기 — 고른 공고의 강조색과 한 줄 소개, 앞에 둘 사례 셋. */
+.brewPreview {
   overflow: hidden;
-  border: 6px solid var(--ex-fg);
-  border-radius: 30px;
+  border: 1px solid var(--ex-border);
+  border-radius: 14px;
   background: var(--ex-bg);
   box-shadow: var(--ex-elevation-overlay);
 }
 
-.phoneImage {
-  display: block;
-  width: 100%;
-  height: auto;
+.brewPreviewBar {
+  display: flex;
+  gap: 6px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--ex-border-inner);
 }
 
+.brewPreviewBar span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ex-border);
+}
+
+.brewPreviewBody {
+  position: relative;
+  padding: 28px 26px 26px;
+}
+
+/* 강조색 띠가 미리보기 머리에 깔린다. 색만 바뀌므로 옮겨 다니지 않고 번진다. */
+.brewPreviewBody::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 6px;
+  background: var(--brew-accent);
+  transition: background var(--standard) var(--ease);
+}
+
+.brewPreviewName {
+  display: block;
+  font-size: var(--ex-text-3xl);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.brewPreviewHeadline {
+  margin: 10px 0 22px;
+  font-size: var(--ex-text-lg);
+  line-height: var(--ex-leading-snug);
+  color: var(--brew-accent);
+  font-weight: 600;
+  word-break: keep-all;
+  transition: color var(--standard) var(--ease);
+}
+
+.brewPreviewCases {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.brewPreviewCase {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-left: 3px solid var(--brew-accent);
+  border-radius: 0;
+  background: var(--ex-bg-sunken);
+  transition: border-color var(--standard) var(--ease);
+}
+
+.brewPreviewCaseTitle {
+  font-size: var(--ex-text-sm);
+  font-weight: 600;
+}
+
+.brewPreviewCaseResult {
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
+}
+
+/* 새 한 줄 소개와 사례는 아래에서 들어온다. 사례는 60ms씩 엇갈려 순위표보다 조금 늦게 도착한다. */
 @media (prefers-reduced-motion: no-preference) {
-  .phone {
-    animation: landingFloat 6s ease-in-out infinite;
+  .brewPreviewHeadline {
+    animation: brewEnter var(--standard) var(--ease-enter) both;
+  }
+
+  .brewPreviewCase {
+    animation: brewEnter var(--standard) var(--ease-enter) both;
+    animation-delay: calc(120ms + var(--i, 0) * 60ms);
   }
 }
 
-@keyframes landingFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+@keyframes brewEnter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
-/* ── 브라우저 창 틀 · 화면 이미지 ──────────────────────────── */
+/* ── 제작 과정 둘러보기 ────────────────────────────────────── */
 
 .browser {
   overflow: hidden;
   border: 1px solid var(--ex-border);
-  border-radius: 16px;
+  border-radius: 14px;
   background: var(--ex-bg);
 }
 
@@ -341,7 +655,7 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 11px 14px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--ex-border-inner);
 }
 
@@ -358,8 +672,7 @@
   padding: 4px 12px;
   border-radius: 8px;
   background: var(--ex-bg-sunken);
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-3xs);
+  font-size: var(--ex-text-2xs);
   color: var(--ex-fg-muted);
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -375,46 +688,18 @@
   height: auto;
 }
 
-/* ── 절 공통 ───────────────────────────────────────────────── */
-
-.section {
-  padding: 112px 0 0;
-  scroll-margin-top: 72px;
-}
-
-.h2 {
-  margin: 0 0 20px;
-  font-size: var(--ex-text-display-sm);
-  font-weight: 600;
-  letter-spacing: -0.03em;
-  line-height: var(--ex-leading-tight);
-  color: var(--ex-fg);
-  text-wrap: balance;
-}
-
-.body {
-  max-width: 640px;
-  margin: 0;
-  font-size: var(--ex-text-lg);
-  line-height: var(--ex-leading-relaxed);
-  color: var(--ex-fg-muted);
-  text-wrap: pretty;
-}
-
-/* ── 제작 과정 둘러보기 ────────────────────────────────────── */
-
 .tour {
   display: grid;
   grid-template-columns: minmax(0, 340px) minmax(0, 1fr);
   align-items: start;
   gap: 32px;
-  margin-top: 36px;
+  margin-top: 40px;
 }
 
 .tourTabs {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .tourTab {
@@ -425,17 +710,14 @@
   gap: 4px 10px;
   overflow: hidden;
   padding: 14px 16px;
-  border: 1px solid transparent;
-  border-radius: 14px;
+  border: none;
+  border-radius: 10px;
   background: none;
   font: inherit;
   color: var(--ex-fg-muted);
   text-align: left;
   cursor: pointer;
-  transition:
-    background var(--ex-motion-quick),
-    border-color var(--ex-motion-quick),
-    color var(--ex-motion-quick);
+  transition: background var(--quick) var(--ease), color var(--quick) var(--ease);
 }
 
 .tourTab:hover {
@@ -448,14 +730,13 @@
 }
 
 .tourTab[data-active="true"] {
-  border-color: var(--ex-border);
   background: var(--ex-bg);
   color: var(--ex-fg);
 }
 
 .tourNumber {
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-2xs);
+  font-size: var(--ex-text-xs);
+  font-weight: 600;
   color: var(--ex-fg-subtle);
 }
 
@@ -468,13 +749,13 @@
   font-weight: 600;
 }
 
-/* 설명은 고른 단계에서만 펼친다. 높이 대신 grid 행으로 펼쳐 글자가 잘리지 않는다. */
 .tourBody {
   grid-column: 2;
   display: none;
   font-size: var(--ex-text-sm);
   line-height: var(--ex-leading-normal);
   color: var(--ex-fg-muted);
+  word-break: keep-all;
 }
 
 .tourTab[data-active="true"] .tourBody {
@@ -523,20 +804,21 @@
   visibility: visible;
 }
 
+/* 나가는 화면은 빨리, 들어오는 화면은 조금 길게(motion-design: Enter > Exit). */
 @media (prefers-reduced-motion: no-preference) {
   .tourPanel {
-    transform: translateY(10px) scale(0.99);
+    transform: translate3d(0, -8px, 0);
     transition:
-      opacity 420ms ease,
-      transform 520ms cubic-bezier(0.16, 1, 0.3, 1),
-      visibility 0s linear 420ms;
+      opacity 260ms var(--ease),
+      transform 260ms var(--ease),
+      visibility 0s linear 260ms;
   }
 
   .tourPanel[data-active="true"] {
     transform: none;
     transition:
-      opacity 420ms ease,
-      transform 520ms cubic-bezier(0.16, 1, 0.3, 1),
+      opacity var(--standard) var(--ease-enter),
+      transform var(--standard) var(--ease-enter),
       visibility 0s;
   }
 }
@@ -545,16 +827,16 @@
   box-shadow: var(--ex-elevation-raised);
 }
 
-/* 넓은 화면에서는 단계 목록이 설명을 펼치므로 화면 아래 설명은 좁은 화면에서만 보인다. */
 .tourCaption {
   display: none;
   margin: 16px 0 0;
   font-size: var(--ex-text-md);
   line-height: var(--ex-leading-normal);
   color: var(--ex-fg-body);
+  word-break: keep-all;
 }
 
-/* 실제 화면이 없는 단계의 그림. 화면 이미지와 같은 16:10 판 안에 둔다. */
+/* 실제 화면이 없는 단계의 그림. 화면 이미지와 같은 판 안에 둔다. */
 .figure {
   box-sizing: border-box;
   display: grid;
@@ -562,7 +844,7 @@
   aspect-ratio: 16 / 10.6;
   padding: 32px;
   border: 1px solid var(--ex-border);
-  border-radius: 16px;
+  border-radius: 14px;
   background: var(--ex-bg-tint);
 }
 
@@ -571,7 +853,7 @@
   max-width: 560px;
   padding: 18px 18px 12px;
   border: 1px solid var(--ex-border);
-  border-radius: 14px;
+  border-radius: 12px;
   background: var(--ex-bg);
   box-shadow: var(--ex-elevation-raised);
 }
@@ -691,6 +973,7 @@
   font-size: var(--ex-text-sm);
   line-height: var(--ex-leading-normal);
   color: var(--ex-fg);
+  word-break: keep-all;
 }
 
 .chatRequirement {
@@ -707,194 +990,121 @@
   color: var(--ex-fg-on-accent);
 }
 
-/* ── 기업 맞춤 — 반전 지면 ─────────────────────────────────── */
-
-.inverse {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
-  align-items: center;
-  gap: 48px;
-  padding: 56px;
-  border-radius: 28px;
-  background: #16223a;
-  color: var(--ex-fg);
-}
-
-.inverseBody {
-  margin: 0;
-  font-size: var(--ex-text-lg);
-  line-height: var(--ex-leading-relaxed);
-  color: var(--ex-fg-muted);
-  text-wrap: pretty;
-}
-
-.tailorDemo {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.tailorTabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.tailorTab {
-  padding: 8px 14px;
-  border: 1px solid color-mix(in srgb, var(--ex-fg) 16%, transparent);
-  border-radius: 999px;
-  background: none;
-  font: inherit;
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-body);
-  cursor: pointer;
-  transition:
-    background var(--ex-motion-quick),
-    color var(--ex-motion-quick),
-    border-color var(--ex-motion-quick);
-}
-
-.tailorTab:hover {
-  border-color: color-mix(in srgb, var(--ex-fg) 40%, transparent);
-  color: var(--ex-fg);
-}
-
-.tailorTab:focus-visible {
-  outline: none;
-  box-shadow: var(--ex-focus-ring);
-}
-
-.tailorTab[data-active="true"] {
-  border-color: var(--ex-accent-soft);
-  background: var(--ex-accent-soft);
-  color: #16223a;
-  font-weight: 600;
-}
-
-/* 줄은 모두 같은 자리에 겹쳐 두고 순위만큼 내린다. 순위가 바뀌면 그 거리만큼 미끄러진다. */
-.tailorList {
-  --row: 52px;
-  position: relative;
-  height: calc(var(--row) * 6);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.tailorRow {
-  box-sizing: border-box;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  display: grid;
-  grid-template-columns: 26px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 12px;
-  height: calc(var(--row) - 6px);
-  padding: 0 14px;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--ex-fg) 5%, transparent);
-  color: var(--ex-fg-subtle);
-}
-
-.tailorRow[data-picked="true"] {
-  background: color-mix(in srgb, var(--ex-fg) 11%, transparent);
-  color: var(--ex-fg);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .tailorRow {
-    transition:
-      transform 620ms cubic-bezier(0.34, 1.2, 0.64, 1),
-      background 300ms ease,
-      color 300ms ease;
-  }
-}
-
-.tailorRank {
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--ex-fg) 10%, transparent);
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-3xs);
-}
-
-.tailorRow[data-picked="true"] .tailorRank {
-  background: var(--ex-accent-soft);
-  color: #16223a;
-}
-
-.tailorTitle {
-  overflow: hidden;
-  font-size: var(--ex-text-sm);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.tailorCategory {
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-fg-subtle);
-}
-
 /* ── 포트폴리오 예시 ───────────────────────────────────────── */
 
 .showcase {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 24px;
-  margin-top: 36px;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 32px;
+  margin-top: 44px;
+  padding-bottom: 20px;
 }
 
-.showcaseItem {
+.siteFrame {
   box-shadow: var(--ex-elevation-raised);
-  transition:
-    transform var(--ex-motion-panel),
-    box-shadow var(--ex-motion-panel);
 }
 
-/* 두 사이트를 같은 비율로 자른다. 첫 화면이 보이도록 위에 맞춘다. */
-.showcaseItem .shot {
-  aspect-ratio: 16 / 9;
-  object-fit: cover;
-  object-position: top;
+/* 창 높이만 보이고 나머지는 아래에 있다. 아래쪽을 흐려 이어진다는 것을 보인다. */
+.siteWindow {
+  position: relative;
+  aspect-ratio: 16 / 11;
+  overflow: hidden;
+  outline: none;
 }
 
+.siteWindow::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 22%;
+  background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--ex-bg) 85%, transparent));
+  pointer-events: none;
+  transition: opacity var(--standard) var(--ease);
+}
+
+.siteWindow:focus-visible {
+  box-shadow: inset var(--ex-focus-ring);
+}
+
+.siteImage {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* 1440×2700 이미지를 16:11 창으로 본다. 끝까지 내리는 거리는 이미지 높이의 63%다 —
+   (1.875 − 0.6875) ÷ 1.875. 내릴 때는 천천히 읽게, 돌아올 때는 빠르게. */
 @media (prefers-reduced-motion: no-preference) {
-  .showcaseItem:hover {
-    transform: translateY(-6px);
-    box-shadow: var(--ex-elevation-card-hover);
+  .siteImage {
+    transition: transform 900ms var(--ease);
+  }
+
+  .siteWindow:hover .siteImage,
+  .siteWindow:focus-visible .siteImage {
+    transform: translate3d(0, -63%, 0);
+    transition: transform 7s cubic-bezier(0.45, 0, 0.55, 1);
+  }
+
+  .siteWindow:hover::after,
+  .siteWindow:focus-visible::after {
+    opacity: 0;
   }
 }
 
-/* ── 마지막 권유 ───────────────────────────────────────────── */
+.showcasePair {
+  position: relative;
+  margin-top: 64px;
+}
+
+.showcasePhone {
+  position: absolute;
+  right: -14px;
+  bottom: -36px;
+  width: 150px;
+  overflow: hidden;
+  border: 5px solid var(--ex-fg);
+  border-radius: 24px;
+  background: var(--ex-bg);
+  box-shadow: var(--ex-elevation-overlay);
+}
+
+.showcasePhoneImage {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* ── 마지막 권유 · 바닥글 — 늘 어두운 한 덩어리 ────────────── */
 
 .closing {
-  padding: 56px;
-  border-radius: 28px;
-  background: var(--ex-accent-surface);
+  margin-top: 140px;
+  padding: 96px 0 88px;
+  background: #16223a;
+  color: var(--ex-fg);
+}
+
+.closingTitle {
+  margin: 0 0 16px;
+  font-family: var(--ex-font-ui);
+  font-size: var(--ex-text-display-md);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: var(--ex-leading-tight);
+  word-break: keep-all;
 }
 
 .closingBody {
-  max-width: 560px;
-  margin: 0 0 28px;
+  max-width: 520px;
+  margin: 0 0 32px;
   font-size: var(--ex-text-lg);
   line-height: var(--ex-leading-relaxed);
-  color: var(--ex-accent-ink);
+  color: var(--ex-fg-muted);
+  word-break: keep-all;
 }
-
-main > .section:last-child {
-  padding-bottom: 112px;
-}
-
-/* ── 바닥글 ────────────────────────────────────────────────── */
 
 .footer {
-  padding: 56px 0 32px;
+  padding: 0 0 32px;
   background: #16223a;
   color: var(--ex-fg);
 }
@@ -904,7 +1114,9 @@ main > .section:last-child {
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 32px 48px;
+  padding-top: 40px;
   padding-bottom: 32px;
+  border-top: 1px solid var(--ex-border);
   border-bottom: 1px solid var(--ex-border);
 }
 
@@ -944,9 +1156,31 @@ main > .section:last-child {
   color: var(--ex-fg-subtle);
 }
 
+/* ── 동작 줄이기 — 첫 화면 구간을 한 화면으로 ─────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .heroPassage {
+    height: 100svh;
+  }
+}
+
 /* ── 좁은 폭 ───────────────────────────────────────────────── */
 
 @media (max-width: 1023px) {
+  .brew {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .brewOrders {
+    flex-direction: row;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .brewOrder {
+    flex: 0 0 240px;
+  }
+
   .tour {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -971,19 +1205,18 @@ main > .section:last-child {
     display: block;
   }
 
-  .inverse {
+  .showcase {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .phone {
-    width: 150px;
-    border-width: 5px;
-    border-radius: 24px;
+  .showcasePair {
+    margin-top: 0;
   }
 }
 
 @media (max-width: 767px) {
-  .container {
+  .container,
+  .heroContent {
     padding: 0 16px;
   }
 
@@ -995,18 +1228,28 @@ main > .section:last-child {
     display: none;
   }
 
-  .hero {
-    padding-top: 40px;
+  .heroPassage {
+    height: 180vh;
+  }
+
+  /* 좁은 화면에서 잔은 아래쪽에 앉는다. 글은 위쪽 3분의 2 안에 둔다. */
+  .heroContent {
+    align-items: flex-start;
+    padding-top: 92px;
+  }
+
+  .heroPoster {
+    object-position: 70% 100%;
   }
 
   .headline {
-    --line: 42px;
-    margin-bottom: 20px;
+    --line: 44px;
+    margin-bottom: 18px;
     font-size: var(--ex-text-display-sm);
   }
 
   .lede {
-    margin-bottom: 24px;
+    margin-bottom: 22px;
     font-size: var(--ex-text-md);
   }
 
@@ -1021,20 +1264,12 @@ main > .section:last-child {
     flex-wrap: nowrap;
   }
 
-  .heroVisual {
-    margin-top: 40px;
-    padding-bottom: 28px;
-  }
-
-  .phone {
-    right: 4px;
-    width: 104px;
-    border-width: 4px;
-    border-radius: 18px;
-  }
-
   .section {
-    padding-top: 72px;
+    padding-top: 80px;
+  }
+
+  .tailorSection {
+    padding-bottom: 80px;
   }
 
   .h2 {
@@ -1042,9 +1277,20 @@ main > .section:last-child {
   }
 
   .body,
-  .inverseBody,
   .closingBody {
     font-size: var(--ex-text-md);
+  }
+
+  .brewResult {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .brewRank {
+    --row: 54px;
+  }
+
+  .brewRankCategory {
+    display: none;
   }
 
   .figure {
@@ -1052,25 +1298,20 @@ main > .section:last-child {
     aspect-ratio: auto;
   }
 
-  .inverse,
+  .showcasePhone {
+    width: 104px;
+    right: 6px;
+    bottom: -24px;
+    border-width: 4px;
+    border-radius: 18px;
+  }
+
   .closing {
-    padding: 32px 20px;
-    border-radius: 20px;
+    margin-top: 96px;
+    padding: 72px 0 64px;
   }
 
-  .tailorList {
-    --row: 50px;
-  }
-
-  .tailorCategory {
-    display: none;
-  }
-
-  .showcase {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  main > .section:last-child {
-    padding-bottom: 72px;
+  .closingTitle {
+    font-size: var(--ex-text-3xl);
   }
 }
