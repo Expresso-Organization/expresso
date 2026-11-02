@@ -31,7 +31,13 @@ export const UnifiedSearchItemSchema = z.strictObject({
 });
 
 export const HomeReadModelSchema = z.strictObject({
-  activeBrews: z.array(z.strictObject({ id: UuidSchema, status: z.string(), updatedAt: TimestampSchema })),
+  activeBrews: z.array(z.strictObject({
+    id: UuidSchema, status: z.string(), updatedAt: TimestampSchema,
+    /** 화면에 보일 제작 이름. 공고 없이 시작한 제작의 이름, 없으면 공고 제목. 둘 다 없으면 null. */
+    title: z.string().max(300).nullable(),
+    /** 공고로 시작한 제작의 회사. 공고 없이 시작했으면 null. */
+    company: z.strictObject({ name: z.string(), logoUrl: z.string().max(300).nullable() }).nullable(),
+  })),
   portfolios: z.array(z.strictObject({ id: UuidSchema, title: z.string(), status: z.string() })),
   recommendedJobs: z.array(z.strictObject({
     id: UuidSchema, title: z.string(), company: z.string(), score: z.number(),

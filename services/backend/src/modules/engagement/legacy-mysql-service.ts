@@ -1,7 +1,7 @@
 import { type NotificationDeliveryProvider, EngagementError } from "./public.js";
 export { type NotificationDeliveryProvider, EngagementError } from "./public.js";
 import { randomUUID } from "node:crypto";
-import { API_PREFIX, HomeReadModelSchema, type NotificationKind, type UnifiedSearchQuery } from "@expresso/contracts";
+import { companyLogoUrl, HomeReadModelSchema, type NotificationKind, type UnifiedSearchQuery } from "@expresso/contracts";
 import type { SqlTag } from "../../platform/legacy-mysql.js";
 
 import { addOutboxEvent } from "../../platform/legacy-mysql-outbox.js";
@@ -162,16 +162,15 @@ export class EngagementService {
       `,
     ]);
     return HomeReadModelSchema.parse({
-      activeBrews: brews.map((brew) => ({ id: brew.id, status: brew.status, updatedAt: iso(brew.updated_at) })),
+      // MySQL 경로는 제작의 공고를 읽지 않는다. 제목 · 회사는 비워 두고 화면이 단계 이름으로 그린다.
+      activeBrews: brews.map((brew) => ({ id: brew.id, status: brew.status, updatedAt: iso(brew.updated_at), title: null, company: null })),
       portfolios,
       recommendedJobs: jobs.map((job) => ({
         id: job.id,
         title: job.title,
         company: job.company,
         score: Number(job.score),
-        companyLogoUrl: job.logo_checksum === null
-          ? null
-          : `${API_PREFIX}/companies/${job.company_id}/logo?v=${job.logo_checksum.slice(0, 16)}`,
+        companyLogoUrl: companyLogoUrl(job.company_id, job.logo_checksum),
       })),
       keyMetrics: metrics.map((metric) => ({ key: metric.key, value: Number(metric.value) })),
       empty: { brews: brews.length === 0, portfolios: portfolios.length === 0, recommendations: jobs.length === 0, metrics: metrics.length === 0 },
