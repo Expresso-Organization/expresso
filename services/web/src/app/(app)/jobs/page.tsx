@@ -746,18 +746,21 @@ export default async function JobsPage({
 
           {q ? null : (
             <div className={styles.categoryTabs}>
-              {listing.summary.categories.map((chip) => (
-                <Link
-                  key={chip.key}
-                  href={listHref(chipQuery(chip, sort))}
-                  className={`${styles.categoryTab} ${
-                    (category ?? "all") === chip.key ? styles.categoryTabActive : ""
-                  }`}
-                >
-                  {chip.label}
-                  <span className={styles.categoryCount}>{chip.count}</span>
-                </Link>
-              ))}
+              {/* 좁은 폭에서는 탭 묶음만 가로로 민다. 정렬 메뉴는 스크롤 밖에 두어 드롭다운이 잘리지 않는다. */}
+              <div className={styles.categoryTabList}>
+                {listing.summary.categories.map((chip) => (
+                  <Link
+                    key={chip.key}
+                    href={listHref(chipQuery(chip, sort))}
+                    className={`${styles.categoryTab} ${
+                      (category ?? "all") === chip.key ? styles.categoryTabActive : ""
+                    }`}
+                  >
+                    {chip.label}
+                    <span className={styles.categoryCount}>{chip.count}</span>
+                  </Link>
+                ))}
+              </div>
               <SortMenu
                 options={SORTS.map(([key, , browseLabel]) => ({
                   key,

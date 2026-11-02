@@ -19,7 +19,7 @@ date: 2026-11-02
 - [ ] 홈 추천 공고 행: 회사 · 제목 영역은 `/jobs/{id}` 링크, 「만들기」는 `analyzePostingAction`을 부르는 `<form>`의 submit 버튼이다.
 - [ ] 홈 진행 중 제작 카드: 「이어서 답하기」는 `/brew/{id}/{resumeStep(status).segment}` 링크다.
 - [ ] 공고 상세 `facts()`의 「기술 스택」 행은 `job.technologies.length === 0`일 때만 선다. 요건을 뽑은 공고는 본문 섹션의 대조 칩 묶음만 보인다.
-- [ ] 공고 탐색 머리: 767px 이하에서 `.headNote`는 `display: none`, `.headAction`은 `white-space: nowrap`, `.categoryTabs`는 `overflow-x: auto`이고 탭은 줄바꿈하지 않는다.
+- [ ] 공고 탐색 머리: 767px 이하에서 `.headNote`는 `display: none`, `.headAction`은 `white-space: nowrap`이다. 카테고리 탭은 모든 폭에서 줄바꿈하지 않고, 탭 링크만 감싼 `.categoryTabList`가 `overflow-x: auto`다. 사이드바가 있는 800px 창에서도 탭 글자가 세로로 떨어졌다(2026-11-02 확인).
 - [ ] 편집기 머리 배지는 "웹 QA 통과" 또는 "웹 QA 확인 필요"만 보이고 `costUsd`를 읽지 않는다.
 - [ ] `app/(app)/career/page.tsx`가 세션의 첫 카테고리(`session.categories[0].key`)로 `redirect`한다. 카테고리가 없으면 `/career/experience`로 간다.
 
@@ -56,7 +56,7 @@ date: 2026-11-02
 - `publishing.public()`이 404 · 400이면 페이지는 `notFound()`를 부른다. `generateMetadata`에서는 예외를 삼키고 기본 제목을 돌려준다. 페이지가 같은 응답으로 404를 낸다.
 - 홈 추천 행에서 `<form>`을 `<Link>` 안에 둘 수 없다. 링크와 폼을 나란히 둔다(PR 118 주석과 같은 이유).
 - `resumeStep`은 모르는 상태를 재료 고르기로 보낸다. 홈의 `activeBrews[].status`는 느슨한 문자열이라 이 함수를 거쳐야 한다.
-- 카테고리 탭 묶음 안에 `SortMenu`가 함께 있다. `overflow-x: auto`를 주면 정렬 메뉴의 드롭다운이 잘릴 수 있다. 767px 이하에서만 적용하고 그 폭에서 드롭다운이 열리는지 확인한다.
+- 카테고리 탭 묶음 안에 `SortMenu`가 함께 있다. `overflow-x: auto`이면 `overflow-y`도 `visible`일 수 없어(CSS Overflow 3) 정렬 메뉴의 드롭다운과 활성 탭 밑줄의 -1px가 잘린다. 탭 링크만 `.categoryTabList`로 감싸 스크롤하고 `SortMenu`는 그 밖에 둔다. 묶음에 `margin-bottom: -1px`와 `padding-bottom: 1px`를 주어 밑줄을 스크롤 영역 안에 넣는다.
 - `facts()`의 기술 스택 행은 `mentionedStacks()`가 본문에서 읽은 것이라 `technologies`가 비어 있어도 설 수 있다. 조건을 `technologies.length === 0`으로 두면 아직 요건을 뽑지 않은 공고에서는 그대로 보인다.
 
 ## 완료 기준

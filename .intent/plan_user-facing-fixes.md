@@ -23,7 +23,8 @@ date: 2026-11-02
 | `proxy.ts` | 공개 호스트에서 `/robots.txt` 통과 |
 | `app/(app)/home/page.tsx` | 추천 행을 링크 + 폼으로, 진행 중 카드를 `ActiveBrewCard`로 |
 | `app/(app)/jobs/[jobId]/page.tsx` | `facts()`의 기술 스택 행에 `technologies.length === 0` 조건 |
-| `app/(app)/jobs/page.module.css` | 767px 이하 `.headNote` 숨김, `.headAction` nowrap, `.categoryTabs` 가로 스크롤, `.categoryTab` nowrap |
+| `app/(app)/jobs/page.module.css` | 767px 이하 `.headNote` 숨김, `.headAction` nowrap. 모든 폭에서 `.categoryTabList` 가로 스크롤, `.categoryTab` nowrap |
+| `app/(app)/jobs/page.tsx` | 카테고리 탭 링크를 `.categoryTabList`로 감싸 `SortMenu`를 스크롤 영역 밖에 둔다 |
 | `app/(app)/edit/[portfolioId]/Editor.tsx` | 배지의 `costUsd` 접미사 삭제 |
 | `app/(app)/career/page.tsx` (새 파일) | 첫 카테고리로 `redirect` |
 
