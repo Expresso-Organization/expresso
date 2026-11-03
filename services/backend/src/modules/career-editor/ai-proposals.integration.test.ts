@@ -2,13 +2,25 @@ import { randomUUID } from "node:crypto";
 import { createHash } from "node:crypto";
 
 import { mongoCollections } from "@expresso/database";
-import { encodeDocumentAsYUpdate, reconstructYDocument } from "@expresso/editor";
+import type { CareerDocument } from "@expresso/editor";
+import { blockNoteToCareerDocument, careerDocumentToBlockNote } from "@expresso/editor/blocknote";
+import type { CareerDocumentBootstrap } from "@expresso/contracts";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { createMongoFixture } from "../../../test/support/mongodb.js";
 import { MongoIdentityService } from "../identity/index.js";
 import { CareerService } from "../career/service.js";
 import { AiProposalService } from "./ai-proposals.js";
+import { restoreBlockNote, syncBlockNoteDocument } from "./blocknote-document.js";
+
+/** 브라우저 편집기가 보내는 것과 같은 BlockNote Yjs 업데이트를 만듭니다. */
+function userEdit(bootstrap: CareerDocumentBootstrap, mutate: (document: CareerDocument) => void): Uint8Array {
+  const next = structuredClone(bootstrap.document); mutate(next);
+  return syncBlockNoteDocument(Buffer.from(bootstrap.stateBase64!, "base64"), [], careerDocumentToBlockNote(next).blocks).update;
+}
+function firstText(state: string, updates: readonly Uint8Array[]): string | undefined {
+  return blockNoteToCareerDocument(restoreBlockNote(Buffer.from(state, "base64"), updates).blocks).content[0]?.text?.[0]?.text;
+}
 import type { AiProposalAdapter } from "./ai-adapter.js";
 import { CareerDocumentService } from "./service.js";
 
@@ -35,8 +47,8 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect(proposal.status).toBe("ready");
     expect(progress).toEqual(expect.arrayContaining(["draft", "streaming", "ready"]));
     expect(await mongoCollections(fixture.resource.db).careerDocumentUpdates.countDocuments({ recordId })).toBe(0);
-    const external = structuredClone(initial.document); external.content[0]!.text = [{ text: "사용자 변경" }];
-    const update = encodeDocumentAsYUpdate(external, [encodeDocumentAsYUpdate(initial.document)]);
+    // 제안 뒤 사람이 고르지 않은 자리에 문단을 더합니다. 대상 블록은 그대로라 AI 변경이 그 위에 적용됩니다.
+    const update = userEdit(initial, (document) => { document.content.push({ id: randomUUID(), type: "paragraph", attrs: {}, text: [{ text: "사용자 문단" }] }); });
     await documentService.appendUpdate(userId, { recordId, clientId: randomUUID(), clientSequence: 1, expectedSequence: initial.documentVersion, updateBase64: Buffer.from(update).toString("base64"), checksum: createHash("sha256").update(update).digest("hex") });
     const applied = await local.apply(userId, recordId, { recordId, proposalId: proposal.proposalId, expectedDocumentVersion: 1, commandIndexes: [0], propertyChangeIndexes: [] });
     expect(applied).toMatchObject({ status: "applied", appliedDocumentVersion: 2 });
@@ -44,14 +56,21 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect(await local.apply(userId, recordId, { recordId, proposalId: proposal.proposalId, expectedDocumentVersion: 1, commandIndexes: [0], propertyChangeIndexes: [] })).toMatchObject({ status: "applied" });
     expect(await mongoCollections(fixture.resource.db).careerDocumentUpdates.findOne({ recordId, actor: "ai" })).toBeTruthy();
     expect(updates[0]).toMatchObject({ sequence: 2 });
-    const liveUpdates = [encodeDocumentAsYUpdate(initial.document), update, Buffer.from(updates[0]!.base64, "base64")];
-    expect(reconstructYDocument(liveUpdates).content[0]?.text?.[0]?.text).toBe("AI 변경");
+    // 열린 편집기는 처음 받은 상태에 사용자 · AI 업데이트를 차례로 적용합니다.
+    const liveUpdates = [update, Buffer.from(updates[0]!.base64, "base64")];
+    expect(firstText(initial.stateBase64!, liveUpdates)).toBe("AI 변경");
     await expect(local.get(otherUserId, recordId, proposal.proposalId)).rejects.toMatchObject({ statusCode: 404 });
     await expect(local.undo(userId, recordId, { recordId, proposalId: proposal.proposalId, expectedDocumentVersion: 1 })).rejects.toMatchObject({ statusCode: 409 });
     const restored = await local.undo(userId, recordId, { recordId, proposalId: proposal.proposalId, expectedDocumentVersion: 2 });
-    expect(restored.document.content[0]?.text?.[0]?.text).toBe("사용자 변경");
+    expect(restored.document.content[0]?.text?.[0]?.text).toBe("초기 본문");
+    expect(JSON.stringify(restored.document)).toContain("사용자 문단");
     expect(updates).toHaveLength(2);
-    expect(reconstructYDocument([...liveUpdates, Buffer.from(updates[1]!.base64, "base64")]).content[0]?.text?.[0]?.text).toBe("사용자 변경");
+    expect(firstText(initial.stateBase64!, [...liveUpdates, Buffer.from(updates[1]!.base64, "base64")])).toBe("초기 본문");
+    // 되돌린 제안은 다시 적용하면 실제로 다시 바뀝니다.
+    expect((await local.get(userId, recordId, proposal.proposalId)).status).toBe("ready");
+    const reapplied = await local.apply(userId, recordId, { recordId, proposalId: proposal.proposalId, expectedDocumentVersion: restored.documentVersion, commandIndexes: [0], propertyChangeIndexes: [] });
+    expect(reapplied.status).toBe("applied");
+    expect((await documentService.bootstrap(userId, recordId)).document.content[0]?.text?.[0]?.text).toBe("AI 변경");
   });
 
   it("rejects inaccessible selection and keeps a cancellation that races the adapter", async () => {
@@ -87,8 +106,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const adapter: AiProposalAdapter = { async generate() { return { summary: "삭제 충돌", commands: [{ type: "setText", blockId, text: "변경" }], propertyChanges: [] }; } };
     const local = new AiProposalService(fixture.resource, documentService, adapter);
     const proposal = await local.create(userId, recordId, { selection: { blockIds: [blockId] }, prompt: "변경" });
-    const deleted = structuredClone(current.document); deleted.content = [];
-    const update = encodeDocumentAsYUpdate(deleted, [encodeDocumentAsYUpdate(current.document)]);
+    const update = userEdit(current, (document) => { document.content = []; });
     await documentService.appendUpdate(userId, { recordId, clientId: randomUUID(), clientSequence: 9, expectedSequence: current.documentVersion, updateBase64: Buffer.from(update).toString("base64"), checksum: createHash("sha256").update(update).digest("hex") });
     await expect(local.apply(userId, recordId, { recordId, proposalId: proposal.proposalId, expectedDocumentVersion: current.documentVersion + 1, commandIndexes: [0], propertyChangeIndexes: [] })).rejects.toMatchObject({ statusCode: 409 });
     expect((await local.get(userId, recordId, proposal.proposalId)).status).toBe("conflicted");
@@ -104,5 +122,33 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     await local.apply(userId, propertyRecordId, { recordId: propertyRecordId, proposalId: proposal.proposalId, expectedDocumentVersion: bootstrap.documentVersion, commandIndexes: [], propertyChangeIndexes: [0] });
     expect((await mongoCollections(fixture.resource.db).careerRecords.findOne({ _id: propertyRecordId }))?.properties[propertyKey]).toEqual({ type: "text", value: "AI 메모" });
     expect(await mongoCollections(fixture.resource.db).outboxEvents.countDocuments({ topic: "career.computation", "payload.recordId": propertyRecordId, "payload.changedPropertyIds": propertyId })).toBe(1);
+  });
+  it("does not overwrite a selected block a person edited after the proposal", async () => {
+    const id = (await new CareerService(fixture.resource).createRecord(userId, randomUUID(), { categoryId, title: "충돌", properties: {}, bodyMd: "원래 문장" })).record.id;
+    const initial = await documentService.bootstrap(userId, id); const blockId = initial.document.content[0]!.id;
+    const proposal = await ai.create(userId, id, { selection: { blockIds: [blockId] }, prompt: "다듬어" });
+    const update = userEdit(initial, (document) => { document.content[0]!.text = [{ text: "사람이 고친 문장" }]; });
+    await documentService.appendUpdate(userId, { recordId: id, clientId: randomUUID(), clientSequence: 1, updateBase64: Buffer.from(update).toString("base64"), checksum: createHash("sha256").update(update).digest("hex") });
+    await expect(ai.apply(userId, id, { recordId: id, proposalId: proposal.proposalId, expectedDocumentVersion: 1, commandIndexes: [0], propertyChangeIndexes: [] })).rejects.toMatchObject({ statusCode: 409 });
+    expect((await documentService.bootstrap(userId, id)).document.content[0]?.text?.[0]?.text).toBe("사람이 고친 문장");
+  });
+
+  it("keeps text color, alignment and nested children of blocks the proposal did not touch", async () => {
+    const id = (await new CareerService(fixture.resource).createRecord(userId, randomUUID(), { categoryId, title: "서식", properties: {}, bodyMd: "첫 문단\n\n둘째 문단" })).record.id;
+    const initial = await documentService.bootstrap(userId, id);
+    const state = Buffer.from(initial.stateBase64!, "base64");
+    const blocks = restoreBlockNote(state).blocks as unknown as Array<Record<string, unknown>>;
+    const second = blocks[1]!;
+    const styled = [blocks[0]!, { ...second, props: { ...(second["props"] as object), textAlignment: "center" }, content: [{ type: "text", text: "둘째 문단", styles: { textColor: "red" } }], children: [{ id: randomUUID(), type: "paragraph", props: {}, content: [{ type: "text", text: "들여쓴 자식", styles: {} }], children: [] }] }];
+    const update = syncBlockNoteDocument(state, [], styled as never).update;
+    await documentService.appendUpdate(userId, { recordId: id, clientId: randomUUID(), clientSequence: 1, updateBase64: Buffer.from(update).toString("base64"), checksum: createHash("sha256").update(update).digest("hex") });
+    const current = await documentService.bootstrap(userId, id);
+    const proposal = await ai.create(userId, id, { selection: { blockIds: [current.document.content[0]!.id] }, prompt: "다듬어" });
+    await ai.apply(userId, id, { recordId: id, proposalId: proposal.proposalId, expectedDocumentVersion: current.documentVersion, commandIndexes: [0], propertyChangeIndexes: [] });
+    const after = await documentService.bootstrap(userId, id);
+    const afterBlocks = restoreBlockNote(Buffer.from(after.stateBase64!, "base64")).blocks as unknown as Array<Record<string, unknown>>;
+    expect(JSON.stringify(afterBlocks[0])).toContain("AI 변경");
+    expect(afterBlocks[1]).toMatchObject({ props: { textAlignment: "center" }, content: [{ text: "둘째 문단", styles: { textColor: "red" } }] });
+    expect(JSON.stringify(afterBlocks[1])).toContain("들여쓴 자식");
   });
 });

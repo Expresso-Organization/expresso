@@ -42,6 +42,8 @@ export interface PlannerSource {
 }
 
 export interface PlannerContext {
+  /** 사용량을 남길 사용자. 사용자가 없는 작업만 null이다. */
+  userId: string | null;
   sources: PlannerSource[];
   company: { name: string; industry: string | null; toneSummary: string | null } | null;
   jobTitle: string | null;
@@ -176,6 +178,7 @@ export class AiRecipePlanner implements RecipePlanner {
         promptVersion: RECIPE_PROMPT_VERSION,
       },
       RecipeDraftSchema,
+      { userId: context.userId },
     );
     return { draft: data, usage, attempts: 1 };
   }

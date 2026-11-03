@@ -4,7 +4,10 @@ import styles from "./page.module.css";
 
 /** 설정 화면의 묶음. 모두 한 화면에 있고, 왼쪽 목록은 그 자리로 옮겨 준다. */
 export const ACCOUNT_SECTIONS = [
+  { id: "profile", label: "프로필", icon: "user" },
   { id: "usage", label: "사용량", icon: "gauge" },
+  { id: "plans", label: "요금제", icon: "coffee" },
+  { id: "billing", label: "결제", icon: "receipt" },
   { id: "notifications", label: "알림", icon: "bell" },
   { id: "surface", label: "지면", icon: "sun" },
   { id: "data", label: "데이터 관리", icon: "database" },

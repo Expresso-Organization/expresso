@@ -43,6 +43,8 @@ export interface SidebarProps {
   /** 공고 탐색 배지 = 관심 + 추천 건수. */
   jobCount?: number | undefined;
   displayName: string;
+  /** 세션 주인이 관리자일 때만 관리 화면으로 가는 줄이 선다. */
+  admin?: boolean;
   quotaUsed: number;
   /** 무제한 요금제는 상한이 없다. 없는 상한을 999로 적으면 그것도 거짓말이다. */
   quotaLimit: number | null;
@@ -55,6 +57,7 @@ export function Sidebar({
   interestTotal,
   jobCount,
   displayName,
+  admin = false,
   quotaUsed,
   quotaLimit,
 }: SidebarProps) {
@@ -67,9 +70,9 @@ export function Sidebar({
           <div className={styles.quotaSlot}>
             <div className={`${styles.copy} ${styles.quotaCard}`}>
               <div className={styles.quotaHead}>
-                <span className={styles.quotaLabel}>이번 달 추출</span>
+                <span className={styles.quotaLabel}>이번 달 크레딧</span>
                 <span className={styles.quotaValue}>
-                  {quotaUsed} / {quotaLimit ?? "무제한"}
+                  {quotaUsed.toLocaleString("ko-KR")} / {quotaLimit?.toLocaleString("ko-KR") ?? "무제한"}
                 </span>
               </div>
               <div
@@ -79,8 +82,8 @@ export function Sidebar({
                 aria-valuemin={0}
                 aria-valuemax={quotaLimit ?? undefined}
                 aria-label={quotaLimit === null
-                  ? `이번 달 추출 ${quotaUsed}회 · 상한 없음`
-                  : `이번 달 추출 ${quotaLimit}회 중 ${quotaUsed}회 사용`}
+                  ? `이번 달 크레딧 ${quotaUsed} 사용 · 상한 없음`
+                  : `이번 달 크레딧 ${quotaLimit} 중 ${quotaUsed} 사용`}
               >
                 <div
                   className={styles.quotaFill}
@@ -89,6 +92,12 @@ export function Sidebar({
               </div>
             </div>
           </div>
+          {admin ? (
+            <Link href="/admin" className={`${styles.row} ${styles.userLink}`} title="관리">
+              <span className={styles.adminIcon}><Icon name="user-switch" size={15} /></span>
+              <span className={`${styles.copy} ${styles.userName}`}>관리</span>
+            </Link>
+          ) : null}
           <Link
             href="/account"
             className={`${styles.row} ${styles.userLink}`}
@@ -189,16 +198,6 @@ export function Sidebar({
         </>
       ) : null}
 
-      <div className={styles.groupHead}>
-        <div className={`${styles.copy} ${styles.groupHeadRow}`}>
-          <span className={styles.groupLabel}>내 커리어</span>
-          <div className={styles.groupActions}>
-            <button type="button" className={styles.groupAction} aria-label="카테고리 추가">
-              <Icon name="plus" size={13} />
-            </button>
-          </div>
-        </div>
-      </div>
       <SidebarCategories categories={categories} />
     </SidebarFrame>
   );

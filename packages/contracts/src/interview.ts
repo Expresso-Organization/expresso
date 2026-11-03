@@ -94,42 +94,37 @@ const QUESTION_SHAPE = {
   rationale: z.string().trim().min(1).max(300),
 } as const;
 
-function refineQuestion(
-  draft: { text: string },
-  context: z.RefinementCtx,
-): void {
-  if (!INTERROGATIVE.test(draft.text)) {
-    context.addIssue({
-      code: "custom",
-      message: "예/아니오로 답할 수 있는 질문입니다 — 무엇 · 어떻게 · 왜로 묻습니다",
-      path: ["text"],
-    });
+/**
+ * 질문 문장이 질문의 조건을 어긴 곳. 비어 있으면 통과다.
+ *
+ * 모양(Zod)이 아니라 업무 규칙이다 — 어긴 질문도 저장할 수 있는 모양이라, 출력을
+ * 거절하지 않고 그 질문만 쓴 모델에게 고쳐 받는다(백엔드 `question-writer.ts`의 check).
+ */
+export function interviewQuestionProblems(text: string): string[] {
+  const problems: string[] = [];
+  if (!INTERROGATIVE.test(text)) {
+    problems.push("예/아니오로 답할 수 있는 질문입니다 — 무엇 · 어떻게 · 왜로 묻습니다");
   }
-  if ((draft.text.match(/\?/g) ?? []).length !== 1) {
-    context.addIssue({
-      code: "custom",
-      message: "한 번에 한 가지만 묻습니다",
-      path: ["text"],
-    });
-  }
+  if ((text.match(/\?/g) ?? []).length !== 1) problems.push("한 번에 한 가지만 묻습니다 — 물음표는 하나입니다");
+  return problems;
 }
 
-export const InterviewQuestionDraftSchema = z
-  .strictObject({
-    /** 프롬프트에서 준 근거 번호. 근거 없는 질문은 만들 수 없다. */
-    basis: z.number().int().min(1).max(20),
-    ...QUESTION_SHAPE,
-  })
-  .superRefine(refineQuestion);
+export const InterviewQuestionDraftSchema = z.strictObject({
+  /** 프롬프트에서 준 근거 번호. 근거 없는 질문은 만들 수 없다. */
+  basis: z.number().int().min(1).max(20),
+  ...QUESTION_SHAPE,
+});
 
+/**
+ * 세션 하나의 질문 수(`InterviewSessionSchema`)와 같은 3~6개다. 기능 명세서 T5.1.1 —
+ * 배정할 자리가 모자라면 줄이되 최소 3개는 유지한다.
+ */
 export const InterviewQuestionDraftListSchema = z.strictObject({
   questions: z.array(InterviewQuestionDraftSchema).min(3).max(6),
 });
 
 /** 다시 묻기 — 같은 근거를 다른 각도에서 묻는다. */
-export const InterviewQuestionRewriteSchema = z
-  .strictObject(QUESTION_SHAPE)
-  .superRefine(refineQuestion);
+export const InterviewQuestionRewriteSchema = z.strictObject(QUESTION_SHAPE);
 
 export type InterviewQuestionDraft = z.infer<typeof InterviewQuestionDraftSchema>;
 export type InterviewQuestionRewrite = z.infer<typeof InterviewQuestionRewriteSchema>;

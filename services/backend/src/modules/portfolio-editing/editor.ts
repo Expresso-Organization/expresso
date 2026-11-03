@@ -3,7 +3,8 @@ import {
   type PortfolioEditPatch,
 } from "@expresso/contracts";
 
-import { AiError, type AiClient } from "../../platform/ai/client.js";
+import { AiError, type AiClient, type AiViolation } from "../../platform/ai/client.js";
+import { jsonPointer } from "../../platform/ai/fixes.js";
 import { ungroundedNumbers } from "../../platform/numbers.js";
 
 /**
@@ -21,7 +22,7 @@ import { ungroundedNumbers } from "../../platform/numbers.js";
  */
 
 /** 프롬프트를 고치면 올린다. */
-export const EDIT_PROMPT_VERSION = 1;
+export const EDIT_PROMPT_VERSION = 2;
 
 export class BlockEditError extends Error {
   constructor(message: string, options: { cause?: unknown } = {}) {
@@ -43,6 +44,8 @@ export const EDITABLE_PATHS: Record<string, readonly string[]> = {
 };
 
 export interface EditContext {
+  /** 사용량을 남길 사용자. 사용자가 없는 작업만 null이다. */
+  userId: string | null;
   instruction: string;
   block: {
     kind: string;
@@ -79,8 +82,8 @@ const SYSTEM = [
   "바꿀 것이 없는 자리는 patch를 내지 않는다.",
   "",
   "## 지어내지 않는다",
-  "- **없던 수치를 만들지 않는다.** 지금 글과 근거 기록에 없는 숫자가 하나라도",
-  "  있으면 이 편집은 통째로 버려진다. 짧게 고치라고 해서 \"30% 개선\"을",
+  "- **없던 수치를 만들지 않는다.** 지금 글과 근거 기록에 없는 숫자가 있으면",
+  "  검사에 걸려 그 patch를 다시 써야 한다. 짧게 고치라고 해서 \"30% 개선\"을",
   "  붙이지 않는다.",
   "- 없던 사실 · 도구 · 조직을 덧붙이지 않는다. 고치는 것이지 늘리는 것이 아니다.",
   "- 사용자가 시키지 않은 것은 바꾸지 않는다. 말투를 고치라고 했으면 내용은 둔다.",
@@ -119,35 +122,43 @@ function buildPrompt(context: EditContext, paths: readonly string[]): string {
   return lines.join("\n");
 }
 
-/** 초안이 우리가 준 자리만 건드렸는지, 지어낸 수치가 없는지. */
-function complaints(
+/**
+ * 받은 patch들이 업무 규칙을 어긴 칸. 경로는 모델 출력 기준이다.
+ *
+ * 자리가 틀린 patch는 patch 하나(`/patches/3`)를, 글이 틀린 patch는 그 글(`/patches/3/after`)을
+ * 가리킨다. 아무것도 안 바뀌었으면 목록 전체(`/patches`)를 다시 받는다.
+ */
+export function editViolations(
   patches: PortfolioEditPatch[],
   context: EditContext,
   paths: readonly string[],
-): string[] {
-  const found: string[] = [];
-
-  const unknown = patches.filter(({ path }) => !paths.includes(path)).map(({ path }) => path);
-  if (unknown.length > 0) found.push(`${unknown.join(" · ")}는 고칠 수 있는 자리가 아닙니다`);
-
-  const seen = new Set<string>();
-  for (const { path } of patches) {
-    if (seen.has(path)) found.push(`${path}를 두 번 고쳤습니다`);
-    seen.add(path);
-  }
-
+): AiViolation[] {
+  const found: AiViolation[] = [];
   // 수치의 출처는 지금 글과 근거 기록뿐이다.
   const source = [...Object.values(context.block.fields), context.sourceText].join("\n");
-  const invented = ungroundedNumbers(patches.map(({ after }) => after).join("\n"), source);
-  if (invented.length > 0) found.push(`글에 없던 수치입니다: ${invented.join(", ")}`);
+  const exclude = (context.section?.exclude ?? []).filter(Boolean);
+  const seen = new Set<string>();
+  patches.forEach((patch, index) => {
+    if (!paths.includes(patch.path)) {
+      found.push({ path: jsonPointer(["patches", index]), problem: `${patch.path}는 고칠 수 있는 자리가 아닙니다 — ${paths.join(" · ")} 중 하나입니다` });
+    } else if (seen.has(patch.path)) {
+      found.push({ path: jsonPointer(["patches", index]), problem: `${patch.path}를 두 번 고쳤습니다 — 한 자리에 patch 하나입니다` });
+    }
+    seen.add(patch.path);
 
-  const banned = (context.section?.exclude ?? []).filter((term) =>
-    term && patches.some(({ after }) => after.includes(term)));
-  if (banned.length > 0) found.push(`이 섹션에서 쓰지 않기로 한 말입니다: ${banned.join(" · ")}`);
+    const invented = ungroundedNumbers(patch.after, source);
+    if (invented.length > 0) {
+      found.push({ path: jsonPointer(["patches", index, "after"]), problem: `글에 없던 수치입니다: ${invented.join(", ")}` });
+    }
+    const banned = exclude.filter((term) => patch.after.includes(term));
+    if (banned.length > 0) {
+      found.push({ path: jsonPointer(["patches", index, "after"]), problem: `이 섹션에서 쓰지 않기로 한 말입니다: ${banned.join(" · ")}` });
+    }
+  });
 
   // 아무것도 안 바뀐 patch는 변경이 아니다.
-  if (patches.every(({ before, after }) => before.trim() === after.trim())) {
-    found.push("바뀐 것이 없습니다");
+  if (patches.every(({ path, before, after }) => after.trim() === (context.block.fields[path] ?? before).trim())) {
+    found.push({ path: "/patches", problem: "바뀐 것이 없습니다 — 지시대로 고친 값을 냅니다" });
   }
   return found;
 }
@@ -163,42 +174,39 @@ export class AiBlockEditor implements BlockEditor {
     const paths = EDITABLE_PATHS[context.block.kind];
     if (!paths) throw new BlockEditError(`${context.block.kind} 블록은 말로 고칠 수 없습니다`);
 
-    const prompt = buildPrompt(context, paths);
-    let lastError: unknown;
-    for (const attempt of [1, 2]) {
-      try {
-        const { data } = await this.#ai.complete(
-          {
-            contract: "partial_edit",
-            system: SYSTEM,
-            prompt: attempt === 1 ? prompt : `${prompt}\n\n${retryNote(lastError)}`,
-            promptVersion: EDIT_PROMPT_VERSION,
-          },
-          PortfolioEditDraftSchema,
-        );
-        const found = complaints(data.patches, context, paths);
-        if (found.length > 0) throw new BlockEditError(found.join(", "));
-        // before는 우리가 아는 값으로 덮는다 — 모델이 옮겨 적다 틀리면
-        // 변경 요약이 거짓말을 하게 된다.
-        return data.patches.map((patch) => ({
-          ...patch,
-          before: context.block.fields[patch.path] ?? "",
-        }));
-      } catch (error) {
-        if (error instanceof AiError && error.code !== "AI_INVALID_OUTPUT") throw error;
-        lastError = error;
+    // 다시 요청하지 않는다 — 걸린 칸은 어댑터가 같은 대화에서 고쳐 받는다(`platform/ai/fixes.ts`).
+    let patches: PortfolioEditPatch[];
+    try {
+      ({ data: { patches } } = await this.#ai.complete(
+        {
+          contract: "partial_edit",
+          system: SYSTEM,
+          prompt: buildPrompt(context, paths),
+          promptVersion: EDIT_PROMPT_VERSION,
+        },
+        PortfolioEditDraftSchema,
+        { userId: context.userId, check: (draft) => editViolations(draft.patches, context, paths) },
+      ));
+    } catch (error) {
+      // 고쳐도 계약을 못 맞춘 출력은 편집 실패(422)로 알린다.
+      if (error instanceof AiError && error.code === "AI_INVALID_OUTPUT") {
+        throw new BlockEditError(`편집이 계약을 벗어났습니다: ${error.message}`, { cause: error });
       }
+      throw error;
     }
-    throw new BlockEditError(
-      `편집이 두 번 모두 계약을 벗어났습니다: ${String(lastError)}`,
-      { cause: lastError },
-    );
-  }
-}
 
-function retryNote(error: unknown): string {
-  const detail = error instanceof Error ? error.message : String(error);
-  return `직전 시도는 거절되었다. 사유: ${detail}\n같은 실수를 반복하지 말고 다시 고쳐라.`;
+    // 고친 뒤에도 남은 위반은 그대로 온다. 수치 · 금지어는 제안 그대로 둔다 — 사용자가 변경
+    // 요약을 보고 적용할지 정한다. 자리가 틀리거나 겹친 patch는 블록에 얹을 수 없어
+    // (`applyPatches`) 그때만 편집을 만들 수 없는 것으로 끝낸다. 바뀐 것이 없어도 같다.
+    const unusable = editViolations(patches, context, paths).filter(({ path }) => !path.endsWith("/after"));
+    if (unusable.length > 0) throw new BlockEditError(unusable.map(({ problem }) => problem).join(", "));
+    // before는 우리가 아는 값으로 덮는다 — 모델이 옮겨 적다 틀리면
+    // 변경 요약이 거짓말을 하게 된다.
+    return patches.map((patch) => ({
+      ...patch,
+      before: context.block.fields[patch.path] ?? "",
+    }));
+  }
 }
 
 /** 블록 종류마다 실제 값이 어디 들어 있는지. 계약의 path와 짝이다. */

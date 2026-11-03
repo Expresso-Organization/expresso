@@ -78,6 +78,15 @@ jobs:
       - name: MongoDB replica set 준비
         run: pnpm infra:mongodb:up
 
+      # 준비가 실패하면 Compose는 「unhealthy」 한 줄만 남긴다. mongod가 왜 멈췄는지는
+      # 컨테이너 로그에 있다. 정보(I) 줄은 걸러 경고 · 오류 · 치명 줄만 남긴다.
+      - name: MongoDB 준비 실패 로그
+        if: failure()
+        run: |
+          uname -r
+          docker compose -f infra/compose.mongodb.yaml ps -a
+          docker compose -f infra/compose.mongodb.yaml logs --no-color mongodb | grep -vE '"s":"I"' | tail -60
+
       # 테스트는 계약과 스키마를 dist로 불러온다. 지어 두지 않으면 vitest가
       # @expresso/contracts를 찾지 못한다. 순서는 deploy.sh와 같다 — 배포와
       # CI가 다른 순서로 지으면 한쪽에서만 깨진다.

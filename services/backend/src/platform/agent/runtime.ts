@@ -1,8 +1,9 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { query, tool, createSdkMcpServer } from "@anthropic-ai/claude-agent-sdk";
+import { query, tool, createSdkMcpServer, type ModelUsage } from "@anthropic-ai/claude-agent-sdk";
 import { z } from "zod";
+import { recordAiUsage, type AiUsageSink } from "../ai/usage-sink.js";
 import { AgentEditDraftSchema, AgentRecordDraftInputSchema, GapReviewDraftSchema, PlanProposalInputSchema, ReplanProposalInputSchema, type AgentPlanDraft, type AgentReplanDraft, type PlanProposalInput, type PreparationPlan, type ReplanProposalInput, type GapReview, type GapReviewDraft, RequirementReviewDraftSchema, UuidSchema, type AgentRecordDraft, type AgentRecordDraftInput, type AgentEditDraft, type AgentMessage, type AgentToolResult, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
 
 export type AgentEvent = { type: "text"; text: string } | { type: "tool"; tool: AgentToolResult };
@@ -11,6 +12,8 @@ export interface AgentRecordText { id: string; title: string; text: string; trun
 /** 도구 입력이 검증을 통과하지 못했다. 에이전트가 고쳐 다시 부를 수 있도록 어긋난 항목을 돌려준다. */
 export class AgentToolRejection extends Error { constructor(readonly issues: string[]) { super(issues.join("\n")); } }
 export interface AgentInput {
+  /** 사용량을 누구 몫으로 남길지. */
+  userId: string;
   apiKey?: string;
   messages: AgentMessage[];
   context: unknown;
@@ -66,7 +69,7 @@ export interface AgentRuntime { run(input: AgentInput): Promise<void> }
  * 원시 파일 경로·도구 인자·추론은 노출하지 않고 텍스트와 승인 가능한 도메인 결과만 전송합니다.
  */
 export class ClaudeAgentRuntime implements AgentRuntime {
-  constructor(_model?: string) {}
+  constructor(_model?: string, private readonly usage?: AiUsageSink) {}
   async run(input: AgentInput): Promise<void> {
     const abortController = new AbortController();
     const cancel = () => abortController.abort();
@@ -174,7 +177,31 @@ export class ClaudeAgentRuntime implements AgentRuntime {
         if (input.signal.aborted) throw new Error("cancelled");
         if (message.type === "stream_event" && message.event.type === "content_block_delta" && message.event.delta.type === "text_delta") await input.emit({ type: "text", text: message.event.delta.text });
         if (message.type === "result" && message.is_error) throw new Error("agent execution failed");
+        if (message.type === "result" && this.usage) recordAgentUsage(this.usage, input.userId, message.modelUsage ?? {}, message.duration_ms ?? 0);
       }
     } finally { input.signal.removeEventListener("abort", cancel); if (isolatedHome) await rm(isolatedHome, { recursive: true, force: true }); }
   }
+}
+
+/**
+ * 에이전트 실행 한 번의 사용량을 모델마다 한 줄로 남긴다.
+ *
+ * 에이전트는 `AiClient`를 지나지 않아 `MeteredAiClient`가 보지 못한다. 결과 메시지의
+ * `modelUsage`가 보조 호출까지 포함한 모델별 합계다(SDK 문서: "The correct field for
+ * token/cost accounting"). 걸린 시간은 실행 전체 하나뿐이라 출력이 가장 많은 모델에 붙인다.
+ * 실패한 실행은 남기지 않는다 — 실패 결과는 위에서 먼저 던진다.
+ */
+function recordAgentUsage(sink: AiUsageSink, userId: string, modelUsage: Record<string, ModelUsage>, durationMs: number) {
+  const rows = Object.entries(modelUsage).sort(([, left], [, right]) => right.outputTokens - left.outputTokens);
+  rows.forEach(([model, row], index) => recordAiUsage(sink, {
+    userId,
+    contract: "agent_chat",
+    model,
+    inputTokens: row.inputTokens,
+    outputTokens: row.outputTokens,
+    cacheReadTokens: row.cacheReadInputTokens,
+    cacheCreationTokens: row.cacheCreationInputTokens,
+    costUsd: row.costUSD,
+    durationMs: index === 0 ? durationMs : 0,
+  }));
 }

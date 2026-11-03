@@ -21,12 +21,17 @@ export interface CareerDocumentRepository {
   insertSnapshot(row: CareerDocumentSnapshotDoc, session?: ClientSession): Promise<void>;
   insertUpdate(row: CareerDocumentUpdateDoc, session?: ClientSession): Promise<void>;
   markCompacted(recordId: string, through: number, session?: ClientSession): Promise<void>;
+  /** 압축된 지 오래된 업데이트를 지웁니다. 메모리 저장소 시험은 구현하지 않아도 됩니다. */
+  pruneCompacted?(recordId: string, compactedBefore: Date, session?: ClientSession): Promise<void>;
   initializeDocument(recordId: string, userId: string, snapshotId: string, session?: ClientSession): Promise<boolean>;
   bumpDocumentVersion(recordId: string, userId: string, expected: number, latestSnapshotId?: string, session?: ClientSession): Promise<number | null>;
   setLatestSnapshot(recordId: string, userId: string, expectedVersion: number, snapshotId: string, session?: ClientSession): Promise<boolean>;
   revisions(userId: string, recordId: string, session?: ClientSession): Promise<CareerRecordRevisionDoc[]>;
   revision(id: string, userId: string, session?: ClientSession): Promise<CareerRecordRevisionDoc | null>;
   insertRevision(row: CareerRecordRevisionDoc, session?: ClientSession): Promise<void>;
+  /** BlockNote 옮기기 표시와 bodyMd 투영입니다. 메모리 저장소 시험은 구현하지 않아도 됩니다. */
+  markBlockNote?(recordId: string, userId: string, session?: ClientSession): Promise<void>;
+  setBodyMarkdown?(recordId: string, userId: string, bodyMd: string, options?: { session?: ClientSession | undefined; expectedBodyMd?: string }): Promise<void>;
 }
 
 export const hashUpdate = (bytes: Uint8Array): string =>
@@ -46,7 +51,9 @@ export class MongoCareerDocumentRepository implements CareerDocumentRepository {
   snapshot(recordId: string, session?: ClientSession) {
     return this.collections().careerDocumentSnapshots.findOne(
       { recordId },
-      { sort: { documentVersion: -1 }, ...this.options(session) },
+      // v1 → v2 옮기기 스냅샷은 같은 버전을 가지므로 schemaVersion이 높은 쪽을 고릅니다.
+      // 스냅샷은 version과 documentVersion을 늘 같게 저장합니다. 인덱스(recordId, version)를 타도록 version으로 정렬합니다.
+      { sort: { version: -1, schemaVersion: -1 }, ...this.options(session) },
     );
   }
   snapshotById(userId: string, recordId: string, snapshotId: string, session?: ClientSession) {
@@ -73,6 +80,9 @@ export class MongoCareerDocumentRepository implements CareerDocumentRepository {
   }
   async insertUpdate(row: CareerDocumentUpdateDoc, session?: ClientSession) {
     await this.collections().careerDocumentUpdates.insertOne(row, this.options(session));
+  }
+  async pruneCompacted(recordId: string, compactedBefore: Date, session?: ClientSession) {
+    await this.collections().careerDocumentUpdates.deleteMany({ recordId, compactedAt: { $ne: null, $lt: compactedBefore } }, this.options(session));
   }
   async markCompacted(recordId: string, through: number, session?: ClientSession) {
     await this.collections().careerDocumentUpdates.updateMany(
@@ -117,6 +127,18 @@ export class MongoCareerDocumentRepository implements CareerDocumentRepository {
     );
     return result.matchedCount === 1;
   }
+  async markBlockNote(recordId: string, userId: string, session?: ClientSession) {
+    await this.collections().careerRecords.updateOne({ _id: recordId, userId }, { $set: { documentSchemaVersion: 2 } }, this.options(session));
+  }
+  async setBodyMarkdown(recordId: string, userId: string, bodyMd: string, options: { session?: ClientSession | undefined; expectedBodyMd?: string } = {}) {
+    // expectedBodyMd가 있으면 그 사이 편집기 밖에서 bodyMd가 바뀐 경우 덮지 않습니다.
+    await this.collections().careerRecords.updateOne(
+      { _id: recordId, userId, deletedAt: null, ...(options.expectedBodyMd === undefined ? {} : { bodyMd: options.expectedBodyMd }) },
+      { $set: { bodyMd, documentBodyHash: createHash("sha256").update(bodyMd).digest("hex") } },
+      this.options(options.session),
+    );
+  }
+
   revisions(userId: string, recordId: string, session?: ClientSession) {
     return this.collections().careerRecordRevisions
       .find({ userId, recordId }, this.options(session))

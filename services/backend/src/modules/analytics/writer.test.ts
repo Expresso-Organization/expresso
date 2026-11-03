@@ -1,30 +1,16 @@
 import { describe, expect, it } from "vitest";
-import type { z } from "zod";
 
-import {
-  AiError,
-  type AiCallSpec,
-  type AiClient,
-  type AiResult,
-} from "../../platform/ai/client.js";
+import { AiError, type AiFix } from "../../platform/ai/client.js";
+import { ScriptedAiClient } from "../../platform/ai/scripted-client.js";
 import {
   AiInsightWriter,
   InsightDraftError,
+  insightViolations,
   type InsightContext,
   type InsightNote,
 } from "./writer.js";
 
-const usage = {
-  model: "claude-haiku-4-5-20251001",
-  inputTokens: 800,
-  outputTokens: 300,
-  cacheReadTokens: 0,
-  cacheCreationTokens: 0,
-  costUsd: 0.002,
-  durationMs: 3_000,
-};
-
-const context: InsightContext = {
+const context: InsightContext = { userId: null,
   period: { start: "2026-07-01", end: "2026-07-31" },
   sampleSize: 48,
   metrics: {
@@ -55,25 +41,17 @@ const note: InsightNote = {
   }],
 };
 
-class StubAiClient implements AiClient {
-  calls: AiCallSpec[] = [];
-  constructor(private readonly replies: unknown[]) {}
-
-  async complete<T>(spec: AiCallSpec, schema: z.ZodType<T>): Promise<AiResult<T>> {
-    this.calls.push(spec);
-    const reply = this.replies[this.calls.length - 1] ?? this.replies.at(-1);
+/** 첫 출력은 `reply`, 고치기 요청에는 `fix`가 답한다. 어댑터와 같은 검사 · 고치기 순서를 탄다. */
+function scripted(reply: unknown, fix?: (paths: string[]) => AiFix[]) {
+  return new ScriptedAiClient(() => {
     if (reply instanceof Error) throw reply;
-    const parsed = schema.safeParse(reply);
-    if (!parsed.success) {
-      throw new AiError("AI_INVALID_OUTPUT", spec.contract, parsed.error.message, { retryable: true });
-    }
-    return { data: parsed.data, usage };
-  }
+    return reply;
+  }, fix && ((_, paths) => fix(paths)));
 }
 
 describe("분석 해설 계약", () => {
   it("세 갈래 집계를 함께 준다", async () => {
-    const ai = new StubAiClient([note]);
+    const ai = scripted(note);
     const written = await new AiInsightWriter(ai).write(context);
 
     const prompt = ai.calls[0]?.prompt ?? "";
@@ -85,49 +63,83 @@ describe("분석 해설 계약", () => {
     expect(written.suggestions[0]?.target).toBe("completes");
   });
 
-  it("두 문장을 넘으면 다시 쓰게 한다", async () => {
+  it("두 문장을 넘으면 해설 칸만 고쳐 받는다", async () => {
     const wordy = {
       ...note,
       narrative: "첫 문장입니다. 둘째 문장입니다. 셋째 문장입니다.",
     };
-    const ai = new StubAiClient([wordy, note]);
-    await new AiInsightWriter(ai).write(context);
+    expect(insightViolations(wordy, context)).toEqual([
+      { path: "/narrative", problem: expect.stringContaining("해설은 두 문장 이내입니다") },
+    ]);
 
-    expect(ai.calls).toHaveLength(2);
-    expect(ai.calls[1]?.prompt).toContain("해설은 두 문장 이내입니다");
+    const ai = scripted(wordy, () => [{ path: "/narrative", value: note.narrative }]);
+    const written = await new AiInsightWriter(ai).write(context);
+
+    expect(ai.calls).toHaveLength(1);
+    expect(ai.fixRequests.map(({ paths }) => paths)).toEqual([["/narrative"]]);
+    expect(written.narrative).toBe(note.narrative);
   });
 
-  it("집계에 없는 지표는 근거가 될 수 없다", async () => {
-    const stray = { ...note, evidenceMetrics: ["bounce_rate"] };
-    const ai = new StubAiClient([stray]);
+  it("고쳐도 두 문장을 넘으면 쓴 그대로 쓴다", async () => {
+    const wordy = { ...note, narrative: "첫 문장입니다. 둘째 문장입니다. 셋째 문장입니다." };
+    const ai = scripted(wordy);
+    const written = await new AiInsightWriter(ai).write(context);
+
+    expect(ai.calls).toHaveLength(1);
+    // 걸린 칸이 줄지 않으면 한 번 고친 뒤 멈춘다(진전 기준, intent `ai-output-no-cli-rewrite`).
+    expect(ai.fixRequests).toHaveLength(1);
+    expect(written.narrative).toBe(wordy.narrative);
+  });
+
+  it("집계에 없는 지표는 그 자리만 고쳐 받는다", async () => {
+    const stray = { ...note, evidenceMetrics: ["visits", "bounce_rate"] };
+    expect(insightViolations(stray, context)).toEqual([
+      { path: "/evidenceMetrics/1", problem: expect.stringContaining("집계에 없는 지표입니다: bounce_rate") },
+    ]);
+
+    const ai = scripted(stray, () => [{ path: "/evidenceMetrics/1", value: "completes" }]);
+    const written = await new AiInsightWriter(ai).write(context);
+
+    expect(ai.calls).toHaveLength(1);
+    expect(written.evidenceMetrics).toEqual(["visits", "completes"]);
+  });
+
+  it("고쳐도 집계에 없는 지표가 남으면 해설을 만들 수 없다", async () => {
+    const ai = scripted({ ...note, evidenceMetrics: ["bounce_rate"] });
     await expect(new AiInsightWriter(ai).write(context)).rejects.toThrow(/집계에 없는 지표/);
+    expect(ai.calls).toHaveLength(1);
+    // 걸린 칸이 줄지 않으면 한 번 고친 뒤 멈춘다(진전 기준, intent `ai-output-no-cli-rewrite`).
+    expect(ai.fixRequests).toHaveLength(1);
   });
 
-  it("제안이 없는 지표를 가리키면 거절한다", async () => {
+  it("제안이 없는 지표를 가리키면 그 target을 고쳐 받고, 남으면 만들 수 없다", async () => {
     const stray = {
       ...note,
       suggestions: [{ direction: "up" as const, target: "shares", action: "공유 버튼을 추가하세요." }],
     };
-    const ai = new StubAiClient([stray]);
+    expect(insightViolations(stray, context).map(({ path }) => path)).toEqual(["/suggestions/0/target"]);
+
+    const ai = scripted(stray);
+    await expect(new AiInsightWriter(ai).write(context)).rejects.toThrow(InsightDraftError);
     await expect(new AiInsightWriter(ai).write(context)).rejects.toThrow(/제안이 가리키는 지표/);
   });
 
   it("제안이 없으면 빈 배열이 정직한 답이다", async () => {
-    const ai = new StubAiClient([{ ...note, suggestions: [] }]);
+    const ai = scripted({ ...note, suggestions: [] });
     const written = await new AiInsightWriter(ai).write(context);
     expect(written.suggestions).toEqual([]);
   });
 
   it("레이트 리밋은 다시 물어보지 않는다", async () => {
     const limited = new AiError("AI_RATE_LIMITED", "insight_note", "usage limit", { retryable: false });
-    const ai = new StubAiClient([limited]);
+    const ai = scripted(limited);
     await expect(new AiInsightWriter(ai).write(context)).rejects.toThrow(AiError);
     expect(ai.calls).toHaveLength(1);
   });
 
-  it("두 번째도 계약을 벗어나면 포기한다", async () => {
-    const ai = new StubAiClient([{ ...note, evidenceMetrics: ["없는지표"] }]);
-    await expect(new AiInsightWriter(ai).write(context)).rejects.toThrow(InsightDraftError);
-    expect(ai.calls).toHaveLength(2);
+  it("계약을 고쳐도 못 맞추면 공급자 오류로 끝나고 다시 요청하지 않는다", async () => {
+    const ai = scripted({ ...note, evidenceMetrics: [] });
+    await expect(new AiInsightWriter(ai).write(context)).rejects.toMatchObject({ code: "AI_INVALID_OUTPUT" });
+    expect(ai.calls).toHaveLength(1);
   });
 });

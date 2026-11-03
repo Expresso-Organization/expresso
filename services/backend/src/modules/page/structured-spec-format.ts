@@ -95,6 +95,7 @@ export function describeSpecSchema(
     else optional.set(text, [...(optional.get(text) ?? []), key]);
   }
   for (const [text, keys] of optional)
+    // 공급자 형식도 선택 요소를 선택으로 둡니다(`toToolSchema`는 필수 키를 늘리지 않습니다). 빼면 됩니다.
     lines.push(`elements.${keys.join(", ")} (선택, 쓰지 않으면 생략): ${text}`);
   return {
     text: lines.join("\n"),

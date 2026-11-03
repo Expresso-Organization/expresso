@@ -8634,7 +8634,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
       <h3 data-page="166">8.1 데이터 모델</h3>
       <p>Expresso는 <strong>MongoDB 8.0</strong> 단일 노드 replica set의 <code>expresso</code> 데이터베이스에
       도메인 문서를 저장한다. <code>packages/database/src/collections.ts</code>의 접근자에
-      <strong>컬렉션 82개</strong>가 선언돼 있다. 문서 타입은 <code>packages/database/src/documents/</code>,
+      <strong>컬렉션 88개</strong>가 선언돼 있다. 문서 타입은 <code>packages/database/src/documents/</code>,
       validator와 인덱스의 기준은 <code>packages/database/src/collection-specs.ts</code>다.</p>
       <p>문서 식별자는 <strong>UUID 문자열</strong> <code>_id</code>이고 컬렉션 사이의 참조는
       <code>userId</code>, <code>recordId</code>, <code>jobPostingId</code> 같은 필드로 보존한다.
@@ -8661,29 +8661,33 @@ GET /v1/entitlements/portfolio.generate</code></pre>
       <code>career_ai_proposals</code>에 남긴다.</p>
       <h4 data-page="166">■ 컬렉션 목록</h4>
       <div class="table-wrap"><table><thead><tr><th>영역</th><th>컬렉션</th><th>개수</th></tr></thead><tbody>
-        <tr><td>계정·인증</td><td><code>plans</code>, <code>users</code>, <code>consents</code>, <code>usage_counters</code>, <code>identity_oauth_accounts</code>, <code>identity_sessions</code></td><td class="num">6</td></tr>
+        <tr><td>계정·인증</td><td><code>plans</code>, <code>users</code>, <code>consents</code>, <code>usage_counters</code>, <code>identity_oauth_accounts</code>, <code>identity_sessions</code>, <code>identity_tokens</code>, <code>ai_usage_events</code></td><td class="num">8</td></tr>
         <tr><td>커리어 기록</td><td><code>career_categories</code>, <code>career_records</code>, <code>career_views</code>, <code>record_links</code>, <code>record_usages</code>, <code>revisions</code>, <code>skills</code>, <code>skill_evidence</code></td><td class="num">8</td></tr>
         <tr><td>커리어 편집</td><td><code>career_document_snapshots</code>, <code>career_document_updates</code>, <code>career_record_revisions</code>, <code>career_record_relations</code>, <code>career_ai_proposals</code></td><td class="num">5</td></tr>
         <tr><td>채용 공고</td><td><code>companies</code>, <code>job_postings</code>, <code>job_posting_requirements</code>, <code>job_sources</code>, <code>recent_searches</code></td><td class="num">5</td></tr>
         <tr><td>제작·매칭</td><td><code>job_analyses</code>, <code>brews</code>, <code>brew_jobs</code>, <code>brew_sources</code>, <code>company_research_items</code>, <code>interests</code>, <code>match_scores</code>, <code>requirement_coverages</code></td><td class="num">8</td></tr>
         <tr><td>AI 인터뷰</td><td><code>interview_sessions</code>, <code>questions</code>, <code>answers</code>, <code>answer_record_changes</code></td><td class="num">4</td></tr>
+        <tr><td>에이전트 채팅</td><td><code>agent_conversations</code>, <code>agent_credentials</code>, <code>preparation_plans</code></td><td class="num">3</td></tr>
         <tr><td>레시피</td><td><code>templates</code>, <code>recipes</code>, <code>recipe_sections</code>, <code>recipe_items</code>, <code>recipe_evidence_paths</code>, <code>recipe_revisions</code>, <code>recipe_unused_sources</code></td><td class="num">7</td></tr>
         <tr><td>생성·편집</td><td><code>portfolios</code>, <code>portfolio_sections</code>, <code>blocks</code>, <code>generation_jobs</code>, <code>generation_sentence_evidence</code>, <code>generation_usage_ledger</code></td><td class="num">6</td></tr>
         <tr><td>지면·레이아웃</td><td><code>generated_pages</code>, <code>layout_specs</code>, <code>portfolio_edit_proposals</code>, <code>portfolio_snapshots</code></td><td class="num">4</td></tr>
         <tr><td>배포·미디어</td><td><code>deployments</code>, <code>deployment_slug_redirects</code>, <code>export_assets</code>, <code>export_jobs</code>, <code>media_assets</code>, <code>media_variants</code></td><td class="num">6</td></tr>
         <tr><td>분석</td><td><code>analytics_event_receipts</code>, <code>annotations</code>, <code>visit_events</code>, <code>conversion_events</code>, <code>dashboard_views</code>, <code>derived_metrics</code>, <code>insights</code>, <code>metrics_daily</code>, <code>notifications</code>, <code>saved_searches</code>, <code>section_views</code>, <code>widgets</code></td><td class="num">12</td></tr>
-        <tr><td>운영·플랫폼</td><td><code>account_deletion_requests</code>, <code>account_deletion_events</code>, <code>scheduled_job_definitions</code>, <code>scheduled_job_runs</code>, <code>schema_migrations</code>, <code>migration_locks</code>, <code>snapshot_chunks</code>, <code>analytics_rate_limits</code>, <code>import_runs</code>, <code>import_checkpoints</code></td><td class="num">10</td></tr>
+        <tr><td>운영·플랫폼</td><td><code>account_deletion_requests</code>, <code>account_deletion_events</code>, <code>scheduled_job_definitions</code>, <code>scheduled_job_runs</code>, <code>schema_migrations</code>, <code>migration_locks</code>, <code>snapshot_chunks</code>, <code>analytics_rate_limits</code>, <code>import_runs</code>, <code>import_checkpoints</code>, <code>admin_audit_events</code></td><td class="num">11</td></tr>
         <tr><td>비동기 이벤트</td><td><code>outbox_events</code></td><td class="num">1</td></tr>
       </tbody></table></div>
       <p>각 컬렉션의 필드와 인덱스는 아래 표와 같다. <mark>표는 마이그레이션을 모두 적용한 스키마의 validator와 인덱스에서 생성한다.</mark></p>
       <!-- collection-spec:auto — 여기서부터 scripts/dump-collection-spec.mjs 가 생성 -->
-      <h4 data-page="168">■ 계정·인증</h4>
+      <h4 data-page="0">■ 계정·인증</h4>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>code</code></td><td>문자열</td><td class="num">O</td><td><code>free</code> · <code>pro</code> · <code>team</code> · 최대 255자</td></tr>
-        <tr><td><code>generationQuota</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
         <tr><td><code>features</code></td><td>객체</td><td class="num">O</td><td></td></tr>
         <tr><td><code>isPublicListed</code></td><td>참거짓</td><td class="num">O</td><td></td></tr>
+        <tr><td><code>displayName</code></td><td>문자열</td><td class="num">O</td><td>최대 80자 · 최소 1자</td></tr>
+        <tr><td><code>monthlyPriceKrw</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
+        <tr><td><code>monthlyCredits</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
+        <tr><td><code>sortOrder</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
       </tbody><caption>표 8.2.1 <code>plans</code> · 인덱스 <code>code ↑</code> (유일)</caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -8704,7 +8708,12 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>notificationPreferences.generation</code></td><td>참거짓</td><td class="num">—</td><td></td></tr>
         <tr><td><code>notificationPreferences.traffic</code></td><td>참거짓</td><td class="num">—</td><td></td></tr>
         <tr><td><code>writeVersion</code></td><td>정수</td><td class="num">—</td><td>≥ 0</td></tr>
-      </tbody><caption>표 8.2.2 <code>users</code> · 인덱스 <code>email ↑</code> (유일) · <code>planId ↑</code></caption></table></div>
+        <tr><td><code>emailVerifiedAt</code></td><td>날짜</td><td class="num">—</td><td>null 허용</td></tr>
+        <tr><td><code>termsAcceptedAt</code></td><td>날짜</td><td class="num">—</td><td>null 허용</td></tr>
+        <tr><td><code>termsVersion</code></td><td>정수</td><td class="num">—</td><td>≥ 1 · null 허용</td></tr>
+        <tr><td><code>role</code></td><td>문자열</td><td class="num">—</td><td><code>user</code> · <code>admin</code></td></tr>
+        <tr><td><code>dummyKey</code></td><td>문자열</td><td class="num">—</td><td>형식 <code>^[a-z][a-z0-9-]{0,63}$</code></td></tr>
+      </tbody><caption>표 8.2.2 <code>users</code> · 인덱스 <code>email ↑</code> (유일) · <code>planId ↑</code> · <code>dummyKey ↑</code> (유일 · 부분)</caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -8737,21 +8746,47 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>revokedAt</code></td><td>날짜</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>lastSeenAt</code></td><td>날짜</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
+        <tr><td><code>idleTtlMs</code></td><td>정수</td><td class="num">—</td><td>≥ 1</td></tr>
+        <tr><td><code>absoluteExpiresAt</code></td><td>날짜</td><td class="num">—</td><td></td></tr>
+        <tr><td><code>actingAsUserId</code></td><td>UUID 문자열</td><td class="num">—</td><td>null 허용</td></tr>
+        <tr><td><code>actingSince</code></td><td>날짜</td><td class="num">—</td><td>null 허용</td></tr>
       </tbody><caption>표 8.2.6 <code>identity_sessions</code> · 인덱스 <code>tokenHash ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>tokenHash ↑, expiresAt ↑</code> · <code>userId ↑, createdAt ↓</code> · <code>expiresAt ↑</code> (만료 0초)</caption></table></div>
-      <h4 data-page="169">■ 커리어 기록</h4>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
-        <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">—</td><td>null 허용</td></tr>
+        <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
+        <tr><td><code>kind</code></td><td>문자열</td><td class="num">O</td><td><code>password_reset</code> · <code>email_verification</code></td></tr>
+        <tr><td><code>tokenHash</code></td><td>문자열</td><td class="num">O</td><td>최대 255자</td></tr>
+        <tr><td><code>expiresAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
+        <tr><td><code>usedAt</code></td><td>날짜</td><td class="num">—</td><td>null 허용</td></tr>
+        <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
+      </tbody><caption>표 8.2.7 <code>identity_tokens</code> · 인덱스 <code>tokenHash ↑</code> (유일) · <code>userId ↑, kind ↑, createdAt ↓</code> · <code>expiresAt ↑</code> (만료 0초)</caption></table></div>
+      <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+        <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
+        <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td>null 허용</td></tr>
+        <tr><td><code>contract</code></td><td>문자열</td><td class="num">O</td><td>최대 80자</td></tr>
+        <tr><td><code>model</code></td><td>문자열</td><td class="num">O</td><td>최대 200자</td></tr>
+        <tr><td><code>inputTokens</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
+        <tr><td><code>outputTokens</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
+        <tr><td><code>cacheReadTokens</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
+        <tr><td><code>cacheCreationTokens</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
+        <tr><td><code>costUsd</code></td><td>정수 · 실수</td><td class="num">O</td><td>≥ 0 · null 허용</td></tr>
+        <tr><td><code>durationMs</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
+        <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
+      </tbody><caption>표 8.2.8 <code>ai_usage_events</code> · 인덱스 <code>userId ↑, createdAt ↓</code></caption></table></div>
+      <h4 data-page="0">■ 커리어 기록</h4>
+      <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+        <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
+        <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>key</code></td><td>문자열</td><td class="num">O</td><td>최대 255자</td></tr>
-        <tr><td><code>isSystem</code></td><td>참거짓</td><td class="num">O</td><td></td></tr>
-        <tr><td><code>propertySchema</code></td><td>객체</td><td class="num">O</td><td></td></tr>
         <tr><td><code>sortOrder</code></td><td>정수</td><td class="num">O</td><td></td></tr>
         <tr><td><code>name</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>icon</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>defaultView</code></td><td>문자열</td><td class="num">O</td><td><code>table</code> · <code>gallery</code> · <code>timeline</code> · <code>board</code> · <code>list</code></td></tr>
         <tr><td><code>version</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.7 <code>career_categories</code> · 인덱스 <code>userId ↑, key ↑</code> (유일 · 부분) · <code>key ↑</code> (유일 · 부분)</caption></table></div>
+        <tr><td><code>propertySchemaV2</code></td><td>배열</td><td class="num">O</td><td></td></tr>
+        <tr><td><code>schemaVersion</code></td><td>정수</td><td class="num">—</td><td>≥ 1</td></tr>
+      </tbody><caption>표 8.2.9 <code>career_categories</code> · 인덱스 <code>userId ↑, key ↑</code> (유일 · 부분)</caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -8777,7 +8812,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>unmappedProperties</code></td><td>객체</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>propertyValueTombstones</code></td><td>객체</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>editorMigratedAt</code></td><td>날짜</td><td class="num">—</td><td>null 허용</td></tr>
-      </tbody><caption>표 8.2.8 <code>career_records</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, createIdempotencyKey ↑</code> (유일 · 부분) · <code>userId ↑, categoryId ↑</code> · <code>categoryId ↑</code> · <code>userId ↑, deletedAt ↑, categoryId ↑, updatedAt ↓, _id ↓</code></caption></table></div>
+      </tbody><caption>표 8.2.10 <code>career_records</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, createIdempotencyKey ↑</code> (유일 · 부분) · <code>userId ↑, categoryId ↑</code> · <code>categoryId ↑</code> · <code>userId ↑, deletedAt ↑, categoryId ↑, updatedAt ↓, _id ↓</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -8792,7 +8827,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>configuration</code></td><td>객체</td><td class="num">—</td><td></td></tr>
         <tr><td><code>version</code></td><td>정수</td><td class="num">—</td><td>≥ 1</td></tr>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">—</td><td></td></tr>
-      </tbody><caption>표 8.2.9 <code>career_views</code> · 인덱스 <code>userId ↑, categoryId ↑, name ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, categoryId ↑, sortOrder ↑</code> · <code>categoryId ↑</code> · <code>userId ↑, categoryId ↑, configuration.order ↑, _id ↑</code> (부분) · <code>userId ↑, _id ↑, configuration.version ↑</code> (부분)</caption></table></div>
+      </tbody><caption>표 8.2.11 <code>career_views</code> · 인덱스 <code>userId ↑, categoryId ↑, name ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, categoryId ↑, sortOrder ↑</code> · <code>categoryId ↑</code> · <code>userId ↑, categoryId ↑, configuration.order ↑, _id ↑</code> (부분) · <code>userId ↑, _id ↑, configuration.version ↑</code> (부분)</caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -8800,7 +8835,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>toRecordId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>relation</code></td><td>문자열</td><td class="num">O</td><td><code>related</code> · <code>parent</code> · <code>duplicate_of</code> · 최대 255자</td></tr>
         <tr><td><code>createdBy</code></td><td>문자열</td><td class="num">O</td><td><code>user</code> · <code>ai</code></td></tr>
-      </tbody><caption>표 8.2.10 <code>record_links</code> · 인덱스 <code>userId ↑, fromRecordId ↑, toRecordId ↑, relation ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, toRecordId ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.12 <code>record_links</code> · 인덱스 <code>userId ↑, fromRecordId ↑, toRecordId ↑, relation ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, toRecordId ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -8808,7 +8843,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>blockId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>quotedText</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>firstUsedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.11 <code>record_usages</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, recordId ↑, blockId ↑</code> (유일) · <code>userId ↑, blockId ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.13 <code>record_usages</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, recordId ↑, blockId ↑</code> (유일) · <code>userId ↑, blockId ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -8823,7 +8858,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>changeKind</code></td><td>문자열</td><td class="num">O</td><td><code>edit</code> · <code>revert</code> · <code>restore</code></td></tr>
         <tr><td><code>summary</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.12 <code>revisions</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>blockId ↑</code> · <code>proposalId ↑</code> · <code>revertedRevisionId ↑</code> · <code>userId ↑, portfolioId ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.14 <code>revisions</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>blockId ↑</code> · <code>proposalId ↑</code> · <code>revertedRevisionId ↑</code> · <code>userId ↑, portfolioId ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -8834,7 +8869,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>evidenceCount</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
         <tr><td><code>lastUsedAt</code></td><td>날짜</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>strength</code></td><td>문자열</td><td class="num">O</td><td><code>weak</code> · <code>supported</code> · <code>strong</code></td></tr>
-      </tbody><caption>표 8.2.13 <code>skills</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, name ↑</code> (유일)</caption></table></div>
+      </tbody><caption>표 8.2.15 <code>skills</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, name ↑</code> (유일)</caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -8842,8 +8877,8 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>recordId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>weight</code></td><td>실수</td><td class="num">O</td><td></td></tr>
         <tr><td><code>extractedSpan</code></td><td>객체</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.14 <code>skill_evidence</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, skillId ↑, recordId ↑</code> (유일) · <code>userId ↑, recordId ↑</code></caption></table></div>
-      <h4 data-page="172">■ 커리어 편집</h4>
+      </tbody><caption>표 8.2.16 <code>skill_evidence</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, skillId ↑, recordId ↑</code> (유일) · <code>userId ↑, recordId ↑</code></caption></table></div>
+      <h4 data-page="0">■ 커리어 편집</h4>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -8857,7 +8892,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>checksum</code></td><td>문자열</td><td class="num">O</td><td>형식 <code>^[a-f0-9]{64}$</code></td></tr>
         <tr><td><code>actor</code></td><td>문자열</td><td class="num">O</td><td><code>user</code> · <code>ai</code> · <code>migration</code></td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.15 <code>career_document_snapshots</code> · 인덱스 <code>recordId ↑, version ↓</code></caption></table></div>
+      </tbody><caption>표 8.2.17 <code>career_document_snapshots</code> · 인덱스 <code>recordId ↑, version ↓</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>recordId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -8871,7 +8906,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>actor</code></td><td>문자열</td><td class="num">O</td><td><code>user</code> · <code>ai</code> · <code>migration</code></td></tr>
         <tr><td><code>receivedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>compactedAt</code></td><td>날짜</td><td class="num">O</td><td>null 허용</td></tr>
-      </tbody><caption>표 8.2.16 <code>career_document_updates</code> · 인덱스 <code>recordId ↑, clientId ↑, clientSequence ↑</code> (유일) · <code>recordId ↑, serverSequence ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.18 <code>career_document_updates</code> · 인덱스 <code>recordId ↑, clientId ↑, clientSequence ↑</code> (유일) · <code>recordId ↑, serverSequence ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -8884,7 +8919,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>proposalId</code></td><td>문자열</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>expiresAt</code></td><td>날짜</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.17 <code>career_record_revisions</code> · 인덱스 <code>recordId ↑, createdAt ↓</code></caption></table></div>
+      </tbody><caption>표 8.2.19 <code>career_record_revisions</code> · 인덱스 <code>recordId ↑, createdAt ↓</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -8897,7 +8932,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>createdBy</code></td><td>문자열</td><td class="num">O</td><td><code>user</code> · <code>ai</code></td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.18 <code>career_record_relations</code> · 인덱스 <code>userId ↑, sourceRecordId ↑, sourcePropertyId ↑, targetRecordId ↑</code> (유일) · <code>userId ↑, targetRecordId ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.20 <code>career_record_relations</code> · 인덱스 <code>userId ↑, sourceRecordId ↑, sourcePropertyId ↑, targetRecordId ↑</code> (유일) · <code>userId ↑, targetRecordId ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -8919,8 +8954,8 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>expiresAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.19 <code>career_ai_proposals</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, recordId ↑, status ↑</code> · <code>expiresAt ↑</code> (만료 0초)</caption></table></div>
-      <h4 data-page="175">■ 채용 공고</h4>
+      </tbody><caption>표 8.2.21 <code>career_ai_proposals</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, recordId ↑, status ↑</code> · <code>expiresAt ↑</code> (만료 0초)</caption></table></div>
+      <h4 data-page="0">■ 채용 공고</h4>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>name</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
@@ -8941,7 +8976,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>logoReadAt</code></td><td>날짜</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>importRunId</code></td><td>문자열</td><td class="num">—</td><td>최대 64자</td></tr>
         <tr><td><code>sourceHash</code></td><td>문자열</td><td class="num">—</td><td>형식 <code>^[a-f0-9]{64}$</code> · 최대 64자 · 최소 64자</td></tr>
-      </tbody><caption>표 8.2.20 <code>companies</code> · 인덱스 <code>dedupeKey ↑</code> (유일 · 부분) · <code>importRunId ↑, _id ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.22 <code>companies</code> · 인덱스 <code>dedupeKey ↑</code> (유일 · 부분) · <code>importRunId ↑, _id ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>companyId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -8975,7 +9010,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>experienceMinYears</code></td><td>정수</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>importRunId</code></td><td>문자열</td><td class="num">—</td><td>최대 64자</td></tr>
         <tr><td><code>sourceHash</code></td><td>문자열</td><td class="num">—</td><td>형식 <code>^[a-f0-9]{64}$</code> · 최대 64자 · 최소 64자</td></tr>
-      </tbody><caption>표 8.2.21 <code>job_postings</code> · 인덱스 <code>dedupeHash ↑</code> (유일) · <code>source ↑, externalId ↑</code> (유일 · 부분) · <code>experienceMinYears ↑</code> · <code>expiresAt ↑</code> · <code>createdAt ↑</code> · <code>jobFamily ↑, locationRegion ↑</code> · <code>jobFamily ↑</code> · <code>locationRegion ↑</code> · <code>companyId ↑</code> · <code>importRunId ↑, _id ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.23 <code>job_postings</code> · 인덱스 <code>dedupeHash ↑</code> (유일) · <code>source ↑, externalId ↑</code> (유일 · 부분) · <code>experienceMinYears ↑</code> · <code>expiresAt ↑</code> · <code>createdAt ↑</code> · <code>jobFamily ↑, locationRegion ↑</code> · <code>jobFamily ↑</code> · <code>locationRegion ↑</code> · <code>companyId ↑</code> · <code>importRunId ↑, _id ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>jobPostingId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -8988,7 +9023,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>axis</code></td><td>문자열</td><td class="num">—</td><td><code>technology</code> · <code>impact</code> · <code>role</code> · <code>conditions</code> · <code>null</code> · 최대 255자 · null 허용</td></tr>
         <tr><td><code>importRunId</code></td><td>문자열</td><td class="num">—</td><td>최대 64자</td></tr>
         <tr><td><code>sourceHash</code></td><td>문자열</td><td class="num">—</td><td>형식 <code>^[a-f0-9]{64}$</code> · 최대 64자 · 최소 64자</td></tr>
-      </tbody><caption>표 8.2.22 <code>job_posting_requirements</code> · 인덱스 <code>jobPostingId ↑, axis ↑</code> · <code>jobPostingId ↑, orderNo ↑</code> · <code>importRunId ↑, _id ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.24 <code>job_posting_requirements</code> · 인덱스 <code>jobPostingId ↑, axis ↑</code> · <code>jobPostingId ↑, orderNo ↑</code> · <code>importRunId ↑, _id ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>provider</code></td><td>문자열</td><td class="num">O</td><td><code>greenhouse</code> · <code>lever</code> · <code>ashby</code> · <code>workable</code> · <code>greeting</code> · <code>work24</code> · <code>work24web</code> · 최대 255자</td></tr>
@@ -9004,7 +9039,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>siteUrl</code></td><td>문자열</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>importRunId</code></td><td>문자열</td><td class="num">—</td><td>최대 64자</td></tr>
         <tr><td><code>sourceHash</code></td><td>문자열</td><td class="num">—</td><td>형식 <code>^[a-f0-9]{64}$</code> · 최대 64자 · 최소 64자</td></tr>
-      </tbody><caption>표 8.2.23 <code>job_sources</code> · 인덱스 <code>provider ↑, token ↑</code> (유일) · <code>provider ↑, token ↑</code> · <code>importRunId ↑, _id ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.25 <code>job_sources</code> · 인덱스 <code>provider ↑, token ↑</code> (유일) · <code>provider ↑, token ↑</code> · <code>importRunId ↑, _id ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9012,8 +9047,8 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>conditions</code></td><td>배열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>resultCount</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.24 <code>recent_searches</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, createdAt ↓</code></caption></table></div>
-      <h4 data-page="177">■ 제작·매칭</h4>
+      </tbody><caption>표 8.2.26 <code>recent_searches</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, createdAt ↓</code></caption></table></div>
+      <h4 data-page="0">■ 제작·매칭</h4>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9035,7 +9070,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>history.previousVersion</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
         <tr><td><code>history.requirements</code></td><td>배열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>history.archivedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.25 <code>job_analyses</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, inputIdempotencyKey ↑</code> (유일 · 부분) · <code>userId ↑, status ↑</code> · <code>jobPostingId ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.27 <code>job_analyses</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, inputIdempotencyKey ↑</code> (유일 · 부분) · <code>userId ↑, status ↑</code> · <code>jobPostingId ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9049,7 +9084,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>resumedAt</code></td><td>날짜</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.26 <code>brews</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, status ↑</code> · <code>userId ↑, jobAnalysisId ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.28 <code>brews</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, status ↑</code> · <code>userId ↑, jobAnalysisId ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9064,7 +9099,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>inputIdempotencyKey</code></td><td>문자열</td><td class="num">—</td><td>최대 255자 · null 허용</td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.27 <code>brew_jobs</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, inputIdempotencyKey ↑</code> (유일 · 부분) · <code>userId ↑, type ↑, createdAt ↓</code></caption></table></div>
+      </tbody><caption>표 8.2.29 <code>brew_jobs</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, inputIdempotencyKey ↑</code> (유일 · 부분) · <code>userId ↑, type ↑, createdAt ↓</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9077,7 +9112,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>reasonText</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>isSelected</code></td><td>참거짓</td><td class="num">O</td><td></td></tr>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.28 <code>brew_sources</code> · 인덱스 <code>userId ↑, brewId ↑, recordId ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, brewId ↑, rank ↑</code> (유일 · 부분) · <code>userId ↑, recordId ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.30 <code>brew_sources</code> · 인덱스 <code>userId ↑, brewId ↑, recordId ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, brewId ↑, rank ↑</code> (유일 · 부분) · <code>userId ↑, recordId ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9090,7 +9125,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>capturedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>confidence</code></td><td>문자열</td><td class="num">O</td><td><code>low</code> · <code>medium</code> · <code>high</code></td></tr>
         <tr><td><code>basisFactIds</code></td><td>임의 값</td><td class="num">O</td><td>null 허용</td></tr>
-      </tbody><caption>표 8.2.29 <code>company_research_items</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, companyId ↑, kind ↑, capturedAt ↓</code> · <code>companyId ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.31 <code>company_research_items</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, companyId ↑, kind ↑, capturedAt ↓</code> · <code>companyId ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9099,7 +9134,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>deadlineAt</code></td><td>날짜</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>memo</code></td><td>문자열</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.30 <code>interests</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, jobPostingId ↑</code> (유일) · <code>jobPostingId ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.32 <code>interests</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, jobPostingId ↑</code> (유일) · <code>jobPostingId ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9109,7 +9144,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>reasonText</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>computedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>nextAction</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.31 <code>match_scores</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, jobPostingId ↑</code> (유일) · <code>jobPostingId ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.33 <code>match_scores</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, jobPostingId ↑</code> (유일) · <code>jobPostingId ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>requirementId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9117,8 +9152,8 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>coveredBy</code></td><td>임의 값</td><td class="num">O</td><td>null 허용</td></tr>
         <tr><td><code>computedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>_id</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.32 <code>requirement_coverages</code> · 인덱스 <code>userId ↑</code> · <code>requirementId ↑</code></caption></table></div>
-      <h4 data-page="180">■ AI 인터뷰</h4>
+      </tbody><caption>표 8.2.34 <code>requirement_coverages</code> · 인덱스 <code>userId ↑</code> · <code>requirementId ↑</code></caption></table></div>
+      <h4 data-page="0">■ AI 인터뷰</h4>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9132,7 +9167,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>pausedAt</code></td><td>날짜</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.33 <code>interview_sessions</code> · 인덱스 <code>userId ↑, brewId ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, inputIdempotencyKey ↑</code> (유일 · 부분)</caption></table></div>
+      </tbody><caption>표 8.2.35 <code>interview_sessions</code> · 인덱스 <code>userId ↑, brewId ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, inputIdempotencyKey ↑</code> (유일 · 부분)</caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9147,7 +9182,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>variant</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>rationale</code></td><td>문자열</td><td class="num">—</td><td>null 허용</td></tr>
-      </tbody><caption>표 8.2.34 <code>questions</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, interviewSessionId ↑, orderNo ↑</code> (유일 · 부분) · <code>replacedFromId ↑</code> · <code>requirementId ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.36 <code>questions</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, interviewSessionId ↑, orderNo ↑</code> (유일 · 부분) · <code>replacedFromId ↑</code> · <code>requirementId ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9159,7 +9194,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>requestHash</code></td><td>문자열</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>version</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.35 <code>answers</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, questionId ↑</code> (유일) · <code>userId ↑, inputIdempotencyKey ↑</code> (유일 · 부분) · <code>createdRecordId ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.37 <code>answers</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, questionId ↑</code> (유일) · <code>userId ↑, inputIdempotencyKey ↑</code> (유일 · 부분) · <code>createdRecordId ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9169,8 +9204,42 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>changedFields</code></td><td>배열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>sourceQuote</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.36 <code>answer_record_changes</code> · 인덱스 <code>userId ↑, answerId ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, recordId ↑</code></caption></table></div>
-      <h4 data-page="182">■ 레시피</h4>
+      </tbody><caption>표 8.2.38 <code>answer_record_changes</code> · 인덱스 <code>userId ↑, answerId ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, recordId ↑</code></caption></table></div>
+      <h4 data-page="0">■ 에이전트 채팅</h4>
+      <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+        <tr><td><code>_id</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
+        <tr><td><code>userId</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
+        <tr><td><code>title</code></td><td>문자열</td><td class="num">O</td><td>최대 120자</td></tr>
+        <tr><td><code>contexts</code></td><td>배열</td><td class="num">O</td><td>최대 10개</td></tr>
+        <tr><td><code>messages</code></td><td>배열</td><td class="num">O</td><td>최대 100개</td></tr>
+        <tr><td><code>version</code></td><td>정수 · 실수</td><td class="num">O</td><td>≥ 0</td></tr>
+        <tr><td><code>updatedAt</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
+        <tr><td><code>heartbeatAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
+      </tbody><caption>표 8.2.39 <code>agent_conversations</code> · 인덱스 <code>userId ↑, updatedAt ↓</code> · <code>run.status ↑, heartbeatAt ↑</code></caption></table></div>
+      <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+        <tr><td><code>_id</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
+        <tr><td><code>userId</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
+        <tr><td><code>ciphertext</code></td><td>문자열</td><td class="num">O</td><td>최대 1024자</td></tr>
+        <tr><td><code>iv</code></td><td>문자열</td><td class="num">O</td><td>최대 32자</td></tr>
+        <tr><td><code>tag</code></td><td>문자열</td><td class="num">O</td><td>최대 32자</td></tr>
+        <tr><td><code>version</code></td><td>열거형</td><td class="num">O</td><td><code>1</code></td></tr>
+        <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
+      </tbody><caption>표 8.2.40 <code>agent_credentials</code> · 인덱스 <code>userId ↑</code> (유일)</caption></table></div>
+      <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+        <tr><td><code>_id</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
+        <tr><td><code>userId</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
+        <tr><td><code>conversationId</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
+        <tr><td><code>jobPostingId</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
+        <tr><td><code>title</code></td><td>문자열</td><td class="num">O</td><td>최대 300자</td></tr>
+        <tr><td><code>summary</code></td><td>문자열</td><td class="num">O</td><td>최대 2000자</td></tr>
+        <tr><td><code>settings</code></td><td>객체</td><td class="num">O</td><td></td></tr>
+        <tr><td><code>tasks</code></td><td>배열</td><td class="num">O</td><td>최소 1개 · 최대 40개</td></tr>
+        <tr><td><code>version</code></td><td>정수 · 실수</td><td class="num">O</td><td>≥ 1</td></tr>
+        <tr><td><code>scheduleVersion</code></td><td>정수 · 실수</td><td class="num">O</td><td>≥ 1</td></tr>
+        <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
+        <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
+      </tbody><caption>표 8.2.41 <code>preparation_plans</code> · 인덱스 <code>userId ↑, updatedAt ↓</code> · <code>userId ↑, conversationId ↑</code></caption></table></div>
+      <h4 data-page="0">■ 레시피</h4>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>code</code></td><td>문자열</td><td class="num">O</td><td>최대 255자</td></tr>
@@ -9183,7 +9252,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>style</code></td><td>객체</td><td class="num">O</td><td></td></tr>
         <tr><td><code>industries</code></td><td>임의 값</td><td class="num">O</td><td>null 허용</td></tr>
         <tr><td><code>isActive</code></td><td>참거짓</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.37 <code>templates</code> · 인덱스 <code>code ↑</code> (유일)</caption></table></div>
+      </tbody><caption>표 8.2.42 <code>templates</code> · 인덱스 <code>code ↑</code> (유일)</caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9197,7 +9266,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>promptVersion</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
         <tr><td><code>portfolioPlan</code></td><td>객체</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>planningManifest</code></td><td>객체</td><td class="num">—</td><td>null 허용</td></tr>
-      </tbody><caption>표 8.2.38 <code>recipes</code> · 인덱스 <code>userId ↑, brewId ↑, version ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, inputIdempotencyKey ↑</code> (유일 · 부분)</caption></table></div>
+      </tbody><caption>표 8.2.43 <code>recipes</code> · 인덱스 <code>userId ↑, brewId ↑, version ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, inputIdempotencyKey ↑</code> (유일 · 부분)</caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9210,7 +9279,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>locked</code></td><td>참거짓</td><td class="num">O</td><td></td></tr>
         <tr><td><code>editedBy</code></td><td>문자열</td><td class="num">O</td><td><code>ai</code> · <code>user</code></td></tr>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.39 <code>recipe_sections</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, recipeId ↑, orderNo ↑</code> (유일)</caption></table></div>
+      </tbody><caption>표 8.2.44 <code>recipe_sections</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, recipeId ↑, orderNo ↑</code> (유일)</caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9221,7 +9290,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>locked</code></td><td>참거짓</td><td class="num">O</td><td></td></tr>
         <tr><td><code>editedBy</code></td><td>문자열</td><td class="num">O</td><td><code>ai</code> · <code>user</code></td></tr>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.40 <code>recipe_items</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, recipeSectionId ↑, orderNo ↑</code> (유일)</caption></table></div>
+      </tbody><caption>표 8.2.45 <code>recipe_items</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, recipeSectionId ↑, orderNo ↑</code> (유일)</caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9232,7 +9301,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>sourceLabel</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>targetPath</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.41 <code>recipe_evidence_paths</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, recipeId ↑, sourceType ↑, sourceId ↑, recipeItemId ↑</code> (유일) · <code>userId ↑, recipeItemId ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.46 <code>recipe_evidence_paths</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, recipeId ↑, sourceType ↑, sourceId ↑, recipeItemId ↑</code> (유일) · <code>userId ↑, recipeItemId ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9242,7 +9311,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>snapshot</code></td><td>객체</td><td class="num">O</td><td></td></tr>
         <tr><td><code>diff</code></td><td>배열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.42 <code>recipe_revisions</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, recipeId ↑, createdAt ↓, _id ↓</code></caption></table></div>
+      </tbody><caption>표 8.2.47 <code>recipe_revisions</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, recipeId ↑, createdAt ↓, _id ↓</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9250,8 +9319,8 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>recordId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>reason</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.43 <code>recipe_unused_sources</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, recipeId ↑, recordId ↑</code> (유일) · <code>userId ↑, recordId ↑</code></caption></table></div>
-      <h4 data-page="184">■ 생성·편집</h4>
+      </tbody><caption>표 8.2.48 <code>recipe_unused_sources</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, recipeId ↑, recordId ↑</code> (유일) · <code>userId ↑, recordId ↑</code></caption></table></div>
+      <h4 data-page="0">■ 생성·편집</h4>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9263,7 +9332,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>styleOverrides</code></td><td>객체</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.44 <code>portfolios</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, status ↑</code> · <code>userId ↑, updatedAt ↓, _id ↓</code> · <code>currentDeploymentId ↑</code> · <code>templateId ↑</code> · <code>userId ↑, brewId ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.49 <code>portfolios</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, status ↑</code> · <code>userId ↑, updatedAt ↓, _id ↓</code> · <code>currentDeploymentId ↑</code> · <code>templateId ↑</code> · <code>userId ↑, brewId ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9272,7 +9341,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>orderNo</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
         <tr><td><code>visible</code></td><td>참거짓</td><td class="num">O</td><td></td></tr>
         <tr><td><code>hiddenReason</code></td><td>문자열</td><td class="num">—</td><td>null 허용</td></tr>
-      </tbody><caption>표 8.2.45 <code>portfolio_sections</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, portfolioId ↑, orderNo ↑</code> (유일) · <code>userId ↑, portfolioId ↑, recipeSectionId ↑</code> (유일 · 부분) · <code>recipeSectionId ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.50 <code>portfolio_sections</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, portfolioId ↑, orderNo ↑</code> (유일) · <code>userId ↑, portfolioId ↑, recipeSectionId ↑</code> (유일 · 부분) · <code>recipeSectionId ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9284,12 +9353,12 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>syncState</code></td><td>문자열</td><td class="num">O</td><td><code>synced</code> · <code>stale</code> · <code>detached</code></td></tr>
         <tr><td><code>locked</code></td><td>참거짓</td><td class="num">O</td><td></td></tr>
         <tr><td><code>orderNo</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
-      </tbody><caption>표 8.2.46 <code>blocks</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, portfolioSectionId ↑, orderNo ↑, _id ↑</code> · <code>userId ↑, sourceRecordId ↑</code> · <code>sourceRecordId ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.51 <code>blocks</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, portfolioSectionId ↑, orderNo ↑, _id ↑</code> · <code>userId ↑, sourceRecordId ↑</code> · <code>sourceRecordId ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>brewId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
-        <tr><td><code>recipeId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
+        <tr><td><code>recipeId</code></td><td>UUID 문자열</td><td class="num">O</td><td>null 허용</td></tr>
         <tr><td><code>templateId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>status</code></td><td>문자열</td><td class="num">O</td><td><code>queued</code> · <code>running</code> · <code>done</code> · <code>failed</code> · 최대 255자</td></tr>
         <tr><td><code>usageCharged</code></td><td>참거짓</td><td class="num">O</td><td></td></tr>
@@ -9303,7 +9372,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>styleOverrides</code></td><td>객체</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.47 <code>generation_jobs</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, inputIdempotencyKey ↑</code> (유일 · 부분) · <code>userId ↑, status ↑</code> · <code>portfolioId ↑</code> · <code>templateId ↑</code> · <code>userId ↑, brewId ↑</code> · <code>userId ↑, recipeId ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.52 <code>generation_jobs</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, inputIdempotencyKey ↑</code> (유일 · 부분) · <code>userId ↑, status ↑</code> · <code>portfolioId ↑</code> · <code>templateId ↑</code> · <code>userId ↑, brewId ↑</code> · <code>userId ↑, recipeId ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9312,7 +9381,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>recipeEvidencePathId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>sourceQuote</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.48 <code>generation_sentence_evidence</code> · 인덱스 <code>userId ↑, generationJobId ↑, blockId ↑, recipeEvidencePathId ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>recipeEvidencePathId ↑</code> · <code>userId ↑, blockId ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.53 <code>generation_sentence_evidence</code> · 인덱스 <code>userId ↑, generationJobId ↑, blockId ↑, recipeEvidencePathId ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>recipeEvidencePathId ↑</code> · <code>userId ↑, blockId ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9321,8 +9390,8 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>amount</code></td><td>정수</td><td class="num">O</td><td><code>-1</code> · <code>1</code></td></tr>
         <tr><td><code>reason</code></td><td>문자열</td><td class="num">O</td><td>최대 255자</td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.49 <code>generation_usage_ledger</code> · 인덱스 <code>userId ↑, generationJobId ↑, reason ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, usageCounterId ↑</code></caption></table></div>
-      <h4 data-page="186">■ 지면·레이아웃</h4>
+      </tbody><caption>표 8.2.54 <code>generation_usage_ledger</code> · 인덱스 <code>userId ↑, generationJobId ↑, reason ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, usageCounterId ↑</code></caption></table></div>
+      <h4 data-page="0">■ 지면·레이아웃</h4>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9343,7 +9412,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>portfolioPlanSnapshot</code></td><td>객체</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>styleSpecSnapshot</code></td><td>객체</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>designPrinciplesVersion</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
-      </tbody><caption>표 8.2.50 <code>generated_pages</code> · 인덱스 <code>portfolioId ↑, revision ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>generationJobId ↑</code> (유일 · 부분) · <code>portfolioId ↑, revision ↓</code> · <code>userId ↑, portfolioId ↑</code> · <code>userId ↑, generationJobId ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.55 <code>generated_pages</code> · 인덱스 <code>portfolioId ↑, revision ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>generationJobId ↑</code> (유일 · 부분) · <code>portfolioId ↑, revision ↓</code> · <code>userId ↑, portfolioId ↑</code> · <code>userId ↑, generationJobId ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9358,7 +9427,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>selected</code></td><td>참거짓</td><td class="num">O</td><td></td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>instruction</code></td><td>문자열</td><td class="num">—</td><td>null 허용</td></tr>
-      </tbody><caption>표 8.2.51 <code>layout_specs</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, portfolioId ↑</code> (유일 · 부분) · <code>userId ↑, portfolioId ↑, createdAt ↓, batchId ↑, orderNo ↑</code> · <code>generationJobId ↑</code> · <code>seedTemplateId ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.56 <code>layout_specs</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, portfolioId ↑</code> (유일 · 부분) · <code>userId ↑, portfolioId ↑, createdAt ↓, batchId ↑, orderNo ↑</code> · <code>generationJobId ↑</code> · <code>seedTemplateId ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9375,7 +9444,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>appliedAt</code></td><td>날짜</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>patches</code></td><td>배열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>instruction</code></td><td>문자열</td><td class="num">—</td><td>null 허용</td></tr>
-      </tbody><caption>표 8.2.52 <code>portfolio_edit_proposals</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, portfolioId ↑, status ↑, expiresAt ↑</code> · <code>userId ↑, blockId ↑</code> · <code>userId ↑, sourceRecordId ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.57 <code>portfolio_edit_proposals</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, portfolioId ↑, status ↑, expiresAt ↑</code> · <code>userId ↑, blockId ↑</code> · <code>userId ↑, sourceRecordId ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9383,8 +9452,8 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>kind</code></td><td>문자열</td><td class="num">O</td><td><code>initial_generation</code> · <code>edit</code> · <code>manual</code></td></tr>
         <tr><td><code>snapshot</code></td><td>객체</td><td class="num">O</td><td></td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.53 <code>portfolio_snapshots</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, portfolioId ↑, createdAt ↓, _id ↓</code></caption></table></div>
-      <h4 data-page="188">■ 배포·미디어</h4>
+      </tbody><caption>표 8.2.58 <code>portfolio_snapshots</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, portfolioId ↑, createdAt ↓, _id ↓</code></caption></table></div>
+      <h4 data-page="0">■ 배포·미디어</h4>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9398,7 +9467,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>hasUnpublishedChanges</code></td><td>참거짓</td><td class="num">O</td><td></td></tr>
         <tr><td><code>snapshot</code></td><td>객체</td><td class="num">O</td><td></td></tr>
         <tr><td><code>seo</code></td><td>객체</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.54 <code>deployments</code> · 인덱스 <code>subdomain ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, portfolioId ↑, version ↑</code> (유일) · <code>customDomain ↑</code> (유일 · 부분) · <code>userId ↑, portfolioId ↑, version ↓</code></caption></table></div>
+      </tbody><caption>표 8.2.59 <code>deployments</code> · 인덱스 <code>subdomain ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, portfolioId ↑, version ↑</code> (유일) · <code>customDomain ↑</code> (유일 · 부분) · <code>userId ↑, portfolioId ↑, version ↓</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9407,7 +9476,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>newSlug</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>expiresAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.55 <code>deployment_slug_redirects</code> · 인덱스 <code>oldSlug ↑</code> (유일) · <code>oldSlug ↑, expiresAt ↑</code> · <code>userId ↑, portfolioId ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.60 <code>deployment_slug_redirects</code> · 인덱스 <code>oldSlug ↑</code> (유일) · <code>oldSlug ↑, expiresAt ↑</code> · <code>userId ↑, portfolioId ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9420,7 +9489,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>accessNonce</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>revokedAt</code></td><td>날짜</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.56 <code>export_assets</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, portfolioId ↑</code> (유일 · 부분) · <code>userId ↑, portfolioId ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.61 <code>export_assets</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, portfolioId ↑</code> (유일 · 부분) · <code>userId ↑, portfolioId ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9436,7 +9505,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>errorCode</code></td><td>문자열</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.57 <code>export_jobs</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, idempotencyKey ↑</code> (유일) · <code>assetId ↑</code> · <code>deploymentId ↑</code> · <code>userId ↑, portfolioId ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.62 <code>export_jobs</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, idempotencyKey ↑</code> (유일) · <code>assetId ↑</code> · <code>deploymentId ↑</code> · <code>userId ↑, portfolioId ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9447,7 +9516,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>byteSize</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
         <tr><td><code>checksum</code></td><td>문자열</td><td class="num">O</td><td>최대 255자</td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.58 <code>media_assets</code> · 인덱스 <code>userId ↑, checksum ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, createdAt ↓</code></caption></table></div>
+      </tbody><caption>표 8.2.63 <code>media_assets</code> · 인덱스 <code>userId ↑, checksum ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, createdAt ↓</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9458,8 +9527,8 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>height</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
         <tr><td><code>byteSize</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.59 <code>media_variants</code> · 인덱스 <code>mediaAssetId ↑, width ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>mediaAssetId ↑, width ↑</code> · <code>userId ↑, mediaAssetId ↑</code></caption></table></div>
-      <h4 data-page="190">■ 분석</h4>
+      </tbody><caption>표 8.2.64 <code>media_variants</code> · 인덱스 <code>mediaAssetId ↑, width ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>mediaAssetId ↑, width ↑</code> · <code>userId ↑, mediaAssetId ↑</code></caption></table></div>
+      <h4 data-page="0">■ 분석</h4>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9470,7 +9539,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>payloadBytes</code></td><td>정수</td><td class="num">O</td><td>≥ 1 · ≤ 8192</td></tr>
         <tr><td><code>occurredAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>receivedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.60 <code>analytics_event_receipts</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>visitorHash ↑, receivedAt ↓</code> · <code>userId ↑, deploymentId ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.65 <code>analytics_event_receipts</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>visitorHash ↑, receivedAt ↓</code> · <code>userId ↑, deploymentId ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9478,7 +9547,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>date</code></td><td>문자열</td><td class="num">O</td><td>형식 <code>^\d{4}-\d{2}-\d{2}$</code></td></tr>
         <tr><td><code>label</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>note</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.61 <code>annotations</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, portfolioId ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.66 <code>annotations</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, portfolioId ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9491,7 +9560,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>eventId</code></td><td>UUID 문자열</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>completed</code></td><td>참거짓</td><td class="num">O</td><td></td></tr>
         <tr><td><code>durationMs</code></td><td>정수</td><td class="num">—</td><td>≥ 0 · null 허용</td></tr>
-      </tbody><caption>표 8.2.62 <code>visit_events</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>eventId ↑</code> (유일 · 부분) · <code>userId ↑, deploymentId ↑, startedAt ↓</code></caption></table></div>
+      </tbody><caption>표 8.2.67 <code>visit_events</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>eventId ↑</code> (유일 · 부분) · <code>userId ↑, deploymentId ↑, startedAt ↓</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9500,7 +9569,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>target</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>eventId</code></td><td>UUID 문자열</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>occurredAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.63 <code>conversion_events</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>eventId ↑</code> (유일 · 부분) · <code>userId ↑, visitEventId ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.68 <code>conversion_events</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>eventId ↑</code> (유일 · 부분) · <code>userId ↑, visitEventId ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9508,14 +9577,14 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>name</code></td><td>문자열</td><td class="num">O</td><td>최대 255자</td></tr>
         <tr><td><code>period</code></td><td>문자열</td><td class="num">O</td><td><code>7d</code> · <code>30d</code> · <code>all</code></td></tr>
         <tr><td><code>isDefault</code></td><td>참거짓</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.64 <code>dashboard_views</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, portfolioId ↑, name ↑</code> (유일) · <code>userId ↑, portfolioId ↑</code> (유일 · 부분)</caption></table></div>
+      </tbody><caption>표 8.2.69 <code>dashboard_views</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, portfolioId ↑, name ↑</code> (유일) · <code>userId ↑, portfolioId ↑</code> (유일 · 부분)</caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>name</code></td><td>문자열</td><td class="num">O</td><td>최대 255자</td></tr>
         <tr><td><code>numeratorKey</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>denominatorKey</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.65 <code>derived_metrics</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, name ↑</code> (유일)</caption></table></div>
+      </tbody><caption>표 8.2.70 <code>derived_metrics</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, name ↑</code> (유일)</caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9526,7 +9595,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>evidenceMetrics</code></td><td>임의 값</td><td class="num">O</td><td>null 허용</td></tr>
         <tr><td><code>suggestions</code></td><td>배열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>generatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.66 <code>insights</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, deploymentId ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.71 <code>insights</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, deploymentId ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9535,7 +9604,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>metricKey</code></td><td>문자열</td><td class="num">O</td><td>최대 255자</td></tr>
         <tr><td><code>value</code></td><td>실수</td><td class="num">O</td><td></td></tr>
         <tr><td><code>sampleSize</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
-      </tbody><caption>표 8.2.67 <code>metrics_daily</code> · 인덱스 <code>userId ↑, deploymentId ↑, date ↑, metricKey ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, deploymentId ↑, metricKey ↑, date ↓</code></caption></table></div>
+      </tbody><caption>표 8.2.72 <code>metrics_daily</code> · 인덱스 <code>userId ↑, deploymentId ↑, date ↑, metricKey ↑</code> (유일) · <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, deploymentId ↑, metricKey ↑, date ↓</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9550,7 +9619,8 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>lastError</code></td><td>문자열</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>deliveredAt</code></td><td>날짜</td><td class="num">—</td><td>null 허용</td></tr>
-      </tbody><caption>표 8.2.68 <code>notifications</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, dedupeKey ↑, dedupeDate ↑</code> (유일) · <code>deliveryStatus ↑, nextAttemptAt ↑</code></caption></table></div>
+        <tr><td><code>subject</code></td><td>문자열</td><td class="num">—</td><td>최대 300자 · null 허용</td></tr>
+      </tbody><caption>표 8.2.73 <code>notifications</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, dedupeKey ↑, dedupeDate ↑</code> (유일) · <code>deliveryStatus ↑, nextAttemptAt ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9561,7 +9631,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>name</code></td><td>문자열</td><td class="num">O</td><td>최대 255자</td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>updatedAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.69 <code>saved_searches</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, name ↑</code> (유일)</caption></table></div>
+      </tbody><caption>표 8.2.74 <code>saved_searches</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>userId ↑, name ↑</code> (유일)</caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9572,7 +9642,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>exited</code></td><td>참거짓</td><td class="num">O</td><td></td></tr>
         <tr><td><code>eventId</code></td><td>UUID 문자열</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>occurredAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.70 <code>section_views</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>eventId ↑</code> (유일 · 부분) · <code>userId ↑, portfolioSectionId ↑</code> · <code>userId ↑, visitEventId ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.75 <code>section_views</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>eventId ↑</code> (유일 · 부분) · <code>userId ↑, portfolioSectionId ↑</code> · <code>userId ↑, visitEventId ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
@@ -9582,8 +9652,8 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>visualization</code></td><td>문자열</td><td class="num">O</td><td><code>number</code> · <code>spark</code> · <code>line</code> · <code>bar</code> · <code>donut</code> · <code>list</code> · <code>note</code></td></tr>
         <tr><td><code>compareTo</code></td><td>문자열</td><td class="num">—</td><td><code>prev_period</code> · <code>other_portfolio</code> · <code>industry</code> · <code>null</code> · null 허용</td></tr>
         <tr><td><code>position</code></td><td>객체</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.71 <code>widgets</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>derivedMetricId ↑</code> · <code>userId ↑, dashboardViewId ↑</code></caption></table></div>
-      <h4 data-page="194">■ 운영·플랫폼</h4>
+      </tbody><caption>표 8.2.76 <code>widgets</code> · 인덱스 <code>userId ↑, _id ↑</code> (유일) · <code>derivedMetricId ↑</code> · <code>userId ↑, dashboardViewId ↑</code></caption></table></div>
+      <h4 data-page="0">■ 운영·플랫폼</h4>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>userId</code></td><td>UUID 문자열</td><td class="num">—</td><td>null 허용</td></tr>
@@ -9596,23 +9666,23 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>cancellationTokenHash</code></td><td>문자열</td><td class="num">O</td><td>최대 64자 · 최소 64자</td></tr>
         <tr><td><code>restoration</code></td><td>객체</td><td class="num">O</td><td></td></tr>
         <tr><td><code>phase</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.72 <code>account_deletion_requests</code> · 인덱스 <code>subjectId ↑</code> (유일 · 부분) · <code>userId ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.77 <code>account_deletion_requests</code> · 인덱스 <code>subjectId ↑</code> (유일 · 부분) · <code>userId ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>requestId</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>phase</code></td><td>문자열</td><td class="num">O</td><td>최대 255자</td></tr>
         <tr><td><code>affectedRows</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
         <tr><td><code>occurredAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.73 <code>account_deletion_events</code> · 인덱스 <code>requestId ↑, phase ↑</code> (유일)</caption></table></div>
+      </tbody><caption>표 8.2.78 <code>account_deletion_events</code> · 인덱스 <code>requestId ↑, phase ↑</code> (유일)</caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
-        <tr><td><code>_id</code></td><td>문자열</td><td class="num">O</td><td><code>saved_searches</code> · <code>expire_postings</code> · <code>notification_batch</code> · <code>analytics_daily</code> · <code>deletion_grace</code> · <code>retention</code> · <code>job_ingest</code> · <code>posting_facts</code> · 최대 255자</td></tr>
+        <tr><td><code>_id</code></td><td>문자열</td><td class="num">O</td><td><code>saved_searches</code> · <code>expire_postings</code> · <code>notification_batch</code> · <code>analytics_daily</code> · <code>deletion_grace</code> · <code>retention</code> · <code>job_ingest</code> · <code>posting_facts</code> · <code>deadline_reminders</code> · 최대 255자</td></tr>
         <tr><td><code>intervalSeconds</code></td><td>정수</td><td class="num">O</td><td>≥ 60 · ≤ 604800</td></tr>
         <tr><td><code>nextRunAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
         <tr><td><code>lastStartedAt</code></td><td>날짜</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>lastFinishedAt</code></td><td>날짜</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>lastStatus</code></td><td>문자열</td><td class="num">—</td><td><code>succeeded</code> · <code>failed</code> · <code>null</code> · null 허용</td></tr>
         <tr><td><code>failureCount</code></td><td>정수</td><td class="num">O</td><td>≥ 0</td></tr>
-      </tbody><caption>표 8.2.74 <code>scheduled_job_definitions</code> · 인덱스 <code>nextRunAt ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.79 <code>scheduled_job_definitions</code> · 인덱스 <code>nextRunAt ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>jobKey</code></td><td>문자열</td><td class="num">O</td><td>최대 255자</td></tr>
@@ -9624,7 +9694,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>lastError</code></td><td>문자열</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>result</code></td><td>객체</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>createdAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.75 <code>scheduled_job_runs</code> · 인덱스 <code>jobKey ↑, scheduledFor ↑</code> (유일) · <code>status ↑, scheduledFor ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.80 <code>scheduled_job_runs</code> · 인덱스 <code>jobKey ↑, scheduledFor ↑</code> (유일) · <code>status ↑, scheduledFor ↑</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>name</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
@@ -9632,13 +9702,13 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>state</code></td><td>문자열</td><td class="num">O</td><td><code>applying</code> · <code>applied</code></td></tr>
         <tr><td><code>completedSteps</code></td><td>배열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>appliedAt</code></td><td>날짜</td><td class="num">—</td><td></td></tr>
-      </tbody><caption>표 8.2.76 <code>schema_migrations</code></caption></table></div>
+      </tbody><caption>표 8.2.81 <code>schema_migrations</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>owner</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>token</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>expiresAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.77 <code>migration_locks</code></caption></table></div>
+      </tbody><caption>표 8.2.82 <code>migration_locks</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>payloadId</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
@@ -9646,7 +9716,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>part</code></td><td>정수 · 실수</td><td class="num">O</td><td></td></tr>
         <tr><td><code>bytes</code></td><td>이진</td><td class="num">O</td><td></td></tr>
         <tr><td><code>sha256</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.78 <code>snapshot_chunks</code> · 인덱스 <code>payloadId ↑, part ↑</code> (유일)</caption></table></div>
+      </tbody><caption>표 8.2.83 <code>snapshot_chunks</code> · 인덱스 <code>payloadId ↑, part ↑</code> (유일)</caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>visitorHash</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
@@ -9654,22 +9724,30 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>period</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>count</code></td><td>정수 · 실수</td><td class="num">O</td><td></td></tr>
         <tr><td><code>expiresAt</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.79 <code>analytics_rate_limits</code> · 인덱스 <code>expiresAt ↑</code> (만료 0초) · <code>visitorHash ↑, targetId ↑, period ↑</code> (유일)</caption></table></div>
+      </tbody><caption>표 8.2.84 <code>analytics_rate_limits</code> · 인덱스 <code>expiresAt ↑</code> (만료 0초) · <code>visitorHash ↑, targetId ↑, period ↑</code> (유일)</caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>schemaHash</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>tables</code></td><td>객체</td><td class="num">O</td><td></td></tr>
         <tr><td><code>validation</code></td><td>객체</td><td class="num">O</td><td></td></tr>
         <tr><td><code>completed</code></td><td>참거짓</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.80 <code>import_runs</code></caption></table></div>
+      </tbody><caption>표 8.2.85 <code>import_runs</code></caption></table></div>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>runId</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>tableName</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>lastKey</code></td><td>문자열</td><td class="num">—</td><td></td></tr>
         <tr><td><code>processedCount</code></td><td>정수 · 실수</td><td class="num">O</td><td></td></tr>
-      </tbody><caption>표 8.2.81 <code>import_checkpoints</code> · 인덱스 <code>runId ↑, tableName ↑</code> (유일)</caption></table></div>
-      <h4 data-page="196">■ 비동기 이벤트</h4>
+      </tbody><caption>표 8.2.86 <code>import_checkpoints</code> · 인덱스 <code>runId ↑, tableName ↑</code> (유일)</caption></table></div>
+      <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
+        <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
+        <tr><td><code>actorUserId</code></td><td>UUID 문자열</td><td class="num">O</td><td>null 허용</td></tr>
+        <tr><td><code>action</code></td><td>문자열</td><td class="num">O</td><td><code>admin.grant</code> · <code>admin.revoke</code> · <code>dummy.create</code> · <code>dummy.refill</code> · <code>dummy.delete</code> · <code>impersonation.start</code> · <code>impersonation.end</code></td></tr>
+        <tr><td><code>targetUserId</code></td><td>UUID 문자열</td><td class="num">—</td><td>null 허용</td></tr>
+        <tr><td><code>dummyKey</code></td><td>문자열</td><td class="num">—</td><td>최대 64자 · null 허용</td></tr>
+        <tr><td><code>at</code></td><td>날짜</td><td class="num">O</td><td></td></tr>
+      </tbody><caption>표 8.2.87 <code>admin_audit_events</code> · 인덱스 <code>at ↓</code> · <code>dummyKey ↑, action ↑, at ↓</code></caption></table></div>
+      <h4 data-page="0">■ 비동기 이벤트</h4>
       <div class="table-wrap"><table class="spec" style="table-layout:fixed"><colgroup><col style="width:36%"><col style="width:18%"><col style="width:8%"><col style="width:38%"></colgroup><thead><tr><th>필드</th><th>타입</th><th class="num">필수</th><th>제약</th></tr></thead><tbody>
         <tr><td><code>_id</code></td><td>UUID 문자열</td><td class="num">O</td><td></td></tr>
         <tr><td><code>topic</code></td><td>문자열</td><td class="num">O</td><td></td></tr>
@@ -9686,7 +9764,7 @@ GET /v1/entitlements/portfolio.generate</code></pre>
         <tr><td><code>leaseToken</code></td><td>문자열</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>leaseUntil</code></td><td>날짜</td><td class="num">—</td><td>null 허용</td></tr>
         <tr><td><code>userId</code></td><td>문자열</td><td class="num">—</td><td>null 허용</td></tr>
-      </tbody><caption>표 8.2.82 <code>outbox_events</code> · 인덱스 <code>idempotencyKey ↑</code> (유일) · <code>availableAt ↑, createdAt ↑</code> · <code>state ↑, availableAt ↑, _id ↑</code> · <code>state ↑, leaseUntil ↑</code></caption></table></div>
+      </tbody><caption>표 8.2.88 <code>outbox_events</code> · 인덱스 <code>idempotencyKey ↑</code> (유일) · <code>availableAt ↑, createdAt ↑</code> · <code>state ↑, availableAt ↑, _id ↑</code> · <code>state ↑, leaseUntil ↑</code></caption></table></div>
       <!-- /collection-spec:auto -->
       <h4 data-page="197">■ 검증과 일관성</h4>
       <ul><li>요청·응답은 <code>packages/contracts</code>의 <strong>Zod 스키마</strong>로 검증한다. 저장 문서는 컬렉션 validator와 인덱스를 적용한다.</li>

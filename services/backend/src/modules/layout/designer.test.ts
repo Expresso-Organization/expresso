@@ -8,6 +8,7 @@ import {
   type AiClient,
   type AiResult,
 } from "../../platform/ai/client.js";
+import { ScriptedAiClient } from "../../platform/ai/scripted-client.js";
 import {
   AiLayoutDesigner,
   LayoutDesignError,
@@ -25,7 +26,7 @@ const usage = {
   durationMs: 24_000,
 };
 
-const context: LayoutDesignContext = {
+const context: LayoutDesignContext = { userId: null,
   sections: [
     {
       title: "핵심 소개",
@@ -112,20 +113,28 @@ describe("지면 생성 계약", () => {
     expect(ai.calls[0]?.system).toContain("팔레트 토큰만");
   });
 
-  it("섹션을 빠뜨린 안이 있으면 다시 짜게 한다", async () => {
+  it("섹션을 빠뜨린 안은 그 안의 섹션 배치만 같은 대화에서 고쳐 받는다", async () => {
     // 1안이 2번 섹션을 빠뜨렸다 — 그대로 두면 그 내용이 지면에서 사라진다.
-    const ai = new StubAiClient([batch([[1], [1, 2], [1, 2]]), batch([])]);
+    const ai = new ScriptedAiClient(
+      () => batch([[1], [1, 2], [1, 2]]),
+      () => [{ path: "/candidates/0/sections", value: batch([]).candidates[0]!.sections }],
+    );
     const drafts = await new AiLayoutDesigner(ai).design(context);
 
-    expect(ai.calls).toHaveLength(2);
-    expect(ai.calls[1]?.prompt).toContain("2번 섹션을 빠뜨렸습니다");
+    expect(ai.calls).toHaveLength(1);
+    expect(ai.fixRequests.map(({ paths }) => paths)).toEqual([["/candidates/0/sections"]]);
+    expect(ai.fixRequests[0]?.prompt).toContain("2번 섹션을 빠뜨렸습니다");
     expect(drafts[0]?.sections).toHaveLength(2);
   });
 
-  it("두 번째도 기준을 못 넘기면 포기한다", async () => {
-    const ai = new StubAiClient([batch([[1], [1], [1]])]);
+  it("고친 뒤에도 섹션을 빠뜨렸으면 그 지면은 내지 않는다", async () => {
+    const ai = new ScriptedAiClient(() => batch([[1], [1], [1]]));
     await expect(new AiLayoutDesigner(ai).design(context)).rejects.toThrow(LayoutDesignError);
-    expect(ai.calls).toHaveLength(2);
+    expect(ai.calls).toHaveLength(1);
+    // 세 안의 빠진 자리를 한 번에 묻는다. 고쳐도 줄지 않으면 거기서 멈춘다.
+    expect(ai.fixRequests.map(({ paths }) => paths)).toEqual([
+      ["/candidates/0/sections", "/candidates/1/sections", "/candidates/2/sections"],
+    ]);
   });
 
   it("레이트 리밋은 다시 물어보지 않고 그대로 올린다", async () => {
@@ -137,24 +146,30 @@ describe("지면 생성 계약", () => {
     expect(ai.calls).toHaveLength(1);
   });
 
-  it("대비가 모자란 팔레트는 계약이 거절한다", async () => {
+  it("대비가 모자란 팔레트는 그 색 칸만 고쳐 받는다", async () => {
     const faded = batch([]);
     // 흰 지면 위 옅은 회색 — 본문 4.5:1을 넘지 못한다.
-    for (const candidate of faded.candidates) candidate.palette.ink = "#B8BEC8";
-    const ai = new StubAiClient([faded]);
+    faded.candidates[1]!.palette.ink = "#B8BEC8";
+    const ai = new ScriptedAiClient(() => faded, () => [{ path: "/candidates/1/palette/ink", value: "#16223A" }]);
 
-    await expect(new AiLayoutDesigner(ai).design(context)).rejects.toThrow(LayoutDesignError);
+    const drafts = await new AiLayoutDesigner(ai).design(context);
+    expect(ai.calls).toHaveLength(1);
+    // 계약은 같은 대비를 글자 쪽과 지면 쪽 두 칸에 붙인다. 둘 다 그 안의 팔레트 칸이다.
+    expect(ai.fixRequests.map(({ paths }) => paths)).toEqual([["/candidates/1/palette/ink", "/candidates/1/palette/paper"]]);
+    expect(drafts[1]?.palette.ink).toBe("#16223A");
   });
 
-  it("막힌 클래스가 있으면 계약이 거절한다", async () => {
+  it("고쳐도 계약을 못 맞추면 AI_INVALID_OUTPUT으로 끝난다", async () => {
     const escaping = batch([]);
     escaping.candidates[0]!.sections[0]!.className = "px-8 py-12 absolute inset-0";
-    const ai = new StubAiClient([escaping]);
+    const ai = new ScriptedAiClient(() => escaping);
 
-    await expect(new AiLayoutDesigner(ai).design(context)).rejects.toThrow(LayoutDesignError);
+    await expect(new AiLayoutDesigner(ai).design(context)).rejects.toMatchObject({ code: "AI_INVALID_OUTPUT" });
+    expect(ai.calls).toHaveLength(1);
+    expect(ai.fixRequests[0]?.paths).toEqual(["/candidates/0/sections/0/className"]);
   });
 
-  it("세 안이 서로 같으면 후보가 아니다", async () => {
+  it("세 안이 서로 같으면 후보 배열을 고쳐 받는다", async () => {
     const same = {
       candidates: [
         draft("serif-editorial", "spacious", [1, 2]),
@@ -162,9 +177,13 @@ describe("지면 생성 계약", () => {
         draft("serif-editorial", "spacious", [1, 2]),
       ],
     };
-    const ai = new StubAiClient([same]);
+    const ai = new ScriptedAiClient(() => same, () => [{ path: "/candidates", value: batch([]).candidates }]);
 
-    await expect(new AiLayoutDesigner(ai).design(context)).rejects.toThrow(LayoutDesignError);
+    const drafts = await new AiLayoutDesigner(ai).design(context);
+    expect(ai.calls).toHaveLength(1);
+    // 계약의 superRefine이 `candidates` 경로를 붙인다. 출력 전체(`/`)가 아니다.
+    expect(ai.fixRequests[0]?.paths).toEqual(["/candidates"]);
+    expect(new Set(drafts.map(({ type }) => type.display)).size).toBe(3);
   });
 
   it("섹션 번호를 실제 섹션 식별자로 바꾼다", () => {

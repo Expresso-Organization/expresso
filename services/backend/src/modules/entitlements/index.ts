@@ -2,4 +2,4 @@ import type { EntitlementService as LegacyEntitlementService } from "./legacy-my
 export { MongoEntitlementService } from "./service.js";
 export { EntitlementService } from "./service.js";
 export type EntitlementApi = Pick<LegacyEntitlementService, keyof LegacyEntitlementService>;
-export { type KstMonthlyPeriod, kstMonthlyPeriod, capabilityEnabled, EntitlementSubjectNotFoundError } from "./public.js";
+export { type KstMonthlyPeriod, KST_OFFSET_MS, kstMonthlyPeriod, kstPeriodStartsAt, tokensUsedInPeriod, BILLABLE_TOKENS, capabilityEnabled, EntitlementSubjectNotFoundError } from "./public.js";

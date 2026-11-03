@@ -8,6 +8,8 @@ export const CareerDocumentBootstrapSchema = z.strictObject({
   record: CareerRecordSchema, document: CareerDocumentSchema, snapshotVersion: z.number().int().nonnegative(),
   documentVersion: z.number().int().nonnegative(), stateVectorBase64: z.string().base64().max(1_398_104),
   pendingUpdateCount: z.number().int().nonnegative(), sessionToken: z.string().min(32).max(4_096),
+  // BlockNote 본문(schemaVersion 2)이면 Yjs 상태 전체를 함께 내려보낸다. document는 Markdown 투영에서 만든 v1 모양 사본이다.
+  editor: z.enum(["career-v1", "blocknote"]).optional(), stateBase64: z.string().base64().max(14_000_000).optional(),
 });
 const SocketEnvelopeSchema = z.strictObject({ protocolVersion: z.literal(1), recordId: UuidSchema, sessionId: UuidSchema });
 export const CareerSocketClientMessageSchema = z.discriminatedUnion("type", [

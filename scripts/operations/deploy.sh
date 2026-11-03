@@ -131,6 +131,17 @@ if [ "$login_code" != "200" ]; then
   echo "로그인 화면이 200이 아닙니다 — nginx 설정을 확인하세요" >&2
   exit 1
 fi
+# 커리어 본문 저장은 /v1/ 아래 WebSocket이다. nginx가 Upgrade를 넘기지 않으면 101 대신 404가 온다.
+# --http1.1이 필요하다. HTTP/2로 협상되면 Upgrade 헤더가 무효라 늘 404다.
+ws_code="$(curl --http1.1 -s -o /dev/null -w '%{http_code}' --max-time 10 \
+  -H 'Connection: Upgrade' -H 'Upgrade: websocket' -H 'Sec-WebSocket-Version: 13' \
+  -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' -H "Origin: $SITE_URL" \
+  "$SITE_URL/v1/career/records/00000000-0000-4000-8000-000000000000/session" || true)"
+echo "$SITE_URL/v1/…/session (WebSocket) → $ws_code (101이 정상)"
+if [ "$ws_code" != "101" ]; then
+  echo "커리어 본문 저장 WebSocket이 열리지 않습니다 — nginx location /v1/의 Upgrade 헤더를 확인하세요" >&2
+  exit 1
+fi
 if [ "$home_code" != "307" ]; then
   echo "경고: /home 이 307이 아닙니다. proxy.ts가 걸리지 않았을 수 있습니다" >&2
 fi

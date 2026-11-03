@@ -4,7 +4,7 @@ import { z } from "zod";
 import { TimestampSchema, UuidSchema } from "./common.js";
 import { PAGE_KIT_CSS, pageKitVariables } from "./page-kit.js";
 import { PortfolioDesignReferenceSchema, TemplateFontSchema } from "./templates.js";
-import { StructuredPortfolioSnapshotSchema, StructuredPortfolioSpecSchema } from "./structured-portfolio.js";
+import { StructuredDesignPlanSchema, StructuredPortfolioSnapshotSchema, StructuredPortfolioSpecSchema } from "./structured-portfolio.js";
 import { MEDIA_ASSET_PATH_PREFIX } from "./media-path.js";
 
 /**
@@ -70,8 +70,14 @@ import { MEDIA_ASSET_PATH_PREFIX } from "./media-path.js";
  * 13 — 사용자가 고른 유형(사례 상세형 · 포스터형 · 글 · 목록형)의 문단(`describeArchetype`)을
  * 넣고, 유형에 없는 컴포넌트 설명을 뺀다. 첫 화면 구도가 고정된 유형은 구도 선택 기준을 빼고,
  * 글 · 목록형은 목차 지시를 뺀다. 내용 정리는 출처에 있는 기간만 period로 옮긴다.
+ *
+ * 14 — 설계가 먼저 오는 생성(`page_design` · `page_fill`)을 더하고, 지면 설계가 섹션마다 크기 · 배경 · 폭과
+ * 큰 인용 · 과정 흐름 · 이미지 전시 부품을 고른다. 채우기는 수치 값을 숫자와 단위로만 쓴다. 다듬기 검토도 같은
+ * 부품과 지면 변화를 바꿀 수 있다.
+ *
+ * 15 — 설계 · 다듬기가 첫 화면 배경(intro의 backdrop)을 고른다. 프롬프트가 배경마다 쓰임을 알린다(`describeBackdrops`).
  */
-export const PAGE_PROMPT_VERSION = 13;
+export const PAGE_PROMPT_VERSION = 15;
 
 /**
  * 한 지면의 상한.
@@ -412,6 +418,26 @@ export const PageGenerationManifestSchema = z.strictObject({
   library: PageLibrarySelectionSchema.optional(),
   renderMeasure: PageRenderMeasureSchema.optional(),
   visualReview: PageVisualReviewSchema.optional(),
+  /** 설계가 먼저 오는 생성의 지면 설계입니다. */
+  designPlan: StructuredDesignPlanSchema.optional(),
+  /** 모델 호출마다의 기록입니다. 어느 호출이 느린지 보려고 남깁니다. */
+  calls: z
+    .array(
+      z.strictObject({
+        contract: z.string().min(1).max(40),
+        model: z.string().min(1).max(200),
+        durationMs: z.number().int().nonnegative(),
+        outputTokens: z.number().int().nonnegative(),
+        costUsd: z.number().nonnegative().nullable(),
+      }),
+    )
+    .max(40)
+    .optional(),
+  /** 생성 시작부터 단계가 끝난 시각(밀리초)입니다. 청사진 · 채움 · 렌더 · 측정. */
+  timeline: z
+    .array(z.strictObject({ stage: z.enum(["designed", "filled", "rendered", "measured"]), atMs: z.number().int().nonnegative() }))
+    .max(8)
+    .optional(),
   usage: z.strictObject({
     inputTokens: z.number().int().nonnegative(),
     outputTokens: z.number().int().nonnegative(),
@@ -447,6 +473,32 @@ export const GeneratedPageSchema = z.strictObject({
 });
 export type GeneratedPage = z.infer<typeof GeneratedPageSchema>;
 
+/** 요소 하나를 말로 고친 결과입니다. 새 판과 화면에 보일 「바뀐 곳」 목록입니다. */
+export const InstructStructuredElementResultSchema = z.strictObject({
+  page: GeneratedPageSchema,
+  changes: z.array(z.strictObject({ label: z.string(), before: z.string(), after: z.string() })),
+  note: z.string(),
+});
+export type InstructStructuredElementResult = z.infer<typeof InstructStructuredElementResultSchema>;
+
+/**
+ * 편집 화면이 고를 수 있는 디자인 값입니다. 글자 크기 단계 · 색 역할 · 서체 역할의 실제 값이라, 화면은 견본을 그리기만 하고
+ * 저장하는 값은 단계 이름 · 역할 이름입니다.
+ */
+export const PageEditorDesignSchema = z.strictObject({
+  steps: z.array(z.strictObject({ name: z.string(), size: z.string() })),
+  colors: z.strictObject({ text: z.string(), muted: z.string(), accent: z.string() }),
+  fonts: z.strictObject({ display: z.string(), body: z.string(), mono: z.string() }),
+});
+export type PageEditorDesign = z.infer<typeof PageEditorDesignSchema>;
+
+/** 편집 화면이 그릴 최신 판의 HTML · CSS입니다. 요소 키 표시가 있는 렌더 결과입니다. */
+export const PageEditableRenderSchema = z.strictObject({
+  revision: z.number().int().nonnegative(),
+  html: z.string(),
+  css: z.string(),
+});
+
 /**
  * 배포 순간 고정하는 자유 HTML 판.
  *
@@ -464,7 +516,8 @@ export type GeneratedPageDeploymentSnapshot = z.infer<typeof GeneratedPageDeploy
 /** 모델이 내는 모양. 저장본과 달리 식별자와 시각이 없다. */
 export const PageDraftSchema = z.strictObject({
   html: z.string().min(1).max(PAGE_MAX_BYTES),
-  css: z.string().min(1).max(PAGE_MAX_BYTES),
+  // 키트를 쓰면 지면 CSS는 비어 있어도 됩니다(생성 프롬프트의 지시). 저장 계약도 빈 CSS를 받습니다.
+  css: z.string().max(PAGE_MAX_BYTES),
   rationale: z.string().min(1).max(400),
 });
 export type PageDraft = z.infer<typeof PageDraftSchema>;
@@ -509,12 +562,17 @@ export function pageDocument(input: {
    * 끼우면 우리 규칙이 그쪽 규칙과 싸운다. 그래서 판마다 갈린다.
    */
   grammar?: PageStyleGrammar;
+  /**
+   * `false`면 문서 루트에 `data-reveal="none"`을 달아 지면 키트의 등장 애니메이션을 모두 끈다.
+   * 편집 화면처럼 고친 곳이 스크롤 위치와 상관없이 바로 보여야 하는 자리에서 쓴다. 기본은 켜짐이다.
+   */
+  reveal?: boolean;
 }): string {
   const escape = (value: string) => value
     .replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
   return `<!doctype html>
-<html lang="ko">
+<html lang="ko"${input.reveal === false ? ' data-reveal="none"' : ""}>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">

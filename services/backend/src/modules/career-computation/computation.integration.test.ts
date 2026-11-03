@@ -135,4 +135,14 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const p95 = sorted[Math.ceil(sorted.length * 0.95) - 1]!;
     expect(p95).toBeLessThanOrEqual(1_000);
   }, 60_000);
+
+  it("reads system record-time properties from record metadata", async () => {
+    const category = await career.createCategory(userId, { key: `compute_time_${randomUUID().replaceAll("-", "")}`, name: "계산 시각", icon: "folder", defaultView: "table" });
+    const createdId = randomUUID();
+    await mongoCollections(fixture.resource.db).careerCategories.updateOne({ _id: category.id }, { $set: { schemaVersion: 1, propertySchemaV2: [{ ...definition(createdId, "created", "created_time"), system: true }] } });
+    const record = await career.createRecord(userId, randomUUID(), { categoryId: category.id, title: "시각", properties: {}, bodyMd: "" });
+    const preview = await service.previewFormula(userId, { categoryId: category.id, recordId: record.record.id, source: `prop("${createdId}")` });
+    expect(preview.diagnostics).toEqual([]);
+    expect(preview.value).toMatchObject({ type: "formula", value: record.record.createdAt!.slice(0, 10) });
+  });
 });

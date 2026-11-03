@@ -45,4 +45,6 @@ minimumReleaseAgeExclude:
   - '@tiptap/starter-kit@3.31.0'
 # 프레임워크에서 검증한 조합. core 0.3.18은 assistant-cloud 0.2를 요구합니다.
 overrides:
+  # BlockNote와 우리 편집기가 같은 Yjs 인스턴스를 써야 y-prosemirror가 한 번만 로드됩니다.
+  yjs: 13.6.33
   '@assistant-ui/react@0.15.18>@assistant-ui/core': 0.3.17

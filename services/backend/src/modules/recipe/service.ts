@@ -4,7 +4,6 @@ import { PortfolioPlanSchema, RecipeEditResultSchema, RecipeEditSchema, RecipeSc
 import { mongoCollections, type JsonObject, type JsonValue, type RecipeDoc, type RecipeEvidencePathDoc, type RecipeItemDoc, type RecipeSectionDoc } from "@expresso/database";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction, type MongoTransaction } from "../../platform/mongo-transaction.js";
-import { withTimeout } from "../../platform/timeouts.js";
 import { requireActiveUser } from "../identity/index.js";
 import { assertActiveRecordsForWrite } from "../career/index.js";
 import type { ConsentApi } from "../consent/index.js";
@@ -47,6 +46,7 @@ export class RecipeService implements RecipeApi {
       ...orderedAnswers.map((answer) => ({ type: "answer" as const, id: answer._id, label: answer.prompt, text: answer.transcript })),
     ];
     const plannerContext: PlannerContext = {
+      userId,
       sources,
       company: company ? { name: company.name, industry: company.industry ?? null, toneSummary: company.toneSummary ?? null } : null,
       jobTitle: posting?.title ?? null,
@@ -64,7 +64,7 @@ export class RecipeService implements RecipeApi {
     if (existing) return this.getRecipe(userId, existing._id);
     if (this.promptVersion > 0) await this.consent?.require(userId, "recipe_draft");
     const { plannerContext, brew, recordIds } = await this.#plannerContext(userId, brewId);
-    const planned = await withTimeout(this.planner.plan(plannerContext), 420_000, "recipe planner");
+    const planned = await this.planner.plan(plannerContext);
     const recipeId = await inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId); const db = mongoCollections(tx.db); const options = { session: tx.session };
       const replay = await db.recipes.findOne({ userId, inputIdempotencyKey: idempotencyKey }, options); if (replay) return replay._id;

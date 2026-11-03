@@ -205,7 +205,7 @@ export async function fetchJson(url: string, timeoutMs = 15_000): Promise<unknow
 }
 
 /** 우리가 누구인지 밝힌다. 막고 싶은 쪽이 막을 수 있어야 한다. */
-export const USER_AGENT = "ExpressoBot/0.1 (+https://xpresso.me/bot)";
+export const USER_AGENT = "ExpressoBot/0.1 (+https://expresso.ai.kr/bot)";
 
 /**
  * 글로 오는 출처를 읽는다.

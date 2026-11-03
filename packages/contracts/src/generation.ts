@@ -14,13 +14,19 @@ import { PortfolioArchetypeSchema } from "./portfolio-archetype.js";
  */
 export const SubmitGenerationSchema = z
   .strictObject({
-    recipeId: UuidSchema,
+    /** 만들 구성(레시피). 구성이 아직이면 대신 `brewId`를 보내고, 서버가 구성이 끝나는 대로 생성을 시작한다. */
+    recipeId: UuidSchema.optional(),
+    brewId: UuidSchema.optional(),
     templateId: UuidSchema.optional(),
     styleOverrides: TemplateStyleOverrideSchema.optional(),
     designSystemRevisionId: UuidSchema.optional(),
     // 페이지 짜임새. 보내지 않으면 사례 상세형(case-study)입니다.
     archetype: PortfolioArchetypeSchema.optional(),
   })
+  .refine(
+    (value) => (value.recipeId === undefined) !== (value.brewId === undefined),
+    "recipeId와 brewId 중 하나만 보내야 합니다.",
+  )
   .refine(
     (value) => (value.templateId === undefined) !== (value.designSystemRevisionId === undefined),
     "templateId와 designSystemRevisionId 중 하나만 보내야 합니다.",

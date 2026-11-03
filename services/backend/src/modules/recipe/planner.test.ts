@@ -24,7 +24,7 @@ const usage = {
   durationMs: 40_000,
 };
 
-const context: PlannerContext = {
+const context: PlannerContext = { userId: null,
   sources: [
     { type: "record", id: "r1", label: "정산 스케줄러 재설계", text: "일 1,200만 건을 처리합니다." },
     { type: "record", id: "r2", label: "야간 배치 안정화", text: "실패율을 줄였습니다." },

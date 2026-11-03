@@ -13,6 +13,8 @@ export interface CareerDocumentSnapshotDoc {
   schemaVersion: number;
   content: JsonValue;
   stateVector: Binary;
+  /** schemaVersion 2(BlockNote)의 Yjs 상태 전체입니다. content에서 Yjs를 다시 만들면 클라이언트 ID가 달라 대기 업데이트가 중복 삽입됩니다. */
+  state?: Binary;
   serverSequence: number;
   checksum: string;
   actor: CareerEditorActor;

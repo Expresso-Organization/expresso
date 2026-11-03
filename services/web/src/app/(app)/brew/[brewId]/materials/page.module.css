@@ -589,21 +589,19 @@
   color: var(--ex-fg);
 }
 
-.quotaSlots {
-  display: flex;
-  gap: 3px;
+/* 한도가 크레딧이라 칸으로 세지 않는다 — 1,000칸을 그릴 수는 없다. 사이드바와 같은 막대다. */
+.quotaTrack {
+  height: 5px;
+  background: var(--ex-bg-track);
+  border-radius: 999px;
+  overflow: hidden;
   margin-bottom: 15px;
 }
 
-.quotaSlot {
-  flex: 1;
-  height: 5px;
-  border-radius: 999px;
-  background: var(--ex-border);
-}
-
-.quotaSlotUsed {
+.quotaFill {
+  height: 100%;
   background: var(--ex-accent);
+  border-radius: 999px;
 }
 
 .brew {

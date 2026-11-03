@@ -53,9 +53,11 @@ export interface MongoCollections {
   generationSentenceEvidence: Collection<Docs.GenerationSentenceEvidenceDoc>;
   usageCounters: Collection<Docs.UsageCounterDoc>;
   generationUsageLedger: Collection<Docs.GenerationUsageLedgerDoc>;
+  aiUsageEvents: Collection<Docs.AiUsageEventDoc>;
   identityOauthAccounts: Collection<Docs.IdentityOauthAccountDoc>;
   identitySessions: Collection<Docs.IdentitySessionDoc>;
   identityTokens: Collection<Docs.IdentityTokenDoc>;
+  adminAuditEvents: Collection<Docs.AdminAuditEventDoc>;
   insights: Collection<Docs.InsightDoc>;
   interests: Collection<Docs.InterestDoc>;
   jobSources: Collection<Docs.JobSourceDoc>;
@@ -143,9 +145,11 @@ export function mongoCollections(db: Db): MongoCollections {
     generationSentenceEvidence: db.collection<Docs.GenerationSentenceEvidenceDoc>("generation_sentence_evidence"),
     usageCounters: db.collection<Docs.UsageCounterDoc>("usage_counters"),
     generationUsageLedger: db.collection<Docs.GenerationUsageLedgerDoc>("generation_usage_ledger"),
+    aiUsageEvents: db.collection<Docs.AiUsageEventDoc>("ai_usage_events"),
     identityOauthAccounts: db.collection<Docs.IdentityOauthAccountDoc>("identity_oauth_accounts"),
     identitySessions: db.collection<Docs.IdentitySessionDoc>("identity_sessions"),
     identityTokens: db.collection<Docs.IdentityTokenDoc>("identity_tokens"),
+    adminAuditEvents: db.collection<Docs.AdminAuditEventDoc>("admin_audit_events"),
     insights: db.collection<Docs.InsightDoc>("insights"),
     interests: db.collection<Docs.InterestDoc>("interests"),
     jobSources: db.collection<Docs.JobSourceDoc>("job_sources"),

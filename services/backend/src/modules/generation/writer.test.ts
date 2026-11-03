@@ -2,28 +2,15 @@ import { GenerationDraftBlockSchema, type GenerationDraft } from "@expresso/cont
 import { describe, expect, it } from "vitest";
 import type { z } from "zod";
 
-import {
-  AiError,
-  type AiCallSpec,
-  type AiClient,
-  type AiResult,
-} from "../../platform/ai/client.js";
+import { AiError, type AiFix } from "../../platform/ai/client.js";
+import { ScriptedAiClient } from "../../platform/ai/scripted-client.js";
 import {
   AiSentenceWriter,
   SentenceDraftError,
+  generationViolations,
   toGenerationOutput,
   type WriterContext,
 } from "./writer.js";
-
-const usage = {
-  model: "claude-sonnet-5",
-  inputTokens: 2_100,
-  outputTokens: 1_400,
-  cacheReadTokens: 0,
-  cacheCreationTokens: 0,
-  costUsd: 0.04,
-  durationMs: 18_000,
-};
 
 const ids = {
   intro: "11111111-1111-4111-8111-111111111111",
@@ -32,7 +19,7 @@ const ids = {
   requirement: "44444444-4444-4444-8444-444444444444",
 };
 
-const context: WriterContext = {
+const context: WriterContext = { userId: null,
   sections: [
     {
       recipeSectionId: ids.intro,
@@ -95,25 +82,17 @@ function draft(blocks: Partial<z.infer<typeof GenerationDraftBlockSchema>>[]): G
 /** 두 섹션을 다 채운 정상 초안. */
 const filled = draft([{ section: 1 }, { section: 2, sources: [1, 2] }]);
 
-class StubAiClient implements AiClient {
-  calls: AiCallSpec[] = [];
-  constructor(private readonly replies: unknown[]) {}
-
-  async complete<T>(spec: AiCallSpec, schema: z.ZodType<T>): Promise<AiResult<T>> {
-    this.calls.push(spec);
-    const reply = this.replies[this.calls.length - 1] ?? this.replies.at(-1);
+/** 첫 출력은 `reply`, 고치기 요청에는 `fix`가 답한다. 어댑터와 같은 검사 · 고치기 순서를 탄다. */
+function scripted(reply: unknown, fix?: (paths: string[]) => AiFix[]) {
+  return new ScriptedAiClient(() => {
     if (reply instanceof Error) throw reply;
-    const parsed = schema.safeParse(reply);
-    if (!parsed.success) {
-      throw new AiError("AI_INVALID_OUTPUT", spec.contract, parsed.error.message, { retryable: true });
-    }
-    return { data: parsed.data, usage };
-  }
+    return reply;
+  }, fix && ((_, paths) => fix(paths)));
 }
 
 describe("추출 계약", () => {
   it("섹션과 근거를 번호로 준다 — 프롬프트에 UUID는 없다", async () => {
-    const ai = new StubAiClient([filled]);
+    const ai = scripted(filled);
     await new AiSentenceWriter(ai).write(context);
 
     const prompt = ai.calls[0]?.prompt ?? "";
@@ -145,13 +124,43 @@ describe("추출 계약", () => {
     expect(output.blocks[0]?.evidencePathIds).toEqual([ids.record]);
   });
 
-  it("빈 섹션이 있으면 다시 쓰게 한다", async () => {
-    const ai = new StubAiClient([draft([{ section: 1 }]), filled]);
+  it("빈 섹션이 있으면 블록 목록을 고쳐 받는다", async () => {
+    const half = draft([{ section: 1 }]);
+    expect(generationViolations(half, context)).toEqual([
+      { path: "/blocks", problem: expect.stringContaining("2번 섹션이 비었습니다") },
+    ]);
+
+    const ai = scripted(half, () => [{ path: "/blocks", value: filled.blocks }]);
     const output = await new AiSentenceWriter(ai).write(context);
 
-    expect(ai.calls).toHaveLength(2);
-    expect(ai.calls[1]?.prompt).toContain("2번 섹션이 비었습니다");
+    expect(ai.calls).toHaveLength(1);
+    expect(ai.fixRequests.map(({ paths }) => paths)).toEqual([["/blocks"]]);
     expect(output.blocks).toHaveLength(2);
+  });
+
+  it("없는 섹션 · 근거를 가리킨 블록은 그 칸을 묻는다", () => {
+    const stray = draft([{ section: 1 }, { section: 5 }, { section: 2, sources: [7] }]);
+    expect(generationViolations(stray, context).map(({ path }) => path)).toEqual([
+      "/blocks/1/section",
+      "/blocks/2/sources",
+      "/blocks",
+    ]);
+  });
+
+  it("고쳐도 빈 섹션이 남으면 쓴 그대로 쓴다", async () => {
+    const ai = scripted(draft([{ section: 1 }]));
+    const output = await new AiSentenceWriter(ai).write(context);
+
+    expect(ai.calls).toHaveLength(1);
+    // 걸린 칸이 줄지 않으면 한 번 고친 뒤 멈춘다(진전 기준, intent `ai-output-no-cli-rewrite`).
+    expect(ai.fixRequests).toHaveLength(1);
+    expect(output.blocks.map(({ recipeSectionId }) => recipeSectionId)).toEqual([ids.intro]);
+  });
+
+  it("고쳐도 근거 붙은 블록이 하나도 없으면 추출을 만들 수 없다", async () => {
+    const ai = scripted(draft([{ section: 1, sources: [9] }]));
+    await expect(new AiSentenceWriter(ai).write(context)).rejects.toThrow(SentenceDraftError);
+    expect(ai.calls).toHaveLength(1);
   });
 
   it("수치 블록은 값 하나에 라벨이 붙는다", () => {
@@ -189,20 +198,20 @@ describe("추출 계약", () => {
     const limited = new AiError("AI_RATE_LIMITED", "generation", "usage limit reached", {
       retryable: false,
     });
-    const ai = new StubAiClient([limited]);
+    const ai = scripted(limited);
     await expect(new AiSentenceWriter(ai).write(context)).rejects.toThrow(AiError);
     expect(ai.calls).toHaveLength(1);
   });
 
   it("근거가 없으면 아예 부르지 않는다", async () => {
-    const ai = new StubAiClient([filled]);
+    const ai = scripted(filled);
     await expect(new AiSentenceWriter(ai).write({ ...context, evidence: [] }))
       .rejects.toThrow(SentenceDraftError);
     expect(ai.calls).toHaveLength(0);
   });
 
   it("잠근 문장은 그대로 다시 내라고 알린다", async () => {
-    const ai = new StubAiClient([filled]);
+    const ai = scripted(filled);
     await new AiSentenceWriter(ai).write({ ...context, lockedTexts: ["직접 고친 문장입니다."] });
     expect(ai.calls[0]?.prompt).toContain("직접 고친 문장입니다.");
     expect(ai.calls[0]?.prompt).toContain("한 글자도 바꾸지 말고");

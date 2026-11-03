@@ -8,7 +8,7 @@ vi.mock("@/features/career-editor/editor/CareerDocumentEditor", () => ({
 }));
 vi.mock("@/features/career-editor/ai/AiProposalPanel", () => ({ AiProposalPanel: ({ requestedPrompt }: { requestedPrompt?: { prompt: string } | null }) => <div>AI {requestedPrompt?.prompt}</div> }));
 vi.mock("@/features/career-editor/session/useCareerEditorSession", () => ({
-  useCareerEditorSession: () => ({ snapshot: { documentVersion: 1, proposal: null }, document: { content: [] } }),
+  useCareerEditorSession: () => ({ snapshot: { status: "saved", documentVersion: 1, proposal: null }, document: { content: [] } }),
 }));
 
 import { DocumentPanel } from "./DocumentPanel";

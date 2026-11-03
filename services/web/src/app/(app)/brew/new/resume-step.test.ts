@@ -17,8 +17,8 @@ describe("resumeStep", () => {
     expect(resumeStep("interviewing").segment).toBe("counter");
   });
 
-  it("recipe는 레시피로 돌아간다", () => {
-    expect(resumeStep("recipe").segment).toBe("outline");
+  it("recipe는 디자인 선택으로 이어진다 — 레시피는 화면 단계가 아니다", () => {
+    expect(resumeStep("recipe").segment).toBe("design");
   });
 
   it("generating은 디자인 선택으로 돌아간다 — 추출 대기를 그 화면이 그린다", () => {

@@ -4,7 +4,8 @@ import {
   type RecordCleanup,
 } from "@expresso/contracts";
 
-import { AiError, type AiClient } from "../../platform/ai/client.js";
+import type { AiClient, AiViolation } from "../../platform/ai/client.js";
+import { jsonPointer } from "../../platform/ai/fixes.js";
 import { ungroundedNumbers } from "../../platform/numbers.js";
 
 /**
@@ -16,20 +17,15 @@ import { ungroundedNumbers } from "../../platform/numbers.js";
  *
  * 이 계약이 하는 일은 **정리**지 창작이 아니다. §8.3이 붙인 조항 둘 —
  * 사용자가 말하지 않은 수치를 만들지 않고, 비어 있는 항목은 null로 둔다.
- * 그래서 STAR 네 칸이 전부 nullable이고, 지어낸 수치는 검증에서 걸린다.
+ * 그래서 STAR 네 칸이 전부 nullable이고, 지어낸 수치는 검사에 걸려 그 칸만 고쳐 받는다.
  */
 
 /** 프롬프트를 고치면 올린다. */
-export const RECORD_CLEANUP_PROMPT_VERSION = 1;
-
-export class RecordCleanupError extends Error {
-  constructor(message: string, options: { cause?: unknown } = {}) {
-    super(message, options.cause === undefined ? {} : { cause: options.cause });
-    this.name = "RecordCleanupError";
-  }
-}
+export const RECORD_CLEANUP_PROMPT_VERSION = 2;
 
 export interface CleanupContext {
+  /** 사용량을 남길 사용자. 사용자가 없는 작업만 null이다. */
+  userId: string | null;
   /** 무엇을 물었나. 답변만으로는 무엇에 대한 이야기인지 모를 때가 있다. */
   question: string;
   /** 사용자가 말한 것. 이 글 밖의 수치는 존재하지 않는다. */
@@ -48,8 +44,8 @@ const SYSTEM = [
   "제목을 붙이고 STAR로 나눈다.",
   "",
   "## 지어내지 않는다",
-  "- **말하지 않은 수치를 만들지 않는다.** 답변에 없는 숫자가 하나라도 있으면",
-  "  이 정리는 통째로 버려진다. \"약 30% 개선\" 같은 어림값을 붙이지 않는다.",
+  "- **말하지 않은 수치를 만들지 않는다.** 답변에 없는 숫자가 있으면 검사에 걸려",
+  "  그 칸을 다시 써야 한다. \"약 30% 개선\" 같은 어림값을 붙이지 않는다.",
   "- **비어 있는 항목은 null로 둔다.** 상황을 말하지 않았으면 situation은 null이다.",
   "  네 칸을 채우려고 없는 이야기를 만들지 않는다. 빈 칸은 나중에 다시 물으면 된다.",
   "- 답변에 없는 도구 · 조직 · 역할을 덧붙이지 않는다.",
@@ -87,15 +83,20 @@ function buildPrompt(context: CleanupContext): string {
   return lines.join("\n");
 }
 
-/** 정리본에 적힌 수가 전부 발화 안에 있는가. */
-function inventedNumbers(cleanup: RecordCleanup, source: string): string[] {
-  const written = [
-    cleanup.title,
-    ...RECORD_STAR_KEYS.map((key) => cleanup[key] ?? ""),
-    ...cleanup.metrics,
-    ...cleanup.competencies,
-  ].join("\n");
-  return ungroundedNumbers(written, source);
+/** 정리본에서 발화에 없는 수가 적힌 칸. 칸마다 따로 봐서 그 칸만 고쳐 받는다. */
+export function cleanupViolations(cleanup: RecordCleanup, source: string): AiViolation[] {
+  const fields: [PropertyKey[], string][] = [
+    [["title"], cleanup.title],
+    ...RECORD_STAR_KEYS.map((key): [PropertyKey[], string] => [[key], cleanup[key] ?? ""]),
+    ...cleanup.metrics.map((metric, index): [PropertyKey[], string] => [["metrics", index], metric]),
+    ...cleanup.competencies.map((competency, index): [PropertyKey[], string] => [["competencies", index], competency]),
+  ];
+  return fields.flatMap(([path, text]) => {
+    const invented = ungroundedNumbers(text, source);
+    return invented.length > 0
+      ? [{ path: jsonPointer(path), problem: `답변에 없는 수치입니다: ${invented.join(", ")}. 답변에 적힌 수치만 쓰고, 없으면 수치를 빼거나 null로 둡니다` }]
+      : [];
+  });
 }
 
 export class AiRecordCleaner implements RecordCleaner {
@@ -111,40 +112,27 @@ export class AiRecordCleaner implements RecordCleaner {
       context.existing?.title ?? "",
       context.existing?.bodyMd ?? "",
     ].join("\n");
-    const prompt = buildPrompt(context);
-    let lastError: unknown;
-
-    for (const attempt of [1, 2]) {
-      try {
-        const { data } = await this.#ai.complete(
-          {
-            contract: "record_cleanup",
-            system: SYSTEM,
-            prompt: attempt === 1 ? prompt : `${prompt}\n\n${retryNote(lastError)}`,
-            promptVersion: RECORD_CLEANUP_PROMPT_VERSION,
-          },
-          RecordCleanupSchema,
-        );
-        const invented = inventedNumbers(data, source);
-        if (invented.length > 0) {
-          throw new RecordCleanupError(`답변에 없는 수치입니다: ${invented.join(", ")}`);
-        }
-        return data;
-      } catch (error) {
-        if (error instanceof AiError && error.code !== "AI_INVALID_OUTPUT") throw error;
-        lastError = error;
-      }
-    }
-    throw new RecordCleanupError(
-      `기록 정리가 두 번 모두 계약을 벗어났습니다: ${String(lastError)}`,
-      { cause: lastError },
+    // 다시 요청하지 않는다 — 걸린 칸은 어댑터가 같은 대화에서 고쳐 받는다(`platform/ai/fixes.ts`).
+    // 두 번 고친 뒤에도 답변에 없는 수치가 남은 칸은 기록에 싣지 않는다. 지어낸 수치를 남기지 않는 선이다(§8.3).
+    const { data } = await this.#ai.complete(
+      {
+        contract: "record_cleanup",
+        system: SYSTEM,
+        prompt: buildPrompt(context),
+        promptVersion: RECORD_CLEANUP_PROMPT_VERSION,
+      },
+      RecordCleanupSchema,
+      { userId: context.userId, check: (cleanup) => cleanupViolations(cleanup, source) },
     );
+    const invented = new Set(cleanupViolations(data, source).map((violation) => violation.path));
+    if (!invented.size) return data;
+    return {
+      ...data,
+      ...Object.fromEntries(RECORD_STAR_KEYS.filter((key) => invented.has(`/${key}`)).map((key) => [key, null])),
+      metrics: data.metrics.filter((_, index) => !invented.has(`/metrics/${index}`)),
+      competencies: data.competencies.filter((_, index) => !invented.has(`/competencies/${index}`)),
+    };
   }
-}
-
-function retryNote(error: unknown): string {
-  const detail = error instanceof Error ? error.message : String(error);
-  return `직전 시도는 거절되었다. 사유: ${detail}\n같은 실수를 반복하지 말고 다시 정리해라.`;
 }
 
 /**

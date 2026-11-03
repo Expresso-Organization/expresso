@@ -10,6 +10,7 @@ import { JobAnalysisService } from "../modules/job-analysis/index.js";
 import { UnavailableRequirementExtractor } from "../modules/job-analysis/extractor.js";
 import { AiRequirementExtractor } from "../modules/job-analysis/ai-extractor.js";
 import { createAiClient } from "../platform/ai/create-client.js";
+import { MongoAiUsageSink } from "../platform/ai/usage-sink.js";
 import { createJobAnalysisProcessor } from "./processors/job-analysis.js";
 import { GenerationService } from "../modules/generation/index.js";
 import { AiSentenceWriter, UnavailableSentenceWriter } from "../modules/generation/writer.js";
@@ -43,7 +44,10 @@ import { ChromiumPageMeasurer } from "../platform/browser/page-measurer.js";
 import { createPageRefineProcessor } from "./processors/page-refine.js";
 import { createMediaStorage } from "../platform/storage/create-storage.js";
 import { CareerDocumentService } from "../modules/career-editor/index.js";
+import { MongoCareerPropertySchemaService } from "../modules/career/index.js";
 import { createCareerDocumentCompactionProcessor } from "./processors/career-document-compaction.js";
+import { createCareerDocumentProjectionProcessor } from "./processors/career-document-projection.js";
+import { CAREER_PROPERTY_MUTATION_JOBS, createCareerPropertyMutationProcessor } from "./processors/career-property-mutation.js";
 import { MongoCareerComputationService } from "../modules/career-computation/index.js";
 import { createCareerComputationProcessor } from "./processors/career-computation.js";
 
@@ -55,15 +59,35 @@ const jobs = createReliableQueue<Record<string, unknown>>(
   config.redisUrl,
   config.queuePrefix,
 );
+/*
+ * 다듬기는 초안을 저장한 뒤 뒤에서 도는 일이라 따로 줄을 섭니다. 같은 줄(동시 1개)에 두면 다듬기가 끝날 때까지
+ * 사용자의 다음 생성이 기다립니다 — 2026-10-26 체험 서버에서 직전 판의 다듬기(211초) 뒤에 새 생성이 섰습니다.
+ */
+const refineJobs = createReliableQueue<Record<string, unknown>>(
+  "page-refine",
+  config.redisUrl,
+  config.queuePrefix,
+);
+/*
+ * 커리어 문서 투영 · 압축 · 계산 · 속성 변경은 몇 초 안에 끝나야 화면 값이 맞습니다. 동시 1개인 domain-jobs에 두면
+ * 포트폴리오 생성(수 분) 뒤에서 기다리느라 bodyMd와 수식 값이 그동안 낡습니다(2026-11-02 감사). 따로 줄을 섭니다.
+ */
+const careerJobs = createReliableQueue<Record<string, unknown>>(
+  "career-jobs",
+  config.redisUrl,
+  config.queuePrefix,
+);
+const queueFor = (name: string) => (name === "page.refine" ? refineJobs.queue : name.startsWith("career.") ? careerJobs.queue : jobs.queue);
 const dispatcher = new MongoOutboxDispatcher({
   context: database,
-  queue: jobs.queue,
+  queue: { add: (name, payload, options) => queueFor(name).add(name, payload, options) },
   batchSize: config.outboxBatchSize,
   maxAttempts: config.outboxMaxAttempts,
 });
 const abortController = new AbortController();
 // AI가 꺼져 있으면(`AI_PROVIDER=off`) 요건 추출과 문장 생성은 멈춘다.
-const ai = createAiClient(config);
+const aiUsage = new MongoAiUsageSink(database);
+const ai = createAiClient(config, aiUsage);
 // 계약을 부르기 전에 지나는 문. 워커에서 도는 계약도 예외가 아니다.
 const consentService = new ConsentService(database);
 const jobAnalysisService = new JobAnalysisService(database);
@@ -113,7 +137,8 @@ const brewJobProcessor = createBrewJobProcessor(brewJobService, {
       return (await recipeService.generate(userId, brewId, idempotencyKey)).id;
     },
   },
-});
+  // 구성이 끝나면 그 구성을 기다리던 생성을 이어서 시작한다(구성 전에 맡긴 생성).
+}, generationService);
 const recordCleanupProcessor = createRecordCleanupProcessor(interviewService);
 const publishingService = new PublishingService(database, config.assetSigningSecret);
 const analyticsService = new AnalyticsService(database, config.analyticsVisitorSalt ? { visitorSalt: config.analyticsVisitorSalt } : {});
@@ -121,7 +146,9 @@ const analyticsProcessor = createAnalyticsProcessor(analyticsService);
 const notificationProcessor = createNotificationProcessor(engagementService, new ConsoleNotificationProvider());
 const accountLifecycleService = new AccountLifecycleService(database);
 const careerDocumentService = new CareerDocumentService(database, config.assetSigningSecret);
+const careerPropertyMutationProcessor = createCareerPropertyMutationProcessor(new MongoCareerPropertySchemaService(database));
 const careerDocumentCompactionProcessor = createCareerDocumentCompactionProcessor(careerDocumentService);
+const careerDocumentProjectionProcessor = createCareerDocumentProjectionProcessor(careerDocumentService);
 const careerComputationProcessor = createCareerComputationProcessor(new MongoCareerComputationService(database));
 // 수집은 여기서만 돈다 — 바깥을 부르는 일은 요청 경로가 아니라 워커의 일이다.
 const jobIngestService = new JobIngestService(
@@ -152,7 +179,9 @@ const queueWorker = createQueueWorker<Record<string, unknown>, Record<string, un
     if (job.name === "notification.deliver") return notificationProcessor(job);
     if (job.name === "scheduled.execute") return scheduledJobProcessor(job);
     if (job.name === "career.document.compact") return careerDocumentCompactionProcessor(job) as Promise<Record<string, unknown>>;
+    if (job.name === "career.document.project") return careerDocumentProjectionProcessor(job) as Promise<Record<string, unknown>>;
     if (job.name === "career.computation") return careerComputationProcessor(job) as unknown as Promise<Record<string, unknown>>;
+    if (CAREER_PROPERTY_MUTATION_JOBS.has(job.name)) return careerPropertyMutationProcessor(job);
     throw new Error(`Unsupported domain job: ${job.name}`);
   },
   onDeadLetterError(error) {
@@ -162,6 +191,43 @@ const queueWorker = createQueueWorker<Record<string, unknown>, Record<string, un
       error: safeErrorSummary(error),
     }));
   },
+});
+
+const careerProcessor = async (job: Parameters<typeof careerDocumentCompactionProcessor>[0]): Promise<Record<string, unknown>> => {
+  if (job.name === "career.document.compact") return careerDocumentCompactionProcessor(job) as Promise<Record<string, unknown>>;
+  if (job.name === "career.document.project") return careerDocumentProjectionProcessor(job) as Promise<Record<string, unknown>>;
+  if (job.name === "career.computation") return careerComputationProcessor(job) as unknown as Promise<Record<string, unknown>>;
+  if (CAREER_PROPERTY_MUTATION_JOBS.has(job.name)) return careerPropertyMutationProcessor(job);
+  throw new Error(`Unsupported career job: ${job.name}`);
+};
+const careerWorker = createQueueWorker<Record<string, unknown>, Record<string, unknown>>({
+  queueName: "career-jobs",
+  redisUrl: config.redisUrl,
+  prefix: config.queuePrefix,
+  deadLetterQueue: careerJobs.deadLetterQueue,
+  concurrency: 4,
+  processor: careerProcessor,
+  onDeadLetterError(error) {
+    console.error(JSON.stringify({ level: "error", message: "failed to persist dead-letter job", error: safeErrorSummary(error) }));
+  },
+});
+careerWorker.on("error", (error) => {
+  console.error(JSON.stringify({ level: "error", message: "queue worker error", error: safeErrorSummary(error) }));
+});
+
+const refineWorker = createQueueWorker<Record<string, unknown>, Record<string, unknown>>({
+  queueName: "page-refine",
+  redisUrl: config.redisUrl,
+  prefix: config.queuePrefix,
+  deadLetterQueue: refineJobs.deadLetterQueue,
+  processor: (job) => pageRefineProcessor(job),
+  onDeadLetterError(error) {
+    console.error(JSON.stringify({ level: "error", message: "failed to persist dead-letter job", error: safeErrorSummary(error) }));
+  },
+});
+
+refineWorker.on("error", (error) => {
+  console.error(JSON.stringify({ level: "error", message: "queue worker error", error: safeErrorSummary(error) }));
 });
 
 queueWorker.on("error", (error) => {
@@ -218,4 +284,4 @@ while (!abortController.signal.aborted) {
   }
 }
 
-await Promise.allSettled([queueWorker.close(), jobs.close(), database.close(), pageMeasurer.close()]);
+await Promise.allSettled([queueWorker.close(), refineWorker.close(), careerWorker.close(), jobs.close(), refineJobs.close(), careerJobs.close(), database.close(), pageMeasurer.close()]);

@@ -46,7 +46,56 @@ export const StructuredSectionSchema = z.strictObject({
     .max(12),
   media: z.array(StructuredMediaSchema).max(8),
   sourceIds: z.array(id).max(30),
+  /**
+   * 원문에서 찾은 수치입니다. `before`가 있으면 전후 비교로 그립니다. 값은 원문 대조(`ungroundedNumbers`)를 지난 것만 남깁니다.
+   * 설계가 먼저 오는 생성에서 채우고, 옛 저장본에는 없습니다.
+   */
+  metrics: z
+    .array(
+      z.strictObject({
+        label: z.string().min(1).max(40),
+        value: z.string().min(1).max(24),
+        before: z.string().min(1).max(24).optional(),
+        note: z.string().max(80).optional(),
+      }),
+    )
+    .max(4)
+    .optional(),
+  /** 큰 글자 한 문장(`PullQuote`)으로 보일 이 작업의 판단 · 원칙입니다. 설계가 먼저 오는 생성에서 채웁니다. */
+  quote: z.string().min(1).max(200).optional(),
+  /** 과정 흐름(`CaseFlow`)의 단계입니다. 순서대로 두며, 번호는 렌더러가 배열 순서로 매깁니다. */
+  steps: z
+    .array(z.strictObject({ label: z.string().min(1).max(40), text: z.string().max(200) }))
+    .max(6)
+    .optional(),
 });
+type StructuredMetric = NonNullable<z.infer<typeof StructuredSectionSchema>["metrics"]>[number];
+const LEADING_NUMBER = /^[+\-−~≈]?\s?(\d+(?:\.\d+)?)/;
+
+/**
+ * "3.8초" · "420KB" · "1,200만 건"처럼 숫자로 시작하는 값에서 그 숫자를 읽습니다. 숫자로 시작하지 않으면 null입니다.
+ * 글 중간의 숫자는 읽지 않습니다. 청사진의 자리 표지(`⟦12⟧`)나 "약 3배" 같은 값에서 엉뚱한 비율이 나오지 않습니다.
+ */
+export function metricNumber(value: string): number | null {
+  const match = value.replace(/,/g, "").match(LEADING_NUMBER);
+  return match ? Number(match[1]) : null;
+}
+
+/** 값에서 앞자리 숫자를 뗀 나머지(단위)입니다. "1,200만 건" → "만 건", "80%" → "%". */
+export function metricUnit(value: string): string {
+  return value.replace(/,/g, "").replace(LEADING_NUMBER, "").trim();
+}
+
+/** 막대 길이로 견줄 수 있는 수치 목록인지 봅니다. 두 개 이상이고, 모두 숫자로 시작하고, 단위가 같아야 합니다. */
+export function comparableMetrics(metrics: readonly StructuredMetric[] | undefined): boolean {
+  return (
+    !!metrics &&
+    metrics.length >= 2 &&
+    metrics.every((metric) => metricNumber(metric.value) !== null) &&
+    new Set(metrics.map((metric) => metricUnit(metric.value))).size === 1
+  );
+}
+
 /** 프로필의 모양입니다. 이름 아래 한 문장 규칙은 저장 계약에서 따로 검사합니다. */
 export const StructuredProfileSchema = z.strictObject({
   name: z.string().min(1).max(200),
@@ -139,9 +188,19 @@ export const StructuredDesignSchema = z.strictObject({
 export const STRUCTURED_INTRO_VARIANTS = ["statement", "split", "media"] as const;
 /** 저장 계약이 받는 첫 화면 구도 전부. poster는 포스터형, sentence는 글 · 목록형 전용입니다. */
 export const STRUCTURED_INTRO_ALL_VARIANTS = [...STRUCTURED_INTRO_VARIANTS, "poster", "sentence"] as const;
-/** 저장 계약이 받는 목차 형태. poster는 포스터형 전용입니다. */
-export const STRUCTURED_INDEX_VARIANTS = ["rows", "mosaic", "rail", "poster"] as const;
+/** 저장 계약이 받는 목차 형태. poster는 포스터형 전용입니다. timeline은 섹션 기간을 두 개 이상 읽을 때 작업 기간 차트로 그립니다. */
+export const STRUCTURED_INDEX_VARIANTS = ["rows", "mosaic", "rail", "poster", "timeline"] as const;
+/** 경력 형태. chart는 기간을 두 개 이상 읽을 때 경력 기간 차트로 그립니다. 없으면(옛 저장본) list입니다. */
+export const STRUCTURED_CAREER_VARIANTS = ["list", "chart"] as const;
 export const STRUCTURED_CASE_TYPES = [
+  // 전후 수치를 막대로 비교합니다. 이전 값이 있는 수치가 하나 이상 필요합니다.
+  "CaseBeforeAfter",
+  // 단계(steps) 두 개 이상을 가로 흐름으로 그립니다.
+  "CaseFlow",
+  // 같은 단위 수치 두 개 이상(`comparableMetrics`)을 가로 막대 차트로 그립니다.
+  "CaseBars",
+  // 제공 이미지 한 장을 크게 두고 제목 · 요약을 그 아래 띠에 둡니다.
+  "CaseShowcase",
   "CaseEssay",
   "CaseGallery",
   "CaseTechnical",
@@ -175,10 +234,50 @@ export const STRUCTURED_MAX_GROUPS = 4;
 export const STRUCTURED_GROUP_VARIANT_VALUES = [
   ...new Set(Object.values(STRUCTURED_GROUP_VARIANTS).flat()),
 ] as [string, ...string[]];
-const leaf = <T extends string, P extends z.ZodType>(type: T, props: P) =>
+/**
+ * 요소 하나의 지면 변화입니다. 섹션마다 크기 · 배경 · 폭을 바꿔 지면이 같은 모양의 반복이 되지 않게 합니다.
+ * scale=크기(lead는 사례 첫머리를 크게 그리는 표지), surface=배경(canvas 기본 · field 디자인 색면 · inverse 반전),
+ * width=폭(content 본문 폭 · bleed 창 폭 전체). 옛 저장본에는 없고, 없으면 standard · canvas · content입니다.
+ */
+export const STRUCTURED_SCALES = ["lead", "standard", "compact"] as const;
+export const STRUCTURED_SURFACES = ["canvas", "field", "inverse"] as const;
+export const STRUCTURED_WIDTHS = ["content", "bleed"] as const;
+const stageProps = {
+  scale: z.enum(STRUCTURED_SCALES).optional(),
+  surface: z.enum(STRUCTURED_SURFACES).optional(),
+  width: z.enum(STRUCTURED_WIDTHS).optional(),
+};
+/**
+ * 첫 화면 뒤에 까는 배경입니다. 키트가 CSS · SVG로 그리고 색은 디자인 토큰에서만 가져옵니다.
+ * grid=선 격자, dots=점 격자, stripes=사선 줄무늬, contour=등고선, rings=동심원 궤도, glow=아래에서 번지는 빛,
+ * aurora=두 색 빛이 천천히 흐르는 면. 옛 저장본에는 없고, 없으면 포스터 첫 화면은 stripes, 나머지는 none입니다.
+ */
+export const STRUCTURED_BACKDROPS = ["none", "grid", "dots", "stripes", "contour", "rings", "glow", "aurora"] as const;
+export type StructuredBackdrop = (typeof STRUCTURED_BACKDROPS)[number];
+/** 지면에 둘 수 있는 큰 인용(`PullQuote`)의 최대 개수입니다. */
+export const STRUCTURED_MAX_QUOTES = 2;
+/**
+ * 편집 화면에서 사용자가 고른 글자 부분의 모양입니다. 값은 디자인 시스템의 토큰 이름이라 디자인을 바꾸면 따라갑니다.
+ * color=색 역할, font=서체 역할, size=디자인 시스템 글자 크기 단계 이름(`typography.scale[].name`).
+ * 부분 이름과 단계 이름이 그 요소 · 디자인에 있는지는 편집 서비스가 확인합니다. 모델 출력 스키마에는 두지 않습니다.
+ */
+export const STRUCTURED_STYLE_COLORS = ["text", "muted", "accent"] as const;
+export const STRUCTURED_STYLE_FONTS = ["display", "body", "mono"] as const;
+export const StructuredPartStyleSchema = z.strictObject({
+  color: z.enum(STRUCTURED_STYLE_COLORS).optional(),
+  font: z.enum(STRUCTURED_STYLE_FONTS).optional(),
+  size: z.string().regex(/^[a-z][a-z0-9-]{0,63}$/).optional(),
+});
+export type StructuredPartStyle = z.infer<typeof StructuredPartStyleSchema>;
+export const StructuredElementStyleSchema = z.record(
+  z.string().regex(/^[a-z][a-z-]{0,39}$/),
+  StructuredPartStyleSchema,
+);
+export type StructuredElementStyle = z.infer<typeof StructuredElementStyleSchema>;
+const leaf = <T extends string, S extends z.ZodRawShape>(type: T, shape: S) =>
   z.strictObject({
     type: z.literal(type),
-    props,
+    props: z.strictObject({ ...shape, style: StructuredElementStyleSchema.optional() }),
     children: z.array(z.never()).max(0),
   });
 export const StructuredNodeSchema = z.union([
@@ -195,29 +294,29 @@ export const StructuredNodeSchema = z.union([
     }),
     children: z.array(id).min(2).max(24),
   }),
-  leaf(
-    "NameIntro",
-    z.strictObject({
-      profile: binding,
-      sections: binding.optional(),
-      sourceId: id.optional(),
-      // 키트 경로의 첫 화면 구도입니다. media는 섹션 이미지가 있을 때만 그 구도로 그립니다.
-      variant: z.enum(STRUCTURED_INTRO_ALL_VARIANTS).optional(),
-    }),
-  ),
-  leaf(
-    "ProjectIndex",
-    z.strictObject({
-      sections: binding,
-      variant: z.enum(STRUCTURED_INDEX_VARIANTS),
-    }),
-  ),
+  leaf("NameIntro", {
+    profile: binding,
+    sections: binding.optional(),
+    sourceId: id.optional(),
+    // 키트 경로의 첫 화면 구도입니다. media는 섹션 이미지가 있을 때만 그 구도로 그립니다.
+    variant: z.enum(STRUCTURED_INTRO_ALL_VARIANTS).optional(),
+    // 첫 화면 배경입니다. 이 칸이 생기기 전 저장본에는 없습니다.
+    backdrop: z.enum(STRUCTURED_BACKDROPS).optional(),
+  }),
+  leaf("ProjectIndex", {
+    sections: binding,
+    variant: z.enum(STRUCTURED_INDEX_VARIANTS),
+  }),
   ...STRUCTURED_CASE_TYPES.map((type) =>
-    leaf(type, z.strictObject({ section: binding, sourceId: id.optional() })),
+    leaf(type, { section: binding, sourceId: id.optional(), ...stageProps }),
   ),
-  leaf("CareerTimeline", z.strictObject({ career: binding })),
-  leaf("EvidenceGrid", z.strictObject({ evidence: binding })),
-  leaf("Contact", z.strictObject({ contact: binding })),
+  // 섹션들의 대표 수치를 한 줄로 크게 보입니다. 수치가 두 개 이상일 때만 둡니다.
+  leaf("MetricStrip", { sections: binding, ...stageProps }),
+  // 한 섹션의 quote를 큰 글자 한 문장으로 보입니다. 사례와 별개 요소라 같은 섹션을 한 번 더 참조합니다.
+  leaf("PullQuote", { section: binding, ...stageProps }),
+  leaf("CareerTimeline", { career: binding, variant: z.enum(STRUCTURED_CAREER_VARIANTS).optional() }),
+  leaf("EvidenceGrid", { evidence: binding }),
+  leaf("Contact", { contact: binding }),
   // type과 variant의 짝은 validateStructuredPortfolio가 읽을 수 있는 메시지로 검사합니다.
   z.strictObject({
     type: z.enum(STRUCTURED_GROUP_TYPES),
@@ -253,6 +352,52 @@ export function structuredLeaves(spec: StructuredPortfolioSpec) {
       : [{ key, node, parent: spec.root }];
   });
 }
+/**
+ * 설계가 먼저 오는 생성의 지면 설계입니다.
+ *
+ * 설계 모델이 Spec과 함께 냅니다. 섹션마다 실을지, 어떤 시각 형태로 보일지, 칸마다 글자 수를 정하고,
+ * 글 채우기는 이 예산을 출력 스키마의 최대 길이로 받습니다.
+ */
+export const STRUCTURED_DESIGN_FORMS = ["before-after", "bars", "flow", "process", "showcase", "technical", "essay", "row"] as const;
+export const StructuredDesignPlanSchema = z.strictObject({
+  /** 지면 전체의 콘셉트 한 문장입니다. 글 채우기가 문체와 강조를 맞출 때 읽습니다. */
+  concept: z.string().min(1).max(300),
+  profile: z.strictObject({
+    intro: z.number().int().min(0).max(400),
+    focus: z.number().int().min(0).max(6),
+  }),
+  sections: z
+    .array(
+      z.strictObject({
+        id,
+        include: z.boolean(),
+        pattern: z.enum(["project", "about", "skills", "career"]),
+        form: z.enum(STRUCTURED_DESIGN_FORMS),
+        /** 섹션의 크기입니다. Spec 사례 노드의 scale로 옮겨 그립니다. */
+        emphasis: z.enum(STRUCTURED_SCALES),
+        // 배경 · 폭과 인용 · 단계 예산은 시각 부품을 더하며 생겼습니다. 그 전에 남긴 생성 기록에는 없습니다.
+        surface: z.enum(STRUCTURED_SURFACES).optional(),
+        width: z.enum(STRUCTURED_WIDTHS).optional(),
+        budget: z.strictObject({
+          title: z.number().int().min(8).max(60),
+          summary: z.number().int().min(0).max(160),
+          body: z.number().int().min(0).max(600),
+          details: z.number().int().min(0).max(6),
+          metrics: z.number().int().min(0).max(4),
+          quote: z.number().int().min(0).max(60).optional(),
+          steps: z.number().int().min(0).max(6).optional(),
+        }),
+        /** 이 섹션에 붙일 제공 이미지의 src입니다. */
+        media: z.array(z.string().max(2_000_000)).max(4),
+      }),
+    )
+    .min(1)
+    .max(16),
+  evidence: z.boolean(),
+  career: z.boolean(),
+});
+export type StructuredDesignPlan = z.infer<typeof StructuredDesignPlanSchema>;
+
 export const StructuredPortfolioSnapshotSchema = z.strictObject({
   version: z.literal(1),
   content: StructuredPortfolioContentSchema,
@@ -261,23 +406,54 @@ export const StructuredPortfolioSnapshotSchema = z.strictObject({
 export type StructuredPortfolioSnapshot = z.infer<
   typeof StructuredPortfolioSnapshotSchema
 >;
+/**
+ * 직접 편집과 요소 지시가 고칠 수 있는 글의 경로입니다. 정규식과 적용 함수가 이 문법 하나를 씁니다.
+ * 프로필 네 칸, 섹션의 글 칸, 설명 · 단계 · 수치 목록의 칸입니다.
+ */
+export const STRUCTURED_TEXT_PATH =
+  /^\/(?:profile\/(name|role|headline|intro)|sections\/([a-zA-Z0-9-]+)\/(?:(title|summary|body|period|quote)|(details|steps|metrics)\/(\d+)\/(label|text|value|before|note)))$/;
+const LIST_FIELDS = {
+  details: ["label", "text"],
+  steps: ["label", "text"],
+  metrics: ["label", "value", "before", "note"],
+} as const;
+/** 비우면 지우는 선택 칸입니다. 계약이 빈 문자열을 받지 않습니다. */
+const OPTIONAL_TEXT = new Set(["period", "quote", "before", "note"]);
+
+type TextSlot = { owner: Record<string, unknown>; key: string } | null;
+function textSlot(content: StructuredPortfolioContent, path: string): TextSlot {
+  const match = STRUCTURED_TEXT_PATH.exec(path);
+  if (!match) return null;
+  const [, profileKey, sectionId, sectionKey, list, index, field] = match;
+  if (profileKey) return { owner: content.profile as Record<string, unknown>, key: profileKey };
+  const section = content.sections.find((item) => item.id === sectionId);
+  if (!section) return null;
+  if (sectionKey) return { owner: section as Record<string, unknown>, key: sectionKey };
+  const name = list as keyof typeof LIST_FIELDS;
+  if (!(LIST_FIELDS[name] as readonly string[]).includes(field!)) return null;
+  const item = (section[name] as Record<string, unknown>[] | undefined)?.[Number(index)];
+  return item ? { owner: item, key: field! } : null;
+}
+
+/** 경로의 지금 글입니다. 없는 칸이면 null, 비어 있는 선택 칸이면 빈 문자열입니다. */
+export function readStructuredText(content: StructuredPortfolioContent, path: string): string | null {
+  const slot = textSlot(content, path);
+  if (!slot) return null;
+  const value = slot.owner[slot.key];
+  return typeof value === "string" ? value : "";
+}
+
+export const StructuredTextPatchSchema = z.strictObject({
+  path: z.string().regex(STRUCTURED_TEXT_PATH),
+  value: z.string().max(20_000),
+});
+export type StructuredTextPatch = z.infer<typeof StructuredTextPatchSchema>;
+
 export const EditStructuredPageSchema = z
   .strictObject({
     expectedRevision: z.number().int().nonnegative(),
     spec: StructuredPortfolioSpecSchema.optional(),
-    patches: z
-      .array(
-        z.strictObject({
-          path: z
-            .string()
-            .regex(
-              /^\/(?:profile\/(?:name|role|headline|intro)|sections\/[a-zA-Z0-9-]+\/(?:title|summary|body|details\/\d+\/text))$/,
-            ),
-          value: z.string().max(20_000),
-        }),
-      )
-      .max(32)
-      .default([]),
+    patches: z.array(StructuredTextPatchSchema).max(64).default([]),
   })
   .refine(
     (value) => !!value.spec || value.patches.length > 0,
@@ -285,9 +461,23 @@ export const EditStructuredPageSchema = z
   );
 export type EditStructuredPage = z.infer<typeof EditStructuredPageSchema>;
 
+/** 고른 요소 하나를 말로 고칩니다. 요소는 경로의 Spec 키로 정합니다. */
+export const InstructStructuredElementSchema = z.strictObject({
+  expectedRevision: z.number().int().nonnegative(),
+  instruction: z.string().trim().min(1).max(2_000),
+});
+export type InstructStructuredElement = z.infer<typeof InstructStructuredElementSchema>;
+
+/** 커리어 기록 하나를 지면의 새 사례로 더합니다. */
+export const AddStructuredSectionSchema = z.strictObject({
+  expectedRevision: z.number().int().nonnegative(),
+  recordId: z.string().uuid(),
+});
+export type AddStructuredSection = z.infer<typeof AddStructuredSectionSchema>;
+
 export function applyStructuredTextPatches(
   input: StructuredPortfolioContent,
-  patches: EditStructuredPage["patches"],
+  patches: readonly StructuredTextPatch[],
 ): StructuredPortfolioContent {
   const copy = structuredClone(input);
   const seen = new Set<string>();
@@ -295,27 +485,10 @@ export function applyStructuredTextPatches(
     if (seen.has(patch.path))
       throw new Error("같은 문장을 두 번 변경할 수 없습니다.");
     seen.add(patch.path);
-    const parts = patch.path.split("/").slice(1);
-    if (parts[0] === "profile") {
-      const key = parts[1];
-      if (!key || !["name", "role", "headline", "intro"].includes(key))
-        throw new Error("허용되지 않은 프로필 경로입니다.");
-      (copy.profile as Record<string, unknown>)[key] = patch.value;
-    } else {
-      const section = copy.sections.find((item) => item.id === parts[1]);
-      if (!section) throw new Error("편집할 섹션이 없습니다.");
-      if (parts[2] === "details") {
-        const item = section.details[Number(parts[3])];
-        if (!item || parts[4] !== "text")
-          throw new Error("편집할 설명이 없습니다.");
-        item.text = patch.value;
-      } else {
-        const key = parts[2];
-        if (!key || !["title", "summary", "body"].includes(key))
-          throw new Error("허용되지 않은 섹션 경로입니다.");
-        (section as Record<string, unknown>)[key] = patch.value;
-      }
-    }
+    const slot = textSlot(copy, patch.path);
+    if (!slot) throw new Error(`편집할 글이 없습니다: ${patch.path}`);
+    if (OPTIONAL_TEXT.has(slot.key) && !patch.value.trim()) delete slot.owner[slot.key];
+    else slot.owner[slot.key] = patch.value;
   }
   return StructuredPortfolioContentSchema.parse(copy);
 }
@@ -342,6 +515,8 @@ export function structuredModelSchema(
   const ref = (value: string) =>
     z.strictObject({ $state: z.literal(`/${value}`) });
   const empty = z.array(z.string()).max(0);
+  // 글 · 목록형은 사례 행을 같은 모양으로 이어 붙이는 유형이라 지면 변화를 두지 않습니다.
+  const stage = archetype === "list" ? {} : stageProps;
   const nodes: Record<string, z.ZodType> = {
     intro: z.strictObject({
       type: z.literal("NameIntro"),
@@ -354,6 +529,7 @@ export function structuredModelSchema(
             : archetype === "list"
               ? z.literal("sentence")
               : z.enum(hasMedia ? STRUCTURED_INTRO_VARIANTS : ["statement", "split"]),
+        backdrop: z.enum(STRUCTURED_BACKDROPS),
         ...(choices?.intro.length
           ? { sourceId: z.enum(choices.intro as [string, ...string[]]) }
           : {}),
@@ -368,7 +544,7 @@ export function structuredModelSchema(
             type: z.literal("ProjectIndex"),
             props: z.strictObject({
               sections: ref("sections"),
-              variant: archetype === "poster" ? z.literal("poster") : z.enum(["rows", "mosaic", "rail"]),
+              variant: archetype === "poster" ? z.literal("poster") : z.enum(["rows", "mosaic", "rail", "timeline"]),
             }),
             children: empty,
           }),
@@ -377,20 +553,48 @@ export function structuredModelSchema(
   for (const section of content.sections)
     nodes[`section-${section.id}`] = z.strictObject({
       type: z.enum(
-        archetypeCaseTypes(archetype).filter((type) => section.media.length || type !== "CaseGallery") as [string, ...string[]],
+        archetypeCaseTypes(archetype).filter(
+          (type) =>
+            (section.media.length || (type !== "CaseGallery" && type !== "CaseShowcase")) &&
+            (type !== "CaseBeforeAfter" || !!section.metrics?.some((metric) => metric.before)) &&
+            (type !== "CaseBars" || comparableMetrics(section.metrics)) &&
+            (type !== "CaseFlow" || (section.steps?.length ?? 0) >= 2),
+        ) as [string, ...string[]],
       ),
       props: z.strictObject({
         section: ref(`sectionById/${section.id}`),
         ...(choices?.section.length
           ? { sourceId: z.enum(choices.section as [string, ...string[]]) }
           : {}),
+        ...stage,
       }),
       children: empty,
     });
+  // 수치가 두 개 이상이면 수치 강조 줄을 둘 수 있습니다. 두지 않아도 됩니다.
+  const optionalNodes: Record<string, z.ZodType> = {};
+  if (archetype !== "list" && content.sections.flatMap((section) => section.metrics ?? []).length >= 2)
+    optionalNodes.metrics = z.strictObject({
+      type: z.literal("MetricStrip"),
+      props: z.strictObject({ sections: ref("sections"), ...stage }),
+      children: empty,
+    });
+  // quote가 있는 섹션은 큰 인용으로 한 번 더 보일 수 있습니다. 섹션 참조의 중복은 도메인 검사가 봅니다.
+  const quotable = content.sections.filter((section) => section.quote);
+  if (archetype !== "list" && quotable.length)
+    for (let index = 1; index <= Math.min(STRUCTURED_MAX_QUOTES, quotable.length); index++)
+      optionalNodes[`quote-${index}`] = z.strictObject({
+        type: z.literal("PullQuote"),
+        props: z.strictObject({
+          section: z.strictObject({ $state: z.enum(quotable.map((section) => `/sectionById/${section.id}`) as [string, ...string[]]) }),
+          ...stage,
+        }),
+        children: empty,
+      });
   if (content.career.length)
     nodes.career = z.strictObject({
       type: z.literal("CareerTimeline"),
-      props: z.strictObject({ career: ref("career") }),
+      // 형태는 고르지 않아도 됩니다. 없으면 목록입니다. 형태를 더하기 전에 남긴 설계 출력도 그대로 받습니다.
+      props: z.strictObject({ career: ref("career"), variant: z.enum(STRUCTURED_CAREER_VARIANTS).optional() }),
       children: empty,
     });
   if (content.evidence.length)
@@ -405,7 +609,7 @@ export function structuredModelSchema(
       props: z.strictObject({ contact: ref("contact") }),
       children: empty,
     });
-  const nodeIds = Object.keys(nodes) as [string, ...string[]];
+  const nodeIds = [...Object.keys(nodes), ...Object.keys(optionalNodes)] as [string, ...string[]];
   // 소개와 연락처는 페이지의 처음과 끝에만 둡니다. 나머지는 컨테이너에 넣을 수 있습니다.
   const groupable = nodeIds.filter(
     (key) => key !== "intro" && key !== "contact",
@@ -449,6 +653,7 @@ export function structuredModelSchema(
     elements: z.strictObject({
       page,
       ...nodes,
+      ...Object.fromEntries(Object.entries(optionalNodes).map(([key, node]) => [key, node.optional()])),
       ...Object.fromEntries(groupIds.map((key) => [key, group.optional()])),
     }),
   });
@@ -551,6 +756,7 @@ export function validateStructuredPortfolio(
     if (section.sourceIds.some((key) => !sourceIds.has(key)))
       throw new Error("입력 근거가 누락되었습니다.");
   const seen = new Set<string>();
+  const quoted = new Set<string>();
   const counts = new Map<string, number>();
   for (const node of nodes) {
     if (!node) throw new Error("연결된 요소가 없습니다.");
@@ -573,11 +779,29 @@ export function validateStructuredPortfolio(
         throw new Error("갤러리 사례에는 제공 이미지가 필요합니다.");
       if (node.type === "CaseProcess" && section.details.length < 2)
         throw new Error("과정 사례에는 두 개 이상의 설명이 필요합니다.");
+      if (node.type === "CaseBeforeAfter" && !section.metrics?.some((metric) => metric.before))
+        throw new Error("전후 비교 사례에는 이전 값이 있는 수치가 필요합니다.");
+      if (node.type === "CaseBars" && !comparableMetrics(section.metrics))
+        throw new Error("막대 차트 사례에는 같은 단위로 시작하는 수치가 두 개 이상 필요합니다.");
+      if (node.type === "CaseFlow" && (section.steps?.length ?? 0) < 2)
+        throw new Error("과정 흐름 사례에는 두 개 이상의 단계가 필요합니다.");
+      if (node.type === "CaseShowcase" && !section.media.length)
+        throw new Error("이미지 전시 사례에는 제공 이미지가 필요합니다.");
       seen.add(key);
+    } else if (node.type === "PullQuote") {
+      const binding = node.props.section.$state;
+      const key = binding.replace(/^\/sectionById\//, ""),
+        section = sections.get(key);
+      if (!section || binding !== `/sectionById/${key}` || quoted.has(key))
+        throw new Error("큰 인용의 섹션 참조가 없거나 중복됩니다.");
+      if (!section.quote)
+        throw new Error("큰 인용에는 그 섹션의 quote가 필요합니다.");
+      quoted.add(key);
     } else {
       const fields: Record<string, string> = {
         NameIntro: "profile",
         ProjectIndex: "sections",
+        MetricStrip: "sections",
         CareerTimeline: "career",
         EvidenceGrid: "evidence",
         Contact: "contact",
@@ -585,7 +809,7 @@ export function validateStructuredPortfolio(
       const field = fields[node.type];
       if (
         !field ||
-        (node.props as Record<string, { $state: string }>)[field]?.$state !==
+        (node.props as unknown as Record<string, { $state?: string } | undefined>)[field]?.$state !==
           `/${field}`
       )
         throw new Error("허용되지 않은 데이터 참조입니다.");
@@ -593,8 +817,13 @@ export function validateStructuredPortfolio(
   }
   if (seen.size !== sections.size)
     throw new Error("입력 섹션이 누락되었습니다.");
+  if (counts.has("MetricStrip") && content.sections.flatMap((section) => section.metrics ?? []).length < 2)
+    throw new Error("수치 강조 줄에는 수치가 두 개 이상 필요합니다.");
+  if ((counts.get("PullQuote") ?? 0) > STRUCTURED_MAX_QUOTES)
+    throw new Error(`큰 인용은 지면에 ${STRUCTURED_MAX_QUOTES}개까지 둡니다.`);
   for (const type of [
     "ProjectIndex",
+    "MetricStrip",
     "CareerTimeline",
     "EvidenceGrid",
     "Contact",
@@ -625,7 +854,7 @@ export function archetypeComponents(
   return [
     "PortfolioPage",
     "NameIntro",
-    ...(archetype === "list" ? [] : ["ProjectIndex"]),
+    ...(archetype === "list" ? [] : ["ProjectIndex", "MetricStrip", "PullQuote"]),
     ...archetypeCaseTypes(archetype),
     ...allowedGroups,
     "CareerTimeline",

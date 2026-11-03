@@ -13,12 +13,11 @@ afterEach(() => cleanup());
  * 화면 01 · 01b · 02 · 02b · 03 · 04의 순서와 이름이 그대로 단계 줄이 된다.
  */
 describe("제작 흐름 단계 줄", () => {
-  it("설계서의 여섯 단계를 순서대로 정의한다", () => {
+  it("다섯 단계를 순서대로 정의한다 — 레시피는 화면 단계가 아니다", () => {
     expect(WIZARD_STEPS.map(({ label }) => label)).toEqual([
       "공고 분석",
       "재료 고르기",
       "AI 대화",
-      "레시피",
       "디자인 선택",
       "다듬기",
     ]);
@@ -26,23 +25,32 @@ describe("제작 흐름 단계 줄", () => {
       "analyze",
       "materials",
       "counter",
-      "outline",
       "design",
       "edit",
     ]);
   });
 
-  it("다듬기에서는 앞의 다섯 단계가 브루 화면으로 돌아가는 링크다", () => {
+  it("다듬기에서는 앞의 네 단계가 브루 화면으로 돌아가는 링크다", () => {
     render(<WizardSteps brewId={BREW} current="edit" situation="생성 완료" />);
     const links = screen.getAllByRole("link").map((link) => link.getAttribute("href"));
-    expect(links).toEqual(
-      ["analyze", "materials", "counter", "outline", "design"].map((segment) => `/brew/${BREW}/${segment}`),
-    );
+    // 디자인 선택은 끝난 생성을 다듬기로 되돌려 보내므로 카탈로그를 여는 `again=1`을 붙인다.
+    expect(links).toEqual([
+      `/brew/${BREW}/analyze`,
+      `/brew/${BREW}/materials`,
+      `/brew/${BREW}/counter`,
+      `/brew/${BREW}/design?again=1`,
+    ]);
   });
 
-  it("디자인 선택에서는 지난 네 단계만 링크이고 다음 단계는 막혀 있다", () => {
+  it("디자인 선택이 지난 단계일 때만 다시 뽑기 표시를 붙인다", () => {
+    render(<WizardSteps brewId={BREW} current="edit" situation="생성 완료" />);
+    const hrefs = screen.getAllByRole("link").map((link) => link.getAttribute("href"));
+    expect(hrefs.filter((href) => href?.includes("again=1"))).toHaveLength(1);
+  });
+
+  it("디자인 선택에서는 지난 세 단계만 링크이고 다음 단계는 막혀 있다", () => {
     render(<WizardSteps brewId={BREW} current="design" situation="38개 디자인" />);
-    expect(screen.getAllByRole("link")).toHaveLength(4);
+    expect(screen.getAllByRole("link")).toHaveLength(3);
     expect(screen.getByText("다듬기").closest("a")).toBeNull();
   });
 });

@@ -1,4 +1,6 @@
 import {
+  MonthlyUsageResponseSchema,
+  PlanListResponseSchema,
   AnalyticsAggregationResponseSchema,
   MediaAssetResponseSchema,
   GeneratedPageSchema,
@@ -7,6 +9,11 @@ import {
   type RegeneratePage,
   type RestorePageRevision,
   type EditStructuredPage,
+  type InstructStructuredElement,
+  type AddStructuredSection,
+  InstructStructuredElementResultSchema,
+  PageEditorDesignSchema,
+  PageEditableRenderSchema,
   type CreateMediaBlock,
   AnalyticsDashboardResponseSchema,
   API_PREFIX,
@@ -46,6 +53,8 @@ import {
   JobInterestResponseSchema,
   BrewStateResponseSchema,
   ConsentListResponseSchema,
+  DummyAccountListResponseSchema,
+  DummyAccountResponseSchema,
   DeploymentListResponseSchema,
   DeploymentSchema,
   PublicPortfolioSchema,
@@ -283,6 +292,14 @@ export const entitlements = {
     ),
 };
 
+/** 09 설정 — 이번 달 AI 사용량과 요금제. */
+export const usage = {
+  monthly: (accessToken: string) =>
+    request(`${API_PREFIX}/me/usage`, MonthlyUsageResponseSchema, { accessToken, cache: "no-store" }),
+  plans: (accessToken: string) =>
+    request(`${API_PREFIX}/plans`, PlanListResponseSchema, { accessToken, cache: "no-store" }),
+};
+
 /** 09 설정 — 알림 종류마다 켜고 끈다. */
 export const notificationSettings = {
   list: (accessToken: string) =>
@@ -317,6 +334,26 @@ export const account = {
       method: "POST",
       body: { cancellationToken },
     }),
+};
+
+/**
+ * 관리 — 더미 계정과 대신 로그인. 세션 주인이 관리자가 아니면 모두 404다.
+ *
+ * 대신 로그인은 토큰을 새로 받지 않는다. 같은 세션이 더미 계정으로 해석되므로 쿠키를 건드리지 않는다.
+ */
+export const admin = {
+  dummies: (accessToken: string) =>
+    request(`${API_PREFIX}/admin/dummy-accounts`, DummyAccountListResponseSchema, { accessToken, cache: "no-store" }),
+  create: (accessToken: string, key: string) =>
+    request(`${API_PREFIX}/admin/dummy-accounts/${encodeURIComponent(key)}`, DummyAccountResponseSchema, { accessToken, method: "POST" }),
+  refill: (accessToken: string, key: string) =>
+    request(`${API_PREFIX}/admin/dummy-accounts/${encodeURIComponent(key)}/refill`, DummyAccountResponseSchema, { accessToken, method: "POST" }),
+  remove: (accessToken: string, key: string) =>
+    request(`${API_PREFIX}/admin/dummy-accounts/${encodeURIComponent(key)}`, DummyAccountResponseSchema, { accessToken, method: "DELETE" }),
+  impersonate: (accessToken: string, key: string) =>
+    requestNoContent(`${API_PREFIX}/admin/dummy-accounts/${encodeURIComponent(key)}/impersonation`, { accessToken, method: "POST" }),
+  endImpersonation: (accessToken: string) =>
+    requestNoContent(`${API_PREFIX}/admin/impersonation`, { accessToken, method: "DELETE" }),
 };
 
 export const publishing = {
@@ -1100,6 +1137,18 @@ export const page = {
   library: (accessToken: string, query: Partial<PageLibrarySearch> = {}) => request(`${API_PREFIX}/page-library?${new URLSearchParams(Object.entries(query).map(([key,value])=>[key,String(value)]))}`, z.object({data:PageLibraryResultSchema}), {accessToken}),
   editComposition: (accessToken: string, portfolioId: string, body: EditStructuredPage) =>
     request(`${API_PREFIX}/portfolios/${portfolioId}/page/composition`, z.object({ data: GeneratedPageSchema }), { method: "PATCH", accessToken, body }),
+  /** 고른 요소 하나를 말로 고칩니다. 새 판과 바뀐 곳 목록이 옵니다. */
+  instructElement: (accessToken: string, portfolioId: string, key: string, body: InstructStructuredElement) =>
+    request(`${API_PREFIX}/portfolios/${portfolioId}/page/elements/${encodeURIComponent(key)}/instruct`, z.object({ data: InstructStructuredElementResultSchema }), { method: "POST", accessToken, body }),
+  /** 커리어 기록 하나를 지면의 새 사례로 더합니다. */
+  addSection: (accessToken: string, portfolioId: string, body: AddStructuredSection) =>
+    request(`${API_PREFIX}/portfolios/${portfolioId}/page/sections`, z.object({ data: GeneratedPageSchema }), { method: "POST", accessToken, body }),
+  /** 편집 화면이 그릴 최신 판. 요소 키 표시가 있는 렌더 결과다. */
+  editable: (accessToken: string, portfolioId: string) =>
+    request(`${API_PREFIX}/portfolios/${portfolioId}/page/editable`, z.object({ data: PageEditableRenderSchema }), { accessToken }),
+  /** 편집 화면이 고를 이 포트폴리오 디자인의 글자 크기 단계 · 색 · 서체입니다. */
+  design: (accessToken: string, portfolioId: string) =>
+    request(`${API_PREFIX}/portfolios/${portfolioId}/page/design`, z.object({ data: PageEditorDesignSchema }), { accessToken }),
   latest: (accessToken: string, portfolioId: string) =>
     request(
       `${API_PREFIX}/portfolios/${portfolioId}/page`,

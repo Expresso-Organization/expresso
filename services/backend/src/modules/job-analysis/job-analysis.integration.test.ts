@@ -7,6 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApi } from "../../api/build-app.js";
 import type { RuntimeConfig } from "../../config/runtime-config.js";
+import { AiError } from "../../platform/ai/client.js";
 import { createReliableQueue } from "../../platform/queue.js";
 import { createQueueWorker } from "../../worker/create-queue-worker.js";
 import { createJobAnalysisProcessor } from "../../worker/processors/job-analysis.js";
@@ -73,6 +74,15 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB versioned job analysis",
     await expect(service.process(submission.jobAnalysisId, invalid)).rejects.toThrow();
     const result = await service.getResult(owner, submission.jobAnalysisId);
     expect(result.analysis).toMatchObject({ status: "failed", resultVersion: 0, failure: { code: "INVALID_SOURCE_SPAN", retryable: false } });
+    expect(result.requirements).toHaveLength(0);
+  });
+
+  it("AI 호출 오류로 멈추면 어댑터가 알린 코드와 재시도 가능 여부를 남긴다", async () => {
+    const submission = await market.submitPosting(owner, randomUUID(), { companyName: "분석 회사", title: "AI 오류 공고", descriptionRaw: source + "AI 오류" });
+    const unavailable: RequirementExtractor = { async extract() { throw new AiError("AI_UNAVAILABLE", "job_analysis", "400 invalid_json_schema", { retryable: false }); } };
+    await expect(service.process(submission.jobAnalysisId, unavailable)).rejects.toThrow(/invalid_json_schema/);
+    const result = await service.getResult(owner, submission.jobAnalysisId);
+    expect(result.analysis).toMatchObject({ status: "failed", resultVersion: 0, failure: { code: "AI_UNAVAILABLE", retryable: false } });
     expect(result.requirements).toHaveLength(0);
   });
 

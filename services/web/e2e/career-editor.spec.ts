@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { expect, test } from "@playwright/test";
 
-import { allBlockDocument, api, categories, createProperty, createRecord, login, openRecordDrawer, replaceDocument } from "./fixtures";
+import { allBlockMarkdown, api, categories, createProperty, createRecord, login, openRecordDrawer, uploadMedia } from "./fixtures";
 
 test.describe.configure({ mode: "serial" });
 
@@ -11,20 +11,23 @@ test("creates, edits, reloads, reconnects and reviews AI changes across side pee
   const categoryList = await categories(page);
   const experience = categoryList.find((item) => item.key === "experience")!;
   const project = categoryList.find((item) => item.key === "project")!;
-  const record = await createRecord(page, experience.id, "E2E 전체 블록 경험");
-  await replaceDocument(page, record.id, allBlockDocument());
+  const record = await createRecord(page, experience.id, "E2E 전체 블록 경험", {}, allBlockMarkdown());
   await page.goto("/career/experience");
   await openRecordDrawer(page, "E2E 전체 블록 경험");
   const editor = page.getByLabel("커리어 기록 본문");
+  const block = (type: string) => editor.locator(`[data-content-type="${type}"]`);
   await expect(editor.getByRole("heading", { name: "제목 1" })).toBeVisible();
-  await expect(editor.locator("ul:not([data-type=taskList])").first()).toContainText("글머리");
-  await expect(editor.locator("ol")).toContainText("번호");
-  await expect(editor.locator("ul[data-type=taskList]")).toContainText("할 일");
-  await expect(editor.locator("blockquote")).toContainText("인용");
+  await expect(editor.getByRole("heading", { name: "제목 3" })).toBeVisible();
+  await expect(block("bulletListItem")).toContainText("글머리");
+  await expect(block("numberedListItem")).toContainText("번호");
+  await expect(block("checkListItem")).toContainText("할 일");
+  await expect(block("checkListItem").getByRole("checkbox")).toBeChecked();
+  await expect(block("quote")).toContainText("인용");
   await expect(editor.locator("pre")).toContainText("const answer = 42");
+  await expect(block("callout")).toContainText("호출");
   await expect(editor.locator("hr")).toHaveCount(1);
-  await expect(editor.locator("table")).toContainText("셀");
-  await expect(editor.getByRole("note")).toHaveCount(4);
+  await expect(editor.locator("table")).toContainText("값");
+  await expect(block("evidence")).toContainText("근거");
 
   const title = page.getByRole("textbox", { name: "제목", exact: true });
   await title.fill("E2E 저장된 경험");
@@ -46,8 +49,9 @@ test("creates, edits, reloads, reconnects and reviews AI changes across side pee
   await expect(page.getByLabel("커리어 기록 본문")).toContainText("오프라인 입력");
 
   await page.getByLabel("커리어 기록 본문").click(); await page.keyboard.press("ControlOrMeta+End"); await page.keyboard.press("Enter"); await page.keyboard.type("/");
-  const slash = page.getByRole("menu", { name: "블록 명령" });
-  await expect(slash.getByRole("menuitem")).toHaveCount(9);
+  const slash = page.locator(".bn-suggestion-menu");
+  await expect(slash).toBeVisible();
+  await expect(slash).toContainText("콜아웃");
   await page.keyboard.press("ArrowDown"); await page.keyboard.press("Escape");
   await expect(slash).toBeHidden();
   await expect(editor).toBeFocused();
@@ -57,9 +61,14 @@ test("creates, edits, reloads, reconnects and reviews AI changes across side pee
   await expect(page.getByLabel("AI 제안 변경 목록")).toBeVisible();
   await page.getByRole("button", { name: /개 변경 적용/ }).click();
   await expect(page.getByRole("button", { name: "변경 되돌리기" })).toBeVisible();
+  // 적용 결과가 열린 본문에 들어와야 합니다(감사 T2).
+  await expect(page.getByLabel("커리어 기록 본문")).toContainText("AI 제안:");
   await page.getByRole("button", { name: "변경 되돌리기" }).click();
   await page.getByRole("button", { name: "되돌리기 확인" }).click();
-  await expect(page.getByRole("button", { name: /개 변경 적용/ })).toBeVisible();
+  await expect(page.getByLabel("커리어 기록 본문")).not.toContainText("AI 제안:");
+  // 되돌린 제안을 다시 적용하면 실제로 다시 바뀝니다.
+  await page.getByRole("button", { name: /개 변경 적용/ }).click();
+  await expect(page.getByLabel("커리어 기록 본문")).toContainText("AI 제안:");
 
   await page.getByRole("button", { name: "넓게 보기" }).click();
   await expect(page).toHaveURL(new RegExp(`/career/records/${record.id}$`));
@@ -100,9 +109,10 @@ test("renders every property family, five saved views and relation hydration", a
   const viewBody = (type: "table" | "list" | "gallery" | "board" | "timeline") => ({ name: `E2E ${type}`, type, filter: null, sorts: [], groupPropertyId: null, groupOrder: [], visiblePropertyIds: visible, propertyOrder: visible, columnWidths: {}, gallery: type === "gallery" ? { coverPropertyId: null, previewPropertyIds: [ids.text] } : null, board: type === "board" ? { hiddenGroupIds: [], cardOrder: {} } : null, timeline: type === "timeline" ? { startPropertyId: ids.date, endPropertyId: null, axisStart: null, axisEnd: null } : null });
   for (const type of ["table", "list", "gallery", "board", "timeline"] as const) await api(page, "POST", `/v1/career/categories/${category.id}/view-configurations`, viewBody(type), { "if-match": `"v${category.version}"` });
   const target = await createRecord(page, category.id, "관계 대상", { field_number: { type: "number", value: 2 } });
+  const mediaId = await uploadMedia(page);
   const record = await createRecord(page, category.id, "모든 속성", {
     field_text: { type: "text", value: "텍스트" }, field_number: { type: "number", value: 3 }, field_select: { type: "select", value: option }, field_multi_select: { type: "multi_select", value: [option] },
-    field_date: { type: "date", value: { start: "2026-09-01", end: null, timezone: null } }, field_checkbox: { type: "checkbox", value: true }, field_url: { type: "url", value: "https://example.com" }, field_email: { type: "email", value: "e2e@example.com" }, field_phone: { type: "phone", value: "+82-10-0000-0000" }, field_file: { type: "file", value: [randomUUID()] }, field_media: { type: "media", value: [randomUUID()] }, field_created_time: { type: "created_time", value: "2026-09-01T00:00:00.000Z" }, field_updated_time: { type: "updated_time", value: "2026-09-01T01:00:00.000Z" },
+    field_date: { type: "date", value: { start: "2026-09-01", end: null, timezone: null } }, field_checkbox: { type: "checkbox", value: true }, field_url: { type: "url", value: "https://example.com" }, field_email: { type: "email", value: "e2e@example.com" }, field_phone: { type: "phone", value: "+82-10-0000-0000" }, field_file: { type: "file", value: [mediaId] }, field_media: { type: "media", value: [mediaId] }, field_created_time: { type: "created_time", value: "2026-09-01T00:00:00.000Z" }, field_updated_time: { type: "updated_time", value: "2026-09-01T01:00:00.000Z" },
   });
   await api(page, "PUT", `/v1/career/records/${record.id}/relations`, { propertyId: ids.relation, targetIds: [target.id] }, { "if-match": `"v${record.version}"` });
   await expect.poll(async () => (await api<{ data: { computedProperties?: Record<string, { value: unknown }> } }>(page, "GET", `/v1/career/records/${record.id}`)).data.computedProperties?.field_formula?.value).toBe(3);

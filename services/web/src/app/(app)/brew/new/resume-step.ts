@@ -11,7 +11,8 @@ import { WIZARD_STEPS } from "@/components/shell/WizardShell";
 const STATUS_SEGMENT: Record<string, (typeof WIZARD_STEPS)[number]["segment"]> = {
   draft: "materials",
   interviewing: "counter",
-  recipe: "outline",
+  // 레시피는 화면 단계가 아니다. 구성을 만드는 중이거나 끝난 제작은 디자인 선택에서 이어 간다.
+  recipe: "design",
   // 추출 대기는 디자인 화면이 그린다(`design/Generating.tsx`).
   generating: "design",
 };

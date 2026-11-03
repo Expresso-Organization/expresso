@@ -13,7 +13,7 @@ export interface AppSession {
   user: AuthenticatedUser;
   categories: readonly CareerCategory[];
   /**
-   * 이번 달 추출. 사이드바가 모든 화면에서 이 숫자를 그린다.
+   * 이번 달 크레딧. 사이드바가 모든 화면에서 이 숫자를 그린다.
    *
    * 여기서 읽는 이유는 하나다 — 화면마다 손으로 적어 두면 틀린다. 실제로
    * 열한 화면이 `0 / 3`을 고정으로 그리고 있었고, 03이 진짜 값을 말하기

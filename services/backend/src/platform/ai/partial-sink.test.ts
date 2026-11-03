@@ -5,8 +5,8 @@ import { partialSink } from "./claude-code.js";
 /**
  * JSONL 한 줄에서 무엇을 골라내는가.
  *
- * 여기 쓰는 줄들은 **실제로 관찰된 모양 그대로**다(2026-08-14, claude-code
- * 2.1.228). 지어낸 모양으로 재면 CLI가 조금만 달라져도 테스트만 통과한다.
+ * 여기 쓰는 줄들은 **실제로 관찰된 모양 그대로**다(생각 줄 2026-08-14 claude-code 2.1.228, 글 블록 줄 2026-10-27
+ * claude-code 2.1.274 `--tools ""`). 지어낸 모양으로 재면 CLI가 조금만 달라져도 테스트만 통과한다.
  *
  * 이 파싱이 조용히 틀어지면 화면은 그냥 아무것도 안 보여 준다 — 실제로 한 번
  * 그랬고, 그때 서버 로그에는 아무 흔적이 없었다.
@@ -32,16 +32,8 @@ const EMPTY_THINKING = JSON.stringify({
     delta: { type: "thinking_delta", thinking: "", estimated_tokens: 50 },
   },
 });
-const OUT_START = line({
-  type: "content_block_start",
-  index: 1,
-  content_block: { type: "tool_use", id: "toolu_x", name: "StructuredOutput", input: {} },
-});
-const out = (text: string) => line({
-  type: "content_block_delta",
-  index: 1,
-  delta: { type: "input_json_delta", partial_json: text },
-});
+const OUT_START = line({ type: "content_block_start", index: 1, content_block: { type: "text", text: "" } });
+const out = (text: string) => line({ type: "content_block_delta", index: 1, delta: { type: "text_delta", text } });
 
 function collect(lines: string[]) {
   const thoughts: number[] = [];
@@ -64,24 +56,38 @@ describe("claude-code 조각 고르기", () => {
     expect(partials.join("")).toBe('{"html":"<p>안녕</p>"}');
   });
 
-  it("우리 것이 아닌 도구의 조각은 안 받는다", () => {
+  it("글 블록이 아닌 블록의 조각은 안 받는다", () => {
     const { partials } = collect([
-      line({
-        type: "content_block_start", index: 0,
-        content_block: { type: "tool_use", id: "t", name: "Write", input: {} },
-      }),
-      line({ type: "content_block_delta", index: 0, delta: { type: "input_json_delta", partial_json: '{"file_path"' } }),
+      line({ type: "content_block_start", index: 0, content_block: { type: "thinking", thinking: "", signature: "" } }),
+      line({ type: "content_block_delta", index: 0, delta: { type: "thinking_delta", thinking: "{생각", estimated_tokens: 50 } }),
     ]);
     expect(partials).toEqual([]);
+  });
+
+  it("JSON 앞에 붙은 글은 흘리지 않는다", () => {
+    const { partials } = collect([OUT_START, out("다음은 결과입니다.\n```json\n"), out('{"a":'), out("1}")]);
+    expect(partials.join("")).toBe('{"a":1}');
   });
 
   it("결과 블록이 닫히면 그 번호의 조각을 더 안 받는다", () => {
     // 번호는 메시지마다 0부터 다시 매겨진다. 닫고 놓지 않으면 남의 조각을 담는다.
     const { partials } = collect([
       OUT_START, out('{"a":1}'), line({ type: "content_block_stop", index: 1 }),
-      line({ type: "content_block_delta", index: 1, delta: { type: "input_json_delta", partial_json: "쓰레기" } }),
+      line({ type: "content_block_delta", index: 1, delta: { type: "text_delta", text: "쓰레기" } }),
     ]);
     expect(partials.join("")).toBe('{"a":1}');
+  });
+
+  it("결과 블록이 다시 열리면 멈추고, 처음부터 읽는 쪽에는 알리고 이어 준다", () => {
+    const lines = [OUT_START, out('{"a":"첫'), line({ type: "content_block_stop", index: 1 }), OUT_START, out('{"a":"둘째"}')];
+    // 이어 붙이기만 하는 쪽은 앞뒤가 다른 JSON을 받지 않도록 그 자리에서 멈춥니다.
+    expect(collect(lines).partials.join("")).toBe('{"a":"첫');
+    const partials: string[] = [];
+    let restarts = 0;
+    const sink = partialSink({ onPartial: (text) => partials.push(text), onPartialRestart: () => { restarts += 1; partials.length = 0; } });
+    for (const item of lines) sink(item);
+    expect(restarts).toBe(1);
+    expect(partials.join("")).toBe('{"a":"둘째"}');
   });
 
   it("JSON이 아닌 줄과 모르는 이벤트는 지나간다", () => {

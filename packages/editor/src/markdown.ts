@@ -3,9 +3,6 @@ import { parseCareerDocument, type CareerBlock, type CareerDocument } from "./do
 function textBlock(type: string, value: string, attrs: Record<string, unknown> = {}): CareerBlock {
   return { id: globalThis.crypto.randomUUID(), type, attrs, text: value ? [{ text: value }] : [] };
 }
-function escapeHtml(value: string): string {
-  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-}
 function blockText(block: CareerBlock): string {
   return block.text?.map((span) => span.text).join("") ?? block.content?.map(blockText).join("\n") ?? "";
 }
@@ -32,7 +29,7 @@ export function markdownToCareerDocument(markdown: string): CareerDocument {
         try {
           const parsed = JSON.parse(body.join("\n")) as CareerBlock;
           content.push({ ...parsed, id: parsed.id ?? globalThis.crypto.randomUUID() });
-        } catch { content.push(textBlock("paragraph", escapeHtml(raw))); }
+        } catch { content.push(textBlock("paragraph", raw)); }
       } else {
         content.push(textBlock("code", body.join("\n"), { language: fence[1] || null, sourceMarkdown: raw }));
       }
@@ -55,13 +52,14 @@ export function markdownToCareerDocument(markdown: string): CareerDocument {
       content.push({ id: globalThis.crypto.randomUUID(), type: "table", attrs: { sourceMarkdown: raw }, content: rows.map((row) => ({ id: globalThis.crypto.randomUUID(), type: "tableRow", attrs: {}, content: row.slice(1, -1).split("|").map((cell) => textBlock("tableCell", cell.trim())) })) });
       continue;
     }
-    const listPattern = /^\s*(?:[-*+] |\d+[.)] |[-*+] \[[ xX]\] )/;
+    // 할 일 표시를 먼저 맞춰야 `- `만 잘리고 `[x]`가 본문에 남지 않습니다.
+    const listPattern = /^\s*(?:[-*+] \[[ xX]\] |[-*+] |\d+[.)] )/;
     if (listPattern.test(line)) {
       const start = index;
       while (index < lines.length && listPattern.test(lines[index] ?? "")) index += 1;
       const raw = lines.slice(start, index).join("\n");
       const type = /\[[ xX]\]/.test(line) ? "taskList" : /^\s*\d/.test(line) ? "orderedList" : "bulletList";
-      content.push({ id: globalThis.crypto.randomUUID(), type, attrs: { sourceMarkdown: raw }, content: lines.slice(start, index).map((item) => textBlock("listItem", item.replace(listPattern, ""))) });
+      content.push({ id: globalThis.crypto.randomUUID(), type, attrs: { sourceMarkdown: raw }, content: lines.slice(start, index).map((item) => textBlock("listItem", item.replace(listPattern, ""), type === "taskList" ? { checked: /^\s*[-*+] \[[xX]\]/.test(item) } : {})) });
       continue;
     }
     if (/^>\s?/.test(line)) {
@@ -73,7 +71,8 @@ export function markdownToCareerDocument(markdown: string): CareerDocument {
     }
     const paragraph: string[] = [];
     while (index < lines.length && (lines[index] ?? "").trim() !== "") paragraph.push(lines[index++] ?? "");
-    content.push(textBlock("paragraph", escapeHtml(paragraph.join("\n"))));
+    // 글은 편집기와 화면에서 텍스트 노드로만 그려집니다. HTML 이스케이프를 하면 `R&D`가 `R&amp;D` 글자로 저장됩니다.
+    content.push(textBlock("paragraph", paragraph.join("\n")));
   }
   if (content.length === 0) content.push(textBlock("paragraph", ""));
   return parseCareerDocument({ schemaVersion: 1, type: "doc", content });

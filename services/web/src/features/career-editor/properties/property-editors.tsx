@@ -17,9 +17,19 @@ export function commitOnEnter(event: KeyboardEvent<HTMLInputElement | HTMLTextAr
   if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); commit(); }
 }
 
-export function ReadOnlyValue({ value }: { value: CareerPropertyValueV2 | null }): ReactNode {
-  if (!value) return <span className={styles.emptyValue}>비어 있음</span>;
+/** ISO 시각을 사용자의 로컬 시간 `YYYY-MM-DD HH:mm`으로 보인다. */
+export function formatTimestamp(value: string): string {
+  const timestamp = new Date(value);
+  const local = new Date(timestamp.getTime() - timestamp.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 16).replace("T", " ");
+}
+
+/** `computed`는 Worker가 채우는 수식 · 롤업 값이다. 계산 중 표시(`properties.module.css`)가 이 칸만 고른다. */
+export function ReadOnlyValue({ value, computed = false }: { value: CareerPropertyValueV2 | null; computed?: boolean }): ReactNode {
+  const marker = computed ? { "data-computed": "" } : {};
+  if (!value) return <span className={styles.emptyValue} {...marker}>비어 있음</span>;
+  if (value.type === "created_time" || value.type === "updated_time") return <output className={styles.readOnlyValue} {...marker}><time dateTime={value.value}>{formatTimestamp(value.value)}</time></output>;
   const raw = value.value;
   const text = Array.isArray(raw) ? raw.map((item) => typeof item === "object" && item && "title" in item ? String(item.title) : String(item)).join(", ") : String(raw ?? "—");
-  return <output className={styles.readOnlyValue}>{text}</output>;
+  return <output className={styles.readOnlyValue} {...marker}>{text}</output>;
 }

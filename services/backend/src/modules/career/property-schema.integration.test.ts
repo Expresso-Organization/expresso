@@ -94,6 +94,20 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect(rows.every((row) => row.propertyValueTombstones?.[propertyId] === undefined)).toBe(true);
   });
 
+  it("creates record-time properties as system values that users can rename, reorder and delete", async () => {
+    const own = await service.createCategory(userId, { key: `time_${randomUUID().replaceAll("-", "")}`, name: "시각", icon: "folder", defaultView: "table" });
+    const apply = async (version: number, change: Parameters<CareerService["previewChange"]>[2]) => service.applyChange(userId, own.id, version, randomUUID(), { change, previewToken: (await service.previewChange(userId, own.id, change)).previewToken, confirmLossy: false });
+    const created = await apply(own.version, { kind: "create", property: { key: "created", name: "생성 일시", type: "created_time", required: false, system: true, config: {} } });
+    const time = created.propertySchemaV2.find((item) => item.key === "created")!;
+    expect(time).toMatchObject({ type: "created_time", system: true });
+    const renamed = await apply(created.version, { kind: "rename", propertyId: time.id, name: "작성 시각" });
+    const reordered = await apply(renamed.version, { kind: "reorder", propertyId: time.id, order: 0 });
+    await expect(apply(reordered.version, { kind: "type-change", propertyId: time.id, type: "date" })).rejects.toMatchObject({ statusCode: 403 });
+    await expect(apply(reordered.version, { kind: "create", property: { key: "fixed", name: "고정", type: "text", required: false, system: true, config: {} } })).rejects.toMatchObject({ statusCode: 403 });
+    const deleted = await apply(reordered.version, { kind: "delete", propertyId: time.id });
+    expect(deleted.propertySchemaV2.find((item) => item.id === time.id)).toMatchObject({ name: "작성 시각", order: 0, deletedAt: expect.any(String) });
+  });
+
   it("lets each owner change their default categories and add options without touching another user", async () => {
     const mine = (await service.listCategories(userId)).find((category) => category.key === "project")!;
     const theirs = (await service.listCategories(otherUserId)).find((category) => category.key === "project")!;

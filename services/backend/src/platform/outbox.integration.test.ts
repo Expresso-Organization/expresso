@@ -24,12 +24,12 @@ describe.skipIf(!process.env.TEST_MONGODB_URL && !process.env.TEST_MONGODB_ADMIN
 
   it("rolls back both domain changes and its outbox on callback failure", async () => {
     await expect(inTransaction(fixture.resource, async tx => {
-      await mongoCollections(tx.db).plans.updateOne({ code: "free" }, { $set: { generationQuota: 999 } }, { session: tx.session });
+      await mongoCollections(tx.db).plans.updateOne({ code: "free" }, { $set: { monthlyCredits: 999 } }, { session: tx.session });
       await addMongoOutboxEvent(tx, input);
       throw new Error("abort-domain-change");
     })).rejects.toThrow("abort-domain-change");
     expect(await mongoCollections(fixture.resource.db).outboxEvents.countDocuments()).toBe(0);
-    expect((await mongoCollections(fixture.resource.db).plans.findOne({ code: "free" }))?.generationQuota).toBe(3);
+    expect((await mongoCollections(fixture.resource.db).plans.findOne({ code: "free" }))?.monthlyCredits).toBe(100);
   });
 
   it("deduplicates concurrent input and rejects another payload or owner for the same key", async () => {

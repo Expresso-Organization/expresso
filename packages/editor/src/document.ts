@@ -10,7 +10,7 @@ export const JsonValueSchema: z.ZodType<unknown> = z.lazy(() =>
 export const CAREER_BLOCK_TYPES = [
   "paragraph", "heading1", "heading2", "heading3", "bulletList", "orderedList",
   "taskList", "listItem", "blockquote", "code", "callout", "horizontalRule",
-  "image", "file", "table", "tableRow", "tableCell", "evidence",
+  "image", "file", "table", "tableRow", "tableHeader", "tableCell", "evidence",
 ] as const;
 
 export const CareerBlockTypeSchema = z.union([
@@ -18,7 +18,7 @@ export const CareerBlockTypeSchema = z.union([
   z.string().regex(/^[a-z][a-zA-Z0-9_.-]{0,63}$/),
 ]);
 export const CareerMarkSchema = z.strictObject({
-  type: z.enum(["bold", "italic", "strike", "code", "link"]),
+  type: z.enum(["bold", "italic", "strike", "code", "link", "underline"]),
   attrs: z.record(z.string(), JsonValueSchema).optional(),
 });
 export const CareerTextSpanSchema = z.strictObject({

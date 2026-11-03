@@ -65,7 +65,7 @@ const MODES: {
     label: "자유 생성",
     icon: "sparkle",
     lede: "공고 없이, 하고 싶은 말을 적어 포트폴리오를 만듭니다.",
-    path: ["설명 적기", "분석 없이 레시피", "바로 초안"],
+    path: ["설명 적기", "분석 없이 구성", "바로 초안"],
   },
 ];
 
@@ -191,7 +191,7 @@ function ModeCards() {
 
 /**
  * 만들다 만 포트폴리오가 있으면 새로 시작하는 것보다 먼저 보여야 한다 —
- * 추출 횟수는 달마다 세고, 같은 공고로 두 번 만드는 것이 가장 흔한 낭비다.
+ * 크레딧은 달마다 세고, 같은 공고로 두 번 만드는 것이 가장 흔한 낭비다.
  */
 async function ResumeBanner({ accessToken }: { accessToken: string }) {
   const { data: home } = await homeEngagement(accessToken);

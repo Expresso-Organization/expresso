@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
+import type { z } from "zod";
 
-import { verifyFacts } from "./facts.js";
+import type { AiCallOptions, AiCallSpec, AiClient, AiResult } from "../../../platform/ai/client.js";
+import { AiFactsReader, factViolations, verifyFacts } from "./facts.js";
 
 /**
  * 검증기 시험.
@@ -131,5 +133,49 @@ describe("모델이 아무것도 못 찾았을 때", () => {
       experienceNote: null,
       workType: null,
     });
+  });
+});
+
+/** 받은 응답을 계약으로만 거른다. `check`는 어댑터가 부르므로 넘어온 것을 담아 두고 테스트가 직접 부른다. */
+class StubAiClient implements AiClient {
+  calls: { spec: AiCallSpec; options: AiCallOptions<unknown> | undefined }[] = [];
+  constructor(private readonly reply: unknown) {}
+
+  async complete<T>(spec: AiCallSpec, schema: z.ZodType<T>, options?: AiCallOptions<T>): Promise<AiResult<T>> {
+    this.calls.push({ spec, options: options as AiCallOptions<unknown> | undefined });
+    return {
+      data: schema.parse(this.reply),
+      usage: { model: "fixture", inputTokens: 1, outputTokens: 1, cacheReadTokens: 0, cacheCreationTokens: 0, costUsd: null, durationMs: 1 },
+    };
+  }
+}
+
+describe("원문과 맞지 않는 항목을 고쳐 받을 때", () => {
+  const reply = {
+    salary: { value: "$174,000–$299,000", quote: "ranges from $174,00/year to $299,000/year" },
+    experience: { value: "6년 이상", quote: "Backend 개발 경력 최소 6년이상" },
+    workType: { value: "하이브리드", quote: "-   Hybrid" },
+  };
+
+  it("걸린 항목의 경로와 이유를 check가 돌려주고, 모델은 한 번만 부른다", async () => {
+    const ai = new StubAiClient(reply);
+    const facts = await new AiFactsReader(ai).read(BODY);
+
+    expect(ai.calls).toHaveLength(1);
+    expect(ai.calls[0]!.options?.check?.(reply)).toEqual([
+      { path: "/salary", problem: expect.stringContaining("value의 숫자 174000가 quote 안에 없습니다") },
+      { path: "/experience", problem: expect.stringContaining("quote가 원문에 그대로 없습니다") },
+    ]);
+    // 고친 뒤에도 남은 항목은 저장 직전에 버린다.
+    expect(facts).toEqual({ salaryNote: null, experienceNote: null, workType: "하이브리드" });
+  });
+
+  it("check는 verifyFacts가 받아들이는 항목을 걸지 않는다", () => {
+    const quote = "Region A: $200,000—$386,400 USD\nRegion C: $170,000—$343,000 USD";
+    expect(factViolations(BODY, {
+      salary: { value: "$170,000–$386,400 (지역별)", quote },
+      experience: { value: "7년 이상", quote: "10+ years of software development experience" },
+      workType: null,
+    })).toEqual([{ path: "/experience", problem: expect.stringContaining("value의 숫자 7가") }]);
   });
 });

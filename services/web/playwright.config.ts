@@ -1,7 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const webPort = 31_00;
-const apiPort = 41_00;
+// 다른 개발 서버가 기본 포트를 쓰고 있으면 CAREER_E2E_WEB_PORT · CAREER_E2E_API_PORT로 옮깁니다.
+const webPort = Number(process.env.CAREER_E2E_WEB_PORT ?? 31_00);
+const apiPort = Number(process.env.CAREER_E2E_API_PORT ?? 41_00);
+process.env.CAREER_E2E_API_PORT = String(apiPort);
 const baseURL = `http://127.0.0.1:${webPort}`;
 const apiURL = `http://127.0.0.1:${apiPort}`;
 const devEmail = `career-editor-e2e-${process.pid}@example.com`;

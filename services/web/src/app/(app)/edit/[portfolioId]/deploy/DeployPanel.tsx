@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 
 import { Icon } from "@/components/ui/Icon";
+import { PUBLIC_SITE_HOST, publicSiteHost } from "@/lib/public-site";
 
 import { deployAction, type DeployResult } from "./deploy-actions";
 import styles from "./page.module.css";
@@ -47,7 +48,7 @@ export function DeployPanel({
   const live = portfolio.deployment;
   // 조사를 붙이지 않는다 — v1은 "이", v2는 "가"라 버전마다 틀린 말이 나온다.
   const said = result.published
-    ? `배포했습니다 — v${result.published.version} · ${result.published.slug}.xpresso.me`
+    ? `배포했습니다 — v${result.published.version} · ${publicSiteHost(result.published.slug)}`
     : result.rolledBackTo
       ? `되돌렸습니다 — 지금 v${result.rolledBackTo} 사본이 공개 중입니다.`
       : result.unpublished
@@ -83,12 +84,13 @@ export function DeployPanel({
                 defaultValue={live?.subdomain ?? ""}
                 placeholder="주소를 정하세요"
                 aria-label="주소"
-                pattern="[a-z0-9][a-z0-9-]*[a-z0-9]"
+                // 브라우저는 pattern을 v 플래그로 읽습니다. 문자 집합 안의 하이픈은 이스케이프해야 유효합니다.
+                pattern="[a-z0-9][a-z0-9\-]*[a-z0-9]"
                 minLength={3}
                 maxLength={63}
                 required
               />
-              <span className={styles.slugSuffix}>.xpresso.me</span>
+              <span className={styles.slugSuffix}>.{PUBLIC_SITE_HOST}</span>
               <span className={styles.slugState}>
                 <Icon
                   name={live ? "check-circle" : "circle-dashed"}
@@ -180,7 +182,7 @@ export function DeployPanel({
                 <span className={styles.versionName}>v{deployment.version}</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className={styles.versionSummary}>
-                    {deployment.slug}.xpresso.me
+                    {publicSiteHost(deployment.slug)}
                     <span className={styles.versionCount}>
                       {" "}
                       · 섹션 {deployment.sectionCount} · 블록 {deployment.blockCount}

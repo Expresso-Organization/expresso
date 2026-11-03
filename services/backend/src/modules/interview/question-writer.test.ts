@@ -1,30 +1,16 @@
-import { InterviewQuestionDraftSchema } from "@expresso/contracts";
+import { interviewQuestionProblems } from "@expresso/contracts";
 import { describe, expect, it } from "vitest";
-import type { z } from "zod";
 
-import {
-  AiError,
-  type AiCallSpec,
-  type AiClient,
-  type AiResult,
-} from "../../platform/ai/client.js";
+import { AiError, type AiFix } from "../../platform/ai/client.js";
+import { ScriptedAiClient } from "../../platform/ai/scripted-client.js";
 import {
   AiQuestionWriter,
   QuestionDraftError,
   countMentions,
+  questionDraftViolations,
   type QuestionBasisOption,
   type QuestionContext,
 } from "./question-writer.js";
-
-const usage = {
-  model: "claude-sonnet-5",
-  inputTokens: 1_800,
-  outputTokens: 900,
-  cacheReadTokens: 0,
-  cacheCreationTokens: 0,
-  costUsd: 0.03,
-  durationMs: 12_000,
-};
 
 const ids = {
   requirement: "11111111-1111-4111-8111-111111111111",
@@ -62,7 +48,7 @@ const options: QuestionBasisOption[] = [
   },
 ];
 
-const context: QuestionContext = {
+const context: QuestionContext = { userId: null,
   options,
   company: { name: "뱅크샐러드", industry: "핀테크", toneSummary: "담백한 존댓말" },
   jobTitle: "데이터 파이프라인 엔지니어",
@@ -77,25 +63,17 @@ const good = {
   ],
 };
 
-class StubAiClient implements AiClient {
-  calls: AiCallSpec[] = [];
-  constructor(private readonly replies: unknown[]) {}
-
-  async complete<T>(spec: AiCallSpec, schema: z.ZodType<T>): Promise<AiResult<T>> {
-    this.calls.push(spec);
-    const reply = this.replies[this.calls.length - 1] ?? this.replies.at(-1);
+/** 첫 출력은 `reply`, 고치기 요청에는 `fix`가 답한다. 어댑터와 같은 검사 · 고치기 순서를 탄다. */
+function scripted(reply: unknown, fix?: (paths: string[]) => AiFix[]) {
+  return new ScriptedAiClient(() => {
     if (reply instanceof Error) throw reply;
-    const parsed = schema.safeParse(reply);
-    if (!parsed.success) {
-      throw new AiError("AI_INVALID_OUTPUT", spec.contract, parsed.error.message, { retryable: true });
-    }
-    return { data: parsed.data, usage };
-  }
+    return reply;
+  }, fix && ((_, paths) => fix(paths)));
 }
 
 describe("질문 생성 계약", () => {
   it("근거를 번호로 준다 — UUID도 세지 않은 숫자도 없다", async () => {
-    const ai = new StubAiClient([good]);
+    const ai = scripted(good);
     const drafted = await new AiQuestionWriter(ai).draft(context);
 
     const prompt = ai.calls[0]?.prompt ?? "";
@@ -112,25 +90,43 @@ describe("질문 생성 계약", () => {
     expect(drafted[0]?.rationale).toContain("3번 언급");
   });
 
-  it("예/아니오로 답할 질문은 계약이 거절한다", () => {
+  it("예/아니오로 답할 질문은 검사에 걸린다", () => {
     // 한국어에서 예/아니오는 어미가 아니라 의문사의 유무로 갈린다.
-    expect(InterviewQuestionDraftSchema.safeParse({
-      basis: 1, text: "Airflow를 써 보셨나요?", rationale: "공고 요건입니다.",
-    }).success).toBe(false);
-    expect(InterviewQuestionDraftSchema.safeParse({
-      basis: 1, text: "Airflow로 무엇을 만드셨나요?", rationale: "공고 요건입니다.",
-    }).success).toBe(true);
+    expect(interviewQuestionProblems("Airflow를 써 보셨나요?")).toHaveLength(1);
+    expect(interviewQuestionProblems("Airflow로 무엇을 만드셨나요?")).toEqual([]);
   });
 
-  it("한 번에 두 가지를 물으면 거절한다", () => {
-    expect(InterviewQuestionDraftSchema.safeParse({
-      basis: 1,
-      text: "무엇을 만드셨나요? 그리고 결과는 어떠했나요?",
-      rationale: "공고 요건입니다.",
-    }).success).toBe(false);
+  it("한 번에 두 가지를 물으면 검사에 걸린다", () => {
+    expect(interviewQuestionProblems("무엇을 만드셨나요? 그리고 결과는 어떠했나요?"))
+      .toEqual([expect.stringContaining("한 번에 한 가지만")]);
   });
 
-  it("없는 번호와 겹치는 번호는 그 질문만 버린다", async () => {
+  it("질문 규칙을 어긴 질문은 그 문장만 고쳐 받는다", async () => {
+    const yesNo = { questions: [good.questions[0]!, { ...good.questions[1]!, text: "온보딩을 해 보셨나요?" }, good.questions[2]!] };
+    expect(questionDraftViolations(yesNo, options.length)).toEqual([
+      { path: "/questions/1/text", problem: expect.stringContaining("예/아니오") },
+    ]);
+
+    const ai = scripted(yesNo, () => [{ path: "/questions/1/text", value: good.questions[1]!.text }]);
+    const drafted = await new AiQuestionWriter(ai).draft(context);
+
+    expect(ai.calls).toHaveLength(1);
+    expect(ai.fixRequests.map(({ paths }) => paths)).toEqual([["/questions/1/text"]]);
+    expect(drafted[1]?.text).toBe(good.questions[1]!.text);
+  });
+
+  it("고쳐도 남은 질문 규칙 위반은 그대로 쓴다", async () => {
+    const yesNo = { questions: [good.questions[0]!, { ...good.questions[1]!, text: "온보딩을 해 보셨나요?" }, good.questions[2]!] };
+    const ai = scripted(yesNo);
+    const drafted = await new AiQuestionWriter(ai).draft(context);
+
+    expect(ai.calls).toHaveLength(1);
+    // 걸린 칸이 줄지 않으면 한 번 고친 뒤 멈춘다(진전 기준, intent `ai-output-no-cli-rewrite`).
+    expect(ai.fixRequests).toHaveLength(1);
+    expect(drafted.map(({ text }) => text)).toContain("온보딩을 해 보셨나요?");
+  });
+
+  it("없는 번호와 겹치는 번호로 질문이 모자라면 목록 전체를 고쳐 받는다", async () => {
     const messy = {
       questions: [
         good.questions[0]!,
@@ -138,35 +134,61 @@ describe("질문 생성 계약", () => {
         { ...good.questions[2]!, basis: 1 },
       ],
     };
-    // 남은 것이 하나뿐이라 다시 쓰게 한다.
-    const ai = new StubAiClient([messy, good]);
+    // 남는 질문이 하나뿐이라 질문을 더 써야 한다. 칸별 이유는 목록 이유에 붙는다.
+    const violations = questionDraftViolations(messy, options.length);
+    expect(violations.map(({ path }) => path)).toEqual(["/questions/1/basis", "/questions/2/basis", "/questions"]);
+    expect(violations.at(-1)?.problem).toContain("질문이 2개 더 필요합니다");
+
+    const ai = scripted(messy, () => [{ path: "/questions", value: good.questions }]);
     const drafted = await new AiQuestionWriter(ai).draft(context);
 
-    expect(ai.calls).toHaveLength(2);
-    expect(ai.calls[1]?.prompt).toContain("근거에 붙은 질문이 1개뿐입니다");
+    expect(ai.calls).toHaveLength(1);
+    expect(ai.fixRequests[0]?.paths).toEqual(["/questions"]);
     expect(drafted).toHaveLength(3);
+  });
+
+  it("고쳐도 근거 붙은 질문이 3개가 안 되면 세션을 만들 수 없다", async () => {
+    const messy = { questions: [good.questions[0]!, { ...good.questions[1]!, basis: 9 }, { ...good.questions[2]!, basis: 1 }] };
+    const ai = scripted(messy);
+    await expect(new AiQuestionWriter(ai).draft(context)).rejects.toThrow(/근거에 붙은 질문이 1개뿐입니다/);
+    expect(ai.calls).toHaveLength(1);
+  });
+
+  it("질문이 3개보다 적으면 계약이 고쳐 받고, 끝내 못 맞추면 질문 초안 실패다", async () => {
+    const short = { questions: good.questions.slice(0, 2) };
+    const ai = scripted(short);
+    await expect(new AiQuestionWriter(ai).draft(context)).rejects.toThrow(QuestionDraftError);
+    expect(ai.calls).toHaveLength(1);
+    expect(ai.fixRequests[0]?.paths).toEqual(["/questions"]);
+  });
+
+  it("프롬프트는 계약과 같은 3개 이상을 요구한다", async () => {
+    const ai = scripted(good);
+    await new AiQuestionWriter(ai).draft(context);
+    expect(ai.calls[0]?.prompt).toContain("3개보다 적게 내지 않는다");
+    expect(ai.calls[0]?.prompt).not.toContain("적게 골라도 된다");
   });
 
   it("레이트 리밋은 다시 물어보지 않는다", async () => {
     const limited = new AiError("AI_RATE_LIMITED", "question_draft", "usage limit", { retryable: false });
-    const ai = new StubAiClient([limited]);
+    const ai = scripted(limited);
     await expect(new AiQuestionWriter(ai).draft(context)).rejects.toThrow(AiError);
     expect(ai.calls).toHaveLength(1);
   });
 
   it("물을 자리가 없으면 부르지 않는다", async () => {
-    const ai = new StubAiClient([good]);
+    const ai = scripted(good);
     await expect(new AiQuestionWriter(ai).draft({ ...context, options: [] }))
       .rejects.toThrow(QuestionDraftError);
     expect(ai.calls).toHaveLength(0);
   });
 
   it("다시 묻기는 이미 나온 질문을 피하게 한다", async () => {
-    const ai = new StubAiClient([{
+    const ai = scripted({
       text: "그 배치가 멈췄을 때 어떻게 되돌리셨나요?",
       rationale: "운영 경험을 확인합니다.",
-    }]);
-    const rewritten = await new AiQuestionWriter(ai).rewrite({
+    });
+    const rewritten = await new AiQuestionWriter(ai).rewrite({ userId: null,
       option: options[0]!,
       previousTexts: ["Airflow로 어떤 배치를 돌려 보셨나요?"],
       company: context.company,
@@ -175,6 +197,23 @@ describe("질문 생성 계약", () => {
 
     expect(ai.calls[0]?.system).toContain("다른 각도에서");
     expect(ai.calls[0]?.prompt).toContain("Airflow로 어떤 배치를 돌려 보셨나요?");
+    expect(rewritten.text).toContain("어떻게");
+  });
+
+  it("다시 묻기도 질문 규칙은 그 문장만 고쳐 받는다", async () => {
+    const ai = scripted(
+      { text: "Airflow를 써 보셨나요?", rationale: "운영 경험을 확인합니다." },
+      () => [{ path: "/text", value: "Airflow 배치가 실패했을 때 어떻게 다시 돌리셨나요?" }],
+    );
+    const rewritten = await new AiQuestionWriter(ai).rewrite({ userId: null,
+      option: options[0]!,
+      previousTexts: ["Airflow로 어떤 배치를 돌려 보셨나요?"],
+      company: context.company,
+      jobTitle: context.jobTitle,
+    });
+
+    expect(ai.calls).toHaveLength(1);
+    expect(ai.fixRequests.map(({ paths }) => paths)).toEqual([["/text"]]);
     expect(rewritten.text).toContain("어떻게");
   });
 

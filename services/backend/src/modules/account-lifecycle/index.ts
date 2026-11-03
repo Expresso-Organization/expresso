@@ -3,3 +3,4 @@ export { AccountLifecycleService } from "./service.js";
 export { MongoAccountLifecycleService } from "./service.js";
 export type AccountLifecycleApi = Pick<LegacyAccountLifecycleService, keyof LegacyAccountLifecycleService>;
 export { AccountLifecycleError } from "./public.js";
+export { purgeUserNow, PURGED_COLLECTIONS } from "./mongo-purge.js";

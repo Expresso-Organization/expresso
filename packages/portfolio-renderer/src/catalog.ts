@@ -3,9 +3,14 @@ import { schema } from "@json-render/react/schema";
 import { z } from "zod";
 import {
   PortfolioArchetypeSchema,
+  STRUCTURED_CAREER_VARIANTS,
   STRUCTURED_GROUP_VARIANTS,
+  STRUCTURED_BACKDROPS,
   STRUCTURED_INDEX_VARIANTS,
   STRUCTURED_INTRO_ALL_VARIANTS,
+  STRUCTURED_SCALES,
+  STRUCTURED_SURFACES,
+  STRUCTURED_WIDTHS,
   StructuredDesignSchema,
   StructuredPortfolioContentSchema as content,
   StructuredSectionSchema,
@@ -15,9 +20,16 @@ import {
  * 구조화 지면의 json-render 카탈로그입니다(계약). 수집 원본 렌더러와 토큰 키트가 같은
  * 카탈로그에 각자의 레지스트리(구현)를 붙입니다.
  */
+/** 요소 하나의 지면 변화(크기 · 배경 · 폭)입니다. 없으면 standard · canvas · content로 그립니다. */
+const stageProps = {
+  scale: z.enum(STRUCTURED_SCALES).optional(),
+  surface: z.enum(STRUCTURED_SURFACES).optional(),
+  width: z.enum(STRUCTURED_WIDTHS).optional(),
+};
 const projectProps = z.object({
   section: StructuredSectionSchema,
   sourceId: z.string().optional(),
+  ...stageProps,
 });
 export const structuredCatalog = defineCatalog(schema, {
   components: {
@@ -40,9 +52,10 @@ export const structuredCatalog = defineCatalog(schema, {
         sections: content.shape.sections.optional(),
         sourceId: z.string().optional(),
         variant: z.enum(STRUCTURED_INTRO_ALL_VARIANTS).optional(),
+        backdrop: z.enum(STRUCTURED_BACKDROPS).optional(),
       }),
       description:
-        "이름을 가장 크게, 그 아래 짧은 자기 정의를 표시합니다. statement=큰 이름과 한 문장, split=이름과 소개를 좌우로 나눔, media=제공된 대표 이미지와 함께, poster=행동색 면 위에 화면 폭에 가까운 이름과 한 문장, sentence=작은 이름 아래 소개를 큰 문장으로.",
+        "이름을 가장 크게, 그 아래 짧은 자기 정의를 표시합니다. statement=큰 이름과 한 문장, split=이름과 소개를 좌우로 나눔, media=제공된 대표 이미지와 함께, poster=행동색 면 위에 화면 폭에 가까운 이름과 한 문장, sentence=작은 이름 아래 소개를 큰 문장으로. backdrop=첫 화면 뒤에 까는 배경.",
     },
     ProjectIndex: {
       props: z.object({
@@ -50,7 +63,31 @@ export const structuredCatalog = defineCatalog(schema, {
         variant: z.enum(STRUCTURED_INDEX_VARIANTS),
       }),
       description:
-        "rows=짧은 목록, mosaic=이미지 중심 비대칭 타일, rail=측면 목차, poster=번호와 큰 글자 제목 행.",
+        "rows=짧은 목록, mosaic=이미지 중심 비대칭 타일, rail=측면 목차, poster=번호와 큰 글자 제목 행, timeline=작업 기간을 한 시간축의 막대로 그린 기간 차트(섹션 기간 period가 두 개 이상일 때. 아니면 rows로 그립니다).",
+    },
+    CaseBeforeAfter: {
+      props: projectProps,
+      description: "이전 값과 이후 값을 막대 두 줄로 비교하고 옆에 짧은 설명을 둡니다. 개선 폭이 핵심인 작업에 사용합니다. 이전 값이 있는 수치가 필요합니다.",
+    },
+    CaseBars: {
+      props: projectProps,
+      description: "한 작업의 같은 단위 수치 2–4개(예: 5년 · 5년 · 2년, 92% · 80%)를 가로 막대 차트로 비교하고 옆에 짧은 설명을 둡니다. 값이 모두 %이면 0–100% 눈금입니다. 이전 값 없이 여러 항목을 견주는 작업 · 역량에 사용합니다.",
+    },
+    MetricStrip: {
+      props: z.object({ sections: content.shape.sections, ...stageProps }),
+      description: "작업마다 대표 수치 하나를 큰 숫자로 한 줄에 4개까지 보입니다. 소개 바로 뒤에 두면 첫 화면에서 성과가 먼저 읽힙니다. surface=inverse · width=bleed로 두면 지면을 가로지르는 띠가 됩니다.",
+    },
+    PullQuote: {
+      props: z.object({ section: StructuredSectionSchema, ...stageProps }),
+      description: "한 작업의 판단 · 원칙 한 문장(quote)을 큰 글자로 보이고 그 작업으로 가는 링크를 붙입니다. 사례 사이에 두어 글이 이어지는 흐름을 끊습니다. quote가 있는 섹션만 고릅니다.",
+    },
+    CaseFlow: {
+      props: projectProps,
+      description: "단계(steps) 두 개 이상을 번호와 연결선이 있는 가로 흐름으로 그립니다. 좁은 화면에서는 세로 흐름입니다. 작업 순서 · 파이프라인 · 전환 절차가 핵심인 작업에 사용합니다.",
+    },
+    CaseShowcase: {
+      props: projectProps,
+      description: "제공 이미지 한 장을 지면 폭으로 크게 두고 제목 · 요약 · 본문을 그 아래에 둡니다. 화면 결과물이 핵심인 작업에 사용합니다. 이미지가 필요합니다.",
     },
     CaseEssay: {
       props: projectProps,
@@ -97,8 +134,8 @@ export const structuredCatalog = defineCatalog(schema, {
         "1–3개 요소를 한 묶음으로 구분합니다. panel=면 배경, accent=강조색 상단 선. 지면의 흐름을 나눌 때 사용합니다.",
     },
     CareerTimeline: {
-      props: z.object({ career: content.shape.career }),
-      description: "제공된 경력을 시간순으로 표시합니다.",
+      props: z.object({ career: content.shape.career, variant: z.enum(STRUCTURED_CAREER_VARIANTS).optional() }),
+      description: "제공된 경력을 시간순으로 표시합니다. list=기간 · 조직 · 설명 목록, chart=조직마다 기간을 한 시간축의 막대로 그린 경력 기간 차트(기간이 두 개 이상 적혀 있을 때. 아니면 list로 그립니다).",
     },
     EvidenceGrid: {
       props: z.object({ evidence: content.shape.evidence }),

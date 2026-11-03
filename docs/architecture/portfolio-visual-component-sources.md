@@ -1,6 +1,6 @@
 # 수치 강조 · 단계 흐름 · 차트 컴포넌트 수집 후보
 
-2026-10-20 조사. [구조적 결함 문서](./portfolio-structured-pipeline-gaps.md)의 해결 순서 5단계(컴포넌트 보강)에서 쓸 원본 후보입니다. 라이선스는 LICENSE 원문으로, 레지스트리 주소는 실제 요청 응답(200 등)으로 확인했습니다. 패키지를 설치해 렌더링해 보는 실험은 하지 않았습니다.
+2026-10-20 조사. [구조적 결함 문서](./portfolio-structured-pipeline-gaps.md)의 해결 순서 5단계(컴포넌트 보강)에서 쓸 원본 후보입니다. 라이선스는 LICENSE 원문으로, 레지스트리 주소는 실제 요청 응답(200 등)으로 확인했습니다. 패키지를 설치해 렌더링해 보는 실험은 2026-10-26에 ECharts 하나만 했습니다(아래 「ECharts SSR 실측」).
 
 ## 판정 기준
 
@@ -52,7 +52,7 @@
 | 선택지 | 서버 렌더링, JS 없음 | 라이선스 | 판정 |
 |---|---|---|---|
 | Charts.css | 됨. 순수 CSS 표(5.9kb gz) | MIT | 막대 구조와 접근성(표로 읽힘) 참고 |
-| Apache ECharts 6.1 | 됨. `ssr:true` + `renderToSVGString()` | Apache-2.0 | 축이 있는 차트가 필요해지면 후보. `var()` 색이 칠해지는지 미검증 |
+| Apache ECharts 6.1 | 됨. `ssr:true` + `renderToSVGString()` | Apache-2.0 | 축이 있는 차트가 필요해지면 후보. `var()` 색은 그대로 나가 칠해짐(실측). 이번 부품에는 쓰지 않음 |
 | `@nivo/static` | 됨 | MIT | 무거움. `var()` 색 보정 미검증 |
 | visx | 부분. `@visx/text` 폭 계산과 `ParentSize`가 DOM 의존 | MIT | 축·글자 부품을 빼면 가능 |
 | Observable Plot | 부분. jsdom 등 가상 DOM 필요 | ISC | 축·라벨 규칙 참고 |
@@ -61,11 +61,26 @@
 | Recharts 3.x · shadcn/ui charts · Tremor 차트 | 안 됨. 3.0–3.1에서 빈 출력([#5997](https://github.com/recharts/recharts/issues/5997)), shadcn chart가 Recharts 3 + `ResponsiveContainer` | MIT | 제외. shadcn의 `<style>`로 `--color-KEY` 주입하는 방식만 참고 |
 | unovis · Frappe Charts | 프리릴리스 / DOM 대상 필요 | — | 제외 |
 
+### ECharts SSR 실측
+
+2026-10-26, `echarts@6.1.0`을 저장소 밖 폴더에 설치해 그렸습니다. 자료는 체험 브루의 전후 수치 두 개(LCP 3.8초 → 1.9초, 클라이언트 JS 420KB → 180KB)이고, 같은 자료를 토큰 키트의 전후 막대(`CaseBeforeAfter`, HTML/CSS)와 비교했습니다. 색은 옵션에 `var(--action)` · `var(--border)` · `var(--text)` · `var(--xp-muted)` · `var(--xp-accent-text)` 문자열을 넣었고, 디자인은 Clarity 변수입니다.
+
+| 항목 | ECharts 고정 폭(`width:390`) | ECharts viewBox(`width:720`, `useViewBox`) → 390px | 키트 HTML/CSS 막대 |
+|---|---|---|---|
+| `var()` 색 | SVG `fill="var(--action)"` 그대로 출력. 변수를 가진 문서에 인라인으로 넣으면 디자인 색으로 칠해짐 | 같음 | 디자인 변수 |
+| 390px 글자 | 지정한 13px 그대로 | 7–8px로 줄어 읽기 어려움 | 값 16px · 이름표 13.76px |
+| 폭 대응 | 서버가 정한 폭 하나. 1440 · 390을 함께 맞추려면 판을 둘 그리거나 viewBox로 줄여야 함 | 폭은 따라가지만 글자도 함께 줄어듦 | 컨테이너 폭을 따라가고 글자 크기는 그대로 |
+| 서체 | `font-family:sans-serif`가 글자마다 인라인. 디자인 서체를 쓰려면 `textStyle.fontFamily`에 변수를 따로 넣어야 함 | 같음 | 디자인 서체 |
+| 용량(전후 두 쌍) | 2,776B · gzip 748B | 2,798B · gzip 762B | 985B · gzip 276B |
+| 의존성 | 서버에 `echarts`(dist min 1.1MB). 브라우저에는 싣지 않음 | 같음 | 없음 |
+
+**판정: 이번 부품(전후 막대 · 수치 강조 줄 · 과정 흐름 · 큰 인용 · 이미지 전시)은 HTML/CSS로 그립니다.** 막대 길이와 값 글자, 단계 연결선은 퍼센트 너비와 CSS 선으로 충분하고, 390px에서 글자가 줄지 않으며, 용량이 약 3분의 1입니다. ECharts는 `var()` 색 조건을 통과했으므로 축 · 눈금 · 여러 계열이 있는 시계열 차트가 필요해질 때 다시 후보로 둡니다. 그때는 폭마다 판을 따로 그리는 방식과 서체 변수 지정이 함께 필요합니다.
+
 시각 참고로 모을 것: shadcn `chart-bar-*` 블록, bklit `stat-card-line-01`, livedocs `sparkline` · `comparison-chart` · `usage-meter`(livedocs 라이선스 미확인), Tremor `BarList` · `ProgressBar` · `CategoryBar` · `SparkChart` 화면.
 
 ## 확인하지 못한 것
 
-- Recharts 3.10.1의 실제 SSR 출력, ECharts · Nivo 출력 SVG의 `var()` 색 적용
+- Recharts 3.10.1의 실제 SSR 출력, Nivo 출력 SVG의 `var()` 색 적용
 - livedocs · ssych 차트 레지스트리의 라이선스
 - Flowbite 블록별 무료 여부, Preline KPI 카드의 무료/Pro 구분
 - HyperUI 단계 컴포넌트의 변형 개수

@@ -26,7 +26,7 @@ export function SidebarSkeleton() {
           <div className={styles.quotaSlot}>
             <div className={`${styles.copy} ${styles.quotaCard}`}>
               <div className={styles.quotaHead}>
-                <span className={styles.quotaLabel}>이번 달 추출</span>
+                <span className={styles.quotaLabel}>이번 달 크레딧</span>
                 <Skel w={44} h={10} />
               </div>
               <div className={styles.quotaTrack} />

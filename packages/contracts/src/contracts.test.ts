@@ -52,6 +52,7 @@ import {
   pageKitVariables,
   PAGE_KIT_CSS,
   pageKitPrompt,
+  pageDocument,
   PortfolioPlanSchema,
   RecipeDraftSchema,
 } from "./index.js";
@@ -150,6 +151,8 @@ describe("identity contracts", () => {
           displayName: "User",
           planCode: "free",
           emailVerifiedAt: null,
+          role: "user",
+          impersonation: null,
         },
       }).data.planCode,
     ).toBe("free");
@@ -904,6 +907,11 @@ describe("생성 요청 스타일 출처", () => {
       SubmitGenerationSchema.safeParse({ recipeId, templateId: id, designSystemRevisionId: id }).success,
     ).toBe(false);
   });
+  it("구성(recipeId) 또는 브루(brewId) 중 정확히 하나를 받는다", () => {
+    expect(SubmitGenerationSchema.safeParse({ brewId: recipeId, designSystemRevisionId: id }).success).toBe(true);
+    expect(SubmitGenerationSchema.safeParse({ designSystemRevisionId: id }).success).toBe(false);
+    expect(SubmitGenerationSchema.safeParse({ recipeId, brewId: recipeId, designSystemRevisionId: id }).success).toBe(false);
+  });
   it("디자인 시스템 판 요청에는 스타일 덮어쓰기를 받지 않는다", () => {
     expect(
       SubmitGenerationSchema.safeParse({
@@ -912,5 +920,14 @@ describe("생성 요청 스타일 출처", () => {
         styleOverrides: { font: "serif" },
       }).success,
     ).toBe(false);
+  });
+});
+
+describe("지면 문서 껍데기", () => {
+  it("등장을 끄면 문서 루트에 data-reveal=\"none\"을 달고, 기본은 지금 문서 그대로다", () => {
+    const base = { html: "<main></main>", css: "", title: "가상 지면" };
+    expect(pageDocument(base)).toContain('<html lang="ko">\n');
+    expect(pageDocument({ ...base, reveal: true })).toBe(pageDocument(base));
+    expect(pageDocument({ ...base, reveal: false })).toContain('<html lang="ko" data-reveal="none">\n');
   });
 });

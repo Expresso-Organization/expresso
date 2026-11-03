@@ -136,7 +136,7 @@ export async function startBrewAction(
 /** §13 — 에러는 다음 행동으로 끝난다. */
 function startFailure(error: ApiError): string {
   if (error.status === 402 || error.status === 403) {
-    return "이번 달 추출 횟수를 다 썼습니다. 다음 달에 다시 시작하거나 요금제를 올려 주세요.";
+    return "이번 달 크레딧을 다 썼습니다. 다음 달에 다시 시작하거나 요금제를 올려 주세요.";
   }
   if (error.status === 409) {
     return "분석이 아직 끝나지 않았습니다. 잠시 뒤 자동으로 다시 확인합니다.";

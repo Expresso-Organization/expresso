@@ -36,6 +36,16 @@
   background: var(--ex-status-success);
 }
 
+/* 공개를 멈춘 포트폴리오. 주소는 닫혔고 지난 기록만 남았다. */
+.headStateClosed {
+  color: var(--ex-fg-muted);
+  background: var(--ex-bg-muted);
+}
+
+.headStateClosed .headStateDot {
+  background: var(--ex-fg-subtle);
+}
+
 .period {
   display: flex;
   background: var(--ex-bg-sunken);
@@ -366,6 +376,22 @@
   border-radius: 2px;
 }
 
+/* 추이 선과 같은 색 — 방문은 진하게, 완독은 옅게. */
+.legendVisits {
+  background: var(--ex-fg);
+}
+
+.legendCompletes {
+  background: var(--ex-fg-subtle);
+}
+
+.trendMeta {
+  font-family: var(--ex-font-mono);
+  font-size: var(--ex-text-3xs);
+  color: var(--ex-fg-subtle);
+  white-space: nowrap;
+}
+
 .chartWrap {
   position: relative;
 }
@@ -540,6 +566,12 @@
   text-overflow: ellipsis;
 }
 
+/* 목록으로 그릴 때는 막대가 없으니 제목이 남는 폭을 다 쓴다. */
+.dwellLabelWide {
+  flex: 1;
+  width: auto;
+}
+
 .dwellTrack {
   flex: 1;
   height: 5px;
@@ -549,6 +581,8 @@
 }
 
 .dwellFill {
+  /* span이라 블록으로 바꾸지 않으면 폭과 높이가 먹지 않는다. */
+  display: block;
   height: 100%;
   background: var(--ex-bg-inverse);
   border-radius: 999px;

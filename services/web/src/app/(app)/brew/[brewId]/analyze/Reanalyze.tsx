@@ -35,7 +35,7 @@ export function Reanalyze({
       {result.queued ? (
         <span className={styles.sourceNotice}>
           v{result.queued.targetVersion} 분석을 맡겼습니다 — 요건을 다시 뽑고 내 기록과 다시
-          맞춰 봅니다. 제작 {result.queued.brewCount}건 · 레시피 {result.queued.recipeCount}건이
+          맞춰 봅니다. 제작 {result.queued.brewCount}건 · 구성 {result.queued.recipeCount}건이
           이 분석에 기대고 있습니다.
         </span>
       ) : null}

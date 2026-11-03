@@ -58,9 +58,11 @@ pnpm test
   CI와 `scripts/operations/deploy.sh`도 같은 순서입니다. 순서가 갈리면 한쪽에서만
   깨집니다. 예전 dist가 남아 있으면 타입 검사는 `src`를 봐서 통과하고 테스트만
   깨집니다.
-- **루트 `pnpm test`는 패키지를 하나씩 돌립니다**(`--workspace-concurrency=1`).
-  각 스크립트가 테스트 전에 dist를 다시 쓰므로, 동시에 돌리면 한 패키지가
-  vitest로 dist를 읽는 동안 다른 패키지가 같은 파일을 다시 씁니다.
+- **루트 `pnpm test`와 `pnpm typecheck`는 패키지를 하나씩 돌립니다**
+  (`--workspace-concurrency=1`). 각 스크립트가 테스트 전에 dist를 다시 쓰므로,
+  동시에 돌리면 한 패키지가 vitest로 dist를 읽는 동안 다른 패키지가 같은 파일을
+  다시 씁니다. 타입 검사도 같습니다. 웹과 백엔드는 `@expresso/portfolio-renderer`를
+  dist로 읽으므로 두 패키지의 `typecheck`가 모두 그 패키지를 먼저 짓습니다.
 - 백엔드를 고쳤으면 실제 인프라까지 씁니다 — `pnpm test:infra`. 루트 스크립트가
   `TEST_MONGODB_URL`과 `TEST_REDIS_URL`을 `infra:up`이 띄운 포트로 넘깁니다.
 - CI가 도는 순서는 `.github/workflows/backend-ci.yml` · `web-ci.yml`에 있습니다 —
@@ -82,6 +84,15 @@ pnpm test
   기준입니다.
 - **UI 컴포넌트는 도메인을 모릅니다.** 도메인 데이터를 UI 속성으로 바꾸는 일은
   화면이 합니다.
+- **AI 출력을 거절해서 처음부터 다시 쓰게 하지 않습니다.** Claude Code CLI에 출력 검증을
+  맡기지 않습니다(`--json-schema` 금지). `--json-schema`는 문법 · 모양이 틀리면 모델이 출력
+  전체를 다시 쓰게 합니다. 이 재시도를 끄는 옵션은 없습니다. 모델은 JSON을 글로 쓰고, 서버가
+  `platform/ai/fixes.ts`에서 읽습니다. 깨진 문법 · 끊긴 출력 · 계약(Zod)과 `check`에 걸린 칸은
+  같은 대화(`--resume`)에 그 조각만 보내 고쳐 받고, 진전이 있는 동안 계속합니다. 출력 형식에는
+  모양(키 · 값의 종류 · 설명)만 두고 글자 수 · 개수 기준은 설명 문장으로 둡니다. AI 호출에는
+  전체 시간 상한을 두지 않습니다 — CLI는 출력이 `AI_TIMEOUT_MS` 동안 멈췄을 때만 끊습니다.
+  호출하는 쪽에 "오류를 붙여 전체 다시 요청" 루프를 두지 않습니다. 작업 큐도 `AI_INVALID_OUTPUT`을
+  다시 돌리지 않습니다. 어기면 `platform/ai/fixes.test.ts`가 실패합니다.
 - **세션 토큰은 `httpOnly` 쿠키(`ex_session`) 하나에만 둡니다.** 클라이언트
   자바스크립트가 읽는 자리에 토큰을 두지 않습니다.
 

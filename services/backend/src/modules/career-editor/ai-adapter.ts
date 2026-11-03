@@ -3,9 +3,12 @@ import { CareerEditCommandSchema } from "@expresso/editor/commands";
 import { AiEditProposalSchema, type AiEditProposal } from "@expresso/contracts";
 import { z } from "zod";
 
-import type { AiClient } from "../../platform/ai/client.js";
+import type { AiClient, AiViolation } from "../../platform/ai/client.js";
+import { jsonPointer } from "../../platform/ai/fixes.js";
 
 export interface AiProposalGenerationInput {
+  /** 사용량을 남길 사용자. */
+  readonly userId: string;
   readonly recordId: string;
   readonly documentVersion: number;
   readonly selectionBlockIds: readonly string[];
@@ -20,11 +23,54 @@ export interface AiProposalGenerationResult {
 }
 export interface AiProposalAdapter { generate(input: AiProposalGenerationInput): Promise<AiProposalGenerationResult> }
 
-const AiProposalGenerationResultSchema = z.strictObject({
+/**
+ * 블록 · 글 조각 · 표시의 선택 칸에 모델이 적어 보낸 `null`만 걷어낸다.
+ *
+ * 공통 파서(`parseToolOutput`)는 온 그대로 실패하면 `null`을 **전부** 걷어낸다. 그러면 진짜 nullable인
+ * `afterBlockId: null`(맨 앞에 넣기)과 블록 `attrs` 안의 JSON `null`까지 사라져, `content: null` 하나 때문에
+ * 엉뚱한 칸(`afterBlockId`)이 걸리고 고치기도 같은 자리에서 멈춘다. 선택 칸만 여기서 먼저 걷어 온 그대로 통과시킨다.
+ */
+function dropOptionalNulls(output: unknown): unknown {
+  if (!isRecord(output) || !Array.isArray(output["commands"])) return output;
+  return { ...output, commands: output["commands"].map((command) => {
+    if (!isRecord(command)) return command;
+    if (Array.isArray(command["blocks"])) return { ...command, blocks: command["blocks"].map(cleanBlock) };
+    if (isRecord(command["block"])) return { ...command, block: cleanBlock(command["block"]) };
+    return command;
+  }) };
+}
+
+function cleanBlock(block: unknown): unknown {
+  if (!isRecord(block)) return block;
+  const { content, text, ...rest } = block;
+  return {
+    ...rest,
+    ...(content === null || content === undefined ? {} : { content: Array.isArray(content) ? content.map(cleanBlock) : content }),
+    ...(text === null || text === undefined ? {} : { text: Array.isArray(text) ? text.map(cleanSpan) : text }),
+  };
+}
+
+function cleanSpan(span: unknown): unknown {
+  if (!isRecord(span)) return span;
+  const { marks, ...rest } = span;
+  if (marks === null || marks === undefined) return rest;
+  return { ...rest, marks: Array.isArray(marks) ? marks.map((mark) => isRecord(mark) && mark["attrs"] === null ? withoutKey(mark, "attrs") : mark) : marks };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function withoutKey(value: Record<string, unknown>, key: string): Record<string, unknown> {
+  const { [key]: _dropped, ...rest } = value;
+  return rest;
+}
+
+export const AiProposalGenerationResultSchema = z.preprocess(dropOptionalNulls, z.strictObject({
   summary: z.string().trim().min(1).max(2_000),
   commands: z.array(CareerEditCommandSchema).max(100),
   propertyChanges: AiEditProposalSchema.shape.propertyChanges,
-});
+}));
 
 /** 키가 없는 기본 runtime은 예측하지 않고, 검토 가능한 빈 제안만 만든다. */
 export class DeterministicAiProposalAdapter implements AiProposalAdapter {
@@ -47,6 +93,19 @@ export class SelectedBlockTextAiProposalAdapter implements AiProposalAdapter {
   }
 }
 
+/**
+ * 선택 밖 블록을 고친 명령을 찾습니다. 제안 전체를 실패시키지 않고, 걸린 명령만 같은 대화에서 고쳐 받습니다(AGENTS.md AI 출력 규칙).
+ */
+export function proposalViolations(data: AiProposalGenerationResult, selectionBlockIds: readonly string[]): AiViolation[] {
+  const allowed = new Set(selectionBlockIds);
+  return data.commands.flatMap((command, index) => {
+    const value = command as { blockId?: string; blockIds?: string[]; afterBlockId?: string | null };
+    const ids = [value.blockId, ...(value.blockIds ?? []), value.afterBlockId].filter((id): id is string => typeof id === "string");
+    const outside = ids.filter((id) => !allowed.has(id));
+    return outside.length ? [{ path: jsonPointer(["commands", index]), problem: `선택하지 않은 블록 ID입니다: ${outside.join(", ")}. 선택한 블록 ID(${[...allowed].join(", ")})만 씁니다` }] : [];
+  });
+}
+
 /** 기존 구조화 AI 포트에 선택 블록과 현재 문서 버전만 전달하는 운영 어댑터입니다. */
 export class AiClientProposalAdapter implements AiProposalAdapter {
   constructor(private readonly client: AiClient) {}
@@ -64,7 +123,7 @@ export class AiClientProposalAdapter implements AiProposalAdapter {
       promptVersion: 1,
       system: "선택된 커리어 기록 블록만 고치는 JSON 변경 제안을 작성합니다. 선택 밖의 블록 ID를 만들거나 원문에 없는 사실과 수치를 추가하지 마십시오.",
       prompt,
-    }, AiProposalGenerationResultSchema);
+    }, AiProposalGenerationResultSchema, { userId: input.userId, check: (data) => proposalViolations(data, input.selectionBlockIds) });
     if (input.signal.aborted) throw new DOMException("AI proposal cancelled", "AbortError");
     return result.data;
   }

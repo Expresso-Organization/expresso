@@ -263,8 +263,10 @@ for (const slug of rerenderFrom ? [] : slugs) {
     );
   fs.mkdirSync(out, { recursive: true });
   try {
-    const normalize = process.env.PORTFOLIO_NORMALIZE === "1";
-    const result = await new StructuredPageGenerator(ai).generate({
+    // PORTFOLIO_DESIGN_FIRST=1이면 제품의 새 생성 경로(설계 → 채우기)로 만듭니다. 원자료와 이미지를 그대로 넘깁니다.
+    const designFirst = process.env.PORTFOLIO_DESIGN_FIRST === "1";
+    const normalize = designFirst || process.env.PORTFOLIO_NORMALIZE === "1";
+    const result = await new StructuredPageGenerator(ai, null, { designFirst }).generate({
       // 제품 경로(PageService)와 같은 티어를 씁니다. 지정하지 않으면 지면 생성 기본 티어(opus)로 호출됩니다.
       ...(claude
         ? { modelTier: (process.env.PORTFOLIO_MODEL_TIER || "sonnet") as "sonnet" | "opus" | "haiku" }
@@ -294,7 +296,9 @@ for (const slug of rerenderFrom ? [] : slugs) {
             sourceType: "record",
           }))
         : [],
-      media: [],
+      media: designFirst
+        ? content.sections.flatMap((section) => section.media.map((item) => ({ src: item.src, srcSet: "", alt: item.alt, width: 0, height: 0 })))
+        : [],
       jobTitle: null,
       company: null,
       // 제품 경로처럼 고른 디자인의 전체 토큰을 넘깁니다. 렌더러는 토큰 키트로, 프롬프트는 그 배치로 씁니다.
@@ -311,7 +315,7 @@ for (const slug of rerenderFrom ? [] : slugs) {
         {
           fictional: true,
           specOrigin: "model",
-          contentOrigin: normalize ? "model-normalized" : "prepared-fictional",
+          contentOrigin: designFirst ? "design-first" : normalize ? "model-normalized" : "prepared-fictional",
           model,
           htmlSha256: sha(document),
           ...(designRevision ? { design: { code: designCode, revisionId: designRevision.revisionId } } : {}),

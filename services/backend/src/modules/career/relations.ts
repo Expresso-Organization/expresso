@@ -17,7 +17,7 @@ import { requireActiveUser } from "../identity/index.js";
 import { CareerError } from "./errors.js";
 import { requireCareerCategory } from "./mongo-categories.js";
 import { assertActiveRecordsForWrite } from "./mongo-record-guard.js";
-import { mapMongoRecord } from "./mongo-records.js";
+import { attachRelationValues, mapMongoRecord } from "./mongo-records.js";
 
 function relationDefinition(category: CareerCategoryDoc, propertyId: string): CareerRelationDefinition {
   const property = category.propertySchemaV2.find((definition) => definition.id === propertyId && definition.deletedAt === null);
@@ -42,7 +42,7 @@ export class MongoRelationService implements RelationService {
     const targetIds = [...new Set(input.targetIds)].sort();
     if (targetIds.includes(recordId)) throw new CareerError(400, "record cannot relate to itself");
 
-    return inTransaction(this.context, async (tx) => {
+    const result = await inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId);
       const db = mongoCollections(tx.db);
       const source = await db.careerRecords.findOne({ _id: recordId, userId, deletedAt: null }, { session: tx.session });
@@ -59,7 +59,7 @@ export class MongoRelationService implements RelationService {
       const existing = await db.careerRecordRelations.find({ userId, sourceRecordId: recordId, sourcePropertyId: input.propertyId }, { session: tx.session }).limit(1_001).toArray();
       if (existing.length > 1_000) throw new CareerError(409, "relation target limit exceeded");
       const existingIds = existing.map((edge) => edge.targetRecordId).sort();
-      if (existingIds.length === targetIds.length && existingIds.every((id, index) => id === targetIds[index])) return mapMongoRecord(source);
+      if (existingIds.length === targetIds.length && existingIds.every((id, index) => id === targetIds[index])) return { doc: source, category: sourceCategory };
 
       // snapshot isolation에서 대상의 휴지통 이동과 경쟁하지 않도록 모든 참여 기록을 갱신한다.
       await assertActiveRecordsForWrite(tx, userId, [recordId, ...targetIds]);
@@ -135,8 +135,11 @@ export class MongoRelationService implements RelationService {
           payload: { userId, recordId: target._id, changedPropertyIds: [definition.inversePropertyId], sourceRecordVersion: target.version },
         });
       }
-      return mapMongoRecord(updated);
+      return { doc: updated, category: sourceCategory };
     });
+    // 응답에는 방금 저장한 관계를 붙여 보냅니다. 트랜잭션이 끝난 뒤 읽어야 새 관계가 보입니다.
+    const [hydrated] = await attachRelationValues(this.context.db, userId, [result.doc], new Map([[result.doc.categoryId, result.category]]));
+    return mapMongoRecord(hydrated ?? result.doc);
   }
 
   async removeForRecord(userId: string, recordId: string): Promise<void> {
