@@ -1,4 +1,5 @@
 export * from "./common.js";
+export * from "./company-logo.js";
 export * from "./career.js";
 export * from "./career-editor.js";
 export {
@@ -32,8 +33,16 @@ export {
   CareerViewFilterV2Schema,
   CareerSortV2Schema,
   CareerViewConfigurationSchema,
+  CreateCareerViewConfigurationSchema,
+  UpdateCareerViewConfigurationSchema,
+  DuplicateCareerViewSchema,
+  ReorderCareerViewsSchema,
+  CareerViewQueryInputSchema,
+  CareerViewResponseSchema,
+  CareerViewListResponseSchema,
+  CareerViewPageResponseSchema,
 } from "./career-views.js";
-export type { CareerViewConfiguration } from "./career-views.js";
+export type { CareerViewConfiguration, CareerViewFilterV2, CreateCareerViewConfiguration, UpdateCareerViewConfiguration, CareerViewPage } from "./career-views.js";
 export * from "./career-ai.js";
 export * from "./entitlements.js";
 export * from "./identity.js";

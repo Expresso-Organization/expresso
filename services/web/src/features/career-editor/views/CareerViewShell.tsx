@@ -45,9 +45,10 @@ const BLURB: Record<string, string> = {
   project: "무엇을 만들었고 무엇이 달라졌는지. 성과 수치가 비어 있으면 AI가 먼저 물어봅니다.",
   education_history: "학교와 회사를 시간순으로. 각 항목 안에서 무엇을 했는지는 프로젝트·경험과 연결됩니다.",
   certification_award: "발급 기관과 취득일, 증빙까지 한 곳에 둡니다.",
-  academic_writing: "논문 · 기술 글 · 발표를 한 곳에. 외부 링크의 조회와 인용은 자동으로 따라옵니다.",
+  // 정의서의 「외부 링크 조회 · 인용 자동」과 「도구 자동 집계」는 구현되지 않아 소개문에서 뺐습니다(2026-11-02 감사).
+  academic_writing: "논문 · 기술 글 · 발표를 한 곳에 둡니다.",
   activity_leadership: "조직에서 맡은 역할과 규모를 남깁니다.",
-  skill_tool: "직접 고르지 않아도 됩니다. 기록에 등장한 도구를 세어 자동으로 채웠고, 숙련도는 근거 개수로 계산합니다.",
+  skill_tool: "다루는 도구와 언어를 처음 · 최근 사용한 때와 함께 남깁니다.",
 };
 
 type Notice = { text: string; action?: { label: string; run(): void } };
@@ -375,12 +376,18 @@ export function CareerViewShell({ category: initialCategory, initialViews, initi
     const item = listItem(payload.data);
     replaceRecords((current) => [item, ...current]);
     if (options.open !== false) setActiveId(item.id);
+    // 사이드바 기록 수는 레이아웃이 서버에서 읽습니다. 만들거나 지우면 레이아웃을 다시 받습니다.
+    router.refresh();
     return item;
   }
 
   async function duplicateRecord(recordId: string): Promise<CareerRecordListItem | null> {
-    const source = recordsRef.current.find((record) => record.id === recordId);
-    if (!source) return null;
+    const listed = recordsRef.current.find((record) => record.id === recordId);
+    if (!listed) return null;
+    // 목록의 본문은 페이지를 연 시점의 값입니다. 패널에서 고친 본문까지 복제하도록 서버에서 다시 읽습니다.
+    const fresh = await fetch(`/api/career/records/${recordId}`, { cache: "no-store" }).then((response) => response.ok ? response.json() as Promise<{ data: CareerRecord }> : null).catch(() => null);
+    const source = fresh?.data ?? listed;
+    // 관계 값은 관계 원장이 원본이라 복제 요청에 실어도 저장되지 않습니다.
     return create({ title: source.title ? `${source.title} 복제` : "", bodyMd: source.bodyMd, properties: source.properties }, { open: false });
   }
 
@@ -388,6 +395,7 @@ export function CareerViewShell({ category: initialCategory, initialViews, initi
     const response = await fetch(`/api/career/records/${recordId}/restore`, { method: "POST" });
     if (!response.ok) { setNotice({ text: "기록을 되돌리지 못했습니다." }); return; }
     addRestored((await response.json() as { data: CareerRecord }).data);
+    router.refresh();
   }
 
   function addRestored(record: CareerRecord) {
@@ -403,6 +411,7 @@ export function CareerViewShell({ category: initialCategory, initialViews, initi
     const response = await fetch(`/api/career/records/${recordId}`, { method: "DELETE" });
     if (!response.ok) { replaceRecords(() => previous); setNotice({ text: "기록을 삭제하지 못했습니다." }); return; }
     setNotice({ text: "휴지통으로 옮겼습니다.", action: { label: "되돌리기", run: () => void restoreRecord(recordId) } });
+    router.refresh();
   }
 
   async function bulkStatus(status: CareerRecordStatus) {
@@ -476,7 +485,7 @@ export function CareerViewShell({ category: initialCategory, initialViews, initi
   return <div className={styles.shell}>
     <main className={styles.viewArea}>
       <div className={styles.categoryIntro}><span className={styles.categoryIcon}><Icon name={CAREER_CATEGORY_ICONS[category.key] ?? "file-text"} weight="fill" size={18} /></span><h1>{category.name}</h1></div>
-      <p className={styles.categoryBlurb}>{BLURB[category.key] ?? "이 카테고리의 기록입니다."}</p>
+      {BLURB[category.key] ? <p className={styles.categoryBlurb}>{BLURB[category.key]}</p> : null}
       <ViewToolbar
         category={category}
         view={view}

@@ -128,7 +128,8 @@ export class PageService {
     if (sections.length === 0) throw new PageServiceError(409, "recipe has no sections");
     const paths = await db.recipeEvidencePaths.find({ userId, recipeId: recipe._id }).toArray();
     const [records, answers, requirements, template, brew, author] = await Promise.all([
-      db.careerRecords.find({ userId, _id: { $in: paths.filter((p) => p.sourceType === "record").map((p) => p.sourceId) } }).toArray(),
+      // 휴지통에 넣은 기록은 새로 만드는 지면의 근거로 쓰지 않습니다.
+      db.careerRecords.find({ userId, deletedAt: null, _id: { $in: paths.filter((p) => p.sourceType === "record").map((p) => p.sourceId) } }).toArray(),
       db.answers.find({ userId, _id: { $in: paths.filter((p) => p.sourceType === "answer").map((p) => p.sourceId) } }).toArray(),
       db.jobPostingRequirements.find({ _id: { $in: paths.filter((p) => p.sourceType === "requirement").map((p) => p.sourceId) } }).toArray(),
       db.templates.findOne({ _id: portfolio.templateId }), db.brews.findOne({ _id: portfolio.brewId, userId }), db.users.findOne({ _id: userId }),

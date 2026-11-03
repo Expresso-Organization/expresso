@@ -95,6 +95,7 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
   const suppressColumnClick = useRef(false);
   const resizeCleanup = useRef<(() => void) | null>(null);
   const cellRefs = useRef(new Map<string, HTMLElement>());
+  const viewportRef = useRef<HTMLDivElement>(null);
   const groupDefinition = props.view.groupPropertyId ? definitionsById.get(props.view.groupPropertyId) : undefined;
   const groups = useMemo(() => props.view.groupPropertyId ? groupedRecords(props.records, props.category, props.view.groupPropertyId, props.view.groupOrder) : [], [props.category, props.records, props.view.groupOrder, props.view.groupPropertyId]);
 
@@ -105,7 +106,8 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
     if (!activeCell) return;
     if (editingCell?.recordId === activeCell.recordId && editingCell.propertyId === activeCell.propertyId && editingCell.instanceKey === activeCell.instanceKey) return;
     cellRefs.current.get(`${activeCell.instanceKey}:${cellKey(activeCell.recordId, activeCell.propertyId)}`)?.focus();
-  }, [activeCell, editingCell, props.records]);
+    // 가상 스크롤 창이 옮겨 가면 새로 그린 셀에 다시 포커스를 둡니다.
+  }, [activeCell, editingCell, props.records, scrollTop]);
   useEffect(() => {
     if (!cellMenu) return;
     const close = (event?: Event) => { if (event?.target instanceof Element && event.target.closest("[data-cell-context-menu]")) return; setCellMenu(null); };
@@ -153,12 +155,34 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
     if (direction === "previous") { nextColumn--; if (nextColumn < 0) { nextColumn = propertyIds.length - 1; nextRow--; } }
     nextRow = Math.max(0, Math.min(keyboardRecords.length - 1, nextRow));
     nextColumn = Math.max(0, Math.min(propertyIds.length - 1, nextColumn));
+    revealRow(keyboardRecords[nextRow]?.id, instanceKey);
     focusCell(keyboardRecords[nextRow]?.id ?? recordId, propertyIds[nextColumn] ?? propertyId, false, instanceKey);
   }
 
-  async function createAndFocus(initialProperties?: Record<string, unknown>, instanceKey = "main") {
+  /**
+   * 긴 표는 보이는 행만 그립니다. 키보드로 그리지 않은 행으로 가면 그 행이 그려지도록 먼저 스크롤합니다.
+   * 그러지 않으면 셀이 없어 포커스가 옮겨 가지 않고 32행에서 멈춥니다(2026-11-02 감사).
+   */
+  function revealRow(recordId: string | undefined, instanceKey: string) {
+    const viewport = viewportRef.current;
+    if (!recordId || !windowed || instanceKey !== "main" || !viewport) return;
+    const top = props.records.findIndex((record) => record.id === recordId) * ROW_HEIGHT;
+    const bottomLimit = viewport.scrollTop + viewport.clientHeight - ROW_HEIGHT * 3;
+    if (top < viewport.scrollTop) viewport.scrollTop = top;
+    else if (top > bottomLimit) viewport.scrollTop = top - viewport.clientHeight + ROW_HEIGHT * 3;
+    setScrollTop(viewport.scrollTop);
+  }
+
+  async function createAndFocus(initialProperties?: Record<string, unknown>, instanceKey = "main", afterRecordId?: string) {
     const created = await props.onCreate(initialProperties, { open: false });
-    if (created) focusCell(created.id, titleColumnId, true, instanceKey);
+    if (!created) return;
+    // 「아래에 새 기록」은 그 행 바로 아래에 둡니다. 정렬이 없는 뷰는 손으로 정한 순서(recordOrder)로 자리를 잡습니다.
+    if (afterRecordId && !props.view.sorts.length) {
+      const order = props.records.map((record) => record.id).filter((id) => id !== created.id);
+      order.splice(order.indexOf(afterRecordId) + 1, 0, created.id);
+      props.onViewChange({ ...props.view, recordOrder: [...new Set(order)] });
+    }
+    focusCell(created.id, titleColumnId, true, instanceKey);
   }
 
   function showCellMenu(event: ReactMouseEvent<HTMLElement>, recordId: string, propertyId: string, instanceKey: string) {
@@ -354,7 +378,7 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
 
   const tableRows = (items: readonly CareerRecord[], rowOffset: number, keyboardRecords: readonly CareerRecord[], instanceKey = "main") => items.map((record, index) => <div className={record.id === props.openId ? styles.rowActive : styles.tableRow} role="row" aria-rowindex={rowOffset + index} key={record.id} tabIndex={activeCell ? -1 : record.id === props.activeId ? 0 : -1} data-dragging={rowDrag.sourceId === record.id ? "true" : undefined} data-drop-position={rowDrag.targetId === record.id ? rowDrag.placement : undefined} style={{ gridTemplateColumns: template }} onKeyDown={(event) => keyboardActivate(event, record.id, keyboardRecords, props.onActivate)} onDoubleClick={(event) => { if (event.target === event.currentTarget) props.onActivate(record.id); }} onDragOver={(event) => setRecordDropTarget(event, record.id)} onDrop={(event) => finishRecordDrop(event, record.id)}>
     <span className={styles.rowControls} role="gridcell">
-      <button type="button" className={styles.rowAddButton} aria-label={`${record.title || "제목 없음"} 아래에 새 기록`} onClick={(event) => { event.stopPropagation(); void createAndFocus(); }}><Icon name="plus" size={17} /></button>
+      <button type="button" className={styles.rowAddButton} aria-label={props.view.sorts.length ? "새 기록" : `${record.title || "제목 없음"} 아래에 새 기록`} onClick={(event) => { event.stopPropagation(); void createAndFocus(undefined, instanceKey, record.id); }}><Icon name="plus" size={17} /></button>
       <button type="button" className={styles.rowDragHandle} aria-label={`${record.title || "제목 없음"} 순서 변경`} title="끌어서 이동 · 위아래 화살표로 이동" draggable onClick={(event) => event.stopPropagation()} onKeyDown={(event) => moveRecordFromKeyboard(event, record.id)} onDragStart={(event) => startRecordDrag(event, record.id)} onDragEnd={() => setRowDrag({ sourceId: "", targetId: null, placement: "before" })}><Icon name="dots-six-vertical" size={18} weight="bold" /></button>
       <label className={styles.rowCheckbox} data-checked={props.selectedIds.has(record.id) ? "true" : "false"} onClick={(event) => event.stopPropagation()}>
         <input aria-label={`${record.title || "제목 없음"} 선택`} type="checkbox" checked={props.selectedIds.has(record.id)} onChange={() => props.onToggle(record.id)} />
@@ -423,7 +447,7 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
     </div>{contextMenu}</>;
   }
 
-  return <><div className={styles.tableViewport} onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}>
+  return <><div ref={viewportRef} className={styles.tableViewport} onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}>
     <div className={styles.table} role="grid" aria-label="커리어 테이블" aria-rowcount={props.records.length + 2} style={{ minWidth: `${Math.max(totalWidth, 700)}px` } as CSSProperties}>
       {tableHeader()}
       {start > 0 ? <div className={styles.tableSpacer} aria-hidden="true" style={{ height: `${start * ROW_HEIGHT}px` }} /> : null}

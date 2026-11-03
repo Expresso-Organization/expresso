@@ -131,6 +131,8 @@ function mapSummary(row: SummaryRow) {
     sectionCount: Number(row.section_count),
     visibleSectionCount: Number(row.visible_section_count),
     blockCount: Number(row.block_count),
+    // MySQL 경로는 제작의 공고를 읽지 않는다.
+    target: null,
     createdAt: iso(row.created_at),
     updatedAt: iso(row.updated_at),
     deployment: row.deployment_id

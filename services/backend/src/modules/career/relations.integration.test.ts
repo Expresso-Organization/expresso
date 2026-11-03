@@ -37,10 +37,11 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     sourceCategoryId = source.id; targetCategoryId = target.id;
     relationId = randomUUID(); inverseRelationId = randomUUID(); singleRelationId = randomUUID(); lostPropertyId = randomUUID(); formulaId = randomUUID();
     const exactId = randomUUID(); const numberId = randomUUID(); const tagsId = randomUUID();
+    const optionA = randomUUID(); const optionB = randomUUID();
     const targetExactId = randomUUID(); const targetNumberId = randomUUID(); const targetTagsId = randomUUID();
     const db = mongoCollections(fixture.resource.db);
     await db.careerCategories.updateOne({ _id: sourceCategoryId }, { $set: { schemaVersion: 1, propertySchemaV2: [
-      definition(exactId, "exact", "text"), definition(numberId, "numberText", "text"), definition(tagsId, "tags", "multi_select"), definition(lostPropertyId, "lost", "text"),
+      definition(exactId, "exact", "text"), definition(numberId, "numberText", "text"), definition(tagsId, "tags", "multi_select", { options: [{ id: optionA, name: "A" }, { id: optionB, name: "B" }] }), definition(lostPropertyId, "lost", "text"),
       definition(relationId, "related", "relation", { targetCategoryId, inversePropertyId: inverseRelationId, cardinality: "multiple", deletePolicy: "restrict" }),
       definition(singleRelationId, "singleRelated", "relation", { targetCategoryId, inversePropertyId: null, cardinality: "single", deletePolicy: "restrict" }),
       definition(formulaId, "constant", "formula", { source: "1 + 2", ast: null, diagnostics: [] }),
@@ -49,7 +50,6 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
       definition(targetExactId, "exact", "text"), definition(targetNumberId, "numberText", "number"), definition(targetTagsId, "tags", "select"),
       definition(inverseRelationId, "back", "relation", { targetCategoryId: sourceCategoryId, inversePropertyId: relationId, cardinality: "multiple", deletePolicy: "restrict" }),
     ] } });
-    const optionA = randomUUID(); const optionB = randomUUID();
     const sourceRecord = await service.createRecord(userId, randomUUID(), { categoryId: sourceCategoryId, title: "본문 보존", properties: { exact: value("text", "같음"), numberText: value("text", "42"), tags: value("multi_select", [optionA, optionB]), lost: value("text", "남겨 둠") }, bodyMd: "# 본문은 이동해도 남는다" });
     sourceRecordId = sourceRecord.record.id;
     targetRecordIds = await Promise.all(["대상 A", "대상 B"].map(async (title) => (await service.createRecord(userId, randomUUID(), { categoryId: targetCategoryId, title, properties: {}, bodyMd: "" })).record.id));
@@ -94,6 +94,23 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect(stored?.properties).toMatchObject({ exact: value("text", "같음"), numberText: value("number", 42), tags: value("select", expect.any(String)) });
     expect(stored?.unmappedProperties?.[lostPropertyId]).toEqual(value("text", "남겨 둠"));
     expect(await mongoCollections(fixture.resource.db).careerRecordRelations.countDocuments({ userId, $or: [{ sourceRecordId }, { targetRecordId: sourceRecordId }] })).toBe(edgeCount);
+  });
+
+  it("recomputes the target category's formulas after a move and refuses a move that leaves a required property empty", async () => {
+    const db = mongoCollections(fixture.resource.db);
+    const record = (await service.createRecord(userId, randomUUID(), { categoryId: sourceCategoryId, title: "계산", properties: { exact: value("text", "y") }, bodyMd: "" })).record;
+    await db.careerRecords.updateOne({ _id: record.id }, { $set: { computedProperties: { constant: value("formula", 3) } as never } });
+    const preview = await service.previewCategoryMove(userId, record.id, targetCategoryId);
+    const moved = await service.commitCategoryMove(userId, record.id, { recordId: record.id, targetCategoryId, previewToken: preview.previewToken, expectedVersion: record.version, discardUnmappedPropertyIds: [] });
+    expect(moved.computedProperties ?? {}).toEqual({});
+    expect(await db.outboxEvents.findOne({ topic: "career.computation", "payload.recordId": record.id, idempotencyKey: { $regex: "^career-category-move:" } })).toBeTruthy();
+
+    const requiredId = randomUUID();
+    await db.careerCategories.updateOne({ _id: sourceCategoryId }, { $push: { propertySchemaV2: { ...definition(requiredId, "mustHave", "text"), required: true } } as never });
+    const second = (await service.createRecord(userId, randomUUID(), { categoryId: targetCategoryId, title: "필수 없음", properties: {}, bodyMd: "" })).record;
+    const back = await service.previewCategoryMove(userId, second.id, sourceCategoryId);
+    await expect(service.commitCategoryMove(userId, second.id, { recordId: second.id, targetCategoryId: sourceCategoryId, previewToken: back.previewToken, expectedVersion: second.version, discardUnmappedPropertyIds: [] })).rejects.toMatchObject({ statusCode: 409 });
+    await db.careerCategories.updateOne({ _id: sourceCategoryId }, { $pull: { propertySchemaV2: { id: requiredId } } as never });
   });
 
   it("rejects a move token after target schema drift", async () => {

@@ -39,6 +39,9 @@ describe("RevisionHistory", () => {
     expect(await screen.findByText("편집")).toBeTruthy();
     expect(screen.getByText("AI 적용 전")).toBeTruthy();
     fireEvent.click(screen.getAllByRole("button", { name: "복원" })[0]!);
+    // 첫 클릭은 확인을 묻기만 하고 요청을 보내지 않습니다.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("button", { name: "복원 확인" }));
     expect(await screen.findByText("복원", { selector: "span" })).toBeTruthy();
     const [url, init] = fetchMock.mock.calls[1]!;
     expect(url).toBe(`/api/career/records/${recordId}/revisions/${edit.id}/restore`);
@@ -51,9 +54,11 @@ describe("RevisionHistory", () => {
     render(<RevisionHistory recordId={recordId} />);
     fireEvent.click(screen.getByRole("button", { name: "이력" }));
     fireEvent.click(await screen.findByRole("button", { name: "복원" }));
+    fireEvent.click(screen.getByRole("button", { name: "복원 확인" }));
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
     expect(fetchMock.mock.calls[2]![0]).toBe(`/api/career/records/${recordId}/revisions`);
     expect(screen.queryByRole("alert")).toBeNull();
+    expect(await screen.findByText(/그 사이 본문이 바뀌었습니다/)).toBeTruthy();
   });
 
   it("keeps restore disabled while edits are still saving", async () => {

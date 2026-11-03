@@ -4,18 +4,18 @@ import type {
   CareerCategory,
   CareerPropertyDefinitionV2,
   CareerViewConfiguration,
+  CareerViewFilterV2,
 } from "@expresso/contracts";
 import type { Document } from "mongodb";
 
 import { CareerError } from "./errors.js";
+import { derivedSecret } from "../../platform/secrets.js";
 
 const CURSOR_LIFETIME_MS = 15 * 60_000;
-const CURSOR_SECRET = process.env.CAREER_VIEW_CURSOR_SECRET ?? "expresso-career-view-cursor-secret";
+const CURSOR_SECRET = process.env.CAREER_VIEW_CURSOR_SECRET ?? derivedSecret("career-view-cursor");
 
 type SortPart = { field: string; direction: 1 | -1 };
-type CareerViewFilterV2 =
-  | { operator: "and" | "or"; filters: CareerViewFilterV2[] }
-  | { propertyId: string; operator: "eq" | "neq" | "contains" | "not_contains" | "gt" | "gte" | "lt" | "lte" | "is_empty" | "is_not_empty"; operand: unknown };
+
 
 export interface CompiledCareerView {
   pipeline: Document[];
@@ -51,8 +51,18 @@ function cursorSignature(body: string): string {
   return createHmac("sha256", CURSOR_SECRET).update(body).digest("base64url");
 }
 
+/** 커서에 담은 정렬 값의 Date를 표시해 둡니다. JSON 문자열로 바뀐 날짜는 Date 필드와 $gt로 비교되지 않아 다음 쪽이 비었습니다(2026-11-02 감사). */
+function encodeCursorValue(value: unknown): unknown {
+  return value instanceof Date ? { $expressoDate: value.toISOString() } : value;
+}
+function decodeCursorValue(value: unknown): unknown {
+  return value && typeof value === "object" && typeof (value as { $expressoDate?: unknown }).$expressoDate === "string"
+    ? new Date((value as { $expressoDate: string }).$expressoDate)
+    : value;
+}
+
 function encodeCursor(payload: CursorPayload): string {
-  const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  const body = Buffer.from(JSON.stringify({ ...payload, values: payload.values.map(encodeCursorValue) })).toString("base64url");
   return `${body}.${cursorSignature(body)}`;
 }
 
@@ -66,7 +76,8 @@ function decodeCursor(cursor: string, expected: Pick<CursorPayload, "userId" | "
     throw new CareerError(400, "invalid career view cursor");
   }
   try {
-    const payload = JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as CursorPayload;
+    const parsed = JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as CursorPayload;
+    const payload: CursorPayload = { ...parsed, values: Array.isArray(parsed.values) ? parsed.values.map(decodeCursorValue) : parsed.values };
     if (!Array.isArray(payload.values) || typeof payload.id !== "string" || payload.expiresAt < Date.now()
       || payload.userId !== expected.userId || payload.viewId !== expected.viewId || payload.viewVersion !== expected.viewVersion) {
       throw new Error("cursor binding mismatch");
@@ -96,8 +107,14 @@ function unwrapStoredValue(value: Document | string): Document {
   };
 }
 
+/** 관계 값은 기록 문서가 아니라 관계 원장에 있습니다. compile이 $lookup으로 이 필드에 대상 기록 ID 목록을 붙입니다. */
+function relationField(definition: CareerPropertyDefinitionV2): string {
+  return `__careerViewRelation_${definition.id.replaceAll("-", "")}`;
+}
+
 function fieldExpression(definition: CareerPropertyDefinitionV2): Document | string {
   if (definition.type === "title") return "$title";
+  if (definition.type === "relation") return { $map: { input: { $ifNull: [`$${relationField(definition)}`, []] }, in: "$$this.targetRecordId" } };
   if (definition.type === "created_time" && definition.system) return { $ifNull: ["$createdAt", "$updatedAt"] };
   if (definition.type === "updated_time" && definition.system) return "$updatedAt";
   const raw = definition.type === "formula" || definition.type === "rollup"
@@ -217,6 +234,19 @@ export class CareerViewQuery {
     }
 
     const pipeline: Document[] = [];
+    // 필터 · 정렬이 쓰는 관계 속성은 관계 원장을 붙여 값으로 씁니다. 붙이지 않으면 관계 필터에 맞는 기록이 하나도 없습니다(2026-11-02 감사).
+    const filterIds: string[] = [];
+    const collect = (node: CareerViewFilterV2 | null): void => { if (!node) return; if ("filters" in node) node.filters.forEach(collect); else filterIds.push(node.propertyId); };
+    collect(filter);
+    for (const id of new Set([...filterIds, ...view.sorts.map((item) => item.propertyId)])) {
+      const definition = definitions.get(id);
+      if (definition?.type !== "relation") continue;
+      pipeline.push({ $lookup: {
+        from: "career_record_relations", let: { recordId: "$_id", userId: "$userId" },
+        pipeline: [{ $match: { $expr: { $and: [{ $eq: ["$sourceRecordId", "$$recordId"] }, { $eq: ["$userId", "$$userId"] }, { $eq: ["$sourcePropertyId", definition.id] }] } } }, { $project: { _id: 0, targetRecordId: 1 } }],
+        as: relationField(definition),
+      } });
+    }
     if (filter) pipeline.push({ $match: { $expr: filterExpression(filter, definitions) } });
     const computed: Document = {};
     const sort: Document = {};

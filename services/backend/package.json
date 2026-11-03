@@ -13,6 +13,7 @@
     "start": "node dist/api/main.js",
     "start:worker": "node dist/worker/main.js",
     "admin": "node --env-file-if-exists=.env dist/cli/admin.js",
+    "career-repair-escaped": "node --env-file-if-exists=.env dist/cli/career-repair-escaped.js",
     "typecheck": "pnpm --filter @expresso/portfolio-renderer build && tsc -p tsconfig.json --noEmit",
     "test": "pnpm --filter \"@expresso/backend^...\" build && vitest run",
     "test:infra": "pnpm --filter \"@expresso/backend^...\" build && vitest run integration.test.ts",

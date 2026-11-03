@@ -37,7 +37,7 @@ const PROPERTY_TYPES: ReadonlyArray<{ value: CreatableType; label: string; icon:
   { value: "media", label: "미디어", icon: "image" },
   { value: "relation", label: "관계", icon: "arrow-up-right", needsSetup: true },
   { value: "formula", label: "수식", icon: "function", needsSetup: true },
-  { value: "rollup", label: "롤업", icon: "magnifying-glass", needsSetup: true },
+  { value: "rollup", label: "롤업", icon: "sigma", needsSetup: true },
   { value: "created_time", label: "생성 일시", icon: "clock" },
   { value: "updated_time", label: "최종 편집 일시", icon: "clock-clockwise" },
 ];
@@ -248,7 +248,7 @@ export function PropertyCreatePopover({ categoryId, definitions, onDefinitionsCh
       {setupType === "formula" ? <FormulaEditor source="" properties={activeDefinitions} preview={previewFormula} onCommit={async (source) => { const formula = await previewFormula(source); await createProperty("formula", { source, ast: formula.ast, diagnostics: formula.diagnostics }); }} /> : null}
       {setupType === "rollup" ? <RollupEditor configuration={null} properties={activeDefinitions} targetProperties={targetProperties} preview={previewRollup} onCommit={async (configuration) => createProperty("rollup", { ...configuration })} /> : null}
     </div> : <>
-      <div className={styles.propertyTypeHeading}><span>유형</span><Icon name="magnifying-glass" size={14} /></div>
+      <div className={styles.propertyTypeHeading}><span>유형</span></div>
       <div className={styles.propertyTypeList} role="listbox" aria-label="속성 유형">
         {PROPERTY_TYPES.map((option) => <button key={option.value} type="button" role="option" aria-selected="false" disabled={busyType !== null} onClick={() => void chooseType(option.value)}>
           <Icon name={option.icon} size={18} />

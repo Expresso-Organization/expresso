@@ -16,10 +16,11 @@ import {
   useComponentsContext,
   useCreateBlockNote,
 } from "@blocknote/react";
-import { mediaAssetUrl } from "@expresso/contracts";
+import { MEDIA_MAX_BYTES, MEDIA_MIME_TYPES, mediaAssetUrl } from "@expresso/contracts";
 import type { CareerDocument } from "@expresso/editor/document";
 import { BLOCKNOTE_FRAGMENT, blockNoteToCareerDocument, careerBlockNoteSchema } from "@expresso/editor/blocknote";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type * as Y from "yjs";
 
 import { Icon } from "@/components/ui/Icon";
@@ -29,7 +30,14 @@ import { AI_ACTIONS } from "../ai/ai-actions";
 import styles from "./BlockNoteBody.module.css";
 import { uploadCareerMediaAction } from "./media-actions";
 
+/** 본문 글자 상한입니다. Markdown 기호를 더해도 bodyMd 계약 상한 20만 자 안에 들게 둡니다. */
+const BODY_TEXT_LIMIT = 150_000;
+const UNSUPPORTED_SLASH_ITEMS = new Set(["video", "audio", "file"]);
+
+/** 본문에 올릴 수 있는 것은 미디어 계약이 받는 그림뿐입니다. 서버에 보내기 전에 이유를 알려 줍니다. */
 async function uploadFile(file: File): Promise<string> {
+  if (!(MEDIA_MIME_TYPES as readonly string[]).includes(file.type)) throw new Error("PNG · JPEG · WebP · GIF 그림만 올릴 수 있습니다.");
+  if (file.size > MEDIA_MAX_BYTES) throw new Error(`그림은 ${MEDIA_MAX_BYTES / 1024 / 1024}MB까지 올릴 수 있습니다.`);
   const form = new FormData();
   form.set("file", file);
   const result = await uploadCareerMediaAction(form);
@@ -49,23 +57,46 @@ function selectedBlockIds(editor: BlockNoteEditor): string[] {
   return selection ? selection.blocks.map((block) => block.id) : [editor.getTextCursorPosition().block.id];
 }
 
+/**
+ * 선택 영역 AI 편집 메뉴입니다. BlockNote 서식 툴바는 가로로 넘치면 스크롤하도록 `overflow`를 두므로,
+ * 툴바 안에 메뉴를 두면 툴바 아래로 잘려 보이지 않습니다. 메뉴는 body에 붙이고 단추 위치로 놓습니다.
+ */
 function AiMenu({ editor, onAiRequest }: { editor: BlockNoteEditor; onAiRequest(prompt: string, blockIds: string[]): void }) {
   const Components = useComponentsContext();
-  const [open, setOpen] = useState(false);
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState<{ top: number; right: number } | null>(null);
+  useEffect(() => {
+    if (!position) return;
+    const close = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (!menuRef.current?.contains(target) && !anchorRef.current?.contains(target)) setPosition(null);
+    };
+    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") setPosition(null); };
+    document.addEventListener("pointerdown", close);
+    document.addEventListener("keydown", escape);
+    return () => { document.removeEventListener("pointerdown", close); document.removeEventListener("keydown", escape); };
+  }, [position]);
   if (!Components) return null;
+  const toggle = () => {
+    if (position) { setPosition(null); return; }
+    const rect = anchorRef.current?.getBoundingClientRect();
+    if (rect) setPosition({ top: rect.bottom + 4, right: Math.max(8, window.innerWidth - rect.right) });
+  };
   return (
-    <div className={styles.aiMenu}>
-      <Components.FormattingToolbar.Button label="AI 편집" mainTooltip="선택 영역 AI 편집" icon={<Icon name="sparkle" size={14} />} isSelected={open} onClick={() => setOpen((current) => !current)}>
+    <div ref={anchorRef} className={styles.aiMenu}>
+      <Components.FormattingToolbar.Button label="AI 편집" mainTooltip="선택 영역 AI 편집" icon={<Icon name="sparkle" size={14} />} isSelected={position !== null} onClick={toggle}>
         <span className={styles.aiLabel}>AI 편집</span>
       </Components.FormattingToolbar.Button>
-      {open ? (
-        <div className={styles.aiActions} role="menu" aria-label="선택 영역 AI 편집">
+      {position ? createPortal(
+        <div ref={menuRef} className={styles.aiActions} role="menu" aria-label="선택 영역 AI 편집" style={{ top: position.top, right: position.right }}>
           {AI_ACTIONS.map((item) => (
-            <button key={item.label} type="button" role="menuitem" onMouseDown={(event) => event.preventDefault()} onClick={() => { onAiRequest(item.prompt, selectedBlockIds(editor)); setOpen(false); }}>
+            <button key={item.label} type="button" role="menuitem" onMouseDown={(event) => event.preventDefault()} onClick={() => { onAiRequest(item.prompt, selectedBlockIds(editor)); setPosition(null); }}>
               <Icon name={item.icon} size={13} />{item.label}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body,
       ) : null}
     </div>
   );
@@ -82,7 +113,15 @@ export interface BlockNoteBodyProps {
 }
 
 export default function BlockNoteBody({ yDocument, userName, onAiRequest, onDocumentChange, onSelectionChange }: BlockNoteBodyProps) {
+  const [limitNotice, setLimitNotice] = useState(false);
   const editor = useCreateBlockNote({
+    // 본문은 bodyMd(20만 자)로 투영되어 매칭 · 생성에 쓰입니다. 붙여 넣은 뒤 본문이 상한을 넘으면 붙여 넣지 않고 이유를 보입니다.
+    pasteHandler: ({ event, editor: target, defaultPasteHandler }) => {
+      const pasted = event.clipboardData?.getData("text/plain") ?? "";
+      if (target.prosemirrorState.doc.textContent.length + pasted.length > BODY_TEXT_LIMIT) { setLimitNotice(true); return true; }
+      setLimitNotice(false);
+      return defaultPasteHandler();
+    },
     // 공용 스키마는 exactOptionalPropertyTypes 때문에 넓은 타입으로 만들어졌습니다. 이 한 곳만 좁힙니다.
     schema: careerBlockNoteSchema as never,
     dictionary: ko,
@@ -103,7 +142,8 @@ export default function BlockNoteBody({ yDocument, userName, onAiRequest, onDocu
   useEffect(() => { onDocumentChange?.(blockNoteToCareerDocument(editor.document)); }, [editor, onDocumentChange]);
   // 콜아웃을 인용과 같은 묶음 끝에 넣습니다. 묶음이 이어지지 않으면 메뉴에 묶음 머리가 두 번 나옵니다.
   const slashItems = async (query: string) => {
-    const items = getDefaultReactSlashMenuItems(editor);
+    // 미디어 계약은 그림만 받습니다. 올릴 수 없는 동영상 · 오디오 · 파일 블록은 메뉴에서 뺍니다.
+    const items = getDefaultReactSlashMenuItems(editor).filter((item) => !UNSUPPORTED_SLASH_ITEMS.has((item as { key?: string }).key ?? ""));
     const group = ko.slash_menu.quote.group;
     const callout = {
       title: "콜아웃",
@@ -117,6 +157,7 @@ export default function BlockNoteBody({ yDocument, userName, onAiRequest, onDocu
   };
   return (
     <div className={styles.body}>
+      {limitNotice ? <p className={styles.limitNotice} role="alert">본문은 {BODY_TEXT_LIMIT.toLocaleString("ko-KR")}자까지 쓸 수 있습니다. 붙여 넣은 글이 길어 넣지 않았습니다.</p> : null}
       <BlockNoteView
         editor={editor}
         slashMenu={false}
