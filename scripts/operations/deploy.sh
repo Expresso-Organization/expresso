@@ -34,7 +34,8 @@ fi
 
 cd "$ROOT"
 
-PREVIOUS="$(git rev-parse HEAD)"
+# 새 스크립트로 다시 시작한 경우에는 이미 새 커밋에 있으므로, 배포 전 커밋을 넘겨받는다.
+PREVIOUS="${EXPRESSO_DEPLOY_PREVIOUS:-$(git rev-parse HEAD)}"
 echo "현재 커밋 $PREVIOUS"
 
 # 되돌릴 때 쓸 커밋을 남긴다. 롤백은 이 파일 하나만 보면 된다.
@@ -43,6 +44,15 @@ echo "$PREVIOUS" > "$ROOT/.last-deployed-commit"
 git fetch origin main
 git checkout --detach "$TARGET"
 echo "배포 대상 $(git rev-parse HEAD)"
+
+# git은 checkout할 때 파일을 지우고 새로 만든다. 지금 도는 bash는 열어 둔 이전 파일을
+# 끝까지 읽으므로, 그대로 이어 가면 이 커밋이 바꾼 배포 단계가 이번 배포에서 돌지 않는다.
+# 처음 실행이면 배포할 커밋의 스크립트로 처음부터 다시 시작한다.
+if [ -z "${EXPRESSO_DEPLOY_REEXEC:-}" ]; then
+  echo "새 배포 스크립트로 다시 시작"
+  EXPRESSO_DEPLOY_REEXEC=1 EXPRESSO_DEPLOY_PREVIOUS="$PREVIOUS" \
+    exec bash "$ROOT/scripts/operations/deploy.sh" "$(git rev-parse HEAD)"
+fi
 
 # 커밋 사이에서 워크스페이스가 추가되면 pnpm이 기존 importer 연결을 그대로 둔 채
 # 설치 완료로 판단할 수 있다. 공용 저장소는 유지하고 다시 만들 수 있는 연결만 비운다.

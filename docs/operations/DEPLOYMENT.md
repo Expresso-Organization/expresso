@@ -98,6 +98,8 @@ sudo apt-get install -y fonts-noto-cjk
 scripts/operations/deploy.sh <검증된-commit>
 ```
 
+스크립트는 `git checkout`으로 배포할 커밋에 간 직후, 그 커밋의 `deploy.sh`로 처음부터 다시 시작합니다. 로그에는 「새 배포 스크립트로 다시 시작」이 찍힙니다. git은 checkout할 때 파일을 지우고 새로 만들고, 이미 돌고 있는 bash는 이전 파일을 끝까지 읽습니다. 다시 시작하지 않으면 그 커밋이 바꾼 배포 단계가 그 배포에서 돌지 않습니다. 2026-11-03 #159 배포가 그랬습니다. 다시 시작한 스크립트는 배포 전 커밋을 `EXPRESSO_DEPLOY_PREVIOUS`로 넘겨받아 `.last-deployed-commit`에 씁니다.
+
 스크립트는 기존 MySQL volume을 참조하거나 삭제하지 않습니다. `down -v`도
 실행하지 않습니다. schema migration과 readiness가 통과하지 않으면 API를 준비된
 것으로 취급하지 않습니다.
