@@ -16,6 +16,9 @@ import { getMongoAnswerResult, refreshMongoInterviewProgress, saveMongoAnswer } 
 interface PlannedQuestion { text: string; basis: InterviewQuestionBasis; requirementId: string | null; variant: number; rationale: string | null }
 
 export class InterviewService implements InterviewApi {
+  private externalBodyListener: ((userId: string, recordId: string) => Promise<unknown>) | undefined;
+  /** 재답변이 기존 기록 본문을 바꾼 뒤 커리어 문서 모듈이 편집기 문서를 맞추게 합니다. */
+  setExternalBodyListener(listener: (userId: string, recordId: string) => Promise<unknown>) { this.externalBodyListener = listener; }
   constructor(readonly context: MongoContext, readonly writer: QuestionWriter | null = null, readonly cleaner: RecordCleaner | null = null, readonly consent: ConsentApi | null = null) {}
 
   async cleanupAnswer(userId: string, answerId: string) {
@@ -154,7 +157,13 @@ export class InterviewService implements InterviewApi {
     return this.getSession(userId, sessionId);
   }
 
-  saveAnswer(userId: string, sessionId: string, questionId: string, idempotencyKey: string, input: SaveInterviewAnswer) { return saveMongoAnswer(this.context, userId, sessionId, questionId, idempotencyKey, input); }
+  async saveAnswer(userId: string, sessionId: string, questionId: string, idempotencyKey: string, input: SaveInterviewAnswer) {
+    const result = await saveMongoAnswer(this.context, userId, sessionId, questionId, idempotencyKey, input);
+    // 재답변은 기존 기록의 bodyMd를 바꿉니다. 편집기에서 연 적 있는 기록이면 문서에도 넣습니다(새 기록이면 할 일 없음).
+    const answer = await mongoCollections(this.context.db).answers.findOne({ userId, questionId });
+    if (answer?.createdRecordId) await this.externalBodyListener?.(userId, answer.createdRecordId).catch(() => undefined);
+    return result;
+  }
   getAnswerResult(userId: string, sessionId: string, answerId: string) { return getMongoAnswerResult(this.context, userId, sessionId, answerId); }
 }
 

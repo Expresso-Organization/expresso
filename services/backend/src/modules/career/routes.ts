@@ -1,4 +1,7 @@
 import {
+  CareerViewListResponseSchema,
+  CareerViewPageResponseSchema,
+  CareerViewResponseSchema,
   API_PREFIX,
   CareerCategoriesResponseSchema,
   CareerCategoryIdParamsSchema,
@@ -10,6 +13,7 @@ import {
   CareerSkillIdParamsSchema,
   CareerRecordResponseSchema,
   CareerRecordSchema,
+  CareerTrashListResponseSchema,
   CareerViewConfigurationSchema,
   CreateCareerCategorySchema,
   CreateCareerRecordLinkSchema,
@@ -53,12 +57,6 @@ import {
 } from "./views.js";
 
 const CareerViewIdParamsSchema = z.strictObject({ viewId: UuidSchema });
-const CareerViewResponseSchema = z.strictObject({ data: CareerViewConfigurationSchema });
-const CareerViewListResponseSchema = z.strictObject({ data: z.array(CareerViewConfigurationSchema) });
-const CareerViewPageResponseSchema = z.strictObject({
-  data: z.array(CareerRecordSchema),
-  page: z.strictObject({ hasNextPage: z.boolean(), nextCursor: z.string().nullable() }),
-});
 
 export interface RegisterCareerRoutesOptions {
   careerService: CareerApi;
@@ -169,8 +167,9 @@ export function registerCareerRoutes(
   });
   app.post(`${API_PREFIX}/career/categories/:categoryId/property-schema/:propertyId/restore`, { preHandler }, async (request, reply) => {
     const principal = requireAuth(request);
-    const { categoryId } = parseParams(CareerCategoryIdParamsSchema, request);
+    // 경로 파라미터에 propertyId가 함께 오므로 categoryId만 받는 strict 스키마로 읽으면 늘 400입니다.
     const params = parseParams(CareerCategoryIdParamsSchema.extend({ propertyId: UuidSchema }), request);
+    const { categoryId } = params;
     if (!options.careerService.restoreProperty) throw new HttpStatusError(501, "property schema v2 is unavailable");
     const category = await options.careerService.restoreProperty(principal.user.id, categoryId, params.propertyId, expectedVersion(request));
     return reply.header("etag", formatResourceEtag(category.version)).send({ data: category });
@@ -190,6 +189,13 @@ export function registerCareerRoutes(
     if (!options.careerService.createViewConfiguration) throw new HttpStatusError(501, "career view configurations are unavailable");
     const view = await options.careerService.createViewConfiguration(principal.user.id, categoryId, expectedVersion(request), input);
     return reply.code(201).header("etag", formatResourceEtag(view.version)).send(CareerViewResponseSchema.parse({ data: view }));
+  });
+
+  app.get(`${API_PREFIX}/career/categories/:categoryId/trash`, { preHandler }, async (request) => {
+    const principal = requireAuth(request);
+    const { categoryId } = parseParams(CareerCategoryIdParamsSchema, request);
+    if (!options.careerService.listTrashedRecords) throw new HttpStatusError(501, "career trash is unavailable");
+    return CareerTrashListResponseSchema.parse({ data: await options.careerService.listTrashedRecords(principal.user.id, categoryId) });
   });
 
   app.post(`${API_PREFIX}/career/categories/:categoryId/view-configurations/reorder`, { preHandler }, async (request) => {

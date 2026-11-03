@@ -1,2 +1,4 @@
+/* 셸 .frame이 overflow: hidden이라 화면이 스크롤 영역을 직접 둔다(홈 · 공고의 .content와 같은 방식). */
+.scroll { flex: 1; min-width: 0; min-height: 0; overflow: auto; }
 .page { width: min(920px, calc(100% - 32px)); margin: 0 auto; padding: 24px 0 64px; }
 @media (max-width: 767px) { .page { width: calc(100% - 24px); padding-top: 12px; } }

@@ -88,9 +88,6 @@ export function SidebarCategories({
               <span className={`${styles.copy} ${styles.categoryCount}`}>
                 {category.recordCount}
               </span>
-              <span className={styles.copy}>
-                <Icon name="plus" size={11} color="var(--ex-border-firm)" />
-              </span>
             </Link>
           );
         })}
@@ -112,6 +109,7 @@ export function SidebarCategories({
               onKeyDown={cancelOnEscape}
               onBlur={() => { if (!name.trim()) close(); }}
             />
+            {state === "failed" ? <span className={`${styles.copy} ${styles.addCategoryIssue}`} role="alert">만들지 못했습니다. 다시 Enter</span> : null}
           </form>
         ) : (
           <button type="button" className={`${styles.row} ${styles.addCategory}`} data-row title="카테고리 추가" onClick={() => setAdding(true)}>

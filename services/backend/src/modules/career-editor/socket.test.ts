@@ -5,6 +5,19 @@ import { InMemoryCareerDocumentSessionRegistry } from "./session-registry.js";
 import { CareerDocumentService } from "./service.js";
 
 describe("career document session registry", () => {
+  it("keeps a reconnected session when the old socket closes late", () => {
+    const registry = new InMemoryCareerDocumentSessionRegistry();
+    const recordId = randomUUID(); const sessionId = randomUUID();
+    const received: unknown[] = [];
+    const leaveOld = registry.join({ sessionId, userId: "u", recordId, send: () => undefined });
+    registry.join({ sessionId, userId: "u", recordId, send: (m) => received.push(m) });
+    leaveOld();
+    expect(registry.count("u", recordId)).toBe(1);
+    registry.publish(recordId, CareerSocketServerMessageSchema.parse({ type: "awareness", protocolVersion: 1, recordId, sessionId: randomUUID(), actor: "user", payload: {} }));
+    expect(received).toHaveLength(1);
+    expect(registry.count("u", recordId, sessionId)).toBe(0);
+  });
+
   it("publishes only to joined record sessions and cleans up exactly", () => {
     const registry = new InMemoryCareerDocumentSessionRegistry();
     const recordId = randomUUID();

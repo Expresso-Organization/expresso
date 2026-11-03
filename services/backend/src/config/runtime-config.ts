@@ -193,6 +193,14 @@ export function loadRuntimeConfig(
   environment: NodeJS.ProcessEnv = process.env,
 ): RuntimeConfig {
   const result = runtimeConfigSchema.parse(environment);
+  // 운영에서 기본값으로 남으면 안 되는 값입니다. 운영 .env를 이 저장소에서 확인할 수 없어 기동을 막지 않고 경고를 남깁니다.
+  if (result.NODE_ENV === "production") {
+    const defaults = [
+      ...(!environment.ASSET_SIGNING_SECRET ? ["ASSET_SIGNING_SECRET"] : []),
+      ...(!environment.CAREER_SOCKET_ALLOWED_ORIGIN ? ["CAREER_SOCKET_ALLOWED_ORIGIN"] : []),
+    ];
+    if (defaults.length) console.warn(JSON.stringify({ level: "warn", message: "production runtime uses development defaults", keys: defaults }));
+  }
 
   return {
     nodeEnv: result.NODE_ENV,

@@ -186,6 +186,16 @@ export const CareerDeleteImpactSchema = z.strictObject({
   purgeAfter: TimestampSchema,
 });
 
+/** 휴지통에 있는 기록. `purgeAfter`가 지나면 복원할 수 없고 영구 삭제 대상이 된다. */
+export const CareerTrashedRecordSchema = CareerRecordSchema.extend({
+  deletedAt: TimestampSchema,
+  purgeAfter: TimestampSchema,
+});
+
+export const CareerTrashListResponseSchema = z.strictObject({
+  data: z.array(CareerTrashedRecordSchema).max(200),
+});
+
 export const CareerSkillEvidenceSpanSchema = z.strictObject({
   source: z.enum(["title", "body_md"]),
   start: z.number().int().nonnegative(),
@@ -236,6 +246,7 @@ export type CareerRecordSort = z.infer<typeof CareerRecordSortSchema>;
 export type ListCareerRecordsQuery = z.infer<typeof ListCareerRecordsQuerySchema>;
 export type CareerRecordListItem = z.infer<typeof CareerRecordListItemSchema>;
 export type CareerRecordSummary = z.infer<typeof CareerRecordSummarySchema>;
+export type CareerTrashedRecord = z.infer<typeof CareerTrashedRecordSchema>;
 export type CareerRecordListResponse = z.infer<
   typeof CareerRecordListResponseSchema
 >;

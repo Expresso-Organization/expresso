@@ -702,3 +702,5 @@
     grid-template-rows: 0fr;
   }
 }
+
+.addCategoryIssue { flex-shrink: 0; color: var(--ex-status-danger-text); font-size: var(--ex-text-3xs); }

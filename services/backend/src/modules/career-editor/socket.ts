@@ -99,6 +99,12 @@ async function handleSocket(
     if (!alive) { socket.close(CLOSE.auth, "heartbeat timeout"); return; }
     alive = false;
     socket.ping();
+    // 로그아웃 · 세션 만료 뒤에도 열린 소켓으로 계속 쓰지 못하게 heartbeat마다 세션을 다시 확인합니다.
+    if (accessToken) {
+      void options.identityService.verifyAccessToken(accessToken)
+        .then((current) => { if (!current) socket.close(CLOSE.auth, "session ended"); })
+        .catch(() => undefined);
+    }
   }, 15_000);
   socket.on("pong", () => { alive = true; });
   socket.on("close", () => { clearInterval(heartbeat); joined?.(); });
@@ -138,7 +144,7 @@ async function handleSocket(
         if (!sessionToken || !options.service.verifySessionToken(principal.user.id, recordId, sessionToken)) {
           fail(CLOSE.auth, "invalid session token"); return;
         }
-        if (registry.count(principal.user.id, recordId) >= 3) {
+        if (registry.count(principal.user.id, recordId, sessionId) >= 3) {
           fail(CLOSE.rate, "too many sessions"); return;
         }
         joined = registry.join({
@@ -150,13 +156,21 @@ async function handleSocket(
           type: "ready", protocolVersion: 1, recordId, sessionId,
           sequence: bootstrap.documentVersion, documentVersion: bootstrap.documentVersion,
         });
-        for (const update of await options.service.updatesSince(
-          principal.user.id, recordId, message.lastAckSequence,
-        )) {
-          send(socket, {
+        // 클라이언트가 가진 상태(state vector) 뒤의 변경을 한 번에 보냅니다. 마지막 ack 이후의 원장만 보내면,
+        // 그사이 압축된 다른 탭의 변경을 다시 받지 못합니다(2026-11-02 감사).
+        const diff = await options.service.syncDiff(principal.user.id, recordId, message.stateVectorBase64);
+        if (diff) {
+          if (diff.updateBase64) send(socket, {
             type: "update", protocolVersion: 1, recordId, sessionId,
-            sequence: update.serverSequence, updateBase64: update.updateBase64, actor: update.actor,
+            sequence: diff.documentVersion, updateBase64: diff.updateBase64, actor: "user",
           });
+        } else {
+          for (const update of await options.service.updatesSince(principal.user.id, recordId, message.lastAckSequence)) {
+            send(socket, {
+              type: "update", protocolVersion: 1, recordId, sessionId,
+              sequence: update.serverSequence, updateBase64: update.updateBase64, actor: update.actor,
+            });
+          }
         }
         return;
       }
