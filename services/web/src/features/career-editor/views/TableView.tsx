@@ -13,7 +13,7 @@ import { CareerTableCell, type TableCellValue } from "./CareerTableCell";
 import { PropertyHeaderMenu } from "./PropertyHeaderMenu";
 import type { CareerViewRendererProps } from "./view-types";
 import { displayValue, keyboardActivate, propertyKey, propertyName, rawValue } from "./view-types";
-import { EMPTY_GROUP } from "./view-logic";
+import { EMPTY_GROUP, propertyLabel } from "./view-logic";
 import styles from "./views.module.css";
 
 const SELECT_WIDTH = 96;
@@ -415,7 +415,7 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
     const close = () => setCellMenu(null);
     return createPortal(<section className={styles.cellContextMenu} data-cell-context-menu role="menu" aria-label={`${definition.name} 셀 메뉴`} style={{ top: Math.min(cellMenu.y, window.innerHeight - 270), left: Math.min(cellMenu.x, window.innerWidth - 230) }} onContextMenu={(event) => event.preventDefault()}>
       <button type="button" role="menuitem" disabled={!canEdit} onClick={() => { close(); focusCell(record.id, definition.id, true, cellMenu.instanceKey); }}><Icon name="pencil-simple" size={15} />셀 편집</button>
-      <button type="button" role="menuitem" onClick={() => { void navigator.clipboard?.writeText(displayValue(raw)); close(); }}><Icon name="copy" size={15} />값 복사</button>
+      <button type="button" role="menuitem" onClick={() => { void navigator.clipboard?.writeText(propertyLabel(record, definition) ?? ""); close(); }}><Icon name="copy" size={15} />값 복사</button>
       <button type="button" role="menuitem" disabled={!canEdit} onClick={() => { void props.onCellCommit?.(record.id, definition, definition.type === "checkbox" ? { type: "checkbox", value: false } : definition.type === "multi_select" ? { type: "multi_select", value: [] } : definition.type === "select" ? { type: "select", value: null } : null); close(); }}><Icon name="eraser" size={15} />값 지우기</button>
       {props.cellIssues?.has(cellKey(record.id, definition.id)) ? <button type="button" role="menuitem" onClick={() => { props.onCellRetry?.(record.id, definition.id); close(); }}><Icon name="arrow-clockwise" size={15} />다시 저장</button> : null}
       <hr />

@@ -2,7 +2,7 @@ import type { CareerCategory, CareerPropertyDefinitionV2, CareerRecord, CareerVi
 import { CareerViewConfigurationSchema } from "@expresso/contracts";
 import { describe, expect, it } from "vitest";
 
-import { EMPTY_GROUP, defaultViewDraft, filterRoot, groupColumns, groupKeyOf, localDefaultViews, matchesFilter, normalizeFilter, operandFor, operatorsFor, sortRecords, timelineDefaults, timelineRange, withType, withinAxis } from "./view-logic";
+import { EMPTY_GROUP, defaultViewDraft, filterRoot, groupColumns, groupKeyOf, localDefaultViews, matchesFilter, normalizeFilter, operandFor, operatorsFor, propertyLabel, propertyLabels, sortRecords, timelineDefaults, timelineRange, withType, withinAxis } from "./view-logic";
 
 const id = (index: number) => `00000000-0000-4000-8000-${String(index).padStart(12, "0")}`;
 function definition(index: number, key: string, type: CareerPropertyDefinitionV2["type"], config: Record<string, unknown> = {}): CareerPropertyDefinitionV2 {
@@ -59,6 +59,25 @@ describe("view-logic", () => {
     const items = [record(1, { score: { type: "number", value: 5 } }, "나"), record(2, {}, "가"), record(3, { score: { type: "number", value: 5 } }, "가")];
     const sorted = sortRecords(items, view({ sorts: [{ propertyId: id(2), direction: "desc", nulls: "last" }, { propertyId: id(1), direction: "asc", nulls: "last" }] }), category);
     expect(sorted.map((item) => item.id)).toEqual([id(203), id(201), id(202)]);
+  });
+
+  it("shows option names instead of option ids and drops ids of deleted options", () => {
+    const tags = definitions[5]!;
+    const stage = definitions[2]!;
+    const item = record(1, { tags: { type: "multi_select", value: [id(91), id(90), id(99)] }, stage: { type: "select", value: id(90) } });
+    expect(propertyLabels(item, tags)).toEqual(["완료", "진행 중"]);
+    expect(propertyLabel(item, tags)).toBe("완료, 진행 중");
+    expect(propertyLabel(item, stage)).toBe("진행 중");
+    expect(propertyLabel(record(2, { stage: { type: "select", value: id(99) } }), stage)).toBeNull();
+    expect(propertyLabels(record(3, {}), tags)).toEqual([]);
+    // 옛 기록에 이름이 그대로 남아 있으면 그 이름을 보인다.
+    expect(propertyLabels(record(4, { tags: { type: "multi_select", value: ["React", id(90)] } }), tags)).toEqual(["React", "진행 중"]);
+  });
+
+  it("shows linked record titles for relations", () => {
+    const linked = definition(7, "projects", "relation");
+    const item = record(1, { projects: { type: "relation", value: [{ recordId: id(400), title: "모아 UI" }, { recordId: id(401), title: "주문 대시보드" }] } });
+    expect(propertyLabels(item, linked)).toEqual(["모아 UI", "주문 대시보드"]);
   });
 
   it("lists every group column in saved order with option names", () => {

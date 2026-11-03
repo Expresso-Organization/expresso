@@ -5,12 +5,10 @@ import type { ReactNode } from "react";
 
 import { API_BASE_URL } from "@/lib/api/client";
 
-import { propertyOptions } from "@/features/career-editor/properties/property-editors";
-
 import type { CareerViewRendererProps } from "./view-types";
-import { displayValue, keyboardActivate, propertyKey, rawValue } from "./view-types";
+import { keyboardActivate, rawValue } from "./view-types";
 import { markdownPreview } from "./markdown-preview";
-import { activeDefinitions, fieldValue, propertyLabel } from "./view-logic";
+import { activeDefinitions, definitionById, fieldValue, propertyLabel, propertyLabels } from "./view-logic";
 import styles from "./views.module.css";
 
 const COVER_BARS = [18, 30, 24, 41, 33, 52, 45, 61, 49, 70, 58, 76, 66, 82];
@@ -29,10 +27,7 @@ function textProperty(record: CareerRecord, key: string): string | null {
 /** 기술은 다중 선택이라 옵션 ID로 저장된다. 화면에는 옵션 이름을 보인다. */
 function projectTags(record: CareerRecord, category: CareerCategory): string[] {
   const definition = activeDefinitions(category).find((item) => item.key === "technologies");
-  const value = rawValue(record, "technologies");
-  if (!definition || !Array.isArray(value)) return [];
-  const names = new Map(propertyOptions(definition).map((option) => [option.id, option.name]));
-  return value.flatMap((id) => { const name = names.get(String(id)); return name ? [name] : []; }).slice(0, 4);
+  return definition ? propertyLabels(record, definition).slice(0, 4) : [];
 }
 
 function projectPeriod(record: CareerRecord): string {
@@ -122,7 +117,7 @@ function ProjectGallery(props: CareerViewRendererProps) {
 }
 
 function GenericGallery(props: CareerViewRendererProps) {
-  return <ul className={styles.gallery} aria-label="커리어 갤러리">{props.records.map((record) => { const preview=props.view.visiblePropertyIds.flatMap((id)=>{const key=propertyKey(props.category,id);return key&&key!=="title"?[displayValue(rawValue(record,key))]:[]}).filter((value)=>value!=="—").slice(0,3); return <li key={record.id}><article className={record.id === props.openId ? styles.cardActive : styles.card} tabIndex={record.id === props.activeId ? 0 : -1} onKeyDown={(event) => keyboardActivate(event, record.id, props.records, props.onActivate)}><div className={styles.cover} aria-hidden="true">{galleryCover(record, props) ?? <><span>{record.title.slice(0, 1) || "E"}</span><small>{props.category.name}</small></>}</div><label><input aria-label={`${record.title || "제목 없음"} 선택`} type="checkbox" checked={props.selectedIds.has(record.id)} onChange={() => props.onToggle(record.id)} /> 선택</label><button type="button" onClick={() => props.onActivate(record.id)}><strong>{record.title || "제목 없음"}</strong><span className={styles.cardSummary}>{plainText(record).slice(0,100)||"내용을 채워 주세요."}</span><span className={styles.cardTags}>{preview.map((item)=><small key={item}>{item}</small>)}</span></button></article></li>})}</ul>;
+  return <ul className={styles.gallery} aria-label="커리어 갤러리">{props.records.map((record) => { const preview=props.view.visiblePropertyIds.flatMap((id)=>{const definition=definitionById(props.category,id);const label=definition&&definition.key!=="title"?propertyLabel(record,definition):null;return label?[label]:[]}).slice(0,3); return <li key={record.id}><article className={record.id === props.openId ? styles.cardActive : styles.card} tabIndex={record.id === props.activeId ? 0 : -1} onKeyDown={(event) => keyboardActivate(event, record.id, props.records, props.onActivate)}><div className={styles.cover} aria-hidden="true">{galleryCover(record, props) ?? <><span>{record.title.slice(0, 1) || "E"}</span><small>{props.category.name}</small></>}</div><label><input aria-label={`${record.title || "제목 없음"} 선택`} type="checkbox" checked={props.selectedIds.has(record.id)} onChange={() => props.onToggle(record.id)} /> 선택</label><button type="button" onClick={() => props.onActivate(record.id)}><strong>{record.title || "제목 없음"}</strong><span className={styles.cardSummary}>{plainText(record).slice(0,100)||"내용을 채워 주세요."}</span><span className={styles.cardTags}>{preview.map((item)=><small key={item}>{item}</small>)}</span></button></article></li>})}</ul>;
 }
 
 export function GalleryView(props: CareerViewRendererProps) {
