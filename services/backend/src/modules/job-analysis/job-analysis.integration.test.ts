@@ -52,12 +52,15 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB versioned job analysis",
     expect((await service.process(analysisId, extractor)).analysis.resultVersion).toBe(1);
     expect(calls).toBe(1);
     await expect(service.getResult(other, analysisId)).rejects.toMatchObject({ statusCode: 404 });
+    // 기록이 하나도 없으면 비교할 재료가 없어 점수를 저장하지 않는다.
+    expect(await mongoCollections(fixture.resource.db).matchScores.countDocuments({ userId: owner, jobPostingId: postingId })).toBe(0);
   });
 
   it("retains only the immediately previous result and does not extract immutable requirements again", async () => {
     const career = new MongoCareerService(fixture.resource);
     const categoryId = (await career.listCategories(owner))[0]!.id;
-    for (let index = 0; index < 3; index++) await career.createRecord(owner, randomUUID(), { categoryId, title: quotes[index]!, properties: {}, bodyMd: "typescript postgresql aws reliability backend remote" });
+    // 기록 한 건이면 일치도를 계산한다.
+    await career.createRecord(owner, randomUUID(), { categoryId, title: quotes[0]!, properties: {}, bodyMd: "typescript postgresql aws reliability backend remote" });
     expect((await service.requestReanalysis(owner, analysisId)).targetVersion).toBe(2);
     const second = await service.process(analysisId, extractor);
     expect(second.previous?.version).toBe(1);

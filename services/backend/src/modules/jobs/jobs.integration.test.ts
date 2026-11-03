@@ -282,30 +282,20 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("job market integration", () => {
     expect((await app.inject({ method: "DELETE", url: "/v1/jobs/postings/not-a-uuid/interest", headers: auth() })).statusCode).toBe(400);
   });
 
-  it("requires three records, persists four-axis scores, and hides demand ratios below five jobs", async () => {
+  it("scores from a single record, refuses only without records, persists four-axis scores, and hides demand ratios below five jobs", async () => {
     await mongoCollections(fixture.resource.db).jobPostings.updateOne({ _id: primaryPostingId }, { $set: { requirements: { technologies: ["postgresql", "kubernetes"], impacts: ["scale"], roles: ["backend"], conditions: ["remote"] } } });
-    for (const [index, text] of [
-      "Backend engineer used PostgreSQL to scale services.",
-      "Operated remote production systems.",
-    ].entries()) {
-      await careerService.createRecord(firstUserId, `match-${index}-${marker}`, {
-        categoryId: experienceCategoryId,
-        title: `Evidence ${index}`,
-        properties: {},
-        bodyMd: text,
-      });
-    }
+    // 이 사용자는 아직 기록이 없다 — 비교할 재료가 없을 때만 거절한다.
     await expect(
       jobMarketService.computeMatch(firstUserId, primaryPostingId),
     ).rejects.toMatchObject({
       statusCode: 409,
-      publicDetails: { required: 3, actual: 2 },
+      publicDetails: { required: 1, actual: 0 },
     });
-    await careerService.createRecord(firstUserId, `match-3-${marker}`, {
+    await careerService.createRecord(firstUserId, `match-0-${marker}`, {
       categoryId: experienceCategoryId,
-      title: "Evidence 3",
+      title: "Evidence 0",
       properties: {},
-      bodyMd: "Led backend delivery with measurable outcomes.",
+      bodyMd: "Backend engineer used PostgreSQL to scale services.",
     });
     const match = await jobMarketService.computeMatch(
       firstUserId,
