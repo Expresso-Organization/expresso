@@ -27,3 +27,11 @@ acme-dns는 최근 두 검증값을 유지해 apex와 wildcard 도전을 함께 
 - [공식 acme-dns API와 권한](https://github.com/acme-dns/acme-dns)
 - [Let's Encrypt DNS 위임](https://letsencrypt.org/docs/challenge-types/)
 - [Certbot manual 훅](https://eff-certbot.readthedocs.io/en/stable/using.html#pre-and-post-validation-hooks)
+
+## 운영 연결 기록
+
+2026-11-04 사용자 승인 후 인증 레코드 한 개를 전용 CNAME에 연결했다. 대상은 `45043145-1ffb-4fa2-9c8f-1b5263cd429a.auth.acme-dns.io`, TTL은 300이다. 웹 서비스 A 레코드는 유지했다.
+
+서버 IP 제한 등록과 root 소유 0600 키 파일을 확인했고 갱신 훅을 기존 경로에 설치했다. 기존 인증서 serial과 만료일을 유지했다. 원래 TXT 설정은 `/var/backups/expresso-acme-dns-before.json`, 원래 훅은 날짜별 백업에 있다.
+
+권한 DNS 4곳, Cloudflare·Google·Quad9 및 인증 DNS의 UDP/TCP 응답을 확인했다. 실제 CA 검증 결과는 [운영 이슈](https://github.com/DigestWorks/LawDigest/issues/240)에서 추적한다. DNS 조회 성공과 인증기관 검증 성공은 각각 확인한다.
