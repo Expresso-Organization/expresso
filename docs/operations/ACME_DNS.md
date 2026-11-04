@@ -35,3 +35,13 @@ acme-dns는 최근 두 검증값을 유지해 apex와 wildcard 도전을 함께 
 서버 IP 제한 등록과 root 소유 0600 키 파일을 확인했고 갱신 훅을 기존 경로에 설치했다. 기존 인증서 serial과 만료일을 유지했다. 원래 TXT 설정은 `/var/backups/expresso-acme-dns-before.json`, 원래 훅은 날짜별 백업에 있다.
 
 권한 DNS 4곳, Cloudflare·Google·Quad9 및 인증 DNS의 UDP/TCP 응답을 확인했다. 실제 CA 검증 결과는 [운영 이슈](https://github.com/DigestWorks/LawDigest/issues/240)에서 추적한다. DNS 조회 성공과 인증기관 검증 성공은 각각 확인한다.
+
+## 현재 운영 상태 — 2026-11-04 원복
+
+실제 staging 갱신은 총 3회 실패했다. 처음에는 TXT 조회 timeout, 전파 확인 후에는 SERVFAIL, 마지막 오류 이후 5분 30초가 지난 재시도에서도 timeout이었다. 권한 DNS 4곳, Cloudflare·Google·Quad9, 외부 인증 DNS UDP/TCP 및 부모 glue 응답은 확인됐지만 CA 검증은 통과하지 못했다. 원인을 로컬 훅이나 특정 제공자로 단정하지 않는다.
+
+자동 갱신 완료로 처리하지 않고 기존 TXT 값·TTL 3600과 원래 수동 auth/cleanup 훅을 복원했다. 운영 인증서 serial·만료일은 동일하며 웹은 HTTP 200이다. 현재 운영은 수동 DNS 인증 방식이다.
+
+사용하지 않는 전용 키는 `/var/backups/expresso-acme-20261104154056/acme-dns-unused.json`으로 옮겼다. `/etc/expresso-acme-dns.json`이 없어 설치 스크립트가 무심코 재활성화하지 못한다. 검증용 전체 소스 워크트리도 제거했다. 기존 갱신 timer는 유지한다.
+
+증거는 서버 `/tmp/expresso-acme-staging-final.log`, `expresso-acme-staging-retry.log`, `expresso-acme-staging-after-cache.log`이며 후속 판단은 [운영 이슈](https://github.com/DigestWorks/LawDigest/issues/240)에 남긴다. 재시도는 DNS 검증 경로의 변경이나 외부 상태 변화 근거가 있을 때 수행한다.
