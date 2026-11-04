@@ -1,8 +1,9 @@
 # 요구사항
 
-- `_acme-challenge.expresso.ai.kr`만 권한 위임한다. NS 대상은 `acme-dns.expresso.ai.kr`이며 기존 wildcard A가 서버로 해석된다.
-- CoreDNS 고정 이미지, 비재귀 응답, 메모리 64MB와 CPU 0.25 제한을 적용한다.
-- 인증 훅은 해당 도메인과 base64url 토큰만 허용한다. 여러 동시 토큰 보존, 잠금, atomic replace, 단조 증가 SOA serial을 사용한다.
-- cleanup은 해당 토큰만 제거한다. 기존 manual hook 경로와 갱신 timer를 재사용한다.
-- 전용 OCI NSG는 현재 인스턴스에만 TCP/UDP 53을 추가한다. 다른 VNIC와 공통 보안 목록은 수정하지 않는다.
-- 계정/API 비밀은 소스나 채팅에 기록하지 않는다. 원복은 NS 위임 제거, 예전 TXT·훅 복원, 전용 NSG 분리다.
+- 호스팅케이알이 NS 레코드 유형을 제공하지 않아 직접 NS 위임은 사용하지 않는다.
+- `_acme-challenge.expresso.ai.kr` 하나를 공식 acme-dns 공개 서비스의 전용 CNAME으로 연결한다. 이 외부 제공자는 해당 도메인의 인증 응답 권한을 갖게 되므로 실제 변경 직전 확인받는다.
+- 전용 API 키는 서버 IP 140.245.74.246/32에서만 사용할 수 있게 등록하고 root 소유 0600 파일에 보관한다. 새 등록은 승인 후 수행한다.
+- 훅은 해당 도메인과 43자 base64url 값만 허용하고 고정 HTTPS 주소만 호출한다. 리다이렉트에는 키를 전송하지 않는다.
+- acme-dns의 최근 두 검증값 보존 방식을 사용한다. cleanup은 다른 도전의 값을 변경하지 않는다.
+- 기존 Certbot 훅 경로와 timer를 유지한다. staging 성공 전 완료로 표시하지 않는다.
+- 검사용 CoreDNS는 제거했고 OCI 네트워크 설정은 변경하지 않았다.

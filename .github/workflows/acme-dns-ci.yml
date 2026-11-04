@@ -1,0 +1,20 @@
+name: 인증 DNS 검사
+on:
+  pull_request:
+    paths:
+      - "scripts/operations/*acme*dns*"
+      - ".github/workflows/acme-dns-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/operations/*acme*dns*"
+      - ".github/workflows/acme-dns-ci.yml"
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: python3 -m unittest discover -s scripts/operations -p test_acme_dns_hook.py -v
+      - run: bash -n scripts/operations/install-acme-dns.sh
