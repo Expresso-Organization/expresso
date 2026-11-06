@@ -22,7 +22,7 @@ date: 2026-11-07
 
 - `services/backend/src/modules/job-analysis/coverage.ts`: 선택 인자 `keywords`. `service.ts`는 `normalized`의 네 축을 합쳐 넘긴다. 일치도(`calculateExplainableMatch`)와 같은 키워드, 같은 정규화 규칙을 쓴다.
 - `service.ts`의 `getResult` · `getResultById`가 공고를 읽어 `sourceText`를 채운다. 계약은 `.nullable().default(null)`이라 레거시 경로를 고치지 않는다.
-- `analyze/source-marks.ts`: 원문을 구간 조각으로 나누는 순수 함수.
+- `analyze/source-marks.ts`: 원문을 구간 조각으로 나누고, 수집 본문의 Markdown을 제목 · 목록 · 문단 줄로 읽는 순수 함수. 위치 계산을 끝낸 뒤 표시 문법을 지워 표시가 밀리지 않는다.
 - `analyze/CoverageMap.tsx`: 클라이언트 컴포넌트. 막대, 요건 행, 원문을 함께 그리고 활성 요건 상태를 가진다.
 - `analyze/page.tsx`는 데이터 조회와 머리 · 바닥만 맡는다. `situation`은 `충족 2 / 6` 하나다. `Reanalyze`의 안내는 짧게 줄인다.
 

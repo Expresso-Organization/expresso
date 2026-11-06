@@ -95,9 +95,10 @@ export class JobAnalysisService implements JobAnalysisApi {
         const recordTexts = records.map((record) => ({ id: record._id, text: recordText(record) }));
         const targetIds = targets.map((target) => target._id);
         await db.requirementCoverages.deleteMany({ userId, requirementId: { $in: targetIds } }, options);
+        const keywords = Object.values(JobAnalysisExtractionSchema.shape.normalized.parse(normalized)).flat();
         for (const target of targets) {
           const requirement = { label: target.label, kind: target.kind, axis: target.axis ?? "other" as const, sourceSpan: RequirementCoverageSchema.shape.sourceSpan.parse(target.sourceSpan) };
-          const coverage = calculateRequirementCoverage(requirement, recordTexts);
+          const coverage = calculateRequirementCoverage(requirement, recordTexts, keywords);
           await db.requirementCoverages.insertOne({ _id: `${userId}:${target._id}`, userId, requirementId: target._id, ...coverage, computedAt: new Date() }, options);
         }
         // 커버리지와 일치도를 같은 기록 snapshot으로 저장합니다. 비교할 기록이 없으면 이전 점수를 남기지 않습니다.
@@ -131,9 +132,11 @@ export class JobAnalysisService implements JobAnalysisApi {
     return inTransaction(this.context, async (tx) => {
     const analysis = await mongoCollections(tx.db).jobAnalyses.findOne({ _id: jobAnalysisId, userId }, { session: tx.session });
     if (!analysis) throw new JobAnalysisNotFoundError();
+    const posting = analysis.jobPostingId ? await mongoCollections(tx.db).jobPostings.findOne({ _id: analysis.jobPostingId }, { session: tx.session, projection: { descriptionRaw: 1 } }) : null;
     return JobAnalysisResultSchema.parse({
       analysis: { jobAnalysisId, status: analysis.status, stage: analysis.progressStage, attempts: analysis.attempts, resultVersion: analysis.resultVersion, failure: analysis.failureCode ? { code: analysis.failureCode, retryable: analysis.failureRetryable ?? false } : null, analyzedAt: analysis.analyzedAt?.toISOString() ?? null },
       requirements: analysis.jobPostingId ? await this.#requirements(userId, analysis.jobPostingId, tx.session) : [],
+      sourceText: posting?.descriptionRaw ?? null,
       previous: analysis.history ? { version: analysis.history.previousVersion, requirements: analysis.history.requirements, archivedAt: analysis.history.archivedAt.toISOString() } : null,
     });
     });

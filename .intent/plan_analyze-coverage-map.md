@@ -24,7 +24,8 @@ date: 2026-11-07
 | `services/web/src/app/(app)/brew/[brewId]/analyze/page.tsx` | 화면 재구성 |
 | `services/web/src/app/(app)/brew/[brewId]/analyze/page.module.css` | 스타일 교체 |
 | `services/web/src/app/(app)/brew/[brewId]/analyze/Reanalyze.tsx` | 안내 축소 |
-| `services/web/src/app/(app)/brew/[brewId]/analyze/loading.tsx` | 새 배치에 맞춘 뼈대 |
+| `services/web/src/app/(app)/brew/[brewId]/analyze/AnalyzeSkeletonBody.tsx` | 새 파일: 새 배치에 맞춘 뼈대 |
+| `services/web/src/app/(app)/brew/[brewId]/analyze/loading.tsx` · `brew/[brewId]/loading.tsx` | 뼈대 공유 |
 
 ## 작업 순서
 

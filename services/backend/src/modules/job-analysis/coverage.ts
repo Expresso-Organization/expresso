@@ -13,10 +13,32 @@ function tokens(value: string): string[] {
     .filter((token) => token.length >= 2))];
 }
 
+function normalized(value: string): string {
+  return value.normalize("NFKC").toLocaleLowerCase("en-US");
+}
+
+/**
+ * 요건에 든 공고 키워드(`normalized`)가 기록 어딘가에 모두 있으면 그 요건은 덮였다.
+ *
+ * 일치도(`calculateExplainableMatch`)와 같은 키워드 · 같은 비교다. 키워드가 없는
+ * 요건("빠른 환경에서의 판단력")은 낱말 일치로 증명할 수 없어 아래 규칙으로 간다.
+ */
+function coveredByKeywords(requirement: ExtractedRequirement, records: CoverageRecord[], keywords: string[]): string[] | null {
+  const statement = normalized(`${requirement.label} ${requirement.sourceSpan.quote}`);
+  const own = keywords.map(normalized).filter((keyword) => keyword.length > 0 && statement.includes(keyword));
+  if (own.length === 0) return null;
+  const sources = records.map((record) => ({ id: record.id, text: normalized(record.text) }));
+  if (!own.every((keyword) => sources.some((source) => source.text.includes(keyword)))) return null;
+  return sources.filter((source) => own.some((keyword) => source.text.includes(keyword))).map((source) => source.id);
+}
+
 export function calculateRequirementCoverage(
   requirement: ExtractedRequirement,
   records: CoverageRecord[],
+  keywords: string[] = [],
 ): { coverage: "covered" | "partial" | "missing"; coveredBy: string[] } {
+  const byKeywords = coveredByKeywords(requirement, records, keywords);
+  if (byKeywords) return { coverage: "covered", coveredBy: byKeywords };
   const requirementTokens = tokens(`${requirement.label} ${requirement.sourceSpan.quote}`);
   const fullyCovered: string[] = [];
   const partiallyCovered: string[] = [];

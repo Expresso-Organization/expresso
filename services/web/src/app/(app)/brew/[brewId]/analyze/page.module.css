@@ -1,385 +1,347 @@
-/* 01 공고 분석 — 화면 정의서 그대로 */
+/* 01 공고 분석 — 충족 지도와 원문 */
+
+/* 어느 공고인가. 원문을 내려도 머리에 남는다. */
+.posting {
+  position: sticky;
+  top: -24px;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin: -24px -32px 20px;
+  padding: 20px 32px 14px;
+  background: var(--ex-bg-sunken);
+  border-bottom: 1px solid var(--ex-bg-track);
+}
+
+.left > .posting {
+  position: static;
+  margin: 0 0 20px;
+  padding: 0;
+  background: none;
+  border: none;
+}
+
+.postingName {
+  flex: 1;
+  min-width: 0;
+}
+
+.postingTitle {
+  margin: 0;
+  font-size: var(--ex-text-md);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ex-fg);
+  overflow-wrap: anywhere;
+}
+
+.postingCompany {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-muted);
+}
+
+.sourceAction {
+  flex-shrink: 0;
+  font-size: var(--ex-text-xs);
+  font-weight: 500;
+  color: var(--ex-fg-body);
+  background: transparent;
+  border: 1px solid var(--ex-border);
+  border-radius: 8px;
+  padding: 7px 12px;
+  white-space: nowrap;
+  transition:
+    background var(--ex-motion-quick),
+    color var(--ex-motion-quick);
+}
+
+.sourceAction:hover:not(:disabled) {
+  background: var(--ex-bg-hover);
+  color: var(--ex-fg);
+}
+
+.sourceAction:disabled {
+  color: var(--ex-fg-subtle);
+}
+
+.sourceNotice {
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-status-danger-text);
+}
+
+.failure {
+  flex-shrink: 0;
+  margin: 16px 32px;
+  padding: 10px 14px;
+  font-size: var(--ex-text-xs);
+  line-height: 1.6;
+  color: var(--ex-status-danger-text);
+  background: var(--ex-status-danger-surface);
+  border-radius: 8px;
+}
 
 .body {
   flex: 1;
-  /* 내용이 넓어도 지면 밖으로 밀지 않는다 — flex 항목의 기본 최소 크기는 내용 크기다 */
   min-width: 0;
   min-height: 0;
   display: flex;
   overflow: hidden;
 }
 
-/* 좌측 본문 */
 .left {
   flex: 1;
   min-width: 0;
-  padding: 26px 32px;
-  display: flex;
-  flex-direction: column;
+  padding: 24px 32px 32px;
   overflow: auto;
 }
 
-.head {
-  flex-shrink: 0;
+/* 충족 막대: 요건 한 칸. 묶음 사이의 틈이 필수와 우대를 가른다. */
+.strip {
   display: flex;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.stripGroup {
+  flex-basis: 0;
+  min-width: 0;
+  display: flex;
+  gap: 3px;
+}
+
+.cell {
+  flex: 1;
+  height: 10px;
+  border-radius: 2px;
+  transition:
+    transform var(--ex-motion-quick),
+    opacity var(--ex-motion-quick);
+}
+
+.cellCovered {
+  background: var(--ex-status-success);
+}
+
+.cellPartial {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--ex-status-warning-text) 0 2px,
+    transparent 2px 5px
+  );
+  box-shadow: inset 0 0 0 1px var(--ex-status-warning-text);
+}
+
+.cellMissing {
+  box-shadow: inset 0 0 0 1px var(--ex-border-firm);
+}
+
+.cellActive {
+  transform: scaleY(1.6);
+}
+
+/* 요건 행 */
+.group + .group {
+  margin-top: 24px;
+}
+
+.groupName {
+  margin: 0 0 4px;
+  font-size: var(--ex-text-2xs);
+  font-weight: 600;
+  color: var(--ex-fg-muted);
+}
+
+.row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto 18px;
   align-items: center;
   gap: 12px;
-  margin-bottom: 13px;
-}
-
-.headTitle {
-  font-size: var(--ex-text-xl);
-  font-weight: 600;
-  letter-spacing: -0.03em;
-}
-
-/* 입력 방식 3택 세그먼트 */
-.segment {
-  margin-left: auto;
-  display: flex;
-  background: var(--ex-border-hair);
-  border-radius: 9px;
-  padding: 3px;
-}
-
-.segmentItem {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
+  padding: 11px 10px;
+  margin: 0 -10px;
+  box-sizing: content-box;
+  max-width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: transparent;
   border: none;
-  background: none;
-  padding: 5px 11px;
-  border-radius: 7px;
-  white-space: nowrap;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background var(--ex-motion-quick);
 }
 
-.segmentItemActive {
-  font-weight: 600;
+.row:disabled {
+  cursor: default;
+}
+
+.rowActive {
+  background: var(--ex-bg-hover);
+}
+
+.row:focus-visible {
+  outline: 2px solid var(--ex-accent);
+  outline-offset: -2px;
+}
+
+.state {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.rowLabel {
+  font-size: var(--ex-text-md);
+  line-height: 1.45;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+/* 덮인 요건은 물러나고 빈 요건이 앞으로 나온다 */
+.rowCovered .state {
+  background: var(--ex-status-success);
+}
+
+.rowCovered .rowLabel {
+  color: var(--ex-fg-muted);
+}
+
+.rowPartial .state {
+  border: 1.5px solid var(--ex-status-warning-text);
+  background: linear-gradient(90deg, var(--ex-status-warning-text) 50%, transparent 50%);
+}
+
+.rowPartial .rowLabel,
+.rowMissing .rowLabel {
   color: var(--ex-fg);
-  background: var(--ex-bg);
-  box-shadow: 0 1px 2px rgba(22, 34, 58, 0.07);
+  font-weight: 500;
 }
 
-/* 확정된 공고 — 파일 카드로 축약 */
-.sourceCard {
-  flex-shrink: 0;
-  display: flex;
+.rowMissing .state {
+  border: 1.5px solid var(--ex-fg-subtle);
+}
+
+.evidence {
+  display: inline-flex;
   align-items: center;
-  /* 다시 분석이 남기는 말은 아랫줄로 내려간다 — 한 줄에 끼우면 제목이 잘린다. */
-  flex-wrap: wrap;
-  gap: 11px;
-  background: var(--ex-bg-sunken);
-  border-radius: 11px;
-  padding: 13px 16px;
-  margin-bottom: 24px;
-}
-
-.sourceTitle {
-  font-size: var(--ex-text-sm);
-  color: var(--ex-fg);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.sourceMeta {
-  font-family: var(--ex-font-mono);
+  gap: 4px;
   font-size: var(--ex-text-2xs);
-  color: var(--ex-fg-muted);
-  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--ex-fg-subtle);
 }
 
-.sourceAction {
-  margin-left: auto;
-  border: none;
-  background: none;
-  padding: 0;
-  font-size: var(--ex-text-xs);
+.gapSlot {
+  display: inline-flex;
+  justify-content: center;
+  color: var(--ex-accent-text);
+}
+
+/* 공고 원문. 근거 문장만 표시를 입는다. */
+.right {
+  flex: 0 1 46%;
+  min-width: 0;
+  max-width: 640px;
+  overflow: auto;
+  padding: 24px 32px 32px;
+  background: var(--ex-bg-sunken);
+  border-left: 1px solid var(--ex-bg-track);
+}
+
+.lineHeading {
+  margin: 22px 0 8px;
+  font-size: var(--ex-text-sm);
   font-weight: 600;
-  color: var(--ex-fg-body);
-  white-space: nowrap;
+  color: var(--ex-fg);
 }
 
-/* AI 분석 문단 */
-.block {
-  flex-shrink: 0;
-  margin-bottom: 24px;
+.lineHeading:first-child {
+  margin-top: 0;
 }
 
-.blockHead {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
+.lineText,
+.lineItem {
+  margin: 0 0 6px;
+  max-width: 62ch;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  font-size: var(--ex-text-sm);
+  line-height: 1.75;
+  color: var(--ex-fg-subtle);
+}
+
+.lineText {
   margin-bottom: 12px;
 }
 
-.blockTitle {
-  font-size: var(--ex-text-lg);
-  font-weight: 600;
+.lineItem {
+  position: relative;
+  padding-left: 16px;
 }
 
-.aiTag {
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-3xs);
-  letter-spacing: 0.1em;
-  color: var(--ex-accent-text);
-  background: var(--ex-accent-surface);
-  border-radius: 5px;
-  padding: 3px 7px;
+.lineItem::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0.8em;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--ex-border-firm);
 }
 
-.summary {
-  font-size: var(--ex-text-md);
-  color: var(--ex-fg-body);
-  line-height: 1.95;
-  text-wrap: pretty;
-}
-
-/* 요구 역량 목록 */
-.requirementsHead {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  margin-bottom: 4px;
-}
-
-.requirementsNote {
-  margin-left: auto;
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
-}
-
-.requirement {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 14px 0;
-  border-bottom: 1px solid var(--ex-border-hair);
-}
-
-.requirementNo {
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-accent-text);
-  flex-shrink: 0;
-  width: 14px;
-  padding-top: 2px;
-}
-
-.requirementBody {
-  flex: 1;
-  min-width: 0;
-}
-
-.requirementHead {
-  display: flex;
-  align-items: baseline;
-  gap: 9px;
-  margin-bottom: 5px;
-}
-
-.requirementLabel {
-  font-size: var(--ex-text-md);
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.requirementMentions {
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-fg-muted);
-}
-
-/* 커버리지 배지 — 기록 있음 / 보강 필요 / 기록 없음 */
-.coverage {
-  margin-left: auto;
-  flex-shrink: 0;
-  font-size: var(--ex-text-xs);
-  border-radius: 6px;
-  padding: 4px 9px;
-  white-space: nowrap;
-}
-
-.coverageHave {
-  color: var(--ex-status-success-text);
-  background: var(--ex-status-success-surface);
-}
-
-.coverageWeak {
-  color: var(--ex-accent-text);
-  background: var(--ex-accent-surface);
-}
-
-.coverageNone {
-  color: var(--ex-fg-muted);
-  background: var(--ex-border-hair);
-}
-
-.requirementQuote {
-  font-size: var(--ex-text-sm);
-  color: var(--ex-fg-muted);
-  line-height: 1.65;
-}
-
-/* 읽은 자료 요약 바 */
-.readBar {
-  margin-top: auto;
-  padding-top: 18px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.readBarText {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
-  flex: 1;
-  line-height: 1.7;
-}
-
-.readBarAction {
-  border: none;
+.lineItem[data-ordinal]::before {
+  content: attr(data-ordinal);
+  top: 0;
+  left: 0;
+  width: auto;
+  height: auto;
   background: none;
-  padding: 0;
-  font-size: var(--ex-text-xs);
-  font-weight: 600;
-  color: var(--ex-fg-body);
-  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--ex-fg-subtle);
 }
 
-/* 우측 468px — 공고에서 읽은 문장 */
-.right {
-  width: 468px;
-  flex-shrink: 0;
-  border-left: 1px solid var(--ex-bg-track);
-  padding: 26px 30px;
-  display: flex;
-  flex-direction: column;
-  overflow: auto;
+.mark {
+  color: var(--ex-fg);
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 1px 0;
+  background: transparent;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  transition:
+    background var(--ex-motion-quick),
+    box-shadow var(--ex-motion-quick);
 }
 
-.rightHead {
-  flex-shrink: 0;
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  margin-bottom: 3px;
+.markCovered {
+  box-shadow: inset 0 -2px 0 var(--ex-status-success);
 }
 
-.rightTitle {
-  font-size: var(--ex-text-lg);
-  font-weight: 600;
+.markPartial {
+  box-shadow: inset 0 -2px 0 var(--ex-status-warning-text);
 }
 
-.rightCount {
-  margin-left: auto;
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-fg-muted);
+.markMissing {
+  box-shadow: inset 0 -2px 0 var(--ex-fg-subtle);
 }
 
-.rightNote {
-  flex-shrink: 0;
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
-  margin-bottom: 8px;
+.markActive.markCovered {
+  background: color-mix(in srgb, var(--ex-status-success) 24%, transparent);
 }
 
-.quote {
-  font-size: var(--ex-text-sm);
-  color: var(--ex-fg-body);
-  line-height: 1.95;
-  padding: 13px 0;
-  border-bottom: 1px solid var(--ex-border-hair);
+.markActive.markPartial {
+  background: color-mix(in srgb, var(--ex-status-warning-text) 28%, transparent);
 }
 
-.rightSection {
-  flex-shrink: 0;
-  margin-top: 20px;
+.markActive.markMissing {
+  background: color-mix(in srgb, var(--ex-fg-subtle) 24%, transparent);
 }
 
-.rightSectionLabel {
-  font-size: var(--ex-text-sm);
-  color: var(--ex-fg-muted);
-  margin-bottom: 10px;
-}
-
-.phrases {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-}
-
-.phrase {
-  font-size: var(--ex-text-sm);
-  color: var(--ex-fg-body);
-  background: var(--ex-bg-sunken);
-  border-radius: 999px;
-  padding: 7px 13px;
-  white-space: nowrap;
-}
-
-.phraseMore {
-  font-size: var(--ex-text-sm);
-  color: var(--ex-fg-muted);
-  border: 1px dashed var(--ex-border-soft);
-  background: none;
-  border-radius: 999px;
-  padding: 7px 13px;
-  white-space: nowrap;
-}
-
-.extraList {
-  display: grid;
-  gap: 10px;
-}
-
-.extraRow {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-}
-
-.extraLabel {
-  font-size: var(--ex-text-sm);
-  color: var(--ex-fg-body);
-  flex: 1;
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.extraCount {
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-fg-muted);
-  flex-shrink: 0;
-}
-
-/* 대화 예고 블록 */
-.preview {
-  margin-top: auto;
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  background: var(--ex-bg-sunken);
-  border-radius: 13px;
-  padding: 16px 18px;
-}
-
-.previewTitle {
-  font-size: var(--ex-text-sm);
-  font-weight: 600;
-  margin-bottom: 5px;
-}
-
-.previewBody {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
-  line-height: 1.7;
-}
-
-/* 하단 액션 바 */
+/* 바닥: 고른 기록 수와 다음 단계 */
 .footer {
   height: 76px;
   flex-shrink: 0;
@@ -390,9 +352,16 @@
   padding: 0 32px;
 }
 
-.footerText {
+.footerCount {
   font-size: var(--ex-text-sm);
-  color: var(--ex-fg-body);
+  font-variant-numeric: tabular-nums;
+  color: var(--ex-fg-muted);
+}
+
+.footerCount b {
+  font-size: var(--ex-text-xl);
+  font-weight: 600;
+  color: var(--ex-fg);
 }
 
 .footerActions {
@@ -400,20 +369,6 @@
   display: flex;
   align-items: center;
   gap: 12px;
-}
-
-.ghost {
-  font-size: var(--ex-text-md);
-  font-weight: 500;
-  color: var(--ex-fg-muted);
-  background: transparent;
-  border: none;
-  padding: 11px 14px;
-  transition: color var(--ex-motion-quick);
-}
-
-.ghost:hover {
-  color: var(--ex-fg);
 }
 
 /* brew CTA — radius full + espresso */
@@ -426,6 +381,7 @@
   border-radius: 999px;
   padding: 13px 26px;
   display: inline-block;
+  white-space: nowrap;
   transition:
     background var(--ex-motion-quick),
     transform var(--ex-motion-spring);
@@ -437,28 +393,15 @@
   color: var(--ex-fg-on-accent);
 }
 
-/* 다시 분석이 남긴 말 · 분석 실패 */
-.sourceNotice {
-  flex-basis: 100%;
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
-  line-height: 1.6;
+/* 움직임을 줄인 사용자에게는 막대가 커지지 않는다. 강조는 배경이 맡는다. */
+@media (prefers-reduced-motion: reduce) {
+  .cellActive {
+    transform: none;
+    opacity: 0.7;
+  }
 }
 
-.failure {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-status-danger-text);
-  background: var(--ex-status-danger-surface);
-  border-radius: 8px;
-  padding: 9px 13px;
-  line-height: 1.6;
-  flex-shrink: 0;
-}
-
-/*
- * 좁은 화면 — 본문과 "공고에서 읽은 문장"을 위아래로 쌓는다.
- * 468px을 떼어 주면 원문 쪽이 못 읽는 폭이 된다.
- */
+/* 좁으면 원문이 요건 아래로 내려간다. 스크롤은 지면 하나로 합친다. */
 @media (max-width: 1023px) {
   .body {
     flex-direction: column;
@@ -467,22 +410,46 @@
 
   .left,
   .right {
+    flex: none;
     overflow: visible;
   }
 
   .right {
-    width: auto;
+    max-width: none;
     border-left: none;
     border-top: 1px solid var(--ex-bg-track);
+  }
+
+  .posting {
+    position: static;
   }
 }
 
 @media (max-width: 767px) {
-  .left {
-    padding: 18px 14px;
+  .posting {
+    margin: -18px -16px 16px;
+    padding: 16px 16px 12px;
   }
 
+  .failure {
+    margin: 14px 16px;
+  }
+
+  .left,
   .right {
-    padding: 18px 14px;
+    padding: 18px 16px 24px;
+  }
+
+  .row {
+    gap: 10px;
+  }
+
+  .footer {
+    padding: 0 16px;
+  }
+
+  .brew {
+    padding: 11px 20px;
+    font-size: var(--ex-text-sm);
   }
 }
