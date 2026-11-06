@@ -359,7 +359,9 @@ export function Editor({
           <span className={styles.statusPill}>
             <span className={styles.statusDot} />
             <span className={styles.statusText}>
-              {portfolio.deployment
+              {portfolio.status === "unlisted"
+                ? "공개 중단"
+                : portfolio.deployment
                 ? portfolio.deployment.hasUnpublishedChanges
                   ? `v${portfolio.deployment.version} · 배포 후 변경됨`
                   : `배포됨 · v${portfolio.deployment.version}`

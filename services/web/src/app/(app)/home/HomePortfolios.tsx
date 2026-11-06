@@ -82,7 +82,9 @@ function PortfolioCard({
   hasPage: boolean;
   site: SiteInsight | null;
 }) {
-  const { deployment, target } = portfolio;
+  const { target } = portfolio;
+  // 공개를 중단해도 배포 기록은 남는다. 지금 열리는 주소가 있을 때만 배포됨이다.
+  const deployment = portfolio.status === "published" ? portfolio.deployment : null;
   return (
     <Link href={`/edit/${portfolio.id}` as Route} className={styles.portfolioCard}>
       {/*
@@ -100,7 +102,7 @@ function PortfolioCard({
           />
         ) : null}
         <span className={`${styles.portfolioBadge} ${deployment ? styles.badgeLive : styles.badgeDraft}`}>
-          {deployment ? "배포됨" : "초안"}
+          {deployment ? "배포됨" : portfolio.status === "unlisted" ? "공개 중단" : "초안"}
         </span>
       </div>
       <CardBody title={portfolio.title} company={target?.company ?? null} posting={target?.postingTitle ?? null}>
