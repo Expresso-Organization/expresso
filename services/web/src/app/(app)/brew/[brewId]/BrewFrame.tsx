@@ -7,6 +7,9 @@ import {
   WizardSteps,
   type WizardStepKey,
 } from "@/components/shell/WizardShell";
+import { WizardTitleEditor } from "@/components/shell/WizardTitleEditor";
+
+import { renameBrewAction } from "./title-actions";
 
 /**
  * 01–03 공통 뼈대 — 마법사 머리말과 무대.
@@ -29,14 +32,22 @@ export function BrewFrame({
   brewId: string;
   step: WizardStepKey;
   situation: string;
-  /** 머리말에 그리는 이름. 아직 정해지지 않았으면 공고 제목이 대신 선다. */
-  portfolioTitle?: string | null;
+  /** 머리말에 그리는 이름(`brewTitle`). 연필로 바꿀 수 있다. */
+  portfolioTitle: string | null;
   tinted?: boolean;
   children: ReactNode;
 }) {
   return (
     <>
-      <WizardHeader portfolioTitle={portfolioTitle ?? "새 포트폴리오"} />
+      <WizardHeader
+        title={
+          <WizardTitleEditor
+            title={portfolioTitle}
+            placeholder="이름 붙이기"
+            action={renameBrewAction.bind(null, brewId)}
+          />
+        }
+      />
       <WizardSteps brewId={brewId} current={step} situation={situation} />
       <AppBody>
         <WizardStage tinted={tinted}>{children}</WizardStage>

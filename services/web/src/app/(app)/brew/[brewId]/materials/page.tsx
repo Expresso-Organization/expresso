@@ -5,6 +5,7 @@ import { brews, entitlements } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 import { BrewFrame } from "../BrewFrame";
+import { brewTitle } from "../brew-title";
 import { MaterialPicker } from "./MaterialPicker";
 
 /**
@@ -22,8 +23,13 @@ export default async function MaterialsPage({
   const session = await requireSession();
 
   let materials;
+  let brew;
   try {
-    materials = (await brews.materials(session.accessToken, brewId)).data;
+    // 머리말의 이름은 제작 상태에서 온다. 재료와 함께 읽는다.
+    [materials, brew] = await Promise.all([
+      brews.materials(session.accessToken, brewId).then((response) => response.data),
+      brews.get(session.accessToken, brewId).then((response) => response.data),
+    ]);
   } catch (error) {
     if (error instanceof ApiError && (error.status === 404 || error.status === 400)) notFound();
     throw error;
@@ -35,7 +41,7 @@ export default async function MaterialsPage({
   ]);
 
   return (
-    <BrewFrame brewId={brewId} step="materials" situation={`기록 최대 ${materials.selectionLimit}건`}>
+    <BrewFrame brewId={brewId} step="materials" portfolioTitle={brewTitle(brew)} situation={`기록 최대 ${materials.selectionLimit}건`}>
       <MaterialPicker
         brewId={brewId}
         materials={materials}

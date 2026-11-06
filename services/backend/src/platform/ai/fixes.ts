@@ -9,7 +9,8 @@ import { AiError, parseToolOutput, type AiCallOptions, type AiContract, type AiF
  * 넣습니다(`claude-code.ts`). 걸린 자리는 둘입니다.
  *
  * - JSON 문법: 모델은 JSON을 글로 쓰고 서버가 읽습니다(`readJsonText`). 문법이 깨진 자리는 바꿀 원문 조각과 고친
- *   조각(`edits`)으로, 중간에 끊긴 글은 이어지는 글로 받습니다.
+ *   조각(`edits`)으로, 중간에 끊긴 글은 이어지는 글로 받습니다. 다 썼는데 닫는 괄호만 빠진 글은 서버가 닫습니다
+ *   (`closeOpenBrackets`).
  * - 계약(Zod)과 업무 규칙(`check`): 걸린 칸의 경로와 이유를 보내고 그 칸의 새 값(`fixes`)을 받습니다.
  *
  * 고치기는 진전이 있는 동안 계속합니다(intent `ai-output-no-cli-rewrite`, 2026-10-27 수락).
@@ -119,7 +120,7 @@ export type JsonRead =
       at: number;
       /**
        * 글 끝에서 막혔는가. 출력 한도에 닿아 끊겼거나(`stopReason` `max_tokens`) 닫는 괄호가 빠진 것이다. 앞의 경우만
-       * 이어지는 글을 받고, 뒤의 경우는 끝부분 조각을 고쳐 받는다.
+       * 이어지는 글을 받는다. 뒤의 경우는 서버가 괄호를 닫고, 닫아도 읽히지 않으면 끝부분 조각을 고쳐 받는다.
        */
       truncated: boolean;
       message: string;
@@ -156,6 +157,43 @@ export function readJsonText(text: string): JsonRead {
       return { ok: false, at: start + at, truncated: false, message };
     }
   }
+}
+
+/**
+ * 다 썼는데 닫는 괄호만 빠진 JSON 글에 빠진 괄호를 열린 순서의 반대로 붙여, 붙인 글과 붙인 괄호를 돌려줍니다. 닫는
+ * 일 말고 다른 고침이 필요한 글이면 null입니다.
+ *
+ * - 첫 `{` · `[`부터 글 끝까지 읽어 문자열 밖에서 끝나고, 열린 괄호가 남아 있어야 합니다. 끝의 코드 블록 표시는
+ *   JSON이 아니라 빼고 봅니다.
+ * - 마지막 글자가 값의 끝이어야 합니다. `,` · `:`로 끝났으면 뒤에 올 값이 빠진 것이라 닫아도 내용이 모자랍니다.
+ *
+ * 붙인 괄호로 읽힌 값도 계약(Zod)과 `check`를 지납니다. 빠진 칸이 있으면 그 검사가 같은 대화에서 고쳐 받습니다.
+ */
+export function closeOpenBrackets(text: string): { text: string; added: string } | null {
+  const start = text.search(/[{[]/);
+  if (start < 0) return null;
+  const body = text.slice(start).replace(/\s*(?:```\s*)?$/, "");
+  const open: string[] = [];
+  let inString = false;
+  let escaped = false;
+  for (const char of body) {
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (char === "\\") escaped = true;
+      else if (char === '"') inString = false;
+      continue;
+    }
+    if (char === '"') inString = true;
+    else if (char === "{") open.push("}");
+    else if (char === "[") open.push("]");
+    else if (char === "}" || char === "]") {
+      if (open.pop() !== char) return null;
+    }
+  }
+  if (inString || !open.length) return null;
+  if (!/[}\]"\del]$/.test(body)) return null;
+  const added = open.reverse().join("");
+  return { text: body + added, added };
 }
 
 /** 문법 고치기 응답의 모양. `find`는 원문에 정확히 한 번 있는 조각이어야 바뀝니다. */
@@ -239,7 +277,7 @@ export async function runWithFixes<T>(input: {
         throw new AiError("AI_INVALID_OUTPUT", contract, `output is not JSON after syntax fixes: ${result.message}`, { retryable: false });
       }
       lastAt = result.at;
-      // 출력 한도에 닿아 끊긴 글만 이어 쓰게 한다. 다 썼는데 끝에서 막혔으면(닫는 괄호가 빠짐) 끝부분 조각을 고쳐 받는다.
+      // 출력 한도에 닿아 끊긴 글만 이어 쓰게 한다.
       if (result.truncated && stopReason === "max_tokens") {
         const more = await input.fix(continuePrompt(text), null);
         usages.push(more.usage);
@@ -249,12 +287,23 @@ export async function runWithFixes<T>(input: {
         text += added;
         continue;
       }
+      // 다 썼는데 닫는 괄호만 빠졌으면 서버가 닫는다. 붙일 조각이 정해져 있어 모델에게 물을 일이 아니다.
+      const closed = result.truncated ? closeOpenBrackets(text) : null;
+      if (closed !== null) {
+        const closedRead = readJsonText(closed.text);
+        if (closedRead.ok) {
+          console.error(JSON.stringify({ level: "info", event: "ai.syntax_closed", contract, at: result.at, added: closed.added }));
+          return closedRead.value;
+        }
+      }
       const reply = await input.fix(syntaxFixPrompt(text, result.at, result.message), SYNTAX_EDITS_SCHEMA);
       usages.push(reply.usage);
       const replyValue = "text" in reply ? readJsonText(reply.text) : { ok: true as const, value: reply.output };
       const edits = replyValue.ok ? SYNTAX_EDITS_SCHEMA.safeParse(replyValue.value) : null;
       const applied = edits?.success ? applySyntaxEdits(text, edits.data.edits) : { text, applied: 0 };
-      console.error(JSON.stringify({ level: "info", event: "ai.syntax_fix", contract, at: result.at, message: result.message.slice(0, 200), applied: applied.applied, durationMs: reply.usage.durationMs, ...around(result.at) }));
+      // 하나도 적용되지 않았으면 모델이 무엇을 냈는지 남긴다. `find`가 원문에 없었는지, 모양이 틀렸는지 로그로 가린다.
+      const replyText = applied.applied ? undefined : ("text" in reply ? reply.text : JSON.stringify(reply.output ?? null)).slice(0, 400);
+      console.error(JSON.stringify({ level: "info", event: "ai.syntax_fix", contract, at: result.at, message: result.message.slice(0, 200), applied: applied.applied, durationMs: reply.usage.durationMs, ...around(result.at), ...(replyText === undefined ? {} : { reply: replyText }) }));
       text = applied.text;
     }
   };

@@ -70,7 +70,8 @@ export class MaterialsService implements MaterialsApi {
     await inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId);
       if (input.mode === "collab" && !(await new MongoEntitlementService(tx).check(userId, "brew.cowork")).allowed) throw new MaterialsError(403, "cowork mode requires an upgraded plan");
-      const result = await mongoCollections(tx.db).brews.updateOne({ _id: brewId, userId }, { $set: { mode: input.mode, updatedAt: new Date() }, $inc: { referenceVersion: 1 } }, { session: tx.session });
+      // 보낸 칸만 바꾼다 — 이름만 고쳤는데 모드가 기본값으로 되돌아가면 안 된다.
+      const result = await mongoCollections(tx.db).brews.updateOne({ _id: brewId, userId }, { $set: { ...(input.mode !== undefined ? { mode: input.mode } : {}), ...(input.title !== undefined ? { title: input.title } : {}), updatedAt: new Date() }, $inc: { referenceVersion: 1 } }, { session: tx.session });
       if (!result.matchedCount) throw new MaterialsError(404, "brew not found");
     });
     return this.getMaterials(userId, brewId);
@@ -105,7 +106,7 @@ export class MaterialsService implements MaterialsApi {
     ]);
     const posting = analysis?.jobPostingId ? await db.jobPostings.findOne({ _id: analysis.jobPostingId }) : null;
     const company = posting ? await db.companies.findOne({ _id: posting.companyId }) : null;
-    return BrewStateSchema.parse({ brewId, jobAnalysisId: brew.jobAnalysisId, status: brew.status, lengthPreset: brew.lengthPreset, freeTitle: brew.freeTitle ?? null, freeBrief: brew.freeBrief ?? null, posting: posting && company ? { title: posting.title, companyName: company.name } : null,
+    return BrewStateSchema.parse({ brewId, jobAnalysisId: brew.jobAnalysisId, status: brew.status, lengthPreset: brew.lengthPreset, title: brew.title ?? null, freeTitle: brew.freeTitle ?? null, freeBrief: brew.freeBrief ?? null, posting: posting && company ? { title: posting.title, companyName: company.name } : null,
       materials: { selected: sources.filter((source) => source.isSelected).length, total: sources.length }, interviewSessionId: session?._id ?? null, recipeId: recipe?._id ?? null, portfolioId: portfolio?._id ?? null,
       latestJob: job ? brewJobStatus(job) : null,
       designSelection: brew.designSystemRevisionId && brew.referenceLockSnapshot && brew.designSelectedAt

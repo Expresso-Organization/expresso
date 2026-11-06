@@ -49,6 +49,8 @@ const SESSION_PATHS = [
   /^\/(?:home|jobs|analytics|career|account|brew|edit)(?:\/|$)/,
   /^\/site\/[^/]+\/candidates(?:\/|$)/,
   /^\/onboarding\/consent$/,
+  // 첫 포트폴리오 화면은 홈 추천 공고와 기록 수를 읽는다.
+  /^\/onboarding\/first-portfolio$/,
 ];
 
 /**

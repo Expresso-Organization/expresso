@@ -33,12 +33,14 @@ export const RequirementReviewDraftSchema = z.strictObject({
   summary: z.string().trim().min(1).max(1_500),
   items: z.array(z.strictObject({ ...requirementItemShape, evidence: z.array(z.strictObject(evidenceShape)).max(5) }).superRefine(assessmentMatchesEvidence)).min(1).max(12),
 });
+/** 근거로 읽은 기록 글의 해시. 지금 글과 다르면 그 기록이 바뀐 것이다. */
+const RecordSnapshotSchema = z.strictObject({ recordId: UuidSchema, textHash: z.string().length(64) });
 export const RequirementReviewSchema = z.strictObject({
   jobPostingId: UuidSchema,
   summary: RequirementReviewDraftSchema.shape.summary,
   items: z.array(z.strictObject({ ...requirementItemShape, evidence: z.array(z.strictObject({ ...evidenceShape, recordTitle: z.string().max(200) })).max(5) }).superRefine(assessmentMatchesEvidence)).min(1).max(12),
   /** 대조할 때 읽은 원문의 해시. 지금 원문과 다르면 다시 대조해야 한다. */
-  snapshot: z.strictObject({ jobContentHash: z.string().length(64), records: z.array(z.strictObject({ recordId: UuidSchema, textHash: z.string().length(64) })).max(60) }),
+  snapshot: z.strictObject({ jobContentHash: z.string().length(64), records: z.array(RecordSnapshotSchema).max(60) }),
   createdAt: TimestampSchema,
 });
 export const AgentReviewFreshnessResponseSchema = z.strictObject({ data: z.strictObject({ stale: z.boolean(), changed: z.array(z.enum(["job", "records"])).max(2) }) });
@@ -106,6 +108,11 @@ export const GapReviewSchema = z.strictObject({
     jobQuote: z.string().max(600),
     evidence: z.array(z.strictObject({ ...gapEvidenceShape, label: z.string().max(200) })).max(7),
   })).min(1).max(20),
+  /**
+   * 근거로 인용한 기록 글의 해시(보완점 20개 × 근거 7개까지). 이 필드가 생기기 전에 만든 보완점에는
+   * 없다 — 그때는 바탕이 된 요건 대조의 최신성만 본다.
+   */
+  snapshot: z.strictObject({ records: z.array(RecordSnapshotSchema).max(140) }).optional(),
   createdAt: TimestampSchema,
 });
 export type GapReviewDraft = z.infer<typeof GapReviewDraftSchema>;
