@@ -6,7 +6,7 @@ import { ScriptedAiClient } from "../../platform/ai/scripted-client.js";
 import { StructuredPageGenerator } from "./structured-generator.js";
 import type { PageGenerationContext } from "./generator.js";
 import { findPortfolioDesign } from "../design-systems/index.js";
-import { METRIC_VALUE_PATTERN, fillViolations, fitToContent, metricUnitsAgree, metricValueAllowed } from "./design-first.js";
+import { METRIC_VALUE_PATTERN, fillViolations, fitToContent, metricBeforeGrounded, metricUnitsAgree, metricValueAllowed } from "./design-first.js";
 
 /** 계약으로 응답을 고르는 가짜 공급자입니다. 실제 어댑터와 같은 검사 · 고치기 순서를 탑니다. */
 class RoutedAi extends ScriptedAiClient {
@@ -284,6 +284,15 @@ describe("수치 값의 근거", () => {
     expect(metricValueAllowed("한나절", source)).toBe(false);
     expect(metricValueAllowed("리포트 작성", source)).toBe(false);
     expect(metricValueAllowed("1.9초", source)).toBe(true);
+  });
+
+  it("이전 값은 출처에 그대로 적힌 값만 인정한다", () => {
+    const source = "주간 리포트 6시간 → 30분, 판매자 2,300곳, 대조군 대비 +3.1%p";
+    expect(metricBeforeGrounded({ value: "30분", before: "6시간" }, source)).toBe(true);
+    expect(metricBeforeGrounded({ value: "30분", before: "6 시간" }, source)).toBe(true);
+    expect(metricBeforeGrounded({ value: "+3.1%p", before: "0%p" }, source)).toBe(false);
+    expect(metricBeforeGrounded({ value: "2,300곳", before: "2,300곳" }, source)).toBe(false);
+    expect(metricBeforeGrounded({ value: "30분" }, source)).toBe(true);
   });
 
   it("이전 값과 값이 시간과 건수로 갈리면 다른 수치를 묶은 것이다", () => {
