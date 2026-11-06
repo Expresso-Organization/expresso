@@ -7,6 +7,7 @@ import {
   MongoTopologyClosedError,
 } from "mongodb";
 import type { Db } from "mongodb";
+import { setTimeout as delay } from "node:timers/promises";
 
 import type { ReadinessCheck } from "../modules/system/readiness.js";
 
@@ -43,6 +44,31 @@ export function isMongoUnavailableError(error: unknown): boolean {
   return isMongoClientClosedError(error) || someErrorInCauseChain(error, (candidate) =>
     candidate instanceof MongoServerSelectionError
     || candidate instanceof MongoNetworkError);
+}
+
+/**
+ * 연결될 때까지 다시 시도합니다. 끝나지 않고 살아 있어야 하는 프로세스(API)가 씁니다.
+ *
+ * `connect()`는 닫힌 topology를 새것으로 바꾸므로 같은 클라이언트를 쥔 서비스는 그대로 살아납니다. 한 번 연결한 뒤의
+ * 장애는 드라이버 모니터가 복구하므로 여기서 끝납니다. 거부하지 않습니다.
+ *
+ * 인증 실패처럼 바로 돌아오는 오류에서 쉬지 않고 돌지 않게, 시도 사이에 서버 선택 시간만큼 쉽니다.
+ * `client.close()` 뒤에 `connect()`를 부르면 클라이언트가 다시 열립니다. 닫기 전에 반드시 `signal`로 멈춥니다.
+ */
+export async function connectMongoUntilReady(
+  client: Pick<MongoClient, "connect">,
+  options: { signal: AbortSignal; onRetry(error: unknown): void },
+): Promise<void> {
+  while (!options.signal.aborted) {
+    try {
+      await client.connect();
+      return;
+    } catch (error) {
+      if (options.signal.aborted) return;
+      options.onRetry(error);
+    }
+    await delay(MONGO_SERVER_SELECTION_TIMEOUT_MS, undefined, { signal: options.signal }).catch(() => undefined);
+  }
 }
 
 export interface MongoContext {
