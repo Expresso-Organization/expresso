@@ -73,11 +73,18 @@ export class JobMarketService implements JobMarketApi {
       if (!await db.jobPostings.findOne({ _id: jobPostingId }, options)) throw new JobMarketError(404, "job posting not found");
       const existing = await db.jobAnalyses.findOne({ userId, jobPostingId }, { ...options, sort: { _id: 1 } });
       const analysis = existing ?? queuedAnalysis(userId, jobPostingId, "board");
-      if (!existing) {
-        await db.jobAnalyses.insertOne(analysis, options);
-        await addMongoOutboxEvent(tx, { userId, topic: "job.normalize", payload: { jobAnalysisId: analysis._id, jobPostingId, userId }, idempotencyKey: `job-normalize:${analysis._id}` });
+      // 다시 해 볼 수 있는 실패는 다시 큐에 넣는다. `requestReanalysis`는 끝난 분석만 받으므로
+      // (`job-analysis/service.ts`) 실패한 분석을 되살리는 자리는 여기뿐이다. `retryable`이
+      // false인 실패는 같은 입력으로 같은 자리에서 멈추므로 그대로 돌려준다.
+      const retrying = !!existing && existing.status === "failed" && existing.failureRetryable === true;
+      if (!existing || retrying) {
+        if (existing) await db.jobAnalyses.updateOne({ _id: existing._id, userId, status: "failed", attempts: existing.attempts }, { $set: { status: "queued", progressStage: "queued", failureCode: null, failureRetryable: null } }, options);
+        else await db.jobAnalyses.insertOne(analysis, options);
+        // 같은 실패를 두 번 눌러도 큐에 한 번만 들어가야 한다. `attempts`가 시도마다 올라가므로
+        // 재시도 한 번에 키 하나가 대응한다.
+        await addMongoOutboxEvent(tx, { userId, topic: "job.normalize", payload: { jobAnalysisId: analysis._id, jobPostingId, userId }, idempotencyKey: existing ? `job-normalize:${analysis._id}:retry:${existing.attempts}` : `job-normalize:${analysis._id}` });
       }
-      return AnalyzedJobPostingSchema.parse({ jobPostingId, jobAnalysisId: analysis._id, status: analysis.status, reused: !!existing });
+      return AnalyzedJobPostingSchema.parse({ jobPostingId, jobAnalysisId: analysis._id, status: retrying ? "queued" : analysis.status, reused: !!existing });
     });
   }
 
