@@ -1,5 +1,10 @@
-import { UnrecoverableError, Worker, type Job, type Processor, type Queue } from "bullmq";
+import { DelayedError, UnrecoverableError, Worker, type Job, type Processor, type Queue } from "bullmq";
 
+import {
+  MONGO_SERVER_SELECTION_TIMEOUT_MS,
+  isMongoClientClosedError,
+  isMongoUnavailableError,
+} from "../platform/mongodb.js";
 import type { DeadLetterJob } from "../platform/queue.js";
 import { safeErrorSummary } from "../platform/observability.js";
 import { AiError } from "../platform/ai/client.js";
@@ -12,15 +17,35 @@ export interface QueueWorkerOptions<TPayload, TResult> {
   prefix?: string;
   deadLetterQueue?: Queue<DeadLetterJob>;
   onDeadLetterError?: (error: unknown) => void;
+  /** 이 프로세스의 Mongo 클라이언트가 다시 열리지 않을 때 부릅니다. 받는 쪽이 프로세스를 끝냅니다. */
+  onFatalError?: (error: unknown) => void;
 }
 
 export function createQueueWorker<TPayload, TResult>(
   options: QueueWorkerOptions<TPayload, TResult>,
 ): Worker<TPayload, TResult> {
-  const processor: Processor<TPayload, TResult> = async (job) => {
+  const processor: Processor<TPayload, TResult> = async (job, token) => {
     try {
       return await options.processor(job);
     } catch (error) {
+      /*
+       * Mongo에 닿지 못한 실패는 잡의 잘못이 아니다. 그대로 던지면 약 30초 장애에도 다섯 번의 시도를 다 쓰고
+       * dead-letter로 넘어간다. 시도 횟수를 쓰지 않고 미룬다. 한 번의 시도가 이미 서버 선택 시간만큼 기다렸으므로
+       * 같은 주기로 다시 묻는다.
+       */
+      if (isMongoUnavailableError(error)) {
+        if (isMongoClientClosedError(error)) options.onFatalError?.(error);
+        console.error(JSON.stringify({
+          level: "error",
+          event: "queue.job_deferred",
+          queue: options.queueName,
+          jobName: job.name,
+          jobId: job.id ?? null,
+          error: safeErrorSummary(error),
+        }));
+        await job.moveToDelayed(Date.now() + MONGO_SERVER_SELECTION_TIMEOUT_MS, token);
+        throw new DelayedError();
+      }
       /*
        * 계약을 못 맞춘 AI 출력은 다시 돌리지 않는다. 어댑터가 이미 같은 대화에서 걸린 칸을 고쳐 받고도 못 맞춘
        * 출력이라, 잡을 처음부터 다시 돌리면 같은 호출을 최대 `attempts`번 더 할 뿐이다.

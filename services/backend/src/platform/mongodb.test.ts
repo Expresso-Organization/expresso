@@ -1,0 +1,50 @@
+import {
+  MongoNetworkError,
+  MongoNotConnectedError,
+  MongoServerError,
+  MongoServerSelectionError,
+  MongoTopologyClosedError,
+} from "mongodb";
+import { describe, expect, it } from "vitest";
+
+import { createMongoResource, isMongoClientClosedError, isMongoUnavailableError } from "./mongodb.js";
+
+const selectionError = () => new MongoServerSelectionError("no server", { type: "Unknown" } as never);
+
+describe("Mongo 오류 판별", () => {
+  it("닫힌 클라이언트 오류만 복구 불가로 본다", () => {
+    expect(isMongoClientClosedError(new MongoTopologyClosedError())).toBe(true);
+    expect(isMongoClientClosedError(new MongoNotConnectedError("closed"))).toBe(true);
+    expect(isMongoClientClosedError(selectionError())).toBe(false);
+    expect(isMongoClientClosedError(new MongoNetworkError("reset"))).toBe(false);
+    expect(isMongoClientClosedError(new Error("other"))).toBe(false);
+    expect(isMongoClientClosedError("not an error")).toBe(false);
+  });
+
+  it("서버의 거절은 도달 불가로 보지 않는다", () => {
+    expect(isMongoUnavailableError(new MongoTopologyClosedError())).toBe(true);
+    expect(isMongoUnavailableError(selectionError())).toBe(true);
+    expect(isMongoUnavailableError(new MongoNetworkError("reset"))).toBe(true);
+    expect(isMongoUnavailableError(new MongoServerError({ message: "auth failed", code: 18 }))).toBe(false);
+    expect(isMongoUnavailableError(new Error("other"))).toBe(false);
+  });
+
+  it("다른 오류에 감싸인 원인도 찾는다", () => {
+    const wrapped = new Error("outer", { cause: new Error("middle", { cause: new MongoTopologyClosedError() }) });
+    expect(isMongoClientClosedError(wrapped)).toBe(true);
+    expect(isMongoUnavailableError(wrapped)).toBe(true);
+    const circular = new Error("loop");
+    circular.cause = circular;
+    expect(isMongoClientClosedError(circular)).toBe(false);
+  });
+
+  it("실제 드라이버는 첫 연결 실패 뒤 닫힌 topology를 계속 돌려준다", async () => {
+    const database = createMongoResource("mongodb://127.0.0.1:1/expresso?directConnection=true", { databaseName: "expresso" });
+    const first = await database.db.command({ ping: 1 }).catch((error: unknown) => error);
+    const second = await database.db.command({ ping: 1 }).catch((error: unknown) => error);
+    expect(isMongoUnavailableError(first)).toBe(true);
+    expect(isMongoClientClosedError(first)).toBe(false);
+    expect(isMongoClientClosedError(second)).toBe(true);
+    await database.close();
+  }, 10_000);
+});
