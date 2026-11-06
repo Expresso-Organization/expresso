@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { AgentMessage, GapReviewDraft, RequirementReview } from "@expresso/contracts";
 import { buildGapReview, gapIssues, latestReview } from "./gap-review.js";
+import { hash } from "./requirement-review.js";
 
 const recordId = "00000000-0000-4000-8000-000000000002";
 const userMessage = "00000000-0000-4000-8000-000000000003";
@@ -26,6 +27,14 @@ describe("보완점 검증", () => {
     expect(gapIssues(input, review, records, messages)).toEqual([]);
     const built = buildGapReview(input, review, records);
     expect(built.items[0]).toMatchObject({ requirement: "Kubernetes 운영", jobQuote: "Kubernetes 환경 운영 경험", evidence: [{ label: "내 답변" }] });
+  });
+  it("근거로 인용한 기록만 한 번씩 글 해시를 남긴다", () => {
+    const quote = { sourceType: "record" as const, sourceId: recordId, quote: "원인을 추적했다" };
+    const input = draft({ evidence: [quote, { ...quote, quote: "배치 적재" }, { sourceType: "user_message", sourceId: userMessage, quote: "써 본 적이 없어요" }] });
+    input.items.push({ ...input.items[0]!, type: "experience", evidence: [quote] });
+    expect(gapIssues(input, review, records, messages)).toEqual([]);
+    expect(buildGapReview(input, review, records).snapshot).toEqual({ records: [{ recordId, textHash: hash("배치 적재 장애의 원인을 추적했다") }] });
+    expect(buildGapReview(draft({}), review, records).snapshot).toEqual({ records: [] });
   });
   it("기록에 없다는 것만으로는 보완 필요가 될 수 없다", () => {
     expect(gapIssues(draft({ status: "needs_improvement" }), review, records, messages)[0]).toContain("needs_confirmation");

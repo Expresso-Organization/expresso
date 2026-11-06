@@ -1,10 +1,11 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
-import { AgentReviewFreshnessResponseSchema, type RequirementReview } from "@expresso/contracts";
+import type { RequirementReview } from "@expresso/contracts";
 import { Icon } from "@/components/ui/Icon";
 import styles from "./ToolCard.module.css";
+import { useToolFreshness } from "./useToolFreshness";
 
 /** 공고 상세의 자격 요건 표시와 같은 아이콘 매핑을 쓴다 — 같은 판정이 두 화면에서 같은 모양이다. */
 const ASSESSMENT = {
@@ -22,15 +23,7 @@ const KIND = { must: "자격", nice: "우대", responsibility: "업무" } as con
  */
 export function RequirementReviewCard({ conversationId, toolId, review }: { conversationId: string | null; toolId: string; review: RequirementReview }) {
   const [open, setOpen] = useState<number | null>(null);
-  const [stale, setStale] = useState(false);
-  useEffect(() => {
-    if (!conversationId) return;
-    const controller = new AbortController();
-    void fetch(`/api/agent/conversations/${conversationId}/reviews/${toolId}`, { signal: controller.signal, cache: "no-store" })
-      .then(async response => { if (response.ok) setStale(AgentReviewFreshnessResponseSchema.parse(await response.json()).data.stale); })
-      .catch(() => undefined);
-    return () => controller.abort();
-  }, [conversationId, toolId]);
+  const stale = useToolFreshness(conversationId, toolId);
   const counts = (["strong", "partial", "unconfirmed"] as const).map(key => [key, review.items.filter(item => item.assessment === key).length] as const);
   return <section className={styles.card} aria-label="요건 대조">
     <header className={styles.head}>
