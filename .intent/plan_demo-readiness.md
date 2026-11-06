@@ -17,16 +17,16 @@ date: 2026-11-06
 | `services/backend/src/modules/jobs/mongo-queries.ts` | 마감 공고 기본 제외 |
 | `services/backend/src/modules/jobs/board-service.ts` | 정렬 보조 키 `createdAt` |
 | `services/backend/src/modules/jobs/board.integration.test.ts` | 기본 제외 · 관심 공고 · 정렬 시험 |
-| `services/backend/src/modules/generation/service.ts` | 기본 제목 함수와 두 호출 지점 |
-| `services/backend/src/modules/generation/generation.integration.test.ts` | 회사 기반 제목 시험 |
-| `services/web/src/app/(auth)/SocialSignIn.tsx` | GitHub 버튼 제거 |
+| `services/backend/src/modules/generation/portfolio-title.ts` | 새 파일: 기본 제목 함수 |
+| `services/backend/src/modules/generation/portfolio-title.test.ts` | 새 파일: 이름 · 회사 · 기본값 시험 |
+| `services/backend/src/modules/generation/service.ts` | 두 호출 지점 |
 | `docs/Expresso Screens.dc.html` | 로그인 · 가입 화면의 GitHub 버튼 제거 |
 
 ## 작업 순서
 
 1. 공고 목록 필터와 정렬을 고치고 시험을 더한다 — `board.integration.test.ts` 통과.
-2. 기본 제목을 고치고 시험을 더한다 — `generation.integration.test.ts` 통과.
-3. GitHub 버튼과 정의서를 고친다 — 웹 테스트 통과, 로컬 화면에 버튼 없음.
+2. 기본 제목을 고치고 시험을 더한다 — `portfolio-title.test.ts` 통과.
+3. 화면 정의서의 GitHub 버튼을 지운다(제품 코드는 PR #118에서 이미 지웠다).
 4. 전체 검증 후 PR을 올린다.
 
 ## 가장 위험한 단계

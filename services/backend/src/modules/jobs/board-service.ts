@@ -67,8 +67,8 @@ export class JobBoardService implements JobBoardApi {
     const sortKey = query.sort === "match" ? { $ifNull: ["$match.total", -1] } : query.sort === "deadline" ? { $ifNull: ["$expiresAt", new Date("9999-12-31T00:00:00Z")] } : "$createdAt";
     const place = nearbyPlaceOf(query);
     const order: Document[] = place
-      ? [{ $set: { sortKey, nearbyRank: nearbyRank(place) } }, { $sort: { nearbyRank: 1, nearbyDistanceKm: 1, sortKey: direction, _id: direction } }]
-      : [{ $set: { sortKey } }, { $sort: { sortKey: direction, _id: direction } }];
+      ? [{ $set: { sortKey, nearbyRank: nearbyRank(place) } }, { $sort: { nearbyRank: 1, nearbyDistanceKm: 1, sortKey: direction, createdAt: direction, _id: direction } }]
+      : [{ $set: { sortKey } }, { $sort: { sortKey: direction, createdAt: direction, _id: direction } }];
     const [result] = await mongoCollections(this.context.db).jobPostings.aggregate<{
       data: BoardRow[]; total: { count: number }[]; categories: { total: number; remote: number; urgent: number }[];
       families: Facet[]; regions: Facet[]; companies: { key: string; label: string; count: number }[];

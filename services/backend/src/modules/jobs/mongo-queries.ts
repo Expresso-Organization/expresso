@@ -14,9 +14,14 @@ export function experienceMinYears(note: string | null | undefined, label: strin
   return match ? Number(match[0]) : null;
 }
 
+const openPostingClause = (at: Date): Document => ({ $or: [{ expiresAt: null }, { expiresAt: { $gte: at } }] });
+
 export type FilterAxis = "category" | "country" | "location" | "experience" | "workType" | "company";
 export function jobBoardFilter(query: ListJobPostingsQuery, at: Date, skip?: FilterAxis): Document {
   const clauses: Document[] = [];
+  // 조건을 주지 않으면 지원할 수 있는 공고만 본다. 칩 · 패싯 개수도 같은 범위를 세도록
+  // 축별 제외(`skip`) 바깥에 둔다. 관심 공고는 사용자가 담은 것이라 마감해도 남긴다.
+  if (query.deadline === undefined && query.interested === undefined) clauses.push(openPostingClause(at));
   if (query.q) clauses.push({ $or: ["title", "company.name", "descriptionRaw"].map((field) => ({ [field]: { $regex: escapeSearch(query.q!), $options: "i" } })) });
   if (query.technology) {
     const escaped = escapeSearch(query.technology);
@@ -40,7 +45,7 @@ export function jobBoardFilter(query: ListJobPostingsQuery, at: Date, skip?: Fil
     if (query.remote === true) clauses.push({ workType: /리모트/i });
     if (query.remote === false) clauses.push({ workType: { $not: /리모트/i } });
     if (query.deadline === "urgent") clauses.push({ expiresAt: { $gte: at, $lt: new Date(at.getTime() + 7 * 86_400_000) } });
-    if (query.deadline === "open") clauses.push({ $or: [{ expiresAt: null }, { expiresAt: { $gte: at } }] });
+    if (query.deadline === "open") clauses.push(openPostingClause(at));
     if (query.deadline === "always") clauses.push({ expiresAt: null });
   }
   if (skip !== "country" && query.country) clauses.push({ locationRegion: { $in: regionsOf(query.country) } });
