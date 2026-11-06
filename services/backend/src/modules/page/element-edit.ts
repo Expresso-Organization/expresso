@@ -30,7 +30,7 @@ import {
 
 import type { AiClient, AiUsage, AiViolation } from "../../platform/ai/client.js";
 import { ungroundedNumbers } from "../../platform/numbers.js";
-import { FILL_LIMITS, FILL_SYSTEM, METRIC_VALUE_PATTERN, sectionFillSchema } from "./design-first.js";
+import { FILL_LIMITS, FILL_SYSTEM, metricValueAllowed, sectionFillSchema } from "./design-first.js";
 
 /** 요소 하나에 대한 고침입니다. 바꾸지 않는 칸은 비웁니다. */
 export type ElementEdit = {
@@ -116,7 +116,7 @@ function groundSource(snapshot: Snapshot): string {
 }
 
 const INSTRUCT_SYSTEM =
-  "포트폴리오 지면에서 사용자가 고른 요소 하나를 사용자의 요청대로 고칩니다. 요청과 관계없는 칸은 비워 둡니다. 출처에 없는 수치 · 성과 · 경력을 만들지 않고, 글은 지금 글의 사실을 유지합니다. 모양은 주어진 선택지 안에서만 고릅니다.";
+  "포트폴리오 지면에서 사용자가 고른 요소 하나를 사용자의 요청대로 고칩니다. 요청과 관계없는 칸은 비워 둡니다. 출처에 없는 수치 · 성과 · 경력을 만들지 않고, 글은 지금 글의 사실을 유지합니다. 모양은 주어진 선택지 안에서만 고릅니다. note는 이 지면을 만든 사람에게 하는 말입니다. label · value · props · style 같은 내부 이름 대신 화면에 보이는 말(수치 이름, 값, 글자 모양)로 쓰고, 항목 추가 · 삭제처럼 칸을 고쳐서 할 수 없는 요청이면 할 수 없는 이유와 지면 구성 편집으로 할 수 있다는 것을 씁니다.";
 
 /**
  * 요소 하나를 말로 고칩니다. 모델은 고칠 칸만 JSON으로 쓰고, 서버가 적용 · 검사합니다.
@@ -163,8 +163,8 @@ export class PageElementEditor {
         const was = readStructuredText(snapshot.content, patch.path) ?? "";
         const numbers = ungroundedNumbers(patch.value, `${source}\n${was}`);
         if (numbers.length) violations.push({ path: `/text/${index}/value`, problem: `출처에 없는 숫자가 있습니다: ${numbers.join(", ")}. 출처에 있는 숫자만 쓰세요.` });
-        if (/\/(?:value|before)$/.test(patch.path) && patch.value && !METRIC_VALUE_PATTERN.test(patch.value))
-          violations.push({ path: `/text/${index}/value`, problem: "수치 값은 숫자와 단위만 씁니다(예: 1.9초, 420KB, 1,200만 건)." });
+        if (/\/(?:value|before)$/.test(patch.path) && patch.value && !metricValueAllowed(patch.value, `${source}\n${was}`))
+          violations.push({ path: `/text/${index}/value`, problem: "수치 값은 숫자와 단위, 또는 출처에 적힌 낱말 하나만 씁니다(예: 1.9초, 420KB, 1,200만 건, 반나절)." });
       });
       if (violations.length) return violations;
       try { applyElementEdit(snapshot, key, toEdit(output), design); }
@@ -233,8 +233,8 @@ note에 무엇을 바꿨는지 한두 문장으로 씁니다. 바꿀 칸만 prop
       output.metrics.forEach((metric, index) => {
         for (const key of ["value", "before"] as const) {
           const value = metric[key];
-          if (value !== undefined && (chars(value) > S.metricValue || !METRIC_VALUE_PATTERN.test(value)))
-            violations.push({ path: `/metrics/${index}/${key}`, problem: `수치 값은 숫자와 단위만 ${S.metricValue}자 이내로 씁니다(예: 1.9초, 420KB).` });
+          if (value !== undefined && (chars(value) > S.metricValue || !metricValueAllowed(value, input.text)))
+            violations.push({ path: `/metrics/${index}/${key}`, problem: `수치 값은 숫자와 단위, 또는 출처에 적힌 낱말 하나만 ${S.metricValue}자 이내로 씁니다(예: 1.9초, 420KB, 반나절).` });
         }
       });
       if (output.steps.length > 6) violations.push({ path: "/steps", problem: "단계는 6개까지입니다." });

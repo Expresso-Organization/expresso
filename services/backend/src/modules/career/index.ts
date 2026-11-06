@@ -11,6 +11,7 @@ export { CareerError } from "./errors.js";
 export { MongoCareerPropertySchemaService } from "./property-schema.js";
 export { cleanupChangedFields, type RecordCleaner } from "./record-cleaner.js";
 export { multiSelectValueByNames, selectValueByName } from "./select-options.js";
+export { careerYearsOf, recordPeriod } from "./record-period.js";
 export { careerRecordText, careerRecordTextReader, readableCareerProperties } from "./record-text.js";
 type CareerCoreMethod = "listCategories" | "listRecords" | "createCategory" | "createRecord" | "getRecord" | "updateRecord"
   | "createLink" | "listLinks" | "getDeleteImpact" | "trashRecord" | "restoreRecord"

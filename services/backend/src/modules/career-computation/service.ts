@@ -305,7 +305,7 @@ export class MongoCareerComputationService implements CareerComputationService {
       if (!category) continue;
       const matches = derivedDefinitions(category).some((definition) => definition.type === "rollup" && definition.config.relationPropertyId === edge.sourcePropertyId && changedPropertyIds.includes(String(definition.config.targetPropertyId)));
       if (!matches) continue;
-      await addMongoOutboxEvent(tx, { userId: record.userId, topic: "career.computation", idempotencyKey: `career-computation-fanout:${record._id}:${edge.sourceRecordId}:v${record.version}`, payload: { userId: record.userId, recordId: source._id, changedPropertyIds: [edge.sourcePropertyId], sourceRecordVersion: source.version } });
+      await addMongoOutboxEvent(tx, { userId: record.userId, topic: "career.computation", idempotencyKey: `career-computation-fanout:${record._id}:${edge.sourceRecordId}:${edge.sourcePropertyId}:v${record.version}:s${source.version}`, payload: { userId: record.userId, recordId: source._id, changedPropertyIds: [edge.sourcePropertyId], sourceRecordVersion: source.version } });
     }
   }
 }

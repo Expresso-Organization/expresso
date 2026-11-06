@@ -183,10 +183,13 @@ export function DeployPanel({
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className={styles.versionSummary}>
                     {publicSiteHost(deployment.slug)}
-                    <span className={styles.versionCount}>
-                      {" "}
-                      · 섹션 {deployment.sectionCount} · 블록 {deployment.blockCount}
-                    </span>
+                    {/* 구조화 지면은 블록 문서가 없어 0으로 온다. 없는 수를 세어 말하지 않는다. */}
+                    {deployment.sectionCount > 0 ? (
+                      <span className={styles.versionCount}>
+                        {" "}
+                        · 섹션 {deployment.sectionCount} · 블록 {deployment.blockCount}
+                      </span>
+                    ) : null}
                   </div>
                   <div className={styles.versionAt}>
                     {formatWhen(deployment.publishedAt)}

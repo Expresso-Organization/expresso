@@ -57,4 +57,9 @@ describe("sourceLines", () => {
     const [item] = lines(text, [{ id: "a", start: 0, end: text.length }]);
     expect(item?.parts).toEqual([expect.objectContaining({ text: "Python 경험", id: "a" })]);
   });
+  it("`##` 제목을 제목 줄로 읽고 내용 없는 `##`은 빈 줄로 둔다", () => {
+    const lines = sourceLines(sourceSegments("##   \n\n## 요구경험 및 역량\n\n**5\\. 데이터 활용**\n", []));
+    expect(lines.filter((line) => line.kind === "heading").map((line) => line.parts.map((part) => part.text).join(""))).toEqual(["요구경험 및 역량", "5. 데이터 활용"]);
+    expect(lines[0]?.kind).toBe("blank");
+  });
 });

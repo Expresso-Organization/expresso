@@ -54,6 +54,27 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
   }, 60_000);
   afterAll(async () => { await fixture?.dispose(); });
 
+  it("같은 대상을 두 관계 속성으로 가리켜도 대상 변경 전파가 멱등 키에 걸리지 않는다", async () => {
+    const db = mongoCollections(fixture.resource.db);
+    const source = await career.createCategory(userId, { key: `fanout_source_${randomUUID().replaceAll("-", "")}`, name: "전파 원본", icon: "folder", defaultView: "table" });
+    const target = await career.createCategory(userId, { key: `fanout_target_${randomUUID().replaceAll("-", "")}`, name: "전파 대상", icon: "folder", defaultView: "table" });
+    const score = randomUUID(); const first = randomUUID(); const second = randomUUID();
+    const relation = { targetCategoryId: target.id, inversePropertyId: null, cardinality: "multiple", deletePolicy: "restrict" };
+    await db.careerCategories.updateOne({ _id: target.id }, { $set: { schemaVersion: 1, propertySchemaV2: [definition(score, "score", "number")] } });
+    await db.careerCategories.updateOne({ _id: source.id }, { $set: { schemaVersion: 1, propertySchemaV2: [
+      definition(first, "first", "relation", relation, 0),
+      definition(second, "second", "relation", relation, 1),
+      definition(randomUUID(), "firstTotal", "rollup", { relationPropertyId: first, targetPropertyId: score, aggregation: "sum" }, 2),
+      definition(randomUUID(), "secondTotal", "rollup", { relationPropertyId: second, targetPropertyId: score, aggregation: "sum" }, 3),
+    ] } });
+    const from = (await career.createRecord(userId, randomUUID(), { categoryId: source.id, title: "원본", properties: {}, bodyMd: "" })).record.id;
+    const to = (await career.createRecord(userId, randomUUID(), { categoryId: target.id, title: "대상", properties: { score: { type: "number", value: 1 } }, bodyMd: "" })).record.id;
+    await db.careerRecordRelations.insertMany([first, second].map((sourcePropertyId) => ({ _id: randomUUID(), userId, sourceRecordId: from, sourcePropertyId, targetRecordId: to, inversePropertyId: null, cardinality: "multiple" as const, deletePolicy: "restrict" as const, createdBy: "user" as const, createdAt: new Date(), updatedAt: new Date() })));
+    const current = await db.careerRecords.findOne({ _id: to });
+    expect(await service.recompute({ eventId: `fanout-${randomUUID()}`, userId, recordId: to, changedPropertyIds: [score], sourceRecordVersion: current!.version })).toBe("applied");
+    expect(await db.outboxEvents.countDocuments({ topic: "career.computation", "payload.recordId": from, idempotencyKey: /career-computation-fanout/ })).toBe(2);
+  });
+
   it("orders formula before projection, computes rollups, deduplicates retry, rejects stale input and fans out relation targets", async () => {
     expect((await service.previewRollup(userId, { categoryId: sourceCategoryId, recordId: sourceRecordId, relationPropertyId: relationId, targetPropertyId: targetScoreId, aggregation: "sum" })).value).toMatchObject({ type: "rollup", value: 7 });
     expect((await service.previewRollup(userId, { categoryId: sourceCategoryId, relationPropertyId: relationId, targetPropertyId: targetScoreId, aggregation: "percent_checked" })).diagnostics.map((diagnostic) => diagnostic.code)).toContain("argument_type");

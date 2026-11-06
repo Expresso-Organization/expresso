@@ -33,8 +33,24 @@ function normalized(value: string): string {
   return value.normalize("NFKC").toLocaleLowerCase("en-US");
 }
 
-function scoreAxis(source: string, requirements: string[]): Axis {
-  const matched = requirements.filter((item) => source.includes(normalized(item)));
+const YEARS_WANTED = /(\d+)\s*(?:년|\+?\s*years?)\s*(?:이상|차)?/u;
+
+/**
+ * 키워드가 기록에 닿는가. 낱말이 그대로 있으면 닿는다.
+ *
+ * "데이터 분석 3년 이상"은 기록에 같은 문구로 적히지 않는다. 연차는 글이 아니라 경력 기간으로
+ * 따지고, 남은 낱말("데이터", "분석")은 글에서 찾는다.
+ */
+export function keywordMet(keyword: string, source: string, careerYears: number): boolean {
+  const wanted = normalized(keyword);
+  if (source.includes(wanted)) return true;
+  const years = YEARS_WANTED.exec(wanted);
+  if (!years || careerYears < Number(years[1])) return false;
+  return wanted.replace(YEARS_WANTED, " ").replace(/경력|경험/g, " ").split(/\s+/).filter(Boolean).every((word) => source.includes(word));
+}
+
+function scoreAxis(source: string, requirements: string[], careerYears: number): Axis {
+  const matched = requirements.filter((item) => keywordMet(item, source, careerYears));
   const missing = requirements.filter((item) => !matched.includes(item));
   return {
     required: requirements.length,
@@ -53,13 +69,14 @@ export function calculateExplainableMatch(
   requirements: JobRequirements,
   recordSearchText: string,
   computedAt: Date,
+  careerYears = 0,
 ): ExplainableMatch | null {
   const source = normalized(recordSearchText);
   const axes = {
-    technology: scoreAxis(source, requirements.technologies),
-    impact: scoreAxis(source, requirements.impacts),
-    role: scoreAxis(source, requirements.roles),
-    conditions: scoreAxis(source, requirements.conditions),
+    technology: scoreAxis(source, requirements.technologies, careerYears),
+    impact: scoreAxis(source, requirements.impacts, careerYears),
+    role: scoreAxis(source, requirements.roles, careerYears),
+    conditions: scoreAxis(source, requirements.conditions, careerYears),
   };
   const entries = Object.entries(axes) as Array<[AxisKey, Axis]>;
   const required = entries.reduce((sum, [, axis]) => sum + axis.required, 0);
@@ -76,7 +93,7 @@ export function calculateExplainableMatch(
     ? `${AXIS_LABEL[weakest[0]]}에서 ${missing} 근거가 비어 있습니다.`
     : `요건 ${required}개의 근거가 모두 기록에서 확인됩니다.`;
   const nextAction = missing
-    ? `${missing}을 실제로 사용한 기록을 추가하거나 기존 기록의 원문 근거를 보강하세요.`
+    ? `${missing} 근거가 드러나는 기록을 추가하거나 기존 기록의 원문 근거를 보강하세요.`
     : "가장 관련 있는 기록을 포트폴리오 재료로 검토하세요.";
 
   return ExplainableMatchSchema.parse({

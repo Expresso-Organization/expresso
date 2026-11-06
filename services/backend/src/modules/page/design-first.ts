@@ -61,6 +61,26 @@ export const FILL_LIMITS = {
  */
 export const METRIC_VALUE_PATTERN = /^[^\s\d]{0,2}\d\S*(?: \S{1,3})?$/;
 
+/**
+ * 수치 값으로 쓸 수 있는가. 숫자 모양이거나, 출처에 그대로 적힌 한 낱말이다.
+ *
+ * 기록에 "3일 → 반나절"이라고 적혀 있으면 "반나절"이 곧 수치다. 숫자만 받으면 쓴 에이전트가 이 칸을
+ * 고치려고 출처의 다른 숫자를 끌어와, 3일이 15건으로 줄었다는 없는 사실이 지면에 나간다.
+ */
+export function metricValueAllowed(value: string, source: string): boolean {
+  return METRIC_VALUE_PATTERN.test(value) || (!/[\s→]/u.test(value) && source.includes(value));
+}
+
+const TIME_UNIT = /(?:초|분|시간|일|주|개월|달|년)$/u;
+const COUNT_UNIT = /(?:건|개|명|회|곳|번)$/u;
+
+/** 이전 값과 값이 같은 것을 재는가. 시간이 건수로 바뀌었다면 서로 다른 수치를 한 줄에 묶은 것이다. */
+export function metricUnitsAgree(metric: { value: string; before?: string | undefined }): boolean {
+  if (!metric.before) return true;
+  const kinds = [metric.value, metric.before].map((value) => (TIME_UNIT.test(value) ? "time" : COUNT_UNIT.test(value) ? "count" : null));
+  return !(kinds[0] && kinds[1] && kinds[0] !== kinds[1]);
+}
+
 export interface DesignFirstCall {
   contract: string;
   model: string;
@@ -418,9 +438,11 @@ export function fillViolations(
       for (const key of ["value", "before"] as const) {
         const value = metric[key];
         if (value === undefined) continue;
-        if (chars(value) > S.metricValue || !METRIC_VALUE_PATTERN.test(value))
-          violations.push({ path: `${at}/${key}`, problem: `수치 값은 숫자와 단위만 ${S.metricValue}자 이내로 씁니다(예: 1.9초, 420KB, 1,200만 건). 무엇의 수치인지는 label에, 설명은 note에 씁니다.` });
+        if (chars(value) > S.metricValue || !metricValueAllowed(value, context.groundSource))
+          violations.push({ path: `${at}/${key}`, problem: `수치 값은 숫자와 단위, 또는 출처에 적힌 낱말 하나만 ${S.metricValue}자 이내로 씁니다(예: 1.9초, 420KB, 1,200만 건, 반나절). 무엇의 수치인지는 label에, 설명은 note에 씁니다.` });
       }
+      if (!metricUnitsAgree(metric))
+        violations.push({ path: `${at}/value`, problem: `이전 값(${metric.before})과 값(${metric.value})이 서로 다른 것을 잽니다. 출처에서 같은 수치의 이전 · 이후를 옮겨 쓰세요.` });
     });
     count(`${base}/steps`, filled.steps, budget.steps ?? 0, "단계");
     filled.steps.forEach((step, index) => {
@@ -717,7 +739,7 @@ ${evidenceText}`;
   const sections = included.map((plannedSection) => {
     const output = filled.sections[plannedSection.id]!;
     // 쓴 에이전트가 두 번 고쳐도 출처에 없는 숫자가 남은 수치는 싣지 않습니다. 지어낸 수치를 지면에 내보내지 않는 선입니다.
-    const metrics = output.metrics.filter((metric) => !ungroundedNumbers([metric.value, metric.before ?? ""].join(" "), groundSource).length);
+    const metrics = output.metrics.filter((metric) => metricUnitsAgree(metric) && !ungroundedNumbers([metric.value, metric.before ?? ""].join(" "), groundSource).length);
     const section = {
       id: plannedSection.id,
       title: output.title,

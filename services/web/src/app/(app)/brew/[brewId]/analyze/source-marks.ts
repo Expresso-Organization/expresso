@@ -56,7 +56,7 @@ function readable(text: string): string {
   return text
     .replace(/\*\*/g, "")
     .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
-    .replace(/\\([\[\]()*_`\\-])/g, "$1");
+    .replace(/\\([\[\]()*_`\\.#!+-])/g, "$1");
 }
 
 /**
@@ -75,8 +75,10 @@ export function sourceLines(segments: SourceSegment[]): SourceLine[] {
     const whole = parts.map(({ text }) => text).join("");
     const key = `l${index}`;
     if (!whole.trim()) return { key, kind: "blank" as const, depth: 0, ordinal: null, parts: [] };
-    const item = /^(\s*)(?:[-*+]|(\d+)\.)\s+/.exec(whole);
-    const prefix = item ? item[0].length : (/^\s*/.exec(whole)?.[0].length ?? 0);
+    const hashes = /^\s*#{1,6}(?:\s+|$)/.exec(whole);
+    if (hashes && !whole.slice(hashes[0].length).trim()) return { key, kind: "blank" as const, depth: 0, ordinal: null, parts: [] };
+    const item = hashes ? null : /^(\s*)(?:[-*+]|(\d+)\.)\s+/.exec(whole);
+    const prefix = hashes ? hashes[0].length : item ? item[0].length : (/^\s*/.exec(whole)?.[0].length ?? 0);
     let skip = prefix;
     const shown: SourcePart[] = [];
     for (const part of parts) {
@@ -85,7 +87,7 @@ export function sourceLines(segments: SourceSegment[]): SourceLine[] {
       const text = readable(part.text.slice(cut));
       if (text) shown.push({ key: part.key, text, id: part.id });
     }
-    const heading = !item && /^\*\*.*\*\*$/.test(whole.trim());
+    const heading = Boolean(hashes) || (!item && /^\*\*.*\*\*$/.test(whole.trim()));
     return {
       key,
       kind: heading ? ("heading" as const) : item ? ("item" as const) : ("text" as const),
