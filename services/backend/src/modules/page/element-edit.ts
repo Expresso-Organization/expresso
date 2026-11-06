@@ -99,7 +99,8 @@ export function elementChanges(before: Snapshot, after: Snapshot, key: string): 
       if (was !== now) changes.push({ label: `${parts[part]?.label ?? part} 모양`, before: was, after: now });
     }
   }
-  const paths = elementTextPaths(after, key);
+  // 비워서 지운 칸은 고친 뒤의 경로에 없다. 고치기 전 경로까지 봐야 지운 것도 바뀐 곳이 된다.
+  const paths = [...new Set([...elementTextPaths(before, key), ...elementTextPaths(after, key)])];
   // 한 섹션만 보이는 요소의 줄 이름에는 섹션 제목을 붙이지 않습니다.
   const section = new Set(paths.filter((path) => path.startsWith("/sections/")).map((path) => path.split("/")[2])).size > 1;
   for (const path of paths) {

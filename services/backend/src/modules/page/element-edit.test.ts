@@ -65,6 +65,12 @@ describe("요소 하나 고치기", () => {
     expect(elementTextPaths(snapshot, "section-a")).toContain("/sections/a/details/0/text");
   });
 
+  it("비워서 지운 칸도 바뀐 곳으로 센다", () => {
+    const next = applyElementEdit(snapshot, "section-a", { text: [{ path: "/sections/a/quote", value: "" }] }, design);
+    expect(next.content.sections[0]?.quote).toBeUndefined();
+    expect(elementChanges(snapshot, next, "section-a")).toEqual([expect.objectContaining({ before: "막히면 돌아갑니다.", after: "" })]);
+  });
+
   it("선택지 · 글자 모양 · 글을 적용하고 바뀐 곳만 줄로 낸다", () => {
     const next = applyElementEdit(snapshot, "section-a", {
       props: { scale: "lead" },
