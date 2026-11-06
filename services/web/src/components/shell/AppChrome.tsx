@@ -2,9 +2,11 @@ import type { ReactNode } from "react";
 import { Suspense } from "react";
 
 import { homeEngagement, recentPortfolios, watchedJobs } from "@/lib/app-data";
+import { publicSiteHost } from "@/lib/public-site";
 import { requireSession } from "@/lib/require-session";
 
 import { AppShell } from "./AppShell";
+import { ImpersonationBar } from "./ImpersonationBar";
 import { Sidebar } from "./Sidebar";
 import { SidebarSkeleton } from "./SidebarSkeleton";
 
@@ -18,6 +20,11 @@ import { SidebarSkeleton } from "./SidebarSkeleton";
 export function AppChrome({ children }: { children: ReactNode }) {
   return (
     <AppShell
+      banner={
+        <Suspense fallback={null}>
+          <ImpersonationBar />
+        </Suspense>
+      }
       sidebar={
         <Suspense fallback={<SidebarSkeleton />}>
           <AppSidebar />
@@ -45,7 +52,7 @@ async function AppSidebar() {
         name: portfolio.title,
         // 배포된 것은 주소를, 작성 중인 것은 진행 상황을 보여준다.
         meta: portfolio.deployment
-          ? `${portfolio.deployment.subdomain}.xpresso.me`
+          ? publicSiteHost(portfolio.deployment.subdomain)
           : `작성 중 · 섹션 ${portfolio.sectionCount}개`,
         status: portfolio.deployment ? "published" : "draft",
         ...(portfolio.deployment
@@ -68,6 +75,8 @@ async function AppSidebar() {
         home.recommendedJobs.length > 0 ? home.recommendedJobs.length : undefined
       }
       displayName={session.user.displayName}
+      // 대신 로그인 중이면 세션 주인이 관리자다.
+      admin={session.user.role === "admin" || session.user.impersonation !== null}
       quotaUsed={session.quota.used}
       quotaLimit={session.quota.limit}
     />

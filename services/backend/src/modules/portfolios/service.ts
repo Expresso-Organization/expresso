@@ -1,4 +1,5 @@
 import {
+  companyLogoUrl,
   PortfolioDetailSchema,
   PortfolioListResponseSchema,
   PortfolioRevisionsResponseSchema,
@@ -28,25 +29,52 @@ function decodeCursor(value: string | undefined): Cursor | null {
 export class PortfolioReadService {
   constructor(readonly context: MongoContext) {}
 
+  /**
+   * 포트폴리오가 겨냥한 공고 — 제작 → 공고 분석 → 공고 → 회사. 한 단계라도 비면 null이다.
+   * 공고 없이 시작한 제작은 분석에 공고가 없어서 여기서 끝난다.
+   */
+  async #target(portfolio: PortfolioDoc) {
+    const db = mongoCollections(this.context.db);
+    const brew = await db.brews.findOne({ _id: portfolio.brewId, userId: portfolio.userId }, { projection: { jobAnalysisId: 1 } });
+    const analysis = brew ? await db.jobAnalyses.findOne({ _id: brew.jobAnalysisId, userId: portfolio.userId }, { projection: { jobPostingId: 1 } }) : null;
+    const posting = analysis?.jobPostingId ? await db.jobPostings.findOne({ _id: analysis.jobPostingId }, { projection: { title: 1, companyId: 1 } }) : null;
+    const company = posting ? await db.companies.findOne({ _id: posting.companyId }, { projection: { name: 1, logoChecksum: 1 } }) : null;
+    if (!posting || !company) return null;
+    return { postingTitle: posting.title, company: { name: company.name, logoUrl: companyLogoUrl(company._id, company.logoChecksum) } };
+  }
+
   async #summary(portfolio: PortfolioDoc) {
     const db = mongoCollections(this.context.db);
-    const [template, sections, deployment] = await Promise.all([
+    const [template, sections, deployment, target] = await Promise.all([
       db.templates.findOne({ _id: portfolio.templateId }),
       db.portfolioSections.find({ userId: portfolio.userId, portfolioId: portfolio._id }).toArray(),
       portfolio.currentDeploymentId ? db.deployments.findOne({ _id: portfolio.currentDeploymentId, userId: portfolio.userId }) : null,
+      this.#target(portfolio),
     ]);
     const blockCount = await db.blocks.countDocuments({ userId: portfolio.userId, portfolioSectionId: { $in: sections.map(({ _id }) => _id) } });
+    // 공개본과 편집본이 다른지는 읽을 때 정합니다. 배포가 실은 지면 판과 지금 배포하면 실릴 판(최신 ready 판)을 비교합니다.
+    // 판을 만드는 경로(생성 · 다듬기 · 편집 · 되돌리기)를 모두 고치지 않아도 되고, 옛 배포로 되돌린 뒤에도 맞습니다.
+    const latestPage = deployment
+      ? await db.generatedPages.find({ userId: portfolio.userId, portfolioId: portfolio._id, qualityStatus: "ready" }, { projection: { _id: 1, createdAt: 1 } }).sort({ revision: -1 }).limit(1).next()
+      : null;
+    const pageChanged = deployment && latestPage
+      ? deployment.generatedPageId
+        ? deployment.generatedPageId !== latestPage._id
+        // 실린 판을 남기기 전의 배포는 배포 뒤에 만든 판이 있는지로 봅니다.
+        : !!deployment.publishedAt && latestPage.createdAt > deployment.publishedAt
+      : false;
     return {
       id: portfolio._id, brewId: portfolio.brewId, title: portfolio.title, status: portfolio.status,
       templateCode: template?.code ?? "", templateName: template?.name ?? "",
       sectionCount: sections.length, visibleSectionCount: sections.filter(({ visible }) => visible).length,
-      blockCount, createdAt: portfolio.createdAt.toISOString(), updatedAt: portfolio.updatedAt.toISOString(),
+      blockCount, target, createdAt: portfolio.createdAt.toISOString(), updatedAt: portfolio.updatedAt.toISOString(),
       deployment: deployment ? {
-        id: deployment._id, version: deployment.version, subdomain: deployment.subdomain,
+        // 주소는 포트폴리오의 것이다. 되돌린 판의 주소가 아니라 지금 열리는 주소를 보여 준다.
+        id: deployment._id, version: deployment.version, subdomain: portfolio.publicSlug ?? deployment.subdomain,
         customDomain: deployment.customDomain ?? null, seoIndexable: deployment.seoIndexable,
         contactVisibility: deployment.contactVisibility,
         publishedAt: deployment.publishedAt?.toISOString() ?? null,
-        hasUnpublishedChanges: deployment.hasUnpublishedChanges,
+        hasUnpublishedChanges: deployment.hasUnpublishedChanges || pageChanged,
       } : null,
     };
   }

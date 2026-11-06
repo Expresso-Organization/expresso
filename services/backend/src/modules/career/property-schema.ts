@@ -21,6 +21,7 @@ import type { MongoContext } from "../../platform/mongodb.js";
 import { requireActiveUser } from "../identity/index.js";
 import { CareerError } from "./errors.js";
 import { mapMongoCategory } from "./mongo-categories.js";
+import { derivedSecret } from "../../platform/secrets.js";
 
 const PREVIEW_LIFETIME_MS = 15 * 60_000;
 const INLINE_MUTATION_LIMIT = 100;
@@ -172,7 +173,7 @@ export interface CareerPropertySchemaService {
 
 export class MongoCareerPropertySchemaService implements CareerPropertySchemaService {
   readonly signingSecret: string;
-  constructor(readonly context: MongoContext, signingSecret = process.env.CAREER_SCHEMA_PREVIEW_SECRET ?? "expresso-career-schema-preview") { this.signingSecret = signingSecret; }
+  constructor(readonly context: MongoContext, signingSecret = process.env.CAREER_SCHEMA_PREVIEW_SECRET ?? derivedSecret("career-schema-preview")) { this.signingSecret = signingSecret; }
 
   async previewChange(userId: string, categoryId: string, raw: CareerPropertySchemaChange): Promise<CareerPropertyChangePreview> {
     const change = CareerPropertySchemaChangeSchema.parse(raw);
@@ -286,14 +287,14 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
   private async convertValues(session: ClientSession, userId: string, categoryId: string, source: CareerPropertyDefinitionV2, targetType: string, confirmLossy: boolean, now: Date): Promise<void> {
     const db = mongoCollections(this.context.db); const filter = affectedFilter(userId, categoryId, source.key);
     const count = await db.careerRecords.countDocuments(filter, { session });
-    if (count > INLINE_MUTATION_LIMIT) { await addMongoOutboxEvent({ ...this.context, session }, { userId, topic: "career.property-conversion", idempotencyKey: `career-property:${categoryId}:${source.id}:${source.version + 1}`, payload: { categoryId, propertyId: source.id, sourceType: source.type, targetType } }); return; }
+    if (count > INLINE_MUTATION_LIMIT) { await addMongoOutboxEvent({ ...this.context, session }, { userId, topic: "career.property-conversion", idempotencyKey: `career-property:${categoryId}:${source.id}:${source.version + 1}`, payload: { userId, categoryId, propertyId: source.id, sourceType: source.type, targetType } }); return; }
     const rows = await db.careerRecords.find(filter, { session }).limit(INLINE_MUTATION_LIMIT + 1).toArray();
     const conversions = rows.map((row) => ({ row, result: convertCareerPropertyValue(row.properties[source.key], source.type, targetType) }));
     if (conversions.some(({ result }) => result.kind === "unmapped")) throw new CareerError(409, "some property values cannot be converted");
     if (!confirmLossy && conversions.some(({ result }) => result.kind === "lossy")) throw new CareerError(409, "lossy conversion requires confirmation");
     if (conversions.length > 0) await db.careerRecords.bulkWrite(conversions.map(({ row, result }) => {
       const stored = CareerPropertyValueV2Schema.safeParse(row.properties[source.key]).success ? result.value : { type: targetType, value: result.value };
-      return { updateOne: { filter: { _id: row._id, userId, version: row.version }, update: { $set: { [`properties.${source.key}`]: stored, updatedAt: now }, $inc: { version: 1 } } } };
+      return { updateOne: { filter: { _id: row._id, userId }, update: { $set: { [`properties.${source.key}`]: stored, updatedAt: now }, $inc: { version: 1 } } } };
     }), { session });
   }
 
@@ -308,7 +309,7 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
     const parsed = CareerPropertyValueV2Schema.safeParse(candidate);
     if (!parsed.success || parsed.data.type !== definition.type || READ_ONLY_TYPES.has(definition.type)) throw new CareerError(400, "property default value does not match its type");
     if (count > INLINE_MUTATION_LIMIT) {
-      await addMongoOutboxEvent({ ...this.context, session }, { userId, topic: "career.property-default", idempotencyKey: `career-property-default:${categoryId}:${definition.id}`, payload: { categoryId, propertyId: definition.id, propertyKey: definition.key, defaultValue: parsed.data } });
+      await addMongoOutboxEvent({ ...this.context, session }, { userId, topic: "career.property-default", idempotencyKey: `career-property-default:${categoryId}:${definition.id}`, payload: { userId, categoryId, propertyId: definition.id, propertyKey: definition.key, defaultValue: parsed.data } });
       return;
     }
     await db.careerRecords.updateMany({ userId, categoryId, deletedAt: null, [`properties.${definition.key}`]: { $exists: false } }, { $set: { [`properties.${definition.key}`]: parsed.data, updatedAt: now }, $inc: { version: 1 } }, { session });
@@ -318,18 +319,62 @@ export class MongoCareerPropertySchemaService implements CareerPropertySchemaSer
     const db = mongoCollections(this.context.db); const filter = affectedFilter(userId, categoryId, source.key);
     const count = await db.careerRecords.countDocuments(filter, { session });
     if (count > 0 && !confirmLossy) throw new CareerError(409, "property deletion requires confirmation");
-    if (count > INLINE_MUTATION_LIMIT) { await addMongoOutboxEvent({ ...this.context, session }, { userId, topic: "career.property-deletion", idempotencyKey: `career-property-delete:${categoryId}:${source.id}:${source.version + 1}`, payload: { categoryId, propertyId: source.id, propertyKey: source.key } }); return; }
+    if (count > INLINE_MUTATION_LIMIT) { await addMongoOutboxEvent({ ...this.context, session }, { userId, topic: "career.property-deletion", idempotencyKey: `career-property-delete:${categoryId}:${source.id}:${source.version + 1}`, payload: { userId, categoryId, propertyId: source.id, propertyKey: source.key } }); return; }
     const rows = await db.careerRecords.find(filter, { session }).limit(INLINE_MUTATION_LIMIT + 1).toArray();
-    if (rows.length > 0) await db.careerRecords.bulkWrite(rows.map((row) => ({ updateOne: { filter: { _id: row._id, userId, version: row.version }, update: { $set: { [`propertyValueTombstones.${source.id}`]: row.properties[source.key], updatedAt: now }, $unset: { [`properties.${source.key}`]: "" }, $inc: { version: 1 } } } })), { session });
+    if (rows.length > 0) await db.careerRecords.bulkWrite(rows.map((row) => ({ updateOne: { filter: { _id: row._id, userId }, update: { $set: { [`propertyValueTombstones.${source.id}`]: row.properties[source.key], updatedAt: now }, $unset: { [`properties.${source.key}`]: "" }, $inc: { version: 1 } } } })), { session });
   }
 
   private async restoreValues(session: ClientSession, userId: string, categoryId: string, source: CareerPropertyDefinitionV2, now: Date): Promise<void> {
     const db = mongoCollections(this.context.db); const path = `propertyValueTombstones.${source.id}`;
     const filter = { userId, categoryId, deletedAt: null, [path]: { $exists: true } } as Filter<CareerRecordDoc>;
     const count = await db.careerRecords.countDocuments(filter, { session });
-    if (count > INLINE_MUTATION_LIMIT) { await addMongoOutboxEvent({ ...this.context, session }, { userId, topic: "career.property-restoration", idempotencyKey: `career-property-restore:${categoryId}:${source.id}:${source.version + 1}`, payload: { categoryId, propertyId: source.id, propertyKey: source.key } }); return; }
+    if (count > INLINE_MUTATION_LIMIT) { await addMongoOutboxEvent({ ...this.context, session }, { userId, topic: "career.property-restoration", idempotencyKey: `career-property-restore:${categoryId}:${source.id}:${source.version + 1}`, payload: { userId, categoryId, propertyId: source.id, propertyKey: source.key } }); return; }
     const rows = await db.careerRecords.find(filter, { session }).limit(INLINE_MUTATION_LIMIT + 1).toArray();
-    if (rows.length > 0) await db.careerRecords.bulkWrite(rows.map((row) => ({ updateOne: { filter: { _id: row._id, userId, version: row.version }, update: { $set: { [`properties.${source.key}`]: row.propertyValueTombstones?.[source.id], updatedAt: now }, $unset: { [path]: "" }, $inc: { version: 1 } } } })), { session });
+    if (rows.length > 0) await db.careerRecords.bulkWrite(rows.map((row) => ({ updateOne: { filter: { _id: row._id, userId }, update: { $set: { [`properties.${source.key}`]: row.propertyValueTombstones?.[source.id], updatedAt: now }, $unset: { [path]: "" }, $inc: { version: 1 } } } })), { session });
+  }
+
+  /**
+   * 기록이 100건을 넘는 카테고리의 속성 변경을 Worker에서 100건씩 끝냅니다(`career.property-*` 작업).
+   * 변환할 수 없는 값은 삭제와 같이 묘비로 옮깁니다. 남겨 두면 그 기록의 모든 저장이 계약 검사에서 400이 됩니다.
+   */
+  async processMutation(topic: string, raw: Record<string, unknown>): Promise<{ updated: number }> {
+    const db = mongoCollections(this.context.db);
+    const categoryId = String(raw["categoryId"] ?? ""); const propertyId = String(raw["propertyId"] ?? "");
+    // 2026-11-02 이전에 큐에 들어간 작업에는 userId가 없습니다. 카테고리의 소유자로 찾습니다.
+    const userId = typeof raw["userId"] === "string" ? raw["userId"] : (await db.careerCategories.findOne({ _id: categoryId }))?.userId;
+    if (!userId || !categoryId) throw new CareerError(400, "career property mutation payload is invalid");
+    const category = await db.careerCategories.findOne({ _id: categoryId, userId });
+    const definition = category?.propertySchemaV2.find((item) => item.id === propertyId);
+    if (!category || !definition) return { updated: 0 };
+    const key = String(raw["propertyKey"] ?? definition.key);
+    const tombstone = `propertyValueTombstones.${propertyId}`;
+    const filter = (topic === "career.property-restoration"
+      ? { userId, categoryId, deletedAt: null, [tombstone]: { $exists: true } }
+      : topic === "career.property-default"
+        ? { userId, categoryId, deletedAt: null, [`properties.${key}`]: { $exists: false } }
+        : topic === "career.property-conversion"
+          ? { userId, categoryId, deletedAt: null, [`properties.${key}`]: { $exists: true }, [`properties.${key}.type`]: { $ne: String(raw["targetType"]) } }
+          : { userId, categoryId, deletedAt: null, [`properties.${key}`]: { $exists: true } }) as Filter<CareerRecordDoc>;
+    let updated = 0;
+    for (;;) {
+      const rows = await db.careerRecords.find(filter).sort({ _id: 1 }).limit(INLINE_MUTATION_LIMIT).toArray();
+      if (!rows.length) return { updated };
+      const now = new Date();
+      const writes = rows.map((row) => {
+        if (topic === "career.property-default") return { updateOne: { filter: { _id: row._id, userId }, update: { $set: { [`properties.${key}`]: raw["defaultValue"], updatedAt: now }, $inc: { version: 1 } } } };
+        if (topic === "career.property-restoration") return { updateOne: { filter: { _id: row._id, userId }, update: { $set: { [`properties.${key}`]: row.propertyValueTombstones?.[propertyId], updatedAt: now }, $unset: { [tombstone]: "" }, $inc: { version: 1 } } } };
+        const toTombstone = { updateOne: { filter: { _id: row._id, userId }, update: { $set: { [tombstone]: row.properties[key], updatedAt: now }, $unset: { [`properties.${key}`]: "" }, $inc: { version: 1 } } } };
+        if (topic === "career.property-deletion") return toTombstone;
+        const result = convertCareerPropertyValue(row.properties[key], String(raw["sourceType"]), String(raw["targetType"]));
+        if (result.kind === "unmapped") return toTombstone;
+        const stored = CareerPropertyValueV2Schema.safeParse(row.properties[key]).success ? result.value : { type: String(raw["targetType"]), value: result.value };
+        return { updateOne: { filter: { _id: row._id, userId }, update: { $set: { [`properties.${key}`]: stored, updatedAt: now }, $inc: { version: 1 } } } };
+      });
+      const written = await db.careerRecords.bulkWrite(writes as never);
+      updated += written.modifiedCount;
+      // 한 묶음에서 하나도 바꾸지 못하면 같은 행을 다시 읽어 끝나지 않으므로 멈춥니다.
+      if (written.modifiedCount === 0) return { updated };
+    }
   }
 
   async restoreProperty(userId: string, categoryId: string, propertyId: string, expectedVersion: number) {

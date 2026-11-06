@@ -34,6 +34,10 @@ export interface UserDoc {
   /** 약관·개인정보 처리방침에 동의한 시각과 그때의 판. 0010 이전 사용자에게는 없다. */
   termsAcceptedAt?: Date | null;
   termsVersion?: number | null;
+  /** 없으면 일반 사용자다. 관리자는 백엔드 CLI(`admin grant`)로만 지정한다. 0024. */
+  role?: "user" | "admin";
+  /** 저장소의 가상 인물 원본 키. 이 값이 있는 계정만 관리자가 대신 로그인할 수 있다. 0024. */
+  dummyKey?: string;
 }
 
 export interface ConsentDoc {
@@ -80,6 +84,9 @@ export interface IdentitySessionDoc {
   idleTtlMs?: number;
   /** 활동으로도 넘지 못하는 절대 상한. 없으면 `createdAt + 90일`로 본다. */
   absoluteExpiresAt?: Date;
+  /** 관리자가 이 세션으로 대신 보고 있는 더미 계정. 세션 주인은 그대로 `userId`다. 0024. */
+  actingAsUserId?: string | null;
+  actingSince?: Date | null;
 }
 
 /**

@@ -15,7 +15,8 @@
 
 .editor[data-mode="peek"] .content { padding-top: 28px; padding-right: 32px; padding-left: 32px; }
 
-.content :global(.tiptap) {
+/* BlockNote 편집 영역(.bn-editor)의 글 모양입니다. 옛 Tiptap 선택자를 BlockNote 클래스로 옮겼습니다. */
+.content :global(.bn-editor) {
   min-height: 420px;
   outline: none;
   box-shadow: none;
@@ -23,25 +24,25 @@
   line-height: var(--ex-leading-relaxed);
 }
 
-.content :global(.tiptap:focus),
-.content :global(.tiptap:focus-visible) {
+.content :global(.bn-editor:focus),
+.content :global(.bn-editor:focus-visible) {
   outline: none;
   box-shadow: none;
 }
 
-.content :global(.tiptap > *) { margin: 0 0 14px; }
-.content :global(.tiptap h1) { margin-top: 34px; color: var(--ex-fg-strong); font-size: var(--ex-text-3xl); line-height: var(--ex-leading-tight); }
-.content :global(.tiptap h2) { margin-top: 28px; color: var(--ex-fg-strong); font-size: var(--ex-text-2xl); line-height: var(--ex-leading-tight); }
-.content :global(.tiptap h3) { margin-top: 22px; color: var(--ex-fg); font-size: var(--ex-text-xl); }
-.content :global(.tiptap ul),
-.content :global(.tiptap ol) { padding-left: 28px; }
-.content :global(.tiptap blockquote) { margin-left: 0; border-left: 3px solid var(--ex-accent-soft); padding-left: 16px; color: var(--ex-fg-muted); }
-.content :global(.tiptap pre) { overflow-x: auto; border-radius: 8px; padding: 16px; background: var(--ex-bg-inverse); color: var(--ex-fg-on-inverse); font-family: var(--ex-font-mono); }
-.content :global(.tiptap table) { width: 100%; border-collapse: collapse; }
-.content :global(.tiptap td),
-.content :global(.tiptap th) { min-width: 100px; border: 1px solid var(--ex-border); padding: 8px 10px; text-align: left; }
-.content :global(.tiptap th) { background: var(--ex-bg-header); color: var(--ex-fg); }
-.content :global(.tiptap p.is-editor-empty:first-child::before) { height: 0; float: left; color: var(--ex-fg-faint); content: attr(data-placeholder); pointer-events: none; }
+.content :global(.bn-editor > *) { margin: 0 0 14px; }
+.content :global(.bn-editor h1) { margin-top: 34px; color: var(--ex-fg-strong); font-size: var(--ex-text-3xl); line-height: var(--ex-leading-tight); }
+.content :global(.bn-editor h2) { margin-top: 28px; color: var(--ex-fg-strong); font-size: var(--ex-text-2xl); line-height: var(--ex-leading-tight); }
+.content :global(.bn-editor h3) { margin-top: 22px; color: var(--ex-fg); font-size: var(--ex-text-xl); }
+.content :global(.bn-editor ul),
+.content :global(.bn-editor ol) { padding-left: 28px; }
+.content :global(.bn-editor blockquote) { margin-left: 0; border-left: 3px solid var(--ex-accent-soft); padding-left: 16px; color: var(--ex-fg-muted); }
+.content :global(.bn-editor pre) { overflow-x: auto; border-radius: 8px; padding: 16px; background: var(--ex-bg-inverse); color: var(--ex-fg-on-inverse); font-family: var(--ex-font-mono); }
+/* 표 너비와 열 너비는 BlockNote가 정합니다(열 끌어 조절). 여기서는 테두리와 여백만 줍니다. */
+.content :global(.bn-editor table) { border-collapse: collapse; }
+.content :global(.bn-editor td),
+.content :global(.bn-editor th) { border: 1px solid var(--ex-border); padding: 8px 10px; text-align: left; }
+.content :global(.bn-editor th) { background: var(--ex-bg-header); color: var(--ex-fg); }
 
 .loading,
 .notice {

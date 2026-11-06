@@ -26,23 +26,29 @@ import styles from "./AppShell.module.css";
  * `SidebarCollapse`가 안다 — 서랍으로 물러난 폭에서는 접지 않는다.
  */
 export function AppShell({
+  banner,
   sidebar,
   children,
 }: {
+  /** 셸 위를 가로지르는 띠. 지금은 대신 로그인 표시 하나다. */
+  banner?: ReactNode;
   sidebar: ReactNode;
   children: ReactNode;
 }) {
   return (
     <ShellNavProvider>
       <SidebarCollapseProvider>
-        <div className={styles.frame}>
-          <ShellNavDrawer>{sidebar}</ShellNavDrawer>
-          <main className={styles.main}>
-            {children}
-            <ShellTabBar />
-          </main>
-          {/* 00c — ⌘K 검색과 알림은 어느 앱 화면에서든 열린다 */}
-          <CommandPalette />
+        <div className={styles.screen}>
+          {banner}
+          <div className={styles.frame}>
+            <ShellNavDrawer>{sidebar}</ShellNavDrawer>
+            <main className={styles.main}>
+              {children}
+              <ShellTabBar />
+            </main>
+            {/* 00c — ⌘K 검색과 알림은 어느 앱 화면에서든 열린다 */}
+            <CommandPalette />
+          </div>
         </div>
       </SidebarCollapseProvider>
     </ShellNavProvider>

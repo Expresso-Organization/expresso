@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import {
   AUTH_MAIL_RESEND_INTERVAL_MS, EMAIL_VERIFICATION_TTL_MS, PASSWORD_RESET_TTL_MS, SESSION_POLICY, TERMS_VERSION,
-  type AuthSession, type AuthenticatedUser, type IssuedIdentitySession, type Login, type PasswordResetConfirm, type SocialAuthSession,
+  type AuthSession, type AuthenticatedUser, type Impersonation, type IssuedIdentitySession, type Login, type PasswordResetConfirm, type SocialAuthSession,
 } from "@expresso/contracts";
 import { defaultCareerCategories, mongoCollections, type IdentityTokenDoc, type UserDoc } from "@expresso/database";
 import type { ClientSession } from "mongodb";
@@ -40,12 +40,13 @@ export class IdentityService implements IdentityApi {
     this.#warn = options.warn ?? ((line) => console.warn(line));
   }
 
-  async #user(account: UserDoc, session?: ClientSession): Promise<AuthenticatedUser> {
+  async #user(account: UserDoc, session?: ClientSession, impersonation: Impersonation | null = null): Promise<AuthenticatedUser> {
     const plan = await mongoCollections(this.context.db).plans.findOne({ _id: account.planId }, session ? { session } : {});
     if (!plan) throw new Error("account plan is not installed");
     return {
       id: account._id, email: account.email, displayName: account.displayName, planCode: plan.code,
       emailVerifiedAt: account.emailVerifiedAt?.toISOString() ?? null,
+      role: account.role ?? "user", impersonation,
     };
   }
 
@@ -201,7 +202,8 @@ export class IdentityService implements IdentityApi {
    */
   async requestPasswordReset(email: string): Promise<void> {
     const account = await mongoCollections(this.context.db).users.findOne({ email }, { collation: emailCollation });
-    if (!account || account.deletionRequestedAt) return;
+    // 더미 계정은 `.test` 주소라 메일이 닿지 않고, 비밀번호로 들어오는 길도 두지 않는다.
+    if (!account || account.deletionRequestedAt || account.dummyKey) return;
     const issued = await this.#issueOneTimeToken(account._id, "password_reset", PASSWORD_RESET_TTL_MS);
     if (!issued) return;
     try {
@@ -281,7 +283,82 @@ export class IdentityService implements IdentityApi {
     if (!session) return null;
     const account = await collections.users.findOne({ _id: session.userId, deletionRequestedAt: null });
     if (!account) return null;
-    return { sessionId: session._id, user: await this.#user(account) };
+    const owner = { userId: account._id, displayName: account.displayName, role: account.role ?? "user" } as const;
+    if (session.actingAsUserId) {
+      // 대신 로그인은 주인이 아직 관리자이고 대상이 아직 더미일 때만 이어진다. 아니면 풀고 주인으로 돌아간다.
+      const target = owner.role === "admin"
+        ? await collections.users.findOne({ _id: session.actingAsUserId, deletionRequestedAt: null, dummyKey: { $type: "string" } })
+        : null;
+      if (target) {
+        const since = (session.actingSince ?? session.createdAt).toISOString();
+        return { sessionId: session._id, owner, user: await this.#user(target, undefined, { adminUserId: account._id, adminDisplayName: account.displayName, since }) };
+      }
+      await collections.identitySessions.updateOne({ _id: session._id, actingAsUserId: session.actingAsUserId }, { $set: { actingAsUserId: null, actingSince: null } });
+    }
+    return { sessionId: session._id, owner, user: await this.#user(account) };
+  }
+
+  /**
+   * 더미 계정을 만든다. 비밀번호가 없어 로그인으로는 들어올 수 없고, 관리자의 대신 로그인으로만 쓴다.
+   * `.test` 주소라 메일을 보낼 수 없으므로 인증과 약관 동의를 만들 때 함께 적는다. 기본 카테고리는
+   * 가입과 같은 것을 복사한다. 같은 키가 이미 있으면 409.
+   */
+  async createDummyAccount(input: { id: string; dummyKey: string; email: string; displayName: string; planCode: "free" | "pro" | "team" }): Promise<string> {
+    try {
+      return await inTransaction(this.context, async tx => {
+        const collections = mongoCollections(tx.db);
+        const plan = await collections.plans.findOne({ code: input.planCode }, { session: tx.session });
+        if (!plan) throw new Error(`${input.planCode} plan is not installed`);
+        const now = new Date();
+        const account: UserDoc = {
+          _id: input.id, email: input.email, displayName: input.displayName, planId: plan._id, passwordHash: null,
+          createdAt: now, deletionRequestedAt: null, lifecycleVersion: 0, emailVerifiedAt: now, ...this.#terms(TERMS_VERSION),
+          role: "user", dummyKey: input.dummyKey,
+        };
+        await collections.users.insertOne(account, { session: tx.session });
+        await collections.careerCategories.insertMany(defaultCareerCategories(account._id, now), { session: tx.session });
+        return account._id;
+      });
+    } catch (error) { if (duplicate(error)) throw new IdentityError(409, "dummy account already exists"); throw error; }
+  }
+
+  /** 권한을 바꾼다. 백엔드 CLI만 부른다. 계정이 없으면 404, 바뀐 것이 없으면 null을 돌려준다. */
+  async setRole(email: string, role: "user" | "admin"): Promise<{ userId: string } | null> {
+    const users = mongoCollections(this.context.db).users;
+    const account = await users.findOne({ email, deletionRequestedAt: null }, { collation: emailCollation });
+    if (!account) throw new IdentityError(404, "account not found");
+    if (account.dummyKey) throw new IdentityError(409, "dummy accounts cannot hold a role");
+    if ((account.role ?? "user") === role) return null;
+    await users.updateOne({ _id: account._id }, { $set: { role } });
+    return { userId: account._id };
+  }
+
+  /**
+   * 관리자 본인 세션을 더미 계정으로 돌린다. 새 토큰을 만들지 않는다 — 쿠키는 그대로이고,
+   * 이 세션으로 들어오는 요청이 대상 계정으로 해석된다. 대상이 더미가 아니면 404.
+   * 다른 더미 계정을 보던 중이었으면 그 계정 ID를 돌려준다 — 부르는 쪽이 그 대신 로그인의 끝을 기록한다.
+   */
+  async actAs(sessionId: string, targetUserId: string): Promise<string | null> {
+    return inTransaction(this.context, async tx => {
+      const collections = mongoCollections(tx.db);
+      const session = await collections.identitySessions.findOne({ _id: sessionId, revokedAt: null }, { session: tx.session });
+      const owner = session ? await collections.users.findOne({ _id: session.userId, deletionRequestedAt: null }, { session: tx.session }) : null;
+      if (!session || owner?.role !== "admin") throw new IdentityError(404, "not found");
+      const target = await collections.users.findOne({ _id: targetUserId, deletionRequestedAt: null, dummyKey: { $type: "string" } }, { session: tx.session });
+      if (!target) throw new IdentityError(404, "dummy account not found");
+      await collections.identitySessions.updateOne({ _id: sessionId }, { $set: { actingAsUserId: target._id, actingSince: new Date() } }, { session: tx.session });
+      return session.actingAsUserId && session.actingAsUserId !== target._id ? session.actingAsUserId : null;
+    });
+  }
+
+  /** 대신 로그인을 끝낸다. 보고 있던 계정 ID를 돌려주고, 대신 로그인 중이 아니었으면 null이다. */
+  async stopActing(sessionId: string): Promise<string | null> {
+    const before = await mongoCollections(this.context.db).identitySessions.findOneAndUpdate(
+      { _id: sessionId, actingAsUserId: { $type: "string" } },
+      { $set: { actingAsUserId: null, actingSince: null } },
+      { returnDocument: "before" },
+    );
+    return before?.actingAsUserId ?? null;
   }
 
   async revokeOwnedSession(userId: string, sessionId: string): Promise<boolean> {

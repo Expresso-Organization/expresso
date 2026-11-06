@@ -7,6 +7,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./editing": {
+      "types": "./dist/editing.d.ts",
+      "default": "./dist/editing.js"
     }
   },
   "scripts": {

@@ -31,6 +31,11 @@ import { inTransaction } from "../../platform/mongo-transaction.js";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { MongoCareerComputationRepository } from "./repository.js";
 
+/** 다른 사람의 것이거나 없는 카테고리 · 기록입니다. 일반 Error로 던지면 500이 됩니다. */
+class ComputationNotFoundError extends Error {
+  readonly statusCode = 404;
+}
+
 export interface CareerComputationEvent {
   eventId: string;
   userId: string;
@@ -133,9 +138,11 @@ export class MongoCareerComputationService implements CareerComputationService {
   constructor(readonly context: MongoContext) { this.repository = new MongoCareerComputationRepository(context); }
 
   async previewFormula(userId: string, raw: PreviewCareerFormula): Promise<CareerFormulaPreview> {
-    const input = PreviewCareerFormulaSchema.parse(raw);
+    const parsed = PreviewCareerFormulaSchema.safeParse(raw);
+    if (!parsed.success) throw Object.assign(new Error("invalid preview request"), { statusCode: 400 });
+    const input = parsed.data;
     const category = await this.repository.readableCategory(userId, input.categoryId);
-    if (!category) throw new Error("career category not found");
+    if (!category) throw new ComputationNotFoundError("career category not found");
     const all = activeDefinitions(category);
     let ast: FormulaAst | null = null;
     let diagnostics: readonly FormulaDiagnostic[];
@@ -155,7 +162,7 @@ export class MongoCareerComputationService implements CareerComputationService {
     let value: CareerPropertyValueV2 | null = null;
     if (input.recordId && ast && diagnostics.length === 0) {
       const record = await this.repository.activeRecord(userId, input.recordId);
-      if (!record || record.categoryId !== input.categoryId) throw new Error("career record not found");
+      if (!record || record.categoryId !== input.categoryId) throw new ComputationNotFoundError("career record not found");
       const computed = computedMap(record);
       const context = new Map(all.map((definition) => [definition.id, valueFor(record, all, definition.id, computed)]));
       value = parseComputed(evaluateFormula(ast, context), "formula");
@@ -164,9 +171,11 @@ export class MongoCareerComputationService implements CareerComputationService {
   }
 
   async previewRollup(userId: string, raw: PreviewCareerRollup): Promise<CareerRollupPreview> {
-    const input = PreviewCareerRollupSchema.parse(raw);
+    const parsed = PreviewCareerRollupSchema.safeParse(raw);
+    if (!parsed.success) throw Object.assign(new Error("invalid preview request"), { statusCode: 400 });
+    const input = parsed.data;
     const category = await this.repository.readableCategory(userId, input.categoryId);
-    if (!category) throw new Error("career category not found");
+    if (!category) throw new ComputationNotFoundError("career category not found");
     const all = activeDefinitions(category);
     const relation = all.find((definition) => definition.id === input.relationPropertyId && definition.type === "relation");
     const targetCategoryId = relation?.config.targetCategoryId;
@@ -181,7 +190,7 @@ export class MongoCareerComputationService implements CareerComputationService {
     }
     if (!input.recordId) return CareerRollupPreviewSchema.parse({ diagnostics: [], value: null });
     const record = await this.repository.activeRecord(userId, input.recordId);
-    if (!record || record.categoryId !== input.categoryId) throw new Error("career record not found");
+    if (!record || record.categoryId !== input.categoryId) throw new ComputationNotFoundError("career record not found");
     const value = await this.rollupForRecord(userId, record, all, relation.id, target.id, input.aggregation);
     return CareerRollupPreviewSchema.parse({ diagnostics: [], value: parseComputed(value, "rollup") });
   }
@@ -237,7 +246,11 @@ export class MongoCareerComputationService implements CareerComputationService {
       }
       const ids = [...new Set([...(meta.eventIds ?? []), event.eventId])].slice(-20);
       next.__expressoComputation = { eventIds: ids, sourceRecordVersion: event.sourceRecordVersion };
-      const updated = await repository.records().findOneAndUpdate({ _id: record._id, userId: event.userId, deletedAt: null, version: event.sourceRecordVersion }, { $set: { computedProperties: next as never, updatedAt: new Date() }, $inc: { version: 1 } }, { session: tx.session, returnDocument: "after" });
+      // 계산 값이 바뀌지 않았으면 처리 표시만 남깁니다. version을 올리면 화면이 방금 받은 ETag가 곧바로 낡아 412가 납니다(2026-11-02 감사).
+      const update = changedOutputIds.length
+        ? { $set: { computedProperties: next as never, updatedAt: new Date() }, $inc: { version: 1 } }
+        : { $set: { computedProperties: next as never } };
+      const updated = await repository.records().findOneAndUpdate({ _id: record._id, userId: event.userId, deletedAt: null, version: event.sourceRecordVersion }, update, { session: tx.session, returnDocument: "after" });
       if (!updated) { await this.enqueueFresh(tx, event, record.version); return "stale"; }
       await this.fanout(tx, updated, category, [...new Set([...event.changedPropertyIds, ...changedOutputIds])]);
       return "applied";

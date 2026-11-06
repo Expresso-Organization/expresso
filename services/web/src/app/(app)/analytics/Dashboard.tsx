@@ -15,6 +15,7 @@ import { useActionState, useState, useTransition, type DragEvent, type ReactNode
 
 import { AppBody, AppHeader } from "@/components/shell/AppShell";
 import { Icon } from "@/components/ui/Icon";
+import { publicSiteHost } from "@/lib/public-site";
 
 import {
   aggregateAction,
@@ -189,14 +190,22 @@ function scalar(
 }
 
 /** 추이를 650×190 좌표로. 점이 하나뿐이면 선이 아니라 점으로 그린다. */
-function polyline(points: { visits: number }[]): string {
-  if (points.length === 0) return "";
-  const top = Math.max(...points.map(({ visits }) => visits), 1);
-  const step = points.length > 1 ? 620 / (points.length - 1) : 0;
-  return points
-    .map(({ visits }, index) => `${(15 + index * step).toFixed(1)},${(180 - (visits / top) * 165).toFixed(1)}`)
+/** 방문과 완독을 같은 눈금(`top`)에 그린다. 완독은 방문보다 클 수 없다. */
+function polyline(values: number[], top: number): string {
+  if (values.length === 0) return "";
+  const step = values.length > 1 ? 620 / (values.length - 1) : 0;
+  return values
+    .map((value, index) => `${(15 + index * step).toFixed(1)},${(180 - (value / top) * 165).toFixed(1)}`)
     .join(" ");
 }
+
+/** 숫자 카드의 작은 막대가 그리는 날짜별 값. 그 지표의 것이 없으면 막대를 그리지 않는다. */
+const SPARK_SERIES: Partial<Record<Widget["metricKey"], keyof Omit<AnalyticsDashboard["trend"][number], "date">>> = {
+  visits: "visits",
+  contact_clicks: "contactClicks",
+  file_downloads: "fileDownloads",
+  link_clicks: "linkClicks",
+};
 
 export function Dashboard({
   dashboard,
@@ -304,13 +313,20 @@ export function Dashboard({
             </>
           ) : (
             <>
-              <span className={styles.headDomain}>{dashboard.deployment.subdomain}.xpresso.me</span>
-              <span className={styles.headState}>
-                <span className={styles.headStateDot} />
-                {dashboard.deployment.publishedAt
-                  ? `배포됨 · ${formatDate(dashboard.deployment.publishedAt.slice(0, 10))}`
-                  : "배포 준비 중"}
-              </span>
+              <span className={styles.headDomain}>{publicSiteHost(dashboard.deployment.subdomain)}</span>
+              {dashboard.portfolio.status === "published" ? (
+                <span className={styles.headState}>
+                  <span className={styles.headStateDot} />
+                  {dashboard.deployment.publishedAt
+                    ? `배포됨 · ${formatDate(dashboard.deployment.publishedAt.slice(0, 10))}`
+                    : "배포 준비 중"}
+                </span>
+              ) : (
+                <span className={`${styles.headState} ${styles.headStateClosed}`}>
+                  <span className={styles.headStateDot} />
+                  공개 중단
+                </span>
+              )}
               <div className={styles.period}>
                 {(["7d", "30d", "all"] as const).map((preset) => (
                   <Link
@@ -578,8 +594,8 @@ function WidgetBody({ widget, dashboard }: { widget: Widget; dashboard: Analytic
     case "section_dwell":
       return (
         <>
-          <Head title="섹션별 체류" meta="1회 평균 · 오래 머문 순" />
-          <SectionDwell sections={sections} />
+          <Head title="섹션별 체류" meta={widget.visualization === "list" ? "1회 평균 · 지면 순서" : "1회 평균 · 오래 머문 순"} />
+          <SectionDwell sections={sections} order={widget.visualization === "list" ? "page" : "dwell"} />
         </>
       );
     case "referrers":
@@ -636,7 +652,9 @@ function WidgetBody({ widget, dashboard }: { widget: Widget; dashboard: Analytic
               </span>
             ) : null}
           </div>
-          {widget.visualization === "spark" ? <Spark trend={trend} /> : null}
+          {widget.visualization === "spark" && SPARK_SERIES[widget.metricKey] ? (
+            <Spark trend={trend} series={SPARK_SERIES[widget.metricKey]!} />
+          ) : null}
           {tile.note ? <div className={styles.tileNote}>{tile.note}</div> : null}
         </>
       );
@@ -653,16 +671,19 @@ function Head({ title, meta }: { title: string; meta: string }) {
   );
 }
 
-function Spark({ trend }: { trend: AnalyticsDashboard["trend"] }) {
+function Spark({ trend, series }: {
+  trend: AnalyticsDashboard["trend"];
+  series: keyof Omit<AnalyticsDashboard["trend"][number], "date">;
+}) {
   const points = trend.slice(-7);
-  const top = Math.max(...points.map(({ visits }) => visits), 1);
+  const top = Math.max(...points.map((point) => point[series]), 1);
   return (
     <div className={styles.spark}>
       {points.map((point) => (
         <span
           key={point.date}
           className={styles.sparkBar}
-          style={{ height: `${Math.max(6, Math.round((point.visits / top) * 100))}%` }}
+          style={{ height: `${Math.max(6, Math.round((point[series] / top) * 100))}%` }}
         />
       ))}
     </div>
@@ -673,7 +694,18 @@ function Trend({ trend }: { trend: AnalyticsDashboard["trend"] }) {
   const top = Math.max(...trend.map(({ visits }) => visits), 1);
   return (
     <>
-      <Head title="방문 추이" meta={`집계된 날만 · ${trend.length}일`} />
+      <div className={styles.chartHead}>
+        <span className={styles.chartTitle}>방문 추이</span>
+        <span className={styles.trendMeta}>집계된 날만 · {trend.length}일</span>
+        <span className={styles.legend}>
+          <span className={styles.legendItem}>
+            <span className={`${styles.legendLine} ${styles.legendVisits}`} />방문
+          </span>
+          <span className={styles.legendItem}>
+            <span className={`${styles.legendLine} ${styles.legendCompletes}`} />완독
+          </span>
+        </span>
+      </div>
       {trend.length === 0 ? (
         <p className={styles.blankBody}>집계된 날이 아직 없습니다.</p>
       ) : (
@@ -694,17 +726,43 @@ function Trend({ trend }: { trend: AnalyticsDashboard["trend"] }) {
             aria-label="방문 추이 선 차트"
           >
             <polyline
-              points={polyline(trend)}
+              points={polyline(trend.map(({ completes }) => completes), top)}
+              fill="none"
+              stroke="var(--ex-fg-subtle)"
+              strokeWidth="2"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+            />
+            <polyline
+              points={polyline(trend.map(({ visits }) => visits), top)}
               fill="none"
               stroke="var(--ex-fg)"
               strokeWidth="2"
               strokeLinejoin="round"
               strokeLinecap="round"
             />
+            {/* 하루뿐이면 선이 생기지 않는다. 그날 값을 점으로 찍는다. */}
+            {/* 눈금이 가로로 늘어나므로 원 대신 길이 0인 선의 둥근 끝을 쓴다. 굵기는 늘지 않는다. */}
+            {trend.length === 1
+              ? [
+                  { value: trend[0]!.completes, color: "var(--ex-fg-subtle)" },
+                  { value: trend[0]!.visits, color: "var(--ex-fg)" },
+                ].map(({ value, color }) => (
+                  <line
+                    key={color}
+                    x1="15" x2="15"
+                    y1={180 - (value / top) * 165} y2={180 - (value / top) * 165}
+                    stroke={color}
+                    strokeWidth="8"
+                    strokeLinecap="round"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                ))
+              : null}
           </svg>
           <div className={styles.chartDates}>
-            {[0, 1, 2, 3]
-              .map((quarter) => trend[Math.round((quarter * (trend.length - 1)) / 3)])
+            {[...new Set([0, 1, 2, 3].map((quarter) => Math.round((quarter * (trend.length - 1)) / 3)))]
+              .map((at) => trend[at])
               .map((point, index) => (
                 <span key={`${point?.date}-${index}`} className={styles.axisLabel}>
                   {point ? formatDate(point.date) : ""}
@@ -873,29 +931,43 @@ function BaristaRead({
   );
 }
 
-function SectionDwell({ sections }: { sections: AnalyticsDashboard["sections"] }) {
+/** 제목이 없는 섹션은 지면에서의 자리로 부른다. 어느 판의 섹션인지 모르면 자리도 없다. */
+function sectionName(section: AnalyticsDashboard["sections"][number]): string {
+  if (section.title) return section.title;
+  return section.position ? `${section.position}번째 섹션` : "지난 판의 섹션";
+}
+
+function SectionDwell({ sections, order }: {
+  sections: AnalyticsDashboard["sections"];
+  /** 막대는 오래 머문 순, 목록은 지면 순서. */
+  order: "dwell" | "page";
+}) {
   if (sections.length === 0) {
     return <p className={styles.blankBody}>아직 읽힌 섹션이 없습니다.</p>;
   }
   const averaged = sections
     .map((section) => ({ ...section, average: ratio(section.dwellMs, section.views) }))
-    .sort((left, right) => right.average - left.average);
-  const top = averaged[0]?.average ?? 1;
+    .sort((left, right) => order === "page"
+      ? (left.position ?? Number.MAX_SAFE_INTEGER) - (right.position ?? Number.MAX_SAFE_INTEGER)
+      : right.average - left.average);
+  const top = Math.max(...averaged.map(({ average }) => average), 1);
 
   return (
     <>
-      {averaged.map((section, index) => (
+      {averaged.map((section) => (
         <div key={section.sectionId} className={styles.dwellRow}>
-          <span className={styles.dwellLabel}>
-            {section.title || `${index + 1}번 섹션`}
+          <span className={order === "page" ? `${styles.dwellLabel} ${styles.dwellLabelWide}` : styles.dwellLabel}>
+            {sectionName(section)}
             <span className={styles.dwellViews}> · {section.views}회</span>
           </span>
-          <span className={styles.dwellTrack}>
-            <span
-              className={styles.dwellFill}
-              style={{ width: `${Math.round((section.average / top) * 100)}%` }}
-            />
-          </span>
+          {order === "dwell" ? (
+            <span className={styles.dwellTrack}>
+              <span
+                className={styles.dwellFill}
+                style={{ width: `${Math.round((section.average / top) * 100)}%` }}
+              />
+            </span>
+          ) : null}
           <span className={styles.dwellTime}>{formatDuration(section.average)}</span>
         </div>
       ))}

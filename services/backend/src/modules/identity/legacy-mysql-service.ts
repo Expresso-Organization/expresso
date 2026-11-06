@@ -41,8 +41,10 @@ function toAuthenticatedUser(row: CredentialRow): AuthenticatedUser {
     email: row.email,
     displayName: row.display_name,
     planCode: row.plan_code,
-    // 레거시 스키마에는 인증 기록이 없다. 미인증으로 읽는다.
+    // 레거시 스키마에는 인증 기록 · 권한이 없다. 미인증 일반 사용자로 읽는다.
     emailVerifiedAt: null,
+    role: "user",
+    impersonation: null,
   };
 }
 
@@ -408,7 +410,10 @@ export class IdentityService {
         displayName: session.display_name,
         planCode: session.plan_code,
         emailVerifiedAt: null,
+        role: "user",
+        impersonation: null,
       },
+      owner: { userId: session.user_id, displayName: session.display_name, role: "user" },
     };
   }
 

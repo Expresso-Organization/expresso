@@ -19,6 +19,7 @@ import {
 } from "@expresso/contracts";
 import {
   describeArchetype,
+  describeBackdrops,
   describeDesignLayout,
   designLayout,
   designQa,
@@ -132,7 +133,8 @@ ${Object.entries(structuredCatalog.data.components)
   .join("\n")}
 입력 특징: ${JSON.stringify({ profile: content.profile, sections: content.sections.map((section) => ({ id: section.id, title: section.title, summary: section.summary, pattern: section.pattern, bodyLength: section.body.length, images: section.media.length, imageDescriptions: section.media.map((item) => item.alt), details: section.details.map((item) => ({ label: item.label, excerpt: item.text.slice(0, 160) })) })), careerCount: content.career.length, evidenceCount: content.evidence.length, contact: !!content.contact })}
 ${layout ?? "색·서체·간격은 사용자가 고른 디자인 시스템이 정하고, 이 Spec은 구성만 정합니다."}${options.archetype ? `\n${options.archetype}` : ""}
-구성은 첫 화면 구도, 사례 유형, 목차 형태${groups ? ", 컨테이너 배치" : ""}입니다. rationale에는 이미지·본문 길이·설명 유형과 위 배치를 근거로 고른 구성의 이유를 씁니다. motion은 'showcase'를 씁니다. 자료마다 사례 유형을 독립적으로 선택합니다.
+${describeBackdrops()}
+구성은 첫 화면 구도 · 배경, 사례 유형, 목차 형태${groups ? ", 컨테이너 배치" : ""}입니다. rationale에는 이미지·본문 길이·설명 유형과 위 배치를 근거로 고른 구성의 이유를 씁니다. motion은 'showcase'를 씁니다. 자료마다 사례 유형을 독립적으로 선택합니다.
 출력 형식(공급자에 넘기는 출력 스키마에서 생성):
 ${format.text}
 모든 요소 ID를 트리 전체에서 정확히 한 번씩 연결합니다. 사용할 요소 ID: ${JSON.stringify(ids)}. ${groups ? "요소는 page.children에 바로 두거나 컨테이너의 children에 넣습니다. 첫 ID는 intro, 연락처가 있으면 마지막 ID는 contact이며 둘은 컨테이너에 넣지 않습니다." : "모든 요소를 page.children에 바로 둡니다. 첫 ID는 intro, 연락처가 있으면 마지막 ID는 contact입니다."}

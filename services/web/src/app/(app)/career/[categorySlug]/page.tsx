@@ -1,26 +1,10 @@
-import type { CareerCategory, CareerRecordSort, CareerViewConfiguration } from "@expresso/contracts";
-import type { Route } from "next";
 import { notFound } from "next/navigation";
 
-import { AppBody, DocumentHeader } from "@/components/shell/AppShell";
-import { Icon } from "@/components/ui/Icon";
 import { career } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 import { CareerBrowser } from "./CareerBrowser";
 
-const SORTS: Record<string, CareerRecordSort> = {
-  updated_desc: "updated_desc",
-  updated_asc: "updated_asc",
-  title_asc: "title_asc",
-  period_desc: "period_desc",
-  period_asc: "period_asc",
-};
-
-/** §6.3 뷰에 맞는 기본 정렬 — 타임라인은 기간 순이다. */
-function defaultSortFor(view: string): CareerRecordSort {
-  return view === "timeline" ? "period_desc" : "updated_desc";
-}
 function editedLabel(updatedAt: string | undefined): string {
   if (!updatedAt) return "아직 편집 없음";
   const minutes = Math.max(0, Math.floor((Date.now() - new Date(updatedAt).getTime()) / 60_000));
@@ -29,14 +13,6 @@ function editedLabel(updatedAt: string | undefined): string {
   if (minutes < 1_440) return `${Math.floor(minutes / 60)}시간 전 편집`;
   if (minutes < 2_880) return "어제 편집";
   return `${Math.floor(minutes / 1_440)}일 전 편집`;
-}
-
-function fallbackView(category: CareerCategory): CareerViewConfiguration {
-  const definitions = category.propertySchemaV2.filter((item) => item.deletedAt === null);
-  const date = definitions.find((item) => item.type === "date");
-  const type = category.defaultView === "timeline" && !date ? "table" : category.defaultView;
-  const now = new Date().toISOString();
-  return { id: `local-${category.id}`, categoryId: category.id, name: "기본 뷰", type, version: 1, order: 0, filter: null, sorts: [], groupPropertyId: null, groupOrder: [], recordOrder: [], visiblePropertyIds: definitions.map((item) => item.id), propertyOrder: definitions.map((item) => item.id), columnWidths: {}, gallery: type === "gallery" ? { coverPropertyId: null, previewPropertyIds: definitions.slice(0, 3).map((item) => item.id) } : null, board: type === "board" ? { hiddenGroupIds: [], cardOrder: {} } : null, timeline: type === "timeline" && date ? { startPropertyId: date.id, endPropertyId: null, axisStart: null, axisEnd: null } : null, createdAt: now, updatedAt: now };
 }
 
 export default async function CareerCategoryPage({
@@ -53,40 +29,21 @@ export default async function CareerCategoryPage({
   const category = session.categories.find((item) => item.key === categorySlug);
   if (!category) notFound();
 
-  const sortParam = typeof query.sort === "string" ? SORTS[query.sort] : undefined;
-  const sort = sortParam ?? defaultSortFor(category.defaultView);
-  const search = typeof query.q === "string" ? query.q : undefined;
-
-  const records = await career.records(session.accessToken, {
-    categoryId: category.id,
-    sort,
-    ...(search ? { q: search } : {}),
-    limit: 50,
-  });
-  const savedViews = await career.viewConfigurations(session.accessToken, category.id);
+  // 필터 · 정렬 · 검색은 뷰가 화면에서 적용한다. 서버는 최근 편집 순으로 한 쪽씩 준다.
+  const [records, savedViews] = await Promise.all([
+    career.records(session.accessToken, { categoryId: category.id, sort: "updated_desc", limit: 100 }),
+    career.viewConfigurations(session.accessToken, category.id),
+  ]);
 
   return (
-    <>
-      <DocumentHeader
-        crumbs={[{ label: "내 커리어", href: "/career/experience" as Route }, category.name]}
-        actions={
-          <>
-            <span style={{ fontSize: "12px", color: "var(--ex-fg-muted)" }}>{editedLabel(records.data[0]?.updatedAt)}</span>
-            <span style={{ fontSize: "12.5px", color: "var(--ex-fg-body)" }}>
-              공유
-            </span>
-            <Icon
-              name="clock-counter-clockwise"
-              size={16}
-              color="var(--ex-fg-muted)"
-            />
-            <Icon name="dots-three" size={16} color="var(--ex-fg-muted)" />
-          </>
-        }
-      />
-      <AppBody>
-        <CareerBrowser category={category} records={records.data} initialView={savedViews.data[0] ?? fallbackView(category)} />
-      </AppBody>
-    </>
+    <CareerBrowser
+      category={category}
+      records={records.data}
+      page={records.page}
+      views={savedViews.data}
+      viewId={typeof query.view === "string" ? query.view : null}
+      search={typeof query.q === "string" ? query.q.slice(0, 200) : ""}
+      editedLabel={editedLabel(records.data[0]?.updatedAt)}
+    />
   );
 }

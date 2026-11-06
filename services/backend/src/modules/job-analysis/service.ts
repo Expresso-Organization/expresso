@@ -7,6 +7,7 @@ import { inTransaction } from "../../platform/mongo-transaction.js";
 import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { requireActiveUser } from "../identity/index.js";
 import { assertActiveRecordsForWrite, careerRecordTextReader } from "../career/index.js";
+import { AiError } from "../../platform/ai/client.js";
 import { calculateExplainableMatch } from "../jobs/index.js";
 import type { JobAnalysisApi } from "./index.js";
 import { JobAnalysisNotFoundError } from "./public.js";
@@ -15,8 +16,15 @@ import { RequirementExtractorUnavailableError, type RequirementExtractor } from 
 import { AnalysisEvidenceError, validateExtractionSource } from "./source-span.js";
 
 const EXTRACTOR_VERSION = 2;
-const failureOf = (error: unknown) => error instanceof AnalysisEvidenceError ? { code: "INVALID_SOURCE_SPAN", retryable: false }
-  : error instanceof RequirementExtractorUnavailableError ? { code: "EXTRACTOR_UNAVAILABLE", retryable: false } : { code: "EXTRACTION_FAILED", retryable: true };
+/**
+ * 분석이 멈춘 이유와 다시 시도해도 되는지.
+ *
+ * AI 호출 오류는 어댑터가 알린 코드와 `retryable`을 그대로 남긴다 — 타임아웃 · 레이트 리밋 · 출력 오류 · 사용 불가를
+ * 하나로 합치면 화면과 기록만 보고는 설정 오류인지 일시 장애인지 알 수 없다(브루 작업의 `brew-jobs.ts`와 같은 기준).
+ */
+export const failureOf = (error: unknown) => error instanceof AnalysisEvidenceError ? { code: "INVALID_SOURCE_SPAN", retryable: false }
+  : error instanceof RequirementExtractorUnavailableError ? { code: "EXTRACTOR_UNAVAILABLE", retryable: false }
+    : error instanceof AiError ? { code: error.code, retryable: error.retryable } : { code: "EXTRACTION_FAILED", retryable: true };
 
 export class JobAnalysisService implements JobAnalysisApi {
   constructor(readonly context: MongoContext) {}
@@ -92,9 +100,9 @@ export class JobAnalysisService implements JobAnalysisApi {
           const coverage = calculateRequirementCoverage(requirement, recordTexts);
           await db.requirementCoverages.insertOne({ _id: `${userId}:${target._id}`, userId, requirementId: target._id, ...coverage, computedAt: new Date() }, options);
         }
-        // 커버리지와 일치도를 같은 기록 snapshot으로 저장합니다. 근거가 부족하면 이전 점수를 남기지 않습니다.
+        // 커버리지와 일치도를 같은 기록 snapshot으로 저장합니다. 비교할 기록이 없으면 이전 점수를 남기지 않습니다.
         const normalizedInput = JobAnalysisExtractionSchema.shape.normalized.parse(normalized);
-        const match = records.length >= 3 ? calculateExplainableMatch(jobPostingId, normalizedInput, recordTexts.map((record) => record.text).join("\n"), new Date()) : null;
+        const match = records.length > 0 ? calculateExplainableMatch(jobPostingId, normalizedInput, recordTexts.map((record) => record.text).join("\n"), new Date()) : null;
         if (match) await db.matchScores.updateOne({ userId, jobPostingId }, { $set: { total: Decimal128.fromString(String(match.total)), axes: match.axes, reasonText: match.reason, nextAction: match.nextAction, computedAt: new Date(match.computedAt) }, $setOnInsert: { _id: randomUUID(), userId, jobPostingId } }, { ...options, upsert: true });
         else await db.matchScores.deleteOne({ userId, jobPostingId }, options);
         await db.jobAnalyses.updateOne({ _id: jobAnalysisId, userId, status: "running", targetVersion, attempts: attempt }, { $set: { status: "done", progressStage: "done", resultVersion: targetVersion, analyzedAt: new Date(), failureCode: null, failureRetryable: null, ...(previous ? { history: { userId, previousVersion: analysis.resultVersion, requirements: previous, archivedAt: new Date() } } : {}) } }, options);

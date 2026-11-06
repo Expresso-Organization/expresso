@@ -226,6 +226,7 @@ export function deterministicUuid(value: string): string {
 }
 
 const MARK_STYLES = ["bold", "italic", "strike", "code", "underline"] as const;
+const MAX_SPAN_TEXT = 50_000;
 type MarkStyle = (typeof MARK_STYLES)[number];
 
 function inlineToSpans(content: unknown): CareerTextSpan[] {
@@ -238,7 +239,11 @@ function inlineToSpans(content: unknown): CareerTextSpan[] {
     const styles = (node["styles"] ?? {}) as Record<string, unknown>;
     const marks: NonNullable<CareerTextSpan["marks"]> = MARK_STYLES.filter((style: MarkStyle) => styles[style] === true).map((type) => ({ type }));
     if (link) marks.push({ type: "link", attrs: { href: link } });
-    spans.push(marks.length ? { text, marks } : { text });
+    // v1 계약은 글 조각 하나를 5만 자까지 받습니다. 긴 글을 붙여 넣어도 bootstrap이 계약에서 막히지 않게 나눕니다.
+    for (let start = 0; start < text.length; start += MAX_SPAN_TEXT) {
+      const part = text.slice(start, start + MAX_SPAN_TEXT);
+      spans.push(marks.length ? { text: part, marks } : { text: part });
+    }
   };
   for (const item of content as Record<string, unknown>[]) {
     if (item["type"] === "link") {

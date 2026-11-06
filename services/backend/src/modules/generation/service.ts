@@ -199,7 +199,7 @@ export class GenerationService {
         const brew = await db.brews.findOne({ _id: job.brewId, userId: job.userId }, options);
         await db.portfolios.insertOne({
           _id: portfolioId, userId: job.userId, brewId: job.brewId, templateId: job.templateId,
-          title: brew?.freeTitle ?? "Generated portfolio", status: "draft", styleOverrides: job.styleOverrides,
+          title: brew?.title ?? brew?.freeTitle ?? "Generated portfolio", status: "draft", styleOverrides: job.styleOverrides,
           designSystemRevisionId: job.designSystemRevisionId ?? null,
           archetype: job.archetype ?? null,
           createdAt: now, updatedAt: now,
@@ -303,7 +303,8 @@ export class GenerationService {
       }) as ContextRow));
     const paths = await db.recipeEvidencePaths.find({ userId: job.userId, recipeId }).sort({ createdAt: 1, _id: 1 }).toArray();
     const [records, answers, requirements] = await Promise.all([
-      db.careerRecords.find({ _id: { $in: paths.filter((p) => p.sourceType === "record").map((p) => p.sourceId) }, userId: job.userId }).toArray(),
+      // 휴지통에 넣은 기록은 새로 만드는 글의 근거로 쓰지 않습니다.
+      db.careerRecords.find({ _id: { $in: paths.filter((p) => p.sourceType === "record").map((p) => p.sourceId) }, userId: job.userId, deletedAt: null }).toArray(),
       db.answers.find({ _id: { $in: paths.filter((p) => p.sourceType === "answer").map((p) => p.sourceId) }, userId: job.userId }).toArray(),
       db.jobPostingRequirements.find({ _id: { $in: paths.filter((p) => p.sourceType === "requirement").map((p) => p.sourceId) } }).toArray(),
     ]);

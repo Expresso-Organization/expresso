@@ -94,6 +94,27 @@ describe("TableView", () => {
     await waitFor(() => expect(onDuplicateRecord).toHaveBeenCalledWith(records[0]!.id));
   });
 
+  it("shows computed values and saves a number after a rejected entry (2026-11-02 감사)", async () => {
+    const formulaId = "00000000-0000-4000-8000-000000000011";
+    const computedCategory = { ...category, propertySchemaV2: [...category.propertySchemaV2!, { id: formulaId, key: "total", name: "합계", type: "formula" as const, required: false, system: false, config: { source: "1 + 2" }, order: 6, version: 1, deletedAt: null }] };
+    const computedView = { ...view, visiblePropertyIds: [...view.visiblePropertyIds, formulaId], propertyOrder: [...view.propertyOrder, formulaId] };
+    const computedRecord = { ...records[0]!, computedProperties: { total: { type: "formula" as const, value: 3, diagnostics: [] } } };
+    const onCellCommit = vi.fn().mockResolvedValue(undefined);
+    render(<TableView records={[computedRecord]} view={computedView} category={computedCategory} activeId={computedRecord.id} openId={null} selectedIds={new Set()} onActivate={() => undefined} onCreate={() => undefined} onFillMissing={() => undefined} onToggle={() => undefined} onViewChange={() => undefined} onCategoryChange={() => undefined} onCellCommit={onCellCommit} />);
+    expect(screen.getByRole("gridcell", { name: "3" })).toBeTruthy();
+
+    const scoreCell = screen.getByRole("gridcell", { name: "2" });
+    fireEvent.click(scoreCell); fireEvent.click(scoreCell);
+    const input = screen.getByRole("textbox", { name: "점수 셀 편집" });
+    fireEvent.change(input, { target: { value: "abc" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(onCellCommit).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert").textContent).toContain("숫자");
+    fireEvent.change(input, { target: { value: "12" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    await waitFor(() => expect(onCellCommit).toHaveBeenCalledWith(computedRecord.id, expect.objectContaining({ id: scoreId }), { type: "number", value: 12 }));
+  });
+
   it("focuses a new row title without opening the document drawer", async () => {
     const created = { ...records[0]!, id: "00000000-0000-4000-8000-000000000010", title: "" };
     const onCreate = vi.fn().mockResolvedValue(created);

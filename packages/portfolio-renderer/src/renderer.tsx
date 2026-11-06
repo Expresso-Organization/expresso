@@ -29,7 +29,8 @@ import {
 } from "./library.js";
 import { STRUCTURED_PORTFOLIO_CSS } from "./styles.js";
 import { structuredCatalog } from "./catalog.js";
-import { KitContext, caseNumbers, firstRowId, kitCss, kitRegistry } from "./kit.js";
+import { ELEMENT_KEY_PROP, KitContext, caseNumbers, firstRowId, kitCss, kitRegistry } from "./kit.js";
+import { elementStyleCss } from "./editing.js";
 
 export { structuredCatalog };
 
@@ -315,7 +316,7 @@ const { registry } = defineRegistry(structuredCatalog, {
       <nav
         id="work"
         className="sp-index"
-        data-variant={variant}
+        data-variant={variant === "timeline" ? "rows" : variant}
         aria-label="프로젝트 목차"
       >
         <p className="sp-kicker">SELECTED WORK</p>
@@ -348,9 +349,12 @@ const { registry } = defineRegistry(structuredCatalog, {
         </div>
       </nav>
     ),
-    // 전후 비교 · 과정 흐름 · 이미지 전시 · 수치 강조 줄 · 큰 인용은 토큰 키트 부품입니다. 수집 원본 렌더러에서는
-    // 사례를 기사형(이미지 전시는 갤러리형)으로 그리고, 수치 줄과 인용은 사례 안의 글과 겹치므로 그리지 않습니다.
+    // 전후 비교 · 막대 차트 · 과정 흐름 · 이미지 전시 · 수치 강조 줄 · 큰 인용 · 기간 차트는 토큰 키트 부품입니다. 수집 원본 렌더러에서는
+    // 사례를 기사형(이미지 전시는 갤러리형)으로, 기간 차트를 목록으로 그리고, 수치 줄과 인용은 사례 안의 글과 겹치므로 그리지 않습니다.
     CaseBeforeAfter: ({ props }) => (
+      <Case section={props.section} sourceId={props.sourceId} kind="essay" />
+    ),
+    CaseBars: ({ props }) => (
       <Case section={props.section} sourceId={props.sourceId} kind="essay" />
     ),
     CaseFlow: ({ props }) => (
@@ -474,11 +478,23 @@ function usesCollectedSources(spec: StructuredPortfolioSnapshot["spec"]): boolea
   );
 }
 
+/** 요소 props에 Spec 키를 넣은 사본입니다. 키트가 그 키를 최상위 DOM의 `data-xp-key`로 답니다(`kit.tsx`). */
+function keyedSpec(spec: StructuredPortfolioSnapshot["spec"]): StructuredPortfolioSnapshot["spec"] {
+  return {
+    root: spec.root,
+    elements: Object.fromEntries(
+      Object.entries(spec.elements).map(([key, node]) => [key, { ...node, props: { ...node.props, [ELEMENT_KEY_PROP]: key } }]),
+    ) as StructuredPortfolioSnapshot["spec"]["elements"],
+  };
+}
+
 export type RenderStructuredOptions = {
   /** 키트 경로의 디자인 시스템 스펙입니다. 사용자 색 덮어쓰기는 호출하는 쪽이 이미 반영해 넘깁니다. */
   design?: DesignSystemSpecV2 | undefined;
   /** 수집 원본으로 그리는 저장된 판의 사용자 색입니다. 키트 경로에서는 쓰지 않습니다. */
   theme?: { background: string; text: string; accent: string } | undefined;
+  /** 렌더 시각입니다. 기간 차트가 "현재"로 끝나는 기간을 여기까지 그립니다. 주지 않으면 호출 시각입니다. */
+  now?: Date | undefined;
 };
 
 export function renderStructuredPortfolio(
@@ -507,8 +523,8 @@ export function renderStructuredPortfolio(
         <VisibilityProvider>
           <ActionProvider handlers={{}}>
             {design ? (
-              <KitContext.Provider value={{ content: snapshot.content, evidenceTitles, design, caseNumbers: caseNumbers(snapshot.spec, snapshot.content), firstRowId: firstRowId(snapshot.spec) }}>
-                <Renderer spec={snapshot.spec} registry={kitRegistry} />
+              <KitContext.Provider value={{ content: snapshot.content, evidenceTitles, design, caseNumbers: caseNumbers(snapshot.spec, snapshot.content), firstRowId: firstRowId(snapshot.spec), now: options.now ?? new Date() }}>
+                <Renderer spec={keyedSpec(snapshot.spec)} registry={kitRegistry} />
               </KitContext.Provider>
             ) : (
               <EvidenceTitles.Provider value={evidenceTitles}>
@@ -533,7 +549,8 @@ export function renderStructuredPortfolio(
       "지면이 저장 크기 제한을 넘었습니다. 내용을 줄여 주세요.",
     );
   if (design) {
-    const css = kitCss(design);
+    const styles = elementStyleCss(snapshot.spec);
+    const css = styles ? `${kitCss(design)}\n${styles}` : kitCss(design);
     if (css.length > PAGE_MAX_BYTES)
       throw new StructuredRenderError("PAGE_TOO_LARGE", "스타일이 저장 크기 제한을 넘었습니다.");
     return { html, css };

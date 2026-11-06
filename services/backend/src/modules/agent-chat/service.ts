@@ -2,7 +2,7 @@ import type { PortfolioReadApi } from "../portfolios/index.js";
 import type { PageApi } from "../page/index.js";
 import { AgentCredentials } from "./credentials.js";
 import { randomUUID } from "node:crypto";
-import { AgentConversationSchema, type CareerDocumentBootstrap, type AgentConversation, type AgentContext, type AgentMessage, type SendAgentMessage, type AgentApproval, type AgentRecordDraftDecision, type AgentRecordDraftInput, type AgentPlanDecision, type AgentReplanDecision, type ReplanProposalInput, type UpdateTaskProgress, type GapReviewDraft, type PlanProposalInput, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
+import { AgentConversationSchema, type CareerDocumentBootstrap, type AgentConversation, type AgentContext, type AgentMessage, type SendAgentMessage, type AgentApproval, type AgentRecordDraftDecision, type AgentRecordDraftInput, type AgentPlanDecision, type AgentReplanDecision, type ReplanProposalInput, type UpdateTaskProgress, type GapReview, type GapReviewDraft, type PlanProposalInput, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
 import { mongoCollections, type AgentConversationDoc } from "@expresso/database";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { AgentToolRejection, type AgentRecordText, type AgentRuntime } from "../../platform/agent/runtime.js";
@@ -128,12 +128,26 @@ export class AgentChatService {
     if (issues.length) throw new AgentToolRejection(issues);
     return buildReview(draft, job.descriptionRaw, records);
   }
-  /** 대조 이후 공고 원문이나 근거로 쓴 기록이 바뀌었는가. */
+  /** 요건 대조나 보완점 정리 뒤에 공고 원문이나 근거로 쓴 기록이 바뀌었는가. */
   async freshness(userId: string, id: string, toolId: string) {
     const row = await this.owned(userId, id);
-    const review = row.messages.flatMap(message => message.tools).find(tool => tool.id === toolId)?.review;
-    if (!review) throw new AgentChatError(404, "이 대화의 요건 대조를 찾을 수 없습니다.");
-    return this.reviewFreshness(userId, review);
+    const tools = row.messages.flatMap(message => message.tools);
+    const position = tools.findIndex(tool => tool.id === toolId);
+    const tool = tools[position];
+    if (tool?.review) return this.reviewFreshness(userId, tool.review);
+    if (tool?.gapReview) return this.gapFreshness(userId, tool.gapReview, tools.slice(0, position).findLast(earlier => earlier.review)?.review);
+    throw new AgentChatError(404, "이 대화의 요건 대조나 보완점 정리를 찾을 수 없습니다.");
+  }
+  /**
+   * 보완점의 최신성. 바탕이 된 대조(만들 때처럼 그 앞의 가장 최근 대조)가 오래되었거나, 보완점이 인용한
+   * 기록의 글이 바뀌었으면 오래된 것이다.
+   */
+  private async gapFreshness(userId: string, gap: GapReview, review: RequirementReview | undefined) {
+    const changed = new Set(review ? (await this.reviewFreshness(userId, review)).changed : []);
+    const snapshot = gap.snapshot?.records ?? [];
+    const records = await this.recordTexts(userId, snapshot.map(item => item.recordId));
+    if (snapshot.some(item => { const current = records.get(item.recordId); return !current || hash(current.text) !== item.textHash; })) changed.add("records");
+    return { stale: changed.size > 0, changed: [...changed] };
   }
   private async reviewFreshness(userId: string, review: RequirementReview) {
     const job = await this.jobs.get(userId, review.jobPostingId).catch(() => null);

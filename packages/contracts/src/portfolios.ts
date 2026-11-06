@@ -42,6 +42,14 @@ export const PortfolioSummarySchema = z.strictObject({
   visibleSectionCount: z.number().int().nonnegative(),
   blockCount: z.number().int().nonnegative(),
   deployment: PortfolioDeploymentSchema.nullable(),
+  /**
+   * 이 포트폴리오가 겨냥한 공고. 제작 → 공고 분석 → 공고 → 회사로 찾는다.
+   * 00 홈 카드가 같은 제목의 포트폴리오를 구분하는 줄이다. 공고 없이 만들었으면 null.
+   */
+  target: z.strictObject({
+    postingTitle: z.string().min(1).max(300),
+    company: z.strictObject({ name: z.string(), logoUrl: z.string().max(300).nullable() }),
+  }).nullable(),
   createdAt: TimestampSchema,
   updatedAt: TimestampSchema,
 });

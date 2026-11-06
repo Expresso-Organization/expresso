@@ -96,3 +96,16 @@ export interface ImportCheckpointDoc {
   lastKey?: string;
   processedCount: number;
 }
+
+/**
+ * 관리 동작 기록. `actorUserId`가 null이면 서버의 CLI가 한 일이다. 더미 계정을 지워도
+ * 남기므로 `dummyKey`를 함께 적는다. 0024.
+ */
+export interface AdminAuditEventDoc {
+  _id: string;
+  actorUserId: string | null;
+  action: "admin.grant" | "admin.revoke" | "dummy.create" | "dummy.refill" | "dummy.delete" | "impersonation.start" | "impersonation.end";
+  targetUserId?: string | null;
+  dummyKey?: string | null;
+  at: Date;
+}

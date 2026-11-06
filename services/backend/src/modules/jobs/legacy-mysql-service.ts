@@ -389,10 +389,11 @@ export class JobMarketService {
       where user_id = ${userId} and deleted_at is null
       order by id
     `;
-    if (records.length < 3) {
+    // 기록이 하나도 없을 때만 막는다. Mongo 구현(`service.ts`)과 같은 기준이다.
+    if (records.length === 0) {
       throw new JobMarketError(409, "more career records are required", {
-        required: 3,
-        actual: records.length,
+        required: 1,
+        actual: 0,
       });
     }
     const searchText = records

@@ -1,5 +1,5 @@
 import {
-  API_PREFIX,
+  companyLogoUrl,
   JobPostingDetailSchema,
   JobPostingListResponseSchema,
   JobRequirementsSchema,
@@ -134,16 +134,8 @@ function iso(value: Date | string): string {
   return new Date(value).toISOString();
 }
 
-/**
- * 회사 마크를 내려받는 주소. 받아 둔 것이 없으면 null이다.
- *
- * 끝에 붙는 `v=`는 그림의 지문 앞 16자다. 그림이 바뀌면 주소가 바뀌므로,
- * 라우트는 이 주소를 **영원히 캐시해도 된다**고 말할 수 있다.
- */
-function logoUrl(companyId: string, checksum: string | null): string | null {
-  if (checksum === null) return null;
-  return `${API_PREFIX}/companies/${companyId}/logo?v=${checksum.slice(0, 16)}`;
-}
+/** 회사 마크 주소. 규칙은 계약의 `companyLogoUrl` 한 곳에 있다. */
+const logoUrl = companyLogoUrl;
 
 function technologies(
   requirements: JobRequirements,
@@ -846,6 +838,8 @@ export class JobBoardService {
             id: analysis.id,
             status: analysis.status,
             progressStage: analysis.progress_stage,
+            // MySQL 경로는 실패 코드를 싣지 않는다. 계약 자리만 채운다.
+            failure: null,
             analyzedAt: analysis.analyzed_at ? iso(analysis.analyzed_at) : null,
           }
         : null,

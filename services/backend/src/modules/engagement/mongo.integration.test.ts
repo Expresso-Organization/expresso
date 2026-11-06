@@ -66,7 +66,12 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB engagement", () => {
     const deploymentId = randomUUID();
     const companyId = randomUUID();
     const postingId = randomUUID();
-    await db.brews.insertOne({ _id: brewId, userId, jobAnalysisId: randomUUID(), mode: "solo", lengthPreset: "single", status: "draft", createdAt: now, updatedAt: now });
+    const analysisId = randomUUID();
+    const freeBrewId = randomUUID();
+    await db.jobAnalyses.insertOne({ _id: analysisId, userId, jobPostingId: postingId, inputType: "board", status: "done", attachments: [], progressStage: "done", attempts: 1, resultVersion: 1, targetVersion: 1 });
+    await db.brews.insertOne({ _id: brewId, userId, jobAnalysisId: analysisId, mode: "solo", lengthPreset: "single", status: "draft", createdAt: now, updatedAt: now });
+    // 공고 없이 시작한 제작 — 이름만 있고 회사는 없다. 공고 분석 문서도 만들지 않는다.
+    await db.brews.insertOne({ _id: freeBrewId, userId, jobAnalysisId: randomUUID(), freeTitle: "  범용 포트폴리오 ", mode: "solo", lengthPreset: "single", status: "recipe", createdAt: now, updatedAt: new Date("2026-08-29T00:00:00Z") });
     await db.portfolios.insertOne({ _id: portfolioId, userId, brewId, templateId: randomUUID(), currentDeploymentId: deploymentId, title: "Portfolio", status: "published", createdAt: now, updatedAt: now, styleOverrides: {} });
     await db.companies.insertOne({ _id: companyId, name: "Expresso", brandColors: [], logoChecksum: "abcdef1234567890" });
     await db.jobPostings.insertOne({ _id: postingId, companyId, source: "api", title: "Backend Engineer", descriptionRaw: "MongoDB", requirements: {}, dedupeHash: randomUUID(), createdAt: now, duties: [], preferred: [], hiringProcess: [] });
@@ -76,7 +81,10 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB engagement", () => {
       { _id: randomUUID(), userId, deploymentId, date: "2026-08-29", metricKey: "visit", value: Decimal128.fromString("3"), sampleSize: 3 },
     ]);
     await expect(service.home(userId)).resolves.toMatchObject({
-      activeBrews: [{ id: brewId, status: "draft" }],
+      activeBrews: [
+        { id: brewId, status: "draft", title: "Backend Engineer", company: { name: "Expresso", logoUrl: "/v1/companies/" + companyId + "/logo?v=abcdef1234567890" } },
+        { id: freeBrewId, status: "recipe", title: "범용 포트폴리오", company: null },
+      ],
       portfolios: [{ id: portfolioId, title: "Portfolio", status: "published" }],
       recommendedJobs: [{ id: postingId, title: "Backend Engineer", company: "Expresso", score: 87.5 }],
       keyMetrics: [{ key: "visit", value: 5 }],

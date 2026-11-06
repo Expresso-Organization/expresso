@@ -92,6 +92,45 @@ DNS가 이미 이 서버를 가리키고 있었다. 인증서는 Let's Encrypt�
 
 지금은 앱이 없어 **502가 정상이다.**
 
+### 공개 포트폴리오 주소 — `*.expresso.ai.kr` (2026-10-28)
+
+배포한 포트폴리오는 `{주소}.expresso.ai.kr`로 열린다. 웹의 프록시가 Host를 보고 그 주소의 공개 사이트를 그린다.
+
+| 항목 | 값 |
+|---|---|
+| DNS | hosting.co.kr에 `*` A 레코드 `140.245.74.246`. 이름을 적은 레코드(`dev` · 루트)가 먼저다 |
+| 인증서 | `/etc/letsencrypt/live/expresso.ai.kr-wildcard/` — `*.expresso.ai.kr`, 2027-01-25 만료 |
+| vhost | `infra/nginx/sites.expresso.ai.kr.conf` — 서버 사본은 `/etc/nginx/sites-available/sites.expresso.ai.kr` |
+| 확인 훅 | `infra/server/expresso-acme/` — 서버 사본은 `~/expresso-acme/` |
+
+vhost는 이 주소를 처리하는 웹이 배포된 뒤에 켠다. 그 전에 켜면 서브도메인에서 앱 화면이 열린다.
+
+```bash
+sudo cp ~/expresso/infra/nginx/sites.expresso.ai.kr.conf /etc/nginx/sites-available/sites.expresso.ai.kr
+sudo ln -sf /etc/nginx/sites-available/sites.expresso.ai.kr /etc/nginx/sites-enabled/sites.expresso.ai.kr
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+#### 와일드카드 인증서 갱신
+
+와일드카드 인증서는 DNS TXT 레코드로만 발급된다. hosting.co.kr DNS에는 API가 없어 TXT 값은 사람이 넣는다. 그래서 자동 갱신이 되지 않는다.
+
+**주의:** 만료 전에 직접 갱신한다. 만료되면 모든 공개 포트폴리오 주소가 https 오류를 낸다.
+
+1. 서버에서 확인 훅을 켜고 갱신을 시작한다. 훅은 `armed` 파일이 있을 때만 기다린다. 없으면 자동 갱신 타이머가 바로 실패하고 지나간다.
+
+   ```bash
+   cp ~/expresso/infra/server/expresso-acme/*.sh ~/expresso-acme/ && touch ~/expresso-acme/armed
+   cd ~/expresso-acme && sudo setsid certbot renew --cert-name expresso.ai.kr-wildcard --force-renewal > certbot.log 2>&1 < /dev/null &
+   ```
+
+2. `cat ~/expresso-acme/value.txt`로 확인 값을 읽는다.
+3. hosting.co.kr에 TXT 레코드를 넣는다. 이름은 `_acme-challenge`, 값은 2의 문자열이다.
+4. 훅이 네임서버 네 곳에서 값을 볼 때까지 기다린 뒤 발급이 끝난다. 결과는 `sudo certbot certificates --cert-name expresso.ai.kr-wildcard`로 본다.
+5. `sudo systemctl reload nginx`로 새 인증서를 읽힌다. TXT 레코드는 지워도 된다.
+
+훅은 DNS를 TCP로 묻는다. 이 서버에서 UDP 53 응답은 중간 캐시를 거쳐 새 레코드를 몇 분 늦게 보여 준다(2026-10-28 확인).
+
 #### nginx 재로드 (2026-09-27 재확인)
 
 현재 호스트의 `nginx.service`는 `active`이고 `MainPID`가 호스트 nginx 마스터와
@@ -142,6 +181,7 @@ bare)은 더 이상 경로에 없다.
 - `services/backend/.env.server.example` — 서버용 환경 예시. 서명 키와 소금은
   `openssl rand -hex 32`로 채운다.
 - `infra/nginx/expresso.ai.kr.conf` — 앞단 vhost. 서버 사본과 같은 내용이다.
+- `infra/nginx/sites.expresso.ai.kr.conf` — 공개 포트폴리오 주소(`*.expresso.ai.kr`) vhost.
 - `infra/systemd/expresso-{api,worker,web}.service` — 세 유닛. Node 24를 절대
   경로로 부른다.
 

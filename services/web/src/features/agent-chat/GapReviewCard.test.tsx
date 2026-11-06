@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { GapReview } from "@expresso/contracts";
 import { GapReviewCard } from "./GapReviewCard";
 
@@ -12,15 +12,35 @@ const gapReview: GapReview = {
   jobPostingId: "00000000-0000-4000-8000-000000000001", summary: "요약", createdAt: "2026-10-15T00:00:00.000Z",
   items: [item("00000000-0000-4000-8000-000000000002", "MLOps", "low", "needs_confirmation"), item("00000000-0000-4000-8000-000000000003", "Kubernetes", "high", "needs_improvement")],
 };
-afterEach(cleanup);
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+const conversationId = "00000000-0000-4000-8000-000000000005";
+const toolId = "00000000-0000-4000-8000-000000000006";
 
 describe("보완점 카드", () => {
   it("준비할 순서대로 보이고 펼치면 근거와 다음 행동을 보인다", () => {
-    render(<GapReviewCard gapReview={gapReview} />);
+    const fetcher = vi.fn();
+    vi.stubGlobal("fetch", fetcher);
+    render(<GapReviewCard conversationId={null} toolId={toolId} gapReview={gapReview} />);
     expect(screen.getAllByRole("button").map(button => button.textContent)).toEqual(["Kubernetes기술보완 필요", "MLOps기술확인 필요"]);
     expect(screen.getByText("확인 필요 1")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Kubernetes/ }));
     expect(screen.getByText("써 본 적이 없어요")).toBeTruthy();
     expect(screen.getByText("Kubernetes 다음 행동")).toBeTruthy();
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(screen.queryByText("다시 대조 필요")).toBeNull();
+  });
+  it("정리 뒤에 공고나 근거 기록이 바뀌었으면 다시 대조가 필요하다고 표시한다", async () => {
+    const fetcher = vi.fn(async (_url: string) => Response.json({ data: { stale: true, changed: ["records"] } }));
+    vi.stubGlobal("fetch", fetcher);
+    render(<GapReviewCard conversationId={conversationId} toolId={toolId} gapReview={gapReview} />);
+    await waitFor(() => expect(screen.getByText("다시 대조 필요")).toBeTruthy());
+    expect(fetcher.mock.calls[0]![0]).toBe(`/api/agent/conversations/${conversationId}/reviews/${toolId}`);
+  });
+  it("바뀐 것이 없으면 표시하지 않는다", async () => {
+    const fetcher = vi.fn(async (_url: string) => Response.json({ data: { stale: false, changed: [] } }));
+    vi.stubGlobal("fetch", fetcher);
+    render(<GapReviewCard conversationId={conversationId} toolId={toolId} gapReview={gapReview} />);
+    await waitFor(() => expect(fetcher).toHaveBeenCalled());
+    expect(screen.queryByText("다시 대조 필요")).toBeNull();
   });
 });

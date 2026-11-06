@@ -6,7 +6,7 @@ import { ScriptedAiClient } from "../../platform/ai/scripted-client.js";
 import { StructuredPageGenerator } from "./structured-generator.js";
 import type { PageGenerationContext } from "./generator.js";
 import { findPortfolioDesign } from "../design-systems/index.js";
-import { METRIC_VALUE_PATTERN, fitToContent } from "./design-first.js";
+import { METRIC_VALUE_PATTERN, fillViolations, fitToContent } from "./design-first.js";
 
 /** 계약으로 응답을 고르는 가짜 공급자입니다. 실제 어댑터와 같은 검사 · 고치기 순서를 탑니다. */
 class RoutedAi extends ScriptedAiClient {
@@ -51,7 +51,7 @@ const spec = {
   root: "page",
   elements: {
     page: { type: "PortfolioPage", props: { profile: { $state: "/profile" }, motion: "showcase", rationale: "수치를 먼저 보입니다." }, children: ["intro", "metrics", "group-1", "quote-1", "section-misc", "evidence", "career"] },
-    intro: { type: "NameIntro", props: { profile: { $state: "/profile" }, sections: { $state: "/sections" }, variant: "statement" }, children: [] },
+    intro: { type: "NameIntro", props: { profile: { $state: "/profile" }, sections: { $state: "/sections" }, variant: "statement", backdrop: "contour" }, children: [] },
     index: { type: "ProjectIndex", props: { sections: { $state: "/sections" }, variant: "rows" }, children: [] },
     metrics: { type: "MetricStrip", props: { sections: { $state: "/sections" }, surface: "inverse", width: "bleed" }, children: [] },
     "group-1": { type: "Columns", props: { variant: "wide-start" }, children: ["section-lcp", "section-ui"] },
@@ -120,6 +120,10 @@ describe("설계가 먼저 오는 생성", () => {
     expect(result.html).toContain('data-surface="inverse"');
     expect(result.html).toContain("xp-flow");
     expect(result.html).toContain("측정한 수치로만 개선을 말합니다.");
+    // 설계 모델이 고른 첫 화면 배경을 그대로 그립니다. 설계 프롬프트가 배경마다 쓰임을 알립니다.
+    expect(ai.calls[0]!.prompt).toContain("contour=등고선");
+    expect(structured.spec.elements.intro?.props).toMatchObject({ backdrop: "contour" });
+    expect(result.html).toContain('data-backdrop="contour"');
     expect(result.manifest.designPlan?.concept).toBe("성능 수치를 앞세운 지면");
     expect(result.manifest.calls?.map((call) => call.model)).toEqual(["opus-test", "sonnet-test"]);
     expect(result.manifest.timeline?.map((item) => item.stage)).toEqual(["designed", "filled", "rendered"]);
@@ -153,6 +157,21 @@ describe("설계가 먼저 오는 생성", () => {
     expect(designFixes[0]!.paths).toEqual(["/plan/sections"]);
     expect(designFixes[0]!.prompt).toContain("빠진 섹션: ui, misc");
     expect(result.manifest.structured!.content.sections.map((section) => section.id)).toEqual(["lcp"]);
+  });
+});
+
+describe("설계 트리 연결", () => {
+  it("연결하지 않은 요소가 있으면 설계를 거절하지 않고 page.children만 같은 대화에서 고쳐 받는다", async () => {
+    const loose = { ...spec, elements: { ...spec.elements, page: { ...spec.elements.page, children: spec.elements.page.children.filter((key) => key !== "index") } } };
+    const ai = new RoutedAi((request) => (request.contract === "page_design" ? { plan, spec: loose } : fill()), (request, paths) =>
+      request.contract === "page_design" ? paths.map((path) => ({ path, value: spec.elements.page.children })) : [],
+    );
+    const result = await new StructuredPageGenerator(ai).generate(context);
+    const designFixes = ai.fixRequests.filter((request) => request.contract === "page_design");
+    expect(designFixes).toHaveLength(1);
+    expect(designFixes[0]!.paths).toEqual(["/spec/elements/page/children"]);
+    expect(designFixes[0]!.prompt).toContain("트리에 연결하지 않은 요소가 있습니다: index");
+    expect(result.manifest.structured!.spec.elements.index?.type).toBe("ProjectIndex");
   });
 });
 
@@ -209,6 +228,48 @@ describe("청사진과 순차 채움", () => {
   });
 });
 
+describe("차트 부품의 청사진", () => {
+  it("막대 차트 · 기간 차트를 고른 설계도 청사진을 낸다 — 표지로는 길이 · 기간을 읽지 못해 기술형 · 목록으로 그린다", async () => {
+    const charted = {
+      ...spec,
+      elements: {
+        ...spec.elements,
+        index: { ...spec.elements.index, props: { ...spec.elements.index.props, variant: "timeline" } },
+        career: { ...spec.elements.career, props: { ...spec.elements.career.props, variant: "chart" } },
+        "section-ui": { type: "CaseBars", props: { section: { $state: "/sectionById/ui" } }, children: [] },
+      },
+    };
+    const barsPlan = { ...plan, career: true, sections: plan.sections.map((item) => (item.id === "ui" ? { ...item, form: "bars", budget: { ...item.budget, metrics: 2 } } : item)) };
+    const pages: { html: string }[] = [];
+    const sink = { delta: () => undefined, thinking: () => undefined, blueprint: (page: { html: string; css: string }) => pages.push(page), stage: () => undefined };
+    const errors: string[] = [];
+    const original = console.error;
+    console.error = (line: string) => { errors.push(String(line)); };
+    try {
+      await new StructuredPageGenerator(new RoutedAi((request) => (request.contract === "page_design" ? { plan: barsPlan, spec: charted } : fill()))).generate(context, sink as never);
+    } finally {
+      console.error = original;
+    }
+    expect(errors.filter((line) => line.includes("blueprint_failed"))).toEqual([]);
+    expect(pages).toHaveLength(1);
+    expect(pages[0]!.html).toContain('data-case-type="technical"');
+  });
+});
+
+describe("기간 숫자", () => {
+  it("섹션 · 경력 기간에 출처에 없는 숫자가 있으면 그 칸만 고쳐 받는다", () => {
+    const filled = fill();
+    const output = {
+      ...filled,
+      sections: { ...filled.sections, lcp: { ...filled.sections.lcp, metrics: [], period: "2019.01 — 2020.12" }, ui: { ...filled.sections.ui, period: "" } },
+      career: [{ period: "2023.03 — 현재", organization: "모아마켓", role: "-", description: "-" }],
+    };
+    const groundSource = "상품 상세 LCP 3.8초 1.9초 컴포넌트 48개 2023.03 — 현재";
+    const violations = fillViolations(output, { ...plan, career: true } as never, plan.sections.filter((item) => item.include) as never, { author: "가상 하린", groundSource, evidenceCount: 1 });
+    expect(violations.filter((item) => item.path.endsWith("/period")).map((item) => item.path)).toEqual(["/sections/lcp/period"]);
+  });
+});
+
 describe("수치 값 모양", () => {
   it("숫자와 단위만 받고 설명이 붙은 값은 거절한다", () => {
     for (const value of ["1.9초", "420KB", "1,200만 건", "-40%", "10만 행", "~3배"]) expect(METRIC_VALUE_PATTERN.test(value), value).toBe(true);
@@ -257,6 +318,55 @@ describe("내용에 맞춘 부품 내림", () => {
     expect(fitted.elements["quote-2"]?.type).toBe("PullQuote");
     // 인용을 잃은 묶음도 자식 수 조건(Band 1–3개)을 지키므로 남습니다.
     expect(fitted.elements["group-1"]?.children).toEqual(["section-a"]);
+  });
+
+  it("같은 단위 수치가 없는 막대 차트와 기간을 두 개 읽지 못한 기간 차트를 내린다", () => {
+    const years = [{ label: "TypeScript", value: "5년" }, { label: "Next.js", value: "2년" }];
+    const mixed = [{ label: "LCP", value: "1.9초" }, { label: "JS", value: "180KB" }];
+    const charts = (value: StructuredPortfolioContent) =>
+      fitToContent(
+        {
+          root: "page",
+          elements: {
+            page: { type: "PortfolioPage", props: {}, children: ["intro", "index", "section-a", "section-b", "career"] },
+            intro: node("NameIntro", { profile: { $state: "/profile" } }),
+            index: node("ProjectIndex", { sections: { $state: "/sections" }, variant: "timeline" }),
+            "section-a": node("CaseBars", { section: { $state: "/sectionById/a" } }),
+            "section-b": node("CaseBars", { section: { $state: "/sectionById/b" } }),
+            career: node("CareerTimeline", { career: { $state: "/career" }, variant: "chart" }),
+          },
+        },
+        value,
+      ).elements;
+    const career = (period: string, id: string) => ({ id, period, organization: id, role: "-", description: "-" });
+    const dated: StructuredPortfolioContent = {
+      ...content,
+      sections: [section("a", { metrics: years, period: "2024.04 — 2024.11" }), section("b", { metrics: mixed, period: "2023.03 — 현재" })],
+      career: [career("2023.03 — 현재", "c1"), career("2021.01 — 2023.02", "c2")],
+    };
+    let fitted = charts(dated);
+    expect(fitted["section-a"]?.type).toBe("CaseBars");
+    expect(fitted["section-b"]?.type).toBe("CaseTechnical");
+    expect(fitted.index?.props.variant).toBe("timeline");
+    expect(fitted.career?.props.variant).toBe("chart");
+    fitted = charts({ ...dated, sections: dated.sections.map((item, index) => (index ? { ...item, period: "6개월" } : item)), career: [career("", "c1"), career("2021.01 — 2023.02", "c2")] });
+    expect(fitted.index?.props.variant).toBe("rows");
+    expect(fitted.career?.props.variant).toBe("list");
+  });
+
+  it("고쳐도 트리에 연결되지 않은 요소는 선택 요소면 지우고, 나머지는 페이지에 붙인다", () => {
+    const loose = {
+      ...raw,
+      elements: {
+        ...raw.elements,
+        index: node("ProjectIndex", { sections: { $state: "/sections" }, variant: "rows" }),
+        "group-2": { type: "Columns", props: { variant: "even" }, children: ["section-b", "quote-1"] },
+      },
+    };
+    const fitted = fitToContent(loose, content);
+    expect(fitted.elements["group-2"]).toBeUndefined();
+    expect(fitted.elements[fitted.root]?.children.slice(0, 2)).toEqual(["intro", "index"]);
+    expect(fitted.elements[fitted.root]?.children).toContain("section-b");
   });
 
   it("설계안의 크기 · 배경 · 폭을 사례 요소에 옮기고 설계안이 없으면 그대로 둔다", () => {

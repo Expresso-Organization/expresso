@@ -240,6 +240,7 @@ export function designQa(spec: DesignSystemSpecV2): PageQaCheck[] {
     ["반전 글자/반전", canvas.value, text.value],
     ["보조/반전", readable.mutedOnInverse, text.value],
     ["강조 글자/반전", readable.accentOnInverse, text.value],
+    ...backdropPairs(spec),
   ];
   const weak = pairs.filter(([, fg, bg]) => contrastRatio(fg, bg) < TEXT_CONTRAST);
   const bodyPx = remToPx(spec.typography.scale[0]!.size);
@@ -275,4 +276,113 @@ export function designQa(spec: DesignSystemSpecV2): PageQaCheck[] {
         : `싣지 못하는 서체가 있거나 한글 대체 웹폰트가 없습니다: ${spec.typography.display.family}(${spec.typography.display.fallback}) · ${spec.typography.body.family}(${spec.typography.body.fallback}).`,
     },
   ];
+}
+
+/** 첫 화면 배경 위 글자마다 가장 낮은 대비가 나오는 바탕 표본을 대비 쌍으로 냅니다. */
+function backdropPairs(spec: DesignSystemSpecV2): [string, string, string][] {
+  const colors = backdropColors(spec);
+  const worst = (foreground: string, samples: readonly string[]) =>
+    samples.reduce((low, sample) => (contrastRatio(foreground, sample) < contrastRatio(foreground, low) ? sample : low));
+  const name = { line: "선 배경", light: "빛 배경" } as const;
+  return (["line", "light"] as const).flatMap((ink) => {
+    const onCanvas = colors.canvas[ink];
+    const onField = colors.field[ink];
+    return [
+      [`본문/${name[ink]}`, onCanvas.primary, worst(onCanvas.primary, onCanvas.samples)],
+      [`보조/${name[ink]}`, onCanvas.muted, worst(onCanvas.muted, onCanvas.samples)],
+      [`강조 글자/${name[ink]}`, onCanvas.accent, worst(onCanvas.accent, onCanvas.samples)],
+      [`행동 글자/색면 ${name[ink]}`, onField.primary, worst(onField.primary, onField.samples)],
+    ] as [string, string, string][];
+  });
+}
+
+/** 첫 화면 배경의 부류입니다. line=선 · 점 · 줄무늬처럼 얇은 그림, light=넓게 번지는 빛. */
+export type BackdropInk = "line" | "light";
+
+/**
+ * 배경 잉크를 바탕에 섞는 비율입니다. 배경은 이 세기를 넘는 색을 그리지 않습니다.
+ * 값은 2026-10-28 견본(Clarity · Signal, 1440 · 390)을 눈으로 보고 정했습니다 — 선은 글자 뒤에서 거슬리지 않을 만큼, 빛은 바탕색이 바뀐 것을 알아볼 만큼입니다.
+ */
+export const BACKDROP_STRENGTH: Record<BackdropInk, number> = { line: 0.16, light: 0.34 };
+
+/** 글자색 하나가 바탕 여럿 모두에서 기준을 넘도록 `toward` 쪽으로 가장 적게 섞은 색입니다. */
+function ensureContrastAll(foreground: string, backgrounds: readonly string[], minimum: number, toward: string): string {
+  for (let step = 0; step <= 50; step++) {
+    const mixed = step ? mixHex(foreground, toward, step / 50) : foreground;
+    if (backgrounds.every((background) => contrastRatio(mixed, background) >= minimum)) return mixed;
+  }
+  return toward;
+}
+
+/**
+ * 배경이 그릴 수 있는 바탕색 표본입니다. 잉크는 투명에서 잉크색까지 번지고(radial-gradient · 선의 가장자리),
+ * 빛 두 개는 겹쳐 그려지므로 두 잉크를 차례로 섞은 조합까지 봅니다.
+ */
+export function backdropSamples(background: string, inks: readonly string[]): string[] {
+  const steps = Array.from({ length: 11 }, (_, index) => index / 10);
+  const [first, second] = inks;
+  if (!first) return [background];
+  const once = steps.map((amount) => mixHex(background, first, amount));
+  if (!second) return once;
+  return once.flatMap((base) => steps.map((amount) => mixHex(base, second, amount)));
+}
+
+type BackdropPalette = {
+  /** 잉크 두 개. 선 부류는 둘이 같습니다. 바탕에 세기만큼 섞은 불투명 색입니다. */
+  inks: [string, string];
+  /** 바탕에 섞은 비율. 본문 글자를 검정 · 흰색까지 진하게 해도 대비가 모자랄 때만 기본 세기보다 낮아집니다. */
+  strength: number;
+  /** 배경 위 첫 화면의 본문 · 보조 · 링크 글자색입니다. */
+  primary: string;
+  muted: string;
+  accent: string;
+  /** 대비를 잰 바탕색 표본입니다. */
+  samples: string[];
+};
+
+function backdropPalette(background: string, raw: readonly [string, string], ink: BackdropInk, text: { primary: string; muted: string; accent: string }): BackdropPalette {
+  const nominal = BACKDROP_STRENGTH[ink];
+  // 본문 글자는 바탕에서 먼 쪽 끝(검정 · 흰색)으로, 보조 · 링크 글자는 본문 글자 쪽으로 섞습니다(readableColors와 같은 방향).
+  const extreme = contrastRatio("#000000", background) > contrastRatio("#ffffff", background) ? "#000000" : "#ffffff";
+  for (let strength = nominal; strength > 0; strength = Math.round((strength - 0.01) * 100) / 100) {
+    const inks: [string, string] = [mixHex(background, raw[0], strength), mixHex(background, raw[1], strength)];
+    const samples = backdropSamples(background, ink === "line" ? [inks[0]] : inks);
+    if (!samples.every((sample) => contrastRatio(extreme, sample) >= TEXT_CONTRAST)) continue;
+    const primary = ensureContrastAll(text.primary, samples, TEXT_CONTRAST, extreme);
+    return {
+      inks,
+      strength,
+      primary,
+      muted: ensureContrastAll(text.muted, samples, TEXT_CONTRAST, primary),
+      accent: ensureContrastAll(text.accent, samples, TEXT_CONTRAST, primary),
+      samples,
+    };
+  }
+  return { inks: [background, background], strength: 0, ...text, samples: [background] };
+}
+
+/**
+ * 첫 화면 배경의 잉크와 그 위 글자색입니다. 바탕(canvas=지면 바탕, field=포스터 첫 화면의 행동색 면) × 부류마다 계산합니다.
+ *
+ * 지면 바탕에서 선 부류는 글자색을, 빛 부류는 강조색 · 행동색을 바탕에 섞습니다. 행동색 면에서는 글자색 · 바탕색 중
+ * 행동 글자와 대비가 큰 쪽(선 · 빛)과 강조색(빛)을 섞습니다. 배경이 가장 짙은 자리에서도 본문 · 보조 · 링크 글자가 4.5:1을 넘게
+ * 글자색을 진하게 합니다.
+ */
+export function backdropColors(spec: DesignSystemSpecV2) {
+  const readable = readableColors(spec);
+  const { canvas, text, accent, action } = spec.colors;
+  const onCanvas = { primary: text.value, muted: readable.mutedOnCanvas, accent: readable.accentText };
+  const onField = { primary: readable.actionText, muted: readable.actionText, accent: readable.actionText };
+  // 행동색 면의 글자는 대비 여유가 적어, 잉크는 글자에서 먼 쪽 토큰(글자색 · 바탕색 중 행동 글자와 대비가 큰 것)으로 둡니다.
+  const away = contrastRatio(text.value, readable.actionText) > contrastRatio(canvas.value, readable.actionText) ? text.value : canvas.value;
+  return {
+    canvas: {
+      line: backdropPalette(canvas.value, [text.value, text.value], "line", onCanvas),
+      light: backdropPalette(canvas.value, [accent.value, action.value], "light", onCanvas),
+    },
+    field: {
+      line: backdropPalette(action.value, [away, away], "line", onField),
+      light: backdropPalette(action.value, [away, accent.value], "light", onField),
+    },
+  };
 }

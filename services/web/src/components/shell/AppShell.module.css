@@ -9,11 +9,61 @@
  * 모습이고, 넓어질수록 정의서의 치수로 되돌아갑니다.
  */
 
-.frame {
+/* 화면 전체. 띠가 있으면 그 아래를 셸이 채운다. */
+.screen {
   display: flex;
+  flex-direction: column;
   height: 100dvh;
+}
+
+.frame {
+  flex: 1;
+  min-height: 0;
+  display: flex;
   background: var(--ex-bg);
   overflow: hidden;
+}
+
+/* 대신 로그인 띠 — 셸 위를 가로지르는 어두운 지면. */
+.impersonation {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 6px 12px;
+  background: var(--ex-bg-inverse);
+  color: var(--ex-fg-on-inverse);
+  font-size: var(--ex-text-xs);
+}
+
+.impersonationName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.impersonationForm {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.impersonationReturn {
+  font-size: var(--ex-text-xs);
+  font-weight: 600;
+  color: var(--ex-fg);
+  background: var(--ex-bg);
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.impersonationReturn:hover {
+  background: var(--ex-bg-tint);
 }
 
 .main {

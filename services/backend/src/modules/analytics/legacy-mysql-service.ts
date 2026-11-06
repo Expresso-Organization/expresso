@@ -538,7 +538,7 @@ export class AnalyticsService {
     const note = stored[0];
 
     return AnalyticsDashboardSchema.parse({
-      portfolio: { id: portfolioId, title: deployment.title },
+      portfolio: { id: portfolioId, title: deployment.title, status: "published" },
       deployment: {
         id: deploymentId,
         subdomain: deployment.subdomain,

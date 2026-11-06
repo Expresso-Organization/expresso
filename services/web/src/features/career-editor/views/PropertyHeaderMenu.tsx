@@ -2,6 +2,8 @@
 
 import type {
   CareerCategory,
+  CareerFormulaPreview,
+  CareerRollupPreview,
   CareerPropertyChangePreview,
   CareerPropertyDefinitionV2,
   CareerPropertySchemaChange,
@@ -11,7 +13,9 @@ import { createPortal } from "react-dom";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 
 import { Icon } from "@/components/ui/Icon";
+import { FormulaEditor } from "@/features/career-editor/properties/FormulaEditor";
 import { PropertySelect } from "@/features/career-editor/properties/PropertySelect";
+import { RollupEditor, type RollupConfiguration } from "@/features/career-editor/properties/RollupEditor";
 import { nextNumberedPropertyName, propertyNameBase } from "@/features/career-editor/properties/property-name";
 
 import styles from "./views.module.css";
@@ -78,6 +82,9 @@ export function PropertyHeaderMenu({ category, definition, view, sortDirection, 
   const [position, setPosition] = useState<Position | null>(null);
   const [busy, setBusy] = useState(false);
   const [issue, setIssue] = useState<string | null>(null);
+  // 수식 · 롤업은 만든 뒤에도 정의를 고칠 수 있어야 합니다. 만들 때 쓰는 편집기를 이 메뉴에서 다시 엽니다.
+  const [computedOpen, setComputedOpen] = useState(false);
+  const [categories, setCategories] = useState<CareerCategory[]>([]);
   const [pending, setPending] = useState<PendingAction | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLElement>(null);
@@ -135,6 +142,31 @@ export function PropertyHeaderMenu({ category, definition, view, sortDirection, 
       document.removeEventListener("keydown", closeWithEscape);
     };
   }, [open, pending, positionMenu]);
+
+  async function previewFormula(source: string): Promise<CareerFormulaPreview> {
+    const response = await fetch("/api/career/formulas/preview", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ categoryId: category.id, source }) });
+    if (!response.ok) throw new Error("수식을 확인하지 못했습니다.");
+    return ((await response.json()) as { data: CareerFormulaPreview }).data;
+  }
+  async function previewRollup(configuration: RollupConfiguration): Promise<CareerRollupPreview> {
+    const response = await fetch("/api/career/rollups/preview", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ categoryId: category.id, ...configuration }) });
+    if (!response.ok) throw new Error("롤업을 확인하지 못했습니다.");
+    return ((await response.json()) as { data: CareerRollupPreview }).data;
+  }
+  function rollupTargets(relationPropertyId: string): readonly CareerPropertyDefinitionV2[] {
+    const relation = category.propertySchemaV2.find((item) => item.id === relationPropertyId);
+    const relatedCategoryId = typeof relation?.config.targetCategoryId === "string" ? relation.config.targetCategoryId : null;
+    return categories.find((item) => item.id === relatedCategoryId)?.propertySchemaV2 ?? [];
+  }
+  function openComputedEditor() {
+    setComputedOpen((current) => !current);
+    if (definition.type === "rollup" && !categories.length) {
+      void fetch("/api/career/categories").then((response) => response.ok ? response.json() as Promise<{ data: CareerCategory[] }> : null).then((payload) => { if (payload) setCategories(payload.data); }).catch(() => undefined);
+    }
+  }
+  async function configureComputed(config: Record<string, unknown>) {
+    await run(async () => { await applyPreview(await previewChange({ kind: "configure", propertyId: definition.id, config }), true); setComputedOpen(false); });
+  }
 
   async function previewChange(change: CareerPropertySchemaChange): Promise<CareerPropertyChangePreview> {
     const response = await fetch(`/api/career/categories/${category.id}/property-schema/preview`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(change) });
@@ -277,6 +309,11 @@ export function PropertyHeaderMenu({ category, definition, view, sortDirection, 
       <MenuAction icon="stack" detail={view.groupPropertyId === definition.id ? "적용됨" : undefined} disabled={busy} onClick={() => { onViewChange({ ...view, groupPropertyId: definition.id }); setOpen(false); }}>그룹화</MenuAction>
       <MenuAction icon="eye-slash" disabled={busy || definition.type === "title"} onClick={hideProperty}>숨기기</MenuAction>
     </div>
+    {definition.type === "formula" || definition.type === "rollup" ? <div className={styles.columnMenuSection}>
+      <MenuAction icon={definition.type === "formula" ? "function" : "sigma"} disabled={busy || !schemaEditable} onClick={openComputedEditor}>{definition.type === "formula" ? "수식 편집" : "롤업 편집"}</MenuAction>
+      {computedOpen && definition.type === "formula" ? <FormulaEditor source={typeof definition.config.source === "string" ? definition.config.source : ""} properties={category.propertySchemaV2.filter((item) => item.deletedAt === null && item.id !== definition.id)} preview={previewFormula} onCommit={async (source) => { const formula = await previewFormula(source); await configureComputed({ source, ast: formula.ast, diagnostics: formula.diagnostics }); }} /> : null}
+      {computedOpen && definition.type === "rollup" ? <RollupEditor configuration={typeof definition.config.relationPropertyId === "string" && typeof definition.config.targetPropertyId === "string" && typeof definition.config.aggregation === "string" ? { relationPropertyId: definition.config.relationPropertyId, targetPropertyId: definition.config.targetPropertyId, aggregation: definition.config.aggregation as RollupConfiguration["aggregation"] } : null} properties={category.propertySchemaV2.filter((item) => item.deletedAt === null && item.id !== definition.id)} targetProperties={rollupTargets} preview={previewRollup} onCommit={async (configuration) => configureComputed({ ...configuration })} /> : null}
+    </div> : null}
     <div className={styles.columnMenuSection}>
       <MenuAction icon="arrow-line-left" disabled={busy} onClick={() => void createProperty("insert-left")}>왼쪽에 삽입</MenuAction>
       <MenuAction icon="arrow-line-right" disabled={busy} onClick={() => void createProperty("insert-right")}>오른쪽에 삽입</MenuAction>

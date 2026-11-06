@@ -34,7 +34,8 @@ fi
 
 cd "$ROOT"
 
-PREVIOUS="$(git rev-parse HEAD)"
+# 새 스크립트로 다시 시작한 경우에는 이미 새 커밋에 있으므로, 배포 전 커밋을 넘겨받는다.
+PREVIOUS="${EXPRESSO_DEPLOY_PREVIOUS:-$(git rev-parse HEAD)}"
 echo "현재 커밋 $PREVIOUS"
 
 # 되돌릴 때 쓸 커밋을 남긴다. 롤백은 이 파일 하나만 보면 된다.
@@ -43,6 +44,15 @@ echo "$PREVIOUS" > "$ROOT/.last-deployed-commit"
 git fetch origin main
 git checkout --detach "$TARGET"
 echo "배포 대상 $(git rev-parse HEAD)"
+
+# git은 checkout할 때 파일을 지우고 새로 만든다. 지금 도는 bash는 열어 둔 이전 파일을
+# 끝까지 읽으므로, 그대로 이어 가면 이 커밋이 바꾼 배포 단계가 이번 배포에서 돌지 않는다.
+# 처음 실행이면 배포할 커밋의 스크립트로 처음부터 다시 시작한다.
+if [ -z "${EXPRESSO_DEPLOY_REEXEC:-}" ]; then
+  echo "새 배포 스크립트로 다시 시작"
+  EXPRESSO_DEPLOY_REEXEC=1 EXPRESSO_DEPLOY_PREVIOUS="$PREVIOUS" \
+    exec bash "$ROOT/scripts/operations/deploy.sh" "$(git rev-parse HEAD)"
+fi
 
 # 커밋 사이에서 워크스페이스가 추가되면 pnpm이 기존 importer 연결을 그대로 둔 채
 # 설치 완료로 판단할 수 있다. 공용 저장소는 유지하고 다시 만들 수 있는 연결만 비운다.
@@ -129,6 +139,17 @@ echo "$SITE_URL/home  → $home_code (세션 없이 307이 정상)"
 
 if [ "$login_code" != "200" ]; then
   echo "로그인 화면이 200이 아닙니다 — nginx 설정을 확인하세요" >&2
+  exit 1
+fi
+# 커리어 본문 저장은 /v1/ 아래 WebSocket이다. nginx가 Upgrade를 넘기지 않으면 101 대신 404가 온다.
+# --http1.1이 필요하다. HTTP/2로 협상되면 Upgrade 헤더가 무효라 늘 404다.
+ws_code="$(curl --http1.1 -s -o /dev/null -w '%{http_code}' --max-time 10 \
+  -H 'Connection: Upgrade' -H 'Upgrade: websocket' -H 'Sec-WebSocket-Version: 13' \
+  -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' -H "Origin: $SITE_URL" \
+  "$SITE_URL/v1/career/records/00000000-0000-4000-8000-000000000000/session" || true)"
+echo "$SITE_URL/v1/…/session (WebSocket) → $ws_code (101이 정상)"
+if [ "$ws_code" != "101" ]; then
+  echo "커리어 본문 저장 WebSocket이 열리지 않습니다 — nginx location /v1/의 Upgrade 헤더를 확인하세요" >&2
   exit 1
 fi
 if [ "$home_code" != "307" ]; then

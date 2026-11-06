@@ -4,6 +4,19 @@ import { TimestampSchema, UuidSchema } from "./common.js";
 
 export const PlanCodeSchema = z.enum(["free", "pro", "team"]);
 
+/** 관리자는 백엔드 CLI로만 지정한다. 웹에는 지정하는 길이 없다. */
+export const UserRoleSchema = z.enum(["user", "admin"]);
+
+/**
+ * 관리자가 자기 세션으로 더미 계정을 대신 보고 있다는 표시. 이때 응답의 사용자는 더미 계정이고,
+ * 세션 주인(관리자)은 여기에 있다. 화면은 이것으로 띠와 「관리자로 돌아가기」를 그린다.
+ */
+export const ImpersonationSchema = z.strictObject({
+  adminUserId: UuidSchema,
+  adminDisplayName: z.string().min(1).max(200),
+  since: TimestampSchema,
+});
+
 export const AuthenticatedUserSchema = z.strictObject({
   id: UuidSchema,
   email: z.email(),
@@ -16,6 +29,9 @@ export const AuthenticatedUserSchema = z.strictObject({
    * 포트폴리오를 공개 주소에 올릴 수 없다.
    */
   emailVerifiedAt: TimestampSchema.nullable(),
+  /** 이 응답이 그리는 사용자의 권한. 대신 로그인 중이면 더미 계정의 것이다. */
+  role: UserRoleSchema,
+  impersonation: ImpersonationSchema.nullable(),
 });
 
 export const CurrentUserResponseSchema = z.strictObject({
@@ -194,6 +210,8 @@ export type EmailVerificationRequired = z.infer<typeof EmailVerificationRequired
 export type Login = z.infer<typeof LoginSchema>;
 export type AuthSession = z.infer<typeof AuthSessionSchema>;
 export type AuthenticatedUser = z.infer<typeof AuthenticatedUserSchema>;
+export type UserRole = z.infer<typeof UserRoleSchema>;
+export type Impersonation = z.infer<typeof ImpersonationSchema>;
 export type CurrentUserResponse = z.infer<typeof CurrentUserResponseSchema>;
 export type IdentitySessionIdParams = z.infer<
   typeof IdentitySessionIdParamsSchema

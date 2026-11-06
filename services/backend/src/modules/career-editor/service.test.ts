@@ -75,10 +75,10 @@ describe("career document service", () => {
     const first = await service.bootstrap(userId, recordId);
     expect(first.document.content[0]?.type).toBe("heading1");
     expect(first.editor).toBe("blocknote");
-    // bodyMd에서 만든 v1 스냅샷과 BlockNote 옮기기 스냅샷 두 개가 생기고, 다시 열어도 늘지 않습니다.
-    expect(repository.snapshots.map((row) => row.schemaVersion)).toEqual([1, 2]);
+    // 처음 열면 bodyMd를 BlockNote로 읽은 스냅샷 하나만 생기고, 다시 열어도 늘지 않습니다.
+    expect(repository.snapshots.map((row) => row.schemaVersion)).toEqual([2]);
     await service.bootstrap(userId, recordId);
-    expect(repository.snapshots).toHaveLength(2);
+    expect(repository.snapshots).toHaveLength(1);
     await expect(service.bootstrap(randomUUID(), recordId)).rejects.toMatchObject({ statusCode: 404 });
   });
 

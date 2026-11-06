@@ -2,11 +2,19 @@ import { randomUUID } from "node:crypto";
 
 import {
   CareerViewConfigurationSchema,
+  CareerViewQueryInputSchema,
   CareerRecordSchema,
+  CreateCareerViewConfigurationSchema,
+  DuplicateCareerViewSchema,
+  ReorderCareerViewsSchema,
+  UpdateCareerViewConfigurationSchema,
   type CareerViewConfiguration,
+  type CareerViewPage,
+  type CreateCareerViewConfiguration,
+  type UpdateCareerViewConfiguration,
 } from "@expresso/contracts";
 import { mongoCollections, type CareerViewDoc } from "@expresso/database";
-import type { Document } from "mongodb";
+import type { ClientSession, Document } from "mongodb";
 import { z } from "zod";
 
 import type { MongoContext } from "../../platform/mongodb.js";
@@ -14,28 +22,19 @@ import { inTransaction } from "../../platform/mongo-transaction.js";
 import { requireActiveUser } from "../identity/index.js";
 import { CareerError } from "./errors.js";
 import { mapMongoCategory, requireCareerCategory } from "./mongo-categories.js";
+import { attachRelationValues } from "./mongo-records.js";
 import { CareerViewQuery } from "./view-query.js";
 
-const ViewCreateSchema = CareerViewConfigurationSchema.omit({
-  id: true, categoryId: true, version: true, order: true, createdAt: true, updatedAt: true,
-});
 const CURSOR_LIFETIME_MS = 15 * 60_000;
-const ViewUpdateSchema = CareerViewConfigurationSchema.omit({
-  id: true, categoryId: true, version: true, order: true, createdAt: true, updatedAt: true,
-}).partial().refine((value) => Object.keys(value).length > 0, "at least one view field is required");
-
-export const CareerViewCreateSchema = ViewCreateSchema;
-export const CareerViewUpdateSchema = ViewUpdateSchema;
-export const CareerViewDuplicateSchema = z.strictObject({ name: z.string().trim().min(1).max(120) });
-export const CareerViewReorderSchema = z.strictObject({ orderedIds: z.array(z.string().uuid()).min(1).max(100) });
-export const CareerViewQueryInputSchema = z.strictObject({ cursor: z.string().min(1).max(4096).nullable().default(null), limit: z.coerce.number().int().min(1).max(100).default(50) });
-
-export type CreateCareerViewConfiguration = z.infer<typeof ViewCreateSchema>;
-export type UpdateCareerViewConfiguration = z.infer<typeof ViewUpdateSchema>;
-export type CareerViewPage = {
-  data: ReturnType<typeof CareerRecordSchema.parse>[];
-  page: { hasNextPage: boolean; nextCursor: string | null };
-};
+// 요청 · 응답 스키마는 계약(packages/contracts)이 소유합니다. 예전 이름은 라우트가 그대로 쓰도록 다시 내보냅니다.
+const ViewCreateSchema = CreateCareerViewConfigurationSchema;
+const ViewUpdateSchema = UpdateCareerViewConfigurationSchema;
+export const CareerViewCreateSchema = CreateCareerViewConfigurationSchema;
+export const CareerViewUpdateSchema = UpdateCareerViewConfigurationSchema;
+export const CareerViewDuplicateSchema = DuplicateCareerViewSchema;
+export const CareerViewReorderSchema = ReorderCareerViewsSchema;
+export { CareerViewQueryInputSchema };
+export type { CreateCareerViewConfiguration, UpdateCareerViewConfiguration, CareerViewPage };
 
 function configuration(view: CareerViewDoc): CareerViewConfiguration {
   if (!view.configuration) throw new CareerError(404, "career view configuration not found");
@@ -75,6 +74,19 @@ function versionConflict(): CareerError {
  * 저장된 뷰는 기록을 복제하지 않습니다. 이 서비스는 설정만 저장하고 조회 때 허용된
  * projection pipeline을 만들어 원본 `career_records`를 읽습니다.
  */
+/**
+ * 같은 카테고리에 같은 이름의 뷰가 있으면 「이름 2」 · 「이름 3」으로 비어 있는 이름을 고릅니다.
+ * 저장소에 { userId, categoryId, name } 유일 인덱스가 있어, 그대로 넣으면 「복제」를 두 번 누를 때 500이 납니다(2026-11-02 감사).
+ */
+async function uniqueViewName(views: ReturnType<typeof mongoCollections>["careerViews"], userId: string, categoryId: string, name: string, session: ClientSession | undefined): Promise<string> {
+  const taken = new Set((await views.find({ userId, categoryId }, { ...(session ? { session } : {}), projection: { name: 1 } }).toArray()).map((row) => row.name));
+  if (!taken.has(name)) return name;
+  for (let suffix = 2; ; suffix += 1) {
+    const candidate = `${name.slice(0, 114)} ${suffix}`;
+    if (!taken.has(candidate)) return candidate;
+  }
+}
+
 export class CareerViewService {
   readonly queryCompiler = new CareerViewQuery();
 
@@ -101,7 +113,7 @@ export class CareerViewService {
       if (count >= 20) throw new CareerError(409, "category view limit exceeded");
       const now = new Date();
       const config = CareerViewConfigurationSchema.parse({
-        ...input, id: randomUUID(), categoryId, version: 1, order: count,
+        ...input, name: await uniqueViewName(views, userId, categoryId, input.name, tx.session), id: randomUUID(), categoryId, version: 1, order: count,
         createdAt: now.toISOString(), updatedAt: now.toISOString(),
       });
       // compile은 저장 전 모든 property UUID와 view-type 설정을 검사한다.
@@ -128,6 +140,9 @@ export class CareerViewService {
         version: current.version + 1, createdAt: current.createdAt, updatedAt: new Date().toISOString(),
       });
       this.queryCompiler.compile(mapMongoCategory(category), next);
+      if (next.name !== current.name && await views.findOne({ userId, categoryId: current.categoryId, name: next.name, _id: { $ne: viewId } }, { session: tx.session })) {
+        throw new CareerError(409, "a view with the same name already exists");
+      }
       const result = await views.updateOne(
         { _id: viewId, userId, "configuration.version": expectedVersion },
         { $set: compatibilitySet(next) },
@@ -151,7 +166,7 @@ export class CareerViewService {
       const order = await views.countDocuments({ userId, categoryId: source.categoryId, configuration: { $exists: true } }, { session: tx.session });
       if (order >= 20) throw new CareerError(409, "category view limit exceeded");
       const now = new Date().toISOString();
-      const copy = CareerViewConfigurationSchema.parse({ ...source, id: randomUUID(), name: parsedName, version: 1, order, createdAt: now, updatedAt: now });
+      const copy = CareerViewConfigurationSchema.parse({ ...source, id: randomUUID(), name: await uniqueViewName(views, userId, source.categoryId, parsedName, tx.session), version: 1, order, createdAt: now, updatedAt: now });
       this.queryCompiler.compile(mapMongoCategory(category), copy);
       const doc = asDoc(copy);
       doc.userId = userId;
@@ -217,7 +232,8 @@ export class CareerViewService {
     pipeline.splice(projectIndex, 0, { $limit: limit + 1 });
     const rows = await mongoCollections(this.context.db).careerRecords.aggregate<Document>(pipeline).toArray();
     const hasNextPage = rows.length > limit;
-    const pageRows = rows.slice(0, limit);
+    // 관계 속성은 원장에만 있으므로 응답에 붙입니다.
+    const pageRows = await attachRelationValues(this.context.db, userId, rows.slice(0, limit) as never[], new Map([[view.categoryId, categoryDoc]])) as Document[];
     const last = pageRows.at(-1);
     const nextCursor = hasNextPage && last
       ? this.queryCompiler.encodeCursor({ userId, viewId, viewVersion: view.version, expiresAt: Date.now() + CURSOR_LIFETIME_MS, values: compiled.sortParts.map((part) => last[part.field]), id: String(last._id) })

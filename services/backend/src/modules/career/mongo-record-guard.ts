@@ -20,6 +20,11 @@ export async function purgeTrashedCareerRecord(context: MongoContext, userId: st
     const record = await db.careerRecords.findOneAndUpdate({ _id: recordId, userId, deletedAt: { $ne: null }, purgeAfter: { $lte: at } }, { $inc: { referenceVersion: 1 } }, options);
     if (!record) throw new CareerError(404, "purgeable career record not found");
     if (await db.recordUsages.findOne({ userId, recordId }, options)) throw new CareerError(409, "record is still quoted by a portfolio block");
+    // 「삭제 제한」 관계가 가리키는 기록은 영구 삭제하지 않습니다. 휴지통 이동은 되돌릴 수 있으므로 막지 않습니다.
+    const restricting = await db.careerRecordRelations.find({ userId, targetRecordId: recordId, deletePolicy: "restrict" }, options).toArray();
+    if (restricting.length && await db.careerRecords.findOne({ _id: { $in: restricting.map((edge) => edge.sourceRecordId) }, userId, deletedAt: null }, options)) {
+      throw new CareerError(409, "record is referenced by a restricted relation");
+    }
     await db.blocks.updateMany({ userId, sourceRecordId: recordId }, { $set: { sourceRecordId: null, syncState: "detached" } }, options);
     await db.recordLinks.deleteMany({ userId, $or: [{ fromRecordId: recordId }, { toRecordId: recordId }] }, options);
     await db.skillEvidence.deleteMany({ userId, recordId }, options);
@@ -28,6 +33,12 @@ export async function purgeTrashedCareerRecord(context: MongoContext, userId: st
     await db.recipeUnusedSources.deleteMany({ userId, recordId }, options);
     await db.portfolioEditProposals.deleteMany({ userId, sourceRecordId: recordId }, options);
     await db.brewSources.deleteMany({ userId, recordId }, options);
+    // 편집기 문서 · 이력 · 관계 · AI 제안도 지웁니다. 남기면 지운 기록의 본문이 DB에 그대로 남습니다.
+    await db.careerDocumentSnapshots.deleteMany({ recordId }, options);
+    await db.careerDocumentUpdates.deleteMany({ recordId }, options);
+    await db.careerRecordRevisions.deleteMany({ userId, recordId }, options);
+    await db.careerAiProposals.deleteMany({ userId, recordId }, options);
+    await db.careerRecordRelations.deleteMany({ userId, $or: [{ sourceRecordId: recordId }, { targetRecordId: recordId }] }, options);
     await db.careerRecords.deleteOne({ _id: recordId, userId }, options);
   });
 }
