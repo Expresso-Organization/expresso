@@ -66,9 +66,10 @@ describe("요소 하나 고치기", () => {
   });
 
   it("비워서 지운 칸도 바뀐 곳으로 센다", () => {
-    const next = applyElementEdit(snapshot, "section-a", { text: [{ path: "/sections/a/quote", value: "" }] }, design);
-    expect(next.content.sections[0]?.quote).toBeUndefined();
-    expect(elementChanges(snapshot, next, "section-a")).toEqual([expect.objectContaining({ before: "막히면 돌아갑니다.", after: "" })]);
+    const dated = validateStructuredPortfolio(snapshot.spec, { ...content, sections: [{ ...content.sections[0]!, period: "2024" }] });
+    const next = applyElementEdit(dated, "section-a", { text: [{ path: "/sections/a/period", value: "" }] }, design);
+    expect(next.content.sections[0]?.period).toBeUndefined();
+    expect(elementChanges(dated, next, "section-a")).toEqual([expect.objectContaining({ before: "2024", after: "" })]);
   });
 
   it("선택지 · 글자 모양 · 글을 적용하고 바뀐 곳만 줄로 낸다", () => {
