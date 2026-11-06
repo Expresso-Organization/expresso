@@ -1,11 +1,10 @@
-import { setTimeout as delay } from "node:timers/promises";
-
 import { loadRuntimeConfig } from "../config/runtime-config.js";
 import { MongoOutboxDispatcher } from "../platform/mongo-outbox.js";
 import { createMongoResource } from "../platform/mongodb.js";
 import { createReliableQueue } from "../platform/queue.js";
 import { safeErrorSummary } from "../platform/observability.js";
 import { createQueueWorker } from "./create-queue-worker.js";
+import { runPollLoop } from "./poll-loop.js";
 import { JobAnalysisService } from "../modules/job-analysis/index.js";
 import { UnavailableRequirementExtractor } from "../modules/job-analysis/extractor.js";
 import { AiRequirementExtractor } from "../modules/job-analysis/ai-extractor.js";
@@ -51,9 +50,32 @@ import { CAREER_PROPERTY_MUTATION_JOBS, createCareerPropertyMutationProcessor } 
 import { MongoCareerComputationService } from "../modules/career-computation/index.js";
 import { createCareerComputationProcessor } from "./processors/career-computation.js";
 
+// 처리 중인 잡을 기다리지 않으므로 남은 일은 연결을 닫는 것뿐입니다. RestartSec(3초)보다 오래 끌 까닭이 없습니다.
+const FATAL_SHUTDOWN_DEADLINE_MS = 3_000;
+
+function logWorkerFatal(error: unknown): void {
+  console.error(JSON.stringify({
+    level: "error",
+    event: "worker.fatal",
+    message: "worker is exiting because MongoDB client is unusable",
+    error: safeErrorSummary(error),
+  }));
+}
+
 const config = loadRuntimeConfig();
 if (!config.mongodbUrl || !config.mongodbDatabase) throw new Error("MongoDB runtime configuration is missing");
 const database = createMongoResource(config.mongodbUrl, { databaseName: config.mongodbDatabase });
+/*
+ * 첫 작업에 연결을 맡기면 그 연결이 실패한 클라이언트는 다시 열리지 않습니다. 잡을 받기 전에 직접 연결하고,
+ * 실패하면 끝내서 systemd가 다시 띄우게 합니다. 한 주기가 서버 선택 3초 + RestartSec 3초라 StartLimit(10초에 5회)에
+ * 걸리지 않습니다.
+ */
+try {
+  await database.client.connect();
+} catch (error) {
+  logWorkerFatal(error);
+  process.exit(1);
+}
 const jobs = createReliableQueue<Record<string, unknown>>(
   "domain-jobs",
   config.redisUrl,
@@ -85,6 +107,16 @@ const dispatcher = new MongoOutboxDispatcher({
   maxAttempts: config.outboxMaxAttempts,
 });
 const abortController = new AbortController();
+let stoppingOnFatal = false;
+const stopOnFatal = (error: unknown) => {
+  if (stoppingOnFatal) return;
+  stoppingOnFatal = true;
+  logWorkerFatal(error);
+  process.exitCode = 1;
+  // 처리 중인 잡은 어차피 저장하지 못합니다. 닫는 일이 멈춰도 프로세스가 살아 있는 상태로 돌아가지 않게 끊습니다.
+  setTimeout(() => process.exit(1), FATAL_SHUTDOWN_DEADLINE_MS).unref();
+  abortController.abort();
+};
 // AI가 꺼져 있으면(`AI_PROVIDER=off`) 요건 추출과 문장 생성은 멈춘다.
 const aiUsage = new MongoAiUsageSink(database);
 const ai = createAiClient(config, aiUsage);
@@ -168,6 +200,7 @@ const queueWorker = createQueueWorker<Record<string, unknown>, Record<string, un
   redisUrl: config.redisUrl,
   prefix: config.queuePrefix,
   deadLetterQueue: jobs.deadLetterQueue,
+  onFatalError: stopOnFatal,
   processor: async (job) => {
     if (job.name === "job.normalize") return analysisProcessor(job);
     if (job.name === "record.cleanup") return recordCleanupProcessor(job);
@@ -206,6 +239,7 @@ const careerWorker = createQueueWorker<Record<string, unknown>, Record<string, u
   prefix: config.queuePrefix,
   deadLetterQueue: careerJobs.deadLetterQueue,
   concurrency: 4,
+  onFatalError: stopOnFatal,
   processor: careerProcessor,
   onDeadLetterError(error) {
     console.error(JSON.stringify({ level: "error", message: "failed to persist dead-letter job", error: safeErrorSummary(error) }));
@@ -220,6 +254,7 @@ const refineWorker = createQueueWorker<Record<string, unknown>, Record<string, u
   redisUrl: config.redisUrl,
   prefix: config.queuePrefix,
   deadLetterQueue: refineJobs.deadLetterQueue,
+  onFatalError: stopOnFatal,
   processor: (job) => pageRefineProcessor(job),
   onDeadLetterError(error) {
     console.error(JSON.stringify({ level: "error", message: "failed to persist dead-letter job", error: safeErrorSummary(error) }));
@@ -256,8 +291,10 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
   });
 }
 
-while (!abortController.signal.aborted) {
-  try {
+await runPollLoop({
+  intervalMs: config.outboxPollIntervalMs,
+  signal: abortController.signal,
+  async poll() {
     if (config.scheduledJobsEnabled !== false) await schedulingService.scheduleDue();
     const result = await dispatcher.pollOnce();
     if (result.published || result.retried || result.deadLettered) {
@@ -265,7 +302,8 @@ while (!abortController.signal.aborted) {
         JSON.stringify({ level: "info", message: "outbox poll completed", ...result }),
       );
     }
-  } catch (error) {
+  },
+  onError(error) {
     console.error(
       JSON.stringify({
         level: "error",
@@ -273,15 +311,9 @@ while (!abortController.signal.aborted) {
         error: safeErrorSummary(error),
       }),
     );
-  }
+  },
+  onFatal: stopOnFatal,
+});
 
-  try {
-    await delay(config.outboxPollIntervalMs, undefined, {
-      signal: abortController.signal,
-    });
-  } catch (error) {
-    if (!abortController.signal.aborted) throw error;
-  }
-}
-
-await Promise.allSettled([queueWorker.close(), refineWorker.close(), careerWorker.close(), jobs.close(), refineJobs.close(), careerJobs.close(), database.close(), pageMeasurer.close()]);
+// fatal이면 처리 중인 잡을 기다리지 않습니다. 잠금이 만료되면 BullMQ의 stalled 처리가 다시 배달합니다.
+await Promise.allSettled([queueWorker.close(stoppingOnFatal), refineWorker.close(stoppingOnFatal), careerWorker.close(stoppingOnFatal), jobs.close(), refineJobs.close(), careerJobs.close(), database.close(), pageMeasurer.close()]);
