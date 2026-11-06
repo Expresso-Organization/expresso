@@ -6,9 +6,26 @@ import { Icon } from "@/components/ui/Icon";
 
 import styles from "./onboarding.module.css";
 
-const STEPS = ["목표", "동의", "재료", "첫 포트폴리오"] as const;
+/**
+ * 온보딩 단계. 진행 표시 · 「STEP n / N」 · 하단 「n / N」이 모두 여기서 나온다.
+ *
+ * 정의서 10d 재료(이력서 · GitHub 가져오기)는 뺐다 — 이력서와 주소에서 기록을
+ * 뽑는 백엔드가 없어 화면이 샘플만 보여 줬다. 기록은 내 커리어에서 직접 쓴다.
+ */
+const STEPS = ["목표", "동의", "첫 포트폴리오"] as const;
 
-/** 10c–10e 공통 뼈대. 앱 셸 없이 단계 인디케이터와 하단 액션 바만 둔다. */
+export type OnboardingStep = 1 | 2 | 3;
+
+/** 본문 머리의 「STEP n / N」. */
+export function OnboardingStepLabel({ step }: { step: OnboardingStep }) {
+  return (
+    <div className={styles.stepLabelMono}>
+      STEP {step} / {STEPS.length}
+    </div>
+  );
+}
+
+/** 10c · 10d 동의 · 10e 공통 뼈대. 앱 셸 없이 단계 인디케이터와 하단 액션 바만 둔다. */
 export function OnboardingShell({
   step,
   wide = false,
@@ -16,7 +33,7 @@ export function OnboardingShell({
   footLeft,
   footRight,
 }: {
-  step: 1 | 2 | 3 | 4;
+  step: OnboardingStep;
   wide?: boolean;
   children: ReactNode;
   footLeft?: ReactNode;
