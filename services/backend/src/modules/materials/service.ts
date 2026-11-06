@@ -5,7 +5,7 @@ import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction, type MongoTransaction } from "../../platform/mongo-transaction.js";
 import { brewJobStatus } from "../brew-jobs/index.js";
 import { requireActiveUser } from "../identity/index.js";
-import { assertActiveRecordsForWrite, careerRecordTextReader } from "../career/index.js";
+import { assertActiveRecordsForWrite, careerRecordTextReader, recordPeriod } from "../career/index.js";
 import { MongoEntitlementService } from "../entitlements/index.js";
 import type { MaterialsApi } from "./index.js";
 import { MaterialsError } from "./public.js";
@@ -61,7 +61,7 @@ export class MaterialsService implements MaterialsApi {
       { $lookup: { from: "career_categories", localField: "record.categoryId", foreignField: "_id", pipeline: [{ $match: { userId } }], as: "category" } }, { $unwind: "$category" },
     ]).toArray();
     return BrewMaterialsSchema.parse({ brewId, jobAnalysisId: brew.jobAnalysisId, updatedAt: brew.updatedAt.toISOString(), selectionLimit: 10, mode: brew.mode, lengthPreset: brew.lengthPreset,
-      materials: rows.map((row) => ({ recordId: row.recordId, title: row.record.title, status: row.record.status, score: row.score, rank: row.rank, selected: row.isSelected, selectedBy: row.selectedBy, excludedReason: row.excludedReason ?? null, categoryName: row.category.name, categoryKey: row.category.key, categoryIcon: row.category.icon, periodFrom: row.record.periodStart ?? null, periodTo: row.record.periodEnd ?? null, origin: row.record.origin, reason: row.reasonText })),
+      materials: rows.map((row) => ({ recordId: row.recordId, title: row.record.title, status: row.record.status, score: row.score, rank: row.rank, selected: row.isSelected, selectedBy: row.selectedBy, excludedReason: row.excludedReason ?? null, categoryName: row.category.name, categoryKey: row.category.key, categoryIcon: row.category.icon, periodFrom: recordPeriod(row.record)?.start ?? null, periodTo: recordPeriod(row.record)?.end ?? null, origin: row.record.origin, reason: row.reasonText })),
     });
   }
 

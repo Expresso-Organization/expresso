@@ -4,6 +4,7 @@ import { mongoCollections, type CareerCategoryDoc, type CareerRecordDoc } from "
 import type { Db, Document } from "mongodb";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { CareerError } from "./errors.js";
+import { recordPeriod } from "./record-period.js";
 
 /**
  * 관계 원장의 값을 기록의 관계 속성에 붙입니다. 관계는 원장에만 저장되어, 붙이지 않으면 화면의 관계 편집기가 늘 비어 보입니다.
@@ -68,7 +69,7 @@ export async function listMongoRecords(context: MongoContext, userId: string, qu
   const descending = query.sort === "updated_desc" || query.sort === "period_desc";
   const direction = descending ? -1 : 1;
   const sortKey = query.sort === "title_asc" ? "$title" : query.sort.startsWith("period_")
-    ? { $ifNull: ["$periodStart", descending ? "0001-01-01" : "9999-12-31"] }
+    ? { $ifNull: ["$periodStart", "$properties.period.value.start", descending ? "0001-01-01" : "9999-12-31"] }
     : { $dateToString: { date: "$updatedAt", format: "%Y-%m-%dT%H:%M:%S.%LZ", timezone: "UTC" } };
   const pageStages: Document[] = [];
   if (query.cursor) {
@@ -104,7 +105,7 @@ export async function listMongoRecords(context: MongoContext, userId: string, qu
   return CareerRecordListResponseSchema.parse({
     data: records.map((record) => ({ ...mapMongoRecord(record), categoryKey: record.category.key,
       isEmpty: record.bodyMd === "" && Object.keys(record.properties).length === 0,
-      periodFrom: record.periodStart ?? null, periodTo: record.periodEnd ?? null,
+      periodFrom: recordPeriod(record)?.start ?? null, periodTo: recordPeriod(record)?.end ?? null,
       linkCount: record.links[0]?.count ?? 0, usedInCount: record.usage[0]?.portfolioCount ?? 0,
     })),
     summary: result?.summary[0] ?? { total: 0, draft: 0, organized: 0, verified: 0, empty: 0 },

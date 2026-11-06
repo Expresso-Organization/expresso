@@ -1143,43 +1143,47 @@ function SearchRail({
   query: string;
 }) {
   const top = missing[0];
+  const scored = axes.length > 0 || missing.length > 0;
 
   return (
     <>
-      <div className={styles.railCardBrew}>
-        <div className={styles.brewHead}>
-          <Icon name="coffee" weight="fill" size={15} color="var(--ex-accent-text)" />
-          <span className={styles.brewLabel}>이 결과가 요구하는 것</span>
-        </div>
-        <p className={styles.brewBody}>
-          {top ? (
-            <>
-              {total}건 중 <b style={{ color: "var(--ex-fg)" }}>{top.count}건</b>이{" "}
-              {top.label}을 요구합니다. 지금 기록에는 근거가 없습니다.
-            </>
-          ) : (
-            <>이 결과가 요구하는 기술은 기록에서 모두 확인됩니다.</>
-          )}
-        </p>
-        {missing.length > 0 ? (
-          <div className={styles.brewInner}>
-            <div className={styles.brewInnerTitle}>비어 있는 재료 {missing.length}</div>
-            {missing.slice(0, 2).map((material, index) => (
-              <div key={material.label} className={styles.missingRow}>
-                <span
-                  className={index === 0 ? styles.missingDanger : styles.missingWarning}
-                >
-                  {material.label} {Math.round(material.ratio * 100)}%
-                </span>
-                <span className={styles.missingNote}>공고 {material.count}건이 요구</span>
-              </div>
-            ))}
+      {/* 일치도를 낸 공고가 없으면 기록과 견줄 근거가 없다. 그때는 아무 말도 하지 않는다. */}
+      {scored ? (
+        <div className={styles.railCardBrew}>
+          <div className={styles.brewHead}>
+            <Icon name="coffee" weight="fill" size={15} color="var(--ex-accent-text)" />
+            <span className={styles.brewLabel}>이 결과가 요구하는 것</span>
           </div>
-        ) : null}
-        <Link href={RECORD_EXPERIENCE_HREF} className={styles.brewCta}>
-          이 경험 기록하기
-        </Link>
-      </div>
+          <p className={styles.brewBody}>
+            {top ? (
+              <>
+                {total}건 중 <b style={{ color: "var(--ex-fg)" }}>{top.count}건</b>이{" "}
+                {top.label} 경험을 요구합니다. 지금 기록에는 근거가 없습니다.
+              </>
+            ) : (
+              <>이 결과가 요구하는 기술은 기록에서 모두 확인됩니다.</>
+            )}
+          </p>
+          {missing.length > 0 ? (
+            <div className={styles.brewInner}>
+              <div className={styles.brewInnerTitle}>비어 있는 재료 {missing.length}</div>
+              {missing.slice(0, 2).map((material, index) => (
+                <div key={material.label} className={styles.missingRow}>
+                  <span
+                    className={index === 0 ? styles.missingDanger : styles.missingWarning}
+                  >
+                    {material.label} {Math.round(material.ratio * 100)}%
+                  </span>
+                  <span className={styles.missingNote}>공고 {material.count}건이 요구</span>
+                </div>
+              ))}
+            </div>
+          ) : null}
+          <Link href={RECORD_EXPERIENCE_HREF} className={styles.brewCta}>
+            이 경험 기록하기
+          </Link>
+        </div>
+      ) : null}
 
       <div className={styles.railCard}>
         <div className={styles.railTitle}>일치도는 이렇게 계산됩니다</div>

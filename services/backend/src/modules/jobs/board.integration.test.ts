@@ -359,6 +359,25 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
     }
   });
 
+  it("지역을 못 읽은 공고는 한국 범위에 남고, 회사 이름이 적힌 근무지는 비운다", async () => {
+    const db = mongoCollections(fixture!.resource.db);
+    const unplacedId = randomUUID();
+    const base = await db.jobPostings.findOne({ _id: alwaysId });
+    const company = await db.companies.findOne({ _id: base!.companyId });
+    await db.jobPostings.insertOne({ ...base!, _id: unplacedId, title: "지역 없는 공고", location: company!.name, locationRegion: null, dedupeHash: `board-unplaced-${marker}` });
+    try {
+      const list = async (extra: string) => JobPostingListResponseSchema.parse((await app.inject({ method: "GET", url: `/v1/jobs/postings?${scoped(extra)}`, headers: auth() })).json());
+      const korea = await list("&country=%ED%95%9C%EA%B5%AD");
+      const found = korea.data.find((posting) => posting.id === unplacedId);
+      expect(found?.location).toBeNull();
+      expect((await list("&country=%EB%AF%B8%EA%B5%AD")).data.map((posting) => posting.id)).not.toContain(unplacedId);
+      const counted = (await list("")).summary.countries.find((country) => country.label === "한국");
+      expect(counted?.count).toBeGreaterThanOrEqual(1);
+    } finally {
+      await db.jobPostings.deleteOne({ _id: unplacedId });
+    }
+  });
+
   it("일치도가 없는 공고는 최근 수집한 순서로 나온다", async () => {
     const response = await app.inject({ method: "GET", url: `/v1/jobs/postings?${scoped("&sort=match")}`, headers: { authorization: `Bearer ${otherToken}` } });
     const rows = JobPostingListResponseSchema.parse(response.json()).data;

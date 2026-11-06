@@ -73,7 +73,7 @@ export default async function AnalyzePage({
                 <h1 className={styles.postingTitle}>{brew.posting?.title ?? "공고 없이 시작한 제작"}</h1>
                 {brew.posting ? <span className={styles.postingCompany}>{brew.posting.companyName}</span> : null}
               </div>
-              <Reanalyze brewId={brewId} jobAnalysisId={brew.jobAnalysisId} disabled={analysis.status !== "done"} />
+              <Reanalyze brewId={brewId} jobAnalysisId={brew.jobAnalysisId} analyzing={analysis.status === "queued" || analysis.status === "running"} />
             </header>
           }
         />

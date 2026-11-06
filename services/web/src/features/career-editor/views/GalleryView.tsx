@@ -1,6 +1,6 @@
 "use client";
 
-import { mediaAssetUrl, type CareerCategory, type CareerRecord, type CareerRecordListItem } from "@expresso/contracts";
+import { CareerPropertyValueV2Schema, mediaAssetUrl, type CareerCategory, type CareerRecord } from "@expresso/contracts";
 import type { ReactNode } from "react";
 
 import { API_BASE_URL } from "@/lib/api/client";
@@ -31,10 +31,12 @@ function projectTags(record: CareerRecord, category: CareerCategory): string[] {
 }
 
 function projectPeriod(record: CareerRecord): string {
-  const item = record as CareerRecord & Pick<CareerRecordListItem, "periodFrom" | "periodTo">;
+  // 기간은 `period` 날짜 속성에 있다. 뷰 응답에는 목록 전용 칸(`periodFrom`)이 없다.
+  const parsed = CareerPropertyValueV2Schema.safeParse(record.properties.period);
+  const range = parsed.success && parsed.data.type === "date" ? parsed.data.value : null;
   const format = (value: string) => value.slice(0, 7).replace("-", ".");
-  if (item.periodFrom && item.periodTo) return `${format(item.periodFrom)} – ${format(item.periodTo)}`;
-  if (item.periodFrom) return `${format(item.periodFrom)} –`;
+  if (range?.start && range.end) return `${format(range.start)} – ${format(range.end)}`;
+  if (range?.start) return `${format(range.start)} –`;
   return "기간 미입력";
 }
 

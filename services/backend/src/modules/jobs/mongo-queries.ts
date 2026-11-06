@@ -14,6 +14,9 @@ export function experienceMinYears(note: string | null | undefined, label: strin
   return match ? Number(match[0]) : null;
 }
 
+/** 지역을 읽지 못한 공고가 속하는 나라. */
+export const UNPLACED_COUNTRY = "한국";
+
 const openPostingClause = (at: Date): Document => ({ $or: [{ expiresAt: null }, { expiresAt: { $gte: at } }] });
 
 export type FilterAxis = "category" | "country" | "location" | "experience" | "workType" | "company";
@@ -48,7 +51,12 @@ export function jobBoardFilter(query: ListJobPostingsQuery, at: Date, skip?: Fil
     if (query.deadline === "open") clauses.push(openPostingClause(at));
     if (query.deadline === "always") clauses.push({ expiresAt: null });
   }
-  if (skip !== "country" && query.country) clauses.push({ locationRegion: { $in: regionsOf(query.country) } });
+  if (skip !== "country" && query.country) {
+    const inCountry = { locationRegion: { $in: regionsOf(query.country) } };
+    // 지역을 읽지 못한 공고는 국내 채용 보드에서 온 것이다(근무지 칸에 회사 이름만 적힌 보드, 주소 형식이 다른 고용24).
+    // 나라를 모른다고 기본 범위에서 빼면 그 회사 공고가 검색에서 통째로 사라진다.
+    clauses.push(query.country === UNPLACED_COUNTRY ? { $or: [inCountry, { locationRegion: null }] } : inCountry);
+  }
   // 지역이 나라보다 더 좁다 — 함께 와도 안전하게 겹친다(경기는 늘 한국 안이다).
   if (skip !== "location" && query.location) {
     const place = koreanPlace(query.location);

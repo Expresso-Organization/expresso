@@ -2,7 +2,7 @@ import Fastify from "fastify";
 import { describe, expect, it, vi } from "vitest";
 
 import { registerErrorHandler } from "../../api/error-handler.js";
-import type { PageApi } from "./index.js";
+import { PageServiceError, type PageApi } from "./index.js";
 import { registerPageRoutes } from "./routes.js";
 
 const user = "00000000-0000-4000-8000-000000000001";
@@ -40,6 +40,15 @@ describe("다듬기 경로", () => {
     // 인자 검사 실패는 앱 공통 오류 처리로 갑니다. 서비스까지 가지 않는 것이 요점입니다.
     expect(bad.statusCode).toBeGreaterThanOrEqual(400);
     expect(service.instructElement).toHaveBeenCalledTimes(1);
+    await server.close();
+  });
+
+  it("고칠 수 없는 이유는 서비스가 쓴 문장 그대로 응답에 싣는다", async () => {
+    const { server, service } = app();
+    service.instructElement.mockRejectedValueOnce(new PageServiceError(422, "바꾼 곳이 없습니다. 항목은 지면 구성에서 뺄 수 있습니다."));
+    const response = await server.inject({ method: "POST", url: `/v1/portfolios/${portfolio}/page/elements/quote-1/instruct`, payload: { expectedRevision: 2, instruction: "빼 줘" } });
+    expect(response.statusCode).toBe(422);
+    expect(response.json().error.message).toBe("바꾼 곳이 없습니다. 항목은 지면 구성에서 뺄 수 있습니다.");
     await server.close();
   });
 

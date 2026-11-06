@@ -6,7 +6,7 @@ import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction, type MongoTransaction } from "../../platform/mongo-transaction.js";
 import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { requireActiveUser } from "../identity/index.js";
-import { careerRecordTextReader } from "../career/index.js";
+import { careerRecordTextReader, careerYearsOf } from "../career/index.js";
 import { JobMarketError } from "./errors.js";
 import type { JobMarketApi } from "./index.js";
 import { calculateExplainableMatch } from "./match-score.js";
@@ -150,7 +150,7 @@ export class JobMarketService implements JobMarketApi {
       const records = await db.careerRecords.find({ userId, deletedAt: null }, options).sort({ _id: 1 }).toArray();
       // 기록이 하나도 없을 때만 막는다. 일치도는 요건 충족률이라 기록 수에 기대는 기준이 없다.
       if (records.length === 0) throw new JobMarketError(409, "more career records are required", { required: 1, actual: 0 });
-      const match = calculateExplainableMatch(jobPostingId, JobRequirementsSchema.parse(posting.requirements), records.map(await careerRecordTextReader(tx.db, userId, tx.session)).join("\n"), at);
+      const match = calculateExplainableMatch(jobPostingId, JobRequirementsSchema.parse(posting.requirements), records.map(await careerRecordTextReader(tx.db, userId, tx.session)).join("\n"), at, await careerYearsOf(tx.db, records, at, tx.session));
       if (!match) throw new JobMarketError(409, "job posting requirements are not extracted yet", { jobPostingId });
       await db.matchScores.updateOne({ userId, jobPostingId }, { $set: { total: Decimal128.fromString(String(match.total)), axes: match.axes, reasonText: match.reason, nextAction: match.nextAction, computedAt: at }, $setOnInsert: { _id: randomUUID(), userId, jobPostingId } }, { ...options, upsert: true });
       return ExplainableMatchSchema.parse(match);

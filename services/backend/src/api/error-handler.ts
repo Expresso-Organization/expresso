@@ -44,10 +44,12 @@ export function registerErrorHandler(app: FastifyInstance): void {
     const errorValue: Error & {
       statusCode?: number;
       publicDetails?: Record<string, unknown>;
+      publicMessage?: string;
     } = error instanceof Error
       ? error as Error & {
           statusCode?: number;
           publicDetails?: Record<string, unknown>;
+          publicMessage?: string;
         }
       : new Error("Unknown request error");
     const candidateStatus = errorValue.statusCode ?? 500;
@@ -64,7 +66,7 @@ export function registerErrorHandler(app: FastifyInstance): void {
     return reply.code(statusCode).send({
       error: {
         code,
-        message: publicMessageForStatus(statusCode),
+        message: errorValue.publicMessage ?? publicMessageForStatus(statusCode),
         requestId: request.id,
         ...(errorValue.publicDetails
           ? { details: errorValue.publicDetails }

@@ -16,16 +16,20 @@ export interface AccessTokenVerifier {
 export class HttpStatusError extends Error {
   readonly statusCode: number;
   readonly publicDetails: Record<string, unknown> | undefined;
+  /** 사용자에게 그대로 보여 줄 문장. 없으면 오류 처리기가 상태 코드의 공통 문구를 쓴다. */
+  readonly publicMessage: string | undefined;
 
   constructor(
     statusCode: number,
     message: string,
     publicDetails?: Record<string, unknown>,
+    publicMessage?: string,
   ) {
     super(message);
     this.name = "HttpStatusError";
     this.statusCode = statusCode;
     this.publicDetails = publicDetails;
+    this.publicMessage = publicMessage;
   }
 }
 
