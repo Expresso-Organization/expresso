@@ -1,0 +1,114 @@
+{
+  "data": {
+    "id": "00000000-0000-4000-8000-000000000001",
+    "userId": "00000000-0000-4000-8000-000000000002",
+    "categoryId": "00000000-0000-4000-8000-000000000003",
+    "title": "커리어 기록",
+    "propertyValues": [
+      {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000011",
+        "type": "text",
+        "value": "업무 메모 😀"
+      },
+      {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000012",
+        "type": "number",
+        "value": "12345678901234567890.123400"
+      },
+      {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000013",
+        "type": "checkbox",
+        "value": true
+      },
+      {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000014",
+        "type": "select",
+        "value": "00000000-0000-4000-8000-000000000081"
+      },
+      {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000015",
+        "type": "select",
+        "value": null
+      },
+      {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000016",
+        "type": "multi_select",
+        "value": [
+          "00000000-0000-4000-8000-000000000082",
+          "00000000-0000-4000-8000-000000000081"
+        ]
+      },
+      {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000017",
+        "type": "date",
+        "value": {
+          "precision": "month",
+          "start": "2026-01",
+          "end": "2026-10"
+        }
+      },
+      {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000018",
+        "type": "date",
+        "value": {
+          "precision": "day",
+          "start": "2024-02-29",
+          "end": null
+        }
+      },
+      {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000019",
+        "type": "date",
+        "value": {
+          "precision": "datetime",
+          "start": "2026-10-06T10:02:03.123456789+09:00",
+          "end": "2026-10-06T02:02:03Z",
+          "timezone": "Asia/Seoul"
+        }
+      },
+      {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000020",
+        "type": "date",
+        "value": {
+          "precision": "datetime",
+          "start": "2026-10-06T01:02:03Z",
+          "end": null,
+          "timezone": null
+        }
+      },
+      {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000021",
+        "type": "url",
+        "value": "https://example.com"
+      },
+      {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000022",
+        "type": "email",
+        "value": "career@example.com"
+      },
+      {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000023",
+        "type": "phone",
+        "value": "+82-10-1234-5678"
+      },
+      {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000024",
+        "type": "file",
+        "value": [
+          "00000000-0000-4000-8000-000000000091",
+          "00000000-0000-4000-8000-000000000092"
+        ]
+      },
+      {
+        "propertyDefinitionId": "00000000-0000-4000-8000-000000000025",
+        "type": "media",
+        "value": [
+          "00000000-0000-4000-8000-000000000092"
+        ]
+      }
+    ],
+    "status": "organized",
+    "version": 7,
+    "updatedAt": "2026-10-06T01:02:03Z"
+  }
+}
