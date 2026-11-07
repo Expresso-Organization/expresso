@@ -72,6 +72,38 @@ describeWithRedis("reliable queue integration", () => {
     expect(await resources.deadLetterQueue.count()).toBe(0);
   }, 20_000);
 
+  it("동시 수만큼 잡을 겹쳐 돌린다", async () => {
+    const prefix = `expresso-test-${randomUUID()}`;
+    const resources = createReliableQueue<{ value: number }>("parallel-job", redisUrl!, prefix);
+    let running = 0;
+    let peak = 0;
+    const worker = createQueueWorker<{ value: number }, number>({
+      queueName: "parallel-job",
+      redisUrl: redisUrl!,
+      prefix,
+      concurrency: 3,
+      async processor(job) {
+        running += 1;
+        peak = Math.max(peak, running);
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        running -= 1;
+        return job.data.value;
+      },
+    });
+    cleanups.push(async () => {
+      await worker.close();
+      await resources.queue.obliterate({ force: true });
+      await resources.close();
+    });
+    let finished = 0;
+    worker.on("completed", () => { finished += 1; });
+    await Promise.all([1, 2, 3].map((value) => resources.queue.add("work", { value }, { jobId: randomUUID() })));
+    const startedAt = Date.now();
+    while (finished < 3 && Date.now() - startedAt < 10_000) await new Promise((resolve) => setTimeout(resolve, 25));
+    expect(finished).toBe(3);
+    expect(peak).toBe(3);
+  });
+
   it("retries a failing job and copies the terminal failure to a DLQ", async () => {
     const prefix = `expresso-test-${randomUUID()}`;
     const resources = createReliableQueue<{ value: number }>(
