@@ -98,6 +98,8 @@ function PortfolioCard({
             title={`${portfolio.title} 미리보기`}
             loading="lazy"
             tabIndex={-1}
+            // 축소본이라 지면 안을 넘겨 보는 자리가 아니다. 틀 자체가 스크롤을 갖지 않게 한다.
+            scrolling="no"
             className={styles.portfolioFrame}
           />
         ) : null}
