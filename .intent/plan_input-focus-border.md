@@ -17,7 +17,7 @@ date: 2026-11-07
 | 파일 | 무엇을 |
 |---|---|
 | `styles/global.css` | 전역 링에서 텍스트 입력 제외 |
-| `styles/agent-chat-framework.css` | `input` · `datepicker` outline과 composer 무력화 규칙 제거 |
+| `styles/agent-chat-framework.css` | `input` · `datepicker` outline을 `none`으로 변경, composer 무력화 규칙 제거 |
 | `styles/tokens.test.ts` | 재발 방지 검사 추가 |
 | `components/ui/textarea.tsx` | 포커스 테두리 · 링 클래스 제거 |
 | `components/assistant-ui/elements/thread.aui.tsx` | composer `focus-within` 테두리 클래스 제거 |
@@ -29,10 +29,10 @@ date: 2026-11-07
 | `features/career-editor/views/views.module.css` | 입력 칸 포커스 규칙 제거 |
 | `features/career-editor/properties/properties.module.css` | 입력 칸 포커스 규칙 제거 |
 | `features/career-editor/views/AiRecordInterview.module.css` | `.question input:focus` 제거 |
-| `features/career-editor/ai/ai.module.css` | `.composer:focus-within`의 `border-color` 제거 |
-| `features/agent-chat/AgentChat.module.css` | 검색 · composer 테두리 규칙과 무력화 규칙 제거 |
-| `features/agent-chat/RecordDraftCard.module.css` | `.field input` 선택자 제거 |
-| `features/agent-chat/PlanCards.module.css` | `.field input` 선택자 제거 |
+| `features/career-editor/ai/ai.module.css` | 효과 없는 `.composer:focus-within` 제거 |
+| `features/agent-chat/AgentChat.module.css` | 검색 · composer 테두리 규칙 제거, 무력화 규칙 3건을 `outline: none` 1건으로 통합 |
+| `features/agent-chat/RecordDraftCard.module.css` | `.field input`은 `outline: none`만 유지 |
+| `features/agent-chat/PlanCards.module.css` | `.field input`은 `outline: none`만 유지 |
 
 ## 작업 순서
 
