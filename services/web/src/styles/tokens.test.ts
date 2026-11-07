@@ -214,3 +214,53 @@ describe("다크 팔레트", () => {
     expect(missing).toEqual([]);
   });
 });
+
+/*
+ * 텍스트 입력은 마우스 클릭에도 `:focus-visible`에 걸린다. 텍스트 커서가 이미
+ * 위치를 보여 주므로 포커스 때 테두리를 바꾸지 않는다. 체크박스 · 라디오는
+ * 커서가 없어 포커스 표시를 유지한다.
+ */
+const NON_TEXT_FOCUS_SELECTORS = [".rowCheckbox", ".archetypeOption"];
+
+function focusBorderDeclaration(declarations: string) {
+  return declarations.match(
+    /border-color\s*:\s*(?!transparent)[^;]+|outline\s*:\s*\d+px[^;]*|box-shadow\s*:[^;]*(--ex-focus-ring|0 0 0 )[^;]*/,
+  )?.[0];
+}
+
+describe("텍스트 입력 포커스", () => {
+  it("전역 포커스 링이 텍스트 입력을 뺀다", () => {
+    const css = stripComments(read(join(SRC, "styles", "global.css")));
+    const ring = css.match(/([^{}]+)\{[^{}]*box-shadow\s*:\s*var\(--ex-focus-ring\)/)?.[1];
+    expect(ring).toContain(":not(:where(");
+    expect(ring).toContain("input:not(");
+    expect(ring).toContain("textarea");
+    expect(ring).toContain("[contenteditable]");
+  });
+
+  it("모듈 CSS가 포커스 때 입력 칸의 테두리를 바꾸지 않는다", () => {
+    const found: string[] = [];
+    for (const file of cssFiles) {
+      for (const [, selectors = "", declarations = ""] of stripComments(read(file)).matchAll(
+        /([^{}]+)\{([^{}]*)\}/g,
+      )) {
+        const entersText = selectors.split(",").some(
+          (selector) =>
+            !NON_TEXT_FOCUS_SELECTORS.some((name) => selector.includes(name)) &&
+            (/:focus(?!-visible)/.test(selector) ||
+              /\b(input|textarea)\b[^,]*:focus-visible/.test(selector)),
+        );
+        const declaration = entersText ? focusBorderDeclaration(declarations) : undefined;
+        if (declaration) found.push(`${label(file)}: ${selectors.trim()} → ${declaration}`);
+      }
+    }
+    expect(found).toEqual([]);
+  });
+
+  it("Tailwind 클래스가 포커스 때 입력 칸의 테두리를 바꾸지 않는다", () => {
+    const textarea = read(join(SRC, "components", "ui", "textarea.tsx"));
+    expect(textarea).not.toMatch(/focus-visible:(border|ring)/);
+    const found = tsxFiles.filter((file) => /focus-within:border/.test(read(file))).map(label);
+    expect(found).toEqual([]);
+  });
+});

@@ -520,10 +520,6 @@
   color: var(--ex-fg);
 }
 
-.searchInput:focus {
-  outline: none;
-}
-
 .searchGo {
   border: none;
   background: none;
@@ -737,8 +733,6 @@
 
 .input:focus,
 .textarea:focus {
-  outline: none;
-  border-color: var(--ex-accent);
   background: var(--ex-bg);
 }
 

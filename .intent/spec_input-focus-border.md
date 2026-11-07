@@ -41,9 +41,9 @@ date: 2026-11-07
 
 **Tailwind 클래스.** `components/ui/textarea.tsx`의 `focus-visible:border-ring` · `ring-3` · `ring-ring/50`과 `thread.aui.tsx` composer의 `focus-within:border-*`를 지운다. `aria-invalid` 링은 유지한다.
 
-**프레임워크 CSS.** `agent-chat-framework.css`의 `[data-aui="input"]`과 `[data-aui="datepicker"]`를 포커스 outline 선택자에서 뺀다. `select`는 남긴다.
+**프레임워크 CSS.** `agent-chat-framework.css`의 `[data-aui="input"]`과 `[data-aui="datepicker"]`는 포커스 때 `outline: none`을 쓴다. `select`의 outline은 남긴다.
 
-**쓸모없어진 규칙.** 전역 링을 지우려고만 있던 규칙을 삭제한다. `AgentChat`의 `.search input:focus-visible` 3건, `.aui-composer-input:focus-visible`, `brew/new`의 `.searchInput:focus`가 대상이다. `home` · `jobs` `.searchBar`의 `transition`도 바뀌는 상태가 없어지므로 지운다.
+**쓸모없어진 규칙.** 전역 링을 지우려고만 있던 규칙을 삭제한다. `.aui-composer-input:focus-visible`과 `brew/new`의 `.searchInput:focus`가 대상이다. `AgentChat`의 `.search input:focus-visible` 3건은 `outline: none` 한 건으로 합친다. Firefox에서 `agent-chat-preflight.css`의 `:-moz-focusring`이 `outline: auto`를 켜므로, 채팅 범위의 입력 칸에는 `outline: none`을 남긴다. `home` · `jobs` `.searchBar`의 `transition`도 바뀌는 상태가 없어지므로 지운다.
 
 **재사용.** 재발 방지 검사는 기존 `styles/tokens.test.ts`의 CSS 파일 목록을 쓴다.
 
@@ -56,8 +56,8 @@ date: 2026-11-07
 
 - 텍스트 입력은 마우스 클릭에도 `:focus-visible`에 걸린다. 버튼은 걸리지 않는다. 그래서 `:focus-visible`만 고치면 입력 칸만 바뀌고 버튼은 그대로이다.
 - `.titleEditor input:focus`와 `.cellInput:focus`는 값을 `none`으로 고정하고 배경과 테두리까지 다루므로 그대로 둔다.
-- `.composer:focus-within`(커리어 AI)의 그림자는 입체감 표현이고 테두리 색은 휴지 상태와 같다. 쓸모없는 `border-color`만 지우고 그림자는 둔다.
-- `.rowCheckbox:focus-within>span`은 체크박스의 포커스 표시이다. 재발 방지 검사에서 제외한다.
+- `.composer:focus-within`(커리어 AI)의 값은 휴지 상태의 `.composer`와 같아 효과가 없다. 규칙 전체를 지운다.
+- `.rowCheckbox:focus-within>span`과 `.archetypeOption:has(input:focus-visible)`은 체크박스 · 라디오의 포커스 표시이다. 재발 방지 검사에서 제외한다.
 
 ## 완료 기준
 
