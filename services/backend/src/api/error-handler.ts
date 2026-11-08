@@ -33,6 +33,7 @@ function publicMessageForStatus(statusCode: number): string {
 type RequestError = Error & {
   statusCode?: number;
   publicDetails?: Record<string, unknown>;
+  publicMessage?: string;
 };
 
 export function registerErrorHandler(app: FastifyInstance): void {
@@ -86,10 +87,12 @@ export function registerErrorHandler(app: FastifyInstance): void {
       "request failed",
     );
 
-    const message =
+    // main의 명시적 공개 안내를 우선하고, 작업 계획의 기존 사용자 안내도 유지합니다.
+    const message = errorValue.publicMessage ?? (
       errorValue instanceof WorkflowError && statusCode < 500
         ? errorValue.message
-        : publicMessageForStatus(statusCode);
+        : publicMessageForStatus(statusCode)
+    );
 
     return reply.code(statusCode).send({
       error: {

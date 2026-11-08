@@ -931,9 +931,10 @@ function BaristaRead({
   );
 }
 
-/** 제목이 없는 섹션은 지면에서의 자리로 부른다. 어느 판의 섹션인지 모르면 자리도 없다. */
+/** 제목이 없는 섹션은 지면에서의 자리로 부른다. 맨 앞은 편집기 목차와 같이 첫 화면이다. 어느 판의 섹션인지 모르면 자리도 없다. */
 function sectionName(section: AnalyticsDashboard["sections"][number]): string {
   if (section.title) return section.title;
+  if (section.position === 1) return "첫 화면";
   return section.position ? `${section.position}번째 섹션` : "지난 판의 섹션";
 }
 

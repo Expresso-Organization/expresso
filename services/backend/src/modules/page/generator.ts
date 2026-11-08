@@ -18,6 +18,7 @@ import {
 } from "@expresso/contracts";
 
 import type { AiClient, AiModelTier, AiUsage } from "../../platform/ai/client.js";
+import { decodeHtmlEntities } from "../../platform/html/entities.js";
 import { sanitizePage } from "../../platform/html/sanitize.js";
 import { isOrdinalLabel, ungroundedNumbers } from "../../platform/numbers.js";
 
@@ -342,10 +343,8 @@ function buildPrompt(context: PageGenerationContext): string {
 
 /** 태그를 걷어낸 글자. 근거 대조는 **화면에 보이는 것**을 봐야 한다. */
 export function visibleText(html: string): string {
-  return html
-    .replaceAll(/<[^>]*>/g, " ")
-    .replaceAll(/&nbsp;/g, " ")
-    .replaceAll(/&amp;/g, "&")
+  // 태그를 지운 뒤에 푼다. 먼저 풀면 글로 적힌 `&lt;script&gt;`가 태그가 되어 지워진다.
+  return decodeHtmlEntities(html.replaceAll(/<[^>]*>/g, " "))
     .replaceAll(/\s+/g, " ")
     .trim();
 }

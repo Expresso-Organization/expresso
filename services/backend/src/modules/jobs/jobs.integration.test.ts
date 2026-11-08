@@ -282,30 +282,20 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("job market integration", () => {
     expect((await app.inject({ method: "DELETE", url: "/v1/jobs/postings/not-a-uuid/interest", headers: auth() })).statusCode).toBe(400);
   });
 
-  it("requires three records, persists four-axis scores, and hides demand ratios below five jobs", async () => {
+  it("scores from a single record, refuses only without records, persists four-axis scores, and hides demand ratios below five jobs", async () => {
     await mongoCollections(fixture.resource.db).jobPostings.updateOne({ _id: primaryPostingId }, { $set: { requirements: { technologies: ["postgresql", "kubernetes"], impacts: ["scale"], roles: ["backend"], conditions: ["remote"] } } });
-    for (const [index, text] of [
-      "Backend engineer used PostgreSQL to scale services.",
-      "Operated remote production systems.",
-    ].entries()) {
-      await careerService.createRecord(firstUserId, `match-${index}-${marker}`, {
-        categoryId: experienceCategoryId,
-        title: `Evidence ${index}`,
-        properties: {},
-        bodyMd: text,
-      });
-    }
+    // 이 사용자는 아직 기록이 없다 — 비교할 재료가 없을 때만 거절한다.
     await expect(
       jobMarketService.computeMatch(firstUserId, primaryPostingId),
     ).rejects.toMatchObject({
       statusCode: 409,
-      publicDetails: { required: 3, actual: 2 },
+      publicDetails: { required: 1, actual: 0 },
     });
-    await careerService.createRecord(firstUserId, `match-3-${marker}`, {
+    await careerService.createRecord(firstUserId, `match-0-${marker}`, {
       categoryId: experienceCategoryId,
-      title: "Evidence 3",
+      title: "Evidence 0",
       properties: {},
-      bodyMd: "Led backend delivery with measurable outcomes.",
+      bodyMd: "Backend engineer used PostgreSQL to scale services.",
     });
     const match = await jobMarketService.computeMatch(
       firstUserId,
@@ -374,5 +364,56 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("job market integration", () => {
       headers: auth(secondToken),
     });
     expect(missing.statusCode).toBe(404);
+  });
+
+  it("requeues a retryable failed analysis and leaves a permanent failure alone", async () => {
+    const db = mongoCollections(fixture.resource.db);
+    // 이 자리에서 분석을 만든다 — 앞 테스트가 만들어 둔 것에 기대면 하나만 돌릴 때 깨진다.
+    const opened = await app.inject({
+      method: "POST",
+      url: `/v1/jobs/postings/${primaryPostingId}/analyses`,
+      headers: auth(secondToken),
+    });
+    const jobAnalysisId: string = opened.json().data.jobAnalysisId;
+    const queued = () =>
+      db.outboxEvents.countDocuments({ topic: "job.normalize", "payload.jobAnalysisId": jobAnalysisId });
+
+    // 다시 해 볼 수 있는 실패. 06c의 "다시 시도"가 누르는 자리다.
+    await db.jobAnalyses.updateOne(
+      { _id: jobAnalysisId },
+      { $set: { status: "failed", progressStage: "failed", failureCode: "EXTRACTION_FAILED", failureRetryable: true, attempts: 1 } },
+    );
+    const before = await queued();
+    const retried = await app.inject({
+      method: "POST",
+      url: `/v1/jobs/postings/${primaryPostingId}/analyses`,
+      headers: auth(secondToken),
+    });
+    expect(retried.statusCode).toBe(200);
+    expect(retried.json().data).toMatchObject({ jobAnalysisId, status: "queued", reused: true });
+    expect(await queued()).toBe(before + 1);
+    expect(await db.jobAnalyses.findOne({ _id: jobAnalysisId })).toMatchObject({
+      status: "queued",
+      progressStage: "queued",
+      failureCode: null,
+      failureRetryable: null,
+    });
+
+    // 워커가 집기 전에 한 번 더 눌러도 큐에 한 번만 들어간다 — 이미 `queued`라 재적재 조건이 아니다.
+    await app.inject({ method: "POST", url: `/v1/jobs/postings/${primaryPostingId}/analyses`, headers: auth(secondToken) });
+    expect(await queued()).toBe(before + 1);
+
+    // AI가 꺼져 생긴 실패는 다시 눌러도 같은 자리에서 멈춘다. 큐에 넣지 않는다.
+    await db.jobAnalyses.updateOne(
+      { _id: jobAnalysisId },
+      { $set: { status: "failed", progressStage: "failed", failureCode: "EXTRACTOR_UNAVAILABLE", failureRetryable: false } },
+    );
+    const permanent = await app.inject({
+      method: "POST",
+      url: `/v1/jobs/postings/${primaryPostingId}/analyses`,
+      headers: auth(secondToken),
+    });
+    expect(permanent.json().data).toMatchObject({ status: "failed", reused: true });
+    expect(await queued()).toBe(before + 1);
   });
 });

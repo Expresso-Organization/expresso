@@ -10,7 +10,7 @@ async function proxy(request: Request, context: { params: Promise<{ path: string
   const token = await readAccessToken(); if (!token) return Response.json({ error: { message: "로그인이 필요합니다." } }, { status: 401 });
   const { path } = await context.params;
   const action = path[2]; const isGet = request.method === "GET";
-  // 경로가 넷인 것: 요건 대조 최신성(GET reviews/:toolId) · 초안 결정(POST <종류>/:draftId).
+  // 경로가 넷인 것: 요건 대조 · 보완점 최신성(GET reviews/:toolId) · 초안 결정(POST <종류>/:draftId).
   const nested = path.length === 4 && UuidSchema.safeParse(path[3]).success;
   const review = isGet && action === "reviews" && nested;
   const draftDecision = !isGet && isDraftAction(action) && nested;

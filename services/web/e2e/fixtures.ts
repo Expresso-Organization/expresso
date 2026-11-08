@@ -25,6 +25,14 @@ export async function api<T>(page: Page, method: "GET" | "POST" | "PATCH" | "PUT
   return response.json() as Promise<T>;
 }
 
+/** 1×1 PNG를 실제 업로드 API로 올립니다. 기록 속성은 사용자가 가진 미디어만 걸 수 있습니다. */
+export async function uploadMedia(page: Page): Promise<string> {
+  const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
+  const response = await page.request.fetch(`${API_URL}/v1/media`, { method: "POST", headers: { authorization: `Bearer ${await accessToken(page)}`, "content-type": "image/png" }, data: png });
+  if (!response.ok()) throw new Error(`POST /v1/media failed: ${response.status()} ${await response.text()}`);
+  return ((await response.json()) as { data: { id: string } }).data.id;
+}
+
 export async function categories(page: Page) {
   return (await api<{ data: Array<{ id: string; key: string; name: string; version: number; propertySchemaV2: Array<{ id: string; key: string; name: string; type: string }> }> }>(page, "GET", "/v1/career/categories")).data;
 }

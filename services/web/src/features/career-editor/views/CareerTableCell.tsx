@@ -8,6 +8,7 @@ import { Icon } from "@/components/ui/Icon";
 import { propertyOptions } from "@/features/career-editor/properties/property-editors";
 
 import { displayValue, rawValue } from "./view-types";
+import { propertyLabel, propertyLabels } from "./view-logic";
 import styles from "./views.module.css";
 
 export type TableCellValue = CareerPropertyValueV2 | null;
@@ -18,6 +19,11 @@ function valueFor(record: CareerRecord, definition: CareerPropertyDefinitionV2):
   if (definition.key === "title") return record.title;
   if (definition.system && definition.type === "created_time") return record.createdAt ?? record.updatedAt;
   if (definition.system && definition.type === "updated_time") return record.updatedAt;
+  // 수식 · 롤업 값은 계산 Worker가 computedProperties에 씁니다. properties만 읽으면 늘 「—」입니다.
+  if (definition.type === "formula" || definition.type === "rollup") {
+    const computed = record.computedProperties?.[definition.key];
+    return computed && typeof computed === "object" && "value" in computed ? computed.value : null;
+  }
   return rawValue(record, definition.key);
 }
 
@@ -54,21 +60,19 @@ function toValue(definition: CareerPropertyDefinitionV2, draft: string): TableCe
 
 function CellDisplay({ record, definition }: { record: CareerRecord; definition: CareerPropertyDefinitionV2 }) {
   const value = valueFor(record, definition);
-  const options = propertyOptions(definition);
-  const labels = new Map(options.map((option) => [option.id, option.name]));
   if (definition.type === "checkbox") {
     const checked = value === true;
     return <span className={styles.tableBoolean} data-checked={checked ? "true" : "false"}><span aria-hidden="true">{checked ? <Icon name="check" size={11} weight="bold" /> : null}</span>{checked ? "예" : "아니요"}</span>;
   }
   if (Array.isArray(value)) {
-    const items = value.map((item) => labels.get(String(item)) ?? (item && typeof item === "object" && "title" in item ? String(item.title) : String(item)));
+    const items = definition.type === "multi_select" || definition.type === "relation" ? propertyLabels(record, definition) : value.map((item) => item && typeof item === "object" && "title" in item ? String(item.title) : String(item));
     return items.length ? <span className={styles.tableTags}>{items.slice(0, 4).map((label, index) => <small key={`${label}-${index}`}>{label}</small>)}</span> : <span className={styles.emptyCell}>—</span>;
   }
   if (definition.type === "date" && value && typeof value === "object" && "start" in value) {
     const range = value as { start: unknown; end?: unknown };
     return <span>{String(range.start)}{range.end ? ` – ${String(range.end)}` : ""}</span>;
   }
-  const text = typeof value === "string" ? labels.get(value) ?? displayValue(value) : displayValue(value);
+  const text = definition.type === "select" ? propertyLabel(record, definition) ?? "—" : displayValue(value);
   if (definition.key === "title") return <span className={styles.tableTitleValue}><Icon name="file" size={17} /><span>{text === "—" ? "제목 없음" : text}</span></span>;
   return text === "—" ? <span className={styles.emptyCell}>—</span> : <span>{text}</span>;
 }
@@ -102,6 +106,7 @@ function OptionPopout({ definition, value, anchorRef, onCommit, onCreateOption, 
   const [selected, setSelected] = useState(new Set(initial));
   const panelRef = useRef<HTMLDivElement>(null);
   const position = usePopoverPosition(true, anchorRef);
+  usePopupKeyboard(panelRef, anchorRef, onClose);
   useEffect(() => {
     const close = (event: PointerEvent) => {
       const target = event.target as Node;
@@ -110,7 +115,7 @@ function OptionPopout({ definition, value, anchorRef, onCommit, onCreateOption, 
     document.addEventListener("pointerdown", close);
     return () => document.removeEventListener("pointerdown", close);
   }, [anchorRef, onClose]);
-  return createPortal(<div ref={panelRef} className={styles.cellPopout} style={position ? { top: position.top, left: position.left, width: position.width } as CSSProperties : { visibility: "hidden" }} role="listbox" aria-label={`${definition.name} 값 선택`} aria-multiselectable={definition.type === "multi_select"}>
+  return createPortal(<div ref={panelRef} className={styles.cellPopout} onKeyDown={(event) => movePopupFocus(event, panelRef.current)} style={position ? { top: position.top, left: position.left, width: position.width } as CSSProperties : { visibility: "hidden" }} role="listbox" aria-label={`${definition.name} 값 선택`} aria-multiselectable={definition.type === "multi_select"}>
     <div className={styles.cellPopoutTitle}><Icon name={definition.type === "multi_select" ? "list-bullets" : "tag"} size={15} /><strong>{definition.name}</strong></div>
     <button type="button" role="option" aria-selected={value === null || value === "" || (Array.isArray(value) && value.length === 0)} onClick={() => { onCommit(definition.type === "multi_select" ? { type: "multi_select", value: [] } : { type: "select", value: null }); onClose(); }}><span>선택 안 함</span></button>
     {options.map((option) => {
@@ -131,6 +136,33 @@ function OptionPopout({ definition, value, anchorRef, onCommit, onCreateOption, 
       }).catch((error: unknown) => setCreateIssue(error instanceof Error ? error.message : "항목을 추가하지 못했습니다.")).finally(() => setCreating(false));
     }} /> : null}
   </div>, document.body);
+}
+
+/**
+ * 셀 팝업의 키보드 처리입니다. 열면 첫 항목으로 포커스를 옮기고, Escape는 팝업을 닫고 셀로 포커스를 돌려줍니다.
+ * 팝업 안의 키가 표 행까지 올라가면 Enter · ↓가 기록을 엽니다(2026-11-02 감사).
+ */
+function usePopupKeyboard(panelRef: React.RefObject<HTMLDivElement | null>, anchorRef: React.RefObject<HTMLElement | null>, onClose: () => void) {
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => panelRef.current?.querySelector<HTMLElement>("button, input")?.focus());
+    const escape = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault(); event.stopPropagation();
+      onClose();
+      anchorRef.current?.focus();
+    };
+    document.addEventListener("keydown", escape, true);
+    return () => { cancelAnimationFrame(frame); document.removeEventListener("keydown", escape, true); };
+  }, [anchorRef, onClose, panelRef]);
+}
+
+function movePopupFocus(event: KeyboardEvent<HTMLElement>, panel: HTMLElement | null) {
+  event.stopPropagation();
+  if (!panel || (event.key !== "ArrowDown" && event.key !== "ArrowUp")) return;
+  const items = [...panel.querySelectorAll<HTMLElement>("button, input")];
+  const index = items.indexOf(document.activeElement as HTMLElement);
+  const next = items[(index + (event.key === "ArrowDown" ? 1 : items.length - 1)) % items.length];
+  if (next) { event.preventDefault(); next.focus(); }
 }
 
 function monthDays(month: Date): Array<Date | null> {
@@ -154,6 +186,7 @@ function DatePopout({ definition, value, anchorRef, onCommit, onClose }: { defin
   const panelRef = useRef<HTMLDivElement>(null);
   const position = usePopoverPosition(true, anchorRef);
   const days = useMemo(() => monthDays(month), [month]);
+  usePopupKeyboard(panelRef, anchorRef, onClose);
   useEffect(() => {
     const close = (event: PointerEvent) => {
       const target = event.target as Node;
@@ -164,7 +197,7 @@ function DatePopout({ definition, value, anchorRef, onCommit, onClose }: { defin
   }, [anchorRef, onClose]);
   const commit = (nextStart: string, nextEnd: string) => onCommit(nextStart ? { type: "date", value: { start: nextStart, end: nextEnd || null, timezone: null } } : null);
   const width = position ? Math.max(position.width, 286) : 286;
-  return createPortal(<div ref={panelRef} className={`${styles.cellPopout} ${styles.datePopout}`} style={position ? { top: position.top, left: Math.min(position.left, window.innerWidth - width - 10), width } as CSSProperties : { visibility: "hidden" }} role="dialog" aria-label={`${definition.name} 날짜 선택`}>
+  return createPortal(<div ref={panelRef} onKeyDown={(event) => event.stopPropagation()} className={`${styles.cellPopout} ${styles.datePopout}`} style={position ? { top: position.top, left: Math.min(position.left, window.innerWidth - width - 10), width } as CSSProperties : { visibility: "hidden" }} role="dialog" aria-label={`${definition.name} 날짜 선택`}>
     <div className={styles.dateFieldsInline}><button type="button" aria-pressed={!selectingEnd} onClick={() => setSelectingEnd(false)}><small>시작</small><span>{start || "날짜 선택"}</span></button><button type="button" aria-pressed={selectingEnd} onClick={() => setSelectingEnd(true)}><small>종료</small><span>{end || "선택 안 함"}</span></button></div>
     <div className={styles.calendarHead}><button type="button" aria-label="이전 달" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}><Icon name="caret-left" size={14} /></button><strong>{month.getFullYear()}년 {month.getMonth() + 1}월</strong><button type="button" aria-label="다음 달" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}><Icon name="caret-right" size={14} /></button></div>
     <div className={styles.calendarGrid}>{["일", "월", "화", "수", "목", "금", "토"].map((day) => <small key={day}>{day}</small>)}{days.map((day, index) => day ? <button key={day.toISOString()} type="button" data-selected={isoDate(day) === start || isoDate(day) === end ? "true" : "false"} onClick={() => { const next = isoDate(day); if (selectingEnd) { const safeEnd = start && next < start ? start : next; setEnd(safeEnd); commit(start, safeEnd); } else { setStart(next); const safeEnd = end && end < next ? "" : end; setEnd(safeEnd); commit(next, safeEnd); } }}>{day.getDate()}</button> : <span key={`empty-${index}`} />)}</div>
@@ -199,13 +232,18 @@ export function CareerTableCell({ record, definition, active, editing, issue, ce
   const popup = editing && (definition.type === "select" || definition.type === "multi_select" || definition.type === "date");
   useEffect(() => { if (!editing) setDraft(draftValue(record, definition)); }, [definition, editing, record]);
   useEffect(() => { if (editing) committedRef.current = false; if (editing && inlineType(definition)) queueMicrotask(() => { inputRef.current?.focus(); inputRef.current?.select(); }); }, [definition, editing]);
-  function finish() {
-    if (committedRef.current) return;
-    try { committedRef.current = true; onCommit(toValue(definition, draft)); setLocalIssue(""); }
-    catch (error) { setLocalIssue(error instanceof Error ? error.message : "값을 확인해 주세요."); }
+  /** 값을 바꿀 수 있으면 저장하고 true입니다. 바꿀 수 없는 값이면 이유를 보이고 편집을 이어 갑니다. */
+  function finish(): boolean {
+    if (committedRef.current) return true;
+    let value: TableCellValue;
+    try { value = toValue(definition, draft); }
+    catch (error) { setLocalIssue(error instanceof Error ? error.message : "값을 확인해 주세요."); return false; }
+    committedRef.current = true; onCommit(value); setLocalIssue("");
+    return true;
   }
   function keyDown(event: KeyboardEvent<HTMLElement>) {
-    if (editing) return;
+    // 편집 중인 키는 셀 밖(행 · 표)으로 보내지 않습니다. 행이 Enter · 방향키로 기록을 열거나 옮겨 갑니다.
+    if (editing) { event.stopPropagation(); return; }
     if ((event.key === "Enter" || event.key === "F2") && canEdit) { event.preventDefault(); event.stopPropagation(); onEdit(); return; }
     const direction = event.key === "ArrowLeft" ? "left" : event.key === "ArrowRight" ? "right" : event.key === "ArrowUp" ? "up" : event.key === "ArrowDown" ? "down" : event.key === "Tab" ? (event.shiftKey ? "previous" : "next") : null;
     if (direction) { event.preventDefault(); event.stopPropagation(); onMove(direction); }
@@ -214,10 +252,11 @@ export function CareerTableCell({ record, definition, active, editing, issue, ce
     {editing && inlineType(definition) ? <input ref={inputRef} className={styles.cellInput} aria-label={`${definition.name} 셀 편집`} type="text" inputMode={definition.type === "number" ? "decimal" : undefined} value={draft} onChange={(event) => { setDraft(event.target.value); setLocalIssue(""); }} onBlur={finish} onKeyDown={(event) => {
       event.stopPropagation();
       if (event.key === "Escape") { event.preventDefault(); onCancel(); return; }
-      if (event.key === "Enter" || event.key === "Tab") { event.preventDefault(); finish(); if (event.key === "Tab") onMove(event.shiftKey ? "previous" : "next"); }
+      if (event.key === "Enter" || event.key === "Tab") { event.preventDefault(); if (finish() && event.key === "Tab") onMove(event.shiftKey ? "previous" : "next"); }
     }} /> : <CellDisplay record={record} definition={definition} />}
     {active && definition.key === "title" && !editing ? <button type="button" className={styles.cellOpenButton} onClick={(event) => { event.stopPropagation(); onOpenRecord(); }}><Icon name="arrow-square-out" size={13} />열기</button> : null}
     {popup && (definition.type === "select" || definition.type === "multi_select") ? <OptionPopout definition={definition} value={raw} anchorRef={anchorRef} onCommit={onCommit} onCreateOption={onCreateOption} onClose={onCancel} /> : null}
+    {issue || localIssue ? <span className="ex-sr-only" role="alert">{issue || localIssue}</span> : null}
     {popup && definition.type === "date" ? <DatePopout definition={definition} value={raw} anchorRef={anchorRef} onCommit={onCommit} onClose={onCancel} /> : null}
   </span>;
 }

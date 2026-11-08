@@ -5,5 +5,5 @@ export type JobBoardApi = Pick<LegacyJobBoardService, keyof LegacyJobBoardServic
 import type { JobMarketService as LegacyJobMarketService } from "./legacy-mysql-service.js";
 export { JobMarketService } from "./service.js";
 export { MongoJobMarketService } from "./service.js";
-export { calculateExplainableMatch } from "./match-score.js";
+export { calculateExplainableMatch, keywordMet } from "./match-score.js";
 export type JobMarketApi = Pick<LegacyJobMarketService, keyof LegacyJobMarketService>;

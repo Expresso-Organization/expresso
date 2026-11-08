@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { API_PREFIX, HomeReadModelSchema, type NotificationKind, type UnifiedSearchQuery } from "@expresso/contracts";
+import { companyLogoUrl, HomeReadModelSchema, type NotificationKind, type UnifiedSearchQuery } from "@expresso/contracts";
 import { mongoCollections, type NotificationDoc } from "@expresso/database";
 
 import type { MongoContext } from "../../platform/mongodb.js";
@@ -41,7 +41,7 @@ export class EngagementService {
   }
   async home(userId: string) {
     type HomeRow =
-      | { kind: "brew"; id: string; status: string; updatedAt: Date }
+      | { kind: "brew"; id: string; status: string; updatedAt: Date; freeTitle?: string | null; postingTitle?: string | null; companyId?: string | null; companyName?: string | null; logoChecksum?: string | null }
       | { kind: "portfolio"; id: string; title: string; status: string }
       | { kind: "job"; id: string; title: string; company: string; score: unknown; companyId: string; logoChecksum?: string | null }
       | { kind: "metric"; key: string; value: unknown };
@@ -52,7 +52,15 @@ export class EngagementService {
       { $match: { userId, status: { $ne: "done" } } },
       { $sort: { updatedAt: -1, _id: -1 } },
       { $limit: 5 },
-      { $project: { _id: 0, kind: { $literal: "brew" }, id: "$_id", status: 1, updatedAt: 1 } },
+      // 홈 격자가 어느 공고의 제작인지 보여 준다. 공고 없이 시작한 제작은 세 단계가 모두 비고 이름만 남는다.
+      { $lookup: { from: db.jobAnalyses.collectionName, localField: "jobAnalysisId", foreignField: "_id", as: "analysis" } },
+      { $lookup: { from: db.jobPostings.collectionName, localField: "analysis.jobPostingId", foreignField: "_id", as: "posting" } },
+      { $lookup: { from: db.companies.collectionName, localField: "posting.companyId", foreignField: "_id", as: "company" } },
+      { $project: {
+        _id: 0, kind: { $literal: "brew" }, id: "$_id", status: 1, updatedAt: 1, freeTitle: 1,
+        postingTitle: { $first: "$posting.title" }, companyId: { $first: "$company._id" },
+        companyName: { $first: "$company.name" }, logoChecksum: { $first: "$company.logoChecksum" },
+      } },
       { $unionWith: { coll: db.portfolios.collectionName, pipeline: [
         { $match: { userId } }, { $sort: { title: 1, _id: 1 } }, { $limit: 10 },
         { $project: { _id: 0, kind: { $literal: "portfolio" }, id: "$_id", title: 1, status: 1 } },
@@ -76,11 +84,15 @@ export class EngagementService {
     const metrics = rows.filter((row): row is Extract<HomeRow, { kind: "metric" }> => row.kind === "metric")
       .sort((left, right) => left.key.localeCompare(right.key));
     return HomeReadModelSchema.parse({
-      activeBrews: brews.map((row) => ({ id: row.id, status: row.status, updatedAt: row.updatedAt.toISOString() })),
+      activeBrews: brews.map((row) => ({
+        id: row.id, status: row.status, updatedAt: row.updatedAt.toISOString(),
+        title: row.freeTitle?.trim() || row.postingTitle || null,
+        company: row.companyId && row.companyName ? { name: row.companyName, logoUrl: companyLogoUrl(row.companyId, row.logoChecksum) } : null,
+      })),
       portfolios: portfolios.map((row) => ({ id: row.id, title: row.title, status: row.status })),
       recommendedJobs: jobs.map((row) => ({
         id: row.id, title: row.title, company: row.company, score: Number(String(row.score)),
-        companyLogoUrl: row.logoChecksum ? `${API_PREFIX}/companies/${row.companyId}/logo?v=${row.logoChecksum.slice(0, 16)}` : null,
+        companyLogoUrl: companyLogoUrl(row.companyId, row.logoChecksum),
       })),
       keyMetrics: metrics.map((row) => ({ key: row.key, value: Number(String(row.value)) })),
       empty: { brews: !brews.length, portfolios: !portfolios.length, recommendations: !jobs.length, metrics: !metrics.length },

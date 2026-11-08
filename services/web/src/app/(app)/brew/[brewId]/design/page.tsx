@@ -7,6 +7,7 @@ import { CAREER_CATEGORY_ICONS } from "@/lib/career-category-icons";
 import { requireSession } from "@/lib/require-session";
 
 import { BrewFrame } from "../BrewFrame";
+import { brewTitle } from "../brew-title";
 import { DesignCatalog, type DesignCatalogEntry } from "./DesignCatalog";
 import { Generating } from "./Generating";
 import type { WaitReading } from "./GenerationWait";
@@ -38,7 +39,7 @@ export default async function DesignPage({
     throw error;
   }
 
-  const title = brew.freeTitle ?? brew.posting?.title ?? null;
+  const title = brewTitle(brew);
   const generation = brew.latestGeneration;
   const running = generation?.status === "queued" || generation?.status === "running";
   const again = query.again === "1";

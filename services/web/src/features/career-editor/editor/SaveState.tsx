@@ -9,6 +9,7 @@ const LABELS: Record<CareerEditorSnapshot["status"], string> = {
   saved: "저장됨",
   offline: "오프라인",
   conflict: "충돌 확인 필요",
+  error: "저장할 수 없음 · 새로고침 필요",
   unavailable: "",
 };
 

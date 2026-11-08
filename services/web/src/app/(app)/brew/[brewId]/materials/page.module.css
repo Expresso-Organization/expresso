@@ -163,7 +163,7 @@
 
 .row {
   display: grid;
-  grid-template-columns: minmax(280px, 1fr) 92px 132px 74px 92px;
+  grid-template-columns: minmax(280px, 1fr) 92px 152px 74px 92px;
   border-bottom: 1px solid var(--ex-border-hair);
   align-items: center;
 }

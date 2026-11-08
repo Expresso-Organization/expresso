@@ -7,7 +7,7 @@ import type { MongoContext } from "../../platform/mongodb.js";
 import type { JobBoardApi } from "./index.js";
 import { JobMarketError } from "./errors.js";
 import { countryOf } from "./ingest/classify.js";
-import { jobBoardFilter, jobBoardJoins, nearbyPlaceOf, nearbyRank, nearbyStages, type FilterAxis } from "./mongo-queries.js";
+import { UNPLACED_COUNTRY, jobBoardFilter, jobBoardJoins, nearbyPlaceOf, nearbyRank, nearbyStages, type FilterAxis } from "./mongo-queries.js";
 
 type BoardRow = JobPostingDoc & {
   company: CompanyDoc; match?: MatchScoreDoc; interest?: InterestDoc;
@@ -20,6 +20,13 @@ const workTypes = ["재택", "하이브리드", "출근"];
 const ratio = <T extends { count: number }>(rows: T[], denominator = rows.reduce((sum, row) => sum + row.count, 0)) => rows.map((row) => ({ ...row, ratio: denominator ? row.count / denominator : 0 }));
 const overlapping = (rows: Facet[]) => ratio(rows.filter((row) => row.count > 0), Math.max(0, ...rows.map((row) => row.count)));
 
+/** 일부 채용 보드는 근무지 칸에 회사 이름을 적는다. 장소가 아니므로 비운다. */
+function placeOf(location: string | null | undefined, companyName: string): string | null {
+  if (!location) return null;
+  const same = (value: string) => value.normalize("NFKC").replace(/\s+/g, "").toLocaleLowerCase("en-US");
+  return same(location) === same(companyName) ? null : location;
+}
+
 function summary(row: BoardRow, brew: JobBrewState | undefined, at: Date) {
   const requirements = JobRequirementsSchema.parse(row.requirements);
   const axes = row.match ? JobPostingMatchSchema.shape.axes.parse(row.match.axes) : null;
@@ -28,7 +35,7 @@ function summary(row: BoardRow, brew: JobBrewState | undefined, at: Date) {
   return {
     id: row._id, title: row.title,
     company: { id: company._id, name: company.name, domain: company.domain ?? null, industry: company.industry ?? null, toneSummary: company.toneSummary ?? null, initial: company.initial ?? null, avatarBackground: company.avatarBackground ?? null, avatarColor: company.avatarColor ?? null, logoUrl: company.logoChecksum ? `${API_PREFIX}/companies/${company._id}/logo?v=${company.logoChecksum.slice(0, 16)}` : null },
-    source: row.source, sourceUrl: row.sourceUrl ?? null, sourceBoard: row.sourceBoard ?? null, team: row.team ?? null, location: row.location ?? null, workType: row.workType ?? null, experienceLabel: row.experienceNote ?? row.experienceLabel ?? null, family: row.jobFamily ?? null,
+    source: row.source, sourceUrl: row.sourceUrl ?? null, sourceBoard: row.sourceBoard ?? null, team: row.team ?? null, location: placeOf(row.location, company.name), workType: row.workType ?? null, experienceLabel: row.experienceNote ?? row.experienceLabel ?? null, family: row.jobFamily ?? null,
     technologies: requirements.technologies.map((name) => ({ name, matched: match ? match.axes.technology.matched.includes(name) : null })),
     expiresAt: row.expiresAt?.toISOString() ?? null, daysLeft: row.expiresAt ? Math.floor(row.expiresAt.getTime() / 86_400_000) - Math.floor(at.getTime() / 86_400_000) : null, deadlineNote: row.deadlineNote ?? null, match,
     interest: row.interest ? { id: row.interest._id, stage: row.interest.stage, deadlineAt: row.interest.deadlineAt?.toISOString() ?? null, memo: row.interest.memo ?? null, updatedAt: row.interest.updatedAt.toISOString() } : null,
@@ -67,17 +74,17 @@ export class JobBoardService implements JobBoardApi {
     const sortKey = query.sort === "match" ? { $ifNull: ["$match.total", -1] } : query.sort === "deadline" ? { $ifNull: ["$expiresAt", new Date("9999-12-31T00:00:00Z")] } : "$createdAt";
     const place = nearbyPlaceOf(query);
     const order: Document[] = place
-      ? [{ $set: { sortKey, nearbyRank: nearbyRank(place) } }, { $sort: { nearbyRank: 1, nearbyDistanceKm: 1, sortKey: direction, _id: direction } }]
-      : [{ $set: { sortKey } }, { $sort: { sortKey: direction, _id: direction } }];
+      ? [{ $set: { sortKey, nearbyRank: nearbyRank(place) } }, { $sort: { nearbyRank: 1, nearbyDistanceKm: 1, sortKey: direction, createdAt: direction, _id: direction } }]
+      : [{ $set: { sortKey } }, { $sort: { sortKey: direction, createdAt: direction, _id: direction } }];
     const [result] = await mongoCollections(this.context.db).jobPostings.aggregate<{
       data: BoardRow[]; total: { count: number }[]; categories: { total: number; remote: number; urgent: number }[];
-      families: Facet[]; regions: Facet[]; companies: { key: string; label: string; count: number }[];
+      families: Facet[]; regions: Facet[]; unplaced: { count: number }[]; companies: { key: string; label: string; count: number }[];
       levels: Record<string, number>[]; workTypes: Record<string, number>[]; common: Facet[]; missing: Facet[];
     }>([...jobBoardJoins(userId), ...nearbyStages(place), { $facet: {
       data: [filter(), ...order, { $skip: (query.page - 1) * query.limit }, { $limit: query.limit }],
       total: [filter(), { $count: "count" }],
       categories: [filter("category"), { $group: { _id: null, total: { $sum: 1 }, remote: countIf(remote), urgent: countIf(urgent) } }],
-      families: [filter("category"), ...group("jobFamily")], regions: [filter("country"), ...group("locationRegion")],
+      families: [filter("category"), ...group("jobFamily")], regions: [filter("country"), ...group("locationRegion")], unplaced: [filter("country"), { $match: { locationRegion: null } }, { $count: "count" }],
       companies: [filter("company"), { $group: { _id: "$companyId", label: { $first: "$company.name" }, count: { $sum: 1 } } }, { $sort: { count: -1, label: 1, _id: 1 } }, { $project: { _id: 0, key: "$_id", label: 1, count: 1 } }],
       levels: [filter("experience"), { $group: { _id: null, ...Object.fromEntries(experienceLevels.map((years) => [`y${years}`, countIf({ $lte: [{ $ifNull: ["$experienceMinYears", 0] }, years] })])) } }],
       workTypes: [filter("workType"), { $group: { _id: null, ...Object.fromEntries(workTypes.map((label, index) => [`w${index}`, countIf({ $regexMatch: { input: { $ifNull: ["$workType", ""] }, regex: label } })])) } }],
@@ -87,6 +94,8 @@ export class JobBoardService implements JobBoardApi {
     const total = result.total[0]?.count ?? 0;
     const byCountry = new Map<string, number>();
     for (const region of result.regions) { const label = countryOf(region.label); byCountry.set(label, (byCountry.get(label) ?? 0) + region.count); }
+    const unplaced = result.unplaced[0]?.count ?? 0;
+    if (unplaced > 0) byCountry.set(UNPLACED_COUNTRY, (byCountry.get(UNPLACED_COUNTRY) ?? 0) + unplaced);
     const countries = [...byCountry].map(([label, count]) => ({ label, count })).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
     const brews = await this.#brews(userId, result.data.map((row) => row._id));
     const chips = result.categories[0];
@@ -126,7 +135,7 @@ export class JobBoardService implements JobBoardApi {
       descriptionRaw: posting.descriptionRaw, employmentType: posting.employmentType ?? null, salaryNote: posting.salaryNote ?? null, duties: posting.duties, preferred: posting.preferred.map((label) => ({ label, coverage: typeof label === "string" ? niceCoverage.get(label) ?? null : null })), hiringProcess: posting.hiringProcess.map((label) => ({ label })), processNote: posting.processNote ?? null, notice: posting.notice ?? null,
       requirements: JobRequirementsSchema.parse(posting.requirements),
       criteria: requirements.map((row) => ({ id: row._id, orderNo: row.orderNo, label: row.label, kind: row.kind, coverage: row.coverage?.coverage ?? null, coveredBy: (Array.isArray(row.coverage?.coveredBy) ? row.coverage.coveredBy : []).flatMap((id) => typeof id === "string" && titles.get(id) ? [{ id, title: titles.get(id)! }] : []), sourceSpan: row.sourceSpan })),
-      analysis: analysis ? { id: analysis._id, status: analysis.status, progressStage: analysis.progressStage, analyzedAt: analysis.analyzedAt?.toISOString() ?? null } : null, rank, topRecords,
+      analysis: analysis ? { id: analysis._id, status: analysis.status, progressStage: analysis.progressStage, failure: analysis.failureCode ? { code: analysis.failureCode, retryable: analysis.failureRetryable ?? false } : null, analyzedAt: analysis.analyzedAt?.toISOString() ?? null } : null, rank, topRecords,
     });
   }
 

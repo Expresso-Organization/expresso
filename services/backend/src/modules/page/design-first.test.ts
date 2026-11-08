@@ -6,7 +6,7 @@ import { ScriptedAiClient } from "../../platform/ai/scripted-client.js";
 import { StructuredPageGenerator } from "./structured-generator.js";
 import type { PageGenerationContext } from "./generator.js";
 import { findPortfolioDesign } from "../design-systems/index.js";
-import { METRIC_VALUE_PATTERN, fillViolations, fitToContent } from "./design-first.js";
+import { METRIC_VALUE_PATTERN, fillViolations, fitToContent, metricBeforeGrounded, metricUnitsAgree, metricValueAllowed } from "./design-first.js";
 
 /** 계약으로 응답을 고르는 가짜 공급자입니다. 실제 어댑터와 같은 검사 · 고치기 순서를 탑니다. */
 class RoutedAi extends ScriptedAiClient {
@@ -142,7 +142,7 @@ describe("설계가 먼저 오는 생성", () => {
     // 출처에 없는 숫자(99%) 때문에 수치 목록 전체를 고쳐 받고, 그 안의 값 모양 위반 이유도 함께 갑니다.
     expect(fixRequest.paths).toContain("/sections/lcp/metrics");
     expect(fixRequest.prompt).toContain("출처에 없는 숫자");
-    expect(fixRequest.prompt).toContain("/0/value: 수치 값은 숫자와 단위만");
+    expect(fixRequest.prompt).toContain("/0/value: 수치 값은 숫자와 단위");
     expect(fixRequest.prompt).not.toContain("1.9초로 줄였다");
     expect(result.manifest.structured!.content.sections[0]!.metrics?.[0]?.value).toBe("1.9초");
   });
@@ -274,6 +274,33 @@ describe("수치 값 모양", () => {
   it("숫자와 단위만 받고 설명이 붙은 값은 거절한다", () => {
     for (const value of ["1.9초", "420KB", "1,200만 건", "-40%", "10만 행", "~3배"]) expect(METRIC_VALUE_PATTERN.test(value), value).toBe(true);
     for (const value of ["10만 행 끊김 없이 스크롤", "약 세 배", "3.8초 → 1.9초", "절반 이하"]) expect(METRIC_VALUE_PATTERN.test(value), value).toBe(false);
+  });
+});
+
+describe("수치 값의 근거", () => {
+  it("숫자가 없어도 출처에 그대로 적힌 낱말은 수치 값이다", () => {
+    const source = "실험 결과 리포트 작성 3일 → 반나절";
+    expect(metricValueAllowed("반나절", source)).toBe(true);
+    expect(metricValueAllowed("한나절", source)).toBe(false);
+    expect(metricValueAllowed("리포트 작성", source)).toBe(false);
+    expect(metricValueAllowed("1.9초", source)).toBe(true);
+  });
+
+  it("이전 값은 출처에 그대로 적힌 값만 인정한다", () => {
+    const source = "주간 리포트 6시간 → 30분, 판매자 2,300곳, 대조군 대비 +3.1%p";
+    expect(metricBeforeGrounded({ value: "30분", before: "6시간" }, source)).toBe(true);
+    expect(metricBeforeGrounded({ value: "30분", before: "6 시간" }, source)).toBe(true);
+    expect(metricBeforeGrounded({ value: "+3.1%p", before: "0%p" }, source)).toBe(false);
+    expect(metricBeforeGrounded({ value: "2,300곳", before: "2,300곳" }, source)).toBe(false);
+    expect(metricBeforeGrounded({ value: "30분" }, source)).toBe(true);
+  });
+
+  it("이전 값과 값이 시간과 건수로 갈리면 다른 수치를 묶은 것이다", () => {
+    expect(metricUnitsAgree({ value: "15건", before: "3일" })).toBe(false);
+    expect(metricUnitsAgree({ value: "반나절", before: "3일" })).toBe(true);
+    expect(metricUnitsAgree({ value: "30분", before: "6시간" })).toBe(true);
+    expect(metricUnitsAgree({ value: "15건", before: "6건" })).toBe(true);
+    expect(metricUnitsAgree({ value: "15건" })).toBe(true);
   });
 });
 

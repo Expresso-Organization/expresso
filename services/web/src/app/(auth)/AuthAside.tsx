@@ -34,21 +34,6 @@ export function AuthAside({
         <div className={styles.headline}>{headline}</div>
         <div className={styles.lede}>{lede}</div>
       </div>
-
-      <div className={styles.stats}>
-        <div>
-          <div className={styles.statValue}>12,400</div>
-          <div className={styles.statLabel}>만들어진 포트폴리오</div>
-        </div>
-        <div>
-          <div className={styles.statValue}>4.2일</div>
-          <div className={styles.statLabel}>평균 완성까지</div>
-        </div>
-        <div>
-          <div className={styles.statValue}>31%</div>
-          <div className={styles.statLabel}>서류 통과율 상승</div>
-        </div>
-      </div>
     </div>
   );
 }

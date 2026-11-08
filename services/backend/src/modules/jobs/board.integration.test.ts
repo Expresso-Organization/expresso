@@ -339,6 +339,54 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
     });
   });
 
+  it("조건이 없으면 마감 공고를 빼고, 관심 공고와 전체 범위 조건에서는 남긴다", async () => {
+    const db = mongoCollections(fixture!.resource.db);
+    const expiredId = randomUUID();
+    const expired = await db.jobPostings.findOne({ _id: alwaysId });
+    await db.jobPostings.insertOne({ ...expired!, _id: expiredId, title: "마감된 공고", expiresAt: new Date(Date.now() - 86_400_000), dedupeHash: `board-expired-${marker}` });
+    await db.interests.insertOne({ _id: randomUUID(), userId: otherUserId, jobPostingId: expiredId, stage: "saved", createdAt: new Date(), updatedAt: new Date() } as never);
+    try {
+      const list = async (extra: string, headers: Record<string, string>) => JobPostingListResponseSchema.parse((await app.inject({ method: "GET", url: `/v1/jobs/postings?${scoped(extra)}`, headers })).json());
+      const other = { authorization: `Bearer ${otherToken}` };
+      const basic = await list("", other);
+      expect(basic.data.map((p) => p.id)).not.toContain(expiredId);
+      expect(basic.summary.total).toBe(3);
+      expect(basic.summary.categories.find((c) => c.key === "all")?.count).toBe(3);
+      expect((await list("&interested=true", other)).data.map((p) => p.id)).toEqual([expiredId]);
+    } finally {
+      await db.interests.deleteMany({ jobPostingId: expiredId });
+      await db.jobPostings.deleteOne({ _id: expiredId });
+    }
+  });
+
+  it("지역을 못 읽은 공고는 한국 범위에 남고, 회사 이름이 적힌 근무지는 비운다", async () => {
+    const db = mongoCollections(fixture!.resource.db);
+    const unplacedId = randomUUID();
+    const base = await db.jobPostings.findOne({ _id: alwaysId });
+    const company = await db.companies.findOne({ _id: base!.companyId });
+    await db.jobPostings.insertOne({ ...base!, _id: unplacedId, title: "지역 없는 공고", location: company!.name, locationRegion: null, dedupeHash: `board-unplaced-${marker}` });
+    try {
+      const list = async (extra: string) => JobPostingListResponseSchema.parse((await app.inject({ method: "GET", url: `/v1/jobs/postings?${scoped(extra)}`, headers: auth() })).json());
+      const korea = await list("&country=%ED%95%9C%EA%B5%AD");
+      const found = korea.data.find((posting) => posting.id === unplacedId);
+      expect(found?.location).toBeNull();
+      expect((await list("&country=%EB%AF%B8%EA%B5%AD")).data.map((posting) => posting.id)).not.toContain(unplacedId);
+      const counted = (await list("")).summary.countries.find((country) => country.label === "한국");
+      expect(counted?.count).toBeGreaterThanOrEqual(1);
+    } finally {
+      await db.jobPostings.deleteOne({ _id: unplacedId });
+    }
+  });
+
+  it("일치도가 없는 공고는 최근 수집한 순서로 나온다", async () => {
+    const response = await app.inject({ method: "GET", url: `/v1/jobs/postings?${scoped("&sort=match")}`, headers: { authorization: `Bearer ${otherToken}` } });
+    const rows = JobPostingListResponseSchema.parse(response.json()).data;
+    const created = await mongoCollections(fixture!.resource.db).jobPostings.find({ _id: { $in: rows.map((p) => p.id) } }).toArray();
+    const at = new Map(created.map((row) => [row._id, row.createdAt.getTime()]));
+    const times = rows.map((p) => at.get(p.id)!);
+    expect(times).toEqual([...times].sort((a, b) => b - a));
+  });
+
   it("마감 임박 · 관심 · 기술 필터가 각각 걸린다", async () => {
     const [urgent, interested, technology] = await Promise.all([
       app.inject({ method: "GET", url: `/v1/jobs/postings?${scoped("&deadline=urgent")}`, headers: auth() }),

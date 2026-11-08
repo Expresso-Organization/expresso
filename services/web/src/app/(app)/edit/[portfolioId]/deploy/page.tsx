@@ -54,9 +54,10 @@ export default async function DeployPage({
     {
       ok: generatedPage !== null,
       title: generatedPage
-        ? `지면 판 ${generatedPage.revision + 1}이 나갑니다`
+        ? `지면 ${generatedPage.revision + 1}판이 나갑니다`
         : "배포할 지면 판이 없습니다",
-      note: generatedPage?.rationale ?? "편집 화면에서 먼저 페이지를 만들어 주세요.",
+      // 설계 근거(rationale)는 모델이 자기 설계를 적은 글이라 부품 이름이 그대로 들어 있다. 여기서 보이지 않는다.
+      note: generatedPage ? "편집 화면에서 본 마지막 판입니다" : "편집 화면에서 먼저 페이지를 만들어 주세요.",
       ...(generatedPage ? {} : { fix: editor }),
     },
     {

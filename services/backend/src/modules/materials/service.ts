@@ -5,7 +5,7 @@ import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction, type MongoTransaction } from "../../platform/mongo-transaction.js";
 import { brewJobStatus } from "../brew-jobs/index.js";
 import { requireActiveUser } from "../identity/index.js";
-import { assertActiveRecordsForWrite, careerRecordTextReader } from "../career/index.js";
+import { assertActiveRecordsForWrite, careerRecordTextReader, recordPeriod } from "../career/index.js";
 import { MongoEntitlementService } from "../entitlements/index.js";
 import type { MaterialsApi } from "./index.js";
 import { MaterialsError } from "./public.js";
@@ -74,7 +74,7 @@ export class MaterialsService implements MaterialsApi {
       { $lookup: { from: "career_categories", localField: "record.categoryId", foreignField: "_id", pipeline: [{ $match: { userId } }], as: "category" } }, { $unwind: "$category" },
     ]).toArray();
     return BrewMaterialsSchema.parse({ brewId, jobAnalysisId: brew.jobAnalysisId, updatedAt: brew.updatedAt.toISOString(), selectionLimit: 10, mode: brew.mode, lengthPreset: brew.lengthPreset,
-      materials: rows.map((row) => ({ recordId: row.recordId, title: row.record.title, status: row.record.status, score: row.score, rank: row.rank, selected: row.isSelected, selectedBy: row.selectedBy, excludedReason: row.excludedReason ?? null, categoryName: row.category.name, categoryKey: row.category.key, categoryIcon: row.category.icon, periodFrom: row.record.periodStart ?? null, periodTo: row.record.periodEnd ?? null, origin: row.record.origin, reason: row.reasonText })),
+      materials: rows.map((row) => ({ recordId: row.recordId, title: row.record.title, status: row.record.status, score: row.score, rank: row.rank, selected: row.isSelected, selectedBy: row.selectedBy, excludedReason: row.excludedReason ?? null, categoryName: row.category.name, categoryKey: row.category.key, categoryIcon: row.category.icon, periodFrom: recordPeriod(row.record)?.start ?? null, periodTo: recordPeriod(row.record)?.end ?? null, origin: row.record.origin, reason: row.reasonText })),
     });
   }
 
@@ -83,7 +83,8 @@ export class MaterialsService implements MaterialsApi {
     await inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId);
       if (input.mode === "collab" && !(await new MongoEntitlementService(tx).check(userId, "brew.cowork")).allowed) throw new MaterialsError(403, "cowork mode requires an upgraded plan");
-      const result = await mongoCollections(tx.db).brews.updateOne({ _id: brewId, userId }, { $set: { mode: input.mode, updatedAt: new Date() }, $inc: { referenceVersion: 1 } }, { session: tx.session });
+      // 보낸 칸만 바꾼다 — 이름만 고쳤는데 모드가 기본값으로 되돌아가면 안 된다.
+      const result = await mongoCollections(tx.db).brews.updateOne({ _id: brewId, userId }, { $set: { ...(input.mode !== undefined ? { mode: input.mode } : {}), ...(input.title !== undefined ? { title: input.title } : {}), updatedAt: new Date() }, $inc: { referenceVersion: 1 } }, { session: tx.session });
       if (!result.matchedCount) throw new MaterialsError(404, "brew not found");
     });
     return this.getMaterials(userId, brewId);
@@ -118,7 +119,7 @@ export class MaterialsService implements MaterialsApi {
     ]);
     const posting = analysis?.jobPostingId ? await db.jobPostings.findOne({ _id: analysis.jobPostingId }) : null;
     const company = posting ? await db.companies.findOne({ _id: posting.companyId }) : null;
-    return BrewStateSchema.parse({ brewId, jobAnalysisId: brew.jobAnalysisId, status: brew.status, lengthPreset: brew.lengthPreset, freeTitle: brew.freeTitle ?? null, freeBrief: brew.freeBrief ?? null, posting: posting && company ? { title: posting.title, companyName: company.name } : null,
+    return BrewStateSchema.parse({ brewId, jobAnalysisId: brew.jobAnalysisId, status: brew.status, lengthPreset: brew.lengthPreset, title: brew.title ?? null, freeTitle: brew.freeTitle ?? null, freeBrief: brew.freeBrief ?? null, posting: posting && company ? { title: posting.title, companyName: company.name } : null,
       materials: { selected: sources.filter((source) => source.isSelected).length, total: sources.length }, interviewSessionId: session?._id ?? null, recipeId: recipe?._id ?? null, portfolioId: portfolio?._id ?? null,
       latestJob: job ? brewJobStatus(job) : null,
       designSelection: brew.designSystemRevisionId && brew.referenceLockSnapshot && brew.designSelectedAt

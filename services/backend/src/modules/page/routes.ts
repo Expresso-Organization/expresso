@@ -176,7 +176,8 @@ async function lift<T>(run: () => Promise<T>): Promise<T> {
   try {
     return await run();
   } catch (error) {
-    if (error instanceof PageServiceError) throw new HttpStatusError(error.statusCode, error.message);
+    // 지면 규칙 위반 · 판 충돌의 이유는 화면이 그대로 보여 준다. 서비스가 사용자에게 쓴 한국어 문장만 내보낸다.
+    if (error instanceof PageServiceError) throw new HttpStatusError(error.statusCode, error.message, undefined, /\p{Script=Hangul}/u.test(error.message) ? error.message : undefined);
     // 두 번 다 거절당한 것은 모델의 실패지 사용자의 실패가 아니다. 502가 맞다.
     if (error instanceof PageGenerationError) throw new HttpStatusError(502, error.message);
     throw error;

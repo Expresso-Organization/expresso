@@ -1,6 +1,8 @@
 import type { JobSourceProvider } from "@expresso/contracts";
 import TurndownService from "turndown";
 
+import { decodeHtmlEntities } from "../../../platform/html/entities.js";
+
 /**
  * 어댑터가 내놓는 공고 하나.
  *
@@ -145,7 +147,7 @@ export function htmlToMarkdown(html: string): string {
   // 적혀 있는 경우까지 풀면 그건 원문을 고치는 것이다.
   let source = html;
   for (let pass = 0; pass < 3; pass += 1) {
-    const next = decodeEntities(source);
+    const next = decodeHtmlEntities(source);
     if (next === source) break;
     source = next;
   }
@@ -154,19 +156,6 @@ export function htmlToMarkdown(html: string): string {
     .turndown(source)
     .replace(/\n{3,}/g, "\n\n")
     .trim();
-}
-
-/** 몇 겹으로 이스케이프된 마크업을 되돌린다. */
-function decodeEntities(value: string): string {
-  return value
-    .replace(/&nbsp;/g, " ")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#0?39;|&apos;/g, "'")
-    .replace(/&#(\d+);/g, (_, code: string) => String.fromCodePoint(Number(code)))
-    // `&amp;`는 마지막이다 — 먼저 풀면 `&amp;lt;`가 `<`까지 가 버린다.
-    .replace(/&amp;/g, "&");
 }
 
 /** 마크다운을 원하지 않는 자리를 위해. 기호만 걷어낸다. */

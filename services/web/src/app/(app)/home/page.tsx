@@ -4,268 +4,119 @@ import { Suspense } from "react";
 
 import { AppBody } from "@/components/shell/AppShell";
 import { Icon } from "@/components/ui/Icon";
-import { homeEngagement, recentPortfolios } from "@/lib/app-data";
-import { publicSiteHost } from "@/lib/public-site";
+import { homeEngagement, recentPortfolios, watchedJobs } from "@/lib/app-data";
 import { requireSession } from "@/lib/require-session";
 
 import { HomeHeader, HomeSearch } from "./HomeChrome";
+import { HomeInsights } from "./HomeInsights";
+import { HomeJobs } from "./HomeJobs";
+import { HomePortfolios } from "./HomePortfolios";
 import { MidRowSkeleton, PortfolioGridSkeleton } from "./HomeSkeleton";
+import { careerProfile, portfoliosWithPage, roleJobs, siteInsights } from "./home-data";
+import { exampleQueries, gridItems, roleTab } from "./home-model";
 import styles from "./page.module.css";
 
-const CATEGORY_ICONS: Record<string, string> = {
-  experience: "chat-circle-dots",
-  project: "briefcase",
-  education_history: "graduation-cap",
-  certification_award: "certificate",
-  academic_writing: "article",
-  activity_leadership: "users-three",
-  skill_tool: "code",
-};
+/** 격자 한 줄이 세 칸이다. 「새 포트폴리오」 칸을 더해 두 줄을 채운다. */
+const GRID_ITEMS = 5;
 
 /**
- * 00 홈.
+ * 00 홈 — 지금 무엇을 해야 하는지 알려주는 화면.
  *
- * 검색 바 · 예시 칩 · 내 커리어 요약은 세션만 있으면 그릴 수 있다. 추천 공고와
- * 포트폴리오 격자는 각각 API 하나를 기다린다. 그래서 기다리는 두 구획만
- * Suspense로 감싼다 — 응답 하나가 늦어도 나머지 화면은 먼저 나간다.
- *
- * 사이드바는 `layout.tsx`가 그린다. 여기서 읽는 두 응답을 사이드바도 보는데,
- * `lib/app-data`가 `cache()`로 감싸 두어 실제 호출은 각각 한 번이다.
+ * 위에서부터 검색창(기록이 없으면 첫 기록 카드), 공고 카드와 사이트 반응 차트,
+ * 내 포트폴리오 격자. 기다리는 두 구획만 Suspense로 감싸 응답 하나가 늦어도
+ * 나머지는 먼저 나간다. 두 구획이 함께 쓰는 응답은 `home-data`가 `cache()`로 묶는다.
  */
-export default async function HomePage() {
-  const session = await requireSession();
-
-  const recordTotal = session.categories.reduce(
-    (sum, category) => sum + category.recordCount,
-    0,
-  );
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const [session, params] = await Promise.all([requireSession(), searchParams]);
+  const profile = await careerProfile(session.accessToken);
+  const tab = params.tab === "interested" ? "interested" : "role";
+  const recordTotal = session.categories.reduce((sum, category) => sum + category.recordCount, 0);
 
   return (
     <>
       <HomeHeader />
       <AppBody>
         <div className={styles.content}>
-          <HomeSearch />
-
-          {/*
-            00 빈 상태 — 기록 0건이면 추천·일치도 UI를 모두 숨기고
-            대화 시작 CTA 하나만 남긴다.
-          */}
-          {recordTotal === 0 ? (
-            <div className={styles.firstRun}>
-              <p className={styles.firstRunTitle}>
-                기록 3건만 있으면 추천이 시작됩니다
-              </p>
-              <p className={styles.firstRunBody}>
-                먼저 경험 하나를 적어 두면, 공고에 맞춰 다시 골라 드립니다.
-                <br />
-                직접 쓰거나 바리스타에게 질문을 받아 채울 수 있습니다.
-              </p>
-              <Link href="/career/experience" className={styles.firstRunCta}>
-                <Icon name="coffee" weight="fill" size={15} />
-                경험 기록하기
-              </Link>
-            </div>
-          ) : null}
+          {recordTotal === 0 ? <FirstRun /> : <HomeSearch examples={exampleQueries(profile)} />}
 
           <Suspense fallback={<MidRowSkeleton />}>
-            <Recommended accessToken={session.accessToken} recordTotal={recordTotal} />
+            <MidRow accessToken={session.accessToken} role={roleTab(profile)} tab={tab} />
           </Suspense>
 
-          <Suspense fallback={<PortfolioGridSkeleton />}>
-            <Portfolios accessToken={session.accessToken} />
-          </Suspense>
-
-          {/* 내 커리어 요약 — 추천이 시작되기 전까지 홈의 실질 내용이다 */}
-          <div>
-            <div className={styles.sectionHead}>
-              <span className={styles.sectionTitle}>내 커리어</span>
-              <span className={styles.sectionNote}>기록 {recordTotal}건</span>
-              <Link href="/career/experience" className={styles.sectionLink}>
-                전체 보기
-              </Link>
-            </div>
-            <div className={styles.categoryGrid}>
-              {session.categories.map((category) => (
-                <Link
-                  key={category.id}
-                  href={`/career/${category.key}`}
-                  className={styles.categoryCard}
-                >
-                  <span className={styles.categoryCardIcon}>
-                    <Icon
-                      name={CATEGORY_ICONS[category.key] ?? "file-text"}
-                      size={15}
-                      color="var(--ex-fg-muted)"
-                    />
-                  </span>
-                  <span className={styles.categoryCardName}>{category.name}</span>
-                  <span className={styles.categoryCardCount}>
-                    {category.recordCount}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </div>
+          {recordTotal > 0 ? (
+            <Suspense fallback={<PortfolioGridSkeleton />}>
+              <Portfolios accessToken={session.accessToken} />
+            </Suspense>
+          ) : null}
         </div>
       </AppBody>
     </>
   );
 }
 
-/** 영역 2·3 — 추천 공고와 이어서 답하기. `GET /v1/home` 하나를 기다린다. */
-async function Recommended({
-  accessToken,
-  recordTotal,
-}: {
-  accessToken: string;
-  recordTotal: number;
-}) {
-  const { data: home } = await homeEngagement(accessToken);
-
+/** 기록이 없을 때 — 비교할 재료가 없으니 검색 대신 첫 기록이 먼저다. */
+function FirstRun() {
   return (
-    <>
-      {/* 영역 2·3 — 지금 나에게 맞는 공고 + 이어서 답하기 */}
-      {home.recommendedJobs.length > 0 || home.activeBrews.length > 0 ? (
-        <div className={styles.midRow}>
-          <div className={styles.card}>
-            <div className={styles.cardHead}>
-              <span className={styles.cardTitle}>지금 나에게 맞는 공고</span>
-              <div className={styles.segment}>
-                <button
-                  type="button"
-                  className={`${styles.segmentItem} ${styles.segmentItemActive}`}
-                >
-                  추천 {home.recommendedJobs.length}
-                </button>
-              </div>
-              <span className={styles.cardNote}>
-                기록 {recordTotal}건 기준
-              </span>
-              <Link href="/jobs" className={styles.cardLink}>
-                전체
-              </Link>
-            </div>
-            {home.recommendedJobs.slice(0, 3).map((job) => (
-              <div key={job.id} className={styles.jobRow}>
-                <span className={styles.jobInitial}>
-                  {job.company.slice(0, 1)}
-                </span>
-                <div className={styles.jobBody}>
-                  <div className={styles.jobHead}>
-                    <span className={styles.jobName}>
-                      {job.company} · {job.title}
-                    </span>
-                    <span
-                      className={`${styles.jobScore} ${
-                        job.score >= 85 ? styles.jobScoreHigh : ""
-                      }`}
-                    >
-                      {job.score}
-                    </span>
-                  </div>
-                </div>
-                <button type="button" className={styles.jobCta}>
-                  만들기
-                </button>
-              </div>
-            ))}
-          </div>
-
-          <div className={styles.sideColumn}>
-            {home.activeBrews.slice(0, 1).map((brew) => (
-              <div key={brew.id} className={styles.plainCard}>
-                <div className={styles.draftHead}>
-                  <span className={styles.workingChip}>
-                    <span className={`${styles.workingDot} ex-anim-pulse`} />
-                    작성 중
-                  </span>
-                </div>
-                <div className={styles.draftTitle}>진행 중인 포트폴리오</div>
-                <div className={styles.draftMeta}>
-                  마지막 작업{" "}
-                  {new Date(brew.updatedAt).toLocaleString("ko-KR", {
-                    month: "long",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}
-                </div>
-                <button type="button" className={styles.draftCta}>
-                  이어서 답하기
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
-    </>
+    <div className={styles.firstRun}>
+      <p className={styles.firstRunTitle}>첫 기록을 남기면 공고와 맞춰 볼 수 있습니다</p>
+      <div className={styles.firstRunActions}>
+        <Link href="/career/experience" className={styles.firstRunCta}>
+          <Icon name="coffee" weight="fill" size={15} />
+          경험 기록하기
+        </Link>
+        <Link href={"/brew/new" as Route} className={styles.firstRunSecondary}>
+          공고로 바로 만들기
+        </Link>
+      </div>
+    </div>
   );
 }
 
-/** 영역 4 — 내 포트폴리오. `GET /v1/portfolios` 하나를 기다린다. */
-async function Portfolios({ accessToken }: { accessToken: string }) {
-  const portfolioList = await recentPortfolios(accessToken);
-
+/** 공고 카드와, 배포한 사이트가 있으면 그 오른쪽의 차트 카드. 차트가 없으면 공고 카드가 한 줄을 다 쓴다. */
+async function MidRow({
+  accessToken,
+  role,
+  tab,
+}: {
+  accessToken: string;
+  role: ReturnType<typeof roleTab>;
+  tab: "role" | "interested";
+}) {
+  const [jobs, interested, sites] = await Promise.all([
+    roleJobs(accessToken, role.family),
+    watchedJobs(accessToken),
+    siteInsights(accessToken),
+  ]);
   return (
-    <>
-      {/* 영역 4 — 내 포트폴리오 */}
-      <div>
-        <div className={styles.sectionHead}>
-          <span className={styles.sectionTitle}>내 포트폴리오</span>
-          <span className={styles.sectionNote}>
-            {portfolioList.data.length === 0
-              ? "아직 없습니다"
-              : `배포된 사이트 ${
-                  portfolioList.data.filter((item) => item.deployment).length
-                }개`}
-          </span>
-          {portfolioList.page.hasNextPage ? (
-            <Link href="/home" className={styles.sectionLink}>
-              전체 보기
-            </Link>
-          ) : null}
+    <div className={`${styles.midRow} ${sites.length > 0 ? "" : styles.midRowSingle}`}>
+      <HomeJobs
+        tab={tab}
+        role={{ ...role, total: jobs.summary.total, rows: jobs.data }}
+        interested={{ total: interested.summary.total, rows: interested.data }}
+      />
+      {sites.length > 0 ? (
+        <div className={styles.sideColumn}>
+          <HomeInsights sites={sites} />
         </div>
-        <div className={styles.portfolioGrid}>
-          {portfolioList.data.map((portfolio) => (
-            <Link
-              key={portfolio.id}
-              href={`/edit/${portfolio.id}` as Route}
-              className={styles.categoryCard}
-              style={{ alignItems: "flex-start", flexDirection: "column", gap: "6px" }}
-            >
-              <span className={styles.categoryCardName}>{portfolio.title}</span>
-              <span className={styles.sectionNote}>
-                {portfolio.deployment
-                  ? `${publicSiteHost(portfolio.deployment.subdomain)} · v${portfolio.deployment.version}`
-                  : `초안 · 섹션 ${portfolio.sectionCount}개`}
-              </span>
-              <span className={styles.sectionNote}>
-                마지막 편집{" "}
-                {new Date(portfolio.updatedAt).toLocaleString("ko-KR", {
-                  month: "long",
-                  day: "numeric",
-                  hour: "numeric",
-                  minute: "2-digit",
-                })}
-              </span>
-            </Link>
-          ))}
-          <Link href={"/brew/new" as Route} className={styles.newPortfolio}>
-            <span className={styles.newPortfolioIcon}>
-              <Icon name="plus" size={18} color="var(--ex-accent-text)" />
-            </span>
-            <span>
-              <span className={styles.newPortfolioTitle}>새 포트폴리오</span>
-              <span className={styles.newPortfolioBody}>
-                공고를 붙여넣으면 그 기업에
-                <br />
-                맞춰 기록을 다시 고릅니다
-              </span>
-            </span>
-          </Link>
-        </div>
-      </div>
-    </>
+      ) : null}
+    </div>
   );
+}
+
+async function Portfolios({ accessToken }: { accessToken: string }) {
+  const [{ data: home }, { data: recent }, sites] = await Promise.all([
+    homeEngagement(accessToken),
+    recentPortfolios(accessToken),
+    siteInsights(accessToken),
+  ]);
+  const items = gridItems(home.activeBrews, recent, GRID_ITEMS);
+  const withPage = await portfoliosWithPage(
+    accessToken,
+    items.flatMap((item) => (item.kind === "portfolio" ? [item.portfolio.id] : [])),
+  );
+  return <HomePortfolios items={items} withPage={withPage} sites={sites} />;
 }

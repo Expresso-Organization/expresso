@@ -3,7 +3,7 @@ import { AgentChat } from "@/features/agent-chat/AgentChat";
 
 import dynamic from "next/dynamic";
 import type { CareerCategory, CareerRecordListItem } from "@expresso/contracts";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useCareerEditorSession } from "../session/useCareerEditorSession";
 import styles from "./CareerDocumentEditor.module.css";
@@ -47,6 +47,9 @@ function BlockNoteDocumentEditor({
   const [aiRequest, setAiRequest] = useState<AiPromptRequest | null>(null);
   // 요청이 처리된 뒤에도 제안을 검토할 수 있게 패널은 사용자가 접을 때까지 열어 둡니다.
   const [panelOpen, setPanelOpen] = useState(false);
+  const panelRef = useRef<HTMLDetailsElement>(null);
+  // 제안 도크는 본문 아래에 있어, 툴바에서 요청하면 화면 밖에 열릴 수 있습니다. 요청마다 도크를 화면 안으로 가져옵니다.
+  useEffect(() => { if (aiRequest) panelRef.current?.scrollIntoView({ block: "start", behavior: "smooth" }); }, [aiRequest]);
   const requestAi = useCallback((prompt: string, blockIds: string[]) => {
     const request = { id: crypto.randomUUID(), recordId, prompt, blockIds };
     if (onAiRequest) onAiRequest(request); else { setAiRequest(request); setPanelOpen(true); }
@@ -60,7 +63,7 @@ function BlockNoteDocumentEditor({
         <BlockNoteBody yDocument={yDocument} userName="나" onAiRequest={showAiProposal || onAiRequest ? requestAi : undefined} onDocumentChange={publishDocument} onSelectionChange={setSelection} />
       </div>
       <AgentChat context={{ kind: "record", id: recordId }} contextLabel="현재 기록" />
-      {showAiProposal && document ? <details open={panelOpen} onToggle={(event) => setPanelOpen(event.currentTarget.open)}><summary>선택 영역 빠른 편집</summary><AiProposalPanel recordId={recordId} documentVersion={session.snapshot.documentVersion} selectedBlockIds={selection.length ? selection : firstBlockId ? [firstBlockId] : []} announcedProposal={session.snapshot.proposal} requestedPrompt={aiRequest} onRequestHandled={() => setAiRequest(null)} document={document} definitions={category?.propertySchemaV2 ?? []} /></details> : null}
+      {showAiProposal && document ? <details ref={panelRef} open={panelOpen} onToggle={(event) => setPanelOpen(event.currentTarget.open)}><summary>선택 영역 빠른 편집</summary><AiProposalPanel recordId={recordId} documentVersion={session.snapshot.documentVersion} selectedBlockIds={selection.length ? selection : firstBlockId ? [firstBlockId] : []} announcedProposal={session.snapshot.proposal} requestedPrompt={aiRequest} onRequestHandled={() => setAiRequest(null)} document={document} definitions={category?.propertySchemaV2 ?? []} /></details> : null}
     </section>
   );
 }

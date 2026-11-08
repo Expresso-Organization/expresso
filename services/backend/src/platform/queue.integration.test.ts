@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import { MongoServerSelectionError, MongoTopologyClosedError } from "mongodb";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { createQueueWorker } from "../worker/create-queue-worker.js";
@@ -27,6 +28,80 @@ describeWithRedis("reliable queue integration", () => {
 
   afterEach(async () => {
     await Promise.allSettled(cleanups.splice(0).map((cleanup) => cleanup()));
+  });
+
+  it.each([
+    ["닫힌 클라이언트", () => new MongoTopologyClosedError(), 1],
+    ["서버 선택 실패", () => new MongoServerSelectionError("no server", { type: "Unknown" } as never), 0],
+  ] as const)("Mongo 도달 불가(%s)는 시도 횟수를 쓰지 않고 미룬다", async (_label, makeError, expectedFatal) => {
+    const prefix = `expresso-test-${randomUUID()}`;
+    const resources = createReliableQueue<{ value: number }>("mongo-down-job", redisUrl!, prefix);
+    const fatal: unknown[] = [];
+    let attempts = 0;
+    const worker = createQueueWorker<{ value: number }, { done: true }>({
+      queueName: "mongo-down-job",
+      redisUrl: redisUrl!,
+      prefix,
+      deadLetterQueue: resources.deadLetterQueue,
+      onFatalError: (error) => fatal.push(error),
+      async processor() {
+        attempts += 1;
+        if (attempts === 1) throw makeError();
+        return { done: true };
+      },
+    });
+    cleanups.push(async () => {
+      await worker.close();
+      await Promise.all([resources.queue.obliterate({ force: true }), resources.deadLetterQueue.obliterate({ force: true })]);
+      await resources.close();
+    });
+
+    const job = await resources.queue.add("work", { value: 1 });
+    await waitFor(async () => ((await resources.queue.getJob(job.id!))?.delay ? true : undefined));
+    const deferred = await resources.queue.getJob(job.id!);
+    expect(await deferred?.getState()).toBe("delayed");
+    expect(deferred?.attemptsMade).toBe(0);
+    expect(fatal).toHaveLength(expectedFatal);
+
+    // Mongo가 돌아오면 그대로 끝난다. 시도 횟수는 성공한 한 번만 쓴다.
+    const finished = await waitFor(async () => {
+      const current = await resources.queue.getJob(job.id!);
+      return (await current?.getState()) === "completed" ? current : undefined;
+    }, 10_000);
+    expect(finished.attemptsMade).toBe(1);
+    expect(await resources.deadLetterQueue.count()).toBe(0);
+  }, 20_000);
+
+  it("동시 수만큼 잡을 겹쳐 돌린다", async () => {
+    const prefix = `expresso-test-${randomUUID()}`;
+    const resources = createReliableQueue<{ value: number }>("parallel-job", redisUrl!, prefix);
+    let running = 0;
+    let peak = 0;
+    const worker = createQueueWorker<{ value: number }, number>({
+      queueName: "parallel-job",
+      redisUrl: redisUrl!,
+      prefix,
+      concurrency: 3,
+      async processor(job) {
+        running += 1;
+        peak = Math.max(peak, running);
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        running -= 1;
+        return job.data.value;
+      },
+    });
+    cleanups.push(async () => {
+      await worker.close();
+      await resources.queue.obliterate({ force: true });
+      await resources.close();
+    });
+    let finished = 0;
+    worker.on("completed", () => { finished += 1; });
+    await Promise.all([1, 2, 3].map((value) => resources.queue.add("work", { value }, { jobId: randomUUID() })));
+    const startedAt = Date.now();
+    while (finished < 3 && Date.now() - startedAt < 10_000) await new Promise((resolve) => setTimeout(resolve, 25));
+    expect(finished).toBe(3);
+    expect(peak).toBe(3);
   });
 
   it("retries a failing job and copies the terminal failure to a DLQ", async () => {

@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { TERMS_VERSION } from "@expresso/contracts";
 import { createMysqlResource } from "../../platform/legacy-mysql.js";
 
 import type { SqlTag } from "../../platform/legacy-mysql.js";
@@ -71,6 +72,79 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB brew materials and jobs"
     expect(await jobs.process(results[0]!.jobId, runner, classify)).toMatchObject({ status: "succeeded", resultId: id });
     await jobs.process(results[0]!.jobId, runner, classify);
     expect(calls).toBe(1);
+  });
+});
+
+describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB 제작 이름 변경 라우트", () => {
+  let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
+  let app: ReturnType<typeof buildApi>;
+  let accessToken: string;
+  let otherToken: string;
+  let brewId: string;
+  const auth = (token = accessToken) => ({ authorization: `Bearer ${token}` });
+  const mongoConfig: RuntimeConfig = {
+    nodeEnv: "test",
+    host: "127.0.0.1",
+    port: 4_000,
+    logLevel: "silent",
+    redisUrl: "redis://127.0.0.1:1",
+    outboxPollIntervalMs: 1_000,
+    outboxBatchSize: 25,
+    outboxMaxAttempts: 5,
+    queuePrefix: "expresso-brew-title-test",
+  };
+  const signup = async (label: string) => {
+    const response = await app.inject({
+      method: "POST",
+      url: "/v1/auth/signup",
+      payload: { email: `brew-title-${label}-${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: label, termsVersion: TERMS_VERSION },
+    });
+    expect(response.statusCode).toBe(201);
+    return response.json().data.session.accessToken as string;
+  };
+  const rename = async (payload: Record<string, unknown>, token = accessToken) =>
+    await app.inject({ method: "PATCH", url: `/v1/brews/${brewId}`, headers: auth(token), payload });
+  const state = async () =>
+    (await app.inject({ method: "GET", url: `/v1/brews/${brewId}`, headers: auth() })).json().data;
+
+  beforeAll(async () => {
+    fixture = await createMongoFixture("brew-title");
+    app = buildApi({ config: mongoConfig, identityService: new MongoIdentityService(fixture.resource), materialsService: new MongoMaterialsService(fixture.resource) });
+    await app.ready();
+    accessToken = await signup("owner");
+    otherToken = await signup("other");
+    const created = await app.inject({ method: "POST", url: "/v1/brews/free", headers: auth(), payload: { title: "자유 제작", brief: "경험 정리", lengthPreset: "single" } });
+    expect(created.statusCode).toBe(201);
+    brewId = created.json().data.brewId;
+  }, 60_000);
+
+  afterAll(async () => {
+    await app?.close();
+    await fixture?.dispose();
+  });
+
+  it("이름을 붙이기 전에는 null이고, 붙이면 앞뒤 공백을 걷어 저장한다", async () => {
+    expect(await state()).toMatchObject({ title: null, freeTitle: "자유 제작" });
+    const response = await rename({ title: "  토스 지원용  " });
+    expect(response.statusCode).toBe(200);
+    // 자유 제작 표식은 그대로 둔다 — 이것이 바뀌면 레시피가 다르게 짜인다.
+    expect(await state()).toMatchObject({ title: "토스 지원용", freeTitle: "자유 제작" });
+  });
+
+  it("이름만 보내면 제작 모드는 그대로다", async () => {
+    const before = (await app.inject({ method: "GET", url: `/v1/brews/${brewId}/materials`, headers: auth() })).json().data;
+    const response = await rename({ title: "당근 지원용" });
+    expect(response.statusCode).toBe(200);
+    expect(response.json().data.mode).toBe(before.mode);
+    expect((await state()).title).toBe("당근 지원용");
+  });
+
+  it("빈 요청 · 빈 이름 · 300자 초과는 400이고, 남의 제작은 404다", async () => {
+    expect((await rename({})).statusCode).toBe(400);
+    expect((await rename({ title: "   " })).statusCode).toBe(400);
+    expect((await rename({ title: "가".repeat(301) })).statusCode).toBe(400);
+    expect((await rename({ title: "남의 것" }, otherToken)).statusCode).toBe(404);
+    expect((await state()).title).toBe("당근 지원용");
   });
 });
 

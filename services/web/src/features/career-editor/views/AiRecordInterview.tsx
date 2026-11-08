@@ -73,15 +73,14 @@ export function AiRecordInterview({ mode, categoryName, recordTitle = "", onCanc
   }}>
     <section ref={cardRef} className={styles.card} role="dialog" aria-modal="true" aria-labelledby="career-ai-question">
       <header>
-        <div><span className={styles.eyebrow}>EXPRESSO AI · {step + 1}/{questions.length}</span><strong>{mode === "create" ? "기록 시작하기" : `${recordTitle || categoryName} 보완하기`}</strong></div>
+        <div><strong>{mode === "create" ? "기록 시작하기" : `${recordTitle || categoryName} 보완하기`}</strong></div>
         <button type="button" aria-label="AI 질문 닫기" onClick={onCancel}><Icon name="x" size={15} /></button>
       </header>
       <div className={styles.progress} aria-hidden="true"><span style={{ width: `${((step + 1) / questions.length) * 100}%` }} /></div>
       <div className={styles.question}>
         <h2 id="career-ai-question">{question.label}</h2>
-        <p>{question.help}</p>
         {question.suggestions.length ? <div className={styles.suggestions}>{question.suggestions.map((suggestion) => <button key={suggestion} type="button" aria-pressed={answer === suggestion} onClick={() => setAnswers((current) => ({ ...current, [question.key]: suggestion }))}>{suggestion}</button>)}</div> : null}
-        <label><span>직접 입력</span><input ref={inputRef} aria-label={question.label} value={answer} placeholder={question.placeholder} onChange={(event) => setAnswers((current) => ({ ...current, [question.key]: event.target.value }))} onKeyDown={(event) => { if (event.key === "Enter" && answer.trim()) advance(); }} /></label>
+        <label><input ref={inputRef} aria-label={question.label} value={answer} placeholder={question.placeholder} onChange={(event) => setAnswers((current) => ({ ...current, [question.key]: event.target.value }))} onKeyDown={(event) => { if (event.key === "Enter" && answer.trim()) advance(); }} /></label>
       </div>
       <footer>
         <button type="button" onClick={() => advance(true)}>건너뛰기</button>

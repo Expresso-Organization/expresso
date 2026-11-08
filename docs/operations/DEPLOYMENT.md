@@ -51,6 +51,30 @@ QUEUE_PREFIX=expresso-mongo-v1
 비밀번호를 저장소, 명령 인자 또는 로그에 기록하지 않습니다. 서버의 환경 파일은
 소유자만 읽을 수 있어야 합니다.
 
+## nginx
+
+호스트 nginx 설정의 출처는 `infra/nginx/expresso.ai.kr.conf`입니다. 배포 스크립트는 이 파일을 서버에 복사하지 않습니다. 저장소 파일을 바꾼 뒤에는 서버 파일에 같은 변경을 직접 적용합니다. 서버 파일은 인증서 경로가 저장소와 다를 수 있으므로 통째로 덮어쓰지 않습니다.
+
+`location /v1/`은 WebSocket 업그레이드를 넘겨야 합니다. 커리어 본문 저장 소켓(`/v1/career/records/:id/session`)이 이 경로로 들어옵니다. 헤더가 빠지면 API가 일반 GET으로 받아 404를 내고, 편집기는 「오프라인」에서 재연결만 반복합니다. 2026-11-02 운영이 이 상태였고, 2026-11-03에 서버 파일에 적용했습니다.
+
+```nginx
+# location /v1/ 안
+proxy_set_header Upgrade $http_upgrade;
+proxy_set_header Connection $connection_upgrade;
+```
+
+`$connection_upgrade` map은 서버의 `/etc/nginx/conf.d/10-connection-upgrade.conf`에 있습니다. 같은 기계의 다른 사이트도 이 map을 씁니다. 사이트 파일에 map을 다시 넣으면 nginx가 중복 변수로 설정을 거부합니다.
+
+호스트 nginx는 systemd 밖에서 띄운 프로세스입니다. `systemctl reload nginx`는 「not active」로 끝나고 설정을 다시 읽지 않습니다. 설정 검사가 통과한 뒤 root가 띄운 master 프로세스에 HUP를 보냅니다.
+
+```bash
+sudo nginx -t
+sudo kill -HUP "$(pgrep -u root -f 'nginx: master process nginx -c /etc/nginx/nginx.conf')"
+curl -4 --http1.1 -s -o /dev/null -w '%{http_code}\n' -H 'Connection: Upgrade' -H 'Upgrade: websocket' -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' https://expresso.ai.kr/v1/career/records/00000000-0000-4000-8000-000000000000/session
+```
+
+마지막 명령은 101을 내야 합니다. `deploy.sh`도 배포 끝에 같은 요청을 보내고, 101이 아니면 실패로 끝납니다. API `.env`의 `CAREER_SOCKET_ALLOWED_ORIGIN`은 `https://expresso.ai.kr`이어야 합니다. 이 값이 틀리면 핸드셰이크는 101이지만 소켓이 곧바로 닫힙니다.
+
 ## 측정 브라우저
 
 워커는 생성한 포트폴리오 지면을 Playwright Chromium(chromium-headless-shell)으로 열어 390 · 926 · 1440px에서 잽니다.
@@ -73,6 +97,8 @@ sudo apt-get install -y fonts-noto-cjk
 ```bash
 scripts/operations/deploy.sh <검증된-commit>
 ```
+
+스크립트는 `git checkout`으로 배포할 커밋에 간 직후, 그 커밋의 `deploy.sh`로 처음부터 다시 시작합니다. 로그에는 「새 배포 스크립트로 다시 시작」이 찍힙니다. git은 checkout할 때 파일을 지우고 새로 만들고, 이미 돌고 있는 bash는 이전 파일을 끝까지 읽습니다. 다시 시작하지 않으면 그 커밋이 바꾼 배포 단계가 그 배포에서 돌지 않습니다. 2026-11-03 #159 배포가 그랬습니다. 다시 시작한 스크립트는 배포 전 커밋을 `EXPRESSO_DEPLOY_PREVIOUS`로 넘겨받아 `.last-deployed-commit`에 씁니다.
 
 스크립트는 기존 MySQL volume을 참조하거나 삭제하지 않습니다. `down -v`도
 실행하지 않습니다. schema migration과 readiness가 통과하지 않으면 API를 준비된

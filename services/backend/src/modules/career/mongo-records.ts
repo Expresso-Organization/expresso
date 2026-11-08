@@ -1,9 +1,36 @@
 import { createHash } from "node:crypto";
 import { CareerPropertyValueV2Schema, CareerRecordSchema, CareerRecordListResponseSchema, ListCareerRecordsQuerySchema, type CreateCareerRecord, type ListCareerRecordsQuery } from "@expresso/contracts";
-import { mongoCollections, type CareerRecordDoc } from "@expresso/database";
-import type { Document } from "mongodb";
+import { mongoCollections, type CareerCategoryDoc, type CareerRecordDoc } from "@expresso/database";
+import type { Db, Document } from "mongodb";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { CareerError } from "./errors.js";
+import { recordPeriod } from "./record-period.js";
+
+/**
+ * 관계 원장의 값을 기록의 관계 속성에 붙입니다. 관계는 원장에만 저장되어, 붙이지 않으면 화면의 관계 편집기가 늘 비어 보입니다.
+ * 휴지통에 있는 대상은 뺍니다.
+ */
+export async function attachRelationValues<T extends { _id: string; categoryId: string; properties: Record<string, unknown> }>(
+  db: Db, userId: string, rows: readonly T[], categories: ReadonlyMap<string, Pick<CareerCategoryDoc, "propertySchemaV2">>,
+): Promise<T[]> {
+  const relationDefinitions = new Map([...categories].map(([id, category]) => [id, category.propertySchemaV2.filter((definition) => definition.type === "relation" && definition.deletedAt === null)]));
+  if (![...relationDefinitions.values()].some((list) => list.length)) return [...rows];
+  const collections = mongoCollections(db);
+  const edges = await collections.careerRecordRelations.find({ userId, sourceRecordId: { $in: rows.map((row) => String(row._id)) } }).sort({ createdAt: 1, _id: 1 }).toArray();
+  const targetIds = [...new Set(edges.map((edge) => edge.targetRecordId))];
+  const titles = new Map(targetIds.length ? (await collections.careerRecords.find({ _id: { $in: targetIds }, userId, deletedAt: null }, { projection: { title: 1 } }).toArray()).map((target) => [target._id, target.title]) : []);
+  return rows.map((row) => {
+    const definitions = relationDefinitions.get(row.categoryId) ?? [];
+    if (!definitions.length) return row;
+    const properties = { ...row.properties };
+    for (const definition of definitions) {
+      const value = edges.filter((edge) => edge.sourceRecordId === String(row._id) && edge.sourcePropertyId === definition.id && titles.has(edge.targetRecordId))
+        .map((edge) => ({ recordId: edge.targetRecordId, title: (titles.get(edge.targetRecordId) ?? "").slice(0, 300) }));
+      if (value.length) properties[definition.key] = { type: "relation", value }; else delete properties[definition.key];
+    }
+    return { ...row, properties };
+  });
+}
 
 export function mapMongoRecord(record: CareerRecordDoc, bodyMd = record.bodyMd) {
   const computedProperties = Object.fromEntries(Object.entries(record.computedProperties ?? {}).flatMap(([key, value]) => {
@@ -42,7 +69,7 @@ export async function listMongoRecords(context: MongoContext, userId: string, qu
   const descending = query.sort === "updated_desc" || query.sort === "period_desc";
   const direction = descending ? -1 : 1;
   const sortKey = query.sort === "title_asc" ? "$title" : query.sort.startsWith("period_")
-    ? { $ifNull: ["$periodStart", descending ? "0001-01-01" : "9999-12-31"] }
+    ? { $ifNull: ["$periodStart", "$properties.period.value.start", descending ? "0001-01-01" : "9999-12-31"] }
     : { $dateToString: { date: "$updatedAt", format: "%Y-%m-%dT%H:%M:%S.%LZ", timezone: "UTC" } };
   const pageStages: Document[] = [];
   if (query.cursor) {
@@ -72,12 +99,13 @@ export async function listMongoRecords(context: MongoContext, userId: string, qu
     } }, { $project: { _id: 0 } }] } },
   ]).toArray();
   const hasNextPage = (result?.data.length ?? 0) > query.limit;
-  const records = result?.data.slice(0, query.limit) ?? [];
+  const pageRecords = result?.data.slice(0, query.limit) ?? [];
+  const records = await attachRelationValues(context.db, userId, pageRecords, new Map(pageRecords.map((record) => [record.categoryId, record.category as unknown as CareerCategoryDoc])));
   const last = records.at(-1);
   return CareerRecordListResponseSchema.parse({
     data: records.map((record) => ({ ...mapMongoRecord(record), categoryKey: record.category.key,
       isEmpty: record.bodyMd === "" && Object.keys(record.properties).length === 0,
-      periodFrom: record.periodStart ?? null, periodTo: record.periodEnd ?? null,
+      periodFrom: recordPeriod(record)?.start ?? null, periodTo: recordPeriod(record)?.end ?? null,
       linkCount: record.links[0]?.count ?? 0, usedInCount: record.usage[0]?.portfolioCount ?? 0,
     })),
     summary: result?.summary[0] ?? { total: 0, draft: 0, organized: 0, verified: 0, empty: 0 },

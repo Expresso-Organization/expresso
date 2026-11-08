@@ -6,7 +6,7 @@ import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction, type MongoTransaction } from "../../platform/mongo-transaction.js";
 import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { requireActiveUser } from "../identity/index.js";
-import { careerRecordTextReader } from "../career/index.js";
+import { careerRecordTextReader, careerYearsOf } from "../career/index.js";
 import { JobMarketError } from "./errors.js";
 import type { JobMarketApi } from "./index.js";
 import { calculateExplainableMatch } from "./match-score.js";
@@ -69,53 +69,22 @@ export class JobMarketService implements JobMarketApi {
 
   async analyzePosting(userId: string, jobPostingId: string) {
     return this.#write(userId, async (tx) => {
-      const db = mongoCollections(tx.db);
-      const options = { session: tx.session };
-
-      const posting = await db.jobPostings.findOne(
-        { _id: jobPostingId },
-        options,
-      );
-
-      if (!posting) {
-        throw new JobMarketError(404, "job posting not found");
+      const db = mongoCollections(tx.db); const options = { session: tx.session };
+      if (!await db.jobPostings.findOne({ _id: jobPostingId }, options)) throw new JobMarketError(404, "job posting not found");
+      const existing = await db.jobAnalyses.findOne({ userId, jobPostingId }, { ...options, sort: { _id: 1 } });
+      const analysis = existing ?? queuedAnalysis(userId, jobPostingId, "board");
+      // 다시 해 볼 수 있는 실패는 다시 큐에 넣는다. `requestReanalysis`는 끝난 분석만 받으므로
+      // (`job-analysis/service.ts`) 실패한 분석을 되살리는 자리는 여기뿐이다. `retryable`이
+      // false인 실패는 같은 입력으로 같은 자리에서 멈추므로 그대로 돌려준다.
+      const retrying = !!existing && existing.status === "failed" && existing.failureRetryable === true;
+      if (!existing || retrying) {
+        if (existing) await db.jobAnalyses.updateOne({ _id: existing._id, userId, status: "failed", attempts: existing.attempts }, { $set: { status: "queued", progressStage: "queued", failureCode: null, failureRetryable: null } }, options);
+        else await db.jobAnalyses.insertOne(analysis, options);
+        // 같은 실패를 두 번 눌러도 큐에 한 번만 들어가야 한다. `attempts`가 시도마다 올라가므로
+        // 재시도 한 번에 키 하나가 대응한다.
+        await addMongoOutboxEvent(tx, { userId, topic: "job.normalize", payload: { jobAnalysisId: analysis._id, jobPostingId, userId }, idempotencyKey: existing ? `job-normalize:${analysis._id}:retry:${existing.attempts}` : `job-normalize:${analysis._id}` });
       }
-
-      const existing = await db.jobAnalyses.findOne(
-        { userId, jobPostingId },
-        { ...options, sort: { _id: 1 } },
-      );
-
-      if (existing) {
-        return AnalyzedJobPostingSchema.parse({
-          jobPostingId,
-          jobAnalysisId: existing._id,
-          status: existing.status,
-          reused: true,
-        });
-      }
-
-      const analysis = queuedAnalysis(userId, jobPostingId, "board");
-
-      await db.jobAnalyses.insertOne(analysis, options);
-
-      await addMongoOutboxEvent(tx, {
-        userId,
-        topic: "job.normalize",
-        payload: {
-          jobAnalysisId: analysis._id,
-          jobPostingId,
-          userId,
-        },
-        idempotencyKey: `job-normalize:${analysis._id}`,
-      });
-
-      return AnalyzedJobPostingSchema.parse({
-        jobPostingId,
-        jobAnalysisId: analysis._id,
-        status: analysis.status,
-        reused: false,
-      });
+      return AnalyzedJobPostingSchema.parse({ jobPostingId, jobAnalysisId: analysis._id, status: retrying ? "queued" : analysis.status, reused: !!existing });
     });
   }
 
@@ -179,8 +148,9 @@ export class JobMarketService implements JobMarketApi {
       const posting = await db.jobPostings.findOne({ _id: jobPostingId }, options);
       if (!posting) throw new JobMarketError(404, "job posting not found");
       const records = await db.careerRecords.find({ userId, deletedAt: null }, options).sort({ _id: 1 }).toArray();
-      if (records.length < 3) throw new JobMarketError(409, "more career records are required", { required: 3, actual: records.length });
-      const match = calculateExplainableMatch(jobPostingId, JobRequirementsSchema.parse(posting.requirements), records.map(await careerRecordTextReader(tx.db, userId, tx.session)).join("\n"), at);
+      // 기록이 하나도 없을 때만 막는다. 일치도는 요건 충족률이라 기록 수에 기대는 기준이 없다.
+      if (records.length === 0) throw new JobMarketError(409, "more career records are required", { required: 1, actual: 0 });
+      const match = calculateExplainableMatch(jobPostingId, JobRequirementsSchema.parse(posting.requirements), records.map(await careerRecordTextReader(tx.db, userId, tx.session)).join("\n"), at, await careerYearsOf(tx.db, records, at, tx.session));
       if (!match) throw new JobMarketError(409, "job posting requirements are not extracted yet", { jobPostingId });
       await db.matchScores.updateOne({ userId, jobPostingId }, { $set: { total: Decimal128.fromString(String(match.total)), axes: match.axes, reasonText: match.reason, nextAction: match.nextAction, computedAt: at }, $setOnInsert: { _id: randomUUID(), userId, jobPostingId } }, { ...options, upsert: true });
       return ExplainableMatchSchema.parse(match);

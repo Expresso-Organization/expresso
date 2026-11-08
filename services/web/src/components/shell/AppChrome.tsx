@@ -47,18 +47,22 @@ async function AppSidebar() {
   return (
     <Sidebar
       categories={session.categories}
-      portfolios={portfolioList.data.map((portfolio) => ({
-        id: portfolio.id,
-        name: portfolio.title,
-        // 배포된 것은 주소를, 작성 중인 것은 진행 상황을 보여준다.
-        meta: portfolio.deployment
-          ? publicSiteHost(portfolio.deployment.subdomain)
-          : `작성 중 · 섹션 ${portfolio.sectionCount}개`,
-        status: portfolio.deployment ? "published" : "draft",
-        ...(portfolio.deployment
-          ? { delta: `v${portfolio.deployment.version}`, deltaTone: "quiet" as const }
-          : {}),
-      }))}
+      portfolios={portfolioList.data.map((portfolio) => {
+        // 공개를 중단해도 배포 기록은 남는다. 지금 열리는 주소가 있을 때만 배포됨으로 보인다.
+        const live = portfolio.status === "published" ? portfolio.deployment : null;
+        return {
+          id: portfolio.id,
+          name: portfolio.title,
+          // 배포된 것은 주소를, 작성 중인 것은 진행 상황을 보여준다.
+          meta: live
+            ? publicSiteHost(live.subdomain)
+            : portfolio.status === "unlisted"
+              ? "공개 중단"
+              : `작성 중 · 섹션 ${portfolio.sectionCount}개`,
+          status: live ? ("published" as const) : ("draft" as const),
+          ...(live ? { delta: `v${live.version}`, deltaTone: "quiet" as const } : {}),
+        };
+      })}
       // 관심 공고는 내가 담은 공고다. 일치도 상위 목록(`recommendedJobs`)이 아니다 —
       // 그 목록으로 채우면 담아도 여기 나타나지 않고, 일치도가 없는 공고의
       // "분석 대기" 줄은 나올 수가 없다.

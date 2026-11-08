@@ -1,4 +1,4 @@
-/* 00 Home — 화면 정의서의 <main> 내부를 그대로 옮긴 것 */
+/* 00 Home — 화면 정의서의 <main> 내부에서 출발해, 목적 기준 재구성(intent_home-purpose-layout)에 맞춘 것 */
 
 .content {
   flex: 1;
@@ -45,17 +45,10 @@
   color: var(--ex-fg-subtle);
 }
 
-.searchShortcut {
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-fg-subtle);
-  background: var(--ex-bg-sunken);
-  border-radius: 6px;
-  padding: 5px 9px;
-  flex-shrink: 0;
-}
-
 .searchSubmit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: var(--ex-text-md);
   font-weight: 600;
   color: var(--ex-fg-on-accent);
@@ -82,12 +75,6 @@
   flex-wrap: wrap;
 }
 
-.examplesLabel {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
-  margin-right: 2px;
-}
-
 .exampleChip {
   font-size: var(--ex-text-sm);
   color: var(--ex-fg-body);
@@ -101,18 +88,6 @@
 
 .exampleChip:hover {
   border-color: var(--ex-border-firm);
-}
-
-.savedSearches {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-body);
-  border: none;
-  background: none;
-  padding: 0;
 }
 
 /* 영역 2·3 — 공고 + 사이드 카드 */
@@ -133,15 +108,10 @@
 .cardHead {
   display: flex;
   align-items: center;
-  gap: 14px;
+  flex-wrap: wrap;
+  gap: 8px 14px;
   padding: 14px 20px;
   border-bottom: 1px solid var(--ex-border-inner);
-}
-
-.cardTitle {
-  font-size: var(--ex-text-md);
-  font-weight: 600;
-  white-space: nowrap;
 }
 
 .segment {
@@ -151,7 +121,11 @@
   padding: 2px;
 }
 
+/* 좁은 칸에서도 단추 글자가 한 글자씩 꺾이지 않는다 */
 .segmentItem {
+  display: inline-block;
+  white-space: nowrap;
+  cursor: pointer;
   font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   border: none;
@@ -164,12 +138,6 @@
   font-weight: 600;
   color: var(--ex-fg);
   background: var(--ex-bg);
-}
-
-.cardNote {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
-  white-space: nowrap;
 }
 
 .cardLink {
@@ -208,8 +176,7 @@
   font-weight: 500;
   flex-shrink: 0;
   margin-top: 2px;
-  background: #eef2fc;
-  color: #2a48b8;
+  overflow: hidden;
 }
 
 .jobBody {
@@ -238,25 +205,12 @@
   color: var(--ex-fg-body);
 }
 
-.jobScoreHigh {
-  color: var(--ex-status-success-text);
-}
-
 .jobDeadline {
   font-family: var(--ex-font-mono);
   font-size: var(--ex-text-2xs);
   color: var(--ex-fg-muted);
   margin-left: auto;
   flex-shrink: 0;
-}
-
-.jobReason {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
-  margin-top: 5px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .jobCta {
@@ -294,33 +248,7 @@
   align-content: start;
 }
 
-.plainCard {
-  background: var(--ex-bg);
-  border: 1px solid var(--ex-border);
-  border-radius: 16px;
-  padding: 17px 20px;
-}
-
-/* 이어서 답하기 */
-.draftHead {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  margin-bottom: 11px;
-}
-
-.workingChip {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--ex-accent-surface);
-  border-radius: 6px;
-  padding: 4px 9px;
-  font-size: var(--ex-text-xs);
-  color: var(--ex-accent-text);
-  white-space: nowrap;
-}
-
+/* 생성 중인 제작 배지의 점 — 지금 돌고 있는 작업에만 붙는다 */
 .workingDot {
   width: 5px;
   height: 5px;
@@ -328,117 +256,11 @@
   background: var(--ex-accent);
 }
 
-.draftDeadline {
-  margin-left: auto;
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-status-danger-text);
-}
-
-.draftTitle {
-  font-size: var(--ex-text-lg);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  margin-bottom: 5px;
-}
-
-.draftMeta {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
-  margin-bottom: 12px;
-}
-
-.draftProgress {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 13px;
-}
-
-.draftTrack {
-  flex: 1;
-  height: 5px;
-  background: var(--ex-bg-muted);
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.draftFill {
-  height: 100%;
-  background: var(--ex-accent);
-  border-radius: 999px;
-}
-
-.draftCount {
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-fg-body);
-}
-
-.draftCta {
-  width: 100%;
-  font-size: var(--ex-text-md);
-  font-weight: 600;
-  color: var(--ex-fg-on-accent);
-  background: var(--ex-accent);
-  border: none;
-  border-radius: 9px;
-  padding: 11px;
-  transition:
-    background var(--ex-motion-quick),
-    transform var(--ex-motion-spring);
-}
-
-.draftCta:hover {
-  background: var(--ex-accent-hover);
-  transform: translateY(-1px);
-}
-
-/* 저장한 검색 카드 */
-.savedHead {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  margin-bottom: 12px;
-}
-
-.savedTitle {
-  font-size: var(--ex-text-sm);
-  font-weight: 600;
-}
-
-.savedList {
-  display: grid;
-  gap: 9px;
-}
-
-.savedRow {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-}
-
-.savedName {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-body);
-  flex: 1;
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.savedCount {
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-accent-text);
-}
-
-.savedFoot {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-subtle);
-  margin-top: 11px;
-  line-height: 1.65;
+.plainCard {
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
+  border-radius: 16px;
+  padding: 17px 20px;
 }
 
 /* 영역 4 — 내 포트폴리오 */
@@ -452,17 +274,6 @@
 .sectionTitle {
   font-size: var(--ex-text-md);
   font-weight: 600;
-}
-
-.sectionNote {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
-}
-
-.sectionLink {
-  margin-left: auto;
-  font-size: var(--ex-text-sm);
-  color: var(--ex-fg-body);
 }
 
 .portfolioGrid {
@@ -508,120 +319,6 @@
   margin-bottom: 6px;
 }
 
-.newPortfolioBody {
-  display: block;
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
-  line-height: 1.65;
-}
-
-/* 영역 5 — 사이트 성과 스트립 */
-.performance {
-  flex-shrink: 0;
-  background: var(--ex-bg);
-  border: 1px solid var(--ex-border);
-  border-radius: 16px;
-  padding: 18px 24px;
-  display: flex;
-  align-items: center;
-  gap: 26px;
-}
-
-.performanceLead {
-  width: 176px;
-  flex-shrink: 0;
-}
-
-.performanceHead {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 7px;
-}
-
-.performancePicker {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  background: var(--ex-bg-sunken);
-  border: none;
-  border-radius: 6px;
-  padding: 3px 8px;
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-fg-body);
-  white-space: nowrap;
-}
-
-.performanceRule {
-  width: 1px;
-  align-self: stretch;
-  background: var(--ex-border-inner);
-  flex-shrink: 0;
-}
-
-.metric {
-  flex: 1;
-  min-width: 0;
-}
-
-.metricLabel {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
-  margin-bottom: 7px;
-  white-space: nowrap;
-}
-
-.metricRow {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.metricValue {
-  font-family: var(--ex-font-brand);
-  font-weight: 300;
-  font-size: var(--ex-text-3xl);
-  line-height: 1;
-  letter-spacing: -0.02em;
-  color: var(--ex-fg);
-}
-
-.metricValueSignature {
-  color: var(--ex-accent-text);
-}
-
-.metricDelta {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
-  white-space: nowrap;
-}
-
-.baristaRead {
-  width: 250px;
-  flex-shrink: 0;
-}
-
-.baristaHead {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 7px;
-}
-
-.baristaText {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-accent-text);
-  flex: 1;
-  min-width: 0;
-  line-height: 1.6;
-}
-
-.baristaLink {
-  font-size: var(--ex-text-xs);
-  font-weight: 600;
-  color: var(--ex-fg-body);
-}
-
 /* 기록 0건 빈 상태 (§09) */
 .firstRun {
   flex-shrink: 0;
@@ -639,12 +336,6 @@
   font-size: var(--ex-text-xl);
   font-weight: 600;
   letter-spacing: -0.015em;
-}
-
-.firstRunBody {
-  font-size: var(--ex-text-sm);
-  line-height: 1.75;
-  color: var(--ex-fg-muted);
 }
 
 .firstRunCta {
@@ -666,71 +357,6 @@
   background: var(--ex-accent-hover);
 }
 
-/* 카테고리 요약 그리드 */
-.categoryGrid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  flex-shrink: 0;
-}
-
-.categoryCard {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 15px 17px;
-  border: 1px solid var(--ex-border);
-  border-radius: 14px;
-  background: var(--ex-bg);
-  transition:
-    box-shadow 0.2s ease,
-    transform 0.2s ease;
-}
-
-.categoryCard:hover {
-  box-shadow: var(--ex-elevation-card-hover);
-  transform: translateY(-2px);
-}
-
-.categoryCardIcon {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  background: var(--ex-bg-sunken);
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-}
-
-.categoryCardName {
-  font-size: var(--ex-text-sm);
-  font-weight: 600;
-  color: var(--ex-fg-body);
-  flex: 1;
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.categoryCardCount {
-  font-family: var(--ex-font-brand);
-  font-weight: 300;
-  font-size: var(--ex-text-3xl);
-  line-height: 1;
-  letter-spacing: -0.02em;
-  color: var(--ex-fg);
-}
-
-/* 좁은 화면에서 바리스타 읽기는 폭을 고집하지 않는다 */
-@media (max-width: 1023px) {
-  .baristaRead {
-    width: auto;
-    flex: 1 1 100%;
-    min-width: 0;
-  }
-}
-
 /* 좁은 화면 — 나란히 선 카드들이 한 줄에 하나씩 */
 @media (max-width: 1023px) {
   .midRow {
@@ -739,8 +365,7 @@
 }
 
 @media (max-width: 767px) {
-  .portfolioGrid,
-  .categoryGrid {
+  .portfolioGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -750,4 +375,682 @@
   .content {
     padding: 26px 26px 20px;
   }
+}
+
+/* ── 목적 기준 재구성에서 더한 것 ── */
+
+/* 차트가 없으면 공고 카드가 한 줄을 다 쓴다 */
+.midRowSingle {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.jobsCard {
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+/* 좁은 칸에서 묶음 단추가 글자 단위로 꺾이지 않게 */
+
+
+
+/* 공고 행 둘째 줄 — 회사, 그리고 분석한 공고면 요건 충족 · 아니면 근무지 · 경력 */
+.jobLine {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.jobCompany {
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+  min-width: 48px;
+  max-width: 45%;
+}
+
+.jobCompany + * {
+  padding-left: 9px;
+  border-left: 1px solid var(--ex-border-soft);
+}
+
+.coverage {
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
+  white-space: nowrap;
+  margin-right: 2px;
+}
+
+.coverage b {
+  font-family: var(--ex-font-mono);
+  font-size: var(--ex-text-2xs);
+  font-weight: 500;
+  color: var(--ex-fg-body);
+}
+
+
+.missingTag {
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-status-warning-text);
+  background: var(--ex-status-warning-surface);
+  border-radius: 5px;
+  padding: 2px 7px;
+  white-space: nowrap;
+}
+
+.jobFacts {
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 오른쪽 열 차트 — 07 분석의 추이 그림과 같은 무채색 선 · 막대 */
+.chartCard {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.chartHead {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  margin-bottom: 16px;
+}
+
+.chartTab {
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* 다음 차트까지 남은 시간 — 단추 바닥에서 차오른다 */
+.rotateBar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 100%;
+  background: var(--ex-accent);
+  transform-origin: 0 50%;
+  animation-name: rotateFill;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+  pointer-events: none;
+}
+
+@keyframes rotateFill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* 차트를 한 칸에 겹친다 — 칸 높이는 가장 큰 차트가 정한다 */
+.chartStage {
+  display: grid;
+}
+
+.chartPanel {
+  grid-area: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--ex-motion-quick),
+    visibility 0s linear 160ms;
+}
+
+.chartPanelActive {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity var(--ex-motion-quick);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chartPanel,
+  .chartPanelActive {
+    transition: none;
+  }
+
+  .rotateBar {
+    display: none;
+  }
+}
+
+.chartMeta {
+  margin-left: auto;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
+  white-space: nowrap;
+}
+
+.kpiRow {
+  display: flex;
+  gap: 28px;
+  margin-bottom: 16px;
+}
+
+.kpiValue {
+  font-family: var(--ex-font-brand);
+  font-weight: 300;
+  font-size: var(--ex-text-4xl);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--ex-fg);
+}
+
+.kpiValueSecondary {
+  color: var(--ex-fg-body);
+}
+
+.kpiOf {
+  font-size: var(--ex-text-xl);
+  color: var(--ex-fg-subtle);
+  letter-spacing: 0;
+}
+
+.kpiLabel {
+  margin-top: 6px;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
+}
+
+.plot {
+  position: relative;
+  height: 110px;
+  outline: none;
+  touch-action: pan-y;
+}
+
+.plot:focus-visible {
+  box-shadow: 0 0 0 2px var(--ex-accent-soft);
+  border-radius: 6px;
+}
+
+.plotSvg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.plotBaseline {
+  stroke: var(--ex-border-inner);
+  stroke-width: 1;
+}
+
+
+.crosshair {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--ex-border-firm);
+  pointer-events: none;
+}
+
+
+.tooltip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  z-index: 2;
+  display: grid;
+  gap: 2px;
+  min-width: 92px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: var(--ex-bg-inverse);
+  color: var(--ex-fg-on-inverse);
+  font-size: var(--ex-text-2xs);
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translateX(8px);
+}
+
+.tooltipLeft {
+  transform: translateX(calc(-100% - 8px));
+}
+
+.tooltipDate {
+  opacity: 0.7;
+}
+
+.tooltipRow b {
+  font-family: var(--ex-font-mono);
+  font-size: var(--ex-text-xs);
+  font-weight: 600;
+  margin-right: 2px;
+}
+
+.axisRow {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-subtle);
+}
+
+.chartTitle {
+  font-size: var(--ex-text-sm);
+  font-weight: 600;
+  color: var(--ex-fg);
+}
+
+/* 지원 반응 — 사이트마다 선 하나. 색은 검증한 차트 토큰(--ex-chart-*)이다 */
+.siteLine {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.contactDot {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  margin: -4.5px 0 0 -4.5px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--ex-bg);
+  pointer-events: none;
+}
+
+.deployMark {
+  position: absolute;
+  bottom: -1px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translate(-50%, 100%);
+  pointer-events: none;
+}
+
+.deployTicks {
+  display: flex;
+  gap: 2px;
+}
+
+.deployTick {
+  width: 2px;
+  height: 6px;
+  border-radius: 1px;
+}
+
+.deployLabel {
+  margin-top: 2px;
+  white-space: nowrap;
+  font-family: var(--ex-font-mono);
+  font-size: var(--ex-text-3xs);
+  color: var(--ex-fg-muted);
+}
+
+.lineKey {
+  display: inline-block;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.legend {
+  display: grid;
+  gap: 4px;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--ex-border-inner);
+}
+
+.legendRow {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 0;
+  min-width: 0;
+  font-size: var(--ex-text-xs);
+}
+
+.legendName {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--ex-font-mono);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.legendRow:hover .legendName {
+  color: var(--ex-fg);
+}
+
+.legendValue {
+  color: var(--ex-fg-muted);
+  white-space: nowrap;
+}
+
+.legendValue b {
+  font-family: var(--ex-font-mono);
+  font-weight: 500;
+  color: var(--ex-fg-body);
+}
+
+/* 섹션 체류 · 유입 경로 — 가로 막대 목록. 막대는 24px를 넘지 않고 끝만 4px 둥글다 */
+.hbarList {
+  display: grid;
+  gap: 2px;
+}
+
+.hbarHead,
+.hbarRow {
+  display: grid;
+  grid-template-columns: minmax(0, 8em) minmax(0, 1fr) 3ch;
+  align-items: center;
+  gap: 10px;
+}
+
+.hbarHead,
+.hbarRowSections {
+  grid-template-columns: minmax(0, 8em) minmax(0, 1fr) 3ch 4ch;
+}
+
+.hbarHead {
+  margin-bottom: 4px;
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-subtle);
+}
+
+.hbarHead span:nth-child(n + 3) {
+  text-align: right;
+}
+
+.hbarRow {
+  padding: 6px 8px;
+  margin: 0 -8px;
+  border-radius: 8px;
+}
+
+a.hbarRow {
+  transition: background var(--ex-motion-instant);
+}
+
+a.hbarRow:hover,
+a.hbarRow:focus-visible {
+  background: var(--ex-bg-hover);
+}
+
+.hbarName {
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hbarNameMono {
+  font-family: var(--ex-font-mono);
+  font-size: var(--ex-text-2xs);
+}
+
+.hbarNameHot {
+  color: var(--ex-fg);
+  font-weight: 600;
+}
+
+.hbarTrack {
+  height: 12px;
+  display: flex;
+}
+
+.hbarBar {
+  height: 100%;
+  border-radius: 0 4px 4px 0;
+  background: var(--ex-fg-faint);
+}
+
+.hbarBarHot {
+  background: var(--ex-accent);
+}
+
+.hbarCount {
+  font-family: var(--ex-font-mono);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-body);
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* 기록 0건 — 버튼 하나와 그보다 약한 링크 하나 */
+.firstRunActions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 6px;
+}
+
+.firstRunSecondary {
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-body);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--ex-border-firm);
+}
+
+
+.searchSubmitIcon {
+  display: none;
+}
+
+/* 내 포트폴리오 — 만드는 중인 제작도 같은 카드다 */
+.portfolioCard {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--ex-border);
+  border-radius: 14px;
+  background: var(--ex-bg);
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.portfolioCard:hover {
+  box-shadow: var(--ex-elevation-card-hover);
+  transform: translateY(-2px);
+}
+
+/* 지면 썸네일 — 틀을 칸의 4배 크기로 그리고 1/4로 줄여 칸에 맞춘다.
+   지면이 아직 없으면 사이드바 썸네일과 같은 빗금이 선다. */
+.portfolioThumb {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: repeating-linear-gradient(
+    135deg,
+    var(--ex-bg) 0 9px,
+    var(--ex-bg-track) 9px 18px
+  );
+  border-bottom: 1px solid var(--ex-border-inner);
+}
+
+.portfolioFrame {
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 400%;
+  height: 400%;
+  border: 0;
+  transform: scale(0.25);
+  transform-origin: 0 0;
+  pointer-events: none;
+}
+
+.portfolioBadge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--ex-text-2xs);
+  border-radius: 6px;
+  padding: 3px 8px;
+  white-space: nowrap;
+  box-shadow: var(--ex-elevation-raised);
+}
+
+.badgeLive {
+  color: var(--ex-status-success-text);
+  background: var(--ex-status-success-surface);
+}
+
+.badgeDraft {
+  color: var(--ex-fg-muted);
+  background: var(--ex-bg-sunken);
+}
+
+.badgeMaking {
+  color: var(--ex-accent-text);
+  background: var(--ex-accent-surface);
+}
+
+.portfolioBody {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+  min-width: 0;
+  padding: 13px 16px 15px;
+}
+
+.portfolioTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.portfolioAvatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  flex-shrink: 0;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  font-size: var(--ex-text-3xs);
+  font-weight: 600;
+}
+
+.portfolioTitle {
+  font-size: var(--ex-text-sm);
+  font-weight: 600;
+  color: var(--ex-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.portfolioTarget {
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.portfolioFoot {
+  margin-top: auto;
+  padding-top: 8px;
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.portfolioHost {
+  font-family: var(--ex-font-mono);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.portfolioMeta {
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
+}
+
+.portfolioStats {
+  display: flex;
+  gap: 12px;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
+}
+
+.portfolioStats b {
+  font-family: var(--ex-font-mono);
+  font-weight: 500;
+  color: var(--ex-fg);
+}
+
+.newPortfolio {
+  min-height: 120px;
+}
+
+/* 폰 — 검색 단추는 화살표만, 공고 제목은 두 줄까지 */
+@media (max-width: 767px) {
+  .jobName {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-height: 1.35;
+  }
+
+  .searchSubmitIcon {
+    display: inline;
+  }
+
+  .searchSubmitText {
+    display: none;
+  }
+}
+
+/* 폰 세로 — 포트폴리오 카드는 한 줄에 하나 */
+@media (max-width: 479px) {
+  .portfolioGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .newPortfolio {
+    min-height: 0;
+  }
+}
+
+/* 체류 시간 칸은 단위가 한글이라 고정폭 글꼴을 쓰지 않는다 */
+.hbarDwell {
+  font-family: var(--ex-font-ui);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
+}
+
+/* 배포 눈금(바닥선 아래 6px 눈금과 판 번호)이 날짜 줄과 겹치지 않도록 그 높이만큼 내린다 */
+.plot + .axisRow {
+  margin-top: 26px;
 }

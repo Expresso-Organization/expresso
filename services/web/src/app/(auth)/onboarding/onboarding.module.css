@@ -409,218 +409,6 @@
   color: var(--ex-status-danger-text);
 }
 
-/* ── 10d 재료 채우기 ──────────────────────────────────────── */
-
-.importGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.dropZone {
-  grid-column: 1 / -1;
-  border: 1px dashed var(--ex-border-firm);
-  border-radius: 14px;
-  background: var(--ex-bg);
-  padding: 26px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  text-align: center;
-}
-
-.dropTitle {
-  font-size: var(--ex-text-md);
-  font-weight: 600;
-  color: var(--ex-fg);
-}
-
-.dropNote {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-subtle);
-}
-
-.uploaded {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 14px;
-  padding: 10px 13px;
-  background: var(--ex-bg-sunken);
-  border-radius: 10px;
-  width: 100%;
-  max-width: 360px;
-}
-
-.uploadedName {
-  font-size: var(--ex-text-sm);
-  color: var(--ex-fg);
-}
-
-.uploadedMeta {
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-fg-subtle);
-  margin-top: 3px;
-}
-
-.importCard {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  padding: 14px 16px;
-  border: 1px solid var(--ex-border);
-  border-radius: 13px;
-  background: var(--ex-bg);
-  text-align: left;
-}
-
-.importTitle {
-  font-size: var(--ex-text-sm);
-  font-weight: 600;
-  color: var(--ex-fg);
-}
-
-.importNote {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
-  margin-top: 4px;
-}
-
-.importState {
-  margin-left: auto;
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-subtle);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.importAction {
-  margin-left: auto;
-  font-size: var(--ex-text-xs);
-  font-weight: 600;
-  color: var(--ex-fg-body);
-  background: none;
-  border: 1px solid var(--ex-border-soft);
-  border-radius: 8px;
-  padding: 7px 12px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.privacyNote {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-subtle);
-  margin-bottom: 26px;
-}
-
-.splitHead {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.splitTitle {
-  font-size: var(--ex-text-lg);
-  font-weight: 600;
-}
-
-.splitCount {
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-xs);
-  color: var(--ex-accent-text);
-}
-
-.splitClear {
-  margin-left: auto;
-  border: none;
-  background: none;
-  padding: 0;
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
-}
-
-.splitList {
-  background: var(--ex-bg);
-  border: 1px solid var(--ex-border);
-  border-radius: 13px;
-  overflow: hidden;
-  margin-bottom: 12px;
-}
-
-.splitRow {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  width: 100%;
-  padding: 11px 15px;
-  border: none;
-  border-bottom: 1px solid var(--ex-border-hair);
-  background: none;
-  text-align: left;
-}
-
-.splitRow:last-child {
-  border-bottom: none;
-}
-
-.splitCheck {
-  width: 15px;
-  height: 15px;
-  border-radius: 4px;
-  background: var(--ex-bg-inverse);
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-}
-
-.splitCategory {
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-fg-body);
-  background: var(--ex-border-inner);
-  border-radius: 5px;
-  padding: 3px 8px;
-  white-space: nowrap;
-  width: 76px;
-  text-align: center;
-  flex-shrink: 0;
-}
-
-.splitName {
-  font-size: var(--ex-text-sm);
-  color: var(--ex-fg);
-  flex: 1;
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.splitPeriod {
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-fg-subtle);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.gapNote {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 15px;
-  background: var(--ex-accent-surface);
-  border-radius: 11px;
-  font-size: var(--ex-text-xs);
-  color: var(--ex-accent-ink);
-  line-height: 1.65;
-}
-
 /* ── 10e 첫 포트폴리오 ────────────────────────────────────── */
 
 .readyTitle {
@@ -656,11 +444,6 @@
   transform: translateY(-2px);
 }
 
-.jobCardOn {
-  border: 1.5px solid var(--ex-accent);
-  background: var(--ex-accent-surface);
-}
-
 .jobAvatar {
   width: 34px;
   height: 34px;
@@ -684,12 +467,6 @@
   font-size: var(--ex-text-sm);
   color: var(--ex-fg-muted);
   margin-top: 3px;
-}
-
-.jobReason {
-  font-size: var(--ex-text-xs);
-  color: var(--ex-fg-muted);
-  margin-top: 6px;
 }
 
 .jobScoreWrap {
@@ -892,15 +669,8 @@
   color: var(--ex-fg-muted);
 }
 
-.privacyLink {
-  color: var(--ex-accent-text);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-/* 좁은 화면 — 두 칸으로 나뉜 고르개가 한 줄에 하나씩 */
+/* 좁은 화면 — 「다음에 일어나는 일」 카드가 한 줄에 하나씩 */
 @media (max-width: 767px) {
-  .importGrid,
   .nextGrid {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -909,9 +679,9 @@
 /*
  * 좁은 화면의 단계 표시.
  *
- * 네 단계에 이름을 다 붙이면 431px이라 360px 지면 밖으로 나간다. 지금 단계의
- * 이름만 남기고 나머지는 동그라미로 둔다 — 몇 번째인지는 하단의 "3 / 4"가
- * 다시 말해 준다.
+ * 단계마다 이름을 다 붙이면 360px 지면에서 로고 · 「나중에 하기」와 한 줄에 서지
+ * 못한다. 지금 단계의 이름만 남기고 나머지는 동그라미로 둔다 — 몇 번째인지는
+ * 하단의 "2 / 3"이 다시 말해 준다.
  */
 @media (max-width: 767px) {
   .step:not(.stepCurrent) .stepLabel {
