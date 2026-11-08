@@ -1,3 +1,5 @@
+import { verifyGeneratedGrounding } from "../../platform/ai/grounding-review.js";
+import { chartNumbers } from "@expresso/contracts";
 import {
   draftBlockText,
   GenerationDraftSchema,
@@ -251,7 +253,7 @@ export class AiSentenceWriter implements SentenceWriter {
   readonly usesContract = true;
   readonly #ai: AiClient;
 
-  constructor(ai: AiClient) {
+  constructor(ai: AiClient, private readonly reviewGrounding = false) {
     this.#ai = ai;
   }
 
@@ -273,7 +275,14 @@ export class AiSentenceWriter implements SentenceWriter {
     );
     // 고친 뒤에도 남은 위반은 그대로 온다. 빈 섹션은 그대로 두고, 섹션이나 근거를 잃은
     // 블록은 원래대로 `toGenerationOutput`이 뺀다. 블록이 하나도 안 남으면 거기서 `SentenceDraftError`로 끝난다.
-    return toGenerationOutput(data, context);
+    const output = toGenerationOutput(data, context);
+    if (this.reviewGrounding) {
+      await verifyGeneratedGrounding(this.#ai, output.blocks.map(block => ({
+        text: block.chart ? `${block.text} ${chartNumbers(block.chart)}` : block.text,
+        sources: block.evidencePathIds.map(id => context.evidence.find(source => source.id === id)).filter((source): source is WriterEvidence => !!source).map(source => ({ type: source.sourceType, text: `${source.label}\n${source.text}` })),
+      })), context.userId);
+    }
+    return output;
   }
 }
 

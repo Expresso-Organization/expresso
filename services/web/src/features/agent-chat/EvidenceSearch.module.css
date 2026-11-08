@@ -1,0 +1,6 @@
+.root { display: grid; gap: var(--ex-text-lg); padding: var(--ex-text-lg); color: var(--ex-fg); background: var(--ex-bg); border: 1px solid var(--ex-border); min-width: 0; flex-shrink: 0; }
+.root fieldset, .root label, .results { display: grid; gap: var(--ex-text-lg); min-width: 0; }
+.root input, .root select { width: 100%; max-width: 100%; color: var(--ex-fg); background: var(--ex-bg); border: 1px solid var(--ex-border); padding: calc(var(--ex-text-lg) / 2); }
+.results { color: var(--ex-fg); }
+.results blockquote { white-space: pre-wrap; overflow-wrap: anywhere; margin-inline: 0; border-left: 1px solid var(--ex-border); padding-inline: var(--ex-text-lg); }
+.actions { display: flex; flex-wrap: wrap; gap: var(--ex-text-lg); }

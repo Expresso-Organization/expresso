@@ -1,0 +1,20 @@
+import { randomUUID } from "node:crypto";
+import { it,expect,vi } from "vitest";
+vi.mock("../../platform/mongo-transaction.js",()=>({inTransaction:async(db:unknown,fn:(tx:unknown)=>unknown)=>fn(db)}));
+vi.mock("../identity/index.js",()=>({requireActiveUser:vi.fn(async()=>undefined)}));
+import { EvidenceSearchService } from "./service.js";
+import type { MongoContext } from "../../platform/mongodb.js";
+import { emptyCoaching } from "../career-coaching/service.js";
+it("관심 없음 공고를 제외하고 기존 지역 필터를 그대로 사용한다",async()=>{
+ const userId=randomUUID(),excluded=randomUUID(),allowed=randomUUID();
+ const state={...emptyCoaching(),feedback:[{id:randomUUID(),kind:"job" as const,target:excluded,reason:"관심 없음",active:true}]};
+ const db={db:{collection:()=>({findOne:async()=>({state})})}} as unknown as MongoContext;
+ const jobs={list:vi.fn(async()=>({data:[{id:excluded,title:"API 개발"},{id:allowed,title:"API 개발"}],summary:{total:2},page:{hasNextPage:false}})),get:vi.fn(async()=>({title:"API 개발",descriptionRaw:"Node.js API 개발",expiresAt:null}))};
+ type Args=ConstructorParameters<typeof EvidenceSearchService>;
+ const service=new EvidenceSearchService(db,{} as Args[1],{} as Args[2],jobs as unknown as Args[3],{} as Args[4]);
+ const result=await service.searchJobs(userId,{query:"API",mode:"keyword",recordIds:[],filters:{location:"서울"},limit:8});
+ expect(result.hits.map(h=>h.jobId)).toEqual([allowed]);
+ expect(jobs.get.mock.calls.some(call=>(call as unknown[])[1]===excluded)).toBe(false);
+ expect(jobs.list.mock.calls.every(call=>(call as unknown[])[1] && ((call as unknown[])[1] as {location:string}).location==="서울")).toBe(true);
+ expect(result.meta.notices.join()).toContain("관심 없음");
+});

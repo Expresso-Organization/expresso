@@ -231,3 +231,29 @@
 
 .runNotice { display:flex; align-items:center; justify-content:space-between; gap:8px; }
 .root .retryButton { flex-shrink:0; gap:4px; }
+/* 채팅과 P9 작업 계획을 함께 스크롤합니다. */
+.workspace {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0%;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-height: calc(100dvh - 108px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+}
+
+/* 작업 계획이 길어져도 각 영역을 눌러서 줄이지 않습니다. */
+.workspace > * {
+  flex-shrink: 0;
+}
+
+/* 공고 우측 채팅의 높이를 명확하게 지정합니다. */
+.workspace > .rail {
+  flex: 0 0 auto;
+  height: min(640px, 70dvh);
+  min-height: 0;
+}

@@ -1,3 +1,4 @@
+import { claimContradictions } from "../../platform/claim-contradictions.js";
 import { GenerationOutputSchema, chartNumbers, type GenerationOutput } from "@expresso/contracts";
 
 import { ungroundedNumbers } from "../../platform/numbers.js";
@@ -46,6 +47,8 @@ export function validateGenerationOutput(
     // 그림에 적힌 수도 문장과 같은 규율을 받는다. 눈에 먼저 들어오는 자리라
     // 여기서 지어낸 값이 가장 크게 거짓말한다.
     const claimed = block.chart ? `${block.text} ${chartNumbers(block.chart)}` : block.text;
+    const contradictions = claimContradictions(claimed, cited);
+    if (contradictions.length) throw new GenerationValidationError(contradictions.join(" "));
     const invented = ungroundedNumbers(claimed, cited);
     if (invented.length > 0) {
       throw new GenerationValidationError(
