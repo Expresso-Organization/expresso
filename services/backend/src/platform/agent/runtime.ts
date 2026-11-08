@@ -21,6 +21,7 @@ export interface AgentInput {
   apiKey?: string;
   messages: AgentMessage[];
   context: unknown;
+  preferences?: unknown;
   signal: AbortSignal;
   emit(event: AgentEvent): Promise<void>;
   propose(recordId: string, draft: AgentEditDraft): Promise<NonNullable<AgentToolResult["proposal"]>>;
@@ -202,7 +203,7 @@ export class ClaudeAgentRuntime implements AgentRuntime {
     ] });
     const isolatedHome = input.apiKey ? await mkdtemp(join(tmpdir(), "expresso-agent-")) : null;
     try {
-      const messages = query({ prompt: JSON.stringify({ conversation: conversationForModel(input.messages), context: input.context, currentRecords }), options: {
+      const messages = query({ prompt: JSON.stringify({ conversation: conversationForModel(input.messages), context: input.context, preferences: input.preferences, currentRecords }), options: {
         model: "sonnet",
         ...(isolatedHome ? { env: { PATH: process.env.PATH, HOME: isolatedHome, CLAUDE_CONFIG_DIR: isolatedHome, ANTHROPIC_API_KEY: input.apiKey } } : {}), abortController, persistSession: false, includePartialMessages: true, maxTurns: 8, maxBudgetUsd: 1,
         tools: [], mcpServers: { expresso: server }, allowedTools: ["mcp__expresso__search_career_evidence", "mcp__expresso__search_job_postings","mcp__expresso__propose_record_edit", "mcp__expresso__list_career_records", "mcp__expresso__read_career_records", "mcp__expresso__record_requirement_review", "mcp__expresso__propose_new_record", "mcp__expresso__record_gap_review", "mcp__expresso__propose_preparation_plan", "mcp__expresso__read_preparation_plan", "mcp__expresso__propose_replan"], permissionMode: "dontAsk", settingSources: [], strictMcpConfig: true,

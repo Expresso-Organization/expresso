@@ -98,6 +98,7 @@ export class CodexAgentRuntime implements AgentRuntime {
       const prompt = JSON.stringify({
         conversation: conversationForModel(input.messages),
         context: input.context,
+        preferences: input.preferences,
         currentRecords,
         tools: repeatedReads >= 2 || turn === MAX_TOOL_CALLS ? [] : tools,
         instruction: repeatedReads >= 2 || turn === MAX_TOOL_CALLS

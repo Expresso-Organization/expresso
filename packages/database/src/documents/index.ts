@@ -1,3 +1,4 @@
+export type { CareerCoachingDoc } from "./career-coaching.js";
 export type * from "./analytics.js";
 export type * from "./brew.js";
 export type * from "./career.js";

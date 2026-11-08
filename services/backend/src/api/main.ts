@@ -1,3 +1,4 @@
+import { CareerCoachingService } from "../modules/career-coaching/index.js";
 import { EvidenceSearchService, HttpSearchEmbedding } from "../modules/evidence-search/index.js";
 import { CareerWorkflowService } from "../modules/career-workflow/index.js";
 import { AgentCredentials } from "../modules/agent-chat/index.js";
@@ -160,8 +161,10 @@ const evidenceSearchService = new EvidenceSearchService(database, careerService,
   config.searchEmbeddingUrl && config.searchEmbeddingModel ? new HttpSearchEmbedding(config.searchEmbeddingUrl, config.searchEmbeddingModel, config.searchEmbeddingApiKey) : null);
 const agentChatService = new AgentChatService(database, createAgentRuntime(config, ai, aiUsage), careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(database, config.agentCredentialEncryptionKey), portfolioReadService, pageService, config.agentChatProvider ?? "anthropic", evidenceSearchService);
 const careerWorkflowService = new CareerWorkflowService(database, agentChatService, careerService, jobBoardService, jobMarketService, materialsService, consentService, ai);
+const careerCoachingService = new CareerCoachingService(database, agentChatService, analyticsService);
 const adminService = new AdminService(database, { identity: identityService, career: careerService, consent: consentService });
 const app = buildApi({
+  careerCoachingService,
   evidenceSearchService,
   adminService,
   agentChatService,

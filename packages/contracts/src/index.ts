@@ -1,3 +1,4 @@
+export * from "./career-coaching.js";
 export * from "./common.js";
 export * from "./career.js";
 export * from "./career-editor.js";

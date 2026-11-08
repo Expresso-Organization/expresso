@@ -1,3 +1,4 @@
+import { readCoaching, personalization } from "../career-coaching/index.js";
 import type { EvidenceSearchService } from "../evidence-search/index.js";
 import type { PortfolioReadApi } from "../portfolios/index.js";
 import type { PageApi } from "../page/index.js";
@@ -162,6 +163,8 @@ export class AgentChatService {
    * 보완점이 그 뒤의 요건 대조보다 오래되었거나 대조가 오래되었으면 받지 않는다.
    */
   private async planDraft(userId: string, messages: AgentMessage[], input: PlanProposalInput) {
+    const savedProfile = (await readCoaching(this.db, userId)).profile;
+    if (savedProfile && input.settings.weeklyHours > savedProfile.weeklyHours) throw new AgentToolRejection([`저장한 가용 시간은 주 ${savedProfile.weeklyHours}시간입니다. 그 안에서 계획하거나 사용자가 탐색 설정을 먼저 수정하도록 안내하세요.`]);
     const gap = latestTool(messages, tool => tool.gapReview);
     if (!gap) throw new AgentToolRejection(["이 대화에 보완점 정리가 없습니다. 먼저 record_gap_review로 정리하십시오."]);
     const review = latestTool(messages, tool => tool.review);
@@ -198,6 +201,8 @@ export class AgentChatService {
   }
   /** 남은 작업 재배치 초안. 완료하지 않은 작업만 새 설정으로 배치한다. 저장은 승인할 때. */
   private async replanDraft(userId: string, input: ReplanProposalInput) {
+    const savedProfile = (await readCoaching(this.db, userId)).profile;
+    if (savedProfile && input.settings.weeklyHours > savedProfile.weeklyHours) throw new AgentToolRejection([`저장한 주당 가용 시간 ${savedProfile.weeklyHours}시간을 초과합니다. 설정을 먼저 확인하세요.`]);
     const plan = await this.plans.get(userId, input.planId);
     if (!plan) throw new AgentToolRejection(["그 계획을 찾을 수 없습니다. 승인한 계획 초안의 planId를 쓰십시오."]);
     try {
@@ -323,7 +328,8 @@ export class AgentChatService {
     }, RUN_HEARTBEAT_MS);
     const timeout = setTimeout(() => controller.abort(), 600_000);
     try {
-      await this.runtime!.run({ userId: row.userId, messages: row.messages.slice(0, -1), context, ...(apiKey ? { apiKey } : {}), signal: controller.signal,
+      const preferences = personalization(await readCoaching(this.db, row.userId));
+      await this.runtime!.run({ preferences, userId: row.userId, messages: row.messages.slice(0, -1), context, ...(apiKey ? { apiKey } : {}), signal: controller.signal,
         emit: async event => {
           if (controller.signal.aborted) throw new Error("cancelled");
           if (event.type === "text") { message.text += event.text; if (message.text.length > 64_000) throw new Error("response too large"); }

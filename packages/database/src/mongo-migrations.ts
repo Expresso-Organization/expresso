@@ -1,3 +1,4 @@
+import { careerCoachingSteps } from "./mongodb-migrations/0027/migration.js";
 import { evidenceSearchSteps } from "./mongodb-migrations/0026/migration.js";
 import { careerWorkflowSteps } from "./mongodb-migrations/0025/migration.js";
 import { createHash } from "node:crypto";
@@ -77,6 +78,7 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
   const workflowHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0025/migration.ts", import.meta.url))).digest("hex");
   const evidenceSource = await readFile(new URL("./mongodb-migrations/0026/migration.ts", import.meta.url));
   const evidenceHash = createHash("sha256").update(`migration.ts\0${evidenceSource.byteLength}\0`).update(evidenceSource).digest("hex");
+  const coachingHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0027/migration.ts", import.meta.url))).digest("hex");
   return [
     { version: "0001", name: "initial_collections", checksum: hash.digest("hex"), steps: await initialMigrationSteps() },
     { version: "0002", name: "generation_ledger_amount_constraint", checksum: secondHash, steps: await generationLedgerConstraintSteps() },
@@ -99,5 +101,6 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
     { version: "0024", name: "admin_dummy_accounts", checksum: adminDummyHash, steps: await adminDummyAccountSteps() },
     { version: "0025", name: "career_workflows", checksum: workflowHash, steps: await careerWorkflowSteps() },
     { version: "0026", name: "evidence_search_indexes", checksum: evidenceHash, steps: await evidenceSearchSteps() },
+    { version: "0027", name: "career_coaching", checksum: coachingHash, steps: await careerCoachingSteps() },
   ];
 }

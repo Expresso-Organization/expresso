@@ -1,4 +1,5 @@
 "use client";
+import CareerCoaching from "./CareerCoaching";
 import EvidenceSearch, { SearchResults } from "./EvidenceSearch";
 import CareerWorkflow from "./CareerWorkflow";
 import { createContext, useContext, useState, useRef, useEffect } from "react";
@@ -197,6 +198,7 @@ export function AgentChat({ job, standalone = false, onRunningChange, ...props }
       </div>
       {standalone ? <ConversationSwitcher contexts={state.conversation?.contexts ?? []} contextDisabled={contextDisabled} onToggleContext={toggleContext} onPreview={setPreview} inline currentId={state.id} conversations={state.list} disabled={state.pending} onSelect={state.select} /> : null}
     </section>
+    {state.id ? <CareerCoaching key={`coaching:${state.id}`} conversationId={state.id} disabled={state.pending || running || !!preview} onSend={text => { void state.send(text); }} /> : <p>대화를 시작하면 직무 탐색·개인화·개선 행동을 사용할 수 있습니다.</p>}
     <EvidenceSearch key={`search:${state.id ?? "new"}`} disabled={state.pending || running || !!preview} contexts={state.conversation?.contexts ?? []} onAttach={toggleContext} />
     {state.id && state.conversation ? (
       <CareerWorkflow

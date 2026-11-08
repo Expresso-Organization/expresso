@@ -8,6 +8,7 @@ const RAW_COLLECTIONS = ["analytics_event_receipts", "visit_events", "conversion
 const AGGREGATE_COLLECTIONS = ["metrics_daily", "insights", "analytics_rate_limits"] as const;
 const DOMAIN_COLLECTIONS = [
   "career_evidence_index",
+  "career_coaching",
   "career_workflows",
   "agent_conversations",
   "agent_credentials",

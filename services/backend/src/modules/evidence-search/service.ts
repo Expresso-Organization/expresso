@@ -1,3 +1,4 @@
+import { readCoaching } from "../career-coaching/index.js";
 import {
   EvidenceSearchInputSchema, EvidenceSearchResultSchema, SemanticJobInputSchema,
   SemanticJobResultSchema, type EvidenceSearchInput, type SemanticJobInput,
@@ -187,12 +188,16 @@ export class EvidenceSearchService {
     let queryVector: number[] | null = null;
     if (hybrid) try { queryVector = (await this.embedding!.embed([query]))[0]!; }
       catch { hybrid = false; notices.push("임베딩 장애: 키워드 재정렬로 전환했습니다."); }
+    const savedFeedback = (await readCoaching(this.db, userId)).feedback.filter(f => f.active && f.kind === "job");
+    const excludedJobs = new Set(savedFeedback.map(f => f.target));
+    if (savedFeedback.length) notices.push(`관심 없음 피드백 공고 ${savedFeedback.length}개를 검색 제외 조건으로 적용했습니다.`);
     const candidates: { id: string; title: string; quote: string; text: string; hash: string; vector: number[] | null }[] = [];
     let total = 0;
     for (let page = 1; page <= 4; page++) {
       const result = await this.jobs.list(userId, { ...input.filters, deadline: input.filters.deadline ?? "open", sort: "recent", page, limit: 50 });
       total = result.summary.total;
       for (const item of result.data) {
+        if (excludedJobs.has(item.id)) continue;
         const detail = await this.jobs.get(userId, item.id);
         const text = `${detail.title}\n${detail.descriptionRaw}`.slice(0, 16_000);
         const quote = splitText(detail.descriptionRaw).sort((a, b) => lexical(query, b) - lexical(query, a))[0] ?? detail.title;
