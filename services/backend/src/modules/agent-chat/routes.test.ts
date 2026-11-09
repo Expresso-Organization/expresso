@@ -28,4 +28,20 @@ describe("에이전트 인증 분리", () => {
     expect(stored).toBeUndefined();
     await app.close();
   });
+  it("관리자가 대신 로그인한 더미 계정은 개인 키 없이 서버 인증을 쓴다", async () => {
+    const admin = "00000000-0000-4000-8000-000000000003";
+    const credentials = { configured: async () => false, save: async () => {}, read: async () => undefined, remove: async () => {} };
+    const app = Fastify(); const send = vi.fn(async () => ({})); const retry = vi.fn(async () => ({}));
+    registerAgentChatRoutes(app, { credentials, enabled: true, consentRequired: async () => false, send, retry, close: async () => {} } as unknown as AgentChatService, async req => { req.auth = { sessionId: "session", user: { id: user, email: "dummy@example.com", displayName: "dummy", planCode: "team", emailVerifiedAt: null, role: "user", impersonation: { adminUserId: admin, adminDisplayName: "admin", since: "2026-11-09T00:00:00.000Z" } }, owner: { userId: admin, displayName: "admin", role: "admin" } }; }, []);
+    const access = await app.inject({ method: "GET", url: "/v1/agent/access" });
+    expect(access.json().data).toMatchObject({ serverCredentialAllowed: true, apiKeyConfigured: false });
+    const body = { requestId: conversation, text: "안녕" };
+    const response = await app.inject({ method: "POST", url: `/v1/agent/conversations/${conversation}/messages`, payload: body });
+    expect(response.statusCode).toBe(202);
+    expect(send).toHaveBeenLastCalledWith(user, conversation, body, undefined);
+    const retried = await app.inject({ method: "POST", url: `/v1/agent/conversations/${conversation}/retry` });
+    expect(retried.statusCode).toBe(202);
+    expect(retry).toHaveBeenLastCalledWith(user, conversation, undefined);
+    await app.close();
+  });
 });
