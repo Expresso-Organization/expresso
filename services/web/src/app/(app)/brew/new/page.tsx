@@ -70,6 +70,8 @@ const MODES: {
 ];
 
 const PAGE_SIZE = 20;
+/** 첫 화면 최신 공고 줄 수. 옆 칸(갈래 · 내 재료)과 높이가 비슷해지는 만큼이다. */
+const RECENT_LIMIT = 6;
 
 function isMode(value: string | undefined): value is Mode {
   return MODES.some((mode) => mode.key === value);
@@ -134,28 +136,45 @@ type JobRow = {
  * 첫 선택 화면.
  *
  * 세 층이다 — 만들던 것(있으면), 공고를 찾는 칸, 그리고 바로 시작할 공고 줄과
- * 목록에 없는 공고를 다루는 갈래. 공고 줄의 유무로 격자가 바뀌므로 데이터를
- * 여기서 기다려 서버에서 배치를 정한다. `homeEngagement` · `watchedJobs`는
- * 사이드바와 같은 요청을 공유한다(cache).
+ * 목록에 없는 공고를 다루는 갈래. 공고 줄은 관심(없으면 추천) 공고와 최신 공고
+ * 두 묶음이고, 최신 공고는 모아 둔 공고가 있으면 늘 선다 — 저장해 둔 것도 추천도
+ * 없는 사람이 첫 화면에서 고를 공고가 없어지지 않게 한다. 공고 줄의 유무로 격자가
+ * 바뀌므로 데이터를 여기서 기다려 서버에서 배치를 정한다. `homeEngagement` ·
+ * `watchedJobs`는 사이드바와 같은 요청을 공유한다(cache).
  */
 async function ModeHome({ session, recordTotal }: { session: Session; recordTotal: number }) {
-  const [{ data: home }, watched, collected] = await Promise.all([
+  const [{ data: home }, watched, recent] = await Promise.all([
     homeEngagement(session.accessToken),
     watchedJobs(session.accessToken),
-    jobs.postings(session.accessToken, { limit: 1 }),
+    jobs.postings(session.accessToken, { sort: "recent", limit: RECENT_LIMIT }),
   ]);
 
-  const jobsPanel = pickJobsPanel(home, watched, recordTotal);
+  const pinned = pickJobsPanel(home, watched, recordTotal);
+  // 위 묶음에 이미 선 공고는 최신 공고에서 빼 같은 줄이 두 번 서지 않게 한다.
+  const shown = new Set(pinned?.rows.map((row) => row.id) ?? []);
+  const recentRows = recent.data.filter((job) => !shown.has(job.id)).map(postingRow);
+  const panels = [
+    ...(pinned ? [pinned] : []),
+    ...(recentRows.length > 0
+      ? [{ title: "최신 공고", note: "들어온 순", href: "/brew/new?mode=list" as Route, rows: recentRows }]
+      : []),
+  ];
   const activeBrew = home.activeBrews[0];
 
   return (
     <>
       {activeBrew ? <ResumeBanner brew={activeBrew} /> : null}
 
-      <EntrySearch total={collected.summary.total} />
+      <EntrySearch total={recent.summary.total} />
 
-      <div className={jobsPanel ? styles.split : styles.splitSolo}>
-        {jobsPanel ? <JobsPanel {...jobsPanel} /> : null}
+      <div className={panels.length > 0 ? styles.split : styles.splitSolo}>
+        {panels.length > 0 ? (
+          <div className={styles.main}>
+            {panels.map((panel) => (
+              <JobsPanel key={panel.title} {...panel} />
+            ))}
+          </div>
+        ) : null}
         <div className={styles.side}>
           <OtherRoutes />
           <MaterialsPanel categories={session.categories} recordTotal={recordTotal} />
@@ -166,8 +185,8 @@ async function ModeHome({ session, recordTotal }: { session: Session; recordTota
 }
 
 /**
- * 공고 줄의 출처. 관심 공고는 지원하려고 골라 둔 것이라 추천보다 앞선다.
- * 둘 다 없으면 칸을 세우지 않는다 — 검색 칸이 목록으로 가는 길을 맡는다.
+ * 위 묶음의 출처. 관심 공고는 지원하려고 골라 둔 것이라 추천보다 앞선다.
+ * 둘 다 없으면 이 묶음은 서지 않고 최신 공고만 선다.
  */
 function pickJobsPanel(
   home: Home,
@@ -180,19 +199,7 @@ function pickJobsPanel(
       title: "관심 공고",
       note: "마감 순",
       href: "/jobs?interested=true" as Route,
-      rows: saved.map((job) => ({
-        id: job.id,
-        title: job.title,
-        company: { name: job.company.name, logoUrl: job.company.logoUrl },
-        ...deadlineMeta(job.daysLeft, job.deadlineNote),
-        resume:
-          job.brew && job.brew.status !== "done"
-            ? {
-                href: `/brew/${job.brew.id}/${resumeStep(job.brew.status).segment}` as Route,
-                label: "이어서 만들기",
-              }
-            : null,
-      })),
+      rows: saved.map(postingRow),
     };
   }
 
@@ -213,6 +220,23 @@ function pickJobsPanel(
   }
 
   return null;
+}
+
+/** 모아 둔 공고 한 건을 공고 줄로. 진행 중인 제작이 있으면 새로 만들기 대신 그리로 보낸다. */
+function postingRow(job: Awaited<ReturnType<typeof jobs.postings>>["data"][number]): JobRow {
+  return {
+    id: job.id,
+    title: job.title,
+    company: { name: job.company.name, logoUrl: job.company.logoUrl },
+    ...deadlineMeta(job.daysLeft, job.deadlineNote),
+    resume:
+      job.brew && job.brew.status !== "done"
+        ? {
+            href: `/brew/${job.brew.id}/${resumeStep(job.brew.status).segment}` as Route,
+            label: "이어서 만들기",
+          }
+        : null,
+  };
 }
 
 /** 마감까지 남은 날을 줄 끝 표시로. 일주일 안이면 진하게, 지났으면 흐리게. */

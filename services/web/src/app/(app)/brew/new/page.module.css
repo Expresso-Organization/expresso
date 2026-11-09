@@ -105,6 +105,13 @@
   gap: 12px;
 }
 
+/* 공고 줄 묶음(관심 · 추천 · 최신)을 세로로 쌓는다 */
+.main {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
 /* 공고 줄이 없으면 갈래와 재료가 나란히 선다 */
 .splitSolo .side {
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
