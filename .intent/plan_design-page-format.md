@@ -19,6 +19,7 @@ date: 2026-11-09
 | `services/backend/src/modules/generation/service.ts` | 저장 · 포트폴리오로 옮기기 · `prepareFreeHtml` 반환 |
 | `services/backend/src/modules/page/format-router.ts` | 새 라우터 |
 | `services/backend/src/modules/page/generator.ts` · `service.ts` | `context.pageFormat`, `options.pageFormat` |
+| `services/backend/src/modules/generation/legacy-mysql-service.ts` · `page/legacy-mysql-service.ts` | API 타입(`GenerationApi` · `PageApi`)이 옛 서비스에서 파생되므로 `pageFormat` 반환 · 옵션 자리만 맞춤 |
 | `services/backend/src/worker/processors/generation.ts` · `worker/main.ts` · `api/main.ts` | 라우터 연결, 작업 방식 전달 |
 | `services/web/src/app/(app)/brew/[brewId]/design/DesignCatalog.tsx` · `.module.css` · `design-actions.ts` | 라디오 · 비활성 · 전달 |
 | 시험: `format-router.test.ts` · `processors/generation.test.ts` · `design-actions.test.ts` · `generation.integration.test.ts` | 새 동작 확인 |

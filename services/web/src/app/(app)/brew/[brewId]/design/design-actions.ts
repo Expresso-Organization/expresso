@@ -5,7 +5,7 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { PortfolioArchetypeSchema } from "@expresso/contracts";
+import { PageGenerationFormatSchema, PortfolioArchetypeSchema } from "@expresso/contracts";
 
 import { ApiError } from "@/lib/api/client";
 import { brews, designSystems, generation } from "@/lib/api/endpoints";
@@ -34,6 +34,7 @@ export async function startGenerationAction(
       recipeId: z.uuid().optional(),
       designSystemRevisionId: z.uuid(),
       archetype: PortfolioArchetypeSchema.optional(),
+      pageFormat: PageGenerationFormatSchema.optional(),
     })
     .safeParse({
       brewId: formData.get("brewId"),
@@ -41,9 +42,11 @@ export async function startGenerationAction(
       recipeId: formData.get("recipeId") || undefined,
       designSystemRevisionId: formData.get("designSystemRevisionId"),
       archetype: formData.get("archetype") ?? undefined,
+      // 생성 방식(구조화 생성 · 자유 생성). 칸이 없으면 서버 설정을 따른다.
+      pageFormat: formData.get("pageFormat") ?? undefined,
     });
   if (!ids.success) return { error: "고른 디자인을 확인하고 다시 눌러 주세요." };
-  const { brewId, recipeId, designSystemRevisionId, archetype } = ids.data;
+  const { brewId, recipeId, designSystemRevisionId, archetype, pageFormat } = ids.data;
 
   try {
     // 선택을 먼저 남긴다. 생성이 실패해도 다시 열면 같은 디자인이 골라져 있다.
@@ -51,7 +54,7 @@ export async function startGenerationAction(
     if (!recipeId) await brews.createRecipe(session.accessToken, brewId, `recipe:${brewId}`);
     await generation.submit(
       session.accessToken,
-      { ...(recipeId ? { recipeId } : { brewId }), designSystemRevisionId, ...(archetype ? { archetype } : {}) },
+      { ...(recipeId ? { recipeId } : { brewId }), designSystemRevisionId, ...(archetype ? { archetype } : {}), ...(pageFormat ? { pageFormat } : {}) },
       randomUUID(),
     );
   } catch (error) {

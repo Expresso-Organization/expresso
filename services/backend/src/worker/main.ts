@@ -39,6 +39,7 @@ import { PageStream } from "../modules/page/stream.js";
 import { createStreamRedis } from "../platform/redis.js";
 import { AiPageGenerator } from "../modules/page/generator.js";
 import { StructuredPageGenerator } from "../modules/page/structured-generator.js";
+import { FormatRoutingPageGenerator } from "../modules/page/format-router.js";
 import { MediaService } from "../modules/media/index.js";
 import { ChromiumPageMeasurer } from "../platform/browser/page-measurer.js";
 import { createPageRefineProcessor } from "./processors/page-refine.js";
@@ -158,7 +159,14 @@ const generationProcessor = createGenerationProcessor(
   generationService,
   ai ? new AiSentenceWriter(ai) : new UnavailableSentenceWriter(),
   ai ? new AiLayoutDesigner(ai) : null,
-  ai ? { service: pageService, generator: config.pageGenerationFormat === "html" ? new AiPageGenerator(ai) : structuredPageGenerator! } : null,
+  // 지면 방식은 생성마다 고른다(구조화 생성 · 자유 생성). 고르지 않은 생성은 설정 값을 따른다.
+  ai ? {
+    service: pageService,
+    generator: new FormatRoutingPageGenerator(
+      { html: new AiPageGenerator(ai), "json-render": structuredPageGenerator! },
+      config.pageGenerationFormat ?? "json-render",
+    ),
+  } : null,
   engagementService,
 );
 // 질문 생성 · 레시피 생성도 여기서 돈다. HTTP 요청은 잡만 만들고 바로 돌아간다.

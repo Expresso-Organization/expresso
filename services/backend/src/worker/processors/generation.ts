@@ -29,7 +29,8 @@ export function createGenerationProcessor(
           prepared.userId,
           prepared.portfolioId,
           page.generator,
-          { generationJobId: id, streamId: id },
+          // 요청이 고른 지면 방식. 생성기(`FormatRoutingPageGenerator`)가 이 값으로 길을 고른다.
+          { generationJobId: id, streamId: id, pageFormat: prepared.pageFormat },
         );
         if (generated.qualityStatus !== "ready") {
           return service.failFreeHtml(id, "PAGE_OUTPUT_INVALID");

@@ -157,6 +157,43 @@
 .archetypeSketch[data-archetype="list"] i:first-child { width: 80%; height: 7px; }
 .archetypeSketch[data-archetype="list"] i:nth-child(n + 2) { height: 2px; margin-top: 3px; }
 
+/* 생성 방식 — 두 칸. 자유 생성이면 아래 짜임새 줄이 흐려지고 잠긴다. */
+.formatRow {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.formatIcon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  background: var(--ex-bg-muted);
+  color: var(--ex-fg-body);
+}
+
+.archetypeOptionActive .formatIcon {
+  background: var(--ex-bg-inverse);
+  color: var(--ex-fg-on-inverse);
+}
+
+.archetypeRow:disabled {
+  opacity: 0.45;
+}
+
+.archetypeRow:disabled .archetypeOption {
+  cursor: not-allowed;
+}
+
+.archetypeRow:disabled .archetypeOption:hover {
+  border-color: var(--ex-border-soft);
+}
+
+.archetypeRow:disabled .archetypeOptionActive {
+  border-color: var(--ex-border-firm);
+}
+
 @media (max-width: 767px) {
   .archetypeRow { grid-template-columns: minmax(0, 1fr); }
 }

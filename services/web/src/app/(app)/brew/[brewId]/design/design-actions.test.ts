@@ -37,6 +37,17 @@ describe("디자인 시스템으로 생성 요청", () => {
     expect(submit).toHaveBeenCalledWith("test-session", { recipeId: RECIPE, designSystemRevisionId: REVISION, archetype: "poster" }, expect.any(String));
   });
 
+  it("고른 생성 방식을 생성 요청에 함께 보낸다", async () => {
+    expect(await startGenerationAction({ error: null }, form({ pageFormat: "html" }))).toEqual({ error: null });
+    expect(submit).toHaveBeenCalledWith("test-session", { recipeId: RECIPE, designSystemRevisionId: REVISION, pageFormat: "html" }, expect.any(String));
+  });
+
+  it("알 수 없는 생성 방식 값이면 생성을 요청하지 않는다", async () => {
+    const result = await startGenerationAction({ error: null }, form({ pageFormat: "markdown" }));
+    expect(result.error).toBeTruthy();
+    expect(submit).not.toHaveBeenCalled();
+  });
+
   it("알 수 없는 짜임새 값이면 생성을 요청하지 않는다", async () => {
     const result = await startGenerationAction({ error: null }, form({ archetype: "magazine" }));
     expect(result.error).toBeTruthy();
