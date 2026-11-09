@@ -119,6 +119,21 @@
   white-space: nowrap;
 }
 
+/* 동의가 없어 해석을 건너뛰었을 때 라벨 자리에 서는 안내. 칩과 같은 줄에서 줄을 바꿔 선다. */
+.consentNote {
+  margin: 0 4px 0 0;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-accent-text);
+  flex-basis: 100%;
+}
+
+.consentLink {
+  font-weight: 600;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .parsedChip {
   display: flex;
   align-items: center;
