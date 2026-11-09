@@ -1,5 +1,6 @@
 import { koreanPlace } from "@expresso/contracts";
 import type {
+  ConsentScope,
   JobSource,
   JobPostingCategory,
   JobPostingFacet,
@@ -13,6 +14,7 @@ import Link from "next/link";
 import { AppBody, AppHeader } from "@/components/shell/AppShell";
 import { Icon } from "@/components/ui/Icon";
 import { jobs as jobsApi } from "@/lib/api/endpoints";
+import { CONSENT_COPY, CONSENT_SETTINGS_HREF } from "@/lib/consent-copy";
 import { watchedJobs } from "@/lib/app-data";
 import { requireSession } from "@/lib/require-session";
 
@@ -739,6 +741,7 @@ export default async function JobsPage({
               saved={searchSaved}
               clearHref={listHref(new URLSearchParams())}
               interested={interested}
+              requiredConsent={interpreted?.requiredConsent}
             />
           ) : (
             <BrowseSearchBar interested={interested} />
@@ -1048,6 +1051,7 @@ function SearchQueryCard({
   saved,
   clearHref,
   interested,
+  requiredConsent,
 }: {
   query: string;
   chips: readonly QueryChip[];
@@ -1058,6 +1062,8 @@ function SearchQueryCard({
   /** 검색어만 지운 목록. 관심 공고 목록이면 그 목록으로 돌아간다. */
   clearHref: Route;
   interested: boolean;
+  /** 검색어 해석에 필요한 동의가 없어 원문으로 찾았을 때 그 동의. */
+  requiredConsent: ConsentScope | undefined;
 }) {
   return (
     <div className={styles.queryCard}>
@@ -1081,7 +1087,16 @@ function SearchQueryCard({
       {/* 해석 칩 — 확신이 낮은 조건도 칩으로 만들되 끌 수 있게 둔다. 칩마다
           눌러서 다른 값을 고르거나 끌 수 있다. */}
       <div className={styles.parsedRow}>
-        <span className={styles.parsedLabel}>이렇게 이해했습니다</span>
+        {requiredConsent ? (
+          // 해석하지 않았으니 「이렇게 이해했습니다」라고 쓰지 않는다. 왜 칩이
+          // 안 생겼는지와 어디서 켜는지를 그 자리에 쓴다.
+          <p className={styles.consentNote}>
+            검색어 그대로 찾았습니다. {CONSENT_COPY[requiredConsent].title} 동의를 켜면 검색어를 조건으로 나눠 읽습니다.{" "}
+            <Link href={CONSENT_SETTINGS_HREF as Route} className={styles.consentLink}>동의 설정 열기</Link>
+          </p>
+        ) : (
+          <span className={styles.parsedLabel}>이렇게 이해했습니다</span>
+        )}
         {chips.map((chip) => (
           <ConditionChip
             key={chip.key}

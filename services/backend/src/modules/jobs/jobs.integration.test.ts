@@ -8,6 +8,8 @@ import { MongoJobMarketService } from "./service.js";
 import { MongoJobBoardService } from "./board-service.js";
 import { MongoIdentityService, type IdentityApi } from "../identity/index.js";
 import { MongoCareerService, type CareerApi } from "../career/index.js";
+import { MongoConsentService } from "../consent/index.js";
+import { CONSENT_POLICY_VERSION } from "@expresso/contracts";
 import { mongoCollections } from "@expresso/database";
 import { createMongoFixture } from "../../../test/support/mongodb.js";
 import { JobInterestResponseSchema, ListJobPostingsQuerySchema } from "@expresso/contracts";
@@ -67,6 +69,24 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB job market and board", (
     const results = await Promise.allSettled(Array.from({ length: 12 }, (_, index) => market.saveSearch(owner, { name: `검색 ${index}`, originalQuery: "서울", conditions: [], notify: false })));
     expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(10);
     expect(await market.listSavedSearches(other)).toHaveLength(0);
+  });
+
+  it("searches without AI interpretation until job posting analysis consent is granted", async () => {
+    const consent = new MongoConsentService(fixture.resource);
+    let calls = 0;
+    const gated = new MongoJobMarketService(fixture.resource, {
+      async interpret() { calls += 1; return [{ field: "location", value: "서울", enabled: true, confidence: 0.85 }]; },
+    }, consent);
+    // 동의가 없으면 해석기를 부르지 않고, 최근 검색은 그대로 남는다.
+    const withheld = await gated.interpretSearch(other, "서울 백엔드", 3);
+    expect(withheld).toMatchObject({ conditions: [], needsClarification: false, requiredConsent: "job_posting_analysis" });
+    expect(calls).toBe(0);
+    expect(await mongoCollections(fixture.resource.db).recentSearches.findOne({ _id: withheld.recentSearchId, userId: other })).toMatchObject({ queryText: "서울 백엔드", resultCount: 3 });
+    await consent.grant(other, ["job_posting_analysis"], CONSENT_POLICY_VERSION);
+    const interpreted = await gated.interpretSearch(other, "서울 백엔드", 3);
+    expect(calls).toBe(1);
+    expect(interpreted.requiredConsent).toBeUndefined();
+    expect(interpreted.conditions).toHaveLength(1);
   });
 
   it("returns company facets from the population without the selected company", async () => {
