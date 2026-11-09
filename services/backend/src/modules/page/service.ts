@@ -26,6 +26,7 @@ import {
   type StructuredElementStyle,
   type StructuredPortfolioSnapshot,
   type PageEditorDesign,
+  type PageGenerationFormat,
 } from "@expresso/contracts";
 import { renderStructuredPortfolio, librarySelection, styleProblems } from "@expresso/portfolio-renderer";
 import { mongoCollections, type GeneratedPageDoc, type JsonObject } from "@expresso/database";
@@ -183,7 +184,7 @@ export class PageService {
     };
   }
 
-  async generate(userId: string, portfolioId: string, generator: PageGenerator, options: { instruction?: string; generationJobId?: string; streamId?: string } = {}): Promise<GeneratedPage> {
+  async generate(userId: string, portfolioId: string, generator: PageGenerator, options: { instruction?: string; generationJobId?: string; streamId?: string; pageFormat?: PageGenerationFormat | null } = {}): Promise<GeneratedPage> {
     if (!await this.owns(userId, portfolioId)) throw new PageServiceError(404, "portfolio not found");
     if (options.generationJobId) { const existing = await this.forGenerationJob(userId, options.generationJobId); if (existing) return existing; }
     const current = await this.latest(userId, portfolioId);
@@ -192,6 +193,7 @@ export class PageService {
       context.previous.structured = current.generationManifest.structured;
       context.structuredContent = current.generationManifest.structured.content;
     }
+    if (options.pageFormat) context.pageFormat = options.pageFormat;
     await this.#consent?.require(userId, "page_generation");
     const streamId = options.streamId ?? portfolioId; const stream = this.#stream;
     // 쓰기는 기다리지 않고 순서대로 쌓습니다. Redis 연결 하나의 명령은 보낸 순서로 처리됩니다.

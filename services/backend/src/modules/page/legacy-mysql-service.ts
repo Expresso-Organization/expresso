@@ -11,6 +11,7 @@ import {
   pageDocument,
   type GeneratedPage,
   type PageStyleGrammar,
+  type PageGenerationFormat,
 } from "@expresso/contracts";
 import type { SqlTag, JSONValue } from "../../platform/legacy-mysql.js";
 
@@ -340,6 +341,8 @@ export class PageService {
        * 보는 쪽이 첫 렌더부터 붙어 있어야 첫 조각을 놓치지 않는다.
        */
       streamId?: string | undefined;
+      /** 생성 요청이 고른 지면 방식. MySQL 배포는 생성기 하나만 쓰므로 읽지 않는다. */
+      pageFormat?: PageGenerationFormat | null | undefined;
     } = {},
   ): Promise<GeneratedPage> {
     const owned = (await this.#sql<{ id: string }[]>`

@@ -2,7 +2,7 @@ import { GenerationError, buildWriterContext, type ContextRow, type PathRow, typ
 export { GenerationError, buildWriterContext } from "./public.js";
 import { createHash, randomUUID } from "node:crypto";
 
-import { GenerationJobStatusSchema, type GenerationOutput, type GeneratedPage, type SubmitGeneration } from "@expresso/contracts";
+import { GenerationJobStatusSchema, type GenerationOutput, type GeneratedPage, type PageGenerationFormat, type SubmitGeneration } from "@expresso/contracts";
 import type { SqlTag, JSONValue } from "../../platform/legacy-mysql.js";
 
 import { EntitlementService } from "../entitlements/legacy-mysql-service.js";
@@ -228,6 +228,8 @@ export class GenerationService {
     return {
       userId: prepared.job.user_id,
       portfolioId: prepared.portfolioId,
+      // MySQL 배포에는 지면 방식 칸이 없다. 워커가 설정 값을 쓴다.
+      pageFormat: null as PageGenerationFormat | null,
       status: await this.getStatus(prepared.job.user_id, jobId),
     };
   }
