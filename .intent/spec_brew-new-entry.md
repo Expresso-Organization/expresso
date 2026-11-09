@@ -17,7 +17,8 @@ date: 2026-11-09
 - [ ] 관심 공고 줄은 `brew`가 있고 `status !== "done"`이면 `resumeStep(status)` 단계로 가는 링크를, 아니면 `analyzePostingAction` 폼 버튼을 낸다. 마감은 `daysLeft`(D-n) 또는 `deadlineNote`로 보인다.
 - [ ] 배치는 서버에서 정한다. 공고 칸 유무로 격자가 바뀌므로 `ModeHome`이 데이터를 `await`한 뒤 그린다(Suspense 뒤 null로 배치가 튀지 않게).
 - [ ] 카드 발치 경로(`path`, `.cardPath`, `.cardStop`)를 지운다.
-- [ ] 모드 탭(`ModeTabs`)과 고른 뒤 화면은 그대로다.
+- [ ] 고른 뒤 화면은 그대로다. 모드 탭 라벨만 정의서 01 칩 길이로 줄인다(공고 목록 · 공고 붙여넣기 · 공고 주소 · 목표 없이). 「기업 URL」은 실제 폼이 채용 공고 주소를 읽으므로 「공고 주소」로 쓴다.
+- [ ] 공고 칸의 「전체 보기」는 관심이면 `/jobs?interested=true`, 추천이면 `/jobs`로 간다.
 
 ## 설계
 

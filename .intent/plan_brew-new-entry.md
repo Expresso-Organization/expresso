@@ -15,7 +15,8 @@ date: 2026-11-09
 | 파일 | 무엇을 |
 |---|---|
 | `services/web/src/app/(app)/brew/new/page.tsx` | `ModeHome` async화, `EntrySearch` · `JobsPanel` · `OtherRoutes` 추가, `ModeCards` · `QuickStart` · `path` 제거 |
-| `services/web/src/app/(app)/brew/new/page.module.css` | 첫 화면 배치와 검색 칸 · 공고 줄 · 갈래 줄 스타일 |
+| `services/web/src/app/(app)/brew/new/page.module.css` | 첫 화면 배치와 검색 칸 · 공고 줄 · 갈래 줄 스타일. 한 열 전환은 중단점 표의 767px |
+| `services/web/src/app/(app)/brew/new/loading.tsx` | 로딩 뼈대를 카드 넷에서 새 첫 화면(검색 칸 · 공고 줄 · 갈래)으로 |
 
 ## 작업 순서
 
