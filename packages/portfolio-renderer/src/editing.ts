@@ -1,9 +1,10 @@
-import type {
-  DesignSystemSpecV2,
-  StructuredElementStyle,
-  StructuredPortfolioSnapshot,
-  StructuredPortfolioSpec,
-  StructuredSection,
+import {
+  isStructuredGroup,
+  type DesignSystemSpecV2,
+  type StructuredElementStyle,
+  type StructuredPortfolioSnapshot,
+  type StructuredPortfolioSpec,
+  type StructuredSection,
 } from "@expresso/contracts";
 import { z } from "zod";
 
@@ -228,6 +229,21 @@ const LIST_LABELS: Record<string, string> = { details: "항목", steps: "단계"
 function sectionIdOf(node: Node | undefined): string | undefined {
   const binding = (node?.props as { section?: { $state?: string } } | undefined)?.section?.$state;
   return binding?.match(/^\/sectionById\/(.+)$/)?.[1];
+}
+
+/**
+ * 요소를 보이는 글로 부르는 이름입니다. 사례는 섹션 제목, 첫 화면은 이름, 인용은 인용 글이고 나머지는 부품 이름입니다.
+ * `meta`는 부품 이름(묶음이면 담은 요소 수)입니다. 목차 화면과 에이전트가 읽는 지면 목차가 같은 이름을 씁니다.
+ */
+export function elementTitle(snapshot: Snapshot, key: string): { title: string; meta: string } {
+  const node = snapshot.spec.elements[key];
+  const type = STRUCTURED_TYPE_LABELS[node?.type ?? ""] ?? node?.type ?? "요소";
+  const id = sectionIdOf(node);
+  const section = id ? snapshot.content.sections.find((item) => item.id === id) : undefined;
+  if (node?.type === "PullQuote" && section?.quote) return { title: section.quote, meta: type };
+  if (section) return { title: section.title, meta: type };
+  if (node?.type === "NameIntro") return { title: snapshot.content.profile.name, meta: type };
+  return { title: type, meta: isStructuredGroup(node) ? `요소 ${node.children.length}개` : "" };
 }
 
 /** 경로를 사람이 읽는 이름으로 바꿉니다. 예: `/sections/a/metrics/0/value` → `경로 재설계 · 수치 1 값`. */

@@ -19,6 +19,8 @@ export interface QueueWorkerOptions<TPayload, TResult> {
   onDeadLetterError?: (error: unknown) => void;
   /** 이 프로세스의 Mongo 클라이언트가 다시 열리지 않을 때 부릅니다. 받는 쪽이 프로세스를 끝냅니다. */
   onFatalError?: (error: unknown) => void;
+  /** 프로세스가 멈추는 중인가. 그동안 끊긴 잡은 실패로 세지 않고 큐로 돌려보냅니다. */
+  stopping?: AbortSignal;
 }
 
 export function createQueueWorker<TPayload, TResult>(
@@ -44,6 +46,24 @@ export function createQueueWorker<TPayload, TResult>(
           error: safeErrorSummary(error),
         }));
         await job.moveToDelayed(Date.now() + MONGO_SERVER_SELECTION_TIMEOUT_MS, token);
+        throw new DelayedError();
+      }
+      /*
+       * 멈추는 중에 난 실패는 잡의 잘못이 아니다. systemd는 SIGTERM을 cgroup 전체에 보내므로 배포 재시작 때 claude CLI가
+       * Worker와 함께 끊긴다. 시도 횟수를 쓰지 않고 큐로 돌려보내 새 Worker가 다시 돌린다. 이 프로세스는 이미 새 잡을
+       * 받지 않으므로 지금 시각으로 돌려보낸다. 다시 돌려도 같은 답인 거절(`UnrecoverableError`)은 그대로 실패한다.
+       */
+      if (options.stopping?.aborted && !(error instanceof UnrecoverableError)) {
+        console.error(JSON.stringify({
+          level: "warn",
+          event: "queue.job_deferred",
+          reason: "worker_stopping",
+          queue: options.queueName,
+          jobName: job.name,
+          jobId: job.id ?? null,
+          error: safeErrorSummary(error),
+        }));
+        await job.moveToDelayed(Date.now(), token);
         throw new DelayedError();
       }
       /*

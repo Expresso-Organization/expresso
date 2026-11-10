@@ -31,7 +31,6 @@ export interface SidebarInterest {
   company: string;
   logoUrl: string | null;
   label: string;
-  score: number | null;
 }
 
 export interface SidebarProps {
@@ -68,7 +67,12 @@ export function Sidebar({
       footer={
         <>
           <div className={styles.quotaSlot}>
-            <div className={`${styles.copy} ${styles.quotaCard}`}>
+            {/* 카드 전체가 설정 화면의 사용량 구획으로 가는 링크다 */}
+            <Link
+              href="/account#usage"
+              className={`${styles.copy} ${styles.quotaCard}`}
+              title="사용량 보기"
+            >
               <div className={styles.quotaHead}>
                 <span className={styles.quotaLabel}>이번 달 크레딧</span>
                 <span className={styles.quotaValue}>
@@ -90,7 +94,7 @@ export function Sidebar({
                   style={{ width: `${quotaRatio * 100}%` }}
                 />
               </div>
-            </div>
+            </Link>
           </div>
           {admin ? (
             <Link href="/admin" className={`${styles.row} ${styles.userLink}`} title="관리">

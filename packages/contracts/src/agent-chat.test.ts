@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { UpdateTaskProgressSchema, PlanProposalInputSchema, PreparationTaskSchema, GapReviewDraftSchema, GapReviewSchema, AgentRecordDraftDecisionSchema, AgentRecordDraftInputSchema, RequirementReviewDraftSchema } from "./agent-chat.js";
+import { AgentMessageSchema, AgentPageElementEditInputSchema, SendAgentMessageSchema, UpdateTaskProgressSchema, PlanProposalInputSchema, PreparationTaskSchema, GapReviewDraftSchema, GapReviewSchema, AgentRecordDraftDecisionSchema, AgentRecordDraftInputSchema, RequirementReviewDraftSchema } from "./agent-chat.js";
 
 const jobPostingId = "00000000-0000-4000-8000-000000000001";
 const recordId = "00000000-0000-4000-8000-000000000002";
@@ -73,5 +73,18 @@ describe("작업 진행 기록", () => {
   it("진행 중에는 결과가 없어도 되고, 사용 시간은 음수가 될 수 없다", () => {
     expect(UpdateTaskProgressSchema.safeParse({ ...base, status: "in_progress" }).success).toBe(true);
     expect(UpdateTaskProgressSchema.safeParse({ ...base, status: "in_progress", spentMinutes: -1 }).success).toBe(false);
+  });
+});
+
+describe("다듬기 화면의 요소 고침", () => {
+  const selection = { portfolioId: jobPostingId, key: "section-a", label: "작업 목차" };
+  it("보내는 말과 저장한 말에 고른 요소를 싣고, 요소 키 모양을 검사한다", () => {
+    expect(SendAgentMessageSchema.parse({ requestId: recordId, text: "더 짧게", selection }).selection).toEqual(selection);
+    expect(SendAgentMessageSchema.safeParse({ requestId: recordId, text: "더 짧게", selection: { ...selection, key: "bad.key" } }).success).toBe(false);
+    expect(AgentMessageSchema.safeParse({ id: recordId, role: "user", text: "더 짧게", tools: [], selection, createdAt: "2026-11-10T00:00:00.000Z" }).success).toBe(true);
+  });
+  it("고침 입력은 모양만 검사하고 선택지는 서버가 본다", () => {
+    expect(AgentPageElementEditInputSchema.safeParse({ portfolioId: jobPostingId, key: "section-a", note: "줄였습니다.", props: [{ name: "scale", value: "아무 값" }] }).success).toBe(true);
+    expect(AgentPageElementEditInputSchema.safeParse({ portfolioId: jobPostingId, key: "section-a", note: "" }).success).toBe(false);
   });
 });

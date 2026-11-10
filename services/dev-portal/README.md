@@ -15,7 +15,7 @@
 | `source/scraps/` | 화면 구성을 잡을 때 쓴 스케치와 개요 |
 | `source/uploads/` | 문서에 붙였다 뺀 그림 |
 | `server/README.md` | 포털 저장 백엔드를 붙인다면 어디에 붙일지 |
-| `status/` | 포털 「진행 현황」 탭의 대시보드 원본 — 아래 절 |
+| `status/` | 포털 「진행 현황」 탭(사이드바의 패치노트 · 대시보드)의 원본 — 아래 절 |
 
 호스팅과 배포는 `docs/operations/ORACLE_HOSTING.md` 7절에 있습니다.
 
@@ -42,3 +42,23 @@ pnpm build          # docs/status/ 에 결과를 씁니다
 - 독립 루트로 둔 이유: 루트 `pnpm-lock.yaml`이 바뀌면 `main` 머지 때 운영 웹 배포가 함께 돕니다.
 - 색 · 글꼴은 `services/web/src/styles/tokens.css`를 직접 가져오고, shadcn 변수는 그 역할 토큰에
   대응만 합니다(`status/src/index.css`). 테마는 포털 설정(`expresso_portal_theme_v1`)을 따릅니다.
+
+## 패치노트 (`status/patch-notes/`)
+
+「진행 현황」 왼쪽 사이드바의 맨 위 화면입니다. 진행 현황을 열면 패치노트가 먼저 선택되고, 「대시보드」를
+누르거나 팀원을 고르면 대시보드로 바뀝니다(`src/lib/route.ts` 의 `page`). 대시보드 조건이 실린 주소
+(`#/status?member=…`)는 대시보드로 엽니다.
+
+| 무엇 | 어디 |
+|---|---|
+| 화면 | `status/src/patch-notes/` (`PatchNotesView`) |
+| 데이터 형식 | `status/shared/patch-notes.ts` — 화면과 생성기가 함께 씁니다 |
+| 손으로 다듬은 정리본 | `status/patch-notes/seed.json` — 문구를 고칠 때는 이 파일을 고칩니다 |
+| 생성기 · 설정 | `status/patch-notes/main.ts` · `config.json`(기간 · 모델 · 예산) |
+| 서버 실행 | `docs/operations/ORACLE_HOSTING.md` 9절 |
+
+```bash
+cd services/dev-portal/status
+node patch-notes/main.ts --out ../../../docs/status/data --dry-run   # 새로 쓸 PR 만 출력
+node patch-notes/main.ts --out ../../../docs/status/data --limit 1   # 로컬 claude 로 한 건 생성
+```

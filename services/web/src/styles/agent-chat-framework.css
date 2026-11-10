@@ -8,6 +8,7 @@
 @source "../features/agent-chat";
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 @theme inline {
+  --radius-lg: var(--ex-radius-control);
   --font-sans: var(--ex-font-ui);
   --font-mono: var(--ex-font-mono);
   --color-background: var(--ex-bg);
@@ -132,7 +133,7 @@
     gap: 0.25rem;
     height: var(--aui-control-height, 2.5rem);
     padding: 0 var(--aui-button-padding-x, 1.25rem);
-    border-radius: calc(var(--radius) - 2px);
+    border-radius: var(--ex-radius-control);
     font-size: var(--aui-control-font-size, 0.875rem);
     font-weight: 500;
     border: 1px solid transparent;
@@ -194,7 +195,7 @@
     min-width: 0;
     height: var(--aui-control-height, 2.5rem);
     padding: 0 var(--aui-field-padding-x, 0.875rem);
-    border-radius: calc(var(--radius) - 2px);
+    border-radius: var(--ex-radius-control);
     border: 1px solid var(--input);
     background-color: transparent;
     font-size: var(--aui-control-font-size, 0.875rem);
@@ -213,9 +214,12 @@
   [data-aui="input"]::placeholder {
     color: color-mix(in oklab, currentColor 45%, transparent);
 }
-  [data-aui="select"]:focus-visible, [data-aui="input"]:focus-visible, [data-aui="datepicker"]:focus-visible {
+  [data-aui="select"]:focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
+}
+  [data-aui="input"]:focus-visible, [data-aui="datepicker"]:focus-visible {
+    outline: none;
 }
   [data-aui="checkbox"] {
     display: inline-flex;
@@ -268,7 +272,7 @@
     background-color: var(--card);
     color: var(--card-foreground);
     border: 1px solid color-mix(in oklab, var(--border) 60%, transparent);
-    border-radius: var(--radius);
+    border-radius: var(--ex-radius-card);
     box-shadow: none;
 }
   [data-aui="card-title"] {
@@ -685,7 +689,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
-    border-radius: 9999px;
+    border-radius: var(--ex-radius-pill);
     padding: 0.125rem 0.5rem;
     font-size: 0.75rem;
     font-weight: 500;
@@ -712,4 +716,3 @@
     background-color: color-mix(in oklab, var(--destructive) 15%, transparent);
     color: var(--destructive);
 }
-.aui-composer-input:focus-visible { box-shadow: none; }

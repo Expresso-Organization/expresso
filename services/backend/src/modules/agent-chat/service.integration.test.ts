@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { CONSENT_POLICY_VERSION } from "@expresso/contracts";
 import { mongoCollections } from "@expresso/database";
 import { createMongoFixture } from "../../../test/support/mongodb.js";
@@ -7,11 +7,11 @@ import { MongoIdentityService } from "../identity/index.js";
 import { CareerService } from "../career/index.js";
 import { CareerDocumentService } from "../career-editor/index.js";
 import { PortfolioReadService } from "../portfolios/index.js";
-import { PageService } from "../page/index.js";
+import { PageElementIssues, PageService } from "../page/index.js";
 import { AgentCredentials } from "./credentials.js";
 import { ConsentService } from "../consent/index.js";
 import { AgentToolRejection, type AgentRuntime } from "../../platform/agent/runtime.js";
-import { AgentChatService, RUN_HEARTBEAT_MS } from "./service.js";
+import { AgentChatService, RUN_HEARTBEAT_MS, RUN_INTERRUPTED_ERROR } from "./service.js";
 import { PreparationPlans } from "./plans.js";
 
 describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB_URL))("공통 에이전트 대화", () => {
@@ -103,6 +103,29 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const service = make(null); const row = await service.create(userId, []);
     await mongoCollections(fixture.resource.db).agentConversations.updateOne({ _id: row.id }, { $set: { run: { id: randomUUID(), requestId: randomUUID(), status: "running", error: null, startedAt: new Date().toISOString() }, heartbeatAt: new Date(0) } });
     expect((await service.get(userId, row.id)).run?.status).toBe("interrupted");
+  });
+  it("서버 종료로 끊긴 실행은 런타임 오류가 무엇이든 중단으로 남기고 실패로 보고하지 않는다", async () => {
+    let started = false;
+    // 운영 Agent SDK는 abort를 받으면 자식 프로세스 종료 오류로 끝난다. 그 모양을 그대로 흉내 낸다.
+    const service = make({ run: input => new Promise<void>((_, reject) => { started = true; input.signal.addEventListener("abort", () => reject(new Error("Claude Code process exited with code 143")), { once: true }); }) });
+    const failures: unknown[] = []; service.setRunFailureListener(error => failures.push(error));
+    const row = await service.create(userId, []);
+    await service.send(userId, row.id, { requestId: randomUUID(), text: "프로젝트를 정리해줘" });
+    await expect.poll(() => started).toBe(true);
+    await service.close();
+    const run = (await make(null).get(userId, row.id)).run;
+    expect(run).toMatchObject({ status: "interrupted", error: RUN_INTERRUPTED_ERROR });
+    expect(failures).toEqual([]);
+  });
+  it("종료와 무관한 실패는 실패로 남기고 원인을 수신자에게 넘긴다", async () => {
+    const service = make({ run: async () => { throw new Error("모델 오류"); } });
+    const failures: Array<{ error: unknown; conversationId: string }> = [];
+    service.setRunFailureListener((error, run) => failures.push({ error, conversationId: run.conversationId }));
+    const row = await service.create(userId, []);
+    await service.send(userId, row.id, { requestId: randomUUID(), text: "질문" });
+    await expect.poll(async () => (await service.get(userId, row.id)).run?.status).toBe("failed");
+    expect((await service.get(userId, row.id)).run?.error).not.toBe(RUN_INTERRUPTED_ERROR);
+    expect(failures).toEqual([{ error: expect.objectContaining({ message: "모델 오류" }), conversationId: row.id }]);
   });
   it("제안은 승인 전 원문을 바꾸지 않고, 다른 대화의 승인을 거절하며 적용과 되돌리기를 저장한다", async () => {
     const original = await documents.bootstrap(userId, recordId);
@@ -380,6 +403,63 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     await service.updateTaskProgress(userId, plan.id, tasks[1]!.id, { expectedVersion: moved.version, status: "in_progress", note: "시작", outcome: "", outcomeUrl: "", spentMinutes: 10 });
     await expect(service.decideReplanDraft(userId, row.id, replans[1]!, { action: "approve" })).rejects.toMatchObject({ statusCode: 409 });
     expect((await service.decideReplanDraft(userId, row.id, replans[1]!, { action: "reject" })).messages.at(-1)!.tools[0]!.replanDraft!.status).toBe("rejected");
+  });
+  it("다듬기에서 고른 요소를 메시지에 남기고, 지면 고침을 카드로 저장하며, 최신 판일 때만 되돌린다", async () => {
+    const db = mongoCollections(fixture.resource.db); const portfolioId = randomUUID(); const now = new Date();
+    await db.portfolios.insertOne({ _id: portfolioId, userId, brewId: randomUUID(), templateId: (await db.templates.findOne({}))!._id, title: "다듬기 검증", status: "draft", createdAt: now, updatedAt: now, styleOverrides: {} });
+    // 지면 모듈은 구조화 지면 통합 테스트가 본다. 여기서는 대화가 지면 도구를 어떻게 잇는지만 본다.
+    let revision = 4;
+    const structured = { spec: { root: "page", elements: { page: { type: "PortfolioPage", props: {}, children: ["toc"] }, toc: { type: "ProjectIndex", props: {}, children: [] } } }, content: { profile: { name: "가상" }, sections: [] } };
+    const pages = {
+      latest: async () => ({ revision, html: "<main></main>", generationManifest: { structured } }) as never,
+      elementGuide: vi.fn(async () => ({ typeLabel: "작업 목차", title: "작업 목차" })) as never,
+      editElementByAgent: vi.fn(async (_user: string, _portfolio: string, _key: string, changes: { text?: { value: string }[] }) => {
+        if (changes.text?.[0]?.value.includes("99")) throw new PageElementIssues(["출처에 없는 숫자가 있습니다(99)."]);
+        revision += 1;
+        // 긴 본문을 고친 고침도 대화에 저장되고 다시 읽힌다(지면 본문 한도 20,000자).
+        return { page: { revision }, changes: [{ label: "제목", before: "긴 제목", after: "짧은 제목" }, { label: "본문", before: "가".repeat(20_000), after: "나".repeat(19_000) }], label: "작업 목차" };
+      }),
+      restoreRevision: vi.fn(async () => { revision += 1; return { revision }; }) as never,
+    };
+    let context: unknown; const outcomes: unknown[] = [];
+    const runtime: AgentRuntime = { run: async input => {
+      context = input.context;
+      outcomes.push(await input.page.edit({ portfolioId, key: "toc", note: "줄였습니다.", text: [{ path: "/x", value: "99개" }] }).catch(error => error));
+      outcomes.push(await input.page.read(randomUUID(), "toc").catch(error => error));
+      const pageEdit = await input.page.edit({ portfolioId, key: "toc", note: "줄였습니다.", text: [{ path: "/x", value: "짧은 제목" }] });
+      await input.emit({ type: "tool", tool: { id: randomUUID(), name: "지면 요소 고침", status: "complete", summary: "작업 목차 · 바뀐 곳 1", pageEdit } });
+    } };
+    const service = new AgentChatService(fixture.resource, runtime, career, { get: async () => { throw new Error("없는 공고"); } }, documents, consent, new AgentCredentials(fixture.resource), new PortfolioReadService(fixture.resource), pages as never);
+    services.push(service);
+    const row = await service.create(userId, [{ kind: "portfolio", id: portfolioId }]);
+    const selection = { portfolioId, key: "toc", label: "작업 목차" };
+    await expect(service.send(userId, row.id, { requestId: randomUUID(), text: "짧게", selection: { ...selection, portfolioId: randomUUID() } })).rejects.toMatchObject({ statusCode: 409 });
+    await service.send(userId, row.id, { requestId: randomUUID(), text: "이 문장 더 짧게", selection });
+    await expect.poll(async () => (await service.get(userId, row.id)).run?.status).toBe("complete");
+    // 구조화 지면은 HTML 대신 목차를 싣는다.
+    expect(context).toEqual([expect.objectContaining({ kind: "portfolio", data: expect.objectContaining({ generatedPage: { revision: 4, outline: [{ key: "toc", depth: 0, title: "작업 목차", type: "작업 목차" }] } }) })]);
+    expect(outcomes[0]).toBeInstanceOf(AgentToolRejection);
+    expect((outcomes[0] as AgentToolRejection).issues).toEqual(["출처에 없는 숫자가 있습니다(99)."]);
+    expect((outcomes[1] as AgentToolRejection).issues).toEqual([expect.stringContaining("연결된 포트폴리오")]);
+    expect(pages.editElementByAgent).toHaveBeenLastCalledWith(userId, portfolioId, "toc", { text: [{ path: "/x", value: "짧은 제목" }] }, { instruction: "이 문장 더 짧게", rationale: "줄였습니다." });
+    const saved = await service.get(userId, row.id);
+    expect(saved.messages[0]!.selection).toEqual(selection);
+    const pageEdit = saved.messages[1]!.tools[0]!.pageEdit!;
+    expect(pageEdit).toMatchObject({ portfolioId, key: "toc", label: "작업 목차", revision: 5, undone: false });
+    // 되돌리기는 이 고침이 최신 판일 때 바로 앞 판을 새 판으로 쌓는다. 두 번 눌러도 한 번이다.
+    const undone = await service.undoPageEdit(userId, row.id, pageEdit.editId);
+    expect(pages.restoreRevision).toHaveBeenCalledWith(userId, portfolioId, { revision: 4, expectedRevision: 5 });
+    expect(undone.messages[1]!.tools[0]!.pageEdit!.undone).toBe(true);
+    await service.undoPageEdit(userId, row.id, pageEdit.editId);
+    expect(pages.restoreRevision).toHaveBeenCalledTimes(1);
+    await expect(service.undoPageEdit(other, row.id, pageEdit.editId)).rejects.toMatchObject({ statusCode: 404 });
+    // 그 뒤에 다른 편집이 쌓였으면 덮지 않는다.
+    await service.send(userId, row.id, { requestId: randomUUID(), text: "다시 짧게", selection });
+    await expect.poll(async () => (await service.get(userId, row.id)).run?.status).toBe("complete");
+    const later = (await service.get(userId, row.id)).messages[3]!.tools[0]!.pageEdit!;
+    revision += 1;
+    await expect(service.undoPageEdit(userId, row.id, later.editId)).rejects.toMatchObject({ statusCode: 409 });
+    expect(pages.restoreRevision).toHaveBeenCalledTimes(1);
   });
   it("연결되지 않은 기록에 대한 도구 실행을 차단한다", async () => {
     let rejected = false;
