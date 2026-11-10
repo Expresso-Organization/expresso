@@ -231,10 +231,12 @@
 /*
  * 본문 — 넓으면 결과 + 316px 레일 두 열, 좁으면 한 열로 쌓인다.
  * 레일은 곁들이는 정보라 결과 아래로 내려가도 읽는 차례가 뒤집히지 않는다.
+ *
+ * 화면 높이에 묶는 것(flex: 1 · min-height: 0)은 두 열일 때만이다. 한 열에서 묶으면
+ * 결과와 레일이 남은 높이를 나눠 가져, 휴대폰에서 공고 20건을 155px 창으로 따로
+ * 스크롤하게 된다. 한 열에서는 내용 높이대로 펼치고 .content 하나가 스크롤한다.
  */
 .columns {
-  flex: 1;
-  min-height: 0;
   display: grid;
   grid-template-columns: 1fr;
   gap: 16px;
@@ -242,6 +244,8 @@
 
 @media (min-width: 1024px) {
   .columns {
+    flex: 1;
+    min-height: 0;
     grid-template-columns: 1fr var(--ex-rail-width);
   }
 }
