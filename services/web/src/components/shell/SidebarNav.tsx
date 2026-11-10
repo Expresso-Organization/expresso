@@ -50,7 +50,7 @@ export function sectionForPath(pathname: string): SidebarSection | null {
   return null;
 }
 
-export function SidebarNav({ jobCount }: { jobCount?: number | undefined }) {
+export function SidebarNav() {
   const active = sectionForPath(usePathname());
 
   return (
@@ -93,11 +93,6 @@ export function SidebarNav({ jobCount }: { jobCount?: number | undefined }) {
             <span className={`${styles.copy} ${styles.primaryLabel}`}>
               {item.label}
             </span>
-            {item.key === "jobs" && jobCount !== undefined ? (
-              <span className={`${styles.copy} ${styles.primaryCount}`}>
-                {jobCount}
-              </span>
-            ) : null}
           </Link>
         ))}
       </GlideMenu>

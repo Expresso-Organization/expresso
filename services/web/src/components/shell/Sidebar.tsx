@@ -39,8 +39,6 @@ export interface SidebarProps {
   interests?: readonly SidebarInterest[];
   /** 관심 공고 전체 건수. 줄은 몇 건만 보이므로 숫자는 따로 받는다. */
   interestTotal?: number | undefined;
-  /** 공고 탐색 배지 = 관심 + 추천 건수. */
-  jobCount?: number | undefined;
   displayName: string;
   /** 세션 주인이 관리자일 때만 관리 화면으로 가는 줄이 선다. */
   admin?: boolean;
@@ -54,7 +52,6 @@ export function Sidebar({
   portfolios = [],
   interests = [],
   interestTotal,
-  jobCount,
   displayName,
   admin = false,
   quotaUsed,
@@ -116,7 +113,7 @@ export function Sidebar({
         </>
       }
     >
-      <SidebarNav jobCount={jobCount} />
+      <SidebarNav />
 
       {portfolios.length > 0 ? (
         <>
