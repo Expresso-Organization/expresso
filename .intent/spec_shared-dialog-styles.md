@@ -22,7 +22,7 @@ date: 2026-11-10
 
 - 재사용: base-ui `Dialog` 원시 요소, `cn()`(부르는 쪽 클래스 합치기), 기존 `data-slot`, `--ex-*` 토큰.
 - 새로 만듦: `components/ui/dialog.module.css`. 선택자는 `div:where(.content)`처럼 요소에 `:where()`를 붙인다. 설명(`DialogDescription`)은 `render={<div />}`로 `div`가 되기도 하므로 `:is(p, div):where(.description)`으로 쓴다.
-- Tailwind 값 옮기기: 위치 `fixed` · 50% · `translate(-50%,-50%)`, `z-index: 50`, 너비 `100%` · 최대 `calc(100% - 2rem)` · 640px 이상 `24rem`, 모서리 12px, 안쪽 여백 16px, 간격 16px, 테두리 대신 1px 고리(`--ex-fg` 10%), 배경 덮개 `--ex-fg` 10% · 블러 4px, 바닥 줄 `--ex-bg-tint` 50% · 위 테두리 `--ex-border`, 제목 `--ex-text-lg` · 500 · 줄 높이 1, 설명 `--ex-text-sm` · `--ex-fg-muted`.
+- Tailwind 값 옮기기: 위치 `fixed` · 50% · `translate(-50%,-50%)`, `z-index: 50`, 너비 `100%` · 최대 `calc(100% - 2rem)` · 480px(`--ex-bp-sm`) 이상 `24rem`. Tailwind `sm`(640px)은 앱 중단점 표(`tokens.test.ts`)에 없어 가장 가까운 앱 중단점을 쓴다, 모서리 12px, 안쪽 여백 16px, 간격 16px, 테두리 대신 1px 고리(`--ex-fg` 10%), 배경 덮개 `--ex-fg` 10% · 블러 4px, 바닥 줄 `--ex-bg-tint` 50% · 위 테두리 `--ex-border`, 제목 `--ex-text-lg` · 500 · 줄 높이 1, 설명 `--ex-text-sm` · `--ex-fg-muted`.
 
 ## 버린 대안
 

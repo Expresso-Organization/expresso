@@ -1,0 +1,152 @@
+/*
+ * 공용 창의 기본 모양.
+ *
+ * 예전에는 Tailwind 클래스로 잡았는데, Tailwind CSS는 지면(`portfolio-utilities.css`)과 에이전트 채팅
+ * (`agent-chat-framework.css`)을 그리는 화면에서만 불린다. 그 밖의 화면에서는 창이 페이지 아래에 배경 없이 붙었다.
+ *
+ * 선택자는 요소 둘의 특정도(0,0,2)로 쓴다 — `html div:where(.content)`.
+ * - 부르는 쪽의 클래스(CSS Modules · Tailwind 유틸리티, 0,1,0)는 CSS가 실린 순서와 상관없이 이긴다.
+ * - 요소 리셋(`global.css`의 `h2 { … }`, 에이전트 채팅 preflight의 `:where(.acf-scope) h2`, 모두 0,0,1)보다는
+ *   이 규칙이 이긴다. 요소 하나(0,0,1)로 썼을 때는 preflight의 `font-weight: inherit`과 같아져 제목이 가늘어졌다.
+ * `@layer`에 넣지 않는 이유: 레이어 밖에 있는 preflight가 창 안의 여백 · 테두리를 지운다.
+ *
+ * 색은 에이전트 채팅 테마가 Tailwind 색에 이어 둔 토큰과 같다(popover → --ex-bg, muted → --ex-bg-tint 등).
+ * 넓은 화면 경계는 Tailwind `sm`(640px) 대신 앱 중단점 `--ex-bp-sm`(480px)을 쓴다.
+ */
+
+html div:where(.overlay) {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  isolation: isolate;
+  background: color-mix(in srgb, var(--ex-fg) 10%, transparent);
+  transition: opacity 0.1s ease;
+}
+
+@supports (backdrop-filter: blur(0)) {
+  html div:where(.overlay) {
+    backdrop-filter: blur(4px);
+  }
+}
+
+html div:where(.content) {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 50;
+  display: grid;
+  width: 100%;
+  max-width: calc(100% - 2rem);
+  gap: 16px;
+  border-radius: 12px;
+  background: var(--ex-bg);
+  padding: 16px;
+  color: var(--ex-fg);
+  font-size: var(--ex-text-sm);
+  /* Tailwind text-sm의 줄 높이(20px)에 가장 가까운 토큰. 창 안의 글이 모두 물려받는다. */
+  line-height: var(--ex-leading-snug);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ex-fg) 10%, transparent);
+  outline: none;
+  transform: translate(-50%, -50%);
+  transition:
+    opacity 0.1s ease,
+    transform 0.1s ease;
+}
+
+@media (min-width: 480px) {
+  html div:where(.content) {
+    max-width: 24rem;
+  }
+}
+
+/* base-ui가 열리기 직전 · 닫히는 동안 붙이는 속성. 흐려지며 95%에서 커진다. */
+html div:where(.overlay)[data-starting-style],
+html div:where(.overlay)[data-ending-style] {
+  opacity: 0;
+}
+
+html div:where(.content)[data-starting-style],
+html div:where(.content)[data-ending-style] {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.95);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html div:where(.overlay),
+  html div:where(.content) {
+    transition: none;
+  }
+}
+
+html button:where(.close) {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  padding: 0;
+  color: var(--ex-fg-muted);
+}
+
+html button:where(.close):hover {
+  background: var(--ex-bg-tint);
+  color: var(--ex-fg);
+}
+
+html button:where(.close) > svg {
+  width: 16px;
+  height: 16px;
+}
+
+html div:where(.header) {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+html div:where(.footer) {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+  margin: 0 -16px -16px;
+  border-top: 1px solid var(--ex-border);
+  border-radius: 0 0 12px 12px;
+  background: color-mix(in srgb, var(--ex-bg-tint) 50%, transparent);
+  padding: 16px;
+}
+
+@media (min-width: 480px) {
+  html div:where(.footer) {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+}
+
+/* 제목은 base-ui가 h2로 그린다. 부르는 쪽이 render로 다른 요소를 주어도 같은 모양이 되게 :is()로 넓힌다. */
+html :is(h2, div, span):where(.title) {
+  margin: 0;
+  font-size: var(--ex-text-lg);
+  font-weight: 500;
+  line-height: var(--ex-leading-none);
+}
+
+/* 설명은 base-ui가 p로 그리고, 여러 문단을 담으려 render={<div />}로 바꾸기도 한다. */
+html :is(p, div):where(.description) {
+  margin: 0;
+  color: var(--ex-fg-muted);
+  font-size: var(--ex-text-sm);
+}
+
+html :is(p, div):where(.description) a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+html :is(p, div):where(.description) a:hover {
+  color: var(--ex-fg);
+}
