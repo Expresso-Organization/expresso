@@ -28,6 +28,7 @@ export function registerAgentChatRoutes(app: FastifyInstance, service: AgentChat
   app.post(`${base}/:id/retry`, options, async (req, reply) => { const principal = requireAuth(req); const apiKey = serverCredential(principal) ? undefined : await service.credentials.read(principal.user.id); if (!serverCredential(principal) && !apiKey) return reply.code(403).send({ error: { message: "Anthropic API 키를 입력해 주세요." } }); return reply.code(202).send({ data: await service.retry(principal.user.id, id(req.params), apiKey) }); });
   app.post(`${base}/:id/contexts`, options, async req => ({ data: await service.attach(requireAuth(req).user.id, id(req.params), AddAgentContextSchema.parse(req.body).context) }));
   app.post(`${base}/:id/context-selection`, options, async req => { const input = SetAgentContextsSchema.parse(req.body); return { data: await service.setContexts(requireAuth(req).user.id, id(req.params), input.contexts, input.expectedVersion) }; });
+  app.post(`${base}/:id/page-edits/:editId/undo`, options, async req => ({ data: await service.undoPageEdit(requireAuth(req).user.id, id(req.params), UuidSchema.parse((req.params as { editId: string }).editId)) }));
   app.post(`${base}/:id/cancel`, options, async req => ({ data: await service.cancel(requireAuth(req).user.id, id(req.params)) }));
   app.post(`${base}/:id/approval`, options, async req => ({ data: await service.approve(requireAuth(req).user.id, id(req.params), AgentApprovalSchema.parse(req.body)) }));
   app.get(`${base}/:id/events`, options, async (req, reply) => {

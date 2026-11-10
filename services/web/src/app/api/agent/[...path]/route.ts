@@ -14,11 +14,13 @@ async function proxy(request: Request, context: { params: Promise<{ path: string
   const nested = path.length === 4 && UuidSchema.safeParse(path[3]).success;
   const review = isGet && action === "reviews" && nested;
   const draftDecision = !isGet && isDraftAction(action) && nested;
-  if (path[0] !== "conversations" || (path.length > 3 && !review && !draftDecision) || (path[1] && !UuidSchema.safeParse(path[1]).success)) return new Response(null, { status: 404 });
-  if ((isGet && action && action !== "events" && !review) || (!isGet && path.length === 2) || (!isGet && action && !["messages", "contexts", "context-selection", "approval", "cancel", "retry"].includes(action) && !draftDecision)) return new Response(null, { status: 404 });
-  let body: string | undefined = action === "cancel" || action === "retry" ? "{}" : undefined;
+  // 지면 고침 되돌리기(POST page-edits/:editId/undo). 본문은 없다.
+  const pageUndo = !isGet && action === "page-edits" && path.length === 5 && UuidSchema.safeParse(path[3]).success && path[4] === "undo";
+  if (path[0] !== "conversations" || (path.length > 3 && !review && !draftDecision && !pageUndo) || (path[1] && !UuidSchema.safeParse(path[1]).success)) return new Response(null, { status: 404 });
+  if ((isGet && action && action !== "events" && !review) || (!isGet && path.length === 2) || (!isGet && action && !["messages", "contexts", "context-selection", "approval", "cancel", "retry"].includes(action) && !draftDecision && !pageUndo)) return new Response(null, { status: 404 });
+  let body: string | undefined = action === "cancel" || action === "retry" || pageUndo ? "{}" : undefined;
   if (!isGet) {
-    const schema = draftDecision && isDraftAction(action) ? DRAFT_DECISIONS[action] : action === "messages" ? SendAgentMessageSchema : action === "context-selection" ? SetAgentContextsSchema : action === "contexts" ? AddAgentContextSchema : action === "approval" ? AgentApprovalSchema : action === "cancel" || action === "retry" ? null : CreateAgentConversationSchema;
+    const schema = draftDecision && isDraftAction(action) ? DRAFT_DECISIONS[action] : action === "messages" ? SendAgentMessageSchema : action === "context-selection" ? SetAgentContextsSchema : action === "contexts" ? AddAgentContextSchema : action === "approval" ? AgentApprovalSchema : action === "cancel" || action === "retry" || pageUndo ? null : CreateAgentConversationSchema;
     if (schema) { const result = schema.safeParse(await request.json().catch(() => null)); if (!result.success) return Response.json({ error: { message: "입력 내용을 확인해 주세요." } }, { status: 400 }); body = JSON.stringify(result.data); }
   }
   const upstream = await fetch(`${API_BASE_URL}${API_PREFIX}/agent/${path.join("/")}`, { method: request.method, headers: { authorization: `Bearer ${token}`, "content-type": "application/json" }, ...(body === undefined ? {} : { body }), signal: request.signal, cache: "no-store" });

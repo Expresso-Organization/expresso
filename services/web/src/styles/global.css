@@ -81,6 +81,18 @@ svg {
 
 :focus-visible {
   outline: none;
+}
+
+/*
+ * 텍스트 입력은 마우스 클릭에도 `:focus-visible`에 걸린다. 텍스트 커서가 이미
+ * 위치를 보여 주므로 링을 그리지 않는다. `:where()`의 명시도는 0이라 화면별
+ * 규칙과의 우선순위는 그대로이다.
+ */
+:focus-visible:not(:where(
+  input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="button"], [type="submit"], [type="reset"], [type="image"]),
+  textarea,
+  [contenteditable]
+)) {
   box-shadow: var(--ex-focus-ring);
 }
 

@@ -4,6 +4,7 @@ import type { Notification } from "@expresso/contracts";
 import { z } from "zod";
 
 import { engagement } from "@/lib/api/endpoints";
+import { DEFAULT_JOB_COUNTRY } from "@/lib/job-search-defaults";
 import { readAccessToken } from "@/lib/session";
 
 /**
@@ -19,7 +20,8 @@ export async function searchAction(q: string) {
   const accessToken = await readAccessToken();
   const query = q.trim().slice(0, 200);
   if (!accessToken || !query) return [];
-  return (await engagement.search(accessToken, query)).data;
+  // 공고 묶음은 공고 탐색 첫 화면과 같은 나라로 찾는다. 결과 끝의 「공고 탐색에서 찾기」가 같은 목록을 연다.
+  return (await engagement.search(accessToken, query, { country: DEFAULT_JOB_COUNTRY })).data;
 }
 
 export async function notificationsAction(): Promise<Notification[]> {

@@ -199,22 +199,40 @@ export function CommandPalette() {
     [results],
   );
   const flat = useMemo(() => grouped.flatMap((group) => group.items), [grouped]);
+  /*
+   * 결과 끝의 「공고 탐색에서 찾기」 줄. 검색창은 입력할 때마다 찾으므로 문장을
+   * 조건(지역 · 연차 · 기술)으로 바꾸는 해석은 공고 탐색에 맡기고, 그리로 넘길 길만 둔다.
+   * 키보드 순회에서는 결과 다음 자리(`flat.length`)다.
+   */
+  const searchText = query.trim();
+  const showJobsAction = searchText !== "" && results !== null && !searchFailed;
+  const jobsActionIndex = flat.length;
+  const rowCount = flat.length + (showJobsAction ? 1 : 0);
 
   function openResult(item: SearchItem) {
     setOpen(false);
     router.push(searchHref(item));
   }
 
+  function openJobsSearch() {
+    setOpen(false);
+    router.push(`/jobs?q=${encodeURIComponent(searchText)}` as Route);
+  }
+
   function onQueryKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
-    if (flat.length === 0) return;
+    if (rowCount === 0) return;
     if (event.key === "ArrowDown") {
       event.preventDefault();
-      setActiveIndex((index) => (index + 1) % flat.length);
+      setActiveIndex((index) => (index + 1) % rowCount);
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
-      setActiveIndex((index) => (index - 1 + flat.length) % flat.length);
+      setActiveIndex((index) => (index - 1 + rowCount) % rowCount);
     } else if (event.key === "Enter" && !event.nativeEvent.isComposing) {
       event.preventDefault();
+      if (showJobsAction && activeIndex === jobsActionIndex) {
+        openJobsSearch();
+        return;
+      }
       const item = flat[activeIndex];
       if (item) openResult(item);
     }
@@ -274,7 +292,7 @@ export function CommandPalette() {
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 onKeyDown={onQueryKeyDown}
-                placeholder="기록 · 공고 · 포트폴리오 제목으로 찾기"
+                placeholder="기록 · 공고 · 포트폴리오 찾기"
                 className={styles.input}
                 aria-label="검색어"
               />
@@ -321,6 +339,29 @@ export function CommandPalette() {
                     </div>
                   ))
                 )}
+                {showJobsAction ? (
+                  <div>
+                    <div className={styles.groupHead}>
+                      <span className={styles.groupLabel}>동작</span>
+                    </div>
+                    <button
+                      type="button"
+                      className={`${styles.item} ${activeIndex === jobsActionIndex ? styles.itemActive : ""}`}
+                      onMouseEnter={() => setActiveIndex(jobsActionIndex)}
+                      onClick={openJobsSearch}
+                    >
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <span className={styles.itemTitle} style={{ display: "block" }}>
+                          공고 탐색에서 「{searchText}」 찾기
+                        </span>
+                        <span className={styles.itemMeta} style={{ display: "block" }}>
+                          문장 속 지역 · 연차 · 기술도 조건으로 읽습니다
+                        </span>
+                      </span>
+                      <span className={styles.kind}>ACTION</span>
+                    </button>
+                  </div>
+                ) : null}
               </div>
             ) : null}
           </div>
