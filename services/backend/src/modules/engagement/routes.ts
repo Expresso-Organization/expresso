@@ -3,12 +3,12 @@ import type { FastifyInstance, preHandlerHookHandler } from "fastify";
 import { z } from "zod";
 
 import { HttpStatusError, requireAuth } from "../../api/plugins/auth-context.js";
-import { type EngagementApi } from "./index.js";
+import { type EngagementApi, type UnifiedSearchApi } from "./index.js";
 
 const KindParams = z.strictObject({ kind: NotificationKindSchema });
 const IdParams = z.strictObject({ id: UuidSchema });
 
-export function registerEngagementRoutes(app: FastifyInstance, options: { service: EngagementApi; authenticateRequest: preHandlerHookHandler }) {
+export function registerEngagementRoutes(app: FastifyInstance, options: { service: EngagementApi; search?: UnifiedSearchApi; authenticateRequest: preHandlerHookHandler }) {
   app.get(`${API_PREFIX}/notification-preferences`, { preHandler: options.authenticateRequest }, async (request) => ({ data: await options.service.preferences(requireAuth(request).user.id) }));
   app.put(`${API_PREFIX}/notification-preferences/:kind`, { preHandler: options.authenticateRequest }, async (request) => {
     const user = requireAuth(request).user;
@@ -25,10 +25,13 @@ export function registerEngagementRoutes(app: FastifyInstance, options: { servic
     return { data: await options.service.markRead(requireAuth(request).user.id, params.data.id) };
   });
   app.get(`${API_PREFIX}/home`, { preHandler: options.authenticateRequest }, async (request) => ({ data: await options.service.home(requireAuth(request).user.id) }));
-  app.get(`${API_PREFIX}/search`, { preHandler: options.authenticateRequest }, async (request) => {
-    const query = UnifiedSearchQuerySchema.safeParse(request.query);
-    if (!query.success) throw new HttpStatusError(400, "invalid search query");
-    return options.service.search(requireAuth(request).user.id, query.data);
-  });
+  const search = options.search;
+  if (search) {
+    app.get(`${API_PREFIX}/search`, { preHandler: options.authenticateRequest }, async (request) => {
+      const query = UnifiedSearchQuerySchema.safeParse(request.query);
+      if (!query.success) throw new HttpStatusError(400, "invalid search query");
+      return search.search(requireAuth(request).user.id, query.data);
+    });
+  }
 }
 

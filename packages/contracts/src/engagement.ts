@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { TimestampSchema, UuidSchema } from "./common.js";
+import { ListJobPostingsQuerySchema } from "./job-board.js";
 
 export const NotificationKindSchema = z.enum(["deadline", "saved_search", "generation", "traffic"]);
 export const NotificationPreferenceSchema = z.strictObject({ kind: NotificationKindSchema, enabled: z.boolean() });
@@ -17,9 +18,14 @@ export const NotificationSchema = z.strictObject({
 
 export const NotificationReadAllResultSchema = z.strictObject({ updated: z.number().int().nonnegative() });
 
+/**
+ * 00c 통합 검색. 기록 · 공고 · 포트폴리오를 각 화면의 검색 규칙으로 찾는다.
+ * `limit`은 종류마다 적용한다 — 세 종류를 섞어 자르면 한 종류가 다른 종류를 밀어낸다.
+ */
 export const UnifiedSearchQuerySchema = z.strictObject({
-  q: z.string().min(1).max(200),
-  cursor: z.string().min(1).max(1_000).optional(),
+  q: z.string().trim().min(1).max(200),
+  /** 공고 묶음에 거는 근무지 나라. 공고 탐색이 아무것도 안 고른 첫 화면에 거는 나라를 화면이 그대로 넘긴다. */
+  country: ListJobPostingsQuerySchema.shape.country,
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });
 
@@ -29,6 +35,9 @@ export const UnifiedSearchItemSchema = z.strictObject({
   title: z.string().min(1),
   subtitle: z.string(),
 });
+
+/** 기록(제목 순) · 공고(일치도 순) · 포트폴리오(최근 수정 순)를 이 순서로 이어 붙인다. */
+export const UnifiedSearchResponseSchema = z.strictObject({ data: z.array(UnifiedSearchItemSchema) });
 
 export const HomeReadModelSchema = z.strictObject({
   activeBrews: z.array(z.strictObject({
@@ -51,5 +60,7 @@ export const HomeReadModelSchema = z.strictObject({
 export type NotificationKind = z.infer<typeof NotificationKindSchema>;
 export type Notification = z.infer<typeof NotificationSchema>;
 export type UnifiedSearchQuery = z.infer<typeof UnifiedSearchQuerySchema>;
+export type UnifiedSearchItem = z.infer<typeof UnifiedSearchItemSchema>;
+export type UnifiedSearchResponse = z.infer<typeof UnifiedSearchResponseSchema>;
 export type HomeReadModel = z.infer<typeof HomeReadModelSchema>;
 

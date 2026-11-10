@@ -84,6 +84,7 @@ export class PortfolioReadService {
     const filter = {
       userId,
       ...(query.status ? { status: query.status } : {}),
+      ...(query.q ? { title: { $regex: query.q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" } } : {}),
       ...(cursor ? { $or: [{ updatedAt: { $lt: new Date(cursor.at) } }, { updatedAt: new Date(cursor.at), _id: { $lt: cursor.id } }] } : {}),
     };
     const rows = await mongoCollections(this.context.db).portfolios.find(filter).sort({ updatedAt: -1, _id: -1 }).limit(query.limit + 1).toArray();
