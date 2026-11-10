@@ -28,7 +28,8 @@ date: 2026-11-10
   `text-decoration: none`, 테두리 색 전환을 더하고 `:hover`에 테두리 색을 둔다. `.copy`의
   `transition`을 덮지 않도록 전환 목록에 `opacity`·`transform`을 함께 적는다.
 - 바뀜: 접힘 미디어 쿼리에 `[data-sidebar-collapsed="true"] .quotaCard { visibility: hidden; }`을
-  넣고, 접힐 때는 160ms 뒤에 숨도록 `visibility` 전환을 지연한다.
+  넣고, `.quotaCard` 전환 목록에 `visibility var(--ex-motion-quick)`을 둔다. visibility 전환은 보이는
+  쪽을 끝까지 유지하므로 접히는 동안은 보이고 끝나면 숨는다. 새 시간 값은 만들지 않는다.
 
 ## 버린 대안
 
