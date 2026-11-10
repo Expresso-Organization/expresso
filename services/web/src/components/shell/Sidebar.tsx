@@ -31,7 +31,6 @@ export interface SidebarInterest {
   company: string;
   logoUrl: string | null;
   label: string;
-  score: number | null;
 }
 
 export interface SidebarProps {
