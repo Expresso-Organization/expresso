@@ -76,6 +76,14 @@ export function createBrewJobProcessor(
       // 구성이 생겼으니 기다리던 생성에 붙여 시작한다. 이미 성공한 잡이 다시 배달되면 실행이 없어 `target`도 없다 —
       // 그때는 처음 성공했을 때 이미 붙였다.
       if (recipe && waiting && seen.target) await waiting.attachRecipe(seen.target.userId, seen.target.brewId);
+      // 큐에서 기다린 시간과 실행 시간. 실행 안의 AI 시간은 `ai_usage_events.durationMs`에 있다 —
+      // 둘의 차이가 AI 호출 전후의 준비 · 저장 시간이다.
+      if (seen.target && job.processedOn !== undefined) {
+        console.info(JSON.stringify({
+          level: "info", event: "brew_job.timing", type: recipe ? "recipe" : "interview", jobId: id,
+          queueWaitMs: job.processedOn - job.timestamp, runMs: Date.now() - job.processedOn,
+        }));
+      }
       return status;
     } catch (error) {
       const { code, retryable } = classifyBrewJobFailure(error);

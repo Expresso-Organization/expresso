@@ -24,6 +24,9 @@ date: 2026-11-10
 | `services/web/src/app/api/brew-jobs/[jobId]/events/route.ts` (새) | SSE 프록시 |
 | `services/web/src/app/(app)/brew/[brewId]/use-refresh-on-job-change.ts` (새) · 테스트 | `EventSource` 훅 |
 | `services/web/src/app/(app)/brew/[brewId]/Waiting.tsx` | 새 훅 사용 |
+| `services/backend/src/modules/interview/interview.integration.test.ts` · `recipe/recipe.integration.test.ts` | 옛 MySQL 묶음에 `follow` 거절 스텁 |
+
+구현 중 더한 것: `watchOutboxInserts` 통합 테스트는 Mongo 고정물이 있는 `brew-jobs.integration.test.ts`에 두었다. 옛 MySQL `BrewJobService`는 `follow`가 없어 그 묶음에서만 거절하는 스텁을 붙였다(interview 근거 조회와 같은 방식).
 
 ## 작업 순서
 

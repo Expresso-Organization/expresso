@@ -64,6 +64,7 @@ describe("release security route inventory", () => {
       ["POST", `/v1/brews/${uuid}/interview-sessions`],
       ["GET", `/v1/brews/${uuid}/interview-bases`],
       ["GET", `/v1/brew-jobs/${uuid}`],
+      ["GET", `/v1/brew-jobs/${uuid}/events`],
       ["GET", `/v1/recipes/${uuid}`], ["GET", `/v1/recipes/${uuid}/template-previews`],
       ["POST", "/v1/generation-jobs"], ["POST", `/v1/portfolios/${uuid}/deployments`],
       ["DELETE", `/v1/portfolios/${uuid}/publication`],
