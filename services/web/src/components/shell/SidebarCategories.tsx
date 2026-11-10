@@ -12,7 +12,10 @@ import { CAREER_CATEGORY_ICONS } from "@/lib/career-category-icons";
 
 import styles from "./Sidebar.module.css";
 
-/** 열려 있는 카테고리도 주소가 안다 — `/career/{key}`. */
+/**
+ * 열려 있는 카테고리도 주소가 안다 — `/career/{key}`.
+ * 보관한 카테고리는 목록 끝 「보관됨」을 펼쳐야 보인다. 보관한 카테고리를 보고 있으면 처음부터 펼친다.
+ */
 export function SidebarCategories({
   categories,
 }: {
@@ -20,6 +23,12 @@ export function SidebarCategories({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const active = categories.filter((category) => category.archivedAt === null);
+  const archived = categories.filter((category) => category.archivedAt !== null);
+  const viewingArchived = archived.some((category) => pathname === `/career/${category.key}`);
+  // 누르기 전에는 지금 보는 카테고리에 맞춰 펼치고, 누른 뒤에는 누른 대로 둡니다.
+  const [archiveOpen, setArchiveOpen] = useState<boolean | null>(null);
+  const showArchived = archiveOpen ?? viewingArchived;
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
   const [state, setState] = useState<"idle" | "saving" | "failed">("idle");
@@ -45,6 +54,39 @@ export function SidebarCategories({
   };
   const cancelOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") close(); };
 
+  const renderCategory = (category: CareerCategory) => {
+    const isActive = pathname === `/career/${category.key}`;
+    return (
+      <Link
+        key={category.id}
+        href={`/career/${category.key}` as Route}
+        data-row
+        title={category.name}
+        className={`${styles.row} ${styles.categoryItem} ${
+          isActive
+            ? `${styles.rowActive} ${styles.categoryItemActive}`
+            : ""
+        }`}
+        aria-current={isActive ? "page" : undefined}
+      >
+        <span className={styles.rowLead}>
+          <Icon
+            name={CAREER_CATEGORY_ICONS[category.key] ?? "file-text"}
+            weight={isActive ? "fill" : "regular"}
+            size={14}
+            color={isActive ? "var(--ex-fg)" : "var(--ex-fg-muted)"}
+          />
+        </span>
+        <span className={`${styles.copy} ${styles.categoryName}`}>
+          {category.name}
+        </span>
+        <span className={`${styles.copy} ${styles.categoryCount}`}>
+          {category.recordCount}
+        </span>
+      </Link>
+    );
+  };
+
   return (
     <>
       {/* 머리말 `+`와 목록 끝 「카테고리 추가」가 같은 입력을 엽니다. */}
@@ -59,38 +101,7 @@ export function SidebarCategories({
         </div>
       </div>
       <GlideMenu className={`${styles.categories} ${styles.navGroup}`}>
-        {categories.map((category) => {
-          const isActive = pathname === `/career/${category.key}`;
-          return (
-            <Link
-              key={category.id}
-              href={`/career/${category.key}` as Route}
-              data-row
-              title={category.name}
-              className={`${styles.row} ${styles.categoryItem} ${
-                isActive
-                  ? `${styles.rowActive} ${styles.categoryItemActive}`
-                  : ""
-              }`}
-              aria-current={isActive ? "page" : undefined}
-            >
-              <span className={styles.rowLead}>
-                <Icon
-                  name={CAREER_CATEGORY_ICONS[category.key] ?? "file-text"}
-                  weight={isActive ? "fill" : "regular"}
-                  size={14}
-                  color={isActive ? "var(--ex-fg)" : "var(--ex-fg-muted)"}
-                />
-              </span>
-              <span className={`${styles.copy} ${styles.categoryName}`}>
-                {category.name}
-              </span>
-              <span className={`${styles.copy} ${styles.categoryCount}`}>
-                {category.recordCount}
-              </span>
-            </Link>
-          );
-        })}
+        {active.map(renderCategory)}
         {adding ? (
           <form className={`${styles.row} ${styles.addCategory}`} data-row data-state={state} onSubmit={(event) => void create(event)}>
             <span className={styles.rowLead}>
@@ -121,6 +132,16 @@ export function SidebarCategories({
             </span>
           </button>
         )}
+        {archived.length ? (
+          <button type="button" className={`${styles.row} ${styles.addCategory} ${styles.archivedToggle}`} data-row aria-expanded={showArchived} title="보관된 카테고리" onClick={() => setArchiveOpen(!showArchived)}>
+            <span className={styles.rowLead}>
+              <Icon name={showArchived ? "caret-down" : "caret-right"} size={12} color="var(--ex-fg-muted)" />
+            </span>
+            <span className={`${styles.copy} ${styles.addCategoryLabel}`}>보관됨</span>
+            <span className={`${styles.copy} ${styles.categoryCount}`}>{archived.length}</span>
+          </button>
+        ) : null}
+        {showArchived ? archived.map(renderCategory) : null}
       </GlideMenu>
     </>
   );
