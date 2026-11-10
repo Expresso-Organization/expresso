@@ -27,6 +27,41 @@
 }
 
 /*
+ * 잔 아래 진행 막대. 모양은 01b 기다림 화면의 막대(`Waiting.module.css` `.progress`)와 같은 값이다.
+ *
+ * 값이 바뀌면 반동 없이 미끄러져 앉는다(`--ex-motion-glide`). 섹션 정보가 뜨면(`data-done`) 끝까지 찬 뒤, 잔이
+ * 올라가는 결(`--wait-rise`)로 흐려지며 자리를 접는다.
+ */
+.progress {
+  width: min(240px, 100%);
+  height: 5px;
+  margin: 14px auto 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--ex-border);
+  transition:
+    opacity var(--wait-rise),
+    height var(--wait-rise),
+    margin var(--wait-rise);
+}
+
+.progressFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ex-accent);
+  transform-origin: left;
+  transition: transform var(--ex-motion-glide);
+}
+
+.progress[data-done] {
+  height: 0;
+  margin: 0 auto;
+  opacity: 0;
+  transition-delay: 220ms;
+}
+
+/*
  * 잔 아래에 도는 한 줄. 줄을 모두 겹쳐 세우고 투명도와 자리만 오간다.
  *
  * 나가는 줄이 먼저 위로 빠지고(`--ex-motion-instant`), 그 시간(140ms)이 지난 뒤 들어오는 줄이 아래에서 올라와
@@ -112,7 +147,8 @@
 
 /*
  * 지면 안. 위아래 끝은 흐리게 지운다 — 카드가 끝에서 잘려 나가는 대신 들어오고 나가는 것처럼 보인다.
- * 스크롤은 사람이 할 수 있게 열어 두고, 막대만 감춘다. 저절로 올라가는 칸에 막대가 서 있으면 움직일 때마다 눈에 걸린다.
+ * 스크롤은 사람이 할 수 있게 열어 두고, 쌓는 동안만 막대를 감춘다. 저절로 올라가는 칸에 막대가 서 있으면 움직일
+ * 때마다 눈에 걸린다. 다 쌓여 멈추면(`data-settled`) 막대를 보여 스크롤해 읽을 수 있다는 것을 알린다.
  */
 .feed {
   /* 흐리게 지우는 폭. 지면 안을 올릴 때 구역이 이 폭 안쪽에 서도록 `GenerationWait`도 이 값을 읽는다. */
@@ -128,6 +164,14 @@
 
 .feed::-webkit-scrollbar {
   display: none;
+}
+
+.feed[data-settled] {
+  scrollbar-width: thin;
+}
+
+.feed[data-settled]::-webkit-scrollbar {
+  display: block;
 }
 
 /* 키보드로 스크롤하려고 초점을 받는 칸이다. 위아래 끝은 흐리게 지워지므로 초점 링을 안쪽에 그려 옆선이 보이게 한다. */
@@ -162,20 +206,6 @@
 .feed[data-building] .group[data-shown] [data-feed-card] {
   opacity: 1;
   transform: none;
-}
-
-/* 다 쌓였으면 지면을 비운다. 위로 조금 비켜나며 한꺼번에 사라진다. */
-.feed[data-building][data-turning] .group > h2,
-.feed[data-building][data-turning] .group [data-feed-card] {
-  opacity: 0;
-  transform: translateY(-12px);
-  transition-delay: 0ms;
-}
-
-/* 비운 뒤 처음 자리로 되돌릴 때는 움직이지 않는다. */
-.feed[data-resetting] .group > h2,
-.feed[data-resetting] .group [data-feed-card] {
-  transition: none;
 }
 
 .group {
@@ -382,7 +412,9 @@
   }
 
   .captionLine,
-  .captionLine[data-on] {
+  .captionLine[data-on],
+  .progress,
+  .progressFill {
     animation: none;
     transition: none;
   }
