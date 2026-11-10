@@ -2,11 +2,10 @@ import type { JobPostingSummary } from "@expresso/contracts";
 import type { Route } from "next";
 import Link from "next/link";
 
-import { Icon } from "@/components/ui/Icon";
-
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { detailHref } from "./list-query";
 import styles from "./page.module.css";
+import { RowInterestButton } from "./RowInterestButton";
 
 /** 게이지 채움은 점수 구간으로 갈린다 (정의서 00b). */
 function fillColor(score: number): string {
@@ -87,22 +86,29 @@ export function JobRowList({
   return (
     <div className={styles.rows}>
       {jobs.map((job, index) => (
-        <Link
+        // 행 전체가 상세로 가는 링크처럼 눌린다(제목 링크의 ::after가 행을 덮는다).
+        // 북마크는 버튼이라 `<a>` 안에 둘 수 없어 링크 바깥 형제로 둔다.
+        <div
           key={job.id}
-          href={detailHref(job.id, listQuery)}
           className={`${styles.row} ${
             highlightFirst && index === 0 ? styles.rowTop : ""
           }`}
         >
           <CompanyAvatar company={job.company} className={styles.avatar} />
           <span className={styles.rowTitle}>
-            <span className={styles.rowRole} style={{ display: "block" }}>
-              {job.title}
-              {isNew(job, now) ? <span className={styles.rowNew}>NEW</span> : null}
-            </span>
-            <span className={styles.rowCompany} style={{ display: "block" }}>
-              {companyLine(job, tail)}
-            </span>
+            <Link
+              href={detailHref(job.id, listQuery)}
+              className={styles.rowLink}
+              style={{ display: "block" }}
+            >
+              <span className={styles.rowRole} style={{ display: "block" }}>
+                {job.title}
+                {isNew(job, now) ? <span className={styles.rowNew}>NEW</span> : null}
+              </span>
+              <span className={styles.rowCompany} style={{ display: "block" }}>
+                {companyLine(job, tail)}
+              </span>
+            </Link>
           </span>
           <span className={styles.rowStack}>
             {job.technologies.map((tool) => (
@@ -137,14 +143,8 @@ export function JobRowList({
             )}
           </span>
           <span className={deadlineClass(job)}>{deadlineLabel(job)}</span>
-          <Icon
-            name="bookmark-simple"
-            weight={job.interest ? "fill" : "regular"}
-            size={15}
-            color={job.interest ? "var(--ex-accent-text)" : "var(--ex-border-firm)"}
-            style={{ flexShrink: 0 }}
-          />
-        </Link>
+          <RowInterestButton jobPostingId={job.id} interested={job.interest !== null} />
+        </div>
       ))}
     </div>
   );
