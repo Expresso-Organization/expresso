@@ -40,7 +40,7 @@ const BREWING_LINES: { text: string; needsPosting?: true }[] = [
   { text: "섹션 구성 확인 중..." },
 ];
 /**
- * 구성(레시피)이 끝나기 전에 맡긴 생성. 지금 도는 것은 구성 잡이라, 그 잡이 하는 일을 적는다 — 무엇을 담을지 ·
+ * 구성(레시피)이 끝나기 전에 맡긴 생성. 지면이 선 뒤에도 구성이 끝날 때까지 쓴다. 지금 도는 것은 구성 잡이라, 그 잡이 하는 일을 적는다 — 무엇을 담을지 ·
  * 어떤 순서로 · 무슨 메시지로(`RecipeV2Section`). 단계가 아니라 한 가지 일을 나눠 적은 것이라 어느 줄이 떠 있어도
  * 그 순간 사실이다.
  */
@@ -65,6 +65,9 @@ const READING_LINE_MS = FEED_STEP_MS * 3;
  * 사람이 스크롤해 읽는다(사용자 결정 2026-11-10 "마지막 섹션까지 뜨면 더이상 순환하지 않도록"). 설계 호출은 생각을 마쳐야 한 글자를 내고(2026-10-27 실측 약 61초), 그동안 화면이 정직하게
  * 보여 줄 수 있는 것은 모델에게 지금 가 있는 것뿐이다. 설계가 오면 `LivePreview`가 이 화면을 지면으로 바꾼다.
  *
+ * 구성(레시피)이 끝나기 전에 맡긴 생성도 10초 뒤 지면으로 넘어간다. 섹션 구역만 없이 쌓이고, 잔 아래 문구는 구성
+ * 작업을 돌리며, 막대는 계속 찬다. 구성이 끝나 다시 그려지면 섹션 구역이 디자인 아래 제자리에 들어오고 막대가 접힌다.
+ *
  * 움직임은 반동 없이 끝에서 천천히 멈춘다(`--ex-motion-panel`의 곡선, 사용자 결정 2026-10-27 "너무 반동이 크다").
  *
  * 남은 시간(`brewingLeftMs`)은 서버가 잡을 만든 시각에서 잰다. 다시 열었을 때 10초가 지났으면 처음부터
@@ -82,14 +85,15 @@ export function GenerationWait({
   /** 서버가 생성 잡을 만든 뒤 지난 시간. 진행 막대가 다시 열어도 그만큼 찬 자리에서 시작한다. */
   waitedMs: number;
   /**
-   * 구성(레시피)이 끝나기 전에 맡긴 생성이고 구성 잡이 아직 도는가. 그동안은 지면에 올릴 섹션이 없으므로 브루잉이
-   * 시간과 상관없이 가운데에 머물고, 1.5초마다 다시 읽어 구성이 끝나면 지금처럼 지면으로 넘어간다.
+   * 구성(레시피)이 끝나기 전에 맡긴 생성이고 구성 잡이 아직 도는가. 그동안 지면에는 섹션 구역이 없고, 잔 아래 문구는
+   * 구성 작업을 적는다. 1.5초마다 다시 읽어 구성이 끝나면 섹션 구역이 지면의 제자리에 들어온다.
    */
   recipePending?: boolean;
   actions: ReactNode;
 }) {
-  // 구성을 기다리는 동안에는 시작한 지 10초가 지났어도 브루잉이다 — 지면에 올릴 섹션이 아직 없다.
-  const [phase, setPhase] = useState<"brewing" | "reading">(brewingLeftMs > 0 || recipePending ? "brewing" : "reading");
+  // 구성을 기다리는 중이어도 10초가 지나면 지면으로 넘어간다 — 공고 · 디자인 · 기록은 구성 없이도 안다(사용자 결정
+  // 2026-11-10 "10초 지나면 바로 띄울 수 있는 것들은 바로 띄우고, 레시피가 나와야 띄울 수 있는 것은 뜨는 대로").
+  const [phase, setPhase] = useState<"brewing" | "reading">(brewingLeftMs > 0 ? "brewing" : "reading");
   /** 브루잉에서 넘어온 입력 묶음인가. 처음부터 입력 묶음이면 올라오는 동작이 없다. */
   const [entering, setEntering] = useState(false);
   const root = useRef<HTMLDivElement>(null);
@@ -101,14 +105,14 @@ export function GenerationWait({
   useRefreshWhile(recipePending);
 
   useEffect(() => {
-    if (phase !== "brewing" || recipePending) return;
+    if (phase !== "brewing") return;
     const timer = window.setTimeout(() => {
       before.current = top.current && root.current ? measure(top.current, root.current) : null;
       setEntering(true);
       setPhase("reading");
     }, brewingLeftMs);
     return () => window.clearTimeout(timer);
-  }, [phase, brewingLeftMs, recipePending]);
+  }, [phase, brewingLeftMs]);
 
   useLayoutEffect(() => {
     const first = before.current;
@@ -126,9 +130,9 @@ export function GenerationWait({
 
   useSheetBuild(feed, phase === "reading", entering);
 
-  const brewingLines = (recipePending ? RECIPE_LINES : BREWING_LINES)
-    .filter(({ needsPosting }) => !needsPosting || reading.posting)
-    .map(({ text }) => text);
+  const linesFor = (lines: typeof BREWING_LINES) =>
+    lines.filter(({ needsPosting }) => !needsPosting || reading.posting).map(({ text }) => text);
+  const brewingLines = linesFor(BREWING_LINES);
 
   return (
     <div
@@ -140,9 +144,14 @@ export function GenerationWait({
     >
       <div ref={top} className={styles.top}>
         <Brewing records={reading.records} quiet={phase === "reading"} />
-        <BrewProgress waitedMs={waitedMs} expectedMs={recipePending ? RECIPE_WAIT_MS : BREWING_MS} done={phase === "reading"} />
-        {phase === "brewing" && recipePending
-          ? <Caption key="recipe" lines={brewingLines} every={READING_LINE_MS} />
+        <BrewProgress
+          waitedMs={waitedMs}
+          expectedMs={recipePending ? RECIPE_WAIT_MS : BREWING_MS}
+          done={phase === "reading" && !recipePending}
+        />
+        {/* 구성을 기다리는 동안은 지면이 서 있어도 지금 도는 일이 구성이다. 같은 열쇠라 지면으로 넘어가도 이어 돈다. */}
+        {recipePending
+          ? <Caption key="recipe" lines={linesFor(RECIPE_LINES)} every={READING_LINE_MS} />
           : phase === "brewing"
           ? <Caption key="brewing" lines={brewingLines} every={BREWING_MS / brewingLines.length} />
           : <Caption key="reading" lines={READING_LINES} every={READING_LINE_MS} />}
@@ -331,64 +340,74 @@ function Caption({ lines, every }: { lines: readonly string[]; every: number }) 
  * 지면에 구역을 1.5초마다 하나씩 올린다.
  *
  * 한 번에 하는 일은 하나다(`FEED_STEP_MS`마다).
- * 1. 이미 올린 구역 가운데 아직 끝까지 안 보인 카드 줄이 있으면 그 줄이 보이게 지면 안을 올린다.
- * 2. 없으면 다음 구역을 올리고(`data-shown`), 그 구역이 칸 아래로 넘치면 아래 끝이 보이게 지면 안을 올린다.
- *    칸보다 긴 구역은 위 끝에 맞춘다.
+ * 1. 마지막으로 올린 구역에 아직 끝까지 안 보인 카드 줄이 있으면 그 줄이 보이게 지면 안을 올린다.
+ * 2. 없으면 아직 안 올린 첫 구역을 올리고(`data-shown`), 그 구역이 칸 밖이면 보이게 지면 안을 옮긴다.
+ *    칸 위에 있거나 칸보다 길면 위 끝에, 아래로 넘치면 아래 끝에 맞춘다.
  * 3. 다 올렸으면 멈춘다(`data-settled`). 지면을 비우지 않고, 그 뒤로는 사람이 스크롤해 읽는다
  *    (사용자 결정 2026-11-10 "마지막 섹션까지 뜨면 더이상 순환하지 않도록 하고, 스크롤이 가능하게").
  *
+ * 올린 구역은 개수로 세지 않고 `data-shown`으로 읽는다. 구성이 늦게 끝나면 섹션 구역이 디자인과 기록 사이에
+ * 끼어드는데, 그 구역도 그대로 "아직 안 올린 첫 구역"이 된다. 다 올려 멈춘 뒤에 구역이 오면 거기서부터 다시 잇는다.
+ *
  * 지면 안을 올리는 데는 0.6초, 곡선은 반동 없는 `--ex-motion-panel`이다.
  *
- * 쌓는 도중에 사용자가 스크롤하면 남은 구역을 모두 보여 주고 거기서 멈춘다 — 손으로 읽는 동안 빈 자리가 나오거나
- * 화면이 읽는 자리를 옮기면 안 된다. 우리가 쓴 값과 다른 스크롤 위치가 읽히면 사용자가 움직인 것이다.
+ * 사용자가 스크롤하면 남은 구역을 모두 보여 주고 거기서 멈춘다 — 손으로 읽는 동안 빈 자리가 나오거나
+ * 화면이 읽는 자리를 옮기면 안 된다. 그 뒤에 오는 구역도 옮기지 않고 바로 보인다. 우리가 쓴 값과 다른 스크롤 위치가
+ * 읽히면 사용자가 움직인 것이다.
  *
- * 동작 줄이기 설정에서는 처음부터 모두 보이고 멈춰 있다.
+ * 동작 줄이기 설정에서는 처음부터 모두 보이고 멈춰 있으며, 오는 구역도 바로 보인다.
  */
 function useSheetBuild(feed: RefObject<HTMLDivElement | null>, enabled: boolean, entering: boolean) {
+  /** 그릴 때마다 부른다. 새로 들어온 구역이 있으면 쌓기를 다시 잇는다. */
+  const resume = useRef<(() => void) | null>(null);
+
   useEffect(() => {
     const node = feed.current;
     if (!enabled || !node) return;
-    const groups = [...node.querySelectorAll<HTMLElement>("[data-feed-group]")];
+    const groups = () => [...node.querySelectorAll<HTMLElement>("[data-feed-group]")];
+    const isShown = (group: HTMLElement) => group.dataset.shown !== undefined;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const root = node.closest<HTMLElement>("[data-phase]") ?? node;
     const ease = cubicBezier(...(parseCubicBezier(getComputedStyle(node).getPropertyValue("--ex-motion-panel")) ?? [0, 0, 1, 1]));
 
-    // 구역 안의 제목과 카드가 위에서부터 `--ex-wave` 간격으로 따라 올라오도록 순서를 매긴다.
-    for (const group of groups)
+    /** 구역을 올린다. 구역 안의 제목과 카드가 위에서부터 `--ex-wave` 간격으로 따라 올라오도록 순서를 매긴다. */
+    const show = (group: HTMLElement) => {
       [...group.querySelectorAll<HTMLElement>(":scope > h2, [data-feed-card]")].forEach((item, index) => item.style.setProperty("--j", String(index)));
-
-    let shown = 0;
-    let written = node.scrollTop;
-    let settled = false;
-    let timer = 0;
-    let frame = 0;
-
-    const reveal = (count: number) => {
-      shown = count;
-      groups.forEach((group, index) => {
-        if (index < count) group.dataset.shown = "";
-        else delete group.dataset.shown;
-      });
+      group.dataset.shown = "";
     };
+    const showAll = () => groups().filter((group) => !isShown(group)).forEach(show);
+
     if (reduced) {
-      reveal(groups.length);
+      showAll();
       node.dataset.settled = "";
-      return;
+      resume.current = showAll;
+      return () => {
+        resume.current = null;
+      };
     }
     node.dataset.building = "";
+
+    let known = groups().length;
+    let written = node.scrollTop;
+    /** 마지막으로 올린 구역. 1단계는 이 구역의 줄만 따라 내려간다. */
+    let latest: HTMLElement | null = null;
+    /** 멈춘 까닭. 다 올려 멈췄으면(`done`) 새 구역이 올 때 다시 잇고, 사람이 스크롤해 멈췄으면(`manual`) 바로 보인다. */
+    let settled: "done" | "manual" | null = null;
+    let timer = 0;
+    let frame = 0;
 
     const onScroll = () => {
       // 소수점 위치는 브라우저가 화면 픽셀로 맞춰 읽어 준다. 그 차이보다 크면 사람이 움직인 것이다.
       if (Math.abs(node.scrollTop - written) <= 1) return;
       window.cancelAnimationFrame(frame);
-      reveal(groups.length);
-      settle();
+      showAll();
+      settle("manual");
     };
-    /** 쌓기를 끝낸다. 이 뒤로 지면은 사람의 스크롤로만 움직인다. */
-    const settle = () => {
-      settled = true;
+    /** 쌓기를 멈춘다. 사람이 움직였으면 이 뒤로 지면은 사람의 스크롤로만 움직인다. */
+    const settle = (reason: "done" | "manual") => {
+      settled = reason;
       window.clearTimeout(timer);
-      node.removeEventListener("scroll", onScroll);
+      if (reason === "manual") node.removeEventListener("scroll", onScroll);
       node.dataset.settled = "";
     };
 
@@ -421,31 +440,33 @@ function useSheetBuild(feed: RefObject<HTMLDivElement | null>, enabled: boolean,
     const step = () => {
       const { fade, visible } = view();
       const scrolled = node.scrollTop;
-      // 1. 올린 구역에 아직 다 안 보인 줄이 있으면 그 줄로.
-      const revealed = groups.slice(0, shown).map((group) => {
+      // 1. 마지막으로 올린 구역에 아직 다 안 보인 줄이 있으면 그 줄로.
+      if (latest) {
         const rows = new Map<number, number>();
-        for (const card of group.querySelectorAll<HTMLElement>("[data-feed-card]")) {
+        for (const card of latest.querySelectorAll<HTMLElement>("[data-feed-card]")) {
           const cardTop = within(card, node);
           rows.set(cardTop, Math.max(rows.get(cardTop) ?? 0, cardTop + card.offsetHeight));
         }
-        return { top: within(group, node) - fade, rows: [...rows].map(([rowTop, bottom]) => ({ top: rowTop - fade, bottom: bottom - fade })) };
-      });
-      const lastBottom = revealed.at(-1)?.rows.reduce((bottom, row) => Math.max(bottom, row.bottom), 0) ?? 0;
-      if (lastBottom > scrolled + visible + 1) {
-        move(nextSnap(feedSnaps(revealed, visible), scrolled, lastBottom - visible));
-        return;
+        const group = { top: within(latest, node) - fade, rows: [...rows].map(([rowTop, bottom]) => ({ top: rowTop - fade, bottom: bottom - fade })) };
+        const lastBottom = group.rows.reduce((bottom, row) => Math.max(bottom, row.bottom), 0);
+        if (lastBottom > scrolled + visible + 1) {
+          move(nextSnap(feedSnaps([group], visible), scrolled, lastBottom - visible));
+          return;
+        }
       }
-      // 2. 다음 구역을 올린다.
-      const next = groups[shown];
+      // 2. 아직 안 올린 첫 구역을 올린다.
+      const next = groups().find((group) => !isShown(group));
       if (next) {
-        reveal(shown + 1);
+        show(next);
+        latest = next;
         const groupTop = within(next, node) - fade;
         const groupBottom = groupTop + next.offsetHeight;
-        if (groupBottom > scrolled + visible) move(next.offsetHeight > visible ? groupTop : groupBottom - visible);
+        if (groupTop < scrolled || next.offsetHeight > visible) move(groupTop);
+        else if (groupBottom > scrolled + visible) move(groupBottom - visible);
         return;
       }
       // 3. 다 올렸다. 멈춘다.
-      settle();
+      settle("done");
     };
     const schedule = (delay: number) => {
       window.clearTimeout(timer);
@@ -455,15 +476,39 @@ function useSheetBuild(feed: RefObject<HTMLDivElement | null>, enabled: boolean,
       }, delay);
     };
 
+    resume.current = () => {
+      const all = groups();
+      if (all.length !== known) {
+        known = all.length;
+        // 위에 구역이 끼어들면 브라우저가 읽던 자리를 지키려고 `scrollTop`을 옮긴다(scroll anchoring). 그 값을 우리가
+        // 쓴 것으로 받아 둔다 — 사람이 스크롤한 것으로 읽으면 쌓기가 멈춘다.
+        written = node.scrollTop;
+      }
+      if (all.every(isShown)) return;
+      if (settled === "manual") showAll();
+      else if (settled === "done") {
+        settled = null;
+        delete node.dataset.settled;
+        schedule(0);
+      }
+      // 쌓는 중이면 다음 차례에 올라온다.
+    };
+
     node.addEventListener("scroll", onScroll, { passive: true });
     // 브루잉에서 넘어왔으면 빈 지면이 다 올라온 뒤 첫 구역을 올린다. 다시 열었으면 바로 올린다.
     schedule(entering ? parseMotion(getComputedStyle(root).getPropertyValue("--wait-rise")).duration : 0);
     return () => {
+      resume.current = null;
       window.clearTimeout(timer);
       window.cancelAnimationFrame(frame);
       node.removeEventListener("scroll", onScroll);
     };
   }, [feed, enabled, entering]);
+
+  // 구성이 끝나 다시 그리면 섹션 구역이 새로 들어온다. 그릴 때마다 확인한다.
+  useEffect(() => {
+    resume.current?.();
+  });
 }
 
 /**
