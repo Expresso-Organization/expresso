@@ -29,6 +29,6 @@ test('변경 알림은 고유한 기록과 내부 이동 주소만 제공한다'
  for(const item of feed.items){
   assert.match(item.date,/^\d{4}-\d{2}-\d{2}$/);
   assert.ok(item.title.trim());assert.ok(item.summary.trim());
-  assert.match(item.href,/^#\/(?:docs|library(?:\/|$)|doc\/)/);
+  assert.match(item.href,/^#\/(?:docs|library(?:\/|$)|doc\/|status(?:\?|$)|patch-notes$)/);
  }
 });

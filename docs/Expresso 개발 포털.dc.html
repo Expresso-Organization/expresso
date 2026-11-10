@@ -234,6 +234,10 @@
     <expresso-library route="{{ libraryRoute }}"></expresso-library>
   </sc-if>
 
+  <sc-if value="{{ patchOpen }}" hint-placeholder-val="{{ false }}">
+    <iframe id="patchframe" class="portal-status-frame" src="{{ patchSrc }}" title="패치노트"></iframe>
+  </sc-if>
+
   <sc-if value="{{ statusOpen }}" hint-placeholder-val="{{ false }}">
     <iframe id="statusframe" class="portal-status-frame" src="{{ statusSrc }}" title="진행 현황"></iframe>
   </sc-if>
@@ -1208,7 +1212,11 @@ const STATUS_PAGE = 'status/index.html';
 // 포털을 열 때마다 다른 값(v)을 붙여 늘 새 index.html 을 받게 한다. 대시보드는 v 를 읽지 않는다.
 const STATUS_LOAD = Date.now().toString(36);
 const statusSrc = query => STATUS_PAGE + '?' + (query ? query + '&' : '') + 'v=' + STATUS_LOAD;
+// 패치노트. 진행 현황 앱의 두 번째 페이지이고, 데이터는 서버 생성기가 쓴다(services/dev-portal/status/patch-notes/).
+const PATCH_TAB = '패치노트';
+const PATCH_SRC = 'status/patch-notes.html?v=' + STATUS_LOAD;
 const NAV = [
+  ['NOTE', PATCH_TAB, '', '#E0B486'],
   ['STAT', STATUS_TAB, '', '#7FD3AE'],
   ['DOC', DOCUMENTATION_TAB, '', '#E0B486'],
   ['LIB', LIBRARY_TAB, '', '#E0B486'],
@@ -1218,7 +1226,7 @@ const NAV = [
   ['DS', '디자인 시스템', DS, '#D8B49A'],
   ['ICON', '아이콘', IC, '#D8B49A']
 ];
-// 파일을 가진 NAV 항목만 바로가기 탭이다(진행 현황 · 개발 문서 · 라이브러리 · 프리젠테이션 제외).
+// 파일을 가진 NAV 항목만 바로가기 탭이다(패치노트 · 진행 현황 · 개발 문서 · 라이브러리 · 프리젠테이션 제외).
 const DIRECT_DOC_TABS = new Set(NAV.filter(n => n[2]).map(n => n[1]));
 const PORTAL_DOCUMENTS = [
   ['SRS', '설계서', GD, '#E0B486'],
@@ -1307,12 +1315,14 @@ function portalSearchMatches(query, libraryEntries) {
   const matches = value => String(value || '').toLocaleLowerCase().includes(q);
   const documents = PORTAL_DOCUMENTS.filter(d => matches(d[0] + ' ' + d[1] + ' ' + DOCUMENTATION_DESCRIPTIONS[d[1]] + ' 개발 문서'));
   const decks = DECKS.filter(d => matches(d[1] + ' ' + d[2] + ' 프리젠테이션 발표 자료'));
+  const patch = matches('패치노트 변경 사항 업데이트 릴리스 patch notes') ? 1 : 0;
   const status = matches('진행 현황 대시보드 일정 마일스톤 상세기능 남은 작업 status') ? 1 : 0;
   const library = q.length > 1 ? (libraryEntries || []).filter(i => matches(i.title + ' ' + i.identifier + ' ' + i.source)) : [];
   return {
-    total: status + documents.length + decks.length + library.length,
+    total: patch + status + documents.length + decks.length + library.length,
     libraryTotal: library.length,
     hits: [
+      ...(patch ? [{ tag: 'NOTE', title: PATCH_TAB, context: '머지된 변경을 날짜별로 정리', href: '#/patch-notes' }] : []),
       ...(status ? [{ tag: 'STAT', title: STATUS_TAB, context: '작업 범위 대비 진척 · 담당자별 남은 작업', href: '#/status' }] : []),
       ...documents.slice(0, 4).map(d => ({ tag: d[0], title: d[1], context: DOCUMENTATION_DESCRIPTIONS[d[1]], href: '#/doc/' + d[0].toLowerCase() })),
       ...decks.slice(0, 3).map(d => ({ tag: 'DECK', title: d[1], context: d[2], href: '#/doc/deck/' + DECK_SLUG[d[0]] })),
@@ -1323,6 +1333,7 @@ function portalSearchMatches(query, libraryEntries) {
 
 function routeOf(s) {
   if (s.doc === LIBRARY_TAB) return s.libraryRoute || '#/library';
+  if (s.doc === PATCH_TAB) return '#/patch-notes';
   if (s.doc === STATUS_TAB) return '#/status' + (s.statusQuery ? '?' + s.statusQuery : '');
   if (s.doc === DOCUMENTATION_TAB) return '#/docs';
   if (s.doc) {
@@ -1338,6 +1349,7 @@ function routeOf(s) {
 // 해석하지 못하는 주소는 null 을 돌려준다 — 부르는 쪽이 지금 화면을 그대로 둔다.
 function parseRoute(hash) {
   if (/^#\/library(?:[/?]|$)/.test(String(hash))) return { doc: LIBRARY_TAB, libraryRoute: String(hash), full: false, view: 'console', section: 'domain', toc: [], tocAt: -1 };
+  if (hash === '#/patch-notes') return { doc: PATCH_TAB, full: false, view: 'console', section: 'domain', toc: [], tocAt: -1 };
   if (hash === '#/docs') return { doc: DOCUMENTATION_TAB, full: false, view: 'console', section: 'domain', toc: [], tocAt: -1 };
   const status = /^#\/status(?:\?(.*))?$/.exec(String(hash));
   if (status) return { doc: STATUS_TAB, statusQuery: status[1] || '', statusSrc: statusSrc(status[1] || ''), full: false, view: 'console', section: 'domain', toc: [], tocAt: -1 };
@@ -1391,8 +1403,8 @@ function tasksOf(d) {
 
 class Component extends DCLogic {
   state = {
-    // 주소 없이 열면 진행 현황이 첫 화면이다.
-    sel: 'D1', q: '', role: 'all', status: 'all', prog: {}, doc: STATUS_TAB, statusQuery: '', statusSrc: statusSrc(''), deck: null, slides: {}, toc: [], tocAt: -1, tocMiss: null,
+    // 주소 없이 열면 패치노트가 첫 화면이다.
+    sel: 'D1', q: '', role: 'all', status: 'all', prog: {}, doc: PATCH_TAB, statusQuery: '', statusSrc: statusSrc(''), deck: null, slides: {}, toc: [], tocAt: -1, tocMiss: null,
     view: 'console', section: 'domain', bview: 'kanban', tickets: [], seq: 1, tsel: null, member: 'all',
     impDomain: 'D1', form: { title: '', assignee: '', due: '', effort: 'M', domain: '' },
     pages: [], comments: [], wseq: 1, psel: null, editing: false, block: -1, draft: '', me: '', newTpl: 'blank',
@@ -2133,20 +2145,20 @@ class Component extends DCLogic {
         this._frame = null;
         this.setState({
           sel: 'D1', q: '', role: 'all', status: 'all',
-          doc: STATUS_TAB, statusQuery: '', statusSrc: statusSrc(''), deck: null, toc: [], tocAt: -1,
+          doc: PATCH_TAB, statusQuery: '', statusSrc: statusSrc(''), deck: null, toc: [], tocAt: -1,
           globalOpen: false, themeOpen: false, changesOpen: false,
           view: 'console', section: 'domain', tsel: null
         });
         window.scrollTo(0, 0);
       },
-      headerLabel: s.doc === LIBRARY_TAB ? 'LIBRARY' : s.doc === STATUS_TAB ? 'STATUS' : s.doc ? 'DOCUMENTATION' : 'DEV CONSOLE',
+      headerLabel: s.doc === LIBRARY_TAB ? 'LIBRARY' : s.doc === PATCH_TAB ? 'PATCH NOTES' : s.doc === STATUS_TAB ? 'STATUS' : s.doc ? 'DOCUMENTATION' : 'DEV CONSOLE',
       navLinks: NAV.map(n => {
         const active = n[1] === DOCUMENTATION_TAB
           ? s.doc === DOCUMENTATION_TAB || (PORTAL_DOCUMENTS.some(d => d[1] === s.doc) && !DIRECT_DOC_TABS.has(s.doc))
           : s.doc === n[1];
         return {
           tag: n[0], label: n[1], tagColor: n[3],
-          href: n[1] === LIBRARY_TAB ? '#/library' : n[1] === DOCUMENTATION_TAB ? '#/docs' : n[1] === STATUS_TAB ? '#/status' : '#/doc/' + DOC_SLUG[n[1]],
+          href: n[1] === LIBRARY_TAB ? '#/library' : n[1] === DOCUMENTATION_TAB ? '#/docs' : n[1] === PATCH_TAB ? '#/patch-notes' : n[1] === STATUS_TAB ? '#/status' : '#/doc/' + DOC_SLUG[n[1]],
           color: active ? '#fff' : '#C6CEDD',
           weight: active ? 600 : 400,
           bg: active ? 'rgba(255,255,255,.07)' : 'transparent',
@@ -2177,13 +2189,15 @@ class Component extends DCLogic {
           return { tag: n[0], title: label, description: DOCUMENTATION_DESCRIPTIONS[label], icon: DOCUMENTATION_ICONS[label], href: '#/doc/' + n[0].toLowerCase() };
         })
       })),
-      shellClass: s.doc === LIBRARY_TAB ? 'portal-library-active' : s.doc === DOCUMENTATION_TAB ? 'portal-documentation-active' : s.doc === STATUS_TAB ? 'portal-status-active' : '',
+      shellClass: s.doc === LIBRARY_TAB ? 'portal-library-active' : s.doc === DOCUMENTATION_TAB ? 'portal-documentation-active' : s.doc === STATUS_TAB || s.doc === PATCH_TAB ? 'portal-status-active' : '',
       shellMinWidth: s.doc ? '0' : '1024px',
       libraryOpen: s.doc === LIBRARY_TAB,
       statusOpen: s.doc === STATUS_TAB,
+      patchOpen: s.doc === PATCH_TAB,
+      patchSrc: PATCH_SRC,
       statusSrc: s.statusSrc || statusSrc(s.statusQuery),
       libraryRoute: s.libraryRoute || '#/library',
-      viewerOpen: !!s.doc && s.doc !== LIBRARY_TAB && s.doc !== DOCUMENTATION_TAB && s.doc !== STATUS_TAB,
+      viewerOpen: !!s.doc && s.doc !== LIBRARY_TAB && s.doc !== DOCUMENTATION_TAB && s.doc !== STATUS_TAB && s.doc !== PATCH_TAB,
       portalOpen: !s.doc,
       consoleOpen: !s.doc && s.section === 'domain',
       boardOpen: !s.doc && s.section === 'board',
