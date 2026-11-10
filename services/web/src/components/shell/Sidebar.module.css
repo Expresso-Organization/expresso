@@ -426,25 +426,6 @@
   text-overflow: ellipsis;
 }
 
-.score {
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-2xs);
-}
-
-.scoreHigh {
-  color: var(--ex-status-success-text);
-}
-
-.scoreMid {
-  color: var(--ex-status-warning-text);
-}
-
-.pending {
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-fg-muted);
-  white-space: nowrap;
-}
-
 /* ── 내 커리어 트리 ───────────────────────────────────────── */
 
 .categories {

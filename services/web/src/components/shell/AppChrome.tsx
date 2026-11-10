@@ -64,15 +64,14 @@ async function AppSidebar() {
         };
       })}
       // 관심 공고는 내가 담은 공고다. 일치도 상위 목록(`recommendedJobs`)이 아니다 —
-      // 그 목록으로 채우면 담아도 여기 나타나지 않고, 일치도가 없는 공고의
-      // "분석 대기" 줄은 나올 수가 없다.
+      // 그 목록으로 채우면 담아도 여기 나타나지 않는다. 일치도는 줄에 싣지 않는다 —
+      // 단위 없는 숫자가 옆의 건수와 섞여 읽히고, 점수와 근거는 공고 상세가 보여 준다.
       interests={watched.data.map((job) => ({
         id: job.id,
         initial: job.company.initial ?? job.company.name.slice(0, 1),
         company: job.company.name,
         logoUrl: job.company.logoUrl,
         label: `${job.company.name} · ${job.title}`,
-        score: job.match?.total ?? null,
       }))}
       interestTotal={watched.summary.total}
       jobCount={

@@ -50,17 +50,6 @@ export function SidebarInterests({
             <span className={`${styles.copy} ${styles.interestName}`}>
               {interest.label}
             </span>
-            {interest.score === null ? (
-              <span className={`${styles.copy} ${styles.pending}`}>분석 대기</span>
-            ) : (
-              <span
-                className={`${styles.copy} ${styles.score} ${
-                  interest.score >= 85 ? styles.scoreHigh : styles.scoreMid
-                }`}
-              >
-                {interest.score}
-              </span>
-            )}
           </Link>
         );
       })}
