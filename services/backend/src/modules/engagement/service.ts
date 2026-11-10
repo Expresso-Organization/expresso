@@ -47,7 +47,8 @@ export class EngagementService {
     // 홈 한 번에 독립 find를 여러 개 열면 동시 요청 수만큼 pool 대기가 증폭된다.
     // 컬렉션별 limit과 정렬은 유지하면서 서버 왕복은 단일 aggregation으로 묶는다.
     const rows = await db.brews.aggregate<HomeRow>([
-      { $match: { userId, status: { $ne: "done" } } },
+      // 휴지통 제작 · 포트폴리오는 홈 격자에 서지 않는다.
+      { $match: { userId, status: { $ne: "done" }, deletedAt: null } },
       { $sort: { updatedAt: -1, _id: -1 } },
       { $limit: 5 },
       // 홈 격자가 어느 공고의 제작인지 보여 준다. 공고 없이 시작한 제작은 세 단계가 모두 비고 이름만 남는다.
@@ -60,7 +61,7 @@ export class EngagementService {
         companyName: { $first: "$company.name" }, logoChecksum: { $first: "$company.logoChecksum" },
       } },
       { $unionWith: { coll: db.portfolios.collectionName, pipeline: [
-        { $match: { userId } }, { $sort: { title: 1, _id: 1 } }, { $limit: 10 },
+        { $match: { userId, deletedAt: null } }, { $sort: { title: 1, _id: 1 } }, { $limit: 10 },
         { $project: { _id: 0, kind: { $literal: "portfolio" }, id: "$_id", title: 1, status: 1 } },
       ] } },
       { $unionWith: { coll: db.matchScores.collectionName, pipeline: [
