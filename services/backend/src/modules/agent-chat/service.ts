@@ -23,14 +23,24 @@ import type { ConsentApi } from "../consent/index.js";
  * 낸 취소가 실행에 닿는 최대 지연이기도 하다. 같은 인스턴스의 취소는 즉시 전달된다.
  */
 export const RUN_HEARTBEAT_MS = 1_000;
+/** 서버가 실행 도중 멈췄을 때(재시작 · heartbeat 끊김) 대화에 남기는 문구. 다시 보내면 되는 상황이다. */
+export const RUN_INTERRUPTED_ERROR = "서버 실행이 중단되었습니다. 다시 보내 주세요.";
+const RUN_FAILED_ERROR = "응답을 완료하지 못했습니다. 설정을 확인하고 다시 보내 주세요.";
+/** 종료 · 취소가 아닌 이유로 실행이 실패했을 때 원인을 받는 쪽. API는 로그에 남긴다. */
+export type AgentRunFailureListener = (error: unknown, run: { conversationId: string; runId: string }) => void;
 
 export class AgentChatError extends Error { constructor(readonly statusCode: number, message: string) { super(message); } }
 const view = (row: AgentConversationDoc) => { const { _id, userId: _userId, heartbeatAt: _heartbeat, ...data } = row; return AgentConversationSchema.parse({ ...data, id: _id }); };
 export class AgentChatService {
   private readonly running = new Map<string, AbortController>();
   private readonly tasks = new Set<Promise<void>>();
+  /** `close()`가 시작되면 켠다. 그 뒤에 끝난 실행은 어떤 오류로 끝났든 서버 종료로 끊긴 것이다. */
+  private closing = false;
+  private runFailureListener: AgentRunFailureListener | null = null;
   constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord" | "listRecords" | "listCategories" | "createRecord">, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi, readonly credentials: AgentCredentials = new AgentCredentials(db), private readonly portfolios?: Pick<PortfolioReadApi, "get">, private readonly pages?: Pick<PageApi, "latest" | "elementGuide" | "editElementByAgent" | "restoreRevision">) {}
   private get plans() { return new PreparationPlans(this.db); }
+  /** 서비스가 Fastify 앱보다 먼저 만들어지므로 로그 수신자는 라우트 등록 때 붙인다. */
+  setRunFailureListener(listener: AgentRunFailureListener) { this.runFailureListener = listener; }
   async consentRequired(userId: string) {
     const result = await this.consent.list(userId);
     return !result.data.consents.some(item => item.scope === "career_records" && item.granted);
@@ -38,7 +48,7 @@ export class AgentChatService {
   get enabled() { return !!this.runtime; }
   private get rows() { return mongoCollections(this.db.db).agentConversations; }
   private async owned(userId: string, id: string) {
-    await this.rows.updateOne({ _id: id, userId, "run.status": "running", heartbeatAt: { $lt: new Date(Date.now() - 60_000) } }, { $set: { "run.status": "interrupted", "run.error": "서버 실행이 중단되었습니다. 다시 보내 주세요.", updatedAt: new Date().toISOString() }, $inc: { version: 1 } });
+    await this.rows.updateOne({ _id: id, userId, "run.status": "running", heartbeatAt: { $lt: new Date(Date.now() - 60_000) } }, { $set: { "run.status": "interrupted", "run.error": RUN_INTERRUPTED_ERROR, updatedAt: new Date().toISOString() }, $inc: { version: 1 } });
     const row = await this.rows.findOne({ _id: id, userId });
     if (!row) throw new AgentChatError(404, "대화를 찾을 수 없습니다.");
     return row;
@@ -416,9 +426,12 @@ export class AgentChatService {
       if (controller.signal.aborted) throw new Error("cancelled");
       await flush();
       await this.rows.updateOne(filter, { $set: { "run.status": "complete" }, $inc: { version: 1 } });
-    } catch {
+    } catch (error) {
       for (const tool of message.tools) if (tool.status === "running") { tool.status = "failed"; tool.summary = "실행이 중단되었습니다."; }
-      await this.rows.updateOne(filter, { $set: { [`messages.${row.messages.length - 1}`]: message, "run.status": controller.signal.aborted ? "interrupted" : "failed", "run.error": "응답을 완료하지 못했습니다. 설정을 확인하고 다시 보내 주세요." }, $inc: { version: 1 } });
+      // 서버 종료 중에는 런타임이 abort 대신 자식 프로세스 종료 오류로 먼저 끝날 수 있다. 그래도 끊긴 것이다.
+      const status = this.closing || controller.signal.aborted ? "interrupted" : "failed";
+      if (status === "failed") this.runFailureListener?.(error, { conversationId: row._id, runId });
+      await this.rows.updateOne(filter, { $set: { [`messages.${row.messages.length - 1}`]: message, "run.status": status, "run.error": this.closing ? RUN_INTERRUPTED_ERROR : RUN_FAILED_ERROR }, $inc: { version: 1 } });
     } finally { clearInterval(timer); clearTimeout(timeout); if (this.running.get(row._id) === controller) this.running.delete(row._id); }
   }
   async cancel(userId: string, id: string) {
@@ -441,7 +454,7 @@ export class AgentChatService {
     await this.rows.updateOne({ _id: id, userId }, { $set: { "messages.$[].tools.$[tool].proposal": proposal, ...(input.action === "undo" ? { "messages.$[].tools.$[tool].undone": true } : {}) }, $inc: { version: 1 } }, { arrayFilters: [{ "tool.proposal.proposalId": input.proposalId }] });
     return this.get(userId, id);
   }
-  async close() { for (const controller of this.running.values()) controller.abort(); await Promise.allSettled(this.tasks); }
+  async close() { this.closing = true; for (const controller of this.running.values()) controller.abort(); await Promise.allSettled(this.tasks); }
 }
 
 /** 에이전트가 읽는 지면 목차. 최상위 요소와 묶음 안의 요소를 읽는 순서대로, 화면 목차와 같은 이름으로 싣는다. */
