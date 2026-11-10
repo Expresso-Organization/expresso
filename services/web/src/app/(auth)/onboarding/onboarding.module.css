@@ -173,7 +173,7 @@
   color: var(--ex-fg-body);
   background: var(--ex-bg);
   border: 1px solid var(--ex-border);
-  border-radius: 999px;
+  border-radius: var(--ex-radius-pill);
   padding: 8px 15px;
   white-space: nowrap;
   transition:
@@ -378,7 +378,7 @@
   color: var(--ex-fg-on-accent);
   background: var(--ex-accent);
   border: none;
-  border-radius: 999px;
+  border-radius: var(--ex-radius-control);
   padding: 13px 26px;
   display: inline-block;
   transition:
@@ -431,7 +431,7 @@
   width: 100%;
   padding: 16px 18px;
   border: 1px solid var(--ex-border);
-  border-radius: 14px;
+  border-radius: var(--ex-radius-card);
   background: var(--ex-bg);
   text-align: left;
   transition:
@@ -513,7 +513,7 @@
 .nextCard {
   padding: 15px 17px;
   border: 1px solid var(--ex-border);
-  border-radius: 13px;
+  border-radius: var(--ex-radius-card);
   background: var(--ex-bg);
 }
 
@@ -543,7 +543,7 @@
   gap: 14px;
   padding: 15px 17px;
   border: 1px dashed var(--ex-border-firm);
-  border-radius: 13px;
+  border-radius: var(--ex-radius-card);
   background: var(--ex-bg);
 }
 
@@ -566,7 +566,7 @@
   color: var(--ex-fg-body);
   background: var(--ex-bg);
   border: 1px solid var(--ex-border-soft);
-  border-radius: 9px;
+  border-radius: var(--ex-radius-control);
   padding: 8px 14px;
   white-space: nowrap;
   flex-shrink: 0;
@@ -585,7 +585,7 @@
   gap: 13px;
   padding: 16px 18px;
   border: 1px solid var(--ex-border);
-  border-radius: 14px;
+  border-radius: var(--ex-radius-card);
   background: var(--ex-bg);
   cursor: pointer;
 }
@@ -641,7 +641,7 @@
   font-family: var(--ex-font-mono);
   font-size: var(--ex-text-2xs);
   padding: 2px 7px;
-  border-radius: 999px;
+  border-radius: var(--ex-radius-pill);
 }
 
 .consentOn {

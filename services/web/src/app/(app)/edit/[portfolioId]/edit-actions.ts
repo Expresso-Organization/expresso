@@ -62,34 +62,6 @@ export async function structuredPageAction(_previous: { error?: string; saved?: 
   } catch (error) { return { error: pageMessage(error, "저장하지 못했습니다. 입력을 확인해 주세요.") }; }
 }
 
-export interface ElementInstructResult {
-  instruction?: string;
-  target?: string;
-  note?: string;
-  changes?: { label: string; before: string; after: string }[];
-  /** 지시로 생긴 판. 되돌리기는 이 판의 바로 앞 판을 새 판으로 쌓습니다. */
-  revision?: number;
-  error?: string;
-}
-
-/** 04 고른 요소 하나를 말로 고칩니다. 결과는 바로 새 판이고, 화면은 바뀐 곳과 되돌리기를 보입니다. */
-export async function instructElementAction(_previous: ElementInstructResult, form: FormData): Promise<ElementInstructResult> {
-  const portfolioId = form.get("portfolioId"), key = form.get("key"), label = form.get("label");
-  const instruction = form.get("instruction"), expectedRevision = Number(form.get("expectedRevision"));
-  if (typeof portfolioId !== "string" || typeof key !== "string" || typeof instruction !== "string" || !instruction.trim() || !Number.isInteger(expectedRevision))
-    return { error: "무엇을 고칠지 적어 주세요." };
-  const said = instruction.trim();
-  const target = typeof label === "string" ? label : key;
-  const session = await requireSession();
-  try {
-    const { data } = await page.instructElement(session.accessToken, portfolioId, key, { expectedRevision, instruction: said });
-    revalidatePath(`/edit/${portfolioId}`);
-    return { instruction: said, target, note: data.note, changes: data.changes, revision: data.page.revision };
-  } catch (error) {
-    return { instruction: said, target, error: pageMessage(error, "고치지 못했습니다. 다시 시도해 주세요.") };
-  }
-}
-
 /** 04 왼쪽 기록 목록에서 기록 하나를 지면의 새 사례로 더합니다. */
 export async function addRecordSectionAction(_previous: { error?: string; added?: string }, form: FormData): Promise<{ error?: string; added?: string }> {
   const portfolioId = form.get("portfolioId"), recordId = form.get("recordId"), expectedRevision = Number(form.get("expectedRevision"));

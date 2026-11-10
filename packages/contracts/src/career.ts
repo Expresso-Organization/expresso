@@ -186,6 +186,11 @@ export const CareerDeleteImpactSchema = z.strictObject({
   purgeAfter: TimestampSchema,
 });
 
+/** 지우기 전에 보여 줄 영향. 이 기록을 근거로 쓰는 포트폴리오 · 블록 수다. */
+export const CareerDeleteImpactResponseSchema = z.strictObject({
+  data: CareerDeleteImpactSchema,
+});
+
 /** 휴지통에 있는 기록. `purgeAfter`가 지나면 복원할 수 없고 영구 삭제 대상이 된다. */
 export const CareerTrashedRecordSchema = CareerRecordSchema.extend({
   deletedAt: TimestampSchema,
@@ -247,6 +252,7 @@ export type ListCareerRecordsQuery = z.infer<typeof ListCareerRecordsQuerySchema
 export type CareerRecordListItem = z.infer<typeof CareerRecordListItemSchema>;
 export type CareerRecordSummary = z.infer<typeof CareerRecordSummarySchema>;
 export type CareerTrashedRecord = z.infer<typeof CareerTrashedRecordSchema>;
+export type CareerDeleteImpact = z.infer<typeof CareerDeleteImpactSchema>;
 export type CareerRecordListResponse = z.infer<
   typeof CareerRecordListResponseSchema
 >;

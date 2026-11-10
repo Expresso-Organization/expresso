@@ -31,16 +31,10 @@
   gap: 12px;
   max-width: 1180px;
   min-height: 56px;
-  padding: 0 8px 0 18px;
+  padding: 0 8px 0 22px;
   border: 1px solid var(--ex-border-firm);
-  border-radius: 11px;
+  border-radius: var(--ex-radius-pill);
   background: var(--ex-bg);
-  transition: border-color var(--ex-motion-instant), box-shadow var(--ex-motion-instant);
-}
-
-.entrySearch:focus-within {
-  border-color: var(--ex-accent);
-  box-shadow: var(--ex-focus-ring);
 }
 
 .entryInput {
@@ -70,7 +64,7 @@
 .entryGo {
   flex-shrink: 0;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--ex-radius-pill);
   background: var(--ex-accent);
   color: var(--ex-fg-on-accent);
   font: inherit;
@@ -177,7 +171,7 @@
 .jobGo,
 .jobResume {
   flex-shrink: 0;
-  border-radius: 7px;
+  border-radius: var(--ex-radius-control);
   font: inherit;
   font-size: var(--ex-text-2xs);
   font-weight: 600;
@@ -217,7 +211,7 @@
 .routes {
   display: grid;
   border: 1px solid var(--ex-border);
-  border-radius: 11px;
+  border-radius: var(--ex-radius-card);
   background: var(--ex-bg);
   padding: 6px;
 }
@@ -337,7 +331,7 @@
 
 .panel {
   border: 1px solid var(--ex-border);
-  border-radius: 11px;
+  border-radius: var(--ex-radius-card);
   background: var(--ex-bg);
   padding: 16px 18px;
 }
@@ -425,7 +419,7 @@
   align-items: center;
   gap: 6px;
   border: 1px solid var(--ex-border);
-  border-radius: 999px;
+  border-radius: var(--ex-radius-pill);
   padding: 6px 11px;
   font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
@@ -461,7 +455,7 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  border-radius: 8px;
+  border-radius: var(--ex-radius-control);
   background: var(--ex-accent);
   color: var(--ex-fg-on-accent);
   font-size: var(--ex-text-xs);
@@ -506,8 +500,8 @@
   gap: 9px;
   background: var(--ex-bg-sunken);
   border: 1px solid var(--ex-border);
-  border-radius: 11px;
-  padding: 11px 14px;
+  border-radius: var(--ex-radius-pill);
+  padding: 11px 18px;
   max-width: 560px;
 }
 
@@ -518,10 +512,6 @@
   background: none;
   font-size: var(--ex-text-sm);
   color: var(--ex-fg);
-}
-
-.searchInput:focus {
-  outline: none;
 }
 
 .searchGo {
@@ -551,7 +541,7 @@
   margin: 0;
   padding: 0;
   border: 1px solid var(--ex-border);
-  border-radius: 11px;
+  border-radius: var(--ex-radius-card);
   overflow: hidden;
   max-width: 960px;
 }
@@ -602,7 +592,7 @@
   font-size: var(--ex-text-2xs);
   color: var(--ex-fg-muted);
   background: var(--ex-bg-tint);
-  border-radius: 5px;
+  border-radius: var(--ex-radius-pill);
   padding: 3px 7px;
   white-space: nowrap;
 }
@@ -610,7 +600,7 @@
 .rowGo {
   flex-shrink: 0;
   border: 1px solid var(--ex-border);
-  border-radius: 7px;
+  border-radius: var(--ex-radius-control);
   background: var(--ex-bg);
   font-size: var(--ex-text-xs);
   font-weight: 600;
@@ -656,7 +646,7 @@
 .formCard {
   max-width: 820px;
   border: 1px solid var(--ex-border);
-  border-radius: 12px;
+  border-radius: var(--ex-radius-card);
   background: var(--ex-bg);
   padding: 22px;
 }
@@ -721,7 +711,7 @@
   width: 100%;
   box-sizing: border-box;
   border: 1px solid var(--ex-border);
-  border-radius: 9px;
+  border-radius: var(--ex-radius-control);
   background: var(--ex-bg-sunken);
   color: var(--ex-fg);
   font: inherit;
@@ -737,8 +727,6 @@
 
 .input:focus,
 .textarea:focus {
-  outline: none;
-  border-color: var(--ex-accent);
   background: var(--ex-bg);
 }
 
@@ -753,7 +741,7 @@
 
 .primaryButton,
 .secondaryButton {
-  border-radius: 9px;
+  border-radius: var(--ex-radius-control);
   cursor: pointer;
   font-size: var(--ex-text-sm);
   font-weight: 600;
@@ -893,7 +881,7 @@
   text-align: center;
   padding: 32px 28px;
   border: 1px solid var(--ex-border);
-  border-radius: 14px;
+  border-radius: var(--ex-radius-card);
   background: var(--ex-bg);
 }
 
@@ -983,7 +971,7 @@
 .waitAction {
   margin-top: 8px;
   border: none;
-  border-radius: 9px;
+  border-radius: var(--ex-radius-control);
   background: var(--ex-accent);
   color: var(--ex-fg-on-accent);
   font-size: var(--ex-text-sm);

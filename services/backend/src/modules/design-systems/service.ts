@@ -47,7 +47,7 @@ export class DesignSystemService {
     const lock = revision.referenceLock;
     const selectedAt = new Date();
     const result = await mongoCollections(this.context.db).brews.updateOne(
-      { _id: brewId, userId },
+      { _id: brewId, userId, deletedAt: null },
       {
         $set: {
           designSystemRevisionId: revision.revisionId,

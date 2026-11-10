@@ -28,6 +28,7 @@ export function registerAgentChatRoutes(app: FastifyInstance, service: AgentChat
   app.post(`${base}/:id/retry`, options, async (req, reply) => { const principal = requireAuth(req); const apiKey = serverCredential(principal) ? undefined : await service.credentials.read(principal.user.id); if (!serverCredential(principal) && !apiKey) return reply.code(403).send({ error: { message: "Anthropic API 키를 입력해 주세요." } }); return reply.code(202).send({ data: await service.retry(principal.user.id, id(req.params), apiKey) }); });
   app.post(`${base}/:id/contexts`, options, async req => ({ data: await service.attach(requireAuth(req).user.id, id(req.params), AddAgentContextSchema.parse(req.body).context) }));
   app.post(`${base}/:id/context-selection`, options, async req => { const input = SetAgentContextsSchema.parse(req.body); return { data: await service.setContexts(requireAuth(req).user.id, id(req.params), input.contexts, input.expectedVersion) }; });
+  app.post(`${base}/:id/page-edits/:editId/undo`, options, async req => ({ data: await service.undoPageEdit(requireAuth(req).user.id, id(req.params), UuidSchema.parse((req.params as { editId: string }).editId)) }));
   app.post(`${base}/:id/cancel`, options, async req => ({ data: await service.cancel(requireAuth(req).user.id, id(req.params)) }));
   app.post(`${base}/:id/approval`, options, async req => ({ data: await service.approve(requireAuth(req).user.id, id(req.params), AgentApprovalSchema.parse(req.body)) }));
   app.get(`${base}/:id/events`, options, async (req, reply) => {
@@ -50,5 +51,8 @@ export function registerAgentChatRoutes(app: FastifyInstance, service: AgentChat
     } catch { /* 접속 종료 후에도 모델 실행은 서버에서 계속됩니다. */ }
     finally { reply.raw.end(); }
   });
-  app.addHook("onClose", async () => service.close());
+  service.setRunFailureListener((error, run) => app.log.error({ err: error, ...run }, "agent run failed"));
+  // HTTP 서버가 열린 연결을 기다리기 전에 실행을 끊는다. 실행이 interrupted로 바뀌면 SSE 루프가
+  // 마지막 상태를 보내고 닫히므로, 종료가 SSE 연결 때문에 늦어지지 않는다.
+  app.addHook("preClose", async () => service.close());
 }
