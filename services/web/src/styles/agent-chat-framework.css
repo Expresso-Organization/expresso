@@ -213,9 +213,12 @@
   [data-aui="input"]::placeholder {
     color: color-mix(in oklab, currentColor 45%, transparent);
 }
-  [data-aui="select"]:focus-visible, [data-aui="input"]:focus-visible, [data-aui="datepicker"]:focus-visible {
+  [data-aui="select"]:focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
+}
+  [data-aui="input"]:focus-visible, [data-aui="datepicker"]:focus-visible {
+    outline: none;
 }
   [data-aui="checkbox"] {
     display: inline-flex;
@@ -712,4 +715,3 @@
     background-color: color-mix(in oklab, var(--destructive) 15%, transparent);
     color: var(--destructive);
 }
-.aui-composer-input:focus-visible { box-shadow: none; }
