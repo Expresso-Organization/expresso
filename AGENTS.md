@@ -67,6 +67,9 @@ pnpm test
   `TEST_MONGODB_URL`과 `TEST_REDIS_URL`을 `infra:up`이 띄운 포트로 넘깁니다.
 - CI가 도는 순서는 `.github/workflows/backend-ci.yml` · `web-ci.yml`에 있습니다 —
   계약·스키마 빌드 → 마이그레이션 → 타입 검사 → 테스트 → 통합 테스트 → 빌드.
+- `main`은 브랜치 보호가 걸려 있습니다. 필수 검사는 `웹 검사` · `백엔드 검사`(두 CI의 `verify` 잡)이고,
+  두 CI는 모든 PR에서 돌며 `changes` 잡이 경로 밖 PR의 검사를 건너뜁니다(건너뛴 잡은 통과).
+  워크플로에 `pull_request.paths`를 다시 두면 경로 밖 PR이 필수 검사를 못 받아 머지가 막힙니다.
 
 ## 지키는 선
 

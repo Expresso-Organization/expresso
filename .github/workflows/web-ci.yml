@@ -1,17 +1,9 @@
 name: 웹 CI
 
 on:
+  # 모든 PR에서 돈다. 이 CI가 보는 경로를 건드렸는지는 `changes` 잡이 가른다 — 워크플로 수준 `paths`로 거르면
+  # 경로 밖 PR에는 검사 결과가 아예 없어 `main` 브랜치 보호의 필수 검사가 끝나지 않는다.
   pull_request:
-    paths:
-      - "services/web/**"
-      - "packages/contracts/**"
-      - "packages/editor/**"
-      - "packages/portfolio-renderer/**"
-      - "package.json"
-      - "pnpm-lock.yaml"
-      - "pnpm-workspace.yaml"
-      - "tsconfig.base.json"
-      - ".github/workflows/web-ci.yml"
   push:
     branches: [main]
     paths:
@@ -28,13 +20,50 @@ on:
 
 permissions:
   contents: read
+  # `changes` 잡이 PR의 바뀐 파일 목록을 읽는다.
+  pull-requests: read
 
 concurrency:
   group: web-ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  # 이 PR이 이 CI가 보는 경로를 건드렸는가. 안 건드렸으면 `verify`를 건너뛰고, 건너뛴 잡은 필수 검사에서 통과로 친다.
+  # PR이 아닌 실행(main 푸시 · 손으로 실행)은 늘 검사한다.
+  changes:
+    name: 웹 변경 감지
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      relevant: ${{ steps.match.outputs.relevant }}
+    steps:
+      - id: match
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" != "pull_request" ]; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # 이름을 바꾼 파일은 옛 경로도 본다. 목록을 못 읽으면 이 단계가 실패하고 `verify`는 그대로 돈다.
+          files=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" --jq '.[] | .filename, (.previous_filename // empty)')
+          relevant=false
+          while IFS= read -r file; do
+            case "$file" in
+              services/web/*|packages/contracts/*|packages/editor/*|packages/portfolio-renderer/*|package.json|pnpm-lock.yaml|pnpm-workspace.yaml|tsconfig.base.json|.github/workflows/web-ci.yml) relevant=true ;;
+            esac
+          done <<< "$files"
+          echo "relevant=$relevant" >> "$GITHUB_OUTPUT"
+
   verify:
+    # 브랜치 보호의 필수 검사 이름이다. 워크플로마다 달라야 어느 검사인지 갈린다.
+    name: 웹 검사
+    needs: changes
+    # 감지가 실패하면(목록을 못 읽음) 건너뛰지 않고 검사한다 — 건너뛴 잡은 통과로 치므로 실패를 통과로 바꾸지 않는다.
+    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.relevant == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
