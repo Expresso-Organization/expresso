@@ -12,10 +12,11 @@ date: 2026-11-10
 ## 요구사항
 
 - [ ] `JobRowList`의 각 행은 `job.technologies` 앞에서 최대 3개의 칩만 그린다. 순서는 API가 준 순서(공고 원문 순서) 그대로다.
+- [ ] 이름 글자 폭의 합이 예산(`STACK_TEXT_BUDGET` 25, 영문 1 · 한글 등 2)을 넘는 칩부터는 잘라 그리지 않고 「+N」으로 접는다. 첫 칩은 길어도 그린다.
 - [ ] 기술이 4개 이상이면 세 칩 뒤에 「+N」 칩 하나를 그린다. N은 숨긴 개수다. `title`과 `aria-label`에 숨긴 기술 이름을 담는다.
 - [ ] 기술이 3개 이하면 「+N」 칩을 그리지 않는다.
 - [ ] 1440px 화면의 `/jobs`에서 `.rows`의 `scrollWidth`가 `clientWidth`와 같다.
-- [ ] 칩 열이 남은 폭보다 넓으면 이름 칩이 말줄임표로 줄고 「+N」 칩은 줄지 않는다.
+- [ ] 1440px에서는 이름 칩이 잘리지 않는다. 그보다 좁아 칩 열이 남은 폭보다 넓을 때만 이름 칩이 말줄임표로 줄고, 「+N」 칩은 줄지 않는다.
 
 ## 설계
 
@@ -24,6 +25,7 @@ date: 2026-11-10
 `JobRows.tsx`
 - `STACK_LIMIT = 3`을 둔다. 근거는 화면 정의서 00b의 공고 행으로, 모든 예시 행이 칩 3개다.
 - 순수 함수 `splitStack(technologies)`가 `{ shown, hidden }`을 돌려준다. 행은 `shown`을 칩으로, `hidden`이 있으면 「+N」 칩을 그린다.
+- 개수만 막으면 1440px에서 「PyTorch · Hugging Face · Scikit-learn」 세 칩이 모두 몇 px씩 잘렸다(칩 열 261px, 필요 278px). 그래서 `STACK_TEXT_BUDGET = 25`를 둔다. 근거: 1440px 목록 804px에서 고정 칸을 빼면 칩 열이 약 250px이고, 「+N」 칩 · 간격 · 칩 안쪽 여백을 빼면 이름 글자에 약 160px이다. 12px 영문은 한 글자에 약 6.3px이다.
 
 `page.module.css`
 - `.rowStack`: `flex-shrink: 0`을 지우고 `min-width: 0; overflow: hidden`을 둔다. 다른 행 요소(제목·점수·마감)는 `flex-shrink: 0`이고 근거 칸(`.rowReason`)은 `flex: 1; min-width: 0`이다. 그래서 남는 폭이 있는 동안에는 칩 열이 줄지 않고, 모자랄 때만 칩 열이 준다.
@@ -49,6 +51,7 @@ flowchart TD
 ## 함정
 
 - 홈(`HomeJobs.tsx`)은 `JobRows.tsx`에서 `deadlineLabel`만 가져온다. `JobRowList`를 쓰는 곳은 `/jobs`(`page.tsx`)뿐이라 홈 화면은 바뀌지 않는다.
+- 1024px에서는 목록이 388px인데 칩이 없는 행의 고정 칸만 523px이다. 이 가로 스크롤은 칩과 무관하게 이미 있고, 모든 행 너비가 같아 구분선은 끝까지 이어진다. 이번 범위 밖이다.
 - 767px 이하에서는 `.rowTitle`이 `flex: 1`(기준 0)이라 칩 열이 줄 때 제목 칸도 0에 가깝다. 이번 변경 전에도 칩 없는 행의 제목 칸이 19px다. 좁은 화면 배치는 범위 밖이다.
 - 일치도를 계산하지 않은 공고는 `matched`가 `null`이다. 「+N」 칩은 경고색을 쓰지 않으므로 영향 없다.
 
@@ -56,4 +59,4 @@ flowchart TD
 
 - `pnpm --filter @expresso/web test`에서 `splitStack` 테스트가 통과한다.
 - `pnpm typecheck`가 통과한다.
-- 내장 브라우저 1440×900에서 `/jobs?country=한국` 첫 쪽의 `.rows` `scrollWidth === clientWidth`이고, 칩 21개 행에 칩 3개와 「+18」이 보인다.
+- 내장 브라우저 1440×900에서 `/jobs?country=한국` 첫 쪽의 `.rows` `scrollWidth === clientWidth`이고, 칩 21개 행에 잘리지 않은 칩 2개와 「+19」가 보인다.
