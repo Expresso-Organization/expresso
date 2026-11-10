@@ -18,7 +18,7 @@ async function connectTools(overrides: Partial<AgentInput> = {}) {
   await client.connect(clientSide);
   return { client, emit };
 }
-const base = () => ({ userId: "00000000-0000-4000-8000-0000000000aa", records: { list: vi.fn(async () => ({ categories: [], records: [] })), read: vi.fn(async () => []) }, review: vi.fn(), draftRecord: vi.fn(), gapReview: vi.fn(), planDraft: vi.fn(), replanDraft: vi.fn(), readPlan: vi.fn(), propose: vi.fn() });
+const base = () => ({ userId: "00000000-0000-4000-8000-0000000000aa", records: { list: vi.fn(async () => ({ categories: [], records: [] })), read: vi.fn(async () => []) }, review: vi.fn(), draftRecord: vi.fn(), gapReview: vi.fn(), planDraft: vi.fn(), replanDraft: vi.fn(), readPlan: vi.fn(), propose: vi.fn(), page: { read: vi.fn(), edit: vi.fn() } });
 describe("Claude 채팅 실행 어댑터", () => {
   it("제품 도구만 노출하고 부분 텍스트만 한 번 전달한다", async () => {
     const events: AgentEvent[] = [];
@@ -30,7 +30,7 @@ describe("Claude 채팅 실행 어댑터", () => {
     await new ClaudeAgentRuntime().run({ messages: [], context: [], signal: new AbortController().signal, emit: async event => { events.push(event); }, ...base() });
     expect(events).toEqual([{ type: "text", text: "안녕하세요" }]);
     expect(sdk.query.mock.lastCall![0].options).toMatchObject({ tools: [], settingSources: [], strictMcpConfig: true, persistSession: false, permissionMode: "dontAsk" });
-    expect(sdk.query.mock.lastCall![0].options.allowedTools).toEqual(["mcp__expresso__propose_record_edit", "mcp__expresso__list_career_records", "mcp__expresso__read_career_records", "mcp__expresso__record_requirement_review", "mcp__expresso__propose_new_record", "mcp__expresso__record_gap_review", "mcp__expresso__propose_preparation_plan", "mcp__expresso__read_preparation_plan", "mcp__expresso__propose_replan"]);
+    expect(sdk.query.mock.lastCall![0].options.allowedTools).toEqual(["mcp__expresso__propose_record_edit", "mcp__expresso__list_career_records", "mcp__expresso__read_career_records", "mcp__expresso__record_requirement_review", "mcp__expresso__propose_new_record", "mcp__expresso__record_gap_review", "mcp__expresso__propose_preparation_plan", "mcp__expresso__read_preparation_plan", "mcp__expresso__propose_replan", "mcp__expresso__read_page_element", "mcp__expresso__edit_page_element"]);
   });
   it("중단 신호를 SDK에 전달한다", async () => {
     const controller = new AbortController(); let stopped = false;
@@ -102,6 +102,23 @@ describe("Claude 채팅 실행 어댑터", () => {
     expect(last).toMatchObject({ type: "tool", tool: { name: "요건 대조", status: "failed", summary: "어긋난 인용을 고쳐 다시 대조합니다." } });
     expect(last.type === "tool" && last.tool.review).toBeUndefined();
   });
+  it("지면 요소 고침은 카드 결과를 남기고, 걸린 고침은 저장 없이 고칠 항목을 돌려준다", async () => {
+    const pageEdit = { editId: "00000000-0000-4000-8000-000000000010", portfolioId: "00000000-0000-4000-8000-000000000011", key: "section-a", label: "경로 재설계", note: "요약을 줄였습니다.", changes: [{ label: "요약", before: "긴 요약", after: "짧은 요약" }], revision: 3, undone: false };
+    const edit = vi.fn(async () => pageEdit);
+    const { client, emit } = await connectTools({ page: { read: vi.fn(async () => ({ typeLabel: "사례", title: "경로 재설계", text: [] })), edit } });
+    const args = { portfolioId: pageEdit.portfolioId, key: "section-a", note: "요약을 줄였습니다.", text: [{ path: "/sections/a/summary", value: "짧은 요약" }] };
+    const read = await client.callTool({ name: "read_page_element", arguments: { portfolioId: pageEdit.portfolioId, key: "section-a" } });
+    expect((read.content as { text: string }[])[0]!.text).toContain("경로 재설계");
+    const result = await client.callTool({ name: "edit_page_element", arguments: args });
+    expect(result.isError).toBeFalsy();
+    expect(edit).toHaveBeenCalledWith(args);
+    expect(emit.mock.calls.at(-1)![0]).toMatchObject({ type: "tool", tool: { name: "지면 요소 고침", status: "complete", summary: "경로 재설계 · 바뀐 곳 1", pageEdit } });
+    edit.mockRejectedValueOnce(new AgentToolRejection(["/sections/a/summary: 출처에 없는 숫자가 있습니다(99)."]));
+    const rejected = await client.callTool({ name: "edit_page_element", arguments: args });
+    expect(rejected.isError).toBe(true);
+    expect((rejected.content as { text: string }[])[0]!.text).toContain("출처에 없는 숫자");
+    expect(emit.mock.calls.at(-1)![0]).toMatchObject({ type: "tool", tool: { name: "지면 요소 고침", status: "failed" } });
+  });
   it("검증 밖의 오류는 실패로 닫고 다시 던진다", async () => {
     const { client, emit } = await connectTools({ records: { list: vi.fn(async () => { throw new Error("db down"); }), read: vi.fn(async () => []) } });
     const result = await client.callTool({ name: "list_career_records", arguments: {} });
@@ -124,6 +141,9 @@ describe("Claude 채팅 실행 어댑터", () => {
     const draft = { draftId: "00000000-0000-4000-8000-000000000004", title: "새 기록", categoryId: null, bodyMd: "본문", sources: [{ messageId: "00000000-0000-4000-8000-000000000003", quote: "말" }], categories: [], status: "approved" as const, recordId: "00000000-0000-4000-8000-000000000005" };
     expect(conversationForModel([{ id: "00000000-0000-4000-8000-000000000006", role: "assistant", text: "", createdAt: "2026-10-15T00:00:00.000Z", tools: [{ id: "d", name: "새 기록 초안", status: "complete", summary: "새 기록", recordDraft: draft }] }])[0]!.tools).toEqual([{ name: "새 기록 초안", summary: "새 기록", recordDraft: { title: "새 기록", status: "approved", recordId: draft.recordId } }]);
     expect(conversationForModel([{ id: "00000000-0000-4000-8000-000000000003", role: "user", text: "질문", createdAt: "2026-10-15T00:00:00.000Z", tools: [] }])).toEqual([{ id: "00000000-0000-4000-8000-000000000003", role: "user", text: "질문" }]);
+    // 다듬기 화면에서 보낸 말에는 고른 요소가 붙는다.
+    const selection = { portfolioId: "00000000-0000-4000-8000-000000000011", key: "toc", label: "작업 목차" };
+    expect(conversationForModel([{ id: "00000000-0000-4000-8000-000000000003", role: "user", text: "더 짧게", selection, createdAt: "2026-10-15T00:00:00.000Z", tools: [] }])[0]).toEqual({ id: "00000000-0000-4000-8000-000000000003", selection, role: "user", text: "더 짧게" });
   });
   it("성공한 실행의 사용량을 모델마다 한 줄씩 사용자 몫으로 남긴다", async () => {
     sdk.query.mockReturnValue((async function* () {

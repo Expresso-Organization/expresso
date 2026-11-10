@@ -90,7 +90,7 @@
 .titleTrigger > i { flex-shrink:0; color:var(--ex-fg-muted); }
 .switcher.switcher { width:min(360px,calc(100vw - 32px)); max-width:var(--available-width); padding:10px; gap:8px; border:1px solid var(--ex-border); border-radius:12px; background:var(--ex-bg); color:var(--ex-fg); font-family:var(--ex-font-ui); }
 .switcherTitle { padding:2px 6px; font-size:var(--ex-text-2xs); color:var(--ex-fg-muted); }
-.search { display:flex; align-items:center; gap:8px; padding:8px 10px; background:var(--ex-bg-sunken); border:1px solid var(--ex-border); border-radius:8px; color:var(--ex-fg-muted); }
+.search { display:flex; align-items:center; gap:8px; padding:8px 14px; background:var(--ex-bg-sunken); border:1px solid var(--ex-border); border-radius:var(--ex-radius-pill); color:var(--ex-fg-muted); }
 .switcher .search input { width:100%; min-width:0; background:transparent; border:0; outline:0; font:inherit; font-size:var(--ex-text-xs); color:var(--ex-fg); }
 .search input:focus-visible { outline:none; }
 .results { overflow-y:auto; max-height:min(320px,50dvh); display:flex; flex-direction:column; gap:3px; }
@@ -125,7 +125,7 @@
 .conversationRail .browserTabs { gap:18px; }
 .browserContent h2 { display:flex; align-items:center; justify-content:space-between; padding:0 8px; font-family:var(--ex-font-mono); font-size:var(--ex-text-3xs); letter-spacing:.08em; color:var(--ex-fg-muted); font-weight:400; }
 .browserContent h2 > span { font-family:var(--ex-font-mono); }
-.browserTabs .search { padding:6px 8px; background:transparent; border-color:transparent; border-radius:6px; }
+.browserTabs .search { padding:6px 12px; background:transparent; border-color:transparent; border-radius:var(--ex-radius-pill); }
 .browserTabs .search:hover { background:var(--ex-bg-tint); }
 .browserTabs .search:focus-within { background:var(--ex-bg); }
 .sidebarResult.sidebarResult { gap:8px; min-height:36px; border:0; text-align:left; cursor:pointer; color:var(--ex-fg-muted); text-decoration:none; }
@@ -227,3 +227,8 @@
 
 .runNotice { display:flex; align-items:center; justify-content:space-between; gap:8px; }
 .root .retryButton { flex-shrink:0; gap:4px; }
+/* 다듬기 화면에서 고른 요소. 입력창 위에는 보낼 말의 대상을, 보낸 말풍선 위에는 그 말이 가리킨 대상을 보인다. */
+.target { display:inline-flex; align-self:flex-start; align-items:center; gap:5px; max-width:100%; padding:4px 9px; border:1px solid var(--ex-border); border-radius:999px; background:var(--ex-bg-sunken); color:var(--ex-fg-body); font-size:var(--ex-text-3xs); }
+.target > span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.target > i { flex:none; color:var(--ex-accent-text); }
+.sentTarget { grid-column:1 / -1; justify-self:end; }

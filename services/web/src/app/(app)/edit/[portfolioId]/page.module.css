@@ -1084,6 +1084,19 @@
 
 /* ── 채팅 탭 (04) ─────────────────────────────────────────── */
 
+/* 구조화 지면의 채팅 탭 — 공통 에이전트 채팅이 탭 아래 남은 높이를 모두 쓴다. */
+.agentChat {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.agentChat > section {
+  flex: 1;
+  min-height: 0;
+}
+
 .chat {
   flex: 1;
   min-height: 0;
@@ -2320,6 +2333,12 @@
   gap: 14px;
   padding: 0 4px;
   overflow-y: auto;
+}
+
+/* 기록 찾기 칸. 속성 입력 칸(.textInput)과 모양을 나누는 것은 곡률뿐이다 — 검색 칸은 pill. */
+.librarySearch {
+  border-radius: var(--ex-radius-pill);
+  padding-inline: 14px;
 }
 
 .libraryGroup {

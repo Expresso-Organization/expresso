@@ -282,9 +282,9 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 10px;
+  padding: 0 14px;
   border: 1px solid var(--ex-border);
-  border-radius: 9px;
+  border-radius: var(--ex-radius-pill);
   background: var(--ex-bg);
   color: var(--ex-fg-muted);
 }

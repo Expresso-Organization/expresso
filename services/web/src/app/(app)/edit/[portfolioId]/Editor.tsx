@@ -17,7 +17,7 @@ import { PortfolioPage } from "@/components/portfolio/PortfolioPage";
 import { EditorTrashMenu } from "@/features/portfolio-trash/PortfolioTrash";
 import { publicSiteHost } from "@/lib/public-site";
 
-import { ElementChat } from "./ElementChat";
+import { AgentChat } from "@/features/agent-chat/AgentChat";
 import { ElementProperties } from "./ElementProperties";
 import { PageOutline } from "./PageOutline";
 import { RecordLibrary, type LibraryRecord } from "./RecordLibrary";
@@ -907,14 +907,18 @@ export function Editor({
               ))}
             </div>
 
-            {tab === "chat" && structured && generatedPage && pickedKey ? (
-              <ElementChat
-                key={pickedKey}
-                portfolioId={portfolio.id}
-                elementKey={pickedKey}
-                label={pickedLabel ?? pickedKey}
-                revision={generatedPage.revision}
-              />
+            {tab === "chat" && structured && generatedPage ? (
+              // 구조화 지면은 공통 에이전트 채팅으로 고친다. 고른 요소는 보내는 말에 붙고, 에이전트의 고침은 새 판이 된다.
+              <div className={styles.agentChat}>
+                <AgentChat
+                  page={{
+                    portfolioId: portfolio.id,
+                    title: portfolio.title,
+                    revision: generatedPage.revision,
+                    selection: pickedKey ? { portfolioId: portfolio.id, key: pickedKey, label: pickedLabel ?? pickedKey } : null,
+                  }}
+                />
+              </div>
             ) : tab === "chat" ? (
               <ChatPanel
                 key={chatTarget ?? "default"}
