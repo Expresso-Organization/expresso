@@ -1,7 +1,7 @@
 import { setTimeout as delay } from "node:timers/promises";
 
 import { mongoCollections } from "@expresso/database";
-import type { Db } from "mongodb";
+import { MongoServerError, type Db } from "mongodb";
 
 /**
  * 폴링 루프의 대기를 끊는 알림.
@@ -48,6 +48,11 @@ export class Wake {
   }
 }
 
+/** Mongo가 권한 없음(13 Unauthorized)으로 거절했는가. */
+function isUnauthorized(error: unknown): boolean {
+  return error instanceof MongoServerError && error.code === 13;
+}
+
 /**
  * `outbox_events`에 행이 커밋되면 `onInsert`를 부른다. 워커가 1초 주기를 기다리지 않고 바로 발행하게 한다.
  *
@@ -68,7 +73,11 @@ export async function watchOutboxInserts(
     try {
       for await (const _change of stream) onInsert();
     } catch (error) {
-      if (!signal.aborted) options.onError(error);
+      if (signal.aborted) return;
+      options.onError(error);
+      // 권한이 없으면 다시 열어도 같은 답이다 — 1초마다 같은 오류를 남기지 않고 폴링에 맡긴다.
+      // 운영 역할은 배포 때 `infra/mongodb/init-replica-set.js`가 올린다.
+      if (isUnauthorized(error)) return;
     } finally {
       signal.removeEventListener("abort", close);
       await stream.close().catch(() => undefined);
