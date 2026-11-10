@@ -3,7 +3,8 @@ import { AgentChatService } from "../modules/agent-chat/index.js";
 import { ClaudeAgentRuntime } from "../platform/agent/runtime.js";
 import { buildApi } from "./build-app.js";
 import { loadRuntimeConfig } from "../config/runtime-config.js";
-import { createMongoResource } from "../platform/mongodb.js";
+import { connectMongoUntilReady, createMongoResource } from "../platform/mongodb.js";
+import { safeErrorSummary } from "../platform/observability.js";
 import { createRedisResource, createStreamRedis } from "../platform/redis.js";
 import { IdentityService } from "../modules/identity/index.js";
 import { RemoteGoogleIdTokenVerifier } from "../modules/identity/google.js";
@@ -210,6 +211,18 @@ const app = buildApi({
   accountLifecycleService,
 });
 
+/*
+ * API는 인프라가 없어도 뜨고 `/health/ready`가 503으로 답합니다(README). 첫 요청에 연결을 맡기면 그 연결이 실패한
+ * 클라이언트는 닫힌 채로 남아 Mongo가 돌아와도 503에 머뭅니다. 뜨면서 연결될 때까지 직접 다시 시도합니다.
+ */
+const mongoConnection = new AbortController();
+const mongoConnected = connectMongoUntilReady(database.client, {
+  signal: mongoConnection.signal,
+  onRetry(error) {
+    app.log.warn({ error: safeErrorSummary(error) }, "MongoDB is unavailable; retrying connection");
+  },
+});
+
 let stopping = false;
 
 async function stop(signal: NodeJS.Signals): Promise<void> {
@@ -217,7 +230,9 @@ async function stop(signal: NodeJS.Signals): Promise<void> {
   stopping = true;
 
   app.log.info({ signal }, "stopping API");
+  mongoConnection.abort();
   await app.close();
+  await mongoConnected;
   await Promise.allSettled([database.close(), redis.close(), careerDocumentJobs.close()]);
 }
 
@@ -234,6 +249,8 @@ try {
   await app.listen({ host: config.host, port: config.port });
 } catch (error) {
   app.log.error({ error }, "failed to start API");
+  mongoConnection.abort();
+  await mongoConnected;
   await Promise.allSettled([app.close(), database.close(), redis.close(), careerDocumentJobs.close()]);
   process.exitCode = 1;
 }
