@@ -327,6 +327,22 @@ def screening(dataset: dict[str, Any], model: Any, vectors: tuple[Any, Any, dict
     }
 
 
+def embedding_record(encoder: SentenceEncoder, output: Path) -> dict[str, Any]:
+    """설계서 9.2가 함께 기록하라는 임베딩 시간 · 처리량 · GPU 메모리 · 벡터 용량.
+
+    E2 다음에 E3을 돌리면 벡터를 캐시에서 읽어 이번 실행에는 측정값이 없다. 그때는 같은 인코더 ·
+    같은 최대 길이로 잰 E2의 값을 출처와 함께 옮긴다.
+    """
+    if encoder.runs:
+        return {"source": "this run", "runs": encoder.runs}
+    path = output / "encoder-comparison.json"
+    if path.exists():
+        row = json.loads(path.read_text(encoding="utf-8")).get("rows", {}).get(encoder.spec.key)
+        if row and row.get("spec") == asdict(encoder.spec) and row["inputLengths"]["profiles"]["maxLength"] == encoder.max_length:
+            return {"source": "encoder-comparison.json", "runs": row["embedding"]}
+    return {"source": "embedding cache without measurement", "runs": []}
+
+
 def cmd_train_bi(arguments: argparse.Namespace) -> dict[str, Any]:
     import torch
 
@@ -376,7 +392,7 @@ def cmd_train_bi(arguments: argparse.Namespace) -> dict[str, Any]:
         },
         "screeningRecall": screening(dataset, model, vectors, device=arguments.device, node=arguments.node),
         "inputLengths": lengths,
-        "embedding": encoder.runs,
+        "embedding": embedding_record(encoder, arguments.output),
         "learning": learning,
         "runtime": {**_runtime(arguments.device), "seconds": round(time.perf_counter() - started, 3)},
     }
@@ -607,7 +623,7 @@ COMMANDS = {"token-stats": cmd_token_stats, "encoders": cmd_encoders, "train-bi"
 
 def main(argv: Sequence[str] | None = None) -> int:
     arguments = build_parser().parse_args(argv)
-    if arguments.command == "encoders" and arguments.encoder_path and len(arguments.encoders) > 1:
+    if arguments.command in {"encoders", "token-stats"} and arguments.encoder_path and len(arguments.encoders) > 1:
         raise SystemExit("--encoder-path는 인코더 하나를 고를 때만 쓴다")
     result = COMMANDS[arguments.command](arguments)
     print(json.dumps(result if arguments.command != "encoders" else {"rows": sorted(result["rows"])}, ensure_ascii=False, indent=2)[:4000])

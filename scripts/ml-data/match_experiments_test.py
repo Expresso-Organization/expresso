@@ -191,6 +191,13 @@ class ExperimentCommandTest(unittest.TestCase):
         match_experiments.main(["train-bi", *self.common(), "--encoder", "fake"])
         self.assertTrue((self.output / "bi-v1-002" / "metrics.json").exists())
 
+    def test_train_bi_after_encoders_keeps_embedding_measurements(self) -> None:
+        match_experiments.main(["encoders", *self.common(), "--encoders", "fake"])
+        match_experiments.main(["train-bi", *self.common(), "--encoder", "fake"])
+        embedding = json.loads((self.output / "bi-v1-001" / "metrics.json").read_text(encoding="utf-8"))["embedding"]
+        self.assertEqual(embedding["source"], "encoder-comparison.json")
+        self.assertEqual([run["role"] for run in embedding["runs"]], ["profile", "job"])
+
     def test_eval_cross_reports_model_a_and_model_b(self) -> None:
         scores = self.output / "pilot-cross" / "scores.jsonl"
         scores.parent.mkdir(parents=True)

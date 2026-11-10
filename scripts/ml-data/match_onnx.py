@@ -33,10 +33,15 @@ sys.path.insert(0, str(Path(__file__).parent))
 import llm_suitability_train  # noqa: E402,F401
 
 OPSET = 17
+# 인코더 4종 중 Qwen3-Embedding만 디코더다(match_encoders.ENCODERS).
+DECODER_MODEL_TYPES = {"qwen3"}
 
 
 def _write_manifest(output: Path, payload: dict[str, Any]) -> None:
+    """2GB를 넘는 모델은 torch가 가중치를 model.onnx 옆의 외부 파일로 나눠 쓴다.
+    그래서 파일 목록은 폴더에서 읽고, 옮길 때는 폴더 전체를 옮긴다."""
     output.mkdir(parents=True, exist_ok=True)
+    payload = {**payload, "files": sorted(path.name for path in output.iterdir() if path.name != "manifest.json"), "moveWholeDirectory": True}
     (output / "manifest.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
@@ -81,6 +86,12 @@ def export_encoder(model_name: str, output: Path, *, quantize: bool) -> dict[str
     from transformers import AutoModel
 
     model = AutoModel.from_pretrained(model_name)
+    if getattr(model.config, "is_decoder", False) or model.config.model_type in DECODER_MODEL_TYPES:
+        raise ValueError(
+            f"{model_name}: 디코더 인코더는 이 도구로 내보내지 않는다. transformers 4.55의 디코더 mask는 "
+            "torch 2.6 이상에서 vmap으로 만들어져 TorchScript 추적이 따라가지 못하고, 우회하면 추적한 길이가 "
+            "그래프에 고정된다(2026-11-10 시험). 지연은 별도 경로로 잰다."
+        )
 
     class Encoder(torch.nn.Module):
         def __init__(self) -> None:
@@ -92,12 +103,11 @@ def export_encoder(model_name: str, output: Path, *, quantize: bool) -> dict[str
 
     target = output / "model.onnx"
     _export(Encoder(), _token_inputs(model.config, 2, 8), ("input_ids", "attention_mask"), "last_hidden_state", {**_TOKEN_AXES, "last_hidden_state": {0: "batch", 1: "sequence"}}, target)
-    manifest = {"kind": "encoder", "model": model_name, "vocabSize": int(model.config.vocab_size), "hiddenSize": int(model.config.hidden_size), "opset": OPSET, "files": ["model.onnx"]}
+    manifest = {"kind": "encoder", "model": model_name, "vocabSize": int(model.config.vocab_size), "hiddenSize": int(model.config.hidden_size), "opset": OPSET}
     if quantize:
         _quantize(target, output / "model.int8.onnx")
-        manifest["files"].append("model.int8.onnx")
     _write_manifest(output, manifest)
-    return manifest
+    return json.loads((output / "manifest.json").read_text(encoding="utf-8"))
 
 
 def export_mlp(checkpoint: Path, output: Path) -> dict[str, Any]:
@@ -121,9 +131,9 @@ def export_mlp(checkpoint: Path, output: Path) -> dict[str, Any]:
 
     target = output / "model.onnx"
     _export(Scorer(), (torch.zeros(2, dimension * 4),), ("features",), "match_score", {"features": {0: "pairs"}, "match_score": {0: "pairs"}}, target)
-    manifest = {"kind": "mlp", "model": payload.get("model"), "embeddingDimension": dimension, "opset": OPSET, "files": ["model.onnx"]}
+    manifest = {"kind": "mlp", "model": payload.get("model"), "embeddingDimension": dimension, "opset": OPSET}
     _write_manifest(output, manifest)
-    return manifest
+    return json.loads((output / "manifest.json").read_text(encoding="utf-8"))
 
 
 def export_cross(base_model: str, output: Path, *, checkpoint: Path | None, quantize: bool) -> dict[str, Any]:
@@ -151,12 +161,11 @@ def export_cross(base_model: str, output: Path, *, checkpoint: Path | None, quan
 
     target = output / "model.onnx"
     _export(Cross(), _token_inputs(model.config, 2, 8), ("input_ids", "attention_mask"), "match_score", {**_TOKEN_AXES, "match_score": {0: "batch"}}, target)
-    manifest = {"kind": "cross", "model": trained or base_model, "baseModel": base_model, "vocabSize": int(model.config.vocab_size), "opset": OPSET, "files": ["model.onnx"]}
+    manifest = {"kind": "cross", "model": trained or base_model, "baseModel": base_model, "vocabSize": int(model.config.vocab_size), "opset": OPSET}
     if quantize:
         _quantize(target, output / "model.int8.onnx")
-        manifest["files"].append("model.int8.onnx")
     _write_manifest(output, manifest)
-    return manifest
+    return json.loads((output / "manifest.json").read_text(encoding="utf-8"))
 
 
 def _session(path: Path, threads: int | None) -> Any:

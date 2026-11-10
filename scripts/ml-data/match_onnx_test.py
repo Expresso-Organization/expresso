@@ -15,7 +15,7 @@ import numpy  # noqa: E402
 import onnxruntime  # noqa: E402
 import torch  # noqa: E402
 from llm_suitability_train import _create_mlp, _mlp_scores, cross_encoder_scores  # noqa: E402
-from transformers import XLMRobertaConfig, XLMRobertaForSequenceClassification, XLMRobertaModel  # noqa: E402
+from transformers import Qwen3Config, Qwen3Model, XLMRobertaConfig, XLMRobertaForSequenceClassification, XLMRobertaModel  # noqa: E402
 
 
 def tiny_config(**extra):
@@ -36,13 +36,20 @@ class OnnxExportTest(unittest.TestCase):
         model.save_pretrained(self.root / "encoder-src")
         output = self.root / "encoder"
         manifest = match_onnx.export_encoder(str(self.root / "encoder-src"), output, quantize=True)
-        self.assertEqual(manifest["files"], ["model.onnx", "model.int8.onnx"])
+        self.assertEqual(manifest["files"], ["model.int8.onnx", "model.onnx"])
         feed = match_onnx._random_tokens(manifest["vocabSize"], 3, 17)
         actual = onnxruntime.InferenceSession(str(output / "model.onnx")).run(None, feed)[0]
         with torch.no_grad():
             expected = model.eval()(input_ids=torch.from_numpy(feed["input_ids"]), attention_mask=torch.from_numpy(feed["attention_mask"])).last_hidden_state.numpy()
         numpy.testing.assert_allclose(actual, expected, atol=1e-4)
         self.assertEqual(onnxruntime.InferenceSession(str(output / "model.int8.onnx")).run(None, feed)[0].shape, expected.shape)
+
+    def test_decoder_encoder_is_refused_with_reason(self) -> None:
+        # Qwen3-Embedding은 디코더다. 길이가 고정된 그래프를 조용히 내보내지 않고 이유와 함께 멈춘다.
+        config = Qwen3Config(vocab_size=120, hidden_size=32, intermediate_size=64, num_hidden_layers=2, num_attention_heads=4, num_key_value_heads=2, head_dim=8, max_position_embeddings=128)
+        Qwen3Model(config).save_pretrained(self.root / "qwen-src")
+        with self.assertRaisesRegex(ValueError, "디코더"):
+            match_onnx.export_encoder(str(self.root / "qwen-src"), self.root / "qwen", quantize=False)
 
     def test_cli_runs_from_script_directory(self) -> None:
         # 같은 폴더의 profile.py가 표준 profile을 가리면 transformers import가 실패한다.

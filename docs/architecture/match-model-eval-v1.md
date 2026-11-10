@@ -100,6 +100,7 @@ git fetch origin
 git switch feat/match-model-eval
 pnpm install --frozen-lockfile
 pnpm --filter "@expresso/contracts..." build                   # 규칙 baseline이 계약 dist를 읽는다
+node --version                                                 # 24 이상(저장소 기준). rule_baselines.mjs가 .ts를 그대로 import한다
 
 uv venv var\ml-venv --python 3.12
 var\ml-venv\Scripts\activate
@@ -107,6 +108,8 @@ uv pip install torch==2.7.0 --index-url https://download.pytorch.org/whl/cu128
 uv pip install numpy==2.3.2 transformers==4.55.4 scipy==1.16.1 sentence-transformers==5.1.0 onnx==1.23.2 onnxruntime==1.31.0
 python -c "import torch; print(torch.__version__, torch.cuda.is_available(), torch.cuda.get_device_name(0))"
 python scripts\ml-data\match_experiments_test.py               # 가짜 인코더로 명령 전체 확인(CPU)
+# PC 캐시에 없는 인코더 3종을 E0 · E1 동안 받아 둔다. KURE · bge-m3은 fp32 가중치만 각 2.27GB다
+python -c "from sentence_transformers import SentenceTransformer as S; [S(m, device='cpu') for m in ('nlpai-lab/KURE-v1', 'BAAI/bge-m3', 'Qwen/Qwen3-Embedding-0.6B')]"
 ```
 
 - RTX 5080(Blackwell)은 CUDA 12.8 빌드가 필요하다. 파일럿과 같은 torch 2.7.0+cu128을 쓴다.
@@ -152,6 +155,9 @@ python scripts\ml-data\match_experiments.py encoders --data $data --labels $labe
 python scripts\ml-data\match_experiments.py train-bi --data $data --labels $labels --output $runs --encoder <E2에서 정한 키>
 ```
 
+E2의 임베딩 캐시를 다시 읽으므로 이번 실행에는 임베딩 측정값이 없다. `metrics.json`의 `embedding`은
+E2에서 같은 인코더 · 같은 최대 길이로 잰 값을 `source: encoder-comparison.json`과 함께 옮겨 둔다.
+
 ### E4 Cross-Encoder · 모델 B
 
 파일럿 가중치가 있으면 그대로 쓴다.
@@ -179,6 +185,8 @@ python scripts\ml-data\match_onnx.py export-cross --model BAAI/bge-reranker-v2-m
 python scripts\ml-data\match_onnx.py latency --encoder "$runs\onnx\encoder" --mlp "$runs\onnx\mlp" --cross "$runs\onnx\cross" --threads 4 --quantized --output "$runs\latency-pc-int8.json"
 ```
 
+- 2GB를 넘는 모델(bge-reranker-v2-m3 · KURE · bge-m3)은 가중치가 `model.onnx` 옆의 외부 파일 수백 개로 나뉜다. 옮길 때는 폴더 전체를 옮긴다. `manifest.json`의 `files`가 폴더 내용이다.
+- Qwen3-Embedding은 내보내지 않는다. 디코더라 transformers 4.55의 mask 생성(vmap)을 TorchScript가 추적하지 못한다. 우회하면 추적할 때의 길이가 그래프에 고정된다(2026-11-10 시험). E2에서 Qwen3가 정해지면 지연은 별도로 잰다. 인코더 선정 자체는 ONNX와 무관하다.
 - `--profile-tokens`는 E1의 프로필 p90과 정한 인코더의 최대 길이 중 작은 값으로 바꾼다.
 - `--rerank-pairs`에는 E3의 `kForFullRecall`과 10을 함께 준다.
 - 운영 서버 측정은 `$runs\onnx`를 옮긴 뒤 같은 `latency` 명령으로 한다. 서버 작업이라 따로 승인을 받는다.
