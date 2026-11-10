@@ -83,7 +83,10 @@ export class PortfolioReadService {
     const cursor = decodeCursor(query.cursor);
     const filter = {
       userId,
+      // 휴지통 포트폴리오는 목록 · 사이드바 · 에이전트 채팅에서 빠진다.
+      deletedAt: null,
       ...(query.status ? { status: query.status } : {}),
+      ...(query.q ? { title: { $regex: query.q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" } } : {}),
       ...(cursor ? { $or: [{ updatedAt: { $lt: new Date(cursor.at) } }, { updatedAt: new Date(cursor.at), _id: { $lt: cursor.id } }] } : {}),
     };
     const rows = await mongoCollections(this.context.db).portfolios.find(filter).sort({ updatedAt: -1, _id: -1 }).limit(query.limit + 1).toArray();
@@ -96,7 +99,8 @@ export class PortfolioReadService {
 
   async get(userId: string, portfolioId: string) {
     const db = mongoCollections(this.context.db);
-    const portfolio = await db.portfolios.findOne({ _id: portfolioId, userId });
+    // 휴지통 포트폴리오는 404다. 편집 화면이 여기서 막히므로 편집 하위 API(`page` · `layout`)는 따로 거르지 않는다.
+    const portfolio = await db.portfolios.findOne({ _id: portfolioId, userId, deletedAt: null });
     if (!portfolio) throw new PortfolioReadError(404, "portfolio not found");
     const [summary, template, sections, selected] = await Promise.all([
       this.#summary(portfolio), db.templates.findOne({ _id: portfolio.templateId }),
@@ -125,7 +129,7 @@ export class PortfolioReadService {
 
   async revisions(userId: string, portfolioId: string, query: ListPortfolioRevisionsQuery) {
     const db = mongoCollections(this.context.db); const cursor = decodeCursor(query.cursor);
-    if (!await db.portfolios.findOne({ _id: portfolioId, userId })) throw new PortfolioReadError(404, "portfolio not found");
+    if (!await db.portfolios.findOne({ _id: portfolioId, userId, deletedAt: null })) throw new PortfolioReadError(404, "portfolio not found");
     const filter = {
       userId, portfolioId, ...(query.actor ? { actor: query.actor } : {}),
       ...(cursor ? { $or: [{ createdAt: { $lt: new Date(cursor.at) } }, { createdAt: new Date(cursor.at), _id: { $lt: cursor.id } }] } : {}),

@@ -5,7 +5,7 @@ import {
   type StructuredPortfolioSnapshot,
   type StructuredPortfolioSpec,
 } from "@expresso/contracts";
-import { STRUCTURED_TYPE_LABELS } from "@expresso/portfolio-renderer/editing";
+import { elementTitle } from "@expresso/portfolio-renderer/editing";
 import { useActionState, useTransition } from "react";
 
 import { structuredPageAction } from "./edit-actions";
@@ -22,18 +22,6 @@ type Row = {
   meta: string;
 };
 
-/** 요소가 보이는 글로 행 이름을 정한다. 사례는 섹션 제목, 첫 화면은 이름, 인용은 인용 글이다. */
-function describe(snapshot: StructuredPortfolioSnapshot, key: string): { title: string; meta: string } {
-  const node = snapshot.spec.elements[key];
-  const type = STRUCTURED_TYPE_LABELS[node?.type ?? ""] ?? node?.type ?? "요소";
-  const binding = (node?.props as { section?: { $state?: string } } | undefined)?.section?.$state;
-  const section = snapshot.content.sections.find((item) => binding === `/sectionById/${item.id}`);
-  if (node?.type === "PullQuote" && section?.quote) return { title: section.quote, meta: type };
-  if (section) return { title: section.title, meta: type };
-  if (node?.type === "NameIntro") return { title: snapshot.content.profile.name, meta: type };
-  return { title: type, meta: isStructuredGroup(node) ? `요소 ${node.children.length}개` : "" };
-}
-
 function outlineRows(snapshot: StructuredPortfolioSnapshot): Row[] {
   const root = snapshot.spec.elements[snapshot.spec.root];
   if (root?.type !== "PortfolioPage") return [];
@@ -46,13 +34,13 @@ function outlineRows(snapshot: StructuredPortfolioSnapshot): Row[] {
     const row: Row = {
       key, parent: snapshot.spec.root, depth: 0, index,
       bounds: fixed ? null : [fixedStart, top.length - 1 - fixedEnd],
-      ...describe(snapshot, key),
+      ...elementTitle(snapshot, key),
     };
     if (!isStructuredGroup(node)) return [row];
     return [row, ...node.children.map((child, childIndex) => ({
       key: child, parent: key, depth: 1, index: childIndex,
       bounds: [0, node.children.length - 1] as [number, number],
-      ...describe(snapshot, child),
+      ...elementTitle(snapshot, child),
     }))];
   });
 }

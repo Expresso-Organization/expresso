@@ -1,8 +1,9 @@
 import type { PortfolioReadApi } from "../portfolios/index.js";
-import type { PageApi } from "../page/index.js";
+import { PageElementIssues, PageServiceError, type PageApi } from "../page/index.js";
+import { elementTitle } from "@expresso/portfolio-renderer";
 import { AgentCredentials } from "./credentials.js";
 import { randomUUID } from "node:crypto";
-import { AgentConversationSchema, type CareerDocumentBootstrap, type AgentConversation, type AgentContext, type AgentMessage, type SendAgentMessage, type AgentApproval, type AgentRecordDraftDecision, type AgentRecordDraftInput, type AgentPlanDecision, type AgentReplanDecision, type ReplanProposalInput, type UpdateTaskProgress, type GapReview, type GapReviewDraft, type PlanProposalInput, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
+import { AgentConversationSchema, isStructuredGroup, type AgentPageElementEditInput, type AgentPageEdit, type StructuredPortfolioSnapshot, type CareerDocumentBootstrap, type AgentConversation, type AgentContext, type AgentMessage, type SendAgentMessage, type AgentApproval, type AgentRecordDraftDecision, type AgentRecordDraftInput, type AgentPlanDecision, type AgentReplanDecision, type ReplanProposalInput, type UpdateTaskProgress, type GapReview, type GapReviewDraft, type PlanProposalInput, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
 import { mongoCollections, type AgentConversationDoc } from "@expresso/database";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { AgentToolRejection, type AgentRecordText, type AgentRuntime } from "../../platform/agent/runtime.js";
@@ -22,14 +23,24 @@ import type { ConsentApi } from "../consent/index.js";
  * 낸 취소가 실행에 닿는 최대 지연이기도 하다. 같은 인스턴스의 취소는 즉시 전달된다.
  */
 export const RUN_HEARTBEAT_MS = 1_000;
+/** 서버가 실행 도중 멈췄을 때(재시작 · heartbeat 끊김) 대화에 남기는 문구. 다시 보내면 되는 상황이다. */
+export const RUN_INTERRUPTED_ERROR = "서버 실행이 중단되었습니다. 다시 보내 주세요.";
+const RUN_FAILED_ERROR = "응답을 완료하지 못했습니다. 설정을 확인하고 다시 보내 주세요.";
+/** 종료 · 취소가 아닌 이유로 실행이 실패했을 때 원인을 받는 쪽. API는 로그에 남긴다. */
+export type AgentRunFailureListener = (error: unknown, run: { conversationId: string; runId: string }) => void;
 
 export class AgentChatError extends Error { constructor(readonly statusCode: number, message: string) { super(message); } }
 const view = (row: AgentConversationDoc) => { const { _id, userId: _userId, heartbeatAt: _heartbeat, ...data } = row; return AgentConversationSchema.parse({ ...data, id: _id }); };
 export class AgentChatService {
   private readonly running = new Map<string, AbortController>();
   private readonly tasks = new Set<Promise<void>>();
-  constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord" | "listRecords" | "listCategories" | "createRecord">, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi, readonly credentials: AgentCredentials = new AgentCredentials(db), private readonly portfolios?: Pick<PortfolioReadApi, "get">, private readonly pages?: Pick<PageApi, "latest">) {}
+  /** `close()`가 시작되면 켠다. 그 뒤에 끝난 실행은 어떤 오류로 끝났든 서버 종료로 끊긴 것이다. */
+  private closing = false;
+  private runFailureListener: AgentRunFailureListener | null = null;
+  constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord" | "listRecords" | "listCategories" | "createRecord">, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi, readonly credentials: AgentCredentials = new AgentCredentials(db), private readonly portfolios?: Pick<PortfolioReadApi, "get">, private readonly pages?: Pick<PageApi, "latest" | "elementGuide" | "editElementByAgent" | "restoreRevision">) {}
   private get plans() { return new PreparationPlans(this.db); }
+  /** 서비스가 Fastify 앱보다 먼저 만들어지므로 로그 수신자는 라우트 등록 때 붙인다. */
+  setRunFailureListener(listener: AgentRunFailureListener) { this.runFailureListener = listener; }
   async consentRequired(userId: string) {
     const result = await this.consent.list(userId);
     return !result.data.consents.some(item => item.scope === "career_records" && item.granted);
@@ -37,7 +48,7 @@ export class AgentChatService {
   get enabled() { return !!this.runtime; }
   private get rows() { return mongoCollections(this.db.db).agentConversations; }
   private async owned(userId: string, id: string) {
-    await this.rows.updateOne({ _id: id, userId, "run.status": "running", heartbeatAt: { $lt: new Date(Date.now() - 60_000) } }, { $set: { "run.status": "interrupted", "run.error": "서버 실행이 중단되었습니다. 다시 보내 주세요.", updatedAt: new Date().toISOString() }, $inc: { version: 1 } });
+    await this.rows.updateOne({ _id: id, userId, "run.status": "running", heartbeatAt: { $lt: new Date(Date.now() - 60_000) } }, { $set: { "run.status": "interrupted", "run.error": RUN_INTERRUPTED_ERROR, updatedAt: new Date().toISOString() }, $inc: { version: 1 } });
     const row = await this.rows.findOne({ _id: id, userId });
     if (!row) throw new AgentChatError(404, "대화를 찾을 수 없습니다.");
     return row;
@@ -54,7 +65,9 @@ export class AgentChatService {
         if (!this.portfolios) throw new AgentChatError(503, "포트폴리오 연결이 설정되지 않았습니다.");
         const portfolio = await this.portfolios.get(userId, ref.id);
         const page = await this.pages?.latest(userId, ref.id);
-        return { ...ref, data: { portfolio, generatedPage: page ? { html: page.html } : null } };
+        // 구조화 지면은 HTML 대신 목차를 싣는다 — 에이전트는 요소를 key로 읽고 고친다. 자유 HTML 지면은 HTML 그대로다.
+        const structured = page?.generationManifest?.structured;
+        return { ...ref, data: { portfolio, generatedPage: page ? structured ? { revision: page.revision, outline: pageOutline(structured) } : { html: page.html } : null } };
       }
       const record = await this.career.getRecord(userId, ref.id);
       const snapshot = await this.documents.bootstrap(userId, ref.id);
@@ -246,6 +259,43 @@ export class AgentChatService {
     if (!plan) throw new AgentChatError(404, "준비 계획을 찾을 수 없습니다.");
     return plan;
   }
+  /**
+   * 대화에 연결된 포트폴리오에만 지면 도구를 쓴다. 지면 규칙 위반과 동시 편집 같은 4xx는 에이전트가 고쳐 다시 부르도록
+   * `AgentToolRejection`으로 바꾼다.
+   */
+  private async pageCall<T>(row: AgentConversationDoc, portfolioId: string, work: (pages: NonNullable<AgentChatService["pages"]>) => Promise<T>): Promise<T> {
+    if (!row.contexts.some(ref => ref.kind === "portfolio" && ref.id === portfolioId)) throw new AgentToolRejection(["대화에 연결된 포트폴리오만 고칠 수 있습니다. selection 또는 context의 portfolioId를 쓰십시오."]);
+    if (!this.pages?.elementGuide || !this.pages.editElementByAgent) throw new AgentChatError(503, "지면 편집이 설정되지 않았습니다.");
+    try { return await work(this.pages); }
+    catch (error) {
+      if (error instanceof PageElementIssues) throw new AgentToolRejection(error.issues);
+      if (error instanceof PageServiceError && error.statusCode < 500) throw new AgentToolRejection([error.message]);
+      throw error;
+    }
+  }
+  /** 요소 고침을 새 판으로 쌓는다. 판의 지시에는 이 실행을 시작한 사용자 메시지를 남긴다 — 「이력」 탭이 그 말로 판을 보여 준다. */
+  private async editPage(row: AgentConversationDoc, edit: AgentPageElementEditInput): Promise<AgentPageEdit> {
+    const { portfolioId, key, note, ...changes } = edit;
+    const result = await this.pageCall(row, portfolioId, pages => pages.editElementByAgent!(row.userId, portfolioId, key, changes, { instruction: row.messages.at(-2)!.text, rationale: note }));
+    return { editId: randomUUID(), portfolioId, key, label: result.label, note, changes: result.changes, revision: result.page.revision, undone: false };
+  }
+  /**
+   * 에이전트가 저장한 지면 고침을 되돌린다. 그 판이 아직 최신일 때만 바로 앞 판의 내용을 새 판으로 쌓는다 — 뒤에 다른 편집이 있으면
+   * 덮지 않고 409를 낸다. AI 없이 동작한다.
+   */
+  async undoPageEdit(userId: string, id: string, editId: string) {
+    const row = await this.owned(userId, id);
+    if (row.run?.status === "running") throw new AgentChatError(409, "응답이 끝난 뒤 되돌려 주세요.");
+    const edit = row.messages.flatMap(message => message.tools).find(tool => tool.pageEdit?.editId === editId)?.pageEdit;
+    if (!edit) throw new AgentChatError(404, "이 대화의 지면 고침을 찾을 수 없습니다.");
+    if (edit.undone) return view(row);
+    if (!this.pages?.restoreRevision) throw new AgentChatError(503, "지면 편집이 설정되지 않았습니다.");
+    const latest = await this.pages.latest(userId, edit.portfolioId);
+    if (latest?.revision !== edit.revision) throw new AgentChatError(409, "이 고침 뒤에 다른 편집이 저장되어 되돌릴 수 없습니다. 「이력」 탭에서 판을 골라 되돌려 주세요.");
+    await this.pages.restoreRevision(userId, edit.portfolioId, { revision: edit.revision - 1, expectedRevision: edit.revision });
+    await this.rows.updateOne({ _id: id, userId }, { $set: { "messages.$[].tools.$[tool].pageEdit.undone": true, updatedAt: new Date().toISOString() }, $inc: { version: 1 } }, { arrayFilters: [{ "tool.pageEdit.editId": editId }] });
+    return this.get(userId, id);
+  }
   async create(userId: string, contexts: AgentContext[]) {
     await this.context(userId, contexts);
     const now = new Date();
@@ -282,9 +332,10 @@ export class AgentChatService {
     const row = await this.owned(userId, id);
     if (row.messages.some(message => message.id === input.requestId)) return view(row);
     if (row.messages.length >= 98 || JSON.stringify(row.messages).length > 160_000) throw new AgentChatError(409, "대화가 길어졌습니다. 새 대화를 시작해 주세요.");
+    if (input.selection && !row.contexts.some(ref => ref.kind === "portfolio" && ref.id === input.selection!.portfolioId)) throw new AgentChatError(409, "고른 요소의 포트폴리오가 대화에 연결되어 있지 않습니다. 포트폴리오를 연결한 뒤 보내 주세요.");
     const context = await this.prepare(userId, row);
     const now = new Date().toISOString();
-    const user: AgentMessage = { id: input.requestId, role: "user", text: input.text, tools: [], createdAt: now };
+    const user: AgentMessage = { id: input.requestId, role: "user", text: input.text, tools: [], ...(input.selection ? { selection: input.selection } : {}), createdAt: now };
     const assistant: AgentMessage = { id: randomUUID(), role: "assistant", text: "", tools: [], createdAt: now };
     const run = { id: randomUUID(), requestId: input.requestId, status: "running" as const, error: null, startedAt: now };
     const changed = await this.rows.findOneAndUpdate({ _id: id, userId, version: row.version, "run.status": { $ne: "running" } }, { $push: { messages: { $each: [user, assistant] } }, $set: { run, title: row.messages.length ? row.title : input.text.slice(0, 100), updatedAt: now, heartbeatAt: new Date() }, $inc: { version: 1 } }, { returnDocument: "after" });
@@ -351,6 +402,13 @@ export class AgentChatService {
         planDraft: input => this.planDraft(row.userId, [...row.messages.slice(0, -1), message], input),
         replanDraft: input => this.replanDraft(row.userId, input),
         readPlan: planId => this.plans.get(row.userId, planId),
+        page: {
+          read: (portfolioId, key) => this.pageCall(row, portfolioId, pages => pages.elementGuide!(row.userId, portfolioId, key)),
+          edit: async edit => {
+            if (controller.signal.aborted) throw new Error("cancelled");
+            return this.editPage(row, edit);
+          },
+        },
         propose: async (recordId, draft) => {
           if (!row.contexts.some(ref => ref.kind === "record" && ref.id === recordId)) throw new AgentChatError(403, "대화에 연결된 기록만 변경할 수 있습니다.");
           await this.consent.require(row.userId, "partial_edit");
@@ -368,9 +426,12 @@ export class AgentChatService {
       if (controller.signal.aborted) throw new Error("cancelled");
       await flush();
       await this.rows.updateOne(filter, { $set: { "run.status": "complete" }, $inc: { version: 1 } });
-    } catch {
+    } catch (error) {
       for (const tool of message.tools) if (tool.status === "running") { tool.status = "failed"; tool.summary = "실행이 중단되었습니다."; }
-      await this.rows.updateOne(filter, { $set: { [`messages.${row.messages.length - 1}`]: message, "run.status": controller.signal.aborted ? "interrupted" : "failed", "run.error": "응답을 완료하지 못했습니다. 설정을 확인하고 다시 보내 주세요." }, $inc: { version: 1 } });
+      // 서버 종료 중에는 런타임이 abort 대신 자식 프로세스 종료 오류로 먼저 끝날 수 있다. 그래도 끊긴 것이다.
+      const status = this.closing || controller.signal.aborted ? "interrupted" : "failed";
+      if (status === "failed") this.runFailureListener?.(error, { conversationId: row._id, runId });
+      await this.rows.updateOne(filter, { $set: { [`messages.${row.messages.length - 1}`]: message, "run.status": status, "run.error": this.closing ? RUN_INTERRUPTED_ERROR : RUN_FAILED_ERROR }, $inc: { version: 1 } });
     } finally { clearInterval(timer); clearTimeout(timeout); if (this.running.get(row._id) === controller) this.running.delete(row._id); }
   }
   async cancel(userId: string, id: string) {
@@ -393,5 +454,16 @@ export class AgentChatService {
     await this.rows.updateOne({ _id: id, userId }, { $set: { "messages.$[].tools.$[tool].proposal": proposal, ...(input.action === "undo" ? { "messages.$[].tools.$[tool].undone": true } : {}) }, $inc: { version: 1 } }, { arrayFilters: [{ "tool.proposal.proposalId": input.proposalId }] });
     return this.get(userId, id);
   }
-  async close() { for (const controller of this.running.values()) controller.abort(); await Promise.allSettled(this.tasks); }
+  async close() { this.closing = true; for (const controller of this.running.values()) controller.abort(); await Promise.allSettled(this.tasks); }
+}
+
+/** 에이전트가 읽는 지면 목차. 최상위 요소와 묶음 안의 요소를 읽는 순서대로, 화면 목차와 같은 이름으로 싣는다. */
+function pageOutline(snapshot: StructuredPortfolioSnapshot) {
+  const root = snapshot.spec.elements[snapshot.spec.root];
+  if (root?.type !== "PortfolioPage") return [];
+  const row = (key: string, depth: number) => { const { title, meta } = elementTitle(snapshot, key); return { key, depth, title, type: meta || title }; };
+  return root.children.flatMap(key => {
+    const node = snapshot.spec.elements[key];
+    return [row(key, 0), ...(isStructuredGroup(node) ? node.children.map(child => row(child, 1)) : [])];
+  });
 }

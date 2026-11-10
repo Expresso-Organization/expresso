@@ -12,6 +12,10 @@ WorkingDirectory=/home/ubuntu/expresso/services/backend
 ExecStart=/home/ubuntu/.nvm/versions/node/v24.13.1/bin/node dist/api/main.js
 EnvironmentFile=/home/ubuntu/expresso/services/backend/.env
 Restart=always
+# 종료 신호(SIGTERM)는 node에만 보낸다. 에이전트 채팅의 Claude Code 자식 프로세스는 node가
+# abort로 정리하고 대화를 「중단」으로 남긴다. control-group이면 자식이 같은 순간 신호를 받아
+# 먼저 죽고, 실행이 「실패」로 기록된다. node가 끝나면 남은 프로세스는 SIGKILL을 받는다.
+KillMode=mixed
 RestartSec=3
 StandardOutput=append:/home/ubuntu/expresso/log/api.log
 StandardError=append:/home/ubuntu/expresso/log/api.log

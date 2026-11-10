@@ -49,7 +49,7 @@ export class InterviewService implements InterviewApi {
 
   async #questionOptions(userId: string, brewId: string, session?: ClientSession) {
     const db = mongoCollections(this.context.db); const options = session ? { session } : {};
-    const brew = await db.brews.findOne({ _id: brewId, userId }, options);
+    const brew = await db.brews.findOne({ _id: brewId, userId, deletedAt: null }, options);
     if (!brew) throw new InterviewError(404, "brew not found");
     const analysis = await db.jobAnalyses.findOne({ _id: brew.jobAnalysisId, userId }, options);
     if (!analysis) throw new InterviewError(404, "job analysis not found");
@@ -125,7 +125,7 @@ export class InterviewService implements InterviewApi {
       await requireActiveUser(tx, userId);
       const collections = mongoCollections(tx.db); const options = { session: tx.session };
       const keyed = await collections.interviewSessions.findOne({ userId, inputIdempotencyKey: idempotencyKey }, options); if (keyed) return keyed._id;
-      const brew = await collections.brews.findOneAndUpdate({ _id: brewId, userId }, { $set: { status: "interviewing", updatedAt: new Date() }, $inc: { referenceVersion: 1 } }, { ...options, returnDocument: "after" });
+      const brew = await collections.brews.findOneAndUpdate({ _id: brewId, userId, deletedAt: null }, { $set: { status: "interviewing", updatedAt: new Date() }, $inc: { referenceVersion: 1 } }, { ...options, returnDocument: "after" });
       if (!brew) throw new InterviewError(404, "brew not found");
       const started = await collections.interviewSessions.findOne({ userId, brewId }, options); if (started) return started._id;
       const now = new Date(); const id = randomUUID();

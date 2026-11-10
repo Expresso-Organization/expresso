@@ -38,6 +38,46 @@ function deadlineClass(job: JobPostingSummary): string {
   return styles.rowDeadline ?? "";
 }
 
+/** 행에 그리는 기술 칩 수의 상한. 정의서 00b의 공고 행은 모두 칩 3개다. */
+const STACK_LIMIT = 3;
+
+/**
+ * 칩 이름에 쓸 수 있는 글자 폭. 영문 한 글자를 1, 한글처럼 넓은 글자를 2로 센다.
+ *
+ * 1440px 화면에서 목록은 804px이고, 제목 · 점수 · 마감 · 북마크 · 여백을 빼면
+ * 칩 열에 약 250px이 남는다. 「+N」 칩(약 36px)과 칩 사이 간격, 칩 안쪽 여백(칩마다
+ * 16px)을 빼면 이름 글자에 약 160px이다. 12px(`--ex-text-2xs`) 영문은 한 글자에
+ * 약 6.3px("Hugging Face" 12자가 74px)이므로 25자다.
+ */
+const STACK_TEXT_BUDGET = 25;
+
+function textUnits(name: string): number {
+  let units = 0;
+  for (const char of name) units += char.charCodeAt(0) > 0x7f ? 2 : 1;
+  return units;
+}
+
+/**
+ * 앞에서부터 칩으로 그릴 기술과 「+N」으로 접을 기술. 순서는 공고 원문 그대로다.
+ *
+ * 개수 제한이 없으면 기술을 20개 넘게 적은 공고 한 행이 목록보다 넓어져
+ * 목록 전체에 가로 스크롤이 생긴다. 개수만 막으면 이름이 긴 칩 세 개가 칩 열을
+ * 넘쳐 이름이 잘리므로, 글자 폭이 예산을 넘는 칩부터는 통째로 접는다.
+ * 첫 칩은 길어도 그린다 — 칩 열보다 넓으면 CSS가 말줄임표로 줄인다.
+ */
+export function splitStack<T extends { name: string }>(
+  technologies: readonly T[],
+): { shown: T[]; hidden: T[] } {
+  let used = 0;
+  let count = 0;
+  for (const tool of technologies.slice(0, STACK_LIMIT)) {
+    used += textUnits(tool.name);
+    if (count > 0 && used > STACK_TEXT_BUDGET) break;
+    count += 1;
+  }
+  return { shown: technologies.slice(0, count), hidden: technologies.slice(count) };
+}
+
 const NEW_WINDOW_MS = 3 * 24 * 60 * 60 * 1000;
 
 function isNew(job: JobPostingSummary, now: number): boolean {
@@ -110,18 +150,7 @@ export function JobRowList({
               </span>
             </Link>
           </span>
-          <span className={styles.rowStack}>
-            {job.technologies.map((tool) => (
-              <span
-                key={tool.name}
-                className={`${styles.stackChip} ${
-                  tool.matched === false ? styles.stackChipMissing : ""
-                }`}
-              >
-                {tool.name}
-              </span>
-            ))}
-          </span>
+          <StackChips technologies={job.technologies} />
           <span className={styles.rowReason}>{job.match?.reason ?? ""}</span>
           <span className={styles.rowScore}>
             {job.match ? (
@@ -147,5 +176,33 @@ export function JobRowList({
         </div>
       ))}
     </div>
+  );
+}
+
+/** 행의 기술 칩. 앞의 몇 개만 그리고 나머지는 「+N」 칩 하나로 접는다. */
+function StackChips({ technologies }: { technologies: JobPostingSummary["technologies"] }) {
+  const { shown, hidden } = splitStack(technologies);
+  const hiddenNames = hidden.map((tool) => tool.name).join(" · ");
+  return (
+    <span className={styles.rowStack}>
+      {shown.map((tool) => (
+        <span
+          key={tool.name}
+          className={`${styles.stackChip} ${
+            tool.matched === false ? styles.stackChipMissing : ""
+          }`}
+        >
+          {tool.name}
+        </span>
+      ))}
+      {hidden.length > 0 ? (
+        <span
+          className={`${styles.stackChip} ${styles.stackChipMore}`}
+          title={hiddenNames}
+        >
+          +{hidden.length}
+        </span>
+      ) : null}
+    </span>
   );
 }

@@ -8,6 +8,8 @@ import { inTransaction } from "../../platform/mongo-transaction.js";
 import { MongoAccountLifecycleService } from "../account-lifecycle/index.js";
 import { MongoAnalyticsService } from "../analytics/index.js";
 import { purgeTrashedCareerRecord } from "../career/index.js";
+import { purgeTrashedBrew } from "../materials/index.js";
+import { purgeTrashedPortfolio } from "../portfolios/index.js";
 import { MongoEngagementService } from "../engagement/index.js";
 import type { JobIngestApi } from "../jobs/ingest/index.js";
 import { SCHEDULED_JOB_KEYS, type ScheduledJobKey } from "./public.js";
@@ -74,10 +76,23 @@ export class SchedulingService {
         try { await purgeTrashedCareerRecord(this.context, record.userId, record._id, at); records += 1; }
         catch { skipped += 1; }
       }
+      // 휴지통 포트폴리오를 먼저 지운다. 포트폴리오가 남은 제작은 건너뛰므로, 같은 차례에 함께 지난 제작도 지워진다.
+      const portfolios = await this.#purgeTrash(await db.portfolios.find({ deletedAt: { $ne: null }, purgeAfter: { $lte: at } }, { projection: { _id: 1, userId: 1 } }).limit(1_000).toArray(), (row) => purgeTrashedPortfolio(this.context, row.userId, row._id, at));
+      const brews = await this.#purgeTrash(await db.brews.find({ deletedAt: { $ne: null }, purgeAfter: { $lte: at } }, { projection: { _id: 1, userId: 1 } }).limit(1_000).toArray(), (row) => purgeTrashedBrew(this.context, row.userId, row._id, at));
       const [redirects, receipts] = await Promise.all([db.deploymentSlugRedirects.deleteMany({ expiresAt: { $lte: at } }), db.analyticsEventReceipts.deleteMany({ receivedAt: { $lt: new Date(at.getTime() - 90 * 86_400_000) } })]);
-      return { records, skippedRecords: skipped, redirects: redirects.deletedCount, analyticsReceipts: receipts.deletedCount };
+      return { records, skippedRecords: skipped, portfolios: portfolios.purged, skippedPortfolios: portfolios.skipped, brews: brews.purged, skippedBrews: brews.skipped, redirects: redirects.deletedCount, analyticsReceipts: receipts.deletedCount };
     }
     throw new Error(`unsupported scheduled job key: ${key satisfies never}`);
+  }
+
+  /** 휴지통 항목을 하나씩 지운다. 한 항목이 실패해도(예: 포트폴리오가 남은 제작의 409) 다음 항목으로 간다. */
+  async #purgeTrash<T>(rows: readonly T[], purge: (row: T) => Promise<unknown>): Promise<{ purged: number; skipped: number }> {
+    let purged = 0; let skipped = 0;
+    for (const row of rows) {
+      try { await purge(row); purged += 1; }
+      catch { skipped += 1; }
+    }
+    return { purged, skipped };
   }
 
   /**
