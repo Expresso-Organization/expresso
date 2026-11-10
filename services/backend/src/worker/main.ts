@@ -5,6 +5,7 @@ import { createReliableQueue } from "../platform/queue.js";
 import { safeErrorSummary } from "../platform/observability.js";
 import { createQueueWorker } from "./create-queue-worker.js";
 import { QUEUE_NAMES, queueNameFor } from "./queue-routing.js";
+import { Wake, watchOutboxInserts } from "./outbox-wake.js";
 import { runPollLoop } from "./poll-loop.js";
 import { JobAnalysisService } from "../modules/job-analysis/index.js";
 import { UnavailableRequirementExtractor } from "../modules/job-analysis/extractor.js";
@@ -332,9 +333,21 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
   });
 }
 
+// 아웃박스 행이 커밋되면 1초 주기를 기다리지 않고 발행한다. 흐름이 끊기면 같은 간격으로 다시 열고,
+// 그동안 폴링은 그대로 돈다 — 흐름의 오류가 폴링 루프를 멈추지 않는다.
+const outboxWake = new Wake();
+const outboxWatch = watchOutboxInserts(database.db, () => outboxWake.notify(), {
+  retryMs: config.outboxPollIntervalMs,
+  signal: abortController.signal,
+  onError(error) {
+    console.error(JSON.stringify({ level: "warn", message: "outbox change stream failed", error: safeErrorSummary(error) }));
+  },
+});
+
 await runPollLoop({
   intervalMs: config.outboxPollIntervalMs,
   signal: abortController.signal,
+  wake: outboxWake,
   async poll() {
     if (config.scheduledJobsEnabled !== false) await schedulingService.scheduleDue();
     const result = await dispatcher.pollOnce();
@@ -357,4 +370,4 @@ await runPollLoop({
 });
 
 // fatal이면 처리 중인 잡을 기다리지 않습니다. 잠금이 만료되면 BullMQ의 stalled 처리가 다시 배달합니다.
-await Promise.allSettled([queueWorker.close(stoppingOnFatal), generationWorker.close(stoppingOnFatal), refineWorker.close(stoppingOnFatal), careerWorker.close(stoppingOnFatal), jobs.close(), generationJobs.close(), refineJobs.close(), careerJobs.close(), database.close(), pageMeasurer.close()]);
+await Promise.allSettled([outboxWatch, queueWorker.close(stoppingOnFatal), generationWorker.close(stoppingOnFatal), refineWorker.close(stoppingOnFatal), careerWorker.close(stoppingOnFatal), jobs.close(), generationJobs.close(), refineJobs.close(), careerJobs.close(), database.close(), pageMeasurer.close()]);

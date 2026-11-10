@@ -99,7 +99,10 @@ describeWithDatabase("recipe integration", () => {
   const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const identityService = new IdentityService(sql);
   const recipeService = new RecipeService(sql);
-  const brewJobService = new BrewJobService(sql);
+  // 옛 MySQL 구현에는 상태 흐름이 없다. 이 묶음은 그 라우트를 부르지 않는다.
+  const brewJobService = Object.assign(new BrewJobService(sql), {
+    follow: (): never => { throw new Error("brew job follow is Mongo-only"); },
+  });
   const app = buildApi({ config, identityService, recipeService, brewJobService });
 
   /** 레시피 만들기 = 잡 하나. Redis 없이 같은 경로를 돌린다. */

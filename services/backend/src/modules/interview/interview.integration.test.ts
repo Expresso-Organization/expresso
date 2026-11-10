@@ -169,7 +169,10 @@ describeWithDatabase("interview integration", () => {
   const interviewService = Object.assign(new InterviewService(sql), {
     questionBases: () => Promise.reject(new Error("question bases are Mongo-only")),
   });
-  const brewJobService = new BrewJobService(sql);
+  // 옛 MySQL 구현에는 상태 흐름이 없다. 이 묶음은 그 라우트를 부르지 않는다.
+  const brewJobService = Object.assign(new BrewJobService(sql), {
+    follow: (): never => { throw new Error("brew job follow is Mongo-only"); },
+  });
   const app = buildApi({ config, identityService, interviewService, brewJobService });
 
   /**
