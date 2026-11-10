@@ -11,7 +11,7 @@ import { PageService } from "../page/index.js";
 import { AgentCredentials } from "./credentials.js";
 import { ConsentService } from "../consent/index.js";
 import { AgentToolRejection, type AgentRuntime } from "../../platform/agent/runtime.js";
-import { AgentChatService, RUN_HEARTBEAT_MS } from "./service.js";
+import { AgentChatService, RUN_HEARTBEAT_MS, RUN_INTERRUPTED_ERROR } from "./service.js";
 import { PreparationPlans } from "./plans.js";
 
 describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB_URL))("공통 에이전트 대화", () => {
@@ -103,6 +103,29 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const service = make(null); const row = await service.create(userId, []);
     await mongoCollections(fixture.resource.db).agentConversations.updateOne({ _id: row.id }, { $set: { run: { id: randomUUID(), requestId: randomUUID(), status: "running", error: null, startedAt: new Date().toISOString() }, heartbeatAt: new Date(0) } });
     expect((await service.get(userId, row.id)).run?.status).toBe("interrupted");
+  });
+  it("서버 종료로 끊긴 실행은 런타임 오류가 무엇이든 중단으로 남기고 실패로 보고하지 않는다", async () => {
+    let started = false;
+    // 운영 Agent SDK는 abort를 받으면 자식 프로세스 종료 오류로 끝난다. 그 모양을 그대로 흉내 낸다.
+    const service = make({ run: input => new Promise<void>((_, reject) => { started = true; input.signal.addEventListener("abort", () => reject(new Error("Claude Code process exited with code 143")), { once: true }); }) });
+    const failures: unknown[] = []; service.setRunFailureListener(error => failures.push(error));
+    const row = await service.create(userId, []);
+    await service.send(userId, row.id, { requestId: randomUUID(), text: "프로젝트를 정리해줘" });
+    await expect.poll(() => started).toBe(true);
+    await service.close();
+    const run = (await make(null).get(userId, row.id)).run;
+    expect(run).toMatchObject({ status: "interrupted", error: RUN_INTERRUPTED_ERROR });
+    expect(failures).toEqual([]);
+  });
+  it("종료와 무관한 실패는 실패로 남기고 원인을 수신자에게 넘긴다", async () => {
+    const service = make({ run: async () => { throw new Error("모델 오류"); } });
+    const failures: Array<{ error: unknown; conversationId: string }> = [];
+    service.setRunFailureListener((error, run) => failures.push({ error, conversationId: run.conversationId }));
+    const row = await service.create(userId, []);
+    await service.send(userId, row.id, { requestId: randomUUID(), text: "질문" });
+    await expect.poll(async () => (await service.get(userId, row.id)).run?.status).toBe("failed");
+    expect((await service.get(userId, row.id)).run?.error).not.toBe(RUN_INTERRUPTED_ERROR);
+    expect(failures).toEqual([{ error: expect.objectContaining({ message: "모델 오류" }), conversationId: row.id }]);
   });
   it("제안은 승인 전 원문을 바꾸지 않고, 다른 대화의 승인을 거절하며 적용과 되돌리기를 저장한다", async () => {
     const original = await documents.bootstrap(userId, recordId);

@@ -10,7 +10,7 @@ describe("에이전트 인증 분리", () => {
     let stored: string | undefined;
     const credentials = { configured: async () => !!stored, save: async (_id: string, value: string) => { stored = value; }, read: async () => stored, remove: async () => { stored = undefined; } };
     const app = Fastify(); const send = vi.fn(async () => ({}));
-    registerAgentChatRoutes(app, { credentials, enabled: true, consentRequired: async () => true, send, close: async () => {} } as unknown as AgentChatService, async req => { req.auth = { sessionId: "session", user: { id: user, email: "test@example.com", displayName: "test", planCode: "free", emailVerifiedAt: null, role: "user", impersonation: null }, owner: { userId: user, displayName: "test", role: "user" } }; }, developer ? [user] : []);
+    registerAgentChatRoutes(app, { credentials, enabled: true, consentRequired: async () => true, send, close: async () => {}, setRunFailureListener: () => {} } as unknown as AgentChatService, async req => { req.auth = { sessionId: "session", user: { id: user, email: "test@example.com", displayName: "test", planCode: "free", emailVerifiedAt: null, role: "user", impersonation: null }, owner: { userId: user, displayName: "test", role: "user" } }; }, developer ? [user] : []);
     const access = await app.inject({ method: "GET", url: "/v1/agent/access" });
     expect(access.json().data).toMatchObject({ serverCredentialAllowed: developer, consentRequired: true, model: "sonnet" });
     const body = { requestId: conversation, text: "안녕" };
@@ -32,7 +32,7 @@ describe("에이전트 인증 분리", () => {
     const admin = "00000000-0000-4000-8000-000000000003";
     const credentials = { configured: async () => false, save: async () => {}, read: async () => undefined, remove: async () => {} };
     const app = Fastify(); const send = vi.fn(async () => ({})); const retry = vi.fn(async () => ({}));
-    registerAgentChatRoutes(app, { credentials, enabled: true, consentRequired: async () => false, send, retry, close: async () => {} } as unknown as AgentChatService, async req => { req.auth = { sessionId: "session", user: { id: user, email: "dummy@example.com", displayName: "dummy", planCode: "team", emailVerifiedAt: null, role: "user", impersonation: { adminUserId: admin, adminDisplayName: "admin", since: "2026-11-09T00:00:00.000Z" } }, owner: { userId: admin, displayName: "admin", role: "admin" } }; }, []);
+    registerAgentChatRoutes(app, { credentials, enabled: true, consentRequired: async () => false, send, retry, close: async () => {}, setRunFailureListener: () => {} } as unknown as AgentChatService, async req => { req.auth = { sessionId: "session", user: { id: user, email: "dummy@example.com", displayName: "dummy", planCode: "team", emailVerifiedAt: null, role: "user", impersonation: { adminUserId: admin, adminDisplayName: "admin", since: "2026-11-09T00:00:00.000Z" } }, owner: { userId: admin, displayName: "admin", role: "admin" } }; }, []);
     const access = await app.inject({ method: "GET", url: "/v1/agent/access" });
     expect(access.json().data).toMatchObject({ serverCredentialAllowed: true, apiKeyConfigured: false });
     const body = { requestId: conversation, text: "안녕" };

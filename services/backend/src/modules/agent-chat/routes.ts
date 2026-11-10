@@ -50,5 +50,8 @@ export function registerAgentChatRoutes(app: FastifyInstance, service: AgentChat
     } catch { /* 접속 종료 후에도 모델 실행은 서버에서 계속됩니다. */ }
     finally { reply.raw.end(); }
   });
-  app.addHook("onClose", async () => service.close());
+  service.setRunFailureListener((error, run) => app.log.error({ err: error, ...run }, "agent run failed"));
+  // HTTP 서버가 열린 연결을 기다리기 전에 실행을 끊는다. 실행이 interrupted로 바뀌면 SSE 루프가
+  // 마지막 상태를 보내고 닫히므로, 종료가 SSE 연결 때문에 늦어지지 않는다.
+  app.addHook("preClose", async () => service.close());
 }

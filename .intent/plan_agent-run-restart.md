@@ -16,6 +16,7 @@ date: 2026-11-10
 |---|---|
 | `services/backend/src/modules/agent-chat/service.ts` | `RUN_INTERRUPTED_ERROR` 상수, `closing` 표시, `catch` 판정, `setRunFailureListener` |
 | `services/backend/src/modules/agent-chat/routes.ts` | `onClose` → `preClose`, 실패 수신자를 `app.log.error`로 등록 |
+| `services/backend/src/modules/agent-chat/routes.test.ts` | 가짜 서비스에 `setRunFailureListener` 추가 |
 | `services/backend/src/modules/agent-chat/service.integration.test.ts` | 종료 중 실패 → interrupted, 일반 실패 → failed + 수신자 호출 |
 | `infra/systemd/expresso-api.service` | `KillMode=mixed`와 이유 주석 |
 
