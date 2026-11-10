@@ -54,6 +54,20 @@ export const InterviewSessionResponseSchema = z.strictObject({
   data: InterviewSessionSchema,
 });
 
+/**
+ * 질문 생성이 고를 수 있는 근거 한 자리. 질문 생성과 같은 계산이고 AI를 부르지 않는다 —
+ * 질문을 만드는 동안 화면이 무엇을 근거로 물을지 먼저 보여 준다.
+ */
+export const InterviewQuestionBaseSchema = z.strictObject({
+  basis: InterviewQuestionBasisSchema,
+  /** 요건이면 요건 이름, 기록이면 기록 제목. */
+  label: z.string().min(1).max(5_000),
+});
+
+export const InterviewQuestionBasesResponseSchema = z.strictObject({
+  data: z.strictObject({ bases: z.array(InterviewQuestionBaseSchema) }),
+});
+
 export const SaveInterviewAnswerSchema = z.strictObject({
   inputType: z.enum(["text", "voice"]),
   transcript: z.string().trim().min(1).max(100_000),
@@ -74,6 +88,7 @@ export const InterviewAnswerResultSchema = z.strictObject({
 });
 
 export type InterviewQuestionBasis = z.infer<typeof InterviewQuestionBasisSchema>;
+export type InterviewQuestionBase = z.infer<typeof InterviewQuestionBaseSchema>;
 export type SaveInterviewAnswer = z.infer<typeof SaveInterviewAnswerSchema>;
 
 // ── §8.3 「질문 생성」 — 모델이 내는 초안 ─────────────────────────────

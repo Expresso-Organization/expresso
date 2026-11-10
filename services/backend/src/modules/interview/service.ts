@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { InterviewQuestionBasisSchema, InterviewSessionSchema, type InterviewQuestionBasis, type SaveInterviewAnswer } from "@expresso/contracts";
+import { InterviewQuestionBaseSchema, InterviewQuestionBasisSchema, InterviewSessionSchema, type InterviewQuestionBasis, type SaveInterviewAnswer } from "@expresso/contracts";
 import { mongoCollections, type QuestionDoc } from "@expresso/database";
 import type { ClientSession } from "mongodb";
 import type { MongoContext } from "../../platform/mongodb.js";
@@ -91,6 +91,19 @@ export class InterviewService implements InterviewApi {
       return drafted.map((question) => { const option = context.options[question.optionIndex]!; return { text: question.text, basis: option.basis, requirementId: option.basis.type === "requirement" ? option.basis.requirementId : null, variant: 0, rationale: question.rationale }; });
     }
     return generateQuestionDrafts(requirements.map((row) => ({ id: row._id, label: row.label, coverage: row.coverage, evidence: row.quote })), records.map((record) => ({ id: record._id, title: record.title, text: recordText(record) }))).map((draft) => ({ ...draft, rationale: null }));
+  }
+
+  /**
+   * 질문 생성이 고를 수 있는 근거. 질문 생성(`#planQuestions`)과 같은 계산이고 AI를 부르지 않는다 —
+   * 질문을 만드는 동안 화면이 무엇을 근거로 물을지 먼저 보여 준다.
+   */
+  async questionBases(userId: string, brewId: string) {
+    const { context, requirements } = await this.#questionOptions(userId, brewId);
+    const requirementLabels = new Map(requirements.map((row) => [row._id, row.label]));
+    return context.options.map(({ basis }) => InterviewQuestionBaseSchema.parse({
+      basis,
+      label: basis.type === "requirement" ? requirementLabels.get(basis.requirementId) ?? basis.evidence : basis.evidence,
+    }));
   }
 
   async start(userId: string, brewId: string, idempotencyKey: string) {

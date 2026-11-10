@@ -67,6 +67,7 @@ import {
   type PortfolioEditCommand,
   BrewJobResponseSchema,
   BrewMaterialsResponseSchema,
+  InterviewQuestionBasesResponseSchema,
   InterviewSessionResponseSchema,
   JobAnalysisResultSchema,
   ReanalysisRequestResultSchema,
@@ -454,6 +455,13 @@ export const brews = {
       accessToken,
       method: "POST",
       idempotencyKey,
+    }),
+
+  /** 질문을 만드는 동안 먼저 보여 줄 근거. 질문 생성과 같은 계산이고 AI를 부르지 않는다. */
+  interviewBases: (accessToken: string, brewId: string) =>
+    request(`${API_PREFIX}/brews/${brewId}/interview-bases`, InterviewQuestionBasesResponseSchema, {
+      accessToken,
+      cache: "no-store",
     }),
 
   /** 02b 레시피 짜기. 이것도 잡이다. */

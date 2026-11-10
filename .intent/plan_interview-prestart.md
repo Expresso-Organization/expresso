@@ -27,7 +27,11 @@ date: 2026-11-10
 | `services/web/src/app/(app)/brew/[brewId]/Waiting.tsx` · `.module.css` | `detail` 슬롯 · 안내 문구 |
 | `services/web/src/app/(app)/brew/[brewId]/counter/QuestionBases.tsx` · `.module.css` (새) | 근거 목록 |
 | `services/web/src/app/(app)/brew/[brewId]/counter/page.tsx` | 대기 상태에서 근거 읽기 |
-| 웹 테스트(`Waiting.test.tsx` 등) | 안내 문구 · 슬롯 |
+| `services/web/src/app/(app)/brew/[brewId]/counter/basis-kind.ts` (새) | 근거 종류 문구 — 근거 패널과 근거 목록이 같이 쓴다 |
+| `services/backend/test/security/security-gate.test.ts` | 새 라우트도 인증 없이 401 |
+| 웹 테스트(`Waiting.test.tsx` · `brew-actions.test.ts`) | 안내 문구 · 슬롯 · 근거 목록 · `beginInterviewAction` 키와 이동 |
+
+구현 중 더한 것: 옛 MySQL 통합 테스트는 `InterviewApi`의 새 메서드를 갖지 않아, 그 묶음에서만 거절하는 `questionBases`를 붙였다(그 묶음은 이 라우트를 부르지 않는다).
 
 ## 작업 순서
 
