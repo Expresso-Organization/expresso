@@ -301,6 +301,8 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
+  /* 행 배치는 화면 폭이 아니라 목록 폭으로 고른다 — 레일이 붙는 1024px 화면의 목록이 768px 화면보다 좁다. */
+  container-type: inline-size;
 }
 
 .row {
@@ -345,11 +347,6 @@
 }
 
 @media (max-width: 767px) {
-  .rowTitle {
-    width: auto;
-    flex: 1;
-  }
-
   /* 좁은 머리에서는 수집처 안내를 접고, 남은 두 액션은 글자가 세로로 떨어지지 않게 한 줄로 둔다. */
   .headNote {
     display: none;
@@ -378,19 +375,32 @@
   text-overflow: ellipsis;
 }
 
+/*
+ * 칩 열은 남는 폭이 모자랄 때만 준다 — 근거 칸(flex: 1)이 먼저 빈다.
+ * 줄어들 때는 이름 칩이 말줄임표로 줄고 「+N」은 그대로 남는다.
+ */
 .rowStack {
   display: flex;
   gap: 5px;
-  flex-shrink: 0;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .stackChip {
+  min-width: 0;
   font-size: var(--ex-text-2xs);
   color: var(--ex-fg-body);
   background: var(--ex-border-inner);
   border-radius: 5px;
   padding: 4px 8px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 접은 기술 개수 */
+.stackChipMore {
+  flex-shrink: 0;
 }
 
 /* 내 기록에 없는 스택은 경고색 */
@@ -442,6 +452,74 @@
   width: 42px;
   text-align: right;
   flex-shrink: 0;
+}
+
+.rowMark {
+  flex-shrink: 0;
+}
+
+/*
+ * 좁은 목록의 행 — 목록이 `--ex-bp-md`(768px)보다 좁으면 줄을 나눈다.
+ * 1줄은 제목과 북마크, 2줄은 근거 · 점수 · 마감, 3줄은 칩(있을 때만)이다.
+ *
+ * 한 줄 행은 고정 칸(여백 40 · 아바타 30 · 제목 236 · 점수 96 · 마감 42 ·
+ * 북마크 15 · 간격 6 × 14)만 543px이고, 칩과 근거까지 담으려면 800px 가까이
+ * 필요하다(1440px 화면의 목록 804px). 그 사이 폭(1280px 화면 644px)에서 한 줄로
+ * 두면 칩과 근거가 잘리므로, 중단점 표에서 543 위의 첫 경계를 쓴다.
+ * 컨테이너 쿼리 조건에는 CSS 변수를 쓸 수 없어 숫자로 적는다.
+ */
+@container (max-width: 767px) {
+  .row {
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr) auto auto;
+    /* 줄 사이는 각 줄의 margin-top이 맡는다 — 칩이 없는 행에 셋째 줄 간격이 남지 않게. */
+    row-gap: 0;
+  }
+
+  .avatar {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+    align-self: start;
+  }
+
+  .rowTitle {
+    grid-column: 2 / 4;
+    grid-row: 1;
+    width: auto;
+  }
+
+  .rowMark {
+    grid-column: 4;
+    grid-row: 1;
+    justify-self: end;
+  }
+
+  .rowReason {
+    grid-column: 2;
+    grid-row: 2;
+    margin-top: 8px;
+  }
+
+  .rowScore {
+    grid-column: 3;
+    grid-row: 2;
+    margin-top: 8px;
+  }
+
+  .rowDeadline {
+    grid-column: 4;
+    grid-row: 2;
+    margin-top: 8px;
+  }
+
+  .rowStack {
+    grid-column: 2 / 5;
+    grid-row: 3;
+  }
+
+  .rowStack:not(:empty) {
+    margin-top: 8px;
+  }
 }
 
 .rowDeadlineAlways {
@@ -750,14 +828,6 @@
   padding: 8px 8px 8px 22px;
   flex-shrink: 0;
   box-shadow: 0 4px 14px -8px rgba(22, 34, 58, 0.14);
-  transition:
-    border-color var(--ex-motion-quick),
-    box-shadow var(--ex-motion-quick);
-}
-
-.searchBar:focus-within {
-  border-color: var(--ex-accent);
-  box-shadow: 0 0 0 3px rgba(154, 64, 48, 0.09);
 }
 
 .searchInput {

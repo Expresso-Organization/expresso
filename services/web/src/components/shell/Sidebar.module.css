@@ -426,25 +426,6 @@
   text-overflow: ellipsis;
 }
 
-.score {
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-2xs);
-}
-
-.scoreHigh {
-  color: var(--ex-status-success-text);
-}
-
-.scoreMid {
-  color: var(--ex-status-warning-text);
-}
-
-.pending {
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-fg-muted);
-  white-space: nowrap;
-}
-
 /* ── 내 커리어 트리 ───────────────────────────────────────── */
 
 .categories {
@@ -525,14 +506,31 @@
   transition: grid-template-rows var(--ex-motion-quick);
 }
 
+/*
+ * 카드는 설정 · 사용량으로 가는 링크다.
+ * 배경 tint는 게이지 트랙과 같은 색이라 hover는 테두리로만 알린다.
+ * `.copy`와 같은 요소라 전환 목록에 opacity · transform을 함께 적는다.
+ */
 .quotaCard {
+  display: block;
   min-height: 0;
   overflow: hidden;
+  color: inherit;
+  text-decoration: none;
   background: var(--ex-bg);
   border: 1px solid var(--ex-border-chrome);
   border-radius: 10px;
   padding: 12px;
   margin-bottom: 10px;
+  transition:
+    opacity var(--ex-motion-quick),
+    transform var(--ex-motion-quick),
+    border-color var(--ex-motion-quick),
+    visibility var(--ex-motion-quick);
+}
+
+.quotaCard:hover {
+  border-color: var(--ex-border-firm);
 }
 
 .quotaHead {
@@ -700,6 +698,14 @@
   [data-sidebar-collapsed="true"] .groupHead,
   [data-sidebar-collapsed="true"] .quotaSlot {
     grid-template-rows: 0fr;
+  }
+
+  /*
+   * 접힌 카드는 Tab 순서에서도 빠진다. visibility 전환은 보이는 쪽을 끝까지
+   * 유지하므로 접히는 동안은 보이다가 끝나면 숨고, 펼 때는 바로 보인다.
+   */
+  [data-sidebar-collapsed="true"] .quotaCard {
+    visibility: hidden;
   }
 }
 

@@ -86,6 +86,7 @@ export class PortfolioReadService {
       // 휴지통 포트폴리오는 목록 · 사이드바 · 에이전트 채팅에서 빠진다.
       deletedAt: null,
       ...(query.status ? { status: query.status } : {}),
+      ...(query.q ? { title: { $regex: query.q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" } } : {}),
       ...(cursor ? { $or: [{ updatedAt: { $lt: new Date(cursor.at) } }, { updatedAt: new Date(cursor.at), _id: { $lt: cursor.id } }] } : {}),
     };
     const rows = await mongoCollections(this.context.db).portfolios.find(filter).sort({ updatedAt: -1, _id: -1 }).limit(query.limit + 1).toArray();

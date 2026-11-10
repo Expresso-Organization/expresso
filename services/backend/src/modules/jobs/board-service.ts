@@ -27,6 +27,18 @@ function placeOf(location: string | null | undefined, companyName: string): stri
   return same(location) === same(companyName) ? null : location;
 }
 
+/**
+ * 공고 목록의 정렬 단계. 공고 탐색(`list`)과 통합 검색(`search`)이 같은 순서를 쓰도록
+ * 한 곳에 둔다. 장소로 찾을 때는 그 장소 · 가까운 순이 `sort`보다 앞선다.
+ */
+function boardOrder(query: Pick<ListJobPostingsQuery, "sort">, place: ReturnType<typeof nearbyPlaceOf>): Document[] {
+  const direction = query.sort === "deadline" ? 1 : -1;
+  const sortKey = query.sort === "match" ? { $ifNull: ["$match.total", -1] } : query.sort === "deadline" ? { $ifNull: ["$expiresAt", new Date("9999-12-31T00:00:00Z")] } : "$createdAt";
+  return place
+    ? [{ $set: { sortKey, nearbyRank: nearbyRank(place) } }, { $sort: { nearbyRank: 1, nearbyDistanceKm: 1, sortKey: direction, createdAt: direction, _id: direction } }]
+    : [{ $set: { sortKey } }, { $sort: { sortKey: direction, createdAt: direction, _id: direction } }];
+}
+
 function summary(row: BoardRow, brew: JobBrewState | undefined, at: Date) {
   const requirements = JobRequirementsSchema.parse(row.requirements);
   const axes = row.match ? JobPostingMatchSchema.shape.axes.parse(row.match.axes) : null;
@@ -71,12 +83,8 @@ export class JobBoardService implements JobBoardApi {
     const countIf = (condition: Document) => ({ $sum: { $cond: [condition, 1, 0] } });
     const remote = { $regexMatch: { input: { $ifNull: ["$workType", ""] }, regex: "리모트", options: "i" } };
     const urgent = { $and: [{ $gte: ["$expiresAt", at] }, { $lt: ["$expiresAt", new Date(at.getTime() + 7 * 86_400_000)] }] };
-    const direction = query.sort === "deadline" ? 1 : -1;
-    const sortKey = query.sort === "match" ? { $ifNull: ["$match.total", -1] } : query.sort === "deadline" ? { $ifNull: ["$expiresAt", new Date("9999-12-31T00:00:00Z")] } : "$createdAt";
     const place = nearbyPlaceOf(query);
-    const order: Document[] = place
-      ? [{ $set: { sortKey, nearbyRank: nearbyRank(place) } }, { $sort: { nearbyRank: 1, nearbyDistanceKm: 1, sortKey: direction, createdAt: direction, _id: direction } }]
-      : [{ $set: { sortKey } }, { $sort: { sortKey: direction, createdAt: direction, _id: direction } }];
+    const order = boardOrder(query, place);
     const [result] = await mongoCollections(this.context.db).jobPostings.aggregate<{
       data: BoardRow[]; total: { count: number }[]; categories: { total: number; remote: number; urgent: number }[];
       families: Facet[]; regions: Facet[]; unplaced: { count: number }[]; companies: { key: string; label: string; count: number }[];
@@ -107,6 +115,21 @@ export class JobBoardService implements JobBoardApi {
       experienceLevels: overlapping(experienceLevels.map((years) => ({ label: years === 0 ? "신입" : `${years}년`, count: result.levels[0]?.[`y${years}`] ?? 0 }))),
       workTypes: overlapping(workTypes.map((label, index) => ({ label, count: result.workTypes[0]?.[`w${index}`] ?? 0 }))),
     }, page: { page: query.page, pageSize: query.limit, totalPages, hasPrevPage: query.page > 1, hasNextPage: query.page < totalPages } });
+  }
+
+  /**
+   * 00c 통합 검색의 공고 묶음. 공고 탐색에서 같은 검색어(`q`) · 나라만 주었을 때의 첫 페이지와
+   * 같은 조건 · 같은 순서다 — 필터(`jobBoardFilter`)와 정렬(`boardOrder`)을 그대로 쓴다.
+   * 입력할 때마다 불리므로 나라 · 회사 · 기술 패싯은 세지 않는다.
+   */
+  async search(userId: string, input: { q: string; country?: string | undefined; limit: number }) {
+    const query = ListJobPostingsQuerySchema.parse({ q: input.q, limit: input.limit, ...(input.country ? { country: input.country } : {}) });
+    const rows = await mongoCollections(this.context.db).jobPostings.aggregate<Pick<BoardRow, "_id" | "title" | "company">>([
+      // 회사 이름 조건이 조인한 `company.name`을 보므로 조인 뒤에 거른다.
+      ...jobBoardJoins(userId), { $match: jobBoardFilter(query, new Date()) }, ...boardOrder(query, undefined),
+      { $limit: query.limit }, { $project: { _id: 1, title: 1, company: 1 } },
+    ]).toArray();
+    return rows.map((row) => ({ id: row._id, title: row.title, company: row.company.name }));
   }
 
   async get(userId: string, jobPostingId: string) {
