@@ -242,3 +242,129 @@ describe("다크 팔레트", () => {
     expect(missing).toEqual([]);
   });
 });
+
+/*
+ * 텍스트 입력은 마우스 클릭에도 `:focus-visible`에 걸린다. 텍스트 커서가 이미
+ * 위치를 보여 주므로 포커스 때 테두리를 바꾸지 않는다. 체크박스 · 라디오는
+ * 커서가 없어 포커스 표시를 유지한다.
+ *
+ * 이 검사가 CI(`웹 검사`)에서 새 입력 칸의 포커스 테두리를 막는다. 그래서
+ * 모듈 CSS만이 아니라 전역 CSS, 클래스로만 고른 입력 칸, Tailwind 클래스까지 본다.
+ */
+const NON_TEXT_FOCUS_SELECTORS = [
+  ".rowCheckbox",
+  ".archetypeOption",
+  '[data-aui="checkbox"]',
+  '[data-aui="radiogroup-option"]',
+];
+
+/** 텍스트를 받지 않는 `input` type. 이 type의 포커스 표시는 유지한다. */
+const NON_TEXT_INPUT_TYPE = /\btype=["'{]*["'`](checkbox|radio|range|color|file|button|submit|reset|image|hidden)["'`]/;
+
+/** 포커스 때 써도 되는 값. 테두리 · 링을 없애는 값만 허용한다. */
+const SAFE_FOCUS_VALUE = /^(none|0|0px|transparent|inherit|initial|unset|revert|revert-layer)$/;
+const FOCUS_BORDER_PROPERTY = /^(border(-(top|right|bottom|left|block|inline)(-(start|end))?)?(-(color|style|width))?|outline(-(color|style|width))?|box-shadow)$/;
+
+/** 집계에 쓰는 CSS 파일. 다른 검사가 쓰는 `cssFiles`와 따로 둔다 — 전역 CSS는 팔레트 정의를 담고 있다. */
+const allCssFiles = globSync("**/*.css", { cwd: SRC }).map((f) => join(SRC, f));
+
+/** `input` · `textarea`와 이름이 `Input` · `Textarea`로 끝나는 컴포넌트의 여는 태그. `=>`의 `>`에서 끊기지 않는다. */
+const TEXT_TAG = /<(input|textarea|[A-Z][\w.]*(?:Input|Textarea))\b((?:=>|[^>])*?)\/?>/g;
+
+function textInputTags(source: string) {
+  return [...source.matchAll(TEXT_TAG)]
+    .map((match) => match[2] ?? "")
+    .filter((body) => !NON_TEXT_INPUT_TYPE.test(body));
+}
+
+/** CSS 파일마다 텍스트 입력 칸에 붙은 모듈 클래스 이름. */
+function textInputClassesByCss() {
+  const byCss = new Map<string, Set<string>>();
+  for (const file of tsxFiles) {
+    const source = read(file);
+    const modules = new Map<string, string>();
+    for (const [, name = "", from = ""] of source.matchAll(
+      /import\s+(\w+)\s+from\s+["']([^"']+\.module\.css)["']/g,
+    )) {
+      const path = from.startsWith("@/") ? join(SRC, from.slice(2)) : join(file, "..", from);
+      modules.set(name, path);
+    }
+    for (const body of textInputTags(source)) {
+      for (const [, name = "", dotted, bracketed] of body.matchAll(
+        /\b(\w+)(?:\.(\w+)|\[["']([\w-]+)["']\])/g,
+      )) {
+        const css = modules.get(name);
+        const className = dotted ?? bracketed;
+        if (!css || !className) continue;
+        if (!byCss.has(css)) byCss.set(css, new Set());
+        byCss.get(css)?.add(className);
+      }
+    }
+  }
+  return byCss;
+}
+
+function focusBorderDeclaration(declarations: string) {
+  for (const declaration of declarations.split(";")) {
+    const [property = "", ...rest] = declaration.split(":");
+    const value = rest.join(":").replace(/!important/, "").trim();
+    if (!FOCUS_BORDER_PROPERTY.test(property.trim())) continue;
+    if (!SAFE_FOCUS_VALUE.test(value)) return `${property.trim()}: ${value}`;
+  }
+  return undefined;
+}
+
+describe("텍스트 입력 포커스", () => {
+  it("전역 포커스 링이 텍스트 입력을 뺀다", () => {
+    const css = stripComments(read(join(SRC, "styles", "global.css")));
+    const ring = css.match(/([^{}]+)\{[^{}]*box-shadow\s*:\s*var\(--ex-focus-ring\)/)?.[1];
+    expect(ring).toContain(":not(:where(");
+    expect(ring).toContain("input:not(");
+    expect(ring).toContain("textarea");
+    expect(ring).toContain("[contenteditable]");
+  });
+
+  it("CSS가 포커스 때 입력 칸의 테두리를 바꾸지 않는다", () => {
+    const classesByCss = textInputClassesByCss();
+    const found: string[] = [];
+    for (const file of allCssFiles) {
+      const textClasses = [...(classesByCss.get(file) ?? [])];
+      for (const [, selectors = "", declarations = ""] of stripComments(read(file)).matchAll(
+        /([^{}]+)\{([^{}]*)\}/g,
+      )) {
+        const entersText = selectors.split(",").some(
+          (selector) =>
+            !NON_TEXT_FOCUS_SELECTORS.some((name) => selector.includes(name)) &&
+            (/:focus(?!-visible)/.test(selector) ||
+              /(\b(input|textarea)\b|\[contenteditable|\[data-aui="input"\])[^,]*:focus-visible/.test(selector) ||
+              textClasses.some((name) =>
+                new RegExp(`\\.${name}(?![\\w-])[^,\\s]*:focus-visible`).test(selector),
+              )),
+        );
+        const declaration = entersText ? focusBorderDeclaration(declarations) : undefined;
+        if (declaration) found.push(`${label(file)}: ${selectors.trim()} → ${declaration}`);
+      }
+    }
+    expect(found).toEqual([]);
+  });
+
+  it("Tailwind 클래스가 포커스 때 입력 칸의 테두리를 바꾸지 않는다", () => {
+    const focusUtility = /(^|[\s"'`])([\w-]+:)*focus(-visible|-within)?:(border|ring|outline(?!-none))/;
+    const found: string[] = [];
+    for (const file of tsxFiles) {
+      const source = read(file);
+      if (textInputTags(source).some((body) => focusUtility.test(body))) found.push(label(file));
+      if (/focus-within:(border|ring|outline(?!-none))/.test(source)) found.push(label(file));
+    }
+    expect(found).toEqual([]);
+  });
+
+  it("검사가 텍스트 입력 칸을 찾는다", () => {
+    // 태그 검색이 깨지면 위 검사가 아무것도 보지 않고 통과한다.
+    const classes = textInputClassesByCss();
+    expect(classes.get(join(SRC, "app", "(app)", "brew", "new", "page.module.css"))).toContain("entryInput");
+    expect(focusBorderDeclaration("border: 1px solid var(--ex-accent)")).toBeDefined();
+    expect(focusBorderDeclaration("outline: auto")).toBeDefined();
+    expect(focusBorderDeclaration("outline: none; background: var(--ex-bg)")).toBeUndefined();
+  });
+});

@@ -4,7 +4,8 @@
 .head > i { color: var(--ex-accent-text); }
 .field { display: flex; flex-direction: column; gap: 4px; font-size: var(--ex-text-3xs); color: var(--ex-fg-muted); }
 .field input, .field select { width: 100%; min-width: 0; padding: 7px 9px; border: 1px solid var(--ex-border); border-radius: 8px; background: var(--ex-bg); color: var(--ex-fg); font: inherit; font-size: var(--ex-text-xs); }
-.field input:focus-visible, .field select:focus-visible { outline: none; border-color: var(--ex-accent-soft); }
+.field input:focus-visible { outline: none; }
+.field select:focus-visible { outline: none; border-color: var(--ex-accent-soft); }
 .card .body { min-height: 120px; background: var(--ex-bg); font-size: var(--ex-text-xs); line-height: var(--ex-leading-relaxed); }
 .sourceLabel { font-size: var(--ex-text-3xs); color: var(--ex-fg-muted); }
 .sources { list-style: none; margin: -4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
