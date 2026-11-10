@@ -8,6 +8,7 @@ import {
   pagePreviewDocument,
   partialFields,
   renderableHtml,
+  type PageStreamStage,
   type PageStyleGrammar,
 } from "@expresso/contracts";
 import { useRouter } from "next/navigation";
@@ -57,7 +58,7 @@ export function LivePreview({
   const [grammar, setGrammar] = useState<PageStyleGrammar | null>(null);
   const [live, setLive] = useState(false);
   /** 설계가 먼저 오는 생성의 단계. 청사진이 오기 전에는 `null`이다. */
-  const [phase, setPhase] = useState<"filling" | "filled" | "rendered" | "final" | null>(null);
+  const [phase, setPhase] = useState<keyof typeof PHASE_LABELS | null>(null);
   /** 청사진을 연 문서인가. 그러면 `delta`는 이어 쓰기가 아니라 완성본으로 바꿔 끼우는 것이다. */
   const blueprintOpen = useRef(false);
   /** 사람이 지면을 직접 움직였는가. 그 뒤로는 쓰이는 자리를 따라 내려가지 않는다. */
@@ -119,6 +120,8 @@ export function LivePreview({
       for (const slot of document_.querySelectorAll<HTMLElement>(`[data-slot="${CSS.escape(path)}"]`)) {
         if (revised) {
           revise(slot, text);
+          // 고친 칸이 화면 밖에서 바뀌면 지면이 멈춘 것으로 보인다. 사람이 움직이지 않았으면 그 자리로 옮긴다.
+          if (!userMoved.current) follow(document_, slot);
           continue;
         }
         const starting = slot.dataset.slotState === "empty";
@@ -238,13 +241,18 @@ export function LivePreview({
   );
 }
 
-/** 설계가 먼저 오는 생성에서 지금 일어나는 일. 청사진이 뜬 뒤로는 모델 호출이 채우기 하나뿐이다. */
-const PHASE_LABELS = {
+/**
+ * 설계가 먼저 오는 생성에서 지금 일어나는 일. 청사진이 뜬 뒤로는 모델 호출이 채우기 하나뿐이다. 글이 다 흐른 뒤
+ * (`drafted`)에는 쓴 내용을 기준과 맞춰 보고 걸린 칸을 고쳐 받는다 — 운영에서 이 구간이 2~12초였고, 그동안
+ * "채우는 중"이 떠 있으면 멈춘 것으로 보였다(2026-11-10). `designed`는 청사진(`filling`)으로 바로 넘어가 문구가 없다.
+ */
+export const PHASE_LABELS = {
   filling: "설계한 자리에 내용을 채우는 중",
+  drafted: "쓴 내용을 기준과 맞춰 보는 중",
   filled: "디자인을 입히는 중",
   rendered: "완성한 지면을 점검하는 중",
   final: "초안을 저장하는 중",
-} as const;
+} as const satisfies Record<Exclude<PageStreamStage, "designed"> | "filling" | "final", string>;
 
 /** 지면 CSS를 한 자리에 둔다. 올 때마다 통째로 갈아 끼운다. */
 function writeCss(document_: Document, css: string) {

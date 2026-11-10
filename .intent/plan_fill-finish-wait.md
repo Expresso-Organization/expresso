@@ -15,6 +15,7 @@ date: 2026-11-10
 | 파일 | 무엇을 |
 |---|---|
 | `services/backend/src/modules/page/design-first.ts` | 칸 선택화 · 빠진 칸 검사 · `withEmptyFills` · `drafted` 갈고리 |
+| `services/backend/src/modules/page/element-edit.ts` | 같은 스키마를 쓰는 기록 사례 쓰기(`writeSection`)도 `missingFills` · `withEmptySection`을 거침 |
 | `services/backend/src/modules/page/design-first.test.ts` | 고치기 호출 수 · 빠진 칸 검사 테스트 |
 | `services/backend/src/modules/page/structured-generator.ts` | `drafted` → `sink.stage("drafted")` |
 | `services/backend/src/platform/ai/fixes.ts` | `ai.fix_round`에 `kind` |

@@ -49,8 +49,11 @@ export const PageStreamFillSchema = z.strictObject({
   revised: z.boolean().default(false),
 });
 
-/** 설계가 먼저 오는 생성의 단계입니다. `filled` 뒤에는 모델 호출 없이 렌더와 측정만 남습니다. */
-export const PAGE_STREAM_STAGES = ["designed", "filled", "rendered"] as const;
+/**
+ * 설계가 먼저 오는 생성의 단계입니다. `drafted`는 채우기 글이 다 흐르고 계약을 지난 때로, 그 뒤에는 업무 규칙 검사와
+ * 걸린 칸 고치기가 남습니다. `filled` 뒤에는 모델 호출 없이 렌더와 측정만 남습니다.
+ */
+export const PAGE_STREAM_STAGES = ["designed", "drafted", "filled", "rendered"] as const;
 export type PageStreamStage = (typeof PAGE_STREAM_STAGES)[number];
 export const PageStreamStageSchema = z.strictObject({
   name: z.enum(PAGE_STREAM_STAGES),
