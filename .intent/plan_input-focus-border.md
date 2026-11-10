@@ -24,7 +24,7 @@ date: 2026-11-07
 | `app/(app)/home/page.module.css` | `.searchBar` 포커스 규칙과 `transition` 제거 |
 | `app/(app)/jobs/page.module.css` | `.searchBar` 포커스 규칙과 `transition` 제거 |
 | `app/(app)/brew/[brewId]/design/DesignCatalog.module.css` | `.searchField` 포커스 규칙 제거 |
-| `app/(app)/brew/new/page.module.css` | `.input` · `.textarea` 테두리 제거, `.searchInput:focus` 삭제 |
+| `app/(app)/brew/new/page.module.css` | `.entrySearch:focus-within` · `transition` 삭제, `.input` · `.textarea` 테두리 제거, `.searchInput:focus` 삭제 |
 | `app/(auth)/auth.module.css` | `.input:focus` 제거 |
 | `features/career-editor/views/views.module.css` | 입력 칸 포커스 규칙 제거 |
 | `features/career-editor/properties/properties.module.css` | 입력 칸 포커스 규칙 제거 |

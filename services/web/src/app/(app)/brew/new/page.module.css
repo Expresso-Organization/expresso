@@ -35,12 +35,6 @@
   border: 1px solid var(--ex-border-firm);
   border-radius: 11px;
   background: var(--ex-bg);
-  transition: border-color var(--ex-motion-instant), box-shadow var(--ex-motion-instant);
-}
-
-.entrySearch:focus-within {
-  border-color: var(--ex-accent);
-  box-shadow: var(--ex-focus-ring);
 }
 
 .entryInput {
