@@ -42,6 +42,7 @@ const runtimeConfigSchema = z.object({
    * `claude-code`와 `codex`는 **개발 전용**이다. 이 머신에 로그인된 CLI로 부르고,
    * CI·컨테이너에서는 별도 인증 없이는 동작하지 않는다.
    */
+  SEARCH_INDEX_MAINTENANCE_ENABLED: z.enum(["0", "1"]).default("0"),
   SEARCH_EMBEDDING_URL: z.string().url().optional(),
   SEARCH_EMBEDDING_MODEL: z.string().min(1).optional(),
   SEARCH_EMBEDDING_API_KEY: z.string().min(1).optional(),
@@ -50,6 +51,11 @@ const runtimeConfigSchema = z.object({
   AGENT_CREDENTIAL_ENCRYPTION_KEY: z.string().regex(/^[a-fA-F0-9]{64}$/).optional(),
   AGENT_CHAT_PROVIDER: z.enum(["anthropic", "codex"]).default("anthropic"),
   AGENT_CHAT_ENABLED: z.enum(["0", "1"]).default("0"),
+  AGENT_CHAT_MAX_TOOLS: z.coerce.number().int().min(1).max(30).default(16),
+  AGENT_CHAT_MAX_MODELS: z.coerce.number().int().min(1).max(16).default(11),
+  AGENT_CHAT_MAX_INPUT_CHARS: z.coerce.number().int().min(1000).max(4_000_000).default(1_000_000),
+  AGENT_CHAT_MAX_COST_USD: z.coerce.number().positive().max(10).default(1),
+  AGENT_CHAT_MAX_SDK_TURNS: z.coerce.number().int().min(1).max(16).default(8),
   AGENT_CHAT_MODEL: z.literal("sonnet").default("sonnet"),
   AGENT_CHAT_DEVELOPER_USER_IDS: z.string().default("").refine(value => value.split(",").map(item => item.trim()).filter(Boolean).every(item => z.uuid().safeParse(item).success), "개발 멤버 ID는 UUID여야 합니다."),
   /**
@@ -139,9 +145,11 @@ const runtimeConfigSchema = z.object({
 }).refine((value) => value.NODE_ENV !== "production" || !value.CAREER_AI_DETERMINISTIC_TEST, { message: "CAREER_AI_DETERMINISTIC_TEST is forbidden in production", path: ["CAREER_AI_DETERMINISTIC_TEST"] });
 
 export interface RuntimeConfig {
+  searchIndexMaintenanceEnabled?: boolean;
   searchEmbeddingUrl?: string;
   searchEmbeddingModel?: string;
   searchEmbeddingApiKey?: string;
+  agentExecutionLimits?: import("@expresso/contracts").AgentExecutionLimits;
   agentChatProvider?: "anthropic" | "codex";
   nodeEnv: z.infer<typeof runtimeConfigSchema>["NODE_ENV"];
   host: string;
@@ -227,6 +235,7 @@ export function loadRuntimeConfig(
     ...(result.SEARCH_EMBEDDING_MODEL ? { searchEmbeddingModel: result.SEARCH_EMBEDDING_MODEL } : {}),
     ...(result.SEARCH_EMBEDDING_API_KEY ? { searchEmbeddingApiKey: result.SEARCH_EMBEDDING_API_KEY } : {}),
     nodeEnv: result.NODE_ENV,
+    searchIndexMaintenanceEnabled: result.SEARCH_INDEX_MAINTENANCE_ENABLED === "1",
     host: result.HOST,
     port: result.PORT,
     logLevel: result.LOG_LEVEL,
@@ -251,6 +260,7 @@ export function loadRuntimeConfig(
     agentChatProvider: result.AGENT_CHAT_PROVIDER,
     agentChatEnabled: result.AGENT_CHAT_ENABLED === "1",
     agentChatModel: result.AGENT_CHAT_MODEL,
+    agentExecutionLimits: { maxToolCalls: result.AGENT_CHAT_MAX_TOOLS, maxModelCalls: result.AGENT_CHAT_MAX_MODELS, maxInputChars: result.AGENT_CHAT_MAX_INPUT_CHARS, maxCostUsd: result.AGENT_CHAT_MAX_COST_USD, maxSdkTurns: result.AGENT_CHAT_MAX_SDK_TURNS },
     agentChatDeveloperUserIds: result.AGENT_CHAT_DEVELOPER_USER_IDS.split(",").map(value => value.trim().toLowerCase()).filter(Boolean),
     aiProvider: result.AI_PROVIDER,
     pageGenerationFormat: result.PAGE_GENERATION_FORMAT,

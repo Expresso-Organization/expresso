@@ -1,3 +1,4 @@
+import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { readCoaching } from "../career-coaching/index.js";
 import {
   EvidenceSearchInputSchema, EvidenceSearchResultSchema, SemanticJobInputSchema,
@@ -44,6 +45,60 @@ export class EvidenceSearchService {
   search(userId: string, input: EvidenceSearchInput) { return this.exclusive(userId, () => this.searchNow(userId, input)); }
   searchJobs(userId: string, input: SemanticJobInput) { return this.exclusive(userId, () => this.searchJobsNow(userId, input)); }
   sync(userId: string) { return this.exclusive(userId, () => this.syncNow(userId)); }
+  private async reconcile(userId: string, source: Snapshot) {
+    await this.cache(userId, source, false, { left: 0 });
+    await inTransaction(this.db, async tx => {
+      await requireActiveUser(tx, userId);
+      await assertActiveRecordsForWrite(tx, userId, [source.id]);
+      const current = await mongoCollections(tx.db).careerRecords.findOne({ _id: source.id, userId, deletedAt: null }, { session: tx.session });
+      if (current?.version !== source.version || (current?.documentVersion ?? null) !== source.documentVersion) return;
+      await tx.db.collection("career_evidence_index").deleteMany({ userId, recordId: source.id, fingerprint: { $ne: source.fingerprint } }, { session: tx.session });
+    });
+  }
+  async syncRecord(userId: string, recordId: string) {
+    await this.active(userId);
+    try { await this.reconcile(userId, await this.snapshot(userId, recordId)); return { indexed: 1 }; }
+    catch (error) {
+      if (!(error && typeof error === "object" && "statusCode" in error && error.statusCode === 404)) throw error;
+      await this.index.deleteMany({ userId, recordId });
+      return { indexed: 0 };
+    }
+  }
+  async requestSync(userId: string, requestId: string, recordId?: string) {
+    await inTransaction(this.db, async tx => {
+      await requireActiveUser(tx, userId);
+      await addMongoOutboxEvent(tx, { userId, topic: recordId ? "career.evidence.record" : "career.evidence.reindex",
+        payload: { userId, ...(recordId ? { recordId } : {}) }, idempotencyKey: `evidence:${userId}:${requestId}` });
+    });
+    return { queued: true as const, requestId };
+  }
+  async health(userId: string) {
+    return this.exclusive(userId, async () => {
+      await this.active(userId);
+      const { snapshots, complete } = await this.snapshots(userId);
+      const rows = await this.index.find({ userId }).project<{ recordId: string; fingerprint: string }>({ recordId: 1, fingerprint: 1 }).limit(20_001).toArray();
+      const current = new Map(snapshots.map(s => [s.id, s.fingerprint]));
+      const indexed = snapshots.filter(s => rows.some(row => row.recordId === s.id && row.fingerprint === s.fingerprint)).length;
+      // 잘린 스캔에서 보이지 않는 기록을 고아로 오인하지 않습니다.
+      const orphaned = complete ? rows.filter(row => !current.has(row.recordId)).length : 0;
+      await this.active(userId);
+      return { scanned: snapshots.length, indexed, missing: snapshots.length - indexed,
+        stale: rows.filter(row => current.has(row.recordId) && current.get(row.recordId) !== row.fingerprint).length,
+        orphaned, complete: complete && rows.length <= 20_000 };
+    });
+  }
+  private maintenanceCursor = "";
+  /** 운영 워커만 호출합니다. 누락된 이벤트·만료 색인을 한 번에 25개씩 복구 큐로 전달합니다. */
+  async scheduleMaintenanceBatch() {
+    const rows = await mongoCollections(this.db.db).careerRecords.find({ deletedAt: null, _id: { $gt: this.maintenanceCursor } })
+      .sort({ _id: 1 }).limit(25).project<{ _id: string; userId: string; version: number; documentVersion?: number }>({ _id: 1, userId: 1, version: 1, documentVersion: 1 }).toArray();
+    if (!rows.length) { this.maintenanceCursor = ""; return; }
+    for (const row of rows) {
+      try { await this.requestSync(row.userId, `repair-${new Date().toISOString().slice(0, 10)}-${row._id}-${row.version}-${row.documentVersion ?? 0}`, row._id); }
+      catch (error) { if (!(error && typeof error === "object" && "statusCode" in error && error.statusCode === 401)) throw error; }
+      this.maintenanceCursor = row._id;
+    }
+  }
   private get index() { return this.db.db.collection<EvidenceIndexDoc>("career_evidence_index"); }
   private async active(userId: string) { await inTransaction(this.db, tx => requireActiveUser(tx, userId)); }
   private async allowEmbedding(userId: string, career: boolean) {
@@ -113,11 +168,8 @@ export class EvidenceSearchService {
   private async syncNow(userId: string) {
     await this.active(userId);
     const { snapshots, complete } = await this.snapshots(userId);
-    await inTransaction(this.db, async tx => {
-      await requireActiveUser(tx, userId);
-      await tx.db.collection("career_evidence_index").deleteMany({ userId }, { session: tx.session });
-    });
-    for (const source of snapshots) await this.cache(userId, source, false, { left: 0 });
+    // 기존 색인을 먼저 지우지 않습니다. 재시도 중에도 현재 버전의 벡터를 유지합니다.
+    for (const source of snapshots) await this.reconcile(userId, source);
     const live = await mongoCollections(this.db.db).careerRecords.find({ userId, deletedAt: null }).project<{ _id: string }>({ _id: 1 }).toArray();
     await this.index.deleteMany({ userId, recordId: { $nin: live.map(x => x._id) } });
     return { indexed: snapshots.length, complete };

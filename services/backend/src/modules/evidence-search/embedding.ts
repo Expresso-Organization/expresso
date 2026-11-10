@@ -1,3 +1,4 @@
+import { redactEmbeddingText } from "./redact.js";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 
@@ -9,7 +10,7 @@ export class HttpSearchEmbedding implements SearchEmbedding {
   constructor(private readonly url: string, private readonly model: string, private readonly apiKey?: string) {
     const target = new URL(url);
     if (!["http:", "https:"].includes(target.protocol) || target.username || target.password) throw new Error("임베딩 URL 설정을 확인하세요.");
-    this.key = createHash("sha256").update(JSON.stringify([url, model])).digest("hex");
+    this.key = createHash("sha256").update(JSON.stringify([url, model, "redaction-v1"])).digest("hex");
   }
   async embed(texts: string[]) {
     const vectors: number[][] = [];
@@ -18,7 +19,7 @@ export class HttpSearchEmbedding implements SearchEmbedding {
       const response = await fetch(this.url, {
         method: "POST", redirect: "error", signal: AbortSignal.timeout(20_000),
         headers: { "content-type": "application/json", ...(this.apiKey ? { authorization: `Bearer ${this.apiKey}` } : {}) },
-        body: JSON.stringify({ model: this.model, input: batch }),
+        body: JSON.stringify({ model: this.model, input: batch.map(redactEmbeddingText) }),
       });
       if (!response.ok) throw new Error("검색 임베딩 서버가 응답하지 않았습니다.");
       const parsed = Response.parse(await response.json());

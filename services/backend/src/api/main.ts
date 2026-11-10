@@ -163,7 +163,7 @@ careerService.setExternalBodyListener((userId, recordId) => careerDocumentServic
 interviewService.setExternalBodyListener((userId, recordId) => careerDocumentService.syncExternalBody(userId, recordId));
 const evidenceSearchService = new EvidenceSearchService(database, careerService, careerDocumentService, jobBoardService, consentService,
   config.searchEmbeddingUrl && config.searchEmbeddingModel ? new HttpSearchEmbedding(config.searchEmbeddingUrl, config.searchEmbeddingModel, config.searchEmbeddingApiKey) : null);
-const agentChatService = new AgentChatService(database, createAgentRuntime(config, ai, aiUsage), careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(database, config.agentCredentialEncryptionKey), portfolioReadService, pageService, config.agentChatProvider ?? "anthropic", evidenceSearchService);
+const agentChatService = new AgentChatService(database, createAgentRuntime(config, ai, aiUsage), careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(database, config.agentCredentialEncryptionKey), portfolioReadService, pageService, config.agentChatProvider ?? "anthropic", evidenceSearchService, config.agentExecutionLimits);
 const careerWorkflowService = new CareerWorkflowService(database, agentChatService, careerService, jobBoardService, jobMarketService, materialsService, consentService, ai);
 const careerCoachingService = new CareerCoachingService(database, agentChatService, analyticsService);
 const adminService = new AdminService(database, { identity: identityService, career: careerService, consent: consentService });

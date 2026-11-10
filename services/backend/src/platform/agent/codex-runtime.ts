@@ -1,3 +1,4 @@
+import { AGENT_ANSWER_POLICY } from "./answer-policy.js";
 import { refreshRecentRecords } from "./fresh-records.js";
 import { readKey } from "./read-reuse.js";
 import { EvidenceSearchInputSchema, SemanticJobInputSchema } from "@expresso/contracts";
@@ -43,7 +44,8 @@ const OutputSchema = z.strictObject({
   answer: z.string().max(64_000),
   tool: z.strictObject({ name: ToolNameSchema, argumentsJson: z.string().max(100_000) }).nullable(),
 });
-const SYSTEM = [
+export const SYSTEM = [
+  AGENT_ANSWER_POLICY,
   "currentRecords는 이번 요청에서 재조회한 원문입니다. 과거 대화의 기록 설명보다 우선하세요. 과거 답변을 현재 원문처럼 인용하지 마세요. 현재 원문이 없으면 도구로 조회하고, 조회할 수 없으면 확인 불가로 답하세요.",
   "경력 근거 검색은 search_career_evidence, 공고 검색은 search_job_postings를 사용하세요. 결과의 출처·인용을 함께 제시하세요. complete=false이면 전체 검색으로 설명하지 마세요. 검색 결과의 초안 상태·가상 경험 표기를 보존하세요. 근거를 확정적으로 사용하기 전 read_career_records로 원문 문맥을 확인하세요. 의미 관련도는 실제 경험이나 지원 자격 충족의 증거가 아닙니다. 지역·경력 조건을 filters로 명시하거나 사용자에게 확인하세요.",
   "당신은 Expresso의 한국어 커리어 도우미입니다. 연결 자료와 사용자 발언만 근거로 답하세요.",
@@ -108,9 +110,11 @@ export class CodexAgentRuntime implements AgentRuntime {
         remainingToolCalls: MAX_TOOL_CALLS - turn,
       });
       if (prompt.length > MAX_PROMPT_CHARS) throw new Error("Codex agent context exceeds limit");
-      const { data } = await this.ai.complete({
+      await input.execution?.model(prompt.length);
+      const { data, usage } = await this.ai.complete({
         contract: "agent_chat_codex", promptVersion: 1, system: SYSTEM, prompt,
       }, repeatedReads >= 2 || turn === MAX_TOOL_CALLS ? FinalOutputSchema : OutputSchema, { userId: input.userId });
+      input.execution?.usage(usage.costUsd);
       // AiClient의 실행 중단을 가정하지 않습니다. 취소 후에는 도구와 결과를 반영하지 않습니다.
       check();
       if (data.action === "answer") {

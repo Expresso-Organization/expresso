@@ -68,3 +68,25 @@ describe.skipIf(!uri)("검색 색인 MongoDB 저장", () => {
     expect(indexes.find(x => x.name === "search_cache_expiry")?.expireAfterSeconds).toBe(0);
   }));
 });
+
+describe.skipIf(!uri)("P22 실제 색인 유지·복구", () => {
+ it("누락·낡은 색인을 탐지하고 재색인으로 복구한다", async () => fixture(async f => {
+  expect(await f.service.health(f.userId)).toMatchObject({ missing: 1, indexed: 0 });
+  await f.service.syncRecord(f.userId, f.recordId);
+  expect(await f.service.health(f.userId)).toMatchObject({ missing: 0, indexed: 1 });
+  await f.db.collection("career_records").updateOne({ _id: f.recordId } as never, { $set: { bodyMd: "현재 오류는 410이다.", documentVersion: 2 } });
+  expect(await f.service.health(f.userId)).toMatchObject({ stale: 1, missing: 1 });
+  await f.service.sync(f.userId);
+  expect(await f.service.health(f.userId)).toMatchObject({ stale: 0, missing: 0, indexed: 1 });
+ }));
+ it("동일 재색인 요청은 outbox 하나에만 저장한다", async () => fixture(async f => {
+  await f.db.collection("outbox_events").createIndex({ idempotencyKey: 1 }, { unique: true });
+  const requestId = randomUUID(); await f.service.requestSync(f.userId, requestId); await f.service.requestSync(f.userId, requestId);
+  expect(await f.db.collection("outbox_events").countDocuments({ userId: f.userId, topic: "career.evidence.reindex" })).toBe(1);
+ }));
+ it("삭제 계정의 복구 요청은 outbox에 넣지 않는다", async () => fixture(async f => {
+  await f.db.collection("users").updateOne({ _id: f.userId } as never, { $set: { deletionRequestedAt: new Date() } });
+  await expect(f.service.requestSync(f.userId, randomUUID())).rejects.toMatchObject({ statusCode: 401 });
+  expect(await f.db.collection("outbox_events").countDocuments({ userId: f.userId })).toBe(0);
+ }));
+});

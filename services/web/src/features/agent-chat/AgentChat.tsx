@@ -1,4 +1,5 @@
 "use client";
+import { toThreadMessage } from "./message-view";
 import CareerCoaching from "./CareerCoaching";
 import EvidenceSearch, { SearchResults } from "./EvidenceSearch";
 import CareerWorkflow from "./CareerWorkflow";
@@ -7,9 +8,9 @@ import Link from "next/link";
 import { LogoMark } from "@/components/brand/Logo";
 import { Icon } from "@/components/ui/Icon";
 import { useRouter } from "next/navigation";
-import { AssistantRuntimeProvider, useExternalStoreRuntime, useAui, useAuiState, type ThreadMessageLike, type ToolCallMessagePartComponent } from "@assistant-ui/react";
+import { AssistantRuntimeProvider, useExternalStoreRuntime, useAui, useAuiState, type ToolCallMessagePartComponent } from "@assistant-ui/react";
 import { AgentChatAccessSchema, AgentResourceDetailSchema } from "@expresso/contracts";
-import type { AgentContext, AgentMessage, AiEditProposalDetail, CareerDocumentBootstrap } from "@expresso/contracts";
+import type { AgentContext, AiEditProposalDetail, CareerDocumentBootstrap } from "@expresso/contracts";
 import { ResourcePreview, type PreviewResource } from "./ResourcePreview";
 import { RequirementReviewCard } from "./RequirementReviewCard";
 import { RecordDraftCard } from "./RecordDraftCard";
@@ -116,13 +117,6 @@ function Proposal({ proposal, beforeDocument, undone }: { proposal: AiEditPropos
     {proposal.status === "applied" && !undone ? <Button variant="outline" disabled={state.pending} onClick={() => void state.approve({ proposalId: proposal.proposalId, action: "undo", expectedDocumentVersion: proposal.appliedDocumentVersion! }).then(() => router.refresh())}>변경 되돌리기</Button> : null}
   </>;
 }
-const convertMessage = (message: AgentMessage): ThreadMessageLike => ({
-  id: message.id, role: message.role, createdAt: new Date(message.createdAt),
-  content: [
-    ...message.tools.map(tool => ({ type: "tool-call" as const, toolCallId: tool.id, toolName: tool.name, args: {}, argsText: "{}", ...(tool.status === "running" ? {} : { result: { summary: tool.summary }, isError: tool.status === "failed" }) })),
-    { type: "text", text: message.text },
-  ],
-});
 export function AgentChat({ job, standalone = false, onRunningChange, ...props }: {
   context?: AgentContext; contextLabel?: string; standalone?: boolean; job?: AgentChatJob;
   /** 응답 진행 여부가 바뀔 때. 레일이 접혀 있으면 머리의 채팅 버튼이 진행 표시를 그린다. */
@@ -162,7 +156,7 @@ export function AgentChat({ job, standalone = false, onRunningChange, ...props }
   const canSend = !!access?.enabled && !access.consentRequired && (access.serverCredentialAllowed || access.apiKeyConfigured);
   const running = state.conversation?.run?.status === "running";
   useEffect(() => { onRunningChange?.(running); }, [onRunningChange, running]);
-  const runtime = useExternalStoreRuntime({ messages: state.conversation?.messages ?? [], convertMessage, isRunning: running, isLoading: state.resolving || (!!state.id && !state.conversation), isDisabled: !!preview || !canSend || state.pending || state.resolving || (!!state.id && !state.conversation), onNew: async message => { const text = message.content.filter(part => part.type === "text").map(part => part.text).join("\n"); try { await state.send(text); } catch { runtime.thread.composer.setText(text); } }, onCancel: state.cancel });
+  const runtime = useExternalStoreRuntime({ messages: state.conversation?.messages ?? [], convertMessage: message => toThreadMessage(message, state.conversation?.run?.status === "cancelled" && message.id === state.conversation.messages.at(-1)?.id), isRunning: running, isLoading: state.resolving || (!!state.id && !state.conversation), isDisabled: !!preview || !canSend || state.pending || state.resolving || (!!state.id && !state.conversation), onNew: async message => { const text = message.content.filter(part => part.type === "text").map(part => part.text).join("\n"); try { await state.send(text); } catch { runtime.thread.composer.setText(text); } }, onCancel: state.cancel });
   const lastRun = state.conversation?.run;
   const canRetry = !!lastRun && ["failed", "interrupted", "cancelled"].includes(lastRun.status) && state.conversation?.messages.at(-1)?.role === "assistant";
   const retryButton = canRetry ? <Button variant="outline" size="sm" className={styles.retryButton} disabled={!canSend || state.pending} onClick={() => void state.retry()}><Icon name="arrow-clockwise" size={13} />다시 보내기</Button> : null;

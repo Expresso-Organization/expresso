@@ -39,3 +39,18 @@ it("임베딩 미설정은 의미 검색 성공으로 표시하지 않는다", a
  const f = fixture(); const result = await f.service.search(f.user, { query: "404", mode: "hybrid", limit: 8 });
  expect(result.meta.mode).toBe("keyword"); expect(result.meta.notices.join()).toContain("미설정");
 });
+
+it("재색인은 현재 원문의 기존 벡터를 지우지 않는다", async () => {
+ const embed = vi.fn(async (texts: string[]) => texts.map(() => [1, 0]));
+ const f = fixture({ key: "retained", embed });
+ await f.service.search(f.user, { query: "예외", mode: "hybrid", limit: 8 });
+ const vectorKeys = [...f.cache.entries()].filter(([, row]) => row.embeddingKey === "retained").map(([id]) => id);
+ await f.service.sync(f.user);
+ for (const id of vectorKeys) expect(f.cache.has(id)).toBe(true);
+ await f.service.search(f.user, { query: "검증", mode: "hybrid", limit: 8 });
+ expect(embed).toHaveBeenCalledTimes(3);
+});
+it("단일 기록 복구도 남의 원문을 색인하지 않는다", async () => {
+ const f = fixture(); await f.service.syncRecord(f.other, f.rows[0]!._id);
+ expect([...f.cache.values()].some(row => row.userId === f.other)).toBe(false);
+});

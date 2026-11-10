@@ -1,3 +1,5 @@
+import type { AgentExecutionControl } from "./execution-policy.js";
+import { AGENT_ANSWER_POLICY } from "./answer-policy.js";
 import { refreshRecentRecords } from "./fresh-records.js";
 import { createReadReuse, readKey } from "./read-reuse.js";
 import { EvidenceSearchInputSchema, SemanticJobInputSchema, type EvidenceSearchInput, type EvidenceSearchResult, type SemanticJobInput, type SemanticJobResult } from "@expresso/contracts";
@@ -17,6 +19,7 @@ export class AgentToolRejection extends Error { constructor(readonly issues: str
 export interface AgentInput {
   /** 사용량을 누구 몫으로 남길지. */
   userId: string;
+  execution?: AgentExecutionControl;
   search?: { career(input: EvidenceSearchInput): Promise<EvidenceSearchResult>; jobs(input: SemanticJobInput): Promise<SemanticJobResult> };
   apiKey?: string;
   messages: AgentMessage[];
@@ -56,7 +59,8 @@ export function conversationForModel(messages: AgentMessage[]) {
     ...(tool.gapReview ? { gapReview: { summary: tool.gapReview.summary, items: tool.gapReview.items.map((item, index) => ({ index, requirement: item.requirement, type: item.type, status: item.status, priority: item.priority, suggestedAction: item.suggestedAction })) } } : {}),
   })) } : {}) }));
 }
-const SYSTEM_PROMPT = [
+export const SYSTEM_PROMPT = [
+  AGENT_ANSWER_POLICY,
   "currentRecords는 이번 요청에서 재조회한 원문입니다. 과거 대화의 기록 설명보다 우선하세요. 과거 답변을 현재 원문처럼 인용하지 마세요. 현재 원문이 없으면 도구로 조회하고, 조회할 수 없으면 확인 불가로 답하세요.",
   "같은 입력으로 성공한 검색·본문 조회를 반복하지 마십시오. 원문 확인이 끝났으면 확보한 근거로 답변하고 미확인 사항을 구분하십시오.",
   "관련 경력 근거는 search_career_evidence, 공고 탐색은 search_job_postings를 사용하세요. 검색은 읽기만 하며 결과의 인용·출처를 표시하세요. complete=false이면 전체 검색으로 설명하지 마세요. 검색 결과의 초안 상태·가상 경험 표기를 보존하세요. 근거를 확정적으로 사용하기 전 read_career_records로 원문 문맥을 확인하세요. 의미 관련도는 실제 경험이나 지원 자격 충족의 증거가 아닙니다. 자연어 조건을 임의로 무시하지 말고 지역·경력 등 필수 조건은 filters로 명시하거나 사용자에게 확인하세요.",
@@ -203,15 +207,18 @@ export class ClaudeAgentRuntime implements AgentRuntime {
     ] });
     const isolatedHome = input.apiKey ? await mkdtemp(join(tmpdir(), "expresso-agent-")) : null;
     try {
-      const messages = query({ prompt: JSON.stringify({ conversation: conversationForModel(input.messages), context: input.context, preferences: input.preferences, currentRecords }), options: {
+      const prompt = JSON.stringify({ conversation: conversationForModel(input.messages), context: input.context, preferences: input.preferences, currentRecords });
+      await input.execution?.model(prompt.length);
+      const messages = query({ prompt, options: {
         model: "sonnet",
-        ...(isolatedHome ? { env: { PATH: process.env.PATH, HOME: isolatedHome, CLAUDE_CONFIG_DIR: isolatedHome, ANTHROPIC_API_KEY: input.apiKey } } : {}), abortController, persistSession: false, includePartialMessages: true, maxTurns: 8, maxBudgetUsd: 1,
+        ...(isolatedHome ? { env: { PATH: process.env.PATH, HOME: isolatedHome, CLAUDE_CONFIG_DIR: isolatedHome, ANTHROPIC_API_KEY: input.apiKey } } : {}), abortController, persistSession: false, includePartialMessages: true, maxTurns: Math.min(input.execution?.limits.maxSdkTurns ?? 8, input.execution?.limits.maxModelCalls ?? 8), maxBudgetUsd: input.execution?.limits.maxCostUsd ?? 1,
         tools: [], mcpServers: { expresso: server }, allowedTools: ["mcp__expresso__search_career_evidence", "mcp__expresso__search_job_postings","mcp__expresso__propose_record_edit", "mcp__expresso__list_career_records", "mcp__expresso__read_career_records", "mcp__expresso__record_requirement_review", "mcp__expresso__propose_new_record", "mcp__expresso__record_gap_review", "mcp__expresso__propose_preparation_plan", "mcp__expresso__read_preparation_plan", "mcp__expresso__propose_replan"], permissionMode: "dontAsk", settingSources: [], strictMcpConfig: true,
         systemPrompt: SYSTEM_PROMPT,
       } });
       for await (const message of messages) {
         if (input.signal.aborted) throw new Error("cancelled");
         if (message.type === "stream_event" && message.event.type === "content_block_delta" && message.event.delta.type === "text_delta") await input.emit({ type: "text", text: message.event.delta.text });
+        if (message.type === "result") input.execution?.usage(message.total_cost_usd ?? null);
         if (message.type === "result" && message.is_error) throw new Error("agent execution failed");
         if (message.type === "result" && this.usage) recordAgentUsage(this.usage, input.userId, message.modelUsage ?? {}, message.duration_ms ?? 0);
       }

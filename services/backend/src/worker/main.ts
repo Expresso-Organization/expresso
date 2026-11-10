@@ -1,3 +1,7 @@
+import { EvidenceSearchService } from "../modules/evidence-search/index.js";
+import { CareerService } from "../modules/career/index.js";
+import { JobBoardService } from "../modules/jobs/index.js";
+import { createEvidenceIndexProcessor } from "./processors/evidence-index.js";
 import { loadRuntimeConfig } from "../config/runtime-config.js";
 import { MongoOutboxDispatcher } from "../platform/mongo-outbox.js";
 import { createMongoResource } from "../platform/mongodb.js";
@@ -110,7 +114,8 @@ const careerJobs = createReliableQueue<Record<string, unknown>>(
   config.redisUrl,
   config.queuePrefix,
 );
-const queues = { [QUEUE_NAMES.domain]: jobs.queue, [QUEUE_NAMES.generation]: generationJobs.queue, [QUEUE_NAMES.refine]: refineJobs.queue, [QUEUE_NAMES.career]: careerJobs.queue };
+const searchJobs = createReliableQueue<Record<string, unknown>>(QUEUE_NAMES.search, config.redisUrl, config.queuePrefix);
+const queues = { [QUEUE_NAMES.search]: searchJobs.queue, [QUEUE_NAMES.domain]: jobs.queue, [QUEUE_NAMES.generation]: generationJobs.queue, [QUEUE_NAMES.refine]: refineJobs.queue, [QUEUE_NAMES.career]: careerJobs.queue };
 const queueFor = (name: string) => queues[queueNameFor(name)];
 const dispatcher = new MongoOutboxDispatcher({
   context: database,
@@ -192,7 +197,10 @@ const accountLifecycleService = new AccountLifecycleService(database);
 const careerDocumentService = new CareerDocumentService(database, config.assetSigningSecret);
 const careerPropertyMutationProcessor = createCareerPropertyMutationProcessor(new MongoCareerPropertySchemaService(database));
 const careerDocumentCompactionProcessor = createCareerDocumentCompactionProcessor(careerDocumentService);
-const careerDocumentProjectionProcessor = createCareerDocumentProjectionProcessor(careerDocumentService);
+const evidenceSearchService = new EvidenceSearchService(database, new CareerService(database), careerDocumentService, new JobBoardService(database), consentService);
+const evidenceIndexProcessor = createEvidenceIndexProcessor(evidenceSearchService);
+const careerDocumentProjectionProcessor = createCareerDocumentProjectionProcessor(careerDocumentService,
+  async (userId, recordId, jobId) => { await evidenceSearchService.requestSync(userId, `projection-${jobId}`, recordId); });
 const careerComputationProcessor = createCareerComputationProcessor(new MongoCareerComputationService(database));
 // 수집은 여기서만 돈다 — 바깥을 부르는 일은 요청 경로가 아니라 워커의 일이다.
 const jobIngestService = new JobIngestService(
@@ -215,6 +223,7 @@ const queueWorker = createQueueWorker<Record<string, unknown>, Record<string, un
   concurrency: workerConcurrency,
   onFatalError: stopOnFatal,
   processor: async (job) => {
+    if (job.name.startsWith("career.evidence.")) return evidenceIndexProcessor(job);
     if (job.name === "job.normalize") return analysisProcessor(job);
     if (job.name === "record.cleanup") return recordCleanupProcessor(job);
     if (job.name === "interview.draft") return brewJobProcessor(job);
@@ -241,6 +250,7 @@ const queueWorker = createQueueWorker<Record<string, unknown>, Record<string, un
 });
 
 const careerProcessor = async (job: Parameters<typeof careerDocumentCompactionProcessor>[0]): Promise<Record<string, unknown>> => {
+  if (job.name.startsWith("career.evidence.")) return evidenceIndexProcessor(job);
   if (job.name === "career.document.compact") return careerDocumentCompactionProcessor(job) as Promise<Record<string, unknown>>;
   if (job.name === "career.document.project") return careerDocumentProjectionProcessor(job) as Promise<Record<string, unknown>>;
   if (job.name === "career.computation") return careerComputationProcessor(job) as unknown as Promise<Record<string, unknown>>;
@@ -263,6 +273,14 @@ careerWorker.on("error", (error) => {
   console.error(JSON.stringify({ level: "error", message: "queue worker error", error: safeErrorSummary(error) }));
 });
 
+// 전체 재색인이 짧은 문서 투영·계산 작업을 막지 않도록 검색 전용 줄을 사용합니다.
+const searchWorker = createQueueWorker<Record<string, unknown>, Record<string, unknown>>({
+  queueName: QUEUE_NAMES.search, redisUrl: config.redisUrl, prefix: config.queuePrefix,
+  deadLetterQueue: searchJobs.deadLetterQueue, concurrency: 1, onFatalError: stopOnFatal,
+  processor: evidenceIndexProcessor,
+  onDeadLetterError(error) { console.error(JSON.stringify({ level: "error", event: "evidence.dead_letter_failed", error: safeErrorSummary(error) })); },
+});
+searchWorker.on("error", error => console.error(JSON.stringify({ level: "error", event: "evidence.worker_error", error: safeErrorSummary(error) })));
 const generationWorker = createQueueWorker<Record<string, unknown>, Record<string, unknown>>({
   queueName: QUEUE_NAMES.generation,
   redisUrl: config.redisUrl,
@@ -324,10 +342,15 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
   });
 }
 
+let nextIndexMaintenanceAt = 0;
 await runPollLoop({
   intervalMs: config.outboxPollIntervalMs,
   signal: abortController.signal,
   async poll() {
+    if (config.searchIndexMaintenanceEnabled && Date.now() >= nextIndexMaintenanceAt) {
+      await evidenceSearchService.scheduleMaintenanceBatch();
+      nextIndexMaintenanceAt = Date.now() + 30_000;
+    }
     if (config.scheduledJobsEnabled !== false) await schedulingService.scheduleDue();
     const result = await dispatcher.pollOnce();
     if (result.published || result.retried || result.deadLettered) {
@@ -349,4 +372,4 @@ await runPollLoop({
 });
 
 // fatal이면 처리 중인 잡을 기다리지 않습니다. 잠금이 만료되면 BullMQ의 stalled 처리가 다시 배달합니다.
-await Promise.allSettled([queueWorker.close(stoppingOnFatal), generationWorker.close(stoppingOnFatal), refineWorker.close(stoppingOnFatal), careerWorker.close(stoppingOnFatal), jobs.close(), generationJobs.close(), refineJobs.close(), careerJobs.close(), database.close(), pageMeasurer.close()]);
+await Promise.allSettled([queueWorker.close(stoppingOnFatal), generationWorker.close(stoppingOnFatal), refineWorker.close(stoppingOnFatal), careerWorker.close(stoppingOnFatal), searchWorker.close(stoppingOnFatal), searchJobs.close(), jobs.close(), generationJobs.close(), refineJobs.close(), careerJobs.close(), database.close(), pageMeasurer.close()]);

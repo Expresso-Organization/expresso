@@ -1,3 +1,6 @@
+import { finishAgentFailure } from "./run-failure.js";
+import { runAgentWithPolicy } from "../../platform/agent/execution-policy.js";
+import type { AgentExecutionLimits } from "@expresso/contracts";
 import { readCoaching, personalization } from "../career-coaching/index.js";
 import type { EvidenceSearchService } from "../evidence-search/index.js";
 import type { PortfolioReadApi } from "../portfolios/index.js";
@@ -30,7 +33,7 @@ const view = (row: AgentConversationDoc) => { const { _id, userId: _userId, hear
 export class AgentChatService {
   private readonly running = new Map<string, AbortController>();
   private readonly tasks = new Set<Promise<void>>();
-  constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord" | "listRecords" | "listCategories" | "createRecord">, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi, readonly credentials: AgentCredentials = new AgentCredentials(db), private readonly portfolios?: Pick<PortfolioReadApi, "get">, private readonly pages?: Pick<PageApi, "latest">, readonly provider: "anthropic" | "codex" = "anthropic", private readonly searchService?: EvidenceSearchService) {}
+  constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord" | "listRecords" | "listCategories" | "createRecord">, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi, readonly credentials: AgentCredentials = new AgentCredentials(db), private readonly portfolios?: Pick<PortfolioReadApi, "get">, private readonly pages?: Pick<PageApi, "latest">, readonly provider: "anthropic" | "codex" = "anthropic", private readonly searchService?: EvidenceSearchService, private readonly executionLimits?: Partial<AgentExecutionLimits>) {}
   private get plans() { return new PreparationPlans(this.db); }
   async consentRequired(userId: string) {
     const result = await this.consent.list(userId);
@@ -280,6 +283,8 @@ export class AgentChatService {
     if (!this.runtime) throw new AgentChatError(503, "에이전트가 아직 설정되지 않았습니다.");
     if (row.run?.status === "running") throw new AgentChatError(409, "응답이 끝나거나 취소된 뒤 보내 주세요.");
     await this.consent.require(userId, "partial_edit");
+    // 공고가 연결된 요청은 메시지·실행을 만들기 전에 필요한 동의를 안내합니다.
+    if (row.contexts.some(ref => ref.kind === "job")) await this.consent.require(userId, "job_analysis");
     const context = await this.context(userId, row.contexts);
     if (JSON.stringify(context).length > 120_000) throw new AgentChatError(422, "연결된 자료가 너무 큽니다. 자료를 나누어 새 대화를 시작해 주세요.");
     return context;
@@ -343,7 +348,7 @@ export class AgentChatService {
     const timeout = setTimeout(() => controller.abort(), 600_000);
     try {
       const preferences = personalization(await readCoaching(this.db, row.userId));
-      await this.runtime!.run({ preferences, userId: row.userId, messages: row.messages.slice(0, -1), context, ...(apiKey ? { apiKey } : {}), signal: controller.signal,
+      await runAgentWithPolicy(this.runtime!, { preferences, userId: row.userId, messages: row.messages.slice(0, -1), context, ...(apiKey ? { apiKey } : {}), signal: controller.signal,
         emit: async event => {
           if (controller.signal.aborted) throw new Error("cancelled");
           if (event.type === "text") { message.text += event.text; if (message.text.length > 64_000) throw new Error("response too large"); }
@@ -372,13 +377,21 @@ export class AgentChatService {
           beforeDocuments.set(proposal.proposalId, doc.document);
           return proposal;
         },
+      }, {
+        ...(this.executionLimits ? { limits: this.executionLimits } : {}),
+        authorize: async operation => {
+          // ConsentService.require는 같은 트랜잭션에서 활성 계정 guard도 검사합니다. 중복 쓰기를 만들지 않습니다.
+          await this.consent.require(row.userId, "partial_edit");
+          if (operation === "search_job_postings" || row.contexts.some(ref => ref.kind === "job")) await this.consent.require(row.userId, "job_analysis");
+        },
+        report: summary => console.info(JSON.stringify({ level: "info", runId, provider: this.provider, ...summary })),
       });
       if (controller.signal.aborted) throw new Error("cancelled");
       await flush();
       await this.rows.updateOne(filter, { $set: { "run.status": "complete" }, $inc: { version: 1 } });
-    } catch {
-      for (const tool of message.tools) if (tool.status === "running") { tool.status = "failed"; tool.summary = "실행이 중단되었습니다."; }
-      await this.rows.updateOne(filter, { $set: { [`messages.${row.messages.length - 1}`]: message, "run.status": controller.signal.aborted ? "interrupted" : "failed", "run.error": "응답을 완료하지 못했습니다. 설정을 확인하고 다시 보내 주세요." }, $inc: { version: 1 } });
+    } catch (error) {
+      const reason = finishAgentFailure(message, error);
+      await this.rows.updateOne(filter, { $set: { [`messages.${row.messages.length - 1}`]: message, "run.status": controller.signal.aborted ? "interrupted" : "failed", "run.error": reason }, $inc: { version: 1 } });
     } finally { clearInterval(timer); clearTimeout(timeout); if (this.running.get(row._id) === controller) this.running.delete(row._id); }
   }
   async cancel(userId: string, id: string) {
@@ -395,7 +408,8 @@ export class AgentChatService {
     if (foundTool?.undone) { if (input.action === "undo") return view(row); throw new AgentChatError(409, "되돌린 제안입니다. 새 제안을 요청해 주세요."); }
     const common = { recordId: found.recordId, proposalId: found.proposalId, expectedDocumentVersion: input.expectedDocumentVersion };
     if (input.action === "apply") await this.documents.applyAiProposal(userId, found.recordId, { ...common, commandIndexes: input.commandIndexes ?? found.commands.map((_, index) => index), propertyChangeIndexes: input.propertyChangeIndexes ?? found.propertyChanges.map((_, index) => index) });
-    else if (input.action === "reject") await this.documents.rejectAiProposal(userId, found.recordId, common);
+    // 거절 계약에는 버전 필드가 없습니다. 적용·되돌리기의 버전 검사는 유지합니다.
+    else if (input.action === "reject") await this.documents.rejectAiProposal(userId, found.recordId, { recordId: found.recordId, proposalId: found.proposalId });
     else await this.documents.undoAiProposal(userId, found.recordId, common);
     const proposal = await this.documents.getAiProposal(userId, found.recordId, found.proposalId);
     await this.rows.updateOne({ _id: id, userId }, { $set: { "messages.$[].tools.$[tool].proposal": proposal, ...(input.action === "undo" ? { "messages.$[].tools.$[tool].undone": true } : {}) }, $inc: { version: 1 } }, { arrayFilters: [{ "tool.proposal.proposalId": input.proposalId }] });
