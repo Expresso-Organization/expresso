@@ -22,7 +22,7 @@ export function CareerBrowser({ category, records, page, views, viewId, search, 
   const [trashOpen, setTrashOpen] = useState(false);
   return <>
     <DocumentHeader
-      crumbs={[{ label: "내 커리어", href: "/career/experience" as Route }, category.name]}
+      crumbs={[{ label: "내 커리어", href: "/career" as Route }, category.name]}
       actions={<>
         {category.archivedAt !== null ? <span className={styles.archivedBadge}><Icon name="archive" size={11} />보관됨</span> : null}
         <span style={{ fontSize: "var(--ex-text-2xs)", color: "var(--ex-fg-muted)" }}>{editedLabel}</span>
