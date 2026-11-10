@@ -7,7 +7,7 @@ import type { ReactNode } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { CONSENT_COPY, CONSENT_SETTINGS_HREF } from "@/lib/consent-copy";
 
-import { useRefreshWhile } from "./use-refresh-while";
+import { useRefreshOnJobChange } from "./use-refresh-on-job-change";
 import styles from "./Waiting.module.css";
 
 /**
@@ -43,7 +43,8 @@ export function Waiting({
 }) {
   const running = job?.status === "queued" || job?.status === "running";
   const failed = job?.status === "failed";
-  useRefreshWhile(running);
+  // 도는 동안만 듣는다. 끝나거나 바뀌는 순간 화면을 다시 읽는다.
+  useRefreshOnJobChange(running ? job : null);
   // 동의가 꺼져 실패했으면 어느 동의인지 말하고 그 자리로 보낸다.
   const consent = job?.failure?.code === "CONSENT_REQUIRED" ? job.failure.requiredConsent : null;
 

@@ -7,7 +7,7 @@
 
 .card {
   border: 1px dashed var(--ex-border-firm);
-  border-radius: 14px;
+  border-radius: var(--ex-radius-card);
   background: var(--ex-bg-hover);
   padding: 34px;
   display: flex;

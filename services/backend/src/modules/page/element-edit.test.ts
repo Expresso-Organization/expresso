@@ -10,7 +10,9 @@ import { ScriptedAiClient } from "../../platform/ai/scripted-client.js";
 import {
   PageElementEditor,
   applyElementEdit,
+  checkElementEdit,
   elementChanges,
+  elementGuide,
   elementTextPaths,
   markdownToText,
   recordInsertIndex,
@@ -94,29 +96,46 @@ describe("요소 하나 고치기", () => {
   });
 });
 
-describe("요소 지시 AI", () => {
-  it("근거 없는 숫자를 쓴 칸만 같은 대화에서 고쳐 받는다", async () => {
-    const ai = new ScriptedAiClient(
-      () => ({ note: "요약을 줄였습니다.", text: [{ path: "/sections/a/summary", value: "배치를 99분 줄였습니다" }] }),
-      (_request, paths) => paths.map((path) => ({ path, value: "배치를 24분으로 줄였습니다" })),
-    );
-    const result = await new PageElementEditor(ai).instruct({ userId: "u1", snapshot, key: "section-a", instruction: "요약을 짧게", design });
-    expect(ai.calls).toHaveLength(1);
-    expect(ai.calls[0]!.contract).toBe("partial_edit");
-    expect(ai.fixRequests.map((request) => request.paths)).toEqual([["/text/0/value"]]);
-    expect(result.edit.text).toEqual([{ path: "/sections/a/summary", value: "배치를 24분으로 줄였습니다" }]);
-    expect(result.note).toBe("요약을 줄였습니다.");
+describe("에이전트의 요소 고침", () => {
+  it("읽을 설명에 선택지 · 글자 부분 · 고칠 수 있는 글 경로를 싣고, 이름은 빼고, 고칠 수 없는 요소는 null이다", () => {
+    const guide = elementGuide(snapshot, "section-a", design)!;
+    expect(guide).toMatchObject({ key: "section-a", type: "CaseEssay", title: "경로 재설계" });
+    expect(guide.options.find((option) => option.name === "scale")?.choices.map((choice) => choice.value)).toContain("lead");
+    expect(guide.parts.map((part) => part.part)).toContain("title");
+    expect(guide.text).toContainEqual({ path: "/sections/a/summary", label: "요약", value: "야간 배치를 24분으로 줄였습니다" });
+    expect(elementGuide(snapshot, "intro", design)!.text.map((row) => row.path)).not.toContain("/profile/name");
+    expect(elementGuide(snapshot, "page", design)).toBeNull();
+    expect(elementGuide(snapshot, "missing", design)).toBeNull();
   });
 
-  it("지면 규칙을 어긴 고침은 그 칸을 고쳐 받는다", async () => {
+  it("통과한 고침은 새 스냅샷과 바뀐 곳을 낸다", () => {
+    const result = checkElementEdit(snapshot, "section-a", { props: [{ name: "scale", value: "lead" }], style: [{ part: "title", color: "accent" }], text: [{ path: "/sections/a/summary", value: "배치를 24분으로" }] }, design);
+    expect(result.issues).toEqual([]);
+    if (!("snapshot" in result)) throw new Error("통과해야 합니다.");
+    expect(result.snapshot.content.sections[0]?.summary).toBe("배치를 24분으로");
+    expect(result.changes.map((row) => row.label)).toEqual(["크기", "제목 모양", "요약"]);
+  });
+
+  it("근거 없는 숫자 · 없는 선택지 · 남의 경로 · 이름은 저장하지 않고 고칠 방법과 허용 값을 돌려준다", () => {
+    const { issues } = checkElementEdit(snapshot, "section-a", {
+      props: [{ name: "scale", value: "huge" }],
+      style: [{ part: "title", color: "neon", size: "giant" }],
+      text: [{ path: "/sections/a/summary", value: "배치를 99분 줄였습니다" }, { path: "/profile/name", value: "다른 이름" }],
+    }, design);
+    expect(issues).toEqual([
+      expect.stringContaining("고를 수 있는 값"),
+      expect.stringContaining("고를 수 있는 색"),
+      expect.stringContaining("고를 수 있는 단계"),
+      expect.stringContaining("출처에 없는 숫자"),
+      expect.stringContaining("고칠 수 있는 경로"),
+    ]);
+  });
+
+  it("지면 규칙을 어긴 고침과 바뀐 곳이 없는 고침도 문장으로 돌려준다", () => {
     // 인용을 비우면 큰 인용 요소가 그릴 글이 없어집니다.
-    const ai = new ScriptedAiClient(
-      () => ({ note: "인용을 지웠습니다.", text: [{ path: "/sections/a/quote", value: "" }] }),
-      () => [{ path: "/text", value: [{ path: "/sections/a/quote", value: "돌아가도 닿습니다." }] }],
-    );
-    const result = await new PageElementEditor(ai).instruct({ userId: "u1", snapshot, key: "quote-1", instruction: "인용 바꿔", design });
-    expect(ai.fixRequests).toHaveLength(1);
-    expect(result.edit.text).toEqual([{ path: "/sections/a/quote", value: "돌아가도 닿습니다." }]);
+    expect(checkElementEdit(snapshot, "quote-1", { text: [{ path: "/sections/a/quote", value: "" }] }, design).issues).toHaveLength(1);
+    expect(checkElementEdit(snapshot, "quote-1", { text: [{ path: "/sections/a/quote", value: "막히면 돌아갑니다." }] }, design).issues).toEqual([expect.stringContaining("바뀐 곳이 없습니다")]);
+    expect(checkElementEdit(snapshot, "page", {}, design).issues).toEqual([expect.stringContaining("outline")]);
   });
 });
 

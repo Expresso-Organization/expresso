@@ -13,7 +13,11 @@ import {
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
+import { REFRESH_MS, useRefreshWhile } from "../use-refresh-while";
 import styles from "./LivePreview.module.css";
+
+/** 브라우저가 닫아 버린 스트림을 다시 여는 간격. 서버 상태를 다시 읽는 간격과 같다. */
+const RECONNECT_MS = REFRESH_MS;
 
 /**
  * 만들어지는 지면을 그 자리에서 보여준다.
@@ -38,6 +42,9 @@ import styles from "./LivePreview.module.css";
  * 한 번 오고, 이후 `fill`은 그 문서의 글 자리(`data-slot`) 글만 바꾼다. 블록의 글 자리가 다 차면 그 블록에
  * 디자인이 입혀진다(CSS만으로, `BLUEPRINT_CSS`). 완성본은 `delta`로 오고, 문서를 다시 열지 않고 본문만 바꾼다 —
  * 서체를 다시 받지 않고 읽던 자리도 그대로다.
+ *
+ * **연결이 끊겨도 다음 단계로 간다.** 브라우저가 스트림을 닫아 버리면 다시 열고, 완성 · 실패를 받은 뒤에는 서버가
+ * 이 화면을 떠나 보낼 때까지 다시 읽는다. 이 화면이 다음 단계를 아는 길은 이 스트림 하나뿐이다.
  */
 export function LivePreview({
   jobId,
@@ -65,9 +72,18 @@ export function LivePreview({
   const grammarRef = useRef<PageStyleGrammar | null>(null);
   const titleRef = useRef(title);
   titleRef.current = title;
+  /** 스트림이 완성 · 실패를 알렸는가. 그 뒤로는 서버가 이 화면을 떠나 보낼 때까지 다시 읽는다. */
+  const [ended, setEnded] = useState(false);
+  useRefreshWhile(ended);
 
   useEffect(() => {
-    const source = new EventSource(`/api/generation-jobs/${jobId}/page-stream`);
+    // 완성 · 실패를 받은 뒤에는 다시 열지 않는다. 남은 일은 서버 상태를 다시 읽는 것뿐이다.
+    if (ended) return;
+    /** 지금 연 연결. 브라우저가 닫아 버리면 새로 열어 바꾼다. */
+    let connection: EventSource | null = null;
+    let retry = 0;
+    /** 완성 · 실패를 받았거나 화면이 떠났다. 더는 다시 열지 않는다. */
+    let finished = false;
 
     const restart = () => {
       // 끊겼다 다시 붙으면 서버가 처음부터 다시 보낸다. 받는 쪽도 처음으로.
@@ -80,84 +96,112 @@ export function LivePreview({
       setPhase(null);
     };
 
-    source.addEventListener("open", restart);
-    source.addEventListener("begin", (event) => {
-      // `style`은 문법을 JSON으로 적은 **글자**다. 문법이 없으면 `"null"`이 온다.
-      const { style } = JSON.parse((event as MessageEvent<string>).data) as { style: string };
-      const parsed = PageStyleGrammarSchema.safeParse(JSON.parse(style));
-      setGrammar(parsed.success ? parsed.data : null);
-      grammarRef.current = parsed.success ? parsed.data : null;
-    });
-    source.addEventListener("blueprint", (event) => {
-      const page = PageStreamBlueprintSchema.safeParse(JSON.parse((event as MessageEvent<string>).data));
-      const document_ = frame.current?.contentDocument;
-      if (!page.success || !document_) return;
-      const shell = pagePreviewDocument({
-        html: "",
-        css: "",
-        title: titleRef.current,
-        ...(grammarRef.current ? { grammar: grammarRef.current } : {}),
-      });
-      document_.open();
-      document_.write(`${shell.slice(0, shell.indexOf("<body>"))}<body>${page.data.html}`);
-      document_.close();
-      writeCss(document_, page.data.css);
-      document_.documentElement.dataset.stage = "blueprint";
-      for (const name of ["wheel", "touchstart", "keydown"])
-        document_.addEventListener(name, () => { userMoved.current = true; }, { passive: true });
-      blueprintOpen.current = true;
-      setPhase("filling");
-      setLive(true);
-    });
-    source.addEventListener("fill", (event) => {
-      const fill = PageStreamFillSchema.safeParse(JSON.parse((event as MessageEvent<string>).data));
-      const document_ = frame.current?.contentDocument;
-      if (!fill.success || !document_ || !blueprintOpen.current) return;
-      const { path, text, done, revised } = fill.data;
-      // 아직 한 글자도 안 왔으면 자리 표시를 그대로 둔다.
-      if (!text && !done) return;
-      for (const slot of document_.querySelectorAll<HTMLElement>(`[data-slot="${CSS.escape(path)}"]`)) {
-        if (revised) {
-          revise(slot, text);
-          continue;
-        }
-        const starting = slot.dataset.slotState === "empty";
-        slot.textContent = text;
-        // 공급자가 출력을 처음부터 다시 쓰면 다 쓴 칸에도 글이 다시 온다. 그 칸은 글만 바꾸고 끝난 상태로 둔다 —
-        // 되돌리면 디자인을 입은 블록이 다시 청사진으로 깜빡인다.
-        if (slot.dataset.slotState !== "done") slot.dataset.slotState = done ? "done" : "writing";
-        if (starting && !userMoved.current) follow(document_, slot);
-      }
-    });
-    source.addEventListener("stage", (event) => {
-      const stage_ = PageStreamStageSchema.safeParse(JSON.parse((event as MessageEvent<string>).data));
-      const document_ = frame.current?.contentDocument;
-      if (!stage_.success || !document_ || !blueprintOpen.current) return;
-      if (stage_.data.name === "designed") return;
-      // 다 채웠다. 모델이 비워 둔 칸의 자리 표시를 걷어 남은 블록에도 디자인을 입힌다.
-      for (const slot of document_.querySelectorAll<HTMLElement>('[data-slot-state]:not([data-slot-state="done"])')) {
-        if (slot.dataset.slotState === "empty") slot.textContent = "";
-        slot.dataset.slotState = "done";
-      }
-      setPhase(stage_.data.name);
-    });
-    source.addEventListener("delta", (event) => {
-      const { text } = JSON.parse((event as MessageEvent<string>).data) as { text: string };
-      setBuffer((current) => current + text);
-      setLive(true);
-    });
-    source.addEventListener("done", () => {
-      source.close();
-      // 이제 진짜가 있다. 서버가 다시 그리면 이 화면은 사라진다.
+    /** 완성 · 실패. 연결을 닫고, 서버가 다듬기 · 실패 안내로 보낼 때까지 다시 읽는다(`ended`). */
+    const finish = () => {
+      finished = true;
+      connection?.close();
+      setEnded(true);
       router.refresh();
-    });
-    source.addEventListener("failed", () => {
-      source.close();
-      router.refresh();
-    });
+    };
 
-    return () => source.close();
-  }, [jobId, router]);
+    const connect = () => {
+      window.clearTimeout(retry);
+      connection?.close();
+      const source = new EventSource(`/api/generation-jobs/${jobId}/page-stream`);
+      connection = source;
+      source.addEventListener("open", restart);
+      source.addEventListener("begin", (event) => {
+        // `style`은 문법을 JSON으로 적은 **글자**다. 문법이 없으면 `"null"`이 온다.
+        const { style } = JSON.parse((event as MessageEvent<string>).data) as { style: string };
+        const parsed = PageStyleGrammarSchema.safeParse(JSON.parse(style));
+        setGrammar(parsed.success ? parsed.data : null);
+        grammarRef.current = parsed.success ? parsed.data : null;
+      });
+      source.addEventListener("blueprint", (event) => {
+        const page = PageStreamBlueprintSchema.safeParse(JSON.parse((event as MessageEvent<string>).data));
+        const document_ = frame.current?.contentDocument;
+        if (!page.success || !document_) return;
+        const shell = pagePreviewDocument({
+          html: "",
+          css: "",
+          title: titleRef.current,
+          ...(grammarRef.current ? { grammar: grammarRef.current } : {}),
+        });
+        document_.open();
+        document_.write(`${shell.slice(0, shell.indexOf("<body>"))}<body>${page.data.html}`);
+        document_.close();
+        writeCss(document_, page.data.css);
+        document_.documentElement.dataset.stage = "blueprint";
+        for (const name of ["wheel", "touchstart", "keydown"])
+          document_.addEventListener(name, () => { userMoved.current = true; }, { passive: true });
+        blueprintOpen.current = true;
+        setPhase("filling");
+        setLive(true);
+      });
+      source.addEventListener("fill", (event) => {
+        const fill = PageStreamFillSchema.safeParse(JSON.parse((event as MessageEvent<string>).data));
+        const document_ = frame.current?.contentDocument;
+        if (!fill.success || !document_ || !blueprintOpen.current) return;
+        const { path, text, done, revised } = fill.data;
+        // 아직 한 글자도 안 왔으면 자리 표시를 그대로 둔다.
+        if (!text && !done) return;
+        for (const slot of document_.querySelectorAll<HTMLElement>(`[data-slot="${CSS.escape(path)}"]`)) {
+          if (revised) {
+            revise(slot, text);
+            continue;
+          }
+          const starting = slot.dataset.slotState === "empty";
+          slot.textContent = text;
+          // 공급자가 출력을 처음부터 다시 쓰면 다 쓴 칸에도 글이 다시 온다. 그 칸은 글만 바꾸고 끝난 상태로 둔다 —
+          // 되돌리면 디자인을 입은 블록이 다시 청사진으로 깜빡인다.
+          if (slot.dataset.slotState !== "done") slot.dataset.slotState = done ? "done" : "writing";
+          if (starting && !userMoved.current) follow(document_, slot);
+        }
+      });
+      source.addEventListener("stage", (event) => {
+        const stage_ = PageStreamStageSchema.safeParse(JSON.parse((event as MessageEvent<string>).data));
+        const document_ = frame.current?.contentDocument;
+        if (!stage_.success || !document_ || !blueprintOpen.current) return;
+        if (stage_.data.name === "designed") return;
+        // 다 채웠다. 모델이 비워 둔 칸의 자리 표시를 걷어 남은 블록에도 디자인을 입힌다.
+        for (const slot of document_.querySelectorAll<HTMLElement>('[data-slot-state]:not([data-slot-state="done"])')) {
+          if (slot.dataset.slotState === "empty") slot.textContent = "";
+          slot.dataset.slotState = "done";
+        }
+        setPhase(stage_.data.name);
+      });
+      source.addEventListener("delta", (event) => {
+        const { text } = JSON.parse((event as MessageEvent<string>).data) as { text: string };
+        setBuffer((current) => current + text);
+        setLive(true);
+      });
+      // 이제 진짜가 있다. 워커는 스트림에 완성을 쓴 뒤 잡 상태를 바꾸므로, 다시 읽은 화면이 아직 생성 중일 수 있다.
+      source.addEventListener("done", finish);
+      source.addEventListener("failed", finish);
+      // 브라우저가 스스로 다시 붙는 중(`CONNECTING`)이면 맡긴다. 닫아 버렸을 때(`CLOSED`)만 우리가 다시 연다 —
+      // 그대로 두면 생성이 끝나도 아무 신호가 오지 않아 화면이 멈춘다(2026-11-10 운영, Safari).
+      source.onerror = () => {
+        if (finished || source.readyState !== EventSource.CLOSED) return;
+        window.clearTimeout(retry);
+        retry = window.setTimeout(connect, RECONNECT_MS);
+      };
+    };
+
+    /** 다른 앱 · 탭에서 돌아왔을 때 연결이 닫혀 있으면 기다리지 않고 다시 연다. */
+    const onVisible = () => {
+      if (document.visibilityState !== "visible" || finished || connection?.readyState !== EventSource.CLOSED) return;
+      connect();
+    };
+
+    connect();
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      finished = true;
+      window.clearTimeout(retry);
+      document.removeEventListener("visibilitychange", onVisible);
+      connection?.close();
+    };
+  }, [jobId, router, ended]);
 
   /*
    * 조각을 문서에 붙인다.

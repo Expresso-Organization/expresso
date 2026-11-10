@@ -5,7 +5,9 @@ import { createReliableQueue } from "../platform/queue.js";
 import { safeErrorSummary } from "../platform/observability.js";
 import { createQueueWorker } from "./create-queue-worker.js";
 import { QUEUE_NAMES, queueNameFor } from "./queue-routing.js";
+import { Wake, watchOutboxInserts } from "./outbox-wake.js";
 import { runPollLoop } from "./poll-loop.js";
+import { closeWorkerRuntime } from "./shutdown.js";
 import { JobAnalysisService } from "../modules/job-analysis/index.js";
 import { UnavailableRequirementExtractor } from "../modules/job-analysis/extractor.js";
 import { AiRequirementExtractor } from "../modules/job-analysis/ai-extractor.js";
@@ -168,6 +170,8 @@ const generationProcessor = createGenerationProcessor(
     ),
   } : null,
   engagementService,
+  // 멈추는 중에 끊긴 생성은 실패로 확정하지 않는다. 새 Worker가 다시 돌린다.
+  abortController.signal,
 );
 // 질문 생성 · 레시피 생성도 여기서 돈다. HTTP 요청은 잡만 만들고 바로 돌아간다.
 const brewJobService = new BrewJobService(database);
@@ -222,6 +226,7 @@ const queueWorker = createQueueWorker<Record<string, unknown>, Record<string, un
   deadLetterQueue: jobs.deadLetterQueue,
   concurrency: workerConcurrency,
   onFatalError: stopOnFatal,
+  stopping: abortController.signal,
   processor: async (job) => {
     if (job.name === "job.normalize") return analysisProcessor(job);
     if (job.name === "record.cleanup") return recordCleanupProcessor(job);
@@ -262,6 +267,7 @@ const careerWorker = createQueueWorker<Record<string, unknown>, Record<string, u
   deadLetterQueue: careerJobs.deadLetterQueue,
   concurrency: 4,
   onFatalError: stopOnFatal,
+  stopping: abortController.signal,
   processor: careerProcessor,
   onDeadLetterError(error) {
     console.error(JSON.stringify({ level: "error", message: "failed to persist dead-letter job", error: safeErrorSummary(error) }));
@@ -278,6 +284,7 @@ const generationWorker = createQueueWorker<Record<string, unknown>, Record<strin
   deadLetterQueue: generationJobs.deadLetterQueue,
   concurrency: workerConcurrency,
   onFatalError: stopOnFatal,
+  stopping: abortController.signal,
   processor: (job) => generationProcessor(job),
   onDeadLetterError(error) {
     console.error(JSON.stringify({ level: "error", message: "failed to persist dead-letter job", error: safeErrorSummary(error) }));
@@ -295,6 +302,7 @@ const refineWorker = createQueueWorker<Record<string, unknown>, Record<string, u
   deadLetterQueue: refineJobs.deadLetterQueue,
   concurrency: workerConcurrency,
   onFatalError: stopOnFatal,
+  stopping: abortController.signal,
   processor: (job) => pageRefineProcessor(job),
   onDeadLetterError(error) {
     console.error(JSON.stringify({ level: "error", message: "failed to persist dead-letter job", error: safeErrorSummary(error) }));
@@ -323,6 +331,15 @@ console.info(
   }),
 );
 
+const queueWorkers = [queueWorker, generationWorker, refineWorker, careerWorker];
+/*
+ * 멈추기 시작하면 곧바로 새 잡 받기를 멈춘다. 폴링 한 주기를 기다리는 동안 이 프로세스가 잡을 받으면, 받자마자 끊긴다.
+ * `Worker.close`는 두 번 불러도 같은 약속을 돌려준다 — 아래 `closeWorkerRuntime`이 그 끝을 기다린다.
+ */
+abortController.signal.addEventListener("abort", () => {
+  for (const worker of queueWorkers) void worker.close(stoppingOnFatal).catch(() => undefined);
+}, { once: true });
+
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.once(signal, () => {
     console.info(
@@ -332,9 +349,21 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
   });
 }
 
+// 아웃박스 행이 커밋되면 1초 주기를 기다리지 않고 발행한다. 흐름이 끊기면 같은 간격으로 다시 열고,
+// 그동안 폴링은 그대로 돈다 — 흐름의 오류가 폴링 루프를 멈추지 않는다.
+const outboxWake = new Wake();
+const outboxWatch = watchOutboxInserts(database.db, () => outboxWake.notify(), {
+  retryMs: config.outboxPollIntervalMs,
+  signal: abortController.signal,
+  onError(error) {
+    console.error(JSON.stringify({ level: "warn", message: "outbox change stream failed", error: safeErrorSummary(error) }));
+  },
+});
+
 await runPollLoop({
   intervalMs: config.outboxPollIntervalMs,
   signal: abortController.signal,
+  wake: outboxWake,
   async poll() {
     if (config.scheduledJobsEnabled !== false) await schedulingService.scheduleDue();
     const result = await dispatcher.pollOnce();
@@ -357,4 +386,9 @@ await runPollLoop({
 });
 
 // fatal이면 처리 중인 잡을 기다리지 않습니다. 잠금이 만료되면 BullMQ의 stalled 처리가 다시 배달합니다.
-await Promise.allSettled([queueWorker.close(stoppingOnFatal), generationWorker.close(stoppingOnFatal), refineWorker.close(stoppingOnFatal), careerWorker.close(stoppingOnFatal), jobs.close(), generationJobs.close(), refineJobs.close(), careerJobs.close(), database.close(), pageMeasurer.close()]);
+// 그 밖에는 처리 중인 잡이 결과를 쓰거나 큐로 돌아갈 때까지 기다린 뒤에 연결을 닫습니다.
+await closeWorkerRuntime({
+  workers: queueWorkers,
+  resources: [() => outboxWatch, () => jobs.close(), () => generationJobs.close(), () => refineJobs.close(), () => careerJobs.close(), () => database.close(), () => pageMeasurer.close()],
+  force: stoppingOnFatal,
+});

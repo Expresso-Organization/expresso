@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { MongoServerSelectionError, MongoTopologyClosedError } from "mongodb";
+import { UnrecoverableError } from "bullmq";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { createQueueWorker } from "../worker/create-queue-worker.js";
@@ -57,19 +58,84 @@ describeWithRedis("reliable queue integration", () => {
     });
 
     const job = await resources.queue.add("work", { value: 1 });
-    await waitFor(async () => ((await resources.queue.getJob(job.id!))?.delay ? true : undefined));
+    // 상태를 먼저 보고 잡을 나중에 읽는다. BullMQ는 상태 이동과 잡 해시 갱신(`atm` · `delay`)을 한 스크립트로
+    // 처리하므로, 상태가 보인 뒤 읽은 해시는 그 상태의 값이다. 순서를 거꾸로 하면 두 읽기 사이에 워커가
+    // 잡을 끝내, 끝나기 전 값(`attemptsMade: 0`)을 들고 완료로 판정할 수 있다(#189).
+    await waitFor(async () => ((await resources.queue.getJobState(job.id!)) === "delayed" ? true : undefined));
     const deferred = await resources.queue.getJob(job.id!);
-    expect(await deferred?.getState()).toBe("delayed");
     expect(deferred?.attemptsMade).toBe(0);
     expect(fatal).toHaveLength(expectedFatal);
 
     // Mongo가 돌아오면 그대로 끝난다. 시도 횟수는 성공한 한 번만 쓴다.
-    const finished = await waitFor(async () => {
-      const current = await resources.queue.getJob(job.id!);
-      return (await current?.getState()) === "completed" ? current : undefined;
-    }, 10_000);
-    expect(finished.attemptsMade).toBe(1);
+    await waitFor(async () => ((await resources.queue.getJobState(job.id!)) === "completed" ? true : undefined), 10_000);
+    const finished = await resources.queue.getJob(job.id!);
+    expect(finished?.attemptsMade).toBe(1);
     expect(await resources.deadLetterQueue.count()).toBe(0);
+  }, 20_000);
+
+  it("멈추는 중에 끊긴 잡은 시도 횟수를 쓰지 않고 다음 Worker가 끝낸다", async () => {
+    const prefix = `expresso-test-${randomUUID()}`;
+    const resources = createReliableQueue<{ value: number }>("stopping-job", redisUrl!, prefix);
+    const stopping = new AbortController();
+    // 배포 재시작: 신호가 오면 main.ts가 곧바로 워커를 닫고, 같은 신호를 받은 claude CLI가 끊긴다.
+    const first = createQueueWorker<{ value: number }, { done: true }>({
+      queueName: "stopping-job",
+      redisUrl: redisUrl!,
+      prefix,
+      deadLetterQueue: resources.deadLetterQueue,
+      stopping: stopping.signal,
+      async processor() {
+        stopping.abort();
+        void first.close();
+        throw new AiError("AI_UNAVAILABLE", "question_draft", "claude was terminated by SIGTERM", { retryable: true });
+      },
+    });
+    cleanups.push(async () => {
+      await first.close();
+      await Promise.all([resources.queue.obliterate({ force: true }), resources.deadLetterQueue.obliterate({ force: true })]);
+      await resources.close();
+    });
+
+    const job = await resources.queue.add("work", { value: 1 }, { attempts: 5 });
+    await first.close();
+    const state = await resources.queue.getJobState(job.id!);
+    expect(["delayed", "waiting"]).toContain(state);
+    expect((await resources.queue.getJob(job.id!))?.attemptsMade).toBe(0);
+
+    const next = createQueueWorker<{ value: number }, { done: true }>({
+      queueName: "stopping-job",
+      redisUrl: redisUrl!,
+      prefix,
+      deadLetterQueue: resources.deadLetterQueue,
+      async processor() { return { done: true }; },
+    });
+    cleanups.unshift(() => next.close());
+    await waitFor(async () => ((await resources.queue.getJobState(job.id!)) === "completed" ? true : undefined), 10_000);
+    expect((await resources.queue.getJob(job.id!))?.attemptsMade).toBe(1);
+    expect(await resources.deadLetterQueue.count()).toBe(0);
+  }, 20_000);
+
+  it("멈추는 중이라도 다시 돌려도 같은 답인 거절은 실패로 끝낸다", async () => {
+    const prefix = `expresso-test-${randomUUID()}`;
+    const resources = createReliableQueue<{ value: number }>("stopping-reject", redisUrl!, prefix);
+    const stopping = new AbortController();
+    stopping.abort();
+    const worker = createQueueWorker<{ value: number }, never>({
+      queueName: "stopping-reject",
+      redisUrl: redisUrl!,
+      prefix,
+      deadLetterQueue: resources.deadLetterQueue,
+      stopping: stopping.signal,
+      async processor() { throw new UnrecoverableError("BREW_INPUT_REJECTED"); },
+    });
+    cleanups.push(async () => {
+      await worker.close();
+      await Promise.all([resources.queue.obliterate({ force: true }), resources.deadLetterQueue.obliterate({ force: true })]);
+      await resources.close();
+    });
+
+    const job = await resources.queue.add("work", { value: 1 }, { attempts: 5 });
+    await waitFor(async () => ((await resources.queue.getJobState(job.id!)) === "failed" ? true : undefined));
   }, 20_000);
 
   it("동시 수만큼 잡을 겹쳐 돌린다", async () => {

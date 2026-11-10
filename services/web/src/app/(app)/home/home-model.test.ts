@@ -6,7 +6,9 @@ import {
   biggestDrop,
   dailySeries,
   exampleQueries,
+  allJobsQuery,
   gridItems,
+  jobsTabShown,
   mergeReferrers,
   missingRequirements,
   roleTab,
@@ -32,6 +34,28 @@ describe("roleTab", () => {
   it("프로필이 없거나 대응하는 직군이 없으면 전체 공고다", () => {
     expect(roleTab(null)).toEqual({ label: "전체 공고", family: null });
     expect(roleTab(profile(["기획 · PM"]))).toEqual({ label: "전체 공고", family: null });
+  });
+});
+
+describe("jobsTabShown", () => {
+  it("관심 공고가 있으면 요청한 탭을 보인다", () => {
+    expect(jobsTabShown("interested", 2)).toBe("interested");
+    expect(jobsTabShown("role", 2)).toBe("role");
+  });
+
+  it("관심 공고가 없으면 관심 탭을 요청해도 첫 탭이다", () => {
+    expect(jobsTabShown("interested", 0)).toBe("role");
+  });
+});
+
+describe("allJobsQuery", () => {
+  it("관심 탭은 관심 공고 목록으로 간다", () => {
+    expect(allJobsQuery("interested", "프론트엔드")).toEqual({ interested: "true" });
+  });
+
+  it("첫 탭은 목표 직군으로, 직군이 없으면 조건 없이 간다", () => {
+    expect(allJobsQuery("role", "프론트엔드")).toEqual({ family: "프론트엔드" });
+    expect(allJobsQuery("role", null)).toEqual({});
   });
 });
 

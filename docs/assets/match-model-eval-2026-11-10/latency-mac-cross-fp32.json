@@ -1,0 +1,47 @@
+{
+  "createdAt": "2026-11-10T13:22:52+0900",
+  "machine": {
+    "platform": "macOS-27.2-arm64-arm-64bit",
+    "machine": "arm64",
+    "cpuCount": 14,
+    "python": "3.12.13",
+    "onnxruntime": "1.31.0"
+  },
+  "threads": 4,
+  "quantized": false,
+  "requests": {
+    "rerank1": {
+      "model": "BAAI/bge-reranker-v2-m3",
+      "pairs": 1,
+      "sequenceLength": 1536,
+      "items": 1,
+      "repeats": 10,
+      "p50Ms": 1030.6775419740006,
+      "p95Ms": 1185.2289580274373,
+      "meanMs": 1064.4999332143925,
+      "itemsPerSecond": 0.9394082317885857
+    },
+    "rerank10": {
+      "model": "BAAI/bge-reranker-v2-m3",
+      "pairs": 10,
+      "sequenceLength": 1536,
+      "items": 10,
+      "repeats": 10,
+      "p50Ms": 11310.577250085771,
+      "p95Ms": 23226.517042028718,
+      "meanMs": 14785.637370904442,
+      "itemsPerSecond": 0.676332020672863
+    },
+    "recordScoring": {
+      "model": "BAAI/bge-reranker-v2-m3",
+      "records": 20,
+      "sequenceLength": 1536,
+      "items": 20,
+      "repeats": 10,
+      "p50Ms": 55794.40137499478,
+      "p95Ms": 377878.40195791796,
+      "meanMs": 144651.17904159706,
+      "itemsPerSecond": 0.13826365006156388
+    }
+  }
+}

@@ -7,6 +7,7 @@ import type { AccountLifecycleService } from "../../src/modules/account-lifecycl
 import type { AnalyticsService } from "../../src/modules/analytics/service.js";
 import type { CareerService } from "../../src/modules/career/service.js";
 import type { EngagementService } from "../../src/modules/engagement/service.js";
+import type { UnifiedSearchService } from "../../src/modules/engagement/search.js";
 import type { EntitlementService } from "../../src/modules/entitlements/service.js";
 import type { GenerationService } from "../../src/modules/generation/service.js";
 import type { IdentityService } from "../../src/modules/identity/service.js";
@@ -46,6 +47,7 @@ const app = buildApi({
   publishingService: unavailable as PublishingService,
   analyticsService: unavailable as AnalyticsService,
   engagementService: unavailable as EngagementService,
+  unifiedSearchService: unavailable as UnifiedSearchService,
   accountLifecycleService: unavailable as AccountLifecycleService,
 });
 
@@ -64,6 +66,7 @@ describe("release security route inventory", () => {
       ["POST", `/v1/brews/${uuid}/interview-sessions`],
       ["GET", `/v1/brews/${uuid}/interview-bases`],
       ["GET", `/v1/brew-jobs/${uuid}`],
+      ["GET", `/v1/brew-jobs/${uuid}/events`],
       ["GET", `/v1/recipes/${uuid}`], ["GET", `/v1/recipes/${uuid}/template-previews`],
       ["POST", "/v1/generation-jobs"], ["POST", `/v1/portfolios/${uuid}/deployments`],
       ["DELETE", `/v1/portfolios/${uuid}/publication`],

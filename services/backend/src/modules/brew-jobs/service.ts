@@ -1,12 +1,18 @@
 import { randomUUID } from "node:crypto";
 import { BrewJobStatusSchema, type BrewJobStatus, type BrewJobType } from "@expresso/contracts";
 import { mongoCollections, type BrewJobDoc } from "@expresso/database";
+import type { Timestamp } from "mongodb";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction } from "../../platform/mongo-transaction.js";
 import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { requireActiveUser } from "../identity/index.js";
 import type { BrewJobApi } from "./index.js";
 import { BrewJobError, type BrewJobRunner, type FailureClassifier } from "./public.js";
+
+/** 더 바뀌지 않는 상태. 재시도할 실패는 `queued`로 돌아가므로 여기 없다. */
+function settled(status: BrewJobStatus["status"]): boolean {
+  return status === "succeeded" || status === "failed";
+}
 
 /**
  * 이 제출로 큐에 올릴 아웃박스 키. `null`이면 올리지 않고 지금 상태를 돌려준다.
@@ -32,7 +38,7 @@ export class BrewJobService implements BrewJobApi {
     const id = await inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId);
       const db = mongoCollections(tx.db); const options = { session: tx.session };
-      if (!await db.brews.findOne({ _id: input.brewId, userId }, options)) throw new BrewJobError(404, "brew not found");
+      if (!await db.brews.findOne({ _id: input.brewId, userId, deletedAt: null }, options)) throw new BrewJobError(404, "brew not found");
       const existing = await db.brewJobs.findOne({ userId, inputIdempotencyKey: idempotencyKey }, options);
       if (existing && (existing.input.brewId !== input.brewId || existing.type !== type)) throw new BrewJobError(409, "idempotency key reused for another brew or job type");
       const job: BrewJobDoc = existing ?? { _id: randomUUID(), userId, type, input: { brewId: input.brewId }, inputIdempotencyKey: idempotencyKey, status: "queued", stage: "queued", attempts: 0, createdAt: new Date(), updatedAt: new Date() };
@@ -54,6 +60,46 @@ export class BrewJobService implements BrewJobApi {
     if (!job) throw new BrewJobError(404, "brew job not found");
     return brewJobStatus(job);
   }
+  /**
+   * 잡 상태를 바뀔 때마다 내준다. 처음에 지금 상태를 한 번 내고, `succeeded` · `failed`에서 끝난다.
+   *
+   * 변경 흐름(change stream)은 첫 `next()` 전까지 서버에 열리지 않는다. 그래서 지금 상태를 읽기 **직전의
+   * 시각**부터 흐름을 연다(`startAtOperationTime`) — 읽은 뒤 열기 전 사이에 끝난 잡도 놓치지 않는다.
+   * 남의 잡이거나 없는 잡이면 첫 `next()`가 404로 거절한다.
+   */
+  async *follow(userId: string, jobId: string, signal: AbortSignal): AsyncGenerator<BrewJobStatus> {
+    const db = mongoCollections(this.context.db);
+    const { operationTime } = await this.context.db.command({ ping: 1 }) as { operationTime?: Timestamp };
+    const current = await db.brewJobs.findOne({ _id: jobId, userId });
+    if (!current) throw new BrewJobError(404, "brew job not found");
+    yield brewJobStatus(current);
+    if (settled(current.status)) return;
+    const stream = db.brewJobs.watch(
+      [{ $match: { "documentKey._id": jobId } }],
+      { fullDocument: "updateLookup", ...(operationTime ? { startAtOperationTime: operationTime } : {}) },
+    );
+    const close = () => { void stream.close(); };
+    signal.addEventListener("abort", close, { once: true });
+    try {
+      let last = `${current.status}:${current.stage}`;
+      for await (const change of stream) {
+        if (signal.aborted) return;
+        const job = "fullDocument" in change ? change.fullDocument : undefined;
+        if (!job || job.userId !== userId) continue;
+        // 문서는 변경을 받는 시점에 다시 읽으므로(updateLookup) 중간 상태가 마지막 상태로 합쳐지거나,
+        // 읽기 직전부터 열었으므로 이미 낸 상태가 한 번 더 올 수 있다. 같은 상태는 다시 내지 않는다.
+        const seen = `${job.status}:${job.stage}`;
+        if (seen === last) continue;
+        last = seen;
+        yield brewJobStatus(job);
+        if (settled(job.status)) return;
+      }
+    } finally {
+      signal.removeEventListener("abort", close);
+      await stream.close().catch(() => undefined);
+    }
+  }
+
   async process(jobId: string, runner: BrewJobRunner, classify: FailureClassifier, { finalAttempt = true }: { finalAttempt?: boolean } = {}) {
     const job = await inTransaction(this.context, async (tx) => {
       const db = mongoCollections(tx.db); const options = { session: tx.session };
