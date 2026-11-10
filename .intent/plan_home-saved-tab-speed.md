@@ -16,8 +16,9 @@ date: 2026-11-10
 |---|---|
 | `services/web/src/app/(app)/home/home-model.ts` | `jobsTabShown` · `allJobsQuery` 추가 |
 | `services/web/src/app/(app)/home/home-model.test.ts` | 두 함수 테스트 |
-| `services/web/src/app/(app)/home/HomeJobsTabs.tsx` (새로) | 탭 상태 · 세그먼트 단추 · 「전체」 링크 · 슬롯 선택 |
+| `services/web/src/app/(app)/home/HomeJobsTabs.tsx` (새로) | `useSearchParams`로 탭 읽기 · 세그먼트 단추 · 「전체」 링크 · 슬롯 선택 |
 | `services/web/src/app/(app)/home/HomeJobs.tsx` | 두 목록을 슬롯으로 그려 `HomeJobsTabs`에 넘김, 머리 주석 갱신 |
+| `services/web/src/app/(app)/home/page.tsx` | `searchParams` · `tab` 전달 제거(탭은 클라이언트가 주소에서 읽음) |
 | `services/web/src/app/(app)/home/page.module.css` | `.segmentItem`에 `font-family: inherit` |
 
 ## 작업 순서
@@ -31,6 +32,8 @@ date: 2026-11-10
 ## 가장 위험한 단계
 
 4단계 — `replaceState` 뒤 Next 라우터 상태. 주소만 바뀌고 서버 렌더가 일어나지 않는지, 새로고침 · 다른 화면 갔다 돌아오기에서 탭이 맞는지 본다. 어긋나면 `HomeJobs.tsx`를 `<Link>` 방식으로 되돌리면 된다(변경이 홈 폴더 안에 갇혀 있다).
+
+구현 중 확인: 처음에는 탭을 `useState(서버가 읽은 탭)`로 들었는데, 관심 탭에서 사이드바 「홈」(`/home`)을 누르면 컴포넌트가 그대로 남아 주소는 `/home`, 탭은 관심으로 어긋났다. 상태를 없애고 `useSearchParams`에서 탭을 읽어 해결했다. `replaceState`도 `useSearchParams`를 갱신하므로 서버 요청 없이 바뀐다.
 
 ## 검증
 

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import { useSearchParams } from "next/navigation";
+import type { ReactNode } from "react";
 
 import { allJobsQuery, jobsTabShown, type JobsTab } from "./home-model";
 import styles from "./page.module.css";
@@ -9,24 +10,22 @@ import styles from "./page.module.css";
 /**
  * 00 공고 카드의 탭 머리와 목록 자리.
  *
- * 두 탭의 행은 서버가 이미 그려 슬롯으로 넘긴다. 여기서는 어느 쪽을 보일지만 정하고,
- * 주소는 `history.replaceState`로 맞춘다 — Next 라우터가 이 호출을 받아 주소만 바꾸고
- * 서버를 다시 부르지 않는다. 새로고침하면 서버가 `?tab=`을 읽어 같은 탭으로 그린다.
+ * 두 탭의 행은 서버가 이미 그려 슬롯으로 넘긴다. 여기서는 주소(`?tab=`)를 읽어 어느 쪽을
+ * 보일지만 정한다. 탭을 누르면 `history.replaceState`로 주소만 바꾼다 — Next 라우터가 이
+ * 호출을 받아 `useSearchParams`를 갱신하고 서버는 다시 부르지 않는다. 탭을 상태로 따로 들지
+ * 않으므로 사이드바 「홈」처럼 주소로 다시 들어와도 주소와 탭이 어긋나지 않는다.
  */
 export function HomeJobsTabs({
-  initialTab,
   role,
   interested,
 }: {
-  initialTab: JobsTab;
   role: { label: string; family: string | null; total: number; rows: ReactNode };
   interested: { total: number; rows: ReactNode };
 }) {
-  const [tab, setTab] = useState(initialTab);
+  const tab: JobsTab = useSearchParams().get("tab") === "interested" ? "interested" : "role";
   const shown = jobsTabShown(tab, interested.total);
 
   function choose(next: JobsTab) {
-    setTab(next);
     window.history.replaceState(null, "", next === "interested" ? "/home?tab=interested" : "/home");
   }
 

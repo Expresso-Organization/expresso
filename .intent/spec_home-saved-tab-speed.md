@@ -13,7 +13,7 @@ date: 2026-11-10
 
 - [ ] 탭 단추를 눌러도 RSC 요청(`_rsc`)이 나가지 않는다.
 - [ ] 관심 탭을 보면 주소가 `/home?tab=interested`, 첫 탭이면 `/home`이다. 주소는 `history.replaceState`로 바꾼다.
-- [ ] 서버는 `?tab=interested`를 읽어 첫 렌더의 탭을 정한다(새로고침 · 주소 공유).
+- [ ] 탭은 주소(`?tab=interested`)에서 읽는다. 새로고침 · 주소 공유 · 사이드바 「홈」으로 다시 들어오기에서 주소와 탭이 같다.
 - [ ] 관심 공고가 0건이면 관심 단추를 숨기고 `?tab=interested`여도 첫 탭을 보인다(지금 규칙).
 - [ ] 「전체」 링크는 보고 있는 탭을 따른다: 관심 → `/jobs?interested=true`, 첫 탭 → `/jobs?family=<family>` 또는 `/jobs`.
 - [ ] 공고 행(`JobRow`)과 「만들기」 서버 액션 폼은 서버 컴포넌트로 남는다.
@@ -29,9 +29,10 @@ date: 2026-11-10
 - `home-model.ts`(바뀜): 순수 함수 둘.
   - `jobsTabShown(tab, interestedTotal)` — 관심이 0건이면 `"role"`.
   - `allJobsQuery(shown, family)` — 「전체」 링크의 query.
-- `HomeJobsTabs.tsx`(새로, `"use client"`): `useState(초기 탭)`. 세그먼트 단추 둘과 「전체」 링크를 그리고,
-  서버가 넘긴 두 목록 슬롯(`roleRows` · `interestedRows`: `ReactNode`) 중 하나를 보인다. 단추를 누르면
-  상태를 바꾸고 `window.history.replaceState(null, "", url)`을 부른다.
+- `HomeJobsTabs.tsx`(새로, `"use client"`): 탭을 `useSearchParams().get("tab")`에서 읽는다(상태를 따로 두지 않음).
+  세그먼트 단추 둘과 「전체」 링크를 그리고, 서버가 넘긴 두 목록 슬롯(`ReactNode`) 중 하나를 보인다.
+  단추를 누르면 `window.history.replaceState(null, "", url)`만 부른다 — 라우터가 `useSearchParams`를 갱신한다.
+- `page.tsx`(바뀜): `searchParams`를 읽어 `tab`을 내려보내던 줄을 지운다.
 - `HomeJobs.tsx`(바뀜): 서버 컴포넌트로 남아 두 목록을 `JobRow`로 그려 `HomeJobsTabs`에 슬롯으로 넘긴다.
   관심이 0건이면 관심 슬롯을 넘기지 않는다.
 - 근거: Next.js App Router는 `pushState` · `replaceState`를 라우터에 통합해 서버를 부르지 않고 주소만
@@ -46,7 +47,7 @@ date: 2026-11-10
 
 ## 함정
 
-- `useState`는 초기값만 받는다. 서버가 다시 그려 `tab`이 바뀌어도(예: 서버 액션 뒤 refresh) 상태는 유지된다 — 이때 주소도 이미 같은 탭이라 어긋나지 않는다.
+- `useState(서버 탭)`로 들면 같은 화면에 주소로 다시 들어올 때(관심 탭에서 사이드바 「홈」) 상태가 남아 주소와 어긋난다 — 구현 중 확인. 탭을 주소에서 읽는다.
 - 관심 공고가 0건이 되면(다른 화면에서 해제 후 돌아옴) 관심 슬롯이 없으니 첫 탭으로 그린다 — `jobsTabShown`을 클라이언트에서도 쓴다.
 - `.segmentItem`이 `<a>`에서 `<button>`으로 바뀐다. 전역 리셋이 없어 `font-family: inherit`가 필요하다.
 - 빈 DB(관심 0건)에서는 관심 단추가 안 보여 검증할 수 없다 — 검증 DB에 관심 공고가 있어야 한다.

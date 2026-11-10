@@ -7,7 +7,7 @@ import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { analyzePostingAction } from "../brew/new/new-brew-actions";
 import { deadlineLabel } from "../jobs/JobRows";
 import { HomeJobsTabs } from "./HomeJobsTabs";
-import { missingRequirements, type JobsTab } from "./home-model";
+import { missingRequirements } from "./home-model";
 import styles from "./page.module.css";
 
 /**
@@ -18,18 +18,15 @@ import styles from "./page.module.css";
  * 받아 두므로, 탭을 바꿀 때 서버를 다시 부르지 않고 클라이언트에서 보일 쪽만 고른다.
  */
 export function HomeJobs({
-  tab,
   role,
   interested,
 }: {
-  tab: JobsTab;
   role: { label: string; family: string | null; total: number; rows: JobPostingSummary[] };
   interested: { total: number; rows: JobPostingSummary[] };
 }) {
   return (
     <div className={`${styles.card} ${styles.jobsCard}`}>
       <HomeJobsTabs
-        initialTab={tab}
         role={{ label: role.label, family: role.family, total: role.total, rows: <JobRows jobs={role.rows} /> }}
         interested={{ total: interested.total, rows: interested.total > 0 ? <JobRows jobs={interested.rows} /> : null }}
       />
