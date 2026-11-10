@@ -57,18 +57,18 @@ describeWithRedis("reliable queue integration", () => {
     });
 
     const job = await resources.queue.add("work", { value: 1 });
-    await waitFor(async () => ((await resources.queue.getJob(job.id!))?.delay ? true : undefined));
+    // 상태를 먼저 보고 잡을 나중에 읽는다. BullMQ는 상태 이동과 잡 해시 갱신(`atm` · `delay`)을 한 스크립트로
+    // 처리하므로, 상태가 보인 뒤 읽은 해시는 그 상태의 값이다. 순서를 거꾸로 하면 두 읽기 사이에 워커가
+    // 잡을 끝내, 끝나기 전 값(`attemptsMade: 0`)을 들고 완료로 판정할 수 있다(#189).
+    await waitFor(async () => ((await resources.queue.getJobState(job.id!)) === "delayed" ? true : undefined));
     const deferred = await resources.queue.getJob(job.id!);
-    expect(await deferred?.getState()).toBe("delayed");
     expect(deferred?.attemptsMade).toBe(0);
     expect(fatal).toHaveLength(expectedFatal);
 
     // Mongo가 돌아오면 그대로 끝난다. 시도 횟수는 성공한 한 번만 쓴다.
-    const finished = await waitFor(async () => {
-      const current = await resources.queue.getJob(job.id!);
-      return (await current?.getState()) === "completed" ? current : undefined;
-    }, 10_000);
-    expect(finished.attemptsMade).toBe(1);
+    await waitFor(async () => ((await resources.queue.getJobState(job.id!)) === "completed" ? true : undefined), 10_000);
+    const finished = await resources.queue.getJob(job.id!);
+    expect(finished?.attemptsMade).toBe(1);
     expect(await resources.deadLetterQueue.count()).toBe(0);
   }, 20_000);
 
