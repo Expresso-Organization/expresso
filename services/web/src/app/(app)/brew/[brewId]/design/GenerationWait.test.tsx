@@ -82,18 +82,87 @@ describe("생성 기다림 화면", () => {
     expect(screen.queryByText("채용 공고 분석 중...")).toBeNull();
   });
 
-  it("구성을 기다리는 동안에는 10초가 지나도 브루잉에 머물고 구성 문장을 돌린다", () => {
+  it("구성을 기다리는 중이어도 10초가 지나면 아는 입력부터 지면에 올리고, 섹션은 구성이 끝나면 제자리에 들어온다", () => {
     const waiting = { ...reading, sections: [] };
-    const { rerender } = render(<GenerationWait reading={waiting} waitedMs={0} brewingLeftMs={0} recipePending actions={null} />);
+    const { rerender } = render(<GenerationWait reading={waiting} waitedMs={0} brewingLeftMs={BREWING_MS} recipePending actions={null} />);
     expect(visible()).toHaveLength(0);
     expect(screen.getByText("고른 기록 읽는 중...")).toBeTruthy();
-    act(() => vi.advanceTimersByTime(BREWING_MS * 3));
-    expect(visible()).toHaveLength(0);
 
-    // 구성이 끝나 다시 읽으면 지금처럼 지면으로 넘어간다.
+    act(() => vi.advanceTimersByTime(BREWING_MS));
+    expect(visible().map((group) => group.getAttribute("aria-label"))).toEqual(["채용 공고", "디자인", "기록"]);
+    // 지금 도는 일은 여전히 구성이다.
+    expect(screen.getByText("고른 기록 읽는 중...")).toBeTruthy();
+    expect(screen.queryByText("포트폴리오 생성 중...")).toBeNull();
+
     rerender(<GenerationWait reading={reading} waitedMs={0} brewingLeftMs={0} recipePending={false} actions={null} />);
     act(() => vi.advanceTimersByTime(0));
     expect(visible().map((group) => group.getAttribute("aria-label"))).toEqual(["채용 공고", "디자인", "섹션", "기록"]);
+    expect(screen.getByText("포트폴리오 생성 중...")).toBeTruthy();
+  });
+
+  describe("구성이 끝나 늦게 온 섹션 구역", () => {
+    const waiting = { ...reading, sections: [] };
+    const shownLabels = (feed: HTMLElement) =>
+      [...feed.querySelectorAll("[data-feed-group][data-shown]")].map((group) => group.getAttribute("aria-label"));
+    const start = () => {
+      window.matchMedia = vi.fn().mockReturnValue({ matches: false }) as unknown as typeof window.matchMedia;
+      const view = render(<GenerationWait reading={waiting} waitedMs={BREWING_MS} brewingLeftMs={0} recipePending actions={null} />);
+      const feed = screen.getByLabelText("지면 설계에 들어가는 입력");
+      const arrive = () => {
+        view.rerender(<GenerationWait reading={reading} waitedMs={BREWING_MS} brewingLeftMs={0} recipePending={false} actions={null} />);
+        act(() => vi.advanceTimersByTime(0));
+      };
+      return { feed, arrive };
+    };
+
+    it("다 쌓고 멈춘 뒤에 오면 다시 이어 올리고, 이미 올린 구역은 그대로 둔다", () => {
+      const { feed, arrive } = start();
+      act(() => vi.advanceTimersByTime(FEED_STEP_MS * 3));
+      expect(shownLabels(feed)).toEqual(["채용 공고", "디자인", "기록"]);
+      expect(feed.hasAttribute("data-settled")).toBe(true);
+
+      arrive();
+      expect(shownLabels(feed)).toEqual(["채용 공고", "디자인", "섹션", "기록"]);
+      expect(feed.hasAttribute("data-settled")).toBe(false);
+      act(() => vi.advanceTimersByTime(FEED_STEP_MS));
+      expect(feed.hasAttribute("data-settled")).toBe(true);
+    });
+
+    it("쌓는 도중에 오면 제자리 순서대로 올린다", () => {
+      const { feed, arrive } = start();
+      act(() => vi.advanceTimersByTime(0));
+      expect(shownLabels(feed)).toEqual(["채용 공고"]);
+
+      arrive();
+      act(() => vi.advanceTimersByTime(FEED_STEP_MS));
+      expect(shownLabels(feed)).toEqual(["채용 공고", "디자인"]);
+      act(() => vi.advanceTimersByTime(FEED_STEP_MS));
+      expect(shownLabels(feed)).toEqual(["채용 공고", "디자인", "섹션"]);
+      act(() => vi.advanceTimersByTime(FEED_STEP_MS));
+      expect(shownLabels(feed)).toEqual(["채용 공고", "디자인", "섹션", "기록"]);
+    });
+
+    it("사람이 스크롤해 멈춘 뒤에 오면 바로 보이고 지면 안을 옮기지 않는다", () => {
+      const { feed, arrive } = start();
+      act(() => vi.advanceTimersByTime(0));
+      act(() => {
+        feed.scrollTop = 120;
+        feed.dispatchEvent(new Event("scroll"));
+      });
+
+      arrive();
+      expect(shownLabels(feed)).toEqual(["채용 공고", "디자인", "섹션", "기록"]);
+      expect(feed.scrollTop).toBe(120);
+    });
+
+    it("동작 줄이기 설정에서는 오는 대로 바로 보인다", () => {
+      // 이 묶음의 기본 `matchMedia`가 동작 줄이기다.
+      const view = render(<GenerationWait reading={waiting} waitedMs={BREWING_MS} brewingLeftMs={0} recipePending actions={null} />);
+      const feed = screen.getByLabelText("지면 설계에 들어가는 입력");
+      expect(shownLabels(feed)).toEqual(["채용 공고", "디자인", "기록"]);
+      view.rerender(<GenerationWait reading={reading} waitedMs={BREWING_MS} brewingLeftMs={0} recipePending={false} actions={null} />);
+      expect(shownLabels(feed)).toEqual(["채용 공고", "디자인", "섹션", "기록"]);
+    });
   });
 
   it("공고 없이 시작했거나 디자인을 못 찾았으면 그 구역만 빠진다", () => {
