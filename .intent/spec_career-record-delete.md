@@ -31,7 +31,7 @@ date: 2026-11-10
 - 웹 프록시 `app/api/career/records/[recordId]/delete-impact/route.ts` (GET). `restore/route.ts`와 같은 모양.
 - `features/career-editor/views/record-trash.tsx`
   - `loadDeleteImpacts(ids)`: 기록마다 영향을 받아 `{ usedRecordCount, portfolioCount }`로 합친다. 하나라도 실패하면 `null`.
-  - `RecordTrashConfirm`: 확인 창. 제목은 한 개면 「{제목}」, 여러 개면 「기록 N개」를 휴지통으로 옮길지 묻는다. 쓰는 곳이 있으면 한 개일 때 "포트폴리오 N곳에서 이 기록을 근거로 씁니다.", 여러 개일 때 "선택한 기록 중 N개를 포트폴리오가 근거로 씁니다."를 쓰고, 이어서 "옮겨도 그 포트폴리오의 문장은 바뀌지 않습니다."를 쓴다. 끝에 "휴지통에서 30일 동안 복원할 수 있습니다."를 쓴다. 버튼은 「취소」 · 「휴지통으로 옮기기」.
+  - `RecordTrashConfirm`: 확인 창. 제목은 한 개면 "이 기록을 휴지통으로 옮길까요?", 여러 개면 "기록 N개를 휴지통으로 옮길까요?"다. 기록 제목은 사용자가 쓴 말이라 조사(을/를)를 붙이지 않고 본문 첫 줄에 따로 보인다. 쓰는 곳이 있으면 한 개일 때 "포트폴리오 N곳에서 이 기록을 근거로 씁니다.", 여러 개일 때 "선택한 기록 중 N개를 포트폴리오가 근거로 씁니다."를 쓰고, 이어서 "옮겨도 그 포트폴리오의 문장은 바뀌지 않습니다."를 쓴다. 끝에 "휴지통에서 30일 동안 복원할 수 있습니다."를 쓴다. 버튼은 「취소」 · 「휴지통으로 옮기기」.
 - `CareerViewShell`: `deleteRecord(id)`를 `requestDelete(ids)` → (확인) → `trashRecords(ids)`로 나눈다. `restoreRecord`는 `restoreRecords(ids)`로 일반화한다. 뷰의 `onDeleteRecord`, 패널의 `onDelete`, 일괄 막대가 모두 `requestDelete`를 부른다.
 - `DocumentPanel`: `onDelete?: () => void` 속성과 머리말 버튼.
 - `app/(app)/career/records/[recordId]/RecordPageMenu.tsx`: 기록 페이지 「…」와 확인 창. 이동 뒤에는 「되돌리기」를 띄울 자리가 없으므로 쓰는 곳이 없어도 확인 창을 띄운다.

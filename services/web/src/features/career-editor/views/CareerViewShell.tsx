@@ -14,6 +14,7 @@ import { BoardView } from "./BoardView";
 import { GalleryView } from "./GalleryView";
 import { ListView } from "./ListView";
 import { QuickFilterBar, type CareerQuickFilter, matchesQuickFilter } from "./QuickFilterBar";
+import { RecordTrashConfirm, loadDeleteImpacts, type RecordTrashImpact } from "./record-trash";
 import { TableView } from "./TableView";
 import { TimelineView } from "./TimelineView";
 import { TrashDialog } from "./TrashDialog";
@@ -71,6 +72,7 @@ export function CareerViewShell({ category: initialCategory, initialViews, initi
   const [interview, setInterview] = useState<{ mode: "create" | "fill"; targetId?: string } | null>(null);
   const [aiRequest, setAiRequest] = useState<AiPromptRequest | null>(null);
   const [cellIssues, setCellIssues] = useState<Map<string, string>>(new Map());
+  const [pendingDelete, setPendingDelete] = useState<{ ids: readonly string[]; impact: RecordTrashImpact } | null>(null);
   const recordsRef = useRef(records);
   const viewsRef = useRef(views);
   const categoryRef = useRef(category);
@@ -391,10 +393,13 @@ export function CareerViewShell({ category: initialCategory, initialViews, initi
     return create({ title: source.title ? `${source.title} 복제` : "", bodyMd: source.bodyMd, properties: source.properties }, { open: false });
   }
 
-  async function restoreRecord(recordId: string) {
-    const response = await fetch(`/api/career/records/${recordId}/restore`, { method: "POST" });
-    if (!response.ok) { setNotice({ text: "기록을 되돌리지 못했습니다." }); return; }
-    addRestored((await response.json() as { data: CareerRecord }).data);
+  async function restoreRecords(recordIds: readonly string[]) {
+    const restored = await Promise.all(recordIds.map(async (id) => {
+      const response = await fetch(`/api/career/records/${id}/restore`, { method: "POST" }).catch(() => null);
+      return response?.ok ? (await response.json() as { data: CareerRecord }).data : null;
+    }));
+    for (const record of restored) if (record) addRestored(record);
+    if (restored.some((record) => !record)) setNotice({ text: "기록을 되돌리지 못했습니다." });
     router.refresh();
   }
 
@@ -403,14 +408,34 @@ export function CareerViewShell({ category: initialCategory, initialViews, initi
     setNotice(null);
   }
 
-  async function deleteRecord(recordId: string): Promise<void> {
+  /**
+   * 표 · 문서 패널 · 일괄 막대가 모두 이 길로 지운다. 먼저 영향을 받아, 포트폴리오가 근거로 쓰는 기록이 있으면
+   * 확인을 받는다(기능 명세 T1.3.5). 쓰는 곳이 없으면 바로 휴지통으로 옮기고 「되돌리기」를 띄운다.
+   */
+  async function requestDelete(recordIds: readonly string[]): Promise<void> {
+    if (!recordIds.length) return;
+    const impact = await loadDeleteImpacts(recordIds);
+    if (!impact) { setNotice({ text: "삭제 영향을 확인하지 못했습니다." }); return; }
+    if (impact.usedRecordCount > 0) { setPendingDelete({ ids: recordIds, impact }); return; }
+    await trashRecords(recordIds);
+  }
+
+  async function trashRecords(recordIds: readonly string[]): Promise<void> {
+    const ids = new Set(recordIds);
     const previous = recordsRef.current;
-    replaceRecords((current) => current.filter((record) => record.id !== recordId));
-    setSelected((current) => { const next = new Set(current); next.delete(recordId); return next; });
-    if (activeId === recordId) setActiveId(null);
-    const response = await fetch(`/api/career/records/${recordId}`, { method: "DELETE" });
-    if (!response.ok) { replaceRecords(() => previous); setNotice({ text: "기록을 삭제하지 못했습니다." }); return; }
-    setNotice({ text: "휴지통으로 옮겼습니다.", action: { label: "되돌리기", run: () => void restoreRecord(recordId) } });
+    replaceRecords((current) => current.filter((record) => !ids.has(record.id)));
+    setSelected((current) => new Set([...current].filter((id) => !ids.has(id))));
+    if (activeId && ids.has(activeId)) setActiveId(null);
+    const results = await Promise.all(recordIds.map(async (id) => ({ id, ok: (await fetch(`/api/career/records/${id}`, { method: "DELETE" }).catch(() => null))?.ok === true })));
+    const failed = new Set(results.filter((result) => !result.ok).map((result) => result.id));
+    const moved = recordIds.filter((id) => !failed.has(id));
+    // 옮기지 못한 기록만 이전 자리로 되돌린다. 그사이 바뀐 다른 기록은 건드리지 않는다.
+    if (failed.size) replaceRecords((current) => [...current, ...previous.filter((record) => failed.has(record.id))]);
+    if (!moved.length) { setNotice({ text: "기록을 삭제하지 못했습니다." }); return; }
+    setNotice({
+      text: failed.size ? `${moved.length}개를 휴지통으로 옮겼습니다. ${failed.size}개는 삭제하지 못했습니다.` : "휴지통으로 옮겼습니다.",
+      action: { label: "되돌리기", run: () => void restoreRecords(moved) },
+    });
     router.refresh();
   }
 
@@ -474,7 +499,7 @@ export function CareerViewShell({ category: initialCategory, initialViews, initi
     onCellRetry: retryCell,
     onStatusChange: changeStatus,
     onDuplicateRecord: duplicateRecord,
-    onDeleteRecord: deleteRecord,
+    onDeleteRecord: (recordId: string) => requestDelete([recordId]),
     cellIssues,
   };
 
@@ -506,7 +531,7 @@ export function CareerViewShell({ category: initialCategory, initialViews, initi
         onReorder={(ids) => void reorderViews(ids)}
       />
       {records.length ? <QuickFilterBar records={records} categoryKey={category.key} value={quickFilter} onChange={setQuickFilter} /> : null}
-      {selected.size ? <div className={styles.bulk} role="toolbar" aria-label="선택한 기록 작업"><span>{selected.size}개 선택</span>{(["draft", "organized", "verified"] as const).map((status) => <button key={status} onClick={() => void bulkStatus(status)}>{STATUS_LABELS[status]}</button>)}</div> : null}
+      {selected.size ? <div className={styles.bulk} role="toolbar" aria-label="선택한 기록 작업"><span>{selected.size}개 선택</span>{(["draft", "organized", "verified"] as const).map((status) => <button key={status} onClick={() => void bulkStatus(status)}>{STATUS_LABELS[status]}</button>)}<button type="button" data-danger="true" onClick={() => void requestDelete([...selected])}><Icon name="trash" size={13} />삭제</button></div> : null}
       {notice ? <p role="status" className={styles.message}>{notice.text}{notice.action ? <button type="button" onClick={() => { notice.action!.run(); setNotice(null); }}>{notice.action.label}</button> : null}</p> : null}
       {empty
         ? <div className={styles.firstRecord}>
@@ -527,8 +552,9 @@ export function CareerViewShell({ category: initialCategory, initialViews, initi
           </div>}
       {page.hasNextPage ? <button className={styles.more} onClick={() => void more()}>더 보기</button> : null}
     </main>
-    <DocumentPanel record={active} category={category} onClose={() => setActiveId(null)} aiRequest={aiRequest?.recordId === active?.id ? aiRequest : null} onAiRequestHandled={() => setAiRequest(null)} onRecordChange={mergeRecord} onCategoryChange={changeCategory} {...(active ? { onExpand: () => router.push(`/career/records/${active.id}` as never) } : {})} />
+    <DocumentPanel record={active} category={category} onClose={() => setActiveId(null)} aiRequest={aiRequest?.recordId === active?.id ? aiRequest : null} onAiRequestHandled={() => setAiRequest(null)} onRecordChange={mergeRecord} onCategoryChange={changeCategory} {...(active ? { onExpand: () => router.push(`/career/records/${active.id}` as never), onDelete: () => void requestDelete([active.id]) } : {})} />
     {interview ? <AiRecordInterview mode={interview.mode} categoryName={category.name} recordTitle={records.find((record) => record.id === interview.targetId)?.title ?? ""} onCancel={() => setInterview(null)} onComplete={(result) => void completeInterview(result)} /> : null}
+    {pendingDelete ? <RecordTrashConfirm open count={pendingDelete.ids.length} title={records.find((record) => record.id === pendingDelete.ids[0])?.title ?? ""} impact={pendingDelete.impact} onCancel={() => setPendingDelete(null)} onConfirm={() => { const { ids } = pendingDelete; setPendingDelete(null); void trashRecords(ids); }} /> : null}
     <TrashDialog open={trashOpen} categoryId={category.id} categoryName={category.name} onClose={() => onTrashClose?.()} onRestored={addRestored} />
   </div>;
 }

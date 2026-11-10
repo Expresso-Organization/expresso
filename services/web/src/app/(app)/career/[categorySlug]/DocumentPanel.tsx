@@ -21,6 +21,7 @@ export function DocumentPanel({
   category,
   onClose,
   onExpand,
+  onDelete,
   aiRequest,
   onAiRequestHandled,
   onRecordChange,
@@ -30,6 +31,8 @@ export function DocumentPanel({
   category: CareerCategory;
   onClose: () => void;
   onExpand?: () => void;
+  /** 열린 기록을 휴지통으로 옮긴다. 확인과 「되돌리기」는 뷰가 맡는다. */
+  onDelete?: () => void;
   aiRequest?: AiPromptRequest | null | undefined;
   onAiRequestHandled?: (() => void) | undefined;
   /** 패널에서 저장한 기록 · 카테고리를 뷰에 반영한다. */
@@ -156,6 +159,9 @@ export function DocumentPanel({
         <span className={styles.headLabel}>{category.name} · 문서</span>
         <div className={styles.headRight}>
           {panelRecord ? <SaveState key={panelRecord.id} recordId={panelRecord.id} className={styles.headLabel} /> : null}
+          <button type="button" className={styles.headAction} aria-label="휴지통으로 옮기기" title="휴지통으로 옮기기" disabled={!record || !onDelete} onClick={onDelete}>
+            <Icon name="trash" size={15} />
+          </button>
           <button type="button" className={styles.headAction} aria-label="닫기" onClick={close}>
             <Icon name="x" size={15} />
           </button>
