@@ -17,6 +17,8 @@ export interface CareerCategoryDoc {
   propertySchemaV2: Contracts.CareerPropertyDefinitionV2[];
   schemaVersion?: number;
   propertyMutationResults?: Record<string, unknown>;
+  /** 보관한 때. 없거나 null이면 보관하지 않은 카테고리다. */
+  archivedAt?: Date | null;
 }
 
 export interface CareerRecordDoc {

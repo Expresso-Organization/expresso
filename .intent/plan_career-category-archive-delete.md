@@ -17,14 +17,16 @@ date: 2026-11-10
 | `packages/contracts/src/career.ts` | 카테고리 `archivedAt` · `builtIn`, 보관 · 삭제 · 영향 스키마 (고침) |
 | `packages/database/src/documents/career.ts` | `CareerCategoryDoc.archivedAt?` (고침) |
 | `packages/database/src/mongodb-migrations/0031/migration.ts` | `career_categories.archivedAt` 검증 규칙 (새로) |
-| `packages/database/src/mongo-migrations.ts` | 0031 등록 (고침) |
+| `packages/database/src/mongo-migrations.ts` · `mongo-build.mjs` | 0031 등록 · 빌드 복사 (고침) |
+| `packages/database/src/schema.test.ts` · `migrations.test.ts` | 마이그레이션 목록 · 개수 (고침) |
 | `services/backend/src/modules/career/mongo-record-guard.ts` | `purgeCareerRecordInTransaction` 꺼냄 (고침) |
 | `services/backend/src/modules/career/category-lifecycle.ts` | 보관 · 영향 · 삭제 (새로) |
 | `services/backend/src/modules/career/mongo-categories.ts` | `mapMongoCategory`가 `archivedAt` · `builtIn`을 채움 (고침) |
-| `services/backend/src/modules/career/service.ts` · `routes.ts` | 위임 메서드와 라우트 3개 (고침) |
+| `services/backend/src/modules/career/service.ts` · `routes.ts` · `index.ts` | 위임 메서드 · 라우트 3개 · `CareerApi` 선택 메서드 (고침) |
 | `services/backend/src/modules/career/category-lifecycle.integration.test.ts` | 통합 테스트 (새로) |
 | `services/web/src/app/api/career/categories/[categoryId]/route.ts` · `delete-impact/route.ts` | 프록시 (새로) |
-| `services/web/src/features/career-editor/views/CategoryMenu.tsx` · `CategoryDeleteDialog.tsx` | 메뉴 항목과 확인 창 (고침 · 새로) |
+| `services/web/src/features/career-editor/views/CategoryMenu.tsx` · `CategoryDeleteDialog.tsx` · `category-archive.ts` · `views.module.css` | 메뉴 항목 · 확인 창 · 보관 호출 · 스타일 (고침 · 새로) |
+| `services/web/src/features/career-editor/views/CategoryDeleteDialog.test.tsx` · `components/shell/SidebarCategories.test.tsx` | 웹 단위 테스트 (새로 · 고침) |
 | `services/web/src/app/(app)/career/[categorySlug]/CareerBrowser.tsx` | 메뉴에 카테고리 전달, 「보관됨」 표시 (고침) |
 | `services/web/src/components/shell/SidebarCategories.tsx` · `Sidebar.module.css` | 보관됨 묶음 (고침) |
 | `services/web/src/app/(app)/career/page.tsx`, `MoveCategoryDialog.tsx`, `PropertyCreatePopover.tsx` | 보관 카테고리 제외 (고침) |

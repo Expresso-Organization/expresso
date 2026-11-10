@@ -12,9 +12,9 @@ date: 2026-11-10
 ## 요구사항
 
 - [ ] `CareerCategorySchema`에 `archivedAt: Timestamp | null`과 `builtIn: boolean`이 있다. `builtIn`은 키가 `CAREER_CATEGORY_TEMPLATES`에 있을 때 참이다.
-- [ ] `PATCH /v1/career/categories/:id` `{ archived: boolean }` + `If-Match`가 `archivedAt`을 바꾸고 `version`을 올린다. 기본 카테고리도 된다. 버전이 다르면 412.
+- [ ] `PATCH /v1/career/categories/:id` `{ archived: boolean }`가 `archivedAt`을 바꾼다. 기본 카테고리도 된다. `version`은 올리지 않고 `If-Match`도 받지 않는다 — `version`은 속성 스키마 변경의 `If-Match`가 보는 값이라, 올리면 열린 화면의 다음 속성 변경이 412로 막힌다(구현 중 변경).
 - [ ] `GET /v1/career/categories/:id/delete-impact`가 `recordCount`(활성) · `trashedRecordCount` · `quotedRecordCount`(포트폴리오 인용, `recordUsages`) · `blockingProperties`(다른 카테고리의 살아 있는 관계 속성 중 `targetCategoryId`가 이 카테고리인 것: 카테고리 · 속성 이름)를 준다.
-- [ ] `DELETE /v1/career/categories/:id?deleteRecords=true|false` + `If-Match`:
+- [ ] `DELETE /v1/career/categories/:id?deleteRecords=true|false`(같은 이유로 `If-Match` 없음. 막는 조건은 트랜잭션 안에서 다시 센다):
   - 기본 카테고리면 409 `built-in career category cannot be deleted`.
   - `blockingProperties`나 `quotedRecordCount`가 있으면 409.
   - 기록(활성 + 휴지통)이 있는데 `deleteRecords`가 참이 아니면 409 `career category has records`.
@@ -28,7 +28,7 @@ date: 2026-11-10
 ## 설계
 
 재사용:
-- 기록 영구 삭제: `mongo-record-guard.ts`의 `purgeTrashedCareerRecord` 본문을 트랜잭션 안 함수 `purgeCareerRecordInTransaction(tx, userId, recordId, { coDeleted })`로 꺼낸다. 기존 함수는 휴지통 · 보관 기간 조건을 검사한 뒤 그것을 부른다. 카테고리 삭제는 조건 없이 부르고, 「삭제 제한」 관계 검사에서 같이 지워지는 기록(`coDeleted`)은 원천으로 세지 않는다.
+- 기록 영구 삭제: `mongo-record-guard.ts`의 `purgeTrashedCareerRecord` 본문을 트랜잭션 안 함수 `purgeCareerRecordInTransaction(tx, userId, recordId, coDeleted)`로 꺼낸다. 기존 함수는 휴지통 · 보관 기간 조건을 검사한 뒤 그것을 부른다. 카테고리 삭제는 조건 없이 부르고, 「삭제 제한」 관계 검사에서 같이 지워지는 기록(`coDeleted`)은 원천으로 세지 않는다.
 - 인용 수 셈: `recordUsages`(`purgeTrashedCareerRecord`가 RESTRICT 판단에 쓰는 컬렉션).
 - 라우트: `routes.ts`의 `expectedVersion` · `parseParams(CareerCategoryIdParamsSchema)` · `formatResourceEtag`.
 - 웹 확인 창: `TrashDialog`와 같은 `Dialog` · `DialogContent` · `views.module.css`. 메뉴는 `CategoryMenu`의 `AnchoredMenu`.
@@ -37,7 +37,7 @@ date: 2026-11-10
 새로 만드는 것:
 - 백엔드 `career/category-lifecycle.ts`: `archiveCareerCategory` · `careerCategoryDeleteImpact` · `deleteCareerCategory`. `CareerService`가 이것을 위임한다.
 - 계약 `UpdateCareerCategorySchema` · `DeleteCareerCategoryQuerySchema` · `CareerCategoryDeleteImpactSchema`(+ 응답 래퍼).
-- 웹 `CategoryDeleteDialog.tsx`, 프록시 `[categoryId]/route.ts`(PATCH · DELETE) · `[categoryId]/delete-impact/route.ts`.
+- 웹 `CategoryDeleteDialog.tsx` · `category-archive.ts`(메뉴와 확인 창이 함께 쓰는 보관 호출), 프록시 `[categoryId]/route.ts`(PATCH · DELETE) · `[categoryId]/delete-impact/route.ts`.
 
 ```mermaid
 flowchart TD

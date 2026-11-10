@@ -9,7 +9,7 @@ import { PropertyCreatePopover } from "./PropertyCreatePopover";
 const categoryId = "00000000-0000-4000-8000-000000000010";
 const definition: CareerPropertyDefinitionV2 = { id: "00000000-0000-4000-8000-000000000011", key: "note", name: "메모", type: "text", required: false, system: false, config: {}, order: 0, version: 1, deletedAt: null };
 const existingSelect: CareerPropertyDefinitionV2 = { id: "00000000-0000-4000-8000-000000000012", key: "choice", name: "선택 1", type: "select", required: false, system: false, config: { options: [] }, order: 1, version: 1, deletedAt: null };
-const category: CareerCategory = { id: categoryId, key: "test", name: "테스트", icon: "folder", defaultView: "table", propertySchemaV2: [definition], schemaVersion: 1, sortOrder: 0, recordCount: 1, version: 1 };
+const category: CareerCategory = { id: categoryId, key: "test", name: "테스트", icon: "folder", defaultView: "table", propertySchemaV2: [definition], schemaVersion: 1, sortOrder: 0, recordCount: 1, version: 1, archivedAt: null, builtIn: false };
 
 describe("PropertyCreatePopover", () => {
   const onChange = vi.fn();

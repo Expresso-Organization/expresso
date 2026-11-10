@@ -247,6 +247,8 @@ describe("career contracts", () => {
           sortOrder: 0,
           recordCount: 0,
           version: 1,
+          archivedAt: null,
+          builtIn: true,
         }],
       }).data,
     ).toHaveLength(1);

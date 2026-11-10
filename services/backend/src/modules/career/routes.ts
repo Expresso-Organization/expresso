@@ -5,6 +5,10 @@ import {
   API_PREFIX,
   CareerCategoriesResponseSchema,
   CareerCategoryIdParamsSchema,
+  CareerCategoryResponseSchema,
+  CareerCategoryDeleteImpactResponseSchema,
+  DeleteCareerCategoryQuerySchema,
+  UpdateCareerCategorySchema,
   CareerRecordIdParamsSchema,
   CareerProfileResponseSchema,
   CareerSkillEvidenceResponseSchema,
@@ -145,6 +149,31 @@ export function registerCareerRoutes(
     return reply.code(201).header("etag", formatResourceEtag(category.version)).send({
       data: category,
     });
+  });
+
+  app.patch(`${API_PREFIX}/career/categories/:categoryId`, { preHandler }, async (request) => {
+    const principal = requireAuth(request);
+    const { categoryId } = parseParams(CareerCategoryIdParamsSchema, request);
+    const input = parseBody(UpdateCareerCategorySchema, request);
+    if (!options.careerService.archiveCategory) throw new HttpStatusError(501, "career category archive is unavailable");
+    return CareerCategoryResponseSchema.parse({ data: await options.careerService.archiveCategory(principal.user.id, categoryId, input.archived) });
+  });
+
+  app.get(`${API_PREFIX}/career/categories/:categoryId/delete-impact`, { preHandler }, async (request) => {
+    const principal = requireAuth(request);
+    const { categoryId } = parseParams(CareerCategoryIdParamsSchema, request);
+    if (!options.careerService.getCategoryDeleteImpact) throw new HttpStatusError(501, "career category delete is unavailable");
+    return CareerCategoryDeleteImpactResponseSchema.parse({ data: await options.careerService.getCategoryDeleteImpact(principal.user.id, categoryId) });
+  });
+
+  app.delete(`${API_PREFIX}/career/categories/:categoryId`, { preHandler }, async (request, reply) => {
+    const principal = requireAuth(request);
+    const { categoryId } = parseParams(CareerCategoryIdParamsSchema, request);
+    const query = DeleteCareerCategoryQuerySchema.safeParse(request.query);
+    if (!query.success) throw new HttpStatusError(400, "invalid query");
+    if (!options.careerService.deleteCategory) throw new HttpStatusError(501, "career category delete is unavailable");
+    await options.careerService.deleteCategory(principal.user.id, categoryId, query.data.deleteRecords);
+    return reply.code(204).send();
   });
 
   app.post(`${API_PREFIX}/career/categories/:categoryId/property-schema/preview`, { preHandler }, async (request) => {

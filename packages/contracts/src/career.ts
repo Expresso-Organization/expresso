@@ -33,6 +33,10 @@ export const CareerCategorySchema = z.strictObject({
   sortOrder: z.number().int().nonnegative(),
   recordCount: z.number().int().nonnegative(),
   version: z.number().int().positive(),
+  /** 보관한 때. 보관한 카테고리는 사이드바 목록 대신 「보관됨」 묶음에 보인다. */
+  archivedAt: TimestampSchema.nullable(),
+  /** 가입 때 복사한 기본 7종이면 참. 기본 카테고리는 보관만 할 수 있고 삭제할 수 없다. */
+  builtIn: z.boolean(),
 });
 
 export const CareerCategoriesResponseSchema = z.strictObject({
@@ -159,6 +163,43 @@ export const CareerCategoryIdParamsSchema = z.strictObject({
   categoryId: UuidSchema,
 });
 
+/** 카테고리 보관 · 보관 해제. 이름 · 아이콘 바꾸기는 아직 없다. */
+export const UpdateCareerCategorySchema = z.strictObject({
+  archived: z.boolean(),
+});
+
+export const CareerCategoryResponseSchema = z.strictObject({
+  data: CareerCategorySchema,
+});
+
+/** 기록이 남은 카테고리는 `deleteRecords=true`일 때만 기록과 함께 영구 삭제한다. */
+export const DeleteCareerCategoryQuerySchema = z.strictObject({
+  deleteRecords: z.enum(["true", "false"]).default("false").transform((value) => value === "true"),
+});
+
+/** 다른 카테고리의 관계 속성 중 이 카테고리를 가리키는 것. 남아 있으면 삭제를 막는다. */
+export const CareerCategoryBlockingPropertySchema = z.strictObject({
+  categoryId: UuidSchema,
+  categoryName: z.string().min(1).max(120),
+  propertyId: UuidSchema,
+  propertyName: z.string().min(1).max(80),
+});
+
+export const CareerCategoryDeleteImpactSchema = z.strictObject({
+  categoryId: UuidSchema,
+  builtIn: z.boolean(),
+  /** 휴지통에 있지 않은 기록 수. */
+  recordCount: z.number().int().nonnegative(),
+  trashedRecordCount: z.number().int().nonnegative(),
+  /** 포트폴리오 블록이 인용 중인 기록 수. 하나라도 있으면 삭제를 막는다. */
+  quotedRecordCount: z.number().int().nonnegative(),
+  blockingProperties: z.array(CareerCategoryBlockingPropertySchema).max(200),
+});
+
+export const CareerCategoryDeleteImpactResponseSchema = z.strictObject({
+  data: CareerCategoryDeleteImpactSchema,
+});
+
 export const CareerLinkRelationSchema = z.enum([
   "related",
   "parent",
@@ -244,6 +285,8 @@ export type CareerRecordOrigin = z.infer<typeof CareerRecordOriginSchema>;
 export type CareerRecord = z.infer<typeof CareerRecordSchema>;
 export type CareerProperties = z.infer<typeof CareerPropertiesSchema>;
 export type CareerCategory = z.infer<typeof CareerCategorySchema>;
+export type UpdateCareerCategory = z.infer<typeof UpdateCareerCategorySchema>;
+export type CareerCategoryDeleteImpact = z.infer<typeof CareerCategoryDeleteImpactSchema>;
 /** 요청 본문 형태. `propertySchemaV2`는 생략할 수 있다. */
 export type CreateCareerCategory = z.input<typeof CreateCareerCategorySchema>;
 export type CreateCareerRecord = z.infer<typeof CreateCareerRecordSchema>;

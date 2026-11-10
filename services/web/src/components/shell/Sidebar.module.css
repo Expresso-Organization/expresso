@@ -491,6 +491,9 @@
   color: var(--ex-fg-muted);
 }
 
+/* 「보관됨」 줄은 수를 오른쪽 끝에 둔다. 카테고리 줄의 수와 같은 열이다 */
+.archivedToggle > .addCategoryLabel { flex: 1; min-width: 0; }
+
 /* ── 푸터 — 항상 하단 고정 ────────────────────────────────── */
 
 .footer {

@@ -21,6 +21,7 @@ import { CareerViewService } from "./views.js";
 import { MongoCategoryMoveService } from "./category-move.js";
 import { MongoRelationService } from "./relations.js";
 import { MongoCareerComputationService } from "../career-computation/index.js";
+import { archiveCareerCategory, careerCategoryDeleteImpact, deleteCareerCategory } from "./category-lifecycle.js";
 
 const duplicate = (error: unknown) => (error as { code?: number })?.code === 11000;
 /** 기본 7종과 사용자가 더한 카테고리 100개. */
@@ -67,6 +68,9 @@ export class CareerService implements CareerApi {
   trashRecord(userId: string, recordId: string, at = new Date()) { return trashMongoRecord(this.context, userId, recordId, at); }
   restoreRecord(userId: string, recordId: string, at = new Date()) { return restoreMongoRecord(this.context, userId, recordId, at); }
   listTrashedRecords(userId: string, categoryId: string, at = new Date()) { return listTrashedMongoRecords(this.context, userId, categoryId, at); }
+  archiveCategory(userId: string, categoryId: string, archived: boolean, at = new Date()) { return archiveCareerCategory(this.context, userId, categoryId, archived, at); }
+  getCategoryDeleteImpact(userId: string, categoryId: string) { return careerCategoryDeleteImpact(this.context, userId, categoryId); }
+  deleteCategory(userId: string, categoryId: string, deleteRecords: boolean) { return deleteCareerCategory(this.context, userId, categoryId, deleteRecords); }
   recomputeSkill(userId: string, input: RecomputeCareerSkill, computedAt = new Date()) { return recomputeMongoSkill(this.context, userId, input, computedAt); }
   listSkills(userId: string) { return listMongoSkills(this.context, userId); }
   listSkillEvidence(userId: string, skillId: string) { return listMongoSkillEvidence(this.context, userId, skillId); }
