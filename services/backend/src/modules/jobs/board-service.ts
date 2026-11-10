@@ -52,11 +52,12 @@ export class JobBoardService implements JobBoardApi {
   async #brews(userId: string, postingIds: string[]): Promise<Map<string, JobBrewState>> {
     if (!postingIds.length) return new Map();
     const rows = await mongoCollections(this.context.db).brews.aggregate<{ _id: string; brew: { _id: string; status: JobBrewState["status"] }; counts: { answered: number; questionCount: number }[]; portfolios: { _id: string }[] }>([
-      { $match: { userId } },
+      // 휴지통 제작 · 포트폴리오는 공고 화면의 「이어 만들기」 · 「포트폴리오 열기」에 쓰지 않는다.
+      { $match: { userId, deletedAt: null } },
       { $lookup: { from: "job_analyses", localField: "jobAnalysisId", foreignField: "_id", pipeline: [{ $match: { userId, jobPostingId: { $in: postingIds } } }], as: "analysis" } }, { $unwind: "$analysis" },
       { $sort: { updatedAt: -1, _id: -1 } }, { $group: { _id: "$analysis.jobPostingId", brew: { $first: "$$ROOT" } } },
       { $lookup: { from: "interview_sessions", localField: "brew._id", foreignField: "brewId", pipeline: [{ $match: { userId } }, { $group: { _id: null, answered: { $sum: "$answeredCount" }, questionCount: { $sum: "$questionCount" } } }], as: "counts" } },
-      { $lookup: { from: "portfolios", localField: "brew._id", foreignField: "brewId", pipeline: [{ $match: { userId } }, { $sort: { createdAt: -1, _id: -1 } }, { $limit: 1 }, { $project: { _id: 1 } }], as: "portfolios" } },
+      { $lookup: { from: "portfolios", localField: "brew._id", foreignField: "brewId", pipeline: [{ $match: { userId, deletedAt: null } }, { $sort: { createdAt: -1, _id: -1 } }, { $limit: 1 }, { $project: { _id: 1 } }], as: "portfolios" } },
     ]).toArray();
     return new Map(rows.map((row) => [row._id, { id: row.brew._id, status: row.brew.status, answered: row.counts[0]?.answered ?? 0, questionCount: row.counts[0]?.questionCount ?? 0, portfolioId: row.portfolios[0]?._id ?? null }]));
   }

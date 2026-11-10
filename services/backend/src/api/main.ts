@@ -15,7 +15,7 @@ import { AiSearchInterpreter } from "../modules/jobs/search-interpreter.js";
 import { AiFactsReader, createJobSourceAdapters, BundledMarkReader, JobIngestService, JobUrlImporter, SiteMarkReader } from "../modules/jobs/ingest/index.js";
 import { JobBoardService } from "../modules/jobs/index.js";
 import { JobAnalysisService } from "../modules/job-analysis/index.js";
-import { MaterialsService } from "../modules/materials/index.js";
+import { BrewTrashService, MaterialsService } from "../modules/materials/index.js";
 import { InterviewService } from "../modules/interview/index.js";
 import { RecipeService } from "../modules/recipe/index.js";
 import { CompanyResearchService } from "../modules/company-research/index.js";
@@ -31,7 +31,7 @@ import { DesignSystemService } from "../modules/design-systems/service.js";
 import { TemplateService } from "../modules/templates/index.js";
 import { GenerationService } from "../modules/generation/index.js";
 import { PortfolioEditingService } from "../modules/portfolio-editing/index.js";
-import { PortfolioReadService } from "../modules/portfolios/index.js";
+import { PortfolioReadService, PortfolioTrashService } from "../modules/portfolios/index.js";
 import { LayoutService } from "../modules/layout/index.js";
 import { PublishingService } from "../modules/publishing/index.js";
 import { MediaService } from "../modules/media/index.js";
@@ -184,6 +184,7 @@ const app = buildApi({
   jobBoardService,
   jobAnalysisService,
   materialsService,
+  brewTrashService: new BrewTrashService(database),
   interviewService,
   recipeService,
   companyResearchService,
@@ -193,6 +194,7 @@ const app = buildApi({
   generationService,
   portfolioEditingService,
   portfolioReadService,
+  portfolioTrashService: new PortfolioTrashService(database),
   consentService,
   layoutService,
   publishingService,

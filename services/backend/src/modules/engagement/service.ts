@@ -49,7 +49,8 @@ export class EngagementService {
     // 홈 한 번에 독립 find를 여러 개 열면 동시 요청 수만큼 pool 대기가 증폭된다.
     // 컬렉션별 limit과 정렬은 유지하면서 서버 왕복은 단일 aggregation으로 묶는다.
     const rows = await db.brews.aggregate<HomeRow>([
-      { $match: { userId, status: { $ne: "done" } } },
+      // 휴지통 제작 · 포트폴리오는 홈 격자에 서지 않는다.
+      { $match: { userId, status: { $ne: "done" }, deletedAt: null } },
       { $sort: { updatedAt: -1, _id: -1 } },
       { $limit: 5 },
       // 홈 격자가 어느 공고의 제작인지 보여 준다. 공고 없이 시작한 제작은 세 단계가 모두 비고 이름만 남는다.
@@ -62,7 +63,7 @@ export class EngagementService {
         companyName: { $first: "$company.name" }, logoChecksum: { $first: "$company.logoChecksum" },
       } },
       { $unionWith: { coll: db.portfolios.collectionName, pipeline: [
-        { $match: { userId } }, { $sort: { title: 1, _id: 1 } }, { $limit: 10 },
+        { $match: { userId, deletedAt: null } }, { $sort: { title: 1, _id: 1 } }, { $limit: 10 },
         { $project: { _id: 0, kind: { $literal: "portfolio" }, id: "$_id", title: 1, status: 1 } },
       ] } },
       { $unionWith: { coll: db.matchScores.collectionName, pipeline: [
@@ -98,7 +99,7 @@ export class EngagementService {
       empty: { brews: !brews.length, portfolios: !portfolios.length, recommendations: !jobs.length, metrics: !metrics.length },
     });
   }
-  async search(userId: string, input: UnifiedSearchQuery) { const db = mongoCollections(this.context.db); const q = input.q.toLocaleLowerCase(); const [records, portfolios, scores] = await Promise.all([db.careerRecords.find({ userId, deletedAt: null }).toArray(), db.portfolios.find({ userId }).toArray(), db.matchScores.find({ userId }).toArray()]); const jobs = await Promise.all(scores.map(async ({ jobPostingId }) => { const posting = await db.jobPostings.findOne({ _id: jobPostingId }); const company = posting ? await db.companies.findOne({ _id: posting.companyId }) : null; return posting ? { id: posting._id, type: "job" as const, title: posting.title, subtitle: company?.name ?? "", sortTitle: posting.title.toLocaleLowerCase() } : null; })); let rows = [...records.map((row) => ({ id: row._id, type: "record" as const, title: row.title, subtitle: row.status, sortTitle: row.title.toLocaleLowerCase() })), ...portfolios.map((row) => ({ id: row._id, type: "portfolio" as const, title: row.title, subtitle: row.status, sortTitle: row.title.toLocaleLowerCase() })), ...jobs.filter((row): row is NonNullable<typeof row> => Boolean(row))].filter(({ title }) => title.toLocaleLowerCase().includes(q)).sort((a, b) => a.sortTitle.localeCompare(b.sortTitle) || a.type.localeCompare(b.type) || a.id.localeCompare(b.id)); const cursor = decode(input.cursor); if (cursor) rows = rows.filter((row) => row.sortTitle > cursor.title || row.sortTitle === cursor.title && (row.type > cursor.type || row.type === cursor.type && row.id > cursor.id)); const hasNextPage = rows.length > input.limit; const page = rows.slice(0, input.limit); return { data: page.map(({ sortTitle: _, ...row }) => row), page: { hasNextPage, nextCursor: hasNextPage && page.at(-1) ? encode(page.at(-1)!) : null } }; }
+  async search(userId: string, input: UnifiedSearchQuery) { const db = mongoCollections(this.context.db); const q = input.q.toLocaleLowerCase(); const [records, portfolios, scores] = await Promise.all([db.careerRecords.find({ userId, deletedAt: null }).toArray(), db.portfolios.find({ userId, deletedAt: null }).toArray(), db.matchScores.find({ userId }).toArray()]); const jobs = await Promise.all(scores.map(async ({ jobPostingId }) => { const posting = await db.jobPostings.findOne({ _id: jobPostingId }); const company = posting ? await db.companies.findOne({ _id: posting.companyId }) : null; return posting ? { id: posting._id, type: "job" as const, title: posting.title, subtitle: company?.name ?? "", sortTitle: posting.title.toLocaleLowerCase() } : null; })); let rows = [...records.map((row) => ({ id: row._id, type: "record" as const, title: row.title, subtitle: row.status, sortTitle: row.title.toLocaleLowerCase() })), ...portfolios.map((row) => ({ id: row._id, type: "portfolio" as const, title: row.title, subtitle: row.status, sortTitle: row.title.toLocaleLowerCase() })), ...jobs.filter((row): row is NonNullable<typeof row> => Boolean(row))].filter(({ title }) => title.toLocaleLowerCase().includes(q)).sort((a, b) => a.sortTitle.localeCompare(b.sortTitle) || a.type.localeCompare(b.type) || a.id.localeCompare(b.id)); const cursor = decode(input.cursor); if (cursor) rows = rows.filter((row) => row.sortTitle > cursor.title || row.sortTitle === cursor.title && (row.type > cursor.type || row.type === cursor.type && row.id > cursor.id)); const hasNextPage = rows.length > input.limit; const page = rows.slice(0, input.limit); return { data: page.map(({ sortTitle: _, ...row }) => row), page: { hasNextPage, nextCursor: hasNextPage && page.at(-1) ? encode(page.at(-1)!) : null } }; }
 }
 
 export { EngagementService as MongoEngagementService };
