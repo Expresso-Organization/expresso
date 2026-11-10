@@ -557,6 +557,55 @@
   color: var(--ex-fg-muted);
 }
 
+/*
+ * 표시 이름 편집. 입력칸이 줄의 남는 폭을 쓰고 저장·취소가 오른쪽에 선다.
+ * 오류는 줄 전체를 쓰는 아래 칸으로 내려선다 — 옆에 두면 입력칸이 줄어든다.
+ */
+.nameForm {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.nameInput {
+  flex: 1;
+  min-width: 160px;
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
+  border-radius: 9px;
+  padding: 8px 12px;
+  font-size: var(--ex-text-sm);
+  font-weight: 600;
+  color: var(--ex-fg);
+  transition:
+    border-color var(--ex-motion-quick),
+    box-shadow var(--ex-motion-quick);
+}
+
+.nameInput:hover {
+  border-color: var(--ex-border-firm);
+}
+
+.nameInput:focus {
+  outline: none;
+  border-color: var(--ex-fg);
+  box-shadow: var(--ex-focus-ring);
+}
+
+.nameInputInvalid,
+.nameInputInvalid:hover {
+  border-color: var(--ex-status-danger);
+  background: var(--ex-status-danger-surface);
+}
+
+.nameError {
+  flex-basis: 100%;
+  margin-top: 0;
+}
+
 /* ── AI 사용 동의 ─────────────────────────────────────────── */
 
 .consentRows {

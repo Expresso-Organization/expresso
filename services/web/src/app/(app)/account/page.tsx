@@ -14,6 +14,7 @@ import { grantConsentAction, revokeConsentAction } from "../../consent-actions";
 
 import { AccountNav } from "./AccountNav";
 import { DataSection } from "./DataSection";
+import { DisplayNameForm } from "./DisplayNameForm";
 import { ResendVerificationForm } from "./ResendVerificationForm";
 import { UsageCharts } from "./UsageCharts";
 import styles from "./page.module.css";
@@ -90,12 +91,17 @@ export default async function AccountPage() {
             <section id="profile" className={styles.section}>
               <HashScroll id="profile" />
               <div className={styles.sectionLabel}>프로필</div>
-              <div className={styles.dataRow}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div className={styles.dataTitle}>{session.user.displayName}</div>
-                  <div className={styles.dataNote}>표시 이름</div>
+              {/* 관리자가 더미 계정을 대신 보는 중에는 이름을 바꿀 수 없다 — 글자만 둔다. */}
+              {session.user.impersonation ? (
+                <div className={styles.dataRow}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className={styles.dataTitle}>{session.user.displayName}</div>
+                    <div className={styles.dataNote}>표시 이름</div>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <DisplayNameForm displayName={session.user.displayName} />
+              )}
               <div className={`${styles.dataRow} ${styles.verifyRow}`}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className={styles.dataTitle}>{session.user.email}</div>

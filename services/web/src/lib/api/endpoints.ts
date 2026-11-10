@@ -23,6 +23,7 @@ import {
   type GoogleLink,
   type PasswordResetRequest,
   type PasswordResetConfirm,
+  type UpdateProfile,
   type EmailVerificationConfirm,
   InsightResponseSchema,
   MetricCatalogResponseSchema,
@@ -177,6 +178,14 @@ export const auth = {
     request(`${API_PREFIX}/me`, CurrentUserResponseSchema, {
       accessToken,
       cache: "no-store",
+    }),
+
+  /** 설정 → 프로필의 표시 이름 변경. 바뀐 사용자를 그대로 돌려받는다. */
+  updateProfile: (accessToken: string, input: UpdateProfile) =>
+    request(`${API_PREFIX}/me`, CurrentUserResponseSchema, {
+      method: "PATCH",
+      accessToken,
+      body: input,
     }),
 };
 

@@ -1,12 +1,12 @@
 "use server";
 
-import { CancelDeletionSchema, NotificationKindSchema } from "@expresso/contracts";
+import { CancelDeletionSchema, NotificationKindSchema, UpdateProfileSchema } from "@expresso/contracts";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { ApiError } from "@/lib/api/client";
-import { account, notificationSettings } from "@/lib/api/endpoints";
+import { account, auth, notificationSettings } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 import { DELETION_CODE_COOKIE, DELETION_CODE_MAX_AGE_SECONDS, DELETION_CODE_PATH } from "@/lib/auth/deletion-code";
 import { clearAccessToken } from "@/lib/session";
@@ -19,6 +19,36 @@ export async function setNotificationPreferenceAction(formData: FormData): Promi
   const session = await requireSession();
   await notificationSettings.set(session.accessToken, kind.data, formData.get("enabled") === "true");
   revalidatePath("/account");
+}
+
+export interface DisplayNameState {
+  /** 저장이 끝났다. 폼이 보기 상태로 돌아간다. */
+  saved?: boolean;
+  error?: string;
+}
+
+/**
+ * 07 프로필 — 표시 이름 변경.
+ *
+ * 사이드바 계정 칸은 앱 셸 레이아웃이 그린다. `/account`만 다시 그리면 옛 이름이 남으므로
+ * 레이아웃부터 무효화한다.
+ */
+export async function updateDisplayNameAction(_previous: DisplayNameState, formData: FormData): Promise<DisplayNameState> {
+  const parsed = UpdateProfileSchema.safeParse({ displayName: formData.get("displayName") });
+  if (!parsed.success) {
+    const tooLong = parsed.error.issues.some((issue) => issue.code === "too_big");
+    return { error: tooLong ? "이름은 200자 이하로 적어 주세요." : "이름을 적어 주세요." };
+  }
+  const session = await requireSession();
+  try {
+    await auth.updateProfile(session.accessToken, parsed.data);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 403) return { error: "다른 계정을 대신 보는 중에는 이름을 바꿀 수 없습니다." };
+    if (error instanceof ApiError && error.status === 400) return { error: "이름을 다시 확인해 주세요." };
+    return { error: "이름을 바꾸지 못했습니다. 다시 시도해 주세요." };
+  }
+  revalidatePath("/", "layout");
+  return { saved: true };
 }
 
 export interface DeletionState {
