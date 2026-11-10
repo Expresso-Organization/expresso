@@ -2335,6 +2335,12 @@
   overflow-y: auto;
 }
 
+/* 기록 찾기 칸. 속성 입력 칸(.textInput)과 모양을 나누는 것은 곡률뿐이다 — 검색 칸은 pill. */
+.librarySearch {
+  border-radius: var(--ex-radius-pill);
+  padding-inline: 14px;
+}
+
 .libraryGroup {
   display: grid;
   gap: 2px;
