@@ -283,12 +283,6 @@
   color: var(--ex-fg-subtle);
 }
 
-.primaryCount {
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-3xs);
-  color: var(--ex-fg-muted);
-}
-
 /* ── 내 포트폴리오 ────────────────────────────────────────── */
 
 .portfolios {

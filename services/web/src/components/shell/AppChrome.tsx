@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Suspense } from "react";
 
-import { homeEngagement, recentPortfolios, watchedJobs } from "@/lib/app-data";
+import { recentPortfolios, watchedJobs } from "@/lib/app-data";
 import { publicSiteHost } from "@/lib/public-site";
 import { requireSession } from "@/lib/require-session";
 
@@ -13,7 +13,7 @@ import { SidebarSkeleton } from "./SidebarSkeleton";
 /**
  * 앱 셸 화면의 공통 껍데기. 각 구간의 `layout.tsx`가 이것 하나만 그린다.
  *
- * 자체는 `async`가 아니다 — 사이드바가 읽는 세 응답을 레이아웃이 기다리면
+ * 자체는 `async`가 아니다 — 사이드바가 읽는 응답을 레이아웃이 기다리면
  * 그 아래 화면 전체가 같이 막힌다. 대신 사이드바만 Suspense 안에 두어,
  * 셸과 본문이 먼저 나가고 사이드바가 뒤따라 채워지게 한다.
  */
@@ -38,9 +38,8 @@ export function AppChrome({ children }: { children: ReactNode }) {
 
 async function AppSidebar() {
   const session = await requireSession();
-  const [portfolioList, { data: home }, watched] = await Promise.all([
+  const [portfolioList, watched] = await Promise.all([
     recentPortfolios(session.accessToken),
-    homeEngagement(session.accessToken),
     watchedJobs(session.accessToken),
   ]);
 
@@ -75,9 +74,6 @@ async function AppSidebar() {
         score: job.match?.total ?? null,
       }))}
       interestTotal={watched.summary.total}
-      jobCount={
-        home.recommendedJobs.length > 0 ? home.recommendedJobs.length : undefined
-      }
       displayName={session.user.displayName}
       // 대신 로그인 중이면 세션 주인이 관리자다.
       admin={session.user.role === "admin" || session.user.impersonation !== null}
