@@ -487,6 +487,8 @@ function useSheetBuild(feed: RefObject<HTMLDivElement | null>, enabled: boolean,
       if (all.every(isShown)) return;
       if (settled === "manual") showAll();
       else if (settled === "done") {
+        // 다 올려 멈췄다면 앞 구역의 줄은 이미 다 보였다. 다음 차례는 곧바로 새 구역을 올리는 것이다.
+        latest = null;
         settled = null;
         delete node.dataset.settled;
         schedule(0);
