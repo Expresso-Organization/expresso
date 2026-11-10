@@ -32,7 +32,7 @@ date: 2026-11-10
 
 2단계 `preClose` 이동. `preClose`에서 실행을 끊으면 SSE가 마지막 상태를 보내고 닫힌다. 훅이 실패하면 `app.close()`가 멈출 수 있으므로 `close()`는 `Promise.allSettled`로 작업을 기다리는 지금 구조를 유지한다. 문제가 생기면 훅 이름만 `onClose`로 되돌리면 이전 동작이다.
 
-운영 유닛 반영은 `sudo cp` + `daemon-reload`이며 다음 재시작부터 적용된다. 되돌리기는 이전 유닛 파일을 다시 복사하는 것이다.
+운영 유닛 반영은 `sudo cp` + `daemon-reload`이며 다음 재시작부터 적용된다. 머지 전에 반영한다 — 지금 코드에서도 SIGTERM이 node에만 가면 `onClose` 경로가 abort해 상태가 `interrupted`가 된다. 되돌리기는 이전 유닛 파일을 다시 복사하는 것이다.
 
 ## 검증
 
