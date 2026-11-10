@@ -56,7 +56,7 @@ export function RecordLibrary({
     <div className={styles.library}>
       <input
         type="search"
-        className={styles.textInput}
+        className={`${styles.textInput} ${styles.librarySearch}`}
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         placeholder="기록 제목"

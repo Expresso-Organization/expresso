@@ -19,3 +19,11 @@ export class PageServiceError extends Error {
     this.statusCode = statusCode;
   }
 }
+
+/** 에이전트가 쓴 요소 고침이 지면 규칙에 걸렸습니다. 항목마다 고칠 방법을 적은 문장입니다. */
+export class PageElementIssues extends PageServiceError {
+  constructor(readonly issues: string[]) {
+    super(422, issues.join("\n"));
+    this.name = "PageElementIssues";
+  }
+}

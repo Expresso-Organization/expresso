@@ -78,6 +78,42 @@ describe("job analysis evidence", () => {
       { id: randomUUID(), text: "Designed a brand identity." },
     ])).toEqual({ coverage: "missing", coveredBy: [] });
   });
+
+  it("요건에 든 공고 키워드가 기록에 모두 있으면 나머지 낱말과 상관없이 덮인 것으로 본다", () => {
+    const requirement = {
+      label: "Python, SQL 등 Data Tool 능숙한 사용 경험",
+      kind: "must" as const,
+      axis: "technology" as const,
+      sourceSpan: { start: 0, end: 4, quote: "Python, SQL 등의 Data Tool의 능숙한 사용 경험 및 역량을 보유하신 분" },
+    };
+    const python = randomUUID();
+    const sql = randomUUID();
+    const other = randomUUID();
+    const keywords = ["Python", "SQL", "Power BI", "데이터 분석 3년 이상"];
+
+    expect(calculateRequirementCoverage(requirement, [
+      { id: python, text: "python으로 지표 자동화" },
+      { id: sql, text: "SQL 마트 설계" },
+      { id: other, text: "판매자 인터뷰" },
+    ], keywords)).toEqual({ coverage: "covered", coveredBy: [python, sql] });
+
+    // 키워드 하나가 비면 덮인 것이 아니다. 낱말 규칙으로 돌아간다.
+    expect(calculateRequirementCoverage(requirement, [
+      { id: python, text: "python으로 지표 자동화" },
+    ], keywords)).toEqual({ coverage: "partial", coveredBy: [python] });
+  });
+
+  it("요건에 공고 키워드가 없으면 키워드로 덮었다고 하지 않는다", () => {
+    const requirement = {
+      label: "빠른 환경의 우선순위 판단",
+      kind: "must" as const,
+      axis: "other" as const,
+      sourceSpan: { start: 0, end: 4, quote: "빠른 환경의 우선순위 판단" },
+    };
+    const id = randomUUID();
+    expect(calculateRequirementCoverage(requirement, [{ id, text: "Python 우선순위" }], ["Python"]))
+      .toEqual({ coverage: "partial", coveredBy: [id] });
+  });
 });
 
 /** 받은 응답을 계약으로만 거른다. `check`는 어댑터가 부르므로 넘어온 것을 담아 두고 테스트가 직접 부른다. */

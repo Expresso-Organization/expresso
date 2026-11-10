@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { calculateExplainableMatch } from "./match-score.js";
+import { mergedYears } from "../career/record-period.js";
+import { calculateExplainableMatch, keywordMet } from "./match-score.js";
 
 // 자연어 검색의 AI 응답 검증은 search-interpreter.test.ts에서 확인합니다.
 
@@ -54,6 +55,25 @@ describe("explainable match scoring", () => {
       matched: [],
       missing: [],
     });
+  });
+
+  it("연차 키워드는 글이 아니라 경력 기간으로 잰다", () => {
+    const source = "고른마켓 데이터 분석가로 일했습니다";
+    expect(keywordMet("데이터 분석 3년 이상", source, 4)).toBe(true);
+    expect(keywordMet("데이터 분석 3년 이상", source, 2)).toBe(false);
+    expect(keywordMet("백엔드 개발 3년 이상", source, 4)).toBe(false);
+    expect(keywordMet("3+ years", source, 4)).toBe(true);
+    expect(keywordMet("Power BI", source, 10)).toBe(false);
+  });
+
+  it("경력 기간은 겹치는 달을 한 번만 세고 끝이 없으면 오늘까지다", () => {
+    const at = new Date("2026-11-01T00:00:00Z");
+    expect(mergedYears([
+      { start: "2022-03-01", end: "2024-12-01" },
+      { start: "2024-01-01", end: "2024-06-01" },
+      { start: "2025-11-01", end: null },
+    ], at)).toBeCloseTo(33 / 12 + 1);
+    expect(mergedYears([], at)).toBe(0);
   });
 
   it("요건을 하나도 못 읽은 공고는 점수를 내지 않는다", () => {

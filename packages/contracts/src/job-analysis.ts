@@ -84,6 +84,8 @@ export const JobAnalysisStatusSchema = z.strictObject({
 export const JobAnalysisResultSchema = z.strictObject({
   analysis: JobAnalysisStatusSchema,
   requirements: z.array(RequirementCoverageSchema),
+  /** 공고 원문. 요건의 `sourceSpan`이 가리키는 글이다. 공고가 없는 분석은 null이다. */
+  sourceText: z.string().nullable().default(null),
   previous: z.strictObject({
     version: z.number().int().positive(),
     requirements: z.array(RequirementCoverageSchema),

@@ -1,6 +1,8 @@
 .wrap {
   display: grid;
   place-items: center;
+  align-content: center;
+  gap: 28px;
   min-height: 420px;
   padding: 48px 24px;
 }
@@ -119,7 +121,7 @@
 .ghost {
   margin-top: 6px;
   padding: 9px 18px;
-  border-radius: 10px;
+  border-radius: var(--ex-radius-control);
   font-family: inherit;
   font-size: var(--ex-text-md);
   font-weight: 600;

@@ -1,7 +1,7 @@
 import { type NotificationDeliveryProvider, EngagementError } from "./public.js";
 export { type NotificationDeliveryProvider, EngagementError } from "./public.js";
 import { randomUUID } from "node:crypto";
-import { companyLogoUrl, HomeReadModelSchema, type NotificationKind, type UnifiedSearchQuery } from "@expresso/contracts";
+import { companyLogoUrl, HomeReadModelSchema, type NotificationKind } from "@expresso/contracts";
 import type { SqlTag } from "../../platform/legacy-mysql.js";
 
 import { addOutboxEvent } from "../../platform/legacy-mysql-outbox.js";
@@ -11,27 +11,11 @@ interface NotificationRow {
   read_at: Date | string | null; delivery_status: "queued" | "sending" | "sent" | "failed" | "suppressed";
   attempts: number; created_at: Date | string;
 }
-interface SearchRow { id: string; resource_type: "record" | "portfolio" | "job"; title: string; subtitle: string; sort_title: string }
 
 function iso(value: Date | string): string { return new Date(value).toISOString(); }
 function kstDate(at: Date): string { return new Date(at.getTime() + 9 * 60 * 60 * 1_000).toISOString().slice(0, 10); }
 function notificationDto(row: NotificationRow) {
   return { id: row.id, kind: row.kind, targetUrl: row.target_url, readAt: row.read_at ? iso(row.read_at) : null, deliveryStatus: row.delivery_status, attempts: row.attempts, createdAt: iso(row.created_at) };
-}
-
-function decodeCursor(cursor: string | undefined): { title: string; type: string; id: string } | null {
-  if (!cursor) return null;
-  try {
-    const parsed = JSON.parse(Buffer.from(cursor, "base64url").toString("utf8")) as Record<string, unknown>;
-    if (typeof parsed.title !== "string" || typeof parsed.type !== "string" || typeof parsed.id !== "string") throw new Error();
-    return { title: parsed.title, type: parsed.type, id: parsed.id };
-  } catch {
-    throw new EngagementError(400, "invalid search cursor");
-  }
-}
-
-function encodeCursor(row: SearchRow): string {
-  return Buffer.from(JSON.stringify({ title: row.sort_title, type: row.resource_type, id: row.id })).toString("base64url");
 }
 
 export class EngagementService {
@@ -177,32 +161,4 @@ export class EngagementService {
     });
   }
 
-  async search(userId: string, input: UnifiedSearchQuery) {
-    const cursor = decodeCursor(input.cursor);
-    const pattern = `%${input.q}%`;
-    const rows = await this.#sql<SearchRow[]>`
-      with resources as (
-        select record.id, 'record' as resource_type, record.title, record.status as subtitle, lower(record.title) as sort_title
-        from record where record.user_id = ${userId} and record.deleted_at is null
-        union all
-        select portfolio.id, 'portfolio', portfolio.title, portfolio.status, lower(portfolio.title)
-        from portfolio where portfolio.user_id = ${userId}
-        union all
-        select posting.id, 'job', posting.title, company.name, lower(posting.title)
-        from job_posting as posting join company on company.id = posting.company_id
-        where exists (select 1 from match_score where match_score.user_id = ${userId} and match_score.job_posting_id = posting.id)
-      )
-      select id, resource_type, title, subtitle, sort_title from resources
-      where lower(title) like lower(${pattern})
-        and (${cursor === null} or (sort_title, resource_type, id) > (${cursor?.title ?? ""}, ${cursor?.type ?? ""}, ${cursor?.id ?? "00000000-0000-0000-0000-000000000000"}))
-      order by sort_title, resource_type, id
-      limit ${input.limit + 1}
-    `;
-    const hasNextPage = rows.length > input.limit;
-    const dataRows = rows.slice(0, input.limit);
-    return {
-      data: dataRows.map((row) => ({ id: row.id, type: row.resource_type, title: row.title, subtitle: row.subtitle })),
-      page: { hasNextPage, nextCursor: hasNextPage && dataRows.at(-1) ? encodeCursor(dataRows.at(-1)!) : null },
-    };
-  }
 }

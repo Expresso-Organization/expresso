@@ -6,6 +6,7 @@ import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 
 import { analyzePostingAction } from "../brew/new/new-brew-actions";
 import { deadlineLabel } from "../jobs/JobRows";
+import { HomeJobsTabs } from "./HomeJobsTabs";
 import { missingRequirements } from "./home-model";
 import styles from "./page.module.css";
 
@@ -13,54 +14,28 @@ import styles from "./page.module.css";
  * 00 공고 카드 — 첫 탭은 목표 직군의 진행 중 공고, 둘째 탭은 관심 공고.
  *
  * 점수는 내가 분석한 공고에만 선다. 분석하지 않은 공고는 근무지 · 경력을 보여 준다.
- * 탭은 링크다(`?tab=interested`) — 서버가 그린 화면을 바꿀 뿐 클라이언트 상태를 두지 않는다.
+ * 두 탭의 행을 모두 여기서 그려 `HomeJobsTabs`에 넘긴다. 홈이 두 목록을 이미 함께
+ * 받아 두므로, 탭을 바꿀 때 서버를 다시 부르지 않고 클라이언트에서 보일 쪽만 고른다.
  */
 export function HomeJobs({
-  tab,
   role,
   interested,
 }: {
-  tab: "role" | "interested";
   role: { label: string; family: string | null; total: number; rows: JobPostingSummary[] };
   interested: { total: number; rows: JobPostingSummary[] };
 }) {
-  const rows = tab === "interested" && interested.total > 0 ? interested.rows : role.rows;
-  const showing = tab === "interested" && interested.total > 0 ? "interested" : "role";
-
   return (
     <div className={`${styles.card} ${styles.jobsCard}`}>
-      <div className={styles.cardHead}>
-        <div className={styles.segment}>
-          <Link
-            href={"/home" as Route}
-            className={`${styles.segmentItem} ${showing === "role" ? styles.segmentItemActive : ""}`}
-          >
-            {role.label} {role.total}
-          </Link>
-          {interested.total > 0 ? (
-            <Link
-              href={{ pathname: "/home", query: { tab: "interested" } }}
-              className={`${styles.segmentItem} ${showing === "interested" ? styles.segmentItemActive : ""}`}
-            >
-              관심 {interested.total}
-            </Link>
-          ) : null}
-        </div>
-        <Link
-          href={{
-            pathname: "/jobs",
-            query: showing === "interested" ? { interested: "true" } : role.family ? { family: role.family } : {},
-          }}
-          className={styles.cardLink}
-        >
-          전체
-        </Link>
-      </div>
-      {rows.map((job) => (
-        <JobRow key={job.id} job={job} />
-      ))}
+      <HomeJobsTabs
+        role={{ label: role.label, family: role.family, total: role.total, rows: <JobRows jobs={role.rows} /> }}
+        interested={{ total: interested.total, rows: interested.total > 0 ? <JobRows jobs={interested.rows} /> : null }}
+      />
     </div>
   );
+}
+
+function JobRows({ jobs }: { jobs: JobPostingSummary[] }) {
+  return jobs.map((job) => <JobRow key={job.id} job={job} />);
 }
 
 function JobRow({ job }: { job: JobPostingSummary }) {

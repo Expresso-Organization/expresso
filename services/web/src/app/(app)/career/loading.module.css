@@ -41,7 +41,7 @@
 /* 테이블 */
 .table {
   border: 1px solid var(--ex-border-hair);
-  border-radius: 10px;
+  border-radius: var(--ex-radius-card);
   overflow: hidden;
 }
 

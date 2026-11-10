@@ -15,7 +15,7 @@
   min-width: 0;
   background: var(--ex-bg);
   border: 1px solid var(--ex-border);
-  border-radius: 16px;
+  border-radius: var(--ex-radius-card);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -205,7 +205,7 @@
   font-size: var(--ex-text-2xs);
   color: var(--ex-accent-text);
   background: var(--ex-accent-surface);
-  border-radius: 5px;
+  border-radius: var(--ex-radius-pill);
   padding: 3px 8px;
   white-space: nowrap;
 }
@@ -282,7 +282,7 @@
   color: var(--ex-fg-body);
   background: var(--ex-bg-sunken);
   border: 1px solid var(--ex-bg-track);
-  border-radius: 999px;
+  border-radius: var(--ex-radius-pill);
   padding: 6px 12px;
   white-space: nowrap;
   transition:
@@ -307,7 +307,7 @@
 
 .inputBox {
   border: 1px solid var(--ex-border);
-  border-radius: 12px;
+  border-radius: var(--ex-radius-control);
   padding: 13px 15px;
   display: flex;
   flex-direction: column;
@@ -359,7 +359,7 @@
   color: var(--ex-fg-on-accent);
   background: var(--ex-accent);
   border: none;
-  border-radius: 9px;
+  border-radius: var(--ex-radius-control);
   padding: 9px 18px;
   display: flex;
   align-items: center;
@@ -377,7 +377,7 @@
   flex-shrink: 0;
   background: var(--ex-bg);
   border: 1px solid var(--ex-border);
-  border-radius: 16px;
+  border-radius: var(--ex-radius-card);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -578,7 +578,7 @@
   letter-spacing: 0.08em;
   color: var(--ex-accent-text);
   background: var(--ex-accent-surface);
-  border-radius: 4px;
+  border-radius: var(--ex-radius-pill);
   padding: 2px 5px;
   flex-shrink: 0;
 }
@@ -629,7 +629,7 @@
   color: var(--ex-fg-body);
   background: var(--ex-bg);
   border: 1px solid var(--ex-border);
-  border-radius: 9px;
+  border-radius: var(--ex-radius-control);
   padding: 9px 14px;
   white-space: nowrap;
   cursor: pointer;

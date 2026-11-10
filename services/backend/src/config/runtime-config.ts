@@ -13,6 +13,7 @@ const runtimeConfigSchema = z.object({
   OUTBOX_POLL_INTERVAL_MS: z.coerce.number().int().min(100).max(60_000).default(1_000),
   OUTBOX_BATCH_SIZE: z.coerce.number().int().min(1).max(100).default(25),
   OUTBOX_MAX_ATTEMPTS: z.coerce.number().int().min(1).max(20).default(5),
+  WORKER_CONCURRENCY: z.coerce.number().int().min(1).max(16).default(3),
   QUEUE_PREFIX: z.string().regex(/^[a-z][a-z0-9-]{1,30}$/).default("expresso-mongo-v1"),
   ASSET_SIGNING_SECRET: z.string().min(16).default("expresso-local-asset-signing-secret"),
   MEDIA_PROVIDER: z.enum(["local", "s3"]).default("local"),
@@ -146,6 +147,8 @@ export interface RuntimeConfig {
   outboxPollIntervalMs: number;
   outboxBatchSize: number;
   outboxMaxAttempts: number;
+  /** AI를 부르는 줄(생성 · 일반 · 다듬기)마다 함께 도는 잡 수입니다. */
+  workerConcurrency?: number;
   queuePrefix: string;
   assetSigningSecret?: string;
   /** 올린 이미지를 어디에 두는가. `s3`는 아직 어댑터가 없다. */
@@ -213,6 +216,7 @@ export function loadRuntimeConfig(
     outboxPollIntervalMs: result.OUTBOX_POLL_INTERVAL_MS,
     outboxBatchSize: result.OUTBOX_BATCH_SIZE,
     outboxMaxAttempts: result.OUTBOX_MAX_ATTEMPTS,
+    workerConcurrency: result.WORKER_CONCURRENCY,
     queuePrefix: result.QUEUE_PREFIX,
     assetSigningSecret: result.ASSET_SIGNING_SECRET,
     mediaProvider: result.MEDIA_PROVIDER,

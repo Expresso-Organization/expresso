@@ -2,29 +2,33 @@ import { setTimeout as delay } from "node:timers/promises";
 import type { FastifyInstance, preHandlerHookHandler } from "fastify";
 import { API_PREFIX, AgentPlanDecisionSchema, AgentReplanDecisionSchema, UpdateTaskProgressSchema, AgentRecordDraftDecisionSchema, UuidSchema, CreateAgentConversationSchema, SendAgentMessageSchema, AddAgentContextSchema, AgentApprovalSchema, SaveAgentApiKeySchema, SetAgentContextsSchema } from "@expresso/contracts";
 import { requireAuth } from "../../api/plugins/auth-context.js";
+import type { IdentityPrincipal } from "../identity/index.js";
 import type { AgentChatService } from "./service.js";
 
 export function registerAgentChatRoutes(app: FastifyInstance, service: AgentChatService, authenticate: preHandlerHookHandler, developerUserIds: readonly string[] = []) {
   const base = `${API_PREFIX}/agent/conversations`;
   const options = { preHandler: authenticate };
   const id = (params: unknown) => UuidSchema.parse((params as { id: string }).id);
-  const developer = (userId: string) => developerUserIds.includes(userId);
-  app.get(`${API_PREFIX}/agent/access`, options, async req => ({ data: { enabled: service.enabled, serverCredentialAllowed: developer(requireAuth(req).user.id), consentRequired: await service.consentRequired(requireAuth(req).user.id), apiKeyConfigured: await service.credentials.configured(requireAuth(req).user.id), model: "sonnet" } }));
+  // 서버 Claude 인증은 개발 멤버와, 관리자가 대신 로그인한 더미 계정이 쓴다.
+  // 더미 계정은 스스로 로그인할 수 없어 대신 로그인 중이라는 것이 곧 관리자가 연 더미 계정이다.
+  const serverCredential = ({ user }: IdentityPrincipal) => developerUserIds.includes(user.id) || user.impersonation !== null;
+  app.get(`${API_PREFIX}/agent/access`, options, async req => ({ data: { enabled: service.enabled, serverCredentialAllowed: serverCredential(requireAuth(req)), consentRequired: await service.consentRequired(requireAuth(req).user.id), apiKeyConfigured: await service.credentials.configured(requireAuth(req).user.id), model: "sonnet" } }));
   app.put(`${API_PREFIX}/agent/credential`, options, async req => { await service.credentials.save(requireAuth(req).user.id, SaveAgentApiKeySchema.parse(req.body).apiKey); return { data: { configured: true } }; });
   app.delete(`${API_PREFIX}/agent/credential`, options, async req => { await service.credentials.remove(requireAuth(req).user.id); return { data: { configured: false } }; });
   app.get(base, options, async req => ({ data: await service.list(requireAuth(req).user.id) }));
   app.post(base, options, async (req, reply) => { const input = CreateAgentConversationSchema.parse(req.body); return reply.code(201).send({ data: await service.create(requireAuth(req).user.id, input.contexts) }); });
   app.get(`${base}/:id`, options, async req => ({ data: await service.get(requireAuth(req).user.id, id(req.params)) }));
-  app.post(`${base}/:id/messages`, options, async (req, reply) => { const principal = requireAuth(req); const input = SendAgentMessageSchema.parse(req.body); const apiKey = developer(principal.user.id) ? undefined : await service.credentials.read(principal.user.id); if (!developer(principal.user.id) && !apiKey) return reply.code(403).send({ error: { message: "Anthropic API 키를 입력해 주세요." } }); return reply.code(202).send({ data: await service.send(principal.user.id, id(req.params), input, apiKey) }); });
+  app.post(`${base}/:id/messages`, options, async (req, reply) => { const principal = requireAuth(req); const input = SendAgentMessageSchema.parse(req.body); const apiKey = serverCredential(principal) ? undefined : await service.credentials.read(principal.user.id); if (!serverCredential(principal) && !apiKey) return reply.code(403).send({ error: { message: "Anthropic API 키를 입력해 주세요." } }); return reply.code(202).send({ data: await service.send(principal.user.id, id(req.params), input, apiKey) }); });
   app.get(`${base}/:id/reviews/:toolId`, options, async req => ({ data: await service.freshness(requireAuth(req).user.id, id(req.params), UuidSchema.parse((req.params as { toolId: string }).toolId)) }));
   app.post(`${base}/:id/record-drafts/:draftId`, options, async req => ({ data: await service.decideRecordDraft(requireAuth(req).user.id, id(req.params), UuidSchema.parse((req.params as { draftId: string }).draftId), AgentRecordDraftDecisionSchema.parse(req.body)) }));
   app.post(`${base}/:id/plan-drafts/:draftId`, options, async req => ({ data: await service.decidePlanDraft(requireAuth(req).user.id, id(req.params), UuidSchema.parse((req.params as { draftId: string }).draftId), AgentPlanDecisionSchema.parse(req.body)) }));
   app.post(`${base}/:id/replan-drafts/:draftId`, options, async req => ({ data: await service.decideReplanDraft(requireAuth(req).user.id, id(req.params), UuidSchema.parse((req.params as { draftId: string }).draftId), AgentReplanDecisionSchema.parse(req.body)) }));
   app.patch(`${API_PREFIX}/agent/plans/:planId/tasks/:taskId`, options, async req => { const params = req.params as { planId: string; taskId: string }; return { data: await service.updateTaskProgress(requireAuth(req).user.id, UuidSchema.parse(params.planId), UuidSchema.parse(params.taskId), UpdateTaskProgressSchema.parse(req.body)) }; });
   app.get(`${API_PREFIX}/agent/plans/:planId`, options, async req => ({ data: await service.plan(requireAuth(req).user.id, UuidSchema.parse((req.params as { planId: string }).planId)) }));
-  app.post(`${base}/:id/retry`, options, async (req, reply) => { const principal = requireAuth(req); const apiKey = developer(principal.user.id) ? undefined : await service.credentials.read(principal.user.id); if (!developer(principal.user.id) && !apiKey) return reply.code(403).send({ error: { message: "Anthropic API 키를 입력해 주세요." } }); return reply.code(202).send({ data: await service.retry(principal.user.id, id(req.params), apiKey) }); });
+  app.post(`${base}/:id/retry`, options, async (req, reply) => { const principal = requireAuth(req); const apiKey = serverCredential(principal) ? undefined : await service.credentials.read(principal.user.id); if (!serverCredential(principal) && !apiKey) return reply.code(403).send({ error: { message: "Anthropic API 키를 입력해 주세요." } }); return reply.code(202).send({ data: await service.retry(principal.user.id, id(req.params), apiKey) }); });
   app.post(`${base}/:id/contexts`, options, async req => ({ data: await service.attach(requireAuth(req).user.id, id(req.params), AddAgentContextSchema.parse(req.body).context) }));
   app.post(`${base}/:id/context-selection`, options, async req => { const input = SetAgentContextsSchema.parse(req.body); return { data: await service.setContexts(requireAuth(req).user.id, id(req.params), input.contexts, input.expectedVersion) }; });
+  app.post(`${base}/:id/page-edits/:editId/undo`, options, async req => ({ data: await service.undoPageEdit(requireAuth(req).user.id, id(req.params), UuidSchema.parse((req.params as { editId: string }).editId)) }));
   app.post(`${base}/:id/cancel`, options, async req => ({ data: await service.cancel(requireAuth(req).user.id, id(req.params)) }));
   app.post(`${base}/:id/approval`, options, async req => ({ data: await service.approve(requireAuth(req).user.id, id(req.params), AgentApprovalSchema.parse(req.body)) }));
   app.get(`${base}/:id/events`, options, async (req, reply) => {

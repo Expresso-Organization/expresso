@@ -2,17 +2,18 @@
 
 import type { BrewJobStatus } from "@expresso/contracts";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 import { Icon } from "@/components/ui/Icon";
 import { CONSENT_COPY, CONSENT_SETTINGS_HREF } from "@/lib/consent-copy";
 
-import { useRefreshWhile } from "./use-refresh-while";
+import { useRefreshOnJobChange } from "./use-refresh-on-job-change";
 import styles from "./Waiting.module.css";
 
 /**
  * 만들어지는 중 · 아직 시작 전 · 실패.
  *
- * 01b가 쓰는 화면이다. 계약이 도는 데 1분쯤 걸리므로
+ * 01b가 쓰는 화면이다. 계약이 도는 데 10초 남짓 걸리므로(운영 2026-11 실측 8–14초)
  * **얼마나 걸리는지 먼저 말한다** — 기다리는 사람에게 필요한 것은 스피너가
  * 아니라 언제 끝나는지다.
  */
@@ -25,6 +26,7 @@ export function Waiting({
   rejectedNote,
   brewId,
   basisJobId,
+  detail,
 }: {
   title: string;
   note: string;
@@ -36,10 +38,13 @@ export function Waiting({
   brewId: string;
   /** 화면이 마지막으로 본 잡. 다시 누르면 이것을 기준으로 새 잡이 돈다. */
   basisJobId: string | null;
+  /** 카드 아래에 함께 보일 것. 기다리는 동안 읽을 실제 내용을 화면이 넣는다. */
+  detail?: ReactNode;
 }) {
   const running = job?.status === "queued" || job?.status === "running";
   const failed = job?.status === "failed";
-  useRefreshWhile(running);
+  // 도는 동안만 듣는다. 끝나거나 바뀌는 순간 화면을 다시 읽는다.
+  useRefreshOnJobChange(running ? job : null);
   // 동의가 꺼져 실패했으면 어느 동의인지 말하고 그 자리로 보낸다.
   const consent = job?.failure?.code === "CONSENT_REQUIRED" ? job.failure.requiredConsent : null;
 
@@ -50,7 +55,7 @@ export function Waiting({
           <Icon name="coffee" weight="fill" size={16} color="var(--ex-accent-surface)" />
         </span>
         <h1 className={styles.title}>{running ? `${title} 만드는 중` : title}</h1>
-        <p className={styles.note}>{running ? "1분쯤 걸립니다. 이 화면을 닫아도 계속됩니다." : note}</p>
+        <p className={styles.note}>{running ? "보통 15초 안에 끝납니다. 이 화면을 닫아도 계속됩니다." : note}</p>
 
         {running ? (
           <div className={styles.progressGroup} aria-live="polite">
@@ -85,6 +90,7 @@ export function Waiting({
           </form>
         )}
       </div>
+      {detail}
     </div>
   );
 }

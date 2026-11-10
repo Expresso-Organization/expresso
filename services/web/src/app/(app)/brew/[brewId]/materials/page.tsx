@@ -40,6 +40,12 @@ export default async function MaterialsPage({
     entitlements.check(session.accessToken, "portfolio.generate"),
   ]);
 
+  // 질문이 이미 있거나 만드는 중이면 시작 버튼은 대화 화면으로 가는 링크다. 잡을 또 내면 질문이 있는
+  // 대화 화면이 잠깐 "만드는 중"으로 돌아가고, 도는 잡 옆에 잡이 하나 더 생긴다.
+  const interviewJob = brew.latestJob?.type === "interview" ? brew.latestJob : null;
+  const beginsInterview = !brew.interviewSessionId
+    && interviewJob?.status !== "queued" && interviewJob?.status !== "running";
+
   return (
     <BrewFrame brewId={brewId} step="materials" portfolioTitle={brewTitle(brew)} situation={`기록 최대 ${materials.selectionLimit}건`}>
       <MaterialPicker
@@ -47,6 +53,8 @@ export default async function MaterialsPage({
         materials={materials}
         coworkAllowed={cowork.data.allowed}
         quota={quota.data.usage ?? null}
+        beginsInterview={beginsInterview}
+        basisJobId={brew.latestJob?.jobId ?? null}
       />
     </BrewFrame>
   );

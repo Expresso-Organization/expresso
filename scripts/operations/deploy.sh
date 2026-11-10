@@ -42,6 +42,8 @@ echo "현재 커밋 $PREVIOUS"
 echo "$PREVIOUS" > "$ROOT/.last-deployed-commit"
 
 git fetch origin main
+# next build가 이 파일을 다시 쓴다. 지난 배포가 남긴 변경이 있으면 이 파일이 바뀐 커밋으로 넘어가지 못한다.
+git checkout -- services/web/next-env.d.ts
 git checkout --detach "$TARGET"
 echo "배포 대상 $(git rev-parse HEAD)"
 

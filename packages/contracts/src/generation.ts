@@ -7,6 +7,14 @@ import { TemplateStyleOverrideSchema } from "./templates.js";
 import { PortfolioArchetypeSchema } from "./portfolio-archetype.js";
 
 /**
+ * 지면을 만드는 방식. 런타임 설정 `PAGE_GENERATION_FORMAT`과 같은 값이다.
+ *
+ * - `json-render` — 구조화 생성. 모델이 구성 문서(Spec)를 쓰고 렌더러가 디자인 시스템으로 그린다.
+ * - `html` — 자유 생성. 모델이 지면의 HTML · CSS를 직접 쓴다.
+ */
+export const PageGenerationFormatSchema = z.enum(["json-render", "html"]);
+
+/**
  * 생성 요청은 템플릿 또는 디자인 시스템 판 중 정확히 하나로 스타일을 정한다.
  *
  * 디자인 시스템 판으로 요청하면 서버가 판의 토큰에서 템플릿과 스타일 값을 정하고,
@@ -22,6 +30,8 @@ export const SubmitGenerationSchema = z
     designSystemRevisionId: UuidSchema.optional(),
     // 페이지 짜임새. 보내지 않으면 사례 상세형(case-study)입니다.
     archetype: PortfolioArchetypeSchema.optional(),
+    // 지면을 만드는 방식. 보내지 않으면 서버 설정(`PAGE_GENERATION_FORMAT`)을 따른다.
+    pageFormat: PageGenerationFormatSchema.optional(),
   })
   .refine(
     (value) => (value.recipeId === undefined) !== (value.brewId === undefined),
@@ -224,4 +234,5 @@ export type GenerationJobStatus = z.infer<typeof GenerationJobStatusSchema>;
 export type DraftBlockKind = z.infer<typeof DraftBlockKindSchema>;
 export type GenerationDraft = z.infer<typeof GenerationDraftSchema>;
 export type SubmitGeneration = z.infer<typeof SubmitGenerationSchema>;
+export type PageGenerationFormat = z.infer<typeof PageGenerationFormatSchema>;
 export type GenerationOutput = z.infer<typeof GenerationOutputSchema>;

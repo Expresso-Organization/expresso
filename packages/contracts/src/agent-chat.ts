@@ -218,15 +218,47 @@ export type PlanProposalInput = z.infer<typeof PlanProposalInputSchema>;
 export type AgentPlanDraft = z.infer<typeof AgentPlanDraftSchema>;
 export type AgentPlanDecision = z.infer<typeof AgentPlanDecisionSchema>;
 export type PreparationPlan = z.infer<typeof PreparationPlanSchema>;
-export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional(), gapReview: GapReviewSchema.optional(), planDraft: AgentPlanDraftSchema.optional(), replanDraft: AgentReplanDraftSchema.optional() });
-export const AgentMessageSchema = z.strictObject({ id: UuidSchema, role: z.enum(["user", "assistant"]), text: z.string().max(64_000), tools: z.array(AgentToolResultSchema).max(30), createdAt: TimestampSchema });
+/** 지면 요소의 Spec 키. 편집 화면의 `data-xp-key`와 같다. */
+export const PageElementKeySchema = z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9-]{0,99}$/);
+/** 메시지를 보낼 때 다듬기 화면에서 고른 요소. 에이전트는 이 요소를 고칠 대상으로 읽는다. */
+export const AgentPageSelectionSchema = z.strictObject({ portfolioId: UuidSchema, key: PageElementKeySchema, label: z.string().trim().min(1).max(200) });
+/**
+ * 에이전트가 지면 요소 하나에 쓰는 고침. 바꾸지 않는 칸은 비운다. 고를 수 있는 값은 요소마다 달라
+ * 형식에는 모양만 두고, 서버가 그 요소의 선택지로 검사해 어긋난 항목을 돌려준다.
+ */
+export const AgentPageElementEditInputSchema = z.strictObject({
+  portfolioId: UuidSchema,
+  key: PageElementKeySchema,
+  note: z.string().trim().min(1).max(400).describe("무엇을 바꿨는지 사용자에게 하는 말 한두 문장"),
+  props: z.array(z.strictObject({ name: z.string().min(1).max(60), value: z.string().min(1).max(60) })).max(20).optional().describe("모양 선택지. read_page_element의 options에 있는 값만"),
+  style: z.array(z.strictObject({ part: z.string().min(1).max(60), color: z.string().max(30).optional(), font: z.string().max(30).optional(), size: z.string().max(30).optional() })).max(20).optional().describe("글자 부분마다 색 · 서체 · 크기 단계. 빈 부분은 기본 모양"),
+  text: z.array(z.strictObject({ path: z.string().min(1).max(300), value: z.string().max(20_000) })).max(64).optional().describe("read_page_element의 text 경로와 새 글"),
+});
+export const AgentPageElementReadInputSchema = z.strictObject({ portfolioId: UuidSchema, key: PageElementKeySchema });
+/** 에이전트가 지면 요소를 고쳐 저장한 새 판. 되돌리기는 이 판이 아직 최신일 때만 된다. */
+export const AgentPageEditSchema = z.strictObject({
+  editId: UuidSchema,
+  portfolioId: UuidSchema,
+  key: PageElementKeySchema,
+  label: z.string().max(200),
+  note: z.string().max(400),
+  // 지면 글 한도(본문 20,000자 · 섹션 제목 300자 + 칸 이름)와 맞춘다. 더 좁으면 긴 본문을 고친 대화는 읽을 수 없게 된다.
+  changes: z.array(z.strictObject({ label: z.string().max(400), before: z.string().max(20_000), after: z.string().max(20_000) })).max(120),
+  revision: z.number().int().positive(),
+  undone: z.boolean(),
+});
+export type AgentPageSelection = z.infer<typeof AgentPageSelectionSchema>;
+export type AgentPageElementEditInput = z.infer<typeof AgentPageElementEditInputSchema>;
+export type AgentPageEdit = z.infer<typeof AgentPageEditSchema>;
+export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional(), gapReview: GapReviewSchema.optional(), planDraft: AgentPlanDraftSchema.optional(), replanDraft: AgentReplanDraftSchema.optional(), pageEdit: AgentPageEditSchema.optional() });
+export const AgentMessageSchema = z.strictObject({ id: UuidSchema, role: z.enum(["user", "assistant"]), text: z.string().max(64_000), tools: z.array(AgentToolResultSchema).max(30), selection: AgentPageSelectionSchema.optional(), createdAt: TimestampSchema });
 export const AgentRunSchema = z.strictObject({ id: UuidSchema, requestId: UuidSchema, status: z.enum(["running", "complete", "cancelled", "failed", "interrupted"]), error: z.string().max(1_000).nullable(), startedAt: TimestampSchema });
 export const AgentConversationSchema = z.strictObject({ id: UuidSchema, title: z.string().max(120), contexts: z.array(AgentContextSchema).max(10), messages: z.array(AgentMessageSchema).max(100), run: AgentRunSchema.nullable(), version: z.number().int().nonnegative(), updatedAt: TimestampSchema });
 export const AgentConversationResponseSchema = z.strictObject({ data: AgentConversationSchema });
 export const AgentConversationListSchema = z.strictObject({ data: z.array(AgentConversationSchema.omit({ messages: true })).max(100) });
 export const CreateAgentConversationSchema = z.strictObject({ contexts: z.array(AgentContextSchema).max(10).default([]) });
 export const AgentApiKeySchema = z.string().trim().min(20).max(300).regex(/^sk-ant-[A-Za-z0-9_-]+$/);
-export const SendAgentMessageSchema = z.strictObject({ requestId: UuidSchema, text: z.string().trim().min(1).max(8_000) });
+export const SendAgentMessageSchema = z.strictObject({ requestId: UuidSchema, text: z.string().trim().min(1).max(8_000), selection: AgentPageSelectionSchema.optional() });
 export const AddAgentContextSchema = z.strictObject({ context: AgentContextSchema });
 export const AgentApprovalSchema = z.strictObject({ proposalId: UuidSchema, action: z.enum(["apply", "reject", "undo"]), expectedDocumentVersion: z.number().int().nonnegative(), commandIndexes: z.array(z.number().int().nonnegative()).max(100).optional(), propertyChangeIndexes: z.array(z.number().int().nonnegative()).max(50).optional() });
 export type AgentContext = z.infer<typeof AgentContextSchema>;

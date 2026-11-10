@@ -334,7 +334,8 @@ function SectionsBody({ site }: { site: SiteInsight }) {
       </div>
       <div className={styles.hbarList}>
         {rows.map((row, index) => {
-          const name = row.title || `${row.position ?? index + 1}번째 섹션`;
+          const position = row.position ?? index + 1;
+          const name = row.title || (position === 1 ? "첫 화면" : `${position}번째 섹션`);
           const seconds = row.views > 0 ? Math.round(row.dwellMs / row.views / 1000) : 0;
           return (
             <Link

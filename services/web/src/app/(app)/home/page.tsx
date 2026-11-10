@@ -26,14 +26,9 @@ const GRID_ITEMS = 5;
  * 내 포트폴리오 격자. 기다리는 두 구획만 Suspense로 감싸 응답 하나가 늦어도
  * 나머지는 먼저 나간다. 두 구획이 함께 쓰는 응답은 `home-data`가 `cache()`로 묶는다.
  */
-export default async function HomePage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const [session, params] = await Promise.all([requireSession(), searchParams]);
+export default async function HomePage() {
+  const session = await requireSession();
   const profile = await careerProfile(session.accessToken);
-  const tab = params.tab === "interested" ? "interested" : "role";
   const recordTotal = session.categories.reduce((sum, category) => sum + category.recordCount, 0);
 
   return (
@@ -44,7 +39,7 @@ export default async function HomePage({
           {recordTotal === 0 ? <FirstRun /> : <HomeSearch examples={exampleQueries(profile)} />}
 
           <Suspense fallback={<MidRowSkeleton />}>
-            <MidRow accessToken={session.accessToken} role={roleTab(profile)} tab={tab} />
+            <MidRow accessToken={session.accessToken} role={roleTab(profile)} />
           </Suspense>
 
           {recordTotal > 0 ? (
@@ -80,11 +75,9 @@ function FirstRun() {
 async function MidRow({
   accessToken,
   role,
-  tab,
 }: {
   accessToken: string;
   role: ReturnType<typeof roleTab>;
-  tab: "role" | "interested";
 }) {
   const [jobs, interested, sites] = await Promise.all([
     roleJobs(accessToken, role.family),
@@ -94,7 +87,6 @@ async function MidRow({
   return (
     <div className={`${styles.midRow} ${sites.length > 0 ? "" : styles.midRowSingle}`}>
       <HomeJobs
-        tab={tab}
         role={{ ...role, total: jobs.summary.total, rows: jobs.data }}
         interested={{ total: interested.summary.total, rows: interested.data }}
       />

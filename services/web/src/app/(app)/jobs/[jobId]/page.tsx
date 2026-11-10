@@ -8,6 +8,7 @@ import { ApiError } from "@/lib/api/client";
 import { jobs as jobsApi } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
+import { analyzePostingAction } from "../../brew/new/new-brew-actions";
 import { backToListHref } from "../list-query";
 import { JobChatRail, JobChatRailProvider, JobChatToggle } from "./JobChatRail";
 
@@ -81,6 +82,7 @@ export default async function JobDetailPage({
   const coveredCount = musts.filter((item) => item.coverage === "covered").length;
   const haveStack = job.technologies.filter((tool) => tool.matched === true).length;
   const rows = facts(job);
+  const startLabel = job.brew ? "이어서 만들기" : "이 공고로 만들기";
 
   return (
     // 머리의 채팅 버튼과 본문의 레일이 접힘 상태를 함께 본다.
@@ -91,9 +93,21 @@ export default async function JobDetailPage({
           `${job.company.name} · ${job.title}`,
         ]}
         actions={
-          // 머리 오른쪽은 버튼 세 개다 — 관심 공고 · 원문 · 채팅. 머리 폭이 넉넉하면(≥768px) 아이콘 옆에
+          // 머리 오른쪽은 만들기 · 관심 공고 · 원문 · 채팅이다. 머리 폭이 넉넉하면(≥768px) 아이콘 옆에
           // 이름을 함께 보이고, 좁으면 아이콘만 남기고 이름은 툴팁과 읽기 레이블로 둔다.
           <div className={styles.headActions}>
+            <form action={analyzePostingAction} className={styles.headForm}>
+              <input type="hidden" name="jobPostingId" value={job.id} />
+              <button
+                type="submit"
+                className={`${styles.headIcon} ${styles.headPrimary}`}
+                aria-label={startLabel}
+                title={startLabel}
+              >
+                <Icon name="coffee" size={16} color="currentColor" />
+                <span className={styles.headLabel}>{startLabel}</span>
+              </button>
+            </form>
             <InterestButton jobPostingId={job.id} interested={job.interest !== null} />
             {job.sourceUrl ? (
               <a

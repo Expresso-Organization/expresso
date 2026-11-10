@@ -109,7 +109,7 @@
 .splitButton {
   display: flex;
   align-items: stretch;
-  border-radius: 8px;
+  border-radius: var(--ex-radius-control);
   overflow: hidden;
   border: 1px solid var(--ex-border);
 }
@@ -157,13 +157,13 @@
   flex: 1;
   min-height: 0;
   border: 1px solid var(--ex-border-hair);
-  border-radius: 10px;
+  border-radius: var(--ex-radius-card);
   overflow: auto;
 }
 
 .row {
   display: grid;
-  grid-template-columns: minmax(280px, 1fr) 92px 132px 74px 92px;
+  grid-template-columns: minmax(280px, 1fr) 92px 152px 74px 92px;
   border-bottom: 1px solid var(--ex-border-hair);
   align-items: center;
 }
@@ -245,7 +245,7 @@
   letter-spacing: 0.08em;
   color: var(--ex-accent-text);
   background: var(--ex-accent-surface);
-  border-radius: 4px;
+  border-radius: var(--ex-radius-pill);
   padding: 2px 5px;
   white-space: nowrap;
   flex-shrink: 0;
@@ -271,7 +271,7 @@
   font-size: var(--ex-text-2xs);
   color: var(--ex-fg-body);
   background: var(--ex-border-inner);
-  border-radius: 5px;
+  border-radius: var(--ex-radius-pill);
   padding: 3px 8px;
   white-space: nowrap;
 }
@@ -355,7 +355,7 @@
 .mixCard {
   background: var(--ex-bg);
   border: 1px solid var(--ex-border);
-  border-radius: 13px;
+  border-radius: var(--ex-radius-card);
   padding: 15px 17px;
 }
 
@@ -612,7 +612,7 @@
   color: var(--ex-fg-on-accent);
   background: var(--ex-accent);
   border: none;
-  border-radius: 999px;
+  border-radius: var(--ex-radius-control);
   padding: 13px;
   text-align: center;
   transition:
@@ -620,10 +620,22 @@
     transform var(--ex-motion-spring);
 }
 
-.brew:hover {
+/* 질문 생성을 맡기는 폼일 때는 버튼이다 — 링크와 같아 보이게 글꼴과 커서를 맞춘다. */
+button.brew {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.brew:hover:not(:disabled) {
   background: var(--ex-accent-hover);
   transform: translateY(-1px);
   color: var(--ex-fg-on-accent);
+}
+
+/* 체크를 저장하는 중 · 제출하는 중 — 저장이 끝나기 전의 선택으로 질문이 만들어지지 않게 한다. */
+.brew:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* 담을 수 없다고 말해야 할 때 */

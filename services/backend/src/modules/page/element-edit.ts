@@ -24,13 +24,14 @@ import {
   STYLE_COLOR_LABELS,
   STYLE_FONT_LABELS,
   editableFields,
+  elementTitle,
   structuredCatalog,
   styleProblems,
 } from "@expresso/portfolio-renderer";
 
 import type { AiClient, AiUsage, AiViolation } from "../../platform/ai/client.js";
 import { ungroundedNumbers } from "../../platform/numbers.js";
-import { FILL_LIMITS, FILL_SYSTEM, METRIC_VALUE_PATTERN, sectionFillSchema } from "./design-first.js";
+import { FILL_LIMITS, FILL_SYSTEM, metricValueAllowed, sectionFillSchema } from "./design-first.js";
 
 /** 요소 하나에 대한 고침입니다. 바꾸지 않는 칸은 비웁니다. */
 export type ElementEdit = {
@@ -99,7 +100,8 @@ export function elementChanges(before: Snapshot, after: Snapshot, key: string): 
       if (was !== now) changes.push({ label: `${parts[part]?.label ?? part} 모양`, before: was, after: now });
     }
   }
-  const paths = elementTextPaths(after, key);
+  // 비워서 지운 칸은 고친 뒤의 경로에 없다. 고치기 전 경로까지 봐야 지운 것도 바뀐 곳이 된다.
+  const paths = [...new Set([...elementTextPaths(before, key), ...elementTextPaths(after, key)])];
   // 한 섹션만 보이는 요소의 줄 이름에는 섹션 제목을 붙이지 않습니다.
   const section = new Set(paths.filter((path) => path.startsWith("/sections/")).map((path) => path.split("/")[2])).size > 1;
   for (const path of paths) {
@@ -115,91 +117,109 @@ function groundSource(snapshot: Snapshot): string {
   return [JSON.stringify(snapshot.content.sections), ...snapshot.content.evidence.map((item) => `${item.title}\n${item.summary}\n${item.body}`)].join("\n");
 }
 
-const INSTRUCT_SYSTEM =
-  "포트폴리오 지면에서 사용자가 고른 요소 하나를 사용자의 요청대로 고칩니다. 요청과 관계없는 칸은 비워 둡니다. 출처에 없는 수치 · 성과 · 경력을 만들지 않고, 글은 지금 글의 사실을 유지합니다. 모양은 주어진 선택지 안에서만 고릅니다.";
+/** 말로 고칠 수 있는 요소인가. 페이지 루트와, 모양 선택지가 없는 묶음은 고칠 칸이 없습니다. */
+function editableNode(snapshot: Snapshot, key: string) {
+  const node = snapshot.spec.elements[key];
+  if (!node || node.type === "PortfolioPage" || (isStructuredGroup(node) && editableFields(node.type).length === 0)) return null;
+  return node;
+}
+
+/** 말로 고칠 수 있는 글 경로입니다. 이름은 사용자가 직접만 고칩니다. */
+function instructablePaths(snapshot: Snapshot, key: string): string[] {
+  return elementTextPaths(snapshot, key).filter((path) => path !== "/profile/name");
+}
 
 /**
- * 요소 하나를 말로 고칩니다. 모델은 고칠 칸만 JSON으로 쓰고, 서버가 적용 · 검사합니다.
- *
- * 검사에 걸린 칸은 출력을 거절하지 않고 같은 대화에서 그 칸만 고쳐 받습니다(`check`). 호출하는 쪽에 다시 요청하는 루프를
- * 두지 않습니다(AGENTS.md 「AI 출력을 거절해서 처음부터 다시 쓰게 하지 않습니다」).
+ * 에이전트가 요소 하나를 고치기 전에 읽는 설명입니다. 지금 모양 · 고를 수 있는 값 · 글자 부분 · 글 경로와 지금 글 · 근거 원문을 담습니다.
+ * 고칠 수 없는 요소면 null입니다.
  */
+export function elementGuide(snapshot: Snapshot, key: string, design: DesignSystemSpecV2) {
+  const node = editableNode(snapshot, key);
+  if (!node) return null;
+  const props = node.props as Record<string, unknown> & { style?: StructuredElementStyle };
+  const catalog = (structuredCatalog.data.components as Record<string, { description?: string }>)[node.type];
+  return {
+    key,
+    type: node.type,
+    typeLabel: STRUCTURED_TYPE_LABELS[node.type] ?? node.type,
+    title: elementTitle(snapshot, key).title,
+    description: catalog?.description ?? "",
+    options: editableFields(node.type).map((field) => ({ name: field.name, label: field.label, current: (props[field.name] as string | undefined) ?? "기본", choices: field.options })),
+    parts: Object.entries(STRUCTURED_PARTS[node.type] ?? {}).map(([part, value]) => ({ part, label: value.label, current: props.style?.[part] ?? {} })),
+    styleChoices: {
+      color: STRUCTURED_STYLE_COLORS.map((value) => ({ value, label: STYLE_COLOR_LABELS[value] })),
+      font: STRUCTURED_STYLE_FONTS.map((value) => ({ value, label: STYLE_FONT_LABELS[value] })),
+      size: design.typography.scale.map((step) => ({ value: step.name, size: step.size })),
+    },
+    text: instructablePaths(snapshot, key).map((path) => ({ path, label: textPathLabel(snapshot, path, { section: false }), value: readStructuredText(snapshot.content, path) ?? "" })),
+    clearable: "비우면 지워지는 칸은 기간 · 인용 · 이전 값 · 설명입니다. 그 밖의 칸은 비울 수 없습니다.",
+    source: groundSource(snapshot).slice(0, 6_000),
+  };
+}
+
+/** 에이전트가 쓴 고침 한 건입니다. 도구 입력(배열)을 그대로 받습니다. */
+export type AgentElementEdit = {
+  props?: { name: string; value: string }[] | undefined;
+  style?: { part: string; color?: string | undefined; font?: string | undefined; size?: string | undefined }[] | undefined;
+  text?: StructuredTextPatch[] | undefined;
+};
+
+/**
+ * 에이전트의 고침을 검사하고 적용한 새 스냅샷을 냅니다. AI를 다시 부르지 않습니다.
+ *
+ * 걸린 항목은 출력을 버리지 않고 문장 목록(`issues`)으로 돌려줍니다. 에이전트가 같은 대화에서 그 항목만 고쳐 다시 부릅니다
+ * (AGENTS.md 「AI 출력을 거절해서 처음부터 다시 쓰게 하지 않습니다」). 문장에는 고를 수 있는 값을 함께 적습니다.
+ */
+export function checkElementEdit(snapshot: Snapshot, key: string, input: AgentElementEdit, design: DesignSystemSpecV2):
+  { issues: string[] } | { issues: []; snapshot: Snapshot; changes: ElementChange[] } {
+  const node = editableNode(snapshot, key);
+  if (!node) return { issues: [`'${key}'는 말로 고칠 수 있는 요소가 아닙니다. 지면 목차(outline)의 key를 쓰십시오.`] };
+  const label = STRUCTURED_TYPE_LABELS[node.type] ?? node.type;
+  const issues: string[] = [];
+  const fields = new Map(editableFields(node.type).map((field) => [field.name, field]));
+  for (const { name, value } of input.props ?? []) {
+    const field = fields.get(name);
+    if (!field) issues.push(`${label}에는 모양 '${name}'이 없습니다. 고를 수 있는 모양: ${[...fields.keys()].join(", ") || "없음"}.`);
+    else if (!field.options.some((option) => option.value === value)) issues.push(`${label}의 '${name}'에는 '${value}'를 쓸 수 없습니다. 고를 수 있는 값: ${field.options.map((option) => option.value).join(", ")}.`);
+  }
+  const parts = STRUCTURED_PARTS[node.type] ?? {};
+  const steps = design.typography.scale.map((step) => step.name);
+  for (const { part, color, font, size } of input.style ?? []) {
+    if (!parts[part]) issues.push(`${label}에는 글자 부분 '${part}'가 없습니다. 고를 수 있는 부분: ${Object.keys(parts).join(", ") || "없음"}.`);
+    if (color && !(STRUCTURED_STYLE_COLORS as readonly string[]).includes(color)) issues.push(`색 '${color}'는 쓸 수 없습니다. 고를 수 있는 색: ${STRUCTURED_STYLE_COLORS.join(", ")}.`);
+    if (font && !(STRUCTURED_STYLE_FONTS as readonly string[]).includes(font)) issues.push(`서체 '${font}'는 쓸 수 없습니다. 고를 수 있는 서체: ${STRUCTURED_STYLE_FONTS.join(", ")}.`);
+    if (size && !steps.includes(size)) issues.push(`글자 크기 '${size}'는 이 디자인의 단계가 아닙니다. 고를 수 있는 단계: ${steps.join(", ")}.`);
+  }
+  const paths = instructablePaths(snapshot, key);
+  const source = groundSource(snapshot);
+  for (const patch of input.text ?? []) {
+    if (!paths.includes(patch.path)) { issues.push(`'${patch.path}'는 이 요소에서 고칠 수 있는 글 경로가 아닙니다. 고칠 수 있는 경로: ${paths.join(", ") || "없음"}.`); continue; }
+    const was = readStructuredText(snapshot.content, patch.path) ?? "";
+    const numbers = ungroundedNumbers(patch.value, `${source}\n${was}`);
+    if (numbers.length) issues.push(`${patch.path}: 출처에 없는 숫자가 있습니다(${numbers.join(", ")}). 출처에 있는 숫자만 쓰십시오.`);
+    if (/\/(?:value|before)$/.test(patch.path) && patch.value && !metricValueAllowed(patch.value, `${source}\n${was}`))
+      issues.push(`${patch.path}: 수치 값은 숫자와 단위, 또는 출처에 적힌 낱말 하나만 씁니다(예: 1.9초, 420KB, 1,200만 건, 반나절).`);
+  }
+  if (issues.length) return { issues };
+  const current = (node.props as { style?: StructuredElementStyle }).style ?? {};
+  const edit: ElementEdit = {
+    ...(input.props?.length ? { props: Object.fromEntries(input.props.map(({ name, value }) => [name, value])) } : {}),
+    ...(input.style?.length
+      ? { style: { ...current, ...Object.fromEntries(input.style.map(({ part, color, font, size }) => [part, { ...(color ? { color } : {}), ...(font ? { font } : {}), ...(size ? { size } : {}) }])) } as StructuredElementStyle }
+      : {}),
+    ...(input.text?.length ? { text: input.text } : {}),
+  };
+  let next: Snapshot;
+  try { next = applyElementEdit(snapshot, key, edit, design); }
+  catch (error) { return { issues: [error instanceof Error ? error.message : "지면 규칙에 맞지 않습니다."] }; }
+  const changes = elementChanges(snapshot, next, key);
+  if (!changes.length) return { issues: ["바뀐 곳이 없습니다. 지금 값과 다른 값을 쓰십시오."] };
+  return { issues: [], snapshot: next, changes };
+}
+
+/** 기록 하나를 지면의 사례로 쓰는 AI 작성기입니다. */
 export class PageElementEditor {
   constructor(private readonly ai: AiClient) {}
-
-  async instruct(input: { userId: string; snapshot: Snapshot; key: string; instruction: string; design: DesignSystemSpecV2 }): Promise<{ edit: ElementEdit; note: string; usage: AiUsage }> {
-    const { snapshot, key, design } = input;
-    const node = snapshot.spec.elements[key];
-    if (!node || node.type === "PortfolioPage" || isStructuredGroup(node) && editableFields(node.type).length === 0)
-      throw new Error("고칠 요소가 없습니다.");
-    const fields = editableFields(node.type);
-    const parts = Object.entries(STRUCTURED_PARTS[node.type] ?? {});
-    const steps = design.typography.scale.map((step) => step.name) as [string, ...string[]];
-    // 이름은 사용자가 직접만 고칩니다. 말로 고치기는 이름을 바꾸지 않습니다.
-    const paths = elementTextPaths(snapshot, key).filter((path) => path !== "/profile/name");
-    const partStyle = z.object({
-      color: z.enum(STRUCTURED_STYLE_COLORS).optional(),
-      font: z.enum(STRUCTURED_STYLE_FONTS).optional(),
-      size: z.enum(steps).optional(),
-    });
-    const schema = z.object({
-      note: z.string().min(1),
-      ...(fields.length
-        ? { props: z.object(Object.fromEntries(fields.map((field) => [field.name, z.enum(field.options.map((option) => option.value) as [string, ...string[]]).optional()]))).optional() }
-        : {}),
-      ...(parts.length ? { style: z.object(Object.fromEntries(parts.map(([name]) => [name, partStyle.optional()]))).optional() } : {}),
-      ...(paths.length ? { text: z.array(z.object({ path: z.enum(paths as [string, ...string[]]), value: z.string() })).optional() } : {}),
-    });
-    type Output = { note: string; props?: Record<string, string | undefined>; style?: StructuredElementStyle; text?: StructuredTextPatch[] };
-    const source = groundSource(snapshot);
-    const toEdit = (output: Output): ElementEdit => ({
-      ...(output.props ? { props: Object.fromEntries(Object.entries(output.props).filter((entry): entry is [string, string] => entry[1] !== undefined)) } : {}),
-      ...(output.style ? { style: { ...((node.props as { style?: StructuredElementStyle }).style ?? {}), ...output.style } } : {}),
-      ...(output.text?.length ? { text: output.text } : {}),
-    });
-    const check = (output: Output): AiViolation[] => {
-      const violations: AiViolation[] = [];
-      (output.text ?? []).forEach((patch, index) => {
-        const was = readStructuredText(snapshot.content, patch.path) ?? "";
-        const numbers = ungroundedNumbers(patch.value, `${source}\n${was}`);
-        if (numbers.length) violations.push({ path: `/text/${index}/value`, problem: `출처에 없는 숫자가 있습니다: ${numbers.join(", ")}. 출처에 있는 숫자만 쓰세요.` });
-        if (/\/(?:value|before)$/.test(patch.path) && patch.value && !METRIC_VALUE_PATTERN.test(patch.value))
-          violations.push({ path: `/text/${index}/value`, problem: "수치 값은 숫자와 단위만 씁니다(예: 1.9초, 420KB, 1,200만 건)." });
-      });
-      if (violations.length) return violations;
-      try { applyElementEdit(snapshot, key, toEdit(output), design); }
-      catch (error) {
-        violations.push({ path: output.text?.length ? "/text" : output.props ? "/props" : "/style", problem: error instanceof Error ? error.message : "지면 규칙에 맞지 않습니다." });
-      }
-      return violations;
-    };
-    const catalog = (structuredCatalog.data.components as Record<string, { description?: string }>)[node.type];
-    const prompt = `## 고를 요소
-${STRUCTURED_TYPE_LABELS[node.type] ?? node.type}(${node.type}): ${catalog?.description ?? ""}
-## 지금 모양
-${JSON.stringify(Object.fromEntries(fields.map((field) => [field.name, (node.props as Record<string, unknown>)[field.name] ?? "기본"])))}
-글자 부분: ${parts.map(([name, part]) => `${name}(${part.label})`).join(", ") || "없음"}
-지금 글자 모양: ${JSON.stringify((node.props as { style?: unknown }).style ?? {})}
-## 고를 수 있는 값
-${fields.map((field) => `- props.${field.name}(${field.label}): ${field.options.map((option) => `${option.value}=${option.label}`).join(", ")}`).join("\n") || "- 모양 선택지 없음"}
-- style.<부분>.color: ${STRUCTURED_STYLE_COLORS.map((value) => `${value}=${STYLE_COLOR_LABELS[value]}`).join(", ")}
-- style.<부분>.font: ${STRUCTURED_STYLE_FONTS.map((value) => `${value}=${STYLE_FONT_LABELS[value]}`).join(", ")}
-- style.<부분>.size: 디자인의 글자 크기 단계 ${design.typography.scale.map((step) => `${step.name}(${step.size})`).join(", ")}
-## 지금 글
-${paths.map((path) => `${path}: ${JSON.stringify(readStructuredText(snapshot.content, path) ?? "")}`).join("\n") || "없음"}
-## 출처
-${source.slice(0, 6_000)}
-## 사용자 요청
-${input.instruction}
-## 출력
-note에 무엇을 바꿨는지 한두 문장으로 씁니다. 바꿀 칸만 props · style · text에 넣습니다. text의 path는 위 「지금 글」의 경로만 씁니다. 비우면 지워지는 칸은 기간 · 인용 · 이전 값 · 설명입니다.`;
-    const result = await this.ai.complete<Output>(
-      { contract: "partial_edit", system: INSTRUCT_SYSTEM, prompt, promptVersion: PAGE_PROMPT_VERSION },
-      schema as unknown as z.ZodType<Output>,
-      { check, userId: input.userId },
-    );
-    return { edit: toEdit(result.data), note: result.data.note, usage: result.usage };
-  }
 
   /** 기록 하나를 지면의 사례 섹션으로 씁니다. 칸 길이 · 수치 모양 · 근거는 같은 대화에서 그 칸만 고쳐 받습니다. */
   async writeSection(input: { userId: string; id: string; title: string; text: string }): Promise<{ section: StructuredSection; usage: AiUsage }> {
@@ -233,8 +253,8 @@ note에 무엇을 바꿨는지 한두 문장으로 씁니다. 바꿀 칸만 prop
       output.metrics.forEach((metric, index) => {
         for (const key of ["value", "before"] as const) {
           const value = metric[key];
-          if (value !== undefined && (chars(value) > S.metricValue || !METRIC_VALUE_PATTERN.test(value)))
-            violations.push({ path: `/metrics/${index}/${key}`, problem: `수치 값은 숫자와 단위만 ${S.metricValue}자 이내로 씁니다(예: 1.9초, 420KB).` });
+          if (value !== undefined && (chars(value) > S.metricValue || !metricValueAllowed(value, input.text)))
+            violations.push({ path: `/metrics/${index}/${key}`, problem: `수치 값은 숫자와 단위, 또는 출처에 적힌 낱말 하나만 ${S.metricValue}자 이내로 씁니다(예: 1.9초, 420KB, 반나절).` });
         }
       });
       if (output.steps.length > 6) violations.push({ path: "/steps", problem: "단계는 6개까지입니다." });

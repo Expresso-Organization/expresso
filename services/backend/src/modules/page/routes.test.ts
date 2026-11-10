@@ -14,7 +14,6 @@ describe("다듬기 경로", () => {
   function app() {
     const service = {
       owns: async () => true,
-      instructElement: vi.fn(async () => ({ page: {}, changes: [], note: "고쳤습니다." })),
       addRecordSection: vi.fn(async () => ({ revision: 3 })),
       editorDesign: vi.fn(async () => ({ steps: [], colors: { text: "#000000", muted: "#555555", accent: "#2255ff" }, fonts: { display: "A", body: "B", mono: "C" } })),
       editableRender: vi.fn(async () => ({ revision: 2, html: "<main></main>", css: "" })),
@@ -30,16 +29,10 @@ describe("다듬기 경로", () => {
     return { server, service };
   }
 
-  it("요소 키와 지시를 서비스에 넘기고, 요소 ID 모양이 아닌 키는 서비스에 넘기지 않는다", async () => {
-    const { server, service } = app();
+  it("요소를 말로 고치는 옛 경로는 없다 — 다듬기 채팅은 에이전트 채팅이 맡는다", async () => {
+    const { server } = app();
     const response = await server.inject({ method: "POST", url: `/v1/portfolios/${portfolio}/page/elements/quote-1/instruct`, payload: { expectedRevision: 2, instruction: "짧게" } });
-    expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual({ data: { page: {}, changes: [], note: "고쳤습니다." } });
-    expect(service.instructElement).toHaveBeenCalledWith(user, portfolio, "quote-1", { expectedRevision: 2, instruction: "짧게" }, null);
-    const bad = await server.inject({ method: "POST", url: `/v1/portfolios/${portfolio}/page/elements/bad.key/instruct`, payload: { expectedRevision: 2, instruction: "짧게" } });
-    // 인자 검사 실패는 앱 공통 오류 처리로 갑니다. 서비스까지 가지 않는 것이 요점입니다.
-    expect(bad.statusCode).toBeGreaterThanOrEqual(400);
-    expect(service.instructElement).toHaveBeenCalledTimes(1);
+    expect(response.statusCode).toBe(404);
     await server.close();
   });
 

@@ -20,12 +20,11 @@ import {
   RestorePageRevisionSchema,
   type RestorePageRevision,
   AddStructuredSectionSchema,
-  InstructStructuredElementSchema,
   type AddStructuredSection,
-  type InstructStructuredElement,
   type StructuredElementStyle,
   type StructuredPortfolioSnapshot,
   type PageEditorDesign,
+  type PageGenerationFormat,
 } from "@expresso/contracts";
 import { renderStructuredPortfolio, librarySelection, styleProblems } from "@expresso/portfolio-renderer";
 import { mongoCollections, type GeneratedPageDoc, type JsonObject } from "@expresso/database";
@@ -37,19 +36,22 @@ import type { ConsentApi } from "../consent/index.js";
 import { findDesignSystemRevision, findPortfolioDesign } from "../design-systems/index.js";
 import { requireActiveUser } from "../identity/index.js";
 import { DESIGN_PRINCIPLES_VERSION, type PageGenerationContext, type PageGenerator, type PageStreamSink } from "./generator.js";
-import { PageServiceError } from "./public.js";
+import { PageElementIssues, PageServiceError } from "./public.js";
 import type { PageStream } from "./stream.js";
 import type { PageRefineInput, PageRefineOutcome } from "./structured-generator.js";
 import {
   applyElementEdit,
-  elementChanges,
+  checkElementEdit,
+  elementGuide,
   markdownToText,
   recordCaseType,
   recordInsertIndex,
   recordSectionByRule,
+  type AgentElementEdit,
   type ElementChange,
   type PageElementEditor,
 } from "./element-edit.js";
+import { elementTitle } from "@expresso/portfolio-renderer";
 
 /** 저장한 초안을 다듬는 쪽입니다. 워커가 `StructuredPageGenerator`를 넘깁니다. */
 export interface PageRefiner {
@@ -183,7 +185,7 @@ export class PageService {
     };
   }
 
-  async generate(userId: string, portfolioId: string, generator: PageGenerator, options: { instruction?: string; generationJobId?: string; streamId?: string } = {}): Promise<GeneratedPage> {
+  async generate(userId: string, portfolioId: string, generator: PageGenerator, options: { instruction?: string; generationJobId?: string; streamId?: string; pageFormat?: PageGenerationFormat | null } = {}): Promise<GeneratedPage> {
     if (!await this.owns(userId, portfolioId)) throw new PageServiceError(404, "portfolio not found");
     if (options.generationJobId) { const existing = await this.forGenerationJob(userId, options.generationJobId); if (existing) return existing; }
     const current = await this.latest(userId, portfolioId);
@@ -192,6 +194,7 @@ export class PageService {
       context.previous.structured = current.generationManifest.structured;
       context.structuredContent = current.generationManifest.structured.content;
     }
+    if (options.pageFormat) context.pageFormat = options.pageFormat;
     await this.#consent?.require(userId, "page_generation");
     const streamId = options.streamId ?? portfolioId; const stream = this.#stream;
     // 쓰기는 기다리지 않고 순서대로 쌓습니다. Redis 연결 하나의 명령은 보낸 순서로 처리됩니다.
@@ -358,23 +361,33 @@ export class PageService {
   }
 
   /**
-   * 고른 요소 하나를 말로 고칩니다. 고친 요소 밖의 Spec과 글은 그대로입니다. 결과는 새 판이고, 화면은 바뀐 곳 목록을 함께 받습니다.
+   * 에이전트가 요소 하나를 고치기 전에 읽는 설명입니다. 최신 판의 구조화 지면을 봅니다. 고칠 수 없는 요소면 그 이유를 `PageElementIssues`로 냅니다.
    */
-  async instructElement(userId: string, portfolioId: string, key: string, raw: InstructStructuredElement, editor: PageElementEditor | null): Promise<{ page: GeneratedPage; changes: ElementChange[]; note: string }> {
-    const input = InstructStructuredElementSchema.parse(raw);
-    if (!editor) throw new PageServiceError(503, "AI가 꺼져 있어 말로 고칠 수 없습니다.");
-    const { previous, design } = await this.#structured(userId, portfolioId, input.expectedRevision);
-    if (!previous.spec.elements[key] || key === previous.spec.root) throw new PageServiceError(404, "고칠 요소가 없습니다.");
-    await this.#consent?.require(userId, "partial_edit");
-    const { edit, note } = await editor.instruct({ userId, snapshot: previous, key, instruction: input.instruction, design });
-    let snapshot;
-    // 같은 대화에서 고친 뒤에도 남은 위반은 저장하지 않고 알립니다. 출력을 버리고 다시 쓰게 하지 않습니다.
-    try { snapshot = applyElementEdit(previous, key, edit, design); }
-    catch (error) { throw new PageServiceError(422, error instanceof Error ? error.message : "지면 규칙에 맞지 않습니다."); }
-    const changes = elementChanges(previous, snapshot, key);
-    if (!changes.length) throw new PageServiceError(422, `바꾼 곳이 없습니다. ${note}`);
-    const row = await this.#commitStructured(userId, portfolioId, input.expectedRevision, snapshot, { instruction: input.instruction, rationale: note });
-    return { page: toPage(row), changes, note };
+  async elementGuide(userId: string, portfolioId: string, key: string) {
+    const { previous, design } = await this.#latestStructured(userId, portfolioId);
+    const guide = elementGuide(previous, key, design);
+    if (!guide) throw new PageElementIssues([`'${key}'는 말로 고칠 수 있는 요소가 아닙니다. 지면 목차(outline)의 key를 쓰십시오.`]);
+    return guide;
+  }
+
+  /**
+   * 에이전트가 쓴 고침을 검사해 최신 판 위에 새 판으로 쌓습니다. AI를 다시 부르지 않습니다. 걸린 항목은 저장하지 않고 `PageElementIssues`로
+   * 돌려줍니다 — 에이전트가 같은 대화에서 그 항목만 고쳐 다시 부릅니다. 고친 요소 밖의 Spec과 글은 그대로입니다.
+   */
+  async editElementByAgent(userId: string, portfolioId: string, key: string, input: AgentElementEdit, note: { instruction: string; rationale: string }): Promise<{ page: GeneratedPage; changes: ElementChange[]; label: string }> {
+    const { current, previous, design } = await this.#latestStructured(userId, portfolioId);
+    const checked = checkElementEdit(previous, key, input, design);
+    if (checked.issues.length || !("snapshot" in checked)) throw new PageElementIssues(checked.issues);
+    const row = await this.#commitStructured(userId, portfolioId, current.revision, checked.snapshot, { instruction: note.instruction.slice(0, 2_000), rationale: note.rationale.slice(0, 400) });
+    return { page: toPage(row), changes: checked.changes, label: elementTitle(previous, key).title };
+  }
+
+  /** 최신 판이 구조화 지면일 때 그 스냅샷입니다. 에이전트는 판 번호를 모르므로 지금 최신 판을 기준으로 합니다. */
+  async #latestStructured(userId: string, portfolioId: string) {
+    const current = await this.latest(userId, portfolioId);
+    if (!current) throw new PageServiceError(404, "지면이 없습니다.");
+    if (!current.generationManifest?.structured) throw new PageElementIssues(["이 포트폴리오는 구조화 지면이 아니라 요소를 고칠 수 없습니다."]);
+    return this.#structured(userId, portfolioId, current.revision);
   }
 
   /**

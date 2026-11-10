@@ -61,6 +61,36 @@ export const FILL_LIMITS = {
  */
 export const METRIC_VALUE_PATTERN = /^[^\s\d]{0,2}\d\S*(?: \S{1,3})?$/;
 
+/**
+ * 수치 값으로 쓸 수 있는가. 숫자 모양이거나, 출처에 그대로 적힌 한 낱말이다.
+ *
+ * 기록에 "3일 → 반나절"이라고 적혀 있으면 "반나절"이 곧 수치다. 숫자만 받으면 쓴 에이전트가 이 칸을
+ * 고치려고 출처의 다른 숫자를 끌어와, 3일이 15건으로 줄었다는 없는 사실이 지면에 나간다.
+ */
+export function metricValueAllowed(value: string, source: string): boolean {
+  return METRIC_VALUE_PATTERN.test(value) || (!/[\s→]/u.test(value) && source.includes(value));
+}
+
+/**
+ * 이전 값은 출처에 그대로 적혀 있어야 한다. 비교 칸을 채우려고 "0명" · "0%p"나 값과 같은 수를 넣으면
+ * 없던 변화가 지면에 나간다. 숫자 하나하나가 출처에 있는지만 봐서는 "0"을 걸러 내지 못한다.
+ */
+export function metricBeforeGrounded(metric: { value: string; before?: string | undefined }, source: string): boolean {
+  if (!metric.before) return true;
+  const compact = (text: string) => text.replace(/\s+/g, "");
+  return compact(metric.before) !== compact(metric.value) && compact(source).includes(compact(metric.before));
+}
+
+const TIME_UNIT = /(?:초|분|시간|일|주|개월|달|년)$/u;
+const COUNT_UNIT = /(?:건|개|명|회|곳|번)$/u;
+
+/** 이전 값과 값이 같은 것을 재는가. 시간이 건수로 바뀌었다면 서로 다른 수치를 한 줄에 묶은 것이다. */
+export function metricUnitsAgree(metric: { value: string; before?: string | undefined }): boolean {
+  if (!metric.before) return true;
+  const kinds = [metric.value, metric.before].map((value) => (TIME_UNIT.test(value) ? "time" : COUNT_UNIT.test(value) ? "count" : null));
+  return !(kinds[0] && kinds[1] && kinds[0] !== kinds[1]);
+}
+
 export interface DesignFirstCall {
   contract: string;
   model: string;
@@ -411,6 +441,9 @@ export function fillViolations(
     });
     if (ungrounded.length)
       violations.push({ path: `${base}/metrics`, problem: `출처에 없는 숫자가 있습니다: ${ungrounded.join(", ")}. 출처에 적힌 숫자로 고치고, 맞는 숫자가 없는 수치는 빼서 metrics 목록 전체를 보내세요.` });
+    const madeUpBefore = filled.metrics.flatMap((metric, index) => (metricBeforeGrounded(metric, context.groundSource) ? [] : [`${index}번(${metric.before})`]));
+    if (madeUpBefore.length)
+      violations.push({ path: `${base}/metrics`, problem: `이전 값이 출처에 적혀 있지 않습니다: ${madeUpBefore.join(", ")}. 그 수치의 before를 빼서 metrics 목록 전체를 보내세요. 이전 값이 없는 수치에 0이나 지금 값을 넣지 않습니다.` });
     filled.metrics.forEach((metric, index) => {
       const at = `${base}/metrics/${index}`;
       text(`${at}/label`, metric.label, S.metricLabel, "수치 이름");
@@ -418,9 +451,11 @@ export function fillViolations(
       for (const key of ["value", "before"] as const) {
         const value = metric[key];
         if (value === undefined) continue;
-        if (chars(value) > S.metricValue || !METRIC_VALUE_PATTERN.test(value))
-          violations.push({ path: `${at}/${key}`, problem: `수치 값은 숫자와 단위만 ${S.metricValue}자 이내로 씁니다(예: 1.9초, 420KB, 1,200만 건). 무엇의 수치인지는 label에, 설명은 note에 씁니다.` });
+        if (chars(value) > S.metricValue || !metricValueAllowed(value, context.groundSource))
+          violations.push({ path: `${at}/${key}`, problem: `수치 값은 숫자와 단위, 또는 출처에 적힌 낱말 하나만 ${S.metricValue}자 이내로 씁니다(예: 1.9초, 420KB, 1,200만 건, 반나절). 무엇의 수치인지는 label에, 설명은 note에 씁니다.` });
       }
+      if (!metricUnitsAgree(metric))
+        violations.push({ path: `${at}/value`, problem: `이전 값(${metric.before})과 값(${metric.value})이 서로 다른 것을 잽니다. 출처에서 같은 수치의 이전 · 이후를 옮겨 쓰세요.` });
     });
     count(`${base}/steps`, filled.steps, budget.steps ?? 0, "단계");
     filled.steps.forEach((step, index) => {
@@ -692,7 +727,7 @@ export async function designFirst(
 ${plan.concept}
 ## 채울 칸
 - 이름(${author}) 아래: 직무(role), 한 문장 headline(줄바꿈 없이 마침표 하나로 끝나는 한 문장, 한글 36자 이내, 직무와 구체적인 작업), 소개(intro, ${plan.profile.intro}자 이내, 0이면 빈 글), 집중 분야(focus, ${plan.profile.focus}개 이내).
-- sections: 섹션마다 아래 설계의 글자 수 · 개수 안에서 채웁니다. 예산이 0이면 빈 글이나 빈 배열입니다. 수치(metrics)의 value · before는 출처에 적힌 숫자와 단위만 씁니다(예: "1.9초", "420KB", "1,200만 건"). 무엇의 수치인지는 label에, 조건 · 설명은 note에 씁니다. before-after 섹션은 이전 값(before)과 이후 값(value)을 함께 적습니다. bars 섹션의 수치는 모두 같은 단위로 적습니다(예: "5년" · "5년" · "2년"). 기간(period)은 출처에 적힌 기간을 그 글자 그대로 적고(예: "2024.04 — 2024.11", "2023.03 — 현재"), 출처에 없으면 비웁니다. process 섹션의 항목(details)은 과정의 단계를 순서대로 두 개 이상 적습니다. flow 섹션의 단계(steps)는 작업 순서대로 짧은 이름(label)과 한 줄 설명(text)입니다. 인용(quote)은 그 작업의 판단 · 원칙을 출처의 사실로 쓴 한 문장입니다.
+- sections: 섹션마다 아래 설계의 글자 수 · 개수 안에서 채웁니다. 예산이 0이면 빈 글이나 빈 배열입니다. before는 출처에 이전 값으로 적힌 수치에만 쓰고, 없으면 칸을 뺍니다. 수치(metrics)의 value · before는 출처에 적힌 숫자와 단위만 씁니다(예: "1.9초", "420KB", "1,200만 건"). 무엇의 수치인지는 label에, 조건 · 설명은 note에 씁니다. before-after 섹션은 이전 값(before)과 이후 값(value)을 함께 적습니다. bars 섹션의 수치는 모두 같은 단위로 적습니다(예: "5년" · "5년" · "2년"). 기간(period)은 출처에 적힌 기간을 그 글자 그대로 적고(예: "2024.04 — 2024.11", "2023.03 — 현재"), 출처에 없으면 비웁니다. process 섹션의 항목(details)은 과정의 단계를 순서대로 두 개 이상 적습니다. flow 섹션의 단계(steps)는 작업 순서대로 짧은 이름(label)과 한 줄 설명(text)입니다. 인용(quote)은 그 작업의 판단 · 원칙을 출처의 사실로 쓴 한 문장입니다.
 ${included.map(fillGuide).join("\n")}
 ${plan.career ? "- career: 출처에 있는 경력만 적습니다. 기간(period)은 출처에 적힌 글자 그대로입니다.\n" : ""}${plan.evidence ? "- evidence: 출처 자료를 지면용으로 짧게 적습니다.\n" : ""}## 출처
 ${JSON.stringify(included.map((section) => { const source = rawById.get(section.id)!; return { id: section.id, title: source.title, purpose: source.purpose, goal: source.goal, points: source.points }; }))}
@@ -717,7 +752,14 @@ ${evidenceText}`;
   const sections = included.map((plannedSection) => {
     const output = filled.sections[plannedSection.id]!;
     // 쓴 에이전트가 두 번 고쳐도 출처에 없는 숫자가 남은 수치는 싣지 않습니다. 지어낸 수치를 지면에 내보내지 않는 선입니다.
-    const metrics = output.metrics.filter((metric) => !ungroundedNumbers([metric.value, metric.before ?? ""].join(" "), groundSource).length);
+    // 이전 값만 근거가 없으면 비교만 빼고 수치는 남깁니다.
+    const metrics = output.metrics
+      .filter((metric) => metricUnitsAgree(metric) && !ungroundedNumbers([metric.value, metric.before ?? ""].join(" "), groundSource).length)
+      .map((metric) => {
+        if (metricBeforeGrounded(metric, groundSource)) return metric;
+        const { before: _madeUp, ...rest } = metric;
+        return rest;
+      });
     const section = {
       id: plannedSection.id,
       title: output.title,
