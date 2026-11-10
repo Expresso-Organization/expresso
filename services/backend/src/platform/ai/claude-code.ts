@@ -91,6 +91,8 @@ const RESULT_SCHEMA = z.looseObject({
   subtype: z.string(),
   is_error: z.boolean(),
   duration_ms: z.number(),
+  /** 모델 API를 기다린 시간. CLI가 남기는 값이고 `duration_ms`보다 클 수 있다(병렬 요청을 더한 값). */
+  duration_api_ms: z.number().optional(),
   total_cost_usd: z.number().optional(),
   structured_output: z.unknown().optional(),
   result: z.string().optional(),
@@ -207,7 +209,7 @@ export class ClaudeCodeAiClient implements AiClient {
       : prompt;
 
     const started = Date.now();
-    const { stdout, stderr, code } = await this.#run(args, spec, input, partialSink(options));
+    const { stdout, stderr, code, firstOutputMs } = await this.#run(args, spec, input, partialSink(options));
     const durationMs = Date.now() - started;
 
     if (code !== 0) {
@@ -237,6 +239,17 @@ export class ClaudeCodeAiClient implements AiClient {
         { retryable: false },
       );
     }
+
+    /*
+     * CLI가 보고하는 `duration_ms`는 CLI 안의 시간이라 프로세스 기동 · 종료가 빠진다. 사용량에는 그 값이 남으므로
+     * 프로세스 바깥 시간을 함께 남겨 둘을 맞춰 볼 수 있게 한다. 운영 실측(2026-11-10): 기동 · 종료가 호출마다
+     * 약 1.35초, 첫 출력까지 약 0.85초.
+     */
+    console.info(JSON.stringify({
+      level: "info", event: "ai.call_timing", contract: spec.contract, model,
+      wallMs: durationMs, firstOutputMs, cliMs: parsed.duration_ms, apiMs: parsed.duration_api_ms ?? null,
+      outsideCliMs: durationMs - parsed.duration_ms,
+    }));
 
     const usage = parsed.usage ?? {};
     // 한 번의 호출에도 여러 모델이 찍힌다(보조 단계). 출력 토큰이 가장 많은
@@ -290,7 +303,9 @@ export class ClaudeCodeAiClient implements AiClient {
     /** 한 줄씩 보고 싶은 사람. 없으면 예전처럼 다 모아서 끝에 판다. */
     onLine: ((line: string) => void) | null,
   ) {
-    return new Promise<{ stdout: string; stderr: string; code: number }>((resolve, reject) => {
+    return new Promise<{ stdout: string; stderr: string; code: number; firstOutputMs: number | null }>((resolve, reject) => {
+      const spawnedAt = Date.now();
+      let firstOutputMs: number | null = null;
       const child = spawn(this.#cliPath, args, {
         cwd: this.#cwd,
         stdio: ["pipe", "pipe", "pipe"],
@@ -331,6 +346,7 @@ export class ClaudeCodeAiClient implements AiClient {
       let pending = "";
       child.stdout.on("data", (chunk: Buffer) => {
         arm();
+        firstOutputMs ??= Date.now() - spawnedAt;
         const text = chunk.toString("utf8");
         stdout += text;
         if (!onLine) return;
@@ -351,7 +367,7 @@ export class ClaudeCodeAiClient implements AiClient {
       });
       child.on("close", (code) => {
         clearTimeout(timer);
-        resolve({ stdout, stderr, code: code ?? 1 });
+        resolve({ stdout, stderr, code: code ?? 1, firstOutputMs });
       });
     });
   }

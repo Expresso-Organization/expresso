@@ -82,12 +82,17 @@ export class InterviewService implements InterviewApi {
     return { context, requirements: requirementRows, records: orderedRecords, recordText };
   }
 
-  async #planQuestions(userId: string, brewId: string): Promise<PlannedQuestion[]> {
+  async #planQuestions(userId: string, brewId: string, timing: Record<string, number> = {}): Promise<PlannedQuestion[]> {
+    let mark = Date.now();
+    const lap = (name: string) => { const now = Date.now(); timing[name] = now - mark; mark = now; };
     const { context, requirements, records, recordText } = await this.#questionOptions(userId, brewId);
+    lap("optionsMs");
     if (context.options.length < 3) throw new InterviewError(409, "at least three grounded question bases are required");
     if (this.writer) {
       await this.consent?.require(userId, "question_draft");
+      lap("consentMs");
       const drafted = await this.writer.draft(context);
+      lap("draftMs");
       return drafted.map((question) => { const option = context.options[question.optionIndex]!; return { text: question.text, basis: option.basis, requirementId: option.basis.type === "requirement" ? option.basis.requirementId : null, variant: 0, rationale: question.rationale }; });
     }
     return generateQuestionDrafts(requirements.map((row) => ({ id: row._id, label: row.label, coverage: row.coverage, evidence: row.quote })), records.map((record) => ({ id: record._id, title: record.title, text: recordText(record) }))).map((draft) => ({ ...draft, rationale: null }));
@@ -112,7 +117,10 @@ export class InterviewService implements InterviewApi {
     if (replay) return this.getSession(userId, replay._id);
     const existing = await db.interviewSessions.findOne({ userId, brewId });
     if (existing) return this.getSession(userId, existing._id);
-    const planned = await this.#planQuestions(userId, brewId);
+    // 질문 생성의 단계별 시간. AI 호출 안쪽은 `ai.call_timing`이 따로 남긴다.
+    const timing: Record<string, number> = {};
+    const planned = await this.#planQuestions(userId, brewId, timing);
+    const savingAt = Date.now();
     const sessionId = await inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId);
       const collections = mongoCollections(tx.db); const options = { session: tx.session };
@@ -125,6 +133,7 @@ export class InterviewService implements InterviewApi {
       await collections.questions.insertMany(planned.map((draft, orderNo) => ({ _id: randomUUID(), userId, interviewSessionId: id, requirementId: draft.requirementId, replacedFromId: null, orderNo, text: draft.text, skipped: false, basis: draft.basis, active: true, variant: draft.variant, rationale: draft.rationale, createdAt: now })), options);
       return id;
     });
+    console.info(JSON.stringify({ level: "info", event: "interview.timing", brewId, ...timing, saveMs: Date.now() - savingAt }));
     return this.getSession(userId, sessionId);
   }
 
