@@ -11,7 +11,7 @@
 .text p[data-tone="warning"] { color:var(--ex-fg-body); }
 .issue { margin:0; color:var(--ex-status-danger-text); font-size:var(--ex-text-xs); }
 .actions { display:flex; justify-content:flex-end; gap:6px; }
-.actions button,.list button,.trashButton { display:inline-flex; min-height:32px; flex:0 0 auto; align-items:center; gap:5px; border:1px solid var(--ex-border-soft); border-radius:6px; background:var(--ex-bg); padding:5px 12px; color:var(--ex-fg-body); font:inherit; font-size:var(--ex-text-sm); cursor:pointer; }
+.actions button,.list button,.trashButton { display:inline-flex; min-height:32px; flex:0 0 auto; align-items:center; gap:5px; border:1px solid var(--ex-border-soft); border-radius:var(--ex-radius-control); background:var(--ex-bg); padding:5px 12px; color:var(--ex-fg-body); font:inherit; font-size:var(--ex-text-sm); cursor:pointer; }
 .actions button:hover,.list button:hover,.trashButton:hover { background:var(--ex-bg-hover); color:var(--ex-fg-strong); }
 .actions button[data-danger="true"] { border-color:color-mix(in srgb,var(--ex-status-danger-text) 35%,var(--ex-border-soft)); color:var(--ex-status-danger-text); }
 .actions button:disabled,.list button:disabled { opacity:.5; cursor:wait; }
