@@ -16,6 +16,10 @@ import {
   LayoutCandidatesSchema,
   LayoutDraftSchema,
   contrastRatio,
+  URGENT_DEADLINE_DAYS,
+  daysUntilDeadline,
+  isUrgentDaysLeft,
+  urgentDeadlineRange,
   checkClassName,
   isCompiledClassName,
   mediaAssetUrl,
@@ -931,5 +935,38 @@ describe("지면 문서 껍데기", () => {
     expect(pageDocument(base)).toContain('<html lang="ko">\n');
     expect(pageDocument({ ...base, reveal: true })).toBe(pageDocument(base));
     expect(pageDocument({ ...base, reveal: false })).toContain('<html lang="ko" data-reveal="none">\n');
+  });
+});
+
+describe("마감 임박 경계", () => {
+  const at = new Date("2026-11-10T15:00:00Z");
+
+  it("마감일이 7일째 날이면 하루 중 언제든 D-7이고 마감 임박이다", () => {
+    for (const time of ["2026-11-17T00:00:00Z", "2026-11-17T23:59:59Z"]) {
+      const days = daysUntilDeadline(new Date(time), at);
+      expect(days).toBe(URGENT_DEADLINE_DAYS);
+      expect(isUrgentDaysLeft(days)).toBe(true);
+    }
+  });
+
+  it("8일째 날 0시는 D-8이라 마감 임박이 아니다", () => {
+    const days = daysUntilDeadline(new Date("2026-11-18T00:00:00Z"), at);
+    expect(days).toBe(8);
+    expect(isUrgentDaysLeft(days)).toBe(false);
+  });
+
+  it("어제 마감 · 상시 채용은 마감 임박이 아니다", () => {
+    expect(isUrgentDaysLeft(daysUntilDeadline(new Date("2026-11-09T23:59:59Z"), at))).toBe(false);
+    expect(isUrgentDaysLeft(null)).toBe(false);
+  });
+
+  it("범위는 오늘 0시부터 8일째 날 0시 직전까지라 isUrgentDaysLeft와 같다", () => {
+    const { from, to } = urgentDeadlineRange(at);
+    expect(from.toISOString()).toBe("2026-11-10T00:00:00.000Z");
+    expect(to.toISOString()).toBe("2026-11-18T00:00:00.000Z");
+    for (const time of [from.getTime() - 1, from.getTime(), to.getTime() - 1, to.getTime()]) {
+      const inRange = time >= from.getTime() && time < to.getTime();
+      expect(isUrgentDaysLeft(daysUntilDeadline(new Date(time), at))).toBe(inRange);
+    }
   });
 });
