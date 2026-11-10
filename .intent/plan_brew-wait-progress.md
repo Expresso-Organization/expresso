@@ -14,7 +14,7 @@ date: 2026-11-10
 
 | 파일 | 무엇을 |
 |---|---|
-| `services/web/src/app/(app)/brew/[brewId]/design/wait-timing.ts` | `RECIPE_WAIT_MS` · `fakeProgress()` 추가 |
+| `services/web/src/app/(app)/brew/[brewId]/design/wait-timing.ts` | `RECIPE_WAIT_MS` · `fakeProgress()` · `waitedMs()`(잡을 만든 뒤 지난 시간, `brewingLeftMs`도 이것을 씀) 추가 |
 | `services/web/src/app/(app)/brew/[brewId]/design/wait-timing.test.ts` (새 파일) | `fakeProgress` 성질 검사 |
 | `services/web/src/app/(app)/brew/[brewId]/design/GenerationWait.tsx` | `BrewProgress` · `waitedMs` 속성 · `useSheetBuild` 멈춤 |
 | `services/web/src/app/(app)/brew/[brewId]/design/GenerationWait.module.css` | 막대 · 접힘 · `data-settled` 스크롤 막대, 비우기 규칙 삭제 |

@@ -11,7 +11,7 @@ import { Brewing, WAVE_MS, type BrewingRecord } from "./Brewing";
 import { DesignThumb, type DesignCatalogEntry } from "./DesignCatalog";
 import { cubicBezier, FEED_MOVE_MS, FEED_STEP_MS, feedSnaps, nextSnap, parseCubicBezier, parseMotion } from "./feed-steps";
 import styles from "./GenerationWait.module.css";
-import { BREWING_MS } from "./wait-timing";
+import { BREWING_MS, fakeProgress, RECIPE_WAIT_MS } from "./wait-timing";
 
 /** 지면 설계가 읽는 것 가운데 화면이 이미 아는 것. 설계 출력이 오기 전에 보여 줄 수 있는 것이 이것뿐이다. */
 export interface WaitReading {
@@ -59,9 +59,10 @@ const READING_LINE_MS = FEED_STEP_MS * 3;
  * 생성을 맡긴 뒤 설계 출력이 오기까지.
  *
  * 처음 10초는 고른 기록이 잔으로 내려가는 그림(`Brewing`)이 화면 가운데에 서고, 잔 아래에서 지금 읽는 입력을
- * 한 줄씩 짚는다. 그 뒤 기록 줄은 걷히고 잔만 위로 올라가며, 아래에서 빈 **지면**이 올라온다. 그 지면 위로
- * 입력 묶음 — 채용 공고 · 디자인 · 섹션 · 기록 — 이 1.5초마다 한 구역씩 올라와 쌓인다. 다 쌓이면 지면을 비우고
- * 다시 쌓는다. 설계 호출은 생각을 마쳐야 한 글자를 내고(2026-10-27 실측 약 61초), 그동안 화면이 정직하게
+ * 한 줄씩 짚는다. 잔 바로 아래에는 진행 막대(`BrewProgress`)가 멈칫거리며 차오른다. 그 뒤 기록 줄은 걷히고
+ * 잔만 위로 올라가며(막대는 끝까지 찬 뒤 접힌다), 아래에서 빈 **지면**이 올라온다. 그 지면 위로
+ * 입력 묶음 — 채용 공고 · 디자인 · 섹션 · 기록 — 이 1.5초마다 한 구역씩 올라와 쌓인다. 다 쌓이면 그대로 멈추고
+ * 사람이 스크롤해 읽는다(사용자 결정 2026-11-10 "마지막 섹션까지 뜨면 더이상 순환하지 않도록"). 설계 호출은 생각을 마쳐야 한 글자를 내고(2026-10-27 실측 약 61초), 그동안 화면이 정직하게
  * 보여 줄 수 있는 것은 모델에게 지금 가 있는 것뿐이다. 설계가 오면 `LivePreview`가 이 화면을 지면으로 바꾼다.
  *
  * 움직임은 반동 없이 끝에서 천천히 멈춘다(`--ex-motion-panel`의 곡선, 사용자 결정 2026-10-27 "너무 반동이 크다").
@@ -72,11 +73,14 @@ const READING_LINE_MS = FEED_STEP_MS * 3;
 export function GenerationWait({
   reading,
   brewingLeftMs,
+  waitedMs,
   recipePending = false,
   actions,
 }: {
   reading: WaitReading;
   brewingLeftMs: number;
+  /** 서버가 생성 잡을 만든 뒤 지난 시간. 진행 막대가 다시 열어도 그만큼 찬 자리에서 시작한다. */
+  waitedMs: number;
   /**
    * 구성(레시피)이 끝나기 전에 맡긴 생성이고 구성 잡이 아직 도는가. 그동안은 지면에 올릴 섹션이 없으므로 브루잉이
    * 시간과 상관없이 가운데에 머물고, 1.5초마다 다시 읽어 구성이 끝나면 지금처럼 지면으로 넘어간다.
@@ -136,6 +140,7 @@ export function GenerationWait({
     >
       <div ref={top} className={styles.top}>
         <Brewing records={reading.records} quiet={phase === "reading"} />
+        <BrewProgress waitedMs={waitedMs} expectedMs={recipePending ? RECIPE_WAIT_MS : BREWING_MS} done={phase === "reading"} />
         {phase === "brewing" && recipePending
           ? <Caption key="recipe" lines={brewingLines} every={READING_LINE_MS} />
           : phase === "brewing"
@@ -264,6 +269,36 @@ function Inputs({ reading }: { reading: WaitReading }) {
   );
 }
 
+/** 막대 값을 다시 재는 간격. 값은 0.3초 넘는 구간마다 바뀌므로 이보다 자주 잴 필요가 없다. */
+const PROGRESS_TICK_MS = 200;
+
+/**
+ * 잔 아래 진행 막대. 섹션 정보가 뜨기 전까지 보인다(사용자 결정 2026-11-10 "가짜 로딩 프로그레스 바를 적절하게
+ * 불규칙적으로"). 값은 실제 진행률이 아니어서 화면 읽기 프로그램에는 수치 없이 진행 중으로만 알린다.
+ *
+ * 경과 시간은 서버가 잰 `waitedMs`에서 시작해 이 화면의 시계로 잇는다. 1.5초마다 다시 그려지며 오는 새
+ * `waitedMs`는 쓰지 않는다 — 두 시계를 섞으면 어긋난 만큼 막대가 뒤로 간다. `done`이면 끝까지 찬 뒤 접힌다.
+ */
+function BrewProgress({ waitedMs, expectedMs, done }: { waitedMs: number; expectedMs: number; done: boolean }) {
+  const [waited] = useState(waitedMs);
+  const [value, setValue] = useState(() => fakeProgress(waitedMs, expectedMs));
+
+  useEffect(() => {
+    if (done) return;
+    const origin = performance.now() - waited;
+    const tick = () => setValue((current) => Math.max(current, fakeProgress(performance.now() - origin, expectedMs)));
+    tick();
+    const timer = window.setInterval(tick, PROGRESS_TICK_MS);
+    return () => window.clearInterval(timer);
+  }, [waited, expectedMs, done]);
+
+  return (
+    <div className={styles.progress} role="progressbar" aria-label="포트폴리오 구성 중" aria-busy={!done} data-done={done ? "" : undefined}>
+      <span className={styles.progressFill} style={{ transform: `scaleX(${done ? 1 : value})` }} />
+    </div>
+  );
+}
+
 /** 넘어가기 직전, 잔의 위치와 지면이 올라오는 결(`--wait-rise`)을 잰다. 잔도 같은 결로 올린다. */
 function measure(node: HTMLElement, root: HTMLElement) {
   const cup = node.querySelector<HTMLElement>("[data-brew-cup]");
@@ -299,15 +334,15 @@ function Caption({ lines, every }: { lines: readonly string[]; every: number }) 
  * 1. 이미 올린 구역 가운데 아직 끝까지 안 보인 카드 줄이 있으면 그 줄이 보이게 지면 안을 올린다.
  * 2. 없으면 다음 구역을 올리고(`data-shown`), 그 구역이 칸 아래로 넘치면 아래 끝이 보이게 지면 안을 올린다.
  *    칸보다 긴 구역은 위 끝에 맞춘다.
- * 3. 다 올렸으면 지면을 비우고(`data-turning` 뒤 처음으로) 다시 쌓는다.
+ * 3. 다 올렸으면 멈춘다(`data-settled`). 지면을 비우지 않고, 그 뒤로는 사람이 스크롤해 읽는다
+ *    (사용자 결정 2026-11-10 "마지막 섹션까지 뜨면 더이상 순환하지 않도록 하고, 스크롤이 가능하게").
  *
  * 지면 안을 올리는 데는 0.6초, 곡선은 반동 없는 `--ex-motion-panel`이다.
  *
- * 사용자가 스크롤하면 멈추고, 남은 구역을 모두 보여 준다 — 손으로 읽는 동안 빈 자리가 나오면 안 된다.
- * 스크롤이 끝나면(`scrollend`) 그 자리에서 1번부터 이어 간다. 우리가 쓴 값과 다른 스크롤 위치가 읽히면 사용자가
- * 움직인 것이다. `scrollend`는 2025년 12월부터 주요 브라우저가 모두 지원한다(MDN Baseline 2025).
+ * 쌓는 도중에 사용자가 스크롤하면 남은 구역을 모두 보여 주고 거기서 멈춘다 — 손으로 읽는 동안 빈 자리가 나오거나
+ * 화면이 읽는 자리를 옮기면 안 된다. 우리가 쓴 값과 다른 스크롤 위치가 읽히면 사용자가 움직인 것이다.
  *
- * 동작 줄이기 설정에서는 처음부터 모두 보이고 움직이지 않는다.
+ * 동작 줄이기 설정에서는 처음부터 모두 보이고 멈춰 있다.
  */
 function useSheetBuild(feed: RefObject<HTMLDivElement | null>, enabled: boolean, entering: boolean) {
   useEffect(() => {
@@ -324,9 +359,8 @@ function useSheetBuild(feed: RefObject<HTMLDivElement | null>, enabled: boolean,
 
     let shown = 0;
     let written = node.scrollTop;
-    let paused = false;
+    let settled = false;
     let timer = 0;
-    let turn = 0;
     let frame = 0;
 
     const reveal = (count: number) => {
@@ -338,9 +372,25 @@ function useSheetBuild(feed: RefObject<HTMLDivElement | null>, enabled: boolean,
     };
     if (reduced) {
       reveal(groups.length);
+      node.dataset.settled = "";
       return;
     }
     node.dataset.building = "";
+
+    const onScroll = () => {
+      // 소수점 위치는 브라우저가 화면 픽셀로 맞춰 읽어 준다. 그 차이보다 크면 사람이 움직인 것이다.
+      if (Math.abs(node.scrollTop - written) <= 1) return;
+      window.cancelAnimationFrame(frame);
+      reveal(groups.length);
+      settle();
+    };
+    /** 쌓기를 끝낸다. 이 뒤로 지면은 사람의 스크롤로만 움직인다. */
+    const settle = () => {
+      settled = true;
+      window.clearTimeout(timer);
+      node.removeEventListener("scroll", onScroll);
+      node.dataset.settled = "";
+    };
 
     /** 위아래 끝을 흐리게 지우는 폭(`--feed-fade`)과 그 안쪽 읽히는 높이. */
     const view = () => {
@@ -359,7 +409,7 @@ function useSheetBuild(feed: RefObject<HTMLDivElement | null>, enabled: boolean,
       // 시작도 프레임 시각으로 잡는다. `performance.now()`와 섞으면 프레임 시각이 그보다 앞설 때 진행이 음수에 묶인다.
       let start = -1;
       const run = (now: number) => {
-        if (paused) return;
+        if (settled) return;
         if (start < 0) start = now;
         const progress = Math.min(1, (now - start) / FEED_MOVE_MS);
         write(from + (target - from) * ease(progress));
@@ -394,53 +444,24 @@ function useSheetBuild(feed: RefObject<HTMLDivElement | null>, enabled: boolean,
         if (groupBottom > scrolled + visible) move(next.offsetHeight > visible ? groupTop : groupBottom - visible);
         return;
       }
-      // 3. 지면을 비우고 처음부터.
-      node.dataset.turning = "";
-      turn = window.setTimeout(() => {
-        if (paused) return;
-        node.dataset.resetting = "";
-        reveal(0);
-        write(0);
-        delete node.dataset.turning;
-        void node.offsetHeight;
-        delete node.dataset.resetting;
-      }, FEED_MOVE_MS);
+      // 3. 다 올렸다. 멈춘다.
+      settle();
     };
     const schedule = (delay: number) => {
       window.clearTimeout(timer);
       timer = window.setTimeout(() => {
-        if (!paused) step();
-        schedule(FEED_STEP_MS);
+        step();
+        if (!settled) schedule(FEED_STEP_MS);
       }, delay);
     };
 
-    const onScroll = () => {
-      // 소수점 위치는 브라우저가 화면 픽셀로 맞춰 읽어 준다. 그 차이보다 크면 사람이 움직인 것이다.
-      if (paused || Math.abs(node.scrollTop - written) <= 1) return;
-      paused = true;
-      window.cancelAnimationFrame(frame);
-      window.clearTimeout(timer);
-      window.clearTimeout(turn);
-      delete node.dataset.turning;
-      reveal(groups.length);
-    };
-    const onScrollEnd = () => {
-      if (!paused) return;
-      paused = false;
-      written = node.scrollTop;
-      schedule(FEED_STEP_MS);
-    };
-
     node.addEventListener("scroll", onScroll, { passive: true });
-    node.addEventListener("scrollend", onScrollEnd);
     // 브루잉에서 넘어왔으면 빈 지면이 다 올라온 뒤 첫 구역을 올린다. 다시 열었으면 바로 올린다.
     schedule(entering ? parseMotion(getComputedStyle(root).getPropertyValue("--wait-rise")).duration : 0);
     return () => {
       window.clearTimeout(timer);
-      window.clearTimeout(turn);
       window.cancelAnimationFrame(frame);
       node.removeEventListener("scroll", onScroll);
-      node.removeEventListener("scrollend", onScrollEnd);
     };
   }, [feed, enabled, entering]);
 }

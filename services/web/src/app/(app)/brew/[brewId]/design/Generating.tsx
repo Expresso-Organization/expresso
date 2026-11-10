@@ -23,6 +23,7 @@ export function Generating({
   title,
   reading,
   brewingLeftMs,
+  waitedMs,
   recipePending,
 }: {
   brewId: string;
@@ -30,6 +31,8 @@ export function Generating({
   title: string;
   reading: WaitReading;
   brewingLeftMs: number;
+  /** 서버가 생성 잡을 만든 뒤 지난 시간. */
+  waitedMs: number;
   /** 구성(레시피)이 끝나기 전에 맡긴 생성이고 구성 잡이 아직 도는가. */
   recipePending: boolean;
 }) {
@@ -38,6 +41,7 @@ export function Generating({
       <GenerationWait
         reading={reading}
         brewingLeftMs={brewingLeftMs}
+        waitedMs={waitedMs}
         recipePending={recipePending}
         actions={
           <form action={refreshGenerationAction}>
