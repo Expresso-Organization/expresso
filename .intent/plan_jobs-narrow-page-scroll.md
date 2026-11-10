@@ -10,7 +10,7 @@ date: 2026-11-10
 
 # 좁은 화면 공고 탐색 페이지 스크롤 — 구현 계획
 
-브랜치 `fix/jobs-narrow-page-scroll`은 `fix/job-row-narrow-layout`(PR #211) 위에 쌓는다. 휴대폰 검증에서 두 줄 행 배치를 함께 봐야 하기 때문이다. PR은 #211 브랜치를 기준으로 열고, 아래 PR이 머지되면 `main`으로 바꾼다.
+브랜치 `fix/jobs-narrow-page-scroll`은 `fix/job-row-narrow-layout`(PR #211) 위에 쌓는다. 휴대폰 검증에서 두 줄 행 배치를 함께 봐야 하기 때문이다. PR(#220)을 연 시점에 #208 · #211이 이미 `main`에 머지되어 기준 브랜치를 `main`으로 바꿨다.
 
 ## 바뀌는 파일
 
