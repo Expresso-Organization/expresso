@@ -61,6 +61,8 @@ export const PortfolioListResponseSchema = z.strictObject({
 
 export const ListPortfoliosQuerySchema = z.strictObject({
   status: PortfolioStatusSchema.optional(),
+  /** 제목 부분 일치(대소문자 무시). 00c 통합 검색이 쓴다. */
+  q: z.string().trim().min(1).max(200).optional(),
   cursor: z.string().min(1).max(512).optional(),
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });

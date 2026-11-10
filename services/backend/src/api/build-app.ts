@@ -57,7 +57,7 @@ import type { PageGenerator } from "../modules/page/generator.js";
 import { type PageApi } from "../modules/page/index.js";
 import { type AnalyticsApi } from "../modules/analytics/index.js";
 import { registerAnalyticsRoutes } from "../modules/analytics/routes.js";
-import { type EngagementApi } from "../modules/engagement/index.js";
+import { type EngagementApi, type UnifiedSearchApi } from "../modules/engagement/index.js";
 import { registerEngagementRoutes } from "../modules/engagement/routes.js";
 import { type AccountLifecycleApi } from "../modules/account-lifecycle/index.js";
 import { registerAccountLifecycleRoutes } from "../modules/account-lifecycle/routes.js";
@@ -109,6 +109,8 @@ export interface BuildApiOptions {
   pageStream?: PageStream | null;
   analyticsService?: AnalyticsApi;
   engagementService?: EngagementApi;
+  /** 00c 통합 검색. 기록 · 공고 · 포트폴리오 서비스를 묶은 것이라 따로 받는다. */
+  unifiedSearchService?: UnifiedSearchApi;
   accountLifecycleService?: AccountLifecycleApi;
   careerDocumentService?: CareerDocumentApi;
   adminService?: AdminService;
@@ -302,6 +304,7 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
     if (options.engagementService) {
       registerEngagementRoutes(app, {
         service: options.engagementService,
+        ...(options.unifiedSearchService ? { search: options.unifiedSearchService } : {}),
         authenticateRequest: createAuthenticateRequest(options.identityService),
       });
     }

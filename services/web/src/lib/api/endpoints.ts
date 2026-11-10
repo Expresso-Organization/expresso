@@ -47,8 +47,7 @@ import {
   HomeReadModelSchema,
   NotificationReadAllResultSchema,
   NotificationSchema,
-  PageInfoSchema,
-  UnifiedSearchItemSchema,
+  UnifiedSearchResponseSchema,
   JobPostingDetailResponseSchema,
   JobInterestResponseSchema,
   BrewStateResponseSchema,
@@ -181,7 +180,6 @@ export const auth = {
 };
 
 const HomeResponseSchema = z.strictObject({ data: HomeReadModelSchema });
-const UnifiedSearchResponseSchema = z.strictObject({ data: z.array(UnifiedSearchItemSchema), page: PageInfoSchema });
 const NotificationListResponseSchema = z.strictObject({ data: z.array(NotificationSchema) });
 const NotificationResponseSchema = z.strictObject({ data: NotificationSchema });
 const NotificationReadAllResponseSchema = z.strictObject({ data: NotificationReadAllResultSchema });
@@ -193,11 +191,11 @@ export const engagement = {
       accessToken,
       cache: "no-store",
     }),
-  /** 00c 통합 검색 — 기록 · 포트폴리오 · 공고 제목. */
-  search: (accessToken: string, q: string, limit = 20) =>
+  /** 00c 통합 검색 — 기록 · 공고 · 포트폴리오를 각 화면의 검색 규칙으로. `limit`은 종류마다. */
+  search: (accessToken: string, q: string, options: { country?: string; limit?: number } = {}) =>
     request(`${API_PREFIX}/search`, UnifiedSearchResponseSchema, {
       accessToken,
-      query: { q, limit },
+      query: { q, limit: options.limit ?? 20, ...(options.country ? { country: options.country } : {}) },
       cache: "no-store",
     }),
   notifications: (accessToken: string) =>
