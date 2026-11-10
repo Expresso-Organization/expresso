@@ -5,9 +5,9 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { AiUsageEvent } from "../ai/usage-sink.js";
-import { AGENT_ALLOWED_TOOLS, AgentToolRejection, ClaudeAgentRuntime, conversationForModel, type AgentEvent } from "./runtime.js";
+import { AGENT_ALLOWED_TOOLS, AgentToolRejection, ClaudeAgentRuntime, conversationForModel, type AgentEvent, type AgentInput } from "./runtime.js";
 /** 실행이 SDK에 넘긴 MCP 서버에 실제 MCP 클라이언트로 붙는다 — 모델이 보는 도구 목록과 호출 경로 그대로. */
-async function connectTools(overrides: Partial<ReturnType<typeof base>> = {}) {
+async function connectTools(overrides: Partial<AgentInput> = {}) {
   let server!: McpServer;
   sdk.query.mockImplementation(({ options }) => (async function* () { server = options.mcpServers.expresso.instance; yield { type: "result", is_error: false }; })());
   const emit = vi.fn(async (_event: AgentEvent) => undefined);
@@ -64,6 +64,34 @@ describe("Claude 채팅 실행 어댑터", () => {
     const events = emit.mock.calls.map(([event]) => event).filter(event => event.type === "tool").map(event => event.tool);
     expect(events.map(tool => [tool.name, tool.status, tool.summary])).toEqual([["기록 목록 확인", "running", "기록 목록을 불러오고 있습니다."], ["기록 목록 확인", "complete", "기록 1개를 확인했습니다."]]);
     expect(events[0]!.id).toBe(events[1]!.id);
+  });
+  it("모델이 도구 입력을 쓰기 시작하면 실행 중을 먼저 알리고, 처리기 결과를 같은 줄에 잇는다", async () => {
+    const emit = vi.fn(async (_event: AgentEvent) => undefined);
+    sdk.query.mockImplementation(({ options }) => (async function* () {
+      yield { type: "stream_event", event: { type: "content_block_start", content_block: { type: "tool_use", id: "toolu_1", name: "mcp__expresso__list_career_records" } } };
+      expect(emit.mock.calls.map(([event]) => event.type === "tool" && event.tool.status)).toEqual(["running"]);
+      const [serverSide, clientSide] = InMemoryTransport.createLinkedPair();
+      await (options.mcpServers.expresso.instance as McpServer).connect(serverSide);
+      const client = new Client({ name: "runtime-test", version: "1.0.0" });
+      await client.connect(clientSide);
+      await client.callTool({ name: "list_career_records", arguments: {}, _meta: { "claudecode/toolUseId": "toolu_1" } });
+      yield { type: "user", message: { content: [{ type: "tool_result", tool_use_id: "toolu_1", content: "[]" }] } };
+      yield { type: "result", is_error: false };
+    })());
+    await new ClaudeAgentRuntime().run({ messages: [], context: [], signal: new AbortController().signal, emit, ...base() });
+    const tools = emit.mock.calls.map(([event]) => event).filter(event => event.type === "tool").map(event => event.tool);
+    expect(tools.map(tool => tool.status)).toEqual(["running", "complete"]);
+    expect(new Set(tools.map(tool => tool.id)).size).toBe(1);
+  });
+  it("처리기까지 오지 못한 도구 호출은 결과가 오면 실패로 닫는다", async () => {
+    const emit = vi.fn(async (_event: AgentEvent) => undefined);
+    sdk.query.mockReturnValue((async function* () {
+      yield { type: "stream_event", event: { type: "content_block_start", content_block: { type: "tool_use", id: "toolu_2", name: "mcp__expresso__record_requirement_review" } } };
+      yield { type: "user", message: { content: [{ type: "tool_result", tool_use_id: "toolu_2", is_error: true, content: "invalid arguments" }] } };
+      yield { type: "result", is_error: false };
+    })());
+    await new ClaudeAgentRuntime().run({ messages: [], context: [], signal: new AbortController().signal, emit, ...base() });
+    expect(emit.mock.calls.map(([event]) => event.type === "tool" && [event.tool.name, event.tool.status, event.tool.summary])).toEqual([["요건 대조", "running", "요건마다 근거를 찾고 있습니다."], ["요건 대조", "failed", "도구 입력이 맞지 않아 다시 씁니다."]]);
   });
   it("검증에 걸린 요건 대조는 카드 없이 실패로 닫고 어긋난 항목을 에이전트에게 돌려준다", async () => {
     const { client, emit } = await connectTools({ review: vi.fn(async () => { throw new AgentToolRejection(["1번 요건: 공고 인용이 원문에 없습니다."]); }) });

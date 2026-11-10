@@ -19,6 +19,7 @@ date: 2026-11-10
 - [ ] init 메시지에 허용 도구가 하나라도 빠지면 `run`이 오류를 던져 실행이 `failed`로 끝난다.
 - [ ] 모든 도구가 같은 id로 `running` → `complete`/`failed` 이벤트를 보낸다.
 - [ ] 회귀 테스트: 실제 MCP 서버에 `tools/list`를 보내 9개 이름과 각 `inputSchema`를 받는다(API 키 불필요).
+- [ ] 모델이 도구 입력을 쓰는 동안 그 단계가 실행 중으로 보인다.
 - [ ] 웹: 도구 호출이 세로선으로 이어진 단계 목록으로 그려지고, 상태(running · complete · failed)가 점과 이름의 모양으로 구분된다.
 - [ ] `prefers-reduced-motion: reduce`에서 반복 애니메이션이 멈춘다(`tokens.css`의 전역 규칙).
 
@@ -27,7 +28,8 @@ date: 2026-11-10
 **백엔드** — `services/backend/src/platform/agent/runtime.ts`
 - 도구 정의는 지금처럼 SDK `tool()`로 만든다(재사용). 서버는 작업공간 `@modelcontextprotocol/sdk`의 `McpServer`로 만들고 `registerTool(name, { description, inputSchema }, handler)`로 등록한 뒤 `{ type: "sdk", name: "expresso", instance }`로 넘긴다. 스키마와 변환기가 같은 zod를 쓴다. `@modelcontextprotocol/sdk`를 backend 직접 의존성으로 올린다(이미 lockfile의 1.32.1).
 - 도구 이름 배열 하나(`TOOL_NAMES`)에서 `allowedTools`를 만들고, init 메시지 `tools`와 비교한다.
-- 도구마다 반복되는 `running` → 결과 이벤트를 `step(name, work)` 하나로 묶는다. `propose_record_edit`의 기존 실패 문구는 유지한다.
+- 도구마다 반복되는 `running` → 결과 이벤트를 `step(tool, extra, work, failure)` 하나로 묶는다. `propose_record_edit`의 기존 실패 문구는 유지한다.
+- `running`은 스트림의 `content_block_start`(`tool_use`) 시점에 먼저 보낸다. 요건 대조처럼 입력이 긴 도구는 처리기가 불리기까지 수십 초가 걸리고, 처리기는 순식간에 끝나 처리기에서만 보내면 화면에 실행 중이 보이지 않는다(실제 화면에서 확인). 블록과 처리기는 `tools/call`의 `_meta["claudecode/toolUseId"]`로 잇는다. 처리기까지 오지 못한 블록은 `tool_result`를 보고 실패로 닫고, 끝까지 열린 블록은 실행 끝에 닫는다.
 
 **웹** — `services/web/src/features/agent-chat/`
 - 새 `ToolStep.tsx` · `ToolStep.module.css`: 도메인을 모르는 단계 줄. 속성은 `status`, `icon`, `title`, `summary`, `children`(카드 · 승인 화면). 왼쪽 점 + 세로선, 오른쪽 이름 · 요약 · 본문.

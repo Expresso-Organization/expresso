@@ -20,11 +20,12 @@ date: 2026-11-10
 | `services/web/src/features/agent-chat/ToolStep.tsx` · `.module.css` (새) | 단계 줄 UI |
 | `services/web/src/features/agent-chat/ToolStep.test.tsx` (새) | 상태별 렌더 |
 | `services/web/src/features/agent-chat/AgentChat.tsx` · `.module.css` | `RecordTool`을 `ToolStep`으로, 타임라인 클래스, 쓰지 않는 `.toolCard` 제거 |
+| `services/web/src/features/agent-chat/ToolCard.module.css` | 첫 줄 주석의 `.toolCard` 참조 갱신 |
 
 ## 작업 순서
 
 1. 백엔드 서버 구성 교체 — 재현 스크립트에서 init `tools` 9개, `listed=1`.
-2. init 도구 검사와 running 이벤트 — `runtime.test.ts` 통과.
+2. init 도구 검사와 running 이벤트(스트림 `tool_use` 블록 시작 시점, tool_use id로 처리기와 연결) — `runtime.test.ts` 통과.
 3. `tools/list` 회귀 테스트(`runtime.test.ts`) — 변경 전 서버 구성(`createSdkMcpServer`)은 같은 요청에 `reading 'push'` 오류, 변경 후 통과.
 4. 웹 `ToolStep`과 `RecordTool` 연결 — 웹 테스트 · 타입 검사 통과.
 5. 실제 화면 검증 — 워크트리 포트의 API · 워커 · 웹으로 공고 채팅을 보내 스크린샷.
