@@ -50,7 +50,8 @@ flowchart TD
 
 ## 함정
 
-- SIGTERM은 cgroup 전체에 가므로 CLI와 Worker가 동시에 받는다. CLI가 처리하고 끝나는 데 시간이 걸려 Worker의 신호 처리기가 먼저 돈다고 본다. 반대 순서여도 재시도 가능 오류라 BullMQ 일반 재시도(시도 1회 소모)로 이어진다.
+- SIGTERM은 cgroup 전체에 가므로 CLI와 Worker가 동시에 받는다. CLI가 처리하고 끝나는 데 시간이 걸려 Worker의 신호 처리기가 먼저 돈다고 본다. 반대 순서면 질문 · 구성은 재시도 가능 오류라 BullMQ 일반 재시도(시도 1회 소모)로 이어지지만, 생성은 `stopping`이 아직 꺼져 있어 `failFreeHtml`로 실패가 확정된다. 생성은 신호 처리기가 먼저 도는 것에 기댄다.
+- 다시 돌릴 때 질문 · 구성은 같은 멱등 키를 쓴다. 키는 AI 호출 뒤 마지막 저장에서만 남으므로(`InterviewService.start` · `RecipeService.generate`) 끊긴 실행이 빈 결과를 남기지 않는다.
 - `forceCloseConnections: true`는 처리 중인 일반 요청도 끊는다. 배포 재시작에서만 생기는 일이고 nginx가 502를 낸다.
 - BullMQ `maxStalledCount` 기본 1: SIGKILL로 두 번 끊긴 잡은 stalled 한도로 실패한다. 이번 범위 밖.
 
