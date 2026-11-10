@@ -68,8 +68,7 @@ flowchart TD
 ## 완료 기준
 
 ```
-pnpm ml:data:test          # 새 테스트 포함 통과
-uv run --python 3.12 ... match_onnx.py latency --tiny   # p50 · p95 출력
+pnpm ml:data:test          # 새 테스트 포함 통과. match_onnx_test가 작은 XLM-R로 latency p50 · p95를 낸다
 ```
 
-가짜 데이터로 `match_experiments.py train-bi --encoder fake`가 `bi-v1-001/metrics.json`에 `roc` · `auc` · `screeningRecall` · `ruleBaseline` 키를 쓴다.
+가짜 데이터로 `match_experiments.py train-bi --encoder fake`가 `bi-v1-001/metrics.json`에 `roc`(`auc` · `points`) · `screeningRecall` · 규칙 baseline(`rule-calculateExplainableMatch`) 모델 행을 쓴다.
