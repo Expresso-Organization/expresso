@@ -11,6 +11,7 @@ import {
   LoginSchema,
   SignupSchema,
   SocialAuthSessionResponseSchema,
+  UpdateProfileSchema,
 } from "@expresso/contracts";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 
@@ -165,6 +166,25 @@ export function registerIdentityRoutes(
     async (request) => {
       const principal = requireAuth(request);
       return CurrentUserResponseSchema.parse({ data: principal.user });
+    },
+  );
+
+  /**
+   * 표시 이름 변경. 관리자가 더미 계정을 대신 보는 중에는 막는다 — 이때 `principal.user`는
+   * 더미 계정이고, 시연용 이름이 실수로 바뀌면 되돌릴 기록이 없다.
+   */
+  app.patch(
+    `${API_PREFIX}/me`,
+    { preHandler: authenticateRequest },
+    async (request) => {
+      const principal = requireAuth(request);
+      const input = parseBody(UpdateProfileSchema, request);
+      if (principal.user.impersonation) {
+        throw new HttpStatusError(403, "profile cannot be edited while acting as another account");
+      }
+      return CurrentUserResponseSchema.parse({
+        data: await options.identityService.updateDisplayName(principal.user.id, input.displayName),
+      });
     },
   );
 

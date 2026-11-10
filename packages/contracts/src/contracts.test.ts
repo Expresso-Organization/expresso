@@ -34,6 +34,7 @@ import {
   LoginSchema,
   SESSION_POLICY,
   SignupSchema,
+  UpdateProfileSchema,
   TERMS_VERSION,
   PasswordResetConfirmSchema,
   EmailVerificationConfirmSchema,
@@ -138,6 +139,21 @@ describe("HTTP contract primitives", () => {
     expect(formatResourceEtag(12)).toBe('"v12"');
     expect(parseResourceEtag('"v12"')).toBe(12);
     expect(() => parseResourceEtag("12")).toThrow();
+  });
+});
+
+describe("profile name contract", () => {
+  it("trims the display name and keeps the signup rule", () => {
+    expect(UpdateProfileSchema.parse({ displayName: "  박민재  " })).toEqual({ displayName: "박민재" });
+    expect(UpdateProfileSchema.parse({ displayName: "a".repeat(200) }).displayName).toHaveLength(200);
+  });
+
+  it("rejects an empty, blank or too long name and unknown keys", () => {
+    expect(UpdateProfileSchema.safeParse({ displayName: "" }).success).toBe(false);
+    expect(UpdateProfileSchema.safeParse({ displayName: "   " }).success).toBe(false);
+    expect(UpdateProfileSchema.safeParse({ displayName: "a".repeat(201) }).success).toBe(false);
+    expect(UpdateProfileSchema.safeParse({ displayName: "박민재", email: "x@example.com" }).success).toBe(false);
+    expect(UpdateProfileSchema.safeParse({}).success).toBe(false);
   });
 });
 
