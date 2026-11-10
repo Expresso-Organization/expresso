@@ -575,24 +575,16 @@
   min-width: 160px;
   background: var(--ex-bg);
   border: 1px solid var(--ex-border);
-  border-radius: 9px;
+  border-radius: var(--ex-radius-control);
   padding: 8px 12px;
   font-size: var(--ex-text-sm);
   font-weight: 600;
   color: var(--ex-fg);
-  transition:
-    border-color var(--ex-motion-quick),
-    box-shadow var(--ex-motion-quick);
+  transition: border-color var(--ex-motion-quick);
 }
 
 .nameInput:hover {
   border-color: var(--ex-border-firm);
-}
-
-.nameInput:focus {
-  outline: none;
-  border-color: var(--ex-fg);
-  box-shadow: var(--ex-focus-ring);
 }
 
 .nameInputInvalid,
