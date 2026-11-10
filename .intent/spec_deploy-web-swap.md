@@ -27,7 +27,7 @@ date: 2026-11-10
 
 1. 빌드 전: `.next-build`를 지우고 만든 뒤 `.next/cache`를 `.next-build/cache`로 옮긴다(같은 파일 시스템의 rename). 운영 서버는 이미지 캐시가 필요하면 `.next/cache`를 다시 만든다.
 2. 빌드: `NEXT_DIST_DIR=.next-build NEXT_PUBLIC_API_BASE_URL=… pnpm --filter @expresso/web build`.
-3. 이전 판 정적 파일 복사: `cp -Rnp .next/static/. .next-build/static/`. `-n`이 새 파일을 덮지 않고 `-p`가 원래 수정 시각을 지킨다.
+3. 이전 판 정적 파일 복사: `.next/static`의 파일 중 `.next-build/static`에 없는 것만 `cp -p`로 복사한다. `-p`가 원래 수정 시각을 지킨다. `cp -n`은 건너뛸 때의 종료 코드가 coreutils 판·macOS마다 달라 쓰지 않는다.
 4. API 준비 뒤 웹 교체: stop → `rm -rf .next-prev` → `mv .next .next-prev` → `mv .next-build .next` → start.
 5. 교체 뒤 `find .next/static -type f -mtime +7 -delete`로 오래된 정적 파일을 정리한다.
 
