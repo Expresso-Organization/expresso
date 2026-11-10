@@ -73,6 +73,8 @@ const runtimeRole = "expressoRuntime";
 const runtimePrivileges = [{
   resource: { db: databaseName, collection: "" },
   actions: [
+    // 워커의 아웃박스 깨우기와 잡 상태 SSE가 변경 흐름(watch)을 연다. 컬렉션 변경 흐름은 find와 이 동작이 함께 있어야 한다.
+    "changeStream",
     "collStats",
     "dbHash",
     "dbStats",
@@ -95,11 +97,31 @@ function normalizePrivileges(privileges) {
     actions: [...privilege.actions].sort(),
   })).sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
 }
+/**
+ * 이미 있는 역할이 선언보다 동작만 적으면(같은 자원, 선언의 부분집합) 올려도 되는 예전 역할이다.
+ * 배포마다 이 스크립트가 돌므로, 선언에 동작을 더한 뒤 첫 배포에서 운영 역할을 그 선언까지 올린다.
+ * 다른 자원이 있거나 선언에 없는 동작이 있으면 다른 설치의 역할로 보고 멈춘다.
+ */
+function upgradableFrom(current, declared) {
+  const declaredByResource = new Map(declared.map((privilege) => [JSON.stringify(privilege.resource), privilege.actions]));
+  if (current.length !== declared.length) return false;
+  return current.every((privilege) => {
+    const actions = declaredByResource.get(JSON.stringify(privilege.resource));
+    return actions !== undefined && privilege.actions.every((action) => actions.includes(action));
+  });
+}
 if (!currentRole) {
   applicationDb.createRole({ role: runtimeRole, privileges: runtimePrivileges, roles: [] });
-} else if (JSON.stringify(normalizePrivileges(currentRole.privileges))
-  !== JSON.stringify(normalizePrivileges(runtimePrivileges))) {
-  throw new Error("MongoDB runtime role conflicts with the restricted local role");
+} else {
+  const current = normalizePrivileges(currentRole.privileges);
+  const declared = normalizePrivileges(runtimePrivileges);
+  if (JSON.stringify(current) !== JSON.stringify(declared)) {
+    if (!upgradableFrom(current, declared)) {
+      throw new Error("MongoDB runtime role conflicts with the restricted local role");
+    }
+    applicationDb.grantPrivilegesToRole(runtimeRole, runtimePrivileges);
+    print("MongoDB runtime role upgraded to the declared privileges");
+  }
 }
 
 function ensureUser(username, password, roles) {
