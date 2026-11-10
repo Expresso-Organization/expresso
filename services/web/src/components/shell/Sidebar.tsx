@@ -5,6 +5,7 @@ import Link from "next/link";
 import { GlideMenu } from "@/components/ui/GlideMenu";
 import { Icon } from "@/components/ui/Icon";
 
+import { AccountLink } from "./AccountLink";
 import { SidebarCategories } from "./SidebarCategories";
 import { SidebarFrame } from "./SidebarFrame";
 import { SidebarInterests } from "./SidebarInterests";
@@ -99,17 +100,13 @@ export function Sidebar({
               <span className={`${styles.copy} ${styles.userName}`}>관리</span>
             </Link>
           ) : null}
-          <Link
-            href="/account"
-            className={`${styles.row} ${styles.userLink}`}
-            title={`${displayName} · 설정`}
-          >
+          <AccountLink title={`${displayName} · 설정`}>
             <span className={styles.avatar}>{displayName.slice(0, 1)}</span>
             <span className={`${styles.copy} ${styles.userName}`}>{displayName}</span>
             <span className={`${styles.copy} ${styles.userAction}`}>
               <Icon name="gear-six" size={14} />
             </span>
-          </Link>
+          </AccountLink>
         </>
       }
     >

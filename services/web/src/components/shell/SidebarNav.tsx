@@ -36,11 +36,12 @@ const PRIMARY_ITEMS: readonly {
  *
  * 예전에는 화면마다 `active="jobs"`를 손으로 넘겼다. 사이드바가 레이아웃으로
  * 올라가면서 그 자리가 없어졌고, 어차피 "지금 어느 메뉴냐"는 주소가 이미
- * 알고 있는 사실이다. 설정(`/account`)은 별도 메뉴가 아니라 홈 밑이다.
+ * 알고 있는 사실이다. 설정(`/account`)은 1차 메뉴가 아니므로 `null`이고, 그
+ * 화면의 활성 표시는 사이드바 아래쪽 사용자 줄(`AccountLink`)이 받는다.
  */
 export function sectionForPath(pathname: string): SidebarSection | null {
   if (pathname.startsWith("/agent")) return "agent";
-  if (pathname === "/home" || pathname.startsWith("/account")) return "home";
+  if (pathname === "/home") return "home";
   if (pathname.startsWith("/jobs")) return "jobs";
   if (pathname.startsWith("/analytics")) return "analytics";
   if (pathname.startsWith("/career")) return "career";
