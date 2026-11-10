@@ -227,3 +227,8 @@
 
 .runNotice { display:flex; align-items:center; justify-content:space-between; gap:8px; }
 .root .retryButton { flex-shrink:0; gap:4px; }
+/* 다듬기 화면에서 고른 요소. 입력창 위에는 보낼 말의 대상을, 보낸 말풍선 위에는 그 말이 가리킨 대상을 보인다. */
+.target { display:inline-flex; align-self:flex-start; align-items:center; gap:5px; max-width:100%; padding:4px 9px; border:1px solid var(--ex-border); border-radius:999px; background:var(--ex-bg-sunken); color:var(--ex-fg-body); font-size:var(--ex-text-3xs); }
+.target > span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.target > i { flex:none; color:var(--ex-accent-text); }
+.sentTarget { grid-column:1 / -1; justify-self:end; }

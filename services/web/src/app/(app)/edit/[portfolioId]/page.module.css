@@ -1084,6 +1084,19 @@
 
 /* ── 채팅 탭 (04) ─────────────────────────────────────────── */
 
+/* 구조화 지면의 채팅 탭 — 공통 에이전트 채팅이 탭 아래 남은 높이를 모두 쓴다. */
+.agentChat {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.agentChat > section {
+  flex: 1;
+  min-height: 0;
+}
+
 .chat {
   flex: 1;
   min-height: 0;

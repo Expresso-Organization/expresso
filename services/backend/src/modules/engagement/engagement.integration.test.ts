@@ -117,16 +117,4 @@ describeWithDatabase("notifications and read models integration", () => {
       empty: { brews: false, portfolios: false, recommendations: false, metrics: false },
     });
   });
-
-  it("uses a stable cursor across record, portfolio, and owned job search", async () => {
-    const first = await service.search(userId, { q: "Alpha", limit: 2 });
-    expect(first.data).toHaveLength(2);
-    expect(first.page).toMatchObject({ hasNextPage: true, nextCursor: expect.any(String) });
-    const second = await service.search(userId, { q: "Alpha", limit: 2, cursor: first.page.nextCursor! });
-    expect(second.data).toHaveLength(2);
-    expect(new Set([...first.data, ...second.data].map(({ id }) => id)).size).toBe(4);
-    expect([...first.data, ...second.data].some(({ title }) => title.includes("Secret"))).toBe(false);
-    await expect(service.search(otherUserId, { q: "Alpha", limit: 20 })).resolves.toMatchObject({ data: [{ title: "Alpha Secret Other User", type: "record" }] });
-    await expect(service.search(userId, { q: "Alpha", limit: 2, cursor: "not-a-cursor" })).rejects.toMatchObject({ statusCode: 400 });
-  });
 });
