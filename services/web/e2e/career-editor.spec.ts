@@ -114,7 +114,12 @@ test("renders every property family, five saved views and relation hydration", a
     field_text: { type: "text", value: "텍스트" }, field_number: { type: "number", value: 3 }, field_select: { type: "select", value: option }, field_multi_select: { type: "multi_select", value: [option] },
     field_date: { type: "date", value: { start: "2026-09-01", end: null, timezone: null } }, field_checkbox: { type: "checkbox", value: true }, field_url: { type: "url", value: "https://example.com" }, field_email: { type: "email", value: "e2e@example.com" }, field_phone: { type: "phone", value: "+82-10-0000-0000" }, field_file: { type: "file", value: [mediaId] }, field_media: { type: "media", value: [mediaId] }, field_created_time: { type: "created_time", value: "2026-09-01T00:00:00.000Z" }, field_updated_time: { type: "updated_time", value: "2026-09-01T01:00:00.000Z" },
   });
-  await api(page, "PUT", `/v1/career/records/${record.id}/relations`, { propertyId: ids.relation, targetIds: [target.id] }, { "if-match": `"v${record.version}"` });
+  // 기록을 만들면 Worker가 수식 · 롤업을 계산하며 기록 버전을 올린다(career.computation). 만들 때 받은 버전은
+  // 곧 낡는다 — 제품(PropertyList)처럼 최신 버전을 읽어 보낸다. 계산이 끝나기 전에 읽었으면 412가 나고 다시 읽는다.
+  await expect(async () => {
+    const latest = await api<{ data: { version: number } }>(page, "GET", `/v1/career/records/${record.id}`);
+    await api(page, "PUT", `/v1/career/records/${record.id}/relations`, { propertyId: ids.relation, targetIds: [target.id] }, { "if-match": `"v${latest.data.version}"` });
+  }).toPass({ timeout: 10_000 });
   await expect.poll(async () => (await api<{ data: { computedProperties?: Record<string, { value: unknown }> } }>(page, "GET", `/v1/career/records/${record.id}`)).data.computedProperties?.field_formula?.value).toBe(3);
   await expect.poll(async () => (await api<{ data: { computedProperties?: Record<string, { value: unknown }> } }>(page, "GET", `/v1/career/records/${record.id}`)).data.computedProperties?.field_rollup?.value).toBe(2);
   expect((await api<{ data: unknown[] }>(page, "GET", `/v1/career/categories/${category.id}/view-configurations`)).data).toHaveLength(5);

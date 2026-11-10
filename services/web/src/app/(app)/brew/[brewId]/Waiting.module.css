@@ -1,6 +1,8 @@
 .wrap {
   display: grid;
   place-items: center;
+  align-content: center;
+  gap: 28px;
   min-height: 420px;
   padding: 48px 24px;
 }

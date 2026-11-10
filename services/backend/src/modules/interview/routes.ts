@@ -15,7 +15,7 @@ const QuestionParamsSchema = z.strictObject({ id: z.uuid(), questionId: z.uuid()
 
 export interface RegisterInterviewRoutesOptions {
   interviewService: InterviewApi;
-  /** 질문 생성은 계약을 부르느라 1분쯤 걸린다. 요청 안에서 돌리지 않는다. */
+  /** 질문 생성은 계약을 부르느라 운영에서 10초 남짓 걸린다(2026-11 실측 8–14초). 요청 안에서 돌리지 않는다. */
   brewJobService: BrewJobApi;
   authenticateRequest: preHandlerHookHandler;
 }
@@ -49,6 +49,14 @@ export function registerInterviewRoutes(
       if (error instanceof BrewJobError) throw new HttpStatusError(error.statusCode, error.message);
       throw error;
     }
+  });
+
+  // 질문을 만드는 동안 화면이 먼저 보여 줄 근거. 질문 생성과 같은 계산이고 AI를 부르지 않는다.
+  app.get(`${API_PREFIX}/brews/:id/interview-bases`, { preHandler }, async (request) => {
+    const principal = requireAuth(request);
+    const params = IdParamsSchema.safeParse(request.params);
+    if (!params.success) throw new HttpStatusError(400, "invalid brew ID");
+    return { data: { bases: await options.interviewService.questionBases(principal.user.id, params.data.id) } };
   });
 
   app.get(`${API_PREFIX}/interview-sessions/:id`, { preHandler }, async (request) => {
