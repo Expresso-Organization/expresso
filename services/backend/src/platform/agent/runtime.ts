@@ -5,7 +5,7 @@ import { query, type ModelUsage } from "@anthropic-ai/claude-agent-sdk";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { recordAiUsage, type AiUsageSink } from "../ai/usage-sink.js";
-import { AgentEditDraftSchema, AgentRecordDraftInputSchema, GapReviewDraftSchema, PlanProposalInputSchema, ReplanProposalInputSchema, type AgentPlanDraft, type AgentReplanDraft, type PlanProposalInput, type PreparationPlan, type ReplanProposalInput, type GapReview, type GapReviewDraft, RequirementReviewDraftSchema, UuidSchema, type AgentRecordDraft, type AgentRecordDraftInput, type AgentEditDraft, type AgentMessage, type AgentToolResult, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
+import { AgentEditDraftSchema, AgentPageElementEditInputSchema, AgentPageElementReadInputSchema, type AgentPageElementEditInput, type AgentPageEdit, AgentRecordDraftInputSchema, GapReviewDraftSchema, PlanProposalInputSchema, ReplanProposalInputSchema, type AgentPlanDraft, type AgentReplanDraft, type PlanProposalInput, type PreparationPlan, type ReplanProposalInput, type GapReview, type GapReviewDraft, RequirementReviewDraftSchema, UuidSchema, type AgentRecordDraft, type AgentRecordDraftInput, type AgentEditDraft, type AgentMessage, type AgentToolResult, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
 
 export type AgentEvent = { type: "text"; text: string } | { type: "tool"; tool: AgentToolResult };
 export interface AgentRecordSummary { id: string; title: string; category: string; status: string; updatedAt: string }
@@ -34,6 +34,11 @@ export interface AgentInput {
   replanDraft(input: ReplanProposalInput): Promise<AgentReplanDraft>;
   /** 승인한 계획과 작업별 진행. 사용자의 계획이 아니면 null. */
   readPlan(planId: string): Promise<PreparationPlan | null>;
+  /** 대화에 연결된 포트폴리오 지면의 요소. 고침은 검사를 지나면 바로 새 판이 되고, 사용자가 카드에서 되돌린다. */
+  page: {
+    read(portfolioId: string, key: string): Promise<{ typeLabel: string; title: string } & Record<string, unknown>>;
+    edit(input: AgentPageElementEditInput): Promise<AgentPageEdit>;
+  };
 }
 
 /**
@@ -41,14 +46,15 @@ export interface AgentInput {
  * 이전 대조를 근거로 삼게 하되, 기록 변경 제안의 명령 같은 큰 구조는 넣지 않는다.
  */
 export function conversationForModel(messages: AgentMessage[]) {
-  // 사용자 메시지에는 id를 싣는다 — 새 기록 초안의 출처로 가리킬 수 있게.
-  return messages.map(({ id, role, text, tools }) => ({ ...(role === "user" ? { id } : {}), role, text, ...(tools.length ? { tools: tools.map(tool => ({
+  // 사용자 메시지에는 id를 싣는다 — 새 기록 초안의 출처로 가리킬 수 있게. 다듬기 화면에서 고른 요소도 싣는다.
+  return messages.map(({ id, role, text, tools, selection }) => ({ ...(role === "user" ? { id } : {}), ...(role === "user" && selection ? { selection } : {}), role, text, ...(tools.length ? { tools: tools.map(tool => ({
     name: tool.name,
     summary: tool.summary,
     ...(tool.review ? { review: { jobPostingId: tool.review.jobPostingId, summary: tool.review.summary, items: tool.review.items.map(item => ({ requirement: item.requirement, kind: item.kind, assessment: item.assessment, recommendation: item.recommendation, evidence: item.evidence.map(evidence => ({ recordTitle: evidence.recordTitle, quote: evidence.quote })) })) } } : {}),
     ...(tool.recordDraft ? { recordDraft: { title: tool.recordDraft.title, status: tool.recordDraft.status, recordId: tool.recordDraft.recordId } } : {}),
     ...(tool.planDraft ? { planDraft: { title: tool.planDraft.title, status: tool.planDraft.status, planId: tool.planDraft.planId, settings: tool.planDraft.settings, tasks: tool.planDraft.tasks.length } } : {}),
     ...(tool.replanDraft ? { replanDraft: { planId: tool.replanDraft.planId, status: tool.replanDraft.status, settings: tool.replanDraft.settings } } : {}),
+    ...(tool.pageEdit ? { pageEdit: { portfolioId: tool.pageEdit.portfolioId, key: tool.pageEdit.key, label: tool.pageEdit.label, revision: tool.pageEdit.revision, undone: tool.pageEdit.undone, changes: tool.pageEdit.changes.map(change => change.label) } } : {}),
     ...(tool.gapReview ? { gapReview: { summary: tool.gapReview.summary, items: tool.gapReview.items.map((item, index) => ({ index, requirement: item.requirement, type: item.type, status: item.status, priority: item.priority, suggestedAction: item.suggestedAction })) } } : {}),
   })) } : {}) }));
 }
@@ -62,12 +68,13 @@ const SYSTEM_PROMPT = [
   "무엇을 보완하거나 준비해야 하는지 정리해 달라고 하면 가장 최근 요건 대조와 대화에서 확인한 답을 바탕으로 record_gap_review를 쓰십시오. requirementIndex는 그 대조의 요건 순서(0부터)입니다. 확인되지 않은 요건은 needs_confirmation으로 두고, needs_improvement는 사용자가 대화에서 직접 부족하다고 말한 경우에만 그 발언을 근거로 쓰십시오. priority는 준비할 순서입니다.",
   "준비 계획을 요청받으면 주당 쓸 수 있는 시간, 기간(주), 시작일을 모르면 먼저 묻고, 가장 최근 보완점 정리에서 고른 번호(gapIndexes, 0부터)로 propose_preparation_plan을 부르십시오. 작업과 일정은 서버가 정하므로 지어내지 마십시오. 시간이 모자라다고 돌아오면 그 내용을 사용자에게 전하고 설정을 다시 물으십시오. 계획은 사용자가 카드에서 승인해야 저장됩니다.",
   "승인한 계획의 진행을 묻거나 남은 작업을 다시 배치해 달라고 하면 read_preparation_plan으로 진행을 보고, 재배치는 새 주당 시간 · 기간 · 시작일로 propose_replan을 부르십시오. 완료한 작업은 그대로 두고 남은 작업만 다시 배치되며, 사용자가 카드에서 승인해야 바뀝니다.",
+  "포트폴리오 지면을 고쳐 달라는 요청이면 사용자 메시지의 selection(portfolioId · key · label)이 가리키는 요소를 read_page_element로 먼저 읽고, edit_page_element로 요청한 칸만 고치십시오. selection이 없으면 context의 지면 목차(outline)에서 요소를 고르고, 어느 요소인지 모호하면 먼저 물으십시오. 고친 내용은 검사를 지나면 바로 새 판으로 저장되고 사용자가 카드에서 되돌릴 수 있으므로, 저장한 뒤에는 무엇을 바꿨는지만 짧게 말하십시오. 출처에 없는 수치 · 성과 · 경력을 만들지 말고 지금 글의 사실을 유지하십시오. 이름은 고치지 않습니다. 요소를 더하거나 빼거나 순서를 바꾸는 일은 이 도구로 할 수 없으니 다듬기 화면의 목차와 기록 탭에서 할 수 있다고 안내하십시오. 도구가 어긋난 항목을 돌려주면 그 항목만 고쳐 다시 부르십시오.",
   "부족한 요건을 보완할 질문을 요청받으면 가장 최근 요건 대조의 unconfirmed · partial 요건부터 한 번에 질문 하나만 하십시오. 답에 역할 · 행동 · 결과 중 빠진 것이 있으면 그것을 이어 묻고, 충분히 확인되었거나 사용자가 그만하자고 하면 질문을 멈추고 확인된 내용을 정리하십시오. 요건 대조가 없으면 먼저 대조하십시오.",
 ].join(" ");
 export interface AgentRuntime { run(input: AgentInput): Promise<void> }
 
 /** 에이전트가 부를 수 있는 도구. SDK에 넘기는 허용 목록과 실행 직전 검사가 이 목록 하나를 본다. */
-const TOOL_NAMES = ["propose_record_edit", "list_career_records", "read_career_records", "record_requirement_review", "propose_new_record", "record_gap_review", "propose_preparation_plan", "read_preparation_plan", "propose_replan"] as const;
+const TOOL_NAMES = ["propose_record_edit", "list_career_records", "read_career_records", "record_requirement_review", "propose_new_record", "record_gap_review", "propose_preparation_plan", "read_preparation_plan", "propose_replan", "read_page_element", "edit_page_element"] as const;
 export const AGENT_ALLOWED_TOOLS = TOOL_NAMES.map(name => `mcp__expresso__${name}`);
 type ToolName = typeof TOOL_NAMES[number];
 /** 작업 흔적에 보이는 이름과, 모델이 도구 입력을 쓰는 동안 보이는 요약. */
@@ -81,6 +88,8 @@ const TOOL_LABELS: Record<ToolName, { name: string; pending: string }> = {
   propose_preparation_plan: { name: "준비 계획 초안", pending: "작업과 일정을 배치하고 있습니다." },
   read_preparation_plan: { name: "계획 진행 확인", pending: "계획의 진행을 읽고 있습니다." },
   propose_replan: { name: "계획 재배치 초안", pending: "남은 작업을 다시 배치하고 있습니다." },
+  read_page_element: { name: "지면 요소 읽기", pending: "요소의 지금 모양과 글을 읽고 있습니다." },
+  edit_page_element: { name: "지면 요소 고침", pending: "요소를 고치고 있습니다." },
 };
 const toolName = (qualified: string) => TOOL_NAMES.find(name => `mcp__expresso__${name}` === qualified);
 /** Claude Code가 tools/call에 실어 보내는 tool_use 블록 id. 스트림의 블록 시작과 처리기를 잇는다. */
@@ -179,6 +188,14 @@ export class ClaudeAgentRuntime implements AgentRuntime {
       const replanDraft = await input.replanDraft(proposal);
       return { summary: `남은 작업 ${replanDraft.slots.length}개 · 주 ${replanDraft.settings.weeklyHours}시간`, detail: { replanDraft }, reply: reply({ draftId: replanDraft.draftId, tasks: replanDraft.slots.length, requiresUserApproval: true }) };
     }, recheck("이 설정으로는 다시 배치할 수 없습니다.", "다시 배치하지 않았습니다.")));
+    server.registerTool("read_page_element", { description: "대화에 연결된 포트폴리오 지면에서 요소 하나의 지금 모양 · 고를 수 있는 값(options · styleChoices) · 글자 부분(parts) · 고칠 수 있는 글 경로와 지금 글(text) · 근거 원문(source)을 읽습니다. 고치기 전에 먼저 읽으십시오.", inputSchema: AgentPageElementReadInputSchema.shape }, ({ portfolioId, key }, extra) => step("read_page_element", extra, async () => {
+      const guide = await input.page.read(portfolioId, key);
+      return { summary: `${guide.typeLabel} · ${guide.title}`.slice(0, 8_000), reply: reply(guide) };
+    }, recheck("요소를 읽지 못했습니다.", "이 요소를 읽을 수 없습니다.")));
+    server.registerTool("edit_page_element", { description: "대화에 연결된 포트폴리오 지면의 요소 하나를 고쳐 바로 새 판으로 저장합니다. 바꿀 칸만 props · style · text에 넣습니다. 값은 read_page_element가 돌려준 선택지와 경로만 씁니다. 사용자는 카드에서 되돌릴 수 있습니다.", inputSchema: AgentPageElementEditInputSchema.shape }, (edit, extra) => step("edit_page_element", extra, async () => {
+      const pageEdit = await input.page.edit(edit);
+      return { summary: `${pageEdit.label} · 바뀐 곳 ${pageEdit.changes.length}`, detail: { pageEdit }, reply: reply({ saved: true, revision: pageEdit.revision, changes: pageEdit.changes }) };
+    }, recheck("어긋난 항목을 고쳐 다시 씁니다.", "저장하지 않았습니다. 아래 항목을 고쳐 다시 부르십시오.")));
     const isolatedHome = input.apiKey ? await mkdtemp(join(tmpdir(), "expresso-agent-")) : null;
     try {
       const messages = query({ prompt: JSON.stringify({ conversation: conversationForModel(input.messages), context: input.context }), options: {

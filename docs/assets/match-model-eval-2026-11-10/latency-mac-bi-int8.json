@@ -1,0 +1,34 @@
+{
+  "createdAt": "2026-11-10T13:59:58+0900",
+  "machine": {
+    "platform": "macOS-27.2-arm64-arm-64bit",
+    "machine": "arm64",
+    "cpuCount": 14,
+    "python": "3.12.13",
+    "onnxruntime": "1.31.0"
+  },
+  "threads": 4,
+  "quantized": true,
+  "requests": {
+    "profileEmbedding": {
+      "model": "intfloat/multilingual-e5-base",
+      "sequenceLength": 512,
+      "items": 1,
+      "repeats": 100,
+      "p50Ms": 63.746207975782454,
+      "p95Ms": 73.55791702866554,
+      "meanMs": 65.22300873300992,
+      "itemsPerSecond": 15.332012727187967
+    },
+    "screening": {
+      "model": "pilot-shape-mlp",
+      "jobs": 368,
+      "items": 368,
+      "repeats": 100,
+      "p50Ms": 0.42458309326320887,
+      "p95Ms": 0.4613329656422138,
+      "meanMs": 0.4227154247928411,
+      "itemsPerSecond": 870562.0339743805
+    }
+  }
+}

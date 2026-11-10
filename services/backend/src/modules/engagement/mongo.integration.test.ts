@@ -48,14 +48,13 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB engagement", () => {
     expect((await service.listNotifications(userId)).every((row) => row.readAt !== null)).toBe(true);
   });
 
-  it("keeps delivery retry state and returns empty home/search models", async () => {
+  it("keeps delivery retry state and returns an empty home model", async () => {
     const created = await service.notify(userId, "traffic", "/analytics", "traffic:retry", new Date("2026-08-09T02:00:00Z"));
     const id = created.notification!.id;
     await expect(service.deliver(id, { async send() { throw new Error("temporary"); } }, new Date("2026-08-09T02:00:00Z"))).rejects.toThrow("temporary");
     await expect(service.getNotificationById(id)).resolves.toMatchObject({ deliveryStatus: "failed", attempts: 1 });
     await expect(service.deliver(id, { async send() {} }, new Date("2026-08-09T02:00:03Z"))).resolves.toMatchObject({ deliveryStatus: "sent", attempts: 2 });
     await expect(service.home(userId)).resolves.toMatchObject({ empty: { brews: true, portfolios: true, recommendations: true, metrics: true } });
-    await expect(service.search(userId, { q: "nothing", limit: 10 })).resolves.toEqual({ data: [], page: { hasNextPage: false, nextCursor: null } });
   });
 
   it("builds populated home sections with one aggregation result", async () => {

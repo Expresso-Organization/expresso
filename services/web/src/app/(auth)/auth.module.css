@@ -156,7 +156,7 @@
   color: var(--ex-fg);
   background: var(--ex-bg);
   border: 1px solid var(--ex-border);
-  border-radius: 10px;
+  border-radius: var(--ex-radius-control);
   padding: 12px;
   transition: background var(--ex-motion-quick);
 }
@@ -218,13 +218,11 @@
   display: block;
   background: var(--ex-bg);
   border: 1px solid var(--ex-border);
-  border-radius: 10px;
+  border-radius: var(--ex-radius-control);
   padding: 12px 14px;
   font-size: var(--ex-text-md);
   color: var(--ex-fg);
-  transition:
-    border-color var(--ex-motion-quick),
-    box-shadow var(--ex-motion-quick);
+  transition: border-color var(--ex-motion-quick);
 }
 
 .input::placeholder {
@@ -234,12 +232,6 @@
 /* 값이 채워진 필드는 보더가 진해진다 (화면 정의서의 채워진 입력) */
 .input:hover {
   border-color: var(--ex-border-firm);
-}
-
-.input:focus {
-  outline: none;
-  border-color: var(--ex-fg);
-  box-shadow: 0 0 0 3px rgba(22, 34, 58, 0.13);
 }
 
 .inputInvalid,
@@ -360,7 +352,7 @@
   color: var(--ex-fg-on-accent);
   background: var(--ex-accent);
   border: none;
-  border-radius: 10px;
+  border-radius: var(--ex-radius-control);
   padding: 13px;
   transition: background var(--ex-motion-quick);
 }
@@ -460,7 +452,7 @@
   min-height: 28px;
   padding: 4px 8px;
   border: 1px solid var(--ex-border);
-  border-radius: 8px;
+  border-radius: var(--ex-radius-control);
   background: var(--ex-bg);
   color: var(--ex-fg-muted);
   font-size: var(--ex-text-2xs);

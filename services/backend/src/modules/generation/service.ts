@@ -98,7 +98,8 @@ export class GenerationService {
         : await latestRecipe(tx, userId, input.brewId!);
       if (input.recipeId && !recipe) throw new GenerationError(404, "recipe not found");
       const brewId = recipe?.brewId ?? input.brewId!;
-      if (!recipe && !await db.brews.findOne({ _id: brewId, userId }, options)) throw new GenerationError(404, "brew not found");
+      // 레시피로 시작해도 제작이 휴지통이면 막는다. 휴지통 제작에 포트폴리오가 생기면 안 된다.
+      if (!await db.brews.findOne({ _id: brewId, userId, deletedAt: null }, options)) throw new GenerationError(404, "brew not found");
       const style = resolveStyle(input);
       if (!await db.templates.findOne({ _id: style.templateId, isActive: true }, options)) {
         throw new GenerationError(404, "template not found");

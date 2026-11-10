@@ -113,14 +113,14 @@
   align-items: center;
   gap: 6px;
   background: var(--ex-accent-surface);
-  border-radius: 7px;
+  border-radius: var(--ex-radius-pill);
   padding: 4px 9px;
 }
 
 .generationPill {
   display: inline-flex;
   align-items: center;
-  border-radius: 999px;
+  border-radius: var(--ex-radius-pill);
   padding: 4px 8px;
   font-size: var(--ex-text-2xs);
   font-weight: 600;
@@ -230,7 +230,7 @@
   color: var(--ex-fg-body);
   background: var(--ex-bg);
   border: 1px solid var(--ex-border-soft);
-  border-radius: 9px;
+  border-radius: var(--ex-radius-control);
   padding: 8px 14px;
   transition: border-color var(--ex-motion-quick);
 }
@@ -245,7 +245,7 @@
   color: var(--ex-fg-on-accent);
   background: var(--ex-accent);
   border: none;
-  border-radius: 9px;
+  border-radius: var(--ex-radius-control);
   padding: 8px 16px;
   display: flex;
   align-items: center;
@@ -359,7 +359,7 @@
 
 .suggestionCard {
   background: var(--ex-bg-sunken);
-  border-radius: 11px;
+  border-radius: var(--ex-radius-card);
   padding: 13px 14px;
 }
 
@@ -1084,6 +1084,19 @@
 
 /* ── 채팅 탭 (04) ─────────────────────────────────────────── */
 
+/* 구조화 지면의 채팅 탭 — 공통 에이전트 채팅이 탭 아래 남은 높이를 모두 쓴다. */
+.agentChat {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.agentChat > section {
+  flex: 1;
+  min-height: 0;
+}
+
 .chat {
   flex: 1;
   min-height: 0;
@@ -1130,7 +1143,7 @@
   max-width: 88%;
   background: var(--ex-bg-sunken);
   border: 1px solid var(--ex-border);
-  border-radius: 7px;
+  border-radius: var(--ex-radius-pill);
   padding: 4px 8px;
   overflow: hidden;
 }
@@ -1217,7 +1230,7 @@
 /* 변경 요약 (diff) */
 .patch {
   border: 1px solid var(--ex-border);
-  border-radius: 10px;
+  border-radius: var(--ex-radius-card);
   overflow: hidden;
   background: var(--ex-bg);
 }
@@ -1300,7 +1313,7 @@
   gap: 5px;
   border: 1px solid var(--ex-border-soft);
   background: none;
-  border-radius: 8px;
+  border-radius: var(--ex-radius-control);
   padding: 7px 0;
   font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
@@ -1320,7 +1333,7 @@
   gap: 5px;
   background: #eef1fc;
   border: 1px solid #dfe5f9;
-  border-radius: 8px;
+  border-radius: var(--ex-radius-control);
   padding: 7px 0;
   font-size: var(--ex-text-xs);
   font-weight: 600;
@@ -1363,7 +1376,7 @@
   color: #354da8;
   background: #eef1fc;
   border: none;
-  border-radius: 999px;
+  border-radius: var(--ex-radius-pill);
   padding: 5px 11px;
   white-space: nowrap;
   /*
@@ -1377,7 +1390,7 @@
 
 .inputBox {
   border: 1px solid var(--ex-border-soft);
-  border-radius: 12px;
+  border-radius: var(--ex-radius-control);
   padding: 11px 13px;
 }
 
@@ -1411,7 +1424,7 @@
 .inputSend {
   width: 28px;
   height: 28px;
-  border-radius: 8px;
+  border-radius: var(--ex-radius-control);
   background: #4562ce;
   border: none;
   display: grid;
@@ -1432,7 +1445,7 @@
   align-items: center;
   gap: 9px;
   background: var(--ex-bg-sunken);
-  border-radius: 10px;
+  border-radius: var(--ex-radius-card);
   padding: 10px 12px;
   margin-bottom: 14px;
 }
@@ -1508,7 +1521,7 @@
   display: flex;
   align-items: center;
   border: 1px solid var(--ex-border-soft);
-  border-radius: 8px;
+  border-radius: var(--ex-radius-control);
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -1553,7 +1566,7 @@
   flex: 1;
   min-width: 0;
   border: 1px solid var(--ex-border-soft);
-  border-radius: 8px;
+  border-radius: var(--ex-radius-control);
   padding: 6px 9px;
   font-size: var(--ex-text-sm);
   color: var(--ex-fg);
@@ -1725,7 +1738,7 @@
   margin: 4px 0 14px;
   padding: 7px 0;
   border: 1px solid var(--ex-border);
-  border-radius: 8px;
+  border-radius: var(--ex-radius-control);
   background: none;
   font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
@@ -1896,7 +1909,7 @@
   flex: 1;
   min-width: 0;
   border: 1px solid var(--ex-border-soft);
-  border-radius: 8px;
+  border-radius: var(--ex-radius-control);
   padding: 8px 10px;
   font-size: var(--ex-text-xs);
   line-height: 1.7;
@@ -1908,7 +1921,7 @@
 .propSave {
   border: 1px solid var(--ex-border-soft);
   background: var(--ex-bg);
-  border-radius: 7px;
+  border-radius: var(--ex-radius-control);
   padding: 6px 10px;
   font-size: var(--ex-text-xs);
   color: var(--ex-fg);
@@ -1941,7 +1954,7 @@
   font-size: var(--ex-text-2xs);
   color: var(--ex-accent-text);
   background: var(--ex-accent-surface);
-  border-radius: 999px;
+  border-radius: var(--ex-radius-pill);
   padding: 3px 8px;
   white-space: nowrap;
 }
@@ -2016,7 +2029,7 @@
   font-size: var(--ex-text-xs);
   color: var(--ex-status-danger-text);
   background: var(--ex-status-danger-surface);
-  border-radius: 7px;
+  border-radius: var(--ex-radius-pill);
   padding: 4px 9px;
   /* 상태 바는 한 줄이다 — 줄바꿈을 허용하면 글자가 세로로 선다. */
   white-space: nowrap;
@@ -2027,7 +2040,7 @@
   border: 1px solid var(--ex-status-danger-surface-deep);
   background: var(--ex-bg);
   color: var(--ex-status-danger-text);
-  border-radius: 6px;
+  border-radius: var(--ex-radius-control);
   padding: 3px 8px;
   font-size: var(--ex-text-xs);
   white-space: nowrap;
@@ -2320,6 +2333,12 @@
   gap: 14px;
   padding: 0 4px;
   overflow-y: auto;
+}
+
+/* 기록 찾기 칸. 속성 입력 칸(.textInput)과 모양을 나누는 것은 곡률뿐이다 — 검색 칸은 pill. */
+.librarySearch {
+  border-radius: var(--ex-radius-pill);
+  padding-inline: 14px;
 }
 
 .libraryGroup {

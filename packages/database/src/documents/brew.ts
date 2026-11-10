@@ -45,6 +45,9 @@ export interface BrewDoc {
   referenceLockSnapshot?: unknown;
   designStyleOverrides?: unknown;
   designSelectedAt?: Date | null;
+  /** 휴지통으로 옮긴 때와 영구 삭제 예정일. `PortfolioDoc`과 같은 규칙이다. */
+  deletedAt?: Date | null;
+  purgeAfter?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }

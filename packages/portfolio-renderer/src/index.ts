@@ -18,6 +18,7 @@ export {
   editableFields,
   elementStyleCss,
   elementTextPaths,
+  elementTitle,
   styleProblems,
   textPathLabel,
   typeSteps,
