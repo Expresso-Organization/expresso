@@ -552,7 +552,7 @@ figure.fig figcaption { margin-top: 10px; font-size: 12.5px; color: var(--ex-sla
       <div class="kicker">RELEASE NOTES · 패치노트</div>
       <h1>Expresso 패치노트 2026-11-10</h1>
       <p class="lede">
-        2026-11-02부터 2026-11-10까지 <code>main</code>에 머지된 PR의 변경 내용을 화면별로 정리했습니다.
+        2026-11-02부터 2026-11-10까지 머지된 변경을 최신순으로 정리했습니다. 날짜마다 사용자가 겪는 변경을 먼저 적고, 개발 · 운영 변경은 아래에 따로 묶었습니다. 날짜는 PR 머지 시각(KST) 기준입니다.
       </p>
       <div class="meta">
         <div><div class="k">AUTHOR</div><div class="v">박민재</div></div>
@@ -562,204 +562,171 @@ figure.fig figcaption { margin-top: 10px; font-size: 12.5px; color: var(--ex-sla
       </div>
     </div>
 
-    <section class="sec" id="home">
+    <section class="sec" id="d1110">
       <div class="sec-head">
         <span class="num">01</span>
-        <h2>홈</h2>
-        <span class="aside">로그인 뒤 첫 화면</span>
+        <h2>11월 10일</h2>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>구분</th><th>변경 내용</th><th>PR</th></tr></thead>
-          <tbody>
-            <tr><td><span class="badge live">NEW</span></td><td>홈을 지금 할 일 기준으로 다시 구성했습니다. 공고 카드는 목표 직군의 모집 중 공고를 일치도 순으로 보여 주고, 「관심」 탭은 담아 둔 공고를 보여 줍니다. 만들던 제작은 어느 회사의 어느 공고로 만드는 중인지와 함께 「내 포트폴리오」에 놓입니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/160">#160</a></td></tr>
-            <tr><td><span class="badge pro">CHANGE</span></td><td>공고 카드의 「전체 공고」와 「관심」 탭을 누르면 목록이 기다림 없이 바로 바뀝니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/212">#212</a></td></tr>
-            <tr><td><span class="badge pro">CHANGE</span></td><td>커리어 기록이 한 건만 있어도 공고 일치도를 계산하고 홈 추천에 올립니다. 이전에는 기록이 세 건 이상이어야 했습니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/156">#156</a></td></tr>
-            <tr><td><span class="badge done">FIX</span></td><td>추천 공고 행, 「만들기」, 「이어서 답하기」를 눌러도 반응이 없던 문제를 고쳤습니다. 「이어서 답하기」는 멈춘 단계로 바로 이동합니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/155">#155</a></td></tr>
-            <tr><td><span class="badge done">FIX</span></td><td>「내 포트폴리오」 카드의 썸네일 안에서 스크롤이 생기던 문제를 고쳤습니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/178">#178</a></td></tr>
-            <tr><td><span class="badge done">FIX</span></td><td>공개를 중단한 포트폴리오가 홈 · 사이드바 · 편집기에서 「배포됨」으로 보이던 문제를 고쳤습니다. 지금 열리는 공개 주소가 있을 때만 「배포됨」으로 표시합니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/176">#176</a></td></tr>
-          </tbody>
-        </table>
-      </div>
+      <ul>
+        <li>버튼과 입력 칸, 칩과 배지, 카드의 모서리 곡률이 앱 전체에서 역할별로 같아졌습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/217">#217</a></li>
+        <li>포트폴리오와 만들던 포트폴리오를 휴지통으로 옮기고 30일 안에 복원할 수 있습니다. 홈 「내 포트폴리오」 카드나 편집기의 「…」 메뉴에서 옮기고, 「휴지통」 창에서 복원합니다. <a href="https://github.com/Expresso-Organization/expresso/pull/215">#215</a></li>
+        <li>공개 중인 포트폴리오를 휴지통으로 옮기면 공개 주소가 바로 닫힙니다. 복원한 뒤 다시 배포하면 열립니다. <a href="https://github.com/Expresso-Organization/expresso/pull/215">#215</a></li>
+        <li>앱의 모든 검색 칸과 검색 버튼이 홈과 같은 pill 모양으로 통일되었습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/214">#214</a></li>
+        <li>홈에서 대화 창이 배경 없이 페이지 아래에 붙고 「Close」 글자가 드러나던 문제가 해결되었습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/216">#216</a></li>
+        <li>홈 공고 카드에서 「전체 공고」와 「관심」 탭을 누르면 목록이 바로 바뀝니다. <a href="https://github.com/Expresso-Organization/expresso/pull/212">#212</a></li>
+        <li>커리어 기록을 여는 모든 자리에서 기록을 휴지통으로 옮길 수 있습니다. 여러 기록을 골라 한 번에 옮기고, 「되돌리기」 한 번으로 모두 복원합니다. <a href="https://github.com/Expresso-Organization/expresso/pull/206">#206</a></li>
+        <li>포트폴리오가 근거로 쓰는 커리어 기록을 휴지통으로 옮기면, 몇 개의 포트폴리오에서 쓰는지 알리는 확인 창이 먼저 뜹니다. <a href="https://github.com/Expresso-Organization/expresso/pull/206">#206</a></li>
+        <li>다듬기 화면의 「채팅」 탭에서 지면 요소를 골라 수정을 요청하면 그 요소가 고쳐져 새 판으로 저장됩니다. 대화는 포트폴리오마다 남고, 바뀐 곳은 수정 전과 후를 카드로 보여 주며 「되돌리기」로 되돌릴 수 있습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/200">#200</a></li>
+        <li>서비스 업데이트 중에 질문 · 구성 · 포트폴리오 생성이 「만드는 중」에서 멈추던 문제가 해결되었습니다. 업데이트가 끝나면 이어서 진행되고, 그동안 「차례를 기다리는 중」이 보입니다. <a href="https://github.com/Expresso-Organization/expresso/pull/204">#204</a></li>
+        <li>사이드바 검색(⌘K)에서 회사 이름과 공고 본문으로도 공고를 찾을 수 있습니다. 결과에는 모집 중인 국내 공고가 공고 탐색과 같은 순서로 나오고, 결과 끝의 「공고 탐색에서 찾기」로 공고 탐색을 엽니다. <a href="https://github.com/Expresso-Organization/expresso/pull/207">#207</a></li>
+        <li>사이드바 관심 공고 줄에서 건수로 오해되던 일치도 숫자와 「분석 대기」 표시가 빠졌습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/213">#213</a></li>
+        <li>사이드바의 「이번 달 크레딧」 카드를 누르면 설정의 사용량 구획으로 이동합니다. <a href="https://github.com/Expresso-Organization/expresso/pull/210">#210</a></li>
+        <li>휴대폰이나 오른쪽 패널이 열린 좁은 화면에서 공고 행이 두 줄로 배치되어 공고 제목이 온전히 보입니다. <a href="https://github.com/Expresso-Organization/expresso/pull/211">#211</a></li>
+        <li>기술 칩이 많은 공고 때문에 공고 목록 전체가 옆으로 밀리던 문제가 해결되었습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/208">#208</a></li>
+        <li>텍스트 입력 칸을 눌렀을 때 생기던 포커스 테두리가 사라졌습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/179">#179</a></li>
+        <li>공고 상세의 「이 공고로 만들기」 버튼 글자가 흰색으로 또렷하게 보입니다. <a href="https://github.com/Expresso-Organization/expresso/pull/205">#205</a></li>
+        <li>포트폴리오 생성을 누르고 10초가 지나면 공고 · 디자인 · 기록이 먼저 지면에 올라오고, 섹션 구성이 끝나는 대로 섹션이 이어서 올라옵니다. <a href="https://github.com/Expresso-Organization/expresso/pull/197">#197</a></li>
+        <li>포트폴리오 생성 화면의 연결이 끊겨도 다시 연결되고, 생성이 끝나면 새로고침 없이 다듬기로 넘어갑니다. <a href="https://github.com/Expresso-Organization/expresso/pull/195">#195</a></li>
+        <li>AI 대화의 질문이 만들어지는 즉시 화면에 나타납니다. <a href="https://github.com/Expresso-Organization/expresso/pull/190">#190</a></li>
+        <li>포트폴리오 생성을 기다리는 동안 진행 막대가 보이고, 다 올라온 지면은 그대로 남아 끝까지 읽을 수 있습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/188">#188</a></li>
+        <li>재료 고르기에서 「AI와 대화 시작」 한 번으로 질문 생성까지 시작됩니다. 기다리는 동안 질문 대상(채우지 못한 요건, 수치가 빠진 기록)이 보입니다. <a href="https://github.com/Expresso-Organization/expresso/pull/187">#187</a></li>
+        <li>AI 채팅이 기록 조회 · 요건 대조 같은 도구 호출 문장을 답변에 그대로 남기고 끝나던 문제가 해결되었습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/186">#186</a></li>
+        <li>AI 채팅의 도구 실행 과정이 단계 목록으로 보이고, 단계마다 「실행 중」에서 「완료」로 바뀝니다. <a href="https://github.com/Expresso-Organization/expresso/pull/186">#186</a></li>
+      </ul>
+      <h3>개발 · 운영</h3>
+      <ul>
+        <li>공고와 커리어 기록이 얼마나 맞는지 계산하는 AI 모델을 여러 방식으로 비교하고, 정확도와 응답 속도를 재는 실험 도구를 준비했습니다. 측정은 학습용 PC에서 진행합니다. <a href="https://github.com/Expresso-Organization/expresso/pull/209">#209</a></li>
+        <li>코드 변경을 검사하는 자동 테스트가 가끔 이유 없이 실패하던 문제를 고쳤습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/191">#191</a></li>
+        <li>AI 대화 질문을 만드는 데 걸리는 시간을 단계별로 서버 기록에 남깁니다. 기다리는 시간을 더 줄일 자리를 찾는 데 씁니다. <a href="https://github.com/Expresso-Organization/expresso/pull/202">#202</a></li>
+        <li>문서만 바꾼 변경도 자동 검사를 통과해 바로 반영할 수 있습니다. 검사 이름은 「웹 검사」와 「백엔드 검사」로 나뉘었습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/199">#199</a></li>
+        <li>코드 변경을 자동으로 검사하는 시간을 줄였습니다. 테스트용 브라우저를 매번 새로 받지 않고 저장해 두고, 같은 테스트를 두 번 돌리던 부분을 없앴습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/194">#194</a></li>
+        <li>질문이 만들어지는 즉시 화면에 알리는 기능이 운영 서버의 데이터베이스 권한 부족으로 동작하지 않던 문제를 고쳤습니다. 그동안 화면은 기존처럼 주기적으로 확인해 질문을 보여 줬습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/193">#193</a></li>
+      </ul>
     </section>
 
-    <section class="sec" id="jobs">
+    <section class="sec" id="d1109">
       <div class="sec-head">
         <span class="num">02</span>
-        <h2>공고 탐색과 공고 상세</h2>
-        <span class="aside">공고 목록 · 공고 상세 · 공고 분석</span>
+        <h2>11월 9일</h2>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>구분</th><th>변경 내용</th><th>PR</th></tr></thead>
-          <tbody>
-            <tr><td><span class="badge pro">CHANGE</span></td><td>공고 목록에서 마감이 지난 공고를 뺐습니다. 일치도가 같거나 없는 공고는 최근 수집한 순서로 나옵니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/169">#169</a></td></tr>
-            <tr><td><span class="badge pro">CHANGE</span></td><td>근무 지역을 읽지 못한 공고도 기본 검색 범위인 「한국」에 포함합니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/173">#173</a></td></tr>
-            <tr><td><span class="badge done">FIX</span></td><td>「공고 분석」 AI 사용에 동의하지 않은 사용자가 검색어를 넣으면 화면 전체가 오류로 끝나던 문제를 고쳤습니다. 이제 공고 원문으로 검색한 결과를 보여 주고, 검색 카드에서 동의를 안내합니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/182">#182</a></td></tr>
-            <tr><td><span class="badge done">FIX</span></td><td>기술 칩이 많은 공고 하나 때문에 목록 전체가 옆으로 밀리고 점수 · 마감 · 북마크가 화면 밖으로 나가던 문제를 고쳤습니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/208">#208</a></td></tr>
-            <tr><td><span class="badge pro">CHANGE</span></td><td>휴대폰이나 오른쪽 패널이 열린 좁은 화면에서는 공고 행을 두 줄로 배치해 공고 제목이 온전히 보입니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/211">#211</a></td></tr>
-            <tr><td><span class="badge live">NEW</span></td><td>공고 상세의 자격 요건 옆에 「내 기록과 대조」 버튼을 두었습니다. 대조하는 동안에는 진행 단계를, 끝나면 충족한 요건 수를, 실패하면 이유와 「다시 시도」를 보여 줍니다. 공고 원문은 분석 여부와 관계없이 항상 펼쳐 둡니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/131">#131</a></td></tr>
-            <tr><td><span class="badge live">NEW</span></td><td>공고 상세 머리에 「이 공고로 만들기」 버튼을 두었습니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/173">#173</a> <a href="https://github.com/Expresso-Organization/expresso/pull/205">#205</a></td></tr>
-            <tr><td><span class="badge pro">CHANGE</span></td><td>공고 분석 화면을 다시 배치했습니다. 요건마다 한 칸인 충족 막대가 상태를 보여 주고, 오른쪽 공고 원문에서 근거 문장이 상태 색으로 표시됩니다. 요건에 마우스를 올리거나 누르면 해당 원문 문장이 함께 표시됩니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/172">#172</a></td></tr>
-            <tr><td><span class="badge done">FIX</span></td><td>커리어 기록이 있어도 요건이 항상 「보강 필요」로 나오던 충족 계산을 고쳤습니다. 요건에 든 공고 키워드가 기록에 모두 있으면 「기록 있음」으로 판정합니다. 연차 요건은 경력 기간으로 판정합니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/172">#172</a> <a href="https://github.com/Expresso-Organization/expresso/pull/173">#173</a></td></tr>
-            <tr><td><span class="badge done">FIX</span></td><td>「다시 분석」을 누른 뒤 화면이 저절로 갱신되고, 분석에 실패한 공고도 다시 시도할 수 있습니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/173">#173</a></td></tr>
-          </tbody>
-        </table>
-      </div>
+      <ul>
+        <li>새 포트폴리오 첫 화면에서 최신 공고 목록을 바로 볼 수 있습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/185">#185</a></li>
+        <li>새 포트폴리오 첫 화면에서 공고를 검색할 수 있고, 관심 공고가 마감 순으로 놓입니다. 관심 공고가 없으면 추천 공고가 놓입니다. <a href="https://github.com/Expresso-Organization/expresso/pull/183">#183</a></li>
+        <li>새 포트폴리오 첫 화면의 「이 공고로」를 누르면 공고 분석으로 바로 갑니다. 그 공고로 만들던 포트폴리오가 있으면 「이어서 만들기」가 멈춘 단계로 보냅니다. <a href="https://github.com/Expresso-Organization/expresso/pull/183">#183</a></li>
+        <li>디자인 선택 단계에서 지면 생성 방식을 「구조화 생성」과 「자유 생성」 중에서 고를 수 있습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/184">#184</a></li>
+        <li>공고 분석 AI 사용에 동의하지 않은 상태에서 공고를 검색하면 오류 화면이 뜨던 문제가 해결되었습니다. 검색 결과가 나오고, 검색 카드에서 동의를 안내합니다. <a href="https://github.com/Expresso-Organization/expresso/pull/182">#182</a></li>
+        <li>관리자가 대신 로그인한 더미 계정에서도 개인 API 키 없이 AI 채팅을 쓸 수 있습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/181">#181</a></li>
+      </ul>
     </section>
 
-    <section class="sec" id="brew">
+    <section class="sec" id="d1107">
       <div class="sec-head">
         <span class="num">03</span>
-        <h2>포트폴리오 제작</h2>
-        <span class="aside">새 포트폴리오 첫 화면 · 재료 고르기 · AI 대화 · 디자인 선택 · 생성</span>
+        <h2>11월 7일</h2>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>구분</th><th>변경 내용</th><th>PR</th></tr></thead>
-          <tbody>
-            <tr><td><span class="badge live">NEW</span></td><td>새 포트폴리오 첫 화면에서 공고를 바로 검색할 수 있습니다. 그 아래에는 관심 공고가 마감 순으로 놓이고, 관심 공고가 없으면 추천 공고가 놓입니다. 「이 공고로」를 누르면 공고 분석으로 바로 가고, 그 공고로 만들던 제작이 있으면 「이어서 만들기」가 멈춘 단계로 보냅니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/183">#183</a></td></tr>
-            <tr><td><span class="badge pro">CHANGE</span></td><td>관심 공고와 추천 공고가 모두 없는 계정도 첫 화면에서 최신 공고 목록을 봅니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/185">#185</a></td></tr>
-            <tr><td><span class="badge pro">CHANGE</span></td><td>재료 고르기에서 「AI와 대화 시작」을 누르면 질문 생성이 바로 시작됩니다. 「질문 만들기」를 한 번 더 누르는 단계를 없앴습니다. 기다리는 동안 질문 대상(채우지 못한 요건, 수치가 빠진 기록)을 미리 보여 줍니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/187">#187</a></td></tr>
-            <tr><td><span class="badge pro">CHANGE</span></td><td>질문이 저장되는 즉시 대화 화면이 갱신됩니다. 질문 생성 대기 중 AI 호출 앞뒤의 지연을 줄였습니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/190">#190</a></td></tr>
-            <tr><td><span class="badge live">NEW</span></td><td>디자인 선택 단계에서 지면 생성 방식을 「구조화 생성」과 「자유 생성」 중에서 고를 수 있습니다. 구조화 생성은 디자인 시스템 부품으로 지면을 그리고, 자유 생성은 모델이 HTML · CSS를 직접 씁니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/184">#184</a></td></tr>
-            <tr><td><span class="badge pro">CHANGE</span></td><td>생성 대기 화면에 진행 막대를 두었고, 다 쌓인 지면은 비우지 않고 그대로 둡니다. 생성을 누르고 10초가 지나면 공고 · 디자인 · 기록부터 지면에 올리고, 섹션 구성이 끝나는 대로 섹션 구역을 이어 올립니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/188">#188</a> <a href="https://github.com/Expresso-Organization/expresso/pull/197">#197</a></td></tr>
-            <tr><td><span class="badge done">FIX</span></td><td>생성 화면의 연결이 한 번 끊기면 다시 연결되지 않아, 생성이 끝나도 새로고침하기 전까지 다듬기로 넘어가지 않던 문제를 고쳤습니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/195">#195</a></td></tr>
-            <tr><td><span class="badge pro">CHANGE</span></td><td>제작 머리말에서 제작 이름을 바꿀 수 있고, 그 이름이 포트폴리오 이름이 됩니다. 이름이 없으면 「&lt;회사&gt; 지원 포트폴리오」로 정합니다. 이전에는 「Generated portfolio」로 만들어졌습니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/118">#118</a> <a href="https://github.com/Expresso-Organization/expresso/pull/169">#169</a></td></tr>
-            <tr><td><span class="badge done">FIX</span></td><td>모델이 출력 끝의 닫는 괄호 하나를 빠뜨리면 생성이 실패하던 문제를 고쳤습니다. 서버가 괄호를 닫고 생성을 이어 갑니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/148">#148</a></td></tr>
-            <tr><td><span class="badge done">FIX</span></td><td>지면 수치 검사를 고쳤습니다. 근거 없는 이전 값(「이전 0%p」)을 막고, 「3일 → 반나절」처럼 출처에 있는 낱말 수치를 그대로 받아들이며, 작은따옴표가 출처 없는 숫자로 잡히던 문제를 없앴습니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/149">#149</a> <a href="https://github.com/Expresso-Organization/expresso/pull/173">#173</a> <a href="https://github.com/Expresso-Organization/expresso/pull/174">#174</a></td></tr>
-          </tbody>
-        </table>
-      </div>
+      <ul>
+        <li>홈 「내 포트폴리오」 썸네일 안에서 스크롤이 생기던 문제가 해결되었습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/178">#178</a></li>
+        <li>여러 작업이 동시에 처리되어, 다른 포트폴리오 생성이 끝나기를 기다리던 공고 분석 · 질문 생성 대기 시간이 줄었습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/177">#177</a></li>
+        <li>공개를 중단한 포트폴리오가 홈 · 사이드바 · 편집기에서 「배포됨」으로 보이던 문제가 해결되었습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/176">#176</a></li>
+        <li>배포 화면 점검 목록에 내부 설계 문구가 보이던 문제가 해결되었습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/175">#175</a></li>
+        <li>생성된 포트폴리오에 근거 없는 이전 값(「이전 0%p」)이 나오거나, 「3일 → 반나절」 같은 수치가 다른 수치로 바뀌던 문제가 해결되었습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/174">#174</a> <a href="https://github.com/Expresso-Organization/expresso/pull/173">#173</a></li>
+        <li>공고 상세 머리에 「이 공고로 만들기」 버튼이 생겼습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/173">#173</a></li>
+        <li>근무 지역이 적히지 않은 공고도 기본 「한국」 검색 결과에 나옵니다. <a href="https://github.com/Expresso-Organization/expresso/pull/173">#173</a></li>
+        <li>「다시 분석」을 누르면 화면이 자동으로 갱신되고, 분석에 실패한 공고도 다시 시도할 수 있습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/173">#173</a></li>
+        <li>공고의 연차 요건을 커리어 기록의 경력 기간으로 판정합니다. <a href="https://github.com/Expresso-Organization/expresso/pull/173">#173</a></li>
+        <li>포트폴리오 부분 수정에 실패하면 그 이유가 한국어로 보입니다. <a href="https://github.com/Expresso-Organization/expresso/pull/173">#173</a></li>
+        <li>공고 분석 화면에서 요건마다 충족 상태가 막대로 보이고, 오른쪽 공고 원문에서 근거 문장이 상태 색으로 표시됩니다. 요건을 누르면 해당 원문 문장으로 이동합니다. <a href="https://github.com/Expresso-Organization/expresso/pull/172">#172</a></li>
+        <li>커리어 기록이 있어도 요건이 항상 「보강 필요」로 나오던 판정이 고쳐졌습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/172">#172</a></li>
+        <li>공고 목록에는 모집 중인 공고만 나오고, 일치도가 같으면 최근 공고부터 나옵니다. <a href="https://github.com/Expresso-Organization/expresso/pull/169">#169</a></li>
+        <li>공고로 만든 포트폴리오가 「Generated portfolio」 대신 「&lt;회사&gt; 지원 포트폴리오」라는 이름으로 만들어집니다. <a href="https://github.com/Expresso-Organization/expresso/pull/169">#169</a></li>
+        <li>11월 4일부터 공고 분석과 포트폴리오 생성이 처리되지 않던 장애가 해결되었습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/170">#170</a></li>
+      </ul>
     </section>
 
-    <section class="sec" id="refine">
+    <section class="sec" id="d1106">
       <div class="sec-head">
         <span class="num">04</span>
-        <h2>다듬기와 배포</h2>
-        <span class="aside">다듬기 · 배포 · 공개 포트폴리오</span>
+        <h2>11월 6일</h2>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>구분</th><th>변경 내용</th><th>PR</th></tr></thead>
-          <tbody>
-            <tr><td><span class="badge live">NEW</span></td><td>다듬기 화면의 「채팅」 탭이 공통 에이전트 채팅으로 바뀌었습니다. 대화가 포트폴리오마다 남고, 지면에서 고른 요소를 대상으로 요청하면 에이전트가 그 요소를 고쳐 새 판으로 저장합니다. 바뀐 곳은 고치기 전과 후를 카드로 보여 주고 「되돌리기」로 되돌릴 수 있습니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/200">#200</a></td></tr>
-            <tr><td><span class="badge done">FIX</span></td><td>배포 화면의 점검 목록에 모델의 내부 설계 근거 문장이 그대로 보이던 문제를 고쳤습니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/175">#175</a></td></tr>
-            <tr><td><span class="badge done">FIX</span></td><td>공개 포트폴리오 주소를 공유하면 미리보기 제목이 「Expresso」로만 뜨던 문제를 고쳤습니다. 배포 설정의 제목과 설명이 공유 미리보기에 들어갑니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/155">#155</a></td></tr>
-            <tr><td><span class="badge done">FIX</span></td><td>편집기 배지에 달러 금액이 보이던 문제를 고쳤습니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/155">#155</a></td></tr>
-          </tbody>
-        </table>
-      </div>
+      <ul>
+        <li>온보딩에서 동작하지 않던 이력서 샘플 단계가 빠졌습니다. 첫 포트폴리오 단계에는 실제 추천 공고가 나오고, 카드를 누르면 그 공고로 분석이 시작됩니다. <a href="https://github.com/Expresso-Organization/expresso/pull/118">#118</a></li>
+        <li>포트폴리오 제작 머리말에서 이름을 바꿀 수 있고, 그 이름이 포트폴리오 이름이 됩니다. <a href="https://github.com/Expresso-Organization/expresso/pull/118">#118</a></li>
+        <li>공고 상세의 자격 요건 옆 「내 기록과 대조」 버튼으로 대조를 시작하고, 진행 단계 · 충족 수 · 실패 이유를 그 자리에서 봅니다. 공고 원문은 항상 펼쳐져 있습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/131">#131</a></li>
+        <li>AI 채팅의 보완점 카드에서, 근거로 쓴 기록이 바뀌었거나 기준이 된 요건 대조가 오래되면 「다시 대조 필요」가 표시됩니다. <a href="https://github.com/Expresso-Organization/expresso/pull/117">#117</a></li>
+        <li>AI 출력 끝의 닫는 괄호 하나가 빠져 포트폴리오 생성이 실패하던 문제가 해결되었습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/148">#148</a></li>
+        <li>작은따옴표가 든 포트폴리오 문장이 출처 없는 수치로 잘못 걸리던 문제가 해결되었습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/149">#149</a></li>
+      </ul>
+      <h3>개발 · 운영</h3>
+      <ul>
+        <li>졸업작품 설계서 제출본에 AI 학습 서버와 관리자 모델 운영 담당자 변경을 반영했습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/147">#147</a></li>
+        <li>문서에 남아 있던 임시 주소를 실제 서비스 주소 <code>expresso.ai.kr</code>로 바꿨습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/127">#127</a></li>
+      </ul>
     </section>
 
-    <section class="sec" id="career">
+    <section class="sec" id="d1105">
       <div class="sec-head">
         <span class="num">05</span>
-        <h2>커리어 기록</h2>
-        <span class="aside">카테고리 화면 · 기록 편집기 · 휴지통</span>
+        <h2>11월 5일</h2>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>구분</th><th>변경 내용</th><th>PR</th></tr></thead>
-          <tbody>
-            <tr><td><span class="badge live">NEW</span></td><td>카테고리 화면에 저장된 뷰 탭을 추가했습니다. 뷰를 여러 개 저장해 탭으로 오가고, 탭마다 이름 · 종류 변경, 복제, 삭제, 끌어서 순서 바꾸기가 됩니다. 필터는 조건 묶음과 「그리고 / 또는」을 지원하고, 보드 · 타임라인 뷰와 휴지통을 함께 열었습니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/141">#141</a></td></tr>
-            <tr><td><span class="badge live">NEW</span></td><td>기록을 여는 모든 자리에서 휴지통으로 옮길 수 있습니다. 여러 기록을 골라 한 번에 옮기고 「되돌리기」 한 번으로 모두 복원합니다. 포트폴리오가 근거로 쓰는 기록이면 옮기기 전에 몇 곳에서 쓰는지 알리고 확인을 받습니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/206">#206</a></td></tr>
-            <tr><td><span class="badge done">FIX</span></td><td>커리어 기록 점검에서 나온 결함을 고쳤습니다. 편집 연결이 끊긴 뒤 다시 연결되고, 편집기 밖에서 바뀐 본문이 열린 편집기에 반영되며, AI 제안을 받아들이면 바뀐 블록만 교체되어 나머지 서식이 유지됩니다. 운영 서버에서 실시간 편집 연결이 열리지 않던 문제도 함께 고쳤습니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/159">#159</a></td></tr>
-            <tr><td><span class="badge done">FIX</span></td><td>갤러리 · 목록 · 표에서 단일 · 다중 선택 속성 값이 옵션 이름 대신 내부 식별자(UUID)로 보이던 문제를 고쳤습니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/158">#158</a></td></tr>
-            <tr><td><span class="badge done">FIX</span></td><td>커리어 기록 주소(<code>/career</code>)가 404이던 문제를 고쳤습니다. 첫 카테고리로 이동합니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/155">#155</a></td></tr>
-          </tbody>
-        </table>
-      </div>
+      <h3>개발 · 운영</h3>
+      <ul>
+        <li>프로젝트 소개 문서(README)의 제품 설명을 설계서와 같은 내용으로 맞췄습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/167">#167</a></li>
+      </ul>
     </section>
 
-    <section class="sec" id="agent">
+    <section class="sec" id="d1104">
       <div class="sec-head">
         <span class="num">06</span>
-        <h2>에이전트 채팅</h2>
-        <span class="aside">공고 채팅 · 커리어 기록 채팅 · 다듬기 채팅에서 함께 쓰는 채팅</span>
+        <h2>11월 4일</h2>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>구분</th><th>변경 내용</th><th>PR</th></tr></thead>
-          <tbody>
-            <tr><td><span class="badge done">FIX</span></td><td>에이전트가 도구를 실행하지 않고 도구 호출 문장을 답변 본문에 남긴 채 끝나던 문제를 고쳤습니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/186">#186</a></td></tr>
-            <tr><td><span class="badge live">NEW</span></td><td>도구 실행을 채팅 안에 단계 목록으로 보여 줍니다. 단계마다 「실행 중」에서 「완료」로 바뀌고 끝나면 요약이 붙습니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/186">#186</a></td></tr>
-            <tr><td><span class="badge live">NEW</span></td><td>보완점 카드에 「다시 대조 필요」 표시를 두었습니다. 근거로 인용한 기록의 글이 바뀌었거나 기준이 된 요건 대조가 오래되면 표시됩니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/117">#117</a></td></tr>
-            <tr><td><span class="badge done">FIX</span></td><td>관리자가 대신 로그인한 더미 계정도 개인 API 키 없이 에이전트 채팅을 씁니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/181">#181</a></td></tr>
-          </tbody>
-        </table>
-      </div>
+      <h3>개발 · 운영</h3>
+      <ul>
+        <li>보안 연결(HTTPS) 인증서를 자동으로 갱신하는 장치를 만들었습니다. 인증기관 확인을 통과하지 못해 지금은 이전처럼 담당자가 직접 갱신합니다. <a href="https://github.com/Expresso-Organization/expresso/pull/163">#163</a> <a href="https://github.com/Expresso-Organization/expresso/pull/164">#164</a> <a href="https://github.com/Expresso-Organization/expresso/pull/165">#165</a> <a href="https://github.com/Expresso-Organization/expresso/pull/166">#166</a></li>
+        <li>서버 데이터베이스의 기록 파일이 11GB 넘게 쌓여 저장 공간을 차지하던 문제를 고쳤습니다. 기록 파일은 정해진 용량까지만 보관합니다. <a href="https://github.com/Expresso-Organization/expresso/pull/162">#162</a></li>
+      </ul>
     </section>
 
-    <section class="sec" id="common">
+    <section class="sec" id="d1103">
       <div class="sec-head">
         <span class="num">07</span>
-        <h2>공통 화면</h2>
-        <span class="aside">랜딩 · 로그인 · 온보딩 · 사이드바 · 입력 요소</span>
+        <h2>11월 3일</h2>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>구분</th><th>변경 내용</th><th>PR</th></tr></thead>
-          <tbody>
-            <tr><td><span class="badge live">NEW</span></td><td>로그인하지 않은 방문자가 첫 주소를 열면 제품 소개 랜딩이 보입니다. 스크롤에 따라 커리어 기록부터 배포까지 제품 흐름을 차례로 보여 주고, 실제 제품 화면을 단계별 탭으로 둘러볼 수 있습니다. 로그인한 사용자는 홈으로 갑니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/157">#157</a></td></tr>
-            <tr><td><span class="badge pro">CHANGE</span></td><td>온보딩에서 동작하지 않던 이력서 샘플 단계를 지웠습니다. 첫 포트폴리오 단계의 카드는 실제 추천 공고와 실제 기록 수를 보여 주고, 카드를 누르면 그 공고로 분석을 시작합니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/118">#118</a></td></tr>
-            <tr><td><span class="badge done">FIX</span></td><td>로그인 화면에서 출처 없는 수치를 지웠습니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/155">#155</a></td></tr>
-            <tr><td><span class="badge pro">CHANGE</span></td><td>사이드바 검색(⌘K)이 공고 탐색 · 커리어 기록 · 포트폴리오 목록과 같은 규칙으로 찾습니다. 공고는 회사 이름과 본문으로도 찾고 마감 · 해외 공고는 결과에서 빠집니다. 결과 끝의 「공고 탐색에서 찾기」로 공고 탐색 화면을 엽니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/207">#207</a></td></tr>
-            <tr><td><span class="badge live">NEW</span></td><td>사이드바의 「이번 달 크레딧」 카드를 누르면 설정의 사용량 구획으로 이동합니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/210">#210</a></td></tr>
-            <tr><td><span class="badge done">FIX</span></td><td>사이드바 관심 공고 줄 오른쪽의 일치도와 「분석 대기」 표시를 지웠습니다. 같은 자리의 다른 숫자가 모두 건수라 일치도가 건수로 읽혔습니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/213">#213</a></td></tr>
-            <tr><td><span class="badge pro">CHANGE</span></td><td>앱의 모든 검색 칸과 검색 버튼 모서리를 홈과 같은 pill 모양으로 통일했습니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/214">#214</a></td></tr>
-            <tr><td><span class="badge pro">CHANGE</span></td><td>텍스트 입력 칸의 포커스 테두리를 없앴습니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/179">#179</a></td></tr>
-            <tr><td><span class="badge done">FIX</span></td><td>홈에서 대화 창이 배경 없이 페이지 아래에 붙고 「Close」 글자가 드러나던 문제를 고쳤습니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/216">#216</a></td></tr>
-          </tbody>
-        </table>
-      </div>
+      <ul>
+        <li>커리어 기록 갤러리 · 목록 · 표에서 선택 속성 값이 알아볼 수 없는 문자열 대신 옵션 이름으로 보입니다. <a href="https://github.com/Expresso-Organization/expresso/pull/158">#158</a></li>
+        <li>커리어 기록이 한 건만 있어도 공고 일치도가 계산되고 홈 추천에 공고가 나옵니다. <a href="https://github.com/Expresso-Organization/expresso/pull/156">#156</a></li>
+        <li>로그인하지 않고 Expresso에 들어오면 제품 소개 랜딩이 보입니다. 스크롤에 따라 커리어 기록부터 배포까지 제품 흐름이 차례로 재생되고, 실제 제품 화면을 단계별 탭으로 둘러볼 수 있습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/157">#157</a></li>
+        <li>홈이 지금 할 일 중심으로 바뀌었습니다. 공고 카드는 목표 직군의 모집 중 공고를 일치도 순으로 보여 주고, 「관심」 탭은 담아 둔 공고를 보여 줍니다. <a href="https://github.com/Expresso-Organization/expresso/pull/160">#160</a></li>
+        <li>홈 「내 포트폴리오」에 만들던 포트폴리오가 어느 회사의 어느 공고로 만드는 중인지와 함께 놓입니다. <a href="https://github.com/Expresso-Organization/expresso/pull/160">#160</a></li>
+        <li>커리어 기록 편집 중 연결이 끊기면 다시 연결되고, 연결할 수 없으면 「오프라인」 또는 「저장할 수 없음」이 보입니다. <a href="https://github.com/Expresso-Organization/expresso/pull/159">#159</a></li>
+        <li>커리어 기록에서 AI 제안을 받아들이면 바뀐 블록만 교체되고 나머지 서식은 그대로 남습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/159">#159</a></li>
+        <li>운영 서버에서 커리어 기록 실시간 편집 연결이 열리지 않던 문제가 해결되었습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/159">#159</a></li>
+      </ul>
+      <h3>개발 · 운영</h3>
+      <ul>
+        <li>서비스 업데이트 절차를 바꾸면, 그 바뀐 절차가 같은 업데이트에서 바로 적용됩니다. <a href="https://github.com/Expresso-Organization/expresso/pull/161">#161</a></li>
+      </ul>
     </section>
 
-    <section class="sec" id="server">
+    <section class="sec" id="d1102">
       <div class="sec-head">
         <span class="num">08</span>
-        <h2>서버 안정성</h2>
-        <span class="aside">Worker · API · 운영 서버</span>
+        <h2>11월 2일</h2>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>구분</th><th>변경 내용</th><th>PR</th></tr></thead>
-          <tbody>
-            <tr><td><span class="badge done">FIX</span></td><td>배포로 Worker가 재시작될 때 진행 중이던 질문 · 구성 · 포트폴리오 생성 작업이 멈춘 채 남던 문제를 고쳤습니다. 새 Worker가 그 작업을 이어서 실행하고, 화면에는 「차례를 기다리는 중」이 보입니다. 같은 배포에서 API가 90초 동안 내려가지 않던 문제도 함께 고쳤습니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/204">#204</a></td></tr>
-            <tr><td><span class="badge done">FIX</span></td><td>MongoDB가 재시작되는 동안 Worker가 시작되면 이후 모든 작업이 실패한 채 프로세스만 살아 있던 문제를 고쳤습니다. 복구할 수 없는 연결 오류면 Worker가 종료되고 systemd가 다시 띄웁니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/170">#170</a></td></tr>
-            <tr><td><span class="badge pro">CHANGE</span></td><td>포트폴리오 생성 전용 작업 큐를 나누고 동시 실행을 켰습니다. 생성 하나가 끝날 때까지 공고 분석 · 질문 생성이 기다리던 대기를 없앴습니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/177">#177</a></td></tr>
-            <tr><td><span class="badge done">FIX</span></td><td>운영 DB 계정에 변경 감시(change stream) 권한을 더했습니다. 권한 오류가 나면 한 번 기록하고 재시도를 멈춥니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/193">#193</a></td></tr>
-            <tr><td><span class="badge pro">CHANGE</span></td><td>서버 MongoDB 로그 용량에 상한을 두었습니다. 배포 스크립트는 받아 온 새 버전의 스크립트로 다시 시작합니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/162">#162</a> <a href="https://github.com/Expresso-Organization/expresso/pull/161">#161</a></td></tr>
-            <tr><td><span class="badge pro">CHANGE</span></td><td>와일드카드 인증서 갱신용 DNS 자동화 훅을 추가했습니다. 인증기관 DNS 검증을 통과하지 못해 운영은 수동 갱신으로 되돌려 두었습니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/163">#163</a> <a href="https://github.com/Expresso-Organization/expresso/pull/164">#164</a> <a href="https://github.com/Expresso-Organization/expresso/pull/165">#165</a> <a href="https://github.com/Expresso-Organization/expresso/pull/166">#166</a></td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="sec" id="dev">
-      <div class="sec-head">
-        <span class="num">09</span>
-        <h2>개발 환경과 문서</h2>
-        <span class="aside">CI · 측정 · 실험 · 문서</span>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>구분</th><th>변경 내용</th><th>PR</th></tr></thead>
-          <tbody>
-            <tr><td><span class="badge pro">CHANGE</span></td><td>경로 필터 밖 PR도 필수 검사를 받아 머지할 수 있고, 두 CI의 검사 이름을 「웹 검사」 · 「백엔드 검사」로 나눴습니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/199">#199</a></td></tr>
-            <tr><td><span class="badge pro">CHANGE</span></td><td>백엔드 CI가 Chromium을 캐시하고 중복 테스트를 지웠으며, 브라우저 E2E를 병렬로 실행합니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/194">#194</a></td></tr>
-            <tr><td><span class="badge done">FIX</span></td><td>큐 통합 테스트가 간헐적으로 실패하던 문제를 고쳤습니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/191">#191</a></td></tr>
-            <tr><td><span class="badge live">NEW</span></td><td>질문 생성 작업의 단계별 시간과 AI CLI 기동 · 종료 시간을 로그로 남깁니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/202">#202</a></td></tr>
-            <tr><td><span class="badge live">NEW</span></td><td>적합도 모델의 인코더 비교 · ROC-AUC · Recall@K · NDCG@10 · p95 지연 측정 실험 코드와 학습 PC 실행 절차를 추가했습니다. 실험은 학습 PC에서 실행할 차례입니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/209">#209</a></td></tr>
-            <tr><td><span class="badge pro">CHANGE</span></td><td>README를 설계서 기준으로 맞추고, 설계서 제출본에 담당 변경을 반영하고, 문서의 임시 도메인 표기를 <code>expresso.ai.kr</code>로 바꿨습니다.</td><td><a href="https://github.com/Expresso-Organization/expresso/pull/167">#167</a> <a href="https://github.com/Expresso-Organization/expresso/pull/147">#147</a> <a href="https://github.com/Expresso-Organization/expresso/pull/127">#127</a></td></tr>
-          </tbody>
-        </table>
-      </div>
+      <ul>
+        <li>커리어 기록 카테고리 화면에서 뷰를 여러 개 저장해 탭으로 오갈 수 있습니다. 탭마다 이름 · 종류를 바꾸거나 복제 · 삭제하고, 끌어서 순서를 바꿉니다. <a href="https://github.com/Expresso-Organization/expresso/pull/141">#141</a></li>
+        <li>커리어 기록 필터에서 조건을 묶고 「그리고 / 또는」으로 조합할 수 있습니다. 보드 · 타임라인 뷰와 휴지통도 쓸 수 있습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/141">#141</a></li>
+        <li>로그인 화면에서 출처 없는 수치가 빠졌습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/155">#155</a></li>
+        <li>공개 포트폴리오 주소를 공유하면 미리보기에 포트폴리오 제목과 설명이 나옵니다. <a href="https://github.com/Expresso-Organization/expresso/pull/155">#155</a></li>
+        <li>홈의 추천 공고 행, 「만들기」, 「이어서 답하기」가 동작합니다. 「이어서 답하기」는 멈춘 단계로 바로 이동합니다. <a href="https://github.com/Expresso-Organization/expresso/pull/155">#155</a></li>
+        <li>휴대폰에서 공고 탐색 머리가 화면 폭에 맞게 정리되었습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/155">#155</a></li>
+        <li>편집기 배지에 달러 금액이 보이던 문제가 해결되었습니다. <a href="https://github.com/Expresso-Organization/expresso/pull/155">#155</a></li>
+        <li>커리어 기록 주소가 404 대신 첫 카테고리를 엽니다. <a href="https://github.com/Expresso-Organization/expresso/pull/155">#155</a></li>
+      </ul>
     </section>
 
     <footer class="docfoot">
-      <strong>변경 이력</strong> · 2026-11-10 v1.0 최초 작성 — 박민재<br>
-      빠진 변경이나 틀린 설명을 찾으면 고쳐서 알려 주십시오.
+      <strong>변경 이력</strong> · 2026-11-10 v1.1 날짜별 최신순 · 사용자 관점으로 재구성, 개발 · 운영 변경 추가, #215 · #217 추가 — 박민재<br>
+      2026-11-10 v1.0 최초 작성 — 박민재
     </footer>
 
   </main>
