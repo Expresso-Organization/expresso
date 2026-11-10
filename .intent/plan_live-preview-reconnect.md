@@ -15,6 +15,7 @@ date: 2026-11-10
 | 파일 | 무엇을 |
 |---|---|
 | `services/web/src/app/(app)/brew/[brewId]/design/LivePreview.tsx` | `connect()`로 묶고 닫힌 연결 다시 열기 · 보일 때 다시 열기 · 종료 뒤 `useRefreshWhile` |
+| `services/web/src/app/(app)/brew/[brewId]/use-refresh-while.ts` | 다시 읽는 간격 1.5초를 `REFRESH_MS`로 내보내 재연결 간격과 한 값으로 둔다 |
 | `services/web/src/app/(app)/brew/[brewId]/design/LivePreview.test.tsx` | 가짜 `EventSource`로 재연결 · 종료 뒤 다시 읽기 검사 |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
@@ -22,7 +23,7 @@ date: 2026-11-10
 ## 작업 순서
 
 1. `LivePreview.tsx` 스트림 효과를 `connect()`로 묶고 `onerror` · `visibilitychange` 처리 — 타입 검사 통과
-2. `done` · `failed`에서 `ended`를 켜고 `useRefreshWhile(ended)` — 종료 뒤 다시 읽기
+2. `done` · `failed`에서 `ended`를 켜고 `useRefreshWhile(ended)` — 종료 뒤 다시 읽기. `ended`면 스트림 효과가 다시 열지 않는다(의존성에 `ended`)
 3. `LivePreview.test.tsx` 작성 — 닫힌 연결 1.5초 뒤 새 연결, 다시 붙는 중엔 그대로, 종료 뒤 1.5초마다 refresh
 4. 웹 테스트 · 타입 검사 → PR → CI → 머지 → 운영 배포 확인
 
