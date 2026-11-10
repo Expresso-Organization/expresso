@@ -1,3 +1,6 @@
+import { get } from "node:http";
+import type { AddressInfo } from "node:net";
+
 import { afterEach, describe, expect, it } from "vitest";
 
 import { buildApi } from "./build-app.js";
@@ -95,5 +98,30 @@ describe("system routes", () => {
         requestId: response.headers["x-request-id"],
       },
     });
+  });
+});
+
+describe("shutdown", () => {
+  it("closes promptly while an SSE stream is still open", async () => {
+    const app = buildApi({ config });
+    // 끝나지 않는 SSE. 잡 상태 흐름처럼 응답을 넘겨받아(hijack) 열어 둔다.
+    app.get("/test/stream", async (_request, reply) => {
+      reply.hijack();
+      reply.raw.writeHead(200, { "content-type": "text/event-stream" });
+      reply.raw.flushHeaders();
+    });
+    await app.listen({ host: "127.0.0.1", port: 0 });
+    const { port } = app.server.address() as AddressInfo;
+    const response = await new Promise<import("node:http").IncomingMessage>((resolve, reject) => {
+      get({ host: "127.0.0.1", port, path: "/test/stream" }, resolve).on("error", reject);
+    });
+    expect(response.statusCode).toBe(200);
+    const ended = new Promise<void>((resolve) => response.on("close", () => resolve()));
+
+    const started = Date.now();
+    await app.close();
+
+    expect(Date.now() - started).toBeLessThan(1_000);
+    await ended;
   });
 });
