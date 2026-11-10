@@ -1,7 +1,8 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { query, tool, createSdkMcpServer, type ModelUsage } from "@anthropic-ai/claude-agent-sdk";
+import { query, type ModelUsage } from "@anthropic-ai/claude-agent-sdk";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { recordAiUsage, type AiUsageSink } from "../ai/usage-sink.js";
 import { AgentEditDraftSchema, AgentRecordDraftInputSchema, GapReviewDraftSchema, PlanProposalInputSchema, ReplanProposalInputSchema, type AgentPlanDraft, type AgentReplanDraft, type PlanProposalInput, type PreparationPlan, type ReplanProposalInput, type GapReview, type GapReviewDraft, RequirementReviewDraftSchema, UuidSchema, type AgentRecordDraft, type AgentRecordDraftInput, type AgentEditDraft, type AgentMessage, type AgentToolResult, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
@@ -65,6 +66,16 @@ const SYSTEM_PROMPT = [
 ].join(" ");
 export interface AgentRuntime { run(input: AgentInput): Promise<void> }
 
+/** 에이전트가 부를 수 있는 도구. SDK에 넘기는 허용 목록과 실행 직전 검사가 이 목록 하나를 본다. */
+const TOOL_NAMES = ["propose_record_edit", "list_career_records", "read_career_records", "record_requirement_review", "propose_new_record", "record_gap_review", "propose_preparation_plan", "read_preparation_plan", "propose_replan"] as const;
+export const AGENT_ALLOWED_TOOLS = TOOL_NAMES.map(name => `mcp__expresso__${name}`);
+type ToolReply = { content: { type: "text"; text: string }[]; isError?: true };
+const reply = (value: unknown): ToolReply => ({ content: [{ type: "text", text: typeof value === "string" ? value : JSON.stringify(value) }] });
+const refuse = (text: string): ToolReply => ({ ...reply(text), isError: true });
+type ToolDone = { summary: string; detail?: Omit<AgentToolResult, "id" | "name" | "status" | "summary">; reply: ToolReply };
+/** 실패를 다루는 법. rejected는 검증에 걸린 입력, failed는 그 밖의 오류 — failed가 없으면 오류를 다시 던진다. */
+type ToolFailure = { rejected?: { summary: string; text: string }; failed?: { summary: string; text: string } };
+
 /** NOTE(agent-chat-framework): 62f5587의 lib/agent/bridge.ts 이벤트 매핑을 제품 계약으로 변환합니다.
  * 원시 파일 경로·도구 인자·추론은 노출하지 않고 텍스트와 승인 가능한 도메인 결과만 전송합니다.
  */
@@ -75,106 +86,82 @@ export class ClaudeAgentRuntime implements AgentRuntime {
     const cancel = () => abortController.abort();
     input.signal.addEventListener("abort", cancel, { once: true });
     if (input.signal.aborted) cancel();
-    const server = createSdkMcpServer({ name: "expresso", version: "1.0.0", tools: [
-      tool("propose_record_edit", "연결된 커리어 기록의 document 블록 ID와 현재 내용을 기준으로 명령을 작성해 변경 제안을 만듭니다. 적용은 사용자가 별도로 승인합니다.", { recordId: z.string().uuid(), draft: AgentEditDraftSchema }, async ({ recordId, draft }) => {
+    /** 도구 한 번을 같은 id의 running → complete · failed 이벤트로 남긴다. 화면은 이 순서로 작업 흔적을 그린다. */
+    const step = async (name: string, pending: string, work: () => Promise<ToolDone>, failure: ToolFailure = {}): Promise<ToolReply> => {
+      if (input.signal.aborted) throw new Error("cancelled");
+      const id = crypto.randomUUID();
+      await input.emit({ type: "tool", tool: { id, name, status: "running", summary: pending } });
+      try {
+        const done = await work();
         if (input.signal.aborted) throw new Error("cancelled");
-        const id = crypto.randomUUID();
-        await input.emit({ type: "tool", tool: { id, name: "기록 변경 제안", status: "running", summary: "변경 내용을 준비하고 있습니다." } });
-        try {
-          const proposal = await input.propose(recordId, draft);
-          if (input.signal.aborted) throw new Error("cancelled");
-          await input.emit({ type: "tool", tool: { id, name: "기록 변경 제안", status: "complete", summary: proposal.summary, proposal } });
-          return { content: [{ type: "text" as const, text: JSON.stringify({ proposalId: proposal.proposalId, summary: proposal.summary, status: proposal.status, requiresUserApproval: true }) }] };
-        } catch (error) {
-          await input.emit({ type: "tool", tool: { id, name: "기록 변경 제안", status: "failed", summary: "제안을 만들지 못했습니다. 기록과 AI 설정을 확인해 주세요." } });
-          return { content: [{ type: "text" as const, text: "제안 생성 실패. 적용된 변경은 없습니다." }], isError: true };
-        }
-      }),
-      tool("list_career_records", "사용자의 커리어 카테고리와 기록 목록(최근 수정순 100개)을 봅니다. 기록은 제목 · 카테고리 · 상태만 돌려줍니다.", {}, async () => {
-        const rows = await input.records.list();
-        await input.emit({ type: "tool", tool: { id: crypto.randomUUID(), name: "기록 목록 확인", status: "complete", summary: `기록 ${rows.records.length}개를 확인했습니다.` } });
-        return { content: [{ type: "text" as const, text: JSON.stringify(rows) }] };
-      }),
-      tool("record_gap_review", "가장 최근 요건 대조와 대화의 답을 바탕으로 이 공고를 위해 확인 · 보완할 점을 기록합니다. 근거는 기록 원문(record) 또는 이 대화의 사용자 메시지(user_message)를 그대로 인용합니다.", GapReviewDraftSchema.shape, async draft => {
-        if (input.signal.aborted) throw new Error("cancelled");
-        try {
-          const gapReview = await input.gapReview(draft);
-          const confirm = gapReview.items.filter(item => item.status === "needs_confirmation").length;
-          await input.emit({ type: "tool", tool: { id: crypto.randomUUID(), name: "보완점 정리", status: "complete", summary: `보완점 ${gapReview.items.length}개 · 확인 필요 ${confirm} · 보완 필요 ${gapReview.items.length - confirm}`, gapReview } });
-          return { content: [{ type: "text" as const, text: JSON.stringify({ saved: true, items: gapReview.items.length }) }] };
-        } catch (error) {
-          if (error instanceof AgentToolRejection) return { content: [{ type: "text" as const, text: `저장하지 않았습니다. 아래 항목을 고쳐 다시 기록하십시오.\n${error.issues.join("\n")}` }], isError: true };
-          throw error;
-        }
-      }),
-      tool("propose_preparation_plan", "가장 최근 보완점 정리에서 고른 보완점(번호, 0부터)과 주당 시간 · 기간 · 시작일로 준비 계획 초안을 만듭니다. 작업과 일정은 서버가 규칙으로 정합니다.", PlanProposalInputSchema.shape, async proposal => {
-        if (input.signal.aborted) throw new Error("cancelled");
-        try {
-          const planDraft = await input.planDraft(proposal);
-          await input.emit({ type: "tool", tool: { id: crypto.randomUUID(), name: "준비 계획 초안", status: "complete", summary: `${planDraft.title} · 작업 ${planDraft.tasks.length}개`, planDraft } });
-          return { content: [{ type: "text" as const, text: JSON.stringify({ draftId: planDraft.draftId, tasks: planDraft.tasks.length, weeks: Math.max(...planDraft.tasks.map(task => task.week)), requiresUserApproval: true }) }] };
-        } catch (error) {
-          if (error instanceof AgentToolRejection) return { content: [{ type: "text" as const, text: `계획을 만들지 않았습니다.\n${error.issues.join("\n")}` }], isError: true };
-          throw error;
-        }
-      }),
-      tool("read_preparation_plan", "승인한 준비 계획의 작업별 일정과 진행 상태를 읽습니다.", { planId: UuidSchema }, async ({ planId }) => {
-        const plan = await input.readPlan(planId);
-        if (!plan) return { content: [{ type: "text" as const, text: "그 계획을 찾을 수 없습니다." }], isError: true };
-        const done = plan.tasks.filter(task => task.status === "completed").length;
-        await input.emit({ type: "tool", tool: { id: crypto.randomUUID(), name: "계획 진행 확인", status: "complete", summary: `${plan.title} · ${done}/${plan.tasks.length} 완료` } });
-        return { content: [{ type: "text" as const, text: JSON.stringify({ title: plan.title, settings: plan.settings, tasks: plan.tasks.map(task => ({ title: task.title, kind: task.kind, week: task.week, date: task.date, minutes: task.minutes, status: task.status, outcome: task.outcome, spentMinutes: task.spentMinutes })) }) }] };
-      }),
-      tool("propose_replan", "승인한 준비 계획에서 완료하지 않은 작업만 새 주당 시간 · 기간 · 시작일로 다시 배치한 초안을 만듭니다.", ReplanProposalInputSchema.shape, async proposal => {
-        if (input.signal.aborted) throw new Error("cancelled");
-        try {
-          const replanDraft = await input.replanDraft(proposal);
-          await input.emit({ type: "tool", tool: { id: crypto.randomUUID(), name: "계획 재배치 초안", status: "complete", summary: `남은 작업 ${replanDraft.slots.length}개 · 주 ${replanDraft.settings.weeklyHours}시간`, replanDraft } });
-          return { content: [{ type: "text" as const, text: JSON.stringify({ draftId: replanDraft.draftId, tasks: replanDraft.slots.length, requiresUserApproval: true }) }] };
-        } catch (error) {
-          if (error instanceof AgentToolRejection) return { content: [{ type: "text" as const, text: `다시 배치하지 않았습니다.\n${error.issues.join("\n")}` }], isError: true };
-          throw error;
-        }
-      }),
-      tool("propose_new_record", "사용자가 대화에서 말한 경험으로 새 커리어 기록 초안을 만듭니다. 저장은 사용자가 승인할 때만 일어납니다. categoryId는 list_career_records의 카테고리 중에서 고르고, 모르면 비웁니다.", AgentRecordDraftInputSchema.shape, async draftInput => {
-        if (input.signal.aborted) throw new Error("cancelled");
-        try {
-          const draft = await input.draftRecord(draftInput);
-          await input.emit({ type: "tool", tool: { id: crypto.randomUUID(), name: "새 기록 초안", status: "complete", summary: draft.title, recordDraft: draft } });
-          return { content: [{ type: "text" as const, text: JSON.stringify({ draftId: draft.draftId, requiresUserApproval: true }) }] };
-        } catch (error) {
-          if (error instanceof AgentToolRejection) return { content: [{ type: "text" as const, text: `초안을 만들지 않았습니다. 아래 항목을 고쳐 다시 제안하십시오.\n${error.issues.join("\n")}` }], isError: true };
-          throw error;
-        }
-      }),
-      tool("read_career_records", "커리어 기록의 본문을 읽습니다. 한 번에 10개까지 묶어 읽으십시오.", { recordIds: z.array(UuidSchema).min(1).max(10) }, async ({ recordIds }) => {
-        const rows = await input.records.read(recordIds);
-        await input.emit({ type: "tool", tool: { id: crypto.randomUUID(), name: "기록 읽기", status: "complete", summary: rows.length ? rows.map(row => row.title).join(" · ").slice(0, 8_000) : "읽을 수 있는 기록이 없습니다." } });
-        return { content: [{ type: "text" as const, text: JSON.stringify(rows) }] };
-      }),
-      tool("record_requirement_review", "대화에 연결된 공고의 요건마다 내 기록으로 확인되는 정도를 기록합니다. strong · partial은 근거 기록 인용이 필요하고 unconfirmed는 근거를 비웁니다. 인용은 원문 그대로 옮깁니다.", RequirementReviewDraftSchema.shape, async draft => {
-        if (input.signal.aborted) throw new Error("cancelled");
-        try {
-          const review = await input.review(draft);
-          const counts = (["strong", "partial", "unconfirmed"] as const).map(assessment => review.items.filter(item => item.assessment === assessment).length);
-          await input.emit({ type: "tool", tool: { id: crypto.randomUUID(), name: "요건 대조", status: "complete", summary: `요건 ${review.items.length}개 · 강함 ${counts[0]} · 일부 ${counts[1]} · 미확인 ${counts[2]}`, review } });
-          return { content: [{ type: "text" as const, text: JSON.stringify({ saved: true, items: review.items.length }) }] };
-        } catch (error) {
-          if (error instanceof AgentToolRejection) return { content: [{ type: "text" as const, text: `저장하지 않았습니다. 아래 항목을 고쳐 다시 기록하십시오.\n${error.issues.join("\n")}` }], isError: true };
-          throw error;
-        }
-      }),
-    ] });
+        await input.emit({ type: "tool", tool: { id, name, status: "complete", summary: done.summary, ...done.detail } });
+        return done.reply;
+      } catch (error) {
+        const handled = error instanceof AgentToolRejection && failure.rejected ? { summary: failure.rejected.summary, text: [failure.rejected.text, ...error.issues].join("\n") } : failure.failed;
+        await input.emit({ type: "tool", tool: { id, name, status: "failed", summary: handled?.summary ?? "실행하지 못했습니다." } });
+        if (!handled) throw error;
+        return refuse(handled.text);
+      }
+    };
+    const recheck = (summary: string, text: string) => ({ rejected: { summary, text } });
+    // SDK의 createSdkMcpServer는 번들 안의 zod로 입력 스키마를 JSON Schema로 바꾼다. 작업공간 zod와 판이 다르면
+    // z.record 변환이 실패하고 SDK가 도구 목록 전체를 버린다(0.3.261 · zod 4.6.5). 스키마와 같은 zod를 쓰는 작업공간 MCP 서버로 만든다.
+    const server = new McpServer({ name: "expresso", version: "1.0.0" });
+    server.registerTool("propose_record_edit", { description: "연결된 커리어 기록의 document 블록 ID와 현재 내용을 기준으로 명령을 작성해 변경 제안을 만듭니다. 적용은 사용자가 별도로 승인합니다.", inputSchema: { recordId: z.string().uuid(), draft: AgentEditDraftSchema } }, ({ recordId, draft }) => step("기록 변경 제안", "변경 내용을 준비하고 있습니다.", async () => {
+      const proposal = await input.propose(recordId, draft);
+      return { summary: proposal.summary, detail: { proposal }, reply: reply({ proposalId: proposal.proposalId, summary: proposal.summary, status: proposal.status, requiresUserApproval: true }) };
+    }, { failed: { summary: "제안을 만들지 못했습니다. 기록과 AI 설정을 확인해 주세요.", text: "제안 생성 실패. 적용된 변경은 없습니다." } }));
+    server.registerTool("list_career_records", { description: "사용자의 커리어 카테고리와 기록 목록(최근 수정순 100개)을 봅니다. 기록은 제목 · 카테고리 · 상태만 돌려줍니다.", inputSchema: {} }, () => step("기록 목록 확인", "기록 목록을 불러오고 있습니다.", async () => {
+      const rows = await input.records.list();
+      return { summary: `기록 ${rows.records.length}개를 확인했습니다.`, reply: reply(rows) };
+    }));
+    server.registerTool("read_career_records", { description: "커리어 기록의 본문을 읽습니다. 한 번에 10개까지 묶어 읽으십시오.", inputSchema: { recordIds: z.array(UuidSchema).min(1).max(10) } }, ({ recordIds }) => step("기록 읽기", "기록 본문을 읽고 있습니다.", async () => {
+      const rows = await input.records.read(recordIds);
+      return { summary: rows.length ? rows.map(row => row.title).join(" · ").slice(0, 8_000) : "읽을 수 있는 기록이 없습니다.", reply: reply(rows) };
+    }));
+    server.registerTool("record_requirement_review", { description: "대화에 연결된 공고의 요건마다 내 기록으로 확인되는 정도를 기록합니다. strong · partial은 근거 기록 인용이 필요하고 unconfirmed는 근거를 비웁니다. 인용은 원문 그대로 옮깁니다.", inputSchema: RequirementReviewDraftSchema.shape }, draft => step("요건 대조", "요건마다 근거를 찾고 있습니다.", async () => {
+      const review = await input.review(draft);
+      const counts = (["strong", "partial", "unconfirmed"] as const).map(assessment => review.items.filter(item => item.assessment === assessment).length);
+      return { summary: `요건 ${review.items.length}개 · 강함 ${counts[0]} · 일부 ${counts[1]} · 미확인 ${counts[2]}`, detail: { review }, reply: reply({ saved: true, items: review.items.length }) };
+    }, recheck("어긋난 인용을 고쳐 다시 대조합니다.", "저장하지 않았습니다. 아래 항목을 고쳐 다시 기록하십시오.")));
+    server.registerTool("propose_new_record", { description: "사용자가 대화에서 말한 경험으로 새 커리어 기록 초안을 만듭니다. 저장은 사용자가 승인할 때만 일어납니다. categoryId는 list_career_records의 카테고리 중에서 고르고, 모르면 비웁니다.", inputSchema: AgentRecordDraftInputSchema.shape }, draftInput => step("새 기록 초안", "대화에서 말한 경험을 초안으로 옮기고 있습니다.", async () => {
+      const draft = await input.draftRecord(draftInput);
+      return { summary: draft.title, detail: { recordDraft: draft }, reply: reply({ draftId: draft.draftId, requiresUserApproval: true }) };
+    }, recheck("어긋난 항목을 고쳐 다시 제안합니다.", "초안을 만들지 않았습니다. 아래 항목을 고쳐 다시 제안하십시오.")));
+    server.registerTool("record_gap_review", { description: "가장 최근 요건 대조와 대화의 답을 바탕으로 이 공고를 위해 확인 · 보완할 점을 기록합니다. 근거는 기록 원문(record) 또는 이 대화의 사용자 메시지(user_message)를 그대로 인용합니다.", inputSchema: GapReviewDraftSchema.shape }, draft => step("보완점 정리", "확인하고 보완할 점을 정리하고 있습니다.", async () => {
+      const gapReview = await input.gapReview(draft);
+      const confirm = gapReview.items.filter(item => item.status === "needs_confirmation").length;
+      return { summary: `보완점 ${gapReview.items.length}개 · 확인 필요 ${confirm} · 보완 필요 ${gapReview.items.length - confirm}`, detail: { gapReview }, reply: reply({ saved: true, items: gapReview.items.length }) };
+    }, recheck("어긋난 항목을 고쳐 다시 정리합니다.", "저장하지 않았습니다. 아래 항목을 고쳐 다시 기록하십시오.")));
+    server.registerTool("propose_preparation_plan", { description: "가장 최근 보완점 정리에서 고른 보완점(번호, 0부터)과 주당 시간 · 기간 · 시작일로 준비 계획 초안을 만듭니다. 작업과 일정은 서버가 규칙으로 정합니다.", inputSchema: PlanProposalInputSchema.shape }, proposal => step("준비 계획 초안", "작업과 일정을 배치하고 있습니다.", async () => {
+      const planDraft = await input.planDraft(proposal);
+      return { summary: `${planDraft.title} · 작업 ${planDraft.tasks.length}개`, detail: { planDraft }, reply: reply({ draftId: planDraft.draftId, tasks: planDraft.tasks.length, weeks: Math.max(...planDraft.tasks.map(task => task.week)), requiresUserApproval: true }) };
+    }, recheck("이 설정으로는 계획을 만들 수 없습니다.", "계획을 만들지 않았습니다.")));
+    server.registerTool("read_preparation_plan", { description: "승인한 준비 계획의 작업별 일정과 진행 상태를 읽습니다.", inputSchema: { planId: UuidSchema } }, ({ planId }) => step("계획 진행 확인", "계획의 진행을 읽고 있습니다.", async () => {
+      const plan = await input.readPlan(planId);
+      if (!plan) throw new AgentToolRejection([]);
+      const done = plan.tasks.filter(task => task.status === "completed").length;
+      return { summary: `${plan.title} · ${done}/${plan.tasks.length} 완료`, reply: reply({ title: plan.title, settings: plan.settings, tasks: plan.tasks.map(task => ({ title: task.title, kind: task.kind, week: task.week, date: task.date, minutes: task.minutes, status: task.status, outcome: task.outcome, spentMinutes: task.spentMinutes })) }) };
+    }, recheck("계획을 찾지 못했습니다.", "그 계획을 찾을 수 없습니다.")));
+    server.registerTool("propose_replan", { description: "승인한 준비 계획에서 완료하지 않은 작업만 새 주당 시간 · 기간 · 시작일로 다시 배치한 초안을 만듭니다.", inputSchema: ReplanProposalInputSchema.shape }, proposal => step("계획 재배치 초안", "남은 작업을 다시 배치하고 있습니다.", async () => {
+      const replanDraft = await input.replanDraft(proposal);
+      return { summary: `남은 작업 ${replanDraft.slots.length}개 · 주 ${replanDraft.settings.weeklyHours}시간`, detail: { replanDraft }, reply: reply({ draftId: replanDraft.draftId, tasks: replanDraft.slots.length, requiresUserApproval: true }) };
+    }, recheck("이 설정으로는 다시 배치할 수 없습니다.", "다시 배치하지 않았습니다.")));
     const isolatedHome = input.apiKey ? await mkdtemp(join(tmpdir(), "expresso-agent-")) : null;
     try {
       const messages = query({ prompt: JSON.stringify({ conversation: conversationForModel(input.messages), context: input.context }), options: {
         model: "sonnet",
         ...(isolatedHome ? { env: { PATH: process.env.PATH, HOME: isolatedHome, CLAUDE_CONFIG_DIR: isolatedHome, ANTHROPIC_API_KEY: input.apiKey } } : {}), abortController, persistSession: false, includePartialMessages: true, maxTurns: 8, maxBudgetUsd: 1,
-        tools: [], mcpServers: { expresso: server }, allowedTools: ["mcp__expresso__propose_record_edit", "mcp__expresso__list_career_records", "mcp__expresso__read_career_records", "mcp__expresso__record_requirement_review", "mcp__expresso__propose_new_record", "mcp__expresso__record_gap_review", "mcp__expresso__propose_preparation_plan", "mcp__expresso__read_preparation_plan", "mcp__expresso__propose_replan"], permissionMode: "dontAsk", settingSources: [], strictMcpConfig: true,
+        tools: [], mcpServers: { expresso: { type: "sdk", name: "expresso", instance: server } }, allowedTools: AGENT_ALLOWED_TOOLS, permissionMode: "dontAsk", settingSources: [], strictMcpConfig: true,
         systemPrompt: SYSTEM_PROMPT,
       } });
       for await (const message of messages) {
         if (input.signal.aborted) throw new Error("cancelled");
+        // 도구가 하나라도 빠진 채 시작하면 모델이 도구 호출을 글로 흉내 낸다. 그 답을 내보내지 않고 실패로 끝낸다.
+        if (message.type === "system" && message.subtype === "init") {
+          const missing = AGENT_ALLOWED_TOOLS.filter(name => !message.tools.includes(name));
+          if (missing.length) { cancel(); throw new Error(`agent tools unavailable: ${missing.join(", ")}`); }
+        }
         if (message.type === "stream_event" && message.event.type === "content_block_delta" && message.event.delta.type === "text_delta") await input.emit({ type: "text", text: message.event.delta.text });
         if (message.type === "result" && message.is_error) throw new Error("agent execution failed");
         if (message.type === "result" && this.usage) recordAgentUsage(this.usage, input.userId, message.modelUsage ?? {}, message.duration_ms ?? 0);
