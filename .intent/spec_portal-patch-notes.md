@@ -11,7 +11,7 @@ date: 2026-11-10
 
 ## 요구사항
 
-- [ ] 포털 `NAV` 맨 앞에 `패치노트` 탭이 있고, 해시가 없을 때 · 로고(`goHome`) · `#/patch-notes`가 이 탭을 연다.
+- [ ] 포털 첫 화면은 `진행 현황`이다. 진행 현황 사이드바 맨 위에 `패치노트` · `대시보드`가 있고, 주소에 조건이 없으면 `패치노트`가 선택된다. 대시보드 조건(`member` 등)이 실린 주소는 대시보드로 연다. `#/patch-notes`는 진행 현황으로 연다.
 - [ ] 패치노트 화면은 `./data/patch-notes.json`만 읽고, zod 스키마(`shared/patch-notes.ts`)로 검사한다. 형식이 틀리면 오류를 보이고 멈춘다.
 - [ ] 화면은 KST 날짜 내림차순, 날짜 안에서 `mergedAt` 내림차순, 사용자 변경 먼저 · `개발 · 운영` 묶음 나중이다.
 - [ ] 생성기는 정리본(`patch-notes/seed.json`)과 이전 결과의 PR 번호에 없는, 기간 안(2026-11-02 ~ 2026-12-01 KST)에 머지된 PR만 새로 쓴다.
@@ -22,7 +22,7 @@ date: 2026-11-10
 ## 설계
 
 **재사용** — 진행 현황 앱(`services/dev-portal/status`)을 그대로 쓴다.
-- 화면: Vite 두 번째 입력 `patch-notes.html` → 빌드 결과 `docs/status/patch-notes.html`. 같은 `index.css`(제품 `tokens.css`), `usePortalTheme`, shadcn `Badge` · `Separator` · `Skeleton` · `Alert`를 쓴다.
+- 화면: 진행 현황 앱 안의 화면 `PatchNotesView`. `View.page`(`notes` | `dashboard`)로 대시보드와 바꾸고, `AppSidebar` 맨 위 메뉴가 고른다. 같은 머리 막대 · `index.css`(제품 `tokens.css`) · 포털 테마 · shadcn 부품을 쓴다.
 - 데이터 경로: 생성기가 `/var/lib/expresso-status/patch-notes.json`에 쓰면 기존 nginx `location ~ ^/status/data/([a-z-]+\.json)$`가 그대로 내보낸다. nginx 변경 없음(주석만 고침).
 - AI 호출: 서버에 로그인된 `claude` CLI(`CLAUDE_CLI_PATH`), 모델은 스캐너와 같은 `sonnet`. 스캐너의 `agent.ts`는 `--json-schema`를 쓰므로 가져오지 않고, 같은 인자 묶음(도구 없음 · MCP 없음 · 예산 상한)으로 새 호출부를 쓴다.
 - PR 조회: 스캐너처럼 서버의 `gh`.
@@ -32,7 +32,7 @@ date: 2026-11-10
 - `patch-notes/main.ts`: 인자 `--out` · `--dry-run` · `--limit`. 정리본 + 이전 결과 병합, 대상 PR 고르기, 항목 생성, 원자적 쓰기.
 - `patch-notes/writer.ts`: 프롬프트, CLI 호출, `extractDraft`(본문에서 JSON 꺼내 `Draft` 검사), `repairDraft` 루프.
 - `patch-notes/seed.json`: 11/02–11/10 정리본 51개 변경을 이 형식으로 옮긴 것.
-- 포털: `PATCH_TAB = '패치노트'`, `PATCH_PAGE`, `parseRoute` · `routeOf` · 초기 상태 · `goHome` · `headerLabel` · 전역 검색 바로가기 · `<iframe>` 한 줄.
+- 포털: 탭은 늘리지 않는다. `parseRoute`가 `#/patch-notes`를 진행 현황으로 열고, 전역 검색에 패치노트 바로가기(`#/status`)를 둔다.
 - 서버: `infra/server/expresso-patch-notes.sh`(전용 클론 `~/expresso-patch-notes`를 `origin/main`으로 맞추고 실행), `infra/systemd/expresso-patch-notes.{service,timer}`(15분, oneshot).
 
 ## 버린 대안
@@ -55,4 +55,4 @@ date: 2026-11-10
 cd services/dev-portal/status && pnpm test && pnpm typecheck && pnpm build
 node patch-notes/main.ts --out ../../../docs/status/data --dry-run   # 새로 쓸 PR 목록 출력
 ```
-`python3 scripts/serve-docs.py`로 포털을 열어 첫 화면이 패치노트이고 테마 전환이 따라오는지 본다. 머지 뒤 서버에서 타이머 첫 실행 결과가 `https://dev.expresso.ai.kr/status/data/patch-notes.json`에 나온다.
+`python3 scripts/serve-docs.py`로 포털을 열어 첫 화면이 진행 현황 · 사이드바 「패치노트」 선택이고 테마 전환이 따라오는지 본다. 머지 뒤 서버에서 타이머 첫 실행 결과가 `https://dev.expresso.ai.kr/status/data/patch-notes.json`에 나온다.

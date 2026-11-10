@@ -393,9 +393,9 @@ ssh Oracle-Server '/usr/local/bin/expresso-status-scan --groups D7'   # 한 도�
 curl -s https://dev.expresso.ai.kr/status/data/runs.json | tail -c 600
 ```
 
-## 9. 패치노트 생성 — 포털 「패치노트」 (2026-11-10)
+## 9. 패치노트 생성 — 포털 「진행 현황」 패치노트 (2026-11-10)
 
-포털 첫 화면인 「패치노트」 탭(`#/patch-notes`)이 읽는 값도 이 기계에서 만든다. systemd 타이머가
+포털 「진행 현황」 사이드바의 「패치노트」 화면이 읽는 값도 이 기계에서 만든다. systemd 타이머가
 15분마다 생성기를 부르고, 생성기가 결과 JSON 을 진행 현황과 같은 폴더에 쓰면 nginx 의 기존
 `/status/data/` 규칙이 그대로 내보낸다. nginx 는 바꾸지 않았다.
 
@@ -412,6 +412,7 @@ curl -s https://dev.expresso.ai.kr/status/data/runs.json | tail -c 600
 
 - 기간(`config.json` 의 `period`, 2026-11-02 ~ 2026-12-01 KST) 안에 `main` 으로 머지된 PR 을 `gh` 로 읽는다.
 - 정리본과 이전 결과에 없는 PR 마다 Claude Code(`~/.local/bin/claude`, 모델 `sonnet`)가 PR 본문과 바뀐 파일 목록을 읽고 항목 하나(사용자 / 개발 · 운영 구분 · 변경 이름 · 세부 문장)를 쓴다. 한 번에 최대 10개, PR 하나에 보통 $0.05 안팎이다.
+- 이 계정의 사용자 설정(`~/.claude/settings.json`)은 읽지 않는다(`--setting-sources ""`). 설정의 `advisorModel` 이 advisor 호출을 붙여 PR 하나가 $0.04 에서 $0.47 로 늘고 예산 상한에 걸렸다(2026-11-10 실측).
 - 출력 검증을 CLI 에 맡기지 않는다(`--json-schema` 없음). 형식이 틀리면 같은 대화에 그 칸만 다시 받고, 나아지지 않으면 그 PR 을 `pending` 에 남겨 다음 실행에서 다시 시도한다.
 - 정리본(`seed.json`)은 매번 다시 읽는다. 자동으로 쓴 문구를 고치려면 그 항목을 `seed.json` 으로 옮겨 다듬고 머지한다 — 정리본에 들어간 PR 의 생성 항목은 다음 실행에서 빠진다.
 - 2026-12-01 뒤에는 새 항목이 생기지 않는다. 타이머는 그 뒤에 꺼도 된다.

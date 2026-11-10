@@ -118,6 +118,9 @@ export async function writeDraft(pull: Pull, ask: Ask, maxRounds: number): Promi
 
 // 서버에 로그인된 Claude Code 를 부른다. 프롬프트는 stdin, 결과는 json 봉투의 result 글.
 // MCP 서버와 도구는 싣지 않는다 — PR 본문만 읽고 답한다.
+// 사용자 설정(~/.claude/settings.json)은 읽지 않는다(--setting-sources ""). 서버 계정 설정의
+// advisorModel 이 --tools "" 로도 꺼지지 않는 advisor 호출을 붙여, PR 하나가 $0.04 에서 $0.47 로
+// 늘고 예산 상한에 걸렸다(2026-11-10 #196 실측). 로그인 정보는 설정이 아니라 그대로 쓴다.
 export function claudeAsk(opts: { cli: string; model: string; budgetUsd: number; timeoutMs: number; cwd: string }): Ask {
   return ({ prompt, resume }) =>
     new Promise((resolve, reject) => {
@@ -130,6 +133,7 @@ export function claudeAsk(opts: { cli: string; model: string; budgetUsd: number;
         "--mcp-config", '{"mcpServers":{}}',
         "--max-budget-usd", String(opts.budgetUsd),
         "--tools", "",
+        "--setting-sources", "",
         ...(resume ? ["--resume", resume] : []),
       ]
       const child = spawn(opts.cli, args, { cwd: opts.cwd, stdio: ["pipe", "pipe", "pipe"] })

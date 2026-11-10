@@ -4,16 +4,17 @@ import { CircleAlertIcon } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ago } from "@/lib/data"
-import { usePortalTheme } from "@/lib/theme"
 import type { PatchNotes } from "../../shared/patch-notes.ts"
 import { byDay, dayParts, loadPatchNotes, periodLabel, prUrl, type Day, type PatchNoteEntry } from "./data"
 
 type Load = { notes: PatchNotes; loadedAt: number } | { error: string } | null
 
-export function PatchNotesApp() {
-  usePortalTheme()
+// 진행 현황 사이드바의 「패치노트」 화면. 대시보드와 같은 머리 막대 자리에 들어가고, 데이터는 따로 읽는다.
+export function PatchNotesView() {
   const [load, setLoad] = useState<Load>(null)
 
   const fetchNotes = () =>
@@ -29,8 +30,10 @@ export function PatchNotesApp() {
   }, [])
 
   return (
-    <div className="min-h-svh">
-      <header className="sticky top-0 z-20 flex h-12 items-center gap-2 border-b bg-background/95 px-4 backdrop-blur lg:px-6">
+    <div className="@container/notes">
+      <header className="sticky top-0 z-20 flex h-12 shrink-0 items-center gap-2 border-b bg-background/95 px-4 backdrop-blur lg:px-6">
+        <SidebarTrigger className="-ml-1" />
+        <Separator orientation="vertical" className="mx-1 data-[orientation=vertical]:h-4" />
         <h1 className="text-base font-medium">패치노트</h1>
         {load && "notes" in load && (
           <div className="ml-auto flex items-center gap-2">
@@ -41,7 +44,7 @@ export function PatchNotesApp() {
           </div>
         )}
       </header>
-      <main className="mx-auto max-w-4xl px-4 pt-6 pb-24 lg:px-6 lg:pt-10">
+      <div className="max-w-4xl px-4 pt-6 pb-24 lg:px-6 lg:pt-8">
         {load === null ? (
           <Loading />
         ) : "error" in load ? (
@@ -59,7 +62,7 @@ export function PatchNotesApp() {
         ) : (
           <Timeline notes={load.notes} />
         )}
-      </main>
+      </div>
     </div>
   )
 }
@@ -68,7 +71,7 @@ function Loading() {
   return (
     <div className="flex flex-col gap-10">
       {Array.from({ length: 3 }, (_, i) => (
-        <div key={i} className="grid gap-4 md:grid-cols-[7.5rem_1fr]">
+        <div key={i} className="grid gap-4 @2xl/notes:grid-cols-[7.5rem_1fr]">
           <Skeleton className="h-14 w-24" />
           <div className="flex flex-col gap-3">
             <Skeleton className="h-5 w-2/5" />
@@ -93,13 +96,13 @@ function Timeline({ notes }: { notes: PatchNotes }) {
   )
 }
 
-// 날짜는 왼쪽에 세워 두고, 그날의 변경을 읽는 동안 따라 내려온다(넓은 화면).
+// 날짜는 왼쪽에 세워 두고, 그날의 변경을 읽는 동안 따라 내려온다(본문 폭이 넓을 때).
 function DaySection({ day, first }: { day: Day; first: boolean }) {
   const { month, day: d, weekday } = dayParts(day.date)
   return (
-    <li className={`grid gap-x-8 gap-y-4 md:grid-cols-[7.5rem_1fr] ${first ? "" : "border-t pt-8 mt-8 md:pt-10 md:mt-10"}`}>
-      <div className="md:sticky md:top-20 md:self-start">
-        <time dateTime={day.date} className="flex items-baseline gap-2 md:flex-col md:gap-1">
+    <li className={`grid gap-x-8 gap-y-4 @2xl/notes:grid-cols-[7.5rem_1fr] ${first ? "" : "mt-8 border-t pt-8 @2xl/notes:mt-10 @2xl/notes:pt-10"}`}>
+      <div className="@2xl/notes:sticky @2xl/notes:top-20 @2xl/notes:self-start">
+        <time dateTime={day.date} className="flex items-baseline gap-2 @2xl/notes:flex-col @2xl/notes:gap-1">
           <span className="font-brand text-5xl leading-none font-light tracking-tight tabular-nums">{d}</span>
           <span className="text-sm text-muted-foreground">
             {month}월 {weekday}요일

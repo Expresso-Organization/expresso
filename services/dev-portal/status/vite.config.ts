@@ -41,13 +41,6 @@ export default defineConfig({
     outDir,
     emptyOutDir: false,
     assetsDir: "assets",
-    // 페이지 둘 — 진행 현황(index.html)과 패치노트(patch-notes.html). 토큰 · 테마 · 부품을 함께 쓴다.
-    rollupOptions: {
-      input: {
-        index: resolve(import.meta.dirname, "index.html"),
-        "patch-notes": resolve(import.meta.dirname, "patch-notes.html"),
-      },
-    },
   },
   server: {
     // 토큰을 제품 웹(services/web/src/styles/tokens.css)에서 직접 읽습니다.
