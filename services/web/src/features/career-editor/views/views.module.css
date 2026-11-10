@@ -23,11 +23,11 @@
 .toolbarActions>button small { min-width:16px; border-radius:999px; background:var(--ex-accent-surface); padding:0 5px; color:var(--ex-accent-text); font-size:var(--ex-text-3xs); text-align:center; }
 .createSplit { flex:0 0 auto; }
 .createSplit button { display:inline-flex; align-items:center; gap:5px; white-space:nowrap; }
-.searchField { display:inline-flex; min-height:32px; flex:0 1 220px; min-width:140px; align-items:center; gap:6px; border:1px solid var(--ex-border-soft); border-radius:6px; background:var(--ex-bg-tint); padding:0 4px 0 9px; color:var(--ex-fg-muted); }
+.searchField { display:inline-flex; min-height:32px; flex:0 1 220px; min-width:140px; align-items:center; gap:6px; border:1px solid var(--ex-border-soft); border-radius:var(--ex-radius-pill); background:var(--ex-bg-tint); padding:0 4px 0 12px; color:var(--ex-fg-muted); }
 .searchField:focus-within { border-color:var(--ex-border-firm); box-shadow:var(--ex-focus-ring); }
 .searchField input { width:100%; min-width:0; border:0; background:transparent; color:var(--ex-fg-strong); font:inherit; font-size:var(--ex-text-sm); outline:0; }
 .searchField input::-webkit-search-cancel-button { display:none; }
-.searchField button { display:grid; width:24px; height:24px; flex:0 0 auto; place-items:center; border:0; border-radius:5px; background:transparent; padding:0; color:var(--ex-fg-muted); cursor:pointer; }
+.searchField button { display:grid; width:24px; height:24px; flex:0 0 auto; place-items:center; border:0; border-radius:50%; background:transparent; padding:0; color:var(--ex-fg-muted); cursor:pointer; }
 .searchField button:hover { background:var(--ex-bg-hover); color:var(--ex-fg-strong); }
 .toolbarActions>button:hover,.toolbarActions>button[aria-expanded="true"] { border-color:var(--ex-border-soft); background:var(--ex-bg-hover); color:var(--ex-fg-strong); }
 .createSplit { display:flex; overflow:hidden; border:1px solid var(--ex-border); border-radius:7px; background:var(--ex-bg); }

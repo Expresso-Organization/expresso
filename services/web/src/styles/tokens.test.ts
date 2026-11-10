@@ -167,6 +167,34 @@ describe("반응형", () => {
   });
 });
 
+/*
+ * 검색 칸은 화면마다 따로 그려진다 — 홈 · 공고 탐색 · 공고로 시작하기의 큰
+ * 검색바부터 커리어 표 툴바 · 에이전트 채팅 · 지표 라이브러리의 작은 칸까지.
+ * 곡률이 칸마다 6 · 8 · 9 · 10 · 11px로 갈려 같은 기능이 다른 물건처럼 보였다.
+ * 검색 칸은 모두 pill이고 그 값은 `--ex-radius-pill` 하나에서 온다.
+ */
+describe("검색 칸 곡률", () => {
+  it("pill 토큰이 있다", () => {
+    expect(read(TOKENS)).toContain("--ex-radius-pill: 999px");
+  });
+
+  it("이름에 search가 든 규칙의 곡률은 pill 토큰이다", () => {
+    const found: string[] = [];
+    for (const file of cssFiles) {
+      for (const [, selectors = "", body = ""] of stripComments(read(file)).matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+        const radius = body.match(/border-radius\s*:\s*([^;]+)/)?.[1]?.trim();
+        if (!radius || radius === "var(--ex-radius-pill)") continue;
+        for (const selector of selectors.split(",")) {
+          // 마지막 복합 선택자만 본다. `.searchField button`은 칸이 아니라 칸 안의 버튼이다.
+          const last = selector.trim().split(/[\s>+~]+/).pop() ?? "";
+          if (/\.[\w-]*search/i.test(last)) found.push(`${label(file)}: ${selector.trim()} → ${radius}`);
+        }
+      }
+    }
+    expect(found).toEqual([]);
+  });
+});
+
 /**
  * 어두운 지면의 값은 두 곳에 적혀 있다 — OS 설정을 따르는 자리와 손으로 고른
  * 자리. 둘이 갈리면 시스템 다크와 수동 다크가 다르게 보인다.

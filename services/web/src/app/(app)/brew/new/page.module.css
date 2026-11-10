@@ -31,9 +31,9 @@
   gap: 12px;
   max-width: 1180px;
   min-height: 56px;
-  padding: 0 8px 0 18px;
+  padding: 0 8px 0 22px;
   border: 1px solid var(--ex-border-firm);
-  border-radius: 11px;
+  border-radius: var(--ex-radius-pill);
   background: var(--ex-bg);
   transition: border-color var(--ex-motion-instant), box-shadow var(--ex-motion-instant);
 }
@@ -70,7 +70,7 @@
 .entryGo {
   flex-shrink: 0;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--ex-radius-pill);
   background: var(--ex-accent);
   color: var(--ex-fg-on-accent);
   font: inherit;
@@ -506,8 +506,8 @@
   gap: 9px;
   background: var(--ex-bg-sunken);
   border: 1px solid var(--ex-border);
-  border-radius: 11px;
-  padding: 11px 14px;
+  border-radius: var(--ex-radius-pill);
+  padding: 11px 18px;
   max-width: 560px;
 }
 
