@@ -393,7 +393,8 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
       editElementByAgent: vi.fn(async (_user: string, _portfolio: string, _key: string, changes: { text?: { value: string }[] }) => {
         if (changes.text?.[0]?.value.includes("99")) throw new PageElementIssues(["출처에 없는 숫자가 있습니다(99)."]);
         revision += 1;
-        return { page: { revision }, changes: [{ label: "제목", before: "긴 제목", after: "짧은 제목" }], label: "작업 목차" };
+        // 긴 본문을 고친 고침도 대화에 저장되고 다시 읽힌다(지면 본문 한도 20,000자).
+        return { page: { revision }, changes: [{ label: "제목", before: "긴 제목", after: "짧은 제목" }, { label: "본문", before: "가".repeat(20_000), after: "나".repeat(19_000) }], label: "작업 목차" };
       }),
       restoreRevision: vi.fn(async () => { revision += 1; return { revision }; }) as never,
     };

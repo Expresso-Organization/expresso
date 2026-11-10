@@ -232,7 +232,7 @@ export const AgentPageElementEditInputSchema = z.strictObject({
   note: z.string().trim().min(1).max(400).describe("무엇을 바꿨는지 사용자에게 하는 말 한두 문장"),
   props: z.array(z.strictObject({ name: z.string().min(1).max(60), value: z.string().min(1).max(60) })).max(20).optional().describe("모양 선택지. read_page_element의 options에 있는 값만"),
   style: z.array(z.strictObject({ part: z.string().min(1).max(60), color: z.string().max(30).optional(), font: z.string().max(30).optional(), size: z.string().max(30).optional() })).max(20).optional().describe("글자 부분마다 색 · 서체 · 크기 단계. 빈 부분은 기본 모양"),
-  text: z.array(z.strictObject({ path: z.string().min(1).max(300), value: z.string().max(4_000) })).max(64).optional().describe("read_page_element의 text 경로와 새 글"),
+  text: z.array(z.strictObject({ path: z.string().min(1).max(300), value: z.string().max(20_000) })).max(64).optional().describe("read_page_element의 text 경로와 새 글"),
 });
 export const AgentPageElementReadInputSchema = z.strictObject({ portfolioId: UuidSchema, key: PageElementKeySchema });
 /** 에이전트가 지면 요소를 고쳐 저장한 새 판. 되돌리기는 이 판이 아직 최신일 때만 된다. */
@@ -242,7 +242,8 @@ export const AgentPageEditSchema = z.strictObject({
   key: PageElementKeySchema,
   label: z.string().max(200),
   note: z.string().max(400),
-  changes: z.array(z.strictObject({ label: z.string().max(300), before: z.string().max(4_000), after: z.string().max(4_000) })).max(80),
+  // 지면 글 한도(본문 20,000자 · 섹션 제목 300자 + 칸 이름)와 맞춘다. 더 좁으면 긴 본문을 고친 대화는 읽을 수 없게 된다.
+  changes: z.array(z.strictObject({ label: z.string().max(400), before: z.string().max(20_000), after: z.string().max(20_000) })).max(120),
   revision: z.number().int().positive(),
   undone: z.boolean(),
 });

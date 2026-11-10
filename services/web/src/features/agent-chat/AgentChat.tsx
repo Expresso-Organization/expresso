@@ -39,6 +39,14 @@ const JobContext = createContext<AgentChatJob | null>(null);
  */
 export type AgentChatPage = { portfolioId: string; title: string; revision: number; selection: AgentPageSelection | null };
 const PageContext = createContext<AgentChatPage | null>(null);
+/**
+ * 고침 카드의 판이 화면의 최신 판인가. 화면이 더 뒤의 판을 보고 있을 때만 false다. 고침 직후 화면이 아직 옛 판을 보고 있으면
+ * (새로고침 전) 모르는 것(undefined)으로 두고 서버가 판단한다.
+ */
+function pageEditLatest(page: AgentChatPage | null, edit: { portfolioId: string; revision: number }) {
+  if (page?.portfolioId !== edit.portfolioId) return undefined;
+  return page.revision === edit.revision ? true : page.revision > edit.revision ? false : undefined;
+}
 function AssistantIdentity() {
   const running = useAuiState(s => s.message.status?.type === "running");
   return <div className={styles.identity}><LogoMark size={20} /><span>Expresso AI</span>{running ? <span className={styles.working}>함께 살펴보는 중</span> : null}</div>;
@@ -137,7 +145,7 @@ const RecordTool: ToolCallMessagePartComponent = props => {
     return step(<PlanDraftCard draft={tool.planDraft} disabled={busy} onDecide={decision => state.decidePlanDraft(draftId, decision)} />, null);
   }
   if (tool?.replanDraft) { const draftId = tool.replanDraft.draftId; return step(<ReplanDraftCard draft={tool.replanDraft} disabled={busy} onDecide={decision => state.decideReplanDraft(draftId, decision)} />, null); }
-  if (tool?.pageEdit) { const edit = tool.pageEdit; return step(<PageEditCard edit={edit} latest={page?.portfolioId === edit.portfolioId ? page.revision === edit.revision : undefined} disabled={busy} onUndo={() => state.undoPageEdit(edit.editId)} />, null); }
+  if (tool?.pageEdit) { const edit = tool.pageEdit; return step(<PageEditCard edit={edit} latest={pageEditLatest(page, edit)} disabled={busy} onUndo={() => state.undoPageEdit(edit.editId)} />, null); }
   return step(tool?.proposal ? <Proposal proposal={tool.proposal} beforeDocument={tool.beforeDocument} undone={tool.undone} /> : null);
 };
 function ExpandedTools({ group, children }: PropsWithChildren<{ group: ThreadGroupPart }>) {
