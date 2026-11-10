@@ -29,6 +29,9 @@ from typing import Any, Callable, Sequence
 
 sys.path.insert(0, str(Path(__file__).parent))
 
+# 같은 폴더의 profile.py가 표준 profile 모듈을 가린다. torch · transformers를 부르기 전에 푼다.
+import llm_suitability_train  # noqa: E402,F401
+
 OPSET = 17
 
 

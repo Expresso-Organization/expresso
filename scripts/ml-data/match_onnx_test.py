@@ -44,6 +44,21 @@ class OnnxExportTest(unittest.TestCase):
         numpy.testing.assert_allclose(actual, expected, atol=1e-4)
         self.assertEqual(onnxruntime.InferenceSession(str(output / "model.int8.onnx")).run(None, feed)[0].shape, expected.shape)
 
+    def test_cli_runs_from_script_directory(self) -> None:
+        # 같은 폴더의 profile.py가 표준 profile을 가리면 transformers import가 실패한다.
+        # 시험 모듈은 llm_suitability_train을 먼저 불러 가림이 풀려 있으므로 새 프로세스로 확인한다.
+        import subprocess
+
+        XLMRobertaModel(tiny_config()).save_pretrained(self.root / "encoder-src")
+        result = subprocess.run(
+            [sys.executable, "match_onnx.py", "export-encoder", "--model", str(self.root / "encoder-src"), "--output", str(self.root / "cli")],
+            cwd=Path(__file__).parent,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr[-2000:])
+        self.assertTrue((self.root / "cli" / "model.onnx").exists())
+
     def test_cross_loads_trained_layers_and_matches_score_contract(self) -> None:
         base = XLMRobertaForSequenceClassification(tiny_config(num_labels=1))
         base.save_pretrained(self.root / "cross-src")
