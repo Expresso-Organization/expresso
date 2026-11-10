@@ -50,8 +50,8 @@
 .root :global(.aui-user-message-content) { background:var(--ex-accent-surface); color:var(--ex-fg); border-radius:14px 14px 4px 14px; font-size:var(--ex-text-sm); line-height:var(--ex-leading-relaxed); }
 .root :global([data-slot="aui_assistant-message-content"]) { font-size:var(--ex-text-sm); line-height:var(--ex-leading-relaxed); }
 .root :global(.aui-md) { font-size:inherit; }
-.toolCard { border:1px solid var(--ex-border); border-radius:12px; background:var(--ex-bg-sunken); padding:10px 14px; }
-.toolSummary { color:var(--ex-fg-body); font-size:var(--ex-text-xs); line-height:var(--ex-leading-relaxed); margin-bottom:12px !important; }
+/* 작업 흔적 — 단계(ToolStep)들이 세로선으로 이어지는 자리. 그룹 머리와 점의 왼쪽 끝을 맞춘다. */
+.trace { display:flex; flex-direction:column; padding-top:6px; }
 .proposalStatus { display:flex; align-items:center; gap:6px; color:var(--ex-fg-muted); font-size:var(--ex-text-2xs); padding-top:12px; }
 .proposalStatus::before { content:""; width:5px; height:5px; border-radius:50%; background:var(--ex-accent-soft); }
 .proposalStatus[data-state="applied"] { color:var(--ex-status-success-text); }

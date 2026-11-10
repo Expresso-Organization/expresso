@@ -18,13 +18,13 @@ import { AgentConsentDialog } from "./AgentConsentDialog";
 import { ConversationSwitcher } from "./ConversationSwitcher";
 import { AiProposalDiff } from "@/features/career-editor/ai/AiProposalDiff";
 import { Thread } from "@/components/assistant-ui/elements/thread.aui";
-import { ToolFallback } from "@/components/assistant-ui/elements/tool-fallback.aui";
 import { ToolGroupRoot, ToolGroupContent, ToolGroupTrigger } from "@/components/assistant-ui/elements/tool-group.aui";
 import { Button } from "@/components/ui/button";
 import type { ThreadGroupPart } from "@/components/assistant-ui/elements/thread.aui";
-import type { PropsWithChildren } from "react";
+import type { PropsWithChildren, ReactNode } from "react";
 import "@/styles/agent-chat-framework.css";
 import { useAgentConversation } from "./useAgentConversation";
+import { ToolStep } from "./ToolStep";
 import styles from "./AgentChat.module.css";
 
 /** 프레임워크 원본 Thread를 사용하고 도메인 도구의 승인 화면만 확장합니다. */
@@ -76,30 +76,34 @@ function GeneralWelcome() {
     <div className={styles.starters}>{STARTERS.map(item => <Button key={item.title} variant="ghost" className={styles.starter} onClick={() => start(item.prompt)}><Icon name={item.icon} size={19} /><strong>{item.title}</strong><span>{item.description}</span><Icon name="arrow-up-right" size={14} /></Button>)}</div>
   </div>;
 }
+/** 작업 흔적의 아이콘. 키는 서버가 보내는 도구 이름(platform/agent/runtime.ts의 step 이름)이다. */
+const TOOL_ICONS: Record<string, string> = {
+  "기록 목록 확인": "list-bullets", "기록 읽기": "book-open-text", "요건 대조": "list-checks", "새 기록 초안": "note-pencil", "기록 변경 제안": "pencil-line",
+  "보완점 정리": "target", "준비 계획 초안": "calendar-check", "계획 진행 확인": "chart-line-up", "계획 재배치 초안": "arrows-clockwise",
+};
 /**
- * 도구 결과의 모양으로 화면을 나눈다 — 요건 대조 · 보완점 · 새 기록 · 준비 계획 · 재배치는 카드,
- * 기록 변경 제안은 승인 화면, 그 밖은 요약. 승인 · 거절은 AI를 부르지 않으므로 실행 중에만 막는다.
+ * 도구 호출 하나를 작업 흔적의 한 단계로 그린다. 결과의 모양으로 단계 아래를 나눈다 — 요건 대조 · 보완점 · 새 기록 · 준비 계획 ·
+ * 재배치는 카드(카드가 요약을 담으므로 단계 요약은 비운다), 기록 변경 제안은 승인 화면, 그 밖은 요약만. 승인 · 거절은 AI를 부르지 않으므로 실행 중에만 막는다.
  */
 const RecordTool: ToolCallMessagePartComponent = props => {
   const state = useContext(ChatContext)!;
   const tool = state.conversation?.messages.flatMap(message => message.tools).find(tool => tool.id === props.toolCallId);
   const busy = state.pending || state.conversation?.run?.status === "running";
-  if (tool?.review) return <RequirementReviewCard conversationId={state.id} toolId={tool.id} review={tool.review} />;
-  if (tool?.gapReview) return <GapReviewCard conversationId={state.id} toolId={tool.id} gapReview={tool.gapReview} />;
-  if (tool?.recordDraft) { const draftId = tool.recordDraft.draftId; return <RecordDraftCard draft={tool.recordDraft} disabled={busy} onDecide={decision => state.decideDraft(draftId, decision)} />; }
+  const name = tool?.name ?? props.toolName;
+  const step = (detail: ReactNode, summary: string | null = tool?.summary ?? null) => <ToolStep status={tool?.status ?? (props.status.type === "running" ? "running" : "complete")} icon={TOOL_ICONS[name] ?? "wrench"} title={name} summary={summary ?? undefined}>{detail}</ToolStep>;
+  if (tool?.review) return step(<RequirementReviewCard conversationId={state.id} toolId={tool.id} review={tool.review} />, null);
+  if (tool?.gapReview) return step(<GapReviewCard conversationId={state.id} toolId={tool.id} gapReview={tool.gapReview} />, null);
+  if (tool?.recordDraft) { const draftId = tool.recordDraft.draftId; return step(<RecordDraftCard draft={tool.recordDraft} disabled={busy} onDecide={decision => state.decideDraft(draftId, decision)} />, null); }
   if (tool?.planDraft) {
     const { draftId, planId, status } = tool.planDraft;
-    if (status === "approved" && planId) return <PlanCard planId={planId} refreshKey={state.conversation?.version} />;
-    return <PlanDraftCard draft={tool.planDraft} disabled={busy} onDecide={decision => state.decidePlanDraft(draftId, decision)} />;
+    if (status === "approved" && planId) return step(<PlanCard planId={planId} refreshKey={state.conversation?.version} />, null);
+    return step(<PlanDraftCard draft={tool.planDraft} disabled={busy} onDecide={decision => state.decidePlanDraft(draftId, decision)} />, null);
   }
-  if (tool?.replanDraft) { const draftId = tool.replanDraft.draftId; return <ReplanDraftCard draft={tool.replanDraft} disabled={busy} onDecide={decision => state.decideReplanDraft(draftId, decision)} />; }
-  return <ToolFallback.Root defaultOpen className={styles.toolCard}><ToolFallback.Trigger toolName={tool?.name ?? props.toolName} status={props.status} /><ToolFallback.Content>
-    <p className={styles.toolSummary}>{tool?.summary}</p>
-    {tool?.proposal ? <Proposal proposal={tool.proposal} beforeDocument={tool.beforeDocument} undone={tool.undone} /> : null}
-  </ToolFallback.Content></ToolFallback.Root>;
+  if (tool?.replanDraft) { const draftId = tool.replanDraft.draftId; return step(<ReplanDraftCard draft={tool.replanDraft} disabled={busy} onDecide={decision => state.decideReplanDraft(draftId, decision)} />, null); }
+  return step(tool?.proposal ? <Proposal proposal={tool.proposal} beforeDocument={tool.beforeDocument} undone={tool.undone} /> : null);
 };
 function ExpandedTools({ group, children }: PropsWithChildren<{ group: ThreadGroupPart }>) {
-  return <ToolGroupRoot variant="ghost" defaultOpen><ToolGroupTrigger count={group.indices.length} active={group.status.type === "running"} /><ToolGroupContent>{children}</ToolGroupContent></ToolGroupRoot>;
+  return <ToolGroupRoot variant="ghost" defaultOpen><ToolGroupTrigger count={group.indices.length} active={group.status.type === "running"} /><ToolGroupContent><div className={styles.trace}>{children}</div></ToolGroupContent></ToolGroupRoot>;
 }
 function Proposal({ proposal, beforeDocument, undone }: { proposal: AiEditProposalDetail; beforeDocument?: CareerDocumentBootstrap["document"] | undefined; undone?: boolean | undefined }) {
   const state = useContext(ChatContext)!; const router = useRouter();
