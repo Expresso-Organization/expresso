@@ -177,7 +177,7 @@ K0은 맥에서 이미 끝냈다. 로컬 DB에서 한국어 위주 공고 295건
 $koJobs = "$repo\var\ml-data\ko-postings\jobs-with-requirements.jsonl"
 $ko = "$repo\var\ml-data\experiments\ko-eval-v1\data"
 $koLabels = "$repo\var\ml-data\experiments\ko-eval-v1\labels"
-Get-FileHash $koJobs -Algorithm SHA256                          # 맥에서 낸 값과 같아야 한다(5절 아래)
+Get-FileHash $koJobs -Algorithm SHA256                          # 아래 표의 값과 같아야 한다
 
 # K1 합성 프로필 원본 폴더(<run-root>\profiles\<분할>\*.json)를 찾는다
 Get-ChildItem "$repo\var\ml-data" -Recurse -Directory -Filter profiles | Where-Object { Test-Path "$($_.FullName)\valid" } | Select-Object FullName
@@ -189,6 +189,14 @@ python scripts\ml-data\ko_eval_dataset.py --fit-data $data --profile-root $runRo
 # K3 Sonnet 5.5 교사 라벨. Claude Code에 로그인된 창에서 돌린다. 끊기면 같은 명령으로 이어 간다
 python scripts\ml-data\ko_teacher_labels.py --data $ko --output $koLabels --workers 2
 ```
+
+| 파일 (2026-11-10 맥 로컬 DB `expresso`) | 값 |
+| --- | --- |
+| 공고 | 501건 중 한국어 위주 295건 |
+| 직군 | 백엔드 84 · 데이터 40 · 개발 그 외 39 · 보안 37 · ML · AI 26 · 프론트엔드 25 · 인프라 · 플랫폼 24 · 모바일 12 · QA 8 |
+| 요건 분해 | 295건 모두 성공 · 서비스 추출기 기본 모델(`opus`) · 공고당 약 18초 |
+| 분할(공고 ID 해시) | 검증 165 · 평가 130. 대응 직군은 두 분할 모두 5건 이상(최소 모바일 6 · 6) |
+| `jobs-with-requirements.jsonl` SHA-256 | `b97aa38dfc9026673ea6032768911780a2edbf6408bff51b7e97d83880d1f010` (2,162,800바이트) |
 
 - K2의 `data-manifest.json`에서 프로필 수, 대응 직군이 없어 빠진 프로필 수(`excludedProfiles`), 요건 분해가 빠진 공고 수(`jobsWithoutRequirements`)를 먼저 본다.
 - K3는 교사 호출이 프로필당 1회이고, 걸린 칸이 있으면 같은 대화에서 고친다. `label-summary.json`의 `failedProfiles`가 비어야 `suitability-labels.jsonl`이 생긴다.
