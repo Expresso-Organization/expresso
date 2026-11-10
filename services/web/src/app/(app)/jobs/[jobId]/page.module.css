@@ -549,6 +549,11 @@
     color: var(--ex-fg-body);
     white-space: nowrap;
   }
+
+  /* 에스프레소 지면 위의 이름은 아이콘과 같은 글자색이다. 위 규칙이 본문색을 따로 지정하므로 덮어쓴다. */
+  .headPrimary .headLabel {
+    color: var(--ex-fg-on-accent);
+  }
 }
 
 /* 접힌 채 응답이 진행 중일 때의 점. */
