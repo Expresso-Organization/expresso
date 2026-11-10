@@ -109,7 +109,7 @@
 .splitButton {
   display: flex;
   align-items: stretch;
-  border-radius: 8px;
+  border-radius: var(--ex-radius-control);
   overflow: hidden;
   border: 1px solid var(--ex-border);
 }
@@ -157,7 +157,7 @@
   flex: 1;
   min-height: 0;
   border: 1px solid var(--ex-border-hair);
-  border-radius: 10px;
+  border-radius: var(--ex-radius-card);
   overflow: auto;
 }
 
@@ -245,7 +245,7 @@
   letter-spacing: 0.08em;
   color: var(--ex-accent-text);
   background: var(--ex-accent-surface);
-  border-radius: 4px;
+  border-radius: var(--ex-radius-pill);
   padding: 2px 5px;
   white-space: nowrap;
   flex-shrink: 0;
@@ -271,7 +271,7 @@
   font-size: var(--ex-text-2xs);
   color: var(--ex-fg-body);
   background: var(--ex-border-inner);
-  border-radius: 5px;
+  border-radius: var(--ex-radius-pill);
   padding: 3px 8px;
   white-space: nowrap;
 }
@@ -355,7 +355,7 @@
 .mixCard {
   background: var(--ex-bg);
   border: 1px solid var(--ex-border);
-  border-radius: 13px;
+  border-radius: var(--ex-radius-card);
   padding: 15px 17px;
 }
 
@@ -612,7 +612,7 @@
   color: var(--ex-fg-on-accent);
   background: var(--ex-accent);
   border: none;
-  border-radius: 999px;
+  border-radius: var(--ex-radius-control);
   padding: 13px;
   text-align: center;
   transition:

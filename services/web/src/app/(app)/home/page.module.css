@@ -80,7 +80,7 @@
   color: var(--ex-fg-body);
   background: var(--ex-bg);
   border: 1px solid var(--ex-border);
-  border-radius: 999px;
+  border-radius: var(--ex-radius-pill);
   padding: 7px 13px;
   white-space: nowrap;
   transition: border-color var(--ex-motion-quick);
@@ -101,7 +101,7 @@
 .card {
   background: var(--ex-bg);
   border: 1px solid var(--ex-border);
-  border-radius: 16px;
+  border-radius: var(--ex-radius-card);
   overflow: hidden;
 }
 
@@ -219,7 +219,7 @@
   color: var(--ex-fg-on-accent);
   background: var(--ex-accent);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--ex-radius-control);
   padding: 9px 14px;
   flex-shrink: 0;
   white-space: nowrap;
@@ -259,7 +259,7 @@
 .plainCard {
   background: var(--ex-bg);
   border: 1px solid var(--ex-border);
-  border-radius: 16px;
+  border-radius: var(--ex-radius-card);
   padding: 17px 20px;
 }
 
@@ -284,7 +284,7 @@
 
 .newPortfolio {
   border: 1px dashed var(--ex-border-firm);
-  border-radius: 14px;
+  border-radius: var(--ex-radius-card);
   background: var(--ex-bg-hover);
   display: flex;
   align-items: center;
@@ -323,7 +323,7 @@
 .firstRun {
   flex-shrink: 0;
   border: 1px dashed var(--ex-border-firm);
-  border-radius: 16px;
+  border-radius: var(--ex-radius-card);
   background: var(--ex-bg);
   padding: 34px;
   display: flex;
@@ -345,7 +345,7 @@
   color: var(--ex-fg-on-accent);
   background: var(--ex-accent);
   border: none;
-  border-radius: 999px;
+  border-radius: var(--ex-radius-control);
   padding: 12px 24px;
   display: inline-flex;
   align-items: center;
@@ -438,7 +438,7 @@
   font-size: var(--ex-text-2xs);
   color: var(--ex-status-warning-text);
   background: var(--ex-status-warning-surface);
-  border-radius: 5px;
+  border-radius: var(--ex-radius-pill);
   padding: 2px 7px;
   white-space: nowrap;
 }
@@ -863,7 +863,7 @@ a.hbarRow:focus-visible {
   min-width: 0;
   overflow: hidden;
   border: 1px solid var(--ex-border);
-  border-radius: 14px;
+  border-radius: var(--ex-radius-card);
   background: var(--ex-bg);
   transition:
     box-shadow 0.2s ease,
@@ -908,7 +908,7 @@ a.hbarRow:focus-visible {
   align-items: center;
   gap: 6px;
   font-size: var(--ex-text-2xs);
-  border-radius: 6px;
+  border-radius: var(--ex-radius-pill);
   padding: 3px 8px;
   white-space: nowrap;
   box-shadow: var(--ex-elevation-raised);
