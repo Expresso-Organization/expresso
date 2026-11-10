@@ -20,6 +20,8 @@ date: 2026-11-10
 - [ ] 모델 B는 평가 분할 (공고, 프로필) 쌍마다 기록을 채점하고 NDCG@10을 낸다. 기록 정답은 교사가 그 기록을 연결한 요건 충족 점수의 최댓값, 연결이 없으면 0이다(9.2 시험내용). 정답이 모두 0인 쌍은 빼고 그 수를 기록한다.
 - [ ] 규칙 baseline은 서비스 코드 `calculateExplainableMatch()` · `rankMaterials()`를 그대로 호출한다. Python으로 다시 짜지 않는다.
 - [ ] ONNX 내보내기와 CPU 지연 측정은 4가지 요청(프로필 1건 임베딩 · 공고 N건 MLP 채점 · Cross-Encoder K쌍 · 기록 R건 채점)의 p50 · p95 · 처리량을 출력한다.
+- [ ] Decisions API(`gpt-6-luna`) · Jev(`jev-1.14.0`)로 검증 · 평가 분할의 모델 A 쌍과 모델 B 기록을 채점하고, `eval-cross`가 그 점수 파일로 같은 지표를 낸다. 평가 지표는 교사별(`labelSource`)로도 나눈다.
+- [ ] API 요청은 본문 해시로 캐시해 다시 보내지 않고, 429 · 529 · 5xx만 다시 보낸다. 거절한 질문은 점수 없음으로 남긴다.
 - [ ] 새 테스트는 다운로드 없이 맥에서 돌고 `pnpm ml:data:test`에 들어간다.
 
 ## 설계
@@ -33,6 +35,7 @@ date: 2026-11-10
 - `match_evaluation.py` — torch 없는 순수 함수. `roc_curve` · `pairwise_accuracy(min_gap)` · `screening_recall_curve` · `record_relevance` · `record_ndcg` · `rule_requirements(job)`(JTH 기술 필드를 `;`로 나눠 `technologies`, 필요 연차를 `roles`의 「N years」로) · `next_version` · `build_metadata`.
 - `rule_baselines.mjs` — Node 24 타입 제거로 `services/backend/src/modules/jobs/match-score.ts` · `materials/ranking.ts`를 직접 import해 JSONL 요청을 채점한다. 요건을 못 읽은 공고(`null`)는 순위의 맨 뒤에 두고 건수를 기록한다.
 - `match_experiments.py` — 하위 명령 `token-stats` · `encoders` · `train-bi` · `eval-cross`(모델 A 지표 + 모델 B).
+- `match_api_scorer.py` — 공급자 표(엔드포인트 · 모델 · 키 변수 · 단가 · 점수 이름), 교사 루브릭 5등급 score 질문, 요청 캐시 · 재시도 · 동시 요청, `scores.jsonl` · `record-scores.jsonl` · `summary.json`. `eval-cross`는 `--record-scores`를 `--cross-checkpoint` 대신 받고, 학습 분할 점수 없이 돈다.
 - `match_onnx.py` — `export`(인코더 · MLP · Cross-Encoder를 ONNX로, 선택적으로 INT8 동적 양자화) · `latency`(입력 길이를 인자로 받아 무작위 토큰으로 측정. 지연은 내용이 아니라 길이로 정해진다).
 
 ```mermaid
@@ -64,6 +67,8 @@ flowchart TD
 - Recall@K 풀의 공고 대부분은 그 프로필에 라벨이 없다. 라벨 없는 공고는 부적합으로 센다. 그래서 Recall@K는 낮은 쪽으로 치우친 값이다.
 - JTH 공고 필드는 영어이고 프로필은 한국어다. 규칙 baseline이 매우 낮게 나와도 서비스 규칙의 실제 한계다.
 - Qwen3는 `transformers>=4.51.0`이 필요하다(모델 카드). 고정 버전 4.55.4는 충족한다.
+- 파일럿 라벨 9,260건이 GPT-5.6 Luna 판정이다. 같은 계열 `gpt-6-luna`는 그 라벨과 겹치기 쉬우므로 Sonnet 라벨 740건 쪽 지표를 따로 본다.
+- 두 API 문서 모두 한국어 지원을 언급하지 않는다. `fit-v1` 공고는 영어라 한국어 성능은 답하지 못한다.
 
 ## 완료 기준
 

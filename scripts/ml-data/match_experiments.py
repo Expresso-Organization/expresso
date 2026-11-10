@@ -131,14 +131,21 @@ def split_metrics(pairs: Sequence[dict[str, Any]], predictions: Sequence[float |
 
 
 def bootstrap_against(
-    pairs: Sequence[dict[str, Any]], candidate: Sequence[float], baseline: Sequence[float | None], split: str = "test"
+    pairs: Sequence[dict[str, Any]], candidate: Sequence[float | None], baseline: Sequence[float | None], split: str = "test"
 ) -> dict[str, Any]:
     """평가 프로필 단위 paired bootstrap. 차이는 후보 − baseline이다."""
-    candidate_rows = _rows(pairs, candidate, split)
-    baseline_rows = [{**row, "prediction": RULE_NULL_RANK_SCORE if row["prediction"] is None else row["prediction"]} for row in _rows(pairs, baseline, split)]
+    def ranked(values: Sequence[float | None]) -> list[dict[str, Any]]:
+        return [{**row, "prediction": RULE_NULL_RANK_SCORE if row["prediction"] is None else row["prediction"]} for row in _rows(pairs, values, split)]
+
+    candidate_rows = ranked(candidate)
+    baseline_rows = ranked(baseline)
     result = {"ndcgAt10": paired_bootstrap(profile_ndcg(candidate_rows), profile_ndcg(baseline_rows), iterations=BOOTSTRAP_ITERATIONS)}
-    # MAE는 baseline 점수가 있는 쌍끼리만 비교한다.
-    scored = {(row["profileId"], row["jobId"]) for row in _rows(pairs, baseline, split) if row["prediction"] is not None}
+    # MAE는 두 쪽 모두 점수가 있는 쌍끼리만 비교한다(규칙 함수 null · API 거절 제외).
+    scored = {
+        (row["profileId"], row["jobId"])
+        for row, other in zip(_rows(pairs, baseline, split), _rows(pairs, candidate, split))
+        if row["prediction"] is not None and other["prediction"] is not None
+    }
     candidate_mae = profile_mae([row for row in candidate_rows if (row["profileId"], row["jobId"]) in scored])
     baseline_mae = profile_mae([row for row in baseline_rows if (row["profileId"], row["jobId"]) in scored])
     if candidate_mae:
@@ -453,15 +460,21 @@ def model_b(
     labels: Sequence[dict[str, Any]],
     split: str,
     *,
-    cross: Callable[[Sequence[dict[str, str]]], tuple[list[float], dict[str, Any]]],
+    cross: Callable[[Sequence[dict[str, str]]], tuple[list[float], dict[str, Any]]] | None,
     encoder: SentenceEncoder,
     node: str,
+    record_scores: dict[tuple[str, str, str], float | None] | None = None,
+    model_name: str = "cross-encoder",
 ) -> dict[str, Any]:
     """설계서 9.2 모델 B: (공고, 기록 1건) 점수 순서를 교사의 기록 단위 판정과 비교한다.
 
     Cross-Encoder 입력은 학습 때와 같은 틀(`build_selected_profile_text`)에 기록 하나만 넣는다.
     학습 때는 기록 최대 8개 묶음이었으므로, 이 시험이 그 입력 단위 차이의 영향을 본다.
+    외부 API(`match_api_scorer.py`)로 매긴 점수는 `record_scores`로 받는다. 점수가 없는 쌍과
+    거절한 기록이 있는 쌍은 그 모델의 평가에서 빼고 수를 남긴다.
     """
+    if (cross is None) == (record_scores is None):
+        raise ValueError("cross scorer or record scores, exactly one")
     profiles = {str(row["profileId"]): row for row in dataset["profiles"]}
     jobs = {str(row["jobId"]): row for row in dataset["jobs"]}
     selected = [label for label in labels if label.get("split") == split]
@@ -493,13 +506,21 @@ def model_b(
                 ],
             }
         )
-    cross_scores, cross_lengths = cross(cross_rows)
+    if cross is not None:
+        cross_scores, cross_lengths = cross(cross_rows)
+    else:
+        cross_lengths = None
+        cross_scores = [record_scores.get((str(selected[group_index]["profileId"]), str(selected[group_index]["jobId"]), record_id)) for group_index, record_id in owners]
     record_vectors = encoder.embed_records(record_texts)
     job_vectors = encoder.embed_jobs(job_texts)
     cross_by_group: dict[int, dict[str, float]] = defaultdict(dict)
     cosine_by_group: dict[int, dict[str, float]] = defaultdict(dict)
+    unscored: set[int] = set()
     for position, ((group_index, record_id), score) in enumerate(zip(owners, cross_scores)):
-        cross_by_group[group_index][record_id] = float(score)
+        if score is None:
+            unscored.add(group_index)
+        else:
+            cross_by_group[group_index][record_id] = float(score)
         cosine_by_group[group_index][record_id] = float((record_vectors[position] * job_vectors[group_index]).sum())
     rule_by_group: dict[int, dict[str, float]] = {}
     for row in run_rule("materials", material_requests, node=node):
@@ -507,15 +528,16 @@ def model_b(
         # rankMaterials()가 정한 순서(동점 처리 포함)를 그대로 쓰도록 순위를 점수로 바꾼다.
         rule_by_group[int(row["id"])] = {item["id"]: float(len(ranked) - position) for position, item in enumerate(ranked)}
 
-    def evaluate(scores: dict[int, dict[str, float]]) -> dict[str, Any]:
-        return record_ndcg([{"relevance": relevance[index], "scores": scores.get(index, {})} for index in range(len(selected))])
+    def evaluate(scores: dict[int, dict[str, float]], *, skip: frozenset[int] | set[int] = frozenset()) -> dict[str, Any]:
+        groups = [{"relevance": relevance[index], "scores": scores.get(index, {})} for index in range(len(selected)) if index not in skip]
+        return {**record_ndcg(groups), "unscoredPairs": len(skip)}
 
     return {
         "split": split,
         "pairs": len(selected),
         "records": len(cross_rows),
         "crossInputLengths": cross_lengths,
-        "models": {"cross-encoder": evaluate(cross_by_group), "frozen-cosine": evaluate(cosine_by_group), RULE_MATERIALS: evaluate(rule_by_group)},
+        "models": {model_name: evaluate(cross_by_group, skip=unscored), "frozen-cosine": evaluate(cosine_by_group), RULE_MATERIALS: evaluate(rule_by_group)},
     }
 
 
@@ -527,33 +549,63 @@ def cmd_eval_cross(arguments: argparse.Namespace) -> dict[str, Any]:
     version = next_version(arguments.output, "cross", DATASET_VERSION)
     directory = arguments.output / version
     by_pair = {
-        (row["profileId"], row["jobId"]): float(row["prediction"])
+        (row["profileId"], row["jobId"]): None if row["prediction"] is None else float(row["prediction"])
         for row in pilot._read_jsonl(arguments.cross_scores)
         if row["model"] == arguments.cross_model_name
     }
-    missing = [pair for pair in pairs if (pair["profileId"], pair["jobId"]) not in by_pair]
+    # 지표는 검증 · 평가 분할만 쓴다. 외부 API 점수에는 학습 분할이 없다.
+    missing = [pair for pair in pairs if pair["split"] in {"valid", "test"} and (pair["profileId"], pair["jobId"]) not in by_pair]
     if missing:
-        raise ValueError(f"cross scores miss {len(missing)} pairs")
-    cross = [by_pair[(pair["profileId"], pair["jobId"])] for pair in pairs]
+        raise ValueError(f"cross scores miss {len(missing)} valid/test pairs for {arguments.cross_model_name}")
+    cross = [by_pair.get((pair["profileId"], pair["jobId"])) for pair in pairs]
     lexical, _ = pilot.run_lexical_baselines(dataset)
     rule = rule_match_scores(dataset, [(row["profileId"], row["jobId"]) for row in pairs], node=arguments.node)
     predictions: dict[str, Sequence[float | None]] = {arguments.cross_model_name: cross, "char_tfidf": lexical["char_tfidf"], RULE_MODEL: rule}
-    scorer, scorer_info = load_cross_scorer(arguments.cross_base_model, arguments.cross_checkpoint, device=arguments.device, batch_size=arguments.cross_batch_size)
+    scorer = None
+    record_scores = None
+    if arguments.cross_checkpoint:
+        scorer, scorer_info = load_cross_scorer(arguments.cross_base_model, arguments.cross_checkpoint, device=arguments.device, batch_size=arguments.cross_batch_size)
+    elif arguments.record_scores:
+        record_scores = {
+            (str(row["profileId"]), str(row["jobId"]), str(row["recordId"])): row["prediction"]
+            for row in pilot._read_jsonl(arguments.record_scores)
+            if row["model"] == arguments.cross_model_name
+        }
+        scorer_info = {"model": arguments.cross_model_name, "recordScores": str(arguments.record_scores)}
+    else:
+        scorer_info = {"model": arguments.cross_model_name}
+    label_source = {(str(row["profileId"]), str(row["jobId"])): str(row.get("labelSource")) for row in labels}
     encoder, _ = load_encoder(arguments.encoder, dataset, arguments)
     metrics = {
         "schemaVersion": "expresso-match-model-metrics-v1",
         "version": version,
         "createdAt": _now(),
         "modelA": {
-            name: {"valid": split_metrics(pairs, values, "valid", roc_points=False), "test": split_metrics(pairs, values, "test", roc_points=True)}
+            name: {
+                "valid": split_metrics(pairs, values, "valid", roc_points=False),
+                "test": split_metrics(pairs, values, "test", roc_points=True),
+                # 교사가 프로필을 나눠 맡았다. 같은 계열 모델끼리 판정이 겹치면 그 교사의 라벨에서만 높게 나온다.
+                "testByLabelSource": {
+                    source: split_metrics(
+                        [pair for pair in pairs if label_source.get((pair["profileId"], pair["jobId"])) == source],
+                        [value for pair, value in zip(pairs, values) if label_source.get((pair["profileId"], pair["jobId"])) == source],
+                        "test",
+                        roc_points=False,
+                    )
+                    for source in sorted({label_source.get((pair["profileId"], pair["jobId"])) for pair in pairs if pair["split"] == "test"})
+                },
+            }
             for name, values in predictions.items()
         },
         "comparisons": {
             f"{arguments.cross_model_name} - {baseline}": bootstrap_against(pairs, cross, predictions[baseline]) for baseline in (RULE_MODEL, "char_tfidf")
         },
         "modelB": {
-            split: model_b(dataset, labels, split, cross=scorer, encoder=encoder, node=arguments.node) for split in ("valid", "test")
-        },
+            split: model_b(dataset, labels, split, cross=scorer, record_scores=record_scores, model_name=arguments.cross_model_name, encoder=encoder, node=arguments.node)
+            for split in ("valid", "test")
+        }
+        if scorer is not None or record_scores is not None
+        else None,
         "modelBCosineEncoder": encoder.spec.model_id,
         "crossEncoder": scorer_info,
         "runtime": {**_runtime(arguments.device), "seconds": round(time.perf_counter() - started, 3)},
@@ -570,7 +622,7 @@ def cmd_eval_cross(arguments: argparse.Namespace) -> dict[str, Any]:
             hashes=dataset["hashes"],
             trained_at=_now(),
             code_commit=_git_commit(),
-            extra={"model": arguments.cross_model_name, "checkpoint": str(arguments.cross_checkpoint), "crossScores": str(arguments.cross_scores), **scorer_info},
+            extra={"checkpoint": str(arguments.cross_checkpoint) if arguments.cross_checkpoint else None, "crossScores": str(arguments.cross_scores), **scorer_info, "model": arguments.cross_model_name},
         ),
     )
     return {"version": version, "directory": str(directory)}
@@ -610,9 +662,11 @@ def build_parser() -> argparse.ArgumentParser:
     eval_cross = commands.add_parser("eval-cross")
     common(eval_cross)
     eval_cross.add_argument("--encoder", choices=sorted(ENCODERS), default="e5", help="모델 B 코사인 baseline 인코더")
-    eval_cross.add_argument("--cross-scores", type=Path, required=True, help="llm_suitability_train --mode cross가 쓴 cross-encoder/scores.jsonl")
-    eval_cross.add_argument("--cross-checkpoint", type=Path, required=True, help="같은 실행의 cross-encoder/trainable-state.pt")
-    eval_cross.add_argument("--cross-base-model", default=pilot.CROSS_ENCODER_MODEL_ID)
+    eval_cross.add_argument("--cross-scores", type=Path, required=True, help="llm_suitability_train --mode cross의 cross-encoder/scores.jsonl 또는 match_api_scorer.py의 scores.jsonl")
+    model_b_source = eval_cross.add_mutually_exclusive_group()
+    model_b_source.add_argument("--cross-checkpoint", type=Path, help="같은 실행의 cross-encoder/trainable-state.pt. 모델 B를 이 가중치로 채점한다")
+    model_b_source.add_argument("--record-scores", type=Path, help="match_api_scorer.py가 쓴 record-scores.jsonl. 모델 B 점수를 이 파일에서 읽는다")
+    eval_cross.add_argument("--cross-base-model", default=pilot.CROSS_ENCODER_MODEL_ID, help="--cross-checkpoint의 기반 모델")
     eval_cross.add_argument("--cross-model-name", default=pilot.CROSS_ENCODER_ID)
     eval_cross.add_argument("--cross-batch-size", type=int, default=16)
     return parser

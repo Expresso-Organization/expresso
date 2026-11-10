@@ -16,6 +16,7 @@
 | E2 | 인코더 4종 비교 | `match_experiments.py encoders` | 검증 | `encoder-comparison.json` | 설계서 4.4 2단계 |
 | E3 | Bi-Encoder+MLP 학습 · 평가 | `match_experiments.py train-bi` | 검증 · 평가 | `bi-v1-NNN/` | 9.2 모델 A · ROC · Recall@K |
 | E4 | Cross-Encoder · 모델 B 평가 | `match_experiments.py eval-cross` | 검증 · 평가 | `cross-v1-NNN/` | 9.2 모델 A · 모델 B |
+| E4b | 외부 API 재정렬 · 모델 B (Decisions API · Jev) | `match_api_scorer.py` → `eval-cross` | 검증 · 평가 | `api-*/`, `cross-v1-NNN/` | Cross-Encoder 자리를 API로 바꿀지 |
 | E5 | ONNX 내보내기 · CPU 지연 | `match_onnx.py` | — | `latency-*.json` | 9.2 p95 지연 · 처리량 |
 
 평가 분할은 E3과 E4에서 한 번씩만 연다. E2가 검증 분할만으로 인코더를 정한 뒤에 연다
@@ -73,12 +74,38 @@
 - Cross-Encoder 입력은 학습 때와 같은 틀(`build_selected_profile_text`)에 기록 하나만 넣은 것이다. 학습 때는 기록 최대 8개 묶음이었으므로, 이 실험이 그 입력 단위 차이를 잰다.
 - 비교 대상은 같은 인코더의 (공고, 기록) 코사인과 `rankMaterials()`다.
 
+### 외부 API 재정렬 (E4b)
+
+Bi-Encoder+MLP는 직접 학습하고, 재정렬(모델 A)과 기록 채점(모델 B)만 외부 API가 맡는 안을 비교한다.
+맥 측정에서 Cross-Encoder가 1,536토큰 쌍당 약 1초였기 때문이다(5절).
+
+| 항목 | Decisions API | Jev |
+| --- | --- | --- |
+| 엔드포인트 | `POST https://api.openai.com/v1/decisions` | `POST https://api.typesafe.ai/v1/systemone` |
+| 모델 | `gpt-6-luna`(유일한 모델) | `jev-1.14.0`(2026-10-14 출시판으로 고정) |
+| 키 환경 변수 | `OPENAI_API_KEY` | `TYPESAFE_API_KEY` |
+| 입력 100만 토큰당 | $0.10 · 출력 무료 | $0.042 · 출력 무료 |
+| 한도 | 질문 1–400개 | 요청당 64k · 질문당 32k 토큰 |
+
+출처: [Decisions 가이드](https://developers.openai.com/api/docs/guides/decisions) · [Create decision](https://developers.openai.com/api/reference/resources/decisions/methods/create) · [Jev 모델](https://docs.typesafe.ai/models.md) · [System One API](https://docs.typesafe.ai/api/system-one.md)(2026-11-10 조회).
+
+- **요청 모양은 서비스가 부를 모양과 같다.**
+  - 모델 A는 입력에 프로필 1건을 두고, 후보 공고마다 score 질문을 하나씩 둔다.
+  - 모델 B는 입력에 공고 1건을 두고, 기록마다 score 질문을 하나씩 둔다.
+- **등급은 교사 루브릭의 근거 판정 5단계다.** not_evidenced부터 strong까지 낮은 것부터 두고, 설명 문장도 교사 프롬프트와 같다. 등급 번호 × 25가 루브릭 충족 점수이므로, API 점수 `score`(등급 번호의 기댓값)를 0–100으로 옮겨 교사 점수와 같은 눈금으로 읽는다. 보정은 하지 않는다.
+- **같은 요청은 다시 보내지 않는다.** 요청 본문 해시로 응답을 캐시하므로 끊긴 실행을 이어서 돈다.
+- **오류 처리:** 429 · 529 · 5xx는 지수 대기 후 다시 보낸다. 400 · 401 · 422는 바로 멈춘다(Jev 오류 표).
+- **거절:** API가 거절한 질문은 점수가 없다. 모델 A에서는 순위 맨 뒤에 두고 MAE에서 뺀다. 모델 B에서는 그 쌍을 빼고 `unscoredPairs`에 수를 남긴다.
+- **라벨 출처별 지표:** `eval-cross`는 평가 분할 지표를 교사별로도 나눠 낸다(`testByLabelSource`). 파일럿 라벨 9,260건을 GPT-5.6 Luna가, 740건을 Claude Sonnet이 만들었다. 그래서 같은 계열인 `gpt-6-luna`는 Luna 라벨에서만 높게 나올 수 있다. Sonnet 라벨에서의 값과 함께 본다.
+- **지연:** `summary.json`의 요청당 p50 · p95는 프로필 하나에 후보 공고 10개를 채점한 값이다. 5절의 「재정렬 10쌍」과 같은 단위다.
+
 ## 3. 결과를 읽을 때
 
 - **적합 공고가 있는 평가 프로필은 13명이다**(60점 이상 라벨 4.1%). ROC · Recall@K · MAP는 이 13명이 정한다.
 - **Recall@K는 낮은 쪽으로 치우친다.** 풀의 공고 대부분은 그 프로필에 라벨이 없고, 부적합으로 센다.
 - **규칙 baseline은 언어가 갈린다.** JTH 필드는 영어이고 프로필은 한국어다. 문자열이 그대로 들어 있어야 닿는 규칙 함수는 매우 낮게 나온다. 서비스에서도 영어 요건과 한국어 기록은 같은 이유로 닿지 않는다.
 - **순서 일치율이 파일럿 수치와 다르다.** 파일럿 0.8025 · 0.7903은 1점 차이도 셌다. 이번 `pairwiseMinGap5`는 설계서 정의(5점 이상)를 따른다. 파일럿 정의의 값도 `pairwiseAccuracy`에 함께 남는다.
+- **E4b는 한국어 공고를 답하지 못한다.** 두 API 문서 모두 언어 지원을 언급하지 않는다. 그런데 `fit-v1` 공고는 영어다. 서비스 공고는 로컬 DB 368건 중 212건이 한국어 위주다(본 학습 계획 3.1).
 - **지연은 구조와 입력 길이의 값이다.** 무작위 토큰과 학습 전 가중치로 잰다. 같은 구조면 학습한 가중치도 같은 시간이 걸린다. 맥과 운영 서버(aarch64 Ampere 4 vCPU, 공용 장비)는 CPU가 다르다. Cross-Encoder 유지 판정은 운영 서버에서 잰 값으로 한다(본 학습 계획 5.1).
 
 ## 4. 오늘 저녁 실행 절차 (학습 PC · PowerShell)
@@ -176,6 +203,29 @@ python scripts\ml-data\llm_suitability_train.py --data $data --labels $labels --
 # 이후 --cross-scores "$runs\pilot-cross\cross-encoder\scores.jsonl" --cross-checkpoint "$runs\pilot-cross\cross-encoder\trainable-state.pt"
 ```
 
+### E4b 외부 API 재정렬 · 모델 B
+
+E2 · E3과 GPU를 나눠 쓰지 않으므로 E2가 도는 동안 다른 창에서 돌려도 된다. 키는 이 창에서만 환경 변수로 둔다.
+파일이나 명령 기록에 남기지 않는다.
+
+```powershell
+$env:OPENAI_API_KEY = Read-Host "OpenAI API key"
+$env:TYPESAFE_API_KEY = Read-Host "TypeSafe API key"
+foreach ($p in "decisions", "jev") {
+  python scripts\ml-data\match_api_scorer.py --provider $p --data $data --labels $labels --output $runs --dry-run     # 요청 수 · 글자 수
+  python scripts\ml-data\match_api_scorer.py --provider $p --data $data --labels $labels --output $runs --limit 1     # 키 · 형식 확인
+  python scripts\ml-data\match_api_scorer.py --provider $p --data $data --labels $labels --output $runs
+}
+python scripts\ml-data\match_experiments.py eval-cross --data $data --labels $labels --output $runs --encoder <E2에서 정한 키> `
+  --cross-scores "$runs\api-decisions\scores.jsonl" --record-scores "$runs\api-decisions\record-scores.jsonl" --cross-model-name decisions-gpt-6-luna
+python scripts\ml-data\match_experiments.py eval-cross --data $data --labels $labels --output $runs --encoder <E2에서 정한 키> `
+  --cross-scores "$runs\api-jev\scores.jsonl" --record-scores "$runs\api-jev\record-scores.jsonl" --cross-model-name jev-1.14.0
+```
+
+- 요청 수는 모델 A가 검증 · 평가 프로필 160건, 모델 B가 검증 · 평가 쌍 1,600건이다. 비용은 `--dry-run` 글자 수와 실행 뒤 `summary.json`의 `estimatedUsd`로 확인한다.
+- 429가 이어지면 `--workers`를 줄인다.
+- Jev 키가 없으면 Decisions만 돌린다. Jev는 early access라 대기 목록을 거쳐 키를 받는다.
+
 ### E5 ONNX 내보내기 · 지연
 
 ```powershell
@@ -194,7 +244,7 @@ python scripts\ml-data\match_onnx.py latency --encoder "$runs\onnx\encoder" --ml
 ### 결과 가져오기
 
 `$runs` 아래의 JSON(`token-stats.json`, `encoder-comparison.json`, `bi-v1-*/metrics.json` · `metadata.json`,
-`cross-v1-*/metrics.json` · `metadata.json`, `latency-*.json`)만 이 브랜치의
+`cross-v1-*/metrics.json` · `metadata.json`, `api-*/summary.json`, `latency-*.json`)만 이 브랜치의
 `docs/assets/match-model-eval-2026-11-10/`에 커밋한다. 가중치 · 임베딩 캐시 · ONNX 파일은 올리지 않는다.
 가중치를 어디에 둘지는 본 학습 계획 5.4의 결정 사항이다.
 
