@@ -195,6 +195,51 @@ class ExperimentCommandTest(unittest.TestCase):
         self.assertEqual((model_b["pairs"], model_b["unscoredPairs"]), (0, SPLITS["test"] * len(SKILLS)))
         self.assertIsNone(metrics["crossEncoder"].get("maxLength"))
 
+    def build_ko_set(self) -> tuple[Path, Path]:
+        import ko_eval_dataset
+        import ko_teacher_labels
+        from ko_eval_fixture import FakeClaude, write_ko_inputs
+
+        fit, run_root, jobs = write_ko_inputs(Path(self.directory.name) / "ko-inputs")
+        data = Path(self.directory.name) / "ko-data"
+        labels = Path(self.directory.name) / "ko-labels"
+        ko_eval_dataset.build(fit, run_root, jobs, data)
+        ko_teacher_labels.run(ko_teacher_labels.build_parser().parse_args(["--data", str(data), "--output", str(labels), "--workers", "1"]), invoke=FakeClaude(), prefix=["claude"])
+        return data, labels
+
+    def test_train_on_fit_and_evaluate_on_korean_set(self) -> None:
+        data, labels = self.build_ko_set()
+        match_experiments.main(["train-bi", *self.common(), "--encoder", "fake", "--eval-data", str(data), "--eval-labels", str(labels)])
+        metrics = json.loads((self.output / "bi-v1-001" / "metrics.json").read_text(encoding="utf-8"))
+        ko_pairs = len((data / "candidate-manifest.jsonl").read_text(encoding="utf-8").splitlines())
+        model = metrics["models"]["expresso-fake-mlp-v1"]
+        self.assertEqual(model["valid"]["pairs"] + model["test"]["pairs"], ko_pairs)
+        self.assertEqual(metrics["evalDataset"]["pairs"], ko_pairs)
+        # 한국어 공고에는 서비스 요건이 붙어 있어 규칙 함수가 점수를 낸다.
+        self.assertEqual(metrics["models"][match_experiments.RULE_MODEL]["test"]["nullPredictions"], 0)
+        self.assertEqual(metrics["screeningRecall"]["pool"]["profiles"], 1)
+        # 학습 세트와 평가 세트의 임베딩 캐시는 다른 폴더다.
+        self.assertEqual(len(list((self.output / "embedding-cache").iterdir())), 2)
+        match_experiments.main(["encoders", *self.common(), "--encoders", "fake", "--eval-data", str(data), "--eval-labels", str(labels)])
+        comparison = json.loads((self.output / "encoder-comparison.json").read_text(encoding="utf-8"))
+        self.assertEqual(comparison["rows"]["fake"]["mlp"]["pairs"], model["valid"]["pairs"])
+
+    def test_eval_cross_scores_korean_pairs_directly_from_checkpoint(self) -> None:
+        import llm_suitability_train as pilot
+
+        data, labels = self.build_ko_set()
+        dataset = pilot.load_training_dataset(data, labels)
+
+        def fake_inputs(source, **_kwargs):
+            return [{**pair, "jobText": "공고", "profileText": f"기록 {pair['jobId']}"} for pair in source["pairs"]]
+
+        with patch.object(pilot, "prepare_cross_encoder_inputs", side_effect=fake_inputs):
+            match_experiments.main(["eval-cross", "--data", str(data), "--labels", str(labels), "--output", str(self.output), "--device", "cpu", "--encoder", "fake", "--cross-checkpoint", str(self.output / "unused.pt")])
+        metrics = json.loads((self.output / "cross-v1-001" / "metrics.json").read_text(encoding="utf-8"))
+        self.assertEqual(metrics["modelA"][CROSS_ENCODER_ID]["test"]["pairs"] + metrics["modelA"][CROSS_ENCODER_ID]["valid"]["pairs"], len(dataset["pairs"]))
+        self.assertEqual(metrics["modelACrossInputLengths"], {"maxLength": 0})
+        self.assertIsNotNone(metrics["modelB"]["test"]["models"][CROSS_ENCODER_ID]["ndcg"])
+
     def test_token_stats_needs_no_model_weights(self) -> None:
         with patch("transformers.AutoTokenizer.from_pretrained", return_value=FakeTokenizer()):
             match_experiments.main(["token-stats", *self.common(), "--encoders", "fake"])

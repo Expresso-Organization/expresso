@@ -11,6 +11,7 @@
 
 | 번호 | 실험 | 명령 | 여는 분할 | 산출물 | 채우는 자리 |
 | --- | --- | --- | --- | --- | --- |
+| K | 한국어 평가 세트 구성 · Sonnet 교사 라벨 | `ko_postings.mjs` → `ko_eval_dataset.py` → `ko_teacher_labels.py` | — | `ko-eval-v1/` | 성능 판정 기준 세트 |
 | E0 | 데이터 · 가중치 확인 | `Get-FileHash` | — | 해시 일치 여부 | 본 학습 계획 3.7 |
 | E1 | 인코더별 토큰 길이 | `match_experiments.py token-stats` | 전체(라벨 미사용) | `token-stats.json` | 본 학습 계획 3.2 |
 | E2 | 인코더 4종 비교 | `match_experiments.py encoders` | 검증 | `encoder-comparison.json` | 설계서 4.4 2단계 |
@@ -105,7 +106,8 @@ Bi-Encoder+MLP는 직접 학습하고, 재정렬(모델 A)과 기록 채점(모�
 - **Recall@K는 낮은 쪽으로 치우친다.** 풀의 공고 대부분은 그 프로필에 라벨이 없고, 부적합으로 센다.
 - **규칙 baseline은 언어가 갈린다.** JTH 필드는 영어이고 프로필은 한국어다. 문자열이 그대로 들어 있어야 닿는 규칙 함수는 매우 낮게 나온다. 서비스에서도 영어 요건과 한국어 기록은 같은 이유로 닿지 않는다.
 - **순서 일치율이 파일럿 수치와 다르다.** 파일럿 0.8025 · 0.7903은 1점 차이도 셌다. 이번 `pairwiseMinGap5`는 설계서 정의(5점 이상)를 따른다. 파일럿 정의의 값도 `pairwiseAccuracy`에 함께 남는다.
-- **E4b는 한국어 공고를 답하지 못한다.** 두 API 문서 모두 언어 지원을 언급하지 않는다. 그런데 `fit-v1` 공고는 영어다. 서비스 공고는 로컬 DB 368건 중 212건이 한국어 위주다(본 학습 계획 3.1).
+- **성능은 한국어 세트로 판정한다.** `fit-v1` 공고는 영어(JTH)라 서비스 성능을 말하지 못한다. 모델은 아직 영어 공고로만 학습했으므로, 한국어 세트 수치는 학습과 평가의 공고 원천이 다른 조건의 값이다.
+- **한국어 세트 정답은 Sonnet 5.5 교사 하나다.** 사람 판정과 맞춰 보지 않았다(사용자 결정). 교사와 사람의 일치도는 이 실험이 답하지 않는다.
 - **지연은 구조와 입력 길이의 값이다.** 무작위 토큰과 학습 전 가중치로 잰다. 같은 구조면 학습한 가중치도 같은 시간이 걸린다. 맥과 운영 서버(aarch64 Ampere 4 vCPU, 공용 장비)는 CPU가 다르다. Cross-Encoder 유지 판정은 운영 서버에서 잰 값으로 한다(본 학습 계획 5.1).
 
 ## 4. 오늘 저녁 실행 절차 (학습 PC · PowerShell)
@@ -161,46 +163,78 @@ PowerShell은 대문자로 출력한다.
 
 해시가 다르면 E1 이후 수치를 파일럿과 나란히 읽을 수 없다. 이때는 진행하지 말고 차이를 먼저 확인한다.
 
+### K 한국어 평가 세트
+
+**성능 판정은 한국어 세트로 한다**(2026-11-10 결정). `fit-v1`은 학습 데이터로만 쓴다. 영어 `fit-v1` 평가 분할 수치는
+학습 분포 안의 참고값이다. 정답은 Claude Sonnet 5.5 교사 하나가 매기고 사람 판정은 두지 않는다(사용자 결정).
+
+K0은 맥에서 이미 끝냈다. 로컬 DB에서 한국어 위주 공고 295건을 내보내고 서비스 요건 추출기로 요건을 붙였다.
+결과 `var/ml-data/ko-postings/jobs-with-requirements.jsonl`을 PC의 같은 자리로 옮긴다. 공고 원문이라 저장소에는
+올리지 않는다.
+
+```powershell
+$koJobs = "$repo\var\ml-data\ko-postings\jobs-with-requirements.jsonl"
+$ko = "$repo\var\ml-data\experiments\ko-eval-v1\data"
+$koLabels = "$repo\var\ml-data\experiments\ko-eval-v1\labels"
+Get-FileHash $koJobs -Algorithm SHA256                          # 맥에서 낸 값과 같아야 한다(5절 아래)
+
+# K1 합성 프로필 원본 폴더(<run-root>\profiles\<분할>\*.json)를 찾는다
+Get-ChildItem "$repo\var\ml-data" -Recurse -Directory -Filter profiles | Where-Object { Test-Path "$($_.FullName)\valid" } | Select-Object FullName
+$runRoot = "<위에서 찾은 profiles 폴더의 부모>"
+
+# K2 세트 구성: 검증 · 평가 프로필 × 한국어 공고 10건(같은 직군 5 · 인접 3 · 무작위 2)
+python scripts\ml-data\ko_eval_dataset.py --fit-data $data --profile-root $runRoot --jobs $koJobs --output $ko
+
+# K3 Sonnet 5.5 교사 라벨. Claude Code에 로그인된 창에서 돌린다. 끊기면 같은 명령으로 이어 간다
+python scripts\ml-data\ko_teacher_labels.py --data $ko --output $koLabels --workers 2
+```
+
+- K2의 `data-manifest.json`에서 프로필 수, 대응 직군이 없어 빠진 프로필 수(`excludedProfiles`), 요건 분해가 빠진 공고 수(`jobsWithoutRequirements`)를 먼저 본다.
+- K3는 교사 호출이 프로필당 1회이고, 걸린 칸이 있으면 같은 대화에서 고친다. `label-summary.json`의 `failedProfiles`가 비어야 `suitability-labels.jsonl`이 생긴다.
+- 실패한 프로필이 있으면 같은 명령을 다시 친다. 실패한 프로필만 새 대화로 다시 부른다.
+- 구독 세션 한도에 걸리면 멈춘다. 한도가 풀린 뒤 같은 명령으로 이어 간다.
+
 ### E1 토큰 길이
 
 ```powershell
-python scripts\ml-data\match_experiments.py token-stats --data $data --labels $labels --output $runs
+python scripts\ml-data\match_experiments.py token-stats --data $ko --labels $koLabels --output $runs
 ```
 
-### E2 인코더 비교 (검증 분할)
+### E2 인코더 비교 (한국어 검증 분할)
 
 ```powershell
-python scripts\ml-data\match_experiments.py encoders --data $data --labels $labels --output $runs --encoders e5 kure bge-m3 qwen3
+python scripts\ml-data\match_experiments.py encoders --data $data --labels $labels --eval-data $ko --eval-labels $koLabels --output $runs --encoders e5 kure bge-m3 qwen3
 ```
 
-- `e5` 행의 검증 NDCG@10이 파일럿 검증값 0.9406에 가까운지 먼저 본다. sentence-transformers가 같은 mean pooling을 하므로 같은 범위여야 한다.
-- 인코더는 검증 NDCG@10이 가장 높은 것으로 정한다(설계서 9.2 주요 지표). 차이가 작으면 시간 · 메모리 · 벡터 용량을 함께 보고 사람이 정한다.
+- 학습과 조기 종료는 `fit-v1`(학습 · 검증 분할)로 하고, 비교 지표는 한국어 세트의 검증 분할이다.
+- 인코더는 한국어 검증 NDCG@10이 가장 높은 것으로 정한다(설계서 9.2 주요 지표). 차이가 작으면 시간 · 메모리 · 벡터 용량을 함께 보고 사람이 정한다.
+- E5는 512토큰에서 자른다. 한국어 공고 원문은 중앙값 3,097자라 대부분 잘린다. 잘린 비율은 `inputLengths.evalData`에 있다.
 
 ### E3 Bi-Encoder+MLP 학습 · 평가
 
 ```powershell
-python scripts\ml-data\match_experiments.py train-bi --data $data --labels $labels --output $runs --encoder <E2에서 정한 키>
+python scripts\ml-data\match_experiments.py train-bi --data $data --labels $labels --eval-data $ko --eval-labels $koLabels --output $runs --encoder <E2에서 정한 키>
 ```
 
-E2의 임베딩 캐시를 다시 읽으므로 이번 실행에는 임베딩 측정값이 없다. `metrics.json`의 `embedding`은
-E2에서 같은 인코더 · 같은 최대 길이로 잰 값을 `source: encoder-comparison.json`과 함께 옮겨 둔다.
+- `metrics.json`의 모델 지표 · ROC · 스크리닝 Recall@K는 한국어 세트로 낸 값이다. 스크리닝 풀은 한국어 평가 분할 공고 전체다.
+- 기준선(코사인 · TF-IDF · BM25)은 한국어 세트에 학습 분할이 없으므로 검증 분할에서 점수를 보정한다.
+- E2의 임베딩 캐시를 다시 읽으므로 이번 실행에는 임베딩 측정값이 없다. `metrics.json`의 `embedding`은 E2에서 잰 값을 `source: encoder-comparison.json`과 함께 옮겨 둔다.
 
 ### E4 Cross-Encoder · 모델 B
 
-파일럿 가중치가 있으면 그대로 쓴다.
+파일럿 가중치로 한국어 쌍을 직접 채점한다. 기록 선택은 학습 때와 같이 E5 코사인 상위 기록이다.
 
 ```powershell
-python scripts\ml-data\match_experiments.py eval-cross --data $data --labels $labels --output $runs --encoder <E2에서 정한 키> `
-  --cross-scores "$exp\models-llm-v1\cross-encoder\scores.jsonl" `
-  --cross-checkpoint "$exp\models-llm-v1\cross-encoder\trainable-state.pt"
+python scripts\ml-data\match_experiments.py eval-cross --data $ko --labels $koLabels --output $runs --encoder <E2에서 정한 키> `
+  --cross-checkpoint "$exp\models-llm-v1\cross-encoder\trainable-state.pt" `
+  --e5-model-path "C:\Users\parkm\.cache\huggingface\hub\models--intfloat--multilingual-e5-base\snapshots\d128750597153bb5987e10b1c3493a34e5a4502a"
 ```
 
-가중치가 없으면 파일럿 방식으로 다시 학습한 뒤 같은 명령을 친다. `--e5-model-path` · `--cross-model-path`의
-기본값은 PC의 Hugging Face 캐시 경로다.
+가중치가 없으면 파일럿 방식으로 다시 학습한 뒤 같은 명령을 친다. 학습은 `fit-v1`으로 한다.
 
 ```powershell
 python scripts\ml-data\llm_suitability_train.py --data $data --labels $labels --output "$runs\pilot-cross" --mode cross
-# 이후 --cross-scores "$runs\pilot-cross\cross-encoder\scores.jsonl" --cross-checkpoint "$runs\pilot-cross\cross-encoder\trainable-state.pt"
+# 이후 --cross-checkpoint "$runs\pilot-cross\cross-encoder\trainable-state.pt"
 ```
 
 ### E4b 외부 API 재정렬 · 모델 B
@@ -212,19 +246,20 @@ E2 · E3과 GPU를 나눠 쓰지 않으므로 E2가 도는 동안 다른 창에�
 $env:OPENAI_API_KEY = Read-Host "OpenAI API key"
 $env:TYPESAFE_API_KEY = Read-Host "TypeSafe API key"
 foreach ($p in "decisions", "jev") {
-  python scripts\ml-data\match_api_scorer.py --provider $p --data $data --labels $labels --output $runs --dry-run     # 요청 수 · 글자 수
-  python scripts\ml-data\match_api_scorer.py --provider $p --data $data --labels $labels --output $runs --limit 1     # 키 · 형식 확인
-  python scripts\ml-data\match_api_scorer.py --provider $p --data $data --labels $labels --output $runs
+  python scripts\ml-data\match_api_scorer.py --provider $p --data $ko --labels $koLabels --output $runs --dry-run     # 요청 수 · 글자 수
+  python scripts\ml-data\match_api_scorer.py --provider $p --data $ko --labels $koLabels --output $runs --limit 1     # 키 · 형식 확인
+  python scripts\ml-data\match_api_scorer.py --provider $p --data $ko --labels $koLabels --output $runs
 }
-python scripts\ml-data\match_experiments.py eval-cross --data $data --labels $labels --output $runs --encoder <E2에서 정한 키> `
+python scripts\ml-data\match_experiments.py eval-cross --data $ko --labels $koLabels --output $runs --encoder <E2에서 정한 키> `
   --cross-scores "$runs\api-decisions\scores.jsonl" --record-scores "$runs\api-decisions\record-scores.jsonl" --cross-model-name decisions-gpt-6-luna
-python scripts\ml-data\match_experiments.py eval-cross --data $data --labels $labels --output $runs --encoder <E2에서 정한 키> `
+python scripts\ml-data\match_experiments.py eval-cross --data $ko --labels $koLabels --output $runs --encoder <E2에서 정한 키> `
   --cross-scores "$runs\api-jev\scores.jsonl" --record-scores "$runs\api-jev\record-scores.jsonl" --cross-model-name jev-1.14.0
 ```
 
-- 요청 수는 모델 A가 검증 · 평가 프로필 160건, 모델 B가 검증 · 평가 쌍 1,600건이다. 비용은 `--dry-run` 글자 수와 실행 뒤 `summary.json`의 `estimatedUsd`로 확인한다.
+- 요청 수는 모델 A가 한국어 세트 프로필 수만큼, 모델 B가 쌍 수만큼이다. 비용은 `--dry-run` 글자 수와 실행 뒤 `summary.json`의 `estimatedUsd`로 확인한다. 한국어 공고 원문이 길어 `fit-v1`보다 입력이 크다.
 - 429가 이어지면 `--workers`를 줄인다.
 - Jev 키가 없으면 Decisions만 돌린다. Jev는 early access라 대기 목록을 거쳐 키를 받는다.
+- 한국어 세트 정답은 Sonnet 교사라서, Luna 계열 Decisions API와 교사가 겹치는 문제가 없다.
 
 ### E5 ONNX 내보내기 · 지연
 
