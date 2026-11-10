@@ -54,6 +54,10 @@ export async function callAgent<T>(call: AgentCall): Promise<AgentResult<T>> {
     // 쓸 수 있는 도구 자체를 읽기 셋으로 제한한다. 쓰기 · 셸 도구는 목록에 없다.
     "--tools", call.tools.join(","),
     ...(call.tools.length ? ["--allowedTools", call.tools.join(",")] : []),
+    // 서버 계정의 사용자 설정(~/.claude/settings.json)을 읽지 않는다. 거기 있는 advisorModel(fable) ·
+    // effortLevel(xhigh) · 훅이 이 호출에도 붙는다 — advisor 는 --tools 로 꺼지지 않는다. 같은 설정을
+    // 읽던 패치노트 생성기는 PR 하나가 $0.04 에서 $0.47 로 늘었다(2026-11-10 실측). 로그인은 그대로 쓰인다.
+    "--setting-sources", "",
   ]
   const { stdout, stderr, code } = await new Promise<{ stdout: string; stderr: string; code: number }>((resolve, reject) => {
     const child = spawn(call.cli, args, {
