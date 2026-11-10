@@ -9,6 +9,7 @@ import type {
 import { useActionState, useEffect, useState, useTransition } from "react";
 
 import { Icon } from "@/components/ui/Icon";
+import { useShortcutLabel } from "@/hooks/use-shortcut-label";
 
 import type { EditorCheckpoint } from "./Editor";
 import {
@@ -60,6 +61,7 @@ export function ChatPanel({
   const [result, instruct, pending] = useActionState<EditResult, FormData>(
     instructAction, {},
   );
+  const sendShortcut = useShortcutLabel("↵");
   const [applied, apply, applying] = useActionState<EditResult, FormData>(
     applyProposalAction, {},
   );
@@ -212,7 +214,7 @@ export function ChatPanel({
             required
           />
           <div className={styles.inputActions}>
-            <span className={styles.inputShortcut}>⌘↵</span>
+            <span className={styles.inputShortcut}>{sendShortcut}</span>
             <button
               type="submit"
               className={styles.inputSend}

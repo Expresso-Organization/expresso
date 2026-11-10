@@ -17,6 +17,7 @@ date: 2026-11-10
 | `services/web/src/lib/shortcut.ts` (새로) | `isApplePlatform`, `shortcutLabel` |
 | `services/web/src/lib/shortcut.test.ts` (새로) | 두 함수 단위 테스트 |
 | `services/web/src/hooks/use-shortcut-label.ts` (새로) | 클라이언트 플랫폼을 읽는 훅 |
+| `services/web/src/hooks/use-shortcut-label.test.tsx` (새로) | 맥·윈도우·서버 렌더에서 훅이 그리는 글자 확인 |
 | `services/web/src/components/shell/SidebarNav.tsx` | `⌘K` 하드코딩을 훅으로 교체 |
 | `services/web/src/app/(app)/edit/[portfolioId]/EditorPanels.tsx` | `⌘↵`를 훅으로 교체 |
 | `services/web/src/app/(app)/edit/[portfolioId]/ElementChat.tsx` | `⌘↵`를 훅으로 교체 |

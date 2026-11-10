@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 
 import { Icon } from "@/components/ui/Icon";
+import { useShortcutLabel } from "@/hooks/use-shortcut-label";
 
 import { instructElementAction, restorePageAction, type ElementInstructResult } from "./edit-actions";
 import styles from "./page.module.css";
@@ -27,6 +28,7 @@ export function ElementChat({
   const [result, instruct, pending] = useActionState<ElementInstructResult, FormData>(instructElementAction, {});
   const [undone, undo, undoing] = useActionState(restorePageAction, {});
   const [kept, setKept] = useState<number | null>(null);
+  const sendShortcut = useShortcutLabel("↵");
   const settled = result.revision !== undefined && (kept === result.revision || undone.revision !== undefined);
 
   return (
@@ -120,7 +122,7 @@ export function ElementChat({
             required
           />
           <div className={styles.inputActions}>
-            <span className={styles.inputShortcut}>⌘↵</span>
+            <span className={styles.inputShortcut}>{sendShortcut}</span>
             <button type="submit" className={styles.inputSend} aria-label="보내기" disabled={pending}>
               <Icon name={pending ? "hourglass" : "arrow-up"} size={14} color="var(--ex-fg-on-accent)" />
             </button>

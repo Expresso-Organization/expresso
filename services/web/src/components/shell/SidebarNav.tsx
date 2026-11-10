@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { openSearch } from "@/components/CommandPalette";
 import { GlideMenu } from "@/components/ui/GlideMenu";
 import { Icon } from "@/components/ui/Icon";
+import { useShortcutLabel } from "@/hooks/use-shortcut-label";
 
 import styles from "./Sidebar.module.css";
 
@@ -52,6 +53,7 @@ export function sectionForPath(pathname: string): SidebarSection | null {
 
 export function SidebarNav({ jobCount }: { jobCount?: number | undefined }) {
   const active = sectionForPath(usePathname());
+  const searchShortcut = useShortcutLabel("K");
 
   return (
     <nav aria-label="주요 이동">
@@ -67,7 +69,7 @@ export function SidebarNav({ jobCount }: { jobCount?: number | undefined }) {
             <Icon name="magnifying-glass" size={14} color="var(--ex-fg-muted)" />
           </span>
           <span className={`${styles.copy} ${styles.primaryLabel}`}>검색</span>
-          <span className={`${styles.copy} ${styles.shortcut}`}>⌘K</span>
+          <span className={`${styles.copy} ${styles.shortcut}`}>{searchShortcut}</span>
         </button>
         {PRIMARY_ITEMS.map((item) => (
           <Link
