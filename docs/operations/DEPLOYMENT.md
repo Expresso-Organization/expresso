@@ -27,11 +27,11 @@ flowchart TD
     INSTALL --> CONTRACTS["contracts · database build"]
     CONTRACTS --> INFRA["MongoDB rs0 · Redis 준비"]
     INFRA --> MIGRATE["migration 계정 schema 적용"]
-    MIGRATE --> BUILD["API · Web build"]
+    MIGRATE --> BUILD["API build · Web은 .next-build에 build"]
     BUILD --> WORKER["Worker 재시작"]
     WORKER --> API["API 재시작"]
     API --> READY{"rs0·schema·Redis ready?"}
-    READY -->|예| WEB["Web 재시작"]
+    READY -->|예| WEB["Web 정지 · .next 교체 · 시작"]
     READY -->|아니오| STOP["중단 · 로그 보존"]
 ```
 
@@ -100,6 +100,8 @@ scripts/operations/deploy.sh <검증된-commit>
 
 스크립트는 `git checkout`으로 배포할 커밋에 간 직후, 그 커밋의 `deploy.sh`로 처음부터 다시 시작합니다. 로그에는 「새 배포 스크립트로 다시 시작」이 찍힙니다. git은 checkout할 때 파일을 지우고 새로 만들고, 이미 돌고 있는 bash는 이전 파일을 끝까지 읽습니다. 다시 시작하지 않으면 그 커밋이 바꾼 배포 단계가 그 배포에서 돌지 않습니다. 2026-11-03 #159 배포가 그랬습니다. 다시 시작한 스크립트는 배포 전 커밋을 `EXPRESSO_DEPLOY_PREVIOUS`로 넘겨받아 `.last-deployed-commit`에 씁니다.
 
+웹은 운영 웹이 쓰는 `services/web/.next`가 아니라 `services/web/.next-build`에 짓습니다. API가 준비되면 웹을 멈추고 `.next`를 `.next-prev`로, `.next-build`를 `.next`로 바꾼 뒤 다시 띄웁니다. 빌드하는 동안 사이트는 이전 판으로 열리고, 화면이 끊기는 시간은 웹이 다시 뜨는 몇 초입니다. 2026-11-10까지는 `.next`를 그 자리에서 다시 지어, 빌드하는 1~2분 동안 `/_next/static` 요청이 500을 내고 모든 화면이 「화면을 그리지 못했습니다」로 넘어갔습니다. 새 `.next/static`에는 이전 판 정적 파일을 7일까지 함께 둡니다. 배포 전에 열어 둔 탭이 옛 JS를 요청해도 404가 나지 않습니다.
+
 스크립트는 기존 MySQL volume을 참조하거나 삭제하지 않습니다. `down -v`도
 실행하지 않습니다. schema migration과 readiness가 통과하지 않으면 API를 준비된
 것으로 취급하지 않습니다.
@@ -125,6 +127,16 @@ pnpm --filter @expresso/backend admin revoke <email>
 그 계정의 기록과 포트폴리오가 모두 지워지고 되돌릴 수 없습니다.
 
 ## 실패와 복구
+
+새 웹 판에 문제가 있으면 다시 빌드하지 않고 직전 판으로 되돌립니다.
+
+```bash
+sudo systemctl stop expresso-web
+cd ~/expresso/services/web && mv .next .next-bad && mv .next-prev .next
+sudo systemctl start expresso-web
+```
+
+웹 빌드가 실패하면 배포가 교체 전에 멈추므로 운영 `.next`는 그대로입니다. 남은 `.next-build`는 다음 배포가 지웁니다.
 
 사용자 쓰기를 열기 전 실패하면 새 프로세스를 중단하고 이전 artifact와 설정으로
 복구할 수 있습니다. 사용자 쓰기를 연 뒤에는 URI만 MySQL로 되돌리지 않습니다.
