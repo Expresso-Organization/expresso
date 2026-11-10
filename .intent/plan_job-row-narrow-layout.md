@@ -17,7 +17,7 @@ date: 2026-11-10
 | 파일 | 무엇을 |
 |---|---|
 | `services/web/src/app/(app)/jobs/JobRows.tsx` | 북마크 `Icon`에 `className={styles.rowMark}`, 인라인 `flexShrink` 제거 |
-| `services/web/src/app/(app)/jobs/page.module.css` | `.rows` 컨테이너, `.rowMark`, `@container (max-width: 543px)` grid 배치, 767px 미디어 쿼리의 `.rowTitle` 규칙 제거 |
+| `services/web/src/app/(app)/jobs/page.module.css` | `.rows` 컨테이너, `.rowMark`, `@container (max-width: 767px)` grid 배치, 767px 미디어 쿼리의 `.rowTitle` 규칙 제거 |
 
 ## 작업 순서
 
@@ -46,3 +46,17 @@ pnpm --filter @expresso/web typecheck
 ```
 
 화면: `http://stack.localhost:3151/jobs?country=한국`. 폭마다 `.rows`의 `scrollWidth`와 `clientWidth`, 첫 행 `.rowTitle` 폭, 행의 `display`를 잰다. 375px과 1024px은 스크린샷을 남긴다.
+
+구현 중 확인: 처음 쓴 543px 경계는 `tokens.test.ts`(중단점 표 밖의 폭 금지)에 걸려 767px로 바꿨다. grid에 행의 `gap: 14px`가 줄 간격으로도 들어가 칩 없는 행에 빈 셋째 줄이 생겨, 좁은 배치에서 `row-gap: 0`을 둔다.
+
+결과(2026-11-10, 목록 폭 · 배치 · 제목 칸 · 가로 스크롤):
+
+| 화면 | 목록 | 배치 | 제목 칸 | `scrollWidth` |
+|---|---|---|---|---|
+| 375 | 345 | 두 줄 | 205 (전 19) | 345 |
+| 768 | 714 | 두 줄 | 574 | 714 |
+| 1024 | 388 | 두 줄 | 248 (전 236, 가로 스크롤 523) | 388 |
+| 1280 | 644 | 두 줄 | 504 | 644 |
+| 1440 | 804 | 한 줄 | 236 | 804 |
+
+칩 행은 모든 폭에서 「PyTorch · Hugging Face · +19」이고 잘린 칩이 없다. 행 높이는 칩 없는 행 92px, 칩 행 123px(한 줄 배치 67px).

@@ -171,7 +171,7 @@ export function JobRowList({
             weight={job.interest ? "fill" : "regular"}
             size={15}
             color={job.interest ? "var(--ex-accent-text)" : "var(--ex-border-firm)"}
-            style={{ flexShrink: 0 }}
+            className={styles.rowMark}
           />
         </Link>
       ))}
