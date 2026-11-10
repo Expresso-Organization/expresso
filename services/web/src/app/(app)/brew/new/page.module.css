@@ -35,12 +35,6 @@
   border: 1px solid var(--ex-border-firm);
   border-radius: var(--ex-radius-pill);
   background: var(--ex-bg);
-  transition: border-color var(--ex-motion-instant), box-shadow var(--ex-motion-instant);
-}
-
-.entrySearch:focus-within {
-  border-color: var(--ex-accent);
-  box-shadow: var(--ex-focus-ring);
 }
 
 .entryInput {
@@ -520,10 +514,6 @@
   color: var(--ex-fg);
 }
 
-.searchInput:focus {
-  outline: none;
-}
-
 .searchGo {
   border: none;
   background: none;
@@ -737,8 +727,6 @@
 
 .input:focus,
 .textarea:focus {
-  outline: none;
-  border-color: var(--ex-accent);
   background: var(--ex-bg);
 }
 

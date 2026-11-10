@@ -24,7 +24,6 @@
 .createSplit { flex:0 0 auto; }
 .createSplit button { display:inline-flex; align-items:center; gap:5px; white-space:nowrap; }
 .searchField { display:inline-flex; min-height:32px; flex:0 1 220px; min-width:140px; align-items:center; gap:6px; border:1px solid var(--ex-border-soft); border-radius:var(--ex-radius-pill); background:var(--ex-bg-tint); padding:0 4px 0 12px; color:var(--ex-fg-muted); }
-.searchField:focus-within { border-color:var(--ex-border-firm); box-shadow:var(--ex-focus-ring); }
 .searchField input { width:100%; min-width:0; border:0; background:transparent; color:var(--ex-fg-strong); font:inherit; font-size:var(--ex-text-sm); outline:0; }
 .searchField input::-webkit-search-cancel-button { display:none; }
 .searchField button { display:grid; width:24px; height:24px; flex:0 0 auto; place-items:center; border:0; border-radius:50%; background:transparent; padding:0; color:var(--ex-fg-muted); cursor:pointer; }
@@ -47,7 +46,6 @@
 .popoverHeader>button:hover { background:var(--ex-bg-hover); color:var(--ex-fg-strong); }
 .popoverField { display:grid; min-width:0; gap:5px; color:var(--ex-fg-muted); font-size:var(--ex-text-xs); }
 .popoverField>input { width:100%; min-height:34px; box-sizing:border-box; border:1px solid var(--ex-border-soft); border-radius:var(--ex-radius-control); background:var(--ex-bg-tint); padding:6px 9px; color:var(--ex-fg-strong); font:inherit; }
-.popoverField>input:focus { border-color:var(--ex-border-firm); outline:0; box-shadow:var(--ex-focus-ring); }
 .popoverHint { margin:-6px 0 0; color:var(--ex-fg-subtle); font-size:var(--ex-text-2xs); line-height:var(--ex-leading-relaxed); }
 .clearViewSetting { justify-self:start; min-height:28px; border:0; border-radius:6px; background:transparent; padding:4px 6px; color:var(--ex-accent-text); font:inherit; font-size:var(--ex-text-xs); cursor:pointer; }
 .clearViewSetting:hover { background:var(--ex-accent-soft); }
@@ -117,7 +115,6 @@
 .columnMenuNameRow { display:grid; grid-template-columns:34px minmax(0,1fr); align-items:center; gap:6px; }
 .columnMenuNameRow>span { display:grid; width:34px; height:34px; place-items:center; border:1px solid var(--ex-border-soft); border-radius:var(--ex-radius-control); background:var(--ex-bg-muted); color:var(--ex-fg-muted); }
 .columnMenuNameRow>input { width:100%; height:34px; min-width:0; box-sizing:border-box; border:1px solid var(--ex-border-soft); border-radius:var(--ex-radius-control); background:var(--ex-bg-tint); padding:6px 9px; color:var(--ex-fg-strong); font:inherit; font-size:var(--ex-text-sm); font-weight:600; }
-.columnMenuNameRow>input:focus { border-color:var(--ex-border-firm); outline:0; box-shadow:var(--ex-focus-ring); }
 .columnMenuNameRow>input:disabled { color:var(--ex-fg-muted); cursor:not-allowed; }
 .columnMenuTypeRow { display:grid; grid-template-columns:20px minmax(52px,auto) minmax(140px,1fr); align-items:center; gap:7px; min-height:38px; padding:2px 4px; color:var(--ex-fg-body); font-size:var(--ex-text-sm); }
 .columnMenuTypeRow>i { color:var(--ex-fg-muted); }
@@ -188,7 +185,7 @@
 .cellPopout>button>i:last-child { margin-left:auto; color:var(--ex-accent-text); }
 .cellPopout>button:disabled,.cellContextMenu>button:disabled { opacity:.4; cursor:not-allowed; }
 .cellPopoutInput { min-height:32px; margin-top:4px; box-sizing:border-box; border:1px solid var(--ex-border-soft); border-radius:var(--ex-radius-control); background:var(--ex-bg-muted); padding:6px 9px; color:var(--ex-fg-strong); font:inherit; font-size:var(--ex-text-sm); }
-.cellPopoutInput:focus { border-color:var(--ex-accent); outline:2px solid var(--ex-focus-ring); outline-offset:1px; background:var(--ex-bg); }
+.cellPopoutInput:focus { background:var(--ex-bg); }
 .cellPopoutInput[data-issue="true"] { border-color:var(--ex-status-danger-text); }
 .optionDot { width:8px; height:8px; flex:0 0 auto; border-radius:999px; background:var(--ex-accent); opacity:.72; }
 .datePopout { overflow:visible; padding:8px; }
@@ -343,7 +340,6 @@
 .filterConjunction>* { width:100%; }
 .filterLeaf { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) minmax(0,1.2fr) 28px; align-items:center; gap:6px; }
 .filterValue { width:100%; min-height:34px; box-sizing:border-box; border:1px solid var(--ex-border-soft); border-radius:var(--ex-radius-control); background:var(--ex-bg-tint); padding:6px 9px; color:var(--ex-fg-strong); font:inherit; font-size:var(--ex-text-sm); }
-.filterValue:focus { border-color:var(--ex-border-firm); outline:0; box-shadow:var(--ex-focus-ring); }
 .filterGroup { display:grid; gap:6px; border:1px solid var(--ex-border-soft); border-radius:9px; background:var(--ex-bg-muted); padding:8px; }
 .filterActions { display:flex; flex-wrap:wrap; align-items:center; gap:4px; }
 .filterActions>button:not(.clearViewSetting):not(.iconButton) { display:inline-flex; min-height:30px; align-items:center; gap:5px; border:0; border-radius:6px; background:transparent; padding:4px 8px; color:var(--ex-fg-muted); font:inherit; font-size:var(--ex-text-xs); cursor:pointer; }
@@ -357,7 +353,6 @@
 .sortRow { display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr) 28px; align-items:center; gap:6px; }
 .tabMenu { position:fixed; z-index:130; display:grid; width:240px; gap:6px; border:1px solid var(--ex-border); border-radius:11px; background:var(--ex-bg); padding:6px; box-shadow:var(--ex-elevation-overlay); }
 .tabMenuName { width:100%; min-height:34px; box-sizing:border-box; border:1px solid var(--ex-border-soft); border-radius:var(--ex-radius-control); background:var(--ex-bg-tint); padding:6px 9px; color:var(--ex-fg-strong); font:inherit; font-size:var(--ex-text-sm); font-weight:600; }
-.tabMenuName:focus { border-color:var(--ex-border-firm); outline:0; box-shadow:var(--ex-focus-ring); }
 .tabMenuSection { display:grid; gap:1px; }
 .tabMenuSection+.tabMenuSection,.tabMenuName+.tabMenuSection { border-top:1px solid var(--ex-border-soft); padding-top:5px; }
 .tabMenuSection button { display:grid; min-height:32px; grid-template-columns:18px minmax(0,1fr) auto; align-items:center; gap:8px; border:0; border-radius:7px; background:transparent; padding:5px 8px; color:var(--ex-fg-body); font:inherit; font-size:var(--ex-text-sm); text-align:left; cursor:pointer; }

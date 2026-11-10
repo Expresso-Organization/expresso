@@ -12,7 +12,6 @@
 .propertyCreateIcon { display:grid; width:34px; height:34px; place-items:center; border:1px solid var(--ex-border-soft); border-radius:var(--ex-radius-control); color:var(--ex-fg-muted); }
 .propertyCreateNameRow input { min-width:0; height:34px; border:1px solid var(--ex-border-soft); border-radius:var(--ex-radius-control); outline:0; background:var(--ex-bg-tint); padding:0 10px; color:var(--ex-fg-strong); font:inherit; font-size:var(--ex-text-sm); }
 .propertyCreateNameRow input::placeholder { color:var(--ex-fg-subtle); }
-.propertyCreateNameRow input:focus { border-color:var(--ex-border-firm); box-shadow:var(--ex-focus-ring); }
 .propertyTypeHeading { display:flex; align-items:center; gap:7px; padding:11px 8px 4px; color:var(--ex-fg-muted); font-size:var(--ex-text-xs); font-weight:600; }
 .propertyTypeList { display:grid; gap:0; }
 .propertyTypeList button { display:grid; min-height:30px; grid-template-columns:24px minmax(0,1fr) 18px; align-items:center; gap:6px; border:0; border-radius:7px; background:transparent; padding:4px 8px; color:var(--ex-fg-body); font:inherit; font-size:var(--ex-text-sm); text-align:left; cursor:pointer; }
@@ -53,7 +52,7 @@
 .fieldEditor, .assetEditor, .dateFields { display: grid; gap: 4px; min-width: 0; }
 .input { width: 100%; min-height: 32px; box-sizing: border-box; border: 1px solid transparent; border-radius: var(--ex-radius-control); background: transparent; padding: 6px 8px; color: var(--ex-fg-strong); font: inherit; }
 .input:hover { border-color: var(--ex-border-soft); background: var(--ex-bg-hover); }
-.input:focus { border-color: var(--ex-accent); outline: 2px solid var(--ex-focus-ring); outline-offset: 1px; background: var(--ex-bg); }
+.input:focus { background: var(--ex-bg); }
 .issue { color: var(--ex-status-danger-text); font-size: var(--ex-text-xs); }
 .fieldRow { position: relative; display: flex; align-items: center; min-width: 0; }
 .fieldRow > .input { padding-right: 26px; }
@@ -85,7 +84,6 @@
 .formulaSource { position: relative; min-height: 112px; resize: vertical; background: transparent; color: var(--ex-fg-strong); }
 .formulaBackdrop { position: absolute; inset: 0; overflow: hidden; border-color: transparent; color: transparent; pointer-events: none; }
 .formulaToken { border-radius: 3px; background: var(--ex-accent-surface-hover); box-shadow: 0 0 0 2px var(--ex-accent-surface-hover), inset 0 -1px 0 var(--ex-accent); color: transparent; }
-.formulaSource:focus { border-color: var(--ex-accent); outline: 2px solid var(--ex-focus-ring); outline-offset: 1px; }
 .propertyAutocomplete { display: flex; gap: 6px; overflow-x: auto; }
 .propertyAutocomplete button { flex: 0 0 auto; max-width: 160px; overflow: hidden; border: 1px solid var(--ex-border-soft); border-radius: 6px; background: var(--ex-accent-surface); padding: 5px 7px; color: var(--ex-accent-ink); font-size: var(--ex-text-xs); text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
 .propertyAutocomplete button:hover { background: var(--ex-accent-surface-hover); }
