@@ -1,4 +1,4 @@
-import type { JobPostingSummary } from "@expresso/contracts";
+import { isUrgentDaysLeft, type JobPostingSummary } from "@expresso/contracts";
 import type { Route } from "next";
 import Link from "next/link";
 
@@ -28,9 +28,9 @@ export function deadlineLabel(job: JobPostingSummary): string {
   return `D-${job.daysLeft}`;
 }
 
-/** 마감 임박은 목록 API의 `deadline=urgent`와 같은 기준(7일)으로 본다. */
+/** 마감 임박은 목록 API의 `deadline=urgent`와 같은 판정(`D-7` 이내)을 쓴다. */
 function isUrgent(job: JobPostingSummary): boolean {
-  return job.daysLeft !== null && job.daysLeft >= 0 && job.daysLeft <= 7;
+  return isUrgentDaysLeft(job.daysLeft);
 }
 
 function deadlineClass(job: JobPostingSummary): string {

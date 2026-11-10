@@ -1,6 +1,6 @@
 import type { z } from "zod";
 type JobBrewState = z.infer<typeof JobBrewStateSchema>;
-import { API_PREFIX, JobPostingDetailSchema, JobPostingListResponseSchema, JobPostingMatchSchema, JobRequirementsSchema, ListJobPostingsQuerySchema, RecentJobSearchListResponseSchema, JobBrewStateSchema, type ListJobPostingsQuery } from "@expresso/contracts";
+import { API_PREFIX, daysUntilDeadline, urgentDeadlineRange, JobPostingDetailSchema, JobPostingListResponseSchema, JobPostingMatchSchema, JobRequirementsSchema, ListJobPostingsQuerySchema, RecentJobSearchListResponseSchema, JobBrewStateSchema, type ListJobPostingsQuery } from "@expresso/contracts";
 import { mongoCollections, type CompanyDoc, type InterestDoc, type JobPostingDoc, type MatchScoreDoc, type JobPostingRequirementDoc, type RequirementCoverageDoc } from "@expresso/database";
 import type { Document } from "mongodb";
 import type { MongoContext } from "../../platform/mongodb.js";
@@ -37,7 +37,7 @@ function summary(row: BoardRow, brew: JobBrewState | undefined, at: Date) {
     company: { id: company._id, name: company.name, domain: company.domain ?? null, industry: company.industry ?? null, toneSummary: company.toneSummary ?? null, initial: company.initial ?? null, avatarBackground: company.avatarBackground ?? null, avatarColor: company.avatarColor ?? null, logoUrl: company.logoChecksum ? `${API_PREFIX}/companies/${company._id}/logo?v=${company.logoChecksum.slice(0, 16)}` : null },
     source: row.source, sourceUrl: row.sourceUrl ?? null, sourceBoard: row.sourceBoard ?? null, team: row.team ?? null, location: placeOf(row.location, company.name), workType: row.workType ?? null, experienceLabel: row.experienceNote ?? row.experienceLabel ?? null, family: row.jobFamily ?? null,
     technologies: requirements.technologies.map((name) => ({ name, matched: match ? match.axes.technology.matched.includes(name) : null })),
-    expiresAt: row.expiresAt?.toISOString() ?? null, daysLeft: row.expiresAt ? Math.floor(row.expiresAt.getTime() / 86_400_000) - Math.floor(at.getTime() / 86_400_000) : null, deadlineNote: row.deadlineNote ?? null, match,
+    expiresAt: row.expiresAt?.toISOString() ?? null, daysLeft: row.expiresAt ? daysUntilDeadline(row.expiresAt, at) : null, deadlineNote: row.deadlineNote ?? null, match,
     interest: row.interest ? { id: row.interest._id, stage: row.interest.stage, deadlineAt: row.interest.deadlineAt?.toISOString() ?? null, memo: row.interest.memo ?? null, updatedAt: row.interest.updatedAt.toISOString() } : null,
     brew: brew ?? null,
     // 0.1km 단위로 자른다 — 좌표가 대략값이라 그보다 잘게 말할 근거가 없다.
@@ -69,7 +69,8 @@ export class JobBoardService implements JobBoardApi {
     const technologies = (field: string, limit: number): Document[] => [filter(), { $unwind: `$${field}` }, ...group(field), { $limit: limit }];
     const countIf = (condition: Document) => ({ $sum: { $cond: [condition, 1, 0] } });
     const remote = { $regexMatch: { input: { $ifNull: ["$workType", ""] }, regex: "리모트", options: "i" } };
-    const urgent = { $and: [{ $gte: ["$expiresAt", at] }, { $lt: ["$expiresAt", new Date(at.getTime() + 7 * 86_400_000)] }] };
+    const urgentRange = urgentDeadlineRange(at);
+    const urgent = { $and: [{ $gte: ["$expiresAt", urgentRange.from] }, { $lt: ["$expiresAt", urgentRange.to] }] };
     const direction = query.sort === "deadline" ? 1 : -1;
     const sortKey = query.sort === "match" ? { $ifNull: ["$match.total", -1] } : query.sort === "deadline" ? { $ifNull: ["$expiresAt", new Date("9999-12-31T00:00:00Z")] } : "$createdAt";
     const place = nearbyPlaceOf(query);
