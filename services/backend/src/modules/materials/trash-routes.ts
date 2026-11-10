@@ -32,7 +32,7 @@ export function registerBrewTrashRoutes(app: FastifyInstance, options: RegisterB
     return reply.code(204).send();
   });
 
-  app.post(`${API_PREFIX}/brews/:id/restore`, { preHandler }, async (request, reply) => {
+  app.post(`${API_PREFIX}/brews/trash/:id/restore`, { preHandler }, async (request, reply) => {
     const principal = requireAuth(request);
     await options.service.restore(principal.user.id, brewId(request.params));
     return reply.code(204).send();

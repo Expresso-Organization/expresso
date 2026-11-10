@@ -29,7 +29,7 @@ export function registerPortfolioTrashRoutes(app: FastifyInstance, options: Regi
     return reply.code(204).send();
   });
 
-  app.post(`${API_PREFIX}/portfolios/:id/restore`, { preHandler }, async (request, reply) => {
+  app.post(`${API_PREFIX}/portfolios/trash/:id/restore`, { preHandler }, async (request, reply) => {
     const principal = requireAuth(request);
     await options.service.restore(principal.user.id, portfolioId(request.params));
     return reply.code(204).send();

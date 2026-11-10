@@ -167,6 +167,6 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB portfolio · brew trash"
     for (const [collection, filter] of [
       ["brews", { _id: lonely }], ["interview_sessions", { brewId: lonely }], ["questions", { interviewSessionId: sessionId }],
       ["answers", { questionId }], ["recipes", { brewId: lonely }], ["recipe_sections", { recipeId }],
-    ] as const) expect(await db.collection(collection).countDocuments({ userId, ...filter }), collection).toBe(0);
+    ] as const) expect(await db.collection(collection).countDocuments({ userId, ...filter } as Record<string, unknown>), collection).toBe(0);
   });
 });

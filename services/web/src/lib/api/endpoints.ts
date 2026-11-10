@@ -1,4 +1,6 @@
 import {
+  BrewTrashListResponseSchema,
+  PortfolioTrashListResponseSchema,
   MonthlyUsageResponseSchema,
   PlanListResponseSchema,
   AnalyticsAggregationResponseSchema,
@@ -218,6 +220,18 @@ export const engagement = {
 };
 
 export const portfolios = {
+  /** 휴지통으로 옮긴다. 공개 중이면 공개도 멈춘다. */
+  trash: (accessToken: string, portfolioId: string) =>
+    requestNoContent(`${API_PREFIX}/portfolios/${portfolioId}`, { accessToken, method: "DELETE" }),
+
+  /** 휴지통에서 되살린다. 공개는 다시 켜지 않는다. */
+  restore: (accessToken: string, portfolioId: string) =>
+    requestNoContent(`${API_PREFIX}/portfolios/trash/${portfolioId}/restore`, { accessToken, method: "POST" }),
+
+  /** 휴지통에 있는 포트폴리오. 최근에 지운 순서. */
+  trashList: (accessToken: string) =>
+    request(`${API_PREFIX}/portfolios/trash`, PortfolioTrashListResponseSchema, { accessToken, cache: "no-store" }),
+
   /** 00 홈 카드 · 사이드바. 최근 편집 순. */
   list: (accessToken: string, query: Partial<ListPortfoliosQuery> = {}) =>
     request(`${API_PREFIX}/portfolios`, PortfolioListResponseSchema, {
@@ -422,6 +436,16 @@ export const consents = {
 };
 
 export const brews = {
+  /** 만들던 포트폴리오를 휴지통으로 옮긴다. 생성 중이면 409다. */
+  trash: (accessToken: string, brewId: string) =>
+    requestNoContent(`${API_PREFIX}/brews/${brewId}`, { accessToken, method: "DELETE" }),
+
+  restore: (accessToken: string, brewId: string) =>
+    requestNoContent(`${API_PREFIX}/brews/trash/${brewId}/restore`, { accessToken, method: "POST" }),
+
+  trashList: (accessToken: string) =>
+    request(`${API_PREFIX}/brews/trash`, BrewTrashListResponseSchema, { accessToken, cache: "no-store" }),
+
   /**
    * 제작을 시작한다. 재료 순위는 이때 한 번 매겨진다.
    *

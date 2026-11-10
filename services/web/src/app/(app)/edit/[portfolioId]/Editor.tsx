@@ -14,6 +14,7 @@ import { Icon } from "@/components/ui/Icon";
 import { EditablePagePreview } from "@/components/portfolio/EditablePagePreview";
 import { PagePreview } from "@/components/portfolio/PagePreview";
 import { PortfolioPage } from "@/components/portfolio/PortfolioPage";
+import { EditorTrashMenu } from "@/features/portfolio-trash/PortfolioTrash";
 import { publicSiteHost } from "@/lib/public-site";
 
 import { ElementChat } from "./ElementChat";
@@ -450,6 +451,10 @@ export function Editor({
               <Icon name="rocket-launch" size={14} />
               배포하기
             </Link>
+            <EditorTrashMenu
+              target={{ kind: "portfolio", id: portfolio.id, title: portfolio.title, published: portfolio.status === "published" }}
+              className={styles.iconAction}
+            />
           </div>
         </div>
 

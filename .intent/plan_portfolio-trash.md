@@ -23,9 +23,9 @@ date: 2026-11-10
 | `services/backend/src/modules/{portfolios,engagement,publishing,analytics}/service.ts` | 포트폴리오 읽기 필터 (고침) |
 | `services/backend/src/modules/{materials,interview,recipe,brew-jobs,generation,company-research,design-systems}/service.ts` · `jobs/board-service.ts` | 제작 읽기 필터 (고침) |
 | `services/backend/src/modules/portfolios/trash.integration.test.ts` | 휴지통 · 필터 · 정리 통합 테스트 (새 파일) |
+| `services/backend/src/api/build-app.test.ts` | 휴지통 라우트가 편집 모듈 라우트와 함께 등록되는지 (고침) |
 | `services/web/src/lib/api/endpoints.ts` | 휴지통 엔드포인트 (고침) |
-| `services/web/src/app/(app)/home/trash-actions.ts` | 옮기기 · 복원 · 목록 서버 액션 (새 파일) |
-| `services/web/src/features/portfolio-trash/*` | 카드 메뉴 · 확인 창 · 휴지통 창 · 스타일 · 테스트 (새 파일) |
+| `services/web/src/features/portfolio-trash/*` | 서버 액션 · 카드 메뉴 · 확인 창 · 휴지통 창 · 스타일 · 테스트 (새 파일) |
 | `services/web/src/app/(app)/home/HomePortfolios.tsx` · `page.module.css` | 카드 메뉴와 머리 「휴지통」 (고침) |
 | `services/web/src/app/(app)/edit/[portfolioId]/Editor.tsx` | 도구 막대 메뉴 (고침) |
 
@@ -37,6 +37,12 @@ date: 2026-11-10
 4. 읽기 필터와 `retention` 연결 — 통합 테스트의 목록 · 홈 · 검색 · 공개 주소 · 배포 확인 통과.
 5. 웹 엔드포인트 · 서버 액션 · 메뉴 · 확인 창 · 휴지통 창 — 웹 단위 테스트 통과.
 6. 검증 — 아래 명령과 브라우저 확인.
+
+## 구현 중 바뀐 것
+
+- 되살리기 주소를 `/portfolios/trash/:id/restore` · `/brews/trash/:id/restore`로 옮겼다. `POST /portfolios/:id/restore`는 편집 모듈의 스냅숏 되돌리기가 이미 쓴다(브라우저 확인에서 API가 뜨지 않아 발견).
+- 창은 공용 `@/components/ui/dialog` 대신 같은 base-ui 원시 요소에 모듈 스타일을 붙였다. 공용 창은 위치 · 배경을 Tailwind로 잡는데 홈에는 그 CSS가 불리지 않는다.
+- 서버 액션은 화면이 아니라 기능 폴더(`features/portfolio-trash/trash-actions.ts`)에 둔다. 홈과 편집기가 함께 쓴다.
 
 ## 가장 위험한 단계
 

@@ -97,3 +97,36 @@ describe("system routes", () => {
     });
   });
 });
+
+describe("portfolio · brew trash routes", () => {
+  // 휴지통 되살리기는 편집 모듈의 스냅숏 되돌리기(`POST /portfolios/:id/restore`)와 주소가 겹치지 않아야 한다.
+  it("registers next to the portfolio editing routes and answers without a body", async () => {
+    const userId = "00000000-0000-4000-8000-0000000000aa";
+    const targetId = "00000000-0000-4000-8000-0000000000bb";
+    const calls: string[] = [];
+    const trashService = (kind: string) => ({
+      trash: async (_user: string, id: string) => { calls.push(`${kind}:trash:${id}`); },
+      restore: async (_user: string, id: string) => { calls.push(`${kind}:restore:${id}`); },
+      list: async () => ({ data: [] }),
+    });
+    const app = buildApi({
+      config,
+      identityService: { verifyAccessToken: async () => ({ user: { id: userId }, sessionId: "session" }) } as never,
+      portfolioEditingService: {} as never,
+      portfolioReadService: {} as never,
+      materialsService: {} as never,
+      portfolioTrashService: trashService("portfolio"),
+      brewTrashService: trashService("brew"),
+    });
+    apps.push(app);
+    const headers = { authorization: `Bearer exps_${"a".repeat(43)}` };
+
+    expect((await app.inject({ method: "DELETE", url: `/v1/portfolios/${targetId}`, headers })).statusCode).toBe(204);
+    expect((await app.inject({ method: "POST", url: `/v1/portfolios/trash/${targetId}/restore`, headers })).statusCode).toBe(204);
+    expect((await app.inject({ method: "GET", url: "/v1/portfolios/trash", headers })).json()).toEqual({ data: [] });
+    expect((await app.inject({ method: "DELETE", url: `/v1/brews/${targetId}`, headers })).statusCode).toBe(204);
+    expect((await app.inject({ method: "POST", url: `/v1/brews/trash/${targetId}/restore`, headers })).statusCode).toBe(204);
+    expect((await app.inject({ method: "GET", url: "/v1/brews/trash", headers })).json()).toEqual({ data: [] });
+    expect(calls).toEqual([`portfolio:trash:${targetId}`, `portfolio:restore:${targetId}`, `brew:trash:${targetId}`, `brew:restore:${targetId}`]);
+  });
+});

@@ -12,9 +12,9 @@ date: 2026-11-10
 ## 요구사항
 
 - [ ] `DELETE /v1/portfolios/:id`는 `deletedAt`과 `purgeAfter`(+30일)를 쓰고, `status`가 `published`면 같은 갱신에서 `unlisted`로 바꾼다. 204. 이미 휴지통이면 404.
-- [ ] `POST /v1/portfolios/:id/restore`는 `purgeAfter`가 지나지 않은 휴지통 포트폴리오의 `deletedAt` · `purgeAfter`를 비운다. `status`는 그대로 둔다. 204.
+- [ ] `POST /v1/portfolios/trash/:id/restore`는 `purgeAfter`가 지나지 않은 휴지통 포트폴리오의 `deletedAt` · `purgeAfter`를 비운다. `status`는 그대로 둔다. 204.
 - [ ] `GET /v1/portfolios/trash`는 보관 중인 포트폴리오를 최근에 지운 순서로 낸다(`PortfolioTrashListResponseSchema`).
-- [ ] `DELETE /v1/brews/:id` · `POST /v1/brews/:id/restore` · `GET /v1/brews/trash`도 같은 규칙이다. `status: "generating"`이면 409.
+- [ ] `DELETE /v1/brews/:id` · `POST /v1/brews/trash/:id/restore` · `GET /v1/brews/trash`도 같은 규칙이다. `status: "generating"`이면 409.
 - [ ] 휴지통 포트폴리오는 `portfolios.list` · `get` · `revisions`, 홈 읽기 모델(`engagement.home`), 통합 검색, 배포 · 되돌리기 · 이력서 교체, 공개 주소 조회, 방문 수집에서 없는 것으로 다룬다.
 - [ ] 휴지통 제작은 홈 읽기 모델, 공고 화면의 제작 상태(`jobs/board-service`), 제작 단계 API(재료 · 질문 · 레시피 · 생성 시작 · 작업 · 회사 조사 · 디자인 선택)에서 없는 것으로 다룬다.
 - [ ] 예약 작업 `retention`이 `purgeAfter`가 지난 포트폴리오와 제작을 지운다. 포트폴리오를 가리키는 지면 · 섹션 · 블록 · 기록 인용 · 배포 · 방문 원시 · 집계 · 대시보드 · 위젯 · 스냅숏 · 수정 제안 · 이력을 함께 지운다. 크레딧 원장(`generation_usage_ledger`, `generation_jobs`, `usage_counters`, `ai_usage_events`)은 지우지 않는다.
@@ -45,6 +45,7 @@ date: 2026-11-10
 
 ## 함정
 
+- `POST /v1/portfolios/:id/restore`는 편집 모듈의 스냅숏 되돌리기가 이미 쓴다. 휴지통 되살리기는 `/trash/:id/restore` 아래에 둔다(`build-app.test.ts`가 두 모듈을 함께 등록해 본다).
 - `publicSlug`는 휴지통에 있는 동안 그 포트폴리오가 가진다. 배포의 주소 점유 검사가 다른 포트폴리오에 같은 주소를 주지 않는다. 영구 삭제 뒤에 풀린다.
 - `page` · `layout` · 분석 대시보드의 소유 확인은 휴지통 포트폴리오도 통과한다. 화면에서는 닿지 않는다.
 - 휴지통 제작을 쓰는 포트폴리오의 「다시 뽑기」는 제작 화면이 404가 된다.
