@@ -138,7 +138,7 @@
   gap: 7px;
   background: var(--ex-bg);
   border: 1px solid var(--ex-accent-surface-hover);
-  border-radius: 999px;
+  border-radius: var(--ex-radius-pill);
   padding: 6px 12px;
   font-size: var(--ex-text-sm);
   color: var(--ex-accent-text);
@@ -174,7 +174,7 @@
   padding: 7px 9px;
   margin-bottom: 4px;
   border-bottom: 1px solid var(--ex-border-inner);
-  border-radius: 7px;
+  border-radius: var(--ex-radius-pill);
   font-size: var(--ex-text-sm);
   color: var(--ex-fg-subtle);
   transition: background var(--ex-motion-quick);
@@ -190,7 +190,7 @@
   gap: 6px;
   border: 1px dashed var(--ex-accent-surface-hover);
   background: none;
-  border-radius: 999px;
+  border-radius: var(--ex-radius-pill);
   padding: 6px 12px;
   font-size: var(--ex-text-sm);
   color: var(--ex-accent-text);
@@ -247,7 +247,7 @@
 .results {
   background: var(--ex-bg);
   border: 1px solid var(--ex-border);
-  border-radius: 16px;
+  border-radius: var(--ex-radius-card);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -389,7 +389,7 @@
   font-size: var(--ex-text-2xs);
   color: var(--ex-fg-body);
   background: var(--ex-border-inner);
-  border-radius: 5px;
+  border-radius: var(--ex-radius-pill);
   padding: 4px 8px;
   white-space: nowrap;
   overflow: hidden;
@@ -580,7 +580,7 @@
 .railCard {
   background: var(--ex-bg);
   border: 1px solid var(--ex-border);
-  border-radius: 16px;
+  border-radius: var(--ex-radius-card);
   padding: 17px 20px;
 }
 
@@ -588,7 +588,7 @@
 .railCardBrew {
   background: var(--ex-accent-surface);
   border: none;
-  border-radius: 16px;
+  border-radius: var(--ex-radius-card);
   padding: 18px 20px;
 }
 
@@ -641,7 +641,7 @@
   font-size: var(--ex-text-xs);
   color: var(--ex-status-danger-text);
   background: var(--ex-status-danger-surface-deep);
-  border-radius: 999px;
+  border-radius: var(--ex-radius-pill);
   padding: 3px 9px;
   white-space: nowrap;
 }
@@ -650,7 +650,7 @@
   font-size: var(--ex-text-xs);
   color: var(--ex-status-warning-text);
   background: var(--ex-status-warning-surface);
-  border-radius: 999px;
+  border-radius: var(--ex-radius-pill);
   padding: 3px 9px;
   white-space: nowrap;
 }
@@ -671,7 +671,7 @@
   color: var(--ex-fg-on-accent);
   background: var(--ex-accent);
   border: none;
-  border-radius: 9px;
+  border-radius: var(--ex-radius-control);
   padding: 11px;
   transition: background var(--ex-motion-quick);
 }
@@ -740,7 +740,7 @@
   color: var(--ex-fg-body);
   background: var(--ex-bg-sunken);
   border: none;
-  border-radius: 999px;
+  border-radius: var(--ex-radius-pill);
   padding: 6px 11px;
 }
 
@@ -1018,7 +1018,7 @@
   letter-spacing: 0.08em;
   color: var(--ex-status-success-text);
   background: var(--ex-status-success-surface);
-  border-radius: 4px;
+  border-radius: var(--ex-radius-pill);
   padding: 2px 5px;
   flex-shrink: 0;
   margin-left: 6px;
@@ -1090,7 +1090,7 @@
   height: 28px;
   padding: 0 11px;
   border: 1px solid var(--ex-border);
-  border-radius: 8px;
+  border-radius: var(--ex-radius-control);
   background: var(--ex-bg);
   font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
