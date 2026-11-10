@@ -1,0 +1,12 @@
+[Unit]
+Description=Expresso 패치노트 생성 15분 간격
+
+[Timer]
+# 새로 머지된 PR 이 없으면 AI 를 부르지 않고 파일만 다시 쓴다. 기간(config.json period)이 끝난
+# 2026-12-01 뒤에도 새 항목은 생기지 않으므로, 그 뒤에는 타이머를 꺼도 된다.
+OnBootSec=5min
+OnUnitActiveSec=15min
+# 앞선 실행이 끝나지 않았으면 systemd 가 겹쳐 띄우지 않는다(oneshot). 생성기도 잠금 파일로 한 번 더 막는다.
+
+[Install]
+WantedBy=timers.target
