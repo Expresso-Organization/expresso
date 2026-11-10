@@ -61,6 +61,14 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB interview integration", 
   }, 60_000);
   afterAll(async () => { await fixture?.dispose(); });
 
+  it("lists the grounded bases the question writer chooses from, without a writer", async () => {
+    const bases = await service.questionBases(userId, brewId);
+    expect(bases.map(({ basis }) => basis.type)).toEqual(["requirement", "requirement", "record_gap", "record_gap"]);
+    expect(bases[0]).toMatchObject({ basis: { type: "requirement", coverage: "missing" }, label: "PostgreSQL 장애 대응 경험이 필요합니다." });
+    expect(bases.slice(2).map(({ label }) => label).sort()).toEqual(["Incident response", "Migration project"]);
+    await expect(service.questionBases(otherUserId, brewId)).rejects.toMatchObject({ statusCode: 404 });
+  });
+
   it("preserves grounded assignment, replacement, pause, and session boundaries", async () => {
     const started = await service.start(userId, brewId, "mongo-interview-start-0001");
     sessionId = started.id;
@@ -157,7 +165,10 @@ interface IdRow { id: string }
 describeWithDatabase("interview integration", () => {
   const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const identityService = new IdentityService(sql);
-  const interviewService = new InterviewService(sql);
+  // 옛 MySQL 구현에는 근거 조회가 없다. 이 묶음은 그 라우트를 부르지 않는다.
+  const interviewService = Object.assign(new InterviewService(sql), {
+    questionBases: () => Promise.reject(new Error("question bases are Mongo-only")),
+  });
   const brewJobService = new BrewJobService(sql);
   const app = buildApi({ config, identityService, interviewService, brewJobService });
 

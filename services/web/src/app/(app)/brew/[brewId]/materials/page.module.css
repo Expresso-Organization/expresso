@@ -620,10 +620,22 @@
     transform var(--ex-motion-spring);
 }
 
-.brew:hover {
+/* 질문 생성을 맡기는 폼일 때는 버튼이다 — 링크와 같아 보이게 글꼴과 커서를 맞춘다. */
+button.brew {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.brew:hover:not(:disabled) {
   background: var(--ex-accent-hover);
   transform: translateY(-1px);
   color: var(--ex-fg-on-accent);
+}
+
+/* 체크를 저장하는 중 · 제출하는 중 — 저장이 끝나기 전의 선택으로 질문이 만들어지지 않게 한다. */
+.brew:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* 담을 수 없다고 말해야 할 때 */

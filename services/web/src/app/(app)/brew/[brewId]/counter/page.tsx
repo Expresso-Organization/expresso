@@ -15,7 +15,9 @@ import {
   replaceQuestionAction,
   startInterviewAction,
 } from "../brew-actions";
+import { basisKind } from "./basis-kind";
 import styles from "./page.module.css";
+import { QuestionBases } from "./QuestionBases";
 
 /**
  * 01b 대화.
@@ -47,6 +49,10 @@ export default async function CounterPage({
 
   const drafting = brew.latestJob?.type === "interview" && brew.latestJob.status !== "succeeded";
   if (!brew.interviewSessionId || drafting) {
+    // 기다리는 동안 무엇을 근거로 물을지 먼저 보여 준다. 근거를 못 읽어도 대기 카드는 그대로 뜬다.
+    const bases = await brews.interviewBases(session.accessToken, brewId)
+      .then((response) => response.data.bases)
+      .catch(() => []);
     return (
       <BrewFrame brewId={brewId} step="counter" portfolioTitle={brewTitle(brew)}
         situation="아직 없음" tinted>
@@ -59,6 +65,7 @@ export default async function CounterPage({
           rejectedNote="물어볼 자리가 모자랍니다. 공고를 분석하면 요건이 자리가 되고, 수치가 빠진 기록도 자리가 됩니다."
           brewId={brewId}
           basisJobId={brew.latestJob?.jobId ?? null}
+          detail={bases.length > 0 ? <QuestionBases bases={bases} /> : null}
         />
       </BrewFrame>
     );
@@ -217,11 +224,7 @@ export default async function CounterPage({
                     color="var(--ex-fg-muted)"
                   />
                   <span className={styles.recordTitle}>
-                    {current.basis.type === "requirement"
-                      ? current.basis.coverage === "missing"
-                        ? "공고 요건 · 아직 못 채움"
-                        : "공고 요건 · 일부만 채움"
-                      : "기록 · 수치가 빠짐"}
+                    {basisKind(current.basis)}
                   </span>
                 </div>
                 <div className={styles.recordMeta}>{current.basis.evidence}</div>
