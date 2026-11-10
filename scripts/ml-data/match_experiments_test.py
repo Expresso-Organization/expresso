@@ -224,6 +224,15 @@ class ExperimentCommandTest(unittest.TestCase):
         comparison = json.loads((self.output / "encoder-comparison.json").read_text(encoding="utf-8"))
         self.assertEqual(comparison["rows"]["fake"]["mlp"]["pairs"], model["valid"]["pairs"])
 
+    def test_train_bi_after_encoders_on_korean_set_keeps_embedding_measurements(self) -> None:
+        data, labels = self.build_ko_set()
+        extra = ["--eval-data", str(data), "--eval-labels", str(labels)]
+        match_experiments.main(["encoders", *self.common(), "--encoders", "fake", *extra])
+        match_experiments.main(["train-bi", *self.common(), "--encoder", "fake", *extra])
+        embedding = json.loads((self.output / "bi-v1-001" / "metrics.json").read_text(encoding="utf-8"))["embedding"]
+        self.assertEqual(embedding["source"], "encoder-comparison.json")
+        self.assertEqual(len(embedding["runs"]), 4)
+
     def test_eval_cross_scores_korean_pairs_directly_from_checkpoint(self) -> None:
         import llm_suitability_train as pilot
 

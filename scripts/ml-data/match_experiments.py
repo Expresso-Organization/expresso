@@ -342,6 +342,7 @@ def cmd_encoders(arguments: argparse.Namespace) -> dict[str, Any]:
             "modelId": encoder.spec.model_id,
             "spec": asdict(encoder.spec),
             "inputLengths": lengths,
+            "maxLength": encoder.max_length,
             "embedding": encoder.runs,
             "embeddingDimension": int(vectors[0].shape[1]),
             "mlp": split_metrics(evaluation["pairs"], predictions, "valid", roc_points=False),
@@ -398,7 +399,7 @@ def embedding_record(encoder: SentenceEncoder, output: Path) -> dict[str, Any]:
     path = output / "encoder-comparison.json"
     if path.exists():
         row = json.loads(path.read_text(encoding="utf-8")).get("rows", {}).get(encoder.spec.key)
-        if row and row.get("spec") == asdict(encoder.spec) and row["inputLengths"]["profiles"]["maxLength"] == encoder.max_length:
+        if row and row.get("spec") == asdict(encoder.spec) and row.get("maxLength") == encoder.max_length:
             return {"source": "encoder-comparison.json", "runs": row["embedding"]}
     return {"source": "embedding cache without measurement", "runs": []}
 

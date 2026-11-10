@@ -231,16 +231,17 @@ def label_profile(profile: Mapping[str, Any], jobs: Sequence[Mapping[str, Any]],
     while envelope.get("stop_reason") == "max_tokens":
         envelope = conversation.send("출력이 길이 한도에서 끊겼다. 앞 내용을 반복하지 말고 끊긴 글자 바로 다음부터 이어서 써라.")
         text += str(envelope.get("result") or "")
-    last_error: str | None = None
+    seen_errors: set[str] = set()
     while True:
         try:
             payload = read_json_text(text)
             break
         except json.JSONDecodeError as error:
             signature = f"{error.msg}@{error.pos}"
-            if signature == last_error:
+            # 같은 오류가 다시 나오면 진전이 없는 것이다(A→B→A로 돌아도 멈춘다).
+            if signature in seen_errors:
                 return {"status": "failed", "reason": f"JSON 문법 오류가 고쳐지지 않는다: {signature}", "text": text}
-            last_error = signature
+            seen_errors.add(signature)
             reply = conversation.send(
                 f"방금 출력의 JSON 문법 오류: {error.msg} (줄 {error.lineno}, 열 {error.colno}). 출력 전체를 다시 쓰지 말고 "
                 '고칠 부분만 {"edits":[{"find":"<지금 출력에 그대로 있는 짧은 문자열>","replace":"<바꿀 문자열>"}]} 모양으로 답하라.'
