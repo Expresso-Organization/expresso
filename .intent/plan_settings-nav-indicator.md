@@ -18,7 +18,8 @@ date: 2026-11-10
 | `services/web/src/components/shell/AccountLink.tsx` (새 파일) | 경로를 보고 활성 표시를 다는 사용자 줄 링크 |
 | `services/web/src/components/shell/Sidebar.tsx` | 사용자 줄 `Link`를 `AccountLink`로 교체 |
 | `services/web/src/components/shell/SidebarSkeleton.tsx` | 같은 교체 |
-| `services/web/src/components/shell/SidebarNav.test.tsx` (새 파일) | `sectionForPath` 경로별 결과 |
+| `services/web/src/components/shell/SidebarNav.test.ts` (새 파일) | `sectionForPath` 경로별 결과 |
+| `services/web/src/components/shell/AccountLink.test.tsx` (새 파일) | 설정 경로에서 사용자 줄의 활성 표시 |
 
 ## 작업 순서
 
