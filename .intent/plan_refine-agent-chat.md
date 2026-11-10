@@ -18,19 +18,21 @@ date: 2026-11-10
 | `packages/contracts/src/page.ts` · `structured-portfolio.ts` | `InstructStructuredElementSchema`와 응답 스키마 삭제 |
 | `packages/contracts/src/agent-chat.test.ts` | 새 스키마 검사 |
 | `packages/portfolio-renderer/src/editing.ts` (+ test) | `elementTitle` 추가 |
-| `services/backend/src/modules/page/element-edit.ts` (+ test) | `instruct` 삭제, `elementGuide` · `elementEditIssues` 추가 |
+| `services/backend/src/modules/page/element-edit.ts` (+ test) | `instruct` 삭제, `elementGuide` · `checkElementEdit`(검사 + 적용 + 바뀐 곳) 추가 |
 | `services/backend/src/modules/page/service.ts` · `index.ts` · `public.ts` | `instructElement` 삭제, `elementGuide` · `editElementByAgent` · `PageElementIssues` 추가 |
 | `services/backend/src/modules/page/routes.ts` (+ test) | 요소 지시 라우트 삭제 |
 | `services/backend/src/modules/page/structured.mongo.integration.test.ts` | 요소 지시 테스트를 `editElementByAgent`로 교체 |
 | `services/backend/src/platform/agent/runtime.ts` (+ test) | 도구 둘 · `AgentInput.page` · 프롬프트 · `conversationForModel` selection |
 | `services/backend/src/modules/agent-chat/service.ts` · `routes.ts` (+ 통합 테스트) | 문맥 outline, selection 저장, page 도구 연결, `undoPageEdit` · undo 라우트 |
-| `services/backend/src/api/build-app.ts` · `main.ts` | `pageEditor` 연결 정리(쓰는 곳 확인) |
 | `services/web/src/components/assistant-ui/elements/thread.aui.tsx` | `ComposerHeader` · `UserMessageHeader` 슬롯 |
 | `services/web/src/features/agent-chat/AgentChat.tsx` · `useAgentConversation.ts` (+ test) | selection 전달 · 표시, 포트폴리오 시작 화면 · 하단 문구, 고침 뒤 새로고침 |
 | `services/web/src/features/agent-chat/PageEditCard.tsx` · `.module.css` (+ test) | 바뀐 곳 카드와 되돌리기 |
-| `services/web/src/app/(app)/edit/[portfolioId]/Editor.tsx` · `PageOutline.tsx` | 채팅 탭 교체, `elementTitle` 사용 |
+| `services/web/src/app/(app)/edit/[portfolioId]/Editor.tsx` · `PageOutline.tsx` · `page.module.css` | 채팅 탭 교체(채팅이 탭 아래 높이를 채움), `elementTitle` 사용 |
+| `services/web/src/app/api/agent/[...path]/route.ts` (+ test) | 되돌리기 경로(`page-edits/:editId/undo`) 전달 |
 | `services/web/src/app/(app)/edit/[portfolioId]/ElementChat.tsx` · `edit-actions.ts` | 삭제 · `instructElementAction` 삭제 |
 | `services/web/src/lib/api/endpoints.ts` | `page.instructElement` 삭제 |
+
+`build-app.ts` · `main.ts`는 바꾸지 않았다 — `PageElementEditor`는 기록 추가(`writeSection`)가 계속 쓴다.
 
 ## 작업 순서
 

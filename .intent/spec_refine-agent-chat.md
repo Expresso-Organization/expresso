@@ -25,7 +25,7 @@ date: 2026-11-10
 
 **재사용** — 공통 채팅 전체(`AgentChatService` 실행 · 저장 · SSE, `useAgentConversation`, `AgentChat`, `ToolStep`), 페이지 모듈의 `applyElementEdit` · `elementChanges` · `restoreRevision` · `#commitStructured`, 숫자 근거 검사 `ungroundedNumbers` · `metricValueAllowed`, 렌더러의 `editableFields` · `STRUCTURED_PARTS` · `elementTextPaths` · `textPathLabel`.
 
-**페이지 모듈** — `element-edit.ts`의 `instruct` 안에 있던 프롬프트 재료와 `check`를 순수 함수 둘로 꺼낸다. `elementGuide(snapshot, key, design)`은 도구가 읽을 설명을, `elementEditIssues(snapshot, key, edit, design)`은 위반 문장 목록을 낸다. `PageService`에 `elementGuide(userId, portfolioId, key)`와 `editElementByAgent(userId, portfolioId, key, edit, note)`를 더한다. 후자는 최신 판을 기준으로 `elementEditIssues` → `applyElementEdit` → `#commitStructured`를 돌고, 위반은 `PageElementIssues` 오류로 던진다. `PageApi`로 드러낸다.
+**페이지 모듈** — `element-edit.ts`의 `instruct` 안에 있던 프롬프트 재료와 `check`를 순수 함수 둘로 꺼낸다. `elementGuide(snapshot, key, design)`은 도구가 읽을 설명을, `checkElementEdit(snapshot, key, edit, design)`은 위반 문장 목록이나, 통과하면 적용한 스냅샷과 바뀐 곳을 낸다. `PageService`에 `elementGuide(userId, portfolioId, key)`와 `editElementByAgent(userId, portfolioId, key, edit, note)`를 더한다. 후자는 최신 판을 기준으로 `checkElementEdit`(안에서 `applyElementEdit`) → `#commitStructured`를 돌고, 위반은 `PageElementIssues` 오류로 던진다. `PageApi`로 드러낸다.
 
 **렌더러** — `PageOutline.tsx`의 `describe`를 `portfolio-renderer/editing.ts`의 `elementTitle`로 올리고, 목차 화면과 백엔드 문맥이 함께 쓴다.
 
@@ -39,7 +39,7 @@ flowchart TD
   RT --> SV["AgentChatService 실행 · undoPageEdit (바뀜)"]
   SV --> RN["ClaudeAgentRuntime read · edit 도구 (바뀜)"]
   RN --> PS["PageService elementGuide · editElementByAgent (바뀜)"]
-  PS --> EE["element-edit elementGuide · elementEditIssues (바뀜)"]
+  PS --> EE["element-edit elementGuide · checkElementEdit (바뀜)"]
   PS --> CM["applyElementEdit · #commitStructured · restoreRevision (재사용)"]
   EE --> PR["portfolio-renderer editableFields · elementTitle (재사용 · 이동)"]
   ED -. 지움 .-> OLD["ElementChat · instructElement 경로 (지움)"]

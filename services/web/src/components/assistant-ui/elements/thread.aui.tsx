@@ -88,6 +88,10 @@ export type ThreadComponents = {
   ReasoningGroup?:
     | ComponentType<PropsWithChildren<{ group: ThreadGroupPart }>>
     | undefined;
+  /** 입력창 바로 위. 이 메시지가 가리킬 대상처럼 보내기 전에 보여 줄 것을 둔다. */
+  ComposerHeader?: ComponentType | undefined;
+  /** 사용자 말풍선 바로 위. 그 메시지에 붙은 대상을 보여 준다. */
+  UserMessageHeader?: ComponentType | undefined;
 };
 
 export type ThreadProps = {
@@ -151,7 +155,7 @@ const ThreadRoot: FC<{ isEmpty: boolean; autoFocus: boolean }> = ({
   isEmpty,
   autoFocus,
 }) => {
-  const { Welcome = ThreadWelcome } = useContext(ThreadComponentsContext);
+  const { Welcome = ThreadWelcome, ComposerHeader } = useContext(ThreadComponentsContext);
 
   return (
     <ThreadPrimitive.Root
@@ -199,6 +203,7 @@ const ThreadRoot: FC<{ isEmpty: boolean; autoFocus: boolean }> = ({
           >
             <ThreadScrollToBottom />
             <ThreadFollowupSuggestions />
+            {ComposerHeader ? <ComposerHeader /> : null}
             <Composer autoFocus={autoFocus} />
             <AuiIf condition={(s) => isNewChatView(s) && s.composer.isEmpty}>
               <ThreadSuggestions />
@@ -458,6 +463,7 @@ const UserImagePart: ImageMessagePartComponent = (part) => (
 );
 
 const UserMessage: FC = () => {
+  const { UserMessageHeader } = useContext(ThreadComponentsContext);
   return (
     <MessagePrimitive.Root
       data-slot="aui_user-message-root"
@@ -465,6 +471,7 @@ const UserMessage: FC = () => {
       data-role="user"
     >
       <UserMessageAttachments />
+      {UserMessageHeader ? <UserMessageHeader /> : null}
 
       <div className="aui-user-message-content-wrapper relative col-start-2 min-w-0">
         <div className="aui-user-message-content peer bg-muted text-foreground rounded-xl px-4 py-2 wrap-break-word empty:hidden">
