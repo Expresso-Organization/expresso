@@ -21,7 +21,7 @@ date: 2026-11-10
 | `services/backend/src/modules/interview/interview.integration.test.ts` | 근거 조회 · 남의 제작물 404 |
 | `services/web/src/lib/api/endpoints.ts` | `brews.interviewBases` |
 | `services/web/src/app/(app)/brew/[brewId]/brew-actions.ts` | `beginInterviewAction` |
-| `services/web/src/app/(app)/brew/[brewId]/materials/page.tsx` | `startsInterview` · `basisJobId` 계산 |
+| `services/web/src/app/(app)/brew/[brewId]/materials/page.tsx` | `beginsInterview` · `basisJobId` 계산 |
 | `services/web/src/app/(app)/brew/[brewId]/materials/MaterialPicker.tsx` | 시작 버튼 폼 · 저장 중 잠금 |
 | `services/web/src/app/(app)/brew/[brewId]/materials/BeginInterviewButton.tsx` (새) | `useFormStatus` 제출 버튼 |
 | `services/web/src/app/(app)/brew/[brewId]/Waiting.tsx` · `.module.css` | `detail` 슬롯 · 안내 문구 |
@@ -43,7 +43,7 @@ date: 2026-11-10
 
 ## 가장 위험한 단계
 
-3단계. 시작 버튼이 잘못된 조건에서 잡을 내면 이미 질문이 있는 제작물의 대화 화면이 대기 카드로 돌아가거나, 돌고 있는 잡 옆에 잡이 하나 더 생긴다. `startsInterview` 조건을 세션 유무와 잡 상태 둘로 막고, 문제가 생기면 버튼을 기존 링크로 되돌리면 된다(백엔드 변경과 독립).
+3단계. 시작 버튼이 잘못된 조건에서 잡을 내면 이미 질문이 있는 제작물의 대화 화면이 대기 카드로 돌아가거나, 돌고 있는 잡 옆에 잡이 하나 더 생긴다. `beginsInterview` 조건을 세션 유무와 잡 상태 둘로 막고, 문제가 생기면 버튼을 기존 링크로 되돌리면 된다(백엔드 변경과 독립).
 
 ## 검증
 

@@ -21,7 +21,7 @@ date: 2026-11-10
 
 ## 설계
 
-**1 — 시작 버튼.** `materials/page.tsx`가 이미 읽는 `brew`에서 `startsInterview = !brew.interviewSessionId && !(latestJob.type === "interview" && queued|running)`와 `basisJobId`를 계산해 `MaterialPicker`에 넘긴다. `brew-actions.ts`에 `beginInterviewAction`을 더한다. 기존 `startInterviewAction` 본문(키 계산 → `brews.startInterview` → `reload`)에 `redirect`를 붙인 형태이고, `continueToDesignAction`과 같은 방식이다. `MaterialPicker`는 `useActionState`의 세 번째 값(진행 중 여부)을 두 저장 액션에서 받아 버튼을 잠근다. 제출 중 잠금은 버튼을 작은 클라이언트 컴포넌트로 빼서 `useFormStatus`로 건다.
+**1 — 시작 버튼.** `materials/page.tsx`가 이미 읽는 `brew`에서 `beginsInterview = !brew.interviewSessionId && !(latestJob.type === "interview" && queued|running)`와 `basisJobId`를 계산해 `MaterialPicker`에 넘긴다. `brew-actions.ts`에 `beginInterviewAction`을 더한다. 기존 `startInterviewAction` 본문(키 계산 → `brews.startInterview` → `reload`)에 `redirect`를 붙인 형태이고, `continueToDesignAction`과 같은 방식이다. `MaterialPicker`는 `useActionState`의 세 번째 값(진행 중 여부)을 두 저장 액션에서 받아 버튼을 잠근다. 제출 중 잠금은 버튼을 작은 클라이언트 컴포넌트로 빼서 `useFormStatus`로 건다.
 
 **2 — 근거 목록.** 근거 계산은 `MongoInterviewService.#questionOptions`가 이미 한다(재사용). 그 결과를 `{ basis, label }[]`로 바꿔 돌려주는 `questionBases(userId, brewId)`를 더한다. `label`은 요건이면 요건 이름, 기록이면 기록 제목이다. 계약은 `packages/contracts/src/interview.ts`에 `InterviewQuestionBasesResponseSchema`로 둔다. 라우트는 `modules/interview/routes.ts`, 웹 호출은 `lib/api/endpoints.ts`의 `brews.interviewBases`다. `InterviewApi`는 옛 MySQL 클래스의 키로 정해져 있어 새 메서드를 교차 타입으로 더한다.
 
