@@ -21,6 +21,9 @@ date: 2026-11-10
 | `scripts/ml-data/match_encoders.py` (새로) | 인코더 표와 sentence-transformers 래퍼 |
 | `scripts/ml-data/match_experiments.py` (새로) | `token-stats` · `encoders` · `train-bi` · `eval-cross` |
 | `scripts/ml-data/match_experiments_test.py` (새로) | 가짜 인코더 · 가짜 데이터로 명령 끝까지 실행 |
+| `scripts/ml-data/match_api_scorer.py` (새로) | Decisions API · Jev 채점기 |
+| `scripts/ml-data/match_api_scorer_test.py` (새로) | 가짜 HTTP 응답으로 요청 형식 · 캐시 · 재시도 · 거절 시험 |
+| `scripts/ml-data/match_fixture.py` (새로) | 두 실험 시험이 함께 쓰는 작은 데이터 |
 | `scripts/ml-data/match_onnx.py` (새로) | `export` · `latency` |
 | `scripts/ml-data/match_onnx_test.py` (새로) | 코드로 만든 작은 XLM-R로 내보내기 · 지연 측정 |
 | `package.json` | 새 테스트를 `ml:data:test` · `ml:model:test`에 추가 |
@@ -35,6 +38,7 @@ date: 2026-11-10
 5. `match_onnx.py`와 시험 — Python 3.12에서 작은 XLM-R 내보내기 후 ONNX 출력이 torch 출력과 1e-4 안에서 같고, `latency`가 p50 · p95를 낸다.
 6. 맥에서 실제 `multilingual-e5-base` · `bge-reranker-v2-m3`로 CPU 지연을 한 번 잰다(학습 전 가중치. 지연은 구조와 길이로 정해진다).
 7. `package.json` · 실험 설계 문서 — `pnpm ml:data:test` 전체 통과.
+8. 외부 API 채점기와 `eval-cross` 점수 파일 입력 — 가짜 HTTP 응답으로 채점 → `eval-cross`가 모델 A · B 지표와 교사별 지표를 낸다.
 
 ## 가장 위험한 단계
 
