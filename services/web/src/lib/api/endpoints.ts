@@ -9,9 +9,7 @@ import {
   type RegeneratePage,
   type RestorePageRevision,
   type EditStructuredPage,
-  type InstructStructuredElement,
   type AddStructuredSection,
-  InstructStructuredElementResultSchema,
   PageEditorDesignSchema,
   PageEditableRenderSchema,
   type CreateMediaBlock,
@@ -1144,8 +1142,6 @@ export const page = {
   editComposition: (accessToken: string, portfolioId: string, body: EditStructuredPage) =>
     request(`${API_PREFIX}/portfolios/${portfolioId}/page/composition`, z.object({ data: GeneratedPageSchema }), { method: "PATCH", accessToken, body }),
   /** 고른 요소 하나를 말로 고칩니다. 새 판과 바뀐 곳 목록이 옵니다. */
-  instructElement: (accessToken: string, portfolioId: string, key: string, body: InstructStructuredElement) =>
-    request(`${API_PREFIX}/portfolios/${portfolioId}/page/elements/${encodeURIComponent(key)}/instruct`, z.object({ data: InstructStructuredElementResultSchema }), { method: "POST", accessToken, body }),
   /** 커리어 기록 하나를 지면의 새 사례로 더합니다. */
   addSection: (accessToken: string, portfolioId: string, body: AddStructuredSection) =>
     request(`${API_PREFIX}/portfolios/${portfolioId}/page/sections`, z.object({ data: GeneratedPageSchema }), { method: "POST", accessToken, body }),

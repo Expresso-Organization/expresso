@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AgentConversationResponseSchema, AgentConversationListSchema, type AgentConversation, type AgentContext, type AgentApproval, type AgentPlanDecision, type AgentRecordDraftDecision, type AgentReplanDecision } from "@expresso/contracts";
+import { AgentConversationResponseSchema, AgentConversationListSchema, type AgentConversation, type AgentContext, type AgentPageSelection, type AgentApproval, type AgentPlanDecision, type AgentRecordDraftDecision, type AgentReplanDecision } from "@expresso/contracts";
 const base = "/api/agent/conversations";
 export async function agentRequest(path: string, body?: unknown) {
   const response = await fetch(`${base}${path}`, { ...(body === undefined ? {} : { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), cache: "no-store" });
@@ -77,14 +77,15 @@ export function useAgentConversation(context?: AgentContext, options: { restore?
     setPending(true); setIssue(null);
     try { accept(await action()); } catch (error) { setIssue(error instanceof Error ? error.message : "요청에 실패했습니다."); } finally { setPending(false); }
   };
-  const send = async (text: string) => {
+  /** `selection`은 다듬기 화면에서 고른 요소다. 에이전트는 그 요소를 고칠 대상으로 읽는다. */
+  const send = async (text: string, selection?: AgentPageSelection) => {
     if (pending || contextMutation.current) return;
     setPending(true); setIssue(null);
     try {
       let target = id;
       if (!target) { const created = await agentRequest("", { contexts: context ? [context] : [] }); if (!mounted.current) return; select(created.id); accept(created); target = created.id; }
       requestId.current = requestId.current?.text === text ? requestId.current : { text, id: crypto.randomUUID() };
-      accept(await agentRequest(`/${target}/messages`, { text, requestId: requestId.current.id })); requestId.current = null;
+      accept(await agentRequest(`/${target}/messages`, { text, requestId: requestId.current.id, ...(selection ? { selection } : {}) })); requestId.current = null;
     } catch (error) { setIssue(error instanceof Error ? error.message : "보내지 못했습니다."); throw error; } finally { setPending(false); }
   };
   const toggleContext = async (ref: AgentContext) => {
@@ -119,5 +120,7 @@ export function useAgentConversation(context?: AgentContext, options: { restore?
     decidePlanDraft: (draftId: string, decision: AgentPlanDecision) => decide(`plan-drafts/${draftId}`, decision),
     decideReplanDraft: (draftId: string, decision: AgentReplanDecision) => decide(`replan-drafts/${draftId}`, decision),
     approve: (input: AgentApproval) => perform(() => agentRequest(`/${id}/approval`, input)),
+    /** 에이전트가 저장한 지면 고침 되돌리기. 실패를 카드가 직접 보여 주도록 오류를 다시 던진다. */
+    undoPageEdit: (editId: string) => decide(`page-edits/${editId}/undo`, {}),
   };
 }

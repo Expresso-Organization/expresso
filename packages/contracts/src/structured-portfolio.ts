@@ -461,13 +461,6 @@ export const EditStructuredPageSchema = z
   );
 export type EditStructuredPage = z.infer<typeof EditStructuredPageSchema>;
 
-/** 고른 요소 하나를 말로 고칩니다. 요소는 경로의 Spec 키로 정합니다. */
-export const InstructStructuredElementSchema = z.strictObject({
-  expectedRevision: z.number().int().nonnegative(),
-  instruction: z.string().trim().min(1).max(2_000),
-});
-export type InstructStructuredElement = z.infer<typeof InstructStructuredElementSchema>;
-
 /** 커리어 기록 하나를 지면의 새 사례로 더합니다. */
 export const AddStructuredSectionSchema = z.strictObject({
   expectedRevision: z.number().int().nonnegative(),

@@ -12,6 +12,18 @@ describe("에이전트 BFF", () => {
     expect(response.status).toBe(200);
     expect(fetcher.mock.calls[0]?.[1]).toMatchObject({ method: "POST", body: "{}", headers: { authorization: "Bearer test-token" } });
   });
+  it("지면 고침 되돌리기는 정해진 경로만 빈 JSON으로 전달한다", async () => {
+    const fetcher = vi.fn(async (_url: string, _options?: RequestInit) => Response.json({ data: { id, title: "대화", contexts: [], messages: [], run: null, version: 2, updatedAt: "2026-11-10T00:00:00.000Z" } }));
+    vi.stubGlobal("fetch", fetcher);
+    const path = ["conversations", id, "page-edits", id, "undo"];
+    const response = await POST(new Request("http://localhost/api/agent/" + path.join("/"), { method: "POST" }), { params: Promise.resolve({ path }) });
+    expect(response.status).toBe(200);
+    expect(fetcher.mock.calls[0]?.[0]).toContain(`/agent/conversations/${id}/page-edits/${id}/undo`);
+    expect(fetcher.mock.calls[0]?.[1]).toMatchObject({ method: "POST", body: "{}" });
+    const wrong = await POST(new Request("http://localhost/api/agent/x", { method: "POST" }), { params: Promise.resolve({ path: ["conversations", id, "page-edits", id, "redo"] }) });
+    expect(wrong.status).toBe(404);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
   it("세션이 없으면 백엔드를 호출하지 않는다", async () => {
     session.token = null; const fetcher = vi.fn(); vi.stubGlobal("fetch", fetcher);
     const response = await POST(new Request("http://localhost/api/agent/conversations", { method: "POST" }), { params: Promise.resolve({ path: ["conversations"] }) });
