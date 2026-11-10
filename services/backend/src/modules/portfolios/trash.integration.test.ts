@@ -5,8 +5,10 @@ import { mongoCollections } from "@expresso/database";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { createMongoFixture } from "../../../test/support/mongodb.js";
-import { MongoEngagementService } from "../engagement/index.js";
+import { MongoCareerService } from "../career/index.js";
+import { MongoEngagementService, UnifiedSearchService } from "../engagement/index.js";
 import { MongoIdentityService } from "../identity/index.js";
+import { MongoJobBoardService } from "../jobs/index.js";
 import { BrewTrashService, MongoMaterialsService, purgeTrashedBrew } from "../materials/index.js";
 import { MongoPublishingService } from "../publishing/index.js";
 import { MongoPortfolioReadService, PORTFOLIO_TRASH_RETENTION_MS, PortfolioTrashService, purgeTrashedPortfolio } from "./index.js";
@@ -61,7 +63,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB portfolio · brew trash"
     expect((await reads.list(userId, ListPortfoliosQuerySchema.parse({}))).data.map(({ id }) => id)).not.toContain(portfolioId);
     await expect(reads.get(userId, portfolioId)).rejects.toMatchObject({ statusCode: 404 });
     expect((await engagement.home(userId)).portfolios.map(({ id }) => id)).not.toContain(portfolioId);
-    expect((await engagement.search(userId, UnifiedSearchQuerySchema.parse({ q: "휴지통 시험" }))).data).toEqual([]);
+    expect((await new UnifiedSearchService({ records: new MongoCareerService(fixture.resource), jobs: new MongoJobBoardService(fixture.resource), portfolios: reads }).search(userId, UnifiedSearchQuerySchema.parse({ q: "휴지통 시험" }))).data).toEqual([]);
     await expect(publishing.getPublic(slug)).rejects.toMatchObject({ statusCode: 404 });
     await expect(publishing.publish(userId, portfolioId, PublishPortfolioSchema.parse({ slug }))).rejects.toMatchObject({ statusCode: 404 });
     expect((await trash.list(userId, now)).data).toEqual([expect.objectContaining({ id: portfolioId, status: "unlisted" })]);
