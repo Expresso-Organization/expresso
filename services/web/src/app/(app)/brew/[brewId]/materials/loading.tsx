@@ -15,7 +15,7 @@ import styles from "./page.module.css";
  */
 export default function Loading() {
   return (
-    <BrewSkeleton step="materials" label="재료를 불러오는 중">
+    <BrewSkeleton step="materials" label="기록을 불러오는 중">
       <div className={styles.body}>
         <div className={styles.left}>
           <div className={styles.head}>

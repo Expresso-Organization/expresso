@@ -424,7 +424,7 @@ export function DesignCatalog({
           </label>
           <div className={styles.filterRow}>
             <label className={styles.filterSelect}>
-              <span>지면</span>
+              <span>테마</span>
               <select value={surface} onChange={(event) => setSurface(event.target.value as typeof surface)}>
                 <option value="all">전체</option>
                 <option value="light">밝게</option>
@@ -448,7 +448,7 @@ export function DesignCatalog({
               </select>
             </label>
             <label className={styles.filterSelect}>
-              <span>서체</span>
+              <span>글꼴</span>
               <select value={typography} onChange={(event) => setTypography(event.target.value)}>
                 <option value="all">전체</option>
                 {typographyOptions.map((value) => <option key={value} value={value}>{value}</option>)}

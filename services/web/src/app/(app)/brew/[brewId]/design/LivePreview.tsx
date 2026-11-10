@@ -264,7 +264,7 @@ export function LivePreview({
       <div className={live ? styles.stage : styles.stageHidden} aria-hidden={!live}>
         <div className={styles.bar}>
           <span className={styles.dot} />
-          <span>{phase ? PHASE_LABELS[phase] : "지면을 쓰는 중"}</span>
+          <span>{phase ? PHASE_LABELS[phase] : "페이지를 쓰는 중"}</span>
         </div>
         <iframe
           ref={frame}
@@ -284,9 +284,9 @@ export function LivePreview({
 
 /** 설계가 먼저 오는 생성에서 지금 일어나는 일. 청사진이 뜬 뒤로는 모델 호출이 채우기 하나뿐이다. */
 const PHASE_LABELS = {
-  filling: "설계한 자리에 내용을 채우는 중",
+  filling: "설계한 구성에 내용을 채우는 중",
   filled: "디자인을 입히는 중",
-  rendered: "완성한 지면을 점검하는 중",
+  rendered: "완성한 페이지를 점검하는 중",
   final: "초안을 저장하는 중",
 } as const;
 

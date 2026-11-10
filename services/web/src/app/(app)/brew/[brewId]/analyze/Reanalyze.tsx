@@ -30,7 +30,7 @@ export function Reanalyze({
         <input type="hidden" name="brewId" value={brewId} />
         <input type="hidden" name="jobAnalysisId" value={jobAnalysisId} />
         <button type="submit" className={styles.sourceAction} disabled={analyzing || running}>
-          {running ? "맡기는 중…" : analyzing ? "분석 중…" : "다시 분석"}
+          {running ? "요청하는 중…" : analyzing ? "분석 중…" : "다시 분석"}
         </button>
       </form>
       {result.error ? <span className={styles.sourceNotice}>{result.error}</span> : null}

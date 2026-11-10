@@ -13,7 +13,7 @@ import styles from "./WizardShell.module.css";
  */
 export const WIZARD_STEPS = [
   { key: "analyze", label: "공고 분석", segment: "analyze" },
-  { key: "materials", label: "재료 고르기", segment: "materials" },
+  { key: "materials", label: "기록 선택", segment: "materials" },
   { key: "counter", label: "AI 대화", segment: "counter" },
   { key: "design", label: "디자인 선택", segment: "design" },
   { key: "edit", label: "다듬기", segment: "edit" },

@@ -86,7 +86,7 @@ export function ElementChat({
                   </form>
                 ) : null}
                 {undone.error ? <div className={styles.aiBubble}>{undone.error}</div> : null}
-                {undone.revision !== undefined ? <div className={styles.aiBubble}>지시 앞 판으로 되돌렸습니다.</div> : null}
+                {undone.revision !== undefined ? <div className={styles.aiBubble}>지시 앞 버전으로 되돌렸습니다.</div> : null}
               </div>
             </div>
           </>

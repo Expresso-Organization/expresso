@@ -16,7 +16,7 @@ describe("제작 흐름 단계 줄", () => {
   it("다섯 단계를 순서대로 정의한다 — 레시피는 화면 단계가 아니다", () => {
     expect(WIZARD_STEPS.map(({ label }) => label)).toEqual([
       "공고 분석",
-      "재료 고르기",
+      "기록 선택",
       "AI 대화",
       "디자인 선택",
       "다듬기",
@@ -42,7 +42,7 @@ describe("제작 흐름 단계 줄", () => {
     ]);
   });
 
-  it("디자인 선택이 지난 단계일 때만 다시 뽑기 표시를 붙인다", () => {
+  it("디자인 선택이 지난 단계일 때만 다시 생성 표시를 붙인다", () => {
     render(<WizardSteps brewId={BREW} current="edit" situation="생성 완료" />);
     const hrefs = screen.getAllByRole("link").map((link) => link.getAttribute("href"));
     expect(hrefs.filter((href) => href?.includes("again=1"))).toHaveLength(1);

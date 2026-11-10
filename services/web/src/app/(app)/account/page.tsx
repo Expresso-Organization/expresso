@@ -230,10 +230,10 @@ export default async function AccountPage() {
             {/* 지면을 밝게 볼지 어둡게 볼지 — 이 기기에만 남는다 */}
             <section id="surface" className={styles.section}>
               <HashScroll id="surface" />
-              <div className={styles.sectionLabel}>지면</div>
+              <div className={styles.sectionLabel}>화면</div>
               <div className={styles.themeRow}>
                 <div style={{ minWidth: 0 }}>
-                  <div className={styles.themeName}>지면 밝기</div>
+                  <div className={styles.themeName}>테마</div>
                   <div className={styles.themeNote}>
                     시스템을 고르면 기기 설정을 따라갑니다. 이 선택은 계정이 아니라
                     지금 쓰는 브라우저에 남습니다.
@@ -265,7 +265,7 @@ export default async function AccountPage() {
                         <div className={styles.consentWhat}>{copy.what}</div>
                         {item.needsRenewal ? (
                           <div className={styles.consentRenew}>
-                            문구가 바뀌어 다시 여쭙니다 — 다시 켜 주셔야 합니다
+                            안내 문구가 바뀌어 다시 동의가 필요합니다 — 다시 켜 주세요
                           </div>
                         ) : null}
                       </div>

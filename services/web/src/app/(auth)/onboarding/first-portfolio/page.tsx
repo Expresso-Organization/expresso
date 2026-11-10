@@ -11,7 +11,7 @@ import { OnboardingShell, onboardingStyles as styles } from "../OnboardingShell"
 const NEXT_STEPS = [
   {
     title: "목록에서 공고를 고릅니다",
-    note: "요구 역량을 뽑고 내 기록으로 덮이는 곳을 표시합니다",
+    note: "요구 역량을 추출하고 내 기록으로 덮이는 곳을 표시합니다",
   },
   {
     title: "빈 곳만 질문으로 묻습니다",
@@ -63,7 +63,7 @@ export default async function OnboardingFirstPortfolioPage() {
       ) : null}
       {candidates.length > 0 ? (
         <>
-          <h1 className={styles.title}>이제 한 곳을 골라 뽑아 봅니다</h1>
+          <h1 className={styles.title}>이제 공고 하나를 골라 시작해 보세요</h1>
           <p className={styles.lede}>
             내 기록으로 일치도를 계산한 공고입니다. 하나를 고르면 분석 → 인터뷰 →
             생성까지 이어집니다.
@@ -126,7 +126,7 @@ export default async function OnboardingFirstPortfolioPage() {
         <Icon name="folder-open" size={18} color="var(--ex-fg-muted)" />
         <div style={{ minWidth: 0 }}>
           <div className={styles.altTitle}>먼저 기록부터 다듬고 싶다면</div>
-          <div className={styles.altNote}>내 커리어로 이동해 자유롭게 정리하십시오</div>
+          <div className={styles.altNote}>내 커리어로 이동해 자유롭게 정리해 보세요</div>
         </div>
         <Link href="/career/experience" className={styles.altAction}>
           내 커리어로

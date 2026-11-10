@@ -18,7 +18,7 @@ export function ForgotForm({ notice }: { notice?: string | undefined }) {
       <div className={styles.form}>
         <h1 className={styles.title}>메일을 확인해 주세요</h1>
         <div className={styles.subtitle}>
-          그 주소로 가입한 계정이 있으면 재설정 링크가 갔습니다. 몇 분 안에 오지 않으면
+          그 주소로 가입한 계정이 있으면 재설정 링크를 보냈습니다. 몇 분 안에 오지 않으면
           스팸함을 보고, 그래도 없으면 주소를 확인해 다시 요청해 주세요.
         </div>
         <div className={styles.foot}>

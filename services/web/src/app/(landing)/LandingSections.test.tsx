@@ -62,7 +62,7 @@ it("제품 화면에서 단계를 누르면 그 단계의 화면이 보인다", 
   render(<Landing />);
   const tabs = within(screen.getByRole("tablist", { name: "제품 화면" })).getAllByRole("tab");
   expect(tabs.map((tab) => tab.querySelector("span:nth-child(2)")?.textContent)).toEqual([
-    "재료 고르기", "디자인 선택", "다듬기", "배포",
+    "기록 선택", "디자인 선택", "다듬기", "배포",
   ]);
   expect(tabs[0]?.getAttribute("aria-selected")).toBe("true");
   fireEvent.click(tabs[2]!);
@@ -77,15 +77,15 @@ it("소개 모션그래픽은 여섯 장을 순서대로 담는다", () => {
   const story = screen.getByRole("region", { name: "Expresso 소개" });
   expect(within(story).getAllByRole("heading", { level: 2, hidden: true }).map((heading) => heading.textContent)).toEqual([
     "기록을 쌓아 둡니다",
-    "공고에서 요건을 뽑습니다",
+    "공고에서 요건을 추출합니다",
     "비어 있는 요건은 물어봅니다",
     "공고에 맞춰 다시 고릅니다",
-    "포트폴리오를 추출합니다",
+    "포트폴리오를 생성합니다",
     "링크 하나로 보냅니다",
   ]);
   const index = within(story).getByRole("list", { name: "소개 순서" });
   expect(within(index).getAllByRole("listitem").map((row) => row.textContent)).toEqual([
-    "커리어 기록", "공고 분석", "AI 대화", "기업 맞춤", "포트폴리오 추출", "배포 · 방문 분석",
+    "커리어 기록", "공고 분석", "AI 대화", "기업 맞춤", "포트폴리오 생성", "배포 · 방문 분석",
   ]);
 });
 

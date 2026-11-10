@@ -23,7 +23,7 @@ export async function addMediaAction(formData: FormData): Promise<MediaResult> {
   const sectionId = formData.get("sectionId");
   const file = formData.get("file");
   if (typeof portfolioId !== "string" || typeof sectionId !== "string") {
-    return { error: "어느 섹션에 놓을지 알 수 없습니다." };
+    return { error: "어느 섹션에 넣을지 알 수 없습니다." };
   }
   if (!(file instanceof File) || file.size === 0) return { error: "이미지를 골라 주세요." };
 
@@ -45,6 +45,6 @@ export async function addMediaAction(formData: FormData): Promise<MediaResult> {
       if (error.status === 413) return { error: "파일이 너무 큽니다. 8MB까지 받습니다." };
       if (error.status === 415) return { error: "PNG · JPEG · WebP · GIF만 받습니다." };
     }
-    return { error: error instanceof Error ? error.message : "이미지를 놓지 못했습니다." };
+    return { error: error instanceof Error ? error.message : "이미지를 추가하지 못했습니다." };
   }
 }

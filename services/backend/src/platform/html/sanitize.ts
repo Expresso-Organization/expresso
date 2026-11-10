@@ -30,7 +30,7 @@ export class PageSanitizeError extends Error {
   readonly reason: string;
 
   constructor(reason: string) {
-    super(`지면이 소독을 통과하지 못했습니다: ${reason}`);
+    super(`페이지가 보안 검사를 통과하지 못했습니다: ${reason}`);
     this.name = "PageSanitizeError";
     this.reason = reason;
   }

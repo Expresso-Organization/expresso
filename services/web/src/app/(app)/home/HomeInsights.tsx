@@ -248,8 +248,8 @@ function ResponseBody({ sites }: { sites: SiteInsight[] }) {
         )}
 
         {/*
-          지금 판을 배포한 날 — 바닥의 눈금. 기간보다 앞서 배포했으면 그리지 않는다.
-          같은 날 배포한 사이트는 눈금을 나란히 세우고 판 번호를 한 줄로 묶는다. 따로 찍으면 글자가 겹친다.
+          지금 버전을 배포한 날 — 바닥의 눈금. 기간보다 앞서 배포했으면 그리지 않는다.
+          같은 날 배포한 사이트는 눈금을 나란히 세우고 버전 번호를 한 줄로 묶는다. 따로 찍으면 글자가 겹친다.
         */}
         {deployMarks(sites, days).map((mark) => (
           <span key={mark.index} className={styles.deployMark} style={{ left: at(mark.index) }}>

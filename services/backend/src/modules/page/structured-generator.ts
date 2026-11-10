@@ -264,7 +264,7 @@ function renderSpec(snapshot: Snapshot, context: SetupContext) {
     return renderStructuredPortfolio(snapshot.spec, snapshot.content, { design: context.design, theme: context.style });
   } catch (error) {
     throw new PageRenderError(
-      `지면 렌더링에 실패했습니다: ${error instanceof Error ? error.message : String(error)}`,
+      `페이지 렌더링에 실패했습니다: ${error instanceof Error ? error.message : String(error)}`,
       { cause: error },
     );
   }

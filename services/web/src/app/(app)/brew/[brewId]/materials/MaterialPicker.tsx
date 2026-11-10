@@ -43,7 +43,7 @@ const EXCLUSION_LABEL: Record<string, string> = {
 const STATUS_LABEL = { organized: "정리됨", verified: "검증됨" } as const;
 
 const SORTS = [
-  { id: "match", label: "매칭순" },
+  { id: "match", label: "일치도 순" },
   { id: "title", label: "제목순" },
   { id: "recent", label: "최근 일 순" },
 ] as const;
@@ -138,12 +138,12 @@ export function MaterialPicker({
             <Icon name="list-checks" weight="fill" size={18} color="var(--ex-accent-text)" />
           </span>
           <span className={styles.headTitle}>무엇을 담을까요</span>
-          <span className={styles.headNote}>공고 매칭도가 높은 순</span>
+          <span className={styles.headNote}>공고 일치도가 높은 순</span>
         </div>
         <p className={styles.blurb}>
           {materials.materials.length === 0
             ? "정리된 기록이 아직 없습니다. 공고에서 읽은 내용만으로 계속한 뒤, 생성된 포트폴리오를 직접 편집할 수 있습니다."
-            : `정리된 기록 ${materials.materials.length}건을 이 공고의 요건에 맞춰 줄 세웠습니다. 한 번에 ${limit}건까지 담을 수 있고, 지금 ${chosen.size}건을 골랐습니다. 체크는 바꾸는 즉시 저장됩니다.`}
+            : `정리된 기록 ${materials.materials.length}건을 이 공고의 요건에 맞춰 정렬했습니다. 한 번에 ${limit}건까지 담을 수 있고, 지금 ${chosen.size}건을 골랐습니다. 체크는 바꾸는 즉시 저장됩니다.`}
         </p>
 
         <div className={styles.tabs}>
@@ -199,7 +199,7 @@ export function MaterialPicker({
             </div>
             <div className={styles.headCell}>
               <Icon name="target" size={12} color="var(--ex-accent-text)" />
-              <span className={styles.headLabel}>매칭</span>
+              <span className={styles.headLabel}>일치도</span>
             </div>
           </div>
 
@@ -275,14 +275,14 @@ export function MaterialPicker({
       <aside className={styles.rail}>
         <div style={{ flexShrink: 0 }}>
           <div className={styles.railHead}>
-            <span className={styles.railTitle}>고른 재료 {chosen.size}건</span>
+            <span className={styles.railTitle}>고른 기록 {chosen.size}건</span>
             <span className={styles.railNote}>
               {materials.materials.length - chosen.size}건 제외됨
             </span>
           </div>
           <div className={styles.mixCard}>
             {mix.length === 0 ? (
-              <div className={styles.railRowBody}>아직 고른 재료가 없습니다.</div>
+              <div className={styles.railRowBody}>아직 고른 기록이 없습니다.</div>
             ) : (
               <>
                 <div className={styles.mixBar}>
@@ -365,7 +365,7 @@ export function MaterialPicker({
             뺀 {materials.materials.length - chosen.size}건은 왜 빠졌나요
           </div>
           {excludedReasons.length === 0 ? (
-            <div className={styles.railRowBody}>줄 세운 기록을 모두 담았습니다.</div>
+            <div className={styles.railRowBody}>정렬한 기록을 모두 담았습니다.</div>
           ) : (
             <div className={styles.reasons}>
               {excludedReasons.map((reason) => (

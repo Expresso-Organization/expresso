@@ -72,9 +72,9 @@ export function ChatPanel({
   );
   const isBlockTarget = !freePage && target !== "layout";
   const targetLabel = target === "page"
-    ? (structured ? "지면 구성" : "웹페이지 전체")
+    ? (structured ? "페이지 구성" : "웹페이지 전체")
     : target === "layout"
-      ? "지면 전체"
+      ? "페이지 전체"
       : blocks.find(({ id }) => id === target)?.label ?? "블록";
   const kept = applied.error === undefined && !applying && result.proposalId === undefined;
 
@@ -111,7 +111,7 @@ export function ChatPanel({
 
                 {result.pageRationale ? (
                   <div className={styles.aiBubble}>
-                    판 {Number(result.pageRevision ?? 0) + 1}을 만들었습니다. {result.pageRationale}
+                    버전 {Number(result.pageRevision ?? 0) + 1}을 만들었습니다. {result.pageRationale}
                   </div>
                 ) : null}
 
@@ -183,13 +183,13 @@ export function ChatPanel({
             aria-label="고칠 대상"
           >
             {freePage ? (
-              <option value="page">{structured ? "지면 구성" : "웹페이지 전체"}</option>
+              <option value="page">{structured ? "페이지 구성" : "웹페이지 전체"}</option>
             ) : (
               <>
                 {blocks.map((block) => (
                   <option key={block.id} value={block.id}>{block.label}</option>
                 ))}
-                <option value="layout">지면 전체</option>
+                <option value="layout">페이지 전체</option>
               </>
             )}
           </select>
@@ -298,8 +298,8 @@ export function FreePageProperties({ page }: { page: GeneratedPage }) {
       <div className={styles.targetCard}>
         <Icon name="code" size={15} color="#354DA8" />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div className={styles.targetName}>{page.generationManifest?.structured ? "구조화 지면" : "자유 HTML"} · 판 {page.revision + 1}</div>
-          <div className={styles.targetPath}>사용자가 요청할 때만 새 판을 만듭니다</div>
+          <div className={styles.targetName}>{page.generationManifest?.structured ? "구조화 페이지" : "자유 HTML"} · 버전 {page.revision + 1}</div>
+          <div className={styles.targetPath}>사용자가 요청할 때만 새 버전을 만듭니다</div>
         </div>
       </div>
       <div className={styles.propGroup}>
@@ -339,7 +339,7 @@ export function FreePageHistoryPanel({ pages, portfolioId }: { pages: readonly G
             {page.revision + 1}
           </span>
           <div className={styles.revisionBody}>
-            <div className={styles.revisionSummary}>판 {page.revision + 1}</div>
+            <div className={styles.revisionSummary}>버전 {page.revision + 1}</div>
             <div className={styles.revisionMeta}>
               {new Date(page.createdAt).toLocaleString("ko-KR")}
               {index === 0 ? " · 현재" : ""}
@@ -351,7 +351,7 @@ export function FreePageHistoryPanel({ pages, portfolioId }: { pages: readonly G
               <input type="hidden" name="revision" value={page.revision} />
               <input type="hidden" name="expectedRevision" value={current} />
               <button type="submit" className={styles.revisionRevert} disabled={running}>
-                이 판으로 되돌리기
+                이 버전으로 되돌리기
               </button>
             </form>
           )}
@@ -397,7 +397,7 @@ const WEIGHTS = [
 
 /** 팔레트 이름. 실제 색은 지면이 정한다 — 지면을 갈면 이 블록 색도 따라간다. */
 const COLORS = [
-  { value: "inherit", label: "지면 그대로", swatch: null },
+  { value: "inherit", label: "기본 색", swatch: null },
   { value: "ink", label: "본문색", swatch: "var(--pf-ink, #16223A)" },
   { value: "accent", label: "강조색", swatch: "var(--pf-accent, #9A4030)" },
   { value: "muted", label: "흐린색", swatch: "var(--pf-muted, #8A94A6)" },
@@ -465,7 +465,7 @@ export function StyleControls({
       >
         −
       </button>
-      <span className={styles.stepperValue} title="지면이 정한 타입 계단의 칸">
+      <span className={styles.stepperValue} title="페이지에서 정한 글자 크기 단계">
         {index + 1}
       </span>
       <button
@@ -531,7 +531,7 @@ export function StyleControls({
           {...(color.swatch ? { style: { background: color.swatch } } : {})}
           onClick={() => set({ color: color.value })}
         >
-          {color.swatch ? null : "지면"}
+          {color.swatch ? null : "기본"}
         </button>
       ))}
       <button
@@ -565,7 +565,7 @@ export function StyleControls({
       <div className={styles.propRow}>
         <span className={styles.propLabel}>크기</span>
         {stepper}
-        <span className={styles.propNote}>지면 계단 {index + 1}/{SIZE_STEPS.length}</span>
+        <span className={styles.propNote}>글자 크기 단계 {index + 1}/{SIZE_STEPS.length}</span>
       </div>
       <div className={styles.propRow}>
         <span className={styles.propLabel}>굵기</span>
@@ -652,7 +652,7 @@ export function PropertiesPanel({
     return (
       <div className={styles.properties}>
         <p className={styles.panelEmpty}>
-          왼쪽 지면에서 고칠 것을 하나 누르면 여기에 그 속성이 나옵니다.
+          왼쪽 페이지에서 고칠 것을 하나 누르면 여기에 그 속성이 나옵니다.
         </p>
       </div>
     );
@@ -676,7 +676,7 @@ export function PropertiesPanel({
 
       {fields === undefined ? (
         <p className={styles.panelEmpty}>
-          이 블록은 값을 직접 고칠 수 없습니다. 지면에서 자리만 옮길 수 있습니다.
+          이 블록은 값을 직접 고칠 수 없습니다. 페이지에서 위치만 옮길 수 있습니다.
         </p>
       ) : (
         <div className={styles.propGroup}>
@@ -720,7 +720,7 @@ export function PropertiesPanel({
         <div className={styles.propGroupHead}>
           <span className={styles.propGroupLabel}>모양</span>
           <span className={styles.propGroupRule} />
-          <span className={styles.propGroupNote}>지면의 계단과 팔레트 위에서</span>
+          <span className={styles.propGroupNote}>페이지의 글자 크기 단계와 색 팔레트 안에서</span>
         </div>
         <StyleControls
           portfolioId={portfolioId}
@@ -869,7 +869,7 @@ export function HistoryPanel({
       {result.error ? <p className={styles.panelError}>{result.error}</p> : null}
       {result.conflict ? (
         <p className={styles.panelError}>
-          그 뒤에 이 자리를 또 고쳤습니다. 되돌리면 그 편집이 사라집니다 — 한 번 더
+          그 뒤에 이 항목을 또 고쳤습니다. 되돌리면 그 편집이 사라집니다 — 한 번 더
           누르면 그때는 덮습니다.
         </p>
       ) : null}

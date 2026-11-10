@@ -70,7 +70,7 @@ const MODES: {
 ];
 
 const PAGE_SIZE = 20;
-/** 첫 화면 최신 공고 줄 수. 옆 칸(갈래 · 내 재료)과 높이가 비슷해지는 만큼이다. */
+/** 첫 화면 최신 공고 줄 수. 옆 칸(갈래 · 내 기록)과 높이가 비슷해지는 만큼이다. */
 const RECENT_LIMIT = 6;
 
 function isMode(value: string | undefined): value is Mode {
@@ -387,7 +387,7 @@ function ResumeBanner({ brew }: { brew: Home["activeBrews"][number] }) {
 }
 
 /**
- * 내 재료 현황 — 02 재료 고르기에서 순위가 매겨질 것들.
+ * 내 기록 현황 — 02 재료 고르기에서 순위가 매겨질 것들.
  *
  * 기록이 없으면 이 화면의 약속("내 기록의 순위가 매겨집니다")이 빈말이 된다.
  * 그 사실을 시작하기 전에 말해 준다.
@@ -402,7 +402,7 @@ function MaterialsPanel({
   return (
     <aside className={styles.panel}>
       <div className={styles.panelHead}>
-        <span className={styles.panelTitle}>내 재료</span>
+        <span className={styles.panelTitle}>내 기록</span>
         <span className={styles.panelNote}>기록 {recordTotal}건</span>
         <Link href="/career/experience" className={styles.panelLink}>
           기록 관리
@@ -412,7 +412,7 @@ function MaterialsPanel({
         <div className={styles.materialsEmpty}>
           <p className={styles.materialsEmptyText}>
             아직 기록이 없습니다. 기록 없이도 만들 수는 있지만, 경험 하나만
-            적어 두면 2단계 재료 고르기부터 공고에 맞춰 골라 드립니다.
+            적어 두면 2단계 기록 선택부터 공고에 맞춰 골라 드립니다.
           </p>
           <Link href="/career/experience" className={styles.materialsCta}>
             <Icon name="coffee" weight="fill" size={13} />

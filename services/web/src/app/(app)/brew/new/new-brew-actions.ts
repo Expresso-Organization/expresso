@@ -44,7 +44,7 @@ export async function pasteAndAnalyzeAction(
   if (!companyName || !title) return { error: "회사와 공고 제목을 적어 주세요." };
   if (descriptionRaw.length < 200) {
     return {
-      error: `공고 원문이 ${descriptionRaw.length}자입니다. 요건을 뽑으려면 200자 이상이 필요합니다.`,
+      error: `공고 원문이 ${descriptionRaw.length}자입니다. 요건을 추출하려면 200자 이상이 필요합니다.`,
     };
   }
 
@@ -62,7 +62,7 @@ export async function pasteAndAnalyzeAction(
     )).data.jobAnalysisId;
   } catch (error) {
     if (error instanceof ApiError) {
-      return { error: "공고를 들이지 못했습니다. 잠시 뒤 다시 눌러 주세요." };
+      return { error: "공고를 등록하지 못했습니다. 잠시 뒤 다시 눌러 주세요." };
     }
     throw error;
   }
@@ -193,7 +193,7 @@ function readFailure(error: ApiError): string {
     return "이 주소에서는 공고 글을 읽지 못했습니다. 봇을 막는 사이트일 수 있습니다 — 아래에 직접 붙여넣어 주세요.";
   }
   if (error.status === 502) {
-    return "그 페이지에 닿지 못했습니다. 주소를 확인하거나 아래에 붙여넣어 주세요.";
+    return "해당 페이지에 연결하지 못했습니다. 주소를 확인하거나 아래에 붙여넣어 주세요.";
   }
   return "주소를 읽지 못했습니다. 아래에 붙여넣어 주세요.";
 }

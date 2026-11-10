@@ -43,7 +43,7 @@ function message(error: unknown): string {
 /** 구조화 지면의 판 충돌 · 검사 실패를 화면 문장으로 바꿉니다. */
 function pageMessage(error: unknown, fallback: string): string {
   if (error instanceof ApiError) {
-    if (error.status === 409) return error.message || "그 사이 판이 바뀌었습니다. 새로고침한 뒤 다시 해 주세요.";
+    if (error.status === 409) return error.message || "그 사이 버전이 바뀌었습니다. 새로고침한 뒤 다시 해 주세요.";
     if (error.status === 403) return "AI 사용 동의가 필요합니다. 설정에서 켜 주세요.";
     if (error.status === 422 || error.status === 404 || error.status === 503) return error.message;
   }
@@ -136,8 +136,8 @@ export async function instructAction(
       revalidatePath(`/edit/${portfolioId}`);
       return {
         instruction: said,
-        target: "지면 전체",
-        layoutRationale: selected?.spec.rationale ?? "지면을 고쳤습니다.",
+        target: "페이지 전체",
+        layoutRationale: selected?.spec.rationale ?? "페이지를 고쳤습니다.",
       };
     }
 
@@ -227,7 +227,7 @@ export async function restorePageAction(
     revalidatePath(`/edit/${portfolioId}`);
     return { revision: data.revision };
   } catch (error) {
-    if (error instanceof ApiError && error.status === 409) return { error: "그 사이 판이 바뀌었습니다. 새로고침한 뒤 다시 눌러 주세요." };
+    if (error instanceof ApiError && error.status === 409) return { error: "그 사이 버전이 바뀌었습니다. 새로고침한 뒤 다시 눌러 주세요." };
     return { error: "되돌리지 못했습니다. 다시 시도해 주세요." };
   }
 }

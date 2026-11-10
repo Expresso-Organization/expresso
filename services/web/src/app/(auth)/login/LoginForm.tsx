@@ -45,14 +45,14 @@ export function LoginForm({
       <AuthAside
         eyebrow="WELCOME BACK"
         headline={<Catchphrase tone="dark" />}
-        lede="한 번 적은 경험은 사라지지 않습니다. 지원할 때마다 처음부터 쓰지 말고, 쌓아 둔 재료에서 골라 뽑아내십시오."
+        lede="한 번 적은 경험은 사라지지 않습니다. 지원할 때마다 처음부터 쓰지 말고, 쌓아 둔 기록에서 골라 쓰세요."
       />
 
       <div className={styles.formPane}>
         <div className={styles.form}>
           <h1 className={styles.title}>다시 오셨군요</h1>
           <div className={styles.subtitle}>
-            계정에 로그인하고 이어서 작업하십시오.
+            계정에 로그인하고 이어서 작업해 주세요.
           </div>
 
           {notice ? (

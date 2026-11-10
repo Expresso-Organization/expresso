@@ -82,7 +82,7 @@ describe("생성 기다림 화면", () => {
     expect(screen.queryByText("채용 공고 분석 중...")).toBeNull();
   });
 
-  it("구성을 기다리는 중이어도 10초가 지나면 아는 입력부터 지면에 올리고, 섹션은 구성이 끝나면 제자리에 들어온다", () => {
+  it("구성을 기다리는 중이어도 10초가 지나면 아는 입력부터 페이지에 올리고, 섹션은 구성이 끝나면 제자리에 들어온다", () => {
     const waiting = { ...reading, sections: [] };
     const { rerender } = render(<GenerationWait reading={waiting} waitedMs={0} brewingLeftMs={BREWING_MS} recipePending actions={null} />);
     expect(visible()).toHaveLength(0);
@@ -107,7 +107,7 @@ describe("생성 기다림 화면", () => {
     const start = () => {
       window.matchMedia = vi.fn().mockReturnValue({ matches: false }) as unknown as typeof window.matchMedia;
       const view = render(<GenerationWait reading={waiting} waitedMs={BREWING_MS} brewingLeftMs={0} recipePending actions={null} />);
-      const feed = screen.getByLabelText("지면 설계에 들어가는 입력");
+      const feed = screen.getByLabelText("페이지 설계에 들어가는 입력");
       const arrive = () => {
         view.rerender(<GenerationWait reading={reading} waitedMs={BREWING_MS} brewingLeftMs={0} recipePending={false} actions={null} />);
         act(() => vi.advanceTimersByTime(0));
@@ -142,7 +142,7 @@ describe("생성 기다림 화면", () => {
       expect(shownLabels(feed)).toEqual(["채용 공고", "디자인", "섹션", "기록"]);
     });
 
-    it("사람이 스크롤해 멈춘 뒤에 오면 바로 보이고 지면 안을 옮기지 않는다", () => {
+    it("사람이 스크롤해 멈춘 뒤에 오면 바로 보이고 페이지 안을 옮기지 않는다", () => {
       const { feed, arrive } = start();
       act(() => vi.advanceTimersByTime(0));
       act(() => {
@@ -158,7 +158,7 @@ describe("생성 기다림 화면", () => {
     it("동작 줄이기 설정에서는 오는 대로 바로 보인다", () => {
       // 이 묶음의 기본 `matchMedia`가 동작 줄이기다.
       const view = render(<GenerationWait reading={waiting} waitedMs={BREWING_MS} brewingLeftMs={0} recipePending actions={null} />);
-      const feed = screen.getByLabelText("지면 설계에 들어가는 입력");
+      const feed = screen.getByLabelText("페이지 설계에 들어가는 입력");
       expect(shownLabels(feed)).toEqual(["채용 공고", "디자인", "기록"]);
       view.rerender(<GenerationWait reading={reading} waitedMs={BREWING_MS} brewingLeftMs={0} recipePending={false} actions={null} />);
       expect(shownLabels(feed)).toEqual(["채용 공고", "디자인", "섹션", "기록"]);
@@ -196,10 +196,10 @@ describe("생성 기다림 화면", () => {
     expect(screen.getByRole("progressbar").hasAttribute("data-done")).toBe(true);
   });
 
-  it("지면에 마지막 구역까지 올라오면 멈추고 비우지 않는다", () => {
+  it("페이지에 마지막 구역까지 올라오면 멈추고 비우지 않는다", () => {
     window.matchMedia = vi.fn().mockReturnValue({ matches: false }) as unknown as typeof window.matchMedia;
     render(<GenerationWait reading={reading} waitedMs={BREWING_MS} brewingLeftMs={0} actions={null} />);
-    const feed = screen.getByLabelText("지면 설계에 들어가는 입력");
+    const feed = screen.getByLabelText("페이지 설계에 들어가는 입력");
     const shown = () => feed.querySelectorAll("[data-feed-group][data-shown]").length;
 
     act(() => vi.advanceTimersByTime(0));
@@ -216,7 +216,7 @@ describe("생성 기다림 화면", () => {
   it("쌓는 도중 사람이 스크롤하면 남은 구역을 모두 보이고 멈춘다", () => {
     window.matchMedia = vi.fn().mockReturnValue({ matches: false }) as unknown as typeof window.matchMedia;
     render(<GenerationWait reading={reading} waitedMs={BREWING_MS} brewingLeftMs={0} actions={null} />);
-    const feed = screen.getByLabelText("지면 설계에 들어가는 입력");
+    const feed = screen.getByLabelText("페이지 설계에 들어가는 입력");
     act(() => vi.advanceTimersByTime(0));
 
     act(() => {

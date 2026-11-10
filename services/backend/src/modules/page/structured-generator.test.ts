@@ -298,7 +298,7 @@ describe("모델 기반 구조화 생성", () => {
     expect(ai.calls).toHaveLength(1);
     expect(failure).toBeInstanceOf(PageRenderError);
     expect((failure as Error).message).toMatch(
-      /^지면 렌더링에 실패했습니다: .*저장 크기 제한/,
+      /^페이지 렌더링에 실패했습니다: .*저장 크기 제한/,
     );
   });
   it("디자인 스펙을 받으면 토큰 키트로 그리고 디자인 검사를 QA에 넣는다", async () => {

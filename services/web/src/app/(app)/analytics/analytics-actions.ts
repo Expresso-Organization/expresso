@@ -36,10 +36,10 @@ function message(error: unknown): string {
   if (error instanceof ApiError) {
     if (error.status === 403) return "AI 사용 동의가 필요합니다. 설정에서 켜 주세요.";
     if (error.status === 409) return error.message.includes("order")
-      ? "지면이 그 사이에 바뀌었습니다. 새로고침해 주세요."
+      ? "페이지가 그 사이에 바뀌었습니다. 새로고침해 주세요."
       : "아직 배포하지 않은 포트폴리오입니다.";
     if (error.status === 422) return error.message;
-    if (error.status === 503) return "지금은 해설을 쓸 수 없습니다.";
+    if (error.status === 503) return "지금은 요약을 만들 수 없습니다.";
   }
   return "읽지 못했습니다. 다시 시도해 주세요.";
 }

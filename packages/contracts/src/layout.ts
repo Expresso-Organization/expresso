@@ -254,7 +254,7 @@ function refinePalette(palette: z.infer<typeof PaletteSchema>, context: z.Refine
   if (contrastRatio(palette.paper, palette.ink) < MINIMUM_BODY_CONTRAST) {
     context.addIssue({
       code: "custom",
-      message: "어두운 지면 위 글자 대비가 부족합니다",
+      message: "어두운 배경 위 글자 대비가 부족합니다",
       path: ["palette", "paper"],
     });
   }
@@ -276,7 +276,7 @@ function refineDistinct(
   if (new Set(candidates.map(shapeOf)).size < candidates.length) {
     context.addIssue({
       code: "custom",
-      message: "후보가 서로 충분히 다르지 않습니다 (서체 · 밀도 · 지면 골격이 겹칩니다)",
+      message: "후보가 서로 충분히 다르지 않습니다 (글꼴 · 밀도 · 페이지 골격이 겹칩니다)",
       path: ["candidates"],
     });
   }

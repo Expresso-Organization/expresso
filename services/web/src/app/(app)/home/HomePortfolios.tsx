@@ -88,7 +88,7 @@ function PortfolioCard({
   return (
     <Link href={`/edit/${portfolio.id}` as Route} className={styles.portfolioCard}>
       {/*
-        넓은 화면 폭으로 그린 지면을 1/4로 줄인다. 04 새 탭 미리보기와 같은 문서라 배포될 모습 그대로다.
+        넓은 화면 폭으로 그린 페이지를 1/4로 줄인다. 04 새 탭 미리보기와 같은 문서라 배포될 모습 그대로다.
         카드를 누르는 자리라 틀 안은 손이 닿지 않고, 화면 밖 카드는 내려오기 전까지 불러오지 않는다.
       */}
       <div className={styles.portfolioThumb} inert>

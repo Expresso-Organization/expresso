@@ -197,7 +197,7 @@ export async function confirmPasswordResetAction(
   const password = formData.get("password");
   const confirm = formData.get("passwordConfirm");
   if (password !== confirm) {
-    return { fieldErrors: { password: "두 칸의 비밀번호가 다릅니다. 같게 적어주세요." } };
+    return { fieldErrors: { password: "입력한 두 비밀번호가 다릅니다. 같게 적어 주세요." } };
   }
 
   const parsed = PasswordResetConfirmSchema.safeParse({

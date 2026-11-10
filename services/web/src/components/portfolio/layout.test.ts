@@ -21,7 +21,7 @@ const spec: LayoutSpec = {
     heading: "text-step2 font-display leading-tight",
     paragraph: "text-step0 leading-relaxed",
   },
-  rationale: "테스트용 지면입니다.",
+  rationale: "테스트용 페이지입니다.",
 };
 
 function block(kind: PortfolioBlock["kind"], style: Record<string, unknown> = {}): PortfolioBlock {
@@ -37,7 +37,7 @@ function block(kind: PortfolioBlock["kind"], style: Record<string, unknown> = {}
   };
 }
 
-describe("지면 합성", () => {
+describe("페이지 합성", () => {
   it("배치 나무가 준 클래스가 종류 기본값의 같은 자리를 걷어낸다", () => {
     // 표지의 제목만 크게 세운다. `text-step2`가 남아 있으면 어느 쪽이 이길지
     // 우리가 정할 수 없다 — 같은 특정도면 스타일시트 순서가 정한다.
@@ -49,7 +49,7 @@ describe("지면 합성", () => {
     expect(classes).toContain("leading-tight");
   });
 
-  it("사용자가 04b에서 고른 모양이 지면과 배치보다 세다 (P3)", () => {
+  it("사용자가 04b에서 고른 모양이 페이지와 배치보다 세다 (P3)", () => {
     const classes = classesFor(block("heading", { size: "step0" }), spec, "text-step4");
     expect(classes).toContain("text-step0");
     expect(classes).not.toContain("text-step4");
@@ -69,7 +69,7 @@ describe("지면 합성", () => {
     expect(variables["--pf-muted"]).toBe("#5A6473");
   });
 
-  it("지면이 없는 포트폴리오도 그릴 수 있다", () => {
+  it("페이지가 없는 포트폴리오도 그릴 수 있다", () => {
     const portfolio = {
       templateStyle: { background: "#0F172A", text: "#E2E8F0", accent: "#38BDF8", font: "sans" },
       sections: [

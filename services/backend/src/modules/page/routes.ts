@@ -49,7 +49,7 @@ export function registerPageRoutes(
     const { id: portfolioId } = PortfolioIdParamsSchema.parse(request.params);
     const { instruction } = RegeneratePageSchema.parse(request.body ?? {});
     const generator = options.generator;
-    if (!generator) throw new HttpStatusError(503, "지면 생성 AI가 꺼져 있습니다.");
+    if (!generator) throw new HttpStatusError(503, "페이지 생성 AI가 꺼져 있습니다.");
     const page = await lift(() =>
       options.service.generate(principal.user.id, portfolioId, generator, instruction === undefined ? {} : { instruction }));
     return reply.code(201).send({ data: page });
@@ -59,7 +59,7 @@ export function registerPageRoutes(
     const principal = requireAuth(request);
     const { id: portfolioId } = PortfolioIdParamsSchema.parse(request.params);
     const page = await lift(() => options.service.latest(principal.user.id, portfolioId));
-    if (!page) throw new HttpStatusError(404, "아직 지면을 만들지 않았습니다");
+    if (!page) throw new HttpStatusError(404, "아직 페이지를 만들지 않았습니다");
     return { data: page };
   });
 
@@ -81,9 +81,9 @@ export function registerPageRoutes(
   app.get(`${path}/editable`, { preHandler: options.authenticateRequest }, async (request) => {
     const principal = requireAuth(request);
     const { id: portfolioId } = PortfolioIdParamsSchema.parse(request.params);
-    if (!options.service.editableRender) throw new HttpStatusError(503, "편집용 지면을 그릴 수 없습니다.");
+    if (!options.service.editableRender) throw new HttpStatusError(503, "편집용 페이지를 표시할 수 없습니다.");
     const rendered = await lift(() => options.service.editableRender!(principal.user.id, portfolioId));
-    if (!rendered) throw new HttpStatusError(404, "구조화 지면이 없습니다.");
+    if (!rendered) throw new HttpStatusError(404, "구조화 페이지가 없습니다.");
     return { data: rendered };
   });
 
@@ -109,7 +109,7 @@ export function registerPageRoutes(
     const { id: portfolioId } = PortfolioIdParamsSchema.parse(request.params);
     const input = RestorePageRevisionSchema.safeParse(request.body);
     if (!input.success) throw new HttpStatusError(400, "invalid page revision");
-    if (!options.service.restoreRevision) throw new HttpStatusError(503, "판 되돌리기를 사용할 수 없습니다.");
+    if (!options.service.restoreRevision) throw new HttpStatusError(503, "버전 되돌리기를 사용할 수 없습니다.");
     const page = await lift(() => options.service.restoreRevision!(principal.user.id, portfolioId, input.data));
     return reply.code(201).send({ data: page });
   });
@@ -138,7 +138,7 @@ export function registerPageRoutes(
     const principal = requireAuth(request);
     const { id: portfolioId } = PortfolioIdParamsSchema.parse(request.params);
     const stream = options.stream;
-    if (!stream) throw new HttpStatusError(503, "지면 스트림이 꺼져 있습니다");
+    if (!stream) throw new HttpStatusError(503, "페이지 스트림이 꺼져 있습니다");
     if (!await options.service.owns(principal.user.id, portfolioId)) {
       throw new HttpStatusError(404, "portfolio not found");
     }
@@ -163,7 +163,7 @@ export function registerPageRoutes(
     const principal = requireAuth(request);
     const { id: portfolioId } = PortfolioIdParamsSchema.parse(request.params);
     const document = await lift(() => options.service.document(principal.user.id, portfolioId));
-    if (!document) throw new HttpStatusError(404, "아직 지면을 만들지 않았습니다");
+    if (!document) throw new HttpStatusError(404, "아직 페이지를 만들지 않았습니다");
     return reply
       .header("content-type", "text/html; charset=utf-8")
       .header("content-security-policy", "sandbox allow-popups; script-src 'none'; form-action 'none'")

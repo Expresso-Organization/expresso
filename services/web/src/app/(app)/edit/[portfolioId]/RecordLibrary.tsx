@@ -77,12 +77,12 @@ export function RecordLibrary({
                   {record.period ? <span className={styles.sectionMeta}>{record.period}</span> : null}
                 </span>
                 {isUsed ? (
-                  <span role="img" aria-label="지면에 있음"><Icon name="check" size={13} color="var(--ex-status-success-text)" /></span>
+                  <span role="img" aria-label="페이지에 있음"><Icon name="check" size={13} color="var(--ex-status-success-text)" /></span>
                 ) : (
                   <button
                     type="button"
                     className={styles.iconAction}
-                    aria-label={`${record.title} 지면에 더하기`}
+                    aria-label={`${record.title} 페이지에 더하기`}
                     disabled={pending}
                     onClick={() => addRecord(record.id)}
                   >

@@ -182,10 +182,10 @@ export class AiLayoutRemixer implements LayoutRemixer {
     }
     const parsed = place(data);
     if (!parsed.success) {
-      throw new LayoutRemixError(`지면이 계약을 벗어났습니다: ${parsed.error.message}`);
+      throw new LayoutRemixError(`페이지가 계약을 벗어났습니다: ${parsed.error.message}`);
     }
     if (unchanged(context.current, parsed.data)) {
-      throw new LayoutRemixError("지면이 그대로입니다");
+      throw new LayoutRemixError("페이지가 그대로입니다");
     }
     return parsed.data;
   }

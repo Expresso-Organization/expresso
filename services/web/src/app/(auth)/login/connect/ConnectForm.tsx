@@ -18,7 +18,7 @@ export function ConnectForm({ email }: { email: string }) {
       <h1 className={styles.title}>비밀번호를 한 번만 확인합니다</h1>
       <div className={styles.subtitle}>
         <strong>{email}</strong>은(는) 비밀번호로 만든 계정입니다. 이 계정의 주인이
-        맞는지 확인한 뒤 Google을 잇습니다. 다음부터는 Google만으로 들어옵니다.
+        맞는지 확인한 뒤 Google을 연결합니다. 다음부터는 Google만으로 들어옵니다.
       </div>
 
       <form action={action}>
@@ -58,7 +58,7 @@ export function ConnectForm({ email }: { email: string }) {
           disabled={pending}
           className={`${styles.submit} ${styles.submitSpacingLogin}`}
         >
-          {pending ? "확인하는 중" : "확인하고 Google 잇기"}
+          {pending ? "확인하는 중" : "확인하고 Google 연결"}
         </button>
       </form>
 

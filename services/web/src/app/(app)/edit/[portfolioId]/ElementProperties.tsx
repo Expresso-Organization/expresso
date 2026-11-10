@@ -213,8 +213,8 @@ export function ElementProperties({
                 </span>
               </div>
               <div className={styles.propRow}>
-                <span className={styles.propLabel}>서체</span>
-                <span className={styles.weightSegment} role="group" aria-label={`${partInfo.label} 서체`}>
+                <span className={styles.propLabel}>글꼴</span>
+                <span className={styles.weightSegment} role="group" aria-label={`${partInfo.label} 글꼴`}>
                   {[undefined, ...STRUCTURED_STYLE_FONTS].map((font) => (
                     <button
                       key={font ?? "default"}

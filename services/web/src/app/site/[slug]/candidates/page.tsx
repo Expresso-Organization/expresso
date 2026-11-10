@@ -39,15 +39,15 @@ export default async function LayoutCandidatesPage({
   return (
     <div className={styles.page}>
       <header className={styles.head}>
-        <h1 className={styles.title}>지면 3안</h1>
+        <h1 className={styles.title}>페이지 3안</h1>
         <p className={styles.note}>
-          {portfolio.title} · 같은 내용을 서로 다른 지면으로 세웠습니다
+          {portfolio.title} · 같은 내용을 서로 다른 페이지로 구성했습니다
         </p>
       </header>
 
       {layouts.candidates.length === 0 ? (
         <p className={styles.empty}>
-          아직 지면을 만들지 않았습니다. 추출을 돌리면 후보 3안이 함께 만들어집니다.
+          아직 페이지를 만들지 않았습니다. 생성하면 후보 3안이 함께 만들어집니다.
         </p>
       ) : (
         <div className={styles.grid}>
@@ -77,7 +77,7 @@ export default async function LayoutCandidatesPage({
                     className={selected ? styles.chosen : styles.choose}
                     disabled={selected}
                   >
-                    {selected ? "이 지면을 쓰는 중" : "이 지면으로"}
+                    {selected ? "이 페이지를 쓰는 중" : "이 페이지로"}
                   </button>
                 </form>
               </section>

@@ -34,7 +34,7 @@ export function registerGenerationRoutes(app: FastifyInstance, options: { genera
     const principal = requireAuth(request);
     const params = ParamsSchema.safeParse(request.params);
     if (!params.success) throw new HttpStatusError(400, "invalid generation job ID");
-    if (!options.pageStream) throw new HttpStatusError(503, "지면 스트림이 꺼져 있습니다");
+    if (!options.pageStream) throw new HttpStatusError(503, "페이지 스트림이 꺼져 있습니다");
     await options.generationService.getStatus(principal.user.id, params.data.id);
     await writePageStream(request, reply, options.pageStream, params.data.id);
   });

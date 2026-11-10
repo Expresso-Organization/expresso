@@ -18,7 +18,7 @@ function failed(failure: BrewJobStatus["failure"]): BrewJobStatus {
 function show(job: BrewJobStatus) {
   render(
     <Waiting title="질문" note="공고를 읽고 물어볼 것을 고릅니다." job={job} action={async () => {}}
-      actionLabel="질문 만들기" rejectedNote="물어볼 자리가 모자랍니다." brewId={brewId} basisJobId={job.jobId} />,
+      actionLabel="질문 만들기" rejectedNote="질문 근거가 모자랍니다." brewId={brewId} basisJobId={job.jobId} />,
   );
 }
 
@@ -38,7 +38,7 @@ it("동의가 아닌 실패는 지금 문구 그대로이고 설정 링크가 �
   expect(screen.queryByRole("link")).toBeNull();
   cleanup();
   show(failed({ code: "BREW_INPUT_REJECTED", retryable: false, requiredConsent: null }));
-  expect(screen.getByText("물어볼 자리가 모자랍니다.")).toBeTruthy();
+  expect(screen.getByText("질문 근거가 모자랍니다.")).toBeTruthy();
 });
 
 it("만드는 동안에는 실측에 맞춘 시간을 말하고 화면이 넣은 근거 목록을 카드 아래에 함께 보인다", () => {
@@ -53,8 +53,8 @@ it("만드는 동안에는 실측에 맞춘 시간을 말하고 화면이 넣은
   );
   expect(screen.getByText("보통 15초 안에 끝납니다. 이 화면을 닫아도 계속됩니다.")).toBeTruthy();
   expect(screen.queryByRole("button", { name: "질문 만들기" })).toBeNull();
-  const bases = screen.getByRole("region", { name: "물어볼 자리" });
-  expect(bases.textContent).toContain("물어볼 자리 2곳");
+  const bases = screen.getByRole("region", { name: "질문 근거" });
+  expect(bases.textContent).toContain("질문 근거 2곳");
   expect(bases.textContent).toContain("공고 요건 · 아직 못 채움");
   expect(bases.textContent).toContain("Kafka 운영 경험");
   expect(bases.textContent).toContain("기록 · 수치가 빠짐");

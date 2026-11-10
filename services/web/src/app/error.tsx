@@ -21,7 +21,7 @@ export default function Error({
 }) {
   return (
     <StandaloneNotice
-      title="화면을 그리지 못했습니다"
+      title="화면을 표시하지 못했습니다"
       body="잠시 뒤 다시 시도해 주세요. 계속 같으면 아래 요청 번호와 함께 알려 주세요."
       backHref="/home"
       backLabel="홈으로"

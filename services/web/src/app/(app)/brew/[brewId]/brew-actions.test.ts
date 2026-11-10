@@ -39,7 +39,7 @@ describe("AI 대화에서 디자인 선택으로", () => {
   });
 });
 
-describe("재료 화면에서 AI 대화로", () => {
+describe("기록 선택 화면에서 AI 대화로", () => {
   const FAILED_JOB = "0b5c2d4e-1f3a-4c6b-9d8e-7a6b5c4d3e2f";
 
   beforeEach(() => {
@@ -53,7 +53,7 @@ describe("재료 화면에서 AI 대화로", () => {
     expect(redirect).toHaveBeenCalledWith(`/brew/${BREW}/counter`);
   });
 
-  it("마지막으로 본 잡을 키에 붙인다 — 거절된 뒤 재료를 고쳐 다시 시작하면 새 잡이 돈다", async () => {
+  it("마지막으로 본 잡을 키에 붙인다 — 거절된 뒤 기록을 고쳐 다시 시작하면 새 잡이 돈다", async () => {
     await beginInterviewAction(form({ brewId: BREW, basisJobId: FAILED_JOB }));
     expect(startInterview).toHaveBeenCalledWith("test-session", BREW, `interview:${BREW}:${FAILED_JOB}`);
   });

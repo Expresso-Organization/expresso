@@ -77,10 +77,10 @@ export async function refreshGenerationAction(formData: FormData): Promise<void>
 
 function submitFailure(error: ApiError): string {
   if (error.status === 402 || error.status === 403) {
-    return "이번 달 크레딧을 다 썼습니다. 다음 달에 다시 뽑거나 요금제를 올려 주세요.";
+    return "이번 달 크레딧을 다 썼습니다. 다음 달에 다시 생성하거나 요금제를 올려 주세요.";
   }
   if (error.status === 404) {
     return "고른 디자인을 더 이상 쓸 수 없습니다. 다시 골라 주세요.";
   }
-  return "추출을 시작하지 못했습니다. 잠시 뒤 다시 눌러 주세요.";
+  return "생성을 시작하지 못했습니다. 잠시 뒤 다시 눌러 주세요.";
 }

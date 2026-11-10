@@ -8,7 +8,7 @@ import type { JobAnalysisResult } from "@expresso/contracts";
  */
 export const ANALYSIS_STAGE: Record<JobAnalysisResult["analysis"]["stage"], string> = {
   queued: "차례를 기다리는 중",
-  extracting: "요건을 뽑는 중",
+  extracting: "요건을 추출하는 중",
   validating: "원문과 맞춰 보는 중",
   covering: "내 기록과 대조하는 중",
   done: "분석 끝",

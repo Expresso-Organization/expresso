@@ -47,7 +47,7 @@ function Dead({ back }: { back: { href: "/home" | "/login"; label: string } }) {
   return (
     <StandaloneNotice
       title="이 링크는 더 쓸 수 없습니다"
-      body="24시간이 지났거나 이미 쓰인 링크입니다. 앱 위쪽의 안내에서 인증 메일을 다시 받으십시오."
+      body="24시간이 지났거나 이미 쓰인 링크입니다. 앱 위쪽의 안내에서 인증 메일을 다시 받아 주세요."
       backHref={back.href}
       backLabel={back.label}
     />

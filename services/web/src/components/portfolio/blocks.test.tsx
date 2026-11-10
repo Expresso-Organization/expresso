@@ -79,7 +79,7 @@ describe("블록 DOM", () => {
     expect(html).toContain(">그냥 항목</li>");
   });
 
-  it("지면이 간격을 안 줘도 이름과 값이 붙지 않는다", () => {
+  it("페이지가 간격을 안 줘도 이름과 값이 붙지 않는다", () => {
     // 칩 클래스처럼 `justify-between`이 없는 배치에서 둘이 맞붙던 자리다.
     const html = render(<BlockView
       block={block("list", { items: [{ term: "언어", value: "Kotlin" }] })}

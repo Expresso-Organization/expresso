@@ -170,7 +170,7 @@ export class PageElementEditor {
       if (violations.length) return violations;
       try { applyElementEdit(snapshot, key, toEdit(output), design); }
       catch (error) {
-        violations.push({ path: output.text?.length ? "/text" : output.props ? "/props" : "/style", problem: error instanceof Error ? error.message : "지면 규칙에 맞지 않습니다." });
+        violations.push({ path: output.text?.length ? "/text" : output.props ? "/props" : "/style", problem: error instanceof Error ? error.message : "페이지 규칙에 맞지 않습니다." });
       }
       return violations;
     };

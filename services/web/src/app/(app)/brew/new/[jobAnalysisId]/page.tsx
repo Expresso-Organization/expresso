@@ -57,7 +57,7 @@ export default async function AnalyzingPage({
             ? "예상 3분"
             : analysis.status === "failed"
               ? "분석 실패"
-              : "다음은 재료 고르기"
+              : "다음은 기록 선택"
         }
       />
       <AppBody>
@@ -76,7 +76,7 @@ export default async function AnalyzingPage({
               <>
                 <h1 className={styles.waitTitle}>공고를 읽는 중</h1>
                 <p className={styles.waitNote}>
-                  무엇을 요구하는지 뽑아내고 내 기록과 맞춰 봅니다. 이 화면을 닫아도
+                  무엇을 요구하는지 추출하고 내 기록과 맞춰 봅니다. 이 화면을 닫아도
                   계속됩니다.
                 </p>
                 <AnalysisProgress stage={analysis.stage} label={STAGE[analysis.stage]} />
@@ -96,7 +96,7 @@ export default async function AnalyzingPage({
               <>
                 <h1 className={styles.waitTitle}>다 읽었습니다</h1>
                 <p className={styles.waitNote}>
-                  요건 {result.requirements.length}개를 뽑았습니다. 제작 공간을 열고
+                  요건 {result.requirements.length}개를 추출했습니다. 작업 화면을 열고
                   있습니다. 기록이 없어도 공고와 이후 편집을 바탕으로 계속됩니다.
                 </p>
                 <StartBrew jobAnalysisId={jobAnalysisId} lengthPreset={length} />

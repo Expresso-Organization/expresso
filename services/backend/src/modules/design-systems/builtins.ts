@@ -252,7 +252,7 @@ export const builtinDesignSystems = {
     code: "signal",
     name: "Signal",
     description: "기술, 데이터, 운영 성과의 수치와 비교 기준을 정밀하게 보여주는 디자인",
-    visualThesis: "어두운 기술 지면에서 수치, 경계, 고정폭 메타데이터를 선명하게 분리",
+    visualThesis: "어두운 기술 배경에서 수치, 경계, 고정폭 메타데이터를 선명하게 분리",
     traits: ["정밀함", "높은 정보 밀도", "수치 중심"],
     signatureMoves: ["고정폭 메타데이터와 청록색 수치 강조", "얇은 선으로 나눈 증거 격자"],
     colors: {
@@ -274,7 +274,7 @@ export const builtinDesignSystems = {
     code: "editorial",
     name: "Editorial",
     description: "연구, 디자인, 집필 작업의 긴 사례와 프로젝트 이미지를 넓은 여백에 담는 디자인",
-    visualThesis: "따뜻한 지면과 세리프 제목, 긴 호흡의 사례로 판단 과정을 드러냄",
+    visualThesis: "따뜻한 배경과 세리프 제목, 긴 호흡의 사례로 판단 과정을 드러냄",
     traits: ["넓은 여백", "긴 사례", "프로젝트 이미지"],
     signatureMoves: ["세리프 제목과 좁은 본문 폭", "사례 사이를 구분하는 넓은 정적 여백"],
     colors: {
@@ -289,7 +289,7 @@ export const builtinDesignSystems = {
     contentWidth: 980, cardRadius: 8, shadowStyle: "none",
     hierarchy: "프로젝트 제목, 긴 사례, 인용과 아티팩트 순서",
     surfaceStrategy: "테두리보다 여백과 따뜻한 표면 차이로 구분",
-    imageryMode: "project-artifacts-first", imageryTreatment: "넓은 지면에 자연 비율로 배치",
+    imageryMode: "project-artifacts-first", imageryTreatment: "넓은 영역에 자연 비율로 배치",
     signatureMove: "세리프 제목과 넓은 여백이 만드는 긴 사례의 호흡",
   }),
 } as const;

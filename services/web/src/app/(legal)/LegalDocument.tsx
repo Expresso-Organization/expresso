@@ -20,10 +20,10 @@ export function LegalDocument({
   return (
     <article>
       <h1 className={styles.title}>{title}</h1>
-      <p className={styles.meta}>제 {TERMS_VERSION}판 · 시행일은 문안이 확정되는 날 적습니다.</p>
+      <p className={styles.meta}>버전 {TERMS_VERSION} · 시행일은 문안이 확정되는 날 적습니다.</p>
       <div className={styles.pending}>
         이 문서의 본문은 준비 중입니다. 아래 항목은 담을 내용의 차례이며, 확정된 문안이 오면
-        같은 자리에 들어갑니다. 문안이 바뀌면 판 번호가 오르고 가입 시 다시 동의를 묻습니다.
+        같은 자리에 들어갑니다. 문안이 바뀌면 버전 번호가 오르고 가입 시 다시 동의를 묻습니다.
       </div>
       {sections.map((section) => (
         <section key={section.heading} className={styles.section}>

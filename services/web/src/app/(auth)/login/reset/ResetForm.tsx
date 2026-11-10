@@ -16,7 +16,7 @@ export function ResetForm({ token }: { token: string }) {
   return (
     <div className={styles.form}>
       <h1 className={styles.title}>새 비밀번호</h1>
-      <div className={styles.subtitle}>10자 이상으로 적어 주세요. 두 칸을 같게 채우면 바로 로그인됩니다.</div>
+      <div className={styles.subtitle}>10자 이상으로 적어 주세요. 두 입력란을 같게 채우면 바로 로그인됩니다.</div>
 
       <form action={action}>
         <input type="hidden" name="token" value={token} />

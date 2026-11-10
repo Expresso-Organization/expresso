@@ -46,7 +46,7 @@ const PERIOD_LABEL: Record<AnalyticsPeriodPreset, string> = {
 /** 집계 키를 사람 말로. 해설의 근거 칩과 제안이 이걸 쓴다. */
 const METRIC_LABEL: Record<string, string> = {
   visits: "방문",
-  completes: "완독",
+  completes: "끝까지 읽음",
   contact_clicks: "연락처 클릭",
   file_downloads: "파일 내려받기",
   link_clicks: "외부 링크 클릭",
@@ -56,12 +56,12 @@ const METRIC_LABEL: Record<string, string> = {
 
 const VISUALIZATION_LABEL: Record<WidgetVisualization, { label: string; icon: string }> = {
   number: { label: "숫자", icon: "number-square-one" },
-  spark: { label: "스파크", icon: "chart-line" },
+  spark: { label: "스파크라인", icon: "chart-line" },
   line: { label: "선", icon: "chart-line-up" },
   bar: { label: "막대", icon: "chart-bar" },
   donut: { label: "도넛", icon: "chart-donut" },
   list: { label: "목록", icon: "list-bullets" },
-  note: { label: "해설", icon: "coffee" },
+  note: { label: "요약", icon: "coffee" },
 };
 
 const SPANS: { value: 3 | 4 | 8 | 12; label: string }[] = [
@@ -160,7 +160,7 @@ function scalar(
       };
     case "completion_rate":
       return {
-        label: "끝까지 읽은 비율", meta: "완독 ÷ 방문",
+        label: "끝까지 읽은 비율", meta: "끝까지 읽음 ÷ 방문",
         value: formatPercent(ratio(metrics.completes, metrics.visits)),
         amount: ratio(metrics.completes, metrics.visits),
         previous: (before) => ratio(before.completes, before.visits),
@@ -371,7 +371,7 @@ export function Dashboard({
             <div className={styles.viewBarRight}>
               <span className={styles.refreshed}>
                 {editing
-                  ? `위젯 ${widgets.length}개 · 12칼럼 그리드`
+                  ? `위젯 ${widgets.length}개 · 12열 그리드`
                   : `${period.start} ~ ${period.end} · 집계 ${coverage.aggregatedDays}/${coverage.days}일`}
               </span>
             </div>
@@ -392,8 +392,8 @@ export function Dashboard({
             <div className={styles.notice}>
               <Icon name="info" size={12} color="var(--ex-fg-muted)" />
               <span className={styles.noticeText}>
-                지금 보고 계신 것은 <b>기본 지면</b>입니다. 옮기거나 고치려면 먼저 내 것으로
-                가져와야 합니다 — 라이브러리에서 지표를 하나 놓아도 같이 가져옵니다.
+                지금 보고 계신 것은 <b>기본 레이아웃</b>입니다. 옮기거나 고치려면 먼저 내 것으로
+                가져와야 합니다 — 라이브러리에서 지표를 하나 추가해도 같이 가져옵니다.
               </span>
               <button
                 type="button"
@@ -418,9 +418,9 @@ export function Dashboard({
                   style={{ gridColumn: `span ${widget.span}` }}
                 >
                   <span className={styles.dropZoneText}>
-                    여기에 놓기
+                    여기에 추가
                     <br />
-                    {widget.span} 칼럼
+                    {widget.span} 열
                   </span>
                 </div>
               ) : (
@@ -451,9 +451,9 @@ export function Dashboard({
                 onDragOver={(event) => { event.preventDefault(); setSlot(widgets.length); }}
               >
                 <span className={styles.dropZoneText}>
-                  여기에 놓기
+                  여기에 추가
                   <br />
-                  맨 뒤 · 3 칼럼
+                  맨 뒤 · 3 열
                 </span>
               </div>
             ) : null}
@@ -594,7 +594,7 @@ function WidgetBody({ widget, dashboard }: { widget: Widget; dashboard: Analytic
     case "section_dwell":
       return (
         <>
-          <Head title="섹션별 체류" meta={widget.visualization === "list" ? "1회 평균 · 지면 순서" : "1회 평균 · 오래 머문 순"} />
+          <Head title="섹션별 체류" meta={widget.visualization === "list" ? "1회 평균 · 페이지 순서" : "1회 평균 · 오래 머문 순"} />
           <SectionDwell sections={sections} order={widget.visualization === "list" ? "page" : "dwell"} />
         </>
       );
@@ -702,7 +702,7 @@ function Trend({ trend }: { trend: AnalyticsDashboard["trend"] }) {
             <span className={`${styles.legendLine} ${styles.legendVisits}`} />방문
           </span>
           <span className={styles.legendItem}>
-            <span className={`${styles.legendLine} ${styles.legendCompletes}`} />완독
+            <span className={`${styles.legendLine} ${styles.legendCompletes}`} />끝까지 읽음
           </span>
         </span>
       </div>
@@ -880,8 +880,8 @@ function BaristaRead({
 
       {insight.state === "insufficient_sample" ? (
         <p className={styles.baristaBody}>
-          방문 {insight.sampleSize}건입니다. {insight.minimumSample}건부터 해설을 씁니다 — 표본이
-          작으면 무슨 말이든 할 수 있게 되고, 그런 해설은 없느니만 못합니다.
+          방문 {insight.sampleSize}건입니다. {insight.minimumSample}건부터 요약을 만듭니다 — 표본이
+          작으면 무슨 말이든 할 수 있게 되고, 그런 요약은 없느니만 못합니다.
         </p>
       ) : insight.state === "none" ? (
         <p className={styles.baristaBody}>
@@ -922,7 +922,7 @@ function BaristaRead({
           <input type="hidden" name="portfolioId" value={portfolioId} />
           <input type="hidden" name="period" value={preset} />
           <button type="submit" className={styles.baristaButton} disabled={running}>
-            {running ? "읽는 중…" : insight.state === "ready" ? "다시 읽기" : "해설 읽기"}
+            {running ? "읽는 중…" : insight.state === "ready" ? "다시 읽기" : "요약 보기"}
           </button>
           {result.error ? <span className={styles.baristaError}>{result.error}</span> : null}
         </form>
@@ -935,7 +935,7 @@ function BaristaRead({
 function sectionName(section: AnalyticsDashboard["sections"][number]): string {
   if (section.title) return section.title;
   if (section.position === 1) return "첫 화면";
-  return section.position ? `${section.position}번째 섹션` : "지난 판의 섹션";
+  return section.position ? `${section.position}번째 섹션` : "지난 버전의 섹션";
 }
 
 function SectionDwell({ sections, order }: {
@@ -1177,7 +1177,7 @@ function MetricLibrary({
                       fields={{ metricKey: entry.key }}
                       className={styles.metricAdd}
                     >
-                      ＋ 놓기
+                      ＋ 추가
                     </WidgetForm>
                   )}
                 </div>
@@ -1188,7 +1188,7 @@ function MetricLibrary({
       </div>
       <div className={styles.drawerFoot}>
         <span className={styles.metricWhat}>
-          지면으로 끌어다 놓거나 ＋ 놓기를 누릅니다. 놓은 위젯을 누르면 그림과 폭을 고칩니다.
+          대시보드로 끌어다 놓거나 ＋ 추가를 누릅니다. 추가한 위젯을 누르면 그림과 폭을 고칩니다.
         </span>
       </div>
     </aside>
@@ -1277,7 +1277,7 @@ function WidgetSettings({
         <div className={styles.settingGroup}>
           <div className={styles.settingGroupTitle}>어디에</div>
           <div className={styles.settingRow}>
-            <span className={styles.settingLabel}>자리</span>
+            <span className={styles.settingLabel}>위치</span>
             <span className={styles.spanRow} style={{ flex: 1 }}>
               <button
                 type="button"
@@ -1302,7 +1302,7 @@ function WidgetSettings({
               </button>
             </span>
           </div>
-          <div className={styles.metricWhat}>지면에서 끌어 옮길 수도 있습니다.</div>
+          <div className={styles.metricWhat}>대시보드에서 끌어 옮길 수도 있습니다.</div>
         </div>
 
         <div className={styles.settingGroup}>

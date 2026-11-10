@@ -54,8 +54,8 @@ export default async function DeployPage({
     {
       ok: generatedPage !== null,
       title: generatedPage
-        ? `지면 ${generatedPage.revision + 1}판이 나갑니다`
-        : "배포할 지면 판이 없습니다",
+        ? `페이지 버전 ${generatedPage.revision + 1}이 배포됩니다`
+        : "배포할 페이지 버전이 없습니다",
       // 설계 근거(rationale)는 모델이 자기 설계를 적은 글이라 부품 이름이 그대로 들어 있다. 여기서 보이지 않는다.
       note: generatedPage ? "편집 화면에서 본 마지막 판입니다" : "편집 화면에서 먼저 페이지를 만들어 주세요.",
       ...(generatedPage ? {} : { fix: editor }),
@@ -73,14 +73,14 @@ export default async function DeployPage({
     {
       ok: !portfolio.deployment?.hasUnpublishedChanges,
       title: portfolio.deployment === null
-        ? "아직 한 번도 나가지 않았습니다"
+        ? "아직 배포한 적이 없습니다"
         : portfolio.deployment.hasUnpublishedChanges
           ? "편집본이 공개본보다 앞서 있습니다"
           : "공개본과 편집본이 같습니다",
       note: portfolio.deployment === null
         ? "배포하면 이 주소로 열립니다"
         : portfolio.deployment.hasUnpublishedChanges
-          ? "지금 배포하면 고친 것이 함께 나갑니다"
+          ? "지금 배포하면 변경한 내용이 함께 반영됩니다"
           : "새로 배포할 것이 없습니다",
     },
   ];

@@ -138,11 +138,11 @@ function Shot({ src, alt }: { src: StaticImageData; alt: string }) {
 
 const STEPS: TourStep[] = [
   {
-    title: "재료 고르기",
+    title: "기록 선택",
     body: "공고와 관련이 깊은 순서로 기록을 정렬합니다. 포트폴리오에 넣을 기록을 체크하면 됩니다.",
     media: (
       <BrowserFrame address="expresso.ai.kr">
-        <Shot src={materialsShot} alt="재료 고르기 화면. 기록 19건이 공고 매칭도 순으로 정렬되어 있고 그중 10건이 체크되어 있다." />
+        <Shot src={materialsShot} alt="기록 선택 화면. 기록 19건이 공고 일치도 순으로 정렬되어 있고 그중 10건이 체크되어 있다." />
       </BrowserFrame>
     ),
   },
@@ -160,7 +160,7 @@ const STEPS: TourStep[] = [
     body: "수정하고 싶은 부분을 선택하고 요청 사항을 입력하면 바로 반영됩니다. 이전 버전으로 되돌릴 수도 있습니다.",
     media: (
       <BrowserFrame address="expresso.ai.kr">
-        <Shot src={editorShot} alt="편집기 화면. 가운데에 생성된 포트폴리오가, 오른쪽 채팅 칸에 수정 요청이 입력되어 있다." />
+        <Shot src={editorShot} alt="편집기 화면. 가운데에 생성된 포트폴리오가, 오른쪽 채팅창에 수정 요청이 입력되어 있다." />
       </BrowserFrame>
     ),
   },

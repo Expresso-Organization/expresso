@@ -50,7 +50,7 @@ export function ThemePicker() {
   }
 
   return (
-    <div className={styles.group} role="radiogroup" aria-label="지면 밝기">
+    <div className={styles.group} role="radiogroup" aria-label="테마">
       {THEME_CHOICES.map((option) => {
         const active = option.value === choice;
         return (

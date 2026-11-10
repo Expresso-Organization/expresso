@@ -546,7 +546,7 @@ export function renderStructuredPortfolio(
   if (html.length > PAGE_MAX_BYTES)
     throw new StructuredRenderError(
       "PAGE_TOO_LARGE",
-      "지면이 저장 크기 제한을 넘었습니다. 내용을 줄여 주세요.",
+      "페이지가 저장 크기 제한을 넘었습니다. 내용을 줄여 주세요.",
     );
   if (design) {
     const styles = elementStyleCss(snapshot.spec);

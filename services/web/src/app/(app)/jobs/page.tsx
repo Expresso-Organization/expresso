@@ -1181,7 +1181,7 @@ function SearchRail({
           </p>
           {missing.length > 0 ? (
             <div className={styles.brewInner}>
-              <div className={styles.brewInnerTitle}>비어 있는 재료 {missing.length}</div>
+              <div className={styles.brewInnerTitle}>부족한 경험 {missing.length}</div>
               {missing.slice(0, 2).map((material, index) => (
                 <div key={material.label} className={styles.missingRow}>
                   <span
@@ -1260,7 +1260,7 @@ function BrowseRail({
           </div>
         ))}
         <div className={styles.railNote}>
-          공고 원문과 기술 블로그에서 뽑았습니다. 카테고리를 바꾸면 다시
+          공고 원문과 기술 블로그에서 추출했습니다. 카테고리를 바꾸면 다시
           계산됩니다.
         </div>
       </div>
@@ -1269,7 +1269,7 @@ function BrowseRail({
         <div className={styles.railCardBrew}>
           <div className={styles.brewHead}>
             <Icon name="coffee" weight="fill" size={15} color="var(--ex-accent-text)" />
-            <span className={styles.brewLabel}>비어 있는 재료</span>
+            <span className={styles.brewLabel}>부족한 경험</span>
           </div>
           <div className={styles.brewInnerTitle}>
             {gap.label} 경험이 기록에 없습니다

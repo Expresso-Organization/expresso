@@ -41,7 +41,7 @@ export async function requestDeletionAction(_previous: DeletionState, formData: 
     if (error instanceof ApiError && error.status === 409) return { error: "이미 삭제를 요청한 계정입니다." };
     return { error: "삭제를 요청하지 못했습니다. 다시 시도해 주세요." };
   }
-  if (!cancellationToken) return { error: "취소 코드를 받지 못했습니다. 지원 창구로 알려 주세요." };
+  if (!cancellationToken) return { error: "취소 코드를 받지 못했습니다. 고객 지원으로 알려 주세요." };
   (await cookies()).set(DELETION_CODE_COOKIE, cancellationToken, {
     httpOnly: true,
     sameSite: "lax",

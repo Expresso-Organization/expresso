@@ -94,7 +94,7 @@ export function GoalForm({ profile }: { profile: CareerProfile | null }) {
       }
     >
       <OnboardingStepLabel step={1} />
-      <h1 className={styles.title}>어떤 자리를 노리고 계신가요?</h1>
+      <h1 className={styles.title}>어떤 직무를 찾고 계신가요?</h1>
       <p className={styles.lede}>
         공고를 추천하고 질문을 만들 때 씁니다. 나중에 언제든 바꿀 수 있습니다.
       </p>

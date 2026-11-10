@@ -36,7 +36,7 @@ function preset(
 }
 
 export const PORTFOLIO_STYLE_PRESETS: readonly PortfolioStylePreset[] = [
-  preset(1, "monochrome", "Monochrome", "흑백 대비 · 큰 명조 제목 · 선으로 나눈 지면",
+  preset(1, "monochrome", "Monochrome", "흑백 대비 · 큰 명조 제목 · 선으로 나눈 페이지",
     "light", "serif", "spacious", "wide-margin", ["#ffffff", "#000000", "#000000"],
     "큰 명조 제목을 첫 화면의 중심으로 삼는다. 모든 면은 흰색·검정·회색으로 한정하고, 대표 성과는 흑백 반전 구획으로 강조한다. 모서리는 직각이고 그림자는 없다. 굵기가 다른 가로선과 넓은 여백으로 섹션을 구분한다. 제목과 본문의 크기 차이를 크게 두되 모바일에서 제목이 잘리지 않게 한다. 호버는 짧은 색 반전으로 표현한다."),
   preset(2, "bauhaus", "Bauhaus", "원색과 기본 도형 · 비대칭 구성",
@@ -106,7 +106,7 @@ export const PORTFOLIO_STYLE_PRESETS: readonly PortfolioStylePreset[] = [
   preset(23, "vaporwave", "Vaporwave", "보랏빛 바탕 · 네온 격자 · 레트로 디스플레이",
     "dark", "sans", "comfortable", "wide-margin", ["#090014", "#e0e0e0", "#ff00ff"],
     "보라색 어둠 위에 분홍·청록 네온과 원근 격자를 장식으로 배치한다. 기하학적 제목과 고정폭 메타정보로 복고적인 디지털 화면을 만든다. 색 번짐·그라데이션은 제목이나 경계에 제한하고 본문은 단색의 안정된 면에 둔다. CRT 질감과 이동 효과는 낮은 강도로 사용하며 모션 감소 시 정지한다. 가독성을 위해 긴 텍스트에는 글로우를 적용하지 않는다."),
-  preset(24, "enterprise", "Enterprise", "정돈된 업무 지면 · 인디고 강조 · 명확한 근거",
+  preset(24, "enterprise", "Enterprise", "정돈된 업무용 페이지 · 인디고 강조 · 명확한 근거",
     "light", "sans", "comfortable", "single-column", ["#f8fafc", "#0f172a", "#4f46e5"],
     "명확한 제목과 안정된 고딕 본문, 밝은 면, 인디고·보라의 절제된 강조로 구성한다. 대표 프로젝트를 크게 보여주고 역할·협업·성과를 일관된 라벨로 정리한다. 부드러운 라운드와 은은한 그림자를 사용하되 전체를 같은 카드로 만들지 않는다. 기업 로고·고객 수·인증·후기를 만들어 신뢰를 꾸미지 않는다. 실제 근거와 연락 링크로 읽기를 마무리한다."),
   preset(25, "sketch", "Sketch", "손그림 선 · 종이 메모 · 과정 중심 구성",

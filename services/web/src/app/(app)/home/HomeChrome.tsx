@@ -50,7 +50,7 @@ export function HomeSearch({ examples }: { examples: string[] }) {
         <input
           name="q"
           className={styles.searchInput}
-          placeholder="어떤 자리를 찾나요?"
+          placeholder="어떤 직무를 찾나요?"
           aria-label="공고 검색"
         />
         <button type="submit" className={styles.searchSubmit} aria-label="물어보기">

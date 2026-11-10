@@ -820,7 +820,7 @@ export function validateStructuredPortfolio(
   if (counts.has("MetricStrip") && content.sections.flatMap((section) => section.metrics ?? []).length < 2)
     throw new Error("수치 강조 줄에는 수치가 두 개 이상 필요합니다.");
   if ((counts.get("PullQuote") ?? 0) > STRUCTURED_MAX_QUOTES)
-    throw new Error(`큰 인용은 지면에 ${STRUCTURED_MAX_QUOTES}개까지 둡니다.`);
+    throw new Error(`큰 인용은 페이지에 ${STRUCTURED_MAX_QUOTES}개까지 둡니다.`);
   for (const type of [
     "ProjectIndex",
     "MetricStrip",

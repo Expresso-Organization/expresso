@@ -13,7 +13,7 @@ const NOTICES: Record<string, string> = {
   google_failed:
     "Google 로그인을 끝내지 못했습니다. 다시 시도하거나 이메일로 로그인해 주세요.",
   reset_invalid:
-    "재설정 링크가 만료됐거나 이미 쓰였습니다. 이메일을 다시 넣어 새 링크를 받으십시오.",
+    "재설정 링크가 만료됐거나 이미 쓰였습니다. 이메일을 다시 넣어 새 링크를 받아 주세요.",
 };
 
 export function socialNotice(code: string | undefined): string | undefined {

@@ -42,7 +42,7 @@ it("도는 동안 진행을 보이고 1.5초마다 화면을 다시 받아 온�
   render(<CompareControl jobPostingId={JOB_ID} view={{ kind: "running", stage: "extracting" }} />);
 
   expect(screen.getByRole("progressbar", { name: "대조 진행률" }).getAttribute("aria-valuenow")).toBe("38");
-  expect(screen.getByText("요건을 뽑는 중")).toBeTruthy();
+  expect(screen.getByText("요건을 추출하는 중")).toBeTruthy();
   vi.advanceTimersByTime(3_100);
   expect(refresh).toHaveBeenCalledTimes(2);
 });

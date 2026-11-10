@@ -265,7 +265,7 @@ function renderRuleSheet(value: DesignDocumentSection): string {
 }
 
 const COLOR_GROUPS = [
-  { label: "지면과 표면", names: ["canvas", "surface", "elevated"] },
+  { label: "배경과 표면", names: ["canvas", "surface", "elevated"] },
   { label: "글자와 경계", names: ["text", "muted", "border"] },
   { label: "강조와 행동", names: ["accent", "action", "actionText"] },
 ] as const;

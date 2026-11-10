@@ -36,7 +36,7 @@ export function CompanyUrlForm() {
       <section className={styles.formCard}>
         <div className={styles.formIntro}>
           <h2 className={styles.formTitle}>채용 공고 주소 읽기</h2>
-          <p className={styles.formNote}>공고가 열린 주소를 넣으면 내용을 읽어 아래 편집 칸에 채웁니다.</p>
+          <p className={styles.formNote}>공고가 열린 주소를 넣으면 내용을 읽어 아래 입력란에 채웁니다.</p>
         </div>
         <form action={readAction} className={styles.urlRow}>
           <label className={styles.srOnly} htmlFor="posting-url">채용 공고 주소</label>

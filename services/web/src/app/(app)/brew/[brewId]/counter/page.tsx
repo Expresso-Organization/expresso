@@ -62,7 +62,7 @@ export default async function CounterPage({
           job={brew.latestJob?.type === "interview" ? brew.latestJob : null}
           action={startInterviewAction}
           actionLabel="질문 만들기"
-          rejectedNote="물어볼 자리가 모자랍니다. 공고를 분석하면 요건이 자리가 되고, 수치가 빠진 기록도 자리가 됩니다."
+          rejectedNote="질문 근거가 모자랍니다. 공고를 분석하면 요건이 질문 근거가 되고, 수치가 빠진 기록도 질문 근거가 됩니다."
           brewId={brewId}
           basisJobId={brew.latestJob?.jobId ?? null}
           detail={bases.length > 0 ? <QuestionBases bases={bases} /> : null}

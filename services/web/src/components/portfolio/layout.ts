@@ -206,6 +206,6 @@ export function fallbackSpec(portfolio: PortfolioDetail): LayoutSpec {
       chart: "grid gap-3 text-accent",
       media: "rounded-xl overflow-hidden",
     },
-    rationale: "아직 지면을 만들지 않아 가장 단순한 배치로 그립니다.",
+    rationale: "아직 페이지를 만들지 않아 가장 단순한 배치로 그립니다.",
   };
 }

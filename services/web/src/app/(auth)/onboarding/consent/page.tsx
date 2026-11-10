@@ -29,7 +29,7 @@ const SCOPES: {
   {
     scope: "job_posting_analysis",
     icon: "target",
-    title: "공고를 읽어 요건을 뽑습니다",
+    title: "공고를 읽어 요건을 추출합니다",
     what: "붙여 넣은 채용 공고의 원문이 AI 모델로 갑니다.",
     why: "공고가 무엇을 요구하는지 알아야 내 기록과 맞춰 볼 수 있습니다.",
   },
@@ -38,7 +38,7 @@ const SCOPES: {
     icon: "file-text",
     title: "내 기록으로 포트폴리오를 만듭니다",
     what: "내가 쓴 커리어 기록과 대화 답변이 AI 모델로 갑니다.",
-    why: "질문을 고르고 문장과 지면을 만드는 데 쓰입니다. 이게 없으면 제작이 돌지 않습니다.",
+    why: "질문을 고르고 문장과 페이지를 만드는 데 쓰입니다. 이게 없으면 제작이 돌지 않습니다.",
   },
 ];
 
@@ -111,7 +111,7 @@ export default async function OnboardingConsentPage() {
 /** 지금 상태. 끈 것과 우리가 문구를 바꾼 것을 구분해 말한다. */
 function Status({ consent }: { consent: Consent }) {
   if (consent.needsRenewal) {
-    return <span className={styles.consentRenew}>문구가 바뀌어 다시 여쭙니다</span>;
+    return <span className={styles.consentRenew}>안내 문구가 바뀌어 다시 동의가 필요합니다</span>;
   }
   if (consent.granted) return <span className={styles.consentOn}>동의함</span>;
   if (consent.revokedAt) return <span className={styles.consentOff}>껐음</span>;

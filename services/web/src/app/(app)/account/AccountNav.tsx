@@ -9,7 +9,7 @@ export const ACCOUNT_SECTIONS = [
   { id: "plans", label: "요금제", icon: "coffee" },
   { id: "billing", label: "결제", icon: "receipt" },
   { id: "notifications", label: "알림", icon: "bell" },
-  { id: "surface", label: "지면", icon: "sun" },
+  { id: "surface", label: "화면", icon: "sun" },
   { id: "data", label: "데이터 관리", icon: "database" },
   { id: "ai-chat-settings", label: "AI 채팅", icon: "chat-circle" },
   { id: "ai-consent", label: "AI 사용 동의", icon: "shield-check" },

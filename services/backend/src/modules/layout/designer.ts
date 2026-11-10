@@ -287,7 +287,7 @@ export function toLayoutSpecs(
 
   const parsed = LayoutCandidatesSchema.safeParse({ candidates });
   if (!parsed.success) {
-    throw new LayoutDesignError(`지면 후보가 계약을 벗어났습니다: ${parsed.error.message}`);
+    throw new LayoutDesignError(`페이지 후보가 계약을 벗어났습니다: ${parsed.error.message}`);
   }
   return parsed.data.candidates;
 }

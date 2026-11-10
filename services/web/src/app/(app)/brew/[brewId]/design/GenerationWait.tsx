@@ -51,7 +51,7 @@ const RECIPE_LINES: { text: string; needsPosting?: true }[] = [
   { text: "섹션 순서 정하는 중..." },
   { text: "섹션마다 핵심 메시지 고르는 중..." },
 ];
-const READING_LINES = ["포트폴리오 생성 중...", "지면 구성 설계 중...", "섹션별 형태 고르는 중...", "섹션별 분량 정하는 중..."];
+const READING_LINES = ["포트폴리오 생성 중...", "페이지 구성 설계 중...", "섹션별 형태 고르는 중...", "섹션별 분량 정하는 중..."];
 /** 입력 묶음이 뜬 뒤 한 줄이 바뀌는 간격. 지면에 구역이 세 번 올라올 때마다 한 번이라 읽기 전에 넘어가지 않는다. */
 const READING_LINE_MS = FEED_STEP_MS * 3;
 
@@ -159,7 +159,7 @@ export function GenerationWait({
       <div className={styles.actions}>{actions}</div>
       {phase === "reading" ? (
         <div className={styles.sheet}>
-          <div ref={feed} className={styles.feed} aria-label="지면 설계에 들어가는 입력" tabIndex={0}>
+          <div ref={feed} className={styles.feed} aria-label="페이지 설계에 들어가는 입력" tabIndex={0}>
             <Inputs reading={reading} />
           </div>
         </div>

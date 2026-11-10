@@ -50,9 +50,9 @@ export function Pagination({
   if (page.totalPages <= 1) return null;
 
   return (
-    <nav className={styles.pager} aria-label="공고 목록 쪽 넘기기">
+    <nav className={styles.pager} aria-label="공고 목록 페이지 이동">
       {page.hasPrevPage ? (
-        <Link href={href(page.page - 1)} className={styles.pagerArrow} aria-label="이전 쪽">
+        <Link href={href(page.page - 1)} className={styles.pagerArrow} aria-label="이전 페이지">
           <Icon name="caret-left" size={13} />
         </Link>
       ) : (
@@ -76,7 +76,7 @@ export function Pagination({
       )}
 
       {page.hasNextPage ? (
-        <Link href={href(page.page + 1)} className={styles.pagerArrow} aria-label="다음 쪽">
+        <Link href={href(page.page + 1)} className={styles.pagerArrow} aria-label="다음 페이지">
           <Icon name="caret-right" size={13} />
         </Link>
       ) : (

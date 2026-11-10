@@ -13,9 +13,9 @@ import styles from "./QuestionBases.module.css";
  */
 export function QuestionBases({ bases }: { bases: InterviewQuestionBase[] }) {
   return (
-    <section className={styles.bases} aria-label="물어볼 자리">
+    <section className={styles.bases} aria-label="질문 근거">
       <div className={styles.head}>
-        <span className={styles.title}>물어볼 자리 {bases.length}곳</span>
+        <span className={styles.title}>질문 근거 {bases.length}곳</span>
         <span className={styles.note}>이 가운데에서 질문을 고릅니다</span>
       </div>
       <ul className={styles.list}>

@@ -31,7 +31,7 @@ function classTokensIn(source: string): string[] {
   return tokens;
 }
 
-describe("지면 컴포넌트의 클래스", () => {
+describe("페이지 컴포넌트의 클래스", () => {
   it("전부 컴파일되는 어휘 안에 있다", () => {
     const files = readdirSync(HERE).filter((name) => name.endsWith(".tsx"));
     expect(files.length).toBeGreaterThan(0);

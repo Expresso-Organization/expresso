@@ -54,7 +54,7 @@ describe("디자인 시스템으로 생성 요청", () => {
     expect(submit).not.toHaveBeenCalled();
   });
 
-  it("고른 디자인을 저장한 뒤 그 판으로 생성을 요청한다", async () => {
+  it("고른 디자인을 저장한 뒤 그 버전으로 생성을 요청한다", async () => {
     const order: string[] = [];
     select.mockImplementation(async () => { order.push("select"); });
     submit.mockImplementation(async () => { order.push("submit"); });

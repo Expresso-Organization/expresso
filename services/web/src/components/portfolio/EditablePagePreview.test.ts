@@ -8,7 +8,7 @@ describe("편집 미리보기 스크립트", () => {
     expect(() => new Function(EDITOR_SCRIPT)).not.toThrow();
   });
 
-  it("지면 루트의 등장 애니메이션 신호를 끈다", () => {
+  it("페이지 루트의 등장 애니메이션 신호를 끈다", () => {
     expect(EDITOR_SCRIPT).toContain('setAttribute("data-motion", "none")');
   });
 

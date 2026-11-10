@@ -295,7 +295,7 @@ export class PageService {
     if (!refiner) { await mark({ status: "skipped", reason: "AI가 꺼져 있습니다." }); return; }
     const structured = toPage(draft).generationManifest?.structured;
     const owner = await db.portfolios.findOne({ _id: draft.portfolioId, userId });
-    if (!structured || !owner) { await mark({ status: "skipped", reason: "구조화 지면이 아닙니다." }); return; }
+    if (!structured || !owner) { await mark({ status: "skipped", reason: "구조화 페이지가 아닙니다." }); return; }
     try { await this.#consent?.require(userId, "page_review"); }
     catch (error) { await mark({ status: "skipped", reason: error instanceof Error ? error.message.slice(0, 1_000) : "동의가 필요합니다." }); return; }
     const root = structured.spec.elements[structured.spec.root] as { props?: { archetype?: unknown } } | undefined;
@@ -372,7 +372,7 @@ export class PageService {
     let snapshot;
     // 같은 대화에서 고친 뒤에도 남은 위반은 저장하지 않고 알립니다. 출력을 버리고 다시 쓰게 하지 않습니다.
     try { snapshot = applyElementEdit(previous, key, edit, design); }
-    catch (error) { throw new PageServiceError(422, error instanceof Error ? error.message : "지면 규칙에 맞지 않습니다."); }
+    catch (error) { throw new PageServiceError(422, error instanceof Error ? error.message : "페이지 규칙에 맞지 않습니다."); }
     const changes = elementChanges(previous, snapshot, key);
     if (!changes.length) throw new PageServiceError(422, `바꾼 곳이 없습니다. ${note}`);
     const row = await this.#commitStructured(userId, portfolioId, input.expectedRevision, snapshot, { instruction: input.instruction, rationale: note });
@@ -390,7 +390,7 @@ export class PageService {
     if (!record) throw new PageServiceError(404, "기록이 없습니다.");
     const used = previous.content.sections.some((section) => section.id === record._id || section.sourceIds.includes(record._id))
       || previous.content.evidence.some((item) => item.id === record._id);
-    if (used) throw new PageServiceError(409, "이미 지면에 쓰인 기록입니다.");
+    if (used) throw new PageServiceError(409, "이미 페이지에 쓰인 기록입니다.");
     const text = markdownToText(record.bodyMd);
     if (!text) throw new PageServiceError(422, "본문이 비어 있는 기록입니다.");
     const source = { id: record._id, title: record.title || "제목 없는 기록", text };
@@ -416,7 +416,7 @@ export class PageService {
     };
     let snapshot;
     try { snapshot = validateStructuredPortfolio(spec, content); }
-    catch (error) { throw new PageServiceError(422, error instanceof Error ? error.message : "지면에 더할 수 없습니다."); }
+    catch (error) { throw new PageServiceError(422, error instanceof Error ? error.message : "페이지에 더할 수 없습니다."); }
     return toPage(await this.#commitStructured(userId, portfolioId, input.expectedRevision, snapshot, { instruction: `기록 추가: ${source.title}`, rationale: `「${source.title}」 기록을 사례로 더했습니다.` }));
   }
 
@@ -461,10 +461,10 @@ export class PageService {
   /** 구조화 지면을 고치기 전 확인입니다. 최신 판 번호가 맞고 구조화 지면이어야 합니다. */
   async #structured(userId: string, portfolioId: string, expectedRevision: number) {
     const current = await this.latest(userId, portfolioId);
-    if (!current) throw new PageServiceError(404, "지면이 없습니다.");
+    if (!current) throw new PageServiceError(404, "페이지가 없습니다.");
     if (current.revision !== expectedRevision) throw new PageServiceError(409, "다른 편집이 먼저 저장됐습니다. 새로고침해 주세요.");
     const previous = current.generationManifest?.structured;
-    if (!previous) throw new PageServiceError(409, "구조화 지면에서만 구성을 편집할 수 있습니다.");
+    if (!previous) throw new PageServiceError(409, "구조화 페이지에서만 구성을 편집할 수 있습니다.");
     const owner = await mongoCollections(this.context.db).portfolios.findOne({ _id: portfolioId, userId });
     if (!owner) throw new PageServiceError(404, "portfolio not found");
     return { current, previous, owner, design: findPortfolioDesign(owner) };
@@ -515,7 +515,7 @@ export class PageService {
       await requireActiveUser(tx, userId);
       const db = mongoCollections(tx.db), options = { session: tx.session };
       const latest = await db.generatedPages.find({ userId, portfolioId }, options).sort({ revision: -1 }).limit(1).next();
-      if (!latest) throw new PageServiceError(404, "지면이 없습니다.");
+      if (!latest) throw new PageServiceError(404, "페이지가 없습니다.");
       if (latest.revision !== input.expectedRevision) throw new PageServiceError(409, "다른 편집이 먼저 저장됐습니다. 새로고침해 주세요.");
       if (input.revision === latest.revision) throw new PageServiceError(409, "지금 보고 있는 판입니다.");
       const source = await db.generatedPages.findOne({ userId, portfolioId, revision: input.revision }, options);

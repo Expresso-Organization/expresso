@@ -37,7 +37,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap"
         />
         {/*
-          고른 지면 밝기를 몸통보다 먼저 붙인다. 이 자리여야 첫 페인트에
+          고른 테마를 몸통보다 먼저 붙인다. 이 자리여야 첫 페인트에
           맞춰지고 밝은 화면이 스쳤다 어두워지는 일이 없다. 자세한 이유는
           `lib/theme.ts`에 있다.
         */}

@@ -68,10 +68,10 @@ export function MediaDrop({
     <div className={styles.mediaDrop}>
       <div className={styles.mediaHead}>
         <Icon name="image" size={13} color="var(--ex-fg-muted)" />
-        <span className={styles.mediaTitle}>{sectionTitle}에 이미지 놓기</span>
+        <span className={styles.mediaTitle}>{sectionTitle}에 이미지 추가</span>
       </div>
 
-      <div className={styles.mediaFrames} role="group" aria-label="액자">
+      <div className={styles.mediaFrames} role="group" aria-label="프레임">
         {MEDIA_FRAMES.map((option) => (
           <button
             key={option}

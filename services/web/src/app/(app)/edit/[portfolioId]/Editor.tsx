@@ -405,8 +405,8 @@ export function Editor({
               <button
                 type="button"
                 className={`${styles.iconAction} ${!canUndo || undoPending ? styles.iconActionDisabled : ""}`}
-                aria-label={generatedPage ? "이전 판으로 되돌리기" : "마지막 변경 되돌리기"}
-                title={undoError ?? (generatedPage ? "바로 앞 판을 새 판으로 다시 쌓습니다" : "마지막 블록 변경 한 번을 무릅니다")}
+                aria-label={generatedPage ? "이전 버전으로 되돌리기" : "마지막 변경 되돌리기"}
+                title={undoError ?? (generatedPage ? "바로 앞 버전을 새 버전으로 복원합니다" : "마지막 블록 변경 한 번을 취소합니다")}
                 disabled={!canUndo || undoPending}
                 onClick={undo}
               >
@@ -431,7 +431,7 @@ export function Editor({
               title="디자인을 바꿔 새로 만듭니다 · 이번 달 크레딧을 씁니다"
             >
               <Icon name="palette" size={14} />
-              다시 뽑기
+              다시 생성
             </Link>
             {generatedPage ? (
               <a
@@ -457,7 +457,7 @@ export function Editor({
         <WizardSteps
           brewId={portfolio.brewId}
           current="edit"
-          situation={generatedPage ? `생성 완료 · 판 ${generatedPage.revision + 1}${refining ? " · AI가 다듬는 중" : ""}` : "생성 전"}
+          situation={generatedPage ? `생성 완료 · 버전 ${generatedPage.revision + 1}${refining ? " · AI가 다듬는 중" : ""}` : "생성 전"}
         />
 
         <div className={styles.stage} data-pane={pane}>
@@ -500,7 +500,7 @@ export function Editor({
             <div className={styles.sectionsHead}>
                 <span className={styles.sectionsLabel}>{generatedPage ? "구성" : "섹션"}</span>
                 <span className={styles.sectionsCount}>
-                  {generatedPage ? `판 ${generatedPage.revision + 1}` : portfolio.visibleSectionCount}
+                  {generatedPage ? `버전 ${generatedPage.revision + 1}` : portfolio.visibleSectionCount}
                 </span>
               </div>
 
@@ -603,7 +603,7 @@ export function Editor({
                   onClick={() => setCanvasView((view) => (view === "html" ? "page" : "html"))}
                 >
                   <Icon name={canvasView === "html" ? "browser" : "code-simple"} size={14} color="var(--ex-fg-muted)" />
-                  <span className={styles.footLabel}>{canvasView === "html" ? "지면으로 돌아가기" : "HTML 직접 보기"}</span>
+                  <span className={styles.footLabel}>{canvasView === "html" ? "페이지로 돌아가기" : "HTML 직접 보기"}</span>
                 </button>
               </div>
             ) : null}
@@ -613,7 +613,7 @@ export function Editor({
             {refining ? (
               <p className={styles.refineNotice} role="status">
                 <span className={styles.statusDot} />
-                초안입니다. AI가 화면을 보고 다듬고 있으며, 끝나면 다듬은 판으로 바뀝니다.
+                초안입니다. AI가 화면을 보고 다듬고 있으며, 끝나면 다듬은 버전으로 바뀝니다.
               </p>
             ) : refined ? (
               <p className={styles.refineNotice} role="status">AI가 화면을 보고 다듬은 판입니다.</p>
@@ -685,7 +685,7 @@ export function Editor({
                 {portfolio.sections.length === 0 ? (
                   <div className={styles.heroLede}>
                     아직 섹션이 없습니다. 디자인 선택으로 돌아가 다시 만들면
-                    이 자리에 문장이 채워집니다.
+                    이 위치에 문장이 채워집니다.
                   </div>
                 ) : (
                   /*
@@ -751,7 +751,7 @@ export function Editor({
               <div className={styles.crumbs}>
                 {generatedPage ? (
                   <span className={`${styles.crumb} ${styles.crumbCurrent}`}>
-                    {generatedPage.generationManifest?.structured ? "구조화 지면" : "자유 HTML"} · 판 {generatedPage.revision + 1}
+                    {generatedPage.generationManifest?.structured ? "구조화 페이지" : "자유 HTML"} · 버전 {generatedPage.revision + 1}
                   </span>
                 ) : chosen ? (
                   <>
@@ -814,7 +814,7 @@ export function Editor({
                     <button
                       type="button"
                       className={styles.statusAskGo}
-                      title="지면 전체는 복원 지점으로 되돌릴 수 있습니다"
+                      title="페이지 전체는 복원 지점으로 되돌릴 수 있습니다"
                       onClick={() => chosen && deleteBlock(chosen.block.id, true)}
                     >
                       그래도 지우기
@@ -871,7 +871,7 @@ export function Editor({
               <span className={styles.panelTitle}>편집</span>
               <span className={styles.panelTarget}>
                 {generatedPage
-                  ? (tab === "history" ? `판 ${generatedPageHistory.length}개` : structured ? (pickedLabel ?? "지면 전체") : "웹페이지 전체")
+                  ? (tab === "history" ? `버전 ${generatedPageHistory.length}개` : structured ? (pickedLabel ?? "페이지 전체") : "웹페이지 전체")
                   : panelTarget(tab, revisions.length, chosen?.path ?? null)}
               </span>
               <button
@@ -936,7 +936,7 @@ export function Editor({
                   />
                 ) : (
                   <div className={styles.properties}>
-                    <p className={styles.panelEmpty}>지면이나 목차에서 요소를 고르세요.</p>
+                    <p className={styles.panelEmpty}>페이지나 목차에서 요소를 고르세요.</p>
                   </div>
                 )
               ) : generatedPage ? (
@@ -1006,7 +1006,7 @@ export function Editor({
 
 const PANES = [
   { key: "sections" as const, label: "섹션", icon: "list-bullets" },
-  { key: "canvas" as const, label: "지면", icon: "browser" },
+  { key: "canvas" as const, label: "페이지", icon: "browser" },
   { key: "panel" as const, label: "편집", icon: "sliders-horizontal" },
 ];
 

@@ -50,7 +50,7 @@ export function SignupForm({
         <div className={styles.form}>
           <h1 className={styles.title}>계정 만들기</h1>
           <div className={styles.subtitle}>
-            무료로 시작하고, 필요할 때 올리십시오.
+            무료로 시작하고, 필요할 때 요금제를 올릴 수 있습니다.
           </div>
 
           {notice ? (

@@ -52,7 +52,7 @@ describe("본문 속 스택 이름", () => {
     expect(chips("Spring Boot 기반")).toEqual([["spring", "Spring Boot"]]);
   });
 
-  it("뒤에 붙은 판 번호는 이름을 깨지 않는다", () => {
+  it("뒤에 붙은 버전 번호는 이름을 깨지 않는다", () => {
     expect(chips("Java17 이상")).toEqual([["java", "Java"]]);
   });
 
