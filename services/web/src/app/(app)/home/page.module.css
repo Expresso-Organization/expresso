@@ -126,6 +126,7 @@
   display: inline-block;
   white-space: nowrap;
   cursor: pointer;
+  font-family: inherit;
   font-size: var(--ex-text-xs);
   color: var(--ex-fg-muted);
   border: none;
