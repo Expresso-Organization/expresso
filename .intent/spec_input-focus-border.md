@@ -35,7 +35,7 @@ date: 2026-11-07
 
 **화면별 규칙.** 다음 규칙에서 테두리 선언만 지우고 다른 선언은 남긴다.
 
-- 지우는 자리: `home` · `jobs`의 `.searchBar`, `DesignCatalog`의 `.searchField`, `views`의 `.searchField` · `.popoverField>input` · `.columnMenuNameRow>input` · `.filterValue` · `.tabMenuName` · `.cellPopoutInput`, `properties`의 `.propertyCreateNameRow input` · `.input` · `.formulaSource`, `AiRecordInterview`의 `.question input`, `auth`의 `.input`, `brew/new`의 `.input` · `.textarea`, `AgentChat`의 `.search` · composer shell, `RecordDraftCard` · `PlanCards`의 `.field input`.
+- 지우는 자리: `home` · `jobs`의 `.searchBar`, `DesignCatalog`의 `.searchField`, `views`의 `.searchField` · `.popoverField>input` · `.columnMenuNameRow>input` · `.filterValue` · `.tabMenuName` · `.cellPopoutInput`, `properties`의 `.propertyCreateNameRow input` · `.input` · `.formulaSource`, `AiRecordInterview`의 `.question input`, `auth`의 `.input`, `brew/new`의 `.entrySearch` · `.input` · `.textarea`, `AgentChat`의 `.search` · composer shell, `RecordDraftCard` · `PlanCards`의 `.field input`.
 - 배경을 남기는 자리: `properties .input`, `views .cellPopoutInput`, `brew/new .input` · `.textarea`, `AgentChat .browserTabs .search`.
 - `select`를 남기는 자리: `RecordDraftCard` · `PlanCards`의 `.field select:focus-visible`.
 
@@ -43,9 +43,15 @@ date: 2026-11-07
 
 **프레임워크 CSS.** `agent-chat-framework.css`의 `[data-aui="input"]`과 `[data-aui="datepicker"]`는 포커스 때 `outline: none`을 쓴다. `select`의 outline은 남긴다.
 
-**쓸모없어진 규칙.** 전역 링을 지우려고만 있던 규칙을 삭제한다. `.aui-composer-input:focus-visible`과 `brew/new`의 `.searchInput:focus`가 대상이다. `AgentChat`의 `.search input:focus-visible` 3건은 `outline: none` 한 건으로 합친다. Firefox에서 `agent-chat-preflight.css`의 `:-moz-focusring`이 `outline: auto`를 켜므로, 채팅 범위의 입력 칸에는 `outline: none`을 남긴다. `home` · `jobs` `.searchBar`의 `transition`도 바뀌는 상태가 없어지므로 지운다.
+**쓸모없어진 규칙.** 전역 링을 지우려고만 있던 규칙을 삭제한다. `.aui-composer-input:focus-visible`과 `brew/new`의 `.searchInput:focus`가 대상이다. `AgentChat`의 `.search input:focus-visible` 3건은 `outline: none` 한 건으로 합친다. Firefox에서 `agent-chat-preflight.css`의 `:-moz-focusring`이 `outline: auto`를 켜므로, 채팅 범위의 입력 칸에는 `outline: none`을 남긴다. `home` · `jobs` `.searchBar`와 `brew/new` `.entrySearch`의 `transition`도 바뀌는 상태가 없어지므로 지운다.
 
-**재사용.** 재발 방지 검사는 기존 `styles/tokens.test.ts`의 CSS 파일 목록을 쓴다.
+**재발 방지.** `styles/tokens.test.ts`가 필수 상태 검사 `웹 검사`에서 돈다. 검사 범위는 다음과 같다.
+
+- 전역 CSS를 포함한 모든 `*.css`. 다른 검사가 쓰는 `cssFiles` 목록과 따로 둔다.
+- `:focus` · `:focus-within` 셀렉터, `input` · `textarea` · `[contenteditable]`의 `:focus-visible`, tsx에서 `<input>` · `<textarea>`에 붙은 모듈 클래스의 `:focus-visible`.
+- 위 셀렉터의 `border*` · `outline*` · `box-shadow`는 `none` · `0` · `transparent` 같은 없애는 값만 허용한다.
+- `<input>` · `<textarea>` 태그의 Tailwind `focus*:border|ring|outline`과 모든 tsx의 `focus-within:border|ring|outline`.
+- 태그 검색이 깨져 검사가 빈 목록으로 통과하지 않도록 알려진 입력 칸 클래스를 찾는지 함께 확인한다.
 
 ## 버린 대안
 
