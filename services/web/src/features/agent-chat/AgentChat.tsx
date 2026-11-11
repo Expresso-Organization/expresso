@@ -1,12 +1,16 @@
 "use client";
+import { toThreadMessage } from "./message-view";
+import CareerCoaching from "./CareerCoaching";
+import EvidenceSearch, { SearchResults } from "./EvidenceSearch";
+import CareerWorkflow from "./CareerWorkflow";
 import { createContext, useContext, useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { LogoMark } from "@/components/brand/Logo";
 import { Icon } from "@/components/ui/Icon";
 import { useRouter } from "next/navigation";
-import { AssistantRuntimeProvider, useExternalStoreRuntime, useAui, useAuiState, type ThreadMessageLike, type ToolCallMessagePartComponent } from "@assistant-ui/react";
+import { AssistantRuntimeProvider, useExternalStoreRuntime, useAui, useAuiState, type ToolCallMessagePartComponent } from "@assistant-ui/react";
 import { AgentChatAccessSchema, AgentResourceDetailSchema } from "@expresso/contracts";
-import type { AgentContext, AgentMessage, AgentPageSelection, AiEditProposalDetail, CareerDocumentBootstrap } from "@expresso/contracts";
+import type { AgentContext, AgentPageSelection, AiEditProposalDetail, CareerDocumentBootstrap } from "@expresso/contracts";
 import { ResourcePreview, type PreviewResource } from "./ResourcePreview";
 import { RequirementReviewCard } from "./RequirementReviewCard";
 import { RecordDraftCard } from "./RecordDraftCard";
@@ -139,6 +143,7 @@ const RecordTool: ToolCallMessagePartComponent = props => {
   if (tool?.review) return step(<RequirementReviewCard conversationId={state.id} toolId={tool.id} review={tool.review} />, null);
   if (tool?.gapReview) return step(<GapReviewCard conversationId={state.id} toolId={tool.id} gapReview={tool.gapReview} />, null);
   if (tool?.recordDraft) { const draftId = tool.recordDraft.draftId; return step(<RecordDraftCard draft={tool.recordDraft} disabled={busy} onDecide={decision => state.decideDraft(draftId, decision)} />, null); }
+  if (tool?.evidenceSearch || tool?.jobSearch) return step(<SearchResults {...(tool.evidenceSearch ? { evidence: tool.evidenceSearch } : {})} {...(tool.jobSearch ? { jobs: tool.jobSearch } : {})} />, null);
   if (tool?.planDraft) {
     const { draftId, planId, status } = tool.planDraft;
     if (status === "approved" && planId) return step(<PlanCard planId={planId} refreshKey={state.conversation?.version} />, null);
@@ -162,14 +167,6 @@ function Proposal({ proposal, beforeDocument, undone }: { proposal: AiEditPropos
     {proposal.status === "applied" && !undone ? <Button variant="outline" disabled={state.pending} onClick={() => void state.approve({ proposalId: proposal.proposalId, action: "undo", expectedDocumentVersion: proposal.appliedDocumentVersion! }).then(() => router.refresh())}>변경 되돌리기</Button> : null}
   </>;
 }
-const convertMessage = (message: AgentMessage): ThreadMessageLike => ({
-  id: message.id, role: message.role, createdAt: new Date(message.createdAt),
-  ...(message.selection ? { metadata: { custom: { selection: message.selection } } } : {}),
-  content: [
-    ...message.tools.map(tool => ({ type: "tool-call" as const, toolCallId: tool.id, toolName: tool.name, args: {}, argsText: "{}", ...(tool.status === "running" ? {} : { result: { summary: tool.summary }, isError: tool.status === "failed" }) })),
-    { type: "text", text: message.text },
-  ],
-});
 export function AgentChat({ job, page, standalone = false, onRunningChange, ...props }: {
   context?: AgentContext; contextLabel?: string; standalone?: boolean; job?: AgentChatJob;
   /** 다듬기 화면의 지면. 대화는 이 포트폴리오가 연결된 가장 최근 대화로 열리고, 보내는 말에 고른 요소가 붙는다. */
@@ -212,7 +209,7 @@ export function AgentChat({ job, page, standalone = false, onRunningChange, ...p
   const canSend = !!access?.enabled && !access.consentRequired && (access.serverCredentialAllowed || access.apiKeyConfigured);
   const running = state.conversation?.run?.status === "running";
   useEffect(() => { onRunningChange?.(running); }, [onRunningChange, running]);
-  const runtime = useExternalStoreRuntime({ messages: state.conversation?.messages ?? [], convertMessage, isRunning: running, isLoading: state.resolving || (!!state.id && !state.conversation), isDisabled: !!preview || !canSend || state.pending || state.resolving || (!!state.id && !state.conversation), onNew: async message => { const text = message.content.filter(part => part.type === "text").map(part => part.text).join("\n"); try { await state.send(text, page?.selection ?? undefined); } catch { runtime.thread.composer.setText(text); } }, onCancel: state.cancel });
+  const runtime = useExternalStoreRuntime({ messages: state.conversation?.messages ?? [], convertMessage: message => toThreadMessage(message, state.conversation?.run?.status === "cancelled" && message.id === state.conversation.messages.at(-1)?.id), isRunning: running, isLoading: state.resolving || (!!state.id && !state.conversation), isDisabled: !!preview || !canSend || state.pending || state.resolving || (!!state.id && !state.conversation), onNew: async message => { const text = message.content.filter(part => part.type === "text").map(part => part.text).join("\n"); try { await state.send(text, page?.selection ?? undefined); } catch { runtime.thread.composer.setText(text); } }, onCancel: state.cancel });
   // 지면 고침이 저장되거나 되돌려지면 화면의 미리보기 · 판 번호를 다시 불러온다. 처음 불러온 대화의 카드로는 다시 부르지 않는다.
   const pageEdits = (state.conversation?.messages ?? []).flatMap(message => message.tools).flatMap(tool => tool.pageEdit && tool.status === "complete" ? [`${tool.pageEdit.editId}:${tool.pageEdit.undone}`] : []).join(",");
   const seenEdits = useRef<{ id: string | null; edits: string } | null>(null);
@@ -229,6 +226,7 @@ export function AgentChat({ job, page, standalone = false, onRunningChange, ...p
   return <ChatContext.Provider value={state}><JobContext.Provider value={job ?? null}><PageContext.Provider value={page ?? null}><AssistantRuntimeProvider runtime={runtime}>
     {preview ? <ResourcePreview resource={preview} onClose={() => setPreview(null)} selected={!!state.conversation?.contexts.some(ref => ref.kind === preview.kind && ref.id === preview.id)} disabled={contextDisabled} onToggle={toggleContext} /> : null}
     <AgentConsentDialog consentRequired={access?.consentRequired ?? true} requiresKey={!!access && !access.serverCredentialAllowed && !access.apiKeyConfigured} onKeySaved={() => setAccess(current => current ? { ...current, apiKeyConfigured: true } : current)} open={consentOpen} onOpenChange={setConsentOpen} onConsented={() => setAccess(current => current ? { ...current, consentRequired: false } : current)} />
+    <div className={styles.workspace}>
     <section className={`acf-scope ${styles.root} ${job || page ? styles.rail : standalone ? styles.standalone : styles.panel}`} aria-label="에이전트 채팅">
       <div className={styles.main}>
         <header className={styles.header}>
@@ -256,5 +254,27 @@ export function AgentChat({ job, page, standalone = false, onRunningChange, ...p
       </div>
       {standalone ? <ConversationSwitcher contexts={state.conversation?.contexts ?? []} contextDisabled={contextDisabled} onToggleContext={toggleContext} onPreview={setPreview} inline currentId={state.id} conversations={state.list} disabled={state.pending} onSelect={state.select} /> : null}
     </section>
-  </AssistantRuntimeProvider></PageContext.Provider></JobContext.Provider></ChatContext.Provider>;
+    {state.id ? <CareerCoaching key={`coaching:${state.id}`} conversationId={state.id} disabled={state.pending || running || !!preview} onSend={text => { void state.send(text); }} /> : <p>대화를 시작하면 직무 탐색·개인화·개선 행동을 사용할 수 있습니다.</p>}
+    <EvidenceSearch key={`search:${state.id ?? "new"}`} disabled={state.pending || running || !!preview} contexts={state.conversation?.contexts ?? []} onAttach={toggleContext} />
+    {state.id && state.conversation ? (
+      <CareerWorkflow
+        key={`workflow:${state.id}`}
+        conversationId={state.id}
+        lastUserText={
+          [...state.conversation.messages]
+            .reverse()
+            .find((message) => message.role === "user")
+            ?.text ?? ""
+        }
+        disabled={state.pending || running || !!preview}
+        onSend={(text) => {
+          void state.send(text);
+        }}
+      />
+    ) : null}
+  </div>
+  </AssistantRuntimeProvider>
+  </PageContext.Provider>
+  </JobContext.Provider>
+  </ChatContext.Provider>;
 }

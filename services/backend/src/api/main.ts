@@ -1,6 +1,9 @@
+import { CareerCoachingService } from "../modules/career-coaching/index.js";
+import { EvidenceSearchService, HttpSearchEmbedding } from "../modules/evidence-search/index.js";
+import { CareerWorkflowService } from "../modules/career-workflow/index.js";
 import { AgentCredentials } from "../modules/agent-chat/index.js";
 import { AgentChatService } from "../modules/agent-chat/index.js";
-import { ClaudeAgentRuntime } from "../platform/agent/runtime.js";
+import { createAgentRuntime } from "../platform/agent/create-runtime.js";
 import { buildApi } from "./build-app.js";
 import { loadRuntimeConfig } from "../config/runtime-config.js";
 import { connectMongoUntilReady, createMongoResource } from "../platform/mongodb.js";
@@ -167,11 +170,18 @@ const careerDocumentService = new CareerDocumentService(
 // 편집기 밖 본문 쓰기(PATCH bodyMd · 인터뷰 재답변)가 곧바로 편집기 문서와 열린 편집기에 들어가게 연결합니다.
 careerService.setExternalBodyListener((userId, recordId) => careerDocumentService.syncExternalBody(userId, recordId));
 interviewService.setExternalBodyListener((userId, recordId) => careerDocumentService.syncExternalBody(userId, recordId));
-const agentChatService = new AgentChatService(database, config.agentChatEnabled ? new ClaudeAgentRuntime(config.agentChatModel, aiUsage) : null, careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(database, config.agentCredentialEncryptionKey), portfolioReadService, pageService);
+const evidenceSearchService = new EvidenceSearchService(database, careerService, careerDocumentService, jobBoardService, consentService,
+  config.searchEmbeddingUrl && config.searchEmbeddingModel ? new HttpSearchEmbedding(config.searchEmbeddingUrl, config.searchEmbeddingModel, config.searchEmbeddingApiKey) : null);
+const agentChatService = new AgentChatService(database, createAgentRuntime(config, ai, aiUsage), careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(database, config.agentCredentialEncryptionKey), portfolioReadService, pageService, config.agentChatProvider ?? "anthropic", evidenceSearchService, config.agentExecutionLimits);
+const careerWorkflowService = new CareerWorkflowService(database, agentChatService, careerService, jobBoardService, jobMarketService, materialsService, consentService, ai);
+const careerCoachingService = new CareerCoachingService(database, agentChatService, analyticsService);
 const adminService = new AdminService(database, { identity: identityService, career: careerService, consent: consentService });
 const app = buildApi({
+  careerCoachingService,
+  evidenceSearchService,
   adminService,
   agentChatService,
+  careerWorkflowService,
   config,
   readinessChecks: [database.readinessCheck, redis.readinessCheck],
   identityService,

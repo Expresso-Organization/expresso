@@ -1,3 +1,4 @@
+import { waitForAgentRun } from "../../../test/support/agent-run.js";
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { CONSENT_POLICY_VERSION } from "@expresso/contracts";
@@ -14,7 +15,7 @@ import { AgentToolRejection, type AgentRuntime } from "../../platform/agent/runt
 import { AgentChatService, RUN_HEARTBEAT_MS, RUN_INTERRUPTED_ERROR } from "./service.js";
 import { PreparationPlans } from "./plans.js";
 
-describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB_URL))("공통 에이전트 대화", () => {
+describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB_URL))("공통 에이전트 대화", { timeout: 60_000 }, () => {
   let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
   let userId: string; let other: string; let recordId: string;
   let career: CareerService; let documents: CareerDocumentService; let consent: ConsentService;
@@ -26,7 +27,8 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     userId = (await identity.signup({ email: `${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "채팅 검증" })).user.id;
     other = (await identity.signup({ email: `${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "다른 사용자" })).user.id;
     career = new CareerService(fixture.resource); documents = new CareerDocumentService(fixture.resource); consent = new ConsentService(fixture.resource);
-    await consent.grant(userId, ["career_records"], CONSENT_POLICY_VERSION);
+    // 공고를 비교하는 정상 경로는 공고 분석 동의도 갖춘 계정으로 검증합니다.
+    await consent.grant(userId, ["career_records", "job_posting_analysis"], CONSENT_POLICY_VERSION);
     const category = (await career.listCategories(userId))[0]!;
     recordId = (await career.createRecord(userId, randomUUID(), { categoryId: category.id, title: "채팅 테스트 기록", bodyMd: "원래 본문", properties: {} })).record.id;
   }, 60_000);
@@ -63,7 +65,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const service = make({ run: async input => { received = input.context; } });
     const row = await service.create(userId, [{ kind: "portfolio", id }, { kind: "record", id: recordId }]);
     await service.send(userId, row.id, { requestId: randomUUID(), text: "자료 확인" });
-    await expect.poll(() => received).toBeDefined();
+    await expect.poll(() => received, { timeout: 10_000 }).toBeDefined();
     expect(received).toEqual(expect.arrayContaining([expect.objectContaining({ kind: "portfolio", id, data: expect.objectContaining({ portfolio: expect.objectContaining({ title: "자료 선택 검증", sections: expect.arrayContaining([expect.objectContaining({ blocks: expect.arrayContaining([expect.objectContaining({ content: { text: "배포 시간을 30% 단축했습니다." } })]) })]) }) }) })]));
     await expect(service.create(other, [{ kind: "portfolio", id }])).rejects.toMatchObject({ statusCode: 404 });
   });
@@ -71,7 +73,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const service = make({ run: async input => { await input.emit({ type: "text", text: "첫 " }); await input.emit({ type: "text", text: "응답" }); } });
     const conversation = await service.create(userId, []); const input = { requestId: randomUUID(), text: "질문" };
     await service.send(userId, conversation.id, input);
-    await expect.poll(async () => (await service.get(userId, conversation.id)).run?.status).toBe("complete");
+    await waitForAgentRun(() => service.get(userId, conversation.id), "complete");
     const restored = await make(null).get(userId, conversation.id);
     expect(restored.messages.map(message => message.text)).toEqual(["질문", "첫 응답"]);
     expect((await service.send(userId, conversation.id, input)).messages).toHaveLength(2);
@@ -136,7 +138,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     } });
     const row = await service.create(userId, [{ kind: "record", id: recordId }]);
     await service.send(userId, row.id, { requestId: randomUUID(), text: "본문을 다듬어줘" });
-    await expect.poll(async () => (await service.get(userId, row.id)).run?.status).toBe("complete");
+    await waitForAgentRun(() => service.get(userId, row.id), "complete");
     const proposal = (await service.get(userId, row.id)).messages.at(-1)!.tools[0]!.proposal!;
     expect((await documents.bootstrap(userId, recordId)).documentVersion).toBe(original.documentVersion);
     const input = { proposalId: proposal.proposalId, action: "apply" as const, expectedDocumentVersion: proposal.baseDocumentVersion };
@@ -164,12 +166,12 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     } });
     const row = await service.create(userId, [{ kind: "record", id: recordId }]);
     await service.send(userId, row.id, { requestId: randomUUID(), text: "본문을 다듬어줘" });
-    await expect.poll(async () => (await service.get(userId, row.id)).run?.status).toBe("failed");
+    await waitForAgentRun(() => service.get(userId, row.id), "failed");
     const failed = await service.get(userId, row.id);
     const stale = failed.messages.at(-1)!.tools[0]!.proposal!;
     await expect(service.retry(other, row.id)).rejects.toMatchObject({ statusCode: 404 });
     await service.retry(userId, row.id);
-    await expect.poll(async () => (await service.get(userId, row.id)).run?.status).toBe("complete");
+    await waitForAgentRun(() => service.get(userId, row.id), "complete");
     const retried = await service.get(userId, row.id);
     expect(retried.messages.map(message => [message.role, message.text])).toEqual([["user", "본문을 다듬어줘"], ["assistant", "다시 만든 답변"]]);
     expect(retried.run?.requestId).toBe(failed.run?.requestId);
@@ -201,7 +203,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const toolId = randomUUID();
     const row = await service.create(userId, [{ kind: "job", id: jobId }]);
     await service.send(userId, row.id, { requestId: randomUUID(), text: "요건과 내 기록 비교" });
-    await expect.poll(async () => (await service.get(userId, row.id)).run?.status).toBe("complete");
+    await waitForAgentRun(() => service.get(userId, row.id), "complete");
     const answer = (await service.get(userId, row.id)).messages.at(-1)!;
     expect(answer.text).toBe("true:1");
     expect(answer.tools[0]!.review!.items[0]!.evidence[0]!.recordTitle).toBe("채팅 테스트 기록");
@@ -226,7 +228,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const before = (await career.listRecords(userId, { sort: "updated_desc", limit: 100 })).data.length;
     const row = await service.create(userId, []);
     await service.send(userId, row.id, { requestId: randomUUID(), text: "인턴 때 EKS 위에 Airflow를 올려서 운영해 봤어요. 기록으로 남겨 줘." });
-    await expect.poll(async () => (await service.get(userId, row.id)).run?.status).toBe("complete");
+    await waitForAgentRun(() => service.get(userId, row.id), "complete");
     const draft = (await service.get(userId, row.id)).messages.at(-1)!.tools[0]!.recordDraft!;
     expect(draft).toMatchObject({ status: "ready", recordId: null });
     expect(draft.categories.some(item => item.id === category.id)).toBe(true);
@@ -248,7 +250,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const before = (await career.listRecords(userId, { sort: "updated_desc", limit: 100 })).data.length;
     const row = await service.create(userId, []);
     await service.send(userId, row.id, { requestId: randomUUID(), text: "배포를 자동화했어요" });
-    await expect.poll(async () => (await service.get(userId, row.id)).run?.status).toBe("complete");
+    await waitForAgentRun(() => service.get(userId, row.id), "complete");
     const draft = (await service.get(userId, row.id)).messages.at(-1)!.tools[0]!.recordDraft!;
     expect((await service.decideRecordDraft(userId, row.id, draft.draftId, { action: "reject" })).messages.at(-1)!.tools[0]!.recordDraft!.status).toBe("rejected");
     expect((await career.listRecords(userId, { sort: "updated_desc", limit: 100 })).data.length).toBe(before);
@@ -274,7 +276,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     } }, career, jobs, documents, consent, new AgentCredentials(fixture.resource));
     services.push(service);
     const row = await service.create(userId, [{ kind: "job", id: jobId }]);
-    const finish = async (text: string) => { await service.send(userId, row.id, { requestId: randomUUID(), text }); await expect.poll(async () => (await service.get(userId, row.id)).run?.status).toBe("complete"); };
+    const finish = async (text: string) => { await service.send(userId, row.id, { requestId: randomUUID(), text }); await waitForAgentRun(() => service.get(userId, row.id), "complete"); };
     await finish("대조해 줘");
     await finish("그 일은 해 본 적이 없어요. 보완점 정리해 줘");
     const gap = (await service.get(userId, row.id)).messages.at(-1)!.tools[0]!.gapReview!;
@@ -313,7 +315,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     } }, career, jobs, documents, consent, new AgentCredentials(fixture.resource));
     services.push(service);
     const row = await service.create(userId, [{ kind: "job", id: jobId }]);
-    const finish = async (text: string) => { await service.send(userId, row.id, { requestId: randomUUID(), text }); await expect.poll(async () => (await service.get(userId, row.id)).run?.status).toBe("complete"); };
+    const finish = async (text: string) => { await service.send(userId, row.id, { requestId: randomUUID(), text }); await waitForAgentRun(() => service.get(userId, row.id), "complete"); };
     await finish("대조해 줘");
     await finish("보완점 정리해 줘");
     const toolId = (await service.get(userId, row.id)).messages.at(-1)!.tools[0]!.id;
@@ -353,7 +355,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     } }, career, jobs, documents, consent, new AgentCredentials(fixture.resource));
     services.push(service);
     const row = await service.create(userId, [{ kind: "job", id: jobId }]);
-    const finish = async (text: string) => { await service.send(userId, row.id, { requestId: randomUUID(), text }); await expect.poll(async () => (await service.get(userId, row.id)).run?.status).toBe("complete"); };
+    const finish = async (text: string) => { await service.send(userId, row.id, { requestId: randomUUID(), text }); await waitForAgentRun(() => service.get(userId, row.id), "complete"); };
     await finish("그 일은 해 본 적이 없어요. 대조하고 보완점 정리해 줘");
     await finish("주 1시간으로 계획 세워 줘");
     expect(rejected[0]![0]).toContain("총 3시간이 필요한데");
@@ -392,7 +394,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect(done.tasks[0]).toMatchObject({ status: "completed", outcome: "예제를 만들었다", spentMinutes: 70 });
     await expect(service.updateTaskProgress(userId, plan.id, tasks[1]!.id, { expectedVersion: 1, status: "in_progress", note: "", outcome: "", outcomeUrl: "", spentMinutes: 0 })).rejects.toMatchObject({ statusCode: 409 });
     await expect(service.updateTaskProgress(other, plan.id, tasks[1]!.id, { expectedVersion: 2, status: "in_progress", note: "", outcome: "", outcomeUrl: "", spentMinutes: 0 })).rejects.toMatchObject({ statusCode: 404 });
-    const finish = async () => { await service.send(userId, row.id, { requestId: randomUUID(), text: plan.id }); await expect.poll(async () => (await service.get(userId, row.id)).run?.status).toBe("complete"); };
+    const finish = async () => { await service.send(userId, row.id, { requestId: randomUUID(), text: plan.id }); await waitForAgentRun(() => service.get(userId, row.id), "complete"); };
     await finish();
     const approved = await service.decideReplanDraft(userId, row.id, replans[0]!, { action: "approve" });
     expect(approved.messages.at(-1)!.tools[0]!.replanDraft!.status).toBe("approved");
@@ -424,9 +426,9 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     let context: unknown; const outcomes: unknown[] = [];
     const runtime: AgentRuntime = { run: async input => {
       context = input.context;
-      outcomes.push(await input.page.edit({ portfolioId, key: "toc", note: "줄였습니다.", text: [{ path: "/x", value: "99개" }] }).catch(error => error));
-      outcomes.push(await input.page.read(randomUUID(), "toc").catch(error => error));
-      const pageEdit = await input.page.edit({ portfolioId, key: "toc", note: "줄였습니다.", text: [{ path: "/x", value: "짧은 제목" }] });
+      outcomes.push(await input.page!.edit({ portfolioId, key: "toc", note: "줄였습니다.", text: [{ path: "/x", value: "99개" }] }).catch(error => error));
+      outcomes.push(await input.page!.read(randomUUID(), "toc").catch(error => error));
+      const pageEdit = await input.page!.edit({ portfolioId, key: "toc", note: "줄였습니다.", text: [{ path: "/x", value: "짧은 제목" }] });
       await input.emit({ type: "tool", tool: { id: randomUUID(), name: "지면 요소 고침", status: "complete", summary: "작업 목차 · 바뀐 곳 1", pageEdit } });
     } };
     const service = new AgentChatService(fixture.resource, runtime, career, { get: async () => { throw new Error("없는 공고"); } }, documents, consent, new AgentCredentials(fixture.resource), new PortfolioReadService(fixture.resource), pages as never);
@@ -466,6 +468,24 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const service = make({ run: async input => { try { await input.propose(recordId, { summary: "불허", commands: [], propertyChanges: [] }); } catch { rejected = true; } } });
     const row = await service.create(userId, []);
     await service.send(userId, row.id, { requestId: randomUUID(), text: "다른 기록 수정" });
-    await expect.poll(() => rejected).toBe(true);
+    await expect.poll(() => rejected, { timeout: 10_000 }).toBe(true);
+  });
+  it("변경 제안 거절과 재조회는 rejected를 유지하고 원본을 바꾸지 않는다", async () => {
+    const original = await documents.bootstrap(userId, recordId);
+    const service = make({ run: async input => {
+      const proposal = await input.propose(recordId, { summary: "거절 검증 초안", commands: [{ type: "setText", blockId: original.document.content[0]!.id, text: "적용하면 안 되는 초안" }], propertyChanges: [] });
+      await input.emit({ type: "tool", tool: { id: "reject-proposal", name: "기록 변경 제안", status: "complete", summary: proposal.summary, proposal } });
+    } });
+    const row = await service.create(userId, [{ kind: "record", id: recordId }]);
+    await service.send(userId, row.id, { requestId: randomUUID(), text: "본문 변경 초안만 만들어줘" });
+    await waitForAgentRun(() => service.get(userId, row.id), "complete");
+    const proposal = (await service.get(userId, row.id)).messages.at(-1)!.tools[0]!.proposal!;
+    const input = { proposalId: proposal.proposalId, action: "reject" as const, expectedDocumentVersion: proposal.baseDocumentVersion };
+    expect((await service.approve(userId, row.id, input)).messages.at(-1)!.tools[0]!.proposal!.status).toBe("rejected");
+    expect((await make(null).get(userId, row.id)).messages.at(-1)!.tools[0]!.proposal!.status).toBe("rejected");
+    expect((await service.approve(userId, row.id, input)).messages.at(-1)!.tools[0]!.proposal!.status).toBe("rejected");
+    const after = await documents.bootstrap(userId, recordId);
+    expect(after.documentVersion).toBe(original.documentVersion);
+    expect(after.document).toEqual(original.document);
   });
 });

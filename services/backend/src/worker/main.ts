@@ -1,3 +1,7 @@
+import { EvidenceSearchService } from "../modules/evidence-search/index.js";
+import { CareerService } from "../modules/career/index.js";
+import { JobBoardService } from "../modules/jobs/index.js";
+import { createEvidenceIndexProcessor } from "./processors/evidence-index.js";
 import { loadRuntimeConfig } from "../config/runtime-config.js";
 import { MongoOutboxDispatcher } from "../platform/mongo-outbox.js";
 import { createMongoResource } from "../platform/mongodb.js";
@@ -113,7 +117,8 @@ const careerJobs = createReliableQueue<Record<string, unknown>>(
   config.redisUrl,
   config.queuePrefix,
 );
-const queues = { [QUEUE_NAMES.domain]: jobs.queue, [QUEUE_NAMES.generation]: generationJobs.queue, [QUEUE_NAMES.refine]: refineJobs.queue, [QUEUE_NAMES.career]: careerJobs.queue };
+const searchJobs = createReliableQueue<Record<string, unknown>>(QUEUE_NAMES.search, config.redisUrl, config.queuePrefix);
+const queues = { [QUEUE_NAMES.search]: searchJobs.queue, [QUEUE_NAMES.domain]: jobs.queue, [QUEUE_NAMES.generation]: generationJobs.queue, [QUEUE_NAMES.refine]: refineJobs.queue, [QUEUE_NAMES.career]: careerJobs.queue };
 const queueFor = (name: string) => queues[queueNameFor(name)];
 const dispatcher = new MongoOutboxDispatcher({
   context: database,
@@ -159,7 +164,7 @@ const engagementService = new EngagementService(database);
 // AI가 없으면 여기서 멈춘다 — 규칙으로 흉내 낸 문장과 요건을 제품에 두지 않는다.
 const generationProcessor = createGenerationProcessor(
   generationService,
-  ai ? new AiSentenceWriter(ai) : new UnavailableSentenceWriter(),
+  ai ? new AiSentenceWriter(ai, true) : new UnavailableSentenceWriter(),
   ai ? new AiLayoutDesigner(ai) : null,
   // 지면 방식은 생성마다 고른다(구조화 생성 · 자유 생성). 고르지 않은 생성은 설정 값을 따른다.
   ai ? {
@@ -204,7 +209,10 @@ const accountLifecycleService = new AccountLifecycleService(database);
 const careerDocumentService = new CareerDocumentService(database, config.assetSigningSecret);
 const careerPropertyMutationProcessor = createCareerPropertyMutationProcessor(new MongoCareerPropertySchemaService(database));
 const careerDocumentCompactionProcessor = createCareerDocumentCompactionProcessor(careerDocumentService);
-const careerDocumentProjectionProcessor = createCareerDocumentProjectionProcessor(careerDocumentService);
+const evidenceSearchService = new EvidenceSearchService(database, new CareerService(database), careerDocumentService, new JobBoardService(database), consentService);
+const evidenceIndexProcessor = createEvidenceIndexProcessor(evidenceSearchService);
+const careerDocumentProjectionProcessor = createCareerDocumentProjectionProcessor(careerDocumentService,
+  async (userId, recordId, jobId) => { await evidenceSearchService.requestSync(userId, `projection-${jobId}`, recordId); });
 const careerComputationProcessor = createCareerComputationProcessor(new MongoCareerComputationService(database));
 // 수집은 여기서만 돈다 — 바깥을 부르는 일은 요청 경로가 아니라 워커의 일이다.
 const jobIngestService = new JobIngestService(
@@ -228,6 +236,7 @@ const queueWorker = createQueueWorker<Record<string, unknown>, Record<string, un
   onFatalError: stopOnFatal,
   stopping: abortController.signal,
   processor: async (job) => {
+    if (job.name.startsWith("career.evidence.")) return evidenceIndexProcessor(job);
     if (job.name === "job.normalize") return analysisProcessor(job);
     if (job.name === "record.cleanup") return recordCleanupProcessor(job);
     if (job.name === "interview.draft") return brewJobProcessor(job);
@@ -254,6 +263,7 @@ const queueWorker = createQueueWorker<Record<string, unknown>, Record<string, un
 });
 
 const careerProcessor = async (job: Parameters<typeof careerDocumentCompactionProcessor>[0]): Promise<Record<string, unknown>> => {
+  if (job.name.startsWith("career.evidence.")) return evidenceIndexProcessor(job);
   if (job.name === "career.document.compact") return careerDocumentCompactionProcessor(job) as Promise<Record<string, unknown>>;
   if (job.name === "career.document.project") return careerDocumentProjectionProcessor(job) as Promise<Record<string, unknown>>;
   if (job.name === "career.computation") return careerComputationProcessor(job) as unknown as Promise<Record<string, unknown>>;
@@ -277,6 +287,14 @@ careerWorker.on("error", (error) => {
   console.error(JSON.stringify({ level: "error", message: "queue worker error", error: safeErrorSummary(error) }));
 });
 
+// 전체 재색인이 짧은 문서 투영·계산 작업을 막지 않도록 검색 전용 줄을 사용합니다.
+const searchWorker = createQueueWorker<Record<string, unknown>, Record<string, unknown>>({
+  queueName: QUEUE_NAMES.search, redisUrl: config.redisUrl, prefix: config.queuePrefix,
+  deadLetterQueue: searchJobs.deadLetterQueue, concurrency: 1, onFatalError: stopOnFatal,
+  processor: evidenceIndexProcessor, stopping: abortController.signal,
+  onDeadLetterError(error) { console.error(JSON.stringify({ level: "error", event: "evidence.dead_letter_failed", error: safeErrorSummary(error) })); },
+});
+searchWorker.on("error", error => console.error(JSON.stringify({ level: "error", event: "evidence.worker_error", error: safeErrorSummary(error) })));
 const generationWorker = createQueueWorker<Record<string, unknown>, Record<string, unknown>>({
   queueName: QUEUE_NAMES.generation,
   redisUrl: config.redisUrl,
@@ -331,7 +349,7 @@ console.info(
   }),
 );
 
-const queueWorkers = [queueWorker, generationWorker, refineWorker, careerWorker];
+const queueWorkers = [queueWorker, generationWorker, refineWorker, careerWorker, searchWorker];
 /*
  * 멈추기 시작하면 곧바로 새 잡 받기를 멈춘다. 폴링 한 주기를 기다리는 동안 이 프로세스가 잡을 받으면, 받자마자 끊긴다.
  * `Worker.close`는 두 번 불러도 같은 약속을 돌려준다 — 아래 `closeWorkerRuntime`이 그 끝을 기다린다.
@@ -349,6 +367,7 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
   });
 }
 
+let nextIndexMaintenanceAt = 0;
 // 아웃박스 행이 커밋되면 1초 주기를 기다리지 않고 발행한다. 흐름이 끊기면 같은 간격으로 다시 열고,
 // 그동안 폴링은 그대로 돈다 — 흐름의 오류가 폴링 루프를 멈추지 않는다.
 const outboxWake = new Wake();
@@ -365,6 +384,10 @@ await runPollLoop({
   signal: abortController.signal,
   wake: outboxWake,
   async poll() {
+    if (config.searchIndexMaintenanceEnabled && Date.now() >= nextIndexMaintenanceAt) {
+      await evidenceSearchService.scheduleMaintenanceBatch();
+      nextIndexMaintenanceAt = Date.now() + 30_000;
+    }
     if (config.scheduledJobsEnabled !== false) await schedulingService.scheduleDue();
     const result = await dispatcher.pollOnce();
     if (result.published || result.retried || result.deadLettered) {
@@ -389,6 +412,6 @@ await runPollLoop({
 // 그 밖에는 처리 중인 잡이 결과를 쓰거나 큐로 돌아갈 때까지 기다린 뒤에 연결을 닫습니다.
 await closeWorkerRuntime({
   workers: queueWorkers,
-  resources: [() => outboxWatch, () => jobs.close(), () => generationJobs.close(), () => refineJobs.close(), () => careerJobs.close(), () => database.close(), () => pageMeasurer.close()],
+  resources: [() => outboxWatch, () => searchJobs.close(), () => jobs.close(), () => generationJobs.close(), () => refineJobs.close(), () => careerJobs.close(), () => database.close(), () => pageMeasurer.close()],
   force: stoppingOnFatal,
 });

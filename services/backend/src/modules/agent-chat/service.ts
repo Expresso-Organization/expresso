@@ -1,3 +1,8 @@
+import { finishAgentFailure } from "./run-failure.js";
+import { runAgentWithPolicy } from "../../platform/agent/execution-policy.js";
+import type { AgentExecutionLimits } from "@expresso/contracts";
+import { readCoaching, personalization } from "../career-coaching/index.js";
+import type { EvidenceSearchService } from "../evidence-search/index.js";
 import type { PortfolioReadApi } from "../portfolios/index.js";
 import { PageElementIssues, PageServiceError, type PageApi } from "../page/index.js";
 import { elementTitle } from "@expresso/portfolio-renderer";
@@ -37,7 +42,7 @@ export class AgentChatService {
   /** `close()`가 시작되면 켠다. 그 뒤에 끝난 실행은 어떤 오류로 끝났든 서버 종료로 끊긴 것이다. */
   private closing = false;
   private runFailureListener: AgentRunFailureListener | null = null;
-  constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord" | "listRecords" | "listCategories" | "createRecord">, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi, readonly credentials: AgentCredentials = new AgentCredentials(db), private readonly portfolios?: Pick<PortfolioReadApi, "get">, private readonly pages?: Pick<PageApi, "latest" | "elementGuide" | "editElementByAgent" | "restoreRevision">) {}
+  constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord" | "listRecords" | "listCategories" | "createRecord">, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi, readonly credentials: AgentCredentials = new AgentCredentials(db), private readonly portfolios?: Pick<PortfolioReadApi, "get">, private readonly pages?: Pick<PageApi, "latest" | "elementGuide" | "editElementByAgent" | "restoreRevision">, readonly provider: "anthropic" | "codex" = "anthropic", private readonly searchService?: EvidenceSearchService, private readonly executionLimits?: Partial<AgentExecutionLimits>) {}
   private get plans() { return new PreparationPlans(this.db); }
   /** 서비스가 Fastify 앱보다 먼저 만들어지므로 로그 수신자는 라우트 등록 때 붙인다. */
   setRunFailureListener(listener: AgentRunFailureListener) { this.runFailureListener = listener; }
@@ -188,6 +193,8 @@ export class AgentChatService {
    * 보완점이 그 뒤의 요건 대조보다 오래되었거나 대조가 오래되었으면 받지 않는다.
    */
   private async planDraft(userId: string, messages: AgentMessage[], input: PlanProposalInput) {
+    const savedProfile = (await readCoaching(this.db, userId)).profile;
+    if (savedProfile && input.settings.weeklyHours > savedProfile.weeklyHours) throw new AgentToolRejection([`저장한 가용 시간은 주 ${savedProfile.weeklyHours}시간입니다. 그 안에서 계획하거나 사용자가 탐색 설정을 먼저 수정하도록 안내하세요.`]);
     const gap = latestTool(messages, tool => tool.gapReview);
     if (!gap) throw new AgentToolRejection(["이 대화에 보완점 정리가 없습니다. 먼저 record_gap_review로 정리하십시오."]);
     const review = latestTool(messages, tool => tool.review);
@@ -224,6 +231,8 @@ export class AgentChatService {
   }
   /** 남은 작업 재배치 초안. 완료하지 않은 작업만 새 설정으로 배치한다. 저장은 승인할 때. */
   private async replanDraft(userId: string, input: ReplanProposalInput) {
+    const savedProfile = (await readCoaching(this.db, userId)).profile;
+    if (savedProfile && input.settings.weeklyHours > savedProfile.weeklyHours) throw new AgentToolRejection([`저장한 주당 가용 시간 ${savedProfile.weeklyHours}시간을 초과합니다. 설정을 먼저 확인하세요.`]);
     const plan = await this.plans.get(userId, input.planId);
     if (!plan) throw new AgentToolRejection(["그 계획을 찾을 수 없습니다. 승인한 계획 초안의 planId를 쓰십시오."]);
     try {
@@ -324,6 +333,8 @@ export class AgentChatService {
     if (!this.runtime) throw new AgentChatError(503, "에이전트가 아직 설정되지 않았습니다.");
     if (row.run?.status === "running") throw new AgentChatError(409, "응답이 끝나거나 취소된 뒤 보내 주세요.");
     await this.consent.require(userId, "partial_edit");
+    // 공고가 연결된 요청은 메시지·실행을 만들기 전에 필요한 동의를 안내합니다.
+    if (row.contexts.some(ref => ref.kind === "job")) await this.consent.require(userId, "job_analysis");
     const context = await this.context(userId, row.contexts);
     if (JSON.stringify(context).length > 120_000) throw new AgentChatError(422, "연결된 자료가 너무 큽니다. 자료를 나누어 새 대화를 시작해 주세요.");
     return context;
@@ -387,13 +398,15 @@ export class AgentChatService {
     }, RUN_HEARTBEAT_MS);
     const timeout = setTimeout(() => controller.abort(), 600_000);
     try {
-      await this.runtime!.run({ userId: row.userId, messages: row.messages.slice(0, -1), context, ...(apiKey ? { apiKey } : {}), signal: controller.signal,
+      const preferences = personalization(await readCoaching(this.db, row.userId));
+      await runAgentWithPolicy(this.runtime!, { preferences, userId: row.userId, messages: row.messages.slice(0, -1), context, ...(apiKey ? { apiKey } : {}), signal: controller.signal,
         emit: async event => {
           if (controller.signal.aborted) throw new Error("cancelled");
           if (event.type === "text") { message.text += event.text; if (message.text.length > 64_000) throw new Error("response too large"); }
           else { const before = event.tool.proposal ? beforeDocuments.get(event.tool.proposal.proposalId) : undefined; if (before) event.tool.beforeDocument = before; const at = message.tools.findIndex(tool => tool.id === event.tool.id); if (at < 0) message.tools.push(event.tool); else message.tools[at] = event.tool; if (message.tools.length > 30) throw new Error("too many tools"); }
           if (event.type === "tool" || Date.now() - lastFlush > 200) await flush();
         },
+        ...(this.searchService ? { search: { career: input => this.searchService!.search(row.userId, input), jobs: input => this.searchService!.searchJobs(row.userId, input) } } : {}),
         records: { list: () => this.listRecords(row.userId), read: ids => this.readRecords(row.userId, ids) },
         review: draft => this.review(row.userId, row.contexts, draft),
         draftRecord: input => this.draftRecord(row, input),
@@ -422,16 +435,24 @@ export class AgentChatService {
           beforeDocuments.set(proposal.proposalId, doc.document);
           return proposal;
         },
+      }, {
+        ...(this.executionLimits ? { limits: this.executionLimits } : {}),
+        authorize: async operation => {
+          // ConsentService.require는 같은 트랜잭션에서 활성 계정 guard도 검사합니다. 중복 쓰기를 만들지 않습니다.
+          await this.consent.require(row.userId, "partial_edit");
+          if (operation === "search_job_postings" || row.contexts.some(ref => ref.kind === "job")) await this.consent.require(row.userId, "job_analysis");
+        },
+        report: summary => console.info(JSON.stringify({ level: "info", runId, provider: this.provider, ...summary })),
       });
       if (controller.signal.aborted) throw new Error("cancelled");
       await flush();
       await this.rows.updateOne(filter, { $set: { "run.status": "complete" }, $inc: { version: 1 } });
     } catch (error) {
-      for (const tool of message.tools) if (tool.status === "running") { tool.status = "failed"; tool.summary = "실행이 중단되었습니다."; }
+      const reason = finishAgentFailure(message, error);
       // 서버 종료 중에는 런타임이 abort 대신 자식 프로세스 종료 오류로 먼저 끝날 수 있다. 그래도 끊긴 것이다.
       const status = this.closing || controller.signal.aborted ? "interrupted" : "failed";
       if (status === "failed") this.runFailureListener?.(error, { conversationId: row._id, runId });
-      await this.rows.updateOne(filter, { $set: { [`messages.${row.messages.length - 1}`]: message, "run.status": status, "run.error": this.closing ? RUN_INTERRUPTED_ERROR : RUN_FAILED_ERROR }, $inc: { version: 1 } });
+      await this.rows.updateOne(filter, { $set: { [`messages.${row.messages.length - 1}`]: message, "run.status": status, "run.error": this.closing ? RUN_INTERRUPTED_ERROR : reason }, $inc: { version: 1 } });
     } finally { clearInterval(timer); clearTimeout(timeout); if (this.running.get(row._id) === controller) this.running.delete(row._id); }
   }
   async cancel(userId: string, id: string) {
@@ -448,7 +469,8 @@ export class AgentChatService {
     if (foundTool?.undone) { if (input.action === "undo") return view(row); throw new AgentChatError(409, "되돌린 제안입니다. 새 제안을 요청해 주세요."); }
     const common = { recordId: found.recordId, proposalId: found.proposalId, expectedDocumentVersion: input.expectedDocumentVersion };
     if (input.action === "apply") await this.documents.applyAiProposal(userId, found.recordId, { ...common, commandIndexes: input.commandIndexes ?? found.commands.map((_, index) => index), propertyChangeIndexes: input.propertyChangeIndexes ?? found.propertyChanges.map((_, index) => index) });
-    else if (input.action === "reject") await this.documents.rejectAiProposal(userId, found.recordId, common);
+    // 거절 계약에는 버전 필드가 없습니다. 적용·되돌리기의 버전 검사는 유지합니다.
+    else if (input.action === "reject") await this.documents.rejectAiProposal(userId, found.recordId, { recordId: found.recordId, proposalId: found.proposalId });
     else await this.documents.undoAiProposal(userId, found.recordId, common);
     const proposal = await this.documents.getAiProposal(userId, found.recordId, found.proposalId);
     await this.rows.updateOne({ _id: id, userId }, { $set: { "messages.$[].tools.$[tool].proposal": proposal, ...(input.action === "undo" ? { "messages.$[].tools.$[tool].undone": true } : {}) }, $inc: { version: 1 } }, { arrayFilters: [{ "tool.proposal.proposalId": input.proposalId }] });

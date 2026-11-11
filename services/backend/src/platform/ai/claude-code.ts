@@ -81,6 +81,8 @@ import { runWithFixes } from "./fixes.js";
 export interface ClaudeCodeOptions {
   /** `claude` 실행 파일. 기본은 PATH에서 찾는다. */
   cliPath?: string;
+  /** 실행 파일에 먼저 전달할 고정 인자입니다. */
+  cliArgs?: readonly string[];
   timeoutMs?: number;
   /** 계약별 모델 별칭 덮어쓰기. */
   models?: Partial<Record<string, string>>;
@@ -115,6 +117,7 @@ const INTERRUPTED_EXIT_CODES = new Set([128 + osConstants.signals.SIGTERM, 128 +
 
 export class ClaudeCodeAiClient implements AiClient {
   readonly #cliPath: string;
+  readonly #cliArgs: readonly string[];
   readonly #timeoutMs: number;
   readonly #models: Partial<Record<string, string>>;
   /**
@@ -125,6 +128,7 @@ export class ClaudeCodeAiClient implements AiClient {
 
   constructor(options: ClaudeCodeOptions = {}) {
     this.#cliPath = options.cliPath ?? "claude";
+    this.#cliArgs = [...(options.cliArgs ?? [])];
     this.#timeoutMs = options.timeoutMs ?? 180_000;
     this.#models = options.models ?? {};
     this.#cwd = mkdtempSync(join(tmpdir(), "expresso-ai-"));
@@ -319,7 +323,7 @@ export class ClaudeCodeAiClient implements AiClient {
     return new Promise<{ stdout: string; stderr: string; code: number; signal: NodeJS.Signals | null; firstOutputMs: number | null }>((resolve, reject) => {
       const spawnedAt = Date.now();
       let firstOutputMs: number | null = null;
-      const child = spawn(this.#cliPath, args, {
+      const child = spawn(this.#cliPath, [...this.#cliArgs, ...args], {
         cwd: this.#cwd,
         stdio: ["pipe", "pipe", "pipe"],
         /*

@@ -12,3 +12,9 @@ describe("작업 줄 고르기", () => {
     }
   });
 });
+
+it("색인 복구는 짧은 커리어 작업과 줄을 분리한다", () => {
+ expect(queueNameFor("career.evidence.record")).toBe(QUEUE_NAMES.search);
+ expect(queueNameFor("career.evidence.reindex")).toBe(QUEUE_NAMES.search);
+ expect(queueNameFor("career.document.project")).toBe(QUEUE_NAMES.career);
+});

@@ -8,13 +8,14 @@ interface CareerDocumentProjectionPayload {
 }
 
 /** BlockNote 본문을 bodyMd로 투영합니다. 매칭 · 생성 · 목록 미리보기가 bodyMd를 읽습니다. */
-export function createCareerDocumentProjectionProcessor(service: Pick<CareerDocumentService, "projectBodyMarkdown">) {
+export function createCareerDocumentProjectionProcessor(service: Pick<CareerDocumentService, "projectBodyMarkdown">, onProjected?: (userId: string, recordId: string, jobId: string) => Promise<void>) {
   return async (job: Job<Record<string, unknown>>) => {
     const payload = job.data as Partial<CareerDocumentProjectionPayload>;
     if (typeof payload.userId !== "string" || typeof payload.recordId !== "string") {
       throw new Error("career.document.project payload is invalid");
     }
     const markdown = await service.projectBodyMarkdown(payload.userId, payload.recordId);
+    if (markdown !== null) await onProjected?.(payload.userId, payload.recordId, job.id ?? "projection");
     return { projected: markdown !== null };
   };
 }

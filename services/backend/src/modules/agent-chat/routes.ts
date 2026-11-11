@@ -11,7 +11,7 @@ export function registerAgentChatRoutes(app: FastifyInstance, service: AgentChat
   const id = (params: unknown) => UuidSchema.parse((params as { id: string }).id);
   // 서버 Claude 인증은 개발 멤버와, 관리자가 대신 로그인한 더미 계정이 쓴다.
   // 더미 계정은 스스로 로그인할 수 없어 대신 로그인 중이라는 것이 곧 관리자가 연 더미 계정이다.
-  const serverCredential = ({ user }: IdentityPrincipal) => developerUserIds.includes(user.id) || user.impersonation !== null;
+  const serverCredential = ({ user }: IdentityPrincipal) => service.provider === "codex" || developerUserIds.includes(user.id) || user.impersonation !== null;
   app.get(`${API_PREFIX}/agent/access`, options, async req => ({ data: { enabled: service.enabled, serverCredentialAllowed: serverCredential(requireAuth(req)), consentRequired: await service.consentRequired(requireAuth(req).user.id), apiKeyConfigured: await service.credentials.configured(requireAuth(req).user.id), model: "sonnet" } }));
   app.put(`${API_PREFIX}/agent/credential`, options, async req => { await service.credentials.save(requireAuth(req).user.id, SaveAgentApiKeySchema.parse(req.body).apiKey); return { data: { configured: true } }; });
   app.delete(`${API_PREFIX}/agent/credential`, options, async req => { await service.credentials.remove(requireAuth(req).user.id); return { data: { configured: false } }; });

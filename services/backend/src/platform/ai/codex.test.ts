@@ -106,7 +106,7 @@ process.stdin.on("end", () => {
     });
   });
 
-  it("스키마에 맞지 않는 최종 메시지는 재시도 가능한 실패다", async () => {
+  it("고쳐도 스키마에 맞지 않는 응답은 전체 재시도 없이 중단한다", async () => {
     const executable = fakeCodex(`
 process.stdin.resume();
 process.stdin.on("end", () => {
@@ -119,7 +119,7 @@ process.stdin.on("end", () => {
 
     await expect(client.complete(spec, OutputSchema)).rejects.toMatchObject({
       code: "AI_INVALID_OUTPUT",
-      retryable: true,
+      retryable: false,
     });
   });
 
@@ -138,5 +138,70 @@ process.exit(1);`);
     const hanging = fakeCodex("process.stdin.resume(); setInterval(() => undefined, 1_000);");
     await expect(new CodexAiClient({ cliPath: hanging, timeoutMs: 30 }).complete(spec, OutputSchema))
       .rejects.toMatchObject({ code: "AI_TIMEOUT", retryable: true });
+  });
+});
+
+describe("Codex 선택 필드 응답", () => {
+  const nested = z.object({ spec: z.object({ elements: z.object({ page: z.object({ type: z.literal("Page") }), metrics: z.object({ text: z.string() }).optional() }) }) });
+  it("선택 요소가 있는 계약은 강제 스키마 없이 받고 생략을 보존한다", async () => {
+    const executable = fakeCodex(String.raw`
+let prompt="";
+process.stdin.setEncoding("utf8");process.stdin.on("data",chunk=>prompt+=chunk);
+process.stdin.on("end",()=>{
+ if(process.argv.includes("--output-schema")) {process.stderr.write("invalid_json_schema: missing metrics");process.exit(1);}
+ if(!prompt.includes("<response_schema>") || !prompt.includes('"metrics"') || !prompt.includes("Optional fields may be omitted")) {process.stderr.write("missing response format");process.exit(1);}
+ console.log(JSON.stringify({type:"item.completed",item:{type:"agent_message",text:JSON.stringify({spec:{elements:{page:{type:"Page"}}}})}}));
+});`);
+    const result = await new CodexAiClient({cliPath:executable}).complete({...spec,contract:"page_design"},nested);
+    expect(result.data.spec.elements).toEqual({page:{type:"Page"}});
+    expect(Object.hasOwn(result.data.spec.elements,"metrics")).toBe(false);
+  });
+  it("강제 스키마를 생략해도 원본 Zod 계약 위반은 거절한다", async () => {
+    const executable=fakeCodex(String.raw`
+process.stdin.resume();process.stdin.on("end",()=>console.log(JSON.stringify({type:"item.completed",item:{type:"agent_message",text:JSON.stringify({spec:{elements:{page:{type:"Wrong"}}}})}})));
+`);
+    await expect(new CodexAiClient({cliPath:executable}).complete({...spec,contract:"page_design"},nested)).rejects.toMatchObject({code:"AI_INVALID_OUTPUT"});
+  });
+});
+
+describe("Codex 필드 복구", () => {
+  const path = "/spec/elements/index/props/variant";
+  const pageSchema = z.object({spec:z.object({elements:z.object({
+    index:z.object({props:z.object({variant:z.enum(["rows","mosaic","rail","timeline"]),title:z.string()})}),
+    metrics:z.object({text:z.string()}).optional(),
+  })})});
+  it("잘못된 variant만 고쳐 받고 다른 내용과 생략한 요소는 보존한다", async () => {
+    const executable=fakeCodex(String.raw`
+let prompt="";process.stdin.setEncoding("utf8");process.stdin.on("data",x=>prompt+=x);process.stdin.on("end",()=>{
+ const repair=prompt.includes("<field_repair>");
+ if(repair && (!prompt.includes("/spec/elements/index/props/variant")||!prompt.includes("timeline")||prompt.includes("keep-this-title"))) {process.stderr.write("not a scoped repair");process.exit(1);}
+ if(repair && process.argv.includes('--output-schema')) {process.stderr.write('unknown repair value cannot be a strict schema');process.exit(1);}
+ const data=repair?{fixes:[{path:"/spec/elements/index/props/variant",value:"rows"}]}:{spec:{elements:{index:{props:{variant:"grid",title:"keep-this-title"}}}}};
+ console.log(JSON.stringify({type:'item.completed',item:{type:'agent_message',text:JSON.stringify(data)}}));
+ console.log(JSON.stringify({type:'turn.completed',usage:{input_tokens:10,output_tokens:5}}));
+});`);
+    const revisions: unknown[]=[];
+    const result=await new CodexAiClient({cliPath:executable}).complete({...spec,contract:"page_design"},pageSchema,{onRevision:fixes=>revisions.push(fixes)});
+    expect(result.data.spec.elements.index.props).toEqual({variant:"rows",title:"keep-this-title"});
+    expect(Object.hasOwn(result.data.spec.elements,"metrics")).toBe(false);
+    expect(result.usage.inputTokens).toBe(20);expect(result.usage.outputTokens).toBe(10);
+    expect(revisions).toEqual([[{path,value:"rows"}]]);
+  });
+  it("Zod 이후 업무 규칙 check도 필드 수정으로 처리한다", async () => {
+    const executable=fakeCodex(String.raw`
+let prompt="";process.stdin.setEncoding('utf8');process.stdin.on('data',x=>prompt+=x);process.stdin.on('end',()=>{
+ const data=prompt.includes('<field_repair>')?{fixes:[{path:'/summary',value:'원문 근거'}]}:{summary:'근거 없음'};
+ console.log(JSON.stringify({type:'item.completed',item:{type:'agent_message',text:JSON.stringify(data)}}));
+});`);
+    const result=await new CodexAiClient({cliPath:executable}).complete(spec,z.object({summary:z.string()}),{check:data=>data.summary==='원문 근거'?[]:[{path:'/summary',problem:'원문의 근거에 맞게 수정하세요.'}]});
+    expect(result.data.summary).toBe('원문 근거');
+  });
+  it("같은 잘못된 값을 다시 보내면 전체 재생성 없이 중단한다", async () => {
+    const executable=fakeCodex(String.raw`
+let prompt="";process.stdin.setEncoding('utf8');process.stdin.on('data',x=>prompt+=x);process.stdin.on('end',()=>{
+ const data=prompt.includes('<field_repair>')?{fixes:[{path:'/spec/elements/index/props/variant',value:'grid'}]}:{spec:{elements:{index:{props:{variant:'grid',title:'보존'}}}}};
+ console.log(JSON.stringify({type:'item.completed',item:{type:'agent_message',text:JSON.stringify(data)}}));
+});`);
+    await expect(new CodexAiClient({cliPath:executable}).complete({...spec,contract:'page_design'},pageSchema)).rejects.toMatchObject({code:'AI_INVALID_OUTPUT',retryable:false,message:expect.stringContaining('after 1 fix rounds')});
   });
 });

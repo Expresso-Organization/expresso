@@ -30,7 +30,7 @@ describe("Claude 채팅 실행 어댑터", () => {
     await new ClaudeAgentRuntime().run({ messages: [], context: [], signal: new AbortController().signal, emit: async event => { events.push(event); }, ...base() });
     expect(events).toEqual([{ type: "text", text: "안녕하세요" }]);
     expect(sdk.query.mock.lastCall![0].options).toMatchObject({ tools: [], settingSources: [], strictMcpConfig: true, persistSession: false, permissionMode: "dontAsk" });
-    expect(sdk.query.mock.lastCall![0].options.allowedTools).toEqual(["mcp__expresso__propose_record_edit", "mcp__expresso__list_career_records", "mcp__expresso__read_career_records", "mcp__expresso__record_requirement_review", "mcp__expresso__propose_new_record", "mcp__expresso__record_gap_review", "mcp__expresso__propose_preparation_plan", "mcp__expresso__read_preparation_plan", "mcp__expresso__propose_replan", "mcp__expresso__read_page_element", "mcp__expresso__edit_page_element"]);
+    expect(sdk.query.mock.lastCall![0].options.allowedTools).toEqual(["mcp__expresso__search_career_evidence", "mcp__expresso__search_job_postings", "mcp__expresso__propose_record_edit", "mcp__expresso__list_career_records", "mcp__expresso__read_career_records", "mcp__expresso__record_requirement_review", "mcp__expresso__propose_new_record", "mcp__expresso__record_gap_review", "mcp__expresso__propose_preparation_plan", "mcp__expresso__read_preparation_plan", "mcp__expresso__propose_replan", "mcp__expresso__read_page_element", "mcp__expresso__edit_page_element"]);
   });
   it("중단 신호를 SDK에 전달한다", async () => {
     const controller = new AbortController(); let stopped = false;
@@ -65,11 +65,11 @@ describe("Claude 채팅 실행 어댑터", () => {
     expect(events.map(tool => [tool.name, tool.status, tool.summary])).toEqual([["기록 목록 확인", "running", "기록 목록을 불러오고 있습니다."], ["기록 목록 확인", "complete", "기록 1개를 확인했습니다."]]);
     expect(events[0]!.id).toBe(events[1]!.id);
   });
-  it("모델이 도구 입력을 쓰기 시작하면 실행 중을 먼저 알리고, 처리기 결과를 같은 줄에 잇는다", async () => {
+  it("읽기 작업은 재사용 여부가 정해진 처리기에서 상태를 한 번만 기록한다", async () => {
     const emit = vi.fn(async (_event: AgentEvent) => undefined);
     sdk.query.mockImplementation(({ options }) => (async function* () {
       yield { type: "stream_event", event: { type: "content_block_start", content_block: { type: "tool_use", id: "toolu_1", name: "mcp__expresso__list_career_records" } } };
-      expect(emit.mock.calls.map(([event]) => event.type === "tool" && event.tool.status)).toEqual(["running"]);
+      expect(emit.mock.calls.map(([event]) => event.type === "tool" && event.tool.status)).toEqual([]);
       const [serverSide, clientSide] = InMemoryTransport.createLinkedPair();
       await (options.mcpServers.expresso.instance as McpServer).connect(serverSide);
       const client = new Client({ name: "runtime-test", version: "1.0.0" });
@@ -113,6 +113,9 @@ describe("Claude 채팅 실행 어댑터", () => {
     expect(result.isError).toBeFalsy();
     expect(edit).toHaveBeenCalledWith(args);
     expect(emit.mock.calls.at(-1)![0]).toMatchObject({ type: "tool", tool: { name: "지면 요소 고침", status: "complete", summary: "경로 재설계 · 바뀐 곳 1", pageEdit } });
+    // 저장 뒤 재조회는 같은 응답에서도 옛 요소를 재사용하지 않습니다.
+    await client.callTool({ name: "read_page_element", arguments: { portfolioId: pageEdit.portfolioId, key: "section-a" } });
+    expect(emit.mock.calls.filter(([event]) => event.type === "tool" && event.tool.name === "지면 요소 읽기" && event.tool.status === "complete")).toHaveLength(2);
     edit.mockRejectedValueOnce(new AgentToolRejection(["/sections/a/summary: 출처에 없는 숫자가 있습니다(99)."]));
     const rejected = await client.callTool({ name: "edit_page_element", arguments: args });
     expect(rejected.isError).toBe(true);
@@ -131,7 +134,7 @@ describe("Claude 채팅 실행 어댑터", () => {
       yield { type: "stream_event", event: { type: "content_block_delta", delta: { type: "text_delta", text: "{\"tool\":\"list_career_records\"}" } } };
     })());
     const emit = vi.fn();
-    await expect(new ClaudeAgentRuntime().run({ messages: [], context: [], signal: new AbortController().signal, emit, ...base() })).rejects.toThrow("agent tools unavailable: mcp__expresso__propose_record_edit");
+    await expect(new ClaudeAgentRuntime().run({ messages: [], context: [], signal: new AbortController().signal, emit, ...base() })).rejects.toThrow(`agent tools unavailable: ${AGENT_ALLOWED_TOOLS[0]}`);
     expect(emit).not.toHaveBeenCalled();
   });
   it("모델에 넘기는 대화에는 도구의 이름 · 요약 · 요건 대조만 싣는다", () => {
@@ -165,4 +168,35 @@ describe("Claude 채팅 실행 어댑터", () => {
     await expect(new ClaudeAgentRuntime(undefined, { record }).run({ messages: [], context: [], signal: new AbortController().signal, emit: vi.fn(), ...base() })).rejects.toThrow("agent execution failed");
     expect(record).not.toHaveBeenCalled();
   });
+});
+
+it("Anthropic 검색 도구도 서비스 검색과 같은 결과를 사용한다", async () => {
+  const result = { hits: [], meta: { mode: "keyword" as const, complete: true, scanned: 0, notices: [] } };
+  const search = { career: vi.fn(async () => result), jobs: vi.fn(async () => result) };
+  const { client, emit } = await connectTools({ search });
+  await client.callTool({ name: "search_career_evidence", arguments: { query: "404", mode: "keyword", limit: 8 } });
+  expect(search.career).toHaveBeenCalledWith({ query: "404", mode: "keyword", limit: 8 });
+  expect(emit).toHaveBeenCalledWith(expect.objectContaining({ tool: expect.objectContaining({ evidenceSearch: result }) }));
+  await client.close();
+});
+
+it("동시 검색은 한 번 실행하고 완료 카드도 한 번만 만든다", async () => {
+  const result = { hits: [], meta: { mode: "keyword" as const, complete: true, scanned: 0, notices: [] } };
+  const career = vi.fn(async () => result);
+  const { client, emit } = await connectTools({ search: { career, jobs: vi.fn() } });
+  await Promise.all([1, 2].map(() => client.callTool({ name: "search_career_evidence", arguments: { query: "404" } })));
+  expect(career).toHaveBeenCalledOnce();
+  const events = emit.mock.calls.map(([event]) => event).filter(event => event.type === "tool");
+  expect(events.filter(event => event.tool.status === "complete")).toHaveLength(1);
+  expect(new Set(events.map(event => event.tool.id)).size).toBe(1);
+  await client.close();
+});
+
+it("실패한 읽기는 재사용하지 않고 다시 시도한다", async () => {
+  const list = vi.fn().mockRejectedValueOnce(new Error("offline")).mockResolvedValue({ categories: [], records: [] });
+  const { client } = await connectTools({ records: { list, read: vi.fn() } });
+  expect((await client.callTool({ name: "list_career_records", arguments: {} })).isError).toBe(true);
+  expect((await client.callTool({ name: "list_career_records", arguments: {} })).isError).toBeFalsy();
+  expect(list).toHaveBeenCalledTimes(2);
+  await client.close();
 });
