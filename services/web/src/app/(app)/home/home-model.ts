@@ -39,6 +39,19 @@ export function roleTab(profile: CareerProfile | null): { label: string; family:
   return { label: "전체 공고", family: null };
 }
 
+export type JobsTab = "role" | "interested";
+
+/** 공고 카드가 실제로 보여 주는 탭. 관심 공고가 없으면 관심 탭을 세우지 않으므로 첫 탭이다. */
+export function jobsTabShown(tab: JobsTab, interestedTotal: number): JobsTab {
+  return tab === "interested" && interestedTotal > 0 ? "interested" : "role";
+}
+
+/** 공고 카드 「전체」가 여는 06 공고 목록의 조건. 보고 있는 탭을 따른다. */
+export function allJobsQuery(shown: JobsTab, family: string | null): Record<string, string> {
+  if (shown === "interested") return { interested: "true" };
+  return family ? { family } : {};
+}
+
 /**
  * 검색창 아래 예시 질문. 목표 직군과 경력에서 만든다.
  * 목표 직군이 없으면 비운다 — 아무에게나 맞는 예시는 아무에게도 맞지 않는다.

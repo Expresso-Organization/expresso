@@ -10,6 +10,7 @@ import {
   type PageQaReport,
   type DesignSystemSpecV2,
   type PortfolioArchetype,
+  type PageGenerationFormat,
   type PageStyleGrammar,
   type PageStreamStage,
   type PortfolioPlan,
@@ -76,6 +77,8 @@ export interface PageGenerationContext {
   design?: DesignSystemSpecV2 | undefined;
   /** 사용자가 고른 페이지 짜임새. 없으면 사례 상세형. */
   archetype?: PortfolioArchetype | undefined;
+  /** 생성 요청이 고른 지면 방식. 없으면 직전 지면 · 서버 설정을 따른다(`FormatRoutingPageGenerator`). */
+  pageFormat?: PageGenerationFormat | undefined;
   sections: PageSection[];
   evidence: PageEvidence[];
   media: PageMedia[];

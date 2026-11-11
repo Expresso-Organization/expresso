@@ -5,7 +5,6 @@ import {
   RestorePageRevisionSchema,
   EditStructuredPageSchema,
   PageLibrarySearchSchema,
-  InstructStructuredElementSchema,
   AddStructuredSectionSchema,
 } from "@expresso/contracts";
 import { z } from "zod";
@@ -19,7 +18,6 @@ import { writePageStream, type PageStream } from "./stream.js";
 import type { PageElementEditor } from "./element-edit.js";
 
 /** 요소 경로의 인자입니다. 요소 키는 Spec의 요소 ID 모양입니다. */
-const PortfolioElementParamsSchema = PortfolioIdParamsSchema.extend({ key: z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9-]{0,99}$/) });
 
 export interface RegisterPageRoutesOptions {
   service: PageApi;
@@ -85,14 +83,6 @@ export function registerPageRoutes(
     const rendered = await lift(() => options.service.editableRender!(principal.user.id, portfolioId));
     if (!rendered) throw new HttpStatusError(404, "구조화 지면이 없습니다.");
     return { data: rendered };
-  });
-
-  app.post(`${path}/elements/:key/instruct`, { preHandler: options.authenticateRequest }, async (request) => {
-    const principal = requireAuth(request);
-    const { id: portfolioId, key } = PortfolioElementParamsSchema.parse(request.params);
-    const input = InstructStructuredElementSchema.parse(request.body);
-    if (!options.service.instructElement) throw new HttpStatusError(503, "요소 편집을 사용할 수 없습니다.");
-    return { data: await lift(() => options.service.instructElement!(principal.user.id, portfolioId, key, input, options.editor ?? null)) };
   });
 
   app.post(`${path}/sections`, { preHandler: options.authenticateRequest }, async (request, reply) => {

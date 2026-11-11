@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { TimestampSchema, UuidSchema } from "./common.js";
+import { ConsentScopeSchema } from "./consent.js";
 
 export const SubmitJobPostingSchema = z.strictObject({
   companyName: z.string().trim().min(1).max(200),
@@ -70,6 +71,8 @@ export const InterpretedJobSearchSchema = z.strictObject({
   needsClarification: z.boolean(),
   example: z.string().optional(),
   recentSearchId: UuidSchema,
+  /** AI 해석에 필요한 동의가 없어 해석을 건너뛰었을 때 그 동의. 화면은 검색어 원문으로 찾고 동의 안내를 띄운다. */
+  requiredConsent: ConsentScopeSchema.optional(),
 });
 
 export const SaveJobSearchSchema = z.strictObject({

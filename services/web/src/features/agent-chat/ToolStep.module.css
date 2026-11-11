@@ -1,0 +1,36 @@
+/*
+ * 작업 흔적 — 도구 호출이 왼쪽 세로선으로 이어진 단계 목록.
+ * 새 단계가 붙으면 앞 단계의 선이 아래로 그어지며 이어지고, 단계는 선 쪽에서 미끄러져 나온다.
+ */
+.step { position: relative; display: grid; grid-template-columns: 20px minmax(0, 1fr); column-gap: 10px; padding-bottom: 12px; animation: enter var(--ex-motion-glide) both; }
+.step:last-child { padding-bottom: 2px; }
+.step:not(:last-child)::before { content: ""; position: absolute; left: 9px; top: 22px; bottom: 2px; width: 2px; border-radius: 1px; background: var(--ex-border-firm); transform-origin: top; animation: draw var(--ex-motion-panel) both; transition: background var(--ex-motion-quick); }
+/* 끝난 단계에서 내려가는 선은 점과 같은 계열로 — 지나온 경로가 이어져 보인다. */
+.step[data-status="complete"]:not(:last-child)::before { background: var(--ex-accent-soft); }
+
+.node { position: relative; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--ex-border); background: var(--ex-bg); color: var(--ex-fg-muted); transition: background var(--ex-motion-quick), border-color var(--ex-motion-quick), color var(--ex-motion-quick); }
+/* 둘레의 도는 고리 — Brew 대기 화면의 스피너(Waiting.module.css)와 같은 모양 · 속도 */
+.step[data-status="running"] .node { color: var(--ex-accent-text); }
+.step[data-status="running"] .node::after { content: ""; position: absolute; inset: -1px; border: 1.5px solid transparent; border-top-color: var(--ex-accent); border-radius: 50%; animation: spin 700ms linear infinite; }
+.step[data-status="complete"] .node { border-color: var(--ex-accent); background: var(--ex-accent); color: var(--ex-fg-on-accent); }
+.step[data-status="failed"] .node { border-color: var(--ex-status-danger-surface); background: var(--ex-status-danger-surface); color: var(--ex-status-danger-text); }
+.glyph { animation: pop var(--ex-motion-spring) both; }
+
+.body { min-width: 0; }
+.title { display: inline-block; font-size: var(--ex-text-xs); font-weight: 600; line-height: 20px; color: var(--ex-fg); }
+/* 전역 ex-anim-shimmer가 배경 위치를 옮긴다 — Skeleton(.bar)과 같은 띠를 글자 모양으로 자른다. */
+.step[data-status="running"] .title { background: linear-gradient(90deg, var(--ex-fg-subtle) 0%, var(--ex-fg) 50%, var(--ex-fg-subtle) 100%) 0 0 / 280px 100%; -webkit-background-clip: text; background-clip: text; color: transparent; }
+.summary { margin: 0; font-size: var(--ex-text-2xs); line-height: var(--ex-leading-normal); color: var(--ex-fg-muted); overflow-wrap: anywhere; animation: reveal var(--ex-motion-panel) both; }
+.step[data-status="running"] .summary { color: var(--ex-fg-subtle); }
+.step[data-status="failed"] .summary { color: var(--ex-status-danger-text); }
+.detail { margin-top: 8px; }
+
+@keyframes enter { from { opacity: 0; translate: -6px 0; } }
+@keyframes draw { from { scale: 1 0; } }
+@keyframes spin { to { rotate: 360deg; } }
+@keyframes pop { from { opacity: 0; scale: 0.4; } }
+@keyframes reveal { from { opacity: 0; translate: 0 -3px; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .step[data-status="running"] .node::after { animation: none; }
+}

@@ -9,7 +9,9 @@ import { createReliableQueue } from "../platform/queue.js";
 import { safeErrorSummary } from "../platform/observability.js";
 import { createQueueWorker } from "./create-queue-worker.js";
 import { QUEUE_NAMES, queueNameFor } from "./queue-routing.js";
+import { Wake, watchOutboxInserts } from "./outbox-wake.js";
 import { runPollLoop } from "./poll-loop.js";
+import { closeWorkerRuntime } from "./shutdown.js";
 import { JobAnalysisService } from "../modules/job-analysis/index.js";
 import { UnavailableRequirementExtractor } from "../modules/job-analysis/extractor.js";
 import { AiRequirementExtractor } from "../modules/job-analysis/ai-extractor.js";
@@ -43,6 +45,7 @@ import { PageStream } from "../modules/page/stream.js";
 import { createStreamRedis } from "../platform/redis.js";
 import { AiPageGenerator } from "../modules/page/generator.js";
 import { StructuredPageGenerator } from "../modules/page/structured-generator.js";
+import { FormatRoutingPageGenerator } from "../modules/page/format-router.js";
 import { MediaService } from "../modules/media/index.js";
 import { ChromiumPageMeasurer } from "../platform/browser/page-measurer.js";
 import { createPageRefineProcessor } from "./processors/page-refine.js";
@@ -163,8 +166,17 @@ const generationProcessor = createGenerationProcessor(
   generationService,
   ai ? new AiSentenceWriter(ai, true) : new UnavailableSentenceWriter(),
   ai ? new AiLayoutDesigner(ai) : null,
-  ai ? { service: pageService, generator: config.pageGenerationFormat === "html" ? new AiPageGenerator(ai) : structuredPageGenerator! } : null,
+  // 지면 방식은 생성마다 고른다(구조화 생성 · 자유 생성). 고르지 않은 생성은 설정 값을 따른다.
+  ai ? {
+    service: pageService,
+    generator: new FormatRoutingPageGenerator(
+      { html: new AiPageGenerator(ai), "json-render": structuredPageGenerator! },
+      config.pageGenerationFormat ?? "json-render",
+    ),
+  } : null,
   engagementService,
+  // 멈추는 중에 끊긴 생성은 실패로 확정하지 않는다. 새 Worker가 다시 돌린다.
+  abortController.signal,
 );
 // 질문 생성 · 레시피 생성도 여기서 돈다. HTTP 요청은 잡만 만들고 바로 돌아간다.
 const brewJobService = new BrewJobService(database);
@@ -222,6 +234,7 @@ const queueWorker = createQueueWorker<Record<string, unknown>, Record<string, un
   deadLetterQueue: jobs.deadLetterQueue,
   concurrency: workerConcurrency,
   onFatalError: stopOnFatal,
+  stopping: abortController.signal,
   processor: async (job) => {
     if (job.name.startsWith("career.evidence.")) return evidenceIndexProcessor(job);
     if (job.name === "job.normalize") return analysisProcessor(job);
@@ -264,6 +277,7 @@ const careerWorker = createQueueWorker<Record<string, unknown>, Record<string, u
   deadLetterQueue: careerJobs.deadLetterQueue,
   concurrency: 4,
   onFatalError: stopOnFatal,
+  stopping: abortController.signal,
   processor: careerProcessor,
   onDeadLetterError(error) {
     console.error(JSON.stringify({ level: "error", message: "failed to persist dead-letter job", error: safeErrorSummary(error) }));
@@ -277,7 +291,7 @@ careerWorker.on("error", (error) => {
 const searchWorker = createQueueWorker<Record<string, unknown>, Record<string, unknown>>({
   queueName: QUEUE_NAMES.search, redisUrl: config.redisUrl, prefix: config.queuePrefix,
   deadLetterQueue: searchJobs.deadLetterQueue, concurrency: 1, onFatalError: stopOnFatal,
-  processor: evidenceIndexProcessor,
+  processor: evidenceIndexProcessor, stopping: abortController.signal,
   onDeadLetterError(error) { console.error(JSON.stringify({ level: "error", event: "evidence.dead_letter_failed", error: safeErrorSummary(error) })); },
 });
 searchWorker.on("error", error => console.error(JSON.stringify({ level: "error", event: "evidence.worker_error", error: safeErrorSummary(error) })));
@@ -288,6 +302,7 @@ const generationWorker = createQueueWorker<Record<string, unknown>, Record<strin
   deadLetterQueue: generationJobs.deadLetterQueue,
   concurrency: workerConcurrency,
   onFatalError: stopOnFatal,
+  stopping: abortController.signal,
   processor: (job) => generationProcessor(job),
   onDeadLetterError(error) {
     console.error(JSON.stringify({ level: "error", message: "failed to persist dead-letter job", error: safeErrorSummary(error) }));
@@ -305,6 +320,7 @@ const refineWorker = createQueueWorker<Record<string, unknown>, Record<string, u
   deadLetterQueue: refineJobs.deadLetterQueue,
   concurrency: workerConcurrency,
   onFatalError: stopOnFatal,
+  stopping: abortController.signal,
   processor: (job) => pageRefineProcessor(job),
   onDeadLetterError(error) {
     console.error(JSON.stringify({ level: "error", message: "failed to persist dead-letter job", error: safeErrorSummary(error) }));
@@ -333,6 +349,15 @@ console.info(
   }),
 );
 
+const queueWorkers = [queueWorker, generationWorker, refineWorker, careerWorker, searchWorker];
+/*
+ * 멈추기 시작하면 곧바로 새 잡 받기를 멈춘다. 폴링 한 주기를 기다리는 동안 이 프로세스가 잡을 받으면, 받자마자 끊긴다.
+ * `Worker.close`는 두 번 불러도 같은 약속을 돌려준다 — 아래 `closeWorkerRuntime`이 그 끝을 기다린다.
+ */
+abortController.signal.addEventListener("abort", () => {
+  for (const worker of queueWorkers) void worker.close(stoppingOnFatal).catch(() => undefined);
+}, { once: true });
+
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.once(signal, () => {
     console.info(
@@ -343,9 +368,21 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
 }
 
 let nextIndexMaintenanceAt = 0;
+// 아웃박스 행이 커밋되면 1초 주기를 기다리지 않고 발행한다. 흐름이 끊기면 같은 간격으로 다시 열고,
+// 그동안 폴링은 그대로 돈다 — 흐름의 오류가 폴링 루프를 멈추지 않는다.
+const outboxWake = new Wake();
+const outboxWatch = watchOutboxInserts(database.db, () => outboxWake.notify(), {
+  retryMs: config.outboxPollIntervalMs,
+  signal: abortController.signal,
+  onError(error) {
+    console.error(JSON.stringify({ level: "warn", message: "outbox change stream failed", error: safeErrorSummary(error) }));
+  },
+});
+
 await runPollLoop({
   intervalMs: config.outboxPollIntervalMs,
   signal: abortController.signal,
+  wake: outboxWake,
   async poll() {
     if (config.searchIndexMaintenanceEnabled && Date.now() >= nextIndexMaintenanceAt) {
       await evidenceSearchService.scheduleMaintenanceBatch();
@@ -372,4 +409,9 @@ await runPollLoop({
 });
 
 // fatal이면 처리 중인 잡을 기다리지 않습니다. 잠금이 만료되면 BullMQ의 stalled 처리가 다시 배달합니다.
-await Promise.allSettled([queueWorker.close(stoppingOnFatal), generationWorker.close(stoppingOnFatal), refineWorker.close(stoppingOnFatal), careerWorker.close(stoppingOnFatal), searchWorker.close(stoppingOnFatal), searchJobs.close(), jobs.close(), generationJobs.close(), refineJobs.close(), careerJobs.close(), database.close(), pageMeasurer.close()]);
+// 그 밖에는 처리 중인 잡이 결과를 쓰거나 큐로 돌아갈 때까지 기다린 뒤에 연결을 닫습니다.
+await closeWorkerRuntime({
+  workers: queueWorkers,
+  resources: [() => outboxWatch, () => searchJobs.close(), () => jobs.close(), () => generationJobs.close(), () => refineJobs.close(), () => careerJobs.close(), () => database.close(), () => pageMeasurer.close()],
+  force: stoppingOnFatal,
+});

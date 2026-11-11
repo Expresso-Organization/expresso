@@ -10,7 +10,7 @@ import { careerRecordTextReader, careerYearsOf } from "../career/index.js";
 import { JobMarketError } from "./errors.js";
 import type { JobMarketApi } from "./index.js";
 import { calculateExplainableMatch } from "./match-score.js";
-import type { ConsentApi } from "../consent/index.js";
+import { ConsentError, type ConsentApi } from "../consent/index.js";
 import {
   NullSearchInterpreter,
   SEARCH_INTERPRET_PROMPT_VERSION,
@@ -89,8 +89,18 @@ export class JobMarketService implements JobMarketApi {
   }
 
   async interpretSearch(userId: string, query: string, resultCount: number) {
-    if (this.searchPromptVersion > 0) await this.consent?.require(userId, "search_interpret");
-    const conditions = await this.interpreter.interpret(query, userId);
+    // 동의는 검색어를 AI로 보내도 되는지를 묻는다. 동의가 없으면 보내지 않고
+    // AI가 꺼진 서버처럼 조건 없이 돌려준다 — 화면은 검색어 원문으로 찾는다.
+    let requiredConsent: ConsentError["scope"] | undefined;
+    if (this.searchPromptVersion > 0) {
+      try {
+        await this.consent?.require(userId, "search_interpret");
+      } catch (error) {
+        if (!(error instanceof ConsentError)) throw error;
+        requiredConsent = error.scope;
+      }
+    }
+    const conditions = requiredConsent ? [] : await this.interpreter.interpret(query, userId);
     return this.#write(userId, async (tx) => {
       const searches = mongoCollections(tx.db).recentSearches; const options = { session: tx.session };
       const latest = await searches.findOne({ userId }, { ...options, sort: { createdAt: -1, _id: -1 } });
@@ -99,6 +109,7 @@ export class JobMarketService implements JobMarketApi {
       await searches.updateOne({ _id: id, userId }, { $set: { queryText: query, conditions, resultCount, createdAt } }, { ...options, upsert: true });
       const overflow = await searches.find({ userId }, options).sort({ createdAt: -1, _id: -1 }).skip(20).project<{ _id: string }>({ _id: 1 }).toArray();
       if (overflow.length) await searches.deleteMany({ userId, _id: { $in: overflow.map((row) => row._id) } }, options);
+      if (requiredConsent) return { originalQuery: query, conditions, needsClarification: false, recentSearchId: id, requiredConsent };
       return { originalQuery: query, conditions, needsClarification: conditions.length === 0, ...(conditions.length === 0 ? { example: "서울의 3년 이상 TypeScript 백엔드 원격 채용" } : {}), recentSearchId: id };
     });
   }

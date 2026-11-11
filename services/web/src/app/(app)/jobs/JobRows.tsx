@@ -1,12 +1,11 @@
-import type { JobPostingSummary } from "@expresso/contracts";
+import { isUrgentDaysLeft, type JobPostingSummary } from "@expresso/contracts";
 import type { Route } from "next";
 import Link from "next/link";
-
-import { Icon } from "@/components/ui/Icon";
 
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { detailHref } from "./list-query";
 import styles from "./page.module.css";
+import { RowInterestButton } from "./RowInterestButton";
 
 /** 게이지 채움은 점수 구간으로 갈린다 (정의서 00b). */
 function fillColor(score: number): string {
@@ -28,15 +27,55 @@ export function deadlineLabel(job: JobPostingSummary): string {
   return `D-${job.daysLeft}`;
 }
 
-/** 마감 임박은 목록 API의 `deadline=urgent`와 같은 기준(7일)으로 본다. */
+/** 마감 임박은 목록 API의 `deadline=urgent`와 같은 판정(`D-7` 이내)을 쓴다. */
 function isUrgent(job: JobPostingSummary): boolean {
-  return job.daysLeft !== null && job.daysLeft >= 0 && job.daysLeft <= 7;
+  return isUrgentDaysLeft(job.daysLeft);
 }
 
 function deadlineClass(job: JobPostingSummary): string {
   if (isUrgent(job)) return `${styles.rowDeadline} ${styles.rowDeadlineUrgent}`;
   if (job.daysLeft === null) return `${styles.rowDeadline} ${styles.rowDeadlineAlways}`;
   return styles.rowDeadline ?? "";
+}
+
+/** 행에 그리는 기술 칩 수의 상한. 정의서 00b의 공고 행은 모두 칩 3개다. */
+const STACK_LIMIT = 3;
+
+/**
+ * 칩 이름에 쓸 수 있는 글자 폭. 영문 한 글자를 1, 한글처럼 넓은 글자를 2로 센다.
+ *
+ * 1440px 화면에서 목록은 804px이고, 제목 · 점수 · 마감 · 북마크 · 여백을 빼면
+ * 칩 열에 약 250px이 남는다. 「+N」 칩(약 36px)과 칩 사이 간격, 칩 안쪽 여백(칩마다
+ * 16px)을 빼면 이름 글자에 약 160px이다. 12px(`--ex-text-2xs`) 영문은 한 글자에
+ * 약 6.3px("Hugging Face" 12자가 74px)이므로 25자다.
+ */
+const STACK_TEXT_BUDGET = 25;
+
+function textUnits(name: string): number {
+  let units = 0;
+  for (const char of name) units += char.charCodeAt(0) > 0x7f ? 2 : 1;
+  return units;
+}
+
+/**
+ * 앞에서부터 칩으로 그릴 기술과 「+N」으로 접을 기술. 순서는 공고 원문 그대로다.
+ *
+ * 개수 제한이 없으면 기술을 20개 넘게 적은 공고 한 행이 목록보다 넓어져
+ * 목록 전체에 가로 스크롤이 생긴다. 개수만 막으면 이름이 긴 칩 세 개가 칩 열을
+ * 넘쳐 이름이 잘리므로, 글자 폭이 예산을 넘는 칩부터는 통째로 접는다.
+ * 첫 칩은 길어도 그린다 — 칩 열보다 넓으면 CSS가 말줄임표로 줄인다.
+ */
+export function splitStack<T extends { name: string }>(
+  technologies: readonly T[],
+): { shown: T[]; hidden: T[] } {
+  let used = 0;
+  let count = 0;
+  for (const tool of technologies.slice(0, STACK_LIMIT)) {
+    used += textUnits(tool.name);
+    if (count > 0 && used > STACK_TEXT_BUDGET) break;
+    count += 1;
+  }
+  return { shown: technologies.slice(0, count), hidden: technologies.slice(count) };
 }
 
 const NEW_WINDOW_MS = 3 * 24 * 60 * 60 * 1000;
@@ -87,35 +126,31 @@ export function JobRowList({
   return (
     <div className={styles.rows}>
       {jobs.map((job, index) => (
-        <Link
+        // 행 전체가 상세로 가는 링크처럼 눌린다(제목 링크의 ::after가 행을 덮는다).
+        // 북마크는 버튼이라 `<a>` 안에 둘 수 없어 링크 바깥 형제로 둔다.
+        <div
           key={job.id}
-          href={detailHref(job.id, listQuery)}
           className={`${styles.row} ${
             highlightFirst && index === 0 ? styles.rowTop : ""
           }`}
         >
           <CompanyAvatar company={job.company} className={styles.avatar} />
           <span className={styles.rowTitle}>
-            <span className={styles.rowRole} style={{ display: "block" }}>
-              {job.title}
-              {isNew(job, now) ? <span className={styles.rowNew}>NEW</span> : null}
-            </span>
-            <span className={styles.rowCompany} style={{ display: "block" }}>
-              {companyLine(job, tail)}
-            </span>
-          </span>
-          <span className={styles.rowStack}>
-            {job.technologies.map((tool) => (
-              <span
-                key={tool.name}
-                className={`${styles.stackChip} ${
-                  tool.matched === false ? styles.stackChipMissing : ""
-                }`}
-              >
-                {tool.name}
+            <Link
+              href={detailHref(job.id, listQuery)}
+              className={styles.rowLink}
+              style={{ display: "block" }}
+            >
+              <span className={styles.rowRole} style={{ display: "block" }}>
+                {job.title}
+                {isNew(job, now) ? <span className={styles.rowNew}>NEW</span> : null}
               </span>
-            ))}
+              <span className={styles.rowCompany} style={{ display: "block" }}>
+                {companyLine(job, tail)}
+              </span>
+            </Link>
           </span>
+          <StackChips technologies={job.technologies} />
           <span className={styles.rowReason}>{job.match?.reason ?? ""}</span>
           <span className={styles.rowScore}>
             {job.match ? (
@@ -137,15 +172,37 @@ export function JobRowList({
             )}
           </span>
           <span className={deadlineClass(job)}>{deadlineLabel(job)}</span>
-          <Icon
-            name="bookmark-simple"
-            weight={job.interest ? "fill" : "regular"}
-            size={15}
-            color={job.interest ? "var(--ex-accent-text)" : "var(--ex-border-firm)"}
-            style={{ flexShrink: 0 }}
-          />
-        </Link>
+          <RowInterestButton jobPostingId={job.id} interested={job.interest !== null} />
+        </div>
       ))}
     </div>
+  );
+}
+
+/** 행의 기술 칩. 앞의 몇 개만 그리고 나머지는 「+N」 칩 하나로 접는다. */
+function StackChips({ technologies }: { technologies: JobPostingSummary["technologies"] }) {
+  const { shown, hidden } = splitStack(technologies);
+  const hiddenNames = hidden.map((tool) => tool.name).join(" · ");
+  return (
+    <span className={styles.rowStack}>
+      {shown.map((tool) => (
+        <span
+          key={tool.name}
+          className={`${styles.stackChip} ${
+            tool.matched === false ? styles.stackChipMissing : ""
+          }`}
+        >
+          {tool.name}
+        </span>
+      ))}
+      {hidden.length > 0 ? (
+        <span
+          className={`${styles.stackChip} ${styles.stackChipMore}`}
+          title={hiddenNames}
+        >
+          +{hidden.length}
+        </span>
+      ) : null}
+    </span>
   );
 }

@@ -7,7 +7,20 @@ import { Icon } from "@/components/ui/Icon";
 
 import { useRefreshWhile } from "../use-refresh-while";
 import { startGenerationAction, type BrewState } from "./design-actions";
-import { DEFAULT_PORTFOLIO_ARCHETYPE, type PortfolioArchetype } from "@expresso/contracts";
+import {
+  DEFAULT_PORTFOLIO_ARCHETYPE,
+  type PageGenerationFormat,
+  type PortfolioArchetype,
+} from "@expresso/contracts";
+
+/**
+ * 생성 방식 선택지. 같은 디자인 · 같은 재료로 두 방식을 견주려고 생성마다 고른다.
+ * 처음 값은 지금까지의 기본 경로인 구조화 생성이다.
+ */
+const PAGE_FORMAT_OPTIONS: { key: PageGenerationFormat; label: string; description: string; icon: string }[] = [
+  { key: "json-render", label: "구조화 생성", description: "구성을 쓰고 디자인 시스템으로 그립니다", icon: "squares-four" },
+  { key: "html", label: "자유 생성", description: "HTML · CSS를 모델이 직접 씁니다", icon: "code" },
+];
 
 /** 페이지 짜임새 선택지. 색 · 글꼴은 아래에서 고르는 디자인이 정하고, 짜임새는 여기서 정합니다. */
 const ARCHETYPE_OPTIONS: { key: PortfolioArchetype; label: string; description: string }[] = [
@@ -216,6 +229,9 @@ export function DesignCatalog({
   );
   const [category, setCategory] = useState<CatalogCategory>("recommended");
   const [archetype, setArchetype] = useState<PortfolioArchetype>(DEFAULT_PORTFOLIO_ARCHETYPE);
+  const [pageFormat, setPageFormat] = useState<PageGenerationFormat>("json-render");
+  // 짜임새는 구조화 생성의 렌더러만 읽는다. 자유 생성에서는 고를 수 없게 둔다.
+  const archetypeApplies = pageFormat === "json-render";
   const [query, setQuery] = useState("");
   const [surface, setSurface] = useState<"all" | "light" | "dark">("all");
   const [density, setDensity] = useState<"all" | "compact" | "comfortable" | "spacious">("all");
@@ -320,7 +336,33 @@ export function DesignCatalog({
           <span className={styles.catalogCount}>{entries.length}개 디자인</span>
         </div>
 
-        <fieldset className={styles.archetypeRow}>
+        <fieldset className={`${styles.archetypeRow} ${styles.formatRow}`}>
+          <legend className={styles.archetypeLegend}>생성 방식</legend>
+          {PAGE_FORMAT_OPTIONS.map((option) => (
+            <label
+              key={option.key}
+              className={`${styles.archetypeOption} ${pageFormat === option.key ? styles.archetypeOptionActive : ""}`}
+            >
+              <input
+                type="radio"
+                name="page-format-choice"
+                value={option.key}
+                checked={pageFormat === option.key}
+                onChange={() => setPageFormat(option.key)}
+                className={styles.srOnly}
+              />
+              <span className={styles.formatIcon} aria-hidden="true">
+                <Icon name={option.icon} size={16} />
+              </span>
+              <span className={styles.archetypeText}>
+                <strong>{option.label}</strong>
+                <small>{option.description}</small>
+              </span>
+            </label>
+          ))}
+        </fieldset>
+
+        <fieldset className={styles.archetypeRow} disabled={!archetypeApplies}>
           <legend className={styles.archetypeLegend}>페이지 짜임새</legend>
           {ARCHETYPE_OPTIONS.map((option) => (
             <label
@@ -655,7 +697,8 @@ export function DesignCatalog({
               <input type="hidden" name="brewId" value={brewId} />
               {recipeId ? <input type="hidden" name="recipeId" value={recipeId} /> : null}
               <input type="hidden" name="designSystemRevisionId" value={selected.revisionId} />
-              <input type="hidden" name="archetype" value={archetype} />
+              <input type="hidden" name="pageFormat" value={pageFormat} />
+              {archetypeApplies ? <input type="hidden" name="archetype" value={archetype} /> : null}
               <button type="submit" disabled={pending || !generationAllowed}>
                 {pending ? "생성을 시작하는 중" : generationAllowed ? (
                   <>이 디자인으로 만들기 <Icon name="arrow-right" size={14} /></>

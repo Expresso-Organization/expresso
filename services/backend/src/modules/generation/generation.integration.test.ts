@@ -108,6 +108,18 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB generation integration",
     })).rejects.toMatchObject({ statusCode: 404 });
   });
 
+  it("고른 지면 방식을 작업과 포트폴리오에 남기고, 고르지 않으면 비워 둔다", async () => {
+    const db = mongoCollections(fixture.resource.db);
+    const chosen = await service.submit(userId, "mongo-generation-page-format", { recipeId, templateId, pageFormat: "html" });
+    expect((await db.generationJobs.findOne({ _id: chosen.generationJobId }))?.pageFormat).toBe("html");
+    const prepared = await service.prepareFreeHtml(chosen.generationJobId);
+    expect(prepared.pageFormat).toBe("html");
+    expect((await db.portfolios.findOne({ _id: prepared.portfolioId! }))?.pageFormat).toBe("html");
+
+    const unset = await service.submit(userId, "mongo-generation-page-format-unset", { recipeId, templateId });
+    expect((await service.prepareFreeHtml(unset.generationJobId)).pageFormat).toBeNull();
+  });
+
   it("머리말에서 붙인 제작 이름이 포트폴리오 이름이 된다", async () => {
     await new MongoMaterialsService(fixture.resource).updateBrew(userId, brewId, { title: "토스 지원용" });
     const submitted = await service.submit(userId, "mongo-generation-brew-title", { recipeId, templateId });

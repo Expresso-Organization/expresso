@@ -3,8 +3,9 @@ import { performance } from "node:perf_hooks";
 import { AgentExecutionLimitsSchema, type AgentExecutionLimits } from "@expresso/contracts";
 import type { AgentInput, AgentRuntime } from "./runtime.js";
 
-// 모델에게 확정·배포 콜백을 주지 않습니다. 새 도구는 이 목록과 서버 동의 검사를 함께 추가해야 합니다.
+// 기록·계획 확정과 배포는 노출하지 않습니다. 기존 지면 고침은 연결 범위를 검사하는 새 판 저장이며 같은 동의·예산 검사를 거칩니다.
 export const TOOL_POLICY = {
+  read_page_element: "read", edit_page_element: "scoped_write",
   search_career_evidence: "read", search_job_postings: "read", list_career_records: "read",
   read_career_records: "read", read_preparation_plan: "read", record_requirement_review: "draft",
   record_gap_review: "draft", propose_new_record: "draft", propose_record_edit: "draft",
@@ -70,6 +71,10 @@ export async function runAgentWithPolicy(runtime: AgentRuntime, input: AgentInpu
     await runtime.run({ ...input, execution,
       records: { list: () => call("list_career_records", () => input.records.list()), read: ids => call("read_career_records", () => input.records.read(ids)) },
       ...(input.search ? { search: { career: args => call("search_career_evidence", () => input.search!.career(args)), jobs: args => call("search_job_postings", () => input.search!.jobs(args)) } } : {}),
+      ...(input.page ? { page: {
+        read: (id, key) => call("read_page_element", () => input.page!.read(id, key)),
+        edit: args => call("edit_page_element", () => input.page!.edit(args)),
+      } } : {}),
       review: args => call("record_requirement_review", () => input.review(args)),
       gapReview: args => call("record_gap_review", () => input.gapReview(args)),
       draftRecord: args => call("propose_new_record", () => input.draftRecord(args)),

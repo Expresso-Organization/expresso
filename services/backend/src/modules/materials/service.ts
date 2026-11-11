@@ -66,7 +66,7 @@ export class MaterialsService implements MaterialsApi {
 
   async getMaterials(userId: string, brewId: string) {
     const db = mongoCollections(this.context.db);
-    const brew = await db.brews.findOne({ _id: brewId, userId });
+    const brew = await db.brews.findOne({ _id: brewId, userId, deletedAt: null });
     if (!brew) throw new MaterialsError(404, "brew not found");
     const rows = await db.brewSources.aggregate<BrewSourceDoc & { record: CareerRecordDoc; category: CareerCategoryDoc }>([
       { $match: { userId, brewId } }, { $sort: { rank: 1, recordId: 1 } },
@@ -84,7 +84,7 @@ export class MaterialsService implements MaterialsApi {
       await requireActiveUser(tx, userId);
       if (input.mode === "collab" && !(await new MongoEntitlementService(tx).check(userId, "brew.cowork")).allowed) throw new MaterialsError(403, "cowork mode requires an upgraded plan");
       // 보낸 칸만 바꾼다 — 이름만 고쳤는데 모드가 기본값으로 되돌아가면 안 된다.
-      const result = await mongoCollections(tx.db).brews.updateOne({ _id: brewId, userId }, { $set: { ...(input.mode !== undefined ? { mode: input.mode } : {}), ...(input.title !== undefined ? { title: input.title } : {}), updatedAt: new Date() }, $inc: { referenceVersion: 1 } }, { session: tx.session });
+      const result = await mongoCollections(tx.db).brews.updateOne({ _id: brewId, userId, deletedAt: null }, { $set: { ...(input.mode !== undefined ? { mode: input.mode } : {}), ...(input.title !== undefined ? { title: input.title } : {}), updatedAt: new Date() }, $inc: { referenceVersion: 1 } }, { session: tx.session });
       if (!result.matchedCount) throw new MaterialsError(404, "brew not found");
     });
     return this.getMaterials(userId, brewId);
@@ -95,7 +95,7 @@ export class MaterialsService implements MaterialsApi {
     await inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId);
       const db = mongoCollections(tx.db); const options = { session: tx.session };
-      const brew = await db.brews.updateOne({ _id: brewId, userId }, { $inc: { referenceVersion: 1 }, $set: { updatedAt: new Date() } }, options);
+      const brew = await db.brews.updateOne({ _id: brewId, userId, deletedAt: null }, { $inc: { referenceVersion: 1 }, $set: { updatedAt: new Date() } }, options);
       if (!brew.matchedCount) throw new MaterialsError(404, "brew not found");
       if (await db.brewSources.countDocuments({ userId, brewId, recordId: { $in: input.recordIds } }, options) !== input.recordIds.length) throw new MaterialsError(409, "selection contains an ineligible record");
       await assertActiveRecordsForWrite(tx, userId, input.recordIds);
@@ -108,12 +108,12 @@ export class MaterialsService implements MaterialsApi {
 
   async getState(userId: string, brewId: string) {
     const db = mongoCollections(this.context.db);
-    const brew = await db.brews.findOne({ _id: brewId, userId });
+    const brew = await db.brews.findOne({ _id: brewId, userId, deletedAt: null });
     if (!brew) throw new MaterialsError(404, "brew not found");
     const [analysis, sources, session, recipe, portfolio, job, generation] = await Promise.all([
       db.jobAnalyses.findOne({ _id: brew.jobAnalysisId, userId }), db.brewSources.find({ userId, brewId }).toArray(),
       db.interviewSessions.findOne({ userId, brewId }), db.recipes.findOne({ userId, brewId }, { sort: { version: -1, _id: -1 } }),
-      db.portfolios.findOne({ userId, brewId }, { sort: { createdAt: -1, _id: -1 } }),
+      db.portfolios.findOne({ userId, brewId, deletedAt: null }, { sort: { createdAt: -1, _id: -1 } }),
       db.brewJobs.findOne({ userId, "input.brewId": brewId }, { sort: { createdAt: -1, _id: -1 } }),
       db.generationJobs.findOne({ userId, brewId }, { sort: { createdAt: -1, _id: -1 } }),
     ]);

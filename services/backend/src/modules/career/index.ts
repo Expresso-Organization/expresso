@@ -36,4 +36,7 @@ export interface CareerApi extends Pick<CareerService, CareerCoreMethod> {
   previewFormula?: CareerComputationService["previewFormula"];
   previewRollup?: CareerComputationService["previewRollup"];
   listTrashedRecords?: CareerService["listTrashedRecords"];
+  archiveCategory?: CareerService["archiveCategory"];
+  getCategoryDeleteImpact?: CareerService["getCategoryDeleteImpact"];
+  deleteCategory?: CareerService["deleteCategory"];
 }

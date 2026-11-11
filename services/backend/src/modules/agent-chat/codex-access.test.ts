@@ -10,7 +10,7 @@ describe("Codex agent access", () => {
     const app = Fastify();
     const read = vi.fn(async () => "should-not-be-read");
     const send = vi.fn(async () => ({})); const retry = vi.fn(async () => ({}));
-    registerAgentChatRoutes(app, { provider: "codex", enabled: true, credentials: { configured: async () => false, read }, consentRequired: async () => false, send, retry, close: async () => {} } as unknown as AgentChatService, async req => { req.auth = auth; });
+    registerAgentChatRoutes(app, { provider: "codex", enabled: true, credentials: { configured: async () => false, read }, consentRequired: async () => false, send, retry, setRunFailureListener: vi.fn(), close: async () => {} } as unknown as AgentChatService, async req => { req.auth = auth; });
     try {
       const access = await app.inject({ method: "GET", url: "/v1/agent/access" });
       expect(access.json().data).toMatchObject({ serverCredentialAllowed: true, apiKeyConfigured: false });
@@ -24,7 +24,7 @@ describe("Codex agent access", () => {
   });
   it("still requires authentication in Codex mode", async () => {
     const app = Fastify(); const send = vi.fn();
-    registerAgentChatRoutes(app, { provider: "codex", enabled: true, send, close: async () => {} } as unknown as AgentChatService, async () => { throw Object.assign(new Error("auth required"), { statusCode: 401 }); });
+    registerAgentChatRoutes(app, { provider: "codex", enabled: true, send, setRunFailureListener: vi.fn(), close: async () => {} } as unknown as AgentChatService, async () => { throw Object.assign(new Error("auth required"), { statusCode: 401 }); });
     try {
       expect((await app.inject({ method: "POST", url: `/v1/agent/conversations/${conversation}/messages`, payload: { requestId: conversation, text: "안녕" } })).statusCode).toBe(401);
       expect(send).not.toHaveBeenCalled();

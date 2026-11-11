@@ -31,6 +31,22 @@ export async function startInterviewAction(formData: FormData): Promise<void> {
 }
 
 /**
+ * 재료 화면의 「AI와 대화 시작」. 질문 잡을 맡기고 곧바로 대화 화면으로 간다 — 화면은 처음부터
+ * "만드는 중"으로 뜨고, 같은 뜻의 「질문 만들기」를 한 번 더 누르지 않는다. 고른 재료가 확정되는
+ * 시점이 이 클릭이라 여기보다 일찍 시작하지 않는다(만든 질문은 다시 만들지 않는다).
+ *
+ * 질문이 이미 있거나 잡이 도는 중이면 화면이 이 폼 대신 링크를 그린다.
+ */
+export async function beginInterviewAction(formData: FormData): Promise<void> {
+  const brewId = formData.get("brewId");
+  if (typeof brewId !== "string") return;
+  const session = await requireSession();
+  await brews.startInterview(session.accessToken, brewId, brewJobKey("interview", brewId, formData.get("basisJobId")));
+  reload(brewId);
+  redirect(`/brew/${brewId}/counter`);
+}
+
+/**
  * AI 대화를 마치고 디자인 선택으로 간다. 구성(레시피)은 화면 단계 없이 여기서 맡긴다 — 디자인을 고르는 동안
  * 만들어지고, 그 전에 만들기를 눌러도 구성이 끝나는 대로 생성이 이어진다.
  *

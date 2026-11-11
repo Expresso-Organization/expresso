@@ -1,4 +1,14 @@
-import { ActivityIcon, GitPullRequestIcon, LayoutGridIcon, ListChecksIcon, ListTodoIcon, TrendingUpIcon, UsersIcon } from "lucide-react"
+import {
+  ActivityIcon,
+  GitPullRequestIcon,
+  LayoutDashboardIcon,
+  LayoutGridIcon,
+  ListChecksIcon,
+  ListTodoIcon,
+  NotebookTextIcon,
+  TrendingUpIcon,
+  UsersIcon,
+} from "lucide-react"
 
 import {
   Sidebar,
@@ -14,6 +24,13 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { ago, type Data } from "@/lib/data"
+import type { Page } from "@/lib/route"
+
+// 맨 위 화면 둘. 진행 현황을 열면 패치노트가 먼저 선택된다(lib/route.ts).
+const PAGES: Array<{ id: Page; label: string; icon: typeof NotebookTextIcon }> = [
+  { id: "notes", label: "패치노트", icon: NotebookTextIcon },
+  { id: "dashboard", label: "대시보드", icon: LayoutDashboardIcon },
+]
 
 const SECTIONS = [
   { id: "todos", label: "할 일", icon: ListTodoIcon },
@@ -25,12 +42,16 @@ const SECTIONS = [
 
 export function AppSidebar({
   data,
+  page,
   member,
   onMember,
+  onPage,
 }: {
   data: Data
+  page: Page
   member: string | null
   onMember: (member: string | null) => void
+  onPage: (page: Page) => void
 }) {
   const { report } = data
   return (
@@ -38,7 +59,7 @@ export function AppSidebar({
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" render={<a href="#todos" />}>
+            <SidebarMenuButton size="lg" onClick={() => onPage("notes")}>
               <span className="flex size-8 items-center justify-center rounded-lg bg-primary font-brand text-sm text-primary-foreground">
                 Ex
               </span>
@@ -52,6 +73,20 @@ export function AppSidebar({
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {PAGES.map((p) => (
+                <SidebarMenuItem key={p.id}>
+                  <SidebarMenuButton isActive={page === p.id} onClick={() => onPage(p.id)}>
+                    <p.icon />
+                    <span>{p.label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        <SidebarGroup>
           <SidebarGroupLabel>
             <UsersIcon className="mr-1.5" />
             팀원 · 할 일
@@ -59,13 +94,13 @@ export function AppSidebar({
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton isActive={member === null} onClick={() => onMember(null)}>
+                <SidebarMenuButton isActive={page === "dashboard" && member === null} onClick={() => onMember(null)}>
                   <span>팀 전체</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               {report.members.map((m) => (
                 <SidebarMenuItem key={m.name}>
-                  <SidebarMenuButton isActive={member === m.name} onClick={() => onMember(m.name)}>
+                  <SidebarMenuButton isActive={page === "dashboard" && member === m.name} onClick={() => onMember(m.name)}>
                     <span>{m.name}</span>
                   </SidebarMenuButton>
                   <SidebarMenuBadge className="tabular-nums">{m.todos.length}</SidebarMenuBadge>
@@ -80,7 +115,7 @@ export function AppSidebar({
             <SidebarMenu>
               {SECTIONS.map((s) => (
                 <SidebarMenuItem key={s.id}>
-                  <SidebarMenuButton render={<a href={`#${s.id}`} />}>
+                  <SidebarMenuButton render={<a href={`#${s.id}`} />} onClick={() => onPage("dashboard")}>
                     <s.icon />
                     <span>{s.label}</span>
                   </SidebarMenuButton>

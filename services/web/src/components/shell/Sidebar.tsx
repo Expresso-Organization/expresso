@@ -5,6 +5,7 @@ import Link from "next/link";
 import { GlideMenu } from "@/components/ui/GlideMenu";
 import { Icon } from "@/components/ui/Icon";
 
+import { AccountLink } from "./AccountLink";
 import { SidebarCategories } from "./SidebarCategories";
 import { SidebarFrame } from "./SidebarFrame";
 import { SidebarInterests } from "./SidebarInterests";
@@ -31,7 +32,6 @@ export interface SidebarInterest {
   company: string;
   logoUrl: string | null;
   label: string;
-  score: number | null;
 }
 
 export interface SidebarProps {
@@ -40,8 +40,6 @@ export interface SidebarProps {
   interests?: readonly SidebarInterest[];
   /** 관심 공고 전체 건수. 줄은 몇 건만 보이므로 숫자는 따로 받는다. */
   interestTotal?: number | undefined;
-  /** 공고 탐색 배지 = 관심 + 추천 건수. */
-  jobCount?: number | undefined;
   displayName: string;
   /** 세션 주인이 관리자일 때만 관리 화면으로 가는 줄이 선다. */
   admin?: boolean;
@@ -55,7 +53,6 @@ export function Sidebar({
   portfolios = [],
   interests = [],
   interestTotal,
-  jobCount,
   displayName,
   admin = false,
   quotaUsed,
@@ -68,7 +65,12 @@ export function Sidebar({
       footer={
         <>
           <div className={styles.quotaSlot}>
-            <div className={`${styles.copy} ${styles.quotaCard}`}>
+            {/* 카드 전체가 설정 화면의 사용량 구획으로 가는 링크다 */}
+            <Link
+              href="/account#usage"
+              className={`${styles.copy} ${styles.quotaCard}`}
+              title="사용량 보기"
+            >
               <div className={styles.quotaHead}>
                 <span className={styles.quotaLabel}>이번 달 크레딧</span>
                 <span className={styles.quotaValue}>
@@ -90,7 +92,7 @@ export function Sidebar({
                   style={{ width: `${quotaRatio * 100}%` }}
                 />
               </div>
-            </div>
+            </Link>
           </div>
           {admin ? (
             <Link href="/admin" className={`${styles.row} ${styles.userLink}`} title="관리">
@@ -98,21 +100,17 @@ export function Sidebar({
               <span className={`${styles.copy} ${styles.userName}`}>관리</span>
             </Link>
           ) : null}
-          <Link
-            href="/account"
-            className={`${styles.row} ${styles.userLink}`}
-            title={`${displayName} · 설정`}
-          >
+          <AccountLink title={`${displayName} · 설정`}>
             <span className={styles.avatar}>{displayName.slice(0, 1)}</span>
             <span className={`${styles.copy} ${styles.userName}`}>{displayName}</span>
             <span className={`${styles.copy} ${styles.userAction}`}>
               <Icon name="gear-six" size={14} />
             </span>
-          </Link>
+          </AccountLink>
         </>
       }
     >
-      <SidebarNav jobCount={jobCount} />
+      <SidebarNav />
 
       {portfolios.length > 0 ? (
         <>

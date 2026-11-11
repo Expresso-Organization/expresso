@@ -1,6 +1,6 @@
 import type { z } from "zod";
 type JobBrewState = z.infer<typeof JobBrewStateSchema>;
-import { API_PREFIX, JobPostingDetailSchema, JobPostingListResponseSchema, JobPostingMatchSchema, JobRequirementsSchema, ListJobPostingsQuerySchema, RecentJobSearchListResponseSchema, JobBrewStateSchema, type ListJobPostingsQuery } from "@expresso/contracts";
+import { API_PREFIX, daysUntilDeadline, urgentDeadlineRange, JobPostingDetailSchema, JobPostingListResponseSchema, JobPostingMatchSchema, JobRequirementsSchema, ListJobPostingsQuerySchema, RecentJobSearchListResponseSchema, JobBrewStateSchema, type ListJobPostingsQuery } from "@expresso/contracts";
 import { mongoCollections, type CompanyDoc, type InterestDoc, type JobPostingDoc, type MatchScoreDoc, type JobPostingRequirementDoc, type RequirementCoverageDoc } from "@expresso/database";
 import type { Document } from "mongodb";
 import type { MongoContext } from "../../platform/mongodb.js";
@@ -27,6 +27,18 @@ function placeOf(location: string | null | undefined, companyName: string): stri
   return same(location) === same(companyName) ? null : location;
 }
 
+/**
+ * 공고 목록의 정렬 단계. 공고 탐색(`list`)과 통합 검색(`search`)이 같은 순서를 쓰도록
+ * 한 곳에 둔다. 장소로 찾을 때는 그 장소 · 가까운 순이 `sort`보다 앞선다.
+ */
+function boardOrder(query: Pick<ListJobPostingsQuery, "sort">, place: ReturnType<typeof nearbyPlaceOf>): Document[] {
+  const direction = query.sort === "deadline" ? 1 : -1;
+  const sortKey = query.sort === "match" ? { $ifNull: ["$match.total", -1] } : query.sort === "deadline" ? { $ifNull: ["$expiresAt", new Date("9999-12-31T00:00:00Z")] } : "$createdAt";
+  return place
+    ? [{ $set: { sortKey, nearbyRank: nearbyRank(place) } }, { $sort: { nearbyRank: 1, nearbyDistanceKm: 1, sortKey: direction, createdAt: direction, _id: direction } }]
+    : [{ $set: { sortKey } }, { $sort: { sortKey: direction, createdAt: direction, _id: direction } }];
+}
+
 function summary(row: BoardRow, brew: JobBrewState | undefined, at: Date) {
   const requirements = JobRequirementsSchema.parse(row.requirements);
   const axes = row.match ? JobPostingMatchSchema.shape.axes.parse(row.match.axes) : null;
@@ -37,7 +49,7 @@ function summary(row: BoardRow, brew: JobBrewState | undefined, at: Date) {
     company: { id: company._id, name: company.name, domain: company.domain ?? null, industry: company.industry ?? null, toneSummary: company.toneSummary ?? null, initial: company.initial ?? null, avatarBackground: company.avatarBackground ?? null, avatarColor: company.avatarColor ?? null, logoUrl: company.logoChecksum ? `${API_PREFIX}/companies/${company._id}/logo?v=${company.logoChecksum.slice(0, 16)}` : null },
     source: row.source, sourceUrl: row.sourceUrl ?? null, sourceBoard: row.sourceBoard ?? null, team: row.team ?? null, location: placeOf(row.location, company.name), workType: row.workType ?? null, experienceLabel: row.experienceNote ?? row.experienceLabel ?? null, family: row.jobFamily ?? null,
     technologies: requirements.technologies.map((name) => ({ name, matched: match ? match.axes.technology.matched.includes(name) : null })),
-    expiresAt: row.expiresAt?.toISOString() ?? null, daysLeft: row.expiresAt ? Math.floor(row.expiresAt.getTime() / 86_400_000) - Math.floor(at.getTime() / 86_400_000) : null, deadlineNote: row.deadlineNote ?? null, match,
+    expiresAt: row.expiresAt?.toISOString() ?? null, daysLeft: row.expiresAt ? daysUntilDeadline(row.expiresAt, at) : null, deadlineNote: row.deadlineNote ?? null, match,
     interest: row.interest ? { id: row.interest._id, stage: row.interest.stage, deadlineAt: row.interest.deadlineAt?.toISOString() ?? null, memo: row.interest.memo ?? null, updatedAt: row.interest.updatedAt.toISOString() } : null,
     brew: brew ?? null,
     // 0.1km 단위로 자른다 — 좌표가 대략값이라 그보다 잘게 말할 근거가 없다.
@@ -52,11 +64,12 @@ export class JobBoardService implements JobBoardApi {
   async #brews(userId: string, postingIds: string[]): Promise<Map<string, JobBrewState>> {
     if (!postingIds.length) return new Map();
     const rows = await mongoCollections(this.context.db).brews.aggregate<{ _id: string; brew: { _id: string; status: JobBrewState["status"] }; counts: { answered: number; questionCount: number }[]; portfolios: { _id: string }[] }>([
-      { $match: { userId } },
+      // 휴지통 제작 · 포트폴리오는 공고 화면의 「이어 만들기」 · 「포트폴리오 열기」에 쓰지 않는다.
+      { $match: { userId, deletedAt: null } },
       { $lookup: { from: "job_analyses", localField: "jobAnalysisId", foreignField: "_id", pipeline: [{ $match: { userId, jobPostingId: { $in: postingIds } } }], as: "analysis" } }, { $unwind: "$analysis" },
       { $sort: { updatedAt: -1, _id: -1 } }, { $group: { _id: "$analysis.jobPostingId", brew: { $first: "$$ROOT" } } },
       { $lookup: { from: "interview_sessions", localField: "brew._id", foreignField: "brewId", pipeline: [{ $match: { userId } }, { $group: { _id: null, answered: { $sum: "$answeredCount" }, questionCount: { $sum: "$questionCount" } } }], as: "counts" } },
-      { $lookup: { from: "portfolios", localField: "brew._id", foreignField: "brewId", pipeline: [{ $match: { userId } }, { $sort: { createdAt: -1, _id: -1 } }, { $limit: 1 }, { $project: { _id: 1 } }], as: "portfolios" } },
+      { $lookup: { from: "portfolios", localField: "brew._id", foreignField: "brewId", pipeline: [{ $match: { userId, deletedAt: null } }, { $sort: { createdAt: -1, _id: -1 } }, { $limit: 1 }, { $project: { _id: 1 } }], as: "portfolios" } },
     ]).toArray();
     return new Map(rows.map((row) => [row._id, { id: row.brew._id, status: row.brew.status, answered: row.counts[0]?.answered ?? 0, questionCount: row.counts[0]?.questionCount ?? 0, portfolioId: row.portfolios[0]?._id ?? null }]));
   }
@@ -69,13 +82,10 @@ export class JobBoardService implements JobBoardApi {
     const technologies = (field: string, limit: number): Document[] => [filter(), { $unwind: `$${field}` }, ...group(field), { $limit: limit }];
     const countIf = (condition: Document) => ({ $sum: { $cond: [condition, 1, 0] } });
     const remote = { $regexMatch: { input: { $ifNull: ["$workType", ""] }, regex: "리모트", options: "i" } };
-    const urgent = { $and: [{ $gte: ["$expiresAt", at] }, { $lt: ["$expiresAt", new Date(at.getTime() + 7 * 86_400_000)] }] };
-    const direction = query.sort === "deadline" ? 1 : -1;
-    const sortKey = query.sort === "match" ? { $ifNull: ["$match.total", -1] } : query.sort === "deadline" ? { $ifNull: ["$expiresAt", new Date("9999-12-31T00:00:00Z")] } : "$createdAt";
+    const urgentRange = urgentDeadlineRange(at);
+    const urgent = { $and: [{ $gte: ["$expiresAt", urgentRange.from] }, { $lt: ["$expiresAt", urgentRange.to] }] };
     const place = nearbyPlaceOf(query);
-    const order: Document[] = place
-      ? [{ $set: { sortKey, nearbyRank: nearbyRank(place) } }, { $sort: { nearbyRank: 1, nearbyDistanceKm: 1, sortKey: direction, createdAt: direction, _id: direction } }]
-      : [{ $set: { sortKey } }, { $sort: { sortKey: direction, createdAt: direction, _id: direction } }];
+    const order = boardOrder(query, place);
     const [result] = await mongoCollections(this.context.db).jobPostings.aggregate<{
       data: BoardRow[]; total: { count: number }[]; categories: { total: number; remote: number; urgent: number }[];
       families: Facet[]; regions: Facet[]; unplaced: { count: number }[]; companies: { key: string; label: string; count: number }[];
@@ -106,6 +116,21 @@ export class JobBoardService implements JobBoardApi {
       experienceLevels: overlapping(experienceLevels.map((years) => ({ label: years === 0 ? "신입" : `${years}년`, count: result.levels[0]?.[`y${years}`] ?? 0 }))),
       workTypes: overlapping(workTypes.map((label, index) => ({ label, count: result.workTypes[0]?.[`w${index}`] ?? 0 }))),
     }, page: { page: query.page, pageSize: query.limit, totalPages, hasPrevPage: query.page > 1, hasNextPage: query.page < totalPages } });
+  }
+
+  /**
+   * 00c 통합 검색의 공고 묶음. 공고 탐색에서 같은 검색어(`q`) · 나라만 주었을 때의 첫 페이지와
+   * 같은 조건 · 같은 순서다 — 필터(`jobBoardFilter`)와 정렬(`boardOrder`)을 그대로 쓴다.
+   * 입력할 때마다 불리므로 나라 · 회사 · 기술 패싯은 세지 않는다.
+   */
+  async search(userId: string, input: { q: string; country?: string | undefined; limit: number }) {
+    const query = ListJobPostingsQuerySchema.parse({ q: input.q, limit: input.limit, ...(input.country ? { country: input.country } : {}) });
+    const rows = await mongoCollections(this.context.db).jobPostings.aggregate<Pick<BoardRow, "_id" | "title" | "company">>([
+      // 회사 이름 조건이 조인한 `company.name`을 보므로 조인 뒤에 거른다.
+      ...jobBoardJoins(userId), { $match: jobBoardFilter(query, new Date()) }, ...boardOrder(query, undefined),
+      { $limit: query.limit }, { $project: { _id: 1, title: 1, company: 1 } },
+    ]).toArray();
+    return rows.map((row) => ({ id: row._id, title: row.title, company: row.company.name }));
   }
 
   async get(userId: string, jobPostingId: string) {

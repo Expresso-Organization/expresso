@@ -4,6 +4,7 @@ import {
   JobPostingListResponseSchema,
   JobRequirementsSchema,
   RecentJobSearchListResponseSchema,
+  URGENT_DEADLINE_DAYS,
   type JobDutyGroup,
   type JobPostingCategory,
   type JobPostingFacet,
@@ -360,8 +361,7 @@ export class JobBoardService {
           ? sql`and (job_posting.work_type is null or lower(job_posting.work_type) not like lower('%리모트%'))`
           : sql``}
         ${query.deadline === "urgent"
-          ? sql`and job_posting.expires_at >= now(6)
-                and job_posting.expires_at < now(6) + interval 7 day`
+          ? sql`and datediff(job_posting.expires_at, now(6)) between 0 and ${URGENT_DEADLINE_DAYS}`
           : sql``}
         ${query.deadline === "open"
           ? sql`and (job_posting.expires_at is null or job_posting.expires_at >= now(6))`
@@ -529,8 +529,7 @@ export class JobBoardService {
         select
           count(*) as total,
           count(case when lower(job_posting.work_type) like lower('%리모트%') then 1 end) as remote,
-          count(case when job_posting.expires_at >= now(6)
-                       and job_posting.expires_at < now(6) + interval 7 day
+          count(case when datediff(job_posting.expires_at, now(6)) between 0 and ${URGENT_DEADLINE_DAYS}
                      then 1 end) as urgent
         ${without("category")}
       `,

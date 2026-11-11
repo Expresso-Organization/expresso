@@ -8,16 +8,16 @@ const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push, refresh: vi.fn() }) }));
 const panel: { onRecordChange?: (record: CareerRecord) => void; onCategoryChange?: (category: CareerCategory) => void } = {};
 vi.mock("@/app/(app)/career/[categorySlug]/DocumentPanel", () => ({
-  DocumentPanel: ({ record, onExpand, onRecordChange, onCategoryChange }: { record: CareerRecord | null; onExpand?: () => void; onRecordChange?: (record: CareerRecord) => void; onCategoryChange?: (category: CareerCategory) => void }) => {
+  DocumentPanel: ({ record, onExpand, onDelete, onRecordChange, onCategoryChange }: { record: CareerRecord | null; onExpand?: () => void; onDelete?: () => void; onRecordChange?: (record: CareerRecord) => void; onCategoryChange?: (category: CareerCategory) => void }) => {
     if (onRecordChange) panel.onRecordChange = onRecordChange;
     if (onCategoryChange) panel.onCategoryChange = onCategoryChange;
-    return <aside aria-label="문서 패널 테스트"><span>{record?.title}</span><button onClick={onExpand}>넓게 보기</button></aside>;
+    return <aside aria-label="문서 패널 테스트"><span>{record?.title}</span><button onClick={onExpand}>넓게 보기</button><button onClick={onDelete}>패널에서 삭제</button></aside>;
   },
 }));
 import { CareerViewShell, type CareerViewShellProps } from "./CareerViewShell";
 
 const categoryId = "00000000-0000-4000-8000-000000000001", titleId = "00000000-0000-4000-8000-000000000002", dateId = "00000000-0000-4000-8000-000000000003";
-const category: CareerCategory = { id: categoryId, key: "test", name: "테스트", icon: "table", defaultView: "table", propertySchemaV2: [{ id: titleId, key: "title", name: "제목", type: "title", required: true, system: true, config: {}, order: 0, version: 1, deletedAt: null }, { id: dateId, key: "date", name: "날짜", type: "date", required: false, system: false, config: {}, order: 1, version: 1, deletedAt: null }], schemaVersion: 1, sortOrder: 0, recordCount: 2, version: 1 };
+const category: CareerCategory = { id: categoryId, key: "test", name: "테스트", icon: "table", defaultView: "table", propertySchemaV2: [{ id: titleId, key: "title", name: "제목", type: "title", required: true, system: true, config: {}, order: 0, version: 1, deletedAt: null }, { id: dateId, key: "date", name: "날짜", type: "date", required: false, system: false, config: {}, order: 1, version: 1, deletedAt: null }], schemaVersion: 1, sortOrder: 0, recordCount: 2, version: 1, archivedAt: null, builtIn: false };
 const records: CareerRecord[] = [1, 2].map((index) => ({ id: `00000000-0000-4000-8000-00000000000${index + 3}`, categoryId, title: `기록 ${index}`, status: index === 1 ? "draft" : "verified", origin: "manual", properties: { date: { type: "date", value: { start: `202${index + 3}-09-0${index}`, end: null, timezone: null } } }, bodyMd: index === 2 ? "결제 장애 회고" : "", version: 1, updatedAt: "2026-09-01T00:00:00.000Z" }));
 const viewId = (index: number) => `00000000-0000-4000-8000-0000000001${String(index).padStart(2, "0")}`;
 const base: CareerViewConfiguration = { id: viewId(0), categoryId, name: "테이블", type: "table", version: 1, order: 0, filter: null, sorts: [], groupPropertyId: null, groupOrder: [], recordOrder: [], visiblePropertyIds: [titleId, dateId], propertyOrder: [titleId, dateId], columnWidths: {}, gallery: null, board: null, timeline: null, createdAt: "2026-09-01T00:00:00.000Z", updatedAt: "2026-09-01T00:00:00.000Z" };
@@ -26,9 +26,18 @@ const page = { data: records, page: { hasNextPage: false, nextCursor: null } };
 function json(data: unknown, status = 200) { return new Response(JSON.stringify(data), { status, headers: { "content-type": "application/json" } }); }
 
 let created = 0;
+/** 기록마다 이 기록을 근거로 쓰는 포트폴리오 수. 없으면 0, `null`이면 영향 조회가 실패한다. */
+let impacts: Record<string, number | null> = {};
+let failingDeletes = new Set<string>();
 function fetchRouter(url: string, init?: RequestInit): Response {
   const method = init?.method ?? "GET";
   const body = init?.body ? JSON.parse(String(init.body)) : {};
+  if (url.endsWith("/delete-impact")) {
+    const recordId = url.split("/").at(-2)!;
+    if (impacts[recordId] === null) return new Response(null, { status: 500 });
+    return json({ data: { recordId, portfolioCount: impacts[recordId] ?? 0, blockCount: impacts[recordId] ?? 0, deletedAt: "2026-11-10T00:00:00.000Z", purgeAfter: "2026-12-10T00:00:00.000Z" } });
+  }
+  if (method === "DELETE" && [...failingDeletes].some((id) => url.endsWith(id))) return new Response(null, { status: 500 });
   if (url === "/api/career/records" && method === "POST") return json({ data: { ...records[0], id: "00000000-0000-4000-8000-000000000009", title: "" } });
   if (url.endsWith("/restore")) return json({ data: { ...records[0], version: 3 } });
   if (url.startsWith("/api/career/records/") && method === "DELETE") return new Response(null, { status: 204 });
@@ -49,7 +58,7 @@ function calls(match: (url: string, init?: RequestInit) => boolean) {
 }
 
 describe("CareerViewShell", () => {
-  beforeEach(() => { push.mockReset(); created = 0; vi.stubGlobal("fetch", vi.fn(async (url: string, init?: RequestInit) => fetchRouter(url, init))); window.history.replaceState(null, "", "/career/test"); });
+  beforeEach(() => { push.mockReset(); created = 0; impacts = {}; failingDeletes = new Set(); vi.stubGlobal("fetch", vi.fn(async (url: string, init?: RequestInit) => fetchRouter(url, init))); window.history.replaceState(null, "", "/career/test"); });
   afterEach(cleanup);
 
   it("opens the document drawer from the title cell", () => {
@@ -254,6 +263,74 @@ describe("CareerViewShell", () => {
     fireEvent.click(screen.getByRole("button", { name: "되돌리기" }));
     await waitFor(() => expect(screen.getByRole("row", { name: /기록 1/ })).toBeTruthy());
     expect(calls((url) => url.endsWith(`${records[0]!.id}/restore`)).length).toBe(1);
+  });
+
+  it("trashes the record open in the document panel without asking when no portfolio uses it", async () => {
+    renderShell({ initialViews: [{ ...base, name: "보드", type: "board", board: { hiddenGroupIds: [], cardOrder: {} } }] });
+    fireEvent.click(screen.getByRole("button", { name: "기록 1" }));
+    fireEvent.click(screen.getByRole("button", { name: "패널에서 삭제" }));
+    await waitFor(() => expect(screen.getByRole("status").textContent).toContain("휴지통으로 옮겼습니다."));
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(calls((url, init) => url === `/api/career/records/${records[0]!.id}` && init?.method === "DELETE").length).toBe(1);
+    expect(screen.getByLabelText("문서 패널 테스트").textContent).not.toContain("기록 1");
+  });
+
+  it("asks before trashing a record that portfolios use, and keeps it on cancel", async () => {
+    impacts = { [records[0]!.id]: 2 };
+    renderShell();
+    const row = screen.getByRole("row", { name: /기록 1/ });
+    fireEvent.contextMenu(within(row).getByRole("gridcell", { name: "기록 1" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: /기록 삭제/ }));
+    const dialog = await screen.findByRole("dialog");
+    expect(dialog.textContent).toContain("이 기록을 휴지통으로 옮길까요?");
+    expect(dialog.textContent).toContain("기록 1");
+    expect(dialog.textContent).toContain("포트폴리오 2곳에서 이 기록을 근거로 씁니다.");
+    fireEvent.click(within(dialog).getByRole("button", { name: "취소" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(screen.getByRole("row", { name: /기록 1/ })).toBeTruthy();
+    expect(calls((url, init) => init?.method === "DELETE").length).toBe(0);
+    // 제목 칸은 행의 두 번째 칸(첫 칸은 선택 · 이동 단추)이다.
+    fireEvent.contextMenu(within(screen.getByRole("row", { name: /기록 1/ })).getAllByRole("gridcell")[1]!);
+    fireEvent.click(screen.getByRole("menuitem", { name: /기록 삭제/ }));
+    fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: /휴지통으로 옮기기/ }));
+    await waitFor(() => expect(screen.queryByRole("row", { name: /기록 1/ })).toBeNull());
+    expect(calls((url, init) => url === `/api/career/records/${records[0]!.id}` && init?.method === "DELETE").length).toBe(1);
+  });
+
+  it("trashes selected records together and restores them all with one undo", async () => {
+    renderShell();
+    fireEvent.click(screen.getByLabelText("기록 1 선택"));
+    fireEvent.click(screen.getByLabelText("기록 2 선택"));
+    fireEvent.click(within(screen.getByRole("toolbar", { name: "선택한 기록 작업" })).getByRole("button", { name: "삭제" }));
+    await waitFor(() => expect(screen.getByRole("status").textContent).toContain("휴지통으로 옮겼습니다."));
+    expect(screen.queryByRole("row", { name: /기록 1/ })).toBeNull();
+    expect(screen.queryByRole("row", { name: /기록 2/ })).toBeNull();
+    expect(screen.queryByRole("toolbar", { name: "선택한 기록 작업" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "되돌리기" }));
+    await waitFor(() => expect(calls((url) => url.endsWith("/restore")).length).toBe(2));
+  });
+
+  it("puts back only the records that failed to move", async () => {
+    failingDeletes = new Set([records[1]!.id]);
+    renderShell();
+    fireEvent.click(screen.getByLabelText("기록 1 선택"));
+    fireEvent.click(screen.getByLabelText("기록 2 선택"));
+    fireEvent.click(within(screen.getByRole("toolbar", { name: "선택한 기록 작업" })).getByRole("button", { name: "삭제" }));
+    await waitFor(() => expect(screen.getByRole("status").textContent).toContain("1개를 휴지통으로 옮겼습니다. 1개는 삭제하지 못했습니다."));
+    expect(screen.queryByRole("row", { name: /기록 1/ })).toBeNull();
+    expect(screen.getByRole("row", { name: /기록 2/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "되돌리기" }));
+    await waitFor(() => expect(calls((url) => url.endsWith("/restore")).map(([url]) => String(url))).toEqual([`/api/career/records/${records[0]!.id}/restore`]));
+  });
+
+  it("does not trash anything when the delete impact cannot be read", async () => {
+    impacts = { [records[0]!.id]: null };
+    renderShell();
+    fireEvent.contextMenu(within(screen.getByRole("row", { name: /기록 1/ })).getByRole("gridcell", { name: "기록 1" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: /기록 삭제/ }));
+    await waitFor(() => expect(screen.getByRole("status").textContent).toContain("삭제 영향을 확인하지 못했습니다."));
+    expect(screen.getByRole("row", { name: /기록 1/ })).toBeTruthy();
+    expect(calls((url, init) => init?.method === "DELETE").length).toBe(0);
   });
 
   it("applies panel edits and new properties to the view without reloading", async () => {

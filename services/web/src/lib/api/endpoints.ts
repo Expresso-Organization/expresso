@@ -1,4 +1,6 @@
 import {
+  BrewTrashListResponseSchema,
+  PortfolioTrashListResponseSchema,
   MonthlyUsageResponseSchema,
   PlanListResponseSchema,
   AnalyticsAggregationResponseSchema,
@@ -9,9 +11,7 @@ import {
   type RegeneratePage,
   type RestorePageRevision,
   type EditStructuredPage,
-  type InstructStructuredElement,
   type AddStructuredSection,
-  InstructStructuredElementResultSchema,
   PageEditorDesignSchema,
   PageEditableRenderSchema,
   type CreateMediaBlock,
@@ -47,8 +47,7 @@ import {
   HomeReadModelSchema,
   NotificationReadAllResultSchema,
   NotificationSchema,
-  PageInfoSchema,
-  UnifiedSearchItemSchema,
+  UnifiedSearchResponseSchema,
   JobPostingDetailResponseSchema,
   JobInterestResponseSchema,
   BrewStateResponseSchema,
@@ -67,6 +66,7 @@ import {
   type PortfolioEditCommand,
   BrewJobResponseSchema,
   BrewMaterialsResponseSchema,
+  InterviewQuestionBasesResponseSchema,
   InterviewSessionResponseSchema,
   JobAnalysisResultSchema,
   ReanalysisRequestResultSchema,
@@ -180,7 +180,6 @@ export const auth = {
 };
 
 const HomeResponseSchema = z.strictObject({ data: HomeReadModelSchema });
-const UnifiedSearchResponseSchema = z.strictObject({ data: z.array(UnifiedSearchItemSchema), page: PageInfoSchema });
 const NotificationListResponseSchema = z.strictObject({ data: z.array(NotificationSchema) });
 const NotificationResponseSchema = z.strictObject({ data: NotificationSchema });
 const NotificationReadAllResponseSchema = z.strictObject({ data: NotificationReadAllResultSchema });
@@ -192,11 +191,11 @@ export const engagement = {
       accessToken,
       cache: "no-store",
     }),
-  /** 00c 통합 검색 — 기록 · 포트폴리오 · 공고 제목. */
-  search: (accessToken: string, q: string, limit = 20) =>
+  /** 00c 통합 검색 — 기록 · 공고 · 포트폴리오를 각 화면의 검색 규칙으로. `limit`은 종류마다. */
+  search: (accessToken: string, q: string, options: { country?: string; limit?: number } = {}) =>
     request(`${API_PREFIX}/search`, UnifiedSearchResponseSchema, {
       accessToken,
-      query: { q, limit },
+      query: { q, limit: options.limit ?? 20, ...(options.country ? { country: options.country } : {}) },
       cache: "no-store",
     }),
   notifications: (accessToken: string) =>
@@ -217,6 +216,18 @@ export const engagement = {
 };
 
 export const portfolios = {
+  /** 휴지통으로 옮긴다. 공개 중이면 공개도 멈춘다. */
+  trash: (accessToken: string, portfolioId: string) =>
+    requestNoContent(`${API_PREFIX}/portfolios/${portfolioId}`, { accessToken, method: "DELETE" }),
+
+  /** 휴지통에서 되살린다. 공개는 다시 켜지 않는다. */
+  restore: (accessToken: string, portfolioId: string) =>
+    requestNoContent(`${API_PREFIX}/portfolios/trash/${portfolioId}/restore`, { accessToken, method: "POST" }),
+
+  /** 휴지통에 있는 포트폴리오. 최근에 지운 순서. */
+  trashList: (accessToken: string) =>
+    request(`${API_PREFIX}/portfolios/trash`, PortfolioTrashListResponseSchema, { accessToken, cache: "no-store" }),
+
   /** 00 홈 카드 · 사이드바. 최근 편집 순. */
   list: (accessToken: string, query: Partial<ListPortfoliosQuery> = {}) =>
     request(`${API_PREFIX}/portfolios`, PortfolioListResponseSchema, {
@@ -421,6 +432,16 @@ export const consents = {
 };
 
 export const brews = {
+  /** 만들던 포트폴리오를 휴지통으로 옮긴다. 생성 중이면 409다. */
+  trash: (accessToken: string, brewId: string) =>
+    requestNoContent(`${API_PREFIX}/brews/${brewId}`, { accessToken, method: "DELETE" }),
+
+  restore: (accessToken: string, brewId: string) =>
+    requestNoContent(`${API_PREFIX}/brews/trash/${brewId}/restore`, { accessToken, method: "POST" }),
+
+  trashList: (accessToken: string) =>
+    request(`${API_PREFIX}/brews/trash`, BrewTrashListResponseSchema, { accessToken, cache: "no-store" }),
+
   /**
    * 제작을 시작한다. 재료 순위는 이때 한 번 매겨진다.
    *
@@ -454,6 +475,13 @@ export const brews = {
       accessToken,
       method: "POST",
       idempotencyKey,
+    }),
+
+  /** 질문을 만드는 동안 먼저 보여 줄 근거. 질문 생성과 같은 계산이고 AI를 부르지 않는다. */
+  interviewBases: (accessToken: string, brewId: string) =>
+    request(`${API_PREFIX}/brews/${brewId}/interview-bases`, InterviewQuestionBasesResponseSchema, {
+      accessToken,
+      cache: "no-store",
     }),
 
   /** 02b 레시피 짜기. 이것도 잡이다. */
@@ -1138,8 +1166,6 @@ export const page = {
   editComposition: (accessToken: string, portfolioId: string, body: EditStructuredPage) =>
     request(`${API_PREFIX}/portfolios/${portfolioId}/page/composition`, z.object({ data: GeneratedPageSchema }), { method: "PATCH", accessToken, body }),
   /** 고른 요소 하나를 말로 고칩니다. 새 판과 바뀐 곳 목록이 옵니다. */
-  instructElement: (accessToken: string, portfolioId: string, key: string, body: InstructStructuredElement) =>
-    request(`${API_PREFIX}/portfolios/${portfolioId}/page/elements/${encodeURIComponent(key)}/instruct`, z.object({ data: InstructStructuredElementResultSchema }), { method: "POST", accessToken, body }),
   /** 커리어 기록 하나를 지면의 새 사례로 더합니다. */
   addSection: (accessToken: string, portfolioId: string, body: AddStructuredSection) =>
     request(`${API_PREFIX}/portfolios/${portfolioId}/page/sections`, z.object({ data: GeneratedPageSchema }), { method: "POST", accessToken, body }),

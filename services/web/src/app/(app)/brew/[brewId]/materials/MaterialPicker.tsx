@@ -7,6 +7,8 @@ import { useActionState, useMemo, useState, useTransition } from "react";
 
 import { Icon } from "@/components/ui/Icon";
 
+import { beginInterviewAction } from "../brew-actions";
+import { BeginInterviewButton } from "./BeginInterviewButton";
 import {
   selectMaterialsAction,
   setModeAction,
@@ -59,11 +61,17 @@ export function MaterialPicker({
   materials,
   coworkAllowed,
   quota,
+  beginsInterview,
+  basisJobId,
 }: {
   brewId: string;
   materials: BrewMaterials;
   coworkAllowed: boolean;
   quota: EntitlementUsage | null;
+  /** 시작 버튼이 질문 생성을 맡기는가. 질문이 이미 있거나 만드는 중이면 링크로 둔다. */
+  beginsInterview: boolean;
+  /** 화면이 마지막으로 본 잡(`brewJobKey`). 거절 뒤 다시 시작하면 새 잡이 돈다. */
+  basisJobId: string | null;
 }) {
   const [chosen, setChosen] = useState<ReadonlySet<string>>(
     () => new Set(materials.materials.filter((row) => row.selected).map((row) => row.recordId)),
@@ -72,8 +80,8 @@ export function MaterialPicker({
   const [sort, setSort] = useState<(typeof SORTS)[number]["id"]>("match");
   const [blocked, setBlocked] = useState<string | null>(null);
 
-  const [saved, save] = useActionState<MaterialsResult, FormData>(selectMaterialsAction, {});
-  const [mode, setMode] = useActionState<MaterialsResult, FormData>(setModeAction, {});
+  const [saved, save, savingMaterials] = useActionState<MaterialsResult, FormData>(selectMaterialsAction, {});
+  const [mode, setMode, savingMode] = useActionState<MaterialsResult, FormData>(setModeAction, {});
   const [, startTransition] = useTransition();
 
   const limit = materials.selectionLimit;
@@ -397,9 +405,19 @@ export function MaterialPicker({
               )}
             </>
           ) : null}
-          <Link href={`/brew/${brewId}/counter` as Route} className={styles.brew}>
-            {chosen.size === 0 ? "기록 없이 계속" : "AI와 대화 시작"}
-          </Link>
+          {beginsInterview ? (
+            <form action={beginInterviewAction}>
+              <input type="hidden" name="brewId" value={brewId} />
+              {basisJobId ? <input type="hidden" name="basisJobId" value={basisJobId} /> : null}
+              <BeginInterviewButton className={styles.brew} saving={savingMaterials || savingMode}>
+                {chosen.size === 0 ? "기록 없이 계속" : "AI와 대화 시작"}
+              </BeginInterviewButton>
+            </form>
+          ) : (
+            <Link href={`/brew/${brewId}/counter` as Route} className={styles.brew}>
+              {chosen.size === 0 ? "기록 없이 계속" : "AI와 대화 시작"}
+            </Link>
+          )}
         </div>
       </aside>
     </div>

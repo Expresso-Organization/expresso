@@ -12,6 +12,7 @@ import { RecipeError } from "../recipe/index.js";
 import { MongoIdentityService } from "../identity/index.js";
 import { MongoMaterialsService } from "../materials/service.js";
 import { MongoBrewJobService } from "./service.js";
+import { watchOutboxInserts } from "../../worker/outbox-wake.js";
 
 describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB brew job resubmission", () => {
   let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
@@ -58,6 +59,36 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB brew job resubmission", 
 
     const resultId = randomUUID();
     expect(await jobs.process(first.jobId, { async run() { return resultId; } }, () => ({ code: "PROVIDER_FAILED", retryable: true }))).toMatchObject({ status: "succeeded", resultId, failure: null, attempts: 2 });
+  });
+
+  it("follows a job from its current status to success, missing no change made right after the first read", async () => {
+    const brewId = await newBrew();
+    const job = await jobs.submit(owner, "interview", `interview:${brewId}`, { brewId });
+    const abort = new AbortController();
+    const statuses = jobs.follow(owner, job.jobId, abort.signal);
+    expect((await statuses.next()).value).toMatchObject({ status: "queued" });
+    // 첫 상태를 읽은 뒤 흐름이 서버에 열리기 전에 끝난다 — 읽기 직전부터 열었으므로 놓치지 않는다.
+    await jobs.process(job.jobId, { async run() { return randomUUID(); } }, () => ({ code: "PROVIDER_FAILED", retryable: true }));
+    const rest: string[] = [];
+    for await (const status of statuses) rest.push(status.status);
+    // 변경을 받을 때 문서를 다시 읽으므로(updateLookup) 중간 상태는 마지막 상태로 합쳐질 수 있다.
+    // 지켜야 할 것은 끝을 놓치지 않는 것이다 — 마지막이 succeeded이고 흐름이 스스로 끝난다.
+    expect(rest.at(-1)).toBe("succeeded");
+    await expect(jobs.follow(randomUUID(), job.jobId, abort.signal).next()).rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  it("wakes the worker when an outbox row commits", async () => {
+    const abort = new AbortController();
+    let woken = 0;
+    const watching = watchOutboxInserts(fixture.resource.db, () => { woken += 1; }, { retryMs: 100, signal: abort.signal, onError: () => undefined });
+    // 흐름이 서버에 열릴 때까지 기다린 뒤 행을 넣는다.
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const brewId = await newBrew();
+    await jobs.submit(owner, "recipe", `recipe:${brewId}`, { brewId });
+    for (let waited = 0; woken === 0 && waited < 5_000; waited += 50) await new Promise((resolve) => setTimeout(resolve, 50));
+    abort.abort();
+    await watching;
+    expect(woken).toBeGreaterThan(0);
   });
 
   it("numbers each resubmission so a second failure is published again", async () => {

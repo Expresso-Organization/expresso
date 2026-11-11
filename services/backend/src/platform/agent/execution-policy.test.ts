@@ -8,6 +8,28 @@ function fixture() {
     propose: vi.fn(), review: vi.fn(), draftRecord: vi.fn(), gapReview: vi.fn(), planDraft: vi.fn(), replanDraft: vi.fn(), readPlan: vi.fn() };
   return { input, controller, report, authorize };
 }
+it("기존 지면 읽기·고침도 동의와 도구 예산을 거친다", async () => {
+  const f = fixture();
+  f.input.page = { read: vi.fn(async () => ({ typeLabel: "목차", title: "목차" })), edit: vi.fn() };
+  const runtime: AgentRuntime = { run: async input => {
+    await input.page!.read("portfolio", "toc");
+    await input.page!.edit({ portfolioId: "portfolio", key: "toc", note: "제목 수정" });
+  } };
+  await expect(runAgentWithPolicy(runtime, f.input, { ...f, limits: { maxToolCalls: 1 } })).rejects.toMatchObject({ code: "TOOL_BUDGET" });
+  expect(f.input.page.read).toHaveBeenCalledOnce();
+  expect(f.input.page.edit).not.toHaveBeenCalled();
+  expect(f.authorize).toHaveBeenCalledWith("edit_page_element");
+});
+it("동의 철회 이후 지면 고침을 실행하지 않는다", async () => {
+  const f = fixture(); let revoked = false;
+  f.input.page = { read: vi.fn(async () => ({ typeLabel: "목차", title: "목차" })), edit: vi.fn() };
+  const runtime: AgentRuntime = { run: async input => {
+    await input.page!.read("portfolio", "toc"); revoked = true;
+    await input.page!.edit({ portfolioId: "portfolio", key: "toc", note: "제목 수정" });
+  } };
+  await expect(runAgentWithPolicy(runtime, f.input, { ...f, authorize: async () => { if (revoked) throw new Error("revoked"); } })).rejects.toThrow("revoked");
+  expect(f.input.page.edit).not.toHaveBeenCalled();
+});
 it.each(["apply", "deploy", "save_record", "__proto__", "constructor"])("확정 도구 %s를 허용하지 않는다", name => { expect(() => assertAgentOperation(name)).toThrow(); });
 it("동의 거절은 실행 전에 막는다", async () => {
   const f = fixture(), run = vi.fn(); f.authorize.mockRejectedValue(new Error("consent"));

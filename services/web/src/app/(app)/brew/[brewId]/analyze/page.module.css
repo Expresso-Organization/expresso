@@ -50,7 +50,7 @@
   color: var(--ex-fg-body);
   background: transparent;
   border: 1px solid var(--ex-border);
-  border-radius: 8px;
+  border-radius: var(--ex-radius-control);
   padding: 7px 12px;
   white-space: nowrap;
   transition:
@@ -378,7 +378,7 @@
   color: var(--ex-fg-on-accent);
   background: var(--ex-accent);
   border: none;
-  border-radius: 999px;
+  border-radius: var(--ex-radius-control);
   padding: 13px 26px;
   display: inline-block;
   white-space: nowrap;

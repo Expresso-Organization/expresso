@@ -11,7 +11,7 @@ import { brewTitle } from "../brew-title";
 import { DesignCatalog, type DesignCatalogEntry } from "./DesignCatalog";
 import { Generating } from "./Generating";
 import type { WaitReading } from "./GenerationWait";
-import { brewingLeftMs } from "./wait-timing";
+import { brewingLeftMs, waitedMs } from "./wait-timing";
 
 /**
  * 03 디자인 선택 — 제작 흐름의 다섯째 단계.
@@ -54,6 +54,7 @@ export default async function DesignPage({
 
   if (running) {
     const reading = await waitReading(session.accessToken, brew);
+    const now = Date.now();
     return (
       <BrewFrame brewId={brewId} step="design" portfolioTitle={title} situation="생성" tinted>
         <Generating
@@ -61,7 +62,8 @@ export default async function DesignPage({
           generation={generation}
           title={title ?? "포트폴리오"}
           reading={reading}
-          brewingLeftMs={brewingLeftMs(generation.createdAt, Date.now())}
+          brewingLeftMs={brewingLeftMs(generation.createdAt, now)}
+          waitedMs={waitedMs(generation.createdAt, now)}
           recipePending={generation.status === "queued" && recipeBuilding}
         />
       </BrewFrame>

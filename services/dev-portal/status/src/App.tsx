@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react"
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react"
 import { CircleAlertIcon, XIcon } from "lucide-react"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -14,7 +14,8 @@ import { DetailSheet, ListTabs, featureDetail, type Detail } from "@/components/
 import { Burndown, PlanTimeline, ScopeMap, Workload } from "@/components/status/scope"
 import { SectionCards } from "@/components/status/section-cards"
 import { TeamTodos } from "@/components/status/todos"
-import { useView, type View } from "@/lib/route"
+import { PatchNotesView } from "@/patch-notes/PatchNotesView"
+import { useView, type Page, type View } from "@/lib/route"
 import { ago, loadData, rows as toRows, semesterWeek, type Data } from "@/lib/data"
 import { usePortalTheme } from "@/lib/theme"
 
@@ -85,7 +86,8 @@ function Dashboard({ data, view, setView }: { data: Data; view: View; setView: (
   const groups = member ? member.groups : report.groups.map((g) => g.id)
   const week = semesterWeek(report.semester.week2Start, new Date(data.loadedAt))
   const lastRun = runs.at(-1)
-  const pickMember = (name: string | null) => setView({ member: name, group: null })
+  const pickMember = (name: string | null) => setView({ page: "dashboard", member: name, group: null })
+  const pickPage = (page: Page) => setView({ page })
   const [detail, setDetail] = useState<Detail | null>(null)
   const toList = (patch: Partial<View>) => {
     setView({ tab: "features", state: null, changed: false, q: "", ...patch })
@@ -94,8 +96,12 @@ function Dashboard({ data, view, setView }: { data: Data; view: View; setView: (
 
   return (
     <SidebarProvider style={{ "--sidebar-width": "15rem" } as CSSProperties}>
-      <AppSidebar data={data} member={member?.name ?? null} onMember={pickMember} />
+      <AppSidebar data={data} page={view.page} member={member?.name ?? null} onMember={pickMember} onPage={pickPage} />
       <SidebarInset>
+        {view.page === "notes" ? (
+          <PatchNotesView />
+        ) : (
+          <DashboardBody>
         <header className="sticky top-0 z-20 flex h-12 shrink-0 items-center gap-2 border-b bg-background/95 px-4 backdrop-blur lg:px-6">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mx-1 data-[orientation=vertical]:h-4" />
@@ -160,10 +166,21 @@ function Dashboard({ data, view, setView }: { data: Data; view: View; setView: (
             전체 판정 {ago(report.scan.fullAt)} · main {report.main.commit}
           </footer>
         </div>
+          </DashboardBody>
+        )}
         <DetailSheet detail={detail} onClose={() => setDetail(null)} />
       </SidebarInset>
     </SidebarProvider>
   )
+}
+
+// 사이드바 바로가기(#todos …)를 패치노트 화면에서 누르면 대시보드가 그려진 뒤에 그 자리로 간다.
+function DashboardBody({ children }: { children: ReactNode }) {
+  useEffect(() => {
+    const id = window.location.hash.slice(1)
+    if (id) document.getElementById(id)?.scrollIntoView({ block: "start" })
+  }, [])
+  return <>{children}</>
 }
 
 export default App

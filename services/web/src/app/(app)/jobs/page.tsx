@@ -1,5 +1,6 @@
 import { koreanPlace } from "@expresso/contracts";
 import type {
+  ConsentScope,
   JobSource,
   JobPostingCategory,
   JobPostingFacet,
@@ -13,7 +14,9 @@ import Link from "next/link";
 import { AppBody, AppHeader } from "@/components/shell/AppShell";
 import { Icon } from "@/components/ui/Icon";
 import { jobs as jobsApi } from "@/lib/api/endpoints";
+import { CONSENT_COPY, CONSENT_SETTINGS_HREF } from "@/lib/consent-copy";
 import { watchedJobs } from "@/lib/app-data";
+import { DEFAULT_JOB_COUNTRY } from "@/lib/job-search-defaults";
 import { requireSession } from "@/lib/require-session";
 
 import { AddCondition, type AddConditionSection } from "./AddCondition";
@@ -35,18 +38,6 @@ import styles from "./page.module.css";
  *
  * 공고 · 일치도 · 관심 · 카테고리 집계는 `GET /v1/jobs/postings`에서 온다.
  */
-
-/**
- * 아무것도 안 고른 06이 보여주는 나라.
- *
- * 우리가 모으는 곳은 국내 회사인데 그 회사들이 해외 법인 자리도 함께 올린다 —
- * 158건 중 70건이 인도·미국·대만이다. 첫 화면이 그걸 섞어 보여주면 국내에서
- * 일자리를 찾는 사람이 첫 쪽부터 지원할 수 없는 공고를 읽는다.
- *
- * 감추는 것이 아니다. 필터를 열면 `전체`가 맨 위에 있고 나라마다 건수가 적혀
- * 있다. 기본값을 정하는 것과 없는 척하는 것은 다르다.
- */
-const DEFAULT_COUNTRY = "한국";
 
 /**
  * 연차 칸막이의 이름과 값. 계약이 내는 라벨과 주소에 실을 숫자를 잇는다.
@@ -189,7 +180,7 @@ export default async function JobsPage({
    * 센 건수다 — 기본값이 걸리면 해외 공고를 담은 사람이 N보다 적은 목록을 본다.
    * 담은 것은 사용자가 직접 고른 것이라 국내 기본값으로 감출 근거도 없다.
    */
-  const defaultCountry = interested ? "all" : DEFAULT_COUNTRY;
+  const defaultCountry = interested ? "all" : DEFAULT_JOB_COUNTRY;
   /**
    * 근무지 나라. **적혀 있지 않으면 한국이다.**
    *
@@ -739,6 +730,7 @@ export default async function JobsPage({
               saved={searchSaved}
               clearHref={listHref(new URLSearchParams())}
               interested={interested}
+              requiredConsent={interpreted?.requiredConsent}
             />
           ) : (
             <BrowseSearchBar interested={interested} />
@@ -1048,6 +1040,7 @@ function SearchQueryCard({
   saved,
   clearHref,
   interested,
+  requiredConsent,
 }: {
   query: string;
   chips: readonly QueryChip[];
@@ -1058,6 +1051,8 @@ function SearchQueryCard({
   /** 검색어만 지운 목록. 관심 공고 목록이면 그 목록으로 돌아간다. */
   clearHref: Route;
   interested: boolean;
+  /** 검색어 해석에 필요한 동의가 없어 원문으로 찾았을 때 그 동의. */
+  requiredConsent: ConsentScope | undefined;
 }) {
   return (
     <div className={styles.queryCard}>
@@ -1081,7 +1076,16 @@ function SearchQueryCard({
       {/* 해석 칩 — 확신이 낮은 조건도 칩으로 만들되 끌 수 있게 둔다. 칩마다
           눌러서 다른 값을 고르거나 끌 수 있다. */}
       <div className={styles.parsedRow}>
-        <span className={styles.parsedLabel}>이렇게 이해했습니다</span>
+        {requiredConsent ? (
+          // 해석하지 않았으니 「이렇게 이해했습니다」라고 쓰지 않는다. 왜 칩이
+          // 안 생겼는지와 어디서 켜는지를 그 자리에 쓴다.
+          <p className={styles.consentNote}>
+            검색어 그대로 찾았습니다. {CONSENT_COPY[requiredConsent].title} 동의를 켜면 검색어를 조건으로 나눠 읽습니다.{" "}
+            <Link href={CONSENT_SETTINGS_HREF as Route} className={styles.consentLink}>동의 설정 열기</Link>
+          </p>
+        ) : (
+          <span className={styles.parsedLabel}>이렇게 이해했습니다</span>
+        )}
         {chips.map((chip) => (
           <ConditionChip
             key={chip.key}

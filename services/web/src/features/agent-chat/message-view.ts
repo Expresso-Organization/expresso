@@ -6,7 +6,8 @@ export function toThreadMessage(message: AgentMessage, cancelled = false): Threa
   const text = cancelled && message.role === "assistant"
     ? [message.text, "응답을 중지했습니다."].filter(Boolean).join("\n\n") : message.text;
   return {
-    id: message.id, role: message.role, createdAt: new Date(message.createdAt),
+    id: message.id, role: message.role,
+    ...(message.selection ? { metadata: { custom: { selection: message.selection } } } : {}), createdAt: new Date(message.createdAt),
     content: [
       ...message.tools.map(tool => ({ type: "tool-call" as const, toolCallId: tool.id, toolName: tool.name, args: {}, argsText: "{}", ...(tool.status === "running" ? {} : { result: { summary: tool.summary }, isError: tool.status === "failed" }) })),
       { type: "text", text },

@@ -6,7 +6,8 @@ import { AgentChatService } from "../modules/agent-chat/index.js";
 import { createAgentRuntime } from "../platform/agent/create-runtime.js";
 import { buildApi } from "./build-app.js";
 import { loadRuntimeConfig } from "../config/runtime-config.js";
-import { createMongoResource } from "../platform/mongodb.js";
+import { connectMongoUntilReady, createMongoResource } from "../platform/mongodb.js";
+import { safeErrorSummary } from "../platform/observability.js";
 import { createRedisResource, createStreamRedis } from "../platform/redis.js";
 import { IdentityService } from "../modules/identity/index.js";
 import { RemoteGoogleIdTokenVerifier } from "../modules/identity/google.js";
@@ -18,7 +19,7 @@ import { AiSearchInterpreter } from "../modules/jobs/search-interpreter.js";
 import { AiFactsReader, createJobSourceAdapters, BundledMarkReader, JobIngestService, JobUrlImporter, SiteMarkReader } from "../modules/jobs/ingest/index.js";
 import { JobBoardService } from "../modules/jobs/index.js";
 import { JobAnalysisService } from "../modules/job-analysis/index.js";
-import { MaterialsService } from "../modules/materials/index.js";
+import { BrewTrashService, MaterialsService } from "../modules/materials/index.js";
 import { InterviewService } from "../modules/interview/index.js";
 import { RecipeService } from "../modules/recipe/index.js";
 import { CompanyResearchService } from "../modules/company-research/index.js";
@@ -34,7 +35,7 @@ import { DesignSystemService } from "../modules/design-systems/service.js";
 import { TemplateService } from "../modules/templates/index.js";
 import { GenerationService } from "../modules/generation/index.js";
 import { PortfolioEditingService } from "../modules/portfolio-editing/index.js";
-import { PortfolioReadService } from "../modules/portfolios/index.js";
+import { PortfolioReadService, PortfolioTrashService } from "../modules/portfolios/index.js";
 import { LayoutService } from "../modules/layout/index.js";
 import { PublishingService } from "../modules/publishing/index.js";
 import { MediaService } from "../modules/media/index.js";
@@ -42,9 +43,10 @@ import { PageElementEditor, PageService } from "../modules/page/index.js";
 import { PageStream } from "../modules/page/stream.js";
 import { AiPageGenerator } from "../modules/page/generator.js";
 import { StructuredPageGenerator } from "../modules/page/structured-generator.js";
+import { FormatRoutingPageGenerator } from "../modules/page/format-router.js";
 import { createMediaStorage } from "../platform/storage/create-storage.js";
 import { AnalyticsService } from "../modules/analytics/index.js";
-import { EngagementService } from "../modules/engagement/index.js";
+import { EngagementService, UnifiedSearchService } from "../modules/engagement/index.js";
 import { AccountLifecycleService } from "../modules/account-lifecycle/index.js";
 import { AdminService } from "../modules/admin/index.js";
 import { CareerDocumentService } from "../modules/career-editor/index.js";
@@ -117,8 +119,14 @@ const pageStream = new PageStream(createStreamRedis(config.redisUrl), {
   prefix: config.queuePrefix,
 });
 const pageService = new PageService(database, consentService, pageStream);
-// AI가 켜져 있을 때 모델이 내용·Spec 또는 HTML을 생성합니다.
-const pageGenerator = ai ? (config.pageGenerationFormat === "html" ? new AiPageGenerator(ai) : new StructuredPageGenerator(ai)) : null;
+// AI가 켜져 있을 때 모델이 내용·Spec 또는 HTML을 생성합니다. 다시 뽑기는 직전 지면의 방식을 따르고,
+// 직전 지면이 없으면 설정 값을 씁니다(`FormatRoutingPageGenerator`).
+const pageGenerator = ai
+  ? new FormatRoutingPageGenerator(
+      { html: new AiPageGenerator(ai), "json-render": new StructuredPageGenerator(ai) },
+      config.pageGenerationFormat ?? "json-render",
+    )
+  : null;
 const pageEditor = ai ? new PageElementEditor(ai) : null;
 const analyticsService = new AnalyticsService(database, {
   ...(config.analyticsVisitorSalt ? { visitorSalt: config.analyticsVisitorSalt } : {}),
@@ -129,6 +137,7 @@ const analyticsService = new AnalyticsService(database, {
   entitlements: entitlementService,
 });
 const engagementService = new EngagementService(database);
+const unifiedSearchService = new UnifiedSearchService({ records: careerService, jobs: jobBoardService, portfolios: portfolioReadService });
 const accountLifecycleService = new AccountLifecycleService(database);
 // 커리어 문서 작업은 Worker의 career-jobs 줄에서 처리합니다(포트폴리오 생성과 줄을 나눔).
 const careerDocumentJobs = createReliableQueue<Record<string, unknown>>(
@@ -187,6 +196,7 @@ const app = buildApi({
   jobBoardService,
   jobAnalysisService,
   materialsService,
+  brewTrashService: new BrewTrashService(database),
   interviewService,
   recipeService,
   companyResearchService,
@@ -196,6 +206,7 @@ const app = buildApi({
   generationService,
   portfolioEditingService,
   portfolioReadService,
+  portfolioTrashService: new PortfolioTrashService(database),
   consentService,
   layoutService,
   publishingService,
@@ -206,7 +217,20 @@ const app = buildApi({
   pageEditor,
   analyticsService,
   engagementService,
+  unifiedSearchService,
   accountLifecycleService,
+});
+
+/*
+ * API는 인프라가 없어도 뜨고 `/health/ready`가 503으로 답합니다(README). 첫 요청에 연결을 맡기면 그 연결이 실패한
+ * 클라이언트는 닫힌 채로 남아 Mongo가 돌아와도 503에 머뭅니다. 뜨면서 연결될 때까지 직접 다시 시도합니다.
+ */
+const mongoConnection = new AbortController();
+const mongoConnected = connectMongoUntilReady(database.client, {
+  signal: mongoConnection.signal,
+  onRetry(error) {
+    app.log.warn({ error: safeErrorSummary(error) }, "MongoDB is unavailable; retrying connection");
+  },
 });
 
 let stopping = false;
@@ -216,7 +240,9 @@ async function stop(signal: NodeJS.Signals): Promise<void> {
   stopping = true;
 
   app.log.info({ signal }, "stopping API");
+  mongoConnection.abort();
   await app.close();
+  await mongoConnected;
   await Promise.allSettled([database.close(), redis.close(), careerDocumentJobs.close()]);
 }
 
@@ -233,6 +259,8 @@ try {
   await app.listen({ host: config.host, port: config.port });
 } catch (error) {
   app.log.error({ error }, "failed to start API");
+  mongoConnection.abort();
+  await mongoConnected;
   await Promise.allSettled([app.close(), database.close(), redis.close(), careerDocumentJobs.close()]);
   process.exitCode = 1;
 }

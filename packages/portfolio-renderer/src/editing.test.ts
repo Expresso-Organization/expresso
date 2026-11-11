@@ -7,7 +7,7 @@ import {
 } from "@expresso/contracts";
 
 import { structuredCatalog } from "./catalog.js";
-import { STRUCTURED_PARTS, STRUCTURED_TYPE_LABELS, editableFields, elementStyleCss, styleProblems } from "./editing.js";
+import { STRUCTURED_PARTS, STRUCTURED_TYPE_LABELS, editableFields, elementStyleCss, elementTitle, styleProblems } from "./editing.js";
 import { renderStructuredPortfolio } from "./renderer.js";
 
 const designs = JSON.parse(readFileSync(new URL("./fixtures/designs.json", import.meta.url), "utf8"));
@@ -76,6 +76,16 @@ describe("편집용 요소 표시", () => {
     expect(styleProblems("CaseEssay", { title: { size: clarity.typography.scale[0]!.name } }, clarity)).toEqual([]);
     expect(styleProblems("CaseEssay", { quote: {} }, clarity)).toEqual(["기사형 사례에는 'quote' 부분이 없습니다."]);
     expect(styleProblems("PullQuote", { quote: { size: "giant" } }, clarity)).toEqual(["글자 크기 'giant'는 이 디자인의 단계가 아닙니다."]);
+  });
+});
+
+describe("요소 이름", () => {
+  it("사례는 섹션 제목, 첫 화면은 이름, 인용은 인용 글, 묶음은 담은 요소 수로 부른다", () => {
+    const snapshot = { spec, content } as never;
+    expect(elementTitle(snapshot, "section-a")).toEqual({ title: "경로 재설계", meta: STRUCTURED_TYPE_LABELS["CaseEssay"] });
+    expect(elementTitle(snapshot, "intro")).toEqual({ title: "가상 인물", meta: STRUCTURED_TYPE_LABELS["NameIntro"] });
+    expect(elementTitle(snapshot, "quote-1")).toEqual({ title: "막히면 돌아갑니다.", meta: STRUCTURED_TYPE_LABELS["PullQuote"] });
+    expect(elementTitle(snapshot, "group-1")).toEqual({ title: STRUCTURED_TYPE_LABELS["Band"], meta: "요소 2개" });
   });
 });
 

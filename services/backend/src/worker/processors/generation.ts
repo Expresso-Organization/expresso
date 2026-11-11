@@ -13,6 +13,11 @@ export function createGenerationProcessor(
   designer?: LayoutDesigner | null,
   page?: { service: PageApi; generator: PageGenerator } | null,
   notifier?: Pick<EngagementApi, "notifyGeneration"> | null,
+  /**
+   * Worker가 멈추는 중인가. 그동안 난 실패는 생성의 잘못이 아니다 — 배포 재시작이 AI 호출을 끊는다. 실패로 확정하지
+   * 않고 다시 던지면 큐가 잡을 돌려보내고, 새 Worker가 `running`인 생성을 다시 맡아 이어 간다(`prepareFreeHtml`).
+   */
+  stopping?: AbortSignal,
 ) {
   return async (job: Job<Record<string, unknown>>) => {
     const id = job.data.generationJobId;
@@ -29,12 +34,14 @@ export function createGenerationProcessor(
           prepared.userId,
           prepared.portfolioId,
           page.generator,
-          { generationJobId: id, streamId: id },
+          // 요청이 고른 지면 방식. 생성기(`FormatRoutingPageGenerator`)가 이 값으로 길을 고른다.
+          { generationJobId: id, streamId: id, pageFormat: prepared.pageFormat },
         );
         if (generated.qualityStatus !== "ready") {
           return service.failFreeHtml(id, "PAGE_OUTPUT_INVALID");
         }
       } catch (error) {
+        if (stopping?.aborted) throw error;
         console.error(JSON.stringify({
           level: "warn",
           event: "page.generation_failed",
@@ -49,6 +56,7 @@ export function createGenerationProcessor(
       try {
         completed = await service.completeFreeHtml(id, generated);
       } catch (error) {
+        if (stopping?.aborted) throw error;
         console.error(JSON.stringify({
           level: "warn",
           event: "page.generation_completion_failed",

@@ -5,6 +5,7 @@ import { afterEach, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
+import { QuestionBases } from "./counter/QuestionBases";
 import { Waiting } from "./Waiting";
 
 const brewId = "3b2f0f8e-1c4d-4a6b-9e7f-0a1b2c3d4e5f";
@@ -38,4 +39,24 @@ it("동의가 아닌 실패는 지금 문구 그대로이고 설정 링크가 �
   cleanup();
   show(failed({ code: "BREW_INPUT_REJECTED", retryable: false, requiredConsent: null }));
   expect(screen.getByText("물어볼 자리가 모자랍니다.")).toBeTruthy();
+});
+
+it("만드는 동안에는 실측에 맞춘 시간을 말하고 화면이 넣은 근거 목록을 카드 아래에 함께 보인다", () => {
+  const running: BrewJobStatus = { jobId, type: "interview", status: "running", stage: "drafting", attempts: 1, resultId: null, failure: null };
+  render(
+    <Waiting title="질문" note="" job={running} action={async () => {}} actionLabel="질문 만들기"
+      rejectedNote="" brewId={brewId} basisJobId={jobId}
+      detail={<QuestionBases bases={[
+        { basis: { type: "requirement", requirementId: jobId, coverage: "missing", evidence: "Kafka 운영 경험" }, label: "Kafka 운영 경험" },
+        { basis: { type: "record_gap", recordId: brewId, gap: "metric", evidence: "결제 API 개편" }, label: "결제 API 개편" },
+      ]} />} />,
+  );
+  expect(screen.getByText("보통 15초 안에 끝납니다. 이 화면을 닫아도 계속됩니다.")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "질문 만들기" })).toBeNull();
+  const bases = screen.getByRole("region", { name: "물어볼 자리" });
+  expect(bases.textContent).toContain("물어볼 자리 2곳");
+  expect(bases.textContent).toContain("공고 요건 · 아직 못 채움");
+  expect(bases.textContent).toContain("Kafka 운영 경험");
+  expect(bases.textContent).toContain("기록 · 수치가 빠짐");
+  expect(bases.textContent).toContain("결제 API 개편");
 });

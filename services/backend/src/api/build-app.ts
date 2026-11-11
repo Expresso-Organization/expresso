@@ -25,8 +25,9 @@ import { type JobBoardApi } from "../modules/jobs/index.js";
 import { registerJobBoardRoutes } from "../modules/jobs/board-routes.js";
 import { type JobAnalysisApi } from "../modules/job-analysis/index.js";
 import { registerJobAnalysisRoutes } from "../modules/job-analysis/routes.js";
-import { type MaterialsApi } from "../modules/materials/index.js";
+import { type BrewTrashService, type MaterialsApi } from "../modules/materials/index.js";
 import { registerMaterialsRoutes } from "../modules/materials/routes.js";
+import { registerBrewTrashRoutes } from "../modules/materials/trash-routes.js";
 import { type InterviewApi } from "../modules/interview/index.js";
 import { registerInterviewRoutes } from "../modules/interview/routes.js";
 import { type RecipeApi } from "../modules/recipe/index.js";
@@ -43,8 +44,9 @@ import { type GenerationApi } from "../modules/generation/index.js";
 import { registerGenerationRoutes } from "../modules/generation/routes.js";
 import { type PortfolioEditingApi } from "../modules/portfolio-editing/index.js";
 import { registerPortfolioEditingRoutes } from "../modules/portfolio-editing/routes.js";
-import { type PortfolioReadApi } from "../modules/portfolios/index.js";
+import { type PortfolioReadApi, type PortfolioTrashService } from "../modules/portfolios/index.js";
 import { registerPortfolioRoutes } from "../modules/portfolios/routes.js";
+import { registerPortfolioTrashRoutes } from "../modules/portfolios/trash-routes.js";
 import { type LayoutApi } from "../modules/layout/index.js";
 import { type ConsentApi } from "../modules/consent/index.js";
 import { registerConsentRoutes } from "../modules/consent/routes.js";
@@ -60,7 +62,7 @@ import type { PageGenerator } from "../modules/page/generator.js";
 import { type PageApi } from "../modules/page/index.js";
 import { type AnalyticsApi } from "../modules/analytics/index.js";
 import { registerAnalyticsRoutes } from "../modules/analytics/routes.js";
-import { type EngagementApi } from "../modules/engagement/index.js";
+import { type EngagementApi, type UnifiedSearchApi } from "../modules/engagement/index.js";
 import { registerEngagementRoutes } from "../modules/engagement/routes.js";
 import { type AccountLifecycleApi } from "../modules/account-lifecycle/index.js";
 import { registerAccountLifecycleRoutes } from "../modules/account-lifecycle/routes.js";
@@ -89,6 +91,7 @@ export interface BuildApiOptions {
   jobBoardService?: JobBoardApi;
   jobAnalysisService?: JobAnalysisApi;
   materialsService?: MaterialsApi;
+  brewTrashService?: Pick<BrewTrashService, "trash" | "restore" | "list">;
   interviewService?: InterviewApi;
   evidenceSearchService?: EvidenceSearchService;
   agentChatService?: AgentChatService;
@@ -102,6 +105,7 @@ export interface BuildApiOptions {
   generationService?: GenerationApi;
   portfolioEditingService?: PortfolioEditingApi;
   portfolioReadService?: PortfolioReadApi;
+  portfolioTrashService?: Pick<PortfolioTrashService, "trash" | "restore" | "list">;
   layoutService?: LayoutApi;
   consentService?: ConsentApi;
   publishingService?: PublishingApi;
@@ -115,6 +119,8 @@ export interface BuildApiOptions {
   pageStream?: PageStream | null;
   analyticsService?: AnalyticsApi;
   engagementService?: EngagementApi;
+  /** 00c 통합 검색. 기록 · 공고 · 포트폴리오 서비스를 묶은 것이라 따로 받는다. */
+  unifiedSearchService?: UnifiedSearchApi;
   accountLifecycleService?: AccountLifecycleApi;
   careerDocumentService?: CareerDocumentApi;
   adminService?: AdminService;
@@ -126,6 +132,12 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
     genReqId: createRequestId,
     logController: new LogController({ requestIdLogLabel: "requestId" }),
     requestTimeout: options.config.requestTimeoutMs ?? 30_000,
+    /*
+     * 닫을 때 열린 연결을 모두 끊는다. 기본값(`idle`)은 쉬는 연결만 끊어, 화면이 열어 둔 SSE(잡 상태 · 지면 조각 ·
+     * 에이전트 채팅)가 남아 있으면 `close()`가 끝나지 않는다. 운영 배포에서 API가 systemd 시간 초과(90초)까지 내려가지
+     * 않다가 SIGKILL됐다(2026-11-10, 이슈 #203). 끊긴 화면은 다시 연결하거나 폴링으로 돌아간다.
+     */
+    forceCloseConnections: true,
   });
 
   app.addHook("onSend", async (request, reply, payload) => {
@@ -211,6 +223,12 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
         authenticateRequest: createAuthenticateRequest(options.identityService),
       });
     }
+    if (options.brewTrashService) {
+      registerBrewTrashRoutes(app, {
+        service: options.brewTrashService,
+        authenticateRequest: createAuthenticateRequest(options.identityService),
+      });
+    }
     if (options.companyResearchService) {
       registerCompanyResearchRoutes(app, {
         service: options.companyResearchService,
@@ -259,6 +277,12 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
     if (options.portfolioReadService) {
       registerPortfolioRoutes(app, {
         service: options.portfolioReadService,
+        authenticateRequest: createAuthenticateRequest(options.identityService),
+      });
+    }
+    if (options.portfolioTrashService) {
+      registerPortfolioTrashRoutes(app, {
+        service: options.portfolioTrashService,
         authenticateRequest: createAuthenticateRequest(options.identityService),
       });
     }
@@ -311,6 +335,7 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
     if (options.engagementService) {
       registerEngagementRoutes(app, {
         service: options.engagementService,
+        ...(options.unifiedSearchService ? { search: options.unifiedSearchService } : {}),
         authenticateRequest: createAuthenticateRequest(options.identityService),
       });
     }

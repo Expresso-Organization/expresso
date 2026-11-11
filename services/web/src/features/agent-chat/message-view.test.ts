@@ -23,3 +23,9 @@ it("새로고침으로 복원한 답변도 같은 중지 안내를 만든다", (
  const restored = JSON.parse(JSON.stringify(fixture())) as AgentMessage;
  expect(toThreadMessage(restored, true)).toEqual(toThreadMessage(fixture(), true));
 });
+it("고른 지면 요소를 복원해도 말풍선의 대상 표시를 보존한다", () => {
+ const selection = { portfolioId: "portfolio", key: "toc", label: "작업 목차" };
+ const message = { ...fixture("더 짧게"), role: "user" as const, selection };
+ expect(toThreadMessage(message).metadata?.custom).toEqual({ selection });
+ expect(message.selection).toEqual(selection);
+});

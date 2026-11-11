@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { InterviewQuestionBasisSchema, InterviewSessionSchema, type InterviewQuestionBasis, type SaveInterviewAnswer } from "@expresso/contracts";
+import { InterviewQuestionBaseSchema, InterviewQuestionBasisSchema, InterviewSessionSchema, type InterviewQuestionBasis, type SaveInterviewAnswer } from "@expresso/contracts";
 import { mongoCollections, type QuestionDoc } from "@expresso/database";
 import type { ClientSession } from "mongodb";
 import type { MongoContext } from "../../platform/mongodb.js";
@@ -49,7 +49,7 @@ export class InterviewService implements InterviewApi {
 
   async #questionOptions(userId: string, brewId: string, session?: ClientSession) {
     const db = mongoCollections(this.context.db); const options = session ? { session } : {};
-    const brew = await db.brews.findOne({ _id: brewId, userId }, options);
+    const brew = await db.brews.findOne({ _id: brewId, userId, deletedAt: null }, options);
     if (!brew) throw new InterviewError(404, "brew not found");
     const analysis = await db.jobAnalyses.findOne({ _id: brew.jobAnalysisId, userId }, options);
     if (!analysis) throw new InterviewError(404, "job analysis not found");
@@ -82,15 +82,33 @@ export class InterviewService implements InterviewApi {
     return { context, requirements: requirementRows, records: orderedRecords, recordText };
   }
 
-  async #planQuestions(userId: string, brewId: string): Promise<PlannedQuestion[]> {
+  async #planQuestions(userId: string, brewId: string, timing: Record<string, number> = {}): Promise<PlannedQuestion[]> {
+    let mark = Date.now();
+    const lap = (name: string) => { const now = Date.now(); timing[name] = now - mark; mark = now; };
     const { context, requirements, records, recordText } = await this.#questionOptions(userId, brewId);
+    lap("optionsMs");
     if (context.options.length < 3) throw new InterviewError(409, "at least three grounded question bases are required");
     if (this.writer) {
       await this.consent?.require(userId, "question_draft");
+      lap("consentMs");
       const drafted = await this.writer.draft(context);
+      lap("draftMs");
       return drafted.map((question) => { const option = context.options[question.optionIndex]!; return { text: question.text, basis: option.basis, requirementId: option.basis.type === "requirement" ? option.basis.requirementId : null, variant: 0, rationale: question.rationale }; });
     }
     return generateQuestionDrafts(requirements.map((row) => ({ id: row._id, label: row.label, coverage: row.coverage, evidence: row.quote })), records.map((record) => ({ id: record._id, title: record.title, text: recordText(record) }))).map((draft) => ({ ...draft, rationale: null }));
+  }
+
+  /**
+   * 질문 생성이 고를 수 있는 근거. 질문 생성(`#planQuestions`)과 같은 계산이고 AI를 부르지 않는다 —
+   * 질문을 만드는 동안 화면이 무엇을 근거로 물을지 먼저 보여 준다.
+   */
+  async questionBases(userId: string, brewId: string) {
+    const { context, requirements } = await this.#questionOptions(userId, brewId);
+    const requirementLabels = new Map(requirements.map((row) => [row._id, row.label]));
+    return context.options.map(({ basis }) => InterviewQuestionBaseSchema.parse({
+      basis,
+      label: basis.type === "requirement" ? requirementLabels.get(basis.requirementId) ?? basis.evidence : basis.evidence,
+    }));
   }
 
   async start(userId: string, brewId: string, idempotencyKey: string) {
@@ -99,12 +117,15 @@ export class InterviewService implements InterviewApi {
     if (replay) return this.getSession(userId, replay._id);
     const existing = await db.interviewSessions.findOne({ userId, brewId });
     if (existing) return this.getSession(userId, existing._id);
-    const planned = await this.#planQuestions(userId, brewId);
+    // 질문 생성의 단계별 시간. AI 호출 안쪽은 `ai.call_timing`이 따로 남긴다.
+    const timing: Record<string, number> = {};
+    const planned = await this.#planQuestions(userId, brewId, timing);
+    const savingAt = Date.now();
     const sessionId = await inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId);
       const collections = mongoCollections(tx.db); const options = { session: tx.session };
       const keyed = await collections.interviewSessions.findOne({ userId, inputIdempotencyKey: idempotencyKey }, options); if (keyed) return keyed._id;
-      const brew = await collections.brews.findOneAndUpdate({ _id: brewId, userId }, { $set: { status: "interviewing", updatedAt: new Date() }, $inc: { referenceVersion: 1 } }, { ...options, returnDocument: "after" });
+      const brew = await collections.brews.findOneAndUpdate({ _id: brewId, userId, deletedAt: null }, { $set: { status: "interviewing", updatedAt: new Date() }, $inc: { referenceVersion: 1 } }, { ...options, returnDocument: "after" });
       if (!brew) throw new InterviewError(404, "brew not found");
       const started = await collections.interviewSessions.findOne({ userId, brewId }, options); if (started) return started._id;
       const now = new Date(); const id = randomUUID();
@@ -112,6 +133,7 @@ export class InterviewService implements InterviewApi {
       await collections.questions.insertMany(planned.map((draft, orderNo) => ({ _id: randomUUID(), userId, interviewSessionId: id, requirementId: draft.requirementId, replacedFromId: null, orderNo, text: draft.text, skipped: false, basis: draft.basis, active: true, variant: draft.variant, rationale: draft.rationale, createdAt: now })), options);
       return id;
     });
+    console.info(JSON.stringify({ level: "info", event: "interview.timing", brewId, ...timing, saveMs: Date.now() - savingAt }));
     return this.getSession(userId, sessionId);
   }
 
