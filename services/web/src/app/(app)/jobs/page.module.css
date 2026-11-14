@@ -1244,3 +1244,22 @@
     padding: 22px 26px 20px;
   }
 }
+
+/* 저장한 검색 한 줄 — 다시 여는 링크와 지우기 */
+.savedRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+}
+
+.savedRow > a {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+}
+
+.savedRow > p {
+  flex-basis: 100%;
+  margin: 0;
+}
