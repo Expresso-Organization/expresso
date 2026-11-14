@@ -15,6 +15,9 @@ import { getMongoAnswerResult, refreshMongoInterviewProgress, saveMongoAnswer } 
 
 interface PlannedQuestion { text: string; basis: InterviewQuestionBasis; requirementId: string | null; variant: number; rationale: string | null }
 
+/** 제목이 빈 기록을 질문 근거로 부를 이름. 기록 화면이 빈 제목을 「제목 없음」으로 보이는 것과 맞춘다. */
+const UNTITLED_RECORD = "제목 없는 기록";
+
 export class InterviewService implements InterviewApi {
   private externalBodyListener: ((userId: string, recordId: string) => Promise<unknown>) | undefined;
   /** 재답변이 기존 기록 본문을 바꾼 뒤 커리어 문서 모듈이 편집기 문서를 맞추게 합니다. */
@@ -77,7 +80,9 @@ export class InterviewService implements InterviewApi {
       userId,
       options: [
         ...requirementRows.filter(({ coverage }) => coverage !== "covered").map((row) => ({ basis: { type: "requirement" as const, requirementId: row._id, coverage: row.coverage as "missing" | "partial", evidence: row.quote }, label: `[공고 요건 · ${row.coverage === "missing" ? "안 채움" : "일부만"}] ${row.label}`, detail: row.quote, mentions: posting ? countMentions(row.label, posting.descriptionRaw) : null })),
-        ...orderedRecords.filter((record) => !hasMetric(recordText(record))).map((record) => ({ basis: { type: "record_gap" as const, recordId: record._id, gap: "metric" as const, evidence: record.title }, label: `[기록 · 수치 없음] ${record.title}`, detail: record.bodyMd, mentions: null })),
+        // 제목이 빈 기록도 근거가 된다. 계약은 근거 글을 1자 이상 받으므로 제목 대신 이름을 둔다 — 빈 제목이 그대로 가면
+        // 질문 근거 목록 · 질문 생성이 계약 검사에서 500이 났다(운영 2026-11-10 · 11-13 `interview-bases`).
+        ...orderedRecords.filter((record) => !hasMetric(recordText(record))).map((record) => { const title = record.title.trim() || UNTITLED_RECORD; return { basis: { type: "record_gap" as const, recordId: record._id, gap: "metric" as const, evidence: title }, label: `[기록 · 수치 없음] ${title}`, detail: record.bodyMd, mentions: null }; }),
       ],
       company: company ? { name: company.name, industry: company.industry ?? null, toneSummary: company.toneSummary ?? null } : null,
       jobTitle: posting?.title ?? null,

@@ -1,12 +1,13 @@
 flowchart TD
-  P["자유 지면 프롬프트"]:::done --> C["CLI spawn 환경"]:::done
-  C --> K["이메일 check"]:::done
-  K --> DB[("운영 지면 7개")]:::decide
-  D1{"D1 정리 방식"}:::decide --> DB
-  R["재료 고르기 · 카테고리"]:::todo
-  J["공고 분석 · 검색"]:::todo
-  E["편집기 버전 복원"]:::todo
-  G["생성 중단 · 취소"]:::todo
+  P["지면 신원 차단 #230"]:::done
+  C["역량 선택지 #231"]:::done
+  R["재료 후보 · 초안 #232"]:::done
+  J["공고 분석 표시 #233"]:::done
+  E["편집 이력 직전 본문 #234"]:::done
+  S["저장한 검색 #235"]:::done
+  G["생성 멈추기 #236"]:::done
+  Q["QA 세 건 #237"]:::done
+  I["질문 근거 빈 제목"]:::doing
   classDef done fill:#d1fae5,stroke:#059669
   classDef doing fill:#fef3c7,stroke:#d97706
   classDef decide fill:#fee2e2,stroke:#dc2626

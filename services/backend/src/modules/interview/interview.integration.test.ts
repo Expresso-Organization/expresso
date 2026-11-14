@@ -69,6 +69,22 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB interview integration", 
     await expect(service.questionBases(otherUserId, brewId)).rejects.toMatchObject({ statusCode: 404 });
   });
 
+  it("제목이 빈 기록도 질문 근거로 내고 계약을 지킨다", async () => {
+    // 운영 2026-11-10 · 11-13: 제목이 빈 기록을 담은 제작에서 질문 근거 목록이 ZodError로 500이었다.
+    const db = mongoCollections(fixture.resource.db);
+    const categoryId = (await career.listCategories(userId)).find(({ key }) => key === "experience")!.id;
+    const empty = (await career.createRecord(userId, randomUUID(), { categoryId, title: "", properties: {}, bodyMd: "내용만 있는 기록" })).record;
+    await db.careerRecords.updateOne({ _id: empty.id }, { $set: { status: "organized" } });
+    await db.brewSources.insertOne({ _id: randomUUID(), userId, brewId, recordId: empty.id, rank: 90, selectedBy: "user", excludedReason: null, score: 0, reasonText: "시험", isSelected: true, updatedAt: new Date() });
+    try {
+      const bases = await service.questionBases(userId, brewId);
+      expect(bases.find(({ basis }) => basis.type === "record_gap" && basis.recordId === empty.id)).toMatchObject({ basis: { evidence: "제목 없는 기록" }, label: "제목 없는 기록" });
+    } finally {
+      await db.brewSources.deleteOne({ userId, brewId, recordId: empty.id });
+      await db.careerRecords.updateOne({ _id: empty.id }, { $set: { deletedAt: new Date() } });
+    }
+  });
+
   it("preserves grounded assignment, replacement, pause, and session boundaries", async () => {
     const started = await service.start(userId, brewId, "mongo-interview-start-0001");
     sessionId = started.id;
