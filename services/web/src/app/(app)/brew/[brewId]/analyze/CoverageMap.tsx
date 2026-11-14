@@ -194,10 +194,12 @@ export function CoverageMap({
                     </span>
                   ) : null}
                   <span className={styles.gapSlot}>
+                    {/* 버튼이 아니라 상태다 — 모자란 요건은 다음 AI 대화가 질문으로 묻는다(interview/questions.ts). */}
                     {one.coverage === "covered" ? null : (
-                      <span title="AI 대화에서 채웁니다" aria-label="AI 대화에서 채웁니다">
-                        <Icon name="chat-teardrop-dots" size={16} />
-                      </span>
+                      <>
+                        <Icon name="chat-teardrop-dots" size={13} />
+                        AI 대화에서 질문
+                      </>
                     )}
                   </span>
                 </button>

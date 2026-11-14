@@ -39,3 +39,10 @@
 - 원인: 재료 후보는 제작을 열 때 한 번만 줄 세우고 초안은 후보가 아님 → 나중에 정리한 기록이 이미 연 제작에 안 들어옴, 화면은 초안을 언급하지 않음
 - MaterialsService.#syncSources(brew.status=draft일 때 새 정리 기록 upsert), 읽기에서 지움 · 초안 기록 제외, BrewMaterials.draftCount, MaterialPicker 초안 안내 · 커리어 링크
 - materials 통합 7 통과 · backend 611 · web 471 통과
+
+### 16:45 · T3 머지 · PR #232
+
+### 16:50 · T4 완료 · fix/analyze-bubble-button
+- 원인: 말풍선은 「이 요건은 AI 대화에서 질문함」 상태 표시인데 강조색 아이콘만 있고 뜻은 툴팁에만 있어 버튼으로 보임. 근거 표시가 없는 요건 행은 disabled라 눌러도 반응 없음
+- CoverageMap gapSlot에 「AI 대화에서 질문」 글자, 근거 수와 같은 캡션 색 · 크기
+- web typecheck · test 471 통과
