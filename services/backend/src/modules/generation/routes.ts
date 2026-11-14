@@ -20,6 +20,13 @@ export function registerGenerationRoutes(app: FastifyInstance, options: { genera
     if (!params.success) throw new HttpStatusError(400, "invalid generation job ID");
     return { data: await options.generationService.getStatus(principal.user.id, params.data.id) };
   });
+  /** 생성을 멈춘다. 끝난 생성은 409, 이미 멈추거나 실패한 생성은 그 상태를 그대로 돌려준다. */
+  app.post(`${API_PREFIX}/generation-jobs/:id/cancel`, { preHandler: options.authenticateRequest }, async (request) => {
+    const principal = requireAuth(request);
+    const params = ParamsSchema.safeParse(request.params);
+    if (!params.success) throw new HttpStatusError(400, "invalid generation job ID");
+    return { data: await options.generationService.cancel(principal.user.id, params.data.id) };
+  });
   /**
    * 만들어지는 지면을 따라 읽는 자리.
    *

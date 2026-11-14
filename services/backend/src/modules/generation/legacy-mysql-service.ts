@@ -2,7 +2,7 @@ import { GenerationError, buildWriterContext, type ContextRow, type PathRow, typ
 export { GenerationError, buildWriterContext } from "./public.js";
 import { createHash, randomUUID } from "node:crypto";
 
-import { GenerationJobStatusSchema, type GenerationOutput, type GeneratedPage, type PageGenerationFormat, type SubmitGeneration } from "@expresso/contracts";
+import { GENERATION_CANCELLED, GenerationJobStatusSchema, type GenerationOutput, type GeneratedPage, type PageGenerationFormat, type SubmitGeneration } from "@expresso/contracts";
 import type { SqlTag, JSONValue } from "../../platform/legacy-mysql.js";
 
 import { EntitlementService } from "../entitlements/legacy-mysql-service.js";
@@ -279,6 +279,25 @@ export class GenerationService {
   }
 
   /** 페이지 호출·보안 검증 실패는 결과와 이유만 남기고 quota를 건드리지 않는다. */
+  /** 사용자가 생성을 멈춘다. Mongo 서비스(`service.ts` `cancel`)와 같은 규칙이다. */
+  async cancel(userId: string, jobId: string) {
+    await this.#sql.begin(async (transaction) => {
+      const job = (await transaction<JobRow[]>`
+        select * from generation_job where id = ${jobId} and user_id = ${userId} for update
+      `)[0];
+      if (!job) throw new GenerationError(404, "generation job not found");
+      if (job.status === "done") throw new GenerationError(409, "generation is already done");
+      if (job.status === "failed") return;
+      await transaction`
+        update generation_job
+        set status = 'failed', stage = 'failed', error_code = ${GENERATION_CANCELLED}, failure_retryable = false,
+            updated_at = now(6)
+        where id = ${jobId}
+      `;
+    });
+    return this.getStatus(userId, jobId);
+  }
+
   async failFreeHtml(
     jobId: string,
     code: "PAGE_GENERATION_FAILED" | "PAGE_OUTPUT_INVALID" | "GENERATION_REJECTED",
