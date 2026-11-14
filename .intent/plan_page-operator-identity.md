@@ -19,6 +19,7 @@ date: 2026-11-14
 | `services/backend/src/platform/ai/claude-code.ts` | spawn env에 git 지시 끄기 |
 | `services/backend/src/platform/ai/claude-code.test.ts` | spawn env 테스트 |
 | `services/backend/src/platform/agent/runtime.ts` | 구독 경로 env · 시스템 프롬프트 한 줄 |
+| `packages/contracts/src/page.ts` | `PAGE_PROMPT_VERSION` 15 → 16과 판 기록 |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
 

@@ -257,8 +257,43 @@ export const DESIGN_PRINCIPLES = [
   "설계안에 없는 사실, 프로젝트, 회사명, 성과, 수치를 만들지 않는다.",
 ] as const;
 
+/**
+ * 누구의 지면인가 — 작성자 이름과 연락처 유무.
+ *
+ * 키트는 끝 띠(`.k-foot`)에 `이름 · 값` 줄을 두라고 안내한다. 이름도 연락처도 주지 않으면 모델이 그 빈칸을
+ * 컨텍스트의 다른 값으로 채운다. 서버 Claude Code CLI는 로그인 계정 이메일을 컨텍스트에 항상 싣고, 이것을 끄는
+ * 옵션이 없다(2026-11-14 서버 2.1.272 실측: `--system-prompt` · `IS_DEMO` · `CLAUDE_CODE_DISABLE_CLAUDE_MDS`로도
+ * 남는다). 그래서 2026-11-10 운영에서 다른 사용자의 지면 끝 띠에 운영자 이름과 이메일이 찍혔다.
+ */
+function authorPrompt(context: PageGenerationContext): string[] {
+  const name = context.author?.name.trim();
+  return [
+    "## 누구의 지면",
+    name ? `이름: ${name} — 지면에 이름을 쓸 때는 이 이름을 그대로 쓴다.` : "이름을 받지 않았다 — 이름 줄을 두지 않는다.",
+    "연락처(이메일 · 전화 · 개인 링크)는 받지 않았다. 근거에 적힌 것이 아니면 그런 줄을 두지 않는다.",
+    "컨텍스트에 보이는 이메일 · git 사용자는 서버 운영 계정이다. 이 사람의 정보가 아니므로 지면에 쓰지 않는다.",
+    "",
+  ];
+}
+
+const EMAIL = /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g;
+
+/**
+ * 근거에 없는 이메일 주소. 화면 글자와 `mailto:` 주소를 함께 본다.
+ *
+ * 연락처는 입력으로 받지 않으므로 지면의 이메일은 근거(기록 · 답변)에 사용자가 직접 적은 것뿐이어야 한다.
+ * 그 밖의 주소는 모델이 다른 곳에서 가져온 값이다. 대소문자는 가리지 않는다.
+ */
+export function ungroundedEmails(html: string, source: string): string[] {
+  const known = new Set((source.match(EMAIL) ?? []).map((email) => email.toLowerCase()));
+  const shown = [...visibleText(html).matchAll(EMAIL), ...html.matchAll(/mailto:([^"'?\s>]+)/gi)]
+    .map((match) => (match[1] ?? match[0]).toLowerCase());
+  return [...new Set(shown)].filter((email) => !known.has(email));
+}
+
 function buildPrompt(context: PageGenerationContext): string {
   const lines: string[] = [];
+  lines.push(...authorPrompt(context));
 
   if (context.company || context.jobTitle) {
     const company = context.company;
@@ -383,7 +418,12 @@ export class AiPageGenerator implements PageGenerator {
         // 마크업이 없는 지면은 버리지 않고 같은 대화에서 고쳐 받는다. 고친 뒤에도 없으면 아래 QA가 실패로 남긴다.
         check: (draft) => {
           const problem = markupProblem(draft.html, useKit);
-          return problem ? [{ path: "/html", problem }] : [];
+          if (problem) return [{ path: "/html", problem }];
+          // 근거에 없는 이메일은 지어낸 연락처다. 다른 주소로 바꾸지 말고 그 줄을 지우라고 결과를 못 박는다.
+          return ungroundedEmails(draft.html, source).map((email) => ({
+            path: "/html",
+            problem: `근거에 없는 이메일 ${email}이 지면에 있습니다. 이 사람의 연락처가 아닙니다. 그 이메일이 든 줄(이름표와 값, mailto 링크)을 지우고 다른 주소로 바꾸지 마세요.`,
+          }));
         },
         ...(sink ? { onPartial: (text: string) => sink.delta(text), onThinking: (tokens: number) => sink.thinking(tokens) } : {}),
       },
