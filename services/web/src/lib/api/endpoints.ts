@@ -610,6 +610,12 @@ export const generation = {
       GenerationJobStatusResponseSchema,
       { accessToken, cache: "no-store" },
     ),
+  /** 생성을 멈춘다. 끝난 생성은 409. 멈춘 생성은 `failed` · `CANCELLED`로 돌아온다. */
+  cancel: (accessToken: string, generationJobId: string) =>
+    request(`${API_PREFIX}/generation-jobs/${generationJobId}/cancel`, GenerationJobStatusResponseSchema, {
+      accessToken,
+      method: "POST",
+    }),
 };
 
 export const portfolioEditing = {
