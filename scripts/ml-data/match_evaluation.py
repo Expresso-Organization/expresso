@@ -231,6 +231,10 @@ def rule_requirements(job: Mapping[str, Any]) -> dict[str, list[str]]:
     경력 연차로 판정한다. 소수 연차는 올린다 — 경력 연차가 정수이므로 3.5년 요구를 3년이
     채우지 못한다.
     """
+    service = job.get("requirements")
+    if isinstance(service, dict):
+        # 수집 공고는 서비스 요건 추출기가 분해한 값을 그대로 쓴다(job_postings.requirements와 같은 값).
+        return {axis: [str(item) for item in service.get(axis) or []] for axis in ("technologies", "impacts", "roles", "conditions")}
     fields = job.get("fields") or {}
     roles = [piece for field in _ROLE_FIELDS for piece in _pieces(fields.get(field))]
     years = str(fields.get(_YEARS_FIELD, "")).strip()
@@ -250,6 +254,8 @@ def rule_requirements(job: Mapping[str, Any]) -> dict[str, list[str]]:
 
 def rule_requirement_labels(job: Mapping[str, Any]) -> list[str]:
     """`rankMaterials()`에 넘길 요건 문구. 서비스는 분해한 요건의 문구를 그대로 넘긴다."""
+    if isinstance(job.get("requirementLabels"), list):
+        return [str(label) for label in job["requirementLabels"]]
     requirements = rule_requirements(job)
     return [*requirements["technologies"], *requirements["roles"]]
 

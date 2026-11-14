@@ -20,6 +20,7 @@ import match_experiments  # noqa: E402  (llm_suitability_train이 표준 profile
 import torch  # noqa: E402
 from llm_suitability_train import CROSS_ENCODER_ID  # noqa: E402
 from match_encoders import ENCODERS, EncoderSpec, SentenceEncoder, choose_max_length  # noqa: E402
+from match_fixture import SKILLS, SPLITS, write_dataset  # noqa: E402
 
 
 DIMENSION = 1024  # 1,024차원 인코더(KURE · bge-m3 · Qwen3)와 같은 크기로 파일럿 함수를 시험한다.
@@ -58,57 +59,6 @@ def fake_cross(*_args, **_kwargs):
         return [float(len(row["profileText"]) % 13) for row in rows], {"maxLength": 0}
 
     return score, {"model": CROSS_ENCODER_ID, "maxLength": 0}
-
-
-SKILLS = ("python", "react", "kafka")
-SPLITS = {"train": 4, "valid": 2, "test": 2}
-SCORES = (85, 45, 10)
-
-
-def write_dataset(root: Path) -> tuple[Path, Path, list[tuple[str, str]]]:
-    data = root / "data"
-    labels_dir = root / "labels"
-    data.mkdir()
-    labels_dir.mkdir()
-    profiles, jobs, candidates, labels = [], [], [], []
-    pairs: list[tuple[str, str]] = []
-    for split, count in SPLITS.items():
-        split_jobs = []
-        for job_index, skill in enumerate(SKILLS):
-            job_id = f"j-{split}-{job_index}"
-            split_jobs.append(job_id)
-            jobs.append({"jobId": job_id, "split": split, "fields": {"job_category": f"{skill} developer", "skills": f"{skill};git", "llm_required_years_of_work_experience": "2"}})
-        for profile_index in range(count):
-            profile_id = f"p-{split}-{profile_index}"
-            records = [
-                {"recordId": f"{profile_id}-r{record_index}", "title": f"{skill} 프로젝트", "properties": {}, "bodyMd": f"{skill}로 서비스를 만들었다 {profile_index}"}
-                for record_index, skill in enumerate(SKILLS)
-            ]
-            profiles.append({"profileId": profile_id, "split": split, "experienceYears": 1 + profile_index, "records": records})
-            for job_index, job_id in enumerate(split_jobs):
-                score = SCORES[(job_index + profile_index) % len(SCORES)]
-                candidates.append({"profileId": profile_id, "jobId": job_id, "split": split, "candidateBucket": "role"})
-                linked = records[job_index]["recordId"]
-                labels.append(
-                    {
-                        "profileId": profile_id,
-                        "jobId": job_id,
-                        "split": split,
-                        "candidateBucket": "role",
-                        "matchScore": score,
-                        "rubricVersion": "job-profile-fit-v1",
-                        "labelSource": "fake-teacher",
-                        "requirementAssessments": [
-                            {"requirement": "기술", "kind": "must", "coverage": "strong" if score >= 60 else "partial", "evidenceRecordIds": [linked]},
-                            {"requirement": "연차", "kind": "must", "coverage": "not_evidenced", "evidenceRecordIds": []},
-                        ],
-                    }
-                )
-                pairs.append((profile_id, job_id))
-    for name, rows in (("profiles.jsonl", profiles), ("jobs.jsonl", jobs), ("candidate-manifest.jsonl", candidates)):
-        (data / name).write_text("".join(json.dumps(row, ensure_ascii=False) + "\n" for row in rows), encoding="utf-8")
-    (labels_dir / "suitability-labels.jsonl").write_text("".join(json.dumps(row, ensure_ascii=False) + "\n" for row in labels), encoding="utf-8")
-    return data, labels_dir, pairs
 
 
 class SentenceEncoderTest(unittest.TestCase):
@@ -211,11 +161,93 @@ class ExperimentCommandTest(unittest.TestCase):
         model_b = metrics["modelB"]["test"]
         self.assertEqual(model_b["pairs"], SPLITS["test"] * len(SKILLS))
         self.assertEqual(model_b["records"], SPLITS["test"] * len(SKILLS) * len(SKILLS))
-        for name in ("cross-encoder", "frozen-cosine", match_experiments.RULE_MATERIALS):
+        for name in (CROSS_ENCODER_ID, "frozen-cosine", match_experiments.RULE_MATERIALS):
             self.assertIsNotNone(model_b["models"][name]["ndcg"])
             self.assertEqual(model_b["models"][name]["pairs"], SPLITS["test"] * len(SKILLS))
         # 규칙 함수는 공고 기술과 같은 낱말이 든 기록(교사가 연결한 기록)을 맨 위에 둔다.
         self.assertEqual(model_b["models"][match_experiments.RULE_MATERIALS]["ndcg"], 1.0)
+
+    def test_eval_cross_reads_api_scores_for_model_a_and_b(self) -> None:
+        import match_api_scorer
+        from match_api_scorer_test import FakeTransport
+
+        with patch.dict("os.environ", {"OPENAI_API_KEY": "test-key"}):
+            match_api_scorer.run(
+                match_api_scorer.build_parser().parse_args(["--provider", "decisions", "--data", str(self.data), "--labels", str(self.labels), "--output", str(self.output)]),
+                transport=FakeTransport(refuse="record_2"),
+                sleep=lambda _: None,
+            )
+        api_dir = self.output / "api-decisions"
+        match_experiments.main(
+            [
+                "eval-cross", *self.common(), "--encoder", "fake",
+                "--cross-scores", str(api_dir / "scores.jsonl"),
+                "--record-scores", str(api_dir / "record-scores.jsonl"),
+                "--cross-model-name", "decisions-gpt-6-luna",
+            ]
+        )
+        metrics = json.loads((self.output / "cross-v1-001" / "metrics.json").read_text(encoding="utf-8"))
+        model_a = metrics["modelA"]["decisions-gpt-6-luna"]
+        self.assertEqual(model_a["test"]["pairs"], SPLITS["test"] * len(SKILLS))
+        self.assertEqual(set(model_a["testByLabelSource"]), {"fake-teacher"})
+        model_b = metrics["modelB"]["test"]["models"]["decisions-gpt-6-luna"]
+        # 기록 3건 중 하나를 거절했으므로 모든 쌍이 평가에서 빠지고 그 수가 남는다.
+        self.assertEqual((model_b["pairs"], model_b["unscoredPairs"]), (0, SPLITS["test"] * len(SKILLS)))
+        self.assertIsNone(metrics["crossEncoder"].get("maxLength"))
+
+    def build_ko_set(self) -> tuple[Path, Path]:
+        import ko_eval_dataset
+        import ko_teacher_labels
+        from ko_eval_fixture import FakeClaude, write_ko_inputs
+
+        fit, run_root, jobs = write_ko_inputs(Path(self.directory.name) / "ko-inputs")
+        data = Path(self.directory.name) / "ko-data"
+        labels = Path(self.directory.name) / "ko-labels"
+        ko_eval_dataset.build(fit, run_root, jobs, data)
+        ko_teacher_labels.run(ko_teacher_labels.build_parser().parse_args(["--data", str(data), "--output", str(labels), "--workers", "1"]), invoke=FakeClaude(), prefix=["claude"])
+        return data, labels
+
+    def test_train_on_fit_and_evaluate_on_korean_set(self) -> None:
+        data, labels = self.build_ko_set()
+        match_experiments.main(["train-bi", *self.common(), "--encoder", "fake", "--eval-data", str(data), "--eval-labels", str(labels)])
+        metrics = json.loads((self.output / "bi-v1-001" / "metrics.json").read_text(encoding="utf-8"))
+        ko_pairs = len((data / "candidate-manifest.jsonl").read_text(encoding="utf-8").splitlines())
+        model = metrics["models"]["expresso-fake-mlp-v1"]
+        self.assertEqual(model["valid"]["pairs"] + model["test"]["pairs"], ko_pairs)
+        self.assertEqual(metrics["evalDataset"]["pairs"], ko_pairs)
+        # 한국어 공고에는 서비스 요건이 붙어 있어 규칙 함수가 점수를 낸다.
+        self.assertEqual(metrics["models"][match_experiments.RULE_MODEL]["test"]["nullPredictions"], 0)
+        self.assertEqual(metrics["screeningRecall"]["pool"]["profiles"], 1)
+        # 학습 세트와 평가 세트의 임베딩 캐시는 다른 폴더다.
+        self.assertEqual(len(list((self.output / "embedding-cache").iterdir())), 2)
+        match_experiments.main(["encoders", *self.common(), "--encoders", "fake", "--eval-data", str(data), "--eval-labels", str(labels)])
+        comparison = json.loads((self.output / "encoder-comparison.json").read_text(encoding="utf-8"))
+        self.assertEqual(comparison["rows"]["fake"]["mlp"]["pairs"], model["valid"]["pairs"])
+
+    def test_train_bi_after_encoders_on_korean_set_keeps_embedding_measurements(self) -> None:
+        data, labels = self.build_ko_set()
+        extra = ["--eval-data", str(data), "--eval-labels", str(labels)]
+        match_experiments.main(["encoders", *self.common(), "--encoders", "fake", *extra])
+        match_experiments.main(["train-bi", *self.common(), "--encoder", "fake", *extra])
+        embedding = json.loads((self.output / "bi-v1-001" / "metrics.json").read_text(encoding="utf-8"))["embedding"]
+        self.assertEqual(embedding["source"], "encoder-comparison.json")
+        self.assertEqual(len(embedding["runs"]), 4)
+
+    def test_eval_cross_scores_korean_pairs_directly_from_checkpoint(self) -> None:
+        import llm_suitability_train as pilot
+
+        data, labels = self.build_ko_set()
+        dataset = pilot.load_training_dataset(data, labels)
+
+        def fake_inputs(source, **_kwargs):
+            return [{**pair, "jobText": "공고", "profileText": f"기록 {pair['jobId']}"} for pair in source["pairs"]]
+
+        with patch.object(pilot, "prepare_cross_encoder_inputs", side_effect=fake_inputs):
+            match_experiments.main(["eval-cross", "--data", str(data), "--labels", str(labels), "--output", str(self.output), "--device", "cpu", "--encoder", "fake", "--cross-checkpoint", str(self.output / "unused.pt")])
+        metrics = json.loads((self.output / "cross-v1-001" / "metrics.json").read_text(encoding="utf-8"))
+        self.assertEqual(metrics["modelA"][CROSS_ENCODER_ID]["test"]["pairs"] + metrics["modelA"][CROSS_ENCODER_ID]["valid"]["pairs"], len(dataset["pairs"]))
+        self.assertEqual(metrics["modelACrossInputLengths"], {"maxLength": 0})
+        self.assertIsNotNone(metrics["modelB"]["test"]["models"][CROSS_ENCODER_ID]["ndcg"])
 
     def test_token_stats_needs_no_model_weights(self) -> None:
         with patch("transformers.AutoTokenizer.from_pretrained", return_value=FakeTokenizer()):
