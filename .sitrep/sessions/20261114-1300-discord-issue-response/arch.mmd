@@ -1,0 +1,13 @@
+flowchart TD
+  P["자유 지면 프롬프트"]:::done --> C["CLI spawn 환경"]:::done
+  C --> K["이메일 check"]:::done
+  K --> DB[("운영 지면 7개")]:::decide
+  D1{"D1 정리 방식"}:::decide --> DB
+  R["재료 고르기 · 카테고리"]:::todo
+  J["공고 분석 · 검색"]:::todo
+  E["편집기 버전 복원"]:::todo
+  G["생성 중단 · 취소"]:::todo
+  classDef done fill:#d1fae5,stroke:#059669
+  classDef doing fill:#fef3c7,stroke:#d97706
+  classDef decide fill:#fee2e2,stroke:#dc2626
+  classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4

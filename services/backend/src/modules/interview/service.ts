@@ -30,7 +30,11 @@ export class InterviewService implements InterviewApi {
     const expectedRecordVersion = answer.recordVersion;
     const [question, record] = await Promise.all([db.questions.findOne({ _id: answer.questionId, userId }), db.careerRecords.findOne({ _id: answer.createdRecordId, userId, origin: "interview", deletedAt: null })]);
     if (!question || !record) return;
-    const cleaned = await this.cleaner.clean({ userId, question: question.text, transcript: answer.transcript, existing: record.status === "draft" ? null : { title: record.title, bodyMd: record.bodyMd } });
+    // 카테고리에 이미 있는 역량 이름을 함께 준다. 모르면 같은 역량을 기록마다 새 이름으로 지어 선택지가 쌓인다.
+    const category = await db.careerCategories.findOne({ _id: record.categoryId, userId });
+    const competency = category?.propertySchemaV2.find((item) => item.key === "competencies" && item.deletedAt === null && item.type === "multi_select");
+    const knownCompetencies = Array.isArray(competency?.config.options) ? (competency.config.options as { name?: unknown }[]).flatMap(({ name }) => typeof name === "string" ? [name] : []) : [];
+    const cleaned = await this.cleaner.clean({ userId, question: question.text, transcript: answer.transcript, existing: record.status === "draft" ? null : { title: record.title, bodyMd: record.bodyMd }, knownCompetencies });
     await inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId);
       const collections = mongoCollections(tx.db); const options = { session: tx.session }; const now = new Date();
