@@ -109,7 +109,17 @@ const RESULT_SCHEMA = z.looseObject({
   modelUsage: z.record(z.string(), z.unknown()).optional(),
 });
 
-const RATE_LIMIT_PATTERN = /rate.?limit|usage limit|quota|too many requests/i;
+/**
+ * CLI가 서버 계정의 신원을 컨텍스트에 싣지 않게 하는 환경.
+ *
+ * CLI는 git 상태 스냅샷에 `Git user: <이름>`을 싣는다. 생성 모델이 이 이름을 다른 사용자의 지면 끝 띠에
+ * 작성자로 썼다(2026-11-10 운영). `CLAUDE_CODE_DISABLE_GIT_INSTRUCTIONS=1`이 스냅샷째 뺀다
+ * (code.claude.com/docs/en/env-vars, 2026-11-14 서버 2.1.272에서 같은 플래그로 「Git user」 줄이 사라짐 확인).
+ * 로그인 계정 이메일 줄은 이 변수로도 `--system-prompt`로도 빠지지 않는다 — 프롬프트와 출력 검사가 맡는다.
+ */
+export const CLI_IDENTITY_ENV = { CLAUDE_CODE_DISABLE_GIT_INSTRUCTIONS: "1" } as const;
+
+const RATE_LIMIT_PATTERN =/rate.?limit|usage limit|quota|too many requests/i;
 /** 종료 신호를 받아 스스로 끝난 CLI의 종료 코드(128 + 신호 번호). SIGKILL은 받을 수 없어 `signal`로만 온다. */
 const INTERRUPTED_EXIT_CODES = new Set([128 + osConstants.signals.SIGTERM, 128 + osConstants.signals.SIGINT]);
 
@@ -333,6 +343,7 @@ export class ClaudeCodeAiClient implements AiClient {
           return {
             ...process.env,
             PATH: path.split(":").includes(binDir) ? path : `${binDir}:${path}`,
+            ...CLI_IDENTITY_ENV,
           };
         })(),
       });

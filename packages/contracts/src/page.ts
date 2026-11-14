@@ -76,8 +76,11 @@ import { MEDIA_ASSET_PATH_PREFIX } from "./media-path.js";
  * 부품과 지면 변화를 바꿀 수 있다.
  *
  * 15 — 설계 · 다듬기가 첫 화면 배경(intro의 backdrop)을 고른다. 프롬프트가 배경마다 쓰임을 알린다(`describeBackdrops`).
+ *
+ * 16 — 자유 지면 프롬프트가 작성자 이름을 싣고, 연락처를 받지 않았으니 이메일 · 전화 줄을 두지 않는다고 알린다.
+ * 받지 않은 빈칸을 모델이 서버 CLI 계정 정보로 채웠다(2026-11-10 운영, 「누구의 지면」 절).
  */
-export const PAGE_PROMPT_VERSION = 15;
+export const PAGE_PROMPT_VERSION = 16;
 
 /**
  * 한 지면의 상한.
