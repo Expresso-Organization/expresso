@@ -7,6 +7,7 @@ import { useActionState } from "react";
 import { Icon } from "@/components/ui/Icon";
 
 import { clearRecentSearchesAction, type ClearRecentState } from "./jobs-actions";
+import { similarSearches } from "./similar-searches";
 import styles from "./page.module.css";
 
 /**
@@ -34,7 +35,7 @@ export function RecentSearches({
     : recent.filter(
         (search, index) => recent.findIndex((other) => other.query === search.query) === index,
       );
-  const similar = shown.filter((search) => search.query !== query).slice(0, 3);
+  const similar = similarSearches(shown, query);
 
   return (
     <>

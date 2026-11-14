@@ -29,14 +29,20 @@ function placeOf(location: string | null | undefined, companyName: string): stri
 
 /**
  * 공고 목록의 정렬 단계. 공고 탐색(`list`)과 통합 검색(`search`)이 같은 순서를 쓰도록
- * 한 곳에 둔다. 장소로 찾을 때는 그 장소 · 가까운 순이 `sort`보다 앞선다.
+ * 한 곳에 둔다.
+ *
+ * 장소로 찾을 때 기본 정렬(`match`)은 그 장소 · 가까운 순이 앞선다. 사용자가 「마감 순」 · 「최신 순」을
+ * **골랐으면** 그 순서가 앞서고 거리는 같은 값끼리의 순서만 정한다 — 거리가 늘 앞서면 마감 순을 눌러도
+ * 마감이 뒤섞여 보였다(Discord QA 11-13). 장소 조건(반경)으로 거르는 것은 그대로다.
  */
 function boardOrder(query: Pick<ListJobPostingsQuery, "sort">, place: ReturnType<typeof nearbyPlaceOf>): Document[] {
   const direction = query.sort === "deadline" ? 1 : -1;
   const sortKey = query.sort === "match" ? { $ifNull: ["$match.total", -1] } : query.sort === "deadline" ? { $ifNull: ["$expiresAt", new Date("9999-12-31T00:00:00Z")] } : "$createdAt";
-  return place
-    ? [{ $set: { sortKey, nearbyRank: nearbyRank(place) } }, { $sort: { nearbyRank: 1, nearbyDistanceKm: 1, sortKey: direction, createdAt: direction, _id: direction } }]
-    : [{ $set: { sortKey } }, { $sort: { sortKey: direction, createdAt: direction, _id: direction } }];
+  if (!place) return [{ $set: { sortKey } }, { $sort: { sortKey: direction, createdAt: direction, _id: direction } }];
+  const nearby = [{ $set: { sortKey, nearbyRank: nearbyRank(place) } }];
+  return query.sort === "match"
+    ? [...nearby, { $sort: { nearbyRank: 1, nearbyDistanceKm: 1, sortKey: direction, createdAt: direction, _id: direction } }]
+    : [...nearby, { $sort: { sortKey: direction, nearbyRank: 1, nearbyDistanceKm: 1, createdAt: direction, _id: direction } }];
 }
 
 function summary(row: BoardRow, brew: JobBrewState | undefined, at: Date) {
