@@ -11,9 +11,9 @@ date: 2026-11-14
 
 ## 요구사항
 
-- [ ] `CleanupContext`에 `knownCompetencies: string[]`를 더한다. 비어 있으면 프롬프트 절을 싣지 않는다.
+- [ ] `CleanupContext`에 선택 항목 `knownCompetencies?: readonly string[]`를 더한다. 비어 있으면 프롬프트 절을 싣지 않는다.
 - [ ] `buildPrompt`(record-cleaner)가 「이미 있는 역량」 절을 싣는다. 같은 뜻이면 글자 그대로 쓰고, 없을 때만 새 이름을 짓고, 기록 하나에 3개까지라고 적는다. `RECORD_CLEANUP_PROMPT_VERSION` 2 → 3.
-- [ ] `InterviewService.cleanupAnswer`가 기록 카테고리의 `competencies` 다중 선택 속성 선택지 이름을 읽어 넘긴다. legacy-mysql 경로는 빈 배열을 넘긴다.
+- [ ] `InterviewService.cleanupAnswer`가 기록 카테고리의 `competencies` 다중 선택 속성 선택지 이름을 읽어 넘긴다.
 - [ ] `optionIdsByNames`가 비교 키(`optionKey`)로 찾는다. 소문자로 바꾸고 공백 · `·・/,.()[]-_` 를 지운 문자열이다. 새 선택지는 들어온 표기 그대로 저장한다.
 
 ## 설계

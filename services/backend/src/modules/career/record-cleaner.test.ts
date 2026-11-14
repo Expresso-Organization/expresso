@@ -101,3 +101,20 @@ describe("기록 정리 계약", () => {
     expect(ai.calls).toHaveLength(1);
   });
 });
+
+describe("기록 정리 역량 이름", () => {
+  it("카테고리에 이미 있는 역량을 프롬프트에 싣는다", async () => {
+    const ai = scripted(cleaned);
+    await new AiRecordCleaner(ai).clean({ ...context, knownCompetencies: ["재시도·타임아웃 정책 설계", "동시성 제어"] });
+    const prompt = ai.calls[0]!.prompt;
+    expect(prompt).toContain("## 이미 있는 역량");
+    expect(prompt).toContain("- 재시도·타임아웃 정책 설계");
+    expect(prompt).toContain("- 동시성 제어");
+  });
+
+  it("이미 있는 역량이 없으면 그 절을 싣지 않는다", async () => {
+    const ai = scripted(cleaned);
+    await new AiRecordCleaner(ai).clean(context);
+    expect(ai.calls[0]!.prompt).not.toContain("## 이미 있는 역량");
+  });
+});

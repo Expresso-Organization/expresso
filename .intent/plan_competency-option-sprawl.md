@@ -17,7 +17,6 @@ date: 2026-11-14
 | `services/backend/src/modules/career/select-options.ts` | `optionKey`로 대조 |
 | `services/backend/src/modules/career/record-cleaner.ts` | `knownCompetencies` · 프롬프트 절 · 판 올림 |
 | `services/backend/src/modules/interview/service.ts` | 카테고리 역량 이름 읽어 넘기기 |
-| `services/backend/src/modules/interview/legacy-mysql-service.ts` | 빈 배열 넘기기 |
 | 테스트 | `select-options` · `record-cleaner` 단위, interview 통합 |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
