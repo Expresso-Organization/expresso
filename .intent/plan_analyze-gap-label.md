@@ -12,7 +12,7 @@ date: 2026-11-14
 | 파일 | 무엇을 |
 |---|---|
 | `services/web/src/app/(app)/brew/[brewId]/analyze/CoverageMap.tsx` | 표시 글자 |
-| `services/web/src/app/(app)/brew/[brewId]/analyze/page.module.css` | `.gapSlot` · 행 그리드 |
+| `services/web/src/app/(app)/brew/[brewId]/analyze/page.module.css` | `.rowText` · `.gapNote` · 행 그리드 |
 
 ## 작업 순서
 
@@ -21,7 +21,7 @@ date: 2026-11-14
 
 ## 가장 위험한 단계
 
-긴 요건 이름의 줄바꿈. 이름 열은 `minmax(0, 1fr)`이라 표시가 늘어난 만큼 이름이 줄바꿈된다.
+행 정렬. 행마다 그리드가 따로라 열 너비가 행마다 다르면 근거 수가 어긋난다. 표시를 이름 아래 줄로 옮겨 열 구성을 모든 행에서 같게 둔다.
 
 ## 검증
 
