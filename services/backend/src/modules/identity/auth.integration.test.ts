@@ -419,6 +419,56 @@ describe.skipIf(!(process.env.TEST_MONGODB_URL ?? process.env.TEST_MONGODB_ADMIN
     } finally { await db.command({ collMod: "identity_sessions", validator: schema }); }
   });
 
+  it("renames the signed-in account and leaves everything else as it was", async () => {
+    const created = AuthSessionResponseSchema.parse((await signup({
+      email: `rename-${crypto.randomUUID()}@example.com`, password: PASSWORD, displayName: "처음 이름", termsVersion: TERMS_VERSION,
+    })).json()).data;
+    const authorization = `Bearer ${created.session.accessToken}`;
+    const patch = (payload: unknown, headers: Record<string, string> = { authorization }) =>
+      app.inject({ method: "PATCH", url: "/v1/me", headers, payload: payload as object });
+
+    // 앞뒤 공백은 지우고 저장한다.
+    const renamed = await patch({ displayName: "  새 이름  " });
+    expect(renamed.statusCode).toBe(200);
+    expect(CurrentUserResponseSchema.parse(renamed.json()).data).toEqual({ ...created.user, displayName: "새 이름" });
+    const me = await app.inject({ method: "GET", url: "/v1/me", headers: { authorization } });
+    expect(CurrentUserResponseSchema.parse(me.json()).data.displayName).toBe("새 이름");
+
+    // 빈 이름 · 공백뿐인 이름 · 201자 · 알 수 없는 키는 400이고 이름은 그대로다.
+    for (const bad of [{ displayName: "" }, { displayName: "   " }, { displayName: "가".repeat(201) }, { displayName: "다른 이름", email: "x@example.com" }, {}]) {
+      expect((await patch(bad)).statusCode).toBe(400);
+    }
+    expect((await mongoCollections(fixture.resource.db).users.findOne({ _id: created.user.id }))?.displayName).toBe("새 이름");
+
+    // 토큰이 없으면 401이다.
+    expect((await patch({ displayName: "남의 이름" }, {})).statusCode).toBe(401);
+
+    // 삭제를 요청한 계정은 이름을 바꿀 수 없다.
+    await mongoCollections(fixture.resource.db).users.updateOne({ _id: created.user.id }, { $set: { deletionRequestedAt: new Date() } });
+    expect((await patch({ displayName: "삭제 중" })).statusCode).toBe(401);
+    expect((await mongoCollections(fixture.resource.db).users.findOne({ _id: created.user.id }))?.displayName).toBe("새 이름");
+  });
+
+  it("does not rename the dummy account an admin is acting as", async () => {
+    const service = identityService as MongoIdentityService;
+    const adminEmail = `rename-admin-${crypto.randomUUID()}@example.com`;
+    const admin = await service.signup({ email: adminEmail, displayName: "운영자", password: PASSWORD });
+    await service.setRole(adminEmail, "admin");
+    const dummyId = crypto.randomUUID();
+    await service.createDummyAccount({ id: dummyId, dummyKey: `rename-${dummyId}`, email: `${dummyId}@expresso.test`, displayName: "시연 계정", planCode: "free" });
+    await service.actAs(admin.session.sessionId, dummyId);
+
+    const authorization = `Bearer ${admin.session.accessToken}`;
+    const acting = CurrentUserResponseSchema.parse((await app.inject({ method: "GET", url: "/v1/me", headers: { authorization } })).json()).data;
+    expect(acting).toMatchObject({ id: dummyId, impersonation: { adminDisplayName: "운영자" } });
+
+    const blocked = await app.inject({ method: "PATCH", url: "/v1/me", headers: { authorization }, payload: { displayName: "바뀐 이름" } });
+    expect(blocked.statusCode).toBe(403);
+    const users = mongoCollections(fixture.resource.db).users;
+    expect((await users.findOne({ _id: dummyId }))?.displayName).toBe("시연 계정");
+    expect((await users.findOne({ email: adminEmail }, { collation: { locale: "en", strength: 1 } }))?.displayName).toBe("운영자");
+  });
+
   it("rechecks an active-user guard after a concurrent deletion invalidates its snapshot", async () => {
     const account = await identityService.signup({ email: `guard-${crypto.randomUUID()}@example.com`, displayName: "Guard", password: PASSWORD });
     let notify!: () => void;

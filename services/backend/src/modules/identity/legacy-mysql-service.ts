@@ -374,6 +374,10 @@ export class IdentityService {
     throw new Error("email verification is not supported on the legacy MySQL identity service");
   }
 
+  async updateDisplayName(_userId: string, _displayName: string): Promise<AuthenticatedUser> {
+    throw new Error("profile update is not supported on the legacy MySQL identity service");
+  }
+
   async verifyAccessToken(accessToken: string): Promise<IdentityPrincipal | null> {
     if (!isAccessToken(accessToken)) return null;
 
