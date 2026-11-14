@@ -31,3 +31,11 @@
 ### 15:10 · T2 완료 · fix/competency-option-sprawl
 - optionKey(공백 · 구분 기호 제거) 대조, 정리 프롬프트에 기존 역량 절 · 3개까지, RECORD_CLEANUP_PROMPT_VERSION 3
 - typecheck 통과 · backend test 605 통과 · test:infra 340/341(account-lifecycle · ai-proposals 5초 초과 2건은 단독 재실행 통과)
+
+### 15:40 · D2 결정 · A(CI 통과 뒤 머지) — 사용자("모든 이슈 해결까지 진행")
+- #230 · #231 머지(8dca160f)
+
+### 16:20 · T3 완료 · fix/draft-records-materials
+- 원인: 재료 후보는 제작을 열 때 한 번만 줄 세우고 초안은 후보가 아님 → 나중에 정리한 기록이 이미 연 제작에 안 들어옴, 화면은 초안을 언급하지 않음
+- MaterialsService.#syncSources(brew.status=draft일 때 새 정리 기록 upsert), 읽기에서 지움 · 초안 기록 제외, BrewMaterials.draftCount, MaterialPicker 초안 안내 · 커리어 링크
+- materials 통합 7 통과 · backend 611 · web 471 통과
