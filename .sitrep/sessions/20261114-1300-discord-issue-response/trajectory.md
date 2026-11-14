@@ -58,3 +58,10 @@
 - recordEditRevision(editSequence) · captureBlockNoteSnapshotBefore: 편집을 연 업데이트 직전 본문을 스냅샷(version = seq - 1)
 - 한계: 10분 경계를 넘어 쉬지 않고 입력하면 다음 이력의 직전 본문도 입력 중일 수 있음
 - career-editor 단위 27 · career 통합 121 통과
+
+### 17:40 · T5 머지 · PR #234
+
+### 17:45 · T6 완료 · fix/saved-search-conditions
+- 원인: 「이 검색 저장」의 저장 여부를 검색 문장만으로 판단해, 태그를 바꿔도 「저장한 검색」으로 잠김. 저장한 검색을 보여 주는 화면이 없음
+- saved-search.ts(conditionsKey · isSavedSearch · savedSearchQuery), 오른쪽 「저장한 검색 N」 카드(열기 · 지우기), DELETE /v1/jobs/saved-searches/:id
+- jobs 통합 159 · 웹 jobs 42 통과, 브라우저: 조건을 바꾸면 저장 버튼이 다시 열림 · 열기 주소에 저장 조건 · 지우기 반영 확인

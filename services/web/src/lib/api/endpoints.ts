@@ -965,6 +965,13 @@ export const jobs = {
       cache: "no-store",
     }),
 
+  /** 저장한 검색 한 건을 지운다. 남의 것이나 없는 것은 404. */
+  deleteSavedSearch: (accessToken: string, savedSearchId: string) =>
+    requestNoContent(`${API_PREFIX}/jobs/saved-searches/${savedSearchId}`, {
+      accessToken,
+      method: "DELETE",
+    }),
+
   /** 검색을 저장한다(201). 한 사람당 10개를 넘으면 409. */
   saveSearch: (accessToken: string, input: SaveJobSearch) =>
     request(`${API_PREFIX}/jobs/saved-searches`, SavedJobSearchResponseSchema, {

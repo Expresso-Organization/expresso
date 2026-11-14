@@ -312,6 +312,15 @@ export class JobMarketService {
     return mapSavedSearch(saved);
   }
 
+  async deleteSavedSearch(userId: string, savedSearchId: string): Promise<void> {
+    const rows = await this.#sql<IdRow[]>`
+      delete from saved_search
+      where id = ${savedSearchId} and user_id = ${userId}
+      returning id
+    `;
+    if (!rows[0]) throw new JobMarketError(404, "saved search not found");
+  }
+
   async listSavedSearches(userId: string) {
     const rows = await this.#sql<SavedSearchRow[]>`
       select * from saved_search where user_id = ${userId}

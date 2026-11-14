@@ -7,6 +7,7 @@ import type {
   JobPostingSummary,
   JobSearchCondition,
   RecentJobSearch,
+  SavedJobSearch,
 } from "@expresso/contracts";
 import type { Route } from "next";
 import Link from "next/link";
@@ -28,6 +29,8 @@ import { Pagination } from "./Pagination";
 import { ALL, JobFilter, type FilterSection } from "./JobFilter";
 import { RecentSearches } from "./RecentSearches";
 import { SaveSearchButton } from "./SaveSearchButton";
+import { SavedSearches } from "./SavedSearches";
+import { CHIP_AXIS_PARAM, conditionsKey, isSavedSearch, type ChipAxis } from "./saved-search";
 import { SortMenu } from "./SortMenu";
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import styles from "./page.module.css";
@@ -64,7 +67,6 @@ function experienceChipLabel(years: number): string {
  * 연봉 · 규모는 해석은 되지만 공고 목록에 그 축의 필터가 없다. 칩을 세우면
  * 결과에 반영되지 않은 조건이 걸린 것처럼 보이므로 세우지 않는다.
  */
-type ChipAxis = "location" | "experience" | "technology" | "family" | "workType";
 
 const CHIP_AXES: readonly ChipAxis[] = ["family", "experience", "workType", "location", "technology"];
 
@@ -259,8 +261,8 @@ export default async function JobsPage({
     // 4,182건"이 적혀 있었는데, 셋 다 우리가 모을 수 없는 곳이고 4,182는
     // 지어낸 수였다.
     jobsApi.sources(session.accessToken),
-    // 「이 검색 저장」이 이미 저장한 검색인지 알아야 같은 줄을 두 번 만들지 않는다.
-    q ? jobsApi.savedSearches(session.accessToken) : Promise.resolve(null),
+    // 오른쪽 「저장한 검색」 목록이자, 「이 검색 저장」이 같은 줄을 두 번 만들지 않게 보는 목록이다.
+    jobsApi.savedSearches(session.accessToken),
   ]);
 
   const sources = sourceList.data.filter((source) => source.active);
@@ -613,9 +615,8 @@ export default async function JobsPage({
       confidence: condition?.confidence ?? 1,
     }];
   });
-  const searchSaved = Boolean(
-    q && savedSearches?.data.some((search) => search.originalQuery === q),
-  );
+  // 검색 문장만 보면 태그를 바꿔도 「저장한 검색」으로 남아, 바꾼 조건을 저장할 수 없었다.
+  const searchSaved = Boolean(q && isSavedSearch(savedSearches.data, q, savedConditions));
 
   const sections: FilterSection[] = [
     {
@@ -828,6 +829,7 @@ export default async function JobsPage({
                   axes={matchAxes(postings)}
                   recent={recent.data}
                   query={q}
+                  saved={savedSearches.data}
                 />
               ) : (
                 <BrowseRail
@@ -837,6 +839,7 @@ export default async function JobsPage({
                   watched={watched.data}
                   now={now}
                   listQuery={listQuery}
+                  saved={savedSearches.data}
                 />
               )}
             </aside>
@@ -963,14 +966,6 @@ const SORTS = [
   ["recent", "최신 순", "최신 순"],
 ] as const;
 
-/** 해석 칩 중 다른 값으로 바꾸거나 끌 수 있는 축과, 그 값이 채워 넣는 질의 파라미터. */
-const CHIP_AXIS_PARAM: Partial<Record<JobSearchCondition["field"], ChipAxis>> = {
-  location: "location",
-  experience: "experience",
-  role: "family",
-  technology: "technology",
-  work_type: "workType",
-};
 
 /** 칩에 적는 값. 걸려 있으면 걸린 값을, 꺼져 있으면 검색어가 읽어낸 값을 적는다. */
 function chipValueLabel(
@@ -1097,10 +1092,10 @@ function SearchQueryCard({
           />
         ))}
         {addSections.length > 0 ? <AddCondition sections={addSections} /> : null}
-        {/* 검색어가 바뀌면 저장 상태를 처음부터 다시 받는다. 같은 화면 안에서
+        {/* 검색어나 칩 조건이 바뀌면 저장 상태를 처음부터 다시 받는다. 같은 화면 안에서
             링크로 옮겨 가면 컴포넌트가 남아 앞 검색의 상태를 들고 간다. */}
         <SaveSearchButton
-          key={query}
+          key={`${query}?${conditionsKey(savedConditions)}`}
           query={query}
           conditions={savedConditions}
           saved={saved}
@@ -1139,12 +1134,14 @@ function SearchRail({
   axes,
   recent,
   query,
+  saved,
 }: {
   total: number;
   missing: readonly JobPostingFacet[];
   axes: readonly { label: string; color: string; fill: number; weight: string }[];
   recent: readonly RecentJobSearch[];
   query: string;
+  saved: readonly SavedJobSearch[];
 }) {
   const top = missing[0];
   const scored = axes.length > 0 || missing.length > 0;
@@ -1210,6 +1207,7 @@ function SearchRail({
 
       {/* 지운 상태도 검색어마다 새로 시작한다 — 저장 버튼과 같은 이유다. */}
       <RecentSearches key={query} recent={recent} query={query} />
+      <SavedSearches saved={saved} />
     </>
   );
 }
@@ -1221,6 +1219,7 @@ function BrowseRail({
   watched,
   now,
   listQuery,
+  saved,
 }: {
   total: number;
   common: readonly JobPostingFacet[];
@@ -1229,6 +1228,7 @@ function BrowseRail({
   now: number;
   /** 관심 공고에서 들어가도 **보고 있던 목록으로** 돌아온다. */
   listQuery: string;
+  saved: readonly SavedJobSearch[];
 }) {
   const gap = missing[0];
 
@@ -1329,6 +1329,7 @@ function BrowseRail({
       </div>
       {/* now는 JobRowList와 같은 기준 시각을 쓰기 위해 받는다. */}
       <span hidden data-now={now} />
+      <SavedSearches saved={saved} />
     </>
   );
 }
