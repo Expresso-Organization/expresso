@@ -145,6 +145,12 @@ export function MaterialPicker({
             ? "정리된 기록이 아직 없습니다. 공고에서 읽은 내용만으로 계속한 뒤, 생성된 포트폴리오를 직접 편집할 수 있습니다."
             : `정리된 기록 ${materials.materials.length}건을 이 공고의 요건에 맞춰 줄 세웠습니다. 한 번에 ${limit}건까지 담을 수 있고, 지금 ${chosen.size}건을 골랐습니다. 체크는 바꾸는 즉시 저장됩니다.`}
         </p>
+        {materials.draftCount > 0 ? (
+          <p className={styles.draftNote}>
+            초안 {materials.draftCount}건은 담지 않습니다.{" "}
+            <Link href={"/career" as Route} className={styles.draftLink}>커리어</Link>에서 정리됨으로 옮기면 여기에 나옵니다.
+          </p>
+        ) : null}
 
         <div className={styles.tabs}>
           {([
