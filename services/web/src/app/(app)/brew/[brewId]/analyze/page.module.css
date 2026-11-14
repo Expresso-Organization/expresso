@@ -157,7 +157,7 @@
 .row {
   width: 100%;
   display: grid;
-  grid-template-columns: 16px minmax(0, 1fr) auto 18px;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
   padding: 11px 10px;
@@ -234,10 +234,21 @@
   color: var(--ex-fg-subtle);
 }
 
-.gapSlot {
+/* 요건 이름 아래 한 줄 — 기록이 모자라 AI 대화에서 물을 요건 */
+.rowText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.gapNote {
   display: inline-flex;
-  justify-content: center;
-  color: var(--ex-accent-text);
+  align-items: center;
+  gap: 4px;
+  font-size: var(--ex-text-2xs);
+  font-weight: 400;
+  color: var(--ex-fg-subtle);
 }
 
 /* 공고 원문. 근거 문장만 표시를 입는다. */
