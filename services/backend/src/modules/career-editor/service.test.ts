@@ -13,6 +13,7 @@ import { describe, expect, it, vi } from "vitest";
 import { CareerDocumentError } from "./errors.js";
 import type { CareerDocumentRepository } from "./repository.js";
 import { CareerDocumentService } from "./service.js";
+import { restoreBlockNote, syncBlockNoteDocument } from "./blocknote-document.js";
 
 class MemoryRepository implements CareerDocumentRepository {
   recordValue: CareerRecordDoc;
@@ -120,12 +121,41 @@ describe("career document service", () => {
     const service = new CareerDocumentService(context(), "secret-that-is-long-enough", repository);
     await service.bootstrap(userId, recordId);
     const start = new Date("2026-10-28T00:00:00.000Z");
-    expect(await service.recordEditRevision(userId, recordId, start)).toBe(true);
-    expect(await service.recordEditRevision(userId, recordId, new Date(start.getTime() + 60_000))).toBe(false);
-    expect(await service.recordEditRevision(userId, recordId, new Date(start.getTime() + 11 * 60_000))).toBe(true);
+    expect(await service.recordEditRevision(userId, recordId, 1, start)).toBe(true);
+    expect(await service.recordEditRevision(userId, recordId, 1, new Date(start.getTime() + 60_000))).toBe(false);
+    expect(await service.recordEditRevision(userId, recordId, 1, new Date(start.getTime() + 11 * 60_000))).toBe(true);
     const edits = repository.revisionRows.filter((row) => row.summary === "편집");
     expect(edits).toHaveLength(2);
     // 이력마다 그 시점 본문을 담은 BlockNote 스냅샷을 가리킵니다.
     for (const edit of edits) expect(repository.snapshots.find((row) => row._id === edit.snapshotId)?.schemaVersion).toBe(2);
+  });
+
+  it("편집 이력은 편집을 연 업데이트 직전의 본문을 담는다", async () => {
+    // Discord #issue 11-12: 이력이 첫 입력을 반영한 뒤에 찍혀 「저는 ㅅ」처럼 조합 중인 글자로 복원됐다.
+    const userId = randomUUID(); const recordId = randomUUID(); const repository = new MemoryRepository(userId, recordId);
+    const service = new CareerDocumentService(context(), "secret-that-is-long-enough", repository);
+    const boot = await service.bootstrap(userId, recordId);
+    const state = Buffer.from(boot.stateBase64!, "base64");
+    const blocks = restoreBlockNote(state).blocks;
+    const settled = syncBlockNoteDocument(state, [], [{ ...blocks[0]!, content: "끝난 문장" } as never]);
+    const typing = syncBlockNoteDocument(state, [settled.update], [{ ...blocks[0]!, content: "끝난 문장 저는 ㅅ" } as never]);
+    const clientId = randomUUID();
+    const send = async (update: Uint8Array, clientSequence: number, expectedSequence: number) => service.appendUpdate(userId, {
+      recordId, clientId, clientSequence, expectedSequence,
+      updateBase64: Buffer.from(update).toString("base64"), checksum: createHash("sha256").update(update).digest("hex"),
+    });
+    const first = await send(settled.update, 1, repository.recordValue.documentVersion ?? 0);
+    const second = await send(typing.update, 2, first.documentVersion);
+    // 10분 뒤 두 번째 업데이트로 편집을 다시 연 것으로 친다.
+    repository.revisionRows.length = 0;
+    expect(await service.recordEditRevision(userId, recordId, second.serverSequence, new Date(Date.now() + 11 * 60_000))).toBe(true);
+    const edit = repository.revisionRows.find((row) => row.summary === "편집")!;
+    const snapshot = repository.snapshots.find((row) => row._id === edit.snapshotId)!;
+    expect(JSON.stringify(snapshot.content)).toContain("끝난 문장");
+    expect(JSON.stringify(snapshot.content)).not.toContain("저는 ㅅ");
+    expect(edit.afterVersion).toBe(second.serverSequence - 1);
+    // 지금 본문은 그대로다 — 직전 스냅샷이 최신으로 골라져도 그 뒤 업데이트를 다시 적용한다.
+    const reopened = await service.bootstrap(userId, recordId);
+    expect(JSON.stringify(reopened)).toContain("저는 ㅅ");
   });
 });

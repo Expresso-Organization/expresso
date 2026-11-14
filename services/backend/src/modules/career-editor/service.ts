@@ -285,23 +285,56 @@ export class CareerDocumentService implements CareerDocumentApi {
 
   /**
    * 사용자 편집을 「편집」 이력으로 남깁니다. 마지막 「편집」 이력이 10분 안이면 남기지 않습니다.
-   * 이력의 스냅샷은 그 시점의 본문이라, 복원하면 그 시점으로 돌아갑니다.
+   *
+   * 이력은 이번 편집을 시작하기 **직전**의 본문을 담습니다. 편집을 연 첫 업데이트(`editSequence`)를 반영한 뒤의
+   * 본문을 담으면 한글 조합 중인 글자가 그대로 남아 「저는 ㅅ」 같은 이력이 생겼습니다(Discord #issue 11-12).
+   * 직전 본문은 지난 편집이 끝난 상태라 복원 지점으로 쓸 수 있습니다.
    */
-  async recordEditRevision(userId: string, recordId: string, now = new Date()): Promise<boolean> {
+  async recordEditRevision(userId: string, recordId: string, editSequence: number, now = new Date()): Promise<boolean> {
     const last = (await this.repository.revisions(userId, recordId)).find((row) => row.summary === EDIT_REVISION_SUMMARY);
     if (last && now.getTime() - last.createdAt.getTime() < EDIT_REVISION_INTERVAL_MS) return false;
     return inTransaction(this.context, async (tx) => {
       const record = await this.repository.record(userId, recordId, tx.session);
       const snapshot = await this.repository.snapshot(recordId, tx.session);
       if (!record || snapshot?.schemaVersion !== BLOCKNOTE_SCHEMA_VERSION) return false;
-      const { snapshotId } = await this.captureBlockNoteSnapshot(userId, recordId, tx.session);
-      const version = record.documentVersion ?? 0;
+      const captured = await this.captureBlockNoteSnapshotBefore(userId, recordId, editSequence, tx.session);
+      if (!captured) return false;
+      const { snapshotId } = captured;
+      const version = editSequence - 1;
       await this.repository.insertRevision({
         _id: randomUUID(), userId, recordId, actor: "user", summary: EDIT_REVISION_SUMMARY,
         beforeVersion: version, afterVersion: version, snapshotId, createdAt: now,
       }, tx.session);
       return true;
     });
+  }
+
+  /**
+   * `sequence` 업데이트를 반영하기 직전의 본문을 v2 스냅샷으로 남깁니다. 최신 스냅샷이 이미 그 업데이트를 담았으면
+   * 직전 본문을 만들 수 없어 null입니다.
+   *
+   * 스냅샷의 version · serverSequence는 `sequence - 1`입니다. 최신 스냅샷으로 골라져도 그 뒤 업데이트를 다시
+   * 적용하므로 지금 본문과 같습니다.
+   */
+  private async captureBlockNoteSnapshotBefore(userId: string, recordId: string, sequence: number, session: Session): Promise<{ snapshotId: string } | null> {
+    const snapshot = await this.repository.snapshot(recordId, session);
+    if (!snapshot?.state || snapshot.serverSequence >= sequence) return null;
+    const pending = (await this.repository.updates(recordId, snapshot.serverSequence, session)).filter((row) => row.serverSequence < sequence);
+    let restored;
+    try {
+      restored = restoreBlockNote(binaryBytes(snapshot.state), pending.map((row) => binaryBytes(row.update)));
+    } catch {
+      return null;
+    }
+    const through = sequence - 1;
+    const snapshotId = randomUUID();
+    await this.repository.insertSnapshot({
+      _id: snapshotId, userId, recordId, documentVersion: through, version: through, schemaVersion: BLOCKNOTE_SCHEMA_VERSION,
+      content: restored.blocks as unknown as JsonValue, stateVector: new Binary(Buffer.from(blockNoteStateVector(restored.state))),
+      state: new Binary(Buffer.from(restored.state)), serverSequence: through,
+      checksum: hashUpdate(restored.state), actor: "user", createdAt: new Date(),
+    }, session);
+    return { snapshotId };
   }
 
   /** 지금 문서 상태를 v2 스냅샷으로 남깁니다. AI 적용 전 상태처럼 나중에 되돌릴 지점에 씁니다. */
@@ -439,7 +472,7 @@ export class CareerDocumentService implements CareerDocumentApi {
 
     this.scheduleBodyProjection(userId, input.recordId);
     // 이력은 보조 기능이라 저장 응답을 기다리게 하지 않고, 실패해도 저장을 실패시키지 않습니다.
-    void this.recordEditRevision(userId, input.recordId).catch(() => undefined);
+    void this.recordEditRevision(userId, input.recordId, acknowledgement.serverSequence).catch(() => undefined);
     if (this.enqueueCompaction) {
       const pending = await this.repository.updates(input.recordId);
       const byteLength = pending.reduce((total, update) => total + update.byteLength, 0);
