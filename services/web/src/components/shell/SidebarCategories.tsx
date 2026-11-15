@@ -13,19 +13,31 @@ import { CAREER_CATEGORY_ICONS } from "@/lib/career-category-icons";
 import styles from "./Sidebar.module.css";
 
 /**
- * 열려 있는 카테고리도 주소가 안다 — `/career/{key}`.
+ * 커리어 카테고리 목록 — 카테고리 추가와 「보관됨」을 함께 품는다. 라이브러리의 왼쪽 목록이 쓴다.
+ *
+ * 열려 있는 카테고리는 `activeKey`로 받는다. 주지 않으면 주소(`/career/{key}`)에서 읽는다.
  * 보관한 카테고리는 목록 끝 「보관됨」을 펼쳐야 보인다. 보관한 카테고리를 보고 있으면 처음부터 펼친다.
  */
 export function SidebarCategories({
   categories,
+  hrefBase = "/career/",
+  activeKey,
+  heading = true,
 }: {
   categories: readonly CareerCategory[];
+  /** 카테고리 키를 붙이면 그 카테고리의 주소가 되는 앞부분. 라이브러리는 `/library?s=`를 준다. */
+  hrefBase?: string;
+  /** 지금 보고 있는 카테고리의 키. 카테고리를 보고 있지 않으면 null. */
+  activeKey?: string | null;
+  /** 「내 커리어」 머리말을 세울지. 다른 목록 안에 들어갈 때는 끈다. */
+  heading?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
   const active = categories.filter((category) => category.archivedAt === null);
   const archived = categories.filter((category) => category.archivedAt !== null);
-  const viewingArchived = archived.some((category) => pathname === `/career/${category.key}`);
+  const isOpen = (key: string) => (activeKey === undefined ? pathname === `/career/${key}` : activeKey === key);
+  const viewingArchived = archived.some((category) => isOpen(category.key));
   // 누르기 전에는 지금 보는 카테고리에 맞춰 펼치고, 누른 뒤에는 누른 대로 둡니다.
   const [archiveOpen, setArchiveOpen] = useState<boolean | null>(null);
   const showArchived = archiveOpen ?? viewingArchived;
@@ -48,18 +60,18 @@ export function SidebarCategories({
     }).catch(() => null);
     if (!response?.ok) { setState("failed"); return; }
     close();
-    router.push(`/career/${key}` as Route);
+    router.push(`${hrefBase}${key}` as Route);
     // 사이드바 목록은 레이아웃이 세션에서 읽으므로 레이아웃까지 다시 받습니다.
     router.refresh();
   };
   const cancelOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") close(); };
 
   const renderCategory = (category: CareerCategory) => {
-    const isActive = pathname === `/career/${category.key}`;
+    const isActive = isOpen(category.key);
     return (
       <Link
         key={category.id}
-        href={`/career/${category.key}` as Route}
+        href={`${hrefBase}${category.key}` as Route}
         data-row
         title={category.name}
         className={`${styles.row} ${styles.categoryItem} ${
@@ -89,17 +101,21 @@ export function SidebarCategories({
 
   return (
     <>
-      {/* 머리말 `+`와 목록 끝 「카테고리 추가」가 같은 입력을 엽니다. */}
-      <div className={styles.groupHead}>
-        <div className={`${styles.copy} ${styles.groupHeadRow}`}>
-          <span className={styles.groupLabel}>내 커리어</span>
-          <div className={styles.groupActions}>
-            <button type="button" className={styles.groupAction} aria-label="카테고리 추가" aria-expanded={adding} onClick={() => setAdding(true)}>
-              <Icon name="plus" size={13} />
-            </button>
+      {heading ? (
+        <>
+          {/* 머리말 `+`와 목록 끝 「카테고리 추가」가 같은 입력을 엽니다. */}
+          <div className={styles.groupHead}>
+            <div className={`${styles.copy} ${styles.groupHeadRow}`}>
+              <span className={styles.groupLabel}>내 커리어</span>
+              <div className={styles.groupActions}>
+                <button type="button" className={styles.groupAction} aria-label="카테고리 추가" aria-expanded={adding} onClick={() => setAdding(true)}>
+                  <Icon name="plus" size={13} />
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        </>
+      ) : null}
       <GlideMenu className={`${styles.categories} ${styles.navGroup}`}>
         {active.map(renderCategory)}
         {adding ? (

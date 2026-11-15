@@ -22,6 +22,9 @@ import { requireSession } from "@/lib/require-session";
 
 import { AddCondition, type AddConditionSection } from "./AddCondition";
 import { BROWSE_QUERY_PLACEHOLDER } from "./browse-copy";
+import { ExploreActivities } from "./ExploreActivities";
+import { ExploreFrame } from "./ExploreFrame";
+import { readKind } from "./explore";
 import { JobRowList, deadlineLabel } from "./JobRows";
 import { ConditionChip, type ConditionChipOption } from "./ConditionChip";
 import { currentListQuery, detailHref, isInterestedList } from "./list-query";
@@ -167,6 +170,9 @@ export default async function JobsPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
+  // 탐색의 종류. 채용 공고가 아니면 그 종류의 화면이 따로 선다.
+  const kind = readKind(params.kind);
+  if (kind !== "jobs") return <ExploreActivities kind={kind} />;
   const q = typeof params.q === "string" && params.q.trim() ? params.q.trim() : undefined;
   const category = typeof params.category === "string" ? params.category : undefined;
   const sort = params.sort === "deadline" || params.sort === "recent" ? params.sort : "match";
@@ -684,7 +690,7 @@ export default async function JobsPage({
 
   const header = (
     <AppHeader
-      title={q ? "공고 검색" : "공고 탐색"}
+      title="탐색"
       actions={
         <>
           <span className={styles.headNote}>{collectionNote(sources)}</span>
@@ -721,6 +727,7 @@ export default async function JobsPage({
     <>
       {header}
       <AppBody>
+        <ExploreFrame kind="jobs">
         <div className={styles.content}>
           {q ? (
             <SearchQueryCard
@@ -845,6 +852,7 @@ export default async function JobsPage({
             </aside>
           </div>
         </div>
+        </ExploreFrame>
       </AppBody>
     </>
   );

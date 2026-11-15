@@ -2,18 +2,12 @@
 
 import type { CareerRecordListItem } from "@expresso/contracts";
 
-import { rawValue } from "./view-types";
+import { isIncompleteRecord } from "./record-completeness";
 import styles from "./views.module.css";
 
-export type CareerQuickFilter = "all" | "draft" | "organized" | "verified" | "incomplete";
+export { isIncompleteRecord };
 
-export function isIncompleteRecord(record: CareerRecordListItem, categoryKey: string): boolean {
-  if (categoryKey === "project") {
-    const outcome = rawValue(record, "outcome");
-    return !(typeof outcome === "string" ? outcome.trim() : outcome);
-  }
-  return record.isEmpty;
-}
+export type CareerQuickFilter = "all" | "draft" | "organized" | "verified" | "incomplete";
 
 export function matchesQuickFilter(record: CareerRecordListItem, categoryKey: string, filter: CareerQuickFilter): boolean {
   if (filter === "all") return true;

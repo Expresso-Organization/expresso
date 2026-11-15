@@ -1,0 +1,653 @@
+/*
+ * 홈 — 대화를 시작하기 전의 화면.
+ *
+ * 한 열에 위에서 아래로 로고, 입력창, 추천 프롬프트, 행동 제안, 새 소식 위젯이 선다.
+ * 로고에서 추천 프롬프트까지는 가운데로 모이고, 제안과 위젯은 열의 폭을 다 쓴다.
+ */
+
+.stage {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  background: var(--ex-bg);
+}
+
+.column {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 0 16px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+/* ── 로고 · 입력창 · 추천 프롬프트 ───────────────────────── */
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 26px;
+  padding-top: clamp(40px, 11dvh, 112px);
+  /* 자료 고르는 창이 아래 구획 위에 뜬다. 등장 모션이 구획마다 쌓임 맥락을 만들기 때문에 순서를 적는다. */
+  position: relative;
+  z-index: 2;
+  animation: rise var(--ex-motion-panel) both;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.composerWrap {
+  position: relative;
+  width: 100%;
+  max-width: 680px;
+}
+
+/*
+ * 입력창. 쉬고 있을 때는 검색 칸과 같은 pill 한 줄이고, 누르면 메시지 입력 상자의 곡률로 펴지면서
+ * 도구 줄이 나타난다.
+ *
+ * 곡률 전환에 따로 완급을 준다. pill 토큰(999px)에서 8px로 고르게 줄이면 대부분의 시간 동안 모양이
+ * 그대로이다가 끝에서 한 번에 바뀐다. 앞 10%에서 눈에 보이는 범위까지 내려오고 나머지 시간에 고르게 줄인다.
+ */
+.composer {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: "mark input send";
+  align-items: center;
+  column-gap: 12px;
+  padding: 8px 8px 8px 22px;
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-accent-surface-hover);
+  border-radius: var(--ex-radius-pill);
+  box-shadow: var(--ex-elevation-raised);
+  transition:
+    border-radius 280ms linear(0, 0.96 10%, 1),
+    padding var(--ex-motion-panel),
+    box-shadow var(--ex-motion-panel);
+}
+
+.composer[data-expanded="true"] {
+  grid-template-areas:
+    "chips chips chips"
+    "mark input input"
+    "tools tools send";
+  align-items: start;
+  row-gap: 10px;
+  padding: 14px 10px 10px 16px;
+  border-radius: var(--ex-radius-control);
+  box-shadow: var(--ex-elevation-card-hover);
+}
+
+.composerMark {
+  grid-area: mark;
+}
+
+.composer[data-expanded="true"] .composerMark {
+  padding-top: 4px;
+}
+
+.input {
+  grid-area: input;
+  min-width: 0;
+  min-height: 40px;
+  max-height: 168px;
+  padding: 9px 0;
+  border: none;
+  outline: none;
+  background: none;
+  resize: none;
+  field-sizing: content;
+  font: inherit;
+  font-size: var(--ex-text-lg);
+  line-height: 1.4;
+  color: var(--ex-fg);
+  transition: min-height var(--ex-motion-panel);
+}
+
+/* 펴지면 두세 줄을 쓸 자리가 먼저 열린다. */
+.composer[data-expanded="true"] .input {
+  min-height: 68px;
+  padding: 2px 6px 0 0;
+}
+
+.input::placeholder {
+  color: var(--ex-fg-subtle);
+}
+
+.send {
+  grid-area: send;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: var(--ex-radius-pill);
+  background: var(--ex-accent);
+  color: var(--ex-fg-on-accent);
+  cursor: pointer;
+  transition: background var(--ex-motion-instant);
+}
+
+.composer[data-expanded="true"] .send {
+  width: 34px;
+  height: 34px;
+  justify-self: end;
+}
+
+.send:hover:not(:disabled) {
+  background: var(--ex-accent-hover);
+}
+
+.send:disabled {
+  background: var(--ex-bg-tint-strong);
+  color: var(--ex-fg-subtle);
+  cursor: default;
+}
+
+.send:focus-visible {
+  outline: none;
+  box-shadow: var(--ex-focus-ring);
+}
+
+/* 도구 줄 — 펴졌을 때만 선다. */
+.tools {
+  grid-area: tools;
+  display: none;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  animation: rise var(--ex-motion-panel) both;
+}
+
+.composer[data-expanded="true"] .tools {
+  display: flex;
+}
+
+.tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: var(--ex-radius-control);
+  background: none;
+  font: inherit;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--ex-motion-instant), color var(--ex-motion-instant);
+}
+
+.tool:hover:not(:disabled),
+.tool[aria-expanded="true"] {
+  background: var(--ex-bg-tint);
+  color: var(--ex-fg);
+}
+
+.tool:disabled {
+  color: var(--ex-fg-faint);
+  cursor: default;
+}
+
+.tool:focus-visible {
+  outline: none;
+  box-shadow: var(--ex-focus-ring);
+}
+
+/* 모델 이름은 브랜드 서체로 적는다. */
+.toolModel {
+  margin-left: auto;
+  font-family: var(--ex-font-brand);
+}
+
+/* 입력창에 붙인 자료. 펴진 입력창의 맨 위 줄에 선다. */
+.attachedRow {
+  grid-area: chips;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.attached {
+  max-width: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px 4px 10px;
+  border-radius: var(--ex-radius-pill);
+  background: var(--ex-accent-surface);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-accent-ink);
+  animation: rise var(--ex-motion-quick) both;
+}
+
+.attachedLabel {
+  min-width: 0;
+  max-width: 260px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.attachedRemove {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.attachedRemove:hover {
+  background: var(--ex-accent-surface-hover);
+}
+
+/* 자료 고르는 창 — 입력창 아래에 뜬다. 목록은 대화 화면의 자료 목록을 그대로 쓴다. */
+.picker {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 8px);
+  left: 0;
+  width: min(380px, 100%);
+  max-height: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  overflow: auto;
+  border: 1px solid var(--ex-border);
+  border-radius: var(--ex-radius-card);
+  background: var(--ex-bg);
+  box-shadow: var(--ex-elevation-overlay);
+  animation: rise var(--ex-motion-quick) both;
+}
+
+.picker h2 {
+  display: none;
+}
+
+.pickerTabs {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--ex-radius-control);
+  background: var(--ex-bg-tint);
+}
+
+.pickerTab {
+  flex: 1;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  font: inherit;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
+  cursor: pointer;
+}
+
+.pickerTab[aria-selected="true"] {
+  background: var(--ex-bg);
+  color: var(--ex-fg);
+  font-weight: 600;
+}
+
+/* 추천 프롬프트 — 입력창 바로 아래. 누르면 요청문이 입력창에 채워진다. */
+.prompts {
+  max-width: 680px;
+  margin-top: -10px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.prompt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 13px;
+  border: 1px solid var(--ex-border);
+  border-radius: var(--ex-radius-pill);
+  background: var(--ex-bg);
+  font: inherit;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-body);
+  cursor: pointer;
+  transition: background var(--ex-motion-instant), border-color var(--ex-motion-instant), color var(--ex-motion-instant);
+}
+
+.prompt > i {
+  color: var(--ex-accent-text);
+}
+
+.prompt:hover {
+  border-color: var(--ex-accent-soft);
+  background: var(--ex-accent-surface);
+  color: var(--ex-accent-ink);
+}
+
+.prompt:focus-visible {
+  outline: none;
+  box-shadow: var(--ex-focus-ring);
+}
+
+/* ── 구획 — 행동 제안과 위젯 ──────────────────────────────── */
+
+.proposals,
+.widgets {
+  animation: rise var(--ex-motion-panel) both;
+}
+
+.proposals {
+  animation-delay: 80ms;
+}
+
+.widgets {
+  animation-delay: 160ms;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 20px;
+  margin-bottom: 10px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: var(--ex-text-xs);
+  font-weight: 600;
+  color: var(--ex-fg);
+}
+
+.sectionCount {
+  font-family: var(--ex-font-brand);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-subtle);
+}
+
+.checked {
+  margin-left: auto;
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-subtle);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.proposalGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+.widgets {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+/* ── 에이전트 제안 — 에이전트의 말은 bean 지면에 선다(디자인 시스템 §05) ── */
+
+.proposal {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 8px 10px;
+  padding: 14px;
+  border-radius: var(--ex-radius-card);
+  background: var(--ex-accent-surface);
+  color: var(--ex-accent-ink);
+}
+
+.proposalIcon {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: var(--ex-bg);
+  color: var(--ex-accent-text);
+}
+
+.proposalText {
+  margin: 0;
+  align-self: center;
+  font-size: var(--ex-text-sm);
+  font-weight: 600;
+  line-height: var(--ex-leading-normal);
+}
+
+.proposalItems,
+.proposalAction {
+  grid-column: 2;
+}
+
+.proposalItems {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.proposalItem {
+  display: block;
+  font-size: var(--ex-text-2xs);
+  line-height: var(--ex-leading-normal);
+  color: inherit;
+  opacity: 0.8;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.proposalItem:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+.proposalAction {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  margin-top: 2px;
+  padding: 0 11px;
+  border: none;
+  border-radius: var(--ex-radius-control);
+  background: var(--ex-bg);
+  font: inherit;
+  font-size: var(--ex-text-xs);
+  font-weight: 600;
+  color: var(--ex-accent-text);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background var(--ex-motion-instant), color var(--ex-motion-instant);
+}
+
+.proposalAction:hover {
+  background: var(--ex-accent);
+  color: var(--ex-fg-on-accent);
+}
+
+.proposalAction:focus-visible {
+  outline: none;
+  box-shadow: var(--ex-focus-ring);
+}
+
+/* ── 새 소식 위젯 ─────────────────────────────────────────── */
+
+.widget,
+.skeletonCard {
+  border: 1px solid var(--ex-border);
+  border-radius: var(--ex-radius-card);
+  background: var(--ex-bg);
+}
+
+.skeletonCard {
+  display: grid;
+  gap: 12px;
+  padding: 16px 14px;
+}
+
+.widgetHead {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 12px 10px 6px 14px;
+  color: var(--ex-fg-muted);
+}
+
+.widgetTitle {
+  flex: 1;
+  margin: 0;
+  font-size: var(--ex-text-xs);
+  font-weight: 600;
+  color: var(--ex-fg);
+}
+
+.widgetMore {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  color: var(--ex-fg-subtle);
+}
+
+.widgetMore:hover {
+  background: var(--ex-bg-tint);
+  color: var(--ex-fg);
+}
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0 6px 6px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 8px;
+  border-radius: 9px;
+  color: inherit;
+  text-decoration: none;
+  transition: background var(--ex-motion-instant);
+}
+
+.row:hover {
+  background: var(--ex-bg-tint);
+}
+
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  font-family: var(--ex-font-brand);
+  font-size: var(--ex-text-xs);
+  font-weight: 500;
+}
+
+.rowBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.rowTitle {
+  font-size: var(--ex-text-xs);
+  font-weight: 500;
+  color: var(--ex-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowSub {
+  font-size: var(--ex-text-3xs);
+  color: var(--ex-fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowDeadline {
+  flex-shrink: 0;
+  font-family: var(--ex-font-brand);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-muted);
+}
+
+.rowDeadlineUrgent {
+  color: var(--ex-accent-text);
+  font-weight: 500;
+}
+
+/* ── 넓어질수록 ───────────────────────────────────────────── */
+
+@media (min-width: 768px) {
+  .column {
+    padding: 0 24px 56px;
+  }
+
+  .proposalGrid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+
+  .widgets {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .widgets {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@keyframes rise {
+  from { opacity: 0; translate: 0 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero,
+  .attached,
+  .tools,
+  .picker,
+  .proposals,
+  .widgets {
+    animation: none;
+  }
+
+  .composer,
+  .input {
+    transition: none;
+  }
+}

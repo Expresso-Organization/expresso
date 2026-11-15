@@ -12,8 +12,9 @@ export async function agentRequest(path: string, body?: unknown) {
 /**
  * `restore: "context"`는 처음 열 대화를 브라우저의 마지막 대화가 아니라 `context`가
  * 연결된 가장 최근 대화로 고른다. 공고 화면이 쓴다 — 다른 공고의 대화가 열리지 않게.
+ * `restore: "url"`은 주소에 적힌 대화(`?chat=`)만 연다. 홈이 쓴다 — 주소에 대화가 없으면 시작 화면이다.
  */
-export function useAgentConversation(context?: AgentContext, options: { restore?: "context" } = {}) {
+export function useAgentConversation(context?: AgentContext, options: { restore?: "context" | "url" } = {}) {
   const { restore } = options;
   const [id, setId] = useState<string | null>(null);
   const [resolving, setResolving] = useState(restore === "context" && !!context);
@@ -38,7 +39,7 @@ export function useAgentConversation(context?: AgentContext, options: { restore?
   const contextKind = context?.kind; const contextId = context?.id;
   useEffect(() => {
     const requested = new URL(window.location.href).searchParams.get("chat");
-    if (requested || restore !== "context" || !contextKind || !contextId) { setResolving(false); select(requested ?? sessionStorage.getItem("ex-agent-conversation")); return; }
+    if (requested || restore !== "context" || !contextKind || !contextId) { setResolving(false); select(requested ?? (restore === "url" ? null : sessionStorage.getItem("ex-agent-conversation"))); return; }
     let alive = true;
     setResolving(true);
     // 목록은 updatedAt 내림차순이다. 맞는 대화가 없으면 아무것도 고르지 않는다 —
