@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { pagePolicyPrompt } from "@expresso/contracts";
 
 import { ScriptedAiClient } from "../../platform/ai/scripted-client.js";
-import { BriefedPageGenerator, briefedSystem, skillBody } from "./briefed-generator.js";
+import { findDesignSystemRevision } from "../design-systems/index.js";
+import { BriefedPageGenerator, briefedPrompt, briefedSystem, skillBody } from "./briefed-generator.js";
 import { AiPageGenerator, type PageGenerationContext } from "./generator.js";
 import type { PageBrief } from "./page-brief.js";
 
@@ -96,6 +97,35 @@ describe("정리본 · 디자인 지침 자유 생성", () => {
     const baseline = new ScriptedAiClient(() => draft);
     await new AiPageGenerator(baseline).generate({ ...context, useKit: false });
     expect(ai.calls[0]!.prompt).toBe(baseline.calls[0]!.prompt);
+  });
+
+  it("토큰 방식은 색 · 서체 · 밀도만 넘기고 골격 규칙을 뺀다", () => {
+    const grammar = briefedPrompt(context, brief);
+    const tokens = briefedPrompt(context, brief, "tokens");
+    expect(grammar).toContain("단일 칼럼 서사");
+    expect(tokens).not.toContain("단일 칼럼 서사");
+    expect(tokens).not.toContain("금지 패턴");
+    expect(tokens).toContain("`#0066cc`");
+    expect(tokens).toContain("서체 계열: 고딕");
+    expect(tokens).toContain("배치 · 단 구성 · 첫 화면의 모양은 스타일이 정하지 않았다");
+    expect(tokens).toContain("## 자료 정리본");
+  });
+
+  it("스펙 방식은 스타일 문법에 디자인 시스템의 시각 규칙을 더하고 부품별 내용 구성은 싣지 않는다", () => {
+    const design = findDesignSystemRevision("5d8f5f2d-6d2a-4f24-9d1a-2b8f9e7c1202")!.spec;
+    const spec = briefedPrompt({ ...context, design }, brief, "spec");
+    expect(spec).toContain("단일 칼럼 서사");
+    expect(spec).toContain(`## 고른 디자인 시스템 상세 — ${design.identity.name}`);
+    expect(spec).toContain(design.identity.visualThesis);
+    expect(spec).toContain(design.colors.surface.value);
+    expect(spec).toContain(`면을 두르는 방식 ${design.componentKit.chrome}`);
+    expect(spec).not.toContain(design.components.hero!.description);
+    // 스펙이 없으면 스타일 문법만 남는다.
+    expect(briefedPrompt(context, brief, "spec")).toBe(briefedPrompt(context, brief));
+  });
+
+  it("정리본 없이 스타일 방식만 바꾸는 조합은 받지 않는다", () => {
+    expect(() => briefedPrompt(context, null, "tokens")).toThrow("자료 정리본이 필요합니다");
   });
 
   it("지침이 없으면 시스템 프롬프트를 바꾸지 않는다", () => {

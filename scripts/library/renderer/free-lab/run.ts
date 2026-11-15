@@ -6,6 +6,8 @@
 //   refine     자료 정리본만
 //   skill      디자인 지침만
 //   both       정리본 + 디자인 지침
+//   tokens     both에서 스타일을 색 · 서체 · 밀도만 넘김(배치는 지면 호출이 정함)
+//   spec       both에 디자인 시스템 스펙의 시각 규칙을 더함
 //   structured 구조화 생성(기준)
 //
 //   node --import ./services/backend/node_modules/tsx/dist/loader.mjs scripts/library/renderer/free-lab/run.ts \
@@ -24,11 +26,11 @@ import { refinePageBrief, type PageBrief } from "../../../../services/backend/sr
 import { StructuredPageGenerator } from "../../../../services/backend/src/modules/page/structured-generator.js";
 import { PAGE_PROMPT_VERSION } from "../../../../packages/contracts/src/page.js";
 
-type Arm = "base" | "plain" | "refine" | "skill" | "both" | "structured";
+type Arm = "base" | "plain" | "refine" | "skill" | "both" | "tokens" | "spec" | "structured";
 interface Cell { input: string; arm: Arm; rep: number }
 
-const FREE: Arm[] = ["base", "plain", "refine", "skill", "both"];
-/** 시험 실행: 한 인물 × 다섯 조건. 전체 실행 전에 지면을 직접 열어 봅니다. */
+const FREE: Arm[] = ["base", "plain", "refine", "skill", "both", "tokens", "spec"];
+/** 시험 실행: 한 인물 × 자유 생성 조건. */
 const PILOT: Cell[] = FREE.map((arm) => ({ input: "yun-clarity", arm, rep: 1 }));
 const FULL: Cell[] = [
   ...["moon-clarity", "bae-clarity"].flatMap((input) => FREE.map((arm) => ({ input, arm, rep: 1 }))),
@@ -36,8 +38,7 @@ const FULL: Cell[] = [
   { input: "yun-clarity", arm: "plain", rep: 2 },
   { input: "yun-clarity", arm: "both", rep: 2 },
   // 같은 인물 · 다른 디자인. 고른 디자인이 지면에 드러나는지 봅니다.
-  { input: "yun-refero-linear-midnight", arm: "both", rep: 1 },
-  { input: "yun-editorial", arm: "both", rep: 1 },
+  ...["yun-refero-linear-midnight", "yun-editorial"].flatMap((input) => (["both", "spec"] as const).map((arm) => ({ input, arm, rep: 1 }))),
   ...["yun-clarity", "moon-clarity", "bae-clarity"].map((input) => ({ input, arm: "structured" as const, rep: 1 })),
 ];
 
@@ -74,18 +75,20 @@ class Traced implements AiClient {
 }
 
 /** 정리본은 입력마다 한 번 만들고, 정제를 쓰는 조건이 함께 씁니다. */
-const briefs = new Map<string, Promise<PageBrief>>();
-function briefFor(name: string, context: PageGenerationContext): Promise<PageBrief> {
+type SavedBrief = { brief: PageBrief; usage: AiUsage };
+const briefs = new Map<string, Promise<SavedBrief>>();
+function briefFor(name: string, context: PageGenerationContext): Promise<SavedBrief> {
   const cached = briefs.get(name);
   if (cached) return cached;
-  const file = path.join(root, "briefs", `${name}.json`);
+  // 정리본은 디자인과 상관없이 같은 자료에서 나오므로 인물마다 하나만 둡니다.
+  const file = path.join(root, "briefs", `${name.split("-")[0]}.json`);
   const made = (async () => {
-    if (fs.existsSync(file)) return (JSON.parse(fs.readFileSync(file, "utf8")) as { brief: PageBrief }).brief;
+    if (fs.existsSync(file)) return JSON.parse(fs.readFileSync(file, "utf8")) as SavedBrief;
     console.log(`${name}: 정리본 만들기`);
     const { brief, usage, prompt } = await refinePageBrief(provider, context, PAGE_PROMPT_VERSION);
     write(file, { input: name, usage, promptSha256: sha(prompt), brief });
-    write(path.join(root, "briefs", `${name}.request.txt`), prompt);
-    return brief;
+    write(file.replace(/\.json$/, ".request.txt"), prompt);
+    return { brief, usage };
   })();
   briefs.set(name, made);
   return made;
@@ -97,6 +100,7 @@ async function runCell(cell: Cell) {
   if (fs.existsSync(path.join(dir, "result.json"))) { console.log(`${label}: 저장된 결과 유지`); return; }
   const { context, persona, design } = input(cell.input);
   const ai = new Traced();
+  let briefUsage: AiUsage | null = null;
   const started = Date.now();
   console.log(`${label}: 시작`);
   try {
@@ -104,11 +108,13 @@ async function runCell(cell: Cell) {
     if (cell.arm === "base") result = await new AiPageGenerator(ai).generate(context);
     else if (cell.arm === "structured") result = await new StructuredPageGenerator(ai, null).generate({ ...context, pageFormat: "json-render" });
     else {
-      const refine = cell.arm === "refine" || cell.arm === "both";
+      const refine = cell.arm !== "plain" && cell.arm !== "skill";
+      if (refine) briefUsage = (await briefFor(cell.input, context)).usage;
       result = await new BriefedPageGenerator(ai, {
         refine,
-        designSkill: cell.arm === "skill" || cell.arm === "both" ? skill : null,
-        brief: refine ? await briefFor(cell.input, context) : null,
+        designSkill: cell.arm === "plain" || cell.arm === "refine" ? null : skill,
+        brief: refine ? (await briefFor(cell.input, context)).brief : null,
+        styleMode: cell.arm === "tokens" ? "tokens" : cell.arm === "spec" ? "spec" : "grammar",
       }).generate(context);
     }
     const title = `${context.author?.name ?? persona} 포트폴리오`;
@@ -123,10 +129,12 @@ async function runCell(cell: Cell) {
       startedAt: new Date(started).toISOString(), wallMs: Date.now() - started,
       model: result.usage.model, calls: ai.calls.length,
       costUsd: Number(total("costUsd").toFixed(4)), outputTokens: total("outputTokens"), inputTokens: total("inputTokens"), aiMs: total("durationMs"),
+      // 정리본은 같은 인물의 여러 조건이 함께 쓰지만, 제품에서는 지면 한 장마다 한 번 듭니다. 지면 한 장의 값은 둘을 더한 것입니다.
+      briefCostUsd: briefUsage ? Number((briefUsage.costUsd ?? 0).toFixed(4)) : 0, briefMs: briefUsage?.durationMs ?? 0,
       rationale: result.rationale, plan: "plan" in result ? result.plan : null,
       ungrounded: result.ungrounded, removed: result.removed, blockedTags: "blockedTags" in result ? result.blockedTags : null,
       qa: result.qaReport.status, htmlBytes: Buffer.byteLength(result.html), cssBytes: Buffer.byteLength(result.css),
-      promptHash: result.manifest.promptHash, skillSha256: cell.arm === "skill" || cell.arm === "both" ? sha(skill) : null,
+      promptHash: result.manifest.promptHash, skillSha256: "plan" in result && result.plan ? sha(skill) : null,
     });
     console.log(`${label}: 완료 ${Math.round((Date.now() - started) / 1000)}초 · $${total("costUsd").toFixed(2)}`);
   } catch (error) {

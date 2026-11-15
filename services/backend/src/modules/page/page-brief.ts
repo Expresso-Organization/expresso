@@ -110,6 +110,7 @@ export function briefRequest(context: PageGenerationContext): string {
   lines.push("- sections: 설계의 모든 섹션을 한 번씩, 설계 순서대로 적습니다. id는 위의 섹션 ID 그대로입니다.");
   lines.push("  - claim은 그 섹션이 말하려는 것 한 줄입니다. 섹션 이름을 되풀이하지 않고 '새벽 4시 배치가 오전 업무까지 밀리던 문제'처럼 내용을 씁니다.");
   lines.push("  - body는 문제 · 한 일 · 결과가 드러나는 서술입니다. 분량은 설계의 분량 안팎입니다.");
+  lines.push("  - 모든 칸에는 지면에 그대로 실을 글만 씁니다. 설계가 다루라고 한 내용이 출처에 없으면 출처가 받쳐 주는 데까지만 쓰고, 그만큼 짧아도 됩니다. 확인 요청이나 작업 메모는 어느 칸에도 쓰지 않습니다.");
   lines.push("  - metrics는 출처에 적힌 수치만 적습니다. value는 숫자와 단위이고, 같은 수치의 이전 값이 출처에 함께 있으면 before에 적습니다.");
   lines.push("  - steps는 출처에 순서가 있는 과정일 때만, quote는 그대로 크게 보일 만한 문장이 있을 때만 적습니다. 없으면 그 칸을 뺍니다.");
   lines.push("  - period는 출처에 적힌 기간 그대로입니다. 출처에 없으면 뺍니다.");

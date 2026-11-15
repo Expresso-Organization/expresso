@@ -33,6 +33,9 @@ function inspect(expected) {
     const value = node.nodeValue.trim();
     const parent = node.parentElement;
     if (!value || !parent || ["STYLE", "SCRIPT", "TITLE"].includes(parent.tagName)) continue;
+    // 접어 둔 `<details>`의 내용은 읽는 사람이 펼쳐 보는 글이라 가려진 글로 세지 않습니다.
+    const closed = parent.closest("details:not([open])");
+    if (closed && !parent.closest("summary")) continue;
     texts.push({ value, parent });
   }
   const opacityOf = (node) => { let value = 1; for (let at = node; at; at = at.parentElement) value *= Number(getComputedStyle(at).opacity); return value; };
@@ -80,8 +83,11 @@ function inspect(expected) {
     families: [...families.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([family]) => family),
     name: expected.name ? has(expected.name) : null,
     sections: expected.sections.filter(has).length,
-    career: expected.career.filter(has).length,
     evidence: expected.evidence.filter(has).length,
+    // 조직 이름은 본문에도 나오므로 경력이 따로 실렸는지는 제목으로 봅니다.
+    careerHeading: [...document.querySelectorAll("h1,h2,h3,h4")].some((node) => /경력|이력|Career|Experience/i.test(node.textContent ?? "")),
+    evidenceHeading: [...document.querySelectorAll("h1,h2,h3,h4")].some((node) => /근거|자료|Evidence|Reference/i.test(node.textContent ?? "")),
+    notes: (text.match(/\[[^\]]{0,12}(보완|확인|TODO|필요)[^\]]{0,12}\]/g) ?? []).length,
   };
 }
 
@@ -93,13 +99,10 @@ try {
     const dir = path.join(root, "cells", label);
     const result = read(path.join(dir, "result.json"));
     const { context } = read(path.join(root, "inputs", `${result.input}.json`));
-    const briefFile = path.join(root, "briefs", `${result.input}.json`);
-    const brief = fs.existsSync(briefFile) ? read(briefFile).brief : null;
-    // 조건마다 같은 기준으로 봅니다. 경력은 정리본의 조직 이름을(없으면 재지 않음), 근거는 출처 자료의 제목을 씁니다.
+    // 조건마다 같은 기준으로 봅니다. 섹션은 설계의 섹션 제목을, 근거는 출처 자료의 제목을 씁니다.
     const expected = {
       name: context.author?.name ?? null,
       sections: context.sections.map((section) => section.title),
-      career: brief ? brief.career.map((item) => item.organization) : [],
       evidence: context.evidence.map((item) => item.label),
     };
     const url = pathToFileURL(path.join(dir, "page.html")).href;
@@ -112,7 +115,12 @@ try {
       page.on("pageerror", (error) => errors.push(error.message));
       await page.goto(url);
       await page.evaluate(settle);
-      await page.waitForTimeout(1500);
+      // 첫 화면은 불러오기 애니메이션이 끝난 뒤에 찍습니다. 되풀이하는 애니메이션은 기다리지 않습니다.
+      await page.evaluate(() => Promise.race([
+        Promise.all(document.getAnimations().filter((animation) => animation.effect?.getComputedTiming().iterations !== Infinity).map((animation) => animation.finished.catch(() => undefined))),
+        new Promise((resolve) => setTimeout(resolve, 6000)),
+      ]));
+      await page.waitForTimeout(300);
       if (width === 1440) await page.screenshot({ path: path.join(dir, "shots", "1440-first.jpg"), type: "jpeg", quality: 72 });
       const height = await page.evaluate(() => document.documentElement.scrollHeight);
       for (let y = 0; y < height; y += 700) { await page.mouse.wheel(0, 700); await page.waitForTimeout(60); }
@@ -129,11 +137,12 @@ try {
       await still.screenshot({ path: path.join(dir, "shots", `${width}-full.jpg`), type: "jpeg", quality: 60, fullPage: true });
       await still.close();
     }
-    const measure = { label, expected: { name: expected.name, sections: expected.sections.length, career: expected.career.length, evidence: expected.evidence.length }, screens };
+    const measure = { label, expected: { name: expected.name, sections: expected.sections.length, evidence: expected.evidence.length }, screens };
     fs.writeFileSync(path.join(dir, "measure.json"), `${JSON.stringify(measure, null, 2)}\n`);
     report.push({ ...result, measure });
     const wide = screens[1440], narrow = screens[390];
-    console.log(label, `넘침 ${wide.overflow ? "1440 " : ""}${narrow.overflow ? "390" : ""}`.trim() || "넘침 없음", `이름 ${wide.name}`, `섹션 ${wide.sections}/${expected.sections.length}`, `경력 ${wide.career}/${expected.career.length}`, `근거 ${wide.evidence}/${expected.evidence.length}`, `가려진 글 ${wide.hiddenChars}`);
+    const overflow = [wide.overflow ? "1440" : "", narrow.overflow ? "390" : ""].filter(Boolean).join(" · ");
+    console.log(label, overflow ? `넘침 ${overflow}` : "넘침 없음", `이름 ${wide.name}`, `섹션 ${wide.sections}/${expected.sections.length}`, `경력 제목 ${wide.careerHeading}`, `근거 ${wide.evidence}/${expected.evidence.length}`, `가려진 글 ${wide.hiddenChars}`, wide.notes ? `작업 메모 ${wide.notes}` : "");
   }
 } finally {
   await browser.close();

@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import { PAGE_PROMPT_VERSION, PageDraftSchema, pagePolicyPrompt } from "@expresso/contracts";
+import { PAGE_PROMPT_VERSION, PageDraftSchema, pagePolicyPrompt, type DesignSystemSpecV2, type PageStyleGrammar } from "@expresso/contracts";
 
 import type { AiClient, AiUsage } from "../../platform/ai/client.js";
 import { sanitizePage } from "../../platform/html/sanitize.js";
@@ -44,6 +44,62 @@ export interface BriefedPageOptions {
   designSkill?: string | null;
   /** 이미 만든 정리본입니다. 주면 정제 호출을 건너뜁니다(같은 입력의 여러 조건이 같은 정리본을 쓰게 합니다). */
   brief?: PageBrief | null;
+  /**
+   * 사용자가 고른 디자인을 지면 호출에 넘기는 방식입니다.
+   *
+   * - `grammar`(기본): 지금의 스타일 문법 그대로입니다. 색 · 서체 · 밀도와 함께 골격(단일 칼럼 · 격자 · 넓은 여백)을 규칙으로 줍니다.
+   * - `tokens`: 색 · 서체 계열 · 밀도만 줍니다. 배치는 지면 호출이 정합니다.
+   * - `spec`: 스타일 문법에 디자인 시스템 스펙(`context.design`)의 시각 규칙을 더합니다. 문법은 스펙을 줄인 것이라 시각 명제 ·
+   *   대표 장치 · 색 역할 · 서체 단계 · 부품 규칙이 빠져 있습니다.
+   */
+  styleMode?: "grammar" | "tokens" | "spec";
+}
+
+const FONT_NAME = { sans: "고딕", serif: "명조", mono: "고정폭" } as const;
+const DENSITY_NAME = { compact: "빽빽하게", comfortable: "읽기 편하게", spacious: "넓게" } as const;
+
+/** 색 · 서체 계열 · 밀도만 적은 스타일 문단입니다. 골격과 구성은 적지 않습니다. */
+export function styleTokensPrompt(style: PageStyleGrammar): string[] {
+  return [
+    "## 사용자가 고른 스타일 — 색 · 서체 · 밀도는 그대로 따른다",
+    `고른 것: **${style.name}** — ${style.description}`,
+    style.toneTags.length ? `성격: ${style.toneTags.join(" · ")}` : "",
+    `- 바탕 \`${style.background}\` · 본문 글자 \`${style.text}\` · 강조 \`${style.accent}\`. 명도를 조절한 변주는 만들어 써도 되고, 계열 밖의 색은 들이지 않는다.`,
+    `- 서체 계열: ${FONT_NAME[style.font]}. 한국어 대체 서체를 함께 지정한다.`,
+    `- 밀도: ${DENSITY_NAME[style.density]}.`,
+    "배치 · 단 구성 · 첫 화면의 모양은 스타일이 정하지 않았다. 이 사람의 자료를 보고 정한다.",
+    "",
+  ].filter((line, index, lines) => line !== "" || index === lines.length - 1);
+}
+
+const KIT_MEANING = {
+  chrome: "면을 두르는 방식",
+  marker: "이름표 앞의 표식",
+  emphasis: "대표 수치를 세우는 방식",
+  divider: "항목을 가르는 선",
+} as const;
+
+/** 디자인 시스템 스펙의 시각 규칙을 글로 폅니다. 부품별 내용 구성(`components`)은 싣지 않습니다 — 모든 사람의 첫 화면을 같은 순서로 묶습니다. */
+export function designSpecPrompt(design: DesignSystemSpecV2): string[] {
+  const { identity, colors, typography, spacing, shape, componentKit, composition, motion } = design;
+  const color = (name: string, token: { value: string; role: string }) => `${name} \`${token.value}\`(${token.role})`;
+  return [
+    `## 고른 디자인 시스템 상세 — ${identity.name}`,
+    `- 시각 명제: ${identity.visualThesis}`,
+    `- 대표 장치: ${identity.signatureMoves.join(" · ")}`,
+    `- 특징: ${identity.traits.join(" · ")}`,
+    `- 색: ${[color("바탕", colors.canvas), color("면", colors.surface), color("올린 면", colors.elevated), color("글자", colors.text), color("보조 글자", colors.muted), color("경계", colors.border), color("강조", colors.accent), color("행동", colors.action)].join(" · ")}`,
+    `- 서체: 제목 ${typography.display.family}(${typography.display.fallback}) · 본문 ${typography.body.family}(${typography.body.fallback}) · 수치 ${typography.mono.family}. 굵기 ${typography.weights.join(" · ")}, 본문 폭 ${typography.measure}.`,
+    `- 글자 단계: ${typography.scale.map((step) => `${step.name} ${step.size}/${step.lineHeight}`).join(" · ")}`,
+    `- 간격: 요소 ${spacing.elementGap}px · 부품 ${spacing.componentGap}px · 섹션 ${spacing.sectionGap}px · 지면 폭 ${spacing.contentWidth}px`,
+    `- 모양: 모서리 ${shape.cardRadius}px · 테두리 ${shape.borderWidth}px · 그림자 ${shape.shadowStyle}`,
+    `- 부품 규칙: ${(Object.keys(KIT_MEANING) as (keyof typeof KIT_MEANING)[]).map((key) => `${KIT_MEANING[key]} ${componentKit[key]}`).join(" · ")}`,
+    `- 섹션 리듬: ${composition.sectionRhythm}`,
+    `- 위계: ${composition.hierarchy}`,
+    `- 면 쓰는 법: ${composition.surfaceStrategy}`,
+    `- 모션: ${motion.personality} · ${motion.duration} ${motion.easing}`,
+    "",
+  ];
 }
 
 const DesignPlanSchema = z.strictObject({
@@ -72,9 +128,9 @@ export function skillBody(text: string): string {
  */
 const SKILL_ROLE = [
   "## 디자인하는 법",
-  "아래 「디자인 지침」이 이 지면을 디자인하는 방법이다. 지침이 말하는 의뢰서는 이 요청의 스타일 문법과 자료 전체다.",
-  "- 스타일 문법이 고른 색 · 서체 계열 · 밀도 · 골격은 의뢰서가 못 박은 방향이다. 그대로 따른다.",
-  "- 문법이 정하지 않은 자리에서 방향을 세운다 — 첫 화면에 무엇을 세울지, 섹션마다의 배치, 글자를 다루는 방식, 수치 · 과정 · 기간을 보이는 형태.",
+  "아래 「디자인 지침」이 이 지면을 디자인하는 방법이다. 지침이 말하는 의뢰서는 이 요청의 스타일과 자료 전체다.",
+  "- 요청의 스타일이 정한 것은 의뢰서가 못 박은 방향이다. 그대로 따른다.",
+  "- 스타일이 정하지 않은 자리에서 방향을 세운다 — 첫 화면에 무엇을 세울지, 섹션마다의 배치, 글자를 다루는 방식, 수치 · 과정 · 기간을 보이는 형태.",
   "- 주제는 이 사람이 하는 일이다. 그 일의 대상 · 도구 · 산출물에서 지면의 소재를 찾는다.",
   "- 지침의 계획 → 검토를 `plan`에 먼저 적고, 그 계획대로 `html`과 `css`를 쓴다. 화면을 찍어 볼 수는 없다.",
   "- 움직임과 반응은 CSS(`:hover` · `:focus` · `<details>` · 애니메이션)로 낸다. 아래 「못 쓰는 것」이 지침보다 먼저다.",
@@ -93,9 +149,15 @@ export function briefedSystem(designSkill: string | null | undefined): string {
   return [SYSTEM, "", SKILL_ROLE, "", "## 디자인 지침", skillBody(designSkill), "", pagePolicyPrompt(), "", PLAN_OUTPUT].join("\n");
 }
 
-export function briefedPrompt(context: PageGenerationContext, brief: PageBrief | null): string {
-  if (!brief) return buildPrompt(context);
-  return [...promptOpening(context), ...briefPrompt(brief), ...promptMedia(context), ...promptClosing(context)].join("\n");
+export function briefedPrompt(context: PageGenerationContext, brief: PageBrief | null, styleMode: BriefedPageOptions["styleMode"] = "grammar"): string {
+  if (!brief && styleMode === "grammar") return buildPrompt(context);
+  // 정리본을 쓰지 않으면서 스타일 방식만 바꾸는 조합은 두지 않습니다. 원문 요청의 조립은 `buildPrompt`가 맡습니다.
+  if (!brief) throw new PageGenerationError("스타일 방식을 바꾸려면 자료 정리본이 필요합니다");
+  const opening =
+    styleMode === "tokens" && context.style
+      ? [...promptOpening({ ...context, style: undefined }), ...styleTokensPrompt(context.style)]
+      : [...promptOpening(context), ...(styleMode === "spec" && context.design ? designSpecPrompt(context.design) : [])];
+  return [...opening, ...briefPrompt(brief), ...promptMedia(context), ...promptClosing(context)].join("\n");
 }
 
 export interface BriefedPageResult extends GeneratedPageResult {
@@ -137,7 +199,7 @@ export class BriefedPageGenerator implements PageGenerator {
 
     const skill = this.#options.designSkill ?? null;
     const system = briefedSystem(skill);
-    const prompt = briefedPrompt(context, brief);
+    const prompt = briefedPrompt(context, brief, this.#options.styleMode);
     // 정리본을 쓴 지면도 원문과 대조합니다. 정리본이 통과시킨 숫자만 믿지 않습니다.
     const source = brief ? briefGroundSource(context) : context.evidence.map(({ text }) => text).join("\n");
     const check = (draft: { html: string }) => {

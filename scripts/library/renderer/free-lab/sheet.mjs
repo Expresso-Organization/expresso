@@ -15,6 +15,8 @@ const ARMS = [
   ["refine", "+ 정리본", "원문 대신 자료 정리본"],
   ["skill", "+ 디자인 지침", "frontend-design 본문"],
   ["both", "+ 정리본 + 지침", "둘 다"],
+  ["tokens", "둘 다 · 배치 자유", "스타일은 색 · 서체 · 밀도만"],
+  ["spec", "둘 다 · 디자인 스펙", "디자인 시스템의 시각 규칙 추가"],
 ];
 const INPUTS = [...new Set(report.map((item) => item.input))];
 const escape = (value) => String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
@@ -27,6 +29,7 @@ function cell(item) {
     wide.name === false ? "이름 없음" : "",
     wide.brokenImages ? `깨진 이미지 ${wide.brokenImages}` : "",
     wide.hiddenChars > 40 ? `가려진 글 ${wide.hiddenChars}자` : "",
+    wide.notes ? `작업 메모 ${wide.notes}` : "",
     item.blockedTags ? `스크립트 ${item.blockedTags}` : "",
     item.ungrounded.length ? `출처 밖 숫자 ${item.ungrounded.length}` : "",
   ].filter(Boolean);
@@ -35,9 +38,9 @@ function cell(item) {
 <a href="${dir}/page.html"><img src="${dir}/shots/1440-first.jpg" alt="${escape(item.label)} 첫 화면" loading="lazy"></a>
 <figcaption>
 <p class="links"><a href="${dir}/shots/1440-full.jpg">1440 전체</a><a href="${dir}/shots/390-full.jpg">390 전체</a>${item.rep > 1 ? `<span>반복 ${item.rep}</span>` : ""}</p>
-<p>섹션 ${wide.sections}/${expected.sections} · 경력 ${wide.career}/${expected.career} · 근거 ${wide.evidence}/${expected.evidence}</p>
+<p>섹션 ${wide.sections}/${expected.sections} · 근거 ${wide.evidence}/${expected.evidence} · 경력 제목 ${wide.careerHeading ? "있음" : "없음"}</p>
 <p>첫 화면 최대 ${wide.firstMaxFont}px · ${wide.firstChars}자 · 높이 ${wide.height.toLocaleString()}px</p>
-<p>${Math.round(item.wallMs / 1000)}초 · $${item.costUsd.toFixed(2)} · 호출 ${item.calls}회</p>
+<p>${Math.round((item.wallMs + (item.briefMs ?? 0)) / 1000)}초 · $${(item.costUsd + (item.briefCostUsd ?? 0)).toFixed(2)}${item.briefCostUsd ? ` (정리 $${item.briefCostUsd.toFixed(2)} 포함)` : ""}</p>
 ${flags.length ? `<p class="flags">${flags.map(escape).join(" · ")}</p>` : ""}
 ${item.plan?.signature ? `<p class="plan">${escape(item.plan.signature)}</p>` : ""}
 </figcaption></figure>`;
