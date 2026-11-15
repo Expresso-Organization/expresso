@@ -679,7 +679,7 @@ svg [data-morph] { transform-box: fill-box; }
 .fp-line .st .tag {
   position: absolute; left: 50%; bottom: 100%; transform: translateX(-50%); margin-bottom: 16px;
   white-space: nowrap; font-size: 22px; font-weight: 600; color: #8A5A12;
-  background: var(--fp-own); border: 1.5px solid var(--fp-own-line); border-radius: 10px; padding: 7px 14px;
+  background: var(--fp-own); border: 1.5px dashed var(--fp-own-line); border-radius: 10px; padding: 7px 14px;
 }
 .fp-line .st .tag::after {
   content: ""; position: absolute; left: 50%; top: 100%; width: 2px; height: 16px; background: var(--fp-own-line);
@@ -1100,9 +1100,9 @@ svg [data-morph] { transform-box: fill-box; }
               <clipPath id="fpv-b"><circle cx="590" cy="250" r="220"/></clipPath>
               <clipPath id="fpv-c"><circle cx="470" cy="440" r="220"/></clipPath>
             </defs>
-            <circle cx="350" cy="250" r="220" style="fill: var(--fp-in); stroke: var(--fp-in-line); stroke-width: 2; fill-opacity: .8"/>
-            <circle cx="590" cy="250" r="220" style="fill: var(--fp-own); stroke: var(--fp-own-line); stroke-width: 2; fill-opacity: .7"/>
-            <circle cx="470" cy="440" r="220" style="fill: var(--fp-out); stroke: var(--fp-out-line); stroke-width: 2; fill-opacity: .7"/>
+            <circle cx="350" cy="250" r="220" style="fill: var(--ex-tint-100); stroke: var(--ex-slate-400); stroke-width: 2; fill-opacity: .55"/>
+            <circle cx="590" cy="250" r="220" style="fill: var(--ex-tint-100); stroke: var(--ex-slate-400); stroke-width: 2; fill-opacity: .55"/>
+            <circle cx="470" cy="440" r="220" style="fill: var(--ex-tint-100); stroke: var(--ex-slate-400); stroke-width: 2; fill-opacity: .55"/>
             <g clip-path="url(#fpv-b)"><g clip-path="url(#fpv-c)"><circle cx="350" cy="250" r="220" style="fill: var(--ex-espresso)"/></g></g>
             <text x="470" y="322" text-anchor="middle" style="font-family: var(--ex-font-brand); font-size: 38px; fill: #fff; letter-spacing: -.02em">Expresso</text>
             <text x="150" y="60" class="s-t">채용 공고 추천</text>
@@ -1244,6 +1244,7 @@ svg [data-morph] { transform-box: fill-box; }
         <div class="ad" style="left: 1244px; top: 522px"><div class="dot"><i class="ph ph-heartbeat"></i></div><span class="nm">시스템 상태</span></div>
 
         <div class="fp-key">
+          <span><i style="background: var(--fp-own); border-color: var(--fp-own-line); border-style: dashed; border-radius: 6px; width: 34px"></i>추천 모델 적용 예정</span>
           <span><i style="background: var(--fp-own); border-color: var(--fp-own-line)"></i>추천 순위 계산 단계</span>
           <span><i style="background: var(--fp-ext); border-color: var(--fp-ext-line)"></i>외부 LLM 호출 단계</span>
         </div>
@@ -1275,6 +1276,7 @@ svg [data-morph] { transform-box: fill-box; }
         <div class="fp-field own in dl-4">
           <div class="k" style="color: #8A5A12">자체 학습 모델</div>
           <div class="who">추천 모델<small>Bi-Encoder+MLP · Cross-Encoder</small></div>
+          <div><span class="fp-state" style="margin-top: 16px">서비스 적용 예정</span></div>
           <ul class="fp-use">
             <li><div class="fp-ico"><i class="ph ph-magnifying-glass"></i></div><div><b>채용 공고 추천 모델</b><span>공고 탐색 · 기록과 공고의 적합도 순위</span></div></li>
             <li><div class="fp-ico"><i class="ph ph-stack"></i></div><div><b>커리어 기록 추천 모델</b><span>재료 고르기 · 공고 요건에 맞는 기록 순위</span></div></li>
@@ -1297,7 +1299,7 @@ svg [data-morph] { transform-box: fill-box; }
     <div class="body">
       <div class="fp-cols" style="grid-template-columns: 1fr 1fr">
         <div class="in dl-3" style="padding-right: 48px">
-          <div class="k" style="margin-bottom: 20px">학습</div>
+          <div class="k" style="margin-bottom: 20px; height: 40px; display: flex; align-items: center">학습</div>
           <div class="fp-chain">
             <div class="node fp-field src"><b>프로필 · 공고 쌍</b><span>합성 프로필 + 수집 공고</span></div>
             <div class="down"><i class="ph ph-arrow-down"></i></div>
@@ -1309,7 +1311,7 @@ svg [data-morph] { transform-box: fill-box; }
           </div>
         </div>
         <div class="in dl-4" style="padding-left: 48px">
-          <div class="k" style="margin-bottom: 20px">추론</div>
+          <div class="k" style="margin-bottom: 20px; height: 40px; display: flex; align-items: center; gap: 16px">추론<span class="fp-state" style="margin: 0">서비스 적용 예정</span></div>
           <div class="fp-funnel">
             <div class="lv fp-field quiet" style="width: 100%; padding: 0"><b>수집한 전체 공고</b></div>
             <div class="down"><i class="ph ph-caret-down"></i></div>
@@ -1469,10 +1471,10 @@ svg [data-morph] { transform-box: fill-box; }
           <div class="p">상세기능 209개 중 174개 · 11주차 점검</div>
         </div>
         <div class="fp-tiles">
-          <div class="in dl-4"><div class="num">163</div><div class="k">API 경로</div></div>
-          <div class="in dl-5"><div class="num">82</div><div class="k">MongoDB 컬렉션</div></div>
-          <div class="in dl-6"><div class="num">27</div><div class="k">웹 화면</div></div>
-          <div class="in dl-7"><div class="num">11</div><div class="k">Worker 작업 유형</div></div>
+          <div class="in dl-4"><div class="num">211</div><div class="k">API 경로</div></div>
+          <div class="in dl-5"><div class="num">88</div><div class="k">MongoDB 컬렉션</div></div>
+          <div class="in dl-6"><div class="num">34</div><div class="k">웹 화면</div></div>
+          <div class="in dl-7"><div class="num">8</div><div class="k">Worker 작업 유형</div></div>
         </div>
       </div>
     </div>
@@ -1671,9 +1673,9 @@ svg [data-morph] { transform-box: fill-box; }
     <div class="body">
       <div class="fp-lessons">
         <div class="k">문제</div><div></div><div class="k">해결</div>
-        <div class="fp-field in dl-3"><div class="t">DB 재시작 뒤 Worker 정지</div><div class="p">프로세스 상태 정상 · 작업 처리 중단</div></div>
+        <div class="fp-field in dl-3"><div class="t">DB 재시작 뒤 Worker 작업 전부 실패</div><div class="p">프로세스 생존으로 자동 재시작 미동작</div></div>
         <div class="arrow in in-fade dl-3"><i class="ph ph-arrow-right"></i></div>
-        <div class="fp-field sig in dl-3"><div class="t">연결 끊김 감지와 재연결</div><div class="p">미발행 작업 재발행 · 운영 로그 기반 재현</div></div>
+        <div class="fp-field sig in dl-3"><div class="t">복구 불가 오류 시 Worker 종료</div><div class="p">자동 재시작 유도 · 일시 오류 재시도 · 실패 작업 지연</div></div>
         <div class="fp-field in dl-4"><div class="t">AI 출력 검사로 인한 수치 왜곡</div><div class="p">형식 검사 통과용 값으로 내용 변경</div></div>
         <div class="arrow in in-fade dl-4"><i class="ph ph-arrow-right"></i></div>
         <div class="fp-field sig in dl-4"><div class="t">오류 항목만 같은 대화에서 수정</div><div class="p">출력 전체 재생성 중단</div></div>
@@ -1702,7 +1704,7 @@ svg [data-morph] { transform-box: fill-box; }
       <div class="fp-steps in in-fade dl-4" style="margin-top: 30px">
         <svg class="under" viewBox="0 0 1712 520" preserveAspectRatio="none" aria-hidden="true">
           <path d="M170 136 H1546" style="fill: none; stroke: var(--ex-slate-300); stroke-width: 4"/>
-          <path d="M170 396 H514" style="fill: none; stroke: var(--ex-line-200); stroke-width: 4"/>
+          <path d="M170 396 H342" style="fill: none; stroke: var(--ex-line-200); stroke-width: 4"/>
         </svg>
         <span class="lane" style="top: 120px">사용자</span>
         <span class="lane" style="top: 380px">관리자</span>
@@ -1720,7 +1722,6 @@ svg [data-morph] { transform-box: fill-box; }
         <div class="sp" style="left: 1546px; top: 100px"><div class="n">9</div><div class="nm">방문자<br>데이터 분석</div></div>
         <div class="sp" style="left: 170px; top: 360px"><div class="n">1</div><div class="nm">관리자 로그인</div></div>
         <div class="sp" style="left: 342px; top: 360px"><div class="n">2</div><div class="nm">대신 로그인</div></div>
-        <div class="sp" style="left: 514px; top: 360px"><div class="n">3</div><div class="nm">공고 수집 실행</div></div>
       </div>
     </div>
   </div>
