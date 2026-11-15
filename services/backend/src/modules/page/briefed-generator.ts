@@ -32,7 +32,10 @@ import { briefGroundSource, briefPrompt, refinePageBrief, type PageBrief } from 
  * - `refine`: 지면을 쓰기 전에 원문에서 자료 정리본(`page-brief.ts`)을 만들고, 지면 호출은 원문 대신 정리본을 받습니다.
  * - `designSkill`: 디자인 지침 본문(예: `frontend-design` 스킬)을 시스템 프롬프트에 넣고, 계획을 `html`보다 먼저 적게 합니다.
  *
- * 둘 다 끄면 `AiPageGenerator`와 같은 시스템 프롬프트 · 같은 요청을 보냅니다. 어느 쪽이 효과를 내는지 가리려고 스위치를 나눴습니다
+ * 이 생성기는 지면 키트(`.k-*` 부품)를 쓰지 않습니다. 모델이 CSS 전체를 씁니다. 디자인 시스템을 고른 포트폴리오에서 제품의 자유 생성은
+ * `useKit: true`로 돌아 미리 만든 부품으로 조판하는데, 그러면 배치와 글자 다루기를 지침대로 정할 자리가 없습니다.
+ *
+ * 둘 다 끄면 키트를 끈 `AiPageGenerator`와 같은 시스템 프롬프트 · 같은 요청을 보냅니다. 어느 쪽이 효과를 내는지 가리려고 스위치를 나눴습니다
  * (`docs/architecture/portfolio-free-generation-lab.md`).
  */
 export interface BriefedPageOptions {
