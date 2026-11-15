@@ -830,10 +830,10 @@ svg [data-morph] { transform-box: fill-box; }
 .fp-two .fp-field { display: flex; flex-direction: column; padding: 36px 40px; }
 .fp-two .who { font-size: 56px; font-weight: 600; letter-spacing: -.035em; margin-top: 8px; line-height: 1.15; }
 .fp-two .who small { font-size: 28px; font-weight: 400; color: var(--ex-slate-700); margin-left: 16px; letter-spacing: -.01em; }
-.fp-use { list-style: none; display: grid; gap: 26px; margin-top: 40px; }
-.fp-use li { display: grid; grid-template-columns: 72px 1fr; column-gap: 24px; align-items: center; }
-.fp-use b { display: block; font-size: 36px; font-weight: 600; letter-spacing: -.025em; }
-.fp-use div > span { display: block; font-size: 27px; color: var(--ex-slate-700); margin-top: 2px; letter-spacing: -.015em; }
+.fp-use { list-style: none; display: grid; gap: 44px; margin: auto 0; padding-top: 12px; }
+.fp-use li { display: grid; grid-template-columns: 72px 1fr; column-gap: 24px; align-items: start; }
+.fp-use b { display: block; font-size: 40px; font-weight: 600; letter-spacing: -.025em; }
+.fp-use div > span { display: block; font-size: 30px; line-height: 1.4; color: var(--ex-slate-700); margin-top: 2px; letter-spacing: -.015em; }
 .fp-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-top: auto; border-top: 1.5px solid rgba(22,34,58,.14); padding-top: 22px; }
 .fp-facts dt { font-size: 24px; color: var(--ex-slate-700); }
 .fp-facts dd { font-size: 40px; font-weight: 600; letter-spacing: -.03em; margin-top: 4px; }
@@ -1077,7 +1077,7 @@ svg [data-morph] { transform-box: fill-box; }
       </svg>
       <div class="fp-cols" style="grid-template-columns: repeat(3, 1fr); margin-top: 40px; border-top: 1px solid var(--ex-line-200); padding-top: 28px">
         <div class="in dl-4"><div class="k">지원 준비</div><div class="t" style="margin-top: 8px">커리어 기록 재사용</div><div class="p" style="margin-top: 8px">쌓아 둔 기록에서 공고에 맞는 경험 선택</div></div>
-        <div class="in dl-5"><div class="k">경험 정리</div><div class="t" style="margin-top: 8px">AI 인터뷰로 기록 보완</div><div class="p" style="margin-top: 8px">공고 요건 기반 질문 생성, 답변의 기록 저장</div></div>
+        <div class="in dl-5"><div class="k">경험 정리</div><div class="t" style="margin-top: 8px">AI 인터뷰로 기록 보완</div><div class="p" style="margin-top: 8px">공고 요건 기반 질문 생성 · 답변 기록 저장</div></div>
         <div class="in dl-6"><div class="k">배포 이후</div><div class="t" style="margin-top: 8px">방문 분석 기반 개선</div><div class="p" style="margin-top: 8px">방문 수 · 섹션별 체류 시간 분석</div></div>
       </div>
     </div>
@@ -1097,20 +1097,20 @@ svg [data-morph] { transform-box: fill-box; }
         <div class="plot in in-fade dl-3">
           <svg viewBox="0 0 960 677" aria-hidden="true">
             <defs>
-              <clipPath id="fpv-b"><circle cx="590" cy="250" r="220"/></clipPath>
-              <clipPath id="fpv-c"><circle cx="470" cy="440" r="220"/></clipPath>
+              <clipPath id="fpv-b"><circle cx="570" cy="262" r="200"/></clipPath>
+              <clipPath id="fpv-c"><circle cx="460" cy="442" r="200"/></clipPath>
             </defs>
-            <circle cx="350" cy="250" r="220" style="fill: var(--ex-tint-100); stroke: var(--ex-slate-400); stroke-width: 2; fill-opacity: .55"/>
-            <circle cx="590" cy="250" r="220" style="fill: var(--ex-tint-100); stroke: var(--ex-slate-400); stroke-width: 2; fill-opacity: .55"/>
-            <circle cx="470" cy="440" r="220" style="fill: var(--ex-tint-100); stroke: var(--ex-slate-400); stroke-width: 2; fill-opacity: .55"/>
-            <g clip-path="url(#fpv-b)"><g clip-path="url(#fpv-c)"><circle cx="350" cy="250" r="220" style="fill: var(--ex-espresso)"/></g></g>
-            <text x="470" y="322" text-anchor="middle" style="font-family: var(--ex-font-brand); font-size: 38px; fill: #fff; letter-spacing: -.02em">Expresso</text>
-            <text x="150" y="60" class="s-t">채용 공고 추천</text>
-            <text x="810" y="60" text-anchor="end" class="s-t">공고 맞춤 문서 작성</text>
-            <text x="470" y="668" text-anchor="middle" class="s-t">커리어 기록 · 공개</text>
-            <text x="470" y="166" text-anchor="middle" class="s-p" style="font-weight: 600; fill: var(--ex-ink-900)">원티드 에이전트</text>
-            <text x="716" y="262" text-anchor="middle" class="s-p" style="font-weight: 600; fill: var(--ex-ink-900)">Rezi · Teal</text>
-            <text x="470" y="560" text-anchor="middle" class="s-p" style="font-weight: 600; fill: var(--ex-ink-900)">랠릿</text>
+            <g style="fill: var(--ex-tint-100); stroke: var(--ex-slate-400); stroke-width: 2; fill-opacity: .55">
+              <circle cx="350" cy="262" r="200"/><circle cx="570" cy="262" r="200"/><circle cx="460" cy="442" r="200"/>
+            </g>
+            <g clip-path="url(#fpv-b)"><g clip-path="url(#fpv-c)"><circle cx="350" cy="262" r="200" style="fill: var(--ex-espresso)"/></g></g>
+            <text x="460" y="344" text-anchor="middle" style="font-family: var(--ex-font-brand); font-size: 34px; fill: #fff; letter-spacing: -.02em">Expresso</text>
+            <text x="436" y="42" text-anchor="end" class="s-t">채용 공고 추천</text>
+            <text x="484" y="42" class="s-t">공고 맞춤 문서 작성</text>
+            <text x="644" y="618" class="s-t">커리어 기록 · 공개</text>
+            <image href="assets/benchmark/wanted-logo.svg" x="404" y="118" width="112" height="32"/><text x="460" y="188" text-anchor="middle" class="s-p" style="font-weight: 600; fill: var(--ex-ink-900)">에이전트</text>
+            <image href="assets/benchmark/rezi-logo.svg" x="636" y="222" width="68" height="28"/><image href="assets/benchmark/teal-logo.svg" x="624" y="266" width="116" height="28"/>
+            <image href="assets/benchmark/rallit-logo.svg" x="401" y="536" width="118" height="32"/>
           </svg>
         </div>
         <div class="notes">
@@ -1129,7 +1129,7 @@ svg [data-morph] { transform-box: fill-box; }
     <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">2</span><span class="sec">프로젝트 개발</span><span class="pg"></span></div>
     <div class="head in dl-2">
       <h2>개발 범위</h2>
-      <p class="sub">이번 학기에 구현한 범위와 제외한 범위</p>
+      <p class="sub">이번 학기의 개발 범위와 제외 범위</p>
     </div>
     <div class="body">
       <div class="fp-scope">
@@ -1184,7 +1184,7 @@ svg [data-morph] { transform-box: fill-box; }
             <ul>
               <li>Google OAuth<small>로그인</small></li>
               <li>ATS 채용 보드 · 고용24<small>채용 공고 수집</small></li>
-              <li>Claude Code<small>공고 분석 · 인터뷰 · 포트폴리오 생성</small></li>
+              <li>Claude<small>공고 분석 · 인터뷰 · 포트폴리오 생성</small></li>
             </ul>
           </div>
           <div class="fp-field own in dl-7">
@@ -1210,7 +1210,7 @@ svg [data-morph] { transform-box: fill-box; }
       <div class="fp-line in in-fade dl-3">
         <div class="band" style="left: 96px; width: 163px"><b>기록 축적</b></div>
         <div class="band" style="left: 271px; width: 1272px"><b>공고마다 반복</b></div>
-        <div class="band" style="left: 1555px; width: 157px"><b>배포 뒤</b></div>
+        <div class="band" style="left: 1555px; width: 157px"><b>배포 이후</b></div>
         <svg class="under" viewBox="0 0 1712 677" preserveAspectRatio="none" aria-hidden="true">
           <defs>
             <marker id="fpl-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
@@ -1265,23 +1265,21 @@ svg [data-morph] { transform-box: fill-box; }
       <div class="fp-two">
         <div class="fp-field ext in dl-3">
           <div class="k" style="color: #5E4E96">외부 LLM</div>
-          <div class="who"><span class="brand">Claude Code</span><small>Opus · Sonnet · Haiku</small></div>
+          <div class="who"><span class="brand">Claude</span><small>Opus · Sonnet · Haiku</small></div>
           <ul class="fp-use">
-            <li><div class="fp-ico"><i class="ph ph-list-magnifying-glass"></i></div><div><b>공고 분석</b><span>요건 · 역량 추출</span></div></li>
-            <li><div class="fp-ico"><i class="ph ph-chats-circle"></i></div><div><b>AI 대화</b><span>인터뷰 질문 생성</span></div></li>
-            <li><div class="fp-ico"><i class="ph ph-palette"></i></div><div><b>포트폴리오 생성</b><span>문장 · 지면 생성</span></div></li>
+            <li><div class="fp-ico"><i class="ph ph-list-magnifying-glass"></i></div><div><b>공고 분석</b><span>공고 원문의 요건 · 역량 추출</span></div></li>
+            <li><div class="fp-ico"><i class="ph ph-chats-circle"></i></div><div><b>AI 대화</b><span>공고 요건 기반 인터뷰 질문 생성</span></div></li>
+            <li><div class="fp-ico"><i class="ph ph-palette"></i></div><div><b>포트폴리오 생성</b><span>레시피 · 문장 · 지면 생성</span></div></li>
           </ul>
-          <dl class="fp-facts"><div><dt>응답 시간</dt><dd>수 초 이상</dd></div><div><dt>호출 비용</dt><dd>건당 과금</dd></div></dl>
         </div>
         <div class="fp-field own in dl-4">
           <div class="k" style="color: #8A5A12">자체 학습 모델</div>
-          <div class="who">추천 모델<small>Bi-Encoder+MLP · Cross-Encoder</small></div>
+          <div class="who">추천 모델<small>교사 LLM 판정 학습</small></div>
           <div><span class="fp-state" style="margin-top: 16px">서비스 적용 예정</span></div>
           <ul class="fp-use">
-            <li><div class="fp-ico"><i class="ph ph-magnifying-glass"></i></div><div><b>채용 공고 추천 모델</b><span>공고 탐색 · 기록과 공고의 적합도 순위</span></div></li>
-            <li><div class="fp-ico"><i class="ph ph-stack"></i></div><div><b>커리어 기록 추천 모델</b><span>재료 고르기 · 공고 요건에 맞는 기록 순위</span></div></li>
+            <li><div class="fp-ico"><i class="ph ph-magnifying-glass"></i></div><div><b>채용 공고 추천 모델</b><span>공고 탐색 · 프로필과 공고의 적합도 순위</span><span>Bi-Encoder+MLP 선별 후 Cross-Encoder 재정렬</span></div></li>
+            <li><div class="fp-ico"><i class="ph ph-stack"></i></div><div><b>커리어 기록 추천 모델</b><span>재료 고르기 · 공고에 맞는 기록 순위</span><span>같은 Cross-Encoder 재사용</span></div></li>
           </ul>
-          <dl class="fp-facts"><div><dt>응답 시간</dt><dd>측정 예정</dd></div><div><dt>호출 비용</dt><dd>없음</dd></div></dl>
         </div>
       </div>
     </div>
@@ -1301,13 +1299,13 @@ svg [data-morph] { transform-box: fill-box; }
         <div class="in dl-3" style="padding-right: 48px">
           <div class="k" style="margin-bottom: 20px; height: 40px; display: flex; align-items: center">학습</div>
           <div class="fp-chain">
-            <div class="node fp-field src"><b>프로필 · 공고 쌍</b><span>합성 프로필 + 수집 공고</span></div>
+            <div class="node fp-field src"><b>프로필 · 공고 쌍</b><span>합성 프로필 + 채용 공고</span></div>
             <div class="down"><i class="ph ph-arrow-down"></i></div>
-            <div class="node fp-field ext"><b>교사 LLM 판정</b><span>요구사항별 근거 기록 연결</span></div>
+            <div class="node fp-field ext"><b>교사 LLM 판정</b><span>요구사항별 충족 수준 · 근거 기록</span></div>
             <div class="down"><i class="ph ph-arrow-down"></i></div>
-            <div class="node fp-field out"><b>적합도 라벨</b><span>루브릭 점수화 0–100</span></div>
+            <div class="node fp-field out"><b>적합도 라벨</b><span>코드의 가중 점수 계산 · 0–100</span></div>
             <div class="down"><i class="ph ph-arrow-down"></i></div>
-            <div class="node fp-field own"><b>학생 모델 학습</b><span>Bi-Encoder+MLP · Cross-Encoder</span></div>
+            <div class="node fp-field own"><b>추천 모델 학습</b><span>Bi-Encoder+MLP · Cross-Encoder</span></div>
           </div>
         </div>
         <div class="in dl-4" style="padding-left: 48px">
@@ -1315,9 +1313,9 @@ svg [data-morph] { transform-box: fill-box; }
           <div class="fp-funnel">
             <div class="lv fp-field quiet" style="width: 100%; padding: 0"><b>수집한 전체 공고</b></div>
             <div class="down"><i class="ph ph-caret-down"></i></div>
-            <div class="lv fp-field own" style="width: 78%; padding: 0"><b>Bi-Encoder+MLP 선별</b><span>상위 K건 후보</span></div>
+            <div class="lv fp-field own" style="width: 78%; padding: 0"><b>Bi-Encoder+MLP 선별</b><span>저장된 공고 벡터로 상위 후보 선별</span></div>
             <div class="down"><i class="ph ph-caret-down"></i></div>
-            <div class="lv fp-field own" style="width: 56%; padding: 0"><b>Cross-Encoder 재정렬</b><span>후보 적합도 재평가</span></div>
+            <div class="lv fp-field own" style="width: 62%; padding: 0"><b>Cross-Encoder 재정렬</b><span>공고 · 관련 기록 동시 입력</span></div>
             <div class="down"><i class="ph ph-caret-down"></i></div>
             <div class="lv fp-field sig" style="width: 36%; padding: 0"><b>추천 공고</b></div>
           </div>
@@ -1384,7 +1382,7 @@ svg [data-morph] { transform-box: fill-box; }
     <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">3</span><span class="sec">프로젝트 일정 및 전략</span><span class="pg"></span></div>
     <div class="head in dl-2">
       <h2>개발팀 구성 및 역할</h2>
-      <p class="sub">서비스 흐름 순서로 본 담당 도메인</p>
+      <p class="sub">서비스 흐름 순서의 담당 도메인</p>
     </div>
     <div class="body">
       <div class="fp-team">
@@ -1436,7 +1434,7 @@ svg [data-morph] { transform-box: fill-box; }
           <ul><li>Next.js 16</li><li>React 19</li><li>CSS Modules</li></ul></div>
         <div class="in dl-5"><div class="k">데이터</div>
           <div class="logos"><img src="assets/프로젝트-제안서/mongodb.svg" alt=""><img src="assets/프로젝트-제안서/redis.svg" alt=""></div>
-          <ul><li>MongoDB 8</li><li>Redis 8</li><li>Zod 계약</li></ul></div>
+          <ul><li>MongoDB 8</li><li>Redis 8</li><li>Zod 4 계약</li></ul></div>
         <div class="in dl-6"><div class="k">AI</div>
           <div class="logos"><img src="assets/프로젝트-제안서/pytorch.svg" alt=""><img src="assets/프로젝트-제안서/huggingface.svg" alt=""><img src="assets/프로젝트-제안서/claude.svg" alt=""></div>
           <ul><li>PyTorch</li><li>Hugging Face Transformers</li><li>Claude Code</li></ul></div>
@@ -1644,7 +1642,7 @@ svg [data-morph] { transform-box: fill-box; }
             <path d="M150 231 l8 8 l14 -16" style="fill: none; stroke: var(--fp-in-line); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round"/>
             <rect x="186" y="225" width="130" height="12" rx="6" style="fill: var(--fp-in-line); opacity: .6"/>
           </svg></div>
-          <div class="p">공고 요건 기반 질문 생성, 답변의 기록 저장</div>
+          <div class="p">공고 요건 기반 질문 생성 · 답변 기록 저장</div>
         </div>
         <div class="in dl-5">
           <div class="k">배포 이후</div><div class="t">방문 분석 기반 개선</div>
