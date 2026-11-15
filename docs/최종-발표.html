@@ -14,7 +14,7 @@
 
   이 자료의 기준
   · 강의실 화면에 띄우는 자료라 본문은 28px 이상, 가장 작은 글자는 22px 입니다.
-  · 머리줄은 절 번호 · 절 이름 · 쪽 번호입니다.
+  · 머리줄은 로고 마크 · 절 번호 · 절 이름 · 쪽 번호입니다. 마크는 로고 기본 모양으로 고정합니다.
   · 그림의 역할 색: 입력(--fp-in) · 외부 LLM(--fp-ext) · 자체 학습 모델(--fp-own) · 출력(--fp-out).
     설계서 그림(svg.dg)의 네 쌍과 같은 값입니다.
   · 값이 아직 없는 자리는 빗금(.fp-slot · .track.wait)으로 둡니다. 측정값 · 화면 캡처가 나오면 그 자리만 바꿉니다.
@@ -621,8 +621,9 @@ svg [data-morph] { transform-box: fill-box; }
 }
 .fp .frame { inset: 60px 104px 68px; }
 
-/* 머리줄 — 절 번호 · 절 이름 · 쪽 번호 */
+/* 머리줄 — 로고 마크(기본 모양 고정) · 절 번호 · 절 이름 · 쪽 번호 */
 .fp .hd { flex: none; display: flex; align-items: center; gap: 14px; height: 44px; }
+.fp .hd .mark { flex: none; margin-right: 2px; }
 .fp .hd .no { font-family: var(--ex-font-brand); font-weight: 400; font-size: 28px; line-height: 1; color: var(--ex-espresso); }
 .fp .hd .sec { font-size: 24px; font-weight: 500; letter-spacing: -.01em; color: var(--ex-slate-500); }
 .fp .hd .pg {
@@ -985,7 +986,7 @@ svg [data-morph] { transform-box: fill-box; }
 <!-- ═══ 목차 ═══ -->
 <section class="slide fp" data-title="목차" data-kind="목차">
   <div class="frame">
-    <div class="hd in in-fade dl-1"><span class="sec">심화전공프로젝트 최종 발표</span><span class="pg"></span></div>
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="sec">심화전공프로젝트 최종 발표</span><span class="pg"></span></div>
     <div class="head in dl-2"><h2>목차</h2></div>
     <div class="body">
       <div class="fp-cols fp-toc">
@@ -1003,7 +1004,7 @@ svg [data-morph] { transform-box: fill-box; }
 <!-- ═══ 세 구획 흐름 — 선정 배경 ═══ -->
 <section class="slide fp" data-title="선정 배경" data-kind="세 구획 흐름">
   <div class="frame">
-    <div class="hd in in-fade dl-1"><span class="no">1</span><span class="sec">프로젝트 개요</span><span class="pg"></span></div>
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">1</span><span class="sec">프로젝트 개요</span><span class="pg"></span></div>
     <div class="head in dl-2">
       <h2>선정 배경</h2>
       <p class="sub">지원하는 회사마다 반복되는 포트폴리오 제작</p>
@@ -1047,7 +1048,7 @@ svg [data-morph] { transform-box: fill-box; }
 <!-- ═══ 그림과 세 열 — 서비스 개요 ═══ -->
 <section class="slide fp" data-title="서비스 개요" data-kind="그림과 세 열">
   <div class="frame">
-    <div class="hd in in-fade dl-1"><span class="no">1</span><span class="sec">프로젝트 개요</span><span class="pg"></span></div>
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">1</span><span class="sec">프로젝트 개요</span><span class="pg"></span></div>
     <div class="head in dl-2">
       <h2>서비스 개요</h2>
       <p class="sub">커리어 기록과 채용 공고에서 공고 맞춤 포트폴리오까지</p>
@@ -1086,7 +1087,7 @@ svg [data-morph] { transform-box: fill-box; }
 <!-- ═══ 벤 다이어그램과 읽는 법 — 벤치마킹 사례와 차별점 ═══ -->
 <section class="slide fp" data-title="벤치마킹 사례와 차별점" data-kind="그림과 읽는 법">
   <div class="frame">
-    <div class="hd in in-fade dl-1"><span class="no">1</span><span class="sec">프로젝트 개요</span><span class="pg"></span></div>
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">1</span><span class="sec">프로젝트 개요</span><span class="pg"></span></div>
     <div class="head in dl-2">
       <h2>벤치마킹 사례와 차별점</h2>
       <p class="sub">기존 서비스의 지원 범위와 Expresso의 지원 범위</p>
@@ -1125,7 +1126,7 @@ svg [data-morph] { transform-box: fill-box; }
 <!-- ═══ 범위 구분 — 개발 범위 ═══ -->
 <section class="slide fp" data-title="개발 범위" data-kind="범위 구분">
   <div class="frame">
-    <div class="hd in in-fade dl-1"><span class="no">2</span><span class="sec">프로젝트 개발</span><span class="pg"></span></div>
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">2</span><span class="sec">프로젝트 개발</span><span class="pg"></span></div>
     <div class="head in dl-2">
       <h2>개발 범위</h2>
       <p class="sub">이번 학기에 구현한 범위와 제외한 범위</p>
@@ -1156,7 +1157,7 @@ svg [data-morph] { transform-box: fill-box; }
 <!-- ═══ 계층 구조도 — 시스템 구성 ═══ -->
 <section class="slide fp" data-title="시스템 구성" data-kind="계층 구조도">
   <div class="frame">
-    <div class="hd in in-fade dl-1"><span class="no">2</span><span class="sec">프로젝트 개발</span><span class="pg"></span></div>
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">2</span><span class="sec">프로젝트 개발</span><span class="pg"></span></div>
     <div class="head in dl-2">
       <h2>시스템 구성</h2>
       <p class="sub">클라이언트 · API 서버 · Worker · 저장소 · 외부 서비스</p>
@@ -1200,7 +1201,7 @@ svg [data-morph] { transform-box: fill-box; }
 <!-- ═══ 단계 흐름 — 주요 기능 ═══ -->
 <section class="slide fp" data-title="주요 기능" data-kind="단계 흐름">
   <div class="frame">
-    <div class="hd in in-fade dl-1"><span class="no">2</span><span class="sec">프로젝트 개발</span><span class="pg"></span></div>
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">2</span><span class="sec">프로젝트 개발</span><span class="pg"></span></div>
     <div class="head in dl-2">
       <h2>주요 기능</h2>
       <p class="sub">커리어 기록에서 방문 분석까지의 사용자 흐름</p>
@@ -1255,7 +1256,7 @@ svg [data-morph] { transform-box: fill-box; }
 <!-- ═══ 대비 — AI 모델 구성 ═══ -->
 <section class="slide fp" data-title="AI 모델 구성" data-kind="대비">
   <div class="frame">
-    <div class="hd in in-fade dl-1"><span class="no">2</span><span class="sec">프로젝트 개발</span><span class="pg"></span></div>
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">2</span><span class="sec">프로젝트 개발</span><span class="pg"></span></div>
     <div class="head in dl-2">
       <h2>AI 모델 구성</h2>
       <p class="sub">기능별 처리 모델 구분</p>
@@ -1290,7 +1291,7 @@ svg [data-morph] { transform-box: fill-box; }
 <!-- ═══ 학습 · 추론 흐름 — 추천 모델 학습 방법 ═══ -->
 <section class="slide fp" data-title="추천 모델 학습 방법" data-kind="학습 · 추론 흐름">
   <div class="frame">
-    <div class="hd in in-fade dl-1"><span class="no">2</span><span class="sec">프로젝트 개발</span><span class="pg"></span></div>
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">2</span><span class="sec">프로젝트 개발</span><span class="pg"></span></div>
     <div class="head in dl-2">
       <h2>추천 모델 학습 방법</h2>
       <p class="sub">교사 지식 증류와 두 모델의 단계적 활용</p>
@@ -1329,7 +1330,7 @@ svg [data-morph] { transform-box: fill-box; }
 <!-- ═══ 간트 — 개발 일정. 실제 진행은 .lane 안에 .act 막대를 더해 표시합니다 ═══ -->
 <section class="slide fp" data-title="개발 일정" data-kind="간트">
   <div class="frame">
-    <div class="hd in in-fade dl-1"><span class="no">3</span><span class="sec">프로젝트 일정 및 전략</span><span class="pg"></span></div>
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">3</span><span class="sec">프로젝트 일정 및 전략</span><span class="pg"></span></div>
     <div class="head in dl-2">
       <h2>개발 일정</h2>
       <p class="sub">학기 주차별 계획과 진도 점검 시점</p>
@@ -1380,7 +1381,7 @@ svg [data-morph] { transform-box: fill-box; }
 <!-- ═══ 담당 배치 — 개발팀 구성 및 역할 ═══ -->
 <section class="slide fp" data-title="개발팀 구성 및 역할" data-kind="담당">
   <div class="frame">
-    <div class="hd in in-fade dl-1"><span class="no">3</span><span class="sec">프로젝트 일정 및 전략</span><span class="pg"></span></div>
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">3</span><span class="sec">프로젝트 일정 및 전략</span><span class="pg"></span></div>
     <div class="head in dl-2">
       <h2>개발팀 구성 및 역할</h2>
       <p class="sub">서비스 흐름 순서로 본 담당 도메인</p>
@@ -1420,7 +1421,7 @@ svg [data-morph] { transform-box: fill-box; }
 <!-- ═══ 기술 스택과 파이프라인 — 개발 환경 ═══ -->
 <section class="slide fp" data-title="개발 환경" data-kind="기술 스택과 파이프라인">
   <div class="frame">
-    <div class="hd in in-fade dl-1"><span class="no">3</span><span class="sec">프로젝트 일정 및 전략</span><span class="pg"></span></div>
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">3</span><span class="sec">프로젝트 일정 및 전략</span><span class="pg"></span></div>
     <div class="head in dl-2">
       <h2>개발 환경</h2>
       <p class="sub">기술 스택과 배포 파이프라인</p>
@@ -1456,7 +1457,7 @@ svg [data-morph] { transform-box: fill-box; }
 <!-- ═══ 수치 — 개발 결과물 ═══ -->
 <section class="slide fp" data-title="개발 결과물" data-kind="수치">
   <div class="frame">
-    <div class="hd in in-fade dl-1"><span class="no">4</span><span class="sec">개발 성과</span><span class="pg"></span></div>
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">4</span><span class="sec">개발 성과</span><span class="pg"></span></div>
     <div class="head in dl-2">
       <h2>개발 결과물</h2>
       <p class="sub">설계서 요구기능 대비 구현 현황</p>
@@ -1483,7 +1484,7 @@ svg [data-morph] { transform-box: fill-box; }
 <!-- ═══ 화면 모음 — 주요 화면. 캡처가 준비되면 .fp-slot 을 <img> 로 바꿉니다 ═══ -->
 <section class="slide fp" data-title="주요 화면" data-kind="화면 모음">
   <div class="frame">
-    <div class="hd in in-fade dl-1"><span class="no">4</span><span class="sec">개발 성과</span><span class="pg"></span></div>
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">4</span><span class="sec">개발 성과</span><span class="pg"></span></div>
     <div class="head in dl-2">
       <h2>주요 화면</h2>
       <p class="sub">운영 중인 서비스의 실제 화면</p>
@@ -1506,7 +1507,7 @@ svg [data-morph] { transform-box: fill-box; }
 <!-- ═══ 차트와 읽는 법 — 추천 모델 성능. 측정값이 나오면 빗금 막대를 실제 높이의 막대로 바꿉니다 ═══ -->
 <section class="slide fp" data-title="추천 모델 성능" data-kind="차트와 읽는 법">
   <div class="frame">
-    <div class="hd in in-fade dl-1"><span class="no">4</span><span class="sec">개발 성과</span><span class="pg"></span></div>
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">4</span><span class="sec">개발 성과</span><span class="pg"></span></div>
     <div class="head in dl-2">
       <h2>추천 모델 성능</h2>
       <p class="sub">한국어 채용 공고 평가 세트의 순위 품질</p>
@@ -1555,7 +1556,7 @@ svg [data-morph] { transform-box: fill-box; }
 <!-- ═══ 목표 대비 측정 배치 — 성능 시험 결과 ═══ -->
 <section class="slide fp" data-title="성능 시험 결과" data-kind="목표 대비 측정">
   <div class="frame">
-    <div class="hd in in-fade dl-1"><span class="no">4</span><span class="sec">개발 성과</span><span class="pg"></span></div>
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">4</span><span class="sec">개발 성과</span><span class="pg"></span></div>
     <div class="head in dl-2">
       <h2>성능 시험 결과</h2>
       <p class="sub">설계서 성능평가지표의 목표치와 측정치</p>
@@ -1614,7 +1615,7 @@ svg [data-morph] { transform-box: fill-box; }
 <!-- ═══ 세 열 그림 — 기대 효과 ═══ -->
 <section class="slide fp" data-title="기대 효과" data-kind="세 열 그림">
   <div class="frame">
-    <div class="hd in in-fade dl-1"><span class="no">4</span><span class="sec">개발 성과</span><span class="pg"></span></div>
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">4</span><span class="sec">개발 성과</span><span class="pg"></span></div>
     <div class="head in dl-2">
       <h2>기대 효과</h2>
       <p class="sub">지원 준비 · 경험 정리 · 배포 이후</p>
@@ -1664,7 +1665,7 @@ svg [data-morph] { transform-box: fill-box; }
 <!-- ═══ 문제와 해결 — Lessons Learned ═══ -->
 <section class="slide fp" data-title="Lessons Learned" data-kind="문제와 해결">
   <div class="frame">
-    <div class="hd in in-fade dl-1"><span class="no">5</span><span class="sec">Lessons Learned</span><span class="pg"></span></div>
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">5</span><span class="sec">Lessons Learned</span><span class="pg"></span></div>
     <div class="head in dl-2">
       <h2 class="brand" style="font-weight: 500">Lessons Learned</h2>
       <p class="sub">개발 과정의 문제와 해결</p>
@@ -1689,7 +1690,7 @@ svg [data-morph] { transform-box: fill-box; }
 <!-- ═══ 시연 — 환경과 순서 ═══ -->
 <section class="slide fp" data-title="시연 환경과 시나리오" data-kind="시연 순서">
   <div class="frame">
-    <div class="hd in in-fade dl-1"><span class="no">6</span><span class="sec">프로젝트 시연</span><span class="pg"></span></div>
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">6</span><span class="sec">프로젝트 시연</span><span class="pg"></span></div>
     <div class="head in dl-2">
       <h2>시연 환경과 시나리오</h2>
       <p class="sub">운영 서버에서 진행하는 시연 순서</p>
