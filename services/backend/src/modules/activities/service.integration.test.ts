@@ -16,9 +16,12 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
   it("처음 본 활동에 처음 본 때를 남기고, 다시 보면 마감일만 고친다", async () => {
     const first = new Date("2026-11-15T03:00:00Z");
     let pages: Record<number, string | null> = { 20: page([["1", "앱 개발 공모전", "D-3"], ["2", "바이브코딩 해커톤", "D-10"]]), 21: null };
-    const service = new ActivityService(fixture.resource, async (field) => pages[field] ?? null);
+    // 첫 쪽만 접수 중이다. 둘째 쪽부터는 접수가 끝난 줄뿐이라 읽기를 멈춘다.
+    const asked: string[] = [];
+    const service = new ActivityService(fixture.resource, async (field, at) => { asked.push(`${field}:${at}`); return at === 1 ? pages[field] ?? null : page([["9", "지난 공모전", "D+3"]]); });
 
     expect(await service.collect(first)).toEqual({ read: 2, added: 2, updated: 0 });
+    expect(asked).toEqual(["20:1", "20:2", "21:1"]);
 
     const second = new Date("2026-11-16T03:00:00Z");
     pages = { 20: page([["1", "앱 개발 공모전", "D-2"], ["3", "새 공모전", "D-20"]]), 21: null };

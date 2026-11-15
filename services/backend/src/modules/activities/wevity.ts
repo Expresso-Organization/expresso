@@ -60,11 +60,14 @@ export function parseWevityRows(html: string): WevityRow[] {
   return rows;
 }
 
-/** 분야 한 쪽을 받아 온다. 응답이 정상이 아니면 null — 부르는 쪽이 그 분야를 건너뛴다. */
-export type WevityFetcher = (field: number) => Promise<string | null>;
+/** 한 분야에서 읽는 쪽 수의 상한. 접수 중인 줄이 한 쪽(15줄)을 넘길 때를 위한 것이다. */
+export const WEVITY_MAX_PAGES = 5;
 
-export const fetchWevityPage: WevityFetcher = async (field) => {
-  const response = await fetch(`${WEVITY_ORIGIN}?c=find&s=1&gub=1&cidx=${field}`, {
+/** 분야의 한 쪽을 받아 온다. 응답이 정상이 아니면 null — 부르는 쪽이 그 분야를 건너뛴다. */
+export type WevityFetcher = (field: number, page: number) => Promise<string | null>;
+
+export const fetchWevityPage: WevityFetcher = async (field, page) => {
+  const response = await fetch(`${WEVITY_ORIGIN}?c=find&s=1&gub=1&cidx=${field}&gp=${page}`, {
     headers: { "user-agent": "Mozilla/5.0" },
     signal: AbortSignal.timeout(20_000),
   });

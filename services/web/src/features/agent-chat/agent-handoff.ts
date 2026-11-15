@@ -27,3 +27,9 @@ export function takeAgentHandoff(): AgentHandoff | null {
     return null;
   }
 }
+
+/**
+ * 대화 화면이 대화 목록을 알릴 때 쓰는 창 이벤트 이름. `detail`은 `{ id, title }[]`(최근 수정순)이다.
+ * 사이드바는 레이아웃에 있어 대화 화면과 상태를 나눌 수 없으므로 이벤트로 받는다.
+ */
+export const AGENT_CONVERSATIONS_EVENT = "ex-agent-conversations";

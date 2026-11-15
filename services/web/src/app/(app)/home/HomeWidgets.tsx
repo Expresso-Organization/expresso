@@ -29,15 +29,21 @@ const URGENT_DAYS = 7;
  * 규칙으로 센 제안(`briefingSteps`)은 크레딧이 남지 않아 에이전트가 쓰지 못했을 때 대신 보이도록 함께 넘긴다.
  */
 export async function Proposals({ accessToken, recordTotal }: { accessToken: string; recordTotal: number }) {
-  const [{ data: feed }, records, home, list, sites, watched] = await Promise.all([
-    proposals.feed(accessToken),
+  const { data: feed } = await proposals.feed(accessToken);
+  // 규칙 제안은 대신 보일 때만 센다. 평소에는 그 응답들을 부르지 않는다.
+  const fallback = feed.enabled && feed.run.reason === "no_credits" ? await ruleFindings(accessToken, recordTotal) : [];
+  return <ProposalFeed initial={feed} fallback={fallback} />;
+}
+
+async function ruleFindings(accessToken: string, recordTotal: number) {
+  const [records, home, list, sites, watched] = await Promise.all([
     career.records(accessToken, { sort: "updated_desc", limit: RECORD_PAGE }),
     homeEngagement(accessToken),
     portfolios.list(accessToken, { limit: PORTFOLIO_PAGE }),
     siteInsights(accessToken),
     watchedJobs(accessToken),
   ]);
-  const fallback = briefingSteps({
+  return briefingSteps({
     records: records.data,
     recordTotal,
     brews: home.data.activeBrews,
@@ -48,7 +54,6 @@ export async function Proposals({ accessToken, recordTotal }: { accessToken: str
     contests: [],
     brewHref: (brew) => `/brew/${brew.id}/${resumeStep(brew.status).segment}`,
   }).flatMap((step) => step.findings);
-  return <ProposalFeed initial={feed} fallback={fallback} />;
 }
 
 export function ProposalsSkeleton() {

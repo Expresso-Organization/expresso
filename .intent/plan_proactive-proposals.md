@@ -28,6 +28,7 @@ date: 2026-11-15
 | `services/web/src/lib/api/endpoints.ts` · `lib/usage-copy.ts` · `lib/job-search-defaults.ts` | `proposals` · `activities` 호출, 사용량 라벨 |
 | `services/web/src/app/(app)/home/ProposalFeed.tsx` · `proposal-actions.ts` (새로) · `HomeWidgets.tsx` · `HomeStart.tsx` · `briefing.ts` · `home-start.module.css` | 켜기 창, 제안 카드, 진행 표시, 규칙 제안은 대신 보일 때만. 제안 단추가 자료 여러 개를 입력창에 붙임 |
 | `services/web/src/app/(app)/jobs/explore.ts` · `ExploreActivities.tsx` · `explore.test.ts` | 위비티를 직접 읽지 않고 `GET /activities`를 읽음 |
+| `services/web/src/app/(app)/home/page.tsx` · `components/shell/SidebarConversations.tsx` · `features/agent-chat/AgentChat.tsx` · `agent-handoff.ts` | 사이드바에서 다른 대화로 전환, 최근 대화 목록 바로 갱신 |
 
 ## 작업 순서
 

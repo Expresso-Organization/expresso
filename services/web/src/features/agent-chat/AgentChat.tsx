@@ -26,7 +26,7 @@ import type { ThreadGroupPart } from "@/components/assistant-ui/elements/thread.
 import type { PropsWithChildren, ReactNode } from "react";
 import "@/styles/agent-chat-framework.css";
 import { agentRequest, useAgentConversation } from "./useAgentConversation";
-import { takeAgentHandoff } from "./agent-handoff";
+import { AGENT_CONVERSATIONS_EVENT, takeAgentHandoff } from "./agent-handoff";
 import { ToolStep } from "./ToolStep";
 import styles from "./AgentChat.module.css";
 
@@ -246,6 +246,11 @@ export function AgentChat({ job, page, standalone = false, fresh = false, newHre
       } catch { runtime.thread.composer.setText(handoff.text); }
     })();
   }, [fresh, access, canSend, runtime, selectConversation]);
+  // 사이드바의 「최근 대화」가 새 대화와 바뀐 제목을 바로 보이도록 목록을 알린다(`SidebarConversations`가 듣는다).
+  const conversationRows = JSON.stringify(state.list.map(({ id, title }) => ({ id, title })));
+  useEffect(() => {
+    if (standalone) window.dispatchEvent(new CustomEvent(AGENT_CONVERSATIONS_EVENT, { detail: JSON.parse(conversationRows) }));
+  }, [standalone, conversationRows]);
   const lastRun = state.conversation?.run;
   const canRetry = !!lastRun && ["failed", "interrupted", "cancelled"].includes(lastRun.status) && state.conversation?.messages.at(-1)?.role === "assistant";
   const retryButton = canRetry ? <Button variant="outline" size="sm" className={styles.retryButton} disabled={!canSend || state.pending} onClick={() => void state.retry()}><Icon name="arrow-clockwise" size={13} />다시 보내기</Button> : null;

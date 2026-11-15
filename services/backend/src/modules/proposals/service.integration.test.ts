@@ -80,6 +80,18 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect(w.written[0]?.jobs.map(({ id, matched }) => [id, matched])).toEqual([[JOB_ID, ["React"]]]);
   });
 
+  it("남은 날은 읽을 때 다시 세고, 마감이 지난 제안은 보이지 않는다", async () => {
+    const w = world();
+    const proposals = service(w);
+    await proposals.enable(userId, at);
+    await proposals.run(userId, "enable", at);
+    expect((await proposals.feed(userId, at)).proposals[0]?.subject.daysLeft).toBe(12);
+    // 이틀 뒤에는 열흘 남았다. 마감 다음 날에는 사라진다.
+    expect((await proposals.feed(userId, new Date("2026-11-17T03:00:00.000Z"))).proposals[0]?.subject.daysLeft).toBe(10);
+    expect((await proposals.feed(userId, new Date("2026-11-27T03:00:00.000Z"))).proposals[0]?.subject.daysLeft).toBe(0);
+    expect((await proposals.feed(userId, new Date("2026-11-28T03:00:00.000Z"))).proposals).toEqual([]);
+  });
+
   it("관심 없다고 한 대상은 지워지고 다음 실행의 후보에서 빠진다", async () => {
     const w = world();
     const proposals = service(w);

@@ -1,7 +1,16 @@
 import type { ActivityKind, Proposal, ProposalRun } from "@expresso/contracts";
 
-/** 저장하는 제안. 계약의 `Proposal`에서 시각만 Date다. */
-export type StoredProposal = Omit<Proposal, "createdAt"> & { createdAt: Date };
+/**
+ * 저장하는 제안. 남은 날과 대화 요청문은 저장하지 않는다 — 날이 지나면 달라지는 값이라 읽을 때 만든다.
+ *
+ * - `deadlineOn`은 대상의 마감일(서울 날짜)이다. 마감이 없으면 null. 지나면 그 제안은 보이지 않는다.
+ * - `origin`은 요청문을 다시 만들 때 쓰는 것 — 대상의 제목 · 주최와 근거로 든 기록이다.
+ */
+export type StoredProposal = Omit<Proposal, "createdAt" | "start"> & {
+  createdAt: Date;
+  deadlineOn: string | null;
+  origin: { title: string; host: string | null; recordIds: string[] };
+};
 
 /** 저장하는 실행 상태. 계약의 `ProposalRun`에서 시각만 Date다. */
 export type StoredProposalRun = Omit<ProposalRun, "startedAt" | "finishedAt"> & { startedAt: Date | null; finishedAt: Date | null };

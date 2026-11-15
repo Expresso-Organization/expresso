@@ -2,7 +2,7 @@ import { type Activity, type ListActivitiesQuery } from "@expresso/contracts";
 import { mongoCollections, type ActivityDoc } from "@expresso/database";
 
 import type { MongoContext } from "../../platform/mongodb.js";
-import { fetchWevityPage, parseWevityRows, WEVITY_FIELDS, type WevityFetcher, type WevityRow } from "./wevity.js";
+import { fetchWevityPage, parseWevityRows, WEVITY_FIELDS, WEVITY_MAX_PAGES, type WevityFetcher, type WevityRow } from "./wevity.js";
 
 const DAY_MS = 86_400_000;
 const KST_OFFSET_MS = 9 * 60 * 60 * 1_000;
@@ -47,8 +47,13 @@ export class ActivityService {
   async collect(at = new Date()): Promise<{ read: number; added: number; updated: number }> {
     const rows = new Map<string, WevityRow>();
     for (const field of WEVITY_FIELDS) {
-      const html = await this.#fetchPage(field).catch(() => null);
-      for (const row of html ? parseWevityRows(html) : []) rows.set(row.id, row);
+      // 목록은 접수 중인 줄이 앞에 선다. 접수 중인 줄이 하나도 없는 쪽이 나오면 그 분야는 끝이다.
+      for (let page = 1; page <= WEVITY_MAX_PAGES; page += 1) {
+        const html = await this.#fetchPage(field, page).catch(() => null);
+        const found = html ? parseWevityRows(html) : [];
+        for (const row of found) rows.set(row.id, row);
+        if (found.length === 0) break;
+      }
     }
     const { activities } = mongoCollections(this.context.db);
     let added = 0; let updated = 0;

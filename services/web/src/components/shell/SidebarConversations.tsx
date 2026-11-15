@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 
 import { GlideMenu } from "@/components/ui/GlideMenu";
 import { Icon } from "@/components/ui/Icon";
+import { AGENT_CONVERSATIONS_EVENT } from "@/features/agent-chat/agent-handoff";
 
 import styles from "./Sidebar.module.css";
 
@@ -34,6 +35,16 @@ export function SidebarConversations() {
       .catch(() => undefined);
     return () => controller.abort();
   }, [pathname]);
+
+  // 대화 화면이 열려 있으면 그 화면이 아는 목록을 받는다 — 새 대화와 바뀐 제목이 바로 보인다.
+  useEffect(() => {
+    const receive = (event: Event) => {
+      const detail = (event as CustomEvent<Row[]>).detail;
+      if (Array.isArray(detail)) setRows(detail.slice(0, SHOWN).map(({ id, title }) => ({ id, title })));
+    };
+    window.addEventListener(AGENT_CONVERSATIONS_EVENT, receive);
+    return () => window.removeEventListener(AGENT_CONVERSATIONS_EVENT, receive);
+  }, []);
 
   if (rows.length === 0) return null;
 

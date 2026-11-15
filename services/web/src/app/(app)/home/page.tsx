@@ -21,14 +21,16 @@ export default async function HomePage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const [params, session] = await Promise.all([searchParams, requireSession()]);
-  const inConversation = typeof params.chat === "string" || params.compose === "1";
+  const chat = typeof params.chat === "string" ? params.chat : null;
+  const inConversation = chat !== null || params.compose === "1";
 
   return (
     <>
       <HomeHeader />
       <AppBody>
         {inConversation ? (
-          <AgentChat standalone fresh newHref="/home" />
+          // 대화는 마운트할 때 주소에서 한 번 읽는다. 사이드바에서 다른 대화를 고르면 새로 세워야 그 대화가 열린다.
+          <AgentChat key={chat ?? "compose"} standalone fresh newHref="/home" />
         ) : (
           <HomeStart
             proposals={

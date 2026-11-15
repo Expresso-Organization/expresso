@@ -7,7 +7,7 @@ import { HttpStatusError } from "../../api/plugins/auth-context.js";
 import { addMongoOutboxEvent } from "../../platform/mongo-outbox.js";
 import { inTransaction } from "../../platform/mongo-transaction.js";
 import type { MongoContext } from "../../platform/mongodb.js";
-import { seoulDate, type ActivityApi } from "../activities/index.js";
+import { daysUntil, seoulDate, type ActivityApi } from "../activities/index.js";
 import { readableCareerProperties, type CareerApi } from "../career/index.js";
 import { ConsentError, type ConsentApi } from "../consent/index.js";
 import type { JobBoardApi } from "../jobs/index.js";
@@ -44,15 +44,37 @@ function isStale(run: StoredProposalRun, at: Date): boolean {
   return (run.status === "queued" || run.status === "running") && run.startedAt !== null && at.getTime() - run.startedAt.getTime() > RUN_TIMEOUT_MS;
 }
 
+/** 저장한 제안을 지금 시각의 모양으로. 마감이 지났으면 null이다. */
+function proposalView(stored: StoredProposal, at: Date): Proposal | null {
+  const daysLeft = stored.deadlineOn === null ? null : daysUntil(stored.deadlineOn, at);
+  if (daysLeft !== null && daysLeft < 0) return null;
+  const { deadlineOn: _deadlineOn, origin, ...rest } = stored;
+  return {
+    ...rest,
+    subject: { ...stored.subject, daysLeft },
+    start: proposalStart({
+      action: stored.action,
+      subject: { kind: stored.subject.kind, id: stored.subject.id, title: origin.title, ...(origin.host === null ? {} : { host: origin.host }), daysLeft },
+      recordIds: origin.recordIds,
+    }),
+    createdAt: stored.createdAt.toISOString(),
+  };
+}
+
 function feedView(doc: ProposalFeedDoc | null, at: Date): ProposalFeed {
   if (!doc) return ProposalFeedSchema.parse({ enabled: false, proposals: [], run: { ...IDLE_RUN } });
   // 끝나지 못한 실행은 실패로 보인다. 다시 받을 수 있다.
   const run: StoredProposalRun = isStale(doc.run, at) ? { ...doc.run, status: "failed", stage: null, reason: "failed", finishedAt: at } : doc.run;
   return ProposalFeedSchema.parse({
     enabled: doc.enabled,
-    proposals: doc.enabled ? doc.proposals.map((proposal) => ({ ...proposal, createdAt: proposal.createdAt.toISOString() })) : [],
+    proposals: doc.enabled ? doc.proposals.flatMap((proposal) => proposalView(proposal, at) ?? []) : [],
     run: { ...run, startedAt: run.startedAt?.toISOString() ?? null, finishedAt: run.finishedAt?.toISOString() ?? null },
   });
+}
+
+/** 남은 날을 마감일(서울 날짜)로 바꾼다. 목록은 남은 날만 주므로 읽은 날에 더해 구한다. */
+function deadlineOn(daysLeft: number | null, at: Date): string | null {
+  return daysLeft === null ? null : seoulDate(new Date(at.getTime() + daysLeft * 86_400_000));
 }
 
 function jobInput(job: JobPostingSummary): JobInput {
@@ -196,7 +218,9 @@ export class ProposalService {
       const fresh = written.map((draft) => this.#proposal(draft, candidates, at));
       const freshKeys = new Set(fresh.map(({ subject }) => subjectKey(subject)));
       const current = (await this.#feeds.findOne({ userId }))?.proposals ?? started.proposals;
-      const proposals = [...fresh, ...current.filter(({ subject }) => !freshKeys.has(subjectKey(subject)))].slice(0, STORED_PROPOSALS);
+      // 마감이 지난 제안은 이때 치운다. 읽을 때는 보이지 않게만 한다.
+      const alive = current.filter((proposal) => proposalView(proposal, at) !== null && !freshKeys.has(subjectKey(proposal.subject)));
+      const proposals = [...fresh, ...alive].slice(0, STORED_PROPOSALS);
       return await finish("complete", null, { proposals, seenThrough: at, read, counted: true });
     } catch {
       return await finish("failed", "failed");
@@ -250,21 +274,16 @@ export class ProposalService {
       : activity
         ? { kind: "activity", id: activity.id, label: activity.title, href: activity.url, external: true, daysLeft: activity.daysLeft }
         : record(draft.subject.id) ?? { kind: "record", id: draft.subject.id, label: "기록", href: `/career/records/${draft.subject.id}`, external: false, daysLeft: null };
-    const start = proposalStart({
-      action: draft.action,
-      subject: { kind: draft.subject.kind, id: draft.subject.id, title: job?.title ?? activity?.title ?? subject.label, ...(activity ? { host: activity.host, daysLeft: activity.daysLeft } : {}) },
-      recordIds: draft.recordIds,
-    });
-    const proposal: Proposal = {
+    return {
       id: randomUUID(),
       action: draft.action,
       title: draft.title,
       reason: draft.reason,
       subject,
       records: draft.recordIds.flatMap((id) => record(id) ?? []),
-      start,
-      createdAt: at.toISOString(),
+      deadlineOn: deadlineOn(job?.daysLeft ?? activity?.daysLeft ?? null, at),
+      origin: { title: job?.title ?? activity?.title ?? subject.label, host: activity?.host ?? null, recordIds: draft.recordIds },
+      createdAt: at,
     };
-    return { ...proposal, createdAt: at };
   }
 }
