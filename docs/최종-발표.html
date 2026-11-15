@@ -895,16 +895,14 @@ svg [data-morph] { transform-box: fill-box; }
 .fp-tiles .k { margin-top: 10px; }
 
 /* ── 화면 모음 — 주요 화면 ────────────────────────────── */
-.fp-shots { display: grid; grid-template-columns: repeat(3, 1fr) 40px 1fr; grid-template-rows: 1fr 1fr; gap: 26px 26px; flex: 1 1 auto; min-height: 0; }
+.fp-shots { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: 1fr 1fr; gap: 24px 26px; flex: 1 1 auto; min-height: 0; }
 .fp-shot { display: flex; flex-direction: column; min-height: 0; }
 .fp-shot .win { flex: 1 1 auto; min-height: 0; border-radius: 14px; border: 1px solid var(--ex-line-200); background: var(--ex-white); overflow: hidden; display: flex; flex-direction: column; box-shadow: var(--ex-elevation-raised); }
 .fp-shot .bar { flex: none; height: 30px; background: var(--ex-surface-100); display: flex; align-items: center; gap: 7px; padding-left: 14px; }
 .fp-shot .bar i { width: 9px; height: 9px; border-radius: 50%; background: var(--ex-slate-300); display: block; }
 .fp-shot .win .fp-slot, .fp-shot .win img { flex: 1 1 auto; min-height: 0; border: none; border-radius: 0; }
-.fp-shot .win img { width: 100%; object-fit: cover; object-position: top; max-height: none; }
+.fp-shot .win img { width: 100%; object-fit: cover; object-position: top left; max-height: none; }
 .fp-shot .cap { flex: none; margin-top: 12px; font-size: 27px; font-weight: 600; letter-spacing: -.02em; }
-.fp-shots .gapcol { grid-row: 1 / 3; grid-column: 4; border-left: 1px solid var(--ex-line-200); margin-left: 20px; }
-.fp-shots .admin { grid-row: 1 / 3; grid-column: 5; }
 
 /* ── 차트와 읽는 법 ───────────────────────────────────── */
 .fp-read { display: grid; grid-template-columns: 1fr 520px; gap: 64px; flex: 1 1 auto; min-height: 0; }
@@ -1479,24 +1477,23 @@ svg [data-morph] { transform-box: fill-box; }
   </div>
 </section>
 
-<!-- ═══ 화면 모음 — 주요 화면. 캡처가 준비되면 .fp-slot 을 <img> 로 바꿉니다 ═══ -->
+<!-- ═══ 화면 모음 — 주요 화면. 공개 포트폴리오는 운영 캡처, 나머지는 로컬 개발 서버(복사본 DB · 더미 계정) 캡처 ═══ -->
 <section class="slide fp" data-title="주요 화면" data-kind="화면 모음">
   <div class="frame">
     <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">4</span><span class="sec">개발 성과</span><span class="pg"></span></div>
     <div class="head in dl-2">
       <h2>주요 화면</h2>
-      <p class="sub">운영 중인 서비스의 실제 화면</p>
+      <p class="sub">예시 계정으로 본 서비스 화면</p>
     </div>
     <div class="body">
       <div class="fp-shots in in-fade dl-3">
-        <div class="fp-shot"><div class="win"><div class="bar"><i></i><i></i><i></i></div><div class="fp-slot">캡처 예정</div></div><div class="cap">커리어 기록</div></div>
-        <div class="fp-shot"><div class="win"><div class="bar"><i></i><i></i><i></i></div><div class="fp-slot">캡처 예정</div></div><div class="cap">공고 탐색</div></div>
-        <div class="fp-shot"><div class="win"><div class="bar"><i></i><i></i><i></i></div><div class="fp-slot">캡처 예정</div></div><div class="cap">재료 고르기</div></div>
-        <div class="gapcol"></div>
-        <div class="fp-shot admin"><div class="win"><div class="bar"><i></i><i></i><i></i></div><div class="fp-slot">캡처 예정</div></div><div class="cap">관리 · 더미 계정<span style="font-weight: 400; color: var(--ex-slate-500); margin-left: 12px">관리자</span></div></div>
-        <div class="fp-shot"><div class="win"><div class="bar"><i></i><i></i><i></i></div><div class="fp-slot">캡처 예정</div></div><div class="cap">다듬기</div></div>
+        <div class="fp-shot"><div class="win"><div class="bar"><i></i><i></i><i></i></div><img src="assets/최종-발표/screen-career.png" alt="커리어 기록 화면"></div><div class="cap">커리어 기록</div></div>
+        <div class="fp-shot"><div class="win"><div class="bar"><i></i><i></i><i></i></div><img src="assets/최종-발표/screen-jobs.png" alt="공고 탐색 화면"></div><div class="cap">공고 탐색</div></div>
+        <div class="fp-shot"><div class="win"><div class="bar"><i></i><i></i><i></i></div><img src="assets/최종-발표/screen-materials.png" alt="재료 고르기 화면"></div><div class="cap">재료 고르기</div></div>
+        <div class="fp-shot"><div class="win"><div class="bar"><i></i><i></i><i></i></div><img src="assets/최종-발표/screen-edit.png" alt="다듬기 화면"></div><div class="cap">다듬기</div></div>
         <div class="fp-shot"><div class="win"><div class="bar"><i></i><i></i><i></i></div><img src="assets/최종-발표/screen-public-portfolio.png" alt="공개 포트폴리오 화면"></div><div class="cap">공개 포트폴리오</div></div>
-        <div class="fp-shot"><div class="win"><div class="bar"><i></i><i></i><i></i></div><div class="fp-slot">캡처 예정</div></div><div class="cap">방문자 데이터 분석</div></div>
+        <div class="fp-shot"><div class="win"><div class="bar"><i></i><i></i><i></i></div><img src="assets/최종-발표/screen-analytics.png" alt="방문자 데이터 분석 화면"></div><div class="cap">방문자 데이터 분석</div></div>
+        <div class="fp-shot"><div class="win"><div class="bar"><i></i><i></i><i></i></div><img src="assets/최종-발표/screen-admin.png" alt="관리 화면"></div><div class="cap">관리 · 더미 계정<span style="font-weight: 400; color: var(--ex-slate-500); margin-left: 12px">관리자</span></div></div>
       </div>
     </div>
   </div>
