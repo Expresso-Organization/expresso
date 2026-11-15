@@ -14,7 +14,7 @@ date: 2026-11-15
 
 | 파일 | 무엇을 |
 |---|---|
-| `services/backend/src/modules/page/generator.ts` | `SYSTEM` · `buildPrompt` · `authorPrompt` · `markupProblem` · `pageQa` 내보내기(동작 변경 없음) |
+| `services/backend/src/modules/page/generator.ts` | `SYSTEM` · `buildPrompt` · `authorPrompt` · `markupProblem` · `pageQa` 내보내기, 요청 조립을 `promptOpening` · `promptMedia` · `promptClosing`으로 나눔(네 가지 입력의 프롬프트 해시가 나누기 전과 같음) |
 | `services/backend/src/modules/page/page-brief.ts` (새) | 정리본 계약 · 정제 호출 · 출처 대조 검사 · `briefPrompt` |
 | `services/backend/src/modules/page/page-brief.test.ts` (새) | 섹션 누락 · 출처에 없는 수치 · 이전 값 검사 |
 | `services/backend/src/modules/page/briefed-generator.ts` (새) | `BriefedPageGenerator`(정제 · 스킬 두 스위치) |

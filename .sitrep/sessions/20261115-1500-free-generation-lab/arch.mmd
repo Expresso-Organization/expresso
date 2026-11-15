@@ -1,0 +1,22 @@
+flowchart TD
+  CTX[생성 문맥 캡처] --> BASE[조건 1 기준 생성기]
+  CTX --> BRIEF[자료 정리본]
+  BRIEF --> LAB[두 스위치 생성기]
+  SKILL[frontend-design 본문] --> LAB
+  CTX --> STRUCT[구조화 기준]
+  BASE --> SAN[소독 · QA]
+  LAB --> SAN
+  SAN --> RUN[조건별 실행 기록]
+  STRUCT --> RUN
+  RUN --> MEAS[스크린샷 · 측정]
+  MEAS --> SHEET[비교 화면]
+  SHEET --> BLIND[눈가림 평가]
+  BLIND --> DOC[결과 문서]
+
+  classDef done fill:#d1fae5,stroke:#059669
+  classDef doing fill:#fef3c7,stroke:#d97706
+  classDef decide fill:#fee2e2,stroke:#dc2626
+  classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4
+  class BASE,BRIEF,LAB,SKILL,SAN done
+  class CTX doing
+  class STRUCT,RUN,MEAS,SHEET,BLIND,DOC todo
