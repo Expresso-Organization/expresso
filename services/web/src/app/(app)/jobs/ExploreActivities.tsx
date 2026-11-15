@@ -1,10 +1,12 @@
 import { AppBody, AppHeader } from "@/components/shell/AppShell";
 import { SearchAndNotifications } from "@/components/shell/HeaderActions";
 import { Icon } from "@/components/ui/Icon";
-import { jobs as jobsApi } from "@/lib/api/endpoints";
+import { activities as activitiesApi, jobs as jobsApi } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
-import { EXPLORE_KINDS, activities, type Activity, type ExploreKind } from "./explore";
+import type { Activity } from "@expresso/contracts";
+
+import { EXPLORE_KINDS, type ExploreKind } from "./explore";
 import { ExploreFrame } from "./ExploreFrame";
 import { JobRowList } from "./JobRows";
 import styles from "./explore.module.css";
@@ -13,9 +15,12 @@ import jobStyles from "./page.module.css";
 /**
  * 채용 공고가 아닌 종류의 탐색 화면 — 인턴 · 공모전 · 해커톤 · 부트캠프.
  *
- * 인턴은 적재한 공고에서 찾고, 공모전 · 해커톤은 위비티 목록을 읽는다. 부트캠프는 출처
+ * 인턴은 적재한 공고에서 찾고, 공모전 · 해커톤은 서버가 수집해 둔 활동을 읽는다. 부트캠프는 출처
  * (고용24 훈련과정 API)를 아직 붙이지 않아 비어 있다.
  */
+/** 활동 목록 응답 한 장의 상한(계약의 `limit` 최댓값). */
+const ACTIVITY_PAGE = 100;
+
 export async function ExploreActivities({ kind }: { kind: Exclude<ExploreKind, "jobs"> }) {
   const session = await requireSession();
   const label = EXPLORE_KINDS.find((item) => item.key === kind)?.label ?? "";
@@ -30,7 +35,7 @@ export async function ExploreActivities({ kind }: { kind: Exclude<ExploreKind, "
             ) : kind === "bootcamp" ? (
               <Empty icon="chalkboard-teacher" title="수집한 부트캠프 과정이 없습니다" />
             ) : (
-              <ActivityList label={label} rows={await activities(kind)} />
+              <ActivityList label={label} rows={(await activitiesApi.list(session.accessToken, { kind, limit: ACTIVITY_PAGE })).data} />
             )}
           </div>
         </ExploreFrame>

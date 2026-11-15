@@ -123,6 +123,7 @@ describe("AI 호출 포트", () => {
     expect(DEFAULT_MODEL_TIER.recipe_draft).toBe("opus");
     expect(DEFAULT_MODEL_TIER.search_interpret).toBe("haiku");
     expect(DEFAULT_MODEL_TIER.insight_note).toBe("haiku");
+    expect(DEFAULT_MODEL_TIER.proposal_briefing).toBe("haiku");
   });
 });
 

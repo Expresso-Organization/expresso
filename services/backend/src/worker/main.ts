@@ -36,6 +36,12 @@ import { AccountLifecycleService } from "../modules/account-lifecycle/index.js";
 import { SchedulingService } from "../modules/scheduling/index.js";
 import { AiFactsReader, createJobSourceAdapters, BundledMarkReader, JobIngestService, SiteMarkReader } from "../modules/jobs/ingest/index.js";
 import { createScheduledJobProcessor } from "./processors/scheduled-jobs.js";
+import { createProposalProcessor } from "./processors/proposals.js";
+import { EntitlementService } from "../modules/entitlements/index.js";
+import { JobBoardService } from "../modules/jobs/index.js";
+import { CareerService } from "../modules/career/index.js";
+import { ActivityService } from "../modules/activities/index.js";
+import { AiProposalWriter, ProposalService } from "../modules/proposals/index.js";
 import { PageService } from "../modules/page/index.js";
 import { PageStream } from "../modules/page/stream.js";
 import { createStreamRedis } from "../platform/redis.js";
@@ -217,7 +223,18 @@ const jobIngestService = new JobIngestService(
   // 저장소에 넣어 둔 파일이 있으면 그것이 먼저다(받아 올 수 없는 회사가 있다).
   new BundledMarkReader(new SiteMarkReader()),
 );
-const schedulingService = new SchedulingService(database, { analytics: analyticsService, accounts: accountLifecycleService, ingest: jobIngestService, notifications: engagementService });
+// 능동 제안은 여기서만 AI를 부른다. 켠 사용자에게만 돌고, 예약 잡과 수집이 실행을 줄에 넣는다.
+const activityService = new ActivityService(database);
+const proposalService = new ProposalService(database, {
+  career: new CareerService(database),
+  jobs: new JobBoardService(database),
+  activities: activityService,
+  consent: consentService,
+  credits: new EntitlementService(database),
+  writer: ai ? new AiProposalWriter(ai) : null,
+});
+const proposalProcessor = createProposalProcessor(proposalService);
+const schedulingService = new SchedulingService(database, { analytics: analyticsService, accounts: accountLifecycleService, ingest: jobIngestService, notifications: engagementService, proposals: proposalService, activities: activityService });
 const scheduledJobProcessor = createScheduledJobProcessor(schedulingService);
 const queueWorker = createQueueWorker<Record<string, unknown>, Record<string, unknown>>({
   queueName: QUEUE_NAMES.domain,
@@ -238,6 +255,7 @@ const queueWorker = createQueueWorker<Record<string, unknown>, Record<string, un
     if (job.name === "analytics.aggregate") return analyticsProcessor(job);
     if (job.name === "notification.deliver") return notificationProcessor(job);
     if (job.name === "scheduled.execute") return scheduledJobProcessor(job);
+    if (job.name === "proposals.generate") return proposalProcessor(job) as unknown as Promise<Record<string, unknown>>;
     if (job.name === "career.document.compact") return careerDocumentCompactionProcessor(job) as Promise<Record<string, unknown>>;
     if (job.name === "career.document.project") return careerDocumentProjectionProcessor(job) as Promise<Record<string, unknown>>;
     if (job.name === "career.computation") return careerComputationProcessor(job) as unknown as Promise<Record<string, unknown>>;

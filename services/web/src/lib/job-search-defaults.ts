@@ -9,4 +9,4 @@
  * 감추는 것이 아니다. 필터를 열면 `전체`가 맨 위에 있고 나라마다 건수가 적혀
  * 있다. 기본값을 정하는 것과 없는 척하는 것은 다르다.
  */
-export const DEFAULT_JOB_COUNTRY = "한국";
+export { DEFAULT_JOB_COUNTRY } from "@expresso/contracts";

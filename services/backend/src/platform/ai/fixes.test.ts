@@ -20,6 +20,7 @@ import {
   SearchInterpretAiOutputSchema,
   StructuredContentModelSchema,
 } from "@expresso/contracts";
+import { ProposalDraftSchema } from "../../modules/proposals/writer.js";
 
 import { ClaudeCodeAiClient } from "./claude-code.js";
 import { SOFT_KEYWORDS, toToolSchema, type AiFix } from "./client.js";
@@ -325,7 +326,7 @@ describe("규칙: 공급자 형식에 글자 수 · 개수 · 형식 기준을 �
   const contracts = {
     GenerationDraftSchema, InterviewQuestionDraftListSchema, InterviewQuestionRewriteSchema, JobAnalysisAiOutputSchema,
     JobFactsAiOutputSchema, LayoutDraftCandidatesSchema, LayoutDraftSchema, PageDraftSchema, PortfolioEditDraftSchema,
-    RecipeDraftSchema, RecordCleanupSchema, SearchInterpretAiOutputSchema, StructuredContentModelSchema,
+    RecipeDraftSchema, RecordCleanupSchema, SearchInterpretAiOutputSchema, StructuredContentModelSchema, ProposalDraftSchema,
   };
   for (const [name, schema] of Object.entries(contracts))
     it(`${name}`, () => {

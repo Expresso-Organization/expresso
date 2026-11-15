@@ -42,7 +42,7 @@ export default async function HomePage({
             widgets={
               <Widgets>
                 <Suspense fallback={<WidgetSkeleton />}><JobsWidget accessToken={session.accessToken} /></Suspense>
-                <Suspense fallback={<WidgetSkeleton />}><ContestsWidget /></Suspense>
+                <Suspense fallback={<WidgetSkeleton />}><ContestsWidget accessToken={session.accessToken} /></Suspense>
                 <Suspense fallback={<WidgetSkeleton />}><InternsWidget accessToken={session.accessToken} /></Suspense>
               </Widgets>
             }

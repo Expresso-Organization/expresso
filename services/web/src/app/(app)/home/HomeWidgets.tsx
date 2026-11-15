@@ -3,16 +3,14 @@ import type { Route } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { LogoMark } from "@/components/brand/Logo";
 import { Skel } from "@/components/shell/Skeleton";
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { Icon } from "@/components/ui/Icon";
 import { homeEngagement, watchedJobs } from "@/lib/app-data";
-import { career, jobs, portfolios } from "@/lib/api/endpoints";
+import { activities, career, jobs, portfolios, proposals } from "@/lib/api/endpoints";
 
 import { resumeStep } from "../brew/new/resume-step";
-import { activities } from "../jobs/explore";
-import { ProposalAction } from "./HomeStart";
+import { ProposalFeed } from "./ProposalFeed";
 import { briefingSteps } from "./briefing";
 import { careerProfile, siteInsights } from "./home-data";
 import { roleTab } from "./home-model";
@@ -27,18 +25,19 @@ const ROWS = 4;
 const URGENT_DAYS = 7;
 
 /**
- * 행동 제안. 기록 · 포트폴리오 · 관심 공고를 집계해서 찾은 것만 선다.
- * 공모전처럼 바깥에서 온 소식은 아래의 위젯이 보여 주므로 여기서는 뺀다.
+ * 제안 공간. 에이전트가 쓴 제안과 실행 상태를 서버에서 읽는다.
+ * 규칙으로 센 제안(`briefingSteps`)은 크레딧이 남지 않아 에이전트가 쓰지 못했을 때 대신 보이도록 함께 넘긴다.
  */
 export async function Proposals({ accessToken, recordTotal }: { accessToken: string; recordTotal: number }) {
-  const [records, home, list, sites, watched] = await Promise.all([
+  const [{ data: feed }, records, home, list, sites, watched] = await Promise.all([
+    proposals.feed(accessToken),
     career.records(accessToken, { sort: "updated_desc", limit: RECORD_PAGE }),
     homeEngagement(accessToken),
     portfolios.list(accessToken, { limit: PORTFOLIO_PAGE }),
     siteInsights(accessToken),
     watchedJobs(accessToken),
   ]);
-  const steps = briefingSteps({
+  const fallback = briefingSteps({
     records: records.data,
     recordTotal,
     brews: home.data.activeBrews,
@@ -48,41 +47,8 @@ export async function Proposals({ accessToken, recordTotal }: { accessToken: str
     jobTotal: 0,
     contests: [],
     brewHref: (brew) => `/brew/${brew.id}/${resumeStep(brew.status).segment}`,
-  });
-  const findings = steps.flatMap((step) => step.findings.map((finding) => ({ ...finding, icon: step.icon })));
-  return (
-    <section className={styles.proposals}>
-      <div className={styles.sectionHead}>
-        <LogoMark size={16} />
-        <h2 className={styles.sectionTitle}>제안</h2>
-        {findings.length > 0 ? <span className={styles.sectionCount}>{findings.length}</span> : null}
-        <span className={styles.checked}>
-          {findings.length === 0 ? "오늘은 손볼 곳이 없습니다 · " : ""}
-          기록 {recordTotal}건 · 포트폴리오 {list.data.length}개 · 관심 공고 {watched.summary.total}건 확인
-        </span>
-      </div>
-      {findings.length > 0 ? (
-        <div className={styles.proposalGrid}>
-          {findings.map((finding) => (
-            <article key={finding.id} className={styles.proposal}>
-              <span className={styles.proposalIcon}><Icon name={finding.icon} size={14} /></span>
-              <p className={styles.proposalText}>{finding.text}</p>
-              {finding.items.length > 0 ? (
-                <ul className={styles.proposalItems}>
-                  {finding.items.map((item) => (
-                    <li key={item.href}>
-                      <Link href={item.href as Route} className={styles.proposalItem}>{item.label}</Link>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-              <ProposalAction action={finding.action} />
-            </article>
-          ))}
-        </div>
-      ) : null}
-    </section>
-  );
+  }).flatMap((step) => step.findings);
+  return <ProposalFeed initial={feed} fallback={fallback} />;
 }
 
 export function ProposalsSkeleton() {
@@ -165,8 +131,8 @@ export async function JobsWidget({ accessToken }: { accessToken: string }) {
 }
 
 /** 접수 마감이 가까운 공모전. */
-export async function ContestsWidget() {
-  const rows = (await activities("contest").catch(() => [])).slice(0, ROWS);
+export async function ContestsWidget({ accessToken }: { accessToken: string }) {
+  const rows = (await activities.list(accessToken, { kind: "contest", limit: ROWS }).catch(() => ({ data: [] }))).data;
   if (rows.length === 0) return null;
   return (
     <Widget icon="trophy" title="공모전" href="/jobs?kind=contest">

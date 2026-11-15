@@ -12,7 +12,6 @@ import { putAgentHandoff } from "@/features/agent-chat/agent-handoff";
 import { ResourceList, type ResourceKind } from "@/features/agent-chat/ResourceList";
 import "@/styles/agent-chat-framework.css";
 
-import type { BriefingAction } from "./briefing";
 import styles from "./home-start.module.css";
 
 const CONTEXT_ICON: Record<AgentContext["kind"], string> = { job: "target", record: "notebook", portfolio: "browsers" };
@@ -25,7 +24,12 @@ const PICKER_TABS: readonly { kind: ResourceKind; label: string }[] = [
 ];
 
 type Attached = { context: AgentContext; label: string };
-type Fill = (prompt: string, context?: AgentContext, label?: string) => void;
+type Fill = (prompt: string, attach?: Attached[]) => void;
+
+/** 제안의 동작. 대화를 여는 동작은 요청문과 연결할 자료를 입력창에 채우고, 나머지는 그 화면으로 간다. */
+export type StartAction =
+  | { kind: "chat"; label: string; prompt: string; contexts: AgentContext[]; /** 자료의 이름. 키는 `<종류>:<id>`다. */ contextLabels: { key: string; label: string }[] }
+  | { kind: "link"; label: string; href: string };
 const ComposerContext = createContext<Fill | null>(null);
 
 /**
@@ -85,10 +89,10 @@ export function HomeStart({ proposals, widgets }: { proposals: ReactNode; widget
     return () => { document.removeEventListener("mousedown", close); document.removeEventListener("keydown", escape); };
   }, [picker]);
 
-  const fill = useCallback<Fill>((prompt, context, label) => {
+  const fill = useCallback<Fill>((prompt, attach) => {
     setText(prompt);
-    // 제안은 그 제안의 자료 하나로 바꾸고, 추천 프롬프트는 이미 붙인 자료를 건드리지 않는다.
-    if (context) setAttached([{ context, label: label ?? "" }]);
+    // 제안은 그 제안의 자료로 바꾸고, 추천 프롬프트는 이미 붙인 자료를 건드리지 않는다.
+    if (attach) setAttached(attach.slice(0, MAX_CONTEXTS));
     input.current?.focus();
   }, []);
 
@@ -216,8 +220,10 @@ export function HomeStart({ proposals, widgets }: { proposals: ReactNode; widget
   );
 }
 
-/** 제안의 동작. 대화를 여는 동작은 요청문과 자료를 가운데 입력창에 채우고, 나머지는 그 화면으로 간다. */
-export function ProposalAction({ action }: { action: BriefingAction }) {
+const CONTEXT_NAME: Record<AgentContext["kind"], string> = { job: "채용 공고", record: "커리어 기록", portfolio: "포트폴리오" };
+
+/** 제안의 단추. 대화를 여는 동작은 가운데 입력창을 채우고, 나머지는 그 화면으로 간다. */
+export function ProposalAction({ action }: { action: StartAction }) {
   const fill = useContext(ComposerContext);
   if (action.kind === "link") {
     return (
@@ -227,8 +233,12 @@ export function ProposalAction({ action }: { action: BriefingAction }) {
       </Link>
     );
   }
+  const attach = action.contexts.map((context) => ({
+    context,
+    label: action.contextLabels.find(({ key }) => key === `${context.kind}:${context.id}`)?.label ?? CONTEXT_NAME[context.kind],
+  }));
   return (
-    <button type="button" className={styles.proposalAction} onClick={() => fill?.(action.prompt, action.context, action.contextLabel)}>
+    <button type="button" className={styles.proposalAction} onClick={() => fill?.(action.prompt, attach)}>
       <Icon name="chat-circle-dots" size={13} />
       {action.label}
     </button>

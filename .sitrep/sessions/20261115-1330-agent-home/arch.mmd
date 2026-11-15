@@ -3,15 +3,17 @@ flowchart TD
   SB --> LIB["라이브러리"]:::done
   SB --> EXP["탐색"]:::done
   HOME --> CHAT["대화 화면"]:::done
-  HOME --> PROP["에이전트 제안"]:::doing
-  PROP --> GEN["제안 생성 워커"]:::todo
-  GEN --> AI["AI 계약 호출"]:::todo
-  GEN --> FEED[("제안 저장소")]:::todo
-  ACT["공모전 수집"]:::todo --> ACTDB[("활동 저장소")]:::todo
+  HOME --> PROP["에이전트 제안 공간"]:::done
+  SCH["예약: 매일 · 수집 뒤"]:::done --> GEN["제안 생성 워커"]:::done
+  PROP --> GEN
+  GEN --> AI["AI 계약 호출 haiku"]:::done
+  GEN --> FEED[("제안 저장소")]:::done
+  ACT["공모전 수집"]:::done --> ACTDB[("활동 저장소")]:::done
   ACTDB --> GEN
   EXP --> ACTDB
   D1{"해커톤 합치기"}:::decide --> EXP
   D2{"대화 입력창 모양"}:::decide --> CHAT
+  OPS["운영 반영 · 실제 예약 확인"]:::todo --> SCH
   classDef done fill:#d1fae5,stroke:#059669
   classDef doing fill:#fef3c7,stroke:#d97706
   classDef decide fill:#fee2e2,stroke:#dc2626

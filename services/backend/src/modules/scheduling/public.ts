@@ -16,6 +16,8 @@ export const SCHEDULED_JOB_KEYS = [
   "job_ingest",
   "posting_facts",
   "deadline_reminders",
+  "proposal_briefing",
+  "activity_collect",
 ] as const;
 
 export type ScheduledJobKey = (typeof SCHEDULED_JOB_KEYS)[number];

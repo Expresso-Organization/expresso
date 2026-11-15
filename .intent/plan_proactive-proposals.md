@@ -14,19 +14,19 @@ date: 2026-11-15
 
 | 파일 | 무엇을 |
 |---|---|
-| `packages/contracts/src/proposals.ts` (새로) · `index.ts` | 제안 · 실행 상태 · 활동 스키마 |
+| `packages/contracts/src/proposals.ts` (새로) · `index.ts` · `job-board.ts` | 제안 · 실행 상태 · 활동 스키마. 공고 기본 나라(`DEFAULT_JOB_COUNTRY`)를 웹에서 계약으로 옮김 |
 | `packages/database/src/documents/proposals.ts` (새로) · `documents/index.ts` · `collections.ts` · `documents/operations.ts` | `proposal_feeds` · `activities` 문서와 예약 잡 키 |
-| `packages/database/src/mongodb-migrations/0032/migration.ts` (새로) · `mongo-migrations.ts` | 두 컬렉션 생성, 예약 잡 둘 등록 |
+| `packages/database/src/mongodb-migrations/0032/migration.ts` (새로) · `mongo-migrations.ts` · `mongo-build.mjs` · `migrations.test.ts` · `schema.test.ts` | 두 컬렉션 생성, 예약 잡 둘 등록, 테스트의 마이그레이션 · 컬렉션 · 잡 수 갱신 |
 | `services/backend/src/platform/ai/client.ts` · `modules/consent/public.ts` | 계약 `proposal_briefing`(haiku · `career_records`) |
 | `services/backend/src/modules/entitlements/service.ts` · `index.ts` | `credits(userId)` |
 | `services/backend/src/modules/activities/*` (새로) | 위비티 읽기, 수집, 목록, 라우트 |
 | `services/backend/src/modules/proposals/*` (새로) | 후보 고르기, 작성기, 요청문, 서비스, 라우트 |
-| `services/backend/src/modules/scheduling/public.ts` · `service.ts` | 예약 잡 둘과 수집 뒤 새 소식 실행 |
-| `services/backend/src/api/main.ts` · `api/build-app.ts` · `worker/main.ts` | 조립, 라우트 등록, `proposals.generate` 처리 |
+| `services/backend/src/modules/scheduling/public.ts` · `service.ts` · `proposals.integration.test.ts` (새로) | 예약 잡 둘과 수집 뒤 새 소식 실행 |
+| `services/backend/src/api/main.ts` · `api/build-app.ts` · `worker/main.ts` · `worker/processors/proposals.ts` (새로) | 조립, 라우트 등록, `proposals.generate` 처리 |
 | `services/backend/src/modules/account-lifecycle/mongo-purge.ts` | `proposal_feeds` 삭제 연동 |
 | `services/backend/src/platform/ai/fixes.test.ts` · `ai.test.ts` | 새 계약의 스키마 · 단계 검사 |
-| `services/web/src/lib/api/endpoints.ts` · `lib/usage-copy.ts` | `proposals` · `activities` 호출, 사용량 라벨 |
-| `services/web/src/app/(app)/home/ProposalFeed.tsx` · `proposal-actions.ts` (새로) · `HomeWidgets.tsx` · `home-start.module.css` | 켜기 창, 제안 카드, 진행 표시, 규칙 제안은 대신 보일 때만 |
+| `services/web/src/lib/api/endpoints.ts` · `lib/usage-copy.ts` · `lib/job-search-defaults.ts` | `proposals` · `activities` 호출, 사용량 라벨 |
+| `services/web/src/app/(app)/home/ProposalFeed.tsx` · `proposal-actions.ts` (새로) · `HomeWidgets.tsx` · `HomeStart.tsx` · `briefing.ts` · `home-start.module.css` | 켜기 창, 제안 카드, 진행 표시, 규칙 제안은 대신 보일 때만. 제안 단추가 자료 여러 개를 입력창에 붙임 |
 | `services/web/src/app/(app)/jobs/explore.ts` · `ExploreActivities.tsx` · `explore.test.ts` | 위비티를 직접 읽지 않고 `GET /activities`를 읽음 |
 
 ## 작업 순서
@@ -38,7 +38,7 @@ date: 2026-11-15
 5. 서비스와 라우트: 켜기 · 끄기 · 다시 받기 · 관심 없음 · 실행 · 자동 실행 대상 고르기 — 통합 테스트.
 6. 조립: API · 워커 · 예약 · 계정 삭제.
 7. 웹: 엔드포인트, 홈 제안 공간, 탐색이 저장분을 읽음.
-8. 검증 서버에서 실제 실행: `AI_PROVIDER=claude-code`, 워커 실행, 켜기부터 다시 받기까지.
+8. 검증 서버에서 실제 실행: `AI_PROVIDER=claude-code`, 워커 실행, 켜기부터 다시 받기까지. 예약 작업(`SCHEDULED_JOBS_ENABLED`)은 켜지 않는다 — 켜면 `posting_facts`가 대기 중인 공고마다 AI를 부른다. 매일 · 새 소식 실행 경로는 통합 테스트로 확인한다.
 
 ```mermaid
 flowchart TD
