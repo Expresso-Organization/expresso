@@ -22,6 +22,26 @@ async function settle() {
   await document.fonts.ready;
 }
 
+/**
+ * 지금 화면에 들어와 있고 보이는 글의 부모 요소를 적어 둡니다. 스크롤하는 동안 단계마다 부릅니다.
+ *
+ * 키트의 등장 애니메이션은 스크롤 위치에 묶여 있어(`animation-timeline: view()`), 화면 밖의 글은 투명도가 0입니다.
+ * 맨 위로 돌아와 한 번에 재면 화면 아래의 글이 모두 가려진 글로 잡힙니다. 그래서 화면에 들어왔을 때 보였는지를 봅니다.
+ */
+function markSeen() {
+  window.__seen ??= new WeakSet();
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    const parent = node.parentElement;
+    if (!parent || !node.nodeValue.trim() || window.__seen.has(parent)) continue;
+    const rect = parent.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0 || rect.bottom < 0 || rect.top > innerHeight) continue;
+    let opacity = 1;
+    for (let at = parent; at; at = at.parentElement) opacity *= Number(getComputedStyle(at).opacity);
+    if (opacity >= 0.2 && getComputedStyle(parent).visibility !== "hidden") window.__seen.add(parent);
+  }
+}
+
 function inspect(expected) {
   const visible = (node) => {
     const rect = node.getBoundingClientRect();
@@ -38,7 +58,6 @@ function inspect(expected) {
     if (closed && !parent.closest("summary")) continue;
     texts.push({ value, parent });
   }
-  const opacityOf = (node) => { let value = 1; for (let at = node; at; at = at.parentElement) value *= Number(getComputedStyle(at).opacity); return value; };
   const fold = innerHeight;
   let firstMax = 0, firstChars = 0, hiddenChars = 0;
   const families = new Map();
@@ -46,8 +65,9 @@ function inspect(expected) {
     const style = getComputedStyle(parent);
     const rect = parent.getBoundingClientRect();
     const top = rect.top + scrollY;
-    if (!visible(parent) || style.visibility === "hidden") { hiddenChars += value.length; continue; }
-    if (opacityOf(parent) < 0.2) hiddenChars += value.length;
+    // 스크롤하는 동안 한 번도 보이지 않은 글입니다.
+    if (!window.__seen?.has(parent)) hiddenChars += value.length;
+    if (!visible(parent) || style.visibility === "hidden") continue;
     if (top < fold) { firstChars += value.length; firstMax = Math.max(firstMax, parseFloat(style.fontSize)); }
     const family = style.fontFamily.split(",")[0].trim().replace(/^["']|["']$/g, "");
     families.set(family, (families.get(family) ?? 0) + value.length);
@@ -109,7 +129,7 @@ try {
     fs.mkdirSync(path.join(dir, "shots"), { recursive: true });
     const screens = {};
     for (const width of WIDTHS) {
-      // 모션을 켠 채로 끝까지 내렸다 올라와서 잽니다. 스크롤로 등장하는 글이 끝내 보이지 않으면 `hiddenChars`에 잡힙니다.
+      // 모션을 켠 채로 끝까지 내리면서 잽니다. 화면에 들어와도 끝내 보이지 않는 글이 `hiddenChars`에 잡힙니다.
       const page = await browser.newPage({ viewport: { width, height: 900 } });
       const errors = [];
       page.on("pageerror", (error) => errors.push(error.message));
@@ -123,8 +143,10 @@ try {
       await page.waitForTimeout(300);
       if (width === 1440) await page.screenshot({ path: path.join(dir, "shots", "1440-first.jpg"), type: "jpeg", quality: 72 });
       const height = await page.evaluate(() => document.documentElement.scrollHeight);
-      for (let y = 0; y < height; y += 700) { await page.mouse.wheel(0, 700); await page.waitForTimeout(60); }
+      await page.evaluate(markSeen);
+      for (let y = 0; y < height; y += 450) { await page.mouse.wheel(0, 450); await page.waitForTimeout(120); await page.evaluate(markSeen); }
       await page.waitForTimeout(400);
+      await page.evaluate(markSeen);
       await page.evaluate(() => scrollTo(0, 0));
       await page.waitForTimeout(300);
       screens[width] = { ...(await page.evaluate(inspect, expected)), errors };
@@ -134,7 +156,7 @@ try {
       await still.goto(url);
       await still.evaluate(settle);
       await still.waitForTimeout(300);
-      await still.screenshot({ path: path.join(dir, "shots", `${width}-full.jpg`), type: "jpeg", quality: 60, fullPage: true });
+      await still.screenshot({ path: path.join(dir, "shots", `${width}-full.jpg`), type: "jpeg", quality: 45, fullPage: true });
       await still.close();
     }
     const measure = { label, expected: { name: expected.name, sections: expected.sections.length, evidence: expected.evidence.length }, screens };

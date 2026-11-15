@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>배준호 포트폴리오</title>
+<meta name="description" content="연구에서 서빙·운영까지 한 사람이 닫는다는 점을 단일 칼럼으로 풀고, 근거가 있는 수치만 첫 화면 지표와 막대·스펙으로 나눠 보여 줬다.">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Nanum+Myeongjo:wght@400;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --page-sans:"Pretendard Variable",Pretendard,-apple-system,system-ui,sans-serif;
+  --page-serif:"Nanum Myeongjo","Noto Serif KR",serif;
+  --page-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --page-display:"Outfit",var(--page-sans);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font-family:var(--page-sans);word-break:keep-all;-webkit-font-smoothing:antialiased}
+img{max-width:100%;height:auto;display:block}
+svg{max-width:100%}
+/* 가로 스크롤은 폰에서 지면을 무너뜨린다. 여기서 한 번 더 막는다. */
+body{overflow-x:hidden}
+</style>
+<style>
+:root{
+  --k-bg:#ffffff;
+  --k-text:#17202a;
+  --k-accent:#2563eb;
+  /* 본문에서 한 단 낮춘 글자색. 대비를 잃지 않도록 투명도가 아니라 혼합으로 만든다. */
+  --k-muted:color-mix(in oklab, var(--k-text) 62%, var(--k-bg));
+  --k-hair:color-mix(in oklab, var(--k-text) 16%, var(--k-bg));
+  --k-veil:color-mix(in oklab, var(--k-text) 5%, var(--k-bg));
+  --k-body:16px;
+  --k-lead:1.7;
+  --k-step1:1.250rem;
+  --k-step2:1.600rem;
+  --k-step3:2.100rem;
+  --k-step4:clamp(2.2rem, 3.40vw + 1rem, 3.600rem);
+  --k-gap:1.500rem;
+  --k-section:5.000rem;
+  --k-measure:42rem;
+  --k-wide:74rem;
+  --k-font:var(--page-sans);
+  --k-font-body:var(--page-sans);
+  --k-font-mono:var(--page-mono);
+}
+/* ── 지면 ─────────────────────────────────────────────── */
+.k-page{background:var(--k-bg);color:var(--k-text);font-family:var(--k-font-body);
+  font-size:var(--k-body);line-height:var(--k-lead)}
+.k-wrap{width:min(100% - 2.5rem, var(--k-wide));margin-inline:auto}
+.k-narrow{max-width:var(--k-measure)}
+
+/* ── 크롬 ─────────────────────────────────────────────── */
+/*
+ * 띠는 화면 끝까지, 글자는 안쪽에. 한 요소가 둘을 겸할 수 없어서 배경 · 경계선은
+ * .k-nav가 지고 가로 배치는 안쪽 .k-wrap이 진다. 바깥에도 같은 배치를 남겨 두는
+ * 것은 .k-wrap을 빠뜨린 지면이 세로로 무너지지는 않게 하려는 것이다.
+ */
+.k-nav{position:sticky;top:0;z-index:10;display:flex;align-items:center;
+  justify-content:space-between;gap:1rem;padding:.85rem 0;
+  background:color-mix(in oklab, var(--k-bg) 88%, transparent);
+  backdrop-filter:blur(8px);border-bottom:1px solid var(--k-hair)}
+.k-nav > .k-wrap{display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.k-nav__mark{font-family:var(--k-font);font-weight:600;letter-spacing:-.01em}
+.k-nav__links{display:flex;gap:1.25rem;flex-wrap:wrap;font-size:.86em;color:var(--k-muted)}
+.k-nav__links a{color:inherit;text-decoration:none;position:relative;padding-bottom:2px}
+.k-nav__links a::after{content:"";position:absolute;inset:auto 0 0;height:1px;
+  background:var(--k-accent);scale:0 1;transform-origin:0 50%;transition:scale .18s ease}
+.k-nav__links a:hover::after,.k-nav__links a:focus-visible::after{scale:1 1}
+/* 스크롤한 만큼 차오르는 막대. 스크립트 없이 스크롤 타임라인으로 돈다. */
+.k-progress{display:none}
+@supports (animation-timeline: scroll(root)){
+  .k-progress{display:block;position:fixed;inset:0 0 auto;height:2px;
+    background:var(--k-accent);z-index:20;transform-origin:0 50%;
+    animation:k-grow linear both;animation-timeline:scroll(root)}
+}
+@keyframes k-grow{from{scale:0 1}to{scale:1 1}}
+.k-foot{margin-top:var(--k-section);padding:2rem 0 3rem;border-top:1px solid var(--k-hair);
+  display:grid;gap:1.25rem;grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));
+  font-size:.86em;color:var(--k-muted)}
+.k-foot > .k-wrap{display:grid;gap:1.25rem;
+  grid-template-columns:repeat(auto-fit,minmax(12rem,1fr))}
+.k-foot dt{font-family:var(--k-font-mono);font-size:.8em;letter-spacing:.08em;
+  text-transform:uppercase;margin-bottom:.35rem}
+.k-foot dd{margin:0;color:var(--k-text)}
+
+/* ── 섹션 ─────────────────────────────────────────────── */
+.k-section{padding-block:var(--k-section);border-top:1px solid var(--k-hair)}
+.k-section:first-of-type{border-top:0}
+.k-eyebrow{font-family:var(--k-font-mono);font-size:.74em;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--k-accent);margin-bottom:.6rem}
+.k-num{font-family:var(--k-font-mono);font-size:.74em;color:var(--k-muted);margin-right:.6rem}
+.k-title{font-family:var(--k-font);font-size:var(--k-step2);line-height:1.25;
+  letter-spacing:-.015em;font-weight:600;margin:0}
+.k-lede{font-family:var(--k-font);font-size:var(--k-step1);line-height:1.45;
+  letter-spacing:-.01em;margin:.5rem 0 0}
+.k-meta{font-size:.82em;color:var(--k-muted);margin-top:.5rem}
+.k-prose{max-width:var(--k-measure)}
+.k-prose p{margin:0 0 .9em}
+.k-prose p:last-child{margin-bottom:0}
+.k-prose strong{font-weight:600;color:var(--k-text)}
+
+/* ── 첫 화면 ──────────────────────────────────────────── */
+.k-hero{padding-block:calc(var(--k-section) * 1.1) var(--k-section)}
+.k-hero__title{font-family:var(--k-font);font-size:var(--k-step4);line-height:1.12;
+  letter-spacing:-.03em;font-weight:700;margin:0}
+.k-hero__lede{max-width:var(--k-measure);margin:1.2rem 0 0;color:var(--k-muted);
+  font-size:1.05em}
+
+/* ── 격자와 칸 ────────────────────────────────────────── */
+.k-grid{display:grid;gap:var(--k-gap);grid-template-columns:repeat(auto-fit,minmax(11rem,1fr))}
+.k-card{border:1px solid var(--k-hair);border-radius:.9rem;padding:1.35rem;
+  transition:border-color .18s ease, transform .18s ease}
+.k-card:hover{border-color:color-mix(in oklab, var(--k-accent) 45%, var(--k-hair));
+  transform:translateY(-2px)}
+.k-metric{display:flex;flex-direction:column;gap:.3rem;min-width:0}
+.k-metric__v{font-family:var(--k-font-mono);font-size:var(--k-step3);line-height:1;
+  font-weight:600;letter-spacing:-.02em}
+.k-metric__u{font-size:.5em;margin-left:.15em;color:var(--k-muted)}
+.k-metric__l{font-size:.82em;color:var(--k-muted)}
+
+/* ── 칩 ───────────────────────────────────────────────── */
+.k-chips{display:flex;flex-wrap:wrap;gap:.45rem;list-style:none;padding:0;margin:0}
+.k-chip{display:inline-flex;align-items:center;font-family:var(--k-font-mono);
+  font-size:.8em;padding:.32em .7em;border:1px solid var(--k-hair);border-radius:999px;
+  transition:border-color .18s ease, color .18s ease}
+.k-chip:hover{border-color:var(--k-accent);color:var(--k-accent)}
+
+/* ── 스펙 행 ──────────────────────────────────────────── */
+.k-specs{margin:0;display:grid;gap:0}
+.k-spec{display:grid;grid-template-columns:minmax(5rem,10rem) 1fr;gap:1.25rem;
+  align-items:baseline;padding:.85rem 0;border-bottom:1px solid var(--k-hair)}
+.k-spec__k{font-family:var(--k-font-mono);font-size:.78em;letter-spacing:.06em;
+  color:var(--k-muted);margin:0}
+.k-spec__v{margin:0;min-width:0}
+
+/* ── 막대 그래프 ──────────────────────────────────────── */
+.k-bars{display:grid;gap:.55rem;margin:0}
+.k-bar{display:grid;grid-template-columns:minmax(4rem,7rem) 1fr auto;gap:.85rem;
+  align-items:center}
+.k-bar__k{font-size:.82em;color:var(--k-muted);min-width:0}
+.k-bar__track{display:block;height:.85rem;border-radius:999px;background:var(--k-veil);
+  overflow:hidden}
+/* display:block이 여기 있어야 한다. inline이면 폭도 높이도 먹지 않는다. */
+.k-bar__fill{display:block;height:100%;border-radius:999px;background:var(--k-accent);
+  width:var(--k-pct,0%);transform-origin:0 50%}
+@supports (animation-timeline: view()){
+  .k-bar__fill{animation:k-fill linear both;animation-timeline:view();
+    animation-range:entry 10% cover 32%}
+}
+@keyframes k-fill{from{scale:0 1}to{scale:1 1}}
+.k-bar__v{font-family:var(--k-font-mono);font-weight:600;white-space:nowrap}
+.k-bar__u{font-size:.72em;color:var(--k-muted);margin-left:.1em}
+
+/* ── 강조 상자 ────────────────────────────────────────── */
+.k-callout{border-left:3px solid var(--k-accent);background:var(--k-veil);
+  padding:1rem 1.2rem;border-radius:0 .6rem .6rem 0}
+
+/* ── 등장 ─────────────────────────────────────────────── */
+/*
+ * **반드시 @supports 안에 있어야 한다.**
+ *
+ * 이 애니메이션은 opacity:0에서 시작한다. 스크롤 타임라인을 모르는 브라우저에서
+ * animation-timeline은 조용히 무시되고 both만 남아, 첫 프레임에 멈춘 채
+ * **본문이 통째로 안 보인다.** 지면이 못생겨지는 정도가 아니라 없어진다.
+ * 실제로 이 가드를 빼먹고 만들었다가 스크린샷에서 섹션 다섯이 사라진 걸 봤다.
+ */
+@supports (animation-timeline: view()){
+  .k-reveal{animation:k-rise linear both;animation-timeline:view();
+    animation-range:entry 0% cover 26%}
+  /* 자식이 하나씩 올라온다. 마크업은 --i만 주면 된다. */
+  .k-stagger > *{animation:k-rise linear both;animation-timeline:view();
+    animation-range:entry 0% cover 22%;animation-delay:calc(var(--i,0) * 55ms)}
+}
+@keyframes k-rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* ── 골격 ─────────────────────────────────────────────── */
+/* 단일 칼럼 — 읽는 흐름이 하나다. */
+.k-page--single-column .k-section > .k-wrap > *{max-width:var(--k-measure)}
+.k-page--single-column .k-bars,
+.k-page--single-column .k-grid,
+.k-page--single-column .k-specs{max-width:none}
+
+/* 밀도 격자 — 왼쪽 메타, 오른쪽 내용. 정보 축이 둘이다. */
+.k-page--dense-grid .k-section > .k-wrap{display:grid;gap:var(--k-gap);
+  grid-template-columns:minmax(0,15rem) minmax(0,1fr)}
+.k-page--dense-grid .k-section__meta{position:sticky;top:4.5rem;align-self:start}
+.k-page--dense-grid .k-section__body{display:grid;gap:var(--k-gap);min-width:0}
+.k-page--dense-grid .k-hero .k-wrap{grid-template-columns:1fr}
+
+/* 넓은 여백 — 문단을 좁게 세우고 둘레를 비운다. 테두리 대신 여백으로 가른다. */
+.k-page--wide-margin{--k-wide:64rem}
+.k-page--wide-margin .k-section{border-top:0;padding-block:calc(var(--k-section) * 1.3)}
+.k-page--wide-margin .k-card{border:0;padding:0}
+.k-page--wide-margin .k-title{font-size:var(--k-step3)}
+
+/* ── 변형 ─────────────────────────────────────────────
+ *
+ * 부품을 늘리는 대신 **같은 부품의 다른 모습**을 둔다. 실려 나가는 CSS는 한 번
+ * 늘지만 지면이 낼 수 있는 모습은 곱으로 늘어난다. 키트가 있으면 모든 지면이
+ * 같아 보인다는 걱정의 답이 여기다 — 모델은 섹션마다 다른 변형을 고를 수 있다.
+ */
+/* 첫 화면 */
+.k-hero--split .k-wrap{display:grid;gap:var(--k-gap);
+  grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);align-items:end}
+.k-hero--centered{text-align:center}
+.k-hero--centered .k-hero__lede{margin-inline:auto}
+.k-hero--oversized .k-hero__title{font-size:calc(var(--k-step4) * 1.28);letter-spacing:-.04em}
+.k-hero--rule{border-bottom:1px solid var(--k-hair)}
+
+/* 섹션 — dense-grid에서 메타를 오른쪽으로 넘기거나, 위로 올리거나 */
+.k-page--dense-grid .k-section--reverse > .k-wrap{grid-template-columns:minmax(0,1fr) minmax(0,15rem)}
+.k-page--dense-grid .k-section--reverse .k-section__meta{order:2}
+.k-page--dense-grid .k-section--stacked > .k-wrap{grid-template-columns:1fr}
+.k-section--flush{border-top:0}
+.k-section--tint{background:var(--k-veil)}
+.k-section--tint > .k-wrap{padding-block:var(--k-gap)}
+
+/* 수치 */
+.k-metric--boxed{border:1px solid var(--k-hair);border-radius:.7rem;padding:1rem 1.1rem}
+.k-metric--rule{border-left:2px solid var(--k-accent);padding-left:.9rem}
+.k-metric--huge .k-metric__v{font-size:calc(var(--k-step3) * 1.5)}
+.k-metric--accent .k-metric__v{color:var(--k-accent)}
+.k-metric--flip{flex-direction:column-reverse}
+
+/* 칩 */
+.k-chips--solid .k-chip{border-color:transparent;background:var(--k-veil)}
+.k-chips--bare .k-chip{border:0;padding-inline:0;
+  border-bottom:1px solid var(--k-hair);border-radius:0}
+.k-chips--accent .k-chip{border-color:color-mix(in oklab, var(--k-accent) 40%, var(--k-hair));
+  color:var(--k-accent)}
+
+/* 스펙 행 */
+.k-specs--boxed{border:1px solid var(--k-hair);border-radius:.9rem;padding-inline:1.2rem}
+.k-specs--boxed .k-spec:last-child{border-bottom:0}
+.k-specs--wide .k-spec{grid-template-columns:minmax(8rem,16rem) 1fr}
+.k-specs--airy .k-spec{border-bottom:0;padding-block:.4rem}
+
+/* 막대 */
+.k-bars--thick .k-bar__track{height:1.5rem;border-radius:.4rem}
+.k-bars--thick .k-bar__fill{border-radius:.4rem}
+.k-bars--thin .k-bar__track{height:.35rem}
+.k-bars--stepped .k-bar__fill{background:linear-gradient(90deg,
+  color-mix(in oklab, var(--k-accent) 55%, var(--k-bg)), var(--k-accent))}
+
+/* 카드 */
+.k-card--flat{border:0;background:var(--k-veil)}
+.k-card--edge{border:0;border-left:2px solid var(--k-accent);border-radius:0;padding-left:1.1rem}
+.k-card--lift:hover{transform:translateY(-4px)}
+
+/* 강조 상자 */
+.k-callout--plain{background:none;border-left-color:var(--k-hair)}
+.k-callout--fill{border-left:0;background:var(--k-veil);border-radius:.7rem}
+
+/* ── 좁은 화면 ────────────────────────────────────────── */
+@media (max-width:768px){
+  .k-page--dense-grid .k-section > .k-wrap{grid-template-columns:1fr}
+  .k-page--dense-grid .k-section__meta{position:static}
+  .k-spec{grid-template-columns:1fr;gap:.2rem}
+  .k-bar{grid-template-columns:1fr auto;gap:.4rem}
+  .k-bar__track{grid-column:1 / -1}
+}
+
+/* ── 움직임을 줄여 달라고 한 사람 ─────────────────────── */
+@media (prefers-reduced-motion:reduce){
+  .k-reveal,.k-stagger > *,.k-bar__fill,.k-progress{animation:none !important}
+  .k-card,.k-chip,.k-nav__links a::after{transition:none !important}
+}
+</style>
+<style>
+.x-hero-metrics{margin-top:2.5rem}
+.x-sub{font-size:1.1rem;margin:2.5rem 0 1rem;color:var(--k-text)}
+.x-timeline{margin:2.5rem 0;padding:1.5rem;border:1px solid var(--k-hair);border-radius:12px;background:#fff}
+.x-timeline figcaption{margin-bottom:1rem}
+.x-fill-accent{background:var(--k-accent)}
+.x-wide{max-width:none}
+.x-mono{font-family:var(--page-mono)}
+.x-steps{list-style:none;padding:0;margin:2rem 0 0;border-left:2px solid var(--k-hair)}
+.x-steps li{display:grid;grid-template-columns:9.5rem 1fr;gap:1rem;padding:0 0 1.5rem 1.25rem;position:relative}
+.x-steps li::before{content:"";position:absolute;left:-6px;top:.55rem;width:10px;height:10px;border-radius:50%;background:var(--k-accent)}
+.x-when{font-family:var(--page-mono);font-size:.85rem;color:var(--k-muted)}
+.x-sm{font-size:.9rem;color:var(--k-muted)}
+@media(max-width:600px){.x-steps li{grid-template-columns:1fr;gap:.25rem}}
+</style>
+</head>
+<body>
+<div class="k-page k-page--single-column">
+<nav class="k-nav"><div class="k-wrap"><span class="k-nav__mark">배준호</span><div class="k-nav__links"><a href="#two-tower">Two-tower</a><a href="#faiss">Faiss 서빙</a><a href="#pipeline">파이프라인</a><a href="#research">연구</a></div></div></nav>
+<main>
+<header class="k-hero k-hero--rule"><div class="k-wrap">
+<p class="k-eyebrow">ML 리서치 엔지니어 · 추천시스템</p>
+<h1 class="k-hero__title">추천 연구를<br />서비스 지표로 옮기는 사람</h1>
+<p class="k-hero__lede">세션 그래프 추천을 연구했고, 그 감각으로 Two-tower 후보 생성 모델을 만들고 Faiss 검색 서버까지 직접 붙였습니다. 모델 설계에서 서빙·운영까지 한 사람이 닫습니다.</p>
+<div class="k-grid x-hero-metrics k-stagger">
+<div class="k-metric k-metric--rule" style="--i:0"><span class="k-metric__v">+6.3<span class="k-metric__u">%</span></span><span class="k-metric__l">A/B 테스트 1인당 시청 시간</span></div>
+<div class="k-metric k-metric--rule" style="--i:1"><span class="k-metric__v">18<span class="k-metric__u">ms</span></span><span class="k-metric__l">Faiss 검색 p99 (목표 30ms)</span></div>
+<div class="k-metric k-metric--rule" style="--i:2"><span class="k-metric__v">1<span class="k-metric__u">시간</span></span><span class="k-metric__l">신규 콘텐츠 후보 반영 (최대 24시간에서)</span></div>
+</div>
+</div></header>
+
+<section class="k-section" id="two-tower"><div class="k-wrap k-narrow">
+<p class="k-eyebrow"><span class="k-num">01</span> 홈 피드 후보 생성 · 2020.06 – 2021.03</p>
+<h2 class="k-title">하루 늦던 홈 피드 후보를 1시간 안으로</h2>
+<p class="k-lede">새 콘텐츠는 다음 날에야 후보에 들어가고, 오늘 본 이력은 반영되지 않던 배치 추천을 Two-tower로 바꿨습니다.</p>
+<div class="k-prose">
+<p><strong>문제.</strong> 기존 홈 피드는 아이템 기반 협업 필터링 결과를 하루 한 번 계산해 썼습니다.</p>
+<p><strong>내가 한 일.</strong> 사용자 타워(최근 시청 50개 + 프로필)와 콘텐츠 타워(메타데이터 + 텍스트 임베딩)를 나눈 모델을 만들었습니다. 배치 내 네거티브에는 인기도 보정을 넣었고, 콘텐츠 임베딩은 Faiss 인덱스로 서빙했습니다.</p>
+</div>
+
+<figure class="x-timeline" aria-label="신규 콘텐츠 반영 시간 비교">
+<figcaption class="k-eyebrow">신규 콘텐츠가 후보에 들어가기까지</figcaption>
+<div class="k-bars k-bars--thick">
+<div class="k-bar"><span class="k-bar__k">일 배치 CF</span><span class="k-bar__track"><span class="k-bar__fill" style="--k-pct:100%"></span></span><span class="k-bar__v">24<span class="k-bar__u">시간(최대)</span></span></div>
+<div class="k-bar"><span class="k-bar__k">Two-tower</span><span class="k-bar__track"><span class="k-bar__fill x-fill-accent" style="--k-pct:4.2%"></span></span><span class="k-bar__v">1<span class="k-bar__u">시간</span></span></div>
+</div>
+</figure>
+
+<h3 class="x-sub">오프라인에서 온라인까지</h3>
+<div class="k-grid k-stagger">
+<div class="k-metric k-metric--boxed" style="--i:0"><span class="k-metric__v">0.284 → 0.371</span><span class="k-metric__l">오프라인 Recall@100</span></div>
+<div class="k-metric k-metric--boxed k-metric--accent" style="--i:1"><span class="k-metric__v">+6.3<span class="k-metric__u">%</span></span><span class="k-metric__l">1인당 시청 시간</span></div>
+<div class="k-metric k-metric--boxed" style="--i:2"><span class="k-metric__v">+3.8<span class="k-metric__u">%</span></span><span class="k-metric__l">클릭률</span></div>
+</div>
+<p class="k-meta">A/B 테스트 2주, 트래픽 20%, 홈 피드 기준</p>
+</div></section>
+
+<section class="k-section k-section--tint" id="faiss"><div class="k-wrap k-narrow">
+<p class="k-eyebrow"><span class="k-num">02</span> 근사 검색 서빙 · 2020.11 – 2021.05</p>
+<h2 class="k-title">목표 30ms 안에서 임베딩 검색 돌리기</h2>
+<p class="k-lede">재현율을 1.2%p만 내주고 지연 목표와 메모리를 모두 잡았습니다.</p>
+<div class="k-prose">
+<p>Two-tower를 실서비스에 붙이기 위해 콘텐츠 임베딩 검색 서버를 만들었습니다. IVF-PQ 인덱스 파라미터를 바꿔 가며 재현율과 지연 시간을 맞췄고, 인덱스를 1시간마다 다시 만들어 서빙 중단 없이 교체하게 했습니다.</p>
+</div>
+<dl class="k-specs k-specs--boxed x-wide">
+<div class="k-spec"><dt class="k-spec__k">p99 지연 시간</dt><dd class="k-spec__v x-mono">18ms · 목표 30ms</dd></div>
+<div class="k-spec"><dt class="k-spec__k">정확 검색 대비 Recall@100</dt><dd class="k-spec__v x-mono">손실 1.2%p</dd></div>
+<div class="k-spec"><dt class="k-spec__k">서버 메모리 (Flat → IVF-PQ)</dt><dd class="k-spec__v x-mono">40% 절감</dd></div>
+<div class="k-spec"><dt class="k-spec__k">인덱스 재생성 주기</dt><dd class="k-spec__v x-mono">1시간, 무중단 교체</dd></div>
+</dl>
+<div class="k-callout k-callout--fill"><p>모델 설계와 서빙을 같은 사람이 맡았기 때문에, 오프라인 지표와 지연·메모리 제약을 함께 놓고 파라미터를 정할 수 있었습니다.</p></div>
+</div></section>
+
+<section class="k-section" id="pipeline"><div class="k-wrap k-narrow">
+<p class="k-eyebrow"><span class="k-num">03</span> 학습·배포 운영</p>
+<h2 class="k-title">지표가 떨어지면 배포되지 않는 학습 파이프라인</h2>
+<p class="k-lede">품질 기준을 사람이 아니라 파이프라인이 지키게 만들었습니다.</p>
+<div class="k-prose">
+<p>모델별로 따로 돌던 cron 학습 작업을 Kubeflow Pipelines로 옮기고, 평가 지표 기준에 못 미치면 배포를 막는 단계를 넣었습니다. 스트림온에서는 Airflow로 데이터 추출 작업을 스케줄링했습니다.</p>
+</div>
+<ul class="k-chips k-chips--accent"><li class="k-chip">Kubeflow Pipelines</li><li class="k-chip">Airflow</li><li class="k-chip">Faiss</li></ul>
+</div></section>
+
+<section class="k-section k-section--tint" id="research"><div class="k-wrap k-narrow">
+<p class="k-eyebrow"><span class="k-num">04</span> 연구 배경</p>
+<h2 class="k-title">세션 그래프 추천 연구에서 출발</h2>
+<p class="k-lede">세션 기반 추천을 깊게 연구한 감각이 실서비스 모델의 바탕이 됐습니다.</p>
+<ol class="x-steps">
+<li><span class="x-when">2013.03 – 2018.02</span><div><strong>한결대학교 컴퓨터공학과 학부</strong><br /><span class="x-sm">군 복무 포함</span></div></li>
+<li><span class="x-when">2018.03 – 2020.02</span><div><strong>한결대학교 대학원 컴퓨터공학과 석사 · 추천시스템 연구실</strong><br /><span class="x-sm">학위논문 「세션 그래프 기반 다음 아이템 추천」 · 평점 4.3/4.5</span></div></li>
+<li><span class="x-when">재학 중</span><div><strong>누리랩스 AI연구소 연구 인턴 6개월</strong></div></li>
+<li><span class="x-when">수상</span><div><strong>석사 우수학위논문상</strong><br /><span class="x-sm">학과에서 한 해 2편 선정</span></div></li>
+</ol>
+</div></section>
+</main>
+<footer class="k-foot"><div class="k-wrap"><dl><dt>역할</dt><dd>ML 리서치 엔지니어</dd></dl><dl><dt>분야</dt><dd>추천시스템 · 후보 생성 · 근사 검색 · MLOps</dd></dl></div></footer>
+</div>
+</body>
+</html>

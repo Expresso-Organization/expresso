@@ -21,7 +21,7 @@ import { pageDocument } from "../../../../packages/contracts/src/page.js";
 import { ClaudeCodeAiClient } from "../../../../services/backend/src/platform/ai/claude-code.js";
 import type { AiCallOptions, AiCallSpec, AiClient, AiResult, AiUsage } from "../../../../services/backend/src/platform/ai/client.js";
 import { AiPageGenerator, type GeneratedPageResult, type PageGenerationContext } from "../../../../services/backend/src/modules/page/generator.js";
-import { BriefedPageGenerator, type BriefedPageResult } from "../../../../services/backend/src/modules/page/briefed-generator.js";
+import { BriefedPageGenerator, skillBody, type BriefedPageResult } from "../../../../services/backend/src/modules/page/briefed-generator.js";
 import { refinePageBrief, type PageBrief } from "../../../../services/backend/src/modules/page/page-brief.js";
 import { StructuredPageGenerator } from "../../../../services/backend/src/modules/page/structured-generator.js";
 import { PAGE_PROMPT_VERSION } from "../../../../packages/contracts/src/page.js";
@@ -54,6 +54,7 @@ const cells = (only
 const parallel = Number(arg("parallel") ?? 3);
 const skillPath = arg("skill") ?? path.join(os.homedir(), ".claude/skills/frontend-design/SKILL.md");
 const skill = fs.readFileSync(skillPath, "utf8");
+const skillText = skillBody(skill);
 
 const root = path.join(process.cwd(), "docs/library/previews/portfolio/runs", run);
 const sha = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -69,7 +70,9 @@ class Traced implements AiClient {
   readonly streams = false;
   async complete<T>(spec: AiCallSpec, schema: z.ZodType<T>, options: AiCallOptions<T> = {}): Promise<AiResult<T>> {
     const result = await provider.complete(spec, schema, options);
-    this.calls.push({ contract: spec.contract, system: spec.system, prompt: spec.prompt, ...(spec.modelTier ? { modelTier: spec.modelTier } : {}), usage: result.usage });
+    // 디자인 지침 본문은 기록에 싣지 않습니다(저장소에 넣지 않는 외부 문서). 자리 표시와 해시만 남깁니다.
+    const system = spec.system.replace(skillText, `[디자인 지침 본문 · sha256 ${sha(skill)}]`);
+    this.calls.push({ contract: spec.contract, system, prompt: spec.prompt, ...(spec.modelTier ? { modelTier: spec.modelTier } : {}), usage: result.usage });
     return result;
   }
 }

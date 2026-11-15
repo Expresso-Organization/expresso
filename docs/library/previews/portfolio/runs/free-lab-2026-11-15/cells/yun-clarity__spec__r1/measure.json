@@ -1,0 +1,62 @@
+{
+  "label": "yun-clarity__spec__r1",
+  "expected": {
+    "name": "윤하린",
+    "sections": 7,
+    "evidence": 8
+  },
+  "screens": {
+    "390": {
+      "overflow": false,
+      "scrollWidth": 390,
+      "height": 6200,
+      "brokenImages": 0,
+      "images": 0,
+      "svgs": 0,
+      "details": 9,
+      "h1": 1,
+      "chars": 1871,
+      "hiddenChars": 0,
+      "firstMaxFont": 38,
+      "firstChars": 383,
+      "backgroundLuminance": 1,
+      "families": [
+        "Inter",
+        "ui-monospace"
+      ],
+      "name": true,
+      "sections": 4,
+      "evidence": 7,
+      "careerHeading": true,
+      "evidenceHeading": true,
+      "notes": 0,
+      "errors": []
+    },
+    "1440": {
+      "overflow": false,
+      "scrollWidth": 1440,
+      "height": 4844,
+      "brokenImages": 0,
+      "images": 0,
+      "svgs": 0,
+      "details": 9,
+      "h1": 1,
+      "chars": 1871,
+      "hiddenChars": 0,
+      "firstMaxFont": 64,
+      "firstChars": 383,
+      "backgroundLuminance": 1,
+      "families": [
+        "Inter",
+        "ui-monospace"
+      ],
+      "name": true,
+      "sections": 4,
+      "evidence": 7,
+      "careerHeading": true,
+      "evidenceHeading": true,
+      "notes": 0,
+      "errors": []
+    }
+  }
+}

@@ -23,7 +23,7 @@ date: 2026-11-15
 | `scripts/library/renderer/free-lab/run.ts` (새) | 조건 · 입력 · 반복별 실제 생성과 기록 |
 | `scripts/library/renderer/free-lab/measure.mjs` (새) | 390 · 1440px 스크린샷과 측정 |
 | `scripts/library/renderer/free-lab/sheet.mjs` (새) | 비교 화면 `index.html` |
-| `docs/library/previews/portfolio/runs/free-lab-2026-11-15/` (새) | 입력 · 요청 · 응답 · 지면 HTML · 스크린샷 · 측정 |
+| `docs/library/previews/portfolio/runs/free-lab-2026-11-15/` (새) | 입력 · 정리본 · 요청 · 응답 · 지면 HTML · 스크린샷 · 측정 · 눈가림 평가(`blind-evaluation.json`) · 비교 화면 |
 | `docs/architecture/portfolio-free-generation-lab.md` (새) | 방법 · 결과 표 · 눈가림 평가 · 다음 결정 |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
@@ -35,7 +35,7 @@ date: 2026-11-15
 3. 시험 실행 — 윤하린 × 다섯 조건(지면 5건 · 정리 1건). 결과: 다섯 지면이 거의 같아 스타일 방식 조건 둘(`tokens` · `spec`)을 더했고, 정리본에 작업 메모가 섞여 정제 프롬프트를 고쳤다. 시험 결과는 버리고 전체를 한 번에 다시 만든다. 확인: 네 지면을 브라우저로 열어 보고, 프롬프트가 의도대로 갔는지 요청 기록을 읽는다. 문제가 있으면 여기서 생성기를 고친다.
 4. 전체 실행 — 인물 세 명 × 일곱 조건, 반복 2건, 다른 디자인 4건, 구조화 기준 3건(30건)을 백그라운드로 돌린다.
 5. 측정과 비교 화면 — `measure.mjs` · `sheet.mjs`. 확인: `index.html`에 모든 칸이 채워진다.
-6. 눈가림 평가 — 조건 이름을 가린 스크린샷을 별도 에이전트에게 준다.
+6. 눈가림 평가 — 조건 이름을 가린 스크린샷을 별도 에이전트에게 준다. 묶음을 만드는 스크립트는 저장소에 넣지 않았고, 대응표를 푼 결과만 실행 폴더에 둔다.
 7. 결과 문서 — 표 · 평가 · 다음 결정.
 8. 검증 — `pnpm typecheck` · `pnpm test`, 운영 계정 정보 검색, 커밋 · 푸시 · PR.
 
