@@ -152,6 +152,13 @@ export interface PageGenerator {
     context: PageGenerationContext,
     sink?: PageStreamSink | null,
   ): Promise<GeneratedPageResult>;
+  /**
+   * 이 문맥의 지면을 키트 부품으로 조판하는가. 없으면 조판하는 것으로 봅니다.
+   *
+   * `false`면 모델이 CSS 전체를 쓴 지면입니다. 지면 서비스가 저장하는 스타일 문법에 `kit: false`를 넣고,
+   * 지면 문서(`pageDocument`)가 키트 CSS를 싣지 않습니다.
+   */
+  usesKit?(context: PageGenerationContext): boolean;
 }
 
 export class PageGenerationError extends Error {
@@ -207,7 +214,7 @@ const SYSTEM_KIT = [
   "- `rationale` — 이 내용을 보고 내린 판단을 한 문장으로.",
 ].join("\n");
 
-const SYSTEM = [
+export const SYSTEM = [
   "너는 이직 지원자의 **포트폴리오 웹페이지 한 장**을 만든다.",
   "글도 네가 쓰고 지면도 네가 짠다.",
   "",
@@ -265,7 +272,7 @@ export const DESIGN_PRINCIPLES = [
  * 옵션이 없다(2026-11-14 서버 2.1.272 실측: `--system-prompt` · `IS_DEMO` · `CLAUDE_CODE_DISABLE_CLAUDE_MDS`로도
  * 남는다). 그래서 2026-11-10 운영에서 다른 사용자의 지면 끝 띠에 운영자 이름과 이메일이 찍혔다.
  */
-function authorPrompt(context: PageGenerationContext): string[] {
+export function authorPrompt(context: PageGenerationContext): string[] {
   const name = context.author?.name.trim();
   return [
     "## 누구의 지면",
@@ -291,7 +298,8 @@ export function ungroundedEmails(html: string, source: string): string[] {
   return [...new Set(shown)].filter((email) => !known.has(email));
 }
 
-function buildPrompt(context: PageGenerationContext): string {
+/** 요청의 앞부분입니다. 누구의 지면인지, 어디에 내는지, 공통 디자인 원칙, 스타일 문법 순서입니다. */
+export function promptOpening(context: PageGenerationContext): string[] {
   const lines: string[] = [];
   lines.push(...authorPrompt(context));
 
@@ -316,7 +324,54 @@ function buildPrompt(context: PageGenerationContext): string {
     lines.push(pageStyleGrammarPrompt(context.style));
     lines.push("");
   }
+  return lines;
+}
 
+/** 쓸 수 있는 그림 목록입니다. */
+export function promptMedia(context: PageGenerationContext): string[] {
+  const lines: string[] = [];
+  if (context.media.length > 0) {
+    lines.push("## 쓸 수 있는 그림 — 주소를 그대로 옮긴다");
+    for (const asset of context.media) {
+      lines.push(
+        `- \`${asset.src}\` (${asset.width}×${asset.height}) — ${asset.alt}`
+        + `\n  srcset: \`${asset.srcSet}\``,
+      );
+    }
+    lines.push("**그림이 있는 섹션은 그림이 주인공이다.** 글 옆에 작게 끼우지 마라.");
+    lines.push("");
+  } else {
+    lines.push("## 그림");
+    lines.push("쓸 수 있는 사진이 없다. 필요하면 CSS와 SVG로 직접 그린다.");
+    lines.push("");
+  }
+  return lines;
+}
+
+/** 요청의 끝입니다. 다시 뽑기면 직전 지면과 지시를, 아니면 만들라는 한 줄을 둡니다. */
+export function promptClosing(context: PageGenerationContext): string[] {
+  const lines: string[] = [];
+  if (context.previous && context.instruction) {
+    lines.push("## 지금 지면 — 지시가 건드리지 않은 것은 그대로 둔다");
+    lines.push("```html");
+    lines.push(context.previous.html);
+    lines.push("```");
+    lines.push("```css");
+    lines.push(context.previous.css);
+    lines.push("```");
+    lines.push("");
+    lines.push(`## 지시\n${context.instruction}`);
+    lines.push("지시대로 고친 지면 전체를 내라.");
+  } else {
+    if (context.instruction) lines.push(`## 요청\n${context.instruction}\n`);
+    lines.push("이 사람의 포트폴리오 페이지를 만들어라.");
+  }
+  return lines;
+}
+
+/** 원문 자료입니다. 설계안, 출처 맥락, 섹션 설계 순서입니다. */
+export function promptSources(context: PageGenerationContext): string[] {
+  const lines: string[] = [];
   if (context.portfolioPlan) {
     lines.push("## PortfolioPlan v1 — 편집 가능한 구성 맥락");
     lines.push(JSON.stringify(context.portfolioPlan, null, 2));
@@ -343,40 +398,11 @@ function buildPrompt(context: PageGenerationContext): string {
     lines.push(`- 분량: 약 ${section.targetLength}자`);
   }
   lines.push("");
+  return lines;
+}
 
-  if (context.media.length > 0) {
-    lines.push("## 쓸 수 있는 그림 — 주소를 그대로 옮긴다");
-    for (const asset of context.media) {
-      lines.push(
-        `- \`${asset.src}\` (${asset.width}×${asset.height}) — ${asset.alt}`
-        + `\n  srcset: \`${asset.srcSet}\``,
-      );
-    }
-    lines.push("**그림이 있는 섹션은 그림이 주인공이다.** 글 옆에 작게 끼우지 마라.");
-    lines.push("");
-  } else {
-    lines.push("## 그림");
-    lines.push("쓸 수 있는 사진이 없다. 필요하면 CSS와 SVG로 직접 그린다.");
-    lines.push("");
-  }
-
-  if (context.previous && context.instruction) {
-    lines.push("## 지금 지면 — 지시가 건드리지 않은 것은 그대로 둔다");
-    lines.push("```html");
-    lines.push(context.previous.html);
-    lines.push("```");
-    lines.push("```css");
-    lines.push(context.previous.css);
-    lines.push("```");
-    lines.push("");
-    lines.push(`## 지시\n${context.instruction}`);
-    lines.push("지시대로 고친 지면 전체를 내라.");
-  } else {
-    if (context.instruction) lines.push(`## 요청\n${context.instruction}\n`);
-    lines.push("이 사람의 포트폴리오 페이지를 만들어라.");
-  }
-
-  return lines.join("\n");
+export function buildPrompt(context: PageGenerationContext): string {
+  return [...promptOpening(context), ...promptSources(context), ...promptMedia(context), ...promptClosing(context)].join("\n");
 }
 
 /** 태그를 걷어낸 글자. 근거 대조는 **화면에 보이는 것**을 봐야 한다. */
@@ -485,7 +511,7 @@ export class AiPageGenerator implements PageGenerator {
 }
 
 /** 지면이 마크업인가. 아니면 그 이유. 생성 호출의 `check`(같은 대화에서 고치기)와 QA가 같은 판정을 쓴다. */
-function markupProblem(html: string, useKit: boolean): string | null {
+export function markupProblem(html: string, useKit: boolean): string | null {
   if (!/<[a-zA-Z]/.test(html)) return "지면에 태그가 하나도 없습니다 — 마크업 대신 설명을 냈습니다";
   if (useKit && !html.includes("k-page")) return "최상위 `k-page`가 없습니다";
   return null;
@@ -505,7 +531,7 @@ function markupProblem(html: string, useKit: boolean): string | null {
  * 근거 없는 수는 **기록만 한다.** 그 판단은 자기 이력을 아는 사람이 해야지
  * 글자 비교가 대신할 수 없고, 값은 `ungrounded_numbers`에 남는다.
  */
-function pageQa(input: {
+export function pageQa(input: {
   html: string;
   useKit: boolean;
   ungrounded: string[];

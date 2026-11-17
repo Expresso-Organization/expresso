@@ -1,0 +1,62 @@
+{
+  "label": "moon-clarity__tokens__r1",
+  "expected": {
+    "name": "문가령",
+    "sections": 4,
+    "evidence": 8
+  },
+  "screens": {
+    "390": {
+      "overflow": false,
+      "scrollWidth": 390,
+      "height": 5282,
+      "brokenImages": 0,
+      "images": 0,
+      "svgs": 1,
+      "details": 0,
+      "h1": 1,
+      "chars": 1664,
+      "hiddenChars": 0,
+      "firstMaxFont": 36,
+      "firstChars": 324,
+      "backgroundLuminance": 0.597,
+      "families": [
+        "Pretendard Variable",
+        "Outfit"
+      ],
+      "name": true,
+      "sections": 4,
+      "evidence": 8,
+      "careerHeading": false,
+      "evidenceHeading": true,
+      "notes": 0,
+      "errors": []
+    },
+    "1440": {
+      "overflow": false,
+      "scrollWidth": 1440,
+      "height": 3536,
+      "brokenImages": 0,
+      "images": 0,
+      "svgs": 1,
+      "details": 0,
+      "h1": 1,
+      "chars": 1664,
+      "hiddenChars": 0,
+      "firstMaxFont": 46,
+      "firstChars": 351,
+      "backgroundLuminance": 0.903,
+      "families": [
+        "Pretendard Variable",
+        "Outfit"
+      ],
+      "name": true,
+      "sections": 4,
+      "evidence": 8,
+      "careerHeading": false,
+      "evidenceHeading": true,
+      "notes": 0,
+      "errors": []
+    }
+  }
+}

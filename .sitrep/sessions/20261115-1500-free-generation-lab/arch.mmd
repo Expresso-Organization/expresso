@@ -1,0 +1,20 @@
+flowchart TD
+  UI[디자인 선택: 자유 생성] --> SVC[지면 서비스: kit 표시]
+  SVC --> RT[방식 라우터]
+  RT --> ST[구조화 생성기]
+  RT --> FREE[자유 생성기: 정리본 · 지침]
+  SKILL[내장 디자인 지침] --> FREE
+  BRIEF[정제 호출] --> FREE
+  SVC --> STREAM[스트림 begin · delta]
+  STREAM --> LIVE[생성 중 미리보기]
+  SVC --> SNAP[(지면 스냅샷)]
+  SNAP --> DOC[지면 문서 조립]
+  DOC --> VIEW[편집 화면 · 미리보기 · 배포]
+  VIEW --> CHECK[검사 · 문서 · PR 갱신]
+
+  classDef done fill:#d1fae5,stroke:#059669
+  classDef doing fill:#fef3c7,stroke:#d97706
+  classDef decide fill:#fee2e2,stroke:#dc2626
+  classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4
+  class UI,SVC,RT,ST,FREE,SKILL,BRIEF,STREAM,LIVE,SNAP,DOC,VIEW done
+  class CHECK done

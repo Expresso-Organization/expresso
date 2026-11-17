@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>윤하린 포트폴리오</title>
+<meta name="description" content="수치가 가장 강한 재료라 히어로에 세 수치와 3.8초·1.9초 로딩 비교를 두고, 단일 칼럼에서 요약 → App Router 과정 → 모아 UI 순서 → 접근성으로 내려가게 했다. 기록이 얇은 결제 접근성은 범위를 지어내지 않고 짧게 두었고, 연락처는 받지 못해 넣지 않았다.">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Nanum+Myeongjo:wght@400;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --page-sans:"Pretendard Variable",Pretendard,-apple-system,system-ui,sans-serif;
+  --page-serif:"Nanum Myeongjo","Noto Serif KR",serif;
+  --page-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --page-display:"Outfit",var(--page-sans);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font-family:var(--page-sans);word-break:keep-all;-webkit-font-smoothing:antialiased}
+img{max-width:100%;height:auto;display:block}
+svg{max-width:100%}
+/* 가로 스크롤은 폰에서 지면을 무너뜨린다. 여기서 한 번 더 막는다. */
+body{overflow-x:hidden}
+</style>
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:#17202a;font-family:var(--page-sans),sans-serif;font-size:16px;line-height:1.7;word-break:keep-all;overflow-wrap:break-word}
+.hr-skip{position:absolute;left:-999px;top:0;background:#2563eb;color:#fff;padding:8px 12px;z-index:10}
+.hr-skip:focus{left:8px;top:8px}
+a{color:#2563eb}
+a:focus-visible,summary:focus-visible{outline:3px solid #2563eb;outline-offset:3px;border-radius:4px}
+.hr-wrap{max-width:680px;margin:0 auto;padding:0 20px}
+.hr-wrap.hr-wide{max-width:860px}
+.hr-top{position:sticky;top:0;background:rgba(255,255,255,.94);border-bottom:1px solid #e3e8ef;z-index:5}
+.hr-topin{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:10px;padding-bottom:10px;max-width:860px}
+.hr-name{font-weight:700}
+.hr-top nav{display:flex;gap:4px 16px;flex-wrap:wrap;font-size:14px}
+.hr-top nav a{color:#17202a;text-decoration:none;padding:2px 0}
+.hr-top nav a:hover{color:#2563eb}
+.hr-label{font-family:var(--page-mono),monospace;font-size:13px;letter-spacing:.02em;color:#2563eb;margin:0 0 12px}
+h1,h2,h3{font-family:var(--page-display),var(--page-sans),sans-serif;line-height:1.2;margin:0}
+h1{font-size:clamp(40px,10vw,68px);font-weight:700;letter-spacing:-.02em}
+h1 em{font-style:normal;color:#2563eb}
+h2{font-size:clamp(24px,5vw,32px);letter-spacing:-.01em;margin-bottom:16px;line-height:1.3}
+h3{font-size:18px}
+.hr-hero{padding:64px 0 56px}
+.hr-lead{font-size:18px;margin:20px 0 32px;max-width:34em}
+.hr-big{list-style:none;margin:0 0 32px;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:2px solid #17202a}
+.hr-big li{padding:16px 12px 0 0;display:block}
+.hr-big li+li{padding-left:14px;border-left:1px solid #e3e8ef}
+.hr-n{display:block;font-family:var(--page-mono),monospace;font-size:clamp(30px,8vw,48px);font-weight:700;line-height:1.1;color:#2563eb}
+.hr-n small{font-size:.4em;margin-left:2px;color:#17202a}
+.hr-c{display:block;font-size:13px;line-height:1.5;color:#4a5565;margin-top:6px}
+.hr-race{display:block;background:#f3f6fd;border-radius:10px;padding:16px}
+.hr-lane{display:flex;align-items:center;gap:12px}
+.hr-lane+.hr-lane{margin-top:10px}
+.hr-lt{flex:0 0 96px;font-family:var(--page-mono),monospace;font-size:12px;color:#4a5565}
+.hr-lt.hr-now{color:#17202a;font-weight:700}
+.hr-track{display:block;flex:1;height:10px;background:#dbe5fb;border-radius:5px;overflow:hidden}
+.hr-fill{display:block;height:100%;width:100%;transform-origin:left;transform:scaleX(0);border-radius:5px;animation:hr-load 3.8s ease-out infinite}
+.hr-slow{background:#8a97ad}
+.hr-fast{background:#2563eb;animation-duration:1.9s;animation-name:hr-load2}
+@keyframes hr-load{0%{transform:scaleX(0)}100%,100%{transform:scaleX(1)}}
+@keyframes hr-load2{0%{transform:scaleX(0)}100%{transform:scaleX(1)}}
+.hr-sec{padding:72px 0}
+.hr-tint{background:#f3f6fd}
+.hr-p{margin:0 0 16px}
+.hr-note{font-size:13px;color:#4a5565;margin:16px 0 0}
+.hr-rows{list-style:none;margin:28px 0 0;padding:0;border-top:1px solid #17202a}
+.hr-rows li{border-bottom:1px solid #e3e8ef}
+.hr-rows a{display:grid;grid-template-columns:96px 1fr auto;gap:4px 16px;align-items:center;padding:16px 8px;color:#17202a;text-decoration:none}
+.hr-rows a:hover{background:#f3f6fd}
+.hr-tag{font-family:var(--page-mono),monospace;font-size:12px;color:#2563eb}
+.hr-k small{font-size:12px;color:#4a5565;margin-left:4px}
+.hr-v{font-family:var(--page-mono),monospace;text-align:right;white-space:nowrap}
+.hr-v s{color:#6b7686}
+.hr-v b{color:#2563eb;font-size:18px}
+.hr-bar{display:block;grid-column:2/4;height:6px;background:#e3e8ef;border-radius:3px;overflow:hidden}
+.hr-bar i{display:block;height:100%;background:#2563eb;border-radius:3px}
+.hr-cs{margin:24px 0}
+.hr-cs div{display:grid;grid-template-columns:96px 1fr;gap:12px;padding:14px 0;border-top:1px solid #d3dcee}
+.hr-cs dt{font-family:var(--page-mono),monospace;font-size:13px;color:#2563eb;padding-top:3px}
+.hr-cs dd{margin:0}
+.hr-fig{margin:24px 0;padding:18px;background:#fff;border:1px solid #d3dcee;border-radius:10px}
+.hr-fig figcaption{font-family:var(--page-mono),monospace;font-size:12px;color:#4a5565;margin-bottom:12px}
+.hr-js{display:flex;align-items:center;gap:12px}
+.hr-js+.hr-js{margin-top:8px}
+.hr-jl{flex:0 0 52px;font-size:13px}
+.hr-jt{display:block;flex:1}
+.hr-jt i{display:block;font-style:normal;font-family:var(--page-mono),monospace;font-size:12px;color:#fff;padding:3px 10px;border-radius:4px;white-space:nowrap}
+.hr-j1{width:100%;background:#8a97ad}
+.hr-j2{width:43%;background:#2563eb}
+.hr-det{border-top:1px solid #d3dcee;padding-top:12px}
+.hr-det summary{cursor:pointer;font-weight:600}
+.hr-det p{margin:10px 0 0}
+.hr-steps{list-style:none;margin:28px 0 0;padding:0;position:relative}
+.hr-steps::before{content:"";position:absolute;left:15px;top:10px;bottom:10px;width:2px;background:#cfdcfa}
+.hr-steps li{display:flex;gap:16px;padding:0 0 22px;position:relative}
+.hr-sn{flex:0 0 32px;height:32px;border-radius:50%;background:#2563eb;color:#fff;font-family:var(--page-mono),monospace;font-size:14px;display:flex;align-items:center;justify-content:center}
+.hr-steps h3{margin-bottom:2px}
+.hr-steps p{margin:0}
+.hr-out{margin:8px 0 0;padding:16px 18px;background:#f3f6fd;border-left:4px solid #2563eb;border-radius:0 8px 8px 0}
+.hr-out b{font-family:var(--page-mono),monospace;color:#2563eb;margin-left:6px}
+.hr-out small{color:#4a5565}
+.hr-stack{margin:24px 0 0}
+.hr-stack div{display:grid;grid-template-columns:110px 1fr;gap:12px;padding:12px 0;border-top:1px solid #e3e8ef}
+.hr-stack dt{font-weight:700}
+.hr-stack dd{margin:0}
+.hr-y{font-family:var(--page-mono),monospace;font-size:13px;color:#2563eb;margin-right:8px;white-space:nowrap}
+.hr-side{padding:18px 0;border-top:1px solid #d3dcee}
+.hr-side h3 small{display:block;font-family:var(--page-mono),monospace;font-size:12px;font-weight:400;color:#4a5565;margin-top:2px}
+.hr-side p{margin:8px 0 0}
+.hr-foot{padding:32px 0 48px;border-top:1px solid #e3e8ef}
+.hr-foot p{margin:0}
+@media(max-width:560px){
+.hr-hero{padding:40px 0}
+.hr-sec{padding:52px 0}
+.hr-big{grid-template-columns:1fr}
+.hr-big li{display:flex;align-items:baseline;gap:12px;padding:12px 0}
+.hr-big li+li{padding-left:0;border-left:0;border-top:1px solid #e3e8ef}
+.hr-n{flex:0 0 120px}
+.hr-c{margin:0}
+.hr-lt{flex-basis:84px}
+.hr-rows a{grid-template-columns:1fr auto}
+.hr-tag{grid-column:1/3}
+.hr-bar{grid-column:1/3}
+.hr-cs div,.hr-stack div{grid-template-columns:1fr;gap:2px}
+}
+@media(prefers-reduced-motion:reduce){.hr-fill{animation:none;transform:scaleX(1)}.hr-slow{width:100%}.hr-fast{width:50%}}
+</style>
+</head>
+<body>
+<a class="hr-skip" href="#main">본문으로 건너뛰기</a>
+<header class="hr-top"><div class="hr-wrap hr-topin"><span class="hr-name">윤하린</span><nav aria-label="섹션"><a href="#numbers">수치</a><a href="#approuter">App Router</a><a href="#moaui">모아 UI</a><a href="#a11y">접근성</a><a href="#stack">스택</a></nav></div></header>
+<main id="main">
+<section class="hr-hero" aria-labelledby="h-hero"><div class="hr-wrap">
+<p class="hr-label">프론트엔드 개발자 · 커머스 5년 차 · 윤하린</p>
+<h1 id="h-hero">상품 상세를<br /><em>1.9초</em>에 띄웁니다</h1>
+<p class="hr-lead">모아마켓(가상)에서 상품 상세·장바구니 화면을 맡아, 체감 속도와 공통 UI 기반을 함께 책임져 왔습니다.</p>
+<ul class="hr-big">
+<li><span class="hr-n">1.9<small>초</small></span><span class="hr-c">상품 상세 LCP<br />3.8초에서 · 가상 측정</span></li>
+<li><span class="hr-n">180<small>KB</small></span><span class="hr-c">클라이언트 JS<br />420KB에서</span></li>
+<li><span class="hr-n">48<small>개</small></span><span class="hr-c">하나의 디자인 시스템으로 모은 컴포넌트</span></li>
+</ul>
+<div class="hr-race" role="img" aria-label="LCP 3.8초와 1.9초의 로딩 속도 비교 애니메이션">
+<div class="hr-lane"><span class="hr-lt">전환 전 3.8s</span><span class="hr-track"><i class="hr-fill hr-slow"></i></span></div>
+<div class="hr-lane"><span class="hr-lt hr-now">전환 후 1.9s</span><span class="hr-track"><i class="hr-fill hr-fast"></i></span></div>
+</div>
+</div></section>
+
+<section id="numbers" class="hr-sec" aria-labelledby="h-num"><div class="hr-wrap hr-wide">
+<p class="hr-label">01 · 요약</p>
+<h2 id="h-num">숫자로 본 지난 두 해</h2>
+<p class="hr-p">속도, 번들, 재사용, 작업 기간이 같은 방향으로 움직였습니다. 행을 누르면 그 수치가 나온 작업으로 내려갑니다.</p>
+<ol class="hr-rows">
+<li><a href="#approuter"><span class="hr-tag">App Router</span><span class="hr-k">상품 상세 LCP <small>가상 측정</small></span><span class="hr-v"><s>3.8초</s> → <b>1.9초</b></span><span class="hr-bar"><i style="width:50%"></i></span></a></li>
+<li><a href="#approuter"><span class="hr-tag">App Router</span><span class="hr-k">클라이언트 JS</span><span class="hr-v"><s>420KB</s> → <b>180KB</b></span><span class="hr-bar"><i style="width:43%"></i></span></a></li>
+<li><a href="#moaui"><span class="hr-tag">모아 UI</span><span class="hr-k">신규 화면의 공통 컴포넌트 사용 비율</span><span class="hr-v"><s>30%</s> → <b>80%</b></span><span class="hr-bar hr-up"><i style="width:80%"></i></span></a></li>
+<li><a href="#moaui"><span class="hr-tag">모아 UI</span><span class="hr-k">신규 화면 개발 기간 평균 <small>가상 집계</small></span><span class="hr-v"><s>5일</s> → <b>3일</b></span><span class="hr-bar"><i style="width:60%"></i></span></a></li>
+</ol>
+<p class="hr-note">막대는 전환 전 값을 100%로 둔 비율입니다. 사용 비율은 80%를 그대로 길이로 썼습니다.</p>
+</div></section>
+
+<section id="approuter" class="hr-sec hr-tint" aria-labelledby="h-app"><div class="hr-wrap">
+<p class="hr-label">02 · 사례 · 2024.04 — 2024.11</p>
+<h2 id="h-app">LCP 3.8초를 1.9초로: 상품 상세 App Router 전환</h2>
+<dl class="hr-cs">
+<div><dt>문제</dt><dd>오래된 CSR 구조에서 상품 상세 첫 렌더가 느렸습니다.</dd></div>
+<div><dt>판단</dt><dd>데이터 요청을 서버 컴포넌트로 올리고, 상호작용이 필요한 부분만 클라이언트 컴포넌트로 남겼습니다. 서버와 클라이언트의 경계를 비용 기준으로 다시 그은 것입니다.</dd></div>
+<div><dt>리스크 관리</dt><dd>Pages Router에서 App Router로 옮기는 동안에도 기존 주소와 SEO 메타를 그대로 유지했습니다.</dd></div>
+<div><dt>재발 방지</dt><dd>배포마다 Lighthouse CI로 성능 예산을 검사해, 한 번 줄인 수치가 다시 늘지 않게 했습니다.</dd></div>
+</dl>
+<figure class="hr-fig"><figcaption>클라이언트가 내려받는 JS</figcaption>
+<div class="hr-js"><span class="hr-jl">전환 전</span><span class="hr-jt"><i class="hr-j1">420KB</i></span></div>
+<div class="hr-js"><span class="hr-jl">전환 후</span><span class="hr-jt"><i class="hr-j2">180KB</i></span></div>
+</figure>
+<details class="hr-det"><summary>남긴 것: 판단 근거를 글로</summary><p>「App Router 전환기: 상품 상세 LCP를 절반으로」에 데이터 요청 위치 결정, 캐시 무효화, 점진 전환 방법을 정리했습니다. 수치만이 아니라 왜 그렇게 정했는지를 팀이 읽을 수 있게 하려는 것이었습니다.</p></details>
+</div></section>
+
+<section id="moaui" class="hr-sec" aria-labelledby="h-ui"><div class="hr-wrap">
+<p class="hr-label">03 · 사례 · 2023.06 — 2024.03</p>
+<h2 id="h-ui">같은 수정을 세 번 하지 않기 위해: 모아 UI</h2>
+<p class="hr-p">화면마다 버튼과 입력 모양이 달라 디자이너와 개발자가 같은 수정을 여러 번 했습니다. UI를 통일하는 데서 그치지 않고, 반복 수정이 생기는 구조를 없애는 쪽으로 풀었습니다.</p>
+<ol class="hr-steps">
+<li><span class="hr-sn">1</span><div><h3>진단</h3><p>화면마다 다른 버튼 · 입력 · 모달이 반복 수정의 원인이었습니다.</p></div></li>
+<li><span class="hr-sn">2</span><div><h3>토큰 정리</h3><p>컴포넌트보다 먼저 색 · 간격 · 글꼴을 디자인 토큰으로 정리했습니다.</p></div></li>
+<li><span class="hr-sn">3</span><div><h3>배포</h3><p>Radix UI 기반, 접근성을 기본으로 갖춘 컴포넌트 48개를 Storybook 문서와 함께 배포했습니다.</p></div></li>
+<li><span class="hr-sn">✓</span><div><h3>정착</h3><p>시각 회귀 테스트로 변경이 깨지지 않게 하고, 신규 화면의 공통 컴포넌트 사용 비율이 30%에서 80%가 되는 것으로 자리 잡았는지 확인했습니다.</p></div></li>
+</ol>
+<p class="hr-out">결과 <b>신규 화면 개발 기간 평균 5일 → 3일</b> <small>(가상 집계)</small></p>
+</div></section>
+
+<section id="a11y" class="hr-sec hr-tint" aria-labelledby="h-a11y"><div class="hr-wrap">
+<p class="hr-label">04 · 품질 기준</p>
+<h2 id="h-a11y">결제 화면의 접근성은 나중 일이 아니라 기본값</h2>
+<p class="hr-p">결제 페이지를 WCAG AA 기준에 맞춰 고쳤습니다. 접근성은 한 화면의 수정으로 끝내지 않고, 모아 UI의 컴포넌트가 처음부터 갖고 있는 속성으로 내려놓는 방식으로 다룹니다.</p>
+</div></section>
+
+<section id="stack" class="hr-sec" aria-labelledby="h-stack"><div class="hr-wrap">
+<p class="hr-label">05 · 스택</p>
+<h2 id="h-stack">쓰는 도구와 일하는 방식</h2>
+<p class="hr-p">React · Next.js · TypeScript를 오래 쓰면서, 품질을 자동으로 검사하는 도구까지 직접 붙여 왔습니다.</p>
+<dl class="hr-stack">
+<div><dt>React</dt><dd><span class="hr-y">5년</span> 서버 컴포넌트와 클라이언트 컴포넌트의 경계 설계</dd></div>
+<div><dt>Next.js</dt><dd><span class="hr-y">App Router 2년</span> 데이터 요청 위치, 캐시 무효화, 점진 전환</dd></div>
+<div><dt>TypeScript</dt><dd><span class="hr-y">5년</span> 제네릭과 판별 유니온으로 API 응답 타입을 계약처럼 다룸</dd></div>
+<div><dt>품질 도구</dt><dd>Radix UI · Storybook · 시각 회귀 테스트 · Lighthouse CI</dd></div>
+<div><dt>팀 기준</dt><dd>프론트엔드 코드 리뷰 기준 문서를 작성</dd></div>
+</dl>
+</div></section>
+
+<section class="hr-sec hr-tint" aria-labelledby="h-side"><div class="hr-wrap">
+<p class="hr-label">06 · 업무 밖에서</p>
+<h2 id="h-side">필요하면 일단 만들어 봅니다</h2>
+<p class="hr-p">불편을 발견하면 작게라도 돌아가는 형태로 만들어 봅니다.</p>
+<article class="hr-side"><h3>개인 가계부 PWA <small>2025.06 — 2025.09</small></h3><p>지하철에서 결제 내역을 바로 적고 싶어 만들었습니다. 기록은 IndexedDB에 먼저 저장하고, 연결되면 서버와 동기화합니다. Service Worker 캐시 덕에 두 번째 실행부터 즉시 열리고, 홈 화면에 설치해 앱처럼 씁니다.</p></article>
+<article class="hr-side"><h3>모아마켓(가상) 사내 해커톤 대상</h3><p>판매자가 상품 사진만 올리면 상세 페이지 초안을 만들어 주는 도구를 이틀 동안 만들어 대상을 받았습니다.</p></article>
+</div></section>
+</main>
+<footer class="hr-foot"><div class="hr-wrap"><p>윤하린 · 프론트엔드 개발자</p><p class="hr-note">모아마켓은 가상의 회사이며, 표기된 가상 측정 · 가상 집계 수치는 그 전제에서 읽어 주세요.</p></div></footer>
+</body>
+</html>
