@@ -152,6 +152,13 @@ export interface PageGenerator {
     context: PageGenerationContext,
     sink?: PageStreamSink | null,
   ): Promise<GeneratedPageResult>;
+  /**
+   * 이 문맥의 지면을 키트 부품으로 조판하는가. 없으면 조판하는 것으로 봅니다.
+   *
+   * `false`면 모델이 CSS 전체를 쓴 지면입니다. 지면 서비스가 저장하는 스타일 문법에 `kit: false`를 넣고,
+   * 지면 문서(`pageDocument`)가 키트 CSS를 싣지 않습니다.
+   */
+  usesKit?(context: PageGenerationContext): boolean;
 }
 
 export class PageGenerationError extends Error {
@@ -362,9 +369,9 @@ export function promptClosing(context: PageGenerationContext): string[] {
   return lines;
 }
 
-export function buildPrompt(context: PageGenerationContext): string {
-  const lines: string[] = promptOpening(context);
-
+/** 원문 자료입니다. 설계안, 출처 맥락, 섹션 설계 순서입니다. */
+export function promptSources(context: PageGenerationContext): string[] {
+  const lines: string[] = [];
   if (context.portfolioPlan) {
     lines.push("## PortfolioPlan v1 — 편집 가능한 구성 맥락");
     lines.push(JSON.stringify(context.portfolioPlan, null, 2));
@@ -391,9 +398,11 @@ export function buildPrompt(context: PageGenerationContext): string {
     lines.push(`- 분량: 약 ${section.targetLength}자`);
   }
   lines.push("");
+  return lines;
+}
 
-  lines.push(...promptMedia(context), ...promptClosing(context));
-  return lines.join("\n");
+export function buildPrompt(context: PageGenerationContext): string {
+  return [...promptOpening(context), ...promptSources(context), ...promptMedia(context), ...promptClosing(context)].join("\n");
 }
 
 /** 태그를 걷어낸 글자. 근거 대조는 **화면에 보이는 것**을 봐야 한다. */

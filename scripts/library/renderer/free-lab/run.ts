@@ -13,7 +13,6 @@
 //   node --import ./services/backend/node_modules/tsx/dist/loader.mjs scripts/library/renderer/free-lab/run.ts \
 //     --run free-lab-2026-11-15 --cells pilot --generate
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import type { z } from "zod";
@@ -22,6 +21,7 @@ import { ClaudeCodeAiClient } from "../../../../services/backend/src/platform/ai
 import type { AiCallOptions, AiCallSpec, AiClient, AiResult, AiUsage } from "../../../../services/backend/src/platform/ai/client.js";
 import { AiPageGenerator, type GeneratedPageResult, type PageGenerationContext } from "../../../../services/backend/src/modules/page/generator.js";
 import { BriefedPageGenerator, skillBody, type BriefedPageResult } from "../../../../services/backend/src/modules/page/briefed-generator.js";
+import { FRONTEND_DESIGN_SKILL } from "../../../../services/backend/src/modules/page/design-skill/frontend-design.js";
 import { refinePageBrief, type PageBrief } from "../../../../services/backend/src/modules/page/page-brief.js";
 import { StructuredPageGenerator } from "../../../../services/backend/src/modules/page/structured-generator.js";
 import { PAGE_PROMPT_VERSION } from "../../../../packages/contracts/src/page.js";
@@ -52,8 +52,9 @@ const cells = (only
   ? only.split(",").map((item) => { const [input, arm, rep] = item.split(":"); return { input: input!, arm: arm as Arm, rep: Number(rep ?? 1) }; })
   : set === "pilot" ? PILOT : set === "full" ? FULL : [...PILOT, ...FULL]);
 const parallel = Number(arg("parallel") ?? 3);
-const skillPath = arg("skill") ?? path.join(os.homedir(), ".claude/skills/frontend-design/SKILL.md");
-const skill = fs.readFileSync(skillPath, "utf8");
+// 디자인 지침은 제품이 쓰는 내장 본문이 기본입니다. `--skill <경로>`로 다른 지침을 줄 수 있습니다.
+const skillPath = arg("skill");
+const skill = skillPath ? fs.readFileSync(skillPath, "utf8") : FRONTEND_DESIGN_SKILL;
 const skillText = skillBody(skill);
 
 const root = path.join(process.cwd(), "docs/library/previews/portfolio/runs", run);
@@ -146,7 +147,8 @@ async function runCell(cell: Cell) {
   }
 }
 
-write(path.join(root, "run.json"), { run, skillPath: skillPath.replace(os.homedir(), "~"), skillSha256: sha(skill), pagePromptVersion: PAGE_PROMPT_VERSION, node: process.version });
+if (!fs.existsSync(path.join(root, "run.json")))
+  write(path.join(root, "run.json"), { run, skillPath: skillPath ?? "services/backend/src/modules/page/design-skill/frontend-design.ts", skillSha256: sha(skill), pagePromptVersion: PAGE_PROMPT_VERSION, node: process.version });
 const queue = [...cells];
 const timer = setInterval(() => console.log(`… 남은 칸 ${queue.length}`), 60_000);
 try {

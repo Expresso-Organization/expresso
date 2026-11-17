@@ -195,6 +195,9 @@ export class PageService {
       context.structuredContent = current.generationManifest.structured.content;
     }
     if (options.pageFormat) context.pageFormat = options.pageFormat;
+    // 키트 없이 만드는 지면은 스타일 문법에 그 사실을 적습니다. 생성 중 미리보기(스트림 `begin`)와 저장하는 스냅샷이 이 값을 쓰고,
+    // 지면 문서가 키트 CSS를 싣지 않습니다.
+    if (context.style && generator.usesKit?.(context) === false) context.style = { ...context.style, kit: false };
     await this.#consent?.require(userId, "page_generation");
     const streamId = options.streamId ?? portfolioId; const stream = this.#stream;
     // 쓰기는 기다리지 않고 순서대로 쌓습니다. Redis 연결 하나의 명령은 보낸 순서로 처리됩니다.

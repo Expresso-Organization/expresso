@@ -936,6 +936,21 @@ describe("지면 문서 껍데기", () => {
     expect(pageDocument({ ...base, reveal: true })).toBe(pageDocument(base));
     expect(pageDocument({ ...base, reveal: false })).toContain('<html lang="ko" data-reveal="none">\n');
   });
+
+  it("문법이 kit: false면 키트 CSS를 싣지 않고, kit이 없는 문법은 지금처럼 싣는다", () => {
+    const base = { html: "<main></main>", css: "main{margin:0}", title: "가상 지면" };
+    const grammar = PageStyleGrammarSchema.parse({
+      name: "Clarity", description: "", toneTags: [], background: "#ffffff", text: "#17202a", accent: "#2563eb",
+      font: "sans", density: "comfortable", structure: "single-column", composition: "linear-story", typography: "display-led",
+      geometry: "contained-cards", motion: "calm-responsive", interaction: "evidence-exploration", imagery: "typography-first", antiPatterns: [],
+    });
+    const withKit = pageDocument({ ...base, grammar });
+    const withoutKit = pageDocument({ ...base, grammar: { ...grammar, kit: false } });
+    expect(withKit).toContain(".k-page");
+    expect(withoutKit).not.toContain(".k-page");
+    expect(withoutKit).toBe(pageDocument(base));
+    expect(pageDocument({ ...base, grammar: { ...grammar, kit: true } })).toBe(withKit);
+  });
 });
 
 describe("마감 임박 경계", () => {

@@ -3,7 +3,10 @@ import { pagePolicyPrompt } from "@expresso/contracts";
 
 import { ScriptedAiClient } from "../../platform/ai/scripted-client.js";
 import { findDesignSystemRevision } from "../design-systems/index.js";
-import { BriefedPageGenerator, briefedPrompt, briefedSystem, skillBody } from "./briefed-generator.js";
+import { createHash } from "node:crypto";
+import { BriefedPageGenerator, briefedPrompt, briefedSystem, freePageGenerator, skillBody } from "./briefed-generator.js";
+import { FRONTEND_DESIGN_SKILL } from "./design-skill/frontend-design.js";
+import { FormatRoutingPageGenerator } from "./format-router.js";
 import { AiPageGenerator, type PageGenerationContext } from "./generator.js";
 import type { PageBrief } from "./page-brief.js";
 
@@ -124,8 +127,71 @@ describe("정리본 · 디자인 지침 자유 생성", () => {
     expect(briefedPrompt(context, brief, "spec")).toBe(briefedPrompt(context, brief));
   });
 
-  it("정리본 없이 스타일 방식만 바꾸는 조합은 받지 않는다", () => {
-    expect(() => briefedPrompt(context, null, "tokens")).toThrow("자료 정리본이 필요합니다");
+  it("지침을 켜면 계획 → CSS → HTML 순서로 받는다 — 생성 중 미리보기가 꾸밈 없는 글을 보이지 않게", async () => {
+    const seen: string[] = [];
+    const ai = new ScriptedAiClient(() => ({ ...draft, plan }));
+    await new BriefedPageGenerator(ai, { designSkill: SKILL }).generate(context, { delta: (text) => seen.push(text), thinking: () => undefined });
+    // 가짜 공급자는 받은 객체를 그대로 흘리므로, 순서는 시스템 프롬프트의 안내로 확인한다.
+    const system = ai.calls[0]!.system;
+    expect(system.indexOf("- `plan`")).toBeLessThan(system.lastIndexOf("- `css`"));
+    expect(system.lastIndexOf("- `css`")).toBeLessThan(system.lastIndexOf("- `html`"));
+    expect(seen.join("")).toContain("main{margin:0}");
+  });
+
+  it("제품의 자유 생성은 정리본 · 내장 지침 · 색과 서체만 넘기는 조합이고 키트를 쓰지 않는다", async () => {
+    const ai = new ScriptedAiClient((request) => (request.contract === "page_fill" ? brief : { plan, ...draft }));
+    const generator = freePageGenerator(ai);
+    expect(generator.usesKit()).toBe(false);
+    const thinking: number[] = [];
+    await generator.generate(context, { delta: () => undefined, thinking: (tokens) => thinking.push(tokens) });
+    expect(ai.calls.map((call) => call.contract)).toEqual(["page_fill", "page_generation"]);
+    const { system, prompt } = ai.calls[1]!;
+    expect(system).toContain("Approach this as the design lead");
+    expect(prompt).toContain("## 자료 정리본");
+    expect(prompt).not.toContain("단일 칼럼 서사");
+    // 내장 본문은 실험에 쓴 사본과 같다.
+    expect(createHash("sha256").update(FRONTEND_DESIGN_SKILL).digest("hex")).toBe("51e3aa519fba86baab67503e71b2e604f1e9682213efb8f9536b48da980bf528");
+  });
+
+  it("지시를 붙여 고칠 때는 다시 정리하지 않고, 직전 지면 · 지시 · 디자인을 유지하라는 말을 싣는다", async () => {
+    const ai = new ScriptedAiClient((request) => (request.contract === "page_fill" ? brief : { plan, ...draft }));
+    await freePageGenerator(ai).generate({ ...context, instruction: "첫 화면을 더 크게", previous: { html: "<main>직전 지면</main>", css: "main{color:red}" } });
+    // 정제 호출 없이 지면 호출 한 번이다. 사람이 화면 앞에서 기다린다.
+    expect(ai.calls.map((call) => call.contract)).toEqual(["page_generation"]);
+    const prompt = ai.calls[0]!.prompt;
+    expect(prompt).toContain("## 출처 맥락");
+    expect(prompt).not.toContain("단일 칼럼 서사");
+    expect(prompt).toContain("<main>직전 지면</main>");
+    expect(prompt).toContain("## 지시\n첫 화면을 더 크게");
+    expect(prompt.indexOf("## 지시")).toBeLessThan(prompt.indexOf("지금 지면의 디자인(색 · 서체 · 배치 · 클래스 이름)과 글을 그대로 두고"));
+    // 새로 만드는 요청에는 그 말이 없다.
+    await freePageGenerator(ai).generate({ ...context, previous: { html: "<main>직전 지면</main>", css: "" } });
+    expect(ai.calls.at(-1)!.prompt).not.toContain("이번 요청은 지금 지면을 고치는 일이다");
+  });
+
+  it("지면 기록의 사용량에 정제 호출을 더한다", async () => {
+    const ai = new ScriptedAiClient((request) => (request.contract === "page_fill" ? brief : { plan, ...draft }));
+    const result = await freePageGenerator(ai).generate(context);
+    // 가짜 공급자는 호출마다 $0.01 · 50ms · 출력 100토큰을 낸다.
+    expect(result.usage.costUsd).toBeCloseTo(0.02);
+    expect(result.manifest.usage.costUsd).toBeCloseTo(0.02);
+    expect(result.manifest.usage.durationMs).toBe(100);
+    expect(result.briefUsage?.costUsd).toBeCloseTo(0.01);
+  });
+
+  it("라우터는 고른 방식의 생성기에게 키트를 쓰는지 묻는다", () => {
+    const kit = { generate: async () => { throw new Error("부르지 않는다"); } };
+    const router = new FormatRoutingPageGenerator({ html: freePageGenerator(new ScriptedAiClient(() => draft)), "json-render": kit }, "json-render");
+    expect(router.usesKit({ ...context, pageFormat: "html" })).toBe(false);
+    expect(router.usesKit({ ...context, pageFormat: "json-render" })).toBe(true);
+    expect(router.usesKit(context)).toBe(true);
+  });
+
+  it("정리본이 없으면 스타일 방식을 바꿔도 원문 자료를 싣는다", () => {
+    const prompt = briefedPrompt(context, null, "tokens");
+    expect(prompt).toContain("## 출처 맥락");
+    expect(prompt).not.toContain("단일 칼럼 서사");
+    expect(prompt).not.toContain("## 자료 정리본");
   });
 
   it("지침이 없으면 시스템 프롬프트를 바꾸지 않는다", () => {

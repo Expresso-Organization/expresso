@@ -39,7 +39,7 @@ import { createScheduledJobProcessor } from "./processors/scheduled-jobs.js";
 import { PageService } from "../modules/page/index.js";
 import { PageStream } from "../modules/page/stream.js";
 import { createStreamRedis } from "../platform/redis.js";
-import { AiPageGenerator } from "../modules/page/generator.js";
+import { freePageGenerator } from "../modules/page/briefed-generator.js";
 import { StructuredPageGenerator } from "../modules/page/structured-generator.js";
 import { FormatRoutingPageGenerator } from "../modules/page/format-router.js";
 import { MediaService } from "../modules/media/index.js";
@@ -165,7 +165,7 @@ const generationProcessor = createGenerationProcessor(
   ai ? {
     service: pageService,
     generator: new FormatRoutingPageGenerator(
-      { html: new AiPageGenerator(ai), "json-render": structuredPageGenerator! },
+      { html: freePageGenerator(ai), "json-render": structuredPageGenerator! },
       config.pageGenerationFormat ?? "json-render",
     ),
   } : null,

@@ -1,22 +1,20 @@
 flowchart TD
-  CTX[생성 문맥 캡처] --> BASE[기준: 키트 조판]
-  CTX --> BRIEF[자료 정리본]
-  BRIEF --> LAB[정리본 · 지침 생성기]
-  SKILL[frontend-design 본문] --> LAB
-  STYLE[스타일 전달 방식] --> LAB
-  CTX --> STRUCT[구조화 기준]
-  BASE --> RUN[30칸 실행 기록]
-  LAB --> RUN
-  STRUCT --> RUN
-  RUN --> MEAS[스크린샷 · 측정]
-  MEAS --> SHEET[비교 화면]
-  MEAS --> BLIND[눈가림 평가]
-  BLIND --> DOC[결과 문서]
-  DOC --> WIRE{제품 경로 연결}
+  UI[디자인 선택: 자유 생성] --> SVC[지면 서비스: kit 표시]
+  SVC --> RT[방식 라우터]
+  RT --> ST[구조화 생성기]
+  RT --> FREE[자유 생성기: 정리본 · 지침]
+  SKILL[내장 디자인 지침] --> FREE
+  BRIEF[정제 호출] --> FREE
+  SVC --> STREAM[스트림 begin · delta]
+  STREAM --> LIVE[생성 중 미리보기]
+  SVC --> SNAP[(지면 스냅샷)]
+  SNAP --> DOC[지면 문서 조립]
+  DOC --> VIEW[편집 화면 · 미리보기 · 배포]
+  VIEW --> CHECK[검사 · 문서 · PR 갱신]
 
   classDef done fill:#d1fae5,stroke:#059669
   classDef doing fill:#fef3c7,stroke:#d97706
   classDef decide fill:#fee2e2,stroke:#dc2626
   classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4
-  class CTX,BASE,BRIEF,LAB,SKILL,STYLE,STRUCT,RUN,MEAS,SHEET,BLIND,DOC done
-  class WIRE decide
+  class UI,SVC,RT,ST,FREE,SKILL,BRIEF,STREAM,LIVE,SNAP,DOC,VIEW done
+  class CHECK done

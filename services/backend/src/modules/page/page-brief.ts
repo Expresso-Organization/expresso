@@ -179,7 +179,13 @@ export function briefViolations(brief: PageBrief, context: PageGenerationContext
 }
 
 /** 원문에서 자료 정리본을 만듭니다. 검사에 걸린 칸은 같은 대화에서 그 칸만 고쳐 받습니다. */
-export async function refinePageBrief(ai: AiClient, context: PageGenerationContext, promptVersion: number): Promise<{ brief: PageBrief; usage: AiUsage; prompt: string }> {
+export async function refinePageBrief(
+  ai: AiClient,
+  context: PageGenerationContext,
+  promptVersion: number,
+  /** 정리하는 동안의 생각 신호를 받을 곳입니다. 지면이 쓰이기 전의 침묵을 화면이 「멈춤」과 구분하게 합니다. */
+  onThinking?: (tokens: number) => void,
+): Promise<{ brief: PageBrief; usage: AiUsage; prompt: string }> {
   const ids = briefIds(context);
   if (!ids.sections.length) throw new Error("정리할 섹션이 없습니다");
   const prompt = briefRequest(context);
@@ -187,7 +193,7 @@ export async function refinePageBrief(ai: AiClient, context: PageGenerationConte
     // 정리는 원문에서 사실을 옮겨 적는 일이라 칸 채우기와 같은 계약 · 같은 모델 등급을 씁니다.
     { contract: "page_fill", system: BRIEF_SYSTEM, prompt, promptVersion },
     pageBriefSchema(ids.sections as [string, ...string[]]),
-    { userId: context.userId, check: (output) => briefViolations(output, context) },
+    { userId: context.userId, check: (output) => briefViolations(output, context), ...(onThinking ? { onThinking } : {}) },
   );
   return { brief: data, usage, prompt };
 }

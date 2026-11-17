@@ -313,6 +313,11 @@ export const PageStyleGrammarSchema = z.strictObject({
   imagery: z.enum(["project-artifacts-first", "data-visual-first", "typography-first"]),
   antiPatterns: z.array(z.string().min(1).max(200)).max(20),
   designReference: PortfolioDesignReferenceSchema.optional(),
+  /**
+   * `false`면 이 지면은 키트 없이 모델이 CSS 전체를 쓴 것이다. 지면 문서(`pageDocument`)가 키트 CSS를 싣지 않는다.
+   * 없으면 키트로 조판한 지면이다 — 이 칸이 생기기 전에 만든 지면이 모두 그렇다.
+   */
+  kit: z.boolean().optional(),
 });
 export type PageStyleGrammar = z.infer<typeof PageStyleGrammarSchema>;
 
@@ -555,6 +560,8 @@ export function pageDocument(input: {
    *
    * 안 주면 모델이 CSS를 통째로 쓴 옛 판이다 — 그때 만든 지면에 지금 키트를
    * 끼우면 우리 규칙이 그쪽 규칙과 싸운다. 그래서 판마다 갈린다.
+   *
+   * 문법이 `kit: false`여도 싣지 않는다. 정리본과 디자인 지침으로 만든 자유 지면이 그렇다 — 모델이 CSS 전체를 쓴다.
    */
   grammar?: PageStyleGrammar;
   /**
@@ -580,7 +587,7 @@ ${input.description ? `<meta name="description" content="${escape(input.descript
 <style>
 ${PAGE_SHELL_CSS}
 </style>
-${input.grammar ? `<style>\n${pageKitVariables(input.grammar)}\n${PAGE_KIT_CSS}\n</style>` : ""}
+${input.grammar && input.grammar.kit !== false ? `<style>\n${pageKitVariables(input.grammar)}\n${PAGE_KIT_CSS}\n</style>` : ""}
 <style>
 ${input.css}
 </style>

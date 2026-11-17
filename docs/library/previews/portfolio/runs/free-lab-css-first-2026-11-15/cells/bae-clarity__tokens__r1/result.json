@@ -1,0 +1,37 @@
+{
+  "label": "bae-clarity__tokens__r1",
+  "input": "bae-clarity",
+  "persona": "bae",
+  "design": "clarity",
+  "arm": "tokens",
+  "rep": 1,
+  "startedAt": "2026-11-15T08:29:32.202Z",
+  "wallMs": 78695,
+  "model": "claude-sonnet-5-5",
+  "calls": 1,
+  "costUsd": 0.1796,
+  "outputTokens": 12313,
+  "inputTokens": 2,
+  "aiMs": 77872,
+  "briefCostUsd": 0.1628,
+  "briefMs": 35567,
+  "rationale": "추천 모델이 후보를 뽑아 서빙되기까지의 흐름이 이 사람의 일이라, 증거마다 형태를 달리했다. Recall은 막대 비교, 지연은 30ms 목표선까지 이어진 눈금자, 배포는 관문이 있는 흐름도로 그렸고 색은 Clarity의 흰색·먹색·파랑으로 제한했다.",
+  "plan": {
+    "subject": "추천 모델이 후보를 뽑아 홈 피드까지 가는 길. 사용자 벡터와 콘텐츠 벡터가 만나는 Two-tower 구조, 30ms 안에서 도는 검색, 지표 기준에서 막히는 배포 관문을 지면의 소재로 쓴다.",
+    "palette": "흰 종이 #ffffff / 먹색 잉크 #17202a / 신호 파랑 #2563eb / 짙은 파랑 #1e40af(큰 글자·hover) / 옅은 파랑 면 #eef4ff / 회색 선 #dfe4ea / 보조 글자 #566170",
+    "type": "고딕 단일 계열: var(--page-sans) Pretendard에 Apple SD Gothic Neo, Noto Sans KR 대체. 숫자는 tabular-nums. 크기 단계는 hero 제목 clamp(30px,5vw,48px), 섹션 제목 26px, 소제목 17px, 본문 16px/1.75, 보조 14px. 굵기는 400, 600, 800 세 단계만 쓴다.",
+    "layout": "왼쪽 정렬 한 줄기 읽기 흐름. 첫 화면은 이름, 주장 제목, 한 줄 소개 뒤에 대표 증거 세 가지를 서로 다른 형태로 둔다(Recall 막대 비교, 시청 시간·클릭률 큰 숫자, 지연 시간 게이지). 2번 섹션은 Two-tower 도식과 문제·기여·결과 3단, 3번은 30ms 눈금자와 메모리 막대, 4번은 관문이 있는 가로 흐름, 5번은 세로 타임라인, 끝에 경력과 근거 자료 목록. 모바일은 단일 열.",
+    "signature": "30ms 눈금자. 목표선까지 이어진 긴 트랙 위에 18ms까지만 파란 막대가 차 있어, 여유 폭이 한눈에 읽힌다.",
+    "revised": "처음에는 첫 화면을 큰 숫자 세 개를 같은 카드로 나란히 놓는 구성으로 잡았으나 기본값으로 읽혔다. 증거마다 형태를 바꿨다. 비교는 막대, 예산은 눈금자, 수상은 문장으로 했다. 섹션마다 번호와 대문자 라벨을 달려던 것은 순서가 있는 5번 타임라인에만 남기고 지웠다."
+  },
+  "ungrounded": [],
+  "removed": [
+    "속성 marker-end"
+  ],
+  "blockedTags": 0,
+  "qa": "ready",
+  "htmlBytes": 11238,
+  "cssBytes": 8126,
+  "promptHash": "095ea0b28833609d774dcd5c9a7415f9c3215f0408671ed2f7f7d586d3a55d32",
+  "skillSha256": "51e3aa519fba86baab67503e71b2e604f1e9682213efb8f9536b48da980bf528"
+}

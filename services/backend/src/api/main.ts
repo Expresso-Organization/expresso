@@ -38,7 +38,7 @@ import { PublishingService } from "../modules/publishing/index.js";
 import { MediaService } from "../modules/media/index.js";
 import { PageElementEditor, PageService } from "../modules/page/index.js";
 import { PageStream } from "../modules/page/stream.js";
-import { AiPageGenerator } from "../modules/page/generator.js";
+import { freePageGenerator } from "../modules/page/briefed-generator.js";
 import { StructuredPageGenerator } from "../modules/page/structured-generator.js";
 import { FormatRoutingPageGenerator } from "../modules/page/format-router.js";
 import { createMediaStorage } from "../platform/storage/create-storage.js";
@@ -117,10 +117,10 @@ const pageStream = new PageStream(createStreamRedis(config.redisUrl), {
 });
 const pageService = new PageService(database, consentService, pageStream);
 // AI가 켜져 있을 때 모델이 내용·Spec 또는 HTML을 생성합니다. 다시 뽑기는 직전 지면의 방식을 따르고,
-// 직전 지면이 없으면 설정 값을 씁니다(`FormatRoutingPageGenerator`).
+// 직전 지면이 없으면 설정 값을 씁니다(`FormatRoutingPageGenerator`). 자유 생성은 정리본 · 디자인 지침으로 CSS 전체를 씁니다.
 const pageGenerator = ai
   ? new FormatRoutingPageGenerator(
-      { html: new AiPageGenerator(ai), "json-render": new StructuredPageGenerator(ai) },
+      { html: freePageGenerator(ai), "json-render": new StructuredPageGenerator(ai) },
       config.pageGenerationFormat ?? "json-render",
     )
   : null;

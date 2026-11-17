@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>윤하린 포트폴리오</title>
+<meta name="description" content="성능 개선이 핵심 증거라서 첫 화면을 로딩 시간 막대(3.8초와 1.9초)로 세우고, 같은 막대 어휘를 번들·사용 비율·개발 기간에 이어 썼다. 사례마다 배치를 달리해 카드 반복을 피했다.">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Nanum+Myeongjo:wght@400;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --page-sans:"Pretendard Variable",Pretendard,-apple-system,system-ui,sans-serif;
+  --page-serif:"Nanum Myeongjo","Noto Serif KR",serif;
+  --page-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --page-display:"Outfit",var(--page-sans);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font-family:var(--page-sans);word-break:keep-all;-webkit-font-smoothing:antialiased}
+img{max-width:100%;height:auto;display:block}
+svg{max-width:100%}
+/* 가로 스크롤은 폰에서 지면을 무너뜨린다. 여기서 한 번 더 막는다. */
+body{overflow-x:hidden}
+</style>
+
+<style>
+:root{--paper:#fbfaf7;--paper2:#f1ede4;--ink:#29251f;--muted:#6e655a;--accent:#9a5b3a;--rule:#ddd5c6;--serif:'Noto Serif KR',var(--page-serif),'Nanum Myeongjo',serif}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--serif);font-size:1rem;line-height:1.85;word-break:keep-all;overflow-wrap:break-word;-webkit-font-smoothing:antialiased}
+.fo-wrap{max-width:1080px;margin:0 auto;padding:0 clamp(1.25rem,6vw,4rem)}
+.fo-sec{padding:clamp(4.5rem,11vw,9rem) 0 0}
+.fo-sec:last-of-type{padding-bottom:clamp(4rem,9vw,7rem)}
+h1,h2,h3,p,dl,dd,ul,ol,figure{margin:0}
+h1{font-weight:800;font-size:clamp(2.4rem,8.4vw,4.5rem);line-height:1.18;letter-spacing:-.035em}
+h2{font-weight:800;font-size:clamp(1.6rem,4.4vw,2.25rem);line-height:1.3;letter-spacing:-.025em;max-width:20em}
+h3{font-weight:700;font-size:1.125rem;line-height:1.5}
+p{max-width:34em}
+a{color:var(--accent);text-underline-offset:.25em}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.fo-muted{color:var(--muted)}
+.fo-top{padding-top:clamp(2rem,5vw,3.5rem);display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;border-bottom:1px solid var(--rule);padding-bottom:1.25rem;font-size:.95rem}
+.fo-top b{font-weight:800;font-size:1.125rem;letter-spacing:.02em}
+.fo-hero{padding-top:clamp(3.5rem,9vw,7rem)}
+.fo-lede{margin-top:2rem;font-size:1.125rem;line-height:1.9}
+.fo-timeline{margin-top:clamp(3rem,7vw,5rem);display:grid;gap:1.1rem}
+.fo-tl-row{display:grid;grid-template-columns:5.5rem 1fr;gap:1rem;align-items:center}
+.fo-tl-row span.fo-tl-k{font-size:.95rem;color:var(--muted)}
+.fo-track{display:block;position:relative;height:3.25rem;border-left:2px solid var(--ink)}
+.fo-bar{display:flex;align-items:center;height:100%;padding-left:1rem;font-weight:800;font-size:1.5rem;letter-spacing:-.02em;transform-origin:left center;white-space:nowrap}
+.fo-bar.is-before{width:100%;background:var(--paper2);color:var(--ink)}
+.fo-bar.is-after{width:50%;background:var(--accent);color:var(--paper);animation:fo-draw 1.4s cubic-bezier(.2,.7,.2,1) .5s both}
+@keyframes fo-draw{from{transform:scaleX(.01);opacity:.4}to{transform:scaleX(1);opacity:1}}
+.fo-tl-note{margin-top:.25rem;font-size:.9rem;color:var(--muted);padding-left:6.5rem}
+.fo-hero-nums{margin-top:clamp(3rem,6vw,4.5rem);display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--ink)}
+.fo-hero-nums div{padding:1.25rem 1.25rem 0 0}
+.fo-hero-nums div+div{padding-left:1.25rem;border-left:1px solid var(--rule)}
+.fo-hero-nums dt{font-size:.92rem;color:var(--muted);line-height:1.5}
+.fo-hero-nums dd{margin-top:.4rem;font-weight:800;font-size:1.5rem;letter-spacing:-.02em;line-height:1.3}
+.fo-hero-nums dd i{font-style:normal;color:var(--accent)}
+.fo-body{margin-top:2rem;display:grid;gap:1.25rem}
+.fo-metrics{margin-top:clamp(2.5rem,6vw,4rem);display:grid;gap:0}
+.fo-metric{display:grid;grid-template-columns:minmax(10rem,15rem) 1fr;gap:1rem 2rem;padding:1.6rem 0;border-top:1px solid var(--rule);align-items:center}
+.fo-metric:last-child{border-bottom:1px solid var(--rule)}
+.fo-metric h3{font-size:1rem;font-weight:600;line-height:1.55}
+.fo-metric h3 small{display:block;font-weight:400;color:var(--muted);font-size:.88rem}
+.fo-mbars{display:grid;gap:.5rem}
+.fo-mb{display:block;height:1.75rem;position:relative}
+.fo-mb em{position:absolute;left:0;top:0;bottom:0;display:block}
+.fo-mb.b em{background:var(--paper2);border-right:2px solid var(--rule)}
+.fo-mb.a em{background:var(--accent)}
+.fo-mb span{position:absolute;left:.7rem;top:0;line-height:1.75rem;font-size:.92rem;font-weight:700;white-space:nowrap}
+.fo-mb.a span{color:var(--paper)}
+.fo-case{margin-top:2.5rem;display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:clamp(2rem,6vw,5rem);align-items:start}
+.fo-when{margin-top:.9rem;color:var(--accent);font-size:.98rem;font-weight:600}
+.fo-side{border-left:2px solid var(--accent);padding-left:1.5rem;display:grid;gap:1.4rem}
+.fo-side dt{font-weight:800;font-size:.98rem}
+.fo-side dd{margin-top:.2rem;font-size:.97rem;line-height:1.75;color:var(--ink)}
+.fo-side dd+dt{margin-top:0}
+.fo-pair{margin-top:2.25rem;display:flex;flex-wrap:wrap;gap:2.5rem}
+.fo-pair div{display:block}
+.fo-pair strong{display:block;font-size:2rem;font-weight:800;letter-spacing:-.025em;line-height:1.3}
+.fo-pair span{font-size:.92rem;color:var(--muted)}
+.fo-steps{list-style:none;padding:0;margin-top:2.5rem;display:grid;grid-template-columns:repeat(4,1fr);gap:0;counter-reset:s;border-top:1px solid var(--ink)}
+.fo-steps li{counter-increment:s;padding:1.25rem 1.25rem 0 0;position:relative;font-size:.97rem;line-height:1.75}
+.fo-steps li+li{padding-left:1.25rem;border-left:1px solid var(--rule)}
+.fo-steps li::before{content:counter(s);display:block;font-weight:800;font-size:1.5rem;color:var(--accent);line-height:1.2;margin-bottom:.35rem}
+.fo-steps b{display:block;font-weight:800;margin-bottom:.25rem;font-size:1.05rem}
+.fo-dots{margin-top:3rem;display:flex;gap:2rem;align-items:center;flex-wrap:wrap}
+.fo-grid48{display:block;width:288px;height:96px;max-width:100%;background-image:radial-gradient(circle at 12px 12px,var(--accent) 6px,transparent 6.5px);background-size:24px 24px}
+.fo-dots p{font-size:.95rem;color:var(--muted);max-width:18em}
+.fo-dots p b{display:block;color:var(--ink);font-size:1.5rem;font-weight:800}
+.fo-quote{background:var(--paper2);padding:clamp(3rem,8vw,6rem) 0;margin-top:clamp(4.5rem,11vw,9rem)}
+.fo-quote .fo-sec{padding:0}
+.fo-quote h2{max-width:16em;font-size:clamp(1.75rem,5.4vw,3rem);line-height:1.35}
+.fo-quote p{margin-top:1.5rem}
+.fo-quote .fo-when{margin-top:2rem}
+.fo-tools{margin-top:2.5rem;border-top:1px solid var(--ink)}
+.fo-tools div{display:grid;grid-template-columns:minmax(9rem,14rem) 1fr;gap:.5rem 2rem;padding:1.15rem 0;border-bottom:1px solid var(--rule)}
+.fo-tools dt{font-weight:800}
+.fo-tools dd{max-width:36em}
+.fo-two{margin-top:2.5rem;display:grid;grid-template-columns:1.25fr 1fr;gap:clamp(2rem,6vw,5rem)}
+.fo-two article:last-child{padding-top:3rem}
+.fo-two h3{font-size:1.25rem;margin-bottom:.4rem}
+.fo-two p{font-size:.98rem}
+.fo-two .fo-when{margin:0 0 .5rem}
+.fo-list{list-style:none;padding:0;margin-top:2rem;border-top:1px solid var(--ink)}
+.fo-list li{padding:1.1rem 0;border-bottom:1px solid var(--rule);display:grid;grid-template-columns:minmax(8rem,12rem) 1fr;gap:.25rem 2rem}
+.fo-list .k{color:var(--accent);font-weight:600;font-size:.95rem}
+.fo-list h3{font-size:1.02rem;font-weight:700}
+.fo-list p{font-size:.94rem;color:var(--muted);margin-top:.15rem;line-height:1.7}
+.fo-career{margin-top:2rem;display:grid;grid-template-columns:minmax(8rem,12rem) 1fr;gap:.5rem 2rem;padding-top:1.4rem;border-top:1px solid var(--ink)}
+.fo-career .k{color:var(--accent);font-weight:600}
+.fo-career h3{margin-bottom:.35rem}
+@media(max-width:760px){
+.fo-hero-nums{grid-template-columns:1fr}
+.fo-hero-nums div,.fo-hero-nums div+div{padding:1rem 0;border-left:0;border-bottom:1px solid var(--rule)}
+.fo-metric,.fo-tools div,.fo-list li,.fo-career{grid-template-columns:1fr}
+.fo-case,.fo-two{grid-template-columns:1fr}
+.fo-two article:last-child{padding-top:0}
+.fo-steps{grid-template-columns:1fr}
+.fo-steps li,.fo-steps li+li{padding:1.1rem 0;border-left:0;border-bottom:1px solid var(--rule)}
+.fo-tl-row{grid-template-columns:1fr;gap:.35rem}
+.fo-tl-note{padding-left:0}
+.fo-bar{font-size:1.15rem}
+}
+@media(prefers-reduced-motion:reduce){.fo-bar.is-after{animation:none}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700;800&amp;display=swap" />
+<div class="fo-wrap">
+<header class="fo-top"><b>윤하린</b><span class="fo-muted">프론트엔드 엔지니어 · 모아마켓(가상) 웹 프론트엔드팀</span></header>
+
+<section class="fo-hero" aria-labelledby="t1">
+<h1 id="t1">상품 상세를<br />1.9초에 띄웁니다</h1>
+<p class="fo-lede">상품 상세 성능과 사내 공통 UI를 함께 다루는 커머스 프론트엔드 개발자입니다.</p>
+<div class="fo-timeline" role="img" aria-label="상품 상세 LCP 3.8초에서 1.9초로, 절반으로 줄었습니다">
+<div class="fo-tl-row"><span class="fo-tl-k">전환 전</span><span class="fo-track"><span class="fo-bar is-before">3.8초</span></span></div>
+<div class="fo-tl-row"><span class="fo-tl-k">전환 후</span><span class="fo-track"><span class="fo-bar is-after">1.9초</span></span></div>
+</div>
+<p class="fo-tl-note">상품 상세 LCP (가상 측정)</p>
+<dl class="fo-hero-nums">
+<div><dt>상품 상세 LCP</dt><dd>3.8초 <i>→</i> 1.9초</dd></div>
+<div><dt>클라이언트 JS</dt><dd>420KB <i>→</i> 180KB</dd></div>
+<div><dt>신규 화면의 공통 컴포넌트 사용 비율</dt><dd>30% <i>→</i> 80%</dd></div>
+</dl>
+<div class="fo-body">
+<p>모아마켓(가상) 웹 프론트엔드팀에서 상품 상세와 장바구니 화면을 맡고 있습니다. React 5년, Next.js App Router 2년 경력입니다. 상품 상세 LCP를 3.8초에서 1.9초로 줄이고, 클라이언트 JS를 420KB에서 180KB로 줄였습니다. 신규 화면의 공통 컴포넌트 사용 비율은 30%에서 80%로 올렸습니다. 성능과 공통 UI 기반을 함께 다룹니다.</p>
+</div>
+</section>
+
+<section class="fo-sec" aria-labelledby="t2">
+<h2 id="t2">숫자로 본 지난 두 해</h2>
+<div class="fo-body"><p>상품 상세 전환 작업에서 LCP와 클라이언트 JS가 줄었습니다. 모아 UI 구축 작업에서 공통 컴포넌트 사용 비율이 오르고 신규 화면 개발 기간이 짧아졌습니다.</p></div>
+<div class="fo-metrics">
+<div class="fo-metric"><h3>상품 상세 LCP<small>App Router 전환</small></h3><div class="fo-mbars"><span class="fo-mb b"><em style="width:100%"></em><span>3.8초</span></span><span class="fo-mb a"><em style="width:50%"></em><span>1.9초 (가상 측정)</span></span></div></div>
+<div class="fo-metric"><h3>클라이언트 JS<small>App Router 전환</small></h3><div class="fo-mbars"><span class="fo-mb b"><em style="width:100%"></em><span>420KB</span></span><span class="fo-mb a"><em style="width:43%"></em><span>180KB</span></span></div></div>
+<div class="fo-metric"><h3>신규 화면의 공통 컴포넌트 사용 비율<small>모아 UI</small></h3><div class="fo-mbars"><span class="fo-mb b"><em style="width:30%"></em><span>30%</span></span><span class="fo-mb a"><em style="width:80%"></em><span>80%</span></span></div></div>
+<div class="fo-metric"><h3>신규 화면 개발 기간 평균<small>모아 UI</small></h3><div class="fo-mbars"><span class="fo-mb b"><em style="width:100%"></em><span>5일</span></span><span class="fo-mb a"><em style="width:60%"></em><span>3일 (가상 집계)</span></span></div></div>
+</div>
+</section>
+
+<section class="fo-sec" aria-labelledby="t3">
+<h2 id="t3">LCP 3.8초를 1.9초로: 상품 상세 App Router 전환</h2>
+<p class="fo-when">2024.04 — 2024.11</p>
+<div class="fo-case">
+<div class="fo-body" style="margin-top:0">
+<p>상품 상세 페이지는 오래된 CSR 구조에서 Pages Router로 동작했습니다. 이를 App Router로 옮겼습니다. 데이터 요청을 서버 컴포넌트로 올리고, 상호작용이 필요한 부분만 클라이언트 컴포넌트로 남겼습니다.</p>
+<p>전환 중에도 기존 주소와 SEO 메타를 그대로 유지했습니다. 배포마다 Lighthouse CI로 성능 예산을 검사했습니다. 데이터 요청 위치 결정, 캐시 무효화, 점진 전환 방법은 글로 정리했습니다.</p>
+<div class="fo-pair"><div><strong>3.8초 → 1.9초</strong><span>상품 상세 LCP (가상 측정)</span></div><div><strong>420KB → 180KB</strong><span>클라이언트 JS</span></div></div>
+</div>
+<dl class="fo-side">
+<div><dt>문제</dt><dd>오래된 CSR 구조에서 상품 상세 첫 렌더가 느렸습니다.</dd></div>
+<div><dt>판단</dt><dd>데이터 요청은 서버 컴포넌트로, 상호작용이 필요한 부분만 클라이언트 컴포넌트로 나눴습니다.</dd></div>
+<div><dt>리스크 관리</dt><dd>전환 중에도 기존 주소와 SEO 메타를 유지했습니다.</dd></div>
+<div><dt>재발 방지</dt><dd>배포마다 Lighthouse CI로 성능 예산을 검사했습니다.</dd></div>
+<div><dt>남긴 것</dt><dd>글 「App Router 전환기: 상품 상세 LCP를 절반으로」에 데이터 요청 위치, 캐시 무효화, 점진 전환 방법을 정리했습니다.</dd></div>
+</dl>
+</div>
+</section>
+
+<section class="fo-sec" aria-labelledby="t4">
+<h2 id="t4">같은 수정을 세 번 하지 않기 위해: 모아 UI</h2>
+<p class="fo-when">2023.06 — 2024.03</p>
+<div class="fo-body"><p>화면마다 버튼과 입력 모양이 달라 디자이너와 개발자가 같은 수정을 여러 번 했습니다. 색, 간격, 글꼴을 디자인 토큰으로 먼저 정리했습니다. 접근성을 기본으로 갖춘 Radix UI 기반 컴포넌트 48개를 Storybook 문서와 함께 배포했습니다. 시각 회귀 테스트를 붙였습니다. 결과로 신규 화면 개발 기간이 평균 5일에서 3일로 줄었고, 신규 화면의 공통 컴포넌트 사용 비율은 30%에서 80%가 됐습니다.</p></div>
+<ol class="fo-steps">
+<li><b>진단</b>화면마다 버튼, 입력, 모달이 달라 같은 수정이 반복됐습니다.</li>
+<li><b>토큰 정리</b>색, 간격, 글꼴을 디자인 토큰으로 정리했습니다.</li>
+<li><b>배포</b>Radix UI 기반 컴포넌트 48개를 Storybook 문서와 함께 배포했습니다.</li>
+<li><b>정착</b>시각 회귀 테스트를 붙였고, 신규 화면의 공통 컴포넌트 사용 비율로 정착을 확인했습니다.</li>
+</ol>
+<div class="fo-dots">
+<span class="fo-grid48" role="img" aria-label="컴포넌트 48개"></span>
+<p><b>48개</b>배포한 컴포넌트</p>
+<div class="fo-pair" style="margin-top:0"><div><strong>5일 → 3일</strong><span>신규 화면 개발 기간 평균 (가상 집계)</span></div><div><strong>30% → 80%</strong><span>신규 화면의 공통 컴포넌트 사용 비율</span></div></div>
+</div>
+</section>
+</div>
+
+<section class="fo-quote" aria-labelledby="t5">
+<div class="fo-wrap"><div class="fo-sec">
+<h2 id="t5">결제 화면의 접근성은 나중 일이 아니라 기본값</h2>
+<p class="fo-when">2023.06 — 2024.03</p>
+<p>모아 UI의 컴포넌트 48개는 접근성을 기본으로 갖추고 있습니다. 화면마다 따로 고치지 않아도 같은 기준이 적용됩니다.</p>
+</div></div>
+</section>
+
+<div class="fo-wrap">
+<section class="fo-sec" aria-labelledby="t6">
+<h2 id="t6">쓰는 도구와 일하는 방식</h2>
+<dl class="fo-tools">
+<div><dt>React · Next.js</dt><dd>React 5년, Next.js App Router 2년. 서버 컴포넌트와 클라이언트 컴포넌트 경계 설계.</dd></div>
+<div><dt>TypeScript</dt><dd>5년간 주력 언어. 제네릭과 판별 유니온으로 API 응답 타입을 계약처럼 다룸.</dd></div>
+<div><dt>UI · 품질 도구</dt><dd>Radix UI, Storybook, 시각 회귀 테스트, Lighthouse CI</dd></div>
+<div><dt>팀 기준</dt><dd>프론트엔드 코드 리뷰 기준 문서 작성</dd></div>
+</dl>
+</section>
+
+<section class="fo-sec" aria-labelledby="t7">
+<h2 id="t7">필요하면 일단 만들어 봅니다</h2>
+<p class="fo-when">2025.06 — 2025.09</p>
+<div class="fo-two">
+<article>
+<h3>개인 가계부 PWA</h3>
+<p>지하철에서 결제 내역을 바로 적고 싶어 만들었습니다. 기록은 IndexedDB에 먼저 저장하고, 연결되면 서버와 동기화합니다. Service Worker 캐시 덕에 두 번째 실행부터 즉시 열립니다. 홈 화면에 설치해 앱처럼 씁니다.</p>
+</article>
+<article>
+<h3>사내 해커톤 대상</h3>
+<p>모아마켓(가상) 사내 해커톤에서 판매자가 상품 사진만 올리면 상세 페이지 초안을 만들어 주는 도구를 이틀 동안 만들어 대상을 받았습니다.</p>
+</article>
+</div>
+</section>
+
+<section class="fo-sec" aria-labelledby="t8">
+<h2 id="t8">경력</h2>
+<div class="fo-career">
+<span class="k">2023.03 — 현재</span>
+<div><h3>모아마켓(가상) · 웹 프론트엔드팀 프론트엔드 엔지니어</h3><p>상품 상세와 장바구니 화면을 맡고 있습니다. 오래된 CSR 구조를 Next.js App Router로 단계적으로 옮겼고, 버튼, 입력, 모달을 사내 디자인 시스템으로 모았습니다. 프론트엔드 코드 리뷰 기준 문서를 작성했습니다.</p></div>
+</div>
+</section>
+
+<section class="fo-sec" aria-labelledby="t9">
+<h2 id="t9">근거 자료</h2>
+<ul class="fo-list">
+<li><span class="k">프로젝트 · 2024.04 — 2024.11</span><div><h3>상품 상세 페이지 App Router 전환과 성능 개선</h3><p>서버 컴포넌트로 데이터 요청을 올리고 Lighthouse CI로 성능 예산을 검사. LCP 3.8초 → 1.9초(가상 측정), 클라이언트 JS 420KB → 180KB, 기존 주소와 SEO 메타 유지.</p></div></li>
+<li><span class="k">프로젝트 · 2023.06 — 2024.03</span><div><h3>사내 디자인 시스템 ‘모아 UI’ 구축</h3><p>디자인 토큰 정리, Radix UI 기반 컴포넌트 48개를 Storybook 문서와 함께 배포, 시각 회귀 테스트. 신규 화면 개발 기간 평균 5일 → 3일(가상 집계).</p></div></li>
+<li><span class="k">글</span><div><h3>App Router 전환기: 상품 상세 LCP를 절반으로</h3><p>Pages Router에서 App Router로 옮기며 겪은 데이터 요청 위치 결정, 캐시 무효화, 점진 전환 방법을 정리한 글.</p></div></li>
+<li><span class="k">수상</span><div><h3>모아마켓(가상) 사내 해커톤 대상</h3><p>상품 사진만 올리면 상세 페이지 초안을 만들어 주는 도구를 이틀 동안 만들어 대상 수상.</p></div></li>
+<li><span class="k">경력 · 2023.03 — 현재</span><div><h3>모아마켓(가상) 웹 프론트엔드팀 프론트엔드 엔지니어</h3><p>상품 상세와 장바구니 화면 담당. LCP 3.8초 → 1.9초(가상 측정), 신규 화면의 공통 컴포넌트 사용 비율 30% → 80%, 코드 리뷰 기준 문서 작성.</p></div></li>
+<li><span class="k">사이드 프로젝트 · 2025.06 — 2025.09</span><div><h3>개인 가계부 PWA</h3><p>IndexedDB 선저장 후 재연결 동기화, Service Worker 캐시로 두 번째 실행부터 즉시 열림.</p></div></li>
+<li><span class="k">기술 소개</span><div><h3>React · Next.js</h3><p>React 5년, Next.js App Router 2년. 서버 컴포넌트와 클라이언트 컴포넌트 경계 설계.</p></div></li>
+<li><span class="k">기술 소개</span><div><h3>TypeScript</h3><p>5년간 주력 언어. 제네릭과 판별 유니온으로 API 응답 타입을 계약처럼 다룸.</p></div></li>
+</ul>
+</section>
+</div>
+</body>
+</html>

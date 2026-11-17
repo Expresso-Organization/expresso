@@ -15,6 +15,7 @@ import {
   promptClosing,
   promptMedia,
   promptOpening,
+  promptSources,
   ungroundedEmails,
   visibleText,
   type GeneratedPageResult,
@@ -22,6 +23,7 @@ import {
   type PageGenerator,
   type PageStreamSink,
 } from "./generator.js";
+import { FRONTEND_DESIGN_SKILL } from "./design-skill/frontend-design.js";
 import { briefGroundSource, briefPrompt, refinePageBrief, type PageBrief } from "./page-brief.js";
 
 /**
@@ -112,8 +114,13 @@ const DesignPlanSchema = z.strictObject({
 });
 export type DesignPlan = z.infer<typeof DesignPlanSchema>;
 
-/** 계획을 `html`보다 먼저 적는 출력입니다. 키 순서가 쓰는 순서입니다. */
-const PlannedDraftSchema = z.strictObject({ plan: DesignPlanSchema, ...PageDraftSchema.shape });
+/**
+ * 계획 → CSS → HTML 순서로 적는 출력입니다. 키 순서가 쓰는 순서입니다.
+ *
+ * CSS를 HTML보다 먼저 받습니다. 이 지면은 키트가 없어서, HTML이 먼저 오면 생성 중 미리보기가 CSS가 올 때까지 꾸밈 없는 글만 보입니다.
+ * CSS가 먼저 깔리면 지면이 위에서부터 제 모습으로 쓰입니다.
+ */
+const PlannedDraftSchema = z.strictObject({ plan: DesignPlanSchema, css: PageDraftSchema.shape.css, html: PageDraftSchema.shape.html, rationale: PageDraftSchema.shape.rationale });
 
 /** 스킬 파일의 머리말(`---` 사이)을 뗍니다. */
 export function skillBody(text: string): string {
@@ -139,8 +146,10 @@ const SKILL_ROLE = [
 
 const PLAN_OUTPUT = [
   "## 내는 순서",
-  "- `plan` — `html`보다 먼저 쓴다. 소재 · 색 · 서체 · 배치 · 기억될 한 가지, 그리고 기본값으로 읽혀 고친 부분.",
-  "- `html` · `css` · `rationale` — 위 「내는 것」과 같다.",
+  "- `plan` — 가장 먼저 쓴다. 소재 · 색 · 서체 · 배치 · 기억될 한 가지, 그리고 기본값으로 읽혀 고친 부분.",
+  "- `css` — 계획대로 스타일 전부를 먼저 쓴다. 쓰는 동안 화면에 지면이 그려지므로, 뒤에 올 마크업의 클래스 이름을 여기서 정해 둔다.",
+  "- `html` — 위에서 정한 클래스로 지면의 몸통을 쓴다.",
+  "- `rationale` — 위 「내는 것」과 같다.",
 ].join("\n");
 
 export function briefedSystem(designSkill: string | null | undefined): string {
@@ -149,15 +158,37 @@ export function briefedSystem(designSkill: string | null | undefined): string {
   return [SYSTEM, "", SKILL_ROLE, "", "## 디자인 지침", skillBody(designSkill), "", pagePolicyPrompt(), "", PLAN_OUTPUT].join("\n");
 }
 
-export function briefedPrompt(context: PageGenerationContext, brief: PageBrief | null, styleMode: BriefedPageOptions["styleMode"] = "grammar"): string {
-  if (!brief && styleMode === "grammar") return buildPrompt(context);
-  // 정리본을 쓰지 않으면서 스타일 방식만 바꾸는 조합은 두지 않습니다. 원문 요청의 조립은 `buildPrompt`가 맡습니다.
-  if (!brief) throw new PageGenerationError("스타일 방식을 바꾸려면 자료 정리본이 필요합니다");
+/**
+ * 지시를 붙여 지금 지면을 고칠 때 덧붙이는 말입니다. 디자인 지침은 새 지면의 방향을 세우라고 하므로, 고치는 요청에서는
+ * 지금 지면의 디자인을 그대로 두라고 따로 못 박습니다. 없으면 작은 지시에도 지면을 새로 디자인할 수 있습니다.
+ */
+const EDIT_NOTE = [
+  "이번 요청은 지금 지면을 고치는 일이다. 지금 지면의 디자인(색 · 서체 · 배치 · 클래스 이름)과 글을 그대로 두고, 지시가 가리킨 것만 바꾼다.",
+  "`plan`에는 지금 지면의 디자인을 그대로 요약하고, 지시로 달라지는 점을 `revised`에 적는다.",
+];
+
+/** 지시를 붙여 지금 지면을 고치는 요청인가. */
+const isEdit = (context: PageGenerationContext) => Boolean(context.previous && context.instruction);
+
+export function briefedPrompt(
+  context: PageGenerationContext,
+  brief: PageBrief | null,
+  styleMode: BriefedPageOptions["styleMode"] = "grammar",
+  /** 디자인 지침을 켠 요청인가. 고치는 요청에 디자인을 유지하라는 말을 덧붙입니다. */
+  guided = false,
+): string {
+  if (!brief && styleMode === "grammar" && !(guided && isEdit(context))) return buildPrompt(context);
   const opening =
     styleMode === "tokens" && context.style
       ? [...promptOpening({ ...context, style: undefined }), ...styleTokensPrompt(context.style)]
       : [...promptOpening(context), ...(styleMode === "spec" && context.design ? designSpecPrompt(context.design) : [])];
-  return [...opening, ...briefPrompt(brief), ...promptMedia(context), ...promptClosing(context)].join("\n");
+  return [
+    ...opening,
+    ...(brief ? briefPrompt(brief) : promptSources(context)),
+    ...promptMedia(context),
+    ...promptClosing(context),
+    ...(guided && isEdit(context) ? EDIT_NOTE : []),
+  ].join("\n");
 }
 
 export interface BriefedPageResult extends GeneratedPageResult {
@@ -176,6 +207,16 @@ export interface BriefedPageResult extends GeneratedPageResult {
 
 const BLOCKED_TAG = /<(script|iframe|form)\b/gi;
 
+/**
+ * 제품의 자유 생성입니다. 자료 정리본과 디자인 지침을 쓰고, 고른 디자인에서는 색 · 서체 계열 · 밀도만 넘깁니다.
+ *
+ * 2026-11-15 실험에서 여덟 조건 중 눈가림 품질 순위와 사람 사이의 다양성이 가장 높았던 조합입니다
+ * (`docs/architecture/portfolio-free-generation-lab.md`). API와 Worker가 같은 조합을 쓰도록 여기 한 곳에 둡니다.
+ */
+export function freePageGenerator(ai: AiClient): BriefedPageGenerator {
+  return new BriefedPageGenerator(ai, { refine: true, designSkill: FRONTEND_DESIGN_SKILL, styleMode: "tokens" });
+}
+
 export class BriefedPageGenerator implements PageGenerator {
   readonly #ai: AiClient;
   readonly #options: BriefedPageOptions;
@@ -185,21 +226,29 @@ export class BriefedPageGenerator implements PageGenerator {
     this.#options = options;
   }
 
+  /** 이 생성기의 지면은 키트를 쓰지 않습니다. 모델이 CSS 전체를 씁니다. */
+  usesKit(): boolean {
+    return false;
+  }
+
   async generate(context: PageGenerationContext, sink: PageStreamSink | null = null): Promise<BriefedPageResult> {
     if (context.sections.length === 0) throw new PageGenerationError("만들 섹션이 없습니다");
 
     let brief = this.#options.brief ?? null;
     let briefUsage: AiUsage | null = null;
-    if (this.#options.refine && !brief) {
-      const refined = await refinePageBrief(this.#ai, context, PAGE_PROMPT_VERSION);
+    // 지시를 붙여 고칠 때는 다시 정리하지 않습니다. 내용은 직전 지면에 이미 있고, 원문 자료를 함께 넘깁니다.
+    // 정리는 약 40초가 드는데 고치는 요청은 사람이 화면 앞에서 기다립니다.
+    const refine = Boolean(this.#options.refine) && !isEdit(context);
+    if (refine && !brief) {
+      const refined = await refinePageBrief(this.#ai, context, PAGE_PROMPT_VERSION, sink ? (tokens) => sink.thinking(tokens) : undefined);
       brief = refined.brief;
       briefUsage = refined.usage;
     }
-    if (!this.#options.refine) brief = null;
+    if (!refine) brief = null;
 
     const skill = this.#options.designSkill ?? null;
     const system = briefedSystem(skill);
-    const prompt = briefedPrompt(context, brief, this.#options.styleMode);
+    const prompt = briefedPrompt(context, brief, this.#options.styleMode, Boolean(skill));
     // 정리본을 쓴 지면도 원문과 대조합니다. 정리본이 통과시킨 숫자만 믿지 않습니다.
     const source = brief ? briefGroundSource(context) : context.evidence.map(({ text }) => text).join("\n");
     const check = (draft: { html: string }) => {
@@ -225,6 +274,18 @@ export class BriefedPageGenerator implements PageGenerator {
       draft = result.data;
       usage = result.usage;
     }
+
+    // 지면 기록의 사용량은 이 지면을 만드는 데 든 호출 전부입니다. 정제 호출을 했으면 더합니다.
+    if (briefUsage)
+      usage = {
+        ...usage,
+        inputTokens: usage.inputTokens + briefUsage.inputTokens,
+        outputTokens: usage.outputTokens + briefUsage.outputTokens,
+        cacheReadTokens: usage.cacheReadTokens + briefUsage.cacheReadTokens,
+        cacheCreationTokens: usage.cacheCreationTokens + briefUsage.cacheCreationTokens,
+        durationMs: usage.durationMs + briefUsage.durationMs,
+        costUsd: usage.costUsd === null || briefUsage.costUsd === null ? null : usage.costUsd + briefUsage.costUsd,
+      };
 
     const clean = sanitizePage(draft);
     const ungrounded = ungroundedNumbers(visibleText(clean.html), source).filter((number) => number.replace(/\D/g, "").length >= 2 && !isOrdinalLabel(number));

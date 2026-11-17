@@ -68,6 +68,10 @@ try {
       const capture: PageGenerator = { async generate(context) { captured = context; throw new Captured(); } };
       await new PageService(resource).generate(user._id, portfolioId, capture).catch((error) => { if (!(error instanceof Captured)) throw error; });
       if (!captured) throw new Error(`${persona.key}-${design}: 문맥을 받지 못했습니다`);
+      // 문맥만 쓰고 생성은 하지 않습니다. 생성 요청을 남겨 두면 나중에 이 DB로 Worker를 띄울 때 실제 생성이 돕니다
+      // (2026-11-17 검증에서 구조화 생성 세 건이 시작됐습니다). 작업을 끝난 것으로 표시하고 대기 중인 발행 요청을 지웁니다.
+      await db.generationJobs.updateOne({ _id: job.generationJobId, userId: user._id }, { $set: { status: "failed", errorCode: "LAB_CAPTURE_ONLY", updatedAt: new Date() } });
+      await db.outboxEvents.deleteMany({ topic: "portfolio.generate", idempotencyKey: `portfolio-generation:${job.generationJobId}`, publishedAt: null });
       // 사용량을 실제 계정에 남기지 않도록 사용자 ID를 비웁니다. 나머지는 제품이 조립한 그대로입니다.
       const context = { ...captured, userId: null };
       fs.writeFileSync(file, `${JSON.stringify({ persona: persona.key, design, context }, null, 2)}\n`);
