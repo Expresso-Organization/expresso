@@ -15,7 +15,7 @@ function setup(options: { proposals?: "ok" | "refused" | "none"; chat?: string |
   const commitments = {
     open: vi.fn(async () => [commitment]), get: vi.fn(async () => commitment), checkins: vi.fn(async () => checkins), dismissQuiet: vi.fn(async () => undefined),
     update: vi.fn(async (_user: string, _id: string, change: { dueOn?: string | undefined; status?: "done" | "dropped" | undefined }) => ({ ...commitment, ...(change.dueOn ? { dueOn: change.dueOn, awaiting: false } : {}), ...(change.status ? { status: change.status, awaiting: false } : {}) })),
-    answer: vi.fn(async (_user: string, _id: string, answer: { answer: string; dueOn?: string }) => ({ ...commitment, awaiting: false, ...(answer.answer === "not_yet" ? { dueOn: answer.dueOn! } : { status: answer.answer as "done" | "dropped" }) })),
+    answer: vi.fn(async (_user: string, _id: string, answer: { answer: string; dueOn?: string }) => ({ changed: true, commitment: { ...commitment, awaiting: false, ...(answer.answer === "not_yet" ? { dueOn: answer.dueOn! } : { status: answer.answer as "done" | "dropped" }) } })),
   };
   const startCheckinChat = vi.fn(async () => options.chat === undefined ? conversation : options.chat);
   const proposals = options.proposals === "none" ? undefined : { enable: vi.fn(async () => { if (options.proposals === "refused") throw new Error("동의가 필요합니다."); }), disable: vi.fn(async () => undefined) };
@@ -39,6 +39,12 @@ describe("컨설턴트의 약속과 연락", () => {
     expect(commitments.answer).toHaveBeenLastCalledWith(user, commitment.id, { answer: "done" });
     expect(startCheckinChat).toHaveBeenCalledWith(user, expect.objectContaining({ id: commitment.id, status: "done" }));
     await app.close();
+    // 이미 닫힌 약속에 「했어요」가 다시 오면(다시 누름 · 지난 카드) 대화를 다시 열지 않는다.
+    const repeated = setup();
+    repeated.commitments.answer.mockResolvedValue({ changed: false, commitment: { ...commitment, status: "done", awaiting: false } });
+    expect((await repeated.app.inject({ method: "POST", url: `/v1/consultant/commitments/${commitment.id}/checkin`, payload: { answer: "done" } })).json().data).toEqual({ commitment: { ...commitment, status: "done", awaiting: false }, conversationId: null });
+    expect(repeated.startCheckinChat).not.toHaveBeenCalled();
+    await repeated.app.close();
     const offline = setup({ chat: null });
     expect((await offline.app.inject({ method: "POST", url: `/v1/consultant/commitments/${commitment.id}/checkin`, payload: { answer: "done" } })).json().data.conversationId).toBeNull();
     await offline.app.close();

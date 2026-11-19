@@ -15,16 +15,16 @@ date: 2026-11-20
 | 파일 | 무엇을 |
 |---|---|
 | `packages/contracts/src/consultant.ts` · `agent-chat.ts` · `engagement.ts` · 테스트 | 약속 · 확인 · 동의, 도구 입력, 날짜 칸, 알림 종류 `consultant` |
-| `packages/database/src/documents/consultant.ts` · `analytics.ts` · `collections.ts` · `mongodb-migrations/0036/migration.ts` · `mongo-migrations.ts` · `mongo-build.mjs` · 테스트 | 약속 문서와 컬렉션, 마이그레이션 0036 |
+| `packages/database/src/documents/consultant.ts` · `analytics.ts` · `operations.ts` · `collections.ts` · `mongodb-migrations/0036/migration.ts` · `mongo-migrations.ts` · `mongo-build.mjs` · 테스트 | 약속 문서와 컬렉션, 마이그레이션 0036 |
 | `services/backend/src/modules/consultant/` (`commitments.ts` 새 파일 · `service.ts` · `routes.ts` · `index.ts` · 테스트) | 약속, 확인 작업, 답 처리, 동의, 라우트 |
 | `services/backend/src/modules/scheduling/public.ts` · `service.ts` · 테스트 | 키 `consultant_checkins` |
 | `services/backend/src/modules/engagement/service.ts` | 알림 종류 목록 |
-| `services/backend/src/modules/agent-chat/service.ts` · `ui-parts.ts` · 테스트 | 약속 도구 연결, 기억에 약속, 서버가 여는 대화, 날짜 칸 확인 |
+| `services/backend/src/modules/agent-chat/service.ts` · `index.ts` · `digest.ts` · `ui-parts.ts` · 테스트 | 약속 도구 연결, 기억에 약속, 서버가 여는 대화, 날짜 칸 확인 |
 | `services/backend/src/platform/agent/runtime.ts` · `runtime.test.ts` | `make_commitment` · `update_commitment` 도구와 지침 |
 | `services/backend/src/api/main.ts` · `build-app.ts` · `worker/main.ts` · `modules/account-lifecycle/mongo-purge.ts` | 배선, 삭제 목록 |
-| `services/web/src/features/agent-chat/` (`CommitmentCard.tsx` 새 파일 · `FormPart.tsx` · `tool-parts.tsx` · 테스트) | 약속 카드, 날짜 칸 |
-| `services/web/src/app/(app)/home/` (`CheckinFeed.tsx` 새 파일 · `HomeStart.tsx` · `home-data.ts` · 스타일 · 테스트) | 확인 카드와 동의 카드 |
-| `services/web/src/app/(app)/goal/` · `account/page.tsx` · `(auth)/onboarding/consent/` · `components/CommandPalette.tsx` · `lib/api/endpoints.ts` | 내 진행의 약속, 설정의 줄, 온보딩 항목, 알림 문장, 엔드포인트 |
+| `services/web/src/features/agent-chat/` (`CommitmentCard.tsx` 새 파일 · `FormPart.tsx` · `tool-parts.tsx` · 테스트) · `app/api/consultant/commitments/[id]/route.ts` 새 파일 | 약속 카드와 그 프록시, 날짜 칸 |
+| `services/web/src/app/(app)/home/` (`CheckinFeed.tsx` · `checkin-actions.ts` 새 파일 · `HomeStart.tsx` · `HomeWidgets.tsx` · `ProposalFeed.tsx` · `proposal-actions.ts` · `page.tsx` · 스타일 · 테스트) | 확인 카드와 동의 카드, 켜기 · 끄기 병합 |
+| `services/web/src/app/(app)/goal/` · `account/page.tsx` · `app/account-actions.ts` · `app/consent-actions.ts` · `(auth)/onboarding/consent/` · `components/CommandPalette.tsx` · `lib/api/endpoints.ts` | 내 진행의 약속, 설정의 줄, 온보딩 항목, 알림 문장, 엔드포인트 |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
 

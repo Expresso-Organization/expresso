@@ -65,13 +65,14 @@ export function registerConsultantRoutes(app: FastifyInstance, options: {
     if (!input.success) throw new HttpStatusError(400, "invalid commitment change");
     return ConsultantCommitmentResponseSchema.parse({ data: await options.commitments.update(requireAuth(request).user.id, id(request.params), { dueOn: input.data.dueOn, status: input.data.status }) });
   });
-  /** 확인 카드의 답. 「했어요」는 약속을 닫고 그 일을 묻는 대화를 연다. 나머지 답은 모델을 부르지 않는다. */
+  /** 확인 카드의 답. 「했어요」는 약속을 닫고 그 일을 묻는 대화를 연다. 나머지 답은 모델을 부르지 않는다. 알림은 앱 안에만 남는다(메일을 보내지 않는다). */
   app.post(`${API_PREFIX}/consultant/commitments/:id/checkin`, guard, async (request) => {
     const input = CommitmentCheckinAnswerSchema.safeParse(request.body);
     if (!input.success) throw new HttpStatusError(400, "invalid checkin answer");
     const userId = requireAuth(request).user.id;
-    const commitment = await options.commitments.answer(userId, id(request.params), input.data);
-    const conversationId = input.data.answer === "done" ? await options.startCheckinChat(userId, commitment) : null;
+    const { commitment, changed } = await options.commitments.answer(userId, id(request.params), input.data);
+    // 대화는 이 답이 약속을 닫았을 때만 연다. 이미 닫힌 약속에 같은 답이 다시 오면(다시 누름 · 지난 카드) 열지 않는다.
+    const conversationId = input.data.answer === "done" && changed ? await options.startCheckinChat(userId, commitment) : null;
     return CommitmentCheckinResultSchema.parse({ data: { commitment, conversationId } });
   });
 }

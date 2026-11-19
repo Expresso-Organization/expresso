@@ -87,13 +87,15 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect((await commitments.checkins(userId, day(0))).commitments).toHaveLength(3);
     await expect(commitments.answer(other, a!.id, { answer: "done" }, day(0))).rejects.toBeInstanceOf(ConsultantNotFoundError);
     await expect(commitments.answer(userId, a!.id, { answer: "not_yet", dueOn: "2026-11-19" }, day(0))).rejects.toBeInstanceOf(ConsultantInputError);
-    expect(await commitments.answer(userId, a!.id, { answer: "not_yet", dueOn: "2026-11-25" }, day(0))).toMatchObject({ status: "open", dueOn: "2026-11-25", awaiting: false });
-    expect(await commitments.answer(userId, b!.id, { answer: "done" }, day(0))).toMatchObject({ status: "done", awaiting: false });
-    expect(await commitments.answer(userId, c!.id, { answer: "dropped" }, day(0))).toMatchObject({ status: "dropped", awaiting: false });
+    expect(await commitments.answer(userId, a!.id, { answer: "not_yet", dueOn: "2026-11-25" }, day(0))).toMatchObject({ changed: true, commitment: { status: "open", dueOn: "2026-11-25", awaiting: false } });
+    expect(await commitments.answer(userId, b!.id, { answer: "done" }, day(0))).toMatchObject({ changed: true, commitment: { status: "done", awaiting: false } });
+    // 같은 답이 다시 오면 약속은 그대로이고 바뀌지 않았다고 알린다. 부른 쪽은 대화를 다시 열지 않는다.
+    expect(await commitments.answer(userId, b!.id, { answer: "done" }, day(0))).toMatchObject({ changed: false, commitment: { status: "done" } });
+    expect(await commitments.answer(userId, c!.id, { answer: "dropped" }, day(0))).toMatchObject({ changed: true, commitment: { status: "dropped", awaiting: false } });
     expect((await commitments.checkins(userId, day(0))).commitments).toEqual([]);
     expect((await commitments.open(userId)).map(item => item.title)).toEqual(["미룰 약속"]);
     // 닫힌 약속은 다시 고치지 않는다. 같은 답이 다시 오면 그대로 돌려준다.
-    expect(await commitments.answer(userId, b!.id, { answer: "done" }, day(0))).toMatchObject({ status: "done" });
+    expect(await commitments.answer(userId, b!.id, { answer: "done" }, day(0))).toMatchObject({ changed: false, commitment: { status: "done" } });
     await expect(commitments.update(userId, b!.id, { dueOn: "2026-12-01" }, day(0))).rejects.toBeInstanceOf(ConsultantInputError);
     // 미룬 약속은 새 날짜에 다시 묻는다.
     await commitments.runCheckins(deps(day(0)), day(4));

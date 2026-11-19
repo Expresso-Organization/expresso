@@ -68,23 +68,31 @@ export class ConsultantCommitments {
    * 닫힌 약속은 고치지 않는다 — 같은 값으로 닫는 요청은 그대로 돌려준다.
    */
   async update(userId: string, id: string, change: { dueOn?: string | undefined; status?: "done" | "dropped" | undefined }, at = new Date()): Promise<ConsultantCommitment> {
+    return (await this.change(userId, id, change, at)).commitment;
+  }
+
+  /** 고친 약속과, 이 호출이 약속을 실제로 바꿨는지. 열린 약속만 고치므로 같은 요청이 겹쳐도 한 번만 바뀐다. */
+  private async change(userId: string, id: string, change: { dueOn?: string | undefined; status?: "done" | "dropped" | undefined }, at: Date): Promise<{ commitment: ConsultantCommitment; changed: boolean }> {
     const row = await this.rows.findOne({ _id: id, userId });
     if (!row) throw new ConsultantNotFoundError();
-    if (row.status !== "open") { if (change.status === row.status && !change.dueOn) return view(row); throw new ConsultantInputError("이미 닫힌 약속입니다."); }
+    if (row.status !== "open") { if (change.status === row.status && !change.dueOn) return { commitment: view(row), changed: false }; throw new ConsultantInputError("이미 닫힌 약속입니다."); }
+    let modified = 0;
     if (change.status) {
-      await this.rows.updateOne({ _id: id, userId }, { $set: { status: change.status, awaiting: false, nextCheckOn: null, updatedAt: at } });
+      modified = (await this.rows.updateOne({ _id: id, userId, status: "open" }, { $set: { status: change.status, awaiting: false, nextCheckOn: null, updatedAt: at } })).modifiedCount;
     } else if (change.dueOn) {
       const today = seoulDay(at);
       if (change.dueOn < today) throw new ConsultantInputError(`오늘(${today})이나 그 뒤의 날짜로 정해 주세요.`);
-      await this.rows.updateOne({ _id: id, userId }, { $set: { dueOn: change.dueOn, nextCheckOn: change.dueOn, awaiting: false, updatedAt: at } });
+      modified = (await this.rows.updateOne({ _id: id, userId, status: "open" }, { $set: { dueOn: change.dueOn, nextCheckOn: change.dueOn, awaiting: false, updatedAt: at } })).modifiedCount;
     }
-    return view((await this.rows.findOne({ _id: id, userId }))!);
+    return { commitment: view((await this.rows.findOne({ _id: id, userId }))!), changed: modified > 0 };
   }
 
-  /** 확인 카드에서 한 답. 「아직이에요」는 새 날짜로 미루고, 나머지는 약속을 닫는다. 대화를 여는 일은 부른 쪽이 한다. */
-  async answer(userId: string, id: string, answer: CommitmentCheckinAnswer, at = new Date()): Promise<ConsultantCommitment> {
-    if (answer.answer === "not_yet") return this.update(userId, id, { dueOn: answer.dueOn }, at);
-    return this.update(userId, id, { status: answer.answer }, at);
+  /**
+   * 확인 카드에서 한 답. 「아직이에요」는 새 날짜로 미루고, 나머지는 약속을 닫는다. 대화를 여는 일은 부른 쪽이 한다.
+   * `changed`는 이 답이 약속을 바꿨는지다 — 이미 닫힌 약속에 같은 답이 다시 오면 거짓이고, 부른 쪽은 대화를 다시 열지 않는다.
+   */
+  async answer(userId: string, id: string, answer: CommitmentCheckinAnswer, at = new Date()): Promise<{ commitment: ConsultantCommitment; changed: boolean }> {
+    return this.change(userId, id, answer.answer === "not_yet" ? { dueOn: answer.dueOn } : { status: answer.answer }, at);
   }
 
   /** 홈이 읽는 연락 — 답을 기다리는 약속과, 대화가 없어 건넨 연락. */

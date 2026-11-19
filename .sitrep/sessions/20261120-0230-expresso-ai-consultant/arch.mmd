@@ -23,6 +23,10 @@ flowchart TD
   MEM --> PROG[내 진행 화면]
   REC --> SAVED[저장된 기록 카드]
   REG --> FORM[입력 칸 묶음]
-  class U,REG,CH,CARD,SEND,SVC,RT,ASK,DB,MEM,PROG,REC,SAVED,FORM done
-  class FU,DG,AC,PF todo
+  FU --> COMMIT[약속 카드]
+  FU --> JOB[확인 작업 · 하루 한 번]
+  JOB --> HOME[홈의 확인 카드]
+  HOME --> SVC
+  class U,REG,CH,CARD,SEND,SVC,RT,ASK,DB,MEM,PROG,REC,SAVED,FORM,FU,COMMIT,JOB,HOME done
+  class DG,AC,PF todo
   class CR,MG decide
