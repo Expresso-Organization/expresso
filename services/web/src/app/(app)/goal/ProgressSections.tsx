@@ -1,11 +1,12 @@
 "use client";
 
-import type { ConsultantMemory, ConsultantStage } from "@expresso/contracts";
+import type { ConsultantDiagnosis, ConsultantMemory, ConsultantStage } from "@expresso/contracts";
 import type { Route } from "next";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 
 import { Icon } from "@/components/ui/Icon";
+import { DiagnosisCard } from "@/features/agent-chat/DiagnosisCard";
 
 import { removePreferenceAction, setStageAction } from "./goal-actions";
 import styles from "./goal.module.css";
@@ -19,13 +20,15 @@ export const STAGES: readonly { value: ConsultantStage; label: string; descripti
 const STAGE_SOURCE = { agent: "컨설턴트가 대화에서 판단한 단계입니다. 다르면 직접 골라 주세요.", user: "직접 고른 단계입니다." } as const;
 
 /**
- * 컨설턴트가 기억하는 것 — 지금 단계, 하기로 한 일, 조건, 최근 대화.
+ * 컨설턴트가 기억하는 것 — 지금 단계, 목표 진단, 하기로 한 일, 조건, 최근 대화.
  *
  * 구직 목표 아래에 놓인다. 단계는 고르는 즉시 저장하고, 조건은 지우는 즉시 지운다.
  * `conversations`의 날짜는 서버가 서울 날짜로 만들어 넘긴다 — 브라우저의 시간대로 다시 계산하지 않는다.
  */
-export function ProgressSections({ memory, commitments, conversations }: {
+export function ProgressSections({ memory, diagnosis, commitments, conversations }: {
   memory: Pick<ConsultantMemory, "stage" | "stageSource" | "preferences">;
+  /** 저장된 목표 진단. 아직 진단하지 않았으면 null. */
+  diagnosis: ConsultantDiagnosis | null;
   /** 열린 약속. `due`는 서버가 만든 날짜 글이고, `href`는 그 약속을 잡은 대화다. */
   commitments: { id: string; title: string; due: string; overdue: boolean; href: string | null }[];
   conversations: { id: string; title: string; date: string; outcomes: string[] }[];
@@ -51,6 +54,12 @@ export function ProgressSections({ memory, commitments, conversations }: {
             );
           })}
         </ul>
+      </section>
+      <section className={styles.section} aria-labelledby="progress-diagnosis">
+        <h2 id="progress-diagnosis" className={styles.sectionTitle}>목표 진단</h2>
+        {diagnosis
+          ? <div className={styles.diagnosis}><DiagnosisCard diagnosis={diagnosis} /></div>
+          : <p className={styles.empty}>아직 진단하지 않았습니다. 대화에서 「내 목표에 비해 부족한 점을 진단해 줘」라고 말하면 목표와 같은 직군의 공고를 세어 여기에 남깁니다.</p>}
       </section>
       <section className={styles.section} aria-labelledby="progress-commitments">
         <h2 id="progress-commitments" className={styles.sectionTitle}>하기로 한 일</h2>

@@ -13,6 +13,7 @@ import { ChoicePart, ChoicePartPending } from "./ChoicePart";
 import { FormPart, FormPartPending } from "./FormPart";
 import { SavedRecordCard, SavedRecordPending } from "./SavedRecordCard";
 import { CommitmentCard, CommitmentPending } from "./CommitmentCard";
+import { DiagnosisCard, DiagnosisPending } from "./DiagnosisCard";
 
 /**
  * 대화 속 화면의 등록표. 도구 결과를 어떤 컴포넌트로, 어느 자리에 그릴지 이 표 하나가 정한다.
@@ -75,6 +76,8 @@ export const TOOL_PARTS: readonly ToolPart[] = [
     render: (tool, context) => tool.commitment
       ? <CommitmentCard commitment={tool.commitment} refreshKey={context.conversationVersion} />
       : <CommitmentPending failed={tool.status === "failed"} /> },
+  { key: "diagnosis", placement: "below", toolNames: ["목표 진단"], match: tool => tool.name === "목표 진단",
+    render: tool => tool.diagnosis ? <DiagnosisCard diagnosis={tool.diagnosis} /> : <DiagnosisPending failed={tool.status === "failed"} /> },
   { key: "review", placement: "trace", match: tool => !!tool.review,
     render: (tool, context) => <RequirementReviewCard conversationId={context.conversationId} toolId={tool.id} review={tool.review!} /> },
   { key: "gapReview", placement: "trace", match: tool => !!tool.gapReview,
