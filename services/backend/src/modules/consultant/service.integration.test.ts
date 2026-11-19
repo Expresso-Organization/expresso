@@ -19,7 +19,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
   afterAll(async () => { await fixture?.dispose(); });
 
   it("아직 적은 것이 없는 사용자의 프로필은 비어 있고, 읽기만으로는 문서가 생기지 않는다", async () => {
-    expect(await service.profile(userId)).toEqual({ stage: null, stageSource: null, stageUpdatedAt: null, preferences: [] });
+    expect(await service.profile(userId)).toEqual({ stage: null, stageSource: null, stageUpdatedAt: null, preferences: [], outreach: null });
     expect(await fixture.resource.db.collection("consultant_profiles").countDocuments({ userId })).toBe(0);
   });
   it("에이전트가 단계와 조건을 적고, 같은 글의 조건과 같은 단계는 다시 적지 않는다", async () => {

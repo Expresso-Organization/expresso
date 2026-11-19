@@ -5,6 +5,7 @@ import { GeneratedPageSchema } from "./page.js";
 import { CareerDocumentBootstrapSchema } from "./career-editor.js";
 import { z } from "zod";
 import { UuidSchema, TimestampSchema } from "./common.js";
+import { ConsultantCommitmentSchema } from "./consultant.js";
 import { AiEditProposalDetailSchema, AiEditProposalSchema } from "./career-ai.js";
 
 export const AgentContextSchema = z.strictObject({ kind: z.enum(["job", "record", "portfolio"]), id: UuidSchema });
@@ -297,7 +298,7 @@ export const AgentChoicePartSchema = z.strictObject({
  * 입력 칸 묶음. 짧게 적을 값(기간 · 인원 · 수치)을 한 번에 받는다 — 하나씩 물으면 질문마다 실행이 한 번씩 든다.
  * `optional`이 거짓인 칸은 비워 둘 수 없다.
  */
-export const AgentFormFieldSchema = z.strictObject({ id: z.string().min(1).max(40), label: z.string().trim().min(1).max(60), placeholder: z.string().trim().max(120).optional(), optional: z.boolean() });
+export const AgentFormFieldSchema = z.strictObject({ id: z.string().min(1).max(40), label: z.string().trim().min(1).max(60), placeholder: z.string().trim().max(120).optional(), optional: z.boolean(), /** 날짜 칸이면 `date`. 값은 `YYYY-MM-DD`다. 없으면 글 칸이다. */ type: z.enum(["text", "date"]).optional() });
 export const AgentFormValueSchema = z.strictObject({ id: z.string().min(1).max(40), text: z.string().trim().max(300) });
 export const AgentFormPartSchema = z.strictObject({
   kind: z.literal("form"),
@@ -310,7 +311,7 @@ export const AgentUiPartSchema = z.discriminatedUnion("kind", [AgentChoicePartSc
 /** 에이전트가 `ask_form`에 넣는 것. 부품과 칸의 id는 서버가 붙인다. */
 export const AgentFormInputSchema = z.strictObject({
   prompt: z.string().trim().min(1).max(400).describe("칸들을 묶는 질문 한 문장"),
-  fields: z.array(z.strictObject({ label: z.string().trim().min(1).max(60).describe("칸 이름. 「기간」 · 「팀 인원」처럼 짧게"), placeholder: z.string().trim().max(120).optional().describe("적는 법의 예. 없어도 된다"), optional: z.boolean().optional().describe("비워도 되는 칸이면 true") })).min(1).max(4).describe("짧게 적을 칸 1~4개. 이름이 서로 달라야 한다"),
+  fields: z.array(z.strictObject({ label: z.string().trim().min(1).max(60).describe("칸 이름. 「기간」 · 「팀 인원」처럼 짧게"), placeholder: z.string().trim().max(120).optional().describe("적는 법의 예. 없어도 된다"), optional: z.boolean().optional().describe("비워도 되는 칸이면 true"), type: z.enum(["text", "date"]).optional().describe("날짜를 받는 칸이면 date. 화면에 날짜 고르기가 뜨고 값은 YYYY-MM-DD로 온다") })).min(1).max(4).describe("짧게 적을 칸 1~4개. 이름이 서로 달라야 한다"),
 });
 /** 에이전트가 `ask_choice`에 넣는 것. 부품과 선택지의 id는 서버가 붙인다. */
 export const AgentChoiceInputSchema = z.strictObject({
@@ -342,7 +343,7 @@ export const AgentSavedRecordSchema = z.strictObject({
   undone: z.boolean(),
 });
 export type AgentSavedRecord = z.infer<typeof AgentSavedRecordSchema>;
-export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional(), goalDraft: AgentGoalDraftSchema.optional(), gapReview: GapReviewSchema.optional(), planDraft: AgentPlanDraftSchema.optional(), replanDraft: AgentReplanDraftSchema.optional(), pageEdit: AgentPageEditSchema.optional(), ui: AgentUiPartSchema.optional(), savedRecord: AgentSavedRecordSchema.optional() });
+export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional(), goalDraft: AgentGoalDraftSchema.optional(), gapReview: GapReviewSchema.optional(), planDraft: AgentPlanDraftSchema.optional(), replanDraft: AgentReplanDraftSchema.optional(), pageEdit: AgentPageEditSchema.optional(), ui: AgentUiPartSchema.optional(), savedRecord: AgentSavedRecordSchema.optional(), commitment: ConsultantCommitmentSchema.optional() });
 export const AgentMessageSchema = z.strictObject({ id: UuidSchema, role: z.enum(["user", "assistant"]), text: z.string().max(64_000), tools: z.array(AgentToolResultSchema).max(30), selection: AgentPageSelectionSchema.optional(), reply: AgentUiReplySchema.optional(), createdAt: TimestampSchema });
 export const AgentRunSchema = z.strictObject({ id: UuidSchema, requestId: UuidSchema, status: z.enum(["running", "complete", "cancelled", "failed", "interrupted"]), error: z.string().max(1_000).nullable(), startedAt: TimestampSchema });
 export const AgentConversationSchema = z.strictObject({ id: UuidSchema, title: z.string().max(120), contexts: z.array(AgentContextSchema).max(10), messages: z.array(AgentMessageSchema).max(100), run: AgentRunSchema.nullable(), version: z.number().int().nonnegative(), updatedAt: TimestampSchema });
