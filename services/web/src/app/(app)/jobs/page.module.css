@@ -26,6 +26,11 @@
   color: var(--ex-fg-body);
 }
 
+a.headAction:hover {
+  /* 전역 링크 호버(`a:where(:hover)`)가 클래스 색을 덮지 않으므로 여기서 진해진다 */
+  color: var(--ex-fg-strong);
+}
+
 /* 켜진 토글. 카테고리 탭의 활성 표시와 같은 값을 쓴다. */
 .headActionActive {
   font-weight: 600;
@@ -1104,6 +1109,8 @@
 .pagerArrow:hover,
 .pagerPage:hover {
   background: var(--ex-bg-sunken);
+  /* 전역 링크 호버(`a:where(:hover)`)가 클래스 색을 덮지 않으므로 여기서 진해진다 */
+  color: var(--ex-fg-strong);
 }
 
 .pagerArrowOff {

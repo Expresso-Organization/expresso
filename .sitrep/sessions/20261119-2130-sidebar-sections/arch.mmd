@@ -1,0 +1,19 @@
+flowchart TD
+  AC["AppChrome 데이터"] --> SB["Sidebar"]
+  SB --> NAV["SidebarNav"]
+  SB --> CV["최근 대화 묶음"]
+  SB --> PF["포트폴리오 묶음"]
+  SB --> CT["커리어 기록 묶음"]
+  CV --> G["SidebarGroup 접기"]
+  PF --> G
+  CT --> G
+  G --> LS[("localStorage")]
+  GL["global.css 링크 호버"] --> NAV
+  PF --> V["만들던 제작 포함"]
+  SB --> PR{"push · PR"}
+  classDef done fill:#d1fae5,stroke:#059669
+  classDef doing fill:#fef3c7,stroke:#d97706
+  classDef decide fill:#fee2e2,stroke:#dc2626
+  classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4
+  class AC,SB,NAV,CV,PF,CT,G,LS,GL,V done
+  class PR decide
