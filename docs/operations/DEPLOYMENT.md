@@ -102,6 +102,19 @@ scripts/operations/deploy.sh <검증된-commit>
 
 웹은 운영 웹이 쓰는 `services/web/.next`가 아니라 `services/web/.next-build`에 짓습니다. API가 준비되면 웹을 멈추고 `.next`를 `.next-prev`로, `.next-build`를 `.next`로 바꾼 뒤 다시 띄웁니다. 빌드하는 동안 사이트는 이전 판으로 열리고, 화면이 끊기는 시간은 웹이 다시 뜨는 몇 초입니다. 2026-11-10까지는 `.next`를 그 자리에서 다시 지어, 빌드하는 1~2분 동안 `/_next/static` 요청이 500을 내고 모든 화면이 「화면을 그리지 못했습니다」로 넘어갔습니다. 새 `.next/static`에는 이전 판 정적 파일을 7일까지 함께 둡니다. 배포 전에 열어 둔 탭이 옛 JS를 요청해도 404가 나지 않습니다.
 
+스크립트는 마이그레이션을 워커 재시작보다 먼저 돌립니다. 마이그레이션이 `scheduled_job_definitions`에 새 예약 작업을 넣으면, 워커가 재시작될 때까지 옛 코드의 워커가 그 정의를 봅니다. 워커는 자기 코드가 아는 키(`SCHEDULED_JOB_KEYS`)의 정의만 집으므로, 새 작업은 `nextRunAt`이 그대로 남았다가 새 워커의 첫 폴링에서 실행됩니다. 이 동작은 #243이 배포된 뒤의 워커부터 적용됩니다. 그 전 판의 워커는 모르는 키도 집어 다섯 번 실패시키고 `nextRunAt`을 다음 주기로 옮깁니다. 2026-11-19 #240 배포에서 `activity_collect`와 `proposal_briefing`의 첫 실행이 이렇게 하루 밀렸습니다.
+
+새 예약 작업이 든 배포 뒤에는 운영 `scheduled_job_runs`에서 그 키의 상태를 확인합니다.
+
+- 최근 실행이 `succeeded`: 정상입니다.
+- 최근 실행이 `failed`: 그 키를 모르는 옛 판 워커가 집어 첫 실행이 밀렸습니다. `scheduled_job_definitions`의 `nextRunAt`은 이미 다음 주기입니다.
+- 실행이 없고 `nextRunAt`이 지나 있음: 지금 도는 워커가 그 키를 모르거나 멈춰 있습니다. 워커가 새 판으로 재시작됐는지와 `worker.log`를 확인합니다.
+
+```js
+db.scheduled_job_runs.find({ jobKey: "<새 키>" }).sort({ scheduledFor: -1 }).limit(3)
+db.scheduled_job_definitions.find({ _id: "<새 키>" })
+```
+
 스크립트는 기존 MySQL volume을 참조하거나 삭제하지 않습니다. `down -v`도
 실행하지 않습니다. schema migration과 readiness가 통과하지 않으면 API를 준비된
 것으로 취급하지 않습니다.

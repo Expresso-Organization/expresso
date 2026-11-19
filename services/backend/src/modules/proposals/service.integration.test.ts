@@ -15,16 +15,19 @@ const CATEGORY_ID = randomUUID();
 
 /** 서비스가 읽는 것들의 가짜. 저장소(`proposal_feeds` · outbox)만 진짜다. */
 function world(overrides: { remaining?: number | null; consent?: boolean; jobCreatedAt?: string } = {}) {
-  const state = { remaining: overrides.remaining ?? 100 as number | null, consent: overrides.consent ?? true, jobCreatedAt: overrides.jobCreatedAt ?? "2026-11-15T00:00:00.000Z", jobTechnologies: ["React"] };
+  const state = { remaining: overrides.remaining ?? 100 as number | null, consent: overrides.consent ?? true, jobCreatedAt: overrides.jobCreatedAt ?? "2026-11-15T00:00:00.000Z", jobTechnologies: ["React"], goal: null as { work: string; place: string; timing: string; source: "app"; updatedAt: string } | null };
   const written: Candidates[] = [];
+  const goals: unknown[] = [];
   const writer: ProposalWriter = {
-    async write(_userId, candidates) {
+    async write(_userId, candidates, goal) {
       written.push(candidates);
+      goals.push(goal ?? null);
       return candidates.jobs.map((job): WrittenProposal => ({ subject: { kind: "job", id: job.id }, action: "compare_job", message: "모아마켓의 「프론트엔드 개발자」 공고 요건을 React 사용 기록과 대조해 볼까요?", recordIds: [RECORD_ID] }));
     },
   };
   const dependencies = {
     career: {
+      getJobGoal: async () => state.goal,
       listCategories: async () => [{ id: CATEGORY_ID, key: "skill_tool", name: "스킬 · 도구", propertySchemaV2: [] }],
       listRecords: async () => ({ data: [{ id: RECORD_ID, categoryId: CATEGORY_ID, categoryKey: "skill_tool", title: "React · Next.js", bodyMd: "3년 사용", properties: {}, isEmpty: false }] }),
     },
@@ -37,7 +40,7 @@ function world(overrides: { remaining?: number | null; consent?: boolean; jobCre
     consent: { require: async () => { if (!state.consent) throw new ConsentError("career_records"); } },
     credits: { credits: async () => ({ remaining: state.remaining }) },
   };
-  return { state, written, writer, dependencies };
+  return { state, written, goals, writer, dependencies };
 }
 
 describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB_URL))("능동 제안", () => {
@@ -94,6 +97,31 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect((await proposals.feed(userId, new Date("2026-11-17T03:00:00.000Z"))).proposals[0]?.subject.daysLeft).toBe(10);
     expect((await proposals.feed(userId, new Date("2026-11-27T03:00:00.000Z"))).proposals[0]?.subject.daysLeft).toBe(0);
     expect((await proposals.feed(userId, new Date("2026-11-28T03:00:00.000Z"))).proposals).toEqual([]);
+  });
+
+  it("적어 둔 구직 목표를 작성기에 넘기고, 없으면 없다고 넘긴다", async () => {
+    const w = world();
+    const proposals = service(w);
+    await proposals.enable(userId, at);
+    await proposals.run(userId, "enable", at);
+    expect(w.goals).toEqual([null]);
+
+    w.state.goal = { work: "커머스 프론트엔드", place: "", timing: "내년 상반기", source: "app", updatedAt: at.toISOString() };
+    w.state.jobCreatedAt = "2026-11-16T00:00:00.000Z";
+    const later = new Date("2026-11-16T03:00:00.000Z");
+    await mongoCollections(fixture.resource.db).proposalFeeds.updateOne({ userId }, { $set: { proposals: [] } });
+    await proposals.refresh(userId, later);
+    await proposals.run(userId, "manual", later);
+    expect(w.goals[1]).toMatchObject({ work: "커머스 프론트엔드", timing: "내년 상반기" });
+  });
+
+  it("에이전트가 권할 것을 고르지 않으면 까닭을 남기고, AI까지 돈 실행으로 센다", async () => {
+    const w = world();
+    const nothing: ProposalWriter = { async write() { return []; } };
+    const proposals = service(w, nothing);
+    await proposals.enable(userId, at);
+    expect(await proposals.run(userId, "enable", at)).toMatchObject({ status: "complete", reason: "nothing_new", written: 0 });
+    expect(await proposals.feed(userId, at)).toMatchObject({ proposals: [], run: { status: "complete", reason: "nothing_new", read: { records: 1, jobs: 1, activities: 0 } } });
   });
 
   it("예전 모양으로 저장된 제안은 내보내지 않고, 다음 실행 때 치운다", async () => {

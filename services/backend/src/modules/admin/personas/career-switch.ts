@@ -5,7 +5,7 @@ export const careerSwitch: Persona = {
   key: "dummy-career-switch",
   displayName: "오태민",
   headline: "UI 디자이너 5년 뒤 프론트엔드로 전직한 1년차",
-  profile: { targetRoles: ["프론트엔드", "디자인"], experienceYears: 6, primaryGoal: "build" },
+  profile: { targetRoles: ["프론트엔드", "디자인"], experienceYears: 6 },
   records: [
     {
       ref: "exp-design",

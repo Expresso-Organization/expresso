@@ -1,0 +1,17 @@
+flowchart TD
+  MIG[마이그레이션: 새 키 정의 추가] --> DEF[(scheduled_job_definitions)]
+  OLD[옛 워커 폴링] --> DUE[scheduleDue: 아는 키만 조회]
+  NEW[새 워커 폴링] --> DUE
+  DEF --> DUE
+  DUE --> KNOWN[아는 키: 실행 생성 · nextRunAt 이동]
+  DUE --> SKIP[모르는 키: 조회 제외 · nextRunAt 유지]
+  KNOWN --> RUNS[(scheduled_job_runs)]
+  KNOWN --> OUTBOX[outbox: scheduled.execute]
+  OUTBOX --> PROC[process · execute]
+  TEST[통합 시험: 옛 워커 재현] --> DUE
+  DOC[DEPLOYMENT.md: 배포 뒤 확인] --> RUNS
+  classDef done fill:#d1fae5,stroke:#059669
+  classDef doing fill:#fef3c7,stroke:#d97706
+  classDef decide fill:#fee2e2,stroke:#dc2626
+  classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4
+  class DUE,SKIP,TEST,DOC done

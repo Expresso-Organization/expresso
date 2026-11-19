@@ -55,7 +55,15 @@ export interface CareerRecordDoc {
 export interface CareerProfileDoc {
   targetRoles: JsonValue;
   experienceYears: number;
-  primaryGoal: "explore" | "build" | "organize";
+  updatedAt: Date;
+}
+
+/** 사용자가 쓴 최종 구직 목표. `users.jobGoal`에 둔다. */
+export interface JobGoalDoc {
+  work: string;
+  place: string;
+  timing: string;
+  source: "onboarding" | "app" | "chat";
   updatedAt: Date;
 }
 

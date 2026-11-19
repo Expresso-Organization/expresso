@@ -3,6 +3,7 @@
 import { SaveCareerProfileSchema } from "@expresso/contracts";
 import { redirect } from "next/navigation";
 
+import { readJobGoalAnswers } from "@/features/job-goal/JobGoalFields";
 import { ApiError } from "@/lib/api/client";
 import { career } from "@/lib/api/endpoints";
 import { readAccessToken } from "@/lib/session";
@@ -17,6 +18,7 @@ export interface GoalFormState {
  *
  * 이 화면은 오랫동안 아무 데도 보내지 않았다 — 슬라이더를 12년에 놓고 다음을
  * 눌러도 그 값은 그 순간 사라졌다. 이제 `career_profile`에 남는다.
+ * 세 질문의 답은 구직 목표로 따로 남는다.
  */
 export async function saveCareerGoalAction(
   _previous: GoalFormState,
@@ -28,15 +30,20 @@ export async function saveCareerGoalAction(
   const parsed = SaveCareerProfileSchema.safeParse({
     targetRoles: formData.getAll("targetRoles").map(String),
     experienceYears: Number(formData.get("experienceYears")),
-    primaryGoal: formData.get("primaryGoal"),
   });
   if (!parsed.success) {
     // 화면이 만들 수 없는 값이다. 사람이 고칠 수 있는 것이 아니므로 다시 하게 한다.
     return { error: "고른 값을 읽지 못했습니다. 새로고침한 뒤 다시 골라 주세요." };
   }
 
+  // 구직 목표의 세 답. 모두 비웠으면 목표는 건드리지 않고 넘어간다 — 앱에서 나중에 적을 수 있다.
+  const answers = readJobGoalAnswers(formData);
+  const answered = Boolean(answers.work || answers.place || answers.timing);
+
   try {
+    // 둘 다 통째로 덮어쓰는 저장이라, 한쪽이 실패해 다시 눌러도 결과가 같다.
     await career.saveProfile(accessToken, parsed.data);
+    if (answered) await career.saveGoal(accessToken, { ...answers, source: "onboarding" });
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) redirect("/login");
     if (error instanceof ApiError) {

@@ -18,3 +18,9 @@
 .done { display: flex; align-items: center; gap: 5px; margin: 0; font-size: var(--ex-text-2xs); color: var(--ex-fg-muted); }
 .done[data-state="approved"] { color: var(--ex-status-success-text); }
 .done a { color: var(--ex-accent-text); }
+/* 구직 목표 변경 카드 — 바뀌는 칸마다 지금 글과 새 글을 위아래로 세운다. */
+.changes { display: flex; flex-direction: column; gap: 10px; margin: 0; }
+.change { display: flex; flex-direction: column; gap: 3px; }
+.change dt { font-size: var(--ex-text-3xs); color: var(--ex-fg-muted); }
+.change dd { margin: 0; font-size: var(--ex-text-xs); line-height: var(--ex-leading-relaxed); overflow-wrap: anywhere; }
+.change .before { font-size: var(--ex-text-2xs); color: var(--ex-fg-muted); text-decoration: line-through; }

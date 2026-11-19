@@ -33,8 +33,8 @@ const PRIMARY_ITEMS: readonly {
  * 화면의 활성 표시는 사이드바 아래쪽 사용자 줄(`AccountLink`)이 받는다.
  */
 export function sectionForPath(pathname: string): SidebarSection | null {
-  // 에이전트 대화는 홈이다. 기록과 포트폴리오는 어디서 열었든 라이브러리에 속한다.
-  if (pathname === "/home" || pathname.startsWith("/agent")) return "home";
+  // 에이전트 대화와 구직 목표는 홈이다. 기록과 포트폴리오는 어디서 열었든 라이브러리에 속한다.
+  if (pathname === "/home" || pathname.startsWith("/agent") || pathname.startsWith("/goal")) return "home";
   if (pathname.startsWith("/library") || pathname.startsWith("/career") || pathname.startsWith("/edit")) return "library";
   if (pathname.startsWith("/jobs")) return "explore";
   if (pathname.startsWith("/analytics")) return "analytics";

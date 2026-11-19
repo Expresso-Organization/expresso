@@ -3,12 +3,13 @@ import { PageElementIssues, PageServiceError, type PageApi } from "../page/index
 import { elementTitle } from "@expresso/portfolio-renderer";
 import { AgentCredentials } from "./credentials.js";
 import { randomUUID } from "node:crypto";
-import { AgentConversationSchema, isStructuredGroup, type AgentPageElementEditInput, type AgentPageEdit, type StructuredPortfolioSnapshot, type CareerDocumentBootstrap, type AgentConversation, type AgentContext, type AgentMessage, type SendAgentMessage, type AgentApproval, type AgentRecordDraftDecision, type AgentRecordDraftInput, type AgentPlanDecision, type AgentReplanDecision, type ReplanProposalInput, type UpdateTaskProgress, type GapReview, type GapReviewDraft, type PlanProposalInput, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
+import { AgentConversationSchema, isStructuredGroup, type AgentPageElementEditInput, type AgentPageEdit, type StructuredPortfolioSnapshot, type CareerDocumentBootstrap, type AgentConversation, type AgentContext, type AgentMessage, type SendAgentMessage, type AgentApproval, type AgentRecordDraftDecision, type AgentRecordDraftInput, type AgentGoalDraftDecision, type AgentGoalDraftInput, type AgentPlanDecision, type AgentReplanDecision, type ReplanProposalInput, type UpdateTaskProgress, type GapReview, type GapReviewDraft, type PlanProposalInput, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
 import { mongoCollections, type AgentConversationDoc } from "@expresso/database";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { AgentToolRejection, type AgentRecordText, type AgentRuntime } from "../../platform/agent/runtime.js";
 import { buildReview, hash, recordText, reviewIssues } from "./requirement-review.js";
 import { buildDraft, draftIssues } from "./record-draft.js";
+import { buildGoalDraft, carryOver, goalDraftIssues, mergeGoal } from "./goal-draft.js";
 import { buildGapReview, gapIssues, latestReview, latestTool } from "./gap-review.js";
 import { buildPreparationTasks, PlanCapacityError, scheduleRemaining } from "./preparation-planner.js";
 import { PreparationPlans } from "./plans.js";
@@ -37,7 +38,7 @@ export class AgentChatService {
   /** `close()`가 시작되면 켠다. 그 뒤에 끝난 실행은 어떤 오류로 끝났든 서버 종료로 끊긴 것이다. */
   private closing = false;
   private runFailureListener: AgentRunFailureListener | null = null;
-  constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord" | "listRecords" | "listCategories" | "createRecord">, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi, readonly credentials: AgentCredentials = new AgentCredentials(db), private readonly portfolios?: Pick<PortfolioReadApi, "get">, private readonly pages?: Pick<PageApi, "latest" | "elementGuide" | "editElementByAgent" | "restoreRevision">) {}
+  constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord" | "listRecords" | "listCategories" | "createRecord" | "getJobGoal" | "saveJobGoal">, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi, readonly credentials: AgentCredentials = new AgentCredentials(db), private readonly portfolios?: Pick<PortfolioReadApi, "get">, private readonly pages?: Pick<PageApi, "latest" | "elementGuide" | "editElementByAgent" | "restoreRevision">) {}
   private get plans() { return new PreparationPlans(this.db); }
   /** 서비스가 Fastify 앱보다 먼저 만들어지므로 로그 수신자는 라우트 등록 때 붙인다. */
   setRunFailureListener(listener: AgentRunFailureListener) { this.runFailureListener = listener; }
@@ -116,6 +117,31 @@ export class AgentChatService {
    * 승인은 초안 id를 멱등 키로 기록을 만든다 — 두 번 눌러도 기록은 하나다. 기록 생성이
    * 실패하면(카테고리 필수 속성 등) 초안 상태를 바꾸지 않는다.
    */
+  /**
+   * 대화에서 바뀐 구직 목표의 변경 초안. 저장하지 않은 앞선 초안은 닫고 그 칸을 새 초안이 이어받는다 —
+   * 대기 중인 카드는 하나만 남아, 옛 카드를 나중에 눌러 새 목표를 덮지 않는다. 지금 쓰는 답변 안의
+   * 초안은 `execute`가 닫는다(답변은 통째로 덮어써진다).
+   */
+  private async goalDraft(row: AgentConversationDoc, messages: readonly AgentMessage[], given: AgentGoalDraftInput) {
+    const current = await this.career.getJobGoal(row.userId);
+    const input = carryOver(given, messages.flatMap(message => message.tools).findLast(tool => tool.goalDraft?.status === "ready")?.goalDraft);
+    const issues = goalDraftIssues(input, current);
+    if (issues.length) throw new AgentToolRejection(issues);
+    await this.rows.updateOne({ _id: row._id, userId: row.userId }, { $set: { "messages.$[].tools.$[tool].goalDraft.status": "replaced" } }, { arrayFilters: [{ "tool.goalDraft.status": "ready" }] });
+    return buildGoalDraft(input, randomUUID(), current);
+  }
+  /** 목표 변경의 승인 · 거절. 승인하면 그 시점의 목표에 바뀌는 칸만 덮어 저장한다. AI를 부르지 않는다. */
+  async decideGoalDraft(userId: string, id: string, draftId: string, decision: AgentGoalDraftDecision) {
+    const row = await this.owned(userId, id);
+    if (row.run?.status === "running") throw new AgentChatError(409, "응답이 끝난 뒤 처리해 주세요.");
+    const draft = row.messages.flatMap(message => message.tools).find(tool => tool.goalDraft?.draftId === draftId)?.goalDraft;
+    if (!draft) throw new AgentChatError(404, "이 대화의 목표 변경을 찾을 수 없습니다.");
+    const target = decision.action === "approve" ? "approved" : "rejected";
+    if (draft.status !== "ready") { if (draft.status === target) return view(row); throw new AgentChatError(409, draft.status === "replaced" ? "새 제안으로 바뀐 변경입니다." : "이미 처리한 변경입니다."); }
+    if (decision.action === "approve") await this.career.saveJobGoal(userId, { ...mergeGoal(draft, await this.career.getJobGoal(userId)), source: "chat" });
+    await this.rows.updateOne({ _id: id, userId }, { $set: { "messages.$[].tools.$[tool].goalDraft.status": target, updatedAt: new Date().toISOString() }, $inc: { version: 1 } }, { arrayFilters: [{ "tool.goalDraft.draftId": draftId, "tool.goalDraft.status": "ready" }] });
+    return this.get(userId, id);
+  }
   async decideRecordDraft(userId: string, id: string, draftId: string, decision: AgentRecordDraftDecision) {
     const row = await this.owned(userId, id);
     if (row.run?.status === "running") throw new AgentChatError(409, "응답이 끝난 뒤 처리해 주세요.");
@@ -387,6 +413,7 @@ export class AgentChatService {
     }, RUN_HEARTBEAT_MS);
     const timeout = setTimeout(() => controller.abort(), 600_000);
     try {
+      const goal = await this.career.getJobGoal(row.userId);
       await this.runtime!.run({ userId: row.userId, messages: row.messages.slice(0, -1), context, ...(apiKey ? { apiKey } : {}), signal: controller.signal,
         emit: async event => {
           if (controller.signal.aborted) throw new Error("cancelled");
@@ -397,6 +424,12 @@ export class AgentChatService {
         records: { list: () => this.listRecords(row.userId), read: ids => this.readRecords(row.userId, ids) },
         review: draft => this.review(row.userId, row.contexts, draft),
         draftRecord: input => this.draftRecord(row, input),
+        jobGoal: goal ? { work: goal.work, place: goal.place, timing: goal.timing } : null,
+        goalDraft: async input => {
+          const draft = await this.goalDraft(row, [...row.messages.slice(0, -1), message], input);
+          for (const tool of message.tools) if (tool.goalDraft?.status === "ready") tool.goalDraft.status = "replaced";
+          return draft;
+        },
         // 같은 실행에서 방금 남긴 도구 결과(예: 대조 직후의 보완점)도 보이도록 지금 쓰는 답변을 넣어 넘긴다.
         gapReview: draft => this.gapReview(row.userId, [...row.messages.slice(0, -1), message], draft),
         planDraft: input => this.planDraft(row.userId, [...row.messages.slice(0, -1), message], input),

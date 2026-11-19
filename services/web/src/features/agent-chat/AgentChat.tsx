@@ -11,6 +11,7 @@ import type { AgentContext, AgentMessage, AgentPageSelection, AiEditProposalDeta
 import { ResourcePreview, type PreviewResource } from "./ResourcePreview";
 import { RequirementReviewCard } from "./RequirementReviewCard";
 import { RecordDraftCard } from "./RecordDraftCard";
+import { JobGoalDraftCard } from "./JobGoalDraftCard";
 import { GapReviewCard } from "./GapReviewCard";
 import { PlanDraftCard } from "./PlanDraftCard";
 import { PlanCard } from "./PlanCard";
@@ -123,7 +124,7 @@ function GeneralWelcome() {
 }
 /** 작업 흔적의 아이콘. 키는 서버가 보내는 도구 이름(platform/agent/runtime.ts의 step 이름)이다. */
 const TOOL_ICONS: Record<string, string> = {
-  "기록 목록 확인": "list-bullets", "기록 읽기": "book-open-text", "요건 대조": "list-checks", "새 기록 초안": "note-pencil", "기록 변경 제안": "pencil-line",
+  "기록 목록 확인": "list-bullets", "기록 읽기": "book-open-text", "요건 대조": "list-checks", "새 기록 초안": "note-pencil", "구직 목표 변경": "target", "기록 변경 제안": "pencil-line",
   "보완점 정리": "target", "준비 계획 초안": "calendar-check", "계획 진행 확인": "chart-line-up", "계획 재배치 초안": "arrows-clockwise",
   "지면 요소 읽기": "cursor-click", "지면 요소 고침": "pencil-simple-line",
 };
@@ -141,6 +142,7 @@ const RecordTool: ToolCallMessagePartComponent = props => {
   if (tool?.review) return step(<RequirementReviewCard conversationId={state.id} toolId={tool.id} review={tool.review} />, null);
   if (tool?.gapReview) return step(<GapReviewCard conversationId={state.id} toolId={tool.id} gapReview={tool.gapReview} />, null);
   if (tool?.recordDraft) { const draftId = tool.recordDraft.draftId; return step(<RecordDraftCard draft={tool.recordDraft} disabled={busy} onDecide={decision => state.decideDraft(draftId, decision)} />, null); }
+  if (tool?.goalDraft) { const draftId = tool.goalDraft.draftId; return step(<JobGoalDraftCard draft={tool.goalDraft} disabled={busy} onDecide={decision => state.decideGoalDraft(draftId, decision)} />, null); }
   if (tool?.planDraft) {
     const { draftId, planId, status } = tool.planDraft;
     if (status === "approved" && planId) return step(<PlanCard planId={planId} refreshKey={state.conversation?.version} />, null);
