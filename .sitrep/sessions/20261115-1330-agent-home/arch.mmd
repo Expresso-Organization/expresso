@@ -11,12 +11,13 @@ flowchart TD
   MEM --> WRITER
   HOME -->|목표 없음| GCARD[구직 목표 카드]
   GCARD --> ON
-  CHATGOAL[대화에서 목표 읽기 · 고치기] --> MEM
+  CHAT -->|목표 읽기| MEM
+  CHAT --> GDRAFT[구직 목표 변경 카드<br/>지금 글 → 새 글 · 저장]
+  GDRAFT -->|저장: 바뀌는 칸만| MEM
   JUDGE[목표 기준 제안<br/>부족한 점 · 포트폴리오 다듬기] --> CAND
   classDef done fill:#d1fae5,stroke:#059669
   classDef doing fill:#fef3c7,stroke:#d97706
   classDef decide fill:#fee2e2,stroke:#dc2626
   classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4
-  class HOME,CARD,CHAT,JOB,FEED,WRITER,SVC,CAND,ON,MEM,GCARD done
-  class CHATGOAL doing
+  class HOME,CARD,CHAT,JOB,FEED,WRITER,SVC,CAND,ON,MEM,GCARD,GDRAFT done
   class JUDGE todo
