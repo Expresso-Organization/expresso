@@ -1,7 +1,8 @@
 flowchart LR
-  source["원천 공고 295건"] --> lengths["공고 입력 길이 측정 완료"]
-  source --> dataset["K2 한국어 평가 세트"]
-  profiles["학습 PC 합성 프로필"] --> dataset
-  dataset --> stats["E1 프로필·공고 토큰 길이"]
-  dataset --> labels["K3 교사 라벨"]
-  labels --> rank["E2 검증 NDCG@10"]
+  data["한국어 100명·1,000쌍"] --> terra["Terra 라벨 1,000쌍"]
+  pilot["파일럿 E5 MLP"] --> pool["전체 풀 13,780쌍 채점"]
+  pool --> recall["검증·평가 스크리닝"]
+  terra --> recall
+  terra --> pair["동일 후보 순위 비교"]
+  api["Decisions 40쌍 응답"] --> pair
+  pool --> short["상위 10건 재정렬 · 한도 대기"]

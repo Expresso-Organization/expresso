@@ -11,7 +11,7 @@
 
 | 번호 | 실험 | 명령 | 여는 분할 | 산출물 | 채우는 자리 |
 | --- | --- | --- | --- | --- | --- |
-| K | 한국어 평가 세트 구성 · Sonnet 교사 라벨 | `ko_postings.mjs` → `ko_eval_dataset.py` → `ko_teacher_labels.py` | — | `ko-eval-v1/` | 성능 판정 기준 세트 |
+| K | 한국어 평가 세트 구성 · 교사 라벨 | `ko_postings.mjs` → `ko_eval_dataset.py` → `ko_teacher_labels.py` | — | `ko-eval-v1/` | 성능 판정 기준 세트 |
 | E0 | 데이터 · 가중치 확인 | `Get-FileHash` | — | 해시 일치 여부 | 본 학습 계획 3.7 |
 | E1 | 인코더별 토큰 길이 | `match_experiments.py token-stats` | 전체(라벨 미사용) | `token-stats.json` | 본 학습 계획 3.2 |
 | E2 | 인코더 4종 비교 | `match_experiments.py encoders` | 검증 | `encoder-comparison.json` | 설계서 4.4 2단계 |
@@ -107,7 +107,7 @@ Bi-Encoder+MLP는 직접 학습하고, 재정렬(모델 A)과 기록 채점(모�
 - **규칙 baseline은 언어가 갈린다.** JTH 필드는 영어이고 프로필은 한국어다. 문자열이 그대로 들어 있어야 닿는 규칙 함수는 매우 낮게 나온다. 서비스에서도 영어 요건과 한국어 기록은 같은 이유로 닿지 않는다.
 - **순서 일치율이 파일럿 수치와 다르다.** 파일럿 0.8025 · 0.7903은 1점 차이도 셌다. 이번 `pairwiseMinGap5`는 설계서 정의(5점 이상)를 따른다. 파일럿 정의의 값도 `pairwiseAccuracy`에 함께 남는다.
 - **성능은 한국어 세트로 판정한다.** `fit-v1` 공고는 영어(JTH)라 서비스 성능을 말하지 못한다. 모델은 아직 영어 공고로만 학습했으므로, 한국어 세트 수치는 학습과 평가의 공고 원천이 다른 조건의 값이다.
-- **한국어 세트 정답은 Sonnet 5.5 교사 하나다.** 사람 판정과 맞춰 보지 않았다(사용자 결정). 교사와 사람의 일치도는 이 실험이 답하지 않는다.
+- **11월 19일 한국어 평가의 정답은 GPT-6.1 Terra가 생성한다.** 사람 판정과의 일치도는 미측정이다.
 - **지연은 구조와 입력 길이의 값이다.** 무작위 토큰과 학습 전 가중치로 잰다. 같은 구조면 학습한 가중치도 같은 시간이 걸린다. 맥과 운영 서버(aarch64 Ampere 4 vCPU, 공용 장비)는 CPU가 다르다. Cross-Encoder 유지 판정은 운영 서버에서 잰 값으로 한다(본 학습 계획 5.1).
 
 ## 4. 오늘 저녁 실행 절차 (학습 PC · PowerShell)
@@ -166,7 +166,7 @@ PowerShell은 대문자로 출력한다.
 ### K 한국어 평가 세트
 
 **성능 판정은 한국어 세트로 한다**(2026-11-10 결정). `fit-v1`은 학습 데이터로만 쓴다. 영어 `fit-v1` 평가 분할 수치는
-학습 분포 안의 참고값이다. 정답은 Claude Sonnet 5.5 교사 하나가 매기고 사람 판정은 두지 않는다(사용자 결정).
+학습 분포 안의 참고값이다. 11월 10일 계획의 교사는 Sonnet 5.5였다. 11월 19일 실험은 사용자 결정에 따라 GPT-6.1 Terra를 사용한다.
 
 K0은 맥에서 이미 끝냈다. 로컬 DB에서 한국어 위주 공고 295건을 내보내고 서비스 요건 추출기로 요건을 붙였다.
 결과 `var/ml-data/ko-postings/jobs-with-requirements.jsonl`을 PC의 같은 자리로 옮긴다. 공고 원문이라 저장소에는
@@ -185,8 +185,8 @@ $runRoot = "<위에서 찾은 profiles 폴더의 부모>"
 # K2 세트 구성: 검증 · 평가 프로필 × 한국어 공고 10건(같은 직군 5 · 인접 3 · 무작위 2)
 python scripts\ml-data\ko_eval_dataset.py --fit-data $data --profile-root $runRoot --jobs $koJobs --output $ko
 
-# K3 Sonnet 5.5 교사 라벨. Claude Code에 로그인된 창에서 돌린다. 끊기면 같은 명령으로 이어 간다
-python scripts\ml-data\ko_teacher_labels.py --data $ko --output $koLabels --workers 2
+# K3 GPT-6.1 Terra 교사 라벨. Codex에 로그인된 창에서 돌린다.
+python scripts\ml-data\ko_teacher_labels.py --data $ko --output $koLabels --model gpt-6.1-terra --workers 2
 ```
 
 | 파일 (2026-11-10 맥 로컬 DB `expresso`) | 값 |
@@ -294,7 +294,7 @@ python scripts\ml-data\match_experiments.py eval-cross --data $ko --labels $koLa
 - 요청 수는 모델 A가 한국어 세트 프로필 수만큼, 모델 B가 쌍 수만큼이다. 비용은 `--dry-run` 글자 수와 실행 뒤 `summary.json`의 `estimatedUsd`로 확인한다. 한국어 공고 원문이 길어 `fit-v1`보다 입력이 크다.
 - 429가 이어지면 `--workers`를 줄인다.
 - Jev 키가 없으면 Decisions만 돌린다. Jev는 early access라 대기 목록을 거쳐 키를 받는다.
-- 한국어 세트 정답은 Sonnet 교사라서, Luna 계열 Decisions API와 교사가 겹치는 문제가 없다.
+- 11월 19일 비교는 OpenAI의 GPT-6.1 Terra 교사 라벨로 같은 공급자의 Decisions 점수를 평가한다. 사람의 판단에 대한 순위 성능은 별도 평가가 필요하다.
 
 ### E5 ONNX 내보내기 · 지연
 
@@ -338,3 +338,40 @@ python scripts\ml-data\match_onnx.py latency --encoder "$runs\onnx\encoder" --ml
 - Bi-Encoder 경로(임베딩 + 스크리닝)는 INT8 기준 p95 74ms다.
 - Cross-Encoder는 1,536토큰에서 쌍당 약 1초다. 재정렬 10쌍이 INT8로도 p95 9.9초다. 서비스 공고 원문은 중앙값이 1,431토큰이라(본 학습 계획 3.2) 대부분 이 길이까지 찬다.
 - 운영 서버는 4 vCPU 공용 장비라 이보다 느릴 가능성이 크다. 유지 판정은 운영 서버 측정과 본 학습 계획 5.4의 기준값으로 한다. 그 전에 입력 길이를 줄이는 비교(기록 단위 입력, 짧은 최대 길이)가 필요하다.
+
+## 6. GPT-6.1 Terra 기준 MLP 스크리닝과 Decisions 재정렬 (2026-11-19)
+
+한국어 평가 30명에서 파일럿 MLP의 후보 10건 NDCG@10은 0.8142였다. 같은 분할의 라벨 중 60점 이상은 0건이었다. 이 기준의 Recall@K는 분모가 없어 계산할 수 없다.
+
+- **교사 라벨**. GPT-6.1 Terra(low)가 합성 프로필 100명당 10건씩 채점했다. 루브릭 검사를 통과한 1,000쌍의 점수와 근거 연결을 원본 응답에서 다시 계산해 최종 파일과 대조했다. 검증 700쌍의 중앙값은 8점, 최고점은 60점이다. 평가 300쌍의 중앙값은 6점, 최고점은 46점이다.
+- **스크리닝**. 파일럿 E5 MLP 체크포인트를 그대로 불러와 검증 70명 × 공고 154건과 평가 30명 × 공고 100건을 채점했다. 이전 파일럿 평가 7쌍의 예측을 재현했을 때 최대 절대차는 0.00015점 이하였다.
+- **재정렬**. 라벨이 있는 후보 10건을 두 모델로 채점하는 비교와, MLP가 전체 공고에서 고른 상위 10건을 재정렬하는 비교를 준비했다. Decisions는 첫 번째 비교에서 4명·40쌍에 응답했다. 이후 HTTP 429를 반환했다. 두 번째 비교의 API 응답은 0건이다.
+
+| 분할 | 라벨 수 | MLP NDCG@10 (라벨 후보 10건) | MLP MAE | 60점 이상 라벨 수 | 전체 풀에서 MLP Recall@10 |
+| --- | ---: | ---: | ---: | ---: | --- |
+| 검증 | 700 | 0.7752 | 7.84 | 1 | 0/1 (해당 공고 40위) |
+| 평가 | 300 | 0.8142 | 6.71 | 0 | 산출 불가 |
+
+보조 지표로 프로필별 최고 라벨을 받은 공고가 전체 풀의 MLP 상위 10건에 한 건 이상 포함되는지 확인했다. 동점은 모두 최고점으로 센다. 검증에서 11/70명, 평가에서 12/30명이었다. 평가의 MLP 상위 300자리 중 교사 라벨이 있는 자리는 54개였다. 나머지 246자리의 적합도는 미판정이다.
+
+| Decisions 응답을 받은 동일 후보 | MLP NDCG@10 | Decisions NDCG@10 | 차이 | MLP MAE | Decisions MAE |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 검증 2명·20쌍 | 0.8388 | 0.8969 | +0.0581 | 7.14 | 12.89 |
+| 평가 2명·20쌍 | 0.8004 | 0.9365 | +0.1362 | 5.66 | 12.76 |
+
+4명은 요청 순서와 API 한도로 결정됐다. 두 분할의 응답 표본에서 순위는 개선됐고 절대 점수 오차는 커졌다. 전체 100명에 대한 재정렬 효과와 실제 MLP 상위 10건의 재정렬 효과는 미확인이다. 성공한 요청의 입력은 총 77,052토큰이었다. 이후 16,454토큰 요청에서 API가 잔여 1,780토큰과 Retry-After 380,351초를 반환했다.
+
+### 실험 재현
+
+Python 3.12에서 실행한다. 아래 경로 인수는 실험 파일의 위치에 맞춘다. `labels`는 Terra 결과 전용 디렉터리다. Windows 학습 PC의 결과는 `match-eval-20261119/terra-screen-v1/`에 두었다.
+
+```sh
+python scripts/ml-data/ko_teacher_labels.py --model gpt-6.1-terra --effort low --data data --output labels --workers 4
+python scripts/ml-data/score_pilot_screen.py --data data --checkpoint checkpoint.pt --encoder-path e5-snapshot --output mlp-scores.jsonl
+python scripts/ml-data/rerank_pilot_screen.py --data data --mlp mlp-scores.jsonl --output decisions --cached-only
+python scripts/ml-data/eval_pilot_rerank.py --data data --labels labels --mlp mlp-scores.jsonl --decisions decisions --output comparison.json --cached-only
+```
+
+Decisions 한도가 회복되면 마지막 두 명령에서 `--cached-only`를 빼고 같은 디렉터리를 사용한다. 요청 캐시를 재사용하며 MLP 재학습이나 교사 재호출은 필요 없다.
+
+[분할별 전체 지표](../assets/match-model-eval-2026-11-19/terra-screening-metrics.json) · [체크포인트·결과 해시 및 실행 조건](../assets/match-model-eval-2026-11-19/terra-run-manifest.json)

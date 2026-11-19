@@ -7,6 +7,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -73,6 +74,46 @@ class TeacherTest(unittest.TestCase):
     def arguments(self):
         return teacher.build_parser().parse_args(["--data", str(self.data), "--output", str(self.labels), "--workers", "1"])
 
+    def test_incomplete_decisions_run_preserves_full_mlp_denominator(self) -> None:
+        from eval_pilot_rerank import compare
+        import llm_suitability_train as pilot
+
+        pairs = pilot._read_jsonl(self.data / "candidate-manifest.jsonl")
+        labels = [{**r, "matchScore": 80 if r["candidateBucket"] == "role" else 10,
+                   "labelSource": "codex-gpt-6.1-terra"} for r in pairs]
+        pilot._atomic_jsonl(self.labels / "suitability-labels.jsonl", labels)
+        scores = [{**r, "prediction": r["matchScore"]} for r in labels]
+        mlp = self.root / "scores.jsonl"
+        pilot._atomic_jsonl(mlp, scores)
+        api = self.root / "decisions"
+        pilot._atomic_jsonl(api / "judged-cached.jsonl", [r for r in scores if r["split"] == "valid"])
+        pilot._atomic_jsonl(api / "screened-cached.jsonl", [])
+        output = self.root / "result.json"
+        compare(self.data, self.labels, mlp, api, output, cached_only=True)
+        result = json.loads(output.read_text(encoding="utf-8"))
+        self.assertEqual(result["test"]["mlpJudgedAll"]["pairs"], 10)
+        self.assertIsNone(result["test"]["pairedJudgedCandidates"])
+        self.assertEqual(result["valid"]["pairedJudgedCandidates"]["delta95"]["meanDifference"], 0)
+        self.assertIsNone(result["test"]["top10Pipeline"]["rerankedObservedNdcg"])
+
+    def test_terra_resumes_the_returned_thread_and_pins_model(self) -> None:
+        completed = [
+            {"type": "thread.started", "thread_id": "terra-session"},
+            {"type": "item.completed", "item": {"type": "agent_message", "text": "{}"}},
+            {"type": "turn.completed", "usage": {"output_tokens": 2}},
+        ]
+        from subprocess import CompletedProcess
+        stdout = "\n".join(json.dumps(event) for event in completed)
+        with patch.object(teacher.subprocess, "run", return_value=CompletedProcess([], 0, stdout=stdout)) as run:
+            conversation = teacher.TerraConversation(model="gpt-6.1-terra", effort="low")
+            conversation.send("평가")
+            conversation.send("교정")
+        initial, followup = [call.args[0] for call in run.call_args_list]
+        self.assertNotIn("resume", initial)
+        self.assertIn("resume", followup)
+        self.assertEqual(followup[-2:], ["terra-session", "-"])
+        self.assertTrue(all(argv[argv.index("-m") + 1] == "gpt-6.1-terra" for argv in (initial, followup)))
+
     def test_syntax_error_and_violation_are_fixed_in_the_same_session(self) -> None:
         fake = FakeClaude(mode="fix")
         summary = teacher.run(self.arguments(), invoke=fake, prefix=["claude"])
@@ -80,6 +121,8 @@ class TeacherTest(unittest.TestCase):
         # 프로필마다 첫 호출 1번 + 문법 고치기 1번 + 칸 고치기 1번. 처음부터 다시 쓰는 호출은 없다.
         self.assertEqual(len(fake.calls), 6)
         self.assertEqual(summary["fixTurns"], 4)
+        cached = teacher.run(self.arguments(), invoke=fake, prefix=["claude"])
+        self.assertEqual((cached["cached"], cached["fixTurns"]), (2, 4))
         first, *fixes = [command for command, _ in fake.calls[:3]]
         session = first[first.index("--session-id") + 1]
         self.assertTrue(all(command[command.index("--resume") + 1] == session for command in fixes))

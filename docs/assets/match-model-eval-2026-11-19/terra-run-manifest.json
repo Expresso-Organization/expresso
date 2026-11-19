@@ -1,0 +1,66 @@
+{
+  "checkpointSha256": "f0a7b666c4fdd8a488dfbfe0f609f46b3f6e80105aaa42b70a1950f066643c01",
+  "decisions": "gpt-6-luna",
+  "decisionsCoverage": {
+    "inputTokens": 77052,
+    "scoreResponses": 40,
+    "successfulRequests": 4
+  },
+  "encoderRevision": "d128750597153bb5987e10b1c3493a34e5a4502a",
+  "filesSha256": {
+    "comparison.json": "d42f0710da153c409ad4be757f87d628da7025272aafa807f5a228a2e603eafc",
+    "comparison.pairs.jsonl": "7ce455dbd9e96e26d805c1b3a1e314feae557d2279cfddd56fe12e46d5fa7a63",
+    "decisions/judged-cached.jsonl": "b9858498e619d113be8d4c32fd0a37fe7708bd73e8109f69ce520491d2e2f278",
+    "decisions/screened-cached.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "labels/suitability-labels.jsonl": "4862c4a6eacdb4563028f6d78f8c57662b0bd5704fd9c1a2678da5704a34d6f5",
+    "mlp-scores.jsonl": "4c36a2dc5c8c54b533eefdb30b3a808fe8cf185ff4f9fc6708050436693671a3"
+  },
+  "grading": {
+    "test": {
+      "pairs": 300,
+      "relevantPairs": 0,
+      "scoreMax": 46,
+      "scoreMedian": 6.0,
+      "scoreMin": 0
+    },
+    "valid": {
+      "pairs": 700,
+      "relevantPairs": 1,
+      "scoreMax": 60,
+      "scoreMedian": 8.0,
+      "scoreMin": 0
+    }
+  },
+  "pilotReplay": {
+    "maxAbsoluteDifference": 0.00014456982421862108,
+    "pairs": 7,
+    "subset": "every 100th row for the pilot MLP in the pilot test split"
+  },
+  "primaryMetric": "linear-gain profile macro NDCG@10",
+  "quotaResponse": {
+    "httpStatus": 429,
+    "remainingTokens": 1780,
+    "reportedLimit": 100000,
+    "requestedTokens": 16454,
+    "retryAfterSeconds": 380351
+  },
+  "relevanceThreshold": 60,
+  "rerankDepth": 10,
+  "screeningK": [
+    1,
+    5,
+    10,
+    20,
+    50
+  ],
+  "teacher": "gpt-6.1-terra",
+  "teacherEffort": "low",
+  "teacherSessions": 100,
+  "teacherUsage": {
+    "cache_write_input_tokens": 0,
+    "cached_input_tokens": 2096128,
+    "input_tokens": 4369393,
+    "output_tokens": 318298,
+    "reasoning_output_tokens": 0
+  }
+}
