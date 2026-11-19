@@ -176,6 +176,7 @@ const PROPOSALS = [
   "### Do not",
   "- 스타일의 이름 · 설명에 구성을 적지 않고, 레이아웃의 이름 · 설명에 색 · 서체를 적지 않습니다.",
   "- 색만 다르고 나머지가 같은 스타일, 좌우만 바꾼 레이아웃을 내지 않습니다.",
+  "- 같은 블록을 같은 자리에 둔 레이아웃을 둘 이상 내지 않습니다 — 셋 모두 맨 아래에 화면 폭의 글 띠를 두는 것처럼. 한 레이아웃에서 쓴 자리 잡기는 다른 레이아웃에서 다시 쓰지 않습니다.",
   "- 「이름 + 한 줄 소개 + 큰 수치 하나」 구성을 레이아웃 둘 이상에 쓰지 않습니다.",
   "- 문단과 목록으로 화면을 채우는 레이아웃을 내지 않습니다. 문서나 이력서처럼 보이는 구성은 디자인이 아닙니다.",
   "- 설명을 여러 줄로 쓰지 않습니다.",
@@ -405,7 +406,7 @@ export function replyCall(input: {
 /** 첫 화면 한 장면의 출력. 키 순서가 쓰는 순서다 — CSS를 마크업보다 먼저 쓴다. */
 export const SnippetDraftSchema = z.strictObject({
   name: z.string().min(1).describe("이 첫 화면의 짧은 이름. 두세 낱말"),
-  note: z.string().min(1).describe("사용자에게 건네는 말 한 문장. 이 첫 화면에서 무엇을 주인공으로 세웠는지. \"~했어요\"로 끝나는 존댓말"),
+  note: z.string().min(1).describe("사용자에게 건네는 짧은 말 한 문장. 이 첫 화면에서 무엇을 주인공으로 세웠는지만. \"~했어요\"로 끝나는 존댓말"),
   tokens: DesignTokensSchema.describe("쓴 바탕 · 글자 · 강조 색(#rrggbb)과 서체 계열 · 밀도"),
   css: z.string().min(1),
   html: z.string().min(1),
@@ -424,11 +425,19 @@ const SNIPPET_SYSTEM = briefedSystem(FRONTEND_DESIGN_SKILL, {
   ].join("\n"),
 });
 
+/**
+ * 그린 쪽이 건네는 말의 길이. 대화 폭(60rem)에서 한 줄에 들어가는 글자 수다.
+ * 2026-11-19 실제 호출에서 이 말이 배치를 풀어 쓴 두 줄짜리 문장으로 나왔다("…가운데 그림으로 세우고, 그 옆에 …을 막대로 받쳤어요").
+ * 화면에 보이는 것을 글로 다시 설명한 것이다.
+ */
+const NOTE_MAX = 60;
+
 /** 그린 쪽이 건네는 한 문장. 한 장을 그리면 이 말이 에이전트의 답으로 대화에 놓인다 — 말의 Do와 Do not을 같이 지킨다. */
 const NOTE = [
   "## `note` — 사용자에게 건네는 말이다",
-  "- 사람에게 말하듯 한 문장으로 쓴다. \"~했어요\", \"~세웠어요\"로 끝나는 부드러운 존댓말이다.",
-  "- 무엇을 주인공으로 세웠는지를 말한다. 색과 배치를 글로 다시 설명하지 않는다.",
+  "- 사람에게 말하듯 짧은 한 문장으로 쓴다. \"~세워 봤어요\", \"~했어요\"로 끝나는 부드러운 존댓말이다.",
+  "- 무엇을 주인공으로 세웠는지만 말한다. 나머지가 어디에 어떻게 놓였는지는 화면이 보인다.",
+  "- 배치, 색, 곁들인 것을 글로 풀지 않는다. \"~을 세우고, 그 옆에 ~을 두고, 아래에 ~을 받쳤어요\"처럼 화면을 다시 설명하지 않는다.",
   "- 보고서 문장(\"~을 배치하였습니다\", \"~가 중심입니다\")으로 쓰지 않는다.",
   "",
 ];
@@ -466,7 +475,11 @@ function snippetCheck(source: string) {
   return (draft: SnippetDraft): AiViolation[] => {
     const problem = markupProblem(draft.html, false);
     if (problem) return [{ path: "/html", problem }];
-    const speech = [...tooLong("/name", draft.name, DesignSnippetSchema.shape.name, "이름"), ...tooLong("/note", draft.note, DesignSnippetSchema.shape.note, "건네는 말"), ...speechProblems("/note", draft.note, "건네는 말")];
+    const speech = [
+      ...tooLong("/name", draft.name, DesignSnippetSchema.shape.name, "이름"),
+      ...speechProblems("/note", draft.note, "건네는 말"),
+      ...(draft.note.length > NOTE_MAX ? [{ path: "/note", problem: `건네는 말이 깁니다(${draft.note.length}자). 무엇을 주인공으로 세웠는지만 짧은 한 문장으로 쓰세요. 배치와 곁들인 것은 화면이 보입니다.` }] : []),
+    ];
     if (speech.length) return speech;
     // 소독기가 거절하는 CSS 구문(`@import` 등)은 여기서 걸러 그 칸만 고쳐 받는다. 그대로 두면 다 그린 첫 화면을 저장하지 못한다
     // (2026-11-19 실제 호출: 둥근 서체를 `@import`로 불러 한 장이 실패했다).
@@ -525,7 +538,7 @@ export function reviseCall(input: { userId: string; sources: BrewPageSources; sn
     "`name`과 `tokens`도 고친 결과에 맞게 적는다.",
     "",
     "## `note` — 사용자에게 건네는 말이다",
-    "- 무엇을 바꿨는지를 사람에게 말하듯 한 문장으로 쓴다. \"~바꿨어요\"로 끝나는 부드러운 존댓말이다.",
+    "- 무엇을 바꿨는지만 사람에게 말하듯 짧은 한 문장으로 쓴다. \"~바꿨어요\"로 끝나는 부드러운 존댓말이다.",
     "- 보고서 문장(\"~으로 변경하였습니다\")으로 쓰지 않는다.",
   ].join("\n");
   return {

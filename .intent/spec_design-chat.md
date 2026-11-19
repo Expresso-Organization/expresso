@@ -70,7 +70,7 @@ flowchart TD
   - 그리는 호출(`page_generation`): 원문 자료와, 따로 고른 스타일(색 · 서체 · 밀도) · 레이아웃(이름 · 설명 · 배치도)으로 지면이 시작하는 자리를 낸다(`name · note · tokens · css · html`). 카탈로그의 디자인만 골랐으면 레이아웃이 없고 구성은 그리는 쪽이 정한다. 소독기가 거절하는 CSS 구문은 검사에서 걸러 그 칸만 고쳐 받는다.
   - 고치는 호출(`page_generation`): 지금 첫 화면과 지시를 받아 지시가 가리킨 것만 바꾼다.
   - 네 호출 모두 `modelTier: "sonnet"`을 명시한다. 두 계약의 기본은 Opus다.
-  - 건네는 말(`say` · `note`)은 끝까지 쓴 문장인지와 세 문장을 넘지 않는지만 검사한다. 말투는 지시가 잡는다.
+  - 건네는 말(`say` · `note`)은 끝까지 쓴 문장인지와 세 문장을 넘지 않는지를 검사한다. 한 장을 그렸을 때의 말(`note`)은 대화 폭의 한 줄(60자)도 넘지 않아야 한다 — 배치를 글로 풀어 쓰지 않게 한다. 말투는 지시가 잡는다.
 - `../design-rules.ts` — 디자인의 Do와 Do not. 그리는 호출과 `briefed-generator.ts`의 `seedPrompt`(고른 첫 화면 뒤를 잇는 지면)가 함께 읽는다.
 - `service.ts` — `DesignChatService`. `get · open · send · select · retry · close`와 생성 쪽이 쓰는 `findDesignSnippet`.
 - `routes.ts` — 위 라우트. AI가 없으면 등록하지 않는다(503).

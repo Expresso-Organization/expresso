@@ -38,6 +38,7 @@ describe("디자인 대화의 호출", () => {
       expect(system).toContain("`styles`와 `layouts`를 서로 독립된 목록으로 냅니다.");
       expect(system).toContain("보고서 문장으로 시작하지 않습니다");
       expect(system).toContain("문단과 목록으로 화면을 채우는 레이아웃을 내지 않습니다.");
+      expect(system).toContain("같은 블록을 같은 자리에 둔 레이아웃을 둘 이상 내지 않습니다");
       // 조사를 근거로 넣었던 문서형 · 작업물 목록형 짜임은 없다.
       for (const gone of ["문서형", "작업물 목록형", "`document`", "가장 앞세울 사실 하나를 짚고"]) expect(system).not.toContain(gone);
     }
@@ -108,6 +109,10 @@ describe("디자인 대화의 호출", () => {
     expect(check({ ...draft, name: "가".repeat(121) }).map(({ path }) => path)).toEqual(["/name"]);
     // 한 장을 그리면 `note`가 에이전트의 말로 대화에 놓인다. 끊긴 문장은 그 칸만 고쳐 받는다.
     expect(check({ ...draft, note: "전후 비교를 가장 크게" }).map(({ path }) => path)).toEqual(["/note"]);
+    // 배치를 풀어 쓴 긴 말은 화면에 보이는 것을 글로 다시 설명한 것이다. 그 칸만 고쳐 받는다.
+    const wordy = check({ ...draft, note: "상품 상세의 전후 비교 막대를 화면 가운데에 가장 크게 세우고, 그 옆에 접근성 위반 건수와 번들 크기의 전후를 작은 막대로 받쳤어요." });
+    expect(wordy.map(({ path }) => path)).toEqual(["/note"]);
+    expect(wordy[0]?.problem).toContain("주인공");
     // 소독기가 거절하는 CSS는 저장 단계에서 실패하게 두지 않고, 그 칸만 고쳐 받는다.
     const imported = check({ ...draft, css: '@import url("https://fonts.example/round.css");.hero{}' });
     expect(imported.map(({ path }) => path)).toEqual(["/css"]);

@@ -97,7 +97,16 @@ export function DesignChat({ brewId, recipeId, catalog, generationAllowed, notic
   const [layout, setLayout] = useState<Layout>("stream");
   const [focus, setFocus] = useState<string | null>(null);
   const [subject, setSubject] = useState<Subject | null>(null);
-  const [picked, setPicked] = useState<Picked>({ style: null, layout: null });
+  /** 이 화면에서 누른 것. 누르지 않은 쪽(undefined)은 마지막으로 그릴 때 고른 것을 잇는다. */
+  const [touched, setTouched] = useState<Partial<Picked>>({});
+  // 마지막으로 그릴 때 고른 스타일과 레이아웃은 대화에 남아 있다. 스타일만 새로 받은 뒤에도, 화면을 새로 고친 뒤에도
+  // 앞서 고른 레이아웃이 이어져 한쪽만 다시 고르면 된다.
+  const drawn = chat?.messages.findLast((message) => message.role === "user" && message.action !== "say");
+  const carried = (kind: keyof Picked) => (drawn?.role === "user" ? drawn.subjects.find((subject) => subject.kind === kind)?.id ?? null : null);
+  const picked: Picked = {
+    style: touched.style !== undefined ? touched.style : carried("style"),
+    layout: touched.layout !== undefined ? touched.layout : carried("layout"),
+  };
   const [sheet, setSheet] = useState(false);
   /** 동의 안내를 닫았는가. 닫아도 동의는 여전히 필요하므로 입력창 위에 다시 여는 자리를 둔다. */
   const [consentClosed, setConsentClosed] = useState(false);
@@ -194,7 +203,7 @@ export function DesignChat({ brewId, recipeId, catalog, generationAllowed, notic
     layoutOf: (id) => proposals.flatMap(({ card }) => card.layouts).find((item) => item.id === id),
     picked,
     // 같은 것을 다시 누르면 고른 것을 푼다.
-    pick: (kind, id) => setPicked((current) => ({ ...current, [kind]: current[kind] === id ? null : id })),
+    pick: (kind, id) => setTouched((current) => ({ ...current, [kind]: picked[kind] === id ? null : id })),
     lastProposals: proposals.at(-1)?.id ?? null,
     busy,
     layout,
