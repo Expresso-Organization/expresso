@@ -52,10 +52,17 @@ const countable = (number: string) => number.replace(/\D/g, "").length >= 2 && !
 function tooLong(path: string, value: string, schema: { safeParse(value: unknown): { success: boolean } }, name: string): AiViolation[] {
   return schema.safeParse(value).success ? [] : [{ path, problem: `${name}이(가) 너무 깁니다(${value.length}자). 더 짧게 다시 쓰세요.` }];
 }
+/**
+ * 견본 아래에 놓이는 한 줄의 길이. 견본 카드는 세 장이 한 줄에 놓이고, 그 폭에 작은 글자로 두 줄이 이만큼 들어간다.
+ * 2026-11-19에 설명이 서너 줄씩 나와 사용자가 "글이 이렇게 많은 건 곤란하다"고 짚었다. 짜임 · 색 · 서체는 견본이 그림으로 보인다.
+ */
+const DIRECTION_WORDS_MAX = 40;
 const directionLimits = (directions: DirectionDraft[]): AiViolation[] =>
   directions.flatMap((item, index) => [
     ...tooLong(`/directions/${index}/name`, item.name, DesignDirectionSchema.shape.name, "방향의 이름"),
-    ...tooLong(`/directions/${index}/words`, item.words, DesignDirectionSchema.shape.words, "방향의 설명"),
+    ...(item.words.length > DIRECTION_WORDS_MAX
+      ? [{ path: `/directions/${index}/words`, problem: `방향의 설명이 깁니다(${item.words.length}자). 색과 서체가 어디서 왔는지만 한 줄(서른 자 안)로 쓰세요. 짜임과 색은 견본이 보입니다.` }]
+      : []),
   ]);
 
 /** 첫 화면에 실을 사실. 여는 호출이 출처에서 한 번 뽑고, 첫 화면을 그리는 호출은 원문 대신 이것을 받는다. */
@@ -70,7 +77,7 @@ export type DesignHead = z.infer<typeof DesignHeadSchema>;
 
 const DirectionDraftSchema = z.strictObject({
   name: z.string().min(1).describe("방향의 이름. 두세 낱말"),
-  words: z.string().min(1).describe("이 방향을 두 문장 안에서. 첫 화면에 무엇이 놓이는지 한 문장, 색과 서체가 이 사람의 일 어디에서 왔는지 한 문장"),
+  words: z.string().min(1).describe("한 줄. 이 방향의 색과 서체가 이 사람의 일 어디에서 왔는지를 서른 자 안에서"),
   tokens: DesignTokensSchema.describe("바탕 · 글자 · 강조 색(#rrggbb), 서체 계열, 밀도"),
   composition: DesignCompositionSchema.describe("첫 화면의 짜임"),
 });
@@ -99,7 +106,8 @@ const DIRECTION_RULES = [
   COMPOSITIONS,
   "",
   "방향은 견본이 됩니다. 견본은 첫 화면의 짜임과 색, 서체를 보입니다.",
-  "- 색과 서체는 이 사람의 일(다루는 대상 · 도구 · 산출물)과 지원하는 곳(회사의 톤 · 브랜드 색)에서 가져옵니다. 어디서 왔는지를 `words`에 적습니다.",
+  "- 색과 서체는 이 사람의 일(다루는 대상 · 도구 · 산출물)과 지원하는 곳(회사의 톤 · 브랜드 색)에서 가져옵니다. 어디서 왔는지를 `words`에 한 줄로 적습니다(예: \"Lighthouse 점수판의 녹색에서\").",
+  "- 짜임과 색, 서체는 견본이 그림으로 보입니다. `words`에 다시 풀어 쓰지 않습니다.",
   "- 바탕과 글자는 본문을 오래 읽을 수 있는 명도 차이를 둡니다. 강조는 바탕 위에서 한눈에 구분되어야 합니다.",
   "- 여러 방향을 낼 때는 바탕의 명도와 서체 계열이 서로 겹치지 않게 합니다. 사용자가 고를 수 있으려면 달라 보여야 합니다.",
 ].join("\n");

@@ -324,7 +324,7 @@ function Specimens({ directions }: { directions: DesignDirection[] }) {
                 <Swatch name={direction.name} tokens={direction.tokens} composition={direction.composition} />
                 <span className={styles.specimenCue} aria-hidden="true"><Icon name="arrow-up" weight="bold" size={13} /></span>
               </span>
-              <span className={styles.specimenWords}><strong>{COMPOSITION_LABEL[direction.composition]}</strong>{direction.words}</span>
+              <span className={styles.specimenWords}><strong>{COMPOSITION_LABEL[direction.composition]}</strong><span>{direction.words}</span></span>
             </button>
           </li>
         ))}

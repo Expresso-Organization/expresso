@@ -161,6 +161,8 @@
   color: var(--ex-fg-muted);
 }
 .specimenWords > strong { display: block; margin-bottom: 2px; font-weight: 600; color: var(--ex-fg); }
+/* 설명은 한 줄이다. 좁은 화면에서 넘쳐도 두 줄에서 멈춘다. */
+.specimenWords > span { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
 /* 견본 아래의 빠른 답. 입력창 위 막대의 버튼과 같은 모양이다. */
 .replies { display: flex; flex-wrap: wrap; gap: 6px; }

@@ -49,6 +49,10 @@ describe("디자인 대화의 호출", () => {
     expect(paths).toEqual(["/head/lead", "/say", "/directions"]);
     // 대화 계약이 받는 길이를 넘는 이름은 저장되기 전에 그 칸만 고쳐 받는다.
     expect(call.check({ ...opening, directions: [{ ...opening.directions[0]!, name: "가".repeat(121) }] }).map(({ path }) => path)).toEqual(["/directions/0/name"]);
+    // 견본 아래의 글은 한 줄이다. 짜임과 색을 다시 풀어 쓴 긴 설명은 그 칸만 고쳐 받는다.
+    const wordy = call.check({ ...opening, directions: [{ ...opening.directions[0]!, words: "이름 옆에 LCP 3.8초 → 1.9초를 크게 세우고 그 아래에 성능·디자인 시스템·접근성 앵커를 둡니다." }] });
+    expect(wordy.map(({ path }) => path)).toEqual(["/directions/0/words"]);
+    expect(wordy[0]?.problem).toContain("한 줄");
   });
 
   it("그리는 호출은 원문 자료와 방향의 색 · 서체 · 짜임을 받고, 계획 칸을 요구하지 않는다", () => {
