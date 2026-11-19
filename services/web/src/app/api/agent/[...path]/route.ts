@@ -15,7 +15,8 @@ async function proxy(request: Request, context: { params: Promise<{ path: string
   const review = isGet && action === "reviews" && nested;
   const draftDecision = !isGet && isDraftAction(action) && nested;
   // 지면 고침 되돌리기(POST page-edits/:editId/undo). 본문은 없다.
-  const pageUndo = !isGet && action === "page-edits" && path.length === 5 && UuidSchema.safeParse(path[3]).success && path[4] === "undo";
+  // 저장한 기록 되돌리기(POST saved-records/:recordId/undo)도 같은 모양이다.
+  const pageUndo = !isGet && (action === "page-edits" || action === "saved-records") && path.length === 5 && UuidSchema.safeParse(path[3]).success && path[4] === "undo";
   if (path[0] !== "conversations" || (path.length > 3 && !review && !draftDecision && !pageUndo) || (path[1] && !UuidSchema.safeParse(path[1]).success)) return new Response(null, { status: 404 });
   if ((isGet && action && action !== "events" && !review) || (!isGet && path.length === 2) || (!isGet && action && !["messages", "contexts", "context-selection", "approval", "cancel", "retry"].includes(action) && !draftDecision && !pageUndo)) return new Response(null, { status: 404 });
   let body: string | undefined = action === "cancel" || action === "retry" || pageUndo ? "{}" : undefined;

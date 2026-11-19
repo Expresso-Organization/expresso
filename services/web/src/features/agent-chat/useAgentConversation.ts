@@ -113,12 +113,12 @@ export function useAgentConversation(context?: AgentContext, options: { restore?
    * 부품에 답한다. 대화에 남는 글은 서버가 고른 선택지의 글로 만든다. 실패를 부품이 직접 보여 주도록 오류를 다시 던진다.
    * 같은 부품에 다시 보내면 같은 요청 id를 쓴다 — 응답을 받지 못하고 다시 누른 답이 두 번 들어가지 않는다.
    */
-  const answerPart = async (partId: string, optionIds: string[]) => {
+  const answerPart = async (partId: string, answer: { optionIds: string[] } | { values: { id: string; text: string }[] }) => {
     if (!id || pending) return;
     setPending(true); setIssue(null);
     try {
       replyIds.current[partId] ??= crypto.randomUUID();
-      accept(await agentRequest(`/${id}/messages`, { requestId: replyIds.current[partId], reply: { partId, optionIds } }));
+      accept(await agentRequest(`/${id}/messages`, { requestId: replyIds.current[partId], reply: { partId, ...answer } }));
     } finally { setPending(false); }
   };
   const decide = async (path: string, decision: unknown) => {
@@ -137,5 +137,7 @@ export function useAgentConversation(context?: AgentContext, options: { restore?
     approve: (input: AgentApproval) => perform(() => agentRequest(`/${id}/approval`, input)),
     /** 에이전트가 저장한 지면 고침 되돌리기. 실패를 카드가 직접 보여 주도록 오류를 다시 던진다. */
     undoPageEdit: (editId: string) => decide(`page-edits/${editId}/undo`, {}),
+    /** 에이전트가 저장한 기록 되돌리기. 기록은 휴지통으로 간다. 실패를 카드가 직접 보여 주도록 오류를 다시 던진다. */
+    undoSavedRecord: (recordId: string) => decide(`saved-records/${recordId}/undo`, {}),
   };
 }
