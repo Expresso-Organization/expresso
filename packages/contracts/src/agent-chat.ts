@@ -276,15 +276,46 @@ export const AgentPageEditSchema = z.strictObject({
 export type AgentPageSelection = z.infer<typeof AgentPageSelectionSchema>;
 export type AgentPageElementEditInput = z.infer<typeof AgentPageElementEditInputSchema>;
 export type AgentPageEdit = z.infer<typeof AgentPageEditSchema>;
-export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional(), goalDraft: AgentGoalDraftSchema.optional(), gapReview: GapReviewSchema.optional(), planDraft: AgentPlanDraftSchema.optional(), replanDraft: AgentReplanDraftSchema.optional(), pageEdit: AgentPageEditSchema.optional() });
-export const AgentMessageSchema = z.strictObject({ id: UuidSchema, role: z.enum(["user", "assistant"]), text: z.string().max(64_000), tools: z.array(AgentToolResultSchema).max(30), selection: AgentPageSelectionSchema.optional(), createdAt: TimestampSchema });
+/**
+ * 대화 속 화면의 부품. 에이전트가 종류를 고르고 내용을 채워 내면 화면이 종류에 맞는 컴포넌트로 그린다.
+ *
+ * 부품은 도구 결과의 `ui` 칸에 실린다. 사용자가 조작하는 부품은 답을 받는다 — 답은 사용자 메시지의
+ * `reply`에 실려 오고, 같은 갱신에서 부품의 `answer`에도 적힌다(화면은 부품만 보고 고른 것을 표시한다).
+ */
+export const AgentChoiceOptionSchema = z.strictObject({ id: z.string().min(1).max(40), label: z.string().trim().min(1).max(120), description: z.string().trim().max(300).optional() });
+export const AgentUiAnswerSchema = z.strictObject({ optionIds: z.array(z.string().min(1).max(40)).min(1).max(8), messageId: UuidSchema });
+/** 선택지. `multiple`이 거짓이면 하나, 참이면 하나 이상을 고른다. */
+export const AgentChoicePartSchema = z.strictObject({
+  kind: z.literal("choice"),
+  partId: UuidSchema,
+  prompt: z.string().trim().min(1).max(400),
+  multiple: z.boolean(),
+  options: z.array(AgentChoiceOptionSchema).min(2).max(8),
+  answer: AgentUiAnswerSchema.nullable(),
+});
+export const AgentUiPartSchema = z.discriminatedUnion("kind", [AgentChoicePartSchema]);
+/** 에이전트가 `ask_choice`에 넣는 것. 부품과 선택지의 id는 서버가 붙인다. */
+export const AgentChoiceInputSchema = z.strictObject({
+  prompt: z.string().trim().min(1).max(400).describe("사용자에게 하는 질문 한 문장"),
+  multiple: z.boolean().describe("여럿을 고를 수 있으면 true, 하나만 고르면 false"),
+  options: z.array(z.strictObject({ label: z.string().trim().min(1).max(120).describe("선택지의 글. 고르면 이 글이 사용자의 답으로 대화에 남는다"), description: z.string().trim().max(300).optional().describe("선택지를 풀어 주는 한 줄. 없어도 된다") })).min(2).max(8).describe("선택지 2~8개. 글이 서로 달라야 한다"),
+});
+/** 사용자가 부품에 한 답. 메시지 보내기와 저장된 사용자 메시지가 함께 쓴다. */
+export const AgentUiReplySchema = z.strictObject({ partId: UuidSchema, optionIds: z.array(z.string().min(1).max(40)).min(1).max(8) });
+export type AgentChoicePart = z.infer<typeof AgentChoicePartSchema>;
+export type AgentUiPart = z.infer<typeof AgentUiPartSchema>;
+export type AgentChoiceInput = z.infer<typeof AgentChoiceInputSchema>;
+export type AgentUiReply = z.infer<typeof AgentUiReplySchema>;
+export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional(), goalDraft: AgentGoalDraftSchema.optional(), gapReview: GapReviewSchema.optional(), planDraft: AgentPlanDraftSchema.optional(), replanDraft: AgentReplanDraftSchema.optional(), pageEdit: AgentPageEditSchema.optional(), ui: AgentUiPartSchema.optional() });
+export const AgentMessageSchema = z.strictObject({ id: UuidSchema, role: z.enum(["user", "assistant"]), text: z.string().max(64_000), tools: z.array(AgentToolResultSchema).max(30), selection: AgentPageSelectionSchema.optional(), reply: AgentUiReplySchema.optional(), createdAt: TimestampSchema });
 export const AgentRunSchema = z.strictObject({ id: UuidSchema, requestId: UuidSchema, status: z.enum(["running", "complete", "cancelled", "failed", "interrupted"]), error: z.string().max(1_000).nullable(), startedAt: TimestampSchema });
 export const AgentConversationSchema = z.strictObject({ id: UuidSchema, title: z.string().max(120), contexts: z.array(AgentContextSchema).max(10), messages: z.array(AgentMessageSchema).max(100), run: AgentRunSchema.nullable(), version: z.number().int().nonnegative(), updatedAt: TimestampSchema });
 export const AgentConversationResponseSchema = z.strictObject({ data: AgentConversationSchema });
 export const AgentConversationListSchema = z.strictObject({ data: z.array(AgentConversationSchema.omit({ messages: true })).max(100) });
 export const CreateAgentConversationSchema = z.strictObject({ contexts: z.array(AgentContextSchema).max(10).default([]) });
 export const AgentApiKeySchema = z.string().trim().min(20).max(300).regex(/^sk-ant-[A-Za-z0-9_-]+$/);
-export const SendAgentMessageSchema = z.strictObject({ requestId: UuidSchema, text: z.string().trim().min(1).max(8_000), selection: AgentPageSelectionSchema.optional() });
+/** 말을 보내거나 부품에 답한다. 부품에 답할 때는 `reply`만 보낸다 — 대화에 남는 글은 서버가 고른 선택지의 글로 만든다. */
+export const SendAgentMessageSchema = z.strictObject({ requestId: UuidSchema, text: z.string().trim().max(8_000).default(""), selection: AgentPageSelectionSchema.optional(), reply: AgentUiReplySchema.optional() }).refine(input => input.text.length > 0 || !!input.reply, { message: "보낼 말이나 부품의 답이 있어야 합니다.", path: ["text"] });
 export const AddAgentContextSchema = z.strictObject({ context: AgentContextSchema });
 export const AgentApprovalSchema = z.strictObject({ proposalId: UuidSchema, action: z.enum(["apply", "reject", "undo"]), expectedDocumentVersion: z.number().int().nonnegative(), commandIndexes: z.array(z.number().int().nonnegative()).max(100).optional(), propertyChangeIndexes: z.array(z.number().int().nonnegative()).max(50).optional() });
 export type AgentContext = z.infer<typeof AgentContextSchema>;

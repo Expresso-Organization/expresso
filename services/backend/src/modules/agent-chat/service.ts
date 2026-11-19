@@ -9,6 +9,7 @@ import type { MongoContext } from "../../platform/mongodb.js";
 import { AgentToolRejection, type AgentRecordText, type AgentRuntime } from "../../platform/agent/runtime.js";
 import { buildReview, hash, recordText, reviewIssues } from "./requirement-review.js";
 import { buildDraft, draftIssues } from "./record-draft.js";
+import { buildChoice, checkReply, choiceIssues } from "./ui-parts.js";
 import { buildGoalDraft, carryOver, goalDraftIssues, mergeGoal } from "./goal-draft.js";
 import { buildGapReview, gapIssues, latestReview, latestTool } from "./gap-review.js";
 import { buildPreparationTasks, PlanCapacityError, scheduleRemaining } from "./preparation-planner.js";
@@ -373,12 +374,24 @@ export class AgentChatService {
     if (row.messages.some(message => message.id === input.requestId)) return view(row);
     if (row.messages.length >= 98 || JSON.stringify(row.messages).length > 160_000) throw new AgentChatError(409, "대화가 길어졌습니다. 새 대화를 시작해 주세요.");
     if (input.selection && !row.contexts.some(ref => ref.kind === "portfolio" && ref.id === input.selection!.portfolioId)) throw new AgentChatError(409, "고른 요소의 포트폴리오가 대화에 연결되어 있지 않습니다. 포트폴리오를 연결한 뒤 보내 주세요.");
+    // 부품에 한 답은 마지막 답변의 답 없는 부품만 받는다. 같은 요청이 다시 온 경우는 위에서 이미 돌려보냈다.
+    const reply = input.reply ? checkReply(row.messages, input.reply) : null;
+    if (reply && !reply.ok) throw new AgentChatError(409, reply.message);
     const context = await this.prepare(userId, row, !apiKey);
     const now = new Date().toISOString();
-    const user: AgentMessage = { id: input.requestId, role: "user", text: input.text, tools: [], ...(input.selection ? { selection: input.selection } : {}), createdAt: now };
+    // 답의 글은 서버가 고른 선택지의 글로 만든다 — 화면이 보낸 글을 쓰면 대화에 남는 말과 부품이 어긋날 수 있다.
+    const text = reply ? reply.text : input.text;
+    const user: AgentMessage = { id: input.requestId, role: "user", text, tools: [], ...(input.selection ? { selection: input.selection } : {}), ...(input.reply ? { reply: input.reply } : {}), createdAt: now };
     const assistant: AgentMessage = { id: randomUUID(), role: "assistant", text: "", tools: [], createdAt: now };
     const run = { id: randomUUID(), requestId: input.requestId, status: "running" as const, error: null, startedAt: now };
-    const changed = await this.rows.findOneAndUpdate({ _id: id, userId, version: row.version, "run.status": { $ne: "running" } }, { $push: { messages: { $each: [user, assistant] } }, $set: { run, title: row.messages.length ? row.title : input.text.slice(0, 100), updatedAt: now, heartbeatAt: new Date() }, $inc: { version: 1 } }, { returnDocument: "after" });
+    const fields = { run, title: row.messages.length ? row.title : text.slice(0, 100), updatedAt: now, heartbeatAt: new Date() };
+    // 배열에 덧붙이기와 배열 안의 칸 고치기는 한 갱신에 함께 쓸 수 없다. 답이 있으면 부품의 answer를 채운 배열 전체를 버전 조건 아래에서 쓴다.
+    const answered = (): AgentMessage[] => {
+      const messages = structuredClone(row.messages);
+      if (reply?.ok && input.reply) messages[reply.messageIndex]!.tools[reply.toolIndex]!.ui!.answer = { optionIds: input.reply.optionIds, messageId: input.requestId };
+      return [...messages, user, assistant];
+    };
+    const changed = await this.rows.findOneAndUpdate({ _id: id, userId, version: row.version, "run.status": { $ne: "running" } }, reply ? { $set: { ...fields, messages: answered() }, $inc: { version: 1 } } : { $push: { messages: { $each: [user, assistant] } }, $set: fields, $inc: { version: 1 } }, { returnDocument: "after" });
     if (!changed) throw new AgentChatError(409, "다른 화면에서 실행을 시작했습니다.");
     this.start(changed, context, apiKey);
     return view(changed);
@@ -449,6 +462,11 @@ export class AgentChatService {
         planDraft: input => this.planDraft(row.userId, [...row.messages.slice(0, -1), message], input),
         replanDraft: input => this.replanDraft(row.userId, input),
         readPlan: planId => this.plans.get(row.userId, planId),
+        askChoice: async choice => {
+          const issues = choiceIssues(choice);
+          if (issues.length) throw new AgentToolRejection(issues);
+          return buildChoice(choice, randomUUID());
+        },
         page: {
           read: (portfolioId, key) => this.pageCall(row, portfolioId, pages => pages.elementGuide!(row.userId, portfolioId, key)),
           edit: async edit => {

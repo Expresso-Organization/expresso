@@ -18,7 +18,7 @@ async function connectTools(overrides: Partial<AgentInput> = {}) {
   await client.connect(clientSide);
   return { client, emit };
 }
-const base = () => ({ userId: "00000000-0000-4000-8000-0000000000aa", records: { list: vi.fn(async () => ({ categories: [], records: [] })), read: vi.fn(async () => []) }, review: vi.fn(), draftRecord: vi.fn(), jobGoal: null, goalDraft: vi.fn(), gapReview: vi.fn(), planDraft: vi.fn(), replanDraft: vi.fn(), readPlan: vi.fn(), propose: vi.fn(), page: { read: vi.fn(), edit: vi.fn() } });
+const base = () => ({ userId: "00000000-0000-4000-8000-0000000000aa", records: { list: vi.fn(async () => ({ categories: [], records: [] })), read: vi.fn(async () => []) }, review: vi.fn(), draftRecord: vi.fn(), jobGoal: null, goalDraft: vi.fn(), gapReview: vi.fn(), planDraft: vi.fn(), replanDraft: vi.fn(), readPlan: vi.fn(), propose: vi.fn(), page: { read: vi.fn(), edit: vi.fn() }, askChoice: vi.fn() });
 describe("Claude 채팅 실행 어댑터", () => {
   it("제품 도구만 노출하고 부분 텍스트만 한 번 전달한다", async () => {
     const events: AgentEvent[] = [];
@@ -30,7 +30,7 @@ describe("Claude 채팅 실행 어댑터", () => {
     await new ClaudeAgentRuntime().run({ messages: [], context: [], signal: new AbortController().signal, emit: async event => { events.push(event); }, ...base() });
     expect(events).toEqual([{ type: "text", text: "안녕하세요" }]);
     expect(sdk.query.mock.lastCall![0].options).toMatchObject({ tools: [], settingSources: [], strictMcpConfig: true, persistSession: false, permissionMode: "dontAsk" });
-    expect(sdk.query.mock.lastCall![0].options.allowedTools).toEqual(["mcp__expresso__propose_record_edit", "mcp__expresso__list_career_records", "mcp__expresso__read_career_records", "mcp__expresso__record_requirement_review", "mcp__expresso__propose_new_record", "mcp__expresso__propose_job_goal_update", "mcp__expresso__record_gap_review", "mcp__expresso__propose_preparation_plan", "mcp__expresso__read_preparation_plan", "mcp__expresso__propose_replan", "mcp__expresso__read_page_element", "mcp__expresso__edit_page_element"]);
+    expect(sdk.query.mock.lastCall![0].options.allowedTools).toEqual(["mcp__expresso__propose_record_edit", "mcp__expresso__list_career_records", "mcp__expresso__read_career_records", "mcp__expresso__record_requirement_review", "mcp__expresso__propose_new_record", "mcp__expresso__propose_job_goal_update", "mcp__expresso__record_gap_review", "mcp__expresso__propose_preparation_plan", "mcp__expresso__read_preparation_plan", "mcp__expresso__propose_replan", "mcp__expresso__read_page_element", "mcp__expresso__edit_page_element", "mcp__expresso__ask_choice"]);
   });
   it("중단 신호를 SDK에 전달한다", async () => {
     const controller = new AbortController(); let stopped = false;
@@ -118,6 +118,37 @@ describe("Claude 채팅 실행 어댑터", () => {
     expect(rejected.isError).toBe(true);
     expect((rejected.content as { text: string }[])[0]!.text).toContain("출처에 없는 숫자");
     expect(emit.mock.calls.at(-1)![0]).toMatchObject({ type: "tool", tool: { name: "지면 요소 고침", status: "failed" } });
+  });
+  it("선택지 질문은 부품을 도구 결과에 싣고, 한 실행에서 부품을 하나만 낸다", async () => {
+    const part = { kind: "choice" as const, partId: "00000000-0000-4000-8000-000000000010", prompt: "주당 몇 시간을 쓸 수 있나요?", multiple: false, options: [{ id: "o1", label: "5시간" }, { id: "o2", label: "10시간" }], answer: null };
+    // 첫 호출은 글이 겹쳐 돌려보내진다. 돌려보낸 호출은 세지 않으므로 고쳐 부른 두 번째 호출이 부품을 낸다.
+    const askChoice = vi.fn().mockRejectedValueOnce(new AgentToolRejection(["2번 선택지: 1번과 글이 같습니다."])).mockResolvedValue(part);
+    const { client, emit } = await connectTools({ askChoice });
+    const args = { prompt: part.prompt, multiple: false, options: [{ label: "5시간" }, { label: "10시간" }] };
+    const rejected = await client.callTool({ name: "ask_choice", arguments: args });
+    expect(rejected.isError).toBe(true);
+    expect((rejected.content as { text: string }[])[0]!.text).toContain("1번과 글이 같습니다");
+    expect(emit.mock.calls.at(-1)![0]).toMatchObject({ type: "tool", tool: { name: "선택지 질문", status: "failed" } });
+    const shown = await client.callTool({ name: "ask_choice", arguments: args });
+    expect(shown.isError).toBeFalsy();
+    expect(emit.mock.calls.at(-1)![0]).toMatchObject({ type: "tool", tool: { name: "선택지 질문", status: "complete", summary: part.prompt, ui: part } });
+    const again = await client.callTool({ name: "ask_choice", arguments: args });
+    expect(again.isError).toBe(true);
+    expect((again.content as { text: string }[])[0]!.text).toContain("이미 선택지를 냈습니다");
+    expect(askChoice).toHaveBeenCalledTimes(2);
+    // 모양이 틀린 입력(선택지 하나)은 처리기까지 오지 않는다.
+    expect((await client.callTool({ name: "ask_choice", arguments: { ...args, options: [{ label: "하나" }] } })).isError).toBe(true);
+    expect(askChoice).toHaveBeenCalledTimes(2);
+  });
+  it("모델에 넘기는 대화에 부품의 질문 · 선택지 글 · 고른 글과, 선택지로 한 답임을 싣는다", () => {
+    const ui = { kind: "choice" as const, partId: "00000000-0000-4000-8000-000000000010", prompt: "주당 몇 시간을 쓸 수 있나요?", multiple: false, options: [{ id: "o1", label: "5시간" }, { id: "o2", label: "10시간" }], answer: { optionIds: ["o2"], messageId: "00000000-0000-4000-8000-000000000021" } };
+    const [asked, answered] = conversationForModel([
+      { id: "00000000-0000-4000-8000-000000000020", role: "assistant", text: "시간을 정하겠습니다.", createdAt: "2026-11-20T00:00:00.000Z", tools: [{ id: "c", name: "선택지 질문", status: "complete", summary: ui.prompt, ui }] },
+      { id: "00000000-0000-4000-8000-000000000021", role: "user", text: "10시간", reply: { partId: ui.partId, optionIds: ["o2"] }, createdAt: "2026-11-20T00:00:01.000Z", tools: [] },
+    ]);
+    expect(asked!.tools).toEqual([{ name: "선택지 질문", summary: ui.prompt, ui: { kind: "choice", prompt: ui.prompt, multiple: false, options: ["5시간", "10시간"], answered: ["10시간"] } }]);
+    expect(answered).toEqual({ id: "00000000-0000-4000-8000-000000000021", answeredByChoice: true, role: "user", text: "10시간" });
+    expect(conversationForModel([{ id: "00000000-0000-4000-8000-000000000022", role: "assistant", text: "", createdAt: "2026-11-20T00:00:00.000Z", tools: [{ id: "c", name: "선택지 질문", status: "complete", summary: ui.prompt, ui: { ...ui, answer: null } }] }])[0]!.tools![0]).toMatchObject({ ui: { answered: null } });
   });
   it("검증 밖의 오류는 실패로 닫고 다시 던진다", async () => {
     const { client, emit } = await connectTools({ records: { list: vi.fn(async () => { throw new Error("db down"); }), read: vi.fn(async () => []) } });

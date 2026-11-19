@@ -10,7 +10,7 @@ import { PortfolioReadService } from "../portfolios/index.js";
 import { PageElementIssues, PageService } from "../page/index.js";
 import { AgentCredentials } from "./credentials.js";
 import { ConsentService } from "../consent/index.js";
-import { AgentToolRejection, type AgentRuntime } from "../../platform/agent/runtime.js";
+import { AgentToolRejection, conversationForModel, type AgentRuntime } from "../../platform/agent/runtime.js";
 import { AgentChatService, CREDITS_EXHAUSTED, RUN_HEARTBEAT_MS, RUN_INTERRUPTED_ERROR } from "./service.js";
 import { MongoEntitlementService } from "../entitlements/index.js";
 import { PreparationPlans } from "./plans.js";
@@ -240,6 +240,51 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     await service.decideRecordDraft(userId, row.id, draft.draftId, decision);
     expect((await career.listRecords(userId, { sort: "updated_desc", limit: 100 })).data.length).toBe(before + 1);
     await expect(service.decideRecordDraft(userId, row.id, draft.draftId, { action: "reject" })).rejects.toMatchObject({ statusCode: 409 });
+  });
+  it("선택지에 한 답은 고른 선택지의 글로 남고 부품에 적히며, 받을 수 없는 답은 대화를 바꾸지 않는다", async () => {
+    const seen: unknown[] = [];
+    const service = make({ run: async input => {
+      const last = input.messages.at(-1)!;
+      seen.push(conversationForModel(input.messages).at(-1));
+      if (last.reply || last.text === "그냥 말로 할게요") { await input.emit({ type: "text", text: "알겠습니다." }); return; }
+      await expect(input.askChoice({ prompt: "질문", multiple: false, options: [{ label: "같은 글" }, { label: "같은 글" }] })).rejects.toBeInstanceOf(AgentToolRejection);
+      const part = await input.askChoice({ prompt: "주당 몇 시간을 쓸 수 있나요?", multiple: false, options: [{ label: "5시간" }, { label: "10시간" }] });
+      await input.emit({ type: "tool", tool: { id: randomUUID(), name: "선택지 질문", status: "complete", summary: part.prompt, ui: part } });
+    } });
+    const done = async (id: string) => { await expect.poll(async () => (await service.get(userId, id)).run?.status).toBe("complete"); return service.get(userId, id); };
+    const row = await service.create(userId, []);
+    await service.send(userId, row.id, { requestId: randomUUID(), text: "준비 계획을 세워 줘" });
+    const asked = await done(row.id);
+    const part = asked.messages.at(-1)!.tools[0]!.ui!;
+    expect(part).toMatchObject({ kind: "choice", multiple: false, answer: null, options: [{ id: "o1", label: "5시간" }, { id: "o2", label: "10시간" }] });
+    // 받을 수 없는 답: 없는 선택지, 하나만 고르는 질문에 둘, 없는 부품, 남의 대화.
+    for (const optionIds of [["o9"], ["o1", "o2"]]) await expect(service.send(userId, row.id, { requestId: randomUUID(), text: "", reply: { partId: part.partId, optionIds } })).rejects.toMatchObject({ statusCode: 409 });
+    await expect(service.send(userId, row.id, { requestId: randomUUID(), text: "", reply: { partId: randomUUID(), optionIds: ["o1"] } })).rejects.toMatchObject({ statusCode: 409 });
+    await expect(service.send(other, row.id, { requestId: randomUUID(), text: "", reply: { partId: part.partId, optionIds: ["o1"] } })).rejects.toMatchObject({ statusCode: 404 });
+    expect(await service.get(userId, row.id)).toEqual(asked);
+    // 받는 답: 글은 화면이 보낸 것이 아니라 고른 선택지의 글이고, 부품에 고른 것과 답한 메시지가 적힌다.
+    const requestId = randomUUID();
+    const reply = { partId: part.partId, optionIds: ["o2"] };
+    const sent = await service.send(userId, row.id, { requestId, text: "화면이 보낸 다른 글", reply });
+    expect(sent.messages).toHaveLength(4);
+    expect(sent.messages[2]).toMatchObject({ id: requestId, role: "user", text: "10시간", reply });
+    expect(sent.messages[1]!.tools[0]!.ui!.answer).toEqual({ optionIds: ["o2"], messageId: requestId });
+    expect(sent.messages[0]).toEqual(asked.messages[0]);
+    const answered = await done(row.id);
+    expect(answered.messages[3]!.text).toBe("알겠습니다.");
+    expect(seen.at(-1)).toMatchObject({ answeredByChoice: true, role: "user", text: "10시간" });
+    // 같은 요청이 다시 오면 409가 아니라 그 대화를 그대로 돌려준다. 이미 답한 부품에 새로 온 답은 받지 않는다.
+    expect((await service.send(userId, row.id, { requestId, text: "", reply })).messages).toHaveLength(4);
+    await expect(service.send(userId, row.id, { requestId: randomUUID(), text: "", reply: { partId: part.partId, optionIds: ["o1"] } })).rejects.toMatchObject({ statusCode: 409 });
+    // 글로 지나친 질문은 잠긴다 — 마지막 답변의 부품만 답을 받는다.
+    const skipped = await service.create(userId, []);
+    await service.send(userId, skipped.id, { requestId: randomUUID(), text: "준비 계획을 세워 줘" });
+    const old = (await done(skipped.id)).messages.at(-1)!.tools[0]!.ui!;
+    await service.send(userId, skipped.id, { requestId: randomUUID(), text: "그냥 말로 할게요" });
+    const passed = await done(skipped.id);
+    await expect(service.send(userId, skipped.id, { requestId: randomUUID(), text: "", reply: { partId: old.partId, optionIds: ["o1"] } })).rejects.toMatchObject({ statusCode: 409 });
+    expect(passed.messages[1]!.tools[0]!.ui!.answer).toBeNull();
+    expect(passed.messages[2]).not.toHaveProperty("reply");
   });
   it("거절한 초안은 기록을 만들지 않는다", async () => {
     const service = make({ run: async input => {
