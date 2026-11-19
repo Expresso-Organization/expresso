@@ -4,7 +4,7 @@ import { createContext, useActionState, useContext, useEffect, useMemo, useRef, 
 import { flushSync } from "react-dom";
 import Link from "next/link";
 import { AssistantRuntimeProvider, useAuiState, useExternalStoreRuntime, type ThreadMessageLike, type ToolCallMessagePartComponent } from "@assistant-ui/react";
-import { pageDocument, pagePreviewDocument, type DesignCard, type DesignDirection, type DesignScreenItem, type DesignSnippet, type DesignTokens } from "@expresso/contracts";
+import { pageDocument, pagePreviewDocument, type DesignCard, type DesignComposition, type DesignDirection, type DesignScreenItem, type DesignSnippet, type DesignTokens } from "@expresso/contracts";
 
 import { startGenerationAction, type BrewState } from "@/app/(app)/brew/[brewId]/design/design-actions";
 import { DesignThumb, type DesignCatalogEntry } from "@/app/(app)/brew/[brewId]/design/DesignCatalog";
@@ -44,8 +44,20 @@ const FONT_STACK = {
   serif: '"Nanum Myeongjo", serif',
   mono: '"JetBrains Mono", ui-monospace, monospace',
 } as const;
-/** 첫 화면 한 장의 원래 크기. 이 폭에서 그려 두고 카드 폭에 맞춰 줄인다. 그리는 호출도 이 크기에 맞춰 쓴다. */
-const FRAME = { width: 1440, height: 720 };
+/** 첫 화면 한 장의 원래 크기. 이 폭에서 그려 두고 카드 폭에 맞춰 줄인다. 그리는 호출도 화면 하나를 이 크기로 잡는다. */
+const FRAME = { width: 1440, height: 900 };
+/** 첫 화면의 짜임 — 지면이 시작하는 자리에 무엇을 놓는가. 견본과 첫 화면 이름 옆에 적는다. */
+const COMPOSITION_LABEL: Record<DesignComposition, string> = { document: "문서형", work: "작업물 목록형", cover: "표지형", metric: "수치 중심" };
+/**
+ * 짜임을 선과 면으로 줄인 그림. 견본의 색 면 위에 그 방향의 글자색 · 강조색으로 그린다.
+ * 줄 하나가 글 한 줄이나 목록 한 칸이다 — `t` 제목, `l` 글, `a` 강조, `r` 가르는 선.
+ */
+const SKELETON: Record<DesignComposition, string[][]> = {
+  document: [["t:28"], ["l:72"], ["l:66"], ["l:40"], ["r:100"], ["t:18", "l:54"], ["t:18", "l:46"]],
+  work: [["t:16", "l:44"], ["r:100"], ["l:12", "t:20", "l:38", "l:12"], ["l:12", "t:24", "l:34", "l:12"], ["l:12", "t:18", "l:40", "l:12"], ["l:12", "t:22", "l:30", "l:12"]],
+  cover: [["l:14"], ["T:46"], ["l:38"]],
+  metric: [["t:22", "A:26"], ["l:34", "l:20"], ["l:28", "a:14"]],
+};
 /** 넓어지는 첫 화면과 무대의 첫 화면이 한 물건으로 이어지게 하는 이름. 한 번에 한 틀에만 붙인다. */
 const MORPH = "design-chat-focus";
 
@@ -264,10 +276,29 @@ function Failure({ text, retryable }: { text: string; retryable: boolean }) {
   );
 }
 
-/** 색과 서체만으로 그리는 견본. 바탕색 면에 방향의 이름을 그 서체로 놓고 강조 · 글자 색을 점으로 둔다. 배치는 보여 주지 않는다. */
-function Swatch({ name, tokens }: { name: string; tokens: DesignTokens }) {
+function Skeleton({ composition, accent }: { composition: DesignComposition; accent: string }) {
+  return (
+    <span className={styles.skeleton} data-kind={composition} aria-hidden="true">
+      {SKELETON[composition].map((row, index) => (
+        <span key={index}>
+          {row.map((cell, at) => {
+            const [kind = "l", width] = cell.split(":");
+            return <i key={at} data-part={kind} style={{ width: `${width}%`, ...(kind === "a" || kind === "A" ? { background: accent } : {}) }} />;
+          })}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/**
+ * 견본. 바탕색 면에 첫 화면의 짜임을 선과 면으로 그리고, 방향의 이름을 그 서체로 놓고, 강조 · 글자 색을 점으로 둔다.
+ * 짜임이 정해지지 않은 것(카탈로그의 디자인을 그리는 중)은 색과 서체만 보인다.
+ */
+function Swatch({ name, tokens, composition }: { name: string; tokens: DesignTokens; composition: DesignComposition | null }) {
   return (
     <span className={styles.swatchFace} style={{ background: tokens.background, color: tokens.text, fontFamily: FONT_STACK[tokens.font] }}>
+      {composition ? <Skeleton composition={composition} accent={tokens.accent} /> : null}
       <strong>{name}</strong>
       <span className={styles.swatchDots} aria-hidden="true">
         <i style={{ background: tokens.accent }} />
@@ -290,10 +321,10 @@ function Specimens({ directions }: { directions: DesignDirection[] }) {
           <li key={direction.id}>
             <button type="button" className={styles.specimen} disabled={busy} aria-label={`${direction.name} 방향으로 첫 화면 보기`} onClick={() => void state.send({ action: "draw", directionIds: [direction.id] })}>
               <span className={styles.swatch}>
-                <Swatch name={direction.name} tokens={direction.tokens} />
+                <Swatch name={direction.name} tokens={direction.tokens} composition={direction.composition} />
                 <span className={styles.specimenCue} aria-hidden="true"><Icon name="arrow-up" weight="bold" size={13} /></span>
               </span>
-              <span className={styles.specimenWords}>{direction.words}</span>
+              <span className={styles.specimenWords}><strong>{COMPOSITION_LABEL[direction.composition]}</strong>{direction.words}</span>
             </button>
           </li>
         ))}
@@ -367,7 +398,7 @@ function PendingThumb({ item }: { item: DesignScreenItem }) {
   return (
     <div className={styles.thumb} data-state={item.status} role="status">
       <span className={styles.frame}>
-        <span className={styles.swatchFill}><Swatch name={item.name} tokens={item.tokens} /></span>
+        <span className={styles.swatchFill}><Swatch name={item.name} tokens={item.tokens} composition={item.composition} /></span>
         {drawing ? <span className={styles.progress} style={{ background: item.tokens.accent }} /> : null}
       </span>
       <span className={styles.thumbName}><strong>{item.name}</strong><small>{drawing ? "그리는 중" : "그리지 못했습니다"}</small></span>
@@ -389,7 +420,7 @@ function ScreenView({ snippet }: { snippet: DesignSnippet }) {
       <figcaption className={styles.viewMeta}>
         <span className={styles.viewName}>
           <strong>{snippet.name}</strong>
-          <span>{ORIGIN_LABEL[snippet.origin]}</span>
+          <span>{COMPOSITION_LABEL[snippet.composition]} · {ORIGIN_LABEL[snippet.origin]}</span>
         </span>
         <span className={styles.viewTokens}><Dots tokens={snippet.tokens} />{FONT_LABEL[snippet.tokens.font]}</span>
         {layout === "stream" ? <span className={styles.viewActions}><SnippetActions snippet={snippet} size="sm" /></span> : null}

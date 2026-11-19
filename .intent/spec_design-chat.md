@@ -52,8 +52,9 @@ flowchart TD
 **계약(`packages/contracts/src/design-chat.ts`)**
 
 - `DesignTokens` — 바탕 · 글자 · 강조 색(#rrggbb), 서체 계열(`TemplateFontSchema`), 밀도.
-- `DesignDirection`(견본) — `id · name · words · tokens`.
-- `DesignSnippet`(첫 화면) — `id · origin(agent|user|catalog|edit) · name · note · words · tokens · css · html · fromSnippetId`.
+- `DesignComposition`(짜임) — `document · work · cover · metric`. 실제 개발자 포트폴리오 23곳의 첫 화면을 나눈 유형에서 왔다.
+- `DesignDirection`(견본) — `id · name · words · tokens · composition`.
+- `DesignSnippet`(첫 화면) — `id · origin(agent|user|catalog|edit) · name · note · words · tokens · composition · css · html · fromSnippetId`.
 - 메시지 — 사용자 말(`text`, `subject`)과 에이전트 답(`text`, `status`, `card`). `card`는 `directions` · `screens`(장마다 `drawing|done|failed`) · `revision`.
 - `DesignChat` — `messages · snippets · selectedSnippetId · run · version`.
 - `SubmitGenerationSchema`에 `designSnippetId`. `templateId` · `designSystemRevisionId` · `designSnippetId` 가운데 하나만 받는다.
@@ -62,9 +63,9 @@ flowchart TD
 
 - `../brew-sources.ts` — `PageService.#context`의 레시피 · 섹션 · 근거 · 공고 · 회사 조립을 `brewPageSources(db, userId, brewId)`로 꺼낸다. `#context`는 이 함수를 쓰고 포트폴리오에 딸린 것(스타일 · 그림)만 더한다. 디자인 단계에는 포트폴리오가 없어서 제작 ID로 읽어야 한다.
 - `prompts.ts` — 호출 네 가지의 계약과 요청.
-  - 여는 호출(`page_design`): 자료를 읽어 `head`(직무 · 한 줄 · 소개 · 다루는 것 · 앞세울 사실)와 말, 견본 세 개를 낸다. `head`의 숫자는 출처와 대조한다.
+  - 여는 호출(`page_design`): 자료를 읽어 `head`(직무 · 한 줄 · 소개 · 다루는 것 · 앞세울 사실)와 말, 견본 세 개를 낸다. 세 견본은 짜임이 서로 다르다. `head`의 숫자는 출처와 대조한다.
   - 답하는 호출(`page_design`): 대화 요약 · 대상 · 사용자의 말을 읽고 `say`와 `show`(none|directions|screens|revision)를 낸다. 선택 규칙(넓게 볼 때 견본, 좁혀졌거나 구체적일 때 첫 화면)은 시스템 프롬프트에 둔다.
-  - 그리는 호출(`page_generation`): `head`와 방향의 말로 첫 화면 한 장면을 낸다(`name · note · tokens · css · html`). 2026-11-17 측정에 쓴 요청을 옮긴다. 소독기가 거절하는 CSS 구문은 검사에서 걸러 그 칸만 고쳐 받는다.
+  - 그리는 호출(`page_generation`): 원문 자료와 방향의 색 · 서체 · 짜임으로 지면이 시작하는 자리를 낸다(`name · note · tokens · composition · css · html`). 짜임마다 무엇을 어떻게 놓는지의 지시가 따로 있다. 문서형과 작업물 목록형은 경력 · 프로젝트 목록을 쓰므로 `head`가 아니라 원문을 받는다. 카탈로그의 디자인은 짜임을 정하지 않아 그리는 쪽이 넷 가운데 고른다. 소독기가 거절하는 CSS 구문은 검사에서 걸러 그 칸만 고쳐 받는다.
   - 고치는 호출(`page_generation`): 지금 첫 화면과 지시를 받아 지시가 가리킨 것만 바꾼다.
   - 네 호출 모두 `modelTier: "sonnet"`을 명시한다. 두 계약의 기본은 Opus다.
 - `service.ts` — `DesignChatService`. `get · open · send · select · retry · close`와 생성 쪽이 쓰는 `findDesignSnippet`.
@@ -94,7 +95,7 @@ flowchart TD
 - **에이전트 채팅 모듈로 구현**: `main`에서는 서버 인증이 허용된 계정이 아니면 개인 API 키가 있어야 한다. 서버 인증 작업은 열린 PR에 있다.
 - **SSE**: 에이전트 채팅의 SSE도 서버가 500ms마다 문서를 다시 읽어 보내는 방식이다. 답이 한 번에 오는 이 대화에서는 1.5초 폴링과 보이는 것이 같다.
 - **새 AI 계약 이름**: 계약을 더하면 기본 모델 표 · 동의 표 · 사용량 이름표를 함께 고쳐야 한다. `page_design` · `page_generation`으로 충분하다.
-- **그릴 때마다 원문 전체를 넘기기**: 여는 호출이 뽑은 `head`만 넘기면 세 장이 같은 사실을 쓰고 요청이 짧다. 측정도 이 모양으로 했다.
+- **그리는 호출에 `head`만 넘기기**: 처음에는 이렇게 했다. 요청은 짧지만 첫 화면에 놓을 수 있는 것이 이름 · 한 줄 소개 · 수치 하나뿐이라 일곱 장이 모두 같은 구도가 됐다. 원문을 넘겨도 한 장에 14–24초였다(2026-11-19).
 
 ## 함정
 

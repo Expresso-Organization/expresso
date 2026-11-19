@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { DesignAssistantMessageSchema, DesignDirectionSchema, DesignScreenItemSchema, DesignSnippetSchema, DesignTokensSchema, type DesignChatMessage, type DesignDirection, type DesignSnippet, type DesignTokens } from "@expresso/contracts";
+import { DesignAssistantMessageSchema, DesignCompositionSchema, DesignDirectionSchema, DesignScreenItemSchema, DesignSnippetSchema, DesignTokensSchema, type DesignChatMessage, type DesignComposition, type DesignDirection, type DesignSnippet, type DesignTokens } from "@expresso/contracts";
 
 import type { AiCallSpec, AiViolation } from "../../../platform/ai/client.js";
 import { PageSanitizeError, sanitizeCss } from "../../../platform/html/sanitize.js";
@@ -70,14 +70,35 @@ export type DesignHead = z.infer<typeof DesignHeadSchema>;
 
 const DirectionDraftSchema = z.strictObject({
   name: z.string().min(1).describe("방향의 이름. 두세 낱말"),
-  words: z.string().min(1).describe("이 방향을 한두 문장으로. 바탕과 강조의 색, 서체, 느낌, 그리고 그것이 이 사람의 일 어디에서 왔는지"),
+  words: z.string().min(1).describe("이 방향을 두 문장 안에서. 첫 화면에 무엇이 놓이는지 한 문장, 색과 서체가 이 사람의 일 어디에서 왔는지 한 문장"),
   tokens: DesignTokensSchema.describe("바탕 · 글자 · 강조 색(#rrggbb), 서체 계열, 밀도"),
+  composition: DesignCompositionSchema.describe("첫 화면의 짜임"),
 });
-export type DirectionDraft = z.infer<typeof DirectionDraftSchema>;
+/** 그릴 방향. 카탈로그의 디자인은 짜임을 정하지 않아 `composition`이 null이고, 그리는 호출이 자료를 보고 고른다. */
+export type DirectionDraft = Omit<z.infer<typeof DirectionDraftSchema>, "composition"> & { composition: DesignComposition | null };
+
+export const COMPOSITION_NAME: Record<DesignComposition, string> = { document: "문서형", work: "작업물 목록형", cover: "표지형", metric: "수치 중심" };
+
+/**
+ * 네 짜임과 저마다 맞는 때. 무엇을 띄울지 정하는 호출이 읽는다.
+ *
+ * 2026-11-19에 실제 개발자 포트폴리오 23곳의 첫 화면을 나눈 유형이다 — 문서형 9 · 표지형 7 · 작업물 목록형 3 · 랜딩 페이지형 4.
+ * 큰 수치를 첫 화면에 세운 곳은 없었다. 그때까지 대화가 그린 첫 화면은 모두 「이름 옆 수치판」 하나였다.
+ */
+const COMPOSITIONS = [
+  "## 첫 화면의 짜임 — 방향마다 하나를 정합니다",
+  "- `document` 문서형: 이름과 직무, 소개 문단 두세 개, 바로 이어지는 경력 목록입니다. 수치는 문장 안에 들어갑니다. 해 온 일을 글로 설명할 것이 많을 때 맞습니다.",
+  "- `work` 작업물 목록형: 소개는 머리 한 줄로 줄이고 프로젝트 목록이 첫 화면의 대부분을 차지합니다. 프로젝트가 여럿이고 저마다 결과가 있을 때 맞습니다.",
+  "- `cover` 표지형: 이름과 직함, 한 줄 소개만 크게 놓습니다. 이름과 직무만으로 무엇을 하는 사람인지 전해질 때 맞습니다.",
+  "- `metric` 수치 중심: 이름 옆에 대표 수치 하나를 크게 세웁니다. 이 지원의 핵심이 되는 수치 하나가 자료에 뚜렷할 때 씁니다.",
+  "여러 방향을 낼 때는 짜임을 서로 다르게 잡습니다. 색만 다르고 짜임이 같으면 사용자가 고를 것이 없습니다.",
+].join("\n");
 
 const DESIGNER = "포트폴리오의 디자인을 사용자와 대화로 정하는 디자이너입니다.";
 const DIRECTION_RULES = [
-  "방향은 색과 서체로 보이는 견본이 됩니다. 배치는 견본에 담지 않습니다.",
+  COMPOSITIONS,
+  "",
+  "방향은 견본이 됩니다. 견본은 첫 화면의 짜임과 색, 서체를 보입니다.",
   "- 색과 서체는 이 사람의 일(다루는 대상 · 도구 · 산출물)과 지원하는 곳(회사의 톤 · 브랜드 색)에서 가져옵니다. 어디서 왔는지를 `words`에 적습니다.",
   "- 바탕과 글자는 본문을 오래 읽을 수 있는 명도 차이를 둡니다. 강조는 바탕 위에서 한눈에 구분되어야 합니다.",
   "- 여러 방향을 낼 때는 바탕의 명도와 서체 계열이 서로 겹치지 않게 합니다. 사용자가 고를 수 있으려면 달라 보여야 합니다.",
@@ -91,7 +112,7 @@ const OPENING_SYSTEM = [
   "지금은 대화의 첫 말을 씁니다. 출처 자료(커리어 기록 · 답변 · 공고 요건)와 섹션 설계를 읽고 세 가지를 냅니다.",
   "- `head`: 이 사람의 첫 화면에 실을 사실입니다. 출처에 없는 수치 · 성과 · 경력을 만들지 않고, 숫자와 기간은 출처에 적힌 글자 그대로 옮깁니다.",
   "- `say`: 자료에서 가장 앞세울 사실 하나를 짚고, 어떤 분위기로 보여 줄지 묻습니다.",
-  "- `directions`: 서로 뚜렷이 다른 방향 셋입니다.",
+  "- `directions`: 서로 뚜렷이 다른 방향 셋입니다. 짜임이 셋 다 다릅니다.",
   "",
   DIRECTION_RULES,
   SPEECH,
@@ -152,7 +173,7 @@ const REPLY_SYSTEM = [
   "사용자의 말에 답합니다. 답은 말(`say`)과 화면에 띄울 것(`show`) 하나입니다.",
   "",
   "## 무엇을 띄우는가",
-  "- `directions` — 견본. 색과 서체만 보이고 바로 뜹니다. 사용자가 방향을 넓게 보고 싶어 하거나, 원하는 것이 아직 좁혀지지 않았을 때 씁니다.",
+  "- `directions` — 견본. 짜임과 색, 서체만 보이고 바로 뜹니다. 사용자가 방향을 넓게 보고 싶어 하거나, 원하는 것이 아직 좁혀지지 않았을 때 씁니다.",
   "- `screens` — 첫 화면. 이 사람의 자료로 그린 포트폴리오 맨 위 한 장면이고 한 장에 20초쯤 걸립니다. 사용자가 스타일을 구체적으로 말했거나, 방향을 하나로 좁혔거나, 실제 모습을 보여 달라고 했을 때 씁니다.",
   "- `revision` — 대상으로 붙은 첫 화면을 고칩니다. 사용자가 그 첫 화면의 한 부분을 바꿔 달라고 했을 때 씁니다. `instruction`에 무엇을 어떻게 바꿀지 한 문장으로 옮깁니다. 대상 첫 화면이 없으면 쓰지 않습니다.",
   "- `none` — 띄울 것이 없습니다. 되물어야 뜻을 알 수 있거나 말로만 답하면 될 때 씁니다.",
@@ -178,7 +199,8 @@ export type ReplySubject =
   | { kind: "snippet"; snippet: DesignSnippet }
   | { kind: "catalog"; direction: DirectionDraft };
 
-const tokensLine = (tokens: DesignTokens) => `바탕 ${tokens.background} · 글자 ${tokens.text} · 강조 ${tokens.accent} · ${FONT_NAME[tokens.font]} · ${DENSITY_NAME[tokens.density]}`;
+const tokensLine = (tokens: DesignTokens, composition?: DesignComposition | null) =>
+  `${composition ? `${COMPOSITION_NAME[composition]} · ` : ""}바탕 ${tokens.background} · 글자 ${tokens.text} · 강조 ${tokens.accent} · ${FONT_NAME[tokens.font]} · ${DENSITY_NAME[tokens.density]}`;
 
 /** 지금까지의 대화를 글로 편다. 카드는 이름과 값만 적는다 — 마크업은 싣지 않는다. */
 export function transcript(messages: DesignChatMessage[], snippets: DesignSnippet[]): string[] {
@@ -190,9 +212,9 @@ export function transcript(messages: DesignChatMessage[], snippets: DesignSnippe
       return [`사용자: ${said}${subject ? ` [대상: ${subject}]` : ""}`];
     }
     const lines = message.text ? [`디자이너: ${message.text}`] : [];
-    if (message.card?.kind === "directions") lines.push(...message.card.directions.map((item) => `  [견본 「${item.name}」 — ${item.words} (${tokensLine(item.tokens)})]`));
+    if (message.card?.kind === "directions") lines.push(...message.card.directions.map((item) => `  [견본 「${item.name}」 — ${item.words} (${tokensLine(item.tokens, item.composition)})]`));
     if (message.card?.kind === "screens")
-      lines.push(...message.card.items.map((item) => `  [첫 화면 「${snippet(item.snippetId)?.name ?? item.name}」 — ${item.words} (${tokensLine(snippet(item.snippetId)?.tokens ?? item.tokens)})${item.status === "failed" ? " 그리지 못함" : ""}]`));
+      lines.push(...message.card.items.map((item) => `  [첫 화면 「${snippet(item.snippetId)?.name ?? item.name}」 — ${item.words} (${tokensLine(snippet(item.snippetId)?.tokens ?? item.tokens, snippet(item.snippetId)?.composition ?? item.composition)})${item.status === "failed" ? " 그리지 못함" : ""}]`));
     if (message.card?.kind === "revision") {
       const after = snippet(message.card.item.snippetId);
       lines.push(`  [첫 화면 「${snippet(message.card.fromSnippetId)?.name ?? "?"}」을 고침 → 「${after?.name ?? message.card.item.name}」 — ${message.card.item.words}]`);
@@ -227,8 +249,8 @@ export function replyCall(input: {
           "",
           "## 이 말의 대상",
           subject.kind === "snippet"
-            ? `첫 화면 「${subject.snippet.name}」 — ${subject.snippet.words} (${tokensLine(subject.snippet.tokens)})`
-            : `${subject.kind === "direction" ? "견본" : "카탈로그의 디자인"} 「${subject.direction.name}」 — ${subject.direction.words} (${tokensLine(subject.direction.tokens)})`,
+            ? `첫 화면 「${subject.snippet.name}」 — ${subject.snippet.words} (${tokensLine(subject.snippet.tokens, subject.snippet.composition)})`
+            : `${subject.kind === "direction" ? "견본" : "카탈로그의 디자인"} 「${subject.direction.name}」 — ${subject.direction.words} (${tokensLine(subject.direction.tokens, subject.direction.composition)})`,
         ]
       : []),
   ].join("\n");
@@ -258,6 +280,7 @@ export const SnippetDraftSchema = z.strictObject({
   name: z.string().min(1).describe("이 스타일의 짧은 이름. 두세 낱말"),
   note: z.string().min(1).describe("사용자에게 건네는 한 문장. 이 첫 화면에서 무엇을 앞에 세웠는지. 존댓말"),
   tokens: DesignTokensSchema.describe("쓴 바탕 · 글자 · 강조 색(#rrggbb)과 서체 계열 · 밀도"),
+  composition: DesignCompositionSchema.describe("그린 짜임"),
   css: z.string().min(1),
   html: z.string().min(1),
 });
@@ -270,6 +293,7 @@ const SNIPPET_SYSTEM = briefedSystem(FRONTEND_DESIGN_SKILL, {
     "- `name` — 이 스타일의 짧은 이름.",
     "- `note` — 사용자에게 건네는 한 문장.",
     "- `tokens` — 쓴 바탕 · 글자 · 강조 색과 서체 계열 · 밀도.",
+    "- `composition` — 그린 짜임.",
     "- `css` — 스타일 전부를 먼저 쓴다. 뒤에 올 마크업의 클래스 이름을 여기서 정해 둔다.",
     "- `html` — 위에서 정한 클래스로 첫 화면의 마크업을 쓴다.",
   ].join("\n"),
@@ -277,11 +301,51 @@ const SNIPPET_SYSTEM = briefedSystem(FRONTEND_DESIGN_SKILL, {
 
 const FIRST_SCREEN = [
   "## 만들 것",
-  "이 사람 포트폴리오의 **첫 화면 한 장면만** 만든다. 이름 · 한 줄 소개 · 대표 사실 하나다. 나머지 섹션은 쓰지 않는다.",
-  "- 화면 폭 1440px에서 높이 720px 안에 들어오게 한다. 지면 바탕색은 `body`에 주고, 첫 화면은 화면 폭 전체를 쓴다.",
-  "- 첫 화면은 `<header>`나 `<section>` 하나로 쓴다. 지면 전체를 감싸는 틀(`<main>`이나 바깥 `<div>`)을 두지 않는다 — 고르면 이 첫 화면 바로 뒤에 나머지 섹션이 이어 붙는다.",
+  "이 사람의 포트폴리오가 **시작하는 자리**를 만든다. 지면의 맨 위부터 화면 하나(폭 1440px · 높이 900px)에 보이는 부분이다.",
+  "- 실제 개발자의 개인 포트폴리오처럼 쓴다. 제품을 파는 랜딩 페이지가 아니라, 한 사람이 자기 일을 적어 둔 문서다.",
+  "- 지면 바탕색은 `body`에 준다. 맨 위 요소는 `<header>`나 `<section>`으로 쓰고 지면 전체를 감싸는 틀(`<main>`이나 바깥 `<div>`)을 두지 않는다 — 고르면 이 뒤에 나머지 섹션이 이어 붙는다.",
   "- 클래스 이름은 뒤에 붙을 섹션이 이어 쓸 수 있게 역할로 짓는다.",
+  "",
 ];
+
+/** 짜임마다 첫 화면에 무엇을 어떻게 놓는가. 2026-11-19에 같은 자료로 세 짜임을 그려 본 요청에서 왔다. */
+const COMPOSITION_BRIEF: Record<DesignComposition, string[]> = {
+  document: [
+    "## 짜임 — 소개 글과 목록으로 시작하는 문서",
+    "- 맨 위에 이름과 직무를 둔다. 이름은 본문보다 조금 큰 글자(40px 안팎)면 된다.",
+    "- 그 아래에 소개 문단 두세 개를 문장으로 쓴다. 무슨 일을 해 왔고, 어떤 문제를 어떻게 풀어 왔는지. 한 줄의 폭은 한국어 40자 안팎으로 잡는다.",
+    "- 소개 바로 뒤에 경력을 목록으로 시작한다. 항목마다 기간 · 조직 · 역할, 그리고 한 일을 한두 문장으로. 수치는 그 문장 안에 쓴다.",
+    "- 본문 글자는 16–17px이다. 글이 화면의 주인이고, 화면 아래로 목록이 이어진다.",
+  ],
+  work: [
+    "## 짜임 — 작업물 목록이 첫 화면에 보이는 문서",
+    "- 맨 위에 이름 · 직무 · 소개 한두 줄을 짧게 둔다. 화면 높이의 4분의 1을 넘기지 않는다.",
+    "- 그 바로 아래부터 프로젝트 목록이 화면의 대부분을 차지한다. 프로젝트마다 이름 · 기간 · 무엇을 했는지 한두 문장 · 쓴 기술을 적고, 결과의 수치는 그 문장 안에 쓴다.",
+    "- 목록은 한눈에 훑을 수 있게 같은 자리에 같은 것을 둔다(이름은 이름끼리, 기간은 기간끼리 줄이 맞는다).",
+    "- 본문 글자는 15–16px, 가장 큰 글자는 이름(36px 안팎)이다.",
+  ],
+  cover: [
+    "## 짜임 — 이름과 직함을 놓은 표지",
+    "- 화면에 놓는 것은 이름, 직무, 한 줄 소개, 이 사람이 다루는 것 몇 낱말이 전부다.",
+    "- 이름이 가장 큰 글자다. 그 크기와 놓인 자리, 둘레의 여백이 이 화면의 디자인이다.",
+    "- 화면의 맨 아래에 다음 섹션(경력이나 프로젝트)의 머리가 살짝 보여, 아래로 이어지는 문서라는 것을 알린다.",
+  ],
+  metric: [
+    "## 짜임 — 대표 수치를 세운 첫 화면",
+    "- 이름 · 직무 · 한 줄 소개를 한쪽에 두고, 자료에서 가장 앞세울 수치 하나를 화면에서 가장 큰 요소로 세운다.",
+    "- 수치 곁에 무엇을 잰 것인지와 이전 값을 둔다. 다른 수치는 작게 곁들이거나 뒤 섹션에 맡긴다.",
+    "- 이 화면은 화면 하나 안에서 끝난다.",
+  ],
+};
+
+/** 그릴 짜임의 지시. 짜임이 정해지지 않았으면(카탈로그의 디자인) 넷을 모두 보이고 자료에 맞는 하나를 고르게 한다. */
+function compositionPrompt(composition: DesignComposition | null): string[] {
+  if (composition) return [...COMPOSITION_BRIEF[composition], `\`composition\`에는 \`${composition}\`을 적는다.`];
+  return [
+    "## 짜임 — 아래 넷 가운데 이 사람의 자료에 맞는 하나를 골라 그린다. 고른 것을 `composition`에 적는다",
+    ...(Object.keys(COMPOSITION_BRIEF) as DesignComposition[]).flatMap((key) => [`### \`${key}\` ${COMPOSITION_NAME[key]}`, ...COMPOSITION_BRIEF[key].slice(1)]),
+  ];
+}
 
 function snippetCheck(source: string) {
   return (draft: SnippetDraft): AiViolation[] => {
@@ -304,19 +368,24 @@ function snippetCheck(source: string) {
   };
 }
 
-export function drawCall(input: { userId: string; sources: BrewPageSources; head: DesignHead; direction: DirectionDraft }): { spec: AiCallSpec; check(output: SnippetDraft): AiViolation[] } {
+/**
+ * 첫 화면을 그리는 호출. 원문 자료 전체를 받는다 — 문서형과 작업물 목록형은 경력 · 프로젝트 목록을 첫 화면에 쓰므로
+ * 뽑아 둔 사실 몇 줄(`head`)로는 그릴 수 없다. 2026-11-19에 원문으로 세 짜임을 그렸을 때 14–24초였다.
+ */
+export function drawCall(input: { userId: string; sources: BrewPageSources; direction: DirectionDraft }): { spec: AiCallSpec; check(output: SnippetDraft): AiViolation[] } {
   const { direction } = input;
+  const context = sourcesContext(input.userId, input.sources);
   const prompt = [
-    ...promptOpening(sourcesContext(input.userId, input.sources)),
+    ...promptOpening(context),
     "## 사용자가 고른 스타일 — 색 · 서체 · 밀도는 그대로 따른다",
     `고른 것: **${direction.name}** — ${direction.words}`,
     `- 바탕 \`${direction.tokens.background}\` · 본문 글자 \`${direction.tokens.text}\` · 강조 \`${direction.tokens.accent}\`. 명도를 조절한 변주는 만들어 써도 되고, 계열 밖의 색은 들이지 않는다.`,
     `- 서체 계열: ${FONT_NAME[direction.tokens.font]}. 한국어 대체 서체를 함께 지정한다.`,
     `- 밀도: ${DENSITY_NAME[direction.tokens.density]}.`,
-    "배치 · 단 구성 · 첫 화면의 모양은 스타일이 정하지 않았다. 이 사람의 자료를 보고 정한다.",
     "",
-    ...headPrompt(input.head),
+    ...promptSources(context),
     ...FIRST_SCREEN,
+    ...compositionPrompt(direction.composition),
   ].join("\n");
   return {
     spec: { contract: "page_generation", system: SNIPPET_SYSTEM, prompt, promptVersion: DESIGN_CHAT_PROMPT_VERSION, ...TIER },
@@ -338,7 +407,7 @@ export function reviseCall(input: { userId: string; sources: BrewPageSources; sn
     "## 지시",
     input.instruction,
     "지시가 가리킨 것만 바꾸고 나머지 마크업 · CSS · 클래스 이름은 그대로 둔다. 고친 첫 화면 전체를 낸다.",
-    "`name`과 `tokens`도 고친 결과에 맞게 적고, `note`에는 무엇을 바꿨는지 한 문장으로 적는다.",
+    "`name`과 `tokens`도 고친 결과에 맞게 적고, `note`에는 무엇을 바꿨는지 한 문장으로 적는다. 짜임은 그대로 둔다.",
   ].join("\n");
   return {
     spec: { contract: "page_generation", system: SNIPPET_SYSTEM, prompt, promptVersion: DESIGN_CHAT_PROMPT_VERSION, ...TIER },
@@ -362,5 +431,7 @@ export function catalogDirection(revisionId: string): DirectionDraft | null {
     name: spec.identity.name,
     words: `카탈로그의 「${spec.identity.name}」 디자인. ${spec.identity.visualThesis}. 제목 서체 ${spec.typography.display.family}(${spec.typography.display.fallback}).`,
     tokens: tokens.data,
+    // 카탈로그의 디자인은 색과 서체를 정한다. 짜임은 그리는 호출이 자료를 보고 고른다.
+    composition: null,
   };
 }

@@ -24,12 +24,13 @@ const tokens = { background: "#101418", text: "#f2f4f6", accent: "#7fe3c4", font
 const opening = {
   head: { role: "엔지니어", headline: "경로를 설계하는 엔지니어입니다.", intro: "", subject: "통로 경로", lead: ["통로 경로를 검토했습니다."] },
   say: "경로 검토를 앞에 세우겠습니다. 어떤 분위기로 보여 드릴까요?",
-  directions: ["가", "나", "다"].map((name) => ({ name: `방향 ${name}`, words: `${name} 방향의 색과 서체`, tokens })),
+  directions: (["document", "work", "cover"] as const).map((composition, index) => ({ name: `방향 ${"가나다"[index]}`, words: `${"가나다"[index]} 방향의 색과 서체`, tokens, composition })),
 };
 const snippet = (name: string) => ({
   name,
   note: `${name}의 첫 화면입니다.`,
   tokens,
+  composition: "metric" as const,
   css: `.hero{color:${tokens.text}}`,
   html: `<header class="hero"><h1>가상 작성자</h1><p>${name}</p><script>alert(1)</script></header>`,
 });
@@ -140,7 +141,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     route = () => snippet("방향 가 리포트");
     const sent = await service.send(user, brewId, { action: "draw", requestId: randomUUID(), directionIds: [first!] });
     expect(sent.run?.status).toBe("running");
-    expect(sent.messages.at(-1)).toMatchObject({ role: "assistant", status: "running", card: { kind: "screens", items: [{ status: "drawing", name: "방향 가" }] } });
+    expect(sent.messages.at(-1)).toMatchObject({ role: "assistant", status: "running", card: { kind: "screens", items: [{ status: "drawing", name: "방향 가", composition: "document" }] } });
     // 답을 만드는 동안에는 새로 보낼 수 없다.
     await expect(service.send(user, brewId, { action: "draw", requestId: randomUUID(), directionIds: [first!] })).rejects.toMatchObject({ statusCode: 409 });
     await service.settled();
@@ -151,12 +152,14 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const answer = done.messages.at(-1)!;
     expect(answer).toMatchObject({ role: "assistant", status: "complete", text: "방향 가 리포트의 첫 화면입니다." });
     expect(done.snippets).toHaveLength(1);
-    expect(done.snippets[0]).toMatchObject({ origin: "agent", name: "방향 가 리포트", fromSnippetId: null, tokens });
+    // 짜임은 방향이 정한 것이다. 그린 쪽이 다른 짜임을 적어도 방향의 것을 쓴다.
+    expect(done.snippets[0]).toMatchObject({ origin: "agent", name: "방향 가 리포트", fromSnippetId: null, tokens, composition: "document" });
     expect(done.snippets[0]!.html).not.toContain("<script");
     expect(answer.role === "assistant" && answer.card?.kind === "screens" && answer.card.items[0]).toMatchObject({ status: "done", snippetId: done.snippets[0]!.id });
     expect(ai.calls.at(-1)).toMatchObject({ contract: "page_generation", modelTier: "sonnet" });
-    // 그리는 호출은 원문 대신 여는 호출이 뽑은 사실을 받는다.
-    expect(ai.calls.at(-1)!.prompt).toContain(opening.head.headline);
+    // 그리는 호출은 원문 자료와 그 방향의 짜임을 받는다.
+    expect(ai.calls.at(-1)!.prompt).toContain("통로 경로를 검토했습니다.");
+    expect(ai.calls.at(-1)!.prompt).toContain("## 짜임 — 소개 글과 목록으로 시작하는 문서");
     await expect(service.send(user, brewId, { action: "draw", requestId: randomUUID(), directionIds: [randomUUID()] })).rejects.toMatchObject({ statusCode: 422 });
   });
 
@@ -203,7 +206,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const revised = (await service.get(user, brewId)).chat!;
     expect(revised.messages.at(-2)).toMatchObject({ role: "user", action: "say", text: "강조색을 짙은 초록으로", subjects: [{ kind: "snippet", id: drawn.id, name: "가 화면" }] });
     expect(revised.messages.at(-1)).toMatchObject({ role: "assistant", status: "complete", text: "강조색만 바꿨습니다.", card: { kind: "revision", fromSnippetId: drawn.id, item: { status: "done" } } });
-    expect(revised.snippets.at(-1)).toMatchObject({ origin: "edit", fromSnippetId: drawn.id, name: "가 화면 초록", words: "강조색을 짙은 초록으로 바꾼다" });
+    expect(revised.snippets.at(-1)).toMatchObject({ origin: "edit", fromSnippetId: drawn.id, name: "가 화면 초록", words: "강조색을 짙은 초록으로 바꾼다", composition: drawn.composition });
     // 답하는 호출은 대화 요약과 대상을 받고, 고치는 호출은 지금 첫 화면의 마크업을 받는다.
     const [reply, revise] = ai.calls.slice(-2);
     expect(reply!.prompt).toContain("## 이 말의 대상");
@@ -223,11 +226,11 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect((await service.get(user, brewId)).chat!.messages.at(-1)).toMatchObject({ role: "assistant", status: "complete", card: null, text: "고치겠습니다." });
 
     // 견본으로 답하면 견본 카드가 붙고, 그것도 누를 수 있는 견본이 된다.
-    route = () => ({ say: "두 방향을 더 놓았습니다.", show: "directions", directions: [{ name: "방향 라", words: "라 방향", tokens, source: "agent" }], instruction: "" });
+    route = () => ({ say: "두 방향을 더 놓았습니다.", show: "directions", directions: [{ name: "방향 라", words: "라 방향", tokens, composition: "work", source: "agent" }], instruction: "" });
     await service.send(user, brewId, { action: "say", requestId: randomUUID(), text: "다른 방향도 보여 주세요" });
     await service.settled();
     const more = (await service.get(user, brewId)).chat!.messages.at(-1)!;
-    expect(more).toMatchObject({ role: "assistant", status: "complete", card: { kind: "directions", directions: [{ name: "방향 라" }] } });
+    expect(more).toMatchObject({ role: "assistant", status: "complete", card: { kind: "directions", directions: [{ name: "방향 라", composition: "work" }] } });
   });
 
   it("답을 만들다 멎은 실행은 읽을 때 끊긴 것으로 바뀌고 다시 시도할 수 있다", async () => {

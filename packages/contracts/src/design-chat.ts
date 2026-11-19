@@ -24,12 +24,29 @@ export const DesignTokensSchema = z.strictObject({
 });
 export type DesignTokens = z.infer<typeof DesignTokensSchema>;
 
-/** 견본. 방향의 이름과 한두 문장, 색과 서체. 배치는 담지 않는다. */
+/**
+ * 첫 화면의 짜임 — 지면이 시작하는 자리에 무엇을 놓는가.
+ *
+ * 실제 개발자 포트폴리오 23곳의 첫 화면을 나눈 유형에서 왔다(2026-11-19 조사,
+ * `docs/architecture/portfolio-free-generation-lab.md`). 색과 서체만 다른 방향은 어느 것을 골라도 같은 구도가 나와서,
+ * 방향이 짜임까지 정한다.
+ *
+ * - `document`: 이름과 직무, 소개 문단, 바로 이어지는 경력 목록. 수치는 문장 안에 있다.
+ * - `work`: 소개는 머리 한 줄로 줄이고 프로젝트 목록이 첫 화면의 대부분을 차지한다.
+ * - `cover`: 이름과 직함, 한 줄 소개만 놓은 표지.
+ * - `metric`: 이름 옆에 대표 수치 하나를 크게 세운다.
+ */
+export const DESIGN_COMPOSITIONS = ["document", "work", "cover", "metric"] as const;
+export const DesignCompositionSchema = z.enum(DESIGN_COMPOSITIONS);
+export type DesignComposition = z.infer<typeof DesignCompositionSchema>;
+
+/** 견본. 방향의 이름과 한두 문장, 색과 서체, 첫 화면의 짜임. */
 export const DesignDirectionSchema = z.strictObject({
   id: UuidSchema,
   name: z.string().min(1).max(120),
   words: z.string().min(1).max(1_000),
   tokens: DesignTokensSchema,
+  composition: DesignCompositionSchema,
 });
 export type DesignDirection = z.infer<typeof DesignDirectionSchema>;
 
@@ -46,6 +63,7 @@ export const DesignSnippetSchema = z.strictObject({
   /** 이 첫 화면을 낳은 말. 방향의 설명이거나 고친 지시다. */
   words: z.string().max(2_000),
   tokens: DesignTokensSchema,
+  composition: DesignCompositionSchema,
   css: PageDraftSchema.shape.css,
   html: PageDraftSchema.shape.html,
   fromSnippetId: UuidSchema.nullable(),
@@ -80,6 +98,8 @@ export const DesignScreenItemSchema = z.strictObject({
   name: z.string().min(1).max(120),
   words: z.string().max(2_000),
   tokens: DesignTokensSchema,
+  /** 그릴 짜임. 카탈로그의 디자인은 짜임을 정하지 않아 null이고, 그리는 쪽이 자료를 보고 고른다. */
+  composition: DesignCompositionSchema.nullable(),
   status: z.enum(["drawing", "done", "failed"]),
   snippetId: UuidSchema.nullable(),
 });

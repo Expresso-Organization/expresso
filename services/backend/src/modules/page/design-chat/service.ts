@@ -190,7 +190,7 @@ export class DesignChatService {
       if (!found) throw new DesignChatError(422, "design system revision not found", "그 디자인을 카탈로그에서 찾지 못했습니다.");
       return found;
     };
-    const item = (draft: DirectionDraft): DesignScreenItem => ({ id: randomUUID(), name: draft.name, words: draft.words, tokens: draft.tokens, status: "drawing", snippetId: null });
+    const item = (draft: DirectionDraft): DesignScreenItem => ({ id: randomUUID(), name: draft.name, words: draft.words, tokens: draft.tokens, composition: draft.composition, status: "drawing", snippetId: null });
 
     let subjects: DesignSubject[] = [];
     let text = "";
@@ -384,7 +384,7 @@ export class DesignChatService {
           selected: row.snippets.find(({ id }) => id === row.selectedSnippetId) ?? null,
         });
         const { data } = await this.#ai.complete(call.spec, ReplySchema, { userId, check: call.check });
-        const item = (draft: DirectionDraft): DesignScreenItem => ({ id: randomUUID(), name: draft.name, words: draft.words, tokens: draft.tokens, status: "drawing", snippetId: null });
+        const item = (draft: DirectionDraft): DesignScreenItem => ({ id: randomUUID(), name: draft.name, words: draft.words, tokens: draft.tokens, composition: draft.composition, status: "drawing", snippetId: null });
         let card: DesignCard | null = null;
         if (data.show === "directions") card = { kind: "directions", directions: data.directions.map(({ source: _source, ...draft }) => ({ id: randomUUID(), ...draft })) };
         if (data.show === "screens") {
@@ -394,7 +394,7 @@ export class DesignChatService {
         }
         if (data.show === "revision" && turn.subject?.kind === "snippet") {
           const from = turn.subject.snippet;
-          const entry: DesignScreenItem = { id: randomUUID(), name: from.name, words: data.instruction, tokens: from.tokens, status: "drawing", snippetId: null };
+          const entry: DesignScreenItem = { id: randomUUID(), name: from.name, words: data.instruction, tokens: from.tokens, composition: from.composition, status: "drawing", snippetId: null };
           card = { kind: "revision", fromSnippetId: from.id, item: entry };
           draw = { kind: "draw", items: [entry], origins: ["edit"], revise: { from, instruction: data.instruction } };
         }
@@ -407,15 +407,17 @@ export class DesignChatService {
           try {
             const call = revise
               ? reviseCall({ userId, sources, snippet: revise.from, instruction: revise.instruction })
-              : drawCall({ userId, sources, head, direction: { name: item.name, words: item.words, tokens: item.tokens } });
+              : drawCall({ userId, sources, direction: { name: item.name, words: item.words, tokens: item.tokens, composition: item.composition } });
             const { data } = await this.#ai.complete(call.spec, SnippetDraftSchema, { userId, check: call.check });
             const clean = sanitizePage({ html: data.html, css: data.css });
             // 소독한 뒤의 값을 대화 계약으로 읽는다. 소독으로 마크업이 비었거나 계약에 맞지 않으면 이 장만 그리지 못한 것으로 남는다.
             const snippet: DesignSnippet = DesignSnippetSchema.parse({
               id: randomUUID(), origin: origins[index] ?? "agent", name: data.name, note: data.note, words: item.words, tokens: data.tokens,
+              // 방향이 정한 짜임이 있으면 그것이고(고친 것은 원래 첫 화면의 짜임), 없으면 그린 쪽이 고른 짜임이다.
+              composition: item.composition ?? data.composition,
               css: clean.css, html: clean.html, fromSnippetId: revise?.from.id ?? null, createdAt: new Date().toISOString(),
             });
-            const done = { ...item, status: "done" as const, snippetId: snippet.id };
+            const done = { ...item, composition: snippet.composition, status: "done" as const, snippetId: snippet.id };
             await this.#write(chatId, runId, {
               $push: { snippets: snippet },
               $set: { [`messages.${assistantAt}.card.${revise ? "item" : "items.$[item]"}`]: done },

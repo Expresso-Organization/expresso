@@ -86,8 +86,10 @@ export function useDesignChat(brewId: string): DesignChatState {
         .then((payload) => {
           const state = DesignChatStateResponseSchema.parse(payload).data;
           if (state.chat) accept(state.chat);
+          if (alive.current) setIssue(null);
         })
-        .catch(() => undefined);
+        // 다시 읽지 못하면 화면은 「만드는 중」에 머문다. 멈춘 것으로 보이지 않게 그 사실을 알리고 계속 다시 읽는다.
+        .catch(() => { if (alive.current) setIssue("대화를 다시 읽지 못했습니다. 잠시 뒤 다시 읽습니다."); });
     }, REFRESH_MS);
     return () => window.clearInterval(timer);
   }, [base, running, version, accept]);

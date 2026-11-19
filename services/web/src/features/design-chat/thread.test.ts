@@ -6,7 +6,7 @@ import { threadOf, userText, workingLabel } from "./thread";
 const id = (n: number) => `00000000-0000-4000-8000-00000000000${n}`;
 const stamp = "2026-11-19T00:00:00.000Z";
 const tokens = { background: "#ffffff", text: "#111111", accent: "#d6336c", font: "sans" as const, density: "comfortable" as const };
-const direction = { id: id(1), name: "측정판", words: "밝은 회색에 파랑", tokens };
+const direction = { id: id(1), name: "측정판", words: "밝은 회색에 파랑", tokens, composition: "document" as const };
 const base: DesignChat = {
   id: id(9), brewId: id(8), snippets: [], selectedSnippetId: null, version: 3, updatedAt: stamp,
   run: { id: id(7), requestId: id(7), status: "complete", error: null, startedAt: stamp },
@@ -39,7 +39,7 @@ describe("디자인 대화를 스레드 메시지로 옮기기", () => {
     expect(workingLabel(running)).toBe("자료를 읽는 중");
     const drawing: DesignChat = {
       ...running,
-      messages: [...base.messages, { id: id(3), role: "user", action: "draw", text: "", subjects: [], createdAt: stamp }, { id: id(4), role: "assistant", text: "", status: "running", card: { kind: "screens", items: [{ id: id(5), name: "측정판", words: "", tokens, status: "drawing", snippetId: null }] }, createdAt: stamp }],
+      messages: [...base.messages, { id: id(3), role: "user", action: "draw", text: "", subjects: [], createdAt: stamp }, { id: id(4), role: "assistant", text: "", status: "running", card: { kind: "screens", items: [{ id: id(5), name: "측정판", words: "", tokens, composition: "document", status: "drawing", snippetId: null }] }, createdAt: stamp }],
     };
     expect(workingLabel(drawing)).toBe("첫 화면을 그리는 중");
     expect(threadOf(drawing).messages[2]).toMatchObject({ content: [{ type: "tool-call", toolCallId: id(4), toolName: "screens" }] });
@@ -53,7 +53,7 @@ describe("디자인 대화를 스레드 메시지로 옮기기", () => {
     const failed: DesignChat = { ...base, run: { ...base.run!, status: "interrupted", error: "답을 만드는 중에 연결이 끊겼습니다. 다시 시도해 주세요." }, messages: [{ id: id(2), role: "assistant", text: "", status: "failed", card: null, createdAt: stamp }] };
     expect(threadOf(failed).cards[id(2)]).toEqual({ kind: "failed", error: "답을 만드는 중에 연결이 끊겼습니다. 다시 시도해 주세요." });
     // 카드가 있는 답의 실패는 카드가 장마다 보인다.
-    const partial: DesignChat = { ...base, messages: [{ id: id(2), role: "assistant", text: "", status: "failed", card: { kind: "screens", items: [{ id: id(5), name: "측정판", words: "", tokens, status: "failed", snippetId: null }] }, createdAt: stamp }] };
+    const partial: DesignChat = { ...base, messages: [{ id: id(2), role: "assistant", text: "", status: "failed", card: { kind: "screens", items: [{ id: id(5), name: "측정판", words: "", tokens, composition: "document", status: "failed", snippetId: null }] }, createdAt: stamp }] };
     expect(threadOf(partial).cards[id(2)]).toMatchObject({ kind: "screens" });
   });
 });

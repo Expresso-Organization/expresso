@@ -89,11 +89,11 @@
 @media (prefers-reduced-motion: reduce) {
   .specimenCue { transition: none; }
 }
-/* 견본은 지면이 아니라 색 면이다. 첫 화면 카드(16:8)보다 낮게 두어 둘이 다른 것으로 읽히게 한다. */
+/* 견본은 지면이 아니라 색 면 위의 그림이다. 첫 화면 카드(16:10)보다 낮게 두어 둘이 다른 것으로 읽히게 한다. */
 .swatch {
   position: relative;
   display: block;
-  aspect-ratio: 16 / 5;
+  aspect-ratio: 16 / 8;
   border-radius: var(--ex-radius-control);
   overflow: hidden;
 }
@@ -116,6 +116,33 @@
   padding: 12px 14px;
   container-type: inline-size;
 }
+/*
+ * 짜임을 줄인 그림. 이름 줄 위의 자리를 채운다. 줄은 위에서부터 쌓이고, 한 줄 안의 칸은 옆으로 놓인다.
+ * 제목(t · T)은 글자색 그대로, 글(l)은 옅게, 강조(a · A)는 그 방향의 강조색이다.
+ */
+.skeleton {
+  position: absolute;
+  inset: 14px 16px 46px;
+  display: flex;
+  flex-direction: column;
+  gap: 6%;
+  justify-content: flex-start;
+}
+.skeleton > span { display: flex; align-items: center; gap: 4%; min-height: 0; }
+.skeleton i { display: block; height: 3px; border-radius: 2px; background: currentColor; opacity: 0.26; flex-shrink: 0; }
+.skeleton i[data-part="t"] { height: 5px; opacity: 0.85; }
+.skeleton i[data-part="a"] { height: 5px; opacity: 1; }
+.skeleton i[data-part="r"] { height: 1px; opacity: 0.3; }
+/* 표지는 이름 하나가 화면을 채운다. 아래로 몰아 크게 둔다. */
+.skeleton[data-kind="cover"] { justify-content: flex-end; gap: 8%; }
+.skeleton i[data-part="T"] { height: 22%; min-height: 14px; opacity: 0.9; border-radius: 3px; }
+.skeleton[data-kind="cover"] > span:nth-child(2) { flex: 0 0 34%; align-items: stretch; }
+.skeleton[data-kind="cover"] i[data-part="T"] { height: 100%; }
+/* 수치 중심은 한쪽에 글, 다른 쪽에 큰 수치가 선다. */
+.skeleton[data-kind="metric"] { justify-content: center; gap: 9%; }
+.skeleton[data-kind="metric"] > span { justify-content: space-between; }
+.skeleton[data-kind="metric"] > span:first-child { align-items: flex-end; flex: 0 0 34%; }
+.skeleton i[data-part="A"] { height: 100%; opacity: 1; border-radius: 3px; }
 .swatchFace > strong {
   min-width: 0;
   font-size: clamp(var(--ex-text-md), 8cqw, var(--ex-text-3xl));
@@ -133,6 +160,7 @@
   line-height: var(--ex-leading-snug);
   color: var(--ex-fg-muted);
 }
+.specimenWords > strong { display: block; margin-bottom: 2px; font-weight: 600; color: var(--ex-fg); }
 
 /* 견본 아래의 빠른 답. 입력창 위 막대의 버튼과 같은 모양이다. */
 .replies { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -192,7 +220,7 @@ button.thumb { cursor: pointer; }
   position: relative;
   display: block;
   width: 100%;
-  aspect-ratio: 2 / 1;
+  aspect-ratio: 8 / 5;
   overflow: hidden;
   border-radius: var(--ex-radius-control);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ex-fg) 10%, transparent);
@@ -312,7 +340,7 @@ button.thumb:focus-visible, button.specimen:focus-visible, .reply:focus-visible,
 .attachment > span:last-child { display: flex; flex-direction: column; line-height: var(--ex-leading-tight); }
 .attachment small { font-size: var(--ex-text-3xs); color: var(--ex-fg-subtle); }
 .attachment strong { font-weight: 600; }
-.attachmentThumb { position: relative; display: block; width: 64px; flex-shrink: 0; aspect-ratio: 2 / 1; border-radius: 4px; overflow: hidden; }
+.attachmentThumb { position: relative; display: block; width: 64px; flex-shrink: 0; aspect-ratio: 8 / 5; border-radius: 4px; overflow: hidden; }
 .attachmentThumb .frame { border-radius: 4px; }
 .attachmentSwatch {
   display: flex;
@@ -321,7 +349,7 @@ button.thumb:focus-visible, button.specimen:focus-visible, .reply:focus-visible,
   gap: 3px;
   width: 64px;
   flex-shrink: 0;
-  aspect-ratio: 2 / 1;
+  aspect-ratio: 8 / 5;
   padding: 5px;
   border-radius: 4px;
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ex-fg) 10%, transparent);
@@ -361,7 +389,7 @@ button.thumb:focus-visible, button.specimen:focus-visible, .reply:focus-visible,
 }
 .chip > button { display: grid; place-items: center; width: 18px; height: 18px; border: 0; border-radius: 50%; background: transparent; color: inherit; cursor: pointer; }
 .chip > button:hover { background: var(--ex-accent-surface-hover); }
-.chipThumb { position: relative; display: block; width: 52px; aspect-ratio: 2 / 1; border-radius: var(--ex-radius-pill); overflow: hidden; flex-shrink: 0; }
+.chipThumb { position: relative; display: block; width: 48px; aspect-ratio: 8 / 5; border-radius: var(--ex-radius-pill); overflow: hidden; flex-shrink: 0; }
 .chipThumb .frame { border-radius: inherit; }
 /* 카탈로그 표지는 카드 크기로 그려진 것이다. 작은 자리에서는 네 배 크기로 그린 뒤 줄여, 글자가 넘치지 않게 한다. */
 .miniCover { position: relative; display: block; width: 100%; height: 100%; overflow: hidden; }

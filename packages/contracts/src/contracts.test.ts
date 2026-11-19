@@ -5,6 +5,7 @@ import {
   PAGE_STREAM_EVENTS,
   SubmitGenerationSchema,
   SendDesignMessageSchema,
+  DESIGN_COMPOSITIONS,
   DesignTokensSchema,
   DesignChatSchema,
   DesignChatStateResponseSchema,
@@ -966,16 +967,19 @@ describe("디자인을 정하는 대화", () => {
     const chat = {
       id, brewId: id, selectedSnippetId: id, version: 4, updatedAt: stamp,
       run: { id, requestId: id, status: "complete", error: null, startedAt: stamp },
-      snippets: [{ id, origin: "agent", name: "측정판", note: "LCP를 앞에 세웠습니다.", words: "밝은 회색에 파랑", tokens, css: "", html: "<header></header>", fromSnippetId: null, createdAt: stamp }],
+      snippets: [{ id, origin: "agent", name: "측정판", note: "LCP를 앞에 세웠습니다.", words: "밝은 회색에 파랑", tokens, composition: "document", css: "", html: "<header></header>", fromSnippetId: null, createdAt: stamp }],
       messages: [
-        { id, role: "assistant", text: "어떤 분위기로 보여 드릴까요?", status: "complete", card: { kind: "directions", directions: [{ id, name: "측정판", words: "밝은 회색에 파랑", tokens }] }, createdAt: stamp },
+        { id, role: "assistant", text: "어떤 분위기로 보여 드릴까요?", status: "complete", card: { kind: "directions", directions: [{ id, name: "측정판", words: "밝은 회색에 파랑", tokens, composition: "work" }] }, createdAt: stamp },
         { id, role: "user", action: "draw", text: "", subjects: [{ kind: "direction", id, name: "측정판" }], createdAt: stamp },
-        { id, role: "assistant", text: "", status: "running", card: { kind: "screens", items: [{ id, name: "측정판", words: "", tokens, status: "drawing", snippetId: null }] }, createdAt: stamp },
-        { id, role: "assistant", text: "강조색만 바꿨습니다.", status: "complete", card: { kind: "revision", fromSnippetId: id, item: { id, name: "측정판", words: "초록으로", tokens, status: "done", snippetId: id } }, createdAt: stamp },
+        { id, role: "assistant", text: "", status: "running", card: { kind: "screens", items: [{ id, name: "측정판", words: "", tokens, composition: null, status: "drawing", snippetId: null }] }, createdAt: stamp },
+        { id, role: "assistant", text: "강조색만 바꿨습니다.", status: "complete", card: { kind: "revision", fromSnippetId: id, item: { id, name: "측정판", words: "초록으로", tokens, composition: "document", status: "done", snippetId: id } }, createdAt: stamp },
       ],
     };
     expect(DesignChatSchema.safeParse(chat).success).toBe(true);
     expect(DesignChatSchema.safeParse({ ...chat, run: { ...chat.run, status: "cancelled" } }).success).toBe(false);
+    // 견본과 그린 첫 화면은 짜임을 갖는다. 그리는 중인 장만 짜임이 비어 있을 수 있다(카탈로그의 디자인).
+    expect(DesignChatSchema.safeParse({ ...chat, snippets: [{ ...chat.snippets[0], composition: null }] }).success).toBe(false);
+    expect(DESIGN_COMPOSITIONS).toEqual(["document", "work", "cover", "metric"]);
     expect(DesignChatStateResponseSchema.safeParse({ data: { chat: null, unchanged: true } }).success).toBe(true);
   });
   it("생성 중 미리보기는 고른 첫 화면을 받는 이벤트를 안다", () => {
