@@ -7,6 +7,7 @@ const runtimeConfigSchema = z.object({
   LOG_LEVEL: z
     .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
     .default("info"),
+  MATCH_MODEL_URL: z.url().refine(value => ["localhost", "127.0.0.1", "[::1]"].includes(new URL(value).hostname) && new URL(value).protocol === "http:", "local inference URL required").optional(),
   MONGODB_URL: z.url().refine((value) => ["mongodb:", "mongodb+srv:"].includes(new URL(value).protocol), "MONGODB_URL must use mongodb:// or mongodb+srv://").default("mongodb://admin:expresso-admin@127.0.0.1:57017/expresso?authSource=admin&replicaSet=rs0"),
   MONGODB_DATABASE: z.string().regex(/^[A-Za-z0-9_-]{1,63}$/).default("expresso"),
   REDIS_URL: z.url().default("redis://127.0.0.1:6379"),
@@ -135,6 +136,7 @@ const runtimeConfigSchema = z.object({
 }).refine((value) => value.NODE_ENV !== "production" || !value.CAREER_AI_DETERMINISTIC_TEST, { message: "CAREER_AI_DETERMINISTIC_TEST is forbidden in production", path: ["CAREER_AI_DETERMINISTIC_TEST"] });
 
 export interface RuntimeConfig {
+  matchModelUrl?: string;
   nodeEnv: z.infer<typeof runtimeConfigSchema>["NODE_ENV"];
   host: string;
   port: number;
@@ -210,6 +212,7 @@ export function loadRuntimeConfig(
     host: result.HOST,
     port: result.PORT,
     logLevel: result.LOG_LEVEL,
+    ...(result.MATCH_MODEL_URL ? { matchModelUrl: result.MATCH_MODEL_URL } : {}),
     mongodbUrl: result.MONGODB_URL,
     mongodbDatabase: result.MONGODB_DATABASE,
     redisUrl: result.REDIS_URL,

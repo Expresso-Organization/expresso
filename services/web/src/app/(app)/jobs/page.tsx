@@ -722,6 +722,7 @@ export default async function JobsPage({
       {header}
       <AppBody>
         <div className={styles.content}>
+          <Link href="/jobs/recommendations" prefetch={false} className={styles.categoryTab}>내 기록으로 공고 추천받기</Link>
           {q ? (
             <SearchQueryCard
               query={q}

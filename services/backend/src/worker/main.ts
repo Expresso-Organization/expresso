@@ -1,3 +1,4 @@
+import { MatchModelService } from "../modules/match-model/service.js";
 import { loadRuntimeConfig } from "../config/runtime-config.js";
 import { MongoOutboxDispatcher } from "../platform/mongo-outbox.js";
 import { createMongoResource } from "../platform/mongodb.js";
@@ -137,6 +138,7 @@ const aiUsage = new MongoAiUsageSink(database);
 const ai = createAiClient(config, aiUsage);
 // 계약을 부르기 전에 지나는 문. 워커에서 도는 계약도 예외가 아니다.
 const consentService = new ConsentService(database);
+const matchModelService = new MatchModelService(database, config.matchModelUrl, consentService);
 const jobAnalysisService = new JobAnalysisService(database);
 const generationService = new GenerationService(database, consentService);
 // 지면을 만드는 쪽이 여기다 — 조각은 전부 이 프로세스에서 나간다.
@@ -153,6 +155,7 @@ const pageRefineProcessor = createPageRefineProcessor(pageService, structuredPag
 const analysisProcessor = createJobAnalysisProcessor(
   jobAnalysisService,
   ai ? new AiRequirementExtractor(ai) : new UnavailableRequirementExtractor(),
+  analysisId => matchModelService.warmAnalysis(analysisId),
 );
 // 생성 완료 알림을 생성 처리기가 만들기 때문에 먼저 둔다.
 const engagementService = new EngagementService(database);

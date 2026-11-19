@@ -59,7 +59,10 @@ export class ConsentService implements ConsentApi {
 
   async require(userId: string, contract: AiContract): Promise<void> {
     const scope = CONTRACT_CONSENT[contract];
-    if (scope === null) return;
+    if (scope !== null) await this.requireScope(userId, scope);
+  }
+
+  async requireScope(userId: string, scope: ConsentScope): Promise<void> {
     await this.#transaction(async tx => {
       await requireActiveUser(tx, userId);
       const result = await mongoCollections(tx.db).consents.updateOne(

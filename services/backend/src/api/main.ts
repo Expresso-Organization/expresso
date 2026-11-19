@@ -1,3 +1,4 @@
+import { MatchModelService } from "../modules/match-model/service.js";
 import { AgentCredentials } from "../modules/agent-chat/index.js";
 import { AgentChatService } from "../modules/agent-chat/index.js";
 import { ClaudeAgentRuntime } from "../platform/agent/runtime.js";
@@ -66,7 +67,7 @@ const careerService = new CareerService(database);
 const jobUrlImporter = new JobUrlImporter();
 const jobBoardService = new JobBoardService(database);
 const jobAnalysisService = new JobAnalysisService(database);
-const materialsService = new MaterialsService(database);
+
 const interviewService = new InterviewService(database);
 const recipeService = new RecipeService(database);
 const companyResearchService = new CompanyResearchService(database);
@@ -92,6 +93,8 @@ const jobIngestService = new JobIngestService(
 );
 // 계약을 부르기 전에 지나는 문. 규칙 폴백은 지나지 않는다.
 const consentService = new ConsentService(database);
+const matchModelService = new MatchModelService(database, config.matchModelUrl, consentService);
+const materialsService = new MaterialsService(database, matchModelService);
 // 자연어 검색도 요청 안에서 계약을 부른다 — 검색은 사용자가 입력하고 바로
 // 결과를 보는 화면이라 뒤로 미룰 수 없다. AI가 꺼져 있으면 규칙 폴백
 // (search-parser.ts)이 그대로 돈다.
@@ -183,6 +186,7 @@ const app = buildApi({
   jobMarketService,
   jobIngestService,
   jobUrlImporter,
+  matchModelService,
   jobBoardService,
   jobAnalysisService,
   materialsService,

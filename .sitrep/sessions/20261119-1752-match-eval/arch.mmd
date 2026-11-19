@@ -1,12 +1,12 @@
 flowchart TD
-  D[(고정 요건 데이터)] --> L[모델 A·B 학습]
-  L --> E[독립 분할·6계정 평가]
-  E --> P[번들 복원·추론]
+  D[고정 요건 · 기록 정답표] --> M[학습한 공고·근거 모델]
+  M --> L[인증 API · ONNX]
+  L --> E[선택한 경우 Decisions 재정렬·검증]
+  L --> W[웹 추천 · 제작 재료]
+  E --> W
+  W --> T[6계정 제품 검증]
   classDef done fill:#d1fae5,stroke:#059669
   classDef doing fill:#fef3c7,stroke:#d97706
   classDef decide fill:#fee2e2,stroke:#dc2626
   classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4
-  class D done
-  class L done
-  class E done
-  class P done
+  class D,M,L,E,W,T done

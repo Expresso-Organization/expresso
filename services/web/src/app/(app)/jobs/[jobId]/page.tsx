@@ -139,6 +139,7 @@ export default async function JobDetailPage({
             * 브라우저 뒤로가기가 아니라 **목록 주소**로 간다 — 주소를 직접
             * 열었거나 알림에서 들어온 사람에게도 같은 자리로 데려다준다.
             */}
+          <Link href={`/jobs/recommendations?posting=${job.id}`} prefetch={false} className={styles.backToList}>요건별 내 경력 근거 보기</Link>
           <Link href={backHref} className={styles.backToList}>
             <Icon name="arrow-left" size={13} />
             목록으로 돌아가기

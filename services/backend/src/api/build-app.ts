@@ -1,3 +1,5 @@
+import type { MatchModelService } from "../modules/match-model/service.js";
+import { registerMatchModelRoutes } from "../modules/match-model/routes.js";
 import { type AgentChatService, registerAgentChatRoutes } from "../modules/agent-chat/index.js";
 import Fastify, { LogController, type FastifyInstance } from "fastify";
 
@@ -85,6 +87,7 @@ export interface BuildApiOptions {
   jobMarketService?: JobMarketApi;
   jobIngestService?: JobIngestApi;
   jobUrlImporter?: JobUrlImporter;
+  matchModelService?: MatchModelService;
   jobBoardService?: JobBoardApi;
   jobAnalysisService?: JobAnalysisApi;
   materialsService?: MaterialsApi;
@@ -196,6 +199,7 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
     }
     if (options.agentChatService) registerAgentChatRoutes(app, options.agentChatService, createAuthenticateRequest(options.identityService), options.config.agentChatDeveloperUserIds);
     // 읽기 라우트를 먼저 건다 — `/jobs/postings/:id`가 쓰기 라우트와 같은 자리다.
+    if (options.matchModelService) registerMatchModelRoutes(app, options.matchModelService, createAuthenticateRequest(options.identityService));
     if (options.jobBoardService) {
       registerJobBoardRoutes(app, {
         service: options.jobBoardService,
