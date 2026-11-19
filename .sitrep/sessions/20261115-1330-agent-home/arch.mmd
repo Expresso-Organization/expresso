@@ -1,21 +1,20 @@
 flowchart TD
-  MERGE[main 머지] --> DEPLOY[deploy.sh]
-  DEPLOY --> MIG[마이그레이션]
-  MIG --> BUILD[웹 빌드<br/>NEXT_DIST_DIR=.next-build]
-  BUILD --> CFG[next.config.ts<br/>빌드용 tsconfig 고르기]
-  CFG --> TSB[tsconfig.next-build.json]
-  TSB --> FRESH[.next-build/types<br/>이번 빌드의 타입]
-  CFG -.고치기 전.-> STALE[.next/types<br/>직전 배포의 타입]
-  BUILD --> CHECK[타입 검사<br/>증분 캐시 없이 전부]
-  FRESH --> CHECK
-  CHECK --> SWAP[.next 교체 · 재시작]
-  GUARD[tsconfig.test.ts] --> TSB
-  PR{PR 머지 D3} --> MERGE
-  TC[pnpm typecheck의 경로 타입] --> CHECK
+  TC[pnpm typecheck] --> REN[portfolio-renderer 빌드]
+  REN --> GEN[next typegen]
+  GEN --> TYPES[.next/types<br/>지금 코드의 경로 타입]
+  GEN -.다시 씀.-> ENV[next-env.d.ts<br/>추적 해제 · 무시]
+  TYPES --> TSC[tsc --noEmit]
+  CI[CI 타입 검사 단계] --> TC
+  GUARD[tsconfig.test.ts<br/>스크립트 순서 검사] --> TC
+  ENV --> DEPLOY[deploy.sh<br/>되돌리기 줄 제거]
+  DEPLOY --> GIT[git 구간 네 경로 실험]
+  PR{PR 머지 D4} --> FIRST[첫 실제 전환 배포]
+  DEPLOY --> FIRST
   classDef done fill:#d1fae5,stroke:#059669
   classDef doing fill:#fef3c7,stroke:#d97706
   classDef decide fill:#fee2e2,stroke:#dc2626
   classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4
-  class DEPLOY,MIG,BUILD,CFG,TSB,FRESH,CHECK,SWAP,GUARD,STALE,MERGE done
+  class TC,REN,GEN,TYPES,ENV,TSC,GUARD,DEPLOY,GIT done
+  class CI doing
   class PR decide
-  class TC todo
+  class FIRST todo

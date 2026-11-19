@@ -106,6 +106,8 @@ scripts/operations/deploy.sh <검증된-commit>
 
 웹의 `tsconfig.json`에는 `incremental`을 두지 않습니다. 켜면 Next가 타입 검사 결과를 `.next/cache/.tsbuildinfo`에 남기고, 배포는 그 캐시를 다음 빌드로 옮겨 이어 씁니다. `tsc` 7.0.2는 경로 타입이 바뀌어도 바뀌지 않은 파일을 다시 검사하지 않아, 화면을 지우고 그 화면으로 가는 링크를 남긴 변경이 캐시가 있는 서버 빌드를 통과했습니다(2026-11-20 로컬 재현). 캐시 없는 전체 검사는 1.5초입니다.
 
+`services/web/next-env.d.ts`는 저장소가 추적하지 않습니다. 빌드가 이 파일을 `.next-build` 경로로 다시 쓰지만, 무시되는 파일이라 다음 배포의 `git checkout`을 막지 않습니다. 2026-11-20까지는 추적했고 `deploy.sh`가 배포 전에 `git checkout -- services/web/next-env.d.ts`로 되돌렸습니다. 그 줄이 있는 옛 커밋으로 되돌릴 때는 git이 무시된 파일을 덮어쓰고, 옛 스크립트가 그 줄을 다시 돌립니다.
+
 스크립트는 마이그레이션을 워커 재시작보다 먼저 돌립니다. 마이그레이션이 `scheduled_job_definitions`에 새 예약 작업을 넣으면, 워커가 재시작될 때까지 옛 코드의 워커가 그 정의를 봅니다. 워커는 자기 코드가 아는 키(`SCHEDULED_JOB_KEYS`)의 정의만 집으므로, 새 작업은 `nextRunAt`이 그대로 남았다가 새 워커의 첫 폴링에서 실행됩니다. 이 동작은 #243이 배포된 뒤의 워커부터 적용됩니다. 그 전 판의 워커는 모르는 키도 집어 다섯 번 실패시키고 `nextRunAt`을 다음 주기로 옮깁니다. 2026-11-19 #240 배포에서 `activity_collect`와 `proposal_briefing`의 첫 실행이 이렇게 하루 밀렸습니다.
 
 새 예약 작업이 든 배포 뒤에는 운영 `scheduled_job_runs`에서 그 키의 상태를 확인합니다.

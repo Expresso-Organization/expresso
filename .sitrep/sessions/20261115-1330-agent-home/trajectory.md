@@ -191,3 +191,22 @@
 ### 01:15 · 보고
 - 상태: 구현 중, 90%. T14 수정 완료, PR 머지는 사용자 승인 대기(D3)
 - 이 PR의 배포로는 운영에서 증명되지 않음(운영 `.next/types`에 이미 `/goal`이 있음). 근거는 로컬 재현
+
+### 01:18 · D3 결정 · T14.3 완료 · PR #247 머지와 운영 배포
+- 결정(사용자): 「머지」. 자동 머지로 `8c937336` 머지, 배포 성공(`배포 완료 8c937336 (이전 f9c6d64)`)
+- 서버 빌드 로그: `Finished TypeScript in 3.9s`(증분 캐시 없이 전체 검사). 웹 · API · 워커 active, `/login` 200 · `/home` 307 · `/goal` 307, WebSocket 101
+- 운영에서의 증명은 새 화면을 더하는 다음 배포
+
+### 01:25 · T15 시작 · 타입 검사의 경로 타입 생성
+- 사용자 지시 「고쳐놔」(앞선 보고의 결정: `pnpm typecheck`가 경로 타입을 새로 만든 뒤 검사하게 고칠지)
+- 확인: `next typegen`은 `routes.d.ts` · `link.d.ts` · `validator.ts` · `cache-life.d.ts` · `root-params.d.ts`를 옛 파일 위에 다시 씀(1초). `next-env.d.ts`도 다시 씀
+- 고치기 전 장면: `.next` 없음 + 없는 경로 링크 → 통과 / `/goal` 없는 옛 타입 + 정상 코드 → `/goal` 링크 세 곳 `TS2322`
+
+### 01:45 · T15.1 · T15.2 완료 · 수정과 검증
+- `services/web/package.json`의 `typecheck`: renderer 빌드 → `next typegen` → `tsc`
+- `services/web/next-env.d.ts` 추적 해제(`.gitignore`에 추가), `deploy.sh`의 `git checkout -- services/web/next-env.d.ts` 줄 제거, `tsconfig.test.ts`에 스크립트 순서 검사, `AGENTS.md` · `DEPLOYMENT.md` 갱신
+- 타입 검사 장면(실제 명령): 옛 타입 + 정상 코드 통과 / 옛 타입 + 화면 삭제 · 링크 유지 실패 / `.next` · `next-env.d.ts` 없음 + 정상 코드 통과 / 같은 상태 + 없는 경로 링크 `TS2322` 실패. 검사 뒤 `git status`에 `next-env.d.ts` 없음
+- 배포 스크립트 git 구간(두 판의 스크립트에서 그대로 뽑아 실제 커밋 `8c937336` ↔ `451591d4`로 실행, git 2.54): 첫 배포 · 보통 배포 · 되돌리기 · 다시 앞으로 모두 통과. 줄을 남긴 판을 새 커밋에서 돌리면 `pathspec … did not match`로 멈춤
+- 서버 git은 2.34.1. 되돌리기 경로가 기대는 「무시된 파일 덮어쓰기」는 그 판에서 실행해 보지 않음
+- `pnpm typecheck` 통과, `pnpm test` 통과(웹 482 · 백엔드 661), `next-env.d.ts` 없이 배포 절차의 웹 빌드 구간 통과
+
