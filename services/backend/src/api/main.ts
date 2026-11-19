@@ -176,7 +176,7 @@ const agentChatService = new AgentChatService(database, config.agentChatEnabled 
   getResult: (userId, jobAnalysisId) => jobAnalysisService.getResult(userId, jobAnalysisId),
   createBrew: (userId, input) => materialsService.createBrew(userId, input),
   // 지운 제작(휴지통)과 없는 제작은 404다. 그 밖의 오류는 그대로 올린다.
-  brewStatus: (userId, brewId) => materialsService.getState(userId, brewId).then(state => state.status, error => { if (error instanceof MaterialsError && error.statusCode === 404) return null; throw error; }),
+  brewState: (userId, brewId) => materialsService.getState(userId, brewId).then(state => ({ status: state.status, selected: state.materials.selected }), error => { if (error instanceof MaterialsError && error.statusCode === 404) return null; throw error; }),
 });
 const activityService = new ActivityService(database);
 // API는 제안을 읽고 실행을 줄에 넣기만 한다. AI 실행은 워커가 한다(`writer`를 주지 않는다).

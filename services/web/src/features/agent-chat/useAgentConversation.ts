@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AgentConversationResponseSchema, AgentConversationListSchema, type AgentConversation, type AgentContext, type AgentPageSelection, type AgentApproval, type AgentPlanDecision, type AgentGoalDraftDecision, type AgentRecordDraftDecision, type AgentReplanDecision } from "@expresso/contracts";
+import { AgentBrewOpenResponseSchema, AgentConversationResponseSchema, AgentConversationListSchema, type AgentConversation, type AgentContext, type AgentPageSelection, type AgentApproval, type AgentPlanDecision, type AgentGoalDraftDecision, type AgentRecordDraftDecision, type AgentReplanDecision } from "@expresso/contracts";
 const base = "/api/agent/conversations";
 export async function agentRequest(path: string, body?: unknown) {
   const response = await fetch(`${base}${path}`, { ...(body === undefined ? {} : { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), cache: "no-store" });
@@ -126,6 +126,18 @@ export function useAgentConversation(context?: AgentContext, options: { restore?
      * 대화에서 시작한 제작의 공고 분석이 끝난 것을 에이전트가 알리게 한다. 서버가 답 하나를 시작하고 그 대화를 돌려준다.
      * 사용자가 누른 일이 아니므로 「보내는 중」으로 표시하지 않고, 실패는 부른 쪽(카드)이 받는다.
      */
+    /**
+     * 대화에서 시작한 제작을 연다. 다음 단계가 이 대화 안이면(재료 고르기) 카드가 붙은 대화를 받아들이고 null을,
+     * 아직 지금의 화면이면 그 경로를 돌려준다. 실패는 부른 쪽(카드)이 받는다.
+     */
+    openBrew: async (startId: string): Promise<string | null> => {
+      const response = await fetch(`${base}/${id}/brew-starts/${startId}/open`, { method: "POST", cache: "no-store" });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(payload?.error?.message ?? "제작을 열지 못했습니다.");
+      const opened = AgentBrewOpenResponseSchema.parse(payload).data;
+      if (opened.conversation) accept(opened.conversation);
+      return opened.path;
+    },
     announceBrew: async (startId: string) => { if (id) accept(await agentRequest(`/${id}/brew-starts/${startId}/announce`, {})); },
     /** 에이전트가 저장한 지면 고침 되돌리기. 실패를 카드가 직접 보여 주도록 오류를 다시 던진다. */
     undoPageEdit: (editId: string) => decide(`page-edits/${editId}/undo`, {}),

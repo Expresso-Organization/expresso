@@ -20,6 +20,8 @@ date: 2026-11-20
 | `services/backend/src/platform/agent/runtime.ts` | 모델에 넘기는 상태의 새 칸, 지침 |
 | `services/backend/src/api/main.ts` | `brewState` 배선 |
 | `services/web/src/app/api/brews/[brewId]/materials/route.ts` (새로) | 재료 읽기 · 저장 |
+| `services/web/src/lib/brew-materials-card.ts` (새로) | 카드가 읽는 모양, 다음 단계의 판정(`interviewEntry`) |
+| `services/web/src/app/(app)/brew/[brewId]/materials/page.tsx` | 같은 판정을 `interviewEntry`로 씀 |
 | `services/web/src/features/agent-chat/BrewMaterialsCard.tsx` · `.module.css` (새로) | 카드 |
 | `services/web/src/features/agent-chat/BrewStartCard.tsx` · `AgentChat.tsx` · `useAgentConversation.ts` | 열기 결과 처리, 카드 분기 |
 | 테스트 | `service.integration.test.ts` · `runtime.test.ts` · `BrewMaterialsCard.test.tsx` · `BrewStartCard.test.tsx` |

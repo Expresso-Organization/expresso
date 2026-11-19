@@ -17,7 +17,7 @@ import type { CareerDocumentApi } from "../career-editor/index.js";
 import { readableCareerProperties, type CareerApi } from "../career/index.js";
 import type { JobBoardApi } from "../jobs/index.js";
 import { ConsentError, type ConsentApi } from "../consent/index.js";
-import { brewPath, brewStartState, KeyedQueue, type AgentBrewDeps } from "./brew-start.js";
+import { brewPath, brewStartState, KeyedQueue, type AgentBrewDeps, type LiveBrew } from "./brew-start.js";
 import type { AgentBrewStart, AgentBrewStartInput, AgentBrewStartState } from "@expresso/contracts";
 import type { AgentBrewState, AgentRunEvent } from "../../platform/agent/runtime.js";
 
@@ -200,21 +200,22 @@ export class AgentChatService {
     catch (error) { if (error instanceof ConsentError) throw new AgentToolRejection(["공고 분석 동의가 꺼져 있습니다. 설정의 「AI 사용 동의」에서 공고 분석을 켠 뒤 다시 요청해 달라고 안내하십시오."]); throw error; }
     const posting = await this.jobs.get(row.userId, input.jobPostingId);
     const { jobAnalysisId } = await this.brews.analyzePosting(row.userId, input.jobPostingId);
-    const brewId = await this.liveBrew(row, jobAnalysisId);
+    const brew = await this.liveBrew(row, jobAnalysisId);
     const result = await this.brews.getResult(row.userId, jobAnalysisId);
     // 앞서 분석해 둔 공고면 결과가 이미 있다. 도구가 그 결과를 돌려주어 이 답이 바로 알리므로, 따로 알리지 않도록 적어 둔다.
     // 메시지 밖에 적으므로 실행이 쓰는 마지막 답변과 부딪히지 않는다.
     const announced = !!row.brewAnnounced?.[jobAnalysisId];
     if (result.analysis.status === "done" && !announced) await this.rows.updateOne({ _id: row._id, userId: row.userId, [`brewAnnounced.${jobAnalysisId}`]: { $exists: false } }, { $set: { [`brewAnnounced.${jobAnalysisId}`]: row.messages.at(-1)!.id } });
     return {
-      start: { startId: randomUUID(), jobPostingId: input.jobPostingId, jobAnalysisId, title: posting.title, companyName: posting.company.name, brewId },
-      state: brewStartState(result, brewId, announced || result.analysis.status === "done"),
+      start: { startId: randomUUID(), jobPostingId: input.jobPostingId, jobAnalysisId, title: posting.title, companyName: posting.company.name, brewId: brew?.id ?? null },
+      state: brewStartState(result, brew, announced || result.analysis.status === "done"),
     };
   }
   /** 이 대화에서 만든 제작 가운데 아직 남아 있는 것. 지운 제작(휴지통)은 없는 것으로 본다 — 카드가 죽은 화면을 열지 않게 한다. */
-  private async liveBrew(row: AgentConversationDoc, jobAnalysisId: string): Promise<string | null> {
+  private async liveBrew(row: AgentConversationDoc, jobAnalysisId: string): Promise<LiveBrew | null> {
     const brewId = brewOf(row, jobAnalysisId);
-    return brewId && await this.brews!.brewStatus(row.userId, brewId) ? brewId : null;
+    const state = brewId ? await this.brews!.brewState(row.userId, brewId) : null;
+    return brewId && state ? { id: brewId, ...state } : null;
   }
   private brewStart(row: AgentConversationDoc, startId: string): AgentBrewStart {
     const start = row.messages.flatMap(message => message.tools).find(tool => tool.brewStart?.startId === startId)?.brewStart;
@@ -266,25 +267,39 @@ export class AgentChatService {
     return jobAnalysisId && start ? { jobAnalysisId, event: { kind: "brew_analysis_done", jobPostingId: start.jobPostingId } } : null;
   }
   /**
-   * 「담을 기록 고르기」. 끝난 분석으로 제작을 한 번만 만들고 다음 화면의 경로를 돌려준다. AI를 부르지 않는다.
-   * 다음 화면은 지금의 재료 고르기다 — 아직 대화로 옮기지 않은 단계는 지금의 화면이 맡는다.
+   * 「담을 기록 고르기」 · 「이어서 만들기」. 끝난 분석으로 제작을 한 번만 만들고 다음 단계를 연다. AI를 부르지 않는다.
+   *
+   * 재료 단계면 대화에 「재료 고르기」 카드를 든 답변을 붙인다. 이 답변은 에이전트가 아니라 서버가 쓴다 — 실행을 시작하지 않고
+   * 글 없이 카드 하나만 둔다. 같은 제작의 카드는 하나다. 그 뒤의 단계는 아직 대화로 옮기지 않아 지금의 화면 경로를 돌려준다.
    */
-  async openBrew(userId: string, id: string, startId: string): Promise<{ brewId: string; path: string }> {
+  async openBrew(userId: string, id: string, startId: string): Promise<{ brewId: string; path: string | null; conversation: AgentConversation | null }> {
     return this.brewQueue.run(id, async () => {
-      const row = await this.owned(userId, id);
+      let row = await this.owned(userId, id);
       const start = this.brewStart(row, startId);
-      // 이미 만든 제작이 남아 있으면 그 제작이 가 있는 단계의 화면을 연다. 지운 제작이면 새로 만든다.
-      const existing = brewOf(row, start.jobAnalysisId);
-      const status = existing ? await this.brews!.brewStatus(userId, existing) : null;
-      if (existing && status) return { brewId: existing, path: brewPath(existing, status) };
-      const result = await this.brews!.getResult(userId, start.jobAnalysisId);
-      if (result.analysis.status !== "done") throw new AgentChatError(409, "공고 분석이 끝난 뒤 열 수 있습니다.", "공고 분석이 끝난 뒤 열 수 있습니다.");
-      const { brewId } = await this.brews!.createBrew(userId, { jobAnalysisId: start.jobAnalysisId, lengthPreset: "single" });
-      // 제작 ID는 대화에 적는다. 메시지 안을 건드리지 않으므로 실행 중에도 실행이 쓰는 마지막 답변과 부딪히지 않는다.
-      // 읽은 뒤로 다른 요청이 먼저 적었으면(API 프로세스가 여럿일 때) 그 제작을 연다.
-      const written = await this.rows.updateOne({ _id: id, userId, [`brewIds.${start.jobAnalysisId}`]: existing ?? { $exists: false } }, { $set: { [`brewIds.${start.jobAnalysisId}`]: brewId, updatedAt: new Date().toISOString() }, $inc: { version: 1 } });
-      const winner = written.matchedCount ? brewId : brewOf(await this.owned(userId, id), start.jobAnalysisId) ?? brewId;
-      return { brewId: winner, path: brewPath(winner, "draft") };
+      // 이미 만든 제작이 남아 있으면 그 제작을 잇는다. 지운 제작(휴지통)이면 새로 만든다.
+      let brew = await this.liveBrew(row, start.jobAnalysisId);
+      if (!brew) {
+        const result = await this.brews!.getResult(userId, start.jobAnalysisId);
+        if (result.analysis.status !== "done") throw new AgentChatError(409, "공고 분석이 끝난 뒤 열 수 있습니다.", "공고 분석이 끝난 뒤 열 수 있습니다.");
+        const existing = brewOf(row, start.jobAnalysisId);
+        const { brewId } = await this.brews!.createBrew(userId, { jobAnalysisId: start.jobAnalysisId, lengthPreset: "single" });
+        // 제작 ID는 대화에 적는다. 메시지 안을 건드리지 않으므로 실행 중에도 실행이 쓰는 마지막 답변과 부딪히지 않는다.
+        // 읽은 뒤로 다른 요청이 먼저 적었으면(API 프로세스가 여럿일 때) 그 제작을 연다.
+        const written = await this.rows.updateOne({ _id: id, userId, [`brewIds.${start.jobAnalysisId}`]: existing ?? { $exists: false } }, { $set: { [`brewIds.${start.jobAnalysisId}`]: brewId, updatedAt: new Date().toISOString() }, $inc: { version: 1 } });
+        row = await this.owned(userId, id);
+        brew = written.matchedCount ? { id: brewId, status: "draft", selected: 0 } : await this.liveBrew(row, start.jobAnalysisId) ?? { id: brewId, status: "draft", selected: 0 };
+      }
+      const brewId = brew.id;
+      if (brew.status !== "draft") return { brewId, path: brewPath(brewId, brew.status), conversation: null };
+      if (row.messages.some(message => message.tools.some(tool => tool.brewMaterials?.brewId === brewId))) return { brewId, path: null, conversation: view(row) };
+      // 실행 중에는 마지막 답변을 실행이 통째로 다시 쓴다. 그 뒤에 답변을 붙일 수 없다.
+      if (row.run?.status === "running") throw new AgentChatError(409, "응답이 끝난 뒤 눌러 주세요.", "응답이 끝난 뒤 눌러 주세요.");
+      if (row.messages.length >= 99) throw new AgentChatError(409, "대화가 길어졌습니다. 새 대화를 시작해 주세요.", "대화가 길어졌습니다. 새 대화를 시작해 주세요.");
+      const now = new Date().toISOString();
+      const card: AgentMessage = { id: randomUUID(), role: "assistant", text: "", tools: [{ id: randomUUID(), name: "재료 고르기", status: "complete", summary: "", brewMaterials: { brewId, jobPostingId: start.jobPostingId } }], createdAt: now };
+      const changed = await this.rows.findOneAndUpdate({ _id: id, userId, "run.status": { $ne: "running" } }, { $push: { messages: card }, $set: { updatedAt: now }, $inc: { version: 1 } }, { returnDocument: "after" });
+      if (!changed) throw new AgentChatError(409, "응답이 끝난 뒤 눌러 주세요.", "응답이 끝난 뒤 눌러 주세요.");
+      return { brewId, path: null, conversation: view(changed) };
     });
   }
   /** 다시 해 볼 수 있는 실패를 다시 큐에 넣는다. 그렇지 않은 상태에서는 지금 상태만 돌려준다. */
@@ -301,7 +316,10 @@ export class AgentChatService {
     if (!this.brews) return [];
     const starts = [...new Map(row.messages.flatMap(message => message.tools).flatMap(tool => (tool.brewStart ? [[tool.brewStart.jobAnalysisId, tool.brewStart] as const] : []))).values()];
     const states = await Promise.all(starts.map(async start => {
-      try { return { jobPostingId: start.jobPostingId, title: start.title, companyName: start.companyName, ...brewStartState(await this.brews!.getResult(row.userId, start.jobAnalysisId), await this.liveBrew(row, start.jobAnalysisId), !!row.brewAnnounced?.[start.jobAnalysisId]) }; }
+      try {
+        const brew = await this.liveBrew(row, start.jobAnalysisId);
+        return { jobPostingId: start.jobPostingId, title: start.title, companyName: start.companyName, selectedRecords: brew?.selected ?? null, ...brewStartState(await this.brews!.getResult(row.userId, start.jobAnalysisId), brew, !!row.brewAnnounced?.[start.jobAnalysisId]) };
+      }
       catch { return null; }
     }));
     return states.flatMap(state => (state ? [state] : []));

@@ -67,7 +67,7 @@ describe("Claude 채팅 실행 어댑터", () => {
   });
   it("제작 시작은 카드에 실을 ID를 도구 결과로 남기고, 거절된 사유는 에이전트에게 돌려준다", async () => {
     const brewStart = { startId: "00000000-0000-4000-8000-0000000000b1", jobPostingId: "00000000-0000-4000-8000-0000000000b2", jobAnalysisId: "00000000-0000-4000-8000-0000000000b3", title: "프론트엔드 개발자", companyName: "가상 회사", brewId: null };
-    const running = { status: "running" as const, stage: "extracting" as const, failure: null, requirements: null, brewId: null, announced: false };
+    const running = { status: "running" as const, stage: "extracting" as const, failure: null, requirements: null, brewId: null, step: null, announced: false };
     const startBrew = vi.fn(async () => ({ start: brewStart, state: running }));
     const { client, emit } = await connectTools({ startBrew });
     const result = await client.callTool({ name: "start_portfolio", arguments: { jobPostingId: brewStart.jobPostingId } });
@@ -90,7 +90,7 @@ describe("Claude 채팅 실행 어댑터", () => {
   });
   it("이 대화에서 시작한 제작의 지금 상태를 프롬프트에 싣는다", async () => {
     sdk.query.mockReturnValue((async function* () { yield { type: "result", is_error: false }; })());
-    const brews = [{ jobPostingId: "00000000-0000-4000-8000-0000000000b2", title: "프론트엔드 개발자", companyName: "가상 회사", status: "done" as const, stage: "done" as const, failure: null, requirements: { total: 6, covered: 3, partial: 2, missing: 1 }, brewId: null, announced: false }];
+    const brews = [{ jobPostingId: "00000000-0000-4000-8000-0000000000b2", title: "프론트엔드 개발자", companyName: "가상 회사", status: "done" as const, stage: "done" as const, failure: null, requirements: { total: 6, covered: 3, partial: 2, missing: 1 }, brewId: null, step: null, announced: false, selectedRecords: null }];
     await new ClaudeAgentRuntime().run({ messages: [], context: [], signal: new AbortController().signal, emit: vi.fn(), ...base(), brews });
     const asked = JSON.parse(sdk.query.mock.lastCall![0].prompt);
     expect(asked.brews).toEqual(brews);

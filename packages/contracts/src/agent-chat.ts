@@ -304,6 +304,11 @@ export const AgentBrewStartStateSchema = z.strictObject({
   requirements: z.strictObject({ total: z.number().int().nonnegative(), covered: z.number().int().nonnegative(), partial: z.number().int().nonnegative(), missing: z.number().int().nonnegative() }).nullable(),
   brewId: UuidSchema.nullable(),
   /**
+   * 만든 제작이 가 있는 단계. `materials` 재료 고르기 · `interview` AI 대화 · `design` 디자인과 그 뒤. 제작이 없으면 null이다.
+   * 재료 단계는 대화의 「재료 고르기」 카드가 맡고, 그 뒤의 단계는 아직 지금의 화면이 맡는다.
+   */
+  step: z.enum(["materials", "interview", "design"]).nullable(),
+  /**
    * 에이전트가 이 분석의 결과를 대화에서 이미 알렸는가. 분석이 끝났는데 아직 알리지 않았으면 카드가 알림을 청한다
    * (`POST brew-starts/:startId/announce`) — 그때 서버가 에이전트의 답을 하나 시작한다.
    */
@@ -311,10 +316,14 @@ export const AgentBrewStartStateSchema = z.strictObject({
 });
 export type AgentBrewStartState = z.infer<typeof AgentBrewStartStateSchema>;
 export const AgentBrewStartStateResponseSchema = z.strictObject({ data: AgentBrewStartStateSchema });
-/** 제작을 연 결과. `path`는 다음 단계의 화면이다 — 아직 대화로 옮기지 않은 단계는 지금의 화면이 맡는다. */
-export const AgentBrewOpenResponseSchema = z.strictObject({ data: z.strictObject({ brewId: UuidSchema, path: z.string().min(1).max(300) }) });
+/**
+ * 대화에 뜨는 「재료 고르기」 카드. 제작 ID만 둔다 — 줄 세운 기록과 고른 것은 카드가 `brew_sources`에서 그때그때 읽는다.
+ * 이 카드를 든 답변은 에이전트가 아니라 서버가 쓴다(AI를 부르지 않는다).
+ */
+export const AgentBrewMaterialsSchema = z.strictObject({ brewId: UuidSchema, jobPostingId: UuidSchema });
+export type AgentBrewMaterials = z.infer<typeof AgentBrewMaterialsSchema>;
 
-export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional(), goalDraft: AgentGoalDraftSchema.optional(), gapReview: GapReviewSchema.optional(), planDraft: AgentPlanDraftSchema.optional(), replanDraft: AgentReplanDraftSchema.optional(), pageEdit: AgentPageEditSchema.optional(), brewStart: AgentBrewStartSchema.optional() });
+export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional(), goalDraft: AgentGoalDraftSchema.optional(), gapReview: GapReviewSchema.optional(), planDraft: AgentPlanDraftSchema.optional(), replanDraft: AgentReplanDraftSchema.optional(), pageEdit: AgentPageEditSchema.optional(), brewStart: AgentBrewStartSchema.optional(), brewMaterials: AgentBrewMaterialsSchema.optional() });
 export const AgentMessageSchema = z.strictObject({ id: UuidSchema, role: z.enum(["user", "assistant"]), text: z.string().max(64_000), tools: z.array(AgentToolResultSchema).max(30), selection: AgentPageSelectionSchema.optional(), createdAt: TimestampSchema });
 export const AgentRunSchema = z.strictObject({ id: UuidSchema, requestId: UuidSchema, status: z.enum(["running", "complete", "cancelled", "failed", "interrupted"]), error: z.string().max(1_000).nullable(), startedAt: TimestampSchema });
 export const AgentConversationSchema = z.strictObject({ id: UuidSchema, title: z.string().max(120), contexts: z.array(AgentContextSchema).max(10), messages: z.array(AgentMessageSchema).max(100), run: AgentRunSchema.nullable(), version: z.number().int().nonnegative(), updatedAt: TimestampSchema });
@@ -336,6 +345,11 @@ export type AgentApproval = z.infer<typeof AgentApprovalSchema>;
 export const AgentEditDraftSchema = AiEditProposalSchema.pick({ summary: true, commands: true, propertyChanges: true });
 export type AgentEditDraft = z.infer<typeof AgentEditDraftSchema>;
 
+/**
+ * 제작을 연 결과. 다음 단계가 이 대화 안에 있으면(재료 고르기) `conversation`에 카드가 붙은 대화가 오고 `path`는 null이다.
+ * 아직 대화로 옮기지 않은 단계면 `path`가 지금의 화면이고 `conversation`은 null이다.
+ */
+export const AgentBrewOpenResponseSchema = z.strictObject({ data: z.strictObject({ brewId: UuidSchema, path: z.string().min(1).max(300).nullable(), conversation: AgentConversationSchema.nullable() }) });
 /**
  * 에이전트 채팅을 쓸 수 있는가. 모든 계정이 서버 인증으로 쓰고, 개인 키를 등록한 계정은 그 키로 쓴다.
  * `creditsExhausted`는 서버 인증으로 도는 계정이 이번 달 크레딧을 다 썼다는 뜻이다. 개인 키를 등록한 계정은 늘 거짓이다.

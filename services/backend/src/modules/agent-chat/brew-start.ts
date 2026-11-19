@@ -16,21 +16,26 @@ export interface AgentBrewDeps {
   getResult(userId: string, jobAnalysisId: string): Promise<JobAnalysisResult>;
   /** 끝난 분석으로 제작을 만든다. 부를 때마다 새 제작이 생기므로 한 번만 부른다(`MaterialsApi.createBrew`). */
   createBrew(userId: string, input: { jobAnalysisId: string; lengthPreset: "single" }): Promise<{ brewId: string }>;
-  /** 제작이 어디까지 갔는가. 지웠거나(휴지통) 없는 제작이면 null이다(`MaterialsApi.getState`). */
-  brewStatus(userId: string, brewId: string): Promise<BrewStatus | null>;
+  /** 제작이 어디까지 갔고 기록을 몇 건 골랐는가. 지웠거나(휴지통) 없는 제작이면 null이다(`MaterialsApi.getState`). */
+  brewState(userId: string, brewId: string): Promise<{ status: BrewStatus; selected: number } | null>;
 }
+/** 이 대화에서 만든 제작 가운데 아직 남아 있는 것. */
+export interface LiveBrew { id: string; status: BrewStatus; selected: number }
+/** 제작이 가 있는 단계. 재료 단계는 대화의 카드가 맡고, 그 뒤는 아직 지금의 화면이 맡는다. */
+export const brewStep = (status: BrewStatus) => (status === "draft" ? "materials" : status === "interviewing" ? "interview" : "design");
 export type BrewStatus = "draft" | "interviewing" | "recipe" | "generating" | "done";
 /** 제작을 이어 갈 화면. 아직 대화로 옮기지 않은 단계는 지금의 화면이 맡는다(`brew/new/resume-step.ts`와 같은 규칙). */
 export const brewPath = (brewId: string, status: BrewStatus) => `/brew/${brewId}/${status === "draft" ? "materials" : status === "interviewing" ? "counter" : "design"}`;
 
 /** 분석 결과를 카드와 모델이 읽는 상태로 옮긴다. 요건의 확인 수는 분석이 끝난 뒤에만 센다. */
-export function brewStartState(result: JobAnalysisResult, brewId: string | null, announced: boolean): AgentBrewStartState {
+export function brewStartState(result: JobAnalysisResult, brew: LiveBrew | null, announced: boolean): AgentBrewStartState {
   const { status, stage, failure } = result.analysis;
   const count = (coverage: JobAnalysisResult["requirements"][number]["coverage"]) => result.requirements.filter(item => item.coverage === coverage).length;
   return {
     status, stage, failure,
     requirements: status === "done" ? { total: result.requirements.length, covered: count("covered"), partial: count("partial"), missing: count("missing") } : null,
-    brewId,
+    brewId: brew?.id ?? null,
+    step: brew ? brewStep(brew.status) : null,
     announced,
   };
 }
