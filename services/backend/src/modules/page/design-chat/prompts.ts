@@ -61,7 +61,7 @@ const directionLimits = (directions: DirectionDraft[]): AiViolation[] =>
   directions.flatMap((item, index) => [
     ...tooLong(`/directions/${index}/name`, item.name, DesignDirectionSchema.shape.name, "방향의 이름"),
     ...(item.words.length > DIRECTION_WORDS_MAX
-      ? [{ path: `/directions/${index}/words`, problem: `방향의 설명이 깁니다(${item.words.length}자). 색과 서체가 어디서 왔는지만 한 줄(서른 자 안)로 쓰세요. 짜임과 색은 견본이 보입니다.` }]
+      ? [{ path: `/directions/${index}/words`, problem: `방향의 설명이 깁니다(${item.words.length}자). 색과 서체를 무엇에서 가져왔는지만 한 줄(서른 자 안)의 명사구로 쓰세요. 짜임과 색은 견본이 보입니다.` }]
       : []),
   ]);
 
@@ -77,7 +77,7 @@ export type DesignHead = z.infer<typeof DesignHeadSchema>;
 
 const DirectionDraftSchema = z.strictObject({
   name: z.string().min(1).describe("방향의 이름. 두세 낱말"),
-  words: z.string().min(1).describe("한 줄. 이 방향의 색과 서체가 이 사람의 일 어디에서 왔는지를 서른 자 안에서"),
+  words: z.string().min(1).describe("한 줄(서른 자 안). 이 방향의 색과 서체를 이 사람의 일 가운데 무엇에서 가져왔는지. 가져온 대상의 이름으로 끝나는 명사구"),
   tokens: DesignTokensSchema.describe("바탕 · 글자 · 강조 색(#rrggbb), 서체 계열, 밀도"),
   composition: DesignCompositionSchema.describe("첫 화면의 짜임"),
 });
@@ -106,7 +106,7 @@ const DIRECTION_RULES = [
   COMPOSITIONS,
   "",
   "방향은 견본이 됩니다. 견본은 첫 화면의 짜임과 색, 서체를 보입니다.",
-  "- 색과 서체는 이 사람의 일(다루는 대상 · 도구 · 산출물)과 지원하는 곳(회사의 톤 · 브랜드 색)에서 가져옵니다. 어디서 왔는지를 `words`에 한 줄로 적습니다(예: \"Lighthouse 점수판의 녹색에서\").",
+  "- 색과 서체는 이 사람의 일(다루는 대상 · 도구 · 산출물)과 지원하는 곳(회사의 톤 · 브랜드 색)에서 가져옵니다. 무엇에서 가져왔는지를 `words`에 한 줄로 적습니다. 가져온 대상의 이름으로 끝나는 명사구입니다 — \"〈이 사람이 다루는 대상〉의 〈색 · 서체〉\" 꼴이고, 대상은 이 사람의 자료에 나오는 이름으로 씁니다.",
   "- 짜임과 색, 서체는 견본이 그림으로 보입니다. `words`에 다시 풀어 쓰지 않습니다.",
   "- 바탕과 글자는 본문을 오래 읽을 수 있는 명도 차이를 둡니다. 강조는 바탕 위에서 한눈에 구분되어야 합니다.",
   "- 여러 방향을 낼 때는 바탕의 명도와 서체 계열이 서로 겹치지 않게 합니다. 사용자가 고를 수 있으려면 달라 보여야 합니다.",
