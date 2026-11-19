@@ -18,7 +18,7 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
 
   it("creates every product collection and preserves the seeded IDs and all 30 additional designs", async () => {
     const names = (await mongo.listCollections({}, { nameOnly: true }).toArray()).map(item => item.name);
-    expect(names).toHaveLength(90);
+    expect(names).toHaveLength(91);
     expect(names).toContain("ai_usage_events");
     expect(names).toContain("admin_audit_events");
     expect(names).toContain("identity_tokens");

@@ -16,7 +16,7 @@ date: 2026-11-20
 |---|---|
 | `packages/contracts/src/consultant.ts` (새 파일) · `consultant.test.ts` · `index.ts` | 단계, 조건, 요지, 기억, 도구 입력, 응답 |
 | `packages/database/src/documents/consultant.ts` (새 파일) · `documents/index.ts` · `collections.ts` | 프로필 문서와 컬렉션 |
-| `packages/database/src/mongodb-migrations/0035/migration.ts` (새 파일) · `mongo-migrations.ts` · `mongo-build.mjs` · `schema.test.ts` | `consultant_profiles` 만들기 |
+| `packages/database/src/mongodb-migrations/0035/migration.ts` (새 파일) · `mongo-migrations.ts` · `mongo-build.mjs` · `schema.test.ts` · `migrations.test.ts` | `consultant_profiles` 만들기, 테스트의 마이그레이션 · 컬렉션 수 |
 | `services/backend/src/modules/consultant/` (새 모듈: `index.ts` · `service.ts` · `routes.ts` · `service.integration.test.ts`) | 프로필 읽기 · 단계 · 조건, 라우트 |
 | `services/backend/src/modules/agent-chat/digest.ts` (새 파일) · `digest.test.ts` | 대화의 요지 |
 | `services/backend/src/modules/agent-chat/service.ts` · `service.integration.test.ts` | 기억 읽기, 실행에 넘기기, `updateMemory` 연결, 최근 요지 조회 |
@@ -24,7 +24,7 @@ date: 2026-11-20
 | `services/backend/src/api/main.ts` · `build-app.ts` | 서비스 만들기와 라우트 등록 |
 | `services/backend/src/modules/account-lifecycle/mongo-purge.ts` | 삭제 목록 |
 | `services/web/src/lib/api/endpoints.ts` | `consultant` 엔드포인트 |
-| `services/web/src/app/(app)/goal/` (`page.tsx` · `ProgressSections.tsx` 새 파일 · `goal-actions.ts` · `goal.module.css`) · 테스트 | 「내 진행」 화면 |
+| `services/web/src/app/(app)/goal/` (`page.tsx` · `ProgressSections.tsx` 새 파일 · `ProgressSections.test.tsx` 새 파일 · `goal-actions.ts` · `goal.module.css`) | 「내 진행」 화면 |
 | `services/web/src/features/agent-chat/AgentChat.tsx` | 「기억 갱신」 아이콘 |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.

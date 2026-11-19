@@ -20,6 +20,7 @@ flowchart TD
   classDef doing fill:#fef3c7,stroke:#d97706
   classDef decide fill:#fee2e2,stroke:#dc2626
   classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4
-  class U,REG,CH,CARD,SEND,SVC,RT,ASK,DB done
-  class MEM,REC,FU,DG,AC,PF todo
+  MEM --> PROG[내 진행 화면]
+  class U,REG,CH,CARD,SEND,SVC,RT,ASK,DB,MEM,PROG done
+  class REC,FU,DG,AC,PF todo
   class CR,MG decide
