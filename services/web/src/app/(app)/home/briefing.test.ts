@@ -38,7 +38,7 @@ it("관심 공고는 7일 안에 마감되는 것만 제안하고, 그 공고를
   const steps = briefingSteps({ ...base, watched: [job("a", 3), job("b", 20), job("c", null)] });
   const finding = steps[2]?.findings.find((item) => item.id === "closing-jobs");
   expect(finding?.text).toBe("관심 공고 1건이 7일 안에 마감됩니다");
-  expect(finding?.action).toMatchObject({ kind: "chat", contexts: [{ kind: "job", id: "a" }], contextLabels: [{ key: "job:a", label: "공고 a" }] });
+  expect(finding?.action).toMatchObject({ kind: "chat", contexts: [{ kind: "job", id: "a" }] });
 });
 
 it("손볼 것이 없으면 제안이 없다", () => {

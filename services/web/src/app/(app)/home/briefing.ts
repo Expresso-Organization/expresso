@@ -9,8 +9,8 @@ import { biggestDrop, type ActiveBrew, type SiteInsight } from "./home-model";
 /**
  * 홈의 에이전트 제안. 저장된 데이터를 집계해서 만든다 — AI를 부르지 않는다.
  *
- * 제안 하나는 근거 한 문장과 동작 하나다. 동작이 대화면(`chat`) 그 자료와 요청문을 홈의
- * 입력창에 채운다. AI 실행은 사용자가 보내기를 눌러야 시작된다.
+ * 제안 하나는 근거 한 문장과 동작 하나다. 동작이 대화면(`chat`) 그 자료와 요청문으로
+ * 대화를 바로 시작한다.
  */
 export type BriefingAction = StartAction;
 
@@ -76,7 +76,6 @@ export function briefingSteps(input: {
         label: "질문받으며 첫 기록 남기기",
         prompt: "내 경험을 기록으로 남기고 싶어. 한 번에 하나씩 질문해 주고, 답을 모아 새 기록 초안을 만들어 줘.",
         contexts: [],
-        contextLabels: [],
       },
     });
   }
@@ -90,7 +89,7 @@ export function briefingSteps(input: {
         label: "질문받고 채우기",
         prompt: "이 기록에서 성과를 숫자로 적을 수 있는 부분을 한 번에 하나씩 질문해 줘. 답을 받으면 기록 변경 제안을 만들어 줘. 내가 말하지 않은 수치는 넣지 마.",
         contexts: [{ kind: "record", id: numberless[0].id }],
-        contextLabels: [{ key: `record:${numberless[0].id}`, label: numberless[0].title || "제목 없음" }],      },
+      },
     });
   }
   if (empty[0]) {
@@ -103,7 +102,7 @@ export function briefingSteps(input: {
         label: "질문받고 채우기",
         prompt: "이 기록에 비어 있는 내용을 한 번에 하나씩 질문해 줘. 답을 받으면 기록 변경 제안을 만들어 줘.",
         contexts: [{ kind: "record", id: empty[0].id }],
-        contextLabels: [{ key: `record:${empty[0].id}`, label: empty[0].title || "제목 없음" }],      },
+      },
     });
   }
 
@@ -137,7 +136,7 @@ export function briefingSteps(input: {
           ? `이 포트폴리오의 「${section.title}」 섹션에서 방문자가 가장 많이 떠났어. 이 섹션을 어떻게 고치면 좋을지 제안해 줘. 지표만으로 원인을 단정하지는 마.`
           : "이 포트폴리오의 방문 지표를 보고 구성에서 손볼 곳을 제안해 줘. 지표만으로 원인을 단정하지는 마.",
         contexts: [{ kind: "portfolio", id: portfolio.id }],
-        contextLabels: [{ key: `portfolio:${portfolio.id}`, label: portfolio.title }],      },
+      },
     });
   }
   const latest = portfolios[0];
@@ -164,7 +163,7 @@ export function briefingSteps(input: {
         label: "요건 대조하기",
         prompt: "이 공고의 자격 요건을 내 커리어 기록과 비교해 줘. 근거가 있는 요건과 근거가 약하거나 없는 요건을 나눠서 알려 줘.",
         contexts: [{ kind: "job", id: closing[0].id }],
-        contextLabels: [{ key: `job:${closing[0].id}`, label: closing[0].title }],      },
+      },
     });
   }
   if (closingContests[0]) {

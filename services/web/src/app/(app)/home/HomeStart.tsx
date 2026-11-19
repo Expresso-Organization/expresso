@@ -4,7 +4,7 @@ import { AgentChatAccessSchema, type AgentContext } from "@expresso/contracts";
 import type { Route } from "next";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type FocusEvent, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type FocusEvent, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
 
 import { LogoMark, Wordmark } from "@/components/brand/Logo";
 import { Icon } from "@/components/ui/Icon";
@@ -24,13 +24,10 @@ const PICKER_TABS: readonly { kind: ResourceKind; label: string }[] = [
 ];
 
 type Attached = { context: AgentContext; label: string };
-type Fill = (prompt: string, attach?: Attached[]) => void;
-
-/** 제안의 동작. 대화를 여는 동작은 요청문과 연결할 자료를 입력창에 채우고, 나머지는 그 화면으로 간다. */
+/** 제안의 동작. 대화를 여는 동작은 요청문과 연결할 자료로 대화를 바로 시작하고, 나머지는 그 화면으로 간다. */
 export type StartAction =
-  | { kind: "chat"; label: string; prompt: string; contexts: AgentContext[]; /** 자료의 이름. 키는 `<종류>:<id>`다. */ contextLabels: { key: string; label: string }[] }
+  | { kind: "chat"; label: string; prompt: string; contexts: AgentContext[] }
   | { kind: "link"; label: string; href: string };
-const ComposerContext = createContext<Fill | null>(null);
 
 /**
  * 입력창 아래의 추천 프롬프트. 에이전트에게 맡길 수 있는 일을 짧은 이름으로 세우고,
@@ -46,7 +43,7 @@ const PROMPTS: readonly { icon: string; label: string; prompt: string }[] = [
 /**
  * 홈 — 대화를 시작하기 전의 화면.
  *
- * 위에서 아래로 로고, 입력창, 추천 프롬프트, 행동 제안, 새 소식 위젯이 선다.
+ * 위에서 아래로 로고, 입력창, 추천 프롬프트, 새 소식 위젯, 제안 카드가 선다.
  * 입력창은 대화를 만들지 않는다. 보낼 말과 연결할 자료를 대화 화면으로 넘기고 그리로 간다.
  */
 export function HomeStart({ proposals, widgets }: { proposals: ReactNode; widgets: ReactNode }) {
@@ -89,10 +86,9 @@ export function HomeStart({ proposals, widgets }: { proposals: ReactNode; widget
     return () => { document.removeEventListener("mousedown", close); document.removeEventListener("keydown", escape); };
   }, [picker]);
 
-  const fill = useCallback<Fill>((prompt, attach) => {
+  // 추천 프롬프트는 요청문만 채운다. 이미 붙인 자료는 건드리지 않는다.
+  const fill = useCallback((prompt: string) => {
     setText(prompt);
-    // 제안은 그 제안의 자료로 바꾸고, 추천 프롬프트는 이미 붙인 자료를 건드리지 않는다.
-    if (attach) setAttached(attach.slice(0, MAX_CONTEXTS));
     input.current?.focus();
   }, []);
 
@@ -121,7 +117,7 @@ export function HomeStart({ proposals, widgets }: { proposals: ReactNode; widget
   };
 
   return (
-    <ComposerContext.Provider value={fill}>
+    <>
       <div className={styles.stage}>
         <div className={styles.column}>
           <div className={styles.hero}>
@@ -216,15 +212,16 @@ export function HomeStart({ proposals, widgets }: { proposals: ReactNode; widget
           {proposals}
         </div>
       </div>
-    </ComposerContext.Provider>
+    </>
   );
 }
 
-const CONTEXT_NAME: Record<AgentContext["kind"], string> = { job: "채용 공고", record: "커리어 기록", portfolio: "포트폴리오" };
-
-/** 제안의 단추. 대화를 여는 동작은 가운데 입력창을 채우고, 나머지는 그 화면으로 간다. */
+/**
+ * 규칙으로 센 제안의 버튼. 대화를 여는 동작은 입력창을 거치지 않고 그 요청문과 자료로 대화를 바로 시작한다 —
+ * 제안 카드는 입력창보다 아래에 있어서, 입력창을 채우기만 하면 누른 자리에서 아무 변화가 보이지 않는다.
+ */
 export function ProposalAction({ action }: { action: StartAction }) {
-  const fill = useContext(ComposerContext);
+  const router = useRouter();
   if (action.kind === "link") {
     return (
       <Link href={action.href as Route} className={styles.proposalAction}>
@@ -233,13 +230,12 @@ export function ProposalAction({ action }: { action: StartAction }) {
       </Link>
     );
   }
-  const attach = action.contexts.map((context) => ({
-    context,
-    label: action.contextLabels.find(({ key }) => key === `${context.kind}:${context.id}`)?.label ?? CONTEXT_NAME[context.kind],
-  }));
   return (
-    <button type="button" className={styles.proposalAction} onClick={() => fill?.(action.prompt, attach)}>
-      <Icon name="chat-circle-dots" size={13} />
+    <button
+      type="button"
+      className={styles.proposalAction}
+      onClick={() => { putAgentHandoff({ text: action.prompt, contexts: action.contexts.slice(0, MAX_CONTEXTS) }); router.push("/home?compose=1"); }}
+    >
       {action.label}
     </button>
   );
