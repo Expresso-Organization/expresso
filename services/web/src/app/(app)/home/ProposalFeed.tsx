@@ -131,7 +131,7 @@ function GoalCard() {
     <FeedCard icon="target" hue="terracotta" title="구직 목표">
       <p className={styles.proposalMessage}>아직 어떤 일을 목표로 하시는지 모릅니다. 알려 주시면 그 목표에 맞춰 공고와 활동을 권합니다.</p>
       <div className={styles.proposalActions}>
-        <Link href={"/goal" as Route} className={styles.proposalAction}>목표 알려 주기</Link>
+        <Link href="/goal" className={styles.proposalAction}>목표 알려 주기</Link>
       </div>
     </FeedCard>
   );
@@ -221,7 +221,7 @@ export function ProposalFeed({ initial, fallback, hasGoal }: { initial: Feed; fa
         <h2 className={styles.sectionTitle}>제안</h2>
         {feed.proposals.length > 0 ? <span className={styles.sectionCount}>{feed.proposals.length}</span> : null}
         <span className={styles.sectionSpace} />
-        {hasGoal ? <Link href={"/goal" as Route} className={styles.feedControl}><Icon name="target" size={13} />목표</Link> : null}
+        {hasGoal ? <Link href="/goal" className={styles.feedControl}><Icon name="target" size={13} />목표</Link> : null}
         <button type="button" className={styles.feedControl} disabled={working || pending} onClick={() => run(refreshProposalsAction)}>
           <Icon name="arrow-clockwise" size={13} />
           다시 받기

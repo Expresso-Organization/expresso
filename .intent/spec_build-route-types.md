@@ -16,6 +16,7 @@ date: 2026-11-20
 3. `NEXT_DIST_DIR`을 준 운영 빌드에 맞는 tsconfig가 없으면 설정을 읽는 단계에서 오류로 멈춘다. `tsconfig.json`으로 넘어가지 않는다.
 4. `next dev` · `next start`에서는 tsconfig를 바꾸지 않는다.
 5. 두 tsconfig의 `include`는 타입 폴더만 다르다.
+6. 웹의 타입 검사는 증분 캐시(`.tsbuildinfo`)를 쓰지 않는다.
 
 ## 원인
 
@@ -32,6 +33,7 @@ flowchart TD
 - `tsconfig.json`에 `extends`가 있으면 Next는 `include`에 `<distDir>/types/**`를 더하지 않는다(`next/dist/lib/typescript/writeConfigurationDefaults.js`의 「Bail automatic setup」).
 - `next-env.d.ts`는 `routes.d.ts`와 `root-params.d.ts`만 가져온다(`writeAppTypeDeclarations.js`). `<Link href>`의 타입인 `link.d.ts`와 화면 검사인 `validator.ts`는 `include`의 글롭으로만 들어온다.
 - CI의 빌드는 `.next`에 지어 방금 만든 타입을 읽는다. 서버가 더 엄격했던 것이 아니라 옛 타입을 읽었다.
+- 둘째 원인(검증 중 발견): `tsconfig.json`의 `incremental: true` 때문에 Next가 `tsc`에 `--tsBuildInfoFile <distDir>/cache/.tsbuildinfo`를 넘긴다(`runTypeCheckCli.js`). `deploy.sh`는 `.next/cache`를 `.next-build/cache`로 옮겨 이어 쓴다. `tsc` 7.0.2는 `link.d.ts`가 바뀌어도 그 타입을 쓰는 파일을 다시 검사하지 않는다 — 화면을 지우고 링크를 남긴 변경이 캐시가 있으면 통과하고 없으면 실패한다. 로컬 `pnpm typecheck`도 같은 캐시(`tsconfig.tsbuildinfo`)로 옛 결과를 낸다.
 
 ## 설계
 
@@ -45,8 +47,9 @@ flowchart TD
 
 - **`services/web/next.config.ts`**: 설정을 phase를 받는 함수로 바꾼다. phase가 `PHASE_PRODUCTION_BUILD`이고 `NEXT_DIST_DIR`이 있으면 `typescript.tsconfigPath`를 `tsconfig.<앞의 점을 뗀 폴더 이름>.json`으로 둔다. 파일이 없으면 던진다. 근거: `next/dist/docs/01-app/03-api-reference/05-config/02-typescript.md` 「Custom tsconfig path」.
 - **`services/web/tsconfig.next-build.json`**: `./tsconfig.json`을 `extends`하고 `include`만 다시 적는다 — `.next/types/**/*.ts` 자리에 `.next-build/types/**/*.ts`.
-- **`services/web/tsconfig.test.ts`**: `tsconfig.next-build.json`의 `include`가 `tsconfig.json`의 것과 타입 폴더만 다른지, `deploy.sh`가 주는 `NEXT_DIST_DIR`에 맞는 tsconfig가 있는지 본다.
-- **`ProposalFeed.tsx`**: `/goal` 링크 두 곳의 `as Route`를 뗀다.
+- **`services/web/tsconfig.json`**: `incremental`을 뺀다. 캐시 없는 전체 검사가 1.5초다.
+- **`services/web/src/tsconfig.test.ts`**: `tsconfig.next-build.json`의 `include`가 `tsconfig.json`의 것과 타입 폴더만 다른지, `deploy.sh`가 주는 `NEXT_DIST_DIR`에 맞는 tsconfig가 있는지, 두 tsconfig가 증분 캐시를 켜지 않는지 본다.
+- **`ProposalFeed.tsx` · `JobGoalDraftCard.tsx`**: `/goal` 링크 세 곳의 `as Route`를 뗀다.
 - **`docs/operations/DEPLOYMENT.md`**: `.next-build`에 짓는 문단에 타입 검사가 읽는 폴더를 적는다.
 
 ## 버린 대안
@@ -66,4 +69,5 @@ flowchart TD
 
 - 재현 장면(#240으로 지은 `.next` + #242 + 수정)이 배포 절차의 웹 빌드 구간 그대로 통과한다.
 - 같은 상태에서 없는 경로의 링크는 실패한다.
+- 직전 배포의 캐시가 있는 상태에서 화면만 지우고 링크를 남긴 변경은 실패한다.
 - `pnpm typecheck` · `pnpm test`가 통과한다.

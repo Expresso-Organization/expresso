@@ -9,7 +9,6 @@
     "jsx": "preserve",
     "allowJs": true,
     "noEmit": true,
-    "incremental": true,
     "resolveJsonModule": true,
     "plugins": [{ "name": "next" }],
     "paths": {
