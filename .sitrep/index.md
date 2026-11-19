@@ -2,4 +2,4 @@
 
 | 세션 | 전체 작업 | 최종 상태 | 진행률 |
 | --- | --- | --- | --- |
-| [2026-11-19 한국어 입력 측정](sessions/20261119-1752-match-eval/tree.md) | 적합도 모델 평가 | Terra 라벨·MLP 평가 완료 | Decisions 40쌍 응답 후 한도 대기 |
+| [2026-11-19 한국어 적합도 모델 평가](sessions/20261119-1752-match-eval/tree.md) | 한국어 적합도 모델 평가 | 중단됨(Blocked) · Decisions API 한도 | 90% |

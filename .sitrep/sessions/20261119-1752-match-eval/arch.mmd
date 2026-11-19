@@ -1,8 +1,17 @@
-flowchart LR
-  data["한국어 100명·1,000쌍"] --> terra["Terra 라벨 1,000쌍"]
-  pilot["파일럿 E5 MLP"] --> pool["전체 풀 13,780쌍 채점"]
-  pool --> recall["검증·평가 스크리닝"]
-  terra --> recall
-  terra --> pair["동일 후보 순위 비교"]
-  api["Decisions 40쌍 응답"] --> pair
-  pool --> short["상위 10건 재정렬 · 한도 대기"]
+flowchart TD
+  data[(한국어 평가 세트)] --> labels[Terra 라벨 1천 쌍]
+  data --> mlp[MLP 스크리닝]
+  labels --> audit[60점 원인 분석]
+  labels --> partial[동일 후보 40쌍 비교]
+  mlp --> partial
+  partial --> rest[나머지 동일 후보 비교]
+  mlp --> top[상위 10건 재정렬]
+  quota[Decisions API 한도] --> rest
+  quota --> top
+
+  classDef done fill:#d1fae5,stroke:#059669
+  classDef doing fill:#fef3c7,stroke:#d97706
+  classDef decide fill:#fee2e2,stroke:#dc2626
+  classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4
+  class data,labels,mlp,audit,partial done
+  class rest,top todo
