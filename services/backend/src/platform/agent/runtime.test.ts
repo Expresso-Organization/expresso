@@ -136,6 +136,10 @@ describe("Claude 채팅 실행 어댑터", () => {
     expect(again.isError).toBe(true);
     expect((again.content as { text: string }[])[0]!.text).toContain("이미 선택지를 냈습니다");
     expect(askChoice).toHaveBeenCalledTimes(2);
+    // 부품을 낸 실행은 도구 뒤에서 멈춘다. 돌려보낸 호출 뒤에는 멈추지 않는다(위에서 askChoice가 한 번 거절됐다).
+    const [hook] = sdk.query.mock.lastCall![0].options.hooks.PostToolUse;
+    expect(hook.matcher).toBe("mcp__expresso__ask_choice");
+    expect(await hook.hooks[0]()).toMatchObject({ continue: false });
     // 모양이 틀린 입력(선택지 하나)은 처리기까지 오지 않는다.
     expect((await client.callTool({ name: "ask_choice", arguments: { ...args, options: [{ label: "하나" }] } })).isError).toBe(true);
     expect(askChoice).toHaveBeenCalledTimes(2);
@@ -149,6 +153,11 @@ describe("Claude 채팅 실행 어댑터", () => {
     expect(asked!.tools).toEqual([{ name: "선택지 질문", summary: ui.prompt, ui: { kind: "choice", prompt: ui.prompt, multiple: false, options: ["5시간", "10시간"], answered: ["10시간"] } }]);
     expect(answered).toEqual({ id: "00000000-0000-4000-8000-000000000021", answeredByChoice: true, role: "user", text: "10시간" });
     expect(conversationForModel([{ id: "00000000-0000-4000-8000-000000000022", role: "assistant", text: "", createdAt: "2026-11-20T00:00:00.000Z", tools: [{ id: "c", name: "선택지 질문", status: "complete", summary: ui.prompt, ui: { ...ui, answer: null } }] }])[0]!.tools![0]).toMatchObject({ ui: { answered: null } });
+  });
+  it("부품을 내지 않은 실행은 선택지 도구 뒤에서 멈추지 않는다", async () => {
+    await connectTools({ askChoice: vi.fn().mockRejectedValue(new AgentToolRejection(["글이 같습니다."])) });
+    const hook = sdk.query.mock.lastCall![0].options.hooks.PostToolUse[0].hooks[0];
+    expect(await hook()).toEqual({});
   });
   it("검증 밖의 오류는 실패로 닫고 다시 던진다", async () => {
     const { client, emit } = await connectTools({ records: { list: vi.fn(async () => { throw new Error("db down"); }), read: vi.fn(async () => []) } });

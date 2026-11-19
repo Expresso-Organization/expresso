@@ -92,7 +92,7 @@ const SYSTEM_PROMPT = [
   "승인한 계획의 진행을 묻거나 남은 작업을 다시 배치해 달라고 하면 read_preparation_plan으로 진행을 보고, 재배치는 새 주당 시간 · 기간 · 시작일로 propose_replan을 부르십시오. 완료한 작업은 그대로 두고 남은 작업만 다시 배치되며, 사용자가 카드에서 승인해야 바뀝니다.",
   "포트폴리오 지면을 고쳐 달라는 요청이면 사용자 메시지의 selection(portfolioId · key · label)이 가리키는 요소를 read_page_element로 먼저 읽고, edit_page_element로 요청한 칸만 고치십시오. selection이 없으면 context의 지면 목차(outline)에서 요소를 고르고, 어느 요소인지 모호하면 먼저 물으십시오. 고친 내용은 검사를 지나면 바로 새 판으로 저장되고 사용자가 카드에서 되돌릴 수 있으므로, 저장한 뒤에는 무엇을 바꿨는지만 짧게 말하십시오. 출처에 없는 수치 · 성과 · 경력을 만들지 말고 지금 글의 사실을 유지하십시오. 이름은 고치지 않습니다. 요소를 더하거나 빼거나 순서를 바꾸는 일은 이 도구로 할 수 없으니 다듬기 화면의 목차와 기록 탭에서 할 수 있다고 안내하십시오. 도구가 어긋난 항목을 돌려주면 그 항목만 고쳐 다시 부르십시오.",
   "context 밖에 보이는 이메일 주소와 계정 정보는 서버 운영 계정입니다. 사용자의 정보가 아니므로 답에 쓰지 마십시오. 사용자의 연락처를 물으면 모른다고 답하십시오.",
-  "사용자에게 고를 답이 정해진 질문(여럿 중 하나 · 예와 아니오 · 기간이나 정도의 단계)을 할 때는 본문에 번호 목록으로 적지 말고 ask_choice로 선택지를 내십시오. 선택지의 글은 사용자가 그대로 답으로 삼을 수 있는 짧은 말로 쓰고, 본문에 같은 선택지를 되풀이하지 마십시오. 선택지를 낸 뒤에는 답을 짐작해 이어 가지 말고 그 답변을 끝내 사용자의 답을 기다리십시오. 한 답변에 선택지 질문은 하나만 냅니다. 사용자가 자유롭게 말해야 하는 질문(경험의 내용 · 이유 · 수치)은 글로 물으십시오. 구직 목표 · 새 기록 · 준비 계획처럼 카드가 사용자의 확인을 맡는 자리에서는 ask_choice로 다시 확인하지 마십시오. 대화의 answeredByChoice가 참인 사용자 메시지는 사용자가 선택지에서 고른 답입니다.",
+  "사용자에게 고를 답이 정해진 질문(여럿 중 하나 · 예와 아니오 · 기간이나 정도의 단계)을 할 때는 본문에 번호 목록으로 적지 말고 ask_choice로 선택지를 내십시오. 선택지의 글은 사용자가 그대로 답으로 삼을 수 있는 짧은 말로 쓰고, description은 글만으로 뜻이 모자랄 때만 넣으십시오. 본문에 같은 질문과 선택지를 되풀이하지 마십시오. 사용자는 선택지를 고르지 않고 입력창에 직접 답할 수 있으므로 「직접 입력」 · 「기타」 같은 선택지는 넣지 마십시오. 질문은 ask_choice의 prompt에 쓰고, 본문에는 그 질문을 하게 된 까닭만 한두 문장으로 쓰십시오. 선택지를 낸 뒤에는 답을 짐작해 이어 가지 말고 덧붙이는 말 없이 그 답변을 끝내십시오. 한 답변에 선택지 질문은 하나만 냅니다. 사용자가 자유롭게 말해야 하는 질문(경험의 내용 · 이유 · 수치)은 글로 물으십시오. 구직 목표 · 새 기록 · 준비 계획처럼 카드가 사용자의 확인을 맡는 자리에서는 ask_choice로 다시 확인하지 마십시오. 대화의 answeredByChoice가 참인 사용자 메시지는 사용자가 선택지에서 고른 답입니다.",
   "부족한 요건을 보완할 질문을 요청받으면 가장 최근 요건 대조의 unconfirmed · partial 요건부터 한 번에 질문 하나만 하십시오. 답에 역할 · 행동 · 결과 중 빠진 것이 있으면 그것을 이어 묻고, 충분히 확인되었거나 사용자가 그만하자고 하면 질문을 멈추고 확인된 내용을 정리하십시오. 요건 대조가 없으면 먼저 대조하십시오.",
 ].join(" ");
 export interface AgentRuntime { run(input: AgentInput): Promise<void> }
@@ -233,7 +233,7 @@ export class ClaudeAgentRuntime implements AgentRuntime {
       if (asked) throw new AgentToolRejection(["이 답변에서 이미 선택지를 냈습니다. 답변을 끝내고 사용자의 답을 기다리십시오."]);
       const part = await input.askChoice(choiceInput);
       asked = true;
-      return { summary: part.prompt.slice(0, 8_000), detail: { ui: part }, reply: reply({ shown: true, options: part.options.map(option => option.label), next: "답변을 끝내고 사용자의 답을 기다리십시오." }) };
+      return { summary: part.prompt.slice(0, 8_000), detail: { ui: part }, reply: reply({ shown: true, options: part.options.map(option => option.label), note: "선택지가 화면에 떴습니다. 본문에 더 쓰지 말고 여기서 끝내십시오." }) };
     }, recheck("어긋난 항목을 고쳐 다시 냅니다.", "선택지를 내지 않았습니다. 아래 항목을 고쳐 다시 부르십시오.")));
     const isolatedHome = input.apiKey ? await mkdtemp(join(tmpdir(), "expresso-agent-")) : null;
     try {
@@ -242,6 +242,9 @@ export class ClaudeAgentRuntime implements AgentRuntime {
         // 구독 경로도 git 사용자 이름을 컨텍스트에 싣지 않는다(`CLI_IDENTITY_ENV`).
         env: isolatedHome ? { PATH: process.env.PATH, HOME: isolatedHome, CLAUDE_CONFIG_DIR: isolatedHome, ANTHROPIC_API_KEY: input.apiKey, ...CLI_IDENTITY_ENV } : { ...process.env, ...CLI_IDENTITY_ENV }, abortController, persistSession: false, includePartialMessages: true, maxTurns: 8, maxBudgetUsd: 1,
         tools: [], mcpServers: { expresso: { type: "sdk", name: "expresso", instance: server } }, allowedTools: AGENT_ALLOWED_TOOLS, permissionMode: "dontAsk", settingSources: [], strictMcpConfig: true,
+        // 부품을 내면 실행을 거기서 끝낸다. 답은 사용자가 화면에서 고르므로 모델을 한 번 더 부를 일이 없다 —
+        // 더 부르면 그 호출의 토큰(실측: 캐시 읽기 약 2만)이 들고, 답을 기다린다는 군말이 본문에 붙는다.
+        hooks: { PostToolUse: [{ matcher: "mcp__expresso__ask_choice", hooks: [async () => asked ? { continue: false, stopReason: "사용자의 답을 기다립니다." } : {}] }] },
         systemPrompt: SYSTEM_PROMPT,
       } });
       for await (const message of messages) {
@@ -263,7 +266,8 @@ export class ClaudeAgentRuntime implements AgentRuntime {
           await input.emit({ type: "tool", tool: { ...row, status: "failed", summary: "도구 입력이 맞지 않아 다시 씁니다." } });
         }
         if (message.type === "stream_event" && message.event.type === "content_block_delta" && message.event.delta.type === "text_delta") await input.emit({ type: "text", text: message.event.delta.text });
-        if (message.type === "result" && message.is_error) throw new Error("agent execution failed");
+        // 부품을 내고 멈춘 실행은 오류가 아니다. SDK가 멈춘 결과를 어떤 모양으로 내든 성공으로 닫는다.
+        if (message.type === "result" && message.is_error && !asked) throw new Error("agent execution failed");
         // 개인 키로 돈 실행은 그 키의 계정이 비용을 낸다. 이번 달 크레딧 장부에 적지 않는다 — 적으면 내 키로 한 대화가 지면 생성의 한도를 깎는다.
         if (message.type === "result" && this.usage && !input.apiKey) recordAgentUsage(this.usage, input.userId, message.modelUsage ?? {}, message.duration_ms ?? 0);
       }

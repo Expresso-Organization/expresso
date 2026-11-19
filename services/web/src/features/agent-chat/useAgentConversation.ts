@@ -27,6 +27,7 @@ export function useAgentConversation(context?: AgentContext, options: { restore?
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const currentId = useRef(id); currentId.current = id;
   const requestId = useRef<{ text: string; id: string } | null>(null);
+  const replyIds = useRef<Record<string, string>>({});
   const accept = useCallback((next: AgentConversation) => {
     if (!mounted.current || currentId.current !== next.id) return;
     setConversation(old => old?.id === next.id && old.version > next.version ? old : next);
@@ -108,11 +109,23 @@ export function useAgentConversation(context?: AgentContext, options: { restore?
     } catch (error) { setIssue(error instanceof Error ? error.message : "자료 선택을 저장하지 못했습니다."); }
     finally { contextMutation.current = false; setPending(false); }
   };
+  /**
+   * 부품에 답한다. 대화에 남는 글은 서버가 고른 선택지의 글로 만든다. 실패를 부품이 직접 보여 주도록 오류를 다시 던진다.
+   * 같은 부품에 다시 보내면 같은 요청 id를 쓴다 — 응답을 받지 못하고 다시 누른 답이 두 번 들어가지 않는다.
+   */
+  const answerPart = async (partId: string, optionIds: string[]) => {
+    if (!id || pending) return;
+    setPending(true); setIssue(null);
+    try {
+      replyIds.current[partId] ??= crypto.randomUUID();
+      accept(await agentRequest(`/${id}/messages`, { requestId: replyIds.current[partId], reply: { partId, optionIds } }));
+    } finally { setPending(false); }
+  };
   const decide = async (path: string, decision: unknown) => {
     setPending(true); setIssue(null);
     try { accept(await agentRequest(`/${id}/${path}`, decision)); } finally { setPending(false); }
   };
-  return { id, conversation, list, issue, pending, resolving, select, send, toggleContext,
+  return { id, conversation, list, issue, pending, resolving, select, send, answerPart, toggleContext,
     attach: () => id && context ? perform(() => agentRequest(`/${id}/contexts`, { context })) : Promise.resolve(),
     cancel: () => perform(() => agentRequest(`/${id}/cancel`, {})),
     retry: () => perform(() => agentRequest(`/${id}/retry`, {})),
