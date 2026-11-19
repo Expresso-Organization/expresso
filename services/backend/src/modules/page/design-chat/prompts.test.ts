@@ -4,7 +4,7 @@ import type { DesignChatMessage, DesignLayoutSpec, DesignSnippet } from "@expres
 import { catalogEntries } from "../../design-systems/catalog.js";
 import type { BrewPageSources } from "../brew-sources.js";
 import { seedPrompt } from "../briefed-generator.js";
-import { catalogStyle, drawCall, openingCall, replyCall, reviseCall, transcript, type Opening } from "./prompts.js";
+import { applyEdits, catalogStyle, drawCall, openingCall, replyCall, reviseCall, reviseTarget, transcript, type Opening } from "./prompts.js";
 
 const sources: BrewPageSources = {
   brewId: "b1",
@@ -27,11 +27,11 @@ const layout: DesignLayoutSpec = {
 const opening: Opening = { head, say: "안녕하세요! 상품 상세를 3.8초에서 1.9초로 줄인 일이 눈에 띄네요. 어떤 느낌으로 보여 드릴까요?", styles: [style], layouts: [layout] };
 const stamp = "2026-11-19T00:00:00.000Z";
 const snippet: DesignSnippet = { id: "00000000-0000-4000-8000-000000000001", origin: "agent", name: "측정판 리포트", note: "", words: style.words, tokens, layout, css: ".hero{}", html: '<header class="hero"></header>', fromSnippetId: null, createdAt: stamp };
-const reply = { say: "분홍으로 가 볼게요.", show: "none" as const, styles: [], layouts: [], screens: [], instruction: "" };
+const reply = { say: "분홍으로 가 볼게요.", show: "none" as const, styles: [], layouts: [], screens: [], target: "", instruction: "" };
 
 describe("디자인 대화의 호출", () => {
   it("여는 말과 답하는 호출은 말 · 제안 · 사실의 Do와 Do not을 읽고, 스타일과 레이아웃을 따로 내라는 말을 받는다", () => {
-    for (const system of [openingCall("u1", sources).spec.system, replyCall({ userId: "u1", sources, head, messages: [], snippets: [], text: "더 밝게", subject: null, selected: null, latest: null }).spec.system]) {
+    for (const system of [openingCall("u1", sources).spec.system, replyCall({ userId: "u1", sources, head, messages: [], snippets: [], text: "더 밝게", subject: null, selected: null }).spec.system]) {
       for (const title of ["## 말 —", "## 제안 — 스타일과 레이아웃을 따로 냅니다", "## 사실"]) expect(system).toContain(title);
       expect(system.match(/### Do\n/g)).toHaveLength(3);
       expect(system.match(/### Do not\n/g)).toHaveLength(3);
@@ -47,7 +47,7 @@ describe("디자인 대화의 호출", () => {
   it("네 호출 모두 Sonnet으로 부른다 — 계약의 기본 등급은 Opus다", () => {
     const calls = [
       openingCall("u1", sources),
-      replyCall({ userId: "u1", sources, head, messages: [], snippets: [], text: "더 밝게", subject: null, selected: null, latest: null }),
+      replyCall({ userId: "u1", sources, head, messages: [], snippets: [], text: "더 밝게", subject: null, selected: null }),
       drawCall({ userId: "u1", sources, style, layout }),
       reviseCall({ userId: "u1", sources, snippet, instruction: "강조색을 초록으로" }),
     ];
@@ -140,7 +140,7 @@ describe("디자인 대화의 호출", () => {
       "사용자: (견본에서 스타일과 레이아웃을 골라 첫 화면을 청함) [대상: 스타일 「측정판」 · 레이아웃 「전후 비교」]",
       `  [첫 화면 「측정판 리포트」 — 스타일 「측정판」 성능 리포트의 회색과 파랑 (바탕 #ffffff · 글자 #111111 · 강조 #d6336c · 고딕 · 읽기 편하게) · 레이아웃 「전후 비교」 — 상품 상세의 전후 비교 차트 · 배치도 ${blocks}]`,
     ]);
-    const input = { userId: "u1", sources, head, messages, snippets: [snippet], text: "강조색을 초록으로", selected: snippet, latest: snippet };
+    const input = { userId: "u1", sources, head, messages, snippets: [snippet], text: "강조색을 초록으로", selected: snippet };
     const targeted = replyCall({ ...input, subject: { kind: "snippet", snippet } });
     expect(targeted.spec.prompt).toContain("## 이 말의 대상\n첫 화면 「측정판 리포트」");
     expect(targeted.spec.prompt).toContain("사용자가 지금 고른 첫 화면: 「측정판 리포트」");
@@ -149,12 +149,18 @@ describe("디자인 대화의 호출", () => {
     const revision = { ...reply, say: "초록으로 바꿔 볼게요.", show: "revision" as const, instruction: "강조색을 초록으로" };
     expect(targeted.check(revision)).toEqual([]);
     expect(targeted.check({ ...revision, instruction: " " }).map(({ path }) => path)).toEqual(["/instruction"]);
-    // 대상을 붙이지 않고 고쳐 달라고 하면 가장 최근에 그린 첫 화면을 고친다.
+    // 대상을 붙이지 않고 고쳐 달라고 하면 가장 최근에 그린 첫 화면을 고친다. 버튼을 눌러 대상을 붙이게 하지 않는다.
     const loose = replyCall({ ...input, subject: null });
-    expect(loose.spec.prompt).toContain("사용자가 대상을 붙이지 않았습니다. 고쳐 달라는 말이면 가장 최근에 그린 첫 화면 「측정판 리포트」을 고칩니다");
+    expect(loose.spec.system).toContain("어느 첫 화면을 고칠지는 사용자의 말에서 읽습니다.");
+    expect(loose.spec.prompt).toContain("가리키는 첫 화면이 따로 없으면, 가장 최근에 그린 「측정판 리포트」을 고칩니다.");
     expect(loose.check(revision)).toEqual([]);
+    // 말이 앞서 그린 것을 가리키면 그 이름을 적는다. 대화에 없는 이름은 그 칸만 고쳐 받는다.
+    expect(loose.check({ ...revision, target: "측정판 리포트" })).toEqual([]);
+    const unknown = loose.check({ ...revision, target: "분홍 버전" });
+    expect(unknown.map(({ path }) => path)).toEqual(["/target"]);
+    expect(unknown[0]?.problem).toContain("「측정판 리포트」");
     // 그린 첫 화면이 하나도 없으면 고칠 수 없다. 띄울 것과 함께 고치겠다는 말도 고쳐 받는다.
-    expect(replyCall({ ...input, subject: null, latest: null }).check(revision).map(({ path }) => path)).toEqual(["/show", "/say"]);
+    expect(replyCall({ ...input, snippets: [], subject: null }).check(revision).map(({ path }) => path)).toEqual(["/show", "/say"]);
     expect(loose.check({ ...reply, show: "screens" }).map(({ path }) => path)).toEqual(["/screens"]);
     expect(loose.check({ ...reply, show: "proposals" }).map(({ path }) => path)).toEqual(["/styles"]);
     // 견본은 한쪽만 새로 낼 수 있다 — 색 이야기에는 스타일만.
@@ -163,6 +169,44 @@ describe("디자인 대화의 호출", () => {
     // 첫 화면으로 그릴 짝의 배치도도 같은 검사를 지난다. 경로는 짝 안의 칸을 가리킨다.
     expect(loose.check({ ...reply, show: "screens", screens: [{ source: "user", style, layout: { ...layout, blocks: [{ kind: "figure", x: 12, y: 0, w: 8, h: 4 }] } }] }).map(({ path }) => path)).toEqual(["/screens/0/layout/blocks/0"]);
     expect(loose.check(reply)).toEqual([]);
+  });
+
+  it("고치는 호출은 첫 화면 전체가 아니라 바뀌는 자리만 받아 지금 첫 화면에 적용한다", () => {
+    const current = { ...snippet, css: ".hero{color:#111111}\n.bar{background:#d6336c;border-color:#d6336c}", html: '<header class="hero"><h1>윤하린</h1><i class="bar"></i></header>' };
+    const { spec, check, apply } = reviseCall({ userId: "u1", sources, snippet: current, instruction: "분홍을 짙은 초록으로" });
+    // 지금 첫 화면을 보이고 조각으로 내게 한다. 첫 화면을 새로 디자인하는 지침은 싣지 않는다 — 고치는 일이다.
+    expect(spec.prompt).toContain(current.html);
+    expect(spec.prompt).toContain(current.css);
+    expect(spec.system).toContain("첫 화면을 다시 쓰지 않는다.");
+    expect(spec.system).not.toContain("## 디자인 지침");
+    const draft = { name: "초록 측정판", tokens: { ...tokens, accent: "#1f5c3a" }, edits: [{ in: "css" as const, find: "#d6336c", replace: "#1f5c3a" }] };
+    expect(check(draft)).toEqual([]);
+    // 같은 글자는 모두 바뀌고, 가리키지 않은 자리는 그대로다.
+    // 고친 것에는 건네는 말이 없다 — 고치겠다는 말은 답하는 호출이 했다.
+    expect(apply(draft)).toEqual({ name: "초록 측정판", note: "", tokens: draft.tokens, html: current.html, css: ".hero{color:#111111}\n.bar{background:#1f5c3a;border-color:#1f5c3a}" });
+    // 조각은 순서대로 적용한다. 뒤 조각은 앞 조각을 적용한 뒤의 글자에서 찾는다.
+    expect(applyEdits(current, [{ in: "html", find: "<h1>", replace: '<h1 class="big">' }, { in: "html", find: 'class="big">윤하린', replace: 'class="big">윤 하린' }])).toMatchObject({ html: '<header class="hero"><h1 class="big">윤 하린</h1><i class="bar"></i></header>', missing: [] });
+    // 지금 첫 화면에 없는 글자를 찾는 조각은 그 조각만 고쳐 받는다.
+    const missed = check({ ...draft, edits: [draft.edits[0]!, { in: "css", find: ".chart { border-radius: 4px }", replace: ".chart { border-radius: 999px }" }] });
+    expect(missed.map(({ path }) => path)).toEqual(["/edits/1/find"]);
+    expect(missed[0]?.problem).toContain("글자 그대로");
+    expect(check({ ...draft, edits: [] }).map(({ path }) => path)).toEqual(["/edits"]);
+    // 적용한 결과는 새로 그린 첫 화면과 같은 검사를 지난다.
+    expect(check({ ...draft, edits: [{ in: "css", find: ".hero{", replace: '@import url("https://fonts.example/a.css");.hero{' }] }).map(({ path }) => path)).toEqual(["/edits"]);
+    expect(check({ ...draft, name: "가".repeat(121) }).map(({ path }) => path)).toEqual(["/name"]);
+  });
+
+  it("고칠 첫 화면은 붙은 대상, 말이 가리킨 이름, 가장 최근에 그린 것 순서로 정한다", () => {
+    const older = { ...snippet, id: "00000000-0000-4000-8000-0000000000a1", name: "분홍 버전" };
+    const newer = { ...snippet, id: "00000000-0000-4000-8000-0000000000a2", name: "자주 버전" };
+    const again = { ...snippet, id: "00000000-0000-4000-8000-0000000000a3", name: "분홍 버전" };
+    expect(reviseTarget([older, newer], null, "")?.id).toBe(newer.id);
+    expect(reviseTarget([older, newer], null, " 분홍 버전 ")?.id).toBe(older.id);
+    // 같은 이름이 여럿이면 나중에 그린 것이다.
+    expect(reviseTarget([older, newer, again], null, "분홍 버전")?.id).toBe(again.id);
+    // 넓게 띄워 놓고 한 말은 그 첫 화면을 고친다.
+    expect(reviseTarget([older, newer], { kind: "snippet", snippet: older }, "자주 버전")?.id).toBe(older.id);
+    expect(reviseTarget([], null, "분홍 버전")).toBeNull();
   });
 
   it("카탈로그의 디자인 판을 그 판으로 생성할 때와 같은 색 · 서체의 스타일로 옮긴다", () => {

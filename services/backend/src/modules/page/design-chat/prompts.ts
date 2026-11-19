@@ -9,6 +9,7 @@ import {
   DesignSnippetSchema,
   DesignStyleSchema,
   DesignTokensSchema,
+  pagePolicyPrompt,
   type DesignChatMessage,
   type DesignLayoutBlock,
   type DesignLayoutSpec,
@@ -29,7 +30,8 @@ import { markupProblem, promptOpening, promptSources, ungroundedEmails, type Pag
 /**
  * 디자인을 정하는 대화의 AI 호출 네 가지 — 여는 말, 답하기, 첫 화면 그리기, 첫 화면 고치기.
  *
- * 앞의 둘은 무엇을 말하고 무엇을 띄울지 정하고(`page_design`), 뒤의 둘은 마크업과 CSS를 쓴다(`page_generation`).
+ * 앞의 둘은 무엇을 말하고 무엇을 띄울지 정하고(`page_design`), 뒤의 둘은 마크업과 CSS를 쓴다(`page_generation`) —
+ * 그리는 호출은 첫 화면 전체를, 고치는 호출은 바뀌는 자리만 쓴다.
  * 넷 모두 Sonnet으로 부른다. 두 계약의 기본 등급은 Opus인데 대화는 사람이 화면 앞에서 기다린다.
  *
  * 지시는 **Do와 Do not**으로 적는다. 2026-11-19에 사용자가 목록을 보고 확정한 것이다 — 말(사람에게 건네는 말),
@@ -280,7 +282,10 @@ const REPLY_SYSTEM = [
   "- `screens` — 첫 화면. 이 사람의 자료로 그린 포트폴리오 맨 위 한 장면이고 한 장에 30초쯤 걸립니다. 사용자가 스타일이나 구성을 구체적으로 말했거나 실제 모습을 보여 달라고 했을 때 씁니다. `screens`의 항목마다 스타일 하나와 레이아웃 하나를 짝지어 적습니다.",
   "  - 사용자가 스타일만 말했으면 레이아웃은 가장 최근에 그린 첫 화면의 것을 이름 · 설명 · 배치도까지 글자 그대로 옮깁니다. 구성만 말했으면 스타일을 그대로 옮깁니다.",
   "  - 아직 그린 첫 화면이 없으면 말하지 않은 쪽은 이 사람의 자료에 맞게 정합니다.",
-  "- `revision` — 대상으로 붙은 첫 화면을 고칩니다. 사용자가 첫 화면의 한 부분을 바꿔 달라고 했을 때 씁니다. `instruction`에 무엇을 어떻게 바꿀지 한 문장으로 옮깁니다. 대상이 붙지 않았으면 가장 최근에 그린 첫 화면을 고칩니다 — 사용자가 방금 보고 한 말입니다. 그린 첫 화면이 하나도 없으면 쓰지 않습니다.",
+  "- `revision` — 이미 그린 첫 화면을 고칩니다. 사용자가 첫 화면의 한 부분을 바꿔 달라고 했을 때 씁니다. `instruction`에 무엇을 어떻게 바꿀지 한 문장으로 옮깁니다. 그린 첫 화면이 하나도 없으면 쓰지 않습니다.",
+  "  - 어느 첫 화면을 고칠지는 사용자의 말에서 읽습니다. 말이 앞서 그린 것을 가리키면(\"아까 분홍색 버전\", \"처음 그린 것\") 그 첫 화면의 이름을 대화에 적힌 글자 그대로 `target`에 적습니다.",
+  "  - 가리키는 것이 따로 없으면 `target`을 비웁니다. 사용자가 방금 본, 가장 최근에 그린 첫 화면을 고칩니다.",
+  "  - 대상이 붙어 있으면(사용자가 그 첫 화면을 넓게 띄워 놓고 한 말입니다) 그것을 고치고 `target`은 비웁니다.",
   "- `none` — 띄울 것이 없습니다. 되물어야 뜻을 알 수 있거나 말로만 답하면 될 때 씁니다.",
   "",
   "`styles` · `layouts`는 `show`가 `proposals`일 때만, `screens`는 `show`가 `screens`일 때만 채웁니다. 나머지는 빈 목록입니다.",
@@ -302,9 +307,22 @@ export const ReplySchema = z.strictObject({
   styles: z.array(StyleDraftSchema).describe("견본으로 띄울 스타일. 없으면 빈 목록"),
   layouts: z.array(LayoutDraftSchema).describe("견본으로 띄울 레이아웃. 없으면 빈 목록"),
   screens: z.array(z.strictObject({ source: z.enum(["agent", "user"]), style: StyleDraftSchema, layout: LayoutDraftSchema })).describe("첫 화면으로 그릴 스타일과 레이아웃의 짝. 없으면 빈 목록"),
+  target: z.string().describe("`revision`일 때 고칠 첫 화면의 이름. 대화에 적힌 이름 그대로. 가장 최근에 그린 것을 고치거나 `revision`이 아니면 빈 글"),
   instruction: z.string().describe("`revision`일 때 고칠 내용 한 문장. 아니면 빈 글"),
 });
 export type Reply = z.infer<typeof ReplySchema>;
+
+/**
+ * 고칠 첫 화면. 붙은 대상(넓게 띄워 놓고 한 말)이 먼저고, 다음은 말이 이름으로 가리킨 것, 그것도 없으면 가장 최근에 그린 것이다.
+ *
+ * 처음에는 첫 화면마다 「말로 고치기」 버튼을 두고 눌러서 대상을 붙이게 했다. 2026-11-19 사용자: "말로 고치기 버튼이 왜 필요하냐;
+ * 채팅 인터페이스인데". 버튼 없이 말만 보냈을 때는 고치겠다는 답만 남고 아무것도 뜨지 않았다. 어느 것을 고칠지는 말에서 읽는다.
+ * 같은 이름이 여럿이면 나중에 그린 것이다.
+ */
+export function reviseTarget(snippets: DesignSnippet[], subject: ReplySubject | null, name: string): DesignSnippet | null {
+  if (subject?.kind === "snippet") return subject.snippet;
+  return snippets.findLast((item) => item.name === name.trim()) ?? snippets.at(-1) ?? null;
+}
 
 /** 답하는 호출이 읽는, 말이 가리킨 대상. */
 export type ReplySubject = { kind: "snippet"; snippet: DesignSnippet } | { kind: "catalog"; style: StyleDraft };
@@ -350,18 +368,11 @@ export function replyCall(input: {
   snippets: DesignSnippet[];
   text: string;
   subject: ReplySubject | null;
-  /**
-   * 가장 최근에 그린 첫 화면. 사용자가 대상을 붙이지 않고 고쳐 달라고 하면 이것을 고친다.
-   * 2026-11-19: 「말로 고치기」를 누르지 않고 "가운데 차트를 pill 형태로"라고만 보내자, 에이전트는 고치겠다고 답했는데
-   * 붙은 대상이 없다는 검사에 걸려 띄울 것만 없음으로 바뀌었다. 말만 남고 아무것도 뜨지 않았다.
-   */
-  latest: DesignSnippet | null;
   selected: DesignSnippet | null;
 }): { spec: AiCallSpec; check(output: Reply): AiViolation[] } {
   const context = sourcesContext(input.userId, input.sources);
   const subject = input.subject;
-  /** 고칠 수 있는 첫 화면. 붙은 대상이 먼저고, 없으면 가장 최근에 그린 것이다. */
-  const target = subject?.kind === "snippet" ? subject.snippet : input.latest;
+  const latest = input.snippets.at(-1) ?? null;
   const prompt = [
     ...promptOpening(context),
     ...headPrompt(input.head),
@@ -379,12 +390,8 @@ export function replyCall(input: {
             ? `첫 화면 「${subject.snippet.name}」 — ${subject.snippet.words} (${tokensLine(subject.snippet.tokens)}) · ${layoutLine(subject.snippet.layout)}`
             : `카탈로그의 디자인 「${subject.style.name}」 — ${subject.style.words} (${tokensLine(subject.style.tokens)})`,
         ]
-      : input.latest
-        ? [
-            "",
-            "## 이 말의 대상",
-            `사용자가 대상을 붙이지 않았습니다. 고쳐 달라는 말이면 가장 최근에 그린 첫 화면 「${input.latest.name}」을 고칩니다 — ${input.latest.words} (${tokensLine(input.latest.tokens)}) · ${layoutLine(input.latest.layout)}`,
-          ]
+      : latest
+        ? ["", "## 이 말의 대상", `붙은 대상이 없습니다. 고쳐 달라는 말이고 가리키는 첫 화면이 따로 없으면, 가장 최근에 그린 「${latest.name}」을 고칩니다.`]
         : []),
   ].join("\n");
   return {
@@ -395,12 +402,14 @@ export function replyCall(input: {
         violations.push({ path: "/styles", problem: "`show`가 proposals인데 스타일도 레이아웃도 없습니다. 띄울 것을 적거나 `show`를 none으로 바꾸세요." });
       if (output.show === "screens" && output.screens.length === 0)
         violations.push({ path: "/screens", problem: "`show`가 screens인데 그릴 것이 없습니다. 스타일과 레이아웃의 짝을 적거나 `show`를 none으로 바꾸세요." });
-      if (output.show === "revision" && !target)
+      if (output.show === "revision" && !reviseTarget(input.snippets, subject, ""))
         violations.push(
           { path: "/show", problem: "아직 그린 첫 화면이 없어 고칠 것이 없습니다. 새로 그릴 것이면 `screens`로, 아니면 `none`으로 바꾸세요." },
           // 띄울 것만 바꾸면 고치겠다는 말이 남는다. 말도 함께 고쳐 받는다.
           { path: "/say", problem: "고칠 첫 화면이 없습니다. 고치겠다는 말 대신, 바꾼 `show`에 맞는 말로 다시 쓰세요." },
         );
+      else if (output.show === "revision" && output.target.trim() && !input.snippets.some(({ name }) => name === output.target.trim()))
+        violations.push({ path: "/target", problem: `「${output.target}」라는 이름의 첫 화면이 대화에 없습니다. 대화에 적힌 첫 화면의 이름(${[...new Set(input.snippets.map(({ name }) => `「${name}」`))].join(" · ")}) 가운데 하나를 그대로 적거나, 가장 최근 것을 고칠 것이면 비우세요.` });
       if (output.show === "revision" && !output.instruction.trim()) violations.push({ path: "/instruction", problem: "무엇을 어떻게 바꿀지 한 문장으로 적으세요." });
       violations.push(
         ...tooLong("/say", output.say, DesignAssistantMessageSchema.shape.text, "말"),
@@ -489,13 +498,14 @@ function layoutPrompt(layout: DesignLayoutSpec | null): string[] {
   ];
 }
 
-function snippetCheck(source: string) {
+/** 첫 화면 한 장의 검사. 건네는 말(`note`)이 없는 출력(고친 것)은 `spoken`을 끄고 부른다. */
+function snippetCheck(source: string, spoken = true) {
   return (draft: SnippetDraft): AiViolation[] => {
     const problem = markupProblem(draft.html, false);
     if (problem) return [{ path: "/html", problem }];
     const speech = [
       ...tooLong("/name", draft.name, DesignSnippetSchema.shape.name, "이름"),
-      ...speechProblems("/note", draft.note, "건네는 말"),
+      ...(spoken ? speechProblems("/note", draft.note, "건네는 말") : []),
       ...(draft.note.length > NOTE_MAX ? [{ path: "/note", problem: `건네는 말이 깁니다(${draft.note.length}자). 무엇을 주인공으로 세웠는지만 짧은 한 문장으로 쓰세요. 배치와 곁들인 것은 화면이 보입니다.` }] : []),
     ];
     if (speech.length) return speech;
@@ -539,29 +549,101 @@ export function drawCall(input: { userId: string; sources: BrewPageSources; styl
   };
 }
 
-export function reviseCall(input: { userId: string; sources: BrewPageSources; snippet: Pick<DesignSnippet, "html" | "css">; instruction: string }): { spec: AiCallSpec; check(output: SnippetDraft): AiViolation[] } {
+/**
+ * 고친 것의 출력. 첫 화면 전체가 아니라 **바뀌는 자리만** 낸다.
+ *
+ * 처음에는 고친 첫 화면 전체(마크업과 CSS)를 다시 쓰게 했다. 색 하나를 바꿔도 30초 안팎이 걸렸고, 2026-11-19 사용자가
+ * "매번 처음부터 새로 그리게 하는 거야?"라고 짚었다. 모델은 「이 글자를 이 글자로」 조각만 쓰고 서버가 지금 첫 화면에 적용한다.
+ * 지시가 가리키지 않은 자리는 한 글자도 다시 쓰이지 않는다.
+ */
+export const RevisionDraftSchema = z.strictObject({
+  name: z.string().min(1).describe("고친 첫 화면의 짧은 이름. 두세 낱말"),
+  tokens: DesignTokensSchema.describe("고친 뒤의 바탕 · 글자 · 강조 색(#rrggbb)과 서체 계열 · 밀도"),
+  edits: z
+    .array(z.strictObject({
+      in: z.enum(["css", "html"]).describe("어디를 고치는가"),
+      find: z.string().min(1).describe("지금 첫 화면에 있는 글자 그대로. 공백과 줄바꿈까지 같아야 한다"),
+      replace: z.string().describe("그 자리에 들어갈 글자. 지우려면 빈 글"),
+    }))
+    .describe("바꿀 자리. 순서대로 적용한다"),
+});
+export type RevisionDraft = z.infer<typeof RevisionDraftSchema>;
+
+const REVISION_SYSTEM = [
+  "너는 포트폴리오 첫 화면의 마크업과 CSS를 고치는 편집자다. 사용자가 채팅에서 보고 있는 첫 화면에서 지시가 가리킨 것만 고친다.",
+  "",
+  "## 고치는 법",
+  "- 첫 화면을 다시 쓰지 않는다. 바뀌는 자리만 `edits`에 조각으로 낸다. 조각마다 지금 있는 글자(`find`)와 그 자리에 들어갈 글자(`replace`)를 적는다.",
+  "- `find`는 지금 첫 화면에서 글자 그대로 옮긴다. 공백 · 줄바꿈 · 따옴표까지 같아야 찾는다.",
+  "- 같은 글자가 여러 번 나오면 모두 바뀐다. 색 값을 통째로 바꿀 때는 그 값만 적으면 되고, 한 자리만 바꿀 때는 그 자리만 가리키도록 앞뒤 글자를 넉넉히 넣는다.",
+  "- 조각은 필요한 만큼만 낸다. 색 하나를 바꾸는 일은 조각 한두 개다. 규칙을 새로 더할 때는 가까운 규칙의 끝을 `find`로 잡고 그 뒤에 이어 붙인다.",
+  "- 조각은 적은 순서대로 적용된다. 뒤 조각의 `find`는 앞 조각을 적용한 뒤의 글자에서 찾는다.",
+  "- 지시가 가리키지 않은 색 · 서체 · 구성 · 글 · 클래스 이름은 건드리지 않는다. 새로 넣는 것은 지금 첫 화면의 색 · 서체 · 클래스 이름 짓는 법을 잇는다.",
+  "- 자료에 없는 수치, 경력, 연락처를 만들지 않는다.",
+  "",
+  pagePolicyPrompt(),
+  "",
+  "## 내는 순서",
+  "- `name` — 고친 첫 화면의 짧은 이름.",
+  "- `tokens` — 고친 뒤의 바탕 · 글자 · 강조 색과 서체 계열 · 밀도. 바뀌지 않았으면 지금 값 그대로다.",
+  "- `edits` — 바꿀 자리.",
+].join("\n");
+
+/** 조각을 순서대로 적용한다. `find`가 없는 조각은 건너뛰고 그 자리 번호를 `missing`에 남긴다. 같은 글자는 모두 바꾼다. */
+export function applyEdits(snippet: Pick<DesignSnippet, "html" | "css">, edits: RevisionDraft["edits"]): { html: string; css: string; missing: number[] } {
+  const next = { html: snippet.html, css: snippet.css };
+  const missing: number[] = [];
+  edits.forEach((edit, index) => {
+    if (!next[edit.in].includes(edit.find)) missing.push(index);
+    else next[edit.in] = next[edit.in].split(edit.find).join(edit.replace);
+  });
+  return { ...next, missing };
+}
+
+export function reviseCall(input: { userId: string; sources: BrewPageSources; snippet: Pick<DesignSnippet, "html" | "css" | "name" | "tokens">; instruction: string }): {
+  spec: AiCallSpec;
+  check(output: RevisionDraft): AiViolation[];
+  /** 조각을 지금 첫 화면에 적용한 결과. 그린 첫 화면과 같은 모양이다. */
+  apply(output: RevisionDraft): SnippetDraft;
+} {
+  const { snippet } = input;
   const prompt = [
-    ...promptOpening(sourcesContext(input.userId, input.sources)),
     "## 지금 첫 화면 — 사용자가 채팅에서 보고 있는 것이다",
+    `이름: ${snippet.name} · ${tokensLine(snippet.tokens)}`,
     "```html",
-    input.snippet.html,
+    snippet.html,
     "```",
     "```css",
-    input.snippet.css,
+    snippet.css,
     "```",
     "",
     "## 지시",
     input.instruction,
-    "지시가 가리킨 것만 바꾸고 나머지 마크업 · CSS · 클래스 이름은 그대로 둔다. 지시가 구성을 가리키지 않으면 구성도 그대로 둔다. 고친 첫 화면 전체를 낸다.",
-    "`name`과 `tokens`도 고친 결과에 맞게 적는다.",
-    "",
-    "## `note` — 사용자에게 건네는 말이다",
-    "- 무엇을 바꿨는지만 사람에게 말하듯 짧은 한 문장으로 쓴다. \"~바꿨어요\"로 끝나는 부드러운 존댓말이다.",
-    "- 보고서 문장(\"~으로 변경하였습니다\")으로 쓰지 않는다.",
   ].join("\n");
+  const apply = (output: RevisionDraft): SnippetDraft => {
+    const { html, css } = applyEdits(snippet, output.edits);
+    // 고친 것에는 건네는 말을 받지 않는다. 고치겠다는 말은 답하는 호출이 이미 했고, 한 칸을 더 쓰게 하면 그만큼 늦어진다
+    // (2026-11-19 실제 호출: 조각은 9초에 왔는데 이 말을 고쳐 받느라 5초가 더 들었다).
+    return { name: output.name, note: "", tokens: output.tokens, css, html };
+  };
+  const whole = snippetCheck(groundSource(input.sources), false);
   return {
-    spec: { contract: "page_generation", system: SNIPPET_SYSTEM, prompt, promptVersion: DESIGN_CHAT_PROMPT_VERSION, ...TIER },
-    check: snippetCheck(groundSource(input.sources)),
+    // 고치는 일은 바뀔 자리를 찾아 적는 일이라 깊이 생각할 것이 없다. 2026-11-19 실제 호출에서 색 하나는 출력 548토큰 · 13초였는데
+    // "막대를 더 두껍게"는 4,563토큰 · 30초가 들었다 — 조각은 몇 줄이고 나머지는 쓰기 전의 생각이었다.
+    spec: { contract: "page_generation", system: REVISION_SYSTEM, prompt, promptVersion: DESIGN_CHAT_PROMPT_VERSION, effort: "low", ...TIER },
+    apply,
+    check(output) {
+      if (output.edits.length === 0) return [{ path: "/edits", problem: "바꿀 자리가 하나도 없습니다. 지시가 가리킨 것을 바꾸는 조각을 적으세요." }];
+      // 지금 첫 화면에 없는 글자를 찾는 조각은 그 조각만 고쳐 받는다. 전체를 다시 쓰게 하지 않는다.
+      const { missing } = applyEdits(snippet, output.edits);
+      if (missing.length)
+        return missing.map((index) => ({
+          path: `/edits/${index}/find`,
+          problem: `지금 첫 화면의 ${output.edits[index]!.in}에 이 글자가 없습니다. 지금 첫 화면에서 글자 그대로(공백 · 줄바꿈까지) 옮겨 적으세요. 더 짧게 잡아도 됩니다.`,
+        }));
+      // 적용한 결과는 새로 그린 첫 화면과 같은 검사를 지난다. 마크업 · CSS의 문제는 조각을 고쳐 받는다.
+      return whole(apply(output)).map((violation) => (violation.path === "/html" || violation.path === "/css" ? { path: "/edits", problem: `조각을 적용한 ${violation.path.slice(1)}에 문제가 있습니다: ${violation.problem}` } : violation));
+    },
   };
 }
 

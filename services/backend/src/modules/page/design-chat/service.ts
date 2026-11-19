@@ -15,14 +15,17 @@ import {
   DesignHeadSchema,
   OpeningSchema,
   ReplySchema,
+  RevisionDraftSchema,
   SnippetDraftSchema,
   catalogStyle,
   drawCall,
   openingCall,
   replyCall,
   reviseCall,
+  reviseTarget,
   type DesignHead,
   type ReplySubject,
+  type SnippetDraft,
   type StyleDraft,
 } from "./prompts.js";
 
@@ -394,7 +397,6 @@ export class DesignChatService {
           snippets: row.snippets,
           text: turn.text,
           subject: turn.subject,
-          latest: row.snippets.at(-1) ?? null,
           selected: row.snippets.find(({ id }) => id === row.selectedSnippetId) ?? null,
         });
         const { data } = await this.#ai.complete(call.spec, ReplySchema, { userId, check: call.check });
@@ -406,8 +408,8 @@ export class DesignChatService {
           card = { kind: "screens", items };
           draw = { kind: "draw", items, origins: data.screens.map(({ source }) => source), revise: null };
         }
-        // 고칠 첫 화면은 붙은 대상이고, 대상을 붙이지 않은 말이면 가장 최근에 그린 것이다.
-        const from = turn.subject?.kind === "snippet" ? turn.subject.snippet : row.snippets.at(-1);
+        // 어느 첫 화면을 고칠지는 말에서 읽는다 — 붙은 대상, 말이 이름으로 가리킨 것, 가장 최근에 그린 것 순서다.
+        const from = reviseTarget(row.snippets, turn.subject, data.target);
         if (data.show === "revision" && from) {
           const entry: DesignScreenItem = { id: randomUUID(), name: from.name, words: data.instruction, tokens: from.tokens, layout: from.layout, status: "drawing", snippetId: null };
           card = { kind: "revision", fromSnippetId: from.id, item: entry };
@@ -420,10 +422,15 @@ export class DesignChatService {
         // 여러 장은 동시에 그리고, 끝난 장부터 대화에 놓는다. 한 장이 실패해도 나머지는 남는다.
         const notes = await Promise.all(items.map(async (item, index) => {
           try {
-            const call = revise
-              ? reviseCall({ userId, sources, snippet: revise.from, instruction: revise.instruction })
-              : drawCall({ userId, sources, style: { name: item.name, words: item.words, tokens: item.tokens }, layout: item.layout });
-            const { data } = await this.#ai.complete(call.spec, SnippetDraftSchema, { userId, check: call.check });
+            let data: SnippetDraft;
+            if (revise) {
+              // 고칠 때는 바뀌는 자리만 받아 지금 첫 화면에 적용한다. 첫 화면 전체를 다시 쓰게 하지 않는다.
+              const call = reviseCall({ userId, sources, snippet: revise.from, instruction: revise.instruction });
+              data = call.apply((await this.#ai.complete(call.spec, RevisionDraftSchema, { userId, check: call.check })).data);
+            } else {
+              const call = drawCall({ userId, sources, style: { name: item.name, words: item.words, tokens: item.tokens }, layout: item.layout });
+              data = (await this.#ai.complete(call.spec, SnippetDraftSchema, { userId, check: call.check })).data;
+            }
             const clean = sanitizePage({ html: data.html, css: data.css });
             // 소독한 뒤의 값을 대화 계약으로 읽는다. 소독으로 마크업이 비었거나 계약에 맞지 않으면 이 장만 그리지 못한 것으로 남는다.
             const snippet: DesignSnippet = DesignSnippetSchema.parse({

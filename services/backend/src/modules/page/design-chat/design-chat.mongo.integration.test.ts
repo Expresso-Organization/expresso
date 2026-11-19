@@ -31,7 +31,7 @@ const opening = {
   styles: [..."가나다"].map(style),
   layouts: [..."가나다"].map(layout),
 };
-const reply = { say: "그렇게 해 볼게요.", show: "none" as const, styles: [], layouts: [], screens: [], instruction: "" };
+const reply = { say: "그렇게 해 볼게요.", show: "none" as const, styles: [], layouts: [], screens: [], target: "", instruction: "" };
 const snippet = (name: string) => ({
   name,
   note: `${name}을 가장 크게 세웠어요.`,
@@ -39,6 +39,8 @@ const snippet = (name: string) => ({
   css: `.hero{color:${tokens.text}}`,
   html: `<header class="hero"><h1>가상 작성자</h1><p>${name}</p><script>alert(1)</script></header>`,
 });
+/** 고친 것의 답. 첫 화면 전체가 아니라 바뀌는 자리만 낸다. */
+const revision = (name: string, edits: { in: "css" | "html"; find: string; replace: string }[], changed = tokens) => ({ name, tokens: changed, edits });
 const plan = { subject: "경로", palette: "먹 · 민트", type: "고정폭", layout: "한 단", signature: "경로 선", revised: "" };
 const brief = (sectionIds: string[]) => ({
   role: "엔지니어", headline: "경로를 설계하는 엔지니어입니다.", intro: "", focus: [], subject: "통로 경로", lead: [],
@@ -246,13 +248,16 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     await service.settled();
     const drawn = (await service.get(user, brewId)).chat!.snippets[0]!;
 
-    route = (request) => (request.contract === "page_design" ? { ...reply, say: "강조색만 바꿔 볼게요.", show: "revision", instruction: "강조색을 짙은 초록으로 바꾼다" } : { ...snippet("가 화면 초록"), tokens: { ...tokens, accent: "#1f5c3a" } });
+    route = (request) => (request.contract === "page_design" ? { ...reply, say: "강조색만 바꿔 볼게요.", show: "revision", instruction: "강조색을 짙은 초록으로 바꾼다" } : revision("가 화면 초록", [{ in: "css", find: tokens.text, replace: "#1f5c3a" }], { ...tokens, accent: "#1f5c3a" }));
     await service.send(user, brewId, { action: "say", requestId: randomUUID(), text: "강조색을 짙은 초록으로", subject: { kind: "snippet", id: drawn.id } });
     await service.settled();
     const revised = (await service.get(user, brewId)).chat!;
     expect(revised.messages.at(-2)).toMatchObject({ role: "user", action: "say", text: "강조색을 짙은 초록으로", subjects: [{ kind: "snippet", id: drawn.id, name: "가 화면" }] });
     expect(revised.messages.at(-1)).toMatchObject({ role: "assistant", status: "complete", text: "강조색만 바꿔 볼게요.", card: { kind: "revision", fromSnippetId: drawn.id, item: { status: "done" } } });
     expect(revised.snippets.at(-1)).toMatchObject({ origin: "edit", fromSnippetId: drawn.id, name: "가 화면 초록", words: "강조색을 짙은 초록으로 바꾼다", layout: drawn.layout });
+    // 고치는 호출은 바뀌는 자리만 낸다. 서버가 지금 첫 화면에 적용하므로 가리키지 않은 자리는 한 글자도 달라지지 않는다.
+    expect(revised.snippets.at(-1)).toMatchObject({ html: drawn.html, css: drawn.css.replace(tokens.text, "#1f5c3a"), tokens: { accent: "#1f5c3a" } });
+    expect(revised.snippets.at(-1)!.css).not.toBe(drawn.css);
     // 답하는 호출은 대화 요약과 대상을 받고, 고치는 호출은 지금 첫 화면의 마크업을 받는다.
     const [answered, revise] = ai.calls.slice(-2);
     expect(answered!.prompt).toContain("## 이 말의 대상");
@@ -262,7 +267,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     // 대상을 붙이지 않고 고쳐 달라고 해도 방금 본 첫 화면(가장 최근에 그린 것)을 고친다.
     // 2026-11-19: 이 말에 "바꿔 볼게요"라는 답만 남고 아무것도 뜨지 않았다.
     const latest = revised.snippets.at(-1)!;
-    route = (request) => (request.contract === "page_design" ? { ...reply, say: "더 밝게 바꿔 볼게요.", show: "revision", instruction: "바탕을 더 밝게 한다" } : snippet("가 화면 밝게"));
+    route = (request) => (request.contract === "page_design" ? { ...reply, say: "더 밝게 바꿔 볼게요.", show: "revision", instruction: "바탕을 더 밝게 한다" } : revision("가 화면 밝게", [{ in: "css", find: ".hero{", replace: ".hero{background:#ffffff;" }]));
     await service.send(user, brewId, { action: "say", requestId: randomUUID(), text: "조금 더 밝게요" });
     await service.settled();
     const loose = (await service.get(user, brewId)).chat!;
@@ -270,6 +275,16 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect(loose.messages.at(-1)).toMatchObject({ role: "assistant", status: "complete", text: "더 밝게 바꿔 볼게요.", card: { kind: "revision", fromSnippetId: latest.id, item: { status: "done" } } });
     expect(loose.snippets.at(-1)).toMatchObject({ origin: "edit", fromSnippetId: latest.id, name: "가 화면 밝게" });
     expect(ai.calls.at(-1)!.prompt).toContain(latest.html);
+
+    // 말이 앞서 그린 것을 가리키면 가장 최근 것이 아니라 그 첫 화면을 고친다.
+    route = (request) => (request.contract === "page_design" ? { ...reply, say: "처음 것의 제목을 키워 볼게요.", show: "revision", target: drawn.name, instruction: "제목을 키운다" } : revision("가 화면 큰 제목", [{ in: "html", find: "<h1>", replace: '<h1 class="big">' }]));
+    await service.send(user, brewId, { action: "say", requestId: randomUUID(), text: "처음 그린 것에서 제목만 키워 주세요" });
+    await service.settled();
+    const named = (await service.get(user, brewId)).chat!;
+    expect(named.messages.at(-1)).toMatchObject({ role: "assistant", status: "complete", card: { kind: "revision", fromSnippetId: drawn.id, item: { status: "done" } } });
+    expect(ai.calls.at(-1)!.prompt).toContain(drawn.html);
+    // 처음 그린 것에 조각을 적용했다 — 그 사이에 고친 초록 · 밝은 바탕은 들어 있지 않다.
+    expect(named.snippets.at(-1)).toMatchObject({ name: "가 화면 큰 제목", css: drawn.css, html: drawn.html.replace("<h1>", '<h1 class="big">') });
 
     // 그린 첫 화면이 하나도 없는 대화에서 고치겠다고 답하면, 띄울 것과 함께 그 말도 고쳐 받는다.
     const emptyBrew = await newBrew(user);

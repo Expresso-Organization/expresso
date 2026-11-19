@@ -28,7 +28,8 @@ import { useDesignChat, type DesignChatState } from "./useDesignChat";
  * 본문이다 — 견본과, 이 사람의 자료로 그린 첫 화면.
  *
  * 견본은 스타일(색 · 서체 · 분위기)과 레이아웃(구성)을 따로 놓는다. 사용자는 각각에서 하나씩 고르고, 그 짝으로 첫 화면을 그린다.
- * 대화에 뜬 카드는 누르면 대화가 이어진다 — 견본은 에이전트의 질문에 대한 답이고, 첫 화면은 다음 말의 대상이 된다(「말로 고치기」).
+ * 대화에 뜬 카드는 누르면 대화가 이어진다 — 견본은 에이전트의 질문에 대한 답이다. 첫 화면을 고칠 때는 버튼을 누르지 않고
+ * 그냥 말한다. 어느 첫 화면을 두고 한 말인지는 에이전트가 말에서 읽고, 가리키는 것이 없으면 가장 최근 것을 고친다.
  * 배치는 흐름이 기본이고, 대화 안의 큰 첫 화면을 누르면 무대로 넓어진다.
  */
 export interface CatalogItem { revisionId: string; code: string; name: string; reason: string; preview: DesignCatalogEntry["preview"] }
@@ -36,8 +37,8 @@ export interface DesignChatNotice { tone: "info" | "error"; text: string }
 
 type Layout = "stream" | "stage";
 interface Picked { style: string | null; layout: string | null }
-/** 다음 말이 가리킬 대상. 첫 화면이면 그것을 고치는 말이 되고, 카탈로그의 디자인이면 그 디자인으로 그린다. */
-type Subject = { kind: "snippet"; id: string } | { kind: "catalog"; item: CatalogItem };
+/** 다음 말에 붙는 대상 — 카탈로그에서 고른 디자인. 그 디자인을 스타일로 삼아 그린다. */
+type Subject = { kind: "catalog"; item: CatalogItem };
 
 const ORIGIN_LABEL: Record<DesignSnippet["origin"], string> = { agent: "제안", user: "말씀하신 스타일", catalog: "카탈로그", edit: "고친 것" };
 const FONT_LABEL = { sans: "고딕", serif: "명조", mono: "고정폭" } as const;
@@ -152,7 +153,9 @@ export function DesignChat({ brewId, recipeId, catalog, generationAllowed, notic
       if (!text) return;
       const target = subject;
       setSubject(null);
-      const sent = await state.send({ action: "say", text, ...(target ? { subject: target.kind === "snippet" ? { kind: "snippet", id: target.id } : { kind: "catalog", id: target.item.revisionId } } : {}) });
+      // 첫 화면을 넓게 띄워 놓고 한 말은 그 첫 화면을 두고 한 말이다. 흐름 배치에서는 대상을 붙이지 않고 에이전트가 말에서 읽는다.
+      const viewing = layout === "stage" && focus ? { kind: "snippet" as const, id: focus } : null;
+      const sent = await state.send({ action: "say", text, ...(target ? { subject: { kind: "catalog", id: target.item.revisionId } } : viewing ? { subject: viewing } : {}) });
       // 보내지 못했으면 대상을 되돌려 다시 보낼 수 있게 한다.
       if (!sent) setSubject(target);
     },
@@ -477,9 +480,9 @@ function ScreenView({ snippet }: { snippet: DesignSnippet }) {
   );
 }
 
-/** 첫 화면 한 장으로 할 수 있는 일 — 새 탭에서 보기, 말로 고치기(다음 말의 대상으로 붙임), 고르기. */
+/** 첫 화면 한 장으로 할 수 있는 일 — 새 탭에서 보기, 고르기. 고치는 일은 버튼이 아니라 대화로 한다. */
 function SnippetActions({ snippet, size }: { snippet: DesignSnippet; size: "sm" | "default" }) {
-  const { state, busy, setSubject } = useView();
+  const { state } = useView();
   const chosen = state.chat?.selectedSnippetId === snippet.id;
   const icon = size === "sm" ? 13 : 14;
   const open = () => {
@@ -487,14 +490,9 @@ function SnippetActions({ snippet, size }: { snippet: DesignSnippet; size: "sm" 
     const url = URL.createObjectURL(new Blob([pagePreviewDocument({ html: snippet.html, css: snippet.css, title: snippet.name })], { type: "text/html" }));
     window.open(url, "_blank", "noopener");
   };
-  const revise = () => {
-    setSubject({ kind: "snippet", id: snippet.id });
-    document.querySelector<HTMLTextAreaElement>('[aria-label="에이전트에게 메시지"]')?.focus();
-  };
   return (
     <>
       <Button variant="ghost" size={size} onClick={open}><Icon name="arrow-square-out" size={icon} />새 탭에서 보기</Button>
-      <Button variant="ghost" size={size} disabled={busy} onClick={revise}><Icon name="chat-text" size={icon} />말로 고치기</Button>
       <Button variant={chosen ? "secondary" : "outline"} size={size} aria-pressed={chosen} disabled={state.pending} onClick={() => void state.select(chosen ? null : snippet.id)}>
         <Icon name={chosen ? "check" : "hand-pointing"} size={icon} />{chosen ? "골랐습니다" : "이 스타일 고르기"}
       </Button>
@@ -644,9 +642,8 @@ function MakeButton() {
 function ComposerBar({ notice }: { notice: DesignChatNotice | null }) {
   const { layout, state, snippet, subject, setSubject, openCatalog, busy, askConsent, brewId, picked, layoutOf } = useView();
   // 카탈로그의 디자인은 스타일이다. 견본에서 고른 레이아웃이 있으면 그 구성으로 그린다.
-  const withLayout = subject?.kind === "catalog" ? layoutOf(picked.layout) : undefined;
+  const withLayout = subject ? layoutOf(picked.layout) : undefined;
   const chosen = snippet(state.chat?.selectedSnippetId ?? null);
-  const target = subject?.kind === "snippet" ? snippet(subject.id) : undefined;
   const issue = state.chat && state.issue ? { tone: "error" as const, text: state.issue } : notice;
   return (
     <div className={styles.barWrap}>
@@ -660,14 +657,7 @@ function ComposerBar({ notice }: { notice: DesignChatNotice | null }) {
       <div className={styles.bar}>
         <span className={styles.barLeft}>
           <button type="button" className={styles.reply} onClick={openCatalog}><Icon name="squares-four" size={14} />카탈로그</button>
-          {target ? (
-            <span className={styles.chip}>
-              <span className={styles.chipThumb}><Frame snippet={target} title={`${target.name} 첫 화면`} /></span>
-              <span className={styles.chipText}><small>이 첫 화면에서</small>{target.name}</span>
-              <button type="button" aria-label="대상 빼기" onClick={() => setSubject(null)}><Icon name="x" size={11} /></button>
-            </span>
-          ) : null}
-          {subject?.kind === "catalog" ? (
+          {subject ? (
             <span className={styles.chip}>
               <span className={styles.chipThumb}><span className={styles.miniCover}><DesignThumb code={subject.item.code} name={subject.item.name} preview={subject.item.preview} /></span></span>
               <span className={styles.chipText}><small>카탈로그에서 고름</small>{subject.item.name}</span>
@@ -680,7 +670,7 @@ function ComposerBar({ notice }: { notice: DesignChatNotice | null }) {
               <span className={styles.chipText}><small>레이아웃</small>{withLayout.name}</span>
             </span>
           ) : null}
-          {subject?.kind === "catalog" ? (
+          {subject ? (
             <button
               type="button"
               className={styles.reply}
