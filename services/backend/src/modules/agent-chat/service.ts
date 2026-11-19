@@ -175,7 +175,9 @@ export class AgentChatService {
     const issues: string[] = [];
     const seen = new Set<string>();
     // 경력 연차(career)는 공고가 받는 경력의 분포라 상태를 매기지 않는다. 모델이 넣어도 버린다.
-    const assessed = input.items.filter(item => before.get(item.itemId)?.kind !== "career");
+    // 자격(학위 · 전공 · 자격증)은 「해 본 적이 없다」는 한마디로 부족이 되지 않는다 — 졸업을 앞둔 사용자의 학위가 부족으로 남는다.
+    // 기록이나 사용자의 답으로 확인되기 전에는 미확인으로 둔다.
+    const assessed = input.items.filter(item => before.get(item.itemId)?.kind !== "career").map(item => item.status === "gap" && before.get(item.itemId)?.kind === "qualification" ? { ...item, status: "unconfirmed" as const } : item);
     for (const item of assessed) {
       const known = before.get(item.itemId);
       const label = `항목 ${item.itemId}${known ? `(${known.label})` : ""}`;
