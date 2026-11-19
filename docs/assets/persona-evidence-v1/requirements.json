@@ -1,0 +1,387 @@
+{
+  "version": "persona-evidence-v1",
+  "postings": [
+    {
+      "code": "DA",
+      "jobId": "9313f79c-febf-4311-bc0e-05d05c60a993",
+      "employer": "여기어때",
+      "title": "Data Analyst [User Behavior]",
+      "sourceUrl": "https://gccompany.career.greetinghr.com/ko/o/237204",
+      "sourceBoard": "여기어때",
+      "ingestedAt": "2026-10-27T14:29:42.300Z",
+      "descriptionSha256": "436c7ddeb3118cfd99daa637a6773ffce875832158dbef921903cfbe2b1aecda",
+      "requirements": [
+        {
+          "id": "DA1",
+          "kind": "must",
+          "criterion": "고객 행동 등 데이터 분석 경력 5년 이상",
+          "sourceLine": 20,
+          "sourceLineSha256": "a0be95b8da621513ab982f3242acac477897db6ae93c715dbb9a840f776c857b"
+        },
+        {
+          "id": "DA2",
+          "kind": "must",
+          "criterion": "퍼널·리텐션·코호트 등 프로덕트 분석 방법 이해",
+          "sourceLine": 21,
+          "sourceLineSha256": "991d2e41615a3b4a33239654a87d76bc54fa39488dcc4717435dccff1ba5a9bb"
+        },
+        {
+          "id": "DA3",
+          "kind": "must",
+          "criterion": "핵심 지표를 정하고 가설·실험으로 서비스 개선",
+          "sourceLine": 22,
+          "sourceLineSha256": "ccf17a3a8ed50f41cb1aa97c8abc2a96c3f91d708186d6a8ccece783e23ca6a5"
+        },
+        {
+          "id": "DA4",
+          "kind": "must",
+          "criterion": "SQL·Python으로 수집부터 분석·보고까지 수행",
+          "sourceLine": 23,
+          "sourceLineSha256": "b96f5eaa92535d96bdb7e29422ec23161aedced0a7cccfec66a9ae6f09068930"
+        },
+        {
+          "id": "DA5",
+          "kind": "must",
+          "criterion": "비즈니스 이해와 유연하고 신뢰할 수 있는 업무 태도",
+          "sourceLine": 24,
+          "sourceLineSha256": "7026b6456638c2c9ee4e795de3dd5c2e28f798230fbd375e5f7a313e6aa80860"
+        },
+        {
+          "id": "DA6",
+          "kind": "responsibility",
+          "criterion": "실험·사후 분석과 시각화로 부서의 의사결정 지원",
+          "sourceLine": 12,
+          "sourceLineSha256": "b6f60b64abb6562d65b660f62bf8c5dd78816e9dfc14144790dc7ec72b18189f"
+        },
+        {
+          "id": "DA7",
+          "kind": "preferred",
+          "criterion": "Airflow·dbt·BigQuery 활용",
+          "sourceLine": 35,
+          "sourceLineSha256": "e84497df4ee66193d2bdbf190a9d3b98f45e2f9b6a94c3664e08f0bd94c05305"
+        }
+      ]
+    },
+    {
+      "code": "ML",
+      "jobId": "1216e56f-ba85-4cac-a57a-997f23ad648e",
+      "employer": "CJ올리브영",
+      "title": "Data Scientist (AI 추천)",
+      "sourceUrl": "https://oliveyoung.career.greetinghr.com/ko/o/213964",
+      "sourceBoard": "CJ올리브영",
+      "ingestedAt": "2026-09-01T07:15:08.595Z",
+      "descriptionSha256": "5b9fe4292834b48cb42b3c76e3e53969064d81b2620b51aa0083290d02d4d7a2",
+      "requirements": [
+        {
+          "id": "ML1",
+          "kind": "must",
+          "criterion": "머신러닝 기초 지식",
+          "sourceLine": 25,
+          "sourceLineSha256": "ceaae4086a27f5744c7fb3fae4970c00d57aee8efaedb335f5418f32f05e7dbc"
+        },
+        {
+          "id": "ML2",
+          "kind": "must",
+          "criterion": "머신러닝 적용 업무 경력 3년 이상, 특히 추천 모델",
+          "sourceLine": 27,
+          "sourceLineSha256": "679a82136a3662852ace95d71876076a877d56d6bfb1d10aebf48d9f63d10218"
+        },
+        {
+          "id": "ML3",
+          "kind": "must",
+          "criterion": "고객·상품·브랜드 분석에서 비즈니스 인사이트 도출",
+          "sourceLine": 29,
+          "sourceLineSha256": "0e1c566b92c0d210d48f4ff0a59417a9791e489e2db173cfbd0dff16fa6d7fed"
+        },
+        {
+          "id": "ML4",
+          "kind": "must",
+          "criterion": "스스로 문제와 해결 방향 정의",
+          "sourceLine": 31,
+          "sourceLineSha256": "a7f13f31e1821262bfc716e48b3674973f7f32281eff1d09c56cbb9b747ee7ac"
+        },
+        {
+          "id": "ML5",
+          "kind": "must",
+          "criterion": "모델 설계와 결과 해석을 과학적으로 문서화",
+          "sourceLine": 33,
+          "sourceLineSha256": "9461ec61eb084ec798ff0540b8f8d951e938d866707fcf1811a706e60358da67"
+        },
+        {
+          "id": "ML6",
+          "kind": "responsibility",
+          "criterion": "탐색 경험을 개선하는 추천 모델 개발",
+          "sourceLine": 13,
+          "sourceLineSha256": "3992266bda7dfb6d52ea94a3ed0edc1d7d25ab400043cd49e50993f65104f9e7"
+        },
+        {
+          "id": "ML7",
+          "kind": "preferred",
+          "criterion": "이커머스 추천·광고 모델 개발 및 운영",
+          "sourceLine": 41,
+          "sourceLineSha256": "b68610749c536a08d691dc870796ccff6016d6bc7aca0857c3b8d3a21afaaaa1"
+        }
+      ]
+    },
+    {
+      "code": "BI",
+      "jobId": "edd36ca6-8d89-4b78-966a-ca94240a5fb0",
+      "employer": "채널톡",
+      "title": "Data Analyst",
+      "sourceUrl": "https://jobs.lever.co/zoyi/31ee3067-0c55-4ca3-b7a5-5a6c0d80e249",
+      "sourceBoard": "채널코퍼레이션",
+      "ingestedAt": "2026-09-01T10:39:11.689Z",
+      "descriptionSha256": "bc7104273ea6a2b1d0c9fe1eb002ee488d8db0ad159304252072425dfdf66ba3",
+      "requirements": [
+        {
+          "id": "BI1",
+          "kind": "must",
+          "criterion": "DA 관련 실무 경험 1년~7년 이상(공고 표현)",
+          "sourceLine": 35,
+          "sourceLineSha256": "1cf3372238680bc7846fc57c4916ff78b2b76632c35baf53e357539a7c606130"
+        },
+        {
+          "id": "BI2",
+          "kind": "must",
+          "criterion": "비즈니스 문제를 구조화하고 핵심 원인 정의",
+          "sourceLine": 36,
+          "sourceLineSha256": "be8f5947d9fc34f7994f05332f1aa20f303e5c414547f4888436d2d56b44f08d"
+        },
+        {
+          "id": "BI3",
+          "kind": "must",
+          "criterion": "SQL로 원자료 추출·분석 및 인사이트 도출",
+          "sourceLine": 37,
+          "sourceLineSha256": "dd84f596938946da49b4da902369409492e137407571174266565df204e2401e"
+        },
+        {
+          "id": "BI4",
+          "kind": "must",
+          "criterion": "문제를 주도적으로 파고들고 새로운 지식을 습득",
+          "sourceLine": 38,
+          "sourceLineSha256": "03679261e8dc45da16a75b63c775e10b51c57fefdc3444342179c3f2ce32f764"
+        },
+        {
+          "id": "BI5",
+          "kind": "must",
+          "criterion": "여러 팀과 소통·협업",
+          "sourceLine": 39,
+          "sourceLineSha256": "364f4e20aeb18155200d7b387fab3ce1b52069633f2ad22b4e49e38aedd0b7fa"
+        },
+        {
+          "id": "BI6",
+          "kind": "responsibility",
+          "criterion": "시각화 도구로 대시보드 구축",
+          "sourceLine": 28,
+          "sourceLineSha256": "8d5f53949a2f777d91109c052976110dae76f5ce479c061a09e7476bc7b1685c"
+        },
+        {
+          "id": "BI7",
+          "kind": "preferred",
+          "criterion": "Python을 활용한 데이터 처리·분석",
+          "sourceLine": 47,
+          "sourceLineSha256": "ea312860518a6a00c578d73d4da69d8825af5795ef060d02519aaf0f6152696f"
+        }
+      ]
+    },
+    {
+      "code": "BE",
+      "jobId": "30dbb6e3-6811-41b0-9f0a-c2c568ce161e",
+      "employer": "버즈빌",
+      "title": "[광고 운영 시스템] 백엔드 엔지니어(경력 무관, 전문연구요원 편입/전직 가능)",
+      "sourceUrl": "https://buzzvil.career.greetinghr.com/ko/o/233330",
+      "sourceBoard": "버즈빌",
+      "ingestedAt": "2026-09-01T07:07:58.030Z",
+      "descriptionSha256": "3015185883562cc4a2d65793bab9c0facbac37ede4a2d94dc65c075b2482a74a",
+      "requirements": [
+        {
+          "id": "BE1",
+          "kind": "must",
+          "criterion": "서버 언어로 백엔드 시스템 개발, 프로젝트 경험 인정",
+          "sourceLine": 67,
+          "sourceLineSha256": "e962a280ddf1f44f48a05d0311560366481e5c8e3a3812510d7bf62eb8ea4e18"
+        },
+        {
+          "id": "BE2",
+          "kind": "must",
+          "criterion": "관계형 DB와 NoSQL 저장소 사용",
+          "sourceLine": 68,
+          "sourceLineSha256": "1695eaefd98d2f46fa65be82ebbfe0917e954ad58e02a7644c884e38d7f614b7"
+        },
+        {
+          "id": "BE3",
+          "kind": "must",
+          "criterion": "외부 시스템 API 연동 설계 및 개발",
+          "sourceLine": 69,
+          "sourceLineSha256": "b6b41a74df6cfcd0edd3066a6a83ccd4c6f4aa9b578ca01dd2fd4d961eb51c80"
+        },
+        {
+          "id": "BE4",
+          "kind": "must",
+          "criterion": "제품에 필요한 다른 기술 영역까지 확장",
+          "sourceLine": 70,
+          "sourceLineSha256": "5d85d0d819f7c70a0bdfa3f3f41cf233ec99c446bc2cbe87276629f20c7b10f8"
+        },
+        {
+          "id": "BE5",
+          "kind": "must",
+          "criterion": "다른 직군과 소통·협업",
+          "sourceLine": 71,
+          "sourceLineSha256": "ba6e340d1a3d459a0f3d473284031b7921a81bf5eb1cf61c6ec7847bf47b1238"
+        },
+        {
+          "id": "BE6",
+          "kind": "must",
+          "criterion": "AI 도구 도입으로 생산성 개선",
+          "sourceLine": 72,
+          "sourceLineSha256": "d100943a539663e6f8bb17361d469d078d6b3ce66d105a309f9beea38ad5eb00"
+        },
+        {
+          "id": "BE7",
+          "kind": "responsibility",
+          "criterion": "계정·권한 관리 및 제휴사 SSO 연동",
+          "sourceLine": 41,
+          "sourceLineSha256": "f693aa8d9d6e54f27b51f2028379075bcef52f42b1c71de02e7f7044a341131b"
+        },
+        {
+          "id": "BE8",
+          "kind": "preferred",
+          "criterion": "Kotlin·Java 등 JVM 언어로 서버 개발",
+          "sourceLine": 78,
+          "sourceLineSha256": "95f09feeea8ef6d6bf666cad5251ba5da19f8622e8aa6fb24d546845e4bfb2dd"
+        }
+      ]
+    },
+    {
+      "code": "FE",
+      "jobId": "35bfd69b-e556-4a17-98a3-8119ba6f1c69",
+      "employer": "캐치테이블",
+      "title": "B2B Front-end Developer",
+      "sourceUrl": "https://catchtable.career.greetinghr.com/ko/o/235283",
+      "sourceBoard": "캐치테이블",
+      "ingestedAt": "2026-09-01T07:08:18.029Z",
+      "descriptionSha256": "96587530904131d68ed847b2d3fa6071ce5dd05a21e35f63a685ddf70775e281",
+      "requirements": [
+        {
+          "id": "FE1",
+          "kind": "must",
+          "criterion": "React 사용 경험",
+          "sourceLine": 55,
+          "sourceLineSha256": "9485629478c5be30ec61253f52a5b420312d1f4f6b17748c2677656f6739f91f"
+        },
+        {
+          "id": "FE2",
+          "kind": "must",
+          "criterion": "UX/UI 개발 경험",
+          "sourceLine": 56,
+          "sourceLineSha256": "16a4ab9f8ae9ad5566012ee846a392c482f1039a2c3fb505a4b1847abaceb35b"
+        },
+        {
+          "id": "FE3",
+          "kind": "must",
+          "criterion": "컴퓨터과학 기본 지식",
+          "sourceLine": 57,
+          "sourceLineSha256": "0437fee21b5ea760c9fb75d4652d5574eb7b72767fffd5418246cabb38761b16"
+        },
+        {
+          "id": "FE4",
+          "kind": "must",
+          "criterion": "유관 경력 5년 이상 또는 이에 준하는 경험",
+          "sourceLine": 58,
+          "sourceLineSha256": "29eaa49ec7c2c94416a230864b111283871ad8368cd2b3c13aebc754da70adf0"
+        },
+        {
+          "id": "FE5",
+          "kind": "must",
+          "criterion": "유관 팀과 원활한 소통",
+          "sourceLine": 59,
+          "sourceLineSha256": "9bc1c65529c9e43838476c6ceeb53e1912d9ae2ddf2fb0f5ec21cb2467f4b5d0"
+        },
+        {
+          "id": "FE6",
+          "kind": "responsibility",
+          "criterion": "측정 지표로 웹 성능 이슈의 우선순위를 정하고 개선",
+          "sourceLine": 49,
+          "sourceLineSha256": "910cce97c93e94f605c00cbb06e385425b8108951cc6a1e7dc2fee10bb9018e9"
+        },
+        {
+          "id": "FE7",
+          "kind": "preferred",
+          "criterion": "다수의 웹뷰 개발 경험",
+          "sourceLine": 66,
+          "sourceLineSha256": "a31db25f1d7d7654dc02ad619d17683387246ed29a0248065f3db1fb2b61c474"
+        }
+      ]
+    },
+    {
+      "code": "SRE",
+      "jobId": "e86187a6-f4c2-4aee-a229-3d445d34b616",
+      "employer": "당근",
+      "title": "Site Reliability Engineer - 인프라 (클러스터)",
+      "sourceUrl": "https://about.daangn.com?gh_jid=5811688003",
+      "sourceBoard": "당근",
+      "ingestedAt": "2026-10-27T14:29:37.235Z",
+      "descriptionSha256": "cfd95e9baa3f80cf29b07a01a87ec1768c8a15aca3110597e28e47dfe94f9f6a",
+      "requirements": [
+        {
+          "id": "SRE1",
+          "kind": "must",
+          "criterion": "SRE·DevOps·플랫폼 인프라 운영·개선 경력 3~5년",
+          "sourceLine": 31,
+          "sourceLineSha256": "a3a541e0c68bf549eed73caa41fa9793570007f28b99671337bad01274a499fd"
+        },
+        {
+          "id": "SRE2",
+          "kind": "must",
+          "criterion": "Kubernetes·Linux·네트워크 기반 복잡한 문제 해결",
+          "sourceLine": 32,
+          "sourceLineSha256": "63909f44f6ef44300a2888a44c28e9f73e17c8806a47255ce234118115778a39"
+        },
+        {
+          "id": "SRE3",
+          "kind": "must",
+          "criterion": "반복되는 인프라 운영 문제를 소프트웨어로 자동화",
+          "sourceLine": 33,
+          "sourceLineSha256": "7dfe0a9e98a72ec2e2811e981a90548335ab98f5cde7c1ef3eab601f0942d16d"
+        },
+        {
+          "id": "SRE4",
+          "kind": "must",
+          "criterion": "AI 코딩 에이전트 등 새 도구로 생산성 향상 및 안정성 검증",
+          "sourceLine": 34,
+          "sourceLineSha256": "af91b6e0b6eab5c744869aa4c20a9209ba44d558c2c1a293e6204f4c56897fd8"
+        },
+        {
+          "id": "SRE5",
+          "kind": "must",
+          "criterion": "운영 메트릭·로그·트레이스로 신뢰성 개선",
+          "sourceLine": 35,
+          "sourceLineSha256": "daa228bda02bcbe8362c8d765df4acee63fcb22af0e53a3e9beea531076888a5"
+        },
+        {
+          "id": "SRE6",
+          "kind": "responsibility",
+          "criterion": "신뢰할 지표와 알림 설계로 장애 대응 효율 개선",
+          "sourceLine": 23,
+          "sourceLineSha256": "544f89cdb55f6eac45a10391894e548be705a1300d39928c0a14917b2171e06c"
+        },
+        {
+          "id": "SRE7",
+          "kind": "preferred",
+          "criterion": "Kubernetes 인프라 운영 및 개선",
+          "sourceLine": 39,
+          "sourceLineSha256": "8e9d2174a7f31f0cceeab69855deac23bded5df8d971d3f938141d44e704ccae"
+        }
+      ]
+    }
+  ],
+  "asOf": "2026-11-19",
+  "profileSource": "expresso_dummy_accounts_trial",
+  "reviewStatus": "agent_curated_pending_human_review",
+  "annotationUnit": "account × frozen requirement",
+  "evidenceFields": [
+    "title",
+    "bodyMd"
+  ],
+  "evidencePolicy": "Representative supporting records; unlisted records are unjudged. An empty list means no support found in the account snapshot."
+}

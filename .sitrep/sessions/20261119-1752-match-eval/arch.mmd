@@ -1,17 +1,13 @@
 flowchart TD
-  data[(한국어 평가 세트)] --> labels[Terra 라벨 1천 쌍]
-  data --> mlp[MLP 스크리닝]
-  labels --> audit[60점 원인 분석]
-  labels --> partial[동일 후보 40쌍 비교]
-  mlp --> partial
-  partial --> rest[나머지 동일 후보 비교]
-  mlp --> top[상위 10건 재정렬]
-  quota[Decisions API 한도] --> rest
-  quota --> top
-
+  S[(공고·경력 원본)] --> R[직무별 요건 동결]
+  R --> P[문가령·배준호]
+  P --> A[나머지 네 계정]
+  A --> V[정답표 검증]
   classDef done fill:#d1fae5,stroke:#059669
   classDef doing fill:#fef3c7,stroke:#d97706
   classDef decide fill:#fee2e2,stroke:#dc2626
   classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4
-  class data,labels,mlp,audit,partial done
-  class rest,top todo
+  class S,R done
+  class P done
+  class A done
+  class V done
