@@ -5,7 +5,7 @@ import { GeneratedPageSchema } from "./page.js";
 import { CareerDocumentBootstrapSchema } from "./career-editor.js";
 import { z } from "zod";
 import { UuidSchema, TimestampSchema } from "./common.js";
-import { ConsultantCommitmentSchema } from "./consultant.js";
+import { ConsultantCommitmentSchema, ConsultantDiagnosisSchema } from "./consultant.js";
 import { AiEditProposalDetailSchema, AiEditProposalSchema } from "./career-ai.js";
 
 export const AgentContextSchema = z.strictObject({ kind: z.enum(["job", "record", "portfolio"]), id: UuidSchema });
@@ -343,7 +343,7 @@ export const AgentSavedRecordSchema = z.strictObject({
   undone: z.boolean(),
 });
 export type AgentSavedRecord = z.infer<typeof AgentSavedRecordSchema>;
-export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional(), goalDraft: AgentGoalDraftSchema.optional(), gapReview: GapReviewSchema.optional(), planDraft: AgentPlanDraftSchema.optional(), replanDraft: AgentReplanDraftSchema.optional(), pageEdit: AgentPageEditSchema.optional(), ui: AgentUiPartSchema.optional(), savedRecord: AgentSavedRecordSchema.optional(), commitment: ConsultantCommitmentSchema.optional() });
+export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional(), goalDraft: AgentGoalDraftSchema.optional(), gapReview: GapReviewSchema.optional(), planDraft: AgentPlanDraftSchema.optional(), replanDraft: AgentReplanDraftSchema.optional(), pageEdit: AgentPageEditSchema.optional(), ui: AgentUiPartSchema.optional(), savedRecord: AgentSavedRecordSchema.optional(), commitment: ConsultantCommitmentSchema.optional(), diagnosis: ConsultantDiagnosisSchema.optional() });
 export const AgentMessageSchema = z.strictObject({ id: UuidSchema, role: z.enum(["user", "assistant"]), text: z.string().max(64_000), tools: z.array(AgentToolResultSchema).max(30), selection: AgentPageSelectionSchema.optional(), reply: AgentUiReplySchema.optional(), createdAt: TimestampSchema });
 export const AgentRunSchema = z.strictObject({ id: UuidSchema, requestId: UuidSchema, status: z.enum(["running", "complete", "cancelled", "failed", "interrupted"]), error: z.string().max(1_000).nullable(), startedAt: TimestampSchema });
 export const AgentConversationSchema = z.strictObject({ id: UuidSchema, title: z.string().max(120), contexts: z.array(AgentContextSchema).max(10), messages: z.array(AgentMessageSchema).max(100), run: AgentRunSchema.nullable(), version: z.number().int().nonnegative(), updatedAt: TimestampSchema });

@@ -47,3 +47,29 @@ export interface ConsultantCommitmentDoc {
   createdAt: Date;
   updatedAt: Date;
 }
+
+/**
+ * 진단 — 구직 목표가 요구하는 것과 내 기록의 대조. 사용자마다 하나이고 `_id`는 사용자 id다.
+ *
+ * - 표본(`family` · `sampleSize` · `companyCount`)과 항목의 건수는 집계할 때(`demandAt`)의 것이다.
+ * - 항목의 상태와 근거는 컨설턴트가 기록과 대조해 채운다(`assessedAt`). 대조하기 전에는 모두 `unconfirmed`다.
+ * - 다시 진단이 필요한지는 저장하지 않는다. 읽을 때 지금의 목표와 기록에 견주어 판단한다.
+ */
+export interface ConsultantDiagnosisDoc {
+  _id: string;
+  userId: string;
+  work: string;
+  family: string | null;
+  basis: "family" | "keyword";
+  focus: string | null;
+  level: "entry" | null;
+  sampleSize: number;
+  companyCount: number;
+  interestedCount: number;
+  small: boolean;
+  summary: string;
+  items: { id: string; kind: "technology" | "experience" | "career" | "qualification"; label: string; count: number; status: "confirmed" | "partial" | "unconfirmed" | "gap"; evidence: { recordId: string; quote: string; recordTitle: string }[]; note: string }[];
+  demandAt: Date;
+  assessedAt: Date | null;
+  updatedAt: Date;
+}

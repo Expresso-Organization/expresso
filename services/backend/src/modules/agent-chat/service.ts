@@ -3,22 +3,22 @@ import { PageElementIssues, PageServiceError, type PageApi } from "../page/index
 import { elementTitle } from "@expresso/portfolio-renderer";
 import { AgentCredentials } from "./credentials.js";
 import { randomUUID } from "node:crypto";
-import { AgentConversationSchema, type ConsultantCommitment, type AgentSavedRecord, isStructuredGroup, type AgentPageElementEditInput, type AgentPageEdit, type StructuredPortfolioSnapshot, type CareerDocumentBootstrap, type AgentConversation, type AgentContext, type AgentMessage, type SendAgentMessage, type AgentApproval, type AgentRecordDraftDecision, type AgentRecordDraftInput, type AgentGoalDraftDecision, type AgentGoalDraftInput, type AgentPlanDecision, type AgentReplanDecision, type ReplanProposalInput, type UpdateTaskProgress, type GapReview, type GapReviewDraft, type PlanProposalInput, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
+import { AgentConversationSchema, type AgentDiagnosisInput, type ConsultantDiagnosis, type ConsultantCommitment, type AgentSavedRecord, isStructuredGroup, type AgentPageElementEditInput, type AgentPageEdit, type StructuredPortfolioSnapshot, type CareerDocumentBootstrap, type AgentConversation, type AgentContext, type AgentMessage, type SendAgentMessage, type AgentApproval, type AgentRecordDraftDecision, type AgentRecordDraftInput, type AgentGoalDraftDecision, type AgentGoalDraftInput, type AgentPlanDecision, type AgentReplanDecision, type ReplanProposalInput, type UpdateTaskProgress, type GapReview, type GapReviewDraft, type PlanProposalInput, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
 import { mongoCollections, type AgentConversationDoc } from "@expresso/database";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { AgentToolRejection, type AgentMemory, type AgentRecordText, type AgentRuntime } from "../../platform/agent/runtime.js";
-import { buildReview, hash, recordText, reviewIssues } from "./requirement-review.js";
+import { buildReview, hash, normalize, recordText, reviewIssues } from "./requirement-review.js";
 import { buildDraft, draftIssues } from "./record-draft.js";
 import { buildChoice, buildForm, checkReply, choiceIssues, formIssues } from "./ui-parts.js";
 import { digestConversation } from "./digest.js";
-import { ConsultantInputError, ConsultantLimitError, ConsultantNotFoundError, seoulDay, type ConsultantApi, type ConsultantCommitmentApi, type ConsultantProfile } from "../consultant/index.js";
+import { ConsultantInputError, ConsultantLimitError, ConsultantNotFoundError, seoulDay, type ConsultantApi, type ConsultantCommitmentApi, type ConsultantDiagnosisApi, type ConsultantProfile } from "../consultant/index.js";
 import { buildGoalDraft, carryOver, goalDraftIssues, mergeGoal } from "./goal-draft.js";
 import { buildGapReview, gapIssues, latestReview, latestTool } from "./gap-review.js";
 import { buildPreparationTasks, PlanCapacityError, scheduleRemaining } from "./preparation-planner.js";
 import { PreparationPlans } from "./plans.js";
 import type { CareerDocumentApi } from "../career-editor/index.js";
 import { readableCareerProperties, type CareerApi } from "../career/index.js";
-import type { JobBoardApi } from "../jobs/index.js";
+import type { GoalDemandApi, JobBoardApi } from "../jobs/index.js";
 import type { ConsentApi } from "../consent/index.js";
 
 /**
@@ -39,13 +39,20 @@ const STAGE_LABELS = { exploring: "탐색", preparing: "준비", applying: "지�
 /** 모델에 넘기는 기억의 모양. 조건은 id · 종류 · 글만, 요지는 날짜(서울이 아닌 저장된 시각의 날짜 부분)와 내용만 싣는다. */
 /** 확인 카드의 세 답. 첫째가 「했어요」다. 홈의 카드와 서버가 여는 대화가 같은 글을 쓴다. */
 const CHECKIN_OPTIONS = ["했어요", "아직이에요", "안 하기로 했어요"] as const;
-function memoryForModel(profile: ConsultantProfile, digests: readonly ({ title: string; said: string[]; outcomes: string[]; lastAnswer: string } & ({ updatedAt: string } | { date: string }))[], commitments: readonly Pick<ConsultantCommitment, "id" | "title" | "dueOn">[], at = new Date()): AgentMemory {
+/** 모델에 넘기는 진단의 요약. 항목의 이름만 상태별로 싣는다 — 건수와 근거는 진단을 다시 읽을 때 본다. */
+function diagnosisForModel(diagnosis: ConsultantDiagnosis | null): AgentMemory["diagnosis"] {
+  if (!diagnosis) return null;
+  const labels = (status: string) => diagnosis.items.filter(item => item.status === status).map(item => item.label);
+  return { assessedOn: diagnosis.assessedAt ? seoulDay(new Date(diagnosis.assessedAt)) : null, work: diagnosis.work, sampleSize: diagnosis.sampleSize, gaps: labels("gap"), unconfirmed: labels("unconfirmed"), partial: labels("partial"), confirmed: labels("confirmed").length, stale: diagnosis.stale };
+}
+function memoryForModel(profile: ConsultantProfile, digests: readonly ({ title: string; said: string[]; outcomes: string[]; lastAnswer: string } & ({ updatedAt: string } | { date: string }))[], commitments: readonly Pick<ConsultantCommitment, "id" | "title" | "dueOn">[], diagnosis: AgentMemory["diagnosis"] = null, at = new Date()): AgentMemory {
   const today = seoulDay(at);
   return {
     stage: profile.stage,
     preferences: profile.preferences.map(({ id, kind, text }) => ({ id, kind, text })),
     today,
     commitments: commitments.map(({ id, title, dueOn }) => ({ id, title, dueOn, overdue: dueOn < today })),
+    diagnosis,
     recentConversations: digests.map(digest => ({ title: digest.title, date: "date" in digest ? digest.date : digest.updatedAt.slice(0, 10), said: digest.said, outcomes: digest.outcomes, lastAnswer: digest.lastAnswer })),
   };
 }
@@ -60,7 +67,7 @@ export class AgentChatService {
   /** `close()`가 시작되면 켠다. 그 뒤에 끝난 실행은 어떤 오류로 끝났든 서버 종료로 끊긴 것이다. */
   private closing = false;
   private runFailureListener: AgentRunFailureListener | null = null;
-  constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord" | "listRecords" | "listCategories" | "createRecord" | "trashRecord" | "getJobGoal" | "saveJobGoal">, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi, readonly credentials: AgentCredentials = new AgentCredentials(db), private readonly portfolios?: Pick<PortfolioReadApi, "get">, private readonly pages?: Pick<PageApi, "latest" | "elementGuide" | "editElementByAgent" | "restoreRevision">, private readonly credits?: AgentCredits, private readonly consultant?: ConsultantApi, private readonly commitments?: Pick<ConsultantCommitmentApi, "open" | "create" | "update">) {}
+  constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord" | "listRecords" | "listCategories" | "createRecord" | "trashRecord" | "getJobGoal" | "saveJobGoal">, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi, readonly credentials: AgentCredentials = new AgentCredentials(db), private readonly portfolios?: Pick<PortfolioReadApi, "get">, private readonly pages?: Pick<PageApi, "latest" | "elementGuide" | "editElementByAgent" | "restoreRevision">, private readonly credits?: AgentCredits, private readonly consultant?: ConsultantApi, private readonly commitments?: Pick<ConsultantCommitmentApi, "open" | "create" | "update">, private readonly diagnosis?: { demand: GoalDemandApi; store: ConsultantDiagnosisApi }) {}
   private get plans() { return new PreparationPlans(this.db); }
   /** 서비스가 Fastify 앱보다 먼저 만들어지므로 로그 수신자는 라우트 등록 때 붙인다. */
   setRunFailureListener(listener: AgentRunFailureListener) { this.runFailureListener = listener; }
@@ -99,7 +106,62 @@ export class AgentChatService {
   /** 실행에 넘기는 기억. 컨설턴트 프로필이 연결되지 않은 서비스(테스트 · 미리보기)는 기억을 쓰지 않는다. */
   private async memory(userId: string, conversationId: string): Promise<AgentMemory | null> {
     if (!this.consultant) return null;
-    return memoryForModel(await this.consultant.profile(userId), await this.recentDigests(userId, conversationId), await this.commitments?.open(userId) ?? []);
+    return memoryForModel(await this.consultant.profile(userId), await this.recentDigests(userId, conversationId), await this.commitments?.open(userId) ?? [], diagnosisForModel(await this.currentDiagnosis(userId)));
+  }
+  /**
+   * 저장된 진단과, 다시 진단이 필요한지. 목표가 바뀌었거나 대조한 뒤에 기록이 바뀌었으면 그 까닭을 함께 낸다.
+   * 「내 진행」 화면과 실행에 넘기는 기억이 같은 판단을 쓴다.
+   */
+  async currentDiagnosis(userId: string): Promise<ConsultantDiagnosis | null> {
+    if (!this.diagnosis) return null;
+    const [goal, latest] = await Promise.all([this.career.getJobGoal(userId), this.career.listRecords(userId, { sort: "updated_desc", limit: 1 })]);
+    const changed = latest.data[0]?.updatedAt;
+    return this.diagnosis.store.current(userId, { work: goal?.work ?? null, recordsChangedAt: changed ? new Date(changed) : null });
+  }
+  /** 지금 목표로 요건을 집계해 저장한다. 목표가 없으면 에이전트가 먼저 목표를 묻도록 돌려보낸다. */
+  private async goalDemand(userId: string) {
+    if (!this.diagnosis) throw new AgentToolRejection(["이 환경에서는 진단을 쓸 수 없습니다. 사용자에게 그렇게 전하십시오."]);
+    const goal = await this.career.getJobGoal(userId);
+    if (!goal?.work.trim()) throw new AgentToolRejection(["구직 목표의 하고 싶은 일이 비어 있습니다. 사용자에게 어떤 일을 목표로 하는지 묻고 propose_job_goal_update로 저장한 뒤 다시 부르십시오."]);
+    return this.diagnosis.store.saveDemand(userId, await this.diagnosis.demand.forGoal(userId, { work: goal.work, timing: goal.timing }));
+  }
+  /**
+   * 대조 결과의 확인과 저장. 요건 대조와 같은 기준이다 — 인용이 기록의 글에 그대로 있는지만 본다.
+   * 「부족」은 사용자가 해 본 적이 없다고 답한 뒤에만 받는다: 그 항목이 미확인으로 저장된 뒤에 사용자의 말이 있어야 한다.
+   */
+  private async recordDiagnosis(userId: string, messages: readonly AgentMessage[], input: AgentDiagnosisInput) {
+    if (!this.diagnosis) throw new AgentToolRejection(["이 환경에서는 진단을 쓸 수 없습니다. 사용자에게 그렇게 전하십시오."]);
+    const stored = await this.currentDiagnosis(userId);
+    if (!stored) throw new AgentToolRejection(["아직 집계가 없습니다. read_goal_demand를 먼저 부르십시오."]);
+    if (stored.stale === "goal") throw new AgentToolRejection(["집계한 뒤에 구직 목표가 바뀌었습니다. read_goal_demand를 다시 부른 뒤 대조하십시오."]);
+    const before = new Map(stored.items.map(item => [item.id, item]));
+    const records = await this.recordTexts(userId, input.items.flatMap(item => item.evidence.map(evidence => evidence.recordId)));
+    const lastSaid = messages.filter(message => message.role === "user").at(-1)?.createdAt;
+    const answered = !!stored.assessedAt && !!lastSaid && lastSaid > stored.assessedAt;
+    const issues: string[] = [];
+    const seen = new Set<string>();
+    for (const item of input.items) {
+      const known = before.get(item.itemId);
+      const label = `항목 ${item.itemId}${known ? `(${known.label})` : ""}`;
+      if (seen.has(item.itemId)) issues.push(`${label}: 같은 항목이 두 번 있습니다.`);
+      seen.add(item.itemId);
+      if (!known) { issues.push(`${label}: 집계에 없는 항목입니다. read_goal_demand가 돌려준 id만 쓰십시오.`); continue; }
+      const grounded = item.status === "confirmed" || item.status === "partial";
+      if (grounded && item.evidence.length === 0) issues.push(`${label}: ${item.status}는 기록의 근거가 있어야 합니다. 근거가 없으면 unconfirmed로 두십시오.`);
+      if (!grounded && item.evidence.length > 0) issues.push(`${label}: ${item.status}에는 근거를 넣지 않습니다. 근거가 있으면 confirmed나 partial입니다.`);
+      if (item.status === "gap" && known.status !== "gap" && !(known.status === "unconfirmed" && answered)) issues.push(`${label}: gap은 사용자가 해 본 적이 없다고 답한 뒤에만 씁니다. 지금은 unconfirmed로 저장하고 사용자에게 해 본 적이 있는지 물으십시오.`);
+      for (const evidence of item.evidence) {
+        const record = records.get(evidence.recordId);
+        if (!record) { issues.push(`${label}: 근거 기록 ${evidence.recordId}를 찾을 수 없습니다. read_career_records로 읽은 기록만 인용할 수 있습니다.`); continue; }
+        if (!normalize(record.text).includes(normalize(evidence.quote))) issues.push(`${label}: "${record.title}"에 인용 "${evidence.quote}"이 없습니다. 기록 본문을 그대로 옮겨 주세요.`);
+      }
+    }
+    if (issues.length) throw new AgentToolRejection(issues);
+    try {
+      await this.diagnosis.store.assess(userId, input.summary, input.items.map(item => ({ itemId: item.itemId, status: item.status, note: item.note, evidence: item.evidence.map(evidence => ({ ...evidence, recordTitle: records.get(evidence.recordId)!.title.slice(0, 200) })) })));
+    } catch (error) { if (error instanceof ConsultantInputError) throw new AgentToolRejection([error.message]); throw error; }
+    // 저장한 뒤의 진단을 다시 읽어, 다시 진단이 필요한지까지 지금 기준으로 싣는다.
+    return (await this.currentDiagnosis(userId))!;
   }
   /**
    * 확인 카드에서 「했어요」라고 답한 약속의 대화를 연다.
@@ -554,12 +616,14 @@ export class AgentChatService {
           try {
             const { profile, changed } = await this.consultant.applyUpdate(row.userId, update);
             const parts = [changed.stage ? `단계: ${STAGE_LABELS[changed.stage]}` : null, changed.remembered ? `조건 ${changed.remembered}개 기억` : null, changed.forgotten ? `조건 ${changed.forgotten}개 지움` : null].filter(Boolean);
-            return { summary: parts.length ? parts.join(" · ") : "이미 기억하고 있습니다.", memory: memoryForModel(profile, memory?.recentConversations ?? [], memory?.commitments ?? []) };
+            return { summary: parts.length ? parts.join(" · ") : "이미 기억하고 있습니다.", memory: memoryForModel(profile, memory?.recentConversations ?? [], memory?.commitments ?? [], memory?.diagnosis ?? null) };
           } catch (error) {
             if (error instanceof ConsultantLimitError) throw new AgentToolRejection([error.message]);
             throw error;
           }
         },
+        goalDemand: () => this.goalDemand(row.userId),
+        recordDiagnosis: assessment => this.recordDiagnosis(row.userId, [...row.messages.slice(0, -1), message], assessment),
         makeCommitment: commitment => this.commitment(() => this.commitments!.create(row.userId, commitment, row._id)),
         updateCommitment: ({ commitmentId, status, dueOn }) => this.commitment(() => this.commitments!.update(row.userId, commitmentId, { status, dueOn })),
         askChoice: async choice => {

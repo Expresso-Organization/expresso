@@ -53,6 +53,12 @@ describe("지난 대화의 요지", () => {
     const digest = digestConversation(conversation([user("해커톤에 나가 볼게요"), assistant("금요일까지 지원서를 내기로 했습니다.", [tool("약속", { commitment }), tool("약속 갱신")])]));
     expect(digest.outcomes).toEqual(["약속: 해커톤 지원서 내기 (2026-11-27까지)"]);
   });
+  it("목표 진단은 표본과 상태별 수로 남긴다", () => {
+    const item = (label: string, status: "confirmed" | "partial" | "unconfirmed" | "gap") => ({ id: `technology:${label}`, kind: "technology" as const, label, count: 10, status, evidence: [], note: "" });
+    const diagnosis = { work: "백엔드 개발자", family: "백엔드", basis: "family" as const, focus: null, level: null, sampleSize: 66, companyCount: 15, interestedCount: 0, small: false, summary: "요약", items: [item("Java", "confirmed"), item("Spring", "partial"), item("Kafka", "unconfirmed"), item("Kubernetes", "gap")], demandAt: at, assessedAt: at, stale: null };
+    const digest = digestConversation(conversation([user("제 목표에 비해 뭐가 부족한가요?"), assistant("진단했습니다.", [tool("목표 요건 집계"), tool("목표 진단", { diagnosis })])]));
+    expect(digest.outcomes).toEqual(["목표 진단: 공고 66건 기준 · 확인 2 · 미확인 1 · 부족 1"]);
+  });
   it("긴 말은 자르고, 결과는 최근 여덟 개만 싣는다", () => {
     const many = Array.from({ length: 10 }, (_, index) => tool("지면 요소 고침", { pageEdit: { editId: id(), portfolioId: id(), key: "hero", label: `고침 ${index + 1}`, note: "", changes: [], revision: index + 1, undone: false } }));
     const digest = digestConversation(conversation([user("가".repeat(500)), assistant("나".repeat(500), many)]));
