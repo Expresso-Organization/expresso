@@ -232,3 +232,8 @@
 .target > span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .target > i { flex:none; color:var(--ex-accent-text); }
 .sentTarget { grid-column:1 / -1; justify-self:end; }
+
+/* 홈에서 넘겨받은 첫 말. 홈의 입력창이 아래 자리에 내려앉는 동안 그 위로 떠오른다(app/(app)/home/page.tsx의 전환). */
+.root :global([data-arrival]) { animation:arrive var(--ex-motion-panel) 120ms both; }
+@keyframes arrive { from { opacity:0; translate:0 16px; } }
+@media (prefers-reduced-motion: reduce) { .root :global([data-arrival]) { animation:none; } }

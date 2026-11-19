@@ -1,20 +1,20 @@
 flowchart TD
-  TC[pnpm typecheck] --> REN[portfolio-renderer 빌드]
-  REN --> GEN[next typegen]
-  GEN --> TYPES[.next/types<br/>지금 코드의 경로 타입]
-  GEN -.다시 씀.-> ENV[next-env.d.ts<br/>추적 해제 · 무시]
-  TYPES --> TSC[tsc --noEmit]
-  CI[CI 타입 검사 단계] --> TC
-  GUARD[tsconfig.test.ts<br/>스크립트 순서 검사] --> TC
-  ENV --> DEPLOY[deploy.sh<br/>되돌리기 줄 제거]
-  DEPLOY --> GIT[git 구간 네 경로 실험]
-  PR{PR 머지 D4} --> FIRST[첫 실제 전환 배포]
-  DEPLOY --> FIRST
+  SEND[입력창 · 제안 동작] --> OPEN[HomeHandoff.open]
+  OPEN --> PEND[대기 중 내용 옅게]
+  OPEN --> NAV[router.push<br/>agent-chat-open]
+  NAV --> VT[View Transition]
+  VT --> LEAVE[홈 빠짐 160ms]
+  VT --> MORPH[입력창 짝 280ms]
+  VT --> ARRIVE[대화 화면 220ms]
+  OPEN --> MEM[agent-handoff 메모리]
+  MEM --> BUBBLE[첫 렌더 말풍선 떠오름]
+  BUBBLE --> HOLD[보낼 수 없으면 거둠]
+  ROOT[다른 이동 교차 끔] --> VT
+  PR{PR 머지 D5} --> DEPLOY[운영 배포]
   classDef done fill:#d1fae5,stroke:#059669
   classDef doing fill:#fef3c7,stroke:#d97706
   classDef decide fill:#fee2e2,stroke:#dc2626
   classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4
-  class TC,REN,GEN,TYPES,ENV,TSC,GUARD,DEPLOY,GIT done
-  class CI doing
+  class SEND,OPEN,PEND,NAV,VT,LEAVE,MORPH,ARRIVE,MEM,BUBBLE,HOLD,ROOT done
   class PR decide
-  class FIRST todo
+  class DEPLOY todo

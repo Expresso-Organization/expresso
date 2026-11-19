@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useContext, useState, useRef, useEffect } from "react";
+import { createContext, useCallback, useContext, useMemo, useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { LogoMark } from "@/components/brand/Logo";
@@ -27,7 +27,7 @@ import type { ThreadGroupPart } from "@/components/assistant-ui/elements/thread.
 import type { PropsWithChildren, ReactNode } from "react";
 import "@/styles/agent-chat-framework.css";
 import { agentRequest, useAgentConversation } from "./useAgentConversation";
-import { AGENT_CONVERSATIONS_EVENT, takeAgentHandoff } from "./agent-handoff";
+import { AGENT_CHAT_OPEN, AGENT_CONVERSATIONS_EVENT, peekAgentHandoff, takeAgentHandoff } from "./agent-handoff";
 import { ToolStep } from "./ToolStep";
 import styles from "./AgentChat.module.css";
 
@@ -166,6 +166,8 @@ function Proposal({ proposal, beforeDocument, undone }: { proposal: AiEditPropos
     {proposal.status === "applied" && !undone ? <Button variant="outline" disabled={state.pending} onClick={() => void state.approve({ proposalId: proposal.proposalId, action: "undo", expectedDocumentVersion: proposal.appliedDocumentVersion! }).then(() => router.refresh())}>변경 되돌리기</Button> : null}
   </>;
 }
+/** 홈의 입력창이 대화를 시작하며 이 입력창 자리로 옮겨 오는 전환. 홈의 입력창과 이름 · 타입이 같아야 짝이 된다. */
+const HOME_COMPOSER_TRANSITION = { name: "agent-composer", types: [AGENT_CHAT_OPEN], className: "composer-morph" };
 const convertMessage = (message: AgentMessage): ThreadMessageLike => ({
   id: message.id, role: message.role, createdAt: new Date(message.createdAt),
   ...(message.selection ? { metadata: { custom: { selection: message.selection } } } : {}),
@@ -189,6 +191,13 @@ export function AgentChat({ job, page, standalone = false, fresh = false, newHre
   const contextLabel = job?.title ?? page?.title ?? props.contextLabel;
   const state = useAgentConversation(context, job || page ? { restore: "context" } : fresh ? { restore: "url" } : {});
   const router = useRouter();
+  // 홈에서 넘겨받은 말. 대화를 만들고 보내기 전, 첫 렌더부터 사용자 말풍선으로 그린다 — 그래야 대화 화면의 첫 장면에
+  // 시작 화면이 아니라 보낸 말이 있다. 서버의 사용자 메시지가 오면 같은 id로 바꿔 그려 말풍선이 다시 마운트되지 않는다.
+  // 보낼 수 없게 되면(동의 · 크레딧 · 권한 오류 · 생성이나 전송 실패) 거두고 입력창에 글을 둔다.
+  const [arrival, setArrival] = useState<{ id: string; text: string; createdAt: string } | null>(() => {
+    const handoff = fresh ? peekAgentHandoff() : null;
+    return handoff && handoff.deliver !== false ? { id: crypto.randomUUID(), text: handoff.text, createdAt: new Date().toISOString() } : null;
+  });
   const [preview, setPreview] = useState<PreviewResource | null>(null);
   const [contextTitles, setContextTitles] = useState<Record<string, string>>({});
   const contextKeys = (state.conversation?.contexts ?? []).map(ref => `${ref.kind}:${ref.id}`).join(",");
@@ -221,7 +230,21 @@ export function AgentChat({ job, page, standalone = false, fresh = false, newHre
   const canSend = !!access?.enabled && !access.consentRequired && !access.creditsExhausted;
   const running = state.conversation?.run?.status === "running";
   useEffect(() => { onRunningChange?.(running); }, [onRunningChange, running]);
-  const runtime = useExternalStoreRuntime({ messages: state.conversation?.messages ?? [], convertMessage, isRunning: running, isLoading: state.resolving || (!!state.id && !state.conversation), isDisabled: !!preview || !canSend || state.pending || state.resolving || (!!state.id && !state.conversation), onNew: async message => { const text = message.content.filter(part => part.type === "text").map(part => part.text).join("\n"); try { await state.send(text, page?.selection ?? undefined); } catch { runtime.thread.composer.setText(text); } }, onCancel: state.cancel });
+  const serverMessages = state.conversation?.messages;
+  const messages = useMemo(() => {
+    const list = serverMessages ?? [];
+    if (!arrival) return list;
+    const first = list.find(message => message.role === "user");
+    if (!first) return [...list, { id: arrival.id, role: "user" as const, text: arrival.text, tools: [], createdAt: arrival.createdAt }];
+    return list.map(message => message === first ? { ...message, id: arrival.id } : message);
+  }, [serverMessages, arrival]);
+  const arrivalId = arrival?.id;
+  const convert = useCallback((message: AgentMessage): ThreadMessageLike => {
+    const converted = convertMessage(message);
+    if (message.id !== arrivalId) return converted;
+    return { ...converted, metadata: { ...converted.metadata, custom: { ...converted.metadata?.custom, arrival: true } } };
+  }, [arrivalId]);
+  const runtime = useExternalStoreRuntime({ messages, convertMessage: convert, isRunning: running, isLoading: !arrival && (state.resolving || (!!state.id && !state.conversation)), isDisabled: !!preview || !canSend || state.pending || state.resolving || (!!state.id && !state.conversation), onNew: async message => { const text = message.content.filter(part => part.type === "text").map(part => part.text).join("\n"); try { await state.send(text, page?.selection ?? undefined); } catch { runtime.thread.composer.setText(text); } }, onCancel: state.cancel });
   // 지면 고침이 저장되거나 되돌려지면 화면의 미리보기 · 판 번호를 다시 불러온다. 처음 불러온 대화의 카드로는 다시 부르지 않는다.
   const pageEdits = (state.conversation?.messages ?? []).flatMap(message => message.tools).flatMap(tool => tool.pageEdit && tool.status === "complete" ? [`${tool.pageEdit.editId}:${tool.pageEdit.undone}`] : []).join(",");
   const seenEdits = useRef<{ id: string | null; edits: string } | null>(null);
@@ -239,16 +262,26 @@ export function AgentChat({ job, page, standalone = false, fresh = false, newHre
     if (!fresh || !access || handoffDone.current) return;
     handoffDone.current = true;
     const handoff = takeAgentHandoff();
-    if (!handoff) return;
+    if (!handoff) { setArrival(null); return; }
+    const hold = () => { setArrival(null); runtime.thread.composer.setText(handoff.text); };
+    if (!canSend) setArrival(null);
     void (async () => {
       try {
         const created = await agentRequest("", { contexts: handoff.contexts });
         selectConversation(created.id);
         if (!canSend) { runtime.thread.composer.setText(handoff.text); return; }
         await agentRequest(`/${created.id}/messages`, { text: handoff.text, requestId: crypto.randomUUID() });
-      } catch { runtime.thread.composer.setText(handoff.text); }
+      } catch { hold(); }
     })();
   }, [fresh, access, canSend, runtime, selectConversation]);
+  // 권한을 확인하지 못하면 넘겨받은 말을 보내지 못한다. 말풍선을 거두고 입력창에 둔다.
+  useEffect(() => {
+    if (!fresh || !accessError || handoffDone.current) return;
+    handoffDone.current = true;
+    setArrival(null);
+    const handoff = takeAgentHandoff();
+    if (handoff) runtime.thread.composer.setText(handoff.text);
+  }, [fresh, accessError, runtime]);
   // 사이드바의 「최근 대화」가 새 대화와 바뀐 제목을 바로 보이도록 목록을 알린다(`SidebarConversations`가 듣는다).
   const conversationRows = JSON.stringify(state.list.map(({ id, title }) => ({ id, title })));
   useEffect(() => {
@@ -279,8 +312,8 @@ export function AgentChat({ job, page, standalone = false, fresh = false, newHre
           {!state.conversation?.contexts.length && !contextLabel ? <><Link className={styles.referenceEmpty} href="/jobs"><Icon name="plus" size={12} />공고</Link><Link className={styles.referenceEmpty} href="/career/experience"><Icon name="plus" size={12} />기록</Link></> : null}</div>
         </div>
         {access?.enabled && access.consentRequired ? <div role="alert" className={styles.apiKeyField}><p>채팅을 시작하려면 AI 사용 동의가 필요합니다.</p><small>대화와 연결된 커리어 기록을 AI 모델에 전달합니다.</small><Button variant="outline" onClick={() => setConsentOpen(true)}>AI 사용 동의 확인</Button></div> : null}
-        {accessError ? <p role="alert" className={styles.error}>채팅 사용 권한을 확인하지 못했습니다. 새로고침해 주세요.</p> : !access ? <p role="status" className={styles.status}>채팅 사용 권한 확인 중…</p> : !access.enabled ? <p className={styles.status}>에이전트 채팅이 아직 활성화되지 않았습니다.</p> : access.creditsExhausted ? <p role="alert" className={styles.status}>이번 달 AI 크레딧을 모두 썼습니다. 다음 달에 다시 대화할 수 있습니다.</p> : null}
-        <div className={styles.thread}><Thread autoFocus={standalone} components={{ Welcome: ChatWelcome, AssistantHeader: AssistantIdentity, ToolFallback: RecordTool, ToolGroup: ExpandedTools, ComposerHeader: ComposerTarget, UserMessageHeader: UserMessageTarget }} /></div>
+        {accessError ? <p role="alert" className={styles.error}>채팅 사용 권한을 확인하지 못했습니다. 새로고침해 주세요.</p> : !access ? (arrival ? null : <p role="status" className={styles.status}>채팅 사용 권한 확인 중…</p>) : !access.enabled ? <p className={styles.status}>에이전트 채팅이 아직 활성화되지 않았습니다.</p> : access.creditsExhausted ? <p role="alert" className={styles.status}>이번 달 AI 크레딧을 모두 썼습니다. 다음 달에 다시 대화할 수 있습니다.</p> : null}
+        <div className={styles.thread}><Thread autoFocus={standalone} composerTransition={fresh ? HOME_COMPOSER_TRANSITION : undefined} components={{ Welcome: ChatWelcome, AssistantHeader: AssistantIdentity, ToolFallback: RecordTool, ToolGroup: ExpandedTools, ComposerHeader: ComposerTarget, UserMessageHeader: UserMessageTarget }} /></div>
         <div className={styles.footnote}><Icon name="check-circle" size={12} /><span>{page ? "지면 고침은 바로 새 판으로 저장되고 카드에서 되돌릴 수 있습니다." : "기록의 변경은 확인 후 적용됩니다."}</span></div>
         {lastRun?.status === "cancelled" ? <div role="status" className={`${styles.status} ${styles.runNotice}`}><span>응답을 중지했습니다.</span>{retryButton}</div> : null}
         {lastRun?.error ? <div role="alert" className={`${styles.error} ${styles.runNotice}`}><span>{lastRun.error}</span>{retryButton}</div> : null}

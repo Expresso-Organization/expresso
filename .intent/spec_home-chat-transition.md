@@ -56,10 +56,10 @@ flowchart TD
 - **`features/agent-chat/agent-handoff.ts`**: `AGENT_CHAT_OPEN = "agent-chat-open"`. `putAgentHandoff`가 메모리에도 둔다. `peekAgentHandoff()`는 메모리의 것을 지우지 않고 돌려준다(서버 렌더와 새로고침에서는 null이라 하이드레이션이 어긋나지 않는다). `AgentHandoff`에 `deliver: boolean`(홈이 보낼 수 있다고 아는가)을 더한다.
 - **`app/(app)/home/HomeHandoff.tsx`**: 컨텍스트 `useHomeHandoff()` — `open(handoff)`가 넘겨주기를 쓰고 `startTransition` 안에서 `router.push("/home?compose=1", { transitionTypes: [AGENT_CHAT_OPEN] })`. `pending`을 함께 준다. `HomeStart`가 제공하고 입력창 · 제안 동작 두 곳 · `ProposalFeed`가 쓴다. `HomeStart`는 이미 받는 `/api/agent/access`로 `deliver`를 정한다.
 - **`HomeStart`**: `.stage`에 `data-leaving`. 입력창(`.composer`)을 `ViewTransition name="agent-composer"`, `share={{ [AGENT_CHAT_OPEN]: "composer-morph", default: "none" }}`, `default="none"`으로 감싼다. 보내기는 `pending`이면 막는다.
-- **`page.tsx`**: `HomeStart`를 `exit={{ [AGENT_CHAT_OPEN]: "home-leave", default: "none" }}`, `AgentChat`을 `enter={{ [AGENT_CHAT_OPEN]: "chat-arrive", default: "none" }}`로 감싼다(둘 다 `default="none"`).
+- **`page.tsx`**: `HomeStart`를 `exit={{ [AGENT_CHAT_OPEN]: "home-leave", default: "none" }}`, `AgentChat`을 `enter={{ [AGENT_CHAT_OPEN]: "chat-arrive", default: "none" }}`로 감싼다(둘 다 `default="none"`). 두 감싸기는 같은 자리에 서므로 `key`("home" · "chat")로 가른다 — 없으면 React가 바뀜(update)으로 보고 enter · exit를 붙이지 않는다.
 - **`thread.aui.tsx`**: `Thread`에 `composerTransitionName`을 받아 `Composer`의 루트를 같은 `share`로 감싼다. 사용자 메시지 루트에 `metadata.custom.arrival`이면 `data-arrival`.
 - **`AgentChat`**: `fresh`이고 `peekAgentHandoff()?.deliver`면 첫 렌더부터 `arrival = { id, text }`. 서버 메시지에 사용자 메시지가 없으면 `arrival` 말풍선을 덧붙이고, 오면 첫 사용자 메시지의 id를 `arrival.id`로 바꿔 변환한다(같은 key). `arrival`이 있는 동안 `isLoading` · 권한 확인 문구를 끈다. 실패 · 보낼 수 없음이면 `arrival`을 거둔다. `fresh`일 때만 `composerTransitionName="agent-composer"`.
-- **`styles/global.css`**: `::view-transition-*(.home-leave · .chat-arrive · .composer-morph)` 규칙과 움직임 줄이기. **`AgentChat.module.css`**: `[data-arrival]` 떠오름.
+- **`styles/global.css`**: `::view-transition-*(.home-leave · .chat-arrive · .composer-morph)` 규칙과 움직임 줄이기. 입력창 그룹은 `z-index: 1` — 들어오는 대화 화면이 불투명해 덮는다. `::view-transition-old/new(root)`의 교차를 끈다 — 화면에 `<ViewTransition>`이 생기면 React가 타입 없는 이동(지난 대화 열기)에도 전환을 시작하고, 브라우저 기본값은 화면 전체를 250ms 교차시킨다. **`AgentChat.module.css`**: `[data-arrival]` 떠오름.
 
 ## 움직임
 
@@ -67,7 +67,8 @@ flowchart TD
 |---|---|---|
 | 홈 내용(대기 중) | 옅어짐 · 위로 6px | `--ex-motion-quick` |
 | 홈 스냅샷 | 사라짐 | 160ms ease(quick) |
-| 입력창 | 자리 · 크기 이동, 두 모습 교차 | 280ms `--ex-motion-panel` 곡선 |
+| 입력창 | 자리 · 크기 이동 | 280ms `--ex-motion-panel` 곡선 |
+| 보낸 글이 든 홈 입력창 모습 | 일찍 사라짐 — 글이 아래로 따라가지 않는다 | 120ms ease |
 | 대화 화면 | 나타남, 홈이 빠진 뒤 | 220ms glide 곡선, 80ms 뒤 |
 | 첫 말풍선 | 아래 16px에서 떠오름 · 나타남 | 280ms panel 곡선, 120ms 뒤 |
 
