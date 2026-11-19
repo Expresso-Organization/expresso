@@ -1,0 +1,20 @@
+flowchart TD
+  U[대화: 이 공고로 만들어 줘] --> T[start_portfolio 도구]
+  T --> A[공고 분석 큐 → 워커]
+  T --> C[포트폴리오 제작 카드]
+  C --> S[상태 읽기 1.5초마다]
+  S --> J[(job_analyses · brews)]
+  A --> J
+  C --> O[담을 기록 고르기 → 제작 한 번 생성]
+  O --> M[재료 고르기: 지금의 화면]
+  M --> I[AI 대화: 지금의 화면]
+  I --> D[디자인 대화]
+  D --> G[생성]
+  Q{분석 뒤 에이전트가 먼저 말하는가}
+  classDef done fill:#d1fae5,stroke:#059669
+  classDef doing fill:#fef3c7,stroke:#d97706
+  classDef decide fill:#fee2e2,stroke:#dc2626
+  classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4
+  class U,T,A,C,S,J,O done
+  class M,I,D,G todo
+  class Q decide

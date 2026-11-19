@@ -16,7 +16,10 @@ import { PreparationPlans } from "./plans.js";
 import type { CareerDocumentApi } from "../career-editor/index.js";
 import { readableCareerProperties, type CareerApi } from "../career/index.js";
 import type { JobBoardApi } from "../jobs/index.js";
-import type { ConsentApi } from "../consent/index.js";
+import { ConsentError, type ConsentApi } from "../consent/index.js";
+import { brewPath, brewStartState, KeyedQueue, type AgentBrewDeps } from "./brew-start.js";
+import type { AgentBrewStart, AgentBrewStartInput, AgentBrewStartState } from "@expresso/contracts";
+import type { AgentBrewState } from "../../platform/agent/runtime.js";
 
 /**
  * 실행 중인 대화의 heartbeat 주기. 실행 인스턴스는 이 주기로 문서를 갱신하고, 갱신이 맞지
@@ -31,19 +34,26 @@ const RUN_FAILED_ERROR = "응답을 완료하지 못했습니다. 설정을 확�
 export type AgentRunFailureListener = (error: unknown, run: { conversationId: string; runId: string }) => void;
 
 /** `publicMessage`를 주면 응답에 그 문장이 그대로 나간다. 주지 않으면 상태 코드의 일반 문장이 나간다(`api/error-handler.ts`). */
+/**
+ * 같은 분석으로 이 대화에서 만든 제작. 카드가 여럿이어도(같은 공고로 다시 시작, 다시 보내기) 제작은 하나다.
+ * 대화에 적어 둔 값(`brewIds`)을 본다 — 카드에 적힌 값은 다시 보내기로 카드와 함께 지워질 수 있다.
+ */
+const brewOf = (row: AgentConversationDoc, jobAnalysisId: string) => row.brewIds?.[jobAnalysisId] ?? null;
 export class AgentChatError extends Error { constructor(readonly statusCode: number, message: string, readonly publicMessage?: string) { super(message); } }
 /** 이번 달 크레딧을 읽는 자리. 요금제의 기능 표와 무관하게 남은 크레딧만 본다(`EntitlementService.credits`). */
 export interface AgentCredits { credits(userId: string, at?: Date): Promise<{ remaining: number | null }> }
 /** 화면에 그대로 보이는 문장이다. 디자인 대화의 한도 안내와 같은 말로 시작한다. */
 export const CREDITS_EXHAUSTED = "이번 달 AI 크레딧을 모두 썼습니다. 다음 달에 다시 대화할 수 있습니다.";
-const view = (row: AgentConversationDoc) => { const { _id, userId: _userId, heartbeatAt: _heartbeat, ...data } = row; return AgentConversationSchema.parse({ ...data, id: _id }); };
+const view = (row: AgentConversationDoc) => { const { _id, userId: _userId, heartbeatAt: _heartbeat, brewIds: _brewIds, ...data } = row; return AgentConversationSchema.parse({ ...data, id: _id }); };
 export class AgentChatService {
   private readonly running = new Map<string, AbortController>();
   private readonly tasks = new Set<Promise<void>>();
   /** `close()`가 시작되면 켠다. 그 뒤에 끝난 실행은 어떤 오류로 끝났든 서버 종료로 끊긴 것이다. */
   private closing = false;
   private runFailureListener: AgentRunFailureListener | null = null;
-  constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord" | "listRecords" | "listCategories" | "createRecord" | "getJobGoal" | "saveJobGoal">, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi, readonly credentials: AgentCredentials = new AgentCredentials(db), private readonly portfolios?: Pick<PortfolioReadApi, "get">, private readonly pages?: Pick<PageApi, "latest" | "elementGuide" | "editElementByAgent" | "restoreRevision">, private readonly credits?: AgentCredits) {}
+  constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord" | "listRecords" | "listCategories" | "createRecord" | "getJobGoal" | "saveJobGoal">, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi, readonly credentials: AgentCredentials = new AgentCredentials(db), private readonly portfolios?: Pick<PortfolioReadApi, "get">, private readonly pages?: Pick<PageApi, "latest" | "elementGuide" | "editElementByAgent" | "restoreRevision">, private readonly credits?: AgentCredits, private readonly brews?: AgentBrewDeps) {}
+  /** 제작을 만드는 요청을 대화마다 한 번에 하나씩 처리한다. */
+  private readonly brewQueue = new KeyedQueue();
   private get plans() { return new PreparationPlans(this.db); }
   /** 서비스가 Fastify 앱보다 먼저 만들어지므로 로그 수신자는 라우트 등록 때 붙인다. */
   setRunFailureListener(listener: AgentRunFailureListener) { this.runFailureListener = listener; }
@@ -178,6 +188,78 @@ export class AgentChatService {
     return buildReview(draft, job.descriptionRaw, records);
   }
   /** 요건 대조나 보완점 정리 뒤에 공고 원문이나 근거로 쓴 기록이 바뀌었는가. */
+  /**
+   * 대화에 연결된 공고로 포트폴리오 제작을 시작한다. 공고 분석을 맡기고 카드에 실을 ID를 돌려준다.
+   * 공고는 대화의 contexts에 있는 것만 받는다 — 도구 입력의 ID는 모델이 쓴 값이라 그대로 믿지 않는다.
+   */
+  private async startBrew(row: AgentConversationDoc, input: AgentBrewStartInput): Promise<AgentBrewStart> {
+    if (!this.brews) throw new AgentToolRejection(["이 서버에서는 대화에서 포트폴리오 제작을 시작할 수 없습니다. 「새 포트폴리오」 화면에서 시작할 수 있다고 안내하십시오."]);
+    if (!row.contexts.some(ref => ref.kind === "job" && ref.id === input.jobPostingId)) throw new AgentToolRejection(["대화에 연결된 공고가 아닙니다. context에 있는 공고(kind가 job)의 id만 쓸 수 있습니다."]);
+    // 공고 분석은 공고 원문을 AI에 보낸다. 동의가 꺼져 있으면 시작하지 않고, 에이전트가 켜는 곳을 안내하게 한다.
+    try { await this.consent.require(row.userId, "job_analysis"); }
+    catch (error) { if (error instanceof ConsentError) throw new AgentToolRejection(["공고 분석 동의가 꺼져 있습니다. 설정의 「AI 사용 동의」에서 공고 분석을 켠 뒤 다시 요청해 달라고 안내하십시오."]); throw error; }
+    const posting = await this.jobs.get(row.userId, input.jobPostingId);
+    const { jobAnalysisId } = await this.brews.analyzePosting(row.userId, input.jobPostingId);
+    return { startId: randomUUID(), jobPostingId: input.jobPostingId, jobAnalysisId, title: posting.title, companyName: posting.company.name, brewId: await this.liveBrew(row, jobAnalysisId) };
+  }
+  /** 이 대화에서 만든 제작 가운데 아직 남아 있는 것. 지운 제작(휴지통)은 없는 것으로 본다 — 카드가 죽은 화면을 열지 않게 한다. */
+  private async liveBrew(row: AgentConversationDoc, jobAnalysisId: string): Promise<string | null> {
+    const brewId = brewOf(row, jobAnalysisId);
+    return brewId && await this.brews!.brewStatus(row.userId, brewId) ? brewId : null;
+  }
+  private brewStart(row: AgentConversationDoc, startId: string): AgentBrewStart {
+    const start = row.messages.flatMap(message => message.tools).find(tool => tool.brewStart?.startId === startId)?.brewStart;
+    if (!start) throw new AgentChatError(404, "이 대화에서 시작한 제작을 찾을 수 없습니다.");
+    if (!this.brews) throw new AgentChatError(503, "포트폴리오 제작 연결이 설정되지 않았습니다.");
+    return start;
+  }
+  /** 제작의 지금 상태. 카드가 끝나지 않은 동안 되풀이해 읽는다. AI를 부르지 않는다. */
+  async brewStartState(userId: string, id: string, startId: string): Promise<AgentBrewStartState> {
+    const row = await this.owned(userId, id);
+    const start = this.brewStart(row, startId);
+    return brewStartState(await this.brews!.getResult(userId, start.jobAnalysisId), await this.liveBrew(row, start.jobAnalysisId));
+  }
+  /**
+   * 「담을 기록 고르기」. 끝난 분석으로 제작을 한 번만 만들고 다음 화면의 경로를 돌려준다. AI를 부르지 않는다.
+   * 다음 화면은 지금의 재료 고르기다 — 아직 대화로 옮기지 않은 단계는 지금의 화면이 맡는다.
+   */
+  async openBrew(userId: string, id: string, startId: string): Promise<{ brewId: string; path: string }> {
+    return this.brewQueue.run(id, async () => {
+      const row = await this.owned(userId, id);
+      const start = this.brewStart(row, startId);
+      // 이미 만든 제작이 남아 있으면 그 제작이 가 있는 단계의 화면을 연다. 지운 제작이면 새로 만든다.
+      const existing = brewOf(row, start.jobAnalysisId);
+      const status = existing ? await this.brews!.brewStatus(userId, existing) : null;
+      if (existing && status) return { brewId: existing, path: brewPath(existing, status) };
+      const result = await this.brews!.getResult(userId, start.jobAnalysisId);
+      if (result.analysis.status !== "done") throw new AgentChatError(409, "공고 분석이 끝난 뒤 열 수 있습니다.", "공고 분석이 끝난 뒤 열 수 있습니다.");
+      const { brewId } = await this.brews!.createBrew(userId, { jobAnalysisId: start.jobAnalysisId, lengthPreset: "single" });
+      // 제작 ID는 대화에 적는다. 메시지 안을 건드리지 않으므로 실행 중에도 실행이 쓰는 마지막 답변과 부딪히지 않는다.
+      // 읽은 뒤로 다른 요청이 먼저 적었으면(API 프로세스가 여럿일 때) 그 제작을 연다.
+      const written = await this.rows.updateOne({ _id: id, userId, [`brewIds.${start.jobAnalysisId}`]: existing ?? { $exists: false } }, { $set: { [`brewIds.${start.jobAnalysisId}`]: brewId, updatedAt: new Date().toISOString() }, $inc: { version: 1 } });
+      const winner = written.matchedCount ? brewId : brewOf(await this.owned(userId, id), start.jobAnalysisId) ?? brewId;
+      return { brewId: winner, path: brewPath(winner, "draft") };
+    });
+  }
+  /** 다시 해 볼 수 있는 실패를 다시 큐에 넣는다. 그렇지 않은 상태에서는 지금 상태만 돌려준다. */
+  async retryBrewStart(userId: string, id: string, startId: string): Promise<AgentBrewStartState> {
+    const row = await this.owned(userId, id);
+    const start = this.brewStart(row, startId);
+    const state = await this.brewStartState(userId, id, startId);
+    if (state.status !== "failed" || !state.failure?.retryable) return state;
+    await this.brews!.analyzePosting(userId, start.jobPostingId);
+    return this.brewStartState(userId, id, startId);
+  }
+  /** 실행을 시작할 때 모델에 넘기는 제작의 지금 상태. 같은 분석의 카드는 한 줄로 모은다. 읽지 못한 것은 뺀다. */
+  private async brewStates(row: AgentConversationDoc): Promise<AgentBrewState[]> {
+    if (!this.brews) return [];
+    const starts = [...new Map(row.messages.flatMap(message => message.tools).flatMap(tool => (tool.brewStart ? [[tool.brewStart.jobAnalysisId, tool.brewStart] as const] : []))).values()];
+    const states = await Promise.all(starts.map(async start => {
+      try { return { jobPostingId: start.jobPostingId, title: start.title, companyName: start.companyName, ...brewStartState(await this.brews!.getResult(row.userId, start.jobAnalysisId), await this.liveBrew(row, start.jobAnalysisId)) }; }
+      catch { return null; }
+    }));
+    return states.flatMap(state => (state ? [state] : []));
+  }
   async freshness(userId: string, id: string, toolId: string) {
     const row = await this.owned(userId, id);
     const tools = row.messages.flatMap(message => message.tools);
@@ -438,6 +520,8 @@ export class AgentChatService {
         records: { list: () => this.listRecords(row.userId), read: ids => this.readRecords(row.userId, ids) },
         review: draft => this.review(row.userId, row.contexts, draft),
         draftRecord: input => this.draftRecord(row, input),
+        brews: await this.brewStates(row),
+        startBrew: input => this.startBrew(row, input),
         jobGoal: goal ? { work: goal.work, place: goal.place, timing: goal.timing } : null,
         goalDraft: async input => {
           const draft = await this.goalDraft(row, [...row.messages.slice(0, -1), message], input);

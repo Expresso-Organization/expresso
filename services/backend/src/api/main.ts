@@ -16,7 +16,7 @@ import { AiSearchInterpreter } from "../modules/jobs/search-interpreter.js";
 import { AiFactsReader, createJobSourceAdapters, BundledMarkReader, JobIngestService, JobUrlImporter, SiteMarkReader } from "../modules/jobs/ingest/index.js";
 import { JobBoardService } from "../modules/jobs/index.js";
 import { JobAnalysisService } from "../modules/job-analysis/index.js";
-import { BrewTrashService, MaterialsService } from "../modules/materials/index.js";
+import { BrewTrashService, MaterialsError, MaterialsService } from "../modules/materials/index.js";
 import { InterviewService } from "../modules/interview/index.js";
 import { RecipeService } from "../modules/recipe/index.js";
 import { CompanyResearchService } from "../modules/company-research/index.js";
@@ -171,7 +171,13 @@ const careerDocumentService = new CareerDocumentService(
 // 편집기 밖 본문 쓰기(PATCH bodyMd · 인터뷰 재답변)가 곧바로 편집기 문서와 열린 편집기에 들어가게 연결합니다.
 careerService.setExternalBodyListener((userId, recordId) => careerDocumentService.syncExternalBody(userId, recordId));
 interviewService.setExternalBodyListener((userId, recordId) => careerDocumentService.syncExternalBody(userId, recordId));
-const agentChatService = new AgentChatService(database, config.agentChatEnabled ? new ClaudeAgentRuntime(config.agentChatModel, aiUsage) : null, careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(database, config.agentCredentialEncryptionKey), portfolioReadService, pageService, entitlementService);
+const agentChatService = new AgentChatService(database, config.agentChatEnabled ? new ClaudeAgentRuntime(config.agentChatModel, aiUsage) : null, careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(database, config.agentCredentialEncryptionKey), portfolioReadService, pageService, entitlementService, {
+  analyzePosting: (userId, jobPostingId) => jobMarketService.analyzePosting(userId, jobPostingId),
+  getResult: (userId, jobAnalysisId) => jobAnalysisService.getResult(userId, jobAnalysisId),
+  createBrew: (userId, input) => materialsService.createBrew(userId, input),
+  // 지운 제작(휴지통)과 없는 제작은 404다. 그 밖의 오류는 그대로 올린다.
+  brewStatus: (userId, brewId) => materialsService.getState(userId, brewId).then(state => state.status, error => { if (error instanceof MaterialsError && error.statusCode === 404) return null; throw error; }),
+});
 const activityService = new ActivityService(database);
 // API는 제안을 읽고 실행을 줄에 넣기만 한다. AI 실행은 워커가 한다(`writer`를 주지 않는다).
 const proposalService = new ProposalService(database, { career: careerService, jobs: jobBoardService, activities: activityService, consent: consentService, credits: entitlementService, writer: null });

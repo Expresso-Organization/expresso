@@ -23,7 +23,7 @@ date: 2026-11-20
 | `services/web/src/app/api/agent/[...path]/route.ts` | `brew-starts` 경로 통과 |
 | `services/web/src/features/agent-chat/BrewStartCard.tsx` · `.module.css` (새로) | 카드 |
 | `services/web/src/features/agent-chat/AgentChat.tsx` | 카드 분기, 도구 아이콘 |
-| 테스트 | `runtime.test.ts` · `service.integration.test.ts` · `brew-start.test.ts` |
+| 테스트 | `runtime.test.ts` · `service.integration.test.ts`(상태 계산과 줄 세우기도 여기서 봄) · `BrewStartCard.test.tsx` |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
 

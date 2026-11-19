@@ -6,6 +6,7 @@ import { CareerDocumentBootstrapSchema } from "./career-editor.js";
 import { z } from "zod";
 import { UuidSchema, TimestampSchema } from "./common.js";
 import { AiEditProposalDetailSchema, AiEditProposalSchema } from "./career-ai.js";
+import { JobAnalysisStatusSchema } from "./job-analysis.js";
 
 export const AgentContextSchema = z.strictObject({ kind: z.enum(["job", "record", "portfolio"]), id: UuidSchema });
 /**
@@ -276,7 +277,39 @@ export const AgentPageEditSchema = z.strictObject({
 export type AgentPageSelection = z.infer<typeof AgentPageSelectionSchema>;
 export type AgentPageElementEditInput = z.infer<typeof AgentPageElementEditInputSchema>;
 export type AgentPageEdit = z.infer<typeof AgentPageEditSchema>;
-export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional(), goalDraft: AgentGoalDraftSchema.optional(), gapReview: GapReviewSchema.optional(), planDraft: AgentPlanDraftSchema.optional(), replanDraft: AgentReplanDraftSchema.optional(), pageEdit: AgentPageEditSchema.optional() });
+/**
+ * 대화에서 시작한 포트폴리오 제작. 도구 결과에는 ID와 공고의 이름만 둔다 — 분석의 진행과 결과, 만들어진 제작은
+ * 서버가 그때그때 `job_analyses`와 `brews`에서 읽는다(`AgentBrewStartState`). 대화는 메시지와 도구 수에 상한이 있고
+ * 모델에는 요약만 넘어가므로, 바뀌는 상태를 여기에 적어 두면 옛 값이 남는다.
+ */
+export const AgentBrewStartSchema = z.strictObject({
+  startId: UuidSchema,
+  jobPostingId: UuidSchema,
+  jobAnalysisId: UuidSchema,
+  title: z.string().min(1).max(300),
+  companyName: z.string().max(200),
+  /** 카드를 세울 때 이 대화에 이미 있던 제작. 없었으면 null이다. 그 뒤에 만든 제작은 상태(`AgentBrewStartState.brewId`)가 알려 준다. */
+  brewId: UuidSchema.nullable(),
+});
+export type AgentBrewStart = z.infer<typeof AgentBrewStartSchema>;
+/** 제작을 시작하는 도구의 입력. 공고는 대화에 연결된 것만 받는다. */
+export const AgentBrewStartInputSchema = z.strictObject({ jobPostingId: UuidSchema.describe("대화에 연결된 공고(context의 kind가 job인 것)의 id") });
+export type AgentBrewStartInput = z.infer<typeof AgentBrewStartInputSchema>;
+/** 제작의 지금 상태. 분석이 끝났으면 요건이 내 기록으로 얼마나 확인되는지를 센다. */
+export const AgentBrewStartStateSchema = z.strictObject({
+  status: JobAnalysisStatusSchema.shape.status,
+  stage: JobAnalysisStatusSchema.shape.stage,
+  failure: JobAnalysisStatusSchema.shape.failure,
+  /** 분석이 끝난 뒤에만 있다. `covered` 기록으로 확인됨 · `partial` 일부만 · `missing` 기록에 없음. */
+  requirements: z.strictObject({ total: z.number().int().nonnegative(), covered: z.number().int().nonnegative(), partial: z.number().int().nonnegative(), missing: z.number().int().nonnegative() }).nullable(),
+  brewId: UuidSchema.nullable(),
+});
+export type AgentBrewStartState = z.infer<typeof AgentBrewStartStateSchema>;
+export const AgentBrewStartStateResponseSchema = z.strictObject({ data: AgentBrewStartStateSchema });
+/** 제작을 연 결과. `path`는 다음 단계의 화면이다 — 아직 대화로 옮기지 않은 단계는 지금의 화면이 맡는다. */
+export const AgentBrewOpenResponseSchema = z.strictObject({ data: z.strictObject({ brewId: UuidSchema, path: z.string().min(1).max(300) }) });
+
+export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional(), goalDraft: AgentGoalDraftSchema.optional(), gapReview: GapReviewSchema.optional(), planDraft: AgentPlanDraftSchema.optional(), replanDraft: AgentReplanDraftSchema.optional(), pageEdit: AgentPageEditSchema.optional(), brewStart: AgentBrewStartSchema.optional() });
 export const AgentMessageSchema = z.strictObject({ id: UuidSchema, role: z.enum(["user", "assistant"]), text: z.string().max(64_000), tools: z.array(AgentToolResultSchema).max(30), selection: AgentPageSelectionSchema.optional(), createdAt: TimestampSchema });
 export const AgentRunSchema = z.strictObject({ id: UuidSchema, requestId: UuidSchema, status: z.enum(["running", "complete", "cancelled", "failed", "interrupted"]), error: z.string().max(1_000).nullable(), startedAt: TimestampSchema });
 export const AgentConversationSchema = z.strictObject({ id: UuidSchema, title: z.string().max(120), contexts: z.array(AgentContextSchema).max(10), messages: z.array(AgentMessageSchema).max(100), run: AgentRunSchema.nullable(), version: z.number().int().nonnegative(), updatedAt: TimestampSchema });

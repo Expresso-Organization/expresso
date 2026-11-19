@@ -27,6 +27,11 @@ export function registerAgentChatRoutes(app: FastifyInstance, service: AgentChat
   app.post(`${base}/:id/replan-drafts/:draftId`, options, async req => ({ data: await service.decideReplanDraft(requireAuth(req).user.id, id(req.params), UuidSchema.parse((req.params as { draftId: string }).draftId), AgentReplanDecisionSchema.parse(req.body)) }));
   app.patch(`${API_PREFIX}/agent/plans/:planId/tasks/:taskId`, options, async req => { const params = req.params as { planId: string; taskId: string }; return { data: await service.updateTaskProgress(requireAuth(req).user.id, UuidSchema.parse(params.planId), UuidSchema.parse(params.taskId), UpdateTaskProgressSchema.parse(req.body)) }; });
   app.get(`${API_PREFIX}/agent/plans/:planId`, options, async req => ({ data: await service.plan(requireAuth(req).user.id, UuidSchema.parse((req.params as { planId: string }).planId)) }));
+  // 대화에서 시작한 포트폴리오 제작. 상태 읽기 · 제작 열기 · 실패한 분석 다시 맡기기 모두 AI를 부르지 않는다.
+  const startId = (params: unknown) => UuidSchema.parse((params as { startId: string }).startId);
+  app.get(`${base}/:id/brew-starts/:startId`, options, async req => ({ data: await service.brewStartState(requireAuth(req).user.id, id(req.params), startId(req.params)) }));
+  app.post(`${base}/:id/brew-starts/:startId/open`, options, async req => ({ data: await service.openBrew(requireAuth(req).user.id, id(req.params), startId(req.params)) }));
+  app.post(`${base}/:id/brew-starts/:startId/retry`, options, async req => ({ data: await service.retryBrewStart(requireAuth(req).user.id, id(req.params), startId(req.params)) }));
   app.post(`${base}/:id/retry`, options, async (req, reply) => { const userId = requireAuth(req).user.id; return reply.code(202).send({ data: await service.retry(userId, id(req.params), await service.credentials.read(userId)) }); });
   app.post(`${base}/:id/contexts`, options, async req => ({ data: await service.attach(requireAuth(req).user.id, id(req.params), AddAgentContextSchema.parse(req.body).context) }));
   app.post(`${base}/:id/context-selection`, options, async req => { const input = SetAgentContextsSchema.parse(req.body); return { data: await service.setContexts(requireAuth(req).user.id, id(req.params), input.contexts, input.expectedVersion) }; });
