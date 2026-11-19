@@ -468,7 +468,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     await consent.grant(owner, ["career_records"], CONSENT_POLICY_VERSION);
     const category = (await career.listCategories(owner))[0]!;
     const record = (await career.createRecord(owner, randomUUID(), { categoryId: category.id, title: "결제 서버", bodyMd: "Java로 결제 API를 만들었다", properties: {} })).record.id;
-    const demand = { forGoal: vi.fn(async (_user: string, goal: { work: string }) => ({ work: goal.work, family: "백엔드", basis: "family" as const, focus: null, level: null, sampleSize: 66, companyCount: 15, interestedCount: 0, small: false, items: [{ id: "technology:java", kind: "technology" as const, label: "Java", count: 45 }, { id: "technology:kafka", kind: "technology" as const, label: "Kafka", count: 39 }] })) };
+    const demand = { forGoal: vi.fn(async (_user: string, goal: { work: string }) => ({ work: goal.work, family: "백엔드", basis: "family" as const, focus: null, level: null, sampleSize: 66, companyCount: 15, interestedCount: 0, small: false, items: [{ id: "technology:java", kind: "technology" as const, label: "Java", count: 45 }, { id: "technology:kafka", kind: "technology" as const, label: "Kafka", count: 39 }, { id: "career:0", kind: "career" as const, label: "신입 지원 가능", count: 4 }] })) };
     const seen: NonNullable<Parameters<AgentRuntime["run"]>[0]["memory"]>["diagnosis"][] = [];
     const java = { itemId: "technology:java", status: "confirmed" as const, evidence: [{ recordId: record, quote: "Java로 결제 API" }], note: "" };
     const kafka = (status: "unconfirmed" | "gap") => ({ itemId: "technology:kafka", status, evidence: [], note: "" });
@@ -479,7 +479,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
       if (said.includes("진단해")) {
         if (!input.jobGoal) { await expect(input.goalDemand()).rejects.toBeInstanceOf(AgentToolRejection); await input.emit({ type: "text", text: "목표를 먼저 알려 주세요." }); return; }
         const draft = await input.goalDemand();
-        expect(draft.items.map(item => item.status)).toEqual(["unconfirmed", "unconfirmed"]);
+        expect(draft.items.map(item => item.status)).toEqual(["unconfirmed", "unconfirmed", "unconfirmed"]);
         // 기록에 없는 인용, 근거 없는 「확인됨」, 근거가 붙은 「미확인」, 첫 대조의 「부족」, 모르는 항목은 받지 않는다.
         await expect(input.recordDiagnosis({ summary: "요약", items: [{ ...java, evidence: [{ recordId: record, quote: "Kafka를 운영했다" }] }] })).rejects.toBeInstanceOf(AgentToolRejection);
         await expect(input.recordDiagnosis({ summary: "요약", items: [{ ...java, evidence: [] }] })).rejects.toBeInstanceOf(AgentToolRejection);
@@ -490,7 +490,8 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
         // 같은 실행에서 곧바로 「부족」으로 고칠 수 없다 — 사용자의 답이 없다.
         await expect(input.recordDiagnosis({ summary: "요약", items: [kafka("gap")] })).rejects.toBeInstanceOf(AgentToolRejection);
       } else if (said.includes("해 본 적 없어요")) {
-        await card(await input.recordDiagnosis({ summary: "백엔드 공고 66건 기준", items: [kafka("gap")] }));
+        // 경력 연차는 참고다. 상태를 넣어도 저장하지 않는다.
+        await card(await input.recordDiagnosis({ summary: "백엔드 공고 66건 기준", items: [kafka("gap"), { itemId: "career:0", status: "gap", evidence: [], note: "" }] }));
       } else {
         await expect(input.recordDiagnosis({ summary: "요약", items: [java] })).rejects.toBeInstanceOf(AgentToolRejection);
       }
@@ -508,14 +509,14 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     await say(conversation.id, "다시 진단해 주세요");
     expect(demand.forGoal).toHaveBeenLastCalledWith(owner, { work: "백엔드 개발자", timing: "내년 2월 졸업" });
     const first = (await service.currentDiagnosis(owner))!;
-    expect(first.items.map(item => [item.id, item.status])).toEqual([["technology:java", "confirmed"], ["technology:kafka", "unconfirmed"]]);
+    expect(first.items.map(item => [item.id, item.status])).toEqual([["technology:java", "confirmed"], ["technology:kafka", "unconfirmed"], ["career:0", "unconfirmed"]]);
     expect(first.items[0]!.evidence).toEqual([{ recordId: record, quote: "Java로 결제 API", recordTitle: "결제 서버" }]);
     expect(first).toMatchObject({ summary: "백엔드 공고 66건 기준", sampleSize: 66, stale: null });
     expect((await service.get(owner, conversation.id)).messages.at(-1)!.tools[0]).toMatchObject({ name: "목표 진단", diagnosis: { sampleSize: 66 } });
     // 사용자가 답한 뒤에는 「부족」으로 고친다. 다음 실행의 기억에 앞선 진단의 요약이 실린다.
     await say(conversation.id, "Kafka는 해 본 적 없어요");
     expect(seen.at(-1)).toEqual({ assessedOn: seoulDay(new Date()), work: "백엔드 개발자", sampleSize: 66, gaps: [], unconfirmed: ["Kafka"], partial: [], confirmed: 1, stale: null });
-    expect((await service.currentDiagnosis(owner))!.items.map(item => item.status)).toEqual(["confirmed", "gap"]);
+    expect((await service.currentDiagnosis(owner))!.items.map(item => item.status)).toEqual(["confirmed", "gap", "unconfirmed"]);
     // 대조한 뒤에 기록이 바뀌면 기록 바뀜, 목표가 바뀌면 목표 바뀜이다. 목표가 바뀐 진단에는 대조를 받지 않는다.
     await career.createRecord(owner, randomUUID(), { categoryId: category.id, title: "새 기록", bodyMd: "Kafka 컨슈머를 만들었다", properties: {} });
     expect((await service.currentDiagnosis(owner))!.stale).toBe("records");
@@ -523,7 +524,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect((await service.currentDiagnosis(owner))!.stale).toBe("goal");
     await say(conversation.id, "그럼 이어서 볼게요");
     expect(seen.at(-1)).toMatchObject({ gaps: ["Kafka"], stale: "goal" });
-    expect((await service.currentDiagnosis(owner))!.items.map(item => item.status)).toEqual(["confirmed", "gap"]);
+    expect((await service.currentDiagnosis(owner))!.items.map(item => item.status)).toEqual(["confirmed", "gap", "unconfirmed"]);
     expect(await service.currentDiagnosis(other)).toBeNull();
   });
   it("확인 카드에서 「했어요」라고 답하면 그 약속을 묻고 답한 대화가 실행 중으로 열린다. 채팅을 쓸 수 없으면 열지 않는다", async () => {

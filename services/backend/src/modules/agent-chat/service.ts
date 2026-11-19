@@ -46,7 +46,8 @@ const CHECKIN_OPTIONS = ["했어요", "아직이에요", "안 하기로 했어�
 /** 모델에 넘기는 진단의 요약. 항목의 이름만 상태별로 싣는다 — 건수와 근거는 진단을 다시 읽을 때 본다. */
 function diagnosisForModel(diagnosis: ConsultantDiagnosis | null): AgentMemory["diagnosis"] {
   if (!diagnosis) return null;
-  const labels = (status: string) => diagnosis.items.filter(item => item.status === status).map(item => item.label);
+  // 경력 연차는 공고가 받는 경력의 분포다. 기록과 대조하는 항목이 아니라 상태별 목록에 넣지 않는다.
+  const labels = (status: string) => diagnosis.items.filter(item => item.kind !== "career" && item.status === status).map(item => item.label);
   return { assessedOn: diagnosis.assessedAt ? seoulDay(new Date(diagnosis.assessedAt)) : null, work: diagnosis.work, sampleSize: diagnosis.sampleSize, gaps: labels("gap"), unconfirmed: labels("unconfirmed"), partial: labels("partial"), confirmed: labels("confirmed").length, stale: diagnosis.stale };
 }
 function memoryForModel(profile: ConsultantProfile, digests: readonly ({ title: string; said: string[]; outcomes: string[]; lastAnswer: string } & ({ updatedAt: string } | { date: string }))[], commitments: readonly Pick<ConsultantCommitment, "id" | "title" | "dueOn">[], diagnosis: AgentMemory["diagnosis"] = null, at = new Date()): AgentMemory {
@@ -173,7 +174,9 @@ export class AgentChatService {
     const answered = !!stored.assessedAt && !!lastSaid && lastSaid > stored.assessedAt;
     const issues: string[] = [];
     const seen = new Set<string>();
-    for (const item of input.items) {
+    // 경력 연차(career)는 공고가 받는 경력의 분포라 상태를 매기지 않는다. 모델이 넣어도 버린다.
+    const assessed = input.items.filter(item => before.get(item.itemId)?.kind !== "career");
+    for (const item of assessed) {
       const known = before.get(item.itemId);
       const label = `항목 ${item.itemId}${known ? `(${known.label})` : ""}`;
       if (seen.has(item.itemId)) issues.push(`${label}: 같은 항목이 두 번 있습니다.`);
@@ -191,7 +194,7 @@ export class AgentChatService {
     }
     if (issues.length) throw new AgentToolRejection(issues);
     try {
-      await this.diagnosis.store.assess(userId, input.summary, input.items.map(item => ({ itemId: item.itemId, status: item.status, note: item.note, evidence: item.evidence.map(evidence => ({ ...evidence, recordTitle: records.get(evidence.recordId)!.title.slice(0, 200) })) })));
+      await this.diagnosis.store.assess(userId, input.summary, assessed.map(item => ({ itemId: item.itemId, status: item.status, note: item.note, evidence: item.evidence.map(evidence => ({ ...evidence, recordTitle: records.get(evidence.recordId)!.title.slice(0, 200) })) })));
     } catch (error) { if (error instanceof ConsultantInputError) throw new AgentToolRejection([error.message]); throw error; }
     // 저장한 뒤의 진단을 다시 읽어, 다시 진단이 필요한지까지 지금 기준으로 싣는다.
     return (await this.currentDiagnosis(userId))!;

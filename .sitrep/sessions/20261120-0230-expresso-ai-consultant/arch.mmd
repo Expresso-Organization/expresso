@@ -26,10 +26,13 @@ flowchart TD
   DG --> DEMAND[공고 요건 집계 · AI 없음]
   DG --> DCARD[진단 카드]
   REC --> APPEND[기존 기록에 더하기]
+  AC --> FIND[공고 · 활동 찾기]
+  FIND --> LIST[목록 · 비교 표 부품]
+  AC --> COMMIT
   FU --> COMMIT[약속 카드]
   FU --> JOB[확인 작업 · 하루 한 번]
   JOB --> HOME[홈의 확인 카드]
   HOME --> SVC
-  class U,REG,CH,CARD,SEND,SVC,RT,ASK,DB,MEM,PROG,REC,SAVED,FORM,FU,COMMIT,JOB,HOME,DG,DEMAND,DCARD,APPEND done
-  class AC,PF todo
+  class U,REG,CH,CARD,SEND,SVC,RT,ASK,DB,MEM,PROG,REC,SAVED,FORM,FU,COMMIT,JOB,HOME,DG,DEMAND,DCARD,APPEND,AC,FIND,LIST done
+  class PF todo
   class CR,MG decide

@@ -19,7 +19,7 @@ date: 2026-11-20
 | `services/backend/src/modules/proposals/service.ts` | 넘긴 대상의 키 읽기 |
 | `services/backend/src/platform/agent/runtime.ts` · `runtime.test.ts` | `search_jobs` · `search_activities` · `show_table` 도구와 지침 |
 | `services/backend/src/api/main.ts` | 배선 |
-| `services/web/src/features/agent-chat/` (`ListPart.tsx` · `TablePart.tsx` 새 파일 · `tool-parts.tsx` · `AgentChat.tsx` · 테스트) | 목록 부품, 표 부품 |
+| `services/web/src/features/agent-chat/` (`ListPart.tsx` · `TablePart.tsx` 새 파일 · `tool-parts.tsx` · `AgentChat.tsx` · `DiagnosisCard.tsx` · 테스트) | 목록 부품, 표 부품, 진단 카드의 경력 연차 줄 |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
 
