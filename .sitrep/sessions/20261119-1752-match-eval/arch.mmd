@@ -1,12 +1,13 @@
 flowchart TD
-  D[고정 요건 · 기록 정답표] --> M[학습한 공고·근거 모델]
-  M --> L[인증 API · ONNX]
-  L --> E[선택한 경우 Decisions 재정렬·검증]
-  L --> W[웹 추천 · 제작 재료]
-  E --> W
-  W --> T[6계정 제품 검증]
+  S[공고·경력 기록 변경] --> W[동기화 Worker]
+  W --> D[(영속 임베딩)]
+  D --> A[추천 API]
+  A --> T[재시작·동시 요청 검증]
   classDef done fill:#d1fae5,stroke:#059669
   classDef doing fill:#fef3c7,stroke:#d97706
   classDef decide fill:#fee2e2,stroke:#dc2626
   classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4
-  class D,M,L,E,W,T done
+  class S,W,D,A done
+  class T done
+  T --> V{공유 VM 중단 시간}
+  class V decide

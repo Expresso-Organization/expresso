@@ -1,3 +1,4 @@
+import { syncMatchEmbeddings } from "./match-embeddings.js";
 import { MatchModelService } from "../modules/match-model/service.js";
 import { loadRuntimeConfig } from "../config/runtime-config.js";
 import { MongoOutboxDispatcher } from "../platform/mongo-outbox.js";
@@ -155,7 +156,6 @@ const pageRefineProcessor = createPageRefineProcessor(pageService, structuredPag
 const analysisProcessor = createJobAnalysisProcessor(
   jobAnalysisService,
   ai ? new AiRequirementExtractor(ai) : new UnavailableRequirementExtractor(),
-  analysisId => matchModelService.warmAnalysis(analysisId),
 );
 // 생성 완료 알림을 생성 처리기가 만들기 때문에 먼저 둔다.
 const engagementService = new EngagementService(database);
@@ -354,6 +354,9 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
 
 // 아웃박스 행이 커밋되면 1초 주기를 기다리지 않고 발행한다. 흐름이 끊기면 같은 간격으로 다시 열고,
 // 그동안 폴링은 그대로 돈다 — 흐름의 오류가 폴링 루프를 멈추지 않는다.
+const embeddings = syncMatchEmbeddings(matchModelService, abortController.signal, error => {
+  console.warn("Model embedding synchronization failed", safeErrorSummary(error));
+});
 const outboxWake = new Wake();
 const outboxWatch = watchOutboxInserts(database.db, () => outboxWake.notify(), {
   retryMs: config.outboxPollIntervalMs,
@@ -390,6 +393,7 @@ await runPollLoop({
 
 // fatal이면 처리 중인 잡을 기다리지 않습니다. 잠금이 만료되면 BullMQ의 stalled 처리가 다시 배달합니다.
 // 그 밖에는 처리 중인 잡이 결과를 쓰거나 큐로 돌아갈 때까지 기다린 뒤에 연결을 닫습니다.
+await embeddings;
 await closeWorkerRuntime({
   workers: queueWorkers,
   resources: [() => outboxWatch, () => jobs.close(), () => generationJobs.close(), () => refineJobs.close(), () => careerJobs.close(), () => database.close(), () => pageMeasurer.close()],

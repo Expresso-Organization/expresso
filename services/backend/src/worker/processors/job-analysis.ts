@@ -10,7 +10,6 @@ export interface JobAnalysisJobPayload extends Record<string, unknown> {
 export function createJobAnalysisProcessor(
   service: JobAnalysisApi,
   extractor: RequirementExtractor,
-  warmAnalysis?: (analysisId: string) => Promise<void>,
 ) {
   return async (job: Job<Record<string, unknown>>) => {
     if (job.name !== "job.normalize") {
@@ -21,10 +20,6 @@ export function createJobAnalysisProcessor(
       throw new Error("job.normalize payload is missing jobAnalysisId");
     }
     const result = await service.process(jobAnalysisId, extractor);
-    if (result.analysis.status === "done" && warmAnalysis) {
-      try { await warmAnalysis(jobAnalysisId); }
-      catch { console.warn("Model cache warm-up failed", { jobAnalysisId }); }
-    }
     return {
       jobAnalysisId,
       status: result.analysis.status,

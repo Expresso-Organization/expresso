@@ -14,7 +14,8 @@ from tokenizers import Tokenizer
 from inputs import (
     detail,
     pilot,
-    profile_text,
+    profile_queries,
+    job_passages,
     usable_records,
     validate_job,
     interactive_scorer,
@@ -77,7 +78,7 @@ class CpuRanker:
             texts = [
                 t
                 for j, _ in missing
-                for t in [pilot.render_job(j), *[q["criterion"] for q in j["requirementsFixed"]]]
+                for t in job_passages(j)
             ]
             vec = self.embed(texts, "passage: ")
             for j, sig in missing:
@@ -96,8 +97,7 @@ class CpuRanker:
         if not jobs:
             return {"status": "ok", "jobs": []}
         self.prepare_jobs(jobs)
-        text = profile_text({**profile, "records": records})
-        texts = [pilot.render_record(r) for r in records]
+        text, *texts = profile_queries(profile, records)
         vectors = self.embed([text, *texts], "query: ")
         rv = np.stack([vectors[t] for t in texts])
         out = []
@@ -112,18 +112,24 @@ class CpuRanker:
                 "kinds": np.array([KIND[q["kind"]] for q in qs], dtype=np.int64),
             }
             score, base, logits = self.heads.run(None, {k: v for k, v in feed.items() if k in self.inputs})
-            out.append(
+            out.append((float(score), j["jobId"], float(base), qs, logits))
+        # 반환할 공고에 대해서만 요건별 기록을 정렬한다.
+        out.sort(key=lambda candidate: (-candidate[0], candidate[1]))
+        return {
+            "status": "ok",
+            "jobs": [
                 {
-                    "jobId": j["jobId"],
-                    "localScore": float(score),
-                    "pilotScore": float(base),
+                    "jobId": job_id,
+                    "localScore": score,
+                    "pilotScore": base,
                     "evidence": [
                         detail(q, row, records, evidence_k, self.settings["threshold"])
                         for q, row in zip(qs, logits, strict=True)
                     ],
                 }
-            )
-        return {"status": "ok", "jobs": sorted(out, key=lambda r: (-r["localScore"], r["jobId"]))[:limit]}
+                for score, job_id, base, qs, logits in out[:limit]
+            ],
+        }
 
 
 if __name__ == "__main__":

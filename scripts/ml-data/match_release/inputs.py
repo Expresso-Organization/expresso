@@ -18,6 +18,14 @@ def profile_text(profile):
     return text.split("\n\n", 1)[-1] if profile.get("experienceYears") is None else text
 
 
+def profile_queries(profile, records):
+    return [profile_text({**profile, "records": records}), *map(pilot.render_record, records)]
+
+
+def job_passages(job):
+    return [pilot.render_job(job), *[q["criterion"] for q in job["requirementsFixed"]]]
+
+
 def usable_records(profile):
     records = profile.get("records")
     if not isinstance(records, list) or any(

@@ -128,31 +128,11 @@ export class MatchModelService {
     });
   }
 
-  async warmAnalysis(analysisId: string) {
-    if (!this.url) return;
-    const db = mongoCollections(this.context.db);
-    const analysis = await db.jobAnalyses.findOne({
-      _id: analysisId,
-      status: "done",
-    });
-    if (!analysis?.jobPostingId) return;
-    const posting = await db.jobPostings.findOne({
-      _id: analysis.jobPostingId,
-      source: { $in: ["api", "partner"] },
-    });
-    if (posting)
-      await this.call("/v1/warm", { jobs: await this.project([posting]) });
-  }
-
-  async view(
+  private async profile(
     userId: string,
-    external: boolean,
-    postingId?: string,
-  ): Promise<ModelView> {
-    if (!this.url) return empty("unavailable");
+    experienceYears: number | null,
+  ): Promise<ModelProfile> {
     const db = mongoCollections(this.context.db);
-    const user = await db.users.findOne({ _id: userId });
-    if (!user) throw new HttpStatusError(404, "user not found");
     const [records, categories] = await Promise.all([
       db.careerRecords
         .find({
@@ -165,9 +145,9 @@ export class MatchModelService {
       db.careerCategories.find({ userId }).toArray(),
     ]);
     const defs = new Map(categories.map((c) => [c._id, c.propertySchemaV2]));
-    const profile: ModelProfile = {
+    return {
       profileId: userId,
-      experienceYears: user.profile?.experienceYears ?? null,
+      experienceYears: experienceYears,
       records: records
         .filter((r) => r.title.trim() || r.bodyMd.trim())
         .map((r) => ({
@@ -180,6 +160,97 @@ export class MatchModelService {
           ),
         })),
     };
+  }
+
+  async warmUser(userId: string) {
+    const user = await mongoCollections(this.context.db).users.findOne({
+      _id: userId,
+      deletionRequestedAt: null,
+    });
+    if (!user) return this.call("/v1/forget", { owner: "user/" + userId });
+    const profile = await this.profile(
+      userId,
+      user.profile?.experienceYears ?? null,
+    );
+    return this.call("/v1/warm-profile", { profile });
+  }
+
+  async warmPosting(id: string) {
+    const posting = await mongoCollections(this.context.db).jobPostings.findOne(
+      { _id: id, source: { $in: ["api", "partner"] } },
+    );
+    if (!posting) return this.call("/v1/forget", { owner: "job/" + id });
+    return this.call("/v1/warm", { jobs: await this.project([posting]) });
+  }
+
+  async embeddingOwners(member: string): Promise<string[]> {
+    const response = (await this.call("/v1/member-owners", { member })) as {
+      owners: string[];
+    };
+    return response.owners;
+  }
+
+  async embeddingCheckpoint(token?: string | null, expected?: string | null) {
+    const response = await this.call("/v1/checkpoint", {
+      source: this.context.db.databaseName,
+      ...(token === undefined ? {} : { token, expected }),
+    });
+    if (
+      !response ||
+      typeof response !== "object" ||
+      !("token" in response) ||
+      (response.token !== null && typeof response.token !== "string")
+    )
+      throw new Error("Invalid embedding checkpoint");
+    return response.token as string | null;
+  }
+
+  async backfillEmbeddings(signal: AbortSignal) {
+    const db = mongoCollections(this.context.db);
+    const seen = new Set<string>();
+    for await (const user of db.users.find(
+      { deletionRequestedAt: null },
+      { projection: { _id: 1 } },
+    )) {
+      signal.throwIfAborted();
+      await this.warmUser(user._id);
+      seen.add("user/" + user._id);
+    }
+    for await (const job of db.jobPostings.find(
+      { source: { $in: ["api", "partner"] } },
+      { projection: { _id: 1 } },
+    )) {
+      signal.throwIfAborted();
+      await this.warmPosting(job._id);
+      seen.add("job/" + job._id);
+    }
+    // 변경 이력이 만료된 동안 삭제된 계정·공고의 벡터도 정리한다.
+    let after = "";
+    for (;;) {
+      signal.throwIfAborted();
+      const { owners } = (await this.call("/v1/owners", { after })) as {
+        owners: string[];
+      };
+      if (!owners.length) break;
+      for (const owner of owners)
+        if (!seen.has(owner)) await this.call("/v1/forget", { owner });
+      after = owners[owners.length - 1]!;
+    }
+  }
+
+  async view(
+    userId: string,
+    external: boolean,
+    postingId?: string,
+  ): Promise<ModelView> {
+    if (!this.url) return empty("unavailable");
+    const db = mongoCollections(this.context.db);
+    const user = await db.users.findOne({ _id: userId });
+    if (!user) throw new HttpStatusError(404, "user not found");
+    const profile = await this.profile(
+      userId,
+      user.profile?.experienceYears ?? null,
+    );
     if (!profile.records.length) return empty("insufficient_records");
     const publicSource = {
       $in: ["api", "partner"] as JobPostingDoc["source"][],
