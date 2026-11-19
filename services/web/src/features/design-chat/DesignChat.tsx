@@ -4,6 +4,7 @@ import { createContext, useActionState, useContext, useEffect, useMemo, useRef, 
 import { flushSync } from "react-dom";
 import Link from "next/link";
 import { AssistantRuntimeProvider, useAuiState, useExternalStoreRuntime, type ThreadMessageLike, type ToolCallMessagePartComponent } from "@assistant-ui/react";
+import { snippetEditingCss, snippetRevisedCss } from "@expresso/portfolio-renderer/blueprint";
 import { DESIGN_LAYOUT_GRID, pageDocument, pagePreviewDocument, type DesignCard, type DesignLayout, type DesignLayoutSpec, type DesignScreenItem, type DesignSnippet, type DesignStyle, type DesignTokens } from "@expresso/contracts";
 
 import { startGenerationAction, type BrewState } from "@/app/(app)/brew/[brewId]/design/design-actions";
@@ -49,6 +50,16 @@ const FONT_STACK = {
 } as const;
 /** 첫 화면 한 장의 원래 크기. 이 폭에서 그려 두고 카드 폭에 맞춰 줄인다. 그리는 호출도 화면 하나를 이 크기로 잡는다. */
 const FRAME = { width: 1440, height: 900 };
+/**
+ * 고친 것이 올 때 바뀐 자리의 강조가 한 번 도는 시간(초). 지면에서는 디자인의 전환 시간의 6배다(`xp-bp-revised`).
+ * 첫 화면에는 그 변수가 없어, 카탈로그 디자인의 전환 시간(140ms · 180ms) 가운데 긴 쪽의 6배로 둔다.
+ */
+const REVISED_SECONDS = 1.08;
+/**
+ * 첫 화면에 얹는 표시. 말로 고치는 동안에는 바뀌는 자리가 청사진으로 돌아가고(`editing`), 고친 것이 오면 바뀐 자리가
+ * 한 번 강조된다(`revised`). 자리는 서버가 조각에서 계산한 CSS 선택자다.
+ */
+interface FrameEffect { kind: "editing" | "revised"; targets: string[] }
 /** 넓어지는 첫 화면과 무대의 첫 화면이 한 물건으로 이어지게 하는 이름. 한 번에 한 틀에만 붙인다. */
 const MORPH = "design-chat-focus";
 
@@ -63,6 +74,8 @@ interface View {
   cards: Record<string, ThreadCard>;
   users: ReturnType<typeof threadOf>["users"];
   snippet(id: string | null): DesignSnippet | undefined;
+  /** 이 첫 화면에 얹을 표시. 고치는 중이면 바뀌는 자리, 이 화면에서 고치는 것을 지켜봤으면 바뀐 자리. 없으면 null이다. */
+  effect(snippetId: string): FrameEffect | null;
   styleOf(id: string | null): DesignStyle | undefined;
   layoutOf(id: string | null): DesignLayout | undefined;
   /** 견본에서 고른 스타일과 레이아웃. 따로 고르고, 둘이 모이면 첫 화면을 그릴 수 있다. */
@@ -196,12 +209,23 @@ export function DesignChat({ brewId, recipeId, catalog, generationAllowed, notic
   });
 
   const proposals = (chat?.messages ?? []).flatMap((message) => (message.role === "assistant" && message.card?.kind === "proposals" ? [{ id: message.id, card: message.card }] : []));
+  const revisions = (chat?.messages ?? []).flatMap((message) => (message.role === "assistant" && message.card?.kind === "revision" ? [message.card] : []));
+  // 이 화면에서 고치는 중인 것을 본 카드. 그 결과가 오면 바뀐 자리를 강조한다. 다시 연 대화의 지난 고침에는 하지 않는다.
+  const [watched, setWatched] = useState<string[]>([]);
+  const unseen = revisions.filter((card) => card.item.status === "drawing" && !watched.includes(card.item.id)).map((card) => card.item.id);
+  if (unseen.length > 0) setWatched([...watched, ...unseen]);
   const view: View = {
     brewId, recipeId, generationAllowed, catalog, state,
     askConsent: state.consentRequired && consentClosed ? () => setConsentClosed(false) : null,
     cards: thread.cards,
     users: thread.users,
     snippet: (id) => chat?.snippets.find((item) => item.id === id),
+    effect: (snippetId) => {
+      const editing = revisions.find((card) => card.fromSnippetId === snippetId && card.item.status === "drawing" && card.targets.length > 0);
+      if (editing) return { kind: "editing", targets: editing.targets };
+      const revised = revisions.find((card) => card.item.snippetId === snippetId && card.targets.length > 0 && watched.includes(card.item.id));
+      return revised ? { kind: "revised", targets: revised.targets } : null;
+    },
     styleOf: (id) => proposals.flatMap(({ card }) => card.styles).find((item) => item.id === id),
     layoutOf: (id) => proposals.flatMap(({ card }) => card.layouts).find((item) => item.id === id),
     picked,
@@ -407,16 +431,50 @@ function useFrameScale() {
   return { ref, scale };
 }
 
+/** 틀 안의 문서 한 장. `marked`는 표시(청사진 · 강조)를 얹은 문서다. */
+interface FrameLayer { id: number; doc: string; marked: boolean }
+
 /**
  * 첫 화면. 서버가 소독해 저장한 마크업과 CSS를 배포 문서와 같은 `pageDocument()`로 그린다.
  * `sandbox`를 비워 두어 이 안에서는 스크립트가 돌지 않고 앱의 쿠키 · 저장소에도 닿지 못한다.
+ *
+ * 표시(`effect`)는 문서에 CSS를 더해 얹는다 — 막힌 틀에는 바깥에서 닿을 길이 없다. 문서가 바뀌면 틀이 다시 그려지므로,
+ * 표시가 걸리거나 풀릴 때는 다음 문서를 아래에 깔고 다 뜬 뒤에 위의 것을 걷어 낸다. 표시가 없는 문서끼리는 바로 바꾼다.
  */
-function Frame({ snippet, title }: { snippet: DesignSnippet; title: string }) {
+function Frame({ snippet, title, effect = null }: { snippet: DesignSnippet; title: string; effect?: FrameEffect | null }) {
   const { ref, scale } = useFrameScale();
-  const srcDoc = useMemo(() => pageDocument({ html: snippet.html, css: snippet.css, title }), [snippet.html, snippet.css, title]);
+  const kind = effect?.kind ?? null;
+  const targets = effect?.targets.join("\n") ?? "";
+  const srcDoc = useMemo(() => {
+    const list = targets ? targets.split("\n") : [];
+    const extra = kind === "editing" ? snippetEditingCss(list, snippet.tokens) : kind === "revised" ? snippetRevisedCss(list, snippet.tokens, REVISED_SECONDS) : "";
+    return pageDocument({ html: snippet.html, css: extra ? `${snippet.css}\n${extra}` : snippet.css, title });
+  }, [snippet.html, snippet.css, snippet.tokens, title, kind, targets]);
+  const marked = kind !== null;
+  const [layers, setLayers] = useState<{ shown: FrameLayer; next: FrameLayer | null; leaving: boolean }>(() => ({ shown: { id: 0, doc: srcDoc, marked }, next: null, leaving: false }));
+  const newest = layers.next ?? layers.shown;
+  if (newest.doc !== srcDoc) {
+    const layer: FrameLayer = { id: newest.id + 1, doc: srcDoc, marked };
+    // 걷어 내는 중에 또 바뀌면 깔려 있던 것을 위로 올리고 그 아래에 새 문서를 깐다.
+    const shown = layers.leaving && layers.next ? layers.next : layers.shown;
+    setLayers(marked || newest.marked ? { shown, next: layer, leaving: false } : { shown: layer, next: null, leaving: false });
+  }
+  const frame = { width: FRAME.width, height: FRAME.height, transform: `scale(${scale})` };
+  const { shown, next, leaving } = layers;
   return (
     <div ref={ref} className={styles.frame} data-frame="" style={{ background: snippet.tokens.background }}>
-      {scale > 0 ? <iframe title={title} srcDoc={srcDoc} sandbox="" tabIndex={-1} style={{ width: FRAME.width, height: FRAME.height, transform: `scale(${scale})` }} /> : null}
+      {scale > 0 && next ? (
+        <iframe
+          key={next.id} title={title} srcDoc={next.doc} sandbox="" tabIndex={-1} style={frame}
+          onLoad={() => setLayers((current) => (current.next?.id === next.id ? { ...current, leaving: true } : current))}
+        />
+      ) : null}
+      {scale > 0 ? (
+        <iframe
+          key={shown.id} title={title} srcDoc={shown.doc} sandbox="" tabIndex={-1} style={frame} data-leaving={leaving ? "" : undefined} aria-hidden={leaving || undefined}
+          onTransitionEnd={() => setLayers((current) => (current.leaving && current.next && current.shown.id === shown.id ? { shown: current.next, next: null, leaving: false } : current))}
+        />
+      ) : null}
     </div>
   );
 }
@@ -458,16 +516,16 @@ function PendingThumb({ item }: { item: DesignScreenItem }) {
 }
 
 /** 크게 본 첫 화면과 그것으로 할 수 있는 일. 흐름 배치에서는 카드 줄 아래에, 무대 배치에서는 왼쪽 무대에 놓인다. */
-function ScreenView({ snippet }: { snippet: DesignSnippet }) {
+function ScreenView({ snippet, effect = null }: { snippet: DesignSnippet; effect?: FrameEffect | null }) {
   const { layout, expand } = useView();
   return (
     <figure className={styles.view}>
       {layout === "stream" ? (
         <button type="button" className={styles.expand} data-expand="" aria-label={`${snippet.name} 넓게 보기`} onClick={(event) => expand(snippet.id, event.currentTarget)}>
-          <Frame snippet={snippet} title={`${snippet.name} 첫 화면`} />
+          <Frame snippet={snippet} title={`${snippet.name} 첫 화면`} effect={effect} />
           <span className={styles.expandCue} aria-hidden="true"><Icon name="arrows-out-simple" size={15} /></span>
         </button>
-      ) : <Frame snippet={snippet} title={`${snippet.name} 첫 화면 넓게 보기`} />}
+      ) : <Frame snippet={snippet} title={`${snippet.name} 첫 화면 넓게 보기`} effect={effect} />}
       <figcaption className={styles.viewMeta}>
         <span className={styles.viewName}>
           <strong>{snippet.name}</strong>
@@ -536,9 +594,12 @@ function Screens({ items, retryable }: { items: DesignScreenItem[]; retryable: b
   );
 }
 
-/** 말로 고친 결과. 무엇이 바뀌었는지를 값으로 보이고, 이전 것과 고친 것을 나란히 둔다. */
+/**
+ * 말로 고친 결과. 무엇이 바뀌었는지를 값으로 보이고, 이전 것과 고친 것을 나란히 둔다.
+ * 고치는 동안에는 큰 첫 화면에서 바뀌는 자리가 청사진으로 돌아가고, 고친 것이 오면 그 자리에서 고친 첫 화면으로 넘어간다.
+ */
 function Revision({ card, retryable }: { card: Extract<DesignCard, { kind: "revision" }>; retryable: boolean }) {
-  const { snippet, layout } = useView();
+  const { snippet, layout, effect } = useView();
   const before = snippet(card.fromSnippetId);
   const after = snippet(card.item.snippetId);
   const { local, active, open } = useShown([...(after ? [after] : []), ...(before ? [before] : [])]);
@@ -563,7 +624,7 @@ function Revision({ card, retryable }: { card: Extract<DesignCard, { kind: "revi
         {after ? <ScreenThumb snippet={after} label="고친 것" active={active === after.id} onOpen={(from) => open(after.id, from)} /> : <PendingThumb item={card.item} />}
       </div>
       {retryable && card.item.status === "failed" ? <RetryRow /> : null}
-      {layout === "stream" && local ? <ScreenView snippet={local} /> : null}
+      {layout === "stream" && local ? <ScreenView snippet={local} effect={effect(local.id)} /> : null}
     </>
   );
 }
@@ -699,7 +760,7 @@ function ComposerBar({ notice }: { notice: DesignChatNotice | null }) {
 
 /** 무대 배치의 왼쪽. 대화에서 넓힌 첫 화면을 크게 본다. */
 function Stage() {
-  const { focus, snippet, collapse, state } = useView();
+  const { focus, snippet, collapse, state, effect } = useView();
   const shown = snippet(focus);
   const close = useRef<HTMLButtonElement>(null);
   // 무대가 열리면 닫는 자리로 초점을 옮긴다 — 키보드로 넓힌 사람이 바로 돌아갈 수 있다.
@@ -709,7 +770,7 @@ function Stage() {
       <button ref={close} type="button" className={styles.stageClose} onClick={collapse}><Icon name="arrows-in-simple" size={14} />대화로 돌아가기</button>
       {shown ? (
         <>
-          <ScreenView snippet={shown} />
+          <ScreenView snippet={shown} effect={effect(shown.id)} />
           <div className={styles.stageActions}>
             <SnippetActions snippet={shown} size="default" />
             {/* 만들기는 고른 첫 화면으로 만든다. 무대에 올린 것이 고른 것일 때만 둔다 — 다른 것을 보면서 누르면 보이는 것과 다른 지면이 나온다. */}

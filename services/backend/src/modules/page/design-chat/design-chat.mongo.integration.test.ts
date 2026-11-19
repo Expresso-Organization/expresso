@@ -4,7 +4,7 @@ import { CONSENT_POLICY_VERSION, type DesignChat } from "@expresso/contracts";
 import { mongoCollections } from "@expresso/database";
 
 import { createMongoFixture } from "../../../../test/support/mongodb.js";
-import type { AiCallSpec } from "../../../platform/ai/client.js";
+import type { AiCallSpec, AiClient } from "../../../platform/ai/client.js";
 import { ScriptedAiClient } from "../../../platform/ai/scripted-client.js";
 import { MongoCareerService } from "../../career/index.js";
 import { catalogEntries } from "../../design-systems/catalog.js";
@@ -312,6 +312,47 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     await service.send(user, brewId, { action: "draw", requestId: randomUUID(), styleId: fresh!.id, layoutId: proposed(chat).layouts[1]!.id });
     await service.settled();
     expect((await service.get(user, brewId)).chat!.snippets.at(-1)).toMatchObject({ name: "라 화면", layout: { name: "레이아웃 나" } });
+  });
+
+  it("고치는 동안 조각이 닿는 자리를 대화에 적고, 다 고치면 고친 첫 화면에서의 자리로 바꾼다", async () => {
+    const brewId = await newBrew(user);
+    const chat = await opened(make(), brewId);
+    const edits = [
+      { in: "css" as const, find: `color:${tokens.text}}`, replace: `color:${tokens.text}}.hero p{font-weight:700}` },
+      { in: "html" as const, find: "<h1>", replace: '<h1 class="big">' },
+    ];
+    const draft = revision("가 화면 굵게", edits);
+    // 쓰는 중의 출력을 첫 조각의 「지금 있는 글자」까지만 흘리고, 그때 대화에 적힌 자리를 읽는다.
+    let during: unknown = null;
+    const reader = make();
+    const watching: AiClient = {
+      complete: async (spec, schema, options) => {
+        if (spec.contract === "page_generation" && options?.onPartial && spec.prompt.includes("## 지시")) {
+          const text = JSON.stringify(draft);
+          options.onPartial(text.slice(0, text.indexOf('"replace"')));
+          await expect.poll(async () => {
+            const card = (await reader.get(user, brewId)).chat!.messages.at(-1);
+            during = card?.role === "assistant" && card.card?.kind === "revision" ? card.card : null;
+            return (during as { targets: string[] } | null)?.targets ?? [];
+          }).toEqual([".hero"]);
+        }
+        return ai.complete(spec, schema, options);
+      },
+    };
+    const service = new DesignChatService(fixture.resource, watching, new ConsentService(fixture.resource));
+    services.push(service);
+    route = () => snippet("가 화면");
+    await service.send(user, brewId, drawFirst(chat));
+    await service.settled();
+
+    route = (request) => (request.contract === "page_design" ? { ...reply, say: "글을 굵게 하고 제목에 이름을 붙여 볼게요.", show: "revision", instruction: "글을 굵게 한다" } : draft);
+    await service.send(user, brewId, { action: "say", requestId: randomUUID(), text: "글을 굵게" });
+    await service.settled();
+    // 고치는 동안에는 그리는 중인 카드에 지금 첫 화면에서의 자리가 적혀 있었다.
+    expect(during).toMatchObject({ kind: "revision", item: { status: "drawing" }, targets: [".hero"] });
+    // 다 고친 뒤에는 고친 첫 화면에서 바뀐 자리다 — 이어 붙인 새 규칙과 속성을 바꾼 요소가 더해진다.
+    const done = (await service.get(user, brewId)).chat!.messages.at(-1);
+    expect(done).toMatchObject({ role: "assistant", status: "complete", card: { kind: "revision", item: { status: "done" }, targets: ["body > :nth-child(1) > :nth-child(1)", ".hero", ".hero p"] } });
   });
 
   it("답을 만들다 멎은 실행은 읽을 때 끊긴 것으로 바뀌고 다시 시도할 수 있다", async () => {

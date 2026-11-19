@@ -120,11 +120,25 @@ export const DesignScreenItemSchema = z.strictObject({
 });
 export type DesignScreenItem = z.infer<typeof DesignScreenItemSchema>;
 
+/** 바뀌는 자리 하나의 길이와 개수의 상한. 서버가 이 안에서 고르고, 넘는 것은 싣지 않는다. */
+export const DESIGN_TARGET_MAX_LENGTH = 300;
+export const DESIGN_TARGET_MAX_COUNT = 48;
+
 export const DesignCardSchema = z.discriminatedUnion("kind", [
   /** 견본. 스타일과 레이아웃을 따로 놓는다 — 사용자는 각각에서 하나씩 고른다. 한쪽만 새로 낼 때는 다른 쪽이 비어 있다. */
   z.strictObject({ kind: z.literal("proposals"), styles: z.array(DesignStyleSchema), layouts: z.array(DesignLayoutSchema) }),
   z.strictObject({ kind: z.literal("screens"), items: z.array(DesignScreenItemSchema) }),
-  z.strictObject({ kind: z.literal("revision"), fromSnippetId: UuidSchema, item: DesignScreenItemSchema }),
+  z.strictObject({
+    kind: z.literal("revision"),
+    fromSnippetId: UuidSchema,
+    item: DesignScreenItemSchema,
+    /**
+     * 바뀌는 자리. 문서 안의 요소를 가리키는 CSS 선택자다. 고치는 호출이 조각을 쓰는 동안에는 **지금 첫 화면**에서
+     * 그 조각이 닿는 요소를, 다 고친 뒤에는 **고친 첫 화면**에서 바뀐 요소를 가리킨다. 화면은 이 자리를 청사진으로 보인다.
+     * 자리를 알아내지 못했으면 비어 있다. 이 칸이 생기기 전에 저장된 카드에도 없다.
+     */
+    targets: z.array(z.string().min(1).max(DESIGN_TARGET_MAX_LENGTH)).max(DESIGN_TARGET_MAX_COUNT).default([]),
+  }),
 ]);
 export type DesignCard = z.infer<typeof DesignCardSchema>;
 

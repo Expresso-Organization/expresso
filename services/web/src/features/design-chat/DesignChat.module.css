@@ -252,7 +252,10 @@ button.thumb { cursor: pointer; }
   border: 0;
   transform-origin: 0 0;
   pointer-events: none;
+  transition: opacity var(--ex-motion-panel);
 }
+/* 표시가 걸리거나 풀릴 때 — 다음 문서를 아래에 깔고, 다 뜨면 위의 것을 걷어 낸다. */
+.frame > iframe[data-leaving] { opacity: 0; }
 /* 틀 위의 테두리는 문서 위에 그린다 — 어두운 지면과 밝은 지면 모두에서 가장자리가 보인다. */
 .frame::after {
   content: "";

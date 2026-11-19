@@ -28,6 +28,7 @@ import {
   type SnippetDraft,
   type StyleDraft,
 } from "./prompts.js";
+import { closedFinds, editingTargets, revisedTargets } from "./targets.js";
 
 /**
  * 디자인을 정하는 대화의 살림.
@@ -280,7 +281,7 @@ export class DesignChatService {
     } else if (pending.length > 0 && last.card?.kind === "revision") {
       const from = row.snippets.find(({ id }) => id === (last.card as Extract<DesignCard, { kind: "revision" }>).fromSnippetId);
       if (!from) throw new DesignChatError(409, "snippet not found");
-      card = { ...last.card, item: { ...last.card.item, status: "drawing" } };
+      card = { ...last.card, item: { ...last.card.item, status: "drawing" }, targets: [] };
       turn = { kind: "draw", items: pending, origins: ["edit"], revise: { from, instruction: last.card.item.words } };
     } else {
       const prior = row.messages[at - 1];
@@ -412,7 +413,7 @@ export class DesignChatService {
         const from = reviseTarget(row.snippets, turn.subject, data.target);
         if (data.show === "revision" && from) {
           const entry: DesignScreenItem = { id: randomUUID(), name: from.name, words: data.instruction, tokens: from.tokens, layout: from.layout, status: "drawing", snippetId: null };
-          card = { kind: "revision", fromSnippetId: from.id, item: entry };
+          card = { kind: "revision", fromSnippetId: from.id, item: entry, targets: [] };
           draw = { kind: "draw", items: [entry], origins: ["edit"], revise: { from, instruction: data.instruction } };
         }
         await this.#write(chatId, runId, { $set: { [`messages.${assistantAt}.text`]: DesignAssistantMessageSchema.shape.text.parse(data.say), [`messages.${assistantAt}.card`]: card ? DesignCardSchema.parse(card) : null } } as UpdateFilter<DesignChatDoc>);
@@ -423,10 +424,18 @@ export class DesignChatService {
         const notes = await Promise.all(items.map(async (item, index) => {
           try {
             let data: SnippetDraft;
+            /** 고친 첫 화면에서 바뀐 자리. 고친 것에만 있다. */
+            let targets: string[] | null = null;
             if (revise) {
               // 고칠 때는 바뀌는 자리만 받아 지금 첫 화면에 적용한다. 첫 화면 전체를 다시 쓰게 하지 않는다.
               const call = reviseCall({ userId, sources, snippet: revise.from, instruction: revise.instruction });
-              data = call.apply((await this.#ai.complete(call.spec, RevisionDraftSchema, { userId, check: call.check })).data);
+              // 조각이 오는 대로 어디가 바뀌는지 대화에 적는다. 화면은 그 자리를 청사진으로 보인다.
+              const live = this.#liveTargets(chatId, runId, assistantAt, revise.from);
+              const draft = (await this.#ai.complete(call.spec, RevisionDraftSchema, { userId, check: call.check, onPartial: live.push, onPartialRestart: live.restart })).data;
+              await live.settled();
+              data = call.apply(draft);
+              // 조각은 고쳐 받는 동안 달라질 수 있다. 끝난 조각으로 고친 첫 화면에서의 자리를 다시 잡는다.
+              targets = revisedTargets(revise.from, draft.edits);
             } else {
               const call = drawCall({ userId, sources, style: { name: item.name, words: item.words, tokens: item.tokens }, layout: item.layout });
               data = (await this.#ai.complete(call.spec, SnippetDraftSchema, { userId, check: call.check })).data;
@@ -442,7 +451,7 @@ export class DesignChatService {
             const done = { ...item, status: "done" as const, snippetId: snippet.id };
             await this.#write(chatId, runId, {
               $push: { snippets: snippet },
-              $set: { [`messages.${assistantAt}.card.${revise ? "item" : "items.$[item]"}`]: done },
+              $set: { [`messages.${assistantAt}.card.${revise ? "item" : "items.$[item]"}`]: done, ...(targets ? { [`messages.${assistantAt}.card.targets`]: targets } : {}) },
             } as UpdateFilter<DesignChatDoc>, revise ? undefined : [{ "item.id": item.id }]);
             return data.note;
           } catch (error) {
@@ -462,6 +471,36 @@ export class DesignChatService {
     } finally {
       clearInterval(heartbeat);
     }
+  }
+
+  /**
+   * 고치는 호출이 쓰는 출력을 받아, 「지금 있는 글자」까지 온 조각이 늘 때마다 지금 첫 화면에서 바뀌는 자리를 대화에 적는다.
+   * 자리는 보여 주는 것일 뿐이다 — 읽다가 실패해도 고치는 일은 그대로 간다.
+   */
+  #liveTargets(chatId: string, runId: string, assistantAt: number, from: DesignSnippet) {
+    let buffer = "";
+    let count = 0;
+    let written = "";
+    let queue: Promise<unknown> = Promise.resolve();
+    const push = (delta: string) => {
+      buffer += delta;
+      try {
+        const finds = closedFinds(buffer);
+        if (finds.length === count) return;
+        count = finds.length;
+        const targets = editingTargets(from, finds);
+        const key = targets.join("\n");
+        if (targets.length === 0 || key === written) return;
+        written = key;
+        // 쓰는 순서를 지킨다. 늦게 끝난 앞의 쓰기가 뒤의 자리를 덮지 않게 한다.
+        queue = queue.then(() => this.#write(chatId, runId, { $set: { [`messages.${assistantAt}.card.targets`]: targets } } as UpdateFilter<DesignChatDoc>)).catch(() => undefined);
+      } catch (error) {
+        this.#log("design_chat.targets_failed", chatId, error);
+      }
+    };
+    // 공급자가 출력을 처음부터 다시 쓰면 쌓은 것만 버린다. 이미 적은 자리는 둔다.
+    const restart = () => { buffer = ""; count = 0; };
+    return { push, restart, settled: () => queue };
   }
 
   #log(event: string, chatId: string, error: unknown): void {

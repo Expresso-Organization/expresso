@@ -59,7 +59,8 @@ flowchart TD
 5. 대화 서비스와 라우트 — `ScriptedAiClient`로 단위 · 통합 테스트.
 6. 생성 요청 연결 — `designSnippetId`로 낸 생성이 Worker에서 끝나고 지면이 고른 첫 화면으로 시작한다.
 7. 웹 화면 — 헤드리스 Chrome으로 첫 질문부터 만들기까지.
-8. 검증 — 아래 명령.
+8. 고치는 자리 보이기(2026-11-20) — 시안으로 방식을 정한 뒤(청사진 + shimmer) 계약의 고친 카드에 `targets`, 서버에 `targets.ts`와 고치는 호출의 스트리밍, 렌더러에 `snippetEditingCss` · `snippetRevisedCss`, 웹의 첫 화면 틀에 문서 두 겹 전환. 실제 호출로 자리가 적히는 시각을 재고, 실제 화면에서 고치는 중과 고친 뒤를 본다.
+9. 검증 — 아래 명령.
 
 ## 가장 위험한 단계
 
