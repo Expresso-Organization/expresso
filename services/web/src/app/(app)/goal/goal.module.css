@@ -287,3 +287,18 @@
   outline: none;
   box-shadow: var(--ex-focus-ring);
 }
+
+/* 하기로 한 일의 줄 — 그 약속을 잡은 대화로 간다. */
+.rowLink {
+  text-decoration: none;
+  transition: background var(--ex-motion-instant);
+}
+
+.rowLink:hover {
+  background: var(--ex-bg-tint);
+}
+
+.rowLink:focus-visible {
+  outline: none;
+  box-shadow: var(--ex-focus-ring);
+}

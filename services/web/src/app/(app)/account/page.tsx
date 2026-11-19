@@ -4,12 +4,12 @@ import { AgentKeySettings } from "@/features/agent-chat/AgentKeySettings";
 import { ThemePicker } from "@/components/ThemePicker";
 import { Icon } from "@/components/ui/Icon";
 import type { EntitlementCapability, NotificationKind, PlanSummary } from "@expresso/contracts";
-import { consents, notificationSettings, usage as usageApi } from "@/lib/api/endpoints";
+import { consents, consultant, notificationSettings, usage as usageApi } from "@/lib/api/endpoints";
 import { CONSENT_COPY } from "@/lib/consent-copy";
 import { requireSession } from "@/lib/require-session";
 import { CAPABILITY_LABEL } from "@/lib/usage-copy";
 
-import { setNotificationPreferenceAction } from "../../account-actions";
+import { setNotificationPreferenceAction, setOutreachAction } from "../../account-actions";
 import { grantConsentAction, revokeConsentAction } from "../../consent-actions";
 
 import { AccountNav } from "./AccountNav";
@@ -22,6 +22,7 @@ import styles from "./page.module.css";
 const NOTIFICATION_COPY: Partial<Record<NotificationKind, { title: string; what: string }>> = {
   deadline: { title: "관심 공고 마감", what: "담아 둔 공고의 마감이 3일 안으로 다가오면 한 번 알립니다" },
   generation: { title: "포트폴리오 생성 완료", what: "생성이 끝나면 알리고, 누르면 편집 화면으로 갑니다" },
+  consultant: { title: "컨설턴트의 확인", what: "하기로 한 일의 날짜가 되었거나 대화가 2주 없을 때, 하루에 한 번까지 알립니다" },
 };
 
 /** ISO 시각에서 날짜만. 결제 내역 줄과 같은 `2026.07.12` 형식이다. */
@@ -59,11 +60,13 @@ function billingRows(plan: PlanSummary | undefined, periodStart: string) {
 
 export default async function AccountPage() {
   const session = await requireSession();
-  const [consent, usage, plans, preferences] = await Promise.all([
+  const [consent, usage, plans, preferences, checkins] = await Promise.all([
     consents.list(session.accessToken).then(({ data }) => data),
     usageApi.monthly(session.accessToken).then(({ data }) => data),
     usageApi.plans(session.accessToken).then(({ data }) => data),
     notificationSettings.list(session.accessToken).then(({ data }) => data),
+    // 컨설턴트가 없는 서버(404)에서는 먼저 연락받기 줄을 세우지 않는다.
+    consultant.checkins(session.accessToken).then(({ data }) => data).catch(() => null),
   ]);
   const currentPlan = plans.find((plan) => plan.code === usage.planCode);
   // 모든 플랜이 여는 기능은 카드를 가르지 않는다. 다른 것만 적는다.
@@ -225,6 +228,33 @@ export default async function AccountPage() {
                 })}
               </div>
               <div className={styles.consentNote}>알림은 오른쪽 위 종 모양 버튼에서 봅니다.</div>
+            </section>
+
+            {/* 컨설턴트가 먼저 연락할지. 홈의 「켜기」 · 온보딩의 항목과 같은 설정이다. */}
+            <section id="outreach" className={styles.section}>
+              <HashScroll id="outreach" />
+              <div className={styles.sectionLabel}>먼저 연락받기</div>
+              {checkins ? (
+                <div className={styles.consentRows}>
+                  <div className={styles.consentRow}>
+                    <div style={{ minWidth: 0 }}>
+                      <div className={styles.consentName}>컨설턴트가 먼저 연락하기</div>
+                      <div className={styles.consentWhat}>
+                        대화에서 하기로 한 일을 약속한 날에 여쭙고, 내 기록과 새 공고 · 공모전을 읽어 지금 하면 좋은 일을 권합니다.
+                        권할 것을 고를 때 AI가 하루 한 번까지 실행되고, 쓴 만큼 이번 달 크레딧에서 차감됩니다.
+                      </div>
+                    </div>
+                    <form action={setOutreachAction}>
+                      <input type="hidden" name="enabled" value={checkins.outreach ? "false" : "true"} />
+                      <button type="submit" className={checkins.outreach ? styles.consentOff : styles.consentOn} aria-label={`먼저 연락받기 ${checkins.outreach ? "끄기" : "켜기"}`}>
+                        {checkins.outreach ? "끄기" : "켜기"}
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              ) : (
+                <div className={styles.consentNote}>지금은 이 설정을 쓸 수 없습니다.</div>
+              )}
             </section>
 
             {/* 지면을 밝게 볼지 어둡게 볼지 — 이 기기에만 남는다 */}

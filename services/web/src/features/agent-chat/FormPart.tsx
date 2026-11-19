@@ -4,7 +4,7 @@ import type { AgentFormPart } from "@expresso/contracts";
 import styles from "./FormPart.module.css";
 
 /**
- * 입력 칸 묶음 부품. 에이전트가 짧게 적을 값(기간 · 인원 · 수치)을 한 번에 묻는다.
+ * 입력 칸 묶음 부품. 에이전트가 짧게 적을 값(기간 · 인원 · 수치)이나 날짜를 한 번에 묻는다. 날짜 칸은 날짜를 고르는 칸으로 선다.
  *
  * 필수 칸을 채워야 보낼 수 있다. 답한 부품과 지나간 부품(`interactive`가 거짓)은 고칠 수 없다 — 답한 부품은 적은 값을 보인다.
  */
@@ -33,7 +33,7 @@ export function FormPart({ part, interactive, onAnswer }: {
     <div className={styles.fields}>
       {part.fields.map(field => <label key={field.id} className={styles.field}>
         <span className={styles.label}>{field.label}{field.optional ? <span className={styles.optional}>선택</span> : null}</span>
-        <input className={styles.input} value={answered ? answered[field.id] ?? "" : texts[field.id] ?? ""} maxLength={300} placeholder={answered ? "" : field.placeholder ?? ""} disabled={!open} onChange={event => setTexts(current => ({ ...current, [field.id]: event.target.value }))} />
+        <input className={styles.input} type={field.type === "date" ? "date" : "text"} value={answered ? answered[field.id] ?? "" : texts[field.id] ?? ""} maxLength={300} placeholder={answered ? "" : field.placeholder ?? ""} disabled={!open} onChange={event => setTexts(current => ({ ...current, [field.id]: event.target.value }))} />
       </label>)}
     </div>
     {answered ? null : <div className={styles.actions}><button type="submit" className={styles.send} disabled={!open || !ready}>{sending ? "보내는 중…" : "보내기"}</button></div>}

@@ -44,18 +44,18 @@ const PROMPTS: readonly { icon: string; label: string; prompt: string }[] = [
 /**
  * 홈 — 대화를 시작하기 전의 화면.
  *
- * 위에서 아래로 로고, 입력창, 추천 프롬프트, 새 소식 위젯, 제안 카드가 선다.
+ * 위에서 아래로 로고, 입력창, 추천 프롬프트, 확인 카드, 새 소식 위젯, 제안 카드가 선다.
  * 입력창은 대화를 만들지 않는다. 보낼 말과 연결할 자료를 대화 화면으로 넘기고 그리로 간다.
  */
-export function HomeStart({ proposals, widgets }: { proposals: ReactNode; widgets: ReactNode }) {
+export function HomeStart({ checkins, proposals, widgets }: { checkins: ReactNode; proposals: ReactNode; widgets: ReactNode }) {
   return (
     <HomeHandoffProvider>
-      <HomeStartBody proposals={proposals} widgets={widgets} />
+      <HomeStartBody checkins={checkins} proposals={proposals} widgets={widgets} />
     </HomeHandoffProvider>
   );
 }
 
-function HomeStartBody({ proposals, widgets }: { proposals: ReactNode; widgets: ReactNode }) {
+function HomeStartBody({ checkins, proposals, widgets }: { checkins: ReactNode; proposals: ReactNode; widgets: ReactNode }) {
   const { open, pending } = useHomeHandoff();
   const [text, setText] = useState("");
   const [attached, setAttached] = useState<Attached[]>([]);
@@ -225,6 +225,7 @@ function HomeStartBody({ proposals, widgets }: { proposals: ReactNode; widgets: 
               ))}
             </div>
           </div>
+          {checkins}
           {widgets}
           {proposals}
         </div>

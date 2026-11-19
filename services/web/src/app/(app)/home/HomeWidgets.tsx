@@ -7,9 +7,10 @@ import { Skel } from "@/components/shell/Skeleton";
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { Icon } from "@/components/ui/Icon";
 import { homeEngagement, watchedJobs } from "@/lib/app-data";
-import { activities, career, jobs, portfolios, proposals } from "@/lib/api/endpoints";
+import { activities, career, consultant, jobs, portfolios, proposals } from "@/lib/api/endpoints";
 
 import { resumeStep } from "../brew/new/resume-step";
+import { CheckinFeed } from "./CheckinFeed";
 import { ProposalFeed } from "./ProposalFeed";
 import { briefingSteps } from "./briefing";
 import { careerProfile, siteInsights } from "./home-data";
@@ -34,6 +35,19 @@ export async function Proposals({ accessToken, recordTotal }: { accessToken: str
   // 규칙 제안은 대신 보일 때만 센다. 평소에는 그 응답들을 부르지 않는다.
   const fallback = feed.enabled && feed.run.reason === "no_credits" ? await ruleFindings(accessToken, recordTotal) : [];
   return <ProposalFeed initial={feed} fallback={fallback} hasGoal={goal !== null} />;
+}
+
+/**
+ * 확인 공간. 컨설턴트가 먼저 건네는 연락(약속한 날이 된 일 · 안부)을 서버에서 읽는다.
+ * 컨설턴트가 없는 서버이거나 읽지 못하면 그리지 않는다 — 홈의 나머지는 그대로 선다.
+ */
+export async function Checkins({ accessToken }: { accessToken: string }) {
+  const [checkins, feed] = await Promise.all([
+    consultant.checkins(accessToken).then(({ data }) => data).catch(() => null),
+    proposals.feed(accessToken).then(({ data }) => data).catch(() => null),
+  ]);
+  if (!checkins) return null;
+  return <CheckinFeed initial={checkins} proposalsEnabled={feed?.enabled ?? false} />;
 }
 
 async function ruleFindings(accessToken: string, recordTotal: number) {
