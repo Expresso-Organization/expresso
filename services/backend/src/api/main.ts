@@ -46,7 +46,7 @@ import { AnalyticsService } from "../modules/analytics/index.js";
 import { EngagementService, UnifiedSearchService } from "../modules/engagement/index.js";
 import { ActivityService } from "../modules/activities/index.js";
 import { ProposalService } from "../modules/proposals/index.js";
-import { ConsultantService } from "../modules/consultant/index.js";
+import { ConsultantCommitments, ConsultantService } from "../modules/consultant/index.js";
 import { AccountLifecycleService } from "../modules/account-lifecycle/index.js";
 import { AdminService } from "../modules/admin/index.js";
 import { CareerDocumentService } from "../modules/career-editor/index.js";
@@ -171,7 +171,8 @@ const careerDocumentService = new CareerDocumentService(
 careerService.setExternalBodyListener((userId, recordId) => careerDocumentService.syncExternalBody(userId, recordId));
 interviewService.setExternalBodyListener((userId, recordId) => careerDocumentService.syncExternalBody(userId, recordId));
 const consultantService = new ConsultantService(database);
-const agentChatService = new AgentChatService(database, config.agentChatEnabled ? new ClaudeAgentRuntime(config.agentChatModel, aiUsage) : null, careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(database, config.agentCredentialEncryptionKey), portfolioReadService, pageService, entitlementService, consultantService);
+const consultantCommitments = new ConsultantCommitments(database);
+const agentChatService = new AgentChatService(database, config.agentChatEnabled ? new ClaudeAgentRuntime(config.agentChatModel, aiUsage) : null, careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(database, config.agentCredentialEncryptionKey), portfolioReadService, pageService, entitlementService, consultantService, consultantCommitments);
 const activityService = new ActivityService(database);
 // API는 제안을 읽고 실행을 줄에 넣기만 한다. AI 실행은 워커가 한다(`writer`를 주지 않는다).
 const proposalService = new ProposalService(database, { career: careerService, jobs: jobBoardService, activities: activityService, consent: consentService, credits: entitlementService, writer: null });
@@ -180,6 +181,7 @@ const app = buildApi({
   adminService,
   agentChatService,
   consultantService,
+  consultantCommitments,
   activityService,
   proposalService,
   config,

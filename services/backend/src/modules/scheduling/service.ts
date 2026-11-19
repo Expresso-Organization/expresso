@@ -24,8 +24,10 @@ type DeadlineNotifier = { notify(userId: string, kind: "deadline", targetUrl: st
 
 const runDto = (row: ScheduledJobRunDoc, at = new Date()) => ({ id: row._id, jobKey: row.jobKey as ScheduledJobKey, scheduledFor: iso(row.scheduledFor)!, status: row.status, attempts: row.attempts, startedAt: iso(row.startedAt), finishedAt: iso(row.finishedAt), lastError: row.lastError ?? null, result: row.result ?? null, lagMs: Math.max(0, at.getTime() - row.scheduledFor.getTime()) });
 
+/** 컨설턴트의 확인 작업. 약속을 묻고 알림을 만드는 일은 `consultant` 모듈이 한다. 여기서는 정해진 시각에 부르기만 한다. */
+export interface ConsultantCheckins { run(at: Date): Promise<Record<string, unknown>> }
 export class SchedulingService {
-  readonly #analytics: { aggregateDay(deploymentId: string, date: string): Promise<Record<string, number>> }; readonly #accounts: { purgeExpired(at?: Date, limit?: number): Promise<{ purged: string[] }> }; readonly #ingest: JobIngestApi | null; readonly #notifications: DeadlineNotifier; readonly #proposals: ProposalScheduler | null; readonly #activities: ActivityCollector | null;
+  readonly #analytics: { aggregateDay(deploymentId: string, date: string): Promise<Record<string, number>> }; readonly #accounts: { purgeExpired(at?: Date, limit?: number): Promise<{ purged: string[] }> }; readonly #ingest: JobIngestApi | null; readonly #notifications: DeadlineNotifier; readonly #proposals: ProposalScheduler | null; readonly #activities: ActivityCollector | null; readonly #consultant: ConsultantCheckins | null;
   readonly #overrides: Partial<Record<ScheduledJobKey, (at: Date) => Promise<Record<string, unknown>>>>;
   /**
    * 이 서비스가 처리할 줄 아는 키. `scheduleDue`는 이 키의 정의만 집는다.
@@ -33,8 +35,8 @@ export class SchedulingService {
    * 모르는 키까지 집으면 실행은 실패하고 `nextRunAt`은 이미 다음 주기로 넘어가 있다(2026-11-19 #240 배포).
    */
   readonly #keys: readonly ScheduledJobKey[];
-  constructor(readonly context: MongoContext, dependencies: { analytics?: { aggregateDay(deploymentId: string, date: string): Promise<Record<string, number>> }; accounts?: { purgeExpired(at?: Date, limit?: number): Promise<{ purged: string[] }> }; ingest?: JobIngestApi | null; notifications?: DeadlineNotifier; proposals?: ProposalScheduler | null; activities?: ActivityCollector | null; overrides?: Partial<Record<ScheduledJobKey, (at: Date) => Promise<Record<string, unknown>>>>; keys?: readonly ScheduledJobKey[] } = {}) {
-    this.#analytics = dependencies.analytics ?? new MongoAnalyticsService(context); this.#accounts = dependencies.accounts ?? new MongoAccountLifecycleService(context); this.#ingest = dependencies.ingest ?? null; this.#notifications = dependencies.notifications ?? new MongoEngagementService(context); this.#proposals = dependencies.proposals ?? null; this.#activities = dependencies.activities ?? null; this.#overrides = dependencies.overrides ?? {}; this.#keys = dependencies.keys ?? SCHEDULED_JOB_KEYS;
+  constructor(readonly context: MongoContext, dependencies: { analytics?: { aggregateDay(deploymentId: string, date: string): Promise<Record<string, number>> }; accounts?: { purgeExpired(at?: Date, limit?: number): Promise<{ purged: string[] }> }; ingest?: JobIngestApi | null; notifications?: DeadlineNotifier; proposals?: ProposalScheduler | null; activities?: ActivityCollector | null; consultant?: ConsultantCheckins | null; overrides?: Partial<Record<ScheduledJobKey, (at: Date) => Promise<Record<string, unknown>>>>; keys?: readonly ScheduledJobKey[] } = {}) {
+    this.#analytics = dependencies.analytics ?? new MongoAnalyticsService(context); this.#accounts = dependencies.accounts ?? new MongoAccountLifecycleService(context); this.#ingest = dependencies.ingest ?? null; this.#notifications = dependencies.notifications ?? new MongoEngagementService(context); this.#proposals = dependencies.proposals ?? null; this.#activities = dependencies.activities ?? null; this.#consultant = dependencies.consultant ?? null; this.#overrides = dependencies.overrides ?? {}; this.#keys = dependencies.keys ?? SCHEDULED_JOB_KEYS;
   }
 
   async scheduleDue(at = new Date()) {
@@ -83,6 +85,7 @@ export class SchedulingService {
       return { ...result, ...(await this.#announce(result, at)) };
     }
     if (key === "proposal_briefing") return this.#proposals ? this.#proposals.requestDaily(at) : { skipped: "proposal service is not wired" };
+    if (key === "consultant_checkins") return this.#consultant ? this.#consultant.run(at) : { skipped: "consultant service is not wired" };
     if (key === "posting_facts") return this.#ingest ? this.#ingest.readPendingFacts(undefined, at) as unknown as Record<string, unknown> : { skipped: "ingest service is not wired" };
     if (key === "deadline_reminders") return this.#deadlineReminders(at);
     if (key === "deletion_grace") return this.#accounts.purgeExpired(at);

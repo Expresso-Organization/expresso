@@ -63,7 +63,7 @@ import { type EngagementApi, type UnifiedSearchApi } from "../modules/engagement
 import { registerEngagementRoutes } from "../modules/engagement/routes.js";
 import { registerActivityRoutes, type ActivityApi } from "../modules/activities/index.js";
 import { registerProposalRoutes, type ProposalApi } from "../modules/proposals/index.js";
-import { registerConsultantRoutes, type ConsultantApi } from "../modules/consultant/index.js";
+import { registerConsultantRoutes, type ConsultantApi, type ConsultantCommitmentApi } from "../modules/consultant/index.js";
 import { type AccountLifecycleApi } from "../modules/account-lifecycle/index.js";
 import { registerAccountLifecycleRoutes } from "../modules/account-lifecycle/routes.js";
 import {
@@ -95,7 +95,9 @@ export interface BuildApiOptions {
   interviewService?: InterviewApi;
   agentChatService?: AgentChatService;
   /** 컨설턴트의 기억. 「내 진행」 화면의 라우트는 대화 서비스(지난 대화의 요지)가 함께 있을 때만 연다. */
-  consultantService?: Pick<ConsultantApi, "profile" | "setStage" | "removePreference">;
+  consultantService?: Pick<ConsultantApi, "profile" | "setStage" | "removePreference" | "setOutreach">;
+  /** 약속과 확인. 컨설턴트 라우트는 이것까지 있을 때 연다. */
+  consultantCommitments?: Pick<ConsultantCommitmentApi, "open" | "get" | "update" | "answer" | "checkins" | "dismissQuiet">;
   recipeService?: RecipeApi;
   companyResearchService?: CompanyResearchApi;
   brewJobService?: BrewJobApi;
@@ -204,7 +206,7 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
       });
     }
     if (options.agentChatService) registerAgentChatRoutes(app, options.agentChatService, createAuthenticateRequest(options.identityService));
-    if (options.agentChatService && options.consultantService) { const chat = options.agentChatService; registerConsultantRoutes(app, { service: options.consultantService, digests: userId => chat.recentDigests(userId), authenticateRequest: createAuthenticateRequest(options.identityService) }); }
+    if (options.agentChatService && options.consultantService && options.consultantCommitments) { const chat = options.agentChatService; registerConsultantRoutes(app, { service: options.consultantService, commitments: options.consultantCommitments, digests: userId => chat.recentDigests(userId), startCheckinChat: (userId, commitment) => chat.startFromCheckin(userId, commitment), proposals: options.proposalService, authenticateRequest: createAuthenticateRequest(options.identityService) }); }
     // 읽기 라우트를 먼저 건다 — `/jobs/postings/:id`가 쓰기 라우트와 같은 자리다.
     if (options.jobBoardService) {
       registerJobBoardRoutes(app, {

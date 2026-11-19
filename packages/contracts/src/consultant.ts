@@ -91,7 +91,11 @@ export const ConsultantCheckinsSchema = z.strictObject({
 });
 export const ConsultantCheckinsResponseSchema = z.strictObject({ data: ConsultantCheckinsSchema });
 export const ConsultantCommitmentResponseSchema = z.strictObject({ data: ConsultantCommitmentSchema });
-export const SetConsultantOutreachSchema = z.strictObject({ enabled: z.boolean() });
+export const SetConsultantOutreachSchema = z.strictObject({
+  enabled: z.boolean(),
+  /** 능동 제안도 함께 켜고 끌지. 제안을 이미 켠 사용자에게 약속 확인만 따로 물을 때 거짓으로 보낸다. */
+  proposals: z.boolean().default(true),
+});
 /** `proposals`는 능동 제안이 함께 켜졌는지다. 커리어 기록의 AI 사용 동의가 없으면 켜지지 않는다. */
 export const ConsultantOutreachResponseSchema = z.strictObject({ data: z.strictObject({ enabled: z.boolean(), proposals: z.boolean() }) });
 

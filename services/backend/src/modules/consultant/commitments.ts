@@ -14,8 +14,8 @@ export const REMINDER_DAYS = 3;
 export const QUIET_DAYS = 14;
 
 /** 약속을 받을 수 없는 입력. 에이전트는 사유를 보고 고쳐 다시 부르고, 화면은 그 문장을 보인다. */
-export class ConsultantInputError extends Error { readonly statusCode = 409; }
-export class ConsultantNotFoundError extends Error { readonly statusCode = 404; constructor() { super("약속을 찾을 수 없습니다."); } }
+export class ConsultantInputError extends Error { readonly statusCode = 409; get publicMessage() { return this.message; } }
+export class ConsultantNotFoundError extends Error { readonly statusCode = 404; readonly publicMessage = "약속을 찾을 수 없습니다."; constructor() { super("약속을 찾을 수 없습니다."); } }
 
 const view = (row: ConsultantCommitmentDoc): ConsultantCommitment => ({ id: row._id, title: row.title, detail: row.detail, dueOn: row.dueOn, status: row.status, awaiting: row.awaiting, conversationId: row.conversationId, createdAt: row.createdAt.toISOString() });
 
@@ -39,6 +39,13 @@ export class ConsultantCommitments {
   /** 열린 약속. 날짜가 이른 순서. */
   async open(userId: string): Promise<ConsultantCommitment[]> {
     return (await this.rows.find({ userId, status: "open" }).sort({ dueOn: 1, createdAt: 1 }).limit(CONSULTANT_COMMITMENT_LIMIT).toArray()).map(view);
+  }
+
+  /** 약속 하나. 닫힌 약속도 돌려준다 — 대화의 약속 카드가 지금 상태를 읽는다. */
+  async get(userId: string, id: string): Promise<ConsultantCommitment> {
+    const row = await this.rows.findOne({ _id: id, userId });
+    if (!row) throw new ConsultantNotFoundError();
+    return view(row);
   }
 
   async create(userId: string, input: AgentCommitmentInput, conversationId: string | null, at = new Date()): Promise<ConsultantCommitment> {

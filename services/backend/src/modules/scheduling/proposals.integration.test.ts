@@ -54,4 +54,14 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("예약 잡과 능동 제안", ()
     expect(await run(service, "proposal_briefing")).toEqual({ skipped: "proposal service is not wired" });
     expect(await run(service, "activity_collect")).toEqual({ skipped: "activity service is not wired" });
   });
+
+  it("컨설턴트의 확인 작업은 정해진 시각에 그 모듈의 함수를 부르고, 정의가 DB에 함께 있다", async () => {
+    const seen: Date[] = [];
+    const service = new MongoSchedulingService(fixture.resource, { consultant: { run: async (at) => { seen.push(at); return { users: 2, asked: 1, quiet: 0, notified: 1, failed: 0 }; } } });
+    expect(await run(service, "consultant_checkins")).toEqual({ users: 2, asked: 1, quiet: 0, notified: 1, failed: 0 });
+    expect(seen).toEqual([new Date("2026-11-15T03:00:00Z")]);
+    expect(await run(new MongoSchedulingService(fixture.resource), "consultant_checkins")).toEqual({ skipped: "consultant service is not wired" });
+    const definition = await mongoCollections(fixture.resource.db).scheduledJobDefinitions.findOne({ _id: "consultant_checkins" });
+    expect(definition).toMatchObject({ intervalSeconds: 86_400 });
+  });
 });
