@@ -43,9 +43,9 @@ describe("디자인 대화 경로", () => {
     expect((await server.inject({ method: "GET", url: `/v1/brews/${brew}/design-chat?since=3` })).json()).toEqual({ data: { chat: null, unchanged: true } });
     expect(service.get).toHaveBeenCalledWith(user, brew, 3);
     expect((await server.inject({ method: "POST", url: `/v1/brews/${brew}/design-chat/open`, payload: { requestId: request } })).statusCode).toBe(202);
-    const sent = await server.inject({ method: "POST", url: `/v1/brews/${brew}/design-chat/messages`, payload: { action: "draw", requestId: request, directionIds: [request] } });
+    const sent = await server.inject({ method: "POST", url: `/v1/brews/${brew}/design-chat/messages`, payload: { action: "draw", requestId: request, styleId: request, layoutId: request } });
     expect(sent.statusCode).toBe(202);
-    expect(service.send).toHaveBeenCalledWith(user, brew, { action: "draw", requestId: request, directionIds: [request] });
+    expect(service.send).toHaveBeenCalledWith(user, brew, { action: "draw", requestId: request, styleId: request, layoutId: request });
     expect((await server.inject({ method: "POST", url: `/v1/brews/${brew}/design-chat/messages`, payload: { action: "say", requestId: request, text: " " } })).statusCode).toBe(400);
     expect((await server.inject({ method: "POST", url: `/v1/brews/${brew}/design-chat/selection`, payload: { snippetId: null } })).statusCode).toBe(200);
     expect(service.select).toHaveBeenCalledWith(user, brew, null);

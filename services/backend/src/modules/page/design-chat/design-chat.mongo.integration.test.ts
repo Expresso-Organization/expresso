@@ -7,6 +7,7 @@ import { createMongoFixture } from "../../../../test/support/mongodb.js";
 import type { AiCallSpec } from "../../../platform/ai/client.js";
 import { ScriptedAiClient } from "../../../platform/ai/scripted-client.js";
 import { MongoCareerService } from "../../career/index.js";
+import { catalogEntries } from "../../design-systems/catalog.js";
 import { ConsentService } from "../../consent/index.js";
 import { MongoGenerationService } from "../../generation/index.js";
 import { MongoIdentityService } from "../../identity/index.js";
@@ -18,19 +19,23 @@ import { DesignChatService } from "./service.js";
 
 /**
  * 디자인 대화가 오가는 길 전체. 모델은 부르지 않고 정해 둔 답을 돌려준다 — 여기서 보는 것은 배관이다.
- * 여는 말 · 견본으로 그리기 · 말로 고치기 · 실패와 다시 시도 · 끊긴 실행 · 고른 첫 화면으로 만든 지면.
+ * 여는 말 · 따로 고른 스타일과 레이아웃으로 그리기 · 말로 고치기 · 실패와 다시 시도 · 끊긴 실행 · 고른 첫 화면으로 만든 지면.
  */
 const tokens = { background: "#101418", text: "#f2f4f6", accent: "#7fe3c4", font: "mono" as const, density: "comfortable" as const };
+const blocks = [{ kind: "title" as const, x: 0, y: 0, w: 6, h: 2 }, { kind: "figure" as const, x: 6, y: 1, w: 10, h: 6 }, { kind: "text" as const, x: 0, y: 3, w: 5, h: 3 }, { kind: "accent" as const, x: 0, y: 7, w: 4, h: 2 }];
+const style = (key: string) => ({ name: `스타일 ${key}`, words: `${key} 경로 도면의 색`, tokens });
+const layout = (key: string) => ({ name: `레이아웃 ${key}`, words: `${key} 경로 지도`, blocks });
 const opening = {
   head: { role: "엔지니어", headline: "경로를 설계하는 엔지니어입니다.", intro: "", subject: "통로 경로", lead: ["통로 경로를 검토했습니다."] },
-  say: "경로 검토를 앞에 세우겠습니다. 어떤 분위기로 보여 드릴까요?",
-  directions: (["document", "work", "cover"] as const).map((composition, index) => ({ name: `방향 ${"가나다"[index]}`, words: `${"가나다"[index]} 방향의 색과 서체`, tokens, composition })),
+  say: "통로 경로를 검토하신 일이 눈에 띄네요. 어떤 느낌으로 보여 드릴까요?",
+  styles: [..."가나다"].map(style),
+  layouts: [..."가나다"].map(layout),
 };
+const reply = { say: "그렇게 해 볼게요.", show: "none" as const, styles: [], layouts: [], screens: [], instruction: "" };
 const snippet = (name: string) => ({
   name,
-  note: `${name}의 첫 화면입니다.`,
+  note: `${name}을 가장 크게 세웠어요.`,
   tokens,
-  composition: "metric" as const,
   css: `.hero{color:${tokens.text}}`,
   html: `<header class="hero"><h1>가상 작성자</h1><p>${name}</p><script>alert(1)</script></header>`,
 });
@@ -68,10 +73,13 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     await service.settled();
     return (await service.get(user, brewId)).chat!;
   };
-  const directionIds = (chat: DesignChat) => {
+  /** 첫 견본 카드의 스타일과 레이아웃. 둘은 따로 놓인 목록이다. */
+  const proposed = (chat: DesignChat) => {
     const first = chat.messages[0];
-    return first?.role === "assistant" && first.card?.kind === "directions" ? first.card.directions.map(({ id }) => id) : [];
+    return first?.role === "assistant" && first.card?.kind === "proposals" ? first.card : { styles: [], layouts: [] };
   };
+  /** 첫 스타일과 첫 레이아웃을 골라 그리는 요청. */
+  const drawFirst = (chat: DesignChat) => ({ action: "draw" as const, requestId: randomUUID(), styleId: proposed(chat).styles[0]!.id, layoutId: proposed(chat).layouts[0]!.id });
 
   beforeAll(async () => {
     fixture = await createMongoFixture("designchat");
@@ -101,8 +109,12 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const chat = await opened(service, brewId);
     expect(chat.run?.status).toBe("complete");
     expect(chat.messages).toHaveLength(1);
-    expect(chat.messages[0]).toMatchObject({ role: "assistant", status: "complete", text: opening.say, card: { kind: "directions" } });
-    expect(directionIds(chat)).toHaveLength(3);
+    expect(chat.messages[0]).toMatchObject({ role: "assistant", status: "complete", text: opening.say, card: { kind: "proposals" } });
+    // 스타일과 레이아웃은 따로 놓인다. 스타일은 구성을, 레이아웃은 색을 갖지 않는다.
+    expect(proposed(chat).styles.map(({ name }) => name)).toEqual(["스타일 가", "스타일 나", "스타일 다"]);
+    expect(proposed(chat).layouts.map(({ name }) => name)).toEqual(["레이아웃 가", "레이아웃 나", "레이아웃 다"]);
+    expect(proposed(chat).styles[0]).not.toHaveProperty("blocks");
+    expect(proposed(chat).layouts[0]).not.toHaveProperty("tokens");
     // 여는 호출은 Sonnet으로 부른다. 계약의 기본 등급(Opus)에 맡기지 않는다.
     expect(ai.calls.at(-1)).toMatchObject({ contract: "page_design", modelTier: "sonnet" });
     expect((await mongoCollections(fixture.resource.db).designChats.findOne({ brewId }))?.head).toEqual(opening.head);
@@ -133,45 +145,76 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     }
   });
 
-  it("견본을 누르면 그 방향의 첫 화면을 그려 소독해 저장한다", async () => {
+  it("스타일 하나와 레이아웃 하나를 골라 보내면 그 짝의 첫 화면을 그려 소독해 저장한다", async () => {
     const service = make();
     const brewId = await newBrew(user);
     const chat = await opened(service, brewId);
-    const [first] = directionIds(chat);
-    route = () => snippet("방향 가 리포트");
-    const sent = await service.send(user, brewId, { action: "draw", requestId: randomUUID(), directionIds: [first!] });
+    // 서로 다른 자리의 것을 짝짓는다 — 어느 스타일이든 어느 레이아웃과 짝이 된다.
+    const [picked, shape] = [proposed(chat).styles[0]!, proposed(chat).layouts[2]!];
+    route = () => snippet("가 화면");
+    const sent = await service.send(user, brewId, { action: "draw", requestId: randomUUID(), styleId: picked.id, layoutId: shape.id });
     expect(sent.run?.status).toBe("running");
-    expect(sent.messages.at(-1)).toMatchObject({ role: "assistant", status: "running", card: { kind: "screens", items: [{ status: "drawing", name: "방향 가", composition: "document" }] } });
+    expect(sent.messages.at(-1)).toMatchObject({ role: "assistant", status: "running", card: { kind: "screens", items: [{ status: "drawing", name: "스타일 가", layout: { name: "레이아웃 다", blocks } }] } });
     // 답을 만드는 동안에는 새로 보낼 수 없다.
-    await expect(service.send(user, brewId, { action: "draw", requestId: randomUUID(), directionIds: [first!] })).rejects.toMatchObject({ statusCode: 409 });
+    await expect(service.send(user, brewId, drawFirst(chat))).rejects.toMatchObject({ statusCode: 409 });
     await service.settled();
 
     const done = (await service.get(user, brewId)).chat!;
     expect(done.run?.status).toBe("complete");
-    expect(done.messages.at(-2)).toMatchObject({ role: "user", action: "draw", subjects: [{ kind: "direction", id: first, name: "방향 가" }] });
+    expect(done.messages.at(-2)).toMatchObject({ role: "user", action: "draw", subjects: [{ kind: "style", id: picked.id, name: "스타일 가" }, { kind: "layout", id: shape.id, name: "레이아웃 다" }] });
     const answer = done.messages.at(-1)!;
-    expect(answer).toMatchObject({ role: "assistant", status: "complete", text: "방향 가 리포트의 첫 화면입니다." });
+    // 한 장을 그리면 그린 쪽이 건네는 말이 답이 된다.
+    expect(answer).toMatchObject({ role: "assistant", status: "complete", text: "가 화면을 가장 크게 세웠어요." });
     expect(done.snippets).toHaveLength(1);
-    // 짜임은 방향이 정한 것이다. 그린 쪽이 다른 짜임을 적어도 방향의 것을 쓴다.
-    expect(done.snippets[0]).toMatchObject({ origin: "agent", name: "방향 가 리포트", fromSnippetId: null, tokens, composition: "document" });
+    expect(done.snippets[0]).toMatchObject({ origin: "agent", name: "가 화면", fromSnippetId: null, tokens, layout: { name: "레이아웃 다", words: "다 경로 지도", blocks } });
     expect(done.snippets[0]!.html).not.toContain("<script");
     expect(answer.role === "assistant" && answer.card?.kind === "screens" && answer.card.items[0]).toMatchObject({ status: "done", snippetId: done.snippets[0]!.id });
     expect(ai.calls.at(-1)).toMatchObject({ contract: "page_generation", modelTier: "sonnet" });
-    // 그리는 호출은 원문 자료와 그 방향의 짜임을 받는다.
-    expect(ai.calls.at(-1)!.prompt).toContain("통로 경로를 검토했습니다.");
-    expect(ai.calls.at(-1)!.prompt).toContain("## 짜임 — 소개 글과 목록으로 시작하는 문서");
-    await expect(service.send(user, brewId, { action: "draw", requestId: randomUUID(), directionIds: [randomUUID()] })).rejects.toMatchObject({ statusCode: 422 });
+    // 그리는 호출은 원문 자료와, 따로 고른 스타일 · 레이아웃(견본이 그린 배치도와 같은 값)을 받는다.
+    const prompt = ai.calls.at(-1)!.prompt;
+    expect(prompt).toContain("통로 경로를 검토했습니다.");
+    expect(prompt).toContain("고른 것: **스타일 가**");
+    expect(prompt).toContain("고른 것: **레이아웃 다** — 다 경로 지도");
+    expect(prompt).toContain("왼쪽에서 6칸 · 위에서 1칸 자리에 가로 10칸 · 세로 6칸");
+    await expect(service.send(user, brewId, { ...drawFirst(chat), styleId: randomUUID() })).rejects.toMatchObject({ statusCode: 422 });
+    // 스타일의 ID를 레이아웃 자리에 보내면 찾지 못한다 — 두 목록은 섞이지 않는다.
+    await expect(service.send(user, brewId, { ...drawFirst(chat), layoutId: picked.id })).rejects.toMatchObject({ statusCode: 422 });
+  });
+
+  it("카탈로그의 디자인은 스타일로 쓰이고, 고른 레이아웃이 있으면 그 구성으로 그린다", async () => {
+    const service = make();
+    const brewId = await newBrew(user);
+    const chat = await opened(service, brewId);
+    const revisionId = catalogEntries()[0]!.revision.revisionId;
+    route = () => snippet("카탈로그 화면");
+    await service.send(user, brewId, { action: "draw_catalog", requestId: randomUUID(), revisionId });
+    await service.settled();
+    const alone = (await service.get(user, brewId)).chat!;
+    expect(alone.messages.at(-2)).toMatchObject({ role: "user", action: "draw_catalog", subjects: [{ kind: "catalog", id: revisionId }] });
+    // 레이아웃을 고르지 않았으면 구성은 그리는 쪽이 정한다.
+    expect(alone.snippets.at(-1)).toMatchObject({ origin: "catalog", layout: null });
+    expect(ai.calls.at(-1)!.prompt).toContain("## 레이아웃 — 정해지지 않았다");
+
+    const shape = proposed(chat).layouts[1]!;
+    await service.send(user, brewId, { action: "draw_catalog", requestId: randomUUID(), revisionId, layoutId: shape.id });
+    await service.settled();
+    const paired = (await service.get(user, brewId)).chat!;
+    expect(paired.messages.at(-2)).toMatchObject({ subjects: [{ kind: "catalog", id: revisionId }, { kind: "layout", id: shape.id, name: "레이아웃 나" }] });
+    expect(paired.snippets.at(-1)).toMatchObject({ origin: "catalog", layout: { name: "레이아웃 나" } });
+    expect(ai.calls.at(-1)!.prompt).toContain("고른 것: **레이아웃 나**");
   });
 
   it("여러 장 가운데 한 장이 실패해도 나머지는 남고, 다시 시도는 그리지 못한 장만 그린다", async () => {
     const service = make();
     const brewId = await newBrew(user);
-    const chat = await opened(service, brewId);
+    await opened(service, brewId);
+    // 여러 장은 답하는 호출이 스타일과 레이아웃을 짝지어 청한다.
     route = (request) => {
-      if (request.prompt.includes("방향 나")) throw new Error("그리기 실패");
-      return snippet(request.prompt.includes("방향 가") ? "가 화면" : "다 화면");
+      if (request.contract === "page_design") return { ...reply, show: "screens", screens: [..."가나다"].map((key) => ({ source: "agent", style: style(key), layout: layout(key) })) };
+      if (request.prompt.includes("고른 것: **스타일 나**")) throw new Error("그리기 실패");
+      return snippet(request.prompt.includes("고른 것: **스타일 가**") ? "가 화면" : "다 화면");
     };
-    await service.send(user, brewId, { action: "draw", requestId: randomUUID(), directionIds: directionIds(chat) });
+    await service.send(user, brewId, { action: "say", requestId: randomUUID(), text: "세 가지 다 실제 모습으로 보여 주세요" });
     await service.settled();
     const partial = (await service.get(user, brewId)).chat!;
     const card = partial.messages.at(-1)!;
@@ -186,8 +229,11 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const repaired = (await service.get(user, brewId)).chat!;
     const again = repaired.messages.at(-1)!;
     expect(ai.calls.length).toBe(before + 1);
+    // 다시 그릴 때도 그 장의 스타일과 레이아웃으로 그린다.
+    expect(ai.calls.at(-1)!.prompt).toContain("고른 것: **레이아웃 나**");
     expect(again.role === "assistant" && again.card?.kind === "screens" && again.card.items.map(({ status }) => status)).toEqual(["done", "done", "done"]);
     expect(repaired.snippets).toHaveLength(3);
+    expect(repaired.snippets.at(-1)).toMatchObject({ origin: "user", layout: { name: "레이아웃 나" } });
     await expect(service.retry(user, brewId, randomUUID())).rejects.toMatchObject({ statusCode: 409 });
   });
 
@@ -196,26 +242,26 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const brewId = await newBrew(user);
     const chat = await opened(service, brewId);
     route = () => snippet("가 화면");
-    await service.send(user, brewId, { action: "draw", requestId: randomUUID(), directionIds: [directionIds(chat)[0]!] });
+    await service.send(user, brewId, drawFirst(chat));
     await service.settled();
     const drawn = (await service.get(user, brewId)).chat!.snippets[0]!;
 
-    route = (request) => (request.contract === "page_design" ? { say: "강조색만 바꿨습니다.", show: "revision", directions: [], instruction: "강조색을 짙은 초록으로 바꾼다" } : { ...snippet("가 화면 초록"), tokens: { ...tokens, accent: "#1f5c3a" } });
+    route = (request) => (request.contract === "page_design" ? { ...reply, say: "강조색만 바꿔 볼게요.", show: "revision", instruction: "강조색을 짙은 초록으로 바꾼다" } : { ...snippet("가 화면 초록"), tokens: { ...tokens, accent: "#1f5c3a" } });
     await service.send(user, brewId, { action: "say", requestId: randomUUID(), text: "강조색을 짙은 초록으로", subject: { kind: "snippet", id: drawn.id } });
     await service.settled();
     const revised = (await service.get(user, brewId)).chat!;
     expect(revised.messages.at(-2)).toMatchObject({ role: "user", action: "say", text: "강조색을 짙은 초록으로", subjects: [{ kind: "snippet", id: drawn.id, name: "가 화면" }] });
-    expect(revised.messages.at(-1)).toMatchObject({ role: "assistant", status: "complete", text: "강조색만 바꿨습니다.", card: { kind: "revision", fromSnippetId: drawn.id, item: { status: "done" } } });
-    expect(revised.snippets.at(-1)).toMatchObject({ origin: "edit", fromSnippetId: drawn.id, name: "가 화면 초록", words: "강조색을 짙은 초록으로 바꾼다", composition: drawn.composition });
+    expect(revised.messages.at(-1)).toMatchObject({ role: "assistant", status: "complete", text: "강조색만 바꿔 볼게요.", card: { kind: "revision", fromSnippetId: drawn.id, item: { status: "done" } } });
+    expect(revised.snippets.at(-1)).toMatchObject({ origin: "edit", fromSnippetId: drawn.id, name: "가 화면 초록", words: "강조색을 짙은 초록으로 바꾼다", layout: drawn.layout });
     // 답하는 호출은 대화 요약과 대상을 받고, 고치는 호출은 지금 첫 화면의 마크업을 받는다.
-    const [reply, revise] = ai.calls.slice(-2);
-    expect(reply!.prompt).toContain("## 이 말의 대상");
-    expect(reply!.prompt).toContain(opening.say);
+    const [answered, revise] = ai.calls.slice(-2);
+    expect(answered!.prompt).toContain("## 이 말의 대상");
+    expect(answered!.prompt).toContain(opening.say);
     expect(revise!.prompt).toContain(drawn.html);
 
     // 대상 없이 고치겠다고 답하면 검사가 걸러 그 칸만 고쳐 받는다.
     const directed = new ScriptedAiClient(
-      () => ({ say: "고치겠습니다.", show: "revision", directions: [], instruction: "밝게" }),
+      () => ({ ...reply, say: "고쳐 볼게요.", show: "revision", instruction: "밝게" }),
       () => [{ path: "/show", value: "none" }],
     );
     const strict = new DesignChatService(fixture.resource, directed, new ConsentService(fixture.resource));
@@ -223,14 +269,20 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     await strict.send(user, brewId, { action: "say", requestId: randomUUID(), text: "조금 더 밝게요" });
     await strict.settled();
     expect(directed.fixRequests).toHaveLength(1);
-    expect((await service.get(user, brewId)).chat!.messages.at(-1)).toMatchObject({ role: "assistant", status: "complete", card: null, text: "고치겠습니다." });
+    expect((await service.get(user, brewId)).chat!.messages.at(-1)).toMatchObject({ role: "assistant", status: "complete", card: null, text: "고쳐 볼게요." });
 
-    // 견본으로 답하면 견본 카드가 붙고, 그것도 누를 수 있는 견본이 된다.
-    route = () => ({ say: "두 방향을 더 놓았습니다.", show: "directions", directions: [{ name: "방향 라", words: "라 방향", tokens, composition: "work", source: "agent" }], instruction: "" });
-    await service.send(user, brewId, { action: "say", requestId: randomUUID(), text: "다른 방향도 보여 주세요" });
+    // 견본으로 답하면 견본 카드가 붙는다. 색 이야기에는 스타일만 새로 낸다 — 레이아웃 줄은 비어 있다.
+    route = () => ({ ...reply, say: "더 밝은 쪽으로 놓아 봤어요.", show: "proposals", styles: [style("라")] });
+    await service.send(user, brewId, { action: "say", requestId: randomUUID(), text: "더 밝은 색도 보여 주세요" });
     await service.settled();
     const more = (await service.get(user, brewId)).chat!.messages.at(-1)!;
-    expect(more).toMatchObject({ role: "assistant", status: "complete", card: { kind: "directions", directions: [{ name: "방향 라", composition: "work" }] } });
+    expect(more).toMatchObject({ role: "assistant", status: "complete", card: { kind: "proposals", styles: [{ name: "스타일 라" }], layouts: [] } });
+    // 새로 놓인 스타일도 앞서 놓인 레이아웃과 짝이 된다.
+    const fresh = more.role === "assistant" && more.card?.kind === "proposals" ? more.card.styles[0]! : null;
+    route = () => snippet("라 화면");
+    await service.send(user, brewId, { action: "draw", requestId: randomUUID(), styleId: fresh!.id, layoutId: proposed(chat).layouts[1]!.id });
+    await service.settled();
+    expect((await service.get(user, brewId)).chat!.snippets.at(-1)).toMatchObject({ name: "라 화면", layout: { name: "레이아웃 나" } });
   });
 
   it("답을 만들다 멎은 실행은 읽을 때 끊긴 것으로 바뀌고 다시 시도할 수 있다", async () => {
@@ -252,10 +304,10 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect(stale.run).toMatchObject({ status: "interrupted", error: expect.stringContaining("끊겼습니다") });
     expect(stale.messages.at(-1)).toMatchObject({ role: "assistant", status: "failed" });
 
-    route = () => ({ say: "밝게 잡은 방향입니다.", show: "none", directions: [], instruction: "" });
+    route = () => ({ ...reply, say: "밝게 잡아 볼게요." });
     await service.retry(user, brewId, randomUUID());
     await service.settled();
-    expect((await service.get(user, brewId)).chat!.messages.at(-1)).toMatchObject({ role: "assistant", status: "complete", text: "밝게 잡은 방향입니다." });
+    expect((await service.get(user, brewId)).chat!.messages.at(-1)).toMatchObject({ role: "assistant", status: "complete", text: "밝게 잡아 볼게요." });
   });
 
   it("서버가 내려가면 돌리던 답을 끊긴 것으로 적는다", async () => {
@@ -273,7 +325,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const brewId = await newBrew(user);
     const chat = await opened(service, brewId);
     route = () => snippet("가 화면");
-    await service.send(user, brewId, { action: "draw", requestId: randomUUID(), directionIds: [directionIds(chat)[0]!] });
+    await service.send(user, brewId, drawFirst(chat));
     await service.settled();
     const picked = (await service.get(user, brewId)).chat!.snippets[0]!;
     expect((await service.select(user, brewId, picked.id)).selectedSnippetId).toBe(picked.id);

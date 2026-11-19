@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { DesignAssistantMessageSchema, DesignCardSchema, DesignSnippetSchema, type DesignCard, type DesignChat, type DesignChatMessage, type DesignDirection, type DesignScreenItem, type DesignSnippet, type DesignSubject, type SendDesignMessage } from "@expresso/contracts";
+import { DesignAssistantMessageSchema, DesignCardSchema, DesignSnippetSchema, type DesignCard, type DesignChat, type DesignChatMessage, type DesignLayout, type DesignLayoutSpec, type DesignScreenItem, type DesignSnippet, type DesignStyle, type DesignSubject, type SendDesignMessage } from "@expresso/contracts";
 import { mongoCollections, type DesignChatDoc, type JsonObject } from "@expresso/database";
 import type { Db, UpdateFilter } from "mongodb";
 
@@ -16,14 +16,14 @@ import {
   OpeningSchema,
   ReplySchema,
   SnippetDraftSchema,
-  catalogDirection,
+  catalogStyle,
   drawCall,
   openingCall,
   replyCall,
   reviseCall,
   type DesignHead,
-  type DirectionDraft,
   type ReplySubject,
+  type StyleDraft,
 } from "./prompts.js";
 
 /**
@@ -69,6 +69,11 @@ const view = (row: DesignChatDoc): DesignChat => ({
   version: row.version,
   updatedAt: row.updatedAt,
 });
+
+/** 그릴 첫 화면 한 장. 스타일과 레이아웃은 따로 고른 것이고, 여기서 한 장으로 짝지어진다. */
+const screenItem = (style: StyleDraft, layout: DesignLayoutSpec | null): DesignScreenItem => ({ id: randomUUID(), name: style.name, words: style.words, tokens: style.tokens, layout, status: "drawing", snippetId: null });
+/** 견본 카드의 레이아웃에서 ID를 뗀 것. 첫 화면과 그리는 호출은 값만 가진다. */
+const layoutSpec = ({ name, words, blocks }: DesignLayout): DesignLayoutSpec => ({ name, words, blocks });
 
 /** 그리다 만 장(`drawing`)과 그리지 못한 장(`failed`). 다시 시도할 때 이 장들만 다시 그린다. */
 const unfinished = (card: DesignCard | null): DesignScreenItem[] =>
@@ -179,46 +184,51 @@ export class DesignChatService {
     if (row.run?.status === "running") throw new DesignChatError(409, "design chat is running", "답을 만드는 중입니다. 끝난 뒤에 보내 주세요.");
     await this.#gate(userId);
 
-    const directions = row.messages.flatMap((message) => (message.role === "assistant" && message.card?.kind === "directions" ? message.card.directions : []));
-    const direction = (id: string): DesignDirection => {
-      const found = directions.find((item) => item.id === id);
-      if (!found) throw new DesignChatError(422, "direction not found", "그 견본을 대화에서 찾지 못했습니다.");
+    const proposals = row.messages.flatMap((message) => (message.role === "assistant" && message.card?.kind === "proposals" ? [message.card] : []));
+    const style = (id: string): DesignStyle => {
+      const found = proposals.flatMap((card) => card.styles).find((item) => item.id === id);
+      if (!found) throw new DesignChatError(422, "style not found", "그 스타일을 대화에서 찾지 못했습니다.");
       return found;
     };
-    const catalog = (revisionId: string): DirectionDraft => {
-      const found = catalogDirection(revisionId);
+    const layout = (id: string): DesignLayout => {
+      const found = proposals.flatMap((card) => card.layouts).find((item) => item.id === id);
+      if (!found) throw new DesignChatError(422, "layout not found", "그 레이아웃을 대화에서 찾지 못했습니다.");
+      return found;
+    };
+    const catalog = (revisionId: string): StyleDraft => {
+      const found = catalogStyle(revisionId);
       if (!found) throw new DesignChatError(422, "design system revision not found", "그 디자인을 카탈로그에서 찾지 못했습니다.");
       return found;
     };
-    const item = (draft: DirectionDraft): DesignScreenItem => ({ id: randomUUID(), name: draft.name, words: draft.words, tokens: draft.tokens, composition: draft.composition, status: "drawing", snippetId: null });
 
     let subjects: DesignSubject[] = [];
     let text = "";
     let card: DesignCard | null = null;
     let turn: Turn;
     if (input.action === "draw") {
-      const chosen = [...new Set(input.directionIds)].map(direction);
-      subjects = chosen.map(({ id, name }) => ({ kind: "direction", id, name }));
-      const items = chosen.map(item);
+      const chosen = { style: style(input.styleId), layout: layout(input.layoutId) };
+      subjects = [{ kind: "style", id: chosen.style.id, name: chosen.style.name }, { kind: "layout", id: chosen.layout.id, name: chosen.layout.name }];
+      const items = [screenItem(chosen.style, layoutSpec(chosen.layout))];
       card = { kind: "screens", items };
-      turn = { kind: "draw", items, origins: items.map(() => "agent"), revise: null };
+      turn = { kind: "draw", items, origins: ["agent"], revise: null };
     } else if (input.action === "draw_catalog") {
       const draft = catalog(input.revisionId);
-      subjects = [{ kind: "catalog", id: input.revisionId, name: draft.name }];
-      const items = [item(draft)];
+      // 카탈로그의 디자인은 스타일이다. 견본에서 고른 레이아웃이 함께 오면 그 구성으로, 없으면 그리는 쪽이 구성을 정한다.
+      const chosen = input.layoutId ? layout(input.layoutId) : null;
+      subjects = [{ kind: "catalog", id: input.revisionId, name: draft.name }, ...(chosen ? [{ kind: "layout" as const, id: chosen.id, name: chosen.name }] : [])];
+      const items = [screenItem(draft, chosen ? layoutSpec(chosen) : null)];
       card = { kind: "screens", items };
       turn = { kind: "draw", items, origins: ["catalog"], revise: null };
     } else {
       text = input.text;
       let subject: ReplySubject | null = null;
-      if (input.subject?.kind === "direction") subject = { kind: "direction", direction: direction(input.subject.id) };
-      if (input.subject?.kind === "catalog") subject = { kind: "catalog", direction: catalog(input.subject.id) };
+      if (input.subject?.kind === "catalog") subject = { kind: "catalog", style: catalog(input.subject.id) };
       if (input.subject?.kind === "snippet") {
         const snippet = row.snippets.find(({ id }) => id === input.subject!.id);
         if (!snippet) throw new DesignChatError(422, "snippet not found", "그 첫 화면을 대화에서 찾지 못했습니다.");
         subject = { kind: "snippet", snippet };
       }
-      if (subject && input.subject) subjects = [{ kind: input.subject.kind, id: input.subject.id, name: subject.kind === "snippet" ? subject.snippet.name : subject.direction.name }];
+      if (subject && input.subject) subjects = [{ kind: input.subject.kind, id: input.subject.id, name: subject.kind === "snippet" ? subject.snippet.name : subject.style.name }];
       turn = { kind: "say", text, subject };
     }
 
@@ -274,12 +284,11 @@ export class DesignChatService {
       card = null;
       if (!prior) turn = { kind: "open" };
       else if (prior.role === "user" && prior.action === "say") {
+        // 말의 대상은 하나다 — 첫 화면이거나 카탈로그의 디자인.
         const target = prior.subjects[0];
-        const directions = row.messages.flatMap((message) => (message.role === "assistant" && message.card?.kind === "directions" ? message.card.directions : []));
-        const found = target?.kind === "direction" ? directions.find(({ id }) => id === target.id) : undefined;
         const snippet = target?.kind === "snippet" ? row.snippets.find(({ id }) => id === target.id) : undefined;
-        const fromCatalog = target?.kind === "catalog" ? catalogDirection(target.id) : null;
-        const subject: ReplySubject | null = found ? { kind: "direction", direction: found } : snippet ? { kind: "snippet", snippet } : fromCatalog ? { kind: "catalog", direction: fromCatalog } : null;
+        const fromCatalog = target?.kind === "catalog" ? catalogStyle(target.id) : null;
+        const subject: ReplySubject | null = snippet ? { kind: "snippet", snippet } : fromCatalog ? { kind: "catalog", style: fromCatalog } : null;
         turn = { kind: "say", text: prior.text, subject };
       } else throw new DesignChatError(409, "nothing to retry");
     }
@@ -366,7 +375,11 @@ export class DesignChatService {
         const call = openingCall(userId, sources);
         const { data } = await this.#ai.complete(call.spec, OpeningSchema, { userId, check: call.check });
         // 저장하기 전에 대화 계약으로 읽는다. 계약에 맞지 않는 것이 한 번 저장되면 화면이 이 대화를 다시 읽지 못한다.
-        const card = DesignCardSchema.parse({ kind: "directions", directions: data.directions.map((draft) => ({ id: randomUUID(), ...draft })) });
+        const card = DesignCardSchema.parse({
+          kind: "proposals",
+          styles: data.styles.map((draft) => ({ id: randomUUID(), ...draft })),
+          layouts: data.layouts.map((draft) => ({ id: randomUUID(), ...draft })),
+        });
         await this.#write(chatId, runId, { $set: { head: data.head as JsonObject, [`messages.${assistantAt}.text`]: DesignAssistantMessageSchema.shape.text.parse(data.say), [`messages.${assistantAt}.card`]: card } } as UpdateFilter<DesignChatDoc>);
         await this.#end(chatId, runId, assistantAt, await current(), "complete", null);
         return;
@@ -384,17 +397,17 @@ export class DesignChatService {
           selected: row.snippets.find(({ id }) => id === row.selectedSnippetId) ?? null,
         });
         const { data } = await this.#ai.complete(call.spec, ReplySchema, { userId, check: call.check });
-        const item = (draft: DirectionDraft): DesignScreenItem => ({ id: randomUUID(), name: draft.name, words: draft.words, tokens: draft.tokens, composition: draft.composition, status: "drawing", snippetId: null });
         let card: DesignCard | null = null;
-        if (data.show === "directions") card = { kind: "directions", directions: data.directions.map(({ source: _source, ...draft }) => ({ id: randomUUID(), ...draft })) };
+        if (data.show === "proposals")
+          card = { kind: "proposals", styles: data.styles.map((draft) => ({ id: randomUUID(), ...draft })), layouts: data.layouts.map((draft) => ({ id: randomUUID(), ...draft })) };
         if (data.show === "screens") {
-          const items = data.directions.map(({ source: _source, ...draft }) => item(draft));
+          const items = data.screens.map(({ style, layout }) => screenItem(style, layout));
           card = { kind: "screens", items };
-          draw = { kind: "draw", items, origins: data.directions.map(({ source }) => source), revise: null };
+          draw = { kind: "draw", items, origins: data.screens.map(({ source }) => source), revise: null };
         }
         if (data.show === "revision" && turn.subject?.kind === "snippet") {
           const from = turn.subject.snippet;
-          const entry: DesignScreenItem = { id: randomUUID(), name: from.name, words: data.instruction, tokens: from.tokens, composition: from.composition, status: "drawing", snippetId: null };
+          const entry: DesignScreenItem = { id: randomUUID(), name: from.name, words: data.instruction, tokens: from.tokens, layout: from.layout, status: "drawing", snippetId: null };
           card = { kind: "revision", fromSnippetId: from.id, item: entry };
           draw = { kind: "draw", items: [entry], origins: ["edit"], revise: { from, instruction: data.instruction } };
         }
@@ -407,17 +420,17 @@ export class DesignChatService {
           try {
             const call = revise
               ? reviseCall({ userId, sources, snippet: revise.from, instruction: revise.instruction })
-              : drawCall({ userId, sources, direction: { name: item.name, words: item.words, tokens: item.tokens, composition: item.composition } });
+              : drawCall({ userId, sources, style: { name: item.name, words: item.words, tokens: item.tokens }, layout: item.layout });
             const { data } = await this.#ai.complete(call.spec, SnippetDraftSchema, { userId, check: call.check });
             const clean = sanitizePage({ html: data.html, css: data.css });
             // 소독한 뒤의 값을 대화 계약으로 읽는다. 소독으로 마크업이 비었거나 계약에 맞지 않으면 이 장만 그리지 못한 것으로 남는다.
             const snippet: DesignSnippet = DesignSnippetSchema.parse({
               id: randomUUID(), origin: origins[index] ?? "agent", name: data.name, note: data.note, words: item.words, tokens: data.tokens,
-              // 방향이 정한 짜임이 있으면 그것이고(고친 것은 원래 첫 화면의 짜임), 없으면 그린 쪽이 고른 짜임이다.
-              composition: item.composition ?? data.composition,
+              // 그릴 때 따른 레이아웃이다(고친 것은 원래 첫 화면의 것). 카탈로그의 디자인만 골라 그렸으면 null이다.
+              layout: item.layout,
               css: clean.css, html: clean.html, fromSnippetId: revise?.from.id ?? null, createdAt: new Date().toISOString(),
             });
-            const done = { ...item, composition: snippet.composition, status: "done" as const, snippetId: snippet.id };
+            const done = { ...item, status: "done" as const, snippetId: snippet.id };
             await this.#write(chatId, runId, {
               $push: { snippets: snippet },
               $set: { [`messages.${assistantAt}.card.${revise ? "item" : "items.$[item]"}`]: done },

@@ -1,10 +1,10 @@
 "use client";
 
-import { createContext, useActionState, useContext, useEffect, useMemo, useRef, useState, type PropsWithChildren } from "react";
+import { createContext, useActionState, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type PropsWithChildren } from "react";
 import { flushSync } from "react-dom";
 import Link from "next/link";
 import { AssistantRuntimeProvider, useAuiState, useExternalStoreRuntime, type ThreadMessageLike, type ToolCallMessagePartComponent } from "@assistant-ui/react";
-import { pageDocument, pagePreviewDocument, type DesignCard, type DesignComposition, type DesignDirection, type DesignScreenItem, type DesignSnippet, type DesignTokens } from "@expresso/contracts";
+import { DESIGN_LAYOUT_GRID, pageDocument, pagePreviewDocument, type DesignCard, type DesignLayout, type DesignLayoutSpec, type DesignScreenItem, type DesignSnippet, type DesignStyle, type DesignTokens } from "@expresso/contracts";
 
 import { startGenerationAction, type BrewState } from "@/app/(app)/brew/[brewId]/design/design-actions";
 import { DesignThumb, type DesignCatalogEntry } from "@/app/(app)/brew/[brewId]/design/DesignCatalog";
@@ -25,15 +25,17 @@ import { useDesignChat, type DesignChatState } from "./useDesignChat";
  * 디자인을 정하는 대화.
  *
  * 스레드는 제품의 에이전트 채팅과 같은 부품(`Thread`)과 같은 말풍선 스타일을 쓴다. 에이전트의 답에 붙는 카드가 이 화면의
- * 본문이다 — 색 · 서체만 보이는 견본과, 이 사람의 자료로 그린 첫 화면.
+ * 본문이다 — 견본과, 이 사람의 자료로 그린 첫 화면.
  *
- * 대화에 뜬 카드는 누르면 대화가 이어진다. 견본은 에이전트의 질문에 대한 답이고(누르면 그 방향의 첫 화면을 그린다),
- * 첫 화면은 다음 말의 대상이 된다(「말로 고치기」). 배치는 흐름이 기본이고, 대화 안의 큰 첫 화면을 누르면 무대로 넓어진다.
+ * 견본은 스타일(색 · 서체 · 분위기)과 레이아웃(구성)을 따로 놓는다. 사용자는 각각에서 하나씩 고르고, 그 짝으로 첫 화면을 그린다.
+ * 대화에 뜬 카드는 누르면 대화가 이어진다 — 견본은 에이전트의 질문에 대한 답이고, 첫 화면은 다음 말의 대상이 된다(「말로 고치기」).
+ * 배치는 흐름이 기본이고, 대화 안의 큰 첫 화면을 누르면 무대로 넓어진다.
  */
 export interface CatalogItem { revisionId: string; code: string; name: string; reason: string; preview: DesignCatalogEntry["preview"] }
 export interface DesignChatNotice { tone: "info" | "error"; text: string }
 
 type Layout = "stream" | "stage";
+interface Picked { style: string | null; layout: string | null }
 /** 다음 말이 가리킬 대상. 첫 화면이면 그것을 고치는 말이 되고, 카탈로그의 디자인이면 그 디자인으로 그린다. */
 type Subject = { kind: "snippet"; id: string } | { kind: "catalog"; item: CatalogItem };
 
@@ -46,18 +48,6 @@ const FONT_STACK = {
 } as const;
 /** 첫 화면 한 장의 원래 크기. 이 폭에서 그려 두고 카드 폭에 맞춰 줄인다. 그리는 호출도 화면 하나를 이 크기로 잡는다. */
 const FRAME = { width: 1440, height: 900 };
-/** 첫 화면의 짜임 — 지면이 시작하는 자리에 무엇을 놓는가. 견본과 첫 화면 이름 옆에 적는다. */
-const COMPOSITION_LABEL: Record<DesignComposition, string> = { document: "문서형", work: "작업물 목록형", cover: "표지형", metric: "수치 중심" };
-/**
- * 짜임을 선과 면으로 줄인 그림. 견본의 색 면 위에 그 방향의 글자색 · 강조색으로 그린다.
- * 줄 하나가 글 한 줄이나 목록 한 칸이다 — `t` 제목, `l` 글, `a` 강조, `r` 가르는 선.
- */
-const SKELETON: Record<DesignComposition, string[][]> = {
-  document: [["t:28"], ["l:72"], ["l:66"], ["l:40"], ["r:100"], ["t:18", "l:54"], ["t:18", "l:46"]],
-  work: [["t:16", "l:44"], ["r:100"], ["l:12", "t:20", "l:38", "l:12"], ["l:12", "t:24", "l:34", "l:12"], ["l:12", "t:18", "l:40", "l:12"], ["l:12", "t:22", "l:30", "l:12"]],
-  cover: [["l:14"], ["T:46"], ["l:38"]],
-  metric: [["t:22", "A:26"], ["l:34", "l:20"], ["l:28", "a:14"]],
-};
 /** 넓어지는 첫 화면과 무대의 첫 화면이 한 물건으로 이어지게 하는 이름. 한 번에 한 틀에만 붙인다. */
 const MORPH = "design-chat-focus";
 
@@ -72,7 +62,13 @@ interface View {
   cards: Record<string, ThreadCard>;
   users: ReturnType<typeof threadOf>["users"];
   snippet(id: string | null): DesignSnippet | undefined;
-  direction(id: string): DesignDirection | undefined;
+  styleOf(id: string | null): DesignStyle | undefined;
+  layoutOf(id: string | null): DesignLayout | undefined;
+  /** 견본에서 고른 스타일과 레이아웃. 따로 고르고, 둘이 모이면 첫 화면을 그릴 수 있다. */
+  picked: Picked;
+  pick(kind: keyof Picked, id: string): void;
+  /** 가장 나중에 뜬 견본 카드. 고른 짝과 「첫 화면 보기」는 이 카드 아래에만 둔다. */
+  lastProposals: string | null;
   /** 답을 만드는 중이거나 요청을 보내는 중이다. 그동안 카드는 눌리지 않는다. */
   busy: boolean;
   layout: Layout;
@@ -101,6 +97,7 @@ export function DesignChat({ brewId, recipeId, catalog, generationAllowed, notic
   const [layout, setLayout] = useState<Layout>("stream");
   const [focus, setFocus] = useState<string | null>(null);
   const [subject, setSubject] = useState<Subject | null>(null);
+  const [picked, setPicked] = useState<Picked>({ style: null, layout: null });
   const [sheet, setSheet] = useState(false);
   /** 동의 안내를 닫았는가. 닫아도 동의는 여전히 필요하므로 입력창 위에 다시 여는 자리를 둔다. */
   const [consentClosed, setConsentClosed] = useState(false);
@@ -186,13 +183,19 @@ export function DesignChat({ brewId, recipeId, catalog, generationAllowed, notic
     return () => window.removeEventListener("keydown", onKey);
   });
 
+  const proposals = (chat?.messages ?? []).flatMap((message) => (message.role === "assistant" && message.card?.kind === "proposals" ? [{ id: message.id, card: message.card }] : []));
   const view: View = {
     brewId, recipeId, generationAllowed, catalog, state,
     askConsent: state.consentRequired && consentClosed ? () => setConsentClosed(false) : null,
     cards: thread.cards,
     users: thread.users,
     snippet: (id) => chat?.snippets.find((item) => item.id === id),
-    direction: (id) => chat?.messages.flatMap((message) => (message.role === "assistant" && message.card?.kind === "directions" ? message.card.directions : [])).find((item) => item.id === id),
+    styleOf: (id) => proposals.flatMap(({ card }) => card.styles).find((item) => item.id === id),
+    layoutOf: (id) => proposals.flatMap(({ card }) => card.layouts).find((item) => item.id === id),
+    picked,
+    // 같은 것을 다시 누르면 고른 것을 푼다.
+    pick: (kind, id) => setPicked((current) => ({ ...current, [kind]: current[kind] === id ? null : id })),
+    lastProposals: proposals.at(-1)?.id ?? null,
     busy,
     layout,
     focus,
@@ -252,12 +255,12 @@ function PlainGroup({ children }: PropsWithChildren) {
 }
 
 const CardTool: ToolCallMessagePartComponent = ({ toolCallId }) => {
-  const { cards, state } = useView();
+  const { cards, state, lastProposals } = useView();
   const card = cards[toolCallId];
   if (!card) return null;
   // 다시 시도는 마지막 답만 받는다. 앞선 답의 그리지 못한 장에는 다시 그리는 자리를 두지 않는다.
   const last = !state.running && state.chat?.messages.at(-1)?.id === toolCallId;
-  if (card.kind === "directions") return <Specimens directions={card.directions} />;
+  if (card.kind === "proposals") return <Proposals styles={card.styles} layouts={card.layouts} footer={toolCallId === lastProposals} />;
   if (card.kind === "screens") return <Screens items={card.items} retryable={last} />;
   if (card.kind === "revision") return <Revision card={card} retryable={last} />;
   return <Failure text={card.error} retryable={last} />;
@@ -276,29 +279,27 @@ function Failure({ text, retryable }: { text: string; retryable: boolean }) {
   );
 }
 
-function Skeleton({ composition, accent }: { composition: DesignComposition; accent: string }) {
+/**
+ * 레이아웃의 배치도. 첫 화면을 가로 16칸 · 세로 10칸으로 나눈 격자 위의 블록을 그 자리에 그린다.
+ * 그리는 호출도 같은 블록을 받는다 — 보고 고른 구성과 그려지는 구성이 같은 값에서 나온다.
+ * 스타일이 주어지면 그 바탕 · 글자 · 강조색으로 그린다. 없으면 화면의 중립 색이다.
+ */
+function Wireframe({ blocks, tokens }: { blocks: DesignLayoutSpec["blocks"]; tokens?: DesignTokens | undefined }) {
+  const { columns, rows } = DESIGN_LAYOUT_GRID;
+  const tint = tokens ? ({ background: tokens.background, color: tokens.text, "--wire-accent": tokens.accent } as CSSProperties) : undefined;
   return (
-    <span className={styles.skeleton} data-kind={composition} aria-hidden="true">
-      {SKELETON[composition].map((row, index) => (
-        <span key={index}>
-          {row.map((cell, at) => {
-            const [kind = "l", width] = cell.split(":");
-            return <i key={at} data-part={kind} style={{ width: `${width}%`, ...(kind === "a" || kind === "A" ? { background: accent } : {}) }} />;
-          })}
-        </span>
+    <span className={styles.wire} aria-hidden="true" style={tint}>
+      {blocks.map((block, index) => (
+        <i key={index} data-kind={block.kind} style={{ left: `${(block.x / columns) * 100}%`, top: `${(block.y / rows) * 100}%`, width: `${(block.w / columns) * 100}%`, height: `${(block.h / rows) * 100}%` }}><b /></i>
       ))}
     </span>
   );
 }
 
-/**
- * 견본. 바탕색 면에 첫 화면의 짜임을 선과 면으로 그리고, 방향의 이름을 그 서체로 놓고, 강조 · 글자 색을 점으로 둔다.
- * 짜임이 정해지지 않은 것(카탈로그의 디자인을 그리는 중)은 색과 서체만 보인다.
- */
-function Swatch({ name, tokens, composition }: { name: string; tokens: DesignTokens; composition: DesignComposition | null }) {
+/** 스타일의 얼굴. 바탕색 면에 이름을 그 서체로 놓고, 강조 · 글자 색을 점으로 둔다. */
+function Swatch({ name, tokens }: { name: string; tokens: DesignTokens }) {
   return (
     <span className={styles.swatchFace} style={{ background: tokens.background, color: tokens.text, fontFamily: FONT_STACK[tokens.font] }}>
-      {composition ? <Skeleton composition={composition} accent={tokens.accent} /> : null}
       <strong>{name}</strong>
       <span className={styles.swatchDots} aria-hidden="true">
         <i style={{ background: tokens.accent }} />
@@ -309,30 +310,68 @@ function Swatch({ name, tokens, composition }: { name: string; tokens: DesignTok
 }
 
 /**
- * 견본 묶음. 견본 하나하나가 에이전트의 질문에 대한 답이다 — 누르면 그 견본이 붙은 말이 대화에 들어가고
- * 에이전트가 그 방향의 첫 화면을 그린다.
+ * 견본 묶음. 스타일과 레이아웃을 다른 줄에 따로 놓는다 — 사용자는 각각에서 하나씩 고른다.
+ * 스타일을 고르면 레이아웃의 배치도가 그 색으로 바뀌어, 고른 짝이 어떤 모습일지를 그리기 전에 보인다.
+ * 둘을 고르면 「첫 화면 보기」가 그 짝을 대화에 보내고 에이전트가 첫 화면을 그린다.
  */
-function Specimens({ directions }: { directions: DesignDirection[] }) {
-  const { state, busy } = useView();
+function Proposals({ styles: styleItems, layouts, footer }: { styles: DesignStyle[]; layouts: DesignLayout[]; footer: boolean }) {
+  const { state, busy, picked, pick, styleOf, layoutOf } = useView();
+  const chosen = { style: styleOf(picked.style), layout: layoutOf(picked.layout) };
   return (
-    <div className={styles.specimens}>
-      <ul className={styles.specimenRow}>
-        {directions.map((direction) => (
-          <li key={direction.id}>
-            <button type="button" className={styles.specimen} disabled={busy} aria-label={`${direction.name} 방향으로 첫 화면 보기`} onClick={() => void state.send({ action: "draw", directionIds: [direction.id] })}>
-              <span className={styles.swatch}>
-                <Swatch name={direction.name} tokens={direction.tokens} composition={direction.composition} />
-                <span className={styles.specimenCue} aria-hidden="true"><Icon name="arrow-up" weight="bold" size={13} /></span>
-              </span>
-              <span className={styles.specimenWords}><strong>{COMPOSITION_LABEL[direction.composition]}</strong><span>{direction.words}</span></span>
-            </button>
-          </li>
-        ))}
-      </ul>
-      {directions.length > 1 ? (
-        <div className={styles.replies}>
-          <button type="button" className={styles.reply} disabled={busy} onClick={() => void state.send({ action: "draw", directionIds: directions.map(({ id }) => id) })}>
-            <Icon name="browsers" size={14} />모두 첫 화면으로
+    <div className={styles.proposals}>
+      {styleItems.length > 0 ? (
+        <section className={styles.proposalRow} aria-label="스타일">
+          <h4>스타일</h4>
+          <ul className={styles.specimenRow}>
+            {styleItems.map((item) => (
+              <li key={item.id}>
+                <button type="button" className={styles.specimen} aria-pressed={picked.style === item.id} aria-label={`스타일 ${item.name}`} onClick={() => pick("style", item.id)}>
+                  <span className={styles.swatch}>
+                    <Swatch name={item.name} tokens={item.tokens} />
+                    <span className={styles.specimenCue} aria-hidden="true"><Icon name="check" weight="bold" size={13} /></span>
+                  </span>
+                  <span className={styles.specimenWords}><span>{item.words}</span></span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+      {layouts.length > 0 ? (
+        <section className={styles.proposalRow} aria-label="레이아웃">
+          <h4>레이아웃</h4>
+          <ul className={styles.specimenRow}>
+            {layouts.map((item) => (
+              <li key={item.id}>
+                <button type="button" className={styles.specimen} aria-pressed={picked.layout === item.id} aria-label={`레이아웃 ${item.name}`} onClick={() => pick("layout", item.id)}>
+                  <span className={styles.swatch} data-kind="layout">
+                    <Wireframe blocks={item.blocks} tokens={chosen.style?.tokens} />
+                    <span className={styles.specimenCue} aria-hidden="true"><Icon name="check" weight="bold" size={13} /></span>
+                  </span>
+                  <span className={styles.specimenWords}><strong>{item.name}</strong><span>{item.words}</span></span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+      {footer ? (
+        <div className={styles.combo}>
+          <span className={styles.comboPick} data-empty={chosen.style ? undefined : ""}>
+            {chosen.style ? <><span className={styles.comboSwatch} style={{ background: chosen.style.tokens.background }} aria-hidden="true"><i style={{ background: chosen.style.tokens.accent }} /></span>{chosen.style.name}</> : "스타일"}
+          </span>
+          <Icon name="plus" size={12} />
+          <span className={styles.comboPick} data-empty={chosen.layout ? undefined : ""}>
+            {chosen.layout ? <><span className={styles.comboWire}><Wireframe blocks={chosen.layout.blocks} tokens={chosen.style?.tokens} /></span>{chosen.layout.name}</> : "레이아웃"}
+          </span>
+          <button
+            type="button"
+            className={styles.reply}
+            data-tone="primary"
+            disabled={busy || !chosen.style || !chosen.layout}
+            onClick={() => { if (chosen.style && chosen.layout) void state.send({ action: "draw", styleId: chosen.style.id, layoutId: chosen.layout.id }); }}
+          >
+            <Icon name="browsers" size={14} />첫 화면 보기
           </button>
         </div>
       ) : null}
@@ -392,13 +431,13 @@ function ScreenThumb({ snippet, active, label, onOpen }: { snippet: DesignSnippe
   );
 }
 
-/** 그리는 중이거나 그리지 못한 장. 방향의 색과 서체는 이미 정해져 있어 그 견본으로 자리를 채운다. */
+/** 그리는 중이거나 그리지 못한 장. 스타일과 레이아웃은 이미 정해져 있어, 그 색으로 그린 배치도로 자리를 채운다. */
 function PendingThumb({ item }: { item: DesignScreenItem }) {
   const drawing = item.status === "drawing";
   return (
     <div className={styles.thumb} data-state={item.status} role="status">
       <span className={styles.frame}>
-        <span className={styles.swatchFill}><Swatch name={item.name} tokens={item.tokens} composition={item.composition} /></span>
+        <span className={styles.swatchFill}>{item.layout ? <Wireframe blocks={item.layout.blocks} tokens={item.tokens} /> : <Swatch name={item.name} tokens={item.tokens} />}</span>
         {drawing ? <span className={styles.progress} style={{ background: item.tokens.accent }} /> : null}
       </span>
       <span className={styles.thumbName}><strong>{item.name}</strong><small>{drawing ? "그리는 중" : "그리지 못했습니다"}</small></span>
@@ -420,7 +459,7 @@ function ScreenView({ snippet }: { snippet: DesignSnippet }) {
       <figcaption className={styles.viewMeta}>
         <span className={styles.viewName}>
           <strong>{snippet.name}</strong>
-          <span>{COMPOSITION_LABEL[snippet.composition]} · {ORIGIN_LABEL[snippet.origin]}</span>
+          <span>{snippet.layout ? `${snippet.layout.name} · ` : ""}{ORIGIN_LABEL[snippet.origin]}</span>
         </span>
         <span className={styles.viewTokens}><Dots tokens={snippet.tokens} />{FONT_LABEL[snippet.tokens.font]}</span>
         {layout === "stream" ? <span className={styles.viewActions}><SnippetActions snippet={snippet} size="sm" /></span> : null}
@@ -522,40 +561,55 @@ function Revision({ card, retryable }: { card: Extract<DesignCard, { kind: "revi
   );
 }
 
-/** 사용자 말풍선 위에 붙는 대상. 어느 견본을 눌렀는지, 어느 첫 화면을 두고 한 말인지, 카탈로그에서 무엇을 골랐는지 보인다. */
+/** 사용자 말풍선 위에 붙는 대상. 어느 스타일과 레이아웃을 골랐는지, 어느 첫 화면을 두고 한 말인지, 카탈로그에서 무엇을 골랐는지 보인다. */
 function UserAttachment() {
   const id = useAuiState((aui) => aui.message.id);
-  const { users, snippet, direction, catalog } = useView();
-  const message = users[id];
-  const subject = message?.subjects.length === 1 ? message.subjects[0] : undefined;
-  if (!subject) return null;
-  if (subject.kind === "catalog") {
-    const item = catalog.find(({ revisionId }) => revisionId === subject.id);
-    return (
-      <span className={styles.attachment}>
-        {item ? <span className={styles.attachmentThumb}><span className={styles.miniCover}><DesignThumb code={item.code} name={item.name} preview={item.preview} /></span></span> : null}
-        <span><small>카탈로그에서 고름</small><strong>{subject.name}</strong></span>
-      </span>
-    );
-  }
-  if (subject.kind === "direction") {
-    const tokens = direction(subject.id)?.tokens;
-    return (
-      <span className={styles.attachment}>
-        {tokens ? (
-          <span className={styles.attachmentSwatch} style={{ background: tokens.background }} aria-hidden="true">
-            <i style={{ background: tokens.accent }} /><i style={{ background: tokens.text }} />
-          </span>
-        ) : null}
-        <span><small>이 방향으로</small><strong>{subject.name}</strong></span>
-      </span>
-    );
-  }
-  const found = snippet(subject.id);
+  const { users, snippet, styleOf, layoutOf, catalog } = useView();
+  const subjects = users[id]?.subjects ?? [];
+  if (subjects.length === 0) return null;
+  // 배치도는 함께 고른 스타일의 색으로 그린다.
+  const tokens = styleOf(subjects.find(({ kind }) => kind === "style")?.id ?? null)?.tokens;
   return (
-    <span className={styles.attachment}>
-      {found ? <span className={styles.attachmentThumb}><Frame snippet={found} title={`${found.name} 첫 화면`} /></span> : null}
-      <span><small>이 첫 화면에서</small><strong>{subject.name}</strong></span>
+    <span className={styles.attachments}>
+      {subjects.map((subject) => {
+        if (subject.kind === "catalog") {
+          const item = catalog.find(({ revisionId }) => revisionId === subject.id);
+          return (
+            <span key={subject.id} className={styles.attachment}>
+              {item ? <span className={styles.attachmentThumb}><span className={styles.miniCover}><DesignThumb code={item.code} name={item.name} preview={item.preview} /></span></span> : null}
+              <span><small>카탈로그에서 고름</small><strong>{subject.name}</strong></span>
+            </span>
+          );
+        }
+        if (subject.kind === "style") {
+          return (
+            <span key={subject.id} className={styles.attachment}>
+              {tokens ? (
+                <span className={styles.attachmentSwatch} style={{ background: tokens.background }} aria-hidden="true">
+                  <i style={{ background: tokens.accent }} /><i style={{ background: tokens.text }} />
+                </span>
+              ) : null}
+              <span><small>스타일</small><strong>{subject.name}</strong></span>
+            </span>
+          );
+        }
+        if (subject.kind === "layout") {
+          const found = layoutOf(subject.id);
+          return (
+            <span key={subject.id} className={styles.attachment}>
+              {found ? <span className={styles.attachmentThumb}><Wireframe blocks={found.blocks} tokens={tokens} /></span> : null}
+              <span><small>레이아웃</small><strong>{subject.name}</strong></span>
+            </span>
+          );
+        }
+        const found = snippet(subject.id);
+        return (
+          <span key={subject.id} className={styles.attachment}>
+            {found ? <span className={styles.attachmentThumb}><Frame snippet={found} title={`${found.name} 첫 화면`} /></span> : null}
+            <span><small>이 첫 화면에서</small><strong>{subject.name}</strong></span>
+          </span>
+        );
+      })}
     </span>
   );
 }
@@ -579,7 +633,9 @@ function MakeButton() {
 
 /** 입력창 바로 위. 카탈로그를 여는 자리, 다음 말의 대상, 고른 첫 화면과 만들기가 놓인다. */
 function ComposerBar({ notice }: { notice: DesignChatNotice | null }) {
-  const { layout, state, snippet, subject, setSubject, openCatalog, busy, askConsent, brewId } = useView();
+  const { layout, state, snippet, subject, setSubject, openCatalog, busy, askConsent, brewId, picked, layoutOf } = useView();
+  // 카탈로그의 디자인은 스타일이다. 견본에서 고른 레이아웃이 있으면 그 구성으로 그린다.
+  const withLayout = subject?.kind === "catalog" ? layoutOf(picked.layout) : undefined;
   const chosen = snippet(state.chat?.selectedSnippetId ?? null);
   const target = subject?.kind === "snippet" ? snippet(subject.id) : undefined;
   const issue = state.chat && state.issue ? { tone: "error" as const, text: state.issue } : notice;
@@ -609,13 +665,19 @@ function ComposerBar({ notice }: { notice: DesignChatNotice | null }) {
               <button type="button" aria-label={`${subject.item.name} 빼기`} onClick={() => setSubject(null)}><Icon name="x" size={11} /></button>
             </span>
           ) : null}
+          {withLayout ? (
+            <span className={styles.chip}>
+              <span className={styles.chipThumb}><Wireframe blocks={withLayout.blocks} /></span>
+              <span className={styles.chipText}><small>레이아웃</small>{withLayout.name}</span>
+            </span>
+          ) : null}
           {subject?.kind === "catalog" ? (
             <button
               type="button"
               className={styles.reply}
               data-tone="primary"
               disabled={busy}
-              onClick={() => { const { revisionId } = subject.item; setSubject(null); void state.send({ action: "draw_catalog", revisionId }); }}
+              onClick={() => { const { revisionId } = subject.item; setSubject(null); void state.send({ action: "draw_catalog", revisionId, ...(withLayout ? { layoutId: withLayout.id } : {}) }); }}
             >
               <Icon name="browsers" size={14} />첫 화면 그리기
             </button>

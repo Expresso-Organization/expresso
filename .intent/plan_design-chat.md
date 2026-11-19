@@ -14,13 +14,14 @@ date: 2026-11-19
 
 | 파일 | 무엇을 |
 |---|---|
-| `packages/contracts/src/design-chat.ts` (새로) · `index.ts` · `contracts.test.ts` | 대화 · 견본 · 첫 화면 계약 |
+| `packages/contracts/src/design-chat.ts` (새로) · `index.ts` · `contracts.test.ts` | 대화 · 견본(스타일 · 레이아웃) · 첫 화면 계약 |
 | `packages/contracts/src/generation.ts` · `page-stream.ts` | `designSnippetId`와 셋 중 하나 규칙, `seed` 이벤트 |
 | `packages/database/src/documents/design-chat.ts` (새로) · `documents/index.ts` · `documents/generation.ts` · 포트폴리오 문서 타입 · `collections.ts` | `design_chats` 문서 타입, 생성 · 포트폴리오의 `designSnippetId` |
 | `packages/database/src/mongodb-migrations/0033/migration.ts` (새로) · `mongo-migrations.ts` · `mongo-build.mjs` · `migrations.test.ts` · `schema.test.ts` | 컬렉션 · 검증 규칙 · 인덱스 |
 | `services/backend/src/modules/account-lifecycle/mongo-purge.ts` | 계정 삭제 목록에 `design_chats` |
 | `services/backend/src/modules/page/brew-sources.ts` (새로) | 제작 ID로 레시피 · 근거 · 공고 읽기. 지면 생성과 대화가 함께 쓴다 |
 | `services/backend/src/modules/page/design-chat/{prompts,service,routes}.ts` (새로) + 테스트 | 호출 네 가지 · 대화 서비스 · 라우트 |
+| `services/backend/src/modules/page/design-rules.ts` (새로) | 디자인의 Do와 Do not. 첫 화면을 그리는 호출과 그 뒤를 잇는 지면 호출이 함께 읽는다 |
 | `services/backend/src/modules/design-systems/generation-style.ts` · `index.ts` | 기본 템플릿 ID 내보내기(첫 화면으로 만드는 생성의 틀) |
 | `services/backend/src/modules/page/service.ts` | `#context`가 `brewPageSources`를 쓰고 `seed`를 싣는다 |
 | `services/backend/src/modules/page/generator.ts` · `briefed-generator.ts` · `stream.ts` | `context.seed`, 첫 화면 뒤 이어 쓰기와 붙이기, `seed` 스트림 이벤트 |
@@ -74,4 +75,4 @@ pnpm test
 pnpm test:infra
 ```
 
-화면: `http://designchat.localhost:3193/brew/ca3e5093-f41f-4aab-8df4-e96799c995a4/design`에서 첫 질문 → 견본 누르기 → 「말로 고치기」 → 넓게 보기 → 「이 스타일 고르기」 → 「이 스타일로 만들기」 → 생성 중 미리보기 → 다듬기 화면. `?view=catalog`에서 기존 화면.
+화면: `http://designchat.localhost:3193/brew/ca3e5093-f41f-4aab-8df4-e96799c995a4/design`에서 첫 질문 → 스타일과 레이아웃을 하나씩 골라 「첫 화면 보기」 → 「말로 고치기」 → 넓게 보기 → 「이 스타일 고르기」 → 「이 스타일로 만들기」 → 생성 중 미리보기 → 다듬기 화면. `?view=catalog`에서 기존 화면.

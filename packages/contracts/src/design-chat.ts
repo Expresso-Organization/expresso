@@ -7,9 +7,11 @@ import { TemplateFontSchema } from "./templates.js";
 /**
  * 디자인을 정하는 대화.
  *
- * 제작의 디자인 단계에서 에이전트와 주고받는 것이다. 에이전트의 답에는 글과 함께 카드가 붙는다 — 색 · 서체만 보이는
- * **견본**(`DesignDirection`)이나, 그 사람의 자료로 그린 포트폴리오 맨 위 한 장면인 **첫 화면**(`DesignSnippet`).
- * 사용자는 카드를 눌러 답하거나 말로 스타일을 전하고, 고른 첫 화면으로 지면을 만든다.
+ * 제작의 디자인 단계에서 에이전트와 주고받는 것이다. 에이전트의 답에는 글과 함께 카드가 붙는다 — **견본**이나
+ * **첫 화면**(`DesignSnippet`, 그 사람의 자료로 그린 포트폴리오 맨 위 한 장면).
+ *
+ * 견본은 스타일(`DesignStyle`, 색 · 서체 · 분위기)과 레이아웃(`DesignLayout`, 구성)을 따로 놓는다. 사용자는 각각에서
+ * 하나씩 골라 첫 화면을 그리게 하거나 말로 전하고, 고른 첫 화면으로 지면을 만든다.
  */
 
 const HexColorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/);
@@ -24,31 +26,43 @@ export const DesignTokensSchema = z.strictObject({
 });
 export type DesignTokens = z.infer<typeof DesignTokensSchema>;
 
-/**
- * 첫 화면의 짜임 — 지면이 시작하는 자리에 무엇을 놓는가.
- *
- * 실제 개발자 포트폴리오 23곳의 첫 화면을 나눈 유형에서 왔다(2026-11-19 조사,
- * `docs/architecture/portfolio-free-generation-lab.md`). 색과 서체만 다른 방향은 어느 것을 골라도 같은 구도가 나와서,
- * 방향이 짜임까지 정한다.
- *
- * - `document`: 이름과 직무, 소개 문단, 바로 이어지는 경력 목록. 수치는 문장 안에 있다.
- * - `work`: 소개는 머리 한 줄로 줄이고 프로젝트 목록이 첫 화면의 대부분을 차지한다.
- * - `cover`: 이름과 직함, 한 줄 소개만 놓은 표지.
- * - `metric`: 이름 옆에 대표 수치 하나를 크게 세운다.
- */
-export const DESIGN_COMPOSITIONS = ["document", "work", "cover", "metric"] as const;
-export const DesignCompositionSchema = z.enum(DESIGN_COMPOSITIONS);
-export type DesignComposition = z.infer<typeof DesignCompositionSchema>;
-
-/** 견본. 방향의 이름과 한두 문장, 색과 서체, 첫 화면의 짜임. */
-export const DesignDirectionSchema = z.strictObject({
+/** 스타일 — 색 · 서체 · 분위기. 견본 카드 한 장이다. 구성은 정하지 않는다. */
+export const DesignStyleSchema = z.strictObject({
   id: UuidSchema,
   name: z.string().min(1).max(120),
   words: z.string().min(1).max(1_000),
   tokens: DesignTokensSchema,
-  composition: DesignCompositionSchema,
 });
-export type DesignDirection = z.infer<typeof DesignDirectionSchema>;
+export type DesignStyle = z.infer<typeof DesignStyleSchema>;
+
+/**
+ * 레이아웃의 배치도가 놓이는 격자. 첫 화면 한 장(1440×900)을 가로 16칸 · 세로 10칸으로 나눈다(한 칸 90px).
+ * 견본은 이 배치도를 그림으로 보이고, 첫 화면을 그리는 쪽도 같은 배치도를 받는다 — 보고 고른 것과 그려진 것이 같은 값에서 나온다.
+ */
+export const DESIGN_LAYOUT_GRID = { columns: 16, rows: 10 } as const;
+/** 배치도의 블록이 무엇인가. `title` 이름이나 큰 글자 · `text` 글 · `figure` 이 사람의 일로 그리는 그림 · `accent` 강조 요소. */
+export const DESIGN_LAYOUT_BLOCK_KINDS = ["title", "text", "figure", "accent"] as const;
+export const DesignLayoutBlockSchema = z
+  .strictObject({
+    kind: z.enum(DESIGN_LAYOUT_BLOCK_KINDS),
+    x: z.number().int().min(0).max(DESIGN_LAYOUT_GRID.columns - 1),
+    y: z.number().int().min(0).max(DESIGN_LAYOUT_GRID.rows - 1),
+    w: z.number().int().min(1).max(DESIGN_LAYOUT_GRID.columns),
+    h: z.number().int().min(1).max(DESIGN_LAYOUT_GRID.rows),
+  })
+  .refine((block) => block.x + block.w <= DESIGN_LAYOUT_GRID.columns && block.y + block.h <= DESIGN_LAYOUT_GRID.rows, "블록이 격자를 벗어났습니다.");
+export type DesignLayoutBlock = z.infer<typeof DesignLayoutBlockSchema>;
+
+/** 레이아웃 — 첫 화면의 구성. 무엇을 주인공으로 세우고 나머지를 어디에 두는가. 색과 서체는 정하지 않는다. */
+export const DesignLayoutSpecSchema = z.strictObject({
+  name: z.string().min(1).max(120),
+  words: z.string().min(1).max(1_000),
+  blocks: z.array(DesignLayoutBlockSchema).min(1).max(24),
+});
+export type DesignLayoutSpec = z.infer<typeof DesignLayoutSpecSchema>;
+/** 견본 카드로 놓인 레이아웃. */
+export const DesignLayoutSchema = DesignLayoutSpecSchema.extend({ id: UuidSchema });
+export type DesignLayout = z.infer<typeof DesignLayoutSchema>;
 
 /** 첫 화면이 어디서 왔는가. 에이전트의 제안 · 사용자가 말한 스타일 · 카탈로그의 디자인 · 앞선 첫 화면을 고친 것. */
 export const DesignSnippetOriginSchema = z.enum(["agent", "user", "catalog", "edit"]);
@@ -63,7 +77,8 @@ export const DesignSnippetSchema = z.strictObject({
   /** 이 첫 화면을 낳은 말. 방향의 설명이거나 고친 지시다. */
   words: z.string().max(2_000),
   tokens: DesignTokensSchema,
-  composition: DesignCompositionSchema,
+  /** 그릴 때 따른 레이아웃. 카탈로그의 디자인만 골라 그렸으면 null이다 — 구성은 그린 쪽이 정했다. */
+  layout: DesignLayoutSpecSchema.nullable(),
   css: PageDraftSchema.shape.css,
   html: PageDraftSchema.shape.html,
   fromSnippetId: UuidSchema.nullable(),
@@ -71,15 +86,15 @@ export const DesignSnippetSchema = z.strictObject({
 });
 export type DesignSnippet = z.infer<typeof DesignSnippetSchema>;
 
-/** 말이 가리키는 대상. 견본 · 첫 화면 · 카탈로그의 디자인 판. */
+/** 말이 가리키는 대상. 견본의 스타일 · 견본의 레이아웃 · 첫 화면 · 카탈로그의 디자인 판. */
 export const DesignSubjectSchema = z.strictObject({
-  kind: z.enum(["direction", "snippet", "catalog"]),
+  kind: z.enum(["style", "layout", "snippet", "catalog"]),
   id: UuidSchema,
   name: z.string().max(200),
 });
 export type DesignSubject = z.infer<typeof DesignSubjectSchema>;
 
-/** 사용자가 한 일. 말하기 · 견본으로 그리기 · 카탈로그의 디자인으로 그리기. */
+/** 사용자가 한 일. 말하기 · 고른 스타일과 레이아웃으로 그리기 · 카탈로그의 디자인으로 그리기. */
 export const DesignActionSchema = z.enum(["say", "draw", "draw_catalog"]);
 
 export const DesignUserMessageSchema = z.strictObject({
@@ -92,21 +107,22 @@ export const DesignUserMessageSchema = z.strictObject({
   createdAt: TimestampSchema,
 });
 
-/** 그리는 중이거나 그린 첫 화면 한 장. 방향의 색과 서체는 그리기 전에 정해져 있어 기다리는 동안 그 값으로 자리를 채운다. */
+/** 그리는 중이거나 그린 첫 화면 한 장. 스타일과 레이아웃은 그리기 전에 정해져 있어 기다리는 동안 그 값으로 자리를 채운다. */
 export const DesignScreenItemSchema = z.strictObject({
   id: UuidSchema,
   name: z.string().min(1).max(120),
   words: z.string().max(2_000),
   tokens: DesignTokensSchema,
-  /** 그릴 짜임. 카탈로그의 디자인은 짜임을 정하지 않아 null이고, 그리는 쪽이 자료를 보고 고른다. */
-  composition: DesignCompositionSchema.nullable(),
+  /** 그릴 레이아웃. 카탈로그의 디자인만 골랐으면 null이고, 그리는 쪽이 자료를 보고 구성을 정한다. */
+  layout: DesignLayoutSpecSchema.nullable(),
   status: z.enum(["drawing", "done", "failed"]),
   snippetId: UuidSchema.nullable(),
 });
 export type DesignScreenItem = z.infer<typeof DesignScreenItemSchema>;
 
 export const DesignCardSchema = z.discriminatedUnion("kind", [
-  z.strictObject({ kind: z.literal("directions"), directions: z.array(DesignDirectionSchema) }),
+  /** 견본. 스타일과 레이아웃을 따로 놓는다 — 사용자는 각각에서 하나씩 고른다. 한쪽만 새로 낼 때는 다른 쪽이 비어 있다. */
+  z.strictObject({ kind: z.literal("proposals"), styles: z.array(DesignStyleSchema), layouts: z.array(DesignLayoutSchema) }),
   z.strictObject({ kind: z.literal("screens"), items: z.array(DesignScreenItemSchema) }),
   z.strictObject({ kind: z.literal("revision"), fromSnippetId: UuidSchema, item: DesignScreenItemSchema }),
 ]);
@@ -159,11 +175,13 @@ export const SendDesignMessageSchema = z.discriminatedUnion("action", [
     action: z.literal("say"),
     requestId: UuidSchema,
     text: z.string().trim().min(1).max(8_000),
-    /** 말이 가리키는 대상. 카탈로그의 디자인이면 `id`가 디자인 판 ID다. */
-    subject: DesignSubjectSchema.pick({ kind: true, id: true }).optional(),
+    /** 말이 가리키는 대상. 첫 화면이거나 카탈로그의 디자인이다. 카탈로그의 디자인이면 `id`가 디자인 판 ID다. */
+    subject: z.strictObject({ kind: z.enum(["snippet", "catalog"]), id: UuidSchema }).optional(),
   }),
-  z.strictObject({ action: z.literal("draw"), requestId: UuidSchema, directionIds: z.array(UuidSchema).min(1) }),
-  z.strictObject({ action: z.literal("draw_catalog"), requestId: UuidSchema, revisionId: UuidSchema }),
+  /** 견본에서 고른 스타일 하나와 레이아웃 하나로 첫 화면을 그린다. */
+  z.strictObject({ action: z.literal("draw"), requestId: UuidSchema, styleId: UuidSchema, layoutId: UuidSchema }),
+  /** 카탈로그의 디자인을 스타일로 삼아 그린다. 견본에서 고른 레이아웃이 있으면 함께 보낸다. */
+  z.strictObject({ action: z.literal("draw_catalog"), requestId: UuidSchema, revisionId: UuidSchema, layoutId: UuidSchema.optional() }),
 ]);
 export type SendDesignMessage = z.infer<typeof SendDesignMessageSchema>;
 

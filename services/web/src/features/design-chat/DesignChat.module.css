@@ -40,8 +40,11 @@
   margin-top: 12px;
 }
 
-/* ── 색과 서체 견본 ───────────────────────────── */
-.specimens { display: flex; flex-direction: column; gap: 12px; }
+/* ── 견본: 스타일 줄과 레이아웃 줄 ─────────────── */
+/* 두 줄은 따로 고르는 두 가지다. 줄마다 이름을 두고, 줄 사이를 카드 사이보다 넓게 띄운다. */
+.proposals { display: flex; flex-direction: column; gap: 18px; }
+.proposalRow { display: flex; flex-direction: column; gap: 8px; }
+.proposalRow > h4 { margin: 0; font-size: var(--ex-text-2xs); font-weight: 600; color: var(--ex-fg-muted); }
 .specimenRow {
   list-style: none;
   margin: 0;
@@ -61,35 +64,31 @@
   color: inherit;
   font: inherit;
   text-align: left;
+  cursor: pointer;
 }
-/* 견본은 에이전트의 질문에 대한 답이다. 누르면 보내진다는 것을 입력창의 보내기와 같은 표시로 알린다. */
-.specimen { cursor: pointer; }
-.specimen:disabled { cursor: default; }
-.specimen:hover:not(:disabled) .swatch, .specimen:focus-visible .swatch { outline: 2px solid var(--ex-accent); outline-offset: 2px; }
-.specimen:hover:not(:disabled) .specimenWords { color: var(--ex-fg-body); }
+.specimen:hover .swatch, .specimen:focus-visible .swatch { outline: 2px solid var(--ex-accent-soft); outline-offset: 2px; }
+/* 고른 견본. 테두리와 체크로 알린다 — 줄마다 하나만 고른다. */
+.specimen[aria-pressed="true"] .swatch { outline: 2px solid var(--ex-accent); outline-offset: 2px; }
 .specimenCue {
   position: absolute;
   top: 8px;
   right: 8px;
   display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   background: var(--ex-accent);
   color: var(--ex-fg-on-accent);
   opacity: 0;
-  transform: translateY(3px);
+  transform: scale(0.8);
   transition: opacity var(--ex-motion-quick), transform var(--ex-motion-quick);
 }
-.specimen:hover:not(:disabled) .specimenCue, .specimen:focus-visible .specimenCue { opacity: 1; transform: none; }
-@media (hover: none) {
-  .specimen:not(:disabled) .specimenCue { opacity: 1; transform: none; }
-}
+.specimen[aria-pressed="true"] .specimenCue { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce) {
   .specimenCue { transition: none; }
 }
-/* 견본은 지면이 아니라 색 면 위의 그림이다. 첫 화면 카드(16:10)보다 낮게 두어 둘이 다른 것으로 읽히게 한다. */
+/* 스타일 견본은 색 면이다. 첫 화면 카드(16:10)보다 낮게 두어 둘이 다른 것으로 읽히게 한다. */
 .swatch {
   position: relative;
   display: block;
@@ -97,6 +96,8 @@
   border-radius: var(--ex-radius-control);
   overflow: hidden;
 }
+/* 레이아웃 견본은 첫 화면을 줄인 배치도라 첫 화면과 같은 비율이다. */
+.swatch[data-kind="layout"] { aspect-ratio: 16 / 10; }
 /* 가장자리는 색 면 위에 그린다 — 흰 바탕의 견본도 지면과 구분된다. */
 .swatch::after {
   content: "";
@@ -116,33 +117,6 @@
   padding: 12px 14px;
   container-type: inline-size;
 }
-/*
- * 짜임을 줄인 그림. 이름 줄 위의 자리를 채운다. 줄은 위에서부터 쌓이고, 한 줄 안의 칸은 옆으로 놓인다.
- * 제목(t · T)은 글자색 그대로, 글(l)은 옅게, 강조(a · A)는 그 방향의 강조색이다.
- */
-.skeleton {
-  position: absolute;
-  inset: 14px 16px 46px;
-  display: flex;
-  flex-direction: column;
-  gap: 6%;
-  justify-content: flex-start;
-}
-.skeleton > span { display: flex; align-items: center; gap: 4%; min-height: 0; }
-.skeleton i { display: block; height: 3px; border-radius: 2px; background: currentColor; opacity: 0.26; flex-shrink: 0; }
-.skeleton i[data-part="t"] { height: 5px; opacity: 0.85; }
-.skeleton i[data-part="a"] { height: 5px; opacity: 1; }
-.skeleton i[data-part="r"] { height: 1px; opacity: 0.3; }
-/* 표지는 이름 하나가 화면을 채운다. 아래로 몰아 크게 둔다. */
-.skeleton[data-kind="cover"] { justify-content: flex-end; gap: 8%; }
-.skeleton i[data-part="T"] { height: 22%; min-height: 14px; opacity: 0.9; border-radius: 3px; }
-.skeleton[data-kind="cover"] > span:nth-child(2) { flex: 0 0 34%; align-items: stretch; }
-.skeleton[data-kind="cover"] i[data-part="T"] { height: 100%; }
-/* 수치 중심은 한쪽에 글, 다른 쪽에 큰 수치가 선다. */
-.skeleton[data-kind="metric"] { justify-content: center; gap: 9%; }
-.skeleton[data-kind="metric"] > span { justify-content: space-between; }
-.skeleton[data-kind="metric"] > span:first-child { align-items: flex-end; flex: 0 0 34%; }
-.skeleton i[data-part="A"] { height: 100%; opacity: 1; border-radius: 3px; }
 .swatchFace > strong {
   min-width: 0;
   font-size: clamp(var(--ex-text-md), 8cqw, var(--ex-text-3xl));
@@ -155,6 +129,29 @@
 }
 .swatchDots { display: flex; gap: 5px; flex-shrink: 0; padding-bottom: 4px; }
 .swatchDots > i { width: 14px; height: 14px; border-radius: 50%; box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 30%, transparent); }
+/*
+ * 배치도. 블록은 격자 위의 자리(left · top · width · height)에 놓이고, 종류마다 다르게 칠한다 —
+ * 이름이나 큰 글자는 글자색 면, 글은 옅은 줄, 그림은 강조색 테두리의 옅은 면, 강조 요소는 강조색 면.
+ * 색은 고른 스타일의 것이고(바탕 · color · --wire-accent), 고른 스타일이 없으면 화면의 중립 색이다.
+ */
+.wire {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background: var(--ex-bg-sunken);
+  color: var(--ex-fg);
+  --wire-accent: var(--ex-accent);
+  transition: background var(--ex-motion-quick), color var(--ex-motion-quick);
+}
+.wire > i { position: absolute; display: block; box-sizing: border-box; padding: 6% 2.5% 0 2.5%; }
+.wire > i > b { display: block; width: 100%; height: 100%; border-radius: 2px; }
+.wire > i[data-kind="title"] > b { background: currentColor; opacity: 0.86; }
+.wire > i[data-kind="text"] > b { background: repeating-linear-gradient(to bottom, currentColor 0 2px, transparent 2px 7px); opacity: 0.32; border-radius: 0; }
+.wire > i[data-kind="figure"] > b { background: color-mix(in srgb, var(--wire-accent) 20%, transparent); box-shadow: inset 0 0 0 1.5px var(--wire-accent); }
+.wire > i[data-kind="accent"] > b { background: var(--wire-accent); }
+@media (prefers-reduced-motion: reduce) {
+  .wire { transition: none; }
+}
 .specimenWords {
   font-size: var(--ex-text-2xs);
   line-height: var(--ex-leading-snug);
@@ -163,6 +160,26 @@
 .specimenWords > strong { display: block; margin-bottom: 2px; font-weight: 600; color: var(--ex-fg); }
 /* 설명은 한 줄이다. 좁은 화면에서 넘쳐도 두 줄에서 멈춘다. */
 .specimenWords > span { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* 고른 짝. 스타일과 레이아웃의 자리가 하나씩 있고, 둘이 차면 「첫 화면 보기」가 켜진다. */
+.combo { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--ex-fg-subtle); }
+.combo > .reply { margin-left: auto; }
+.comboPick {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 5px 12px 5px 6px;
+  border: 1px solid var(--ex-border-firm);
+  border-radius: var(--ex-radius-pill);
+  font-size: var(--ex-text-2xs);
+  font-weight: 600;
+  color: var(--ex-fg);
+}
+.comboPick[data-empty] { padding: 5px 12px; border-style: dashed; font-weight: 500; color: var(--ex-fg-subtle); }
+.comboSwatch { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ex-fg) 14%, transparent); }
+.comboSwatch > i { width: 9px; height: 9px; border-radius: 50%; }
+.comboWire { position: relative; display: block; width: 35px; aspect-ratio: 16 / 10; border-radius: 3px; overflow: hidden; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ex-fg) 14%, transparent); }
 
 /* 견본 아래의 빠른 답. 입력창 위 막대의 버튼과 같은 모양이다. */
 .replies { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -185,6 +202,8 @@
 .reply:hover:not(:disabled) { border-color: var(--ex-accent-soft); background: var(--ex-accent-surface); color: var(--ex-accent-ink); }
 .reply[data-tone="primary"] { border-color: var(--ex-accent); background: var(--ex-accent); color: var(--ex-fg-on-accent); }
 .reply[data-tone="primary"]:hover:not(:disabled) { background: var(--ex-accent-hover); color: var(--ex-fg-on-accent); }
+/* 아직 누를 수 없는 주 버튼은 채움을 뺀다 — 스타일과 레이아웃을 다 골라야 켜진다. */
+.reply[data-tone="primary"]:disabled { border-color: var(--ex-border-firm); background: var(--ex-bg-muted); color: var(--ex-fg-subtle); }
 
 /* ── 첫 화면 카드 ─────────────────────────────── */
 .thumbs { display: grid; gap: 10px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -326,10 +345,9 @@ button.thumb:focus-visible, button.specimen:focus-visible, .reply:focus-visible,
 .change i { display: inline-block; }
 
 /* ── 사용자 말풍선 위의 대상 ───────────────────── */
+/* 사용자 말은 두 칸 격자의 오른쪽 칸에 놓인다. 대상도 같은 칸에서 말풍선의 오른쪽 끝에 맞춘다. 스타일과 레이아웃을 함께 고르면 둘이 나란히 놓인다. */
+.attachments { grid-column: 2; justify-self: end; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
 .attachment {
-  /* 사용자 말은 두 칸 격자의 오른쪽 칸에 놓인다. 대상도 같은 칸에서 말풍선의 오른쪽 끝에 맞춘다. */
-  grid-column: 2;
-  justify-self: end;
   display: inline-flex;
   align-items: center;
   gap: 8px;

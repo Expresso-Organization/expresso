@@ -14,8 +14,10 @@ type UserMessage = Extract<DesignChatMessage, { role: "user" }>;
 /** 카드를 눌러 한 일을 사용자의 말로 적는다. 말로 보낸 것은 그 글 그대로다. */
 export function userText(message: UserMessage): string {
   if (message.action === "say") return message.text;
-  if (message.action === "draw_catalog") return "이 디자인으로 첫 화면을 보여 주세요.";
-  return message.subjects.length > 1 ? "모두 첫 화면으로 보여 주세요." : "이 방향으로 첫 화면을 보여 주세요.";
+  // 그리기의 대상은 둘이다 — 따로 고른 스타일(또는 카탈로그의 디자인)과 레이아웃. 무엇을 골랐는지는 말풍선 위의 대상이 보인다.
+  const withLayout = message.subjects.some(({ kind }) => kind === "layout");
+  if (message.action === "draw_catalog") return withLayout ? "이 디자인과 레이아웃으로 첫 화면을 보여 주세요." : "이 디자인으로 첫 화면을 보여 주세요.";
+  return "이 스타일과 레이아웃으로 첫 화면을 보여 주세요.";
 }
 
 export function threadOf(chat: DesignChat | null): { messages: ThreadMessageLike[]; cards: Record<string, ThreadCard>; users: Record<string, UserMessage> } {

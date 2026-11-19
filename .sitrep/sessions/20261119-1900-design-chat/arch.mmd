@@ -4,6 +4,9 @@ flowchart TD
   P --> S["DesignChatService"]:::done
   S --> D[("design_chats")]:::done
   S --> A["AI 호출 네 가지"]:::done
+  A --> O["Do와 Do not 지시"]:::done
+  C --> T["스타일 줄 · 레이아웃 줄"]:::done
+  T --> Q{"고르는 순서 · 말투"}:::decide
   C --> K["카탈로그 화면 유지"]:::done
   C --> G["생성 요청 designSnippetId"]:::done
   G --> W["Worker 지면 생성"]:::done

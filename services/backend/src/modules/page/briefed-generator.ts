@@ -24,6 +24,7 @@ import {
   type PageSeed,
   type PageStreamSink,
 } from "./generator.js";
+import { designRules } from "./design-rules.js";
 import { FRONTEND_DESIGN_SKILL } from "./design-skill/frontend-design.js";
 import { briefGroundSource, briefPrompt, refinePageBrief, type PageBrief } from "./page-brief.js";
 
@@ -210,10 +211,13 @@ export function seedPrompt(seed: PageSeed): string[] {
     seed.css,
     "```",
     "",
-    "- `html`에는 첫 화면 **바로 다음부터** 쓴다. 첫 화면에 이미 있는 이름 · 한 줄 소개 · 대표 사실을 되풀이하지 않고, 나머지 섹션 · 경력 · 근거를 잇는다.",
+    "- `html`에는 첫 화면 **바로 다음부터** 쓴다. 첫 화면에 이미 있는 이름 · 한 줄 소개 · 대표 사실을 되풀이하지 않고, 첫 화면에 싣지 않은 일을 섹션마다 디자인해 잇는다.",
     "- `css`에는 **새로 더하는 규칙만** 쓴다. 위 CSS는 이미 지면에 실려 있다. 위에 있는 선택자를 다시 정의하지 않고, 같은 색 · 서체 · 간격 단위 · 클래스 이름 짓는 법을 잇는다.",
     "- `plan`에는 첫 화면의 디자인을 요약하고, 그 뒤를 어떻게 이을지를 적는다. 지면의 소재와 색 · 서체는 첫 화면이 정했다.",
     "",
+    // 첫 화면만 디자인되고 그 뒤가 문단과 목록으로 돌아가면 사용자가 고른 것과 만든 것이 어긋난다. 첫 화면을 그릴 때와 같은 목록을 지킨다.
+    "첫 화면 뒤의 섹션도 첫 화면을 디자인한 것과 같은 기준으로 만든다.",
+    ...designRules("섹션"),
   ];
 }
 
