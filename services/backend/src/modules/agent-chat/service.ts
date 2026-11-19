@@ -113,7 +113,7 @@ export class AgentChatService {
     const now = new Date().toISOString();
     const partId = randomUUID(); const answerId = randomUUID();
     const prompt = `「${commitment.title}」 어떻게 됐나요?`;
-    const question: AgentMessage = { id: randomUUID(), role: "assistant", text: `${commitment.dueOn}에 하기로 한 일을 여쭙니다.`, createdAt: now, tools: [{ id: randomUUID(), name: "선택지 질문", status: "complete", summary: prompt,
+    const question: AgentMessage = { id: randomUUID(), role: "assistant", text: `${Number(commitment.dueOn.slice(5, 7))}월 ${Number(commitment.dueOn.slice(8, 10))}일에 하기로 한 일을 여쭙니다.`, createdAt: now, tools: [{ id: randomUUID(), name: "선택지 질문", status: "complete", summary: prompt,
       ui: { kind: "choice", partId, prompt, multiple: false, options: CHECKIN_OPTIONS.map((label, index) => ({ id: `o${index + 1}`, label })), answer: { optionIds: ["o1"], messageId: answerId } } }] };
     const answer: AgentMessage = { id: answerId, role: "user", text: CHECKIN_OPTIONS[0], tools: [], reply: { partId, optionIds: ["o1"] }, createdAt: now };
     const assistant: AgentMessage = { id: randomUUID(), role: "assistant", text: "", tools: [], createdAt: now };

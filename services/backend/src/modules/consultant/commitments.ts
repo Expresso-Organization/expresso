@@ -19,6 +19,12 @@ export class ConsultantNotFoundError extends Error { readonly statusCode = 404; 
 
 const view = (row: ConsultantCommitmentDoc): ConsultantCommitment => ({ id: row._id, title: row.title, detail: row.detail, dueOn: row.dueOn, status: row.status, awaiting: row.awaiting, conversationId: row.conversationId, createdAt: row.createdAt.toISOString() });
 
+/**
+ * 이 날짜로는 첫 확인인가. 날짜를 미루면 새 날짜에 다시 한 번 묻고 3일 뒤에 한 번 더 묻는다 —
+ * 앞선 날짜에 물은 것은 세지 않는다.
+ */
+const firstCheck = (row: Pick<ConsultantCommitmentDoc, "checks" | "dueOn">) => !row.checks.some(check => check.on >= row.dueOn);
+
 /** 확인 작업이 바깥에서 받는 것. 마지막 대화 시각은 대화를 가진 모듈이, 알림은 알림 모듈이 준다. */
 export interface CheckinDependencies {
   lastConversationAt(userId: string): Promise<Date | null>;
@@ -108,7 +114,7 @@ export class ConsultantCommitments {
         const outreach = profile.outreach!;
         const due = await this.rows.find({ userId: profile.userId, status: "open", nextCheckOn: { $ne: null, $lte: today } }).sort({ dueOn: 1 }).toArray();
         for (const row of due) {
-          await this.rows.updateOne({ _id: row._id, userId: profile.userId, status: "open" }, { $set: { awaiting: true, nextCheckOn: row.checks.length === 0 ? addDays(today, REMINDER_DAYS) : null, updatedAt: at }, $push: { checks: { on: today, at } } });
+          await this.rows.updateOne({ _id: row._id, userId: profile.userId, status: "open" }, { $set: { awaiting: true, nextCheckOn: firstCheck(row) ? addDays(today, REMINDER_DAYS) : null, updatedAt: at }, $push: { checks: { on: today, at } } });
           asked += 1;
         }
         // 대화가 없을 때의 연락. 한 번도 대화하지 않았으면 먼저 연락하기를 정한 날부터 센다.

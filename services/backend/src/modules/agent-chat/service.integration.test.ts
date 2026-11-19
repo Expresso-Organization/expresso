@@ -413,7 +413,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     await expect.poll(async () => (await service.get(owner, id!)).run?.status).toBe("complete");
     const opened = await service.get(owner, id!);
     expect(opened.title).toBe("해커톤 지원서 내기");
-    expect(opened.messages.map(message => [message.role, message.text])).toEqual([["assistant", "2026-11-19에 하기로 한 일을 여쭙니다."], ["user", "했어요"], ["assistant", "잘하셨어요. 무엇을 내셨나요?"]]);
+    expect(opened.messages.map(message => [message.role, message.text])).toEqual([["assistant", "11월 19일에 하기로 한 일을 여쭙니다."], ["user", "했어요"], ["assistant", "잘하셨어요. 무엇을 내셨나요?"]]);
     expect(opened.messages[0]!.tools[0]).toMatchObject({ name: "선택지 질문", ui: { kind: "choice", prompt: "「해커톤 지원서 내기」 어떻게 됐나요?", answer: { optionIds: ["o1"], messageId: opened.messages[1]!.id } } });
     // 모델은 물음과 답까지를 읽는다. 답을 쓸 빈 메시지는 넘기지 않는다.
     expect(received[0]!.map(message => message.role)).toEqual(["assistant", "user"]);

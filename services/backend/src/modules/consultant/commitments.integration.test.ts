@@ -102,6 +102,28 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect((await commitments.checkins(userId, day(5))).commitments.map(item => item.title)).toEqual(["미룰 약속"]);
   });
 
+  it("미룬 약속은 새 날짜에 다시 한 번 묻고, 답이 없으면 3일 뒤에 한 번 더 묻고 멈춘다", async () => {
+    const userId = await signup();
+    await consultant.setOutreach(userId, true, day(0));
+    const made = await commitments.create(userId, { title: "미룰 약속", dueOn: "2026-11-20" }, null, day(0));
+    const row = async () => (await fixture.resource.db.collection("consultant_commitments").findOne({ _id: made.id as never }))!;
+    await commitments.runCheckins(deps(day(0)), day(0));
+    expect(await row()).toMatchObject({ awaiting: true, nextCheckOn: "2026-11-23" });
+    await commitments.answer(userId, made.id, { answer: "not_yet", dueOn: "2026-11-25" }, day(0));
+    expect(await row()).toMatchObject({ awaiting: false, nextCheckOn: "2026-11-25" });
+    // 새 날짜 전에는 묻지 않는다.
+    await commitments.runCheckins(deps(day(0)), day(3));
+    expect(await row()).toMatchObject({ awaiting: false });
+    // 새 날짜: 첫 확인으로 세어 3일 뒤를 다음 확인으로 잡는다.
+    await commitments.runCheckins(deps(day(0)), day(5));
+    expect(await row()).toMatchObject({ awaiting: true, nextCheckOn: "2026-11-28" });
+    await commitments.runCheckins(deps(day(0)), day(8));
+    expect(await row()).toMatchObject({ awaiting: true, nextCheckOn: null });
+    expect(((await row()).checks as unknown[]).length).toBe(3);
+    await commitments.runCheckins(deps(day(0)), day(20));
+    expect(((await row()).checks as unknown[]).length).toBe(3);
+  });
+
   it("대화가 2주 넘게 없으면 한 번 연락하고, 본 뒤에는 2주 뒤에 다시 연락한다", async () => {
     // 확인 작업은 켠 사용자 모두를 돈다. 같은 DB의 다른 사례가 만든 사용자도 함께 세어지므로, 이 사용자의 상태와 알림만 본다.
     const userId = await signup();
