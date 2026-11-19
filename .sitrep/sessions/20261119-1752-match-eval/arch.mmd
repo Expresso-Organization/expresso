@@ -1,0 +1,7 @@
+flowchart LR
+  source["원천 공고 295건"] --> lengths["공고 입력 길이 측정 완료"]
+  source --> dataset["K2 한국어 평가 세트"]
+  profiles["학습 PC 합성 프로필"] --> dataset
+  dataset --> stats["E1 프로필·공고 토큰 길이"]
+  dataset --> labels["K3 교사 라벨"]
+  labels --> rank["E2 검증 NDCG@10"]

@@ -126,8 +126,7 @@ $labels = "$exp\labels-final"                                  # suitability-lab
 $runs = "$repo\var\ml-data\experiments\match-eval-v1"
 
 cd $repo
-git fetch origin
-git switch feat/match-model-eval
+python scripts\ml-data\match_experiments.py token-stats --help  # 이 버전은 [--labels LABELS]로 표시한다
 pnpm install --frozen-lockfile
 pnpm --filter "@expresso/contracts..." build                   # 규칙 baseline이 계약 dist를 읽는다
 node --version                                                 # 24 이상(저장소 기준). rule_baselines.mjs가 .ts를 그대로 import한다
@@ -203,14 +202,25 @@ python scripts\ml-data\ko_teacher_labels.py --data $ko --output $koLabels --work
 - 실패한 프로필이 있으면 같은 명령을 다시 친다. 실패한 프로필만 새 대화로 다시 부른다.
 - 구독 세션 한도에 걸리면 멈춘다. 한도가 풀린 뒤 같은 명령으로 이어 간다.
 - **K3를 가장 먼저 시작한다.** GPU가 필요 없고 가장 오래 걸린다. 맥 시험에서 공고 3건이 약 1.2만 토큰 · 15초였으므로, 공고 10건 × 160명이면 입력이 수백만 토큰이다. 세션 한도에 한 번 이상 걸린다고 보고 일정을 잡는다.
-- K3가 도는 동안 다른 창에서 E1 · E2를 돌린다. E2의 비교 지표는 한국어 검증 라벨이 있어야 나오므로, E2는 K3가 끝난 뒤에 친다. 그 전에는 E0 · E1과 인코더 다운로드를 한다.
+- K2가 끝나면 K3와 E1을 동시에 시작할 수 있다. E1은 `profiles.jsonl`과 `jobs.jsonl`만 읽는다. E2는 K3가 한국어 검증 라벨을 작성한 뒤에 시작한다.
 - 호출 하나에 시간 상한이 없다(저장소 지침). 한 대화가 멈춘 채 오래가면 Ctrl-C로 끊고 같은 명령을 다시 친다. 끝난 프로필은 캐시에서 읽는다.
 
 ### E1 토큰 길이
 
 ```powershell
-python scripts\ml-data\match_experiments.py token-stats --data $ko --labels $koLabels --output $runs
+python scripts\ml-data\match_experiments.py token-stats --data $ko --output $runs
 ```
+
+2026-11-19에는 K2 후보 선정 전의 원천 공고 295건을 먼저 측정했다. K2와 같은 형식으로 제목·직군·본문을 조합하고, 각 인코더의 공고 프롬프트와 특수 토큰을 포함해 길이를 셌다.
+
+| 인코더 | 중앙값(토큰) | p90 | 최대 | 모델 한도 초과 |
+| --- | ---: | ---: | ---: | ---: |
+| E5 | 1,476 | 2,124 | 3,215 | 275/295 (93.2%) |
+| KURE | 1,474 | 2,122 | 3,213 | 0/295 |
+| BGE-M3 | 1,474 | 2,122 | 3,213 | 0/295 |
+| Qwen3 | 1,865 | 2,787 | 4,073 | 0/295 |
+
+E5는 이 공고 중 275건에서 뒤쪽 내용을 잘라낸다. 인코더 선정에는 한국어 검증 프로필의 NDCG@10을 사용한다. K2가 구성한 최종 세트의 프로필·공고 길이는 위 명령으로 따로 측정한다. 원천 파일 해시와 토크나이저 리비전은 [측정 결과](../assets/match-model-eval-2026-11-10/token-lengths-ko-source-jobs.json)에 있다.
 
 ### E2 인코더 비교 (한국어 검증 분할)
 

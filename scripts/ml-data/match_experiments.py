@@ -302,8 +302,12 @@ def _free(device: str) -> None:
 def cmd_token_stats(arguments: argparse.Namespace) -> dict[str, Any]:
     from transformers import AutoTokenizer
 
-    dataset = pilot.load_training_dataset(arguments.data, arguments.labels)
-    _, profile_texts, _, job_texts = _texts(dataset)
+    profiles = pilot._read_jsonl(arguments.data / "profiles.jsonl")
+    jobs = pilot._read_jsonl(arguments.data / "jobs.jsonl")
+    if not profiles or not jobs:
+        raise ValueError("token-stats requires non-empty profiles.jsonl and jobs.jsonl")
+    profile_texts = [pilot.render_profile(row) for row in profiles]
+    job_texts = [pilot.render_job(row) for row in jobs]
     report: dict[str, Any] = {"createdAt": _now(), "encoders": {}}
     for key in arguments.encoders:
         spec = ENCODERS[key]
@@ -710,9 +714,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest="command", required=True)
 
-    def common(command: argparse.ArgumentParser) -> None:
+    def common(command: argparse.ArgumentParser, *, needs_labels: bool = True) -> None:
         command.add_argument("--data", type=Path, required=True)
-        command.add_argument("--labels", type=Path, required=True)
+        command.add_argument("--labels", type=Path, required=needs_labels)
         command.add_argument("--output", type=Path, required=True)
         command.add_argument("--device", choices=("cuda", "cpu"), default="cuda")
         command.add_argument("--seed", type=int, default=42)
@@ -726,7 +730,7 @@ def build_parser() -> argparse.ArgumentParser:
         command.add_argument("--node", default="node")
 
     token_stats = commands.add_parser("token-stats")
-    common(token_stats)
+    common(token_stats, needs_labels=False)
     token_stats.add_argument("--encoders", nargs="+", choices=sorted(ENCODERS), default=sorted(ENCODERS))
     encoders = commands.add_parser("encoders")
     common(encoders)
