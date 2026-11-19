@@ -14,6 +14,7 @@ import { AgentToolRejection, conversationForModel, type AgentRuntime } from "../
 import { AgentChatService, CREDITS_EXHAUSTED, RUN_HEARTBEAT_MS, RUN_INTERRUPTED_ERROR } from "./service.js";
 import { MongoEntitlementService } from "../entitlements/index.js";
 import { PreparationPlans } from "./plans.js";
+import { buildDraft } from "./record-draft.js";
 import { ConsultantService } from "../consultant/index.js";
 
 describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB_URL))("공통 에이전트 대화", () => {
@@ -152,6 +153,38 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect(undone.messages.at(-1)!.tools[0]!.undone).toBe(true);
     expect((await documents.bootstrap(userId, recordId)).document.content).toEqual(original.document.content);
   });
+  it("새 블록만 더하는 제안은 승인 없이 적용되고 카드에서 되돌릴 수 있다. 문장을 바꾸는 명령이 섞이면 승인을 기다린다", async () => {
+    const category = (await career.listCategories(userId))[0]!;
+    const target = (await career.createRecord(userId, randomUUID(), { categoryId: category.id, title: "더하기 테스트 기록", bodyMd: "처음 문단", properties: {} })).record.id;
+    const original = await documents.bootstrap(userId, target);
+    const first = original.document.content[0]!;
+    const added = (text: string) => ({ id: randomUUID(), type: first.type, attrs: {}, text: [{ text }] });
+    const service = make({ run: async input => {
+      const mixed = input.messages.at(-1)!.text.includes("고쳐");
+      const proposal = await input.propose(target, { summary: mixed ? "더하고 고치기" : "결과 더하기", propertyChanges: [], commands: [
+        { type: "insertBlocks", afterBlockId: first.id, blocks: [added("처리 시간을 40% 줄였다")] },
+        ...(mixed ? [{ type: "setText" as const, blockId: first.id, text: "고친 문단" }] : []),
+      ] });
+      await input.emit({ type: "tool", tool: { id: randomUUID(), name: "기록 변경 제안", status: "complete", summary: proposal.summary, proposal } });
+    } });
+    const row = await service.create(userId, [{ kind: "record", id: target }]);
+    await service.send(userId, row.id, { requestId: randomUUID(), text: "결과를 더해 줘" });
+    await expect.poll(async () => (await service.get(userId, row.id)).run?.status).toBe("complete");
+    const applied = (await service.get(userId, row.id)).messages.at(-1)!.tools[0]!;
+    expect(applied.proposal!.status).toBe("applied");
+    const after = await documents.bootstrap(userId, target);
+    expect(after.document.content.map(block => block.text?.[0]?.text)).toEqual(["처음 문단", "처리 시간을 40% 줄였다"]);
+    // 카드의 되돌리기는 승인해서 적용한 제안과 같은 길이다.
+    const undone = await service.approve(userId, row.id, { proposalId: applied.proposal!.proposalId, action: "undo", expectedDocumentVersion: applied.proposal!.appliedDocumentVersion! });
+    expect(undone.messages.at(-1)!.tools[0]!.undone).toBe(true);
+    expect((await documents.bootstrap(userId, target)).document.content).toEqual(original.document.content);
+    // 있는 문장을 바꾸는 명령이 하나라도 있으면 지금처럼 승인을 기다린다.
+    const before = await documents.bootstrap(userId, target);
+    await service.send(userId, row.id, { requestId: randomUUID(), text: "결과를 더하고 첫 문단도 고쳐 줘" });
+    await expect.poll(async () => (await service.get(userId, row.id)).run?.status).toBe("complete");
+    expect((await service.get(userId, row.id)).messages.at(-1)!.tools[0]!.proposal!.status).toBe("ready");
+    expect((await documents.bootstrap(userId, target)).documentVersion).toBe(before.documentVersion);
+  });
   it("실패한 답변을 같은 질문으로 다시 만들고 남은 제안을 취소한다", async () => {
     const original = await documents.bootstrap(userId, recordId);
     let attempt = 0;
@@ -220,8 +253,8 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const service = make({ run: async input => {
       attempt += 1;
       const question = input.messages.at(-1)!;
-      await expect(input.draftRecord({ title: "지어낸 초안", bodyMd: "본문", sources: [{ messageId: question.id, quote: "말하지 않은 문장" }] })).rejects.toBeInstanceOf(AgentToolRejection);
-      const draft = await input.draftRecord({ title: `EKS 위 Airflow 운영 ${attempt}`, bodyMd: "## 행동\nEKS 위에 Airflow를 올려 운영", sources: [{ messageId: question.id, quote: "EKS 위에 Airflow를 올려서" }] });
+      // 초안 도구는 없어졌다. 앞선 대화에 남은 초안과 같은 모양을 실행이 직접 싣는다 — 그 초안의 승인은 계속 동작해야 한다.
+      const draft = buildDraft({ title: `EKS 위 Airflow 운영 ${attempt}`, bodyMd: "## 행동\nEKS 위에 Airflow를 올려 운영", sources: [{ messageId: question.id, quote: "EKS 위에 Airflow를 올려서" }] }, randomUUID(), (await career.listCategories(userId)).map(item => ({ id: item.id, name: item.name })));
       await input.emit({ type: "tool", tool: { id: randomUUID(), name: "새 기록 초안", status: "complete", summary: draft.title, recordDraft: draft } });
     } });
     const category = (await career.listCategories(userId))[0]!;
@@ -327,9 +360,69 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect((await service.recentDigests(memoryUser)).map(item => item.conversationId)).toEqual([first.id, second.id]);
     expect(await service.recentDigests(other)).toEqual([]);
   });
+  it("대화에서 한 말로 정리한 기록은 승인 없이 정리됨 상태로 저장되고, 말하지 않은 인용과 틀린 카테고리는 기록을 만들지 않으며, 되돌리면 휴지통으로 간다", async () => {
+    const category = (await career.listCategories(userId))[0]!;
+    const count = async () => (await career.listRecords(userId, { sort: "updated_desc", limit: 100 })).data.length;
+    const before = await count();
+    let offered: unknown;
+    const service = make({ run: async input => {
+      offered = input.recordCategories;
+      const question = input.messages.at(-1)!;
+      const base = { title: "EKS 위 Airflow 운영", bodyMd: "## 행동\nEKS 위에 Airflow를 올려 운영", sources: [{ messageId: question.id, quote: "EKS 위에 Airflow를 올려서" }] };
+      // 말하지 않은 인용, 카테고리 없음, 남의 카테고리는 모두 돌려보내진다 — 그동안 기록은 생기지 않는다.
+      await expect(input.saveRecord({ ...base, categoryId: category.id, sources: [{ messageId: question.id, quote: "말하지 않은 문장" }] }, "k0")).rejects.toBeInstanceOf(AgentToolRejection);
+      await expect(input.saveRecord(base, "k0")).rejects.toMatchObject({ issues: [expect.stringContaining(category.name)] });
+      await expect(input.saveRecord({ ...base, categoryId: randomUUID() }, "k0")).rejects.toBeInstanceOf(AgentToolRejection);
+      expect(await count()).toBe(before);
+      const saved = await input.saveRecord({ ...base, categoryId: category.id }, "k1");
+      // 같은 도구 호출이 다시 와도 기록은 하나다.
+      expect((await input.saveRecord({ ...base, categoryId: category.id }, "k1")).recordId).toBe(saved.recordId);
+      await input.emit({ type: "tool", tool: { id: randomUUID(), name: "기록 저장", status: "complete", summary: saved.title, savedRecord: saved } });
+    } });
+    const row = await service.create(userId, []);
+    await service.send(userId, row.id, { requestId: randomUUID(), text: "인턴 때 EKS 위에 Airflow를 올려서 운영해 봤어요." });
+    await expect.poll(async () => (await service.get(userId, row.id)).run?.status).toBe("complete");
+    expect(offered).toEqual((await career.listCategories(userId)).map(item => ({ id: item.id, name: item.name })));
+    const saved = (await service.get(userId, row.id)).messages.at(-1)!.tools[0]!.savedRecord!;
+    expect(saved).toMatchObject({ title: "EKS 위 Airflow 운영", categoryName: category.name, undone: false });
+    expect(await count()).toBe(before + 1);
+    expect(await career.getRecord(userId, saved.recordId)).toMatchObject({ status: "organized", origin: "ai", title: "EKS 위 Airflow 운영" });
+    // 요지에는 저장한 기록이 남는다.
+    expect((await service.recentDigests(userId)).find(item => item.conversationId === row.id)!.outcomes).toEqual(["커리어 기록 저장: EKS 위 Airflow 운영"]);
+    // 되돌리기: 남의 대화와 없는 기록은 받지 않고, 내 것은 휴지통으로 간다. 두 번 눌러도 같다.
+    await expect(service.undoSavedRecord(other, row.id, saved.recordId)).rejects.toMatchObject({ statusCode: 404 });
+    await expect(service.undoSavedRecord(userId, row.id, randomUUID())).rejects.toMatchObject({ statusCode: 404 });
+    const undone = await service.undoSavedRecord(userId, row.id, saved.recordId);
+    expect(undone.messages.at(-1)!.tools[0]!.savedRecord!.undone).toBe(true);
+    expect((await service.undoSavedRecord(userId, row.id, saved.recordId)).version).toBe(undone.version);
+    expect(await count()).toBe(before);
+    expect((await service.recentDigests(userId)).find(item => item.conversationId === row.id)!.outcomes).toEqual([]);
+  });
+  it("입력 칸 묶음에 한 답은 칸 이름과 값의 글로 남고 부품에 적히며, 빈 필수 칸은 받지 않는다", async () => {
+    const service = make({ run: async input => {
+      if (input.messages.at(-1)!.reply) { await input.emit({ type: "text", text: "알겠습니다." }); return; }
+      await expect(input.askForm({ prompt: "질문", fields: [{ label: "기간" }, { label: "기간" }] })).rejects.toBeInstanceOf(AgentToolRejection);
+      const part = await input.askForm({ prompt: "기간과 인원을 알려 주세요.", fields: [{ label: "기간" }, { label: "팀 인원", optional: true }] });
+      await input.emit({ type: "tool", tool: { id: randomUUID(), name: "입력 칸 질문", status: "complete", summary: part.prompt, ui: part } });
+    } });
+    const row = await service.create(userId, []);
+    await service.send(userId, row.id, { requestId: randomUUID(), text: "프로젝트 얘기를 할게요" });
+    await expect.poll(async () => (await service.get(userId, row.id)).run?.status).toBe("complete");
+    const asked = await service.get(userId, row.id);
+    const part = asked.messages.at(-1)!.tools[0]!.ui!;
+    expect(part).toMatchObject({ kind: "form", fields: [{ id: "f1", label: "기간", optional: false }, { id: "f2", label: "팀 인원", optional: true }], answer: null });
+    await expect(service.send(userId, row.id, { requestId: randomUUID(), text: "", reply: { partId: part.partId, values: [{ id: "f2", text: "4명" }] } })).rejects.toMatchObject({ statusCode: 409 });
+    await expect(service.send(userId, row.id, { requestId: randomUUID(), text: "", reply: { partId: part.partId, optionIds: ["o1"] } })).rejects.toMatchObject({ statusCode: 409 });
+    expect(await service.get(userId, row.id)).toEqual(asked);
+    const requestId = randomUUID();
+    const sent = await service.send(userId, row.id, { requestId, text: "", reply: { partId: part.partId, values: [{ id: "f1", text: "3개월" }, { id: "f2", text: "" }] } });
+    expect(sent.messages[2]).toMatchObject({ id: requestId, role: "user", text: "기간: 3개월" });
+    expect(sent.messages[1]!.tools[0]!.ui!.answer).toEqual({ values: [{ id: "f1", text: "3개월" }], messageId: requestId });
+    await expect.poll(async () => (await service.get(userId, row.id)).run?.status).toBe("complete");
+  });
   it("거절한 초안은 기록을 만들지 않는다", async () => {
     const service = make({ run: async input => {
-      const draft = await input.draftRecord({ title: "거절할 초안", bodyMd: "본문", sources: [{ messageId: input.messages.at(-1)!.id, quote: "배포를 자동화" }] });
+      const draft = buildDraft({ title: "거절할 초안", bodyMd: "본문", sources: [{ messageId: input.messages.at(-1)!.id, quote: "배포를 자동화" }] }, randomUUID(), []);
       await input.emit({ type: "tool", tool: { id: randomUUID(), name: "새 기록 초안", status: "complete", summary: draft.title, recordDraft: draft } });
     } });
     const before = (await career.listRecords(userId, { sort: "updated_desc", limit: 100 })).data.length;

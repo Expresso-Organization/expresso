@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AgentChoiceInputSchema, AgentChoicePartSchema, AgentToolResultSchema, AgentMessageSchema, AgentPageElementEditInputSchema, SendAgentMessageSchema, UpdateTaskProgressSchema, PlanProposalInputSchema, PreparationTaskSchema, GapReviewDraftSchema, GapReviewSchema, AgentRecordDraftDecisionSchema, AgentRecordDraftInputSchema, RequirementReviewDraftSchema } from "./agent-chat.js";
+import { AgentFormInputSchema, AgentFormPartSchema, AgentSavedRecordSchema, AgentChoiceInputSchema, AgentChoicePartSchema, AgentToolResultSchema, AgentMessageSchema, AgentPageElementEditInputSchema, SendAgentMessageSchema, UpdateTaskProgressSchema, PlanProposalInputSchema, PreparationTaskSchema, GapReviewDraftSchema, GapReviewSchema, AgentRecordDraftDecisionSchema, AgentRecordDraftInputSchema, RequirementReviewDraftSchema } from "./agent-chat.js";
 
 const jobPostingId = "00000000-0000-4000-8000-000000000001";
 const recordId = "00000000-0000-4000-8000-000000000002";
@@ -118,5 +118,38 @@ describe("대화 속 화면의 부품", () => {
   });
   it("저장된 사용자 메시지는 부품에 한 답을 싣는다", () => {
     expect(AgentMessageSchema.safeParse({ id: messageId, role: "user", text: "선택지 1", tools: [], reply: { partId, optionIds: ["o1"] }, createdAt: "2026-11-20T00:00:00.000Z" }).success).toBe(true);
+  });
+});
+
+describe("입력 칸 묶음과 저장된 기록", () => {
+  const partId = "00000000-0000-4000-8000-000000000010";
+  const messageId = "00000000-0000-4000-8000-000000000011";
+  const fields = (count: number) => Array.from({ length: count }, (_, index) => ({ id: `f${index + 1}`, label: `칸 ${index + 1}`, optional: false }));
+  const form = (count = 2) => ({ kind: "form" as const, partId, prompt: "기간과 인원을 알려 주세요.", fields: fields(count), answer: null });
+  it("입력 칸은 1개 이상 4개 이하다", () => {
+    expect(AgentFormPartSchema.safeParse(form(1)).success).toBe(true);
+    expect(AgentFormPartSchema.safeParse(form(4)).success).toBe(true);
+    expect(AgentFormPartSchema.safeParse(form(0)).success).toBe(false);
+    expect(AgentFormPartSchema.safeParse(form(5)).success).toBe(false);
+    expect(AgentFormInputSchema.safeParse({ prompt: "질문", fields: [{ label: "기간" }, { label: "인원", optional: true, placeholder: "예: 4명" }] }).success).toBe(true);
+  });
+  it("도구 결과는 입력 칸 묶음과 그 답을 싣는다", () => {
+    const tool = { id: "t1", name: "입력 칸 질문", status: "complete" as const, summary: "질문" };
+    expect(AgentToolResultSchema.safeParse({ ...tool, ui: form() }).success).toBe(true);
+    expect(AgentToolResultSchema.safeParse({ ...tool, ui: { ...form(), answer: { values: [{ id: "f1", text: "3개월" }], messageId } } }).success).toBe(true);
+  });
+  it("부품에 하는 답은 고른 선택지이거나 칸마다의 값이다", () => {
+    const requestId = messageId;
+    expect(SendAgentMessageSchema.safeParse({ requestId, reply: { partId, values: [{ id: "f1", text: "3개월" }] } }).success).toBe(true);
+    expect(SendAgentMessageSchema.safeParse({ requestId, reply: { partId, optionIds: ["o1"] } }).success).toBe(true);
+    expect(SendAgentMessageSchema.safeParse({ requestId, reply: { partId, values: [] } }).success).toBe(false);
+    expect(SendAgentMessageSchema.safeParse({ requestId, reply: { partId, optionIds: ["o1"], values: [{ id: "f1", text: "3개월" }] } }).success).toBe(false);
+    expect(AgentMessageSchema.safeParse({ id: messageId, role: "user", text: "기간: 3개월", tools: [], reply: { partId, values: [{ id: "f1", text: "3개월" }] }, createdAt: "2026-11-20T00:00:00.000Z" }).success).toBe(true);
+  });
+  it("저장된 기록은 근거가 된 말을 함께 싣는다", () => {
+    const saved = { recordId: partId, title: "EKS 위 Airflow 운영", categoryName: "경험", bodyMd: "## 행동\nAirflow를 올려 운영", sources: [{ messageId, quote: "EKS 위에 Airflow를 올려서" }], undone: false };
+    expect(AgentSavedRecordSchema.safeParse(saved).success).toBe(true);
+    expect(AgentSavedRecordSchema.safeParse({ ...saved, sources: [] }).success).toBe(false);
+    expect(AgentToolResultSchema.safeParse({ id: "t1", name: "기록 저장", status: "complete", summary: saved.title, savedRecord: saved }).success).toBe(true);
   });
 });

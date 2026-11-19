@@ -13,6 +13,7 @@ const clip = (text: string, max: number) => { const flat = text.replace(/\s+/g, 
 function outcome(tool: AgentToolResult): string | null {
   if (tool.status !== "complete") return null;
   if (tool.recordDraft) return tool.recordDraft.status === "approved" ? `커리어 기록 저장: ${tool.recordDraft.title}` : null;
+  if (tool.savedRecord) return tool.savedRecord.undone ? null : `커리어 기록 저장: ${tool.savedRecord.title}`;
   if (tool.goalDraft) {
     if (tool.goalDraft.status !== "approved") return null;
     const changes = ([["하고 싶은 일", tool.goalDraft.work], ["일하고 싶은 곳", tool.goalDraft.place], ["시기와 상황", tool.goalDraft.timing]] as const).filter(([, value]) => value !== null).map(([label, value]) => `${label} → ${value}`);
@@ -23,9 +24,13 @@ function outcome(tool: AgentToolResult): string | null {
   if (tool.pageEdit) return tool.pageEdit.undone ? null : `포트폴리오 지면 고침: ${tool.pageEdit.label}`;
   if (tool.gapReview) return `보완점 정리: ${tool.gapReview.items.length}개`;
   if (tool.review) return `요건 대조: 요건 ${tool.review.items.length}개`;
-  if (tool.ui?.answer) {
-    const chosen = tool.ui.options.filter(option => tool.ui!.answer!.optionIds.includes(option.id)).map(option => option.label).join(", ");
-    return `${tool.ui.prompt} → ${chosen}`;
+  if (tool.ui?.kind === "choice" && tool.ui.answer) {
+    const { options, answer } = tool.ui;
+    return `${tool.ui.prompt} → ${options.filter(option => answer.optionIds.includes(option.id)).map(option => option.label).join(", ")}`;
+  }
+  if (tool.ui?.kind === "form" && tool.ui.answer) {
+    const { fields, answer } = tool.ui;
+    return `${tool.ui.prompt} → ${answer.values.map(value => `${fields.find(field => field.id === value.id)?.label ?? value.id}: ${value.text}`).join(", ")}`;
   }
   return null;
 }
