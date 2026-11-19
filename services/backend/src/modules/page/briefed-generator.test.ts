@@ -207,4 +207,45 @@ describe("정리본 · 디자인 지침 자유 생성", () => {
     expect(result.blockedTags).toBe(1);
     expect(result.removed).toContain("속성 onclick");
   });
+  describe("디자인 대화에서 고른 첫 화면", () => {
+    const seed = {
+      name: "측정판 리포트", words: "밝은 회색에 파랑", html: '<header class="hero"><h1>윤하린</h1></header>', css: "body{margin:0}.hero{color:#111827}",
+      tokens: { background: "#f3f4f6", text: "#111827", accent: "#1d4ed8", font: "mono" as const, density: "compact" as const },
+    };
+    const rest = { plan, css: ".sec{margin:0}", html: '<section class="sec"><h2>성능 개선</h2></section>', rationale: "첫 화면을 이었다" };
+
+    it("모델은 첫 화면 뒤만 쓰고, 지면은 고른 첫 화면의 마크업과 CSS로 시작한다", async () => {
+      const ai = new ScriptedAiClient((request) => (request.contract === "page_fill" ? brief : rest));
+      const seeded: { html: string; css: string }[] = [];
+      const result = await freePageGenerator(ai).generate({ ...context, seed }, { delta: () => undefined, thinking: () => undefined, seed: (page) => { seeded.push(page); } });
+      expect(result.html).toBe(`${seed.html}\n${rest.html}`);
+      expect(result.css).toBe(`${seed.css}\n${rest.css}`);
+      // 화면에는 자료를 정리하기 전에 첫 화면부터 보낸다.
+      expect(seeded).toEqual([{ html: seed.html, css: seed.css }]);
+      const prompt = ai.calls.at(-1)!.prompt;
+      expect(prompt).toContain("## 확정된 첫 화면");
+      expect(prompt).toContain(seed.html);
+      expect(prompt).toContain("`html`에는 첫 화면 **바로 다음부터** 쓴다");
+      // 스타일 문단은 문법(고딕으로 내린 값) 대신 첫 화면이 쓴 색과 서체 계열을 적는다.
+      expect(prompt).toContain("고른 것: **측정판 리포트**");
+      expect(prompt).toContain("강조 `#1d4ed8`");
+      expect(prompt).toContain("서체 계열: 고정폭");
+      expect(prompt).not.toContain("고른 것: **Clarity**");
+    });
+
+    it("지금 지면을 지시로 고칠 때는 첫 화면을 다시 붙이지 않는다 — 직전 지면에 이미 있다", async () => {
+      const ai = new ScriptedAiClient(() => ({ plan, ...draft }));
+      const previous = { html: `${seed.html}<section>앞 판</section>`, css: seed.css };
+      const result = await freePageGenerator(ai).generate({ ...context, seed, previous, instruction: "더 차분하게" });
+      expect(result.html).toBe(draft.html);
+      expect(ai.calls.at(-1)!.prompt).not.toContain("## 확정된 첫 화면");
+    });
+
+    it("첫 화면이 없으면 요청과 결과가 지금과 같다", async () => {
+      const ai = new ScriptedAiClient((request) => (request.contract === "page_fill" ? brief : { plan, ...draft }));
+      const result = await freePageGenerator(ai).generate(context);
+      expect(result.html).toBe(draft.html);
+      expect(ai.calls.at(-1)!.prompt).not.toContain("확정된 첫 화면");
+    });
+  });
 });

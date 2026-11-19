@@ -21,6 +21,7 @@ import {
   type GeneratedPageResult,
   type PageGenerationContext,
   type PageGenerator,
+  type PageSeed,
   type PageStreamSink,
 } from "./generator.js";
 import { FRONTEND_DESIGN_SKILL } from "./design-skill/frontend-design.js";
@@ -133,16 +134,18 @@ export function skillBody(text: string): string {
  * 지침은 "과감한 방향"을 요구하고 스타일 문법은 사용자가 고른 색 · 서체를 지키라고 합니다. 가르지 않으면 모델이 고른 색을 버립니다.
  * 지침 본문도 "의뢰서가 방향을 못 박았으면 그대로 따른다"고 적고 있어, 문법을 의뢰서로 읽게 합니다.
  */
-const SKILL_ROLE = [
+const skillRole = (planLine: string) => [
   "## 디자인하는 법",
   "아래 「디자인 지침」이 이 지면을 디자인하는 방법이다. 지침이 말하는 의뢰서는 이 요청의 스타일과 자료 전체다.",
   "- 요청의 스타일이 정한 것은 의뢰서가 못 박은 방향이다. 그대로 따른다.",
   "- 스타일이 정하지 않은 자리에서 방향을 세운다 — 첫 화면에 무엇을 세울지, 섹션마다의 배치, 글자를 다루는 방식, 수치 · 과정 · 기간을 보이는 형태.",
   "- 주제는 이 사람이 하는 일이다. 그 일의 대상 · 도구 · 산출물에서 지면의 소재를 찾는다.",
-  "- 지침의 계획 → 검토를 `plan`에 먼저 적고, 그 계획대로 `html`과 `css`를 쓴다. 화면을 찍어 볼 수는 없다.",
+  planLine,
   "- 움직임과 반응은 CSS(`:hover` · `:focus` · `<details>` · 애니메이션)로 낸다. 아래 「못 쓰는 것」이 지침보다 먼저다.",
   "- 지면의 글은 자료에 있는 사실로 쓴다. 지침의 문안 원칙은 그 글을 다듬는 데 쓴다.",
 ].join("\n");
+
+const PLAN_LINE = "- 지침의 계획 → 검토를 `plan`에 먼저 적고, 그 계획대로 `html`과 `css`를 쓴다. 화면을 찍어 볼 수는 없다.";
 
 const PLAN_OUTPUT = [
   "## 내는 순서",
@@ -152,10 +155,17 @@ const PLAN_OUTPUT = [
   "- `rationale` — 위 「내는 것」과 같다.",
 ].join("\n");
 
-export function briefedSystem(designSkill: string | null | undefined): string {
+/**
+ * 디자인 지침을 넣은 시스템 프롬프트입니다.
+ *
+ * `output`은 내는 순서를 적은 마지막 문단과 계획을 어디에 적는지의 한 줄입니다. 비우면 지면 전체를 쓰는 호출의 것
+ * (`plan` → `css` → `html` → `rationale`)입니다. 첫 화면 한 장면만 그리는 호출(`design-chat/prompts.ts`)은 `plan` 칸이
+ * 없어서 자기 것을 넘깁니다.
+ */
+export function briefedSystem(designSkill: string | null | undefined, output: { planLine: string; order: string } = { planLine: PLAN_LINE, order: PLAN_OUTPUT }): string {
   if (!designSkill) return SYSTEM;
   // 지면 정책을 지침 뒤에 한 번 더 둡니다. 지침이 권한 것 중 지면이 실을 수 없는 것(스크립트 · 바깥 이미지)을 마지막에 다시 읽게 합니다.
-  return [SYSTEM, "", SKILL_ROLE, "", "## 디자인 지침", skillBody(designSkill), "", pagePolicyPrompt(), "", PLAN_OUTPUT].join("\n");
+  return [SYSTEM, "", skillRole(output.planLine), "", "## 디자인 지침", skillBody(designSkill), "", pagePolicyPrompt(), "", output.order].join("\n");
 }
 
 /**
@@ -170,6 +180,43 @@ const EDIT_NOTE = [
 /** 지시를 붙여 지금 지면을 고치는 요청인가. */
 const isEdit = (context: PageGenerationContext) => Boolean(context.previous && context.instruction);
 
+/** 고른 첫 화면을 이어 쓰는 요청인가. 지금 지면을 고칠 때는 직전 지면에 첫 화면이 이미 있어 쓰지 않습니다. */
+const seedOf = (context: PageGenerationContext): PageSeed | null => (context.seed && !isEdit(context) ? context.seed : null);
+
+/**
+ * 고른 첫 화면의 스타일 문단입니다. 색 · 서체 계열 · 밀도는 첫 화면이 실제로 쓴 값입니다.
+ * 스타일 문법(`context.style`)은 고정폭을 고딕으로 내려 두므로, 첫 화면이 있으면 문법 대신 이 값을 적습니다.
+ */
+export function seedStylePrompt(seed: PageSeed): string[] {
+  return [
+    "## 사용자가 고른 스타일 — 색 · 서체 · 밀도는 그대로 따른다",
+    `고른 것: **${seed.name}**${seed.words ? ` — ${seed.words}` : ""}`,
+    `- 바탕 \`${seed.tokens.background}\` · 본문 글자 \`${seed.tokens.text}\` · 강조 \`${seed.tokens.accent}\`. 명도를 조절한 변주는 만들어 써도 되고, 계열 밖의 색은 들이지 않는다.`,
+    `- 서체 계열: ${FONT_NAME[seed.tokens.font]}. 한국어 대체 서체를 함께 지정한다.`,
+    `- 밀도: ${DENSITY_NAME[seed.tokens.density]}.`,
+    "",
+  ];
+}
+
+/** 확정된 첫 화면과, 그 뒤만 쓰라는 지시입니다. */
+export function seedPrompt(seed: PageSeed): string[] {
+  return [
+    "## 확정된 첫 화면 — 사용자가 대화에서 보고 고른 것이다",
+    "이 첫 화면은 지면의 맨 앞에 그대로 놓인다. 다시 쓰지 않는다.",
+    "```html",
+    seed.html,
+    "```",
+    "```css",
+    seed.css,
+    "```",
+    "",
+    "- `html`에는 첫 화면 **바로 다음부터** 쓴다. 첫 화면에 이미 있는 이름 · 한 줄 소개 · 대표 사실을 되풀이하지 않고, 나머지 섹션 · 경력 · 근거를 잇는다.",
+    "- `css`에는 **새로 더하는 규칙만** 쓴다. 위 CSS는 이미 지면에 실려 있다. 위에 있는 선택자를 다시 정의하지 않고, 같은 색 · 서체 · 간격 단위 · 클래스 이름 짓는 법을 잇는다.",
+    "- `plan`에는 첫 화면의 디자인을 요약하고, 그 뒤를 어떻게 이을지를 적는다. 지면의 소재와 색 · 서체는 첫 화면이 정했다.",
+    "",
+  ];
+}
+
 export function briefedPrompt(
   context: PageGenerationContext,
   brief: PageBrief | null,
@@ -177,15 +224,18 @@ export function briefedPrompt(
   /** 디자인 지침을 켠 요청인가. 고치는 요청에 디자인을 유지하라는 말을 덧붙입니다. */
   guided = false,
 ): string {
-  if (!brief && styleMode === "grammar" && !(guided && isEdit(context))) return buildPrompt(context);
-  const opening =
-    styleMode === "tokens" && context.style
+  const seed = seedOf(context);
+  if (!brief && styleMode === "grammar" && !(guided && isEdit(context)) && !seed) return buildPrompt(context);
+  const opening = seed
+    ? [...promptOpening({ ...context, style: undefined }), ...seedStylePrompt(seed)]
+    : styleMode === "tokens" && context.style
       ? [...promptOpening({ ...context, style: undefined }), ...styleTokensPrompt(context.style)]
       : [...promptOpening(context), ...(styleMode === "spec" && context.design ? designSpecPrompt(context.design) : [])];
   return [
     ...opening,
     ...(brief ? briefPrompt(brief) : promptSources(context)),
     ...promptMedia(context),
+    ...(seed ? seedPrompt(seed) : []),
     ...promptClosing(context),
     ...(guided && isEdit(context) ? EDIT_NOTE : []),
   ].join("\n");
@@ -233,6 +283,11 @@ export class BriefedPageGenerator implements PageGenerator {
 
   async generate(context: PageGenerationContext, sink: PageStreamSink | null = null): Promise<BriefedPageResult> {
     if (context.sections.length === 0) throw new PageGenerationError("만들 섹션이 없습니다");
+
+    // 고른 첫 화면이 있으면 자료를 정리하기 전에 먼저 화면에 보냅니다. 정리에 30–50초가 들고(2026-11-19 측정),
+    // 그동안 사람이 보는 것이 방금 고른 첫 화면이어야 합니다. 이어서 쓰이는 조각은 그 뒤에 붙습니다.
+    const seed = seedOf(context);
+    if (seed) sink?.seed?.({ html: seed.html, css: seed.css });
 
     let brief = this.#options.brief ?? null;
     let briefUsage: AiUsage | null = null;
@@ -287,7 +342,9 @@ export class BriefedPageGenerator implements PageGenerator {
         costUsd: usage.costUsd === null || briefUsage.costUsd === null ? null : usage.costUsd + briefUsage.costUsd,
       };
 
-    const clean = sanitizePage(draft);
+    const written = sanitizePage(draft);
+    // 첫 화면은 고른 것을 그대로 앞에 둡니다. 모델이 쓴 것은 그 뒤입니다.
+    const clean = seed ? { ...written, html: `${seed.html}\n${written.html}`, css: `${seed.css}\n${written.css}` } : written;
     const ungrounded = ungroundedNumbers(visibleText(clean.html), source).filter((number) => number.replace(/\D/g, "").length >= 2 && !isOrdinalLabel(number));
     return {
       html: clean.html,

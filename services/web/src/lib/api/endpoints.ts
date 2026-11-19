@@ -108,6 +108,7 @@ import {
   type ListPortfoliosQuery,
   type Login,
   type Signup,
+  DesignChatStateResponseSchema,
 } from "@expresso/contracts";
 import { z } from "zod";
 
@@ -541,6 +542,12 @@ export const templates = {
         query: { useCompanyColors: String(useCompanyColors) },
       },
     ),
+};
+
+export const designChat = {
+  /** 디자인 대화를 읽는다. 서버 화면은 이 대화를 쓸 수 있는 서버인지(AI가 꺼져 있으면 503) 보는 데 쓴다. */
+  get: (accessToken: string, brewId: string) =>
+    request(`${API_PREFIX}/brews/${brewId}/design-chat`, DesignChatStateResponseSchema, { accessToken, cache: "no-store" }),
 };
 
 export const designSystems = {

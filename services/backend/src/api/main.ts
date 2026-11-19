@@ -36,7 +36,7 @@ import { PortfolioReadService, PortfolioTrashService } from "../modules/portfoli
 import { LayoutService } from "../modules/layout/index.js";
 import { PublishingService } from "../modules/publishing/index.js";
 import { MediaService } from "../modules/media/index.js";
-import { PageElementEditor, PageService } from "../modules/page/index.js";
+import { DesignChatService, PageElementEditor, PageService } from "../modules/page/index.js";
 import { PageStream } from "../modules/page/stream.js";
 import { freePageGenerator } from "../modules/page/briefed-generator.js";
 import { StructuredPageGenerator } from "../modules/page/structured-generator.js";
@@ -125,6 +125,8 @@ const pageGenerator = ai
     )
   : null;
 const pageEditor = ai ? new PageElementEditor(ai) : null;
+// 디자인을 정하는 대화. 답은 이 프로세스에서 뒤로 만든다. AI가 꺼져 있으면 두지 않고, 화면은 카탈로그 화면을 연다.
+const designChatService = ai ? new DesignChatService(database, ai, consentService) : null;
 const analyticsService = new AnalyticsService(database, {
   ...(config.analyticsVisitorSalt ? { visitorSalt: config.analyticsVisitorSalt } : {}),
   // 해설은 07에서 사용자가 누를 때만 쓴다. 없으면 숫자를 다시 읽어 주는 한 문장이 남는다.
@@ -205,6 +207,7 @@ const app = buildApi({
   pageStream,
   ...(pageGenerator ? { pageGenerator } : {}),
   pageEditor,
+  designChatService,
   analyticsService,
   engagementService,
   unifiedSearchService,

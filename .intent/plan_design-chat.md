@@ -15,17 +15,19 @@ date: 2026-11-19
 | 파일 | 무엇을 |
 |---|---|
 | `packages/contracts/src/design-chat.ts` (새로) · `index.ts` · `contracts.test.ts` | 대화 · 견본 · 첫 화면 계약 |
-| `packages/contracts/src/generation.ts` | `designSnippetId`와 셋 중 하나 규칙 |
+| `packages/contracts/src/generation.ts` · `page-stream.ts` | `designSnippetId`와 셋 중 하나 규칙, `seed` 이벤트 |
 | `packages/database/src/documents/design-chat.ts` (새로) · `documents/index.ts` · `documents/generation.ts` · 포트폴리오 문서 타입 · `collections.ts` | `design_chats` 문서 타입, 생성 · 포트폴리오의 `designSnippetId` |
 | `packages/database/src/mongodb-migrations/0033/migration.ts` (새로) · `mongo-migrations.ts` · `mongo-build.mjs` · `migrations.test.ts` · `schema.test.ts` | 컬렉션 · 검증 규칙 · 인덱스 |
 | `services/backend/src/modules/account-lifecycle/mongo-purge.ts` | 계정 삭제 목록에 `design_chats` |
-| `services/backend/src/modules/page/design-chat/{sources,prompts,service,routes}.ts` (새로) + 테스트 | 자료 읽기 · 호출 네 가지 · 대화 서비스 · 라우트 |
+| `services/backend/src/modules/page/brew-sources.ts` (새로) | 제작 ID로 레시피 · 근거 · 공고 읽기. 지면 생성과 대화가 함께 쓴다 |
+| `services/backend/src/modules/page/design-chat/{prompts,service,routes}.ts` (새로) + 테스트 | 호출 네 가지 · 대화 서비스 · 라우트 |
+| `services/backend/src/modules/design-systems/generation-style.ts` · `index.ts` | 기본 템플릿 ID 내보내기(첫 화면으로 만드는 생성의 틀) |
 | `services/backend/src/modules/page/service.ts` | `#context`가 `brewPageSources`를 쓰고 `seed`를 싣는다 |
 | `services/backend/src/modules/page/generator.ts` · `briefed-generator.ts` · `stream.ts` | `context.seed`, 첫 화면 뒤 이어 쓰기와 붙이기, `seed` 스트림 이벤트 |
 | `services/backend/src/modules/page/index.ts` | 대화 서비스 · 첫 화면 조회 내보내기 |
 | `services/backend/src/modules/generation/service.ts` | `designSnippetId`로 스타일 정하기, 작업 · 포트폴리오에 싣기 |
 | `services/backend/src/api/main.ts` · `api/build-app.ts` | 대화 서비스 조립과 라우트 등록 |
-| `services/web/src/features/design-chat/*` (새로) | 대화 화면 · 상태 훅 · 변환 · 스타일 · 테스트 |
+| `services/web/src/features/design-chat/*` (새로) | 대화 화면 · 구성 대기 화면 · 상태 훅 · 변환 · 스타일 · 테스트 |
 | `services/web/src/app/api/brews/[brewId]/design-chat/[[...path]]/route.ts` (새로) | 프록시 |
 | `services/web/src/app/(app)/brew/[brewId]/design/page.tsx` · `design-actions.ts` · `LivePreview.tsx` | 화면 분기, `designSnippetId`로 생성, `seed` 이벤트 |
 | `services/web/src/lib/api/endpoints.ts` | `designChat.get` |
@@ -49,7 +51,7 @@ flowchart TD
   classDef risk fill:#FCEBEB,stroke:#A32D2D,color:#501313
 ```
 
-1. 자료 읽기와 호출 네 가지 — `brewPageSources`를 꺼낸 뒤 `page.integration.test.ts`가 그대로 통과하고, 프롬프트 단위 테스트가 통과한다.
+1. 자료 읽기와 호출 네 가지(`brew-sources.ts` · `design-chat/prompts.ts`) — `brewPageSources`를 꺼낸 뒤 `page.integration.test.ts`가 그대로 통과하고, 프롬프트 단위 테스트가 통과한다.
 2. 실제 호출로 재기 — 임시 스크립트로 윤하린 제작에서 여는 호출 · 그리기 · 고치기를 돌려 시간과 결과를 본다. 여는 호출이 20초를 넘으면 `head`와 견본을 두 호출로 나누는 것을 다시 본다.
 3. 첫 화면 이어 쓰기 — 임시 스크립트로 `seed`를 준 자유 생성을 돌려 붙인 지면을 헤드리스 Chrome으로 찍는다. 첫 화면과 뒤 섹션의 색 · 서체가 이어지는지 본다.
 4. 계약과 컬렉션 — `pnpm --filter @expresso/contracts test`, `pnpm --filter @expresso/database test`, 복사본 DB에 `pnpm db:migrate`.

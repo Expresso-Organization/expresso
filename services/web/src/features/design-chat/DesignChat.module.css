@@ -1,0 +1,457 @@
+/*
+ * 디자인을 정하는 대화.
+ *
+ * 화면에서 가장 큰 것은 스니펫이다. 말풍선과 에이전트의 말은 제품 채팅의 크기 그대로 두고, 카드가 그 사이를 넓게 차지한다.
+ * 색 · 크기는 tokens.css의 값만 쓴다.
+ */
+.screen {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  background: var(--ex-bg);
+}
+
+/* 대화. 흐름 배치에서는 지면 전체를 쓰고 스레드 폭을 넓힌다 — 카드 석 장이 한 줄에 놓인다. */
+.chat {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.chat :global(.aui-thread-root) { --thread-max-width: 60rem !important; }
+.screen[data-layout="stage"] .chat {
+  flex: 0 0 min(440px, 40%);
+  border-left: 1px solid var(--ex-border);
+}
+.screen[data-layout="stage"] .chat :global(.aui-thread-root) { --thread-max-width: 100% !important; }
+/* 사용자 말풍선은 읽는 폭으로 둔다. 넓은 스레드에서 한 줄로 길게 늘어나지 않게 한다. */
+.chat :global(.aui-user-message-content) { max-width: 34rem; }
+
+/* 구성을 기다리는 자리. 대화가 열릴 자리에 에이전트의 이름과 한 줄만 둔다. */
+.wait { max-width: 60rem; width: 100%; margin: 0 auto; padding: 24px 16px; gap: 10px; }
+.waitText { margin: 0; font-size: var(--ex-text-sm); line-height: var(--ex-leading-relaxed); color: var(--ex-fg-body); }
+
+/* 카드 묶음 — 에이전트의 말 아래에 바로 놓인다. */
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+/* ── 색과 서체 견본 ───────────────────────────── */
+.specimens { display: flex; flex-direction: column; gap: 12px; }
+.specimenRow {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.specimen {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+/* 견본은 에이전트의 질문에 대한 답이다. 누르면 보내진다는 것을 입력창의 보내기와 같은 표시로 알린다. */
+.specimen { cursor: pointer; }
+.specimen:disabled { cursor: default; }
+.specimen:hover:not(:disabled) .swatch, .specimen:focus-visible .swatch { outline: 2px solid var(--ex-accent); outline-offset: 2px; }
+.specimen:hover:not(:disabled) .specimenWords { color: var(--ex-fg-body); }
+.specimenCue {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--ex-accent);
+  color: var(--ex-fg-on-accent);
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity var(--ex-motion-quick), transform var(--ex-motion-quick);
+}
+.specimen:hover:not(:disabled) .specimenCue, .specimen:focus-visible .specimenCue { opacity: 1; transform: none; }
+@media (hover: none) {
+  .specimen:not(:disabled) .specimenCue { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .specimenCue { transition: none; }
+}
+/* 견본은 지면이 아니라 색 면이다. 첫 화면 카드(16:8)보다 낮게 두어 둘이 다른 것으로 읽히게 한다. */
+.swatch {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 5;
+  border-radius: var(--ex-radius-control);
+  overflow: hidden;
+}
+/* 가장자리는 색 면 위에 그린다 — 흰 바탕의 견본도 지면과 구분된다. */
+.swatch::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ex-fg) 12%, transparent);
+  pointer-events: none;
+}
+.swatchFace {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  container-type: inline-size;
+}
+.swatchFace > strong {
+  min-width: 0;
+  font-size: clamp(var(--ex-text-md), 8cqw, var(--ex-text-3xl));
+  font-weight: 700;
+  line-height: var(--ex-leading-tight);
+  letter-spacing: -0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.swatchDots { display: flex; gap: 5px; flex-shrink: 0; padding-bottom: 4px; }
+.swatchDots > i { width: 14px; height: 14px; border-radius: 50%; box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 30%, transparent); }
+.specimenWords {
+  font-size: var(--ex-text-2xs);
+  line-height: var(--ex-leading-snug);
+  color: var(--ex-fg-muted);
+}
+
+/* 견본 아래의 빠른 답. 입력창 위 막대의 버튼과 같은 모양이다. */
+.replies { display: flex; flex-wrap: wrap; gap: 6px; }
+.reply {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid var(--ex-border-firm);
+  border-radius: var(--ex-radius-pill);
+  background: var(--ex-bg);
+  color: var(--ex-fg-body);
+  font: inherit;
+  font-size: var(--ex-text-2xs);
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+}
+.reply:disabled { cursor: default; color: var(--ex-fg-subtle); }
+.reply:hover:not(:disabled) { border-color: var(--ex-accent-soft); background: var(--ex-accent-surface); color: var(--ex-accent-ink); }
+.reply[data-tone="primary"] { border-color: var(--ex-accent); background: var(--ex-accent); color: var(--ex-fg-on-accent); }
+.reply[data-tone="primary"]:hover:not(:disabled) { background: var(--ex-accent-hover); color: var(--ex-fg-on-accent); }
+
+/* ── 첫 화면 카드 ─────────────────────────────── */
+.thumbs { display: grid; gap: 10px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.thumbs[data-count="2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.thumbs[data-count="1"] { grid-template-columns: minmax(0, 1fr); }
+.screen[data-layout="stage"] .thumbs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.screen[data-layout="stage"] .thumbs[data-count="1"] { grid-template-columns: minmax(0, 1fr); }
+
+.thumb {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+button.thumb { cursor: pointer; }
+.thumbName {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  font-size: var(--ex-text-2xs);
+}
+.thumbName > i { align-self: center; color: var(--ex-accent-text); }
+.thumbName strong { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.thumbName small { flex-shrink: 0; font-size: var(--ex-text-3xs); color: var(--ex-fg-subtle); }
+
+/* 스니펫을 담는 틀. 안의 문서는 1440px 폭으로 그리고 틀 폭에 맞춰 줄인다. */
+.frame {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  overflow: hidden;
+  border-radius: var(--ex-radius-control);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ex-fg) 10%, transparent);
+}
+.frame > iframe {
+  position: absolute;
+  inset: 0 auto auto 0;
+  border: 0;
+  transform-origin: 0 0;
+  pointer-events: none;
+}
+/* 틀 위의 테두리는 문서 위에 그린다 — 어두운 지면과 밝은 지면 모두에서 가장자리가 보인다. */
+.frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ex-fg) 12%, transparent);
+  pointer-events: none;
+}
+button.thumb[aria-pressed="true"] .frame { outline: 2px solid var(--ex-accent); outline-offset: 2px; }
+button.thumb:hover .frame::after { box-shadow: inset 0 0 0 1px var(--ex-accent-soft); }
+button.thumb:focus-visible, button.specimen:focus-visible, .reply:focus-visible, .catalogItem:focus-visible { outline: 2px solid var(--ex-accent); outline-offset: 3px; border-radius: var(--ex-radius-control); }
+
+/* 그리지 못한 장은 색 면을 흐리게 둔다. 다시 그리는 자리는 카드 줄 아래에 있다. */
+.thumb[data-state="failed"] .frame { opacity: 0.45; }
+
+/* 그리는 중 — 견본의 색 면 아래로 진행 막대가 지나간다. */
+.swatchFill { position: absolute; inset: 0; }
+.progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: 38%;
+  animation: draw 1.6s ease-in-out infinite;
+}
+@keyframes draw {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(265%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .progress { animation: none; width: 100%; opacity: 0.5; }
+}
+
+/* 크게 본 첫 화면 */
+.view { margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.view .frame { border-radius: var(--ex-radius-card); }
+/* 대화 안의 큰 첫 화면은 누르면 무대로 넓어진다. 오른쪽 위의 표시가 그 자리를 알린다. */
+.expand {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ex-radius-card);
+  background: transparent;
+  cursor: zoom-in;
+}
+.expandCue {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--ex-radius-control);
+  /* 어두운 첫 화면과 밝은 첫 화면 위에서 모두 보이도록 제품의 바탕색 면에 놓는다. */
+  background: var(--ex-bg);
+  color: var(--ex-fg-body);
+  box-shadow: 0 0 0 1px var(--ex-border-firm);
+}
+.expand:hover .expandCue, .expand:focus-visible .expandCue { color: var(--ex-accent-ink); box-shadow: 0 0 0 1px var(--ex-accent-soft); }
+.expand:hover .frame::after { box-shadow: inset 0 0 0 1px var(--ex-accent-soft); }
+.expand:focus-visible { outline: 2px solid var(--ex-accent); outline-offset: 3px; }
+.viewMeta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-muted);
+}
+.viewName { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.viewName strong { font-size: var(--ex-text-sm); font-weight: 600; color: var(--ex-fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.viewName span { flex-shrink: 0; }
+.viewTokens { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.viewActions { display: flex; gap: 6px; margin-left: auto; flex-shrink: 0; }
+.dots { display: inline-flex; gap: 4px; }
+.dots > span, .change i {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ex-fg) 18%, transparent);
+}
+
+/* 고친 것 — 무엇이 바뀌었는지를 값으로 보인다. */
+.change { margin: 0; display: flex; flex-wrap: wrap; gap: 14px; font-size: var(--ex-text-2xs); color: var(--ex-fg-muted); }
+.change > span { display: inline-flex; align-items: center; gap: 6px; }
+.change i { display: inline-block; }
+
+/* ── 사용자 말풍선 위의 대상 ───────────────────── */
+.attachment {
+  /* 사용자 말은 두 칸 격자의 오른쪽 칸에 놓인다. 대상도 같은 칸에서 말풍선의 오른쪽 끝에 맞춘다. */
+  grid-column: 2;
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px 5px 5px;
+  border: 1px solid var(--ex-border);
+  border-radius: var(--ex-radius-control);
+  background: var(--ex-bg);
+  font-size: var(--ex-text-2xs);
+}
+.attachment > span:last-child { display: flex; flex-direction: column; line-height: var(--ex-leading-tight); }
+.attachment small { font-size: var(--ex-text-3xs); color: var(--ex-fg-subtle); }
+.attachment strong { font-weight: 600; }
+.attachmentThumb { position: relative; display: block; width: 64px; flex-shrink: 0; aspect-ratio: 2 / 1; border-radius: 4px; overflow: hidden; }
+.attachmentThumb .frame { border-radius: 4px; }
+.attachmentSwatch {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 3px;
+  width: 64px;
+  flex-shrink: 0;
+  aspect-ratio: 2 / 1;
+  padding: 5px;
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ex-fg) 10%, transparent);
+}
+.attachmentSwatch > i { width: 8px; height: 8px; border-radius: 50%; }
+
+/* ── 알림 — 만들지 못한 답, 한도 · 생성 실패 안내 ── */
+.notice {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: var(--ex-text-2xs);
+  line-height: var(--ex-leading-snug);
+  color: var(--ex-fg-muted);
+}
+.notice[data-tone="error"] { color: var(--ex-status-danger-text); }
+
+/* ── 입력창 위 막대 ───────────────────────────── */
+.barWrap { display: flex; flex-direction: column; gap: 8px; }
+.bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.barLeft, .dock { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 4px 8px 4px 4px;
+  border: 1px solid var(--ex-accent-soft);
+  border-radius: var(--ex-radius-pill);
+  background: var(--ex-accent-surface);
+  color: var(--ex-accent-ink);
+  font-size: var(--ex-text-2xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.chip > button { display: grid; place-items: center; width: 18px; height: 18px; border: 0; border-radius: 50%; background: transparent; color: inherit; cursor: pointer; }
+.chip > button:hover { background: var(--ex-accent-surface-hover); }
+.chipThumb { position: relative; display: block; width: 52px; aspect-ratio: 2 / 1; border-radius: var(--ex-radius-pill); overflow: hidden; flex-shrink: 0; }
+.chipThumb .frame { border-radius: inherit; }
+/* 카탈로그 표지는 카드 크기로 그려진 것이다. 작은 자리에서는 네 배 크기로 그린 뒤 줄여, 글자가 넘치지 않게 한다. */
+.miniCover { position: relative; display: block; width: 100%; height: 100%; overflow: hidden; }
+.miniCover > * { position: absolute; inset: 0 auto auto 0; width: 400%; height: 400%; transform: scale(0.25); transform-origin: 0 0; }
+.chipText { display: flex; flex-direction: column; min-width: 0; line-height: var(--ex-leading-tight); overflow: hidden; text-overflow: ellipsis; }
+.chipText > small { font-size: var(--ex-text-3xs); font-weight: 500; opacity: 0.75; }
+.makeForm { display: flex; align-items: center; gap: 8px; }
+.makeIssue { font-size: var(--ex-text-2xs); color: var(--ex-fg-muted); }
+
+/* 만들기 — 제작 흐름의 주 행동이라 에스프레소 면을 쓴다. 채팅 안팎(입력창 위 · 무대)에서 같은 모양이다. */
+.make.make { background: var(--ex-accent); color: var(--ex-fg-on-accent); }
+.make.make:hover:not(:disabled) { background: var(--ex-accent-hover); color: var(--ex-fg-on-accent); }
+.make.make:disabled { background: var(--ex-bg-tint-strong); color: var(--ex-fg-subtle); opacity: 1; }
+
+/* ── 무대(무대 배치) ──────────────────────────── */
+.stage {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 16px;
+  padding: 32px 40px;
+  background: var(--ex-bg-sunken);
+  overflow: auto;
+}
+.stageActions { display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 8px; }
+.stageClose {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: var(--ex-radius-control);
+  background: transparent;
+  color: var(--ex-fg-muted);
+  font: inherit;
+  font-size: var(--ex-text-2xs);
+  font-weight: 500;
+  cursor: pointer;
+}
+.stageClose:hover { background: var(--ex-bg-tint-strong); color: var(--ex-fg); }
+.stageClose:focus-visible { outline: 2px solid var(--ex-accent); outline-offset: 2px; }
+/* ── 카탈로그 ─────────────────────────────────── */
+.sheet.sheet { width: min(920px, calc(100vw - 48px)); max-width: none; max-height: min(720px, 86dvh); display: flex; flex-direction: column; }
+.catalog {
+  list-style: none;
+  margin: 0;
+  padding: 2px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px 12px;
+  overflow-y: auto;
+}
+.catalogItem {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ex-fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.catalogItem .swatch { aspect-ratio: 16 / 10; }
+.catalogItem:hover .swatch { outline: 2px solid var(--ex-accent-soft); outline-offset: 2px; }
+.catalogItem strong { font-size: var(--ex-text-xs); font-weight: 600; }
+.catalogItem small { font-size: var(--ex-text-3xs); line-height: var(--ex-leading-snug); color: var(--ex-fg-muted); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* 무대와 대화를 나란히 둘 폭이 안 되면 무대를 위에 쌓는다. */
+@media (max-width: 1023px) {
+  .screen[data-layout="stage"] { flex-direction: column; }
+  .screen[data-layout="stage"] .chat { flex: 1; border-left: 0; border-top: 1px solid var(--ex-border); }
+  .stage { flex: 0 0 auto; padding: 16px; gap: 10px; }
+  /* 무대가 위로 쌓이면 닫는 자리도 첫 화면 위의 줄로 내려온다. */
+  .stageClose { position: static; align-self: flex-start; margin: -6px 0 0 -10px; }
+}
+@media (max-width: 767px) {
+  .thumbs, .specimenRow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* 좁은 화면에서는 이름 줄 아래로 행동을 내린다. 한 줄에 두면 이름이 잘리고 버튼이 화면 밖으로 나간다. */
+  .viewMeta { flex-wrap: wrap; row-gap: 6px; }
+  .viewActions { margin-left: 0; width: 100%; flex-wrap: wrap; }
+  .bar { align-items: flex-start; }
+  .dock { flex-wrap: wrap; }
+}

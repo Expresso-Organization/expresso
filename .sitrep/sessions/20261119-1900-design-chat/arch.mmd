@@ -1,0 +1,16 @@
+flowchart TD
+  U[사용자] --> C["디자인 대화 화면"]:::done
+  C --> P["Next 프록시"]:::done
+  P --> S["DesignChatService"]:::done
+  S --> D[("design_chats")]:::done
+  S --> A["AI 호출 네 가지"]:::done
+  C --> K["카탈로그 화면 유지"]:::done
+  C --> G["생성 요청 designSnippetId"]:::done
+  G --> W["Worker 지면 생성"]:::done
+  W --> B["첫 화면 뒤 이어 쓰기"]:::done
+  W --> L["미리보기 seed 이벤트"]:::done
+  B --> R{"PR 머지와 운영 배포"}:::decide
+  classDef done fill:#d1fae5,stroke:#059669
+  classDef doing fill:#fef3c7,stroke:#d97706
+  classDef decide fill:#fee2e2,stroke:#dc2626
+  classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4

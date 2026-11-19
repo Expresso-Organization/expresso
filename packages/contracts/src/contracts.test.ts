@@ -2,7 +2,13 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
 import {
+  PAGE_STREAM_EVENTS,
   SubmitGenerationSchema,
+  SendDesignMessageSchema,
+  DesignTokensSchema,
+  DesignChatSchema,
+  DesignChatStateResponseSchema,
+  PageStreamSeedSchema,
   ApiErrorResponseSchema,
   CursorPaginationQuerySchema,
   CurrentUserResponseSchema,
@@ -918,6 +924,15 @@ describe("생성 요청 스타일 출처", () => {
     expect(SubmitGenerationSchema.safeParse({ designSystemRevisionId: id }).success).toBe(false);
     expect(SubmitGenerationSchema.safeParse({ recipeId, brewId: recipeId, designSystemRevisionId: id }).success).toBe(false);
   });
+  it("디자인 대화에서 고른 첫 화면으로도 요청한다 — 셋 중 하나만, 자유 생성으로", () => {
+    expect(SubmitGenerationSchema.safeParse({ brewId: recipeId, designSnippetId: id }).success).toBe(true);
+    expect(SubmitGenerationSchema.safeParse({ recipeId, designSnippetId: id, pageFormat: "html" }).success).toBe(true);
+    expect(SubmitGenerationSchema.safeParse({ recipeId, designSnippetId: id, designSystemRevisionId: id }).success).toBe(false);
+    expect(SubmitGenerationSchema.safeParse({ recipeId, designSnippetId: id, templateId: id }).success).toBe(false);
+    expect(SubmitGenerationSchema.safeParse({ recipeId, designSnippetId: id, pageFormat: "json-render" }).success).toBe(false);
+    expect(SubmitGenerationSchema.safeParse({ recipeId, designSnippetId: id, archetype: "poster" }).success).toBe(false);
+    expect(SubmitGenerationSchema.safeParse({ recipeId, designSnippetId: id, styleOverrides: { font: "serif" } }).success).toBe(false);
+  });
   it("디자인 시스템 판 요청에는 스타일 덮어쓰기를 받지 않는다", () => {
     expect(
       SubmitGenerationSchema.safeParse({
@@ -926,6 +941,46 @@ describe("생성 요청 스타일 출처", () => {
         styleOverrides: { font: "serif" },
       }).success,
     ).toBe(false);
+  });
+});
+
+describe("디자인을 정하는 대화", () => {
+  const id = "5d8f5f2d-6d2a-4f24-9d1a-2b8f9e7c1002";
+  const stamp = "2026-11-19T00:00:00.000Z";
+  const tokens = { background: "#ffffff", text: "#111111", accent: "#d6336c", font: "mono", density: "compact" };
+  it("보내는 것은 말 · 견본으로 그리기 · 카탈로그의 디자인으로 그리기 셋이다", () => {
+    expect(SendDesignMessageSchema.safeParse({ action: "say", requestId: id, text: "흰 바탕에 분홍 강조" }).success).toBe(true);
+    expect(SendDesignMessageSchema.safeParse({ action: "say", requestId: id, text: "주황 대신 초록", subject: { kind: "snippet", id } }).success).toBe(true);
+    expect(SendDesignMessageSchema.safeParse({ action: "say", requestId: id, text: "  " }).success).toBe(false);
+    expect(SendDesignMessageSchema.safeParse({ action: "draw", requestId: id, directionIds: [id] }).success).toBe(true);
+    expect(SendDesignMessageSchema.safeParse({ action: "draw", requestId: id, directionIds: [] }).success).toBe(false);
+    expect(SendDesignMessageSchema.safeParse({ action: "draw_catalog", requestId: id, revisionId: id }).success).toBe(true);
+    expect(SendDesignMessageSchema.safeParse({ action: "erase", requestId: id }).success).toBe(false);
+  });
+  it("스타일의 색은 #rrggbb이고 서체 계열은 고정폭까지 받는다", () => {
+    expect(DesignTokensSchema.safeParse(tokens).success).toBe(true);
+    expect(DesignTokensSchema.safeParse({ ...tokens, accent: "분홍" }).success).toBe(false);
+    expect(DesignTokensSchema.safeParse({ ...tokens, accent: "#d63" }).success).toBe(false);
+  });
+  it("대화는 말과 카드가 붙은 답, 그린 첫 화면, 고른 것을 담는다", () => {
+    const chat = {
+      id, brewId: id, selectedSnippetId: id, version: 4, updatedAt: stamp,
+      run: { id, requestId: id, status: "complete", error: null, startedAt: stamp },
+      snippets: [{ id, origin: "agent", name: "측정판", note: "LCP를 앞에 세웠습니다.", words: "밝은 회색에 파랑", tokens, css: "", html: "<header></header>", fromSnippetId: null, createdAt: stamp }],
+      messages: [
+        { id, role: "assistant", text: "어떤 분위기로 보여 드릴까요?", status: "complete", card: { kind: "directions", directions: [{ id, name: "측정판", words: "밝은 회색에 파랑", tokens }] }, createdAt: stamp },
+        { id, role: "user", action: "draw", text: "", subjects: [{ kind: "direction", id, name: "측정판" }], createdAt: stamp },
+        { id, role: "assistant", text: "", status: "running", card: { kind: "screens", items: [{ id, name: "측정판", words: "", tokens, status: "drawing", snippetId: null }] }, createdAt: stamp },
+        { id, role: "assistant", text: "강조색만 바꿨습니다.", status: "complete", card: { kind: "revision", fromSnippetId: id, item: { id, name: "측정판", words: "초록으로", tokens, status: "done", snippetId: id } }, createdAt: stamp },
+      ],
+    };
+    expect(DesignChatSchema.safeParse(chat).success).toBe(true);
+    expect(DesignChatSchema.safeParse({ ...chat, run: { ...chat.run, status: "cancelled" } }).success).toBe(false);
+    expect(DesignChatStateResponseSchema.safeParse({ data: { chat: null, unchanged: true } }).success).toBe(true);
+  });
+  it("생성 중 미리보기는 고른 첫 화면을 받는 이벤트를 안다", () => {
+    expect(PAGE_STREAM_EVENTS).toContain("seed");
+    expect(PageStreamSeedSchema.safeParse({ html: "<header></header>", css: "" }).success).toBe(true);
   });
 });
 

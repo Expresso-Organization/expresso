@@ -3,6 +3,7 @@
 import {
   PageStreamBlueprintSchema,
   PageStreamFillSchema,
+  PageStreamSeedSchema,
   PageStreamStageSchema,
   PageStyleGrammarSchema,
   pagePreviewDocument,
@@ -68,6 +69,8 @@ export function LivePreview({
   const [phase, setPhase] = useState<keyof typeof PHASE_LABELS | null>(null);
   /** 청사진을 연 문서인가. 그러면 `delta`는 이어 쓰기가 아니라 완성본으로 바꿔 끼우는 것이다. */
   const blueprintOpen = useRef(false);
+  /** 디자인 대화에서 고른 첫 화면의 CSS. 이후에 오는 CSS는 이 뒤에 붙는다. 첫 화면 없이 만드는 생성에서는 비어 있다. */
+  const seedCss = useRef("");
   /** 사람이 지면을 직접 움직였는가. 그 뒤로는 쓰이는 자리를 따라 내려가지 않는다. */
   const userMoved = useRef(false);
   const grammarRef = useRef<PageStyleGrammar | null>(null);
@@ -91,6 +94,7 @@ export function LivePreview({
       written.current = 0;
       opened.current = false;
       blueprintOpen.current = false;
+      seedCss.current = "";
       userMoved.current = false;
       setBuffer("");
       setLive(false);
@@ -137,6 +141,24 @@ export function LivePreview({
           document_.addEventListener(name, () => { userMoved.current = true; }, { passive: true });
         blueprintOpen.current = true;
         setPhase("filling");
+        setLive(true);
+      });
+      source.addEventListener("seed", (event) => {
+        // 고른 첫 화면이 가장 먼저 온다. 문서를 열어 그것부터 그리고, 이어서 오는 조각은 그 뒤에 쓰인다.
+        const page = PageStreamSeedSchema.safeParse(JSON.parse((event as MessageEvent<string>).data));
+        const document_ = frame.current?.contentDocument;
+        if (!page.success || !document_ || opened.current) return;
+        const shell = pagePreviewDocument({
+          html: "",
+          css: "",
+          title: titleRef.current,
+          ...(grammarRef.current ? { grammar: grammarRef.current } : {}),
+        });
+        document_.open();
+        document_.write(`${shell.slice(0, shell.indexOf("<body>"))}<body>${page.data.html}`);
+        opened.current = true;
+        seedCss.current = page.data.css;
+        writeCss(document_, page.data.css);
         setLive(true);
       });
       source.addEventListener("fill", (event) => {
@@ -256,7 +278,7 @@ export function LivePreview({
      * 그동안 지면을 세워 주는 것은 키트다. 여기 오는 것은 그 위에 얹는 것이라
      * 늦게 와도 무너지지 않고, 올 때마다 통째로 갈아 끼우면 된다.
      */
-    if (fields.css) writeCss(document_, fields.css);
+    if (fields.css) writeCss(document_, seedCss.current ? `${seedCss.current}\n${fields.css}` : fields.css);
   }, [buffer, grammar, title]);
 
   return (

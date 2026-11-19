@@ -2,7 +2,9 @@ import { GENERATION_CANCELLED, type BrewState } from "@expresso/contracts";
 import { notFound, redirect } from "next/navigation";
 
 import { ApiError } from "@/lib/api/client";
-import { brews, designSystems, entitlements, jobAnalyses, recipes } from "@/lib/api/endpoints";
+import { DesignChat, type CatalogItem } from "@/features/design-chat/DesignChat";
+import { RecipeWait } from "@/features/design-chat/RecipeWait";
+import { brews, designChat, designSystems, entitlements, jobAnalyses, recipes } from "@/lib/api/endpoints";
 import { CAREER_CATEGORY_ICONS } from "@/lib/career-category-icons";
 import { requireSession } from "@/lib/require-session";
 
@@ -16,16 +18,19 @@ import { brewingLeftMs, waitedMs } from "./wait-timing";
 /**
  * 03 디자인 선택 — 제작 흐름의 다섯째 단계.
  *
- * 디자인 시스템을 고르고 그 디자인으로 생성을 실행한다. 구성(레시피)이 아직이어도 실행할 수 있고, 그때는
- * 구성이 끝나는 대로 생성이 이어진다. 진행 중인 생성은
- * 기다림 화면으로, 끝난 생성은 06 다듬기 편집 화면으로 간다. "다시 뽑기"(`again=1`)는 카탈로그를 연다.
+ * 에이전트와의 대화로 디자인을 정하고 고른 첫 화면으로 생성을 실행한다(`DesignChat`). 진행 중인 생성은
+ * 기다림 화면으로, 끝난 생성은 06 다듬기 편집 화면으로 간다. "다시 뽑기"(`again=1`)는 대화를 다시 연다.
+ *
+ * 기존 카탈로그 화면은 `?view=catalog`로 연다 — 구조화 생성과 페이지 짜임새는 그 화면에서 고른다. 디자인 대화를
+ * 쓸 수 없는 서버(AI가 꺼져 있다)에서는 카탈로그 화면이 바로 열린다. 카탈로그 화면은 구성(레시피)이 아직이어도
+ * 실행할 수 있고, 그때는 구성이 끝나는 대로 생성이 이어진다.
  */
 export default async function DesignPage({
   params,
   searchParams,
 }: {
   params: Promise<{ brewId: string }>;
-  searchParams: Promise<{ again?: string }>;
+  searchParams: Promise<{ again?: string; view?: string }>;
 }) {
   const session = await requireSession();
   const { brewId } = await params;
@@ -71,10 +76,36 @@ export default async function DesignPage({
   }
 
   // 목록은 카드가 그리는 값만 받는다. 문서는 고른 판 하나만 따로 불러온다.
-  const [catalog, quota] = await Promise.all([
+  const [catalog, quota, chatReady] = await Promise.all([
     designSystems.list(session.accessToken),
     entitlements.check(session.accessToken, "portfolio.generate"),
+    query.view === "catalog" ? false : designChatReady(session.accessToken, brewId),
   ]);
+  const notice: { tone: "info" | "error"; text: string } | null =
+    generation?.status === "failed" && generation.failureCode === GENERATION_CANCELLED
+      ? { tone: "info", text: "생성을 멈췄습니다. 크레딧은 차감하지 않았습니다. 디자인을 고르면 다시 만들 수 있습니다." }
+    : generation?.status === "failed" ? { tone: "error", text: failureNote(generation.failureCode, isFreeBrew) }
+    : recipeJob?.status === "failed" && !brew.recipeId ? { tone: "error", text: failureNote(recipeJob.failure?.code ?? null, isFreeBrew) }
+    : null;
+
+  if (chatReady) {
+    const items: CatalogItem[] = catalog.data.items.map((item) => ({
+      revisionId: item.revisionId,
+      code: item.code,
+      name: item.name,
+      reason: item.fitReasons[0] ?? "",
+      preview: item.preview,
+    }));
+    return (
+      <BrewFrame brewId={brewId} step="design" portfolioTitle={title} situation="대화로 고르기" tinted>
+        {brew.recipeId ? (
+          <DesignChat brewId={brewId} recipeId={brew.recipeId} catalog={items} generationAllowed={quota.data.allowed} notice={notice} />
+        ) : (
+          <RecipeWait brewId={brewId} building={recipeBuilding} failure={recipeJob?.status === "failed" ? failureNote(recipeJob.failure?.code ?? null, isFreeBrew) : null} />
+        )}
+      </BrewFrame>
+    );
+  }
   const entries: DesignCatalogEntry[] = catalog.data.items.map((item) => ({
       designSystemId: item.designSystemId,
       revisionId: item.revisionId,
@@ -117,17 +148,24 @@ export default async function DesignPage({
         recipeId={brew.recipeId}
         generationAllowed={quota.data.allowed}
         recipeBuilding={recipeBuilding}
-        notice={
-          generation?.status === "failed" && generation.failureCode === GENERATION_CANCELLED
-            ? { tone: "info", text: "생성을 멈췄습니다. 크레딧은 차감하지 않았습니다. 디자인을 고르면 다시 만들 수 있습니다." }
-          : generation?.status === "failed" ? { tone: "error", text: failureNote(generation.failureCode, isFreeBrew) }
-          : recipeJob?.status === "failed" && !brew.recipeId ? { tone: "error", text: failureNote(recipeJob.failure?.code ?? null, isFreeBrew) }
-          : recipeBuilding ? { tone: "info", text: "구성을 만드는 중입니다. 지금 눌러도 구성이 끝나는 대로 이어서 만듭니다." }
-          : null
-        }
+        notice={notice ?? (recipeBuilding ? { tone: "info", text: "구성을 만드는 중입니다. 지금 눌러도 구성이 끝나는 대로 이어서 만듭니다." } : null)}
       />
     </BrewFrame>
   );
+}
+
+/**
+ * 이 서버에서 디자인 대화를 쓸 수 있는가. AI가 꺼진 서버는 대화 라우트가 503을 낸다. 그때는 카탈로그 화면을 연다.
+ * 읽기만 한다 — 대화를 여는 일(에이전트의 첫 말을 시작하는 일)은 화면이 뜬 뒤 클라이언트가 한 번 한다.
+ */
+async function designChatReady(accessToken: string, brewId: string): Promise<boolean> {
+  try {
+    await designChat.get(accessToken, brewId);
+    return true;
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 503) return false;
+    throw error;
+  }
 }
 
 /**

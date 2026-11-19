@@ -60,11 +60,11 @@ flowchart TD
 
 **백엔드(`services/backend/src/modules/page/design-chat/`)**
 
-- `sources.ts` — `PageService.#context`의 레시피 · 섹션 · 근거 · 공고 · 회사 조립을 `brewPageSources(db, userId, brewId)`로 꺼낸다. `#context`는 이 함수를 쓰고 포트폴리오에 딸린 것(스타일 · 그림)만 더한다. 디자인 단계에는 포트폴리오가 없어서 제작 ID로 읽어야 한다.
+- `../brew-sources.ts` — `PageService.#context`의 레시피 · 섹션 · 근거 · 공고 · 회사 조립을 `brewPageSources(db, userId, brewId)`로 꺼낸다. `#context`는 이 함수를 쓰고 포트폴리오에 딸린 것(스타일 · 그림)만 더한다. 디자인 단계에는 포트폴리오가 없어서 제작 ID로 읽어야 한다.
 - `prompts.ts` — 호출 네 가지의 계약과 요청.
   - 여는 호출(`page_design`): 자료를 읽어 `head`(직무 · 한 줄 · 소개 · 다루는 것 · 앞세울 사실)와 말, 견본 세 개를 낸다. `head`의 숫자는 출처와 대조한다.
   - 답하는 호출(`page_design`): 대화 요약 · 대상 · 사용자의 말을 읽고 `say`와 `show`(none|directions|screens|revision)를 낸다. 선택 규칙(넓게 볼 때 견본, 좁혀졌거나 구체적일 때 첫 화면)은 시스템 프롬프트에 둔다.
-  - 그리는 호출(`page_generation`): `head`와 방향의 말로 첫 화면 한 장면을 낸다(`name · note · tokens · css · html`). 2026-11-17 측정에 쓴 요청을 옮긴다.
+  - 그리는 호출(`page_generation`): `head`와 방향의 말로 첫 화면 한 장면을 낸다(`name · note · tokens · css · html`). 2026-11-17 측정에 쓴 요청을 옮긴다. 소독기가 거절하는 CSS 구문은 검사에서 걸러 그 칸만 고쳐 받는다.
   - 고치는 호출(`page_generation`): 지금 첫 화면과 지시를 받아 지시가 가리킨 것만 바꾼다.
   - 네 호출 모두 `modelTier: "sonnet"`을 명시한다. 두 계약의 기본은 Opus다.
 - `service.ts` — `DesignChatService`. `get · open · send · select · retry · close`와 생성 쪽이 쓰는 `findDesignSnippet`.
