@@ -3,7 +3,7 @@
   width: min(520px, 100%);
   background: var(--ex-bg);
   border: 1px solid var(--ex-border);
-  border-radius: 16px;
+  border-radius: var(--ex-radius-card);
   text-align: left;
 }
 

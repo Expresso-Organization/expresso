@@ -42,7 +42,7 @@
 | 필요한 것 | 쓰는 곳 | 메모 |
 |---|---|---|
 | `POST /v1/career/records/import` | 10d 온보딩 | 이력서 PDF·URL을 기록으로 분해. `record.origin='import'`는 이미 있음 |
-| `PATCH /v1/career/categories/:id` | 05* 카테고리 편집 | 이름·아이콘·기본 뷰. 지금은 property-schema만 수정 가능 |
+| `PATCH /v1/career/categories/:id` | 05* 카테고리 편집 | 이름·아이콘·기본 뷰. 지금은 보관(`archived`)만 받는다 |
 | `DELETE /v1/career/views/:id` | 05* 뷰 관리 | 생성·조회만 있음 |
 
 ### M3 — 제작 코어 01→04

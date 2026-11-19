@@ -195,6 +195,81 @@ describe("검색 칸 곡률", () => {
   });
 });
 
+/*
+ * 역할마다 곡률이 하나다 — 버튼 · 입력 칸 8px, 칩 · 배지 pill, 카드 14px(2026-11-10 결정).
+ * 예전에는 같은 주 버튼이 7 · 8 · 9 · 10px · pill, 같은 카드가 10~16px로 화면마다 달랐다.
+ *
+ * 역할은 클래스 이름의 단어로 정한다(`statusPill` → pill, `creditCard` → card).
+ * 이름만으로는 역할이 틀리는 자리는 아래 예외에 이유와 함께 둔다.
+ * 랜딩 · 공개 포트폴리오는 별도 지면이라 보지 않는다.
+ */
+const RADIUS = {
+  pill: "var(--ex-radius-pill)",
+  control: "var(--ex-radius-control)",
+  card: "var(--ex-radius-card)",
+} as const;
+
+const RADIUS_ROLE_EXCEPTIONS: Record<string, string> = {
+  "app/(app)/brew/[brewId]/counter/page.module.css .recordChip": "칩이 아니라 카드처럼 쓰는 기록 칸",
+  "app/(app)/jobs/[jobId]/page.module.css .swatchChip": "색 견본 — 모양이 곧 내용",
+  "features/career-editor/views/views.module.css .projectSelect": "칩 모양으로 그린 선택 칸 — 칩 곡률",
+  "features/agent-chat/AgentChat.module.css .attachButton": "참조 칩 줄의 첨부 자리 — 옆 참조 칩과 같은 pill",
+  "features/career-editor/views/views.module.css .rowAddButton": "표 행에 올렸을 때만 보이는 24px 손잡이(.rowDragHandle과 한 규칙)",
+  "app/(app)/edit/[portfolioId]/page.module.css .railButton": "편집기 레일 탐색 항목",
+  "app/(app)/edit/[portfolioId]/page.module.css .toolButton": "떠 있는 도구 막대 항목",
+  "app/(app)/edit/[portfolioId]/page.module.css .viewportButton": "세그먼트 항목(데스크톱 · 모바일)",
+  "app/(app)/edit/[portfolioId]/page.module.css .alignButton": "세그먼트 항목(정렬)",
+  "app/(app)/edit/[portfolioId]/page.module.css .sectionMoveButton": "13px 높이 화살표 — 8px이면 원이 된다",
+  "app/(app)/brew/[brewId]/design/DesignCatalog.module.css .cardCheck": "카드 위 선택 표시 원",
+};
+
+function radiusRole(className: string): keyof typeof RADIUS | "search" | null {
+  const words = className.split(/(?=[A-Z])|[-_]/).map((word) => word.toLowerCase());
+  if (words.includes("search")) return "search";
+  // 팝오버 · 메뉴와 그 항목은 아직 곡률 단계가 없다.
+  if (words.some((word) => ["pop", "popover", "menu", "option", "item"].includes(word))) return null;
+  if (words.some((word) => ["chip", "badge", "tag", "pill"].includes(word))) return "pill";
+  if (words.includes("card")) return "card";
+  if (words.some((word) => ["button", "btn", "cta"].includes(word))) return "control";
+  if (words.some((word) => ["input", "select", "textarea", "field", "composer"].includes(word))) return "control";
+  return null;
+}
+
+describe("역할별 곡률", () => {
+  it("곡률 토큰이 결정한 값이다", () => {
+    const css = read(TOKENS);
+    expect(css).toContain("--ex-radius-control: 8px");
+    expect(css).toContain("--ex-radius-card: 14px");
+  });
+
+  it("칩 · 배지 · 카드 · 버튼 · 입력 칸 이름의 규칙은 역할 토큰을 쓴다", () => {
+    const found: string[] = [];
+    const appFiles = cssFiles.filter((f) => !/^app\/(\(landing\)|site)\//.test(label(f)));
+    for (const file of appFiles) {
+      for (const [, selectors = "", body = ""] of stripComments(read(file)).matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+        const radius = body.match(/border-radius\s*:\s*([^;!]+)/)?.[1]?.trim();
+        if (!radius) continue;
+        for (const selector of selectors.split(",")) {
+          const last = selector.trim().split(/[\s>+~]+/).pop() ?? "";
+          // `:not(.iconButton)` 안의 클래스는 이 요소가 아니다.
+          const classes = [...last.replace(/:not\([^)]*\)/g, "").matchAll(/\.([\w-]+)/g)].map((match) => match[1] ?? "");
+          const roles = new Set(classes.map(radiusRole).filter((role) => role !== null));
+          if (roles.size !== 1) continue;
+          const [role] = roles;
+          if (!role || role === "search") continue;
+          const key = `${label(file)} ${selector.trim()}`;
+          if (key in RADIUS_ROLE_EXCEPTIONS) continue;
+          // 한쪽 모서리만 둥근 값은 0이 아닌 칸이 모두 그 역할의 토큰이면 된다. 원형(50%)은 버튼과 칩에서 허용한다.
+          const parts = radius.split(/\s+(?![^(]*\))/).filter((part) => part !== "0");
+          const allowed = role === "card" ? [RADIUS.card] : [RADIUS[role], "50%"];
+          if (!parts.every((part) => allowed.includes(part))) found.push(`${key} → ${radius} (${role})`);
+        }
+      }
+    }
+    expect(found).toEqual([]);
+  });
+});
+
 /**
  * 어두운 지면의 값은 두 곳에 적혀 있다 — OS 설정을 따르는 자리와 손으로 고른
  * 자리. 둘이 갈리면 시스템 다크와 수동 다크가 다르게 보인다.

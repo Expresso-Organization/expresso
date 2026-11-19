@@ -283,12 +283,6 @@
   color: var(--ex-fg-subtle);
 }
 
-.primaryCount {
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-3xs);
-  color: var(--ex-fg-muted);
-}
-
 /* ── 내 포트폴리오 ────────────────────────────────────────── */
 
 .portfolios {
@@ -381,7 +375,7 @@
   font-size: var(--ex-text-3xs);
   color: var(--ex-accent-text);
   background: var(--ex-accent-surface);
-  border-radius: 4px;
+  border-radius: var(--ex-radius-pill);
   padding: 3px 6px;
   flex-shrink: 0;
 }
@@ -491,6 +485,9 @@
   color: var(--ex-fg-muted);
 }
 
+/* 「보관됨」 줄은 수를 오른쪽 끝에 둔다. 카테고리 줄의 수와 같은 열이다 */
+.archivedToggle > .addCategoryLabel { flex: 1; min-width: 0; }
+
 /* ── 푸터 — 항상 하단 고정 ────────────────────────────────── */
 
 .footer {
@@ -519,7 +516,7 @@
   text-decoration: none;
   background: var(--ex-bg);
   border: 1px solid var(--ex-border-chrome);
-  border-radius: 10px;
+  border-radius: var(--ex-radius-card);
   padding: 12px;
   margin-bottom: 10px;
   transition:

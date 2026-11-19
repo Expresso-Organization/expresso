@@ -1,9 +1,9 @@
 /* 요건 대조 · 보완점 카드 — 작업 흔적(ToolStep) 단계 아래에 놓이는 테두리 · 바탕. */
-.card { border: 1px solid var(--ex-border); border-radius: 12px; background: var(--ex-bg-sunken); padding: 12px 14px; font-family: var(--ex-font-ui); color: var(--ex-fg); }
+.card { border: 1px solid var(--ex-border); border-radius: var(--ex-radius-card); background: var(--ex-bg-sunken); padding: 12px 14px; font-family: var(--ex-font-ui); color: var(--ex-fg); }
 .head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .title { display: inline-flex; align-items: center; gap: 6px; font-size: var(--ex-text-xs); font-weight: 600; }
 .title > i { color: var(--ex-accent-text); }
-.stale { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; background: var(--ex-status-warning-surface); color: var(--ex-status-warning-text); font-size: var(--ex-text-3xs); white-space: nowrap; }
+.stale { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: var(--ex-radius-pill); background: var(--ex-status-warning-surface); color: var(--ex-status-warning-text); font-size: var(--ex-text-3xs); white-space: nowrap; }
 .summary { margin: 8px 0 0; font-size: var(--ex-text-xs); line-height: var(--ex-leading-relaxed); color: var(--ex-fg-body); }
 .counts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .count { display: inline-flex; align-items: center; gap: 4px; font-size: var(--ex-text-3xs); }
@@ -28,7 +28,7 @@
 .evidence q { color: var(--ex-fg-body); }
 .recommendation { display: flex; gap: 6px; color: var(--ex-fg-muted); }
 .recommendation > i { flex-shrink: 0; margin-top: 3px; }
-.status { flex-shrink: 0; margin-top: 1px; padding: 1px 6px; border-radius: 999px; font-size: var(--ex-text-3xs); white-space: nowrap; }
+.status { flex-shrink: 0; margin-top: 1px; padding: 1px 6px; border-radius: var(--ex-radius-pill); font-size: var(--ex-text-3xs); white-space: nowrap; }
 .status[data-status="needs_confirmation"] { background: var(--ex-status-warning-surface); color: var(--ex-status-warning-text); }
 .status[data-status="needs_improvement"] { background: var(--ex-status-danger-surface); color: var(--ex-status-danger-text); }
 .priority { flex-shrink: 0; width: 6px; height: 6px; margin-top: 7px; border-radius: 50%; background: var(--ex-fg-subtle); }

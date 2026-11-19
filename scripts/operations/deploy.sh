@@ -93,8 +93,34 @@ pnpm db:migrate
 
 pnpm --filter @expresso/backend build
 
+# 웹은 운영 웹이 쓰지 않는 폴더(.next-build)에 짓는다. 운영 .next를 그 자리에서 다시 지으면
+# 빌드하는 1~2분 동안 /_next/static 요청이 500을 내고 모든 화면이 오류 경계로 넘어간다
+# (2026-11-10 #186·#187 배포). 빌드가 실패해도 운영 .next는 그대로 남는다.
+# 이름을 바꿔도 되는 근거: next start는 요청마다 서버의 실제 distDir로 덮어쓴다
+# (next/dist/server/route-modules/route-module.js, Next 16.3.0).
+WEB_DIR="$ROOT/services/web"
+rm -rf -- "$WEB_DIR/.next-build"
+mkdir -p "$WEB_DIR/.next-build"
+# Turbopack 빌드 캐시를 이어 쓴다. 같은 파일 시스템의 rename이라 운영 웹은 영향이 없고,
+# 이미지 캐시가 필요하면 .next/cache를 다시 만든다.
+if [ -d "$WEB_DIR/.next/cache" ]; then
+  mv "$WEB_DIR/.next/cache" "$WEB_DIR/.next-build/cache"
+fi
+
 # NEXT_PUBLIC_* 은 빌드 시점에 번들로 치환돼 들어간다. start 앞에 붙이면 늦다.
-NEXT_PUBLIC_API_BASE_URL="$SITE_URL" pnpm --filter @expresso/web build
+NEXT_DIST_DIR=.next-build NEXT_PUBLIC_API_BASE_URL="$SITE_URL" pnpm --filter @expresso/web build
+
+# 배포 전에 열어 둔 탭은 이전 판 JS를 요청한다. 없으면 404로 오류 화면이 나므로 함께 남긴다.
+# 새 판에 없는 파일만 복사한다. cp -p로 원래 수정 시각을 지켜 아래 7일 정리가 오래된 것만 지운다.
+# cp -n은 쓰지 않는다 — 건너뛴 파일이 있을 때 종료 코드가 coreutils 판과 macOS에서 서로 다르다.
+if [ -d "$WEB_DIR/.next/static" ]; then
+  (cd "$WEB_DIR/.next/static" && find . -type f) | while IFS= read -r file; do
+    if [ ! -e "$WEB_DIR/.next-build/static/$file" ]; then
+      mkdir -p "$(dirname "$WEB_DIR/.next-build/static/$file")"
+      cp -p "$WEB_DIR/.next/static/$file" "$WEB_DIR/.next-build/static/$file"
+    fi
+  done
+fi
 
 # 큐 소비자를 먼저 올려 새 스키마의 작업을 받을 수 있게 한 뒤 API를 바꾼다.
 sudo systemctl restart expresso-worker
@@ -117,7 +143,17 @@ for attempt in $(seq 1 30); do
   sleep 2
 done
 
-sudo systemctl restart expresso-web
+# 멈춘 뒤 바꾼다. 먼저 바꾸면 아직 도는 옛 프로세스가 새 판 서버 파일을 읽는다.
+# 직전 판은 .next-prev로 남긴다 — 되돌리기는 DEPLOYMENT.md 「실패와 복구」.
+sudo systemctl stop expresso-web
+rm -rf -- "$WEB_DIR/.next-prev"
+if [ -d "$WEB_DIR/.next" ]; then
+  mv "$WEB_DIR/.next" "$WEB_DIR/.next-prev"
+fi
+mv "$WEB_DIR/.next-build" "$WEB_DIR/.next"
+sudo systemctl start expresso-web
+# 이전 판에서 넘어온 정적 파일은 7일까지만 둔다. 이번 판 파일은 방금 만들어져 지워지지 않는다.
+find "$WEB_DIR/.next/static" -type f -mtime +7 -delete
 
 for attempt in $(seq 1 30); do
   code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "http://127.0.0.1:$WEB_PORT/login" || true)"

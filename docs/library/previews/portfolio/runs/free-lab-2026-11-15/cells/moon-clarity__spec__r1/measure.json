@@ -1,0 +1,62 @@
+{
+  "label": "moon-clarity__spec__r1",
+  "expected": {
+    "name": "문가령",
+    "sections": 4,
+    "evidence": 8
+  },
+  "screens": {
+    "390": {
+      "overflow": false,
+      "scrollWidth": 390,
+      "height": 5731,
+      "brokenImages": 0,
+      "images": 0,
+      "svgs": 0,
+      "details": 8,
+      "h1": 1,
+      "chars": 1488,
+      "hiddenChars": 0,
+      "firstMaxFont": 38,
+      "firstChars": 178,
+      "backgroundLuminance": 1,
+      "families": [
+        "Inter",
+        "ui-monospace"
+      ],
+      "name": true,
+      "sections": 4,
+      "evidence": 8,
+      "careerHeading": false,
+      "evidenceHeading": true,
+      "notes": 0,
+      "errors": []
+    },
+    "1440": {
+      "overflow": false,
+      "scrollWidth": 1440,
+      "height": 4238,
+      "brokenImages": 0,
+      "images": 0,
+      "svgs": 0,
+      "details": 8,
+      "h1": 1,
+      "chars": 1488,
+      "hiddenChars": 0,
+      "firstMaxFont": 64,
+      "firstChars": 208,
+      "backgroundLuminance": 1,
+      "families": [
+        "Inter",
+        "ui-monospace"
+      ],
+      "name": true,
+      "sections": 4,
+      "evidence": 8,
+      "careerHeading": false,
+      "evidenceHeading": true,
+      "notes": 0,
+      "errors": []
+    }
+  }
+}

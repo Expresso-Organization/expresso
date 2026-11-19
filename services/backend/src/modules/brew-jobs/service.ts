@@ -38,7 +38,7 @@ export class BrewJobService implements BrewJobApi {
     const id = await inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId);
       const db = mongoCollections(tx.db); const options = { session: tx.session };
-      if (!await db.brews.findOne({ _id: input.brewId, userId }, options)) throw new BrewJobError(404, "brew not found");
+      if (!await db.brews.findOne({ _id: input.brewId, userId, deletedAt: null }, options)) throw new BrewJobError(404, "brew not found");
       const existing = await db.brewJobs.findOne({ userId, inputIdempotencyKey: idempotencyKey }, options);
       if (existing && (existing.input.brewId !== input.brewId || existing.type !== type)) throw new BrewJobError(409, "idempotency key reused for another brew or job type");
       const job: BrewJobDoc = existing ?? { _id: randomUUID(), userId, type, input: { brewId: input.brewId }, inputIdempotencyKey: idempotencyKey, status: "queued", stage: "queued", attempts: 0, createdAt: new Date(), updatedAt: new Date() };

@@ -18,7 +18,7 @@ function definition(index: number, key: string, type: CareerPropertyDefinitionV2
 const definitions = [definition(1, "title", "title"), definition(2, "technologies", "multi_select", { options })];
 
 function props(key: "project" | "experience"): CareerViewRendererProps {
-  const category: CareerCategory = { id: id(100), key, name: key === "project" ? "프로젝트" : "경험", icon: "folder", defaultView: "gallery", propertySchemaV2: definitions, schemaVersion: 1, sortOrder: 0, recordCount: 1, version: 1 };
+  const category: CareerCategory = { id: id(100), key, name: key === "project" ? "프로젝트" : "경험", icon: "folder", defaultView: "gallery", propertySchemaV2: definitions, schemaVersion: 1, sortOrder: 0, recordCount: 1, version: 1, archivedAt: null, builtIn: false };
   // 지운 옵션을 가리키는 ID(99)가 섞여 있다.
   const record: CareerRecord = { id: id(200), categoryId: category.id, title: "상품 상세 App Router 전환", status: "organized", origin: "manual", properties: { technologies: { type: "multi_select", value: [id(90), id(91), id(99)] } }, bodyMd: "", version: 1, updatedAt: "2026-09-01T00:00:00.000Z" };
   const view = { ...defaultViewDraft(category, "gallery", "갤러리"), id: id(300), categoryId: category.id, version: 1, order: 0, createdAt: "2026-09-01T00:00:00.000Z", updatedAt: "2026-09-01T00:00:00.000Z", visiblePropertyIds: [id(2)] };

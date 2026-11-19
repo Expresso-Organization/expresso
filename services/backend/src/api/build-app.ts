@@ -22,8 +22,9 @@ import { type JobBoardApi } from "../modules/jobs/index.js";
 import { registerJobBoardRoutes } from "../modules/jobs/board-routes.js";
 import { type JobAnalysisApi } from "../modules/job-analysis/index.js";
 import { registerJobAnalysisRoutes } from "../modules/job-analysis/routes.js";
-import { type MaterialsApi } from "../modules/materials/index.js";
+import { type BrewTrashService, type MaterialsApi } from "../modules/materials/index.js";
 import { registerMaterialsRoutes } from "../modules/materials/routes.js";
+import { registerBrewTrashRoutes } from "../modules/materials/trash-routes.js";
 import { type InterviewApi } from "../modules/interview/index.js";
 import { registerInterviewRoutes } from "../modules/interview/routes.js";
 import { type RecipeApi } from "../modules/recipe/index.js";
@@ -40,8 +41,9 @@ import { type GenerationApi } from "../modules/generation/index.js";
 import { registerGenerationRoutes } from "../modules/generation/routes.js";
 import { type PortfolioEditingApi } from "../modules/portfolio-editing/index.js";
 import { registerPortfolioEditingRoutes } from "../modules/portfolio-editing/routes.js";
-import { type PortfolioReadApi } from "../modules/portfolios/index.js";
+import { type PortfolioReadApi, type PortfolioTrashService } from "../modules/portfolios/index.js";
 import { registerPortfolioRoutes } from "../modules/portfolios/routes.js";
+import { registerPortfolioTrashRoutes } from "../modules/portfolios/trash-routes.js";
 import { type LayoutApi } from "../modules/layout/index.js";
 import { type ConsentApi } from "../modules/consent/index.js";
 import { registerConsentRoutes } from "../modules/consent/routes.js";
@@ -86,6 +88,7 @@ export interface BuildApiOptions {
   jobBoardService?: JobBoardApi;
   jobAnalysisService?: JobAnalysisApi;
   materialsService?: MaterialsApi;
+  brewTrashService?: Pick<BrewTrashService, "trash" | "restore" | "list">;
   interviewService?: InterviewApi;
   agentChatService?: AgentChatService;
   recipeService?: RecipeApi;
@@ -96,6 +99,7 @@ export interface BuildApiOptions {
   generationService?: GenerationApi;
   portfolioEditingService?: PortfolioEditingApi;
   portfolioReadService?: PortfolioReadApi;
+  portfolioTrashService?: Pick<PortfolioTrashService, "trash" | "restore" | "list">;
   layoutService?: LayoutApi;
   consentService?: ConsentApi;
   publishingService?: PublishingApi;
@@ -210,6 +214,12 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
         authenticateRequest: createAuthenticateRequest(options.identityService),
       });
     }
+    if (options.brewTrashService) {
+      registerBrewTrashRoutes(app, {
+        service: options.brewTrashService,
+        authenticateRequest: createAuthenticateRequest(options.identityService),
+      });
+    }
     if (options.companyResearchService) {
       registerCompanyResearchRoutes(app, {
         service: options.companyResearchService,
@@ -258,6 +268,12 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
     if (options.portfolioReadService) {
       registerPortfolioRoutes(app, {
         service: options.portfolioReadService,
+        authenticateRequest: createAuthenticateRequest(options.identityService),
+      });
+    }
+    if (options.portfolioTrashService) {
+      registerPortfolioTrashRoutes(app, {
+        service: options.portfolioTrashService,
         authenticateRequest: createAuthenticateRequest(options.identityService),
       });
     }

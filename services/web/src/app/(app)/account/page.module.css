@@ -70,7 +70,7 @@
 .creditCard {
   background: var(--ex-bg);
   border: 1px solid var(--ex-border);
-  border-radius: 14px;
+  border-radius: var(--ex-radius-card);
   padding: 16px 18px;
 }
 
@@ -136,7 +136,7 @@
   margin-top: 14px;
   background: var(--ex-bg);
   border: 1px solid var(--ex-border);
-  border-radius: 14px;
+  border-radius: var(--ex-radius-card);
   padding: 16px 18px;
   min-width: 0;
 }
@@ -385,7 +385,7 @@
 .plan {
   background: var(--ex-bg);
   border: 1px solid var(--ex-border);
-  border-radius: 16px;
+  border-radius: var(--ex-radius-card);
   padding: 20px 22px;
   display: flex;
   flex-direction: column;
@@ -417,7 +417,7 @@
   font-weight: 600;
   color: var(--ex-accent-text);
   background: var(--ex-bg);
-  border-radius: 4px;
+  border-radius: var(--ex-radius-pill);
   padding: 2px 6px;
 }
 
@@ -470,7 +470,7 @@
   font-size: var(--ex-text-xs);
   color: var(--ex-status-success-text);
   background: var(--ex-status-success-surface);
-  border-radius: 6px;
+  border-radius: var(--ex-radius-pill);
   padding: 4px 9px;
   white-space: nowrap;
 }
@@ -482,7 +482,7 @@
   gap: 14px;
   padding: 14px 16px;
   border: 1px solid var(--ex-border);
-  border-radius: 12px;
+  border-radius: var(--ex-radius-card);
   background: var(--ex-bg);
 }
 
@@ -514,7 +514,7 @@
   color: var(--ex-fg-body);
   background: var(--ex-bg);
   border: 1px solid var(--ex-border-soft);
-  border-radius: 9px;
+  border-radius: var(--ex-radius-control);
   padding: 8px 14px;
   white-space: nowrap;
   flex-shrink: 0;
@@ -570,7 +570,7 @@
   gap: 16px;
   padding: 14px 16px;
   border: 1px solid var(--ex-border);
-  border-radius: 12px;
+  border-radius: var(--ex-radius-card);
   background: var(--ex-bg);
 }
 
@@ -596,7 +596,7 @@
 .consentOff {
   margin-left: auto;
   padding: 7px 16px;
-  border-radius: 9px;
+  border-radius: var(--ex-radius-control);
   font-family: inherit;
   font-size: var(--ex-text-sm);
   font-weight: 600;

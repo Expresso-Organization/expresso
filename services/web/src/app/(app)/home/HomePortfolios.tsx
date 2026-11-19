@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { Icon } from "@/components/ui/Icon";
+import { PortfolioTrashButton, TrashableCard } from "@/features/portfolio-trash/PortfolioTrash";
 import { publicSiteHost } from "@/lib/public-site";
 
 import { resumeStep } from "../brew/new/resume-step";
@@ -30,6 +31,7 @@ export function HomePortfolios({
     <div>
       <div className={styles.sectionHead}>
         <span className={styles.sectionTitle}>내 포트폴리오</span>
+        <PortfolioTrashButton />
       </div>
       <div className={styles.portfolioGrid}>
         {items.map((item) =>
@@ -59,6 +61,7 @@ export function HomePortfolios({
 function BrewCard({ brew }: { brew: ActiveBrew }) {
   const step = resumeStep(brew.status);
   return (
+    <TrashableCard target={{ kind: "brew", id: brew.id, title: brew.title ?? "만들던 포트폴리오" }}>
     <Link href={`/brew/${brew.id}/${step.segment}` as Route} className={styles.portfolioCard}>
       <div className={styles.portfolioThumb}>
         <span className={`${styles.portfolioBadge} ${styles.badgeMaking}`}>
@@ -70,6 +73,7 @@ function BrewCard({ brew }: { brew: ActiveBrew }) {
         <span className={styles.portfolioMeta}>{formatAt(brew.updatedAt)}</span>
       </CardBody>
     </Link>
+    </TrashableCard>
   );
 }
 
@@ -86,6 +90,7 @@ function PortfolioCard({
   // 공개를 중단해도 배포 기록은 남는다. 지금 열리는 주소가 있을 때만 배포됨이다.
   const deployment = portfolio.status === "published" ? portfolio.deployment : null;
   return (
+    <TrashableCard target={{ kind: "portfolio", id: portfolio.id, title: portfolio.title, published: portfolio.status === "published" }}>
     <Link href={`/edit/${portfolio.id}` as Route} className={styles.portfolioCard}>
       {/*
         넓은 화면 폭으로 그린 지면을 1/4로 줄인다. 04 새 탭 미리보기와 같은 문서라 배포될 모습 그대로다.
@@ -129,6 +134,7 @@ function PortfolioCard({
         )}
       </CardBody>
     </Link>
+    </TrashableCard>
   );
 }
 

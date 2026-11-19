@@ -163,7 +163,7 @@
   font-size: var(--ex-text-xs);
   color: var(--ex-fg-body);
   background: var(--ex-border-inner);
-  border-radius: 5px;
+  border-radius: var(--ex-radius-pill);
   padding: 4px 9px;
 }
 
@@ -171,7 +171,7 @@
   font-size: var(--ex-text-xs);
   color: var(--ex-accent-text);
   background: var(--ex-accent-surface);
-  border-radius: 5px;
+  border-radius: var(--ex-radius-pill);
   padding: 4px 9px;
 }
 

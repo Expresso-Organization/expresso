@@ -9,7 +9,7 @@ import { TableView } from "./TableView";
 const ids = Array.from({ length: 6 }, (_, index) => `00000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`);
 const [categoryId, titleId, roleId, outcomeId, technologiesId, scoreId] = ids as [string, string, string, string, string, string];
 const category: CareerCategory = {
-  id: categoryId, key: "project", name: "프로젝트", icon: "briefcase", defaultView: "table", schemaVersion: 1, sortOrder: 0, recordCount: 2, version: 1,
+  id: categoryId, key: "project", name: "프로젝트", icon: "briefcase", defaultView: "table", schemaVersion: 1, sortOrder: 0, recordCount: 2, version: 1, archivedAt: null, builtIn: false,
   propertySchemaV2: [
     { id: titleId, key: "title", name: "제목", type: "title", required: true, system: true, config: {}, order: 0, version: 1, deletedAt: null },
     { id: roleId, key: "role", name: "역할", type: "text", required: false, system: false, config: {}, order: 1, version: 1, deletedAt: null },

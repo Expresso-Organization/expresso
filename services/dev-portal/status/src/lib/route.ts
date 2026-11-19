@@ -2,11 +2,16 @@ import { useCallback, useEffect, useState } from "react"
 
 import { STATES, type State } from "../../shared/report.ts"
 
+// 사이드바 맨 위의 화면 둘. 주소에 아무것도 없으면 패치노트가 열린다.
+export const PAGES = ["notes", "dashboard"] as const
+export type Page = (typeof PAGES)[number]
+
 // 아래 목록 표의 탭.
 export const TABS = ["features", "pulls", "runs", "scans"] as const
 export type Tab = (typeof TABS)[number]
 
 export type View = {
+  page: Page
   tab: Tab
   member: string | null
   group: string | null
@@ -21,7 +26,11 @@ function parse(search: string): View {
   const p = new URLSearchParams(search)
   const tab = p.get("tab")
   const state = p.get("state")
+  const page = p.get("page")
+  // 예전 주소(#/status?member=…)처럼 대시보드 조건만 실린 주소는 대시보드로 연다.
+  const dashboardOnly = ["tab", "member", "group", "state", "changed", "q"].some((key) => p.has(key))
   return {
+    page: PAGES.includes(page as Page) ? (page as Page) : dashboardOnly ? "dashboard" : "notes",
     tab: TABS.includes(tab as Tab) ? (tab as Tab) : "features",
     member: p.get("member") || null,
     group: p.get("group") || null,
@@ -33,6 +42,9 @@ function parse(search: string): View {
 
 function serialize(view: View): string {
   const p = new URLSearchParams()
+  // 패치노트는 기본 화면이라 주소에 싣지 않는다. 대시보드 조건도 함께 비운다.
+  if (view.page === "notes") return ""
+  p.set("page", "dashboard")
   if (view.tab !== "features") p.set("tab", view.tab)
   if (view.member) p.set("member", view.member)
   if (view.group) p.set("group", view.group)

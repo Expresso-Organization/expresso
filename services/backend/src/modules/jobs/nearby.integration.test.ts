@@ -7,7 +7,8 @@ import { createMongoFixture } from "../../../test/support/mongodb.js";
 import { MongoJobBoardService } from "./board-service.js";
 
 /**
- * 장소로 찾으면 그 장소 → 가까운 순 → 장소를 못 읽은 같은 지역 순으로 온다.
+ * 장소로 찾으면 기본 정렬에서 그 장소 → 가까운 순 → 장소를 못 읽은 같은 지역 순으로 온다.
+ * 「마감 순」 · 「최신 순」을 고르면 그 순서가 앞선다.
  *
  * 정렬은 집계 안에서 해야 한다 — 한 쪽만 받아 다시 정렬하면 2쪽에 더 가까운
  * 공고가 남는다. 그래서 쪽을 나눠서도 본다.
@@ -42,7 +43,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("장소 검색 (mongodb)", () => 
   });
 
   it("판교 → 가까운 순(서울 강남 포함) → 장소를 못 읽은 경기 공고", async () => {
-    const result = await service.list(userId, { location: "판교", sort: "recent", page: 1, limit: 20 });
+    const result = await service.list(userId, { location: "판교", sort: "match", page: 1, limit: 20 });
 
     // 평택(반경 밖) · 마포(반경 밖) · 부산은 빠진다.
     expect(result.data.map((job) => job.title)).toEqual(["판교", "분당", "강남", "미상 경기"]);
@@ -54,8 +55,22 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("장소 검색 (mongodb)", () => 
   });
 
   it("쪽을 나눠도 순서가 이어진다", async () => {
-    const pages = await Promise.all([1, 2].map((page) => service.list(userId, { location: "판교", sort: "recent", page, limit: 2 })));
+    const pages = await Promise.all([1, 2].map((page) => service.list(userId, { location: "판교", sort: "match", page, limit: 2 })));
     expect(pages.flatMap((page) => page.data.map((job) => job.title))).toEqual(["판교", "분당", "강남", "미상 경기"]);
+  });
+
+  it("마감 순 · 최신 순을 고르면 그 순서가 거리보다 앞선다", async () => {
+    // Discord QA 11-13: 장소로 찾은 뒤 마감 순을 눌러도 가까운 순이 앞서 마감이 뒤섞여 보였다.
+    const db = mongoCollections(fixture.resource.db);
+    const day = 24 * 60 * 60_000;
+    for (const [title, days] of [["판교", 9], ["분당", 1], ["강남", 5]] as const) {
+      await db.jobPostings.updateOne({ title }, { $set: { expiresAt: new Date(Date.now() + days * day) } });
+    }
+    const deadline = await service.list(userId, { location: "판교", sort: "deadline", page: 1, limit: 20 });
+    expect(deadline.data.map((job) => job.title)).toEqual(["분당", "강남", "판교", "미상 경기"]);
+    const recent = await service.list(userId, { location: "판교", sort: "recent", page: 1, limit: 20 });
+    expect(recent.data.map((job) => job.title)).toEqual(["미상 경기", "강남", "판교", "분당"]);
+    await db.jobPostings.updateMany({}, { $unset: { expiresAt: "" } });
   });
 
   it("지역으로 찾으면 예전 그대로 그 지역 전체다", async () => {

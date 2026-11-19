@@ -1,0 +1,37 @@
+/* 확인 창 · 휴지통 창. 커리어 휴지통 창과 같은 크기 · 모양이다. 위치와 배경도 여기서 잡는다. */
+.backdrop { position:fixed; inset:0; z-index:50; background:color-mix(in srgb,var(--ex-fg-strong) 10%,transparent); }
+.dialog { position:fixed; z-index:50; top:50%; left:50%; transform:translate(-50%,-50%); outline:none; display:grid; width:min(520px,calc(100vw - 32px)); max-width:none; gap:12px; border:1px solid var(--ex-border); border-radius:12px; background:var(--ex-bg); padding:16px; color:var(--ex-fg-body); box-shadow:var(--ex-elevation-overlay); }
+.title { display:flex; align-items:center; gap:8px; margin:0; color:var(--ex-fg-strong); font-size:var(--ex-text-md); font-weight:600; }
+.title>i { color:var(--ex-fg-muted); }
+.close { display:grid; width:28px; height:28px; place-items:center; margin-left:auto; border:0; border-radius:6px; background:transparent; padding:0; color:var(--ex-fg-muted); cursor:pointer; }
+.close:hover { background:var(--ex-bg-hover); color:var(--ex-fg-strong); }
+.text { display:grid; gap:6px; }
+.text strong { overflow:hidden; color:var(--ex-fg-strong); font-size:var(--ex-text-sm); font-weight:500; text-overflow:ellipsis; white-space:nowrap; }
+.text p { margin:0; color:var(--ex-fg-muted); font-size:var(--ex-text-sm); line-height:var(--ex-leading-relaxed); }
+.text p[data-tone="warning"] { color:var(--ex-fg-body); }
+.issue { margin:0; color:var(--ex-status-danger-text); font-size:var(--ex-text-xs); }
+.actions { display:flex; justify-content:flex-end; gap:6px; }
+.actions button,.list button,.trashButton { display:inline-flex; min-height:32px; flex:0 0 auto; align-items:center; gap:5px; border:1px solid var(--ex-border-soft); border-radius:var(--ex-radius-control); background:var(--ex-bg); padding:5px 12px; color:var(--ex-fg-body); font:inherit; font-size:var(--ex-text-sm); cursor:pointer; }
+.actions button:hover,.list button:hover,.trashButton:hover { background:var(--ex-bg-hover); color:var(--ex-fg-strong); }
+.actions button[data-danger="true"] { border-color:color-mix(in srgb,var(--ex-status-danger-text) 35%,var(--ex-border-soft)); color:var(--ex-status-danger-text); }
+.actions button:disabled,.list button:disabled { opacity:.5; cursor:wait; }
+.empty { margin:0; padding:24px 0; color:var(--ex-fg-muted); font-size:var(--ex-text-sm); text-align:center; }
+.list { display:grid; max-height:min(420px,60dvh); margin:0; overflow-y:auto; padding:0; list-style:none; }
+.list li { display:flex; align-items:center; justify-content:space-between; gap:12px; border-top:1px solid var(--ex-border-soft); padding:10px 2px; }
+.list li:first-child { border-top:0; }
+.list button { min-height:30px; padding:4px 10px; font-size:var(--ex-text-xs); }
+.row { display:grid; min-width:0; gap:2px; }
+.row strong { overflow:hidden; color:var(--ex-fg-strong); font-size:var(--ex-text-sm); font-weight:500; text-overflow:ellipsis; white-space:nowrap; }
+.row small { color:var(--ex-fg-muted); font-size:var(--ex-text-2xs); }
+
+/* 「내 포트폴리오」 머리 오른쪽의 「휴지통」. 머리 글씨보다 한 단계 작게 둔다. */
+.trashButton { margin-left:auto; min-height:28px; padding:3px 10px; border-color:transparent; background:transparent; color:var(--ex-fg-muted); font-size:var(--ex-text-xs); }
+
+/* 카드 썸네일 왼쪽 위의 「…」. 오른쪽 위는 상태 배지 자리다. 마우스를 올리거나 초점이 들어오면 보이고, 터치 화면에서는 늘 보인다. */
+.cardMenu { position:absolute; z-index:2; top:10px; left:10px; display:grid; width:28px; height:28px; place-items:center; border:1px solid var(--ex-border-soft); border-radius:7px; background:var(--ex-bg); padding:0; color:var(--ex-fg-body); box-shadow:var(--ex-elevation-raised); cursor:pointer; opacity:0; transition:opacity .15s ease; }
+.cardMenu:hover,.cardMenu[aria-expanded="true"] { color:var(--ex-fg-strong); }
+.cardHost { position:relative; display:grid; min-width:0; }
+.cardHost:hover .cardMenu,.cardHost:focus-within .cardMenu { opacity:1; }
+.cardMenu:focus-visible { opacity:1; outline:none; box-shadow:var(--ex-focus-ring); }
+.cardMenu[aria-expanded="true"] { opacity:1; }
+@media (hover:none) { .cardMenu { opacity:1; } }

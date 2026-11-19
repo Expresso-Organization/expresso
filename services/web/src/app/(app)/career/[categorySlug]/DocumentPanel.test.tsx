@@ -15,7 +15,7 @@ import { DocumentPanel } from "./DocumentPanel";
 
 const category = {
   id: "00000000-0000-4000-8000-000000000001", key: "project", name: "프로젝트", icon: "briefcase", defaultView: "gallery",
-  propertySchemaV2: [], schemaVersion: 1, sortOrder: 0, recordCount: 1, version: 1,
+  propertySchemaV2: [], schemaVersion: 1, sortOrder: 0, recordCount: 1, version: 1, archivedAt: null, builtIn: false,
 } satisfies CareerCategory;
 const record = {
   id: "00000000-0000-4000-8000-000000000002", categoryId: category.id, categoryKey: category.key, title: "드로워 기록",

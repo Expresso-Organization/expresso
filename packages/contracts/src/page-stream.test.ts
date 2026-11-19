@@ -35,6 +35,19 @@ describe("partialFields", () => {
     expect(partialFields('{"html":"a\\u0041"}')).toEqual({ html: "aA" });
   });
 
+  it("글자가 아닌 값은 건너뛰고 뒤의 글자 칸을 읽는다", () => {
+    // 자유 생성은 계획(객체)을 CSS · HTML보다 먼저 쓴다.
+    expect(partialFields('{"plan":{"layout":"두 단 {격자}","steps":["a","b"],"n":3},"css":"main{margin:0}","html":"<main>'))
+      .toEqual({ css: "main{margin:0}", html: "<main>" });
+    expect(partialFields('{"count":12,"ok":true,"none":null,"html":"<p>글"}')).toEqual({ html: "<p>글" });
+  });
+
+  it("건너뛸 값이 아직 끝나지 않았으면 거기서 멈춘다", () => {
+    expect(partialFields('{"css":"a{}","plan":{"layout":"두 단')).toEqual({ css: "a{}" });
+    expect(partialFields('{"plan":{"layout":"두 단"')).toEqual({});
+    expect(partialFields('{"css":"a{}","count":12')).toEqual({ css: "a{}" });
+  });
+
   it("값 안에 적힌 키 이름에 속지 않는다", () => {
     // CSS가 `content:"html"`을 쓰는 것은 얼마든지 있는 일이다.
     expect(partialFields('{"css":"a::after{content:\\"html\\"}","html":"<p>진짜"}'))

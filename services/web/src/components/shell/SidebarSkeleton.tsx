@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { Icon } from "@/components/ui/Icon";
 
+import { AccountLink } from "./AccountLink";
 import { Skel, SkelRegion, skelKeys } from "./Skeleton";
 import { SidebarFrame } from "./SidebarFrame";
 import { SidebarNav } from "./SidebarNav";
@@ -32,7 +33,7 @@ export function SidebarSkeleton() {
               <div className={styles.quotaTrack} />
             </div>
           </div>
-          <Link href="/account" className={`${styles.row} ${styles.userLink}`} title="설정">
+          <AccountLink title="설정">
             <span className={styles.avatar} />
             <span className={`${styles.copy} ${styles.userName}`}>
               <Skel w={92} h={12} />
@@ -40,7 +41,7 @@ export function SidebarSkeleton() {
             <span className={`${styles.copy} ${styles.userAction}`}>
               <Icon name="gear-six" size={14} />
             </span>
-          </Link>
+          </AccountLink>
         </>
       }
     >

@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { query, type ModelUsage } from "@anthropic-ai/claude-agent-sdk";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { CLI_IDENTITY_ENV } from "../ai/claude-code.js";
 import { recordAiUsage, type AiUsageSink } from "../ai/usage-sink.js";
 import { AgentEditDraftSchema, AgentPageElementEditInputSchema, AgentPageElementReadInputSchema, type AgentPageElementEditInput, type AgentPageEdit, AgentRecordDraftInputSchema, GapReviewDraftSchema, PlanProposalInputSchema, ReplanProposalInputSchema, type AgentPlanDraft, type AgentReplanDraft, type PlanProposalInput, type PreparationPlan, type ReplanProposalInput, type GapReview, type GapReviewDraft, RequirementReviewDraftSchema, UuidSchema, type AgentRecordDraft, type AgentRecordDraftInput, type AgentEditDraft, type AgentMessage, type AgentToolResult, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
 
@@ -69,6 +70,7 @@ const SYSTEM_PROMPT = [
   "준비 계획을 요청받으면 주당 쓸 수 있는 시간, 기간(주), 시작일을 모르면 먼저 묻고, 가장 최근 보완점 정리에서 고른 번호(gapIndexes, 0부터)로 propose_preparation_plan을 부르십시오. 작업과 일정은 서버가 정하므로 지어내지 마십시오. 시간이 모자라다고 돌아오면 그 내용을 사용자에게 전하고 설정을 다시 물으십시오. 계획은 사용자가 카드에서 승인해야 저장됩니다.",
   "승인한 계획의 진행을 묻거나 남은 작업을 다시 배치해 달라고 하면 read_preparation_plan으로 진행을 보고, 재배치는 새 주당 시간 · 기간 · 시작일로 propose_replan을 부르십시오. 완료한 작업은 그대로 두고 남은 작업만 다시 배치되며, 사용자가 카드에서 승인해야 바뀝니다.",
   "포트폴리오 지면을 고쳐 달라는 요청이면 사용자 메시지의 selection(portfolioId · key · label)이 가리키는 요소를 read_page_element로 먼저 읽고, edit_page_element로 요청한 칸만 고치십시오. selection이 없으면 context의 지면 목차(outline)에서 요소를 고르고, 어느 요소인지 모호하면 먼저 물으십시오. 고친 내용은 검사를 지나면 바로 새 판으로 저장되고 사용자가 카드에서 되돌릴 수 있으므로, 저장한 뒤에는 무엇을 바꿨는지만 짧게 말하십시오. 출처에 없는 수치 · 성과 · 경력을 만들지 말고 지금 글의 사실을 유지하십시오. 이름은 고치지 않습니다. 요소를 더하거나 빼거나 순서를 바꾸는 일은 이 도구로 할 수 없으니 다듬기 화면의 목차와 기록 탭에서 할 수 있다고 안내하십시오. 도구가 어긋난 항목을 돌려주면 그 항목만 고쳐 다시 부르십시오.",
+  "context 밖에 보이는 이메일 주소와 계정 정보는 서버 운영 계정입니다. 사용자의 정보가 아니므로 답에 쓰지 마십시오. 사용자의 연락처를 물으면 모른다고 답하십시오.",
   "부족한 요건을 보완할 질문을 요청받으면 가장 최근 요건 대조의 unconfirmed · partial 요건부터 한 번에 질문 하나만 하십시오. 답에 역할 · 행동 · 결과 중 빠진 것이 있으면 그것을 이어 묻고, 충분히 확인되었거나 사용자가 그만하자고 하면 질문을 멈추고 확인된 내용을 정리하십시오. 요건 대조가 없으면 먼저 대조하십시오.",
 ].join(" ");
 export interface AgentRuntime { run(input: AgentInput): Promise<void> }
@@ -200,7 +202,8 @@ export class ClaudeAgentRuntime implements AgentRuntime {
     try {
       const messages = query({ prompt: JSON.stringify({ conversation: conversationForModel(input.messages), context: input.context }), options: {
         model: "sonnet",
-        ...(isolatedHome ? { env: { PATH: process.env.PATH, HOME: isolatedHome, CLAUDE_CONFIG_DIR: isolatedHome, ANTHROPIC_API_KEY: input.apiKey } } : {}), abortController, persistSession: false, includePartialMessages: true, maxTurns: 8, maxBudgetUsd: 1,
+        // 구독 경로도 git 사용자 이름을 컨텍스트에 싣지 않는다(`CLI_IDENTITY_ENV`).
+        env: isolatedHome ? { PATH: process.env.PATH, HOME: isolatedHome, CLAUDE_CONFIG_DIR: isolatedHome, ANTHROPIC_API_KEY: input.apiKey, ...CLI_IDENTITY_ENV } : { ...process.env, ...CLI_IDENTITY_ENV }, abortController, persistSession: false, includePartialMessages: true, maxTurns: 8, maxBudgetUsd: 1,
         tools: [], mcpServers: { expresso: { type: "sdk", name: "expresso", instance: server } }, allowedTools: AGENT_ALLOWED_TOOLS, permissionMode: "dontAsk", settingSources: [], strictMcpConfig: true,
         systemPrompt: SYSTEM_PROMPT,
       } });

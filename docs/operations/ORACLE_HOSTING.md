@@ -392,3 +392,54 @@ ssh Oracle-Server 'journalctl -u expresso-status-scan --since -1h --no-pager | t
 ssh Oracle-Server '/usr/local/bin/expresso-status-scan --groups D7'   # 한 도메인만 다시 판정
 curl -s https://dev.expresso.ai.kr/status/data/runs.json | tail -c 600
 ```
+
+## 9. 패치노트 생성 — 포털 「진행 현황」 패치노트 (2026-11-10)
+
+포털 「진행 현황」 사이드바의 「패치노트」 화면이 읽는 값도 이 기계에서 만든다. systemd 타이머가
+15분마다 생성기를 부르고, 생성기가 결과 JSON 을 진행 현황과 같은 폴더에 쓰면 nginx 의 기존
+`/status/data/` 규칙이 그대로 내보낸다. nginx 는 바꾸지 않았다.
+
+| 항목 | 값 |
+|---|---|
+| 생성기 원본 | `services/dev-portal/status/patch-notes/` (설정 `config.json` · 정리본 `seed.json`) |
+| 실행 스크립트 | `infra/server/expresso-patch-notes.sh` → 서버 사본 `/usr/local/bin/expresso-patch-notes` |
+| 유닛 | `infra/systemd/expresso-patch-notes.{service,timer}` |
+| 클론 | `~/expresso-patch-notes` — 실행마다 origin/main 으로 맞춘다. 스캔 클론과 나눈다 |
+| 결과 | `/var/lib/expresso-status/patch-notes.json` |
+| 내보내는 주소 | `https://dev.expresso.ai.kr/status/data/patch-notes.json` |
+
+### 무엇을 하는가
+
+- 기간(`config.json` 의 `period`, 2026-11-02 ~ 2026-12-01 KST) 안에 `main` 으로 머지된 PR 을 `gh` 로 읽는다.
+- 정리본과 이전 결과에 없는 PR 마다 Claude Code(`~/.local/bin/claude`, 모델 `sonnet`)가 PR 본문과 바뀐 파일 목록을 읽고 항목 하나(사용자 / 개발 · 운영 구분 · 변경 이름 · 세부 문장)를 쓴다. 한 번에 최대 10개, PR 하나에 보통 $0.05 안팎이다.
+- 이 계정의 사용자 설정(`~/.claude/settings.json`)은 읽지 않는다(`--setting-sources ""`). 설정의 `advisorModel` 이 advisor 호출을 붙여 PR 하나가 $0.04 에서 $0.47 로 늘고 예산 상한에 걸렸다(2026-11-10 실측).
+- 출력 검증을 CLI 에 맡기지 않는다(`--json-schema` 없음). 형식이 틀리면 같은 대화에 그 칸만 다시 받고, 나아지지 않으면 그 PR 을 `pending` 에 남겨 다음 실행에서 다시 시도한다.
+- 정리본(`seed.json`)은 매번 다시 읽는다. 자동으로 쓴 문구를 고치려면 그 항목을 `seed.json` 으로 옮겨 다듬고 머지한다 — 정리본에 들어간 PR 의 생성 항목은 다음 실행에서 빠진다.
+- 2026-12-01 뒤에는 새 항목이 생기지 않는다. 타이머는 그 뒤에 꺼도 된다.
+
+### 처음 한 번
+
+`main` 에 생성기가 머지된 뒤에 한다. 결과 폴더(`/var/lib/expresso-status`)는 8절에서 이미 만들었다.
+
+```bash
+ssh Oracle-Server 'cd ~/expresso-patch-notes 2>/dev/null || git clone -q https://github.com/Expresso-Organization/expresso.git ~/expresso-patch-notes'
+ssh Oracle-Server 'cd ~/expresso-patch-notes && git pull -q --ff-only'
+ssh Oracle-Server 'sudo install -m 755 ~/expresso-patch-notes/infra/server/expresso-patch-notes.sh /usr/local/bin/expresso-patch-notes'
+ssh Oracle-Server 'sudo cp ~/expresso-patch-notes/infra/systemd/expresso-patch-notes.{service,timer} /etc/systemd/system/ && sudo systemctl daemon-reload'
+
+# 손으로 한 번 돌려 결과 파일을 만들고 타이머를 켠다
+ssh Oracle-Server '/usr/local/bin/expresso-patch-notes'
+ssh Oracle-Server 'sudo systemctl enable --now expresso-patch-notes.timer'
+```
+
+### 확인 · 손으로 돌리기 · 끄기
+
+```bash
+ssh Oracle-Server 'systemctl list-timers expresso-patch-notes.timer --no-pager'
+ssh Oracle-Server 'journalctl -u expresso-patch-notes --since -1h --no-pager | tail -40'
+ssh Oracle-Server '/usr/local/bin/expresso-patch-notes --dry-run'   # 새로 쓸 PR 만 출력
+curl -s https://dev.expresso.ai.kr/status/data/patch-notes.json | head -c 400
+
+# 기간이 끝난 뒤
+ssh Oracle-Server 'sudo systemctl disable --now expresso-patch-notes.timer'
+```

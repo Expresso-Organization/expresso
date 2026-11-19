@@ -1,9 +1,9 @@
 /* 새 기록 초안 카드 — 요건 대조 카드와 같은 테두리 · 바탕 · 글자 크기를 쓴다. */
-.card { display: flex; flex-direction: column; gap: 10px; border: 1px solid var(--ex-border); border-radius: 12px; background: var(--ex-bg-sunken); padding: 12px 14px; font-family: var(--ex-font-ui); color: var(--ex-fg); }
+.card { display: flex; flex-direction: column; gap: 10px; border: 1px solid var(--ex-border); border-radius: var(--ex-radius-card); background: var(--ex-bg-sunken); padding: 12px 14px; font-family: var(--ex-font-ui); color: var(--ex-fg); }
 .head { display: flex; align-items: center; gap: 6px; font-size: var(--ex-text-xs); font-weight: 600; }
 .head > i { color: var(--ex-accent-text); }
 .field { display: flex; flex-direction: column; gap: 4px; font-size: var(--ex-text-3xs); color: var(--ex-fg-muted); }
-.field input, .field select { width: 100%; min-width: 0; padding: 7px 9px; border: 1px solid var(--ex-border); border-radius: 8px; background: var(--ex-bg); color: var(--ex-fg); font: inherit; font-size: var(--ex-text-xs); }
+.field input, .field select { width: 100%; min-width: 0; padding: 7px 9px; border: 1px solid var(--ex-border); border-radius: var(--ex-radius-control); background: var(--ex-bg); color: var(--ex-fg); font: inherit; font-size: var(--ex-text-xs); }
 .field input:focus-visible { outline: none; }
 .field select:focus-visible { outline: none; border-color: var(--ex-accent-soft); }
 .card .body { min-height: 120px; background: var(--ex-bg); font-size: var(--ex-text-xs); line-height: var(--ex-leading-relaxed); }

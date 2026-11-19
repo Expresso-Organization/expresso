@@ -35,3 +35,11 @@ describe("claude CLI가 끝난 방식에 따라 다시 돌릴지 정한다", () 
     });
   });
 });
+
+describe("claude CLI에 서버 계정 신원을 싣지 않는다", () => {
+  it("git 상태 스냅샷(Git user)을 끄는 환경으로 띄운다", async () => {
+    // 2026-11-10 운영: 스냅샷의 git 사용자 이름이 다른 사용자의 지면에 작성자로 찍혔다.
+    const client = new ClaudeCodeAiClient({ cliPath: fakeCli('echo "git=$CLAUDE_CODE_DISABLE_GIT_INSTRUCTIONS" >&2; exit 1') });
+    await expect(client.complete(spec, schema)).rejects.toMatchObject({ message: "git=1" });
+  });
+});

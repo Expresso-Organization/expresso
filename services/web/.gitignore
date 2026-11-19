@@ -15,6 +15,9 @@ build/
 
 # next build가 이 파일을 자기 것으로 덮어쓴다. 아래를 남겨 두면 덮어쓰지 않는다.
 .next/
+# 배포가 새 판을 짓는 자리와 직전 판을 남기는 자리 — scripts/operations/deploy.sh
+.next-build/
+.next-prev/
 .next-e2e-*/
 out/
 next-env.d.ts.bak

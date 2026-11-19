@@ -13,6 +13,12 @@ export interface PortfolioDoc {
   status: "draft" | "published" | "unlisted";
   createdAt: Date;
   updatedAt: Date;
+  /**
+   * 휴지통으로 옮긴 때와 영구 삭제 예정일. 휴지통 밖이면 없거나 null이다.
+   * 0001 검증기가 추가 필드를 막지 않고 `{ deletedAt: null }`이 필드 없는 문서도 맞추므로 마이그레이션 없이 쓴다.
+   */
+  deletedAt?: Date | null;
+  purgeAfter?: Date | null;
   styleOverrides: JsonObject;
   /** 디자인 시스템 판으로 생성했으면 그 판입니다. 템플릿으로 만든 포트폴리오는 비어 있습니다. */
   designSystemRevisionId?: string | null;  /** 페이지 짜임새(`PORTFOLIO_ARCHETYPES`). 유형 이전에 만든 포트폴리오는 비어 있고 사례 상세형으로 그립니다. */

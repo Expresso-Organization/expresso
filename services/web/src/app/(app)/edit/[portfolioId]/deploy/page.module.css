@@ -40,7 +40,7 @@
 .card {
   background: var(--ex-bg);
   border: 1px solid var(--ex-border);
-  border-radius: 14px;
+  border-radius: var(--ex-radius-card);
   padding: 16px 18px;
 }
 
@@ -55,7 +55,7 @@
 .slugInput {
   border: 1px solid var(--ex-border-soft);
   border-right: none;
-  border-radius: 9px 0 0 9px;
+  border-radius: var(--ex-radius-control) 0 0 var(--ex-radius-control);
   padding: 10px 13px;
   font-size: var(--ex-text-md);
   color: var(--ex-fg);
@@ -66,7 +66,7 @@
 .slugSuffix {
   border: 1px solid var(--ex-border-soft);
   border-left: none;
-  border-radius: 0 9px 9px 0;
+  border-radius: 0 var(--ex-radius-control) var(--ex-radius-control) 0;
   padding: 10px 13px;
   font-family: var(--ex-font-mono);
   font-size: var(--ex-text-sm);
@@ -172,7 +172,7 @@
   align-items: center;
   gap: 7px;
   border: 1px solid var(--ex-border-soft);
-  border-radius: 8px;
+  border-radius: var(--ex-radius-control);
   padding: 7px 11px;
   background: none;
   font-size: var(--ex-text-sm);
@@ -216,7 +216,7 @@
   font-size: var(--ex-text-xs);
   color: var(--ex-status-success-text);
   background: var(--ex-status-success-surface);
-  border-radius: 6px;
+  border-radius: var(--ex-radius-pill);
   padding: 4px 9px;
   white-space: nowrap;
   flex-shrink: 0;
@@ -258,7 +258,7 @@
   color: var(--ex-fg-body);
   background: var(--ex-bg);
   border: 1px solid var(--ex-border-soft);
-  border-radius: 9px;
+  border-radius: var(--ex-radius-control);
   padding: 8px 14px;
 }
 
@@ -268,7 +268,7 @@
   color: var(--ex-fg-on-accent);
   background: var(--ex-accent);
   border: none;
-  border-radius: 9px;
+  border-radius: var(--ex-radius-control);
   padding: 8px 16px;
   display: flex;
   align-items: center;
@@ -345,7 +345,7 @@
   border: 1px solid var(--ex-status-danger-surface-deep);
   background: var(--ex-status-danger-surface);
   color: var(--ex-status-danger-text);
-  border-radius: 8px;
+  border-radius: var(--ex-radius-control);
   padding: 7px 12px;
   font-size: var(--ex-text-sm);
   white-space: nowrap;

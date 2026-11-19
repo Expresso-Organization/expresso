@@ -1,3 +1,4 @@
+import { isUrgentDaysLeft } from "@expresso/contracts";
 import type { Route } from "next";
 import Link from "next/link";
 
@@ -239,7 +240,7 @@ function postingRow(job: Awaited<ReturnType<typeof jobs.postings>>["data"][numbe
   };
 }
 
-/** 마감까지 남은 날을 줄 끝 표시로. 일주일 안이면 진하게, 지났으면 흐리게. */
+/** 마감까지 남은 날을 줄 끝 표시로. 마감 임박(`D-7` 이내)이면 진하게, 지났으면 흐리게. */
 function deadlineMeta(
   daysLeft: number | null,
   note: string | null,
@@ -247,7 +248,7 @@ function deadlineMeta(
   if (daysLeft === null) return { meta: note, metaTone: "muted" };
   if (daysLeft < 0) return { meta: "마감", metaTone: "muted" };
   if (daysLeft === 0) return { meta: "오늘 마감", metaTone: "strong" };
-  return { meta: `D-${daysLeft}`, metaTone: daysLeft <= 7 ? "strong" : "plain" };
+  return { meta: `D-${daysLeft}`, metaTone: isUrgentDaysLeft(daysLeft) ? "strong" : "plain" };
 }
 
 /** 공고를 찾는 칸. 넣은 말로 좁힌 공고 목록(`mode=list`)을 연다. */

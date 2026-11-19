@@ -1307,12 +1307,14 @@ function portalSearchMatches(query, libraryEntries) {
   const matches = value => String(value || '').toLocaleLowerCase().includes(q);
   const documents = PORTAL_DOCUMENTS.filter(d => matches(d[0] + ' ' + d[1] + ' ' + DOCUMENTATION_DESCRIPTIONS[d[1]] + ' 개발 문서'));
   const decks = DECKS.filter(d => matches(d[1] + ' ' + d[2] + ' 프리젠테이션 발표 자료'));
+  const patch = matches('패치노트 변경 사항 업데이트 릴리스 patch notes') ? 1 : 0;
   const status = matches('진행 현황 대시보드 일정 마일스톤 상세기능 남은 작업 status') ? 1 : 0;
   const library = q.length > 1 ? (libraryEntries || []).filter(i => matches(i.title + ' ' + i.identifier + ' ' + i.source)) : [];
   return {
-    total: status + documents.length + decks.length + library.length,
+    total: patch + status + documents.length + decks.length + library.length,
     libraryTotal: library.length,
     hits: [
+      ...(patch ? [{ tag: 'STAT', title: '패치노트', context: '진행 현황 · 머지된 변경을 날짜별로 정리', href: '#/status' }] : []),
       ...(status ? [{ tag: 'STAT', title: STATUS_TAB, context: '작업 범위 대비 진척 · 담당자별 남은 작업', href: '#/status' }] : []),
       ...documents.slice(0, 4).map(d => ({ tag: d[0], title: d[1], context: DOCUMENTATION_DESCRIPTIONS[d[1]], href: '#/doc/' + d[0].toLowerCase() })),
       ...decks.slice(0, 3).map(d => ({ tag: 'DECK', title: d[1], context: d[2], href: '#/doc/deck/' + DECK_SLUG[d[0]] })),
@@ -1338,6 +1340,8 @@ function routeOf(s) {
 // 해석하지 못하는 주소는 null 을 돌려준다 — 부르는 쪽이 지금 화면을 그대로 둔다.
 function parseRoute(hash) {
   if (/^#\/library(?:[/?]|$)/.test(String(hash))) return { doc: LIBRARY_TAB, libraryRoute: String(hash), full: false, view: 'console', section: 'domain', toc: [], tocAt: -1 };
+  // 패치노트는 진행 현황 사이드바의 기본 화면이다. 예전 주소(#/patch-notes)도 그리로 연다.
+  if (hash === '#/patch-notes') return { doc: STATUS_TAB, statusQuery: '', statusSrc: statusSrc(''), full: false, view: 'console', section: 'domain', toc: [], tocAt: -1 };
   if (hash === '#/docs') return { doc: DOCUMENTATION_TAB, full: false, view: 'console', section: 'domain', toc: [], tocAt: -1 };
   const status = /^#\/status(?:\?(.*))?$/.exec(String(hash));
   if (status) return { doc: STATUS_TAB, statusQuery: status[1] || '', statusSrc: statusSrc(status[1] || ''), full: false, view: 'console', section: 'domain', toc: [], tocAt: -1 };
@@ -1391,7 +1395,7 @@ function tasksOf(d) {
 
 class Component extends DCLogic {
   state = {
-    // 주소 없이 열면 진행 현황이 첫 화면이다.
+    // 주소 없이 열면 진행 현황이 첫 화면이다. 진행 현황은 사이드바의 패치노트부터 연다.
     sel: 'D1', q: '', role: 'all', status: 'all', prog: {}, doc: STATUS_TAB, statusQuery: '', statusSrc: statusSrc(''), deck: null, slides: {}, toc: [], tocAt: -1, tocMiss: null,
     view: 'console', section: 'domain', bview: 'kanban', tickets: [], seq: 1, tsel: null, member: 'all',
     impDomain: 'D1', form: { title: '', assignee: '', due: '', effort: 'M', domain: '' },

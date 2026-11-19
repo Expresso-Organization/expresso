@@ -1,0 +1,10 @@
+{
+  "$comment": "패치노트 생성기 설정. period 는 KST 날짜이고 양 끝을 포함한다 — 2026-12-01 까지 머지된 PR 만 추가한다(2026-11-10 결정). model 은 진행 현황 스캐너와 같은 값이다.",
+  "repo": "Expresso-Organization/expresso",
+  "period": { "from": "2026-11-02", "to": "2026-12-01" },
+  "model": "sonnet",
+  "maxBudgetUsdPerPr": 0.5,
+  "timeoutMinutes": 10,
+  "maxPerRun": 10,
+  "maxFixRounds": 5
+}

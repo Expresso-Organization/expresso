@@ -24,7 +24,7 @@
   font-size: var(--ex-text-xs);
   color: var(--ex-status-success-text);
   background: var(--ex-status-success-surface);
-  border-radius: 6px;
+  border-radius: var(--ex-radius-pill);
   padding: 4px 9px;
   white-space: nowrap;
 }
@@ -74,7 +74,7 @@
   color: var(--ex-fg-body);
   background: var(--ex-bg);
   border: 1px solid var(--ex-border-soft);
-  border-radius: 9px;
+  border-radius: var(--ex-radius-control);
   padding: 8px 14px;
   white-space: nowrap;
   transition: border-color var(--ex-motion-quick);
@@ -140,7 +140,7 @@
   color: var(--ex-fg-body);
   background: var(--ex-bg-sunken);
   border: none;
-  border-radius: 999px;
+  border-radius: var(--ex-radius-pill);
   padding: 5px 11px;
   white-space: nowrap;
 }
@@ -153,7 +153,7 @@
   color: var(--ex-fg-muted);
   border: 1px dashed var(--ex-border-soft);
   background: none;
-  border-radius: 999px;
+  border-radius: var(--ex-radius-pill);
   padding: 5px 11px;
   white-space: nowrap;
 }
@@ -175,7 +175,7 @@
 .widget {
   background: var(--ex-bg);
   border: 1px solid var(--ex-border);
-  border-radius: 14px;
+  border-radius: var(--ex-radius-card);
   padding: 16px 18px;
   position: relative;
 }
@@ -453,7 +453,7 @@
 /* BARISTA'S READ — bean-50 지면 */
 .baristaCard {
   background: var(--ex-accent-surface);
-  border-radius: 14px;
+  border-radius: var(--ex-radius-card);
   padding: 16px 18px;
   display: flex;
   flex-direction: column;
@@ -532,7 +532,7 @@
   color: var(--ex-fg-on-accent);
   background: var(--ex-accent);
   border: none;
-  border-radius: 9px;
+  border-radius: var(--ex-radius-control);
   padding: 11px;
   transition: background var(--ex-motion-quick);
 }
@@ -724,7 +724,7 @@
 
 .dropZone {
   border: 1px dashed var(--ex-border-firm);
-  border-radius: 14px;
+  border-radius: var(--ex-radius-card);
   background: var(--ex-bg-hover);
   display: grid;
   place-items: center;
@@ -871,7 +871,7 @@
   font-size: var(--ex-text-2xs);
   color: var(--ex-fg-muted);
   background: var(--ex-bg-sunken);
-  border-radius: 5px;
+  border-radius: var(--ex-radius-pill);
   padding: 3px 7px;
   white-space: nowrap;
 }
@@ -880,7 +880,7 @@
   font-size: var(--ex-text-2xs);
   color: var(--ex-fg);
   background: var(--ex-bg-tint-strong);
-  border-radius: 5px;
+  border-radius: var(--ex-radius-pill);
   padding: 3px 7px;
   white-space: nowrap;
 }
@@ -891,7 +891,7 @@
   letter-spacing: 0.08em;
   color: var(--ex-accent-text);
   background: var(--ex-accent-surface);
-  border-radius: 5px;
+  border-radius: var(--ex-radius-pill);
   padding: 3px 7px;
   white-space: nowrap;
 }
@@ -913,7 +913,7 @@
   color: var(--ex-fg-body);
   background: none;
   border: 1px dashed var(--ex-border-soft);
-  border-radius: 10px;
+  border-radius: var(--ex-radius-control);
   padding: 11px;
 }
 
@@ -963,7 +963,7 @@
   align-items: center;
   gap: 8px;
   border: 1px solid var(--ex-border-soft);
-  border-radius: 8px;
+  border-radius: var(--ex-radius-control);
   padding: 7px 10px;
   background: none;
   font-size: var(--ex-text-sm);
@@ -1076,7 +1076,7 @@
   color: var(--ex-fg-body);
   background: none;
   border: 1px solid var(--ex-border-soft);
-  border-radius: 8px;
+  border-radius: var(--ex-radius-control);
   padding: 8px 0;
 }
 
@@ -1096,7 +1096,7 @@
   font-size: var(--ex-text-xs);
   color: #354da8;
   background: #eef1fc;
-  border-radius: 6px;
+  border-radius: var(--ex-radius-pill);
   padding: 4px 9px;
   white-space: nowrap;
 }
@@ -1133,7 +1133,7 @@
 .noticeAction {
   border: 1px solid var(--ex-border-firm);
   background: var(--ex-bg);
-  border-radius: 7px;
+  border-radius: var(--ex-radius-control);
   padding: 5px 11px;
   font-size: var(--ex-text-xs);
   color: var(--ex-fg);
@@ -1156,7 +1156,7 @@
   font-size: var(--ex-text-2xs);
   color: var(--ex-fg-muted);
   background: var(--ex-bg-muted);
-  border-radius: 999px;
+  border-radius: var(--ex-radius-pill);
   padding: 3px 8px;
 }
 
@@ -1192,7 +1192,7 @@
 .blankAction {
   margin-top: 6px;
   border: 1px solid var(--ex-border-firm);
-  border-radius: 8px;
+  border-radius: var(--ex-radius-control);
   padding: 7px 14px;
   font-size: var(--ex-text-sm);
   color: var(--ex-fg);
@@ -1225,7 +1225,7 @@
 .metricAddAgain {
   border: 1px solid var(--ex-border-soft);
   background: var(--ex-bg);
-  border-radius: 7px;
+  border-radius: var(--ex-radius-control);
   padding: 4px 9px;
   font-size: var(--ex-text-2xs);
   color: var(--ex-fg);
@@ -1246,7 +1246,7 @@
   font-size: var(--ex-text-2xs);
   color: var(--ex-fg-subtle);
   background: var(--ex-bg-sunken);
-  border-radius: 999px;
+  border-radius: var(--ex-radius-pill);
   padding: 3px 8px;
   white-space: nowrap;
 }

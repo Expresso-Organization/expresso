@@ -185,8 +185,32 @@ export const JobPostingListResponseSchema = z.strictObject({
 
 export const JobPostingSortSchema = z.enum(["match", "deadline", "recent"]);
 
-/** 마감 필터. `urgent`는 06의 "마감 임박" 칩이다 — 7일 이내. */
+/** 마감 필터. `urgent`는 06의 "마감 임박" 칩이다 — `D-7` 이내(`isUrgentDaysLeft`). */
 export const JobDeadlineFilterSchema = z.enum(["urgent", "open", "always"]);
+
+const DAY_MS = 86_400_000;
+
+/** 마감 임박의 기준 — 행에 `D-0`~`D-7`로 보이는 공고다. 서버 쿼리와 화면이 이 값 하나를 쓴다. */
+export const URGENT_DEADLINE_DAYS = 7;
+
+/** 마감일까지 남은 날 수(`daysLeft`, 행의 `D-n`). 시각이 아니라 UTC 날짜의 차이다. */
+export function daysUntilDeadline(expiresAt: Date, at: Date): number {
+  return Math.floor(expiresAt.getTime() / DAY_MS) - Math.floor(at.getTime() / DAY_MS);
+}
+
+/** 마감 임박인가. 마감일이 없거나(상시) 이미 지난 날이면 아니다. */
+export function isUrgentDaysLeft(daysLeft: number | null): boolean {
+  return daysLeft !== null && daysLeft >= 0 && daysLeft <= URGENT_DEADLINE_DAYS;
+}
+
+/**
+ * 마감 임박인 마감일의 범위 `[from, to)` — `daysUntilDeadline`이 0~7인 시각들이다.
+ * 날짜 단위라 `at`이 속한 UTC 날짜의 0시부터 `D-7`인 날의 끝까지다.
+ */
+export function urgentDeadlineRange(at: Date): { from: Date; to: Date } {
+  const from = Math.floor(at.getTime() / DAY_MS) * DAY_MS;
+  return { from: new Date(from), to: new Date(from + (URGENT_DEADLINE_DAYS + 1) * DAY_MS) };
+}
 
 const BooleanQuerySchema = z
   .enum(["true", "false"])

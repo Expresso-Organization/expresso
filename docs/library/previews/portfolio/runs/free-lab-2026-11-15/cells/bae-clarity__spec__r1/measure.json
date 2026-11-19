@@ -1,0 +1,62 @@
+{
+  "label": "bae-clarity__spec__r1",
+  "expected": {
+    "name": "배준호",
+    "sections": 5,
+    "evidence": 8
+  },
+  "screens": {
+    "390": {
+      "overflow": false,
+      "scrollWidth": 390,
+      "height": 6093,
+      "brokenImages": 0,
+      "images": 0,
+      "svgs": 0,
+      "details": 8,
+      "h1": 1,
+      "chars": 1740,
+      "hiddenChars": 26,
+      "firstMaxFont": 34,
+      "firstChars": 388,
+      "backgroundLuminance": 1,
+      "families": [
+        "Inter",
+        "ui-monospace"
+      ],
+      "name": true,
+      "sections": 5,
+      "evidence": 8,
+      "careerHeading": true,
+      "evidenceHeading": true,
+      "notes": 0,
+      "errors": []
+    },
+    "1440": {
+      "overflow": false,
+      "scrollWidth": 1440,
+      "height": 4549,
+      "brokenImages": 0,
+      "images": 0,
+      "svgs": 0,
+      "details": 8,
+      "h1": 1,
+      "chars": 1765,
+      "hiddenChars": 0,
+      "firstMaxFont": 64,
+      "firstChars": 450,
+      "backgroundLuminance": 1,
+      "families": [
+        "Inter",
+        "ui-monospace"
+      ],
+      "name": true,
+      "sections": 5,
+      "evidence": 8,
+      "careerHeading": true,
+      "evidenceHeading": true,
+      "notes": 0,
+      "errors": []
+    }
+  }
+}

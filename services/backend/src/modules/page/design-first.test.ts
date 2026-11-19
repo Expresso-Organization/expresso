@@ -204,7 +204,9 @@ describe("청사진과 순차 채움", () => {
     await new StructuredPageGenerator(new RoutedAi(route)).generate(context, sink);
 
     const order = events.map((item) => (item.event === "stage" ? `stage:${item.name}` : item.event)).filter((name, index, list) => name !== list[index - 1]);
-    expect(order).toEqual(["blueprint", "stage:designed", "fill", "stage:filled", "stage:rendered", "delta"]);
+    // 글이 다 흐르고 계약을 지나면(drafted) 검사 · 고치기가 돌고, 고친 칸이 다시 흐른 뒤 채우기가 끝납니다(filled).
+    expect(order.slice(0, 4)).toEqual(["blueprint", "stage:designed", "fill", "stage:drafted"]);
+    expect(order.slice(-3)).toEqual(["stage:filled", "stage:rendered", "delta"]);
 
     const blueprint = events.find((item) => item.event === "blueprint") as { html: string; css: string } | undefined;
     // 표지는 하나도 남지 않고, 설계한 칸마다 글 자리가 있습니다. 뺀 섹션(misc)은 청사진에도 없습니다.
@@ -225,6 +227,47 @@ describe("청사진과 순차 채움", () => {
     // 글은 조각마다 자라며 오고, 근거의 id는 글 칸이 아니라 보내지 않습니다.
     expect(fills.filter((item) => item.path === "/sections/lcp/title").length).toBeGreaterThan(1);
     expect(fills.some((item) => item.path.endsWith("/id"))).toBe(false);
+  });
+});
+
+describe("빠진 빈 칸", () => {
+  /** 예산이 0인 칸(lcp의 항목 · 단계, ui의 인용)을 비우는 대신 아예 뺀 채우기 출력. */
+  function omitted() {
+    const filled = fill();
+    const { details: _details, steps: _steps, ...lcp } = filled.sections.lcp;
+    const { quote: _quote, ...ui } = filled.sections.ui;
+    return { ...filled, sections: { lcp, ui } };
+  }
+
+  it("예산이 0인 칸이 빠지면 묻지 않고, 예산을 받은 칸이 빠졌을 때만 다른 위반과 함께 묻는다", () => {
+    const { quote: _quote, ...lcp } = omitted().sections.lcp;
+    const output = { ...omitted(), sections: { ...omitted().sections, lcp } };
+    const violations = fillViolations(output as never, plan as never, plan.sections.filter((item) => item.include) as never, { author: "가상 하린", groundSource: "LCP 3.8초 1.9초 컴포넌트 48개", evidenceCount: 1 });
+    const missing = violations.filter((item) => item.problem.includes("빠졌습니다")).map((item) => item.path);
+    expect(missing).toEqual(["/sections/lcp/quote"]);
+    // 같은 호출에서 업무 규칙 위반(출처에 없는 수치 99%)도 함께 나옵니다.
+    expect(violations.some((item) => item.path === "/sections/lcp/metrics")).toBe(true);
+  });
+
+  it("예산이 0인 칸을 빼먹은 출력은 고치기 한 라운드로 끝나고 빈 값으로 지면에 선다", async () => {
+    const fixRounds: string[][] = [];
+    const ai = new RoutedAi(
+      (request) => (request.contract === "page_design" ? { plan, spec } : { ...omitted(), headline: "커머스 화면을 고칩니다. 성능도 봅니다." }),
+      (request, paths) => {
+        if (request.contract !== "page_fill") return [];
+        fixRounds.push(paths);
+        return paths.includes("/headline") ? [{ path: "/headline", value: "커머스 화면의 성능을 고칩니다." }] : [];
+      },
+    );
+    const result = await new StructuredPageGenerator(ai).generate(context, null);
+    // 빠진 칸만 묻는 계약 라운드가 먼저 돌지 않습니다. 업무 규칙 위반은 첫 라운드에 함께 갑니다.
+    expect(fixRounds[0]).toContain("/headline");
+    expect(fixRounds.flat().some((path) => /\/(details|steps|quote)$/.test(path))).toBe(false);
+    const content = result.manifest.structured!.content;
+    expect(content.profile.headline).toBe("커머스 화면의 성능을 고칩니다.");
+    const ui = content.sections.find((section) => section.id === "ui")!;
+    expect(ui.quote).toBeUndefined();
+    expect(content.sections.find((section) => section.id === "lcp")!.quote).toBe("측정한 수치로만 개선을 말합니다.");
   });
 });
 

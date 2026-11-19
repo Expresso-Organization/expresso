@@ -37,7 +37,7 @@
   row-gap: 10px;
   padding: 14px 16px;
   border: 1px solid var(--ex-border);
-  border-radius: 12px;
+  border-radius: var(--ex-radius-card);
   background: var(--ex-bg);
   transition: border-color var(--ex-motion-instant), background var(--ex-motion-instant);
 }
@@ -177,7 +177,7 @@
   color: var(--ex-fg-body);
   background: var(--ex-bg);
   border: 1px solid var(--ex-border-soft);
-  border-radius: 9px;
+  border-radius: var(--ex-radius-control);
   padding: 8px 14px;
   white-space: nowrap;
   cursor: pointer;
@@ -213,7 +213,7 @@
   color: var(--ex-fg-muted);
   background: var(--ex-bg);
   border: 1px solid var(--ex-border-soft);
-  border-radius: 9px;
+  border-radius: var(--ex-radius-control);
   cursor: pointer;
   transition: background var(--ex-motion-instant), color var(--ex-motion-instant);
 }

@@ -26,6 +26,18 @@ export async function multiSelectValueByNames(tx: MongoTransaction, userId: stri
   return ids ? { type: "multi_select", value: ids } : null;
 }
 
+/**
+ * 선택지 이름의 비교 키. 표기만 다른 이름을 같은 선택지로 본다.
+ *
+ * AI 정리가 같은 역량을 「재시도·타임아웃 정책 설계」와 「재시도/타임아웃 정책 설계」로 따로 적어
+ * 카테고리 하나의 역량 선택지가 60개 넘게 쌓였다(2026-11-13 Discord 제보). 소문자로 바꾸고 공백과
+ * 구분 기호(`·・/,.()[]-_`)만 지운다. 글자는 남긴다 — 뜻이 다른 이름을 합치지 않기 위해서다.
+ * 기호만 있는 이름은 빈 키가 되므로 키로 합치지 않는다.
+ */
+export function optionKey(name: string): string {
+  return name.toLocaleLowerCase("ko-KR").replace(/[\s·・\/,.()[\]\-_]/gu, "");
+}
+
 async function optionIdsByNames(tx: MongoTransaction, userId: string, categoryId: string, key: string, type: "select" | "multi_select", names: readonly string[]): Promise<string[] | null> {
   const categories = mongoCollections(tx.db).careerCategories;
   const category = await categories.findOne({ _id: categoryId, userId }, { session: tx.session });
@@ -36,7 +48,8 @@ async function optionIdsByNames(tx: MongoTransaction, userId: string, categoryId
   for (const raw of names) {
     const name = raw.trim();
     if (!name) continue;
-    let option = options.find((item) => item.name.trim().toLocaleLowerCase("ko-KR") === name.toLocaleLowerCase("ko-KR"));
+    const key = optionKey(name);
+    let option = options.find((item) => key ? optionKey(item.name) === key : item.name.trim() === name);
     if (!option) { option = { id: randomUUID(), name }; options.push(option); }
     if (!ids.includes(option.id)) ids.push(option.id);
   }
