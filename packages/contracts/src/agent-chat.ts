@@ -350,7 +350,56 @@ export const AgentSavedRecordSchema = z.strictObject({
   undone: z.boolean(),
 });
 export type AgentSavedRecord = z.infer<typeof AgentSavedRecordSchema>;
-export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional(), goalDraft: AgentGoalDraftSchema.optional(), gapReview: GapReviewSchema.optional(), planDraft: AgentPlanDraftSchema.optional(), replanDraft: AgentReplanDraftSchema.optional(), pageEdit: AgentPageEditSchema.optional(), ui: AgentUiPartSchema.optional(), savedRecord: AgentSavedRecordSchema.optional(), commitment: ConsultantCommitmentSchema.optional(), diagnosis: ConsultantDiagnosisSchema.optional() });
+/**
+ * 대화에서 찾은 공고 · 활동의 목록과 비교 표. 보여 주기만 하는 부품이다 — 사용자의 답을 받지 않는다.
+ * 목록의 줄은 서버의 검색 결과이고, 표의 글은 컨설턴트가 채운 것이다.
+ */
+export const AgentFindItemSchema = z.strictObject({
+  kind: z.enum(["job", "activity"]),
+  id: z.string().min(1).max(120),
+  title: z.string().min(1).max(300),
+  /** 회사나 주최. */
+  sub: z.string().max(200),
+  /** 지역 · 경력 · 분야 같은 짧은 조각. */
+  meta: z.array(z.string().min(1).max(80)).max(4),
+  /** 마감까지 남은 날. 상시 모집이면 null. */
+  daysLeft: z.number().int().nullable(),
+  /** 공고는 앱 안의 주소, 활동은 출처의 주소다. */
+  href: z.string().min(1).max(2_000),
+  external: z.boolean(),
+});
+export const AgentFindListSchema = z.strictObject({
+  title: z.string().max(120),
+  items: z.array(AgentFindItemSchema).max(8),
+  /** 조건에 맞는 것의 전체 수. */
+  total: z.number().int().nonnegative(),
+});
+const findLimit = z.number().int().min(1).max(8).default(5).describe("돌려받을 건수(1~8).");
+export const AgentJobSearchInputSchema = z.strictObject({
+  query: z.string().trim().min(1).max(200).optional().describe("제목 · 회사 · 원문에서 찾을 글. 직군이나 기술로 거를 수 있으면 비운다."),
+  technology: z.string().trim().min(1).max(100).optional().describe("기술 이름 하나. 예: Kafka"),
+  family: z.string().trim().min(1).max(60).optional().describe("직군. 예: 백엔드 · 프론트엔드 · 데이터 · 모바일 · 인프라 · ML"),
+  location: z.string().trim().min(1).max(60).optional().describe("지역. 예: 서울 · 경기 · 판교"),
+  experience: z.number().int().min(0).max(50).optional().describe("사용자의 경력 연수. 신입이면 0. 이 경력으로 지원할 수 있는 공고만 남긴다."),
+  interested: z.boolean().optional().describe("참이면 사용자가 관심 표시한 공고만."),
+  limit: findLimit,
+});
+export const AgentActivitySearchInputSchema = z.strictObject({
+  kind: z.enum(["contest", "hackathon"]).optional().describe("공모전(contest)이나 해커톤(hackathon). 비우면 둘 다."),
+  query: z.string().trim().min(1).max(200).optional().describe("제목 · 주최 · 분야에서 찾을 글."),
+  limit: findLimit,
+});
+export const AgentTableSchema = z.strictObject({
+  title: z.string().trim().min(1).max(120),
+  columns: z.array(z.string().trim().min(1).max(40)).min(2).max(5),
+  rows: z.array(z.array(z.string().trim().max(200)).min(2).max(5)).min(1).max(8),
+});
+export type AgentFindItem = z.infer<typeof AgentFindItemSchema>;
+export type AgentFindList = z.infer<typeof AgentFindListSchema>;
+export type AgentJobSearchInput = z.infer<typeof AgentJobSearchInputSchema>;
+export type AgentActivitySearchInput = z.infer<typeof AgentActivitySearchInputSchema>;
+export type AgentTable = z.infer<typeof AgentTableSchema>;
+export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional(), goalDraft: AgentGoalDraftSchema.optional(), gapReview: GapReviewSchema.optional(), planDraft: AgentPlanDraftSchema.optional(), replanDraft: AgentReplanDraftSchema.optional(), pageEdit: AgentPageEditSchema.optional(), ui: AgentUiPartSchema.optional(), savedRecord: AgentSavedRecordSchema.optional(), commitment: ConsultantCommitmentSchema.optional(), diagnosis: ConsultantDiagnosisSchema.optional(), list: AgentFindListSchema.optional(), table: AgentTableSchema.optional() });
 export const AgentMessageSchema = z.strictObject({ id: UuidSchema, role: z.enum(["user", "assistant"]), text: z.string().max(64_000), tools: z.array(AgentToolResultSchema).max(30), selection: AgentPageSelectionSchema.optional(), reply: AgentUiReplySchema.optional(), createdAt: TimestampSchema });
 export const AgentRunSchema = z.strictObject({ id: UuidSchema, requestId: UuidSchema, status: z.enum(["running", "complete", "cancelled", "failed", "interrupted"]), error: z.string().max(1_000).nullable(), startedAt: TimestampSchema });
 export const AgentConversationSchema = z.strictObject({ id: UuidSchema, title: z.string().max(120), contexts: z.array(AgentContextSchema).max(10), messages: z.array(AgentMessageSchema).max(100), run: AgentRunSchema.nullable(), version: z.number().int().nonnegative(), updatedAt: TimestampSchema });

@@ -396,6 +396,37 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect(await commitments.open(owner)).toEqual([]);
     expect(await commitments.open(other)).toHaveLength(1);
   });
+  it("대화에서 공고와 활동을 찾는다: 필터를 공고 목록 조회에 넘기고, 사용자가 넘긴 대상을 빼며, 찾을 수 없는 환경에서는 돌려보낸다", async () => {
+    const job = (id: string, title: string) => ({ id, title, company: { name: "당근" }, location: "서울", experienceLabel: "신입 가능", workType: null, family: "백엔드", daysLeft: 10 });
+    const [first, passed, third] = [randomUUID(), randomUUID(), randomUUID()];
+    const list = vi.fn(async () => ({ data: [job(first, "서버 엔지니어"), job(passed, "넘긴 공고"), job(third, "플랫폼 엔지니어")], summary: { total: 12 } }));
+    const activity = (id: string, kind: "contest" | "hackathon", title: string) => ({ id, kind, title, host: "주최", fields: [title.split(" ")[0]!], url: `https://example.com/${id}`, daysLeft: 5, status: "접수중", firstSeenAt: "2026-11-01T00:00:00.000Z" });
+    const activities = vi.fn(async () => [activity("a:1", "hackathon", "데이터 해커톤"), activity("a:2", "hackathon", "넘긴 해커톤"), activity("a:3", "hackathon", "디자인 해커톤")]);
+    const finds = { jobs: { list }, activities: { list: activities }, dismissed: async () => new Set([`job:${passed}`, "activity:a:2"]) };
+    const results: unknown[] = [];
+    const build = (wired: boolean) => { const service = new AgentChatService(fixture.resource, { run: async input => {
+      if (!wired) { await expect(input.searchJobs({ limit: 5 })).rejects.toBeInstanceOf(AgentToolRejection); await expect(input.searchActivities({ limit: 5 })).rejects.toBeInstanceOf(AgentToolRejection); }
+      else {
+        results.push(await input.searchJobs({ family: "백엔드 개발자", technology: "Kafka", location: "서울", experience: 0, limit: 2 }));
+        results.push(await input.searchJobs({ family: "기획", query: "서비스", interested: true, limit: 5 }));
+        results.push(await input.searchActivities({ kind: "hackathon", query: "데이터", limit: 5 }));
+      }
+      await input.emit({ type: "text", text: "찾았습니다." });
+    } }, career, { get: async () => { throw new Error("없는 공고"); } }, documents, consent, new AgentCredentials(fixture.resource), new PortfolioReadService(fixture.resource), new PageService(fixture.resource), undefined, undefined, undefined, undefined, wired ? finds as never : undefined); services.push(service); return service; };
+    for (const wired of [false, true]) {
+      const service = build(wired);
+      const conversation = await service.create(userId, []);
+      await service.send(userId, conversation.id, { requestId: randomUUID(), text: "뭐부터 할까요?" });
+      await expect.poll(async () => (await service.get(userId, conversation.id)).run?.status).toBe("complete");
+    }
+    // 직군은 사용자의 말로 와도 공고에 매긴 직군으로 옮긴다. 넘긴 공고를 뺄 만큼 더 읽는다.
+    expect(list).toHaveBeenNthCalledWith(1, userId, { technology: "Kafka", family: "백엔드", location: "서울", experience: 0, deadline: "open", sort: "recent", page: 1, limit: 4 });
+    expect(results[0]).toMatchObject({ title: "백엔드 · Kafka · 서울 · 신입 공고", total: 11, items: [{ kind: "job", id: first, href: `/jobs/${first}`, external: false }, { id: third }] });
+    // 직군으로 옮기지 못한 말은 글 검색에 더한다. 관심 공고는 마감한 것도 본다.
+    expect(list).toHaveBeenNthCalledWith(2, userId, { q: "서비스 기획", interested: true, sort: "deadline", page: 1, limit: 7 });
+    expect(activities).toHaveBeenCalledWith({ kind: "hackathon", limit: 100 });
+    expect(results[2]).toEqual({ title: "접수 중인 해커톤 · 「데이터」", total: 1, items: [{ kind: "activity", id: "a:1", title: "데이터 해커톤", sub: "주최", meta: ["해커톤", "데이터"], daysLeft: 5, href: "https://example.com/a:1", external: true }] });
+  });
   it("이미 있는 기록에 더하기: 대화에 연결되지 않은 기록의 끝에 사용자가 한 말을 더해 바로 적용하고, 카드에서 되돌린다. 하지 않은 말과 남의 기록은 받지 않는다", async () => {
     const owner = (await new MongoIdentityService(fixture.resource).signup({ email: `${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "더하기 검증" })).user.id;
     await consent.grant(owner, ["career_records"], CONSENT_POLICY_VERSION);

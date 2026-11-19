@@ -18,7 +18,7 @@ async function connectTools(overrides: Partial<AgentInput> = {}) {
   await client.connect(clientSide);
   return { client, emit };
 }
-const base = () => ({ userId: "00000000-0000-4000-8000-0000000000aa", records: { list: vi.fn(async () => ({ categories: [], records: [] })), read: vi.fn(async () => []) }, review: vi.fn(), saveRecord: vi.fn(), recordCategories: [], askForm: vi.fn(), jobGoal: null, goalDraft: vi.fn(), gapReview: vi.fn(), planDraft: vi.fn(), replanDraft: vi.fn(), readPlan: vi.fn(), propose: vi.fn(), page: { read: vi.fn(), edit: vi.fn() }, askChoice: vi.fn(), memory: null, updateMemory: vi.fn(), makeCommitment: vi.fn(), updateCommitment: vi.fn(), goalDemand: vi.fn(), recordDiagnosis: vi.fn(), appendToRecord: vi.fn() });
+const base = () => ({ userId: "00000000-0000-4000-8000-0000000000aa", records: { list: vi.fn(async () => ({ categories: [], records: [] })), read: vi.fn(async () => []) }, review: vi.fn(), saveRecord: vi.fn(), recordCategories: [], askForm: vi.fn(), jobGoal: null, goalDraft: vi.fn(), gapReview: vi.fn(), planDraft: vi.fn(), replanDraft: vi.fn(), readPlan: vi.fn(), propose: vi.fn(), page: { read: vi.fn(), edit: vi.fn() }, askChoice: vi.fn(), memory: null, updateMemory: vi.fn(), makeCommitment: vi.fn(), updateCommitment: vi.fn(), goalDemand: vi.fn(), recordDiagnosis: vi.fn(), appendToRecord: vi.fn(), searchJobs: vi.fn(), searchActivities: vi.fn() });
 describe("Claude 채팅 실행 어댑터", () => {
   it("제품 도구만 노출하고 부분 텍스트만 한 번 전달한다", async () => {
     const events: AgentEvent[] = [];
@@ -30,7 +30,7 @@ describe("Claude 채팅 실행 어댑터", () => {
     await new ClaudeAgentRuntime().run({ messages: [], context: [], signal: new AbortController().signal, emit: async event => { events.push(event); }, ...base() });
     expect(events).toEqual([{ type: "text", text: "안녕하세요" }]);
     expect(sdk.query.mock.lastCall![0].options).toMatchObject({ tools: [], settingSources: [], strictMcpConfig: true, persistSession: false, permissionMode: "dontAsk" });
-    expect(sdk.query.mock.lastCall![0].options.allowedTools).toEqual(["mcp__expresso__propose_record_edit", "mcp__expresso__list_career_records", "mcp__expresso__read_career_records", "mcp__expresso__record_requirement_review", "mcp__expresso__save_record", "mcp__expresso__propose_job_goal_update", "mcp__expresso__record_gap_review", "mcp__expresso__propose_preparation_plan", "mcp__expresso__read_preparation_plan", "mcp__expresso__propose_replan", "mcp__expresso__read_page_element", "mcp__expresso__edit_page_element", "mcp__expresso__ask_choice", "mcp__expresso__ask_form", "mcp__expresso__update_memory", "mcp__expresso__make_commitment", "mcp__expresso__update_commitment", "mcp__expresso__read_goal_demand", "mcp__expresso__record_diagnosis", "mcp__expresso__append_to_record"]);
+    expect(sdk.query.mock.lastCall![0].options.allowedTools).toEqual(["mcp__expresso__propose_record_edit", "mcp__expresso__list_career_records", "mcp__expresso__read_career_records", "mcp__expresso__record_requirement_review", "mcp__expresso__save_record", "mcp__expresso__propose_job_goal_update", "mcp__expresso__record_gap_review", "mcp__expresso__propose_preparation_plan", "mcp__expresso__read_preparation_plan", "mcp__expresso__propose_replan", "mcp__expresso__read_page_element", "mcp__expresso__edit_page_element", "mcp__expresso__ask_choice", "mcp__expresso__ask_form", "mcp__expresso__update_memory", "mcp__expresso__make_commitment", "mcp__expresso__update_commitment", "mcp__expresso__read_goal_demand", "mcp__expresso__record_diagnosis", "mcp__expresso__append_to_record", "mcp__expresso__search_jobs", "mcp__expresso__search_activities", "mcp__expresso__show_table"]);
   });
   it("중단 신호를 SDK에 전달한다", async () => {
     const controller = new AbortController(); let stopped = false;
@@ -272,6 +272,43 @@ describe("Claude 채팅 실행 어댑터", () => {
     expect((await client.callTool({ name: "record_diagnosis", arguments: { summary: "요약", items: [{ itemId: "technology:java", status: "done" }] } })).isError).toBe(true);
     expect(recordDiagnosis).toHaveBeenCalledTimes(2);
     expect(conversationForModel([{ id: "00000000-0000-4000-8000-000000000082", role: "assistant", text: "", createdAt: "2026-11-20T00:00:00.000Z", tools: [{ id: "d", name: "목표 진단", status: "complete", summary: "확인 1", diagnosis: assessed }] }])[0]!.tools).toEqual([{ name: "목표 진단", summary: "확인 1", diagnosis: { sampleSize: 66, items: [{ id: "technology:java", label: "Java", count: 45, status: "confirmed" }, { id: "technology:kafka", label: "Kafka", count: 39, status: "unconfirmed" }] } }]);
+  });
+  it("공고 · 활동 찾기는 목록을 카드 결과로 남기고 모델에는 줄의 요점만 돌려준다. 한 실행의 찾기는 네 번까지다", async () => {
+    const item = { kind: "job" as const, id: "00000000-0000-4000-8000-000000000091", title: "백엔드 엔지니어", sub: "당근", meta: ["서울", "신입 가능"], daysLeft: 12, href: "/jobs/00000000-0000-4000-8000-000000000091", external: false };
+    const searchJobs = vi.fn(async () => ({ title: "백엔드 · 신입 공고", items: [item], total: 9 }));
+    const searchActivities = vi.fn(async () => ({ title: "접수 중인 해커톤", items: [], total: 0 }));
+    const { client, emit } = await connectTools({ searchJobs, searchActivities });
+    const found = await client.callTool({ name: "search_jobs", arguments: { family: "백엔드", experience: 0 } });
+    expect(found.isError).toBeFalsy();
+    // 적지 않은 건수는 기본값으로 채워 넘긴다.
+    expect(searchJobs).toHaveBeenLastCalledWith({ family: "백엔드", experience: 0, limit: 5 });
+    expect(emit.mock.calls.at(-1)![0]).toMatchObject({ type: "tool", tool: { name: "공고 찾기", status: "complete", summary: "백엔드 · 신입 공고 · 1건 (전체 9건)", list: { title: "백엔드 · 신입 공고", items: [item], total: 9 } } });
+    const reply = JSON.parse((found.content as { text: string }[])[0]!.text) as { total: number; items: Record<string, unknown>[] };
+    expect(reply.items).toEqual([{ id: item.id, title: item.title, sub: item.sub, meta: item.meta, daysLeft: 12 }]);
+    const none = await client.callTool({ name: "search_activities", arguments: { kind: "hackathon", query: "데이터" } });
+    expect(emit.mock.calls.at(-1)![0]).toMatchObject({ type: "tool", tool: { name: "활동 찾기", summary: "접수 중인 해커톤 · 찾은 것 없음" } });
+    expect((none.content as { text: string }[])[0]!.text).toContain("찾은 것이 없습니다");
+    // 건수가 범위를 벗어나거나 종류가 사전에 없으면 처리기까지 오지 않는다.
+    expect((await client.callTool({ name: "search_jobs", arguments: { limit: 20 } })).isError).toBe(true);
+    expect((await client.callTool({ name: "search_activities", arguments: { kind: "bootcamp" } })).isError).toBe(true);
+    await client.callTool({ name: "search_jobs", arguments: {} });
+    await client.callTool({ name: "search_jobs", arguments: {} });
+    const fifth = await client.callTool({ name: "search_jobs", arguments: {} });
+    expect(fifth.isError).toBe(true);
+    expect((fifth.content as { text: string }[])[0]!.text).toContain("이미 네 번 찾았습니다");
+    expect(searchJobs).toHaveBeenCalledTimes(3);
+    expect(conversationForModel([{ id: "00000000-0000-4000-8000-000000000092", role: "assistant", text: "", createdAt: "2026-11-20T00:00:00.000Z", tools: [{ id: "l", name: "공고 찾기", status: "complete", summary: "1건", list: { title: "공고", items: [item], total: 1 } }] }])[0]!.tools).toEqual([{ name: "공고 찾기", summary: "1건", list: [{ kind: "job", id: item.id, title: item.title, sub: item.sub, daysLeft: 12 }] }]);
+  });
+  it("비교 표는 열과 줄을 카드 결과로 남기고, 칸 수가 열 수와 다르면 돌려보낸다", async () => {
+    const { client, emit } = await connectTools();
+    const table = { title: "두 공고 견주기", columns: ["공고", "경력", "기술"], rows: [["당근 백엔드", "신입 가능", "Kotlin · Kafka"], ["토스 서버", "3년 이상", "Java · Spring"]] };
+    const shown = await client.callTool({ name: "show_table", arguments: table });
+    expect(shown.isError).toBeFalsy();
+    expect(emit.mock.calls.at(-1)![0]).toMatchObject({ type: "tool", tool: { name: "비교 표", status: "complete", summary: "두 공고 견주기 · 2줄", table } });
+    const uneven = await client.callTool({ name: "show_table", arguments: { ...table, rows: [["당근 백엔드", "신입 가능"]] } });
+    expect(uneven.isError).toBe(true);
+    expect((uneven.content as { text: string }[])[0]!.text).toContain("1번 줄의 칸이 2개입니다");
+    expect((await client.callTool({ name: "show_table", arguments: { ...table, columns: ["공고"] } })).isError).toBe(true);
   });
   it("기억을 쓸 수 없는 환경에서는 memory를 null로 싣는다", async () => {
     await connectTools();
