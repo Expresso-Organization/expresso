@@ -11,6 +11,7 @@ import {
 
 import { Icon } from "@/components/ui/Icon";
 
+import { SIDEBAR_GROUP_STORAGE_PREFIX } from "./sidebar-group-storage";
 import styles from "./Sidebar.module.css";
 
 /**
@@ -22,13 +23,18 @@ import styles from "./Sidebar.module.css";
  * 것은 같기 때문이다.
  */
 
-/* 저장값은 첫 페인트 전에 적용한다 — 이유는 `SidebarCollapse`와 같다. */
+/*
+ * 저장값은 첫 페인트 전에 적용한다 — 이유는 `SidebarCollapse`와 같다. 새로고침 첫 화면은
+ * `sidebar-group-storage.ts`의 스크립트가 맡고, 이 효과는 그 모습을 이어받는다.
+ */
 const useBeforePaint =
   typeof window === "undefined" ? useEffect : useLayoutEffect;
 
-const storageKey = (id: string) => `ex.sidebar.group.${id}`;
+const storageKey = (id: string) => `${SIDEBAR_GROUP_STORAGE_PREFIX}${id}`;
 
 export interface SidebarGroupState {
+  /** 저장 키와 첫 페인트 스크립트가 묶음을 찾는 이름. `[a-z-]`만 쓴다. */
+  id: string;
   open: boolean;
   /** 전환을 켜도 되는가 — 저장값이 그려진 다음 프레임부터 참. */
   animated: boolean;
@@ -57,6 +63,7 @@ export function useSidebarGroupOpen(id: string): SidebarGroupState {
 
   return useMemo(
     () => ({
+      id,
       open,
       animated,
       setOpen: (next: boolean) => {
@@ -92,11 +99,12 @@ export function SidebarGroupView({
   children: ReactNode;
 }) {
   const bodyId = useId();
-  const { open, animated, setOpen } = state;
+  const { id, open, animated, setOpen } = state;
 
   return (
     <section
       className={`${styles.group} ${className}`}
+      data-sidebar-group={id}
       data-open={open}
       data-animated={animated}
       aria-label={label}
@@ -112,7 +120,7 @@ export function SidebarGroupView({
             onClick={() => setOpen(!open)}
           >
             <span className={styles.groupLabel}>{label}</span>
-            <span className={styles.groupCaret} aria-hidden="true">
+            <span className={styles.groupCaret} data-sidebar-group-caret aria-hidden="true">
               <Icon name="caret-down" size={10} />
             </span>
           </button>
@@ -120,7 +128,7 @@ export function SidebarGroupView({
         </div>
       </div>
       {/* 접힌 줄은 높이만 0이 아니라 포커스와 클릭에서도 빠진다 */}
-      <div id={bodyId} className={styles.groupBody} inert={!open}>
+      <div id={bodyId} className={styles.groupBody} data-sidebar-group-body inert={!open}>
         <div className={styles.groupBodyInner}>{children}</div>
       </div>
     </section>

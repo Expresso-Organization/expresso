@@ -16,7 +16,8 @@ date: 2026-11-19
 |---|---|
 | `services/web/src/components/shell/SidebarGroup.tsx` (새로) | 접히는 묶음 훅 · 뷰 · 묶음 |
 | `services/web/src/components/shell/SidebarGroup.test.tsx` (새로) | 접기 · 저장 · 복원 · inert 테스트 |
-| `services/web/src/components/shell/SidebarPortfolios.tsx` (새로) | 포트폴리오 줄과 「모두 보기」 |
+| `services/web/src/components/shell/SidebarPortfolios.tsx` (새로) | 포트폴리오 · 제작 줄과 「모두 보기」 |
+| `services/web/src/components/shell/sidebar-group-storage.ts` (새로) · `app/layout.tsx` | 첫 페인트 전 접힘 스크립트 |
 | `services/web/src/components/shell/SidebarConversations.tsx` | 머리말을 `SidebarGroup`으로 |
 | `services/web/src/components/shell/SidebarCategories.tsx` | `heading` 분기를 접히는 묶음으로, 이름 「커리어 기록」 |
 | `services/web/src/components/shell/Sidebar.tsx` | 포트폴리오 · 카테고리 props와 묶음 배치 |
@@ -25,6 +26,7 @@ date: 2026-11-19
 | `services/web/src/components/shell/Sidebar.module.css` | 묶음 토글 · 본문 접힘 · 레일 처리 |
 | `services/web/src/components/shell/Sidebar.test.tsx` | 새 props와 묶음 확인 |
 | `services/web/src/styles/global.css` | 전역 `a:hover` 우선순위를 `a:where(:hover)`로 낮춤 (구현 중 추가 요청) |
+| `app/(app)/account/page.module.css` · `app/(app)/jobs/page.module.css` · `app/(app)/jobs/explore.module.css` · `app/(app)/library/library.module.css` | 흐린 링크의 호버 글자색을 자기 규칙에 적음 |
 
 ## 작업 순서
 
@@ -33,7 +35,7 @@ date: 2026-11-19
 3. `SidebarCategories` 머리말을 접히는 묶음으로 바꾼다 — 기존 `SidebarCategories.test.tsx`가 통과한다.
 4. `recentPortfolios`, `AppChrome` 매핑, `SidebarPortfolios`, `Sidebar` 배치를 되살린다 — 타입 검사가 통과한다.
 5. 스켈레톤과 `Sidebar.test.tsx`를 맞춘다 — `vitest run src/components/shell`이 통과한다.
-6. 전역 `a:hover` 우선순위를 낮춘다 — 「새 포트폴리오」 호버 글자가 흰색이다.
+6. 전역 `a:hover` 우선순위를 낮추고, 전역 규칙에 기대던 흐린 링크에 호버 색을 적는다 — 「새 포트폴리오」 호버 글자가 흰색이고, 링크 감사 스크립트가 강조색 버튼 외에 호버 색 없는 링크를 찾지 않는다.
 7. 로컬 웹에서 펼침 · 접힘 · 새로고침 · 레일 · 375px 서랍을 확인한다.
 
 ```mermaid

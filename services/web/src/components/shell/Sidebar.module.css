@@ -321,18 +321,14 @@ nav + .group .groupHeadRow {
 }
 
 .group[data-animated="true"] .groupBody {
-  transition: grid-template-rows var(--ex-motion-quick), visibility 0s;
+  transition:
+    grid-template-rows var(--ex-motion-quick),
+    visibility var(--ex-motion-quick);
 }
 
 .group[data-open="false"] .groupBody {
   grid-template-rows: 0fr;
   visibility: hidden;
-}
-
-.group[data-animated="true"][data-open="false"] .groupBody {
-  transition:
-    grid-template-rows var(--ex-motion-quick),
-    visibility 0s linear 160ms;
 }
 
 .groupBodyInner {

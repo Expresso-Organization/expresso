@@ -36,7 +36,10 @@ it("포트폴리오 · 커리어 기록 묶음이 서고 각 줄이 편집 화�
     <SidebarCollapseProvider>
       <Sidebar
         categories={[category]}
-        portfolios={[{ id: "p1", name: "토스 프론트엔드", meta: "작성 중 · 섹션 4개", status: "draft" }]}
+        portfolios={[
+          { id: "p1", name: "토스 프론트엔드", href: "/edit/p1", meta: "작성 중 · 섹션 4개", status: "draft" },
+          { id: "b1", name: "만들던 포트폴리오", href: "/brew/b1/design", meta: "만드는 중 · 디자인 선택", status: "draft" },
+        ]}
         morePortfolios
         displayName="박민재"
         quotaUsed={0}
@@ -48,6 +51,7 @@ it("포트폴리오 · 커리어 기록 묶음이 서고 각 줄이 편집 화�
   expect(screen.getByRole("button", { name: /포트폴리오/, expanded: true })).toBeTruthy();
   expect(screen.getByRole("button", { name: /커리어 기록/, expanded: true })).toBeTruthy();
   expect(screen.getByRole("link", { name: /토스 프론트엔드/ }).getAttribute("href")).toBe("/edit/p1");
+  expect(screen.getByRole("link", { name: /만들던 포트폴리오/ }).getAttribute("href")).toBe("/brew/b1/design");
   expect(screen.getByRole("link", { name: /모두 보기/ }).getAttribute("href")).toBe("/library?s=portfolios");
   expect(screen.getByRole("link", { name: /경험/ }).getAttribute("href")).toBe("/career/experience");
 });
