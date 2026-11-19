@@ -1,13 +1,12 @@
 flowchart TD
-  S[(공고·경력 원본)] --> R[직무별 요건 동결]
-  R --> P[문가령·배준호]
-  P --> A[나머지 네 계정]
-  A --> V[정답표 검증]
+  D[(고정 요건 데이터)] --> L[모델 A·B 학습]
+  L --> E[독립 분할·6계정 평가]
+  E --> P[번들 복원·추론]
   classDef done fill:#d1fae5,stroke:#059669
   classDef doing fill:#fef3c7,stroke:#d97706
   classDef decide fill:#fee2e2,stroke:#dc2626
   classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4
-  class S,R done
+  class D done
+  class L done
+  class E done
   class P done
-  class A done
-  class V done

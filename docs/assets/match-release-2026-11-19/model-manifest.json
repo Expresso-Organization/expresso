@@ -1,0 +1,320 @@
+{
+  "archiveBytes": 701528668,
+  "cpuModelFiles": {
+    "encoder/config.json": "9dab198f24c8c0879e481cf7822005d5ecbceedbacb390ffafa594e28d31bac4",
+    "encoder/manifest.json": "9249e2c35d0f8ee4fe08acb28364f7a2263b916cb7b6637afa713a35153430c9",
+    "encoder/model.onnx": "2d2b0b83896c1edbe4be17c11ee3e3c89905c47c778a8c271c44aff3c5939376",
+    "encoder/special_tokens_map.json": "06e405a36dfe4b9604f484f6a1e619af1a7f7d09e34a8555eb0b77b66318067f",
+    "encoder/tokenizer.json": "62c24cdc13d4c9952d63718d6c9fa4c287974249e16b7ade6d5a85e7bbb75626",
+    "encoder/tokenizer_config.json": "efb5c0d09722e5fe59a462cd2a9976ee216d55b037597d997cd3fe833216da15",
+    "heads.onnx": "a9d3c76ef99cb5b57045efd120b075c094783c80b2e9b8d18d99ccdca4bb677a"
+  },
+  "cpuVerification": {
+    "coldJobCacheFirstRequestSeconds": 1.5302304170036223,
+    "comparedJobRankings": 6,
+    "comparedRequirements": 258,
+    "cpuLoadSeconds": 1.0827297910000198,
+    "device": "arm64",
+    "emptyProfileAbstains": true,
+    "maxEvidenceLogitDifference": 6.67572021484375e-05,
+    "maxLocalScoreDifference": 0.00011324882507324219,
+    "realRequestSeconds": [
+      1.5302304170036223,
+      0.979335624986561,
+      0.13501875000656582,
+      0.40889666602015495,
+      0.5463805409963243,
+      1.6859848750173114
+    ],
+    "threads": 4,
+    "warmJobCacheMedianSeconds": 0.5463805409963243
+  },
+  "dataAudit": {
+    "distinctBySplit": {
+      "job.description": {
+        "test": 32,
+        "train": 124,
+        "valid": 34
+      },
+      "job.jobId": {
+        "test": 32,
+        "train": 124,
+        "valid": 34
+      },
+      "job.sourceUrl": {
+        "test": 32,
+        "train": 124,
+        "valid": 34
+      },
+      "job.title": {
+        "test": 32,
+        "train": 124,
+        "valid": 34
+      },
+      "profile.profileId": {
+        "test": 40,
+        "train": 144,
+        "valid": 30
+      }
+    },
+    "exactPriorPostingOverlap": 0,
+    "fullTestPairs": 1280,
+    "initial": {
+      "jobs": 190,
+      "pairs": 1284,
+      "profiles": 214
+    },
+    "pilotTrainToFixedEvalProfileIdOverlap": 0,
+    "sourceRequirements": 1313,
+    "testJobs": 32,
+    "testProfiles": 40,
+    "trainPersonaRecordIdOverlap": 0
+  },
+  "encoder": "intfloat/multilingual-e5-base",
+  "initialPairs": {
+    "test": 240,
+    "train": 864,
+    "valid": 180
+  },
+  "macWindowsParity": {
+    "jobs": 6,
+    "maxAbsScoreDifference": 0.00011444091796875,
+    "platforms": [
+      "macOS arm64",
+      "Windows x86-64"
+    ],
+    "provider": "CPUExecutionProvider",
+    "queries": 43,
+    "sameRankedRecordIds": true
+  },
+  "numpy": "2.3.2",
+  "onnx": "1.23.2",
+  "onnxruntime": "1.31.0",
+  "python": "3.12.13",
+  "recordPolicy": {
+    "candidateLimit": 12,
+    "model": "gpt-6-luna",
+    "threshold": 25
+  },
+  "releaseDate": "2026-11-19",
+  "screeningTrainExcludedPairs": 3,
+  "settings": {
+    "encoderRevision": "d128750597153bb5987e10b1c3493a34e5a4502a",
+    "evidenceMethod": "learned",
+    "features": [
+      "pilot",
+      "profileJobCosine",
+      "meanEvidence",
+      "minEvidence",
+      "mustEvidence",
+      "responsibilityEvidence",
+      "preferredEvidence",
+      "meanCosine",
+      "minCosine",
+      "logRecordCount"
+    ],
+    "format": "expresso-match-v1",
+    "screenMethod": "fusion",
+    "threshold": -0.23397254943847656
+  },
+  "sha256": {
+    "bundle/manifest.json": "50080920d714ae600a6498330df5148f9f67acbd29dd630b3e9a4030d4adaa9c",
+    "bundle/model.pt": "4bc8ec9c8a855c3246eec299df8f430cec437053bd7e403bc47df3ebff0e02e6",
+    "cpu/heads.onnx": "a9d3c76ef99cb5b57045efd120b075c094783c80b2e9b8d18d99ccdca4bb677a",
+    "cpu/manifest.json": "c2e4cede79727456b6804000a4630b717815f4ef22921f189f6dfde9dba60930",
+    "example-input.json": "c3833246d51015aacaf3fb47583f4e1963abac14c67c1bcaf18aae1bcafd2426",
+    "expresso-match-cpu-v1.tar.gz": "7e57ade555763b514271e6396152b13535a5df468a35cdce5f92bdaf86a90fce",
+    "fixed-labels/labels.jsonl": "6dd9cf870103518ab91640917d9c812f5cd0b30dc29d8569c15305860a826de9",
+    "fixed/candidate-manifest.jsonl": "211ea8e8fc5ebf0e5a588d73cade99906fc60cee8b713fdb8524350d51c63c7e",
+    "fixed/jobs.jsonl": "d2cf0b7633424a27a771d7ac20146047b347f2aab1f882e65b16e8fc6694b1f2",
+    "fixed/profiles.jsonl": "9165c6a7cc345a5e0f6d325b2c45c2cc3d0eba28ab44591ba7f0ab65b1a746af",
+    "pilot/labels.jsonl": "cbf35b5357d70452c486a6b803c65cf31eed92f44b3b91cca8abb660e769e56f",
+    "pilot/profiles.jsonl": "d6b23abd6ad7d0d93981e18fd267c6c9443c0ce4e02f589d1994cab41dce6ee8",
+    "pilot/records.pt": "fbd48ad509d71defccc94ecabe884b3d781cc2b9ce22fdfe3df9a59d1830ab76",
+    "postings.jsonl": "9e1dd36250afc94127591479c985b4d9f40017de247990acbe95c080dc96e32e",
+    "record-api/policy.json": "bd4fd0c36961b138676b745eba7cce5feb5cd21653a5f0da0055023ad6841e91",
+    "test-pool/labels.jsonl": "26a6b05d77fa5e7cfb3e59e145c9ccb94c62b4781a257b1ce0d27761559a0dae"
+  },
+  "sourceRestrictions": "raw postings, pilot-derived user records and weights are retained in the private experiment directory",
+  "tokenizers": "0.21.4",
+  "torch": "2.7.0",
+  "training": {
+    "evidence": {
+      "bestLearnedEpoch": 4,
+      "history": [
+        {
+          "epoch": 1,
+          "hitAt3": 0.9164265129682997,
+          "linkPresenceF1": 0.5467775467775468,
+          "mrr": 0.7657667660549505,
+          "recallAt3": 0.763400576368876,
+          "requirements": 1281,
+          "threshold": -0.2117704153060913,
+          "withEvidence": 347
+        },
+        {
+          "epoch": 2,
+          "hitAt3": 0.9106628242074928,
+          "linkPresenceF1": 0.52,
+          "mrr": 0.77717968070994,
+          "recallAt3": 0.7683477425552353,
+          "requirements": 1281,
+          "threshold": -0.09229302406311035,
+          "withEvidence": 347
+        },
+        {
+          "epoch": 3,
+          "hitAt3": 0.9106628242074928,
+          "linkPresenceF1": 0.5203073545554336,
+          "mrr": 0.7772791729564064,
+          "recallAt3": 0.7662824207492795,
+          "requirements": 1281,
+          "threshold": 0.14954900741577148,
+          "withEvidence": 347
+        },
+        {
+          "epoch": 4,
+          "hitAt3": 0.9077809798270894,
+          "linkPresenceF1": 0.525987525987526,
+          "mrr": 0.7843466571852739,
+          "recallAt3": 0.7649375600384246,
+          "requirements": 1281,
+          "threshold": -0.23397254943847656,
+          "withEvidence": 347
+        },
+        {
+          "epoch": 5,
+          "hitAt3": 0.9048991354466859,
+          "linkPresenceF1": 0.5343228200371057,
+          "mrr": 0.7665545949407621,
+          "recallAt3": 0.7524495677233429,
+          "requirements": 1281,
+          "threshold": -0.44615721702575684,
+          "withEvidence": 347
+        },
+        {
+          "epoch": 6,
+          "hitAt3": 0.8933717579250721,
+          "linkPresenceF1": 0.5347368421052632,
+          "mrr": 0.7797996432002195,
+          "recallAt3": 0.747790585975024,
+          "requirements": 1281,
+          "threshold": -0.23453664779663086,
+          "withEvidence": 347
+        },
+        {
+          "epoch": 7,
+          "hitAt3": 0.8933717579250721,
+          "linkPresenceF1": 0.5368421052631579,
+          "mrr": 0.7603278565814588,
+          "recallAt3": 0.7397214217098943,
+          "requirements": 1281,
+          "threshold": -0.11976456642150879,
+          "withEvidence": 347
+        }
+      ],
+      "linkedPairs": 37491,
+      "trainingPairs": 184134,
+      "trainingRequirements": 49278,
+      "valid": {
+        "cosine": {
+          "hitAt3": 0.8270893371757925,
+          "linkPresenceF1": 0.503735325506937,
+          "mrr": 0.6857428754402818,
+          "recallAt3": 0.6771373679154659,
+          "requirements": 1281,
+          "threshold": 0.6948155164718628,
+          "withEvidence": 347
+        },
+        "learned": {
+          "hitAt3": 0.9077809798270894,
+          "linkPresenceF1": 0.525987525987526,
+          "mrr": 0.7843466571852739,
+          "recallAt3": 0.7649375600384246,
+          "requirements": 1281,
+          "threshold": -0.23397254943847656,
+          "withEvidence": 347
+        }
+      }
+    },
+    "screen": {
+      "bestEpoch": 32,
+      "excludedTrainingJobs": [
+        "22cb0dca-4d26-4423-a0eb-c4c3b494e69c",
+        "94563bd8-b717-4332-be6e-f77b1850f139"
+      ],
+      "trainPairs": 861,
+      "validNdcg": {
+        "fusion": 0.9031320162742908,
+        "pilot": 0.795387713031764
+      },
+      "validNdcgByEpoch": [
+        0.698407408284355,
+        0.6974406414934711,
+        0.6979339817975159,
+        0.6979339817975159,
+        0.6976211726725035,
+        0.6949127872012271,
+        0.6994565069541667,
+        0.7196815325781766,
+        0.8315962641644264,
+        0.8608114903039153,
+        0.8616212304026922,
+        0.8619486219627908,
+        0.859816244476261,
+        0.8684500294588712,
+        0.8696814637201513,
+        0.868282718605035,
+        0.8688080267562338,
+        0.8679116974271142,
+        0.8705298177194281,
+        0.8698250647316825,
+        0.8766040145888868,
+        0.881665529453795,
+        0.8854418593550201,
+        0.8874341697647118,
+        0.8907729491023929,
+        0.8971389755852953,
+        0.8964182435955051,
+        0.8990997742721482,
+        0.9029864773628393,
+        0.9029864773628393,
+        0.9030253535930405,
+        0.9031320162742908,
+        0.8990973619415065,
+        0.898777719722294,
+        0.898777719722294,
+        0.8981253513379936,
+        0.8981253513379936,
+        0.8985466440406447,
+        0.8985466440406447,
+        0.8973190650862993,
+        0.8976489847143113,
+        0.8974320720370961
+      ],
+      "validPairs": 180
+    },
+    "selection": "validation only: B MRR then A profile macro NDCG@10; train seed 42",
+    "settings": {
+      "encoderRevision": "d128750597153bb5987e10b1c3493a34e5a4502a",
+      "evidenceMethod": "learned",
+      "features": [
+        "pilot",
+        "profileJobCosine",
+        "meanEvidence",
+        "minEvidence",
+        "mustEvidence",
+        "responsibilityEvidence",
+        "preferredEvidence",
+        "meanCosine",
+        "minCosine",
+        "logRecordCount"
+      ],
+      "format": "expresso-match-v1",
+      "screenMethod": "fusion",
+      "threshold": -0.23397254943847656
+    }
+  },
+  "transformers": "4.55.4",
+  "version": "expresso-match-v1"
+}
