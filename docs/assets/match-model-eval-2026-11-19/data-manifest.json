@@ -1,0 +1,32 @@
+{
+  "datasetVersion": "ko-eval-v1",
+  "excludedProfiles": {
+    "noMatchingFamily": 60
+  },
+  "filesSha256": {
+    "candidate-manifest.jsonl": "7226d3af42df7de844dd39337753dd01b9e13893478c8f19f9efc259a2e983c2",
+    "jobs.jsonl": "bb444b70d9a6513590d255711c415e642c54523aca6c5730dfd3e3eddae1332d",
+    "profiles.jsonl": "a2b8e0568d869bcd8a8feb3196494d15b52b52ffc4486528ad8e1bc0ea14d44b"
+  },
+  "jobs": 254,
+  "jobsWithoutRequirements": 0,
+  "pairs": 1000,
+  "profiles": 100,
+  "quotas": {
+    "adjacent": 3,
+    "random": 2,
+    "role": 5
+  },
+  "sources": {
+    "fitProfilesSha256": "d6b23abd6ad7d0d93981e18fd267c6c9443c0ce4e02f589d1994cab41dce6ee8",
+    "jobsSha256": "b97aa38dfc9026673ea6032768911780a2edbf6408bff51b7e97d83880d1f010"
+  },
+  "splitJobs": {
+    "test": 100,
+    "valid": 154
+  },
+  "splitProfiles": {
+    "test": 30,
+    "valid": 70
+  }
+}

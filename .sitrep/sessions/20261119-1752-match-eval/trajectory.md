@@ -17,3 +17,6 @@ Mac의 Tailscale이 정지되어 학습 PC SSH 주소를 해석하지 못함. PC
 
 ### 17:58 · T2 · 검증 완료
 `pnpm ml:data:test`와 `pnpm typecheck` 통과. 전체 테스트 첫 실행에서 RelationEditor의 검색 지연 시험 1건 실패. `VITEST_MAX_WORKERS=2 pnpm test`로 전체 재실행 통과.
+
+### 18:01 · T3·T4 · 검증 완료
+PC에서 원본 해시 대조 후 한국어 세트 생성. 맥에서 1,000쌍 유일성과 후보 비율·분할 검증, 토크나이저 4종 E1 실행.

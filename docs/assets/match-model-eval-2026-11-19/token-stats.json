@@ -1,0 +1,101 @@
+{
+  "createdAt": "2026-11-19T09:01:47.738463+00:00",
+  "encoders": {
+    "bge-m3": {
+      "jobs": {
+        "max": 3213,
+        "maxLength": 5892,
+        "p50": 1485,
+        "p90": 2122,
+        "p99": 3049,
+        "texts": 254,
+        "truncated": 0,
+        "truncatedFraction": 0.0
+      },
+      "modelId": "BAAI/bge-m3",
+      "modelLimit": 8192,
+      "profiles": {
+        "max": 5892,
+        "maxLength": 5892,
+        "p50": 1365,
+        "p90": 2711,
+        "p99": 4795,
+        "texts": 100,
+        "truncated": 0,
+        "truncatedFraction": 0.0
+      }
+    },
+    "e5": {
+      "jobs": {
+        "max": 3215,
+        "maxLength": 512,
+        "p50": 1487,
+        "p90": 2124,
+        "p99": 3051,
+        "texts": 254,
+        "truncated": 237,
+        "truncatedFraction": 0.9330708661417323
+      },
+      "modelId": "intfloat/multilingual-e5-base",
+      "modelLimit": 512,
+      "profiles": {
+        "max": 5895,
+        "maxLength": 512,
+        "p50": 1368,
+        "p90": 2714,
+        "p99": 4798,
+        "texts": 100,
+        "truncated": 86,
+        "truncatedFraction": 0.86
+      }
+    },
+    "kure": {
+      "jobs": {
+        "max": 3213,
+        "maxLength": 5892,
+        "p50": 1485,
+        "p90": 2122,
+        "p99": 3049,
+        "texts": 254,
+        "truncated": 0,
+        "truncatedFraction": 0.0
+      },
+      "modelId": "nlpai-lab/KURE-v1",
+      "modelLimit": 8192,
+      "profiles": {
+        "max": 5892,
+        "maxLength": 5892,
+        "p50": 1365,
+        "p90": 2711,
+        "p99": 4795,
+        "texts": 100,
+        "truncated": 0,
+        "truncatedFraction": 0.0
+      }
+    },
+    "qwen3": {
+      "jobs": {
+        "max": 4073,
+        "maxLength": 7658,
+        "p50": 1906,
+        "p90": 2791,
+        "p99": 3946,
+        "texts": 254,
+        "truncated": 0,
+        "truncatedFraction": 0.0
+      },
+      "modelId": "Qwen/Qwen3-Embedding-0.6B",
+      "modelLimit": 32768,
+      "profiles": {
+        "max": 7658,
+        "maxLength": 7658,
+        "p50": 1902,
+        "p90": 3572,
+        "p99": 6097,
+        "texts": 100,
+        "truncated": 0,
+        "truncatedFraction": 0.0
+      }
+    }
+  }
+}
