@@ -17,6 +17,7 @@ date: 2026-11-20
 | `packages/contracts/src/agent-chat.ts` | `AgentChatAccessSchema`에서 `serverCredentialAllowed`를 빼고 `creditsExhausted`를 더함 |
 | `services/backend/src/modules/agent-chat/routes.ts` | 개발 멤버 · 대신 로그인 판정 삭제, 키가 있으면 넘기고 없으면 서버 인증, `access`의 새 칸 |
 | `services/backend/src/modules/agent-chat/service.ts` | 생성자에 `credits`, `prepare`의 크레딧 검사, `creditsExhausted` |
+| `services/backend/src/platform/agent/runtime.ts` · `runtime.test.ts` | 개인 키로 돈 실행은 사용량 장부에 적지 않음 |
 | `services/backend/src/api/main.ts` · `build-app.ts` | 서비스에 `entitlementService`를 넘기고 개발 멤버 목록 인자를 뺌 |
 | `services/backend/src/config/runtime-config.ts` · `.env.example` | `AGENT_CHAT_DEVELOPER_USER_IDS` 삭제 |
 | `services/backend/src/modules/agent-chat/routes.test.ts` · `service.integration.test.ts` | 새 접근 조건과 크레딧 검사 |

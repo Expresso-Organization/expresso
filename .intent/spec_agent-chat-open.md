@@ -23,6 +23,7 @@ date: 2026-11-20
 - 검사는 `AgentChatService.prepare`에 둔다. 보내기와 다시 보내기가 함께 지나는 자리다. `prepare`가 `apiKey` 유무를 받아 서버 인증일 때만 본다.
 - 서비스는 `credits`를 생성자에서 받는다(`{ credits(userId): Promise<{ remaining: number | null }> }`). 주지 않으면 검사하지 않는다 — 테스트와 미리보기 서버가 그렇게 쓴다.
 - `access`의 `creditsExhausted`는 라우트가 서비스의 `creditsExhausted(userId)`로 읽는다.
+- 개인 키로 돈 실행은 사용량 장부(`ai_usage_events`)에 적지 않는다(`runtime.ts`). 지금은 키 유무와 상관없이 적혀, 내 키로 한 대화가 지면 생성과 함께 쓰는 이번 달 크레딧을 깎는다.
 - 런타임의 개인 키 격리 실행(`runtime.ts`)과 키 저장(`credentials.ts`) · 키 라우트 · 키 입력 폼은 그대로다.
 - 계약 `AgentChatAccessSchema`가 바뀐다. 웹과 API는 같은 배포에서 함께 나간다.
 
