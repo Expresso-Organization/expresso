@@ -104,6 +104,24 @@
   min-width: 0;
 }
 
+/* 제품 로고일 때 브랜드 줄은 홈으로 가는 링크다. 왼쪽 여백은 로고 자리 그대로 둔다. */
+.brandLink {
+  align-self: stretch;
+  border-radius: 8px;
+  color: inherit;
+  transition: background var(--ex-motion-instant);
+}
+
+.brandLink:hover {
+  background: var(--ex-bg-tint);
+  color: inherit;
+}
+
+.brandLink:focus-visible {
+  outline: none;
+  box-shadow: var(--ex-focus-ring);
+}
+
 .collapseControl,
 .expandControl {
   position: absolute;
@@ -151,14 +169,6 @@
  * `--ex-row-lead`는 그 줄의 선행 아이콘 폭이다.
  */
 /* 검색 줄은 이동이 아니라 오버레이를 여는 버튼이다. 다른 줄과 같게 그린다. */
-.searchRow {
-  border: none;
-  background: none;
-  font: inherit;
-  color: inherit;
-  text-align: left;
-}
-
 .row {
   --ex-row-lead: 14px;
 
@@ -275,12 +285,6 @@
 .primaryItemActive .primaryLabel {
   font-weight: 600;
   color: var(--ex-fg);
-}
-
-.shortcut {
-  font-family: var(--ex-font-mono);
-  font-size: var(--ex-text-3xs);
-  color: var(--ex-fg-subtle);
 }
 
 /* ── 내 포트폴리오 ────────────────────────────────────────── */
@@ -681,6 +685,11 @@
   [data-sidebar-collapsed="true"] .expandControl {
     opacity: 1;
     pointer-events: auto;
+  }
+
+  /* 물러난 로고는 펴기 단추 둘레에서도 눌리지 않는다 */
+  [data-sidebar-collapsed="true"] .brandLink {
+    pointer-events: none;
   }
 
   /* 줄은 선행 아이콘 하나 폭으로 좁아지고, 그 아이콘은 레일 한가운데 선다 */

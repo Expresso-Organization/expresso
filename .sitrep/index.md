@@ -6,3 +6,4 @@
 | [20261115-1330-agent-home](sessions/20261115-1330-agent-home/session.md) | 에이전트 중심 홈 재구성 | 구현 중 | 90% |
 | [20261115-1500-free-generation-lab](sessions/20261115-1500-free-generation-lab/session.md) | 자유 생성 파이프라인 실험 | 완료됨 | 100% |
 | [20261119-2125-scheduled-unknown-key](sessions/20261119-2125-scheduled-unknown-key/session.md) | 배포 중 새 예약 작업의 첫 실행 보존 | 완료됨 | 100% |
+| [20261119-2150-sidebar-logo-home](sessions/20261119-2150-sidebar-logo-home/session.md) | 사이드바 로고 홈 이동 · 검색 줄 제거 | 완료됨 | 100% |

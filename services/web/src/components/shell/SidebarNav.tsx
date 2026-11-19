@@ -4,7 +4,6 @@ import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { openSearch } from "@/components/CommandPalette";
 import { GlideMenu } from "@/components/ui/GlideMenu";
 import { Icon } from "@/components/ui/Icon";
 
@@ -51,19 +50,6 @@ export function SidebarNav() {
         <span className={`${styles.copy} ${styles.brewLabel}`}>새 포트폴리오</span>
       </Link>
       <GlideMenu className={`${styles.primary} ${styles.navGroup}`}>
-        <button
-          type="button"
-          className={`${styles.row} ${styles.primaryItem} ${styles.searchRow}`}
-          data-row
-          title="검색"
-          onClick={openSearch}
-        >
-          <span className={styles.rowLead}>
-            <Icon name="magnifying-glass" size={14} color="var(--ex-fg-muted)" />
-          </span>
-          <span className={`${styles.copy} ${styles.primaryLabel}`}>검색</span>
-          <span className={`${styles.copy} ${styles.shortcut}`}>⌘K</span>
-        </button>
         {PRIMARY_ITEMS.map((item) => (
           <Link
             key={item.key}
