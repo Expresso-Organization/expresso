@@ -1,23 +1,20 @@
 flowchart TD
-  U[사용자] --> HOME[홈: 로고 · 입력창 · 위젯 · 제안 카드]
-  HOME --> CARD[제안 카드<br/>제목 · 메시지 · 인용 대상 · 버튼]
-  CARD -->|대화 시작| CHAT[에이전트 대화]
-  CARD -->|공고 열기| JOB[공고 화면]
-  FEED[(proposal_feeds)] --> CARD
-  WRITER[제안 작성기<br/>message · 근거 기록] --> SVC[제안 서비스<br/>표시 자료 부착 · 옛 모양 거름]
-  CAND[후보 고르기<br/>로직] --> WRITER
-  SVC --> FEED
-  ON[온보딩 세 질문 · /goal] --> MEM[(users.jobGoal)]
-  MEM --> WRITER
-  HOME -->|목표 없음| GCARD[구직 목표 카드]
-  GCARD --> ON
-  CHAT -->|목표 읽기| MEM
-  CHAT --> GDRAFT[구직 목표 변경 카드<br/>지금 글 → 새 글 · 저장]
-  GDRAFT -->|저장: 바뀌는 칸만| MEM
-  JUDGE[목표 기준 제안<br/>부족한 점 · 포트폴리오 다듬기] --> CAND
+  TC[pnpm typecheck] --> REN[portfolio-renderer 빌드]
+  REN --> GEN[next typegen]
+  GEN --> TYPES[.next/types<br/>지금 코드의 경로 타입]
+  GEN -.다시 씀.-> ENV[next-env.d.ts<br/>추적 해제 · 무시]
+  TYPES --> TSC[tsc --noEmit]
+  CI[CI 타입 검사 단계] --> TC
+  GUARD[tsconfig.test.ts<br/>스크립트 순서 검사] --> TC
+  ENV --> DEPLOY[deploy.sh<br/>되돌리기 줄 제거]
+  DEPLOY --> GIT[git 구간 네 경로 실험]
+  PR{PR 머지 D4} --> FIRST[첫 실제 전환 배포]
+  DEPLOY --> FIRST
   classDef done fill:#d1fae5,stroke:#059669
   classDef doing fill:#fef3c7,stroke:#d97706
   classDef decide fill:#fee2e2,stroke:#dc2626
   classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4
-  class HOME,CARD,CHAT,JOB,FEED,WRITER,SVC,CAND,ON,MEM,GCARD,GDRAFT done
-  class JUDGE todo
+  class TC,REN,GEN,TYPES,ENV,TSC,GUARD,DEPLOY,GIT done
+  class CI doing
+  class PR decide
+  class FIRST todo

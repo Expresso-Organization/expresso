@@ -158,3 +158,55 @@
 - 상태: 구현 중, 90%. T12(최종 구직 목표) 완료, 다음은 T13
 - 사용자가 아직 보지 않은 화면: 온보딩 세 질문, `/goal`, 홈의 「구직 목표」 카드, 대화의 「구직 목표 변경」 카드
 - 결정 요청: D1(권장 합침), D2(권장 같이 바꿈) 그대로 열림
+
+### 21:23 · T10 완료 · #240 머지와 운영 배포
+- 사용자 지시 「#240 머지」. 머지 `2479678a`, 배포 성공
+- 발견: 마이그레이션 0032가 `activity_collect` · `proposal_briefing`을 `nextRunAt: 지금`으로 넣음 → 배포 중 옛 워커가 집어 5회 실패, 다음 실행이 하루 밀림. 운영 `activities` 0건
+- 결정(사용자): 「지금 당기기」. 운영 DB에서 두 정의의 `nextRunAt`을 지금으로 고침 → 둘 다 1회 만에 성공, `activities` 16건
+- 재발 방지는 다른 세션이 #243으로 구현(워커가 모르는 키의 정의를 집지 않음)
+
+### 21:57 · T10 막힘 · #242 운영 배포 실패
+- 사용자 지시 「둘 다 머지해」(#242 · #243). 충돌 없음. #242 머지 `059dbd60`, #243 머지 `36407a65`
+- #242 배포가 웹 빌드 타입 검사에서 실패: `ProposalFeed.tsx(134,15)` · `(224,26)` `Type '"/goal"' is not assignable to type 'UrlObject | RouteImpl<"/goal">'`. CI와 로컬 빌드는 통과
+- 마이그레이션 0033은 이미 적용, 서비스는 옛 코드 → 21:57~22:07 동안 `profile.primaryGoal`을 필수로 읽는 옛 코드와 DB가 어긋남(프로필 있는 사용자 8명)
+- 응급 수정 #244(`/goal` 링크 두 곳에 `as Route`), 머지 `70934ba5`, 22:07 배포 성공. 프로필 읽기 8건 통과 확인
+
+## 2026-11-20
+
+### 00:50 · T14 시작 · 운영 빌드가 옛 경로 타입으로 검사하는 원인
+- 사용자 지시 「운영 빌드가 옛 경로 타입으로 검사하는 원인도 고쳐」
+- 원인 1: 웹 `tsconfig.json`의 `include`가 `.next/types/**`뿐. `extends`가 있어 Next가 `<distDir>/types/**`를 더하지 않음. 배포는 `.next-build`에 지으므로 `link.d.ts` · `validator.ts`는 운영 `.next`에 남은 직전 배포의 것을 읽음
+- 재현: #240으로 `.next`를 짓고 #242를 `deploy.sh`의 웹 빌드 구간 그대로 지음 → 운영과 같은 오류
+- 앞선 보고의 「CI는 검사가 느슨하다」는 틀림. CI 빌드는 `.next`에 지어 방금 만든 타입으로 검사함. 서버가 옛 타입을 읽었음
+
+### 01:15 · T14.2 완료 · 수정과 검증
+- `next.config.ts`: 운영 빌드 + `NEXT_DIST_DIR`이면 `typescript.tsconfigPath`를 `tsconfig.<폴더>.json`으로. 파일이 없으면 오류
+- `tsconfig.next-build.json` 추가, `/goal` 링크 세 곳의 `as Route` 제거, `src/tsconfig.test.ts` 추가, `DEPLOYMENT.md` 갱신
+- 발견(원인 2): `tsconfig.json`의 `incremental: true`로 Next가 `.next/cache/.tsbuildinfo`를 쓰고 배포가 그 캐시를 이어 씀. `tsc` 7.0.2는 `link.d.ts`가 바뀌어도 바뀌지 않은 파일을 다시 검사하지 않음 → 화면을 지우고 링크를 남긴 변경이 캐시가 있으면 통과, 없으면 실패. 로컬 `pnpm typecheck`도 같은 캐시로 옛 오류를 냄 → `incremental` 제거(전체 검사 1.5초)
+- 검증(같은 #240 `.next` 위, 배포 구간 그대로): 수정 뒤 통과 / 없는 경로 링크 실패 / `NEXT_DIST_DIR=.next-other` 설정 단계 오류 / 경로 처리기 삭제는 고치기 전 `validator.ts` TS2307 · 고친 뒤 통과 / 캐시 있음 + 화면 삭제 + 링크 유지는 `incremental` 제거 전 통과 · 제거 뒤 실패
+- `NEXT_DIST_DIR=.next-e2e-v2 next dev` 200, `pnpm typecheck` 통과, `pnpm test` 통과(웹 481 · 백엔드 661), 기본 빌드 통과
+- 검증 서버(웹 3181 · API 4181 · 워커)를 멈춤
+- 범위 밖: `pnpm typecheck`가 경로 타입을 만들지 않고 도는 것(#246이 겪음), 웹 빌드 실패 시 마이그레이션이 이미 적용된 순서
+
+### 01:15 · 보고
+- 상태: 구현 중, 90%. T14 수정 완료, PR 머지는 사용자 승인 대기(D3)
+- 이 PR의 배포로는 운영에서 증명되지 않음(운영 `.next/types`에 이미 `/goal`이 있음). 근거는 로컬 재현
+
+### 01:18 · D3 결정 · T14.3 완료 · PR #247 머지와 운영 배포
+- 결정(사용자): 「머지」. 자동 머지로 `8c937336` 머지, 배포 성공(`배포 완료 8c937336 (이전 f9c6d64)`)
+- 서버 빌드 로그: `Finished TypeScript in 3.9s`(증분 캐시 없이 전체 검사). 웹 · API · 워커 active, `/login` 200 · `/home` 307 · `/goal` 307, WebSocket 101
+- 운영에서의 증명은 새 화면을 더하는 다음 배포
+
+### 01:25 · T15 시작 · 타입 검사의 경로 타입 생성
+- 사용자 지시 「고쳐놔」(앞선 보고의 결정: `pnpm typecheck`가 경로 타입을 새로 만든 뒤 검사하게 고칠지)
+- 확인: `next typegen`은 `routes.d.ts` · `link.d.ts` · `validator.ts` · `cache-life.d.ts` · `root-params.d.ts`를 옛 파일 위에 다시 씀(1초). `next-env.d.ts`도 다시 씀
+- 고치기 전 장면: `.next` 없음 + 없는 경로 링크 → 통과 / `/goal` 없는 옛 타입 + 정상 코드 → `/goal` 링크 세 곳 `TS2322`
+
+### 01:45 · T15.1 · T15.2 완료 · 수정과 검증
+- `services/web/package.json`의 `typecheck`: renderer 빌드 → `next typegen` → `tsc`
+- `services/web/next-env.d.ts` 추적 해제(`.gitignore`에 추가), `deploy.sh`의 `git checkout -- services/web/next-env.d.ts` 줄 제거, `tsconfig.test.ts`에 스크립트 순서 검사, `AGENTS.md` · `DEPLOYMENT.md` 갱신
+- 타입 검사 장면(실제 명령): 옛 타입 + 정상 코드 통과 / 옛 타입 + 화면 삭제 · 링크 유지 실패 / `.next` · `next-env.d.ts` 없음 + 정상 코드 통과 / 같은 상태 + 없는 경로 링크 `TS2322` 실패. 검사 뒤 `git status`에 `next-env.d.ts` 없음
+- 배포 스크립트 git 구간(두 판의 스크립트에서 그대로 뽑아 실제 커밋 `8c937336` ↔ `451591d4`로 실행, git 2.54): 첫 배포 · 보통 배포 · 되돌리기 · 다시 앞으로 모두 통과. 줄을 남긴 판을 새 커밋에서 돌리면 `pathspec … did not match`로 멈춤
+- 서버 git은 2.34.1. 되돌리기 경로가 기대는 「무시된 파일 덮어쓰기」는 그 판에서 실행해 보지 않음
+- `pnpm typecheck` 통과, `pnpm test` 통과(웹 482 · 백엔드 661), `next-env.d.ts` 없이 배포 절차의 웹 빌드 구간 통과
+

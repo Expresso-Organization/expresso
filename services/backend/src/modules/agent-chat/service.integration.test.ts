@@ -11,7 +11,8 @@ import { PageElementIssues, PageService } from "../page/index.js";
 import { AgentCredentials } from "./credentials.js";
 import { ConsentService } from "../consent/index.js";
 import { AgentToolRejection, type AgentRuntime } from "../../platform/agent/runtime.js";
-import { AgentChatService, RUN_HEARTBEAT_MS, RUN_INTERRUPTED_ERROR } from "./service.js";
+import { AgentChatService, CREDITS_EXHAUSTED, RUN_HEARTBEAT_MS, RUN_INTERRUPTED_ERROR } from "./service.js";
+import { MongoEntitlementService } from "../entitlements/index.js";
 import { PreparationPlans } from "./plans.js";
 
 describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB_URL))("공통 에이전트 대화", () => {
@@ -520,5 +521,45 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const row = await service.create(userId, []);
     await service.send(userId, row.id, { requestId: randomUUID(), text: "다른 기록 수정" });
     await expect.poll(() => rejected).toBe(true);
+  });
+  it("서버 인증으로 도는 실행은 이번 달 크레딧을 다 쓰면 시작하지 않고, 개인 키로 도는 실행은 시작한다", async () => {
+    const identity = new MongoIdentityService(fixture.resource);
+    const spender = (await identity.signup({ email: `${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "한도 검증" })).user.id;
+    await consent.grant(spender, ["career_records"], CONSENT_POLICY_VERSION);
+    const keys: (string | undefined)[] = [];
+    let fail = true;
+    const runtime: AgentRuntime = { run: async input => { keys.push(input.apiKey); if (fail) throw new Error("실행 실패"); await input.emit({ type: "text", text: "답" }); } };
+    const service = new AgentChatService(fixture.resource, runtime, career, { get: async () => { throw new Error("없는 공고"); } }, documents, consent, new AgentCredentials(fixture.resource), new PortfolioReadService(fixture.resource), new PageService(fixture.resource), new MongoEntitlementService(fixture.resource));
+    service.setRunFailureListener(() => {}); services.push(service);
+    const conversation = await service.create(spender, []);
+
+    // 한도가 남은 동안에는 서버 인증으로 시작한다. 이 실행은 실패로 끝내 다시 보낼 질문을 남긴다.
+    expect(await service.creditsExhausted(spender)).toBe(false);
+    await service.send(spender, conversation.id, { requestId: randomUUID(), text: "안녕" });
+    await vi.waitFor(async () => expect((await service.get(spender, conversation.id)).run?.status).toBe("failed"));
+    expect(keys).toEqual([undefined]);
+
+    // 이번 달 사용량이 한도를 넘는다.
+    await mongoCollections(fixture.resource.db).aiUsageEvents.insertOne({
+      _id: randomUUID(), userId: spender, contract: "agent_chat", model: "claude-sonnet-4-5",
+      inputTokens: 0, outputTokens: 100_000_000, cacheReadTokens: 0, cacheCreationTokens: 0,
+      costUsd: null, durationMs: 1, createdAt: new Date(),
+    });
+    expect(await service.creditsExhausted(spender)).toBe(true);
+    const before = await service.get(spender, conversation.id);
+    await expect(service.send(spender, conversation.id, { requestId: randomUUID(), text: "한 번 더" })).rejects.toMatchObject({ statusCode: 403, publicMessage: CREDITS_EXHAUSTED });
+    await expect(service.retry(spender, conversation.id)).rejects.toMatchObject({ statusCode: 403, publicMessage: CREDITS_EXHAUSTED });
+    // 거절된 요청은 대화를 바꾸지 않고 런타임도 부르지 않는다.
+    expect(await service.get(spender, conversation.id)).toEqual(before);
+    expect(keys).toHaveLength(1);
+
+    // 개인 키로 도는 실행은 그 키의 계정이 비용을 내므로 한도를 보지 않는다.
+    fail = false;
+    await service.retry(spender, conversation.id, "sk-ant-test-personal-key-value");
+    await vi.waitFor(async () => expect((await service.get(spender, conversation.id)).run?.status).toBe("complete"));
+    expect(keys).toEqual([undefined, "sk-ant-test-personal-key-value"]);
+
+    // 다른 계정의 한도는 그대로다.
+    expect(await service.creditsExhausted(userId)).toBe(false);
   });
 });

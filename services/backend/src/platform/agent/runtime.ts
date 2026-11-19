@@ -241,7 +241,8 @@ export class ClaudeAgentRuntime implements AgentRuntime {
         }
         if (message.type === "stream_event" && message.event.type === "content_block_delta" && message.event.delta.type === "text_delta") await input.emit({ type: "text", text: message.event.delta.text });
         if (message.type === "result" && message.is_error) throw new Error("agent execution failed");
-        if (message.type === "result" && this.usage) recordAgentUsage(this.usage, input.userId, message.modelUsage ?? {}, message.duration_ms ?? 0);
+        // 개인 키로 돈 실행은 그 키의 계정이 비용을 낸다. 이번 달 크레딧 장부에 적지 않는다 — 적으면 내 키로 한 대화가 지면 생성의 한도를 깎는다.
+        if (message.type === "result" && this.usage && !input.apiKey) recordAgentUsage(this.usage, input.userId, message.modelUsage ?? {}, message.duration_ms ?? 0);
       }
       // 끝까지 결과가 오지 않은 블록이 실행 중으로 남지 않게 닫는다. 실패한 실행은 서비스가 닫는다.
       for (const row of open.values()) await input.emit({ type: "tool", tool: { ...row, status: "failed", summary: "실행하지 못했습니다." } });

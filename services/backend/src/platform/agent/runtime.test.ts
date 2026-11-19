@@ -161,6 +161,12 @@ describe("Claude 채팅 실행 어댑터", () => {
       { userId: "00000000-0000-4000-8000-0000000000aa", contract: "agent_chat", model: "claude-haiku-5-5", inputTokens: 10, outputTokens: 20, cacheReadTokens: 0, cacheCreationTokens: 0, costUsd: 0.001, durationMs: 0 },
     ]);
   });
+  it("개인 키로 돈 실행은 사용량을 남기지 않는다", async () => {
+    sdk.query.mockReturnValue((async function* () { yield { type: "result", is_error: false, duration_ms: 10, modelUsage: { "claude-sonnet-5": { inputTokens: 1, outputTokens: 1, cacheReadInputTokens: 0, cacheCreationInputTokens: 0, costUSD: 0 } } }; })());
+    const record = vi.fn(async (_event: AiUsageEvent) => undefined);
+    await new ClaudeAgentRuntime(undefined, { record }).run({ apiKey: "sk-ant-test-personal-key-value", messages: [], context: [], signal: new AbortController().signal, emit: vi.fn(), ...base() });
+    expect(record).not.toHaveBeenCalled();
+  });
   it("실패한 실행은 사용량을 남기지 않는다", async () => {
     sdk.query.mockReturnValue((async function* () { yield { type: "result", is_error: true, duration_ms: 10, modelUsage: { "claude-sonnet-5": { inputTokens: 1, outputTokens: 1, cacheReadInputTokens: 0, cacheCreationInputTokens: 0, costUSD: 0 } } }; })());
     const record = vi.fn(async (_event: AiUsageEvent) => undefined);
