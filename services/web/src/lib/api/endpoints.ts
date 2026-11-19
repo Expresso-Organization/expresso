@@ -1,4 +1,7 @@
 import {
+  ActivityListResponseSchema,
+  ProposalFeedResponseSchema,
+  type ListActivitiesQuery,
   BrewTrashListResponseSchema,
   PortfolioTrashListResponseSchema,
   MonthlyUsageResponseSchema,
@@ -407,6 +410,33 @@ export const publishing = {
       z.strictObject({ data: z.strictObject({ portfolioId: z.uuid(), status: z.literal("unlisted") }) }),
       { accessToken, method: "DELETE" },
     ),
+};
+
+/** 능동 제안 — 에이전트가 먼저 권하는 행동. 켠 사용자에게만 만들어진다. */
+export const proposals = {
+  feed: (accessToken: string) =>
+    request(`${API_PREFIX}/proposals`, ProposalFeedResponseSchema, { accessToken, cache: "no-store" }),
+  /** 켠다. 첫 실행이 줄에 들어간다. 커리어 기록의 AI 사용 동의가 없으면 403이다. */
+  enable: (accessToken: string) =>
+    request(`${API_PREFIX}/proposals/enable`, ProposalFeedResponseSchema, { accessToken, method: "POST" }),
+  disable: (accessToken: string) =>
+    request(`${API_PREFIX}/proposals/disable`, ProposalFeedResponseSchema, { accessToken, method: "POST" }),
+  /** 「다시 받기」. 실행 중이면 409다. */
+  refresh: (accessToken: string) =>
+    request(`${API_PREFIX}/proposals/refresh`, ProposalFeedResponseSchema, { accessToken, method: "POST" }),
+  /** 「관심 없음」. 그 대상을 다시 제안하지 않는다. */
+  dismiss: (accessToken: string, proposalId: string) =>
+    request(`${API_PREFIX}/proposals/${proposalId}/dismiss`, ProposalFeedResponseSchema, { accessToken, method: "POST" }),
+};
+
+/** 수집한 활동(공모전 · 해커톤). 접수가 끝나지 않은 것을 마감이 가까운 순서로. */
+export const activities = {
+  list: (accessToken: string, query: Partial<ListActivitiesQuery> = {}) =>
+    request(`${API_PREFIX}/activities`, ActivityListResponseSchema, {
+      accessToken,
+      cache: "no-store",
+      query: { ...(query.kind ? { kind: query.kind } : {}), ...(query.limit ? { limit: query.limit } : {}) },
+    }),
 };
 
 export const consents = {

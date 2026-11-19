@@ -9,15 +9,15 @@ import { PortfolioTrashButton, TrashableCard } from "@/features/portfolio-trash/
 import { publicSiteHost } from "@/lib/public-site";
 
 import { resumeStep } from "../brew/new/resume-step";
-import type { ActiveBrew, GridItem, SiteInsight } from "./home-model";
-import styles from "./page.module.css";
+import type { ActiveBrew, GridItem, SiteInsight } from "../home/home-model";
+import styles from "./portfolio-grid.module.css";
 
 /**
- * 00 「내 포트폴리오」 격자. 만들다 만 제작도 같은 카드 모양으로 함께 선다 —
+ * 라이브러리의 「내 포트폴리오」 격자. 만들다 만 제작도 같은 카드 모양으로 함께 선다 —
  * 사용자에게는 둘 다 "내 포트폴리오"다. 카드 위쪽은 실제 지면의 축소본이고,
  * 지면이 아직 없으면 사이드바 썸네일과 같은 빗금이 선다.
  */
-export function HomePortfolios({
+export function PortfolioGrid({
   items,
   withPage,
   sites,

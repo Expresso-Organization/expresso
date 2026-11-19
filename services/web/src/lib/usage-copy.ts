@@ -23,6 +23,7 @@ const CONTRACT_LABEL: Record<string, string> = {
   partial_edit: "부분 수정",
   style_remix: "스타일 바꾸기",
   insight_note: "방문 분석 해설",
+  proposal_briefing: "능동 제안",
 };
 
 export function contractLabel(contract: string): string {

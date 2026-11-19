@@ -22,6 +22,7 @@ import { aiUsageAndPlanCreditSteps } from "./mongodb-migrations/0022/migration.j
 import { portfolioPublicSlugSteps } from "./mongodb-migrations/0023/migration.js";
 import { adminDummyAccountSteps } from "./mongodb-migrations/0024/migration.js";
 import { careerCategoryArchiveSteps } from "./mongodb-migrations/0031/migration.js";
+import { proactiveProposalSteps } from "./mongodb-migrations/0032/migration.js";
 
 
 export interface MongoMigrationStep {
@@ -75,6 +76,7 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
   const adminDummyHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0024/migration.ts", import.meta.url))).digest("hex");
   // 0025–0030은 열린 PR이 쓰고 있다.
   const categoryArchiveHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0031/migration.ts", import.meta.url))).digest("hex");
+  const proactiveProposalHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0032/migration.ts", import.meta.url))).digest("hex");
   return [
     { version: "0001", name: "initial_collections", checksum: hash.digest("hex"), steps: await initialMigrationSteps() },
     { version: "0002", name: "generation_ledger_amount_constraint", checksum: secondHash, steps: await generationLedgerConstraintSteps() },
@@ -96,5 +98,6 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
     { version: "0023", name: "portfolio_public_slug", checksum: publicSlugHash, steps: await portfolioPublicSlugSteps() },
     { version: "0024", name: "admin_dummy_accounts", checksum: adminDummyHash, steps: await adminDummyAccountSteps() },
     { version: "0031", name: "career_category_archive", checksum: categoryArchiveHash, steps: await careerCategoryArchiveSteps() },
+    { version: "0032", name: "proactive_proposals", checksum: proactiveProposalHash, steps: await proactiveProposalSteps() },
   ];
 }

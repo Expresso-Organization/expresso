@@ -100,6 +100,14 @@ export const JobBrewStateSchema = z.strictObject({
   portfolioId: UuidSchema.nullable(),
 });
 
+/**
+ * 아무것도 고르지 않았을 때 공고를 찾는 나라. 06 공고 탐색 · 00c 통합 검색 · 능동 제안이 같은 값을 쓴다.
+ *
+ * 모으는 곳은 국내 회사인데 그 회사들이 해외 법인 자리도 함께 올린다. 기본값을 두지 않으면
+ * 국내에서 일자리를 찾는 사람이 지원할 수 없는 공고부터 읽는다.
+ */
+export const DEFAULT_JOB_COUNTRY = "한국";
+
 export const JobPostingSummarySchema = z.strictObject({
   id: UuidSchema,
   title: z.string().min(1).max(300),

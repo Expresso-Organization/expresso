@@ -1,0 +1,20 @@
+flowchart TD
+  U[사용자] --> HOME[홈: 로고 · 입력창 · 위젯 · 제안 카드]
+  HOME --> CARD[제안 카드<br/>제목 · 메시지 · 인용 대상 · 버튼]
+  CARD -->|대화 시작| CHAT[에이전트 대화]
+  CARD -->|공고 열기| JOB[공고 화면]
+  FEED[(proposal_feeds)] --> CARD
+  WRITER[제안 작성기<br/>message · 근거 기록] --> SVC[제안 서비스<br/>표시 자료 부착 · 옛 모양 거름]
+  CAND[후보 고르기<br/>로직] --> WRITER
+  SVC --> FEED
+  GOAL{다음: 목표부터?}
+  MEM[최종 구직 목표<br/>온보딩 · 메모리]
+  JUDGE[목표 기준 제안<br/>부족한 점 · 포트폴리오 다듬기]
+  GOAL --> MEM --> JUDGE --> CAND
+  classDef done fill:#d1fae5,stroke:#059669
+  classDef doing fill:#fef3c7,stroke:#d97706
+  classDef decide fill:#fee2e2,stroke:#dc2626
+  classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4
+  class HOME,CARD,CHAT,JOB,FEED,WRITER,SVC,CAND done
+  class GOAL decide
+  class MEM,JUDGE todo

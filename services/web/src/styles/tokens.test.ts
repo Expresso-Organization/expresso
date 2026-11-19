@@ -221,6 +221,7 @@ const RADIUS_ROLE_EXCEPTIONS: Record<string, string> = {
   "app/(app)/edit/[portfolioId]/page.module.css .alignButton": "세그먼트 항목(정렬)",
   "app/(app)/edit/[portfolioId]/page.module.css .sectionMoveButton": "13px 높이 화살표 — 8px이면 원이 된다",
   "app/(app)/brew/[brewId]/design/DesignCatalog.module.css .cardCheck": "카드 위 선택 표시 원",
+  "app/(app)/home/home-start.module.css .composer": "홈 입력창 — 쉬는 동안은 검색 칸과 같은 pill, 누르면 입력 칸 곡률로 펴진다",
 };
 
 function radiusRole(className: string): keyof typeof RADIUS | "search" | null {

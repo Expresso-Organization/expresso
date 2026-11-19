@@ -18,7 +18,7 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
 
   it("creates every product collection and preserves the seeded IDs and all 30 additional designs", async () => {
     const names = (await mongo.listCollections({}, { nameOnly: true }).toArray()).map(item => item.name);
-    expect(names).toHaveLength(88);
+    expect(names).toHaveLength(90);
     expect(names).toContain("ai_usage_events");
     expect(names).toContain("admin_audit_events");
     expect(names).toContain("identity_tokens");
@@ -34,7 +34,7 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
     ]);
     expect(plans.every((plan) => !("generationQuota" in plan) && !("generation.unlimited" in plan.features))).toBe(true);
     expect(await collections.careerCategories.countDocuments()).toBe(0);
-    expect(await collections.scheduledJobDefinitions.countDocuments()).toBe(9);
+    expect(await collections.scheduledJobDefinitions.countDocuments()).toBe(11);
     expect(await collections.templates.countDocuments()).toBe(33);
     for (let i = 1; i <= 30; i++) {
       expect(await collections.templates.findOne({ _id: `d3510000-0000-4000-8000-${String(i).padStart(12, "0")}` })).not.toBeNull();
@@ -45,7 +45,7 @@ describe.skipIf(!mongoUrl)("MongoDB schema", () => {
     await collections.plans.updateOne({ code: "free" }, { $set: { monthlyCredits: 17 } });
     const result = await migrateMongo({ databaseUrl: mongoUrl!, databaseName });
     expect(result.applied).toEqual([]);
-    expect(result.existing).toEqual(["0001_initial_collections", "0002_generation_ledger_amount_constraint", "0003_analytics_rate_and_notification_preferences", "0004_job_import_metadata", "0005_job_source_ats_providers", "0006_career_record_editor", "0007_job_source_boards", "0008_career_view_configurations", "0009_agent_conversations", "0010_agent_credentials", "0011_preparation_plans", "0012_identity_session_sliding_expiry", "0013_identity_email_and_terms", "0017_career_category_ownership", "0020_notification_producers", "0021_generation_waiting_recipe", "0022_ai_usage_and_plan_credits", "0023_portfolio_public_slug", "0024_admin_dummy_accounts", "0031_career_category_archive"]);
+    expect(result.existing).toEqual(["0001_initial_collections", "0002_generation_ledger_amount_constraint", "0003_analytics_rate_and_notification_preferences", "0004_job_import_metadata", "0005_job_source_ats_providers", "0006_career_record_editor", "0007_job_source_boards", "0008_career_view_configurations", "0009_agent_conversations", "0010_agent_credentials", "0011_preparation_plans", "0012_identity_session_sliding_expiry", "0013_identity_email_and_terms", "0017_career_category_ownership", "0020_notification_producers", "0021_generation_waiting_recipe", "0022_ai_usage_and_plan_credits", "0023_portfolio_public_slug", "0024_admin_dummy_accounts", "0031_career_category_archive", "0032_proactive_proposals"]);
     expect((await collections.plans.findOne({ code: "free" }))?.monthlyCredits).toBe(17);
   });
 
