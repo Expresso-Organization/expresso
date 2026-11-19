@@ -47,7 +47,6 @@ const runtimeConfigSchema = z.object({
   AGENT_CREDENTIAL_ENCRYPTION_KEY: z.string().regex(/^[a-fA-F0-9]{64}$/).optional(),
   AGENT_CHAT_ENABLED: z.enum(["0", "1"]).default("0"),
   AGENT_CHAT_MODEL: z.literal("sonnet").default("sonnet"),
-  AGENT_CHAT_DEVELOPER_USER_IDS: z.string().default("").refine(value => value.split(",").map(item => item.trim()).filter(Boolean).every(item => z.uuid().safeParse(item).success), "개발 멤버 ID는 UUID여야 합니다."),
   /**
    * 지면 생성만 다른 프로바이더로.
    *
@@ -166,7 +165,6 @@ export interface RuntimeConfig {
   agentChatEnabled?: boolean;
   agentChatModel?: string;
   agentCredentialEncryptionKey?: string;
-  agentChatDeveloperUserIds?: string[];
   /** 지면 생성만 갈아 끼울 때. 비우면 `aiProvider`와 같다. */
   aiPageGenerationProvider?: "claude-code" | "codex" | "fixture" | "anthropic";
   /** 검색 해석만 갈아 끼울 때. 비우면 `aiProvider`와 같다. */
@@ -230,7 +228,6 @@ export function loadRuntimeConfig(
     ...(result.AGENT_CREDENTIAL_ENCRYPTION_KEY ? { agentCredentialEncryptionKey: result.AGENT_CREDENTIAL_ENCRYPTION_KEY } : {}),
     agentChatEnabled: result.AGENT_CHAT_ENABLED === "1",
     agentChatModel: result.AGENT_CHAT_MODEL,
-    agentChatDeveloperUserIds: result.AGENT_CHAT_DEVELOPER_USER_IDS.split(",").map(value => value.trim().toLowerCase()).filter(Boolean),
     aiProvider: result.AI_PROVIDER,
     pageGenerationFormat: result.PAGE_GENERATION_FORMAT,
     ...(result.AI_PROVIDER_PAGE_GENERATION

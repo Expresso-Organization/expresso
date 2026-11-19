@@ -1,0 +1,19 @@
+flowchart TD
+  U[웹 입력창 5곳] --> A[GET /agent/access]
+  U --> S[POST messages · retry]
+  S --> K{저장된 개인 키}
+  K -->|있음| P[개인 키로 실행]
+  K -->|없음| C[이번 달 크레딧 검사]
+  C -->|남음| R[서버 인증으로 실행]
+  C -->|0| X[403 한도 안내]
+  A --> N[한도 안내 · 보내기 끔]
+  E[(ai_usage_events)] --> C
+  R --> E
+  D[개발 멤버 목록 삭제]
+  M{PR 머지}
+  classDef done fill:#d1fae5,stroke:#059669
+  classDef doing fill:#fef3c7,stroke:#d97706
+  classDef decide fill:#fee2e2,stroke:#dc2626
+  classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4
+  class A,S,K,P,C,R,X,N,E,D done
+  class M decide
