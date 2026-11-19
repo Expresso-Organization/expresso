@@ -44,8 +44,11 @@ export class ActivitySourceError extends Error {
 /** 주소를 받아 본문을 돌려준다. 응답이 2xx가 아니면 던진다. */
 export type FetchText = (url: string, init?: { method?: "GET" | "POST"; headers?: Record<string, string>; body?: string }) => Promise<string>;
 
-/** 출처 쪽은 대부분 브라우저용이라 브라우저 꼴의 사용자 에이전트를 보낸다. */
-export const USER_AGENT = "Mozilla/5.0 (compatible; ExpressoActivityCollector/1.0)";
+/**
+ * 출처 쪽은 브라우저용이라 브라우저 꼴의 사용자 에이전트를 보낸다. 위비티는 `compatible; …Collector` 꼴을 403으로 막는다
+ * (2026-11-20 확인 — `Mozilla/5.0`은 200). 0032부터 쓰던 값 그대로다.
+ */
+export const USER_AGENT = "Mozilla/5.0";
 const TIMEOUT_MS = 20_000;
 
 export const fetchText: FetchText = async (url, init = {}) => {
