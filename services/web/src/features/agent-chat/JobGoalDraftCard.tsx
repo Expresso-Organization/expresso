@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import type { Route } from "next";
 import type { AgentGoalDraft, AgentGoalDraftDecision } from "@expresso/contracts";
 import { Icon } from "@/components/ui/Icon";
 import { Button } from "@/components/ui/button";
@@ -36,7 +35,7 @@ export function JobGoalDraftCard({ draft, disabled, onDecide }: { draft: AgentGo
         </div>;
       })}
     </dl>
-    {draft.status === "approved" ? <p className={styles.done} data-state="approved"><Icon name="check-circle" weight="fill" size={13} />구직 목표에 저장했습니다. <Link href={"/goal" as Route}>목표 보기</Link></p> : null}
+    {draft.status === "approved" ? <p className={styles.done} data-state="approved"><Icon name="check-circle" weight="fill" size={13} />구직 목표에 저장했습니다. <Link href="/goal">목표 보기</Link></p> : null}
     {draft.status === "rejected" ? <p className={styles.done}><Icon name="x-circle" size={13} />목표를 그대로 두었습니다.</p> : null}
     {draft.status === "replaced" ? <p className={styles.done}><Icon name="arrows-clockwise" size={13} />새 제안으로 바뀌었습니다.</p> : null}
     {error ? <p role="alert" className={styles.error}>{error}</p> : null}
