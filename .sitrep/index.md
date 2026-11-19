@@ -8,4 +8,4 @@
 | [20261119-2125-scheduled-unknown-key](sessions/20261119-2125-scheduled-unknown-key/session.md) | 배포 중 새 예약 작업의 첫 실행 보존 | 완료됨 | 100% |
 | [20261119-2130-sidebar-sections](sessions/20261119-2130-sidebar-sections/session.md) | 좌측 사이드바 포트폴리오 · 커리어 기록 묶음과 묶음별 접기 | 구현 중 | 95% |
 | [20261120-0115-agent-chat-open](sessions/20261120-0115-agent-chat-open/session.md) | 에이전트 채팅 전체 개방 | 구현 중 | 90% |
-| [20261120-0230-expresso-ai-consultant](sessions/20261120-0230-expresso-ai-consultant/session.md) | Expresso AI 커리어 컨설턴트 | 구현 중 | 60% |
+| [20261120-0230-expresso-ai-consultant](sessions/20261120-0230-expresso-ai-consultant/session.md) | Expresso AI 커리어 컨설턴트 | 구현 중 | 75% |

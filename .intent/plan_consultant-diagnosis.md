@@ -18,8 +18,8 @@ date: 2026-11-20
 | `packages/database/src/documents/consultant.ts` · `collections.ts` · `mongodb-migrations/0037/migration.ts` · `mongo-migrations.ts` · `mongo-build.mjs` · 테스트 | 진단 문서와 컬렉션, 마이그레이션 0037 |
 | `services/backend/src/modules/jobs/demand.ts` 새 파일 · `index.ts` · 테스트 | 사전과 요건 집계 |
 | `services/backend/src/modules/consultant/diagnoses.ts` 새 파일 · `routes.ts` · `index.ts` · 테스트 | 진단 저장과 읽기, 기억 응답 |
-| `services/backend/src/modules/agent-chat/service.ts` · `digest.ts` · 테스트 | 도구 연결, 근거 확인, 기억의 진단 요약 |
-| `services/backend/src/platform/agent/runtime.ts` · `runtime.test.ts` | `read_goal_demand` · `record_diagnosis` 도구와 지침 |
+| `services/backend/src/modules/agent-chat/service.ts` · `digest.ts` · `record-draft.ts` · 테스트 | 도구 연결, 근거 확인, 기억의 진단 요약, 기존 기록에 더하기 |
+| `services/backend/src/platform/agent/runtime.ts` · `runtime.test.ts` | `read_goal_demand` · `record_diagnosis` · `append_to_record` 도구와 지침 |
 | `services/backend/src/api/main.ts` · `build-app.ts` · `modules/account-lifecycle/mongo-purge.ts` | 배선, 삭제 목록 |
 | `services/web/src/features/agent-chat/` (`DiagnosisCard.tsx` 새 파일 · `tool-parts.tsx` · 테스트) | 진단 카드 |
 | `services/web/src/app/(app)/goal/` · `home/HomeStart.tsx` | 내 진행의 진단, 추천 프롬프트 |
