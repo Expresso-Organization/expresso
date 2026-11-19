@@ -3,15 +3,16 @@ import type { AgentContext, ProposalAction, ProposalStart } from "@expresso/cont
 /**
  * 제안에서 대화를 시작할 때의 요청문과 연결할 자료. 서버가 쓴다.
  *
- * 모델이 요청문을 쓰게 하지 않는 까닭은 공고와 활동의 글이 바깥에서 온 글이기 때문이다.
+ * 모델이 요청문을 쓰게 하지 않고 모델이 쓴 제안 메시지도 여기에 싣지 않는다. 공고와 활동의 글이 바깥에서 온 글이기 때문이다.
  * 그 글이 요청문에 실리면 쓰기 도구를 가진 다음 대화로 넘어간다. 여기서는 자료를 연결로 넘기고,
  * 연결할 수 없는 활동만 제목과 주최를 한 줄로 적는다(줄바꿈을 지우고 길이를 묶는다).
  */
+/** 버튼의 문구. 대화를 여는 버튼은 사용자가 에이전트에게 하는 답이고, 공고 화면으로 가는 버튼은 가는 곳을 말한다. */
 const LABEL: Record<ProposalAction, string> = {
-  compare_job: "요건 대조하기",
+  compare_job: "요건을 대조해 주세요",
   start_portfolio: "공고 열고 만들기",
-  plan_activity: "참가 계획 세우기",
-  strengthen_record: "질문받고 채우기",
+  plan_activity: "참가 계획을 세워 주세요",
+  strengthen_record: "네, 물어봐 주세요",
 };
 
 /** 대화 하나에 연결하는 근거 기록의 수. */

@@ -5,14 +5,14 @@ import type { Candidates } from "./candidates.js";
 import { AiProposalWriter, acceptProposals, buildProposalPrompt, proposalViolations } from "./writer.js";
 
 const CANDIDATES: Candidates = {
-  jobs: [{ id: "job-1", title: "프론트엔드 개발자", company: "모아마켓", family: "프론트엔드", technologies: ["React"], daysLeft: 3, createdAt: "2026-11-15T00:00:00.000Z", watched: true, matched: ["React"] }],
+  jobs: [{ id: "job-1", title: "프론트엔드 개발자", company: "모아마켓", avatar: { name: "모아마켓", initial: "M", avatarBackground: null, avatarColor: null, logoUrl: null }, family: "프론트엔드", technologies: ["React"], daysLeft: 3, createdAt: "2026-11-15T00:00:00.000Z", watched: true, matched: ["React"] }],
   activities: [{ id: "wevity:1", kind: "contest", title: "차량용 앱 개발 공모전", host: "현대자동차그룹", fields: ["웹/모바일/IT"], url: "https://example.test/1", daysLeft: 0, firstSeenAt: "2026-11-15T00:00:00.000Z", matched: [] }],
-  weakRecords: [{ id: "rec-9", title: "스터디 운영", categoryName: "활동", why: "no_numbers" }],
-  records: [{ id: "rec-1", title: "개인 가계부 PWA", categoryName: "프로젝트", excerpt: "오프라인에서도 기록한다." }],
+  weakRecords: [{ id: "rec-9", title: "스터디 운영", categoryKey: "activity_leadership", categoryName: "활동", why: "no_numbers" }],
+  records: [{ id: "rec-1", title: "개인 가계부 PWA", categoryKey: "project", categoryName: "프로젝트", excerpt: "오프라인에서도 기록한다." }],
 };
 
 const draft = (proposals: unknown[]) => ({ proposals });
-const good = { subject: "A1", action: "plan_activity", title: "차량용 앱 공모전에 참가해 보세요", reason: "「개인 가계부 PWA」의 오프라인 동기화 경험이 주제와 이어집니다. 오늘 마감입니다.", records: ["R1"] };
+const good = { subject: "A1", action: "plan_activity", message: "오늘 마감인 「차량용 앱 개발 공모전」에 오프라인 동기화 경험을 살려 참가해 보시겠어요?", records: ["R1"] };
 
 it("후보 표에 번호를 붙이고, 번호가 가리키는 것을 따로 든다", () => {
   const { prompt, keys } = buildProposalPrompt(CANDIDATES);
@@ -45,12 +45,23 @@ it("고친 뒤에도 표 밖을 짚은 제안만 버리고 나머지는 살린�
     good,
     { ...good, subject: "J9" },
     { ...good, subject: "J1", action: "compare_job", records: ["R4"] },
-    { subject: "W1", action: "strengthen_record", title: "스터디 기록에 숫자를 채워 보세요", reason: "성과에 숫자가 없습니다.", records: ["R1"] },
+    { subject: "W1", action: "strengthen_record", message: "  「스터디 운영」에 성과가 숫자로 적혀 있지 않습니다. 여쭤보고 채울까요?  ", records: ["R1"] },
+    { ...good, subject: "J1", action: "compare_job", message: "   " },
   ]) as never, keys);
   expect(accepted).toEqual([
-    { subject: { kind: "activity", id: "wevity:1" }, action: "plan_activity", title: good.title, reason: good.reason, recordIds: ["rec-1"] },
-    { subject: { kind: "record", id: "rec-9" }, action: "strengthen_record", title: "스터디 기록에 숫자를 채워 보세요", reason: "성과에 숫자가 없습니다.", recordIds: [] },
+    { subject: { kind: "activity", id: "wevity:1" }, action: "plan_activity", message: good.message, recordIds: ["rec-1"] },
+    { subject: { kind: "record", id: "rec-9" }, action: "strengthen_record", message: "「스터디 운영」에 성과가 숫자로 적혀 있지 않습니다. 여쭤보고 채울까요?", recordIds: [] },
   ]);
+});
+
+it("메시지는 비었거나 길이를 넘긴 칸만 짚는다 — 말투와 끝맺음은 검사하지 않는다", () => {
+  const { keys } = buildProposalPrompt(CANDIDATES);
+  const found = proposalViolations(draft([
+    good,
+    { ...good, subject: "J1", action: "compare_job", message: "가".repeat(121) },
+    { ...good, subject: "W1", action: "strengthen_record", message: " ", records: [] },
+  ]) as never, keys);
+  expect(found.map(({ path }) => path)).toEqual(["/proposals/1/message", "/proposals/2/message"]);
 });
 
 it("걸린 칸은 같은 대화에서 고쳐 받고, 사용량은 사용자 앞으로 남긴다", async () => {

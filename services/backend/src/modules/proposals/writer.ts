@@ -8,18 +8,18 @@ import type { Candidates } from "./candidates.js";
 /**
  * 「능동 제안」 계약.
  *
- * 모델은 후보 표(새 공고 · 새 활동 · 손볼 기록)와 내 기록 표를 읽고, 사용자에게 먼저 권할 행동을 쓴다.
+ * 모델은 후보 표(새 공고 · 새 활동 · 손볼 기록)와 내 기록 표를 읽고, 사용자에게 먼저 권할 행동을 고르고 건넬 메시지를 쓴다.
+ * 카드의 제목 · 버튼 · 인용한 대상의 표시는 모델이 쓰지 않는다 — 고른 행동과 번호에서 서버와 화면이 정한다.
  * 무엇을 권할 수 있는지는 표가 정하고 모델은 고르고 글을 쓸 뿐이다 — 표에 없는 대상이나 기록을
  * 짚으면 그 칸을 고쳐 받고, 고친 뒤에도 남으면 그 제안은 버린다.
  */
 
 /** 프롬프트를 고치면 올린다. */
-export const PROPOSAL_PROMPT_VERSION = 1;
+export const PROPOSAL_PROMPT_VERSION = 2;
 
-/** 한 번에 쓰는 제안 수와 문장 길이. 홈의 카드 한 장에 들어가는 양이다. */
+/** 한 번에 쓰는 제안 수와 메시지 길이. 홈의 카드 한 장에 들어가는 양이다 — 카드는 두 칸으로 서고 메시지는 두세 줄이다. */
 export const MAX_PROPOSALS = 4;
-const TITLE_LIMIT = 60;
-const REASON_LIMIT = 220;
+const MESSAGE_LIMIT = 120;
 const MAX_RECORDS = 3;
 
 /** 모델이 내는 초안. 대상과 기록은 표의 번호(`J1` · `A2` · `W1` · `R3`)로 짚는다. */
@@ -28,10 +28,8 @@ export const ProposalDraftSchema = z.strictObject({
     /** 후보 표의 번호. */
     subject: z.string(),
     action: ProposalActionSchema,
-    /** 할 일 한 문장. */
-    title: z.string(),
-    /** 그렇게 권하는 이유. 내 기록의 어떤 점이 대상과 이어지는지. */
-    reason: z.string(),
+    /** 사용자에게 건네는 제안 메시지. 한두 문장이고 물음으로 끝난다. */
+    message: z.string(),
     /** 근거로 든 내 기록의 번호. */
     records: z.array(z.string()),
   })),
@@ -49,8 +47,7 @@ export interface ProposalKeys {
 export interface WrittenProposal {
   subject: { kind: "job" | "activity" | "record"; id: string };
   action: ProposalAction;
-  title: string;
-  reason: string;
+  message: string;
   recordIds: string[];
 }
 
@@ -71,12 +68,18 @@ const SYSTEM = `당신은 Expresso의 에이전트입니다. Expresso는 커리�
 - subject에는 J · A · W 표의 번호 하나를 적습니다. 한 대상은 한 번만 제안합니다.
 - action은 대상에 따라 고릅니다. 공고(J)는 compare_job(요건을 기록과 대조) 또는 start_portfolio(이 공고로 포트폴리오 만들기), 활동(A)은 plan_activity(참가 계획), 손볼 기록(W)은 strengthen_record(질문받아 보강)입니다.
 - records에는 그렇게 권하는 근거가 되는 사용자의 기록(R) 번호를 최대 ${MAX_RECORDS}개 적습니다. 공고와 활동 제안에는 하나 이상 적습니다. 손볼 기록 제안에는 비워 둡니다.
-- title은 권하는 행동을 한 문장으로 적습니다. ${TITLE_LIMIT}자 안쪽, 존댓말, 「~해 보세요」처럼 행동으로 끝냅니다. 대상의 이름을 넣습니다.
-- reason은 왜 지금 이 사용자에게 권하는지를 ${REASON_LIMIT}자 안쪽 한두 문장으로 적습니다. 근거로 든 기록의 제목을 「」로 짚고, 그 기록의 어떤 내용이 대상과 이어지는지 말합니다. 마감이 가까우면 남은 날을 말합니다.
+- message는 사용자에게 건네는 말입니다. 한두 문장, ${MESSAGE_LIMIT}자 안쪽으로 씁니다. 문장은 「~습니다」로, 물음은 「~할까요?」 · 「~보시겠어요?」로 맺습니다. 「~이에요」 · 「~있어요」 · 「~좋아요」는 쓰지 않습니다.
+  - 대상의 이름을 「」 안에 넣습니다. 공고는 회사 이름을 앞에 붙입니다(예: 모아마켓의 「프론트엔드 개발자」 공고). 이름이 길면 알아볼 수 있을 만큼만 줄입니다.
+  - 근거로 든 기록에서 확인되는 사실 하나를 말합니다. 기록의 제목을 늘어놓지 않습니다 — 인용한 기록은 화면이 따로 보여 줍니다.
+  - 마지막 문장은 권하는 행동을 묻는 물음으로 끝냅니다(「~할까요?」 · 「~보시겠어요?」).
+  - 마감이 7일 안쪽이면 남은 날이나 「오늘 마감」을 말합니다.
+  - 손볼 기록은 무엇이 빠져 있는지 말하고 채울지 묻습니다.
 
 지키는 것:
 - 기록에 없는 경험 · 수치 · 기술을 지어내지 않습니다. 표에 적힌 것만 근거로 씁니다.
+- 기록의 글에 없는 수단 · 도구 · 기술 이름을 덧붙이지 않습니다. 대상이 AI 공모전이라고 해서 기록에 없는 「AI로」를 붙이지 않습니다.
 - 합격 가능성이나 적합도를 숫자로 말하지 않습니다.
+- 사용자의 목표나 희망 직무를 아는 것처럼 말하지 않습니다. 맞는다는 말은 표에 적힌 겹치는 기술과 기록의 내용으로만 합니다.
 - 이어지는 기록이 없는 공고 · 활동은 제안하지 않습니다.
 - 과장하지 않고 담백하게 씁니다. 이모지를 쓰지 않습니다.`;
 
@@ -154,11 +157,8 @@ export function proposalViolations(draft: ProposalDraft, keys: ProposalKeys): Ai
       if (!keys.records.has(record)) found.push({ path: jsonPointer(["proposals", index, "records", at]), problem: `기록 표에 없는 번호입니다: ${record}.` });
     });
     if (proposal.records.length > MAX_RECORDS) found.push({ path: jsonPointer(["proposals", index, "records"]), problem: `기록은 ${MAX_RECORDS}개까지 적습니다.` });
-    if (proposal.title.trim().length === 0 || proposal.title.length > TITLE_LIMIT) {
-      found.push({ path: jsonPointer(["proposals", index, "title"]), problem: `title은 1자 이상 ${TITLE_LIMIT}자 이하로 적으세요(지금 ${proposal.title.length}자).` });
-    }
-    if (proposal.reason.trim().length === 0 || proposal.reason.length > REASON_LIMIT) {
-      found.push({ path: jsonPointer(["proposals", index, "reason"]), problem: `reason은 1자 이상 ${REASON_LIMIT}자 이하로 적으세요(지금 ${proposal.reason.length}자).` });
+    if (proposal.message.trim().length === 0 || proposal.message.length > MESSAGE_LIMIT) {
+      found.push({ path: jsonPointer(["proposals", index, "message"]), problem: `message는 1자 이상 ${MESSAGE_LIMIT}자 이하로 적으세요(지금 ${proposal.message.length}자).` });
     }
   });
   return found;
@@ -176,11 +176,10 @@ export function acceptProposals(draft: ProposalDraft, keys: ProposalKeys): Writt
     if (!subject || seen.has(proposal.subject) || !ACTIONS[subject.kind].includes(proposal.action)) continue;
     const recordIds = [...new Set(proposal.records.flatMap((key) => keys.records.get(key) ?? []))].slice(0, MAX_RECORDS);
     if (subject.kind !== "record" && recordIds.length === 0) continue;
-    const title = proposal.title.trim().slice(0, 200);
-    const reason = proposal.reason.trim().slice(0, 600);
-    if (!title || !reason) continue;
+    const message = proposal.message.trim().slice(0, 400);
+    if (!message) continue;
     seen.add(proposal.subject);
-    accepted.push({ subject, action: proposal.action, title, reason, recordIds: subject.kind === "record" ? [] : recordIds });
+    accepted.push({ subject, action: proposal.action, message, recordIds: subject.kind === "record" ? [] : recordIds });
     if (accepted.length === MAX_PROPOSALS) break;
   }
   return accepted;

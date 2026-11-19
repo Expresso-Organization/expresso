@@ -44,8 +44,12 @@ function isStale(run: StoredProposalRun, at: Date): boolean {
   return (run.status === "queued" || run.status === "running") && run.startedAt !== null && at.getTime() - run.startedAt.getTime() > RUN_TIMEOUT_MS;
 }
 
-/** 저장한 제안을 지금 시각의 모양으로. 마감이 지났으면 null이다. */
+/**
+ * 저장한 제안을 지금 시각의 모양으로. 마감이 지났으면 null이다.
+ * 메시지가 없는 것은 예전 모양(제목 문장과 설명 문단)으로 저장된 제안이라 내보내지 않는다 — 다음 실행 때 치워진다.
+ */
 function proposalView(stored: StoredProposal, at: Date): Proposal | null {
+  if (typeof (stored as { message?: unknown }).message !== "string") return null;
   const daysLeft = stored.deadlineOn === null ? null : daysUntil(stored.deadlineOn, at);
   if (daysLeft !== null && daysLeft < 0) return null;
   const { deadlineOn: _deadlineOn, origin, ...rest } = stored;
@@ -78,7 +82,7 @@ function deadlineOn(daysLeft: number | null, at: Date): string | null {
 }
 
 function jobInput(job: JobPostingSummary): JobInput {
-  return { id: job.id, title: job.title, company: job.company.name, family: job.family, technologies: job.technologies.map(({ name }) => name), daysLeft: job.daysLeft, createdAt: job.createdAt };
+  return { id: job.id, title: job.title, company: job.company.name, avatar: { name: job.company.name, initial: job.company.initial ?? null, avatarBackground: job.company.avatarBackground ?? null, avatarColor: job.company.avatarColor ?? null, logoUrl: job.company.logoUrl ?? null }, family: job.family, technologies: job.technologies.map(({ name }) => name), daysLeft: job.daysLeft, createdAt: job.createdAt };
 }
 
 function subjectKey(subject: { kind: string; id: string }): string {
@@ -261,24 +265,24 @@ export class ProposalService {
     return { candidates, read: { records: recordInputs.length, jobs: jobs.length, activities: activityInputs.length } };
   }
 
-  /** 모델이 고른 제안에 화면이 쓸 자료(대상 · 근거 기록 · 시작 동작)를 붙인다. */
+  /** 모델이 고른 제안에 화면이 쓸 자료(대상 · 근거 기록과 그 표시)를 붙인다. */
   #proposal(draft: WrittenProposal, candidates: Candidates, at: Date): StoredProposal {
+    const none = { company: null, categoryKey: null, activityKind: null } as const;
     const record = (id: string): ProposalRef | null => {
       const found = candidates.records.find((item) => item.id === id) ?? candidates.weakRecords.find((item) => item.id === id);
-      return found ? { kind: "record", id, label: found.title, href: `/career/records/${id}`, external: false, daysLeft: null } : null;
+      return found ? { ...none, kind: "record", id, label: found.title, sub: found.categoryName.slice(0, 200), href: `/career/records/${id}`, external: false, daysLeft: null, categoryKey: found.categoryKey } : null;
     };
     const job = candidates.jobs.find(({ id }) => draft.subject.kind === "job" && id === draft.subject.id);
     const activity = candidates.activities.find(({ id }) => draft.subject.kind === "activity" && id === draft.subject.id);
     const subject: ProposalRef = job
-      ? { kind: "job", id: job.id, label: `${job.company} · ${job.title}`.slice(0, 400), href: `/jobs/${job.id}`, external: false, daysLeft: job.daysLeft }
+      ? { ...none, kind: "job", id: job.id, label: job.title.slice(0, 400), sub: job.company.slice(0, 200), href: `/jobs/${job.id}`, external: false, daysLeft: job.daysLeft, company: job.avatar }
       : activity
-        ? { kind: "activity", id: activity.id, label: activity.title, href: activity.url, external: true, daysLeft: activity.daysLeft }
-        : record(draft.subject.id) ?? { kind: "record", id: draft.subject.id, label: "기록", href: `/career/records/${draft.subject.id}`, external: false, daysLeft: null };
+        ? { ...none, kind: "activity", id: activity.id, label: activity.title, sub: activity.host.slice(0, 200) || null, href: activity.url, external: true, daysLeft: activity.daysLeft, activityKind: activity.kind }
+        : record(draft.subject.id) ?? { ...none, kind: "record", id: draft.subject.id, label: "기록", sub: null, href: `/career/records/${draft.subject.id}`, external: false, daysLeft: null };
     return {
       id: randomUUID(),
       action: draft.action,
-      title: draft.title,
-      reason: draft.reason,
+      message: draft.message,
       subject,
       records: draft.recordIds.flatMap((id) => record(id) ?? []),
       deadlineOn: deadlineOn(job?.daysLeft ?? activity?.daysLeft ?? null, at),

@@ -1,8 +1,8 @@
 /*
  * 홈 — 대화를 시작하기 전의 화면.
  *
- * 한 열에 위에서 아래로 로고, 입력창, 추천 프롬프트, 행동 제안, 새 소식 위젯이 선다.
- * 로고에서 추천 프롬프트까지는 가운데로 모이고, 제안과 위젯은 열의 폭을 다 쓴다.
+ * 한 열에 위에서 아래로 로고, 입력창, 추천 프롬프트, 새 소식 위젯, 제안 카드가 선다.
+ * 로고에서 추천 프롬프트까지는 가운데로 모이고, 위젯과 제안은 열의 폭을 다 쓴다.
  */
 
 .stage {
@@ -346,18 +346,18 @@
   box-shadow: var(--ex-focus-ring);
 }
 
-/* ── 구획 — 행동 제안과 위젯 ──────────────────────────────── */
+/* ── 구획 — 위젯과 제안 ──────────────────────────────── */
 
 .proposals,
 .widgets {
   animation: rise var(--ex-motion-panel) both;
 }
 
-.proposals {
+.widgets {
   animation-delay: 80ms;
 }
 
-.widgets {
+.proposals {
   animation-delay: 160ms;
 }
 
@@ -382,15 +382,9 @@
   color: var(--ex-fg-subtle);
 }
 
-.checked {
+/* 머리줄에서 제목과 오른쪽 단추 사이를 벌린다. */
+.sectionSpace {
   flex: 1;
-  min-width: 0;
-  text-align: right;
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-fg-subtle);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .proposalGrid {
@@ -406,59 +400,109 @@
   align-items: start;
 }
 
-/* ── 제안 공간 — 에이전트의 말은 bean 지면에 선다(디자인 시스템 §05) ── */
+/* ── 제안 카드 — 위젯과 같은 틀(.widget · .widgetHead · .widgetTitle)에 선다 ── */
 
-/* 켜기 전 — 무엇을 하는 기능인지와 켜는 단추 하나. */
-.invite {
+.proposalCard {
   display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 16px 18px;
-  border-radius: var(--ex-radius-card);
-  background: var(--ex-accent-surface);
-  color: var(--ex-accent-ink);
+  flex-direction: column;
+  animation: rise var(--ex-motion-panel) both;
 }
 
-.inviteBody {
-  flex: 1;
-  min-width: 0;
+/*
+ * 종류 표시 — 머리줄의 아이콘 자리에 선다. 카드에서 색이 있는 곳은 여기뿐이다.
+ * 색은 회사 아바타의 틴트 규칙(`company-avatar-tint.ts`)에서 오고 인라인으로 들어온다.
+ */
+.proposalMark {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--ex-radius-control);
 }
 
-.inviteTitle {
+/* 에이전트의 제안 메시지. */
+.proposalMessage {
   margin: 0;
-  font-size: var(--ex-text-md);
-  font-weight: 600;
-}
-
-.inviteText {
-  margin: 3px 0 0;
+  padding: 4px 16px 0 14px;
   font-size: var(--ex-text-xs);
   line-height: var(--ex-leading-relaxed);
-  opacity: 0.85;
+  color: var(--ex-fg-body);
+  word-break: keep-all;
 }
 
-.inviteAction {
+/* 메시지가 인용한 대상 — 위젯의 줄(.rows · .row · .avatar)을 그대로 쓴다. */
+.proposalCard .proposalRefs {
+  margin-top: 8px;
+  padding-bottom: 0;
+}
+
+/* 로고가 없는 대상(기록 · 활동)의 아이콘 칸. 종류 색은 머리줄에만 있으므로 여기는 무채색이다. */
+.refIcon {
+  background: var(--ex-bg-tint);
+  color: var(--ex-fg-muted);
+}
+
+.refOut {
   flex-shrink: 0;
-  height: 36px;
-  padding: 0 16px;
+  color: var(--ex-fg-subtle);
+}
+
+/*
+ * 사용자의 선택 — 주 버튼은 에스프레소 면에 흰 글자, 보조 버튼은 옅은 면에 짙은 글자다. 둘 다 테두리가 없다.
+ * 인용한 대상의 수가 달라도 같은 줄의 카드끼리 버튼이 아래에 맞는다.
+ */
+.proposalActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  padding: 10px 14px 14px;
+}
+
+.proposalAction,
+.proposalPass {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
   border: none;
   border-radius: var(--ex-radius-control);
-  background: var(--ex-accent);
   font: inherit;
-  font-size: var(--ex-text-sm);
+  font-size: var(--ex-text-xs);
   font-weight: 600;
-  color: var(--ex-fg-on-accent);
+  text-decoration: none;
   cursor: pointer;
   transition: background var(--ex-motion-instant);
 }
 
-.inviteAction:hover {
+.proposalAction {
+  background: var(--ex-accent);
+  color: var(--ex-fg-on-accent);
+}
+
+.proposalAction:hover {
   background: var(--ex-accent-hover);
 }
 
-.inviteAction:focus-visible,
+.proposalPass {
+  background: var(--ex-bg-tint);
+  color: var(--ex-fg);
+}
+
+.proposalPass:hover:not(:disabled) {
+  background: var(--ex-bg-tint-strong);
+}
+
+.proposalPass:disabled {
+  color: var(--ex-fg-faint);
+  cursor: default;
+}
+
+.proposalAction:focus-visible,
+.proposalPass:focus-visible,
 .feedControl:focus-visible,
-.proposalDismiss:focus-visible,
 .enableCancel:focus-visible,
 .enableConfirm:focus-visible {
   outline: none;
@@ -581,12 +625,9 @@
   cursor: default;
 }
 
-/* 만드는 동안 — 서버가 알리는 단계. 대화의 작업 흔적과 같은 모양이다. */
-.working {
-  margin-bottom: 12px;
-  padding: 14px 16px 10px;
-  border-radius: var(--ex-radius-card);
-  background: var(--ex-accent-surface);
+/* 만드는 동안 — 서버가 알리는 단계. 대화의 작업 흔적과 같은 모양이고 카드 틀 안에 선다. */
+.proposalSteps {
+  padding: 6px 16px 12px 14px;
 }
 
 .feedNote,
@@ -599,130 +640,6 @@
 
 .feedError {
   color: var(--ex-status-danger-text);
-}
-
-/* 제안 한 건 — 할 일 한 문장, 그렇게 권하는 이유, 짚은 대상과 내 기록, 시작 단추. */
-.proposal {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 14px 16px 16px;
-  border-radius: var(--ex-radius-card);
-  background: var(--ex-accent-surface);
-  color: var(--ex-accent-ink);
-  animation: rise var(--ex-motion-panel) both;
-}
-
-.proposalMeta {
-  align-self: stretch;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 22px;
-  font-size: var(--ex-text-2xs);
-  opacity: 0.85;
-}
-
-.proposalDue {
-  font-weight: 600;
-  color: var(--ex-accent-text);
-}
-
-.proposalDismiss {
-  margin-left: auto;
-  display: grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  border: none;
-  border-radius: 50%;
-  background: none;
-  color: inherit;
-  cursor: pointer;
-  opacity: 0.6;
-}
-
-.proposalDismiss:hover:not(:disabled) {
-  background: var(--ex-accent-surface-hover);
-  opacity: 1;
-}
-
-.proposalTitle {
-  margin: 0;
-  font-size: var(--ex-text-md);
-  font-weight: 600;
-  line-height: var(--ex-leading-normal);
-  letter-spacing: -0.01em;
-}
-
-.proposalReason {
-  margin: 0;
-  font-size: var(--ex-text-xs);
-  line-height: var(--ex-leading-relaxed);
-}
-
-.refs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  max-width: 100%;
-}
-
-.refs:empty {
-  display: none;
-}
-
-.ref {
-  max-width: 100%;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 9px;
-  border-radius: var(--ex-radius-pill);
-  background: var(--ex-bg);
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-accent-ink);
-  text-decoration: none;
-}
-
-.ref:hover {
-  color: var(--ex-accent-text);
-}
-
-.refLabel {
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.proposalAction {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 32px;
-  margin-top: 4px;
-  padding: 0 12px;
-  border: none;
-  border-radius: var(--ex-radius-control);
-  background: var(--ex-accent);
-  font: inherit;
-  font-size: var(--ex-text-xs);
-  font-weight: 600;
-  color: var(--ex-fg-on-accent);
-  text-decoration: none;
-  cursor: pointer;
-  transition: background var(--ex-motion-instant);
-}
-
-.proposalAction:hover {
-  background: var(--ex-accent-hover);
-}
-
-.proposalAction:focus-visible {
-  outline: none;
-  box-shadow: var(--ex-focus-ring);
 }
 
 /* ── 새 소식 위젯 ─────────────────────────────────────────── */
@@ -847,8 +764,9 @@
     padding: 0 24px 56px;
   }
 
+  /* 제안 카드는 글을 읽는 카드라 위젯(세 칸)보다 넓게 두 칸으로 선다. */
   .proposalGrid {
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .widgets {
@@ -872,7 +790,7 @@
   .tools,
   .picker,
   .proposals,
-  .proposal,
+  .proposalCard,
   .widgets {
     animation: none;
   }

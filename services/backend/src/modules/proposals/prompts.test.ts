@@ -7,7 +7,7 @@ const RECORDS = ["11111111-1111-4111-8111-111111111111", "22222222-2222-4222-822
 
 it("공고 대조는 공고와 근거 기록 셋까지를 대화에 연결한다", () => {
   const start = proposalStart({ action: "compare_job", subject: { kind: "job", id: JOB, title: "프론트엔드 개발자" }, recordIds: RECORDS });
-  expect(start).toMatchObject({ kind: "chat", label: "요건 대조하기" });
+  expect(start).toMatchObject({ kind: "chat", label: "요건을 대조해 주세요" });
   expect(start.kind === "chat" ? start.contexts : []).toEqual([{ kind: "job", id: JOB }, ...RECORDS.slice(0, 3).map((id) => ({ kind: "record", id }))]);
 });
 

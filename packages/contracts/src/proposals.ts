@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { AgentContextSchema } from "./agent-chat.js";
 import { TimestampSchema, UuidSchema } from "./common.js";
+import { JobPostingCompanySchema } from "./job-board.js";
 
 /**
  * 활동 — 채용 공고가 아닌 기회. 지금은 공모전과 해커톤이다.
@@ -37,7 +38,7 @@ export const ActivityListResponseSchema = z.strictObject({ data: z.array(Activit
 /**
  * 능동 제안 — 에이전트가 사용자의 기록과 새 공고 · 활동을 읽고 권하는 행동.
  *
- * 행동은 닫힌 목록이다. 모델은 이 가운데서 고르고, 대화를 시작할 요청문과 연결할 자료는
+ * 행동은 닫힌 목록이다. 카드의 제목과 버튼은 행동이 정한다. 모델은 이 가운데서 고르고 메시지를 쓰며, 대화를 시작할 요청문과 연결할 자료는
  * 서버가 만든다(`start`). 공고와 활동의 글은 바깥에서 온 글이라 요청문에 그대로 싣지 않는다.
  */
 export const ProposalActionSchema = z.enum([
@@ -51,16 +52,30 @@ export const ProposalActionSchema = z.enum([
   "strengthen_record",
 ]);
 
-/** 제안이 짚는 것 — 대상(공고 · 활동 · 기록)이나 근거로 든 내 기록. */
+/** 공고의 회사 아바타 — 로고 주소와, 로고가 없을 때 쓰는 이니셜 · 색. */
+export const ProposalCompanySchema = JobPostingCompanySchema.pick({ name: true, initial: true, avatarBackground: true, avatarColor: true, logoUrl: true });
+
+/**
+ * 제안이 인용하는 것 — 대상(공고 · 활동 · 기록)이나 근거로 든 내 기록.
+ *
+ * 화면은 이것을 카드에 한 줄로 세운다. 그 줄을 그리는 데 쓰는 것을 함께 싣는다 —
+ * 공고는 회사 아바타, 기록은 서랍, 활동은 종류. 해당하지 않는 칸은 null이다.
+ */
 export const ProposalRefSchema = z.strictObject({
   kind: z.enum(["job", "activity", "record"]),
   id: z.string().min(1).max(120),
   label: z.string().min(1).max(400),
+  /** 이름 아래에 적는 한 줄 — 공고는 회사, 활동은 주최, 기록은 서랍 이름. */
+  sub: z.string().max(200).nullable(),
   /** 눌렀을 때 열릴 주소. 활동은 출처의 원문이라 `external`이 참이다. */
   href: z.string().min(1).max(2_000),
   external: z.boolean(),
   /** 마감까지 남은 날. 마감이 없거나 기록이면 null. */
   daysLeft: z.number().int().nullable(),
+  company: ProposalCompanySchema.nullable(),
+  /** 기록이 든 서랍의 키. 화면은 이 키로 서랍 아이콘을 고른다. */
+  categoryKey: z.string().max(80).nullable(),
+  activityKind: ActivityKindSchema.nullable(),
 });
 
 export const ProposalStartSchema = z.discriminatedUnion("kind", [
@@ -80,10 +95,11 @@ export const ProposalStartSchema = z.discriminatedUnion("kind", [
 export const ProposalSchema = z.strictObject({
   id: UuidSchema,
   action: ProposalActionSchema,
-  /** 할 일 한 문장. 에이전트가 쓴다. */
-  title: z.string().min(1).max(200),
-  /** 그렇게 권하는 이유. 에이전트가 쓴다. */
-  reason: z.string().min(1).max(600),
+  /**
+   * 에이전트가 사용자에게 건네는 제안 메시지. 화면에만 쓴다 —
+   * 바깥에서 온 글(공고 · 활동)을 담을 수 있어 대화의 요청문으로 넘기지 않는다.
+   */
+  message: z.string().min(1).max(400),
   subject: ProposalRefSchema,
   /** 근거로 든 내 기록. */
   records: z.array(ProposalRefSchema).max(4),
@@ -131,6 +147,7 @@ export type Activity = z.infer<typeof ActivitySchema>;
 export type ActivityKind = z.infer<typeof ActivityKindSchema>;
 export type ListActivitiesQuery = z.infer<typeof ListActivitiesQuerySchema>;
 export type ProposalAction = z.infer<typeof ProposalActionSchema>;
+export type ProposalCompany = z.infer<typeof ProposalCompanySchema>;
 export type ProposalRef = z.infer<typeof ProposalRefSchema>;
 export type ProposalStart = z.infer<typeof ProposalStartSchema>;
 export type Proposal = z.infer<typeof ProposalSchema>;

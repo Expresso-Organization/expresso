@@ -212,8 +212,8 @@ export function HomeStart({ proposals, widgets }: { proposals: ReactNode; widget
               ))}
             </div>
           </div>
-          {proposals}
           {widgets}
+          {proposals}
         </div>
       </div>
     </ComposerContext.Provider>

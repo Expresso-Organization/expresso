@@ -20,7 +20,7 @@ function world(overrides: { remaining?: number | null; consent?: boolean; jobCre
   const writer: ProposalWriter = {
     async write(_userId, candidates) {
       written.push(candidates);
-      return candidates.jobs.map((job): WrittenProposal => ({ subject: { kind: "job", id: job.id }, action: "compare_job", title: "요건을 대조해 보세요", reason: "「가계부 PWA」 경험이 이어집니다.", recordIds: [RECORD_ID] }));
+      return candidates.jobs.map((job): WrittenProposal => ({ subject: { kind: "job", id: job.id }, action: "compare_job", message: "모아마켓의 「프론트엔드 개발자」 공고 요건을 React 사용 기록과 대조해 볼까요?", recordIds: [RECORD_ID] }));
     },
   };
   const dependencies = {
@@ -73,10 +73,14 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect(feed.proposals).toHaveLength(1);
     expect(feed.proposals[0]).toMatchObject({
       action: "compare_job",
-      subject: { kind: "job", id: JOB_ID, label: "모아마켓 · 프론트엔드 개발자", href: `/jobs/${JOB_ID}`, daysLeft: 12 },
-      records: [{ kind: "record", id: RECORD_ID, label: "React · Next.js" }],
-      start: { kind: "chat", label: "요건 대조하기", contexts: [{ kind: "job", id: JOB_ID }, { kind: "record", id: RECORD_ID }] },
+      message: "모아마켓의 「프론트엔드 개발자」 공고 요건을 React 사용 기록과 대조해 볼까요?",
+      // 화면이 대상을 그리는 데 쓰는 것 — 공고는 회사 아바타, 기록은 서랍.
+      subject: { kind: "job", id: JOB_ID, label: "프론트엔드 개발자", sub: "모아마켓", href: `/jobs/${JOB_ID}`, daysLeft: 12, company: { name: "모아마켓", initial: null, avatarBackground: null, avatarColor: null, logoUrl: null }, categoryKey: null, activityKind: null },
+      records: [{ kind: "record", id: RECORD_ID, label: "React · Next.js", sub: "스킬 · 도구", categoryKey: "skill_tool", company: null, activityKind: null }],
+      start: { kind: "chat", label: "요건을 대조해 주세요", contexts: [{ kind: "job", id: JOB_ID }, { kind: "record", id: RECORD_ID }] },
     });
+    // 메시지는 화면에만 쓴다. 대화로 넘기는 요청문에는 싣지 않는다.
+    expect(JSON.stringify(feed.proposals[0]?.start)).not.toContain("모아마켓");
     expect(w.written[0]?.jobs.map(({ id, matched }) => [id, matched])).toEqual([[JOB_ID, ["React"]]]);
   });
 
@@ -90,6 +94,20 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect((await proposals.feed(userId, new Date("2026-11-17T03:00:00.000Z"))).proposals[0]?.subject.daysLeft).toBe(10);
     expect((await proposals.feed(userId, new Date("2026-11-27T03:00:00.000Z"))).proposals[0]?.subject.daysLeft).toBe(0);
     expect((await proposals.feed(userId, new Date("2026-11-28T03:00:00.000Z"))).proposals).toEqual([]);
+  });
+
+  it("예전 모양으로 저장된 제안은 내보내지 않고, 다음 실행 때 치운다", async () => {
+    const w = world();
+    const proposals = service(w);
+    await proposals.enable(userId, at);
+    // 제목 문장과 설명 문단을 쓰던 때의 문서.
+    const old = { id: randomUUID(), action: "compare_job", title: "요건을 대조해 보세요", reason: "「가계부 PWA」 경험이 이어집니다.", subject: { kind: "job", id: randomUUID(), label: "옛 공고", href: "/jobs/old", external: false, daysLeft: null }, records: [], deadlineOn: null, origin: { title: "옛 공고", host: null, recordIds: [] }, createdAt: at };
+    await mongoCollections(fixture.resource.db).proposalFeeds.updateOne({ userId }, { $set: { proposals: [old as never] } });
+    expect((await proposals.feed(userId, at)).proposals).toEqual([]);
+
+    await proposals.run(userId, "enable", at);
+    const stored = await mongoCollections(fixture.resource.db).proposalFeeds.findOne({ userId });
+    expect(stored?.proposals.map(({ subject }) => subject.id)).toEqual([JOB_ID]);
   });
 
   it("관심 없다고 한 대상은 지워지고 다음 실행의 후보에서 빠진다", async () => {

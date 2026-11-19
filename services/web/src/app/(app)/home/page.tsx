@@ -11,7 +11,7 @@ import { ContestsWidget, InternsWidget, JobsWidget, Proposals, ProposalsSkeleton
 /**
  * 홈.
  *
- * 대화를 시작하기 전에는 위에서 아래로 로고, 입력창, 추천 프롬프트, 행동 제안, 새 소식 위젯이 보인다.
+ * 대화를 시작하기 전에는 위에서 아래로 로고, 입력창, 추천 프롬프트, 새 소식 위젯, 제안 카드가 보인다.
  * 말을 보내면(`?compose=1`) 같은 주소에서 대화 화면으로 바뀌고, 주소에 대화가 적혀 있으면
  * (`?chat=`) 그 대화가 열린다.
  */

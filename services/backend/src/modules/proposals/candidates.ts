@@ -35,6 +35,8 @@ export interface JobInput {
   id: string;
   title: string;
   company: string;
+  /** 화면이 그릴 회사 아바타. 고르는 데는 쓰지 않고 그대로 넘긴다. */
+  avatar: { name: string; initial: string | null; avatarBackground: string | null; avatarColor: string | null; logoUrl: string | null };
   family: string | null;
   technologies: string[];
   daysLeft: number | null;
@@ -54,8 +56,8 @@ export interface ActivityInput {
 
 export interface JobCandidate extends JobInput { watched: boolean; matched: string[] }
 export interface ActivityCandidate extends ActivityInput { matched: string[] }
-export interface RecordBrief { id: string; title: string; categoryName: string; excerpt: string }
-export interface WeakRecord { id: string; title: string; categoryName: string; why: "empty" | "no_numbers" }
+export interface RecordBrief { id: string; title: string; categoryKey: string; categoryName: string; excerpt: string }
+export interface WeakRecord { id: string; title: string; categoryKey: string; categoryName: string; why: "empty" | "no_numbers" }
 
 export interface Candidates {
   jobs: JobCandidate[];
@@ -154,7 +156,7 @@ export function pickCandidates(input: {
     .flatMap((record): WeakRecord[] => {
       if (input.exclude.has(`record:${record.id}`)) return [];
       const why = record.isEmpty ? "empty" : lacksNumbers(record) ? "no_numbers" : null;
-      return why ? [{ id: record.id, title: record.title || "제목 없음", categoryName: record.categoryName, why }] : [];
+      return why ? [{ id: record.id, title: record.title || "제목 없음", categoryKey: record.categoryKey, categoryName: record.categoryName, why }] : [];
     })
     .slice(0, WEAK_RECORD_CANDIDATES);
 
@@ -166,6 +168,7 @@ export function pickCandidates(input: {
     .map((record) => ({
       id: record.id,
       title: record.title || "제목 없음",
+      categoryKey: record.categoryKey,
       categoryName: record.categoryName,
       excerpt: `${record.bodyMd} ${strings(record.properties.outcome).join(" ")}`.replace(/\s+/g, " ").trim().slice(0, RECORD_EXCERPT),
     }));

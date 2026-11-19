@@ -5,7 +5,7 @@ import { hasCandidates, hasRelevantNews, lacksNumbers, matchedTerms, pickCandida
 const record = (id: string, categoryKey: string, title: string, bodyMd = "본문 1건", properties: Record<string, unknown> = {}, isEmpty = false): RecordInput =>
   ({ id, title, categoryKey, categoryName: categoryKey, bodyMd, properties, isEmpty });
 const job = (id: string, title: string, technologies: string[] = [], createdAt = "2026-11-15T00:00:00.000Z", daysLeft: number | null = 20): JobInput =>
-  ({ id, title, company: "회사", family: "프론트엔드", technologies, daysLeft, createdAt });
+  ({ id, title, company: "회사", avatar: { name: "회사", initial: null, avatarBackground: null, avatarColor: null, logoUrl: null }, family: "프론트엔드", technologies, daysLeft, createdAt });
 const activity = (id: string, title: string, daysLeft: number, firstSeenAt = "2026-11-15T00:00:00.000Z"): ActivityInput =>
   ({ id, kind: "contest", title, host: "주최", fields: ["웹/모바일/IT"], url: `https://example.test/${id}`, daysLeft, firstSeenAt });
 
@@ -69,8 +69,8 @@ it("활동은 마감이 가까운 순으로 고른다", () => {
 it("비어 있거나 성과에 숫자가 없는 기록을 손볼 기록으로 고른다", () => {
   const records = [...RECORDS, record("e1", "project", "빈 프로젝트", "", {}, true), record("n1", "experience", "스터디 운영", "격주로 스터디를 열었다.")];
   expect(pickCandidates({ ...base, records }).weakRecords).toEqual([
-    { id: "e1", title: "빈 프로젝트", categoryName: "project", why: "empty" },
-    { id: "n1", title: "스터디 운영", categoryName: "experience", why: "no_numbers" },
+    { id: "e1", title: "빈 프로젝트", categoryKey: "project", categoryName: "project", why: "empty" },
+    { id: "n1", title: "스터디 운영", categoryKey: "experience", categoryName: "experience", why: "no_numbers" },
   ]);
   // 성과 속성에 숫자가 있으면 본문에 없어도 된다. 스킬 기록은 세지 않는다.
   expect(lacksNumbers(record("n2", "experience", "스터디", "격주 스터디.", { outcome: "30회 진행" }))).toBe(false);
