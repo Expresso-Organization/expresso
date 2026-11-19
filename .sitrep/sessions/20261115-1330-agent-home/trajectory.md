@@ -229,3 +229,22 @@
 - 버린 방법: 펴진 상태에만 29px — 접히는 순간 pill 토큰이 높은 상자의 절반으로 그려져 모서리가 35px까지 부풀었다가 줄어듦(측정)
 - 검증(검증 서버 3181): 펼치고 접는 동안 393회 측정, 높이 58.4~142.4px · 모서리 29px 고정. 웹 스타일 · 홈 테스트 29개 통과
 
+### ~02:05 · T16 · PR #250 머지와 운영 배포 · 정리
+- 결정(사용자): 「머지해」. 자동 머지로 `c45c405c` 머지, 배포 실행 `44571060509` 성공(`배포 완료 c45c405c (이전 d5505cd)`)
+- 서버: 웹 · API · 워커 active, 재시작 뒤 오류 0줄, `/login` 200 · `/home` 307, 배포된 CSS에 `--composer-radius:calc(8px + 40px / 2 + 1px)`
+- 정리: 검증 서버(3181 · 4181) 정지, 메인 체크아웃 `launch.json`의 `home-agent-first-*` 두 항목 제거, 브랜치 `fix/home-composer-radius` 로컬 · 원격 삭제, 워크트리는 `origin/main`(분리된 HEAD)
+
+### ~02:15 · T17 시작 · 홈 → 대화 전환
+- 사용자 지시 「이제 홈 화면에서 채팅 화면으로 이어지는 부드럽고 자연스러운 애니메이션을 작업해」
+- 고치기 전(Playwright Chromium, 검증 서버 3181): Enter 뒤 636ms까지 그대로 → 한 번에 대화 화면 → 시작 화면 · 「채팅 사용 권한 확인 중…」 123ms → 빈 스레드 28ms → 보낸 말. `loading.tsx`는 끼지 않음(한 커밋)
+- 환경: 워크트리가 최신 main으로 옮긴 뒤 계약 dist를 다시 짓지 않아 `/api/agent/access` 502 → `@expresso/contracts` 빌드로 해결
+
+### ~02:40 · T17.2 · T17.3 완료 · 구현과 검증
+- `components/motion/ViewTransition.tsx`(React canary의 `ViewTransition`, 없으면 자식만), `home/HomeHandoff.tsx`(전환 타입 `agent-chat-open`을 단 이동 · 대기 상태), `page.tsx` 홈 exit · 대화 enter(key로 가름), 입력창 짝 `agent-composer`, `AgentChat` 첫 렌더 말풍선(`peekAgentHandoff`, 서버 메시지와 같은 id), `global.css` 전환 규칙
+- 발견 1: 두 감싸기가 같은 자리라 key 없이는 React가 update로 봐 enter · exit가 안 붙음
+- 발견 2: 들어오는 대화 화면(불투명)이 옮겨 가는 입력창 그룹을 덮음 → 입력창 그룹 `z-index: 1`
+- 발견 3: `<ViewTransition>`이 생기자 타입 없는 이동(사이드바 지난 대화)에도 화면 전체 교차 250ms가 돎 → `root`의 교차를 끔
+- 검증: 멈춘 프레임 0~400ms에서 입력창이 가운데 → 아래(0~120ms), 말풍선 160ms부터. 동의 필요 계정은 말풍선 없이 입력창에 글 · 동의 창. 사이드바 열기는 애니메이션 없이 끝남. 움직임 줄이기는 애니메이션 없음 · 말풍선 첫 장면. 390×844 정상
+- `pnpm --filter @expresso/web typecheck` 통과, 웹 테스트 485 통과, 웹 빌드 통과(첫 빌드에 `Can't resolve './tokens.css'` 한 번, 다시 지은 두 번은 없음 · 산출 CSS에 규칙과 토큰 있음)
+- 로컬 DB에 검증 대화 14건 생김(dev 계정)
+

@@ -26,6 +26,7 @@ import {
   ToolGroupTrigger,
 } from "@/components/assistant-ui/elements/tool-group.aui";
 import { TooltipIconButton } from "@/components/assistant-ui/elements/tooltip-icon-button";
+import { ViewTransition } from "@/components/motion/ViewTransition";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -94,9 +95,13 @@ export type ThreadComponents = {
   UserMessageHeader?: ComponentType | undefined;
 };
 
+/** 다른 화면의 입력창이 이 입력창 자리로 옮겨 오는 전환. `name`이 같은 요소와 짝을 이루고, `types`의 이동에서만 돈다. */
+export type ComposerTransition = { name: string; types: string[]; className: string };
+
 export type ThreadProps = {
   components?: ThreadComponents | undefined;
   autoFocus?: boolean | undefined;
+  composerTransition?: ComposerTransition | undefined;
 };
 
 const EMPTY_COMPONENTS: ThreadComponents = {};
@@ -141,19 +146,21 @@ const ThreadHistorySkeleton: FC = () => (
 export const Thread: FC<ThreadProps> = ({
   components = EMPTY_COMPONENTS,
   autoFocus = true,
+  composerTransition,
 }) => {
   const isEmpty = useAuiState(isNewChatView);
 
   return (
     <ThreadComponentsContext.Provider value={components}>
-      <ThreadRoot isEmpty={isEmpty} autoFocus={autoFocus} />
+      <ThreadRoot isEmpty={isEmpty} autoFocus={autoFocus} composerTransition={composerTransition} />
     </ThreadComponentsContext.Provider>
   );
 };
 
-const ThreadRoot: FC<{ isEmpty: boolean; autoFocus: boolean }> = ({
+const ThreadRoot: FC<{ isEmpty: boolean; autoFocus: boolean; composerTransition: ComposerTransition | undefined }> = ({
   isEmpty,
   autoFocus,
+  composerTransition,
 }) => {
   const { Welcome = ThreadWelcome, ComposerHeader } = useContext(ThreadComponentsContext);
 
@@ -204,7 +211,17 @@ const ThreadRoot: FC<{ isEmpty: boolean; autoFocus: boolean }> = ({
             <ThreadScrollToBottom />
             <ThreadFollowupSuggestions />
             {ComposerHeader ? <ComposerHeader /> : null}
-            <Composer autoFocus={autoFocus} />
+            {composerTransition ? (
+              <ViewTransition
+                name={composerTransition.name}
+                share={{ ...Object.fromEntries(composerTransition.types.map((type) => [type, composerTransition.className])), default: "none" }}
+                default="none"
+              >
+                <Composer autoFocus={autoFocus} />
+              </ViewTransition>
+            ) : (
+              <Composer autoFocus={autoFocus} />
+            )}
             <AuiIf condition={(s) => isNewChatView(s) && s.composer.isEmpty}>
               <ThreadSuggestions />
             </AuiIf>
@@ -464,9 +481,12 @@ const UserImagePart: ImageMessagePartComponent = (part) => (
 
 const UserMessage: FC = () => {
   const { UserMessageHeader } = useContext(ThreadComponentsContext);
+  // 다른 화면에서 넘겨받아 대화의 첫 장면에 놓인 말. 화면이 고유한 등장을 준다.
+  const arrival = useAuiState((s) => (s.message.metadata.custom as { arrival?: boolean } | undefined)?.arrival === true);
   return (
     <MessagePrimitive.Root
       data-slot="aui_user-message-root"
+      data-arrival={arrival || undefined}
       className="fade-in slide-in-from-bottom-1 animate-in grid auto-rows-auto grid-cols-[minmax(72px,1fr)_auto] content-start gap-y-2 px-2 duration-150 [contain-intrinsic-size:auto_200px] [content-visibility:auto] [&:where(>*)]:col-start-2"
       data-role="user"
     >

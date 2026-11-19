@@ -3,7 +3,6 @@
 import type { Proposal, ProposalAction as Action, ProposalFeed as Feed, ProposalRef, ProposalRunReason } from "@expresso/contracts";
 import type { Route } from "next";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition, type ReactNode } from "react";
 
 import { LogoMark } from "@/components/brand/Logo";
@@ -11,10 +10,10 @@ import { tintOf, type TintHue } from "@/components/ui/company-avatar-tint";
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Icon } from "@/components/ui/Icon";
-import { putAgentHandoff } from "@/features/agent-chat/agent-handoff";
 import { ToolStep } from "@/features/agent-chat/ToolStep";
 import { CAREER_CATEGORY_ICONS } from "@/lib/career-category-icons";
 
+import { useHomeHandoff } from "./HomeHandoff";
 import { ProposalAction } from "./HomeStart";
 import type { BriefingFinding } from "./briefing";
 import styles from "./home-start.module.css";
@@ -91,7 +90,7 @@ function RefRow({ item }: { item: ProposalRef }) {
  * 대화를 여는 버튼은 입력창을 거치지 않고 그 말로 대화를 바로 시작한다(홈의 입력창이 말을 넘기는 길과 같다).
  */
 function ProposalCard({ proposal, disabled, onDismiss }: { proposal: Proposal; disabled: boolean; onDismiss(): void }) {
-  const router = useRouter();
+  const handoff = useHomeHandoff();
   const { start, subject } = proposal;
   const kind = KIND[proposal.action];
   const title = proposal.action === "plan_activity" && subject.activityKind === "hackathon" ? "해커톤 참가" : kind.title;
@@ -106,7 +105,8 @@ function ProposalCard({ proposal, disabled, onDismiss }: { proposal: Proposal; d
           <button
             type="button"
             className={styles.proposalAction}
-            onClick={() => { putAgentHandoff({ text: start.prompt, contexts: start.contexts }); router.push("/home?compose=1"); }}
+            disabled={handoff.pending}
+            onClick={() => handoff.open({ text: start.prompt, contexts: start.contexts })}
           >
             {start.label}
           </button>

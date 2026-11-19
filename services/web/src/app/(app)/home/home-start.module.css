@@ -785,6 +785,23 @@
   from { opacity: 0; translate: 0 8px; }
 }
 
+/*
+ * 대화로 가는 중(서버 응답을 기다리는 동안). 입력창만 남기고 나머지는 위로 살짝 빠지며 사라진다 —
+ * 누른 직후부터 다음 장면으로 넘어가고 있다는 것이 보인다. 등장(rise)과 같은 자리의 animation을 바꿔 써서
+ * 등장의 마지막 값이 사라짐을 덮지 않게 한다.
+ */
+.stage[data-leaving] .brand,
+.stage[data-leaving] .prompts,
+.stage[data-leaving] .widgets,
+.stage[data-leaving] .proposals {
+  animation: leave var(--ex-motion-quick) forwards;
+  pointer-events: none;
+}
+
+@keyframes leave {
+  to { opacity: 0; translate: 0 -6px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero,
   .attached,
@@ -799,5 +816,13 @@
   .composer,
   .input {
     transition: none;
+  }
+
+  .stage[data-leaving] .brand,
+  .stage[data-leaving] .prompts,
+  .stage[data-leaving] .widgets,
+  .stage[data-leaving] .proposals {
+    animation: none;
+    opacity: 0;
   }
 }
