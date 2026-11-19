@@ -18,7 +18,7 @@ const data = (selected: boolean[], extra: Partial<BrewMaterialsCardData> = {}): 
     brewId, jobAnalysisId: "00000000-0000-4000-8000-000000000002", updatedAt: "2026-11-20T00:00:00.000Z", selectionLimit: 2, mode: "solo", lengthPreset: "single", draftCount: 0,
     materials: [row(ids[0], "디자인 시스템 구축", 90, selected[0]!), row(ids[1], "주문 현황 대시보드", 60, selected[1]!), row(ids[2], "접근성 개선", 30, selected[2]!)],
   },
-  beginsInterview: true, basisJobId: null, locked: false, ...extra,
+  beginsInterview: true, basisJobId: null, resumePath: null, ...extra,
 });
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 
@@ -94,13 +94,13 @@ describe("재료 고르기 카드", () => {
   });
 
   it("다음 단계로 넘어간 제작의 카드는 고른 것을 보이기만 하고, 그 단계로 가는 링크만 둔다", async () => {
-    const saved = serve(data([true, true, false], { beginsInterview: false, locked: true }));
+    const saved = serve(data([true, true, false], { beginsInterview: false, resumePath: `/brew/${brewId}/design` }));
     show();
     await screen.findByText("디자인 시스템 구축");
     expect(boxes().every((box) => box.disabled)).toBe(true);
     fireEvent.click(boxes()[1]!);
     expect(saved).toEqual([]);
-    expect(screen.getByRole("link", { name: "AI 대화 이어가기" }).getAttribute("href")).toBe(`/brew/${brewId}/counter`);
+    expect(screen.getByRole("link", { name: "이어서 만들기" }).getAttribute("href")).toBe(`/brew/${brewId}/design`);
     expect(screen.queryByRole("link", { name: "넓게 보기" })).toBeNull();
     expect(screen.queryByRole("button")).toBeNull();
   });

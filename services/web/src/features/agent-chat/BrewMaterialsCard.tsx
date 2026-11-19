@@ -26,7 +26,7 @@ async function request(brewId: string, recordIds?: string[]): Promise<BrewMateri
  * 대화에는 제작 ID만 있고, 목록과 고른 것은 지금의 재료 고르기 화면과 같은 API로 읽고 저장한다 — 두 화면에서 고른 것이 서로 보인다.
  * 고른 목록은 통째로 보낸다. AI를 부르지 않는다.
  * 다음 단계(AI 대화)와 제작 모드 · 정렬은 아직 지금의 화면이 맡는다.
- * 제작이 다음 단계로 넘어간 뒤에도 카드는 대화에 남는다. 그때는 고른 것을 보이기만 한다(`locked`).
+ * 제작이 다음 단계로 넘어간 뒤에도 카드는 대화에 남는다. 그때는 고른 것을 보이기만 하고, 제작이 이어지는 화면으로 가는 링크만 둔다(`resumePath`).
  */
 export function BrewMaterialsCard({ materials: { brewId } }: { materials: AgentBrewMaterials }) {
   const [data, setData] = useState<BrewMaterialsCardData | null>(null);
@@ -47,7 +47,7 @@ export function BrewMaterialsCard({ materials: { brewId } }: { materials: AgentB
   const top = Math.max(...rows.map(row => row.score), 1);
 
   const toggle = async (recordId: string) => {
-    if (data?.locked) return;
+    if (data?.resumePath) return;
     const next = new Set(chosen);
     if (next.has(recordId)) next.delete(recordId);
     else if (next.size >= limit) { setNotice(`한 번에 ${limit}건까지 담을 수 있습니다. 빼고 다시 골라 주세요.`); return; }
@@ -60,8 +60,8 @@ export function BrewMaterialsCard({ materials: { brewId } }: { materials: AgentB
     finally { setSaving(false); }
   };
 
-  const locked = data?.locked ?? false;
-  const next = locked ? "AI 대화 이어가기" : chosen.size === 0 ? "기록 없이 계속" : "AI와 대화 시작";
+  const locked = !!data?.resumePath;
+  const next = chosen.size === 0 ? "기록 없이 계속" : "AI와 대화 시작";
   return <section className={card.card} aria-label="재료 고르기">
     <header className={`${card.head} ${styles.head}`}>
       <Icon name="list-checks" size={15} /><span>재료 고르기</span>
@@ -86,8 +86,8 @@ export function BrewMaterialsCard({ materials: { brewId } }: { materials: AgentB
     </ul> : null}
     {notice ? <p role="alert" className={card.error}>{notice}</p> : null}
     {data ? <div className={`${card.actions} ${styles.actions}`}>
-      {locked ? <span /> : <Link className={styles.wide} href={`/brew/${brewId}/materials` as Route}><Icon name="arrows-out-simple" size={12} />넓게 보기</Link>}
-      {data.beginsInterview && !locked ? <form action={beginInterviewAction}>
+      {data.resumePath ? <span /> : <Link className={styles.wide} href={`/brew/${brewId}/materials` as Route}><Icon name="arrows-out-simple" size={12} />넓게 보기</Link>}
+      {data.resumePath ? <Link className={styles.next} href={data.resumePath as Route}>이어서 만들기</Link> : data.beginsInterview ? <form action={beginInterviewAction}>
         <input type="hidden" name="brewId" value={brewId} />
         {data.basisJobId ? <input type="hidden" name="basisJobId" value={data.basisJobId} /> : null}
         <BeginInterviewButton className={styles.next} saving={saving}>{next}</BeginInterviewButton>

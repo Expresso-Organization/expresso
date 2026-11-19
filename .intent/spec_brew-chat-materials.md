@@ -16,7 +16,7 @@ date: 2026-11-20
 4. 웹의 `GET · PUT /api/brews/:brewId/materials`가 재료 목록과 제작 상태를 읽고, 고른 목록을 통째로 저장한다. 백엔드의 기존 `/v1/brews/:id/materials`를 그대로 쓴다.
 5. `BrewMaterialsCard`가 줄 세운 기록을 체크 목록으로 그리고, 누를 때마다 고른 목록 전체를 저장한다. 한도는 서버가 준 `selectionLimit`이다.
 6. 카드의 「AI와 대화 시작」은 지금의 서버 액션 `beginInterviewAction`을 부른다. 질문이 이미 있거나 만드는 중이면 `/brew/:id/counter` 링크다. 지금의 재료 화면과 카드가 판정 하나(`interviewEntry`)를 쓴다.
-7. 제작이 재료 단계를 지나면(`status`가 `draft`가 아님) 대화에 남은 카드는 고른 것을 보이기만 한다(`locked`) — 체크 칸이 꺼지고 「AI 대화 이어가기」 링크만 남는다. 웹의 `PUT`은 409로 거절한다.
+7. 질문을 만드는 중이거나 제작이 재료 단계를 지나면 대화에 남은 카드는 고른 것을 보이기만 한다 — 체크 칸이 꺼지고, 제작이 이어지는 화면으로 가는 「이어서 만들기」 링크만 남는다(`resumePath`: 질문 만드는 중 · AI 대화는 `/counter`, 그 뒤는 `/design`). 웹의 `PUT`은 409로 거절한다.
 8. 카드가 이미 있을 때 「담을 기록 고르기」를 다시 누르면 그 카드가 보이게 대화를 옮긴다.
 
 ## 설계
@@ -26,7 +26,8 @@ date: 2026-11-20
 - **모듈 경계.** 에이전트 대화 서비스가 받는 `brewStatus`를 `brewState`(상태 + 고른 수)로 넓힌다. 출처는 그대로 `MaterialsApi.getState`다.
 - **다음 화면.** 지금의 서버 액션과 멱등 키(`brewJobKey`)를 그대로 쓴다. 질문 잡을 두 번 맡기지 않도록, 카드는 제작 상태(`interviewSessionId` · `latestJob`)로 단추와 링크를 가른다.
 - **스크롤.** 서버가 붙인 답변은 1단계의 알림과 같은 길(답변 뒤에 답변)로 화면이 끝까지 내려간다.
-- **지나간 단계의 카드.** 백엔드의 재료 저장(`updateSelection`)은 단계를 보지 않고 `referenceVersion`을 올린다. 지금의 재료 화면은 뒤로 돌아가 고치는 길로 그 동작을 쓰므로 백엔드는 그대로 두고, 대화의 카드가 쓰는 웹 경로에서만 막는다.
+- **지나간 단계의 카드.** 백엔드의 재료 저장(`updateSelection`)은 단계를 보지 않고 `referenceVersion`을 올린다. 구성 생성은 그 값이 바뀌면 409로 실패한다(`recipe/service.ts`). 지금의 재료 화면(`/brew/:id/materials`)은 주소로 다시 열 수 있고 같은 저장을 쓴다. 그 화면의 동작은 이 변경의 범위가 아니어서 백엔드는 그대로 두고, 대화의 카드가 쓰는 웹 경로에서만 막는다.
+- **제작의 상태가 바뀌는 때.** `brews.status`는 질문이 다 만들어져 대화 세션이 생길 때 `interviewing`이 된다(`interview/service.ts`의 `start`). 그 사이(질문 잡이 줄에 있거나 도는 중)에도 카드를 잠근다.
 
 ```mermaid
 flowchart TD

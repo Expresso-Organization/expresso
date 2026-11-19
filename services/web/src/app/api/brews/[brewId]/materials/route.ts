@@ -2,7 +2,7 @@ import { UuidSchema } from "@expresso/contracts";
 
 import { ApiError } from "@/lib/api/client";
 import { brews } from "@/lib/api/endpoints";
-import { BrewMaterialsCardResponseSchema, SelectBrewMaterialsSchema, interviewEntry } from "@/lib/brew-materials-card";
+import { BrewMaterialsCardResponseSchema, SelectBrewMaterialsSchema, interviewEntry, resumePath } from "@/lib/brew-materials-card";
 import { readAccessToken } from "@/lib/session";
 
 export const runtime = "nodejs";
@@ -22,7 +22,7 @@ const MESSAGES: Record<number, string> = {
 
 async function read(token: string, brewId: string, materials = brews.materials(token, brewId).then((response) => response.data)) {
   const [list, brew] = await Promise.all([materials, brews.get(token, brewId).then((response) => response.data)]);
-  return BrewMaterialsCardResponseSchema.parse({ data: { materials: list, ...interviewEntry(brew), locked: brew.status !== "draft" } });
+  return BrewMaterialsCardResponseSchema.parse({ data: { materials: list, ...interviewEntry(brew), resumePath: resumePath(brew) } });
 }
 
 async function handle(request: Request, context: { params: Promise<{ brewId: string }> }) {
@@ -34,8 +34,8 @@ async function handle(request: Request, context: { params: Promise<{ brewId: str
     if (request.method === "GET") return Response.json(await read(token, brewId));
     const body = SelectBrewMaterialsSchema.safeParse(await request.json().catch(() => null));
     if (!body.success) return Response.json({ error: { message: "입력 내용을 확인해 주세요." } }, { status: 400 });
-    // 재료 단계를 지난 제작은 이 길로 고치지 않는다. 대화에 남은 옛 카드가 다음 단계의 재료를 바꾸지 못하게 한다.
-    if ((await brews.get(token, brewId)).data.status !== "draft") return Response.json({ error: { message: "다음 단계로 넘어간 제작입니다. 고른 기록은 여기서 바꾸지 않습니다." } }, { status: 409 });
+    // 질문을 만드는 중이거나 재료 단계를 지난 제작은 이 길로 고치지 않는다. 대화에 남은 옛 카드가 다음 단계의 재료를 바꾸지 못하게 한다.
+    if (resumePath((await brews.get(token, brewId)).data)) return Response.json({ error: { message: "다음 단계로 넘어간 제작입니다. 고른 기록은 여기서 바꾸지 않습니다." } }, { status: 409 });
     return Response.json(await read(token, brewId, brews.selectMaterials(token, brewId, body.data.recordIds).then((response) => response.data)));
   } catch (error) {
     if (error instanceof ApiError) return Response.json({ error: { message: MESSAGES[error.status] ?? "재료를 불러오지 못했습니다. 다시 시도해 주세요." } }, { status: error.status });
