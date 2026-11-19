@@ -102,6 +102,8 @@
 
 .listRow:hover {
   background: var(--ex-bg-tint);
+  /* 전역 링크 호버(`a:where(:hover)`)가 클래스 색을 덮지 않으므로 여기서 진해진다 */
+  color: var(--ex-fg-strong);
 }
 
 .listRow[aria-current="page"] {
