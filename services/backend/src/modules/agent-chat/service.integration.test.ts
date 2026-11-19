@@ -396,6 +396,40 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect(await commitments.open(owner)).toEqual([]);
     expect(await commitments.open(other)).toHaveLength(1);
   });
+  it("이미 있는 기록에 더하기: 대화에 연결되지 않은 기록의 끝에 사용자가 한 말을 더해 바로 적용하고, 카드에서 되돌린다. 하지 않은 말과 남의 기록은 받지 않는다", async () => {
+    const owner = (await new MongoIdentityService(fixture.resource).signup({ email: `${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "더하기 검증" })).user.id;
+    await consent.grant(owner, ["career_records"], CONSENT_POLICY_VERSION);
+    const category = (await career.listCategories(owner))[0]!;
+    const target = (await career.createRecord(owner, randomUUID(), { categoryId: category.id, title: "졸업 프로젝트", bodyMd: "채팅 서버를 만들었다", properties: {} })).record.id;
+    const text = async (id: string) => (await documents.bootstrap(owner, id)).document.content.map(block => JSON.stringify(block)).join("\n");
+    let proposalId = "";
+    const service = make({ run: async input => {
+      const said = input.messages.at(-1)!;
+      const sources = [{ messageId: said.id, quote: "Spring Boot로 만들었어요" }];
+      // 연결되지 않은 기록은 문장을 고치는 제안을 받지 않고, 더하기로 가라고 알린다.
+      await expect(input.propose(target, { summary: "고침", commands: [], propertyChanges: [] })).rejects.toBeInstanceOf(AgentToolRejection);
+      await expect(input.appendToRecord({ recordId: target, bodyMd: "## 기술\n\nKafka로 만들었다", sources: [{ messageId: said.id, quote: "Kafka로 만들었어요" }] })).rejects.toBeInstanceOf(AgentToolRejection);
+      await expect(input.appendToRecord({ recordId: recordId, bodyMd: "## 기술\n\nSpring Boot", sources })).rejects.toBeInstanceOf(AgentToolRejection);
+      const proposal = await input.appendToRecord({ recordId: target, bodyMd: "## 기술\n\nJava 17과 Spring Boot로 만들었다", sources });
+      proposalId = proposal.proposalId;
+      expect(proposal.status).toBe("applied");
+      await input.emit({ type: "tool", tool: { id: "append", name: "기록에 더하기", status: "complete", summary: proposal.summary, proposal } });
+      await input.emit({ type: "text", text: "기록에 더했습니다." });
+    } });
+    const conversation = await service.create(owner, []);
+    await service.send(owner, conversation.id, { requestId: randomUUID(), text: "채팅 서버는 Java 17과 Spring Boot로 만들었어요" });
+    await expect.poll(async () => (await service.get(owner, conversation.id)).run?.status).toBe("complete");
+    const after = await text(target);
+    expect(after).toContain("채팅 서버를 만들었다");
+    expect(after).toContain("Java 17과 Spring Boot로 만들었다");
+    const tool = (await service.get(owner, conversation.id)).messages.at(-1)!.tools[0]!;
+    expect(tool).toMatchObject({ name: "기록에 더하기", summary: "「졸업 프로젝트」에 내용을 더했습니다.", proposal: { proposalId, status: "applied" } });
+    expect(tool.beforeDocument).toBeTruthy();
+    // 카드의 되돌리기는 기록 변경 제안과 같은 길을 쓴다.
+    const undone = await service.approve(owner, conversation.id, { proposalId, action: "undo", expectedDocumentVersion: tool.proposal!.appliedDocumentVersion! });
+    expect(undone.messages.at(-1)!.tools[0]!.undone).toBe(true);
+    expect(await text(target)).not.toContain("Spring Boot로 만들었다");
+  });
   it("목표 진단: 집계를 저장하고, 근거가 기록에 있는 대조만 받으며, 「부족」은 사용자가 답한 뒤에만 받는다. 다음 실행의 기억에 요약이 실리고 목표가 바뀌면 다시 진단을 요구한다", async () => {
     const consultant = new ConsultantService(fixture.resource); const store = new ConsultantDiagnoses(fixture.resource);
     const identity = new MongoIdentityService(fixture.resource);

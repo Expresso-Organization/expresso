@@ -3,12 +3,13 @@ import { PageElementIssues, PageServiceError, type PageApi } from "../page/index
 import { elementTitle } from "@expresso/portfolio-renderer";
 import { AgentCredentials } from "./credentials.js";
 import { randomUUID } from "node:crypto";
-import { AgentConversationSchema, type AgentDiagnosisInput, type ConsultantDiagnosis, type ConsultantCommitment, type AgentSavedRecord, isStructuredGroup, type AgentPageElementEditInput, type AgentPageEdit, type StructuredPortfolioSnapshot, type CareerDocumentBootstrap, type AgentConversation, type AgentContext, type AgentMessage, type SendAgentMessage, type AgentApproval, type AgentRecordDraftDecision, type AgentRecordDraftInput, type AgentGoalDraftDecision, type AgentGoalDraftInput, type AgentPlanDecision, type AgentReplanDecision, type ReplanProposalInput, type UpdateTaskProgress, type GapReview, type GapReviewDraft, type PlanProposalInput, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
+import { AgentConversationSchema, type AgentRecordAppendInput, type AgentDiagnosisInput, type ConsultantDiagnosis, type ConsultantCommitment, type AgentSavedRecord, isStructuredGroup, type AgentPageElementEditInput, type AgentPageEdit, type StructuredPortfolioSnapshot, type CareerDocumentBootstrap, type AgentConversation, type AgentContext, type AgentMessage, type SendAgentMessage, type AgentApproval, type AgentRecordDraftDecision, type AgentRecordDraftInput, type AgentGoalDraftDecision, type AgentGoalDraftInput, type AgentPlanDecision, type AgentReplanDecision, type ReplanProposalInput, type UpdateTaskProgress, type GapReview, type GapReviewDraft, type PlanProposalInput, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
 import { mongoCollections, type AgentConversationDoc } from "@expresso/database";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { AgentToolRejection, type AgentMemory, type AgentRecordText, type AgentRuntime } from "../../platform/agent/runtime.js";
+import { markdownToCareerDocument } from "@expresso/editor";
 import { buildReview, hash, normalize, recordText, reviewIssues } from "./requirement-review.js";
-import { buildDraft, draftIssues } from "./record-draft.js";
+import { buildDraft, draftIssues, sourceIssues } from "./record-draft.js";
 import { buildChoice, buildForm, checkReply, choiceIssues, formIssues } from "./ui-parts.js";
 import { digestConversation } from "./digest.js";
 import { ConsultantInputError, ConsultantLimitError, ConsultantNotFoundError, seoulDay, type ConsultantApi, type ConsultantCommitmentApi, type ConsultantDiagnosisApi, type ConsultantProfile } from "../consultant/index.js";
@@ -250,6 +251,25 @@ export class AgentChatService {
     if (issues.length || !category) throw new AgentToolRejection(issues);
     const { record } = await this.career.createRecord(row.userId, `agent-save:${row._id}:${key}`, { categoryId: category.id, title: input.title, bodyMd: input.bodyMd, properties: {} }, { status: "organized", origin: "ai" });
     return { recordId: record.id, title: input.title, categoryName: category.name, bodyMd: input.bodyMd, sources: input.sources, undone: false };
+  }
+  /**
+   * 이미 있는 기록의 끝에 새 내용을 더한다. 대화에 연결되지 않은 기록에도 된다 — 홈의 대화에는 기록이 연결되어 있지 않다.
+   * 더할 글은 이 대화에서 사용자가 한 말이어야 한다(새 기록과 같은 출처 규칙). 문서의 마지막 블록 뒤에 넣는 제안을 만들어 바로 적용하므로
+   * 사용자가 쓴 문장은 바뀌지 않고, 카드의 「되돌리기」로 되돌린다.
+   */
+  private async appendToRecord(row: AgentConversationDoc, messages: readonly AgentMessage[], input: AgentRecordAppendInput) {
+    const issues = sourceIssues(input.sources, messages);
+    if (issues.length) throw new AgentToolRejection(issues);
+    await this.consent.require(row.userId, "partial_edit");
+    let doc: Awaited<ReturnType<CareerDocumentApi["bootstrap"]>>; let title: string;
+    try { title = (await this.career.getRecord(row.userId, input.recordId)).title; doc = await this.documents.bootstrap(row.userId, input.recordId); }
+    catch { throw new AgentToolRejection([`기록 ${input.recordId}를 찾을 수 없습니다. list_career_records의 id를 쓰십시오.`]); }
+    const blocks = markdownToCareerDocument(input.bodyMd).content;
+    if (!blocks.length) throw new AgentToolRejection(["bodyMd에 더할 내용이 없습니다."]);
+    const draft = { summary: `「${title}」에 내용을 더했습니다.`.slice(0, 500), commands: [{ type: "insertBlocks" as const, afterBlockId: doc.document.content.at(-1)?.id ?? null, blocks }], propertyChanges: [] };
+    const proposal = await this.documents.createPreparedAiProposal(row.userId, input.recordId, { prompt: messages.filter(item => item.role === "user").at(-1)?.text ?? "", selection: { blockIds: doc.document.content.map(block => block.id) } }, draft);
+    const applied = await this.documents.applyAiProposal(row.userId, input.recordId, { recordId: input.recordId, proposalId: proposal.proposalId, expectedDocumentVersion: doc.documentVersion, commandIndexes: proposal.commands.map((_, index) => index), propertyChangeIndexes: [] });
+    return { proposal: applied, before: doc.document };
   }
   /** 저장을 되돌린다. 기록은 지우지 않고 휴지통으로 옮긴다 — 사용자가 휴지통에서 되살릴 수 있다. */
   async undoSavedRecord(userId: string, id: string, recordId: string) {
@@ -622,6 +642,12 @@ export class AgentChatService {
             throw error;
           }
         },
+        appendToRecord: async addition => {
+          if (controller.signal.aborted) throw new Error("cancelled");
+          const { proposal, before } = await this.appendToRecord(row, [...row.messages.slice(0, -1), message], addition);
+          beforeDocuments.set(proposal.proposalId, before);
+          return proposal;
+        },
         goalDemand: () => this.goalDemand(row.userId),
         recordDiagnosis: assessment => this.recordDiagnosis(row.userId, [...row.messages.slice(0, -1), message], assessment),
         makeCommitment: commitment => this.commitment(() => this.commitments!.create(row.userId, commitment, row._id)),
@@ -639,7 +665,8 @@ export class AgentChatService {
           },
         },
         propose: async (recordId, draft) => {
-          if (!row.contexts.some(ref => ref.kind === "record" && ref.id === recordId)) throw new AgentChatError(403, "대화에 연결된 기록만 변경할 수 있습니다.");
+          // 연결되지 않은 기록은 블록 id를 모델이 알 수 없어 고칠 수 없다. 까닭과 다른 길을 알려 같은 호출을 되풀이하지 않게 한다.
+          if (!row.contexts.some(ref => ref.kind === "record" && ref.id === recordId)) throw new AgentToolRejection(["이 기록은 대화에 연결되어 있지 않아 propose_record_edit으로 고칠 수 없습니다. 내용을 더하려면 append_to_record를 쓰십시오. 기존 문장을 고쳐야 하면 사용자에게 그 기록을 대화에 연결해 달라고 하십시오."]);
           await this.consent.require(row.userId, "partial_edit");
           if (controller.signal.aborted) throw new Error("cancelled");
           const doc = await this.documents.bootstrap(row.userId, recordId);

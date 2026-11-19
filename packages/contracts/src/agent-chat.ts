@@ -58,6 +58,13 @@ export const AgentRecordDraftInputSchema = z.strictObject({
   bodyMd: z.string().trim().min(1).max(20_000),
   sources: z.array(recordDraftSourceSchema).min(1).max(10),
 });
+/** 이미 있는 기록의 끝에 더할 내용. 새 기록과 같은 출처 규칙을 따른다 — 이 대화에서 사용자가 한 말이어야 한다. */
+export const AgentRecordAppendInputSchema = z.strictObject({
+  recordId: UuidSchema,
+  bodyMd: z.string().trim().min(1).max(4_000),
+  sources: z.array(recordDraftSourceSchema).min(1).max(10),
+});
+export type AgentRecordAppendInput = z.infer<typeof AgentRecordAppendInputSchema>;
 export const AgentRecordDraftSchema = z.strictObject({
   draftId: UuidSchema,
   title: AgentRecordDraftInputSchema.shape.title,
