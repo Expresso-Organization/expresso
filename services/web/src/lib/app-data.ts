@@ -14,6 +14,13 @@ export const homeEngagement = cache(async (accessToken: string) =>
 );
 
 /**
+ * 사이드바의 「포트폴리오」 묶음. 최근 수정순 다섯 개 — 더 있는지는 `page.hasNextPage`가 말한다.
+ */
+export const recentPortfolios = cache(async (accessToken: string) =>
+  portfolioApi.list(accessToken, { limit: 5 }),
+);
+
+/**
  * 사이드바의 "관심 공고" 묶음. 06 공고 탐색의 관심 공고 레일도 같은 목록을 쓴다.
  * 마감이 가까운 것부터 다섯 건 — 건수는 `summary.total`이 따로 말한다.
  */

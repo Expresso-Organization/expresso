@@ -1,16 +1,23 @@
+import type { CareerCategory } from "@expresso/contracts";
 import Link from "next/link";
 
 import { Icon } from "@/components/ui/Icon";
 
 import { AccountLink } from "./AccountLink";
+import { SidebarCategories } from "./SidebarCategories";
 import { SidebarConversations } from "./SidebarConversations";
 import { SidebarFrame } from "./SidebarFrame";
 import { SidebarNav, type SidebarSection } from "./SidebarNav";
+import { SidebarPortfolios, type SidebarPortfolio } from "./SidebarPortfolios";
 import styles from "./Sidebar.module.css";
 
-export type { SidebarSection };
+export type { SidebarPortfolio, SidebarSection };
 
 export interface SidebarProps {
+  categories: readonly CareerCategory[];
+  portfolios?: readonly SidebarPortfolio[];
+  /** 세운 포트폴리오 말고도 더 있는가 — 있으면 「모두 보기」 줄이 선다. */
+  morePortfolios?: boolean;
   displayName: string;
   /** 세션 주인이 관리자일 때만 관리 화면으로 가는 줄이 선다. */
   admin?: boolean;
@@ -20,6 +27,9 @@ export interface SidebarProps {
 }
 
 export function Sidebar({
+  categories,
+  portfolios = [],
+  morePortfolios = false,
   displayName,
   admin = false,
   quotaUsed,
@@ -78,7 +88,10 @@ export function Sidebar({
       }
     >
       <SidebarNav />
+      {/* 묶음은 각자 접힌다. 대화 · 포트폴리오는 0건이면 묶음째 서지 않는다 */}
       <SidebarConversations />
+      <SidebarPortfolios portfolios={portfolios} more={morePortfolios} />
+      <SidebarCategories categories={categories} />
     </SidebarFrame>
   );
 }
