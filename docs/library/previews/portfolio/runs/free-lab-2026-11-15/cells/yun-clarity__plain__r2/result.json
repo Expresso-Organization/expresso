@@ -1,0 +1,30 @@
+{
+  "label": "yun-clarity__plain__r2",
+  "input": "yun-clarity",
+  "persona": "yun",
+  "design": "clarity",
+  "arm": "plain",
+  "rep": 2,
+  "startedAt": "2026-11-15T07:20:07.236Z",
+  "wallMs": 100613,
+  "model": "claude-sonnet-5-5",
+  "calls": 1,
+  "costUsd": 0.3516,
+  "outputTokens": 17751,
+  "inputTokens": 6,
+  "aiMs": 99238,
+  "briefCostUsd": 0,
+  "briefMs": 0,
+  "rationale": "수치가 가장 강한 재료라 히어로에 세 수치와 3.8초·1.9초 로딩 비교를 두고, 단일 칼럼에서 요약 → App Router 과정 → 모아 UI 순서 → 접근성으로 내려가게 했다. 기록이 얇은 결제 접근성은 범위를 지어내지 않고 짧게 두었고, 연락처는 받지 못해 넣지 않았다.",
+  "plan": null,
+  "ungrounded": [
+    "100"
+  ],
+  "removed": [],
+  "blockedTags": 0,
+  "qa": "ready",
+  "htmlBytes": 8837,
+  "cssBytes": 6581,
+  "promptHash": "04672f13c7f57a4e246b0cb73c0591bc9b7656127d3e1df7c0d7272351dd6cf8",
+  "skillSha256": null
+}

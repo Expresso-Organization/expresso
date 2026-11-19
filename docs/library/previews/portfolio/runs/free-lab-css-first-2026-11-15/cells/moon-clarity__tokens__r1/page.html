@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>문가령 포트폴리오</title>
+<meta name="description" content="대표 증거인 '3일 → 반나절'을 숫자 대신 길이 비교 막대로 첫 화면에 세우고, 섹션마다 형태를 달리해 실험 표준화는 문제-해결-결과 선, 검색 이탈은 두 막대, 데이터 기반은 표로 보였습니다.">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Nanum+Myeongjo:wght@400;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --page-sans:"Pretendard Variable",Pretendard,-apple-system,system-ui,sans-serif;
+  --page-serif:"Nanum Myeongjo","Noto Serif KR",serif;
+  --page-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --page-display:"Outfit",var(--page-sans);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font-family:var(--page-sans);word-break:keep-all;-webkit-font-smoothing:antialiased}
+img{max-width:100%;height:auto;display:block}
+svg{max-width:100%}
+/* 가로 스크롤은 폰에서 지면을 무너뜨린다. 여기서 한 번 더 막는다. */
+body{overflow-x:hidden}
+</style>
+
+<style>
+:root{--ink:#17202a;--mute:#566274;--blue:#2563eb;--blue-d:#1d4ed8;--tint:#eef3fe;--line:#dde3ec;--sans:var(--page-sans),'Pretendard','Noto Sans KR','Apple SD Gothic Neo',system-ui,sans-serif;--num:var(--page-display),'Outfit',var(--page-sans),sans-serif}
+*{box-sizing:border-box}
+.cl{font-family:var(--sans);color:var(--ink);background:#fff;font-size:17px;line-height:1.75;word-break:keep-all;overflow-wrap:break-word}
+.cl *{margin:0}
+.cl-wrap{max-width:1080px;margin:0 auto;padding:0 28px}
+.cl a:focus-visible,.cl summary:focus-visible,.cl-row:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+.cl-hero{padding:72px 0 64px;border-bottom:1px solid var(--line)}
+.cl-name{font-size:18px;font-weight:700;color:var(--blue);margin-bottom:14px}
+.cl-h1{font-size:44px;line-height:1.25;font-weight:800;letter-spacing:-.02em;max-width:18em}
+.cl-lead{margin-top:20px;max-width:38em;color:var(--mute);font-size:18px}
+.cl-proof{margin-top:48px;padding:28px;background:var(--tint);border-radius:6px}
+.cl-proof-t{font-weight:700;font-size:17px;margin-bottom:20px}
+.cl-bars{display:grid;gap:12px}
+.cl-barrow{display:grid;grid-template-columns:72px 1fr;align-items:center;gap:14px}
+.cl-barlabel{font-size:14px;color:var(--mute);font-weight:600}
+.cl-track{display:block;height:34px;background:#fff;border:1px solid var(--line);border-radius:3px;position:relative;overflow:hidden}
+.cl-fill{display:block;height:100%;background:#9fb4d6;width:100%;transform-origin:left;animation:clgrow 1.1s cubic-bezier(.2,.7,.2,1) both}
+.cl-fill.is-new{background:var(--blue);width:16.7%;animation-delay:.5s}
+.cl-val{position:absolute;left:12px;top:0;line-height:34px;font-size:14px;font-weight:700;color:#fff;white-space:nowrap}
+.cl-val.dark{color:var(--ink)}
+@keyframes clgrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.cl-proofnote{margin-top:18px;font-size:15px;color:var(--mute);display:flex;flex-wrap:wrap;gap:6px 28px}
+.cl-proofnote b{color:var(--ink);font-family:var(--num);font-weight:700}
+.cl-sec{padding:80px 0;border-bottom:1px solid var(--line)}
+.cl-h2{font-size:28px;line-height:1.4;font-weight:800;letter-spacing:-.015em;max-width:24em}
+.cl-p{margin-top:18px;max-width:40em}
+.cl-defs{margin-top:40px;display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:2px solid var(--ink)}
+.cl-def{padding:20px 24px 4px 0}
+.cl-def+.cl-def{padding-left:24px;border-left:1px solid var(--line)}
+.cl-def dt{font-weight:800;font-size:18px}
+.cl-def dd{color:var(--mute);margin-top:4px;font-size:16px}
+.cl-meta{margin-top:10px;color:var(--mute);font-size:15px;font-weight:600}
+.cl-story{margin-top:44px;display:grid;gap:0;border-left:3px solid var(--line);margin-left:6px}
+.cl-step{padding:0 0 32px 28px;position:relative}
+.cl-step::before{content:'';position:absolute;left:-10px;top:10px;width:17px;height:17px;border-radius:50%;background:#fff;border:3px solid var(--line)}
+.cl-step.is-result::before{border-color:var(--blue);background:var(--blue)}
+.cl-step h3{font-size:19px;font-weight:800}
+.cl-step p{max-width:38em;margin-top:6px}
+.cl-step.is-result h3{color:var(--blue)}
+.cl-metrics{margin-top:24px;display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.cl-m{padding:22px;background:var(--tint);border-radius:6px}
+.cl-m-t{font-size:15px;font-weight:700;color:var(--mute)}
+.cl-m-n{font-family:var(--num);font-weight:800;font-size:40px;line-height:1.2;margin-top:6px;letter-spacing:-.02em}
+.cl-m-n small{font-size:20px;font-weight:700;color:var(--mute)}
+.cl-m-n em{font-style:normal;color:var(--blue)}
+.cl-dots{display:grid;grid-template-columns:repeat(15,1fr);gap:4px;margin-top:14px}
+.cl-dot{display:block;aspect-ratio:1;border-radius:50%;background:#c3d2ee}
+.cl-dot.on{background:var(--blue)}
+.cl-dot.old{background:var(--ink)}
+.cl-mini{display:block;height:14px;border-radius:2px;margin-top:8px}
+.cl-mini.a{background:#c3d2ee;width:100%}
+.cl-mini.b{background:var(--blue);width:70%}
+.cl-miniL{display:flex;justify-content:space-between;font-size:13px;color:var(--mute);margin-top:12px}
+.cl-tags{margin-top:28px;display:flex;flex-wrap:wrap;gap:8px}
+.cl-tag{display:inline-block;padding:4px 12px;border:1px solid var(--line);border-radius:999px;font-size:14px;font-weight:600;color:var(--ink);line-height:1.6}
+.cl-split{margin-top:36px;display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start}
+.cl-two{display:grid;gap:16px}
+.cl-two .cl-barrow{grid-template-columns:56px 1fr}
+.cl-flow{margin-top:8px;display:grid;gap:0}
+.cl-flowi{display:grid;grid-template-columns:auto 1fr;gap:14px;padding:16px 0;border-top:1px solid var(--line)}
+.cl-flowi:last-child{border-bottom:1px solid var(--line)}
+.cl-no{font-family:var(--num);font-weight:800;color:var(--blue);font-size:20px;line-height:1.5}
+.cl-flowi b{display:block}
+.cl-flowi span.t{color:var(--mute);font-size:16px;display:block}
+.cl-table{margin-top:36px;border-top:2px solid var(--ink)}
+.cl-row{display:grid;grid-template-columns:140px 1fr;gap:24px;padding:16px 0;border-bottom:1px solid var(--line)}
+.cl-row dt{font-weight:800}
+.cl-row dd{color:var(--ink)}
+.cl-ev{padding:72px 0 96px}
+.cl-evlist{margin-top:32px;list-style:none;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:0 48px}
+.cl-evlist li{padding:14px 0;border-bottom:1px solid var(--line);font-size:15px;line-height:1.65;color:var(--mute)}
+.cl-evlist b{display:block;color:var(--ink);font-size:16px}
+.cl-evlist b i{font-style:normal;font-weight:600;font-size:13px;color:var(--blue);margin-left:8px}
+@media (max-width:820px){.cl-h1{font-size:34px}.cl-defs,.cl-metrics,.cl-split,.cl-evlist{grid-template-columns:1fr}.cl-def+.cl-def{padding-left:0;border-left:0;border-top:1px solid var(--line);margin-top:16px;padding-top:20px}.cl-split{gap:32px}.cl-row{grid-template-columns:1fr;gap:2px}.cl-sec{padding:56px 0}.cl-hero{padding:48px 0}.cl-wrap{padding:0 20px}.cl-evlist{gap:0}}
+@media (prefers-reduced-motion:reduce){.cl-fill{animation:none}}
+</style>
+</head>
+<body>
+<main class="cl">
+<header class="cl-hero"><div class="cl-wrap">
+<p class="cl-name">문가령 · 데이터 분석가</p>
+<h1 class="cl-h1">반복되는 실험 분석을 절차와 도구로 만듭니다</h1>
+<p class="cl-lead">A/B 테스트 분석 절차를 Python 패키지와 Streamlit 화면으로 표준화해 리포트 작성을 3일에서 반나절로 줄였습니다. dbt, Airflow, BigQuery로 데이터 마트와 배치도 직접 운영합니다.</p>
+<div class="cl-proof" role="img" aria-label="실험 결과 리포트 작성 시간 3일에서 반나절로">
+<p class="cl-proof-t">실험 결과 리포트 작성 시간</p>
+<div class="cl-bars">
+<div class="cl-barrow"><span class="cl-barlabel">이전</span><span class="cl-track"><span class="cl-fill"></span><span class="cl-val dark">3일</span></span></div>
+<div class="cl-barrow"><span class="cl-barlabel">이후</span><span class="cl-track"><span class="cl-fill is-new"></span><span class="cl-val dark" style="left:calc(16.7% + 12px)">반나절</span></span></div>
+</div>
+<p class="cl-proofnote"><span>분기당 실험 수 <b>6건 → 15건</b></span><span>필요 표본 크기 평균 <b>약 30%</b> 감소</span><span>결과 0건 검색 비율 <b>7.4% → 4.1%</b></span></p>
+</div>
+</div></header>
+
+<section class="cl-sec"><div class="cl-wrap">
+<h2 class="cl-h2">실험과 분석을 반복 가능한 절차로 만드는 데이터 분석가</h2>
+<p class="cl-p">A/B 테스트와 CUPED 같은 실험 분석, 검색 이탈 같은 제품 문제 분석을 다뤘습니다. 분석을 한 번 내는 데서 끝내지 않고, 반복되는 분석을 절차와 도구로 만듭니다. 실험 분석은 Python 패키지와 Streamlit 화면으로 표준화했습니다. dbt, Airflow, BigQuery로 데이터 마트와 배치까지 직접 운영합니다.</p>
+<dl class="cl-defs">
+<div class="cl-def"><dt>실험 분석</dt><dd>A/B 테스트, CUPED</dd></div>
+<div class="cl-def"><dt>제품 문제 분석</dt><dd>검색 후 이탈 세션 분석</dd></div>
+<div class="cl-def"><dt>데이터 기반</dt><dd>dbt, Airflow, BigQuery</dd></div>
+</dl>
+</div></section>
+
+<section class="cl-sec"><div class="cl-wrap">
+<h2 class="cl-h2">3일 걸리던 실험 리포트를 반나절로: A/B 테스트 분석 표준화</h2>
+<p class="cl-meta">2025.08 – 2026.02</p>
+<p class="cl-p">실험마다 새로 짜던 분석 노트북을 하나의 패키지와 화면으로 묶어, 리포트 시간과 필요 표본을 함께 줄였습니다.</p>
+<div class="cl-story">
+<div class="cl-step"><h3>문제</h3><p>실험마다 분석가가 노트북을 새로 짜다 보니 결과 하나를 내는 데 3일 정도 걸렸습니다. 표본 크기 계산을 건너뛰는 경우도 있었습니다.</p></div>
+<div class="cl-step"><h3>해결</h3><p>실험 설계서 양식, 표본 크기 계산, 결과 리포트를 하나의 Python 패키지와 Streamlit 화면으로 묶었습니다.</p></div>
+<div class="cl-step"><h3>CUPED</h3><p>사전 기간 매출을 공변량으로 쓰는 분산 축소(CUPED)를 기본 옵션으로 넣었습니다.</p></div>
+<div class="cl-step is-result"><h3>결과</h3><p>실험 결과 리포트 작성이 3일에서 반나절로 줄었습니다. 분기당 실험 수는 6건에서 15건으로 늘었고, 필요 표본 크기는 평균 약 30% 줄었습니다.</p></div>
+</div>
+<div class="cl-metrics">
+<div class="cl-m"><p class="cl-m-t">실험 결과 리포트 작성</p><p class="cl-m-n">3일 → <em>반나절</em></p></div>
+<div class="cl-m"><p class="cl-m-t">분기당 실험 수</p><p class="cl-m-n">6건 → <em>15건</em></p>
+<div class="cl-dots" aria-hidden="true"><i class="cl-dot old"></i><i class="cl-dot old"></i><i class="cl-dot old"></i><i class="cl-dot old"></i><i class="cl-dot old"></i><i class="cl-dot old"></i><i class="cl-dot on"></i><i class="cl-dot on"></i><i class="cl-dot on"></i><i class="cl-dot on"></i><i class="cl-dot on"></i><i class="cl-dot on"></i><i class="cl-dot on"></i><i class="cl-dot on"></i><i class="cl-dot on"></i></div></div>
+<div class="cl-m"><p class="cl-m-t">필요 표본 크기 평균</p><p class="cl-m-n"><em>약 30%</em> <small>감소</small></p>
+<div aria-hidden="true"><span class="cl-mini a"></span><span class="cl-mini b"></span></div></div>
+</div>
+<div class="cl-tags"><span class="cl-tag">Python 패키지</span><span class="cl-tag">Streamlit</span><span class="cl-tag">CUPED</span></div>
+</div></section>
+
+<section class="cl-sec"><div class="cl-wrap">
+<h2 class="cl-h2">검색 후 나가는 세션을 검색어 유형별로 쪼개 보기</h2>
+<p class="cl-meta">2023.11 – 2024.04</p>
+<p class="cl-p">'검색 후 이탈이 많다'는 막연한 문제 제기를 검색어 유형별 분해로 좁혀, 동의어 사전 보강 제안으로 연결했습니다.</p>
+<div class="cl-split">
+<div class="cl-flow">
+<div class="cl-flowi"><span class="cl-no">1</span><div><b>문제 제기</b><span class="t">검색 후 상품 클릭 없이 이탈하는 세션이 많다.</span></div></div>
+<div class="cl-flowi"><span class="cl-no">2</span><div><b>분해</b><span class="t">검색어 유형별로 이탈을 나눠 원인 구간을 좁혔다.</span></div></div>
+<div class="cl-flowi"><span class="cl-no">3</span><div><b>제안</b><span class="t">결과 0건 검색어 상위 200개를 정리해 동의어 사전 보강을 제안했다.</span></div></div>
+</div>
+<div class="cl-m">
+<p class="cl-m-t">결과 0건 검색 비율</p>
+<p class="cl-m-n">7.4% → <em>4.1%</em></p>
+<div class="cl-two" style="margin-top:20px" role="img" aria-label="7.4퍼센트에서 4.1퍼센트로 감소">
+<div class="cl-barrow"><span class="cl-barlabel">이전</span><span class="cl-track"><span class="cl-fill" style="width:100%"></span><span class="cl-val dark">7.4%</span></span></div>
+<div class="cl-barrow"><span class="cl-barlabel">이후</span><span class="cl-track"><span class="cl-fill is-new" style="width:55.4%"></span><span class="cl-val">4.1%</span></span></div>
+</div>
+</div>
+</div>
+</div></section>
+
+<section class="cl-sec"><div class="cl-wrap">
+<h2 class="cl-h2">분석이 기대는 데이터 기반을 직접 만들고 운영합니다</h2>
+<p class="cl-p">분석가로서 데이터 마트, 배치, 비용, 시각화까지 직접 다룹니다.</p>
+<dl class="cl-table">
+<div class="cl-row"><dt>데이터 마트</dt><dd>dbt로 주문 데이터 마트를 옮기면서 모델 구조, dbt test, dbt docs를 운영했습니다.</dd></div>
+<div class="cl-row"><dt>배치</dt><dd>Airflow로 데이터 마트 일일 갱신과 발주량 예측 배치를 DAG로 작성했습니다.</dd></div>
+<div class="cl-row"><dt>비용</dt><dd>BigQuery 파티션과 클러스터링 설정으로 대시보드 집계 비용을 줄였습니다.</dd></div>
+<div class="cl-row"><dt>분석</dt><dd>SQL(윈도 함수, CTE), Python(pandas, scikit-learn, statsmodels)</dd></div>
+<div class="cl-row"><dt>시각화</dt><dd>고른마켓 판매자 대시보드를 Tableau로 만들어 운영했습니다.</dd></div>
+</dl>
+</div></section>
+
+<section class="cl-ev"><div class="cl-wrap">
+<h2 class="cl-h2">근거 자료</h2>
+<ul class="cl-evlist">
+<li><b>A/B 테스트 분석 절차 표준화<i>프로젝트</i></b>2025.08 – 2026.02. Python 패키지와 Streamlit 화면으로 실험 분석을 통합하고 CUPED를 기본 옵션으로 넣었습니다. 리포트 작성 3일 → 반나절, 분기당 실험 수 6건 → 15건, 필요 표본 크기 평균 약 30% 감소.</li>
+<li><b>검색 결과 페이지 이탈 분석<i>프로젝트</i></b>2023.11 – 2024.04. 검색어 유형별로 이탈을 나누고 결과 0건 검색어 상위 200개로 동의어 사전 보강을 제안했습니다. 결과 0건 검색 비율 7.4% → 4.1%.</li>
+<li><b>Python<i>도구</i></b>pandas, scikit-learn, statsmodels로 모델링과 실험 분석을 합니다.</li>
+<li><b>SQL<i>도구</i></b>윈도 함수와 CTE를 주로 쓰며 업무 분석 쿼리의 대부분을 직접 작성합니다.</li>
+<li><b>dbt<i>도구</i></b>주문 데이터 마트를 dbt로 옮기며 모델 구조, dbt test, dbt docs를 운영했습니다.</li>
+<li><b>Airflow<i>도구</i></b>데이터 마트 일일 갱신과 발주량 예측 배치를 DAG로 작성했습니다.</li>
+<li><b>BigQuery<i>도구</i></b>파티션·클러스터링 설정으로 대시보드 집계 비용을 줄인 경험이 있습니다.</li>
+<li><b>Tableau<i>도구</i></b>고른마켓 판매자 대시보드를 만들고 운영했습니다.</li>
+</ul>
+</div></section>
+</main>
+</body>
+</html>

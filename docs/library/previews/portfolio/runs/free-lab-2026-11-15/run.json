@@ -1,0 +1,7 @@
+{
+  "run": "free-lab-2026-11-15",
+  "skillPath": "~/.claude/skills/frontend-design/SKILL.md",
+  "skillSha256": "51e3aa519fba86baab67503e71b2e604f1e9682213efb8f9536b48da980bf528",
+  "pagePromptVersion": 16,
+  "node": "v26.5.0"
+}
