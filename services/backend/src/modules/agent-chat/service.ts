@@ -6,10 +6,12 @@ import { randomUUID } from "node:crypto";
 import { AgentConversationSchema, isStructuredGroup, type AgentPageElementEditInput, type AgentPageEdit, type StructuredPortfolioSnapshot, type CareerDocumentBootstrap, type AgentConversation, type AgentContext, type AgentMessage, type SendAgentMessage, type AgentApproval, type AgentRecordDraftDecision, type AgentRecordDraftInput, type AgentGoalDraftDecision, type AgentGoalDraftInput, type AgentPlanDecision, type AgentReplanDecision, type ReplanProposalInput, type UpdateTaskProgress, type GapReview, type GapReviewDraft, type PlanProposalInput, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
 import { mongoCollections, type AgentConversationDoc } from "@expresso/database";
 import type { MongoContext } from "../../platform/mongodb.js";
-import { AgentToolRejection, type AgentRecordText, type AgentRuntime } from "../../platform/agent/runtime.js";
+import { AgentToolRejection, type AgentMemory, type AgentRecordText, type AgentRuntime } from "../../platform/agent/runtime.js";
 import { buildReview, hash, recordText, reviewIssues } from "./requirement-review.js";
 import { buildDraft, draftIssues } from "./record-draft.js";
 import { buildChoice, checkReply, choiceIssues } from "./ui-parts.js";
+import { digestConversation } from "./digest.js";
+import { ConsultantLimitError, type ConsultantApi, type ConsultantProfile } from "../consultant/index.js";
 import { buildGoalDraft, carryOver, goalDraftIssues, mergeGoal } from "./goal-draft.js";
 import { buildGapReview, gapIssues, latestReview, latestTool } from "./gap-review.js";
 import { buildPreparationTasks, PlanCapacityError, scheduleRemaining } from "./preparation-planner.js";
@@ -33,6 +35,15 @@ export type AgentRunFailureListener = (error: unknown, run: { conversationId: st
 
 /** `publicMessage`를 주면 응답에 그 문장이 그대로 나간다. 주지 않으면 상태 코드의 일반 문장이 나간다(`api/error-handler.ts`). */
 export class AgentChatError extends Error { constructor(readonly statusCode: number, message: string, readonly publicMessage?: string) { super(message); } }
+const STAGE_LABELS = { exploring: "탐색", preparing: "준비", applying: "지원" } as const;
+/** 모델에 넘기는 기억의 모양. 조건은 id · 종류 · 글만, 요지는 날짜(서울이 아닌 저장된 시각의 날짜 부분)와 내용만 싣는다. */
+function memoryForModel(profile: ConsultantProfile, digests: readonly ({ title: string; said: string[]; outcomes: string[]; lastAnswer: string } & ({ updatedAt: string } | { date: string }))[]): AgentMemory {
+  return {
+    stage: profile.stage,
+    preferences: profile.preferences.map(({ id, kind, text }) => ({ id, kind, text })),
+    recentConversations: digests.map(digest => ({ title: digest.title, date: "date" in digest ? digest.date : digest.updatedAt.slice(0, 10), said: digest.said, outcomes: digest.outcomes, lastAnswer: digest.lastAnswer })),
+  };
+}
 /** 이번 달 크레딧을 읽는 자리. 요금제의 기능 표와 무관하게 남은 크레딧만 본다(`EntitlementService.credits`). */
 export interface AgentCredits { credits(userId: string, at?: Date): Promise<{ remaining: number | null }> }
 /** 화면에 그대로 보이는 문장이다. 디자인 대화의 한도 안내와 같은 말로 시작한다. */
@@ -44,7 +55,7 @@ export class AgentChatService {
   /** `close()`가 시작되면 켠다. 그 뒤에 끝난 실행은 어떤 오류로 끝났든 서버 종료로 끊긴 것이다. */
   private closing = false;
   private runFailureListener: AgentRunFailureListener | null = null;
-  constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord" | "listRecords" | "listCategories" | "createRecord" | "getJobGoal" | "saveJobGoal">, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi, readonly credentials: AgentCredentials = new AgentCredentials(db), private readonly portfolios?: Pick<PortfolioReadApi, "get">, private readonly pages?: Pick<PageApi, "latest" | "elementGuide" | "editElementByAgent" | "restoreRevision">, private readonly credits?: AgentCredits) {}
+  constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord" | "listRecords" | "listCategories" | "createRecord" | "getJobGoal" | "saveJobGoal">, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi, readonly credentials: AgentCredentials = new AgentCredentials(db), private readonly portfolios?: Pick<PortfolioReadApi, "get">, private readonly pages?: Pick<PageApi, "latest" | "elementGuide" | "editElementByAgent" | "restoreRevision">, private readonly credits?: AgentCredits, private readonly consultant?: ConsultantApi) {}
   private get plans() { return new PreparationPlans(this.db); }
   /** 서비스가 Fastify 앱보다 먼저 만들어지므로 로그 수신자는 라우트 등록 때 붙인다. */
   setRunFailureListener(listener: AgentRunFailureListener) { this.runFailureListener = listener; }
@@ -66,6 +77,19 @@ export class AgentChatService {
     return row;
   }
   async get(userId: string, id: string) { return view(await this.owned(userId, id)); }
+  /**
+   * 최근 대화의 요지. 말이 오간 대화만 세고, `excludeId`(지금 대화)는 뺀다.
+   * 요지는 저장하지 않고 읽을 때 만든다 — 대화 하나는 메시지 100개와 160,000자 한도가 있어 읽는 양이 정해져 있다.
+   */
+  async recentDigests(userId: string, excludeId?: string, limit = 5) {
+    const rows = await this.rows.find({ userId, ...(excludeId ? { _id: { $ne: excludeId } } : {}), "messages.0": { $exists: true } }).sort({ updatedAt: -1 }).limit(limit).toArray();
+    return rows.map(row => digestConversation(view(row)));
+  }
+  /** 실행에 넘기는 기억. 컨설턴트 프로필이 연결되지 않은 서비스(테스트 · 미리보기)는 기억을 쓰지 않는다. */
+  private async memory(userId: string, conversationId: string): Promise<AgentMemory | null> {
+    if (!this.consultant) return null;
+    return memoryForModel(await this.consultant.profile(userId), await this.recentDigests(userId, conversationId));
+  }
   async list(userId: string) {
     const rows = await this.rows.find({ userId }).project<Omit<AgentConversationDoc, "messages">>({ messages: 0 }).sort({ updatedAt: -1 }).limit(100).toArray();
     return rows.map(row => { const { messages: _messages, ...summary } = view({ ...row, messages: [] }); return summary; });
@@ -441,6 +465,7 @@ export class AgentChatService {
     const timeout = setTimeout(() => controller.abort(), 600_000);
     try {
       const goal = await this.career.getJobGoal(row.userId);
+      const memory = await this.memory(row.userId, row._id);
       await this.runtime!.run({ userId: row.userId, messages: row.messages.slice(0, -1), context, ...(apiKey ? { apiKey } : {}), signal: controller.signal,
         emit: async event => {
           if (controller.signal.aborted) throw new Error("cancelled");
@@ -462,6 +487,18 @@ export class AgentChatService {
         planDraft: input => this.planDraft(row.userId, [...row.messages.slice(0, -1), message], input),
         replanDraft: input => this.replanDraft(row.userId, input),
         readPlan: planId => this.plans.get(row.userId, planId),
+        memory,
+        updateMemory: async update => {
+          if (!this.consultant) throw new AgentToolRejection(["이 환경에서는 기억을 쓸 수 없습니다. 사용자에게 그렇게 전하십시오."]);
+          try {
+            const { profile, changed } = await this.consultant.applyUpdate(row.userId, update);
+            const parts = [changed.stage ? `단계: ${STAGE_LABELS[changed.stage]}` : null, changed.remembered ? `조건 ${changed.remembered}개 기억` : null, changed.forgotten ? `조건 ${changed.forgotten}개 지움` : null].filter(Boolean);
+            return { summary: parts.length ? parts.join(" · ") : "이미 기억하고 있습니다.", memory: memoryForModel(profile, memory?.recentConversations ?? []) };
+          } catch (error) {
+            if (error instanceof ConsultantLimitError) throw new AgentToolRejection([error.message]);
+            throw error;
+          }
+        },
         askChoice: async choice => {
           const issues = choiceIssues(choice);
           if (issues.length) throw new AgentToolRejection(issues);
