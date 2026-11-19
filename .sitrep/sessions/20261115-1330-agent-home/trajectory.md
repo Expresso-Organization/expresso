@@ -210,3 +210,22 @@
 - 서버 git은 2.34.1. 되돌리기 경로가 기대는 「무시된 파일 덮어쓰기」는 그 판에서 실행해 보지 않음
 - `pnpm typecheck` 통과, `pnpm test` 통과(웹 482 · 백엔드 661), `next-env.d.ts` 없이 배포 절차의 웹 빌드 구간 통과
 
+### 01:55 · T15 보고 · PR #249
+- 커밋 `2edb4995`(실험에 쓴 `451591d4`는 작업 기록을 더하기 전의 같은 코드), PR #249 생성. 머지는 사용자 결정 대기(D4)
+- 「웹 검사」 통과. 타입 검사 단계 로그에 `Generating route types...` · `✓ Types generated successfully` 확인
+- 상태: 구현 중, 90%. 이 PR의 배포가 `next-env.d.ts` 추적 해제로 넘어가는 첫 실제 배포
+
+### 01:50 · D4 결정 · T15.3 완료 · PR #249 머지와 운영 배포 · 정리
+- 결정(사용자): 「머지 후 정리」. 필수 검사 · e2e 통과 뒤 머지 `d5505cd7`
+- 배포 실행 `44568648289` 성공(`배포 완료 d5505cd7 (이전 053a027)`, 사이에 #248 배포). 1차 · 2차 스크립트 모두 checkout 통과
+- 서버: `git status`에 `next-env.d.ts` 변경 없음(무시됨), 웹 · API · 워커 active, 재시작 뒤 오류 0줄, `/login` 200 · `/home` 307 · `/goal` 307, WebSocket 101, 타입 검사 3.7초
+- 정리: 머지된 브랜치 `fix/deploy-route-types` · `fix/typecheck-route-types` · `feat/home-agent-first` 로컬 · 원격 삭제, 이 워크트리는 `origin/main`(분리된 HEAD)으로 옮김, 메인 체크아웃 `launch.json`의 `home-agent-first-*` 두 항목 제거 · `next-env.d.ts` 되돌림, 실험용 `.next-prev` 삭제
+- 메인 체크아웃 `main`은 `origin/main`보다 1,017커밋 뒤. 남이 고친 `AGENTS.md`가 미커밋이고 원격에서도 바뀌어 받지 않음
+
+### 02:00 · T16 시작 · 완료 · 홈 입력창 곡률
+- 사용자 지적 「홈 화면 컴포저를 클릭했을 때 곡률이 너무 작아져. Pill 형태와 일관성을 갖게」
+- 원인: 쉴 때 `--ex-radius-pill`(높이 58.4px라 실제 29.2px), 펴지면 `--ex-radius-control`(8px)
+- 수정: `home-start.module.css`의 `.composer`가 두 상태 모두 `--composer-radius`(여백 8px + 보내기 단추 40px의 절반 + 테두리 1px = 29px), 곡률 전환 제거. `tokens.test.ts`의 `.composer` 예외 사유 갱신
+- 버린 방법: 펴진 상태에만 29px — 접히는 순간 pill 토큰이 높은 상자의 절반으로 그려져 모서리가 35px까지 부풀었다가 줄어듦(측정)
+- 검증(검증 서버 3181): 펼치고 접는 동안 393회 측정, 높이 58.4~142.4px · 모서리 29px 고정. 웹 스타일 · 홈 테스트 29개 통과
+
