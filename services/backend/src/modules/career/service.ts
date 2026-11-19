@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { careerDocumentToMarkdown, encodeDocumentAsYUpdate, encodeDocumentStateVector, markdownToCareerDocument, parseCareerDocument, reconstructYDocument } from "@expresso/editor";
-import { CareerProfileSchema, CreateCareerCategorySchema, CreateCareerRecordSchema, SaveCareerProfileSchema, UpdateCareerRecordSchema, type CreateCareerCategory, type CreateCareerRecord, type ListCareerRecordsQuery, type SaveCareerProfile, type UpdateCareerRecord } from "@expresso/contracts";
+import { CareerProfileSchema, JobGoalSchema, type JobGoalSource, CreateCareerCategorySchema, CreateCareerRecordSchema, SaveCareerProfileSchema, UpdateCareerRecordSchema, type CreateCareerCategory, type CreateCareerRecord, type ListCareerRecordsQuery, type SaveCareerProfile, type UpdateCareerRecord } from "@expresso/contracts";
 import { mongoCollections, type CareerCategoryDoc, type CareerRecordDoc } from "@expresso/database";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction } from "../../platform/mongo-transaction.js";
@@ -230,7 +230,28 @@ export class CareerService implements CareerApi {
 
   async getProfile(userId: string) {
     const user = await mongoCollections(this.context.db).users.findOne({ _id: userId });
-    return user?.profile ? CareerProfileSchema.parse({ ...user.profile, updatedAt: user.profile.updatedAt.toISOString() }) : null;
+    if (!user?.profile) return null;
+    // 계약의 칸만 골라 읽는다. 예전 칸(「지금 가장 급한 것」)이 남은 문서를 통째로 펼치면 strict 계약이 거절한다.
+    const { targetRoles, experienceYears, updatedAt } = user.profile;
+    return CareerProfileSchema.parse({ targetRoles, experienceYears, updatedAt: updatedAt.toISOString() });
+  }
+
+  /** 사용자가 쓴 최종 구직 목표. 아직 적지 않았으면 null이다. */
+  async getJobGoal(userId: string) {
+    const user = await mongoCollections(this.context.db).users.findOne({ _id: userId }, { projection: { jobGoal: 1 } });
+    return user?.jobGoal ? JobGoalSchema.parse({ ...user.jobGoal, updatedAt: user.jobGoal.updatedAt.toISOString() }) : null;
+  }
+
+  /** 통째로 덮어쓴다. 누가 적었는지(`source`)와 적은 때를 함께 남긴다. */
+  async saveJobGoal(userId: string, inputValue: { work: string; place: string; timing: string; source: JobGoalSource }) {
+    const updatedAt = new Date();
+    const goal = JobGoalSchema.parse({ ...inputValue, updatedAt: updatedAt.toISOString() });
+    if (!goal.work && !goal.place && !goal.timing) throw new CareerError(400, "세 답 가운데 하나는 적어야 합니다.");
+    return inTransaction(this.context, async (tx) => {
+      await requireActiveUser(tx, userId);
+      await mongoCollections(tx.db).users.updateOne({ _id: userId }, { $set: { jobGoal: { work: goal.work, place: goal.place, timing: goal.timing, source: goal.source, updatedAt } } }, { session: tx.session });
+      return goal;
+    });
   }
 
   async saveProfile(userId: string, inputValue: SaveCareerProfile) {

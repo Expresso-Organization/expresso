@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AgentConversationResponseSchema, AgentConversationListSchema, type AgentConversation, type AgentContext, type AgentPageSelection, type AgentApproval, type AgentPlanDecision, type AgentRecordDraftDecision, type AgentReplanDecision } from "@expresso/contracts";
+import { AgentConversationResponseSchema, AgentConversationListSchema, type AgentConversation, type AgentContext, type AgentPageSelection, type AgentApproval, type AgentPlanDecision, type AgentGoalDraftDecision, type AgentRecordDraftDecision, type AgentReplanDecision } from "@expresso/contracts";
 const base = "/api/agent/conversations";
 export async function agentRequest(path: string, body?: unknown) {
   const response = await fetch(`${base}${path}`, { ...(body === undefined ? {} : { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), cache: "no-store" });
@@ -118,6 +118,7 @@ export function useAgentConversation(context?: AgentContext, options: { restore?
     retry: () => perform(() => agentRequest(`/${id}/retry`, {})),
     /** 초안 승인 · 거절. 실패를 카드가 직접 보여 주도록 오류를 다시 던진다. */
     decideDraft: (draftId: string, decision: AgentRecordDraftDecision) => decide(`record-drafts/${draftId}`, decision),
+    decideGoalDraft: (draftId: string, decision: AgentGoalDraftDecision) => decide(`goal-drafts/${draftId}`, decision),
     decidePlanDraft: (draftId: string, decision: AgentPlanDecision) => decide(`plan-drafts/${draftId}`, decision),
     decideReplanDraft: (draftId: string, decision: AgentReplanDecision) => decide(`replan-drafts/${draftId}`, decision),
     approve: (input: AgentApproval) => perform(() => agentRequest(`/${id}/approval`, input)),

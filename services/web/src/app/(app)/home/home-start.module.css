@@ -598,7 +598,7 @@
   cursor: default;
 }
 
-/* 머리줄의 「다시 받기」 · 「끄기」. */
+/* 머리줄의 「목표」 · 「다시 받기」 · 「끄기」. */
 .feedControl {
   flex-shrink: 0;
   display: inline-flex;
@@ -612,6 +612,7 @@
   font: inherit;
   font-size: var(--ex-text-2xs);
   color: var(--ex-fg-muted);
+  text-decoration: none;
   cursor: pointer;
 }
 
