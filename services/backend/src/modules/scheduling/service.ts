@@ -27,13 +27,19 @@ const runDto = (row: ScheduledJobRunDoc, at = new Date()) => ({ id: row._id, job
 export class SchedulingService {
   readonly #analytics: { aggregateDay(deploymentId: string, date: string): Promise<Record<string, number>> }; readonly #accounts: { purgeExpired(at?: Date, limit?: number): Promise<{ purged: string[] }> }; readonly #ingest: JobIngestApi | null; readonly #notifications: DeadlineNotifier; readonly #proposals: ProposalScheduler | null; readonly #activities: ActivityCollector | null;
   readonly #overrides: Partial<Record<ScheduledJobKey, (at: Date) => Promise<Record<string, unknown>>>>;
-  constructor(readonly context: MongoContext, dependencies: { analytics?: { aggregateDay(deploymentId: string, date: string): Promise<Record<string, number>> }; accounts?: { purgeExpired(at?: Date, limit?: number): Promise<{ purged: string[] }> }; ingest?: JobIngestApi | null; notifications?: DeadlineNotifier; proposals?: ProposalScheduler | null; activities?: ActivityCollector | null; overrides?: Partial<Record<ScheduledJobKey, (at: Date) => Promise<Record<string, unknown>>>> } = {}) {
-    this.#analytics = dependencies.analytics ?? new MongoAnalyticsService(context); this.#accounts = dependencies.accounts ?? new MongoAccountLifecycleService(context); this.#ingest = dependencies.ingest ?? null; this.#notifications = dependencies.notifications ?? new MongoEngagementService(context); this.#proposals = dependencies.proposals ?? null; this.#activities = dependencies.activities ?? null; this.#overrides = dependencies.overrides ?? {};
+  /**
+   * 이 서비스가 처리할 줄 아는 키. `scheduleDue`는 이 키의 정의만 집는다.
+   * 배포는 마이그레이션을 워커 재시작보다 먼저 돌려서, 새 키의 정의가 생긴 뒤에도 옛 코드의 워커가 잠시 돈다.
+   * 모르는 키까지 집으면 실행은 실패하고 `nextRunAt`은 이미 다음 주기로 넘어가 있다(2026-11-19 #240 배포).
+   */
+  readonly #keys: readonly ScheduledJobKey[];
+  constructor(readonly context: MongoContext, dependencies: { analytics?: { aggregateDay(deploymentId: string, date: string): Promise<Record<string, number>> }; accounts?: { purgeExpired(at?: Date, limit?: number): Promise<{ purged: string[] }> }; ingest?: JobIngestApi | null; notifications?: DeadlineNotifier; proposals?: ProposalScheduler | null; activities?: ActivityCollector | null; overrides?: Partial<Record<ScheduledJobKey, (at: Date) => Promise<Record<string, unknown>>>>; keys?: readonly ScheduledJobKey[] } = {}) {
+    this.#analytics = dependencies.analytics ?? new MongoAnalyticsService(context); this.#accounts = dependencies.accounts ?? new MongoAccountLifecycleService(context); this.#ingest = dependencies.ingest ?? null; this.#notifications = dependencies.notifications ?? new MongoEngagementService(context); this.#proposals = dependencies.proposals ?? null; this.#activities = dependencies.activities ?? null; this.#overrides = dependencies.overrides ?? {}; this.#keys = dependencies.keys ?? SCHEDULED_JOB_KEYS;
   }
 
   async scheduleDue(at = new Date()) {
     return inTransaction(this.context, async (tx) => {
-      const db = mongoCollections(tx.db); const options = { session: tx.session }; const definitions = await db.scheduledJobDefinitions.find({ nextRunAt: { $lte: at } }, options).sort({ nextRunAt: 1, _id: 1 }).toArray(); const runIds: string[] = [];
+      const db = mongoCollections(tx.db); const options = { session: tx.session }; const definitions = await db.scheduledJobDefinitions.find({ _id: { $in: [...this.#keys] }, nextRunAt: { $lte: at } }, options).sort({ nextRunAt: 1, _id: 1 }).toArray(); const runIds: string[] = [];
       for (const definition of definitions) {
         const scheduledFor = definition.nextRunAt; const id = randomUUID();
         const inserted = await db.scheduledJobRuns.updateOne({ jobKey: definition._id, scheduledFor }, { $setOnInsert: { _id: id, jobKey: definition._id, scheduledFor, status: "queued", attempts: 0, createdAt: at } }, { ...options, upsert: true });
