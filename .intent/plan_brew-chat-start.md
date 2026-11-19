@@ -23,6 +23,8 @@ date: 2026-11-20
 | `services/web/src/app/api/agent/[...path]/route.ts` | `brew-starts` 경로 통과 |
 | `services/web/src/features/agent-chat/BrewStartCard.tsx` · `.module.css` (새로) | 카드 |
 | `services/web/src/features/agent-chat/AgentChat.tsx` | 카드 분기, 도구 아이콘 |
+| `services/web/src/features/agent-chat/useAgentConversation.ts` | 분석 완료 알림 요청(`announceBrew`) |
+| `packages/database/src/documents/agent-chat.ts` | 대화 문서의 `brewIds` · `brewAnnounced` |
 | 테스트 | `runtime.test.ts` · `service.integration.test.ts`(상태 계산과 줄 세우기도 여기서 봄) · `BrewStartCard.test.tsx` |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
@@ -48,6 +50,7 @@ flowchart TD
 5. 웹 카드 — 타입 검사.
 6. 실제 화면 — 복사본 DB(`expresso_brew_chat`), AI를 켠 워커, 실제 Claude 호출.
 7. 전체 검사 뒤 커밋 · 푸시.
+8. 분석 완료 알림(2026-11-20, 요청자가 「에이전트가 먼저 말한다」로 정함) — 계약의 상태에 `announced`, 서비스의 `announceBrew`와 다시 보내기, 런타임의 계기(`event`), 카드의 알림 요청. 실제 호출로 답이 붙는 것을 본다.
 
 ## 가장 위험한 단계
 

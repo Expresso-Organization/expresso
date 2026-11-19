@@ -9,8 +9,8 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 
 const conversationId = "00000000-0000-4000-8000-000000000001";
 const start: AgentBrewStart = { startId: "00000000-0000-4000-8000-000000000002", jobPostingId: "00000000-0000-4000-8000-000000000003", jobAnalysisId: "00000000-0000-4000-8000-000000000004", title: "프론트엔드 개발자", companyName: "가상 회사", brewId: null };
-const running: AgentBrewStartState = { status: "running", stage: "covering", failure: null, requirements: null, brewId: null };
-const done: AgentBrewStartState = { status: "done", stage: "done", failure: null, requirements: { total: 6, covered: 1, partial: 5, missing: 0 }, brewId: null };
+const running: AgentBrewStartState = { status: "running", stage: "covering", failure: null, requirements: null, brewId: null, announced: false };
+const done: AgentBrewStartState = { status: "done", stage: "done", failure: null, requirements: { total: 6, covered: 1, partial: 5, missing: 0 }, brewId: null, announced: true };
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 
 /** 요청 경로마다 정해 둔 답을 돌려주는 fetch. 부른 경로와 방식을 남긴다. */
@@ -55,8 +55,8 @@ describe("포트폴리오 제작 카드", () => {
 
   it("다시 해 볼 수 있는 실패에만 「다시 분석」을 두고, 누르면 다시 맡긴 상태로 바뀐다", async () => {
     const calls = serve({
-      "GET ": () => json({ data: { status: "failed", stage: "failed", failure: { code: "AI_TIMEOUT", retryable: true }, requirements: null, brewId: null } }),
-      "POST /retry": () => json({ data: { status: "queued", stage: "queued", failure: null, requirements: null, brewId: null } }),
+      "GET ": () => json({ data: { status: "failed", stage: "failed", failure: { code: "AI_TIMEOUT", retryable: true }, requirements: null, brewId: null, announced: false } }),
+      "POST /retry": () => json({ data: { status: "queued", stage: "queued", failure: null, requirements: null, brewId: null, announced: false } }),
     });
     render(<BrewStartCard conversationId={conversationId} start={start} disabled={false} />);
     fireEvent.click(await screen.findByRole("button", { name: "다시 분석" }));
@@ -64,10 +64,41 @@ describe("포트폴리오 제작 카드", () => {
     await waitFor(() => expect(screen.queryByRole("button", { name: "다시 분석" })).toBeNull());
     cleanup();
 
-    serve({ "GET ": () => json({ data: { status: "failed", stage: "failed", failure: { code: "EXTRACTOR_UNAVAILABLE", retryable: false }, requirements: null, brewId: null } }) });
+    serve({ "GET ": () => json({ data: { status: "failed", stage: "failed", failure: { code: "EXTRACTOR_UNAVAILABLE", retryable: false }, requirements: null, brewId: null, announced: false } }) });
     render(<BrewStartCard conversationId={conversationId} start={start} disabled={false} />);
     expect(await screen.findByText("이 공고는 분석하지 못했습니다.")).toBeTruthy();
     expect(screen.queryByRole("button")).toBeNull();
+  });
+
+  it("분석이 끝났고 아직 알리지 않았으면 알림을 한 번 청한다. 답이 도는 동안에는 기다리고, 이미 알린 분석과 도는 중인 분석에는 청하지 않는다", async () => {
+    const onAnnounce = vi.fn(async () => {});
+    serve({ "GET ": () => json({ data: { ...done, announced: false } }) });
+    const view = render(<BrewStartCard conversationId={conversationId} start={start} disabled onAnnounce={onAnnounce} />);
+    await screen.findByRole("img");
+    expect(onAnnounce).not.toHaveBeenCalled();
+    view.rerender(<BrewStartCard conversationId={conversationId} start={start} disabled={false} onAnnounce={onAnnounce} />);
+    await waitFor(() => expect(onAnnounce).toHaveBeenCalledTimes(1));
+    // 답이 다시 돌았다 끝나도 다시 청하지 않는다.
+    view.rerender(<BrewStartCard conversationId={conversationId} start={start} disabled onAnnounce={onAnnounce} />);
+    view.rerender(<BrewStartCard conversationId={conversationId} start={start} disabled={false} onAnnounce={onAnnounce} />);
+    expect(onAnnounce).toHaveBeenCalledTimes(1);
+    cleanup();
+
+    for (const state of [done, running]) {
+      const quiet = vi.fn(async () => {});
+      serve({ "GET ": () => json({ data: state }) });
+      render(<BrewStartCard conversationId={conversationId} start={start} disabled={false} onAnnounce={quiet} />);
+      await screen.findByText(state.status === "done" ? "기록 일부" : "내 기록과 대조하는 중");
+      expect(quiet).not.toHaveBeenCalled();
+      cleanup();
+    }
+  });
+
+  it("알리지 못해도 카드는 결과를 그대로 보인다", async () => {
+    serve({ "GET ": () => json({ data: { ...done, announced: false } }) });
+    render(<BrewStartCard conversationId={conversationId} start={start} disabled={false} onAnnounce={vi.fn(async () => { throw new Error("이번 달 AI 크레딧을 모두 썼습니다."); })} />);
+    expect(await screen.findByRole("button", { name: "담을 기록 고르기" })).toBeTruthy();
+    expect(screen.queryByRole("alert")).toBeNull();
   });
 
   it("제작을 열지 못하면 서버가 준 이유를 보인다", async () => {

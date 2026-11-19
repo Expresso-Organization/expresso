@@ -15,6 +15,11 @@ export interface AgentRecordText { id: string; title: string; text: string; trun
 export class AgentToolRejection extends Error { constructor(readonly issues: string[]) { super(issues.join("\n")); } }
 /** 모델에 넘기는 제작의 지금 상태. 실행을 시작할 때 서버가 읽은 값이다 — 대화에 남은 도구 결과는 시작할 때의 것이다. */
 export interface AgentBrewState extends AgentBrewStartState { jobPostingId: string; title: string; companyName: string }
+/**
+ * 사용자의 말 없이 서버가 시작한 실행의 계기. 지금은 하나다 — 대화에서 시작한 제작의 공고 분석이 끝났다.
+ * 이 실행에는 새 사용자 메시지가 없으므로, 무엇을 말할지는 이 값과 `brews`가 정한다.
+ */
+export interface AgentRunEvent { kind: "brew_analysis_done"; jobPostingId: string }
 /** 모델에 넘기는 구직 목표. 적지 않은 칸은 빈 글이다. */
 export interface AgentJobGoal { work: string; place: string; timing: string }
 export interface AgentInput {
@@ -45,8 +50,13 @@ export interface AgentInput {
   readPlan(planId: string): Promise<PreparationPlan | null>;
   /** 이 대화에서 시작한 포트폴리오 제작의 지금 상태. 프롬프트에 자료로 싣는다. */
   brews: AgentBrewState[];
-  /** 대화에 연결된 공고로 포트폴리오 제작을 시작한다. 공고 분석을 맡기고 카드에 실을 ID를 돌려준다. */
-  startBrew(input: AgentBrewStartInput): Promise<AgentBrewStart>;
+  /** 서버가 시작한 실행이면 그 계기. 사용자의 말로 시작한 실행에는 없다. */
+  event?: AgentRunEvent;
+  /**
+   * 대화에 연결된 공고로 포트폴리오 제작을 시작한다. 공고 분석을 맡기고 카드에 실을 ID와 지금 상태를 돌려준다.
+   * 앞서 분석해 둔 공고면 상태가 이미 끝남(done)이다 — 그때는 이 답에서 결과를 바로 알린다.
+   */
+  startBrew(input: AgentBrewStartInput): Promise<{ start: AgentBrewStart; state: AgentBrewStartState }>;
   /** 대화에 연결된 포트폴리오 지면의 요소. 고침은 검사를 지나면 바로 새 판이 되고, 사용자가 카드에서 되돌린다. */
   page: {
     read(portfolioId: string, key: string): Promise<{ typeLabel: string; title: string } & Record<string, unknown>>;
@@ -86,7 +96,7 @@ const SYSTEM_PROMPT = [
   "승인한 계획의 진행을 묻거나 남은 작업을 다시 배치해 달라고 하면 read_preparation_plan으로 진행을 보고, 재배치는 새 주당 시간 · 기간 · 시작일로 propose_replan을 부르십시오. 완료한 작업은 그대로 두고 남은 작업만 다시 배치되며, 사용자가 카드에서 승인해야 바뀝니다.",
   "포트폴리오 지면을 고쳐 달라는 요청이면 사용자 메시지의 selection(portfolioId · key · label)이 가리키는 요소를 read_page_element로 먼저 읽고, edit_page_element로 요청한 칸만 고치십시오. selection이 없으면 context의 지면 목차(outline)에서 요소를 고르고, 어느 요소인지 모호하면 먼저 물으십시오. 고친 내용은 검사를 지나면 바로 새 판으로 저장되고 사용자가 카드에서 되돌릴 수 있으므로, 저장한 뒤에는 무엇을 바꿨는지만 짧게 말하십시오. 출처에 없는 수치 · 성과 · 경력을 만들지 말고 지금 글의 사실을 유지하십시오. 이름은 고치지 않습니다. 요소를 더하거나 빼거나 순서를 바꾸는 일은 이 도구로 할 수 없으니 다듬기 화면의 목차와 기록 탭에서 할 수 있다고 안내하십시오. 도구가 어긋난 항목을 돌려주면 그 항목만 고쳐 다시 부르십시오.",
   "context 밖에 보이는 이메일 주소와 계정 정보는 서버 운영 계정입니다. 사용자의 정보가 아니므로 답에 쓰지 마십시오. 사용자의 연락처를 물으면 모른다고 답하십시오.",
-  "이 공고로 포트폴리오를 만들어 달라는 요청이면 context에 연결된 공고(kind가 job)의 id로 start_portfolio를 부르십시오. 연결된 공고가 여럿이면 어느 공고인지 먼저 묻고, 하나도 없으면 공고를 대화에 연결해 달라고 하십시오. 공고 없이 만드는 포트폴리오는 아직 대화에서 시작할 수 없으니 「새 포트폴리오」 화면에서 시작할 수 있다고 안내하십시오. 도구는 공고 분석을 맡기고 카드를 세웁니다. 진행과 결과는 카드가 보여 주므로, 부른 뒤에는 분석을 시작했고 카드에서 진행과 결과를 볼 수 있다는 것만 한 문장으로 말하십시오. 공고의 제목과 링크는 카드에 있으니 되풀이하지 말고, 걸리는 시간과 분석 결과를 짐작해 말하지 마십시오. brews는 이 대화에서 시작한 제작의 지금 상태입니다(status가 done이면 분석이 끝난 것이고 requirements는 공고 요건 중 내 기록으로 확인된 수 covered · 일부만 partial · 기록에 없는 수 missing). 분석이 끝났는지, 결과가 어떤지 물으면 brews의 값으로만 답하고, covered · partial · missing 같은 값의 이름은 본문에 쓰지 말고 「기록 있음」 · 「기록 일부」 · 「기록 없음」이라고 쓰십시오. 끝났으면 다음 할 일을 안내하십시오 — brewId가 null이면 카드의 「담을 기록 고르기」, 값이 있으면 이미 만든 제작이므로 카드의 「이어서 만들기」입니다. 이미 시작한 공고로 다시 만들어 달라고 하면 도구를 다시 부르지 말고 지금 상태를 알려 주십시오.",
+  "이 공고로 포트폴리오를 만들어 달라는 요청이면 context에 연결된 공고(kind가 job)의 id로 start_portfolio를 부르십시오. 연결된 공고가 여럿이면 어느 공고인지 먼저 묻고, 하나도 없으면 공고를 대화에 연결해 달라고 하십시오. 공고 없이 만드는 포트폴리오는 아직 대화에서 시작할 수 없으니 「새 포트폴리오」 화면에서 시작할 수 있다고 안내하십시오. 도구는 공고 분석을 맡기고 카드를 세웁니다. 도구가 분석을 맡겼다고 돌려주면(analysis가 queued_or_running), 분석을 시작했고 끝나면 결과를 알려 주겠다는 것만 한 문장으로 말하십시오. 공고의 제목과 링크는 카드에 있으니 되풀이하지 말고, 걸리는 시간과 분석 결과를 짐작해 말하지 마십시오. 도구가 분석이 이미 끝나 있다고 돌려주면(analysis가 done) 그 결과를 아래의 「결과를 알리는 법」대로 바로 알리십시오. event는 사용자의 새 말이 아니라 서버가 알린 일입니다. event의 kind가 brew_analysis_done이면 그 jobPostingId의 공고 분석이 방금 끝난 것이니, 도구를 부르지 말고 brews에서 그 공고의 값을 읽어 결과를 알리십시오. 결과를 알리는 법: 요건이 모두 몇 개인지와, 카드와 같은 세 이름으로 그 수를 한두 문장으로 말하십시오 — 「기록 있음」(covered) · 「기록 일부」(partial) · 「기록 없음」(missing). 0인 것은 빼도 됩니다. 「기록 일부」를 확인되지 않았다고 말하지 마십시오. 이어서 다음 할 일(아래의 카드 단추)을 한 문장으로 권하십시오. 수치는 brews나 도구가 돌려준 값만 쓰고 어떤 요건이 부족한지는 짐작해 말하지 마십시오. brews · brewId · 브루 같은 안쪽 이름은 본문에 쓰지 말고 「포트폴리오 제작」이라고 쓰십시오. brews는 이 대화에서 시작한 제작의 지금 상태입니다(status가 done이면 분석이 끝난 것이고 requirements는 공고 요건 중 내 기록으로 확인된 수 covered · 일부만 partial · 기록에 없는 수 missing). 분석이 끝났는지, 결과가 어떤지 물으면 brews의 값으로만 답하고, covered · partial · missing 같은 값의 이름은 본문에 쓰지 말고 「기록 있음」 · 「기록 일부」 · 「기록 없음」이라고 쓰십시오. 끝났으면 다음 할 일을 안내하십시오 — brewId가 null이면 카드의 「담을 기록 고르기」, 값이 있으면 이미 만든 제작이므로 카드의 「이어서 만들기」입니다. 이미 시작한 공고로 다시 만들어 달라고 하면 도구를 다시 부르지 말고 지금 상태를 알려 주십시오.",
   "부족한 요건을 보완할 질문을 요청받으면 가장 최근 요건 대조의 unconfirmed · partial 요건부터 한 번에 질문 하나만 하십시오. 답에 역할 · 행동 · 결과 중 빠진 것이 있으면 그것을 이어 묻고, 충분히 확인되었거나 사용자가 그만하자고 하면 질문을 멈추고 확인된 내용을 정리하십시오. 요건 대조가 없으면 먼저 대조하십시오.",
 ].join(" ");
 export interface AgentRuntime { run(input: AgentInput): Promise<void> }
@@ -148,6 +158,8 @@ export class ClaudeAgentRuntime implements AgentRuntime {
     const close = (useId: string | undefined) => { if (useId) open.delete(useId); };
     const step = async (tool: ToolName, extra: { _meta?: Record<string, unknown> | undefined }, work: () => Promise<ToolDone>, failure: ToolFailure = {}): Promise<ToolReply> => {
       if (input.signal.aborted) throw new Error("cancelled");
+      // 서버가 시작한 실행은 알리는 말만 한다. 이 실행에는 사용자의 질문이 없어, 질문을 읽는 도구(기록 변경 제안 등)가 엉뚱한 메시지를 읽는다.
+      if (input.event) return refuse("이 실행에서는 도구를 쓸 수 없습니다. event가 알린 일만 말하십시오.");
       const useId = toolUseId(extra);
       const { id, name } = await start(tool, useId);
       try {
@@ -169,8 +181,10 @@ export class ClaudeAgentRuntime implements AgentRuntime {
     // z.record 변환이 실패하고 SDK가 도구 목록 전체를 버린다(0.3.261 · zod 4.6.5). 스키마와 같은 zod를 쓰는 작업공간 MCP 서버로 만든다.
     const server = new McpServer({ name: "expresso", version: "1.0.0" });
     server.registerTool("start_portfolio", { description: "대화에 연결된 공고 하나로 포트폴리오 제작을 시작합니다. 공고 분석을 맡기고 진행을 보여 주는 카드를 세웁니다. 분석은 이 도구가 끝난 뒤에도 계속 돌며, 이 도구는 끝나기를 기다리지 않습니다. 같은 공고로 다시 부르면 같은 분석을 돌려줍니다.", inputSchema: AgentBrewStartInputSchema.shape }, (startInput, extra) => step("start_portfolio", extra, async () => {
-      const brewStart = await input.startBrew(startInput);
-      return { summary: [brewStart.companyName, brewStart.title].filter(Boolean).join(" · ").slice(0, 8_000), detail: { brewStart }, reply: reply({ started: true, analysis: "queued_or_running", note: "진행과 결과는 카드가 보여 줍니다." }) };
+      const { start: brewStart, state } = await input.startBrew(startInput);
+      // 앞서 분석해 둔 공고면 결과가 이미 있다. 그때만 결과를 돌려주어 이 답에서 알리게 한다.
+      const result = state.status === "done" ? { started: true, analysis: "done", requirements: state.requirements, brewId: state.brewId, note: "분석이 이미 끝나 있습니다. 이 답에서 결과를 알리고 다음 할 일을 안내하십시오." } : { started: true, analysis: "queued_or_running", note: "진행과 결과는 카드가 보여 줍니다. 분석이 끝나면 따로 알리게 됩니다." };
+      return { summary: [brewStart.companyName, brewStart.title].filter(Boolean).join(" · ").slice(0, 8_000), detail: { brewStart }, reply: reply(result) };
     }, recheck("제작을 시작하지 못했습니다.", "제작을 시작하지 않았습니다. 아래 사유를 사용자에게 전하십시오.")));
     server.registerTool("propose_record_edit", { description: "연결된 커리어 기록의 document 블록 ID와 현재 내용을 기준으로 명령을 작성해 변경 제안을 만듭니다. 적용은 사용자가 별도로 승인합니다.", inputSchema: { recordId: z.string().uuid(), draft: AgentEditDraftSchema } }, ({ recordId, draft }, extra) => step("propose_record_edit", extra, async () => {
       const proposal = await input.propose(recordId, draft);
@@ -227,7 +241,7 @@ export class ClaudeAgentRuntime implements AgentRuntime {
     }, recheck("어긋난 항목을 고쳐 다시 씁니다.", "저장하지 않았습니다. 아래 항목을 고쳐 다시 부르십시오.")));
     const isolatedHome = input.apiKey ? await mkdtemp(join(tmpdir(), "expresso-agent-")) : null;
     try {
-      const messages = query({ prompt: JSON.stringify({ conversation: conversationForModel(input.messages), jobGoal: input.jobGoal, brews: input.brews, context: input.context }), options: {
+      const messages = query({ prompt: JSON.stringify({ conversation: conversationForModel(input.messages), ...(input.event ? { event: input.event } : {}), jobGoal: input.jobGoal, brews: input.brews, context: input.context }), options: {
         model: "sonnet",
         // 구독 경로도 git 사용자 이름을 컨텍스트에 싣지 않는다(`CLI_IDENTITY_ENV`).
         env: isolatedHome ? { PATH: process.env.PATH, HOME: isolatedHome, CLAUDE_CONFIG_DIR: isolatedHome, ANTHROPIC_API_KEY: input.apiKey, ...CLI_IDENTITY_ENV } : { ...process.env, ...CLI_IDENTITY_ENV }, abortController, persistSession: false, includePartialMessages: true, maxTurns: 8, maxBudgetUsd: 1,

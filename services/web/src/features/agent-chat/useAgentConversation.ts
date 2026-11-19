@@ -122,6 +122,11 @@ export function useAgentConversation(context?: AgentContext, options: { restore?
     decidePlanDraft: (draftId: string, decision: AgentPlanDecision) => decide(`plan-drafts/${draftId}`, decision),
     decideReplanDraft: (draftId: string, decision: AgentReplanDecision) => decide(`replan-drafts/${draftId}`, decision),
     approve: (input: AgentApproval) => perform(() => agentRequest(`/${id}/approval`, input)),
+    /**
+     * 대화에서 시작한 제작의 공고 분석이 끝난 것을 에이전트가 알리게 한다. 서버가 답 하나를 시작하고 그 대화를 돌려준다.
+     * 사용자가 누른 일이 아니므로 「보내는 중」으로 표시하지 않고, 실패는 부른 쪽(카드)이 받는다.
+     */
+    announceBrew: async (startId: string) => { if (id) accept(await agentRequest(`/${id}/brew-starts/${startId}/announce`, {})); },
     /** 에이전트가 저장한 지면 고침 되돌리기. 실패를 카드가 직접 보여 주도록 오류를 다시 던진다. */
     undoPageEdit: (editId: string) => decide(`page-edits/${editId}/undo`, {}),
   };

@@ -19,7 +19,7 @@ import type { JobBoardApi } from "../jobs/index.js";
 import { ConsentError, type ConsentApi } from "../consent/index.js";
 import { brewPath, brewStartState, KeyedQueue, type AgentBrewDeps } from "./brew-start.js";
 import type { AgentBrewStart, AgentBrewStartInput, AgentBrewStartState } from "@expresso/contracts";
-import type { AgentBrewState } from "../../platform/agent/runtime.js";
+import type { AgentBrewState, AgentRunEvent } from "../../platform/agent/runtime.js";
 
 /**
  * 실행 중인 대화의 heartbeat 주기. 실행 인스턴스는 이 주기로 문서를 갱신하고, 갱신이 맞지
@@ -44,7 +44,7 @@ export class AgentChatError extends Error { constructor(readonly statusCode: num
 export interface AgentCredits { credits(userId: string, at?: Date): Promise<{ remaining: number | null }> }
 /** 화면에 그대로 보이는 문장이다. 디자인 대화의 한도 안내와 같은 말로 시작한다. */
 export const CREDITS_EXHAUSTED = "이번 달 AI 크레딧을 모두 썼습니다. 다음 달에 다시 대화할 수 있습니다.";
-const view = (row: AgentConversationDoc) => { const { _id, userId: _userId, heartbeatAt: _heartbeat, brewIds: _brewIds, ...data } = row; return AgentConversationSchema.parse({ ...data, id: _id }); };
+const view = (row: AgentConversationDoc) => { const { _id, userId: _userId, heartbeatAt: _heartbeat, brewIds: _brewIds, brewAnnounced: _brewAnnounced, ...data } = row; return AgentConversationSchema.parse({ ...data, id: _id }); };
 export class AgentChatService {
   private readonly running = new Map<string, AbortController>();
   private readonly tasks = new Set<Promise<void>>();
@@ -192,7 +192,7 @@ export class AgentChatService {
    * 대화에 연결된 공고로 포트폴리오 제작을 시작한다. 공고 분석을 맡기고 카드에 실을 ID를 돌려준다.
    * 공고는 대화의 contexts에 있는 것만 받는다 — 도구 입력의 ID는 모델이 쓴 값이라 그대로 믿지 않는다.
    */
-  private async startBrew(row: AgentConversationDoc, input: AgentBrewStartInput): Promise<AgentBrewStart> {
+  private async startBrew(row: AgentConversationDoc, input: AgentBrewStartInput): Promise<{ start: AgentBrewStart; state: AgentBrewStartState }> {
     if (!this.brews) throw new AgentToolRejection(["이 서버에서는 대화에서 포트폴리오 제작을 시작할 수 없습니다. 「새 포트폴리오」 화면에서 시작할 수 있다고 안내하십시오."]);
     if (!row.contexts.some(ref => ref.kind === "job" && ref.id === input.jobPostingId)) throw new AgentToolRejection(["대화에 연결된 공고가 아닙니다. context에 있는 공고(kind가 job)의 id만 쓸 수 있습니다."]);
     // 공고 분석은 공고 원문을 AI에 보낸다. 동의가 꺼져 있으면 시작하지 않고, 에이전트가 켜는 곳을 안내하게 한다.
@@ -200,7 +200,16 @@ export class AgentChatService {
     catch (error) { if (error instanceof ConsentError) throw new AgentToolRejection(["공고 분석 동의가 꺼져 있습니다. 설정의 「AI 사용 동의」에서 공고 분석을 켠 뒤 다시 요청해 달라고 안내하십시오."]); throw error; }
     const posting = await this.jobs.get(row.userId, input.jobPostingId);
     const { jobAnalysisId } = await this.brews.analyzePosting(row.userId, input.jobPostingId);
-    return { startId: randomUUID(), jobPostingId: input.jobPostingId, jobAnalysisId, title: posting.title, companyName: posting.company.name, brewId: await this.liveBrew(row, jobAnalysisId) };
+    const brewId = await this.liveBrew(row, jobAnalysisId);
+    const result = await this.brews.getResult(row.userId, jobAnalysisId);
+    // 앞서 분석해 둔 공고면 결과가 이미 있다. 도구가 그 결과를 돌려주어 이 답이 바로 알리므로, 따로 알리지 않도록 적어 둔다.
+    // 메시지 밖에 적으므로 실행이 쓰는 마지막 답변과 부딪히지 않는다.
+    const announced = !!row.brewAnnounced?.[jobAnalysisId];
+    if (result.analysis.status === "done" && !announced) await this.rows.updateOne({ _id: row._id, userId: row.userId, [`brewAnnounced.${jobAnalysisId}`]: { $exists: false } }, { $set: { [`brewAnnounced.${jobAnalysisId}`]: row.messages.at(-1)!.id } });
+    return {
+      start: { startId: randomUUID(), jobPostingId: input.jobPostingId, jobAnalysisId, title: posting.title, companyName: posting.company.name, brewId },
+      state: brewStartState(result, brewId, announced || result.analysis.status === "done"),
+    };
   }
   /** 이 대화에서 만든 제작 가운데 아직 남아 있는 것. 지운 제작(휴지통)은 없는 것으로 본다 — 카드가 죽은 화면을 열지 않게 한다. */
   private async liveBrew(row: AgentConversationDoc, jobAnalysisId: string): Promise<string | null> {
@@ -217,7 +226,44 @@ export class AgentChatService {
   async brewStartState(userId: string, id: string, startId: string): Promise<AgentBrewStartState> {
     const row = await this.owned(userId, id);
     const start = this.brewStart(row, startId);
-    return brewStartState(await this.brews!.getResult(userId, start.jobAnalysisId), await this.liveBrew(row, start.jobAnalysisId));
+    return brewStartState(await this.brews!.getResult(userId, start.jobAnalysisId), await this.liveBrew(row, start.jobAnalysisId), !!row.brewAnnounced?.[start.jobAnalysisId]);
+  }
+  /**
+   * 공고 분석이 끝난 것을 에이전트가 대화에서 알리게 한다. 분석 하나에 한 번이다.
+   *
+   * 큐 작업(공고 분석)은 워커에서 끝나고 대화는 그것을 모른다. 카드가 끝난 것을 보면 이 요청을 보내고, 서버는 사용자의 말 없이
+   * 답 하나를 시작한다 — 마지막 답변에 덧쓰지 않고 새 답변을 붙인다(실행 중인 답변은 실행이 통째로 다시 쓴다).
+   * 탭이 닫혀 있던 동안 끝난 분석은 대화를 다시 열 때 알린다. 이미 알렸거나 다른 요청이 먼저 알리면 아무 일도 하지 않는다.
+   * 보통의 답과 같이 동의와 이번 달 크레딧을 본다.
+   */
+  async announceBrew(userId: string, id: string, startId: string, apiKey?: string) {
+    const row = await this.owned(userId, id);
+    const start = this.brewStart(row, startId);
+    if (row.brewAnnounced?.[start.jobAnalysisId]) return view(row);
+    const result = await this.brews!.getResult(userId, start.jobAnalysisId);
+    if (result.analysis.status !== "done") throw new AgentChatError(409, "공고 분석이 끝난 뒤 알릴 수 있습니다.");
+    if (row.messages.length >= 99 || JSON.stringify(row.messages).length > 160_000) throw new AgentChatError(409, "대화가 길어졌습니다. 새 대화를 시작해 주세요.");
+    const context = await this.prepare(userId, row, !apiKey);
+    const now = new Date().toISOString();
+    const assistant: AgentMessage = { id: randomUUID(), role: "assistant", text: "", tools: [], createdAt: now };
+    // 이 실행에는 질문이 없다. 실행의 requestId에 이 답변의 ID를 적어, 다시 보내기가 알림을 다시 만들 답변을 알아보게 한다.
+    const run = { id: randomUUID(), requestId: assistant.id, status: "running" as const, error: null, startedAt: now };
+    const changed = await this.rows.findOneAndUpdate(
+      { _id: id, userId, version: row.version, "run.status": { $ne: "running" }, [`brewAnnounced.${start.jobAnalysisId}`]: { $exists: false } },
+      { $push: { messages: assistant }, $set: { run, [`brewAnnounced.${start.jobAnalysisId}`]: assistant.id, updatedAt: now, heartbeatAt: new Date() }, $inc: { version: 1 } },
+      { returnDocument: "after" },
+    );
+    // 다른 탭이 먼저 알렸거나 그 사이 대화가 바뀌었다. 지금 대화를 돌려주고, 카드는 다음에 다시 본다.
+    if (!changed) return view(await this.owned(userId, id));
+    this.start(changed, context, apiKey, { kind: "brew_analysis_done", jobPostingId: start.jobPostingId });
+    return view(changed);
+  }
+  /** 이 답변이 분석 완료 알림이면 그 계기를 돌려준다. 다시 보내기가 질문 없는 답을 다시 만들 때 쓴다. */
+  private announceEvent(row: AgentConversationDoc, answerId: string): { jobAnalysisId: string; event: AgentRunEvent } | null {
+    if (row.run?.requestId !== answerId) return null;
+    const jobAnalysisId = Object.entries(row.brewAnnounced ?? {}).find(([, messageId]) => messageId === answerId)?.[0];
+    const start = jobAnalysisId ? row.messages.flatMap(message => message.tools).find(tool => tool.brewStart?.jobAnalysisId === jobAnalysisId)?.brewStart : undefined;
+    return jobAnalysisId && start ? { jobAnalysisId, event: { kind: "brew_analysis_done", jobPostingId: start.jobPostingId } } : null;
   }
   /**
    * 「담을 기록 고르기」. 끝난 분석으로 제작을 한 번만 만들고 다음 화면의 경로를 돌려준다. AI를 부르지 않는다.
@@ -255,7 +301,7 @@ export class AgentChatService {
     if (!this.brews) return [];
     const starts = [...new Map(row.messages.flatMap(message => message.tools).flatMap(tool => (tool.brewStart ? [[tool.brewStart.jobAnalysisId, tool.brewStart] as const] : []))).values()];
     const states = await Promise.all(starts.map(async start => {
-      try { return { jobPostingId: start.jobPostingId, title: start.title, companyName: start.companyName, ...brewStartState(await this.brews!.getResult(row.userId, start.jobAnalysisId), await this.liveBrew(row, start.jobAnalysisId)) }; }
+      try { return { jobPostingId: start.jobPostingId, title: start.title, companyName: start.companyName, ...brewStartState(await this.brews!.getResult(row.userId, start.jobAnalysisId), await this.liveBrew(row, start.jobAnalysisId), !!row.brewAnnounced?.[start.jobAnalysisId]) }; }
       catch { return null; }
     }));
     return states.flatMap(state => (state ? [state] : []));
@@ -475,22 +521,25 @@ export class AgentChatService {
   async retry(userId: string, id: string, apiKey?: string) {
     const row = await this.owned(userId, id);
     const [question, answer] = row.messages.slice(-2);
-    if (!row.run || !["failed", "interrupted", "cancelled"].includes(row.run.status) || question?.role !== "user" || answer?.role !== "assistant" || question.id !== row.run.requestId) throw new AgentChatError(409, "다시 보낼 질문이 없습니다.");
+    const stopped = !!row.run && ["failed", "interrupted", "cancelled"].includes(row.run.status) && answer?.role === "assistant";
+    // 서버가 시작한 답(분석 완료 알림)에는 질문이 없다. 그 답은 같은 계기로 다시 만든다.
+    const announce = stopped ? this.announceEvent(row, answer.id) : null;
+    if (!stopped || !answer || (!announce && (question?.role !== "user" || question.id !== row.run!.requestId))) throw new AgentChatError(409, "다시 보낼 질문이 없습니다.");
     const context = await this.prepare(userId, row, !apiKey);
     for (const tool of answer.tools) if (tool.proposal?.status === "ready") await this.documents.cancelAiProposal(userId, tool.proposal.recordId, { recordId: tool.proposal.recordId, proposalId: tool.proposal.proposalId }).catch(() => undefined);
     const now = new Date().toISOString();
     const fresh: AgentMessage = { id: randomUUID(), role: "assistant", text: "", tools: [], createdAt: now };
-    const run = { id: randomUUID(), requestId: question.id, status: "running" as const, error: null, startedAt: now };
-    const changed = await this.rows.findOneAndUpdate({ _id: id, userId, version: row.version, "run.status": { $ne: "running" } }, { $set: { [`messages.${row.messages.length - 1}`]: fresh, run, updatedAt: now, heartbeatAt: new Date() }, $inc: { version: 1 } }, { returnDocument: "after" });
+    const run = { id: randomUUID(), requestId: announce ? fresh.id : question!.id, status: "running" as const, error: null, startedAt: now };
+    const changed = await this.rows.findOneAndUpdate({ _id: id, userId, version: row.version, "run.status": { $ne: "running" } }, { $set: { [`messages.${row.messages.length - 1}`]: fresh, run, ...(announce ? { [`brewAnnounced.${announce.jobAnalysisId}`]: fresh.id } : {}), updatedAt: now, heartbeatAt: new Date() }, $inc: { version: 1 } }, { returnDocument: "after" });
     if (!changed) throw new AgentChatError(409, "다른 화면에서 실행을 시작했습니다.");
-    this.start(changed, context, apiKey);
+    this.start(changed, context, apiKey, announce?.event);
     return view(changed);
   }
-  private start(row: AgentConversationDoc, context: Awaited<ReturnType<AgentChatService["context"]>>, apiKey?: string) {
-    const task = this.execute(row, context, apiKey).catch(() => undefined);
+  private start(row: AgentConversationDoc, context: Awaited<ReturnType<AgentChatService["context"]>>, apiKey?: string, event?: AgentRunEvent) {
+    const task = this.execute(row, context, apiKey, event).catch(() => undefined);
     this.tasks.add(task); void task.finally(() => this.tasks.delete(task));
   }
-  private async execute(row: AgentConversationDoc, context: Awaited<ReturnType<AgentChatService["context"]>>, apiKey?: string) {
+  private async execute(row: AgentConversationDoc, context: Awaited<ReturnType<AgentChatService["context"]>>, apiKey?: string, event?: AgentRunEvent) {
     const controller = new AbortController(); this.running.set(row._id, controller);
     const runId = row.run!.id;
     const filter = { _id: row._id, userId: row.userId, "run.id": runId, "run.status": "running" };
@@ -521,6 +570,7 @@ export class AgentChatService {
         review: draft => this.review(row.userId, row.contexts, draft),
         draftRecord: input => this.draftRecord(row, input),
         brews: await this.brewStates(row),
+        ...(event ? { event } : {}),
         startBrew: input => this.startBrew(row, input),
         jobGoal: goal ? { work: goal.work, place: goal.place, timing: goal.timing } : null,
         goalDraft: async input => {

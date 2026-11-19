@@ -24,13 +24,14 @@ export type BrewStatus = "draft" | "interviewing" | "recipe" | "generating" | "d
 export const brewPath = (brewId: string, status: BrewStatus) => `/brew/${brewId}/${status === "draft" ? "materials" : status === "interviewing" ? "counter" : "design"}`;
 
 /** 분석 결과를 카드와 모델이 읽는 상태로 옮긴다. 요건의 확인 수는 분석이 끝난 뒤에만 센다. */
-export function brewStartState(result: JobAnalysisResult, brewId: string | null): AgentBrewStartState {
+export function brewStartState(result: JobAnalysisResult, brewId: string | null, announced: boolean): AgentBrewStartState {
   const { status, stage, failure } = result.analysis;
   const count = (coverage: JobAnalysisResult["requirements"][number]["coverage"]) => result.requirements.filter(item => item.coverage === coverage).length;
   return {
     status, stage, failure,
     requirements: status === "done" ? { total: result.requirements.length, covered: count("covered"), partial: count("partial"), missing: count("missing") } : null,
     brewId,
+    announced,
   };
 }
 

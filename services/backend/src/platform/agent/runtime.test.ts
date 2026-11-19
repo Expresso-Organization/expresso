@@ -67,15 +67,20 @@ describe("Claude 채팅 실행 어댑터", () => {
   });
   it("제작 시작은 카드에 실을 ID를 도구 결과로 남기고, 거절된 사유는 에이전트에게 돌려준다", async () => {
     const brewStart = { startId: "00000000-0000-4000-8000-0000000000b1", jobPostingId: "00000000-0000-4000-8000-0000000000b2", jobAnalysisId: "00000000-0000-4000-8000-0000000000b3", title: "프론트엔드 개발자", companyName: "가상 회사", brewId: null };
-    const startBrew = vi.fn(async () => brewStart);
+    const running = { status: "running" as const, stage: "extracting" as const, failure: null, requirements: null, brewId: null, announced: false };
+    const startBrew = vi.fn(async () => ({ start: brewStart, state: running }));
     const { client, emit } = await connectTools({ startBrew });
     const result = await client.callTool({ name: "start_portfolio", arguments: { jobPostingId: brewStart.jobPostingId } });
     expect(result.isError).toBeFalsy();
     expect(startBrew).toHaveBeenCalledWith({ jobPostingId: brewStart.jobPostingId });
     const done = emit.mock.calls.map(([event]) => event).filter(event => event.type === "tool").map(event => event.tool).at(-1)!;
     expect(done).toMatchObject({ name: "포트폴리오 제작", status: "complete", summary: "가상 회사 · 프론트엔드 개발자", brewStart });
-    // 분석 결과는 도구가 돌려주지 않는다 — 모델이 결과를 지어내지 않게 한다.
+    // 분석이 도는 동안에는 결과를 돌려주지 않는다 — 모델이 결과를 지어내지 않게 한다.
     expect(JSON.stringify(result.content)).not.toContain("covered");
+    // 앞서 분석해 둔 공고면 결과가 이미 있다. 그때만 결과를 돌려주어 그 답에서 알리게 한다.
+    const ready = await connectTools({ startBrew: vi.fn(async () => ({ start: brewStart, state: { ...running, status: "done" as const, stage: "done" as const, requirements: { total: 6, covered: 1, partial: 5, missing: 0 }, announced: true } })) });
+    const finished = await ready.client.callTool({ name: "start_portfolio", arguments: { jobPostingId: brewStart.jobPostingId } });
+    expect(JSON.parse((finished.content as { text: string }[])[0]!.text)).toMatchObject({ analysis: "done", requirements: { total: 6, covered: 1, partial: 5, missing: 0 } });
 
     const refused = await connectTools({ startBrew: vi.fn(async () => { throw new AgentToolRejection(["대화에 연결된 공고가 아닙니다."]); }) });
     const rejected = await refused.client.callTool({ name: "start_portfolio", arguments: { jobPostingId: brewStart.jobPostingId } });
@@ -85,9 +90,23 @@ describe("Claude 채팅 실행 어댑터", () => {
   });
   it("이 대화에서 시작한 제작의 지금 상태를 프롬프트에 싣는다", async () => {
     sdk.query.mockReturnValue((async function* () { yield { type: "result", is_error: false }; })());
-    const brews = [{ jobPostingId: "00000000-0000-4000-8000-0000000000b2", title: "프론트엔드 개발자", companyName: "가상 회사", status: "done" as const, stage: "done" as const, failure: null, requirements: { total: 6, covered: 3, partial: 2, missing: 1 }, brewId: null }];
+    const brews = [{ jobPostingId: "00000000-0000-4000-8000-0000000000b2", title: "프론트엔드 개발자", companyName: "가상 회사", status: "done" as const, stage: "done" as const, failure: null, requirements: { total: 6, covered: 3, partial: 2, missing: 1 }, brewId: null, announced: false }];
     await new ClaudeAgentRuntime().run({ messages: [], context: [], signal: new AbortController().signal, emit: vi.fn(), ...base(), brews });
-    expect(JSON.parse(sdk.query.mock.lastCall![0].prompt).brews).toEqual(brews);
+    const asked = JSON.parse(sdk.query.mock.lastCall![0].prompt);
+    expect(asked.brews).toEqual(brews);
+    // 사용자의 말로 시작한 실행에는 계기가 없다.
+    expect(asked).not.toHaveProperty("event");
+    // 서버가 시작한 실행은 계기를 싣는다 — 새 사용자 메시지가 없으므로 무엇을 말할지는 이 값이 정한다.
+    const event = { kind: "brew_analysis_done" as const, jobPostingId: brews[0]!.jobPostingId };
+    await new ClaudeAgentRuntime().run({ messages: [], context: [], signal: new AbortController().signal, emit: vi.fn(), ...base(), brews, event });
+    expect(JSON.parse(sdk.query.mock.lastCall![0].prompt).event).toEqual(event);
+    // 서버가 시작한 실행에서는 도구를 쓰지 못한다 — 작업 흔적도 남기지 않는다.
+    const list = vi.fn(async () => ({ categories: [], records: [] }));
+    const quiet = await connectTools({ event, records: { list, read: vi.fn(async () => []) } });
+    const refused = await quiet.client.callTool({ name: "list_career_records", arguments: {} });
+    expect(refused.isError).toBe(true);
+    expect(list).not.toHaveBeenCalled();
+    expect(quiet.emit).not.toHaveBeenCalled();
   });
   it("모델이 도구 입력을 쓰기 시작하면 실행 중을 먼저 알리고, 처리기 결과를 같은 줄에 잇는다", async () => {
     const emit = vi.fn(async (_event: AgentEvent) => undefined);

@@ -303,6 +303,11 @@ export const AgentBrewStartStateSchema = z.strictObject({
   /** 분석이 끝난 뒤에만 있다. `covered` 기록으로 확인됨 · `partial` 일부만 · `missing` 기록에 없음. */
   requirements: z.strictObject({ total: z.number().int().nonnegative(), covered: z.number().int().nonnegative(), partial: z.number().int().nonnegative(), missing: z.number().int().nonnegative() }).nullable(),
   brewId: UuidSchema.nullable(),
+  /**
+   * 에이전트가 이 분석의 결과를 대화에서 이미 알렸는가. 분석이 끝났는데 아직 알리지 않았으면 카드가 알림을 청한다
+   * (`POST brew-starts/:startId/announce`) — 그때 서버가 에이전트의 답을 하나 시작한다.
+   */
+  announced: z.boolean(),
 });
 export type AgentBrewStartState = z.infer<typeof AgentBrewStartStateSchema>;
 export const AgentBrewStartStateResponseSchema = z.strictObject({ data: AgentBrewStartStateSchema });

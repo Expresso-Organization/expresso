@@ -141,7 +141,7 @@ const RecordTool: ToolCallMessagePartComponent = props => {
   const name = tool?.name ?? props.toolName;
   const step = (detail: ReactNode, summary: string | null = tool?.summary ?? null) => <ToolStep status={tool?.status ?? (props.status.type === "running" ? "running" : "complete")} icon={TOOL_ICONS[name] ?? "wrench"} title={name} summary={summary ?? undefined}>{detail}</ToolStep>;
   // 대화에서 시작한 제작. 진행과 결과는 카드가 서버에서 읽는다. 제작을 여는 일은 AI를 부르지 않으므로 실행 중에만 막는다.
-  if (tool?.brewStart) return step(<BrewStartCard conversationId={state.id} start={tool.brewStart} disabled={busy} />, null);
+  if (tool?.brewStart) return step(<BrewStartCard conversationId={state.id} start={tool.brewStart} disabled={busy} onAnnounce={() => state.announceBrew(tool.brewStart!.startId)} />, null);
   if (tool?.review) return step(<RequirementReviewCard conversationId={state.id} toolId={tool.id} review={tool.review} />, null);
   if (tool?.gapReview) return step(<GapReviewCard conversationId={state.id} toolId={tool.id} gapReview={tool.gapReview} />, null);
   if (tool?.recordDraft) { const draftId = tool.recordDraft.draftId; return step(<RecordDraftCard draft={tool.recordDraft} disabled={busy} onDecide={decision => state.decideDraft(draftId, decision)} />, null); }
@@ -223,6 +223,27 @@ export function AgentChat({ job, page, standalone = false, fresh = false, newHre
   // 모든 계정이 서버 인증으로 대화한다. 이번 달 크레딧을 다 쓴 계정만 보내지 못한다(개인 키를 등록한 계정은 한도를 보지 않는다).
   const canSend = !!access?.enabled && !access.consentRequired && !access.creditsExhausted;
   const running = state.conversation?.run?.status === "running";
+  /**
+   * 서버가 시작한 답(대화에서 시작한 제작의 분석 완료 알림)은 사용자가 보낸 말 없이 붙는다. 스레드는 사용자가 보낸 말을 따라
+   * 내려가므로, 이런 답은 화면 아래에 가려진 채 붙는다. 답변이 답변 뒤에 바로 붙었으면 그 답이 보이게 끝까지 내린다.
+   */
+  const root = useRef<HTMLElement>(null);
+  const [previous, latest] = (state.conversation?.messages ?? []).slice(-2);
+  const serverStarted = previous?.role === "assistant" && latest?.role === "assistant" ? latest.id : null;
+  const grown = serverStarted ? latest!.text.length : 0;
+  const followed = useRef<string | null>(null);
+  useEffect(() => {
+    if (!serverStarted) return;
+    // 답변의 자리와 글이 그려진 뒤에 내린다. 처음 붙을 때는 반드시 내리고, 글이 이어지는 동안에는 사람이 아래쪽을 보고 있을 때만 따라간다.
+    const timer = window.setTimeout(() => {
+      const node = root.current?.querySelector<HTMLElement>('[data-slot="aui_thread-viewport"]');
+      if (!node) return;
+      const first = followed.current !== serverStarted;
+      followed.current = serverStarted;
+      if (first || node.scrollHeight - node.scrollTop - node.clientHeight < node.clientHeight / 2) node.scrollTo({ top: node.scrollHeight });
+    }, 80);
+    return () => window.clearTimeout(timer);
+  }, [serverStarted, grown]);
   useEffect(() => { onRunningChange?.(running); }, [onRunningChange, running]);
   const runtime = useExternalStoreRuntime({ messages: state.conversation?.messages ?? [], convertMessage, isRunning: running, isLoading: state.resolving || (!!state.id && !state.conversation), isDisabled: !!preview || !canSend || state.pending || state.resolving || (!!state.id && !state.conversation), onNew: async message => { const text = message.content.filter(part => part.type === "text").map(part => part.text).join("\n"); try { await state.send(text, page?.selection ?? undefined); } catch { runtime.thread.composer.setText(text); } }, onCancel: state.cancel });
   // 지면 고침이 저장되거나 되돌려지면 화면의 미리보기 · 판 번호를 다시 불러온다. 처음 불러온 대화의 카드로는 다시 부르지 않는다.
@@ -264,7 +285,7 @@ export function AgentChat({ job, page, standalone = false, fresh = false, newHre
   return <ChatContext.Provider value={state}><JobContext.Provider value={job ?? null}><PageContext.Provider value={page ?? null}><AssistantRuntimeProvider runtime={runtime}>
     {preview ? <ResourcePreview resource={preview} onClose={() => setPreview(null)} selected={!!state.conversation?.contexts.some(ref => ref.kind === preview.kind && ref.id === preview.id)} disabled={contextDisabled} onToggle={toggleContext} /> : null}
     <AgentConsentDialog open={consentOpen} onOpenChange={setConsentOpen} onConsented={() => setAccess(current => current ? { ...current, consentRequired: false } : current)} />
-    <section className={`acf-scope ${styles.root} ${job || page ? styles.rail : standalone ? styles.standalone : styles.panel}`} aria-label="에이전트 채팅">
+    <section ref={root} className={`acf-scope ${styles.root} ${job || page ? styles.rail : standalone ? styles.standalone : styles.panel}`} aria-label="에이전트 채팅">
       <div className={styles.main}>
         <header className={styles.header}>
           <div className={styles.heading}><span className={styles.assistantMark}><LogoMark size={22} /></span><div><strong>{state.conversation?.title ?? "새 대화"}</strong><span>{running ? "답변을 준비하고 있어요" : "Expresso AI"}</span></div></div>
