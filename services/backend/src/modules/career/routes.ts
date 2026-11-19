@@ -14,6 +14,9 @@ import {
   CareerSkillEvidenceResponseSchema,
   OptionalCareerProfileResponseSchema,
   SaveCareerProfileSchema,
+  JobGoalResponseSchema,
+  OptionalJobGoalResponseSchema,
+  SaveJobGoalSchema,
   CareerSkillIdParamsSchema,
   CareerRecordResponseSchema,
   CareerRecordSchema,
@@ -130,6 +133,19 @@ export function registerCareerRoutes(
     return CareerProfileResponseSchema.parse({
       data: await options.careerService.saveProfile(principal.user.id, input),
     });
+  });
+
+  /** 최종 구직 목표. 아직 적지 않은 사람에게는 null이다. */
+  app.get(`${API_PREFIX}/career/goal`, { preHandler }, async (request) => {
+    const principal = requireAuth(request);
+    return OptionalJobGoalResponseSchema.parse({ data: await options.careerService.getJobGoal(principal.user.id) });
+  });
+
+  /** 통째로 덮어쓴다. 온보딩과 앱의 구직 목표 화면이 쓴다 — 대화에서 고치는 길은 에이전트 쪽에 따로 있다. */
+  app.put(`${API_PREFIX}/career/goal`, { preHandler }, async (request) => {
+    const principal = requireAuth(request);
+    const input = parseBody(SaveJobGoalSchema, request);
+    return JobGoalResponseSchema.parse({ data: await options.careerService.saveJobGoal(principal.user.id, input) });
   });
 
   app.get(`${API_PREFIX}/career/categories`, { preHandler }, async (request) => {

@@ -15,7 +15,7 @@ export { careerYearsOf, recordPeriod } from "./record-period.js";
 export { careerRecordText, careerRecordTextReader, readableCareerProperties } from "./record-text.js";
 type CareerCoreMethod = "listCategories" | "listRecords" | "createCategory" | "createRecord" | "getRecord" | "updateRecord"
   | "createLink" | "listLinks" | "getDeleteImpact" | "trashRecord" | "restoreRecord"
-  | "recomputeSkill" | "listSkills" | "listSkillEvidence" | "getProfile" | "saveProfile";
+  | "recomputeSkill" | "listSkills" | "listSkillEvidence" | "getProfile" | "saveProfile" | "getJobGoal" | "saveJobGoal";
 export interface CareerApi extends Pick<CareerService, CareerCoreMethod> {
   /** 라우트 단위 테스트가 필요한 부분만 조립할 수 있게 선택적으로 둡니다. */
   previewChange?: CareerPropertySchemaService["previewChange"];

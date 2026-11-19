@@ -1,4 +1,4 @@
-import type { CareerGoalSchema, CareerRecordStatusSchema, TargetRoleSchema } from "@expresso/contracts";
+import type { CareerRecordStatusSchema, TargetRoleSchema } from "@expresso/contracts";
 import type { CareerTemplateKey } from "@expresso/database";
 import type { z } from "zod";
 
@@ -38,7 +38,6 @@ export interface Persona {
   profile: {
     targetRoles: readonly z.infer<typeof TargetRoleSchema>[];
     experienceYears: number;
-    primaryGoal: z.infer<typeof CareerGoalSchema>;
   };
   records: readonly PersonaRecord[];
 }

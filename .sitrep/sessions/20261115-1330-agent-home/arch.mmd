@@ -7,14 +7,16 @@ flowchart TD
   WRITER[제안 작성기<br/>message · 근거 기록] --> SVC[제안 서비스<br/>표시 자료 부착 · 옛 모양 거름]
   CAND[후보 고르기<br/>로직] --> WRITER
   SVC --> FEED
-  GOAL{다음: 목표부터?}
-  MEM[최종 구직 목표<br/>온보딩 · 메모리]
-  JUDGE[목표 기준 제안<br/>부족한 점 · 포트폴리오 다듬기]
-  GOAL --> MEM --> JUDGE --> CAND
+  ON[온보딩 세 질문 · /goal] --> MEM[(users.jobGoal)]
+  MEM --> WRITER
+  HOME -->|목표 없음| GCARD[구직 목표 카드]
+  GCARD --> ON
+  CHATGOAL[대화에서 목표 읽기 · 고치기] --> MEM
+  JUDGE[목표 기준 제안<br/>부족한 점 · 포트폴리오 다듬기] --> CAND
   classDef done fill:#d1fae5,stroke:#059669
   classDef doing fill:#fef3c7,stroke:#d97706
   classDef decide fill:#fee2e2,stroke:#dc2626
   classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4
-  class HOME,CARD,CHAT,JOB,FEED,WRITER,SVC,CAND done
-  class GOAL decide
-  class MEM,JUDGE todo
+  class HOME,CARD,CHAT,JOB,FEED,WRITER,SVC,CAND,ON,MEM,GCARD done
+  class CHATGOAL doing
+  class JUDGE todo

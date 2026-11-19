@@ -4,7 +4,7 @@ export const mlResearch: Persona = {
   key: "dummy-ml-research",
   displayName: "배준호",
   headline: "추천 시스템 ML 엔지니어 · 석사 · 6년차",
-  profile: { targetRoles: ["ML · AI", "데이터"], experienceYears: 6, primaryGoal: "organize" },
+  profile: { targetRoles: ["ML · AI", "데이터"], experienceYears: 6 },
   records: [
     // ── 경험 ──────────────────────────────────────────────
     {

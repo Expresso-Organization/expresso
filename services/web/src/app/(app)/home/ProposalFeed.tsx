@@ -123,13 +123,28 @@ function ProposalCard({ proposal, disabled, onDismiss }: { proposal: Proposal; d
 }
 
 /**
+ * 구직 목표를 아직 모를 때 에이전트가 먼저 묻는 카드. 제안을 켰는지와 상관없이 맨 앞에 선다 —
+ * 목표는 에이전트가 권할 때 기준으로 삼는 것이라 다른 제안보다 먼저다. 누르면 구직 목표 화면으로 간다.
+ */
+function GoalCard() {
+  return (
+    <FeedCard icon="target" hue="terracotta" title="구직 목표">
+      <p className={styles.proposalMessage}>아직 어떤 일을 목표로 하시는지 모릅니다. 알려 주시면 그 목표에 맞춰 공고와 활동을 권합니다.</p>
+      <div className={styles.proposalActions}>
+        <Link href="/goal" className={styles.proposalAction}>목표 알려 주기</Link>
+      </div>
+    </FeedCard>
+  );
+}
+
+/**
  * 홈의 제안 구획 — 에이전트가 내 기록과 새 공고 · 공모전을 읽고 먼저 권하는 행동.
  *
  * 켜지 않았으면 켜는 카드만 선다. 켜면 서버가 하루 한 번, 그리고 새 소식이 들어올 때 제안을 만든다.
  * 만드는 동안에는 서버가 알리는 단계를 대화의 작업 흔적과 같은 모양으로 보인다.
  * `fallback`은 규칙으로 센 제안이다 — 크레딧이 남지 않아 에이전트가 쓰지 못했을 때만 대신 보인다.
  */
-export function ProposalFeed({ initial, fallback }: { initial: Feed; fallback: BriefingFinding[] }) {
+export function ProposalFeed({ initial, fallback, hasGoal }: { initial: Feed; fallback: BriefingFinding[]; hasGoal: boolean }) {
   const [feed, setFeed] = useState(initial);
   const [error, setError] = useState<string | null>(null);
   const [asking, setAsking] = useState(false);
@@ -158,6 +173,7 @@ export function ProposalFeed({ initial, fallback }: { initial: Feed; fallback: B
           <h2 className={styles.sectionTitle}>제안</h2>
         </div>
         <div className={styles.proposalGrid}>
+          {hasGoal ? null : <GoalCard />}
           <FeedCard icon="sparkle" hue="terracotta" title="먼저 제안받기">
             <p className={styles.proposalMessage}>내 기록과 새로 올라온 공고 · 공모전을 읽고, 지금 하면 좋은 일을 근거와 함께 권합니다.</p>
             <div className={styles.proposalActions}>
@@ -173,7 +189,7 @@ export function ProposalFeed({ initial, fallback }: { initial: Feed; fallback: B
               <DialogDescription className={styles.enableIntro}>켜면 누르지 않아도 익스프레소가 AI를 실행합니다.</DialogDescription>
             </DialogHeader>
             <dl className={styles.enableFacts}>
-              <div><Icon name="notebook" size={18} /><div><dt>읽는 것</dt><dd>내 커리어 기록, 관심 공고, 새로 수집된 채용 공고와 공모전</dd></div></div>
+              <div><Icon name="notebook" size={18} /><div><dt>읽는 것</dt><dd>내 구직 목표와 커리어 기록, 관심 공고, 새로 수집된 채용 공고와 공모전</dd></div></div>
               <div><Icon name="clock" size={18} /><div><dt>실행되는 때</dt><dd>하루에 한 번, 그리고 내 기술과 맞는 새 공고나 공모전이 들어왔을 때 하루 한 번까지</dd></div></div>
               <div><Icon name="coins" size={18} /><div><dt>크레딧</dt><dd>실행할 때마다 사용한 만큼 이번 달 크레딧에서 차감됩니다. 크레딧이 남지 않으면 실행하지 않습니다.</dd></div></div>
               <div><Icon name="sparkle" size={18} /><div><dt>정보를 사용하는 곳</dt><dd>Anthropic의 Claude 모델. 커리어 기록의 AI 사용 동의가 함께 켜집니다.</dd></div></div>
@@ -205,6 +221,7 @@ export function ProposalFeed({ initial, fallback }: { initial: Feed; fallback: B
         <h2 className={styles.sectionTitle}>제안</h2>
         {feed.proposals.length > 0 ? <span className={styles.sectionCount}>{feed.proposals.length}</span> : null}
         <span className={styles.sectionSpace} />
+        {hasGoal ? <Link href="/goal" className={styles.feedControl}><Icon name="target" size={13} />목표</Link> : null}
         <button type="button" className={styles.feedControl} disabled={working || pending} onClick={() => run(refreshProposalsAction)}>
           <Icon name="arrow-clockwise" size={13} />
           다시 받기
@@ -216,6 +233,7 @@ export function ProposalFeed({ initial, fallback }: { initial: Feed; fallback: B
       {error ? <p role="alert" className={styles.feedError}>{error}</p> : null}
 
       <div className={styles.proposalGrid}>
+        {hasGoal ? null : <GoalCard />}
         {working ? (
           <FeedCard icon="sparkle" hue="terracotta" title="제안을 준비하고 있습니다">
             <div className={styles.proposalSteps} role="status">

@@ -36,7 +36,10 @@ import {
   CareerCategoriesResponseSchema,
   CareerProfileResponseSchema,
   OptionalCareerProfileResponseSchema,
+  OptionalJobGoalResponseSchema,
+  JobGoalResponseSchema,
   type SaveCareerProfile,
+  type SaveJobGoal,
   CareerRecordListResponseSchema,
   CareerRecordResponseSchema,
   CareerDocumentBootstrapSchema,
@@ -1082,6 +1085,20 @@ export const career = {
 
   saveProfile: (accessToken: string, input: SaveCareerProfile) =>
     request(`${API_PREFIX}/career/profile`, CareerProfileResponseSchema, {
+      method: "PUT",
+      accessToken,
+      body: input,
+    }),
+
+  /** 최종 구직 목표. 아직 적지 않았으면 data가 null이다. */
+  goal: (accessToken: string) =>
+    request(`${API_PREFIX}/career/goal`, OptionalJobGoalResponseSchema, {
+      accessToken,
+      cache: "no-store",
+    }),
+
+  saveGoal: (accessToken: string, input: SaveJobGoal) =>
+    request(`${API_PREFIX}/career/goal`, JobGoalResponseSchema, {
       method: "PUT",
       accessToken,
       body: input,

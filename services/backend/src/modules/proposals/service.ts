@@ -30,7 +30,7 @@ const ACTIVITY_PAGE = 100;
 const IDLE_RUN: StoredProposalRun = { status: "idle", stage: null, reason: null, trigger: null, startedAt: null, finishedAt: null, read: null };
 
 type ProposalDependencies = {
-  career: Pick<CareerApi, "listRecords" | "listCategories">;
+  career: Pick<CareerApi, "listRecords" | "listCategories" | "getJobGoal">;
   jobs: Pick<JobBoardApi, "list">;
   activities: Pick<ActivityApi, "list">;
   consent: Pick<ConsentApi, "require">;
@@ -213,19 +213,20 @@ export class ProposalService {
       const { remaining } = await this.#deps.credits.credits(userId, at);
       if (remaining !== null && remaining <= 0) return await finish("skipped", "no_credits");
 
-      const { candidates, read } = await this.#candidates(userId, started, at);
+      const [{ candidates, read }, goal] = await Promise.all([this.#candidates(userId, started, at), this.#deps.career.getJobGoal(userId)]);
       const relevant = trigger === "news" ? hasRelevantNews(candidates) : hasCandidates(candidates);
       if (!relevant) return await finish("skipped", "nothing_new", { read, ...(trigger === "news" ? {} : { seenThrough: at }) });
 
       await this.#feeds.updateOne({ userId, "run.status": "running" }, { $set: { "run.stage": "writing" } });
-      const written = await this.#deps.writer.write(userId, candidates);
+      const written = await this.#deps.writer.write(userId, candidates, goal);
       const fresh = written.map((draft) => this.#proposal(draft, candidates, at));
       const freshKeys = new Set(fresh.map(({ subject }) => subjectKey(subject)));
       const current = (await this.#feeds.findOne({ userId }))?.proposals ?? started.proposals;
       // 마감이 지난 제안은 이때 치운다. 읽을 때는 보이지 않게만 한다.
       const alive = current.filter((proposal) => proposalView(proposal, at) !== null && !freshKeys.has(subjectKey(proposal.subject)));
       const proposals = [...fresh, ...alive].slice(0, STORED_PROPOSALS);
-      return await finish("complete", null, { proposals, seenThrough: at, read, counted: true });
+      // 에이전트가 읽고도 권할 것을 고르지 않았으면 그렇다고 남긴다 — 화면이 까닭 없이 비어 보이지 않게 한다.
+      return await finish("complete", fresh.length === 0 ? "nothing_new" : null, { proposals, seenThrough: at, read, counted: true });
     } catch {
       return await finish("failed", "failed");
     }

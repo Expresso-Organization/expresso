@@ -23,8 +23,9 @@ date: 2026-11-19
 | `services/web/src/features/job-goal/` | 세 질문 칸과 스타일 |
 | `services/web/src/app/(auth)/onboarding/goal/GoalForm.tsx` · `page.tsx` · `onboarding-actions.ts` | 세 질문, 함께 저장 |
 | `services/web/src/app/(app)/goal/` | 앱 안의 구직 목표 화면 |
+| `services/web/src/components/shell/SidebarNav.tsx` | `/goal`을 홈 탭으로 |
 | `services/web/src/app/(app)/home/{HomeWidgets,ProposalFeed}.tsx` | 구직 목표 카드, 머리줄의 「목표」, 켜기 대화상자 문구 |
-| `docs/design-doc/07-API-설계.md` · `08-데이터-설계.md` | 프로필 계약과 저장 칸 |
+| `docs/design-doc/08-데이터-설계.md` | 손대지 않는다 — 컬렉션 표는 `scripts/dump-collection-spec.mjs`가 생성한다. 다음 생성 때 `profile.primaryGoal`이 빠지고 `jobGoal`이 들어간다 |
 
 ## 작업 순서
 
