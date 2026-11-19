@@ -1,7 +1,7 @@
 // 최종 SQL 제약 목록을 대조해 확정한 MongoDB 저장 타입입니다. API 계약은 contracts에서 가져옵니다.
 import type * as Contracts from "@expresso/contracts";
 import type { JsonObject } from "./common.js";
-import type { CareerProfileDoc } from "./career.js";
+import type { CareerProfileDoc, JobGoalDoc } from "./career.js";
 
 export interface PlanDoc {
   _id: string;
@@ -26,6 +26,8 @@ export interface UserDoc {
   createdAt: Date;
   passwordHash?: string | null;
   profile?: CareerProfileDoc | null;
+  /** 최종 구직 목표. 아직 적지 않았으면 없다. */
+  jobGoal?: JobGoalDoc | null;
   notificationPreferences?: JsonObject | null;
   writeVersion?: number;
   lifecycleVersion?: number;

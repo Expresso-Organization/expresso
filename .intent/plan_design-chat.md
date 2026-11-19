@@ -17,7 +17,7 @@ date: 2026-11-19
 | `packages/contracts/src/design-chat.ts` (새로) · `index.ts` · `contracts.test.ts` | 대화 · 견본(스타일 · 레이아웃) · 첫 화면 계약 |
 | `packages/contracts/src/generation.ts` · `page-stream.ts` | `designSnippetId`와 셋 중 하나 규칙, `seed` 이벤트 |
 | `packages/database/src/documents/design-chat.ts` (새로) · `documents/index.ts` · `documents/generation.ts` · 포트폴리오 문서 타입 · `collections.ts` | `design_chats` 문서 타입, 생성 · 포트폴리오의 `designSnippetId` |
-| `packages/database/src/mongodb-migrations/0033/migration.ts` (새로) · `mongo-migrations.ts` · `mongo-build.mjs` · `migrations.test.ts` · `schema.test.ts` | 컬렉션 · 검증 규칙 · 인덱스 |
+| `packages/database/src/mongodb-migrations/0034/migration.ts` (새로) · `mongo-migrations.ts` · `mongo-build.mjs` · `migrations.test.ts` · `schema.test.ts` | 컬렉션 · 검증 규칙 · 인덱스 |
 | `services/backend/src/modules/account-lifecycle/mongo-purge.ts` | 계정 삭제 목록에 `design_chats` |
 | `services/backend/src/modules/page/brew-sources.ts` (새로) | 제작 ID로 레시피 · 근거 · 공고 읽기. 지면 생성과 대화가 함께 쓴다 |
 | `services/backend/src/modules/page/design-chat/{prompts,service,routes}.ts` (새로) + 테스트 | 호출 네 가지 · 대화 서비스 · 라우트 |
@@ -44,7 +44,7 @@ date: 2026-11-19
 flowchart TD
   A["1단계: 자료 읽기와 호출 네 가지<br/>sources.ts · prompts.ts"] --> B["2단계: 실제 호출로 재기<br/>여는 호출 · 그리기 · 고치기"]
   B --> C["3단계: 첫 화면 이어 쓰기<br/>generator.ts · briefed-generator.ts · stream.ts"]:::risk
-  C --> D["4단계: 계약과 컬렉션<br/>contracts · database 0033"]
+  C --> D["4단계: 계약과 컬렉션<br/>contracts · database 0034"]
   D --> E["5단계: 대화 서비스와 라우트<br/>service.ts · routes.ts · main.ts"]
   E --> F["6단계: 생성 요청 연결<br/>generation/service.ts · page/service.ts"]
   F --> G["7단계: 웹 화면<br/>features/design-chat · page.tsx · LivePreview"]

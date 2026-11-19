@@ -18,3 +18,4 @@ export type * from "./design-chat.js";
 
 export type { AgentCredentialDoc } from "./agent-credential.js";
 export type { PreparationPlanDoc } from "./preparation-plan.js";
+export type { ActivityDoc, ProposalFeedDoc, StoredProposal, StoredProposalRun } from "./proposals.js";

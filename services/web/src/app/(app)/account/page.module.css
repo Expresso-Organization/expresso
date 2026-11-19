@@ -36,6 +36,8 @@
 
 .navItem:hover {
   background: var(--ex-bg-sunken);
+  /* 전역 링크 호버(`a:where(:hover)`)가 클래스 색을 덮지 않으므로 여기서 진해진다 */
+  color: var(--ex-fg-strong);
 }
 
 
@@ -518,6 +520,11 @@
   padding: 8px 14px;
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+a.dataAction:hover {
+  /* 전역 링크 호버(`a:where(:hover)`)가 클래스 색을 덮지 않으므로 여기서 진해진다 */
+  color: var(--ex-fg-strong);
 }
 
 /* 보낸 뒤에는 같은 버튼이 결과를 말한다 — 다시 누를 것이 없다. */

@@ -8,7 +8,7 @@
 - [x] T2 기획 · 설계: intent · spec · plan (`design-chat`)
 - [x] T3 AI 호출 네 가지와 실제 측정 (`page/design-chat/prompts.ts`)
 - [x] T4 고른 첫 화면 뒤 이어 쓰기 (`briefed-generator.ts` · `stream.ts` · `LivePreview.tsx`)
-- [x] T5 계약과 컬렉션 (`contracts/design-chat.ts` · 마이그레이션 0033)
+- [x] T5 계약과 컬렉션 (`contracts/design-chat.ts` · 마이그레이션 0034)
 - [x] T6 대화 서비스와 라우트 (`page/design-chat/service.ts` · `routes.ts`)
 - [x] T7 생성 요청 연결 (`designSnippetId`)
 - [x] T8 웹 대화 화면 (`features/design-chat/`) · 시안 라우트 제거
@@ -32,7 +32,7 @@
   - [x] T14.5 실제 호출과 실제 화면 검증 ← 현재
 
 ## 열린 결정
-- D1 PR 머지: 머지하면 운영에 배포되고 마이그레이션 0033이 돈다. 사용자가 정함
+- D1 PR 머지: 머지하면 운영에 배포되고 마이그레이션 0034가 돈다. 사용자가 정함
 - D2 스타일과 레이아웃을 고르는 순서: 한 카드에 두 줄(지금) / 레이아웃 먼저 고르고 스타일. 권장: 지금 화면을 보고 정함
 - D3 말투: "~해요"(지금) / "~합니다". 권장: "~해요"
 - D4 완성 지면 끝의 「경력」 · 「근거 자료」: 목록 그대로(지금) / 이것도 디자인의 대상으로. 권장: 사용자가 정함 — 바꾸면 자유 생성 전체의 정리본 지시가 달라진다

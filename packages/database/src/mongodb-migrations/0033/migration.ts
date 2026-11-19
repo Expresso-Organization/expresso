@@ -1,25 +1,38 @@
+import type { Db, Document } from "mongodb";
 import type { MongoMigrationStep } from "../../mongo-migrations.js";
 
 /**
- * 디자인을 정하는 대화의 자리를 연다.
+ * 최종 구직 목표.
  *
- * - `design_chats` — 제작(brew) 하나에 대화 하나. 주고받은 말, 그린 첫 화면(소독한 마크업 · CSS), 고른 첫 화면,
- *   답을 만드는 실행의 상태를 한 문서에 둔다. 에이전트 대화(`agent_conversations`, 0009)와 같은 방식으로
- *   `version`을 올리고 `heartbeatAt`으로 끊긴 실행을 가린다.
- *
- * 번호 0033: 0032는 열린 브랜치(`feat/home-agent-first`)가 쓴다(2026-11-19 확인).
+ * - `users.jobGoal`: 사용자가 쓴 구직 목표 — 하고 싶은 일 · 가고 싶은 곳 · 시기와 지금 상황.
+ *   온보딩과 앱의 구직 목표 화면, 에이전트 대화가 쓴다. 아직 적지 않은 사용자에게는 없다.
+ * - `users.profile.primaryGoal`(온보딩의 「지금 가장 급한 것」)을 없앤다. 저장만 되고 읽는 곳이 없던 값이다.
+ *   검증 규칙이 필수로 두고 있어, 규칙을 먼저 풀고 저장된 값을 지운다.
  */
-export async function designChatSteps(): Promise<MongoMigrationStep[]> {
-  return [{ id: "design_chats:create", async run(db) {
-    const validator = { $jsonSchema: { bsonType: "object", required: ["_id", "userId", "brewId", "head", "messages", "snippets", "selectedSnippetId", "run", "version", "createdAt", "updatedAt", "heartbeatAt"], properties: {
-      _id: { bsonType: "string" }, userId: { bsonType: "string" }, brewId: { bsonType: "string" },
-      head: { bsonType: ["object", "null"] }, messages: { bsonType: "array" }, snippets: { bsonType: "array" },
-      selectedSnippetId: { bsonType: ["string", "null"] }, run: { bsonType: ["object", "null"] },
-      version: { bsonType: ["int", "long", "double"], minimum: 0 },
-      createdAt: { bsonType: "string" }, updatedAt: { bsonType: "string" }, heartbeatAt: { bsonType: "date" },
-    } } };
-    if (await db.listCollections({ name: "design_chats" }).hasNext()) await db.command({ collMod: "design_chats", validator });
-    else await db.createCollection("design_chats", { validator });
-    await db.collection("design_chats").createIndex({ userId: 1, brewId: 1 }, { unique: true, name: "design_chat_owner_brew" });
-  } }];
+const TEXT = { bsonType: "string", maxLength: 300 } as const;
+
+export async function jobGoalSteps(): Promise<MongoMigrationStep[]> {
+  return [
+    { id: "users:job_goal_schema", async run(db: Db) {
+      const info = await db.listCollections({ name: "users" }, { nameOnly: false }).next() as Document | null;
+      if (!info) throw new Error("users collection is missing");
+      const validator = structuredClone((info.options.validator ?? {}) as Document);
+      const properties = (validator.$jsonSchema as Document).properties as Document;
+      for (const shape of ((properties.profile as Document).anyOf ?? []) as Document[]) {
+        if (shape.bsonType !== "object") continue;
+        shape.required = ((shape.required ?? []) as string[]).filter((name) => name !== "primaryGoal");
+        delete (shape.properties as Document).primaryGoal;
+      }
+      properties.jobGoal = { anyOf: [
+        { bsonType: "object", required: ["work", "place", "timing", "source", "updatedAt"], additionalProperties: false, properties: {
+          work: TEXT, place: TEXT, timing: TEXT, source: { enum: ["onboarding", "app", "chat"] }, updatedAt: { bsonType: "date" },
+        } },
+        { bsonType: "null" },
+      ] };
+      await db.command({ collMod: "users", validator, validationLevel: "strict", validationAction: "error" });
+    } },
+    { id: "users:drop_primary_goal", async run(db: Db) {
+      await db.collection("users").updateMany({ "profile.primaryGoal": { $exists: true } }, { $unset: { "profile.primaryGoal": "" } });
+    } },
+  ];
 }

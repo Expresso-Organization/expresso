@@ -1,0 +1,170 @@
+/* 라이브러리 — 왼쪽 목록에서 고르고 오른쪽에서 본다. */
+
+/* ── 내용 자리 ─────────────────────────────────────────────── */
+
+.pane {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+
+.paneScroll {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 18px 14px 16px;
+}
+
+/*
+ * 분류 화면은 문서 헤더(46px) 아래 화면 전체를 쓰도록 높이가 박혀 있다. 여기서는 자리의
+ * 높이를 따르게 한다.
+ */
+.recordsPane {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.recordsPane > div {
+  height: 100%;
+}
+
+.pendingPane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--ex-fg-muted);
+}
+
+.pendingIcon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--ex-bg-tint);
+}
+
+.pendingTitle {
+  margin: 0;
+  font-size: var(--ex-text-md);
+  font-weight: 600;
+  color: var(--ex-fg);
+}
+
+.pendingAction {
+  padding: 7px 12px;
+  border: 1px solid var(--ex-border-soft);
+  border-radius: var(--ex-radius-control);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-body);
+  text-decoration: none;
+}
+
+.pendingAction:hover {
+  background: var(--ex-bg-hover);
+}
+
+/* ── 목록 ─────────────────────────────────────────────────── */
+
+.split {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+
+.list {
+  width: 216px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  padding: 12px 8px;
+  border-right: 1px solid var(--ex-border);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.listRow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 8px;
+  border-radius: 7px;
+  color: var(--ex-fg-muted);
+  text-decoration: none;
+  transition: background var(--ex-motion-instant);
+}
+
+.listRow:hover {
+  background: var(--ex-bg-tint);
+  /* 전역 링크 호버(`a:where(:hover)`)가 클래스 색을 덮지 않으므로 여기서 진해진다 */
+  color: var(--ex-fg-strong);
+}
+
+.listRow[aria-current="page"] {
+  background: var(--ex-bg-tint);
+  color: var(--ex-fg);
+}
+
+.listName {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.listRow[aria-current="page"] .listName {
+  font-weight: 600;
+  color: var(--ex-fg);
+}
+
+.listCount {
+  font-family: var(--ex-font-brand);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-subtle);
+}
+
+/* 분류는 커리어 기록에 속한다 — 한 칸 들이고 세로선으로 묶는다. */
+.listNested {
+  margin: 1px 0 6px 15px;
+  padding-left: 6px;
+  border-left: 1px solid var(--ex-border);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+/* ── 좁은 화면 ─────────────────────────────────────────────── */
+
+@media (max-width: 767px) {
+  /* 목록은 내용 위로 올라가 가로로 흐른다 */
+  .split {
+    flex-direction: column;
+  }
+
+  .list {
+    width: auto;
+    flex-direction: row;
+    overflow-x: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--ex-border);
+  }
+
+  .listNested {
+    flex-direction: row;
+    margin: 0;
+    padding-left: 6px;
+  }
+
+  .listRow {
+    flex-shrink: 0;
+  }
+}

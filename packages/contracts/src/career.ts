@@ -353,9 +353,6 @@ export const TargetRoleSchema = z.enum([
   "디자인",
 ]);
 
-/** 화면의 "지금 가장 급한 것" 세 갈래. */
-export const CareerGoalSchema = z.enum(["explore", "build", "organize"]);
-
 /** 슬라이더 상한. **12는 "12년 이상"이다.** */
 export const MAX_EXPERIENCE_YEARS = 12;
 
@@ -363,15 +360,13 @@ export const CareerProfileSchema = z.strictObject({
   /** 빈 배열은 "아직 안 정했다"는 뜻이다. 그것도 답이라 막지 않는다. */
   targetRoles: z.array(TargetRoleSchema).max(8),
   experienceYears: z.number().int().min(0).max(MAX_EXPERIENCE_YEARS),
-  primaryGoal: CareerGoalSchema,
   updatedAt: TimestampSchema,
 });
 
-/** 저장은 통째로 덮어쓴다 — 화면이 세 값을 한 번에 정하므로 부분 갱신이 없다. */
+/** 저장은 통째로 덮어쓴다 — 화면이 두 값을 한 번에 정하므로 부분 갱신이 없다. */
 export const SaveCareerProfileSchema = z.strictObject({
   targetRoles: z.array(TargetRoleSchema).max(8),
   experienceYears: z.number().int().min(0).max(MAX_EXPERIENCE_YEARS),
-  primaryGoal: CareerGoalSchema,
 });
 
 export const CareerProfileResponseSchema = z.strictObject({
@@ -383,7 +378,47 @@ export const OptionalCareerProfileResponseSchema = z.strictObject({
   data: CareerProfileSchema.nullable(),
 });
 
+/**
+ * 최종 구직 목표 — 에이전트가 권할 때 기준으로 삼는 것.
+ *
+ * 닫힌 목록이 아니라 사용자가 쓴 말 그대로다. 에이전트가 읽고 판단하는 글이라 맞춰 볼 필요가 없고,
+ * 골라 담게 하면 사용자가 실제로 원하는 자리(회사 · 시기 · 사정)가 잘려 나간다.
+ */
+export const JOB_GOAL_TEXT_MAX = 300;
+const JobGoalText = z.string().trim().max(JOB_GOAL_TEXT_MAX);
+
+/** 누가 적었는가. 온보딩, 앱의 구직 목표 화면, 에이전트 대화. */
+export const JobGoalSourceSchema = z.enum(["onboarding", "app", "chat"]);
+
+export const JobGoalSchema = z.strictObject({
+  /** 하고 싶은 일. */
+  work: JobGoalText,
+  /** 가고 싶은 곳. */
+  place: JobGoalText,
+  /** 언제까지, 그리고 지금 상황. */
+  timing: JobGoalText,
+  source: JobGoalSourceSchema,
+  updatedAt: TimestampSchema,
+});
+
+/**
+ * 화면이 저장할 때 보내는 것. 통째로 덮어쓴다. 셋 가운데 하나는 적혀 있어야 목표다.
+ * 출처는 온보딩과 앱의 구직 목표 화면뿐이다 — 대화에서 고친 목표는 이 길로 오지 않는다.
+ */
+export const SaveJobGoalSchema = z.strictObject({
+  work: JobGoalText,
+  place: JobGoalText,
+  timing: JobGoalText,
+  source: JobGoalSourceSchema.exclude(["chat"]),
+}).refine(({ work, place, timing }) => Boolean(work || place || timing), { message: "세 답 가운데 하나는 적어야 합니다." });
+
+/** 아직 적지 않은 사람에게는 목표가 없다. */
+export const OptionalJobGoalResponseSchema = z.strictObject({ data: JobGoalSchema.nullable() });
+export const JobGoalResponseSchema = z.strictObject({ data: JobGoalSchema });
+
 export type TargetRole = z.infer<typeof TargetRoleSchema>;
-export type CareerGoal = z.infer<typeof CareerGoalSchema>;
+export type JobGoal = z.infer<typeof JobGoalSchema>;
+export type JobGoalSource = z.infer<typeof JobGoalSourceSchema>;
+export type SaveJobGoal = z.infer<typeof SaveJobGoalSchema>;
 export type CareerProfile = z.infer<typeof CareerProfileSchema>;
 export type SaveCareerProfile = z.infer<typeof SaveCareerProfileSchema>;

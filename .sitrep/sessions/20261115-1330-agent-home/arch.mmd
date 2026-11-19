@@ -1,0 +1,21 @@
+flowchart TD
+  MERGE[main 머지] --> DEPLOY[deploy.sh]
+  DEPLOY --> MIG[마이그레이션]
+  MIG --> BUILD[웹 빌드<br/>NEXT_DIST_DIR=.next-build]
+  BUILD --> CFG[next.config.ts<br/>빌드용 tsconfig 고르기]
+  CFG --> TSB[tsconfig.next-build.json]
+  TSB --> FRESH[.next-build/types<br/>이번 빌드의 타입]
+  CFG -.고치기 전.-> STALE[.next/types<br/>직전 배포의 타입]
+  BUILD --> CHECK[타입 검사<br/>증분 캐시 없이 전부]
+  FRESH --> CHECK
+  CHECK --> SWAP[.next 교체 · 재시작]
+  GUARD[tsconfig.test.ts] --> TSB
+  PR{PR 머지 D3} --> MERGE
+  TC[pnpm typecheck의 경로 타입] --> CHECK
+  classDef done fill:#d1fae5,stroke:#059669
+  classDef doing fill:#fef3c7,stroke:#d97706
+  classDef decide fill:#fee2e2,stroke:#dc2626
+  classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4
+  class DEPLOY,MIG,BUILD,CFG,TSB,FRESH,CHECK,SWAP,GUARD,STALE,MERGE done
+  class PR decide
+  class TC todo

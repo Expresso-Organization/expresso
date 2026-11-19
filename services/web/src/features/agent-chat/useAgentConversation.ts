@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AgentConversationResponseSchema, AgentConversationListSchema, type AgentConversation, type AgentContext, type AgentPageSelection, type AgentApproval, type AgentPlanDecision, type AgentRecordDraftDecision, type AgentReplanDecision } from "@expresso/contracts";
+import { AgentConversationResponseSchema, AgentConversationListSchema, type AgentConversation, type AgentContext, type AgentPageSelection, type AgentApproval, type AgentPlanDecision, type AgentGoalDraftDecision, type AgentRecordDraftDecision, type AgentReplanDecision } from "@expresso/contracts";
 const base = "/api/agent/conversations";
 export async function agentRequest(path: string, body?: unknown) {
   const response = await fetch(`${base}${path}`, { ...(body === undefined ? {} : { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), cache: "no-store" });
@@ -12,8 +12,9 @@ export async function agentRequest(path: string, body?: unknown) {
 /**
  * `restore: "context"`는 처음 열 대화를 브라우저의 마지막 대화가 아니라 `context`가
  * 연결된 가장 최근 대화로 고른다. 공고 화면이 쓴다 — 다른 공고의 대화가 열리지 않게.
+ * `restore: "url"`은 주소에 적힌 대화(`?chat=`)만 연다. 홈이 쓴다 — 주소에 대화가 없으면 시작 화면이다.
  */
-export function useAgentConversation(context?: AgentContext, options: { restore?: "context" } = {}) {
+export function useAgentConversation(context?: AgentContext, options: { restore?: "context" | "url" } = {}) {
   const { restore } = options;
   const [id, setId] = useState<string | null>(null);
   const [resolving, setResolving] = useState(restore === "context" && !!context);
@@ -38,7 +39,7 @@ export function useAgentConversation(context?: AgentContext, options: { restore?
   const contextKind = context?.kind; const contextId = context?.id;
   useEffect(() => {
     const requested = new URL(window.location.href).searchParams.get("chat");
-    if (requested || restore !== "context" || !contextKind || !contextId) { setResolving(false); select(requested ?? sessionStorage.getItem("ex-agent-conversation")); return; }
+    if (requested || restore !== "context" || !contextKind || !contextId) { setResolving(false); select(requested ?? (restore === "url" ? null : sessionStorage.getItem("ex-agent-conversation"))); return; }
     let alive = true;
     setResolving(true);
     // 목록은 updatedAt 내림차순이다. 맞는 대화가 없으면 아무것도 고르지 않는다 —
@@ -117,6 +118,7 @@ export function useAgentConversation(context?: AgentContext, options: { restore?
     retry: () => perform(() => agentRequest(`/${id}/retry`, {})),
     /** 초안 승인 · 거절. 실패를 카드가 직접 보여 주도록 오류를 다시 던진다. */
     decideDraft: (draftId: string, decision: AgentRecordDraftDecision) => decide(`record-drafts/${draftId}`, decision),
+    decideGoalDraft: (draftId: string, decision: AgentGoalDraftDecision) => decide(`goal-drafts/${draftId}`, decision),
     decidePlanDraft: (draftId: string, decision: AgentPlanDecision) => decide(`plan-drafts/${draftId}`, decision),
     decideReplanDraft: (draftId: string, decision: AgentReplanDecision) => decide(`replan-drafts/${draftId}`, decision),
     approve: (input: AgentApproval) => perform(() => agentRequest(`/${id}/approval`, input)),

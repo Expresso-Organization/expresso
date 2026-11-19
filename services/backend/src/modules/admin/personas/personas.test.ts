@@ -1,4 +1,4 @@
-import { CareerGoalSchema, CareerRecordStatusSchema, DummyAccountKeySchema, MAX_EXPERIENCE_YEARS, TargetRoleSchema } from "@expresso/contracts";
+import { CareerRecordStatusSchema, DummyAccountKeySchema, MAX_EXPERIENCE_YEARS, TargetRoleSchema } from "@expresso/contracts";
 import { CAREER_CATEGORY_TEMPLATES } from "@expresso/database";
 import { describe, expect, it } from "vitest";
 
@@ -20,7 +20,6 @@ describe("dummy personas", () => {
       expect(personaEmail(persona)).toMatch(/@expresso\.test$/);
       expect(persona.displayName.length).toBeGreaterThan(0);
       for (const role of persona.profile.targetRoles) expect(TargetRoleSchema.safeParse(role).success).toBe(true);
-      expect(CareerGoalSchema.safeParse(persona.profile.primaryGoal).success).toBe(true);
       expect(persona.profile.experienceYears).toBeGreaterThanOrEqual(0);
       expect(persona.profile.experienceYears).toBeLessThanOrEqual(MAX_EXPERIENCE_YEARS);
     }

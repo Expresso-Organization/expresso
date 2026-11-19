@@ -6,13 +6,15 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { CLI_IDENTITY_ENV } from "../ai/claude-code.js";
 import { recordAiUsage, type AiUsageSink } from "../ai/usage-sink.js";
-import { AgentEditDraftSchema, AgentPageElementEditInputSchema, AgentPageElementReadInputSchema, type AgentPageElementEditInput, type AgentPageEdit, AgentRecordDraftInputSchema, GapReviewDraftSchema, PlanProposalInputSchema, ReplanProposalInputSchema, type AgentPlanDraft, type AgentReplanDraft, type PlanProposalInput, type PreparationPlan, type ReplanProposalInput, type GapReview, type GapReviewDraft, RequirementReviewDraftSchema, UuidSchema, type AgentRecordDraft, type AgentRecordDraftInput, type AgentEditDraft, type AgentMessage, type AgentToolResult, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
+import { AgentEditDraftSchema, AgentPageElementEditInputSchema, AgentPageElementReadInputSchema, type AgentPageElementEditInput, type AgentPageEdit, AgentGoalDraftInputSchema, type AgentGoalDraft, type AgentGoalDraftInput, AgentRecordDraftInputSchema, GapReviewDraftSchema, PlanProposalInputSchema, ReplanProposalInputSchema, type AgentPlanDraft, type AgentReplanDraft, type PlanProposalInput, type PreparationPlan, type ReplanProposalInput, type GapReview, type GapReviewDraft, RequirementReviewDraftSchema, UuidSchema, type AgentRecordDraft, type AgentRecordDraftInput, type AgentEditDraft, type AgentMessage, type AgentToolResult, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
 
 export type AgentEvent = { type: "text"; text: string } | { type: "tool"; tool: AgentToolResult };
 export interface AgentRecordSummary { id: string; title: string; category: string; status: string; updatedAt: string }
 export interface AgentRecordText { id: string; title: string; text: string; truncated: boolean }
 /** 도구 입력이 검증을 통과하지 못했다. 에이전트가 고쳐 다시 부를 수 있도록 어긋난 항목을 돌려준다. */
 export class AgentToolRejection extends Error { constructor(readonly issues: string[]) { super(issues.join("\n")); } }
+/** 모델에 넘기는 구직 목표. 적지 않은 칸은 빈 글이다. */
+export interface AgentJobGoal { work: string; place: string; timing: string }
 export interface AgentInput {
   /** 사용량을 누구 몫으로 남길지. */
   userId: string;
@@ -27,6 +29,10 @@ export interface AgentInput {
   review(draft: RequirementReviewDraft): Promise<RequirementReview>;
   /** 대화에서 사용자가 한 말로 새 기록 초안을 만든다. 저장은 사용자가 카드에서 승인할 때만. */
   draftRecord(input: AgentRecordDraftInput): Promise<AgentRecordDraft>;
+  /** 사용자가 적어 둔 구직 목표. 없으면 null. 프롬프트에 자료로 싣는다. */
+  jobGoal: AgentJobGoal | null;
+  /** 대화에서 바뀐 목표의 칸으로 변경 초안을 만든다. 저장은 사용자가 카드에서 승인할 때만. */
+  goalDraft(input: AgentGoalDraftInput): Promise<AgentGoalDraft>;
   /** 가장 최근 요건 대조를 기준으로 보완점을 정리한다. */
   gapReview(draft: GapReviewDraft): Promise<GapReview>;
   /** 가장 최근 보완점에서 고른 번호와 시간 설정으로 준비 계획 초안을 만든다. 저장은 승인할 때. */
@@ -53,6 +59,7 @@ export function conversationForModel(messages: AgentMessage[]) {
     summary: tool.summary,
     ...(tool.review ? { review: { jobPostingId: tool.review.jobPostingId, summary: tool.review.summary, items: tool.review.items.map(item => ({ requirement: item.requirement, kind: item.kind, assessment: item.assessment, recommendation: item.recommendation, evidence: item.evidence.map(evidence => ({ recordTitle: evidence.recordTitle, quote: evidence.quote })) })) } } : {}),
     ...(tool.recordDraft ? { recordDraft: { title: tool.recordDraft.title, status: tool.recordDraft.status, recordId: tool.recordDraft.recordId } } : {}),
+    ...(tool.goalDraft ? { goalDraft: { work: tool.goalDraft.work, place: tool.goalDraft.place, timing: tool.goalDraft.timing, status: tool.goalDraft.status } } : {}),
     ...(tool.planDraft ? { planDraft: { title: tool.planDraft.title, status: tool.planDraft.status, planId: tool.planDraft.planId, settings: tool.planDraft.settings, tasks: tool.planDraft.tasks.length } } : {}),
     ...(tool.replanDraft ? { replanDraft: { planId: tool.replanDraft.planId, status: tool.replanDraft.status, settings: tool.replanDraft.settings } } : {}),
     ...(tool.pageEdit ? { pageEdit: { portfolioId: tool.pageEdit.portfolioId, key: tool.pageEdit.key, label: tool.pageEdit.label, revision: tool.pageEdit.revision, undone: tool.pageEdit.undone, changes: tool.pageEdit.changes.map(change => change.label) } } : {}),
@@ -66,6 +73,7 @@ const SYSTEM_PROMPT = [
   "사용자의 커리어 기록은 대화에 연결되지 않았어도 list_career_records로 목록을, read_career_records로 본문을 읽을 수 있습니다. 필요한 기록만 골라 한 번에 묶어 읽으십시오.",
   "공고 요건과 기록을 비교해 달라는 요청에는 필요한 기록을 읽은 뒤 record_requirement_review로 요건 대조를 기록하고, 본문에는 결과를 짧게 요약하십시오. 공고 인용과 근거 인용은 원문을 한 글자도 바꾸지 말고 옮기십시오. 근거가 없는 요건은 unconfirmed로 두고, 기록에 없다는 이유로 경험이 없다고 단정하지 마십시오. 도구가 어긋난 항목을 돌려주면 그 항목을 고쳐 다시 기록하십시오.",
   "사용자가 대화에서 말한 경험을 기록으로 남기자고 하면 propose_new_record로 새 기록 초안을 제안하십시오. 사용자가 실제로 말한 내용만 쓰고, 팀원이 한 일을 사용자의 일로 바꾸거나 말하지 않은 수치 · 기술을 더하지 마십시오. 본문은 상황 · 역할 · 행동 · 결과 소제목의 마크다운으로 쓰고 말하지 않은 항목은 비워 두십시오. sources에는 근거가 된 사용자 메시지의 id와 그 말을 그대로 옮긴 인용을 넣으십시오. 저장은 사용자가 카드에서 승인할 때만 일어나므로 승인 전에는 저장했다고 말하지 마십시오.",
+  "jobGoal은 사용자가 적어 둔 최종 구직 목표입니다(work 하고 싶은 일 · place 일하고 싶은 곳 · timing 목표 시기와 지금 상황, 빈 글은 적지 않은 칸). 진로 · 준비 · 공고 선택에 대한 조언은 이 목표를 기준으로 하십시오. jobGoal이 null이면 목표를 아는 것처럼 말하지 말고, 목표를 알아야 답할 수 있는 요청이면 하고 싶은 일 · 일하고 싶은 곳 · 시기를 한 번에 하나씩 물으십시오. 사용자가 목표를 새로 말하거나 바꾸겠다고 분명히 말하면 되묻지 말고 propose_job_goal_update로 제안하십시오. 카드가 사용자의 확인입니다. 사용자의 말이 적어 둔 목표와 달라 보이기만 하고 바꾸겠다는 말이 없으면 도구를 부르지 말고 목표가 바뀌었는지 한 번만 물으십시오. 도구에는 사용자가 말한 칸만 사용자의 말에 가깝게 넣고, 말하지 않은 칸 · 회사 · 시기 · 조건을 더하지 마십시오. 저장은 사용자가 카드에서 승인할 때만 일어나므로, 대화의 goalDraft가 approved가 되기 전에는 목표를 고쳤다고 말하지 말고 카드에서 확인해 달라고만 하십시오. rejected인 변경은 사용자가 다시 말하기 전에는 되풀이해 제안하지 마십시오.",
   "무엇을 보완하거나 준비해야 하는지 정리해 달라고 하면 가장 최근 요건 대조와 대화에서 확인한 답을 바탕으로 record_gap_review를 쓰십시오. requirementIndex는 그 대조의 요건 순서(0부터)입니다. 확인되지 않은 요건은 needs_confirmation으로 두고, needs_improvement는 사용자가 대화에서 직접 부족하다고 말한 경우에만 그 발언을 근거로 쓰십시오. priority는 준비할 순서입니다.",
   "준비 계획을 요청받으면 주당 쓸 수 있는 시간, 기간(주), 시작일을 모르면 먼저 묻고, 가장 최근 보완점 정리에서 고른 번호(gapIndexes, 0부터)로 propose_preparation_plan을 부르십시오. 작업과 일정은 서버가 정하므로 지어내지 마십시오. 시간이 모자라다고 돌아오면 그 내용을 사용자에게 전하고 설정을 다시 물으십시오. 계획은 사용자가 카드에서 승인해야 저장됩니다.",
   "승인한 계획의 진행을 묻거나 남은 작업을 다시 배치해 달라고 하면 read_preparation_plan으로 진행을 보고, 재배치는 새 주당 시간 · 기간 · 시작일로 propose_replan을 부르십시오. 완료한 작업은 그대로 두고 남은 작업만 다시 배치되며, 사용자가 카드에서 승인해야 바뀝니다.",
@@ -76,7 +84,7 @@ const SYSTEM_PROMPT = [
 export interface AgentRuntime { run(input: AgentInput): Promise<void> }
 
 /** 에이전트가 부를 수 있는 도구. SDK에 넘기는 허용 목록과 실행 직전 검사가 이 목록 하나를 본다. */
-const TOOL_NAMES = ["propose_record_edit", "list_career_records", "read_career_records", "record_requirement_review", "propose_new_record", "record_gap_review", "propose_preparation_plan", "read_preparation_plan", "propose_replan", "read_page_element", "edit_page_element"] as const;
+const TOOL_NAMES = ["propose_record_edit", "list_career_records", "read_career_records", "record_requirement_review", "propose_new_record", "propose_job_goal_update", "record_gap_review", "propose_preparation_plan", "read_preparation_plan", "propose_replan", "read_page_element", "edit_page_element"] as const;
 export const AGENT_ALLOWED_TOOLS = TOOL_NAMES.map(name => `mcp__expresso__${name}`);
 type ToolName = typeof TOOL_NAMES[number];
 /** 작업 흔적에 보이는 이름과, 모델이 도구 입력을 쓰는 동안 보이는 요약. */
@@ -86,6 +94,7 @@ const TOOL_LABELS: Record<ToolName, { name: string; pending: string }> = {
   read_career_records: { name: "기록 읽기", pending: "기록 본문을 읽고 있습니다." },
   record_requirement_review: { name: "요건 대조", pending: "요건마다 근거를 찾고 있습니다." },
   propose_new_record: { name: "새 기록 초안", pending: "대화에서 말한 경험을 초안으로 옮기고 있습니다." },
+  propose_job_goal_update: { name: "구직 목표 변경", pending: "바뀐 목표를 정리하고 있습니다." },
   record_gap_review: { name: "보완점 정리", pending: "확인하고 보완할 점을 정리하고 있습니다." },
   propose_preparation_plan: { name: "준비 계획 초안", pending: "작업과 일정을 배치하고 있습니다." },
   read_preparation_plan: { name: "계획 진행 확인", pending: "계획의 진행을 읽고 있습니다." },
@@ -171,6 +180,11 @@ export class ClaudeAgentRuntime implements AgentRuntime {
       const draft = await input.draftRecord(draftInput);
       return { summary: draft.title, detail: { recordDraft: draft }, reply: reply({ draftId: draft.draftId, requiresUserApproval: true }) };
     }, recheck("어긋난 항목을 고쳐 다시 제안합니다.", "초안을 만들지 않았습니다. 아래 항목을 고쳐 다시 제안하십시오.")));
+    server.registerTool("propose_job_goal_update", { description: "사용자가 대화에서 말한 구직 목표의 변경을 제안합니다. 바뀌는 칸만 넣고 나머지는 넣지 않습니다. 아직 승인 · 거절하지 않은 앞선 제안(status ready)의 칸은 새 제안이 이어받으므로 다시 넣지 않습니다. 저장은 사용자가 카드에서 승인할 때만 일어납니다.", inputSchema: AgentGoalDraftInputSchema.shape }, (goalInput, extra) => step("propose_job_goal_update", extra, async () => {
+      const draft = await input.goalDraft(goalInput);
+      const changed = (["work", "place", "timing"] as const).filter(key => draft[key] !== null);
+      return { summary: `바뀌는 칸 ${changed.length}`, detail: { goalDraft: draft }, reply: reply({ draftId: draft.draftId, changed, requiresUserApproval: true }) };
+    }, recheck("어긋난 항목을 고쳐 다시 제안합니다.", "변경을 제안하지 않았습니다. 아래 항목을 고쳐 다시 제안하십시오.")));
     server.registerTool("record_gap_review", { description: "가장 최근 요건 대조와 대화의 답을 바탕으로 이 공고를 위해 확인 · 보완할 점을 기록합니다. 근거는 기록 원문(record) 또는 이 대화의 사용자 메시지(user_message)를 그대로 인용합니다.", inputSchema: GapReviewDraftSchema.shape }, (draft, extra) => step("record_gap_review", extra, async () => {
       const gapReview = await input.gapReview(draft);
       const confirm = gapReview.items.filter(item => item.status === "needs_confirmation").length;
@@ -200,7 +214,7 @@ export class ClaudeAgentRuntime implements AgentRuntime {
     }, recheck("어긋난 항목을 고쳐 다시 씁니다.", "저장하지 않았습니다. 아래 항목을 고쳐 다시 부르십시오.")));
     const isolatedHome = input.apiKey ? await mkdtemp(join(tmpdir(), "expresso-agent-")) : null;
     try {
-      const messages = query({ prompt: JSON.stringify({ conversation: conversationForModel(input.messages), context: input.context }), options: {
+      const messages = query({ prompt: JSON.stringify({ conversation: conversationForModel(input.messages), jobGoal: input.jobGoal, context: input.context }), options: {
         model: "sonnet",
         // 구독 경로도 git 사용자 이름을 컨텍스트에 싣지 않는다(`CLI_IDENTITY_ENV`).
         env: isolatedHome ? { PATH: process.env.PATH, HOME: isolatedHome, CLAUDE_CONFIG_DIR: isolatedHome, ANTHROPIC_API_KEY: input.apiKey, ...CLI_IDENTITY_ENV } : { ...process.env, ...CLI_IDENTITY_ENV }, abortController, persistSession: false, includePartialMessages: true, maxTurns: 8, maxBudgetUsd: 1,
@@ -227,7 +241,8 @@ export class ClaudeAgentRuntime implements AgentRuntime {
         }
         if (message.type === "stream_event" && message.event.type === "content_block_delta" && message.event.delta.type === "text_delta") await input.emit({ type: "text", text: message.event.delta.text });
         if (message.type === "result" && message.is_error) throw new Error("agent execution failed");
-        if (message.type === "result" && this.usage) recordAgentUsage(this.usage, input.userId, message.modelUsage ?? {}, message.duration_ms ?? 0);
+        // 개인 키로 돈 실행은 그 키의 계정이 비용을 낸다. 이번 달 크레딧 장부에 적지 않는다 — 적으면 내 키로 한 대화가 지면 생성의 한도를 깎는다.
+        if (message.type === "result" && this.usage && !input.apiKey) recordAgentUsage(this.usage, input.userId, message.modelUsage ?? {}, message.duration_ms ?? 0);
       }
       // 끝까지 결과가 오지 않은 블록이 실행 중으로 남지 않게 닫는다. 실패한 실행은 서비스가 닫는다.
       for (const row of open.values()) await input.emit({ type: "tool", tool: { ...row, status: "failed", summary: "실행하지 못했습니다." } });

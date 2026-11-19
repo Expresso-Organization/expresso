@@ -86,7 +86,7 @@ flowchart TD
 
 **데이터**
 
-- 새 컬렉션 `design_chats`(마이그레이션 0033 — 0032는 `feat/home-agent-first`가 쓴다). `(userId, brewId)` 고유 인덱스. 계정 삭제 목록(`PURGED_COLLECTIONS`)에 넣는다.
+- 새 컬렉션 `design_chats`(마이그레이션 0034 — main을 합치며 0033에서 다시 매겼다). `(userId, brewId)` 고유 인덱스. 계정 삭제 목록(`PURGED_COLLECTIONS`)에 넣는다.
 
 **웹**
 

@@ -249,6 +249,115 @@
   color: var(--ex-fg-muted);
 }
 
+/* ── 접히는 묶음 ──────────────────────────────────────────────
+ *
+ * 머리말 전체가 접기 단추다. 화살표는 손이 얹히거나 접혀 있을 때만 보인다 —
+ * 펼친 묶음 셋이 화살표 셋을 늘 달고 있으면 머리말이 메뉴처럼 시끄러워진다.
+ * 1차 메뉴 바로 아래 첫 묶음은 위 여백을 비운다. 어느 묶음이 첫째인지는 대화가
+ * 있는가에 따라 바뀌므로 묶음 이름에 묶지 않는다.
+ */
+nav + .group .groupHeadRow {
+  padding-top: 0;
+}
+
+.groupToggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.groupToggle:hover .groupLabel {
+  color: var(--ex-fg-body);
+}
+
+.groupToggle:focus-visible {
+  outline: none;
+  border-radius: 4px;
+  box-shadow: var(--ex-focus-ring);
+}
+
+.groupCaret {
+  display: grid;
+  place-items: center;
+  color: var(--ex-fg-subtle);
+  opacity: 0;
+  transition:
+    opacity var(--ex-motion-instant),
+    transform var(--ex-motion-quick);
+}
+
+.groupToggle:hover .groupCaret,
+.groupToggle:focus-visible .groupCaret,
+.group[data-open="false"] .groupCaret {
+  opacity: 1;
+}
+
+.group[data-open="false"] .groupCaret {
+  transform: rotate(-90deg);
+}
+
+/* 손을 얹을 수 없는 기기(폰 서랍)에서는 머리말이 눌린다는 표시를 늘 둔다 */
+@media (hover: none) {
+  .groupCaret {
+    opacity: 1;
+  }
+}
+
+/*
+ * 본문은 높이째 접힌다. 접히는 동안은 보이다가 끝나면 숨는다(visibility는
+ * 보이는 쪽을 끝까지 유지한다) — 숨은 뒤에는 남은 몇 px도 그려지지 않는다.
+ * 안쪽은 위아래 3px을 더 품는다. 잘라 내는 상자가 줄의 포커스 링까지 자르지 않게.
+ */
+.groupBody {
+  display: grid;
+  grid-template-rows: 1fr;
+}
+
+.group[data-animated="true"] .groupBody {
+  transition:
+    grid-template-rows var(--ex-motion-quick),
+    visibility var(--ex-motion-quick);
+}
+
+.group[data-open="false"] .groupBody {
+  grid-template-rows: 0fr;
+  visibility: hidden;
+}
+
+.groupBodyInner {
+  min-height: 0;
+  overflow: hidden;
+  padding: 3px 0;
+  margin: -3px 0;
+}
+
+/* 「모두 보기」 — 줄 모양을 빌리되 글자는 머리말처럼 물러나 있다 */
+.groupMore {
+  /* 포트폴리오 썸네일과 같은 폭 — 글자가 위 줄의 제목과 같은 선에 선다 */
+  --ex-row-lead: 26px;
+
+  padding: 5px 8px;
+  text-decoration: none;
+}
+
+.groupMoreLabel {
+  margin-left: 9px;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
+  white-space: nowrap;
+}
+
+.groupMore:hover .groupMoreLabel {
+  color: var(--ex-fg-body);
+}
+
 /* ── 1차 메뉴 ─────────────────────────────────────────────── */
 
 .primary {
@@ -704,6 +813,97 @@
   [data-sidebar-collapsed="true"] .quotaCard {
     visibility: hidden;
   }
+
+  /* 머리말의 접기 단추 · 추가 단추도 같은 이유로 Tab 순서에서 빠진다 */
+  .groupHeadRow {
+    transition: visibility var(--ex-motion-quick);
+  }
+
+  [data-sidebar-collapsed="true"] .groupHeadRow {
+    visibility: hidden;
+  }
 }
 
 .addCategoryIssue { flex-shrink: 0; color: var(--ex-status-danger-text); font-size: var(--ex-text-3xs); }
+
+/* ── 새 포트폴리오 ────────────────────────────────────────────
+ *
+ * 서비스의 단 하나의 CTA다(디자인 시스템 §04 BUTTONS · SIGNATURE). 탭과 다른 모양으로
+ * 탭 묶음 위에 선다. 접히면 글자가 사라지고 아이콘만 레일 한가운데 남는다.
+ */
+.brew {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  height: 34px;
+  margin-bottom: 14px;
+  border-radius: var(--ex-radius-pill);
+  background: var(--ex-accent);
+  color: var(--ex-fg-on-accent);
+  font-size: var(--ex-text-xs);
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    width var(--ex-motion-quick),
+    gap var(--ex-motion-quick),
+    background var(--ex-motion-instant);
+}
+
+.brew:hover {
+  background: var(--ex-accent-hover);
+}
+
+.brew:focus-visible {
+  outline: none;
+  box-shadow: var(--ex-focus-ring);
+}
+
+.brewLead {
+  display: grid;
+  place-items: center;
+}
+
+.brewLabel {
+  white-space: nowrap;
+}
+
+/* ── 최근 대화 ────────────────────────────────────────────── */
+
+.conversations {
+  display: grid;
+  gap: 1px;
+}
+
+.conversationItem {
+  padding: 6px 8px;
+}
+
+.conversationTitle {
+  margin-left: 9px;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-body);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (min-width: 1024px) {
+  [data-sidebar-collapsed="true"] .brew {
+    width: var(--ex-sidebar-rail-row);
+    gap: 0;
+  }
+
+  [data-sidebar-collapsed="true"] .brewLabel {
+    width: 0;
+    overflow: hidden;
+  }
+
+  /* 레일에는 대화 제목이 들어설 자리가 없다. 묶음째 물러난다. */
+  [data-sidebar-collapsed="true"] .conversations {
+    display: none;
+  }
+}

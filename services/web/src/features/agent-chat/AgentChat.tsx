@@ -1,6 +1,7 @@
 "use client";
 import { createContext, useContext, useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import type { Route } from "next";
 import { LogoMark } from "@/components/brand/Logo";
 import { Icon } from "@/components/ui/Icon";
 import { useRouter } from "next/navigation";
@@ -10,6 +11,7 @@ import type { AgentContext, AgentMessage, AgentPageSelection, AiEditProposalDeta
 import { ResourcePreview, type PreviewResource } from "./ResourcePreview";
 import { RequirementReviewCard } from "./RequirementReviewCard";
 import { RecordDraftCard } from "./RecordDraftCard";
+import { JobGoalDraftCard } from "./JobGoalDraftCard";
 import { GapReviewCard } from "./GapReviewCard";
 import { PlanDraftCard } from "./PlanDraftCard";
 import { PlanCard } from "./PlanCard";
@@ -24,7 +26,8 @@ import { Button } from "@/components/ui/button";
 import type { ThreadGroupPart } from "@/components/assistant-ui/elements/thread.aui";
 import type { PropsWithChildren, ReactNode } from "react";
 import "@/styles/agent-chat-framework.css";
-import { useAgentConversation } from "./useAgentConversation";
+import { agentRequest, useAgentConversation } from "./useAgentConversation";
+import { AGENT_CONVERSATIONS_EVENT, takeAgentHandoff } from "./agent-handoff";
 import { ToolStep } from "./ToolStep";
 import styles from "./AgentChat.module.css";
 
@@ -121,7 +124,7 @@ function GeneralWelcome() {
 }
 /** 작업 흔적의 아이콘. 키는 서버가 보내는 도구 이름(platform/agent/runtime.ts의 step 이름)이다. */
 const TOOL_ICONS: Record<string, string> = {
-  "기록 목록 확인": "list-bullets", "기록 읽기": "book-open-text", "요건 대조": "list-checks", "새 기록 초안": "note-pencil", "기록 변경 제안": "pencil-line",
+  "기록 목록 확인": "list-bullets", "기록 읽기": "book-open-text", "요건 대조": "list-checks", "새 기록 초안": "note-pencil", "구직 목표 변경": "target", "기록 변경 제안": "pencil-line",
   "보완점 정리": "target", "준비 계획 초안": "calendar-check", "계획 진행 확인": "chart-line-up", "계획 재배치 초안": "arrows-clockwise",
   "지면 요소 읽기": "cursor-click", "지면 요소 고침": "pencil-simple-line",
 };
@@ -139,6 +142,7 @@ const RecordTool: ToolCallMessagePartComponent = props => {
   if (tool?.review) return step(<RequirementReviewCard conversationId={state.id} toolId={tool.id} review={tool.review} />, null);
   if (tool?.gapReview) return step(<GapReviewCard conversationId={state.id} toolId={tool.id} gapReview={tool.gapReview} />, null);
   if (tool?.recordDraft) { const draftId = tool.recordDraft.draftId; return step(<RecordDraftCard draft={tool.recordDraft} disabled={busy} onDecide={decision => state.decideDraft(draftId, decision)} />, null); }
+  if (tool?.goalDraft) { const draftId = tool.goalDraft.draftId; return step(<JobGoalDraftCard draft={tool.goalDraft} disabled={busy} onDecide={decision => state.decideGoalDraft(draftId, decision)} />, null); }
   if (tool?.planDraft) {
     const { draftId, planId, status } = tool.planDraft;
     if (status === "approved" && planId) return step(<PlanCard planId={planId} refreshKey={state.conversation?.version} />, null);
@@ -170,8 +174,12 @@ const convertMessage = (message: AgentMessage): ThreadMessageLike => ({
     { type: "text", text: message.text },
   ],
 });
-export function AgentChat({ job, page, standalone = false, onRunningChange, ...props }: {
+export function AgentChat({ job, page, standalone = false, fresh = false, newHref, onRunningChange, ...props }: {
   context?: AgentContext; contextLabel?: string; standalone?: boolean; job?: AgentChatJob;
+  /** 참이면 주소에 적힌 대화만 연다. 홈이 쓴다 — 홈의 입력창이 넘긴 말(`agent-handoff`)이 있으면 그 말로 대화를 시작한다. */
+  fresh?: boolean;
+  /** 「새 대화」가 갈 곳. 홈에서는 대화 전의 홈 화면으로 돌아간다. 주지 않으면 이 자리에서 대화를 비운다. */
+  newHref?: string;
   /** 다듬기 화면의 지면. 대화는 이 포트폴리오가 연결된 가장 최근 대화로 열리고, 보내는 말에 고른 요소가 붙는다. */
   page?: AgentChatPage;
   /** 응답 진행 여부가 바뀔 때. 레일이 접혀 있으면 머리의 채팅 버튼이 진행 표시를 그린다. */
@@ -179,7 +187,7 @@ export function AgentChat({ job, page, standalone = false, onRunningChange, ...p
 }) {
   const context: AgentContext | undefined = job ? { kind: "job", id: job.id } : page ? { kind: "portfolio", id: page.portfolioId } : props.context;
   const contextLabel = job?.title ?? page?.title ?? props.contextLabel;
-  const state = useAgentConversation(context, job || page ? { restore: "context" } : {});
+  const state = useAgentConversation(context, job || page ? { restore: "context" } : fresh ? { restore: "url" } : {});
   const router = useRouter();
   const [preview, setPreview] = useState<PreviewResource | null>(null);
   const [contextTitles, setContextTitles] = useState<Record<string, string>>({});
@@ -207,9 +215,10 @@ export function AgentChat({ job, page, standalone = false, onRunningChange, ...p
   const [access, setAccess] = useState<ReturnType<typeof AgentChatAccessSchema.parse>["data"] | null>(null);
   const [accessError, setAccessError] = useState(false);
   const [consentOpen, setConsentOpen] = useState(false);
-  useEffect(() => { if (standalone && access?.enabled && (access.consentRequired || (!access.serverCredentialAllowed && !access.apiKeyConfigured))) setConsentOpen(true); }, [standalone, access?.enabled, access?.consentRequired, access?.serverCredentialAllowed, access?.apiKeyConfigured]);
+  useEffect(() => { if (standalone && access?.enabled && access.consentRequired) setConsentOpen(true); }, [standalone, access?.enabled, access?.consentRequired]);
   useEffect(() => { const controller = new AbortController(); void fetch("/api/agent/access", { signal: controller.signal, cache: "no-store" }).then(async response => { if (!response.ok) throw new Error("access"); setAccess(AgentChatAccessSchema.parse(await response.json()).data); }).catch(() => { if (!controller.signal.aborted) setAccessError(true); }); return () => controller.abort(); }, []);
-  const canSend = !!access?.enabled && !access.consentRequired && (access.serverCredentialAllowed || access.apiKeyConfigured);
+  // 모든 계정이 서버 인증으로 대화한다. 이번 달 크레딧을 다 쓴 계정만 보내지 못한다(개인 키를 등록한 계정은 한도를 보지 않는다).
+  const canSend = !!access?.enabled && !access.consentRequired && !access.creditsExhausted;
   const running = state.conversation?.run?.status === "running";
   useEffect(() => { onRunningChange?.(running); }, [onRunningChange, running]);
   const runtime = useExternalStoreRuntime({ messages: state.conversation?.messages ?? [], convertMessage, isRunning: running, isLoading: state.resolving || (!!state.id && !state.conversation), isDisabled: !!preview || !canSend || state.pending || state.resolving || (!!state.id && !state.conversation), onNew: async message => { const text = message.content.filter(part => part.type === "text").map(part => part.text).join("\n"); try { await state.send(text, page?.selection ?? undefined); } catch { runtime.thread.composer.setText(text); } }, onCancel: state.cancel });
@@ -222,18 +231,41 @@ export function AgentChat({ job, page, standalone = false, onRunningChange, ...p
     seenEdits.current = { id: state.conversation.id, edits: pageEdits };
     if (page && seen?.id === state.conversation.id && seen.edits !== pageEdits) router.refresh();
   }, [page, pageEdits, router, state.conversation]);
+  // 홈의 입력창이 넘긴 말. 자료가 있으면 그 자료를 연결한 대화를 만들고, 보낼 수 있으면 바로 보낸다.
+  // 동의나 키가 없어 못 보내면 입력창에 남겨 둔다 — 동의 창이 이 화면에서 열린다.
+  const handoffDone = useRef(false);
+  const selectConversation = state.select;
+  useEffect(() => {
+    if (!fresh || !access || handoffDone.current) return;
+    handoffDone.current = true;
+    const handoff = takeAgentHandoff();
+    if (!handoff) return;
+    void (async () => {
+      try {
+        const created = await agentRequest("", { contexts: handoff.contexts });
+        selectConversation(created.id);
+        if (!canSend) { runtime.thread.composer.setText(handoff.text); return; }
+        await agentRequest(`/${created.id}/messages`, { text: handoff.text, requestId: crypto.randomUUID() });
+      } catch { runtime.thread.composer.setText(handoff.text); }
+    })();
+  }, [fresh, access, canSend, runtime, selectConversation]);
+  // 사이드바의 「최근 대화」가 새 대화와 바뀐 제목을 바로 보이도록 목록을 알린다(`SidebarConversations`가 듣는다).
+  const conversationRows = JSON.stringify(state.list.map(({ id, title }) => ({ id, title })));
+  useEffect(() => {
+    if (standalone) window.dispatchEvent(new CustomEvent(AGENT_CONVERSATIONS_EVENT, { detail: JSON.parse(conversationRows) }));
+  }, [standalone, conversationRows]);
   const lastRun = state.conversation?.run;
   const canRetry = !!lastRun && ["failed", "interrupted", "cancelled"].includes(lastRun.status) && state.conversation?.messages.at(-1)?.role === "assistant";
   const retryButton = canRetry ? <Button variant="outline" size="sm" className={styles.retryButton} disabled={!canSend || state.pending} onClick={() => void state.retry()}><Icon name="arrow-clockwise" size={13} />다시 보내기</Button> : null;
   const missing = context && state.conversation && !state.conversation.contexts.some(ref => ref.kind === context.kind && ref.id === context.id);
   return <ChatContext.Provider value={state}><JobContext.Provider value={job ?? null}><PageContext.Provider value={page ?? null}><AssistantRuntimeProvider runtime={runtime}>
     {preview ? <ResourcePreview resource={preview} onClose={() => setPreview(null)} selected={!!state.conversation?.contexts.some(ref => ref.kind === preview.kind && ref.id === preview.id)} disabled={contextDisabled} onToggle={toggleContext} /> : null}
-    <AgentConsentDialog consentRequired={access?.consentRequired ?? true} requiresKey={!!access && !access.serverCredentialAllowed && !access.apiKeyConfigured} onKeySaved={() => setAccess(current => current ? { ...current, apiKeyConfigured: true } : current)} open={consentOpen} onOpenChange={setConsentOpen} onConsented={() => setAccess(current => current ? { ...current, consentRequired: false } : current)} />
+    <AgentConsentDialog open={consentOpen} onOpenChange={setConsentOpen} onConsented={() => setAccess(current => current ? { ...current, consentRequired: false } : current)} />
     <section className={`acf-scope ${styles.root} ${job || page ? styles.rail : standalone ? styles.standalone : styles.panel}`} aria-label="에이전트 채팅">
       <div className={styles.main}>
         <header className={styles.header}>
           <div className={styles.heading}><span className={styles.assistantMark}><LogoMark size={22} /></span><div><strong>{state.conversation?.title ?? "새 대화"}</strong><span>{running ? "답변을 준비하고 있어요" : "Expresso AI"}</span></div></div>
-          <div className={styles.headerActions}><span className={standalone ? styles.compactHistory : undefined}><ConversationSwitcher contexts={state.conversation?.contexts ?? []} contextDisabled={contextDisabled} onToggleContext={toggleContext} onPreview={setPreview} currentId={state.id} conversations={state.list} disabled={state.pending} onSelect={state.select} /></span>{!standalone ? <Link aria-label="독립 채팅으로 크게 열기" title="크게 열기" href={{ pathname: "/agent", query: state.id ? { chat: state.id } : {} }}><Icon name="arrows-out-simple" size={17} /></Link> : null}<Button variant="ghost" size="icon" aria-label="새 대화" title="새 대화" disabled={state.pending} onClick={() => state.select(null)}><Icon name="note-pencil" size={18} /></Button></div>
+          <div className={styles.headerActions}><span className={standalone ? styles.compactHistory : undefined}><ConversationSwitcher contexts={state.conversation?.contexts ?? []} contextDisabled={contextDisabled} onToggleContext={toggleContext} onPreview={setPreview} currentId={state.id} conversations={state.list} disabled={state.pending} onSelect={state.select} /></span>{!standalone ? <Link aria-label="독립 채팅으로 크게 열기" title="크게 열기" href={{ pathname: "/agent", query: state.id ? { chat: state.id } : {} }}><Icon name="arrows-out-simple" size={17} /></Link> : null}<Button variant="ghost" size="icon" aria-label="새 대화" title="새 대화" disabled={state.pending} onClick={() => newHref ? router.push(newHref as Route) : state.select(null)}><Icon name="note-pencil" size={18} /></Button></div>
         </header>
 
         <div className={styles.contexts} aria-label="대화에 연결된 자료">
@@ -247,7 +279,7 @@ export function AgentChat({ job, page, standalone = false, onRunningChange, ...p
           {!state.conversation?.contexts.length && !contextLabel ? <><Link className={styles.referenceEmpty} href="/jobs"><Icon name="plus" size={12} />공고</Link><Link className={styles.referenceEmpty} href="/career/experience"><Icon name="plus" size={12} />기록</Link></> : null}</div>
         </div>
         {access?.enabled && access.consentRequired ? <div role="alert" className={styles.apiKeyField}><p>채팅을 시작하려면 AI 사용 동의가 필요합니다.</p><small>대화와 연결된 커리어 기록을 AI 모델에 전달합니다.</small><Button variant="outline" onClick={() => setConsentOpen(true)}>AI 사용 동의 확인</Button></div> : null}
-        {accessError ? <p role="alert" className={styles.error}>채팅 사용 권한을 확인하지 못했습니다. 새로고침해 주세요.</p> : !access ? <p role="status" className={styles.status}>채팅 사용 권한 확인 중…</p> : !access.enabled ? <p className={styles.status}>에이전트 채팅이 아직 활성화되지 않았습니다.</p> : !access.serverCredentialAllowed && !access.apiKeyConfigured ? <div className={styles.apiKeyField}><p>Anthropic API 키를 등록하면 채팅을 시작할 수 있습니다.</p><Link href="/account#ai-chat-settings">설정에서 API 키 등록</Link></div> : null}
+        {accessError ? <p role="alert" className={styles.error}>채팅 사용 권한을 확인하지 못했습니다. 새로고침해 주세요.</p> : !access ? <p role="status" className={styles.status}>채팅 사용 권한 확인 중…</p> : !access.enabled ? <p className={styles.status}>에이전트 채팅이 아직 활성화되지 않았습니다.</p> : access.creditsExhausted ? <p role="alert" className={styles.status}>이번 달 AI 크레딧을 모두 썼습니다. 다음 달에 다시 대화할 수 있습니다.</p> : null}
         <div className={styles.thread}><Thread autoFocus={standalone} components={{ Welcome: ChatWelcome, AssistantHeader: AssistantIdentity, ToolFallback: RecordTool, ToolGroup: ExpandedTools, ComposerHeader: ComposerTarget, UserMessageHeader: UserMessageTarget }} /></div>
         <div className={styles.footnote}><Icon name="check-circle" size={12} /><span>{page ? "지면 고침은 바로 새 판으로 저장되고 카드에서 되돌릴 수 있습니다." : "기록의 변경은 확인 후 적용됩니다."}</span></div>
         {lastRun?.status === "cancelled" ? <div role="status" className={`${styles.status} ${styles.runNotice}`}><span>응답을 중지했습니다.</span>{retryButton}</div> : null}

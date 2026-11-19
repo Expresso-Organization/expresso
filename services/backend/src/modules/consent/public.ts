@@ -46,6 +46,8 @@ export const CONTRACT_CONSENT: Record<AiContract, ConsentScope | null> = {
   partial_edit: "career_records",
   style_remix: "career_records",
   insight_note: "career_records",
+  // 능동 제안은 커리어 기록을 읽는다. 켬 여부는 따로 둔다(`proposal_feeds.enabled`).
+  proposal_briefing: "career_records",
 };
 
 

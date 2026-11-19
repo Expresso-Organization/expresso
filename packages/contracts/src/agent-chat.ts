@@ -1,5 +1,5 @@
 import { JobPostingDetailSchema } from "./job-board.js";
-import { CareerRecordSchema } from "./career.js";
+import { CareerRecordSchema, JOB_GOAL_TEXT_MAX } from "./career.js";
 import { PortfolioDetailSchema } from "./portfolios.js";
 import { GeneratedPageSchema } from "./page.js";
 import { CareerDocumentBootstrapSchema } from "./career-editor.js";
@@ -75,6 +75,32 @@ export const AgentRecordDraftDecisionSchema = z.discriminatedUnion("action", [
 export type AgentRecordDraftInput = z.infer<typeof AgentRecordDraftInputSchema>;
 export type AgentRecordDraft = z.infer<typeof AgentRecordDraftSchema>;
 export type AgentRecordDraftDecision = z.infer<typeof AgentRecordDraftDecisionSchema>;
+/**
+ * 대화로 고치는 구직 목표의 초안. 에이전트는 바뀌는 칸만 제안하고, 저장은 사용자가 카드에서
+ * 승인할 때만 일어난다. 승인하면 그 시점의 목표에 바뀌는 칸만 덮는다.
+ */
+const goalDraftText = z.string().trim().min(1).max(JOB_GOAL_TEXT_MAX);
+export const AgentGoalDraftInputSchema = z.strictObject({
+  work: goalDraftText.optional().describe("하고 싶은 일. 바뀌지 않으면 넣지 않습니다."),
+  place: goalDraftText.optional().describe("일하고 싶은 곳. 바뀌지 않으면 넣지 않습니다."),
+  timing: goalDraftText.optional().describe("취업 목표 시기와 지금 상황. 바뀌지 않으면 넣지 않습니다."),
+});
+const goalDraftTexts = z.strictObject({ work: z.string().max(JOB_GOAL_TEXT_MAX), place: z.string().max(JOB_GOAL_TEXT_MAX), timing: z.string().max(JOB_GOAL_TEXT_MAX) });
+export const AgentGoalDraftSchema = z.strictObject({
+  draftId: UuidSchema,
+  /** 바뀌지 않는 칸은 null이다. */
+  work: goalDraftText.nullable(),
+  place: goalDraftText.nullable(),
+  timing: goalDraftText.nullable(),
+  /** 초안을 만들 때 적혀 있던 목표. 목표가 없었으면 null. */
+  previous: goalDraftTexts.nullable(),
+  /** replaced — 저장하기 전에 같은 대화에서 새 초안이 나와 닫혔다. */
+  status: z.enum(["ready", "approved", "rejected", "replaced"]),
+});
+export const AgentGoalDraftDecisionSchema = z.strictObject({ action: z.enum(["approve", "reject"]) });
+export type AgentGoalDraftInput = z.infer<typeof AgentGoalDraftInputSchema>;
+export type AgentGoalDraft = z.infer<typeof AgentGoalDraftSchema>;
+export type AgentGoalDraftDecision = z.infer<typeof AgentGoalDraftDecisionSchema>;
 /**
  * 보완점 정리 — 요건 대조와 대화에서 확인한 내용으로, 이 공고를 위해 무엇을 확인하거나
  * 준비할지 정리한 것.
@@ -250,7 +276,7 @@ export const AgentPageEditSchema = z.strictObject({
 export type AgentPageSelection = z.infer<typeof AgentPageSelectionSchema>;
 export type AgentPageElementEditInput = z.infer<typeof AgentPageElementEditInputSchema>;
 export type AgentPageEdit = z.infer<typeof AgentPageEditSchema>;
-export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional(), gapReview: GapReviewSchema.optional(), planDraft: AgentPlanDraftSchema.optional(), replanDraft: AgentReplanDraftSchema.optional(), pageEdit: AgentPageEditSchema.optional() });
+export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional(), goalDraft: AgentGoalDraftSchema.optional(), gapReview: GapReviewSchema.optional(), planDraft: AgentPlanDraftSchema.optional(), replanDraft: AgentReplanDraftSchema.optional(), pageEdit: AgentPageEditSchema.optional() });
 export const AgentMessageSchema = z.strictObject({ id: UuidSchema, role: z.enum(["user", "assistant"]), text: z.string().max(64_000), tools: z.array(AgentToolResultSchema).max(30), selection: AgentPageSelectionSchema.optional(), createdAt: TimestampSchema });
 export const AgentRunSchema = z.strictObject({ id: UuidSchema, requestId: UuidSchema, status: z.enum(["running", "complete", "cancelled", "failed", "interrupted"]), error: z.string().max(1_000).nullable(), startedAt: TimestampSchema });
 export const AgentConversationSchema = z.strictObject({ id: UuidSchema, title: z.string().max(120), contexts: z.array(AgentContextSchema).max(10), messages: z.array(AgentMessageSchema).max(100), run: AgentRunSchema.nullable(), version: z.number().int().nonnegative(), updatedAt: TimestampSchema });
@@ -272,7 +298,11 @@ export type AgentApproval = z.infer<typeof AgentApprovalSchema>;
 export const AgentEditDraftSchema = AiEditProposalSchema.pick({ summary: true, commands: true, propertyChanges: true });
 export type AgentEditDraft = z.infer<typeof AgentEditDraftSchema>;
 
-export const AgentChatAccessSchema = z.strictObject({ data: z.strictObject({ enabled: z.boolean(), serverCredentialAllowed: z.boolean(), consentRequired: z.boolean(), apiKeyConfigured: z.boolean(), model: z.literal("sonnet") }) });
+/**
+ * 에이전트 채팅을 쓸 수 있는가. 모든 계정이 서버 인증으로 쓰고, 개인 키를 등록한 계정은 그 키로 쓴다.
+ * `creditsExhausted`는 서버 인증으로 도는 계정이 이번 달 크레딧을 다 썼다는 뜻이다. 개인 키를 등록한 계정은 늘 거짓이다.
+ */
+export const AgentChatAccessSchema = z.strictObject({ data: z.strictObject({ enabled: z.boolean(), consentRequired: z.boolean(), apiKeyConfigured: z.boolean(), creditsExhausted: z.boolean(), model: z.literal("sonnet") }) });
 
 export const SaveAgentApiKeySchema = z.strictObject({ apiKey: AgentApiKeySchema });
 export const AgentCredentialStatusSchema = z.strictObject({ data: z.strictObject({ configured: z.boolean() }) });

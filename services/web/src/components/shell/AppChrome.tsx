@@ -1,7 +1,10 @@
+import type { Route } from "next";
 import type { ReactNode } from "react";
 import { Suspense } from "react";
 
-import { recentPortfolios, watchedJobs } from "@/lib/app-data";
+import { resumeStep } from "@/app/(app)/brew/new/resume-step";
+import { gridItems } from "@/app/(app)/home/home-model";
+import { homeEngagement, recentPortfolios } from "@/lib/app-data";
 import { publicSiteHost } from "@/lib/public-site";
 import { requireSession } from "@/lib/require-session";
 
@@ -36,43 +39,50 @@ export function AppChrome({ children }: { children: ReactNode }) {
   );
 }
 
+/** 사이드바 「포트폴리오」 묶음에 세우는 줄 수. 넘으면 「모두 보기」가 라이브러리로 보낸다. */
+const SIDEBAR_PORTFOLIOS = 5;
+
 async function AppSidebar() {
   const session = await requireSession();
-  const [portfolioList, watched] = await Promise.all([
+  const [{ data: home }, portfolioList] = await Promise.all([
+    homeEngagement(session.accessToken),
     recentPortfolios(session.accessToken),
-    watchedJobs(session.accessToken),
   ]);
+  // 라이브러리의 「포트폴리오」와 같은 규칙 — 끝나지 않은 제작과 포트폴리오를 마지막 작업 순으로 섞는다.
+  const items = gridItems(home.activeBrews, portfolioList.data, SIDEBAR_PORTFOLIOS + 1);
 
   return (
     <Sidebar
       categories={session.categories}
-      portfolios={portfolioList.data.map((portfolio) => {
+      portfolios={items.slice(0, SIDEBAR_PORTFOLIOS).map((item) => {
+        if (item.kind === "brew") {
+          const step = resumeStep(item.brew.status);
+          return {
+            id: item.brew.id,
+            name: item.brew.title ?? "만들던 포트폴리오",
+            href: `/brew/${item.brew.id}/${step.segment}` as Route,
+            meta: `만드는 중 · ${step.label}`,
+            status: "draft" as const,
+          };
+        }
+        const { portfolio } = item;
         // 공개를 중단해도 배포 기록은 남는다. 지금 열리는 주소가 있을 때만 배포됨으로 보인다.
         const live = portfolio.status === "published" ? portfolio.deployment : null;
         return {
           id: portfolio.id,
           name: portfolio.title,
-          // 배포된 것은 주소를, 작성 중인 것은 진행 상황을 보여준다.
+          href: `/edit/${portfolio.id}` as Route,
+          // 배포된 것은 주소를, 아닌 것은 진행 상황을 보여 준다.
           meta: live
             ? publicSiteHost(live.subdomain)
             : portfolio.status === "unlisted"
               ? "공개 중단"
               : `작성 중 · 섹션 ${portfolio.sectionCount}개`,
           status: live ? ("published" as const) : ("draft" as const),
-          ...(live ? { delta: `v${live.version}`, deltaTone: "quiet" as const } : {}),
+          ...(live ? { delta: `v${live.version}` } : {}),
         };
       })}
-      // 관심 공고는 내가 담은 공고다. 일치도 상위 목록(`recommendedJobs`)이 아니다 —
-      // 그 목록으로 채우면 담아도 여기 나타나지 않는다. 일치도는 줄에 싣지 않는다 —
-      // 단위 없는 숫자가 옆의 건수와 섞여 읽히고, 점수와 근거는 공고 상세가 보여 준다.
-      interests={watched.data.map((job) => ({
-        id: job.id,
-        initial: job.company.initial ?? job.company.name.slice(0, 1),
-        company: job.company.name,
-        logoUrl: job.company.logoUrl,
-        label: `${job.company.name} · ${job.title}`,
-      }))}
-      interestTotal={watched.summary.total}
+      morePortfolios={items.length > SIDEBAR_PORTFOLIOS || portfolioList.page.hasNextPage}
       displayName={session.user.displayName}
       // 대신 로그인 중이면 세션 주인이 관리자다.
       admin={session.user.role === "admin" || session.user.impersonation !== null}
@@ -81,4 +91,3 @@ async function AppSidebar() {
     />
   );
 }
-
