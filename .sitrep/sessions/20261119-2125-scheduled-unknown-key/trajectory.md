@@ -7,7 +7,7 @@
 - `scripts/operations/deploy.sh` 92행 `pnpm db:migrate`, 94행 백엔드 빌드, 111행 웹 빌드, 126행 `expresso-worker` 재시작
 - `worker/main.ts` 폴링 루프가 `outboxPollIntervalMs`마다 `scheduleDue()` 호출
 - `scheduleDue`는 키와 관계없이 `nextRunAt <= 지금`인 정의를 모두 집고 같은 트랜잭션에서 `nextRunAt`을 옮김
-- `#execute`는 모르는 키에서 `unsupported scheduled job key`를 던짐. 재시도는 `MongoOutboxDispatcher`의 `maxAttempts` 기본값 5
+- `#execute`는 모르는 키에서 `unsupported scheduled job key`를 던짐. 재시도는 `platform/mongo-outbox.ts`의 `maxAttempts` 기본값 5
 
 ### 21:35 · T2 결정 · 워커가 아는 키만 집기
 - 고른 선택지: `scheduleDue` 조회를 `SCHEDULED_JOB_KEYS`로 제한(에이전트 결정, 작업 지시의 후보 a)
@@ -30,5 +30,5 @@
 
 ### 22:00 · 보고 · 완료됨 100%
 - 전달: 워커가 모르는 예약 작업 키의 정의를 집지 않음. 새 워커가 원래 예정 시각으로 실행을 만듦
-- 결정 요청: 없음. PR 머지는 사용자가 정함(머지하면 운영에 배포됨)
+- 결정 요청: 없음. PR #243 머지는 사용자가 정함(머지하면 운영에 배포됨)
 - 기타: 이 변경이 배포된 뒤의 워커부터 적용. 이 변경과 새 예약 작업이 같은 배포에 실리면 보호되지 않음

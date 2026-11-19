@@ -23,7 +23,7 @@ date: 2026-11-19
 
 ## 작업 순서
 
-1. 시험을 먼저 쓴다. `activity_collect`와 `proposal_briefing`을 뺀 `keys`로 만든 서비스가 `scheduleDue`를 돌린 뒤 두 키의 실행 0건, outbox 0건, `nextRunAt` 유지를 단언한다. 이어서 기본 서비스가 돌리면 `scheduledFor`가 원래 `nextRunAt`인 실행이 1건씩 생기는 것을 단언한다. 수정 전에는 `keys`가 없어 타입 검사에서 실패한다.
+1. 시험을 먼저 쓴다. `activity_collect`와 `proposal_briefing`을 뺀 `keys`로 만든 서비스가 `scheduleDue`를 돌린 뒤 두 키의 실행 0건, outbox 0건, `nextRunAt` 유지를 단언한다. 이어서 기본 서비스가 돌리면 `scheduledFor`가 원래 `nextRunAt`인 실행이 1건씩 생기는 것을 단언한다. 수정 전에는 서비스가 `keys`를 무시해, 옛 워커가 정의를 모두 예약하고 첫 단언에서 실패한다.
 2. `service.ts`에 `keys`와 조회 조건을 더한다. 새 시험과 기존 `mongo.integration.test.ts`가 통과한다.
 3. `public.ts` 주석과 `DEPLOYMENT.md`를 고친다.
 4. 전체 검증을 돌린다.
