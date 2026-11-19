@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from "@testing-library/react";
+import type { Route } from "next";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/home", useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }) }));
@@ -37,8 +38,8 @@ it("포트폴리오 · 커리어 기록 묶음이 서고 각 줄이 편집 화�
       <Sidebar
         categories={[category]}
         portfolios={[
-          { id: "p1", name: "토스 프론트엔드", href: "/edit/p1", meta: "작성 중 · 섹션 4개", status: "draft" },
-          { id: "b1", name: "만들던 포트폴리오", href: "/brew/b1/design", meta: "만드는 중 · 디자인 선택", status: "draft" },
+          { id: "p1", name: "토스 프론트엔드", href: "/edit/p1" as Route, meta: "작성 중 · 섹션 4개", status: "draft" },
+          { id: "b1", name: "만들던 포트폴리오", href: "/brew/b1/design" as Route, meta: "만드는 중 · 디자인 선택", status: "draft" },
         ]}
         morePortfolios
         displayName="박민재"

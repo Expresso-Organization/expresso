@@ -45,3 +45,7 @@
 - 사용자 결정: 「PR 만들고 머지 후 정리」
 - 머지하면 `web-deploy.yml`이 운영에 배포함
 - 분기 뒤 main에 #242~#244가 머지됨. 충돌 없음, `/goal` 레이아웃이 `AppChrome`을 씀 → 반영 후 재검증
+
+### ~00:42 · T9.1 발견 · 운영 빌드 타입 오류
+- 새 main 반영(6ac9bea5) 뒤 `pnpm --filter @expresso/web build`에서 `Sidebar.test.tsx`의 href 문자열이 `Route`에 맞지 않음. `tsc --noEmit`은 통과했음
+- `AppChrome`과 같이 `as Route`로 고침 → 빌드(39쪽) · typecheck · vitest 89파일 478개 통과
