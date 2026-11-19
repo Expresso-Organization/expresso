@@ -5,6 +5,7 @@ import { Icon } from "@/components/ui/Icon";
 import { AccountLink } from "./AccountLink";
 import { Skel, SkelRegion, skelKeys } from "./Skeleton";
 import { SidebarFrame } from "./SidebarFrame";
+import { SidebarGroup } from "./SidebarGroup";
 import { SidebarNav } from "./SidebarNav";
 import styles from "./Sidebar.module.css";
 
@@ -15,9 +16,9 @@ import styles from "./Sidebar.module.css";
  * 그려지고, 기다리는 동안에도 눌러서 다른 데로 갈 수 있어야 한다. 그래서
  * 여기서 뼈대로 두는 것은 **정말 응답에서 오는 것**뿐이다.
  *
- * 포트폴리오·관심 공고 묶음은 0건이면 화면에서 통째로 사라진다. 몇 개가 올지
+ * 최근 대화 · 포트폴리오 묶음은 0건이면 화면에서 통째로 사라진다. 몇 개가 올지
  * 모르는 자리에 뼈대를 세워 두면 0건일 때 그만큼 접히므로, 그 두 묶음은 비워
- * 두고 언제나 있는 것 — 커리어 트리와 바닥 — 만 그린다.
+ * 두고 언제나 있는 것 — 커리어 기록 묶음과 바닥 — 만 그린다.
  */
 export function SidebarSkeleton() {
   return (
@@ -47,24 +48,22 @@ export function SidebarSkeleton() {
     >
       <SidebarNav />
 
-      <div className={styles.groupHead}>
-        <div className={`${styles.copy} ${styles.groupHeadRow}`}>
-          <span className={styles.groupLabel}>내 커리어</span>
-        </div>
-      </div>
-      <SkelRegion label="사이드바를 불러오는 중" className={styles.categories}>
-        {/* 기본 분류 7개 — `0002_seed.sql` */}
-        {skelKeys(7).map((row) => (
-          <div key={row} className={`${styles.row} ${styles.categoryItem}`}>
-            <span className={styles.rowLead}>
-              <Skel w={14} h={14} radius={4} />
-            </span>
-            <span className={`${styles.copy} ${styles.categoryName}`}>
-              <Skel w={`${74 - (row % 4) * 11}%`} h={11} />
-            </span>
-          </div>
-        ))}
-      </SkelRegion>
+      {/* 같은 id로 접힘을 읽는다 — 접어 둔 묶음이 응답을 기다리는 동안 펼쳐졌다가 다시 접히지 않게 */}
+      <SidebarGroup id="career" label="커리어 기록">
+        <SkelRegion label="사이드바를 불러오는 중" className={styles.categories}>
+          {/* 기본 분류 7개 — `0002_seed.sql` */}
+          {skelKeys(7).map((row) => (
+            <div key={row} className={`${styles.row} ${styles.categoryItem}`}>
+              <span className={styles.rowLead}>
+                <Skel w={14} h={14} radius={4} />
+              </span>
+              <span className={`${styles.copy} ${styles.categoryName}`}>
+                <Skel w={`${74 - (row % 4) * 11}%`} h={11} />
+              </span>
+            </div>
+          ))}
+        </SkelRegion>
+      </SidebarGroup>
     </SidebarFrame>
   );
 }

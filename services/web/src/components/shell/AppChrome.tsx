@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { Suspense } from "react";
 
+import { recentPortfolios } from "@/lib/app-data";
+import { publicSiteHost } from "@/lib/public-site";
 import { requireSession } from "@/lib/require-session";
 
 import { AppShell } from "./AppShell";
@@ -36,8 +38,28 @@ export function AppChrome({ children }: { children: ReactNode }) {
 
 async function AppSidebar() {
   const session = await requireSession();
+  const portfolioList = await recentPortfolios(session.accessToken);
+
   return (
     <Sidebar
+      categories={session.categories}
+      portfolios={portfolioList.data.map((portfolio) => {
+        // 공개를 중단해도 배포 기록은 남는다. 지금 열리는 주소가 있을 때만 배포됨으로 보인다.
+        const live = portfolio.status === "published" ? portfolio.deployment : null;
+        return {
+          id: portfolio.id,
+          name: portfolio.title,
+          // 배포된 것은 주소를, 아닌 것은 진행 상황을 보여 준다.
+          meta: live
+            ? publicSiteHost(live.subdomain)
+            : portfolio.status === "unlisted"
+              ? "공개 중단"
+              : `작성 중 · 섹션 ${portfolio.sectionCount}개`,
+          status: live ? ("published" as const) : ("draft" as const),
+          ...(live ? { delta: `v${live.version}` } : {}),
+        };
+      })}
+      morePortfolios={portfolioList.page.hasNextPage}
       displayName={session.user.displayName}
       // 대신 로그인 중이면 세션 주인이 관리자다.
       admin={session.user.role === "admin" || session.user.impersonation !== null}

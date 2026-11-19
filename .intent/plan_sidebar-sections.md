@@ -24,6 +24,7 @@ date: 2026-11-19
 | `services/web/src/components/shell/SidebarSkeleton.tsx` | 묶음 이름 · 구조 맞춤 |
 | `services/web/src/components/shell/Sidebar.module.css` | 묶음 토글 · 본문 접힘 · 레일 처리 |
 | `services/web/src/components/shell/Sidebar.test.tsx` | 새 props와 묶음 확인 |
+| `services/web/src/styles/global.css` | 전역 `a:hover` 우선순위를 `a:where(:hover)`로 낮춤 (구현 중 추가 요청) |
 
 ## 작업 순서
 
@@ -32,7 +33,8 @@ date: 2026-11-19
 3. `SidebarCategories` 머리말을 접히는 묶음으로 바꾼다 — 기존 `SidebarCategories.test.tsx`가 통과한다.
 4. `recentPortfolios`, `AppChrome` 매핑, `SidebarPortfolios`, `Sidebar` 배치를 되살린다 — 타입 검사가 통과한다.
 5. 스켈레톤과 `Sidebar.test.tsx`를 맞춘다 — `vitest run src/components/shell`이 통과한다.
-6. 로컬 웹에서 펼침 · 접힘 · 새로고침 · 레일 · 375px 서랍을 확인한다.
+6. 전역 `a:hover` 우선순위를 낮춘다 — 「새 포트폴리오」 호버 글자가 흰색이다.
+7. 로컬 웹에서 펼침 · 접힘 · 새로고침 · 레일 · 375px 서랍을 확인한다.
 
 ```mermaid
 flowchart TD
@@ -40,7 +42,8 @@ flowchart TD
   B --> C["3단계: 커리어 기록 묶음<br/>SidebarCategories.tsx"]
   C --> D["4단계: 포트폴리오 묶음<br/>app-data · AppChrome · SidebarPortfolios · Sidebar"]
   D --> E["5단계: 스켈레톤 · 테스트<br/>SidebarSkeleton · Sidebar.test"]
-  E --> F["6단계: 검증<br/>typecheck · vitest · 브라우저"]
+  E --> H["6단계: 링크 호버 우선순위<br/>global.css"]
+  H --> F["7단계: 검증<br/>typecheck · vitest · 브라우저"]
   classDef risk fill:#FCEBEB,stroke:#A32D2D,color:#501313
 ```
 

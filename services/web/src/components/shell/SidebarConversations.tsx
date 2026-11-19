@@ -9,6 +9,7 @@ import { GlideMenu } from "@/components/ui/GlideMenu";
 import { Icon } from "@/components/ui/Icon";
 import { AGENT_CONVERSATIONS_EVENT } from "@/features/agent-chat/agent-handoff";
 
+import { SidebarGroup } from "./SidebarGroup";
 import styles from "./Sidebar.module.css";
 
 type Row = { id: string; title: string };
@@ -49,12 +50,7 @@ export function SidebarConversations() {
   if (rows.length === 0) return null;
 
   return (
-    <>
-      <div className={`${styles.groupHead} ${styles.groupHeadFirst}`}>
-        <div className={`${styles.copy} ${styles.groupHeadRow}`}>
-          <span className={styles.groupLabel}>최근 대화</span>
-        </div>
-      </div>
+    <SidebarGroup id="conversations" label="최근 대화">
       <GlideMenu className={`${styles.conversations} ${styles.navGroup}`}>
         {rows.map((row) => (
           <Link
@@ -72,6 +68,6 @@ export function SidebarConversations() {
           </Link>
         ))}
       </GlideMenu>
-    </>
+    </SidebarGroup>
   );
 }
