@@ -15,12 +15,13 @@ date: 2026-11-20
 | 파일 | 무엇을 |
 |---|---|
 | `packages/contracts/src/agent-chat.ts` · `agent-chat.test.ts` | 부품 계약(`AgentUiPartSchema`, 선택지), 도구 입력(`AgentChoiceInputSchema`), 도구 결과의 `ui`, 사용자 메시지의 `reply`, 보내기의 `reply` |
-| `services/backend/src/platform/agent/runtime.ts` · `runtime.test.ts` | `ask_choice` 도구, 이름표, 한 실행 한 번 제한, 시스템 프롬프트의 선택지 지침, 모델에 넘기는 대화에 부품과 답 |
+| `services/backend/src/platform/agent/runtime.ts` · `runtime.test.ts` | `ask_choice` 도구, 이름표, 한 실행에 부품 하나, 부품을 낸 뒤 실행 끝내기(`PostToolUse` 훅), 시스템 프롬프트의 선택지 지침, 모델에 넘기는 대화에 부품과 답 |
 | `services/backend/src/modules/agent-chat/ui-parts.ts` (새 파일) · `ui-parts.test.ts` | 부품 만들기(id 붙이기 · 겹치는 글 검사), 답 검사(순수 함수) |
 | `services/backend/src/modules/agent-chat/service.ts` · `service.integration.test.ts` | 실행에 `askChoice` 연결, 보내기의 `reply` 처리 |
 | `services/web/src/features/agent-chat/tool-parts.tsx` (새 파일) · `tool-parts.test.tsx` | 등록표, 기존 카드 일곱 종 옮기기 |
 | `services/web/src/features/agent-chat/ChoicePart.tsx` · `ChoicePart.module.css` · `ChoicePart.test.tsx` (새 파일) | 선택지 부품 |
-| `services/web/src/features/agent-chat/AgentChat.tsx` | `RecordTool`이 등록표를 부름, 부품이 있는 도구 호출을 글 뒤에 두기, 선택지 도구 UI를 묶음 밖 표시로 등록 |
+| `services/web/src/features/agent-chat/AgentChat.tsx` · `AgentChat.module.css` | `RecordTool`이 등록표를 부름, 답변 글 아래의 부품(`BelowParts`), 그 도구 호출을 작업 흔적에서 빼기, 보낼 수 있는지 알리는 컨텍스트 |
+| `services/web/src/components/assistant-ui/elements/thread.aui.tsx` | 답변 글 아래의 자리(`AssistantFooter`) |
 | `services/web/src/features/agent-chat/useAgentConversation.ts` | `answerPart(partId, optionIds)` |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
@@ -42,7 +43,7 @@ flowchart TD
   classDef risk stroke:#dc2626,stroke-width:2px
 ```
 
-0. 묶음 밖 표시 — 지금 있는 도구 이름에 임시 UI를 `display: "standalone"`으로 등록해, 이 저장소의 실행 방식(`useExternalStoreRuntime`)에서 작업 흔적 밖에 그려지는지 테스트로 확인한다. 안 되면 선택지 부품을 답변 아래의 별도 자리에 그리는 방식으로 명세를 고친다.
+0. 묶음 밖 표시 — 결과: 등록 API(`useAssistantToolUI`)가 폐기 예정이라, 답변 컴포넌트에 답변 글 아래의 자리(`AssistantFooter`)를 더하는 방식으로 정했다. 명세의 「작업 흔적 밖에 그리는 방법」을 이에 맞게 고쳤다.
 1. 계약 — `pnpm --filter @expresso/contracts test`.
 2. 부품 만들기와 답 검사 — 순수 함수 단위 테스트.
 3. 실행부 — 실행부 테스트.
