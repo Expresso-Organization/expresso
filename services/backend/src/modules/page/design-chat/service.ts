@@ -394,6 +394,7 @@ export class DesignChatService {
           snippets: row.snippets,
           text: turn.text,
           subject: turn.subject,
+          latest: row.snippets.at(-1) ?? null,
           selected: row.snippets.find(({ id }) => id === row.selectedSnippetId) ?? null,
         });
         const { data } = await this.#ai.complete(call.spec, ReplySchema, { userId, check: call.check });
@@ -405,8 +406,9 @@ export class DesignChatService {
           card = { kind: "screens", items };
           draw = { kind: "draw", items, origins: data.screens.map(({ source }) => source), revise: null };
         }
-        if (data.show === "revision" && turn.subject?.kind === "snippet") {
-          const from = turn.subject.snippet;
+        // 고칠 첫 화면은 붙은 대상이고, 대상을 붙이지 않은 말이면 가장 최근에 그린 것이다.
+        const from = turn.subject?.kind === "snippet" ? turn.subject.snippet : row.snippets.at(-1);
+        if (data.show === "revision" && from) {
           const entry: DesignScreenItem = { id: randomUUID(), name: from.name, words: data.instruction, tokens: from.tokens, layout: from.layout, status: "drawing", snippetId: null };
           card = { kind: "revision", fromSnippetId: from.id, item: entry };
           draw = { kind: "draw", items: [entry], origins: ["edit"], revise: { from, instruction: data.instruction } };

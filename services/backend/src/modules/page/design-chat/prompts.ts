@@ -280,7 +280,7 @@ const REPLY_SYSTEM = [
   "- `screens` — 첫 화면. 이 사람의 자료로 그린 포트폴리오 맨 위 한 장면이고 한 장에 30초쯤 걸립니다. 사용자가 스타일이나 구성을 구체적으로 말했거나 실제 모습을 보여 달라고 했을 때 씁니다. `screens`의 항목마다 스타일 하나와 레이아웃 하나를 짝지어 적습니다.",
   "  - 사용자가 스타일만 말했으면 레이아웃은 가장 최근에 그린 첫 화면의 것을 이름 · 설명 · 배치도까지 글자 그대로 옮깁니다. 구성만 말했으면 스타일을 그대로 옮깁니다.",
   "  - 아직 그린 첫 화면이 없으면 말하지 않은 쪽은 이 사람의 자료에 맞게 정합니다.",
-  "- `revision` — 대상으로 붙은 첫 화면을 고칩니다. 사용자가 그 첫 화면의 한 부분을 바꿔 달라고 했을 때 씁니다. `instruction`에 무엇을 어떻게 바꿀지 한 문장으로 옮깁니다. 대상 첫 화면이 없으면 쓰지 않습니다.",
+  "- `revision` — 대상으로 붙은 첫 화면을 고칩니다. 사용자가 첫 화면의 한 부분을 바꿔 달라고 했을 때 씁니다. `instruction`에 무엇을 어떻게 바꿀지 한 문장으로 옮깁니다. 대상이 붙지 않았으면 가장 최근에 그린 첫 화면을 고칩니다 — 사용자가 방금 보고 한 말입니다. 그린 첫 화면이 하나도 없으면 쓰지 않습니다.",
   "- `none` — 띄울 것이 없습니다. 되물어야 뜻을 알 수 있거나 말로만 답하면 될 때 씁니다.",
   "",
   "`styles` · `layouts`는 `show`가 `proposals`일 때만, `screens`는 `show`가 `screens`일 때만 채웁니다. 나머지는 빈 목록입니다.",
@@ -350,10 +350,18 @@ export function replyCall(input: {
   snippets: DesignSnippet[];
   text: string;
   subject: ReplySubject | null;
+  /**
+   * 가장 최근에 그린 첫 화면. 사용자가 대상을 붙이지 않고 고쳐 달라고 하면 이것을 고친다.
+   * 2026-11-19: 「말로 고치기」를 누르지 않고 "가운데 차트를 pill 형태로"라고만 보내자, 에이전트는 고치겠다고 답했는데
+   * 붙은 대상이 없다는 검사에 걸려 띄울 것만 없음으로 바뀌었다. 말만 남고 아무것도 뜨지 않았다.
+   */
+  latest: DesignSnippet | null;
   selected: DesignSnippet | null;
 }): { spec: AiCallSpec; check(output: Reply): AiViolation[] } {
   const context = sourcesContext(input.userId, input.sources);
   const subject = input.subject;
+  /** 고칠 수 있는 첫 화면. 붙은 대상이 먼저고, 없으면 가장 최근에 그린 것이다. */
+  const target = subject?.kind === "snippet" ? subject.snippet : input.latest;
   const prompt = [
     ...promptOpening(context),
     ...headPrompt(input.head),
@@ -371,7 +379,13 @@ export function replyCall(input: {
             ? `첫 화면 「${subject.snippet.name}」 — ${subject.snippet.words} (${tokensLine(subject.snippet.tokens)}) · ${layoutLine(subject.snippet.layout)}`
             : `카탈로그의 디자인 「${subject.style.name}」 — ${subject.style.words} (${tokensLine(subject.style.tokens)})`,
         ]
-      : []),
+      : input.latest
+        ? [
+            "",
+            "## 이 말의 대상",
+            `사용자가 대상을 붙이지 않았습니다. 고쳐 달라는 말이면 가장 최근에 그린 첫 화면 「${input.latest.name}」을 고칩니다 — ${input.latest.words} (${tokensLine(input.latest.tokens)}) · ${layoutLine(input.latest.layout)}`,
+          ]
+        : []),
   ].join("\n");
   return {
     spec: { contract: "page_design", system: REPLY_SYSTEM, prompt, promptVersion: DESIGN_CHAT_PROMPT_VERSION, ...TIER },
@@ -381,8 +395,12 @@ export function replyCall(input: {
         violations.push({ path: "/styles", problem: "`show`가 proposals인데 스타일도 레이아웃도 없습니다. 띄울 것을 적거나 `show`를 none으로 바꾸세요." });
       if (output.show === "screens" && output.screens.length === 0)
         violations.push({ path: "/screens", problem: "`show`가 screens인데 그릴 것이 없습니다. 스타일과 레이아웃의 짝을 적거나 `show`를 none으로 바꾸세요." });
-      if (output.show === "revision" && subject?.kind !== "snippet")
-        violations.push({ path: "/show", problem: "고칠 대상 첫 화면이 붙어 있지 않습니다. 새로 그릴 것이면 `screens`로, 아니면 `none`으로 바꾸세요." });
+      if (output.show === "revision" && !target)
+        violations.push(
+          { path: "/show", problem: "아직 그린 첫 화면이 없어 고칠 것이 없습니다. 새로 그릴 것이면 `screens`로, 아니면 `none`으로 바꾸세요." },
+          // 띄울 것만 바꾸면 고치겠다는 말이 남는다. 말도 함께 고쳐 받는다.
+          { path: "/say", problem: "고칠 첫 화면이 없습니다. 고치겠다는 말 대신, 바꾼 `show`에 맞는 말로 다시 쓰세요." },
+        );
       if (output.show === "revision" && !output.instruction.trim()) violations.push({ path: "/instruction", problem: "무엇을 어떻게 바꿀지 한 문장으로 적으세요." });
       violations.push(
         ...tooLong("/say", output.say, DesignAssistantMessageSchema.shape.text, "말"),

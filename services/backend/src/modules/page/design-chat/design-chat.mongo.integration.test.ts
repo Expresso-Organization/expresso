@@ -259,17 +259,31 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect(answered!.prompt).toContain(opening.say);
     expect(revise!.prompt).toContain(drawn.html);
 
-    // 대상 없이 고치겠다고 답하면 검사가 걸러 그 칸만 고쳐 받는다.
+    // 대상을 붙이지 않고 고쳐 달라고 해도 방금 본 첫 화면(가장 최근에 그린 것)을 고친다.
+    // 2026-11-19: 이 말에 "바꿔 볼게요"라는 답만 남고 아무것도 뜨지 않았다.
+    const latest = revised.snippets.at(-1)!;
+    route = (request) => (request.contract === "page_design" ? { ...reply, say: "더 밝게 바꿔 볼게요.", show: "revision", instruction: "바탕을 더 밝게 한다" } : snippet("가 화면 밝게"));
+    await service.send(user, brewId, { action: "say", requestId: randomUUID(), text: "조금 더 밝게요" });
+    await service.settled();
+    const loose = (await service.get(user, brewId)).chat!;
+    expect(loose.messages.at(-2)).toMatchObject({ role: "user", action: "say", subjects: [] });
+    expect(loose.messages.at(-1)).toMatchObject({ role: "assistant", status: "complete", text: "더 밝게 바꿔 볼게요.", card: { kind: "revision", fromSnippetId: latest.id, item: { status: "done" } } });
+    expect(loose.snippets.at(-1)).toMatchObject({ origin: "edit", fromSnippetId: latest.id, name: "가 화면 밝게" });
+    expect(ai.calls.at(-1)!.prompt).toContain(latest.html);
+
+    // 그린 첫 화면이 하나도 없는 대화에서 고치겠다고 답하면, 띄울 것과 함께 그 말도 고쳐 받는다.
+    const emptyBrew = await newBrew(user);
+    await opened(service, emptyBrew);
     const directed = new ScriptedAiClient(
       () => ({ ...reply, say: "고쳐 볼게요.", show: "revision", instruction: "밝게" }),
-      () => [{ path: "/show", value: "none" }],
+      () => [{ path: "/show", value: "none" }, { path: "/say", value: "먼저 스타일과 레이아웃을 골라 첫 화면을 그려 볼까요?" }],
     );
     const strict = new DesignChatService(fixture.resource, directed, new ConsentService(fixture.resource));
     services.push(strict);
-    await strict.send(user, brewId, { action: "say", requestId: randomUUID(), text: "조금 더 밝게요" });
+    await strict.send(user, emptyBrew, { action: "say", requestId: randomUUID(), text: "조금 더 밝게요" });
     await strict.settled();
     expect(directed.fixRequests).toHaveLength(1);
-    expect((await service.get(user, brewId)).chat!.messages.at(-1)).toMatchObject({ role: "assistant", status: "complete", card: null, text: "고쳐 볼게요." });
+    expect((await service.get(user, emptyBrew)).chat!.messages.at(-1)).toMatchObject({ role: "assistant", status: "complete", card: null, text: "먼저 스타일과 레이아웃을 골라 첫 화면을 그려 볼까요?" });
 
     // 견본으로 답하면 견본 카드가 붙는다. 색 이야기에는 스타일만 새로 낸다 — 레이아웃 줄은 비어 있다.
     route = () => ({ ...reply, say: "더 밝은 쪽으로 놓아 봤어요.", show: "proposals", styles: [style("라")] });
