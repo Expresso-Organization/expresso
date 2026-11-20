@@ -6,7 +6,8 @@ import type { Activity, AgentFindItem, JobPostingSummary } from "@expresso/contr
  * 줄에는 서버의 검색 결과만 싣는다 — 제목 · 회사 · 마감은 모델이 옮겨 적지 않는다.
  * 공고는 앱 안의 공고 화면으로, 활동은 출처의 주소로 간다.
  */
-const ACTIVITY_KIND = { contest: "공모전", hackathon: "해커톤" } as const;
+/** 활동 종류의 이름. 종류는 수집 출처가 늘면 함께 는다(#253의 부트캠프) — 모르는 종류는 이름 없이 분야만 싣는다. */
+const ACTIVITY_KIND: Record<string, string> = { contest: "공모전", hackathon: "해커톤", bootcamp: "부트캠프" };
 const pieces = (...values: (string | null | undefined)[]) => values.map(value => value?.trim()).filter((value): value is string => !!value).map(value => value.slice(0, 80)).slice(0, 4);
 
 export function jobItem(job: JobPostingSummary): AgentFindItem {
