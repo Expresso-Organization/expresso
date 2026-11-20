@@ -17,7 +17,7 @@ export default function Loading() {
   return (
     <>
       <DocumentHeader crumbs={[{ label: "공고 탐색", href: "/jobs" }, null]} />
-      <AppBody>
+      <AppBody pending>
         <SkelRegion label="공고를 불러오는 중" className={styles.body}>
           <div className={styles.left}>
             <Skel w={124} h={13} style={{ marginBottom: 14 }} />
