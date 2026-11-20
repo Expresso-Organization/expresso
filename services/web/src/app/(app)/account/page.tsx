@@ -76,7 +76,8 @@ export default async function AccountPage() {
     ),
   );
   const billing = billingRows(currentPlan, usage.periodStart);
-  const notifications = preferences.filter((item) => NOTIFICATION_COPY[item.kind]);
+  // 컨설턴트의 알림은 먼저 연락받기가 만든다. 요금제가 열지 않으면 오지 않는 알림이라 스위치를 세우지 않는다.
+  const notifications = preferences.filter((item) => NOTIFICATION_COPY[item.kind] && (item.kind !== "consultant" || checkins?.available));
   const verifiedAt = session.user.emailVerifiedAt;
 
   return (

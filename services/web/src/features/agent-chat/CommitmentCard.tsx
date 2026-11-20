@@ -62,7 +62,7 @@ export function CommitmentCard({ commitment: snapshot, refreshKey }: { commitmen
         <button type="button" className={styles.secondary} disabled={busy} onClick={() => { setDay(commitment.dueOn); setEditing(true); }}>날짜 바꾸기</button>
         <button type="button" className={styles.secondary} disabled={busy} onClick={() => void change({ status: "dropped" })}>{busy ? "거두는 중…" : "하지 않기로"}</button>
       </div>}
-    {commitment.status === "open" ? <p className={styles.note}>그날 홈에서 어떻게 됐는지 여쭙니다.</p> : null}
+    {commitment.status === "open" ? <p className={styles.note}>「내 진행」에 남겼습니다. 먼저 연락받기를 켜 두면 그날 홈에서 어떻게 됐는지 여쭙니다.</p> : null}
     {error ? <p className={styles.error} role="alert">{error}</p> : null}
   </section>;
 }

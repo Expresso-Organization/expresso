@@ -34,7 +34,7 @@ describe("약속 카드", () => {
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
     expect(container.firstElementChild?.getAttribute("data-state")).toBe("open");
     expect(screen.getByText("11월 27일까지")).toBeTruthy();
-    expect(screen.getByText("그날 홈에서 어떻게 됐는지 여쭙니다.")).toBeTruthy();
+    expect(screen.getByText("「내 진행」에 남겼습니다. 먼저 연락받기를 켜 두면 그날 홈에서 어떻게 됐는지 여쭙니다.")).toBeTruthy();
   });
   it("날짜를 바꾸면 새 날짜로 저장하고, 같은 날짜로는 저장하지 않는다", async () => {
     fetchMock.mockImplementation(async (_input, init) => ok(commitment(init?.method === "PATCH" ? { dueOn: "2099-12-04" } : {})));

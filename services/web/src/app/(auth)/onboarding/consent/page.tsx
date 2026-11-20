@@ -17,8 +17,6 @@ import { OnboardingShell, OnboardingStepLabel, onboardingStyles as styles } from
  * 두 가지를 따로 묻는다. 공고 원문은 남이 쓴 공개된 글이고 커리어 기록은 내가
  * 쓴 글이라, 하나만 주고 다른 하나는 안 줄 수 있어야 한다. 아무것도 고르지
  * 않고 넘어가도 된다 — 그때는 AI 기능이 잠기고 설정에서 나중에 켠다.
- *
- * 그 아래에 컨설턴트가 먼저 연락해도 되는지를 함께 묻는다. 기본은 켬이다.
  */
 
 const SCOPES: {

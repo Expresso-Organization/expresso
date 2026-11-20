@@ -25,6 +25,8 @@ date: 2026-11-20
 | `services/web/src/app/(app)/home/` (`ProposalFeed.tsx` · `CheckinFeed.tsx` · `ProposalFeed.test.tsx` 새 파일 · 테스트) | 잠긴 상태 |
 | `services/web/src/app/(app)/account/` (`page.tsx` · `UsageCharts.tsx`) · `lib/usage-copy.ts` · 테스트 | 먼저 연락받기 줄, 차트, 기능 이름 |
 | `services/web/src/app/(auth)/onboarding/consent/page.tsx` · `app/consent-actions.ts` | 항목 제거 |
+| `services/web/src/features/agent-chat/CommitmentCard.tsx` · `app/(app)/goal/ProgressSections.tsx` · 테스트 | 먼저 묻는다는 글을 조건으로 |
+| `feat/consultant-actions`의 `agent-chat/finds.ts` · 테스트 | #253이 더한 활동 종류와 칸에 맞추기(그 브랜치에서 커밋) |
 | `feat/consultant-memory` · `feat/consultant-follow-up` · `feat/consultant-diagnosis`의 `packages/database/src/mongodb-migrations/` 와 등록 목록 | 번호 이동(그 브랜치에서 커밋하고 위로 병합) |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
