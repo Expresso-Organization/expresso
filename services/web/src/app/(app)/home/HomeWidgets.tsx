@@ -57,9 +57,10 @@ async function ruleFindings(accessToken: string, recordTotal: number) {
   }).flatMap((step) => step.findings);
 }
 
+// 스켈레톤 틀은 150ms 뒤에 나타난다(ex-anim-appear) — 짧은 대기에 빈 틀이 번쩍이지 않는다.
 export function ProposalsSkeleton() {
   return (
-    <section className={styles.proposals}>
+    <section className={`${styles.proposals} ex-anim-appear`}>
       <div className={styles.sectionHead}><Skel w={64} /></div>
       <div className={styles.proposalGrid}>
         <div className={styles.skeletonCard}><Skel w={180} /><Skel w={120} /></div>
@@ -92,7 +93,7 @@ function Widget({ icon, title, href, children }: { icon: string; title: string; 
 
 export function WidgetSkeleton() {
   return (
-    <div className={styles.skeletonCard}>
+    <div className={`${styles.skeletonCard} ex-anim-appear`}>
       <Skel w={80} />
       <Skel w={200} />
       <Skel w={170} />

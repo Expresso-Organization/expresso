@@ -39,7 +39,7 @@ export async function PortfoliosPane({ accessToken }: { accessToken: string }) {
  */
 export function PortfoliosPaneSkeleton({ count }: { count: number }) {
   return (
-    <SkelRegion label="포트폴리오를 불러오는 중">
+    <SkelRegion label="포트폴리오를 불러오는 중" className="ex-anim-appear">
       <div className={gridStyles.sectionHead}>
         <span className={gridStyles.sectionTitle}>내 포트폴리오</span>
       </div>

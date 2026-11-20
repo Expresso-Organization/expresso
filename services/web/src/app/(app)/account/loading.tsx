@@ -21,7 +21,7 @@ export default function Loading() {
   return (
     <>
       <DocumentHeader crumbs={["설정"]} />
-      <AppBody>
+      <AppBody pending>
         <div className={styles.body}>
           <AccountNav />
           <SkelRegion label="설정을 불러오는 중" className={styles.main}>
