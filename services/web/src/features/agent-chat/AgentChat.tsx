@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { Route } from "next";
 import { LogoMark } from "@/components/brand/Logo";
 import { Icon } from "@/components/ui/Icon";
+import { showToast } from "@/components/ui/toast";
 import { useRouter } from "next/navigation";
 import { AssistantRuntimeProvider, useExternalStoreRuntime, useAui, useAuiState, type ThreadMessageLike, type ToolCallMessagePartComponent } from "@assistant-ui/react";
 import { AgentChatAccessSchema, AgentResourceDetailSchema } from "@expresso/contracts";
@@ -214,6 +215,8 @@ export function AgentChat({ job, page, standalone = false, fresh = false, newHre
   const context: AgentContext | undefined = job ? { kind: "job", id: job.id } : page ? { kind: "portfolio", id: page.portfolioId } : props.context;
   const contextLabel = job?.title ?? page?.title ?? props.contextLabel;
   const state = useAgentConversation(context, job || page ? { restore: "context" } : fresh ? { restore: "url" } : {});
+  // 요청 실패는 입력 칸 아래가 아니라 알림으로 띄운다. 같은 글이 이어서 나면 알림이 하나만 남는다.
+  useEffect(() => { if (state.issue) showToast(state.issue, "danger"); }, [state.issue]);
   const router = useRouter();
   const [preview, setPreview] = useState<PreviewResource | null>(null);
   const [contextTitles, setContextTitles] = useState<Record<string, string>>({});
@@ -369,7 +372,6 @@ export function AgentChat({ job, page, standalone = false, fresh = false, newHre
         <div className={styles.footnote}><Icon name="check-circle" size={12} /><span>{page ? "지면 고침은 바로 새 판으로 저장되고 카드에서 되돌릴 수 있습니다." : "기록의 변경은 확인 후 적용됩니다."}</span></div>
         {lastRun?.status === "cancelled" ? <div role="status" className={`${styles.status} ${styles.runNotice}`}><span>응답을 중지했습니다.</span>{retryButton}</div> : null}
         {lastRun?.error ? <div role="alert" className={`${styles.error} ${styles.runNotice}`}><span>{lastRun.error}</span>{retryButton}</div> : null}
-        {state.issue ? <p role="alert" className={styles.error}>{state.issue}</p> : null}
       </div>
       {standalone && !staged ? <ConversationSwitcher contexts={state.conversation?.contexts ?? []} contextDisabled={contextDisabled} onToggleContext={toggleContext} onPreview={setPreview} inline currentId={state.id} conversations={state.list} disabled={state.pending} onSelect={state.select} /> : null}
     </section>

@@ -26,7 +26,7 @@ import { useDesignBrew } from "./design-brews";
 export function BrewDesignCard({ design: { brewId, designMessageId } }: { design: AgentBrewDesign }) {
   const brew = useDesignBrew(brewId);
   if (!brew) return <section className={`${styles.card} ${designStyles.compact}`} aria-label="디자인" />;
-  const { state, view, context, issue, retrying } = brew;
+  const { state, view, context, retrying } = brew;
   const opening = designMessageId === null;
   const ready = !!context?.recipeId;
   const chat = state.chat;
@@ -60,6 +60,5 @@ export function BrewDesignCard({ design: { brewId, designMessageId } }: { design
     </DesignViewContext.Provider>
     {/* 카탈로그에서 고르기와 구조화 생성은 지금의 디자인 화면에 있다. */}
     {opening && shown?.kind === "proposals" ? <Link className={rows.wide} href={`/brew/${brewId}/design?view=catalog` as Route}><Icon name="squares-four" size={12} />카탈로그 화면으로</Link> : null}
-    {issue || (state.issue && !working) ? <p role="alert" className={card.error}>{issue ?? state.issue}</p> : null}
   </section>;
 }

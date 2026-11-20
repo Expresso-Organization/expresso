@@ -1,4 +1,5 @@
 "use client";
+import { showToast } from "@/components/ui/toast";
 import { createContext, useCallback, useContext, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
@@ -195,6 +196,9 @@ function DesignBrewSource({ brewId, wanted, generationIds, store, onDraw, onMake
     },
   };
   useEffect(() => { store.set(brewId, entry); });
+  // 불러오기 · 그리기 실패는 카드마다 적지 않고 알림 하나로 띄운다. 한 제작의 카드가 여럿이면 같은 경고가 카드 수만큼 붙었다.
+  useEffect(() => { if (issue) showToast(issue, "danger"); }, [issue]);
+  useEffect(() => { if (state.issue) showToast(state.issue, "danger"); }, [state.issue]);
 
   const title = generation?.title ?? "포트폴리오";
   const portfolioId = generation?.generation?.status === "done" ? generation.generation.portfolioId : null;

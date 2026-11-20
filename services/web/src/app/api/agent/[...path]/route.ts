@@ -33,7 +33,9 @@ async function proxy(request: Request, context: { params: Promise<{ path: string
     const schema = designDraw ? AgentDesignDrawSchema : draftDecision && isDraftAction(action) ? DRAFT_DECISIONS[action] : action === "messages" ? SendAgentMessageSchema : action === "context-selection" ? SetAgentContextsSchema : action === "contexts" ? AddAgentContextSchema : action === "approval" ? AgentApprovalSchema : action === "cancel" || action === "retry" || pageUndo || brewAction || brewInterview || brewDesign || brewGeneration ? null : CreateAgentConversationSchema;
     if (schema) { const result = schema.safeParse(await request.json().catch(() => null)); if (!result.success) return Response.json({ error: { message: "입력 내용을 확인해 주세요." } }, { status: 400 }); body = JSON.stringify(result.data); }
   }
-  const upstream = await fetch(`${API_BASE_URL}${API_PREFIX}/agent/${path.join("/")}`, { method: request.method, headers: { authorization: `Bearer ${token}`, "content-type": "application/json" }, ...(body === undefined ? {} : { body }), signal: request.signal, cache: "no-store" });
+  // API가 내려가 있으면 fetch가 던진다. 그대로 두면 Next가 본문 없는 500을 내고, 화면은 브라우저의 JSON 해석 오류를 그대로 보인다.
+  const upstream = await fetch(`${API_BASE_URL}${API_PREFIX}/agent/${path.join("/")}`, { method: request.method, headers: { authorization: `Bearer ${token}`, "content-type": "application/json" }, ...(body === undefined ? {} : { body }), signal: request.signal, cache: "no-store" }).catch(() => null);
+  if (!upstream) return Response.json({ error: { message: "서버에 연결하지 못했습니다. 잠시 뒤 다시 시도해 주세요." } }, { status: 502 });
   if (action === "events" && upstream.ok) return new Response(upstream.body, { headers: { "content-type": "text/event-stream", "cache-control": "no-cache, no-transform", "x-accel-buffering": "no" } });
   const payload: unknown = await upstream.json().catch(() => ({ error: { message: "서버에 연결하지 못했습니다." } }));
   if (!upstream.ok) return Response.json(payload, { status: upstream.status });

@@ -4,7 +4,9 @@ import { AgentBrewOpenResponseSchema, AgentConversationResponseSchema, AgentConv
 const base = "/api/agent/conversations";
 export async function agentRequest(path: string, body?: unknown) {
   const response = await fetch(`${base}${path}`, { ...(body === undefined ? {} : { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), cache: "no-store" });
-  const payload = await response.json();
+  // 본문이 비었거나 JSON이 아니면(게이트웨이 오류 등) 브라우저의 해석 오류 문장을 화면에 올리지 않는다.
+  const payload = await response.json().catch(() => null) as { error?: { message?: string; details?: { requiredConsent?: string } }; message?: string } | null;
+  if (!payload) throw new Error(response.ok ? "응답을 읽지 못했습니다." : "서버에 연결하지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
   if (!response.ok && payload.error?.details?.requiredConsent === "career_records") throw new Error("AI 사용 동의가 필요합니다. 설정에서 커리어 기록 사용을 켜 주세요.");
   if (!response.ok) throw new Error(payload.error?.message ?? payload.message ?? "대화를 불러오지 못했습니다.");
   return AgentConversationResponseSchema.parse(payload).data;

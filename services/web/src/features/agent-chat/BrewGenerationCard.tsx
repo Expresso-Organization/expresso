@@ -6,8 +6,8 @@ import { GENERATION_CANCELLED, type AgentBrewGeneration } from "@expresso/contra
 import { GenerationWait } from "@/app/(app)/brew/[brewId]/design/GenerationWait";
 import { brewingLeftMs, waitedMs } from "@/app/(app)/brew/[brewId]/design/wait-timing";
 import { Icon } from "@/components/ui/Icon";
+import { showToast } from "@/components/ui/toast";
 import chatStyles from "./AgentChat.module.css";
-import card from "./RecordDraftCard.module.css";
 import styles from "./BrewGenerationCard.module.css";
 import { useDesignBrew } from "./design-brews";
 
@@ -22,7 +22,6 @@ import { useDesignBrew } from "./design-brews";
  */
 export function BrewGenerationCard({ generation: { brewId, generationId } }: { generation: AgentBrewGeneration }) {
   const brew = useDesignBrew(brewId);
-  const [issue, setIssue] = useState<string | null>(null);
   const [remaking, setRemaking] = useState(false);
   const data = brew?.generation;
   const job = data?.generation;
@@ -30,7 +29,7 @@ export function BrewGenerationCard({ generation: { brewId, generationId } }: { g
   // 이 카드의 생성이 지난 것이면(다시 만들었다) 결과만 짧게 둔다.
   if (job.id !== generationId) return <section className={styles.card} aria-label="생성"><p className={styles.line}>이전에 맡긴 생성입니다.</p></section>;
   const running = job.status === "queued" || job.status === "running";
-  const remake = async () => { setRemaking(true); setIssue(await brew.remake()); setRemaking(false); };
+  const remake = async () => { setRemaking(true); const failed = await brew.remake(); setRemaking(false); if (failed) showToast(failed, "danger"); };
   const stop = <button type="button" className={styles.ghost} onClick={brew.cancel}>생성 멈추기</button>;
 
   return <section className={styles.card} aria-label="생성">
@@ -52,6 +51,5 @@ export function BrewGenerationCard({ generation: { brewId, generationId } }: { g
       <p className={styles.line} role={job.failureCode === GENERATION_CANCELLED ? "status" : "alert"}>{job.failureCode === GENERATION_CANCELLED ? "생성을 멈췄습니다. 크레딧은 차감하지 않았습니다." : `만들지 못했습니다${job.failureCode ? `(${job.failureCode})` : ""}. 다시 만들 수 있습니다.`}</p>
       <div className={styles.actions}><button type="button" className={styles.primary} disabled={remaking} onClick={() => void remake()}>다시 만들기</button></div>
     </> : null}
-    {issue ? <p role="alert" className={card.error}>{issue}</p> : null}
   </section>;
 }
