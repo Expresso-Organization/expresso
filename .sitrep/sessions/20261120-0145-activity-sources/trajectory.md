@@ -41,3 +41,10 @@
 ### 03:05 · 보고 · 완료됨 100%
 - 출처 다섯 수집 · 중복 묶기 · 실패 표시 · 부트캠프 탭 완료
 - 남은 것: 제목 표현이 다른 같은 행사 2쌍 미묶음, 고용24 KDT는 키 확인 뒤
+
+### 15:30 · 발견 · CI 백엔드 검사 실패
+- `packages/database/src/schema.test.ts`가 컬렉션 90개를 기대 — 0035의 `activity_sources`로 91개. `pnpm test:infra`는 `integration.test.ts`만 돌려 로컬에서 빠짐
+- 기대값 91과 `activity_sources` 포함 확인으로 수정. CI와 같은 명령(웹 제외 전체 · Mongo · Redis)으로 다시 돌림: database 23건 통과, `agent-chat/service.integration.test.ts` 1건이 전체 실행에서만 실패하고 단독 24건 통과(이 PR이 손대지 않은 모듈)
+
+### 15:30 · 완료 · 공모전 · 해커톤 · 부트캠프 수집 출처 확장과 정확도 개선
+- 사용자 결정: CI 통과 후 머지
