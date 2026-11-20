@@ -40,7 +40,16 @@ const helpers = [
   "  return (-qb - sqrt(qb * qb - 4.0 * qa * qc)) / (2.0 * qa);",
   "}",
 ].join("\n");
-const bundle = `window.MOTIONWEB_WGSL_STD = ${JSON.stringify(std)};\n${hg}\nwindow.HG_SDF_WGSL = window.HG_SDF_WGSL + "\\n" + ${JSON.stringify(helpers)};\n${engine}`;
+/*
+ * 엔진에 고치는 자리 하나 — 실루엣 커버리지. 엔진은 형체를 아슬아슬하게 비껴간 가장자리 픽셀을 `음영 * cov`로 칠하고 배경을 섞지
+ * 않는다. 어두운 바탕에서는 보이지 않지만 밝은 지면 바탕에서는 형체마다 검은 테두리가 생긴다(2026-11-20 시안). 배경과 섞는다.
+ * 원문 줄이 바뀌면 여기서 멈춘다 — 조용히 넘어가지 않는다.
+ */
+const COVERAGE_FROM = '"    col = shadeSurface(p, n, rd, occ, fres) * cov;",';
+const COVERAGE_TO = '"    col = mix(background(uv), shadeSurface(p, n, rd, occ, fres), cov);",';
+if (!engine.includes(COVERAGE_FROM)) throw new Error("engine.js 의 실루엣 커버리지 줄을 찾지 못했습니다. 고치는 자리를 다시 확인하십시오.");
+const patched = engine.replace(COVERAGE_FROM, COVERAGE_TO);
+const bundle = `window.MOTIONWEB_WGSL_STD = ${JSON.stringify(std)};\n${hg}\nwindow.HG_SDF_WGSL = window.HG_SDF_WGSL + "\\n" + ${JSON.stringify(helpers)};\n${patched}`;
 const version = createHash("sha256").update(bundle).digest("hex").slice(0, 12);
 const out = join(dirname(fileURLToPath(import.meta.url)), "..", "src", "page-engine.generated.ts");
 writeFileSync(out, `// 생성물 — 손으로 고치지 않는다. scripts/vendor-motionweb.mjs 로 다시 만든다.

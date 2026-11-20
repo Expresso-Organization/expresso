@@ -95,7 +95,7 @@ describe("디자인 대화의 호출", () => {
     for (const line of ["## Do\n", "## Do not\n", "포트폴리오를 디자인한다.", "추상적인 그래픽이다.", "문서나 이력서처럼 보이면 실패다.", "같은 모양의 카드를 줄지어 쌓지 않는다."]) expect(spec.prompt).toContain(line);
     // 그래픽은 차트가 아니라 형태로 짓고, 첫 화면의 수치는 한 줄 글로만 둔다.
     expect(spec.prompt).toContain("바라보는 형태다");
-    expect(spec.prompt).toContain("수치는 첫 화면에 한 줄 글로만 둔다");
+    expect(spec.prompt).toContain("첫 화면에는 수치를 두지 않는다");
     // 그래픽을 canvas · three.js로 지을 수 있다는 것과 그 쓰는 법은 시스템에 있다.
     expect(spec.system).toContain("## 그림 스크립트 — `script` 칸");
     expect(spec.system).toContain('import * as THREE from "three"');
