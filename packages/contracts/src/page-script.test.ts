@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { PAGE_SCRIPT_ENGINE, PAGE_SCRIPT_LIBRARY, PAGE_SCRIPT_POLICY_MARK, joinPageScripts, pageDocument, pageScriptText, sha256Base64 } from "./index.js";
+import { PAGE_SCRIPT_ENGINE, PAGE_SCRIPT_LIBRARY, PAGE_SCRIPT_PROMPT, PAGE_SCRIPT_POLICY_MARK, joinPageScripts, pageDocument, pageScriptText, sha256Base64 } from "./index.js";
 
 const base = { html: "<main><canvas width=\"10\" height=\"10\"></canvas></main>", css: "main{}", title: "지면" };
 const node = (text: string) => createHash("sha256").update(text).digest("base64");
@@ -53,6 +53,13 @@ describe("지면 스크립트", () => {
     // 라이선스 고지는 지면에도 그대로 실린다.
     expect(uses).toContain("MIT License");
     expect(pageDocument({ ...base, script: "draw()", run: { origin: "" } })).not.toContain("MOTIONWEB_WGSL_STD");
+  });
+
+  it("엔진 쓰는 법은 부분 재질을 거리로 가리게 한다 — 좌표 띠로 가르면 형체가 수평으로 잘려 칠해진다", () => {
+    expect(PAGE_SCRIPT_PROMPT).toContain("fn partOf(p: vec3f) -> i32");
+    // 배경은 톤매핑을 되돌리는 헬퍼로 지면 바탕과 맞춘다. 헬퍼는 엔진 묶음에 실려 있다.
+    expect(PAGE_SCRIPT_PROMPT).toContain("pageColor(u.base)");
+    expect(PAGE_SCRIPT_ENGINE).toContain("fn pageColor(c: vec3f) -> vec3f");
   });
 
   it("스크립트가 없어도 돌리는 자리면 정책을 싣는다 — 함께 넣는 우리 스크립트만 돈다", () => {

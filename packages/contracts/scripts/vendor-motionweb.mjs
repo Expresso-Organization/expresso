@@ -24,7 +24,23 @@ const hg = read("hg-sdf.js");
 const engine = read("engine.js");
 if (!engine.includes("global.MotionWeb")) throw new Error("engine.js 가 MotionWeb 을 내보내지 않습니다. 경로를 확인하십시오.");
 if (!hg.includes("HG_SDF_WGSL")) throw new Error("hg-sdf.js 가 WGSL 판이 아닙니다.");
-const bundle = `window.MOTIONWEB_WGSL_STD = ${JSON.stringify(std)};\n${hg}\n${engine}`;
+/*
+ * 지면용 WGSL 헬퍼 — 엔진은 고치지 않고 hg-sdf 묶음 뒤에 붙인다(엔진이 저자 블록에 함께 싣는 자리다).
+ *
+ * pageColor(c): 엔진은 배경까지 ACES 톤매핑(wgsl-std tonemapAces)을 거친다. 지면 바탕색(0.98 같은 밝은 색)을 그대로 돌려주면
+ * 회색으로 눌려 캔버스가 지면 위에 회색 사각형으로 뜬다(2026-11-20 실제 그리기). 톤매핑의 역함수로, 돌려준 값이 톤매핑을 지나
+ * 정확히 c가 되게 한다. ACES(x) = x(2.51x+0.03) / (x(2.43x+0.59)+0.14)를 x에 대해 푼 근이다.
+ */
+const helpers = [
+  "fn pageColor(c: vec3f) -> vec3f {",
+  "  let y = clamp(c, vec3f(0.0), vec3f(0.995));",
+  "  let qa = 2.43 * y - vec3f(2.51);",
+  "  let qb = 0.59 * y - vec3f(0.03);",
+  "  let qc = 0.14 * y;",
+  "  return (-qb - sqrt(qb * qb - 4.0 * qa * qc)) / (2.0 * qa);",
+  "}",
+].join("\n");
+const bundle = `window.MOTIONWEB_WGSL_STD = ${JSON.stringify(std)};\n${hg}\nwindow.HG_SDF_WGSL = window.HG_SDF_WGSL + "\\n" + ${JSON.stringify(helpers)};\n${engine}`;
 const version = createHash("sha256").update(bundle).digest("hex").slice(0, 12);
 const out = join(dirname(fileURLToPath(import.meta.url)), "..", "src", "page-engine.generated.ts");
 writeFileSync(out, `// 생성물 — 손으로 고치지 않는다. scripts/vendor-motionweb.mjs 로 다시 만든다.
