@@ -282,3 +282,15 @@
 - 사용자: "수치에 왜 계속 집착하는거냐 대체" — 내가 쓴 3D 시안 소개 문장에 LCP 수치를 넣음(세 번째 지적)
 - 지침(DESIGN_CHAT_PROMPT_VERSION 9): 첫 화면에는 성과 수치(시간 · 용량 · 비율 · 건수 · 전후)를 두지 않는다. 날짜는 괜찮다. 뒤 섹션의 몫. head.lead에서도 수치를 빼게 함
 - 엔진 커버리지 수정: 밝은 바탕에서 형체마다 검은 테두리 → 배경과 섞도록 묶음에서 한 줄 고침(생성 스크립트가 원문 줄이 바뀌면 멈춤)
+
+## 2026-11-21
+
+### ~01:30 · 결정 · 3D는 검증된 효과 라이브러리에서
+- 사용자: 공중에 오브젝트 하나는 "이상하다" · 입자 · 프리즘 시안도 어색 · 블루프린트는 괜찮음 · "웹용 3D 인터랙티브 오브젝트랑 파티클 효과 … 라이브러리로 흡수하도록 하고, 모델이 라이브러리를 참고하도록 하자"
+- 조사: 포트폴리오 3D 쓰임은 ① 커서에 반응하는 입자 배경 ② 역할이 분명한 상호작용 물체 ③ 단색 선화. 출처 후보 Vanta.js(MIT) · three.js 예제 부가 모듈(MIT)
+
+### ~03:00 · 완료 · 효과 라이브러리(ExpressoEffects)
+- `packages/contracts/effects`: 런타임 · Vanta 감싸기(net · dots · fog · globe · cells) · 메타볼(MarchingCubes · RoomEnvironment) · 블루프린트, 목록 `catalog.json`(모습 · 쓰임 · 바탕 · 자리 · 값 · 출처)
+- `scripts/build-effects.mjs`(esbuild, three만 바깥) → `page-effects.generated.ts`. `pageDocument`가 `ExpressoEffects.mount("이름"`을 찾아 런타임 + 그 효과만 모듈로 싣고 해시를 정책에
+- 갤러리(밝음 · 어두움 × 가만히 · 커서): Vanta NET · GLOBE가 r125에서 없어진 THREE.VertexColors로 선 색을 잃음 → 원본에서 고침(머리에 기록). 투명 캔버스로 경계 사각형 제거. 후광은 팔레트를 따르지 않아 뺌. 바람 BIRDS · 구름 CLOUDS2 · 링 RINGS · 파도 WAVES는 비호환 · 팔레트 무시 · 밝은 바탕 회색으로 뺌
+- 지침(PAGE_PROMPT_VERSION 21 · DESIGN_CHAT_PROMPT_VERSION 10): 3D · 입자 · 인터랙티브 배경은 라이브러리에서 고른다, 공중에 오브젝트 하나 금지

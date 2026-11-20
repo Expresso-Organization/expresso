@@ -1,6 +1,7 @@
 import { PageLibrarySelectionSchema } from "./page-library.js";
 import { PAGE_SCRIPT_BREAK, PAGE_SCRIPT_LIBRARY, PAGE_SCRIPT_POLICY_MARK, pageScriptPolicy, pageScriptText } from "./page-script.js";
 import { PAGE_SCRIPT_ENGINE } from "./page-engine.generated.js";
+import { PAGE_EFFECT_CATALOG, PAGE_EFFECT_RUNTIME, PAGE_EFFECTS } from "./page-effects.generated.js";
 import { z } from "zod";
 
 import { TimestampSchema, UuidSchema } from "./common.js";
@@ -85,9 +86,10 @@ import { MEDIA_ASSET_PATH_PREFIX } from "./media-path.js";
  * 17 — 지면이 그림 스크립트(`script`)를 싣는다. canvas · three.js 그림을 쓰는 법과 스크립트 없는 첫 모습을 알린다(2026-11-20).
  * 18 — three.js 장면의 형태 · 재질 · 빛 짝. 기본 상자를 Lambert로 늘어놓은 장면이 나왔다(같은 날 사용자 "이런 저퀄리티 박스는 쓰지 않게").
  * 19 — 3d-motion-web 엔진(MotionWeb)을 지면에 싣고 그 계약 · 재질 · 빛을 알린다(같은 날 사용자 "Build in the engine").
+ * 21 — 효과 라이브러리(ExpressoEffects): 3D · 입자 · 인터랙티브 배경은 검증된 효과에서 고른다(2026-11-21 사용자 "그걸 라이브러리로 흡수하도록 하고, 모델이 라이브러리를 참고하도록 하자").
  * 20 — 부분 재질은 거리로 가린다(좌표 띠로 가른 셰이더가 고리를 수평으로 잘라 칠했다) · 엔진 바탕은 스타일의 바탕색.
  */
-export const PAGE_PROMPT_VERSION = 20;
+export const PAGE_PROMPT_VERSION = 21;
 
 /**
  * 한 지면의 상한.
@@ -602,8 +604,11 @@ export function pageDocument(input: {
   const importMap = JSON.stringify({ imports: { [PAGE_SCRIPT_LIBRARY.name]: PAGE_SCRIPT_LIBRARY.url } });
   // 3D 엔진(3d-motion-web)은 쓰는 지면에만 싣는다. classic 스크립트라 뒤의 모듈보다 먼저 돌아 `window.MotionWeb`을 만든다.
   const engine = modules.some((code) => /\bMotionWeb\b/.test(code)) ? pageScriptText(PAGE_SCRIPT_ENGINE) : "";
+  // 효과 라이브러리도 부르는 효과만 싣는다. 런타임 · 효과 묶음은 모듈이라 import map으로 three를 받고, 저자 모듈보다 앞에 놓여 먼저 돈다.
+  const effectNames = [...new Set(modules.flatMap((code) => [...code.matchAll(/ExpressoEffects\.mount\(\s*["'`]([a-z0-9-]+)["'`]/g)].map((m) => m[1]!)))].filter((name) => name in PAGE_EFFECTS);
+  const effects = effectNames.length ? [PAGE_EFFECT_RUNTIME, ...effectNames.map((name) => PAGE_EFFECTS[name]!)].map(pageScriptText) : [];
   const policy = input.run
-    ? `<meta http-equiv="Content-Security-Policy" ${PAGE_SCRIPT_POLICY_MARK} content="${pageScriptPolicy({ scripts: [...(engine ? [engine] : []), ...(modules.length ? [importMap, ...modules] : []), ...(input.run.extraScripts ?? [])], origin: input.run.origin, styleHosts: PAGE_ALLOWED_STYLESHEET_HOSTS })}">\n`
+    ? `<meta http-equiv="Content-Security-Policy" ${PAGE_SCRIPT_POLICY_MARK} content="${pageScriptPolicy({ scripts: [...(engine ? [engine] : []), ...(modules.length ? [importMap, ...effects, ...modules] : []), ...(input.run.extraScripts ?? [])], origin: input.run.origin, styleHosts: PAGE_ALLOWED_STYLESHEET_HOSTS })}">\n`
     : "";
   return `<!doctype html>
 <html lang="ko"${input.reveal === false ? ' data-reveal="none"' : ""}>
@@ -626,7 +631,7 @@ ${input.css}
 </head>
 <body>
 ${input.html}
-${engine ? `<script>${engine}</script>\n` : ""}${modules.length ? `<script type="importmap">${importMap}</script>\n${modules.map((code) => `<script type="module">${code}</script>\n`).join("")}` : ""}</body>
+${engine ? `<script>${engine}</script>\n` : ""}${modules.length ? `<script type="importmap">${importMap}</script>\n${[...effects, ...modules].map((code) => `<script type="module">${code}</script>\n`).join("")}` : ""}</body>
 </html>`;
 }
 
@@ -719,6 +724,19 @@ export const PAGE_SCRIPT_PROMPT = [
   "- `matchMedia(\"(prefers-reduced-motion: reduce)\")`이면 한 장면만 그리고 멈춘다. 화면 밖에 있으면 그리기를 멈춘다(`IntersectionObserver`).",
   "- 그림판 크기는 컨테이너를 따르고 `devicePixelRatio`를 반영한다(`ResizeObserver`). WebGL을 얻지 못하거나 오류가 나면 아무것도 하지 않고 첫 모습을 남긴다.",
   "- 바깥으로 요청할 수 없다 — `fetch` · 바깥 그림 · 바깥 글꼴 · `eval`이 막혀 있다. 그림에 쓰는 값은 스크립트 안에 적는다.",
+  "",
+  "### 효과 라이브러리 — 3D · 입자 · 인터랙티브 배경은 여기서 고른다",
+  "검증된 웹 효과(Vanta.js · three.js 예제, MIT)를 지면이 갖고 있다. 효과 코드를 직접 짜지 않고 이름으로 부른다. `import` 없이 바로 쓴다.",
+  "```js",
+  "const el = document.querySelector(\".hero-art\");   // 효과가 채울 자리. 자리와 크기는 CSS로 정한다",
+  "ExpressoEffects.mount(\"fog\", { el, palette: { background: \"#faf8f4\", ink: \"#241b2b\", accent: \"#5f0080\", soft: \"#c9b3d6\" }, values: { speed: 0.8 } });",
+  "```",
+  "- `palette`는 고른 스타일의 바탕 · 글자 · 강조색과, 바탕과 강조 사이의 옅은 색(`soft`)이다. `values`는 효과마다 아래 적힌 값만, 기록에서 계산해 넣는다.",
+  "- 효과가 실패하거나 동작 줄이기면 아무것도 그리지 않는다 — 자리(`el`) 아래에 CSS 첫 모습을 깐다. 효과는 커서에 스스로 반응하고, 화면 밖이면 멈춘다.",
+  "- 바탕에 맞는 효과만 고른다(밝은 바탕에는 `밝음`이 있는 효과). 한 화면에 효과는 하나다.",
+  ...PAGE_EFFECT_CATALOG.map((effect) => `- \`${effect.name}\` ${effect.title}(${effect.dimension.toUpperCase()} · ${effect.background.map((b) => (b === "light" ? "밝음" : "어두움")).join(" · ")}) — ${effect.look} 어울림: ${effect.use} 자리: ${effect.place}. 값: ${effect.values}`),
+  "",
+  "### 라이브러리에 맞는 효과가 없을 때만 — three.js · MotionWeb 엔진으로 직접 짓는다. 공중에 오브젝트 하나를 띄우지 않는다.",
   "",
   "### three.js 장면 — 입자 · 선의 장, 그리고 형태 · 재질 · 빛을 함께 짓는다",
   "- 형태와 재질의 짝을 맞춘다. 밝기는 법선이 정한다 — 법선이 계속 변하는 곡면(구 · 토러스 · 튜브 · 매듭 · 덩어리)에는 금속 · 세라믹 · 광택(`MeshPhysicalMaterial`의 metalness · roughness · clearcoat)을, 평면 다면체(상자 · 결정)에는 굴절 유리(transmission · thickness · ior)를, 선 · 입자에는 자체발광(`AdditiveBlending`)을 쓴다. 평면 다면체에 Lambert · 단색 재질을 얹으면 면마다 평평한 색판이 되어 장난감 블록으로 읽힌다.",

@@ -70,6 +70,7 @@ export * from "./media.js";
 export * from "./page.js";
 export * from "./page-script.js";
 export * from "./page-engine.generated.js";
+export * from "./page-effects.generated.js";
 export * from "./page-kit.js";
 export * from "./page-stream.js";
 export * from "./generation.js";

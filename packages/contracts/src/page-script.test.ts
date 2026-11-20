@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { PAGE_SCRIPT_ENGINE, PAGE_SCRIPT_LIBRARY, PAGE_SCRIPT_PROMPT, PAGE_SCRIPT_POLICY_MARK, joinPageScripts, pageDocument, pageScriptText, sha256Base64 } from "./index.js";
+import { PAGE_EFFECT_RUNTIME, PAGE_EFFECTS, PAGE_SCRIPT_ENGINE, PAGE_SCRIPT_LIBRARY, PAGE_SCRIPT_PROMPT, PAGE_SCRIPT_POLICY_MARK, joinPageScripts, pageDocument, pageScriptText, sha256Base64 } from "./index.js";
 
 const base = { html: "<main><canvas width=\"10\" height=\"10\"></canvas></main>", css: "main{}", title: "지면" };
 const node = (text: string) => createHash("sha256").update(text).digest("base64");
@@ -53,6 +53,20 @@ describe("지면 스크립트", () => {
     // 라이선스 고지는 지면에도 그대로 실린다.
     expect(uses).toContain("MIT License");
     expect(pageDocument({ ...base, script: "draw()", run: { origin: "" } })).not.toContain("MOTIONWEB_WGSL_STD");
+  });
+
+  it("부르는 효과만 런타임과 함께 저자 모듈보다 앞에 싣고, 해시를 정책에 넣는다 — 모르는 이름은 싣지 않는다", () => {
+    const document = pageDocument({ ...base, script: 'ExpressoEffects.mount("fog", { el }); ExpressoEffects.mount(\'globe\', {}); ExpressoEffects.mount("nope", {})', run: { origin: "" } });
+    const runtime = pageScriptText(PAGE_EFFECT_RUNTIME), fog = pageScriptText(PAGE_EFFECTS.fog!);
+    expect(document.indexOf(runtime)).toBeGreaterThan(-1);
+    expect(document.indexOf(runtime)).toBeLessThan(document.indexOf(fog));
+    expect(document.indexOf(fog)).toBeLessThan(document.indexOf('ExpressoEffects.mount("fog"'));
+    expect(document).toContain(pageScriptText(PAGE_EFFECTS.globe!));
+    expect(document).not.toContain(pageScriptText(PAGE_EFFECTS.net!));
+    expect(document).toContain(`'sha256-${node(fog)}'`);
+    // MIT 고지가 묶음과 함께 실린다.
+    expect(document).toContain("Vanta.js 0.5.24 · Copyright 2020 Teng Bao · MIT License");
+    expect(pageDocument({ ...base, script: "draw()", run: { origin: "" } })).not.toContain("ExpressoEffects =");
   });
 
   it("엔진 쓰는 법은 부분 재질을 거리로 가리게 한다 — 좌표 띠로 가르면 형체가 수평으로 잘려 칠해진다", () => {
