@@ -1,7 +1,8 @@
 "use client";
-import { createContext, useCallback, useContext, useMemo, useState, useRef, useEffect } from "react";
+import { createContext, startTransition, useCallback, useContext, useMemo, useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import type { Route } from "next";
+import { useChangedSinceMount } from "@/components/motion/useChangedSinceMount";
 import { LogoMark } from "@/components/brand/Logo";
 import { Icon } from "@/components/ui/Icon";
 import { useRouter } from "next/navigation";
@@ -9,14 +10,7 @@ import { AssistantRuntimeProvider, useExternalStoreRuntime, useAui, useAuiState,
 import { AgentChatAccessSchema, AgentResourceDetailSchema } from "@expresso/contracts";
 import type { AgentContext, AgentMessage, AgentPageSelection, AiEditProposalDetail, CareerDocumentBootstrap } from "@expresso/contracts";
 import { ResourcePreview, type PreviewResource } from "./ResourcePreview";
-import { RequirementReviewCard } from "./RequirementReviewCard";
-import { RecordDraftCard } from "./RecordDraftCard";
-import { JobGoalDraftCard } from "./JobGoalDraftCard";
-import { GapReviewCard } from "./GapReviewCard";
-import { PlanDraftCard } from "./PlanDraftCard";
-import { PlanCard } from "./PlanCard";
-import { ReplanDraftCard } from "./ReplanDraftCard";
-import { PageEditCard } from "./PageEditCard";
+import { isBelowTool, toolPartFor, type ToolPartContext } from "./tool-parts";
 import { AgentConsentDialog } from "./AgentConsentDialog";
 import { ConversationSwitcher } from "./ConversationSwitcher";
 import { AiProposalDiff } from "@/features/career-editor/ai/AiProposalDiff";
@@ -27,7 +21,7 @@ import type { ThreadGroupPart } from "@/components/assistant-ui/elements/thread.
 import type { PropsWithChildren, ReactNode } from "react";
 import "@/styles/agent-chat-framework.css";
 import { agentRequest, useAgentConversation } from "./useAgentConversation";
-import { AGENT_CHAT_OPEN, AGENT_CONVERSATIONS_EVENT, peekAgentHandoff, takeAgentHandoff } from "./agent-handoff";
+import { AGENT_CHAT_CLOSE, AGENT_CHAT_OPEN, AGENT_CONVERSATIONS_EVENT, peekAgentHandoff, takeAgentHandoff } from "./agent-handoff";
 import { ToolStep } from "./ToolStep";
 import styles from "./AgentChat.module.css";
 
@@ -42,6 +36,8 @@ const JobContext = createContext<AgentChatJob | null>(null);
  */
 export type AgentChatPage = { portfolioId: string; title: string; revision: number; selection: AgentPageSelection | null };
 const PageContext = createContext<AgentChatPage | null>(null);
+/** 지금 말을 보낼 수 있는가(사용 설정 · 동의 · 이번 달 크레딧). 부품이 답을 받을지 정할 때 쓴다. */
+const SendContext = createContext(false);
 /**
  * 고침 카드의 판이 화면의 최신 판인가. 화면이 더 뒤의 판을 보고 있을 때만 false다. 고침 직후 화면이 아직 옛 판을 보고 있으면
  * (새로고침 전) 모르는 것(undefined)으로 두고 서버가 판단한다.
@@ -126,7 +122,7 @@ function GeneralWelcome() {
 const TOOL_ICONS: Record<string, string> = {
   "기록 목록 확인": "list-bullets", "기록 읽기": "book-open-text", "요건 대조": "list-checks", "새 기록 초안": "note-pencil", "구직 목표 변경": "target", "기록 변경 제안": "pencil-line",
   "보완점 정리": "target", "준비 계획 초안": "calendar-check", "계획 진행 확인": "chart-line-up", "계획 재배치 초안": "arrows-clockwise",
-  "지면 요소 읽기": "cursor-click", "지면 요소 고침": "pencil-simple-line",
+  "지면 요소 읽기": "cursor-click", "지면 요소 고침": "pencil-simple-line", "기억 갱신": "bookmark-simple", "기록 저장": "note-pencil",
 };
 /**
  * 도구 호출 하나를 작업 흔적의 한 단계로 그린다. 결과의 모양으로 단계 아래를 나눈다 — 요건 대조 · 보완점 · 새 기록 · 준비 계획 ·
@@ -139,19 +135,37 @@ const RecordTool: ToolCallMessagePartComponent = props => {
   const busy = state.pending || state.conversation?.run?.status === "running";
   const name = tool?.name ?? props.toolName;
   const step = (detail: ReactNode, summary: string | null = tool?.summary ?? null) => <ToolStep status={tool?.status ?? (props.status.type === "running" ? "running" : "complete")} icon={TOOL_ICONS[name] ?? "wrench"} title={name} summary={summary ?? undefined}>{detail}</ToolStep>;
-  if (tool?.review) return step(<RequirementReviewCard conversationId={state.id} toolId={tool.id} review={tool.review} />, null);
-  if (tool?.gapReview) return step(<GapReviewCard conversationId={state.id} toolId={tool.id} gapReview={tool.gapReview} />, null);
-  if (tool?.recordDraft) { const draftId = tool.recordDraft.draftId; return step(<RecordDraftCard draft={tool.recordDraft} disabled={busy} onDecide={decision => state.decideDraft(draftId, decision)} />, null); }
-  if (tool?.goalDraft) { const draftId = tool.goalDraft.draftId; return step(<JobGoalDraftCard draft={tool.goalDraft} disabled={busy} onDecide={decision => state.decideGoalDraft(draftId, decision)} />, null); }
-  if (tool?.planDraft) {
-    const { draftId, planId, status } = tool.planDraft;
-    if (status === "approved" && planId) return step(<PlanCard planId={planId} refreshKey={state.conversation?.version} />, null);
-    return step(<PlanDraftCard draft={tool.planDraft} disabled={busy} onDecide={decision => state.decidePlanDraft(draftId, decision)} />, null);
-  }
-  if (tool?.replanDraft) { const draftId = tool.replanDraft.draftId; return step(<ReplanDraftCard draft={tool.replanDraft} disabled={busy} onDecide={decision => state.decideReplanDraft(draftId, decision)} />, null); }
-  if (tool?.pageEdit) { const edit = tool.pageEdit; return step(<PageEditCard edit={edit} latest={pageEditLatest(page, edit)} disabled={busy} onUndo={() => state.undoPageEdit(edit.editId)} />, null); }
+  // 카드는 등록표(tool-parts.tsx)가 정한다. 카드가 요약을 담으므로 단계 요약은 비운다.
+  const part = tool ? toolPartFor(tool) : undefined;
+  if (tool && part?.placement === "trace") return step(part.render(tool, partContext(state, page, busy, false)), null);
   return step(tool?.proposal ? <Proposal proposal={tool.proposal} beforeDocument={tool.beforeDocument} undone={tool.undone} /> : null);
 };
+/** 등록표의 항목이 받아 쓰는 상태와 동작. */
+function partContext(state: ReturnType<typeof useAgentConversation>, page: AgentChatPage | null, busy: boolean, canAnswer: boolean): ToolPartContext {
+  return {
+    conversationId: state.id, conversationVersion: state.conversation?.version, busy, canAnswer,
+    pageEditLatest: edit => pageEditLatest(page, edit),
+    decideDraft: state.decideDraft, decideGoalDraft: state.decideGoalDraft, decidePlanDraft: state.decidePlanDraft, decideReplanDraft: state.decideReplanDraft,
+    undoPageEdit: state.undoPageEdit, answerPart: state.answerPart, undoSavedRecord: state.undoSavedRecord,
+  };
+}
+/**
+ * 답변 글 아래의 부품. 작업 흔적 밖에 그린다 — 사용자에게 건네는 화면은 에이전트가 한 일의 기록이 아니다.
+ * 답을 받는 것은 마지막 답변의 부품뿐이다. 실행 중이거나 보낼 수 없는 상태에서도 받지 않는다.
+ */
+function BelowParts() {
+  const state = useContext(ChatContext)!;
+  const page = useContext(PageContext);
+  const canSend = useContext(SendContext);
+  const messageId = useAuiState(s => s.message.id);
+  const messages = state.conversation?.messages ?? [];
+  const index = messages.findIndex(message => message.id === messageId);
+  const tools = index < 0 ? [] : messages[index]!.tools.filter(isBelowTool);
+  if (!tools.length) return null;
+  const busy = state.pending || state.conversation?.run?.status === "running";
+  const context = partContext(state, page, busy, canSend && !busy && index === messages.length - 1);
+  return <div className={styles.belowParts}>{tools.map(tool => <div key={tool.id}>{toolPartFor(tool)!.render(tool, context)}</div>)}</div>;
+}
 function ExpandedTools({ group, children }: PropsWithChildren<{ group: ThreadGroupPart }>) {
   return <ToolGroupRoot variant="ghost" defaultOpen><ToolGroupTrigger count={group.indices.length} active={group.status.type === "running"} /><ToolGroupContent><div className={styles.trace}>{children}</div></ToolGroupContent></ToolGroupRoot>;
 }
@@ -159,27 +173,33 @@ function Proposal({ proposal, beforeDocument, undone }: { proposal: AiEditPropos
   const state = useContext(ChatContext)!; const router = useRouter();
   const [commands, setCommands] = useState(new Set(proposal.commands.map((_, i) => i)));
   const [properties, setProperties] = useState(new Set(proposal.propertyChanges.map((_, i) => i)));
+  // 적용 · 거절 · 되돌리기로 바뀐 상태 문구만 떠오른다. 값이 바뀔 때마다 새로 그려 다시 돈다.
+  const status = undone ? "undone" : proposal.status;
+  const swapped = useChangedSinceMount(status);
   const toggle = (current: Set<number>, index: number) => { const next = new Set(current); if (next.has(index)) next.delete(index); else next.add(index); return next; };
   return <><AiProposalDiff proposal={proposal} document={beforeDocument ?? null} commandIndexes={commands} propertyChangeIndexes={properties} onCommandToggle={index => setCommands(current => toggle(current, index))} onPropertyToggle={index => setProperties(current => toggle(current, index))} />
-    <p className={styles.proposalStatus} data-state={undone ? "undone" : proposal.status}>{undone ? "변경을 되돌렸습니다." : proposal.status === "applied" ? "기록에 적용했습니다." : proposal.status === "ready" ? "검토 후 적용해 주세요." : proposal.status === "rejected" ? "제안을 거절했습니다." : "제안을 더 이상 적용할 수 없습니다."}</p>
+    <p key={status} className={`${styles.proposalStatus} ${swapped ? "ex-anim-reveal" : ""}`} data-state={status}>{undone ? "변경을 되돌렸습니다." : proposal.status === "applied" ? "기록에 적용했습니다." : proposal.status === "ready" ? "검토 후 적용해 주세요." : proposal.status === "rejected" ? "제안을 거절했습니다." : "제안을 더 이상 적용할 수 없습니다."}</p>
     {proposal.status === "ready" ? <div className={styles.actions}><Button className={styles.applyButton} disabled={state.pending || state.conversation?.run?.status === "running" || !(commands.size + properties.size)} onClick={() => void state.approve({ proposalId: proposal.proposalId, action: "apply", expectedDocumentVersion: proposal.baseDocumentVersion, commandIndexes: [...commands], propertyChangeIndexes: [...properties] }).then(() => router.refresh())}>선택한 변경 적용</Button><Button variant="outline" disabled={state.pending} onClick={() => void state.approve({ proposalId: proposal.proposalId, action: "reject", expectedDocumentVersion: proposal.baseDocumentVersion })}>거절</Button></div> : null}
     {proposal.status === "applied" && !undone ? <Button variant="outline" disabled={state.pending} onClick={() => void state.approve({ proposalId: proposal.proposalId, action: "undo", expectedDocumentVersion: proposal.appliedDocumentVersion! }).then(() => router.refresh())}>변경 되돌리기</Button> : null}
   </>;
 }
 /** 홈의 입력창이 대화를 시작하며 이 입력창 자리로 옮겨 오는 전환. 홈의 입력창과 이름 · 타입이 같아야 짝이 된다. */
-const HOME_COMPOSER_TRANSITION = { name: "agent-composer", types: [AGENT_CHAT_OPEN], className: "composer-morph" };
+const HOME_COMPOSER_TRANSITION = { name: "agent-composer", share: { [AGENT_CHAT_OPEN]: "composer-morph", [AGENT_CHAT_CLOSE]: "composer-return" } };
 const convertMessage = (message: AgentMessage): ThreadMessageLike => ({
   id: message.id, role: message.role, createdAt: new Date(message.createdAt),
   ...(message.selection ? { metadata: { custom: { selection: message.selection } } } : {}),
   content: [
-    ...message.tools.map(tool => ({ type: "tool-call" as const, toolCallId: tool.id, toolName: tool.name, args: {}, argsText: "{}", ...(tool.status === "running" ? {} : { result: { summary: tool.summary }, isError: tool.status === "failed" }) })),
+    // 답변 글 아래에 그리는 부품(등록표의 below)은 작업 흔적에 넣지 않는다. BelowParts가 저장된 메시지에서 직접 그린다.
+    ...message.tools.filter(tool => !isBelowTool(tool)).map(tool => ({ type: "tool-call" as const, toolCallId: tool.id, toolName: tool.name, args: {}, argsText: "{}", ...(tool.status === "running" ? {} : { result: { summary: tool.summary }, isError: tool.status === "failed" }) })),
     { type: "text", text: message.text },
   ],
 });
-export function AgentChat({ job, page, standalone = false, fresh = false, newHref, onRunningChange, ...props }: {
+export function AgentChat({ job, page, standalone = false, fresh = false, chatId = null, newHref, onRunningChange, ...props }: {
   context?: AgentContext; contextLabel?: string; standalone?: boolean; job?: AgentChatJob;
   /** 참이면 주소에 적힌 대화만 연다. 홈이 쓴다 — 홈의 입력창이 넘긴 말(`agent-handoff`)이 있으면 그 말로 대화를 시작한다. */
   fresh?: boolean;
+  /** `fresh`일 때 주소에 적힌 대화(`?chat=`). 서버가 읽어 넘겨, 첫 렌더부터 그 대화를 불러온다. */
+  chatId?: string | null;
   /** 「새 대화」가 갈 곳. 홈에서는 대화 전의 홈 화면으로 돌아간다. 주지 않으면 이 자리에서 대화를 비운다. */
   newHref?: string;
   /** 다듬기 화면의 지면. 대화는 이 포트폴리오가 연결된 가장 최근 대화로 열리고, 보내는 말에 고른 요소가 붙는다. */
@@ -189,7 +209,7 @@ export function AgentChat({ job, page, standalone = false, fresh = false, newHre
 }) {
   const context: AgentContext | undefined = job ? { kind: "job", id: job.id } : page ? { kind: "portfolio", id: page.portfolioId } : props.context;
   const contextLabel = job?.title ?? page?.title ?? props.contextLabel;
-  const state = useAgentConversation(context, job || page ? { restore: "context" } : fresh ? { restore: "url" } : {});
+  const state = useAgentConversation(context, job || page ? { restore: "context" } : fresh ? { restore: "url", initialId: chatId } : {});
   const router = useRouter();
   // 홈에서 넘겨받은 말. 대화를 만들고 보내기 전, 첫 렌더부터 사용자 말풍선으로 그린다 — 그래야 대화 화면의 첫 장면에
   // 시작 화면이 아니라 보낸 말이 있다. 서버의 사용자 메시지가 오면 같은 id로 바꿔 그려 말풍선이 다시 마운트되지 않는다.
@@ -291,14 +311,20 @@ export function AgentChat({ job, page, standalone = false, fresh = false, newHre
   const canRetry = !!lastRun && ["failed", "interrupted", "cancelled"].includes(lastRun.status) && state.conversation?.messages.at(-1)?.role === "assistant";
   const retryButton = canRetry ? <Button variant="outline" size="sm" className={styles.retryButton} disabled={!canSend || state.pending} onClick={() => void state.retry()}><Icon name="arrow-clockwise" size={13} />다시 보내기</Button> : null;
   const missing = context && state.conversation && !state.conversation.contexts.some(ref => ref.kind === context.kind && ref.id === context.id);
-  return <ChatContext.Provider value={state}><JobContext.Provider value={job ?? null}><PageContext.Provider value={page ?? null}><AssistantRuntimeProvider runtime={runtime}>
+  return <ChatContext.Provider value={state}><JobContext.Provider value={job ?? null}><PageContext.Provider value={page ?? null}><SendContext.Provider value={canSend}><AssistantRuntimeProvider runtime={runtime}>
     {preview ? <ResourcePreview resource={preview} onClose={() => setPreview(null)} selected={!!state.conversation?.contexts.some(ref => ref.kind === preview.kind && ref.id === preview.id)} disabled={contextDisabled} onToggle={toggleContext} /> : null}
     <AgentConsentDialog open={consentOpen} onOpenChange={setConsentOpen} onConsented={() => setAccess(current => current ? { ...current, consentRequired: false } : current)} />
-    <section className={`acf-scope ${styles.root} ${job || page ? styles.rail : standalone ? styles.standalone : styles.panel}`} aria-label="에이전트 채팅">
+    <section
+      className={`acf-scope ${styles.root} ${job || page ? styles.rail : standalone ? styles.standalone : styles.panel}`}
+      aria-label="에이전트 채팅"
+      // 지난 대화의 기록을 기다리는 동안 pending, 도착하면 done — done이 되는 순간 메시지 묶음이 떠오른다.
+      // 보낸 말 말풍선(arrival)은 자기 모션이 있어 두지 않는다.
+      data-restore={!arrival && state.id ? (state.conversation ? "done" : "pending") : undefined}
+    >
       <div className={styles.main}>
         <header className={styles.header}>
           <div className={styles.heading}><span className={styles.assistantMark}><LogoMark size={22} /></span><div><strong>{state.conversation?.title ?? "새 대화"}</strong><span>{running ? "답변을 준비하고 있어요" : "Expresso AI"}</span></div></div>
-          <div className={styles.headerActions}><span className={standalone ? styles.compactHistory : undefined}><ConversationSwitcher contexts={state.conversation?.contexts ?? []} contextDisabled={contextDisabled} onToggleContext={toggleContext} onPreview={setPreview} currentId={state.id} conversations={state.list} disabled={state.pending} onSelect={state.select} /></span>{!standalone ? <Link aria-label="독립 채팅으로 크게 열기" title="크게 열기" href={{ pathname: "/agent", query: state.id ? { chat: state.id } : {} }}><Icon name="arrows-out-simple" size={17} /></Link> : null}<Button variant="ghost" size="icon" aria-label="새 대화" title="새 대화" disabled={state.pending} onClick={() => newHref ? router.push(newHref as Route) : state.select(null)}><Icon name="note-pencil" size={18} /></Button></div>
+          <div className={styles.headerActions}><span className={standalone ? styles.compactHistory : undefined}><ConversationSwitcher contexts={state.conversation?.contexts ?? []} contextDisabled={contextDisabled} onToggleContext={toggleContext} onPreview={setPreview} currentId={state.id} conversations={state.list} disabled={state.pending} onSelect={state.select} /></span>{!standalone ? <Link aria-label="독립 채팅으로 크게 열기" title="크게 열기" href={{ pathname: "/agent", query: state.id ? { chat: state.id } : {} }}><Icon name="arrows-out-simple" size={17} /></Link> : null}<Button variant="ghost" size="icon" aria-label="새 대화" title="새 대화" disabled={state.pending} onClick={() => newHref ? startTransition(() => router.push(newHref as Route, { transitionTypes: [AGENT_CHAT_CLOSE] })) : state.select(null)}><Icon name="note-pencil" size={18} /></Button></div>
         </header>
 
         <div className={styles.contexts} aria-label="대화에 연결된 자료">
@@ -313,7 +339,7 @@ export function AgentChat({ job, page, standalone = false, fresh = false, newHre
         </div>
         {access?.enabled && access.consentRequired ? <div role="alert" className={styles.apiKeyField}><p>채팅을 시작하려면 AI 사용 동의가 필요합니다.</p><small>대화와 연결된 커리어 기록을 AI 모델에 전달합니다.</small><Button variant="outline" onClick={() => setConsentOpen(true)}>AI 사용 동의 확인</Button></div> : null}
         {accessError ? <p role="alert" className={styles.error}>채팅 사용 권한을 확인하지 못했습니다. 새로고침해 주세요.</p> : !access ? (arrival ? null : <p role="status" className={styles.status}>채팅 사용 권한 확인 중…</p>) : !access.enabled ? <p className={styles.status}>에이전트 채팅이 아직 활성화되지 않았습니다.</p> : access.creditsExhausted ? <p role="alert" className={styles.status}>이번 달 AI 크레딧을 모두 썼습니다. 다음 달에 다시 대화할 수 있습니다.</p> : null}
-        <div className={styles.thread}><Thread autoFocus={standalone} composerTransition={fresh ? HOME_COMPOSER_TRANSITION : undefined} components={{ Welcome: ChatWelcome, AssistantHeader: AssistantIdentity, ToolFallback: RecordTool, ToolGroup: ExpandedTools, ComposerHeader: ComposerTarget, UserMessageHeader: UserMessageTarget }} /></div>
+        <div className={styles.thread}><Thread autoFocus={standalone} composerTransition={fresh ? HOME_COMPOSER_TRANSITION : undefined} components={{ Welcome: ChatWelcome, AssistantHeader: AssistantIdentity, AssistantFooter: BelowParts, ToolFallback: RecordTool, ToolGroup: ExpandedTools, ComposerHeader: ComposerTarget, UserMessageHeader: UserMessageTarget }} /></div>
         <div className={styles.footnote}><Icon name="check-circle" size={12} /><span>{page ? "지면 고침은 바로 새 판으로 저장되고 카드에서 되돌릴 수 있습니다." : "기록의 변경은 확인 후 적용됩니다."}</span></div>
         {lastRun?.status === "cancelled" ? <div role="status" className={`${styles.status} ${styles.runNotice}`}><span>응답을 중지했습니다.</span>{retryButton}</div> : null}
         {lastRun?.error ? <div role="alert" className={`${styles.error} ${styles.runNotice}`}><span>{lastRun.error}</span>{retryButton}</div> : null}
@@ -321,5 +347,5 @@ export function AgentChat({ job, page, standalone = false, fresh = false, newHre
       </div>
       {standalone ? <ConversationSwitcher contexts={state.conversation?.contexts ?? []} contextDisabled={contextDisabled} onToggleContext={toggleContext} onPreview={setPreview} inline currentId={state.id} conversations={state.list} disabled={state.pending} onSelect={state.select} /> : null}
     </section>
-  </AssistantRuntimeProvider></PageContext.Provider></JobContext.Provider></ChatContext.Provider>;
+  </AssistantRuntimeProvider></SendContext.Provider></PageContext.Provider></JobContext.Provider></ChatContext.Provider>;
 }

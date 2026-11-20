@@ -10,6 +10,7 @@ import { publicSiteHost } from "@/lib/public-site";
 
 import { resumeStep } from "../brew/new/resume-step";
 import type { ActiveBrew, GridItem, SiteInsight } from "../home/home-model";
+import { PreviewFrame } from "./PreviewFrame";
 import styles from "./portfolio-grid.module.css";
 
 /**
@@ -28,7 +29,8 @@ export function PortfolioGrid({
 }) {
   const stats = new Map(sites.map((site) => [site.portfolioId, site]));
   return (
-    <div>
+    // 스켈레톤 격자(PortfoliosPaneSkeleton) 자리에서 떠오른다.
+    <div className="ex-anim-reveal">
       <div className={styles.sectionHead}>
         <span className={styles.sectionTitle}>내 포트폴리오</span>
         <PortfolioTrashButton />
@@ -98,15 +100,7 @@ function PortfolioCard({
       */}
       <div className={styles.portfolioThumb} inert>
         {hasPage ? (
-          <iframe
-            src={`/edit/${portfolio.id}/preview`}
-            title={`${portfolio.title} 미리보기`}
-            loading="lazy"
-            tabIndex={-1}
-            // 축소본이라 지면 안을 넘겨 보는 자리가 아니다. 틀 자체가 스크롤을 갖지 않게 한다.
-            scrolling="no"
-            className={styles.portfolioFrame}
-          />
+          <PreviewFrame src={`/edit/${portfolio.id}/preview`} title={`${portfolio.title} 미리보기`} className={styles.portfolioFrame} />
         ) : null}
         <span className={`${styles.portfolioBadge} ${deployment ? styles.badgeLive : styles.badgeDraft}`}>
           {deployment ? "배포됨" : portfolio.status === "unlisted" ? "공개 중단" : "초안"}

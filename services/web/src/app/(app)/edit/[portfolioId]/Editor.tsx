@@ -327,7 +327,7 @@ export function Editor({
   const [pane, setPane] = useState<"canvas" | "sections" | "panel">("canvas");
 
   return (
-    <div className={styles.frame}>
+    <div className={`${styles.frame} ex-anim-reveal`}>
       <nav className={styles.rail} aria-label="주요 이동">
         <span className={styles.railLogo}>
           <LogoMark size={22} />

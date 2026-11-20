@@ -28,6 +28,15 @@ describe("공유 대화 상태", () => {
     act(() => Events.instances.at(-1)!.callback!({ data: JSON.stringify({ data: { ...conversation, version: 2, title: "이전" } }) }));
     expect(result.current.conversation?.title).toBe("최신");
   });
+  it("서버가 넘긴 대화로 첫 렌더부터 시작해 시작 화면이 지나가지 않는다", async () => {
+    window.history.replaceState(null, "", `/home?chat=${first}`);
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => Response.json({ data: url.endsWith("conversations") ? [] : row() })));
+    const renders: (string | null)[] = [];
+    const { result } = renderHook(() => { const state = useAgentConversation(undefined, { restore: "url", initialId: first }); renders.push(state.id); return state; });
+    // 효과가 돌기 전의 첫 렌더 — 시작 화면(대화 없음)이 아니라 그 대화를 불러오는 상태다.
+    expect(renders[0]).toBe(first);
+    await waitFor(() => expect(result.current.conversation?.id).toBe(first));
+  });
   it("대화 전환 이후 도착한 이전 대화의 응답이 화면을 덮지 않는다", async () => {
     window.history.replaceState(null, "", `/agent?chat=${first}`);
     let release!: (value: Response) => void;

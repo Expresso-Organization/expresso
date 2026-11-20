@@ -81,6 +81,8 @@ export type ThreadGroupPart = MessagePrimitive.GroupedParts.GroupPart;
 export type ThreadComponents = {
   AssistantMessage?: ComponentType | undefined;
   AssistantHeader?: ComponentType | undefined;
+  /** 답변 글 바로 아래. 작업 흔적 밖에서 그 답변에 딸린 화면(사용자에게 건네는 부품)을 그린다. */
+  AssistantFooter?: ComponentType | undefined;
   Welcome?: ComponentType | undefined;
   ToolFallback?: ToolCallMessagePartComponent | undefined;
   ToolGroup?:
@@ -95,8 +97,8 @@ export type ThreadComponents = {
   UserMessageHeader?: ComponentType | undefined;
 };
 
-/** 다른 화면의 입력창이 이 입력창 자리로 옮겨 오는 전환. `name`이 같은 요소와 짝을 이루고, `types`의 이동에서만 돈다. */
-export type ComposerTransition = { name: string; types: string[]; className: string };
+/** 다른 화면의 입력창과 이 입력창이 자리를 주고받는 전환. `name`이 같은 요소와 짝을 이루고, `share`에 적은 이동 타입에서만 그 클래스로 돈다. */
+export type ComposerTransition = { name: string; share: Record<string, string> };
 
 export type ThreadProps = {
   components?: ThreadComponents | undefined;
@@ -214,7 +216,7 @@ const ThreadRoot: FC<{ isEmpty: boolean; autoFocus: boolean; composerTransition:
             {composerTransition ? (
               <ViewTransition
                 name={composerTransition.name}
-                share={{ ...Object.fromEntries(composerTransition.types.map((type) => [type, composerTransition.className])), default: "none" }}
+                share={{ ...composerTransition.share, default: "none" }}
                 default="none"
               >
                 <Composer autoFocus={autoFocus} />
@@ -329,6 +331,7 @@ const MessageError: FC = () => {
 const AssistantMessage: FC = () => {
   const {
     AssistantHeader,
+    AssistantFooter,
     ToolFallback: ToolFallbackComponent = ToolFallback,
     ToolGroup,
     ReasoningGroup,
@@ -424,6 +427,7 @@ const AssistantMessage: FC = () => {
             }
           }}
         </MessagePrimitive.GroupedParts>
+        {AssistantFooter ? <AssistantFooter /> : null}
         <MessageError />
       </div>
 

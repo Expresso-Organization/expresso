@@ -37,6 +37,7 @@ import {
   CareerProfileResponseSchema,
   OptionalCareerProfileResponseSchema,
   OptionalJobGoalResponseSchema,
+  ConsultantMemoryResponseSchema,
   JobGoalResponseSchema,
   type SaveCareerProfile,
   type SaveJobGoal,
@@ -114,6 +115,7 @@ import {
   type ListPortfoliosQuery,
   type Login,
   type Signup,
+  type ConsultantStage,
 } from "@expresso/contracts";
 import { z } from "zod";
 
@@ -416,6 +418,17 @@ export const publishing = {
 };
 
 /** 능동 제안 — 에이전트가 먼저 권하는 행동. 켠 사용자에게만 만들어진다. */
+/** 컨설턴트의 기억 — 「내 진행」 화면이 읽고 고친다. */
+export const consultant = {
+  memory: (accessToken: string) =>
+    request(`${API_PREFIX}/consultant/memory`, ConsultantMemoryResponseSchema, { accessToken, cache: "no-store" }),
+  /** 사용자가 직접 고른 단계로 저장한다. */
+  setStage: (accessToken: string, stage: ConsultantStage) =>
+    request(`${API_PREFIX}/consultant/stage`, ConsultantMemoryResponseSchema, { accessToken, method: "PUT", body: { stage } }),
+  removePreference: (accessToken: string, preferenceId: string) =>
+    request(`${API_PREFIX}/consultant/preferences/${preferenceId}`, ConsultantMemoryResponseSchema, { accessToken, method: "DELETE" }),
+};
+
 export const proposals = {
   feed: (accessToken: string) =>
     request(`${API_PREFIX}/proposals`, ProposalFeedResponseSchema, { accessToken, cache: "no-store" }),

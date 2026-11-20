@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import type { AgentPlanDecision, AgentPlanDraft, PreparationTaskDraft } from "@expresso/contracts";
+import { useChangedSinceMount } from "@/components/motion/useChangedSinceMount";
 import { Icon } from "@/components/ui/Icon";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,6 +32,8 @@ export function PlanDraftCard({ draft, disabled, onDecide }: { draft: AgentPlanD
   const [summary, setSummary] = useState(draft.summary);
   const [tasks, setTasks] = useState<PreparationTaskDraft[]>(draft.tasks);
   const [editing, setEditing] = useState(false);
+  // 누른 결과로 바뀐 문구만 떠오른다. 대화를 다시 열어 이미 끝난 카드는 움직이지 않는다.
+  const swapped = useChangedSinceMount(draft.status);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const decide = async (decision: AgentPlanDecision) => {
@@ -41,7 +44,7 @@ export function PlanDraftCard({ draft, disabled, onDecide }: { draft: AgentPlanD
   if (draft.status === "rejected") return <section className={styles.card} aria-label="준비 계획 초안">
     <header className={styles.head}><Icon name="calendar-check" size={15} /><span>준비 계획 초안</span></header>
     <strong className={styles.planTitle}>{draft.title}</strong>
-    <p className={styles.muted}><Icon name="x-circle" size={13} />계획 초안을 거절했습니다.</p>
+    <p className={`${styles.muted} ${swapped ? "ex-anim-reveal" : ""}`}><Icon name="x-circle" size={13} />계획 초안을 거절했습니다.</p>
   </section>;
   const ready = !!title.trim() && !!summary.trim() && tasks.every(task => task.title.trim() && task.action.trim() && task.deliverable.trim());
   return <section className={styles.card} aria-label="준비 계획 초안">

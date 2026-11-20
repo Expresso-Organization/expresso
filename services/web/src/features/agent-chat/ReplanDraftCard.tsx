@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import type { AgentReplanDecision, AgentReplanDraft } from "@expresso/contracts";
+import { useChangedSinceMount } from "@/components/motion/useChangedSinceMount";
 import { Icon } from "@/components/ui/Icon";
 import { Button } from "@/components/ui/button";
 import { byWeek, settingsLine } from "./PlanDraftCard";
@@ -8,6 +9,8 @@ import styles from "./PlanCards.module.css";
 
 /** 남은 작업 재배치 초안. 완료한 작업은 그대로 두고 남은 작업의 주차 · 날짜만 바뀐다. */
 export function ReplanDraftCard({ draft, disabled, onDecide }: { draft: AgentReplanDraft; disabled: boolean; onDecide(decision: AgentReplanDecision): Promise<void> }) {
+  // 누른 결과로 바뀐 문구만 떠오른다. 대화를 다시 열어 이미 끝난 카드는 움직이지 않는다.
+  const swapped = useChangedSinceMount(draft.status);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const decide = async (decision: AgentReplanDecision) => {
@@ -27,6 +30,6 @@ export function ReplanDraftCard({ draft, disabled, onDecide }: { draft: AgentRep
         <Button variant="outline" disabled={busy || disabled} onClick={() => void decide({ action: "reject" })}>거절</Button>
         <Button className={styles.approve} disabled={busy || disabled} onClick={() => void decide({ action: "approve" })}>이대로 다시 배치</Button>
       </div>
-    </> : <p className={styles.muted}><Icon name={draft.status === "approved" ? "check-circle" : "x-circle"} size={13} />{draft.status === "approved" ? "계획을 다시 배치했습니다." : "재배치를 거절했습니다."}</p>}
+    </> : <p className={`${styles.muted} ${swapped ? "ex-anim-reveal" : ""}`}><Icon name={draft.status === "approved" ? "check-circle" : "x-circle"} size={13} />{draft.status === "approved" ? "계획을 다시 배치했습니다." : "재배치를 거절했습니다."}</p>}
   </section>;
 }
