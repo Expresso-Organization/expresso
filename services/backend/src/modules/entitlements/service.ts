@@ -1,9 +1,9 @@
-import { creditsFromTokens, EntitlementDecisionSchema, type EntitlementCapability, type EntitlementDecision } from "@expresso/contracts";
+import { creditsFromUsage, EntitlementDecisionSchema, type EntitlementCapability, type EntitlementDecision } from "@expresso/contracts";
 import { mongoCollections } from "@expresso/database";
 import type { MongoContext } from "../../platform/mongodb.js";
 import type { MongoTransaction } from "../../platform/mongo-transaction.js";
 import type { EntitlementApi } from "./index.js";
-import { capabilityEnabled, EntitlementSubjectNotFoundError, kstMonthlyPeriod, tokensUsedInPeriod } from "./public.js";
+import { capabilityEnabled, EntitlementSubjectNotFoundError, kstMonthlyPeriod, usageInPeriod } from "./public.js";
 
 export { capabilityEnabled, kstMonthlyPeriod } from "./public.js";
 
@@ -25,10 +25,7 @@ export class EntitlementService implements EntitlementApi {
     return EntitlementDecisionSchema.parse({ capability, planCode: plan.code, allowed, reason: allowed ? "ENTITLED" : "QUOTA_EXHAUSTED", usage });
   }
 
-  /**
-   * 이번 달 크레딧. 요금제의 기능 표와 무관하게 AI를 돌려도 되는지만 묻는 자리가 쓴다 —
-   * 사용자가 누르지 않아도 도는 실행(능동 제안)은 돌리기 전에 남은 크레딧을 본다.
-   */
+  /** 이번 달 크레딧. 요금제의 기능 표와 무관하게 남은 크레딧만 묻는 자리가 쓴다. */
   async credits(userId: string, at = new Date()): Promise<{ used: number; limit: number | null; remaining: number | null }> {
     const collections = mongoCollections(this.context.db);
     const options = "session" in this.context ? { session: (this.context as MongoTransaction).session } : {};
@@ -44,7 +41,7 @@ export class EntitlementService implements EntitlementApi {
   async #usage(userId: string, limit: number | null, at: Date) {
     const options = "session" in this.context ? { session: (this.context as MongoTransaction).session } : {};
     const period = kstMonthlyPeriod(at);
-    const used = creditsFromTokens(await tokensUsedInPeriod(this.context.db, userId, period, options));
+    const used = creditsFromUsage(await usageInPeriod(this.context.db, userId, period, options));
     return { ...period, used, limit, remaining: limit === null ? null : Math.max(limit - used, 0) };
   }
 }

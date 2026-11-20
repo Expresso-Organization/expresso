@@ -1,38 +1,21 @@
 flowchart TD
-  U[대화 화면] --> REG[부품 등록표]
-  REG --> CH[선택지 부품]
-  REG --> CARD[기존 카드 일곱 종]
-  CH --> SEND[메시지 보내기 · reply]
-  SEND --> SVC[대화 서비스]
-  SVC --> RT[에이전트 실행]
-  RT --> ASK[ask_choice 도구]
-  ASK --> SVC
+  U[대화 화면] --> RT[에이전트 실행]
   RT --> MEM[컨설턴트의 기억]
   RT --> REC[대화로 기록]
-  RT --> FU[챙기기]
-  RT --> DG[진단]
-  RT --> AC[행동 제안]
-  RT --> PF[포트폴리오 잇기]
-  SVC --> DB[(MongoDB)]
-  CR{크레딧 계산 · 무료 한도}
-  MG{PR 병합}
+  RT --> FU[챙기기: 약속 · 확인]
+  RT --> DG[진단: 요건 집계 · 대조]
+  RT --> AC[행동 제안: 찾기 · 권유]
+  USG[(ai_usage_events)] --> CR[크레딧 셈: 캐시 읽기 ÷ 10]
+  CR --> LIM[한도 판단 · 사용량 화면]
+  GATE[권한 consultant.outreach] --> FU
+  GATE --> PP[능동 제안: 크레딧 제외]
+  MIG[마이그레이션 0036~0038]
+  M253{#253 먼저 병합}
+  MG{D2 스택 병합 실행}
+  PAY{D9 결제 전의 능동 제안}
   classDef done fill:#d1fae5,stroke:#059669
   classDef doing fill:#fef3c7,stroke:#d97706
   classDef decide fill:#fee2e2,stroke:#dc2626
   classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4
-  MEM --> PROG[내 진행 화면]
-  REC --> SAVED[저장된 기록 카드]
-  REG --> FORM[입력 칸 묶음]
-  DG --> DEMAND[공고 요건 집계 · AI 없음]
-  DG --> DCARD[진단 카드]
-  REC --> APPEND[기존 기록에 더하기]
-  AC --> FIND[공고 · 활동 찾기]
-  FIND --> LIST[목록 · 비교 표 부품]
-  AC --> COMMIT
-  FU --> COMMIT[약속 카드]
-  FU --> JOB[확인 작업 · 하루 한 번]
-  JOB --> HOME[홈의 확인 카드]
-  HOME --> SVC
-  class U,REG,CH,CARD,SEND,SVC,RT,ASK,DB,MEM,PROG,REC,SAVED,FORM,FU,COMMIT,JOB,HOME,DG,DEMAND,DCARD,APPEND,AC,FIND,LIST done
-  class PF todo
-  class CR,MG decide
+  class U,RT,MEM,REC,FU,DG,AC,USG,CR,LIM,GATE,PP,MIG done
+  class M253,MG,PAY decide

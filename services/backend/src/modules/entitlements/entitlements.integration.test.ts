@@ -132,13 +132,20 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_U
   /**
    * 크레딧에 들어가는 토큰이 `billableTokens`인 호출 한 건.
    *
-   * 모양은 측정한 생성 한 번의 평균이다(입력 8 · 캐시 읽기 81,423 · 나머지는 출력). 캐시
-   * 생성 136,562 토큰은 언제나 함께 넣는다 — 크레딧에 들어가면 아래 기대값이 모두 틀린다.
+   * 입력 8 · 캐시 읽기 81,420(10분의 1로 세어 8,142) · 나머지는 출력이다. 캐시 생성 136,562
+   * 토큰은 언제나 함께 넣는다 — 크레딧에 들어가면 아래 기대값이 모두 틀린다.
    */
-  const usage = (userId: string | null, billableTokens: number, createdAt: Date) =>
+  const usage = (userId: string | null, billableTokens: number, createdAt: Date, contract = "page_generation") =>
+    mongoCollections(fixture!.resource.db).aiUsageEvents.insertOne({
+      _id: randomUUID(), userId, contract, model: "claude-opus-4-5",
+      inputTokens: 8, outputTokens: billableTokens - 8 - 8_142, cacheReadTokens: 81_420, cacheCreationTokens: 136_562,
+      costUsd: null, durationMs: 1_000, createdAt,
+    });
+  /** 측정한 생성 한 번의 평균 그대로(입력 8 · 출력 16,647 · 캐시 읽기 81,423). 크레딧으로는 약 2.48이다. */
+  const generation = (userId: string, createdAt: Date) =>
     mongoCollections(fixture!.resource.db).aiUsageEvents.insertOne({
       _id: randomUUID(), userId, contract: "page_generation", model: "claude-opus-4-5",
-      inputTokens: 8, outputTokens: billableTokens - 8 - 81_423, cacheReadTokens: 81_423, cacheCreationTokens: 136_562,
+      inputTokens: 8, outputTokens: 16_647, cacheReadTokens: 81_423, cacheCreationTokens: 136_562,
       costUsd: null, durationMs: 1_000, createdAt,
     });
 
@@ -228,18 +235,18 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_U
     `;
     expect(records).toEqual([{ id: preservedRecordId }]);
   });
-  it.skipIf(engine === "mysql")("allows ten average generations on the free plan and blocks the eleventh", async () => {
+  it.skipIf(engine === "mysql")("counts cache reads at a tenth: forty average generations fill the free plan", async () => {
     const userId = randomUUID();
     await mongoCollections(fixture!.resource.db).users.insertOne({ _id: userId, email: `${userId}@example.com`, displayName: "ten", planId: planIds.free, createdAt: new Date() });
     const at = new Date("2026-10-20T03:00:00Z");
-    // 평균 생성 한 번은 캐시 생성을 빼면 98,078 토큰이다.
-    for (let index = 0; index < 10; index++) await usage(userId, 98_078, new Date("2026-10-10T03:00:00Z"));
+    // 평균 생성 한 번은 16,655 + 81,423 ÷ 10 = 24,797.3 토큰이다. 캐시 읽기를 그대로 세던 때는 98,078이었다.
+    for (let index = 0; index < 39; index++) await generation(userId, new Date("2026-10-10T03:00:00Z"));
     await expect(entitlementService.check(userId, "portfolio.generate", at)).resolves.toMatchObject({
-      allowed: true, reason: "ENTITLED", usage: { used: 99, limit: 100, remaining: 1 },
+      allowed: true, reason: "ENTITLED", usage: { used: 97, limit: 100, remaining: 3 },
     });
-    await usage(userId, 98_078, new Date("2026-10-11T03:00:00Z"));
+    await generation(userId, new Date("2026-10-11T03:00:00Z"));
     await expect(entitlementService.check(userId, "portfolio.generate", at)).resolves.toMatchObject({
-      allowed: false, reason: "QUOTA_EXHAUSTED", usage: { used: 108, limit: 100, remaining: 0 },
+      allowed: false, reason: "QUOTA_EXHAUSTED", usage: { used: 100, limit: 100, remaining: 0 },
     });
   });
 
@@ -264,6 +271,8 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !(process.env.TEST_MONGODB_U
     }
     await usage(null, 5_000_000, new Date("2026-10-10T03:00:00Z"));
     await usage(userIds.pro!, 5_000_000, new Date("2026-10-10T03:00:00Z"));
+    // 서비스가 먼저 실행한 능동 제안은 이 계정의 호출이어도 크레딧에 넣지 않는다.
+    await usage(userId, 5_000_000, new Date("2026-10-10T03:00:00Z"), "proposal_briefing");
     await expect(entitlementService.check(userId, "portfolio.generate", new Date("2026-10-20T03:00:00Z"))).resolves.toMatchObject({
       allowed: true, usage: { used: 1, remaining: 99 },
     });

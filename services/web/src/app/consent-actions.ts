@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import type { Route } from "next";
 import { redirect } from "next/navigation";
 
-import { consents, consultant } from "@/lib/api/endpoints";
+import { consents } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 /**
@@ -30,12 +30,6 @@ export async function grantConsentAction(formData: FormData): Promise<void> {
   if (scopes.length > 0 && Number.isInteger(policyVersion)) {
     const session = await requireSession();
     await consents.grant(session.accessToken, scopes, policyVersion);
-  }
-  // 온보딩은 먼저 연락받기도 함께 묻는다. 동의를 먼저 저장한 뒤에 켜야 능동 제안이 함께 켜진다.
-  // 이 설정을 저장하지 못해도 온보딩은 계속한다 — 홈과 설정에서 다시 정할 수 있다.
-  if (formData.get("outreachAsked") === "1") {
-    const session = await requireSession();
-    await consultant.setOutreach(session.accessToken, formData.get("outreach") === "on").catch(() => undefined);
   }
   revalidatePath("/account");
   // 아무것도 안 골라도 다음으로 간다. 동의는 강요할 수 있는 것이 아니다.

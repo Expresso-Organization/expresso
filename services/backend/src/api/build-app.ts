@@ -8,7 +8,7 @@ import { type AdminService, registerAdminRoutes } from "../modules/admin/index.j
 import { type IdentityApi } from "../modules/identity/index.js";
 import { registerIdentityRoutes } from "../modules/identity/routes.js";
 import type { GoogleIdTokenVerifier } from "../modules/identity/google.js";
-import { type EntitlementApi } from "../modules/entitlements/index.js";
+import { outreachGate, type EntitlementApi } from "../modules/entitlements/index.js";
 import { registerEntitlementRoutes } from "../modules/entitlements/routes.js";
 import { type UsageApi } from "../modules/usage/index.js";
 import { registerUsageRoutes } from "../modules/usage/routes.js";
@@ -206,7 +206,7 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
       });
     }
     if (options.agentChatService) registerAgentChatRoutes(app, options.agentChatService, createAuthenticateRequest(options.identityService));
-    if (options.agentChatService && options.consultantService && options.consultantCommitments) { const chat = options.agentChatService; registerConsultantRoutes(app, { service: options.consultantService, commitments: options.consultantCommitments, digests: userId => chat.recentDigests(userId), diagnosis: userId => chat.currentDiagnosis(userId), startCheckinChat: (userId, commitment) => chat.startFromCheckin(userId, commitment), proposals: options.proposalService, authenticateRequest: createAuthenticateRequest(options.identityService) }); }
+    if (options.agentChatService && options.consultantService && options.consultantCommitments) { const chat = options.agentChatService; registerConsultantRoutes(app, { service: options.consultantService, commitments: options.consultantCommitments, digests: userId => chat.recentDigests(userId), diagnosis: userId => chat.currentDiagnosis(userId), startCheckinChat: (userId, commitment) => chat.startFromCheckin(userId, commitment), proposals: options.proposalService, entitled: options.entitlementService ? outreachGate(options.entitlementService) : async () => false, authenticateRequest: createAuthenticateRequest(options.identityService) }); }
     // 읽기 라우트를 먼저 건다 — `/jobs/postings/:id`가 쓰기 라우트와 같은 자리다.
     if (options.jobBoardService) {
       registerJobBoardRoutes(app, {

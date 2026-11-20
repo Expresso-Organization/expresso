@@ -8,19 +8,20 @@ const user = "00000000-0000-4000-8000-000000000001";
 const commitment: ConsultantCommitment = { id: "00000000-0000-4000-8000-000000000002", title: "해커톤 지원서 내기", detail: "", dueOn: "2026-11-19", status: "open", awaiting: true, conversationId: null, createdAt: "2026-11-12T00:00:00.000Z" };
 const conversation = "00000000-0000-4000-8000-000000000003";
 const profile = { stage: null, stageSource: null, stageUpdatedAt: null, preferences: [], outreach: null };
-const checkins = { outreach: true, today: "2026-11-20", commitments: [commitment], quiet: false };
+const stored = { outreach: true, today: "2026-11-20", commitments: [commitment], quiet: true };
+const checkins = { available: true, ...stored };
 
-function setup(options: { proposals?: "ok" | "refused" | "none"; chat?: string | null } = {}) {
+function setup(options: { proposals?: "ok" | "refused" | "none"; chat?: string | null; entitled?: boolean } = {}) {
   const service = { profile: vi.fn(async () => profile), setStage: vi.fn(), removePreference: vi.fn(), setOutreach: vi.fn(async () => profile) };
   const commitments = {
-    open: vi.fn(async () => [commitment]), get: vi.fn(async () => commitment), checkins: vi.fn(async () => checkins), dismissQuiet: vi.fn(async () => undefined),
+    open: vi.fn(async () => [commitment]), get: vi.fn(async () => commitment), checkins: vi.fn(async () => stored), dismissQuiet: vi.fn(async () => undefined),
     update: vi.fn(async (_user: string, _id: string, change: { dueOn?: string | undefined; status?: "done" | "dropped" | undefined }) => ({ ...commitment, ...(change.dueOn ? { dueOn: change.dueOn, awaiting: false } : {}), ...(change.status ? { status: change.status, awaiting: false } : {}) })),
     answer: vi.fn(async (_user: string, _id: string, answer: { answer: string; dueOn?: string }) => ({ changed: true, commitment: { ...commitment, awaiting: false, ...(answer.answer === "not_yet" ? { dueOn: answer.dueOn! } : { status: answer.answer as "done" | "dropped" }) } })),
   };
   const startCheckinChat = vi.fn(async () => options.chat === undefined ? conversation : options.chat);
   const proposals = options.proposals === "none" ? undefined : { enable: vi.fn(async () => { if (options.proposals === "refused") throw new Error("동의가 필요합니다."); }), disable: vi.fn(async () => undefined) };
   const app = Fastify();
-  registerConsultantRoutes(app, { service, commitments, digests: async () => [], diagnosis: async () => null, startCheckinChat, proposals, authenticateRequest: async req => { req.auth = { sessionId: "session", user: { id: user, email: "test@example.com", displayName: "test", planCode: "free", emailVerifiedAt: null, role: "user", impersonation: null }, owner: { userId: user, displayName: "test", role: "user" } }; } });
+  registerConsultantRoutes(app, { service, commitments, digests: async () => [], diagnosis: async () => null, startCheckinChat, proposals, entitled: async () => options.entitled ?? true, authenticateRequest: async req => { req.auth = { sessionId: "session", user: { id: user, email: "test@example.com", displayName: "test", planCode: "free", emailVerifiedAt: null, role: "user", impersonation: null }, owner: { userId: user, displayName: "test", role: "user" } }; } });
   return { app, service, commitments, startCheckinChat, proposals };
 }
 
@@ -97,6 +98,19 @@ describe("컨설턴트의 약속과 연락", () => {
     const { app, commitments } = setup();
     expect((await app.inject({ method: "POST", url: "/v1/consultant/quiet/dismiss" })).statusCode).toBe(200);
     expect(commitments.dismissQuiet).toHaveBeenCalledWith(user);
+    await app.close();
+  });
+  it("요금제가 열지 않으면 켜기는 403이고, 끄기는 되며, 확인할 약속과 안부는 내보내지 않는다", async () => {
+    const { app, service, proposals } = setup({ entitled: false });
+    const on = await app.inject({ method: "PUT", url: "/v1/consultant/outreach", payload: { enabled: true } });
+    expect(on.statusCode).toBe(403);
+    expect(service.setOutreach).not.toHaveBeenCalled();
+    expect(proposals!.enable).not.toHaveBeenCalled();
+    const off = await app.inject({ method: "PUT", url: "/v1/consultant/outreach", payload: { enabled: false } });
+    expect(off.statusCode).toBe(200);
+    expect(service.setOutreach).toHaveBeenCalledWith(user, false);
+    expect((await app.inject({ method: "GET", url: "/v1/consultant/checkins" })).json().data).toEqual({ available: false, outreach: true, today: "2026-11-20", commitments: [], quiet: false });
+    expect((await app.inject({ method: "POST", url: "/v1/consultant/quiet/dismiss" })).json().data).toMatchObject({ available: false, commitments: [], quiet: false });
     await app.close();
   });
 });

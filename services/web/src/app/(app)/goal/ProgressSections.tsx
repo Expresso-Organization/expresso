@@ -70,7 +70,7 @@ export function ProgressSections({ memory, diagnosis, commitments, conversations
               return <li key={item.id}>{item.href ? <Link href={item.href as Route} className={`${styles.row} ${styles.rowLink}`}>{body}</Link> : <span className={styles.row}>{body}</span>}</li>;
             })}
           </ul>
-        ) : <p className={styles.empty}>아직 하기로 한 일이 없습니다. 대화에서 무엇을 언제까지 하겠다고 말하면 여기에 남고, 그날 홈에서 여쭙니다.</p>}
+        ) : <p className={styles.empty}>아직 하기로 한 일이 없습니다. 대화에서 무엇을 언제까지 하겠다고 말하면 여기에 남습니다. 먼저 연락받기를 켜 두면 그날 홈에서 여쭙니다.</p>}
       </section>
       <section className={styles.section} aria-labelledby="progress-preferences">
         <h2 id="progress-preferences" className={styles.sectionTitle}>컨설턴트가 기억하는 조건</h2>

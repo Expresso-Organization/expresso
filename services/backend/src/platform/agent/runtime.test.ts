@@ -205,10 +205,12 @@ describe("Claude 채팅 실행 어댑터", () => {
     expect(await hook()).toEqual({});
   });
   it("기억을 프롬프트에 자료로 싣고, 기억 갱신은 요약만 남기며 빈 입력은 돌려보낸다", async () => {
-    const memory = { stage: "preparing" as const, preferences: [{ id: "00000000-0000-4000-8000-000000000031", kind: "avoid" as const, text: "야근이 잦은 곳" }], today: "2026-11-20", commitments: [{ id: "00000000-0000-4000-8000-000000000032", title: "해커톤 지원서 내기", dueOn: "2026-11-19", overdue: true }], diagnosis: { assessedOn: "2026-11-18", work: "백엔드 개발자", sampleSize: 66, gaps: ["Kafka"], unconfirmed: ["Kubernetes"], partial: [], confirmed: 3, stale: null }, recentConversations: [{ title: "준비 계획", date: "2026-11-19", said: ["계획을 세워 줘"], outcomes: ["준비 계획 승인: 백엔드 준비 (주 10시간 · 8주)"], lastAnswer: "계획을 저장했습니다." }] };
+    const memory = { stage: "preparing" as const, checkins: true, preferences: [{ id: "00000000-0000-4000-8000-000000000031", kind: "avoid" as const, text: "야근이 잦은 곳" }], today: "2026-11-20", commitments: [{ id: "00000000-0000-4000-8000-000000000032", title: "해커톤 지원서 내기", dueOn: "2026-11-19", overdue: true }], diagnosis: { assessedOn: "2026-11-18", work: "백엔드 개발자", sampleSize: 66, gaps: ["Kafka"], unconfirmed: ["Kubernetes"], partial: [], confirmed: 3, stale: null }, recentConversations: [{ title: "준비 계획", date: "2026-11-19", said: ["계획을 세워 줘"], outcomes: ["준비 계획 승인: 백엔드 준비 (주 10시간 · 8주)"], lastAnswer: "계획을 저장했습니다." }] };
     const updateMemory = vi.fn(async () => ({ summary: "단계: 지원 · 조건 1개 기억", memory: { ...memory, stage: "applying" as const } }));
     const { client, emit } = await connectTools({ memory, updateMemory });
     expect(JSON.parse(sdk.query.mock.lastCall![0].prompt)).toMatchObject({ memory });
+    // 약속한 날에 먼저 묻는지는 기억이 알려 준다. 묻지 않는 사용자에게 묻겠다고 말하지 않게 지침이 그 값을 가리킨다.
+    expect(sdk.query.mock.lastCall![0].options.systemPrompt).toEqual(expect.stringContaining("memory.checkins가 false이면"));
     const saved = await client.callTool({ name: "update_memory", arguments: { stage: "applying", remember: [{ kind: "prefer", text: "재택이 되는 곳" }] } });
     expect(saved.isError).toBeFalsy();
     expect(updateMemory).toHaveBeenCalledWith({ stage: "applying", remember: [{ kind: "prefer", text: "재택이 되는 곳" }] });

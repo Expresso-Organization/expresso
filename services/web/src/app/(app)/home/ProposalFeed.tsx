@@ -39,6 +39,7 @@ const ACTIVITY_TITLE: Record<ActivityKind, string> = { contest: "공모전 참�
 
 const REASON: Record<ProposalRunReason, string> = {
   no_credits: "이번 달 크레딧을 모두 써서 새 제안을 만들지 않았습니다.",
+  plan_required: "지금 요금제에서는 새 제안을 만들지 않습니다.",
   consent_required: "커리어 기록의 AI 사용 동의가 꺼져 있어 제안을 만들지 않았습니다.",
   ai_unavailable: "지금은 제안을 만들 수 없습니다.",
   nothing_new: "새로 권할 것이 없습니다. 새 공고나 공모전이 들어오면 다시 확인합니다.",
@@ -151,12 +152,32 @@ function GoalCard() {
   );
 }
 
+/** 규칙으로 센 제안 한 건. AI를 쓰지 않는다 — 에이전트의 제안이 없을 때 같은 틀에 선다. */
+function RuleCard({ finding }: { finding: BriefingFinding }) {
+  return (
+    <FeedCard icon="lightbulb" hue="terracotta" title="지금 할 수 있는 일">
+      <p className={styles.proposalMessage}>{finding.text}</p>
+      <ul className={`${styles.rows} ${styles.proposalRefs}`}>
+        {finding.items.map((item) => (
+          <li key={item.href}>
+            <Link href={item.href as Route} className={styles.row}>
+              <span className={styles.rowBody}><span className={styles.rowTitle}>{item.label}</span></span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+      <div className={styles.proposalActions}><ProposalAction action={finding.action} /></div>
+    </FeedCard>
+  );
+}
+
 /**
  * 홈의 제안 구획 — 에이전트가 내 기록과 새 공고 · 공모전을 읽고 먼저 권하는 행동.
  *
  * 켜지 않았으면 켜는 카드만 선다. 켜면 서버가 하루 한 번, 그리고 새 소식이 들어올 때 제안을 만든다.
  * 만드는 동안에는 서버가 알리는 단계를 대화의 작업 흔적과 같은 모양으로 보인다.
- * `fallback`은 규칙으로 센 제안이다 — 크레딧이 남지 않아 에이전트가 쓰지 못했을 때만 대신 보인다.
+ * 유료 요금제의 기능이다(`feed.available`). 요금제가 열지 않으면 규칙으로 센 제안(`fallback`, AI를 쓰지 않는다)과
+ * 요금제 안내 카드가 선다 — 켜 둔 채 무료가 된 사용자의 화면이 까닭 없이 비지 않는다.
  */
 export function ProposalFeed({ initial, fallback, hasGoal }: { initial: Feed; fallback: BriefingFinding[]; hasGoal: boolean }) {
   const [feed, setFeed] = useState(initial);
@@ -181,6 +202,30 @@ export function ProposalFeed({ initial, fallback, hasGoal }: { initial: Feed; fa
     const timer = setInterval(() => { void loadProposalsAction().then((result) => { const next = result.feed; if (alive && next) startFeedTransition(() => { addTransitionType(PROPOSAL_FEED_CHANGE); setFeed(next); }); }); }, POLL_MS);
     return () => { alive = false; clearInterval(timer); };
   }, [working]);
+
+  if (!feed.available) {
+    return (
+      <section className={styles.proposals}>
+        <div className={styles.sectionHead}>
+          <LogoMark size={16} />
+          <h2 className={styles.sectionTitle}>제안</h2>
+        </div>
+        <div className={styles.proposalGrid}>
+          {hasGoal ? null : <GoalCard />}
+          {fallback.map((finding) => <RuleCard key={finding.id} finding={finding} />)}
+          <FeedCard icon="sparkle" hue="terracotta" title="먼저 연락받기">
+            <p className={styles.proposalMessage}>컨설턴트가 내 기록과 새 공고 · 공모전을 읽고 지금 하면 좋은 일을 먼저 권하고, 대화에서 하기로 한 일을 약속한 날에 여쭙니다. 유료 요금제에서 쓸 수 있습니다.</p>
+            <div className={styles.proposalActions}>
+              <Link href={"/account#plans" as Route} className={styles.proposalAction}>
+                요금제 보기
+                <Icon name="arrow-right" size={12} />
+              </Link>
+            </div>
+          </FeedCard>
+        </div>
+      </section>
+    );
+  }
 
   if (!feed.enabled) {
     return (
@@ -209,7 +254,7 @@ export function ProposalFeed({ initial, fallback, hasGoal }: { initial: Feed; fa
               <div><Icon name="notebook" size={18} /><div><dt>읽는 것</dt><dd>내 구직 목표와 커리어 기록, 관심 공고, 새로 수집된 채용 공고와 공모전</dd></div></div>
               <div><Icon name="clock" size={18} /><div><dt>실행되는 때</dt><dd>하루에 한 번, 그리고 내 기술과 맞는 새 공고나 공모전이 들어왔을 때 하루 한 번까지</dd></div></div>
               <div><Icon name="calendar-check" size={18} /><div><dt>하기로 한 일</dt><dd>대화에서 하기로 한 일은 약속한 날에 한 번, 답이 없으면 3일 뒤에 한 번 더 여쭙니다. 대화가 2주 없으면 한 번 안부를 묻습니다. 여쭙는 데에는 AI를 쓰지 않습니다.</dd></div></div>
-              <div><Icon name="coins" size={18} /><div><dt>크레딧</dt><dd>실행할 때마다 사용한 만큼 이번 달 크레딧에서 차감됩니다. 크레딧이 남지 않으면 실행하지 않습니다.</dd></div></div>
+              <div><Icon name="coins" size={18} /><div><dt>크레딧</dt><dd>익스프레소가 먼저 실행하는 일이라 이번 달 크레딧에서 빼지 않습니다.</dd></div></div>
               <div><Icon name="sparkle" size={18} /><div><dt>정보를 사용하는 곳</dt><dd>Anthropic의 Claude 모델. 커리어 기록의 AI 사용 동의가 함께 켜집니다.</dd></div></div>
             </dl>
             <DialogFooter className={styles.enableFooter}>
@@ -275,24 +320,8 @@ export function ProposalFeed({ initial, fallback, hasGoal }: { initial: Feed; fa
           </CardTransition>
         ))}
 
-        {/* 크레딧이 남지 않았을 때 — 규칙으로 센 제안을 같은 틀에 세운다. */}
-        {useFallback ? fallback.map((finding) => (
-          <CardTransition key={finding.id}>
-          <FeedCard icon="lightbulb" hue="terracotta" title="지금 할 수 있는 일">
-            <p className={styles.proposalMessage}>{finding.text}</p>
-            <ul className={`${styles.rows} ${styles.proposalRefs}`}>
-              {finding.items.map((item) => (
-                <li key={item.href}>
-                  <Link href={item.href as Route} className={styles.row}>
-                    <span className={styles.rowBody}><span className={styles.rowTitle}>{item.label}</span></span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-            <div className={styles.proposalActions}><ProposalAction action={finding.action} /></div>
-          </FeedCard>
-          </CardTransition>
-        )) : null}
+        {/* 예전에 크레딧이 남지 않아 멈춘 실행 — 규칙으로 센 제안을 같은 틀에 세운다. */}
+        {useFallback ? fallback.map((finding) => <CardTransition key={finding.id}><RuleCard finding={finding} /></CardTransition>) : null}
       </div>
     </section>
   );

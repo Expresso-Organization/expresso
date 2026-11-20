@@ -1,4 +1,4 @@
-import type { MonthlyUsage, UsageDay, UsageGroup } from "@expresso/contracts";
+import { billableTokensOf, type MonthlyUsage, type UsageDay, type UsageGroup } from "@expresso/contracts";
 
 import { contractLabel, TOKEN_KINDS } from "@/lib/usage-copy";
 
@@ -24,8 +24,13 @@ function niceCeil(value: number): number {
   return step * magnitude;
 }
 
+/** 크레딧에 들어가는 토큰 수. 한도와 같은 셈이다 — 캐시 읽기는 10분의 1로 센다. */
+function billed(tokens: Pick<UsageDay, "inputTokens" | "outputTokens" | "cacheReadTokens">, key: (typeof TOKEN_KINDS)[number]["key"]): number {
+  return billableTokensOf(key, tokens[key]);
+}
+
 function dayTotal(day: UsageDay): number {
-  return TOKEN_KINDS.reduce((sum, { key }) => sum + day[key], 0);
+  return TOKEN_KINDS.reduce((sum, { key }) => sum + billed(day, key), 0);
 }
 
 function shortDate(date: string): string {
@@ -64,7 +69,7 @@ function DailyChart({ usage }: { usage: MonthlyUsage }) {
           <span key={kind.key} className={styles.legendItem}>
             <span className={`${styles.legendSwatch} ${SEGMENT_CLASS[index]}`} />
             {kind.label}
-            <span className={styles.legendValue}>{credits(usage.tokens[kind.key], perCredit)}</span>
+            <span className={styles.legendValue}>{credits(billed(usage.tokens, kind.key), perCredit)}</span>
           </span>
         ))}
       </div>
@@ -88,11 +93,11 @@ function DailyChart({ usage }: { usage: MonthlyUsage }) {
                   <div className={styles.dayStack} style={{ height: `${(total / (top * perCredit)) * 100}%` }}>
                     {TOKEN_KINDS.map((kind, kindIndex) =>
                       // 막대 안에서 1%가 안 되는 조각은 그리지 않는다. 값은 범례와 말풍선이 적는다.
-                      day[kind.key] / total >= 0.01 ? (
+                      billed(day, kind.key) / total >= 0.01 ? (
                         <span
                           key={kind.key}
                           className={`${styles.daySegment} ${SEGMENT_CLASS[kindIndex]}`}
-                          style={{ flexGrow: day[kind.key] }}
+                          style={{ flexGrow: billed(day, kind.key) }}
                         />
                       ) : null,
                     )}
@@ -107,7 +112,7 @@ function DailyChart({ usage }: { usage: MonthlyUsage }) {
                     <div key={kind.key} className={styles.dayTipRow}>
                       <span className={`${styles.legendSwatch} ${SEGMENT_CLASS[kindIndex]}`} />
                       {kind.label}
-                      <span>{credits(day[kind.key], perCredit)}</span>
+                      <span>{credits(billed(day, kind.key), perCredit)}</span>
                     </div>
                   ))}
                   <div className={styles.dayTipRow}>

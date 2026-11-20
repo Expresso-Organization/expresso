@@ -8,7 +8,7 @@ import { safeErrorSummary } from "../platform/observability.js";
 import { createRedisResource, createStreamRedis } from "../platform/redis.js";
 import { IdentityService } from "../modules/identity/index.js";
 import { RemoteGoogleIdTokenVerifier } from "../modules/identity/google.js";
-import { EntitlementService } from "../modules/entitlements/index.js";
+import { EntitlementService, outreachGate } from "../modules/entitlements/index.js";
 import { UsageService } from "../modules/usage/index.js";
 import { CareerService } from "../modules/career/index.js";
 import { GoalDemandService, JobMarketService } from "../modules/jobs/index.js";
@@ -175,7 +175,7 @@ const consultantCommitments = new ConsultantCommitments(database);
 const activityService = new ActivityService(database);
 const agentChatService = new AgentChatService(database, config.agentChatEnabled ? new ClaudeAgentRuntime(config.agentChatModel, aiUsage) : null, careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(database, config.agentCredentialEncryptionKey), portfolioReadService, pageService, entitlementService, consultantService, consultantCommitments, { demand: new GoalDemandService(database), store: new ConsultantDiagnoses(database) }, { jobs: jobBoardService, activities: activityService, dismissed: userId => proposalService.dismissedKeys(userId) });
 // API는 제안을 읽고 실행을 줄에 넣기만 한다. AI 실행은 워커가 한다(`writer`를 주지 않는다).
-const proposalService = new ProposalService(database, { career: careerService, jobs: jobBoardService, activities: activityService, consent: consentService, credits: entitlementService, writer: null });
+const proposalService = new ProposalService(database, { career: careerService, jobs: jobBoardService, activities: activityService, consent: consentService, entitled: outreachGate(entitlementService), writer: null });
 const adminService = new AdminService(database, { identity: identityService, career: careerService, consent: consentService });
 const app = buildApi({
   adminService,
