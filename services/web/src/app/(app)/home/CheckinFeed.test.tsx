@@ -25,6 +25,16 @@ describe("홈의 확인 구획", () => {
     const { container } = render(<CheckinFeed initial={cleared} proposalsEnabled />);
     expect(container.firstChild).toBeNull();
   });
+  it("서버가 새 상태를 내려 주면 그 값으로 바꾼다 — 먼저 연락받기를 켠 직후에 받을지를 다시 묻지 않는다", () => {
+    const { rerender, container } = render(<CheckinFeed initial={checkins({ outreach: null, commitments: [] })} proposalsEnabled={false} />);
+    expect(container.firstChild).toBeNull();
+    // 제안 구획에서 켜면 서버가 켜진 상태를 내려 준다. 옛 상태(정하지 않음)를 쥐고 있으면 여기서 묻는 카드가 선다.
+    rerender(<CheckinFeed initial={checkins({ outreach: true, commitments: [] })} proposalsEnabled />);
+    expect(screen.queryByText(/여쭤봐도 될까요/)).toBeNull();
+    expect(container.firstChild).toBeNull();
+    rerender(<CheckinFeed initial={checkins({ outreach: true })} proposalsEnabled />);
+    expect(screen.getByText("「해커톤 지원서 내기」 어떻게 됐나요?")).toBeTruthy();
+  });
   it("요금제가 열지 않으면 받을지 묻는 카드도 세우지 않는다", () => {
     const { container } = render(<CheckinFeed initial={checkins({ available: false, outreach: null, commitments: [] })} proposalsEnabled />);
     expect(container.firstChild).toBeNull();
