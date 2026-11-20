@@ -189,7 +189,7 @@
 .cellPopoutInput:focus { background:var(--ex-bg); }
 .cellPopoutInput[data-issue="true"] { border-color:var(--ex-status-danger-text); }
 .optionDot { width:8px; height:8px; flex:0 0 auto; border-radius:999px; background:var(--ex-accent); opacity:.72; }
-.datePopout { overflow:visible; padding:8px; }
+.datePopout { max-height:none; overflow:visible; padding:8px; }
 .dateFieldsInline { display:grid; grid-template-columns:1fr 1fr; gap:5px; }
 .dateFieldsInline>button { display:grid; gap:2px; border:1px solid var(--ex-border-soft); border-radius:var(--ex-radius-control); background:var(--ex-bg-muted); padding:6px 8px; color:var(--ex-fg-body); font:inherit; text-align:left; cursor:pointer; }
 .dateFieldsInline>button[aria-pressed="true"] { border-color:var(--ex-accent); }

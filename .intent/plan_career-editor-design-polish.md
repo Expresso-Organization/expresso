@@ -14,7 +14,7 @@ date: 2026-11-20
 
 | 파일 | 무엇을 |
 |---|---|
-| `services/web/src/features/career-editor/views/ValuePopouts.tsx` (새) | 표 셀에서 옮긴 옵션 · 날짜 팝업과 위치 · 키보드 훅 |
+| `services/web/src/features/career-editor/views/ValuePopouts.tsx` (새) | 표 셀에서 옮긴 옵션 · 날짜 팝업과 위치 · 키보드 훅. 달력은 폭 286px · 높이 어림 380px로 고정(넓은 앵커에서 날짜 칸이 팝업 밖으로 넘치던 문제) |
 | `services/web/src/features/career-editor/views/RecordSelectBox.tsx` (새) | 표 · 보드 · 타임라인 공용 선택 상자 |
 | `services/web/src/features/career-editor/views/CareerTableCell.tsx` | 팝업을 `ValuePopouts`에서 가져오기, 날짜 칸을 `formatPeriodRange`로 |
 | `services/web/src/features/career-editor/views/view-logic.ts` | `formatPeriodRange` 추가 |

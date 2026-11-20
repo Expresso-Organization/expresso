@@ -8,7 +8,7 @@ import { API_BASE_URL } from "@/lib/api/client";
 import type { CareerViewRendererProps } from "./view-types";
 import { keyboardActivate, rawValue } from "./view-types";
 import { markdownPreview } from "./markdown-preview";
-import { activeDefinitions, definitionById, fieldValue, propertyLabel, propertyLabels } from "./view-logic";
+import { activeDefinitions, definitionById, fieldValue, formatPeriodRange, propertyLabel, propertyLabels } from "./view-logic";
 import styles from "./views.module.css";
 
 const COVER_BARS = [18, 30, 24, 41, 33, 52, 45, 61, 49, 70, 58, 76, 66, 82];
@@ -34,10 +34,7 @@ function projectPeriod(record: CareerRecord): string {
   // 기간은 `period` 날짜 속성에 있다. 뷰 응답에는 목록 전용 칸(`periodFrom`)이 없다.
   const parsed = CareerPropertyValueV2Schema.safeParse(record.properties.period);
   const range = parsed.success && parsed.data.type === "date" ? parsed.data.value : null;
-  const format = (value: string) => value.slice(0, 7).replace("-", ".");
-  if (range?.start && range.end) return `${format(range.start)} – ${format(range.end)}`;
-  if (range?.start) return `${format(range.start)} –`;
-  return "기간 미입력";
+  return range?.start ? formatPeriodRange(range.start, range.end) : "기간 미입력";
 }
 
 /** 뷰 설정 「갤러리 표지」의 내용입니다. 그림 속성이면 첫 그림, 다른 속성이면 그 값입니다. 정하지 않았거나 비었으면 null입니다. */
