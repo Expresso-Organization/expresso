@@ -2,6 +2,7 @@
 import { createContext, startTransition, useCallback, useContext, useMemo, useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import type { Route } from "next";
+import { useChangedSinceMount } from "@/components/motion/useChangedSinceMount";
 import { LogoMark } from "@/components/brand/Logo";
 import { Icon } from "@/components/ui/Icon";
 import { useRouter } from "next/navigation";
@@ -159,9 +160,12 @@ function Proposal({ proposal, beforeDocument, undone }: { proposal: AiEditPropos
   const state = useContext(ChatContext)!; const router = useRouter();
   const [commands, setCommands] = useState(new Set(proposal.commands.map((_, i) => i)));
   const [properties, setProperties] = useState(new Set(proposal.propertyChanges.map((_, i) => i)));
+  // 적용 · 거절 · 되돌리기로 바뀐 상태 문구만 떠오른다. 값이 바뀔 때마다 새로 그려 다시 돈다.
+  const status = undone ? "undone" : proposal.status;
+  const swapped = useChangedSinceMount(status);
   const toggle = (current: Set<number>, index: number) => { const next = new Set(current); if (next.has(index)) next.delete(index); else next.add(index); return next; };
   return <><AiProposalDiff proposal={proposal} document={beforeDocument ?? null} commandIndexes={commands} propertyChangeIndexes={properties} onCommandToggle={index => setCommands(current => toggle(current, index))} onPropertyToggle={index => setProperties(current => toggle(current, index))} />
-    <p className={styles.proposalStatus} data-state={undone ? "undone" : proposal.status}>{undone ? "변경을 되돌렸습니다." : proposal.status === "applied" ? "기록에 적용했습니다." : proposal.status === "ready" ? "검토 후 적용해 주세요." : proposal.status === "rejected" ? "제안을 거절했습니다." : "제안을 더 이상 적용할 수 없습니다."}</p>
+    <p key={status} className={`${styles.proposalStatus} ${swapped ? "ex-anim-reveal" : ""}`} data-state={status}>{undone ? "변경을 되돌렸습니다." : proposal.status === "applied" ? "기록에 적용했습니다." : proposal.status === "ready" ? "검토 후 적용해 주세요." : proposal.status === "rejected" ? "제안을 거절했습니다." : "제안을 더 이상 적용할 수 없습니다."}</p>
     {proposal.status === "ready" ? <div className={styles.actions}><Button className={styles.applyButton} disabled={state.pending || state.conversation?.run?.status === "running" || !(commands.size + properties.size)} onClick={() => void state.approve({ proposalId: proposal.proposalId, action: "apply", expectedDocumentVersion: proposal.baseDocumentVersion, commandIndexes: [...commands], propertyChangeIndexes: [...properties] }).then(() => router.refresh())}>선택한 변경 적용</Button><Button variant="outline" disabled={state.pending} onClick={() => void state.approve({ proposalId: proposal.proposalId, action: "reject", expectedDocumentVersion: proposal.baseDocumentVersion })}>거절</Button></div> : null}
     {proposal.status === "applied" && !undone ? <Button variant="outline" disabled={state.pending} onClick={() => void state.approve({ proposalId: proposal.proposalId, action: "undo", expectedDocumentVersion: proposal.appliedDocumentVersion! }).then(() => router.refresh())}>변경 되돌리기</Button> : null}
   </>;
