@@ -22,7 +22,10 @@ export function useAgentConversation(context?: AgentContext, options: { restore?
   const [resolving, setResolving] = useState(restore === "context" && !!context);
   const [conversation, setConversation] = useState<AgentConversation | null>(null);
   const [list, setList] = useState<ReturnType<typeof AgentConversationListSchema.parse>["data"]>([]);
-  const [issue, setIssue] = useState<string | null>(null);
+  const [issue, setIssueState] = useState<string | null>(null);
+  /** 지금 떠 있는 오류 글이 배경의 다시 읽기가 띄운 것인가. 그런 글만 다음 읽기의 성공이 지운다. */
+  const pollIssue = useRef(false);
+  const setIssue = useCallback((message: string | null, fromPoll = false) => { pollIssue.current = fromPoll && message !== null; setIssueState(message); }, []);
   const [pending, setPending] = useState(false);
   const contextMutation = useRef(false);
   const mounted = useRef(true);
@@ -59,18 +62,30 @@ export function useAgentConversation(context?: AgentContext, options: { restore?
     const refresh = async () => {
       try {
         const response = await fetch(base, { cache: "no-store" }); if (!response.ok) throw new Error("대화 목록을 불러오지 못했습니다.");
-        const rows = AgentConversationListSchema.parse(await response.json()).data; if (alive) setList(rows);
-      } catch (error) { if (alive) setIssue(error instanceof Error ? error.message : "연결 오류"); }
+        const rows = AgentConversationListSchema.parse(await response.json()).data; if (alive) { setList(rows); if (pollIssue.current) setIssue(null); }
+      } catch (error) { if (alive) setIssue(error instanceof Error ? error.message : "연결 오류", true); }
     };
     void refresh(); const timer = setInterval(() => void refresh(), 10_000); return () => { alive = false; clearInterval(timer); };
-  }, [id]);
+  }, [id, setIssue]);
   useEffect(() => {
     if (!id) return;
     let alive = true;
-    const refresh = () => agentRequest(`/${id}`).then(next => { if (alive) accept(next); }).catch(error => { if (alive) setIssue(error.message); });
+    // 다시 읽기는 3초마다 돈다. 한 번의 실패(잠깐의 502)는 다음 읽기가 메우므로 알리지 않고, 두 번 잇달아 실패했을 때만 알린다.
+    // 다시 읽기가 띄운 글은 읽기에 성공하면 지운다 — 사용자가 누른 동작의 오류는 건드리지 않는다.
+    let failures = 0;
+    const refresh = () => agentRequest(`/${id}`).then(next => {
+      if (!alive) return;
+      failures = 0;
+      if (pollIssue.current) setIssue(null);
+      accept(next);
+    }).catch(error => {
+      if (!alive) return;
+      failures += 1;
+      if (failures >= 2) setIssue(error.message, true);
+    });
     void refresh(); const timer = setInterval(() => void refresh(), 3_000);
     return () => { alive = false; clearInterval(timer); };
-  }, [id, accept]);
+  }, [id, accept, setIssue]);
   useEffect(() => {
     if (!id || conversation?.run?.status !== "running") return;
     const events = new EventSource(`${base}/${id}/events`);

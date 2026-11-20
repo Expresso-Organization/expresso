@@ -20,6 +20,22 @@ async function connectTools(overrides: Partial<AgentInput> = {}) {
 }
 const base = () => ({ userId: "00000000-0000-4000-8000-0000000000aa", records: { list: vi.fn(async () => ({ categories: [], records: [] })), read: vi.fn(async () => []) }, review: vi.fn(), saveRecord: vi.fn(), recordCategories: [], askForm: vi.fn(), jobGoal: null, goalDraft: vi.fn(), gapReview: vi.fn(), planDraft: vi.fn(), replanDraft: vi.fn(), readPlan: vi.fn(), propose: vi.fn(), page: { read: vi.fn(), edit: vi.fn() }, askChoice: vi.fn(), memory: null, updateMemory: vi.fn(), makeCommitment: vi.fn(), updateCommitment: vi.fn(), goalDemand: vi.fn(), recordDiagnosis: vi.fn(), appendToRecord: vi.fn(), searchJobs: vi.fn(), searchActivities: vi.fn() });
 describe("Claude 채팅 실행 어댑터", () => {
+  it("글 덩어리가 새로 시작되면 앞의 글과 빈 줄로 띄운다. 도구 앞에 한 말이 마지막 답변과 붙지 않는다", async () => {
+    const events: AgentEvent[] = [];
+    const delta = (text: string) => ({ type: "stream_event", event: { type: "content_block_delta", delta: { type: "text_delta", text } } });
+    const start = (type: "text" | "tool_use") => ({ type: "stream_event", event: { type: "content_block_start", content_block: type === "text" ? { type } : { type, id: "toolu_sep", name: "mcp__expresso__list_career_records" } } });
+    sdk.query.mockReturnValue((async function* () {
+      yield start("text"); yield delta("바로 기록으로"); yield delta(" 저장하겠습니다.");
+      yield start("tool_use");
+      yield start("text"); yield delta(""); yield delta("새 기록으로 저장했습니다.");
+      yield { type: "result", is_error: false };
+    })());
+    await new ClaudeAgentRuntime().run({ messages: [], context: [], signal: new AbortController().signal, emit: async event => { events.push(event); }, ...base() });
+    expect(events.filter(event => event.type === "text").map(event => event.type === "text" ? event.text : "").join("")).toBe("바로 기록으로 저장하겠습니다.\n\n새 기록으로 저장했습니다.");
+    // 지침이 자료의 이름과 도구 앞의 말, 목표 카드를 저장한 메시지를 다룬다.
+    const prompt = sdk.query.mock.lastCall![0].options.systemPrompt as string;
+    for (const phrase of ["자료의 이름(jobGoal", "도구를 부르기 전에 무엇을 하겠다거나", "「구직 목표를 저장했습니다.」이면"]) expect(prompt).toContain(phrase);
+  });
   it("제품 도구만 노출하고 부분 텍스트만 한 번 전달한다", async () => {
     const events: AgentEvent[] = [];
     sdk.query.mockReturnValue((async function* () {
@@ -244,6 +260,13 @@ describe("Claude 채팅 실행 어댑터", () => {
     expect(updateCommitment).toHaveBeenCalledTimes(1);
     expect(conversationForModel([{ id: "00000000-0000-4000-8000-000000000072", role: "assistant", text: "", createdAt: "2026-11-20T00:00:00.000Z", tools: [{ id: "c", name: "약속", status: "complete", summary: "약속", commitment }] }])[0]!.tools).toEqual([{ name: "약속", summary: "약속", commitment: { id: commitment.id, title: commitment.title, dueOn: commitment.dueOn } }]);
   });
+  it("요건 집계는 경력 연차를 참고로 돌려준다 — 미확인으로 주면 모델이 미확인의 수에 넣어 말한다", async () => {
+    const row = (id: string, kind: "technology" | "career", label: string) => ({ id, kind, label, count: 10, status: "unconfirmed" as const, evidence: [], note: "" });
+    const diagnosis = { work: "데이터 분석가", family: "데이터", basis: "family" as const, focus: null, level: null, sampleSize: 52, companyCount: 18, interestedCount: 0, small: false, summary: "", items: [row("technology:sql", "technology", "SQL"), row("career:5-7", "career", "경력 5~7년 이상")], demandAt: "2026-11-20T00:00:00.000Z", assessedAt: null, stale: null };
+    const { client } = await connectTools({ goalDemand: vi.fn().mockResolvedValue(diagnosis) });
+    const read = await client.callTool({ name: "read_goal_demand", arguments: {} });
+    expect((JSON.parse((read.content as { text: string }[])[0]!.text) as { items: { id: string; status: string }[] }).items.map(({ id, status }) => ({ id, status }))).toEqual([{ id: "technology:sql", status: "unconfirmed" }, { id: "career:5-7", status: "reference" }]);
+  });
   it("요건 집계는 표본과 항목을 모델에 돌려주고, 진단을 저장하면 진단 카드 결과를 남긴다. 돌려보낸 사유는 모델에 그대로 전한다", async () => {
     const item = (id: string, label: string, count: number, status: "confirmed" | "partial" | "unconfirmed" | "gap" = "unconfirmed") => ({ id, kind: "technology" as const, label, count, status, evidence: [], note: "" });
     const diagnosis = { work: "백엔드 개발자", family: "백엔드", basis: "family" as const, focus: null, level: null, sampleSize: 66, companyCount: 15, interestedCount: 1, small: false, summary: "", items: [item("technology:java", "Java", 45), item("technology:kafka", "Kafka", 39)], demandAt: "2026-11-20T00:00:00.000Z", assessedAt: null, stale: null };
@@ -269,11 +292,17 @@ describe("Claude 채팅 실행 어댑터", () => {
     // 적지 않은 근거 · 메모는 빈 값으로 채워 넘긴다.
     expect(recordDiagnosis).toHaveBeenLastCalledWith({ summary: input.summary, items: [{ ...input.items[0], note: "" }] });
     expect(emit.mock.calls.at(-1)![0]).toMatchObject({ type: "tool", tool: { name: "목표 진단", status: "complete", summary: "확인 1 · 일부 0 · 미확인 1 · 부족 0", diagnosis: assessed } });
-    expect(JSON.parse((saved.content as { text: string }[])[0]!.text)).toMatchObject({ saved: true, unconfirmed: ["Kafka"], gaps: [] });
+    // 모델이 수를 직접 세지 않게 카드와 같은 수를 돌려준다.
+    expect(JSON.parse((saved.content as { text: string }[])[0]!.text)).toMatchObject({ saved: true, counts: { confirmed: 1, partial: 0, unconfirmed: 1, gap: 0 }, unconfirmed: ["Kafka"], gaps: [] });
     // 상태가 사전에 없는 값이면 처리기까지 오지 않는다.
     expect((await client.callTool({ name: "record_diagnosis", arguments: { summary: "요약", items: [{ itemId: "technology:java", status: "done" }] } })).isError).toBe(true);
     expect(recordDiagnosis).toHaveBeenCalledTimes(2);
-    expect(conversationForModel([{ id: "00000000-0000-4000-8000-000000000082", role: "assistant", text: "", createdAt: "2026-11-20T00:00:00.000Z", tools: [{ id: "d", name: "목표 진단", status: "complete", summary: "확인 1", diagnosis: assessed }] }])[0]!.tools).toEqual([{ name: "목표 진단", summary: "확인 1", diagnosis: { sampleSize: 66, items: [{ id: "technology:java", label: "Java", count: 45, status: "confirmed" }, { id: "technology:kafka", label: "Kafka", count: 39, status: "unconfirmed" }] } }]);
+    expect(conversationForModel([{ id: "00000000-0000-4000-8000-000000000082", role: "assistant", text: "", createdAt: "2026-11-20T00:00:00.000Z", tools: [{ id: "d", name: "목표 진단", status: "complete", summary: "확인 1", diagnosis: assessed }] }])[0]!.tools).toEqual([{ name: "목표 진단", summary: "확인 1", diagnosis: { sampleSize: 66, counts: { confirmed: 1, partial: 0, unconfirmed: 1, gap: 0 }, items: [{ id: "technology:java", label: "Java", count: 45, status: "confirmed" }, { id: "technology:kafka", label: "Kafka", count: 39, status: "unconfirmed" }] } }]);
+    // 경력 연차는 기록과 대조하지 않는 참고 항목이다. 모델에는 reference로 싣고 수에 넣지 않는다 — 미확인으로 실으면 답변이 카드보다 하나 많게 말한다.
+    const withCareer = { ...assessed, items: [...assessed.items, { id: "career:5-7", kind: "career" as const, label: "경력 5~7년 이상", count: 21, status: "unconfirmed" as const, evidence: [], note: "" }] };
+    const shown = conversationForModel([{ id: "00000000-0000-4000-8000-000000000083", role: "assistant", text: "", createdAt: "2026-11-20T00:00:00.000Z", tools: [{ id: "d2", name: "목표 진단", status: "complete", summary: "확인 1", diagnosis: withCareer }] }])[0]!.tools![0] as { diagnosis: { counts: Record<string, number>; items: { id: string; status: string }[] } };
+    expect(shown.diagnosis.counts).toEqual({ confirmed: 1, partial: 0, unconfirmed: 1, gap: 0 });
+    expect(shown.diagnosis.items.at(-1)).toMatchObject({ id: "career:5-7", status: "reference" });
   });
   it("공고 · 활동 찾기는 목록을 카드 결과로 남기고 모델에는 줄의 요점만 돌려준다. 한 실행의 찾기는 네 번까지다", async () => {
     const item = { kind: "job" as const, id: "00000000-0000-4000-8000-000000000091", title: "백엔드 엔지니어", sub: "당근", meta: ["서울", "신입 가능"], daysLeft: 12, href: "/jobs/00000000-0000-4000-8000-000000000091", external: false };
