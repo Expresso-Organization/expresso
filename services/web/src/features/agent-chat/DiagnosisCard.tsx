@@ -14,6 +14,8 @@ const STATUS: Record<DiagnosisStatus, { icon: string; weight: "fill" | "regular"
   unconfirmed: { icon: "circle-dashed", weight: "regular", label: "미확인", tone: styles.muted },
   gap: { icon: "x-circle", weight: "fill", label: "부족", tone: card.unconfirmed },
 };
+/** 경력 연차의 줄. 상태가 아니라 참고다. */
+const REFERENCE = { icon: "info", weight: "regular" as const, label: "참고", tone: styles.muted };
 const ORDER: readonly DiagnosisStatus[] = ["confirmed", "partial", "unconfirmed", "gap"];
 const KIND = { technology: "기술", experience: "경험", career: "경력", qualification: "자격" } as const;
 const EMPTY: Record<DiagnosisStatus, string> = {
@@ -42,7 +44,8 @@ export function sampleLine(diagnosis: Pick<ConsultantDiagnosis, "family" | "work
  */
 export function DiagnosisCard({ diagnosis }: { diagnosis: ConsultantDiagnosis }) {
   const [open, setOpen] = useState<string | null>(null);
-  const counts = ORDER.map(status => [status, diagnosis.items.filter(item => item.status === status).length] as const);
+  // 경력 연차는 공고가 받는 경력의 분포다. 기록과 대조하는 항목이 아니라 상태를 세지도, 보이지도 않는다.
+  const counts = ORDER.map(status => [status, diagnosis.items.filter(item => item.kind !== "career" && item.status === status).length] as const);
   return <section className={`${card.card} ${styles.card}`} aria-label="목표 진단">
     <header className={card.head}>
       <span className={card.title}><Icon name="chart-bar" size={15} />목표 진단</span>
@@ -55,7 +58,8 @@ export function DiagnosisCard({ diagnosis }: { diagnosis: ConsultantDiagnosis })
       ? <div className={card.counts}>{counts.map(([status, count]) => <span key={status} className={`${card.count} ${STATUS[status].tone ?? ""}`}><Icon name={STATUS[status].icon} weight={STATUS[status].weight} size={12} />{STATUS[status].label} {count}</span>)}</div>
       : <p className={styles.small}>아직 기록과 대조하지 않았습니다.</p>}
     <ul className={card.items}>{diagnosis.items.map(item => {
-      const state = STATUS[item.status];
+      const reference = item.kind === "career";
+      const state = reference ? REFERENCE : STATUS[item.status];
       const expanded = open === item.id;
       const ratio = diagnosis.sampleSize ? Math.min(1, item.count / diagnosis.sampleSize) : 0;
       return <li key={item.id} className={card.item}>
@@ -66,15 +70,15 @@ export function DiagnosisCard({ diagnosis }: { diagnosis: ConsultantDiagnosis })
             <span className={styles.bar} aria-hidden="true"><span style={{ width: `${Math.round(ratio * 100)}%` }} /></span>
             <span className={styles.count}>{item.count}/{diagnosis.sampleSize}건</span>
           </span>
-          <span className={styles.status} data-status={item.status}>{state.label}</span>
+          <span className={styles.status} data-status={reference ? "reference" : item.status}>{state.label}</span>
         </button>
         {expanded ? <div className={card.detail}>
-          {item.evidence.map(evidence => <div key={`${evidence.recordId}:${evidence.quote}`} className={card.evidence}>
+          {reference ? null : item.evidence.map(evidence => <div key={`${evidence.recordId}:${evidence.quote}`} className={card.evidence}>
             <Link href={`/career/records/${evidence.recordId}` as Route}><Icon name="notebook" size={12} />{evidence.recordTitle}</Link>
             <q>{evidence.quote}</q>
           </div>)}
-          {item.note ? <p>{item.note}</p> : null}
-          {item.evidence.length === 0 && !item.note ? <p>{EMPTY[item.status]}</p> : null}
+          {item.note && !reference ? <p>{item.note}</p> : null}
+          {reference ? <p>공고가 받는 경력입니다. 기록과 대조하지 않습니다.</p> : item.evidence.length === 0 && !item.note ? <p>{EMPTY[item.status]}</p> : null}
         </div> : null}
       </li>;
     })}</ul>

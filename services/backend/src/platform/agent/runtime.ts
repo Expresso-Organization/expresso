@@ -6,7 +6,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { CLI_IDENTITY_ENV } from "../ai/claude-code.js";
 import { recordAiUsage, type AiUsageSink } from "../ai/usage-sink.js";
-import { AgentRecordAppendInputSchema, type AgentRecordAppendInput, AgentDiagnosisInputSchema, type AgentDiagnosisInput, type ConsultantDiagnosis, AgentCommitmentInputSchema, AgentCommitmentUpdateInputSchema, type AgentCommitmentInput, type AgentCommitmentUpdateInput, type ConsultantCommitment, AgentFormInputSchema, type AgentFormInput, type AgentFormPart, type AgentSavedRecord, AgentMemoryUpdateInputSchema, type AgentMemoryUpdateInput, AgentChoiceInputSchema, type AgentChoiceInput, type AgentChoicePart, type AgentUiPart, AgentEditDraftSchema, AgentPageElementEditInputSchema, AgentPageElementReadInputSchema, type AgentPageElementEditInput, type AgentPageEdit, AgentGoalDraftInputSchema, type AgentGoalDraft, type AgentGoalDraftInput, AgentRecordDraftInputSchema, GapReviewDraftSchema, PlanProposalInputSchema, ReplanProposalInputSchema, type AgentPlanDraft, type AgentReplanDraft, type PlanProposalInput, type PreparationPlan, type ReplanProposalInput, type GapReview, type GapReviewDraft, RequirementReviewDraftSchema, UuidSchema, type AgentRecordDraft, type AgentRecordDraftInput, type AgentEditDraft, type AgentMessage, type AgentToolResult, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
+import { AgentJobSearchInputSchema, AgentActivitySearchInputSchema, AgentTableSchema, type AgentJobSearchInput, type AgentActivitySearchInput, type AgentFindList, AgentRecordAppendInputSchema, type AgentRecordAppendInput, AgentDiagnosisInputSchema, type AgentDiagnosisInput, type ConsultantDiagnosis, AgentCommitmentInputSchema, AgentCommitmentUpdateInputSchema, type AgentCommitmentInput, type AgentCommitmentUpdateInput, type ConsultantCommitment, AgentFormInputSchema, type AgentFormInput, type AgentFormPart, type AgentSavedRecord, AgentMemoryUpdateInputSchema, type AgentMemoryUpdateInput, AgentChoiceInputSchema, type AgentChoiceInput, type AgentChoicePart, type AgentUiPart, AgentEditDraftSchema, AgentPageElementEditInputSchema, AgentPageElementReadInputSchema, type AgentPageElementEditInput, type AgentPageEdit, AgentGoalDraftInputSchema, type AgentGoalDraft, type AgentGoalDraftInput, AgentRecordDraftInputSchema, GapReviewDraftSchema, PlanProposalInputSchema, ReplanProposalInputSchema, type AgentPlanDraft, type AgentReplanDraft, type PlanProposalInput, type PreparationPlan, type ReplanProposalInput, type GapReview, type GapReviewDraft, RequirementReviewDraftSchema, UuidSchema, type AgentRecordDraft, type AgentRecordDraftInput, type AgentEditDraft, type AgentMessage, type AgentToolResult, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
 
 export type AgentEvent = { type: "text"; text: string } | { type: "tool"; tool: AgentToolResult };
 export interface AgentRecordSummary { id: string; title: string; category: string; status: string; updatedAt: string }
@@ -63,6 +63,10 @@ export interface AgentInput {
   updateMemory(input: AgentMemoryUpdateInput): Promise<{ summary: string; memory: AgentMemory }>;
   /** 사용자가 하겠다고 한 일을 약속으로 저장한다. 날짜가 지났거나 열린 약속이 너무 많으면 어긋난 항목으로 돌려보낸다. */
   makeCommitment(input: AgentCommitmentInput): Promise<ConsultantCommitment>;
+  /** 열린 공고를 찾는다. 사용자가 「관심 없음」으로 넘긴 공고는 빠져 있다. */
+  searchJobs(input: AgentJobSearchInput): Promise<AgentFindList>;
+  /** 접수 중인 공모전 · 해커톤을 찾는다. */
+  searchActivities(input: AgentActivitySearchInput): Promise<AgentFindList>;
   /** 지금 구직 목표와 같은 직군의 공고에서 요건을 세어 저장하고 돌려준다. 목표가 없으면 어긋난 항목으로 돌려보낸다. */
   goalDemand(): Promise<ConsultantDiagnosis>;
   /** 요건마다의 상태와 근거를 저장한다. 인용이 기록에 없거나 근거 없는 「확인됨」이면 어긋난 항목으로 돌려보낸다. */
@@ -116,6 +120,7 @@ export function conversationForModel(messages: AgentMessage[]) {
     ...(tool.recordDraft ? { recordDraft: { title: tool.recordDraft.title, status: tool.recordDraft.status, recordId: tool.recordDraft.recordId } } : {}),
     ...(tool.savedRecord ? { savedRecord: { title: tool.savedRecord.title, recordId: tool.savedRecord.recordId, undone: tool.savedRecord.undone } } : {}),
     ...(tool.commitment ? { commitment: { id: tool.commitment.id, title: tool.commitment.title, dueOn: tool.commitment.dueOn } } : {}),
+    ...(tool.list ? { list: tool.list.items.map(({ kind, id, title, sub, daysLeft }) => ({ kind, id, title, sub, daysLeft })) } : {}),
     ...(tool.diagnosis ? { diagnosis: { sampleSize: tool.diagnosis.sampleSize, items: tool.diagnosis.items.map(({ id, label, count, status }) => ({ id, label, count, status })) } } : {}),
     ...(tool.goalDraft ? { goalDraft: { work: tool.goalDraft.work, place: tool.goalDraft.place, timing: tool.goalDraft.timing, status: tool.goalDraft.status } } : {}),
     ...(tool.planDraft ? { planDraft: { title: tool.planDraft.title, status: tool.planDraft.status, planId: tool.planDraft.planId, settings: tool.planDraft.settings, tasks: tool.planDraft.tasks.length } } : {}),
@@ -139,6 +144,7 @@ const SYSTEM_PROMPT = [
   "context 밖에 보이는 이메일 주소와 계정 정보는 서버 운영 계정입니다. 사용자의 정보가 아니므로 답에 쓰지 마십시오. 사용자의 연락처를 물으면 모른다고 답하십시오.",
   "memory는 당신이 이 사용자에 대해 이어 가는 기억입니다(stage 구직 단계: exploring 하고 싶은 일을 정하는 중 · preparing 목표를 두고 경험을 쌓는 중 · applying 지원할 공고를 고르고 포트폴리오를 만드는 중, null은 아직 모름 · preferences 사용자가 원하거나(prefer) 피하는(avoid) 조건 · recentConversations 지난 대화의 요지: said 사용자가 한 말, outcomes 그 대화에서 저장하거나 정한 것, lastAnswer 마지막 답변의 앞부분). recentConversations는 지금 대화가 아닌 다른 대화입니다. 그 대화의 카드와 초안은 이 대화 화면에 없으므로 「위의 카드」처럼 가리키지 말고, 이 대화의 conversation에 있는 것만 지금 일어난 일로 다루십시오. 지난 대화에서 정한 것은 다시 묻지 말고 이어서 말하되, 요지에 없는 일을 있었던 것처럼 말하지 마십시오. 요지로 답할 수 없으면 기억에 없다고 말하십시오. 조언과 제안은 stage에 맞추고, avoid 조건에 걸리는 것은 권하지 마십시오. 사용자의 말에서 단계가 분명히 드러나고 그것이 memory의 stage와 다르면 update_memory로 stage를 고치십시오. 사용자가 원하거나 피한다고 분명히 말한 조건은 그 말을 짧게 옮겨 remember에 넣고, 사용자가 거둔 조건은 그 id를 forget에 넣으십시오. 짐작한 조건은 넣지 않습니다. 기억을 고쳤으면 무엇을 기억했는지 본문에 한 문장으로 알리십시오. memory가 null이면 기억을 쓸 수 없는 환경이니 update_memory · make_commitment · update_commitment를 부르지 마십시오.",
   "memory.diagnosis는 구직 목표를 기준으로 한 진단의 요약입니다(gaps 해 본 적 없는 것 · unconfirmed 기록에 없고 아직 묻지 않은 것 · partial 일부만 확인된 것). 사용자가 공고를 붙이지 않고 목표에 비해 무엇이 부족한지 묻거나 무엇부터 준비할지 물을 때 진단합니다: read_goal_demand로 요건을 집계하고, list_career_records · read_career_records로 기록을 읽어 항목마다 근거를 찾은 뒤, record_diagnosis로 저장합니다. 근거를 말할 때는 「백엔드 공고 66건 중 45건에 나옵니다」처럼 표본 수와 건수를 함께 말하고, 건수는 그 표현이 나온 공고의 수이므로 「요구한다」고 단정하지 마십시오. 표본이 적으면(small) 적다고 밝히고 당신의 판단은 판단이라고 밝히십시오. 진단을 저장한 뒤 unconfirmed 항목이 있으면 ask_choice(multiple)로 그 가운데 해 본 적이 있는 것을 고르게 하십시오. 답을 받은 차례에 먼저 record_diagnosis로 선택지에 올렸지만 고르지 않은 항목을 gap으로 저장하십시오(선택지에 올리지 않은 항목은 그대로 둡니다). 고른 항목은 한 번에 하나씩 인터뷰해 save_record나 append_to_record로 기록에 남긴 뒤, record_diagnosis에 그 항목만 넣어 상태를 고치십시오. 근거의 인용은 방금 저장한 기록의 글에서 그대로 옮기십시오. 그다음 gap 가운데 먼저 채울 것 하나를 권하십시오. memory.diagnosis가 이미 있으면 다시 집계하지 말고 그 요약으로 답하십시오. stale이 goal이면 목표가 바뀐 것이니 부족한 점을 말하기 전에 다시 진단하고, stale이 records면 기록이 바뀌었다는 뜻일 뿐이니 사용자가 부족한 점을 다시 물을 때만 다시 대조하십시오.",
+  "사용자가 무엇부터 할지 묻거나 진단의 부족한 점을 채우려 할 때 다음에 할 일을 권합니다. 부족한 점마다 맞는 행동을 고르십시오: 해 본 일이면 인터뷰해 기록으로, 경험이 필요하면 활동(search_activities)이나 직접 해 볼 작은 프로젝트로, 준비가 됐으면 지원할 공고(search_jobs)로 잇습니다. 찾을 때는 jobGoal의 직군과 memory의 조건을 입력에 반영하고, memory.preferences의 avoid에 걸리는 것은 권하지 마십시오. 찾은 것을 모두 권하지 말고 지금 하기에 가장 맞는 하나를 까닭 한두 문장과 함께 권하십시오. 둘 사이에서 고민하면 show_table로 견주어 보이십시오. 사용자가 하겠다고 하면 make_commitment로 저장하고 detail에 무엇을 어디에서 하는지(공고나 활동의 이름)를 적으십시오. 목록과 표는 화면에 뜨므로 그 내용을 글로 되풀이하지 마십시오.",
   "memory.commitments는 사용자가 하겠다고 한 일(약속)이고 memory.today는 오늘 날짜입니다. 사용자가 당신의 제안을 받아들이거나 언제까지 무엇을 하겠다고 말하면 make_commitment로 약속을 저장하십시오. 날짜를 말하지 않았으면 ask_form의 날짜 칸(type date)으로 물은 뒤 저장하고, 「다음 주 금요일」 같은 말은 memory.today를 기준으로 날짜로 바꾸십시오. 하겠다고 하지 않은 일을 약속으로 만들지 마십시오. 사용자가 약속한 일을 했다고 말하면 update_commitment로 done으로 닫고 그 일을 기록으로 남기는 인터뷰를 이어 가십시오. 하지 않기로 했다고 하면 dropped로 닫고, 미루겠다고 하면 새 날짜를 dueOn에 넣으십시오. 대화의 첫 메시지가 약속을 묻는 당신의 질문이고 사용자의 답이 「했어요」이면, 그 약속은 이미 닫혀 있으니 다시 닫지 말고 무엇을 어떻게 했는지 인터뷰하십시오. overdue인 약속이 있고 대화가 그 일과 닿으면 한 번만 어떻게 됐는지 물으십시오.",
   "사용자에게 고를 답이 정해진 질문(여럿 중 하나 · 예와 아니오 · 기간이나 정도의 단계)을 할 때는 본문에 번호 목록으로 적지 말고 ask_choice로 선택지를 내십시오. 선택지의 글은 사용자가 그대로 답으로 삼을 수 있는 짧은 말로 쓰고, description은 글만으로 뜻이 모자랄 때만 넣으십시오. 본문에 같은 질문과 선택지를 되풀이하지 마십시오. 사용자는 선택지를 고르지 않고 입력창에 직접 답할 수 있으므로 「직접 입력」 · 「기타」 같은 선택지는 넣지 마십시오. 질문은 ask_choice의 prompt에 쓰고, 본문에는 그 질문을 하게 된 까닭만 한두 문장으로 쓰십시오. 선택지를 낸 뒤에는 답을 짐작해 이어 가지 말고 덧붙이는 말 없이 그 답변을 끝내십시오. 한 답변에 선택지 질문은 하나만 냅니다. 사용자가 자유롭게 말해야 하는 질문(경험의 내용 · 이유 · 수치)은 글로 물으십시오. 구직 목표 · 새 기록 · 준비 계획처럼 카드가 사용자의 확인을 맡는 자리에서는 ask_choice로 다시 확인하지 마십시오. 대화의 answeredByChoice가 참인 사용자 메시지는 사용자가 선택지에서 고른 답입니다.",
   "부족한 요건을 보완할 질문을 요청받으면 가장 최근 요건 대조의 unconfirmed · partial 요건부터 한 번에 질문 하나만 하십시오. 답에 역할 · 행동 · 결과 중 빠진 것이 있으면 그것을 이어 묻고, 충분히 확인되었거나 사용자가 그만하자고 하면 질문을 멈추고 확인된 내용을 정리하십시오. 요건 대조가 없으면 먼저 대조하십시오.",
@@ -146,7 +152,7 @@ const SYSTEM_PROMPT = [
 export interface AgentRuntime { run(input: AgentInput): Promise<void> }
 
 /** 에이전트가 부를 수 있는 도구. SDK에 넘기는 허용 목록과 실행 직전 검사가 이 목록 하나를 본다. */
-const TOOL_NAMES = ["propose_record_edit", "list_career_records", "read_career_records", "record_requirement_review", "save_record", "propose_job_goal_update", "record_gap_review", "propose_preparation_plan", "read_preparation_plan", "propose_replan", "read_page_element", "edit_page_element", "ask_choice", "ask_form", "update_memory", "make_commitment", "update_commitment", "read_goal_demand", "record_diagnosis", "append_to_record"] as const;
+const TOOL_NAMES = ["propose_record_edit", "list_career_records", "read_career_records", "record_requirement_review", "save_record", "propose_job_goal_update", "record_gap_review", "propose_preparation_plan", "read_preparation_plan", "propose_replan", "read_page_element", "edit_page_element", "ask_choice", "ask_form", "update_memory", "make_commitment", "update_commitment", "read_goal_demand", "record_diagnosis", "append_to_record", "search_jobs", "search_activities", "show_table"] as const;
 export const AGENT_ALLOWED_TOOLS = TOOL_NAMES.map(name => `mcp__expresso__${name}`);
 type ToolName = typeof TOOL_NAMES[number];
 /** 작업 흔적에 보이는 이름과, 모델이 도구 입력을 쓰는 동안 보이는 요약. */
@@ -171,6 +177,9 @@ const TOOL_LABELS: Record<ToolName, { name: string; pending: string }> = {
   read_goal_demand: { name: "목표 요건 집계", pending: "목표와 같은 직군의 공고를 세고 있습니다." },
   record_diagnosis: { name: "목표 진단", pending: "기록과 대조한 결과를 적고 있습니다." },
   append_to_record: { name: "기록에 더하기", pending: "기록에 새 내용을 더하고 있습니다." },
+  search_jobs: { name: "공고 찾기", pending: "공고를 찾고 있습니다." },
+  search_activities: { name: "활동 찾기", pending: "공모전과 해커톤을 찾고 있습니다." },
+  show_table: { name: "비교 표", pending: "표로 정리하고 있습니다." },
 };
 const toolName = (qualified: string) => TOOL_NAMES.find(name => `mcp__expresso__${name}` === qualified);
 /** Claude Code가 tools/call에 실어 보내는 tool_use 블록 id. 스트림의 블록 시작과 처리기를 잇는다. */
@@ -302,10 +311,25 @@ export class ClaudeAgentRuntime implements AgentRuntime {
       const proposal = await input.appendToRecord(addition);
       return { summary: proposal.summary, detail: { proposal }, reply: reply({ applied: proposal.status === "applied", proposalId: proposal.proposalId, note: "기록에 더했습니다. 무엇을 더했는지 한 문장으로 알리십시오." }) };
     }, recheck("어긋난 항목을 고쳐 다시 더합니다.", "기록에 더하지 않았습니다. 아래 사유를 보고 고쳐 다시 부르십시오.")));
+    // 한 실행의 찾기는 네 번까지다. 결과가 문맥에 쌓여 뒤의 호출이 모두 비싸진다.
+    let finds = 0;
+    const find = async (work: () => Promise<AgentFindList>): Promise<ToolDone> => {
+      if (finds >= 4) throw new AgentToolRejection(["이번 답변에서는 이미 네 번 찾았습니다. 지금까지 찾은 것으로 답하십시오."]);
+      finds += 1;
+      const list = await work();
+      return { summary: list.items.length ? `${list.title} · ${list.items.length}건${list.total > list.items.length ? ` (전체 ${list.total}건)` : ""}` : `${list.title} · 찾은 것 없음`, detail: { list }, reply: reply({ total: list.total, items: list.items.map(({ id, title, sub, meta, daysLeft }) => ({ id, title, sub, meta, daysLeft })), note: list.items.length ? "목록이 화면에 떴습니다. 줄을 글로 다시 늘어놓지 말고, 권할 것 하나와 그 까닭만 말하십시오." : "찾은 것이 없습니다. 없다고 말하고 조건을 넓힐지 물으십시오." }) };
+    };
+    server.registerTool("search_jobs", { description: "열린 채용 공고를 찾아 화면에 목록으로 띄웁니다. 글 · 기술 · 직군 · 지역 · 사용자의 경력으로 거릅니다. 사용자가 「관심 없음」으로 넘긴 공고는 결과에서 빠집니다. 부족한 점을 채울 자리나 지원할 자리를 권할 때 씁니다.", inputSchema: AgentJobSearchInputSchema.shape }, (search, extra) => step("search_jobs", extra, () => find(() => input.searchJobs(search)), recheck("공고를 찾지 못했습니다.", "찾지 않았습니다. 아래 사유를 보고 답하십시오.")));
+    server.registerTool("search_activities", { description: "접수 중인 공모전 · 해커톤을 마감이 이른 순서로 찾아 화면에 목록으로 띄웁니다. 경험이 없는 항목을 활동으로 채우자고 권할 때 씁니다.", inputSchema: AgentActivitySearchInputSchema.shape }, (search, extra) => step("search_activities", extra, () => find(() => input.searchActivities(search)), recheck("활동을 찾지 못했습니다.", "찾지 않았습니다. 아래 사유를 보고 답하십시오.")));
+    server.registerTool("show_table", { description: "찾은 공고나 활동 몇 개를 기준별로 견주는 표를 화면에 띄웁니다. columns는 열 이름(첫 열은 견주는 대상), rows는 줄마다 칸의 글입니다. 도구로 확인한 사실만 적고, 모르는 칸은 「확인 필요」라고 적으십시오.", inputSchema: AgentTableSchema.shape }, (table, extra) => step("show_table", extra, async () => {
+      const uneven = table.rows.findIndex(row => row.length !== table.columns.length);
+      if (uneven >= 0) throw new AgentToolRejection([`${uneven + 1}번 줄의 칸이 ${table.rows[uneven]!.length}개입니다. 열이 ${table.columns.length}개이니 칸도 ${table.columns.length}개로 맞추십시오.`]);
+      return { summary: `${table.title} · ${table.rows.length}줄`.slice(0, 8_000), detail: { table }, reply: reply({ shown: true, note: "표가 화면에 떴습니다. 표의 내용을 글로 다시 쓰지 마십시오." }) };
+    }, recheck("어긋난 칸을 고쳐 다시 그립니다.", "표를 그리지 않았습니다. 아래 사유를 보고 고쳐 다시 부르십시오.")));
     server.registerTool("read_goal_demand", { description: "지금 구직 목표와 같은 직군의 실제 공고를 모아, 기술 · 경험 · 경력 연차 · 자격이 몇 건에 나오는지 센 목록을 돌려줍니다. AI를 쓰지 않는 집계입니다. count는 그 표현이 나온 공고의 수이고 sampleSize가 표본의 수입니다. 공고를 붙이지 않고 목표 기준의 부족한 점을 볼 때 먼저 부릅니다.", inputSchema: {} }, (_input, extra) => step("read_goal_demand", extra, async () => {
       const diagnosis = await input.goalDemand();
       const scope = `${diagnosis.family ?? diagnosis.work} 공고 ${diagnosis.sampleSize}건`;
-      return { summary: `${scope} · 요건 ${diagnosis.items.length}개`.slice(0, 8_000), reply: reply({ sample: { work: diagnosis.work, family: diagnosis.family, focus: diagnosis.focus, level: diagnosis.level, sampleSize: diagnosis.sampleSize, companyCount: diagnosis.companyCount, interestedCount: diagnosis.interestedCount, small: diagnosis.small }, items: diagnosis.items.map(({ id, kind, label, count, status }) => ({ id, kind, label, count, status })), note: diagnosis.small ? "표본이 5건보다 적습니다. 건수로 단정하지 말고 표본이 적다고 밝히십시오." : "이 목록을 list_career_records · read_career_records로 읽은 기록과 대조한 뒤 record_diagnosis로 저장하십시오." }) };
+      return { summary: `${scope} · 요건 ${diagnosis.items.length}개`.slice(0, 8_000), reply: reply({ sample: { work: diagnosis.work, family: diagnosis.family, focus: diagnosis.focus, level: diagnosis.level, sampleSize: diagnosis.sampleSize, companyCount: diagnosis.companyCount, interestedCount: diagnosis.interestedCount, small: diagnosis.small }, items: diagnosis.items.map(({ id, kind, label, count, status }) => ({ id, kind, label, count, status })), note: diagnosis.small ? "표본이 5건보다 적습니다. 건수로 단정하지 말고 표본이 적다고 밝히십시오." : "이 목록을 list_career_records · read_career_records로 읽은 기록과 대조한 뒤 record_diagnosis로 저장하십시오. kind가 career인 항목은 공고가 받는 경력의 분포이니 상태를 매기지 말고 참고로만 말하십시오. kind가 qualification인 항목(학위 · 전공 · 자격증)은 gap으로 적지 않습니다 — 기록이나 사용자의 답으로 확인되기 전에는 unconfirmed입니다." }) };
     }, recheck("집계하지 못했습니다.", "집계하지 않았습니다. 아래 사유를 보고 사용자에게 전하십시오.")));
     server.registerTool("record_diagnosis", { description: "read_goal_demand의 항목마다 내 기록과 대조한 상태를 저장하고 화면에 진단 카드를 띄웁니다. confirmed · partial은 기록의 근거(recordId와 그 기록에서 그대로 옮긴 인용)가 있어야 합니다. 기록에 근거가 없으면 unconfirmed로 두십시오. gap은 사용자가 해 본 적이 없다고 답한 뒤에만 씁니다. 적지 않은 항목은 앞선 상태를 둡니다.", inputSchema: AgentDiagnosisInputSchema.shape }, (assessment, extra) => step("record_diagnosis", extra, async () => {
       const diagnosis = await input.recordDiagnosis(assessment);

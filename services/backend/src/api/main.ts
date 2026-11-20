@@ -172,8 +172,8 @@ careerService.setExternalBodyListener((userId, recordId) => careerDocumentServic
 interviewService.setExternalBodyListener((userId, recordId) => careerDocumentService.syncExternalBody(userId, recordId));
 const consultantService = new ConsultantService(database);
 const consultantCommitments = new ConsultantCommitments(database);
-const agentChatService = new AgentChatService(database, config.agentChatEnabled ? new ClaudeAgentRuntime(config.agentChatModel, aiUsage) : null, careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(database, config.agentCredentialEncryptionKey), portfolioReadService, pageService, entitlementService, consultantService, consultantCommitments, { demand: new GoalDemandService(database), store: new ConsultantDiagnoses(database) });
 const activityService = new ActivityService(database);
+const agentChatService = new AgentChatService(database, config.agentChatEnabled ? new ClaudeAgentRuntime(config.agentChatModel, aiUsage) : null, careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(database, config.agentCredentialEncryptionKey), portfolioReadService, pageService, entitlementService, consultantService, consultantCommitments, { demand: new GoalDemandService(database), store: new ConsultantDiagnoses(database) }, { jobs: jobBoardService, activities: activityService, dismissed: userId => proposalService.dismissedKeys(userId) });
 // API는 제안을 읽고 실행을 줄에 넣기만 한다. AI 실행은 워커가 한다(`writer`를 주지 않는다).
 const proposalService = new ProposalService(database, { career: careerService, jobs: jobBoardService, activities: activityService, consent: consentService, credits: entitlementService, writer: null });
 const adminService = new AdminService(database, { identity: identityService, career: careerService, consent: consentService });

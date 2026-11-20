@@ -140,6 +140,11 @@ export class ProposalService {
   }
 
   /** 「관심 없음」. 제안을 지우고 그 대상을 다시 제안하지 않는다. */
+  /** 사용자가 「관심 없음」으로 넘긴 대상의 키(`job:<id>` · `activity:<id>` · `record:<id>`). 대화의 찾기가 같은 대상을 다시 권하지 않게 쓴다. */
+  async dismissedKeys(userId: string): Promise<ReadonlySet<string>> {
+    return new Set((await this.#feeds.findOne({ userId }, { projection: { dismissed: 1 } }))?.dismissed ?? []);
+  }
+
   async dismiss(userId: string, proposalId: string, at = new Date()): Promise<ProposalFeed> {
     const doc = await this.#feeds.findOne({ userId });
     const proposal = doc?.proposals.find(({ id }) => id === proposalId);

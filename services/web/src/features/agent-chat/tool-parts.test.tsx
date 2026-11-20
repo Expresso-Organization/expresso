@@ -13,6 +13,8 @@ import { ReplanDraftCard } from "./ReplanDraftCard";
 import { PageEditCard } from "./PageEditCard";
 import { CommitmentCard } from "./CommitmentCard";
 import { DiagnosisCard } from "./DiagnosisCard";
+import { ListPart } from "./ListPart";
+import { TablePart } from "./TablePart";
 import { TOOL_PARTS, isBelowTool, toolPartFor, type ToolPartContext } from "./tool-parts";
 
 afterEach(cleanup);
@@ -139,5 +141,26 @@ describe("대화 속 화면의 등록표", () => {
     expect(made.props).toEqual({ diagnosis });
     expect(toolPartFor(tool("목표 요건 집계"))).toBeUndefined();
     expect(isBelowTool(tool("목표 요건 집계"))).toBe(false);
+  });
+  it("공고 찾기와 활동 찾기는 답변 글 아래에 목록을, 비교 표는 표를 그린다", () => {
+    for (const [name, text] of [["공고 찾기", "공고를 찾고 있습니다."], ["활동 찾기", "공모전과 해커톤을 찾고 있습니다."], ["비교 표", "표로 정리하고 있습니다."]] as const) {
+      const pending = tool(name, {}, "running");
+      expect(isBelowTool(pending), name).toBe(true);
+      const { container, unmount } = render(<>{toolPartFor(pending)!.render(pending, context())}</>);
+      expect(screen.getByRole("status").textContent, name).toBe(text);
+      unmount();
+      const failed = tool(name, {}, "failed");
+      const again = render(<>{toolPartFor(failed)!.render(failed, context())}</>);
+      expect(again.container.firstChild, name).toBeNull();
+      again.unmount();
+      expect(container).toBeTruthy();
+    }
+    const list = { title: "백엔드 공고", items: [], total: 0 };
+    expect(element(tool("공고 찾기", { list })).type).toBe(ListPart);
+    expect(element(tool("활동 찾기", { list })).props).toEqual({ list });
+    const table = { title: "견주기", columns: ["공고", "경력"], rows: [["당근", "신입"]] };
+    const shown = element(tool("비교 표", { table }));
+    expect(shown.type).toBe(TablePart);
+    expect(shown.props).toEqual({ table });
   });
 });

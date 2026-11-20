@@ -3,7 +3,7 @@ import { PageElementIssues, PageServiceError, type PageApi } from "../page/index
 import { elementTitle } from "@expresso/portfolio-renderer";
 import { AgentCredentials } from "./credentials.js";
 import { randomUUID } from "node:crypto";
-import { AgentConversationSchema, type AgentRecordAppendInput, type AgentDiagnosisInput, type ConsultantDiagnosis, type ConsultantCommitment, type AgentSavedRecord, isStructuredGroup, type AgentPageElementEditInput, type AgentPageEdit, type StructuredPortfolioSnapshot, type CareerDocumentBootstrap, type AgentConversation, type AgentContext, type AgentMessage, type SendAgentMessage, type AgentApproval, type AgentRecordDraftDecision, type AgentRecordDraftInput, type AgentGoalDraftDecision, type AgentGoalDraftInput, type AgentPlanDecision, type AgentReplanDecision, type ReplanProposalInput, type UpdateTaskProgress, type GapReview, type GapReviewDraft, type PlanProposalInput, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
+import { AgentConversationSchema, type AgentJobSearchInput, type AgentActivitySearchInput, type AgentFindList, type AgentRecordAppendInput, type AgentDiagnosisInput, type ConsultantDiagnosis, type ConsultantCommitment, type AgentSavedRecord, isStructuredGroup, type AgentPageElementEditInput, type AgentPageEdit, type StructuredPortfolioSnapshot, type CareerDocumentBootstrap, type AgentConversation, type AgentContext, type AgentMessage, type SendAgentMessage, type AgentApproval, type AgentRecordDraftDecision, type AgentRecordDraftInput, type AgentGoalDraftDecision, type AgentGoalDraftInput, type AgentPlanDecision, type AgentReplanDecision, type ReplanProposalInput, type UpdateTaskProgress, type GapReview, type GapReviewDraft, type PlanProposalInput, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
 import { mongoCollections, type AgentConversationDoc } from "@expresso/database";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { AgentToolRejection, type AgentMemory, type AgentRecordText, type AgentRuntime } from "../../platform/agent/runtime.js";
@@ -20,6 +20,9 @@ import { PreparationPlans } from "./plans.js";
 import type { CareerDocumentApi } from "../career-editor/index.js";
 import { readableCareerProperties, type CareerApi } from "../career/index.js";
 import type { GoalDemandApi, JobBoardApi } from "../jobs/index.js";
+import { goalFamily } from "../jobs/demand.js";
+import type { ActivityApi } from "../activities/index.js";
+import { activityItem, activityMatches, jobItem } from "./finds.js";
 import type { ConsentApi } from "../consent/index.js";
 
 /**
@@ -43,7 +46,8 @@ const CHECKIN_OPTIONS = ["했어요", "아직이에요", "안 하기로 했어�
 /** 모델에 넘기는 진단의 요약. 항목의 이름만 상태별로 싣는다 — 건수와 근거는 진단을 다시 읽을 때 본다. */
 function diagnosisForModel(diagnosis: ConsultantDiagnosis | null): AgentMemory["diagnosis"] {
   if (!diagnosis) return null;
-  const labels = (status: string) => diagnosis.items.filter(item => item.status === status).map(item => item.label);
+  // 경력 연차는 공고가 받는 경력의 분포다. 기록과 대조하는 항목이 아니라 상태별 목록에 넣지 않는다.
+  const labels = (status: string) => diagnosis.items.filter(item => item.kind !== "career" && item.status === status).map(item => item.label);
   return { assessedOn: diagnosis.assessedAt ? seoulDay(new Date(diagnosis.assessedAt)) : null, work: diagnosis.work, sampleSize: diagnosis.sampleSize, gaps: labels("gap"), unconfirmed: labels("unconfirmed"), partial: labels("partial"), confirmed: labels("confirmed").length, stale: diagnosis.stale };
 }
 function memoryForModel(profile: ConsultantProfile, digests: readonly ({ title: string; said: string[]; outcomes: string[]; lastAnswer: string } & ({ updatedAt: string } | { date: string }))[], commitments: readonly Pick<ConsultantCommitment, "id" | "title" | "dueOn">[], diagnosis: AgentMemory["diagnosis"] = null, at = new Date()): AgentMemory {
@@ -68,7 +72,9 @@ export class AgentChatService {
   /** `close()`가 시작되면 켠다. 그 뒤에 끝난 실행은 어떤 오류로 끝났든 서버 종료로 끊긴 것이다. */
   private closing = false;
   private runFailureListener: AgentRunFailureListener | null = null;
-  constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord" | "listRecords" | "listCategories" | "createRecord" | "trashRecord" | "getJobGoal" | "saveJobGoal">, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi, readonly credentials: AgentCredentials = new AgentCredentials(db), private readonly portfolios?: Pick<PortfolioReadApi, "get">, private readonly pages?: Pick<PageApi, "latest" | "elementGuide" | "editElementByAgent" | "restoreRevision">, private readonly credits?: AgentCredits, private readonly consultant?: ConsultantApi, private readonly commitments?: Pick<ConsultantCommitmentApi, "open" | "create" | "update">, private readonly diagnosis?: { demand: GoalDemandApi; store: ConsultantDiagnosisApi }) {}
+  constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord" | "listRecords" | "listCategories" | "createRecord" | "trashRecord" | "getJobGoal" | "saveJobGoal">, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi, readonly credentials: AgentCredentials = new AgentCredentials(db), private readonly portfolios?: Pick<PortfolioReadApi, "get">, private readonly pages?: Pick<PageApi, "latest" | "elementGuide" | "editElementByAgent" | "restoreRevision">, private readonly credits?: AgentCredits, private readonly consultant?: ConsultantApi, private readonly commitments?: Pick<ConsultantCommitmentApi, "open" | "create" | "update">, private readonly diagnosis?: { demand: GoalDemandApi; store: ConsultantDiagnosisApi },
+    /** 대화에서 공고와 활동을 찾을 때 쓰는 것. `dismissed`는 사용자가 능동 제안에서 「관심 없음」으로 넘긴 대상의 키(`job:<id>` · `activity:<id>`)다. */
+    private readonly finds?: { jobs: Pick<JobBoardApi, "list">; activities: Pick<ActivityApi, "list">; dismissed(userId: string): Promise<ReadonlySet<string>> }) {}
   private get plans() { return new PreparationPlans(this.db); }
   /** 서비스가 Fastify 앱보다 먼저 만들어지므로 로그 수신자는 라우트 등록 때 붙인다. */
   setRunFailureListener(listener: AgentRunFailureListener) { this.runFailureListener = listener; }
@@ -119,6 +125,33 @@ export class AgentChatService {
     const changed = latest.data[0]?.updatedAt;
     return this.diagnosis.store.current(userId, { work: goal?.work ?? null, recordsChangedAt: changed ? new Date(changed) : null });
   }
+  /**
+   * 열린 공고를 찾아 목록의 줄로 옮긴다. 지금 있는 공고 목록 조회의 필터를 그대로 쓴다.
+   * 직군은 사용자가 쓰는 말(「백엔드 개발자」)로 와도 공고에 매긴 직군으로 옮기고, 옮기지 못하면 글 검색에 더한다.
+   * 사용자가 「관심 없음」으로 넘긴 공고는 뺀다 — 뺀 만큼 더 읽어 건수를 채운다.
+   */
+  private async searchJobs(userId: string, input: AgentJobSearchInput): Promise<AgentFindList> {
+    if (!this.finds) throw new AgentToolRejection(["이 환경에서는 공고를 찾을 수 없습니다. 사용자에게 그렇게 전하십시오."]);
+    const dismissed = await this.finds.dismissed(userId);
+    const family = input.family ? goalFamily(input.family) : null;
+    const q = [input.query, input.family && !family ? input.family : null].filter(Boolean).join(" ").trim();
+    const result = await this.finds.jobs.list(userId, {
+      ...(q ? { q } : {}), ...(input.technology ? { technology: input.technology } : {}), ...(family ? { family } : {}), ...(input.location ? { location: input.location } : {}),
+      ...(input.experience !== undefined ? { experience: input.experience } : {}), ...(input.interested ? { interested: true } : { deadline: "open" as const }),
+      sort: input.interested ? "deadline" : "recent", page: 1, limit: Math.min(50, input.limit + dismissed.size),
+    });
+    const kept = result.data.filter(job => !dismissed.has(`job:${job.id}`));
+    const title = [family ?? input.family, input.technology, input.location, input.experience !== undefined ? (input.experience === 0 ? "신입" : `경력 ${input.experience}년`) : null, input.query ? `「${input.query}」` : null, input.interested ? "관심 공고" : null].filter(Boolean).join(" · ");
+    return { title: `${title || "열린"} 공고`.slice(0, 120), items: kept.slice(0, input.limit).map(jobItem), total: Math.max(kept.length, result.summary.total - (result.data.length - kept.length)) };
+  }
+  /** 접수 중인 공모전 · 해커톤을 마감이 이른 순서로 찾는다. 글은 제목 · 주최 · 분야에서 찾는다. */
+  private async searchActivities(userId: string, input: AgentActivitySearchInput): Promise<AgentFindList> {
+    if (!this.finds) throw new AgentToolRejection(["이 환경에서는 활동을 찾을 수 없습니다. 사용자에게 그렇게 전하십시오."]);
+    const dismissed = await this.finds.dismissed(userId);
+    const kept = (await this.finds.activities.list({ ...(input.kind ? { kind: input.kind } : {}), limit: 100 })).filter(activity => !dismissed.has(`activity:${activity.id}`) && activityMatches(activity, input.query));
+    const title = [input.kind === "contest" ? "공모전" : input.kind === "hackathon" ? "해커톤" : "공모전 · 해커톤", input.query ? `「${input.query}」` : null].filter(Boolean).join(" · ");
+    return { title: `접수 중인 ${title}`.slice(0, 120), items: kept.slice(0, input.limit).map(activityItem), total: kept.length };
+  }
   /** 지금 목표로 요건을 집계해 저장한다. 목표가 없으면 에이전트가 먼저 목표를 묻도록 돌려보낸다. */
   private async goalDemand(userId: string) {
     if (!this.diagnosis) throw new AgentToolRejection(["이 환경에서는 진단을 쓸 수 없습니다. 사용자에게 그렇게 전하십시오."]);
@@ -141,7 +174,11 @@ export class AgentChatService {
     const answered = !!stored.assessedAt && !!lastSaid && lastSaid > stored.assessedAt;
     const issues: string[] = [];
     const seen = new Set<string>();
-    for (const item of input.items) {
+    // 경력 연차(career)는 공고가 받는 경력의 분포라 상태를 매기지 않는다. 모델이 넣어도 버린다.
+    // 자격(학위 · 전공 · 자격증)은 「해 본 적이 없다」는 한마디로 부족이 되지 않는다 — 졸업을 앞둔 사용자의 학위가 부족으로 남는다.
+    // 기록이나 사용자의 답으로 확인되기 전에는 미확인으로 둔다.
+    const assessed = input.items.filter(item => before.get(item.itemId)?.kind !== "career").map(item => item.status === "gap" && before.get(item.itemId)?.kind === "qualification" ? { ...item, status: "unconfirmed" as const } : item);
+    for (const item of assessed) {
       const known = before.get(item.itemId);
       const label = `항목 ${item.itemId}${known ? `(${known.label})` : ""}`;
       if (seen.has(item.itemId)) issues.push(`${label}: 같은 항목이 두 번 있습니다.`);
@@ -159,7 +196,7 @@ export class AgentChatService {
     }
     if (issues.length) throw new AgentToolRejection(issues);
     try {
-      await this.diagnosis.store.assess(userId, input.summary, input.items.map(item => ({ itemId: item.itemId, status: item.status, note: item.note, evidence: item.evidence.map(evidence => ({ ...evidence, recordTitle: records.get(evidence.recordId)!.title.slice(0, 200) })) })));
+      await this.diagnosis.store.assess(userId, input.summary, assessed.map(item => ({ itemId: item.itemId, status: item.status, note: item.note, evidence: item.evidence.map(evidence => ({ ...evidence, recordTitle: records.get(evidence.recordId)!.title.slice(0, 200) })) })));
     } catch (error) { if (error instanceof ConsultantInputError) throw new AgentToolRejection([error.message]); throw error; }
     // 저장한 뒤의 진단을 다시 읽어, 다시 진단이 필요한지까지 지금 기준으로 싣는다.
     return (await this.currentDiagnosis(userId))!;
@@ -648,6 +685,8 @@ export class AgentChatService {
           beforeDocuments.set(proposal.proposalId, before);
           return proposal;
         },
+        searchJobs: search => this.searchJobs(row.userId, search),
+        searchActivities: search => this.searchActivities(row.userId, search),
         goalDemand: () => this.goalDemand(row.userId),
         recordDiagnosis: assessment => this.recordDiagnosis(row.userId, [...row.messages.slice(0, -1), message], assessment),
         makeCommitment: commitment => this.commitment(() => this.commitments!.create(row.userId, commitment, row._id)),

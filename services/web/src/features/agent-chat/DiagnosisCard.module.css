@@ -11,6 +11,6 @@
 .status { flex-shrink: 0; min-width: 38px; margin-top: 1px; padding: 1px 6px; border-radius: var(--ex-radius-pill); font-size: var(--ex-text-3xs); text-align: center; white-space: nowrap; }
 .status[data-status="confirmed"] { background: var(--ex-status-success-surface); color: var(--ex-status-success-text); }
 .status[data-status="partial"] { background: var(--ex-status-warning-surface); color: var(--ex-status-warning-text); }
-.status[data-status="unconfirmed"] { background: var(--ex-bg-tint); color: var(--ex-fg-muted); }
+.status[data-status="unconfirmed"], .status[data-status="reference"] { background: var(--ex-bg-tint); color: var(--ex-fg-muted); }
 .status[data-status="gap"] { background: var(--ex-status-danger-surface); color: var(--ex-status-danger-text); }
 .pending { margin: 10px 0 0; font-family: var(--ex-font-ui); font-size: var(--ex-text-xs); color: var(--ex-fg-muted); }

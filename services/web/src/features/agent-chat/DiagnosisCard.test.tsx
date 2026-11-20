@@ -63,4 +63,14 @@ describe("목표 진단 카드", () => {
     expect(screen.getByText("아직 기록과 대조하지 않았습니다.")).toBeTruthy();
     expect(screen.queryByText("확인됨 1")).toBeNull();
   });
+  it("경력 연차의 줄은 상태가 아니라 참고로 보이고 상태별 수에 넣지 않는다", () => {
+    render(<DiagnosisCard diagnosis={diagnosis({ items: [item("technology:java", "Java", 45, "confirmed"), item("career:0", "신입 지원 가능", 4, "gap", { kind: "career", note: "해 본 적 없음" })] })} />);
+    const career = screen.getByRole("button", { name: /^신입 지원 가능/ });
+    expect(career.textContent).toContain("참고");
+    expect(career.textContent).not.toContain("부족");
+    expect(screen.getByText("부족 0")).toBeTruthy();
+    fireEvent.click(career);
+    expect(screen.getByText("공고가 받는 경력입니다. 기록과 대조하지 않습니다.")).toBeTruthy();
+    expect(screen.queryByText("해 본 적 없음")).toBeNull();
+  });
 });
