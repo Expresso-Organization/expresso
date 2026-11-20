@@ -38,6 +38,8 @@
   flex-direction: column;
   gap: 12px;
   margin-top: 12px;
+  /* 카드 묶음의 폭으로 좁은 배치를 고른다. 에이전트 대화의 「디자인」 카드는 화면이 넓어도 좁은 오른쪽 자리에 놓인다. */
+  container: design-cards / inline-size;
 }
 
 /* ── 견본: 스타일 줄과 레이아웃 줄 ─────────────── */
@@ -428,6 +430,8 @@ button.thumb:focus-visible, button.specimen:focus-visible, .reply:focus-visible,
 .make.make:disabled { background: var(--ex-bg-tint-strong); color: var(--ex-fg-subtle); opacity: 1; }
 
 /* ── 무대(무대 배치) ──────────────────────────── */
+/* 에이전트 대화의 「디자인」 카드에서 넓게 볼 때. 대화가 좁은 자리에 있어 무대가 화면 전체를 덮는다. */
+.overlay { position: fixed; inset: 0; z-index: 60; display: flex; background: var(--ex-bg-sunken); }
 .stage {
   position: relative;
   flex: 1;
@@ -497,6 +501,18 @@ button.thumb:focus-visible, button.specimen:focus-visible, .reply:focus-visible,
   .stage { flex: 0 0 auto; padding: 16px; gap: 10px; }
   /* 무대가 위로 쌓이면 닫는 자리도 첫 화면 위의 줄로 내려온다. */
   .stageClose { position: static; align-self: flex-start; margin: -6px 0 0 -10px; }
+}
+/* 카드 묶음이 좁을 때(에이전트 대화의 「디자인」 카드). 좁은 화면의 규칙과 같다. */
+@container design-cards (max-width: 560px) {
+  .thumbs, .specimenRow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .swatchFace { padding: 10px 12px; gap: 8px; }
+  .viewMeta { flex-wrap: wrap; row-gap: 6px; }
+  .viewActions { margin-left: 0; width: 100%; flex-wrap: wrap; }
+}
+/* 더 좁으면(공고 화면 오른쪽 자리) 스타일을 한 줄에 하나씩 놓는다. 두 칸이면 견본의 이름이 두세 글자에서 잘린다 —
+   이름이 스타일을 가르는 첫 단서다. 레이아웃은 배치도라 두 칸으로 둔다. */
+@container design-cards (max-width: 400px) {
+  .proposalRow[aria-label="스타일"] .specimenRow { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 767px) {
   .thumbs, .specimenRow { grid-template-columns: repeat(2, minmax(0, 1fr)); }

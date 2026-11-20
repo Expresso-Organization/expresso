@@ -81,6 +81,8 @@ interface View {
   /** 견본에서 고른 스타일과 레이아웃. 따로 고르고, 둘이 모이면 첫 화면을 그릴 수 있다. */
   picked: Picked;
   pick(kind: keyof Picked, id: string): void;
+  /** 견본에서 고른 짝으로 첫 화면을 그린다. 디자인 화면은 디자인 대화에, 에이전트 대화의 카드는 그 대화의 경로에 보낸다. */
+  draw(styleId: string, layoutId: string): void;
   /** 가장 나중에 뜬 견본 카드. 고른 짝과 「첫 화면 보기」는 이 카드 아래에만 둔다. */
   lastProposals: string | null;
   /** 답을 만드는 중이거나 요청을 보내는 중이다. 그동안 카드는 눌리지 않는다. */
@@ -95,17 +97,24 @@ interface View {
   setSubject(subject: Subject | null): void;
   openCatalog(): void;
 }
-const ViewContext = createContext<View | null>(null);
+export type { View as DesignView };
+export const DesignViewContext = createContext<View | null>(null);
+const ViewContext = DesignViewContext;
 const useView = () => useContext(ViewContext)!;
 
-export function DesignChat({ brewId, recipeId, catalog, generationAllowed, notice }: {
+/**
+ * 디자인 대화를 보는 화면의 상태 — 고른 견본, 무대에 올린 첫 화면, 고치는 중인 자리의 표시. 디자인 화면(`DesignChat`)과
+ * 에이전트 대화의 「디자인」 카드가 함께 쓴다. 넓게 보기의 전환(화면 전환 효과)은 쓰는 쪽이 `expand` · `collapse`를 덮어 정한다.
+ */
+export function useDesignView({ brewId, recipeId, generationAllowed, catalog, state, draw, askConsent = null }: {
   brewId: string;
   recipeId: string | null;
-  catalog: CatalogItem[];
   generationAllowed: boolean;
-  notice: DesignChatNotice | null;
+  catalog: CatalogItem[];
+  state: DesignChatState;
+  draw(styleId: string, layoutId: string): void;
+  askConsent?: (() => void) | null;
 }) {
-  const state = useDesignChat(brewId);
   const { chat } = state;
   const thread = useMemo(() => threadOf(chat), [chat]);
   const [layout, setLayout] = useState<Layout>("stream");
@@ -122,9 +131,6 @@ export function DesignChat({ brewId, recipeId, catalog, generationAllowed, notic
     layout: touched.layout !== undefined ? touched.layout : carried("layout"),
   };
   const [sheet, setSheet] = useState(false);
-  /** 동의 안내를 닫았는가. 닫아도 동의는 여전히 필요하므로 입력창 위에 다시 여는 자리를 둔다. */
-  const [consentClosed, setConsentClosed] = useState(false);
-  const screen = useRef<HTMLDivElement>(null);
   /** 마지막으로 누른 카드 묶음. 배치가 바뀌면 대화 폭이 달라져 글이 다시 흐르므로, 바뀐 뒤 이 묶음을 다시 보이게 한다. */
   const anchor = useRef<HTMLElement | null>(null);
   const busy = state.running || state.pending;
@@ -136,6 +142,68 @@ export function DesignChat({ brewId, recipeId, catalog, generationAllowed, notic
     if (newest && seen.current !== null && seen.current !== newest && layout === "stage") setFocus(newest);
     seen.current = newest;
   }, [newest, layout]);
+
+  const proposals = (chat?.messages ?? []).flatMap((message) => (message.role === "assistant" && message.card?.kind === "proposals" ? [{ id: message.id, card: message.card }] : []));
+  const revisions = (chat?.messages ?? []).flatMap((message) => (message.role === "assistant" && message.card?.kind === "revision" ? [message.card] : []));
+  // 이 화면에서 고치는 중인 것을 본 카드. 그 결과가 오면 바뀐 자리를 강조한다. 다시 연 대화의 지난 고침에는 하지 않는다.
+  const [watched, setWatched] = useState<string[]>([]);
+  const unseen = revisions.filter((card) => card.item.status === "drawing" && !watched.includes(card.item.id)).map((card) => card.item.id);
+  if (unseen.length > 0) setWatched([...watched, ...unseen]);
+  const view: View = {
+    brewId, recipeId, generationAllowed, catalog, state, askConsent, draw,
+    cards: thread.cards,
+    users: thread.users,
+    snippet: (id) => chat?.snippets.find((item) => item.id === id),
+    effect: (snippetId) => {
+      const editing = revisions.find((card) => card.fromSnippetId === snippetId && card.item.status === "drawing" && card.targets.length > 0);
+      if (editing) return { kind: "editing", targets: editing.targets };
+      const revised = revisions.find((card) => card.item.snippetId === snippetId && card.targets.length > 0 && watched.includes(card.item.id));
+      return revised ? { kind: "revised", targets: revised.targets } : null;
+    },
+    styleOf: (id) => proposals.flatMap(({ card }) => card.styles).find((item) => item.id === id),
+    layoutOf: (id) => proposals.flatMap(({ card }) => card.layouts).find((item) => item.id === id),
+    picked,
+    // 같은 것을 다시 누르면 고른 것을 푼다.
+    pick: (kind, id) => setTouched((current) => ({ ...current, [kind]: picked[kind] === id ? null : id })),
+    lastProposals: proposals.at(-1)?.id ?? null,
+    busy,
+    layout,
+    focus,
+    show: (snippetId, from) => {
+      if (from) anchor.current = from.closest<HTMLElement>("[data-cards]");
+      setFocus(snippetId);
+    },
+    expand: (snippetId, from) => {
+      anchor.current = from.closest<HTMLElement>("[data-cards]");
+      setFocus(snippetId);
+      setLayout("stage");
+    },
+    collapse: () => setLayout("stream"),
+    subject,
+    setSubject,
+    openCatalog: () => setSheet(true),
+  };
+  return { view, thread, sheet, setSheet, setLayout, setFocus, anchor };
+}
+
+export function DesignChat({ brewId, recipeId, catalog, generationAllowed, notice }: {
+  brewId: string;
+  recipeId: string | null;
+  catalog: CatalogItem[];
+  generationAllowed: boolean;
+  notice: DesignChatNotice | null;
+}) {
+  const state = useDesignChat(brewId);
+  const { chat } = state;
+  /** 동의 안내를 닫았는가. 닫아도 동의는 여전히 필요하므로 입력창 위에 다시 여는 자리를 둔다. */
+  const [consentClosed, setConsentClosed] = useState(false);
+  const { view: base, thread, sheet, setSheet, setLayout, setFocus, anchor } = useDesignView({
+    brewId, recipeId, generationAllowed, catalog, state,
+    draw: (styleId, layoutId) => void state.send({ action: "draw", styleId, layoutId }),
+    askConsent: state.consentRequired && consentClosed ? () => setConsentClosed(false) : null,
+  });
+  const { layout, focus, subject, setSubject } = base;
+  const screen = useRef<HTMLDivElement>(null);
 
   // 답이 붙거나 첫 화면이 놓이면 대화가 길어진다. 사람이 맨 아래를 보고 있었으면 새로 온 것이 보이게 끝까지 내린다.
   // 위로 올라가 앞의 카드를 보고 있었으면 그대로 둔다.
@@ -208,45 +276,13 @@ export function DesignChat({ brewId, recipeId, catalog, generationAllowed, notic
     return () => window.removeEventListener("keydown", onKey);
   });
 
-  const proposals = (chat?.messages ?? []).flatMap((message) => (message.role === "assistant" && message.card?.kind === "proposals" ? [{ id: message.id, card: message.card }] : []));
-  const revisions = (chat?.messages ?? []).flatMap((message) => (message.role === "assistant" && message.card?.kind === "revision" ? [message.card] : []));
-  // 이 화면에서 고치는 중인 것을 본 카드. 그 결과가 오면 바뀐 자리를 강조한다. 다시 연 대화의 지난 고침에는 하지 않는다.
-  const [watched, setWatched] = useState<string[]>([]);
-  const unseen = revisions.filter((card) => card.item.status === "drawing" && !watched.includes(card.item.id)).map((card) => card.item.id);
-  if (unseen.length > 0) setWatched([...watched, ...unseen]);
   const view: View = {
-    brewId, recipeId, generationAllowed, catalog, state,
-    askConsent: state.consentRequired && consentClosed ? () => setConsentClosed(false) : null,
-    cards: thread.cards,
-    users: thread.users,
-    snippet: (id) => chat?.snippets.find((item) => item.id === id),
-    effect: (snippetId) => {
-      const editing = revisions.find((card) => card.fromSnippetId === snippetId && card.item.status === "drawing" && card.targets.length > 0);
-      if (editing) return { kind: "editing", targets: editing.targets };
-      const revised = revisions.find((card) => card.item.snippetId === snippetId && card.targets.length > 0 && watched.includes(card.item.id));
-      return revised ? { kind: "revised", targets: revised.targets } : null;
-    },
-    styleOf: (id) => proposals.flatMap(({ card }) => card.styles).find((item) => item.id === id),
-    layoutOf: (id) => proposals.flatMap(({ card }) => card.layouts).find((item) => item.id === id),
-    picked,
-    // 같은 것을 다시 누르면 고른 것을 푼다.
-    pick: (kind, id) => setTouched((current) => ({ ...current, [kind]: picked[kind] === id ? null : id })),
-    lastProposals: proposals.at(-1)?.id ?? null,
-    busy,
-    layout,
-    focus,
-    show: (snippetId, from) => {
-      if (from) anchor.current = from.closest<HTMLElement>("[data-cards]");
-      setFocus(snippetId);
-    },
+    ...base,
     expand: (snippetId, from) => {
       anchor.current = from.closest<HTMLElement>("[data-cards]");
       relayout("stage", { before: () => setFocus(snippetId), from: from.querySelector<HTMLElement>("[data-frame]") });
     },
     collapse,
-    subject,
-    setSubject,
-    openCatalog: () => setSheet(true),
   };
 
   return (
@@ -303,7 +339,7 @@ const CardTool: ToolCallMessagePartComponent = ({ toolCallId }) => {
 };
 
 /** 만들지 못한 답. 무엇이 안 됐는지와 다시 시도하는 자리를 둔다. */
-function Failure({ text, retryable }: { text: string; retryable: boolean }) {
+export function Failure({ text, retryable }: { text: string; retryable: boolean }) {
   const { state, busy, brewId } = useView();
   return (
     <p className={styles.notice} data-tone="error" role="alert">
@@ -350,8 +386,8 @@ function Swatch({ name, tokens }: { name: string; tokens: DesignTokens }) {
  * 스타일을 고르면 레이아웃의 배치도가 그 색으로 바뀌어, 고른 짝이 어떤 모습일지를 그리기 전에 보인다.
  * 둘을 고르면 「첫 화면 보기」가 그 짝을 대화에 보내고 에이전트가 첫 화면을 그린다.
  */
-function Proposals({ styles: styleItems, layouts, footer }: { styles: DesignStyle[]; layouts: DesignLayout[]; footer: boolean }) {
-  const { state, busy, picked, pick, styleOf, layoutOf } = useView();
+export function Proposals({ styles: styleItems, layouts, footer }: { styles: DesignStyle[]; layouts: DesignLayout[]; footer: boolean }) {
+  const { busy, picked, pick, styleOf, layoutOf, draw } = useView();
   const chosen = { style: styleOf(picked.style), layout: layoutOf(picked.layout) };
   return (
     <div className={styles.proposals}>
@@ -405,7 +441,7 @@ function Proposals({ styles: styleItems, layouts, footer }: { styles: DesignStyl
             className={styles.reply}
             data-tone="primary"
             disabled={busy || !chosen.style || !chosen.layout}
-            onClick={() => { if (chosen.style && chosen.layout) void state.send({ action: "draw", styleId: chosen.style.id, layoutId: chosen.layout.id }); }}
+            onClick={() => { if (chosen.style && chosen.layout) draw(chosen.style.id, chosen.layout.id); }}
           >
             <Icon name="browsers" size={14} />첫 화면 보기
           </button>
@@ -573,7 +609,7 @@ function RetryRow() {
   return <div className={styles.replies}><button type="button" className={styles.reply} disabled={busy} onClick={() => void state.retry()}><Icon name="arrow-clockwise" size={13} />그리지 못한 장 다시 그리기</button></div>;
 }
 
-function Screens({ items, retryable }: { items: DesignScreenItem[]; retryable: boolean }) {
+export function Screens({ items, retryable }: { items: DesignScreenItem[]; retryable: boolean }) {
   const { snippet, layout } = useView();
   const done = items.flatMap((item) => { const found = snippet(item.snippetId); return found ? [found] : []; });
   const { local, active, open } = useShown(done);
@@ -598,7 +634,7 @@ function Screens({ items, retryable }: { items: DesignScreenItem[]; retryable: b
  * 말로 고친 결과. 무엇이 바뀌었는지를 값으로 보이고, 이전 것과 고친 것을 나란히 둔다.
  * 고치는 동안에는 큰 첫 화면에서 바뀌는 자리가 청사진으로 돌아가고, 고친 것이 오면 그 자리에서 고친 첫 화면으로 넘어간다.
  */
-function Revision({ card, retryable }: { card: Extract<DesignCard, { kind: "revision" }>; retryable: boolean }) {
+export function Revision({ card, retryable }: { card: Extract<DesignCard, { kind: "revision" }>; retryable: boolean }) {
   const { snippet, layout, effect } = useView();
   const before = snippet(card.fromSnippetId);
   const after = snippet(card.item.snippetId);
@@ -683,7 +719,7 @@ function UserAttachment() {
 }
 
 /** 고른 첫 화면으로 지면을 만든다. 생성을 맡기면 이 화면은 생성 중 화면으로 바뀐다. */
-function MakeButton() {
+export function MakeButton() {
   const { brewId, recipeId, generationAllowed, state } = useView();
   const [result, start, submitting] = useActionState<BrewState, FormData>(startGenerationAction, { error: null });
   const selected = state.chat?.selectedSnippetId;
@@ -759,7 +795,7 @@ function ComposerBar({ notice }: { notice: DesignChatNotice | null }) {
 }
 
 /** 무대 배치의 왼쪽. 대화에서 넓힌 첫 화면을 크게 본다. */
-function Stage() {
+export function Stage() {
   const { focus, snippet, collapse, state, effect } = useView();
   const shown = snippet(focus);
   const close = useRef<HTMLButtonElement>(null);

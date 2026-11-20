@@ -1,21 +1,19 @@
 flowchart TD
-  U[대화: 이 공고로 만들어 줘] --> T[start_portfolio 도구]
-  T --> A[공고 분석 큐 → 워커]
-  T --> C[포트폴리오 제작 카드]
-  C --> O[담을 기록 고르기]
-  O --> M[재료 고르기 카드]
-  M --> B[(brew_sources)]
-  M --> I[AI와 대화 시작]
-  I --> S[(interview_sessions)]
-  I --> Q[AI 대화 카드 + 첫 질문]
-  Q --> V[save_interview_answer]
-  V --> R[(answers · 커리어 기록)]
-  Q --> D[디자인 고르기: 지금의 화면]
-  D --> E[구성 · 디자인 대화]
-  E --> G[생성]
+  M[재료 고르기 카드] --> Q[AI 대화 카드]
+  Q --> R[디자인 고르기: 구성 잡]
+  R --> RC[(recipes)]
+  R --> D4{4단계 방식}
+  D4 --> DA[에이전트 도구]
+  D4 --> DB[디자인 대화 카드]
+  D4 --> DC[지금의 디자인 화면]
+  DC --> DCH[(design_chats)]
+  DA --> DCH
+  DB --> DCH
+  DA --> G[이 스타일로 만들기]
   classDef done fill:#d1fae5,stroke:#059669
   classDef doing fill:#fef3c7,stroke:#d97706
   classDef decide fill:#fee2e2,stroke:#dc2626
   classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4
-  class U,T,A,C,O,M,B,I,S,Q,V,R,D done
-  class E,G todo
+  class M,Q,R,RC,DC,DCH done
+  class D4 decide
+  class DA,DB,G todo

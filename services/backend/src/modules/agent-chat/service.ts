@@ -18,7 +18,7 @@ import { readableCareerProperties, type CareerApi } from "../career/index.js";
 import type { JobBoardApi } from "../jobs/index.js";
 import { ConsentError, type ConsentApi } from "../consent/index.js";
 import { brewPath, brewStartState, KeyedQueue, type AgentBrewDeps, type LiveBrew } from "./brew-start.js";
-import { interviewBasisKey, type AgentBrewStart, type AgentBrewStartInput, type AgentBrewStartState, type AgentInterviewAnswerInput } from "@expresso/contracts";
+import { interviewBasisKey, type AgentBrewStart, type AgentBrewStartInput, type AgentBrewStartState, type AgentDesignDraw, type AgentInterviewAnswerInput } from "@expresso/contracts";
 import type { AgentBrewInterviewState, AgentBrewState, AgentRunEvent } from "../../platform/agent/runtime.js";
 import { InterviewError } from "../interview/index.js";
 
@@ -303,6 +303,12 @@ export class AgentChatService {
       const brewId = brew.id;
       // AI 대화 단계는 이 대화에서 연 인터뷰면 대화 안에서 이어 간다. 지금의 화면에서 질문을 만든 제작이면 그 화면이다.
       if (brew.status === "interviewing" && row.messages.some(message => message.tools.some(tool => tool.brewInterview?.brewId === brewId))) return { brewId, path: null, conversation: view(row) };
+      // 디자인 단계는 대화 안에서 이어 간다. 이 대화에서 연 디자인이 없으면(지금의 화면에서 인터뷰를 마친 제작) 여기서 연다.
+      if (brew.status !== "draft" && brew.status !== "interviewing") {
+        if (row.messages.some(message => message.tools.some(tool => tool.brewDesign?.brewId === brewId))) return { brewId, path: null, conversation: view(row) };
+        await this.brews!.startRecipe(userId, brewId);
+        return { brewId, path: null, conversation: view(await this.appendCard(row, { id: randomUUID(), name: "디자인", status: "complete", summary: "", brewDesign: { brewId, jobPostingId: start.jobPostingId, designMessageId: null } })) };
+      }
       if (brew.status !== "draft") return { brewId, path: brewPath(brewId, brew.status), conversation: null };
       if (row.messages.some(message => message.tools.some(tool => tool.brewMaterials?.brewId === brewId))) return { brewId, path: null, conversation: view(row) };
       // 실행 중에는 마지막 답변을 실행이 통째로 다시 쓴다. 그 뒤에 답변을 붙일 수 없다.
@@ -350,6 +356,56 @@ export class AgentChatService {
       this.start(changed, context, apiKey, { kind: "brew_interview_start", jobPostingId: start.jobPostingId });
       return view(changed);
     });
+  }
+  /**
+   * 「AI 대화」 카드의 「디자인 고르기」. 이 대화가 만든 제작의 디자인을 대화에서 연다.
+   *
+   * 구성 잡을 맡기고(지금의 화면과 같은 키라 이미 있으면 그 잡이다) 「디자인」 카드를 든 답변을 서버가 붙인다. 실행을 시작하지 않는다 —
+   * 디자이너의 첫 말과 견본은 디자인 대화의 여는 호출이 쓰고 카드가 그린다. 같은 제작의 카드는 하나다.
+   */
+  async beginDesign(userId: string, id: string, brewId: string) {
+    return this.brewQueue.run(id, async () => {
+      const row = await this.owned(userId, id);
+      const start = this.startOfBrew(row, brewId);
+      if (row.messages.some(message => message.tools.some(tool => tool.brewDesign?.brewId === brewId && tool.brewDesign.designMessageId === null))) return view(row);
+      const state = await this.brews!.brewState(userId, brewId);
+      if (!state) throw new AgentChatError(404, "이 대화에서 만든 제작을 찾을 수 없습니다.");
+      if (state.status === "draft") throw new AgentChatError(409, "재료를 고른 뒤 디자인을 고를 수 있습니다.", "재료를 고른 뒤 디자인을 고를 수 있습니다.");
+      await this.brews!.startRecipe(userId, brewId);
+      return view(await this.appendCard(row, { id: randomUUID(), name: "디자인", status: "complete", summary: "", brewDesign: { brewId, jobPostingId: start.jobPostingId, designMessageId: null } }));
+    });
+  }
+  /**
+   * 「디자인」 카드의 「첫 화면 보기」. 디자인 대화에 그리기를 보내고, 그 답을 가리키는 카드 답변을 서버가 붙인다. 실행을 시작하지 않는다.
+   * 디자인 대화의 거절(답을 만드는 중 · 크레딧 · 동의)은 그 문장 그대로 올린다.
+   */
+  async drawDesign(userId: string, id: string, brewId: string, input: AgentDesignDraw) {
+    return this.brewQueue.run(id, async () => {
+      const row = await this.owned(userId, id);
+      const start = this.startOfBrew(row, brewId);
+      if (!row.messages.some(message => message.tools.some(tool => tool.brewDesign?.brewId === brewId))) throw new AgentChatError(409, "디자인 카드가 없습니다.", "「디자인 고르기」로 디자인을 먼저 열어 주세요.");
+      if (row.run?.status === "running") throw new AgentChatError(409, "응답이 끝난 뒤 눌러 주세요.", "응답이 끝난 뒤 눌러 주세요.");
+      const { designMessageId } = await this.brews!.designDraw(userId, brewId, input);
+      return view(await this.appendCard(row, { id: randomUUID(), name: "디자인", status: "complete", summary: "", brewDesign: { brewId, jobPostingId: start.jobPostingId, designMessageId } }));
+    });
+  }
+  /** 이 대화가 만든 제작의 시작 카드. 다른 대화의 제작이면 404다. */
+  private startOfBrew(row: AgentConversationDoc, brewId: string): AgentBrewStart {
+    if (!this.brews) throw new AgentChatError(503, "포트폴리오 제작 연결이 설정되지 않았습니다.");
+    const jobAnalysisId = Object.entries(row.brewIds ?? {}).find(([, value]) => value === brewId)?.[0];
+    const start = jobAnalysisId ? row.messages.flatMap(message => message.tools).find(tool => tool.brewStart?.jobAnalysisId === jobAnalysisId)?.brewStart : undefined;
+    if (!start) throw new AgentChatError(404, "이 대화에서 만든 제작을 찾을 수 없습니다.");
+    return start;
+  }
+  /** 서버가 쓴 카드 답변을 붙인다. 실행 중에는 마지막 답변을 실행이 통째로 다시 쓰므로 붙일 수 없다. */
+  private async appendCard(row: AgentConversationDoc, tool: AgentMessage["tools"][number]) {
+    if (row.run?.status === "running") throw new AgentChatError(409, "응답이 끝난 뒤 눌러 주세요.", "응답이 끝난 뒤 눌러 주세요.");
+    if (row.messages.length >= 99) throw new AgentChatError(409, "대화가 길어졌습니다. 새 대화를 시작해 주세요.", "대화가 길어졌습니다. 새 대화를 시작해 주세요.");
+    const now = new Date().toISOString();
+    const card: AgentMessage = { id: randomUUID(), role: "assistant", text: "", tools: [tool], createdAt: now };
+    const changed = await this.rows.findOneAndUpdate({ _id: row._id, userId: row.userId, "run.status": { $ne: "running" } }, { $push: { messages: card }, $set: { updatedAt: now }, $inc: { version: 1 } }, { returnDocument: "after" });
+    if (!changed) throw new AgentChatError(409, "응답이 끝난 뒤 눌러 주세요.", "응답이 끝난 뒤 눌러 주세요.");
+    return changed;
   }
   /** 모델에 넘기는 인터뷰. 근거의 글은 300자로 자른다. 읽지 못하면 null이다. */
   private async interviewState(userId: string, brewId: string): Promise<AgentBrewInterviewState | null> {
@@ -408,7 +464,8 @@ export class AgentChatService {
       try {
         const brew = await this.liveBrew(row, start.jobAnalysisId);
         const interview = brew?.status === "interviewing" ? await this.interviewState(row.userId, brew.id).catch(() => null) : null;
-        return { jobPostingId: start.jobPostingId, title: start.title, companyName: start.companyName, selectedRecords: brew?.selected ?? null, interview, ...brewStartState(await this.brews!.getResult(row.userId, start.jobAnalysisId), brew, !!row.brewAnnounced?.[start.jobAnalysisId]) };
+        const design = brew && brew.status !== "draft" && brew.status !== "interviewing" ? await this.brews!.designState(row.userId, brew.id).catch(() => null) : null;
+        return { jobPostingId: start.jobPostingId, title: start.title, companyName: start.companyName, selectedRecords: brew?.selected ?? null, interview, design, ...brewStartState(await this.brews!.getResult(row.userId, start.jobAnalysisId), brew, !!row.brewAnnounced?.[start.jobAnalysisId]) };
       }
       catch { return null; }
     }));

@@ -24,6 +24,26 @@ export interface AgentBrewDeps {
   interview(userId: string, brewId: string): Promise<{ bases: InterviewQuestionBase[]; session: InterviewSession | null }>;
   /** 한 질문의 답을 저장한다. 같은 근거의 질문이 있으면 그 답을 다시 쓴다(`InterviewApi.saveConversationAnswer`). */
   saveInterviewAnswer(userId: string, brewId: string, input: { basis: InterviewQuestionBasis; question: string; transcript: string }, idempotencyKey: string): Promise<InterviewAnswerResult>;
+  /** 구성 잡을 맡긴다. 지금의 화면과 같은 키(`recipe:<brewId>`)라 이미 있으면 그 잡이다. */
+  startRecipe(userId: string, brewId: string): Promise<unknown>;
+  /** 디자인 대화에 견본의 짝으로 그리기를 보낸다. 그 답의 ID를 돌려준다(`DesignChatService.send`). */
+  designDraw(userId: string, brewId: string, input: { styleId: string; layoutId: string }): Promise<{ designMessageId: string }>;
+  /** 디자인 대화의 지금 상태를 모델에 넘길 만큼 줄인 것. 아직 열지 않았거나 디자인 대화가 없는 서버면 null이다. */
+  designState(userId: string, brewId: string): Promise<AgentBrewDesignState | null>;
+}
+/** 모델에 넘기는 디자인 대화. 이름만 싣는다 — 색 값 · 마크업은 싣지 않는다. */
+export interface AgentBrewDesignState {
+  /** 디자이너의 첫 말과 견본이 나왔는가. */
+  ready: boolean;
+  /** 디자인 대화가 답을 만드는 중(첫 말 · 그리기 · 고치기)이다. */
+  busy: boolean;
+  /** 가장 최근 견본의 스타일 · 레이아웃 이름. */
+  styles: string[];
+  layouts: string[];
+  /** 그린 첫 화면의 이름. 오래된 것부터. */
+  screens: string[];
+  /** 고른 첫 화면의 이름. */
+  selected: string | null;
 }
 /** 이 대화에서 만든 제작 가운데 아직 남아 있는 것. */
 export interface LiveBrew { id: string; status: BrewStatus; selected: number }

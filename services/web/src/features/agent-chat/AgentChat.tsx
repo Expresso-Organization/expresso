@@ -18,6 +18,7 @@ import { PlanCard } from "./PlanCard";
 import { ReplanDraftCard } from "./ReplanDraftCard";
 import { PageEditCard } from "./PageEditCard";
 import { AgentConsentDialog } from "./AgentConsentDialog";
+import { BrewDesignCard } from "./BrewDesignCard";
 import { BrewInterviewCard } from "./BrewInterviewCard";
 import { BrewMaterialsCard } from "./BrewMaterialsCard";
 import { BrewStartCard } from "./BrewStartCard";
@@ -129,7 +130,7 @@ function GeneralWelcome() {
 const TOOL_ICONS: Record<string, string> = {
   "기록 목록 확인": "list-bullets", "기록 읽기": "book-open-text", "요건 대조": "list-checks", "새 기록 초안": "note-pencil", "구직 목표 변경": "target", "기록 변경 제안": "pencil-line",
   "보완점 정리": "target", "준비 계획 초안": "calendar-check", "계획 진행 확인": "chart-line-up", "계획 재배치 초안": "arrows-clockwise",
-  "지면 요소 읽기": "cursor-click", "지면 요소 고침": "pencil-simple-line", "포트폴리오 제작": "coffee", "재료 고르기": "list-checks", "AI 대화": "chat-circle-dots", "답 저장": "floppy-disk",
+  "지면 요소 읽기": "cursor-click", "지면 요소 고침": "pencil-simple-line", "포트폴리오 제작": "coffee", "재료 고르기": "list-checks", "AI 대화": "chat-circle-dots", "답 저장": "floppy-disk", "디자인": "palette",
 };
 /**
  * 도구 호출 하나를 작업 흔적의 한 단계로 그린다. 결과의 모양으로 단계 아래를 나눈다 — 요건 대조 · 보완점 · 새 기록 · 준비 계획 ·
@@ -150,7 +151,10 @@ const RecordTool: ToolCallMessagePartComponent = props => {
   // 인터뷰를 열면 제작이 다음 단계로 가므로 그때 다시 읽어 잠근다.
   if (tool?.brewMaterials) { const { brewId } = tool.brewMaterials; const continues = !!state.conversation?.messages.some(message => message.tools.some(item => item.brewInterview?.brewId === brewId)); return step(<BrewMaterialsCard materials={tool.brewMaterials} disabled={busy} continuesInChat={continues} refreshKey={continues ? 1 : 0} onBegin={() => state.beginInterview(brewId)} />, null); }
   // 서버가 붙인 「AI 대화」. 근거와 답한 질문은 카드가 읽는다. 답을 저장할 때마다 다시 읽는다 — 대화의 판은 글이 흐르는 동안에도 올라가므로 쓰지 않는다.
-  if (tool?.brewInterview) return step(<BrewInterviewCard interview={tool.brewInterview} refreshKey={savedAnswers} />, null);
+  // 「디자인 고르기」는 이 대화에서 디자인을 연다. 연 뒤에는 대화 아래의 「디자인」 카드가 이어 가므로 잠긴 카드에 링크를 두지 않는다.
+  if (tool?.brewInterview) { const { brewId } = tool.brewInterview; return step(<BrewInterviewCard interview={tool.brewInterview} refreshKey={savedAnswers} continuesInChat={!!state.conversation?.messages.some(message => message.tools.some(item => item.brewDesign?.brewId === brewId))} onDesign={() => state.beginDesign(brewId)} />, null); }
+  // 서버가 붙인 「디자인」. 디자인 대화의 답 하나를 그린다. 「첫 화면 보기」만 이 대화의 경로로 보내 그 카드가 대화에 붙는다.
+  if (tool?.brewDesign) { const { brewId } = tool.brewDesign; return step(<BrewDesignCard design={tool.brewDesign} onDraw={(styleId, layoutId) => state.drawDesign(brewId, styleId, layoutId)} />, null); }
   if (tool?.review) return step(<RequirementReviewCard conversationId={state.id} toolId={tool.id} review={tool.review} />, null);
   if (tool?.gapReview) return step(<GapReviewCard conversationId={state.id} toolId={tool.id} gapReview={tool.gapReview} />, null);
   if (tool?.recordDraft) { const draftId = tool.recordDraft.draftId; return step(<RecordDraftCard draft={tool.recordDraft} disabled={busy} onDecide={decision => state.decideDraft(draftId, decision)} />, null); }

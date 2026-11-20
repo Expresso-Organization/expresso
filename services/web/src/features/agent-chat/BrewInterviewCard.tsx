@@ -3,8 +3,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import type { AgentBrewInterview } from "@expresso/contracts";
-import { continueToDesignAction } from "@/app/(app)/brew/[brewId]/brew-actions";
-import { BeginInterviewButton } from "@/app/(app)/brew/[brewId]/materials/BeginInterviewButton";
 import { Skel } from "@/components/shell/Skeleton";
 import { Icon } from "@/components/ui/Icon";
 import { BrewInterviewCardResponseSchema, type BrewInterviewCardData } from "@/lib/brew-interview-card";
@@ -28,9 +26,23 @@ async function request(brewId: string): Promise<BrewInterviewCardData> {
  * 「디자인 고르기」는 지금의 AI 대화 화면과 같은 서버 액션이다 — 구성을 맡기고 디자인 화면으로 간다. 답을 하나도 안 해도 누를 수 있다.
  * 제작이 디자인 단계로 넘어가면 답한 근거만 보이고 그 화면으로 가는 링크만 둔다.
  */
-export function BrewInterviewCard({ interview: { brewId }, refreshKey }: { interview: AgentBrewInterview; refreshKey?: number | undefined }) {
+export function BrewInterviewCard({ interview: { brewId }, refreshKey, onDesign, continuesInChat = false }: {
+  interview: AgentBrewInterview;
+  refreshKey?: number | undefined;
+  /** 「디자인 고르기」 — 이 대화에서 디자인을 연다. 실패는 카드가 받아 보인다. */
+  onDesign(): Promise<void>;
+  /** 이 대화에서 디자인을 열었다. 잠긴 카드에 링크를 두지 않는다 — 대화 아래의 「디자인」 카드가 이어 간다. */
+  continuesInChat?: boolean;
+}) {
   const [data, setData] = useState<BrewInterviewCardData | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [opening, setOpening] = useState(false);
+  const design = async () => {
+    setOpening(true); setNotice(null);
+    try { await onDesign(); }
+    catch (error) { setNotice(error instanceof Error ? error.message : "디자인을 열지 못했습니다."); }
+    finally { setOpening(false); }
+  };
 
   useEffect(() => {
     let alive = true;
@@ -38,7 +50,7 @@ export function BrewInterviewCard({ interview: { brewId }, refreshKey }: { inter
       .then(next => { if (alive) { setData(next); setNotice(null); } })
       .catch(error => { if (alive) setNotice(error instanceof Error ? error.message : "AI 대화를 불러오지 못했습니다."); });
     return () => { alive = false; };
-  }, [brewId, refreshKey]);
+  }, [brewId, refreshKey, continuesInChat]);
 
   return <section className={card.card} aria-label="AI 대화">
     <header className={`${card.head} ${rows.head}`}>
@@ -57,10 +69,8 @@ export function BrewInterviewCard({ interview: { brewId }, refreshKey }: { inter
     </ul> : null}
     {notice ? <p role="alert" className={card.error}>{notice}</p> : null}
     {data ? <div className={card.actions}>
-      {data.resumePath ? <Link className={rows.next} href={data.resumePath as Route}>이어서 만들기</Link> : <form action={continueToDesignAction}>
-        <input type="hidden" name="brewId" value={brewId} />
-        <BeginInterviewButton className={rows.next} saving={false}>디자인 고르기</BeginInterviewButton>
-      </form>}
+      {data.resumePath ? (continuesInChat ? null : <button type="button" className={rows.next} disabled={opening} aria-busy={opening} onClick={() => void design()}>이어서 만들기</button>)
+        : continuesInChat ? null : <button type="button" className={rows.next} disabled={opening} aria-busy={opening} onClick={() => void design()}>디자인 고르기</button>}
     </div> : null}
   </section>;
 }

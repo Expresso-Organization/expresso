@@ -13,6 +13,7 @@ import { brewTitle } from "../brew-title";
 import { DesignCatalog, type DesignCatalogEntry } from "./DesignCatalog";
 import { Generating } from "./Generating";
 import type { WaitReading } from "./GenerationWait";
+import { failureNote } from "./failure-note";
 import { brewingLeftMs, waitedMs } from "./wait-timing";
 
 /**
@@ -221,11 +222,3 @@ async function waitReading(accessToken: string, brew: BrewState): Promise<WaitRe
  * 지난 생성 · 구성이 왜 실패했는지 한 줄. 구성 잡의 거절(`BREW_INPUT_REJECTED`)은 입력이 모자란 것이라 무엇을 더
  * 하면 되는지 적는다 — 레시피 화면이 하던 안내를 그대로 옮겼다. 만들기를 다시 누르면 실패한 구성 잡부터 다시 돈다.
  */
-function failureNote(code: string | null, isFreeBrew: boolean): string {
-  if (code === "BREW_INPUT_REJECTED") {
-    return isFreeBrew
-      ? "입력한 내용으로 구성을 만들지 못했습니다. 자유 생성 설명을 보완한 뒤 다시 만들어 주세요."
-      : "고른 재료가 세 건보다 적어 구성을 만들지 못했습니다. 기록을 더 고른 뒤 다시 만들어 주세요.";
-  }
-  return code ? `지난 생성이 실패했습니다(${code}). 다시 만들 수 있습니다.` : "지난 생성이 실패했습니다. 다시 만들 수 있습니다.";
-}

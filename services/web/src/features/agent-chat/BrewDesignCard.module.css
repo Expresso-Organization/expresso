@@ -1,0 +1,18 @@
+/* 대화의 「디자인」 카드. 틀은 다른 카드(RecordDraftCard.module.css)와 같고, 견본 · 첫 화면은 디자인 화면의 부품(DesignChat.module.css)이 그린다.
+   여기에는 이 카드만의 것을 둔다. */
+
+/* 견본과 첫 화면이 카드 폭을 다 쓴다. */
+.card { gap: 12px; }
+
+/* 디자이너의 말. 대화의 답 글과 같은 크기 · 줄 간격이다. */
+.say { margin: 0; font-size: var(--ex-text-xs); line-height: var(--ex-leading-relaxed); color: var(--ex-fg-body); white-space: pre-wrap; }
+
+/* 구성을 기다리는 동안. 대화의 「쓰는 중」 표시를 그대로 쓴다. */
+.wait { margin: 0; }
+
+/* 고른 첫 화면 아래의 만들기. */
+.make { display: flex; justify-content: flex-end; }
+
+.action { display: inline-flex; align-items: center; min-height: 30px; padding: 0 12px; border: 1px solid var(--ex-border); border-radius: var(--ex-radius-control); background: var(--ex-bg); color: var(--ex-fg); font: inherit; font-size: var(--ex-text-2xs); text-decoration: none; cursor: pointer; }
+.action:hover:not(:disabled) { background: var(--ex-bg-tint); }
+.action:disabled { opacity: 0.6; cursor: progress; }

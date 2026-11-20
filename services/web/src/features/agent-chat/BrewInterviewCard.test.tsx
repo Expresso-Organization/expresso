@@ -1,12 +1,10 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { BrewState, InterviewQuestionBase, InterviewSession } from "@expresso/contracts";
 import { interviewCard, type BrewInterviewCardData } from "@/lib/brew-interview-card";
 import { BrewInterviewCard } from "./BrewInterviewCard";
 
-// 서버 액션은 이 테스트가 보는 것이 아니다. 폼이 어느 액션에 묶였는지만 본다.
-vi.mock("@/app/(app)/brew/[brewId]/brew-actions", () => ({ continueToDesignAction: vi.fn() }));
 
 const brewId = "00000000-0000-4000-8000-000000000001";
 const requirementId = "00000000-0000-4000-8000-0000000000b1";
@@ -50,27 +48,42 @@ describe("AI 대화 카드의 데이터", () => {
 describe("AI 대화 카드", () => {
   it("근거와 답한 표시, 디자인 고르기를 보인다", async () => {
     serve(interviewCard(brew("interviewing"), bases, session(true)));
-    render(<BrewInterviewCard interview={{ brewId, jobPostingId: brewId }} />);
+    render(<BrewInterviewCard interview={{ brewId, jobPostingId: brewId }} onDesign={async () => undefined} />);
     expect(await screen.findByText("장애 대응 경험")).toBeTruthy();
     expect(screen.getByText("1").closest("span")!.textContent).toBe("답한 질문 1 / 6");
     const rows = screen.getAllByRole("listitem").map(item => item.firstElementChild!.getAttribute("data-selected"));
     expect(rows).toEqual(["true", "false"]);
-    const button = screen.getByRole("button", { name: "디자인 고르기" });
-    expect(button.closest("form")!.querySelector<HTMLInputElement>('input[name="brewId"]')!.value).toBe(brewId);
+    expect(screen.getByRole("button", { name: "디자인 고르기" })).toBeTruthy();
+  });
+
+  it("디자인 고르기는 이 대화에서 디자인을 열고, 연 뒤에는 링크 없이 잠긴다", async () => {
+    serve(interviewCard(brew("interviewing"), bases, session(true)));
+    const onDesign = vi.fn(async () => undefined);
+    render(<BrewInterviewCard interview={{ brewId, jobPostingId: brewId }} onDesign={onDesign} />);
+    fireEvent.click(await screen.findByRole("button", { name: "디자인 고르기" }));
+    await waitFor(() => expect(onDesign).toHaveBeenCalledTimes(1));
+    cleanup();
+    serve(interviewCard(brew("recipe"), bases, session(true)));
+    render(<BrewInterviewCard interview={{ brewId, jobPostingId: brewId }} onDesign={onDesign} continuesInChat />);
+    await screen.findByText("장애 대응 경험");
+    expect(screen.queryByRole("link")).toBeNull();
+    expect(screen.queryByRole("button")).toBeNull();
   });
 
   it("대화의 판이 바뀌면 다시 읽는다", async () => {
     const fetch = serve(interviewCard(brew("interviewing"), bases, null));
-    const { rerender } = render(<BrewInterviewCard interview={{ brewId, jobPostingId: brewId }} refreshKey={1} />);
+    const { rerender } = render(<BrewInterviewCard interview={{ brewId, jobPostingId: brewId }} refreshKey={1} onDesign={async () => undefined} />);
     await screen.findByText("장애 대응 경험");
-    rerender(<BrewInterviewCard interview={{ brewId, jobPostingId: brewId }} refreshKey={2} />);
+    rerender(<BrewInterviewCard interview={{ brewId, jobPostingId: brewId }} refreshKey={2} onDesign={async () => undefined} />);
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
   });
 
-  it("디자인 단계로 넘어간 제작의 카드는 그 화면으로 가는 링크만 둔다", async () => {
+  it("디자인 단계로 넘어간 제작의 카드는 이 대화에서 디자인을 여는 「이어서 만들기」만 둔다", async () => {
     serve(interviewCard(brew("recipe"), bases, session(true)));
-    render(<BrewInterviewCard interview={{ brewId, jobPostingId: brewId }} />);
-    expect((await screen.findByRole("link", { name: "이어서 만들기" })).getAttribute("href")).toBe(`/brew/${brewId}/design`);
-    expect(screen.queryByRole("button")).toBeNull();
+    const onDesign = vi.fn(async () => undefined);
+    render(<BrewInterviewCard interview={{ brewId, jobPostingId: brewId }} onDesign={onDesign} />);
+    fireEvent.click(await screen.findByRole("button", { name: "이어서 만들기" }));
+    await waitFor(() => expect(onDesign).toHaveBeenCalledTimes(1));
+    expect(screen.queryByRole("link")).toBeNull();
   });
 });

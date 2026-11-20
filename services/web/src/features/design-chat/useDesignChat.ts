@@ -23,6 +23,12 @@ export interface DesignChatState {
   reopen(): void;
 }
 
+/**
+ * `autoOpen` — 대화가 없으면 화면이 뜰 때 연다. 디자인 화면은 늘 연다. 에이전트 대화의 「디자인」 카드는 구성이 생긴 뒤
+ * 여는 카드 하나만 연다(구성이 없으면 열기가 409다). 그 밖의 카드는 읽기만 한다.
+ */
+export interface DesignChatOptions { autoOpen?: boolean }
+
 class ConsentRequired extends Error {}
 
 async function call(path: string, body?: unknown): Promise<unknown> {
@@ -40,7 +46,7 @@ async function call(path: string, body?: unknown): Promise<unknown> {
  * 답은 서버가 뒤에서 만든다. 만드는 동안 1.5초마다(제작 흐름의 다른 화면과 같은 주기) 지금 가진 판을 `since`로 보내
  * 바뀐 것이 있을 때만 대화를 다시 받는다.
  */
-export function useDesignChat(brewId: string): DesignChatState {
+export function useDesignChat(brewId: string, { autoOpen = true }: DesignChatOptions = {}): DesignChatState {
   const base = `/api/brews/${brewId}/design-chat`;
   const [chat, setChat] = useState<DesignChat | null>(null);
   const [issue, setIssue] = useState<string | null>(null);
@@ -68,14 +74,14 @@ export function useDesignChat(brewId: string): DesignChatState {
     void (async () => {
       try {
         const state = DesignChatStateResponseSchema.parse(await call(base)).data;
-        const opened = state.chat ?? DesignChatResponseSchema.parse(await call(`${base}/open`, { requestId: crypto.randomUUID() })).data;
-        if (current) accept(opened);
+        const opened = state.chat ?? (autoOpen ? DesignChatResponseSchema.parse(await call(`${base}/open`, { requestId: crypto.randomUUID() })).data : null);
+        if (current && opened) accept(opened);
       } catch (error) {
         if (current) fail(error);
       }
     })();
     return () => { current = false; };
-  }, [base, attempt, accept, fail]);
+  }, [base, attempt, autoOpen, accept, fail]);
 
   const running = chat?.run?.status === "running";
   const version = chat?.version;

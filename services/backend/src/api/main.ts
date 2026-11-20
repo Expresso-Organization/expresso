@@ -1,5 +1,6 @@
+import { randomUUID } from "node:crypto";
 import { AgentCredentials } from "../modules/agent-chat/index.js";
-import { AgentChatService } from "../modules/agent-chat/index.js";
+import { AgentChatError, AgentChatService } from "../modules/agent-chat/index.js";
 import { ClaudeAgentRuntime } from "../platform/agent/runtime.js";
 import { buildApi } from "./build-app.js";
 import { loadRuntimeConfig } from "../config/runtime-config.js";
@@ -36,7 +37,7 @@ import { PortfolioReadService, PortfolioTrashService } from "../modules/portfoli
 import { LayoutService } from "../modules/layout/index.js";
 import { PublishingService } from "../modules/publishing/index.js";
 import { MediaService } from "../modules/media/index.js";
-import { DesignChatService, PageElementEditor, PageService } from "../modules/page/index.js";
+import { DesignChatError, DesignChatService, PageElementEditor, PageService } from "../modules/page/index.js";
 import { PageStream } from "../modules/page/stream.js";
 import { freePageGenerator } from "../modules/page/briefed-generator.js";
 import { StructuredPageGenerator } from "../modules/page/structured-generator.js";
@@ -181,6 +182,27 @@ const agentChatService = new AgentChatService(database, config.agentChatEnabled 
   openInterview: (userId, brewId) => interviewService.openConversation(userId, brewId),
   interview: (userId, brewId) => interviewService.conversationState(userId, brewId),
   saveInterviewAnswer: (userId, brewId, input, idempotencyKey) => interviewService.saveConversationAnswer(userId, brewId, input, idempotencyKey),
+  startRecipe: (userId, brewId) => brewJobService.submit(userId, "recipe", `recipe:${brewId}`, { brewId }),
+  designDraw: async (userId, brewId, input) => {
+    if (!designChatService) throw new AgentChatError(503, "design chat is not configured", "이 서버에서는 대화로 디자인을 고를 수 없습니다.");
+    // 디자인 대화의 거절은 화면에 보일 문장을 갖고 있다. 대화의 오류로 옮겨 그 문장을 그대로 낸다.
+    const chat = await designChatService.send(userId, brewId, { action: "draw", requestId: randomUUID(), ...input }).catch((error: unknown) => { throw error instanceof DesignChatError ? new AgentChatError(error.statusCode, error.message, error.publicMessage) : error; });
+    return { designMessageId: chat.messages.at(-1)!.id };
+  },
+  designState: async (userId, brewId) => {
+    const chat = designChatService ? (await designChatService.get(userId, brewId)).chat : null;
+    if (!chat || chat.messages.length === 0) return null;
+    const proposals = chat.messages.findLast(message => message.role === "assistant" && message.card?.kind === "proposals");
+    const card = proposals?.role === "assistant" && proposals.card?.kind === "proposals" ? proposals.card : null;
+    return {
+      ready: !!card,
+      busy: chat.run?.status === "running",
+      styles: card?.styles.map(style => style.name) ?? [],
+      layouts: card?.layouts.map(layout => layout.name) ?? [],
+      screens: chat.snippets.map(snippet => snippet.name).slice(-12),
+      selected: chat.snippets.find(snippet => snippet.id === chat.selectedSnippetId)?.name ?? null,
+    };
+  },
 });
 const activityService = new ActivityService(database);
 // API는 제안을 읽고 실행을 줄에 넣기만 한다. AI 실행은 워커가 한다(`writer`를 주지 않는다).

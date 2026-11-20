@@ -1,6 +1,6 @@
 import { setTimeout as delay } from "node:timers/promises";
 import type { FastifyInstance, preHandlerHookHandler } from "fastify";
-import { API_PREFIX, AgentPlanDecisionSchema, AgentReplanDecisionSchema, UpdateTaskProgressSchema, AgentRecordDraftDecisionSchema, AgentGoalDraftDecisionSchema, UuidSchema, CreateAgentConversationSchema, SendAgentMessageSchema, AddAgentContextSchema, AgentApprovalSchema, SaveAgentApiKeySchema, SetAgentContextsSchema } from "@expresso/contracts";
+import { API_PREFIX, AgentDesignDrawSchema, AgentPlanDecisionSchema, AgentReplanDecisionSchema, UpdateTaskProgressSchema, AgentRecordDraftDecisionSchema, AgentGoalDraftDecisionSchema, UuidSchema, CreateAgentConversationSchema, SendAgentMessageSchema, AddAgentContextSchema, AgentApprovalSchema, SaveAgentApiKeySchema, SetAgentContextsSchema } from "@expresso/contracts";
 import { requireAuth } from "../../api/plugins/auth-context.js";
 import type { AgentChatService } from "./service.js";
 
@@ -35,6 +35,10 @@ export function registerAgentChatRoutes(app: FastifyInstance, service: AgentChat
   app.post(`${base}/:id/brew-starts/:startId/announce`, options, async (req, reply) => { const userId = requireAuth(req).user.id; return reply.code(202).send({ data: await service.announceBrew(userId, id(req.params), startId(req.params), await service.credentials.read(userId)) }); });
   // 대화에서 인터뷰를 연다. 에이전트가 첫 질문을 하는 답을 시작하므로 보내기와 같이 개인 키가 있으면 그 키로 돈다.
   app.post(`${base}/:id/brews/:brewId/interview`, options, async (req, reply) => { const userId = requireAuth(req).user.id; return reply.code(202).send({ data: await service.beginInterview(userId, id(req.params), UuidSchema.parse((req.params as { brewId: string }).brewId), await service.credentials.read(userId)) }); });
+  // 대화에서 디자인을 연다 · 견본의 짝으로 첫 화면을 그린다. 둘 다 실행을 시작하지 않는다(그리기는 디자인 대화가 뒤에서 한다).
+  const brewId = (params: unknown) => UuidSchema.parse((params as { brewId: string }).brewId);
+  app.post(`${base}/:id/brews/:brewId/design`, options, async req => ({ data: await service.beginDesign(requireAuth(req).user.id, id(req.params), brewId(req.params)) }));
+  app.post(`${base}/:id/brews/:brewId/design/draw`, options, async req => ({ data: await service.drawDesign(requireAuth(req).user.id, id(req.params), brewId(req.params), AgentDesignDrawSchema.parse(req.body)) }));
   app.post(`${base}/:id/brew-starts/:startId/retry`, options, async req => ({ data: await service.retryBrewStart(requireAuth(req).user.id, id(req.params), startId(req.params)) }));
   app.post(`${base}/:id/retry`, options, async (req, reply) => { const userId = requireAuth(req).user.id; return reply.code(202).send({ data: await service.retry(userId, id(req.params), await service.credentials.read(userId)) }); });
   app.post(`${base}/:id/contexts`, options, async req => ({ data: await service.attach(requireAuth(req).user.id, id(req.params), AddAgentContextSchema.parse(req.body).context) }));
