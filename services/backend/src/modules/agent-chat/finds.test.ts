@@ -3,7 +3,8 @@ import type { Activity, JobPostingSummary } from "@expresso/contracts";
 import { activityItem, activityMatches, jobItem } from "./finds.js";
 
 const job = (overrides: Partial<JobPostingSummary> = {}) => ({ id: "00000000-0000-4000-8000-000000000001", title: "백엔드 엔지니어", company: { name: "당근" }, location: "서울 강남", experienceLabel: "신입 가능", workType: null, family: "백엔드", daysLeft: 12, ...overrides }) as JobPostingSummary;
-const activity = (overrides: Partial<Activity> = {}): Activity => ({ id: "wevity:1", kind: "hackathon", title: "데이터 엔지니어링 해커톤", host: "한국데이터산업진흥원", fields: ["데이터", "AI", "클라우드"], url: "https://example.com/hackathon", daysLeft: 9, status: "접수중", firstSeenAt: "2026-11-01T00:00:00.000Z", ...overrides });
+// 줄로 옮길 때 읽는 칸만 채운다. 활동의 칸은 수집 출처가 늘면 함께 는다.
+const activity = (overrides: Partial<Activity> = {}) => ({ id: "wevity:1", kind: "hackathon", title: "데이터 엔지니어링 해커톤", host: "한국데이터산업진흥원", fields: ["데이터", "AI", "클라우드"], url: "https://example.com/hackathon", daysLeft: 9, status: "접수중", firstSeenAt: "2026-11-01T00:00:00.000Z", ...overrides }) as Activity;
 
 describe("찾은 것을 목록의 줄로", () => {
   it("공고는 앱 안의 공고 화면으로 가고, 지역 · 경력 · 직군을 조각으로 싣는다. 비어 있는 조각은 뺀다", () => {
