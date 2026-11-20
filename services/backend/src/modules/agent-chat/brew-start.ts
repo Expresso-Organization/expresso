@@ -32,7 +32,7 @@ export interface AgentBrewDeps {
   /** 구성 잡을 맡긴다. 지금의 화면과 같은 키(`recipe:<brewId>`)라 이미 있으면 그 잡이다. */
   startRecipe(userId: string, brewId: string): Promise<unknown>;
   /** 디자인 대화에 견본의 짝으로 그리기를 보낸다. 그 답의 ID를 돌려준다(`DesignChatService.send`). */
-  designDraw(userId: string, brewId: string, input: { styleId: string; layoutId: string }): Promise<{ designMessageId: string }>;
+  designDraw(userId: string, brewId: string, input: { styleId: string; layoutId: string; graphic?: "2d" | "3d" | undefined }): Promise<{ designMessageId: string }>;
   /** 디자인 대화에 견본 제안 · 고치기 차례를 맡긴다. 그 답의 ID를 돌려준다(`DesignChatService.propose` · `revise`). */
   designPropose(userId: string, brewId: string, input: { request: string; focus: "both" | "styles" | "layouts" }): Promise<{ designMessageId: string }>;
   designRevise(userId: string, brewId: string, input: { instruction: string; screen: string }): Promise<{ designMessageId: string }>;

@@ -110,6 +110,13 @@ export const DesignUserMessageSchema = z.strictObject({
 });
 
 /** 그리는 중이거나 그린 첫 화면 한 장. 스타일과 레이아웃은 그리기 전에 정해져 있어 기다리는 동안 그 값으로 자리를 채운다. */
+/**
+ * 첫 화면 그래픽의 차원. 평면(canvas 2D · SVG)이냐 입체(3D 엔진 · three.js)냐는 취향이 갈려 사용자가 고른다
+ * (2026-11-20 사용자: "2D/3D 배경 요소 중 뭘 쓸지는 사용자에게 물어보는 게 낫겠다").
+ */
+export const DesignGraphicSchema = z.enum(["2d", "3d"]);
+export type DesignGraphic = z.infer<typeof DesignGraphicSchema>;
+
 export const DesignScreenItemSchema = z.strictObject({
   id: UuidSchema,
   name: z.string().min(1).max(120),
@@ -117,6 +124,8 @@ export const DesignScreenItemSchema = z.strictObject({
   tokens: DesignTokensSchema,
   /** 그릴 레이아웃. 카탈로그의 디자인만 골랐으면 null이고, 그리는 쪽이 자료를 보고 구성을 정한다. */
   layout: DesignLayoutSpecSchema.nullable(),
+  /** 사용자가 고른 그래픽의 차원. 고르지 않고 그렸거나(말로 청한 것 · 고친 것) 이 칸이 생기기 전의 장에는 없다. */
+  graphic: DesignGraphicSchema.optional(),
   status: z.enum(["drawing", "done", "failed"]),
   snippetId: UuidSchema.nullable(),
 });
@@ -195,9 +204,9 @@ export const SendDesignMessageSchema = z.discriminatedUnion("action", [
     subject: z.strictObject({ kind: z.enum(["snippet", "catalog"]), id: UuidSchema }).optional(),
   }),
   /** 견본에서 고른 스타일 하나와 레이아웃 하나로 첫 화면을 그린다. */
-  z.strictObject({ action: z.literal("draw"), requestId: UuidSchema, styleId: UuidSchema, layoutId: UuidSchema }),
+  z.strictObject({ action: z.literal("draw"), requestId: UuidSchema, styleId: UuidSchema, layoutId: UuidSchema, graphic: DesignGraphicSchema.optional() }),
   /** 카탈로그의 디자인을 스타일로 삼아 그린다. 견본에서 고른 레이아웃이 있으면 함께 보낸다. */
-  z.strictObject({ action: z.literal("draw_catalog"), requestId: UuidSchema, revisionId: UuidSchema, layoutId: UuidSchema.optional() }),
+  z.strictObject({ action: z.literal("draw_catalog"), requestId: UuidSchema, revisionId: UuidSchema, layoutId: UuidSchema.optional(), graphic: DesignGraphicSchema.optional() }),
 ]);
 export type SendDesignMessage = z.infer<typeof SendDesignMessageSchema>;
 

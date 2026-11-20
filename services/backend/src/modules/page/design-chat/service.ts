@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { DesignAssistantMessageSchema, DesignCardSchema, DesignSnippetSchema, type DesignCard, type DesignChat, type DesignChatMessage, type DesignLayout, type DesignLayoutSpec, type DesignScreenItem, type DesignSnippet, type DesignStyle, type DesignSubject, type SendDesignMessage } from "@expresso/contracts";
+import { DesignAssistantMessageSchema, DesignCardSchema, DesignSnippetSchema, type DesignCard, type DesignChat, type DesignChatMessage, type DesignLayout, type DesignLayoutSpec, type DesignScreenItem, type DesignSnippet, type DesignStyle, type DesignSubject, type SendDesignMessage, type DesignGraphic } from "@expresso/contracts";
 import { mongoCollections, type DesignChatDoc, type JsonObject } from "@expresso/database";
 import type { Db, UpdateFilter } from "mongodb";
 
@@ -79,7 +79,7 @@ const view = (row: DesignChatDoc): DesignChat => ({
 });
 
 /** 그릴 첫 화면 한 장. 스타일과 레이아웃은 따로 고른 것이고, 여기서 한 장으로 짝지어진다. */
-const screenItem = (style: StyleDraft, layout: DesignLayoutSpec | null): DesignScreenItem => ({ id: randomUUID(), name: style.name, words: style.words, tokens: style.tokens, layout, status: "drawing", snippetId: null });
+const screenItem = (style: StyleDraft, layout: DesignLayoutSpec | null, graphic?: DesignGraphic): DesignScreenItem => ({ id: randomUUID(), name: style.name, words: style.words, tokens: style.tokens, layout, ...(graphic ? { graphic } : {}), status: "drawing", snippetId: null });
 /** 견본 카드의 레이아웃에서 ID를 뗀 것. 첫 화면과 그리는 호출은 값만 가진다. */
 const layoutSpec = ({ name, words, blocks }: DesignLayout): DesignLayoutSpec => ({ name, words, blocks });
 
@@ -216,7 +216,7 @@ export class DesignChatService {
     if (input.action === "draw") {
       const chosen = { style: style(input.styleId), layout: layout(input.layoutId) };
       subjects = [{ kind: "style", id: chosen.style.id, name: chosen.style.name }, { kind: "layout", id: chosen.layout.id, name: chosen.layout.name }];
-      const items = [screenItem(chosen.style, layoutSpec(chosen.layout))];
+      const items = [screenItem(chosen.style, layoutSpec(chosen.layout), input.graphic)];
       card = { kind: "screens", items };
       turn = { kind: "draw", items, origins: ["agent"], revise: null };
     } else if (input.action === "draw_catalog") {
@@ -224,7 +224,7 @@ export class DesignChatService {
       // 카탈로그의 디자인은 스타일이다. 견본에서 고른 레이아웃이 함께 오면 그 구성으로, 없으면 그리는 쪽이 구성을 정한다.
       const chosen = input.layoutId ? layout(input.layoutId) : null;
       subjects = [{ kind: "catalog", id: input.revisionId, name: draft.name }, ...(chosen ? [{ kind: "layout" as const, id: chosen.id, name: chosen.name }] : [])];
-      const items = [screenItem(draft, chosen ? layoutSpec(chosen) : null)];
+      const items = [screenItem(draft, chosen ? layoutSpec(chosen) : null, input.graphic)];
       card = { kind: "screens", items };
       turn = { kind: "draw", items, origins: ["catalog"], revise: null };
     } else {
@@ -492,7 +492,7 @@ export class DesignChatService {
               // 스크립트 조각은 화면의 자리가 없다. 마크업 · CSS 조각만 친다.
               targets = revisedTargets(revise.from, draft.edits.flatMap((edit) => (edit.in === "script" ? [] : [{ ...edit, in: edit.in }])));
             } else {
-              const call = drawCall({ userId, sources, style: { name: item.name, words: item.words, tokens: item.tokens }, layout: item.layout });
+              const call = drawCall({ userId, sources, style: { name: item.name, words: item.words, tokens: item.tokens }, layout: item.layout, graphic: item.graphic ?? null });
               data = (await this.#ai.complete(call.spec, SnippetDraftSchema, { userId, check: call.check })).data;
             }
             const clean = sanitizePage({ html: data.html, css: data.css });

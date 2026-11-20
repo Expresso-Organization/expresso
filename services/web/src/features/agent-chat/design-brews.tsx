@@ -79,7 +79,7 @@ interface DesignBrewsProps {
   cards: Record<string, string[]>;
   /** 제작 ID → 그 제작의 「생성」 카드가 가리키는 생성 ID. 마지막이 가장 최근이다. */
   generations: Record<string, string[]>;
-  onDraw(brewId: string, styleId: string, layoutId: string): Promise<void>;
+  onDraw(brewId: string, styleId: string, layoutId: string, graphic: "2d" | "3d"): Promise<void>;
   onMake(brewId: string): Promise<void>;
   /** 만들어지는 지면을 여는 자리. 없으면 가운데로 열지 않고 카드만 둔다. */
   stageHost: HTMLElement | null;
@@ -154,7 +154,7 @@ function DesignBrewSource({ brewId, wanted, generationIds, store, onDraw, onMake
   const state = useDesignChat(brewId, { autoOpen: ready });
   const { view } = useDesignView({
     brewId, recipeId: context?.recipeId ?? null, generationAllowed: context?.generationAllowed ?? false, catalog: [], state,
-    draw: (styleId, layoutId) => { setIssue(null); void onDraw(brewId, styleId, layoutId).catch((error: unknown) => setIssue(error instanceof Error ? error.message : "첫 화면을 그리지 못했습니다.")); },
+    draw: (styleId, layoutId, graphic) => { setIssue(null); void onDraw(brewId, styleId, layoutId, graphic).catch((error: unknown) => setIssue(error instanceof Error ? error.message : "첫 화면을 그리지 못했습니다.")); },
     // 화면을 넘기지 않는다. 대화에 「생성」 카드가 붙고, 지면이 서면 가운데로 연다.
     make: async () => {
       try { await onMake(brewId); view.collapse(); return null; }

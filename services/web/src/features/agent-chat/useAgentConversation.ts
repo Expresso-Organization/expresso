@@ -146,7 +146,7 @@ export function useAgentConversation(context?: AgentContext, options: { restore?
     /** 「AI 대화」 카드의 「디자인 고르기」. 서버가 구성을 맡기고 「디자인」 카드를 붙인다. 실패는 카드가 받는다. */
     beginDesign: (brewId: string) => decide(`brews/${brewId}/design`, {}),
     /** 「디자인」 카드의 「첫 화면 보기」. 서버가 디자인 대화에 그리기를 보내고 그 첫 화면의 카드를 붙인다. 실패는 카드가 받는다. */
-    drawDesign: (brewId: string, styleId: string, layoutId: string) => decide(`brews/${brewId}/design/draw`, { styleId, layoutId }),
+    drawDesign: (brewId: string, styleId: string, layoutId: string, graphic: "2d" | "3d") => decide(`brews/${brewId}/design/draw`, { styleId, layoutId, graphic }),
     /** 「디자인」 카드의 「이 스타일로 만들기」. 서버가 고른 첫 화면으로 생성을 맡기고 「생성」 카드를 붙인다. 실패는 카드가 받는다. */
     startGeneration: (brewId: string) => decide(`brews/${brewId}/generation`, {}),
     /** 에이전트가 저장한 지면 고침 되돌리기. 실패를 카드가 직접 보여 주도록 오류를 다시 던진다. */

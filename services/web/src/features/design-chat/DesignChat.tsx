@@ -6,7 +6,7 @@ import { flushSync } from "react-dom";
 import Link from "next/link";
 import { AssistantRuntimeProvider, useAuiState, useExternalStoreRuntime, type ThreadMessageLike, type ToolCallMessagePartComponent } from "@assistant-ui/react";
 import { snippetEditingCss, snippetRevisedCss } from "@expresso/portfolio-renderer/blueprint";
-import { DESIGN_LAYOUT_GRID, pageDocument, pagePreviewDocument, type DesignCard, type DesignLayout, type DesignLayoutSpec, type DesignScreenItem, type DesignSnippet, type DesignStyle, type DesignTokens } from "@expresso/contracts";
+import { DESIGN_LAYOUT_GRID, pageDocument, pagePreviewDocument, type DesignCard, type DesignGraphic, type DesignLayout, type DesignLayoutSpec, type DesignScreenItem, type DesignSnippet, type DesignStyle, type DesignTokens } from "@expresso/contracts";
 
 import { startGenerationAction, type BrewState } from "@/app/(app)/brew/[brewId]/design/design-actions";
 import { DesignThumb, type DesignCatalogEntry } from "@/app/(app)/brew/[brewId]/design/DesignCatalog";
@@ -38,9 +38,11 @@ export interface CatalogItem { revisionId: string; code: string; name: string; r
 export interface DesignChatNotice { tone: "info" | "error"; text: string }
 
 type Layout = "stream" | "stage";
-interface Picked { style: string | null; layout: string | null }
+interface Picked { style: string | null; layout: string | null; graphic: DesignGraphic | null }
 /** 다음 말에 붙는 대상 — 카탈로그에서 고른 디자인. 그 디자인을 스타일로 삼아 그린다. */
 type Subject = { kind: "catalog"; item: CatalogItem };
+
+const GRAPHICS: { value: DesignGraphic; label: string }[] = [{ value: "2d", label: "2D" }, { value: "3d", label: "3D" }];
 
 const ORIGIN_LABEL: Record<DesignSnippet["origin"], string> = { agent: "제안", user: "말씀하신 스타일", catalog: "카탈로그", edit: "고친 것" };
 const FONT_LABEL = { sans: "고딕", serif: "명조", mono: "고정폭" } as const;
@@ -79,11 +81,11 @@ interface View {
   effect(snippetId: string): FrameEffect | null;
   styleOf(id: string | null): DesignStyle | undefined;
   layoutOf(id: string | null): DesignLayout | undefined;
-  /** 견본에서 고른 스타일과 레이아웃. 따로 고르고, 둘이 모이면 첫 화면을 그릴 수 있다. */
+  /** 견본에서 고른 스타일 · 레이아웃과 그래픽의 차원(2D · 3D). 따로 고르고, 셋이 모이면 첫 화면을 그릴 수 있다. */
   picked: Picked;
   pick(kind: keyof Picked, id: string): void;
   /** 견본에서 고른 짝으로 첫 화면을 그린다. 디자인 화면은 디자인 대화에, 에이전트 대화의 카드는 그 대화의 경로에 보낸다. */
-  draw(styleId: string, layoutId: string): void;
+  draw(styleId: string, layoutId: string, graphic: DesignGraphic): void;
   /**
    * 고른 첫 화면으로 만든다. 주면 「이 스타일로 만들기」가 화면을 넘기지 않고 이 함수를 부른다(에이전트 대화 — 대화에 「생성」 카드가 붙는다).
    * 실패하면 보일 문장을, 맡겼으면 null을 돌려준다. 주지 않으면 지금처럼 생성을 맡기고 생성 화면으로 간다.
@@ -118,7 +120,7 @@ export function useDesignView({ brewId, recipeId, generationAllowed, catalog, st
   generationAllowed: boolean;
   catalog: CatalogItem[];
   state: DesignChatState;
-  draw(styleId: string, layoutId: string): void;
+  draw(styleId: string, layoutId: string, graphic: DesignGraphic): void;
   make?: (() => Promise<string | null>) | undefined;
   askConsent?: (() => void) | null;
 }) {
@@ -132,10 +134,13 @@ export function useDesignView({ brewId, recipeId, generationAllowed, catalog, st
   // 마지막으로 그릴 때 고른 스타일과 레이아웃은 대화에 남아 있다. 스타일만 새로 받은 뒤에도, 화면을 새로 고친 뒤에도
   // 앞서 고른 레이아웃이 이어져 한쪽만 다시 고르면 된다.
   const drawn = chat?.messages.findLast((message) => message.role === "user" && message.action !== "say");
-  const carried = (kind: keyof Picked) => (drawn?.role === "user" ? drawn.subjects.find((subject) => subject.kind === kind)?.id ?? null : null);
+  const carried = (kind: "style" | "layout") => (drawn?.role === "user" ? drawn.subjects.find((subject) => subject.kind === kind)?.id ?? null : null);
+  // 그래픽의 차원은 마지막으로 그린 장에 남아 있다.
+  const lastGraphic = chat?.messages.flatMap((message) => (message.role === "assistant" && message.card?.kind === "screens" ? message.card.items : [])).findLast((item) => item.graphic)?.graphic ?? null;
   const picked: Picked = {
     style: touched.style !== undefined ? touched.style : carried("style"),
     layout: touched.layout !== undefined ? touched.layout : carried("layout"),
+    graphic: touched.graphic !== undefined ? touched.graphic : lastGraphic,
   };
   const [sheet, setSheet] = useState(false);
   /** 마지막으로 누른 카드 묶음. 배치가 바뀌면 대화 폭이 달라져 글이 다시 흐르므로, 바뀐 뒤 이 묶음을 다시 보이게 한다. */
@@ -206,7 +211,7 @@ export function DesignChat({ brewId, recipeId, catalog, generationAllowed, notic
   const [consentClosed, setConsentClosed] = useState(false);
   const { view: base, thread, sheet, setSheet, setLayout, setFocus, anchor } = useDesignView({
     brewId, recipeId, generationAllowed, catalog, state,
-    draw: (styleId, layoutId) => void state.send({ action: "draw", styleId, layoutId }),
+    draw: (styleId, layoutId, graphic) => void state.send({ action: "draw", styleId, layoutId, graphic }),
     askConsent: state.consentRequired && consentClosed ? () => setConsentClosed(false) : null,
   });
   const { layout, focus, subject, setSubject } = base;
@@ -443,12 +448,17 @@ export function Proposals({ styles: styleItems, layouts, footer }: { styles: Des
           <span className={styles.comboPick} data-empty={chosen.layout ? undefined : ""}>
             {chosen.layout ? <><span className={styles.comboWire}><Wireframe blocks={chosen.layout.blocks} tokens={chosen.style?.tokens} /></span>{chosen.layout.name}</> : "레이아웃"}
           </span>
+          <Icon name="plus" size={12} />
+          {/* 배경 그래픽을 평면으로 할지 입체로 할지는 취향이 갈려 사용자가 고른다. */}
+          <span className={styles.comboGraphic} role="group" aria-label="배경 그래픽" data-empty={picked.graphic ? undefined : ""}>
+            {GRAPHICS.map(({ value, label }) => <button key={value} type="button" aria-pressed={picked.graphic === value} aria-label={`배경 그래픽 ${label}`} onClick={() => pick("graphic", value)}>{label}</button>)}
+          </span>
           <button
             type="button"
             className={styles.reply}
             data-tone="primary"
-            disabled={busy || !chosen.style || !chosen.layout}
-            onClick={() => { if (chosen.style && chosen.layout) draw(chosen.style.id, chosen.layout.id); }}
+            disabled={busy || !chosen.style || !chosen.layout || !picked.graphic}
+            onClick={() => { if (chosen.style && chosen.layout && picked.graphic) draw(chosen.style.id, chosen.layout.id, picked.graphic); }}
           >
             <Icon name="browsers" size={14} />첫 화면 보기
           </button>

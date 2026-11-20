@@ -104,6 +104,10 @@ describe("디자인 대화의 호출", () => {
     expect(spec.system).toContain("fn shadeSurface(p: vec3f, n: vec3f, rd: vec3f, occ: f32, fres: f32) -> vec3f");
     // 문서를 흉내 내라던 지시는 없다.
     for (const gone of ["제품을 파는 랜딩 페이지가 아니라", "글이 화면의 주인", "## 짜임", "`composition`"]) expect(spec.prompt).not.toContain(gone);
+    // 그래픽의 차원은 사용자가 고른다. 고르지 않았으면 적지 않는다.
+    expect(spec.prompt).not.toContain("## 사용자가 고른 그래픽");
+    expect(drawCall({ userId: "u1", sources, style, layout, graphic: "2d" }).spec.prompt).toContain("## 사용자가 고른 그래픽 — 2D");
+    expect(drawCall({ userId: "u1", sources, style, layout, graphic: "3d" }).spec.prompt).toContain("공들인 오브젝트 하나는 MotionWeb 엔진으로");
     // 레이아웃이 정해지지 않았으면(카탈로그의 디자인만 고름) 구성을 그리는 쪽이 정한다.
     const open = drawCall({ userId: "u1", sources, style, layout: null }).spec.prompt;
     expect(open).toContain("## 레이아웃 — 정해지지 않았다. 구성은 네가 정한다");

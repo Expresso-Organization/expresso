@@ -264,3 +264,10 @@
 - 지침(`DESIGN_CHAT_PROMPT_VERSION` 6): 3D 장면은 공들인 오브젝트 하나 또는 이어진 장
 - 3 · 4번 다시 그리기: 검은 시트 물결 · 광택 보라 매듭(three.js, 상자 없음)
 - 보드: 이미지를 누르면 같은 문서(pageDocument + 스크립트 정책)를 보드 안 전체 화면으로 띄움(Esc로 닫기). 로컬 headless에서 열기 · 움직임 · 닫기 확인, claude.ai 안에서는 미확인(창 로그인 없음)
+
+### ~21:50 · 완료 · 3D 엔진 내장과 배경 그래픽 2D/3D 선택
+- 엔진(`aac32d74`): 3d-motion-web의 engine.js · hg_sdf · wgsl-std를 `page-engine.generated.ts`(82KB, `scripts/vendor-motionweb.mjs`)로 들여와 MotionWeb을 쓰는 지면에만 classic 스크립트로 실음. 우리 틀 · 정책 안에서 WebGPU 렌더 확인(콘솔 오류 0). HDRI는 바깥 fetch라 쓰지 않음
+- 사용자: "2D/3D 배경 요소 중 뭘 쓸지는 사용자에게 물어보는 게 낫겠다" → 짝 고르기 줄에 「2D · 3D」, 고르기 전엔 「첫 화면 보기」 꺼짐. 그리기 요청 `graphic` → 프롬프트 「사용자가 고른 그래픽」(DESIGN_CHAT_PROMPT_VERSION 8). 에이전트 설명에도 반영
+- 실제 그리기: 3D 2장 = MotionWeb(엔진 컴파일 ok · 움직임), 2D 2장 = canvas 2D. 3D 1장은 가운데 고리가 수평으로 잘리는 결함, 1장은 배경 회색 번짐
+- 새 제작으로 견본까지 진행해 고르기 줄 확인(2D/3D 고르기 전 꺼짐 → 3D 고른 뒤 켜짐)
+- 검사: typecheck 통과 · test 통과(백엔드 702 · 웹 518)

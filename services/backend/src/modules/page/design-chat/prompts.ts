@@ -14,8 +14,7 @@ import {
   type DesignLayoutBlock,
   type DesignLayoutSpec,
   type DesignSnippet,
-  type DesignTokens,
-} from "@expresso/contracts";
+  type DesignTokens, type DesignGraphic } from "@expresso/contracts";
 
 import type { AiCallSpec, AiViolation } from "../../../platform/ai/client.js";
 import { PageSanitizeError, sanitizeCss } from "../../../platform/html/sanitize.js";
@@ -38,8 +37,8 @@ import { markupProblem, promptOpening, promptSources, ungroundedEmails, type Pag
  * 제안(스타일과 레이아웃을 따로), 디자인(`../design-rules.ts`), 사실. 문구를 고칠 때는 그 목록의 뜻을 지킨다.
  */
 const TIER = { modelTier: "sonnet" } as const;
-/** 프롬프트 판. 문구를 바꾸면 올린다. 2: Do와 Do not, 스타일과 레이아웃을 따로 제안(2026-11-19). 4: 추상 그래픽과 그림 스크립트(2026-11-20). 5: 형태 · 흐름 · 밀도, 수치는 한 줄(같은 날). 6: 3D 형태 · 재질 · 빛 짝(같은 날). 7: MotionWeb 엔진(같은 날). */
-export const DESIGN_CHAT_PROMPT_VERSION = 7;
+/** 프롬프트 판. 문구를 바꾸면 올린다. 2: Do와 Do not, 스타일과 레이아웃을 따로 제안(2026-11-19). 4: 추상 그래픽과 그림 스크립트(2026-11-20). 5: 형태 · 흐름 · 밀도, 수치는 한 줄(같은 날). 6: 3D 형태 · 재질 · 빛 짝(같은 날). 7: MotionWeb 엔진(같은 날). 8: 사용자가 고른 그래픽 차원(같은 날). */
+export const DESIGN_CHAT_PROMPT_VERSION = 8;
 
 const FONT_NAME = { sans: "고딕", serif: "명조", mono: "고정폭" } as const;
 const DENSITY_NAME = { compact: "빽빽하게", comfortable: "읽기 편하게", spacious: "넓게" } as const;
@@ -532,6 +531,15 @@ const FIRST_SCREEN = [
   ...NOTE,
 ];
 
+/** 사용자가 고른 그래픽의 차원. 지침의 「깊이가 있는 장면은 3D로」보다 먼저다. 고르지 않았으면 아무것도 적지 않는다. */
+function graphicPrompt(graphic: DesignGraphic | null): string[] {
+  if (graphic === "3d")
+    return ["## 사용자가 고른 그래픽 — 3D", "첫 화면의 그래픽을 입체로 짓는다. 공들인 오브젝트 하나는 MotionWeb 엔진으로, 흩어진 입자 · 선의 장은 three.js로 짓는다.", ""];
+  if (graphic === "2d")
+    return ["## 사용자가 고른 그래픽 — 2D", "첫 화면의 그래픽을 평면으로 짓는다. canvas 2D 생성 그래픽으로, 원근 · 회전 · 깊이 없이 형태 · 흐름 · 밀도 · 결로 짓는다. 3D 엔진과 three.js는 쓰지 않는다.", ""];
+  return [];
+}
+
 /** 고른 레이아웃을 그리는 호출이 읽을 글로 편다. 견본이 그림으로 보인 배치도와 같은 값이다. */
 function layoutPrompt(layout: DesignLayoutSpec | null): string[] {
   if (!layout)
@@ -580,7 +588,7 @@ function snippetCheck(source: string, spoken = true) {
  * 첫 화면을 그리는 호출. 스타일과 레이아웃을 따로 받는다 — 사용자가 따로 고른 것이다.
  * 원문 자료 전체를 받는다. 이 사람의 일을 그림으로 만들려면 뽑아 둔 사실 몇 줄(`head`)로는 모자란다.
  */
-export function drawCall(input: { userId: string; sources: BrewPageSources; style: StyleDraft; layout: DesignLayoutSpec | null }): { spec: AiCallSpec; check(output: SnippetDraft): AiViolation[] } {
+export function drawCall(input: { userId: string; sources: BrewPageSources; style: StyleDraft; layout: DesignLayoutSpec | null; graphic?: DesignGraphic | null }): { spec: AiCallSpec; check(output: SnippetDraft): AiViolation[] } {
   const { style } = input;
   const context = sourcesContext(input.userId, input.sources);
   const prompt = [
@@ -592,6 +600,7 @@ export function drawCall(input: { userId: string; sources: BrewPageSources; styl
     `- 밀도: ${DENSITY_NAME[style.tokens.density]}.`,
     "",
     ...layoutPrompt(input.layout),
+    ...graphicPrompt(input.graphic ?? null),
     ...promptSources(context),
     ...FIRST_SCREEN,
   ].join("\n");
