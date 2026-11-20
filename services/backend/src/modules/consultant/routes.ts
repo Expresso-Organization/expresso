@@ -21,6 +21,8 @@ export function registerConsultantRoutes(app: FastifyInstance, options: {
   diagnosis(userId: string): Promise<ConsultantDiagnosis | null>;
   /** 「했어요」라고 답한 약속의 대화를 연다. 채팅을 쓸 수 없으면 null. */
   startCheckinChat(userId: string, commitment: ConsultantCommitment): Promise<string | null>;
+  /** 요금제가 먼저 연락하기를 여는가(`outreachGate`). 열지 않으면 켤 수 없고 확인할 것도 내보내지 않는다. */
+  entitled(userId: string): Promise<boolean>;
   /** 능동 제안. 먼저 연락하기와 함께 켜고 끈다. 켜지 못하면(동의 없음) 던진다. */
   proposals?: { enable(userId: string): Promise<unknown>; disable(userId: string): Promise<unknown> } | undefined;
   authenticateRequest: preHandlerHookHandler;
@@ -46,6 +48,8 @@ export function registerConsultantRoutes(app: FastifyInstance, options: {
     const input = SetConsultantOutreachSchema.safeParse(request.body);
     if (!input.success) throw new HttpStatusError(400, "invalid outreach");
     const userId = requireAuth(request).user.id;
+    // 끄기는 요금제와 무관하게 된다.
+    if (input.data.enabled && !(await options.entitled(userId))) throw new HttpStatusError(403, "consultant outreach requires an upgraded plan");
     await options.service.setOutreach(userId, input.data.enabled);
     let proposals = false;
     if (options.proposals && input.data.proposals) {
@@ -55,11 +59,16 @@ export function registerConsultantRoutes(app: FastifyInstance, options: {
     }
     return ConsultantOutreachResponseSchema.parse({ data: { enabled: input.data.enabled, proposals } });
   });
-  app.get(`${API_PREFIX}/consultant/checkins`, guard, async (request) => ConsultantCheckinsResponseSchema.parse({ data: await options.commitments.checkins(requireAuth(request).user.id) }));
+  /** 요금제가 열지 않으면 저장된 설정만 돌려주고 확인할 약속과 안부는 비운다. */
+  const checkins = async (userId: string) => {
+    const [available, stored] = await Promise.all([options.entitled(userId), options.commitments.checkins(userId)]);
+    return ConsultantCheckinsResponseSchema.parse({ data: available ? { available, ...stored } : { available, outreach: stored.outreach, today: stored.today, commitments: [], quiet: false } });
+  };
+  app.get(`${API_PREFIX}/consultant/checkins`, guard, async (request) => checkins(requireAuth(request).user.id));
   app.post(`${API_PREFIX}/consultant/quiet/dismiss`, guard, async (request) => {
     const userId = requireAuth(request).user.id;
     await options.commitments.dismissQuiet(userId);
-    return ConsultantCheckinsResponseSchema.parse({ data: await options.commitments.checkins(userId) });
+    return checkins(userId);
   });
   app.get(`${API_PREFIX}/consultant/commitments/:id`, guard, async (request) => ConsultantCommitmentResponseSchema.parse({ data: await options.commitments.get(requireAuth(request).user.id, id(request.params)) }));
   app.patch(`${API_PREFIX}/consultant/commitments/:id`, guard, async (request) => {

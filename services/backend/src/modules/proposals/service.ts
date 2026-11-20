@@ -34,7 +34,8 @@ type ProposalDependencies = {
   jobs: Pick<JobBoardApi, "list">;
   activities: Pick<ActivityApi, "list">;
   consent: Pick<ConsentApi, "require">;
-  credits: { credits(userId: string, at?: Date): Promise<{ remaining: number | null }> };
+  /** 요금제가 능동 제안을 여는가(`outreachGate`). 크레딧은 보지 않는다 — 능동 제안은 크레딧에서 빼지 않는다. */
+  entitled(userId: string): Promise<boolean>;
   /** AI가 꺼져 있으면 null이다. 그때는 실행하지 않고 그 까닭을 남긴다. */
   writer: ProposalWriter | null;
 };
@@ -65,14 +66,18 @@ function proposalView(stored: StoredProposal, at: Date): Proposal | null {
   };
 }
 
-function feedView(doc: ProposalFeedDoc | null, at: Date): ProposalFeed {
-  if (!doc) return ProposalFeedSchema.parse({ enabled: false, proposals: [], run: { ...IDLE_RUN } });
+/** 요금제가 열지 않으면(`available`이 false) 켜 두었어도 꺼진 것으로 보인다. 저장된 켜짐과 제안은 지우지 않는다 — 요금제가 오르면 그대로 다시 보인다. */
+function feedView(doc: ProposalFeedDoc | null, at: Date, available: boolean): ProposalFeed {
+  if (!doc) return ProposalFeedSchema.parse({ available, enabled: false, proposals: [], run: { ...IDLE_RUN } });
   // 끝나지 못한 실행은 실패로 보인다. 다시 받을 수 있다.
   const run: StoredProposalRun = isStale(doc.run, at) ? { ...doc.run, status: "failed", stage: null, reason: "failed", finishedAt: at } : doc.run;
+  const enabled = available && doc.enabled;
   return ProposalFeedSchema.parse({
-    enabled: doc.enabled,
-    proposals: doc.enabled ? doc.proposals.flatMap((proposal) => proposalView(proposal, at) ?? []) : [],
-    run: { ...run, startedAt: run.startedAt?.toISOString() ?? null, finishedAt: run.finishedAt?.toISOString() ?? null },
+    available,
+    enabled,
+    proposals: enabled ? doc.proposals.flatMap((proposal) => proposalView(proposal, at) ?? []) : [],
+    // 요금제가 열지 않으면 실행 상태도 내보내지 않는다 — 줄에 남은 실행을 화면이 기다리며 되풀이해 읽지 않게 한다.
+    run: available ? { ...run, startedAt: run.startedAt?.toISOString() ?? null, finishedAt: run.finishedAt?.toISOString() ?? null } : { ...IDLE_RUN },
   });
 }
 
@@ -93,7 +98,8 @@ function subjectKey(subject: { kind: string; id: string }): string {
  * 능동 제안.
  *
  * 켠 사용자에게만 돈다. 실행은 줄에 맡기고(`proposals.generate`) 워커가 `run`으로 받는다 —
- * 후보를 로직으로 고르고, 그 후보 안에서 모델이 고른 것만 저장한다. 실행 전에 동의와 남은 크레딧을 본다.
+ * 후보를 로직으로 고르고, 그 후보 안에서 모델이 고른 것만 저장한다. 실행 전에 요금제와 동의를 본다.
+ * 서비스가 먼저 실행하는 일이라 사용자의 크레딧에서 빼지 않고(`UNMETERED_CONTRACTS`), 그 대신 유료 요금제에서만 돈다.
  */
 export class ProposalService {
   readonly #deps: ProposalDependencies;
@@ -107,11 +113,16 @@ export class ProposalService {
   }
 
   async feed(userId: string, at = new Date()): Promise<ProposalFeed> {
-    return feedView(await this.#feeds.findOne({ userId }), at);
+    return feedView(await this.#feeds.findOne({ userId }), at, await this.#deps.entitled(userId));
+  }
+
+  async #requireEntitled(userId: string): Promise<void> {
+    if (!(await this.#deps.entitled(userId))) throw new HttpStatusError(403, "proactive proposals require an upgraded plan");
   }
 
   /** 켠다. 커리어 기록을 AI에 넘기는 동의가 있어야 한다. 켜면 첫 실행을 줄에 넣는다. */
   async enable(userId: string, at = new Date()): Promise<ProposalFeed> {
+    await this.#requireEntitled(userId);
     await this.#deps.consent.require(userId, "proposal_briefing");
     await this.#feeds.updateOne(
       { userId },
@@ -133,6 +144,7 @@ export class ProposalService {
 
   /** 「다시 받기」. 실행 중이면 409다. */
   async refresh(userId: string, at = new Date()): Promise<ProposalFeed> {
+    await this.#requireEntitled(userId);
     const doc = await this.#feeds.findOne({ userId });
     if (!doc?.enabled) throw new HttpStatusError(409, "proposals are not enabled");
     if (!(await this.#request(userId, "manual", at))) throw new HttpStatusError(409, "a proposal run is already in progress");
@@ -171,7 +183,8 @@ export class ProposalService {
     const today = seoulDate(at);
     const users = await this.#feeds.find({ enabled: true, [`autoRuns.${trigger}`]: { $ne: today } }, { projection: { userId: 1 } }).toArray();
     let requested = 0;
-    for (const { userId } of users) if (await this.#request(userId, trigger, at)) requested += 1;
+    // 요금제가 열지 않는 사용자는 줄에 넣지 않는다. 켜 둔 채 무료가 된 계정이 여기에 걸린다.
+    for (const { userId } of users) if (await this.#deps.entitled(userId) && await this.#request(userId, trigger, at)) requested += 1;
     return { requested };
   }
 
@@ -212,11 +225,11 @@ export class ProposalService {
     };
 
     try {
+      // 줄에 넣은 뒤 요금제가 바뀌었을 수 있다. AI를 부르기 전에 다시 본다.
+      if (!(await this.#deps.entitled(userId))) return await finish("skipped", "plan_required");
       if (!this.#deps.writer) return await finish("skipped", "ai_unavailable");
       try { await this.#deps.consent.require(userId, "proposal_briefing"); }
       catch (error) { if (error instanceof ConsentError) return await finish("skipped", "consent_required"); throw error; }
-      const { remaining } = await this.#deps.credits.credits(userId, at);
-      if (remaining !== null && remaining <= 0) return await finish("skipped", "no_credits");
 
       const [{ candidates, read }, goal] = await Promise.all([this.#candidates(userId, started, at), this.#deps.career.getJobGoal(userId)]);
       const relevant = trigger === "news" ? hasRelevantNews(candidates) : hasCandidates(candidates);

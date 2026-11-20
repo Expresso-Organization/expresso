@@ -50,10 +50,11 @@ function diagnosisForModel(diagnosis: ConsultantDiagnosis | null): AgentMemory["
   const labels = (status: string) => diagnosis.items.filter(item => item.kind !== "career" && item.status === status).map(item => item.label);
   return { assessedOn: diagnosis.assessedAt ? seoulDay(new Date(diagnosis.assessedAt)) : null, work: diagnosis.work, sampleSize: diagnosis.sampleSize, gaps: labels("gap"), unconfirmed: labels("unconfirmed"), partial: labels("partial"), confirmed: labels("confirmed").length, stale: diagnosis.stale };
 }
-function memoryForModel(profile: ConsultantProfile, digests: readonly ({ title: string; said: string[]; outcomes: string[]; lastAnswer: string } & ({ updatedAt: string } | { date: string }))[], commitments: readonly Pick<ConsultantCommitment, "id" | "title" | "dueOn">[], diagnosis: AgentMemory["diagnosis"] = null, at = new Date()): AgentMemory {
+function memoryForModel(profile: ConsultantProfile, digests: readonly ({ title: string; said: string[]; outcomes: string[]; lastAnswer: string } & ({ updatedAt: string } | { date: string }))[], commitments: readonly Pick<ConsultantCommitment, "id" | "title" | "dueOn">[], diagnosis: AgentMemory["diagnosis"] = null, checkins = false, at = new Date()): AgentMemory {
   const today = seoulDay(at);
   return {
     stage: profile.stage,
+    checkins,
     preferences: profile.preferences.map(({ id, kind, text }) => ({ id, kind, text })),
     today,
     commitments: commitments.map(({ id, title, dueOn }) => ({ id, title, dueOn, overdue: dueOn < today })),
@@ -62,7 +63,11 @@ function memoryForModel(profile: ConsultantProfile, digests: readonly ({ title: 
   };
 }
 /** 이번 달 크레딧을 읽는 자리. 요금제의 기능 표와 무관하게 남은 크레딧만 본다(`EntitlementService.credits`). */
-export interface AgentCredits { credits(userId: string, at?: Date): Promise<{ remaining: number | null }> }
+export interface AgentCredits {
+  credits(userId: string, at?: Date): Promise<{ remaining: number | null }>;
+  /** 요금제의 기능 표. 약속한 날에 먼저 묻는지(`consultant.outreach`)를 기억에 실을 때 쓴다. 없으면 묻지 않는 것으로 본다. */
+  check?(userId: string, capability: "consultant.outreach"): Promise<{ allowed: boolean }>;
+}
 /** 화면에 그대로 보이는 문장이다. 디자인 대화의 한도 안내와 같은 말로 시작한다. */
 export const CREDITS_EXHAUSTED = "이번 달 AI 크레딧을 모두 썼습니다. 다음 달에 다시 대화할 수 있습니다.";
 const view = (row: AgentConversationDoc) => { const { _id, userId: _userId, heartbeatAt: _heartbeat, ...data } = row; return AgentConversationSchema.parse({ ...data, id: _id }); };
@@ -113,7 +118,10 @@ export class AgentChatService {
   /** 실행에 넘기는 기억. 컨설턴트 프로필이 연결되지 않은 서비스(테스트 · 미리보기)는 기억을 쓰지 않는다. */
   private async memory(userId: string, conversationId: string): Promise<AgentMemory | null> {
     if (!this.consultant) return null;
-    return memoryForModel(await this.consultant.profile(userId), await this.recentDigests(userId, conversationId), await this.commitments?.open(userId) ?? [], diagnosisForModel(await this.currentDiagnosis(userId)));
+    const profile = await this.consultant.profile(userId);
+    // 약속한 날에 먼저 묻는 것은 사용자가 켰고 요금제가 열 때만이다. 계정을 찾지 못하면 묻지 않는 것으로 본다.
+    const checkins = profile.outreach === true && (await this.credits?.check?.(userId, "consultant.outreach").catch(() => null))?.allowed === true;
+    return memoryForModel(profile, await this.recentDigests(userId, conversationId), await this.commitments?.open(userId) ?? [], diagnosisForModel(await this.currentDiagnosis(userId)), checkins);
   }
   /**
    * 저장된 진단과, 다시 진단이 필요한지. 목표가 바뀌었거나 대조한 뒤에 기록이 바뀌었으면 그 까닭을 함께 낸다.
@@ -673,7 +681,7 @@ export class AgentChatService {
           try {
             const { profile, changed } = await this.consultant.applyUpdate(row.userId, update);
             const parts = [changed.stage ? `단계: ${STAGE_LABELS[changed.stage]}` : null, changed.remembered ? `조건 ${changed.remembered}개 기억` : null, changed.forgotten ? `조건 ${changed.forgotten}개 지움` : null].filter(Boolean);
-            return { summary: parts.length ? parts.join(" · ") : "이미 기억하고 있습니다.", memory: memoryForModel(profile, memory?.recentConversations ?? [], memory?.commitments ?? [], memory?.diagnosis ?? null) };
+            return { summary: parts.length ? parts.join(" · ") : "이미 기억하고 있습니다.", memory: memoryForModel(profile, memory?.recentConversations ?? [], memory?.commitments ?? [], memory?.diagnosis ?? null, memory?.checkins ?? false) };
           } catch (error) {
             if (error instanceof ConsultantLimitError) throw new AgentToolRejection([error.message]);
             throw error;

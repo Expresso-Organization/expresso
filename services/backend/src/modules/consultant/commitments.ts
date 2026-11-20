@@ -27,6 +27,8 @@ const firstCheck = (row: Pick<ConsultantCommitmentDoc, "checks" | "dueOn">) => !
 
 /** 확인 작업이 바깥에서 받는 것. 마지막 대화 시각은 대화를 가진 모듈이, 알림은 알림 모듈이 준다. */
 export interface CheckinDependencies {
+  /** 요금제가 먼저 연락하기를 여는가(`outreachGate`). 열지 않는 사용자는 건너뛴다. */
+  entitled(userId: string): Promise<boolean>;
   lastConversationAt(userId: string): Promise<Date | null>;
   notify(userId: string, subject: string | null, dedupeKey: string, at: Date): Promise<unknown>;
 }
@@ -116,9 +118,11 @@ export class ConsultantCommitments {
   async runCheckins(dependencies: CheckinDependencies, at = new Date()) {
     const today = seoulDay(at);
     const profiles = await this.profiles.find({ "outreach.enabled": true }).project<Pick<ConsultantProfileDoc, "_id" | "userId" | "outreach">>({ userId: 1, outreach: 1 }).toArray();
-    let asked = 0; let quiet = 0; let notified = 0; let failed = 0;
+    let asked = 0; let quiet = 0; let notified = 0; let failed = 0; let skipped = 0;
     for (const profile of profiles) {
       try {
+        // 켜 둔 채 무료가 된 계정은 묻지 않는다. 약속의 다음 확인일은 그대로 두어, 요금제가 오르면 그때 묻는다.
+        if (!(await dependencies.entitled(profile.userId))) { skipped += 1; continue; }
         const outreach = profile.outreach!;
         const due = await this.rows.find({ userId: profile.userId, status: "open", nextCheckOn: { $ne: null, $lte: today } }).sort({ dueOn: 1 }).toArray();
         for (const row of due) {
@@ -138,6 +142,6 @@ export class ConsultantCommitments {
         console.error(JSON.stringify({ level: "warn", event: "consultant_checkin.failed", userId: profile.userId, message: error instanceof Error ? error.message : String(error) }));
       }
     }
-    return { users: profiles.length, asked, quiet, notified, failed };
+    return { users: profiles.length, asked, quiet, notified, failed, skipped };
   }
 }

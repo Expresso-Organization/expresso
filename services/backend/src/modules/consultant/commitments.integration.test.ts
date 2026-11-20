@@ -11,7 +11,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
   const signup = async () => (await new MongoIdentityService(fixture.resource).signup({ email: `${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "약속 검증" })).user.id;
   // 서울 2026-11-20 정오. 날짜 계산은 서울 날짜로 한다.
   const day = (offset: number) => new Date(Date.UTC(2026, 10, 20 + offset, 3, 0, 0));
-  const deps = (last: Date | null = null) => ({ lastConversationAt: vi.fn(async () => last), notify: vi.fn(async () => undefined) });
+  const deps = (last: Date | null = null, entitled = true) => ({ entitled: vi.fn(async () => entitled), lastConversationAt: vi.fn(async () => last), notify: vi.fn(async () => undefined) });
   beforeAll(async () => {
     fixture = await createMongoFixture("commitments");
     commitments = new ConsultantCommitments(fixture.resource); consultant = new ConsultantService(fixture.resource);
@@ -174,5 +174,19 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     await commitments.runCheckins(dependencies, day(0));
     expect(dependencies.notify.mock.calls.filter(call => (call as unknown[])[0] === userId)).toEqual([]);
     expect((await commitments.checkins(userId, day(0))).commitments).toHaveLength(2);
+  });
+  it("요금제가 열지 않는 사용자는 켜 두었어도 묻지 않고 알리지 않는다. 요금제가 열리면 그때 묻는다", async () => {
+    const userId = await signup();
+    await consultant.setOutreach(userId, true, day(0));
+    const made = await commitments.create(userId, { title: "무료가 된 뒤의 약속", dueOn: "2026-11-20" }, null, day(0));
+    const closed = deps(day(0), false);
+    const result = await commitments.runCheckins(closed, day(0));
+    expect(result.skipped).toBeGreaterThanOrEqual(1);
+    expect(closed.notify.mock.calls.filter(call => (call as unknown[])[0] === userId)).toEqual([]);
+    expect((await commitments.checkins(userId, day(0))).commitments).toEqual([]);
+    const open = deps(day(0));
+    await commitments.runCheckins(open, day(1));
+    expect((await commitments.checkins(userId, day(1))).commitments.map(item => item.id)).toEqual([made.id]);
+    expect(open.notify.mock.calls.filter(call => (call as unknown[])[0] === userId)).toHaveLength(1);
   });
 });

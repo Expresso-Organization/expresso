@@ -341,7 +341,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const first = await service.create(memoryUser, []);
     await service.send(memoryUser, first.id, { requestId: randomUUID(), text: "주 10시간씩 8주 동안 준비할게요" });
     await done(first.id);
-    expect(seen[0]).toEqual({ stage: null, preferences: [], today: seoulDay(new Date()), commitments: [], diagnosis: null, recentConversations: [] });
+    expect(seen[0]).toEqual({ stage: null, checkins: false, preferences: [], today: seoulDay(new Date()), commitments: [], diagnosis: null, recentConversations: [] });
     // 둘째 대화: 첫 대화의 요지가 실리고, 지금 대화는 실리지 않는다.
     const second = await service.create(memoryUser, []);
     await service.send(memoryUser, second.id, { requestId: randomUUID(), text: "이제 지원할 공고를 고르고 있어요" });
@@ -360,7 +360,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect((await service.recentDigests(memoryUser)).map(item => item.conversationId)).toEqual([first.id, second.id]);
     expect(await service.recentDigests(other)).toEqual([]);
   });
-  it("약속을 잡고 닫는 도구는 바로 저장하고, 실행에 오늘과 열린 약속을 넘기며, 지난 날짜와 남의 약속은 돌려보낸다", async () => {
+  it("약속을 잡고 닫는 도구는 바로 저장하고, 실행에 오늘과 열린 약속 · 먼저 묻는지를 넘기며, 지난 날짜와 남의 약속은 돌려보낸다", async () => {
     const consultant = new ConsultantService(fixture.resource); const commitments = new ConsultantCommitments(fixture.resource);
     const identity = new MongoIdentityService(fixture.resource);
     const owner = (await identity.signup({ email: `${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "약속 검증" })).user.id;
@@ -368,6 +368,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const foreign = await commitments.create(other, { title: "남의 약속", dueOn: "2099-01-01" }, null);
     const today = seoulDay(new Date());
     const seen: NonNullable<Parameters<AgentRuntime["run"]>[0]["memory"]>[] = [];
+    const plan = { outreach: false };
     const service = new AgentChatService(fixture.resource, { run: async input => {
       seen.push(structuredClone(input.memory!));
       if (input.messages.at(-1)!.text.includes("다 했어요")) {
@@ -380,19 +381,23 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
         await input.emit({ type: "tool", tool: { id: randomUUID(), name: "약속", status: "complete", summary: commitment.title, commitment } });
       }
       await input.emit({ type: "text", text: "알겠습니다." });
-    } }, career, { get: async () => { throw new Error("없는 공고"); } }, documents, consent, new AgentCredentials(fixture.resource), new PortfolioReadService(fixture.resource), new PageService(fixture.resource), undefined, consultant, commitments);
+    } }, career, { get: async () => { throw new Error("없는 공고"); } }, documents, consent, new AgentCredentials(fixture.resource), new PortfolioReadService(fixture.resource), new PageService(fixture.resource), { credits: async () => ({ remaining: null }), check: async () => ({ allowed: plan.outreach }) }, consultant, commitments);
     services.push(service);
     const done = async (id: string) => { await expect.poll(async () => (await service.get(owner, id)).run?.status).toBe("complete"); };
     const conversation = await service.create(owner, []);
+    // 먼저 연락받기를 켰어도 요금제가 열지 않으면 컨설턴트는 먼저 묻는다고 알지 않는다.
+    await consultant.setOutreach(owner, true);
     await service.send(owner, conversation.id, { requestId: randomUUID(), text: "해커톤에 나가 볼게요" });
     await done(conversation.id);
-    expect(seen[0]).toMatchObject({ today, commitments: [] });
+    expect(seen[0]).toMatchObject({ today, commitments: [], checkins: false });
+    plan.outreach = true;
     const [open] = await commitments.open(owner);
     expect(open).toMatchObject({ title: "해커톤 지원서 내기", detail: "금요일 자정 마감", dueOn: "2099-12-31", status: "open", conversationId: conversation.id });
     expect((await service.get(owner, conversation.id)).messages.at(-1)!.tools[0]).toMatchObject({ name: "약속", commitment: { id: open!.id } });
     await service.send(owner, conversation.id, { requestId: randomUUID(), text: "다 했어요" });
     await done(conversation.id);
     expect(seen[1]!.commitments).toEqual([{ id: open!.id, title: "해커톤 지원서 내기", dueOn: "2099-12-31", overdue: false }]);
+    expect(seen[1]!.checkins).toBe(true);
     expect(await commitments.open(owner)).toEqual([]);
     expect(await commitments.open(other)).toHaveLength(1);
   });
