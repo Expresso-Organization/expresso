@@ -98,14 +98,13 @@ describe("디자인 대화의 호출", () => {
     expect(spec.prompt).toContain("첫 화면에는 수치를 두지 않는다");
     // 그래픽을 canvas · three.js로 지을 수 있다는 것과 그 쓰는 법은 시스템에 있다.
     expect(spec.system).toContain("## 그림 스크립트 — `script` 칸");
-    expect(spec.system).toContain('import * as THREE from "three"');
-    // 공들인 3D 오브젝트는 지면에 실린 MotionWeb 엔진으로 짓는다.
+    // 3D 오브젝트는 짓지 않는다 — 엔진도 three.js 형체 지침도 없다.
+    expect(spec.system).not.toContain("MotionWeb");
+    expect(spec.prompt).toContain("3D 오브젝트(도형 · 덩어리 · 구 · 결정)는 짓지도 띄우지도 않는다");
     // 3D · 입자는 효과 라이브러리에서 고른다 — 목록과 부르는 법이 시스템에 있다.
     expect(spec.system).toContain("### 효과 라이브러리");
     expect(spec.system).toContain('ExpressoEffects.mount("fog"');
     expect(spec.system).toContain("`blueprint` 블루프린트 선화");
-    expect(spec.system).toContain("await MotionWeb.create({");
-    expect(spec.system).toContain("fn shadeSurface(p: vec3f, n: vec3f, rd: vec3f, occ: f32, fres: f32) -> vec3f");
     // 문서를 흉내 내라던 지시는 없다.
     for (const gone of ["제품을 파는 랜딩 페이지가 아니라", "글이 화면의 주인", "## 짜임", "`composition`"]) expect(spec.prompt).not.toContain(gone);
     // 그래픽의 차원은 사용자가 고른다. 고르지 않았으면 적지 않는다.

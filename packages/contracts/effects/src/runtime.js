@@ -9,6 +9,7 @@
  * - 팔레트는 #rrggbb 넷. 효과마다 자기 옵션으로 옮긴다(colors 헬퍼).
  * - prefers-reduced-motion이면 첫 장면을 그린 뒤 멈춘다.
  * - 실패하면 아무것도 하지 않는다 — 지면 CSS의 첫 모습이 그대로 남는다.
+ * - 붙으면 자리(el) 안의 첫 모습(자식 요소 · el의 배경)을 감추고 data-effect를 단다. 투명 캔버스 효과 뒤로 첫 모습이 겹쳐 보이지 않게 한다.
  */
 const registry = Object.create(null);
 const reduceMotion = () => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -47,8 +48,13 @@ const api = {
       const el = options.el;
       if (!effect || !el) return null;
       if (getComputedStyle(el).position === "static") el.style.position = "relative";
+      const firstLook = [...el.children];
       const handle = effect.mount({ el, palette: colors(options.palette), values: options.values ?? {}, reduce: reduceMotion() });
-      return handle ?? null;
+      if (!handle) return null;
+      for (const child of firstLook) child.style.visibility = "hidden";
+      el.style.backgroundImage = "none";
+      el.setAttribute("data-effect", name);
+      return handle;
     } catch (error) {
       return null;
     }

@@ -5,7 +5,7 @@
  *   node scripts/build-effects.mjs
  *
  * effects/src의 런타임과 효과마다 ESM 묶음을 만든다. three는 바깥에 두고(지면의 import map이 r170 한 주소로 푼다),
- * Vanta 원본(effects/vendor/vanta, MIT)과 three 부가 모듈(MarchingCubes · RoomEnvironment, MIT)은 묶음 안에 든다.
+ * Vanta 원본(effects/vendor/vanta, MIT)은 묶음 안에 든다.
  * 만드는 것: src/page-effects.generated.ts — PAGE_EFFECT_RUNTIME · PAGE_EFFECTS · PAGE_EFFECT_CATALOG. 손으로 고치지 않는다.
  */
 import { build } from "esbuild";
@@ -19,7 +19,7 @@ const catalog = JSON.parse(readFileSync(join(root, "effects", "catalog.json"), "
 const bundle = async (entry) => {
   const result = await build({
     entryPoints: [join(root, "effects", "src", entry)], bundle: true, format: "esm", write: false,
-    // 정확히 "three"만 바깥에 둔다. esbuild의 external은 하위 경로(three/addons/…)까지 빼므로 부가 모듈이 묶음에 들지 않는다.
+    // 정확히 "three"만 바깥에 둔다. esbuild의 external은 하위 경로(three/addons/…)까지 뺀다 — 부가 모듈을 쓰는 효과가 생겨도 묶음에 들게.
     plugins: [{ name: "three-only", setup(b) { b.onResolve({ filter: /^three$/ }, () => ({ path: "three", external: true })); } }],
     legalComments: "inline", logLevel: "warning", target: "es2020",
   });
@@ -30,11 +30,7 @@ const effects = {};
 for (const item of catalog) effects[item.name] = await bundle(`${item.name}.js`);
 // Vanta 원본에는 파일마다 고지가 없다(MIT 고지는 저장소의 LICENSE.md). 묶음 머리에 고지를 붙인다 — MIT 조건.
 const vantaNotice = `/*! Vanta.js 0.5.24 · Copyright 2020 Teng Bao · MIT License · https://github.com/tengbao/vanta */\n`;
-const threeNotice = `/*! three.js examples (MarchingCubes · RoomEnvironment) r170 · Copyright 2010-2024 three.js authors · MIT License */\n`;
-for (const item of catalog) {
-  if (item.source.name.startsWith("Vanta")) effects[item.name] = vantaNotice + effects[item.name];
-  if (item.source.name.startsWith("three.js")) effects[item.name] = threeNotice + effects[item.name];
-}
+for (const item of catalog) if (item.source.name.startsWith("Vanta")) effects[item.name] = vantaNotice + effects[item.name];
 const version = createHash("sha256").update(runtime + JSON.stringify(effects)).digest("hex").slice(0, 12);
 writeFileSync(join(root, "src", "page-effects.generated.ts"), `// 생성물 — 손으로 고치지 않는다. scripts/build-effects.mjs 로 다시 만든다.
 // 출처 · 라이선스는 effects/catalog.json 과 THIRD-PARTY.md 에 있다.

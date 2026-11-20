@@ -2,7 +2,7 @@
 title: 첫 화면 3D를 3d-motion-web 엔진으로
 slug: motionweb-engine
 stage: intent
-status: accepted
+status: withdrawn
 author: 박민재
 date: 2026-11-20
 ---
@@ -39,3 +39,8 @@ SDF · 안티에일리어싱 · 톤매핑 · 실패 처리를 이미 갖췄고, 
 ## 열린 질문
 
 - 팔레트를 무엇이 정하나 → 디자인 대화에서 고른 스타일의 바탕 · 글자 · 강조 색. 엔진에는 uniform으로 넘긴다.
+
+## 철회 (2026-11-21)
+
+엔진은 SDF 오브젝트 한 덩어리를 그리는 데만 쓰였다. 라이브러리 견본을 본 사용자가 "의미없는 3D 오브젝트는 그냥 안쓰는게 더 낫겠다"고 정해,
+엔진 묶음 · 문서 싣기 · 지침을 걷어냈다. 3D는 효과 라이브러리의 배경 장과 블루프린트 선화로만 쓴다(`intent_page-effects-library.md`).

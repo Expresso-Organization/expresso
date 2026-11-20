@@ -26,3 +26,8 @@ date: 2026-11-21
 - `PAGE_SCRIPT_PROMPT`에 「효과 라이브러리」 — 목록(카탈로그에서 생성) · 부르는 법 · 팔레트 · 값.
 - `design-rules.ts` · 그래픽 차원 문단: 3D · 입자 · 인터랙티브 배경 · 상호작용 물체는 라이브러리에서 고른다. 직접 짜는 것은 canvas 2D 생성 그래픽뿐이다. 공중에 오브젝트 하나를 띄우지 않는다.
 - 판 올림: `PAGE_PROMPT_VERSION` 21, `DESIGN_CHAT_PROMPT_VERSION` 10.
+
+## 고친 범위 (2026-11-21)
+
+- 카탈로그: net · dots · fog · cells · blueprint. `metaballs.js` · `globe.js` · `vanta.globe.js` · `vanta.waves.js`를 지우고, 빌드의 three 부가 모듈 고지를 뺐다.
+- `PAGE_SCRIPT_PROMPT`: 직접 그리는 그림은 canvas 2D. three.js 형체 장면 절을 지우고 「형체를 짓거나 띄우지 않는다」를 둔다. `PAGE_PROMPT_VERSION` 22 · `DESIGN_CHAT_PROMPT_VERSION` 11.

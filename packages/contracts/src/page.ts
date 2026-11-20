@@ -1,6 +1,5 @@
 import { PageLibrarySelectionSchema } from "./page-library.js";
 import { PAGE_SCRIPT_BREAK, PAGE_SCRIPT_LIBRARY, PAGE_SCRIPT_POLICY_MARK, pageScriptPolicy, pageScriptText } from "./page-script.js";
-import { PAGE_SCRIPT_ENGINE } from "./page-engine.generated.js";
 import { PAGE_EFFECT_CATALOG, PAGE_EFFECT_RUNTIME, PAGE_EFFECTS } from "./page-effects.generated.js";
 import { z } from "zod";
 
@@ -86,10 +85,11 @@ import { MEDIA_ASSET_PATH_PREFIX } from "./media-path.js";
  * 17 — 지면이 그림 스크립트(`script`)를 싣는다. canvas · three.js 그림을 쓰는 법과 스크립트 없는 첫 모습을 알린다(2026-11-20).
  * 18 — three.js 장면의 형태 · 재질 · 빛 짝. 기본 상자를 Lambert로 늘어놓은 장면이 나왔다(같은 날 사용자 "이런 저퀄리티 박스는 쓰지 않게").
  * 19 — 3d-motion-web 엔진(MotionWeb)을 지면에 싣고 그 계약 · 재질 · 빛을 알린다(같은 날 사용자 "Build in the engine").
+ * 22 — 3D는 라이브러리의 배경 장 · 선화로만. 방울 · 지구본 효과와 MotionWeb 엔진을 걷어냈다(2026-11-21 사용자 "의미없는 3D 오브젝트는 그냥 안쓰는게 더 낫겠다").
  * 21 — 효과 라이브러리(ExpressoEffects): 3D · 입자 · 인터랙티브 배경은 검증된 효과에서 고른다(2026-11-21 사용자 "그걸 라이브러리로 흡수하도록 하고, 모델이 라이브러리를 참고하도록 하자").
  * 20 — 부분 재질은 거리로 가린다(좌표 띠로 가른 셰이더가 고리를 수평으로 잘라 칠했다) · 엔진 바탕은 스타일의 바탕색.
  */
-export const PAGE_PROMPT_VERSION = 21;
+export const PAGE_PROMPT_VERSION = 22;
 
 /**
  * 한 지면의 상한.
@@ -602,13 +602,11 @@ export function pageDocument(input: {
     .replaceAll('"', "&quot;");
   const modules = input.run && input.script ? input.script.split(PAGE_SCRIPT_BREAK).map(pageScriptText).filter(Boolean) : [];
   const importMap = JSON.stringify({ imports: { [PAGE_SCRIPT_LIBRARY.name]: PAGE_SCRIPT_LIBRARY.url } });
-  // 3D 엔진(3d-motion-web)은 쓰는 지면에만 싣는다. classic 스크립트라 뒤의 모듈보다 먼저 돌아 `window.MotionWeb`을 만든다.
-  const engine = modules.some((code) => /\bMotionWeb\b/.test(code)) ? pageScriptText(PAGE_SCRIPT_ENGINE) : "";
   // 효과 라이브러리도 부르는 효과만 싣는다. 런타임 · 효과 묶음은 모듈이라 import map으로 three를 받고, 저자 모듈보다 앞에 놓여 먼저 돈다.
   const effectNames = [...new Set(modules.flatMap((code) => [...code.matchAll(/ExpressoEffects\.mount\(\s*["'`]([a-z0-9-]+)["'`]/g)].map((m) => m[1]!)))].filter((name) => name in PAGE_EFFECTS);
   const effects = effectNames.length ? [PAGE_EFFECT_RUNTIME, ...effectNames.map((name) => PAGE_EFFECTS[name]!)].map(pageScriptText) : [];
   const policy = input.run
-    ? `<meta http-equiv="Content-Security-Policy" ${PAGE_SCRIPT_POLICY_MARK} content="${pageScriptPolicy({ scripts: [...(engine ? [engine] : []), ...(modules.length ? [importMap, ...effects, ...modules] : []), ...(input.run.extraScripts ?? [])], origin: input.run.origin, styleHosts: PAGE_ALLOWED_STYLESHEET_HOSTS })}">\n`
+    ? `<meta http-equiv="Content-Security-Policy" ${PAGE_SCRIPT_POLICY_MARK} content="${pageScriptPolicy({ scripts: [...(modules.length ? [importMap, ...effects, ...modules] : []), ...(input.run.extraScripts ?? [])], origin: input.run.origin, styleHosts: PAGE_ALLOWED_STYLESHEET_HOSTS })}">\n`
     : "";
   return `<!doctype html>
 <html lang="ko"${input.reveal === false ? ' data-reveal="none"' : ""}>
@@ -631,7 +629,7 @@ ${input.css}
 </head>
 <body>
 ${input.html}
-${engine ? `<script>${engine}</script>\n` : ""}${modules.length ? `<script type="importmap">${importMap}</script>\n${[...effects, ...modules].map((code) => `<script type="module">${code}</script>\n`).join("")}` : ""}</body>
+${modules.length ? `<script type="importmap">${importMap}</script>\n${[...effects, ...modules].map((code) => `<script type="module">${code}</script>\n`).join("")}` : ""}</body>
 </html>`;
 }
 
@@ -718,7 +716,7 @@ export function pagePolicyPrompt(options: { script?: boolean } = {}): string {
 export const PAGE_SCRIPT_PROMPT = [
   "## 그림 스크립트 — `script` 칸",
   "- `script`에는 ES 모듈 자바스크립트를 쓴다. 문서 끝에서 `<script type=\"module\">`로 돈다. 그림이 필요 없으면 비운다.",
-  `- \`import * as THREE from "three"\`로 three.js(r170 본체만, examples · addons 없음)를 쓸 수 있다. canvas 2D · WebGL을 직접 써도 된다.`,
+  "- 직접 그리는 그림은 canvas 2D로 짓는다. three.js(r170)는 아래 효과 라이브러리가 쓴다 — 스크립트에서 three.js · WebGL 장면을 직접 짓지 않는다.",
   "- 그림판은 `html`에 `<canvas>`로 두고 스크립트가 클래스로 찾는다. 스크립트는 자기 그림의 컨테이너 안만 다룬다 — 글과 마크업을 만들거나 바꾸지 않는다.",
   "- 스크립트가 돌지 않는 자리(만들어지는 중의 지면 · 축소 미리보기)가 있다. 그림판 밑에 같은 성격의 첫 모습을 CSS(배경 · 그러데이션 · 인라인 SVG)로 깔아, 스크립트 없이도 첫 화면이 서게 한다.",
   "- `matchMedia(\"(prefers-reduced-motion: reduce)\")`이면 한 장면만 그리고 멈춘다. 화면 밖에 있으면 그리기를 멈춘다(`IntersectionObserver`).",
@@ -726,45 +724,20 @@ export const PAGE_SCRIPT_PROMPT = [
   "- 바깥으로 요청할 수 없다 — `fetch` · 바깥 그림 · 바깥 글꼴 · `eval`이 막혀 있다. 그림에 쓰는 값은 스크립트 안에 적는다.",
   "",
   "### 효과 라이브러리 — 3D · 입자 · 인터랙티브 배경은 여기서 고른다",
-  "검증된 웹 효과(Vanta.js · three.js 예제, MIT)를 지면이 갖고 있다. 효과 코드를 직접 짜지 않고 이름으로 부른다. `import` 없이 바로 쓴다.",
+  "검증된 웹 효과(Vanta.js, MIT)와 블루프린트 선화를 지면이 갖고 있다. 효과 코드를 직접 짜지 않고 이름으로 부른다. `import` 없이 바로 쓴다.",
   "```js",
   "const el = document.querySelector(\".hero-art\");   // 효과가 채울 자리. 자리와 크기는 CSS로 정한다",
   "ExpressoEffects.mount(\"fog\", { el, palette: { background: \"#faf8f4\", ink: \"#241b2b\", accent: \"#5f0080\", soft: \"#c9b3d6\" }, values: { speed: 0.8 } });",
   "```",
   "- `palette`는 고른 스타일의 바탕 · 글자 · 강조색과, 바탕과 강조 사이의 옅은 색(`soft`)이다. `values`는 효과마다 아래 적힌 값만, 기록에서 계산해 넣는다.",
-  "- 효과가 실패하거나 동작 줄이기면 아무것도 그리지 않는다 — 자리(`el`) 아래에 CSS 첫 모습을 깐다. 효과는 커서에 스스로 반응하고, 화면 밖이면 멈춘다.",
-  "- 바탕에 맞는 효과만 고른다(밝은 바탕에는 `밝음`이 있는 효과). 한 화면에 효과는 하나다.",
+  "- 효과는 커서에 스스로 반응하고, 화면 밖이면 멈추고, 동작 줄이기면 첫 장면에서 멈춘다. 실패하면 아무것도 그리지 않는다.",
+  "- 이 사람의 일과 고른 레이아웃에 맞는 효과를 고른다 — 아래 「어울림」을 읽고, 일의 성격이 가장 가까운 것 하나. 어느 효과든 기본값처럼 고르지 않는다. 바탕에 맞는 효과만(밝은 바탕에는 `밝음`이 있는 효과), 한 화면에 하나.",
+  "- 첫 모습(CSS · SVG)은 자리(`el`) 안에 자식 요소나 `el`의 배경으로 둔다. 효과가 붙으면 런타임이 그것을 감추고, 실패하면 남는다.",
   ...PAGE_EFFECT_CATALOG.map((effect) => `- \`${effect.name}\` ${effect.title}(${effect.dimension.toUpperCase()} · ${effect.background.map((b) => (b === "light" ? "밝음" : "어두움")).join(" · ")}) — ${effect.look} 어울림: ${effect.use} 자리: ${effect.place}. 값: ${effect.values}`),
   "",
-  "### 라이브러리에 맞는 효과가 없을 때만 — three.js · MotionWeb 엔진으로 직접 짓는다. 공중에 오브젝트 하나를 띄우지 않는다.",
-  "",
-  "### three.js 장면 — 입자 · 선의 장, 그리고 형태 · 재질 · 빛을 함께 짓는다",
-  "- 형태와 재질의 짝을 맞춘다. 밝기는 법선이 정한다 — 법선이 계속 변하는 곡면(구 · 토러스 · 튜브 · 매듭 · 덩어리)에는 금속 · 세라믹 · 광택(`MeshPhysicalMaterial`의 metalness · roughness · clearcoat)을, 평면 다면체(상자 · 결정)에는 굴절 유리(transmission · thickness · ior)를, 선 · 입자에는 자체발광(`AdditiveBlending`)을 쓴다. 평면 다면체에 Lambert · 단색 재질을 얹으면 면마다 평평한 색판이 되어 장난감 블록으로 읽힌다.",
-  "- 같은 기본 도형을 격자 · 줄로 늘어놓지 않고, 형태 하나를 연속된 덩어리 · 흐름 · 입자 장으로 짓는다. 상자 · 기둥 배열은 높이로 값을 읽게 해 막대그래프가 된다.",
-  "- 빛은 환경에서 온다. `PMREMGenerator`로 장면 안에서 그러데이션 환경(고른 스타일의 바탕색 → 강조색)을 구워 `scene.environment`에 넣고, 강조색 쪽 림 라이트를 더한다. 주변광 하나 + 방향광 하나로 끝내면 플라스틱처럼 보인다. 바깥 HDRI는 받을 수 없다.",
-  "- 렌더러는 `antialias: true` · `toneMapping: ACESFilmicToneMapping` · `outputColorSpace: SRGBColorSpace`. 깊이는 `Fog`나 거리에 따른 색 감쇠로 낸다.",
-  "",
-  "### 3D 엔진 — MotionWeb (공들인 오브젝트 하나는 이것으로)",
-  "지면에 3d-motion-web 엔진이 있다. 레이마칭 SDF · 가장자리 안티에일리어싱 · ACES 톤매핑 · 크기 맞춤 · 동작 줄이기(시간을 멈춤)를 엔진이 맡고, 너는 형태와 재질을 WGSL로 쓴다. WebGPU를 쓴다.",
-  "```js",
-  "const canvas = document.querySelector(\".hero-art canvas\");",
-  "const FRAG = [/* WGSL 줄들 */].join(\"\\n\");",
-  "await MotionWeb.create({ canvas, fragment: FRAG, seed: 2.4,",
-  "  uniforms: { base: [r, g, b], glow: [r, g, b] },   // 고른 스타일의 색, 0~1",
-  "  camera: (scroll, wide) => [0, 0, -5 * (1.42 - 0.42 * wide)],",
-  "  onError: () => {} });   // WebGPU가 없거나 실패하면 아무것도 하지 않는다 — CSS 첫 모습이 남는다",
-  "```",
-  "- 계약(WGSL): `fn map(p: vec3f) -> f32` 거리장(필수) · `fn shadeSurface(p: vec3f, n: vec3f, rd: vec3f, occ: f32, fres: f32) -> vec3f` 재질과 빛(필수) · `fn background(uv: vec2f) -> vec3f`(선택, uv는 -1~1 · y가 위). 반사 환경은 직접 `fn env(d: vec3f) -> vec3f`로 짓고 shadeSurface에서 부른다.",
-  "- 엔진이 주는 값: `u.time` 초 · `u.seed` · `u.noiseSeed` · `u.wide` 화면비 0~1 · `u.scroll` 스크롤 0~1, 그리고 `uniforms`로 넘긴 이름(`u.base` · `u.glow`).",
-  "- 헬퍼: hg_sdf — `fSphere(p, r)` · `fBox(p, b)` · `fTorus(p, small, large)` · `fCapsule` · `fOctahedron` · `fDodecahedron` · `fIcosahedron` · `fOpUnionRound(a, b, r)` · `fOpUnionSoft` · `pModPolar` · `pMirror` · `gmod`. wgsl-std — `perlin3d` · `simplex3d` · `fbmSimplex3d`(-1~1) · `hash3` · `saturate` · `rotate2d`, 엔진의 `rot2(a)` · `softShadow(ro, rd)`.",
-  "- 형태 × 재질: 곡면(구 · 토러스 · 매듭 · 덩어리)은 크롬 · 액체 금속 · 세라믹, 평면 다면체는 굴절 유리만(반사만 얹으면 면마다 단색 블록), 선 · 와이어는 자체발광.",
-  "- 재질: 검은 크롬 — 고유색 0.02 이하, `F = 0.042 + 0.958 * fres`, `env(reflect(rd, n)) * F`에 `u.glow * fres * 0.4`. 액체 금속 — `F = 0.6 + 0.4 * fres`, 반사만. 서리 유리(곡면) — 반사 방향에 `(hash3(p * 40.0) - 0.5) * 0.28`, 두께 빛 `u.glow * pow(1.0 - fres, 1.6)`. 무광 세라믹 — `u.base * (0.14 + 확산 * softShadow)`, 림만 `pow(fres, 2.2)`. 자체발광 — `u.glow * (1.4 + pow(fres, 2.0) * 3.2)`.",
-  "- 빛은 `env(d)`가 정한다: 스튜디오 스트립 — 방위각 `az = atan2(d.z, d.x)`만 좁혀 `pow(max(0.0, cos(az - φ)), 40~110)`(긴 줄기), 색은 스트립으로 넣는다(표면을 칠하면 플라스틱). 키+림 — 흰 키 하나 + `u.glow` 림. 컬러 젤 — 두 색을 반대 방위에. 그라디언트 돔 — 무광 재질용. 앰비언트 `vec3f(0.01)`을 남긴다.",
-  "- 형체는 화면 한가운데에 모으지 않는다(글과 맞물리는 쪽에 둔다 · 가운데에 모으면 느려진다). 카메라 식은 `camera` 한 곳에만 쓴다.",
-  "- 한 부분만 다른 재질로 칠하려면(지금의 일인 고리 하나를 빛나게 하는 등) 맞은 지점이 어느 부분인지 거리로 가린다 — `map`과 같은 식으로 부분마다 거리를 재 가장 가까운 것의 번호를 돌려주는 `fn partOf(p: vec3f) -> i32`를 두고 `shadeSurface`에서 부른다. `p.y` 같은 좌표 띠로 가르면 부분이 겹치는 높이에서 형체가 수평으로 잘린 것처럼 칠해진다.",
-  "- `background`는 지면의 바탕과 이어지게 `pageColor(u.base)`를 돌려준다(`u.base`는 지면 바탕색). 엔진은 배경까지 톤매핑하므로 `u.base`를 그대로 돌려주면 회색으로 눌린다 — `pageColor`가 그 역을 맞춰 준다. 명도만 살짝 바꾼 결은 `pageColor(u.base * 0.98)`처럼 쓰고, 다른 색의 번짐(회색 원 등)은 두지 않는다.",
-  "- WGSL 함정: 스위즐에 대입할 수 없다(`p.xz = …` 대신 새 벡터) · 오버로딩 · 삼항 없음(`select(거짓, 참, 조건)`) · `mod` 대신 `gmod` · `atan2` · 암시적 형변환 없음(`vec3f(0.0)` · `f32(i)`) · 다시 대입할 값은 `var` · `fwidth`는 분기 밖 · `__`로 시작하는 이름 금지 · `smin`을 쓰면 거리를 줄여 돌려준다(`* 0.6`).",
-  "- 입자 · 선이 흩어진 장(場)은 three.js로 짓는다.",
+  "### 라이브러리에 맞는 효과가 없을 때 — canvas 2D로 평면 그래픽을 짓는다",
+  "- 3D는 위 라이브러리의 효과로만 쓴다. 형체(도형 · 덩어리 · 구 · 결정 · 오브젝트)를 짓거나 공중에 띄우지 않는다 — 이 사람의 일과 관계없는 오브젝트는 장식으로 읽힌다.",
+  "- 맞는 3D 효과가 없으면 canvas 2D로 형태 · 흐름 · 밀도 · 결을 짓는다.",
 ].join("\n");
 
 /**

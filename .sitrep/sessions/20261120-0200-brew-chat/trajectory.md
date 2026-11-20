@@ -294,3 +294,13 @@
 - `scripts/build-effects.mjs`(esbuild, three만 바깥) → `page-effects.generated.ts`. `pageDocument`가 `ExpressoEffects.mount("이름"`을 찾아 런타임 + 그 효과만 모듈로 싣고 해시를 정책에
 - 갤러리(밝음 · 어두움 × 가만히 · 커서): Vanta NET · GLOBE가 r125에서 없어진 THREE.VertexColors로 선 색을 잃음 → 원본에서 고침(머리에 기록). 투명 캔버스로 경계 사각형 제거. 후광은 팔레트를 따르지 않아 뺌. 바람 BIRDS · 구름 CLOUDS2 · 링 RINGS · 파도 WAVES는 비호환 · 팔레트 무시 · 밝은 바탕 회색으로 뺌
 - 지침(PAGE_PROMPT_VERSION 21 · DESIGN_CHAT_PROMPT_VERSION 10): 3D · 입자 · 인터랙티브 배경은 라이브러리에서 고른다, 공중에 오브젝트 하나 금지
+
+### ~03:40 · 완료 · 첫 모습 감춤 · 효과 고르기 지침
+- 첫 그리기 세 장이 모두 메타볼이고 잘림 · CSS 첫 모습과 겹침 → 런타임이 붙은 뒤 자리의 첫 모습을 감춤, 효과마다 「어울림」을 일의 성격으로 다시 씀, 「기본값처럼 고르지 않는다」
+- 다시 그리기: 블루프린트 · 블루프린트 · 점 격자, 콘솔 오류 0
+
+### ~04:00 · 폐기 · 3D 오브젝트 효과와 MotionWeb 엔진 (T13)
+- 사용자: "이미지로 보는데 너무 끔찍하네. 의미없는 3D 오브젝트는 그냥 안쓰는게 더 낫겠다"
+- 지움: `metaballs.js` · `globe.js` · `vanta.globe.js` · `vanta.waves.js` · `page-engine.generated.ts` · `vendor-motionweb.mjs`, `pageDocument`의 엔진 싣기, 지침의 three.js 형체 · 엔진 절
+- 지침(PAGE_PROMPT_VERSION 22 · DESIGN_CHAT_PROMPT_VERSION 11): 3D는 배경 장(입자 그물 · 점 격자)과 블루프린트 선화만, 직접 그림은 canvas 2D
+- 검사: typecheck 통과 · test 통과(계약 129 · 백엔드 702 · 웹 518)
