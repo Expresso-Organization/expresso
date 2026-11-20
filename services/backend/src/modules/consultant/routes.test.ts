@@ -20,14 +20,14 @@ function setup(options: { proposals?: "ok" | "refused" | "none"; chat?: string |
   const startCheckinChat = vi.fn(async () => options.chat === undefined ? conversation : options.chat);
   const proposals = options.proposals === "none" ? undefined : { enable: vi.fn(async () => { if (options.proposals === "refused") throw new Error("동의가 필요합니다."); }), disable: vi.fn(async () => undefined) };
   const app = Fastify();
-  registerConsultantRoutes(app, { service, commitments, digests: async () => [], startCheckinChat, proposals, authenticateRequest: async req => { req.auth = { sessionId: "session", user: { id: user, email: "test@example.com", displayName: "test", planCode: "free", emailVerifiedAt: null, role: "user", impersonation: null }, owner: { userId: user, displayName: "test", role: "user" } }; } });
+  registerConsultantRoutes(app, { service, commitments, digests: async () => [], diagnosis: async () => null, startCheckinChat, proposals, authenticateRequest: async req => { req.auth = { sessionId: "session", user: { id: user, email: "test@example.com", displayName: "test", planCode: "free", emailVerifiedAt: null, role: "user", impersonation: null }, owner: { userId: user, displayName: "test", role: "user" } }; } });
   return { app, service, commitments, startCheckinChat, proposals };
 }
 
 describe("컨설턴트의 약속과 연락", () => {
   it("기억에는 먼저 연락하기 설정과 열린 약속이 함께 실린다", async () => {
     const { app } = setup();
-    expect((await app.inject({ method: "GET", url: "/v1/consultant/memory" })).json().data).toEqual({ ...profile, commitments: [commitment], recentConversations: [] });
+    expect((await app.inject({ method: "GET", url: "/v1/consultant/memory" })).json().data).toEqual({ ...profile, commitments: [commitment], diagnosis: null, recentConversations: [] });
     expect((await app.inject({ method: "GET", url: "/v1/consultant/checkins" })).json().data).toEqual(checkins);
     expect((await app.inject({ method: "GET", url: `/v1/consultant/commitments/${commitment.id}` })).json().data).toEqual(commitment);
     await app.close();

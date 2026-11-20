@@ -12,6 +12,7 @@ import { PlanCard } from "./PlanCard";
 import { ReplanDraftCard } from "./ReplanDraftCard";
 import { PageEditCard } from "./PageEditCard";
 import { CommitmentCard } from "./CommitmentCard";
+import { DiagnosisCard } from "./DiagnosisCard";
 import { TOOL_PARTS, isBelowTool, toolPartFor, type ToolPartContext } from "./tool-parts";
 
 afterEach(cleanup);
@@ -123,5 +124,20 @@ describe("대화 속 화면의 등록표", () => {
     // 약속을 닫거나 옮긴 호출은 카드가 없다 — 작업 흔적에 요약만 남는다.
     expect(toolPartFor(tool("약속 갱신"))).toBeUndefined();
     expect(isBelowTool(tool("약속 갱신"))).toBe(false);
+  });
+  it("목표 진단은 답변 글 아래에 진단 카드를 그리고, 집계만 한 호출은 작업 흔적에 요약만 남는다", () => {
+    const pending = tool("목표 진단", {}, "running");
+    expect(isBelowTool(pending)).toBe(true);
+    const { container, rerender } = render(<>{toolPartFor(pending)!.render(pending, context())}</>);
+    expect(screen.getByRole("status").textContent).toBe("기록과 대조한 결과를 정리하고 있습니다.");
+    const failed = tool("목표 진단", {}, "failed");
+    rerender(<>{toolPartFor(failed)!.render(failed, context())}</>);
+    expect(container.firstChild).toBeNull();
+    const diagnosis = { work: "백엔드 개발자", family: "백엔드", basis: "family", focus: null, level: null, sampleSize: 66, companyCount: 15, interestedCount: 0, small: false, summary: "요약", items: [], demandAt: "2026-11-20T00:00:00.000Z", assessedAt: "2026-11-20T00:00:00.000Z", stale: null };
+    const made = element(tool("목표 진단", { diagnosis }));
+    expect(made.type).toBe(DiagnosisCard);
+    expect(made.props).toEqual({ diagnosis });
+    expect(toolPartFor(tool("목표 요건 집계"))).toBeUndefined();
+    expect(isBelowTool(tool("목표 요건 집계"))).toBe(false);
   });
 });

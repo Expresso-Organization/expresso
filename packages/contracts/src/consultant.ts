@@ -99,6 +99,72 @@ export const SetConsultantOutreachSchema = z.strictObject({
 /** `proposals`는 능동 제안이 함께 켜졌는지다. 커리어 기록의 AI 사용 동의가 없으면 켜지지 않는다. */
 export const ConsultantOutreachResponseSchema = z.strictObject({ data: z.strictObject({ enabled: z.boolean(), proposals: z.boolean() }) });
 
+/**
+ * 진단 — 구직 목표가 요구하는 것과 내 기록의 대조.
+ *
+ * 요건은 목표와 같은 직군의 실제 공고에서 센다(`GoalDemandSchema`). 건수는 「그 표현이 나온 공고의 수」다.
+ * 컨설턴트가 항목마다 기록에서 근거를 찾아 상태를 매기고, 서버가 인용이 기록에 있는지 확인한다.
+ */
+export const DemandKindSchema = z.enum(["technology", "experience", "career", "qualification"]);
+export const CONSULTANT_DIAGNOSIS_ITEM_LIMIT = 14;
+/** 요건 한 줄. `id`는 `technology:kubernetes`처럼 사전의 항목을 가리키는 고정된 이름이다. */
+export const DemandItemSchema = z.strictObject({
+  id: z.string().min(1).max(80),
+  kind: DemandKindSchema,
+  label: z.string().min(1).max(80),
+  /** 이 요건이 나온 공고의 수. 표본의 수(`sampleSize`)를 넘지 않는다. */
+  count: z.number().int().nonnegative(),
+});
+const demandShape = {
+  /** 집계할 때의 구직 목표(하고 싶은 일). */
+  work: z.string().max(300),
+  /** 목표의 글이 분류된 직군. 분류되지 않았으면 null이고 목표의 글로 찾았다(`basis: "keyword"`). */
+  family: z.string().max(40).nullable(),
+  basis: z.enum(["family", "keyword"]),
+  /** 표본을 좁힌 기술. 목표의 글에 기술 이름이 있고 그 기술이 나온 공고가 충분하면 그 공고들만 본다. */
+  focus: z.string().max(80).nullable(),
+  /** 신입 · 주니어 목표면 경력 2년 이하(또는 연차를 적지 않은) 공고로 좁힌다. */
+  level: z.enum(["entry"]).nullable(),
+  /** 표본이 된 공고의 수. */
+  sampleSize: z.number().int().nonnegative(),
+  /** 표본에 든 회사의 수. 한 회사의 공고는 10건까지만 표본에 넣는다. */
+  companyCount: z.number().int().nonnegative(),
+  /** 표본에 든 관심 공고의 수. */
+  interestedCount: z.number().int().nonnegative(),
+  /** 표본이 적다(5건 미만). 건수로 말하기 어렵다. */
+  small: z.boolean(),
+};
+export const GoalDemandSchema = z.strictObject({ ...demandShape, items: z.array(DemandItemSchema).max(CONSULTANT_DIAGNOSIS_ITEM_LIMIT) });
+/** 확인됨(기록에 근거가 있다) · 일부 확인됨 · 미확인(기록에 없고 아직 묻지 않았다) · 부족(해 본 적이 없다고 사용자가 말했다). */
+export const DiagnosisStatusSchema = z.enum(["confirmed", "partial", "unconfirmed", "gap"]);
+const diagnosisEvidenceShape = { recordId: UuidSchema, quote: z.string().trim().min(1).max(600) };
+export const DiagnosisItemSchema = DemandItemSchema.extend({
+  status: DiagnosisStatusSchema,
+  evidence: z.array(z.strictObject({ ...diagnosisEvidenceShape, recordTitle: z.string().max(200) })).max(3),
+  note: z.string().max(300),
+});
+export const ConsultantDiagnosisSchema = z.strictObject({
+  ...demandShape,
+  /** 컨설턴트가 쓴 진단의 한 줄 요약. 아직 대조하지 않았으면 빈 글이다. */
+  summary: z.string().max(600),
+  items: z.array(DiagnosisItemSchema).max(CONSULTANT_DIAGNOSIS_ITEM_LIMIT),
+  demandAt: TimestampSchema,
+  /** 기록과 대조한 때. 집계만 하고 아직 대조하지 않았으면 null. */
+  assessedAt: TimestampSchema.nullable(),
+  /** 다시 진단이 필요한 까닭. 목표가 바뀌었거나(`goal`), 대조한 뒤에 기록이 바뀌었다(`records`). */
+  stale: z.enum(["goal", "records"]).nullable(),
+});
+/** 에이전트가 `record_diagnosis`에 넣는 것. 적지 않은 항목은 앞선 상태를 둔다. */
+export const AgentDiagnosisInputSchema = z.strictObject({
+  summary: z.string().trim().min(1).max(600).describe("진단의 한 줄 요약. 표본 수와 가장 큰 부족한 점을 적는다."),
+  items: z.array(z.strictObject({
+    itemId: z.string().min(1).max(80).describe("read_goal_demand가 돌려준 항목의 id."),
+    status: DiagnosisStatusSchema.describe("confirmed · partial은 기록의 근거가 있을 때만. gap은 사용자가 해 본 적이 없다고 답한 뒤에만."),
+    evidence: z.array(z.strictObject(diagnosisEvidenceShape)).max(3).default([]).describe("근거 기록의 id와 그 기록에서 그대로 옮긴 인용."),
+    note: z.string().trim().max(300).default("").describe("판단의 까닭 한 줄. 없으면 비운다."),
+  })).min(1).max(CONSULTANT_DIAGNOSIS_ITEM_LIMIT),
+});
+
 export const ConsultantMemorySchema = z.strictObject({
   stage: ConsultantStageSchema.nullable(),
   /** 단계를 마지막으로 정한 쪽. 아직 없으면 null. */
@@ -109,6 +175,8 @@ export const ConsultantMemorySchema = z.strictObject({
   outreach: z.boolean().nullable(),
   /** 열린 약속. 날짜가 이른 순서. */
   commitments: z.array(ConsultantCommitmentSchema).max(CONSULTANT_COMMITMENT_LIMIT),
+  /** 저장된 진단. 아직 진단하지 않았으면 null. */
+  diagnosis: ConsultantDiagnosisSchema.nullable(),
   recentConversations: z.array(ConversationDigestSchema).max(5),
 });
 export const ConsultantMemoryResponseSchema = z.strictObject({ data: ConsultantMemorySchema });
@@ -121,6 +189,13 @@ export const AgentMemoryUpdateInputSchema = z.strictObject({
   forget: z.array(UuidSchema).max(5).optional().describe("사용자가 거둔 조건의 id(memory.preferences의 id)"),
 });
 
+export type DemandKind = z.infer<typeof DemandKindSchema>;
+export type DemandItem = z.infer<typeof DemandItemSchema>;
+export type GoalDemand = z.infer<typeof GoalDemandSchema>;
+export type DiagnosisStatus = z.infer<typeof DiagnosisStatusSchema>;
+export type DiagnosisItem = z.infer<typeof DiagnosisItemSchema>;
+export type ConsultantDiagnosis = z.infer<typeof ConsultantDiagnosisSchema>;
+export type AgentDiagnosisInput = z.infer<typeof AgentDiagnosisInputSchema>;
 export type ConsultantStage = z.infer<typeof ConsultantStageSchema>;
 export type ConsultantPreference = z.infer<typeof ConsultantPreferenceSchema>;
 export type ConversationDigest = z.infer<typeof ConversationDigestSchema>;

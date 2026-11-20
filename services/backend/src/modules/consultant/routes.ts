@@ -1,4 +1,4 @@
-import { API_PREFIX, CommitmentCheckinAnswerSchema, CommitmentCheckinResultSchema, ConsultantCheckinsResponseSchema, ConsultantCommitmentResponseSchema, ConsultantMemoryResponseSchema, ConsultantOutreachResponseSchema, SetConsultantOutreachSchema, SetConsultantStageSchema, UpdateCommitmentSchema, UuidSchema, type ConsultantCommitment, type ConversationDigest } from "@expresso/contracts";
+import { API_PREFIX, CommitmentCheckinAnswerSchema, CommitmentCheckinResultSchema, ConsultantCheckinsResponseSchema, ConsultantCommitmentResponseSchema, ConsultantMemoryResponseSchema, ConsultantOutreachResponseSchema, SetConsultantOutreachSchema, SetConsultantStageSchema, UpdateCommitmentSchema, UuidSchema, type ConsultantCommitment, type ConsultantDiagnosis, type ConversationDigest } from "@expresso/contracts";
 import type { FastifyInstance, preHandlerHookHandler } from "fastify";
 import { z } from "zod";
 
@@ -17,6 +17,8 @@ export function registerConsultantRoutes(app: FastifyInstance, options: {
   service: Pick<ConsultantApi, "profile" | "setStage" | "removePreference" | "setOutreach">;
   commitments: Pick<ConsultantCommitmentApi, "open" | "get" | "update" | "answer" | "checkins" | "dismissQuiet">;
   digests(userId: string): Promise<ConversationDigest[]>;
+  /** 저장된 진단과 다시 진단이 필요한지. 목표와 기록을 읽는 대화 모듈이 판단한다. */
+  diagnosis(userId: string): Promise<ConsultantDiagnosis | null>;
   /** 「했어요」라고 답한 약속의 대화를 연다. 채팅을 쓸 수 없으면 null. */
   startCheckinChat(userId: string, commitment: ConsultantCommitment): Promise<string | null>;
   /** 능동 제안. 먼저 연락하기와 함께 켜고 끈다. 켜지 못하면(동의 없음) 던진다. */
@@ -25,7 +27,7 @@ export function registerConsultantRoutes(app: FastifyInstance, options: {
 }) {
   const guard = { preHandler: options.authenticateRequest };
   const id = (params: unknown) => { const parsed = IdParams.safeParse(params); if (!parsed.success) throw new HttpStatusError(400, "invalid id"); return parsed.data.id; };
-  const memory = async (userId: string) => ConsultantMemoryResponseSchema.parse({ data: { ...(await options.service.profile(userId)), commitments: await options.commitments.open(userId), recentConversations: await options.digests(userId) } });
+  const memory = async (userId: string) => ConsultantMemoryResponseSchema.parse({ data: { ...(await options.service.profile(userId)), commitments: await options.commitments.open(userId), diagnosis: await options.diagnosis(userId), recentConversations: await options.digests(userId) } });
   app.get(`${API_PREFIX}/consultant/memory`, guard, async (request) => memory(requireAuth(request).user.id));
   app.put(`${API_PREFIX}/consultant/stage`, guard, async (request) => {
     const input = SetConsultantStageSchema.safeParse(request.body);

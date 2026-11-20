@@ -1,0 +1,16 @@
+/* 목표 진단 카드 — 틀은 요건 대조 · 보완점 카드(ToolCard)와 같고, 빈도 막대와 상태 표시만 더한다. */
+.card { margin-top: 10px; max-width: 560px; }
+.sample { margin: 8px 0 0; font-size: var(--ex-text-2xs); line-height: var(--ex-leading-relaxed); color: var(--ex-fg-muted); }
+.small { margin: 6px 0 0; font-size: var(--ex-text-2xs); line-height: var(--ex-leading-relaxed); color: var(--ex-fg-muted); }
+.muted { color: var(--ex-fg-subtle); }
+.kind { margin-left: 6px; font-size: var(--ex-text-3xs); color: var(--ex-fg-subtle); }
+.frequency { flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; margin-top: 2px; }
+.bar { display: block; width: 44px; height: 4px; border-radius: var(--ex-radius-pill); background: var(--ex-bg-tint-strong); overflow: hidden; }
+.bar > span { display: block; height: 100%; border-radius: var(--ex-radius-pill); background: var(--ex-accent); }
+.count { min-width: 46px; font-family: var(--ex-font-brand); font-size: var(--ex-text-3xs); color: var(--ex-fg-muted); text-align: right; white-space: nowrap; }
+.status { flex-shrink: 0; min-width: 38px; margin-top: 1px; padding: 1px 6px; border-radius: var(--ex-radius-pill); font-size: var(--ex-text-3xs); text-align: center; white-space: nowrap; }
+.status[data-status="confirmed"] { background: var(--ex-status-success-surface); color: var(--ex-status-success-text); }
+.status[data-status="partial"] { background: var(--ex-status-warning-surface); color: var(--ex-status-warning-text); }
+.status[data-status="unconfirmed"] { background: var(--ex-bg-tint); color: var(--ex-fg-muted); }
+.status[data-status="gap"] { background: var(--ex-status-danger-surface); color: var(--ex-status-danger-text); }
+.pending { margin: 10px 0 0; font-family: var(--ex-font-ui); font-size: var(--ex-text-xs); color: var(--ex-fg-muted); }

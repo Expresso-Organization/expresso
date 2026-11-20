@@ -33,7 +33,7 @@ export default async function GoalPage() {
             <h1 className={styles.title}>어떤 자리를 목표로 하고 계신가요?</h1>
             <p className={styles.lede}>익스프레소가 공고와 활동을 권하고 기록과 포트폴리오를 살필 때 이 목표를 기준으로 삼습니다. 언제든 고칠 수 있습니다.</p>
             <GoalEditor goal={goal} />
-            {memory ? <ProgressSections memory={memory} commitments={memory.commitments.map(item => ({ id: item.id, title: item.title, due: SEOUL_DATE.format(new Date(`${item.dueOn}T00:00:00+09:00`)), overdue: item.dueOn < today, href: item.conversationId ? `/home?chat=${item.conversationId}` : null }))} conversations={memory.recentConversations.map(item => ({ id: item.conversationId, title: item.title, date: SEOUL_DATE.format(new Date(item.updatedAt)), outcomes: item.outcomes.slice(-3) }))} /> : null}
+            {memory ? <ProgressSections memory={memory} diagnosis={memory.diagnosis} commitments={memory.commitments.map(item => ({ id: item.id, title: item.title, due: SEOUL_DATE.format(new Date(`${item.dueOn}T00:00:00+09:00`)), overdue: item.dueOn < today, href: item.conversationId ? `/home?chat=${item.conversationId}` : null }))} conversations={memory.recentConversations.map(item => ({ id: item.conversationId, title: item.title, date: SEOUL_DATE.format(new Date(item.updatedAt)), outcomes: item.outcomes.slice(-3) }))} /> : null}
           </div>
         </div>
       </AppBody>

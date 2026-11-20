@@ -18,7 +18,7 @@ async function connectTools(overrides: Partial<AgentInput> = {}) {
   await client.connect(clientSide);
   return { client, emit };
 }
-const base = () => ({ userId: "00000000-0000-4000-8000-0000000000aa", records: { list: vi.fn(async () => ({ categories: [], records: [] })), read: vi.fn(async () => []) }, review: vi.fn(), saveRecord: vi.fn(), recordCategories: [], askForm: vi.fn(), jobGoal: null, goalDraft: vi.fn(), gapReview: vi.fn(), planDraft: vi.fn(), replanDraft: vi.fn(), readPlan: vi.fn(), propose: vi.fn(), page: { read: vi.fn(), edit: vi.fn() }, askChoice: vi.fn(), memory: null, updateMemory: vi.fn(), makeCommitment: vi.fn(), updateCommitment: vi.fn() });
+const base = () => ({ userId: "00000000-0000-4000-8000-0000000000aa", records: { list: vi.fn(async () => ({ categories: [], records: [] })), read: vi.fn(async () => []) }, review: vi.fn(), saveRecord: vi.fn(), recordCategories: [], askForm: vi.fn(), jobGoal: null, goalDraft: vi.fn(), gapReview: vi.fn(), planDraft: vi.fn(), replanDraft: vi.fn(), readPlan: vi.fn(), propose: vi.fn(), page: { read: vi.fn(), edit: vi.fn() }, askChoice: vi.fn(), memory: null, updateMemory: vi.fn(), makeCommitment: vi.fn(), updateCommitment: vi.fn(), goalDemand: vi.fn(), recordDiagnosis: vi.fn(), appendToRecord: vi.fn() });
 describe("Claude 채팅 실행 어댑터", () => {
   it("제품 도구만 노출하고 부분 텍스트만 한 번 전달한다", async () => {
     const events: AgentEvent[] = [];
@@ -30,7 +30,7 @@ describe("Claude 채팅 실행 어댑터", () => {
     await new ClaudeAgentRuntime().run({ messages: [], context: [], signal: new AbortController().signal, emit: async event => { events.push(event); }, ...base() });
     expect(events).toEqual([{ type: "text", text: "안녕하세요" }]);
     expect(sdk.query.mock.lastCall![0].options).toMatchObject({ tools: [], settingSources: [], strictMcpConfig: true, persistSession: false, permissionMode: "dontAsk" });
-    expect(sdk.query.mock.lastCall![0].options.allowedTools).toEqual(["mcp__expresso__propose_record_edit", "mcp__expresso__list_career_records", "mcp__expresso__read_career_records", "mcp__expresso__record_requirement_review", "mcp__expresso__save_record", "mcp__expresso__propose_job_goal_update", "mcp__expresso__record_gap_review", "mcp__expresso__propose_preparation_plan", "mcp__expresso__read_preparation_plan", "mcp__expresso__propose_replan", "mcp__expresso__read_page_element", "mcp__expresso__edit_page_element", "mcp__expresso__ask_choice", "mcp__expresso__ask_form", "mcp__expresso__update_memory", "mcp__expresso__make_commitment", "mcp__expresso__update_commitment"]);
+    expect(sdk.query.mock.lastCall![0].options.allowedTools).toEqual(["mcp__expresso__propose_record_edit", "mcp__expresso__list_career_records", "mcp__expresso__read_career_records", "mcp__expresso__record_requirement_review", "mcp__expresso__save_record", "mcp__expresso__propose_job_goal_update", "mcp__expresso__record_gap_review", "mcp__expresso__propose_preparation_plan", "mcp__expresso__read_preparation_plan", "mcp__expresso__propose_replan", "mcp__expresso__read_page_element", "mcp__expresso__edit_page_element", "mcp__expresso__ask_choice", "mcp__expresso__ask_form", "mcp__expresso__update_memory", "mcp__expresso__make_commitment", "mcp__expresso__update_commitment", "mcp__expresso__read_goal_demand", "mcp__expresso__record_diagnosis", "mcp__expresso__append_to_record"]);
   });
   it("중단 신호를 SDK에 전달한다", async () => {
     const controller = new AbortController(); let stopped = false;
@@ -205,7 +205,7 @@ describe("Claude 채팅 실행 어댑터", () => {
     expect(await hook()).toEqual({});
   });
   it("기억을 프롬프트에 자료로 싣고, 기억 갱신은 요약만 남기며 빈 입력은 돌려보낸다", async () => {
-    const memory = { stage: "preparing" as const, preferences: [{ id: "00000000-0000-4000-8000-000000000031", kind: "avoid" as const, text: "야근이 잦은 곳" }], today: "2026-11-20", commitments: [{ id: "00000000-0000-4000-8000-000000000032", title: "해커톤 지원서 내기", dueOn: "2026-11-19", overdue: true }], recentConversations: [{ title: "준비 계획", date: "2026-11-19", said: ["계획을 세워 줘"], outcomes: ["준비 계획 승인: 백엔드 준비 (주 10시간 · 8주)"], lastAnswer: "계획을 저장했습니다." }] };
+    const memory = { stage: "preparing" as const, preferences: [{ id: "00000000-0000-4000-8000-000000000031", kind: "avoid" as const, text: "야근이 잦은 곳" }], today: "2026-11-20", commitments: [{ id: "00000000-0000-4000-8000-000000000032", title: "해커톤 지원서 내기", dueOn: "2026-11-19", overdue: true }], diagnosis: { assessedOn: "2026-11-18", work: "백엔드 개발자", sampleSize: 66, gaps: ["Kafka"], unconfirmed: ["Kubernetes"], partial: [], confirmed: 3, stale: null }, recentConversations: [{ title: "준비 계획", date: "2026-11-19", said: ["계획을 세워 줘"], outcomes: ["준비 계획 승인: 백엔드 준비 (주 10시간 · 8주)"], lastAnswer: "계획을 저장했습니다." }] };
     const updateMemory = vi.fn(async () => ({ summary: "단계: 지원 · 조건 1개 기억", memory: { ...memory, stage: "applying" as const } }));
     const { client, emit } = await connectTools({ memory, updateMemory });
     expect(JSON.parse(sdk.query.mock.lastCall![0].prompt)).toMatchObject({ memory });
@@ -241,6 +241,37 @@ describe("Claude 채팅 실행 어댑터", () => {
     expect((await client.callTool({ name: "update_commitment", arguments: { commitmentId: commitment.id } })).isError).toBe(true);
     expect(updateCommitment).toHaveBeenCalledTimes(1);
     expect(conversationForModel([{ id: "00000000-0000-4000-8000-000000000072", role: "assistant", text: "", createdAt: "2026-11-20T00:00:00.000Z", tools: [{ id: "c", name: "약속", status: "complete", summary: "약속", commitment }] }])[0]!.tools).toEqual([{ name: "약속", summary: "약속", commitment: { id: commitment.id, title: commitment.title, dueOn: commitment.dueOn } }]);
+  });
+  it("요건 집계는 표본과 항목을 모델에 돌려주고, 진단을 저장하면 진단 카드 결과를 남긴다. 돌려보낸 사유는 모델에 그대로 전한다", async () => {
+    const item = (id: string, label: string, count: number, status: "confirmed" | "partial" | "unconfirmed" | "gap" = "unconfirmed") => ({ id, kind: "technology" as const, label, count, status, evidence: [], note: "" });
+    const diagnosis = { work: "백엔드 개발자", family: "백엔드", basis: "family" as const, focus: null, level: null, sampleSize: 66, companyCount: 15, interestedCount: 1, small: false, summary: "", items: [item("technology:java", "Java", 45), item("technology:kafka", "Kafka", 39)], demandAt: "2026-11-20T00:00:00.000Z", assessedAt: null, stale: null };
+    const goalDemand = vi.fn().mockRejectedValueOnce(new AgentToolRejection(["구직 목표의 하고 싶은 일이 비어 있습니다."])).mockResolvedValue(diagnosis);
+    const assessed = { ...diagnosis, summary: "백엔드 공고 66건 기준", assessedAt: "2026-11-20T00:01:00.000Z", items: [{ ...item("technology:java", "Java", 45, "confirmed"), evidence: [{ recordId: "00000000-0000-4000-8000-000000000081", quote: "Java로 결제 API를 만들었다", recordTitle: "결제 서버" }] }, item("technology:kafka", "Kafka", 39)] };
+    const recordDiagnosis = vi.fn().mockRejectedValueOnce(new AgentToolRejection(["항목 technology:kafka(Kafka): gap은 사용자가 해 본 적이 없다고 답한 뒤에만 씁니다."])).mockResolvedValue(assessed);
+    const { client, emit } = await connectTools({ goalDemand, recordDiagnosis });
+    const empty = await client.callTool({ name: "read_goal_demand", arguments: {} });
+    expect(empty.isError).toBe(true);
+    expect((empty.content as { text: string }[])[0]!.text).toContain("구직 목표의 하고 싶은 일이 비어 있습니다.");
+    const read = await client.callTool({ name: "read_goal_demand", arguments: {} });
+    expect(read.isError).toBeFalsy();
+    const payload = JSON.parse((read.content as { text: string }[])[0]!.text) as { sample: { sampleSize: number; companyCount: number }; items: { id: string; count: number; status: string }[] };
+    expect(payload.sample).toMatchObject({ family: "백엔드", sampleSize: 66, companyCount: 15, small: false });
+    expect(payload.items).toEqual([{ id: "technology:java", kind: "technology", label: "Java", count: 45, status: "unconfirmed" }, { id: "technology:kafka", kind: "technology", label: "Kafka", count: 39, status: "unconfirmed" }]);
+    expect(emit.mock.calls.at(-1)![0]).toMatchObject({ type: "tool", tool: { name: "목표 요건 집계", status: "complete", summary: "백엔드 공고 66건 · 요건 2개" } });
+    const input = { summary: "백엔드 공고 66건 기준", items: [{ itemId: "technology:java", status: "confirmed", evidence: [{ recordId: "00000000-0000-4000-8000-000000000081", quote: "Java로 결제 API를 만들었다" }] }] };
+    const rejected = await client.callTool({ name: "record_diagnosis", arguments: { summary: "요약", items: [{ itemId: "technology:kafka", status: "gap" }] } });
+    expect(rejected.isError).toBe(true);
+    expect((rejected.content as { text: string }[])[0]!.text).toContain("gap은 사용자가 해 본 적이 없다고 답한 뒤에만");
+    const saved = await client.callTool({ name: "record_diagnosis", arguments: input });
+    expect(saved.isError).toBeFalsy();
+    // 적지 않은 근거 · 메모는 빈 값으로 채워 넘긴다.
+    expect(recordDiagnosis).toHaveBeenLastCalledWith({ summary: input.summary, items: [{ ...input.items[0], note: "" }] });
+    expect(emit.mock.calls.at(-1)![0]).toMatchObject({ type: "tool", tool: { name: "목표 진단", status: "complete", summary: "확인 1 · 일부 0 · 미확인 1 · 부족 0", diagnosis: assessed } });
+    expect(JSON.parse((saved.content as { text: string }[])[0]!.text)).toMatchObject({ saved: true, unconfirmed: ["Kafka"], gaps: [] });
+    // 상태가 사전에 없는 값이면 처리기까지 오지 않는다.
+    expect((await client.callTool({ name: "record_diagnosis", arguments: { summary: "요약", items: [{ itemId: "technology:java", status: "done" }] } })).isError).toBe(true);
+    expect(recordDiagnosis).toHaveBeenCalledTimes(2);
+    expect(conversationForModel([{ id: "00000000-0000-4000-8000-000000000082", role: "assistant", text: "", createdAt: "2026-11-20T00:00:00.000Z", tools: [{ id: "d", name: "목표 진단", status: "complete", summary: "확인 1", diagnosis: assessed }] }])[0]!.tools).toEqual([{ name: "목표 진단", summary: "확인 1", diagnosis: { sampleSize: 66, items: [{ id: "technology:java", label: "Java", count: 45, status: "confirmed" }, { id: "technology:kafka", label: "Kafka", count: 39, status: "unconfirmed" }] } }]);
   });
   it("기억을 쓸 수 없는 환경에서는 memory를 null로 싣는다", async () => {
     await connectTools();

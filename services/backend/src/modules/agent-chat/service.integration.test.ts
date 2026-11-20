@@ -15,7 +15,7 @@ import { AgentChatService, CREDITS_EXHAUSTED, RUN_HEARTBEAT_MS, RUN_INTERRUPTED_
 import { MongoEntitlementService } from "../entitlements/index.js";
 import { PreparationPlans } from "./plans.js";
 import { buildDraft } from "./record-draft.js";
-import { ConsultantCommitments, ConsultantService, seoulDay } from "../consultant/index.js";
+import { ConsultantCommitments, ConsultantDiagnoses, ConsultantService, seoulDay } from "../consultant/index.js";
 
 describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB_URL))("공통 에이전트 대화", () => {
   let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
@@ -341,7 +341,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const first = await service.create(memoryUser, []);
     await service.send(memoryUser, first.id, { requestId: randomUUID(), text: "주 10시간씩 8주 동안 준비할게요" });
     await done(first.id);
-    expect(seen[0]).toEqual({ stage: null, preferences: [], today: seoulDay(new Date()), commitments: [], recentConversations: [] });
+    expect(seen[0]).toEqual({ stage: null, preferences: [], today: seoulDay(new Date()), commitments: [], diagnosis: null, recentConversations: [] });
     // 둘째 대화: 첫 대화의 요지가 실리고, 지금 대화는 실리지 않는다.
     const second = await service.create(memoryUser, []);
     await service.send(memoryUser, second.id, { requestId: randomUUID(), text: "이제 지원할 공고를 고르고 있어요" });
@@ -395,6 +395,105 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect(seen[1]!.commitments).toEqual([{ id: open!.id, title: "해커톤 지원서 내기", dueOn: "2099-12-31", overdue: false }]);
     expect(await commitments.open(owner)).toEqual([]);
     expect(await commitments.open(other)).toHaveLength(1);
+  });
+  it("이미 있는 기록에 더하기: 대화에 연결되지 않은 기록의 끝에 사용자가 한 말을 더해 바로 적용하고, 카드에서 되돌린다. 하지 않은 말과 남의 기록은 받지 않는다", async () => {
+    const owner = (await new MongoIdentityService(fixture.resource).signup({ email: `${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "더하기 검증" })).user.id;
+    await consent.grant(owner, ["career_records"], CONSENT_POLICY_VERSION);
+    const category = (await career.listCategories(owner))[0]!;
+    const target = (await career.createRecord(owner, randomUUID(), { categoryId: category.id, title: "졸업 프로젝트", bodyMd: "채팅 서버를 만들었다", properties: {} })).record.id;
+    const text = async (id: string) => (await documents.bootstrap(owner, id)).document.content.map(block => JSON.stringify(block)).join("\n");
+    let proposalId = "";
+    const service = make({ run: async input => {
+      const said = input.messages.at(-1)!;
+      const sources = [{ messageId: said.id, quote: "Spring Boot로 만들었어요" }];
+      // 연결되지 않은 기록은 문장을 고치는 제안을 받지 않고, 더하기로 가라고 알린다.
+      await expect(input.propose(target, { summary: "고침", commands: [], propertyChanges: [] })).rejects.toBeInstanceOf(AgentToolRejection);
+      await expect(input.appendToRecord({ recordId: target, bodyMd: "## 기술\n\nKafka로 만들었다", sources: [{ messageId: said.id, quote: "Kafka로 만들었어요" }] })).rejects.toBeInstanceOf(AgentToolRejection);
+      await expect(input.appendToRecord({ recordId: recordId, bodyMd: "## 기술\n\nSpring Boot", sources })).rejects.toBeInstanceOf(AgentToolRejection);
+      const proposal = await input.appendToRecord({ recordId: target, bodyMd: "## 기술\n\nJava 17과 Spring Boot로 만들었다", sources });
+      proposalId = proposal.proposalId;
+      expect(proposal.status).toBe("applied");
+      await input.emit({ type: "tool", tool: { id: "append", name: "기록에 더하기", status: "complete", summary: proposal.summary, proposal } });
+      await input.emit({ type: "text", text: "기록에 더했습니다." });
+    } });
+    const conversation = await service.create(owner, []);
+    await service.send(owner, conversation.id, { requestId: randomUUID(), text: "채팅 서버는 Java 17과 Spring Boot로 만들었어요" });
+    await expect.poll(async () => (await service.get(owner, conversation.id)).run?.status).toBe("complete");
+    const after = await text(target);
+    expect(after).toContain("채팅 서버를 만들었다");
+    expect(after).toContain("Java 17과 Spring Boot로 만들었다");
+    const tool = (await service.get(owner, conversation.id)).messages.at(-1)!.tools[0]!;
+    expect(tool).toMatchObject({ name: "기록에 더하기", summary: "「졸업 프로젝트」에 내용을 더했습니다.", proposal: { proposalId, status: "applied" } });
+    expect(tool.beforeDocument).toBeTruthy();
+    // 카드의 되돌리기는 기록 변경 제안과 같은 길을 쓴다.
+    const undone = await service.approve(owner, conversation.id, { proposalId, action: "undo", expectedDocumentVersion: tool.proposal!.appliedDocumentVersion! });
+    expect(undone.messages.at(-1)!.tools[0]!.undone).toBe(true);
+    expect(await text(target)).not.toContain("Spring Boot로 만들었다");
+  });
+  it("목표 진단: 집계를 저장하고, 근거가 기록에 있는 대조만 받으며, 「부족」은 사용자가 답한 뒤에만 받는다. 다음 실행의 기억에 요약이 실리고 목표가 바뀌면 다시 진단을 요구한다", async () => {
+    const consultant = new ConsultantService(fixture.resource); const store = new ConsultantDiagnoses(fixture.resource);
+    const identity = new MongoIdentityService(fixture.resource);
+    const owner = (await identity.signup({ email: `${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "진단 검증" })).user.id;
+    await consent.grant(owner, ["career_records"], CONSENT_POLICY_VERSION);
+    const category = (await career.listCategories(owner))[0]!;
+    const record = (await career.createRecord(owner, randomUUID(), { categoryId: category.id, title: "결제 서버", bodyMd: "Java로 결제 API를 만들었다", properties: {} })).record.id;
+    const demand = { forGoal: vi.fn(async (_user: string, goal: { work: string }) => ({ work: goal.work, family: "백엔드", basis: "family" as const, focus: null, level: null, sampleSize: 66, companyCount: 15, interestedCount: 0, small: false, items: [{ id: "technology:java", kind: "technology" as const, label: "Java", count: 45 }, { id: "technology:kafka", kind: "technology" as const, label: "Kafka", count: 39 }] })) };
+    const seen: NonNullable<Parameters<AgentRuntime["run"]>[0]["memory"]>["diagnosis"][] = [];
+    const java = { itemId: "technology:java", status: "confirmed" as const, evidence: [{ recordId: record, quote: "Java로 결제 API" }], note: "" };
+    const kafka = (status: "unconfirmed" | "gap") => ({ itemId: "technology:kafka", status, evidence: [], note: "" });
+    const service = new AgentChatService(fixture.resource, { run: async input => {
+      seen.push(structuredClone(input.memory!.diagnosis));
+      const said = input.messages.at(-1)!.text;
+      const card = async (diagnosis: Awaited<ReturnType<typeof input.recordDiagnosis>>) => input.emit({ type: "tool", tool: { id: randomUUID(), name: "목표 진단", status: "complete", summary: "진단", diagnosis } });
+      if (said.includes("진단해")) {
+        if (!input.jobGoal) { await expect(input.goalDemand()).rejects.toBeInstanceOf(AgentToolRejection); await input.emit({ type: "text", text: "목표를 먼저 알려 주세요." }); return; }
+        const draft = await input.goalDemand();
+        expect(draft.items.map(item => item.status)).toEqual(["unconfirmed", "unconfirmed"]);
+        // 기록에 없는 인용, 근거 없는 「확인됨」, 근거가 붙은 「미확인」, 첫 대조의 「부족」, 모르는 항목은 받지 않는다.
+        await expect(input.recordDiagnosis({ summary: "요약", items: [{ ...java, evidence: [{ recordId: record, quote: "Kafka를 운영했다" }] }] })).rejects.toBeInstanceOf(AgentToolRejection);
+        await expect(input.recordDiagnosis({ summary: "요약", items: [{ ...java, evidence: [] }] })).rejects.toBeInstanceOf(AgentToolRejection);
+        await expect(input.recordDiagnosis({ summary: "요약", items: [{ ...kafka("unconfirmed"), evidence: java.evidence }] })).rejects.toBeInstanceOf(AgentToolRejection);
+        await expect(input.recordDiagnosis({ summary: "요약", items: [kafka("gap")] })).rejects.toBeInstanceOf(AgentToolRejection);
+        await expect(input.recordDiagnosis({ summary: "요약", items: [{ itemId: "technology:rust", status: "unconfirmed", evidence: [], note: "" }] })).rejects.toBeInstanceOf(AgentToolRejection);
+        await card(await input.recordDiagnosis({ summary: "백엔드 공고 66건 기준", items: [java, kafka("unconfirmed")] }));
+        // 같은 실행에서 곧바로 「부족」으로 고칠 수 없다 — 사용자의 답이 없다.
+        await expect(input.recordDiagnosis({ summary: "요약", items: [kafka("gap")] })).rejects.toBeInstanceOf(AgentToolRejection);
+      } else if (said.includes("해 본 적 없어요")) {
+        await card(await input.recordDiagnosis({ summary: "백엔드 공고 66건 기준", items: [kafka("gap")] }));
+      } else {
+        await expect(input.recordDiagnosis({ summary: "요약", items: [java] })).rejects.toBeInstanceOf(AgentToolRejection);
+      }
+      await input.emit({ type: "text", text: "알겠습니다." });
+    } }, career, { get: async () => { throw new Error("없는 공고"); } }, documents, consent, new AgentCredentials(fixture.resource), new PortfolioReadService(fixture.resource), new PageService(fixture.resource), undefined, consultant, undefined, { demand, store });
+    services.push(service);
+    const done = async (id: string) => { await expect.poll(async () => (await service.get(owner, id)).run?.status).toBe("complete"); };
+    const say = async (id: string, text: string) => { await service.send(owner, id, { requestId: randomUUID(), text }); await done(id); };
+    const conversation = await service.create(owner, []);
+    // 목표가 없으면 집계하지 않는다.
+    await say(conversation.id, "진단해 주세요");
+    expect(demand.forGoal).not.toHaveBeenCalled();
+    expect(await service.currentDiagnosis(owner)).toBeNull();
+    await career.saveJobGoal(owner, { work: "백엔드 개발자", place: "", timing: "내년 2월 졸업", source: "app" });
+    await say(conversation.id, "다시 진단해 주세요");
+    expect(demand.forGoal).toHaveBeenLastCalledWith(owner, { work: "백엔드 개발자", timing: "내년 2월 졸업" });
+    const first = (await service.currentDiagnosis(owner))!;
+    expect(first.items.map(item => [item.id, item.status])).toEqual([["technology:java", "confirmed"], ["technology:kafka", "unconfirmed"]]);
+    expect(first.items[0]!.evidence).toEqual([{ recordId: record, quote: "Java로 결제 API", recordTitle: "결제 서버" }]);
+    expect(first).toMatchObject({ summary: "백엔드 공고 66건 기준", sampleSize: 66, stale: null });
+    expect((await service.get(owner, conversation.id)).messages.at(-1)!.tools[0]).toMatchObject({ name: "목표 진단", diagnosis: { sampleSize: 66 } });
+    // 사용자가 답한 뒤에는 「부족」으로 고친다. 다음 실행의 기억에 앞선 진단의 요약이 실린다.
+    await say(conversation.id, "Kafka는 해 본 적 없어요");
+    expect(seen.at(-1)).toEqual({ assessedOn: seoulDay(new Date()), work: "백엔드 개발자", sampleSize: 66, gaps: [], unconfirmed: ["Kafka"], partial: [], confirmed: 1, stale: null });
+    expect((await service.currentDiagnosis(owner))!.items.map(item => item.status)).toEqual(["confirmed", "gap"]);
+    // 대조한 뒤에 기록이 바뀌면 기록 바뀜, 목표가 바뀌면 목표 바뀜이다. 목표가 바뀐 진단에는 대조를 받지 않는다.
+    await career.createRecord(owner, randomUUID(), { categoryId: category.id, title: "새 기록", bodyMd: "Kafka 컨슈머를 만들었다", properties: {} });
+    expect((await service.currentDiagnosis(owner))!.stale).toBe("records");
+    await career.saveJobGoal(owner, { work: "데이터 엔지니어", place: "", timing: "", source: "app" });
+    expect((await service.currentDiagnosis(owner))!.stale).toBe("goal");
+    await say(conversation.id, "그럼 이어서 볼게요");
+    expect(seen.at(-1)).toMatchObject({ gaps: ["Kafka"], stale: "goal" });
+    expect((await service.currentDiagnosis(owner))!.items.map(item => item.status)).toEqual(["confirmed", "gap"]);
+    expect(await service.currentDiagnosis(other)).toBeNull();
   });
   it("확인 카드에서 「했어요」라고 답하면 그 약속을 묻고 답한 대화가 실행 중으로 열린다. 채팅을 쓸 수 없으면 열지 않는다", async () => {
     const consultant = new ConsultantService(fixture.resource); const commitments = new ConsultantCommitments(fixture.resource);
