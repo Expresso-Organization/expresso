@@ -119,6 +119,24 @@ it("배포할 지면이 없으면 헤더 배포 단추를 누를 수 없다", ()
   expect(within(screen.getByRole("region", { name: "공개 상태" })).getByText("아직 배포 전")).toBeTruthy();
 });
 
+it("「복사」는 공개 주소를 클립보드에 넣고, 거절되면 실패를 말한다", async () => {
+  const writeText = vi.fn().mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error("denied"));
+  Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+  render(<DeployPanel portfolio={portfolio("published")} deployments={DEPLOYMENTS} checks={[]} nextVersion={3} canPublish />);
+
+  const head = screen.getByRole("region", { name: "공개 상태" });
+  await act(async () => {
+    fireEvent.click(within(head).getByRole("button", { name: /복사/ }));
+  });
+  expect(writeText).toHaveBeenCalledWith(publicSiteUrl("minjae"));
+  expect(within(head).getByRole("button", { name: /복사함/ })).toBeTruthy();
+
+  await act(async () => {
+    fireEvent.click(within(head).getByRole("button", { name: /복사함/ }));
+  });
+  expect(within(head).getByRole("button", { name: /복사하지 못했습니다/ })).toBeTruthy();
+});
+
 it("배포 뒤 고친 것이 있으면 상태 머리가 그 사실을 말한다", () => {
   render(<DeployPanel portfolio={portfolio("published", true, true)} deployments={DEPLOYMENTS} checks={[]} nextVersion={3} canPublish />);
 

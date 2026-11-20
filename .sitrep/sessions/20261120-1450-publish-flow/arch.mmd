@@ -7,8 +7,7 @@ flowchart TD
   RO --> ACT["deployAction"]
   CF --> ACT
   ACT --> API[("publishing API")]
-  DP --> BR{"브라우저 확인"}
+  DP --> BR["브라우저 확인"]
   classDef done fill:#d1fae5,stroke:#059669
   classDef doing fill:#fef3c7,stroke:#d97706
-  class ED,PS,DP,SH,CF,RO,ACT,API done
-  class BR doing
+  class ED,PS,DP,SH,CF,RO,ACT,API,BR done

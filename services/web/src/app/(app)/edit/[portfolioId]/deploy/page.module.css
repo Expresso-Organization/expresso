@@ -60,7 +60,9 @@
   font-size: var(--ex-text-md);
   color: var(--ex-fg);
   outline: none;
-  width: 180px;
+  /* 좁은 폭에서는 입력칸이 줄어든다. 고정 폭이면 375px에서 뒤 주소가 카드 밖으로 밀려 본문이 가로로 넘쳤다. */
+  flex: 0 1 180px;
+  min-width: 0;
 }
 
 .slugSuffix {
@@ -72,6 +74,7 @@
   font-size: var(--ex-text-sm);
   color: var(--ex-fg-muted);
   background: var(--ex-bg-sunken);
+  white-space: nowrap;
 }
 
 
