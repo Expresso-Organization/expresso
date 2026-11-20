@@ -31,9 +31,8 @@ export async function toggleInterestAction(formData: FormData): Promise<Interest
     throw error;
   }
 
-  // 사이드바 "관심 공고"는 구간마다 레이아웃(AppChrome)에 있어 모든 앱 화면에
-  // 걸친다. 루트 레이아웃 단위로 무효화해야 지금 화면의 사이드바와, 다음에
-  // 여는 공고 탐색의 관심 공고 레일이 함께 바뀐다.
+  // 관심 공고는 공고 탐색의 관심 공고 레일처럼 여러 화면에 걸친다. 루트 레이아웃
+  // 단위로 무효화해야 지금 화면과 다음에 여는 화면이 함께 새 목록을 읽는다.
   revalidatePath("/", "layout");
   return { error: null };
 }

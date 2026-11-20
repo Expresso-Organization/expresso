@@ -30,7 +30,7 @@
     "D5": ["services/backend/src/modules/interview", "services/backend/src/modules/agent-chat", "services/web/src/app/(app)/brew/[brewId]/counter", "services/web/src/features/agent-chat"],
     "D6": ["services/backend/src/modules/recipe", "services/backend/src/modules/brew-jobs", "services/web/src/app/(app)/brew/[brewId]/outline"],
     "D7": ["services/backend/src/modules/generation", "services/backend/src/modules/page", "services/backend/src/modules/templates", "services/backend/src/modules/design-systems", "services/backend/src/modules/layout", "services/web/src/app/(app)/brew/[brewId]/design", "packages/portfolio-renderer"],
-    "D8": ["services/backend/src/modules/portfolio-editing", "services/backend/src/modules/portfolios", "services/web/src/app/(app)/edit/[portfolioId]"],
+    "D8": ["services/backend/src/modules/portfolio-editing", "services/backend/src/modules/portfolios", "services/web/src/app/(editor)/edit/[portfolioId]"],
     "D9": ["services/backend/src/modules/publishing", "services/web/src/app/(app)/edit/[portfolioId]/deploy", "services/web/src/app/site"],
     "D10": ["services/backend/src/modules/analytics", "services/web/src/app/(app)/analytics"],
     "D11": ["services/backend/src/modules/engagement", "services/web/src/app/(app)/home", "services/web/src/components/shell", "services/web/src/components/CommandPalette.tsx"],

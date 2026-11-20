@@ -11,3 +11,4 @@
 | [20261120-0145-activity-sources](sessions/20261120-0145-activity-sources/session.md) | 공모전 · 해커톤 · 부트캠프 수집 출처 확장과 정확도 개선 | 완료됨 | 100% |
 | [20261120-0230-expresso-ai-consultant](sessions/20261120-0230-expresso-ai-consultant/session.md) | Expresso AI 커리어 컨설턴트 | 구현 중 | 90% |
 | [20261120-1450-publish-flow](sessions/20261120-1450-publish-flow/session.md) | 편집에서 배포 · 재배포 · 공개 중단까지 이어지는 배포 흐름 | 완료됨 | 100% |
+| [20261120-1530-app-shell-layout](sessions/20261120-1530-app-shell-layout/session.md) | 앱 셸 공용 레이아웃 — 화면 이동 사이 사이드바 유지 | 완료됨 | 100% |
