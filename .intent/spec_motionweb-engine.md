@@ -24,3 +24,11 @@ date: 2026-11-20
 
 - 엔진 문자열이 contracts에 있어 웹 클라이언트 묶음이 약 82KB 커진다(`pageDocument`를 쓰는 화면).
 - WebGPU가 없는 브라우저(macOS Firefox 145 미만 등)는 첫 모습만 본다.
+
+## 배경 그래픽 2D · 3D 선택 (같은 날 추가)
+
+사용자: "2D/3D 배경 요소 중 뭘 쓸지는 사용자에게 물어보는 게 낫겠다. 이게 호불호가 갈릴 수 있어서."
+
+- 계약: `DesignGraphicSchema = "2d" | "3d"`. 그리기 요청(`draw` · `draw_catalog` · `AgentDesignDrawSchema`)에 `graphic`(선택), 첫 화면 장(`DesignScreenItem`)에 `graphic`(선택).
+- 그리는 호출: 「사용자가 고른 그래픽」 문단을 레이아웃 뒤에 둔다 — 3D는 MotionWeb · three.js, 2D는 canvas 2D(엔진 · three.js 쓰지 않음). 지침은 「고르지 않았으면」 3D 규칙을 따른다.
+- 화면: 짝 고르기 줄(스타일 + 레이아웃)에 「2D · 3D」. 셋이 모여야 「첫 화면 보기」가 켜진다. 마지막으로 그린 장의 차원을 잇는다.
