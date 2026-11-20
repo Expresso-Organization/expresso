@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useState, useSyncExt
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import type { Route } from "next";
+import type { DesignGraphic } from "@expresso/contracts";
 import type { WaitReading } from "@/app/(app)/brew/[brewId]/design/GenerationWait";
 import { LivePreview } from "@/app/(app)/brew/[brewId]/design/LivePreview";
 import { cancelGenerationInChatAction, ensureRecipeAction } from "@/app/(app)/brew/[brewId]/design/design-actions";
@@ -79,7 +80,7 @@ interface DesignBrewsProps {
   cards: Record<string, string[]>;
   /** 제작 ID → 그 제작의 「생성」 카드가 가리키는 생성 ID. 마지막이 가장 최근이다. */
   generations: Record<string, string[]>;
-  onDraw(brewId: string, styleId: string, layoutId: string, graphic: "2d" | "3d"): Promise<void>;
+  onDraw(brewId: string, styleId: string, layoutId: string, graphic: DesignGraphic): Promise<void>;
   onMake(brewId: string): Promise<void>;
   /** 만들어지는 지면을 여는 자리. 없으면 가운데로 열지 않고 카드만 둔다. */
   stageHost: HTMLElement | null;

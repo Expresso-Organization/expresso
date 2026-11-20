@@ -31,3 +31,4 @@ date: 2026-11-21
 
 - 카탈로그: net · dots · fog · cells · blueprint. `metaballs.js` · `globe.js` · `vanta.globe.js` · `vanta.waves.js`를 지우고, 빌드의 three 부가 모듈 고지를 뺐다.
 - `PAGE_SCRIPT_PROMPT`: 직접 그리는 그림은 canvas 2D. three.js 형체 장면 절을 지우고 「형체를 짓거나 띄우지 않는다」를 둔다. `PAGE_PROMPT_VERSION` 22 · `DESIGN_CHAT_PROMPT_VERSION` 11.
+- 세포 무늬(cells)도 뺐다 — 견본을 본 사용자 "세포 무늬는 좀 이상하네. 저건 빼자". 남은 것: net · dots · fog · blueprint.

@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { TimestampSchema, UuidSchema } from "./common.js";
 import { PageDraftSchema } from "./page.js";
+import { PAGE_EFFECT_CATALOG } from "./page-effects.generated.js";
 import { TemplateFontSchema } from "./templates.js";
 
 /**
@@ -111,10 +112,15 @@ export const DesignUserMessageSchema = z.strictObject({
 
 /** 그리는 중이거나 그린 첫 화면 한 장. 스타일과 레이아웃은 그리기 전에 정해져 있어 기다리는 동안 그 값으로 자리를 채운다. */
 /**
- * 첫 화면 그래픽의 차원. 평면(canvas 2D · SVG)이냐 입체(3D 엔진 · three.js)냐는 취향이 갈려 사용자가 고른다
- * (2026-11-20 사용자: "2D/3D 배경 요소 중 뭘 쓸지는 사용자에게 물어보는 게 낫겠다").
+ * 첫 화면 그래픽. `canvas`는 그 사람의 기록 · 지원하는 공고 · 담을 내용에서 모델이 canvas 2D로 짓는 추상 그래픽이고(기본),
+ * 나머지는 사용자가 카탈로그에서 고른 효과 라이브러리의 효과 이름이다. 효과는 모델이 고르지 않는다
+ * (2026-11-21 사용자: "기본은 커리어 기록과 지원 대상, 포트폴리오 내용에 맞춰서 추상화된 디자인 요소를 canvas로 그리도록 하고,
+ * 3D 디자인 등은 사용자가 카탈로그에서 선택할 수 있는 요소로 하자").
+ *
+ * 앞판의 `2d` · `3d`(차원만 고르고 효과는 모델이 정했다)는 `canvas`로 읽는다 — 이 브랜치의 검증 DB에 그 장이 남아 있다.
  */
-export const DesignGraphicSchema = z.enum(["2d", "3d"]);
+export const DESIGN_GRAPHICS = ["canvas", ...PAGE_EFFECT_CATALOG.map((effect) => effect.name)] as [string, ...string[]];
+export const DesignGraphicSchema = z.preprocess((value) => (value === "2d" || value === "3d" ? "canvas" : value), z.enum(DESIGN_GRAPHICS));
 export type DesignGraphic = z.infer<typeof DesignGraphicSchema>;
 
 export const DesignScreenItemSchema = z.strictObject({
@@ -124,7 +130,7 @@ export const DesignScreenItemSchema = z.strictObject({
   tokens: DesignTokensSchema,
   /** 그릴 레이아웃. 카탈로그의 디자인만 골랐으면 null이고, 그리는 쪽이 자료를 보고 구성을 정한다. */
   layout: DesignLayoutSpecSchema.nullable(),
-  /** 사용자가 고른 그래픽의 차원. 고르지 않고 그렸거나(말로 청한 것 · 고친 것) 이 칸이 생기기 전의 장에는 없다. */
+  /** 사용자가 고른 그래픽. 고르지 않고 그렸거나(말로 청한 것 · 고친 것) 이 칸이 생기기 전의 장에는 없다 — 그때는 `canvas`다. */
   graphic: DesignGraphicSchema.optional(),
   status: z.enum(["drawing", "done", "failed"]),
   snippetId: UuidSchema.nullable(),

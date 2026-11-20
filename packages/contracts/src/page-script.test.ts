@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { PAGE_EFFECT_CATALOG, PAGE_EFFECT_RUNTIME, PAGE_EFFECTS, PAGE_SCRIPT_LIBRARY, PAGE_SCRIPT_PROMPT, PAGE_SCRIPT_POLICY_MARK, joinPageScripts, pageDocument, pageScriptText, sha256Base64 } from "./index.js";
+import { DesignGraphicSchema, PAGE_EFFECT_CATALOG, PAGE_EFFECT_RUNTIME, PAGE_EFFECTS, PAGE_SCRIPT_LIBRARY, PAGE_SCRIPT_PROMPT, PAGE_SCRIPT_POLICY_MARK, joinPageScripts, pageDocument, pageEffectPrompt, pageScriptText, sha256Base64 } from "./index.js";
 
 const base = { html: "<main><canvas width=\"10\" height=\"10\"></canvas></main>", css: "main{}", title: "지면" };
 const node = (text: string) => createHash("sha256").update(text).digest("base64");
@@ -58,10 +58,18 @@ describe("지면 스크립트", () => {
     expect(pageDocument({ ...base, script: "draw()", run: { origin: "" } })).not.toContain("ExpressoEffects =");
   });
 
-  it("3D는 라이브러리의 배경 장 · 선화뿐이다 — 오브젝트를 띄우는 효과도, 직접 짓는 엔진도 없다", () => {
-    expect(PAGE_EFFECT_CATALOG.map((effect) => effect.name)).toEqual(["net", "dots", "fog", "cells", "blueprint"]);
-    for (const gone of ["MotionWeb", "metaballs", "globe", "MeshPhysicalMaterial"]) expect(PAGE_SCRIPT_PROMPT).not.toContain(gone);
-    expect(PAGE_SCRIPT_PROMPT).toContain("형체(도형 · 덩어리 · 구 · 결정 · 오브젝트)를 짓거나 공중에 띄우지 않는다");
+  it("효과는 사용자가 고른 것만 — 지침은 canvas 2D이고 목록이 없으며, 고른 효과 하나의 쓰는 법만 따로 낸다", () => {
+    expect(PAGE_EFFECT_CATALOG.map((effect) => effect.name)).toEqual(["net", "dots", "fog", "blueprint"]);
+    for (const gone of ["MotionWeb", "metaballs", "globe", "ExpressoEffects", "`net`", "`dots`"]) expect(PAGE_SCRIPT_PROMPT).not.toContain(gone);
+    expect(PAGE_SCRIPT_PROMPT).toContain("그림은 canvas 2D로 직접 짓는다");
+    const dots = pageEffectPrompt("dots");
+    expect(dots).toContain('ExpressoEffects.mount("dots"');
+    for (const other of ["net", "fog", "blueprint"]) expect(dots).not.toContain(`"${other}"`);
+    expect(pageEffectPrompt("nope")).toBe("");
+    // 앞판의 차원 값(2d · 3d)은 기본 그림으로 읽는다.
+    expect(DesignGraphicSchema.parse("3d")).toBe("canvas");
+    expect(DesignGraphicSchema.parse("blueprint")).toBe("blueprint");
+    expect(() => DesignGraphicSchema.parse("cells")).toThrow();
     expect(pageDocument({ ...base, script: "await MotionWeb.create({})", run: { origin: "" } })).not.toContain("MOTIONWEB_WGSL_STD");
   });
 

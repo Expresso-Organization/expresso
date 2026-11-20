@@ -101,6 +101,11 @@
 }
 /* 레이아웃 견본은 첫 화면을 줄인 배치도라 첫 화면과 같은 비율이다. */
 .swatch[data-kind="layout"] { aspect-ratio: 16 / 10; }
+/* 그래픽 카탈로그는 다섯 장이 한 줄에 놓인다. 효과는 실제로 그린 화면을 줄여 보이고, 「기록에서 그림」은 고른 스타일의 바탕이다. */
+.specimenRow[data-kind="graphic"] { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.swatch[data-kind="graphic"] { aspect-ratio: 16 / 8; }
+.graphicShot { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.canvasFace { position: absolute; inset: 0; display: grid; place-items: center; background: var(--ex-bg-sunken); color: var(--ex-accent); }
 /* 가장자리는 색 면 위에 그린다 — 흰 바탕의 견본도 지면과 구분된다. */
 .swatch::after {
   content: "";
@@ -181,11 +186,6 @@
 }
 .comboPick[data-empty] { padding: 5px 12px; border-style: dashed; font-weight: 500; color: var(--ex-fg-subtle); }
 /* 배경 그래픽의 차원. 고르기 전에는 짝의 빈 자리처럼 점선이고, 고른 쪽만 채운다. */
-.comboGraphic { display: inline-flex; padding: 2px; border: 1px solid var(--ex-border-firm); border-radius: var(--ex-radius-pill); }
-.comboGraphic[data-empty] { border-style: dashed; }
-.comboGraphic > button { padding: 3px 10px; border: 0; border-radius: var(--ex-radius-pill); background: transparent; color: var(--ex-fg-subtle); font: inherit; font-size: var(--ex-text-2xs); font-weight: 600; cursor: pointer; }
-.comboGraphic > button:hover { color: var(--ex-fg); }
-.comboGraphic > button[aria-pressed="true"] { background: var(--ex-accent-surface); color: var(--ex-accent-ink); }
 .comboSwatch { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ex-fg) 14%, transparent); }
 .comboSwatch > i { width: 9px; height: 9px; border-radius: 50%; }
 .comboWire { position: relative; display: block; width: 35px; aspect-ratio: 16 / 10; border-radius: 3px; overflow: hidden; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ex-fg) 14%, transparent); }
@@ -276,7 +276,7 @@ button.thumb { cursor: pointer; }
 }
 button.thumb[aria-pressed="true"] .frame { outline: 2px solid var(--ex-accent); outline-offset: 2px; }
 button.thumb:hover .frame::after { box-shadow: inset 0 0 0 1px var(--ex-accent-soft); }
-button.thumb:focus-visible, button.specimen:focus-visible, .reply:focus-visible, .comboGraphic > button:focus-visible, .catalogItem:focus-visible { outline: 2px solid var(--ex-accent); outline-offset: 3px; border-radius: var(--ex-radius-control); }
+button.thumb:focus-visible, button.specimen:focus-visible, .reply:focus-visible, .catalogItem:focus-visible { outline: 2px solid var(--ex-accent); outline-offset: 3px; border-radius: var(--ex-radius-control); }
 
 /* 그리지 못한 장은 색 면을 흐리게 둔다. 다시 그리는 자리는 카드 줄 아래에 있다. */
 .thumb[data-state="failed"] .frame { opacity: 0.45; }
@@ -512,6 +512,7 @@ button.thumb:focus-visible, button.specimen:focus-visible, .reply:focus-visible,
 /* 카드 묶음이 좁을 때(에이전트 대화의 「디자인」 카드만). 좁은 화면의 규칙과 같다. */
 @container design-cards (max-width: 767px) {
   .compact .thumbs, .compact .specimenRow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .compact .specimenRow[data-kind="graphic"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .compact .swatchFace { padding: 10px 12px; gap: 8px; }
   .compact .viewMeta { flex-wrap: wrap; row-gap: 6px; }
   .compact .viewActions { margin-left: 0; width: 100%; flex-wrap: wrap; }
@@ -523,6 +524,7 @@ button.thumb:focus-visible, button.specimen:focus-visible, .reply:focus-visible,
 }
 @media (max-width: 767px) {
   .thumbs, .specimenRow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .specimenRow[data-kind="graphic"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   /* 좁은 화면에서는 이름 줄 아래로 행동을 내린다. 한 줄에 두면 이름이 잘리고 버튼이 화면 밖으로 나간다. */
   .viewMeta { flex-wrap: wrap; row-gap: 6px; }
   .viewActions { margin-left: 0; width: 100%; flex-wrap: wrap; }

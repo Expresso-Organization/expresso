@@ -14,7 +14,7 @@ import {
   type DesignLayoutBlock,
   type DesignLayoutSpec,
   type DesignSnippet,
-  type DesignTokens, type DesignGraphic } from "@expresso/contracts";
+  type DesignTokens, type DesignGraphic, PAGE_EFFECT_CATALOG, pageEffectPrompt } from "@expresso/contracts";
 
 import type { AiCallSpec, AiViolation } from "../../../platform/ai/client.js";
 import { PageSanitizeError, sanitizeCss } from "../../../platform/html/sanitize.js";
@@ -37,8 +37,8 @@ import { markupProblem, promptOpening, promptSources, ungroundedEmails, type Pag
  * 제안(스타일과 레이아웃을 따로), 디자인(`../design-rules.ts`), 사실. 문구를 고칠 때는 그 목록의 뜻을 지킨다.
  */
 const TIER = { modelTier: "sonnet" } as const;
-/** 프롬프트 판. 문구를 바꾸면 올린다. 2: Do와 Do not, 스타일과 레이아웃을 따로 제안(2026-11-19). 4: 추상 그래픽과 그림 스크립트(2026-11-20). 5: 형태 · 흐름 · 밀도, 수치는 한 줄(같은 날). 6: 3D 형태 · 재질 · 빛 짝(같은 날). 7: MotionWeb 엔진(같은 날). 8: 사용자가 고른 그래픽 차원(같은 날). 9: 첫 화면에 수치 없음(같은 날). 10: 효과 라이브러리(2026-11-21). 11: 3D 오브젝트 없음 — 방울 · 지구본 · 엔진 제거(같은 날). */
-export const DESIGN_CHAT_PROMPT_VERSION = 11;
+/** 프롬프트 판. 문구를 바꾸면 올린다. 2: Do와 Do not, 스타일과 레이아웃을 따로 제안(2026-11-19). 4: 추상 그래픽과 그림 스크립트(2026-11-20). 5: 형태 · 흐름 · 밀도, 수치는 한 줄(같은 날). 6: 3D 형태 · 재질 · 빛 짝(같은 날). 7: MotionWeb 엔진(같은 날). 8: 사용자가 고른 그래픽 차원(같은 날). 9: 첫 화면에 수치 없음(같은 날). 10: 효과 라이브러리(2026-11-21). 11: 3D 오브젝트 없음 — 방울 · 지구본 · 엔진 제거(같은 날). 12: 형태의 계열은 스타일 · 그림 자리에서, 기록은 값만(같은 날). 13: 모티프는 그 사람의 일에서, 효과는 사용자가 카탈로그에서 고른 것만(같은 날). */
+export const DESIGN_CHAT_PROMPT_VERSION = 13;
 
 const FONT_NAME = { sans: "고딕", serif: "명조", mono: "고정폭" } as const;
 const DENSITY_NAME = { compact: "빽빽하게", comfortable: "읽기 편하게", spacious: "넓게" } as const;
@@ -531,13 +531,11 @@ const FIRST_SCREEN = [
   ...NOTE,
 ];
 
-/** 사용자가 고른 그래픽의 차원. 지침의 「깊이가 있는 장면은 3D로」보다 먼저다. 고르지 않았으면 아무것도 적지 않는다. */
+/** 사용자가 카탈로그에서 고른 효과. 기본(`canvas`)이거나 고르지 않았으면 아무것도 적지 않는다 — 기본 지침이 canvas 2D다. */
 function graphicPrompt(graphic: DesignGraphic | null): string[] {
-  if (graphic === "3d")
-    return ["## 사용자가 고른 그래픽 — 3D", "첫 화면의 그래픽을 효과 라이브러리의 3D 효과(차원 3D)에서 골라 짓는다. 바탕에 맞는 효과를 고르고, values는 기록에서 계산한다. 오브젝트를 짓거나 띄우지 않는다.", ""];
-  if (graphic === "2d")
-    return ["## 사용자가 고른 그래픽 — 2D", "첫 화면의 그래픽을 평면으로 짓는다. canvas 2D 생성 그래픽을 직접 짓거나 효과 라이브러리의 2D 효과(차원 2D)를 쓴다. 원근 · 회전 · 깊이 없이 형태 · 흐름 · 밀도 · 결로 짓는다. 3D 효과는 쓰지 않는다.", ""];
-  return [];
+  const effect = graphic && graphic !== "canvas" ? PAGE_EFFECT_CATALOG.find((item) => item.name === graphic) : undefined;
+  if (!effect) return [];
+  return [`## 사용자가 고른 그래픽 — ${effect.title}`, "첫 화면의 그래픽은 사용자가 카탈로그에서 고른 이 효과다. canvas로 따로 그리지 않는다.", pageEffectPrompt(effect.name), ""];
 }
 
 /** 고른 레이아웃을 그리는 호출이 읽을 글로 편다. 견본이 그림으로 보인 배치도와 같은 값이다. */

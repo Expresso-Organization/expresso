@@ -57,24 +57,6 @@
     "place": "첫 화면 전체 — 자기 바탕을 칠하므로 일부에만 두면 경계가 사각형으로 보인다"
   },
   {
-    "name": "cells",
-    "title": "세포 무늬",
-    "dimension": "2d",
-    "background": [
-      "dark"
-    ],
-    "look": "세포 무늬가 천천히 갈라지고 이어진다. 어두운 바탕용 결.",
-    "use": "자라고 갈라지는 구조(시스템 · 조직 · 생태계)를 다룬 일. 어두운 스타일.",
-    "values": "size: 세포 크기 1~3(기본 1.8)",
-    "source": {
-      "name": "Vanta.js CELLS",
-      "url": "https://github.com/tengbao/vanta",
-      "version": "0.5.24",
-      "license": "MIT"
-    },
-    "place": "첫 화면 전체 — 자기 바탕을 칠한다"
-  },
-  {
     "name": "blueprint",
     "title": "블루프린트 선화",
     "dimension": "3d",

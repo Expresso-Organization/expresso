@@ -304,3 +304,16 @@
 - 지움: `metaballs.js` · `globe.js` · `vanta.globe.js` · `vanta.waves.js` · `page-engine.generated.ts` · `vendor-motionweb.mjs`, `pageDocument`의 엔진 싣기, 지침의 three.js 형체 · 엔진 절
 - 지침(PAGE_PROMPT_VERSION 22 · DESIGN_CHAT_PROMPT_VERSION 11): 3D는 배경 장(입자 그물 · 점 격자)과 블루프린트 선화만, 직접 그림은 canvas 2D
 - 검사: typecheck 통과 · test 통과(계약 129 · 백엔드 702 · 웹 518)
+
+### ~06:30 · 발견 · 2D가 한 모양으로 몰림
+- 새 보드(https://claude.ai/artifact/4EqisxPWCUabApczPwKEKt): 같은 사람 · 다른 짝 셋의 2D가 모두 「흩어진 선이 한 다발로 모인다」. 원인은 형태를 기록에서만 고르게 한 지침(기록은 짝마다 같음)
+- 계열(점 · 격자 · 면 · 모듈 …)을 스타일 · 그림 자리에서 고르게 하자 세 장이 모두 「모듈 격자」 — 목록이 무난한 하나로 몰게 함
+- 사용자: 세포 무늬 빼기 → 제거
+
+### ~08:30 · 완료 · 첫 화면 그래픽 카탈로그 (T15)
+- 사용자: "기본은 커리어 기록과 지원 대상, 포트폴리오 내용에 맞춰서 추상화된 디자인 요소를 canvas로 … 3D 디자인 등은 사용자가 카탈로그에서 선택"
+- 계약: `DesignGraphicSchema` = canvas | 효과 이름(옛 2d · 3d → canvas). `PAGE_SCRIPT_PROMPT`에서 효과 목록 제거, `pageEffectPrompt(name)`가 고른 효과 하나만
+- 지침: 모티프는 기록 · 공고 · 담을 내용에서, 계열 목록 없음. DESIGN_CHAT_PROMPT_VERSION 13 · PAGE_PROMPT_VERSION 23
+- 화면: 짝 줄의 2D · 3D 칩 대신 「그래픽」 카탈로그 줄(기록에서 그림 + 효과 넷, 축소 화면), 기본 선택
+- 실제 그리기: 기본 셋 = 행 중 일부만 켜짐(가상 스크롤) · 서버 조각과 점선 상호작용 · 경계를 옮기는 타일, 입자 그물 고른 장 = net만. 둘째 · 셋째가 모두 타일 계열
+- 검사: typecheck 통과 · test 통과(계약 129 · 백엔드 702 · 웹 518)

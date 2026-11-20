@@ -7,6 +7,7 @@ import { z } from "zod";
 import { UuidSchema, TimestampSchema } from "./common.js";
 import { AiEditProposalDetailSchema, AiEditProposalSchema } from "./career-ai.js";
 import { JobAnalysisStatusSchema } from "./job-analysis.js";
+import { DesignGraphicSchema } from "./design-chat.js";
 
 export const AgentContextSchema = z.strictObject({ kind: z.enum(["job", "record", "portfolio"]), id: UuidSchema });
 /**
@@ -350,7 +351,7 @@ export const AgentBrewGenerationSchema = z.strictObject({ brewId: UuidSchema, jo
 export type AgentBrewGeneration = z.infer<typeof AgentBrewGenerationSchema>;
 /** 견본에서 고른 스타일과 레이아웃으로 첫 화면을 그린다. 대화에 그 첫 화면의 카드가 붙는다. */
 /** 견본의 짝과 그래픽의 차원(2D · 3D)으로 첫 화면을 그린다. 차원은 사용자가 고른다. */
-export const AgentDesignDrawSchema = z.strictObject({ styleId: UuidSchema, layoutId: UuidSchema, graphic: z.enum(["2d", "3d"]).optional() });
+export const AgentDesignDrawSchema = z.strictObject({ styleId: UuidSchema, layoutId: UuidSchema, graphic: DesignGraphicSchema.optional() });
 export type AgentDesignDraw = z.infer<typeof AgentDesignDrawSchema>;
 /** 말로 견본을 다시 받는 도구의 입력. 견본은 디자인 대화가 견본 규칙대로 만든다 — 에이전트는 무엇을 원하는지만 옮긴다. */
 export const AgentDesignProposeInputSchema = z.strictObject({

@@ -74,11 +74,10 @@ describe("디자인 카드", () => {
     expect(screen.getByRole("link", { name: "카탈로그 화면으로" }).getAttribute("href")).toBe(`/brew/${brewId}/design?view=catalog`);
     fireEvent.click(screen.getByRole("button", { name: "스타일 새벽 청록" }));
     fireEvent.click(screen.getByRole("button", { name: "레이아웃 차트 주인공" }));
-    // 배경 그래픽의 차원까지 골라야 그릴 수 있다 — 취향이 갈려 사용자가 고른다.
-    expect((screen.getByRole("button", { name: "첫 화면 보기" }) as HTMLButtonElement).disabled).toBe(true);
-    fireEvent.click(screen.getByRole("button", { name: "배경 그래픽 2D" }));
+    // 그래픽은 처음부터 「기록에서 그림」이 골라져 있어 짝만 고르면 그린다. 효과는 사용자가 카탈로그에서 골랐을 때만이다.
+    expect(screen.getByRole("button", { name: "그래픽 기록에서 그림" }).getAttribute("aria-pressed")).toBe("true");
     fireEvent.click(screen.getByRole("button", { name: "첫 화면 보기" }));
-    await waitFor(() => expect(onDraw).toHaveBeenCalledWith(brewId, id(20), id(30), "2d"));
+    await waitFor(() => expect(onDraw).toHaveBeenCalledWith(brewId, id(20), id(30), "canvas"));
   });
 
   it("한 제작의 카드들은 상태 하나를 함께 읽는다 — 앞선 견본의 레이아웃을 새 견본의 스타일과 짝짓고, 고른 첫 화면은 한 곳에만 만들기를 둔다", async () => {
@@ -90,9 +89,9 @@ describe("디자인 카드", () => {
     expect(within(first).queryByRole("button", { name: "첫 화면 보기" })).toBeNull();
     fireEvent.click(within(first).getByRole("button", { name: "레이아웃 차트 주인공" }));
     fireEvent.click(within(third).getByRole("button", { name: "스타일 따뜻한 종이" }));
-    fireEvent.click(within(third).getByRole("button", { name: "배경 그래픽 3D" }));
+    fireEvent.click(within(third).getByRole("button", { name: "그래픽 점 격자 물결" }));
     fireEvent.click(within(third).getByRole("button", { name: "첫 화면 보기" }));
-    await waitFor(() => expect(onDraw).toHaveBeenCalledWith(brewId, id(21), id(30), "3d"));
+    await waitFor(() => expect(onDraw).toHaveBeenCalledWith(brewId, id(21), id(30), "dots"));
     // 그린 첫 화면을 고르면 그 카드에만 만들기가 뜬다.
     fireEvent.click(screen.getByRole("button", { name: "이 스타일 고르기" }));
     await screen.findByRole("button", { name: "골랐습니다" });

@@ -85,11 +85,12 @@ import { MEDIA_ASSET_PATH_PREFIX } from "./media-path.js";
  * 17 — 지면이 그림 스크립트(`script`)를 싣는다. canvas · three.js 그림을 쓰는 법과 스크립트 없는 첫 모습을 알린다(2026-11-20).
  * 18 — three.js 장면의 형태 · 재질 · 빛 짝. 기본 상자를 Lambert로 늘어놓은 장면이 나왔다(같은 날 사용자 "이런 저퀄리티 박스는 쓰지 않게").
  * 19 — 3d-motion-web 엔진(MotionWeb)을 지면에 싣고 그 계약 · 재질 · 빛을 알린다(같은 날 사용자 "Build in the engine").
+ * 23 — 그림은 canvas 2D로 직접. 효과 목록을 지침에서 빼고, 사용자가 카탈로그에서 고른 효과 하나만 `pageEffectPrompt`로 싣는다(2026-11-21).
  * 22 — 3D는 라이브러리의 배경 장 · 선화로만. 방울 · 지구본 효과와 MotionWeb 엔진을 걷어냈다(2026-11-21 사용자 "의미없는 3D 오브젝트는 그냥 안쓰는게 더 낫겠다").
  * 21 — 효과 라이브러리(ExpressoEffects): 3D · 입자 · 인터랙티브 배경은 검증된 효과에서 고른다(2026-11-21 사용자 "그걸 라이브러리로 흡수하도록 하고, 모델이 라이브러리를 참고하도록 하자").
  * 20 — 부분 재질은 거리로 가린다(좌표 띠로 가른 셰이더가 고리를 수평으로 잘라 칠했다) · 엔진 바탕은 스타일의 바탕색.
  */
-export const PAGE_PROMPT_VERSION = 22;
+export const PAGE_PROMPT_VERSION = 23;
 
 /**
  * 한 지면의 상한.
@@ -716,29 +717,37 @@ export function pagePolicyPrompt(options: { script?: boolean } = {}): string {
 export const PAGE_SCRIPT_PROMPT = [
   "## 그림 스크립트 — `script` 칸",
   "- `script`에는 ES 모듈 자바스크립트를 쓴다. 문서 끝에서 `<script type=\"module\">`로 돈다. 그림이 필요 없으면 비운다.",
-  "- 직접 그리는 그림은 canvas 2D로 짓는다. three.js(r170)는 아래 효과 라이브러리가 쓴다 — 스크립트에서 three.js · WebGL 장면을 직접 짓지 않는다.",
+  "- 그림은 canvas 2D로 직접 짓는다. three.js · WebGL 장면을 짓지 않는다 — 3D와 효과는 사용자가 카탈로그에서 골랐을 때만, 아래 「사용자가 고른 그래픽」이 알려 준다.",
   "- 그림판은 `html`에 `<canvas>`로 두고 스크립트가 클래스로 찾는다. 스크립트는 자기 그림의 컨테이너 안만 다룬다 — 글과 마크업을 만들거나 바꾸지 않는다.",
   "- 스크립트가 돌지 않는 자리(만들어지는 중의 지면 · 축소 미리보기)가 있다. 그림판 밑에 같은 성격의 첫 모습을 CSS(배경 · 그러데이션 · 인라인 SVG)로 깔아, 스크립트 없이도 첫 화면이 서게 한다.",
   "- `matchMedia(\"(prefers-reduced-motion: reduce)\")`이면 한 장면만 그리고 멈춘다. 화면 밖에 있으면 그리기를 멈춘다(`IntersectionObserver`).",
-  "- 그림판 크기는 컨테이너를 따르고 `devicePixelRatio`를 반영한다(`ResizeObserver`). WebGL을 얻지 못하거나 오류가 나면 아무것도 하지 않고 첫 모습을 남긴다.",
+  "- 그림판 크기는 컨테이너를 따르고 `devicePixelRatio`를 반영한다(`ResizeObserver`). 오류가 나면 아무것도 하지 않고 첫 모습을 남긴다.",
   "- 바깥으로 요청할 수 없다 — `fetch` · 바깥 그림 · 바깥 글꼴 · `eval`이 막혀 있다. 그림에 쓰는 값은 스크립트 안에 적는다.",
-  "",
-  "### 효과 라이브러리 — 3D · 입자 · 인터랙티브 배경은 여기서 고른다",
-  "검증된 웹 효과(Vanta.js, MIT)와 블루프린트 선화를 지면이 갖고 있다. 효과 코드를 직접 짜지 않고 이름으로 부른다. `import` 없이 바로 쓴다.",
-  "```js",
-  "const el = document.querySelector(\".hero-art\");   // 효과가 채울 자리. 자리와 크기는 CSS로 정한다",
-  "ExpressoEffects.mount(\"fog\", { el, palette: { background: \"#faf8f4\", ink: \"#241b2b\", accent: \"#5f0080\", soft: \"#c9b3d6\" }, values: { speed: 0.8 } });",
-  "```",
-  "- `palette`는 고른 스타일의 바탕 · 글자 · 강조색과, 바탕과 강조 사이의 옅은 색(`soft`)이다. `values`는 효과마다 아래 적힌 값만, 기록에서 계산해 넣는다.",
-  "- 효과는 커서에 스스로 반응하고, 화면 밖이면 멈추고, 동작 줄이기면 첫 장면에서 멈춘다. 실패하면 아무것도 그리지 않는다.",
-  "- 이 사람의 일과 고른 레이아웃에 맞는 효과를 고른다 — 아래 「어울림」을 읽고, 일의 성격이 가장 가까운 것 하나. 어느 효과든 기본값처럼 고르지 않는다. 바탕에 맞는 효과만(밝은 바탕에는 `밝음`이 있는 효과), 한 화면에 하나.",
-  "- 첫 모습(CSS · SVG)은 자리(`el`) 안에 자식 요소나 `el`의 배경으로 둔다. 효과가 붙으면 런타임이 그것을 감추고, 실패하면 남는다.",
-  ...PAGE_EFFECT_CATALOG.map((effect) => `- \`${effect.name}\` ${effect.title}(${effect.dimension.toUpperCase()} · ${effect.background.map((b) => (b === "light" ? "밝음" : "어두움")).join(" · ")}) — ${effect.look} 어울림: ${effect.use} 자리: ${effect.place}. 값: ${effect.values}`),
-  "",
-  "### 라이브러리에 맞는 효과가 없을 때 — canvas 2D로 평면 그래픽을 짓는다",
-  "- 3D는 위 라이브러리의 효과로만 쓴다. 형체(도형 · 덩어리 · 구 · 결정 · 오브젝트)를 짓거나 공중에 띄우지 않는다 — 이 사람의 일과 관계없는 오브젝트는 장식으로 읽힌다.",
-  "- 맞는 3D 효과가 없으면 canvas 2D로 형태 · 흐름 · 밀도 · 결을 짓는다.",
 ].join("\n");
+
+/**
+ * 사용자가 카탈로그에서 고른 효과 하나를 쓰는 법. 고른 효과만 싣는다 — 목록을 보이면 모델이 다른 효과로 바꾼다.
+ * 모르는 이름이면 빈 글.
+ */
+export function pageEffectPrompt(name: string): string {
+  const effect = PAGE_EFFECT_CATALOG.find((item) => item.name === name);
+  if (!effect) return "";
+  return [
+    `### 효과 \`${effect.name}\` ${effect.title} — 사용자가 고른 것`,
+    `${effect.look}`,
+    "효과 코드를 직접 짜지 않고 이름으로 부른다. `import` 없이 바로 쓴다.",
+    "```js",
+    "const el = document.querySelector(\".hero-art\");   // 효과가 채울 자리. 자리와 크기는 CSS로 정한다",
+    `ExpressoEffects.mount(${JSON.stringify(effect.name)}, { el, palette: { background: "#faf8f4", ink: "#241b2b", accent: "#5f0080", soft: "#c9b3d6" }, values: { /* 아래 값 */ } });`,
+    "```",
+    "- `palette`는 고른 스타일의 바탕 · 글자 · 강조색과, 바탕과 강조 사이의 옅은 색(`soft`)이다.",
+    `- \`values\`: ${effect.values}. 기록에서 계산해 넣는다 — ${effect.use}`,
+    `- 자리: ${effect.place}.`,
+    "- 효과는 커서에 스스로 반응하고, 화면 밖이면 멈추고, 동작 줄이기면 첫 장면에서 멈춘다. 실패하면 아무것도 그리지 않는다.",
+    "- 첫 모습(CSS · SVG)은 자리(`el`) 안에 자식 요소나 `el`의 배경으로 둔다. 효과가 붙으면 런타임이 그것을 감추고, 실패하면 남는다.",
+    "- 이 효과 말고 다른 그림 스크립트는 쓰지 않는다. 한 화면에 이 효과 하나다.",
+  ].join("\n");
+}
 
 /**
  * 스타일 문법을 생성기에게 넘기는 모양.
