@@ -8,7 +8,7 @@ import { useCallback, useEffect, useRef, useState, type FocusEvent, type FormEve
 import { LogoMark, Wordmark } from "@/components/brand/Logo";
 import { ViewTransition } from "@/components/motion/ViewTransition";
 import { Icon } from "@/components/ui/Icon";
-import { AGENT_CHAT_OPEN } from "@/features/agent-chat/agent-handoff";
+import { AGENT_CHAT_CLOSE, AGENT_CHAT_OPEN } from "@/features/agent-chat/agent-handoff";
 import { ResourceList, type ResourceKind } from "@/features/agent-chat/ResourceList";
 import "@/styles/agent-chat-framework.css";
 
@@ -141,7 +141,7 @@ function HomeStartBody({ checkins, proposals, widgets }: { checkins: ReactNode; 
             </div>
             <form ref={wrap} className={styles.composerWrap} onSubmit={submit} onFocus={() => setFocused(true)} onBlur={blur}>
               {/* 대화 화면의 입력창과 같은 이름 — 대화를 시작하는 이동에서 이 입력창이 대화 화면 아래 자리로 옮겨 간다. */}
-              <ViewTransition name="agent-composer" share={{ [AGENT_CHAT_OPEN]: "composer-morph", default: "none" }} default="none">
+              <ViewTransition name="agent-composer" share={{ [AGENT_CHAT_OPEN]: "composer-morph", [AGENT_CHAT_CLOSE]: "composer-return", default: "none" }} default="none">
               <div className={styles.composer} data-expanded={expanded}>
                 {attached.length > 0 ? (
                   <div className={styles.attachedRow}>

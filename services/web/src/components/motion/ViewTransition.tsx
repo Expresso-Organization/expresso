@@ -14,3 +14,10 @@ const Native = (React as { ViewTransition?: React.ComponentType<ViewTransitionPr
 export function ViewTransition(props: ViewTransitionProps & { children?: ReactNode }) {
   return Native ? <Native {...props} /> : <>{props.children}</>;
 }
+
+const nativeAddType = (React as { addTransitionType?: (type: string) => void }).addTransitionType;
+
+/** React의 `addTransitionType`. `startTransition` 안에서 불러 그 갱신에 전환 타입을 단다. 안정판 React에서는 아무것도 하지 않는다. */
+export function addTransitionType(type: string) {
+  nativeAddType?.(type);
+}
