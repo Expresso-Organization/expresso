@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useCallback, useContext, useMemo, useState, useRef, useEffect } from "react";
+import { createContext, startTransition, useCallback, useContext, useMemo, useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { LogoMark } from "@/components/brand/Logo";
@@ -27,7 +27,7 @@ import type { ThreadGroupPart } from "@/components/assistant-ui/elements/thread.
 import type { PropsWithChildren, ReactNode } from "react";
 import "@/styles/agent-chat-framework.css";
 import { agentRequest, useAgentConversation } from "./useAgentConversation";
-import { AGENT_CHAT_OPEN, AGENT_CONVERSATIONS_EVENT, peekAgentHandoff, takeAgentHandoff } from "./agent-handoff";
+import { AGENT_CHAT_CLOSE, AGENT_CHAT_OPEN, AGENT_CONVERSATIONS_EVENT, peekAgentHandoff, takeAgentHandoff } from "./agent-handoff";
 import { ToolStep } from "./ToolStep";
 import styles from "./AgentChat.module.css";
 
@@ -167,7 +167,7 @@ function Proposal({ proposal, beforeDocument, undone }: { proposal: AiEditPropos
   </>;
 }
 /** 홈의 입력창이 대화를 시작하며 이 입력창 자리로 옮겨 오는 전환. 홈의 입력창과 이름 · 타입이 같아야 짝이 된다. */
-const HOME_COMPOSER_TRANSITION = { name: "agent-composer", types: [AGENT_CHAT_OPEN], className: "composer-morph" };
+const HOME_COMPOSER_TRANSITION = { name: "agent-composer", share: { [AGENT_CHAT_OPEN]: "composer-morph", [AGENT_CHAT_CLOSE]: "composer-return" } };
 const convertMessage = (message: AgentMessage): ThreadMessageLike => ({
   id: message.id, role: message.role, createdAt: new Date(message.createdAt),
   ...(message.selection ? { metadata: { custom: { selection: message.selection } } } : {}),
@@ -176,10 +176,12 @@ const convertMessage = (message: AgentMessage): ThreadMessageLike => ({
     { type: "text", text: message.text },
   ],
 });
-export function AgentChat({ job, page, standalone = false, fresh = false, newHref, onRunningChange, ...props }: {
+export function AgentChat({ job, page, standalone = false, fresh = false, chatId = null, newHref, onRunningChange, ...props }: {
   context?: AgentContext; contextLabel?: string; standalone?: boolean; job?: AgentChatJob;
   /** 참이면 주소에 적힌 대화만 연다. 홈이 쓴다 — 홈의 입력창이 넘긴 말(`agent-handoff`)이 있으면 그 말로 대화를 시작한다. */
   fresh?: boolean;
+  /** `fresh`일 때 주소에 적힌 대화(`?chat=`). 서버가 읽어 넘겨, 첫 렌더부터 그 대화를 불러온다. */
+  chatId?: string | null;
   /** 「새 대화」가 갈 곳. 홈에서는 대화 전의 홈 화면으로 돌아간다. 주지 않으면 이 자리에서 대화를 비운다. */
   newHref?: string;
   /** 다듬기 화면의 지면. 대화는 이 포트폴리오가 연결된 가장 최근 대화로 열리고, 보내는 말에 고른 요소가 붙는다. */
@@ -189,7 +191,7 @@ export function AgentChat({ job, page, standalone = false, fresh = false, newHre
 }) {
   const context: AgentContext | undefined = job ? { kind: "job", id: job.id } : page ? { kind: "portfolio", id: page.portfolioId } : props.context;
   const contextLabel = job?.title ?? page?.title ?? props.contextLabel;
-  const state = useAgentConversation(context, job || page ? { restore: "context" } : fresh ? { restore: "url" } : {});
+  const state = useAgentConversation(context, job || page ? { restore: "context" } : fresh ? { restore: "url", initialId: chatId } : {});
   const router = useRouter();
   // 홈에서 넘겨받은 말. 대화를 만들고 보내기 전, 첫 렌더부터 사용자 말풍선으로 그린다 — 그래야 대화 화면의 첫 장면에
   // 시작 화면이 아니라 보낸 말이 있다. 서버의 사용자 메시지가 오면 같은 id로 바꿔 그려 말풍선이 다시 마운트되지 않는다.
@@ -294,11 +296,17 @@ export function AgentChat({ job, page, standalone = false, fresh = false, newHre
   return <ChatContext.Provider value={state}><JobContext.Provider value={job ?? null}><PageContext.Provider value={page ?? null}><AssistantRuntimeProvider runtime={runtime}>
     {preview ? <ResourcePreview resource={preview} onClose={() => setPreview(null)} selected={!!state.conversation?.contexts.some(ref => ref.kind === preview.kind && ref.id === preview.id)} disabled={contextDisabled} onToggle={toggleContext} /> : null}
     <AgentConsentDialog open={consentOpen} onOpenChange={setConsentOpen} onConsented={() => setAccess(current => current ? { ...current, consentRequired: false } : current)} />
-    <section className={`acf-scope ${styles.root} ${job || page ? styles.rail : standalone ? styles.standalone : styles.panel}`} aria-label="에이전트 채팅">
+    <section
+      className={`acf-scope ${styles.root} ${job || page ? styles.rail : standalone ? styles.standalone : styles.panel}`}
+      aria-label="에이전트 채팅"
+      // 지난 대화의 기록을 기다리는 동안 pending, 도착하면 done — done이 되는 순간 메시지 묶음이 떠오른다.
+      // 보낸 말 말풍선(arrival)은 자기 모션이 있어 두지 않는다.
+      data-restore={!arrival && state.id ? (state.conversation ? "done" : "pending") : undefined}
+    >
       <div className={styles.main}>
         <header className={styles.header}>
           <div className={styles.heading}><span className={styles.assistantMark}><LogoMark size={22} /></span><div><strong>{state.conversation?.title ?? "새 대화"}</strong><span>{running ? "답변을 준비하고 있어요" : "Expresso AI"}</span></div></div>
-          <div className={styles.headerActions}><span className={standalone ? styles.compactHistory : undefined}><ConversationSwitcher contexts={state.conversation?.contexts ?? []} contextDisabled={contextDisabled} onToggleContext={toggleContext} onPreview={setPreview} currentId={state.id} conversations={state.list} disabled={state.pending} onSelect={state.select} /></span>{!standalone ? <Link aria-label="독립 채팅으로 크게 열기" title="크게 열기" href={{ pathname: "/agent", query: state.id ? { chat: state.id } : {} }}><Icon name="arrows-out-simple" size={17} /></Link> : null}<Button variant="ghost" size="icon" aria-label="새 대화" title="새 대화" disabled={state.pending} onClick={() => newHref ? router.push(newHref as Route) : state.select(null)}><Icon name="note-pencil" size={18} /></Button></div>
+          <div className={styles.headerActions}><span className={standalone ? styles.compactHistory : undefined}><ConversationSwitcher contexts={state.conversation?.contexts ?? []} contextDisabled={contextDisabled} onToggleContext={toggleContext} onPreview={setPreview} currentId={state.id} conversations={state.list} disabled={state.pending} onSelect={state.select} /></span>{!standalone ? <Link aria-label="독립 채팅으로 크게 열기" title="크게 열기" href={{ pathname: "/agent", query: state.id ? { chat: state.id } : {} }}><Icon name="arrows-out-simple" size={17} /></Link> : null}<Button variant="ghost" size="icon" aria-label="새 대화" title="새 대화" disabled={state.pending} onClick={() => newHref ? startTransition(() => router.push(newHref as Route, { transitionTypes: [AGENT_CHAT_CLOSE] })) : state.select(null)}><Icon name="note-pencil" size={18} /></Button></div>
         </header>
 
         <div className={styles.contexts} aria-label="대화에 연결된 자료">

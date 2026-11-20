@@ -391,6 +391,35 @@ svg {
   animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
+/*
+ * 대화에서 「새 대화」로 홈에 돌아가는 전환(`AGENT_CHAT_CLOSE`) — 위의 반대.
+ * 대화 화면이 먼저 빠지고(--ex-motion-quick), 홈이 뒤따라 들어오며(--ex-motion-glide),
+ * 아래의 입력창이 홈 가운데 자리로 올라간다(--ex-motion-panel).
+ */
+::view-transition-old(.chat-leave) {
+  animation: 160ms ease both ex-vt-fade-out;
+}
+
+::view-transition-new(.home-arrive) {
+  animation: 220ms cubic-bezier(0.23, 1, 0.32, 1) 80ms both ex-vt-fade-in;
+}
+
+::view-transition-group(.composer-return) {
+  z-index: 1;
+  animation-duration: 280ms;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+::view-transition-old(.composer-return) {
+  animation-duration: 160ms;
+  animation-timing-function: ease;
+}
+
+::view-transition-new(.composer-return) {
+  animation-duration: 280ms;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
 @keyframes ex-vt-fade-out {
   to { opacity: 0; }
 }
