@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from "react";
  * 하이드레이션 전에 다 불러온 틀은 `load`를 다시 보내지 않으므로, 마운트할 때 문서 상태를 한 번 본다.
  * 미리보기는 같은 출처(`/edit/:id/preview`)라 문서를 읽을 수 있다.
  */
-export function PreviewFrame({ src, title, className }: { src: string; title: string; className: string }) {
+export function PreviewFrame({ src, title, className }: { src: string; title: string; className?: string | undefined }) {
   const frame = useRef<HTMLIFrameElement>(null);
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
