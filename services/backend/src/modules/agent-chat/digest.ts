@@ -1,4 +1,4 @@
-import type { AgentConversation, AgentToolResult, ConversationDigest } from "@expresso/contracts";
+import { diagnosisCounts, diagnosisCountsLine, type AgentConversation, type AgentToolResult, type ConversationDigest } from "@expresso/contracts";
 
 /**
  * 지난 대화의 요지. 저장된 대화에서 규칙으로 뽑는다. 순수 함수만 둔다.
@@ -15,7 +15,8 @@ function outcome(tool: AgentToolResult): string | null {
   if (tool.recordDraft) return tool.recordDraft.status === "approved" ? `커리어 기록 저장: ${tool.recordDraft.title}` : null;
   if (tool.savedRecord) return tool.savedRecord.undone ? null : `커리어 기록 저장: ${tool.savedRecord.title}`;
   if (tool.commitment) return `약속: ${tool.commitment.title} (${tool.commitment.dueOn}까지)`;
-  if (tool.diagnosis) { const count = (status: string) => tool.diagnosis!.items.filter(item => item.status === status).length; return `목표 진단: 공고 ${tool.diagnosis.sampleSize}건 기준 · 확인 ${count("confirmed") + count("partial")} · 미확인 ${count("unconfirmed")} · 부족 ${count("gap")}`; }
+  // 수는 진단 카드와 같은 함수로 센다 — 요지와 카드의 수가 달라지지 않는다.
+  if (tool.diagnosis) return `목표 진단: 공고 ${tool.diagnosis.sampleSize}건 기준 · ${diagnosisCountsLine(diagnosisCounts(tool.diagnosis.items))}`;
   if (tool.goalDraft) {
     if (tool.goalDraft.status !== "approved") return null;
     const changes = ([["하고 싶은 일", tool.goalDraft.work], ["일하고 싶은 곳", tool.goalDraft.place], ["시기와 상황", tool.goalDraft.timing]] as const).filter(([, value]) => value !== null).map(([label, value]) => `${label} → ${value}`);
