@@ -260,6 +260,13 @@ describe("Claude 채팅 실행 어댑터", () => {
     expect(updateCommitment).toHaveBeenCalledTimes(1);
     expect(conversationForModel([{ id: "00000000-0000-4000-8000-000000000072", role: "assistant", text: "", createdAt: "2026-11-20T00:00:00.000Z", tools: [{ id: "c", name: "약속", status: "complete", summary: "약속", commitment }] }])[0]!.tools).toEqual([{ name: "약속", summary: "약속", commitment: { id: commitment.id, title: commitment.title, dueOn: commitment.dueOn } }]);
   });
+  it("요건 집계는 경력 연차를 참고로 돌려준다 — 미확인으로 주면 모델이 미확인의 수에 넣어 말한다", async () => {
+    const row = (id: string, kind: "technology" | "career", label: string) => ({ id, kind, label, count: 10, status: "unconfirmed" as const, evidence: [], note: "" });
+    const diagnosis = { work: "데이터 분석가", family: "데이터", basis: "family" as const, focus: null, level: null, sampleSize: 52, companyCount: 18, interestedCount: 0, small: false, summary: "", items: [row("technology:sql", "technology", "SQL"), row("career:5-7", "career", "경력 5~7년 이상")], demandAt: "2026-11-20T00:00:00.000Z", assessedAt: null, stale: null };
+    const { client } = await connectTools({ goalDemand: vi.fn().mockResolvedValue(diagnosis) });
+    const read = await client.callTool({ name: "read_goal_demand", arguments: {} });
+    expect((JSON.parse((read.content as { text: string }[])[0]!.text) as { items: { id: string; status: string }[] }).items.map(({ id, status }) => ({ id, status }))).toEqual([{ id: "technology:sql", status: "unconfirmed" }, { id: "career:5-7", status: "reference" }]);
+  });
   it("요건 집계는 표본과 항목을 모델에 돌려주고, 진단을 저장하면 진단 카드 결과를 남긴다. 돌려보낸 사유는 모델에 그대로 전한다", async () => {
     const item = (id: string, label: string, count: number, status: "confirmed" | "partial" | "unconfirmed" | "gap" = "unconfirmed") => ({ id, kind: "technology" as const, label, count, status, evidence: [], note: "" });
     const diagnosis = { work: "백엔드 개발자", family: "백엔드", basis: "family" as const, focus: null, level: null, sampleSize: 66, companyCount: 15, interestedCount: 1, small: false, summary: "", items: [item("technology:java", "Java", 45), item("technology:kafka", "Kafka", 39)], demandAt: "2026-11-20T00:00:00.000Z", assessedAt: null, stale: null };
