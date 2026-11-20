@@ -4,13 +4,16 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AgentRecordDraft } from "@expresso/contracts";
 import { RecordDraftCard } from "./RecordDraftCard";
 
+const refresh = vi.fn();
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh }) }));
+
 const category = "00000000-0000-4000-8000-000000000003";
 const draft: AgentRecordDraft = {
   draftId: "00000000-0000-4000-8000-000000000001", title: "EKS 위 Airflow 운영", categoryId: null, bodyMd: "## 행동\nEKS 위에 Airflow를 올려 운영",
   sources: [{ messageId: "00000000-0000-4000-8000-000000000002", quote: "EKS 위에 Airflow를 올려서" }],
   categories: [{ id: category, name: "경험" }], status: "ready", recordId: null,
 };
-afterEach(cleanup);
+afterEach(() => { cleanup(); refresh.mockClear(); });
 
 describe("새 기록 초안 카드", () => {
   it("카테고리를 고르기 전에는 승인할 수 없고, 고친 제목으로 승인한다", async () => {
@@ -23,12 +26,15 @@ describe("새 기록 초안 카드", () => {
     fireEvent.change(screen.getByLabelText("제목"), { target: { value: "EKS 위 Airflow 운영 경험" } });
     fireEvent.click(approve);
     await waitFor(() => expect(onDecide).toHaveBeenCalledWith({ action: "approve", title: "EKS 위 Airflow 운영 경험", bodyMd: draft.bodyMd, categoryId: category }));
+    // 사이드바의 카테고리별 건수를 다시 읽는다
+    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
   });
   it("저장이 거절되면 이유를 보이고 초안을 그대로 둔다", async () => {
     render(<RecordDraftCard draft={{ ...draft, categoryId: category }} disabled={false} onDecide={async () => { throw new Error("필수 속성을 채워 주세요."); }} />);
     fireEvent.click(screen.getByRole("button", { name: "승인하고 저장" }));
     await waitFor(() => expect(screen.getByRole("alert").textContent).toBe("필수 속성을 채워 주세요."));
     expect(screen.getByRole("button", { name: "승인하고 저장" })).toBeTruthy();
+    expect(refresh).not.toHaveBeenCalled();
   });
   it("처리한 초안은 상태와 기록 링크만 보인다", () => {
     render(<RecordDraftCard draft={{ ...draft, status: "approved", recordId: category }} disabled={false} onDecide={vi.fn()} />);

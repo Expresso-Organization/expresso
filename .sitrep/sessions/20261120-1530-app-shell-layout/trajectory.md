@@ -20,3 +20,12 @@
 - Playwright(운영 빌드, API 앞 300ms + 사이드바 응답 1.5s 지연 프록시): 라이브러리 → 탐색 → 분석 → 커리어 기록 → 홈, 미리 받기 허용 · 차단 모두 같은 사이드바 노드 · 스켈레톤 0회. main은 두 모드 모두 노드 교체
 - 편집기 왕복: 편집기에 사이드바 0, 돌아오면 1. 배포 화면은 셸 안
 - 갱신: 사이드바 카테고리 추가(router.refresh) · 바깥에서 만든 카테고리가 설정 알림 토글(Server Action) 뒤 보임, 둘 다 같은 노드
+
+### 17:10 · T7 완료 · main 리베이스와 재검증
+- #261(앱 모션)이 먼저 머지됨 → origin/main(1c5e8df9) 위로 리베이스. 충돌: `.sitrep/index.md`, `AgentChat.tsx`(main이 카드를 `tool-parts.tsx` 등록표로 옮김)
+- 기록 초안 승인 갱신은 `RecordDraftCard` 안으로 옮기고 테스트(`RecordDraftCard.test.tsx`)에 `refresh` 호출 확인 추가
+- 재검증: `pnpm typecheck` 통과, `pnpm test` 통과(웹 101파일 549개. `CheckinFeed.test.tsx` 1건은 전체 실행 부하에서 한 번 실패, 단독 3회 · 웹 재실행 통과)
+- 운영 빌드 경로 88개 = main 87개 + main이 새로 더한 `/api/consultant/commitments/[id]`
+- Playwright 재실행: 미리 받기 허용 · 차단 모두 같은 노드 · 스켈레톤 0, 편집기 왕복, 375px 서랍 닫힘, 카테고리 추가 · Server Action 갱신 통과
+- 미검증: AI 대화 실행 종료 · 기록 초안 승인 뒤 갱신의 브라우저 확인(AI off 환경)
+

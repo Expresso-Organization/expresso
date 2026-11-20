@@ -20,6 +20,7 @@ date: 2026-11-20
 | `services/web/src/components/shell/AppChrome.tsx` | 머리 주석을 공용 레이아웃 기준으로 |
 | `services/web/src/app/(app)/jobs/[jobId]/interest-actions.ts` | 주석만 |
 | `services/web/src/features/agent-chat/AgentChat.tsx` | 실행이 끝나면 `router.refresh()` |
+| `services/web/src/features/agent-chat/RecordDraftCard.tsx` · `.test.tsx` | 기록 초안 승인 뒤 `router.refresh()` — 사이드바 카테고리 건수 |
 | `services/web/src/styles/tokens.test.ts` | 편집기 경로 키 5개 |
 | `services/dev-portal/status/scanner/config.json` | D8 경로 |
 

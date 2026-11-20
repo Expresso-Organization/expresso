@@ -9,6 +9,8 @@
   - [x] T4.1 `(app)/layout.tsx` 추가 · 구간 레이아웃 12개 삭제
   - [x] T4.2 편집기 `(editor)` 그룹으로 이동, deploy는 셸 안에 유지
   - [x] T4.3 AI 대화 실행 종료 뒤 `router.refresh()`
+  - [x] T4.4 AI 대화 기록 초안 승인 뒤 `router.refresh()`
+- [x] T7 #261 머지된 main 위로 리베이스 · 재검증
 - [x] T5 typecheck · test
 - [x] T6 운영 빌드 Playwright 검증(main 기준선 실패 확인 포함)
 

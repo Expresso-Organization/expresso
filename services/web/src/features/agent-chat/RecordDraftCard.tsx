@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
+import { useRouter } from "next/navigation";
 import type { AgentRecordDraft, AgentRecordDraftDecision } from "@expresso/contracts";
 import { useChangedSinceMount } from "@/components/motion/useChangedSinceMount";
 import { Icon } from "@/components/ui/Icon";
@@ -23,9 +24,11 @@ export function RecordDraftCard({ draft, disabled, onDecide }: { draft: AgentRec
   // 누른 결과로 바뀐 문구만 떠오른다. 대화를 다시 열어 이미 끝난 카드는 움직이지 않는다.
   const swapped = useChangedSinceMount(draft.status);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
   const decide = async (decision: AgentRecordDraftDecision) => {
     setBusy(true); setError(null);
-    try { await onDecide(decision); } catch (cause) { setError(cause instanceof Error ? cause.message : "처리하지 못했습니다."); } finally { setBusy(false); }
+    // 저장하면 사이드바의 카테고리별 건수가 바뀐다. 사이드바는 공용 레이아웃이라 화면을 옮겨도 다시 읽지 않으므로 여기서 다시 그린다.
+    try { await onDecide(decision); if (decision.action === "approve") router.refresh(); } catch (cause) { setError(cause instanceof Error ? cause.message : "처리하지 못했습니다."); } finally { setBusy(false); }
   };
   const sources = <ul className={styles.sources} aria-label="근거가 된 내 발언">{draft.sources.map(source => <li key={`${source.messageId}:${source.quote}`}><q>{source.quote}</q></li>)}</ul>;
   if (draft.status !== "ready") return <section className={styles.card} aria-label="새 기록 초안">

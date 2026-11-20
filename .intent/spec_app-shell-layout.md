@@ -26,6 +26,7 @@ date: 2026-11-20
   - `router.refresh()` — 분류 · 기록 · 휴지통 · 제작 · 비교 화면이 이미 부른다.
   - `revalidatePath`를 부르는 Server Action — Next 16은 Server Action 응답을 루트부터 그리고 `FreshnessPolicy.RefreshAll`로 적용한다(`next/dist/client/components/router-reducer/reducers/server-action-reducer.js` 주석 "the server always renders from the root in response to a Server Action"). 배포 · 이름 변경 · 관심 공고 · 대신 로그인이 여기에 든다.
   - AI 대화: `AgentChat`이 같은 대화의 실행이 `running`에서 끝난 상태로 바뀌면 `router.refresh()`를 한 번 부른다. 대화는 클라이언트 fetch라 위 두 경로를 타지 않는다.
+  - AI 대화의 기록 초안 승인: `RecordDraftCard`가 승인 뒤 `router.refresh()`를 부른다. 저장된 기록이 사이드바 카테고리 건수를 바꾼다.
 - `AppChrome.tsx` 머리 주석, `interest-actions.ts` 주석, `tokens.test.ts`의 편집기 경로 키, `dev-portal` 스캐너 D8 경로를 새 위치로 맞춘다.
 
 ## 버린 대안
