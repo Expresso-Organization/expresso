@@ -15,7 +15,7 @@ date: 2026-11-20
 | 파일 | 무엇을 |
 |---|---|
 | `packages/contracts/src/consultant.ts` · `agent-chat.ts` · 테스트 | 요건 집계, 진단, 도구 입력, 도구 결과의 `diagnosis` |
-| `packages/database/src/documents/consultant.ts` · `collections.ts` · `mongodb-migrations/0037/migration.ts` · `mongo-migrations.ts` · `mongo-build.mjs` · 테스트 | 진단 문서와 컬렉션, 마이그레이션 0037 |
+| `packages/database/src/documents/consultant.ts` · `collections.ts` · `mongodb-migrations/0038/migration.ts` · `mongo-migrations.ts` · `mongo-build.mjs` · 테스트 | 진단 문서와 컬렉션, 마이그레이션 0038 |
 | `services/backend/src/modules/jobs/demand.ts` 새 파일 · `index.ts` · 테스트 | 사전과 요건 집계 |
 | `services/backend/src/modules/consultant/diagnoses.ts` 새 파일 · `routes.ts` · `index.ts` · 테스트 | 진단 저장과 읽기, 기억 응답 |
 | `services/backend/src/modules/agent-chat/service.ts` · `digest.ts` · `record-draft.ts` · 테스트 | 도구 연결, 근거 확인, 기억의 진단 요약, 기존 기록에 더하기 |
@@ -30,7 +30,7 @@ date: 2026-11-20
 
 ```mermaid
 flowchart TD
-  A["1단계: 계약<br/>consultant.ts · agent-chat.ts"] --> B["2단계: 문서 · 마이그레이션 0037<br/>packages/database"]
+  A["1단계: 계약<br/>consultant.ts · agent-chat.ts"] --> B["2단계: 문서 · 마이그레이션 0038<br/>packages/database"]
   A --> C["3단계: 사전과 요건 집계<br/>jobs/demand.ts"]:::risk
   B --> D["4단계: 진단 저장<br/>consultant/diagnoses.ts"]
   C --> E["5단계: 도구 · 근거 확인 · 기억<br/>runtime.ts · agent-chat"]

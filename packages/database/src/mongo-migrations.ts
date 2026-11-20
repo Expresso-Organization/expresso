@@ -26,7 +26,7 @@ import { proactiveProposalSteps } from "./mongodb-migrations/0032/migration.js";
 import { jobGoalSteps } from "./mongodb-migrations/0033/migration.js";
 import { consultantProfileSteps } from "./mongodb-migrations/0035/migration.js";
 import { consultantFollowUpSteps } from "./mongodb-migrations/0036/migration.js";
-import { consultantDiagnosisSteps } from "./mongodb-migrations/0037/migration.js";
+import { consultantDiagnosisSteps } from "./mongodb-migrations/0038/migration.js";
 
 
 export interface MongoMigrationStep {
@@ -85,7 +85,7 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
   // 0034는 열린 PR(#241)이 쓰고 있다.
   const consultantProfileHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0035/migration.ts", import.meta.url))).digest("hex");
   const consultantFollowUpHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0036/migration.ts", import.meta.url))).digest("hex");
-  const consultantDiagnosisHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0037/migration.ts", import.meta.url))).digest("hex");
+  const consultantDiagnosisHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0038/migration.ts", import.meta.url))).digest("hex");
   return [
     { version: "0001", name: "initial_collections", checksum: hash.digest("hex"), steps: await initialMigrationSteps() },
     { version: "0002", name: "generation_ledger_amount_constraint", checksum: secondHash, steps: await generationLedgerConstraintSteps() },
@@ -111,6 +111,6 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
     { version: "0033", name: "job_goal", checksum: jobGoalHash, steps: await jobGoalSteps() },
     { version: "0035", name: "consultant_profiles", checksum: consultantProfileHash, steps: await consultantProfileSteps() },
     { version: "0036", name: "consultant_follow_up", checksum: consultantFollowUpHash, steps: await consultantFollowUpSteps() },
-    { version: "0037", name: "consultant_diagnoses", checksum: consultantDiagnosisHash, steps: await consultantDiagnosisSteps() },
+    { version: "0038", name: "consultant_diagnoses", checksum: consultantDiagnosisHash, steps: await consultantDiagnosisSteps() },
   ];
 }
