@@ -119,7 +119,7 @@ export interface BuildApiOptions {
   analyticsService?: AnalyticsApi;
   engagementService?: EngagementApi;
   /** 수집한 활동(공모전 · 해커톤) 목록. */
-  activityService?: Pick<ActivityApi, "list">;
+  activityService?: Pick<ActivityApi, "page">;
   /** 능동 제안. 읽고, 켜고 끄고, 실행을 줄에 넣는다. */
   proposalService?: Pick<ProposalApi, "feed" | "enable" | "disable" | "refresh" | "dismiss">;
   /** 00c 통합 검색. 기록 · 공고 · 포트폴리오 서비스를 묶은 것이라 따로 받는다. */
