@@ -287,3 +287,24 @@
   outline: none;
   box-shadow: var(--ex-focus-ring);
 }
+
+/* 하기로 한 일의 줄 — 그 약속을 잡은 대화로 간다. */
+.rowLink {
+  text-decoration: none;
+  transition: background var(--ex-motion-instant);
+}
+
+.rowLink:hover {
+  background: var(--ex-bg-tint);
+}
+
+.rowLink:focus-visible {
+  outline: none;
+  box-shadow: var(--ex-focus-ring);
+}
+
+/* 목표 진단 — 대화의 진단 카드를 그대로 세운다. 카드가 대화에서 쓰는 위 여백과 폭 상한은 여기서 푼다. */
+.diagnosis > section {
+  margin-top: 0;
+  max-width: none;
+}

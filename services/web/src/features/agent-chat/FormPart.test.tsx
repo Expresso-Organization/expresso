@@ -46,4 +46,14 @@ describe("입력 칸 묶음 부품", () => {
     fireEvent.click(screen.getByRole("button", { name: "보내기" }));
     expect((await screen.findByRole("alert")).textContent).toBe("이미 답한 질문입니다.");
   });
+  it("날짜 칸은 날짜를 고르는 칸으로 서고, 고른 날짜를 그대로 보낸다", async () => {
+    const onAnswer = vi.fn(async () => undefined);
+    render(<FormPart part={part({ prompt: "언제까지 할까요?", fields: [{ id: "f1", label: "날짜", optional: false, type: "date" }, { id: "f2", label: "메모", optional: true }] })} interactive onAnswer={onAnswer} />);
+    const date = screen.getByLabelText("날짜") as HTMLInputElement;
+    expect(date.type).toBe("date");
+    expect((screen.getByLabelText(/^메모/) as HTMLInputElement).type).toBe("text");
+    fireEvent.change(date, { target: { value: "2026-11-27" } });
+    fireEvent.click(screen.getByRole("button", { name: "보내기" }));
+    await waitFor(() => expect(onAnswer).toHaveBeenCalledWith([{ id: "f1", text: "2026-11-27" }]));
+  });
 });

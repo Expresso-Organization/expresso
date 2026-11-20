@@ -34,7 +34,8 @@ export function contractLabel(contract: string): string {
  * 크레딧에 들어가는 토큰 종류. 쌓는 순서이자 범례 순서다.
  *
  * 차트 계열 색은 이 순서로 `--ex-chart-1`부터 붙는다. 캐시 생성 토큰은 크레딧에
- * 넣지 않으므로 여기에도 없다(`BILLABLE_TOKEN_FIELDS`).
+ * 넣지 않으므로 여기에도 없다(`BILLABLE_TOKEN_FIELDS`). 차트는 종류마다 무게를 곱한 값
+ * (`billableTokensOf`)을 그린다 — 캐시 읽기는 10분의 1이다.
  */
 export const TOKEN_KINDS: readonly { key: keyof UsageTokens; label: string }[] = [
   { key: "inputTokens", label: "입력" },
@@ -53,4 +54,5 @@ export const CAPABILITY_LABEL: Partial<Record<EntitlementCapability, string>> = 
   "analytics.organization_domains": "기업 도메인 방문 분석",
   "analytics.returning_visitors": "재방문 분석",
   "export.document": "이력서 파일 공유",
+  "consultant.outreach": "컨설턴트의 먼저 연락과 제안",
 };

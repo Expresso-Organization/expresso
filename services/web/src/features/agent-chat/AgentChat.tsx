@@ -123,6 +123,7 @@ const TOOL_ICONS: Record<string, string> = {
   "기록 목록 확인": "list-bullets", "기록 읽기": "book-open-text", "요건 대조": "list-checks", "새 기록 초안": "note-pencil", "구직 목표 변경": "target", "기록 변경 제안": "pencil-line",
   "보완점 정리": "target", "준비 계획 초안": "calendar-check", "계획 진행 확인": "chart-line-up", "계획 재배치 초안": "arrows-clockwise",
   "지면 요소 읽기": "cursor-click", "지면 요소 고침": "pencil-simple-line", "기억 갱신": "bookmark-simple", "기록 저장": "note-pencil",
+  "약속": "calendar-check", "약속 갱신": "calendar-check", "목표 요건 집계": "chart-bar", "목표 진단": "chart-bar", "기록에 더하기": "pencil-line", "공고 찾기": "briefcase", "활동 찾기": "trophy", "비교 표": "table",
 };
 /**
  * 도구 호출 하나를 작업 흔적의 한 단계로 그린다. 결과의 모양으로 단계 아래를 나눈다 — 요건 대조 · 보완점 · 새 기록 · 준비 계획 ·

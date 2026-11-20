@@ -37,6 +37,7 @@ export type StartAction =
 const PROMPTS: readonly { icon: string; label: string; prompt: string }[] = [
   { icon: "note-pencil", label: "새 기록 남기기", prompt: "내 경험을 기록으로 남기고 싶어. 한 번에 하나씩 질문해 주고, 답을 모아 새 기록 초안을 만들어 줘." },
   { icon: "chat-circle-dots", label: "경험 구체화", prompt: "내 커리어 기록에서 역할 · 행동 · 성과가 부족한 부분을 질문해 줘." },
+  { icon: "chart-bar", label: "목표 진단", prompt: "내 구직 목표에 비해 지금 부족한 점을 진단해 줘. 목표와 같은 직군의 공고를 기준으로 봐 줘." },
   { icon: "target", label: "맞는 공고 찾기", prompt: "내 커리어 기록과 잘 맞는 채용 공고를 찾아 줘. 왜 맞는지 기록의 근거와 함께 알려 줘." },
   { icon: "compass", label: "목표 직무 탐색", prompt: "아직 목표 공고가 없어. 내 경험과 관심사를 물어보고 맞는 직무 후보를 같이 찾아 줘." },
 ];
@@ -44,18 +45,18 @@ const PROMPTS: readonly { icon: string; label: string; prompt: string }[] = [
 /**
  * 홈 — 대화를 시작하기 전의 화면.
  *
- * 위에서 아래로 로고, 입력창, 추천 프롬프트, 새 소식 위젯, 제안 카드가 선다.
+ * 위에서 아래로 로고, 입력창, 추천 프롬프트, 확인 카드, 새 소식 위젯, 제안 카드가 선다.
  * 입력창은 대화를 만들지 않는다. 보낼 말과 연결할 자료를 대화 화면으로 넘기고 그리로 간다.
  */
-export function HomeStart({ proposals, widgets }: { proposals: ReactNode; widgets: ReactNode }) {
+export function HomeStart({ checkins, proposals, widgets }: { checkins: ReactNode; proposals: ReactNode; widgets: ReactNode }) {
   return (
     <HomeHandoffProvider>
-      <HomeStartBody proposals={proposals} widgets={widgets} />
+      <HomeStartBody checkins={checkins} proposals={proposals} widgets={widgets} />
     </HomeHandoffProvider>
   );
 }
 
-function HomeStartBody({ proposals, widgets }: { proposals: ReactNode; widgets: ReactNode }) {
+function HomeStartBody({ checkins, proposals, widgets }: { checkins: ReactNode; proposals: ReactNode; widgets: ReactNode }) {
   const { open, pending } = useHomeHandoff();
   const [text, setText] = useState("");
   const [attached, setAttached] = useState<Attached[]>([]);
@@ -225,6 +226,7 @@ function HomeStartBody({ proposals, widgets }: { proposals: ReactNode; widgets: 
               ))}
             </div>
           </div>
+          {checkins}
           {widgets}
           {proposals}
         </div>

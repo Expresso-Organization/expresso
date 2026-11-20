@@ -11,6 +11,10 @@ import { PlanDraftCard } from "./PlanDraftCard";
 import { PlanCard } from "./PlanCard";
 import { ReplanDraftCard } from "./ReplanDraftCard";
 import { PageEditCard } from "./PageEditCard";
+import { CommitmentCard } from "./CommitmentCard";
+import { DiagnosisCard } from "./DiagnosisCard";
+import { ListPart } from "./ListPart";
+import { TablePart } from "./TablePart";
 import { TOOL_PARTS, isBelowTool, toolPartFor, type ToolPartContext } from "./tool-parts";
 
 afterEach(cleanup);
@@ -106,5 +110,57 @@ describe("대화 속 화면의 등록표", () => {
     rerender(<>{toolPartFor(saved)!.render(saved, using)}</>);
     fireEvent.click(screen.getByRole("button", { name: "되돌리기" }));
     expect(using.undoSavedRecord).toHaveBeenCalledWith("00000000-0000-4000-8000-000000000030");
+  });
+  it("약속은 답변 글 아래에 약속 카드를 그리고, 대화가 바뀔 때 다시 읽도록 대화의 번호를 넘긴다", () => {
+    const pending = tool("약속", {}, "running");
+    expect(isBelowTool(pending)).toBe(true);
+    const { container, rerender } = render(<>{toolPartFor(pending)!.render(pending, context())}</>);
+    expect(screen.getByRole("status").textContent).toBe("하기로 한 일을 남기고 있습니다.");
+    const failed = tool("약속", {}, "failed");
+    rerender(<>{toolPartFor(failed)!.render(failed, context())}</>);
+    expect(container.firstChild).toBeNull();
+    const commitment = { id: "00000000-0000-4000-8000-000000000040", title: "해커톤 지원서 내기", detail: "", dueOn: "2026-11-27", status: "open", awaiting: false, conversationId: null, createdAt: "2026-11-20T00:00:00.000Z" };
+    const made = element(tool("약속", { commitment }));
+    expect(made.type).toBe(CommitmentCard);
+    expect(made.props).toMatchObject({ commitment, refreshKey: 3 });
+    // 약속을 닫거나 옮긴 호출은 카드가 없다 — 작업 흔적에 요약만 남는다.
+    expect(toolPartFor(tool("약속 갱신"))).toBeUndefined();
+    expect(isBelowTool(tool("약속 갱신"))).toBe(false);
+  });
+  it("목표 진단은 답변 글 아래에 진단 카드를 그리고, 집계만 한 호출은 작업 흔적에 요약만 남는다", () => {
+    const pending = tool("목표 진단", {}, "running");
+    expect(isBelowTool(pending)).toBe(true);
+    const { container, rerender } = render(<>{toolPartFor(pending)!.render(pending, context())}</>);
+    expect(screen.getByRole("status").textContent).toBe("기록과 대조한 결과를 정리하고 있습니다.");
+    const failed = tool("목표 진단", {}, "failed");
+    rerender(<>{toolPartFor(failed)!.render(failed, context())}</>);
+    expect(container.firstChild).toBeNull();
+    const diagnosis = { work: "백엔드 개발자", family: "백엔드", basis: "family", focus: null, level: null, sampleSize: 66, companyCount: 15, interestedCount: 0, small: false, summary: "요약", items: [], demandAt: "2026-11-20T00:00:00.000Z", assessedAt: "2026-11-20T00:00:00.000Z", stale: null };
+    const made = element(tool("목표 진단", { diagnosis }));
+    expect(made.type).toBe(DiagnosisCard);
+    expect(made.props).toEqual({ diagnosis });
+    expect(toolPartFor(tool("목표 요건 집계"))).toBeUndefined();
+    expect(isBelowTool(tool("목표 요건 집계"))).toBe(false);
+  });
+  it("공고 찾기와 활동 찾기는 답변 글 아래에 목록을, 비교 표는 표를 그린다", () => {
+    for (const [name, text] of [["공고 찾기", "공고를 찾고 있습니다."], ["활동 찾기", "공모전과 해커톤을 찾고 있습니다."], ["비교 표", "표로 정리하고 있습니다."]] as const) {
+      const pending = tool(name, {}, "running");
+      expect(isBelowTool(pending), name).toBe(true);
+      const { container, unmount } = render(<>{toolPartFor(pending)!.render(pending, context())}</>);
+      expect(screen.getByRole("status").textContent, name).toBe(text);
+      unmount();
+      const failed = tool(name, {}, "failed");
+      const again = render(<>{toolPartFor(failed)!.render(failed, context())}</>);
+      expect(again.container.firstChild, name).toBeNull();
+      again.unmount();
+      expect(container).toBeTruthy();
+    }
+    const list = { title: "백엔드 공고", items: [], total: 0 };
+    expect(element(tool("공고 찾기", { list })).type).toBe(ListPart);
+    expect(element(tool("활동 찾기", { list })).props).toEqual({ list });
+    const table = { title: "견주기", columns: ["공고", "경력"], rows: [["당근", "신입"]] };
+    const shown = element(tool("비교 표", { table }));
+    expect(shown.type).toBe(TablePart);
+    expect(shown.props).toEqual({ table });
   });
 });

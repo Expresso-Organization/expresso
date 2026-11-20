@@ -9,6 +9,8 @@ export interface ConsultantProfile {
   stageSource: "agent" | "user" | null;
   stageUpdatedAt: string | null;
   preferences: ConsultantPreference[];
+  /** 먼저 연락하기를 켰는가. 아직 정하지 않았으면 null. */
+  outreach: boolean | null;
 }
 
 /** 조건을 더 기억할 수 없다. 에이전트는 사용자에게 알리고, 지울 조건을 묻는다. */
@@ -16,11 +18,12 @@ export class ConsultantLimitError extends Error {
   constructor() { super(`기억하는 조건이 ${CONSULTANT_PREFERENCE_LIMIT}개입니다. 더 기억하려면 쓰지 않는 조건을 지워야 합니다.`); }
 }
 
-const EMPTY: ConsultantProfile = { stage: null, stageSource: null, stageUpdatedAt: null, preferences: [] };
+const EMPTY: ConsultantProfile = { stage: null, stageSource: null, stageUpdatedAt: null, preferences: [], outreach: null };
 const normalize = (text: string) => text.replace(/\s+/g, " ").trim();
 const view = (row: ConsultantProfileDoc | null): ConsultantProfile => row ? {
   stage: row.stage, stageSource: row.stageSource, stageUpdatedAt: row.stageUpdatedAt?.toISOString() ?? null,
   preferences: row.preferences.map(item => ({ id: item.id, kind: item.kind, text: item.text, source: item.source, createdAt: item.createdAt.toISOString() })),
+  outreach: row.outreach?.enabled ?? null,
 } : EMPTY;
 
 /**
@@ -44,6 +47,17 @@ export class ConsultantService {
   async setStage(userId: string, stage: ConsultantStage, source: "agent" | "user", at = new Date()): Promise<ConsultantProfile> {
     await this.ensure(userId, at);
     await this.rows.updateOne({ _id: userId, userId }, { $set: { stage, stageSource: source, stageUpdatedAt: at, updatedAt: at } });
+    return this.profile(userId);
+  }
+
+  /**
+   * 먼저 연락하기를 켜거나 끈다. 켠 사용자에게만 컨설턴트가 약속한 날과 대화가 없을 때 먼저 묻는다.
+   * 다시 정해도 하루 한 건 · 2주에 한 번을 지키는 날짜는 그대로 둔다.
+   */
+  async setOutreach(userId: string, enabled: boolean, at = new Date()): Promise<ConsultantProfile> {
+    await this.ensure(userId, at);
+    const row = (await this.rows.findOne({ _id: userId, userId }))!;
+    await this.rows.updateOne({ _id: userId, userId }, { $set: { outreach: { enabled, decidedAt: at, lastNotifiedOn: row.outreach?.lastNotifiedOn ?? null, lastQuietOn: row.outreach?.lastQuietOn ?? null, quiet: enabled ? row.outreach?.quiet ?? false : false }, updatedAt: at } });
     return this.profile(userId);
   }
 

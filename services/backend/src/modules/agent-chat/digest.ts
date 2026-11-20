@@ -14,6 +14,8 @@ function outcome(tool: AgentToolResult): string | null {
   if (tool.status !== "complete") return null;
   if (tool.recordDraft) return tool.recordDraft.status === "approved" ? `커리어 기록 저장: ${tool.recordDraft.title}` : null;
   if (tool.savedRecord) return tool.savedRecord.undone ? null : `커리어 기록 저장: ${tool.savedRecord.title}`;
+  if (tool.commitment) return `약속: ${tool.commitment.title} (${tool.commitment.dueOn}까지)`;
+  if (tool.diagnosis) { const count = (status: string) => tool.diagnosis!.items.filter(item => item.status === status).length; return `목표 진단: 공고 ${tool.diagnosis.sampleSize}건 기준 · 확인 ${count("confirmed") + count("partial")} · 미확인 ${count("unconfirmed")} · 부족 ${count("gap")}`; }
   if (tool.goalDraft) {
     if (tool.goalDraft.status !== "approved") return null;
     const changes = ([["하고 싶은 일", tool.goalDraft.work], ["일하고 싶은 곳", tool.goalDraft.place], ["시기와 상황", tool.goalDraft.timing]] as const).filter(([, value]) => value !== null).map(([label, value]) => `${label} → ${value}`);

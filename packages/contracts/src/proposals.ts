@@ -143,7 +143,10 @@ export const ProposalTriggerSchema = z.enum(["enable", "manual", "daily", "news"
 
 /** 실행하지 않았거나 끝내지 못한 까닭. */
 export const ProposalRunReasonSchema = z.enum([
+  /** 예전 실행 기록에만 남아 있다. 능동 제안은 이제 크레딧을 보지 않는다. */
   "no_credits",
+  /** 요금제가 능동 제안을 열지 않는다. */
+  "plan_required",
   "consent_required",
   "ai_unavailable",
   "nothing_new",
@@ -167,6 +170,8 @@ export const ProposalRunSchema = z.strictObject({
 });
 
 export const ProposalFeedSchema = z.strictObject({
+  /** 요금제가 능동 제안을 여는가. 열지 않으면 켜져 있어도 `enabled`는 false이고 제안은 비어 있다. */
+  available: z.boolean(),
   /** 사용자가 능동 제안을 켰는가. 꺼져 있으면 서버는 이 사용자에게 AI를 돌리지 않는다. */
   enabled: z.boolean(),
   proposals: z.array(ProposalSchema).max(12),

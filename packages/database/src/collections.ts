@@ -7,6 +7,8 @@ export interface MongoCollections {
   preparationPlans: Collection<Docs.PreparationPlanDoc>;
   proposalFeeds: Collection<Docs.ProposalFeedDoc>;
   consultantProfiles: Collection<Docs.ConsultantProfileDoc>;
+  consultantCommitments: Collection<Docs.ConsultantCommitmentDoc>;
+  consultantDiagnoses: Collection<Docs.ConsultantDiagnosisDoc>;
   activities: Collection<Docs.ActivityDoc>;
   activitySources: Collection<Docs.ActivitySourceDoc>;
   plans: Collection<Docs.PlanDoc>;
@@ -103,6 +105,8 @@ export function mongoCollections(db: Db): MongoCollections {
     preparationPlans: db.collection<Docs.PreparationPlanDoc>("preparation_plans"),
     proposalFeeds: db.collection<Docs.ProposalFeedDoc>("proposal_feeds"),
     consultantProfiles: db.collection<Docs.ConsultantProfileDoc>("consultant_profiles"),
+    consultantCommitments: db.collection<Docs.ConsultantCommitmentDoc>("consultant_commitments"),
+    consultantDiagnoses: db.collection<Docs.ConsultantDiagnosisDoc>("consultant_diagnoses"),
     activities: db.collection<Docs.ActivityDoc>("activities"),
     activitySources: db.collection<Docs.ActivitySourceDoc>("activity_sources"),
     plans: db.collection<Docs.PlanDoc>("plans"),
