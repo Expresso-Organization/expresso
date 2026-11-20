@@ -15,7 +15,8 @@ date: 2026-11-21
 - [ ] `.bn-ak-menu-item`의 `:hover` · `[data-active-item]` · `[aria-selected=true]` · `[aria-expanded=true]` · `:active`가 `--ex-bg-tint-strong` 배경, `--ex-fg-strong` 글자다. `#007acc` · `#0062a3`이 계산된 스타일에 남지 않는다.
 - [ ] 메뉴 항목은 최소 34px, 모서리 7px, `--ex-text-sm`, `--ex-fg-body`이고 눌러도 위아래 여백이 흔들리지 않는다.
 - [ ] `.bn-side-menu .bn-ak-button`은 투명 배경 · 그림자 없음 · `--ex-fg-subtle`, 아이콘 18px, 올리면 `--ex-bg-tint` · `--ex-fg-strong`이다.
-- [ ] `/` 메뉴: 왼쪽 아이콘 칸 32px 테두리 상자(`--ex-border-soft`, `--ex-radius-control`), 제목 `--ex-text-sm` 500, 설명 `--ex-text-2xs` `--ex-fg-muted`, 단축키는 `--ex-font-mono` `--ex-text-3xs` 얇은 테두리, 묶음 이름 `--ex-text-xs` 600 `--ex-fg-muted`.
+- [ ] `/` 메뉴: 왼쪽 아이콘 칸 32px 테두리 상자(`--ex-border-soft`, `--ex-radius-control`), 설명이 붙은 항목 최소 44px, 제목 `--ex-text-sm` 500, 설명 `--ex-text-2xs` `--ex-fg-muted`, 묶음 이름 `--ex-text-xs` 600 `--ex-fg-muted`.
+- [ ] `/` 메뉴 항목에 단축키 표시(`badge`)가 없다. `BlockNoteBody.tsx`의 `slashItems`가 기본 항목에서 `badge`를 뺀다. 「콜아웃」 항목은 `icon`(Phosphor `lightbulb`)을 가진다.
 - [ ] 서식 툴바 단추는 투명 · 그림자 없음, 고른 단추는 `--ex-bg-tint-strong`. 툴팁은 `--ex-bg-inverse` · `--ex-fg-on-inverse`.
 - [ ] 빈 줄 안내(`.bn-block-content:has(.ProseMirror-trailingBreak:only-child)::after`)가 `font-style: normal`이다.
 - [ ] `tokens.test.ts` 통과(곡률 역할: `button`이 든 선택자는 `--ex-radius-control`).
