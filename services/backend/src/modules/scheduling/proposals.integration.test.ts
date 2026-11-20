@@ -18,11 +18,14 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("예약 잡과 능동 제안", ()
     await mongoCollections(fixture.resource.db).scheduledJobRuns.insertOne({ _id: id, jobKey, scheduledFor: new Date(at.getTime() + Math.floor(Math.random() * 1_000_000)), status: "queued", attempts: 0, createdAt: at } as never);
     return (await service.process(id, at)).result;
   };
-  const world = (added: { jobs: number; activities: number }) => {
+  const world = (added: { jobs: number; activities: number }, failing: string | null = null) => {
     const calls: string[] = [];
     const service = new MongoSchedulingService(fixture.resource, {
       ingest: { run: async () => ({ added: added.jobs, sources: 1 }), readPendingFacts: async () => ({}) } as never,
-      activities: { collect: async () => ({ read: 5, added: added.activities, updated: 5 - added.activities }) },
+      activities: { collect: async () => ({
+        read: 5, added: added.activities, updated: 5 - added.activities, duplicates: 0,
+        sources: [{ source: "wevity" as const, read: 5, error: null }, ...(failing ? [{ source: "boottent" as const, read: 0, error: failing }] : [])],
+      }) },
       proposals: {
         requestDaily: async () => { calls.push("daily"); return { requested: 3 }; },
         requestForNews: async () => { calls.push("news"); return { requested: 2 }; },
@@ -40,13 +43,23 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("예약 잡과 능동 제안", ()
   it("수집이 새 항목을 들였을 때만 새 소식 실행을 맡긴다", async () => {
     const quiet = world({ jobs: 0, activities: 0 });
     expect(await run(quiet.service, "job_ingest")).toEqual({ added: 0, sources: 1 });
-    expect(await run(quiet.service, "activity_collect")).toEqual({ read: 5, added: 0, updated: 5 });
+    expect(await run(quiet.service, "activity_collect")).toMatchObject({ read: 5, added: 0, updated: 5 });
     expect(quiet.calls).toEqual([]);
 
     const busy = world({ jobs: 4, activities: 1 });
     expect(await run(busy.service, "job_ingest")).toEqual({ added: 4, sources: 1, proposalsRequested: 2 });
-    expect(await run(busy.service, "activity_collect")).toEqual({ read: 5, added: 1, updated: 4, proposalsRequested: 2 });
+    expect(await run(busy.service, "activity_collect")).toMatchObject({ read: 5, added: 1, updated: 4, proposalsRequested: 2 });
     expect(busy.calls).toEqual(["news", "news"]);
+  });
+
+  it("출처 하나가 실패하면 새 활동 제안은 맡기고 실행은 실패로 남긴다", async () => {
+    const { service, calls } = world({ jobs: 0, activities: 2 }, "boottent: no camps");
+    const id = randomUUID(); const at = new Date("2026-11-15T03:00:00Z");
+    await mongoCollections(fixture.resource.db).scheduledJobRuns.insertOne({ _id: id, jobKey: "activity_collect", scheduledFor: new Date(at.getTime() + 7), status: "queued", attempts: 0, createdAt: at } as never);
+    // 실행은 실패를 기록하고 다시 던진다 — 작업 큐가 다시 시도한다.
+    await expect(service.process(id, at)).rejects.toThrow("boottent");
+    expect(await mongoCollections(fixture.resource.db).scheduledJobRuns.findOne({ _id: id })).toMatchObject({ status: "failed", lastError: "ActivityCollectError" });
+    expect(calls).toEqual(["news"]);
   });
 
   it("연결되지 않은 자리는 건너뛴 까닭을 남긴다", async () => {

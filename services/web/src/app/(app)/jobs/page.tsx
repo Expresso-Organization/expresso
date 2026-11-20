@@ -172,7 +172,7 @@ export default async function JobsPage({
   const params = await searchParams;
   // 탐색의 종류. 채용 공고가 아니면 그 종류의 화면이 따로 선다.
   const kind = readKind(params.kind);
-  if (kind !== "jobs") return <ExploreActivities kind={kind} />;
+  if (kind !== "jobs") return <ExploreActivities kind={kind} page={Math.max(1, Number.parseInt(String(params.page ?? "1"), 10) || 1)} />;
   const q = typeof params.q === "string" && params.q.trim() ? params.q.trim() : undefined;
   const category = typeof params.category === "string" ? params.category : undefined;
   const sort = params.sort === "deadline" || params.sort === "recent" ? params.sort : "match";

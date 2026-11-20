@@ -9,6 +9,7 @@ export interface MongoCollections {
   consultantProfiles: Collection<Docs.ConsultantProfileDoc>;
   consultantCommitments: Collection<Docs.ConsultantCommitmentDoc>;
   activities: Collection<Docs.ActivityDoc>;
+  activitySources: Collection<Docs.ActivitySourceDoc>;
   plans: Collection<Docs.PlanDoc>;
   users: Collection<Docs.UserDoc>;
   accountDeletionRequests: Collection<Docs.AccountDeletionRequestDoc>;
@@ -105,6 +106,7 @@ export function mongoCollections(db: Db): MongoCollections {
     consultantProfiles: db.collection<Docs.ConsultantProfileDoc>("consultant_profiles"),
     consultantCommitments: db.collection<Docs.ConsultantCommitmentDoc>("consultant_commitments"),
     activities: db.collection<Docs.ActivityDoc>("activities"),
+    activitySources: db.collection<Docs.ActivitySourceDoc>("activity_sources"),
     plans: db.collection<Docs.PlanDoc>("plans"),
     users: db.collection<Docs.UserDoc>("users"),
     accountDeletionRequests: db.collection<Docs.AccountDeletionRequestDoc>("account_deletion_requests"),
