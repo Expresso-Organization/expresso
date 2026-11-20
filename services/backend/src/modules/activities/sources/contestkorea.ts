@@ -1,5 +1,5 @@
 import { addDays, isoDate, seoulDate } from "../dates.js";
-import { ActivitySourceError, clip, fetchText, statusOn, type ActivityRow, type ActivitySource, type FetchText } from "./adapter.js";
+import { ActivitySourceError, clip, fetchText, imageUrl, statusOn, type ActivityRow, type ActivitySource, type FetchText } from "./adapter.js";
 import { htmlText, isHackathon } from "./text.js";
 
 /**
@@ -93,7 +93,16 @@ export function contestKoreaRow(row: ContestKoreaListRow, at: Date): ActivityRow
     tuition: null,
     nbcardRequired: null,
     status: statusOn(applyStartOn, at),
+    posterUrl: null,
   };
+}
+
+/**
+ * 상세(`view.php`)의 포스터. 본문 머리 `div.img_area`의 첫 그림이다(2026-11-20 확인 — 옆 배너의 그림도
+ * 같은 `/admincenter/files/meet/` 아래에 있어 자리로 가른다).
+ */
+export function contestKoreaPoster(html: string): string | null {
+  return imageUrl(/<div class="img_area">\s*<img[^>]*\ssrc="([^"]+)"/.exec(html)?.[1], "https://www.contestkorea.com");
 }
 
 export class ContestKoreaSource implements ActivitySource {
@@ -112,6 +121,10 @@ export class ContestKoreaSource implements ActivitySource {
         if (row) rows.set(row.sourceId, row);
       }
       if (listed.length === 0) break;
+    }
+    // 목록에는 그림이 없다. 상세를 하나씩 읽어 포스터를 찾는다 — 못 읽어도 그 활동은 포스터 없이 남는다.
+    for (const row of rows.values()) {
+      row.posterUrl = await this.fetchPage(row.url).then(contestKoreaPoster).catch(() => null);
     }
     return [...rows.values()];
   }
