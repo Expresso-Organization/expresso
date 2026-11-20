@@ -2,6 +2,7 @@ import type { CareerCategory } from "@expresso/contracts";
 import type { Route } from "next";
 import Link from "next/link";
 
+import { Skel, SkelRegion, skelKeys } from "@/components/shell/Skeleton";
 import { Icon } from "@/components/ui/Icon";
 import { CareerViewShell } from "@/features/career-editor/views/CareerViewShell";
 import { homeEngagement } from "@/lib/app-data";
@@ -11,6 +12,7 @@ import { PortfolioGrid } from "./PortfolioGrid";
 import { portfoliosWithPage, siteInsights } from "../home/home-data";
 import { gridItems } from "../home/home-model";
 import { KIND_ICON, KIND_LABEL } from "./library-model";
+import gridStyles from "./portfolio-grid.module.css";
 import styles from "./library.module.css";
 
 /** 목록 응답 한 장의 상한(계약 `ListPortfoliosQuerySchema`). */
@@ -29,6 +31,31 @@ export async function PortfoliosPane({ accessToken }: { accessToken: string }) {
     items.flatMap((item) => (item.kind === "portfolio" ? [item.portfolio.id] : [])),
   );
   return <PortfolioGrid items={items} withPage={withPage} sites={sites} />;
+}
+
+/**
+ * 지면 칸이 응답을 기다리는 동안. 왼쪽 목록이 이미 센 수(`count`)만큼 같은 격자 · 같은 카드 틀로 세운다 —
+ * 카드가 오면 그 자리에서 떠오르고 칸이 밀리지 않는다.
+ */
+export function PortfoliosPaneSkeleton({ count }: { count: number }) {
+  return (
+    <SkelRegion label="포트폴리오를 불러오는 중">
+      <div className={gridStyles.sectionHead}>
+        <span className={gridStyles.sectionTitle}>내 포트폴리오</span>
+      </div>
+      <div className={gridStyles.portfolioGrid}>
+        {skelKeys(count + 1).map((card) => (
+          <div key={card} className={gridStyles.portfolioCard}>
+            <div className={gridStyles.portfolioThumb} />
+            <div className={gridStyles.portfolioBody}>
+              <Skel w={`${68 - (card % 3) * 12}%`} h={13} />
+              <Skel w="44%" h={11} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </SkelRegion>
+  );
 }
 
 /** 포트폴리오와 만들다 만 제작을 합친 수. */
