@@ -7,6 +7,7 @@ import { AgentChat } from "@/features/agent-chat/AgentChat";
 import { requireSession } from "@/lib/require-session";
 
 import { HomeHeader } from "./HomeChrome";
+import { PROPOSAL_FEED_CHANGE } from "./home-transitions";
 import { HomeStart } from "./HomeStart";
 import { ContestsWidget, InternsWidget, JobsWidget, Proposals, ProposalsSkeleton, WidgetSkeleton, Widgets } from "./HomeWidgets";
 
@@ -42,7 +43,7 @@ export default async function HomePage({
             <AgentChat key={chat ?? "compose"} standalone fresh chatId={chat} newHref="/home" />
           </ViewTransition>
         ) : (
-          <ViewTransition key="home" exit={{ [AGENT_CHAT_OPEN]: "home-leave", default: "none" }} enter={{ [AGENT_CHAT_CLOSE]: "home-arrive", default: "none" }} default="none">
+          <ViewTransition key="home" exit={{ [AGENT_CHAT_OPEN]: "home-leave", default: "none" }} enter={{ [AGENT_CHAT_CLOSE]: "home-arrive", default: "none" }} update={{ [PROPOSAL_FEED_CHANGE]: "home-shift", default: "none" }} default="none">
           <HomeStart
             proposals={
               <Suspense fallback={<ProposalsSkeleton />}>

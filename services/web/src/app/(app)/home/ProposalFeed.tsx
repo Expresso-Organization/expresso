@@ -6,7 +6,7 @@ import Link from "next/link";
 import { startTransition as startFeedTransition, useEffect, useState, useTransition, type ReactNode } from "react";
 
 import { LogoMark } from "@/components/brand/Logo";
-import { ViewTransition } from "@/components/motion/ViewTransition";
+import { addTransitionType, ViewTransition } from "@/components/motion/ViewTransition";
 import { tintOf, type TintHue } from "@/components/ui/company-avatar-tint";
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -14,6 +14,7 @@ import { Icon } from "@/components/ui/Icon";
 import { ToolStep } from "@/features/agent-chat/ToolStep";
 import { CAREER_CATEGORY_ICONS } from "@/lib/career-category-icons";
 
+import { PROPOSAL_FEED_CHANGE } from "./home-transitions";
 import { useHomeHandoff } from "./HomeHandoff";
 import { ProposalAction } from "./HomeStart";
 import type { BriefingFinding } from "./briefing";
@@ -167,13 +168,14 @@ export function ProposalFeed({ initial, fallback, hasGoal }: { initial: Feed; fa
   };
   // 결과 반영도 Transition 안에서 한다 — React 19는 await 뒤의 갱신을 Transition으로 보지 않는데, 카드가 빠지고 자리를
   // 옮기는 전환(<ViewTransition>)은 Transition에서만 돈다.
-  const run = (action: () => Promise<ProposalActionResult>) => startTransition(async () => { const result = await action(); startTransition(() => apply(result)); });
+  // `PROPOSAL_FEED_CHANGE`는 카드가 빠져 스크롤이 당겨질 때 홈 전체를 교차시킨다(home-transitions.ts).
+  const run = (action: () => Promise<ProposalActionResult>) => startTransition(async () => { const result = await action(); startTransition(() => { addTransitionType(PROPOSAL_FEED_CHANGE); apply(result); }); });
 
   // 실행 중에는 끝날 때까지 상태를 다시 읽는다.
   useEffect(() => {
     if (!working) return;
     let alive = true;
-    const timer = setInterval(() => { void loadProposalsAction().then((result) => { const next = result.feed; if (alive && next) startFeedTransition(() => setFeed(next)); }); }, POLL_MS);
+    const timer = setInterval(() => { void loadProposalsAction().then((result) => { const next = result.feed; if (alive && next) startFeedTransition(() => { addTransitionType(PROPOSAL_FEED_CHANGE); setFeed(next); }); }); }, POLL_MS);
     return () => { alive = false; clearInterval(timer); };
   }, [working]);
 

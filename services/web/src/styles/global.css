@@ -440,6 +440,19 @@ svg {
 }
 
 /*
+ * 카드가 빠져 홈이 화면보다 짧아지면 브라우저가 스크롤을 위로 당겨 카드 밖의 홈이 한 번에 내려간다.
+ * 이 갱신에서만 홈 전체를 교차시켜, 누르기 전 화면에서 새 화면으로 이어지게 한다. 홈은 스크롤 상자 안에서
+ * 보이는 대로 찍혀 자리를 옮기지 않으므로 옮김이 아니라 교차다(--ex-motion-quick · --ex-motion-glide).
+ */
+::view-transition-old(.home-shift) {
+  animation: 160ms ease both ex-vt-fade-out;
+}
+
+::view-transition-new(.home-shift) {
+  animation: 220ms cubic-bezier(0.23, 1, 0.32, 1) both ex-vt-fade-in;
+}
+
+/*
  * 온보딩 단계(app/(auth)/onboarding/OnboardingShell.tsx). 본문 틀이 다음 단계의 크기로 맞춰지는 동안(--ex-motion-panel)
  * 옛 본문은 빠지고(--ex-motion-quick) 새 본문은 뒤따라 떠오른다(--ex-motion-glide).
  */
