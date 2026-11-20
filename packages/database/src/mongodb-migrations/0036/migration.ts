@@ -8,7 +8,7 @@ import type { MongoMigrationStep } from "../../mongo-migrations.js";
  *   에이전트가 대화에서 적고 사용자가 「내 진행」 화면에서 고친다.
  *
  * 새 컬렉션을 만들 뿐 기존 문서는 바꾸지 않는다.
- * 번호가 0033에서 0035로 건너뛴다. 0034는 열린 PR(#241 디자인 대화)이 쓰고 있다(2026-11-20 확인).
+ * 번호가 0033에서 0036으로 건너뛴다. 0034는 열린 PR #241(디자인 대화)이, 0035는 열린 PR #253(활동 출처)이 쓰고 있다(2026-11-20 확인).
  */
 export async function consultantProfileSteps(): Promise<MongoMigrationStep[]> {
   return [
