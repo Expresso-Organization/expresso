@@ -45,7 +45,7 @@ Expresso AI 기획(`docs/expresso-ai/product-plan.md`, PR #252)의 넷째 마일
 - 준비 계획의 작업 마감은 이 변경의 확인 대상이 아니다. 계획의 작업을 약속으로 잇는 일은 뒤에 한다.
 - 능동 제안을 새 소식이 있는 날에만 실행하게 바꾸는 일은 이 변경에 넣지 않았다.
 - 이메일은 보내지 않는다.
-- 새 컬렉션 `consultant_commitments`와 예약 작업 `consultant_checkins`가 생긴다(마이그레이션 0036).
+- 새 컬렉션 `consultant_commitments`와 예약 작업 `consultant_checkins`가 생긴다(마이그레이션 0037).
 - 화면의 모양은 구현 뒤 화면 캡처로 확인받는다. 이 PR은 병합하지 않고 열어 둔다.
 
 ## 열린 질문

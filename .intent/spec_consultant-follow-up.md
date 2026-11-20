@@ -39,7 +39,7 @@ date: 2026-11-20
 - **알림은 앱 안에만 남는다.** 워커의 발송 수단이 로그 출력뿐이라 메일을 보내지 않는다.
 - **알림은 하루 한 건.** 확인 작업이 사용자마다 알릴 것을 모은 뒤 가장 이른 약속 하나로 알림을 만든다. `notify`의 중복 방지 키는 사용자와 날짜다.
 - **동의를 정하지 않은 사용자에게는 연락하지 않는다.** 확인 작업은 `outreach.enabled`가 참인 사용자만 본다.
-- 마이그레이션 0036: `consultant_commitments` 만들기, `consultant_profiles`에 `outreach` 칸, `notifications.kind`와 `users.notificationPreferences`에 `consultant`, 예약 작업의 키와 정의.
+- 마이그레이션 0037: `consultant_commitments` 만들기, `consultant_profiles`에 `outreach` 칸, `notifications.kind`와 `users.notificationPreferences`에 `consultant`, 예약 작업의 키와 정의.
 
 ```mermaid
 flowchart TD
