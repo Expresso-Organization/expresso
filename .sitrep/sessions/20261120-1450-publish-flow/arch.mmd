@@ -1,0 +1,14 @@
+flowchart TD
+  ED["편집 화면 버튼"] --> PS["publishState"]
+  DP["DeployPanel"] --> PS
+  DP --> SH["상태 머리 · 열기 · 복사"]
+  DP --> CF["확인 창"]
+  DP --> RO["다시 공개"]
+  RO --> ACT["deployAction"]
+  CF --> ACT
+  ACT --> API[("publishing API")]
+  DP --> BR{"브라우저 확인"}
+  classDef done fill:#d1fae5,stroke:#059669
+  classDef doing fill:#fef3c7,stroke:#d97706
+  class ED,PS,DP,SH,CF,RO,ACT,API done
+  class BR doing

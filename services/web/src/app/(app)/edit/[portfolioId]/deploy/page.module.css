@@ -74,24 +74,7 @@
   background: var(--ex-bg-sunken);
 }
 
-.slugState {
-  margin-left: 12px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: var(--ex-text-xs);
-  color: var(--ex-status-success-text);
-}
 
-.slugAction {
-  margin-left: auto;
-  border: none;
-  background: none;
-  padding: 0;
-  font-size: var(--ex-text-xs);
-  font-weight: 600;
-  color: var(--ex-fg-body);
-}
 
 
 
@@ -222,6 +205,15 @@
   flex-shrink: 0;
 }
 
+.versionCurrent[data-closed] {
+  color: var(--ex-fg-muted);
+  background: var(--ex-bg-sunken);
+}
+
+.versionCurrent + .versionRevert {
+  margin-left: 10px;
+}
+
 .versionRevert {
   border: none;
   background: none;
@@ -276,8 +268,17 @@
   transition: background var(--ex-motion-quick);
 }
 
-.headPublish:hover {
+.headPublish:hover:not(:disabled) {
   background: var(--ex-accent-hover);
+}
+
+/* 배포 중이거나 지면이 없을 때 — 눌리지 않는다는 것을 흐림으로 보인다 */
+.headPublish:disabled,
+.versionRevert:disabled,
+.dangerAction:disabled,
+.statusPrimary:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 /* 켜고 끄는 스위치 — 폼이 값을 실어 보내야 하므로 진짜 체크박스가 안에 있다 */
@@ -308,6 +309,138 @@
   cursor: pointer;
 }
 
+/*
+ * 공개 상태 — 화면 맨 위. 왼쪽은 지금 상태, 오른쪽은 공개 주소와 그 주소로 하는 일.
+ * 점의 색이 상태를 말한다: 공개 중은 성공색, 고친 것이 남았으면 경고색, 닫혔거나 아직이면 흐린 색.
+ */
+.statusHead {
+  --status-dot: var(--ex-fg-subtle);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px 24px;
+  margin-bottom: 28px;
+  padding: 18px 20px;
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
+  border-radius: var(--ex-radius-card);
+}
+
+.statusHead[data-state="live"] {
+  --status-dot: var(--ex-status-success);
+}
+
+.statusHead[data-state="changed"] {
+  --status-dot: var(--ex-status-warning-text);
+  background: var(--ex-status-warning-surface);
+  border-color: transparent;
+}
+
+.statusMain {
+  min-width: 0;
+}
+
+.statusLine {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.statusDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--status-dot);
+  flex-shrink: 0;
+}
+
+.statusHead[data-state="live"] .statusDot {
+  box-shadow: 0 0 0 4px var(--ex-status-success-surface);
+}
+
+.statusTitle {
+  font-size: var(--ex-text-lg);
+  font-weight: 600;
+  color: var(--ex-fg);
+}
+
+.statusVersion {
+  font-family: var(--ex-font-mono);
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
+}
+
+.statusNote {
+  margin-top: 6px;
+  font-size: var(--ex-text-xs);
+  line-height: 1.6;
+  color: var(--ex-fg-muted);
+}
+
+.statusHead[data-state="changed"] .statusNote {
+  color: var(--ex-status-warning-text);
+}
+
+.statusAddress {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  min-width: 0;
+}
+
+.statusHost {
+  font-family: var(--ex-font-mono);
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg);
+  overflow-wrap: anywhere;
+}
+
+.statusHead[data-state="unlisted"] .statusHost {
+  color: var(--ex-fg-subtle);
+  text-decoration: line-through;
+}
+
+.statusActions {
+  display: flex;
+  gap: 8px;
+}
+
+.statusPrimary,
+.statusGhost {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: var(--ex-radius-control);
+  padding: 7px 12px;
+  font-size: var(--ex-text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background var(--ex-motion-quick);
+}
+
+.statusPrimary {
+  border: none;
+  background: var(--ex-fg);
+  color: var(--ex-bg);
+}
+
+.statusPrimary:hover:not(:disabled) {
+  background: var(--ex-fg-strong);
+  color: var(--ex-bg);
+}
+
+.statusGhost {
+  border: 1px solid var(--ex-border-soft);
+  background: var(--ex-bg);
+  color: var(--ex-fg-body);
+}
+
+.statusGhost:hover {
+  background: var(--ex-bg-sunken);
+}
+
 /* 배포 결과 · 실패 알림 */
 .notice {
   display: flex;
@@ -320,6 +453,13 @@
   color: var(--ex-accent-ink);
   line-height: 1.6;
   margin-bottom: 14px;
+}
+
+.noticeLink {
+  font-family: var(--ex-font-mono);
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .noticeBad {
@@ -349,6 +489,18 @@
   padding: 7px 12px;
   font-size: var(--ex-text-sm);
   white-space: nowrap;
+}
+
+/* 확인 창 — 공용 창의 모양에 단추 줄만 더한다 */
+.confirm {
+  gap: 12px;
+}
+
+.confirmActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
 }
 
 /* 넓어지면 정의서의 여백으로 돌아간다 */
