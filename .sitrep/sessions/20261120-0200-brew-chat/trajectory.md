@@ -336,3 +336,11 @@
 - 실제 대화: 그림 + 레포 붙음, 사이트는 이 맥에 headless shell이 없어 실패 → SITE_CAPTURE_CHANNEL=chrome으로 확인. 팝업 처리기가 첫 페이지에 걸리던 버그 수정. 내부 주소 차단 확인
 - 검사: typecheck · test 통과(백엔드 711 · 웹 518), test:infra 389 통과(첫 실행은 부하로 공고 테스트 시간 초과, 재실행 통과)
 - 사용자: 다음은 생성 지면에 자연스러운 모션 · 등장 애니메이션
+
+### ~18:30 · 완료 · 생성 지면 모션 · 등장 (T18)
+- 사용자: "자연스러운 모션+등장 애니메이션 작업이 더해지면 좋을 것 같다"
+- 측정: 고치기 전 지면은 keyframes 1~2 · transition 0~6, 자유 생성은 지면 키트 등장(.k-reveal)을 쓰지 않음
+- 지면 껍데기 PAGE_MOTION_CSS: data-motion intro · rise · stagger · draw · grow · fade. 값과 원칙은 구조화 키트 REVEAL_*(25vh 구간 · 문서 끝 마무리 · 구간 밀기 · @supports와 no-preference 안에서만 시작 상태 · data-reveal none 꺼짐). SVG pathLength 허용
+- 지침 PAGE_MOTION_PROMPT(장면마다 한두 곳 · 본문 문단 제외) · 반응(:hover · :focus-visible 0.2초 안팎). PAGE_PROMPT_VERSION 25 · DESIGN_CHAT_PROMPT_VERSION 14
+- 다시 생성 셋: rise 6~9 · stagger 4~5 · grow 2~4 · draw 0~2, 스스로 짠 keyframes 0~1. 전후 스크롤 영상을 보드에
+- 검사: typecheck · test 통과

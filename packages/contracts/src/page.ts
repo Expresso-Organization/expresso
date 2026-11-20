@@ -85,13 +85,14 @@ import { MEDIA_ASSET_PATH_PREFIX } from "./media-path.js";
  * 17 — 지면이 그림 스크립트(`script`)를 싣는다. canvas · three.js 그림을 쓰는 법과 스크립트 없는 첫 모습을 알린다(2026-11-20).
  * 18 — three.js 장면의 형태 · 재질 · 빛 짝. 기본 상자를 Lambert로 늘어놓은 장면이 나왔다(같은 날 사용자 "이런 저퀄리티 박스는 쓰지 않게").
  * 19 — 3d-motion-web 엔진(MotionWeb)을 지면에 싣고 그 계약 · 재질 · 빛을 알린다(같은 날 사용자 "Build in the engine").
+ * 25 — 등장(`data-motion`)과 반응: 지면 껍데기에 등장 규칙을 싣고 쓰는 법을 알린다(2026-11-21 사용자 "자연스러운 모션+등장 애니메이션").
  * 24 — 섹션: 대표 사례 하나에 깊이, 섹션마다 「만든 것」에서 그림 · 배치, 수치는 근거로, 장의 리듬. 정리본이 대표 사례와 만든 것을 적는다(2026-11-21 사용자 "섹션 표현/대표 사례 깊이부터").
  * 23 — 그림은 canvas 2D로 직접. 효과 목록을 지침에서 빼고, 사용자가 카탈로그에서 고른 효과 하나만 `pageEffectPrompt`로 싣는다(2026-11-21).
  * 22 — 3D는 라이브러리의 배경 장 · 선화로만. 방울 · 지구본 효과와 MotionWeb 엔진을 걷어냈다(2026-11-21 사용자 "의미없는 3D 오브젝트는 그냥 안쓰는게 더 낫겠다").
  * 21 — 효과 라이브러리(ExpressoEffects): 3D · 입자 · 인터랙티브 배경은 검증된 효과에서 고른다(2026-11-21 사용자 "그걸 라이브러리로 흡수하도록 하고, 모델이 라이브러리를 참고하도록 하자").
  * 20 — 부분 재질은 거리로 가린다(좌표 띠로 가른 셰이더가 고리를 수평으로 잘라 칠했다) · 엔진 바탕은 스타일의 바탕색.
  */
-export const PAGE_PROMPT_VERSION = 24;
+export const PAGE_PROMPT_VERSION = 25;
 
 /**
  * 한 지면의 상한.
@@ -223,7 +224,7 @@ export const PAGE_TAG_ATTRIBUTES: Readonly<Record<string, readonly string[]>> = 
     "clip-path", "clip-rule", "mask", "filter", "patternUnits", "markerWidth",
     "markerHeight", "refX", "refY", "orient", "text-anchor", "dominant-baseline",
     "font-size", "font-family", "font-weight", "letter-spacing", "dx", "dy",
-    "in", "in2", "result", "stdDeviation", "mode", "type", "values",
+    "in", "in2", "result", "stdDeviation", "mode", "type", "values", "pathLength",
   ],
 };
 
@@ -673,6 +674,43 @@ export function pagePreviewDocument(input: Parameters<typeof pageDocument>[0]): 
  * 여백을 정해 두면 모델이 쓴 CSS와 매번 싸우게 되고, 어느 쪽이 이겼는지
  * 아무도 모르는 지면이 나온다.
  */
+/**
+ * 자유 생성 지면의 등장(`data-motion`). 지면이 요소에 속성만 붙이면 여기 규칙이 움직인다 — 모델이 등장을 손으로 짜다 내용을 숨기는 일이 없게.
+ *
+ * 값과 원칙은 구조화 생성 키트의 등장(`portfolio-renderer/src/kit-styles.ts`의 REVEAL_*)을 잇는다. 요소의 위쪽이 화면 아래 25vh를 지나는 동안
+ * 나타나 읽는 자리(위 4분의 3)에서는 늘 불투명하다. 문서 끝에서 더 내릴 수 없어 다 나타나지 못한 요소는 문서 스크롤의 마지막 25vh에서 마저
+ * 나타난다. 차례는 스크롤 타임라인에서 `animation-delay`가 듣지 않아 구간 시작을 민다. 시작 상태(투명)는 움직임 줄이기가 아니고 브라우저가
+ * 스크롤 타임라인을 지원할 때만 선언한다 — 둘 중 하나가 아니면 처음부터 보인다. `<html data-reveal="none">`(측정 · 축소 미리보기)에서는 모두 꺼진다.
+ * 2026-11-21 사용자: "지금 생성 결과가 꽤 괜찮은데, 여기에 자연스러운 모션+등장 애니메이션 작업이 더해지면 좋을 것 같다."
+ */
+const MOTION_ON = ":root:not([data-reveal=\"none\"])";
+const MOTION_ZONE = "25vh";
+const MOTION_TAIL = `calc(100% - ${MOTION_ZONE}) 100%`;
+const motionRange = (step: number) => `cover calc(var(--motion-step) * ${step}) cover calc(${MOTION_ZONE} + var(--motion-step) * ${step}),${MOTION_TAIL}`;
+export const PAGE_MOTION_CSS = `
+:root{--motion-rise:20px;--motion-step:3vh;--motion-ease:cubic-bezier(.2,.7,.2,1);--motion-time:.8s}
+@keyframes page-rise{from{opacity:0;transform:translateY(var(--motion-rise))}to{opacity:1;transform:none}}
+@keyframes page-fade{from{opacity:0}to{opacity:1}}
+@keyframes page-grow{from{transform:scaleX(0)}to{transform:none}}
+@keyframes page-draw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes page-settle{to{opacity:1;transform:none;stroke-dashoffset:0}}
+@media (prefers-reduced-motion:no-preference){
+  ${MOTION_ON} [data-motion="intro"]>*{animation:page-rise var(--motion-time) var(--motion-ease) both}
+  ${MOTION_ON} [data-motion="intro"]>:nth-child(2){animation-delay:.09s}
+  ${MOTION_ON} [data-motion="intro"]>:nth-child(3){animation-delay:.18s}
+  ${MOTION_ON} [data-motion="intro"]>:nth-child(n+4){animation-delay:.27s}
+  @supports (animation-timeline:view()){
+    ${MOTION_ON} :is([data-motion="rise"],[data-motion="stagger"]>*){animation:page-rise linear both,page-settle linear forwards;animation-timeline:view(),scroll(root);animation-range:${motionRange(0)}}
+    ${MOTION_ON} [data-motion="stagger"]>:nth-child(2){animation-range:${motionRange(1)}}
+    ${MOTION_ON} [data-motion="stagger"]>:nth-child(3){animation-range:${motionRange(2)}}
+    ${MOTION_ON} [data-motion="stagger"]>:nth-child(n+4){animation-range:${motionRange(3)}}
+    ${MOTION_ON} [data-motion="fade"]{animation:page-fade linear both,page-settle linear forwards;animation-timeline:view(),scroll(root);animation-range:${motionRange(0)}}
+    ${MOTION_ON} [data-motion="grow"]{transform-origin:left center;animation:page-grow linear both,page-settle linear forwards;animation-timeline:view(),scroll(root);animation-range:${motionRange(1)}}
+    ${MOTION_ON} [data-motion="draw"] [pathLength]{stroke-dasharray:1;animation:page-draw linear both,page-settle linear forwards;animation-timeline:view(),scroll(root);animation-range:cover 0% cover calc(${MOTION_ZONE} * 1.6),${MOTION_TAIL}}
+  }
+}
+`.trim();
+
 export const PAGE_SHELL_CSS = `
 :root{
   --page-sans:"Pretendard Variable",Pretendard,-apple-system,system-ui,sans-serif;
@@ -687,6 +725,7 @@ img{max-width:100%;height:auto;display:block}
 svg{max-width:100%}
 /* 가로 스크롤은 폰에서 지면을 무너뜨린다. 여기서 한 번 더 막는다. */
 body{overflow-x:hidden}
+${PAGE_MOTION_CSS}
 `.trim();
 
 /**
@@ -708,13 +747,26 @@ export function pagePolicyPrompt(options: { script?: boolean } = {}): string {
     `\`<link rel="stylesheet">\`로 ${PAGE_ALLOWED_STYLESHEET_HOSTS.join(" · ")}에서 가져올 수 있다.`,
     "따로 안 부르면 아래가 이미 실려 있다 —",
     ...PAGE_FONTS.map((font) => `\`${font.stack}\` ${font.label}`),
-    ...(options.script ? ["", PAGE_SCRIPT_PROMPT] : []),
+    ...(options.script ? ["", PAGE_MOTION_PROMPT, "", PAGE_SCRIPT_PROMPT] : []),
   ].join("\n");
 }
 
 /**
  * 그림 스크립트를 쓰는 법. 스크립트가 도는 틀과 정책(`page-script.ts`)이 허락하는 것만 적는다 — 막힌 것을 쓰면 그림이 서지 않는다.
  */
+/** 등장 속성(`PAGE_MOTION_CSS`)을 쓰는 법. 스크립트 칸을 쓰는 호출(자유 생성 · 디자인 대화)이 받는다. */
+export const PAGE_MOTION_PROMPT = [
+  "## 움직임 — 등장은 `data-motion`으로",
+  "지면에 등장 규칙이 실려 있다. 요소에 속성만 붙이면 스크롤에 맞춰 나타난다. 등장 애니메이션을 CSS로 직접 짜지 않는다(시작 상태를 잘못 두면 내용이 사라진다).",
+  "- `data-motion=\"intro\"` — 첫 화면의 글 묶음(이름 · 한 줄 소개 · 곁의 글). 지면이 열릴 때 자식이 차례로 떠오른다.",
+  "- `data-motion=\"rise\"` — 장 제목 · 장면의 첫 문장 · 그림처럼 장면을 여는 요소. 화면에 들어올 때 떠오른다.",
+  "- `data-motion=\"stagger\"` — 나란한 항목의 부모(단계 · 카드 묶음 · 목록). 자식이 하나씩 이어 떠오른다.",
+  "- `data-motion=\"draw\"` — 선으로 그린 SVG 그림의 바깥 요소. 안의 `path` · `line` · `polyline` · `rect` · `circle`에 `pathLength=\"1\"`을 주면 그 선이 그어지며 나타난다.",
+  "- `data-motion=\"grow\"` — 막대 · 진행선처럼 길이가 뜻인 요소. 왼쪽에서 자라난다.",
+  "- `data-motion=\"fade\"` — 움직이면 안 되고 나타나기만 할 요소(넓은 그림 · 바탕 면).",
+  "- 장면마다 장면을 여는 요소 한두 곳과 나란한 묶음에 붙인다. 모든 요소에 붙이지 않는다 — 글 한 줄 한 줄이 따로 떠오르면 읽기를 끊는다. 본문 문단에는 붙이지 않는다.",
+].join("\n");
+
 export const PAGE_SCRIPT_PROMPT = [
   "## 그림 스크립트 — `script` 칸",
   "- `script`에는 ES 모듈 자바스크립트를 쓴다. 문서 끝에서 `<script type=\"module\">`로 돈다. 그림이 필요 없으면 비운다.",

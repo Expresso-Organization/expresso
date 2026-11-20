@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { DesignGraphicSchema, PAGE_EFFECT_CATALOG, PAGE_EFFECT_RUNTIME, PAGE_EFFECTS, PAGE_SCRIPT_LIBRARY, PAGE_SCRIPT_PROMPT, PAGE_SCRIPT_POLICY_MARK, joinPageScripts, pageDocument, pageEffectPrompt, pageScriptText, sha256Base64 } from "./index.js";
+import { DesignGraphicSchema, PAGE_MOTION_CSS, PAGE_SHELL_CSS, pagePolicyPrompt, PAGE_EFFECT_CATALOG, PAGE_EFFECT_RUNTIME, PAGE_EFFECTS, PAGE_SCRIPT_LIBRARY, PAGE_SCRIPT_PROMPT, PAGE_SCRIPT_POLICY_MARK, joinPageScripts, pageDocument, pageEffectPrompt, pageScriptText, sha256Base64 } from "./index.js";
 
 const base = { html: "<main><canvas width=\"10\" height=\"10\"></canvas></main>", css: "main{}", title: "지면" };
 const node = (text: string) => createHash("sha256").update(text).digest("base64");
@@ -78,5 +78,19 @@ describe("지면 스크립트", () => {
     expect(document).not.toContain('<script type="module">');
     expect(document).toContain(`'sha256-${node("edit()")}'`);
     expect(document).toContain("img-src data: blob:");
+  });
+
+  it("등장(`data-motion`)은 지면 껍데기에 실리고, 스크롤 등장의 투명한 시작은 지원 확인 · 움직임 줄이기 안에서만 선언한다", () => {
+    expect(PAGE_SHELL_CSS).toContain(PAGE_MOTION_CSS);
+    const supports = PAGE_MOTION_CSS.indexOf("@supports (animation-timeline:view())");
+    const reduced = PAGE_MOTION_CSS.indexOf("@media (prefers-reduced-motion:no-preference)");
+    expect(reduced).toBeGreaterThan(-1);
+    // 스크롤 등장 규칙(view())은 모두 @supports 뒤에 있다 — 모르는 브라우저에서 내용이 첫 프레임(투명)에 멈추지 않게.
+    expect(PAGE_MOTION_CSS.indexOf("animation-timeline:view()", supports + 40)).toBeGreaterThan(supports);
+    expect(PAGE_MOTION_CSS.slice(0, supports)).not.toContain("animation-timeline");
+    // 측정 · 축소 미리보기(<html data-reveal="none">)에서는 모두 꺼진다.
+    for (const line of PAGE_MOTION_CSS.split("\n").filter((row) => row.includes("data-motion"))) expect(line).toContain(':root:not([data-reveal="none"])');
+    expect(pagePolicyPrompt({ script: true })).toContain("## 움직임 — 등장은 `data-motion`으로");
+    expect(pagePolicyPrompt()).not.toContain("data-motion");
   });
 });
