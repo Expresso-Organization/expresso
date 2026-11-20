@@ -1,0 +1,25 @@
+flowchart TD
+  A["표 셀 CareerTableCell"]:::done
+  P["ValuePopouts 팝업"]:::done
+  V["문서 속성 PropertyValueEditor"]:::done
+  F["formatPeriodRange"]:::done
+  G["프로젝트 갤러리"]:::done
+  D["문서 한 열 CareerDocumentEditor"]:::done
+  H["패널 머리말 이력"]:::done
+  S["RecordSelectBox"]:::done
+  B["표 · 보드 · 타임라인 · 갤러리 · 목록"]:::done
+  R{"기간 표기 단위"}:::decide
+  U{"push · PR"}:::decide
+  P --> A
+  P --> V
+  F --> A
+  F --> V
+  F --> G
+  V --> D --> H
+  S --> B
+  F --> R
+  D --> U
+  classDef done fill:#d1fae5,stroke:#059669
+  classDef doing fill:#fef3c7,stroke:#d97706
+  classDef decide fill:#fee2e2,stroke:#dc2626
+  classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4
