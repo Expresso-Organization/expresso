@@ -14,6 +14,7 @@ import { AgentToolRejection, conversationForModel, type AgentRuntime } from "../
 import { AgentChatService, CREDITS_EXHAUSTED, RUN_HEARTBEAT_MS, RUN_INTERRUPTED_ERROR } from "./service.js";
 import { MongoEntitlementService } from "../entitlements/index.js";
 import { PreparationPlans } from "./plans.js";
+import { ConsultantService } from "../consultant/index.js";
 
 describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB_URL))("공통 에이전트 대화", () => {
   let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
@@ -285,6 +286,46 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     await expect(service.send(userId, skipped.id, { requestId: randomUUID(), text: "", reply: { partId: old.partId, optionIds: ["o1"] } })).rejects.toMatchObject({ statusCode: 409 });
     expect(passed.messages[1]!.tools[0]!.ui!.answer).toBeNull();
     expect(passed.messages[2]).not.toHaveProperty("reply");
+  });
+  it("실행에 기억을 넘긴다 — 프로필과, 지금 대화를 뺀 지난 대화의 요지. 도구로 고친 기억은 바로 저장된다", async () => {
+    const consultant = new ConsultantService(fixture.resource);
+    const memoryUser = (await new MongoIdentityService(fixture.resource).signup({ email: `${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "기억 검증" })).user.id;
+    await consent.grant(memoryUser, ["career_records"], CONSENT_POLICY_VERSION);
+    const seen: Parameters<AgentRuntime["run"]>[0]["memory"][] = [];
+    const service = new AgentChatService(fixture.resource, { run: async input => {
+      seen.push(structuredClone(input.memory));
+      const last = input.messages.at(-1)!;
+      if (last.text.includes("지원")) {
+        const saved = await input.updateMemory({ stage: "applying", remember: [{ kind: "avoid", text: "야근이 잦은 곳" }] });
+        await input.emit({ type: "tool", tool: { id: randomUUID(), name: "기억 갱신", status: "complete", summary: saved.summary } });
+        expect(saved.memory).toMatchObject({ stage: "applying", preferences: [{ kind: "avoid", text: "야근이 잦은 곳" }] });
+      }
+      await input.emit({ type: "text", text: "주 10시간씩 8주로 잡았습니다." });
+    } }, career, { get: async () => { throw new Error("없는 공고"); } }, documents, consent, new AgentCredentials(fixture.resource), new PortfolioReadService(fixture.resource), new PageService(fixture.resource), undefined, consultant);
+    services.push(service);
+    const done = async (id: string) => { await expect.poll(async () => (await service.get(memoryUser, id)).run?.status).toBe("complete"); };
+    // 첫 대화: 지난 대화가 없고 프로필도 비어 있다.
+    const first = await service.create(memoryUser, []);
+    await service.send(memoryUser, first.id, { requestId: randomUUID(), text: "주 10시간씩 8주 동안 준비할게요" });
+    await done(first.id);
+    expect(seen[0]).toEqual({ stage: null, preferences: [], recentConversations: [] });
+    // 둘째 대화: 첫 대화의 요지가 실리고, 지금 대화는 실리지 않는다.
+    const second = await service.create(memoryUser, []);
+    await service.send(memoryUser, second.id, { requestId: randomUUID(), text: "이제 지원할 공고를 고르고 있어요" });
+    await done(second.id);
+    expect(seen[1]!.recentConversations).toHaveLength(1);
+    expect(seen[1]!.recentConversations[0]).toMatchObject({ title: "주 10시간씩 8주 동안 준비할게요", said: ["주 10시간씩 8주 동안 준비할게요"], outcomes: [], lastAnswer: "주 10시간씩 8주로 잡았습니다." });
+    expect(seen[1]!.recentConversations[0]!.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect((await service.get(memoryUser, second.id)).messages.at(-1)!.tools[0]).toMatchObject({ name: "기억 갱신", summary: "단계: 지원 · 조건 1개 기억" });
+    // 도구로 고친 기억은 프로필에 저장되어 다음 실행에 실린다.
+    expect(await consultant.profile(memoryUser)).toMatchObject({ stage: "applying", stageSource: "agent" });
+    await service.send(memoryUser, first.id, { requestId: randomUUID(), text: "계획을 다시 볼게요" });
+    await done(first.id);
+    expect(seen[2]).toMatchObject({ stage: "applying", preferences: [{ kind: "avoid", text: "야근이 잦은 곳" }] });
+    expect(seen[2]!.recentConversations.map(item => item.title)).toEqual(["이제 지원할 공고를 고르고 있어요"]);
+    // 「내 진행」이 읽는 요지는 대화를 가리지 않고 최근 순이다. 남의 대화는 없다.
+    expect((await service.recentDigests(memoryUser)).map(item => item.conversationId)).toEqual([first.id, second.id]);
+    expect(await service.recentDigests(other)).toEqual([]);
   });
   it("거절한 초안은 기록을 만들지 않는다", async () => {
     const service = make({ run: async input => {

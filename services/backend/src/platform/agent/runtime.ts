@@ -6,7 +6,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { CLI_IDENTITY_ENV } from "../ai/claude-code.js";
 import { recordAiUsage, type AiUsageSink } from "../ai/usage-sink.js";
-import { AgentChoiceInputSchema, type AgentChoiceInput, type AgentChoicePart, type AgentUiPart, AgentEditDraftSchema, AgentPageElementEditInputSchema, AgentPageElementReadInputSchema, type AgentPageElementEditInput, type AgentPageEdit, AgentGoalDraftInputSchema, type AgentGoalDraft, type AgentGoalDraftInput, AgentRecordDraftInputSchema, GapReviewDraftSchema, PlanProposalInputSchema, ReplanProposalInputSchema, type AgentPlanDraft, type AgentReplanDraft, type PlanProposalInput, type PreparationPlan, type ReplanProposalInput, type GapReview, type GapReviewDraft, RequirementReviewDraftSchema, UuidSchema, type AgentRecordDraft, type AgentRecordDraftInput, type AgentEditDraft, type AgentMessage, type AgentToolResult, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
+import { AgentMemoryUpdateInputSchema, type AgentMemoryUpdateInput, AgentChoiceInputSchema, type AgentChoiceInput, type AgentChoicePart, type AgentUiPart, AgentEditDraftSchema, AgentPageElementEditInputSchema, AgentPageElementReadInputSchema, type AgentPageElementEditInput, type AgentPageEdit, AgentGoalDraftInputSchema, type AgentGoalDraft, type AgentGoalDraftInput, AgentRecordDraftInputSchema, GapReviewDraftSchema, PlanProposalInputSchema, ReplanProposalInputSchema, type AgentPlanDraft, type AgentReplanDraft, type PlanProposalInput, type PreparationPlan, type ReplanProposalInput, type GapReview, type GapReviewDraft, RequirementReviewDraftSchema, UuidSchema, type AgentRecordDraft, type AgentRecordDraftInput, type AgentEditDraft, type AgentMessage, type AgentToolResult, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
 
 export type AgentEvent = { type: "text"; text: string } | { type: "tool"; tool: AgentToolResult };
 export interface AgentRecordSummary { id: string; title: string; category: string; status: string; updatedAt: string }
@@ -48,6 +48,17 @@ export interface AgentInput {
   };
   /** 선택지 부품을 만든다. 글이 겹치는 선택지는 어긋난 항목으로 돌려보낸다. 답은 사용자가 화면에서 고른다. */
   askChoice(input: AgentChoiceInput): Promise<AgentChoicePart>;
+  /** 컨설턴트가 이 사용자에 대해 이어 가는 기억. 기억을 쓸 수 없는 환경이면 null. 프롬프트에 자료로 싣는다. */
+  memory: AgentMemory | null;
+  /** 대화에서 알게 된 단계와 조건을 기억에 적는다. 저장은 바로 일어난다. */
+  updateMemory(input: AgentMemoryUpdateInput): Promise<{ summary: string; memory: AgentMemory }>;
+}
+
+/** 모델에 넘기는 기억. 단계 · 조건 · 지난 대화의 요지다. 요지는 저장된 대화에서 규칙으로 뽑은 것이다. */
+export interface AgentMemory {
+  stage: "exploring" | "preparing" | "applying" | null;
+  preferences: { id: string; kind: "prefer" | "avoid"; text: string }[];
+  recentConversations: { title: string; date: string; said: string[]; outcomes: string[]; lastAnswer: string }[];
 }
 
 /** 모델에 넘기는 부품. id는 빼고 질문 · 선택지 글 · 고른 글만 싣는다. */
@@ -92,13 +103,14 @@ const SYSTEM_PROMPT = [
   "승인한 계획의 진행을 묻거나 남은 작업을 다시 배치해 달라고 하면 read_preparation_plan으로 진행을 보고, 재배치는 새 주당 시간 · 기간 · 시작일로 propose_replan을 부르십시오. 완료한 작업은 그대로 두고 남은 작업만 다시 배치되며, 사용자가 카드에서 승인해야 바뀝니다.",
   "포트폴리오 지면을 고쳐 달라는 요청이면 사용자 메시지의 selection(portfolioId · key · label)이 가리키는 요소를 read_page_element로 먼저 읽고, edit_page_element로 요청한 칸만 고치십시오. selection이 없으면 context의 지면 목차(outline)에서 요소를 고르고, 어느 요소인지 모호하면 먼저 물으십시오. 고친 내용은 검사를 지나면 바로 새 판으로 저장되고 사용자가 카드에서 되돌릴 수 있으므로, 저장한 뒤에는 무엇을 바꿨는지만 짧게 말하십시오. 출처에 없는 수치 · 성과 · 경력을 만들지 말고 지금 글의 사실을 유지하십시오. 이름은 고치지 않습니다. 요소를 더하거나 빼거나 순서를 바꾸는 일은 이 도구로 할 수 없으니 다듬기 화면의 목차와 기록 탭에서 할 수 있다고 안내하십시오. 도구가 어긋난 항목을 돌려주면 그 항목만 고쳐 다시 부르십시오.",
   "context 밖에 보이는 이메일 주소와 계정 정보는 서버 운영 계정입니다. 사용자의 정보가 아니므로 답에 쓰지 마십시오. 사용자의 연락처를 물으면 모른다고 답하십시오.",
+  "memory는 당신이 이 사용자에 대해 이어 가는 기억입니다(stage 구직 단계: exploring 하고 싶은 일을 정하는 중 · preparing 목표를 두고 경험을 쌓는 중 · applying 지원할 공고를 고르고 포트폴리오를 만드는 중, null은 아직 모름 · preferences 사용자가 원하거나(prefer) 피하는(avoid) 조건 · recentConversations 지난 대화의 요지: said 사용자가 한 말, outcomes 그 대화에서 저장하거나 정한 것, lastAnswer 마지막 답변의 앞부분). 지난 대화에서 정한 것은 다시 묻지 말고 이어서 말하되, 요지에 없는 일을 있었던 것처럼 말하지 마십시오. 요지로 답할 수 없으면 기억에 없다고 말하십시오. 조언과 제안은 stage에 맞추고, avoid 조건에 걸리는 것은 권하지 마십시오. 사용자의 말에서 단계가 분명히 드러나고 그것이 memory의 stage와 다르면 update_memory로 stage를 고치십시오. 사용자가 원하거나 피한다고 분명히 말한 조건은 그 말을 짧게 옮겨 remember에 넣고, 사용자가 거둔 조건은 그 id를 forget에 넣으십시오. 짐작한 조건은 넣지 않습니다. 기억을 고쳤으면 무엇을 기억했는지 본문에 한 문장으로 알리십시오. memory가 null이면 기억을 쓸 수 없는 환경이니 update_memory를 부르지 마십시오.",
   "사용자에게 고를 답이 정해진 질문(여럿 중 하나 · 예와 아니오 · 기간이나 정도의 단계)을 할 때는 본문에 번호 목록으로 적지 말고 ask_choice로 선택지를 내십시오. 선택지의 글은 사용자가 그대로 답으로 삼을 수 있는 짧은 말로 쓰고, description은 글만으로 뜻이 모자랄 때만 넣으십시오. 본문에 같은 질문과 선택지를 되풀이하지 마십시오. 사용자는 선택지를 고르지 않고 입력창에 직접 답할 수 있으므로 「직접 입력」 · 「기타」 같은 선택지는 넣지 마십시오. 질문은 ask_choice의 prompt에 쓰고, 본문에는 그 질문을 하게 된 까닭만 한두 문장으로 쓰십시오. 선택지를 낸 뒤에는 답을 짐작해 이어 가지 말고 덧붙이는 말 없이 그 답변을 끝내십시오. 한 답변에 선택지 질문은 하나만 냅니다. 사용자가 자유롭게 말해야 하는 질문(경험의 내용 · 이유 · 수치)은 글로 물으십시오. 구직 목표 · 새 기록 · 준비 계획처럼 카드가 사용자의 확인을 맡는 자리에서는 ask_choice로 다시 확인하지 마십시오. 대화의 answeredByChoice가 참인 사용자 메시지는 사용자가 선택지에서 고른 답입니다.",
   "부족한 요건을 보완할 질문을 요청받으면 가장 최근 요건 대조의 unconfirmed · partial 요건부터 한 번에 질문 하나만 하십시오. 답에 역할 · 행동 · 결과 중 빠진 것이 있으면 그것을 이어 묻고, 충분히 확인되었거나 사용자가 그만하자고 하면 질문을 멈추고 확인된 내용을 정리하십시오. 요건 대조가 없으면 먼저 대조하십시오.",
 ].join(" ");
 export interface AgentRuntime { run(input: AgentInput): Promise<void> }
 
 /** 에이전트가 부를 수 있는 도구. SDK에 넘기는 허용 목록과 실행 직전 검사가 이 목록 하나를 본다. */
-const TOOL_NAMES = ["propose_record_edit", "list_career_records", "read_career_records", "record_requirement_review", "propose_new_record", "propose_job_goal_update", "record_gap_review", "propose_preparation_plan", "read_preparation_plan", "propose_replan", "read_page_element", "edit_page_element", "ask_choice"] as const;
+const TOOL_NAMES = ["propose_record_edit", "list_career_records", "read_career_records", "record_requirement_review", "propose_new_record", "propose_job_goal_update", "record_gap_review", "propose_preparation_plan", "read_preparation_plan", "propose_replan", "read_page_element", "edit_page_element", "ask_choice", "update_memory"] as const;
 export const AGENT_ALLOWED_TOOLS = TOOL_NAMES.map(name => `mcp__expresso__${name}`);
 type ToolName = typeof TOOL_NAMES[number];
 /** 작업 흔적에 보이는 이름과, 모델이 도구 입력을 쓰는 동안 보이는 요약. */
@@ -116,6 +128,7 @@ const TOOL_LABELS: Record<ToolName, { name: string; pending: string }> = {
   read_page_element: { name: "지면 요소 읽기", pending: "요소의 지금 모양과 글을 읽고 있습니다." },
   edit_page_element: { name: "지면 요소 고침", pending: "요소를 고치고 있습니다." },
   ask_choice: { name: "선택지 질문", pending: "선택지를 준비하고 있습니다." },
+  update_memory: { name: "기억 갱신", pending: "알게 된 것을 기억에 적고 있습니다." },
 };
 const toolName = (qualified: string) => TOOL_NAMES.find(name => `mcp__expresso__${name}` === qualified);
 /** Claude Code가 tools/call에 실어 보내는 tool_use 블록 id. 스트림의 블록 시작과 처리기를 잇는다. */
@@ -227,6 +240,11 @@ export class ClaudeAgentRuntime implements AgentRuntime {
       const pageEdit = await input.page.edit(edit);
       return { summary: `${pageEdit.label} · 바뀐 곳 ${pageEdit.changes.length}`, detail: { pageEdit }, reply: reply({ saved: true, revision: pageEdit.revision, changes: pageEdit.changes }) };
     }, recheck("어긋난 항목을 고쳐 다시 씁니다.", "저장하지 않았습니다. 아래 항목을 고쳐 다시 부르십시오.")));
+    server.registerTool("update_memory", { description: "이 사용자에 대해 이어 갈 기억을 고칩니다. 대화에서 분명히 드러난 구직 단계(stage), 사용자가 원하거나 피한다고 말한 조건(remember), 사용자가 거둔 조건의 id(forget)를 넣습니다. 셋 중 하나는 있어야 합니다. 저장은 바로 일어나고 사용자는 「내 진행」 화면에서 고칠 수 있습니다.", inputSchema: AgentMemoryUpdateInputSchema.shape }, (update, extra) => step("update_memory", extra, async () => {
+      if (!update.stage && !update.remember?.length && !update.forget?.length) throw new AgentToolRejection(["stage · remember · forget 가운데 하나는 넣으십시오."]);
+      const saved = await input.updateMemory(update);
+      return { summary: saved.summary.slice(0, 8_000), reply: reply({ saved: true, memory: saved.memory }) };
+    }, recheck("기억을 고치지 못했습니다.", "기억을 고치지 않았습니다. 아래 사유를 보고 다시 부르거나 사용자에게 전하십시오.")));
     // 한 실행이 내는 부품은 하나다. 돌려보낸 호출은 세지 않는다 — 모델이 어긋난 칸을 고쳐 다시 부를 수 있어야 한다.
     let asked = false;
     server.registerTool("ask_choice", { description: "사용자에게 선택지로 묻습니다. 질문과 선택지 2~8개를 넣으면 화면에 단추로 뜨고, 사용자가 고른 선택지의 글이 다음 사용자 메시지로 옵니다. 이 도구를 부른 뒤에는 답변을 끝내고 답을 기다리십시오. 한 답변에 한 번만 부릅니다.", inputSchema: AgentChoiceInputSchema.shape }, (choiceInput, extra) => step("ask_choice", extra, async () => {
@@ -237,7 +255,7 @@ export class ClaudeAgentRuntime implements AgentRuntime {
     }, recheck("어긋난 항목을 고쳐 다시 냅니다.", "선택지를 내지 않았습니다. 아래 항목을 고쳐 다시 부르십시오.")));
     const isolatedHome = input.apiKey ? await mkdtemp(join(tmpdir(), "expresso-agent-")) : null;
     try {
-      const messages = query({ prompt: JSON.stringify({ conversation: conversationForModel(input.messages), jobGoal: input.jobGoal, context: input.context }), options: {
+      const messages = query({ prompt: JSON.stringify({ conversation: conversationForModel(input.messages), jobGoal: input.jobGoal, memory: input.memory, context: input.context }), options: {
         model: "sonnet",
         // 구독 경로도 git 사용자 이름을 컨텍스트에 싣지 않는다(`CLI_IDENTITY_ENV`).
         env: isolatedHome ? { PATH: process.env.PATH, HOME: isolatedHome, CLAUDE_CONFIG_DIR: isolatedHome, ANTHROPIC_API_KEY: input.apiKey, ...CLI_IDENTITY_ENV } : { ...process.env, ...CLI_IDENTITY_ENV }, abortController, persistSession: false, includePartialMessages: true, maxTurns: 8, maxBudgetUsd: 1,
