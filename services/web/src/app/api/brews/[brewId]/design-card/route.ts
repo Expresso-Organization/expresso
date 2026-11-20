@@ -29,6 +29,7 @@ export async function GET(_request: Request, context: { params: Promise<{ brewId
       recipeFailure: recipeJob?.status === "failed" && !brew.recipeId ? failureNote(recipeJob.failure?.code ?? null, brew.freeTitle !== null) : null,
       generationAllowed: quota.allowed,
       generating: brew.latestGeneration?.status === "queued" || brew.latestGeneration?.status === "running",
+      portfolioId: brew.latestGeneration?.status === "done" ? brew.latestGeneration.portfolioId ?? brew.portfolioId : null,
     } }));
   } catch (error) {
     if (error instanceof ApiError) return Response.json({ error: { message: error.status === 404 ? "이 제작을 찾지 못했습니다." : "디자인을 불러오지 못했습니다. 다시 시도해 주세요." } }, { status: error.status });

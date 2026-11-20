@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useContext, useState, useRef, useEffect } from "react";
+import { createContext, useContext, useMemo, useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { LogoMark } from "@/components/brand/Logo";
@@ -19,6 +19,7 @@ import { ReplanDraftCard } from "./ReplanDraftCard";
 import { PageEditCard } from "./PageEditCard";
 import { AgentConsentDialog } from "./AgentConsentDialog";
 import { BrewDesignCard } from "./BrewDesignCard";
+import { DesignBrews } from "./design-brews";
 import { BrewInterviewCard } from "./BrewInterviewCard";
 import { BrewMaterialsCard } from "./BrewMaterialsCard";
 import { BrewStartCard } from "./BrewStartCard";
@@ -154,7 +155,7 @@ const RecordTool: ToolCallMessagePartComponent = props => {
   // 「디자인 고르기」는 이 대화에서 디자인을 연다. 연 뒤에는 대화 아래의 「디자인」 카드가 이어 가므로 잠긴 카드에 링크를 두지 않는다.
   if (tool?.brewInterview) { const { brewId } = tool.brewInterview; return step(<BrewInterviewCard interview={tool.brewInterview} refreshKey={savedAnswers} continuesInChat={!!state.conversation?.messages.some(message => message.tools.some(item => item.brewDesign?.brewId === brewId))} onDesign={() => state.beginDesign(brewId)} />, null); }
   // 서버가 붙인 「디자인」. 디자인 대화의 답 하나를 그린다. 「첫 화면 보기」만 이 대화의 경로로 보내 그 카드가 대화에 붙는다.
-  if (tool?.brewDesign) { const { brewId } = tool.brewDesign; return step(<BrewDesignCard design={tool.brewDesign} onDraw={(styleId, layoutId) => state.drawDesign(brewId, styleId, layoutId)} />, null); }
+  if (tool?.brewDesign) return step(<BrewDesignCard design={tool.brewDesign} />, null);
   if (tool?.review) return step(<RequirementReviewCard conversationId={state.id} toolId={tool.id} review={tool.review} />, null);
   if (tool?.gapReview) return step(<GapReviewCard conversationId={state.id} toolId={tool.id} gapReview={tool.gapReview} />, null);
   if (tool?.recordDraft) { const draftId = tool.recordDraft.draftId; return step(<RecordDraftCard draft={tool.recordDraft} disabled={busy} onDecide={decision => state.decideDraft(draftId, decision)} />, null); }
@@ -291,6 +292,13 @@ export function AgentChat({ job, page, standalone = false, fresh = false, newHre
   useEffect(() => {
     if (standalone) window.dispatchEvent(new CustomEvent(AGENT_CONVERSATIONS_EVENT, { detail: JSON.parse(conversationRows) }));
   }, [standalone, conversationRows]);
+  // 제작 ID → 그 제작의 「디자인」 카드가 가리키는 디자인 대화의 답 ID. 여는 카드는 답 ID가 없다.
+  const designKey = (state.conversation?.messages ?? []).flatMap(message => message.tools).flatMap(tool => (tool.brewDesign ? [`${tool.brewDesign.brewId}:${tool.brewDesign.designMessageId ?? ""}`] : [])).join(",");
+  const designCards = useMemo(() => {
+    const cards: Record<string, string[]> = {};
+    for (const entry of designKey ? designKey.split(",") : []) { const [brewId, messageId] = entry.split(":") as [string, string]; (cards[brewId] ??= []).push(...(messageId ? [messageId] : [])); }
+    return cards;
+  }, [designKey]);
   const lastRun = state.conversation?.run;
   // 다시 보내기는 마지막 답변을 지우고 다시 쓴다. 그 실행의 답변이 마지막일 때만 둔다 — 실패한 답 뒤에 서버가 붙인 카드(재료 고르기)가
   // 있으면 지워질 것은 그 카드다. 실행의 requestId는 질문의 ID이거나(보낸 말), 답변의 ID다(서버가 시작한 알림).
@@ -320,7 +328,10 @@ export function AgentChat({ job, page, standalone = false, fresh = false, newHre
         </div>
         {access?.enabled && access.consentRequired ? <div role="alert" className={styles.apiKeyField}><p>채팅을 시작하려면 AI 사용 동의가 필요합니다.</p><small>대화와 연결된 커리어 기록을 AI 모델에 전달합니다.</small><Button variant="outline" onClick={() => setConsentOpen(true)}>AI 사용 동의 확인</Button></div> : null}
         {accessError ? <p role="alert" className={styles.error}>채팅 사용 권한을 확인하지 못했습니다. 새로고침해 주세요.</p> : !access ? <p role="status" className={styles.status}>채팅 사용 권한 확인 중…</p> : !access.enabled ? <p className={styles.status}>에이전트 채팅이 아직 활성화되지 않았습니다.</p> : access.creditsExhausted ? <p role="alert" className={styles.status}>이번 달 AI 크레딧을 모두 썼습니다. 다음 달에 다시 대화할 수 있습니다.</p> : null}
-        <div className={styles.thread}><Thread autoFocus={standalone} components={{ Welcome: ChatWelcome, AssistantHeader: AssistantIdentity, ToolFallback: RecordTool, ToolGroup: ExpandedTools, ComposerHeader: ComposerTarget, UserMessageHeader: UserMessageTarget }} /></div>
+        {/* 디자인 카드가 있는 제작마다 디자인 상태를 하나씩 두고, 그 제작의 카드들이 함께 읽는다. */}
+        <DesignBrews cards={designCards} onDraw={state.drawDesign}>
+          <div className={styles.thread}><Thread autoFocus={standalone} components={{ Welcome: ChatWelcome, AssistantHeader: AssistantIdentity, ToolFallback: RecordTool, ToolGroup: ExpandedTools, ComposerHeader: ComposerTarget, UserMessageHeader: UserMessageTarget }} /></div>
+        </DesignBrews>
         <div className={styles.footnote}><Icon name="check-circle" size={12} /><span>{page ? "지면 고침은 바로 새 판으로 저장되고 카드에서 되돌릴 수 있습니다." : "기록의 변경은 확인 후 적용됩니다."}</span></div>
         {lastRun?.status === "cancelled" ? <div role="status" className={`${styles.status} ${styles.runNotice}`}><span>응답을 중지했습니다.</span>{retryButton}</div> : null}
         {lastRun?.error ? <div role="alert" className={`${styles.error} ${styles.runNotice}`}><span>{lastRun.error}</span>{retryButton}</div> : null}

@@ -20,7 +20,7 @@ date: 2026-11-20
 | `services/backend/src/modules/page/design-chat/service.ts` · `prompts.ts` | (둘째) 엔진 진입점 `propose` · `revise`, 견본 제안 호출 |
 | `services/backend/src/api/main.ts` · `modules/page/index.ts` · `modules/agent-chat/index.ts` | 배선, 디자인 대화 오류를 대화의 오류로(`DesignChatError` · `AgentChatError` 내보내기) |
 | `services/web/src/features/design-chat/DesignChat.tsx` · `useDesignChat.ts` · `DesignChat.module.css` | 부품과 `useDesignView` 꺼내기, `autoOpen`, 화면 전체 무대 |
-| `services/web/src/features/agent-chat/BrewDesignCard.tsx` · `.module.css` (새로) | 카드 |
+| `services/web/src/features/agent-chat/BrewDesignCard.tsx` · `.module.css` · `design-brews.tsx` (새로) | 카드, 제작별 디자인 상태(카드들이 함께 읽음) · 무대 · 동의 안내 |
 | `services/web/src/app/api/brews/[brewId]/design-card/route.ts` · `lib/brew-design-card.ts` (새로) | 구성 · 생성 가능 여부 읽기 |
 | `services/web/src/app/(app)/brew/[brewId]/design/failure-note.ts` (새로) · `page.tsx` | 실패 문장을 디자인 화면과 카드가 함께 씀 |
 | `services/web/src/app/api/agent/[...path]/route.ts` | 디자인 열기 · 그리기 경로 통과 |

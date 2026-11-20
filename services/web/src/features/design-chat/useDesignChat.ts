@@ -21,6 +21,8 @@ export interface DesignChatState {
   retry(): Promise<void>;
   select(snippetId: string | null): Promise<void>;
   reopen(): void;
+  /** 대화를 다시 읽는다. 다른 곳(에이전트 대화)에서 차례를 맡긴 뒤 부른다. */
+  refresh(): void;
 }
 
 /**
@@ -100,6 +102,7 @@ export function useDesignChat(brewId: string, { autoOpen = true }: DesignChatOpt
     return () => window.clearInterval(timer);
   }, [base, running, version, accept]);
 
+  const refresh = useCallback(() => setAttempt((count) => count + 1), []);
   const post = useCallback(async (path: string, body: unknown): Promise<boolean> => {
     setPending(true);
     setIssue(null);
@@ -124,5 +127,6 @@ export function useDesignChat(brewId: string, { autoOpen = true }: DesignChatOpt
     retry: async () => { await post("retry", { requestId: crypto.randomUUID() }); },
     select: async (snippetId) => { await post("selection", { snippetId }); },
     reopen: () => { setConsentRequired(false); setIssue(null); setAttempt((count) => count + 1); },
+    refresh,
   };
 }

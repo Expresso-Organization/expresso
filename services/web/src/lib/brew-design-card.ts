@@ -15,6 +15,8 @@ export const BrewDesignCardSchema = z.strictObject({
   generationAllowed: z.boolean(),
   /** 생성이 줄에 있거나 도는 중이다. 만든 뒤에는 생성 화면으로 잇는다. */
   generating: z.boolean(),
+  /** 생성이 끝나 만든 포트폴리오. 다시 만들지 않고 연다 — 만드는 일은 이번 달 횟수를 쓴다. 없으면 null이다. */
+  portfolioId: UuidSchema.nullable(),
 });
 export type BrewDesignCardData = z.infer<typeof BrewDesignCardSchema>;
 export const BrewDesignCardResponseSchema = z.strictObject({ data: BrewDesignCardSchema });
