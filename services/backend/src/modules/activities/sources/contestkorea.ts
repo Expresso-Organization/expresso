@@ -102,7 +102,7 @@ export function contestKoreaRow(row: ContestKoreaListRow, at: Date): ActivityRow
  * 같은 `/admincenter/files/meet/` 아래에 있어 자리로 가른다).
  */
 export function contestKoreaPoster(html: string): string | null {
-  return imageUrl(/<div class="img_area">\s*<img[^>]*\ssrc="([^"]+)"/.exec(html)?.[1], "https://www.contestkorea.com");
+  return imageUrl(/<div class="img_area"[^>]*>\s*(?:<div[^>]*>\s*)?<img[^>]*\ssrc="([^"]+)"/.exec(html)?.[1], "https://www.contestkorea.com");
 }
 
 export class ContestKoreaSource implements ActivitySource {

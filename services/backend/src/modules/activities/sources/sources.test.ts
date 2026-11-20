@@ -82,8 +82,8 @@ it("부트텐트: 과정 객체를 읽고, 「그달 중」 마감은 말일로,
 
 it("콘테스트코리아: 상세 본문 머리의 그림만 포스터로 읽는다", () => {
   const html = `<div class="side"><img src="/admincenter/files/meet/[AB-2] 정보 모음[1].jpg" alt="" /></div>
-    <div class="img_area">
-<img src="/admincenter/files/meet/202610121605164029020.jpg" alt="2026 대구광역시 AI 활용대회">`;
+					<div class="img_area">
+						<div><img src="/admincenter/files/meet/202610121605164029020.jpg" alt="2026 대구광역시 AI 활용대회"></div>`;
   expect(contestKoreaPoster(html)).toBe("https://www.contestkorea.com/admincenter/files/meet/202610121605164029020.jpg");
   expect(contestKoreaPoster(`<img src="/admincenter/files/meet/banner.jpg" alt="">`)).toBeNull();
 });
