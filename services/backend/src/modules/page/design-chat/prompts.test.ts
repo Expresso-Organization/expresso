@@ -145,6 +145,8 @@ describe("디자인 대화의 호출", () => {
     const prompt = seedPrompt({ name: "측정판 리포트", words: style.words, tokens, html: snippet.html, css: snippet.css }).join("\n");
     for (const line of ["## Do\n", "## Do not\n", "섹션마다 주인공을 하나 세우고", "문서나 이력서처럼 보이면 실패다."]) expect(prompt).toContain(line);
     expect(prompt).not.toContain("나머지 섹션 · 경력 · 근거를 잇는다");
+    // 섹션은 대표 사례에 깊이를 몰고, 섹션마다 그 일이 만든 것에서 그림 · 배치를 정하고, 수치는 근거로 둔다.
+    for (const line of ["대표 사례(정리본의 「대표 사례」)는 여러 화면에 걸쳐 깊게 쓴다", "모든 사례를 같은 무게 · 같은 길이로 늘어놓지 않는다", "그 섹션의 일이 만든 것의 생김새", "글 한쪽 · 그림 한쪽의 같은 틀을 섹션마다 되풀이하지 않는다", "큰 숫자나 전후 막대로 세우는 자리는 지면 전체에서 대표 사례의 결과 하나다"]) expect(prompt).toContain(line);
   });
 
   it("답하는 호출은 대화와 대상을 글로 받고, 대상 없는 고치기와 빈 띄우기를 걸러 낸다", () => {

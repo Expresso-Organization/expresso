@@ -106,4 +106,14 @@ describe("정리본을 지면 요청으로 펴기", () => {
     expect(text).toContain("### 근거 자료");
     expect(text).not.toContain("### 경력");
   });
+
+  it("대표 사례와 그 일이 만든 것을 적는다 — 섹션 그림과 깊이를 고르는 재료다", () => {
+    const base = brief();
+    const first = base.sections[0]!;
+    const text = briefPrompt({ ...base, flagship: { sectionId: first.id, why: "공고의 성능 요건과 맞닿는다" }, sections: [{ ...first, made: "4.2초 걸리던 운영 대시보드" }, ...base.sections.slice(1)] }).join("\n");
+    expect(text).toContain(`### 대표 사례 — ${first.title}`);
+    expect(text).toContain("공고와 맞닿는 까닭: 공고의 성능 요건과 맞닿는다");
+    expect(text).toContain(`#### 1. ${first.title} (2025.03 — 2025.08) — 대표 사례`);
+    expect(text).toContain("만든 것: 4.2초 걸리던 운영 대시보드");
+  });
 });
