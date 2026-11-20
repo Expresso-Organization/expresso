@@ -21,6 +21,8 @@ flowchart TD
   classDef decide fill:#fee2e2,stroke:#dc2626
   classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4
   MEM --> PROG[내 진행 화면]
-  class U,REG,CH,CARD,SEND,SVC,RT,ASK,DB,MEM,PROG done
-  class REC,FU,DG,AC,PF todo
+  REC --> SAVED[저장된 기록 카드]
+  REG --> FORM[입력 칸 묶음]
+  class U,REG,CH,CARD,SEND,SVC,RT,ASK,DB,MEM,PROG,REC,SAVED,FORM done
+  class FU,DG,AC,PF todo
   class CR,MG decide

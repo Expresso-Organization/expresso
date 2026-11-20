@@ -10,6 +10,8 @@ import { PlanCard } from "./PlanCard";
 import { ReplanDraftCard } from "./ReplanDraftCard";
 import { PageEditCard } from "./PageEditCard";
 import { ChoicePart, ChoicePartPending } from "./ChoicePart";
+import { FormPart, FormPartPending } from "./FormPart";
+import { SavedRecordCard, SavedRecordPending } from "./SavedRecordCard";
 
 /**
  * 대화 속 화면의 등록표. 도구 결과를 어떤 컴포넌트로, 어느 자리에 그릴지 이 표 하나가 정한다.
@@ -36,7 +38,10 @@ export interface ToolPartContext {
   decidePlanDraft(draftId: string, decision: AgentPlanDecision): Promise<void>;
   decideReplanDraft(draftId: string, decision: AgentReplanDecision): Promise<void>;
   undoPageEdit(editId: string): Promise<void>;
-  answerPart(partId: string, optionIds: string[]): Promise<void>;
+  /** 부품에 답한다. 선택지는 고른 id, 입력 칸 묶음은 칸마다의 값이다. */
+  answerPart(partId: string, answer: { optionIds: string[] } | { values: { id: string; text: string }[] }): Promise<void>;
+  /** 에이전트가 저장한 기록을 되돌린다(휴지통으로 옮긴다). */
+  undoSavedRecord(recordId: string): Promise<void>;
 }
 
 export interface ToolPart {
@@ -55,8 +60,16 @@ export interface ToolPart {
 export const TOOL_PARTS: readonly ToolPart[] = [
   { key: "choice", placement: "below", toolNames: ["선택지 질문"], match: tool => tool.name === "선택지 질문",
     render: (tool, context) => tool.ui?.kind === "choice"
-      ? <ChoicePart part={tool.ui} interactive={context.canAnswer} onAnswer={optionIds => context.answerPart(tool.ui!.partId, optionIds)} />
+      ? <ChoicePart part={tool.ui} interactive={context.canAnswer} onAnswer={optionIds => context.answerPart(tool.ui!.partId, { optionIds })} />
       : <ChoicePartPending failed={tool.status === "failed"} /> },
+  { key: "form", placement: "below", toolNames: ["입력 칸 질문"], match: tool => tool.name === "입력 칸 질문",
+    render: (tool, context) => tool.ui?.kind === "form"
+      ? <FormPart part={tool.ui} interactive={context.canAnswer} onAnswer={values => context.answerPart(tool.ui!.partId, { values })} />
+      : <FormPartPending failed={tool.status === "failed"} /> },
+  { key: "savedRecord", placement: "below", toolNames: ["기록 저장"], match: tool => tool.name === "기록 저장",
+    render: (tool, context) => { const saved = tool.savedRecord; return saved
+      ? <SavedRecordCard saved={saved} disabled={context.busy} onUndo={() => context.undoSavedRecord(saved.recordId)} />
+      : <SavedRecordPending failed={tool.status === "failed"} />; } },
   { key: "review", placement: "trace", match: tool => !!tool.review,
     render: (tool, context) => <RequirementReviewCard conversationId={context.conversationId} toolId={tool.id} review={tool.review!} /> },
   { key: "gapReview", placement: "trace", match: tool => !!tool.gapReview,
