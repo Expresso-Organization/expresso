@@ -1,5 +1,5 @@
 import { isoDate, lastDayOfMonth } from "../dates.js";
-import { ActivitySourceError, clip, fetchText, statusOn, type ActivityRow, type ActivitySource, type FetchText } from "./adapter.js";
+import { ActivitySourceError, clip, fetchText, imageUrl, statusOn, type ActivityRow, type ActivitySource, type FetchText } from "./adapter.js";
 
 /**
  * 부트텐트(boottent.com) 부트캠프 — 모집 중인 과정 전체.
@@ -28,6 +28,8 @@ export interface BoottentCamp {
   qualification?: string;
   keywords?: string[];
   campUrl?: string;
+  /** 캠프 머리 배너(`cdn.sayun.studio`). 733건 모두 있음(2026-11-20 확인). */
+  image?: string;
 }
 
 /** 서버 컴포넌트 데이터 조각을 이어 붙인다. */
@@ -113,6 +115,7 @@ export function boottentRow(camp: BoottentCamp, at: Date): ActivityRow | null {
     tuition: typeof camp.tuition === "number" && camp.tuition >= 0 ? Math.round(camp.tuition * 10_000) : null,
     nbcardRequired: typeof camp.nbcardRequired === "boolean" ? camp.nbcardRequired : null,
     status: statusOn(applyStartOn, at),
+    posterUrl: imageUrl(camp.image),
   };
 }
 

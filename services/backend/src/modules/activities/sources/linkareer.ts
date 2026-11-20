@@ -1,5 +1,5 @@
 import { seoulDateOfMs } from "../dates.js";
-import { ActivitySourceError, clip, fetchText, statusOn, type ActivityRow, type ActivitySource, type FetchText } from "./adapter.js";
+import { ActivitySourceError, clip, fetchText, imageUrl, statusOn, type ActivityRow, type ActivitySource, type FetchText } from "./adapter.js";
 import { isHackathon } from "./text.js";
 
 /**
@@ -20,7 +20,7 @@ const MAX_PAGES = 10;
 const QUERY = `query ActivityList($filter: ActivityFilter, $page: Int!, $pageSize: Int!) {
   activities(filterBy: $filter, pagination: { page: $page, pageSize: $pageSize }) {
     totalCount
-    nodes { id title organizationName recruitStartAt recruitCloseAt homepageURL awards targets { name } categories { name } }
+    nodes { id title organizationName recruitStartAt recruitCloseAt homepageURL awards targets { name } categories { name } thumbnailImage { url } }
   }
 }`;
 
@@ -34,6 +34,8 @@ interface LinkareerNode {
   awards: string | null;
   targets: { name: string }[] | null;
   categories: { name: string }[] | null;
+  /** 목록 카드의 포스터. `api.linkareer.com/attachments/<id>`가 CDN으로 넘긴다(2026-11-20 확인 — 442건 모두 있음). */
+  thumbnailImage?: { url: string } | null;
 }
 
 interface LinkareerResponse {
@@ -69,6 +71,7 @@ export function linkareerRow(node: LinkareerNode, at: Date): ActivityRow | null 
     tuition: null,
     nbcardRequired: null,
     status: statusOn(applyStartOn, at),
+    posterUrl: imageUrl(node.thumbnailImage?.url),
   };
 }
 

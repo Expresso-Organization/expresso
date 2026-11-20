@@ -16,6 +16,10 @@ const row = (title: string, day: string, extra = "", id = "112294") => `
 
 const detail = (period: string) => `
   <ul class="cat"><li><span class="tit">응모대상</span> 사이드 메뉴</li></ul>
+  <div class="cd-area">
+    <div class="img">
+      <div class="thumb">
+<img src="/upload/contest/20261113133114_f7b24bd6.jpg" alt="농민신문 제31회 신춘문예 작품 공모">
   <ul class="cd-info-list">
     <li><span class="tit">분야</span> 웹/모바일/IT </li>
     <li><span class="tit">응모대상</span> 일반인, 대학생 </li>
@@ -44,7 +48,10 @@ it("상세의 정보 목록에서 접수 기간 · 대상 · 상금 · 원 공�
     eligibility: "일반인, 대학생",
     prize: "총 3천만원~1천만원 · 1등 500만원",
     homepageUrl: "https://sto.or.kr/notice?id=1&q=2",
+    posterUrl: "https://www.wevity.com/upload/contest/20261113133114_f7b24bd6.jpg",
   });
+  // 아래 목록의 다른 공모전 그림은 포스터가 아니다.
+  expect(parseWevityDetail(detail("2026-11-10 ~ 2026-11-29").replace(/<div class="thumb">\s*<img[^>]*>/, "") + `<img src="/upload/contest/other.jpg">`)?.posterUrl).toBeNull();
   expect(parseWevityDetail("<html>점검 중</html>")).toBeNull();
 });
 

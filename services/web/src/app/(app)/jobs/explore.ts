@@ -80,3 +80,12 @@ export function activitySourceNote(rows: readonly Activity[]): string {
   for (const row of rows) counts.set(row.source, (counts.get(row.source) ?? 0) + 1);
   return [...counts].sort((a, b) => b[1] - a[1]).map(([source]) => ACTIVITY_SOURCE_LABEL[source]).join(" · ");
 }
+
+/**
+ * 포스터 없는 활동 카드의 이니셜 — 주최 이름의 첫 글자. 「(사)」 「[주최]」 같은 앞머리와 숫자 · 기호를 건너뛴다
+ * (그냥 첫 글자를 쓰면 「(」나 「4」가 선다).
+ */
+export function activityInitial(name: string): string {
+  const trimmed = name.replace(/^\s*(?:[([（【「『][^)\]）】」』]*[)\]）】」』]\s*)+/u, "");
+  return /\p{L}/u.exec(trimmed)?.[0] ?? /\p{L}/u.exec(name)?.[0] ?? name.slice(0, 1);
+}

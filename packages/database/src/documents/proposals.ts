@@ -1,3 +1,4 @@
+import type { Binary } from "mongodb";
 import type { ActivityKind, ActivitySource, Proposal, ProposalRun } from "@expresso/contracts";
 
 /**
@@ -67,6 +68,22 @@ export interface ActivityDoc {
   nbcardRequired?: boolean | null;
   /** 다른 출처(또는 같은 출처의 다른 글)에 있는 같은 활동의 대표 `_id`. 대표면 null. */
   duplicateOf?: string | null;
+  /** 보관한 포스터의 크기와 체크섬(`activity_posters`). 받은 적이 없으면 없다. */
+  poster?: { width: number; height: number; checksum: string } | null;
+}
+
+/** 활동 포스터 한 장. `_id`는 활동 `_id`다. 출처 그림을 폭 480px webp로 줄여 둔다. */
+export interface ActivityPosterDoc {
+  _id: string;
+  /** 받아 온 출처 그림 주소. 같은 주소면 다시 받지 않는다. */
+  sourceUrl: string;
+  data: Binary;
+  mediaType: string;
+  width: number;
+  height: number;
+  /** 줄인 그림의 sha256(hex). 내보내는 주소의 `v`다. */
+  checksum: string;
+  readAt: Date;
 }
 
 /** 활동 출처 하나의 수집 상태. `_id`는 출처 이름이다. */

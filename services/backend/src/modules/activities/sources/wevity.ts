@@ -1,5 +1,5 @@
 import { addDays, isoDate } from "../dates.js";
-import { ActivitySourceError, clip, fetchText, statusOn, type ActivityRow, type ActivitySource, type FetchText } from "./adapter.js";
+import { ActivitySourceError, clip, fetchText, imageUrl, statusOn, type ActivityRow, type ActivitySource, type FetchText } from "./adapter.js";
 import { decodeEntities, htmlText, isHackathon } from "./text.js";
 
 /**
@@ -37,6 +37,8 @@ export interface WevityDetail {
   eligibility: string | null;
   prize: string | null;
   homepageUrl: string | null;
+  /** 상세 머리의 포스터(`div.thumb` 안의 첫 그림). 아래 목록의 다른 공모전 그림과 섞이지 않게 그 자리만 본다. */
+  posterUrl: string | null;
 }
 
 const ROW = /<li[^>]*>(?:<!--[\s\S]*?-->)?\s*<div class="tit">\s*<a href="([^"]+)">([\s\S]*?)<\/a>\s*<div class="sub-tit">([^<]*)<\/div>\s*<\/div>\s*<div class="organ">([^<]*)<\/div>\s*<div class="day">\s*D([-+])(\d+|day)\s*<span class="dday \w+">([^<]*)<\/span>/gi;
@@ -66,7 +68,8 @@ export function parseWevityList(html: string): WevityListRow[] {
 
 /** 상세 HTML의 정보 목록. 사이드 메뉴에도 같은 낱말(응모대상)이 있어 `cd-info-list` 안만 본다. */
 export function parseWevityDetail(html: string): WevityDetail | null {
-  const block = /<ul class="cd-info-list">([\s\S]*?)<\/ul>/.exec(html.replace(/<!--[\s\S]*?-->/g, ""))?.[1];
+  const clean = html.replace(/<!--[\s\S]*?-->/g, "");
+  const block = /<ul class="cd-info-list">([\s\S]*?)<\/ul>/.exec(clean)?.[1];
   if (!block) return null;
   const items = new Map<string, { text: string; html: string }>();
   for (const [, label = "", rest = ""] of block.matchAll(/<li[^>]*>\s*<span class="tit">([^<]*)<\/span>([\s\S]*?)<\/li>/g)) {
@@ -82,6 +85,7 @@ export function parseWevityDetail(html: string): WevityDetail | null {
     eligibility: clip(items.get("응모대상")?.text, 300),
     prize: total && first ? `총 ${total} · 1등 ${first}` : total ? `총 ${total}` : first ? `1등 ${first}` : null,
     homepageUrl: href ? clip(decodeEntities(href), 2_000) : null,
+    posterUrl: imageUrl(/<div class="thumb">\s*<img[^>]*\ssrc="([^"]+)"/.exec(clean)?.[1], WEVITY_ORIGIN),
   };
 }
 
@@ -125,6 +129,7 @@ export class WevitySource implements ActivitySource {
         tuition: null,
         nbcardRequired: null,
         status: statusOn(applyStartOn, at),
+        posterUrl: detail?.posterUrl ?? null,
       });
     }
     return result;

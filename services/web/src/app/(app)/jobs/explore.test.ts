@@ -2,7 +2,7 @@ import { expect, it } from "vitest";
 
 import type { Activity } from "@expresso/contracts";
 
-import { activityLine, activitySourceNote, exploreHref, readKind, tuitionLabel } from "./explore";
+import { activityInitial, activityLine, activitySourceNote, exploreHref, readKind, tuitionLabel } from "./explore";
 
 it("모르는 종류는 채용 공고로 읽는다", () => {
   expect(readKind("contest")).toBe("contest");
@@ -18,7 +18,7 @@ it("채용 공고는 종류를 주소에 적지 않는다", () => {
 const activity = (extra: Partial<Activity>): Activity => ({
   id: "wevity:1", source: "wevity", kind: "contest", title: "공모전", host: "주최", fields: [], url: "https://example.com", homepageUrl: null,
   applyStartOn: null, deadlineOn: "2026-11-29", deadlinePrecision: "day", daysLeft: 9, status: "접수중", startsOn: null,
-  eligibility: null, prize: null, tuition: null, nbcardRequired: null, firstSeenAt: "2026-11-20T00:00:00.000Z", ...extra,
+  eligibility: null, prize: null, tuition: null, nbcardRequired: null, firstSeenAt: "2026-11-20T00:00:00.000Z", poster: null, ...extra,
 });
 
 it("공모전 줄은 대상 · 상금을, 접수 전이면 접수 시작일을 보인다", () => {
@@ -36,4 +36,12 @@ it("부트캠프 줄은 학비 · 내일배움카드 · 수업 시작일을, 달
 
 it("출처 안내는 목록에 실린 출처를 많은 순으로 적는다", () => {
   expect(activitySourceNote([activity({ source: "linkareer" }), activity({ source: "wevity" }), activity({ source: "linkareer" })])).toBe("링커리어 · 위비티");
+});
+
+it("포스터 없는 카드의 이니셜은 주최 이름의 앞머리 · 숫자를 건너뛴 첫 글자다", () => {
+  expect(activityInitial("(재)운당나눔재단")).toBe("운");
+  expect(activityInitial("[주최] 한국관광공사")).toBe("한");
+  expect(activityInitial("4·16재단")).toBe("재");
+  expect(activityInitial("네이버 커넥트재단")).toBe("네");
+  expect(activityInitial("Team.HUMAN")).toBe("T");
 });

@@ -24,6 +24,8 @@ export interface ActivityRow {
   tuition: number | null;
   nbcardRequired: boolean | null;
   status: string;
+  /** 출처의 포스터(부트캠프는 캠프 배너) 주소. 받아 줄여 보관하는 것은 서비스가 한다(`posters.ts`). 없으면 null. */
+  posterUrl: string | null;
 }
 
 /**
@@ -35,6 +37,15 @@ export interface ActivityRow {
 export interface ActivitySource {
   readonly name: ActivitySourceName;
   fetch(at: Date): Promise<ActivityRow[]>;
+}
+
+/** 주소처럼 보이는 그림 주소만 받는다. 상대 주소는 `base`로 푼다. */
+export function imageUrl(value: string | null | undefined, base?: string): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value.trim(), base);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.toString().slice(0, 2_000) : null;
+  } catch { return null; }
 }
 
 export class ActivitySourceError extends Error {

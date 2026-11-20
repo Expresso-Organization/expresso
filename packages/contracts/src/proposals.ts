@@ -53,6 +53,11 @@ export const ActivitySchema = z.strictObject({
   nbcardRequired: z.boolean().nullable(),
   /** 수집기가 이 활동을 처음 본 때. "새로 올라온 것"의 기준이다. */
   firstSeenAt: TimestampSchema,
+  /**
+   * 출처의 포스터(부트캠프는 캠프 배너)를 우리 서버가 줄여 보관한 것. 주소는 우리 API다 — 출처 서버를 화면이 직접
+   * 부르지 않는다. 가로세로는 줄인 그림의 크기라, 그림이 오기 전에 자리를 잡는 데 쓴다. 출처가 그림을 주지 않으면 null.
+   */
+  poster: z.strictObject({ url: z.string().min(1).max(300), width: z.number().int().positive(), height: z.number().int().positive() }).nullable(),
 });
 
 export const ListActivitiesQuerySchema = z.strictObject({
