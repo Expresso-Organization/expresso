@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { PAGE_SCRIPT_LIBRARY, PAGE_SCRIPT_POLICY_MARK, joinPageScripts, pageDocument, pageScriptText, sha256Base64 } from "./index.js";
+import { PAGE_SCRIPT_ENGINE, PAGE_SCRIPT_LIBRARY, PAGE_SCRIPT_POLICY_MARK, joinPageScripts, pageDocument, pageScriptText, sha256Base64 } from "./index.js";
 
 const base = { html: "<main><canvas width=\"10\" height=\"10\"></canvas></main>", css: "main{}", title: "지면" };
 const node = (text: string) => createHash("sha256").update(text).digest("base64");
@@ -42,6 +42,17 @@ describe("지면 스크립트", () => {
     expect(document.match(/<script type="module">/g)).toHaveLength(2);
     expect(document).toContain(`'sha256-${node('import * as THREE from "three"; b()')}'`);
     expect(joinPageScripts(undefined, " ")).toBeUndefined();
+  });
+
+  it("MotionWeb을 쓰는 지면에만 3D 엔진을 모듈보다 앞에 싣고, 그 해시를 정책에 넣는다", () => {
+    const uses = pageDocument({ ...base, script: "await MotionWeb.create({})", run: { origin: "" } });
+    const engine = pageScriptText(PAGE_SCRIPT_ENGINE);
+    expect(uses).toContain(`<script>${engine}</script>`);
+    expect(uses.indexOf("window.MOTIONWEB_WGSL_STD")).toBeLessThan(uses.indexOf('<script type="module">'));
+    expect(uses).toContain(`'sha256-${node(engine)}'`);
+    // 라이선스 고지는 지면에도 그대로 실린다.
+    expect(uses).toContain("MIT License");
+    expect(pageDocument({ ...base, script: "draw()", run: { origin: "" } })).not.toContain("MOTIONWEB_WGSL_STD");
   });
 
   it("스크립트가 없어도 돌리는 자리면 정책을 싣는다 — 함께 넣는 우리 스크립트만 돈다", () => {

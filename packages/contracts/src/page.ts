@@ -1,5 +1,6 @@
 import { PageLibrarySelectionSchema } from "./page-library.js";
 import { PAGE_SCRIPT_BREAK, PAGE_SCRIPT_LIBRARY, PAGE_SCRIPT_POLICY_MARK, pageScriptPolicy, pageScriptText } from "./page-script.js";
+import { PAGE_SCRIPT_ENGINE } from "./page-engine.generated.js";
 import { z } from "zod";
 
 import { TimestampSchema, UuidSchema } from "./common.js";
@@ -83,8 +84,9 @@ import { MEDIA_ASSET_PATH_PREFIX } from "./media-path.js";
  *
  * 17 — 지면이 그림 스크립트(`script`)를 싣는다. canvas · three.js 그림을 쓰는 법과 스크립트 없는 첫 모습을 알린다(2026-11-20).
  * 18 — three.js 장면의 형태 · 재질 · 빛 짝. 기본 상자를 Lambert로 늘어놓은 장면이 나왔다(같은 날 사용자 "이런 저퀄리티 박스는 쓰지 않게").
+ * 19 — 3d-motion-web 엔진(MotionWeb)을 지면에 싣고 그 계약 · 재질 · 빛을 알린다(같은 날 사용자 "Build in the engine").
  */
-export const PAGE_PROMPT_VERSION = 18;
+export const PAGE_PROMPT_VERSION = 19;
 
 /**
  * 한 지면의 상한.
@@ -597,8 +599,10 @@ export function pageDocument(input: {
     .replaceAll('"', "&quot;");
   const modules = input.run && input.script ? input.script.split(PAGE_SCRIPT_BREAK).map(pageScriptText).filter(Boolean) : [];
   const importMap = JSON.stringify({ imports: { [PAGE_SCRIPT_LIBRARY.name]: PAGE_SCRIPT_LIBRARY.url } });
+  // 3D 엔진(3d-motion-web)은 쓰는 지면에만 싣는다. classic 스크립트라 뒤의 모듈보다 먼저 돌아 `window.MotionWeb`을 만든다.
+  const engine = modules.some((code) => /\bMotionWeb\b/.test(code)) ? pageScriptText(PAGE_SCRIPT_ENGINE) : "";
   const policy = input.run
-    ? `<meta http-equiv="Content-Security-Policy" ${PAGE_SCRIPT_POLICY_MARK} content="${pageScriptPolicy({ scripts: [...(modules.length ? [importMap, ...modules] : []), ...(input.run.extraScripts ?? [])], origin: input.run.origin, styleHosts: PAGE_ALLOWED_STYLESHEET_HOSTS })}">\n`
+    ? `<meta http-equiv="Content-Security-Policy" ${PAGE_SCRIPT_POLICY_MARK} content="${pageScriptPolicy({ scripts: [...(engine ? [engine] : []), ...(modules.length ? [importMap, ...modules] : []), ...(input.run.extraScripts ?? [])], origin: input.run.origin, styleHosts: PAGE_ALLOWED_STYLESHEET_HOSTS })}">\n`
     : "";
   return `<!doctype html>
 <html lang="ko"${input.reveal === false ? ' data-reveal="none"' : ""}>
@@ -621,7 +625,7 @@ ${input.css}
 </head>
 <body>
 ${input.html}
-${modules.length ? `<script type="importmap">${importMap}</script>\n${modules.map((code) => `<script type="module">${code}</script>\n`).join("")}` : ""}</body>
+${engine ? `<script>${engine}</script>\n` : ""}${modules.length ? `<script type="importmap">${importMap}</script>\n${modules.map((code) => `<script type="module">${code}</script>\n`).join("")}` : ""}</body>
 </html>`;
 }
 
@@ -715,11 +719,31 @@ export const PAGE_SCRIPT_PROMPT = [
   "- 그림판 크기는 컨테이너를 따르고 `devicePixelRatio`를 반영한다(`ResizeObserver`). WebGL을 얻지 못하거나 오류가 나면 아무것도 하지 않고 첫 모습을 남긴다.",
   "- 바깥으로 요청할 수 없다 — `fetch` · 바깥 그림 · 바깥 글꼴 · `eval`이 막혀 있다. 그림에 쓰는 값은 스크립트 안에 적는다.",
   "",
-  "### three.js 장면 — 형태 · 재질 · 빛을 함께 짓는다",
+  "### three.js 장면 — 입자 · 선의 장, 그리고 형태 · 재질 · 빛을 함께 짓는다",
   "- 형태와 재질의 짝을 맞춘다. 밝기는 법선이 정한다 — 법선이 계속 변하는 곡면(구 · 토러스 · 튜브 · 매듭 · 덩어리)에는 금속 · 세라믹 · 광택(`MeshPhysicalMaterial`의 metalness · roughness · clearcoat)을, 평면 다면체(상자 · 결정)에는 굴절 유리(transmission · thickness · ior)를, 선 · 입자에는 자체발광(`AdditiveBlending`)을 쓴다. 평면 다면체에 Lambert · 단색 재질을 얹으면 면마다 평평한 색판이 되어 장난감 블록으로 읽힌다.",
   "- 같은 기본 도형을 격자 · 줄로 늘어놓지 않고, 형태 하나를 연속된 덩어리 · 흐름 · 입자 장으로 짓는다. 상자 · 기둥 배열은 높이로 값을 읽게 해 막대그래프가 된다.",
   "- 빛은 환경에서 온다. `PMREMGenerator`로 장면 안에서 그러데이션 환경(고른 스타일의 바탕색 → 강조색)을 구워 `scene.environment`에 넣고, 강조색 쪽 림 라이트를 더한다. 주변광 하나 + 방향광 하나로 끝내면 플라스틱처럼 보인다. 바깥 HDRI는 받을 수 없다.",
   "- 렌더러는 `antialias: true` · `toneMapping: ACESFilmicToneMapping` · `outputColorSpace: SRGBColorSpace`. 깊이는 `Fog`나 거리에 따른 색 감쇠로 낸다.",
+  "",
+  "### 3D 엔진 — MotionWeb (공들인 오브젝트 하나는 이것으로)",
+  "지면에 3d-motion-web 엔진이 있다. 레이마칭 SDF · 가장자리 안티에일리어싱 · ACES 톤매핑 · 크기 맞춤 · 동작 줄이기(시간을 멈춤)를 엔진이 맡고, 너는 형태와 재질을 WGSL로 쓴다. WebGPU를 쓴다.",
+  "```js",
+  "const canvas = document.querySelector(\".hero-art canvas\");",
+  "const FRAG = [/* WGSL 줄들 */].join(\"\\n\");",
+  "await MotionWeb.create({ canvas, fragment: FRAG, seed: 2.4,",
+  "  uniforms: { base: [r, g, b], glow: [r, g, b] },   // 고른 스타일의 색, 0~1",
+  "  camera: (scroll, wide) => [0, 0, -5 * (1.42 - 0.42 * wide)],",
+  "  onError: () => {} });   // WebGPU가 없거나 실패하면 아무것도 하지 않는다 — CSS 첫 모습이 남는다",
+  "```",
+  "- 계약(WGSL): `fn map(p: vec3f) -> f32` 거리장(필수) · `fn shadeSurface(p: vec3f, n: vec3f, rd: vec3f, occ: f32, fres: f32) -> vec3f` 재질과 빛(필수) · `fn background(uv: vec2f) -> vec3f`(선택, uv는 -1~1 · y가 위). 반사 환경은 직접 `fn env(d: vec3f) -> vec3f`로 짓고 shadeSurface에서 부른다.",
+  "- 엔진이 주는 값: `u.time` 초 · `u.seed` · `u.noiseSeed` · `u.wide` 화면비 0~1 · `u.scroll` 스크롤 0~1, 그리고 `uniforms`로 넘긴 이름(`u.base` · `u.glow`).",
+  "- 헬퍼: hg_sdf — `fSphere(p, r)` · `fBox(p, b)` · `fTorus(p, small, large)` · `fCapsule` · `fOctahedron` · `fDodecahedron` · `fIcosahedron` · `fOpUnionRound(a, b, r)` · `fOpUnionSoft` · `pModPolar` · `pMirror` · `gmod`. wgsl-std — `perlin3d` · `simplex3d` · `fbmSimplex3d`(-1~1) · `hash3` · `saturate` · `rotate2d`, 엔진의 `rot2(a)` · `softShadow(ro, rd)`.",
+  "- 형태 × 재질: 곡면(구 · 토러스 · 매듭 · 덩어리)은 크롬 · 액체 금속 · 세라믹, 평면 다면체는 굴절 유리만(반사만 얹으면 면마다 단색 블록), 선 · 와이어는 자체발광.",
+  "- 재질: 검은 크롬 — 고유색 0.02 이하, `F = 0.042 + 0.958 * fres`, `env(reflect(rd, n)) * F`에 `u.glow * fres * 0.4`. 액체 금속 — `F = 0.6 + 0.4 * fres`, 반사만. 서리 유리(곡면) — 반사 방향에 `(hash3(p * 40.0) - 0.5) * 0.28`, 두께 빛 `u.glow * pow(1.0 - fres, 1.6)`. 무광 세라믹 — `u.base * (0.14 + 확산 * softShadow)`, 림만 `pow(fres, 2.2)`. 자체발광 — `u.glow * (1.4 + pow(fres, 2.0) * 3.2)`.",
+  "- 빛은 `env(d)`가 정한다: 스튜디오 스트립 — 방위각 `az = atan2(d.z, d.x)`만 좁혀 `pow(max(0.0, cos(az - φ)), 40~110)`(긴 줄기), 색은 스트립으로 넣는다(표면을 칠하면 플라스틱). 키+림 — 흰 키 하나 + `u.glow` 림. 컬러 젤 — 두 색을 반대 방위에. 그라디언트 돔 — 무광 재질용. 앰비언트 `vec3f(0.01)`을 남긴다.",
+  "- 형체는 화면 한가운데에 모으지 않는다(글과 맞물리는 쪽에 둔다 · 가운데에 모으면 느려진다). 카메라 식은 `camera` 한 곳에만 쓴다.",
+  "- WGSL 함정: 스위즐에 대입할 수 없다(`p.xz = …` 대신 새 벡터) · 오버로딩 · 삼항 없음(`select(거짓, 참, 조건)`) · `mod` 대신 `gmod` · `atan2` · 암시적 형변환 없음(`vec3f(0.0)` · `f32(i)`) · 다시 대입할 값은 `var` · `fwidth`는 분기 밖 · `__`로 시작하는 이름 금지 · `smin`을 쓰면 거리를 줄여 돌려준다(`* 0.6`).",
+  "- 입자 · 선이 흩어진 장(場)은 three.js로 짓는다.",
 ].join("\n");
 
 /**

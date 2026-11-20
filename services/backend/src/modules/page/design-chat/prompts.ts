@@ -38,8 +38,8 @@ import { markupProblem, promptOpening, promptSources, ungroundedEmails, type Pag
  * 제안(스타일과 레이아웃을 따로), 디자인(`../design-rules.ts`), 사실. 문구를 고칠 때는 그 목록의 뜻을 지킨다.
  */
 const TIER = { modelTier: "sonnet" } as const;
-/** 프롬프트 판. 문구를 바꾸면 올린다. 2: Do와 Do not, 스타일과 레이아웃을 따로 제안(2026-11-19). 4: 추상 그래픽과 그림 스크립트(2026-11-20). 5: 형태 · 흐름 · 밀도, 수치는 한 줄(같은 날). 6: 3D 형태 · 재질 · 빛 짝(같은 날). */
-export const DESIGN_CHAT_PROMPT_VERSION = 6;
+/** 프롬프트 판. 문구를 바꾸면 올린다. 2: Do와 Do not, 스타일과 레이아웃을 따로 제안(2026-11-19). 4: 추상 그래픽과 그림 스크립트(2026-11-20). 5: 형태 · 흐름 · 밀도, 수치는 한 줄(같은 날). 6: 3D 형태 · 재질 · 빛 짝(같은 날). 7: MotionWeb 엔진(같은 날). */
+export const DESIGN_CHAT_PROMPT_VERSION = 7;
 
 const FONT_NAME = { sans: "고딕", serif: "명조", mono: "고정폭" } as const;
 const DENSITY_NAME = { compact: "빽빽하게", comfortable: "읽기 편하게", spacious: "넓게" } as const;
