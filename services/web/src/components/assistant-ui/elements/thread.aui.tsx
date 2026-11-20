@@ -81,6 +81,8 @@ export type ThreadGroupPart = MessagePrimitive.GroupedParts.GroupPart;
 export type ThreadComponents = {
   AssistantMessage?: ComponentType | undefined;
   AssistantHeader?: ComponentType | undefined;
+  /** 답변 글 바로 아래. 작업 흔적 밖에서 그 답변에 딸린 화면(사용자에게 건네는 부품)을 그린다. */
+  AssistantFooter?: ComponentType | undefined;
   Welcome?: ComponentType | undefined;
   ToolFallback?: ToolCallMessagePartComponent | undefined;
   ToolGroup?:
@@ -329,6 +331,7 @@ const MessageError: FC = () => {
 const AssistantMessage: FC = () => {
   const {
     AssistantHeader,
+    AssistantFooter,
     ToolFallback: ToolFallbackComponent = ToolFallback,
     ToolGroup,
     ReasoningGroup,
@@ -424,6 +427,7 @@ const AssistantMessage: FC = () => {
             }
           }}
         </MessagePrimitive.GroupedParts>
+        {AssistantFooter ? <AssistantFooter /> : null}
         <MessageError />
       </div>
 

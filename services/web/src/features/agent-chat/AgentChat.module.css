@@ -51,6 +51,8 @@
 .root :global(.aui-md) { font-size:inherit; }
 /* 작업 흔적 — 단계(ToolStep)들이 세로선으로 이어지는 자리. 그룹 머리와 점의 왼쪽 끝을 맞춘다. */
 .trace { display:flex; flex-direction:column; padding-top:6px; }
+/* 답변 글 아래의 부품. 작업 흔적과 달리 접히지 않는다. */
+.belowParts { display:flex; flex-direction:column; gap:10px; }
 .proposalStatus { display:flex; align-items:center; gap:6px; color:var(--ex-fg-muted); font-size:var(--ex-text-2xs); padding-top:12px; }
 .proposalStatus::before { content:""; width:5px; height:5px; border-radius:50%; background:var(--ex-accent-soft); }
 .proposalStatus[data-state="applied"] { color:var(--ex-status-success-text); }
