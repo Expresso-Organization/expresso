@@ -9,6 +9,7 @@ import type { CareerViewRendererProps } from "./view-types";
 import { keyboardActivate, rawValue } from "./view-types";
 import { markdownPreview } from "./markdown-preview";
 import { activeDefinitions, definitionById, fieldValue, formatPeriodRange, propertyLabel, propertyLabels } from "./view-logic";
+import { RecordSelectBox } from "./RecordSelectBox";
 import styles from "./views.module.css";
 
 const COVER_BARS = [18, 30, 24, 41, 33, 52, 45, 61, 49, 70, 58, 76, 66, 82];
@@ -79,10 +80,7 @@ function ProjectGallery(props: CareerViewRendererProps) {
           return (
             <li key={record.id}>
               <article className={record.id === props.openId ? styles.projectCardActive : styles.projectCard}>
-                <label className={styles.projectSelect}>
-                  <input aria-label={`${record.title || "제목 없음"} 선택`} type="checkbox" checked={props.selectedIds.has(record.id)} onChange={() => props.onToggle(record.id)} />
-                  <span>선택</span>
-                </label>
+                <RecordSelectBox className={styles.projectSelect} text="선택" title={record.title} checked={props.selectedIds.has(record.id)} onToggle={() => props.onToggle(record.id)} />
                 <button className={styles.projectOpen} type="button" tabIndex={record.id === props.activeId ? 0 : -1} onKeyDown={(event) => keyboardActivate(event, record.id, props.records, props.onActivate)} onClick={() => props.onActivate(record.id)}>
                   {(() => { const cover = galleryCover(record, props); return cover ? <div className={styles.projectCover} aria-hidden="true">{cover}</div> : <ProjectCover index={index} ai={record.origin === "ai"} />; })()}
                   <span className={styles.projectBody}>
@@ -116,7 +114,7 @@ function ProjectGallery(props: CareerViewRendererProps) {
 }
 
 function GenericGallery(props: CareerViewRendererProps) {
-  return <ul className={styles.gallery} aria-label="커리어 갤러리">{props.records.map((record) => { const preview=props.view.visiblePropertyIds.flatMap((id)=>{const definition=definitionById(props.category,id);const label=definition&&definition.key!=="title"?propertyLabel(record,definition):null;return label?[label]:[]}).slice(0,3); return <li key={record.id}><article className={record.id === props.openId ? styles.cardActive : styles.card} tabIndex={record.id === props.activeId ? 0 : -1} onKeyDown={(event) => keyboardActivate(event, record.id, props.records, props.onActivate)}><div className={styles.cover} aria-hidden="true">{galleryCover(record, props) ?? <><span>{record.title.slice(0, 1) || "E"}</span><small>{props.category.name}</small></>}</div><label><input aria-label={`${record.title || "제목 없음"} 선택`} type="checkbox" checked={props.selectedIds.has(record.id)} onChange={() => props.onToggle(record.id)} /> 선택</label><button type="button" onClick={() => props.onActivate(record.id)}><strong>{record.title || "제목 없음"}</strong><span className={styles.cardSummary}>{plainText(record).slice(0,100)||"내용을 채워 주세요."}</span><span className={styles.cardTags}>{preview.map((item)=><small key={item}>{item}</small>)}</span></button></article></li>})}</ul>;
+  return <ul className={styles.gallery} aria-label="커리어 갤러리">{props.records.map((record) => { const preview=props.view.visiblePropertyIds.flatMap((id)=>{const definition=definitionById(props.category,id);const label=definition&&definition.key!=="title"?propertyLabel(record,definition):null;return label?[label]:[]}).slice(0,3); return <li key={record.id}><article className={record.id === props.openId ? styles.cardActive : styles.card} tabIndex={record.id === props.activeId ? 0 : -1} onKeyDown={(event) => keyboardActivate(event, record.id, props.records, props.onActivate)}><div className={styles.cover} aria-hidden="true">{galleryCover(record, props) ?? <><span>{record.title.slice(0, 1) || "E"}</span><small>{props.category.name}</small></>}</div><RecordSelectBox title={record.title} checked={props.selectedIds.has(record.id)} onToggle={() => props.onToggle(record.id)} /><button type="button" onClick={() => props.onActivate(record.id)}><strong>{record.title || "제목 없음"}</strong><span className={styles.cardSummary}>{plainText(record).slice(0,100)||"내용을 채워 주세요."}</span><span className={styles.cardTags}>{preview.map((item)=><small key={item}>{item}</small>)}</span></button></article></li>})}</ul>;
 }
 
 export function GalleryView(props: CareerViewRendererProps) {

@@ -8,7 +8,6 @@ import { DatePopout, OptionPopout } from "@/features/career-editor/views/ValuePo
 import { formatPeriodRange } from "@/features/career-editor/views/view-logic";
 
 import { commitOnEnter, formatTimestamp, propertyOptions, ReadOnlyValue } from "./property-editors";
-import { PropertySelect } from "./PropertySelect";
 import styles from "./properties.module.css";
 
 export interface PropertyValueEditorProps {
@@ -57,8 +56,6 @@ function initialDraft(value: CareerPropertyValueV2 | null): string {
 export function PropertyValueEditor({ definition, value, onCommit, onCreateOption, disabled = false }: PropertyValueEditorProps) {
   const [draft, setDraft] = useState(() => initialDraft(value));
   const [issue, setIssue] = useState<string | null>(null);
-  // 새 옵션 이름은 값 초안과 따로 둔다. 값이 바뀔 때 초안을 되돌리는 effect가 입력 중인 이름을 지우지 않게 한다.
-  const [optionName, setOptionName] = useState("");
   const [saving, setSaving] = useState(false);
   const options = useMemo(() => propertyOptions(definition), [definition]);
   useEffect(() => { setDraft(initialDraft(value)); setIssue(null); }, [value]);
@@ -88,20 +85,12 @@ export function PropertyValueEditor({ definition, value, onCommit, onCreateOptio
   if (definition.type === "checkbox") {
     return <label className={styles.checkboxLabel}><input aria-label={definition.name} type="checkbox" checked={value?.type === "checkbox" ? value.value : false} disabled={disabled || saving} onChange={(event) => void commit({ type: "checkbox", value: event.target.checked })} /><span>{value?.type === "checkbox" && value.value ? "예" : "아니요"}</span></label>;
   }
-  const optionInput = (choose: (optionId: string) => Promise<void>) => onCreateOption ? <div className={styles.fieldRow}><input className={styles.input} aria-label={`${definition.name} 새 항목`} placeholder="새 항목 입력 후 Enter" value={optionName} disabled={disabled || saving} onChange={(event) => { setOptionName(event.target.value); setIssue(null); }} onKeyDown={(event) => { if (event.nativeEvent.isComposing) return; commitOnEnter(event, () => {
-    if (!optionName.trim()) return;
-    setSaving(true); setIssue(null);
-    void onCreateOption(optionName).then(async (optionId) => { setOptionName(""); setSaving(false); await choose(optionId); }).catch((error: unknown) => { setSaving(false); setIssue(error instanceof Error ? error.message : "항목을 추가하지 못했습니다."); });
-  }); }} /><IssueBadge issue={issue} /></div> : null;
   if (definition.type === "select") {
-    return <div className={styles.fieldEditor}><PropertySelect
-      label={definition.name}
-      value={value?.type === "select" ? value.value ?? "" : ""}
-      placeholder="선택 안 함"
-      disabled={disabled || saving}
-      options={[{ value: "", label: "선택 안 함" }, ...options.map((option) => ({ value: option.id, label: option.name }))]}
-      onChange={(next) => void commit({ type: "select", value: next || null })}
-    />{optionInput((optionId) => commit({ type: "select", value: optionId }))}</div>;
+    // 다중 선택과 같은 단추 + 옵션 팝업입니다. 옵션 만들기도 팝업 안에서 합니다.
+    const chosen = value?.type === "select" && value.value ? options.find((option) => option.id === value.value)?.name ?? null : null;
+    return <PopoutField label={definition.name} disabled={disabled || saving} issue={issue} empty={!chosen} display={chosen ? <span className={styles.valueChips}><small>{chosen}</small></span> : "비어 있음"}>
+      {(anchorRef, close) => <OptionPopout definition={definition} value={value?.type === "select" ? value.value : null} anchorRef={anchorRef} onCommit={(next) => void commit(next)} onCreateOption={onCreateOption} onClose={close} />}
+    </PopoutField>;
   }
   if (definition.type === "multi_select") {
     // 표 셀과 같은 옵션 팝업을 연다. 값은 칩으로 보인다(화면 정의서 05 · 05b의 역량 칸).

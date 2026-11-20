@@ -11,12 +11,12 @@ date: 2026-11-20
 
 ## 요구사항
 
-- [ ] `PropertyValueEditor`의 `multi_select` · `date`가 `input[type=checkbox]` · `input[type=date]`를 그리지 않는다.
-- [ ] 두 값은 트리거 단추 하나로 보인다. 다중 선택은 칩, 날짜는 `YYYY.MM – YYYY.MM`, 비었으면 「비어 있음」이다. 누르면 표와 같은 `OptionPopout` · `DatePopout`이 단추에 붙어 열린다.
+- [ ] `PropertyValueEditor`의 `select` · `multi_select` · `date`가 `input[type=checkbox]` · `input[type=date]` · 상자형 드롭다운을 그리지 않는다.
+- [ ] 세 값은 트리거 단추 하나로 보인다. 선택 · 다중 선택은 칩, 날짜는 `YYYY.MM – YYYY.MM`, 비었으면 「비어 있음」이다. 누르면 표와 같은 `OptionPopout` · `DatePopout`이 단추에 붙어 열린다.
 - [ ] 팝업에서 고른 값은 기존 `onCommit`으로 저장되고, 옵션 만들기는 기존 `onCreateOption`을 쓴다.
 - [ ] 문서(`CareerDocumentEditor`)는 peek · page 모두 제목 · 속성 · BlockNote 본문을 한 열(`.content`)에 둔다. 본문 첫 글자 x가 제목 x와 같다(±1px).
 - [ ] peek에서 「이력」은 패널 머리말(`DocumentPanel` `.headRight`)에 있고, 본문 위 별도 줄은 없다.
-- [ ] `BoardView` · `TimelineView` 카드의 선택 상자는 표의 `.rowCheckbox` 모양이다. 고르지 않은 카드에서는 호버 · 포커스 때만 보인다.
+- [ ] `BoardView` · `TimelineView` · `GalleryView` · `ListView`의 선택 상자는 표의 상자(`.checkMark`) 모양이다. 고르지 않은 카드에서는 호버 · 포커스 때만 보이고, `(hover: none)`에서는 늘 보인다.
 - [ ] 보드 카드의 이동 단추는 카드 흐름에서 빠져(겹쳐 놓임) 빈 줄을 만들지 않는다.
 - [ ] 표 날짜 칸과 갤러리가 같은 기간 포맷 함수를 쓴다.
 - [ ] `.categoryIntro h1`이 `--ex-text-3xl`이다.
@@ -28,11 +28,11 @@ date: 2026-11-20
 재사용을 먼저 한다.
 
 - **팝업 분리(재사용)**: `CareerTableCell.tsx`의 `usePopoverPosition` · `usePopupKeyboard` · `movePopupFocus` · `OptionPopout` · `DatePopout`을 `views/ValuePopouts.tsx`로 옮겨 내보낸다. 표는 그대로 가져다 쓴다. 스타일은 `views.module.css`의 `.cellPopout` 계열을 그대로 쓴다. 팝업 props는 `onCommit(value: CareerPropertyValueV2 | null)`이라 두 곳에 같은 모양이다.
-- **속성 트리거(바뀜)**: `PropertyValueEditor`에 `multi_select` · `date` 분기를 `ValueTrigger`(단추 + 열림 상태 + 앵커 ref)로 바꾼다. 칩은 `properties.module.css`에 표의 `.tableTags small`과 같은 값으로 둔다. 다중 선택 팝업은 고를 때마다 커밋하므로 `commit()`의 검증 · 오류 표시를 그대로 탄다.
+- **속성 트리거(바뀜)**: `PropertyValueEditor`에 `select` · `multi_select` · `date` 분기를 `ValueTrigger`(단추 + 열림 상태 + 앵커 ref)로 바꾼다. 칩은 `properties.module.css`에 표의 `.tableTags small`과 같은 값으로 둔다. 다중 선택 팝업은 고를 때마다 커밋하므로 `commit()`의 검증 · 오류 표시를 그대로 탄다.
 - **기간 포맷(바뀜)**: `view-logic.ts`에 `formatPeriodRange(start, end)`를 두고 `GalleryView`의 지역 `format` · `CareerTableCell`의 `CellDisplay` 날짜 · 새 트리거가 쓴다. 타임라인 축은 일 단위가 필요해 그대로 둔다.
 - **한 열 문서(바뀜)**: `CareerDocumentEditor`에서 `PropertyList`를 `.content` 안으로 옮긴다. `.bn-editor`의 기본 `padding-inline: 54px`를 0으로 하고, 블록 단추(side menu)가 들어갈 자리는 `.content`의 좌우 48px(간격 척도 값)로 준다. peek에서는 `DocumentPanel .body`의 좌우 여백을 0으로 해 여백을 `.content` 한 곳에서만 준다. page의 `topRow`는 `.content` 안 맨 위로 옮긴다.
 - **이력 위치(바뀜)**: `CareerDocumentEditor`는 peek에서 `topRow`를 그리지 않고, `DocumentPanel` 머리말이 `RevisionHistory`를 저장 상태 옆에 그린다.
-- **선택 상자(재사용)**: `views/RecordSelectBox.tsx`가 표 행의 `label.rowCheckbox` 마크업을 그린다. 표 · 보드 · 타임라인이 같이 쓴다. 보이기 규칙은 각 카드 선택자(`.board article:hover` 등)가 정한다.
+- **선택 상자(재사용)**: `views/RecordSelectBox.tsx`가 표 행의 `label.rowCheckbox` 마크업을 그린다. 표 · 보드 · 타임라인 · 갤러리 · 목록이 같이 쓰고, 프로젝트 갤러리는 `className` · `text`로 「선택」 알약 모양을 유지한다. 남은 기본 컨트롤(체크박스 속성, 이동 대화상자, AI 비교, 타임라인 축)에는 `accent-color: var(--ex-fg-strong)`만 준다. 보이기 규칙은 각 카드 선택자(`.board article:hover` 등)가 정한다.
 - **좁은 화면 표(바뀜)**: `TableView`의 grid template 첫 칸을 `var(--table-controls, 96px)`로 쓰고, 고정 제목 열 `left`도 같은 변수를 쓴다. 767px 미디어 쿼리에서 변수를 36px로 바꾸고 `.rowAddButton` · `.rowDragHandle`을 숨긴다.
 
 ## 버린 대안

@@ -20,9 +20,10 @@ date: 2026-11-20
 | `services/web/src/features/career-editor/views/view-logic.ts` | `formatPeriodRange` 추가 |
 | `services/web/src/features/career-editor/views/GalleryView.tsx` | 지역 기간 포맷을 `formatPeriodRange`로 |
 | `services/web/src/features/career-editor/views/TableView.tsx` | 선택 상자를 `RecordSelectBox`로, 첫 칸 폭을 CSS 변수로 |
-| `services/web/src/features/career-editor/views/BoardView.tsx` · `TimelineView.tsx` | 선택 상자를 `RecordSelectBox`로 |
+| `services/web/src/features/career-editor/views/BoardView.tsx` · `TimelineView.tsx` · `GalleryView.tsx` · `ListView.tsx` | 선택 상자를 `RecordSelectBox`로 |
+| `services/web/src/features/career-editor/ai/ai.module.css` · `move/move.module.css` | 남은 기본 체크박스에 잉크 강조색 |
 | `services/web/src/features/career-editor/views/views.module.css` | 화면 제목 크기, 보드 이동 단추 겹치기, 카드 선택 상자 보이기, 좁은 화면 행 조작 칸 |
-| `services/web/src/features/career-editor/properties/PropertyValueEditor.tsx` | 다중 선택 · 날짜를 트리거 + 팝업으로 |
+| `services/web/src/features/career-editor/properties/PropertyValueEditor.tsx` | 선택 · 다중 선택 · 날짜를 트리거 + 팝업으로 |
 | `services/web/src/features/career-editor/properties/properties.module.css` | 트리거 · 칩 스타일, 옛 체크박스 · 날짜 입력 스타일 정리 |
 | `services/web/src/features/career-editor/editor/CareerDocumentEditor.tsx` · `.module.css` | 속성을 `.content` 안으로, side menu 여백, peek에서 `topRow` 제거 |
 | `services/web/src/app/(app)/career/[categorySlug]/DocumentPanel.tsx` · `.module.css` | 머리말에 「이력」, 본문 좌우 여백 0 |
