@@ -11,6 +11,7 @@ import { PlanDraftCard } from "./PlanDraftCard";
 import { PlanCard } from "./PlanCard";
 import { ReplanDraftCard } from "./ReplanDraftCard";
 import { PageEditCard } from "./PageEditCard";
+import { CommitmentCard } from "./CommitmentCard";
 import { TOOL_PARTS, isBelowTool, toolPartFor, type ToolPartContext } from "./tool-parts";
 
 afterEach(cleanup);
@@ -106,5 +107,21 @@ describe("대화 속 화면의 등록표", () => {
     rerender(<>{toolPartFor(saved)!.render(saved, using)}</>);
     fireEvent.click(screen.getByRole("button", { name: "되돌리기" }));
     expect(using.undoSavedRecord).toHaveBeenCalledWith("00000000-0000-4000-8000-000000000030");
+  });
+  it("약속은 답변 글 아래에 약속 카드를 그리고, 대화가 바뀔 때 다시 읽도록 대화의 번호를 넘긴다", () => {
+    const pending = tool("약속", {}, "running");
+    expect(isBelowTool(pending)).toBe(true);
+    const { container, rerender } = render(<>{toolPartFor(pending)!.render(pending, context())}</>);
+    expect(screen.getByRole("status").textContent).toBe("하기로 한 일을 남기고 있습니다.");
+    const failed = tool("약속", {}, "failed");
+    rerender(<>{toolPartFor(failed)!.render(failed, context())}</>);
+    expect(container.firstChild).toBeNull();
+    const commitment = { id: "00000000-0000-4000-8000-000000000040", title: "해커톤 지원서 내기", detail: "", dueOn: "2026-11-27", status: "open", awaiting: false, conversationId: null, createdAt: "2026-11-20T00:00:00.000Z" };
+    const made = element(tool("약속", { commitment }));
+    expect(made.type).toBe(CommitmentCard);
+    expect(made.props).toMatchObject({ commitment, refreshKey: 3 });
+    // 약속을 닫거나 옮긴 호출은 카드가 없다 — 작업 흔적에 요약만 남는다.
+    expect(toolPartFor(tool("약속 갱신"))).toBeUndefined();
+    expect(isBelowTool(tool("약속 갱신"))).toBe(false);
   });
 });

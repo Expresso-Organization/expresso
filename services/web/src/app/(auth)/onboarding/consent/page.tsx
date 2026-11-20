@@ -3,7 +3,7 @@ import type { Route } from "next";
 import Link from "next/link";
 
 import { Icon } from "@/components/ui/Icon";
-import { consents } from "@/lib/api/endpoints";
+import { consents, consultant } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 import { grantConsentAction } from "../../../consent-actions";
@@ -17,6 +17,8 @@ import { OnboardingShell, OnboardingStepLabel, onboardingStyles as styles } from
  * 두 가지를 따로 묻는다. 공고 원문은 남이 쓴 공개된 글이고 커리어 기록은 내가
  * 쓴 글이라, 하나만 주고 다른 하나는 안 줄 수 있어야 한다. 아무것도 고르지
  * 않고 넘어가도 된다 — 그때는 AI 기능이 잠기고 설정에서 나중에 켠다.
+ *
+ * 그 아래에 컨설턴트가 먼저 연락해도 되는지를 함께 묻는다. 기본은 켬이다.
  */
 
 const SCOPES: {
@@ -44,7 +46,11 @@ const SCOPES: {
 
 export default async function OnboardingConsentPage() {
   const session = await requireSession();
-  const { data } = await consents.list(session.accessToken);
+  const [{ data }, outreach] = await Promise.all([
+    consents.list(session.accessToken),
+    // 컨설턴트가 없는 서버(404)에서는 먼저 연락받기를 묻지 않는다.
+    consultant.checkins(session.accessToken).then((result) => result.data.outreach).catch(() => undefined),
+  ]);
   const byScope = new Map(data.consents.map((consent) => [consent.scope, consent]));
 
   return (
@@ -94,6 +100,26 @@ export default async function OnboardingConsentPage() {
             </label>
           );
         })}
+
+        {/* AI로 보내는 범위가 아니라 연락을 받을지다. 기본은 켬이고, 끄고 넘어가도 된다. */}
+        {outreach === undefined ? null : (
+          <label className={styles.consentCard}>
+            <input type="hidden" name="outreachAsked" value="1" />
+            <input type="checkbox" name="outreach" defaultChecked={outreach ?? true} className={styles.consentBox} />
+            <span className={styles.consentBody}>
+              <span className={styles.consentTitle}>
+                <Icon name="bell" size={14} color="var(--ex-accent-text)" />
+                컨설턴트가 먼저 연락합니다
+              </span>
+              <span className={styles.consentWhat}>
+                대화에서 하기로 한 일을 약속한 날에 여쭙고, 내 기록과 새 공고 · 공모전을 읽어 지금 하면 좋은 일을 권합니다.
+              </span>
+              <span className={styles.consentWhy}>
+                권할 것을 고를 때 AI가 하루 한 번까지 실행되고, 쓴 만큼 이번 달 크레딧에서 차감됩니다. 권하는 일은 위의 기록 동의가 있어야 켜집니다.
+              </span>
+            </span>
+          </label>
+        )}
       </form>
 
       <div className={styles.consentFoot}>

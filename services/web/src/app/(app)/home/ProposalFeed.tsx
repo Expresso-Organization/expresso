@@ -58,7 +58,7 @@ function CardTransition({ children }: { children: ReactNode }) {
   );
 }
 
-function FeedCard({ icon, hue, title, children }: { icon: string; hue: TintHue; title: string; children: ReactNode }) {
+export function FeedCard({ icon, hue, title, children }: { icon: string; hue: TintHue; title: string; children: ReactNode }) {
   return (
     <article className={`${styles.widget} ${styles.proposalCard}`}>
       <header className={styles.widgetHead}>
@@ -191,10 +191,10 @@ export function ProposalFeed({ initial, fallback, hasGoal }: { initial: Feed; fa
         </div>
         <div className={styles.proposalGrid}>
           {hasGoal ? null : <GoalCard />}
-          <FeedCard icon="sparkle" hue="terracotta" title="먼저 제안받기">
-            <p className={styles.proposalMessage}>내 기록과 새로 올라온 공고 · 공모전을 읽고, 지금 하면 좋은 일을 근거와 함께 권합니다.</p>
+          <FeedCard icon="sparkle" hue="terracotta" title="먼저 연락받기">
+            <p className={styles.proposalMessage}>내 기록과 새로 올라온 공고 · 공모전을 읽고 지금 하면 좋은 일을 근거와 함께 권합니다. 대화에서 하기로 한 일은 약속한 날에 여쭙니다.</p>
             <div className={styles.proposalActions}>
-              <button type="button" className={styles.proposalAction} onClick={() => setAsking(true)}>제안 켜기</button>
+              <button type="button" className={styles.proposalAction} onClick={() => setAsking(true)}>켜기</button>
             </div>
           </FeedCard>
         </div>
@@ -202,12 +202,13 @@ export function ProposalFeed({ initial, fallback, hasGoal }: { initial: Feed; fa
         <Dialog open={asking} onOpenChange={(open) => { if (!pending) setAsking(open); }}>
           <DialogContent className={styles.enableDialog} showCloseButton={false}>
             <DialogHeader>
-              <DialogTitle className={styles.enableTitle}>제안을 켜기 전에</DialogTitle>
+              <DialogTitle className={styles.enableTitle}>먼저 연락받기 전에</DialogTitle>
               <DialogDescription className={styles.enableIntro}>켜면 누르지 않아도 익스프레소가 AI를 실행합니다.</DialogDescription>
             </DialogHeader>
             <dl className={styles.enableFacts}>
               <div><Icon name="notebook" size={18} /><div><dt>읽는 것</dt><dd>내 구직 목표와 커리어 기록, 관심 공고, 새로 수집된 채용 공고와 공모전</dd></div></div>
               <div><Icon name="clock" size={18} /><div><dt>실행되는 때</dt><dd>하루에 한 번, 그리고 내 기술과 맞는 새 공고나 공모전이 들어왔을 때 하루 한 번까지</dd></div></div>
+              <div><Icon name="calendar-check" size={18} /><div><dt>하기로 한 일</dt><dd>대화에서 하기로 한 일은 약속한 날에 한 번, 답이 없으면 3일 뒤에 한 번 더 여쭙니다. 대화가 2주 없으면 한 번 안부를 묻습니다. 여쭙는 데에는 AI를 쓰지 않습니다.</dd></div></div>
               <div><Icon name="coins" size={18} /><div><dt>크레딧</dt><dd>실행할 때마다 사용한 만큼 이번 달 크레딧에서 차감됩니다. 크레딧이 남지 않으면 실행하지 않습니다.</dd></div></div>
               <div><Icon name="sparkle" size={18} /><div><dt>정보를 사용하는 곳</dt><dd>Anthropic의 Claude 모델. 커리어 기록의 AI 사용 동의가 함께 켜집니다.</dd></div></div>
             </dl>

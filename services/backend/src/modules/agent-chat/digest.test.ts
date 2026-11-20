@@ -48,6 +48,11 @@ describe("지난 대화의 요지", () => {
       "포트폴리오 지면 고침: 첫 화면 제목",
     ]);
   });
+  it("잡은 약속은 제목과 날짜로 남긴다", () => {
+    const commitment = { id: id(), title: "해커톤 지원서 내기", detail: "", dueOn: "2026-11-27", status: "open" as const, awaiting: false, conversationId: null, createdAt: at };
+    const digest = digestConversation(conversation([user("해커톤에 나가 볼게요"), assistant("금요일까지 지원서를 내기로 했습니다.", [tool("약속", { commitment }), tool("약속 갱신")])]));
+    expect(digest.outcomes).toEqual(["약속: 해커톤 지원서 내기 (2026-11-27까지)"]);
+  });
   it("긴 말은 자르고, 결과는 최근 여덟 개만 싣는다", () => {
     const many = Array.from({ length: 10 }, (_, index) => tool("지면 요소 고침", { pageEdit: { editId: id(), portfolioId: id(), key: "hero", label: `고침 ${index + 1}`, note: "", changes: [], revision: index + 1, undone: false } }));
     const digest = digestConversation(conversation([user("가".repeat(500)), assistant("나".repeat(500), many)]));

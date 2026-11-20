@@ -18,7 +18,7 @@ async function connectTools(overrides: Partial<AgentInput> = {}) {
   await client.connect(clientSide);
   return { client, emit };
 }
-const base = () => ({ userId: "00000000-0000-4000-8000-0000000000aa", records: { list: vi.fn(async () => ({ categories: [], records: [] })), read: vi.fn(async () => []) }, review: vi.fn(), saveRecord: vi.fn(), recordCategories: [], askForm: vi.fn(), jobGoal: null, goalDraft: vi.fn(), gapReview: vi.fn(), planDraft: vi.fn(), replanDraft: vi.fn(), readPlan: vi.fn(), propose: vi.fn(), page: { read: vi.fn(), edit: vi.fn() }, askChoice: vi.fn(), memory: null, updateMemory: vi.fn() });
+const base = () => ({ userId: "00000000-0000-4000-8000-0000000000aa", records: { list: vi.fn(async () => ({ categories: [], records: [] })), read: vi.fn(async () => []) }, review: vi.fn(), saveRecord: vi.fn(), recordCategories: [], askForm: vi.fn(), jobGoal: null, goalDraft: vi.fn(), gapReview: vi.fn(), planDraft: vi.fn(), replanDraft: vi.fn(), readPlan: vi.fn(), propose: vi.fn(), page: { read: vi.fn(), edit: vi.fn() }, askChoice: vi.fn(), memory: null, updateMemory: vi.fn(), makeCommitment: vi.fn(), updateCommitment: vi.fn() });
 describe("Claude 채팅 실행 어댑터", () => {
   it("제품 도구만 노출하고 부분 텍스트만 한 번 전달한다", async () => {
     const events: AgentEvent[] = [];
@@ -30,7 +30,7 @@ describe("Claude 채팅 실행 어댑터", () => {
     await new ClaudeAgentRuntime().run({ messages: [], context: [], signal: new AbortController().signal, emit: async event => { events.push(event); }, ...base() });
     expect(events).toEqual([{ type: "text", text: "안녕하세요" }]);
     expect(sdk.query.mock.lastCall![0].options).toMatchObject({ tools: [], settingSources: [], strictMcpConfig: true, persistSession: false, permissionMode: "dontAsk" });
-    expect(sdk.query.mock.lastCall![0].options.allowedTools).toEqual(["mcp__expresso__propose_record_edit", "mcp__expresso__list_career_records", "mcp__expresso__read_career_records", "mcp__expresso__record_requirement_review", "mcp__expresso__save_record", "mcp__expresso__propose_job_goal_update", "mcp__expresso__record_gap_review", "mcp__expresso__propose_preparation_plan", "mcp__expresso__read_preparation_plan", "mcp__expresso__propose_replan", "mcp__expresso__read_page_element", "mcp__expresso__edit_page_element", "mcp__expresso__ask_choice", "mcp__expresso__ask_form", "mcp__expresso__update_memory"]);
+    expect(sdk.query.mock.lastCall![0].options.allowedTools).toEqual(["mcp__expresso__propose_record_edit", "mcp__expresso__list_career_records", "mcp__expresso__read_career_records", "mcp__expresso__record_requirement_review", "mcp__expresso__save_record", "mcp__expresso__propose_job_goal_update", "mcp__expresso__record_gap_review", "mcp__expresso__propose_preparation_plan", "mcp__expresso__read_preparation_plan", "mcp__expresso__propose_replan", "mcp__expresso__read_page_element", "mcp__expresso__edit_page_element", "mcp__expresso__ask_choice", "mcp__expresso__ask_form", "mcp__expresso__update_memory", "mcp__expresso__make_commitment", "mcp__expresso__update_commitment"]);
   });
   it("중단 신호를 SDK에 전달한다", async () => {
     const controller = new AbortController(); let stopped = false;
@@ -205,7 +205,7 @@ describe("Claude 채팅 실행 어댑터", () => {
     expect(await hook()).toEqual({});
   });
   it("기억을 프롬프트에 자료로 싣고, 기억 갱신은 요약만 남기며 빈 입력은 돌려보낸다", async () => {
-    const memory = { stage: "preparing" as const, preferences: [{ id: "00000000-0000-4000-8000-000000000031", kind: "avoid" as const, text: "야근이 잦은 곳" }], recentConversations: [{ title: "준비 계획", date: "2026-11-19", said: ["계획을 세워 줘"], outcomes: ["준비 계획 승인: 백엔드 준비 (주 10시간 · 8주)"], lastAnswer: "계획을 저장했습니다." }] };
+    const memory = { stage: "preparing" as const, preferences: [{ id: "00000000-0000-4000-8000-000000000031", kind: "avoid" as const, text: "야근이 잦은 곳" }], today: "2026-11-20", commitments: [{ id: "00000000-0000-4000-8000-000000000032", title: "해커톤 지원서 내기", dueOn: "2026-11-19", overdue: true }], recentConversations: [{ title: "준비 계획", date: "2026-11-19", said: ["계획을 세워 줘"], outcomes: ["준비 계획 승인: 백엔드 준비 (주 10시간 · 8주)"], lastAnswer: "계획을 저장했습니다." }] };
     const updateMemory = vi.fn(async () => ({ summary: "단계: 지원 · 조건 1개 기억", memory: { ...memory, stage: "applying" as const } }));
     const { client, emit } = await connectTools({ memory, updateMemory });
     expect(JSON.parse(sdk.query.mock.lastCall![0].prompt)).toMatchObject({ memory });
@@ -218,6 +218,29 @@ describe("Claude 채팅 실행 어댑터", () => {
     const empty = await client.callTool({ name: "update_memory", arguments: {} });
     expect(empty.isError).toBe(true);
     expect(updateMemory).toHaveBeenCalledTimes(1);
+  });
+  it("약속을 저장하면 약속 카드 결과를 남기고, 약속을 닫거나 옮기면 요약만 남긴다", async () => {
+    const commitment = { id: "00000000-0000-4000-8000-000000000071", title: "해커톤 지원서 내기", detail: "", dueOn: "2026-11-27", status: "open" as const, awaiting: false, conversationId: null, createdAt: "2026-11-20T00:00:00.000Z" };
+    const makeCommitment = vi.fn().mockRejectedValueOnce(new AgentToolRejection(["dueOn이 오늘(2026-11-20)보다 앞입니다."])).mockResolvedValue(commitment);
+    const updateCommitment = vi.fn(async () => ({ ...commitment, status: "done" as const }));
+    const { client, emit } = await connectTools({ makeCommitment, updateCommitment });
+    const rejected = await client.callTool({ name: "make_commitment", arguments: { title: commitment.title, dueOn: "2026-11-19" } });
+    expect(rejected.isError).toBe(true);
+    expect((rejected.content as { text: string }[])[0]!.text).toContain("오늘(2026-11-20)보다 앞");
+    const made = await client.callTool({ name: "make_commitment", arguments: { title: commitment.title, dueOn: "2026-11-27" } });
+    expect(made.isError).toBeFalsy();
+    expect(emit.mock.calls.at(-1)![0]).toMatchObject({ type: "tool", tool: { name: "약속", status: "complete", summary: "해커톤 지원서 내기 · 2026-11-27", commitment } });
+    // 날짜는 날(YYYY-MM-DD)만 받는다. 모양이 틀리면 처리기까지 오지 않는다.
+    expect((await client.callTool({ name: "make_commitment", arguments: { title: commitment.title, dueOn: "다음 주 금요일" } })).isError).toBe(true);
+    expect(makeCommitment).toHaveBeenCalledTimes(2);
+    const done = await client.callTool({ name: "update_commitment", arguments: { commitmentId: commitment.id, status: "done" } });
+    expect(done.isError).toBeFalsy();
+    const last = emit.mock.calls.at(-1)![0];
+    expect(last).toMatchObject({ type: "tool", tool: { name: "약속 갱신", status: "complete", summary: "해커톤 지원서 내기 · 했음" } });
+    expect(last.type === "tool" && last.tool.commitment).toBeUndefined();
+    expect((await client.callTool({ name: "update_commitment", arguments: { commitmentId: commitment.id } })).isError).toBe(true);
+    expect(updateCommitment).toHaveBeenCalledTimes(1);
+    expect(conversationForModel([{ id: "00000000-0000-4000-8000-000000000072", role: "assistant", text: "", createdAt: "2026-11-20T00:00:00.000Z", tools: [{ id: "c", name: "약속", status: "complete", summary: "약속", commitment }] }])[0]!.tools).toEqual([{ name: "약속", summary: "약속", commitment: { id: commitment.id, title: commitment.title, dueOn: commitment.dueOn } }]);
   });
   it("기억을 쓸 수 없는 환경에서는 memory를 null로 싣는다", async () => {
     await connectTools();

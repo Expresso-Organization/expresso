@@ -1,4 +1,6 @@
 import { loadRuntimeConfig } from "../config/runtime-config.js";
+import { ConsultantCommitments } from "../modules/consultant/index.js";
+import { lastConversationAt } from "../modules/agent-chat/index.js";
 import { MongoOutboxDispatcher } from "../platform/mongo-outbox.js";
 import { createMongoResource } from "../platform/mongodb.js";
 import { createReliableQueue } from "../platform/queue.js";
@@ -234,7 +236,10 @@ const proposalService = new ProposalService(database, {
   writer: ai ? new AiProposalWriter(ai) : null,
 });
 const proposalProcessor = createProposalProcessor(proposalService);
-const schedulingService = new SchedulingService(database, { analytics: analyticsService, accounts: accountLifecycleService, ingest: jobIngestService, notifications: engagementService, proposals: proposalService, activities: activityService });
+// 컨설턴트의 확인 작업: 약속한 날에 묻고, 대화가 없을 때 연락한다. 알림은 알림 모듈이, 마지막 대화 시각은 대화 모듈이 준다.
+const consultantCommitments = new ConsultantCommitments(database);
+const consultantCheckins = { run: (at: Date) => consultantCommitments.runCheckins({ lastConversationAt: userId => lastConversationAt(database, userId), notify: (userId, subject, dedupeKey, when) => engagementService.notify(userId, "consultant", "/home", dedupeKey, when, subject) }, at) };
+const schedulingService = new SchedulingService(database, { analytics: analyticsService, accounts: accountLifecycleService, ingest: jobIngestService, notifications: engagementService, proposals: proposalService, activities: activityService, consultant: consultantCheckins });
 const scheduledJobProcessor = createScheduledJobProcessor(schedulingService);
 const queueWorker = createQueueWorker<Record<string, unknown>, Record<string, unknown>>({
   queueName: QUEUE_NAMES.domain,

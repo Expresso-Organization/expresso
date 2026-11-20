@@ -826,3 +826,40 @@
     opacity: 0;
   }
 }
+
+/* ── 확인 카드 — 제안 카드와 같은 틀에 서고, 날짜를 받는 칸만 더한다 ── */
+
+.checkinDue {
+  margin: 0;
+  padding: 2px 16px 0 14px;
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-muted);
+}
+
+/* 날짜를 받는 줄은 좁은 카드에서 다음 줄로 넘어간다. */
+.checkinActions {
+  flex-wrap: wrap;
+}
+
+.checkinDateLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-body);
+}
+
+.checkinDate {
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--ex-border-firm);
+  border-radius: var(--ex-radius-control);
+  background: var(--ex-bg);
+  color: var(--ex-fg);
+  font: inherit;
+  font-size: var(--ex-text-xs);
+}
+
+.checkinDate:focus-visible {
+  outline: none;
+}

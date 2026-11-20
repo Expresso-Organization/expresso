@@ -7,6 +7,8 @@ import type { AgentChoiceInput, AgentChoicePart, AgentFormInput, AgentFormPart, 
  */
 
 const normalize = (text: string) => text.replace(/\s+/g, " ").trim();
+/** 실제로 있는 날인가. 2026-02-30 같은 값은 날짜 형식이어도 받지 않는다. */
+const isDay = (text: string) => /^\d{4}-\d{2}-\d{2}$/.test(text) && !Number.isNaN(Date.parse(`${text}T00:00:00.000Z`)) && new Date(`${text}T00:00:00.000Z`).toISOString().slice(0, 10) === text;
 
 /** 글이 서로 달라야 하는 항목(선택지의 글 · 칸의 이름)에서 겹치는 것을 찾는다. */
 function duplicateIssues(labels: readonly string[], noun: string) {
@@ -42,7 +44,7 @@ export function formIssues(input: AgentFormInput) {
 export function buildForm(input: AgentFormInput, partId: string): AgentFormPart {
   return {
     kind: "form", partId, prompt: input.prompt,
-    fields: input.fields.map((field, index) => ({ id: `f${index + 1}`, label: field.label, ...(field.placeholder ? { placeholder: field.placeholder } : {}), optional: field.optional ?? false })),
+    fields: input.fields.map((field, index) => ({ id: `f${index + 1}`, label: field.label, ...(field.placeholder ? { placeholder: field.placeholder } : {}), optional: field.optional ?? false, ...(field.type === "date" ? { type: "date" as const } : {}) })),
     answer: null,
   };
 }
@@ -79,6 +81,9 @@ export function checkReply(messages: readonly AgentMessage[], reply: AgentUiRepl
   const filled = part.fields.flatMap(field => { const text = reply.values.find(value => value.id === field.id)?.text.trim() ?? ""; return text ? [{ field, text }] : []; });
   const missing = part.fields.find(field => !field.optional && !filled.some(item => item.field.id === field.id));
   if (missing) return { ok: false, message: `「${missing.label}」 칸을 적어 주세요.` };
+  // 날짜 칸의 값은 실제로 있는 날(YYYY-MM-DD)이어야 한다. 에이전트는 이 값을 그대로 약속의 날짜로 쓴다.
+  const badDate = filled.find(item => item.field.type === "date" && !isDay(item.text));
+  if (badDate) return { ok: false, message: `「${badDate.field.label}」 칸에는 날짜를 골라 주세요.` };
   // 적은 칸만 남긴다. 빈 선택 칸은 대화에도 부품에도 적지 않는다.
   return { ok: true, messageIndex, toolIndex, text: filled.map(item => `${item.field.label}: ${item.text}`).join("\n"), answer: { values: filled.map(item => ({ id: item.field.id, text: item.text })) } };
 }

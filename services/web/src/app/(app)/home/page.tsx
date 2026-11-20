@@ -9,12 +9,12 @@ import { requireSession } from "@/lib/require-session";
 import { HomeHeader } from "./HomeChrome";
 import { PROPOSAL_FEED_CHANGE } from "./home-transitions";
 import { HomeStart } from "./HomeStart";
-import { ContestsWidget, InternsWidget, JobsWidget, Proposals, ProposalsSkeleton, WidgetSkeleton, Widgets } from "./HomeWidgets";
+import { Checkins, ContestsWidget, InternsWidget, JobsWidget, Proposals, ProposalsSkeleton, WidgetSkeleton, Widgets } from "./HomeWidgets";
 
 /**
  * 홈.
  *
- * 대화를 시작하기 전에는 위에서 아래로 로고, 입력창, 추천 프롬프트, 새 소식 위젯, 제안 카드가 보인다.
+ * 대화를 시작하기 전에는 위에서 아래로 로고, 입력창, 추천 프롬프트, 확인 카드, 새 소식 위젯, 제안 카드가 보인다.
  * 말을 보내면(`?compose=1`) 같은 주소에서 대화 화면으로 바뀌고, 주소에 대화가 적혀 있으면
  * (`?chat=`) 그 대화가 열린다.
  *
@@ -45,6 +45,7 @@ export default async function HomePage({
         ) : (
           <ViewTransition key="home" exit={{ [AGENT_CHAT_OPEN]: "home-leave", default: "none" }} enter={{ [AGENT_CHAT_CLOSE]: "home-arrive", default: "none" }} update={{ [PROPOSAL_FEED_CHANGE]: "home-shift", default: "none" }} default="none">
           <HomeStart
+            checkins={<Suspense fallback={null}><Checkins accessToken={session.accessToken} /></Suspense>}
             proposals={
               <Suspense fallback={<ProposalsSkeleton />}>
                 <Proposals

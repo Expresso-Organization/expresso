@@ -78,6 +78,14 @@ describe("입력 칸 묶음", () => {
     expect(checkReply(messages, { partId, optionIds: ["o1"] })).toEqual({ ok: false, message: "칸에 적어 답하는 질문입니다." });
     expect(checkReply([messages[0]!, asked(true)], { partId, values: [{ id: "f1", text: "3개월" }, { id: "f2", text: "4명" }] })).toEqual({ ok: false, message: "이미 답한 질문입니다." });
   });
+  it("날짜 칸은 날짜 칸으로 내보내고, 날짜가 아닌 값은 받지 않는다", () => {
+    const dated = { prompt: "언제까지 할까요?", fields: [{ label: "날짜", type: "date" as const }, { label: "메모", optional: true }] };
+    const part = buildForm(dated, partId);
+    expect(part.fields).toEqual([{ id: "f1", label: "날짜", optional: false, type: "date" }, { id: "f2", label: "메모", optional: true }]);
+    const asking: AgentMessage[] = [user("00000000-0000-4000-8000-000000000001"), { id: "00000000-0000-4000-8000-000000000002", role: "assistant", text: "", createdAt: at, tools: [{ id: "t1", name: "입력 칸 질문", status: "complete", summary: dated.prompt, ui: part }] }];
+    expect(checkReply(asking, { partId, values: [{ id: "f1", text: "2026-11-27" }] })).toMatchObject({ ok: true, text: "날짜: 2026-11-27" });
+    for (const text of ["다음 주 금요일", "2026-13-01", "2026-02-30", "26-11-27"]) expect(checkReply(asking, { partId, values: [{ id: "f1", text }] }), text).toEqual({ ok: false, message: "「날짜」 칸에는 날짜를 골라 주세요." });
+  });
   it("선택지 부품에 값으로 답하면 받지 않는다", () => {
     const choice = [user("00000000-0000-4000-8000-000000000001"), asking("00000000-0000-4000-8000-000000000002")];
     expect(checkReply(choice, { partId, values: [{ id: "f1", text: "값" }] })).toEqual({ ok: false, message: "선택지에서 골라 답하는 질문입니다." });

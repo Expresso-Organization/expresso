@@ -15,7 +15,7 @@ import { AgentChatService, CREDITS_EXHAUSTED, RUN_HEARTBEAT_MS, RUN_INTERRUPTED_
 import { MongoEntitlementService } from "../entitlements/index.js";
 import { PreparationPlans } from "./plans.js";
 import { buildDraft } from "./record-draft.js";
-import { ConsultantService } from "../consultant/index.js";
+import { ConsultantCommitments, ConsultantService, seoulDay } from "../consultant/index.js";
 
 describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB_URL))("공통 에이전트 대화", () => {
   let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
@@ -341,7 +341,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const first = await service.create(memoryUser, []);
     await service.send(memoryUser, first.id, { requestId: randomUUID(), text: "주 10시간씩 8주 동안 준비할게요" });
     await done(first.id);
-    expect(seen[0]).toEqual({ stage: null, preferences: [], recentConversations: [] });
+    expect(seen[0]).toEqual({ stage: null, preferences: [], today: seoulDay(new Date()), commitments: [], recentConversations: [] });
     // 둘째 대화: 첫 대화의 요지가 실리고, 지금 대화는 실리지 않는다.
     const second = await service.create(memoryUser, []);
     await service.send(memoryUser, second.id, { requestId: randomUUID(), text: "이제 지원할 공고를 고르고 있어요" });
@@ -359,6 +359,66 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     // 「내 진행」이 읽는 요지는 대화를 가리지 않고 최근 순이다. 남의 대화는 없다.
     expect((await service.recentDigests(memoryUser)).map(item => item.conversationId)).toEqual([first.id, second.id]);
     expect(await service.recentDigests(other)).toEqual([]);
+  });
+  it("약속을 잡고 닫는 도구는 바로 저장하고, 실행에 오늘과 열린 약속을 넘기며, 지난 날짜와 남의 약속은 돌려보낸다", async () => {
+    const consultant = new ConsultantService(fixture.resource); const commitments = new ConsultantCommitments(fixture.resource);
+    const identity = new MongoIdentityService(fixture.resource);
+    const owner = (await identity.signup({ email: `${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "약속 검증" })).user.id;
+    await consent.grant(owner, ["career_records"], CONSENT_POLICY_VERSION);
+    const foreign = await commitments.create(other, { title: "남의 약속", dueOn: "2099-01-01" }, null);
+    const today = seoulDay(new Date());
+    const seen: NonNullable<Parameters<AgentRuntime["run"]>[0]["memory"]>[] = [];
+    const service = new AgentChatService(fixture.resource, { run: async input => {
+      seen.push(structuredClone(input.memory!));
+      if (input.messages.at(-1)!.text.includes("다 했어요")) {
+        const closed = await input.updateCommitment({ commitmentId: input.memory!.commitments[0]!.id, status: "done" });
+        await input.emit({ type: "tool", tool: { id: randomUUID(), name: "약속 갱신", status: "complete", summary: `${closed.title} · 했음` } });
+        await expect(input.updateCommitment({ commitmentId: foreign.id, status: "done" })).rejects.toBeInstanceOf(AgentToolRejection);
+      } else {
+        await expect(input.makeCommitment({ title: "지난 약속", dueOn: "2020-01-01" })).rejects.toBeInstanceOf(AgentToolRejection);
+        const commitment = await input.makeCommitment({ title: "해커톤 지원서 내기", detail: "금요일 자정 마감", dueOn: "2099-12-31" });
+        await input.emit({ type: "tool", tool: { id: randomUUID(), name: "약속", status: "complete", summary: commitment.title, commitment } });
+      }
+      await input.emit({ type: "text", text: "알겠습니다." });
+    } }, career, { get: async () => { throw new Error("없는 공고"); } }, documents, consent, new AgentCredentials(fixture.resource), new PortfolioReadService(fixture.resource), new PageService(fixture.resource), undefined, consultant, commitments);
+    services.push(service);
+    const done = async (id: string) => { await expect.poll(async () => (await service.get(owner, id)).run?.status).toBe("complete"); };
+    const conversation = await service.create(owner, []);
+    await service.send(owner, conversation.id, { requestId: randomUUID(), text: "해커톤에 나가 볼게요" });
+    await done(conversation.id);
+    expect(seen[0]).toMatchObject({ today, commitments: [] });
+    const [open] = await commitments.open(owner);
+    expect(open).toMatchObject({ title: "해커톤 지원서 내기", detail: "금요일 자정 마감", dueOn: "2099-12-31", status: "open", conversationId: conversation.id });
+    expect((await service.get(owner, conversation.id)).messages.at(-1)!.tools[0]).toMatchObject({ name: "약속", commitment: { id: open!.id } });
+    await service.send(owner, conversation.id, { requestId: randomUUID(), text: "다 했어요" });
+    await done(conversation.id);
+    expect(seen[1]!.commitments).toEqual([{ id: open!.id, title: "해커톤 지원서 내기", dueOn: "2099-12-31", overdue: false }]);
+    expect(await commitments.open(owner)).toEqual([]);
+    expect(await commitments.open(other)).toHaveLength(1);
+  });
+  it("확인 카드에서 「했어요」라고 답하면 그 약속을 묻고 답한 대화가 실행 중으로 열린다. 채팅을 쓸 수 없으면 열지 않는다", async () => {
+    const consultant = new ConsultantService(fixture.resource); const commitments = new ConsultantCommitments(fixture.resource);
+    const owner = (await new MongoIdentityService(fixture.resource).signup({ email: `${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "확인 검증" })).user.id;
+    const commitment = { id: randomUUID(), title: "해커톤 지원서 내기", dueOn: "2026-11-19" };
+    const received: Parameters<AgentRuntime["run"]>[0]["messages"][] = [];
+    const build = (runtime: AgentRuntime | null) => { const service = new AgentChatService(fixture.resource, runtime, career, { get: async () => { throw new Error("없는 공고"); } }, documents, consent, new AgentCredentials(fixture.resource), new PortfolioReadService(fixture.resource), new PageService(fixture.resource), undefined, consultant, commitments); services.push(service); return service; };
+    const service = build({ run: async input => { received.push(structuredClone(input.messages)); await input.emit({ type: "text", text: "잘하셨어요. 무엇을 내셨나요?" }); } });
+    // 커리어 기록의 AI 사용 동의가 없으면 대화를 열지 않는다.
+    expect(await service.startFromCheckin(owner, commitment)).toBeNull();
+    expect(await service.list(owner)).toEqual([]);
+    await consent.grant(owner, ["career_records"], CONSENT_POLICY_VERSION);
+    expect(await build(null).startFromCheckin(owner, commitment)).toBeNull();
+    const id = await service.startFromCheckin(owner, commitment);
+    expect(id).toEqual(expect.any(String));
+    await expect.poll(async () => (await service.get(owner, id!)).run?.status).toBe("complete");
+    const opened = await service.get(owner, id!);
+    expect(opened.title).toBe("해커톤 지원서 내기");
+    expect(opened.messages.map(message => [message.role, message.text])).toEqual([["assistant", "11월 19일에 하기로 한 일을 여쭙니다."], ["user", "했어요"], ["assistant", "잘하셨어요. 무엇을 내셨나요?"]]);
+    expect(opened.messages[0]!.tools[0]).toMatchObject({ name: "선택지 질문", ui: { kind: "choice", prompt: "「해커톤 지원서 내기」 어떻게 됐나요?", answer: { optionIds: ["o1"], messageId: opened.messages[1]!.id } } });
+    // 모델은 물음과 답까지를 읽는다. 답을 쓸 빈 메시지는 넘기지 않는다.
+    expect(received[0]!.map(message => message.role)).toEqual(["assistant", "user"]);
+    expect(conversationForModel(received[0]!)[1]).toMatchObject({ role: "user", text: "했어요" });
+    expect(await service.list(other)).not.toContainEqual(expect.objectContaining({ id }));
   });
   it("대화에서 한 말로 정리한 기록은 승인 없이 정리됨 상태로 저장되고, 말하지 않은 인용과 틀린 카테고리는 기록을 만들지 않으며, 되돌리면 휴지통으로 간다", async () => {
     const category = (await career.listCategories(userId))[0]!;

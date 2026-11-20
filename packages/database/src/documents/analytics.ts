@@ -89,7 +89,7 @@ export interface MetricDailyDoc {
 export interface NotificationDoc {
   _id: string;
   userId: string;
-  kind: "deadline" | "saved_search" | "generation" | "traffic";
+  kind: "deadline" | "saved_search" | "generation" | "traffic" | "consultant";
   targetUrl: string;
   /** 알림이 가리키는 대상 이름. 0020 이전 알림에는 없다. */
   subject?: string | null;
@@ -105,7 +105,7 @@ export interface NotificationDoc {
 }
 
 export interface NotificationPreferenceDoc {
-  kind: "deadline" | "saved_search" | "generation" | "traffic";
+  kind: "deadline" | "saved_search" | "generation" | "traffic" | "consultant";
   enabled: boolean;
   updatedAt: Date;
 }

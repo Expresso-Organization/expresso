@@ -1,6 +1,7 @@
 "use client";
 
 import type { ConsultantMemory, ConsultantStage } from "@expresso/contracts";
+import type { Route } from "next";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 
@@ -18,13 +19,15 @@ export const STAGES: readonly { value: ConsultantStage; label: string; descripti
 const STAGE_SOURCE = { agent: "컨설턴트가 대화에서 판단한 단계입니다. 다르면 직접 골라 주세요.", user: "직접 고른 단계입니다." } as const;
 
 /**
- * 컨설턴트가 기억하는 것 — 지금 단계, 조건, 최근 대화.
+ * 컨설턴트가 기억하는 것 — 지금 단계, 하기로 한 일, 조건, 최근 대화.
  *
  * 구직 목표 아래에 놓인다. 단계는 고르는 즉시 저장하고, 조건은 지우는 즉시 지운다.
  * `conversations`의 날짜는 서버가 서울 날짜로 만들어 넘긴다 — 브라우저의 시간대로 다시 계산하지 않는다.
  */
-export function ProgressSections({ memory, conversations }: {
+export function ProgressSections({ memory, commitments, conversations }: {
   memory: Pick<ConsultantMemory, "stage" | "stageSource" | "preferences">;
+  /** 열린 약속. `due`는 서버가 만든 날짜 글이고, `href`는 그 약속을 잡은 대화다. */
+  commitments: { id: string; title: string; due: string; overdue: boolean; href: string | null }[];
   conversations: { id: string; title: string; date: string; outcomes: string[] }[];
 }) {
   const [pending, startTransition] = useTransition();
@@ -48,6 +51,17 @@ export function ProgressSections({ memory, conversations }: {
             );
           })}
         </ul>
+      </section>
+      <section className={styles.section} aria-labelledby="progress-commitments">
+        <h2 id="progress-commitments" className={styles.sectionTitle}>하기로 한 일</h2>
+        {commitments.length ? (
+          <ul className={styles.rows}>
+            {commitments.map(item => {
+              const body = <><span className={styles.rowText}>{item.title}</span>{item.overdue ? <span className={styles.kind} data-kind="avoid">지남</span> : null}<span className={styles.date}>{item.due}까지</span></>;
+              return <li key={item.id}>{item.href ? <Link href={item.href as Route} className={`${styles.row} ${styles.rowLink}`}>{body}</Link> : <span className={styles.row}>{body}</span>}</li>;
+            })}
+          </ul>
+        ) : <p className={styles.empty}>아직 하기로 한 일이 없습니다. 대화에서 무엇을 언제까지 하겠다고 말하면 여기에 남고, 그날 홈에서 여쭙니다.</p>}
       </section>
       <section className={styles.section} aria-labelledby="progress-preferences">
         <h2 id="progress-preferences" className={styles.sectionTitle}>컨설턴트가 기억하는 조건</h2>
