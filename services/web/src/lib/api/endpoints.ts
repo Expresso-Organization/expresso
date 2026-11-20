@@ -460,13 +460,13 @@ export const proposals = {
     request(`${API_PREFIX}/proposals/${proposalId}/dismiss`, ProposalFeedResponseSchema, { accessToken, method: "POST" }),
 };
 
-/** 수집한 활동(공모전 · 해커톤). 접수가 끝나지 않은 것을 마감이 가까운 순서로. */
+/** 수집한 활동(공모전 · 해커톤 · 부트캠프). 접수가 끝나지 않은 것을 마감이 가까운 순서로. */
 export const activities = {
   list: (accessToken: string, query: Partial<ListActivitiesQuery> = {}) =>
     request(`${API_PREFIX}/activities`, ActivityListResponseSchema, {
       accessToken,
       cache: "no-store",
-      query: { ...(query.kind ? { kind: query.kind } : {}), ...(query.limit ? { limit: query.limit } : {}) },
+      query: { ...(query.kind ? { kind: query.kind } : {}), ...(query.limit ? { limit: query.limit } : {}), ...(query.offset ? { offset: query.offset } : {}) },
     }),
 };
 

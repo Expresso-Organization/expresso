@@ -242,7 +242,7 @@ export class ProposalService {
       this.#deps.career.listCategories(userId) as Promise<CareerCategory[]>,
       this.#deps.career.listRecords(userId, { sort: "updated_desc", limit: RECORD_PAGE }),
       this.#deps.jobs.list(userId, { interested: true, sort: "deadline", page: 1, limit: JOB_PAGE }),
-      this.#deps.activities.list({ limit: ACTIVITY_PAGE }, at),
+      this.#deps.activities.list({ limit: ACTIVITY_PAGE, sort: "fresh" }, at),
       ...Array.from({ length: JOB_PAGES }, (_, index) => this.#deps.jobs.list(userId, { deadline: "open", sort: "recent", country: DEFAULT_JOB_COUNTRY, page: index + 1, limit: JOB_PAGE })),
     ]);
     const byCategory = new Map(categories.map((category) => [category.id, category]));
