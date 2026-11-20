@@ -27,7 +27,7 @@ async function request(path: string, post = false): Promise<unknown> {
  * 대화에는 ID만 있다. 분석의 진행과 결과는 이 카드가 서버에서 읽는다 — 끝나지 않은 동안 제작 흐름의 다른 화면과
  * 같은 주기로 다시 읽고, 대화를 닫았다 다시 열어도 그때의 상태가 보인다. 읽기 · 제작 열기 · 다시 분석은 AI를 부르지 않는다.
  * 분석이 끝나면 「담을 기록 고르기」가 제작을 한 번만 만들고(`onOpen`) 대화에 「재료 고르기」 카드를 붙인다. 화면은 넘어가지 않는다.
- * 재료 단계를 지난 제작은 「이어서 만들기」로 그 단계의 화면을 연다 — 아직 대화로 옮기지 않은 단계다.
+ * 재료 단계를 지난 제작은 「이어서 만들기」로 잇는다 — 이 대화에서 연 AI 대화면 그 카드로, 아직 대화로 옮기지 않은 단계면 그 화면으로 간다.
  *
  * 분석은 워커에서 끝나고 대화는 그것을 모른다. 이 카드가 끝난 것을 처음 보면 `onAnnounce`로 알리고, 서버가 에이전트의
  * 답을 하나 시작해 결과를 말한다. 탭이 닫혀 있던 동안 끝난 분석은 대화를 다시 열 때 알린다. 분석 하나에 알림은 한 번이고
@@ -77,16 +77,16 @@ export function BrewStartCard({ conversationId, start, disabled, onOpen, onAnnou
     const next = await onOpen();
     if (next) router.push(next as Route);
     else {
-      // 대화 안에서 이어진다. 「재료 고르기」 카드가 방금 붙었거나 이미 있으니 그 카드가 보이게 한다 — 이미 있는 카드는
-      // 다시 눌러도 대화가 바뀌지 않아 화면이 따라가지 않는다.
-      window.setTimeout(() => [...(card.current?.closest('[data-slot="aui_thread-viewport"]')?.querySelectorAll('section[aria-label="재료 고르기"]') ?? [])].at(-1)?.scrollIntoView({ block: "nearest" }), 160);
+      // 대화 안에서 이어진다. 그 단계의 카드(「재료 고르기」 · 「AI 대화」)가 방금 붙었거나 이미 있으니 마지막 카드가 보이게 한다 —
+      // 이미 있는 카드는 다시 눌러도 대화가 바뀌지 않아 화면이 따라가지 않는다.
+      window.setTimeout(() => [...(card.current?.closest('[data-slot="aui_thread-viewport"]')?.querySelectorAll('section[aria-label="재료 고르기"], section[aria-label="AI 대화"]') ?? [])].at(-1)?.scrollIntoView({ block: "nearest" }), 160);
       // 상태를 다시 읽어 단추의 말을 맞춘다.
       if (path) setState(AgentBrewStartStateResponseSchema.parse(await request(path)).data);
     }
   });
   const retry = () => act(async () => { setState(AgentBrewStartStateResponseSchema.parse(await request(`${path}/retry`, true)).data); });
 
-  // 재료 단계까지는 대화의 카드가 맡는다. 그 뒤로 간 제작만 「이어서 만들기」다.
+  // 재료 단계에서는 「담을 기록 고르기」, 그 뒤로 간 제작은 「이어서 만들기」다.
   const resumes = state?.step === "interview" || state?.step === "design";
   const counts = state?.requirements;
   return <section ref={card} className={cardStyles.card} aria-label="포트폴리오 제작">

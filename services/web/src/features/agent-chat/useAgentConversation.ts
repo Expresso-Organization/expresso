@@ -139,6 +139,8 @@ export function useAgentConversation(context?: AgentContext, options: { restore?
       return opened.path;
     },
     announceBrew: async (startId: string) => { if (id) accept(await agentRequest(`/${id}/brew-starts/${startId}/announce`, {})); },
+    /** 「재료 고르기」 카드의 「AI와 대화 시작」. 서버가 「AI 대화」 카드를 붙이고 에이전트가 첫 질문을 한다. 실패는 카드가 받는다. */
+    beginInterview: (brewId: string) => decide(`brews/${brewId}/interview`, {}),
     /** 에이전트가 저장한 지면 고침 되돌리기. 실패를 카드가 직접 보여 주도록 오류를 다시 던진다. */
     undoPageEdit: (editId: string) => decide(`page-edits/${editId}/undo`, {}),
   };

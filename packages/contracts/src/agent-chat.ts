@@ -305,7 +305,7 @@ export const AgentBrewStartStateSchema = z.strictObject({
   brewId: UuidSchema.nullable(),
   /**
    * 만든 제작이 가 있는 단계. `materials` 재료 고르기 · `interview` AI 대화 · `design` 디자인과 그 뒤. 제작이 없으면 null이다.
-   * 재료 단계는 대화의 「재료 고르기」 카드가 맡고, 그 뒤의 단계는 아직 지금의 화면이 맡는다.
+   * 재료 · AI 대화 단계는 대화의 카드(「재료 고르기」 · 「AI 대화」)가 맡고, 그 뒤의 단계는 아직 지금의 화면이 맡는다.
    */
   step: z.enum(["materials", "interview", "design"]).nullable(),
   /**
@@ -322,8 +322,22 @@ export const AgentBrewStartStateResponseSchema = z.strictObject({ data: AgentBre
  */
 export const AgentBrewMaterialsSchema = z.strictObject({ brewId: UuidSchema, jobPostingId: UuidSchema });
 export type AgentBrewMaterials = z.infer<typeof AgentBrewMaterialsSchema>;
+/**
+ * 대화에 뜨는 「AI 대화」 카드. 제작 ID만 둔다 — 물어볼 근거와 답한 질문은 카드가 인터뷰 세션에서 그때그때 읽는다.
+ * 이 카드를 든 답변도 서버가 쓰고, 바로 뒤에 에이전트가 첫 질문을 하는 답변이 붙는다.
+ */
+export const AgentBrewInterviewSchema = z.strictObject({ brewId: UuidSchema, jobPostingId: UuidSchema });
+export type AgentBrewInterview = z.infer<typeof AgentBrewInterviewSchema>;
+/** 대화에서 한 질문의 답을 저장하는 도구의 입력. 답의 글은 서버가 사용자 메시지 원문으로 만든다 — 모델이 쓰지 않는다. */
+export const AgentInterviewAnswerInputSchema = z.strictObject({
+  jobPostingId: UuidSchema.describe("인터뷰 중인 제작의 공고 id(brews의 jobPostingId)"),
+  basis: z.number().int().min(0).max(99).describe("brews.interview.bases에서 이 질문이 고른 근거의 index"),
+  question: z.string().trim().min(5).max(200).describe("이 근거로 처음 한 질문. 대화에서 한 그대로 옮긴다"),
+  messageIds: z.array(UuidSchema).min(1).max(10).describe("이 질문과 꼬리 질문에 답한 사용자 메시지의 id"),
+});
+export type AgentInterviewAnswerInput = z.infer<typeof AgentInterviewAnswerInputSchema>;
 
-export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional(), goalDraft: AgentGoalDraftSchema.optional(), gapReview: GapReviewSchema.optional(), planDraft: AgentPlanDraftSchema.optional(), replanDraft: AgentReplanDraftSchema.optional(), pageEdit: AgentPageEditSchema.optional(), brewStart: AgentBrewStartSchema.optional(), brewMaterials: AgentBrewMaterialsSchema.optional() });
+export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional(), goalDraft: AgentGoalDraftSchema.optional(), gapReview: GapReviewSchema.optional(), planDraft: AgentPlanDraftSchema.optional(), replanDraft: AgentReplanDraftSchema.optional(), pageEdit: AgentPageEditSchema.optional(), brewStart: AgentBrewStartSchema.optional(), brewMaterials: AgentBrewMaterialsSchema.optional(), brewInterview: AgentBrewInterviewSchema.optional() });
 export const AgentMessageSchema = z.strictObject({ id: UuidSchema, role: z.enum(["user", "assistant"]), text: z.string().max(64_000), tools: z.array(AgentToolResultSchema).max(30), selection: AgentPageSelectionSchema.optional(), createdAt: TimestampSchema });
 export const AgentRunSchema = z.strictObject({ id: UuidSchema, requestId: UuidSchema, status: z.enum(["running", "complete", "cancelled", "failed", "interrupted"]), error: z.string().max(1_000).nullable(), startedAt: TimestampSchema });
 export const AgentConversationSchema = z.strictObject({ id: UuidSchema, title: z.string().max(120), contexts: z.array(AgentContextSchema).max(10), messages: z.array(AgentMessageSchema).max(100), run: AgentRunSchema.nullable(), version: z.number().int().nonnegative(), updatedAt: TimestampSchema });
@@ -346,7 +360,7 @@ export const AgentEditDraftSchema = AiEditProposalSchema.pick({ summary: true, c
 export type AgentEditDraft = z.infer<typeof AgentEditDraftSchema>;
 
 /**
- * 제작을 연 결과. 다음 단계가 이 대화 안에 있으면(재료 고르기) `conversation`에 카드가 붙은 대화가 오고 `path`는 null이다.
+ * 제작을 연 결과. 다음 단계가 이 대화 안에 있으면(재료 고르기 · AI 대화) `conversation`에 그 카드가 있는 대화가 오고 `path`는 null이다.
  * 아직 대화로 옮기지 않은 단계면 `path`가 지금의 화면이고 `conversation`은 null이다.
  */
 export const AgentBrewOpenResponseSchema = z.strictObject({ data: z.strictObject({ brewId: UuidSchema, path: z.string().min(1).max(300).nullable(), conversation: AgentConversationSchema.nullable() }) });

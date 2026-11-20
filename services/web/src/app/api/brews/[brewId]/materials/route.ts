@@ -2,7 +2,7 @@ import { UuidSchema } from "@expresso/contracts";
 
 import { ApiError } from "@/lib/api/client";
 import { brews } from "@/lib/api/endpoints";
-import { BrewMaterialsCardResponseSchema, SelectBrewMaterialsSchema, interviewEntry, resumePath } from "@/lib/brew-materials-card";
+import { BrewMaterialsCardResponseSchema, SelectBrewMaterialsSchema, resumePath } from "@/lib/brew-materials-card";
 import { readAccessToken } from "@/lib/session";
 
 export const runtime = "nodejs";
@@ -22,7 +22,7 @@ const MESSAGES: Record<number, string> = {
 
 async function read(token: string, brewId: string, materials = brews.materials(token, brewId).then((response) => response.data)) {
   const [list, brew] = await Promise.all([materials, brews.get(token, brewId).then((response) => response.data)]);
-  return BrewMaterialsCardResponseSchema.parse({ data: { materials: list, ...interviewEntry(brew), resumePath: resumePath(brew) } });
+  return BrewMaterialsCardResponseSchema.parse({ data: { materials: list, resumePath: resumePath(brew) } });
 }
 
 async function handle(request: Request, context: { params: Promise<{ brewId: string }> }) {

@@ -417,15 +417,26 @@ describe("interview contracts", () => {
       questionsMayAdapt: true,
       questions: [question, { ...question, order: 1 }, { ...question, order: 2 }],
     }).questions).toHaveLength(3);
+    // 에이전트 대화로 연 세션은 질문 0개로 시작한다. 상한은 6이다.
+    expect(InterviewSessionSchema.parse({
+      id: ids.job,
+      brewId: ids.user,
+      status: "open",
+      currentOrder: 0,
+      answeredCount: 0,
+      questionCount: 0,
+      questionsMayAdapt: true,
+      questions: [],
+    }).questions).toHaveLength(0);
     expect(() => InterviewSessionSchema.parse({
       id: ids.job,
       brewId: ids.user,
       status: "open",
       currentOrder: 0,
       answeredCount: 0,
-      questionCount: 2,
+      questionCount: 7,
       questionsMayAdapt: true,
-      questions: [question, { ...question, order: 1 }],
+      questions: Array.from({ length: 7 }, (_, order) => ({ ...question, order })),
     })).toThrow();
   });
 });

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { InterviewQuestionBaseSchema, InterviewQuestionBasisSchema, InterviewSessionSchema, type InterviewQuestionBasis, type SaveInterviewAnswer } from "@expresso/contracts";
+import { InterviewQuestionBaseSchema, InterviewQuestionBasisSchema, InterviewSessionSchema, interviewBasisKey, type InterviewQuestionBasis, type SaveInterviewAnswer } from "@expresso/contracts";
 import { mongoCollections, type QuestionDoc } from "@expresso/database";
 import type { ClientSession } from "mongodb";
 import type { MongoContext } from "../../platform/mongodb.js";
@@ -196,6 +196,64 @@ export class InterviewService implements InterviewApi {
     return result;
   }
   getAnswerResult(userId: string, sessionId: string, answerId: string) { return getMongoAnswerResult(this.context, userId, sessionId, answerId); }
+
+  /**
+   * 에이전트 대화에서 인터뷰를 연다. 질문 잡 없이 질문 0개의 세션을 만들고 제작을 인터뷰 단계로 옮긴다 — 질문은 에이전트가 대화에서
+   * 하고, 답을 저장할 때 붙는다(`saveConversationAnswer`). 이미 세션이 있으면(지금의 화면에서 질문을 만든 제작) 그 세션이다.
+   * 재료 단계가 아닌 제작에는 새 세션을 열지 않는다.
+   */
+  async openConversation(userId: string, brewId: string) {
+    const db = mongoCollections(this.context.db);
+    const existing = await db.interviewSessions.findOne({ userId, brewId });
+    if (existing) return this.getSession(userId, existing._id);
+    const sessionId = await inTransaction(this.context, async (tx) => {
+      await requireActiveUser(tx, userId);
+      const collections = mongoCollections(tx.db); const options = { session: tx.session };
+      const started = await collections.interviewSessions.findOne({ userId, brewId }, options); if (started) return started._id;
+      const brew = await collections.brews.findOneAndUpdate({ _id: brewId, userId, deletedAt: null, status: "draft" }, { $set: { status: "interviewing", updatedAt: new Date() }, $inc: { referenceVersion: 1 } }, { ...options, returnDocument: "after" });
+      if (!brew) throw await collections.brews.findOne({ _id: brewId, userId, deletedAt: null }, options) ? new InterviewError(409, "brew is past the materials step") : new InterviewError(404, "brew not found");
+      const now = new Date(); const id = randomUUID();
+      await collections.interviewSessions.insertOne({ _id: id, userId, brewId, status: "open", questionCount: 0, inputIdempotencyKey: null, currentOrder: 0, answeredCount: 0, version: 1, createdAt: now, updatedAt: now }, options);
+      return id;
+    });
+    return this.getSession(userId, sessionId);
+  }
+
+  /** 대화의 인터뷰가 고를 수 있는 근거와 지금까지 저장한 질문. AI를 부르지 않는다. 세션이 없으면 질문은 비어 있다. */
+  async conversationState(userId: string, brewId: string) {
+    const bases = await this.questionBases(userId, brewId);
+    const session = await mongoCollections(this.context.db).interviewSessions.findOne({ userId, brewId });
+    return { bases, session: session ? await this.getSession(userId, session._id) : null };
+  }
+
+  /**
+   * 대화에서 한 질문의 답을 저장한다. 같은 근거의 질문이 세션에 있으면 그 질문의 답을 다시 쓰고(꼬리 답을 합친 글), 없으면 질문을 새로 붙인다.
+   * 근거는 지금 고를 수 있는 근거(`questionBases`)에 있어야 하고, 질문은 세션마다 6개까지다. 저장 · 기록 생성 · 정리 작업은 지금의 답 저장과 같다.
+   */
+  async saveConversationAnswer(userId: string, brewId: string, input: { basis: InterviewQuestionBasis; question: string; transcript: string }, idempotencyKey: string) {
+    const db = mongoCollections(this.context.db);
+    const [brew, session] = await Promise.all([db.brews.findOne({ _id: brewId, userId, deletedAt: null }), db.interviewSessions.findOne({ userId, brewId })]);
+    if (!brew || !session) throw new InterviewError(404, "interview session not found");
+    if (brew.status !== "interviewing") throw new InterviewError(409, "brew is past the interview");
+    const key = interviewBasisKey(input.basis);
+    const { context } = await this.#questionOptions(userId, brewId);
+    const option = context.options.find(({ basis }) => interviewBasisKey(basis) === key);
+    if (!option) throw new InterviewError(409, "basis is not a grounded question basis");
+    const questionId = await inTransaction(this.context, async (tx) => {
+      await requireActiveUser(tx, userId);
+      const collections = mongoCollections(tx.db); const options = { session: tx.session };
+      const all = await collections.questions.find({ userId, interviewSessionId: session._id }, options).toArray();
+      const active = all.filter((question) => question.active);
+      const found = active.find((question) => interviewBasisKey(InterviewQuestionBasisSchema.parse(question.basis)) === key);
+      if (found) return found._id;
+      if (active.length >= 6) throw new InterviewError(409, "interview question limit reached");
+      const now = new Date(); const id = randomUUID();
+      await collections.questions.insertOne({ _id: id, userId, interviewSessionId: session._id, requirementId: option.basis.type === "requirement" ? option.basis.requirementId : null, replacedFromId: null, orderNo: Math.max(-1, ...all.map(({ orderNo }) => orderNo)) + 1, text: input.question, skipped: false, basis: option.basis, active: true, variant: 0, rationale: null, createdAt: now }, options);
+      await collections.interviewSessions.updateOne({ _id: session._id, userId }, { $set: { questionCount: active.length + 1, status: "open", updatedAt: now }, $inc: { version: 1 } }, options);
+      return id;
+    });
+    return this.saveAnswer(userId, session._id, questionId, idempotencyKey, { inputType: "text", transcript: input.transcript });
+  }
 }
 
 export { InterviewService as MongoInterviewService };

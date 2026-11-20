@@ -1,4 +1,4 @@
-import type { AgentBrewStartState, JobAnalysisResult } from "@expresso/contracts";
+import type { AgentBrewStartState, InterviewAnswerResult, InterviewQuestionBase, InterviewQuestionBasis, InterviewSession, JobAnalysisResult } from "@expresso/contracts";
 
 /**
  * 대화에서 시작한 포트폴리오 제작.
@@ -18,10 +18,16 @@ export interface AgentBrewDeps {
   createBrew(userId: string, input: { jobAnalysisId: string; lengthPreset: "single" }): Promise<{ brewId: string }>;
   /** 제작이 어디까지 갔고 기록을 몇 건 골랐는가. 지웠거나(휴지통) 없는 제작이면 null이다(`MaterialsApi.getState`). */
   brewState(userId: string, brewId: string): Promise<{ status: BrewStatus; selected: number } | null>;
+  /** 질문 0개의 인터뷰 세션을 열고 제작을 AI 대화 단계로 옮긴다. 이미 세션이 있으면 그 세션이다(`InterviewApi.openConversation`). */
+  openInterview(userId: string, brewId: string): Promise<unknown>;
+  /** 고를 수 있는 근거와 저장한 질문(`InterviewApi.conversationState`). AI를 부르지 않는다. */
+  interview(userId: string, brewId: string): Promise<{ bases: InterviewQuestionBase[]; session: InterviewSession | null }>;
+  /** 한 질문의 답을 저장한다. 같은 근거의 질문이 있으면 그 답을 다시 쓴다(`InterviewApi.saveConversationAnswer`). */
+  saveInterviewAnswer(userId: string, brewId: string, input: { basis: InterviewQuestionBasis; question: string; transcript: string }, idempotencyKey: string): Promise<InterviewAnswerResult>;
 }
 /** 이 대화에서 만든 제작 가운데 아직 남아 있는 것. */
 export interface LiveBrew { id: string; status: BrewStatus; selected: number }
-/** 제작이 가 있는 단계. 재료 단계는 대화의 카드가 맡고, 그 뒤는 아직 지금의 화면이 맡는다. */
+/** 제작이 가 있는 단계. 재료 · AI 대화 단계는 대화의 카드가 맡고, 그 뒤는 아직 지금의 화면이 맡는다. */
 export const brewStep = (status: BrewStatus) => (status === "draft" ? "materials" : status === "interviewing" ? "interview" : "design");
 export type BrewStatus = "draft" | "interviewing" | "recipe" | "generating" | "done";
 /** 제작을 이어 갈 화면. 아직 대화로 옮기지 않은 단계는 지금의 화면이 맡는다(`brew/new/resume-step.ts`와 같은 규칙). */

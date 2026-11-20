@@ -19,11 +19,13 @@ async function proxy(request: Request, context: { params: Promise<{ path: string
   // 대화에서 시작한 포트폴리오 제작: 상태(GET brew-starts/:startId) · 제작 열기 · 다시 분석 · 분석 완료 알림(POST brew-starts/:startId/open|retry|announce). 본문은 없다.
   const brewState = isGet && action === "brew-starts" && nested;
   const brewAction = !isGet && action === "brew-starts" && path.length === 5 && UuidSchema.safeParse(path[3]).success && (path[4] === "open" || path[4] === "retry" || path[4] === "announce");
-  if (path[0] !== "conversations" || (path.length > 3 && !review && !draftDecision && !pageUndo && !brewState && !brewAction) || (path[1] && !UuidSchema.safeParse(path[1]).success)) return new Response(null, { status: 404 });
-  if ((isGet && action && action !== "events" && !review && !brewState) || (!isGet && path.length === 2) || (!isGet && action && !["messages", "contexts", "context-selection", "approval", "cancel", "retry"].includes(action) && !draftDecision && !pageUndo && !brewAction)) return new Response(null, { status: 404 });
-  let body: string | undefined = action === "cancel" || action === "retry" || pageUndo || brewAction ? "{}" : undefined;
+  // 대화에서 인터뷰 열기(POST brews/:brewId/interview). 본문은 없고 대화를 돌려준다.
+  const brewInterview = !isGet && action === "brews" && path.length === 5 && UuidSchema.safeParse(path[3]).success && path[4] === "interview";
+  if (path[0] !== "conversations" || (path.length > 3 && !review && !draftDecision && !pageUndo && !brewState && !brewAction && !brewInterview) || (path[1] && !UuidSchema.safeParse(path[1]).success)) return new Response(null, { status: 404 });
+  if ((isGet && action && action !== "events" && !review && !brewState) || (!isGet && path.length === 2) || (!isGet && action && !["messages", "contexts", "context-selection", "approval", "cancel", "retry"].includes(action) && !draftDecision && !pageUndo && !brewAction && !brewInterview)) return new Response(null, { status: 404 });
+  let body: string | undefined = action === "cancel" || action === "retry" || pageUndo || brewAction || brewInterview ? "{}" : undefined;
   if (!isGet) {
-    const schema = draftDecision && isDraftAction(action) ? DRAFT_DECISIONS[action] : action === "messages" ? SendAgentMessageSchema : action === "context-selection" ? SetAgentContextsSchema : action === "contexts" ? AddAgentContextSchema : action === "approval" ? AgentApprovalSchema : action === "cancel" || action === "retry" || pageUndo || brewAction ? null : CreateAgentConversationSchema;
+    const schema = draftDecision && isDraftAction(action) ? DRAFT_DECISIONS[action] : action === "messages" ? SendAgentMessageSchema : action === "context-selection" ? SetAgentContextsSchema : action === "contexts" ? AddAgentContextSchema : action === "approval" ? AgentApprovalSchema : action === "cancel" || action === "retry" || pageUndo || brewAction || brewInterview ? null : CreateAgentConversationSchema;
     if (schema) { const result = schema.safeParse(await request.json().catch(() => null)); if (!result.success) return Response.json({ error: { message: "입력 내용을 확인해 주세요." } }, { status: 400 }); body = JSON.stringify(result.data); }
   }
   const upstream = await fetch(`${API_BASE_URL}${API_PREFIX}/agent/${path.join("/")}`, { method: request.method, headers: { authorization: `Bearer ${token}`, "content-type": "application/json" }, ...(body === undefined ? {} : { body }), signal: request.signal, cache: "no-store" });

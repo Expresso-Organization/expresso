@@ -18,6 +18,7 @@ import { PlanCard } from "./PlanCard";
 import { ReplanDraftCard } from "./ReplanDraftCard";
 import { PageEditCard } from "./PageEditCard";
 import { AgentConsentDialog } from "./AgentConsentDialog";
+import { BrewInterviewCard } from "./BrewInterviewCard";
 import { BrewMaterialsCard } from "./BrewMaterialsCard";
 import { BrewStartCard } from "./BrewStartCard";
 import { ConversationSwitcher } from "./ConversationSwitcher";
@@ -128,7 +129,7 @@ function GeneralWelcome() {
 const TOOL_ICONS: Record<string, string> = {
   "기록 목록 확인": "list-bullets", "기록 읽기": "book-open-text", "요건 대조": "list-checks", "새 기록 초안": "note-pencil", "구직 목표 변경": "target", "기록 변경 제안": "pencil-line",
   "보완점 정리": "target", "준비 계획 초안": "calendar-check", "계획 진행 확인": "chart-line-up", "계획 재배치 초안": "arrows-clockwise",
-  "지면 요소 읽기": "cursor-click", "지면 요소 고침": "pencil-simple-line", "포트폴리오 제작": "coffee", "재료 고르기": "list-checks",
+  "지면 요소 읽기": "cursor-click", "지면 요소 고침": "pencil-simple-line", "포트폴리오 제작": "coffee", "재료 고르기": "list-checks", "AI 대화": "chat-circle-dots", "답 저장": "floppy-disk",
 };
 /**
  * 도구 호출 하나를 작업 흔적의 한 단계로 그린다. 결과의 모양으로 단계 아래를 나눈다 — 요건 대조 · 보완점 · 새 기록 · 준비 계획 ·
@@ -140,11 +141,16 @@ const RecordTool: ToolCallMessagePartComponent = props => {
   const tool = state.conversation?.messages.flatMap(message => message.tools).find(tool => tool.id === props.toolCallId);
   const busy = state.pending || state.conversation?.run?.status === "running";
   const name = tool?.name ?? props.toolName;
+  const savedAnswers = state.conversation?.messages.flatMap(message => message.tools).filter(item => item.name === "답 저장" && item.status === "complete").length ?? 0;
   const step = (detail: ReactNode, summary: string | null = tool?.summary ?? null) => <ToolStep status={tool?.status ?? (props.status.type === "running" ? "running" : "complete")} icon={TOOL_ICONS[name] ?? "wrench"} title={name} summary={summary ?? undefined}>{detail}</ToolStep>;
   // 대화에서 시작한 제작. 진행과 결과는 카드가 서버에서 읽는다. 제작을 여는 일은 AI를 부르지 않으므로 실행 중에만 막는다.
   if (tool?.brewStart) return step(<BrewStartCard conversationId={state.id} start={tool.brewStart} disabled={busy} onOpen={() => state.openBrew(tool.brewStart!.startId)} onAnnounce={() => state.announceBrew(tool.brewStart!.startId)} />, null);
-  // 서버가 붙인 「재료 고르기」. 목록과 고른 것은 카드가 읽고 저장한다. AI를 부르지 않으므로 답이 도는 동안에도 쓸 수 있다.
-  if (tool?.brewMaterials) return step(<BrewMaterialsCard materials={tool.brewMaterials} />, null);
+  // 서버가 붙인 「재료 고르기」. 목록과 고른 것은 카드가 읽고 저장한다. 고르기는 AI를 부르지 않아 답이 도는 동안에도 쓸 수 있지만,
+  // 「AI와 대화 시작」은 에이전트의 답을 시작하므로 그동안 막는다.
+  // 인터뷰를 열면 제작이 다음 단계로 가므로 그때 다시 읽어 잠근다.
+  if (tool?.brewMaterials) { const { brewId } = tool.brewMaterials; const continues = !!state.conversation?.messages.some(message => message.tools.some(item => item.brewInterview?.brewId === brewId)); return step(<BrewMaterialsCard materials={tool.brewMaterials} disabled={busy} continuesInChat={continues} refreshKey={continues ? 1 : 0} onBegin={() => state.beginInterview(brewId)} />, null); }
+  // 서버가 붙인 「AI 대화」. 근거와 답한 질문은 카드가 읽는다. 답을 저장할 때마다 다시 읽는다 — 대화의 판은 글이 흐르는 동안에도 올라가므로 쓰지 않는다.
+  if (tool?.brewInterview) return step(<BrewInterviewCard interview={tool.brewInterview} refreshKey={savedAnswers} />, null);
   if (tool?.review) return step(<RequirementReviewCard conversationId={state.id} toolId={tool.id} review={tool.review} />, null);
   if (tool?.gapReview) return step(<GapReviewCard conversationId={state.id} toolId={tool.id} gapReview={tool.gapReview} />, null);
   if (tool?.recordDraft) { const draftId = tool.recordDraft.draftId; return step(<RecordDraftCard draft={tool.recordDraft} disabled={busy} onDecide={decision => state.decideDraft(draftId, decision)} />, null); }

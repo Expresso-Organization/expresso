@@ -45,9 +45,13 @@ export const InterviewSessionSchema = z.strictObject({
   status: z.enum(["open", "paused", "done"]),
   currentOrder: z.number().int().nonnegative(),
   answeredCount: z.number().int().nonnegative(),
-  questionCount: z.number().int().min(3).max(6),
+  /**
+   * 질문 생성(질문 잡)으로 연 세션은 3–6개로 시작한다. 에이전트 대화로 연 세션은 0개로 시작하고, 에이전트가 답을 저장할 때마다
+   * 질문이 하나씩 붙는다(`InterviewApi.saveConversationAnswer`). 상한 6은 구성 생성이 읽는 질문 수와 같다.
+   */
+  questionCount: z.number().int().min(0).max(6),
   questionsMayAdapt: z.literal(true),
-  questions: z.array(InterviewQuestionSchema).min(3).max(6),
+  questions: z.array(InterviewQuestionSchema).max(6),
 });
 
 export const InterviewSessionResponseSchema = z.strictObject({
@@ -83,12 +87,19 @@ export const InterviewAnswerResultSchema = z.strictObject({
   }),
   progress: z.strictObject({
     answered: z.number().int().nonnegative(),
-    total: z.number().int().min(3).max(6),
+    total: z.number().int().min(0).max(6),
   }),
 });
 
 export type InterviewQuestionBasis = z.infer<typeof InterviewQuestionBasisSchema>;
+
+/** 근거가 같은 질문인지 가르는 키. 요건이면 요건 ID, 기록이면 기록 ID다 — 근거 글(evidence)은 공고 · 기록을 고치면 바뀐다. */
+export function interviewBasisKey(basis: InterviewQuestionBasis): string {
+  return basis.type === "requirement" ? `requirement:${basis.requirementId}` : `record:${basis.recordId}`;
+}
 export type InterviewQuestionBase = z.infer<typeof InterviewQuestionBaseSchema>;
+export type InterviewSession = z.infer<typeof InterviewSessionSchema>;
+export type InterviewAnswerResult = z.infer<typeof InterviewAnswerResultSchema>;
 export type SaveInterviewAnswer = z.infer<typeof SaveInterviewAnswerSchema>;
 
 // ── §8.3 「질문 생성」 — 모델이 내는 초안 ─────────────────────────────

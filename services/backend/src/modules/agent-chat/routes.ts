@@ -33,6 +33,8 @@ export function registerAgentChatRoutes(app: FastifyInstance, service: AgentChat
   app.post(`${base}/:id/brew-starts/:startId/open`, options, async req => ({ data: await service.openBrew(requireAuth(req).user.id, id(req.params), startId(req.params)) }));
   // 분석이 끝난 것을 에이전트가 알리게 한다. 답 하나를 시작하므로 보내기와 같이 개인 키가 있으면 그 키로 돈다.
   app.post(`${base}/:id/brew-starts/:startId/announce`, options, async (req, reply) => { const userId = requireAuth(req).user.id; return reply.code(202).send({ data: await service.announceBrew(userId, id(req.params), startId(req.params), await service.credentials.read(userId)) }); });
+  // 대화에서 인터뷰를 연다. 에이전트가 첫 질문을 하는 답을 시작하므로 보내기와 같이 개인 키가 있으면 그 키로 돈다.
+  app.post(`${base}/:id/brews/:brewId/interview`, options, async (req, reply) => { const userId = requireAuth(req).user.id; return reply.code(202).send({ data: await service.beginInterview(userId, id(req.params), UuidSchema.parse((req.params as { brewId: string }).brewId), await service.credentials.read(userId)) }); });
   app.post(`${base}/:id/brew-starts/:startId/retry`, options, async req => ({ data: await service.retryBrewStart(requireAuth(req).user.id, id(req.params), startId(req.params)) }));
   app.post(`${base}/:id/retry`, options, async (req, reply) => { const userId = requireAuth(req).user.id; return reply.code(202).send({ data: await service.retry(userId, id(req.params), await service.credentials.read(userId)) }); });
   app.post(`${base}/:id/contexts`, options, async req => ({ data: await service.attach(requireAuth(req).user.id, id(req.params), AddAgentContextSchema.parse(req.body).context) }));
