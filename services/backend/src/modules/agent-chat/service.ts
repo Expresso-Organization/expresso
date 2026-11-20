@@ -23,7 +23,7 @@ import type { GoalDemandApi, JobBoardApi } from "../jobs/index.js";
 import { goalFamily } from "../jobs/demand.js";
 import type { ActivityApi } from "../activities/index.js";
 import { activityItem, activityMatches, jobItem } from "./finds.js";
-import type { ConsentApi } from "../consent/index.js";
+import { ConsentError, type ConsentApi } from "../consent/index.js";
 
 /**
  * 실행 중인 대화의 heartbeat 주기. 실행 인스턴스는 이 주기로 문서를 갱신하고, 갱신이 맞지
@@ -69,6 +69,8 @@ export interface AgentCredits {
   check?(userId: string, capability: "consultant.outreach"): Promise<{ allowed: boolean }>;
 }
 /** 화면에 그대로 보이는 문장이다. 디자인 대화의 한도 안내와 같은 말로 시작한다. */
+/** 목표 카드를 저장했을 때 서버가 사용자의 말로 더하는 글. 지침이 이 글을 「카드에서 저장을 눌렀다」로 읽는다. */
+export const GOAL_SAVED = "구직 목표를 저장했습니다.";
 export const CREDITS_EXHAUSTED = "이번 달 AI 크레딧을 모두 썼습니다. 다음 달에 다시 대화할 수 있습니다.";
 const view = (row: AgentConversationDoc) => { const { _id, userId: _userId, heartbeatAt: _heartbeat, ...data } = row; return AgentConversationSchema.parse({ ...data, id: _id }); };
 export class AgentChatService {
@@ -347,7 +349,7 @@ export class AgentChatService {
     return buildGoalDraft(input, randomUUID(), current);
   }
   /** 목표 변경의 승인 · 거절. 승인하면 그 시점의 목표에 바뀌는 칸만 덮어 저장한다. AI를 부르지 않는다. */
-  async decideGoalDraft(userId: string, id: string, draftId: string, decision: AgentGoalDraftDecision) {
+  async decideGoalDraft(userId: string, id: string, draftId: string, decision: AgentGoalDraftDecision, apiKey?: string) {
     const row = await this.owned(userId, id);
     if (row.run?.status === "running") throw new AgentChatError(409, "응답이 끝난 뒤 처리해 주세요.");
     const draft = row.messages.flatMap(message => message.tools).find(tool => tool.goalDraft?.draftId === draftId)?.goalDraft;
@@ -356,6 +358,12 @@ export class AgentChatService {
     if (draft.status !== "ready") { if (draft.status === target) return view(row); throw new AgentChatError(409, draft.status === "replaced" ? "새 제안으로 바뀐 변경입니다." : "이미 처리한 변경입니다."); }
     if (decision.action === "approve") await this.career.saveJobGoal(userId, { ...mergeGoal(draft, await this.career.getJobGoal(userId)), source: "chat" });
     await this.rows.updateOne({ _id: id, userId }, { $set: { "messages.$[].tools.$[tool].goalDraft.status": target, updatedAt: new Date().toISOString() }, $inc: { version: 1 } }, { arrayFilters: [{ "tool.goalDraft.draftId": draftId, "tool.goalDraft.status": "ready" }] });
+    // 대화가 이 카드에서 멈춰 있었으면(마지막 답변의 카드) 저장한 것을 알리고 하던 일을 잇는다 — 진단을 부탁한 사용자가 「이제 진단해 주세요」를 다시 쓰지 않게 한다.
+    // 지난 답변의 카드를 저장한 것이면 저장만 한다. 잇지 못하는 까닭(크레딧 · 동의 · 대화 길이 · 에이전트 없음)이 있어도 저장은 이미 끝났으므로 오류로 돌리지 않는다.
+    if (decision.action === "approve" && row.messages.at(-1)?.tools.some(tool => tool.goalDraft?.draftId === draftId)) {
+      try { return await this.send(userId, id, { requestId: randomUUID(), text: GOAL_SAVED }, apiKey); }
+      catch (error) { if (!(error instanceof AgentChatError) && !(error instanceof ConsentError)) throw error; }
+    }
     return this.get(userId, id);
   }
   async decideRecordDraft(userId: string, id: string, draftId: string, decision: AgentRecordDraftDecision) {

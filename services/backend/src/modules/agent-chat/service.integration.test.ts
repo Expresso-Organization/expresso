@@ -11,7 +11,7 @@ import { PageElementIssues, PageService } from "../page/index.js";
 import { AgentCredentials } from "./credentials.js";
 import { ConsentService } from "../consent/index.js";
 import { AgentToolRejection, conversationForModel, type AgentRuntime } from "../../platform/agent/runtime.js";
-import { AgentChatService, CREDITS_EXHAUSTED, RUN_HEARTBEAT_MS, RUN_INTERRUPTED_ERROR } from "./service.js";
+import { AgentChatService, CREDITS_EXHAUSTED, GOAL_SAVED, RUN_HEARTBEAT_MS, RUN_INTERRUPTED_ERROR } from "./service.js";
 import { MongoEntitlementService } from "../entitlements/index.js";
 import { PreparationPlans } from "./plans.js";
 import { buildDraft } from "./record-draft.js";
@@ -633,7 +633,10 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     await career.saveJobGoal(userId, { work: "프론트엔드 개발", place: "커머스 회사", timing: "내년 상반기", source: "app" });
     let seen: unknown;
     const goalTool = (draft: AgentGoalDraft) => ({ type: "tool" as const, tool: { id: randomUUID(), name: "구직 목표 변경", status: "complete" as const, summary: "바뀌는 칸", goalDraft: draft } });
+    let continued = 0;
     const service = make({ run: async input => {
+      // 목표 카드를 저장해 이어진 실행. 저장한 목표를 읽고 하던 일을 잇는다.
+      if (input.messages.at(-1)!.text === GOAL_SAVED) { continued += 1; expect(input.jobGoal).toMatchObject({ work: "백엔드 개발" }); await input.emit({ type: "text", text: "저장한 목표로 이어서 진행합니다." }); return; }
       seen = input.jobGoal;
       // 바뀌는 칸이 없거나 지금 글과 같으면 돌려보낸다.
       await expect(input.goalDraft({})).rejects.toBeInstanceOf(AgentToolRejection);
@@ -656,11 +659,46 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     // 카드가 선 뒤 구직 목표 화면에서 고친 칸은 승인이 되돌리지 않는다.
     await career.saveJobGoal(userId, { work: "프론트엔드 개발", place: "커머스 회사", timing: "올해 안", source: "app" });
     const approved = await service.decideGoalDraft(userId, row.id, second!.draftId, { action: "approve" });
-    expect(approved.messages.at(-1)!.tools[1]!.goalDraft!.status).toBe("approved");
     expect(await career.getJobGoal(userId)).toMatchObject({ work: "백엔드 개발", place: "커머스 회사", timing: "올해 안", source: "chat" });
-    // 같은 결정은 그대로 응답하고, 다른 결정은 받지 않는다.
+    // 대화가 이 카드에서 멈춰 있었으므로, 저장했다는 말을 사용자의 말로 더하고 하던 일을 잇는다.
+    expect(approved.messages.at(-3)!.tools[1]!.goalDraft!.status).toBe("approved");
+    expect(approved.messages.at(-2)).toMatchObject({ role: "user", text: GOAL_SAVED });
+    expect(approved.run?.status).toBe("running");
+    await expect.poll(async () => (await service.get(userId, row.id)).run?.status).toBe("complete");
+    expect((await service.get(userId, row.id)).messages.at(-1)!.text).toBe("저장한 목표로 이어서 진행합니다.");
+    // 같은 결정은 그대로 응답하고(다시 잇지 않는다), 다른 결정은 받지 않는다.
     await service.decideGoalDraft(userId, row.id, second!.draftId, { action: "approve" });
+    expect(continued).toBe(1);
     await expect(service.decideGoalDraft(userId, row.id, second!.draftId, { action: "reject" })).rejects.toMatchObject({ statusCode: 409 });
+  });
+  it("지난 답변의 목표 카드를 저장하면 저장만 하고, 이을 수 없을 때(크레딧 없음)도 저장은 남는다", async () => {
+    await career.saveJobGoal(userId, { work: "프론트엔드 개발", place: "", timing: "", source: "app" });
+    const state = { remaining: 100 as number | null, runs: 0 };
+    const service = new AgentChatService(fixture.resource, { run: async input => {
+      state.runs += 1;
+      const text = input.messages.at(-1)!.text;
+      if (text.includes("가고 싶어요")) { const draft = await input.goalDraft({ work: text.includes("데이터") ? "데이터 엔지니어" : "백엔드 개발" }); await input.emit({ type: "tool", tool: { id: randomUUID(), name: "구직 목표 변경", status: "complete", summary: "바뀌는 칸 1", goalDraft: draft } }); }
+      await input.emit({ type: "text", text: "알겠습니다." });
+    } }, career, { get: async () => { throw new Error("없는 공고"); } }, documents, consent, new AgentCredentials(fixture.resource), new PortfolioReadService(fixture.resource), new PageService(fixture.resource), { credits: async () => ({ remaining: state.remaining }) });
+    services.push(service);
+    const row = await service.create(userId, []);
+    const turn = async (text: string) => { await service.send(userId, row.id, { requestId: randomUUID(), text }); await expect.poll(async () => (await service.get(userId, row.id)).run?.status).toBe("complete"); return (await service.get(userId, row.id)).messages.at(-1)!; };
+    const old = (await turn("백엔드로 가고 싶어요")).tools[0]!.goalDraft!;
+    await turn("그건 그렇고 요즘 공부는 이렇게 하고 있어요");
+    // 지난 답변의 카드: 저장만 한다. 메시지도 실행도 늘지 않는다.
+    const before = await service.get(userId, row.id);
+    const saved = await service.decideGoalDraft(userId, row.id, old.draftId, { action: "approve" });
+    expect((await career.getJobGoal(userId))!.work).toBe("백엔드 개발");
+    expect(saved.messages).toHaveLength(before.messages.length);
+    expect(state.runs).toBe(2);
+    // 마지막 답변의 카드지만 크레딧이 없다: 저장은 남고 오류 없이 끝난다.
+    const waiting = (await turn("아니, 데이터 쪽으로 가고 싶어요")).tools[0]!.goalDraft!;
+    state.remaining = 0;
+    const blocked = await service.decideGoalDraft(userId, row.id, waiting.draftId, { action: "approve" });
+    expect((await career.getJobGoal(userId))!.work).toBe("데이터 엔지니어");
+    expect(blocked.messages.at(-1)!.tools[0]!.goalDraft!.status).toBe("approved");
+    expect(blocked.run?.status).not.toBe("running");
+    expect(state.runs).toBe(3);
   });
   it("그대로 둔 목표 변경은 저장하지 않고, 새 제안은 앞선 대기 초안을 닫으며 그 칸을 이어받는다", async () => {
     await career.saveJobGoal(userId, { work: "프론트엔드 개발", place: "", timing: "", source: "app" });
