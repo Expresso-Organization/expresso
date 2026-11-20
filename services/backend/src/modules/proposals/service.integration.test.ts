@@ -14,8 +14,8 @@ const JOB_ID = randomUUID();
 const CATEGORY_ID = randomUUID();
 
 /** 서비스가 읽는 것들의 가짜. 저장소(`proposal_feeds` · outbox)만 진짜다. */
-function world(overrides: { remaining?: number | null; consent?: boolean; jobCreatedAt?: string } = {}) {
-  const state = { remaining: overrides.remaining ?? 100 as number | null, consent: overrides.consent ?? true, jobCreatedAt: overrides.jobCreatedAt ?? "2026-11-15T00:00:00.000Z", jobTechnologies: ["React"], goal: null as { work: string; place: string; timing: string; source: "app"; updatedAt: string } | null };
+function world(overrides: { entitled?: boolean; consent?: boolean; jobCreatedAt?: string } = {}) {
+  const state = { entitled: overrides.entitled ?? true, consent: overrides.consent ?? true, jobCreatedAt: overrides.jobCreatedAt ?? "2026-11-15T00:00:00.000Z", jobTechnologies: ["React"], goal: null as { work: string; place: string; timing: string; source: "app"; updatedAt: string } | null };
   const written: Candidates[] = [];
   const goals: unknown[] = [];
   const writer: ProposalWriter = {
@@ -38,7 +38,7 @@ function world(overrides: { remaining?: number | null; consent?: boolean; jobCre
     },
     activities: { list: async () => [] },
     consent: { require: async () => { if (!state.consent) throw new ConsentError("career_records"); } },
-    credits: { credits: async () => ({ remaining: state.remaining }) },
+    entitled: async () => state.entitled,
   };
   return { state, written, goals, writer, dependencies };
 }
@@ -155,12 +155,42 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     await expect(proposals.dismiss(userId, randomUUID(), later)).rejects.toMatchObject({ statusCode: 404 });
   });
 
-  it("크레딧이 남지 않았거나 AI가 꺼져 있으면 실행하지 않고 그 까닭을 남긴다", async () => {
-    const broke = world({ remaining: 0 });
-    await service(broke).enable(userId, at);
-    expect(await service(broke).run(userId, "enable", at)).toMatchObject({ status: "skipped", reason: "no_credits" });
-    expect(broke.written).toHaveLength(0);
-    expect((await service(broke).feed(userId, at)).run).toMatchObject({ status: "skipped", reason: "no_credits" });
+  it("요금제가 열지 않으면 켜지도 다시 받지도 못한다. 켜 둔 채 무료가 된 계정은 꺼진 것으로 보이고 실행과 줄 넣기를 건너뛴다", async () => {
+    const free = world({ entitled: false });
+    await expect(service(free).enable(userId, at)).rejects.toMatchObject({ statusCode: 403 });
+    expect(await service(free).feed(userId, at)).toMatchObject({ available: false, enabled: false, proposals: [] });
+    expect(await outbox()).toHaveLength(0);
+
+    // 유료일 때 켜고 제안을 받은 뒤 무료가 된다.
+    free.state.entitled = true;
+    await service(free).enable(userId, at);
+    expect(await service(free).run(userId, "enable", at)).toMatchObject({ status: "complete" });
+    expect(await service(free).feed(userId, at)).toMatchObject({ available: true, enabled: true });
+    expect((await service(free).feed(userId, at)).proposals).toHaveLength(1);
+    free.state.entitled = false;
+    expect(await service(free).feed(userId, at)).toMatchObject({ available: false, enabled: false, proposals: [], run: { status: "idle" } });
+    await expect(service(free).refresh(userId, at)).rejects.toMatchObject({ statusCode: 403 });
+    const queued = (await outbox()).length;
+    const tomorrow = new Date(at.getTime() + 86_400_000);
+    await service(free).requestDaily(tomorrow);
+    await service(free).requestForNews(tomorrow);
+    expect(await outbox()).toHaveLength(queued);
+    // 끄기는 요금제와 무관하게 된다.
+    await expect(service(free).disable(userId, tomorrow)).resolves.toMatchObject({ enabled: false });
+
+    // 줄에 넣은 뒤 요금제가 바뀐 실행은 AI를 부르지 않고 까닭을 남긴다.
+    userId = randomUUID();
+    const changed = world();
+    await service(changed).enable(userId, at);
+    changed.state.entitled = false;
+    expect(await service(changed).run(userId, "enable", at)).toMatchObject({ status: "skipped", reason: "plan_required" });
+    expect(changed.written).toHaveLength(0);
+    // 저장된 켜짐은 지우지 않는다. 요금제가 오르면 다시 켜지 않아도 보인다.
+    changed.state.entitled = true;
+    expect(await service(changed).feed(userId, at)).toMatchObject({ available: true, enabled: true, run: { status: "skipped", reason: "plan_required" } });
+  });
+
+  it("AI가 꺼져 있으면 실행하지 않고 그 까닭을 남긴다. 남은 크레딧은 보지 않는다", async () => {
 
     userId = randomUUID();
     const off = world();

@@ -12,7 +12,7 @@ import styles from "./page.module.css";
  */
 export default function Loading() {
   return (
-    <SkelRegion label="포트폴리오를 불러오는 중" className={styles.frame}>
+    <SkelRegion label="포트폴리오를 불러오는 중" className={`${styles.frame} ex-anim-appear`}>
       <nav className={styles.rail} aria-label="주요 이동">
         <span className={styles.railLogo}>
           <LogoMark size={22} />

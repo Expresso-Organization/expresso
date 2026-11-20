@@ -1,20 +1,21 @@
 flowchart TD
-  TC[pnpm typecheck] --> REN[portfolio-renderer 빌드]
-  REN --> GEN[next typegen]
-  GEN --> TYPES[.next/types<br/>지금 코드의 경로 타입]
-  GEN -.다시 씀.-> ENV[next-env.d.ts<br/>추적 해제 · 무시]
-  TYPES --> TSC[tsc --noEmit]
-  CI[CI 타입 검사 단계] --> TC
-  GUARD[tsconfig.test.ts<br/>스크립트 순서 검사] --> TC
-  ENV --> DEPLOY[deploy.sh<br/>되돌리기 줄 제거]
-  DEPLOY --> GIT[git 구간 네 경로 실험]
-  PR{PR 머지 D4} --> FIRST[첫 실제 전환 배포]
-  DEPLOY --> FIRST
+  NAV[화면 이동] --> SK[스켈레톤 150ms 숨김]
+  SK --> RV[AppBody 떠오름 CSS]
+  CHAT[지난 대화] --> ID[첫 렌더부터 대화 id]
+  ID --> FADE[기록 도착 떠오름]
+  NEW[새 대화] --> CLOSE[agent-chat-close 전환]
+  FEED[제안 갱신] --> CARD[카드 빠짐 · 자리 옮김]
+  FEED --> SHIFT[스크롤 당김 홈 교차]
+  VIEW[기록 보기] --> XF[보기 모양 교차]
+  LIB[라이브러리] --> PANE[지면 칸 Suspense]
+  APPR[승인 카드] --> SWAP[바뀐 문구만 떠오름]
+  ONB[온보딩] --> PANEL[본문 이어짐]
+  PR{PR 머지 D7} --> DEPLOY[운영 배포]
+  SIDE[사이드바 다시 그림 T20]
   classDef done fill:#d1fae5,stroke:#059669
   classDef doing fill:#fef3c7,stroke:#d97706
   classDef decide fill:#fee2e2,stroke:#dc2626
   classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4
-  class TC,REN,GEN,TYPES,ENV,TSC,GUARD,DEPLOY,GIT done
-  class CI doing
+  class NAV,SK,RV,CHAT,ID,FADE,NEW,CLOSE,FEED,CARD,SHIFT,VIEW,XF,LIB,PANE,APPR,SWAP,ONB,PANEL done
   class PR decide
-  class FIRST todo
+  class DEPLOY,SIDE todo

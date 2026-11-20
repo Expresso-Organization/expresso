@@ -16,6 +16,8 @@ export const EntitlementCapabilitySchema = z.enum([
   "publishing.remove_badge",
   "analysis.advanced",
   "collaboration.team",
+  /** 컨설턴트가 먼저 연락하기 — 약속 확인 · 안부 · 능동 제안. 크레딧에서 빼지 않는 대신 유료 요금제의 기능이다. */
+  "consultant.outreach",
 ]);
 
 export const EntitlementReasonSchema = z.enum([

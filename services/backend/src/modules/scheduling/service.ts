@@ -11,6 +11,7 @@ import { purgeTrashedCareerRecord } from "../career/index.js";
 import { purgeTrashedBrew } from "../materials/index.js";
 import { purgeTrashedPortfolio } from "../portfolios/index.js";
 import { MongoEngagementService } from "../engagement/index.js";
+import { ActivityCollectError, type ActivityApi } from "../activities/index.js";
 import type { JobIngestApi } from "../jobs/ingest/index.js";
 import { SCHEDULED_JOB_KEYS, type ScheduledJobKey } from "./public.js";
 
@@ -19,13 +20,15 @@ const iso = (value?: Date | null) => value?.toISOString() ?? null;
 const DEADLINE_WINDOW_MS = 72 * 3_600_000;
 /** 능동 제안에 실행을 맡기는 자리. 예약 잡은 켠 사용자를 고르는 일까지만 하고, AI 실행은 줄에 넣은 뒤 워커가 한다. */
 type ProposalScheduler = { requestDaily(at?: Date): Promise<{ requested: number }>; requestForNews(at?: Date): Promise<{ requested: number }> };
-type ActivityCollector = { collect(at?: Date): Promise<{ read: number; added: number; updated: number }> };
+type ActivityCollector = Pick<ActivityApi, "collect">;
 type DeadlineNotifier = { notify(userId: string, kind: "deadline", targetUrl: string, dedupeKey: string, at?: Date, subject?: string | null): Promise<{ created: boolean }> };
 
 const runDto = (row: ScheduledJobRunDoc, at = new Date()) => ({ id: row._id, jobKey: row.jobKey as ScheduledJobKey, scheduledFor: iso(row.scheduledFor)!, status: row.status, attempts: row.attempts, startedAt: iso(row.startedAt), finishedAt: iso(row.finishedAt), lastError: row.lastError ?? null, result: row.result ?? null, lagMs: Math.max(0, at.getTime() - row.scheduledFor.getTime()) });
 
+/** 컨설턴트의 확인 작업. 약속을 묻고 알림을 만드는 일은 `consultant` 모듈이 한다. 여기서는 정해진 시각에 부르기만 한다. */
+export interface ConsultantCheckins { run(at: Date): Promise<Record<string, unknown>> }
 export class SchedulingService {
-  readonly #analytics: { aggregateDay(deploymentId: string, date: string): Promise<Record<string, number>> }; readonly #accounts: { purgeExpired(at?: Date, limit?: number): Promise<{ purged: string[] }> }; readonly #ingest: JobIngestApi | null; readonly #notifications: DeadlineNotifier; readonly #proposals: ProposalScheduler | null; readonly #activities: ActivityCollector | null;
+  readonly #analytics: { aggregateDay(deploymentId: string, date: string): Promise<Record<string, number>> }; readonly #accounts: { purgeExpired(at?: Date, limit?: number): Promise<{ purged: string[] }> }; readonly #ingest: JobIngestApi | null; readonly #notifications: DeadlineNotifier; readonly #proposals: ProposalScheduler | null; readonly #activities: ActivityCollector | null; readonly #consultant: ConsultantCheckins | null;
   readonly #overrides: Partial<Record<ScheduledJobKey, (at: Date) => Promise<Record<string, unknown>>>>;
   /**
    * 이 서비스가 처리할 줄 아는 키. `scheduleDue`는 이 키의 정의만 집는다.
@@ -33,8 +36,8 @@ export class SchedulingService {
    * 모르는 키까지 집으면 실행은 실패하고 `nextRunAt`은 이미 다음 주기로 넘어가 있다(2026-11-19 #240 배포).
    */
   readonly #keys: readonly ScheduledJobKey[];
-  constructor(readonly context: MongoContext, dependencies: { analytics?: { aggregateDay(deploymentId: string, date: string): Promise<Record<string, number>> }; accounts?: { purgeExpired(at?: Date, limit?: number): Promise<{ purged: string[] }> }; ingest?: JobIngestApi | null; notifications?: DeadlineNotifier; proposals?: ProposalScheduler | null; activities?: ActivityCollector | null; overrides?: Partial<Record<ScheduledJobKey, (at: Date) => Promise<Record<string, unknown>>>>; keys?: readonly ScheduledJobKey[] } = {}) {
-    this.#analytics = dependencies.analytics ?? new MongoAnalyticsService(context); this.#accounts = dependencies.accounts ?? new MongoAccountLifecycleService(context); this.#ingest = dependencies.ingest ?? null; this.#notifications = dependencies.notifications ?? new MongoEngagementService(context); this.#proposals = dependencies.proposals ?? null; this.#activities = dependencies.activities ?? null; this.#overrides = dependencies.overrides ?? {}; this.#keys = dependencies.keys ?? SCHEDULED_JOB_KEYS;
+  constructor(readonly context: MongoContext, dependencies: { analytics?: { aggregateDay(deploymentId: string, date: string): Promise<Record<string, number>> }; accounts?: { purgeExpired(at?: Date, limit?: number): Promise<{ purged: string[] }> }; ingest?: JobIngestApi | null; notifications?: DeadlineNotifier; proposals?: ProposalScheduler | null; activities?: ActivityCollector | null; consultant?: ConsultantCheckins | null; overrides?: Partial<Record<ScheduledJobKey, (at: Date) => Promise<Record<string, unknown>>>>; keys?: readonly ScheduledJobKey[] } = {}) {
+    this.#analytics = dependencies.analytics ?? new MongoAnalyticsService(context); this.#accounts = dependencies.accounts ?? new MongoAccountLifecycleService(context); this.#ingest = dependencies.ingest ?? null; this.#notifications = dependencies.notifications ?? new MongoEngagementService(context); this.#proposals = dependencies.proposals ?? null; this.#activities = dependencies.activities ?? null; this.#consultant = dependencies.consultant ?? null; this.#overrides = dependencies.overrides ?? {}; this.#keys = dependencies.keys ?? SCHEDULED_JOB_KEYS;
   }
 
   async scheduleDue(at = new Date()) {
@@ -80,9 +83,15 @@ export class SchedulingService {
     if (key === "activity_collect") {
       if (!this.#activities) return { skipped: "activity service is not wired" };
       const result = await this.#activities.collect(at);
-      return { ...result, ...(await this.#announce(result, at)) };
+      const announced = await this.#announce(result as unknown as Record<string, unknown>, at);
+      // 성공한 출처의 활동은 저장했고 새 활동 제안도 맡겼다. 실패한 출처가 있으면 이 실행을 실패로 남겨 드러낸다.
+      // 다시 시도하면 처음부터 읽고 `added`가 0이라 제안을 다시 맡기지 않는다.
+      const failed = result.sources.flatMap(({ source, error }) => (error ? [{ source, error }] : []));
+      if (failed.length) throw new ActivityCollectError(failed);
+      return { ...result, ...announced };
     }
     if (key === "proposal_briefing") return this.#proposals ? this.#proposals.requestDaily(at) : { skipped: "proposal service is not wired" };
+    if (key === "consultant_checkins") return this.#consultant ? this.#consultant.run(at) : { skipped: "consultant service is not wired" };
     if (key === "posting_facts") return this.#ingest ? this.#ingest.readPendingFacts(undefined, at) as unknown as Record<string, unknown> : { skipped: "ingest service is not wired" };
     if (key === "deadline_reminders") return this.#deadlineReminders(at);
     if (key === "deletion_grace") return this.#accounts.purgeExpired(at);

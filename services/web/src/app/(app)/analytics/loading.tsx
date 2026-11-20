@@ -26,7 +26,7 @@ export default function Loading() {
           </>
         }
       />
-      <AppBody>
+      <AppBody pending>
         <SkelRegion label="대시보드를 불러오는 중" className={styles.content}>
           <div className={styles.viewBar}>
             {skelKeys(2).map((tab) => (

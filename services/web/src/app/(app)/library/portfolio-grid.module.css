@@ -112,6 +112,13 @@
   transform: scale(0.25);
   transform-origin: 0 0;
   pointer-events: none;
+  /* 다 그려진 뒤에 나타난다(PreviewFrame) — 그 전에는 아래의 빗금이 보인다. */
+  opacity: 0;
+  transition: opacity var(--ex-motion-quick);
+}
+
+.portfolioFrame[data-loaded] {
+  opacity: 1;
 }
 
 .portfolioBadge {

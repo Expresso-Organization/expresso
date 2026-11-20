@@ -8,10 +8,10 @@ import { safeErrorSummary } from "../platform/observability.js";
 import { createRedisResource, createStreamRedis } from "../platform/redis.js";
 import { IdentityService } from "../modules/identity/index.js";
 import { RemoteGoogleIdTokenVerifier } from "../modules/identity/google.js";
-import { EntitlementService } from "../modules/entitlements/index.js";
+import { EntitlementService, outreachGate } from "../modules/entitlements/index.js";
 import { UsageService } from "../modules/usage/index.js";
 import { CareerService } from "../modules/career/index.js";
-import { JobMarketService } from "../modules/jobs/index.js";
+import { GoalDemandService, JobMarketService } from "../modules/jobs/index.js";
 import { AiSearchInterpreter } from "../modules/jobs/search-interpreter.js";
 import { AiFactsReader, createJobSourceAdapters, BundledMarkReader, JobIngestService, JobUrlImporter, SiteMarkReader } from "../modules/jobs/ingest/index.js";
 import { JobBoardService } from "../modules/jobs/index.js";
@@ -46,6 +46,7 @@ import { AnalyticsService } from "../modules/analytics/index.js";
 import { EngagementService, UnifiedSearchService } from "../modules/engagement/index.js";
 import { ActivityService } from "../modules/activities/index.js";
 import { ProposalService } from "../modules/proposals/index.js";
+import { ConsultantCommitments, ConsultantDiagnoses, ConsultantService } from "../modules/consultant/index.js";
 import { AccountLifecycleService } from "../modules/account-lifecycle/index.js";
 import { AdminService } from "../modules/admin/index.js";
 import { CareerDocumentService } from "../modules/career-editor/index.js";
@@ -169,14 +170,18 @@ const careerDocumentService = new CareerDocumentService(
 // 편집기 밖 본문 쓰기(PATCH bodyMd · 인터뷰 재답변)가 곧바로 편집기 문서와 열린 편집기에 들어가게 연결합니다.
 careerService.setExternalBodyListener((userId, recordId) => careerDocumentService.syncExternalBody(userId, recordId));
 interviewService.setExternalBodyListener((userId, recordId) => careerDocumentService.syncExternalBody(userId, recordId));
-const agentChatService = new AgentChatService(database, config.agentChatEnabled ? new ClaudeAgentRuntime(config.agentChatModel, aiUsage) : null, careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(database, config.agentCredentialEncryptionKey), portfolioReadService, pageService, entitlementService);
+const consultantService = new ConsultantService(database);
+const consultantCommitments = new ConsultantCommitments(database);
 const activityService = new ActivityService(database);
+const agentChatService = new AgentChatService(database, config.agentChatEnabled ? new ClaudeAgentRuntime(config.agentChatModel, aiUsage) : null, careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(database, config.agentCredentialEncryptionKey), portfolioReadService, pageService, entitlementService, consultantService, consultantCommitments, { demand: new GoalDemandService(database), store: new ConsultantDiagnoses(database) }, { jobs: jobBoardService, activities: activityService, dismissed: userId => proposalService.dismissedKeys(userId) });
 // API는 제안을 읽고 실행을 줄에 넣기만 한다. AI 실행은 워커가 한다(`writer`를 주지 않는다).
-const proposalService = new ProposalService(database, { career: careerService, jobs: jobBoardService, activities: activityService, consent: consentService, credits: entitlementService, writer: null });
+const proposalService = new ProposalService(database, { career: careerService, jobs: jobBoardService, activities: activityService, consent: consentService, entitled: outreachGate(entitlementService), writer: null });
 const adminService = new AdminService(database, { identity: identityService, career: careerService, consent: consentService });
 const app = buildApi({
   adminService,
   agentChatService,
+  consultantService,
+  consultantCommitments,
   activityService,
   proposalService,
   config,

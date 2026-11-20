@@ -14,7 +14,7 @@ import { requireSession } from "@/lib/require-session";
  * 주소를 바꿔도 옛 주소가 30일간 새 주소로 넘어간다. 공개 중단조차 문서를
  * 지우지 않는다 — 여기서 되돌릴 수 없는 일은 없다.
  *
- * 세 가지(배포 · 되돌리기 · 공개 중단)를 **한 문으로** 받는다. 따로 두면 각자 마지막 결과를 들고 있어서,
+ * 네 가지(배포 · 되돌리기 · 공개 중단 · 다시 공개)를 **한 문으로** 받는다. 따로 두면 각자 마지막 결과를 들고 있어서,
  * 되돌린 뒤에도 "배포했습니다"가 화면에 남는다.
  */
 export interface DeployResult {
@@ -22,6 +22,8 @@ export interface DeployResult {
   published?: { version: number; slug: string };
   rolledBackTo?: number;
   unpublished?: boolean;
+  /** 공개를 중단했던 판을 같은 주소로 다시 열었다. */
+  reopened?: { version: number; slug: string };
   error?: string;
 }
 
@@ -76,6 +78,15 @@ export async function deployAction(
       const { data } = await publishing.rollback(session.accessToken, portfolioId, deploymentId);
       refresh();
       return { rolledBackTo: data.version };
+    }
+
+    // 다시 공개는 지금 판으로 되돌리는 것과 같다 — 서버의 되돌리기가 상태를 공개로 바꾼다. 새 판을 만들지 않는다.
+    if (intent === "reopen") {
+      const deploymentId = formData.get("deploymentId");
+      if (typeof deploymentId !== "string") return {};
+      const { data } = await publishing.rollback(session.accessToken, portfolioId, deploymentId);
+      refresh();
+      return { reopened: { version: data.version, slug: data.slug } };
     }
 
     if (intent === "unpublish") {

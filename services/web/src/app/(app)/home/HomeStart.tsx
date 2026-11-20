@@ -3,15 +3,16 @@
 import { AgentChatAccessSchema, type AgentContext } from "@expresso/contracts";
 import type { Route } from "next";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type FocusEvent, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
 
 import { LogoMark, Wordmark } from "@/components/brand/Logo";
+import { ViewTransition } from "@/components/motion/ViewTransition";
 import { Icon } from "@/components/ui/Icon";
-import { putAgentHandoff } from "@/features/agent-chat/agent-handoff";
+import { AGENT_CHAT_CLOSE, AGENT_CHAT_OPEN } from "@/features/agent-chat/agent-handoff";
 import { ResourceList, type ResourceKind } from "@/features/agent-chat/ResourceList";
 import "@/styles/agent-chat-framework.css";
 
+import { HomeHandoffProvider, useHomeHandoff } from "./HomeHandoff";
 import styles from "./home-start.module.css";
 
 const CONTEXT_ICON: Record<AgentContext["kind"], string> = { job: "target", record: "notebook", portfolio: "browsers" };
@@ -36,6 +37,7 @@ export type StartAction =
 const PROMPTS: readonly { icon: string; label: string; prompt: string }[] = [
   { icon: "note-pencil", label: "새 기록 남기기", prompt: "내 경험을 기록으로 남기고 싶어. 한 번에 하나씩 질문해 주고, 답을 모아 새 기록 초안을 만들어 줘." },
   { icon: "chat-circle-dots", label: "경험 구체화", prompt: "내 커리어 기록에서 역할 · 행동 · 성과가 부족한 부분을 질문해 줘." },
+  { icon: "chart-bar", label: "목표 진단", prompt: "내 구직 목표에 비해 지금 부족한 점을 진단해 줘. 목표와 같은 직군의 공고를 기준으로 봐 줘." },
   { icon: "target", label: "맞는 공고 찾기", prompt: "내 커리어 기록과 잘 맞는 채용 공고를 찾아 줘. 왜 맞는지 기록의 근거와 함께 알려 줘." },
   { icon: "compass", label: "목표 직무 탐색", prompt: "아직 목표 공고가 없어. 내 경험과 관심사를 물어보고 맞는 직무 후보를 같이 찾아 줘." },
 ];
@@ -43,17 +45,27 @@ const PROMPTS: readonly { icon: string; label: string; prompt: string }[] = [
 /**
  * 홈 — 대화를 시작하기 전의 화면.
  *
- * 위에서 아래로 로고, 입력창, 추천 프롬프트, 새 소식 위젯, 제안 카드가 선다.
+ * 위에서 아래로 로고, 입력창, 추천 프롬프트, 확인 카드, 새 소식 위젯, 제안 카드가 선다.
  * 입력창은 대화를 만들지 않는다. 보낼 말과 연결할 자료를 대화 화면으로 넘기고 그리로 간다.
  */
-export function HomeStart({ proposals, widgets }: { proposals: ReactNode; widgets: ReactNode }) {
-  const router = useRouter();
+export function HomeStart({ checkins, proposals, widgets }: { checkins: ReactNode; proposals: ReactNode; widgets: ReactNode }) {
+  return (
+    <HomeHandoffProvider>
+      <HomeStartBody checkins={checkins} proposals={proposals} widgets={widgets} />
+    </HomeHandoffProvider>
+  );
+}
+
+function HomeStartBody({ checkins, proposals, widgets }: { checkins: ReactNode; proposals: ReactNode; widgets: ReactNode }) {
+  const { open, pending } = useHomeHandoff();
   const [text, setText] = useState("");
   const [attached, setAttached] = useState<Attached[]>([]);
   // 입력창을 누르면 pill이 둥근 사각형으로 펴지고 도구 줄이 나타난다. 쓴 것이 남아 있으면 접지 않는다.
   const [focused, setFocused] = useState(false);
   const [picker, setPicker] = useState<ResourceKind | null>(null);
   const [model, setModel] = useState<string | null>(null);
+  // 지금 보낼 수 있는 계정인가. 모르면 null — 대화 화면이 다시 확인한다.
+  const [sendable, setSendable] = useState<boolean | null>(null);
   const wrap = useRef<HTMLFormElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
   const expanded = focused || picker !== null || text.length > 0 || attached.length > 0;
@@ -62,8 +74,11 @@ export function HomeStart({ proposals, widgets }: { proposals: ReactNode; widget
   useEffect(() => {
     const controller = new AbortController();
     void fetch("/api/agent/access", { signal: controller.signal, cache: "no-store" })
-      .then(async (response) => (response.ok ? AgentChatAccessSchema.parse(await response.json()).data.model : null))
-      .then(setModel)
+      .then(async (response) => (response.ok ? AgentChatAccessSchema.parse(await response.json()).data : null))
+      .then((access) => {
+        setModel(access?.model ?? null);
+        if (access) setSendable(access.enabled && !access.consentRequired && !access.creditsExhausted);
+      })
       .catch(() => undefined);
     return () => controller.abort();
   }, []);
@@ -101,9 +116,8 @@ export function HomeStart({ proposals, widgets }: { proposals: ReactNode; widget
 
   const send = () => {
     const value = text.trim();
-    if (!value) return;
-    putAgentHandoff({ text: value, contexts: attached.map((item) => item.context) });
-    router.push("/home?compose=1" as Route);
+    if (!value || pending) return;
+    open({ text: value, contexts: attached.map((item) => item.context), deliver: sendable !== false });
   };
   const submit = (event: FormEvent) => { event.preventDefault(); send(); };
   const keyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -118,7 +132,8 @@ export function HomeStart({ proposals, widgets }: { proposals: ReactNode; widget
 
   return (
     <>
-      <div className={styles.stage}>
+      {/* 대화로 가는 중에는 입력창만 남기고 나머지를 옅게 한다. 서버를 기다리는 동안에도 눌렸다는 것이 보인다. */}
+      <div className={styles.stage} data-leaving={pending || undefined}>
         <div className={styles.column}>
           <div className={styles.hero}>
             <div className={styles.brand}>
@@ -126,6 +141,8 @@ export function HomeStart({ proposals, widgets }: { proposals: ReactNode; widget
               <Wordmark size={38} />
             </div>
             <form ref={wrap} className={styles.composerWrap} onSubmit={submit} onFocus={() => setFocused(true)} onBlur={blur}>
+              {/* 대화 화면의 입력창과 같은 이름 — 대화를 시작하는 이동에서 이 입력창이 대화 화면 아래 자리로 옮겨 간다. */}
+              <ViewTransition name="agent-composer" share={{ [AGENT_CHAT_OPEN]: "composer-morph", [AGENT_CHAT_CLOSE]: "composer-return", default: "none" }} default="none">
               <div className={styles.composer} data-expanded={expanded}>
                 {attached.length > 0 ? (
                   <div className={styles.attachedRow}>
@@ -175,10 +192,11 @@ export function HomeStart({ proposals, widgets }: { proposals: ReactNode; widget
                     </button>
                   ) : null}
                 </div>
-                <button type="submit" className={styles.send} aria-label="보내기" disabled={!text.trim()}>
+                <button type="submit" className={styles.send} aria-label="보내기" disabled={!text.trim() || pending}>
                   <Icon name="arrow-up" weight="bold" size={16} />
                 </button>
               </div>
+              </ViewTransition>
               {picker ? (
                 <div className={`acf-scope ${styles.picker}`} role="dialog" aria-label="대화에 연결할 자료">
                   <div className={styles.pickerTabs} role="tablist">
@@ -208,6 +226,7 @@ export function HomeStart({ proposals, widgets }: { proposals: ReactNode; widget
               ))}
             </div>
           </div>
+          {checkins}
           {widgets}
           {proposals}
         </div>
@@ -221,7 +240,7 @@ export function HomeStart({ proposals, widgets }: { proposals: ReactNode; widget
  * 제안 카드는 입력창보다 아래에 있어서, 입력창을 채우기만 하면 누른 자리에서 아무 변화가 보이지 않는다.
  */
 export function ProposalAction({ action }: { action: StartAction }) {
-  const router = useRouter();
+  const { open, pending } = useHomeHandoff();
   if (action.kind === "link") {
     return (
       <Link href={action.href as Route} className={styles.proposalAction}>
@@ -234,7 +253,8 @@ export function ProposalAction({ action }: { action: StartAction }) {
     <button
       type="button"
       className={styles.proposalAction}
-      onClick={() => { putAgentHandoff({ text: action.prompt, contexts: action.contexts.slice(0, MAX_CONTEXTS) }); router.push("/home?compose=1"); }}
+      disabled={pending}
+      onClick={() => open({ text: action.prompt, contexts: action.contexts.slice(0, MAX_CONTEXTS) })}
     >
       {action.label}
     </button>
