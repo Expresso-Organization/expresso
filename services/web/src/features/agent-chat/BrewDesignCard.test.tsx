@@ -44,7 +44,7 @@ function serve(card: BrewDesignCardData, current: DesignChat | null) {
 /** 대화가 그리는 모양 그대로 — 제작의 디자인 상태 하나를 여러 카드가 읽는다. */
 function show(cards: AgentBrewDesign[], onDraw = vi.fn(async () => undefined)) {
   const wanted = { [brewId]: cards.flatMap((card) => (card.designMessageId ? [card.designMessageId] : [])) };
-  render(<DesignBrews cards={wanted} onDraw={onDraw}>{cards.map((card) => <BrewDesignCard key={card.designMessageId ?? "open"} design={card} />)}</DesignBrews>);
+  render(<DesignBrews cards={wanted} generations={{}} onDraw={onDraw} onMake={async () => undefined} stageHost={null} stagedBrew={null} onStage={() => undefined}>{cards.map((card) => <BrewDesignCard key={card.designMessageId ?? "open"} design={card} />)}</DesignBrews>);
   return onDraw;
 }
 const card = (designMessageId: string | null): AgentBrewDesign => ({ brewId, jobPostingId: brewId, designMessageId });

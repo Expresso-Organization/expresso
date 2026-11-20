@@ -39,7 +39,7 @@ import { markupProblem, promptOpening, promptSources, ungroundedEmails, type Pag
  */
 const TIER = { modelTier: "sonnet" } as const;
 /** 프롬프트 판. 문구를 바꾸면 올린다. 2: Do와 Do not, 스타일과 레이아웃을 따로 제안(2026-11-19). */
-export const DESIGN_CHAT_PROMPT_VERSION = 2;
+export const DESIGN_CHAT_PROMPT_VERSION = 3;
 
 const FONT_NAME = { sans: "고딕", serif: "명조", mono: "고정폭" } as const;
 const DENSITY_NAME = { compact: "빽빽하게", comfortable: "읽기 편하게", spacious: "넓게" } as const;
@@ -98,7 +98,7 @@ export const DesignHeadSchema = z.strictObject({
   headline: z.string().min(1).describe("이 사람이 무엇을 하는 사람인지 한 문장"),
   intro: z.string().describe("소개 두세 문장"),
   subject: z.string().min(1).describe("이 사람이 다루는 대상 · 도구 · 산출물을 구체적인 낱말로"),
-  lead: z.array(z.string().min(1)).describe("첫 화면에 세울 만한 사실. 숫자와 단위는 출처에 적힌 글자 그대로"),
+  lead: z.array(z.string().min(1)).describe("첫 화면에 세울 만한 것. 이 사람이 만든 화면 · 구조 · 흐름 · 산출물과 그 일의 맥락을 먼저 적고, 수치는 그 일에 붙여 함께 적는다. 숫자와 단위는 출처에 적힌 글자 그대로"),
 });
 export type DesignHead = z.infer<typeof DesignHeadSchema>;
 
@@ -172,7 +172,7 @@ const PROPOSALS = [
   "- `styles`와 `layouts`를 서로 독립된 목록으로 냅니다.",
   "- 한 목록 안의 제안은 나란히 놓았을 때 한눈에 구분되게 합니다. 스타일은 바탕의 명도와 서체 계열이 서로 겹치지 않게, 레이아웃은 주인공과 그것이 놓인 자리가 서로 다르게 잡습니다.",
   "- 스타일은 이 사람의 일(다루는 대상 · 도구 · 산출물)과 지원하는 곳(회사의 톤 · 브랜드 색)에서 가져옵니다.",
-  "- 레이아웃은 이 사람의 자료에서 그림으로 만들 수 있는 것(화면의 모습 · 전후 비교 · 구조도 · 흐름 · 차트)을 찾아, 무엇을 주인공으로 세울지에서 출발합니다.",
+  "- 레이아웃은 이 사람이 만든 것(화면의 모습 · 구조도 · 흐름 · 산출물)에서 무엇을 주인공으로 세울지에서 출발합니다. 세 레이아웃의 주인공은 서로 다른 종류로 잡고, 수치(전후 비교 · 차트)를 주인공으로 세우는 레이아웃은 많아야 하나입니다. 나머지에서 수치는 주인공 곁의 근거입니다.",
   "- 카드의 글은 이름(두세 낱말)과 한 줄(`words`, 서른 자 안의 명사구)까지만 씁니다. 대상은 이 사람의 자료에 나오는 이름으로 씁니다.",
   "- 바탕과 글자는 본문을 오래 읽을 수 있는 명도 차이를 두고, 강조는 바탕 위에서 한눈에 구분되게 합니다.",
   "### Do not",
@@ -205,7 +205,7 @@ const OPENING_SYSTEM = [
   DESIGNER,
   "지금은 대화의 첫 말을 씁니다. 출처 자료(커리어 기록 · 답변 · 공고 요건)와 섹션 설계를 읽고 네 가지를 냅니다.",
   "- `head`: 이 사람의 첫 화면에 실을 사실입니다.",
-  "- `say`: 사용자에게 건네는 첫 말입니다. 자료를 읽다 눈에 띈 일 하나를 말하듯 짚고, 어떤 느낌으로 보여 드릴지 묻습니다. 자료의 문장을 길게 옮기지 않고 이 사람의 낱말로 줄여 말합니다.",
+  "- `say`: 사용자에게 건네는 첫 말입니다. 자료를 읽다 눈에 띈 일 하나 — 이 사람이 만든 것이나 맡은 일 — 를 말하듯 짚고, 어떤 느낌으로 보여 드릴지 묻습니다. 수치보다 무엇을 만들었는지를 짚습니다. 자료의 문장을 길게 옮기지 않고 이 사람의 낱말로 줄여 말합니다.",
   "- `styles`: 서로 뚜렷이 다른 스타일 셋입니다.",
   "- `layouts`: 서로 뚜렷이 다른 레이아웃 셋입니다.",
   "",
@@ -535,7 +535,7 @@ function layoutPrompt(layout: DesignLayoutSpec | null): string[] {
   if (!layout)
     return [
       "## 레이아웃 — 정해지지 않았다. 구성은 네가 정한다",
-      "이 사람의 자료에서 그림으로 만들 수 있는 것을 찾아 주인공으로 세우고, 나머지를 그것을 받치는 자리에 둔다.",
+      "이 사람이 만든 것(화면의 모습 · 구조도 · 흐름 · 산출물)에서 주인공을 세우고, 나머지를 그것을 받치는 자리에 둔다. 수치는 주인공 곁의 근거로 둔다.",
       "",
     ];
   return [

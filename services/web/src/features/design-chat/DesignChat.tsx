@@ -83,6 +83,11 @@ interface View {
   pick(kind: keyof Picked, id: string): void;
   /** 견본에서 고른 짝으로 첫 화면을 그린다. 디자인 화면은 디자인 대화에, 에이전트 대화의 카드는 그 대화의 경로에 보낸다. */
   draw(styleId: string, layoutId: string): void;
+  /**
+   * 고른 첫 화면으로 만든다. 주면 「이 스타일로 만들기」가 화면을 넘기지 않고 이 함수를 부른다(에이전트 대화 — 대화에 「생성」 카드가 붙는다).
+   * 실패하면 보일 문장을, 맡겼으면 null을 돌려준다. 주지 않으면 지금처럼 생성을 맡기고 생성 화면으로 간다.
+   */
+  make?: (() => Promise<string | null>) | undefined;
   /** 가장 나중에 뜬 견본 카드. 고른 짝과 「첫 화면 보기」는 이 카드 아래에만 둔다. */
   lastProposals: string | null;
   /** 답을 만드는 중이거나 요청을 보내는 중이다. 그동안 카드는 눌리지 않는다. */
@@ -106,13 +111,14 @@ const useView = () => useContext(ViewContext)!;
  * 디자인 대화를 보는 화면의 상태 — 고른 견본, 무대에 올린 첫 화면, 고치는 중인 자리의 표시. 디자인 화면(`DesignChat`)과
  * 에이전트 대화의 「디자인」 카드가 함께 쓴다. 넓게 보기의 전환(화면 전환 효과)은 쓰는 쪽이 `expand` · `collapse`를 덮어 정한다.
  */
-export function useDesignView({ brewId, recipeId, generationAllowed, catalog, state, draw, askConsent = null }: {
+export function useDesignView({ brewId, recipeId, generationAllowed, catalog, state, draw, make, askConsent = null }: {
   brewId: string;
   recipeId: string | null;
   generationAllowed: boolean;
   catalog: CatalogItem[];
   state: DesignChatState;
   draw(styleId: string, layoutId: string): void;
+  make?: (() => Promise<string | null>) | undefined;
   askConsent?: (() => void) | null;
 }) {
   const { chat } = state;
@@ -150,7 +156,7 @@ export function useDesignView({ brewId, recipeId, generationAllowed, catalog, st
   const unseen = revisions.filter((card) => card.item.status === "drawing" && !watched.includes(card.item.id)).map((card) => card.item.id);
   if (unseen.length > 0) setWatched([...watched, ...unseen]);
   const view: View = {
-    brewId, recipeId, generationAllowed, catalog, state, askConsent, draw,
+    brewId, recipeId, generationAllowed, catalog, state, askConsent, draw, make,
     cards: thread.cards,
     users: thread.users,
     snippet: (id) => chat?.snippets.find((item) => item.id === id),
@@ -720,10 +726,21 @@ function UserAttachment() {
 
 /** 고른 첫 화면으로 지면을 만든다. 생성을 맡기면 이 화면은 생성 중 화면으로 바뀐다. */
 export function MakeButton() {
-  const { brewId, recipeId, generationAllowed, state } = useView();
+  const { brewId, recipeId, generationAllowed, state, make } = useView();
   const [result, start, submitting] = useActionState<BrewState, FormData>(startGenerationAction, { error: null });
+  const [making, setMaking] = useState(false);
+  const [issue, setIssue] = useState<string | null>(null);
   const selected = state.chat?.selectedSnippetId;
   if (!selected) return null;
+  if (make) {
+    const run = async () => { setMaking(true); setIssue(null); setIssue(await make()); setMaking(false); };
+    return (
+      <span className={styles.makeForm}>
+        {issue ? <span className={styles.makeIssue} role="alert">{issue}</span> : !generationAllowed ? <span className={styles.makeIssue}>이번 달 AI 크레딧을 모두 썼습니다.</span> : null}
+        <Button type="button" className={styles.make} disabled={making || state.running || !generationAllowed} onClick={() => void run()}><Icon name="magic-wand" size={14} />{making ? "맡기는 중" : "이 스타일로 만들기"}</Button>
+      </span>
+    );
+  }
   return (
     <form action={start} className={styles.makeForm}>
       <input type="hidden" name="brewId" value={brewId} />

@@ -38,6 +38,8 @@ export function registerAgentChatRoutes(app: FastifyInstance, service: AgentChat
   // 대화에서 디자인을 연다 · 견본의 짝으로 첫 화면을 그린다. 둘 다 실행을 시작하지 않는다(그리기는 디자인 대화가 뒤에서 한다).
   const brewId = (params: unknown) => UuidSchema.parse((params as { brewId: string }).brewId);
   app.post(`${base}/:id/brews/:brewId/design`, options, async req => ({ data: await service.beginDesign(requireAuth(req).user.id, id(req.params), brewId(req.params)) }));
+  // 고른 첫 화면으로 포트폴리오를 만든다. 실행을 시작하지 않는다(생성은 워커가 한다).
+  app.post(`${base}/:id/brews/:brewId/generation`, options, async req => ({ data: await service.startGeneration(requireAuth(req).user.id, id(req.params), brewId(req.params)) }));
   app.post(`${base}/:id/brews/:brewId/design/draw`, options, async req => ({ data: await service.drawDesign(requireAuth(req).user.id, id(req.params), brewId(req.params), AgentDesignDrawSchema.parse(req.body)) }));
   app.post(`${base}/:id/brew-starts/:startId/retry`, options, async req => ({ data: await service.retryBrewStart(requireAuth(req).user.id, id(req.params), startId(req.params)) }));
   app.post(`${base}/:id/retry`, options, async (req, reply) => { const userId = requireAuth(req).user.id; return reply.code(202).send({ data: await service.retry(userId, id(req.params), await service.credentials.read(userId)) }); });

@@ -17,7 +17,7 @@ import type { CareerDocumentApi } from "../career-editor/index.js";
 import { readableCareerProperties, type CareerApi } from "../career/index.js";
 import type { JobBoardApi } from "../jobs/index.js";
 import { ConsentError, type ConsentApi } from "../consent/index.js";
-import { brewPath, brewStartState, KeyedQueue, type AgentBrewDeps, type LiveBrew } from "./brew-start.js";
+import { brewPath, brewStartState, generating, KeyedQueue, type AgentBrewDeps, type LiveBrew } from "./brew-start.js";
 import { interviewBasisKey, type AgentBrewDesign, type AgentBrewStart, type AgentBrewStartInput, type AgentBrewStartState, type AgentDesignDraw, type AgentDesignProposeInput, type AgentDesignReviseInput, type AgentInterviewAnswerInput } from "@expresso/contracts";
 import type { AgentBrewInterviewState, AgentBrewState, AgentRunEvent } from "../../platform/agent/runtime.js";
 import { InterviewError } from "../interview/index.js";
@@ -385,6 +385,7 @@ export class AgentChatService {
       const start = this.startOfBrew(row, brewId);
       if (!row.messages.some(message => message.tools.some(tool => tool.brewDesign?.brewId === brewId))) throw new AgentChatError(409, "디자인 카드가 없습니다.", "「디자인 고르기」로 디자인을 먼저 열어 주세요.");
       if (row.run?.status === "running") throw new AgentChatError(409, "응답이 끝난 뒤 눌러 주세요.", "응답이 끝난 뒤 눌러 주세요.");
+      if (generating((await this.brews!.brewState(userId, brewId))?.generation)) throw new AgentChatError(409, "generation is running", "포트폴리오를 만드는 중입니다. 다 만든 뒤에 다듬기에서 고칠 수 있습니다.");
       const { designMessageId } = await this.brews!.designDraw(userId, brewId, input);
       return view(await this.appendCard(row, { id: randomUUID(), name: "디자인", status: "complete", summary: "", brewDesign: { brewId, jobPostingId: start.jobPostingId, designMessageId } }));
     });
@@ -398,12 +399,28 @@ export class AgentChatService {
     const brew = starts.length ? await this.liveBrew(row, starts[0]!.jobAnalysisId) : null;
     if (!brew) throw new AgentToolRejection(["이 대화에서 그 공고로 만든 제작이 없습니다. brews의 jobPostingId를 쓰십시오."]);
     if (brew.status === "draft" || brew.status === "interviewing") throw new AgentToolRejection(["아직 디자인 단계가 아닙니다. 지금 단계를 안내하십시오."]);
+    if (generating(brew.generation)) throw new AgentToolRejection(["포트폴리오를 만드는 중이라 디자인을 바꿀 수 없습니다. 이번 생성에 반영되지 않습니다. 다 만들어지면 다듬기에서 고칠 수 있다고 안내하십시오."]);
+    if (brew.generation?.status === "done") throw new AgentToolRejection(["이미 만든 포트폴리오가 있습니다. 「생성」 카드의 「다듬기에서 열기」로 다듬기에서 고칠 수 있다고 안내하십시오."]);
     if (!row.messages.some(message => message.tools.some(tool => tool.brewDesign?.brewId === brew.id))) throw new AgentToolRejection(["이 대화에 「디자인」 카드가 없습니다. 「AI 대화」 카드의 「디자인 고르기」를 권하십시오."]);
     try { return { brewId: brew.id, jobPostingId, ...(await work(brew.id)) }; }
     catch (error) { if (error instanceof AgentChatError && error.publicMessage) throw new AgentToolRejection([error.publicMessage]); throw error; }
   }
   private proposeDesign(row: AgentConversationDoc, input: AgentDesignProposeInput) { return this.designTool(row, input.jobPostingId, brewId => this.brews!.designPropose(row.userId, brewId, { request: input.request, focus: input.focus })); }
   private reviseDesign(row: AgentConversationDoc, input: AgentDesignReviseInput) { return this.designTool(row, input.jobPostingId, brewId => this.brews!.designRevise(row.userId, brewId, { instruction: input.instruction, screen: input.screen })); }
+  /**
+   * 「디자인」 카드의 「이 스타일로 만들기」. 디자인 대화에서 고른 첫 화면으로 생성을 맡기고 「생성」 카드를 든 답변을 서버가 붙인다.
+   * 실행을 시작하지 않는다. 생성이 줄에 있거나 도는 중이면 새로 맡기지 않고 그 생성의 카드를 붙인다(이미 있으면 대화만 돌려준다).
+   */
+  async startGeneration(userId: string, id: string, brewId: string) {
+    return this.brewQueue.run(id, async () => {
+      const row = await this.owned(userId, id);
+      const start = this.startOfBrew(row, brewId);
+      if (!row.messages.some(message => message.tools.some(tool => tool.brewDesign?.brewId === brewId))) throw new AgentChatError(409, "디자인 카드가 없습니다.", "「디자인 고르기」로 디자인을 먼저 열어 주세요.");
+      const { generationId } = await this.brews!.startGeneration(userId, brewId);
+      if (row.messages.some(message => message.tools.some(tool => tool.brewGeneration?.generationId === generationId))) return view(row);
+      return view(await this.appendCard(row, { id: randomUUID(), name: "생성", status: "complete", summary: "", brewGeneration: { brewId, jobPostingId: start.jobPostingId, generationId } }));
+    });
+  }
   /** 이 대화가 만든 제작의 시작 카드. 다른 대화의 제작이면 404다. */
   private startOfBrew(row: AgentConversationDoc, brewId: string): AgentBrewStart {
     if (!this.brews) throw new AgentChatError(503, "포트폴리오 제작 연결이 설정되지 않았습니다.");
@@ -480,7 +497,7 @@ export class AgentChatService {
         const brew = await this.liveBrew(row, start.jobAnalysisId);
         const interview = brew?.status === "interviewing" ? await this.interviewState(row.userId, brew.id).catch(() => null) : null;
         const design = brew && brew.status !== "draft" && brew.status !== "interviewing" ? await this.brews!.designState(row.userId, brew.id).catch(() => null) : null;
-        return { jobPostingId: start.jobPostingId, title: start.title, companyName: start.companyName, selectedRecords: brew?.selected ?? null, interview, design, ...brewStartState(await this.brews!.getResult(row.userId, start.jobAnalysisId), brew, !!row.brewAnnounced?.[start.jobAnalysisId]) };
+        return { jobPostingId: start.jobPostingId, title: start.title, companyName: start.companyName, selectedRecords: brew?.selected ?? null, interview, design, generation: brew?.generation ? { status: brew.generation.status } : null, ...brewStartState(await this.brews!.getResult(row.userId, start.jobAnalysisId), brew, !!row.brewAnnounced?.[start.jobAnalysisId]) };
       }
       catch { return null; }
     }));

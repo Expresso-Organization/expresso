@@ -5,6 +5,19 @@
 .rail { display:flex; height:100%; min-height:0; }
 @media(max-width:1023px) { .rail { height:min(720px,85dvh); } }
 .main { min-width:0; min-height:0; flex:1; display:flex; flex-direction:column; }
+/*
+ * 대화에서 만드는 지면의 자리(독립 채팅). 지면이 서기 전에는 보이지 않게 접어 두되 \`display: none\`을 쓰지 않는다 — 미리보기 틀이
+ * 문서를 다시 만들면 쓴 것이 사라진다. 지면이 서면 가운데를 차지하고 대화는 공고 화면의 레일과 같은 폭 범위로 오른쪽에 선다.
+ */
+.stageSlot { position:absolute; width:1px; height:1px; overflow:hidden; opacity:0; pointer-events:none; }
+.standalone[data-staged="true"] .stageSlot { position:relative; flex:1; width:auto; height:auto; min-width:0; overflow:visible; opacity:1; pointer-events:auto; view-transition-name:agent-stage-slot; }
+.standalone[data-staged="true"] .main { flex:0 0 clamp(316px, 32%, 440px); border-left:1px solid var(--ex-border); }
+/* 레일이 본문 아래로 내려가는 폭(공고 화면과 같다)에서는 지면을 위에, 대화를 아래에 쌓는다. */
+@media(max-width:1023px) {
+  .standalone[data-staged="true"] { flex-direction:column; }
+  .standalone[data-staged="true"] .stageSlot { flex:0 0 55dvh; }
+  .standalone[data-staged="true"] .main { flex:1; border-left:0; border-top:1px solid var(--ex-border); }
+}
 .header { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:18px 26px; flex-shrink:0; }
 .heading { display:flex; align-items:center; gap:10px; min-width:0; }
 .heading > div { display:flex; flex-direction:column; gap:3px; min-width:0; }

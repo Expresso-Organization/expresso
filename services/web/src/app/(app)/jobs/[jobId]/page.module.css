@@ -14,6 +14,20 @@
   overflow: auto;
 }
 
+/* 왼쪽 본문과 그 위를 덮는 층. 대화에서 만드는 지면이 서면 덮는 층이 본문 자리 전체를 차지한다(`JobChatStage`). */
+.leftWrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+/* 층 자체는 누름을 받지 않는다. 무대가 열렸을 때만 무대가 받는다(`AgentStage.module.css`). */
+.stageHost {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
 /*
  * 목록으로 돌아가기.
  *

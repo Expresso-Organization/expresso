@@ -54,7 +54,8 @@ export function BrewDesignCard({ design: { brewId, designMessageId } }: { design
       </div> : null}
       {/* 이미 만든 포트폴리오는 다시 만들지 않고 연다. 만드는 일은 이번 달 횟수를 쓴다. */}
       {making && context?.portfolioId ? <div className={styles.make}><Link className={styles.action} href={`/edit/${context.portfolioId}` as Route}>만든 포트폴리오 열기</Link></div>
-        : making && context?.generating ? <div className={styles.make}><Link className={styles.action} href={`/brew/${brewId}/design` as Route}>생성 화면 보기</Link></div>
+        // 만드는 중이면 대화 아래의 「생성」 카드가 진행을 보인다.
+        : making && (context?.generating || brew.generation?.generation?.status === "queued" || brew.generation?.generation?.status === "running") ? null
         : making ? <div className={styles.make}><MakeButton /></div> : null}
     </DesignViewContext.Provider>
     {/* 카탈로그에서 고르기와 구조화 생성은 지금의 디자인 화면에 있다. */}

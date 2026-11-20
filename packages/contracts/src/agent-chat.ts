@@ -342,6 +342,12 @@ export type AgentInterviewAnswerInput = z.infer<typeof AgentInterviewAnswerInput
  */
 export const AgentBrewDesignSchema = z.strictObject({ brewId: UuidSchema, jobPostingId: UuidSchema, designMessageId: UuidSchema.nullable() });
 export type AgentBrewDesign = z.infer<typeof AgentBrewDesignSchema>;
+/**
+ * 대화에 뜨는 「생성」 카드. 디자인 대화에서 고른 첫 화면으로 시작한 생성 하나를 가리킨다 — 진행과 만들어지는 지면은 카드와 무대가
+ * 그때그때 읽는다(생성 상태 · 생성 스트림).
+ */
+export const AgentBrewGenerationSchema = z.strictObject({ brewId: UuidSchema, jobPostingId: UuidSchema, generationId: UuidSchema });
+export type AgentBrewGeneration = z.infer<typeof AgentBrewGenerationSchema>;
 /** 견본에서 고른 스타일과 레이아웃으로 첫 화면을 그린다. 대화에 그 첫 화면의 카드가 붙는다. */
 export const AgentDesignDrawSchema = z.strictObject({ styleId: UuidSchema, layoutId: UuidSchema });
 export type AgentDesignDraw = z.infer<typeof AgentDesignDrawSchema>;
@@ -360,7 +366,7 @@ export const AgentDesignReviseInputSchema = z.strictObject({
 });
 export type AgentDesignReviseInput = z.infer<typeof AgentDesignReviseInputSchema>;
 
-export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional(), goalDraft: AgentGoalDraftSchema.optional(), gapReview: GapReviewSchema.optional(), planDraft: AgentPlanDraftSchema.optional(), replanDraft: AgentReplanDraftSchema.optional(), pageEdit: AgentPageEditSchema.optional(), brewStart: AgentBrewStartSchema.optional(), brewMaterials: AgentBrewMaterialsSchema.optional(), brewInterview: AgentBrewInterviewSchema.optional(), brewDesign: AgentBrewDesignSchema.optional() });
+export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional(), goalDraft: AgentGoalDraftSchema.optional(), gapReview: GapReviewSchema.optional(), planDraft: AgentPlanDraftSchema.optional(), replanDraft: AgentReplanDraftSchema.optional(), pageEdit: AgentPageEditSchema.optional(), brewStart: AgentBrewStartSchema.optional(), brewMaterials: AgentBrewMaterialsSchema.optional(), brewInterview: AgentBrewInterviewSchema.optional(), brewDesign: AgentBrewDesignSchema.optional(), brewGeneration: AgentBrewGenerationSchema.optional() });
 export const AgentMessageSchema = z.strictObject({ id: UuidSchema, role: z.enum(["user", "assistant"]), text: z.string().max(64_000), tools: z.array(AgentToolResultSchema).max(30), selection: AgentPageSelectionSchema.optional(), createdAt: TimestampSchema });
 export const AgentRunSchema = z.strictObject({ id: UuidSchema, requestId: UuidSchema, status: z.enum(["running", "complete", "cancelled", "failed", "interrupted"]), error: z.string().max(1_000).nullable(), startedAt: TimestampSchema });
 export const AgentConversationSchema = z.strictObject({ id: UuidSchema, title: z.string().max(120), contexts: z.array(AgentContextSchema).max(10), messages: z.array(AgentMessageSchema).max(100), run: AgentRunSchema.nullable(), version: z.number().int().nonnegative(), updatedAt: TimestampSchema });

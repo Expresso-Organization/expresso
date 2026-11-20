@@ -116,7 +116,7 @@ describe("Claude 채팅 실행 어댑터", () => {
   });
   it("이 대화에서 시작한 제작의 지금 상태를 프롬프트에 싣는다", async () => {
     sdk.query.mockReturnValue((async function* () { yield { type: "result", is_error: false }; })());
-    const brews = [{ jobPostingId: "00000000-0000-4000-8000-0000000000b2", title: "프론트엔드 개발자", companyName: "가상 회사", status: "done" as const, stage: "done" as const, failure: null, requirements: { total: 6, covered: 3, partial: 2, missing: 1 }, brewId: null, step: null, announced: false, selectedRecords: null, interview: null, design: null }];
+    const brews = [{ jobPostingId: "00000000-0000-4000-8000-0000000000b2", title: "프론트엔드 개발자", companyName: "가상 회사", status: "done" as const, stage: "done" as const, failure: null, requirements: { total: 6, covered: 3, partial: 2, missing: 1 }, brewId: null, step: null, announced: false, selectedRecords: null, interview: null, design: null, generation: null }];
     await new ClaudeAgentRuntime().run({ messages: [], context: [], signal: new AbortController().signal, emit: vi.fn(), ...base(), brews });
     const asked = JSON.parse(sdk.query.mock.lastCall![0].prompt);
     expect(asked.brews).toEqual(brews);

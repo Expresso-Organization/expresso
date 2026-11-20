@@ -79,7 +79,7 @@ export function BrewStartCard({ conversationId, start, disabled, onOpen, onAnnou
     else {
       // 대화 안에서 이어진다. 그 단계의 카드(「재료 고르기」 · 「AI 대화」)가 방금 붙었거나 이미 있으니 마지막 카드가 보이게 한다 —
       // 이미 있는 카드는 다시 눌러도 대화가 바뀌지 않아 화면이 따라가지 않는다.
-      window.setTimeout(() => [...(card.current?.closest('[data-slot="aui_thread-viewport"]')?.querySelectorAll('section[aria-label="재료 고르기"], section[aria-label="AI 대화"], section[aria-label="디자인"]') ?? [])].at(-1)?.scrollIntoView({ block: "nearest" }), 160);
+      window.setTimeout(() => [...(card.current?.closest('[data-slot="aui_thread-viewport"]')?.querySelectorAll('section[aria-label="재료 고르기"], section[aria-label="AI 대화"], section[aria-label="디자인"], section[aria-label="생성"]') ?? [])].at(-1)?.scrollIntoView({ block: "nearest" }), 160);
       // 상태를 다시 읽어 단추의 말을 맞춘다.
       if (path) setState(AgentBrewStartStateResponseSchema.parse(await request(path)).data);
     }

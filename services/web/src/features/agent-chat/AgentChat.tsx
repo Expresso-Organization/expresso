@@ -1,5 +1,6 @@
 "use client";
-import { createContext, useContext, useMemo, useState, useRef, useEffect } from "react";
+import { createContext, useCallback, useContext, useMemo, useState, useRef, useEffect } from "react";
+import { flushSync } from "react-dom";
 import Link from "next/link";
 import type { Route } from "next";
 import { LogoMark } from "@/components/brand/Logo";
@@ -19,6 +20,7 @@ import { ReplanDraftCard } from "./ReplanDraftCard";
 import { PageEditCard } from "./PageEditCard";
 import { AgentConsentDialog } from "./AgentConsentDialog";
 import { BrewDesignCard } from "./BrewDesignCard";
+import { BrewGenerationCard } from "./BrewGenerationCard";
 import { DesignBrews } from "./design-brews";
 import { BrewInterviewCard } from "./BrewInterviewCard";
 import { BrewMaterialsCard } from "./BrewMaterialsCard";
@@ -131,7 +133,7 @@ function GeneralWelcome() {
 const TOOL_ICONS: Record<string, string> = {
   "기록 목록 확인": "list-bullets", "기록 읽기": "book-open-text", "요건 대조": "list-checks", "새 기록 초안": "note-pencil", "구직 목표 변경": "target", "기록 변경 제안": "pencil-line",
   "보완점 정리": "target", "준비 계획 초안": "calendar-check", "계획 진행 확인": "chart-line-up", "계획 재배치 초안": "arrows-clockwise",
-  "지면 요소 읽기": "cursor-click", "지면 요소 고침": "pencil-simple-line", "포트폴리오 제작": "coffee", "재료 고르기": "list-checks", "AI 대화": "chat-circle-dots", "답 저장": "floppy-disk", "디자인": "palette", "견본 다시 받기": "swatches", "첫 화면 고치기": "pencil-simple-line",
+  "지면 요소 읽기": "cursor-click", "지면 요소 고침": "pencil-simple-line", "포트폴리오 제작": "coffee", "재료 고르기": "list-checks", "AI 대화": "chat-circle-dots", "답 저장": "floppy-disk", "디자인": "palette", "견본 다시 받기": "swatches", "첫 화면 고치기": "pencil-simple-line", "생성": "magic-wand",
 };
 /**
  * 도구 호출 하나를 작업 흔적의 한 단계로 그린다. 결과의 모양으로 단계 아래를 나눈다 — 요건 대조 · 보완점 · 새 기록 · 준비 계획 ·
@@ -156,6 +158,8 @@ const RecordTool: ToolCallMessagePartComponent = props => {
   if (tool?.brewInterview) { const { brewId } = tool.brewInterview; return step(<BrewInterviewCard interview={tool.brewInterview} refreshKey={savedAnswers} continuesInChat={!!state.conversation?.messages.some(message => message.tools.some(item => item.brewDesign?.brewId === brewId))} onDesign={() => state.beginDesign(brewId)} />, null); }
   // 서버가 붙인 「디자인」. 디자인 대화의 답 하나를 그린다. 「첫 화면 보기」만 이 대화의 경로로 보내 그 카드가 대화에 붙는다.
   if (tool?.brewDesign) return step(<BrewDesignCard design={tool.brewDesign} />, null);
+  // 서버가 붙인 「생성」. 진행은 제작별 상태가 읽고, 지면이 서면 가운데 무대로 간다.
+  if (tool?.brewGeneration) return step(<BrewGenerationCard generation={tool.brewGeneration} />, null);
   if (tool?.review) return step(<RequirementReviewCard conversationId={state.id} toolId={tool.id} review={tool.review} />, null);
   if (tool?.gapReview) return step(<GapReviewCard conversationId={state.id} toolId={tool.id} gapReview={tool.gapReview} />, null);
   if (tool?.recordDraft) { const draftId = tool.recordDraft.draftId; return step(<RecordDraftCard draft={tool.recordDraft} disabled={busy} onDecide={decision => state.decideDraft(draftId, decision)} />, null); }
@@ -191,7 +195,7 @@ const convertMessage = (message: AgentMessage): ThreadMessageLike => ({
     { type: "text", text: message.text },
   ],
 });
-export function AgentChat({ job, page, standalone = false, fresh = false, newHref, onRunningChange, ...props }: {
+export function AgentChat({ job, page, standalone = false, fresh = false, newHref, onRunningChange, stageHost = null, ...props }: {
   context?: AgentContext; contextLabel?: string; standalone?: boolean; job?: AgentChatJob;
   /** 참이면 주소에 적힌 대화만 연다. 홈이 쓴다 — 홈의 입력창이 넘긴 말(`agent-handoff`)이 있으면 그 말로 대화를 시작한다. */
   fresh?: boolean;
@@ -201,6 +205,11 @@ export function AgentChat({ job, page, standalone = false, fresh = false, newHre
   page?: AgentChatPage;
   /** 응답 진행 여부가 바뀔 때. 레일이 접혀 있으면 머리의 채팅 버튼이 진행 표시를 그린다. */
   onRunningChange?: ((running: boolean) => void) | undefined;
+  /**
+   * 대화에서 만드는 지면을 여는 자리. 공고 화면이 왼쪽 본문 자리를 준다(대화는 이미 오른쪽 레일에 있다). 주지 않으면 독립 채팅은
+   * 대화 창 안에 자리를 두고, 지면이 서면 지면이 가운데를 차지하고 대화가 오른쪽으로 옮긴다. 그 밖의 자리(다듬기 화면 등)는 열지 않는다.
+   */
+  stageHost?: HTMLElement | null;
 }) {
   const context: AgentContext | undefined = job ? { kind: "job", id: job.id } : page ? { kind: "portfolio", id: page.portfolioId } : props.context;
   const contextLabel = job?.title ?? page?.title ?? props.contextLabel;
@@ -292,6 +301,30 @@ export function AgentChat({ job, page, standalone = false, fresh = false, newHre
   useEffect(() => {
     if (standalone) window.dispatchEvent(new CustomEvent(AGENT_CONVERSATIONS_EVENT, { detail: JSON.parse(conversationRows) }));
   }, [standalone, conversationRows]);
+  // 제작 ID → 그 제작의 「생성」 카드가 가리키는 생성 ID. 마지막이 가장 최근이다.
+  const generationKey = (state.conversation?.messages ?? []).flatMap(message => message.tools).flatMap(tool => (tool.brewGeneration ? [`${tool.brewGeneration.brewId}:${tool.brewGeneration.generationId}`] : [])).join(",");
+  const generationCards = useMemo(() => {
+    const cards: Record<string, string[]> = {};
+    for (const entry of generationKey ? generationKey.split(",") : []) { const [brewId, generationId] = entry.split(":") as [string, string]; (cards[brewId] ??= []).push(generationId); }
+    return cards;
+  }, [generationKey]);
+  /**
+   * 가운데에 열린 지면. 열고 닫을 때 화면 전환으로 잇는다 — 독립 채팅에서는 대화가 오른쪽으로 옮겨 가고 지면이 가운데에 들어온다.
+   * 움직임을 줄이도록 설정했거나 전환을 지원하지 않는 브라우저에서는 바로 바꾼다.
+   */
+  const [stageSlot, setStageSlot] = useState<HTMLDivElement | null>(null);
+  const host = stageHost ?? (standalone ? stageSlot : null);
+  const [stagedBrew, setStagedBrew] = useState<string | null>(null);
+  const stagedRef = useRef(stagedBrew);
+  stagedRef.current = stagedBrew;
+  const onStage = useCallback((brewId: string, open: boolean) => {
+    const next = open ? brewId : stagedRef.current === brewId ? null : stagedRef.current;
+    if (next === stagedRef.current) return;
+    const apply = () => flushSync(() => setStagedBrew(next));
+    if (!document.startViewTransition || window.matchMedia("(prefers-reduced-motion: reduce)").matches) apply();
+    else document.startViewTransition(apply);
+  }, []);
+  const staged = !!stagedBrew && !!host && host === stageSlot;
   // 제작 ID → 그 제작의 「디자인」 카드가 가리키는 디자인 대화의 답 ID. 여는 카드는 답 ID가 없다.
   const designKey = (state.conversation?.messages ?? []).flatMap(message => message.tools).flatMap(tool => (tool.brewDesign ? [`${tool.brewDesign.brewId}:${tool.brewDesign.designMessageId ?? ""}`] : [])).join(",");
   const designCards = useMemo(() => {
@@ -309,8 +342,9 @@ export function AgentChat({ job, page, standalone = false, fresh = false, newHre
   return <ChatContext.Provider value={state}><JobContext.Provider value={job ?? null}><PageContext.Provider value={page ?? null}><AssistantRuntimeProvider runtime={runtime}>
     {preview ? <ResourcePreview resource={preview} onClose={() => setPreview(null)} selected={!!state.conversation?.contexts.some(ref => ref.kind === preview.kind && ref.id === preview.id)} disabled={contextDisabled} onToggle={toggleContext} /> : null}
     <AgentConsentDialog open={consentOpen} onOpenChange={setConsentOpen} onConsented={() => setAccess(current => current ? { ...current, consentRequired: false } : current)} />
-    <section ref={root} className={`acf-scope ${styles.root} ${job || page ? styles.rail : standalone ? styles.standalone : styles.panel}`} aria-label="에이전트 채팅">
-      <div className={styles.main}>
+    <section ref={root} className={`acf-scope ${styles.root} ${job || page ? styles.rail : standalone ? styles.standalone : styles.panel}`} aria-label="에이전트 채팅" data-staged={staged ? "true" : undefined}>
+      {standalone && !stageHost ? <div ref={setStageSlot} className={styles.stageSlot} /> : null}
+      <div className={styles.main} style={standalone ? { viewTransitionName: "agent-chat" } : undefined}>
         <header className={styles.header}>
           <div className={styles.heading}><span className={styles.assistantMark}><LogoMark size={22} /></span><div><strong>{state.conversation?.title ?? "새 대화"}</strong><span>{running ? "답변을 준비하고 있어요" : "Expresso AI"}</span></div></div>
           <div className={styles.headerActions}><span className={standalone ? styles.compactHistory : undefined}><ConversationSwitcher contexts={state.conversation?.contexts ?? []} contextDisabled={contextDisabled} onToggleContext={toggleContext} onPreview={setPreview} currentId={state.id} conversations={state.list} disabled={state.pending} onSelect={state.select} /></span>{!standalone ? <Link aria-label="독립 채팅으로 크게 열기" title="크게 열기" href={{ pathname: "/agent", query: state.id ? { chat: state.id } : {} }}><Icon name="arrows-out-simple" size={17} /></Link> : null}<Button variant="ghost" size="icon" aria-label="새 대화" title="새 대화" disabled={state.pending} onClick={() => newHref ? router.push(newHref as Route) : state.select(null)}><Icon name="note-pencil" size={18} /></Button></div>
@@ -329,7 +363,7 @@ export function AgentChat({ job, page, standalone = false, fresh = false, newHre
         {access?.enabled && access.consentRequired ? <div role="alert" className={styles.apiKeyField}><p>채팅을 시작하려면 AI 사용 동의가 필요합니다.</p><small>대화와 연결된 커리어 기록을 AI 모델에 전달합니다.</small><Button variant="outline" onClick={() => setConsentOpen(true)}>AI 사용 동의 확인</Button></div> : null}
         {accessError ? <p role="alert" className={styles.error}>채팅 사용 권한을 확인하지 못했습니다. 새로고침해 주세요.</p> : !access ? <p role="status" className={styles.status}>채팅 사용 권한 확인 중…</p> : !access.enabled ? <p className={styles.status}>에이전트 채팅이 아직 활성화되지 않았습니다.</p> : access.creditsExhausted ? <p role="alert" className={styles.status}>이번 달 AI 크레딧을 모두 썼습니다. 다음 달에 다시 대화할 수 있습니다.</p> : null}
         {/* 디자인 카드가 있는 제작마다 디자인 상태를 하나씩 두고, 그 제작의 카드들이 함께 읽는다. */}
-        <DesignBrews cards={designCards} onDraw={state.drawDesign}>
+        <DesignBrews cards={designCards} generations={generationCards} onDraw={state.drawDesign} onMake={state.startGeneration} stageHost={host} stagedBrew={stagedBrew} onStage={onStage}>
           <div className={styles.thread}><Thread autoFocus={standalone} components={{ Welcome: ChatWelcome, AssistantHeader: AssistantIdentity, ToolFallback: RecordTool, ToolGroup: ExpandedTools, ComposerHeader: ComposerTarget, UserMessageHeader: UserMessageTarget }} /></div>
         </DesignBrews>
         <div className={styles.footnote}><Icon name="check-circle" size={12} /><span>{page ? "지면 고침은 바로 새 판으로 저장되고 카드에서 되돌릴 수 있습니다." : "기록의 변경은 확인 후 적용됩니다."}</span></div>
@@ -337,7 +371,7 @@ export function AgentChat({ job, page, standalone = false, fresh = false, newHre
         {lastRun?.error ? <div role="alert" className={`${styles.error} ${styles.runNotice}`}><span>{lastRun.error}</span>{retryButton}</div> : null}
         {state.issue ? <p role="alert" className={styles.error}>{state.issue}</p> : null}
       </div>
-      {standalone ? <ConversationSwitcher contexts={state.conversation?.contexts ?? []} contextDisabled={contextDisabled} onToggleContext={toggleContext} onPreview={setPreview} inline currentId={state.id} conversations={state.list} disabled={state.pending} onSelect={state.select} /> : null}
+      {standalone && !staged ? <ConversationSwitcher contexts={state.conversation?.contexts ?? []} contextDisabled={contextDisabled} onToggleContext={toggleContext} onPreview={setPreview} inline currentId={state.id} conversations={state.list} disabled={state.pending} onSelect={state.select} /> : null}
     </section>
   </AssistantRuntimeProvider></PageContext.Provider></JobContext.Provider></ChatContext.Provider>;
 }

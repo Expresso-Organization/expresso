@@ -17,7 +17,12 @@ export interface AgentBrewDeps {
   /** 끝난 분석으로 제작을 만든다. 부를 때마다 새 제작이 생기므로 한 번만 부른다(`MaterialsApi.createBrew`). */
   createBrew(userId: string, input: { jobAnalysisId: string; lengthPreset: "single" }): Promise<{ brewId: string }>;
   /** 제작이 어디까지 갔고 기록을 몇 건 골랐는가. 지웠거나(휴지통) 없는 제작이면 null이다(`MaterialsApi.getState`). */
-  brewState(userId: string, brewId: string): Promise<{ status: BrewStatus; selected: number } | null>;
+  brewState(userId: string, brewId: string): Promise<{ status: BrewStatus; selected: number; generation: BrewGeneration | null } | null>;
+  /**
+   * 디자인 대화에서 고른 첫 화면으로 생성을 맡긴다. 줄에 있거나 도는 생성이 있으면 새로 맡기지 않고 그 생성이다.
+   * 고른 첫 화면이 없거나 이미 만든 포트폴리오가 있으면 거절한다(`AgentChatError`).
+   */
+  startGeneration(userId: string, brewId: string): Promise<{ generationId: string }>;
   /** 질문 0개의 인터뷰 세션을 열고 제작을 AI 대화 단계로 옮긴다. 이미 세션이 있으면 그 세션이다(`InterviewApi.openConversation`). */
   openInterview(userId: string, brewId: string): Promise<unknown>;
   /** 고를 수 있는 근거와 저장한 질문(`InterviewApi.conversationState`). AI를 부르지 않는다. */
@@ -48,8 +53,12 @@ export interface AgentBrewDesignState {
   /** 고른 첫 화면의 이름. */
   selected: string | null;
 }
+/** 제작의 최근 생성. */
+export interface BrewGeneration { id: string; status: "queued" | "running" | "done" | "failed" }
+/** 생성이 줄에 있거나 도는 중인가. */
+export const generating = (generation: BrewGeneration | null | undefined) => generation?.status === "queued" || generation?.status === "running";
 /** 이 대화에서 만든 제작 가운데 아직 남아 있는 것. */
-export interface LiveBrew { id: string; status: BrewStatus; selected: number }
+export interface LiveBrew { id: string; status: BrewStatus; selected: number; generation?: BrewGeneration | null }
 /** 제작이 가 있는 단계. 재료 · AI 대화 단계는 대화의 카드가 맡고, 그 뒤는 아직 지금의 화면이 맡는다. */
 export const brewStep = (status: BrewStatus) => (status === "draft" ? "materials" : status === "interviewing" ? "interview" : "design");
 export type BrewStatus = "draft" | "interviewing" | "recipe" | "generating" | "done";
