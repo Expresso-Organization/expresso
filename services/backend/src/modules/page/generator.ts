@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 
 import {
   PAGE_PROMPT_VERSION,
+  PAGE_SCRIPT_BREAK,
   PageDraftSchema,
   pageKitPrompt,
   pagePolicyPrompt,
@@ -385,6 +386,9 @@ export function promptClosing(context: PageGenerationContext): string[] {
       lines.push("```js");
       lines.push(context.previous.script);
       lines.push("```");
+      // 첫 화면의 스크립트와 이어 쓴 스크립트는 따로 도는 모듈이다. 한 모듈로 합치면 같은 import가 두 번 선언되어 둘 다 멈춘다.
+      if (context.previous.script.includes(PAGE_SCRIPT_BREAK.trim()))
+        lines.push(`스크립트는 \`${PAGE_SCRIPT_BREAK.trim()}\` 줄로 나뉜 모듈들이다. 고친 \`script\`에도 그 줄을 그대로 두어 모듈을 나눈다.`);
     }
     lines.push("");
     lines.push(`## 지시\n${context.instruction}`);

@@ -247,6 +247,15 @@ describe("정리본 · 디자인 지침 자유 생성", () => {
       expect(plain.script).toBeUndefined();
     });
 
+    it("지시로 고칠 때 직전 지면의 스크립트를 보이고, 모듈이 나뉘어 있으면 그 경계를 지키라고 한다", async () => {
+      const ai = new ScriptedAiClient(() => ({ plan, ...draft }));
+      const script = `hero()${PAGE_SCRIPT_BREAK}rings()`;
+      await freePageGenerator(ai).generate({ ...context, previous: { html: "<section>앞 판</section>", css: "", script }, instruction: "더 차분하게" });
+      const prompt = ai.calls.at(-1)!.prompt;
+      expect(prompt).toContain(`\`\`\`js\n${script}\n\`\`\``);
+      expect(prompt).toContain("줄로 나뉜 모듈들이다");
+    });
+
     it("지금 지면을 지시로 고칠 때는 첫 화면을 다시 붙이지 않는다 — 직전 지면에 이미 있다", async () => {
       const ai = new ScriptedAiClient(() => ({ plan, ...draft }));
       const previous = { html: `${seed.html}<section>앞 판</section>`, css: seed.css };

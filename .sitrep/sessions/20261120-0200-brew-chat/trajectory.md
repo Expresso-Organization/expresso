@@ -228,3 +228,14 @@
 ### ~19:20 · T12.7 완료 · 전체 검사
 - `pnpm typecheck` 통과 · `pnpm test` 통과(백엔드 701 · 웹 518 등)
 - `pnpm test:infra` 1건 실패 → 단독 재실행 9/9 통과: `structured.mongo.integration.test.ts`의 5006ms 시간 초과(부하), 구조화 지면은 스크립트와 무관
+
+### ~19:35 · T12 발견 · 틀의 자기 이동으로 글이 빠져나감
+- 적대 스크립트 `location = "https://…?d=" + 글` → 앱 문서에 CSP가 없을 때 바깥에 닿음(디자인 대화 · 다듬기 틀에는 비공개 기록이 있음)
+- 앱 문서 `frame-src 'self'`로 막힘 확인(srcdoc 틀은 그대로 뜸) → `next.config.ts` headers에 추가
+- `window.open`: 공개 지면만 `allow-popups`(링크용) — 지면 글은 이미 공개라 남는 위험으로 둠. 미리보기 틀에는 `allow-popups` 없음
+
+### ~19:40 · T12.8 완료 · 전체 생성으로 확인
+- 고른 canvas 첫 화면으로 생성 180초: 저장 행의 스크립트 = 첫 화면 스크립트 한 모듈(2,777자). 생성 중 무대는 스크립트 없이 CSS 첫 모습
+- 다듬기 화면: 자유 지면은 `PagePreview`가 그림 → 스크립트가 있으면 `allow-scripts`로 돌게 고침. headless Chrome에서 움직임 확인(브라우저 창은 숨김 상태라 틀을 그리지 않았음)
+- 배포 문서: `withSiteTracker` 결과의 정책 1개, 추적 스크립트 `complete` 알림과 그림이 함께 돎, 콘솔 오류 0
+- 되돌리기 · 고침 되돌리기는 옛 판에서 새 판을 지어 그 판의 스크립트를 잇는다(섞이지 않음)

@@ -18,3 +18,5 @@ date: 2026-11-20
 
 - 적대 스크립트: `fetch` · `new Image().src` · `parent.document` · `document.cookie` · `localStorage` · `eval` · 바깥 스크립트 · WebSocket이 모두 실패하고 바깥에 닿은 요청이 0건. 추적 메시지 흉내는 막지 못한다(남는 위험).
 - 정상 스크립트: canvas 2D · three.js 장면이 세 자리에서 그려진다.
+- 틀의 자기 이동: 앱 문서에 `frame-src 'self'`가 있으면 막힌다. 미리보기 틀(디자인 대화 · 다듬기)에는 `allow-popups`가 없다.
+- 전체 생성 한 번: 첫 화면 스크립트가 지면 스크립트의 첫 모듈로 저장되고, 다듬기 화면(`PagePreview`)에서 돈다. 배포 문서(`withSiteTracker`)는 정책이 하나이고 추적 스크립트와 그림이 함께 돈다.
