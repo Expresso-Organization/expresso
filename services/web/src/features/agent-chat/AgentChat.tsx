@@ -251,6 +251,15 @@ export function AgentChat({ job, page, standalone = false, fresh = false, chatId
   const canSend = !!access?.enabled && !access.consentRequired && !access.creditsExhausted;
   const running = state.conversation?.run?.status === "running";
   useEffect(() => { onRunningChange?.(running); }, [onRunningChange, running]);
+  // 답변 한 번이 끝나면 크레딧이 줄었다. 사이드바는 공용 레이아웃이라 화면을 옮겨도 다시 읽지 않으므로
+  // 여기서 한 번 다시 그린다. 같은 대화 안에서 실행 중 → 끝남으로 바뀔 때만 부른다.
+  const runSeen = useRef<{ id: string | null; running: boolean }>({ id: null, running: false });
+  useEffect(() => {
+    const id = state.conversation?.id ?? null;
+    const before = runSeen.current;
+    runSeen.current = { id, running };
+    if (before.id === id && before.running && !running) router.refresh();
+  }, [router, running, state.conversation?.id]);
   const serverMessages = state.conversation?.messages;
   const messages = useMemo(() => {
     const list = serverMessages ?? [];
