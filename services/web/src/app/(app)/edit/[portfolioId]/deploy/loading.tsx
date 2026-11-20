@@ -14,7 +14,7 @@ export default function Loading() {
   return (
     <>
       <DocumentHeader crumbs={[null, "배포"]} />
-      <AppBody>
+      <AppBody pending>
         <SkelRegion label="배포 화면을 불러오는 중" className={styles.body}>
           <div className={styles.inner}>
             <h1 className={styles.title}>배포</h1>

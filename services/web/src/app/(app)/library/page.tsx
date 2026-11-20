@@ -1,6 +1,7 @@
 import type { CareerCategory } from "@expresso/contracts";
 import type { Route } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 
 import { AppBody, AppHeader } from "@/components/shell/AppShell";
 import { SearchAndNotifications } from "@/components/shell/HeaderActions";
@@ -8,7 +9,7 @@ import { SidebarCategories } from "@/components/shell/SidebarCategories";
 import { Icon } from "@/components/ui/Icon";
 import { requireSession } from "@/lib/require-session";
 
-import { PendingPane, PortfoliosPane, RecordsPane, portfolioCount } from "./LibraryPanes";
+import { PendingPane, PortfoliosPane, PortfoliosPaneSkeleton, RecordsPane, portfolioCount } from "./LibraryPanes";
 import {
   KIND_ICON,
   KIND_LABEL,
@@ -47,7 +48,12 @@ export default async function LibraryPage({
           <LibraryList categories={session.categories} selection={selection} counts={counts} />
           <div className={styles.pane}>
             {selection.kind === "portfolios" ? (
-              <div className={styles.paneScroll}><PortfoliosPane accessToken={session.accessToken} /></div>
+              // 지면 칸만 따로 기다린다 — 왼쪽 목록은 지면 목록을 기다리지 않고 먼저 선다.
+              <div className={styles.paneScroll}>
+                <Suspense fallback={<PortfoliosPaneSkeleton count={counts.portfolios} />}>
+                  <PortfoliosPane accessToken={session.accessToken} />
+                </Suspense>
+              </div>
             ) : selection.kind === "records" ? (
               <RecordsPane accessToken={session.accessToken} category={selection.category} />
             ) : (

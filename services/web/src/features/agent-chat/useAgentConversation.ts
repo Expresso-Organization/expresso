@@ -13,10 +13,12 @@ export async function agentRequest(path: string, body?: unknown) {
  * `restore: "context"`는 처음 열 대화를 브라우저의 마지막 대화가 아니라 `context`가
  * 연결된 가장 최근 대화로 고른다. 공고 화면이 쓴다 — 다른 공고의 대화가 열리지 않게.
  * `restore: "url"`은 주소에 적힌 대화(`?chat=`)만 연다. 홈이 쓴다 — 주소에 대화가 없으면 시작 화면이다.
+ * `initialId`는 서버가 주소에서 읽은 그 대화다. 첫 렌더부터 그 대화를 불러오는 상태로 시작해, 주소를 읽는 효과가
+ * 돌기 전의 한 프레임에 빈 대화의 시작 화면이 지나가지 않는다.
  */
-export function useAgentConversation(context?: AgentContext, options: { restore?: "context" | "url" } = {}) {
+export function useAgentConversation(context?: AgentContext, options: { restore?: "context" | "url"; initialId?: string | null } = {}) {
   const { restore } = options;
-  const [id, setId] = useState<string | null>(null);
+  const [id, setId] = useState<string | null>(options.initialId ?? null);
   const [resolving, setResolving] = useState(restore === "context" && !!context);
   const [conversation, setConversation] = useState<AgentConversation | null>(null);
   const [list, setList] = useState<ReturnType<typeof AgentConversationListSchema.parse>["data"]>([]);

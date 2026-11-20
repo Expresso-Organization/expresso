@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import type { AgentPageEdit } from "@expresso/contracts";
+import { useChangedSinceMount } from "@/components/motion/useChangedSinceMount";
 import { Icon } from "@/components/ui/Icon";
 import { Button } from "@/components/ui/button";
 import styles from "./PageEditCard.module.css";
@@ -13,6 +14,8 @@ import styles from "./PageEditCard.module.css";
  * 되돌리기는 AI를 부르지 않는다.
  */
 export function PageEditCard({ edit, latest, disabled, onUndo }: { edit: AgentPageEdit; latest?: boolean | undefined; disabled: boolean; onUndo(): Promise<void> }) {
+  // 되돌린 결과만 떠오른다. 대화를 다시 열어 이미 되돌린 카드는 움직이지 않는다.
+  const swapped = useChangedSinceMount(edit.undone ? "undone" : "saved");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const undo = async () => {
@@ -37,7 +40,7 @@ export function PageEditCard({ edit, latest, disabled, onUndo }: { edit: AgentPa
     </ul>
     {error ? <p role="alert" className={styles.error}>{error}</p> : null}
     {edit.undone
-      ? <p className={styles.done}><Icon name="arrow-counter-clockwise" size={13} />앞 판으로 되돌렸습니다.</p>
+      ? <p className={`${styles.done} ${swapped ? "ex-anim-reveal" : ""}`}><Icon name="arrow-counter-clockwise" size={13} />앞 판으로 되돌렸습니다.</p>
       : <div className={styles.actions}>
         {latest === false ? <span className={styles.hint}>그 뒤에 다른 편집이 있어 되돌릴 수 없습니다.</span> : <span className={styles.hint}>판 {edit.revision + 1}에 저장했습니다.</span>}
         <Button variant="outline" size="sm" disabled={busy || disabled || latest === false} onClick={() => void undo()}>

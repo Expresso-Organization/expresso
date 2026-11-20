@@ -17,7 +17,7 @@ export default function Loading() {
       <AppHeader title="새 포트폴리오" />
       {/* 이 자리는 언제나 01 공고 분석의 입구다 — 본 화면과 같은 줄을 세운다 */}
       <WizardSteps current="analyze" situation="예상 3분" />
-      <AppBody>
+      <AppBody pending>
         <SkelRegion label="불러오는 중" className={styles.page}>
           <div className={styles.head}>
             <h1 className={styles.title}>어디에 지원하나요</h1>
