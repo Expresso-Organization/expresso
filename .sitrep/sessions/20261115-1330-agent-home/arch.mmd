@@ -1,20 +1,21 @@
 flowchart TD
-  SEND[입력창 · 제안 동작] --> OPEN[HomeHandoff.open]
-  OPEN --> PEND[대기 중 내용 옅게]
-  OPEN --> NAV[router.push<br/>agent-chat-open]
-  NAV --> VT[View Transition]
-  VT --> LEAVE[홈 빠짐 160ms]
-  VT --> MORPH[입력창 짝 280ms]
-  VT --> ARRIVE[대화 화면 220ms]
-  OPEN --> MEM[agent-handoff 메모리]
-  MEM --> BUBBLE[첫 렌더 말풍선 떠오름]
-  BUBBLE --> HOLD[보낼 수 없으면 거둠]
-  ROOT[다른 이동 교차 끔] --> VT
-  PR{PR 머지 D5} --> DEPLOY[운영 배포]
+  NAV[화면 이동] --> SK[스켈레톤 150ms 숨김]
+  SK --> RV[AppBody 떠오름 CSS]
+  CHAT[지난 대화] --> ID[첫 렌더부터 대화 id]
+  ID --> FADE[기록 도착 떠오름]
+  NEW[새 대화] --> CLOSE[agent-chat-close 전환]
+  FEED[제안 갱신] --> CARD[카드 빠짐 · 자리 옮김]
+  FEED --> SHIFT[스크롤 당김 홈 교차]
+  VIEW[기록 보기] --> XF[보기 모양 교차]
+  LIB[라이브러리] --> PANE[지면 칸 Suspense]
+  APPR[승인 카드] --> SWAP[바뀐 문구만 떠오름]
+  ONB[온보딩] --> PANEL[본문 이어짐]
+  PR{PR 머지 D7} --> DEPLOY[운영 배포]
+  SIDE[사이드바 다시 그림 T20]
   classDef done fill:#d1fae5,stroke:#059669
   classDef doing fill:#fef3c7,stroke:#d97706
   classDef decide fill:#fee2e2,stroke:#dc2626
   classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4
-  class SEND,OPEN,PEND,NAV,VT,LEAVE,MORPH,ARRIVE,MEM,BUBBLE,HOLD,ROOT done
+  class NAV,SK,RV,CHAT,ID,FADE,NEW,CLOSE,FEED,CARD,SHIFT,VIEW,XF,LIB,PANE,APPR,SWAP,ONB,PANEL done
   class PR decide
-  class DEPLOY todo
+  class DEPLOY,SIDE todo

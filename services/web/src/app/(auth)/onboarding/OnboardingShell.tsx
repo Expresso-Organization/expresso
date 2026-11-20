@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { ViewTransition } from "@/components/motion/ViewTransition";
 import { LogoMark, Wordmark } from "@/components/brand/Logo";
 import { Icon } from "@/components/ui/Icon";
 
@@ -77,7 +78,13 @@ export function OnboardingShell({
       </div>
 
       <div className={styles.body}>
-        <div className={`${styles.panel} ${wide ? styles.panelWide : ""}`}>{children}</div>
+        {/*
+          단계마다 다른 화면이지만 본문은 같은 이름을 나눠, 옛 본문이 옅어지며 새 본문이 떠오르고 크기를 맞춘다.
+          머리줄의 단계 표시와 아래 바는 바로 바뀐다. 길이와 곡선은 styles/global.css의 `onboarding-step`.
+        */}
+        <ViewTransition name="onboarding-panel" share="onboarding-step" default="none">
+          <div className={`${styles.panel} ${wide ? styles.panelWide : ""}`}>{children}</div>
+        </ViewTransition>
       </div>
 
       <div className={styles.foot}>

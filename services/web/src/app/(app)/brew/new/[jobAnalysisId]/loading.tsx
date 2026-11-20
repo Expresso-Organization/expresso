@@ -16,7 +16,7 @@ export default function Loading() {
     <>
       <AppHeader title="새 포트폴리오" />
       <WizardSteps current="analyze" situation="예상 3분" />
-      <AppBody>
+      <AppBody pending>
         <SkelRegion label="공고 분석 상태를 불러오는 중" className={styles.wait}>
           <div className={styles.waitCard}>
             <Skel w={34} circle style={{ marginBottom: 4 }} />
