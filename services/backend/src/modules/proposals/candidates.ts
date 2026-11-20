@@ -1,3 +1,5 @@
+import type { ActivityKind } from "@expresso/contracts";
+
 /**
  * 능동 제안의 후보 고르기. 순수 함수만 둔다.
  *
@@ -45,7 +47,7 @@ export interface JobInput {
 
 export interface ActivityInput {
   id: string;
-  kind: "contest" | "hackathon";
+  kind: ActivityKind;
   title: string;
   host: string;
   fields: string[];
