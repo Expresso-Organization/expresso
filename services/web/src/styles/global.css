@@ -421,14 +421,16 @@ svg {
 }
 
 /*
- * 홈 제안 카드(app/(app)/home/ProposalFeed.tsx). 빠지는 카드는 옅어지고(--ex-motion-quick), 남은 카드는 빈자리로
+ * 홈 제안 카드(app/(app)/home/ProposalFeed.tsx)와 기록 보기 모양 바꾸기(CareerViewShell.tsx). 빠지는 카드 · 보기는 옅어지고(--ex-motion-quick), 남은 카드는 빈자리로
  * 옮겨 가며(--ex-motion-panel), 새 카드는 빠짐이 시작된 뒤 떠오른다(--ex-motion-glide).
  */
-::view-transition-old(.card-out) {
+::view-transition-old(.card-out),
+::view-transition-old(.view-out) {
   animation: 160ms ease both ex-vt-fade-out;
 }
 
-::view-transition-new(.card-in) {
+::view-transition-new(.card-in),
+::view-transition-new(.view-in) {
   animation: 220ms cubic-bezier(0.23, 1, 0.32, 1) 80ms both ex-vt-fade-in;
 }
 
