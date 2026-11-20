@@ -1,0 +1,101 @@
+/*
+ * 우측 채팅 레일 — 화면의 자료(공고 · 기록)를 두고 나누는 대화 하나가 레일 높이를 다 쓴다.
+ * 여백은 채팅이 갖고, 스크롤도 채팅의 메시지 목록 안에서만 일어난다.
+ * 레일을 담는 화면의 본문은 가로 flex(왼쪽 열 + 레일)이고, 1023px 이하에서 세로로 쌓는 일은 화면이 맡는다.
+ */
+.rail {
+  position: relative;
+  width: var(--chat-rail-width, 316px);
+  flex-shrink: 0;
+  min-height: 0;
+  border-left: 1px solid var(--ex-border);
+  background: var(--ex-bg);
+  display: flex;
+  flex-direction: column;
+}
+
+/* 저장값이 그려진 다음부터, 끄는 중이 아닐 때만 너비가 부드럽게 바뀐다. */
+.rail[data-animated="true"]:not([data-resizing="true"]) {
+  transition: width var(--ex-motion-panel);
+}
+
+/* 접으면 레일이 사라지고 본문이 그 자리를 쓴다. 채팅은 마운트된 채 감춰 둔다. */
+.rail[data-collapsed="true"] {
+  width: 0;
+  border-left: 0;
+  overflow: hidden;
+}
+
+/*
+ * 세로 방향이어야 채팅 루트가 가로로 늘어나 레일 폭을 다 쓴다. 가로 방향이면 채팅 루트가 내용 폭으로
+ * 줄어, 대화가 없는 첫 화면에서 오른쪽이 비어 보인다. 높이는 채팅 루트의 `height: 100%`가 정한다.
+ */
+.railChat {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.railChat[hidden] {
+  display: none;
+}
+
+/* 왼쪽 경계 핸들 — 문서 패널(`DocumentPanel`)의 핸들과 같은 모양이다. */
+.railHandle {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  bottom: 0;
+  left: -5px;
+  width: 10px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.railHandle::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 4px;
+  width: 1px;
+  content: "";
+  transition: background var(--ex-motion-quick), width var(--ex-motion-quick);
+}
+
+.railHandle:hover::after,
+.railHandle:focus-visible::after,
+.rail[data-resizing="true"] .railHandle::after {
+  width: 2px;
+  background: var(--ex-fg-muted);
+}
+
+/* 머리의 접기 · 펼치기 버튼. 모양은 화면의 머리 버튼을 따르고, 여기서는 점의 기준 자리만 잡는다. */
+.toggle {
+  position: relative;
+}
+
+/* 접힌 채 응답이 진행 중일 때의 점. */
+.running {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ex-accent);
+}
+
+@media (max-width: 1023px) {
+  /* 레일이 본문 아래로 내려가는 폭에서는 접지 않으므로 버튼도 없다. 화면의 머리 버튼 규칙보다 앞서도록 요소를 붙인다. */
+  button.toggle {
+    display: none;
+  }
+
+  .rail {
+    width: auto;
+    border-left: none;
+    border-top: 1px solid var(--ex-border);
+  }
+}

@@ -12,3 +12,4 @@
 | [20261120-0230-expresso-ai-consultant](sessions/20261120-0230-expresso-ai-consultant/session.md) | Expresso AI 커리어 컨설턴트 | 구현 중 | 95% |
 | [20261120-1450-publish-flow](sessions/20261120-1450-publish-flow/session.md) | 편집에서 배포 · 재배포 · 공개 중단까지 이어지는 배포 흐름 | 완료됨 | 100% |
 | [20261120-2230-career-editor-design](sessions/20261120-2230-career-editor-design/session.md) | 커리어 기록 편집기 디자인 시스템 정합 | 완료됨 | 100% |
+| [20261121-1500-record-chat-rail](sessions/20261121-1500-record-chat-rail/session.md) | 커리어 기록 화면 채팅 우측 레일 배치 | 완료됨 | 100% |

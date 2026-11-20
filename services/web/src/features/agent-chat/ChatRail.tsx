@@ -1,20 +1,19 @@
 "use client";
 
-import type { CSSProperties, KeyboardEvent, PointerEvent as ReactPointerEvent, ReactNode, RefObject } from "react";
+import type { ComponentProps, CSSProperties, KeyboardEvent, PointerEvent as ReactPointerEvent, ReactNode, RefObject } from "react";
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { Icon } from "@/components/ui/Icon";
-import { AgentChat, type AgentChatJob } from "@/features/agent-chat/AgentChat";
 
-import styles from "./page.module.css";
+import { AgentChat } from "./AgentChat";
+
+import styles from "./ChatRail.module.css";
 
 /** 지금의 레일 폭. 대화 안 카드들이 이 폭에 맞춰 그려져 있어 그보다 좁히지 않는다. */
 export const MIN_WIDTH = 316;
-/** 왼쪽 본문이 레일 옆에 서려면 필요한 폭(`page.module.css`의 1023px 규칙 주석). */
+/** 왼쪽 본문이 레일 옆에 서려면 필요한 폭. 이보다 좁으면 화면이 레일을 본문 아래로 내린다. */
 export const LEFT_MIN_WIDTH = 700;
 const STEP = 24;
-const COLLAPSED_KEY = "ex.jobChat.collapsed";
-const WIDTH_KEY = "ex.jobChat.width";
 /** `tokens.css`의 `--ex-bp-lg`. 이보다 좁으면 레일이 본문 아래로 내려간다. */
 const DOCKED = "(min-width: 1024px)";
 
@@ -25,12 +24,15 @@ const read = (key: string) => { try { return window.localStorage.getItem(key); }
 const write = (key: string, value: string) => { try { window.localStorage.setItem(key, value); } catch { /* 기억하지 못할 뿐 동작은 한다. */ } };
 
 /**
- * 공고 채팅 레일의 접힘과 너비.
+ * 채팅 레일의 접힘과 너비.
  *
  * 레일이 본문 옆에 설 때(≥1024px)만 접고 늘린다. 너비는 316px부터 본문 폭에서 왼쪽 열 700px을 뺀
  * 값까지이고, 왼쪽 앱 사이드바를 접고 펴서 본문 폭이 바뀌어도 그 범위로 다시 맞춘다.
+ * 접힘 · 너비는 화면마다 따로 기억한다(`storageKey`.collapsed · `storageKey`.width).
  */
-export function useJobChatRail(container: () => HTMLElement | null) {
+export function useChatRail(container: () => HTMLElement | null, storageKey: string) {
+  const collapsedKey = `${storageKey}.collapsed`;
+  const widthKey = `${storageKey}.width`;
   const [docked, setDocked] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [width, setWidth] = useState(MIN_WIDTH);
@@ -47,8 +49,8 @@ export function useJobChatRail(container: () => HTMLElement | null) {
       if (!media.matches) return;
       const limit = measure();
       setMax(limit);
-      setCollapsed(read(COLLAPSED_KEY) === "true");
-      const stored = Number(read(WIDTH_KEY));
+      setCollapsed(read(collapsedKey) === "true");
+      const stored = Number(read(widthKey));
       setWidth(current => Math.round(Math.min(Math.max(Number.isFinite(stored) && stored > 0 ? stored : current, MIN_WIDTH), limit)));
     };
     apply();
@@ -61,37 +63,37 @@ export function useJobChatRail(container: () => HTMLElement | null) {
     });
     if (element) observer?.observe(element);
     return () => { media.removeEventListener("change", apply); observer?.disconnect(); };
-  }, [container]);
+  }, [container, collapsedKey, widthKey]);
 
   useEffect(() => { const frame = requestAnimationFrame(() => setAnimated(true)); return () => cancelAnimationFrame(frame); }, []);
 
   return {
     docked, collapsed, width, max, animated,
-    setCollapsed: (next: boolean) => { setCollapsed(next); write(COLLAPSED_KEY, String(next)); },
+    setCollapsed: (next: boolean) => { setCollapsed(next); write(collapsedKey, String(next)); },
     /** 끄는 중에는 저장하지 않고, 손을 뗄 때 `commit`으로 한 번 저장한다. */
     resize: (next: number) => setWidth(clamp(next)),
-    commit: (next: number) => { const value = clamp(next); setWidth(value); write(WIDTH_KEY, String(value)); },
+    commit: (next: number) => { const value = clamp(next); setWidth(value); write(widthKey, String(value)); },
   };
 }
 
-type RailValue = ReturnType<typeof useJobChatRail> & { aside: RefObject<HTMLElement | null>; running: boolean; setRunning: (running: boolean) => void };
+type RailValue = ReturnType<typeof useChatRail> & { aside: RefObject<HTMLElement | null>; running: boolean; setRunning: (running: boolean) => void };
 const RailContext = createContext<RailValue | null>(null);
 function useRail() {
   const value = useContext(RailContext);
-  if (!value) throw new Error("공고 채팅 레일은 JobChatRailProvider 안에서만 쓸 수 있습니다.");
+  if (!value) throw new Error("채팅 레일은 ChatRailProvider 안에서만 쓸 수 있습니다.");
   return value;
 }
 
 /**
- * 공고 상세의 머리(접기 · 펼치기 버튼)와 레일이 함께 보는 상태.
+ * 화면의 머리(접기 · 펼치기 버튼)와 레일이 함께 보는 상태.
  *
  * 접기 버튼은 페이지 머리에, 레일은 본문 오른쪽에 있어 둘을 감싸는 자리에서 상태를 든다.
  * 최대 너비는 레일이 들어 있는 본문의 폭으로 정하므로 레일의 `<aside>`를 여기서 참조한다.
  */
-export function JobChatRailProvider({ children }: { children: ReactNode }) {
+export function ChatRailProvider({ storageKey, children }: { storageKey: string; children: ReactNode }) {
   const aside = useRef<HTMLElement>(null);
   const container = useCallback(() => aside.current?.parentElement ?? null, []);
-  const rail = useJobChatRail(container);
+  const rail = useChatRail(container, storageKey);
   const [running, setRunning] = useState(false);
   return <RailContext.Provider value={{ ...rail, aside, running, setRunning }}>{children}</RailContext.Provider>;
 }
@@ -100,21 +102,24 @@ export function JobChatRailProvider({ children }: { children: ReactNode }) {
  * 머리의 채팅 접기 · 펼치기 버튼. 레일이 본문 옆에 설 때(≥1024px)만 보인다 — 첫 렌더에서
  * 자리를 잡아 두고, 좁은 폭에서는 CSS가 감춘다. 접힌 채 응답이 진행 중이면 점을 하나 둔다.
  */
-export function JobChatToggle({ className, labelClassName }: { className?: string | undefined; labelClassName?: string | undefined }) {
+export function ChatRailToggle({ className, labelClassName }: { className?: string | undefined; labelClassName?: string | undefined }) {
   const rail = useRail();
   const open = !(rail.docked && rail.collapsed);
   const label = open ? "채팅 접기" : "채팅 펼치기";
   return (
-    <button type="button" className={`${className ?? ""} ${styles.chatToggle}`} aria-label={label} title={label} aria-pressed={open} onClick={() => rail.setCollapsed(open)}>
+    <button type="button" className={`${className ?? ""} ${styles.toggle}`} aria-label={label} title={label} aria-pressed={open} onClick={() => rail.setCollapsed(open)}>
       <Icon name="chat-circle-dots" weight={open ? "fill" : "regular"} size={16} color={open ? "var(--ex-accent-text)" : "var(--ex-fg-muted)"} />
       <span className={labelClassName}>{label}</span>
-      {!open && rail.running ? <span className={`${styles.chatRunning} ex-anim-pulse`} role="status" aria-label="응답을 준비하고 있어요" /> : null}
+      {!open && rail.running ? <span className={`${styles.running} ex-anim-pulse`} role="status" aria-label="응답을 준비하고 있어요" /> : null}
     </button>
   );
 }
 
-/** 공고 상세 우측 레일. 채팅을 감싸고 왼쪽 경계 핸들을 그린다. 접히면 폭이 0이 된다. */
-export function JobChatRail({ job }: { job: AgentChatJob }) {
+/** 레일의 대화가 어떤 자료를 두고 나누는 것인지. 공고는 `job`, 그 밖의 자료는 `context`와 이름을 넘긴다. */
+type ChatRailProps = Pick<ComponentProps<typeof AgentChat>, "job" | "context" | "contextLabel">;
+
+/** 화면 우측 레일. 채팅을 감싸고 왼쪽 경계 핸들을 그린다. 접히면 폭이 0이 된다. */
+export function ChatRail(props: ChatRailProps) {
   const rail = useRail();
   const [resizing, setResizing] = useState(false);
   const drag = useRef<{ startX: number; startWidth: number; width: number } | null>(null);
@@ -168,7 +173,7 @@ export function JobChatRail({ job }: { job: AgentChatJob }) {
       data-collapsed={collapsed ? "true" : "false"}
       data-resizing={resizing ? "true" : "false"}
       data-animated={rail.animated ? "true" : "false"}
-      style={rail.docked ? ({ "--job-chat-width": `${rail.width}px` } as CSSProperties) : undefined}
+      style={rail.docked ? ({ "--chat-rail-width": `${rail.width}px` } as CSSProperties) : undefined}
     >
       {rail.docked && !collapsed ? (
         <div
@@ -186,7 +191,7 @@ export function JobChatRail({ job }: { job: AgentChatJob }) {
       ) : null}
       {/* 접혀도 채팅은 마운트된 채로 둔다 — 입력 중인 글과 진행 중인 응답이 끊기지 않게. */}
       <div className={styles.railChat} hidden={collapsed}>
-        <AgentChat job={job} onRunningChange={setRunning} />
+        <AgentChat {...props} onRunningChange={setRunning} />
       </div>
     </aside>
   );

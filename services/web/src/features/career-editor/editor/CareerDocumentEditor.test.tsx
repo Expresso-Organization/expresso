@@ -7,7 +7,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as Y from "yjs";
 
 // 채팅의 네트워크·스크롤은 별도 테스트와 실제 브라우저에서 검증합니다.
-vi.mock("@/features/agent-chat/AgentChat", () => ({ AgentChat: () => null }));
 vi.mock("../ai/AiProposalPanel", () => ({ AiProposalPanel: () => <div>제안 패널</div> }));
 // BlockNote는 실제 브라우저에서 검증합니다. 여기서는 편집기가 받는 값만 확인합니다.
 const body = vi.hoisted(() => ({ props: null as null | Record<string, unknown> }));

@@ -21,8 +21,8 @@ date: 2026-11-21
 ## 설계
 
 - `jobs/[jobId]/JobChatRail.tsx`의 훅 · 프로바이더 · 토글 · 레일을 `features/agent-chat/ChatRail.tsx`로 옮긴다.
-  `ChatRailProvider({ storageKey, children })`, `ChatRailToggle({ className, labelClassName })`, `ChatRail({ children: (onRunningChange) => ReactNode })`.
-  레일은 채팅 내용을 모른다 — 공고는 `job`, 기록은 `context`를 넘긴 `AgentChat`을 children으로 준다.
+  `ChatRailProvider({ storageKey, children })`, `ChatRailToggle({ className, labelClassName })`, `ChatRail({ job } | { context, contextLabel })`.
+  레일이 `AgentChat`을 직접 그린다 — 두 페이지가 서버 컴포넌트라 응답 진행 콜백을 넘기는 렌더 함수를 줄 수 없다. 공고는 `job`, 기록은 `context`를 넘긴다.
 - 레일 CSS(`.rail`, `.railChat`, `.railHandle`, `.chatRunning`, 1023px 토글 숨김 · 쌓기)를 공고 `page.module.css`에서 `ChatRail.module.css`로 옮긴다.
   `.body`의 세로 전환과 왼쪽 열 스크롤 해제는 화면마다 자기 CSS에 둔다.
 - 기록 페이지 토글은 기존 `viewStyles.headerMenuButton` 모양에 레이블은 `ex-sr-only`로 둔다.
