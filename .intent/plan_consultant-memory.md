@@ -16,7 +16,7 @@ date: 2026-11-20
 |---|---|
 | `packages/contracts/src/consultant.ts` (새 파일) · `consultant.test.ts` · `index.ts` | 단계, 조건, 요지, 기억, 도구 입력, 응답 |
 | `packages/database/src/documents/consultant.ts` (새 파일) · `documents/index.ts` · `collections.ts` | 프로필 문서와 컬렉션 |
-| `packages/database/src/mongodb-migrations/0035/migration.ts` (새 파일) · `mongo-migrations.ts` · `mongo-build.mjs` · `schema.test.ts` · `migrations.test.ts` | `consultant_profiles` 만들기, 테스트의 마이그레이션 · 컬렉션 수 |
+| `packages/database/src/mongodb-migrations/0036/migration.ts` (새 파일) · `mongo-migrations.ts` · `mongo-build.mjs` · `schema.test.ts` · `migrations.test.ts` | `consultant_profiles` 만들기, 테스트의 마이그레이션 · 컬렉션 수 |
 | `services/backend/src/modules/consultant/` (새 모듈: `index.ts` · `service.ts` · `routes.ts` · `service.integration.test.ts`) | 프로필 읽기 · 단계 · 조건, 라우트 |
 | `services/backend/src/modules/agent-chat/digest.ts` (새 파일) · `digest.test.ts` | 대화의 요지 |
 | `services/backend/src/modules/agent-chat/service.ts` · `service.integration.test.ts` | 기억 읽기, 실행에 넘기기, `updateMemory` 연결, 최근 요지 조회 |
@@ -33,7 +33,7 @@ date: 2026-11-20
 
 ```mermaid
 flowchart TD
-  A["1단계: 계약<br/>consultant.ts"] --> B["2단계: 문서 · 컬렉션 · 마이그레이션 0035<br/>packages/database"]:::risk
+  A["1단계: 계약<br/>consultant.ts"] --> B["2단계: 문서 · 컬렉션 · 마이그레이션 0036<br/>packages/database"]:::risk
   B --> C["3단계: consultant 모듈<br/>service.ts · routes.ts"]
   A --> D["4단계: 대화의 요지<br/>digest.ts"]
   C --> E["5단계: 실행부와 대화 서비스 연결<br/>runtime.ts · service.ts · main.ts"]
