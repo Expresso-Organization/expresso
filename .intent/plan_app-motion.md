@@ -11,8 +11,8 @@ date: 2026-11-20
 ## 순서와 파일
 
 1. **고치기 전 측정** — 스크래치패드 `transition-probe/survey.mjs`로 운영 빌드의 이동을 녹화한다(이미 `survey-5`). 새 장면(새 대화 · 관심 없음 · 보기 바꾸기 · 승인 · 온보딩)은 녹화를 더한다.
-2. **R1 · R2 공용** — `components/motion/Reveal.tsx`(새), `components/shell/AppShell.tsx`(`AppBody pending`), 셸을 쓰는 `loading.tsx`들, `components/shell/Skeleton.tsx`, `styles/global.css`(`reveal-*` · `ex-anim-skeleton` · `ex-anim-appear`). **관문**: 공고 상세 · 구직 목표의 내용 시각이 survey-5(99ms · 58ms)보다 늦지 않고 막대 프레임이 없어야 3 이후로 간다.
-3. **R1 셸 밖** — `app/(app)/edit/[portfolioId]/loading.tsx` · `page.tsx`, `app/(app)/home/page.tsx`(제안 · 위젯 Suspense).
+2. **R1 · R2 공용** — `components/shell/AppShell.tsx`(`AppBody`), `components/shell/Skeleton.tsx`, `styles/global.css`(`ex-anim-reveal` · `ex-anim-skeleton` · `ex-anim-appear`). **관문**: 공고 상세 · 구직 목표의 내용 시각이 survey-5(99ms · 58ms)보다 늦지 않고 막대 프레임이 없어야 3 이후로 간다.
+3. **R1 셸 밖** — `app/(app)/edit/[portfolioId]/Editor.tsx`, `app/(app)/home/HomeWidgets.tsx` · `ProposalFeed.tsx`.
 4. **R3 · R4** — `features/agent-chat/useAgentConversation.ts` · `AgentChat.tsx` · `AgentChat.module.css` · `agent-handoff.ts`, `app/(app)/home/page.tsx` · `HomeStart.tsx`, `styles/global.css`.
 5. **R5** — `app/(app)/home/ProposalFeed.tsx`, `styles/global.css`(`proposal-move`).
 6. **R6** — `features/career-editor/views/CareerViewShell.tsx`.
@@ -35,6 +35,6 @@ date: 2026-11-20
 
 ## 위험
 
-- `AppBody`에 이름이 붙으면 #251 전환에서 홈 전체가 한 장으로 찍혀 입력창 짝이 깨질 수 있다. `default="none"`이면 React가 이름을 붙이지 않는지 프레임으로 확인한다.
+- 첫 설계(뷰 전환 두 갈래)는 관문에서 내용을 약 50ms 늦춰 CSS 애니메이션으로 바꿨다. 같은 이유로 이동마다 도는 뷰 전환은 더하지 않는다.
 - 공고 목록처럼 그림이 보이는 자리는 React가 전환 전에 그림을 최대 500ms 기다린다. 탐색의 내용 시각도 전후로 잰다.
 - 요구사항마다 커밋을 나눠 하나씩 되돌릴 수 있게 한다.

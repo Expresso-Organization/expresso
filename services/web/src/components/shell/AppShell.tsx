@@ -56,8 +56,15 @@ export function AppShell({
 }
 
 /** 헤더 아래 본문 영역. 화면이 헤더 다음에 놓는다. */
+/**
+ * 화면 본문. 그려질 때 떠오른다(`ex-anim-reveal`) — `loading.tsx`의 스켈레톤이 내용으로 바뀌는 자리가
+ * 한 프레임에 갈아 끼워지지 않는다. 같은 화면 안의 갱신(검색 조건 · `router.refresh`)은 본문이 남아 있어 돌지 않는다.
+ *
+ * 뷰 전환으로 스켈레톤과 교차시키지 않는다. 이동마다 React가 빈 전환을 하나 더 시작하고, 내용 전환이 그것이
+ * 끝날 때까지 기다려 내용이 약 50ms 늦게 보였다(2026-11-20 공고 상세 측정).
+ */
 export function AppBody({ children }: { children: ReactNode }) {
-  return <div className={styles.body}>{children}</div>;
+  return <div className={`${styles.body} ex-anim-reveal`}>{children}</div>;
 }
 
 /** 홈(00) 헤더 — 56px, 제목 + 우측 아이콘 액션. */

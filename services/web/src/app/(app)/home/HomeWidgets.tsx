@@ -75,8 +75,9 @@ export function Widgets({ children }: { children: ReactNode }) {
 }
 
 function Widget({ icon, title, href, children }: { icon: string; title: string; href: string; children: ReactNode }) {
+  // 스켈레톤 카드 자리에서 떠오른다(ex-anim-reveal).
   return (
-    <section className={styles.widget}>
+    <section className={`${styles.widget} ex-anim-reveal`}>
       <header className={styles.widgetHead}>
         <Icon name={icon} size={14} />
         <h2 className={styles.widgetTitle}>{title}</h2>

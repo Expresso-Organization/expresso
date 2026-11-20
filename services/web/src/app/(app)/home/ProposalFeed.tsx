@@ -167,7 +167,7 @@ export function ProposalFeed({ initial, fallback, hasGoal }: { initial: Feed; fa
 
   if (!feed.enabled) {
     return (
-      <section className={styles.proposals}>
+      <section className={`${styles.proposals} ex-anim-reveal`}>
         <div className={styles.sectionHead}>
           <LogoMark size={16} />
           <h2 className={styles.sectionTitle}>제안</h2>
@@ -215,7 +215,7 @@ export function ProposalFeed({ initial, fallback, hasGoal }: { initial: Feed; fa
   const useFallback = last.reason === "no_credits" && fallback.length > 0;
 
   return (
-    <section className={styles.proposals}>
+    <section className={`${styles.proposals} ex-anim-reveal`}>
       <div className={styles.sectionHead}>
         <LogoMark size={16} />
         <h2 className={styles.sectionTitle}>제안</h2>

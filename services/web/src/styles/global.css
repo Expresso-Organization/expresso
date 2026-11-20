@@ -141,6 +141,31 @@ svg {
   animation: ex-bob 3s ease-in-out infinite;
 }
 
+/*
+ * 스켈레톤 — 150ms 동안 보이지 않다가 200ms에 나타난다. 그보다 짧은 대기에는 막대가 번쩍이지 않는다.
+ * 값은 대화 기록 스켈레톤(thread.aui.tsx ThreadHistorySkeleton)이 쓰는 것과 같다.
+ */
+.ex-anim-skeleton {
+  animation:
+    ex-shimmer 1.5s linear infinite,
+    ex-appear 200ms ease 150ms both;
+}
+
+.ex-anim-appear {
+  animation: ex-appear 200ms ease 150ms both;
+}
+
+/* 기다리던 내용이 그려질 때 — 스켈레톤 자리에서 떠오른다. 내용을 늦추지 않으려고 기다리지 않고 바로 시작한다. */
+.ex-anim-reveal {
+  animation: ex-appear var(--ex-motion-glide) both;
+}
+
+@keyframes ex-appear {
+  from {
+    opacity: 0;
+  }
+}
+
 /* 화면 정의서의 키프레임 — 이름과 값을 그대로 옮긴다 */
 @keyframes ex-pulse {
   0%,
@@ -304,6 +329,9 @@ svg {
   .ex-anim-caret,
   .ex-anim-pulse,
   .ex-anim-shimmer,
+  .ex-anim-skeleton,
+  .ex-anim-appear,
+  .ex-anim-reveal,
   .ex-anim-bob {
     animation: none !important;
   }
