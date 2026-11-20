@@ -21,8 +21,8 @@ date: 2026-11-20
 | `services/backend/src/modules/proposals/service.ts` · 테스트 | 권한 확인, 크레딧 확인 제거 |
 | `services/backend/src/modules/consultant/` (`routes.ts` · `commitments.ts` · 테스트) | 켜기 403, 확인 읽기와 확인 작업의 권한 |
 | `services/backend/src/modules/agent-chat/service.ts` · `platform/agent/runtime.ts` · 테스트 | 기억의 `checkins`, 지침 |
-| `services/backend/src/api/main.ts` · `api/build-app.ts` · `worker/main.ts` · `modules/scheduling/` | 배선 |
-| `services/web/src/app/(app)/home/` (`ProposalFeed.tsx` · `CheckinFeed.tsx` · 테스트) | 잠긴 상태 |
+| `services/backend/src/api/main.ts` · `api/build-app.ts` · `worker/main.ts` | 배선 |
+| `services/web/src/app/(app)/home/` (`ProposalFeed.tsx` · `CheckinFeed.tsx` · `ProposalFeed.test.tsx` 새 파일 · 테스트) | 잠긴 상태 |
 | `services/web/src/app/(app)/account/` (`page.tsx` · `UsageCharts.tsx`) · `lib/usage-copy.ts` · 테스트 | 먼저 연락받기 줄, 차트, 기능 이름 |
 | `services/web/src/app/(auth)/onboarding/consent/page.tsx` · `app/consent-actions.ts` | 항목 제거 |
 | `feat/consultant-memory` · `feat/consultant-follow-up` · `feat/consultant-diagnosis`의 `packages/database/src/mongodb-migrations/` 와 등록 목록 | 번호 이동(그 브랜치에서 커밋하고 위로 병합) |

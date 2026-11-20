@@ -81,7 +81,8 @@ export function CheckinFeed({ initial, proposalsEnabled }: { initial: Consultant
     else setNote("하지 않기로 한 일로 남겼습니다.");
   });
 
-  const asking = proposalsEnabled && checkins.outreach === null;
+  // 요금제가 열지 않으면 서버가 확인할 것을 비워 보낸다. 받을지 묻는 카드도 세우지 않는다.
+  const asking = checkins.available && proposalsEnabled && checkins.outreach === null;
   if (!asking && checkins.commitments.length === 0 && !checkins.quiet && !note && !error) return null;
 
   return (

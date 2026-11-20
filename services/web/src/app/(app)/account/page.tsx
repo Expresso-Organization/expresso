@@ -230,7 +230,7 @@ export default async function AccountPage() {
               <div className={styles.consentNote}>알림은 오른쪽 위 종 모양 버튼에서 봅니다.</div>
             </section>
 
-            {/* 컨설턴트가 먼저 연락할지. 홈의 「켜기」 · 온보딩의 항목과 같은 설정이다. */}
+            {/* 컨설턴트가 먼저 연락할지. 홈의 「켜기」와 같은 설정이고, 유료 요금제의 기능이다. */}
             <section id="outreach" className={styles.section}>
               <HashScroll id="outreach" />
               <div className={styles.sectionLabel}>먼저 연락받기</div>
@@ -241,15 +241,19 @@ export default async function AccountPage() {
                       <div className={styles.consentName}>컨설턴트가 먼저 연락하기</div>
                       <div className={styles.consentWhat}>
                         대화에서 하기로 한 일을 약속한 날에 여쭙고, 내 기록과 새 공고 · 공모전을 읽어 지금 하면 좋은 일을 권합니다.
-                        권할 것을 고를 때 AI가 하루 한 번까지 실행되고, 쓴 만큼 이번 달 크레딧에서 차감됩니다.
+                        권할 것을 고를 때 AI가 하루 한 번까지 실행되고, 이번 달 크레딧에서 빼지 않습니다.
+                        {checkins.available ? null : <> 유료 요금제에서 쓸 수 있습니다. <a href="#plans">요금제 보기</a></>}
                       </div>
                     </div>
-                    <form action={setOutreachAction}>
-                      <input type="hidden" name="enabled" value={checkins.outreach ? "false" : "true"} />
-                      <button type="submit" className={checkins.outreach ? styles.consentOff : styles.consentOn} aria-label={`먼저 연락받기 ${checkins.outreach ? "끄기" : "켜기"}`}>
-                        {checkins.outreach ? "끄기" : "켜기"}
-                      </button>
-                    </form>
+                    {/* 요금제가 열지 않으면 켤 수 없다. 켜 둔 채 무료가 된 계정은 끌 수만 있다. */}
+                    {checkins.available || checkins.outreach ? (
+                      <form action={setOutreachAction}>
+                        <input type="hidden" name="enabled" value={checkins.outreach ? "false" : "true"} />
+                        <button type="submit" className={checkins.outreach ? styles.consentOff : styles.consentOn} aria-label={`먼저 연락받기 ${checkins.outreach ? "끄기" : "켜기"}`}>
+                          {checkins.outreach ? "끄기" : "켜기"}
+                        </button>
+                      </form>
+                    ) : null}
                   </div>
                 </div>
               ) : (

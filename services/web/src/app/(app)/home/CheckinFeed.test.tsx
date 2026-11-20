@@ -14,7 +14,7 @@ vi.mock("./ProposalFeed", () => ({ FeedCard: ({ title, children }: { title: stri
 import { CheckinFeed } from "./CheckinFeed";
 
 const commitment: ConsultantCommitment = { id: "00000000-0000-4000-8000-000000000040", title: "해커톤 지원서 내기", detail: "", dueOn: "2026-11-19", status: "open", awaiting: true, conversationId: null, createdAt: "2026-11-12T00:00:00.000Z" };
-const checkins = (overrides: Partial<ConsultantCheckins> = {}): ConsultantCheckins => ({ outreach: true, today: "2026-11-20", commitments: [commitment], quiet: false, ...overrides });
+const checkins = (overrides: Partial<ConsultantCheckins> = {}): ConsultantCheckins => ({ available: true, outreach: true, today: "2026-11-20", commitments: [commitment], quiet: false, ...overrides });
 const cleared = checkins({ commitments: [] });
 
 afterEach(cleanup);
@@ -23,6 +23,10 @@ beforeEach(() => { for (const mock of [...Object.values(actions), ...Object.valu
 describe("홈의 확인 구획", () => {
   it("건넬 것이 없으면 그리지 않는다", () => {
     const { container } = render(<CheckinFeed initial={cleared} proposalsEnabled />);
+    expect(container.firstChild).toBeNull();
+  });
+  it("요금제가 열지 않으면 받을지 묻는 카드도 세우지 않는다", () => {
+    const { container } = render(<CheckinFeed initial={checkins({ available: false, outreach: null, commitments: [] })} proposalsEnabled />);
     expect(container.firstChild).toBeNull();
   });
   it("「했어요」는 약속을 닫고 열린 대화로 간다", async () => {

@@ -3,7 +3,7 @@ import type { Route } from "next";
 import Link from "next/link";
 
 import { Icon } from "@/components/ui/Icon";
-import { consents, consultant } from "@/lib/api/endpoints";
+import { consents } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 import { grantConsentAction } from "../../../consent-actions";
@@ -46,11 +46,7 @@ const SCOPES: {
 
 export default async function OnboardingConsentPage() {
   const session = await requireSession();
-  const [{ data }, outreach] = await Promise.all([
-    consents.list(session.accessToken),
-    // 컨설턴트가 없는 서버(404)에서는 먼저 연락받기를 묻지 않는다.
-    consultant.checkins(session.accessToken).then((result) => result.data.outreach).catch(() => undefined),
-  ]);
+  const { data } = await consents.list(session.accessToken);
   const byScope = new Map(data.consents.map((consent) => [consent.scope, consent]));
 
   return (
@@ -100,26 +96,6 @@ export default async function OnboardingConsentPage() {
             </label>
           );
         })}
-
-        {/* AI로 보내는 범위가 아니라 연락을 받을지다. 기본은 켬이고, 끄고 넘어가도 된다. */}
-        {outreach === undefined ? null : (
-          <label className={styles.consentCard}>
-            <input type="hidden" name="outreachAsked" value="1" />
-            <input type="checkbox" name="outreach" defaultChecked={outreach ?? true} className={styles.consentBox} />
-            <span className={styles.consentBody}>
-              <span className={styles.consentTitle}>
-                <Icon name="bell" size={14} color="var(--ex-accent-text)" />
-                컨설턴트가 먼저 연락합니다
-              </span>
-              <span className={styles.consentWhat}>
-                대화에서 하기로 한 일을 약속한 날에 여쭙고, 내 기록과 새 공고 · 공모전을 읽어 지금 하면 좋은 일을 권합니다.
-              </span>
-              <span className={styles.consentWhy}>
-                권할 것을 고를 때 AI가 하루 한 번까지 실행되고, 쓴 만큼 이번 달 크레딧에서 차감됩니다. 권하는 일은 위의 기록 동의가 있어야 켜집니다.
-              </span>
-            </span>
-          </label>
-        )}
       </form>
 
       <div className={styles.consentFoot}>
