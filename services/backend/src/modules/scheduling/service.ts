@@ -11,6 +11,7 @@ import { purgeTrashedCareerRecord } from "../career/index.js";
 import { purgeTrashedBrew } from "../materials/index.js";
 import { purgeTrashedPortfolio } from "../portfolios/index.js";
 import { MongoEngagementService } from "../engagement/index.js";
+import { ActivityCollectError, type ActivityApi } from "../activities/index.js";
 import type { JobIngestApi } from "../jobs/ingest/index.js";
 import { SCHEDULED_JOB_KEYS, type ScheduledJobKey } from "./public.js";
 
@@ -19,7 +20,7 @@ const iso = (value?: Date | null) => value?.toISOString() ?? null;
 const DEADLINE_WINDOW_MS = 72 * 3_600_000;
 /** 능동 제안에 실행을 맡기는 자리. 예약 잡은 켠 사용자를 고르는 일까지만 하고, AI 실행은 줄에 넣은 뒤 워커가 한다. */
 type ProposalScheduler = { requestDaily(at?: Date): Promise<{ requested: number }>; requestForNews(at?: Date): Promise<{ requested: number }> };
-type ActivityCollector = { collect(at?: Date): Promise<{ read: number; added: number; updated: number }> };
+type ActivityCollector = Pick<ActivityApi, "collect">;
 type DeadlineNotifier = { notify(userId: string, kind: "deadline", targetUrl: string, dedupeKey: string, at?: Date, subject?: string | null): Promise<{ created: boolean }> };
 
 const runDto = (row: ScheduledJobRunDoc, at = new Date()) => ({ id: row._id, jobKey: row.jobKey as ScheduledJobKey, scheduledFor: iso(row.scheduledFor)!, status: row.status, attempts: row.attempts, startedAt: iso(row.startedAt), finishedAt: iso(row.finishedAt), lastError: row.lastError ?? null, result: row.result ?? null, lagMs: Math.max(0, at.getTime() - row.scheduledFor.getTime()) });
@@ -80,7 +81,12 @@ export class SchedulingService {
     if (key === "activity_collect") {
       if (!this.#activities) return { skipped: "activity service is not wired" };
       const result = await this.#activities.collect(at);
-      return { ...result, ...(await this.#announce(result, at)) };
+      const announced = await this.#announce(result as unknown as Record<string, unknown>, at);
+      // 성공한 출처의 활동은 저장했고 새 활동 제안도 맡겼다. 실패한 출처가 있으면 이 실행을 실패로 남겨 드러낸다.
+      // 다시 시도하면 처음부터 읽고 `added`가 0이라 제안을 다시 맡기지 않는다.
+      const failed = result.sources.flatMap(({ source, error }) => (error ? [{ source, error }] : []));
+      if (failed.length) throw new ActivityCollectError(failed);
+      return { ...result, ...announced };
     }
     if (key === "proposal_briefing") return this.#proposals ? this.#proposals.requestDaily(at) : { skipped: "proposal service is not wired" };
     if (key === "posting_facts") return this.#ingest ? this.#ingest.readPendingFacts(undefined, at) as unknown as Record<string, unknown> : { skipped: "ingest service is not wired" };

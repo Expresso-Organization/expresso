@@ -1,6 +1,6 @@
 "use client";
 
-import type { Proposal, ProposalAction as Action, ProposalFeed as Feed, ProposalRef, ProposalRunReason } from "@expresso/contracts";
+import type { ActivityKind, Proposal, ProposalAction as Action, ProposalFeed as Feed, ProposalRef, ProposalRunReason } from "@expresso/contracts";
 import type { Route } from "next";
 import Link from "next/link";
 import { useEffect, useState, useTransition, type ReactNode } from "react";
@@ -31,6 +31,9 @@ const KIND: Record<Action, { title: string; icon: string; hue: TintHue }> = {
   plan_activity: { title: "공모전 참가", icon: "trophy", hue: "olive" },
   strengthen_record: { title: "기록 채우기", icon: "notebook", hue: "amber" },
 };
+
+/** 활동 제안의 제목. 활동 종류마다 하는 일이 다르다. */
+const ACTIVITY_TITLE: Record<ActivityKind, string> = { contest: "공모전 참가", hackathon: "해커톤 참가", bootcamp: "부트캠프 지원" };
 
 const REASON: Record<ProposalRunReason, string> = {
   no_credits: "이번 달 크레딧을 모두 써서 새 제안을 만들지 않았습니다.",
@@ -93,7 +96,7 @@ function ProposalCard({ proposal, disabled, onDismiss }: { proposal: Proposal; d
   const handoff = useHomeHandoff();
   const { start, subject } = proposal;
   const kind = KIND[proposal.action];
-  const title = proposal.action === "plan_activity" && subject.activityKind === "hackathon" ? "해커톤 참가" : kind.title;
+  const title = proposal.action === "plan_activity" && subject.activityKind ? ACTIVITY_TITLE[subject.activityKind] : kind.title;
   return (
     <FeedCard icon={kind.icon} hue={kind.hue} title={title}>
       <p className={styles.proposalMessage}>{proposal.message}</p>
