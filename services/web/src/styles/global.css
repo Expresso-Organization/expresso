@@ -141,6 +141,32 @@ svg {
   animation: ex-bob 3s ease-in-out infinite;
 }
 
+/*
+ * 스켈레톤 — 150ms 동안 보이지 않다가 200ms에 나타난다. 그보다 짧은 대기에는 막대가 번쩍이지 않는다.
+ * 채움은 backwards다 — 기다리는 동안만 투명하고, 끝난 뒤에는 애니메이션 값이 남지 않는다(쌓임 맥락을 남기지 않는다).
+ * 값은 대화 기록 스켈레톤(thread.aui.tsx ThreadHistorySkeleton)이 쓰는 것과 같다.
+ */
+.ex-anim-skeleton {
+  animation:
+    ex-shimmer 1.5s linear infinite,
+    ex-appear 200ms ease 150ms backwards;
+}
+
+.ex-anim-appear {
+  animation: ex-appear 200ms ease 150ms backwards;
+}
+
+/* 기다리던 내용이 그려질 때 — 스켈레톤 자리에서 떠오른다. 내용을 늦추지 않으려고 기다리지 않고 바로 시작한다. */
+.ex-anim-reveal {
+  animation: ex-appear var(--ex-motion-glide);
+}
+
+@keyframes ex-appear {
+  from {
+    opacity: 0;
+  }
+}
+
 /* 화면 정의서의 키프레임 — 이름과 값을 그대로 옮긴다 */
 @keyframes ex-pulse {
   0%,
@@ -304,6 +330,9 @@ svg {
   .ex-anim-caret,
   .ex-anim-pulse,
   .ex-anim-shimmer,
+  .ex-anim-skeleton,
+  .ex-anim-appear,
+  .ex-anim-reveal,
   .ex-anim-bob {
     animation: none !important;
   }
@@ -361,6 +390,87 @@ svg {
 ::view-transition-new(.composer-morph) {
   animation-duration: 280ms;
   animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/*
+ * 대화에서 「새 대화」로 홈에 돌아가는 전환(`AGENT_CHAT_CLOSE`) — 위의 반대.
+ * 대화 화면이 먼저 빠지고(--ex-motion-quick), 홈이 뒤따라 들어오며(--ex-motion-glide),
+ * 아래의 입력창이 홈 가운데 자리로 올라간다(--ex-motion-panel).
+ */
+::view-transition-old(.chat-leave) {
+  animation: 160ms ease both ex-vt-fade-out;
+}
+
+::view-transition-new(.home-arrive) {
+  animation: 220ms cubic-bezier(0.23, 1, 0.32, 1) 80ms both ex-vt-fade-in;
+}
+
+::view-transition-group(.composer-return) {
+  z-index: 1;
+  animation-duration: 280ms;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+::view-transition-old(.composer-return) {
+  animation-duration: 160ms;
+  animation-timing-function: ease;
+}
+
+::view-transition-new(.composer-return) {
+  animation-duration: 280ms;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/*
+ * 홈 제안 카드(app/(app)/home/ProposalFeed.tsx)와 기록 보기 모양 바꾸기(CareerViewShell.tsx). 빠지는 카드 · 보기는 옅어지고(--ex-motion-quick), 남은 카드는 빈자리로
+ * 옮겨 가며(--ex-motion-panel), 새 카드는 빠짐이 시작된 뒤 떠오른다(--ex-motion-glide).
+ */
+::view-transition-old(.card-out),
+::view-transition-old(.view-out) {
+  animation: 160ms ease both ex-vt-fade-out;
+}
+
+::view-transition-new(.card-in),
+::view-transition-new(.view-in) {
+  animation: 220ms cubic-bezier(0.23, 1, 0.32, 1) 80ms both ex-vt-fade-in;
+}
+
+::view-transition-group(.proposal-move) {
+  animation-duration: 280ms;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/*
+ * 카드가 빠져 홈이 화면보다 짧아지면 브라우저가 스크롤을 위로 당겨 카드 밖의 홈이 한 번에 내려간다.
+ * 이 갱신에서만 홈 전체를 교차시켜, 누르기 전 화면에서 새 화면으로 이어지게 한다. 홈은 스크롤 상자 안에서
+ * 보이는 대로 찍혀 자리를 옮기지 않으므로 옮김이 아니라 교차다(--ex-motion-panel).
+ * 옛 그림과 새 그림은 그룹의 길이 · 곡선을 함께 물려받는다 — 둘이 다르면 불투명도 합이 1 아래로 내려가
+ * 바뀌지 않은 자리(로고 · 입력창 · 위젯)가 교차 중간에 옅어진다. animation을 덮지 않아 plus-lighter 섞기도 남는다.
+ */
+::view-transition-group(.home-shift) {
+  animation-duration: 280ms;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/*
+ * 온보딩 단계(app/(auth)/onboarding/OnboardingShell.tsx). 본문 틀이 다음 단계의 크기로 맞춰지는 동안(--ex-motion-panel)
+ * 옛 본문은 빠지고(--ex-motion-quick) 새 본문은 뒤따라 떠오른다(--ex-motion-glide).
+ */
+::view-transition-group(.onboarding-step) {
+  animation-duration: 280ms;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* 옛 본문과 새 본문이 함께 있는 교차라 길이 · 곡선 · 늦춤만 바꾼다(plus-lighter 섞기를 남긴다). */
+::view-transition-old(.onboarding-step) {
+  animation-duration: 160ms;
+  animation-timing-function: ease;
+}
+
+::view-transition-new(.onboarding-step) {
+  animation-duration: 220ms;
+  animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
+  animation-delay: 80ms;
 }
 
 @keyframes ex-vt-fade-out {

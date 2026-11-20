@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { AgentGoalDraft, AgentGoalDraftDecision } from "@expresso/contracts";
+import { useChangedSinceMount } from "@/components/motion/useChangedSinceMount";
 import { Icon } from "@/components/ui/Icon";
 import { Button } from "@/components/ui/button";
 import { JOB_GOAL_QUESTIONS } from "@/features/job-goal/JobGoalFields";
@@ -14,6 +15,8 @@ import styles from "./RecordDraftCard.module.css";
  * 일어난다. 저장 · 그대로 두기는 AI를 부르지 않으므로 채팅을 쓸 수 없는 상태에서도 된다.
  */
 export function JobGoalDraftCard({ draft, disabled, onDecide }: { draft: AgentGoalDraft; disabled: boolean; onDecide(decision: AgentGoalDraftDecision): Promise<void> }) {
+  // 누른 결과로 바뀐 문구만 떠오른다. 대화를 다시 열어 이미 끝난 카드는 움직이지 않는다.
+  const swapped = useChangedSinceMount(draft.status);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const decide = async (decision: AgentGoalDraftDecision) => {
@@ -35,9 +38,9 @@ export function JobGoalDraftCard({ draft, disabled, onDecide }: { draft: AgentGo
         </div>;
       })}
     </dl>
-    {draft.status === "approved" ? <p className={styles.done} data-state="approved"><Icon name="check-circle" weight="fill" size={13} />구직 목표에 저장했습니다. <Link href="/goal">목표 보기</Link></p> : null}
-    {draft.status === "rejected" ? <p className={styles.done}><Icon name="x-circle" size={13} />목표를 그대로 두었습니다.</p> : null}
-    {draft.status === "replaced" ? <p className={styles.done}><Icon name="arrows-clockwise" size={13} />새 제안으로 바뀌었습니다.</p> : null}
+    {draft.status === "approved" ? <p className={`${styles.done} ${swapped ? "ex-anim-reveal" : ""}`} data-state="approved"><Icon name="check-circle" weight="fill" size={13} />구직 목표에 저장했습니다. <Link href="/goal">목표 보기</Link></p> : null}
+    {draft.status === "rejected" ? <p className={`${styles.done} ${swapped ? "ex-anim-reveal" : ""}`}><Icon name="x-circle" size={13} />목표를 그대로 두었습니다.</p> : null}
+    {draft.status === "replaced" ? <p className={`${styles.done} ${swapped ? "ex-anim-reveal" : ""}`}><Icon name="arrows-clockwise" size={13} />새 제안으로 바뀌었습니다.</p> : null}
     {error ? <p role="alert" className={styles.error}>{error}</p> : null}
     {ready ? <div className={styles.actions}>
       <Button variant="outline" disabled={busy || disabled} onClick={() => void decide({ action: "reject" })}>그대로 두기</Button>
