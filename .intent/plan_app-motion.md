@@ -17,9 +17,9 @@ date: 2026-11-20
 5. **R5** — `app/(app)/home/ProposalFeed.tsx`, `styles/global.css`(`proposal-move`).
 6. **R6** — `features/career-editor/views/CareerViewShell.tsx`.
 7. **R7** — `app/(app)/library/page.tsx`(지면 칸 Suspense) · `PreviewFrame.tsx`(새) · `PortfolioGrid.tsx` · `portfolio-grid.module.css`.
-8. **R8** — `components/motion/Swap.tsx` · `Swap.module.css`(새), 승인 카드(`AgentChat.tsx`의 기록 변경 제안 · `RecordDraftCard` · `PlanDraftCard` · `ReplanDraftCard` · `JobGoalDraftCard` · `PageEditCard` 중 상태 문구가 있는 곳).
+8. **R8** — `components/motion/useChangedSinceMount.ts`(새), 승인 카드(`AgentChat.tsx`의 기록 변경 제안 · `RecordDraftCard` · `PlanDraftCard` · `ReplanDraftCard` · `JobGoalDraftCard` · `PageEditCard` 중 상태 문구가 있는 곳).
 9. **R9** — `app/(auth)/onboarding/OnboardingShell.tsx`, `styles/global.css`(`onboarding-step`).
-10. **테스트** — `useAgentConversation.test.tsx`(첫 렌더의 `id`), `Swap` 단위 테스트(처음엔 `data-changed` 없음 · 바뀌면 있음), `tokens.test.ts`가 새 값에 걸리면 맞춘다.
+10. **테스트** — `useAgentConversation.test.tsx`(첫 렌더의 `id`), `useChangedSinceMount` 단위 테스트(처음 값이면 거짓 · 바뀌면 참), `tokens.test.ts`가 새 값에 걸리면 맞춘다.
 
 ## 검증
 
