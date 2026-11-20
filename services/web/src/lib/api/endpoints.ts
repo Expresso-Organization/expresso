@@ -1,4 +1,7 @@
 import {
+  ActivityListResponseSchema,
+  ProposalFeedResponseSchema,
+  type ListActivitiesQuery,
   BrewTrashListResponseSchema,
   PortfolioTrashListResponseSchema,
   MonthlyUsageResponseSchema,
@@ -34,7 +37,14 @@ import {
   CareerCategoriesResponseSchema,
   CareerProfileResponseSchema,
   OptionalCareerProfileResponseSchema,
+  OptionalJobGoalResponseSchema,
+  CommitmentCheckinResultSchema,
+  ConsultantCheckinsResponseSchema,
+  ConsultantMemoryResponseSchema,
+  ConsultantOutreachResponseSchema,
+  JobGoalResponseSchema,
   type SaveCareerProfile,
+  type SaveJobGoal,
   CareerRecordListResponseSchema,
   CareerRecordResponseSchema,
   CareerDocumentBootstrapSchema,
@@ -109,6 +119,8 @@ import {
   type ListPortfoliosQuery,
   type Login,
   type Signup,
+  type CommitmentCheckinAnswer,
+  type ConsultantStage,
 } from "@expresso/contracts";
 import { z } from "zod";
 
@@ -418,6 +430,55 @@ export const publishing = {
     ),
 };
 
+/** 능동 제안 — 에이전트가 먼저 권하는 행동. 켠 사용자에게만 만들어진다. */
+/** 컨설턴트의 기억 — 「내 진행」 화면이 읽고 고친다. */
+export const consultant = {
+  memory: (accessToken: string) =>
+    request(`${API_PREFIX}/consultant/memory`, ConsultantMemoryResponseSchema, { accessToken, cache: "no-store" }),
+  /** 사용자가 직접 고른 단계로 저장한다. */
+  setStage: (accessToken: string, stage: ConsultantStage) =>
+    request(`${API_PREFIX}/consultant/stage`, ConsultantMemoryResponseSchema, { accessToken, method: "PUT", body: { stage } }),
+  removePreference: (accessToken: string, preferenceId: string) =>
+    request(`${API_PREFIX}/consultant/preferences/${preferenceId}`, ConsultantMemoryResponseSchema, { accessToken, method: "DELETE" }),
+  /** 컨설턴트가 먼저 건네는 연락 — 답을 기다리는 약속과 안부. 홈이 읽는다. */
+  checkins: (accessToken: string) =>
+    request(`${API_PREFIX}/consultant/checkins`, ConsultantCheckinsResponseSchema, { accessToken, cache: "no-store" }),
+  /** 먼저 연락하기를 켜고 끈다. `proposals`가 참이면 능동 제안도 함께 켜고 끈다. */
+  setOutreach: (accessToken: string, enabled: boolean, proposals = true) =>
+    request(`${API_PREFIX}/consultant/outreach`, ConsultantOutreachResponseSchema, { accessToken, method: "PUT", body: { enabled, proposals } }),
+  /** 확인 카드의 답. 「했어요」면 그 일을 묻는 대화의 id가 함께 온다. */
+  answerCheckin: (accessToken: string, commitmentId: string, answer: CommitmentCheckinAnswer) =>
+    request(`${API_PREFIX}/consultant/commitments/${commitmentId}/checkin`, CommitmentCheckinResultSchema, { accessToken, method: "POST", body: answer }),
+  dismissQuiet: (accessToken: string) =>
+    request(`${API_PREFIX}/consultant/quiet/dismiss`, ConsultantCheckinsResponseSchema, { accessToken, method: "POST" }),
+};
+
+export const proposals = {
+  feed: (accessToken: string) =>
+    request(`${API_PREFIX}/proposals`, ProposalFeedResponseSchema, { accessToken, cache: "no-store" }),
+  /** 켠다. 첫 실행이 줄에 들어간다. 커리어 기록의 AI 사용 동의가 없으면 403이다. */
+  enable: (accessToken: string) =>
+    request(`${API_PREFIX}/proposals/enable`, ProposalFeedResponseSchema, { accessToken, method: "POST" }),
+  disable: (accessToken: string) =>
+    request(`${API_PREFIX}/proposals/disable`, ProposalFeedResponseSchema, { accessToken, method: "POST" }),
+  /** 「다시 받기」. 실행 중이면 409다. */
+  refresh: (accessToken: string) =>
+    request(`${API_PREFIX}/proposals/refresh`, ProposalFeedResponseSchema, { accessToken, method: "POST" }),
+  /** 「관심 없음」. 그 대상을 다시 제안하지 않는다. */
+  dismiss: (accessToken: string, proposalId: string) =>
+    request(`${API_PREFIX}/proposals/${proposalId}/dismiss`, ProposalFeedResponseSchema, { accessToken, method: "POST" }),
+};
+
+/** 수집한 활동(공모전 · 해커톤 · 부트캠프). 접수가 끝나지 않은 것을 마감이 가까운 순서로. */
+export const activities = {
+  list: (accessToken: string, query: Partial<ListActivitiesQuery> = {}) =>
+    request(`${API_PREFIX}/activities`, ActivityListResponseSchema, {
+      accessToken,
+      cache: "no-store",
+      query: { ...(query.kind ? { kind: query.kind } : {}), ...(query.limit ? { limit: query.limit } : {}), ...(query.offset ? { offset: query.offset } : {}) },
+    }),
+};
+
 export const consents = {
   /** 10d 온보딩과 09 설정이 읽는다. 범위마다 지금 상태 하나씩. */
   list: (accessToken: string) =>
@@ -619,6 +680,12 @@ export const generation = {
       GenerationJobStatusResponseSchema,
       { accessToken, cache: "no-store" },
     ),
+  /** 생성을 멈춘다. 끝난 생성은 409. 멈춘 생성은 `failed` · `CANCELLED`로 돌아온다. */
+  cancel: (accessToken: string, generationJobId: string) =>
+    request(`${API_PREFIX}/generation-jobs/${generationJobId}/cancel`, GenerationJobStatusResponseSchema, {
+      accessToken,
+      method: "POST",
+    }),
 };
 
 export const portfolioEditing = {
@@ -974,6 +1041,13 @@ export const jobs = {
       cache: "no-store",
     }),
 
+  /** 저장한 검색 한 건을 지운다. 남의 것이나 없는 것은 404. */
+  deleteSavedSearch: (accessToken: string, savedSearchId: string) =>
+    requestNoContent(`${API_PREFIX}/jobs/saved-searches/${savedSearchId}`, {
+      accessToken,
+      method: "DELETE",
+    }),
+
   /** 검색을 저장한다(201). 한 사람당 10개를 넘으면 409. */
   saveSearch: (accessToken: string, input: SaveJobSearch) =>
     request(`${API_PREFIX}/jobs/saved-searches`, SavedJobSearchResponseSchema, {
@@ -1048,6 +1122,20 @@ export const career = {
 
   saveProfile: (accessToken: string, input: SaveCareerProfile) =>
     request(`${API_PREFIX}/career/profile`, CareerProfileResponseSchema, {
+      method: "PUT",
+      accessToken,
+      body: input,
+    }),
+
+  /** 최종 구직 목표. 아직 적지 않았으면 data가 null이다. */
+  goal: (accessToken: string) =>
+    request(`${API_PREFIX}/career/goal`, OptionalJobGoalResponseSchema, {
+      accessToken,
+      cache: "no-store",
+    }),
+
+  saveGoal: (accessToken: string, input: SaveJobGoal) =>
+    request(`${API_PREFIX}/career/goal`, JobGoalResponseSchema, {
       method: "PUT",
       accessToken,
       body: input,

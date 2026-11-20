@@ -8,10 +8,10 @@ import { safeErrorSummary } from "../platform/observability.js";
 import { createRedisResource, createStreamRedis } from "../platform/redis.js";
 import { IdentityService } from "../modules/identity/index.js";
 import { RemoteGoogleIdTokenVerifier } from "../modules/identity/google.js";
-import { EntitlementService } from "../modules/entitlements/index.js";
+import { EntitlementService, outreachGate } from "../modules/entitlements/index.js";
 import { UsageService } from "../modules/usage/index.js";
 import { CareerService } from "../modules/career/index.js";
-import { JobMarketService } from "../modules/jobs/index.js";
+import { GoalDemandService, JobMarketService } from "../modules/jobs/index.js";
 import { AiSearchInterpreter } from "../modules/jobs/search-interpreter.js";
 import { AiFactsReader, createJobSourceAdapters, BundledMarkReader, JobIngestService, JobUrlImporter, SiteMarkReader } from "../modules/jobs/ingest/index.js";
 import { JobBoardService } from "../modules/jobs/index.js";
@@ -38,12 +38,15 @@ import { PublishingService } from "../modules/publishing/index.js";
 import { MediaService } from "../modules/media/index.js";
 import { PageElementEditor, PageService } from "../modules/page/index.js";
 import { PageStream } from "../modules/page/stream.js";
-import { AiPageGenerator } from "../modules/page/generator.js";
+import { freePageGenerator } from "../modules/page/briefed-generator.js";
 import { StructuredPageGenerator } from "../modules/page/structured-generator.js";
 import { FormatRoutingPageGenerator } from "../modules/page/format-router.js";
 import { createMediaStorage } from "../platform/storage/create-storage.js";
 import { AnalyticsService } from "../modules/analytics/index.js";
 import { EngagementService, UnifiedSearchService } from "../modules/engagement/index.js";
+import { ActivityService } from "../modules/activities/index.js";
+import { ProposalService } from "../modules/proposals/index.js";
+import { ConsultantCommitments, ConsultantDiagnoses, ConsultantService } from "../modules/consultant/index.js";
 import { AccountLifecycleService } from "../modules/account-lifecycle/index.js";
 import { AdminService } from "../modules/admin/index.js";
 import { CareerDocumentService } from "../modules/career-editor/index.js";
@@ -117,10 +120,10 @@ const pageStream = new PageStream(createStreamRedis(config.redisUrl), {
 });
 const pageService = new PageService(database, consentService, pageStream);
 // AI가 켜져 있을 때 모델이 내용·Spec 또는 HTML을 생성합니다. 다시 뽑기는 직전 지면의 방식을 따르고,
-// 직전 지면이 없으면 설정 값을 씁니다(`FormatRoutingPageGenerator`).
+// 직전 지면이 없으면 설정 값을 씁니다(`FormatRoutingPageGenerator`). 자유 생성은 정리본 · 디자인 지침으로 CSS 전체를 씁니다.
 const pageGenerator = ai
   ? new FormatRoutingPageGenerator(
-      { html: new AiPageGenerator(ai), "json-render": new StructuredPageGenerator(ai) },
+      { html: freePageGenerator(ai), "json-render": new StructuredPageGenerator(ai) },
       config.pageGenerationFormat ?? "json-render",
     )
   : null;
@@ -167,11 +170,20 @@ const careerDocumentService = new CareerDocumentService(
 // 편집기 밖 본문 쓰기(PATCH bodyMd · 인터뷰 재답변)가 곧바로 편집기 문서와 열린 편집기에 들어가게 연결합니다.
 careerService.setExternalBodyListener((userId, recordId) => careerDocumentService.syncExternalBody(userId, recordId));
 interviewService.setExternalBodyListener((userId, recordId) => careerDocumentService.syncExternalBody(userId, recordId));
-const agentChatService = new AgentChatService(database, config.agentChatEnabled ? new ClaudeAgentRuntime(config.agentChatModel, aiUsage) : null, careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(database, config.agentCredentialEncryptionKey), portfolioReadService, pageService);
+const consultantService = new ConsultantService(database);
+const consultantCommitments = new ConsultantCommitments(database);
+const activityService = new ActivityService(database);
+const agentChatService = new AgentChatService(database, config.agentChatEnabled ? new ClaudeAgentRuntime(config.agentChatModel, aiUsage) : null, careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(database, config.agentCredentialEncryptionKey), portfolioReadService, pageService, entitlementService, consultantService, consultantCommitments, { demand: new GoalDemandService(database), store: new ConsultantDiagnoses(database) }, { jobs: jobBoardService, activities: activityService, dismissed: userId => proposalService.dismissedKeys(userId) });
+// API는 제안을 읽고 실행을 줄에 넣기만 한다. AI 실행은 워커가 한다(`writer`를 주지 않는다).
+const proposalService = new ProposalService(database, { career: careerService, jobs: jobBoardService, activities: activityService, consent: consentService, entitled: outreachGate(entitlementService), writer: null });
 const adminService = new AdminService(database, { identity: identityService, career: careerService, consent: consentService });
 const app = buildApi({
   adminService,
   agentChatService,
+  consultantService,
+  consultantCommitments,
+  activityService,
+  proposalService,
   config,
   readinessChecks: [database.readinessCheck, redis.readinessCheck],
   identityService,

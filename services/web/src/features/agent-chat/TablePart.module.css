@@ -1,0 +1,12 @@
+/* 비교 표 — 답변 글 아래에 놓인다. 테두리 · 바탕은 대화의 다른 카드와 같다. */
+.part { display: flex; flex-direction: column; margin: 10px 0 0; max-width: 640px; border: 1px solid var(--ex-border); border-radius: var(--ex-radius-card); background: var(--ex-bg-sunken); font-family: var(--ex-font-ui); color: var(--ex-fg); overflow: hidden; }
+.title { padding: 10px 14px 8px; font-size: var(--ex-text-xs); font-weight: 600; overflow-wrap: anywhere; }
+.scroll { overflow-x: auto; border-top: 1px solid var(--ex-border-inner); }
+.table { width: 100%; border-collapse: collapse; font-size: var(--ex-text-2xs); line-height: var(--ex-leading-relaxed); }
+.table th, .table td { padding: 8px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--ex-border-inner); overflow-wrap: anywhere; }
+.table thead th { font-weight: 500; color: var(--ex-fg-muted); white-space: nowrap; }
+.table tbody th { min-width: 120px; font-weight: 600; color: var(--ex-fg); }
+.table td { min-width: 96px; color: var(--ex-fg-body); }
+.table tbody tr:last-child th, .table tbody tr:last-child td { border-bottom: 0; }
+.note { margin: 0; padding: 8px 14px 10px; border-top: 1px solid var(--ex-border-inner); font-size: var(--ex-text-3xs); color: var(--ex-fg-muted); }
+.pending { margin: 10px 0 0; font-family: var(--ex-font-ui); font-size: var(--ex-text-xs); color: var(--ex-fg-muted); }

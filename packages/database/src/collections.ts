@@ -5,6 +5,12 @@ export interface MongoCollections {
   agentCredentials: Collection<Docs.AgentCredentialDoc>;
   agentConversations: Collection<Docs.AgentConversationDoc>;
   preparationPlans: Collection<Docs.PreparationPlanDoc>;
+  proposalFeeds: Collection<Docs.ProposalFeedDoc>;
+  consultantProfiles: Collection<Docs.ConsultantProfileDoc>;
+  consultantCommitments: Collection<Docs.ConsultantCommitmentDoc>;
+  consultantDiagnoses: Collection<Docs.ConsultantDiagnosisDoc>;
+  activities: Collection<Docs.ActivityDoc>;
+  activitySources: Collection<Docs.ActivitySourceDoc>;
   plans: Collection<Docs.PlanDoc>;
   users: Collection<Docs.UserDoc>;
   accountDeletionRequests: Collection<Docs.AccountDeletionRequestDoc>;
@@ -97,6 +103,12 @@ export function mongoCollections(db: Db): MongoCollections {
     agentCredentials: db.collection<Docs.AgentCredentialDoc>("agent_credentials"),
     agentConversations: db.collection<Docs.AgentConversationDoc>("agent_conversations"),
     preparationPlans: db.collection<Docs.PreparationPlanDoc>("preparation_plans"),
+    proposalFeeds: db.collection<Docs.ProposalFeedDoc>("proposal_feeds"),
+    consultantProfiles: db.collection<Docs.ConsultantProfileDoc>("consultant_profiles"),
+    consultantCommitments: db.collection<Docs.ConsultantCommitmentDoc>("consultant_commitments"),
+    consultantDiagnoses: db.collection<Docs.ConsultantDiagnosisDoc>("consultant_diagnoses"),
+    activities: db.collection<Docs.ActivityDoc>("activities"),
+    activitySources: db.collection<Docs.ActivitySourceDoc>("activity_sources"),
     plans: db.collection<Docs.PlanDoc>("plans"),
     users: db.collection<Docs.UserDoc>("users"),
     accountDeletionRequests: db.collection<Docs.AccountDeletionRequestDoc>("account_deletion_requests"),

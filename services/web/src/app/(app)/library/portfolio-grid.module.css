@@ -1,0 +1,245 @@
+/* 라이브러리의 포트폴리오 격자 — 만들다 만 제작도 같은 카드 모양으로 함께 선다. */
+
+/* 생성 중인 제작 배지의 점 — 지금 돌고 있는 작업에만 붙는다 */
+.workingDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ex-accent);
+}
+
+/* 영역 4 — 내 포트폴리오 */
+.sectionHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.sectionTitle {
+  font-size: var(--ex-text-md);
+  font-weight: 600;
+}
+
+.portfolioGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.newPortfolio {
+  border: 1px dashed var(--ex-border-firm);
+  border-radius: var(--ex-radius-card);
+  background: var(--ex-bg-hover);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 22px;
+  text-align: left;
+  transition:
+    border-color 0.18s,
+    background 0.18s;
+}
+
+.newPortfolio:hover {
+  border-color: var(--ex-accent);
+  background: var(--ex-accent-surface);
+}
+
+.newPortfolioIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--ex-accent-surface);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.newPortfolioTitle {
+  display: block;
+  font-size: var(--ex-text-md);
+  font-weight: 600;
+  color: var(--ex-fg-body);
+  margin-bottom: 6px;
+}
+
+@media (max-width: 767px) {
+    .portfolioGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* 내 포트폴리오 — 만드는 중인 제작도 같은 카드다 */
+.portfolioCard {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--ex-border);
+  border-radius: var(--ex-radius-card);
+  background: var(--ex-bg);
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.portfolioCard:hover {
+  box-shadow: var(--ex-elevation-card-hover);
+  transform: translateY(-2px);
+}
+
+/* 지면 썸네일 — 틀을 칸의 4배 크기로 그리고 1/4로 줄여 칸에 맞춘다.
+   지면이 아직 없으면 사이드바 썸네일과 같은 빗금이 선다. */
+.portfolioThumb {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: repeating-linear-gradient(
+    135deg,
+    var(--ex-bg) 0 9px,
+    var(--ex-bg-track) 9px 18px
+  );
+  border-bottom: 1px solid var(--ex-border-inner);
+}
+
+.portfolioFrame {
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 400%;
+  height: 400%;
+  border: 0;
+  transform: scale(0.25);
+  transform-origin: 0 0;
+  pointer-events: none;
+  /* 다 그려진 뒤에 나타난다(PreviewFrame) — 그 전에는 아래의 빗금이 보인다. */
+  opacity: 0;
+  transition: opacity var(--ex-motion-quick);
+}
+
+.portfolioFrame[data-loaded] {
+  opacity: 1;
+}
+
+.portfolioBadge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--ex-text-2xs);
+  border-radius: var(--ex-radius-pill);
+  padding: 3px 8px;
+  white-space: nowrap;
+  box-shadow: var(--ex-elevation-raised);
+}
+
+.badgeLive {
+  color: var(--ex-status-success-text);
+  background: var(--ex-status-success-surface);
+}
+
+.badgeDraft {
+  color: var(--ex-fg-muted);
+  background: var(--ex-bg-sunken);
+}
+
+.badgeMaking {
+  color: var(--ex-accent-text);
+  background: var(--ex-accent-surface);
+}
+
+.portfolioBody {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+  min-width: 0;
+  padding: 13px 16px 15px;
+}
+
+.portfolioTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.portfolioAvatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  flex-shrink: 0;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  font-size: var(--ex-text-3xs);
+  font-weight: 600;
+}
+
+.portfolioTitle {
+  font-size: var(--ex-text-sm);
+  font-weight: 600;
+  color: var(--ex-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.portfolioTarget {
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.portfolioFoot {
+  margin-top: auto;
+  padding-top: 8px;
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.portfolioHost {
+  font-family: var(--ex-font-mono);
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.portfolioMeta {
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
+}
+
+.portfolioStats {
+  display: flex;
+  gap: 12px;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
+}
+
+.portfolioStats b {
+  font-family: var(--ex-font-mono);
+  font-weight: 500;
+  color: var(--ex-fg);
+}
+
+.newPortfolio {
+  min-height: 120px;
+}
+
+@media (max-width: 479px) {
+    .portfolioGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+    .newPortfolio {
+    min-height: 0;
+  }
+}

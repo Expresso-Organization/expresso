@@ -1,4 +1,4 @@
-import type { BrewState } from "@expresso/contracts";
+import { GENERATION_CANCELLED, type BrewState } from "@expresso/contracts";
 import { notFound, redirect } from "next/navigation";
 
 import { ApiError } from "@/lib/api/client";
@@ -118,7 +118,9 @@ export default async function DesignPage({
         generationAllowed={quota.data.allowed}
         recipeBuilding={recipeBuilding}
         notice={
-          generation?.status === "failed" ? { tone: "error", text: failureNote(generation.failureCode, isFreeBrew) }
+          generation?.status === "failed" && generation.failureCode === GENERATION_CANCELLED
+            ? { tone: "info", text: "생성을 멈췄습니다. 크레딧은 차감하지 않았습니다. 디자인을 고르면 다시 만들 수 있습니다." }
+          : generation?.status === "failed" ? { tone: "error", text: failureNote(generation.failureCode, isFreeBrew) }
           : recipeJob?.status === "failed" && !brew.recipeId ? { tone: "error", text: failureNote(recipeJob.failure?.code ?? null, isFreeBrew) }
           : recipeBuilding ? { tone: "info", text: "구성을 만드는 중입니다. 지금 눌러도 구성이 끝나는 대로 이어서 만듭니다." }
           : null

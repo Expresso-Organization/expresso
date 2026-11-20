@@ -29,4 +29,9 @@ export class FormatRoutingPageGenerator implements PageGenerator {
   generate(context: PageGenerationContext, sink?: PageStreamSink | null): Promise<GeneratedPageResult> {
     return this.generators[this.formatFor(context)].generate(context, sink);
   }
+
+  /** 고른 방식의 생성기에게 묻습니다. 답하지 않는 생성기는 키트로 조판하는 것으로 봅니다. */
+  usesKit(context: PageGenerationContext): boolean {
+    return this.generators[this.formatFor(context)].usesKit?.(context) ?? true;
+  }
 }

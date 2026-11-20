@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { careerDocumentToMarkdown, encodeDocumentAsYUpdate, encodeDocumentStateVector, markdownToCareerDocument, parseCareerDocument, reconstructYDocument } from "@expresso/editor";
-import { CareerProfileSchema, CreateCareerCategorySchema, CreateCareerRecordSchema, SaveCareerProfileSchema, UpdateCareerRecordSchema, type CreateCareerCategory, type CreateCareerRecord, type ListCareerRecordsQuery, type SaveCareerProfile, type UpdateCareerRecord } from "@expresso/contracts";
+import { CareerProfileSchema, JobGoalSchema, type JobGoalSource, CreateCareerCategorySchema, CreateCareerRecordSchema, SaveCareerProfileSchema, UpdateCareerRecordSchema, type CreateCareerCategory, type CreateCareerRecord, type ListCareerRecordsQuery, type SaveCareerProfile, type UpdateCareerRecord } from "@expresso/contracts";
 import { mongoCollections, type CareerCategoryDoc, type CareerRecordDoc } from "@expresso/database";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { inTransaction } from "../../platform/mongo-transaction.js";
@@ -21,6 +21,7 @@ import { CareerViewService } from "./views.js";
 import { MongoCategoryMoveService } from "./category-move.js";
 import { MongoRelationService } from "./relations.js";
 import { MongoCareerComputationService } from "../career-computation/index.js";
+import { archiveCareerCategory, careerCategoryDeleteImpact, deleteCareerCategory } from "./category-lifecycle.js";
 
 const duplicate = (error: unknown) => (error as { code?: number })?.code === 11000;
 /** 기본 7종과 사용자가 더한 카테고리 100개. */
@@ -67,6 +68,9 @@ export class CareerService implements CareerApi {
   trashRecord(userId: string, recordId: string, at = new Date()) { return trashMongoRecord(this.context, userId, recordId, at); }
   restoreRecord(userId: string, recordId: string, at = new Date()) { return restoreMongoRecord(this.context, userId, recordId, at); }
   listTrashedRecords(userId: string, categoryId: string, at = new Date()) { return listTrashedMongoRecords(this.context, userId, categoryId, at); }
+  archiveCategory(userId: string, categoryId: string, archived: boolean, at = new Date()) { return archiveCareerCategory(this.context, userId, categoryId, archived, at); }
+  getCategoryDeleteImpact(userId: string, categoryId: string) { return careerCategoryDeleteImpact(this.context, userId, categoryId); }
+  deleteCategory(userId: string, categoryId: string, deleteRecords: boolean) { return deleteCareerCategory(this.context, userId, categoryId, deleteRecords); }
   recomputeSkill(userId: string, input: RecomputeCareerSkill, computedAt = new Date()) { return recomputeMongoSkill(this.context, userId, input, computedAt); }
   listSkills(userId: string) { return listMongoSkills(this.context, userId); }
   listSkillEvidence(userId: string, skillId: string) { return listMongoSkillEvidence(this.context, userId, skillId); }
@@ -106,7 +110,11 @@ export class CareerService implements CareerApi {
     } catch (error) { if (duplicate(error)) throw new CareerError(409, "career category key already exists"); throw error; }
   }
 
-  async createRecord(userId: string, idempotencyKey: string, inputValue: CreateCareerRecord) {
+  /**
+   * 기록을 만든다. `as`를 주지 않으면 사용자가 손으로 만든 초안이다(`draft` · `manual`).
+   * 에이전트가 대화에서 정리해 저장한 기록은 `{ status: "organized", origin: "ai" }`로 만든다 — 포트폴리오 재료가 되는 상태다.
+   */
+  async createRecord(userId: string, idempotencyKey: string, inputValue: CreateCareerRecord, as: { status: "draft" | "organized"; origin: CareerRecordDoc["origin"] } = { status: "draft", origin: "manual" }) {
     const input = CreateCareerRecordSchema.parse(inputValue);
     const hash = careerRequestHash(input);
     return inTransaction(this.context, async (tx) => {
@@ -122,7 +130,7 @@ export class CareerService implements CareerApi {
         return { record: mapMongoRecord(existing), created: false };
       }
       const now = new Date();
-      const record: CareerRecordDoc = { _id: randomUUID(), userId, ...input, properties: createdProperties, status: "draft", origin: "manual", version: 1, createdAt: now, updatedAt: now, deletedAt: null, purgeAfter: null, createIdempotencyKey: idempotencyKey, createRequestHash: hash };
+      const record: CareerRecordDoc = { _id: randomUUID(), userId, ...input, properties: createdProperties, status: as.status, origin: as.origin, version: 1, createdAt: now, updatedAt: now, deletedAt: null, purgeAfter: null, createIdempotencyKey: idempotencyKey, createRequestHash: hash };
       await records.insertOne(record, { session: tx.session });
       const definitions = category.propertySchemaV2.filter((definition) => definition.deletedAt === null);
       const changedPropertyIds = definitions.filter((definition) => definition.type === "formula" || definition.type === "rollup" || Object.hasOwn(input.properties, definition.key) || (definition.type === "title" && input.title !== "")).map((definition) => definition.id);
@@ -226,7 +234,28 @@ export class CareerService implements CareerApi {
 
   async getProfile(userId: string) {
     const user = await mongoCollections(this.context.db).users.findOne({ _id: userId });
-    return user?.profile ? CareerProfileSchema.parse({ ...user.profile, updatedAt: user.profile.updatedAt.toISOString() }) : null;
+    if (!user?.profile) return null;
+    // 계약의 칸만 골라 읽는다. 예전 칸(「지금 가장 급한 것」)이 남은 문서를 통째로 펼치면 strict 계약이 거절한다.
+    const { targetRoles, experienceYears, updatedAt } = user.profile;
+    return CareerProfileSchema.parse({ targetRoles, experienceYears, updatedAt: updatedAt.toISOString() });
+  }
+
+  /** 사용자가 쓴 최종 구직 목표. 아직 적지 않았으면 null이다. */
+  async getJobGoal(userId: string) {
+    const user = await mongoCollections(this.context.db).users.findOne({ _id: userId }, { projection: { jobGoal: 1 } });
+    return user?.jobGoal ? JobGoalSchema.parse({ ...user.jobGoal, updatedAt: user.jobGoal.updatedAt.toISOString() }) : null;
+  }
+
+  /** 통째로 덮어쓴다. 누가 적었는지(`source`)와 적은 때를 함께 남긴다. */
+  async saveJobGoal(userId: string, inputValue: { work: string; place: string; timing: string; source: JobGoalSource }) {
+    const updatedAt = new Date();
+    const goal = JobGoalSchema.parse({ ...inputValue, updatedAt: updatedAt.toISOString() });
+    if (!goal.work && !goal.place && !goal.timing) throw new CareerError(400, "세 답 가운데 하나는 적어야 합니다.");
+    return inTransaction(this.context, async (tx) => {
+      await requireActiveUser(tx, userId);
+      await mongoCollections(tx.db).users.updateOne({ _id: userId }, { $set: { jobGoal: { work: goal.work, place: goal.place, timing: goal.timing, source: goal.source, updatedAt } } }, { session: tx.session });
+      return goal;
+    });
   }
 
   async saveProfile(userId: string, inputValue: SaveCareerProfile) {

@@ -10,13 +10,7 @@ import { Icon } from "@/components/ui/Icon";
 
 import styles from "./Sidebar.module.css";
 
-export type SidebarSection =
-  | "home"
-  | "new-portfolio"
-  | "jobs"
-  | "analytics"
-  | "career"
-  | "agent";
+export type SidebarSection = "home" | "library" | "explore" | "analytics";
 
 const PRIMARY_ITEMS: readonly {
   key: SidebarSection;
@@ -25,9 +19,8 @@ const PRIMARY_ITEMS: readonly {
   icon: string;
 }[] = [
   { key: "home", label: "홈", href: "/home", icon: "house" },
-  { key: "new-portfolio", label: "새 포트폴리오", href: "/brew/new", icon: "coffee" },
-  { key: "jobs", label: "공고 탐색", href: "/jobs", icon: "target" },
-  { key: "agent", label: "에이전트 채팅", href: "/agent", icon: "chat-circle-dots" },
+  { key: "library", label: "라이브러리", href: "/library" as Route, icon: "books" },
+  { key: "explore", label: "탐색", href: "/jobs", icon: "compass" },
   { key: "analytics", label: "분석", href: "/analytics", icon: "chart-bar" },
 ];
 
@@ -36,25 +29,27 @@ const PRIMARY_ITEMS: readonly {
  *
  * 예전에는 화면마다 `active="jobs"`를 손으로 넘겼다. 사이드바가 레이아웃으로
  * 올라가면서 그 자리가 없어졌고, 어차피 "지금 어느 메뉴냐"는 주소가 이미
- * 알고 있는 사실이다. 설정(`/account`)은 별도 메뉴가 아니라 홈 밑이다.
+ * 알고 있는 사실이다. 설정(`/account`)은 1차 메뉴가 아니므로 `null`이고, 그
+ * 화면의 활성 표시는 사이드바 아래쪽 사용자 줄(`AccountLink`)이 받는다.
  */
 export function sectionForPath(pathname: string): SidebarSection | null {
-  if (pathname.startsWith("/agent")) return "agent";
-  if (pathname === "/home" || pathname.startsWith("/account")) return "home";
-  if (pathname.startsWith("/jobs")) return "jobs";
+  // 에이전트 대화와 구직 목표는 홈이다. 기록과 포트폴리오는 어디서 열었든 라이브러리에 속한다.
+  if (pathname === "/home" || pathname.startsWith("/agent") || pathname.startsWith("/goal")) return "home";
+  if (pathname.startsWith("/library") || pathname.startsWith("/career") || pathname.startsWith("/edit")) return "library";
+  if (pathname.startsWith("/jobs")) return "explore";
   if (pathname.startsWith("/analytics")) return "analytics";
-  if (pathname.startsWith("/career")) return "career";
-  if (pathname.startsWith("/brew") || pathname.startsWith("/edit")) {
-    return "new-portfolio";
-  }
   return null;
 }
 
-export function SidebarNav({ jobCount }: { jobCount?: number | undefined }) {
+export function SidebarNav() {
   const active = sectionForPath(usePathname());
 
   return (
     <nav aria-label="주요 이동">
+      <Link href="/brew/new" className={styles.brew} title="새 포트폴리오">
+        <span className={styles.brewLead}><Icon name="coffee" weight="fill" size={15} /></span>
+        <span className={`${styles.copy} ${styles.brewLabel}`}>새 포트폴리오</span>
+      </Link>
       <GlideMenu className={`${styles.primary} ${styles.navGroup}`}>
         <button
           type="button"
@@ -93,11 +88,6 @@ export function SidebarNav({ jobCount }: { jobCount?: number | undefined }) {
             <span className={`${styles.copy} ${styles.primaryLabel}`}>
               {item.label}
             </span>
-            {item.key === "jobs" && jobCount !== undefined ? (
-              <span className={`${styles.copy} ${styles.primaryCount}`}>
-                {jobCount}
-              </span>
-            ) : null}
           </Link>
         ))}
       </GlideMenu>

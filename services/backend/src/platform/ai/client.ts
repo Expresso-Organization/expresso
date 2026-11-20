@@ -35,6 +35,8 @@ export const AI_CONTRACTS = [
   "partial_edit",
   "style_remix",
   "insight_note",
+  // 능동 제안: 후보 표를 읽고 사용자에게 먼저 권할 행동을 쓴다.
+  "proposal_briefing",
 ] as const;
 
 export type AiContract = (typeof AI_CONTRACTS)[number];
@@ -73,6 +75,8 @@ export const DEFAULT_MODEL_TIER: Record<AiContract, AiModelTier> = {
   style_remix: "sonnet",
   search_interpret: "haiku",
   insight_note: "haiku",
+  // 사용자가 누르지 않아도 도는 실행이다. 후보를 로직으로 추린 뒤라 가장 낮은 단계로 충분하다.
+  proposal_briefing: "haiku",
 };
 
 export interface AiCallSpec {

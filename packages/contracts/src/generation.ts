@@ -46,6 +46,9 @@ export const SubmitGenerationSchema = z
     "디자인 시스템 판으로 요청할 때는 styleOverrides를 보내지 않습니다.",
   );
 
+/** 사용자가 멈춘 생성의 실패 코드. 상태는 `failed`, 다시 돌 수 없음(`retryable: false`)으로 끝난다. */
+export const GENERATION_CANCELLED = "CANCELLED";
+
 export const GenerationJobStatusSchema = z.strictObject({
   generationJobId: UuidSchema,
   status: z.enum(["queued", "running", "done", "failed"]),

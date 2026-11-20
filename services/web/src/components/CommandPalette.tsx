@@ -49,13 +49,15 @@ const NOTIFICATION_COPY: Record<NotificationKind, { fallback: string; body: stri
   generation: { fallback: "포트폴리오", body: "생성이 끝났습니다. 눌러서 편집으로 갑니다" },
   saved_search: { fallback: "저장한 검색", body: "조건에 맞는 새 공고가 있습니다" },
   traffic: { fallback: "배포한 포트폴리오", body: "새 방문이 있습니다" },
+  consultant: { fallback: "컨설턴트", body: "여쭐 것이 있습니다. 눌러서 홈에서 답합니다" },
 };
 
-/** 지금 만들어지는 알림 종류만 거른다(마감 · 생성). */
+/** 지금 만들어지는 알림 종류만 거른다(마감 · 생성 · 확인). */
 const NOTIFICATION_FILTERS: ReadonlyArray<{ key: "all" | NotificationKind; label: string }> = [
   { key: "all", label: "전체" },
   { key: "deadline", label: "마감" },
   { key: "generation", label: "생성" },
+  { key: "consultant", label: "확인" },
 ];
 
 function relativeTime(iso: string, now: number): string {

@@ -1,10 +1,10 @@
-import { API_PREFIX, AgentPlanDecisionSchema, AgentRecordDraftDecisionSchema, AgentReplanDecisionSchema, AgentReviewFreshnessResponseSchema, UuidSchema, CreateAgentConversationSchema, SendAgentMessageSchema, AddAgentContextSchema, AgentApprovalSchema, AgentConversationResponseSchema, AgentConversationListSchema, SetAgentContextsSchema } from "@expresso/contracts";
+import { API_PREFIX, AgentGoalDraftDecisionSchema, AgentPlanDecisionSchema, AgentRecordDraftDecisionSchema, AgentReplanDecisionSchema, AgentReviewFreshnessResponseSchema, UuidSchema, CreateAgentConversationSchema, SendAgentMessageSchema, AddAgentContextSchema, AgentApprovalSchema, AgentConversationResponseSchema, AgentConversationListSchema, SetAgentContextsSchema } from "@expresso/contracts";
 import { API_BASE_URL } from "@/lib/api/client";
 import { readAccessToken } from "@/lib/session";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 /** 대화 안 초안의 결정(POST conversations/:id/<종류>/:draftId)과 그 입력 계약. */
-const DRAFT_DECISIONS = { "record-drafts": AgentRecordDraftDecisionSchema, "plan-drafts": AgentPlanDecisionSchema, "replan-drafts": AgentReplanDecisionSchema } as const;
+const DRAFT_DECISIONS = { "record-drafts": AgentRecordDraftDecisionSchema, "goal-drafts": AgentGoalDraftDecisionSchema, "plan-drafts": AgentPlanDecisionSchema, "replan-drafts": AgentReplanDecisionSchema } as const;
 const isDraftAction = (action: string | undefined): action is keyof typeof DRAFT_DECISIONS => !!action && action in DRAFT_DECISIONS;
 async function proxy(request: Request, context: { params: Promise<{ path: string[] }> }) {
   const token = await readAccessToken(); if (!token) return Response.json({ error: { message: "로그인이 필요합니다." } }, { status: 401 });
@@ -15,7 +15,8 @@ async function proxy(request: Request, context: { params: Promise<{ path: string
   const review = isGet && action === "reviews" && nested;
   const draftDecision = !isGet && isDraftAction(action) && nested;
   // 지면 고침 되돌리기(POST page-edits/:editId/undo). 본문은 없다.
-  const pageUndo = !isGet && action === "page-edits" && path.length === 5 && UuidSchema.safeParse(path[3]).success && path[4] === "undo";
+  // 저장한 기록 되돌리기(POST saved-records/:recordId/undo)도 같은 모양이다.
+  const pageUndo = !isGet && (action === "page-edits" || action === "saved-records") && path.length === 5 && UuidSchema.safeParse(path[3]).success && path[4] === "undo";
   if (path[0] !== "conversations" || (path.length > 3 && !review && !draftDecision && !pageUndo) || (path[1] && !UuidSchema.safeParse(path[1]).success)) return new Response(null, { status: 404 });
   if ((isGet && action && action !== "events" && !review) || (!isGet && path.length === 2) || (!isGet && action && !["messages", "contexts", "context-selection", "approval", "cancel", "retry"].includes(action) && !draftDecision && !pageUndo)) return new Response(null, { status: 404 });
   let body: string | undefined = action === "cancel" || action === "retry" || pageUndo ? "{}" : undefined;

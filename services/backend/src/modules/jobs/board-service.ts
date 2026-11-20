@@ -1,6 +1,6 @@
 import type { z } from "zod";
 type JobBrewState = z.infer<typeof JobBrewStateSchema>;
-import { API_PREFIX, JobPostingDetailSchema, JobPostingListResponseSchema, JobPostingMatchSchema, JobRequirementsSchema, ListJobPostingsQuerySchema, RecentJobSearchListResponseSchema, JobBrewStateSchema, type ListJobPostingsQuery } from "@expresso/contracts";
+import { API_PREFIX, daysUntilDeadline, urgentDeadlineRange, JobPostingDetailSchema, JobPostingListResponseSchema, JobPostingMatchSchema, JobRequirementsSchema, ListJobPostingsQuerySchema, RecentJobSearchListResponseSchema, JobBrewStateSchema, type ListJobPostingsQuery } from "@expresso/contracts";
 import { mongoCollections, type CompanyDoc, type InterestDoc, type JobPostingDoc, type MatchScoreDoc, type JobPostingRequirementDoc, type RequirementCoverageDoc } from "@expresso/database";
 import type { Document } from "mongodb";
 import type { MongoContext } from "../../platform/mongodb.js";
@@ -29,14 +29,20 @@ function placeOf(location: string | null | undefined, companyName: string): stri
 
 /**
  * 공고 목록의 정렬 단계. 공고 탐색(`list`)과 통합 검색(`search`)이 같은 순서를 쓰도록
- * 한 곳에 둔다. 장소로 찾을 때는 그 장소 · 가까운 순이 `sort`보다 앞선다.
+ * 한 곳에 둔다.
+ *
+ * 장소로 찾을 때 기본 정렬(`match`)은 그 장소 · 가까운 순이 앞선다. 사용자가 「마감 순」 · 「최신 순」을
+ * **골랐으면** 그 순서가 앞서고 거리는 같은 값끼리의 순서만 정한다 — 거리가 늘 앞서면 마감 순을 눌러도
+ * 마감이 뒤섞여 보였다(Discord QA 11-13). 장소 조건(반경)으로 거르는 것은 그대로다.
  */
 function boardOrder(query: Pick<ListJobPostingsQuery, "sort">, place: ReturnType<typeof nearbyPlaceOf>): Document[] {
   const direction = query.sort === "deadline" ? 1 : -1;
   const sortKey = query.sort === "match" ? { $ifNull: ["$match.total", -1] } : query.sort === "deadline" ? { $ifNull: ["$expiresAt", new Date("9999-12-31T00:00:00Z")] } : "$createdAt";
-  return place
-    ? [{ $set: { sortKey, nearbyRank: nearbyRank(place) } }, { $sort: { nearbyRank: 1, nearbyDistanceKm: 1, sortKey: direction, createdAt: direction, _id: direction } }]
-    : [{ $set: { sortKey } }, { $sort: { sortKey: direction, createdAt: direction, _id: direction } }];
+  if (!place) return [{ $set: { sortKey } }, { $sort: { sortKey: direction, createdAt: direction, _id: direction } }];
+  const nearby = [{ $set: { sortKey, nearbyRank: nearbyRank(place) } }];
+  return query.sort === "match"
+    ? [...nearby, { $sort: { nearbyRank: 1, nearbyDistanceKm: 1, sortKey: direction, createdAt: direction, _id: direction } }]
+    : [...nearby, { $sort: { sortKey: direction, nearbyRank: 1, nearbyDistanceKm: 1, createdAt: direction, _id: direction } }];
 }
 
 function summary(row: BoardRow, brew: JobBrewState | undefined, at: Date) {
@@ -49,7 +55,7 @@ function summary(row: BoardRow, brew: JobBrewState | undefined, at: Date) {
     company: { id: company._id, name: company.name, domain: company.domain ?? null, industry: company.industry ?? null, toneSummary: company.toneSummary ?? null, initial: company.initial ?? null, avatarBackground: company.avatarBackground ?? null, avatarColor: company.avatarColor ?? null, logoUrl: company.logoChecksum ? `${API_PREFIX}/companies/${company._id}/logo?v=${company.logoChecksum.slice(0, 16)}` : null },
     source: row.source, sourceUrl: row.sourceUrl ?? null, sourceBoard: row.sourceBoard ?? null, team: row.team ?? null, location: placeOf(row.location, company.name), workType: row.workType ?? null, experienceLabel: row.experienceNote ?? row.experienceLabel ?? null, family: row.jobFamily ?? null,
     technologies: requirements.technologies.map((name) => ({ name, matched: match ? match.axes.technology.matched.includes(name) : null })),
-    expiresAt: row.expiresAt?.toISOString() ?? null, daysLeft: row.expiresAt ? Math.floor(row.expiresAt.getTime() / 86_400_000) - Math.floor(at.getTime() / 86_400_000) : null, deadlineNote: row.deadlineNote ?? null, match,
+    expiresAt: row.expiresAt?.toISOString() ?? null, daysLeft: row.expiresAt ? daysUntilDeadline(row.expiresAt, at) : null, deadlineNote: row.deadlineNote ?? null, match,
     interest: row.interest ? { id: row.interest._id, stage: row.interest.stage, deadlineAt: row.interest.deadlineAt?.toISOString() ?? null, memo: row.interest.memo ?? null, updatedAt: row.interest.updatedAt.toISOString() } : null,
     brew: brew ?? null,
     // 0.1km 단위로 자른다 — 좌표가 대략값이라 그보다 잘게 말할 근거가 없다.
@@ -82,7 +88,8 @@ export class JobBoardService implements JobBoardApi {
     const technologies = (field: string, limit: number): Document[] => [filter(), { $unwind: `$${field}` }, ...group(field), { $limit: limit }];
     const countIf = (condition: Document) => ({ $sum: { $cond: [condition, 1, 0] } });
     const remote = { $regexMatch: { input: { $ifNull: ["$workType", ""] }, regex: "리모트", options: "i" } };
-    const urgent = { $and: [{ $gte: ["$expiresAt", at] }, { $lt: ["$expiresAt", new Date(at.getTime() + 7 * 86_400_000)] }] };
+    const urgentRange = urgentDeadlineRange(at);
+    const urgent = { $and: [{ $gte: ["$expiresAt", urgentRange.from] }, { $lt: ["$expiresAt", urgentRange.to] }] };
     const place = nearbyPlaceOf(query);
     const order = boardOrder(query, place);
     const [result] = await mongoCollections(this.context.db).jobPostings.aggregate<{

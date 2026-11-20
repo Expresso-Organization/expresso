@@ -10,19 +10,45 @@ import { GlideMenu } from "@/components/ui/GlideMenu";
 import { Icon } from "@/components/ui/Icon";
 import { CAREER_CATEGORY_ICONS } from "@/lib/career-category-icons";
 
+import { SidebarGroupView, useSidebarGroupOpen } from "./SidebarGroup";
 import styles from "./Sidebar.module.css";
 
-/** 열려 있는 카테고리도 주소가 안다 — `/career/{key}`. */
+/**
+ * 커리어 카테고리 목록 — 카테고리 추가와 「보관됨」을 함께 품는다. 사이드바의 「커리어 기록」 묶음과
+ * 라이브러리의 왼쪽 목록이 쓴다.
+ *
+ * 열려 있는 카테고리는 `activeKey`로 받는다. 주지 않으면 주소(`/career/{key}`)에서 읽는다.
+ * 보관한 카테고리는 목록 끝 「보관됨」을 펼쳐야 보인다. 보관한 카테고리를 보고 있으면 처음부터 펼친다.
+ */
 export function SidebarCategories({
   categories,
+  hrefBase = "/career/",
+  activeKey,
+  heading = true,
 }: {
   categories: readonly CareerCategory[];
+  /** 카테고리 키를 붙이면 그 카테고리의 주소가 되는 앞부분. 라이브러리는 `/library?s=`를 준다. */
+  hrefBase?: string;
+  /** 지금 보고 있는 카테고리의 키. 카테고리를 보고 있지 않으면 null. */
+  activeKey?: string | null;
+  /** 「커리어 기록」 접히는 묶음으로 세울지. 다른 목록 안에 들어갈 때는 끈다. */
+  heading?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const active = categories.filter((category) => category.archivedAt === null);
+  const archived = categories.filter((category) => category.archivedAt !== null);
+  const isOpen = (key: string) => (activeKey === undefined ? pathname === `/career/${key}` : activeKey === key);
+  const viewingArchived = archived.some((category) => isOpen(category.key));
+  // 누르기 전에는 지금 보는 카테고리에 맞춰 펼치고, 누른 뒤에는 누른 대로 둡니다.
+  const [archiveOpen, setArchiveOpen] = useState<boolean | null>(null);
+  const showArchived = archiveOpen ?? viewingArchived;
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
   const [state, setState] = useState<"idle" | "saving" | "failed">("idle");
+  const group = useSidebarGroupOpen("career");
+  // 머리말 `+`와 목록 끝 「카테고리 추가」가 같은 입력을 연다. 접힌 묶음이면 펼쳐서 연다.
+  const startAdding = () => { if (heading) group.setOpen(true); setAdding(true); };
 
   const close = () => { setAdding(false); setName(""); setState("idle"); };
   const create = async (event: FormEvent) => {
@@ -39,89 +65,103 @@ export function SidebarCategories({
     }).catch(() => null);
     if (!response?.ok) { setState("failed"); return; }
     close();
-    router.push(`/career/${key}` as Route);
+    router.push(`${hrefBase}${key}` as Route);
     // 사이드바 목록은 레이아웃이 세션에서 읽으므로 레이아웃까지 다시 받습니다.
     router.refresh();
   };
   const cancelOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") close(); };
 
+  const renderCategory = (category: CareerCategory) => {
+    const isActive = isOpen(category.key);
+    return (
+      <Link
+        key={category.id}
+        href={`${hrefBase}${category.key}` as Route}
+        data-row
+        title={category.name}
+        className={`${styles.row} ${styles.categoryItem} ${
+          isActive
+            ? `${styles.rowActive} ${styles.categoryItemActive}`
+            : ""
+        }`}
+        aria-current={isActive ? "page" : undefined}
+      >
+        <span className={styles.rowLead}>
+          <Icon
+            name={CAREER_CATEGORY_ICONS[category.key] ?? "file-text"}
+            weight={isActive ? "fill" : "regular"}
+            size={14}
+            color={isActive ? "var(--ex-fg)" : "var(--ex-fg-muted)"}
+          />
+        </span>
+        <span className={`${styles.copy} ${styles.categoryName}`}>
+          {category.name}
+        </span>
+        <span className={`${styles.copy} ${styles.categoryCount}`}>
+          {category.recordCount}
+        </span>
+      </Link>
+    );
+  };
+
+  const list = (
+    <GlideMenu className={`${styles.categories} ${styles.navGroup}`}>
+      {active.map(renderCategory)}
+      {adding ? (
+        <form className={`${styles.row} ${styles.addCategory}`} data-row data-state={state} onSubmit={(event) => void create(event)}>
+          <span className={styles.rowLead}>
+            <Icon name="file-text" size={14} color="var(--ex-fg-muted)" />
+          </span>
+          <input
+            className={`${styles.copy} ${styles.addCategoryInput}`}
+            aria-label="새 카테고리 이름"
+            aria-invalid={state === "failed"}
+            placeholder="카테고리 이름"
+            maxLength={120}
+            autoFocus
+            value={name}
+            disabled={state === "saving"}
+            onChange={(event) => { setName(event.target.value); if (state === "failed") setState("idle"); }}
+            onKeyDown={cancelOnEscape}
+            onBlur={() => { if (!name.trim()) close(); }}
+          />
+          {state === "failed" ? <span className={`${styles.copy} ${styles.addCategoryIssue}`} role="alert">만들지 못했습니다. 다시 Enter</span> : null}
+        </form>
+      ) : (
+        <button type="button" className={`${styles.row} ${styles.addCategory}`} data-row title="카테고리 추가" onClick={startAdding}>
+          <span className={styles.rowLead}>
+            <Icon name="plus" size={13} color="var(--ex-fg-muted)" />
+          </span>
+          <span className={`${styles.copy} ${styles.addCategoryLabel}`}>
+            카테고리 추가
+          </span>
+        </button>
+      )}
+      {archived.length ? (
+        <button type="button" className={`${styles.row} ${styles.addCategory} ${styles.archivedToggle}`} data-row aria-expanded={showArchived} title="보관된 카테고리" onClick={() => setArchiveOpen(!showArchived)}>
+          <span className={styles.rowLead}>
+            <Icon name={showArchived ? "caret-down" : "caret-right"} size={12} color="var(--ex-fg-muted)" />
+          </span>
+          <span className={`${styles.copy} ${styles.addCategoryLabel}`}>보관됨</span>
+          <span className={`${styles.copy} ${styles.categoryCount}`}>{archived.length}</span>
+        </button>
+      ) : null}
+      {showArchived ? archived.map(renderCategory) : null}
+    </GlideMenu>
+  );
+
+  if (!heading) return list;
   return (
-    <>
-      {/* 머리말 `+`와 목록 끝 「카테고리 추가」가 같은 입력을 엽니다. */}
-      <div className={styles.groupHead}>
-        <div className={`${styles.copy} ${styles.groupHeadRow}`}>
-          <span className={styles.groupLabel}>내 커리어</span>
-          <div className={styles.groupActions}>
-            <button type="button" className={styles.groupAction} aria-label="카테고리 추가" aria-expanded={adding} onClick={() => setAdding(true)}>
-              <Icon name="plus" size={13} />
-            </button>
-          </div>
-        </div>
-      </div>
-      <GlideMenu className={`${styles.categories} ${styles.navGroup}`}>
-        {categories.map((category) => {
-          const isActive = pathname === `/career/${category.key}`;
-          return (
-            <Link
-              key={category.id}
-              href={`/career/${category.key}` as Route}
-              data-row
-              title={category.name}
-              className={`${styles.row} ${styles.categoryItem} ${
-                isActive
-                  ? `${styles.rowActive} ${styles.categoryItemActive}`
-                  : ""
-              }`}
-              aria-current={isActive ? "page" : undefined}
-            >
-              <span className={styles.rowLead}>
-                <Icon
-                  name={CAREER_CATEGORY_ICONS[category.key] ?? "file-text"}
-                  weight={isActive ? "fill" : "regular"}
-                  size={14}
-                  color={isActive ? "var(--ex-fg)" : "var(--ex-fg-muted)"}
-                />
-              </span>
-              <span className={`${styles.copy} ${styles.categoryName}`}>
-                {category.name}
-              </span>
-              <span className={`${styles.copy} ${styles.categoryCount}`}>
-                {category.recordCount}
-              </span>
-            </Link>
-          );
-        })}
-        {adding ? (
-          <form className={`${styles.row} ${styles.addCategory}`} data-row data-state={state} onSubmit={(event) => void create(event)}>
-            <span className={styles.rowLead}>
-              <Icon name="file-text" size={14} color="var(--ex-fg-muted)" />
-            </span>
-            <input
-              className={`${styles.copy} ${styles.addCategoryInput}`}
-              aria-label="새 카테고리 이름"
-              aria-invalid={state === "failed"}
-              placeholder="카테고리 이름"
-              maxLength={120}
-              autoFocus
-              value={name}
-              disabled={state === "saving"}
-              onChange={(event) => { setName(event.target.value); if (state === "failed") setState("idle"); }}
-              onKeyDown={cancelOnEscape}
-              onBlur={() => { if (!name.trim()) close(); }}
-            />
-            {state === "failed" ? <span className={`${styles.copy} ${styles.addCategoryIssue}`} role="alert">만들지 못했습니다. 다시 Enter</span> : null}
-          </form>
-        ) : (
-          <button type="button" className={`${styles.row} ${styles.addCategory}`} data-row title="카테고리 추가" onClick={() => setAdding(true)}>
-            <span className={styles.rowLead}>
-              <Icon name="plus" size={13} color="var(--ex-fg-muted)" />
-            </span>
-            <span className={`${styles.copy} ${styles.addCategoryLabel}`}>
-              카테고리 추가
-            </span>
-          </button>
-        )}
-      </GlideMenu>
-    </>
+    <SidebarGroupView
+      label="커리어 기록"
+      state={group}
+      actions={
+        <button type="button" className={styles.groupAction} aria-label="카테고리 추가" aria-expanded={adding} onClick={startAdding}>
+          <Icon name="plus" size={13} />
+        </button>
+      }
+    >
+      {list}
+    </SidebarGroupView>
   );
 }

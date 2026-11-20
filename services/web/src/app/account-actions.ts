@@ -6,7 +6,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { ApiError } from "@/lib/api/client";
-import { account, auth, notificationSettings } from "@/lib/api/endpoints";
+import { account, auth, consultant, notificationSettings } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 import { DELETION_CODE_COOKIE, DELETION_CODE_MAX_AGE_SECONDS, DELETION_CODE_PATH } from "@/lib/auth/deletion-code";
 import { clearAccessToken } from "@/lib/session";
@@ -49,6 +49,17 @@ export async function updateDisplayNameAction(_previous: DisplayNameState, formD
   }
   revalidatePath("/", "layout");
   return { saved: true };
+}
+
+/**
+ * 09 먼저 연락받기 — 컨설턴트의 약속 확인과 능동 제안을 함께 켜고 끈다.
+ * 능동 제안은 커리어 기록의 AI 사용 동의가 있어야 켜진다. 없으면 약속 확인만 켜진다.
+ */
+export async function setOutreachAction(formData: FormData): Promise<void> {
+  const session = await requireSession();
+  await consultant.setOutreach(session.accessToken, formData.get("enabled") === "true");
+  revalidatePath("/account");
+  revalidatePath("/home");
 }
 
 export interface DeletionState {

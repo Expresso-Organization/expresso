@@ -1,0 +1,481 @@
+[
+  {
+    "label": "bae-clarity__tokens__r1",
+    "input": "bae-clarity",
+    "persona": "bae",
+    "design": "clarity",
+    "arm": "tokens",
+    "rep": 1,
+    "startedAt": "2026-11-15T08:29:32.202Z",
+    "wallMs": 78695,
+    "model": "claude-sonnet-5-5",
+    "calls": 1,
+    "costUsd": 0.1796,
+    "outputTokens": 12313,
+    "inputTokens": 2,
+    "aiMs": 77872,
+    "briefCostUsd": 0.1628,
+    "briefMs": 35567,
+    "rationale": "추천 모델이 후보를 뽑아 서빙되기까지의 흐름이 이 사람의 일이라, 증거마다 형태를 달리했다. Recall은 막대 비교, 지연은 30ms 목표선까지 이어진 눈금자, 배포는 관문이 있는 흐름도로 그렸고 색은 Clarity의 흰색·먹색·파랑으로 제한했다.",
+    "plan": {
+      "subject": "추천 모델이 후보를 뽑아 홈 피드까지 가는 길. 사용자 벡터와 콘텐츠 벡터가 만나는 Two-tower 구조, 30ms 안에서 도는 검색, 지표 기준에서 막히는 배포 관문을 지면의 소재로 쓴다.",
+      "palette": "흰 종이 #ffffff / 먹색 잉크 #17202a / 신호 파랑 #2563eb / 짙은 파랑 #1e40af(큰 글자·hover) / 옅은 파랑 면 #eef4ff / 회색 선 #dfe4ea / 보조 글자 #566170",
+      "type": "고딕 단일 계열: var(--page-sans) Pretendard에 Apple SD Gothic Neo, Noto Sans KR 대체. 숫자는 tabular-nums. 크기 단계는 hero 제목 clamp(30px,5vw,48px), 섹션 제목 26px, 소제목 17px, 본문 16px/1.75, 보조 14px. 굵기는 400, 600, 800 세 단계만 쓴다.",
+      "layout": "왼쪽 정렬 한 줄기 읽기 흐름. 첫 화면은 이름, 주장 제목, 한 줄 소개 뒤에 대표 증거 세 가지를 서로 다른 형태로 둔다(Recall 막대 비교, 시청 시간·클릭률 큰 숫자, 지연 시간 게이지). 2번 섹션은 Two-tower 도식과 문제·기여·결과 3단, 3번은 30ms 눈금자와 메모리 막대, 4번은 관문이 있는 가로 흐름, 5번은 세로 타임라인, 끝에 경력과 근거 자료 목록. 모바일은 단일 열.",
+      "signature": "30ms 눈금자. 목표선까지 이어진 긴 트랙 위에 18ms까지만 파란 막대가 차 있어, 여유 폭이 한눈에 읽힌다.",
+      "revised": "처음에는 첫 화면을 큰 숫자 세 개를 같은 카드로 나란히 놓는 구성으로 잡았으나 기본값으로 읽혔다. 증거마다 형태를 바꿨다. 비교는 막대, 예산은 눈금자, 수상은 문장으로 했다. 섹션마다 번호와 대문자 라벨을 달려던 것은 순서가 있는 5번 타임라인에만 남기고 지웠다."
+    },
+    "ungrounded": [],
+    "removed": [
+      "속성 marker-end"
+    ],
+    "blockedTags": 0,
+    "qa": "ready",
+    "htmlBytes": 11238,
+    "cssBytes": 8126,
+    "promptHash": "095ea0b28833609d774dcd5c9a7415f9c3215f0408671ed2f7f7d586d3a55d32",
+    "skillSha256": "51e3aa519fba86baab67503e71b2e604f1e9682213efb8f9536b48da980bf528",
+    "measure": {
+      "label": "bae-clarity__tokens__r1",
+      "expected": {
+        "name": "배준호",
+        "sections": 5,
+        "evidence": 8
+      },
+      "screens": {
+        "390": {
+          "overflow": false,
+          "scrollWidth": 390,
+          "height": 6352,
+          "brokenImages": 0,
+          "images": 0,
+          "svgs": 1,
+          "details": 0,
+          "h1": 1,
+          "chars": 2023,
+          "hiddenChars": 0,
+          "firstMaxFont": 44,
+          "firstChars": 301,
+          "backgroundLuminance": 1,
+          "families": [
+            "Pretendard Variable"
+          ],
+          "name": true,
+          "sections": 5,
+          "evidence": 8,
+          "careerHeading": true,
+          "evidenceHeading": true,
+          "notes": 0,
+          "errors": []
+        },
+        "1440": {
+          "overflow": false,
+          "scrollWidth": 1440,
+          "height": 4883,
+          "brokenImages": 0,
+          "images": 0,
+          "svgs": 1,
+          "details": 0,
+          "h1": 1,
+          "chars": 2023,
+          "hiddenChars": 0,
+          "firstMaxFont": 48,
+          "firstChars": 428,
+          "backgroundLuminance": 1,
+          "families": [
+            "Pretendard Variable"
+          ],
+          "name": true,
+          "sections": 5,
+          "evidence": 8,
+          "careerHeading": true,
+          "evidenceHeading": true,
+          "notes": 0,
+          "errors": []
+        }
+      }
+    }
+  },
+  {
+    "label": "moon-clarity__tokens__r1",
+    "input": "moon-clarity",
+    "persona": "moon",
+    "design": "clarity",
+    "arm": "tokens",
+    "rep": 1,
+    "startedAt": "2026-11-15T08:29:32.202Z",
+    "wallMs": 53888,
+    "model": "claude-sonnet-5-5",
+    "calls": 1,
+    "costUsd": 0.1412,
+    "outputTokens": 8654,
+    "inputTokens": 2,
+    "aiMs": 52939,
+    "briefCostUsd": 0.2341,
+    "briefMs": 37045,
+    "rationale": "대표 증거인 '3일 → 반나절'을 숫자 대신 길이 비교 막대로 첫 화면에 세우고, 섹션마다 형태를 달리해 실험 표준화는 문제-해결-결과 선, 검색 이탈은 두 막대, 데이터 기반은 표로 보였습니다.",
+    "plan": {
+      "subject": "A/B 테스트 분석 절차. 실험 한 건이 '설계서 → 표본 크기 → 결과 리포트'로 흐르는 파이프라인과, 3일이 반나절로 줄어드는 길이 비교. 검색 이탈은 '유형별로 쪼개기'를 막대 분해로 보인다.",
+      "palette": "흰 종이 #ffffff / 먹 #17202a / 파랑 #2563eb / 연파랑 면 #eef3fe / 회청 보조 글자 #566274 / 가는 선 #dde3ec",
+      "type": "고딕 단일 계열. 본문 Pretendard(var(--page-sans)) 17px/1.75, 대체 Noto Sans KR·system-ui. 수치만 var(--page-display) Outfit으로 크게. 크기 단계: 수치 72 / h1 44 / h2 28 / 본문 17 / 보조 14. 굵기 대비 800 vs 400.",
+      "layout": "좌측 정렬 단일 칼럼(최대 1080px). 첫 화면: 이름과 역할, 한 줄 소개 아래에 '3일 → 반나절' 시간 막대 비교를 대표 증거로 세운다. 섹션1은 3개 강점을 가로 3열 정의 목록. 섹션2는 주인공으로, 문제·해결·결과를 좌측 세로 선과 단계로 잇고 수치 3개는 서로 다른 시각형(시간 막대, 6→15 점 격자, 30% 줄어든 표본 막대). 섹션3은 이탈 7.4%→4.1% 두 개의 막대와 3단계 깔때기형 가로 흐름. 섹션4는 표 형태의 5행 목록. 끝에 근거 자료 목록을 2열 촘촘한 줄로.",
+      "signature": "첫 화면의 시간 막대: 3일 막대가 길게 있고 그 안에서 반나절 구간만 파랗게 칠해져, 줄어든 양이 길이로 읽힌다. 페이지 로드 때 한 번만 채워진다.",
+      "revised": "처음엔 큰 숫자+작은 라벨 히어로와 동일한 카드 3장 구성이었다. 대표 수치를 숫자 대신 길이 비교 그래픽으로 바꾸고, 섹션마다 형태를 달리했다(정의 목록, 단계선, 두 막대, 표). 영문 대문자 라벨과 번호 마커는 쓰지 않았고, 번호는 실제 순서인 과정에만 썼다."
+    },
+    "ungrounded": [],
+    "removed": [],
+    "blockedTags": 0,
+    "qa": "ready",
+    "htmlBytes": 8464,
+    "cssBytes": 5881,
+    "promptHash": "2309aff2e734b40559504a07912e578a35e8ab2e2487e66350b0dba73b181c95",
+    "skillSha256": "51e3aa519fba86baab67503e71b2e604f1e9682213efb8f9536b48da980bf528",
+    "measure": {
+      "label": "moon-clarity__tokens__r1",
+      "expected": {
+        "name": "문가령",
+        "sections": 4,
+        "evidence": 8
+      },
+      "screens": {
+        "390": {
+          "overflow": false,
+          "scrollWidth": 390,
+          "height": 6132,
+          "brokenImages": 0,
+          "images": 0,
+          "svgs": 0,
+          "details": 0,
+          "h1": 1,
+          "chars": 1713,
+          "hiddenChars": 0,
+          "firstMaxFont": 34,
+          "firstChars": 449,
+          "backgroundLuminance": 1,
+          "families": [
+            "Pretendard Variable",
+            "Outfit"
+          ],
+          "name": true,
+          "sections": 4,
+          "evidence": 8,
+          "careerHeading": false,
+          "evidenceHeading": true,
+          "notes": 0,
+          "errors": []
+        },
+        "1440": {
+          "overflow": false,
+          "scrollWidth": 1440,
+          "height": 3979,
+          "brokenImages": 0,
+          "images": 0,
+          "svgs": 0,
+          "details": 0,
+          "h1": 1,
+          "chars": 1713,
+          "hiddenChars": 0,
+          "firstMaxFont": 44,
+          "firstChars": 468,
+          "backgroundLuminance": 1,
+          "families": [
+            "Pretendard Variable",
+            "Outfit"
+          ],
+          "name": true,
+          "sections": 4,
+          "evidence": 8,
+          "careerHeading": false,
+          "evidenceHeading": true,
+          "notes": 0,
+          "errors": []
+        }
+      }
+    }
+  },
+  {
+    "label": "yun-clarity__tokens__r1",
+    "input": "yun-clarity",
+    "persona": "yun",
+    "design": "clarity",
+    "arm": "tokens",
+    "rep": 1,
+    "startedAt": "2026-11-15T08:29:32.201Z",
+    "wallMs": 82501,
+    "model": "claude-sonnet-5-5",
+    "calls": 1,
+    "costUsd": 0.1915,
+    "outputTokens": 13255,
+    "inputTokens": 2,
+    "aiMs": 81577,
+    "briefCostUsd": 0.0989,
+    "briefMs": 41433,
+    "rationale": "성능 개선이 핵심 증거라 LCP 3.8초와 1.9초를 같은 초 눈금 위 막대 두 줄로 첫 화면에 세웠고, 이후 섹션은 막대 행, 문제-판단 목록, 실제 4단계인 모아 UI 단계선, 표로 내용 성격에 맞게 형태를 바꿨다.",
+    "plan": {
+      "subject": "성능 개선은 숫자를 길이로 보여 줄 수 있는 일이다. LCP 3.8초와 1.9초를 같은 초 눈금 위에 막대로 놓고, 그 눈금을 지면 전체의 측정 언어로 쓴다.",
+      "palette": "흰 종이 #ffffff · 먹 #17202a · 파랑 #2563eb · 진한 파랑 #1d4ed8(글자 강조용) · 옅은 파랑 #eff5ff(개선 후 영역) · 회청 #c3cbd6(개선 전 막대) · 선 #dfe5ec · 보조 글자 #5a6675",
+      "type": "Pretendard(var(--page-sans)) 한 계열에 굵기와 크기로만 위계를 만든다. 한국어 대체로 Noto Sans KR, Apple SD Gothic Neo. 헤드라인 clamp(30px–48px)/800, 섹션 제목 26px/750, 본문 16.5px/1.75, 보조 14px. 숫자는 tabular-nums.",
+      "layout": "왼쪽 정렬 한 단(최대 1040px)에 얇은 선으로 구획한다. 첫 화면은 이름과 직무, 헤드라인, 그 아래 0–4초 눈금 위의 LCP 막대 두 줄, 이어서 JS와 컴포넌트 비율 두 수치. 숫자 섹션은 전후 막대 행, 프로젝트는 문제-판단-리스크-재발 방지-남긴 것 목록과 옆의 수치, 모아 UI는 4단계가 이어지는 가로 단계선(실제 순서라 번호 사용), 접근성은 옅은 파랑 띠, 도구는 용어-설명 표, 사이드는 서로 다른 두 덩어리, 경력과 근거 자료는 목록.",
+      "signature": "첫 화면의 초 눈금. 개선 전 막대가 3.8초까지 그려진 뒤 개선 후 막대가 1.9초에서 멈춘다. 페이지 로드 때 한 번만 움직인다.",
+      "revised": "처음 구상은 큰 숫자 세 개를 같은 카드로 나란히 놓는 첫 화면이었다. 이는 어느 성과 포트폴리오에나 나오는 기본형이라 대표 수치 하나(LCP)만 눈금 위 막대로 키우고 나머지 둘은 선으로 나눈 한 줄로 낮췄다. 모든 섹션을 같은 카드로 반복하지 않고 막대 행, 목록, 단계선, 띠, 표로 내용 성격에 따라 형태를 바꿨다. 영문 대문자 라벨과 번호 장식은 쓰지 않았고 번호는 모아 UI의 실제 4단계에만 썼다."
+    },
+    "ungrounded": [],
+    "removed": [],
+    "blockedTags": 0,
+    "qa": "ready",
+    "htmlBytes": 11133,
+    "cssBytes": 7909,
+    "promptHash": "ecd8c5c384a696f483976705e1af5184eca789631299d89b05b18d695f296a47",
+    "skillSha256": "51e3aa519fba86baab67503e71b2e604f1e9682213efb8f9536b48da980bf528",
+    "measure": {
+      "label": "yun-clarity__tokens__r1",
+      "expected": {
+        "name": "윤하린",
+        "sections": 7,
+        "evidence": 8
+      },
+      "screens": {
+        "390": {
+          "overflow": false,
+          "scrollWidth": 390,
+          "height": 7148,
+          "brokenImages": 0,
+          "images": 0,
+          "svgs": 0,
+          "details": 0,
+          "h1": 1,
+          "chars": 2554,
+          "hiddenChars": 0,
+          "firstMaxFont": 32,
+          "firstChars": 381,
+          "backgroundLuminance": 1,
+          "families": [
+            "Pretendard Variable"
+          ],
+          "name": true,
+          "sections": 7,
+          "evidence": 7,
+          "careerHeading": true,
+          "evidenceHeading": true,
+          "notes": 0,
+          "errors": []
+        },
+        "1440": {
+          "overflow": false,
+          "scrollWidth": 1440,
+          "height": 5084,
+          "brokenImages": 0,
+          "images": 0,
+          "svgs": 0,
+          "details": 0,
+          "h1": 1,
+          "chars": 2554,
+          "hiddenChars": 0,
+          "firstMaxFont": 52,
+          "firstChars": 421,
+          "backgroundLuminance": 0.592,
+          "families": [
+            "Pretendard Variable"
+          ],
+          "name": true,
+          "sections": 7,
+          "evidence": 7,
+          "careerHeading": true,
+          "evidenceHeading": true,
+          "notes": 0,
+          "errors": []
+        }
+      }
+    }
+  },
+  {
+    "label": "yun-editorial__tokens__r1",
+    "input": "yun-editorial",
+    "persona": "yun",
+    "design": "editorial",
+    "arm": "tokens",
+    "rep": 1,
+    "startedAt": "2026-11-15T08:29:32.203Z",
+    "wallMs": 73200,
+    "model": "claude-sonnet-5-5",
+    "calls": 1,
+    "costUsd": 0.1792,
+    "outputTokens": 12019,
+    "inputTokens": 2,
+    "aiMs": 72392,
+    "briefCostUsd": 0.0989,
+    "briefMs": 41433,
+    "rationale": "성능 개선이 핵심 증거라서 첫 화면을 로딩 시간 막대(3.8초와 1.9초)로 세우고, 같은 막대 어휘를 번들·사용 비율·개발 기간에 이어 썼다. 사례마다 배치를 달리해 카드 반복을 피했다.",
+    "plan": {
+      "subject": "상품 상세 페이지가 뜨는 시간. 로딩 타임라인의 막대 두 개(3.8초와 1.9초)를 지면의 기본 도형으로 쓴다.",
+      "palette": "종이 #fbfaf7, 먹 #29251f, 벽돌 #9a5b3a, 바랜 먹 #6e655a(보조 글자), 짙은 종이 #f1ede4(면 구분), 괘선 #ddd5c6",
+      "type": "Noto Serif KR(한국어 명조)을 본문과 제목에 쓰고 대체로 var(--page-serif)를 지정한다. 제목은 굵기 800에 자간을 조여 크게, 본문은 400에 행간 1.85. 수치는 같은 명조의 굵은 숫자. 크기는 1.0 / 1.125 / 1.5 / 2.25 / clamp 최대 4.5rem.",
+      "layout": "왼쪽 정렬, 넓은 여백, 본문 폭 약 34em. 첫 화면은 큰 제목 아래에 LCP 3.8초와 1.9초 막대를 길이로 비교한다. 숫자 섹션은 지표별 전/후 막대, 사례는 본문 옆 좁은 칸에 문제·판단·리스크를 놓는 두 단 구성, 모아 UI는 4단계 과정과 컴포넌트 48개 점 격자, 접근성은 한 문장 인용, 도구는 정의 목록, 사이드 프로젝트는 비대칭 두 열, 경력과 근거는 얇은 괘선 목록.",
+      "signature": "첫 화면의 로딩 막대. 3.8초 막대 아래 1.9초 막대가 한 번 그어지며 절반에서 멈추고, 같은 막대 어휘가 번들·사용 비율·개발 기간으로 이어진다.",
+      "revised": "처음에는 큰 숫자 세 개를 나란히 세우는 안이었으나 지표 카드의 기본형이라 버리고, 숫자를 길이로 비교하는 막대로 바꿨다. 모든 섹션을 같은 카드로 반복하지 않고 섹션마다 배치를 달리했다. 대문자 라벨과 번호 장식은 쓰지 않았고 번호는 실제 순서인 모아 UI 4단계에만 썼다."
+    },
+    "ungrounded": [],
+    "removed": [],
+    "blockedTags": 0,
+    "qa": "ready",
+    "htmlBytes": 11156,
+    "cssBytes": 7482,
+    "promptHash": "8fbd0ffa3a0be7deae1e7c5a92e180f2f647646d003a4b0ec12bbcfaca4a5ca5",
+    "skillSha256": "51e3aa519fba86baab67503e71b2e604f1e9682213efb8f9536b48da980bf528",
+    "measure": {
+      "label": "yun-editorial__tokens__r1",
+      "expected": {
+        "name": "윤하린",
+        "sections": 7,
+        "evidence": 8
+      },
+      "screens": {
+        "390": {
+          "overflow": false,
+          "scrollWidth": 390,
+          "height": 8897,
+          "brokenImages": 0,
+          "images": 0,
+          "svgs": 0,
+          "details": 0,
+          "h1": 1,
+          "chars": 2646,
+          "hiddenChars": 0,
+          "firstMaxFont": 38,
+          "firstChars": 163,
+          "backgroundLuminance": 0.956,
+          "families": [
+            "Noto Serif KR"
+          ],
+          "name": true,
+          "sections": 7,
+          "evidence": 6,
+          "careerHeading": true,
+          "evidenceHeading": true,
+          "notes": 0,
+          "errors": []
+        },
+        "1440": {
+          "overflow": false,
+          "scrollWidth": 1440,
+          "height": 7047,
+          "brokenImages": 0,
+          "images": 0,
+          "svgs": 0,
+          "details": 0,
+          "h1": 1,
+          "chars": 2646,
+          "hiddenChars": 0,
+          "firstMaxFont": 72,
+          "firstChars": 190,
+          "backgroundLuminance": 0.956,
+          "families": [
+            "Noto Serif KR"
+          ],
+          "name": true,
+          "sections": 7,
+          "evidence": 6,
+          "careerHeading": true,
+          "evidenceHeading": true,
+          "notes": 0,
+          "errors": []
+        }
+      }
+    }
+  },
+  {
+    "label": "yun-refero-linear-midnight__tokens__r1",
+    "input": "yun-refero-linear-midnight",
+    "persona": "yun",
+    "design": "refero-linear-midnight",
+    "arm": "tokens",
+    "rep": 1,
+    "startedAt": "2026-11-15T08:29:32.203Z",
+    "wallMs": 69463,
+    "model": "claude-sonnet-5-5",
+    "calls": 1,
+    "costUsd": 0.1724,
+    "outputTokens": 11338,
+    "inputTokens": 2,
+    "aiMs": 68581,
+    "briefCostUsd": 0.0989,
+    "briefMs": 41433,
+    "rationale": "성능 개선과 공통 UI가 이 사람의 두 축이라, 첫 화면에 LCP 전/후 막대를 세워 숫자를 길이로 읽히게 하고 라임은 '이후' 값과 결과 행에만 썼다.",
+    "plan": {
+      "subject": "성능 트레이스와 컴포넌트 목록. 이 사람의 일은 느린 것을 재서 줄이고, 흩어진 UI를 한 목록으로 모으는 것이다. 지면을 Lighthouse 측정 화면처럼, 전/후 막대와 정의 표로 짠다.",
+      "palette": "midnight #08090a(바탕) · panel #0e0f11(면) · hairline rgba(255,255,255,.10)(0.5px 경계) · ink #e5e5e6(본문) · mute #8b8f96(보조) · dim #55595f(이전 값 막대) · volt #e4f222(이후 값과 행동, 한 곳에만 집중)",
+      "type": "Pretendard(var(--page-sans)) 단일 계열에 한국어 대체 서체 지정. 굵기 대비로 위계를 만든다. 히어로 제목 clamp(30–52px) 700 · 섹션 제목 22px 650 · 본문 14.5px/1.7 · 보조 12.5px. 숫자는 tabular-nums.",
+      "layout": "왼쪽에 고정 좁은 열(이름, 직무, 이동 목록), 오른쪽에 촘촘한 본문 열. 첫 화면은 제목 아래에 LCP 3.8초와 1.9초 막대 두 줄을 바로 놓는다. 숫자 섹션은 전/후 막대가 든 표, 두 프로젝트는 문제·판단·결과를 정의 행으로 구분하고 모아 UI만 4단계 과정을 가로 열로 둔다. 도구는 표, 근거는 목록. 모바일에서는 한 열로 쌓인다.",
+      "signature": "히어로의 측정 막대: 이전 3.8초 막대가 먼저 차고, 이후 1.9초 막대가 라임색으로 절반 지점에서 멈춘다. 페이지 로드 때 한 번만 움직인다.",
+      "revised": "처음 안은 라임 큰 숫자 세 개를 카드로 나란히 놓았다. 어느 포트폴리오에나 나오는 지표 카드라서, 같은 수치를 전/후 막대와 표로 바꿨다. 모든 섹션을 같은 카드로 반복하지 않고 섹션마다 형태(막대, 정의 행, 과정 열, 표, 목록)를 달리했다. 번호는 실제 순서인 모아 UI 4단계에만 쓴다."
+    },
+    "ungrounded": [],
+    "removed": [],
+    "blockedTags": 0,
+    "qa": "ready",
+    "htmlBytes": 10960,
+    "cssBytes": 7768,
+    "promptHash": "d8a2572b0302a50b49d7197b471dccf3fa499c59e879b2bcda8cb992e320cf95",
+    "skillSha256": "51e3aa519fba86baab67503e71b2e604f1e9682213efb8f9536b48da980bf528",
+    "measure": {
+      "label": "yun-refero-linear-midnight__tokens__r1",
+      "expected": {
+        "name": "윤하린",
+        "sections": 7,
+        "evidence": 8
+      },
+      "screens": {
+        "390": {
+          "overflow": false,
+          "scrollWidth": 390,
+          "height": 5721,
+          "brokenImages": 0,
+          "images": 0,
+          "svgs": 0,
+          "details": 0,
+          "h1": 1,
+          "chars": 2477,
+          "hiddenChars": 0,
+          "firstMaxFont": 30,
+          "firstChars": 459,
+          "backgroundLuminance": 0.003,
+          "families": [
+            "Pretendard Variable"
+          ],
+          "name": true,
+          "sections": 7,
+          "evidence": 7,
+          "careerHeading": true,
+          "evidenceHeading": true,
+          "notes": 0,
+          "errors": []
+        },
+        "1440": {
+          "overflow": false,
+          "scrollWidth": 1440,
+          "height": 3932,
+          "brokenImages": 0,
+          "images": 0,
+          "svgs": 0,
+          "details": 0,
+          "h1": 1,
+          "chars": 2477,
+          "hiddenChars": 0,
+          "firstMaxFont": 52,
+          "firstChars": 596,
+          "backgroundLuminance": 0.048,
+          "families": [
+            "Pretendard Variable"
+          ],
+          "name": true,
+          "sections": 7,
+          "evidence": 7,
+          "careerHeading": true,
+          "evidenceHeading": true,
+          "notes": 0,
+          "errors": []
+        }
+      }
+    }
+  }
+]

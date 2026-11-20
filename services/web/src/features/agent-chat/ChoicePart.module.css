@@ -1,0 +1,22 @@
+/* 선택지 부품 — 답변 글 아래에 테두리 없이 놓는다. 단추는 홈 제안 카드의 보조 단추(옅은 바탕)와 주 단추(커피색)를 따른다. */
+.part { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; max-width: 440px; font-family: var(--ex-font-ui); color: var(--ex-fg); }
+.prompt { margin: 0; font-size: var(--ex-text-xs); font-weight: 600; line-height: var(--ex-leading-normal); }
+.options { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.option { display: flex; align-items: flex-start; gap: 8px; width: 100%; padding: 9px 12px; border: none; border-radius: var(--ex-radius-control); background: var(--ex-bg-tint); color: var(--ex-fg); font: inherit; font-size: var(--ex-text-xs); text-align: left; cursor: pointer; transition: background var(--ex-motion-instant); }
+.option:hover:not(:disabled) { background: var(--ex-bg-tint-strong); }
+.option:focus-visible, .send:focus-visible { outline: none; box-shadow: var(--ex-focus-ring); }
+.option:disabled { cursor: default; color: var(--ex-fg-faint); }
+.option[data-selected] { color: var(--ex-fg); }
+.mark { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; margin-top: 1px; border: 1px solid var(--ex-border-firm); border-radius: var(--ex-radius-pill); background: var(--ex-bg); color: var(--ex-fg-on-accent); }
+.option[data-selected] .mark { border-color: var(--ex-accent); background: var(--ex-accent); }
+.text { display: flex; flex-direction: column; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
+.label { font-weight: 500; line-height: var(--ex-leading-normal); }
+.description { font-size: var(--ex-text-2xs); line-height: var(--ex-leading-normal); color: var(--ex-fg-muted); }
+.option:disabled .description { color: var(--ex-fg-faint); }
+.actions { display: flex; align-items: center; gap: 10px; }
+.send { height: 34px; padding: 0 14px; border: none; border-radius: var(--ex-radius-control); background: var(--ex-accent); color: var(--ex-fg-on-accent); font: inherit; font-size: var(--ex-text-xs); font-weight: 600; cursor: pointer; transition: background var(--ex-motion-instant); }
+.send:hover:not(:disabled) { background: var(--ex-accent-hover); }
+.send:disabled { background: var(--ex-bg-tint); color: var(--ex-fg-faint); cursor: default; }
+.hint, .note { margin: 0; font-size: var(--ex-text-2xs); color: var(--ex-fg-muted); }
+.error { margin: 0; font-size: var(--ex-text-2xs); color: var(--ex-status-danger-text); }
+.pending { margin: 10px 0 0; font-family: var(--ex-font-ui); font-size: var(--ex-text-xs); color: var(--ex-fg-muted); }

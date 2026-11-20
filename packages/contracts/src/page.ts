@@ -76,8 +76,11 @@ import { MEDIA_ASSET_PATH_PREFIX } from "./media-path.js";
  * 부품과 지면 변화를 바꿀 수 있다.
  *
  * 15 — 설계 · 다듬기가 첫 화면 배경(intro의 backdrop)을 고른다. 프롬프트가 배경마다 쓰임을 알린다(`describeBackdrops`).
+ *
+ * 16 — 자유 지면 프롬프트가 작성자 이름을 싣고, 연락처를 받지 않았으니 이메일 · 전화 줄을 두지 않는다고 알린다.
+ * 받지 않은 빈칸을 모델이 서버 CLI 계정 정보로 채웠다(2026-11-10 운영, 「누구의 지면」 절).
  */
-export const PAGE_PROMPT_VERSION = 15;
+export const PAGE_PROMPT_VERSION = 16;
 
 /**
  * 한 지면의 상한.
@@ -310,6 +313,11 @@ export const PageStyleGrammarSchema = z.strictObject({
   imagery: z.enum(["project-artifacts-first", "data-visual-first", "typography-first"]),
   antiPatterns: z.array(z.string().min(1).max(200)).max(20),
   designReference: PortfolioDesignReferenceSchema.optional(),
+  /**
+   * `false`면 이 지면은 키트 없이 모델이 CSS 전체를 쓴 것이다. 지면 문서(`pageDocument`)가 키트 CSS를 싣지 않는다.
+   * 없으면 키트로 조판한 지면이다 — 이 칸이 생기기 전에 만든 지면이 모두 그렇다.
+   */
+  kit: z.boolean().optional(),
 });
 export type PageStyleGrammar = z.infer<typeof PageStyleGrammarSchema>;
 
@@ -552,6 +560,8 @@ export function pageDocument(input: {
    *
    * 안 주면 모델이 CSS를 통째로 쓴 옛 판이다 — 그때 만든 지면에 지금 키트를
    * 끼우면 우리 규칙이 그쪽 규칙과 싸운다. 그래서 판마다 갈린다.
+   *
+   * 문법이 `kit: false`여도 싣지 않는다. 정리본과 디자인 지침으로 만든 자유 지면이 그렇다 — 모델이 CSS 전체를 쓴다.
    */
   grammar?: PageStyleGrammar;
   /**
@@ -577,7 +587,7 @@ ${input.description ? `<meta name="description" content="${escape(input.descript
 <style>
 ${PAGE_SHELL_CSS}
 </style>
-${input.grammar ? `<style>\n${pageKitVariables(input.grammar)}\n${PAGE_KIT_CSS}\n</style>` : ""}
+${input.grammar && input.grammar.kit !== false ? `<style>\n${pageKitVariables(input.grammar)}\n${PAGE_KIT_CSS}\n</style>` : ""}
 <style>
 ${input.css}
 </style>

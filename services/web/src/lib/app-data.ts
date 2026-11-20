@@ -13,7 +13,9 @@ export const homeEngagement = cache(async (accessToken: string) =>
   engagement.home(accessToken),
 );
 
-/** 사이드바의 "내 포트폴리오" 묶음. 홈의 포트폴리오 격자도 같은 목록을 쓴다. */
+/**
+ * 사이드바의 「포트폴리오」 묶음. 최근 수정순 다섯 개 — 더 있는지는 `page.hasNextPage`가 말한다.
+ */
 export const recentPortfolios = cache(async (accessToken: string) =>
   portfolioApi.list(accessToken, { limit: 5 }),
 );

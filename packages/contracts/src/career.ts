@@ -33,6 +33,10 @@ export const CareerCategorySchema = z.strictObject({
   sortOrder: z.number().int().nonnegative(),
   recordCount: z.number().int().nonnegative(),
   version: z.number().int().positive(),
+  /** 보관한 때. 보관한 카테고리는 사이드바 목록 대신 「보관됨」 묶음에 보인다. */
+  archivedAt: TimestampSchema.nullable(),
+  /** 가입 때 복사한 기본 7종이면 참. 기본 카테고리는 보관만 할 수 있고 삭제할 수 없다. */
+  builtIn: z.boolean(),
 });
 
 export const CareerCategoriesResponseSchema = z.strictObject({
@@ -159,6 +163,43 @@ export const CareerCategoryIdParamsSchema = z.strictObject({
   categoryId: UuidSchema,
 });
 
+/** 카테고리 보관 · 보관 해제. 이름 · 아이콘 바꾸기는 아직 없다. */
+export const UpdateCareerCategorySchema = z.strictObject({
+  archived: z.boolean(),
+});
+
+export const CareerCategoryResponseSchema = z.strictObject({
+  data: CareerCategorySchema,
+});
+
+/** 기록이 남은 카테고리는 `deleteRecords=true`일 때만 기록과 함께 영구 삭제한다. */
+export const DeleteCareerCategoryQuerySchema = z.strictObject({
+  deleteRecords: z.enum(["true", "false"]).default("false").transform((value) => value === "true"),
+});
+
+/** 다른 카테고리의 관계 속성 중 이 카테고리를 가리키는 것. 남아 있으면 삭제를 막는다. */
+export const CareerCategoryBlockingPropertySchema = z.strictObject({
+  categoryId: UuidSchema,
+  categoryName: z.string().min(1).max(120),
+  propertyId: UuidSchema,
+  propertyName: z.string().min(1).max(80),
+});
+
+export const CareerCategoryDeleteImpactSchema = z.strictObject({
+  categoryId: UuidSchema,
+  builtIn: z.boolean(),
+  /** 휴지통에 있지 않은 기록 수. */
+  recordCount: z.number().int().nonnegative(),
+  trashedRecordCount: z.number().int().nonnegative(),
+  /** 포트폴리오 블록이 인용 중인 기록 수. 하나라도 있으면 삭제를 막는다. */
+  quotedRecordCount: z.number().int().nonnegative(),
+  blockingProperties: z.array(CareerCategoryBlockingPropertySchema).max(200),
+});
+
+export const CareerCategoryDeleteImpactResponseSchema = z.strictObject({
+  data: CareerCategoryDeleteImpactSchema,
+});
+
 export const CareerLinkRelationSchema = z.enum([
   "related",
   "parent",
@@ -244,6 +285,8 @@ export type CareerRecordOrigin = z.infer<typeof CareerRecordOriginSchema>;
 export type CareerRecord = z.infer<typeof CareerRecordSchema>;
 export type CareerProperties = z.infer<typeof CareerPropertiesSchema>;
 export type CareerCategory = z.infer<typeof CareerCategorySchema>;
+export type UpdateCareerCategory = z.infer<typeof UpdateCareerCategorySchema>;
+export type CareerCategoryDeleteImpact = z.infer<typeof CareerCategoryDeleteImpactSchema>;
 /** 요청 본문 형태. `propertySchemaV2`는 생략할 수 있다. */
 export type CreateCareerCategory = z.input<typeof CreateCareerCategorySchema>;
 export type CreateCareerRecord = z.infer<typeof CreateCareerRecordSchema>;
@@ -310,9 +353,6 @@ export const TargetRoleSchema = z.enum([
   "디자인",
 ]);
 
-/** 화면의 "지금 가장 급한 것" 세 갈래. */
-export const CareerGoalSchema = z.enum(["explore", "build", "organize"]);
-
 /** 슬라이더 상한. **12는 "12년 이상"이다.** */
 export const MAX_EXPERIENCE_YEARS = 12;
 
@@ -320,15 +360,13 @@ export const CareerProfileSchema = z.strictObject({
   /** 빈 배열은 "아직 안 정했다"는 뜻이다. 그것도 답이라 막지 않는다. */
   targetRoles: z.array(TargetRoleSchema).max(8),
   experienceYears: z.number().int().min(0).max(MAX_EXPERIENCE_YEARS),
-  primaryGoal: CareerGoalSchema,
   updatedAt: TimestampSchema,
 });
 
-/** 저장은 통째로 덮어쓴다 — 화면이 세 값을 한 번에 정하므로 부분 갱신이 없다. */
+/** 저장은 통째로 덮어쓴다 — 화면이 두 값을 한 번에 정하므로 부분 갱신이 없다. */
 export const SaveCareerProfileSchema = z.strictObject({
   targetRoles: z.array(TargetRoleSchema).max(8),
   experienceYears: z.number().int().min(0).max(MAX_EXPERIENCE_YEARS),
-  primaryGoal: CareerGoalSchema,
 });
 
 export const CareerProfileResponseSchema = z.strictObject({
@@ -340,7 +378,47 @@ export const OptionalCareerProfileResponseSchema = z.strictObject({
   data: CareerProfileSchema.nullable(),
 });
 
+/**
+ * 최종 구직 목표 — 에이전트가 권할 때 기준으로 삼는 것.
+ *
+ * 닫힌 목록이 아니라 사용자가 쓴 말 그대로다. 에이전트가 읽고 판단하는 글이라 맞춰 볼 필요가 없고,
+ * 골라 담게 하면 사용자가 실제로 원하는 자리(회사 · 시기 · 사정)가 잘려 나간다.
+ */
+export const JOB_GOAL_TEXT_MAX = 300;
+const JobGoalText = z.string().trim().max(JOB_GOAL_TEXT_MAX);
+
+/** 누가 적었는가. 온보딩, 앱의 구직 목표 화면, 에이전트 대화. */
+export const JobGoalSourceSchema = z.enum(["onboarding", "app", "chat"]);
+
+export const JobGoalSchema = z.strictObject({
+  /** 하고 싶은 일. */
+  work: JobGoalText,
+  /** 가고 싶은 곳. */
+  place: JobGoalText,
+  /** 언제까지, 그리고 지금 상황. */
+  timing: JobGoalText,
+  source: JobGoalSourceSchema,
+  updatedAt: TimestampSchema,
+});
+
+/**
+ * 화면이 저장할 때 보내는 것. 통째로 덮어쓴다. 셋 가운데 하나는 적혀 있어야 목표다.
+ * 출처는 온보딩과 앱의 구직 목표 화면뿐이다 — 대화에서 고친 목표는 이 길로 오지 않는다.
+ */
+export const SaveJobGoalSchema = z.strictObject({
+  work: JobGoalText,
+  place: JobGoalText,
+  timing: JobGoalText,
+  source: JobGoalSourceSchema.exclude(["chat"]),
+}).refine(({ work, place, timing }) => Boolean(work || place || timing), { message: "세 답 가운데 하나는 적어야 합니다." });
+
+/** 아직 적지 않은 사람에게는 목표가 없다. */
+export const OptionalJobGoalResponseSchema = z.strictObject({ data: JobGoalSchema.nullable() });
+export const JobGoalResponseSchema = z.strictObject({ data: JobGoalSchema });
+
 export type TargetRole = z.infer<typeof TargetRoleSchema>;
-export type CareerGoal = z.infer<typeof CareerGoalSchema>;
+export type JobGoal = z.infer<typeof JobGoalSchema>;
+export type JobGoalSource = z.infer<typeof JobGoalSourceSchema>;
+export type SaveJobGoal = z.infer<typeof SaveJobGoalSchema>;
 export type CareerProfile = z.infer<typeof CareerProfileSchema>;
 export type SaveCareerProfile = z.infer<typeof SaveCareerProfileSchema>;

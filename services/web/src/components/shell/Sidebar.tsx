@@ -1,46 +1,23 @@
 import type { CareerCategory } from "@expresso/contracts";
-import type { Route } from "next";
 import Link from "next/link";
 
-import { GlideMenu } from "@/components/ui/GlideMenu";
 import { Icon } from "@/components/ui/Icon";
 
+import { AccountLink } from "./AccountLink";
 import { SidebarCategories } from "./SidebarCategories";
+import { SidebarConversations } from "./SidebarConversations";
 import { SidebarFrame } from "./SidebarFrame";
-import { SidebarInterests } from "./SidebarInterests";
 import { SidebarNav, type SidebarSection } from "./SidebarNav";
+import { SidebarPortfolios, type SidebarPortfolio } from "./SidebarPortfolios";
 import styles from "./Sidebar.module.css";
 
-export type { SidebarSection };
-
-export interface SidebarPortfolio {
-  id: string;
-  name: string;
-  /** 배포됨이면 도메인, 초안이면 "작성 중 · 질문 4/6" 같은 진행 문구. */
-  meta: string;
-  status: "published" | "draft";
-  /** 배포 판 번호(`v3`). */
-  delta?: string;
-  deltaTone?: "up" | "quiet";
-}
-
-export interface SidebarInterest {
-  id: string;
-  initial: string;
-  /** 회사 이름 — 로고가 없을 때 첫 글자를 뽑는 자리. */
-  company: string;
-  logoUrl: string | null;
-  label: string;
-}
+export type { SidebarPortfolio, SidebarSection };
 
 export interface SidebarProps {
   categories: readonly CareerCategory[];
   portfolios?: readonly SidebarPortfolio[];
-  interests?: readonly SidebarInterest[];
-  /** 관심 공고 전체 건수. 줄은 몇 건만 보이므로 숫자는 따로 받는다. */
-  interestTotal?: number | undefined;
-  /** 공고 탐색 배지 = 관심 + 추천 건수. */
-  jobCount?: number | undefined;
+  /** 세운 포트폴리오 말고도 더 있는가 — 있으면 「모두 보기」 줄이 선다. */
+  morePortfolios?: boolean;
   displayName: string;
   /** 세션 주인이 관리자일 때만 관리 화면으로 가는 줄이 선다. */
   admin?: boolean;
@@ -52,9 +29,7 @@ export interface SidebarProps {
 export function Sidebar({
   categories,
   portfolios = [],
-  interests = [],
-  interestTotal,
-  jobCount,
+  morePortfolios = false,
   displayName,
   admin = false,
   quotaUsed,
@@ -102,106 +77,20 @@ export function Sidebar({
               <span className={`${styles.copy} ${styles.userName}`}>관리</span>
             </Link>
           ) : null}
-          <Link
-            href="/account"
-            className={`${styles.row} ${styles.userLink}`}
-            title={`${displayName} · 설정`}
-          >
+          <AccountLink title={`${displayName} · 설정`}>
             <span className={styles.avatar}>{displayName.slice(0, 1)}</span>
             <span className={`${styles.copy} ${styles.userName}`}>{displayName}</span>
             <span className={`${styles.copy} ${styles.userAction}`}>
               <Icon name="gear-six" size={14} />
             </span>
-          </Link>
+          </AccountLink>
         </>
       }
     >
-      <SidebarNav jobCount={jobCount} />
-
-      {portfolios.length > 0 ? (
-        <>
-          <div className={`${styles.groupHead} ${styles.groupHeadFirst}`}>
-            <div className={`${styles.copy} ${styles.groupHeadRow}`}>
-              <span className={styles.groupLabel}>내 포트폴리오</span>
-              <div className={styles.groupActions}>
-                <span className={styles.groupCount}>{portfolios.length}</span>
-                <Link
-                  href="/brew/new"
-                  className={styles.groupAction}
-                  aria-label="포트폴리오 추가"
-                  title="새 포트폴리오 만들기"
-                >
-                  <Icon name="plus" size={13} />
-                </Link>
-              </div>
-            </div>
-          </div>
-          <GlideMenu className={`${styles.portfolios} ${styles.navGroup}`}>
-            {portfolios.map((portfolio) => (
-              <Link
-                key={portfolio.id}
-                href={`/edit/${portfolio.id}` as Route}
-                data-row
-                title={portfolio.name}
-                className={`${styles.row} ${styles.portfolioItem}`}
-              >
-                <span className={styles.thumb}>
-                  <span
-                    className={`${styles.thumbDot} ${
-                      portfolio.status === "published"
-                        ? styles.thumbDotPublished
-                        : styles.thumbDotDraft
-                    }`}
-                  />
-                </span>
-                <div className={`${styles.copy} ${styles.portfolioBody}`}>
-                  <div className={styles.portfolioName}>{portfolio.name}</div>
-                  <div className={styles.portfolioMeta}>{portfolio.meta}</div>
-                </div>
-                {portfolio.status === "draft" ? (
-                  <span className={`${styles.copy} ${styles.draftChip}`}>초안</span>
-                ) : portfolio.delta ? (
-                  <div className={`${styles.copy} ${styles.portfolioStat}`}>
-                    <div
-                      className={`${styles.portfolioDelta} ${
-                        portfolio.deltaTone === "quiet"
-                          ? styles.portfolioDeltaQuiet
-                          : ""
-                      }`}
-                    >
-                      {portfolio.delta}
-                    </div>
-                  </div>
-                ) : null}
-              </Link>
-            ))}
-          </GlideMenu>
-        </>
-      ) : null}
-
-      {interests.length > 0 ? (
-        <>
-          <div className={styles.groupHead}>
-            <div className={`${styles.copy} ${styles.groupHeadRow}`}>
-              <span className={styles.groupLabel}>관심 공고</span>
-              <div className={styles.groupActions}>
-                <span className={styles.groupCount}>{interestTotal ?? interests.length}</span>
-                {/* 관심 공고는 공고 상세에서 담는다. 상세에 닿는 목록이 공고 탐색이다. */}
-                <Link
-                  href="/jobs"
-                  className={styles.groupAction}
-                  aria-label="관심 공고 추가"
-                  title="공고 탐색에서 담기"
-                >
-                  <Icon name="plus" size={13} />
-                </Link>
-              </div>
-            </div>
-          </div>
-          <SidebarInterests interests={interests} />
-        </>
-      ) : null}
-
+      <SidebarNav />
+      {/* 묶음은 각자 접힌다. 대화 · 포트폴리오는 0건이면 묶음째 서지 않는다 */}
+      <SidebarConversations />
+      <SidebarPortfolios portfolios={portfolios} more={morePortfolios} />
       <SidebarCategories categories={categories} />
     </SidebarFrame>
   );

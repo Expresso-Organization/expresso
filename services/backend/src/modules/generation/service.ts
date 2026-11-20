@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 
 import {
+  GENERATION_CANCELLED,
   GenerationJobStatusSchema,
   PageGenerationFormatSchema,
   type GeneratedPage,
@@ -21,6 +22,7 @@ import { assertActiveRecordsForWrite } from "../career/index.js";
 import type { ConsentApi } from "../consent/index.js";
 import { findDesignSystemRevision, generationStyleFor } from "../design-systems/index.js";
 import { MongoEntitlementService } from "../entitlements/index.js";
+import { PORTFOLIO_TRASH_RETENTION_MS } from "../portfolios/index.js";
 import { requireActiveUser } from "../identity/index.js";
 import {
   LAYOUT_PROMPT_VERSION,
@@ -176,6 +178,39 @@ export class GenerationService {
       { $set: { status: "failed", stage: "failed", errorCode: code, failureRetryable: false, updatedAt: new Date() } },
     );
     return result.modifiedCount;
+  }
+
+  /**
+   * 사용자가 생성을 멈춘다(Discord #issue 11-12 「생성 중단 · 취소 없음」).
+   *
+   * 멈춘 생성은 `failed` · `CANCELLED` · 다시 돌 수 없음으로 끝난다. 상태 값을 늘리지 않아 스키마 · 계약이 그대로다.
+   * - 끝난 생성(`done`)은 멈출 수 없다(409). 이미 실패 · 취소된 생성은 그대로 돌려준다.
+   * - 워커가 쓰던 실행 표(`runToken`)를 지워, 늦게 끝난 AI 결과가 완료 · 차감으로 이어지지 않는다
+   *   (`completeFreeHtml` · `#complete` · `prepareFreeHtml` · `process`가 모두 끝난 상태를 건너뛴다).
+   * - 이 생성이 만들던 포트폴리오는 휴지통으로 보낸다. 아직 지면이 없는 빈 초안이라 목록에 남기지 않는다.
+   * - 돌던 AI 호출은 다른 프로세스(워커)에 있어 여기서 끊지 못한다. 끝나면 결과는 버려지고 크레딧은 차감하지 않는다.
+   */
+  async cancel(userId: string, jobId: string) {
+    await inTransaction(this.context, async (tx) => {
+      await requireActiveUser(tx, userId);
+      const db = mongoCollections(tx.db); const options = { session: tx.session };
+      const job = await db.generationJobs.findOne({ _id: jobId, userId }, options);
+      if (!job) throw new GenerationError(404, "generation job not found");
+      if (job.status === "done") throw new GenerationError(409, "generation is already done");
+      if (job.status === "failed") return;
+      const now = new Date();
+      await db.generationJobs.updateOne({ _id: jobId, userId, status: job.status, attempts: job.attempts }, { $set: {
+        status: "failed", stage: "failed", errorCode: GENERATION_CANCELLED, failureRetryable: false, runToken: null, updatedAt: now,
+      } }, options);
+      if (job.portfolioId) {
+        await db.portfolios.updateOne(
+          { _id: job.portfolioId, userId, deletedAt: null },
+          { $set: { deletedAt: now, purgeAfter: new Date(now.getTime() + PORTFOLIO_TRASH_RETENTION_MS) } },
+          options,
+        );
+      }
+    });
+    return this.getStatus(userId, jobId);
   }
 
   async getStatus(userId: string, jobId: string) {
@@ -351,6 +386,8 @@ export class GenerationService {
         if (!job) throw new GenerationError(404, "generation job not found");
         await requireActiveUser(tx, job.userId);
         if (job.status === "done") return job;
+        // 사용자가 멈춘 생성은 큐가 다시 전달해도 다시 돌지 않는다.
+        if (job.status === "failed" && job.errorCode === GENERATION_CANCELLED) return job;
         if (job.status === "running") throw new GenerationError(409, "generation job is already running");
         const attempts = job.attempts + 1;
         const result = await db.generationJobs.updateOne({ _id: jobId, attempts: job.attempts, status: job.status }, { $set: {
@@ -360,7 +397,7 @@ export class GenerationService {
         if (result.matchedCount !== 1) throw new GenerationError(409, "generation job is already running");
         return { ...job, status: "running" as const, stage: "validating" as const, attempts, runToken };
       });
-      if (claimed.status === "done") return this.getStatus(claimed.userId, claimed._id);
+      if (claimed.status !== "running") return this.getStatus(claimed.userId, claimed._id);
       const prepared = await this.#context(claimed);
       if (writer.usesContract) await this.#consent?.require(claimed.userId, "generation");
       const subject = await this.#subject(claimed);

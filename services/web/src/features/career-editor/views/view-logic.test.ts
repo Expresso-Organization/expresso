@@ -10,7 +10,7 @@ function definition(index: number, key: string, type: CareerPropertyDefinitionV2
 }
 const options = [{ id: id(90), name: "진행 중" }, { id: id(91), name: "완료" }];
 const definitions = [definition(1, "title", "title"), definition(2, "score", "number"), definition(3, "stage", "select", { options }), definition(4, "period", "date"), definition(5, "ended", "date"), definition(6, "tags", "multi_select", { options })];
-const category: CareerCategory = { id: id(100), key: "experience", name: "경험", icon: "table", defaultView: "table", propertySchemaV2: definitions, schemaVersion: 1, sortOrder: 0, recordCount: 0, version: 1 };
+const category: CareerCategory = { id: id(100), key: "experience", name: "경험", icon: "table", defaultView: "table", propertySchemaV2: definitions, schemaVersion: 1, sortOrder: 0, recordCount: 0, version: 1, archivedAt: null, builtIn: false };
 function record(index: number, properties: CareerRecord["properties"], title = `기록 ${index}`): CareerRecord {
   return { id: id(200 + index), categoryId: category.id, title, status: "draft", origin: "manual", properties, bodyMd: "", version: 1, updatedAt: "2026-09-01T00:00:00.000Z" };
 }

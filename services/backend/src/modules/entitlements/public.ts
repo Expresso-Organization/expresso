@@ -1,4 +1,4 @@
-import { BILLABLE_TOKEN_FIELDS, type EntitlementCapability, type PlanCode } from "@expresso/contracts";
+import { UNMETERED_CONTRACTS, type EntitlementCapability, type PlanCode, type UsageTokens } from "@expresso/contracts";
 import { mongoCollections } from "@expresso/database";
 import type { ClientSession, Db } from "mongodb";
 
@@ -30,6 +30,7 @@ export const DEFAULT_CAPABILITY_MATRIX: Record<
     "publishing.remove_badge": false,
     "analysis.advanced": false,
     "collaboration.team": false,
+    "consultant.outreach": false,
   },
   pro: {
     "portfolio.generate": true,
@@ -44,6 +45,7 @@ export const DEFAULT_CAPABILITY_MATRIX: Record<
     "publishing.remove_badge": false,
     "analysis.advanced": false,
     "collaboration.team": false,
+    "consultant.outreach": true,
   },
   team: {
     "portfolio.generate": true,
@@ -58,6 +60,7 @@ export const DEFAULT_CAPABILITY_MATRIX: Record<
     "publishing.remove_badge": true,
     "analysis.advanced": true,
     "collaboration.team": true,
+    "consultant.outreach": true,
   },
 };
 
@@ -85,26 +88,33 @@ export function kstPeriodStartsAt(period: KstMonthlyPeriod): Date {
   return new Date(Date.parse(`${period.periodStart}T00:00:00.000Z`) - KST_OFFSET_MS);
 }
 
-/** 크레딧에 들어가는 토큰의 합. 어느 종류를 넣는지는 `BILLABLE_TOKEN_FIELDS` 한 곳이 정한다. */
-export const BILLABLE_TOKENS = { $add: BILLABLE_TOKEN_FIELDS.map((field) => `$${field}`) };
+/** 크레딧에 넣는 호출만 고른다. 서비스가 먼저 실행하는 계약(`UNMETERED_CONTRACTS`)은 뺀다. */
+export const METERED_CALLS = { contract: { $nin: [...UNMETERED_CONTRACTS] } };
+
+/** 종류별 합계. 무게는 여기서 곱하지 않는다 — `creditsFromUsage`가 정수로 한 번 곱한다. */
+export const TOKEN_SUMS = {
+  inputTokens: { $sum: "$inputTokens" },
+  outputTokens: { $sum: "$outputTokens" },
+  cacheReadTokens: { $sum: "$cacheReadTokens" },
+};
 
 /**
- * 기간 안에서 한 사용자가 크레딧에 들어가는 토큰을 쓴 합계.
+ * 기간 안에서 한 사용자가 쓴 토큰의 종류별 합계. 크레딧에 넣는 호출만 센다.
  *
  * 캐시 읽기가 입력보다 네 자리 크다 — 측정한 생성 한 번이 입력 8 · 캐시 읽기 81,423
- * 토큰이었다. 입력만 세면 실제 사용량과 전혀 다른 값이 된다.
+ * 토큰이었다. 종류를 나눠 돌려주는 까닭이다: 캐시 읽기는 10분의 1로 센다.
  */
-export async function tokensUsedInPeriod(
+export async function usageInPeriod(
   db: Db,
   userId: string,
   period: KstMonthlyPeriod,
   options: { session?: ClientSession } = {},
-): Promise<number> {
-  const [row] = await mongoCollections(db).aiUsageEvents.aggregate<{ total: number }>([
-    { $match: { userId, createdAt: { $gte: kstPeriodStartsAt(period), $lt: new Date(period.resetsAt) } } },
-    { $group: { _id: null, total: { $sum: BILLABLE_TOKENS } } },
+): Promise<UsageTokens> {
+  const [row] = await mongoCollections(db).aiUsageEvents.aggregate<UsageTokens>([
+    { $match: { userId, ...METERED_CALLS, createdAt: { $gte: kstPeriodStartsAt(period), $lt: new Date(period.resetsAt) } } },
+    { $group: { _id: null, ...TOKEN_SUMS } },
   ], options).toArray();
-  return row?.total ?? 0;
+  return { inputTokens: row?.inputTokens ?? 0, outputTokens: row?.outputTokens ?? 0, cacheReadTokens: row?.cacheReadTokens ?? 0 };
 }
 
 export function configuredBoolean(
@@ -122,6 +132,19 @@ export function capabilityEnabled(
 ): boolean {
   return configuredBoolean(features, capability)
     ?? DEFAULT_CAPABILITY_MATRIX[planCode][capability];
+}
+
+/**
+ * 요금제가 먼저 연락하기(약속 확인 · 안부 · 능동 제안)를 여는가.
+ *
+ * 켜기 · 읽기 · 실행 · 확인 작업 · 에이전트의 기억이 모두 이 함수 하나로 묻는다. 한 곳이라도
+ * 따로 판단하면 무료 계정에 크레딧 없이 AI가 돌 수 있다. 계정이 없으면(탈퇴) 열지 않는다.
+ */
+export function outreachGate(entitlements: { check(userId: string, capability: EntitlementCapability, at?: Date): Promise<{ allowed: boolean }> }) {
+  return async (userId: string): Promise<boolean> => {
+    try { return (await entitlements.check(userId, "consultant.outreach")).allowed; }
+    catch (error) { if (error instanceof EntitlementSubjectNotFoundError) return false; throw error; }
+  };
 }
 
 export class EntitlementSubjectNotFoundError extends Error {

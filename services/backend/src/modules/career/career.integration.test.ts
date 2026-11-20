@@ -186,10 +186,10 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB career editing", () => {
 
   it("stores profile atomically on the owner and blocks writes after deletion starts", async () => {
     expect(await service.getProfile(otherId)).toBeNull();
-    await service.saveProfile(otherId, { targetRoles: ["백엔드", "백엔드"], experienceYears: 3, primaryGoal: "build" });
+    await service.saveProfile(otherId, { targetRoles: ["백엔드", "백엔드"], experienceYears: 3 });
     expect(await service.getProfile(otherId)).toMatchObject({ targetRoles: ["백엔드"], experienceYears: 3 });
     await mongoCollections(fixture.resource.db).users.updateOne({ _id: otherId }, { $set: { deletionRequestedAt: new Date() } });
-    await expect(service.saveProfile(otherId, { targetRoles: [], experienceYears: 0, primaryGoal: "explore" })).rejects.toMatchObject({ statusCode: 401 });
+    await expect(service.saveProfile(otherId, { targetRoles: [], experienceYears: 0 })).rejects.toMatchObject({ statusCode: 401 });
     await expect(service.createRecord(otherId, randomUUID(), { categoryId, title: "", properties: {}, bodyMd: "" })).rejects.toMatchObject({ statusCode: 401 });
   });
 });

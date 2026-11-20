@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { KM_PER_DEGREE_LAT, KOREAN_PLACES_BY_SPECIFICITY, NEARBY_RADIUS_KM, koreanPlace, kmPerDegreeLng, type KoreanPlace, type ListJobPostingsQuery } from "@expresso/contracts";
+import { KM_PER_DEGREE_LAT, urgentDeadlineRange, KOREAN_PLACES_BY_SPECIFICITY, NEARBY_RADIUS_KM, koreanPlace, kmPerDegreeLng, type KoreanPlace, type ListJobPostingsQuery } from "@expresso/contracts";
 import type { Document } from "mongodb";
 import { regionsOf } from "./ingest/classify.js";
 
@@ -47,7 +47,7 @@ export function jobBoardFilter(query: ListJobPostingsQuery, at: Date, skip?: Fil
     if (query.family) clauses.push({ jobFamily: query.family });
     if (query.remote === true) clauses.push({ workType: /리모트/i });
     if (query.remote === false) clauses.push({ workType: { $not: /리모트/i } });
-    if (query.deadline === "urgent") clauses.push({ expiresAt: { $gte: at, $lt: new Date(at.getTime() + 7 * 86_400_000) } });
+    if (query.deadline === "urgent") { const { from, to } = urgentDeadlineRange(at); clauses.push({ expiresAt: { $gte: from, $lt: to } }); }
     if (query.deadline === "open") clauses.push(openPostingClause(at));
     if (query.deadline === "always") clauses.push({ expiresAt: null });
   }

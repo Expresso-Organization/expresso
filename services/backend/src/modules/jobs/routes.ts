@@ -95,6 +95,13 @@ export function registerJobMarketRoutes(
     };
   });
 
+  app.delete(`${API_PREFIX}/jobs/saved-searches/:id`, { preHandler }, async (request, reply) => {
+    const principal = requireAuth(request);
+    const { id } = parse(IdParamsSchema, request.params);
+    await options.jobMarketService.deleteSavedSearch(principal.user.id, id);
+    return reply.code(204).send();
+  });
+
   app.put(`${API_PREFIX}/jobs/postings/:id/interest`, { preHandler }, async (request) => {
     const principal = requireAuth(request);
     const { id } = parse(IdParamsSchema, request.params);

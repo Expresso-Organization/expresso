@@ -186,20 +186,22 @@ export function CoverageMap({
                   onClick={() => pinFromRow(one.requirementId)}
                 >
                   <span className={styles.state} title={COVERAGE_NAME[one.coverage]} aria-label={COVERAGE_NAME[one.coverage]} />
-                  <span className={styles.rowLabel}>{one.label}</span>
+                  <span className={styles.rowText}>
+                    <span className={styles.rowLabel}>{one.label}</span>
+                    {/* 버튼이 아니라 상태다 — 모자란 요건은 다음 AI 대화가 질문으로 묻는다(interview/questions.ts). */}
+                    {one.coverage === "covered" ? null : (
+                      <span className={styles.gapNote}>
+                        <Icon name="chat-teardrop-dots" size={13} />
+                        AI 대화에서 질문
+                      </span>
+                    )}
+                  </span>
                   {one.coveredBy.length > 0 ? (
                     <span className={styles.evidence} title={`근거 기록 ${one.coveredBy.length}건`}>
                       <Icon name="file-text" size={13} />
                       {one.coveredBy.length}
                     </span>
                   ) : null}
-                  <span className={styles.gapSlot}>
-                    {one.coverage === "covered" ? null : (
-                      <span title="AI 대화에서 채웁니다" aria-label="AI 대화에서 채웁니다">
-                        <Icon name="chat-teardrop-dots" size={16} />
-                      </span>
-                    )}
-                  </span>
                 </button>
               );
             })}

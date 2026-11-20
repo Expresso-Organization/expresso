@@ -50,6 +50,8 @@ export const BrewMaterialsSchema = z.strictObject({
   mode: z.enum(["solo", "collab"]),
   lengthPreset: z.enum(["single", "double", "triple"]),
   materials: z.array(BrewMaterialSchema).max(50),
+  /** 후보가 될 수 없는 초안 기록 수. 화면이 "초안 N건은 담지 않습니다"라고 알릴 때 쓴다. */
+  draftCount: z.number().int().nonnegative(),
 });
 
 /**

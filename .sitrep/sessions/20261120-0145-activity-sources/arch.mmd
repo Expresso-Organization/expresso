@@ -1,0 +1,17 @@
+flowchart TD
+  W["위비티 어댑터"]:::done --> C["ActivityService.collect"]:::done
+  L["링커리어 어댑터"]:::done --> C
+  K["콘테스트코리아 어댑터"]:::done --> C
+  D["Dev-Event 어댑터"]:::done --> C
+  B["부트텐트 어댑터"]:::done --> C
+  G["고용24 KDT 과정"]:::todo -.-> C
+  J["activity_collect 예약 잡"]:::done --> C
+  C --> S[("activity_sources")]:::done
+  C --> X["dedupe 중복 묶기"]:::done
+  X --> A[("activities 0035")]:::done
+  A --> P["능동 제안 새로 본 순"]:::done
+  A --> E["탐색 세 탭 · 쪽 넘김"]:::done
+  classDef done fill:#d1fae5,stroke:#059669
+  classDef doing fill:#fef3c7,stroke:#d97706
+  classDef decide fill:#fee2e2,stroke:#dc2626
+  classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4

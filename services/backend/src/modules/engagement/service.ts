@@ -9,7 +9,7 @@ import { inTransaction } from "../../platform/mongo-transaction.js";
 import { requireActiveUser } from "../identity/index.js";
 import { type NotificationDeliveryProvider, EngagementError } from "./public.js";
 
-const KINDS: NotificationKind[] = ["deadline", "generation", "saved_search", "traffic"];
+const KINDS: NotificationKind[] = ["deadline", "generation", "saved_search", "traffic", "consultant"];
 const kstDate = (at: Date) => new Date(at.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
 const dto = (row: NotificationDoc) => ({ id: row._id, kind: row.kind, targetUrl: row.targetUrl, subject: row.subject ?? null, readAt: row.readAt?.toISOString() ?? null, deliveryStatus: row.deliveryStatus, attempts: row.attempts, createdAt: row.createdAt.toISOString() });
 

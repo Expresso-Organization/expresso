@@ -86,6 +86,39 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB generation integration",
     expect((await db.usageCounters.findOne({ userId }))!.used).toBe(before);
   });
 
+  it("멈춘 생성은 늦게 끝난 결과를 완료 · 차감으로 잇지 않고, 다시 전달돼도 돌지 않는다", async () => {
+    // Discord #issue 11-12: 포트폴리오 생성을 멈추거나 취소할 방법이 없었다.
+    const db = mongoCollections(fixture.resource.db);
+    const before = (await db.usageCounters.findOne({ userId }))?.used ?? 0;
+    const submitted = await service.submit(userId, "mongo-generation-cancel", { recipeId, templateId });
+    const prepared = await service.prepareFreeHtml(submitted.generationJobId);
+    expect(await service.cancel(userId, submitted.generationJobId)).toMatchObject({ status: "failed", usageCharged: false, failure: { code: "CANCELLED", retryable: false } });
+    // 만들던 빈 포트폴리오는 휴지통으로 간다.
+    expect((await db.portfolios.findOne({ _id: prepared.portfolioId! }))?.deletedAt).toBeInstanceOf(Date);
+    // 워커의 AI 호출이 뒤늦게 끝나도 완료 · 차감이 되지 않는다.
+    const page = { id: randomUUID(), portfolioId: prepared.portfolioId!, generationJobId: submitted.generationJobId, html: "<main>late</main>", css: "", rationale: "late", promptVersion: 1, revision: 1, qualityStatus: "ready" as const, qaReport: { status: "ready" as const, checks: [] }, generationManifest: null, styleSpec: null, createdAt: new Date().toISOString() };
+    expect(await service.completeFreeHtml(submitted.generationJobId, page)).toMatchObject({ status: "failed", usageCharged: false });
+    expect((await db.usageCounters.findOne({ userId }))?.used ?? 0).toBe(before);
+    // 큐가 다시 전달해도 다시 돌지 않는다.
+    expect((await service.prepareFreeHtml(submitted.generationJobId)).status).toMatchObject({ status: "failed", failure: { code: "CANCELLED" } });
+    expect(await service.process(submitted.generationJobId, new StubSentenceWriter())).toMatchObject({ status: "failed", failure: { code: "CANCELLED" } });
+    // 두 번 눌러도 같고, 남의 생성은 404, 끝난 생성은 409다.
+    expect(await service.cancel(userId, submitted.generationJobId)).toMatchObject({ status: "failed", failure: { code: "CANCELLED" } });
+    const other = (await new MongoIdentityService(fixture.resource).signup({ email: `generation-other-${randomUUID()}@example.com`, displayName: "Other", password: "correct-horse-battery" })).user.id;
+    await expect(service.cancel(other, submitted.generationJobId)).rejects.toMatchObject({ statusCode: 404 });
+    const done = await db.generationJobs.findOne({ userId, status: "done" });
+    await expect(service.cancel(userId, done!._id)).rejects.toMatchObject({ statusCode: 409 });
+  });
+
+  it("구성을 기다리던 생성을 멈추면 구성이 끝나도 붙지 않는다", async () => {
+    const db = mongoCollections(fixture.resource.db);
+    const job = await service.submit(userId, "mongo-generation-cancel-waiting", { recipeId, templateId });
+    await db.generationJobs.updateOne({ _id: job.generationJobId }, { $set: { recipeId: null, status: "queued" } });
+    await service.cancel(userId, job.generationJobId);
+    await service.attachRecipe(userId, brewId);
+    expect(await db.generationJobs.findOne({ _id: job.generationJobId })).toMatchObject({ recipeId: null, status: "failed", errorCode: "CANCELLED" });
+  });
+
   it("디자인 시스템 판으로 요청하면 판의 토큰을 스타일로 저장하고 포트폴리오에 판을 남긴다", async () => {
     // Refero Apple 판은 템플릿과 연결되지 않아 내장 Clarity 틀을 씁니다.
     const revisionId = "5d8f5f2d-6d2a-4f24-9d1a-2b8f9e7c1303";

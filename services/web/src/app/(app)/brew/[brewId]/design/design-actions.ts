@@ -69,6 +69,23 @@ export async function startGenerationAction(
   return { error: null };
 }
 
+/**
+ * 생성을 멈춘다. 멈춘 생성이 만들던 빈 포트폴리오는 서버가 휴지통으로 보내고, 크레딧은 차감하지 않는다.
+ * 그사이 생성이 끝났으면(409) 끝난 화면으로 넘어가도록 다시 그리기만 한다.
+ */
+export async function cancelGenerationAction(formData: FormData): Promise<void> {
+  const session = await requireSession();
+  const brewId = String(formData.get("brewId") ?? "");
+  const jobId = String(formData.get("generationJobId") ?? "");
+  try {
+    await generation.cancel(session.accessToken, jobId);
+  } catch (error) {
+    if (!(error instanceof ApiError) || (error.status !== 409 && error.status !== 404)) throw error;
+  }
+  revalidatePath(`/brew/${brewId}/design`);
+  redirect(`/brew/${brewId}/design`);
+}
+
 /** 기다리는 동안 다시 읽어 온다. 01b·02b의 "새로고침"과 같은 자리다. */
 export async function refreshGenerationAction(formData: FormData): Promise<void> {
   await requireSession();

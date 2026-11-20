@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AgentConversationResponseSchema, AgentConversationListSchema, type AgentConversation, type AgentContext, type AgentPageSelection, type AgentApproval, type AgentPlanDecision, type AgentRecordDraftDecision, type AgentReplanDecision } from "@expresso/contracts";
+import { AgentConversationResponseSchema, AgentConversationListSchema, type AgentConversation, type AgentContext, type AgentPageSelection, type AgentApproval, type AgentPlanDecision, type AgentGoalDraftDecision, type AgentRecordDraftDecision, type AgentReplanDecision } from "@expresso/contracts";
 const base = "/api/agent/conversations";
 export async function agentRequest(path: string, body?: unknown) {
   const response = await fetch(`${base}${path}`, { ...(body === undefined ? {} : { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), cache: "no-store" });
@@ -12,10 +12,13 @@ export async function agentRequest(path: string, body?: unknown) {
 /**
  * `restore: "context"`는 처음 열 대화를 브라우저의 마지막 대화가 아니라 `context`가
  * 연결된 가장 최근 대화로 고른다. 공고 화면이 쓴다 — 다른 공고의 대화가 열리지 않게.
+ * `restore: "url"`은 주소에 적힌 대화(`?chat=`)만 연다. 홈이 쓴다 — 주소에 대화가 없으면 시작 화면이다.
+ * `initialId`는 서버가 주소에서 읽은 그 대화다. 첫 렌더부터 그 대화를 불러오는 상태로 시작해, 주소를 읽는 효과가
+ * 돌기 전의 한 프레임에 빈 대화의 시작 화면이 지나가지 않는다.
  */
-export function useAgentConversation(context?: AgentContext, options: { restore?: "context" } = {}) {
+export function useAgentConversation(context?: AgentContext, options: { restore?: "context" | "url"; initialId?: string | null } = {}) {
   const { restore } = options;
-  const [id, setId] = useState<string | null>(null);
+  const [id, setId] = useState<string | null>(options.initialId ?? null);
   const [resolving, setResolving] = useState(restore === "context" && !!context);
   const [conversation, setConversation] = useState<AgentConversation | null>(null);
   const [list, setList] = useState<ReturnType<typeof AgentConversationListSchema.parse>["data"]>([]);
@@ -26,6 +29,7 @@ export function useAgentConversation(context?: AgentContext, options: { restore?
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const currentId = useRef(id); currentId.current = id;
   const requestId = useRef<{ text: string; id: string } | null>(null);
+  const replyIds = useRef<Record<string, string>>({});
   const accept = useCallback((next: AgentConversation) => {
     if (!mounted.current || currentId.current !== next.id) return;
     setConversation(old => old?.id === next.id && old.version > next.version ? old : next);
@@ -38,7 +42,7 @@ export function useAgentConversation(context?: AgentContext, options: { restore?
   const contextKind = context?.kind; const contextId = context?.id;
   useEffect(() => {
     const requested = new URL(window.location.href).searchParams.get("chat");
-    if (requested || restore !== "context" || !contextKind || !contextId) { setResolving(false); select(requested ?? sessionStorage.getItem("ex-agent-conversation")); return; }
+    if (requested || restore !== "context" || !contextKind || !contextId) { setResolving(false); select(requested ?? (restore === "url" ? null : sessionStorage.getItem("ex-agent-conversation"))); return; }
     let alive = true;
     setResolving(true);
     // 목록은 updatedAt 내림차순이다. 맞는 대화가 없으면 아무것도 고르지 않는다 —
@@ -107,20 +111,35 @@ export function useAgentConversation(context?: AgentContext, options: { restore?
     } catch (error) { setIssue(error instanceof Error ? error.message : "자료 선택을 저장하지 못했습니다."); }
     finally { contextMutation.current = false; setPending(false); }
   };
+  /**
+   * 부품에 답한다. 대화에 남는 글은 서버가 고른 선택지의 글로 만든다. 실패를 부품이 직접 보여 주도록 오류를 다시 던진다.
+   * 같은 부품에 다시 보내면 같은 요청 id를 쓴다 — 응답을 받지 못하고 다시 누른 답이 두 번 들어가지 않는다.
+   */
+  const answerPart = async (partId: string, answer: { optionIds: string[] } | { values: { id: string; text: string }[] }) => {
+    if (!id || pending) return;
+    setPending(true); setIssue(null);
+    try {
+      replyIds.current[partId] ??= crypto.randomUUID();
+      accept(await agentRequest(`/${id}/messages`, { requestId: replyIds.current[partId], reply: { partId, ...answer } }));
+    } finally { setPending(false); }
+  };
   const decide = async (path: string, decision: unknown) => {
     setPending(true); setIssue(null);
     try { accept(await agentRequest(`/${id}/${path}`, decision)); } finally { setPending(false); }
   };
-  return { id, conversation, list, issue, pending, resolving, select, send, toggleContext,
+  return { id, conversation, list, issue, pending, resolving, select, send, answerPart, toggleContext,
     attach: () => id && context ? perform(() => agentRequest(`/${id}/contexts`, { context })) : Promise.resolve(),
     cancel: () => perform(() => agentRequest(`/${id}/cancel`, {})),
     retry: () => perform(() => agentRequest(`/${id}/retry`, {})),
     /** 초안 승인 · 거절. 실패를 카드가 직접 보여 주도록 오류를 다시 던진다. */
     decideDraft: (draftId: string, decision: AgentRecordDraftDecision) => decide(`record-drafts/${draftId}`, decision),
+    decideGoalDraft: (draftId: string, decision: AgentGoalDraftDecision) => decide(`goal-drafts/${draftId}`, decision),
     decidePlanDraft: (draftId: string, decision: AgentPlanDecision) => decide(`plan-drafts/${draftId}`, decision),
     decideReplanDraft: (draftId: string, decision: AgentReplanDecision) => decide(`replan-drafts/${draftId}`, decision),
     approve: (input: AgentApproval) => perform(() => agentRequest(`/${id}/approval`, input)),
     /** 에이전트가 저장한 지면 고침 되돌리기. 실패를 카드가 직접 보여 주도록 오류를 다시 던진다. */
     undoPageEdit: (editId: string) => decide(`page-edits/${editId}/undo`, {}),
+    /** 에이전트가 저장한 기록 되돌리기. 기록은 휴지통으로 간다. 실패를 카드가 직접 보여 주도록 오류를 다시 던진다. */
+    undoSavedRecord: (recordId: string) => decide(`saved-records/${recordId}/undo`, {}),
   };
 }

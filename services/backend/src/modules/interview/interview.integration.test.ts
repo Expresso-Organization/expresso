@@ -69,6 +69,22 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB interview integration", 
     await expect(service.questionBases(otherUserId, brewId)).rejects.toMatchObject({ statusCode: 404 });
   });
 
+  it("제목이 빈 기록도 질문 근거로 내고 계약을 지킨다", async () => {
+    // 운영 2026-11-10 · 11-13: 제목이 빈 기록을 담은 제작에서 질문 근거 목록이 ZodError로 500이었다.
+    const db = mongoCollections(fixture.resource.db);
+    const categoryId = (await career.listCategories(userId)).find(({ key }) => key === "experience")!.id;
+    const empty = (await career.createRecord(userId, randomUUID(), { categoryId, title: "", properties: {}, bodyMd: "내용만 있는 기록" })).record;
+    await db.careerRecords.updateOne({ _id: empty.id }, { $set: { status: "organized" } });
+    await db.brewSources.insertOne({ _id: randomUUID(), userId, brewId, recordId: empty.id, rank: 90, selectedBy: "user", excludedReason: null, score: 0, reasonText: "시험", isSelected: true, updatedAt: new Date() });
+    try {
+      const bases = await service.questionBases(userId, brewId);
+      expect(bases.find(({ basis }) => basis.type === "record_gap" && basis.recordId === empty.id)).toMatchObject({ basis: { evidence: "제목 없는 기록" }, label: "제목 없는 기록" });
+    } finally {
+      await db.brewSources.deleteOne({ userId, brewId, recordId: empty.id });
+      await db.careerRecords.updateOne({ _id: empty.id }, { $set: { deletedAt: new Date() } });
+    }
+  });
+
   it("preserves grounded assignment, replacement, pause, and session boundaries", async () => {
     const started = await service.start(userId, brewId, "mongo-interview-start-0001");
     sessionId = started.id;
@@ -147,6 +163,31 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB interview integration", 
     expect(Object.keys(record.properties).sort()).toEqual(["competencies", "period"]);
     expect((record.properties.competencies as { value: string[] }).value.map((id) => names.get(id))).toEqual(["원인 분석", "협업"]);
     expect((await db.answerRecordChanges.findOne({ userId, answerId: answer._id }))?.changedFields).toEqual(["title", "body_md", "competencies"]);
+  });
+
+  it("gives the cleaner the category's competencies and reuses one written differently", async () => {
+    // 2026-11-13 Discord 제보: 같은 역량이 표기만 바뀌어 기록마다 새 선택지로 쌓였다.
+    const db = mongoCollections(fixture.resource.db);
+    // 질문 3의 기록은 앞 테스트에서 워커가 정리했고 사용자가 고치지 않았다. 다시 정리할 수 있게 판을 맞춘다.
+    const questionId = (await service.getSession(userId, sessionId)).questions[3]!.id;
+    const answer = (await db.answers.findOne({ userId, questionId }))!;
+    const record = (await db.careerRecords.findOne({ _id: answer.createdRecordId! }))!;
+    await db.answers.updateOne({ _id: answer._id }, { $set: { recordVersion: record.version } });
+    const optionsOf = async () => {
+      const category = (await db.careerCategories.findOne({ _id: record.categoryId, userId }))!;
+      return category.propertySchemaV2.find((definition) => definition.key === "competencies")!.config.options as { id: string; name: string }[];
+    };
+    const before = await optionsOf();
+    const seen: (readonly string[] | undefined)[] = [];
+    const cleanup = new MongoInterviewService(fixture.resource, null, { async clean(context) {
+      seen.push(context.knownCompetencies);
+      return { title: "재시도 정책 정리", situation: null, task: null, action: "행동", result: null, metrics: [], competencies: [before[0]!.name.replaceAll(" ", "/")] };
+    } });
+    await cleanup.cleanupAnswer(userId, answer._id);
+    expect(seen[0]).toEqual(before.map(({ name }) => name));
+    expect(await optionsOf()).toHaveLength(before.length);
+    const updated = (await db.careerRecords.findOne({ _id: record._id }))!;
+    expect((updated.properties.competencies as { value: string[] }).value).toEqual([before[0]!.id]);
   });
 });
 

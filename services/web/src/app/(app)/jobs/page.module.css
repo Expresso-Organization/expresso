@@ -26,6 +26,11 @@
   color: var(--ex-fg-body);
 }
 
+a.headAction:hover {
+  /* 전역 링크 호버(`a:where(:hover)`)가 클래스 색을 덮지 않으므로 여기서 진해진다 */
+  color: var(--ex-fg-strong);
+}
+
 /* 켜진 토글. 카테고리 탭의 활성 표시와 같은 값을 쓴다. */
 .headActionActive {
   font-weight: 600;
@@ -308,6 +313,7 @@
 }
 
 .row {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 14px;
@@ -322,6 +328,60 @@
 
 .row:hover {
   background: var(--ex-bg-hover);
+}
+
+/* 제목 링크가 행 전체를 덮는다. 북마크 버튼만 그 위(z-index)에 올라 따로 눌린다. */
+.rowLink {
+  color: inherit;
+  text-decoration: none;
+}
+
+.rowLink::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.rowLink:focus-visible {
+  outline: none;
+}
+
+.row:has(.rowLink:focus-visible) {
+  outline: 2px solid var(--ex-accent-soft);
+  outline-offset: -2px;
+}
+
+.rowInterestForm {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-shrink: 0;
+}
+
+/* 아이콘은 15px이지만 누를 자리는 28px — 음수 여백으로 행의 간격은 그대로 둔다 */
+.rowInterest {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin: -6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.rowInterest:hover {
+  background: var(--ex-bg-tint);
+}
+
+.rowInterest:focus-visible {
+  outline: 2px solid var(--ex-accent-soft);
+  outline-offset: 1px;
+}
+
+.rowInterest:disabled {
+  cursor: progress;
 }
 
 /* 첫 행(가장 잘 맞는 공고)은 시그니처 지면 */
@@ -456,10 +516,6 @@
   flex-shrink: 0;
 }
 
-.rowMark {
-  flex-shrink: 0;
-}
-
 /*
  * 좁은 목록의 행 — 목록이 `--ex-bp-md`(768px)보다 좁으면 줄을 나눈다.
  * 1줄은 제목과 북마크, 2줄은 근거 · 점수 · 마감, 3줄은 칩(있을 때만)이다.
@@ -490,7 +546,7 @@
     width: auto;
   }
 
-  .rowMark {
+  .rowInterestForm {
     grid-column: 4;
     grid-row: 1;
     justify-self: end;
@@ -1053,6 +1109,8 @@
 .pagerArrow:hover,
 .pagerPage:hover {
   background: var(--ex-bg-sunken);
+  /* 전역 링크 호버(`a:where(:hover)`)가 클래스 색을 덮지 않으므로 여기서 진해진다 */
+  color: var(--ex-fg-strong);
 }
 
 .pagerArrowOff {
@@ -1192,4 +1250,23 @@
   .content {
     padding: 22px 26px 20px;
   }
+}
+
+/* 저장한 검색 한 줄 — 다시 여는 링크와 지우기 */
+.savedRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+}
+
+.savedRow > a {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+}
+
+.savedRow > p {
+  flex-basis: 100%;
+  margin: 0;
 }

@@ -53,6 +53,7 @@
 .input { width: 100%; min-height: 32px; box-sizing: border-box; border: 1px solid transparent; border-radius: var(--ex-radius-control); background: transparent; padding: 6px 8px; color: var(--ex-fg-strong); font: inherit; }
 .input:hover { border-color: var(--ex-border-soft); background: var(--ex-bg-hover); }
 .input:focus { background: var(--ex-bg); }
+.input::placeholder { color: var(--ex-fg-subtle); }
 .issue { color: var(--ex-status-danger-text); font-size: var(--ex-text-xs); }
 .fieldRow { position: relative; display: flex; align-items: center; min-width: 0; }
 .fieldRow > .input { padding-right: 26px; }

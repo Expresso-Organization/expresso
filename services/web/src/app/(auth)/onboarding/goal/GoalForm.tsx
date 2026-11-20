@@ -1,7 +1,9 @@
 "use client";
 
-import { MAX_EXPERIENCE_YEARS, type CareerProfile, type TargetRole } from "@expresso/contracts";
+import { MAX_EXPERIENCE_YEARS, type CareerProfile, type JobGoal, type TargetRole } from "@expresso/contracts";
 import { useActionState, useCallback, useRef, useState } from "react";
+
+import { JobGoalFields } from "@/features/job-goal/JobGoalFields";
 
 import { OnboardingShell, OnboardingStepLabel, onboardingStyles as styles } from "../OnboardingShell";
 import { saveCareerGoalAction, type GoalFormState } from "../onboarding-actions";
@@ -21,25 +23,6 @@ const ROLES: readonly TargetRole[] = [
   "디자인",
 ];
 
-/** 추천과 질문의 기준이 되는 최소 정보만 묻는다. */
-const GOALS = [
-  {
-    id: "explore",
-    title: "지원할 곳을 정하고 싶습니다",
-    note: "공고를 모아 내 기록과의 일치도부터 보여드립니다",
-  },
-  {
-    id: "build",
-    title: "지원할 포트폴리오가 필요합니다",
-    note: "공고 하나를 골라 바로 제작 흐름으로 들어갑니다",
-  },
-  {
-    id: "organize",
-    title: "흩어진 경험부터 정리하고 싶습니다",
-    note: "카테고리에 기록을 쌓는 것부터 시작합니다",
-  },
-] as const;
-
 const FORM_ID = "onboarding-goal";
 const INITIAL: GoalFormState = {};
 
@@ -47,7 +30,7 @@ function clampYears(value: number): number {
   return Math.min(MAX_EXPERIENCE_YEARS, Math.max(0, value));
 }
 
-export function GoalForm({ profile }: { profile: CareerProfile | null }) {
+export function GoalForm({ profile, goal }: { profile: CareerProfile | null; goal: JobGoal | null }) {
   const [state, action, pending] = useActionState(saveCareerGoalAction, INITIAL);
 
   /*
@@ -58,7 +41,6 @@ export function GoalForm({ profile }: { profile: CareerProfile | null }) {
     profile ? profile.targetRoles : ["백엔드"],
   );
   const [years, setYears] = useState(profile ? profile.experienceYears : 5);
-  const [goal, setGoal] = useState<string>(profile ? profile.primaryGoal : "build");
   const trackRef = useRef<HTMLSpanElement>(null);
 
   const ratio = (years / MAX_EXPERIENCE_YEARS) * 100;
@@ -96,7 +78,7 @@ export function GoalForm({ profile }: { profile: CareerProfile | null }) {
       <OnboardingStepLabel step={1} />
       <h1 className={styles.title}>어떤 자리를 노리고 계신가요?</h1>
       <p className={styles.lede}>
-        공고를 추천하고 질문을 만들 때 씁니다. 나중에 언제든 바꿀 수 있습니다.
+        공고와 활동을 권하고 질문을 만들 때 씁니다. 아래 세 질문은 비워 두고 넘어가도 되고, 언제든 바꿀 수 있습니다.
       </p>
 
       {/*
@@ -114,7 +96,6 @@ export function GoalForm({ profile }: { profile: CareerProfile | null }) {
           <input key={role} type="hidden" name="targetRoles" value={role} />
         ))}
         <input type="hidden" name="experienceYears" value={years} />
-        <input type="hidden" name="primaryGoal" value={goal} />
 
         <div className={styles.field}>
           <div className={styles.fieldLabel}>직무</div>
@@ -195,31 +176,8 @@ export function GoalForm({ profile }: { profile: CareerProfile | null }) {
           </div>
         </div>
 
-        <div className={styles.field}>
-          <div className={styles.fieldLabel}>지금 가장 급한 것</div>
-          <div className={styles.goals} role="radiogroup" aria-label="지금 가장 급한 것">
-            {GOALS.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                role="radio"
-                aria-checked={item.id === goal}
-                onClick={() => setGoal(item.id)}
-                className={`${styles.goal} ${item.id === goal ? styles.goalOn : ""}`}
-              >
-                <span className={styles.goalMark} />
-                <span style={{ minWidth: 0 }}>
-                  <span className={styles.goalTitle} style={{ display: "block" }}>
-                    {item.title}
-                  </span>
-                  <span className={styles.goalNote} style={{ display: "block" }}>
-                    {item.note}
-                  </span>
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* 에이전트가 권할 때 기준으로 삼는 목표. 답을 비워 두고 넘어가도 된다 — 앱에서 나중에 적을 수 있다. */}
+        <JobGoalFields goal={goal} />
       </form>
     </OnboardingShell>
   );

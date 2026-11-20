@@ -1,0 +1,62 @@
+{
+  "label": "bae-clarity__skill__r1",
+  "expected": {
+    "name": "배준호",
+    "sections": 5,
+    "evidence": 8
+  },
+  "screens": {
+    "390": {
+      "overflow": false,
+      "scrollWidth": 390,
+      "height": 4614,
+      "brokenImages": 0,
+      "images": 0,
+      "svgs": 0,
+      "details": 1,
+      "h1": 1,
+      "chars": 1308,
+      "hiddenChars": 0,
+      "firstMaxFont": 36,
+      "firstChars": 284,
+      "backgroundLuminance": 1,
+      "families": [
+        "Pretendard Variable",
+        "JetBrains Mono"
+      ],
+      "name": true,
+      "sections": 2,
+      "evidence": 5,
+      "careerHeading": false,
+      "evidenceHeading": false,
+      "notes": 0,
+      "errors": []
+    },
+    "1440": {
+      "overflow": false,
+      "scrollWidth": 1440,
+      "height": 3661,
+      "brokenImages": 0,
+      "images": 0,
+      "svgs": 0,
+      "details": 1,
+      "h1": 1,
+      "chars": 1308,
+      "hiddenChars": 0,
+      "firstMaxFont": 64,
+      "firstChars": 284,
+      "backgroundLuminance": 1,
+      "families": [
+        "Pretendard Variable",
+        "JetBrains Mono"
+      ],
+      "name": true,
+      "sections": 2,
+      "evidence": 5,
+      "careerHeading": false,
+      "evidenceHeading": false,
+      "notes": 0,
+      "errors": []
+    }
+  }
+}

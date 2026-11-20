@@ -404,6 +404,30 @@ describe.skipIf(engine === "mysql" ? !databaseUrl : !process.env.TEST_MONGODB_UR
       .toEqual([laterId]);
   });
 
+  it.skipIf(engine !== "mongodb")("마감 임박은 D-7 이내다 — 7일째 날은 하루 끝까지 들어가고 8일째 날 0시부터 빠진다", async () => {
+    const db = mongoCollections(fixture!.resource.db);
+    const dayStart = Math.floor(Date.now() / 86_400_000) * 86_400_000;
+    const lastDayId = randomUUID();
+    const nextDayId = randomUUID();
+    const base = await db.jobPostings.findOne({ _id: alwaysId });
+    await db.jobPostings.insertMany([
+      { ...base!, _id: lastDayId, title: "D-7 끝 공고", expiresAt: new Date(dayStart + 8 * 86_400_000 - 1000), dedupeHash: `board-d7-${marker}` },
+      { ...base!, _id: nextDayId, title: "D-8 시작 공고", expiresAt: new Date(dayStart + 8 * 86_400_000), dedupeHash: `board-d8-${marker}` },
+    ]);
+    try {
+      const body = JobPostingListResponseSchema.parse((await app.inject({ method: "GET", url: `/v1/jobs/postings?${scoped("&deadline=urgent")}`, headers: auth() })).json());
+      const ids = body.data.map((p) => p.id);
+      expect(ids).toContain(lastDayId);
+      expect(ids).not.toContain(nextDayId);
+      expect(body.data.find((p) => p.id === lastDayId)?.daysLeft).toBe(7);
+      // 탭 건수는 같은 기준으로 세어 목록과 어긋나지 않는다.
+      const chips = JobPostingListResponseSchema.parse((await app.inject({ method: "GET", url: `/v1/jobs/postings?${scoped()}`, headers: auth() })).json()).summary.categories;
+      expect(chips.find((c) => c.key === "urgent")?.count).toBe(body.summary.total);
+    } finally {
+      await db.jobPostings.deleteMany({ _id: { $in: [lastDayId, nextDayId] } });
+    }
+  });
+
   it("마감 순과 최신 순은 정렬 기준이 다르다", async () => {
     const [deadline, recent] = await Promise.all([
       app.inject({ method: "GET", url: `/v1/jobs/postings?${scoped("&sort=deadline")}`, headers: auth() }),

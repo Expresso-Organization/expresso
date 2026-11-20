@@ -14,13 +14,6 @@ export const careerProfile = cache(async (accessToken: string) =>
   (await career.profile(accessToken)).data,
 );
 
-/** 공고 카드 첫 탭. 목표 직군이 있으면 그 직군을 일치도 순으로, 없으면 전체를 최근 순으로. */
-export const roleJobs = cache(async (accessToken: string, family: string | null) =>
-  jobs.postings(accessToken, family
-    ? { family, deadline: "open", sort: "match", limit: 5 }
-    : { deadline: "open", sort: "recent", limit: 5 }),
-);
-
 /** 차트 색이 셋이라 사이트도 셋까지 그린다 — 넷째 색을 새로 만들지 않는다. */
 const MAX_SITES = 3;
 

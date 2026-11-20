@@ -26,7 +26,7 @@ export default function Loading() {
           </>
         }
       />
-      <AppBody>
+      <AppBody pending>
         <SkelRegion label="공고를 불러오는 중" className={styles.content}>
           <div className={styles.searchBar}>
             <Skel w={18} circle />

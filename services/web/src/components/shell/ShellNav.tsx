@@ -138,8 +138,8 @@ const TABS: readonly {
   icon: string;
 }[] = [
   { key: "home", label: "홈", href: "/home", icon: "house" },
-  { key: "new-portfolio", label: "만들기", href: "/brew/new", icon: "coffee" },
-  { key: "jobs", label: "공고", href: "/jobs", icon: "target" },
+  { key: "library", label: "라이브러리", href: "/library" as Route, icon: "books" },
+  { key: "explore", label: "탐색", href: "/jobs", icon: "compass" },
   { key: "analytics", label: "분석", href: "/analytics", icon: "chart-bar" },
 ];
 
