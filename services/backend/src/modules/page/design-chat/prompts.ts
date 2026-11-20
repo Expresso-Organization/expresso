@@ -38,12 +38,12 @@ import { markupProblem, promptOpening, promptSources, ungroundedEmails, type Pag
  * 제안(스타일과 레이아웃을 따로), 디자인(`../design-rules.ts`), 사실. 문구를 고칠 때는 그 목록의 뜻을 지킨다.
  */
 const TIER = { modelTier: "sonnet" } as const;
-/** 프롬프트 판. 문구를 바꾸면 올린다. 2: Do와 Do not, 스타일과 레이아웃을 따로 제안(2026-11-19). */
-export const DESIGN_CHAT_PROMPT_VERSION = 3;
+/** 프롬프트 판. 문구를 바꾸면 올린다. 2: Do와 Do not, 스타일과 레이아웃을 따로 제안(2026-11-19). 4: 추상 그래픽과 그림 스크립트(2026-11-20). */
+export const DESIGN_CHAT_PROMPT_VERSION = 4;
 
 const FONT_NAME = { sans: "고딕", serif: "명조", mono: "고정폭" } as const;
 const DENSITY_NAME = { compact: "빽빽하게", comfortable: "읽기 편하게", spacious: "넓게" } as const;
-const BLOCK_NAME: Record<DesignLayoutBlock["kind"], string> = { title: "이름이나 큰 글자", text: "글", figure: "이 사람의 일로 그리는 그림", accent: "강조 요소" };
+const BLOCK_NAME: Record<DesignLayoutBlock["kind"], string> = { title: "이름이나 큰 글자", text: "글", figure: "이 사람의 기록에서 나온 추상 그래픽", accent: "강조 요소" };
 const { columns: COLUMNS, rows: ROWS } = DESIGN_LAYOUT_GRID;
 
 /** 자료 읽기 함수의 결과를 지면 프롬프트 조각들이 받는 문맥 모양으로 옮긴다. 스타일과 그림은 싣지 않는다. */
@@ -172,7 +172,7 @@ const PROPOSALS = [
   "- `styles`와 `layouts`를 서로 독립된 목록으로 냅니다.",
   "- 한 목록 안의 제안은 나란히 놓았을 때 한눈에 구분되게 합니다. 스타일은 바탕의 명도와 서체 계열이 서로 겹치지 않게, 레이아웃은 주인공과 그것이 놓인 자리가 서로 다르게 잡습니다.",
   "- 스타일은 이 사람의 일(다루는 대상 · 도구 · 산출물)과 지원하는 곳(회사의 톤 · 브랜드 색)에서 가져옵니다.",
-  "- 레이아웃은 이 사람이 만든 것(화면의 모습 · 구조도 · 흐름 · 산출물)에서 무엇을 주인공으로 세울지에서 출발합니다. 세 레이아웃의 주인공은 서로 다른 종류로 잡고, 수치(전후 비교 · 차트)를 주인공으로 세우는 레이아웃은 많아야 하나입니다. 나머지에서 수치는 주인공 곁의 근거입니다.",
+  "- 레이아웃은 첫 화면에서 추상 그래픽(이 사람의 기록 · 강조할 점에서 나온 형태)과 이름 · 글을 어떻게 놓을지에서 출발합니다. 세 레이아웃은 그래픽의 자리 · 크기와 글과의 관계(겹침 · 나란함 · 둘러쌈)가 서로 다르게 잡습니다. 수치는 그래픽 곁의 근거입니다.",
   "- 카드의 글은 이름(두세 낱말)과 한 줄(`words`, 서른 자 안의 명사구)까지만 씁니다. 대상은 이 사람의 자료에 나오는 이름으로 씁니다.",
   "- 바탕과 글자는 본문을 오래 읽을 수 있는 명도 차이를 두고, 강조는 바탕 위에서 한눈에 구분되게 합니다.",
   "### Do not",
@@ -487,6 +487,7 @@ export const SnippetDraftSchema = z.strictObject({
   tokens: DesignTokensSchema.describe("쓴 바탕 · 글자 · 강조 색(#rrggbb)과 서체 계열 · 밀도"),
   css: z.string().min(1),
   html: z.string().min(1),
+  script: z.string().optional().describe("그림 스크립트(ES 모듈). 그림이 필요 없으면 비운다"),
 });
 export type SnippetDraft = z.infer<typeof SnippetDraftSchema>;
 
@@ -499,6 +500,7 @@ const SNIPPET_SYSTEM = briefedSystem(FRONTEND_DESIGN_SKILL, {
     "- `tokens` — 쓴 바탕 · 글자 · 강조 색과 서체 계열 · 밀도.",
     "- `css` — 스타일 전부를 먼저 쓴다. 뒤에 올 마크업의 클래스 이름을 여기서 정해 둔다.",
     "- `html` — 위에서 정한 클래스로 첫 화면의 마크업을 쓴다.",
+    "- `script` — 그림 스크립트. 그래픽을 canvas · three.js로 지을 때 쓴다.",
   ].join("\n"),
 });
 
@@ -535,7 +537,7 @@ function layoutPrompt(layout: DesignLayoutSpec | null): string[] {
   if (!layout)
     return [
       "## 레이아웃 — 정해지지 않았다. 구성은 네가 정한다",
-      "이 사람이 만든 것(화면의 모습 · 구조도 · 흐름 · 산출물)에서 주인공을 세우고, 나머지를 그것을 받치는 자리에 둔다. 수치는 주인공 곁의 근거로 둔다.",
+      "이 사람의 기록 · 강조할 점에서 나온 추상 그래픽을 주인공으로 세우고, 이름과 글을 그것과 한 장면으로 놓는다. 수치는 그래픽 곁의 근거로 둔다.",
       "",
     ];
   return [
@@ -611,7 +613,7 @@ export const RevisionDraftSchema = z.strictObject({
   tokens: DesignTokensSchema.describe("고친 뒤의 바탕 · 글자 · 강조 색(#rrggbb)과 서체 계열 · 밀도"),
   edits: z
     .array(z.strictObject({
-      in: z.enum(["css", "html"]).describe("어디를 고치는가"),
+      in: z.enum(["css", "html", "script"]).describe("어디를 고치는가"),
       find: z.string().min(1).describe("지금 첫 화면에 있는 글자 그대로. 공백과 줄바꿈까지 같아야 한다"),
       replace: z.string().describe("그 자리에 들어갈 글자. 지우려면 빈 글"),
     }))
@@ -620,7 +622,7 @@ export const RevisionDraftSchema = z.strictObject({
 export type RevisionDraft = z.infer<typeof RevisionDraftSchema>;
 
 const REVISION_SYSTEM = [
-  "너는 포트폴리오 첫 화면의 마크업과 CSS를 고치는 편집자다. 사용자가 채팅에서 보고 있는 첫 화면에서 지시가 가리킨 것만 고친다.",
+  "너는 포트폴리오 첫 화면의 마크업 · CSS · 그림 스크립트를 고치는 편집자다. 사용자가 채팅에서 보고 있는 첫 화면에서 지시가 가리킨 것만 고친다.",
   "",
   "## 고치는 법",
   "- 첫 화면을 다시 쓰지 않는다. 바뀌는 자리만 `edits`에 조각으로 낸다. 조각마다 지금 있는 글자(`find`)와 그 자리에 들어갈 글자(`replace`)를 적는다.",
@@ -631,7 +633,7 @@ const REVISION_SYSTEM = [
   "- 지시가 가리키지 않은 색 · 서체 · 구성 · 글 · 클래스 이름은 건드리지 않는다. 새로 넣는 것은 지금 첫 화면의 색 · 서체 · 클래스 이름 짓는 법을 잇는다.",
   "- 자료에 없는 수치, 경력, 연락처를 만들지 않는다.",
   "",
-  pagePolicyPrompt(),
+  pagePolicyPrompt({ script: true }),
   "",
   "## 내는 순서",
   "- `name` — 고친 첫 화면의 짧은 이름.",
@@ -640,8 +642,8 @@ const REVISION_SYSTEM = [
 ].join("\n");
 
 /** 조각을 순서대로 적용한다. `find`가 없는 조각은 건너뛰고 그 자리 번호를 `missing`에 남긴다. 같은 글자는 모두 바꾼다. */
-export function applyEdits(snippet: Pick<DesignSnippet, "html" | "css">, edits: RevisionDraft["edits"]): { html: string; css: string; missing: number[] } {
-  const next = { html: snippet.html, css: snippet.css };
+export function applyEdits(snippet: Pick<DesignSnippet, "html" | "css" | "script">, edits: RevisionDraft["edits"]): { html: string; css: string; script: string; missing: number[] } {
+  const next = { html: snippet.html, css: snippet.css, script: snippet.script ?? "" };
   const missing: number[] = [];
   edits.forEach((edit, index) => {
     if (!next[edit.in].includes(edit.find)) missing.push(index);
@@ -650,7 +652,7 @@ export function applyEdits(snippet: Pick<DesignSnippet, "html" | "css">, edits: 
   return { ...next, missing };
 }
 
-export function reviseCall(input: { userId: string; sources: BrewPageSources; snippet: Pick<DesignSnippet, "html" | "css" | "name" | "tokens">; instruction: string }): {
+export function reviseCall(input: { userId: string; sources: BrewPageSources; snippet: Pick<DesignSnippet, "html" | "css" | "script" | "name" | "tokens">; instruction: string }): {
   spec: AiCallSpec;
   check(output: RevisionDraft): AiViolation[];
   /** 조각을 지금 첫 화면에 적용한 결과. 그린 첫 화면과 같은 모양이다. */
@@ -666,15 +668,16 @@ export function reviseCall(input: { userId: string; sources: BrewPageSources; sn
     "```css",
     snippet.css,
     "```",
+    ...(snippet.script ? ["```js", snippet.script, "```"] : []),
     "",
     "## 지시",
     input.instruction,
   ].join("\n");
   const apply = (output: RevisionDraft): SnippetDraft => {
-    const { html, css } = applyEdits(snippet, output.edits);
+    const { html, css, script } = applyEdits(snippet, output.edits);
     // 고친 것에는 건네는 말을 받지 않는다. 고치겠다는 말은 답하는 호출이 이미 했고, 한 칸을 더 쓰게 하면 그만큼 늦어진다
     // (2026-11-19 실제 호출: 조각은 9초에 왔는데 이 말을 고쳐 받느라 5초가 더 들었다).
-    return { name: output.name, note: "", tokens: output.tokens, css, html };
+    return { name: output.name, note: "", tokens: output.tokens, css, html, ...(script.trim() ? { script } : {}) };
   };
   const whole = snippetCheck(groundSource(input.sources), false);
   return {

@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import { PAGE_PROMPT_VERSION, PageDraftSchema, pagePolicyPrompt, type DesignSystemSpecV2, type PageStyleGrammar } from "@expresso/contracts";
+import { PAGE_PROMPT_VERSION, PageDraftSchema, pagePolicyPrompt, type DesignSystemSpecV2, type PageStyleGrammar, joinPageScripts } from "@expresso/contracts";
 
 import type { AiClient, AiUsage } from "../../platform/ai/client.js";
 import { sanitizePage } from "../../platform/html/sanitize.js";
@@ -122,7 +122,7 @@ export type DesignPlan = z.infer<typeof DesignPlanSchema>;
  * CSS를 HTML보다 먼저 받습니다. 이 지면은 키트가 없어서, HTML이 먼저 오면 생성 중 미리보기가 CSS가 올 때까지 꾸밈 없는 글만 보입니다.
  * CSS가 먼저 깔리면 지면이 위에서부터 제 모습으로 쓰입니다.
  */
-const PlannedDraftSchema = z.strictObject({ plan: DesignPlanSchema, css: PageDraftSchema.shape.css, html: PageDraftSchema.shape.html, rationale: PageDraftSchema.shape.rationale });
+const PlannedDraftSchema = z.strictObject({ plan: DesignPlanSchema, css: PageDraftSchema.shape.css, html: PageDraftSchema.shape.html, script: PageDraftSchema.shape.script, rationale: PageDraftSchema.shape.rationale });
 
 /** 스킬 파일의 머리말(`---` 사이)을 뗍니다. */
 export function skillBody(text: string): string {
@@ -142,7 +142,7 @@ const skillRole = (planLine: string) => [
   "- 스타일이 정하지 않은 자리에서 방향을 세운다 — 첫 화면에 무엇을 세울지, 섹션마다의 배치, 글자를 다루는 방식, 수치 · 과정 · 기간을 보이는 형태.",
   "- 주제는 이 사람이 하는 일이다. 그 일의 대상 · 도구 · 산출물에서 지면의 소재를 찾는다.",
   planLine,
-  "- 움직임과 반응은 CSS(`:hover` · `:focus` · `<details>` · 애니메이션)로 낸다. 아래 「못 쓰는 것」이 지침보다 먼저다.",
+  "- 반응은 CSS(`:hover` · `:focus` · `<details>` · 애니메이션)로 낸다. canvas · three.js 그림은 아래 「그림 스크립트」대로 `script`에 쓴다. 아래 「못 쓰는 것」이 지침보다 먼저다.",
   "- 지면의 글은 자료에 있는 사실로 쓴다. 지침의 문안 원칙은 그 글을 다듬는 데 쓴다.",
 ].join("\n");
 
@@ -153,6 +153,7 @@ const PLAN_OUTPUT = [
   "- `plan` — 가장 먼저 쓴다. 소재 · 색 · 서체 · 배치 · 기억될 한 가지, 그리고 기본값으로 읽혀 고친 부분.",
   "- `css` — 계획대로 스타일 전부를 먼저 쓴다. 쓰는 동안 화면에 지면이 그려지므로, 뒤에 올 마크업의 클래스 이름을 여기서 정해 둔다.",
   "- `html` — 위에서 정한 클래스로 지면의 몸통을 쓴다.",
+  "- `script` — 그림 스크립트. 그림이 필요 없으면 비운다.",
   "- `rationale` — 위 「내는 것」과 같다.",
 ].join("\n");
 
@@ -166,7 +167,7 @@ const PLAN_OUTPUT = [
 export function briefedSystem(designSkill: string | null | undefined, output: { planLine: string; order: string } = { planLine: PLAN_LINE, order: PLAN_OUTPUT }): string {
   if (!designSkill) return SYSTEM;
   // 지면 정책을 지침 뒤에 한 번 더 둡니다. 지침이 권한 것 중 지면이 실을 수 없는 것(스크립트 · 바깥 이미지)을 마지막에 다시 읽게 합니다.
-  return [SYSTEM, "", skillRole(output.planLine), "", "## 디자인 지침", skillBody(designSkill), "", pagePolicyPrompt(), "", output.order].join("\n");
+  return [SYSTEM, "", skillRole(output.planLine), "", "## 디자인 지침", skillBody(designSkill), "", pagePolicyPrompt({ script: true }), "", output.order].join("\n");
 }
 
 /**
@@ -210,9 +211,11 @@ export function seedPrompt(seed: PageSeed): string[] {
     "```css",
     seed.css,
     "```",
+    ...(seed.script ? ["```js", seed.script, "```"] : []),
     "",
     "- `html`에는 첫 화면 **바로 다음부터** 쓴다. 첫 화면에 이미 있는 이름 · 한 줄 소개 · 대표 사실을 되풀이하지 않고, 첫 화면에 싣지 않은 일을 섹션마다 디자인해 잇는다.",
     "- `css`에는 **새로 더하는 규칙만** 쓴다. 위 CSS는 이미 지면에 실려 있다. 위에 있는 선택자를 다시 정의하지 않고, 같은 색 · 서체 · 간격 단위 · 클래스 이름 짓는 법을 잇는다.",
+    "- `script`에는 뒤 섹션의 그림에 필요한 스크립트만 쓴다. 첫 화면의 스크립트는 따로 도는 모듈로 이미 실려 있다 — 다시 쓰지 않고, 필요하면 `three`를 이 모듈에서 다시 불러온다.",
     "- `plan`에는 첫 화면의 디자인을 요약하고, 그 뒤를 어떻게 이을지를 적는다. 지면의 소재와 색 · 서체는 첫 화면이 정했다.",
     "",
     // 첫 화면만 디자인되고 그 뒤가 문단과 목록으로 돌아가면 사용자가 고른 것과 만든 것이 어긋난다. 첫 화면을 그릴 때와 같은 목록을 지킨다.
@@ -349,10 +352,13 @@ export class BriefedPageGenerator implements PageGenerator {
     const written = sanitizePage(draft);
     // 첫 화면은 고른 것을 그대로 앞에 둡니다. 모델이 쓴 것은 그 뒤입니다.
     const clean = seed ? { ...written, html: `${seed.html}\n${written.html}`, css: `${seed.css}\n${written.css}` } : written;
+    // 첫 화면의 스크립트와 이어 쓴 스크립트는 모듈을 따로 둔다(`PAGE_SCRIPT_BREAK`).
+    const script = joinPageScripts(seed?.script, draft.script);
     const ungrounded = ungroundedNumbers(visibleText(clean.html), source).filter((number) => number.replace(/\D/g, "").length >= 2 && !isOrdinalLabel(number));
     return {
       html: clean.html,
       css: clean.css,
+      ...(script ? { script } : {}),
       rationale: draft.rationale,
       ungrounded,
       removed: clean.removed,

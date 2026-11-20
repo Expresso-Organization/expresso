@@ -641,6 +641,8 @@ export function Editor({
                     title: portfolio.title,
                     description: generatedPage.rationale,
                     ...(generatedPage.styleSpec ? { grammar: generatedPage.styleSpec } : {}),
+                    // 배포될 문서와 같게 그림 스크립트와 정책을 싣는다. 그림 출처는 배포 주소에서 더해진다.
+                    ...(generatedPage.script ? { script: generatedPage.script, run: { origin: "" } } : {}),
                   })}
                 </pre>
               ) : (

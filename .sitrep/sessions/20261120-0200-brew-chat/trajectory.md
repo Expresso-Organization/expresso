@@ -208,3 +208,23 @@
 - 토스트 부품 신설(`components/ui/toast.tsx`, 루트 레이아웃 `<Toaster />`) — 앱에 기존 토스트 없음 · 같은 글 중복 없음 · 6초 뒤 내림
 - 대화 · 디자인 · 생성 카드의 일시 실패 경고를 토스트로(카드 수만큼 반복되던 경고 제거). 구성 실패 사유 · 동의 안내 · 멈춘 생성은 카드에 남김
 - 확인: API를 내린 채 메시지 전송 → 오른쪽 위 토스트, 입력 칸 아래 · 카드 안 경고 없음. 웹 98 통과 · tsc 통과
+
+### ~19:10 · T12 결정 · 지면 스크립트 제약 풀기
+- 사용자: "이건 표현력 문제를 야기해. 이 제약을 풀자" · 첫 화면 그래픽은 기록 · 스타일 · 강조점에서 나온 추상 그래픽(svg/canvas/three.js)
+- 방식: 소독은 그대로 두고 `script` 칸을 따로 받음. 안전은 틀(allow-scripts만) + 정책(해시 · three r170 한 주소 · connect-src 'none' · img-src 앱 출처만)
+- 결정한 사람: 사용자(제약 해제) · 에이전트(가두는 방식)
+
+### ~19:12 · T12 완료 · 계약 · 백엔드 · 웹
+- 계약 `page-script.ts`: 동기 SHA-256(Node crypto와 일치 테스트) · `</script` 무력화 · 모듈 경계 `PAGE_SCRIPT_BREAK` · `pageDocument({ script, run })`
+- 백엔드: 그리기 · 고치기(`in: script`) · 자유 생성 출력 `script` · 첫 화면 스크립트를 첫 모듈로 · 지시 고침에서 직전 스크립트 잇기 · 배포 스냅샷 · 측정기 `javaScriptEnabled: false` · 마이그레이션 없음(검증 규칙이 추가 속성 허용)
+- 웹: `withSiteTracker`가 기존 정책에 추적 해시 · 방문 출처를 더함 · 디자인 대화 `Frame`은 스크립트 있는 첫 화면만 `allow-scripts` · 다듬기 미리보기는 편집 스크립트 해시를 같은 정책에
+- 지침: 첫 화면 그래픽을 그림 스크립트로(SVG를 동등한 선택지로 두자 첫 실제 호출이 SVG만 씀 → 스크립트를 기본으로)
+
+### ~19:14 · T12 발견 · 점검 결과
+- 적대 스크립트(headless Chrome · opaque iframe): fetch · 쿠키 · parent/top · localStorage · eval · new Function · 바깥 import · 스크립트 주입 · 이미지 비콘 · WebSocket 모두 막힘, 바깥 도달 요청 0건. blob Worker 생성과 추적 알림 흉내는 남는 위험
+- 정상: three r170 import · WebGL 렌더 성공(콘솔 오류 0)
+- 실제 그리기(claude-code): 「성능 계기판 × 경계선 위의 이름」 → canvas 2D 생성 그래픽 2,777자, 대화 카드에서 `allow-scripts`로 움직임 확인. 스크립트 없는 다른 첫 화면은 `sandbox=""` 유지
+
+### ~19:20 · T12.7 완료 · 전체 검사
+- `pnpm typecheck` 통과 · `pnpm test` 통과(백엔드 701 · 웹 518 등)
+- `pnpm test:infra` 1건 실패 → 단독 재실행 9/9 통과: `structured.mongo.integration.test.ts`의 5006ms 시간 초과(부하), 구조화 지면은 스크립트와 무관

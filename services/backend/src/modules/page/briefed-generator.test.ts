@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pagePolicyPrompt } from "@expresso/contracts";
+import { pagePolicyPrompt, PAGE_SCRIPT_BREAK } from "@expresso/contracts";
 
 import { ScriptedAiClient } from "../../platform/ai/scripted-client.js";
 import { findDesignSystemRevision } from "../design-systems/index.js";
@@ -93,7 +93,8 @@ describe("정리본 · 디자인 지침 자유 생성", () => {
     const system = ai.calls[0]!.system;
     expect(system).not.toContain("name: frontend-design");
     expect(system.indexOf("지침 본문")).toBeGreaterThan(system.indexOf("## 디자인하는 법"));
-    expect(system.lastIndexOf(pagePolicyPrompt())).toBeGreaterThan(system.indexOf("지침 본문"));
+    // 그림 스크립트를 쓰는 호출이라 정책도 스크립트 칸을 알린다.
+    expect(system.lastIndexOf(pagePolicyPrompt({ script: true }))).toBeGreaterThan(system.indexOf("지침 본문"));
     expect(result.plan).toEqual(plan);
     expect(result.html).toContain("윤하린");
     // 지침만 켜면 요청은 키트를 끈 자유 생성과 같다.
@@ -231,6 +232,19 @@ describe("정리본 · 디자인 지침 자유 생성", () => {
       expect(prompt).toContain("강조 `#1d4ed8`");
       expect(prompt).toContain("서체 계열: 고정폭");
       expect(prompt).not.toContain("고른 것: **Clarity**");
+    });
+
+    it("첫 화면의 그림 스크립트를 보이고, 지면 스크립트는 첫 화면의 것과 이어 쓴 것을 모듈로 나눠 잇는다", async () => {
+      const seedScript = 'import * as THREE from "three"; hero()';
+      const ai = new ScriptedAiClient((request) => (request.contract === "page_fill" ? brief : { ...rest, script: 'import * as THREE from "three"; rings()' }));
+      const result = await freePageGenerator(ai).generate({ ...context, seed: { ...seed, script: seedScript } });
+      expect(result.script).toBe(`${seedScript}${PAGE_SCRIPT_BREAK}import * as THREE from "three"; rings()`);
+      const prompt = ai.calls.at(-1)!.prompt;
+      expect(prompt).toContain(`\`\`\`js\n${seedScript}\n\`\`\``);
+      expect(prompt).toContain("`script`에는 뒤 섹션의 그림에 필요한 스크립트만 쓴다");
+      // 그림이 없는 지면은 칸을 두지 않는다.
+      const plain = await freePageGenerator(new ScriptedAiClient((request) => (request.contract === "page_fill" ? brief : rest))).generate({ ...context, seed });
+      expect(plain.script).toBeUndefined();
     });
 
     it("지금 지면을 지시로 고칠 때는 첫 화면을 다시 붙이지 않는다 — 직전 지면에 이미 있다", async () => {

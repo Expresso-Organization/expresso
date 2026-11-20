@@ -81,6 +81,8 @@ export const DesignSnippetSchema = z.strictObject({
   layout: DesignLayoutSpecSchema.nullable(),
   css: PageDraftSchema.shape.css,
   html: PageDraftSchema.shape.html,
+  /** 첫 화면의 스크립트(`page-script.ts`). 고르면 완성 지면의 스크립트 맨 앞에 그대로 들어간다. */
+  script: PageDraftSchema.shape.script,
   fromSnippetId: UuidSchema.nullable(),
   createdAt: TimestampSchema,
 });

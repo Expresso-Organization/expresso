@@ -489,7 +489,8 @@ export class DesignChatService {
               await live.settled();
               data = call.apply(draft);
               // 조각은 고쳐 받는 동안 달라질 수 있다. 끝난 조각으로 고친 첫 화면에서의 자리를 다시 잡는다.
-              targets = revisedTargets(revise.from, draft.edits);
+              // 스크립트 조각은 화면의 자리가 없다. 마크업 · CSS 조각만 친다.
+              targets = revisedTargets(revise.from, draft.edits.flatMap((edit) => (edit.in === "script" ? [] : [{ ...edit, in: edit.in }])));
             } else {
               const call = drawCall({ userId, sources, style: { name: item.name, words: item.words, tokens: item.tokens }, layout: item.layout });
               data = (await this.#ai.complete(call.spec, SnippetDraftSchema, { userId, check: call.check })).data;
@@ -500,7 +501,7 @@ export class DesignChatService {
               id: randomUUID(), origin: origins[index] ?? "agent", name: data.name, note: data.note, words: item.words, tokens: data.tokens,
               // 그릴 때 따른 레이아웃이다(고친 것은 원래 첫 화면의 것). 카탈로그의 디자인만 골라 그렸으면 null이다.
               layout: item.layout,
-              css: clean.css, html: clean.html, fromSnippetId: revise?.from.id ?? null, createdAt: new Date().toISOString(),
+              css: clean.css, html: clean.html, ...(data.script?.trim() ? { script: data.script.trim() } : {}), fromSnippetId: revise?.from.id ?? null, createdAt: new Date().toISOString(),
             });
             const done = { ...item, status: "done" as const, snippetId: snippet.id };
             await this.#write(chatId, runId, {

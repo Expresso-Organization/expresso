@@ -91,8 +91,11 @@ describe("디자인 대화의 호출", () => {
     // 레이아웃은 견본이 그린 배치도와 같은 값으로 간다.
     expect(spec.prompt).toContain("## 사용자가 고른 레이아웃 — 구성은 이것을 따른다");
     expect(spec.prompt).toContain("고른 것: **전후 비교** — 상품 상세의 전후 비교 차트");
-    expect(spec.prompt).toContain("- 이 사람의 일로 그리는 그림: 왼쪽에서 6칸 · 위에서 1칸 자리에 가로 10칸 · 세로 6칸");
-    for (const line of ["## Do\n", "## Do not\n", "포트폴리오를 디자인한다.", "이 사람의 일을 그림으로 만든다.", "문서나 이력서처럼 보이면 실패다.", "같은 모양의 카드를 줄지어 쌓지 않는다."]) expect(spec.prompt).toContain(line);
+    expect(spec.prompt).toContain("- 이 사람의 기록에서 나온 추상 그래픽: 왼쪽에서 6칸 · 위에서 1칸 자리에 가로 10칸 · 세로 6칸");
+    for (const line of ["## Do\n", "## Do not\n", "포트폴리오를 디자인한다.", "추상적인 그래픽이다.", "문서나 이력서처럼 보이면 실패다.", "같은 모양의 카드를 줄지어 쌓지 않는다."]) expect(spec.prompt).toContain(line);
+    // 그래픽을 canvas · three.js로 지을 수 있다는 것과 그 쓰는 법은 시스템에 있다.
+    expect(spec.system).toContain("## 그림 스크립트 — `script` 칸");
+    expect(spec.system).toContain('import * as THREE from "three"');
     // 문서를 흉내 내라던 지시는 없다.
     for (const gone of ["제품을 파는 랜딩 페이지가 아니라", "글이 화면의 주인", "## 짜임", "`composition`"]) expect(spec.prompt).not.toContain(gone);
     // 레이아웃이 정해지지 않았으면(카탈로그의 디자인만 고름) 구성을 그리는 쪽이 정한다.
@@ -186,6 +189,9 @@ describe("디자인 대화의 호출", () => {
     expect(apply(draft)).toEqual({ name: "초록 측정판", note: "", tokens: draft.tokens, html: current.html, css: ".hero{color:#111111}\n.bar{background:#1f5c3a;border-color:#1f5c3a}" });
     // 조각은 순서대로 적용한다. 뒤 조각은 앞 조각을 적용한 뒤의 글자에서 찾는다.
     expect(applyEdits(current, [{ in: "html", find: "<h1>", replace: '<h1 class="big">' }, { in: "html", find: 'class="big">윤하린', replace: 'class="big">윤 하린' }])).toMatchObject({ html: '<header class="hero"><h1 class="big">윤 하린</h1><i class="bar"></i></header>', missing: [] });
+    // 그림 스크립트도 조각으로 고친다. 스크립트가 없던 첫 화면은 빈 글에서 시작한다.
+    expect(applyEdits({ ...current, script: "spin(0.2)" }, [{ in: "script", find: "0.2", replace: "0.05" }])).toMatchObject({ script: "spin(0.05)", html: current.html, missing: [] });
+    expect(applyEdits(current, [{ in: "script", find: "x", replace: "y" }]).missing).toEqual([0]);
     // 지금 첫 화면에 없는 글자를 찾는 조각은 그 조각만 고쳐 받는다.
     const missed = check({ ...draft, edits: [draft.edits[0]!, { in: "css", find: ".chart { border-radius: 4px }", replace: ".chart { border-radius: 999px }" }] });
     expect(missed.map(({ path }) => path)).toEqual(["/edits/1/find"]);

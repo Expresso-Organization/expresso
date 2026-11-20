@@ -1,5 +1,6 @@
 "use client";
 
+import { useAppOrigin } from "@/lib/app-origin";
 import { createContext, useActionState, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type PropsWithChildren } from "react";
 import { flushSync } from "react-dom";
 import Link from "next/link";
@@ -478,20 +479,24 @@ interface FrameLayer { id: number; doc: string; marked: boolean }
 
 /**
  * 첫 화면. 서버가 소독해 저장한 마크업과 CSS를 배포 문서와 같은 `pageDocument()`로 그린다.
- * `sandbox`를 비워 두어 이 안에서는 스크립트가 돌지 않고 앱의 쿠키 · 저장소에도 닿지 못한다.
+ * 그림 스크립트가 있으면 배포 지면과 같은 틀(`allow-scripts`만, `allow-same-origin` 없음)과 정책으로 돌린다 — 고르는 화면에서
+ * 그림이 보여야 고를 수 있다(2026-11-20 사용자가 스크립트 제약을 풀기로 함). 문서는 익명 출처에서 돌아 앱의 쿠키 · 저장소 · 부모 문서에
+ * 닿지 못하고, 정책이 바깥 요청을 막는다(`page-script.ts`). 스크립트가 없으면 지금처럼 `sandbox`를 비운다.
  *
  * 표시(`effect`)는 문서에 CSS를 더해 얹는다 — 막힌 틀에는 바깥에서 닿을 길이 없다. 문서가 바뀌면 틀이 다시 그려지므로,
  * 표시가 걸리거나 풀릴 때는 다음 문서를 아래에 깔고 다 뜬 뒤에 위의 것을 걷어 낸다. 표시가 없는 문서끼리는 바로 바꾼다.
  */
 function Frame({ snippet, title, effect = null }: { snippet: DesignSnippet; title: string; effect?: FrameEffect | null }) {
   const { ref, scale } = useFrameScale();
+  const origin = useAppOrigin();
   const kind = effect?.kind ?? null;
   const targets = effect?.targets.join("\n") ?? "";
   const srcDoc = useMemo(() => {
     const list = targets ? targets.split("\n") : [];
     const extra = kind === "editing" ? snippetEditingCss(list, snippet.tokens) : kind === "revised" ? snippetRevisedCss(list, snippet.tokens, REVISED_SECONDS) : "";
-    return pageDocument({ html: snippet.html, css: extra ? `${snippet.css}\n${extra}` : snippet.css, title });
-  }, [snippet.html, snippet.css, snippet.tokens, title, kind, targets]);
+    return pageDocument({ html: snippet.html, css: extra ? `${snippet.css}\n${extra}` : snippet.css, title, ...(snippet.script ? { script: snippet.script, run: { origin } } : {}) });
+  }, [snippet.html, snippet.css, snippet.script, snippet.tokens, title, kind, targets, origin]);
+  const sandbox = snippet.script ? "allow-scripts" : "";
   const marked = kind !== null;
   const [layers, setLayers] = useState<{ shown: FrameLayer; next: FrameLayer | null; leaving: boolean }>(() => ({ shown: { id: 0, doc: srcDoc, marked }, next: null, leaving: false }));
   const newest = layers.next ?? layers.shown;
@@ -507,13 +512,13 @@ function Frame({ snippet, title, effect = null }: { snippet: DesignSnippet; titl
     <div ref={ref} className={styles.frame} data-frame="" style={{ background: snippet.tokens.background }}>
       {scale > 0 && next ? (
         <iframe
-          key={next.id} title={title} srcDoc={next.doc} sandbox="" tabIndex={-1} style={frame}
+          key={next.id} title={title} srcDoc={next.doc} sandbox={sandbox} tabIndex={-1} style={frame}
           onLoad={() => setLayers((current) => (current.next?.id === next.id ? { ...current, leaving: true } : current))}
         />
       ) : null}
       {scale > 0 ? (
         <iframe
-          key={shown.id} title={title} srcDoc={shown.doc} sandbox="" tabIndex={-1} style={frame} data-leaving={leaving ? "" : undefined} aria-hidden={leaving || undefined}
+          key={shown.id} title={title} srcDoc={shown.doc} sandbox={sandbox} tabIndex={-1} style={frame} data-leaving={leaving ? "" : undefined} aria-hidden={leaving || undefined}
           onTransitionEnd={() => setLayers((current) => (current.leaving && current.next && current.shown.id === shown.id ? { shown: current.next, next: null, leaving: false } : current))}
         />
       ) : null}

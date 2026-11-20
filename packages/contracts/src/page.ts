@@ -1,4 +1,5 @@
 import { PageLibrarySelectionSchema } from "./page-library.js";
+import { PAGE_SCRIPT_BREAK, PAGE_SCRIPT_LIBRARY, PAGE_SCRIPT_POLICY_MARK, pageScriptPolicy, pageScriptText } from "./page-script.js";
 import { z } from "zod";
 
 import { TimestampSchema, UuidSchema } from "./common.js";
@@ -79,8 +80,10 @@ import { MEDIA_ASSET_PATH_PREFIX } from "./media-path.js";
  *
  * 16 — 자유 지면 프롬프트가 작성자 이름을 싣고, 연락처를 받지 않았으니 이메일 · 전화 줄을 두지 않는다고 알린다.
  * 받지 않은 빈칸을 모델이 서버 CLI 계정 정보로 채웠다(2026-11-10 운영, 「누구의 지면」 절).
+ *
+ * 17 — 지면이 그림 스크립트(`script`)를 싣는다. canvas · three.js 그림을 쓰는 법과 스크립트 없는 첫 모습을 알린다(2026-11-20).
  */
-export const PAGE_PROMPT_VERSION = 16;
+export const PAGE_PROMPT_VERSION = 17;
 
 /**
  * 한 지면의 상한.
@@ -125,6 +128,11 @@ export const PAGE_ALLOWED_TAGS = [
    * 받는 척하는 화면(가짜 로그인)을 만들 수 없다. `type`도 아래에서 두 가지로 묶는다.
    */
   "details", "summary", "label", "input",
+  /*
+   * 그림판. 스크립트가 그리는 자리라 스크립트가 돌지 않는 문서에서는 빈 칸이다 — 지면은 그 아래에 CSS로 첫 모습을 깐다.
+   * 스크립트는 따로 받는다(`page-script.ts`).
+   */
+  "canvas",
 ] as const;
 // `style` 태그는 없다. CSS는 `css` 필드로 따로 받아 따로 검사한다 — 마크업
 // 소독기에게 `<style>` 안은 그냥 글자 덩어리라 그대로 지나간다.
@@ -192,6 +200,7 @@ export const PAGE_TAG_ATTRIBUTES: Readonly<Record<string, readonly string[]>> = 
   label: ["for"],
   // `value`·`placeholder`가 없다 — 글자를 받는 칸으로 쓸 수 없게 한다.
   input: ["type", "id", "name", "checked", "disabled"],
+  canvas: ["width", "height"],
   // SVG는 표현 속성이 곧 그림이라 넓게 연다. 스크립트가 들어갈 속성은 없다.
   svg: [
     "viewBox", "width", "height", "xmlns", "fill", "stroke", "stroke-width",
@@ -466,6 +475,8 @@ export const GeneratedPageSchema = z.strictObject({
   html: z.string().min(1).max(PAGE_MAX_BYTES),
   /** `<style>`에 실릴 CSS. 역시 소독을 지난 것이다. */
   css: z.string().max(PAGE_MAX_BYTES),
+  /** 지면 스크립트(`page-script.ts`). 스크립트가 없는 판과 이 칸이 생기기 전의 판에는 없다. */
+  script: z.string().max(PAGE_MAX_BYTES).optional(),
   /** 무엇을 왜 이렇게 만들었는지 한 문장. 사용자가 이걸 읽고 다시 뽑을지 정한다. */
   rationale: z.string().max(400),
   promptVersion: z.number().int().nonnegative(),
@@ -518,6 +529,8 @@ export const PageDraftSchema = z.strictObject({
   html: z.string().min(1).max(PAGE_MAX_BYTES),
   // 키트를 쓰면 지면 CSS는 비어 있어도 됩니다(생성 프롬프트의 지시). 저장 계약도 빈 CSS를 받습니다.
   css: z.string().max(PAGE_MAX_BYTES),
+  /** 지면 스크립트. canvas · three.js 그림을 그린다. 없어도 된다. */
+  script: z.string().max(PAGE_MAX_BYTES).optional(),
   rationale: z.string().min(1).max(400),
 });
 export type PageDraft = z.infer<typeof PageDraftSchema>;
@@ -569,16 +582,29 @@ export function pageDocument(input: {
    * 편집 화면처럼 고친 곳이 스크롤 위치와 상관없이 바로 보여야 하는 자리에서 쓴다. 기본은 켜짐이다.
    */
   reveal?: boolean;
+  /** 지면 스크립트. `run`이 없으면 싣지 않는다 — 스크립트가 돌지 않는 자리(생성 중 실시간 지면 · 축소 미리보기)의 문서다. */
+  script?: string | undefined;
+  /**
+   * 스크립트를 돌리는 자리에서만 준다. 주면 스크립트와 정책(`pageScriptPolicy`)을 함께 싣는다.
+   * `origin`은 그림을 내보내는 앱 출처, `extraScripts`는 같은 문서에 함께 넣을 우리 스크립트(편집 · 추적)의 원문이다 — 정책이 둘이면
+   * 교집합이 되어 서로를 막으므로 한 정책에 해시를 모은다. 넣는 일은 부르는 쪽이 한다.
+   */
+  run?: { origin: string; extraScripts?: string[] } | undefined;
 }): string {
   const escape = (value: string) => value
     .replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
+  const modules = input.run && input.script ? input.script.split(PAGE_SCRIPT_BREAK).map(pageScriptText).filter(Boolean) : [];
+  const importMap = JSON.stringify({ imports: { [PAGE_SCRIPT_LIBRARY.name]: PAGE_SCRIPT_LIBRARY.url } });
+  const policy = input.run
+    ? `<meta http-equiv="Content-Security-Policy" ${PAGE_SCRIPT_POLICY_MARK} content="${pageScriptPolicy({ scripts: [...(modules.length ? [importMap, ...modules] : []), ...(input.run.extraScripts ?? [])], origin: input.run.origin, styleHosts: PAGE_ALLOWED_STYLESHEET_HOSTS })}">\n`
+    : "";
   return `<!doctype html>
 <html lang="ko"${input.reveal === false ? ' data-reveal="none"' : ""}>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${escape(input.title)}</title>
+${policy}<title>${escape(input.title)}</title>
 ${input.description ? `<meta name="description" content="${escape(input.description)}">` : ""}
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -594,7 +620,7 @@ ${input.css}
 </head>
 <body>
 ${input.html}
-</body>
+${modules.length ? `<script type="importmap">${importMap}</script>\n${modules.map((code) => `<script type="module">${code}</script>\n`).join("")}` : ""}</body>
 </html>`;
 }
 
@@ -658,19 +684,36 @@ body{overflow-x:hidden}
  * 소독기와 **같은 상수를 읽는다.** 목록을 늘리면 모델이 그날부터 쓸 수 있고,
  * 줄이면 그날부터 안 쓴다 — 둘이 어긋날 자리가 없다.
  */
-export function pagePolicyPrompt(): string {
+export function pagePolicyPrompt(options: { script?: boolean } = {}): string {
   return [
     "## 못 쓰는 것 — 이것 말고는 HTML도 CSS도 전부 자유다",
     "- `<script>` · `<iframe>` · `<form>`, 그리고 `onclick` 같은 모든 이벤트 속성.",
-    "  **지면은 움직이지 않는다.** 동작이 필요하면 CSS 애니메이션과 `:hover`로 낸다.",
+    options.script
+      ? "  스크립트는 마크업에 쓰지 않고 `script` 칸에 따로 쓴다(아래 「그림 스크립트」)."
+      : "  **지면은 움직이지 않는다.** 동작이 필요하면 CSS 애니메이션과 `:hover`로 낸다.",
     `- 바깥 이미지 주소. 그림은 \`${PAGE_IMAGE_SRC_PREFIX}…\`만 쓸 수 있다.`,
     "",
     "## 서체는 직접 불러라",
     `\`<link rel="stylesheet">\`로 ${PAGE_ALLOWED_STYLESHEET_HOSTS.join(" · ")}에서 가져올 수 있다.`,
     "따로 안 부르면 아래가 이미 실려 있다 —",
     ...PAGE_FONTS.map((font) => `\`${font.stack}\` ${font.label}`),
+    ...(options.script ? ["", PAGE_SCRIPT_PROMPT] : []),
   ].join("\n");
 }
+
+/**
+ * 그림 스크립트를 쓰는 법. 스크립트가 도는 틀과 정책(`page-script.ts`)이 허락하는 것만 적는다 — 막힌 것을 쓰면 그림이 서지 않는다.
+ */
+export const PAGE_SCRIPT_PROMPT = [
+  "## 그림 스크립트 — `script` 칸",
+  "- `script`에는 ES 모듈 자바스크립트를 쓴다. 문서 끝에서 `<script type=\"module\">`로 돈다. 그림이 필요 없으면 비운다.",
+  `- \`import * as THREE from "three"\`로 three.js(r170 본체만, examples · addons 없음)를 쓸 수 있다. canvas 2D · WebGL을 직접 써도 된다.`,
+  "- 그림판은 `html`에 `<canvas>`로 두고 스크립트가 클래스로 찾는다. 스크립트는 자기 그림의 컨테이너 안만 다룬다 — 글과 마크업을 만들거나 바꾸지 않는다.",
+  "- 스크립트가 돌지 않는 자리(만들어지는 중의 지면 · 축소 미리보기)가 있다. 그림판 밑에 같은 성격의 첫 모습을 CSS(배경 · 그러데이션 · 인라인 SVG)로 깔아, 스크립트 없이도 첫 화면이 서게 한다.",
+  "- `matchMedia(\"(prefers-reduced-motion: reduce)\")`이면 한 장면만 그리고 멈춘다. 화면 밖에 있으면 그리기를 멈춘다(`IntersectionObserver`).",
+  "- 그림판 크기는 컨테이너를 따르고 `devicePixelRatio`를 반영한다(`ResizeObserver`). WebGL을 얻지 못하거나 오류가 나면 아무것도 하지 않고 첫 모습을 남긴다.",
+  "- 바깥으로 요청할 수 없다 — `fetch` · 바깥 그림 · 바깥 글꼴 · `eval`이 막혀 있다. 그림에 쓰는 값은 스크립트 안에 적는다.",
+].join("\n");
 
 /**
  * 스타일 문법을 생성기에게 넘기는 모양.
