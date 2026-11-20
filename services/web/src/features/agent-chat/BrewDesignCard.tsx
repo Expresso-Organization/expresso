@@ -6,7 +6,6 @@ import type { Route } from "next";
 import type { AgentBrewDesign } from "@expresso/contracts";
 import { ensureRecipeAction } from "@/app/(app)/brew/[brewId]/design/design-actions";
 import { REFRESH_MS } from "@/app/(app)/brew/[brewId]/use-refresh-while";
-import { Icon } from "@/components/ui/Icon";
 import { DesignViewContext, Failure, MakeButton, Proposals, Revision, Screens, Stage, useDesignView } from "@/features/design-chat/DesignChat";
 import designStyles from "@/features/design-chat/DesignChat.module.css";
 import { workingLabel } from "@/features/design-chat/thread";
@@ -70,8 +69,8 @@ export function BrewDesignCard({ design: { brewId, designMessageId }, onDraw }: 
   const shown = assistant ? view.cards[assistant.id] : undefined;
   const last = !!assistant && !state.running && chat?.messages.at(-1)?.id === assistant.id;
   const working = assistant?.status === "running" && chat?.messages.at(-1)?.id === assistant.id ? workingLabel(chat) : null;
-  // 고른 첫 화면이 이 카드에 있으면 그 아래에서 만든다.
-  const here = shown?.kind === "screens" ? shown.items.map((item) => item.snippetId) : shown?.kind === "revision" ? [shown.item.snippetId, shown.fromSnippetId] : [];
+  // 고른 첫 화면을 그린 카드에서만 만든다. 고친 결과의 카드는 고친 것만 친다 — 이전 것은 그것을 그린 카드에 있어, 같이 치면 만들기가 두 곳에 뜬다.
+  const here = shown?.kind === "screens" ? shown.items.map((item) => item.snippetId) : shown?.kind === "revision" ? [shown.item.snippetId] : [];
   const making = !!chat?.selectedSnippetId && here.includes(chat.selectedSnippetId);
 
   const retryRecipe = async () => {
@@ -82,8 +81,10 @@ export function BrewDesignCard({ design: { brewId, designMessageId }, onDraw }: 
     else setContext((current) => (current ? { ...current, recipeBuilding: true, recipeFailure: null } : current));
   };
 
-  return <section className={`${card.card} ${styles.card}`} aria-label="디자인">
-    <header className={card.head}><Icon name="palette" size={15} /><span>디자인</span>{working ? <span className={chatStyles.working}>{working}</span> : null}</header>
+  // 테두리 상자를 두지 않는다. 견본과 첫 화면이 이미 저마다의 틀을 가져, 상자를 씌우면 카드 안에 카드가 된다.
+  // 제목은 작업 흔적 줄(「디자인」)이 맡는다.
+  return <section className={styles.card} aria-label="디자인">
+    {working ? <p className={styles.wait}><span className={chatStyles.working}>{working}</span></p> : null}
     {opening && context && !ready ? (context.recipeFailure ? <p role="alert" className={card.error}>{context.recipeFailure}</p> : <p className={styles.wait}><span className={chatStyles.working}>구성을 만드는 중</span></p>) : null}
     {opening && context?.recipeFailure && !ready ? <div className={card.actions}><button type="button" className={styles.action} disabled={retrying} onClick={() => void retryRecipe()}>다시 맡기기</button></div> : null}
     {assistant?.text ? <p className={styles.say}>{assistant.text}</p> : null}

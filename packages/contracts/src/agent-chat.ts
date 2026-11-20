@@ -345,6 +345,20 @@ export type AgentBrewDesign = z.infer<typeof AgentBrewDesignSchema>;
 /** 견본에서 고른 스타일과 레이아웃으로 첫 화면을 그린다. 대화에 그 첫 화면의 카드가 붙는다. */
 export const AgentDesignDrawSchema = z.strictObject({ styleId: UuidSchema, layoutId: UuidSchema });
 export type AgentDesignDraw = z.infer<typeof AgentDesignDrawSchema>;
+/** 말로 견본을 다시 받는 도구의 입력. 견본은 디자인 대화가 견본 규칙대로 만든다 — 에이전트는 무엇을 원하는지만 옮긴다. */
+export const AgentDesignProposeInputSchema = z.strictObject({
+  jobPostingId: UuidSchema.describe("디자인 중인 제작의 공고 id(brews의 jobPostingId)"),
+  request: z.string().trim().min(1).max(2_000).describe("사용자가 원하는 스타일이나 구성. 사용자의 말에 가깝게"),
+  focus: z.enum(["both", "styles", "layouts"]).describe("새로 낼 견본. 색 · 서체 · 분위기 이야기면 styles, 구성 이야기면 layouts, 둘 다면 both"),
+});
+export type AgentDesignProposeInput = z.infer<typeof AgentDesignProposeInputSchema>;
+/** 그린 첫 화면을 말로 고치는 도구의 입력. 바뀌는 자리만 고친다(디자인 대화의 고치는 호출). */
+export const AgentDesignReviseInputSchema = z.strictObject({
+  jobPostingId: UuidSchema.describe("디자인 중인 제작의 공고 id(brews의 jobPostingId)"),
+  instruction: z.string().trim().min(1).max(2_000).describe("무엇을 어떻게 바꿀지 한 문장"),
+  screen: z.string().max(200).describe("고칠 첫 화면의 이름(brews.design.screens에 적힌 그대로). 가장 최근 것을 고치면 빈 글"),
+});
+export type AgentDesignReviseInput = z.infer<typeof AgentDesignReviseInputSchema>;
 
 export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional(), goalDraft: AgentGoalDraftSchema.optional(), gapReview: GapReviewSchema.optional(), planDraft: AgentPlanDraftSchema.optional(), replanDraft: AgentReplanDraftSchema.optional(), pageEdit: AgentPageEditSchema.optional(), brewStart: AgentBrewStartSchema.optional(), brewMaterials: AgentBrewMaterialsSchema.optional(), brewInterview: AgentBrewInterviewSchema.optional(), brewDesign: AgentBrewDesignSchema.optional() });
 export const AgentMessageSchema = z.strictObject({ id: UuidSchema, role: z.enum(["user", "assistant"]), text: z.string().max(64_000), tools: z.array(AgentToolResultSchema).max(30), selection: AgentPageSelectionSchema.optional(), createdAt: TimestampSchema });

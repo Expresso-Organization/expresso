@@ -18,7 +18,7 @@ import { readableCareerProperties, type CareerApi } from "../career/index.js";
 import type { JobBoardApi } from "../jobs/index.js";
 import { ConsentError, type ConsentApi } from "../consent/index.js";
 import { brewPath, brewStartState, KeyedQueue, type AgentBrewDeps, type LiveBrew } from "./brew-start.js";
-import { interviewBasisKey, type AgentBrewStart, type AgentBrewStartInput, type AgentBrewStartState, type AgentDesignDraw, type AgentInterviewAnswerInput } from "@expresso/contracts";
+import { interviewBasisKey, type AgentBrewDesign, type AgentBrewStart, type AgentBrewStartInput, type AgentBrewStartState, type AgentDesignDraw, type AgentDesignProposeInput, type AgentDesignReviseInput, type AgentInterviewAnswerInput } from "@expresso/contracts";
 import type { AgentBrewInterviewState, AgentBrewState, AgentRunEvent } from "../../platform/agent/runtime.js";
 import { InterviewError } from "../interview/index.js";
 
@@ -389,6 +389,21 @@ export class AgentChatService {
       return view(await this.appendCard(row, { id: randomUUID(), name: "디자인", status: "complete", summary: "", brewDesign: { brewId, jobPostingId: start.jobPostingId, designMessageId } }));
     });
   }
+  /**
+   * 디자인 도구(견본 다시 받기 · 첫 화면 고치기). 디자인 대화에 그 차례를 맡기고 그 답을 가리키는 카드(`brewDesign`)를 도구 결과로 돌려준다.
+   * 디자인 대화의 거절(아직 열지 않음 · 답을 만드는 중 · 크레딧 · 그린 첫 화면 없음)은 그 문장을 모델에게 돌려준다.
+   */
+  private async designTool(row: AgentConversationDoc, jobPostingId: string, work: (brewId: string) => Promise<{ designMessageId: string }>): Promise<AgentBrewDesign> {
+    const starts = row.messages.flatMap(message => message.tools).flatMap(tool => (tool.brewStart?.jobPostingId === jobPostingId ? [tool.brewStart] : []));
+    const brew = starts.length ? await this.liveBrew(row, starts[0]!.jobAnalysisId) : null;
+    if (!brew) throw new AgentToolRejection(["이 대화에서 그 공고로 만든 제작이 없습니다. brews의 jobPostingId를 쓰십시오."]);
+    if (brew.status === "draft" || brew.status === "interviewing") throw new AgentToolRejection(["아직 디자인 단계가 아닙니다. 지금 단계를 안내하십시오."]);
+    if (!row.messages.some(message => message.tools.some(tool => tool.brewDesign?.brewId === brew.id))) throw new AgentToolRejection(["이 대화에 「디자인」 카드가 없습니다. 「AI 대화」 카드의 「디자인 고르기」를 권하십시오."]);
+    try { return { brewId: brew.id, jobPostingId, ...(await work(brew.id)) }; }
+    catch (error) { if (error instanceof AgentChatError && error.publicMessage) throw new AgentToolRejection([error.publicMessage]); throw error; }
+  }
+  private proposeDesign(row: AgentConversationDoc, input: AgentDesignProposeInput) { return this.designTool(row, input.jobPostingId, brewId => this.brews!.designPropose(row.userId, brewId, { request: input.request, focus: input.focus })); }
+  private reviseDesign(row: AgentConversationDoc, input: AgentDesignReviseInput) { return this.designTool(row, input.jobPostingId, brewId => this.brews!.designRevise(row.userId, brewId, { instruction: input.instruction, screen: input.screen })); }
   /** 이 대화가 만든 제작의 시작 카드. 다른 대화의 제작이면 404다. */
   private startOfBrew(row: AgentConversationDoc, brewId: string): AgentBrewStart {
     if (!this.brews) throw new AgentChatError(503, "포트폴리오 제작 연결이 설정되지 않았습니다.");
@@ -738,6 +753,8 @@ export class AgentChatService {
         ...(event ? { event } : {}),
         startBrew: input => this.startBrew(row, input),
         saveInterviewAnswer: input => this.saveInterviewAnswer(row, input),
+        proposeDesign: input => this.proposeDesign(row, input),
+        reviseDesign: input => this.reviseDesign(row, input),
         jobGoal: goal ? { work: goal.work, place: goal.place, timing: goal.timing } : null,
         goalDraft: async input => {
           const draft = await this.goalDraft(row, [...row.messages.slice(0, -1), message], input);

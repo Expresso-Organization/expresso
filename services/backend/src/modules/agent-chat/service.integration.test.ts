@@ -592,7 +592,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
       } catch (error) { if (!(error instanceof AgentToolRejection)) throw error; rejections.push(error.issues.join(" ")); }
       await input.emit({ type: "text", text: "분석을 시작했어요." });
     } };
-    const make = (owner: typeof consent) => { const service = new AgentChatService(fixture.resource, runtime, career, jobs, documents, owner, new AgentCredentials(fixture.resource), new PortfolioReadService(fixture.resource), new PageService(fixture.resource), undefined, { analyzePosting, getResult, createBrew, brewState, openInterview: vi.fn(), interview: vi.fn(async () => ({ bases: [], session: null })), saveInterviewAnswer: vi.fn(), startRecipe: vi.fn(), designDraw: vi.fn(), designState: vi.fn(async () => null) }); service.setRunFailureListener(() => {}); services.push(service); return service; };
+    const make = (owner: typeof consent) => { const service = new AgentChatService(fixture.resource, runtime, career, jobs, documents, owner, new AgentCredentials(fixture.resource), new PortfolioReadService(fixture.resource), new PageService(fixture.resource), undefined, { analyzePosting, getResult, createBrew, brewState, openInterview: vi.fn(), interview: vi.fn(async () => ({ bases: [], session: null })), saveInterviewAnswer: vi.fn(), startRecipe: vi.fn(), designDraw: vi.fn(), designPropose: vi.fn(), designRevise: vi.fn(), designState: vi.fn(async () => null) }); service.setRunFailureListener(() => {}); services.push(service); return service; };
     const service = make(consent);
     const conversation = await service.create(maker, [{ kind: "job", id: jobPostingId }]);
     const say = async (text: string) => { await service.send(maker, conversation.id, { requestId: randomUUID(), text }); await vi.waitFor(async () => expect((await service.get(maker, conversation.id)).run?.status).toBe("complete")); return service.get(maker, conversation.id); };
@@ -715,7 +715,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     // 답이 도는 동안에는 카드를 붙이지 않는다. 실행이 마지막 답변을 통째로 다시 쓰기 때문이다.
     const busy = await service.create(maker, [{ kind: "job", id: jobPostingId }]);
     let release!: () => void; const held = new Promise<void>(resolve => { release = resolve; });
-    const slow = new AgentChatService(fixture.resource, { run: async input => { const { start: brewStart } = await input.startBrew({ jobPostingId }); await input.emit({ type: "tool", tool: { id: randomUUID(), name: "포트폴리오 제작", status: "complete", summary: "", brewStart } }); await held; } }, career, jobs, documents, consent, new AgentCredentials(fixture.resource), new PortfolioReadService(fixture.resource), new PageService(fixture.resource), undefined, { analyzePosting, getResult, createBrew, brewState, openInterview: vi.fn(), interview: vi.fn(async () => ({ bases: [], session: null })), saveInterviewAnswer: vi.fn(), startRecipe: vi.fn(), designDraw: vi.fn(), designState: vi.fn(async () => null) });
+    const slow = new AgentChatService(fixture.resource, { run: async input => { const { start: brewStart } = await input.startBrew({ jobPostingId }); await input.emit({ type: "tool", tool: { id: randomUUID(), name: "포트폴리오 제작", status: "complete", summary: "", brewStart } }); await held; } }, career, jobs, documents, consent, new AgentCredentials(fixture.resource), new PortfolioReadService(fixture.resource), new PageService(fixture.resource), undefined, { analyzePosting, getResult, createBrew, brewState, openInterview: vi.fn(), interview: vi.fn(async () => ({ bases: [], session: null })), saveInterviewAnswer: vi.fn(), startRecipe: vi.fn(), designDraw: vi.fn(), designPropose: vi.fn(), designRevise: vi.fn(), designState: vi.fn(async () => null) });
     slow.setRunFailureListener(() => {}); services.push(slow);
     await slow.send(maker, busy.id, { requestId: randomUUID(), text: "이 공고로 만들어 줘" });
     await vi.waitFor(async () => expect(starts(await slow.get(maker, busy.id))).toHaveLength(1));
@@ -766,7 +766,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
       openInterview,
       interview: vi.fn(async () => ({ bases, session: null })),
       saveInterviewAnswer: vi.fn(async (_user: string, _brew: string, input: { basis: unknown; question: string; transcript: string }, key: string) => { saved.push({ ...input, key }); return { progress: { answered: 1, total: 1 } } as never; }),
-      startRecipe: vi.fn(), designDraw: vi.fn(), designState: vi.fn(async () => null),
+      startRecipe: vi.fn(), designDraw: vi.fn(), designPropose: vi.fn(), designRevise: vi.fn(), designState: vi.fn(async () => null),
     };
     const jobs = { get: async () => ({ id: jobPostingId, title: "프론트엔드 개발자", company: { name: "가상 회사" } }) as never };
     const events: unknown[] = []; const seen: unknown[] = []; const rejections: string[] = [];
@@ -843,7 +843,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const identity = new MongoIdentityService(fixture.resource);
     const maker = (await identity.signup({ email: `${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "디자인 검증" })).user.id;
     await consent.grant(maker, ["career_records", "job_posting_analysis"], CONSENT_POLICY_VERSION);
-    const jobPostingId = randomUUID(); const jobAnalysisId = randomUUID(); const brewId = randomUUID(); const drawnId = randomUUID();
+    const jobPostingId = randomUUID(); const jobAnalysisId = randomUUID(); const brewId = randomUUID(); const drawnId = randomUUID(); const proposedId = randomUUID(); const revisedId = randomUUID();
     let stage: "draft" | "interviewing" | "recipe" = "draft";
     const design = { ready: true, busy: false, styles: ["새벽 청록"], layouts: ["차트 주인공"], screens: [] as string[], selected: null };
     const deps = {
@@ -854,13 +854,20 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
       openInterview: vi.fn(), interview: vi.fn(async () => ({ bases: [], session: null })), saveInterviewAnswer: vi.fn(),
       startRecipe: vi.fn(async () => undefined),
       designDraw: vi.fn(async () => ({ designMessageId: drawnId })),
+      designPropose: vi.fn(async () => ({ designMessageId: proposedId })),
+      designRevise: vi.fn(async () => ({ designMessageId: revisedId })),
       designState: vi.fn(async () => design),
     };
     const jobs = { get: async () => ({ id: jobPostingId, title: "프론트엔드 개발자", company: { name: "가상 회사" } }) as never };
-    const seen: unknown[] = [];
+    const seen: unknown[] = []; const tools: unknown[] = []; const refusals: string[] = [];
     const runtime: AgentRuntime = { run: async input => {
       seen.push(input.brews);
-      if (input.messages.at(-1)!.text.includes("만들어")) { const { start } = await input.startBrew({ jobPostingId }); await input.emit({ type: "tool", tool: { id: randomUUID(), name: "포트폴리오 제작", status: "complete", summary: "", brewStart: start } }); }
+      const said = input.messages.at(-1)!.text;
+      if (said.includes("만들어")) { const { start } = await input.startBrew({ jobPostingId }); await input.emit({ type: "tool", tool: { id: randomUUID(), name: "포트폴리오 제작", status: "complete", summary: "", brewStart: start } }); }
+      try {
+        if (said.includes("따뜻한")) tools.push(await input.proposeDesign({ jobPostingId, request: said, focus: "styles" }));
+        if (said.includes("초록")) tools.push(await input.reviseDesign({ jobPostingId, instruction: "강조색을 짙은 초록으로 바꾼다", screen: "" }));
+      } catch (error) { if (!(error instanceof AgentToolRejection)) throw error; refusals.push(error.issues.join(" ")); }
       await input.emit({ type: "text", text: "네." });
     } };
     const service = new AgentChatService(fixture.resource, runtime, career, jobs, documents, consent, new AgentCredentials(fixture.resource), new PortfolioReadService(fixture.resource), new PageService(fixture.resource), undefined, deps);
@@ -901,6 +908,17 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     await say("지금 뭐 골랐지?");
     expect(seen.at(-1)).toMatchObject([{ step: "design", design }]);
     expect(deps.designState).toHaveBeenCalledWith(maker, brewId);
+
+    // 말로 견본을 다시 받고 첫 화면을 고친다. 디자인 대화에 그 차례를 맡기고 그 답을 가리키는 카드를 도구 결과로 돌려준다.
+    await say("더 따뜻한 색으로 다시 보여 줘");
+    expect(deps.designPropose).toHaveBeenCalledWith(maker, brewId, { request: "더 따뜻한 색으로 다시 보여 줘", focus: "styles" });
+    await say("강조색을 초록으로");
+    expect(deps.designRevise).toHaveBeenCalledWith(maker, brewId, { instruction: "강조색을 짙은 초록으로 바꾼다", screen: "" });
+    expect(tools).toEqual([{ brewId, jobPostingId, designMessageId: proposedId }, { brewId, jobPostingId, designMessageId: revisedId }]);
+    // 디자인 대화의 거절은 그 문장을 모델에게 돌려준다. 실행은 실패하지 않는다.
+    deps.designRevise.mockRejectedValueOnce(new AgentChatError(409, "design chat is running", "답을 만드는 중입니다. 끝난 뒤에 보내 주세요."));
+    await say("강조색을 초록으로 다시");
+    expect(refusals.at(-1)).toBe("답을 만드는 중입니다. 끝난 뒤에 보내 주세요.");
 
     // 지금의 화면에서 인터뷰를 마친 제작은 「이어서 만들기」가 이 대화에 디자인을 연다.
     const other = await service.create(maker, [{ kind: "job", id: jobPostingId }]);

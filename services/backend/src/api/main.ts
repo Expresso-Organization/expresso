@@ -189,6 +189,16 @@ const agentChatService = new AgentChatService(database, config.agentChatEnabled 
     const chat = await designChatService.send(userId, brewId, { action: "draw", requestId: randomUUID(), ...input }).catch((error: unknown) => { throw error instanceof DesignChatError ? new AgentChatError(error.statusCode, error.message, error.publicMessage) : error; });
     return { designMessageId: chat.messages.at(-1)!.id };
   },
+  designPropose: async (userId, brewId, input) => {
+    if (!designChatService) throw new AgentChatError(503, "design chat is not configured", "이 서버에서는 대화로 디자인을 고를 수 없습니다.");
+    const chat = await designChatService.propose(userId, brewId, { requestId: randomUUID(), ...input }).catch((error: unknown) => { throw error instanceof DesignChatError ? new AgentChatError(error.statusCode, error.message, error.publicMessage) : error; });
+    return { designMessageId: chat.messages.at(-1)!.id };
+  },
+  designRevise: async (userId, brewId, input) => {
+    if (!designChatService) throw new AgentChatError(503, "design chat is not configured", "이 서버에서는 대화로 디자인을 고를 수 없습니다.");
+    const chat = await designChatService.revise(userId, brewId, { requestId: randomUUID(), ...input }).catch((error: unknown) => { throw error instanceof DesignChatError ? new AgentChatError(error.statusCode, error.message, error.publicMessage) : error; });
+    return { designMessageId: chat.messages.at(-1)!.id };
+  },
   designState: async (userId, brewId) => {
     const chat = designChatService ? (await designChatService.get(userId, brewId)).chat : null;
     if (!chat || chat.messages.length === 0) return null;

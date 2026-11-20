@@ -503,7 +503,7 @@ button.thumb:focus-visible, button.specimen:focus-visible, .reply:focus-visible,
   .stageClose { position: static; align-self: flex-start; margin: -6px 0 0 -10px; }
 }
 /* 카드 묶음이 좁을 때(에이전트 대화의 「디자인」 카드). 좁은 화면의 규칙과 같다. */
-@container design-cards (max-width: 560px) {
+@container design-cards (max-width: 767px) {
   .thumbs, .specimenRow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .swatchFace { padding: 10px 12px; gap: 8px; }
   .viewMeta { flex-wrap: wrap; row-gap: 6px; }
@@ -511,7 +511,7 @@ button.thumb:focus-visible, button.specimen:focus-visible, .reply:focus-visible,
 }
 /* 더 좁으면(공고 화면 오른쪽 자리) 스타일을 한 줄에 하나씩 놓는다. 두 칸이면 견본의 이름이 두세 글자에서 잘린다 —
    이름이 스타일을 가르는 첫 단서다. 레이아웃은 배치도라 두 칸으로 둔다. */
-@container design-cards (max-width: 400px) {
+@container design-cards (max-width: 479px) {
   .proposalRow[aria-label="스타일"] .specimenRow { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 767px) {

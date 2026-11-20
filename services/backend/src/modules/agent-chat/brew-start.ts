@@ -28,6 +28,9 @@ export interface AgentBrewDeps {
   startRecipe(userId: string, brewId: string): Promise<unknown>;
   /** 디자인 대화에 견본의 짝으로 그리기를 보낸다. 그 답의 ID를 돌려준다(`DesignChatService.send`). */
   designDraw(userId: string, brewId: string, input: { styleId: string; layoutId: string }): Promise<{ designMessageId: string }>;
+  /** 디자인 대화에 견본 제안 · 고치기 차례를 맡긴다. 그 답의 ID를 돌려준다(`DesignChatService.propose` · `revise`). */
+  designPropose(userId: string, brewId: string, input: { request: string; focus: "both" | "styles" | "layouts" }): Promise<{ designMessageId: string }>;
+  designRevise(userId: string, brewId: string, input: { instruction: string; screen: string }): Promise<{ designMessageId: string }>;
   /** 디자인 대화의 지금 상태를 모델에 넘길 만큼 줄인 것. 아직 열지 않았거나 디자인 대화가 없는 서버면 null이다. */
   designState(userId: string, brewId: string): Promise<AgentBrewDesignState | null>;
 }

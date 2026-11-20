@@ -14,6 +14,9 @@ import { PageServiceError } from "../public.js";
 import {
   DesignHeadSchema,
   OpeningSchema,
+  ProposalsSchema,
+  proposalsCall,
+  type ProposalFocus,
   ReplySchema,
   RevisionDraftSchema,
   SnippetDraftSchema,
@@ -60,6 +63,7 @@ export class DesignChatError extends Error {
 /** 답 하나를 만드는 일. 요청을 받을 때 대상을 모두 풀어 두므로 실행은 대화를 다시 읽지 않는다. */
 type Turn =
   | { kind: "open" }
+  | { kind: "propose"; request: string; focus: ProposalFocus }
   | { kind: "say"; text: string; subject: ReplySubject | null }
   | { kind: "draw"; items: DesignScreenItem[]; origins: DesignSnippet["origin"][]; revise: { from: DesignSnippet; instruction: string } | null };
 
@@ -255,6 +259,48 @@ export class DesignChatService {
   }
 
   /**
+   * 에이전트 대화가 청한 차례. 무엇을 할지는 에이전트가 정했으므로 답하는 호출을 거치지 않고 그 차례를 바로 시작한다.
+   * 사용자의 차례로는 에이전트가 옮긴 요청이 남는다(지금의 디자인 화면에도 같은 대화로 보인다). 답의 말은 비워 둔다 — 말은 에이전트가 한다.
+   *
+   * - `propose`: 요청에 맞춘 견본을 낸다.
+   * - `revise`: 그린 첫 화면 하나를 고친다. 고칠 것은 이름으로 가리키고, 비면 가장 최근 것이다. 청사진 자리 · 다시 그리기는 말로 고칠 때와 같다.
+   */
+  async propose(userId: string, brewId: string, input: { requestId: string; request: string; focus: ProposalFocus }): Promise<DesignChat> {
+    return this.#delegate(userId, brewId, input.requestId, input.request, () => ({ card: null, turn: { kind: "propose", request: input.request, focus: input.focus } }));
+  }
+
+  async revise(userId: string, brewId: string, input: { requestId: string; instruction: string; screen: string }): Promise<DesignChat> {
+    return this.#delegate(userId, brewId, input.requestId, input.instruction, (row) => {
+      const from = reviseTarget(row.snippets, null, input.screen);
+      if (!from) throw new DesignChatError(409, "nothing to revise", "아직 그린 첫 화면이 없습니다. 견본에서 짝을 골라 첫 화면을 먼저 그려 주세요.");
+      const entry: DesignScreenItem = { id: randomUUID(), name: from.name, words: input.instruction, tokens: from.tokens, layout: from.layout, status: "drawing", snippetId: null };
+      return { card: { kind: "revision", fromSnippetId: from.id, item: entry, targets: [] }, turn: { kind: "draw", items: [entry], origins: ["edit"], revise: { from, instruction: input.instruction } } };
+    });
+  }
+
+  async #delegate(userId: string, brewId: string, requestId: string, text: string, plan: (row: DesignChatDoc) => { card: DesignCard | null; turn: Turn }): Promise<DesignChat> {
+    await this.#ownBrew(userId, brewId);
+    const row = await this.#load(userId, brewId);
+    if (!row || !row.head) throw new DesignChatError(409, "design chat is not open", "디자인 대화가 아직 열리지 않았습니다. 「디자인」 카드에 첫 말과 견본이 뜬 뒤에 할 수 있습니다.");
+    if (row.run?.requestId === requestId) return view(row);
+    if (row.run?.status === "running") throw new DesignChatError(409, "design chat is running", "답을 만드는 중입니다. 끝난 뒤에 보내 주세요.");
+    await this.#gate(userId);
+    const { card, turn } = plan(row);
+    const now = new Date();
+    const stamp = now.toISOString();
+    const user: DesignChatMessage = { id: randomUUID(), role: "user", action: "say", text, subjects: [], createdAt: stamp };
+    const assistant: DesignChatMessage = { id: randomUUID(), role: "assistant", text: "", status: "running", card, createdAt: stamp };
+    const next = await this.#rows.findOneAndUpdate(
+      { _id: row._id, version: row.version, "run.status": { $ne: "running" } },
+      { $push: { messages: { $each: [user, assistant] } }, $set: { run: { id: randomUUID(), requestId, status: "running", error: null, startedAt: stamp }, heartbeatAt: now, updatedAt: stamp }, $inc: { version: 1 } },
+      { returnDocument: "after" },
+    );
+    if (!next) throw new DesignChatError(409, "design chat changed", "대화가 그사이 바뀌었습니다. 다시 보내 주세요.");
+    this.#start(next, next.messages.length - 1, turn);
+    return view(next);
+  }
+
+  /**
    * 실패했거나 끊긴 답을 다시 만든다. 이미 그린 장은 두고 그리지 못한 장만 다시 그린다 — 한 장에 20초쯤이 들고 크레딧도 쓴다.
    * 카드 없이 실패한 답은 그 앞의 말(없으면 첫 말)부터 다시 한다.
    */
@@ -389,6 +435,14 @@ export class DesignChatService {
         return;
       }
       const head = DesignHeadSchema.parse(row.head) as DesignHead;
+      if (turn.kind === "propose") {
+        const call = proposalsCall({ userId, sources, head, messages: row.messages.slice(0, assistantAt - 1), snippets: row.snippets, request: turn.request, focus: turn.focus });
+        const { data } = await this.#ai.complete(call.spec, ProposalsSchema, { userId, check: call.check });
+        const card = DesignCardSchema.parse({ kind: "proposals", styles: data.styles.map((draft) => ({ id: randomUUID(), ...draft })), layouts: data.layouts.map((draft) => ({ id: randomUUID(), ...draft })) });
+        await this.#write(chatId, runId, { $set: { [`messages.${assistantAt}.card`]: card } } as UpdateFilter<DesignChatDoc>);
+        await this.#end(chatId, runId, assistantAt, await current(), "complete", null);
+        return;
+      }
       let draw = turn.kind === "draw" ? turn : null;
       if (turn.kind === "say") {
         const call = replyCall({

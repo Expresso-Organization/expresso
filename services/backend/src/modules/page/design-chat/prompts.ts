@@ -428,6 +428,56 @@ export function replyCall(input: {
   };
 }
 
+// ── 견본 다시 내기 (에이전트 대화) ───────────────────────────
+
+/** 견본을 다시 낼 때 무엇을 새로 내는가. */
+export type ProposalFocus = "both" | "styles" | "layouts";
+
+const PROPOSE_SYSTEM = [
+  DESIGNER,
+  "사용자의 요청에 맞춰 견본을 다시 냅니다. 말은 쓰지 않습니다 — 사용자와의 대화는 다른 쪽이 맡고, 여기서는 카드에 띄울 견본만 냅니다.",
+  "- 요청이 색 · 서체 · 분위기 이야기면 `styles`만, 구성 이야기면 `layouts`만 채웁니다. 낼 것은 아래 「낼 것」이 정합니다.",
+  "- 앞서 보인 견본과 이름 · 색 · 자리 잡기가 겹치지 않게 냅니다. 사용자가 앞선 견본의 하나를 바탕으로 바꿔 달라고 했으면 그 견본에서 요청한 것만 바꿉니다.",
+  "",
+  PROPOSALS,
+  "",
+  FACTS,
+].join("\n");
+
+export const ProposalsSchema = z.strictObject({
+  styles: z.array(StyleDraftSchema).describe("견본으로 띄울 스타일. 낼 것이 아니면 빈 목록"),
+  layouts: z.array(LayoutDraftSchema).describe("견본으로 띄울 레이아웃. 낼 것이 아니면 빈 목록"),
+});
+export type Proposals = z.infer<typeof ProposalsSchema>;
+
+/** 에이전트 대화가 청한 견본. 대화와 요청을 읽고 견본만 낸다 — 말은 에이전트가 한다. 검사는 여는 호출의 견본 검사와 같다. */
+export function proposalsCall(input: { userId: string; sources: BrewPageSources; head: DesignHead; messages: DesignChatMessage[]; snippets: DesignSnippet[]; request: string; focus: ProposalFocus }): { spec: AiCallSpec; check(output: Proposals): AiViolation[] } {
+  const context = sourcesContext(input.userId, input.sources);
+  const wanted = { both: "서로 다른 스타일 셋과 서로 다른 레이아웃 셋", styles: "서로 다른 스타일 셋. `layouts`는 빈 목록", layouts: "서로 다른 레이아웃 셋. `styles`는 빈 목록" }[input.focus];
+  const prompt = [
+    ...promptOpening(context),
+    ...headPrompt(input.head),
+    "## 지금까지의 대화",
+    ...transcript(input.messages, input.snippets),
+    "",
+    "## 사용자의 요청",
+    input.request,
+    "",
+    "## 낼 것",
+    wanted,
+  ].join("\n");
+  return {
+    spec: { contract: "page_design", system: PROPOSE_SYSTEM, prompt, promptVersion: DESIGN_CHAT_PROMPT_VERSION, ...TIER },
+    check(output) {
+      const violations: AiViolation[] = [];
+      if (input.focus !== "layouts" && output.styles.length === 0) violations.push({ path: "/styles", problem: "스타일이 하나도 없습니다. 서로 다른 스타일 셋을 내세요." });
+      if (input.focus !== "styles" && output.layouts.length === 0) violations.push({ path: "/layouts", problem: "레이아웃이 하나도 없습니다. 서로 다른 레이아웃 셋을 내세요." });
+      violations.push(...styleLimits(output.styles, "/styles"), ...layoutLimits(output.layouts, "/layouts"));
+      return violations;
+    },
+  };
+}
+
 // ── 첫 화면 그리기 · 고치기 ────────────────────────────────
 
 /** 첫 화면 한 장면의 출력. 키 순서가 쓰는 순서다 — CSS를 마크업보다 먼저 쓴다. */
