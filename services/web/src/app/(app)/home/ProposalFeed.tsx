@@ -3,9 +3,10 @@
 import type { Proposal, ProposalAction as Action, ProposalFeed as Feed, ProposalRef, ProposalRunReason } from "@expresso/contracts";
 import type { Route } from "next";
 import Link from "next/link";
-import { useEffect, useState, useTransition, type ReactNode } from "react";
+import { startTransition as startFeedTransition, useEffect, useState, useTransition, type ReactNode } from "react";
 
 import { LogoMark } from "@/components/brand/Logo";
+import { ViewTransition } from "@/components/motion/ViewTransition";
 import { tintOf, type TintHue } from "@/components/ui/company-avatar-tint";
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -44,6 +45,15 @@ const REASON: Record<ProposalRunReason, string> = {
  * 제안 구획의 카드 한 장 — 위젯 카드와 같은 틀이다. 머리줄의 아이콘 자리에 종류 표시가 서고, 카드에서 색이 있는 곳은 거기뿐이다.
  * 색은 회사 아바타의 틴트 규칙에서 색상만 골라 쓴다.
  */
+/** 제안 칸의 카드 하나. 클래스의 길이와 곡선은 styles/global.css의 `card-in` · `card-out` · `proposal-move`. */
+function CardTransition({ children }: { children: ReactNode }) {
+  return (
+    <ViewTransition enter="card-in" exit="card-out" update="proposal-move" default="none">
+      {children}
+    </ViewTransition>
+  );
+}
+
 function FeedCard({ icon, hue, title, children }: { icon: string; hue: TintHue; title: string; children: ReactNode }) {
   return (
     <article className={`${styles.widget} ${styles.proposalCard}`}>
@@ -155,13 +165,15 @@ export function ProposalFeed({ initial, fallback, hasGoal }: { initial: Feed; fa
     if (result.feed) setFeed(result.feed);
     setError(result.error);
   };
-  const run = (action: () => Promise<ProposalActionResult>) => startTransition(async () => apply(await action()));
+  // 결과 반영도 Transition 안에서 한다 — React 19는 await 뒤의 갱신을 Transition으로 보지 않는데, 카드가 빠지고 자리를
+  // 옮기는 전환(<ViewTransition>)은 Transition에서만 돈다.
+  const run = (action: () => Promise<ProposalActionResult>) => startTransition(async () => { const result = await action(); startTransition(() => apply(result)); });
 
   // 실행 중에는 끝날 때까지 상태를 다시 읽는다.
   useEffect(() => {
     if (!working) return;
     let alive = true;
-    const timer = setInterval(() => { void loadProposalsAction().then((result) => { if (alive && result.feed) setFeed(result.feed); }); }, POLL_MS);
+    const timer = setInterval(() => { void loadProposalsAction().then((result) => { const next = result.feed; if (alive && next) startFeedTransition(() => setFeed(next)); }); }, POLL_MS);
     return () => { alive = false; clearInterval(timer); };
   }, [working]);
 
@@ -233,8 +245,10 @@ export function ProposalFeed({ initial, fallback, hasGoal }: { initial: Feed; fa
       {error ? <p role="alert" className={styles.feedError}>{error}</p> : null}
 
       <div className={styles.proposalGrid}>
-        {hasGoal ? null : <GoalCard />}
+        {/* 카드마다 전환 경계를 두고 서로 바로 옆에 세운다 — 빠지는 카드는 옅어지고, 남은 카드는 자리를 옮기고, 새 카드는 떠오른다. */}
+        {hasGoal ? null : <CardTransition key="goal"><GoalCard /></CardTransition>}
         {working ? (
+          <CardTransition key="working">
           <FeedCard icon="sparkle" hue="terracotta" title="제안을 준비하고 있습니다">
             <div className={styles.proposalSteps} role="status">
               <ToolStep
@@ -246,15 +260,19 @@ export function ProposalFeed({ initial, fallback, hasGoal }: { initial: Feed; fa
               {last.stage === "writing" ? <ToolStep status="running" icon="pencil-simple-line" title="제안 쓰는 중" /> : null}
             </div>
           </FeedCard>
+          </CardTransition>
         ) : null}
 
         {feed.proposals.map((proposal) => (
-          <ProposalCard key={proposal.id} proposal={proposal} disabled={pending} onDismiss={() => run(() => dismissProposalAction(proposal.id))} />
+          <CardTransition key={proposal.id}>
+            <ProposalCard proposal={proposal} disabled={pending} onDismiss={() => run(() => dismissProposalAction(proposal.id))} />
+          </CardTransition>
         ))}
 
         {/* 크레딧이 남지 않았을 때 — 규칙으로 센 제안을 같은 틀에 세운다. */}
         {useFallback ? fallback.map((finding) => (
-          <FeedCard key={finding.id} icon="lightbulb" hue="terracotta" title="지금 할 수 있는 일">
+          <CardTransition key={finding.id}>
+          <FeedCard icon="lightbulb" hue="terracotta" title="지금 할 수 있는 일">
             <p className={styles.proposalMessage}>{finding.text}</p>
             <ul className={`${styles.rows} ${styles.proposalRefs}`}>
               {finding.items.map((item) => (
@@ -267,6 +285,7 @@ export function ProposalFeed({ initial, fallback, hasGoal }: { initial: Feed; fa
             </ul>
             <div className={styles.proposalActions}><ProposalAction action={finding.action} /></div>
           </FeedCard>
+          </CardTransition>
         )) : null}
       </div>
     </section>

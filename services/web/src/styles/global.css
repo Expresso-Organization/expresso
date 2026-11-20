@@ -420,6 +420,23 @@ svg {
   animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
+/*
+ * 홈 제안 카드(app/(app)/home/ProposalFeed.tsx). 빠지는 카드는 옅어지고(--ex-motion-quick), 남은 카드는 빈자리로
+ * 옮겨 가며(--ex-motion-panel), 새 카드는 빠짐이 시작된 뒤 떠오른다(--ex-motion-glide).
+ */
+::view-transition-old(.card-out) {
+  animation: 160ms ease both ex-vt-fade-out;
+}
+
+::view-transition-new(.card-in) {
+  animation: 220ms cubic-bezier(0.23, 1, 0.32, 1) 80ms both ex-vt-fade-in;
+}
+
+::view-transition-group(.proposal-move) {
+  animation-duration: 280ms;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
 @keyframes ex-vt-fade-out {
   to { opacity: 0; }
 }
