@@ -5,25 +5,52 @@ import { TimestampSchema, UuidSchema } from "./common.js";
 import { JobPostingCompanySchema } from "./job-board.js";
 
 /**
- * 활동 — 채용 공고가 아닌 기회. 지금은 공모전과 해커톤이다.
+ * 활동 — 채용 공고가 아닌 기회. 공모전 · 해커톤 · 부트캠프다.
  *
- * 출처가 준 목록의 한 줄을 그대로 옮긴다. 해커톤 분류는 출처에 없어 제목으로 가른다.
+ * 출처가 준 한 줄을 옮긴다. 해커톤 분류는 출처에 없어 제목으로 가른다. 여러 출처에 같은 활동이 있으면
+ * 목록에는 대표 하나만 나온다(`ActivityService`의 중복 묶기).
  */
-export const ActivityKindSchema = z.enum(["contest", "hackathon"]);
+export const ActivityKindSchema = z.enum(["contest", "hackathon", "bootcamp"]);
+
+/** 활동을 읽어 오는 곳. */
+export const ActivitySourceSchema = z.enum(["wevity", "linkareer", "contestkorea", "devevent", "boottent"]);
+
+/** 서울 날짜 `YYYY-MM-DD`. */
+const DateOnlySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
 export const ActivitySchema = z.strictObject({
   /** 출처와 출처 안의 번호. `wevity:112294`. */
   id: z.string().min(1).max(120),
+  source: ActivitySourceSchema,
   kind: ActivityKindSchema,
   title: z.string().min(1).max(300),
+  /** 주최 · 운영사. */
   host: z.string().max(200),
   fields: z.array(z.string().min(1).max(60)).max(12),
   /** 출처의 원문 주소. */
   url: z.string().min(1).max(2_000),
+  /** 주최가 직접 올린 원 공고 주소. 출처가 주지 않으면 null. */
+  homepageUrl: z.string().max(2_000).nullable(),
+  /** 접수 시작일. 출처가 주지 않으면 null. */
+  applyStartOn: DateOnlySchema.nullable(),
+  /** 접수 마감일. */
+  deadlineOn: DateOnlySchema,
+  /** `month`면 출처가 마감을 「12월 중」처럼 달로만 적었고, `deadlineOn`은 그달 말일이다. */
+  deadlinePrecision: z.enum(["day", "month"]),
   /** 접수 마감까지 남은 날. 오늘 마감이면 0. */
   daysLeft: z.number().int().nonnegative(),
-  /** 출처가 적은 접수 상태. "접수중" · "마감임박" · "접수예정". */
+  /** "접수예정"(접수 시작 전) 또는 "접수중". */
   status: z.string().max(40),
+  /** 활동 · 수업이 시작하는 날. 부트캠프 수업 시작일, 당일 행사의 날짜. */
+  startsOn: DateOnlySchema.nullable(),
+  /** 응모 · 지원 대상. 출처가 적은 글 그대로. */
+  eligibility: z.string().max(300).nullable(),
+  /** 상금 · 시상. 출처가 적은 글 그대로. */
+  prize: z.string().max(200).nullable(),
+  /** 부트캠프 본인 부담 학비(원). 0이면 무료. */
+  tuition: z.number().int().nonnegative().nullable(),
+  /** 부트캠프가 국민내일배움카드를 요구하는가. */
+  nbcardRequired: z.boolean().nullable(),
   /** 수집기가 이 활동을 처음 본 때. "새로 올라온 것"의 기준이다. */
   firstSeenAt: TimestampSchema,
 });
@@ -31,9 +58,14 @@ export const ActivitySchema = z.strictObject({
 export const ListActivitiesQuerySchema = z.strictObject({
   kind: ActivityKindSchema.optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
+  offset: z.coerce.number().int().min(0).max(10_000).default(0),
 });
 
-export const ActivityListResponseSchema = z.strictObject({ data: z.array(ActivitySchema) });
+export const ActivityListResponseSchema = z.strictObject({
+  data: z.array(ActivitySchema),
+  /** 조건에 맞는 접수 중 활동 전체 수. */
+  summary: z.strictObject({ total: z.number().int().nonnegative() }),
+});
 
 /**
  * 능동 제안 — 에이전트가 사용자의 기록과 새 공고 · 활동을 읽고 권하는 행동.
@@ -145,6 +177,7 @@ export const ProposalFeedResponseSchema = z.strictObject({ data: ProposalFeedSch
 
 export type Activity = z.infer<typeof ActivitySchema>;
 export type ActivityKind = z.infer<typeof ActivityKindSchema>;
+export type ActivitySource = z.infer<typeof ActivitySourceSchema>;
 export type ListActivitiesQuery = z.infer<typeof ListActivitiesQuerySchema>;
 export type ProposalAction = z.infer<typeof ProposalActionSchema>;
 export type ProposalCompany = z.infer<typeof ProposalCompanySchema>;
