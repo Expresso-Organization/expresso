@@ -235,6 +235,8 @@ export class InterviewService implements InterviewApi {
     const [brew, session] = await Promise.all([db.brews.findOne({ _id: brewId, userId, deletedAt: null }), db.interviewSessions.findOne({ userId, brewId })]);
     if (!brew || !session) throw new InterviewError(404, "interview session not found");
     if (brew.status !== "interviewing") throw new InterviewError(409, "brew is past the interview");
+    // 「디자인 고르기」를 누르면 구성 잡이 돈다. 제작은 구성이 저장될 때 recipe가 되므로 그 사이도 막는다 — 구성은 시작할 때 답을 읽어, 그 뒤의 답은 지면에 닿지 않는다.
+    if (await db.brewJobs.findOne({ userId, "input.brewId": brewId, type: "recipe", status: { $in: ["queued", "running"] } })) throw new InterviewError(409, "brew is past the interview");
     const key = interviewBasisKey(input.basis);
     const { context } = await this.#questionOptions(userId, brewId);
     const option = context.options.find(({ basis }) => interviewBasisKey(basis) === key);

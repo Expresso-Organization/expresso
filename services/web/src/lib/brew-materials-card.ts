@@ -28,6 +28,14 @@ export function interviewEntry(brew: BrewState): { beginsInterview: boolean; bas
   return { beginsInterview: !brew.interviewSessionId && !makingQuestions(brew), basisJobId: brew.latestJob?.jobId ?? null };
 }
 
+/**
+ * 구성을 만드는 잡이 줄에 있거나 도는 중인가. 「디자인 고르기」를 누르면 돌고, 제작은 구성이 저장될 때 `recipe`가 된다 —
+ * 그 사이에는 아직 `interviewing`이지만 구성 단계로 본다.
+ */
+export function planningRecipe(brew: BrewState): boolean {
+  return brew.latestJob?.type === "recipe" && (brew.latestJob.status === "queued" || brew.latestJob.status === "running");
+}
+
 /** 질문을 만드는 잡이 줄에 있거나 도는 중인가. */
 function makingQuestions(brew: BrewState): boolean {
   return brew.latestJob?.type === "interview" && (brew.latestJob.status === "queued" || brew.latestJob.status === "running");
@@ -42,5 +50,5 @@ function makingQuestions(brew: BrewState): boolean {
  */
 export function resumePath(brew: BrewState): string | null {
   if (brew.status === "draft") return makingQuestions(brew) ? `/brew/${brew.brewId}/counter` : null;
-  return `/brew/${brew.brewId}/${brew.status === "interviewing" ? "counter" : "design"}`;
+  return `/brew/${brew.brewId}/${brew.status === "interviewing" && !planningRecipe(brew) ? "counter" : "design"}`;
 }

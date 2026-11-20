@@ -1,6 +1,8 @@
 import { interviewBasisKey, type BrewState, type InterviewQuestionBase, type InterviewSession } from "@expresso/contracts";
 import { z } from "zod";
 
+import { planningRecipe } from "./brew-materials-card";
+
 /** 대화의 인터뷰에서 저장하는 질문의 상한. 세션 계약(`InterviewSessionSchema`)과 구성 생성이 읽는 질문 수가 6이다. */
 export const INTERVIEW_QUESTION_LIMIT = 6;
 
@@ -30,6 +32,7 @@ export function interviewCard(brew: BrewState, bases: InterviewQuestionBase[], s
     bases: bases.map(({ basis, label }) => ({ kind: basis.type === "requirement" ? "requirement" : "record", label, answered: answered.has(interviewBasisKey(basis)) })),
     answered: session?.answeredCount ?? 0,
     limit: INTERVIEW_QUESTION_LIMIT,
-    resumePath: brew.status === "draft" || brew.status === "interviewing" ? null : `/brew/${brew.brewId}/design`,
+    // 구성 잡이 도는 동안도 구성 단계다(`planningRecipe`).
+    resumePath: (brew.status === "draft" || brew.status === "interviewing") && !planningRecipe(brew) ? null : `/brew/${brew.brewId}/design`,
   };
 }

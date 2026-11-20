@@ -189,6 +189,11 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB interview integration", 
     const state = await service.conversationState(userId, conversationBrew);
     expect(state.session?.questions.map(({ text, answered }) => ({ text, answered }))).toEqual([{ text: "장애를 어떻게 대응하셨나요?", answered: true }]);
 
+    // 「디자인 고르기」로 구성 잡이 도는 동안은 아직 interviewing이어도 거절한다. 실패한 잡 뒤에는 다시 받는다.
+    const recipeJob = randomUUID();
+    await db.brewJobs.insertOne({ _id: recipeJob, userId, type: "recipe", input: { brewId: conversationBrew }, inputIdempotencyKey: `recipe:${conversationBrew}`, status: "running", stage: "drafting", attempts: 1, createdAt: new Date(), updatedAt: new Date() });
+    await expect(service.saveConversationAnswer(userId, conversationBrew, { basis: bases[1]!.basis, question: "어떤 성과였나요?", transcript: "답" }, `conv:${randomUUID()}`)).rejects.toMatchObject({ statusCode: 409, message: "brew is past the interview" });
+    await db.brewJobs.updateOne({ _id: recipeJob }, { $set: { status: "failed" } });
     // 근거 목록에 없는 근거와 디자인 단계로 간 제작은 거절한다.
     await expect(service.saveConversationAnswer(userId, conversationBrew, { basis: { type: "record_gap", recordId: randomUUID(), gap: "metric", evidence: "없는 기록" }, question: "무엇을 하셨나요?", transcript: "답" }, `conv:${randomUUID()}`)).rejects.toMatchObject({ statusCode: 409 });
     await db.brews.updateOne({ _id: conversationBrew }, { $set: { status: "recipe" } });

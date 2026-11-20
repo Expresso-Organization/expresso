@@ -26,7 +26,7 @@ date: 2026-11-20
 | `services/web/src/app/api/agent/[...path]/route.ts` | 인터뷰 열기 경로(`POST brews/:brewId/interview`) 통과 |
 | `services/web/src/features/agent-chat/BrewInterviewCard.tsx` · `.module.css` (새로) | 카드 |
 | `services/web/src/features/agent-chat/BrewMaterialsCard.tsx` · `BrewStartCard.tsx` · `AgentChat.tsx` · `useAgentConversation.ts` | 시작 단추, 스크롤, 카드 분기 |
-| 테스트 | `interview.integration.test.ts` · `service.integration.test.ts` · `runtime.test.ts` · `BrewMaterialsCard.test.tsx` · `BrewInterviewCard.test.tsx` (새로) |
+| 테스트 | `interview.integration.test.ts` · `service.integration.test.ts` · `runtime.test.ts` · `BrewMaterialsCard.test.tsx` · `BrewInterviewCard.test.tsx` (새로) · `brew-materials-card.test.ts` |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
 

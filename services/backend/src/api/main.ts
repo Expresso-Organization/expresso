@@ -176,7 +176,8 @@ const agentChatService = new AgentChatService(database, config.agentChatEnabled 
   getResult: (userId, jobAnalysisId) => jobAnalysisService.getResult(userId, jobAnalysisId),
   createBrew: (userId, input) => materialsService.createBrew(userId, input),
   // 지운 제작(휴지통)과 없는 제작은 404다. 그 밖의 오류는 그대로 올린다.
-  brewState: (userId, brewId) => materialsService.getState(userId, brewId).then(state => ({ status: state.status, selected: state.materials.selected }), error => { if (error instanceof MaterialsError && error.statusCode === 404) return null; throw error; }),
+  // 구성 잡이 줄에 있거나 도는 동안은 아직 interviewing이어도 구성 단계로 본다(구성이 저장될 때 recipe가 된다). 인터뷰를 더 하지 않게 한다.
+  brewState: (userId, brewId) => materialsService.getState(userId, brewId).then(state => ({ status: state.status === "interviewing" && state.latestJob?.type === "recipe" && (state.latestJob.status === "queued" || state.latestJob.status === "running") ? "recipe" as const : state.status, selected: state.materials.selected }), error => { if (error instanceof MaterialsError && error.statusCode === 404) return null; throw error; }),
   openInterview: (userId, brewId) => interviewService.openConversation(userId, brewId),
   interview: (userId, brewId) => interviewService.conversationState(userId, brewId),
   saveInterviewAnswer: (userId, brewId, input, idempotencyKey) => interviewService.saveConversationAnswer(userId, brewId, input, idempotencyKey),
