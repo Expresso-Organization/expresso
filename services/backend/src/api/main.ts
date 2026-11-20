@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { AgentCredentials } from "../modules/agent-chat/index.js";
-import { AgentChatError, AgentChatService } from "../modules/agent-chat/index.js";
+import { AgentChatError, AgentChatService, type AgentWorkDeps } from "../modules/agent-chat/index.js";
+import { ChromiumSiteCapturer } from "../platform/browser/site-capture.js";
+import { GithubRepoReader } from "../platform/github/repo-reader.js";
 import { ClaudeAgentRuntime } from "../platform/agent/runtime.js";
 import { buildApi } from "./build-app.js";
 import { loadRuntimeConfig } from "../config/runtime-config.js";
@@ -172,6 +174,16 @@ const careerDocumentService = new CareerDocumentService(
 // 편집기 밖 본문 쓰기(PATCH bodyMd · 인터뷰 재답변)가 곧바로 편집기 문서와 열린 편집기에 들어가게 연결합니다.
 careerService.setExternalBodyListener((userId, recordId) => careerDocumentService.syncExternalBody(userId, recordId));
 interviewService.setExternalBodyListener((userId, recordId) => careerDocumentService.syncExternalBody(userId, recordId));
+// 작업물 재료: 채팅에 붙인 그림 · 사이트 첫 화면 찍기 · 공개 깃허브 레포 읽기(`agent-chat/work-materials.ts`).
+// 운영은 측정기와 같은 headless shell을 쓴다. 그 브라우저를 깔지 않은 개발 기기는 `SITE_CAPTURE_CHANNEL=chrome`으로 설치된 Chrome을 쓴다.
+const siteCapturer = new ChromiumSiteCapturer(20_000, process.env.SITE_CAPTURE_CHANNEL?.trim() ? { channel: process.env.SITE_CAPTURE_CHANNEL.trim() } : {});
+const repoReader = new GithubRepoReader(process.env.GITHUB_TOKEN?.trim() || null);
+const agentWork: AgentWorkDeps = {
+  ownsMedia: (userId, mediaId) => mediaService.owns(userId, mediaId),
+  uploadImage: (userId, bytes) => mediaService.upload(userId, bytes),
+  capture: url => siteCapturer.capture(url),
+  readRepo: url => repoReader.read(url),
+};
 const agentChatService = new AgentChatService(database, config.agentChatEnabled ? new ClaudeAgentRuntime(config.agentChatModel, aiUsage) : null, careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(database, config.agentCredentialEncryptionKey), portfolioReadService, pageService, entitlementService, {
   analyzePosting: (userId, jobPostingId) => jobMarketService.analyzePosting(userId, jobPostingId),
   getResult: (userId, jobAnalysisId) => jobAnalysisService.getResult(userId, jobAnalysisId),
@@ -179,6 +191,7 @@ const agentChatService = new AgentChatService(database, config.agentChatEnabled 
   // 지운 제작(휴지통)과 없는 제작은 404다. 그 밖의 오류는 그대로 올린다.
   // 구성 잡이 줄에 있거나 도는 동안은 아직 interviewing이어도 구성 단계로 본다(구성이 저장될 때 recipe가 된다). 인터뷰를 더 하지 않게 한다.
   brewState: (userId, brewId) => materialsService.getState(userId, brewId).then(state => ({ status: state.status === "interviewing" && state.latestJob?.type === "recipe" && (state.latestJob.status === "queued" || state.latestJob.status === "running") ? "recipe" as const : state.status, selected: state.materials.selected, generation: state.latestGeneration ? { id: state.latestGeneration.id, status: state.latestGeneration.status } : null }), error => { if (error instanceof MaterialsError && error.statusCode === 404) return null; throw error; }),
+  selectedRecords: (userId, brewId) => materialsService.getMaterials(userId, brewId).then(state => state.materials.filter(item => item.selected).map(item => ({ id: item.recordId, title: item.title }))),
   openInterview: (userId, brewId) => interviewService.openConversation(userId, brewId),
   interview: (userId, brewId) => interviewService.conversationState(userId, brewId),
   saveInterviewAnswer: (userId, brewId, input, idempotencyKey) => interviewService.saveConversationAnswer(userId, brewId, input, idempotencyKey),
@@ -231,7 +244,7 @@ const agentChatService = new AgentChatService(database, config.agentChatEnabled 
       selected: chat.snippets.find(snippet => snippet.id === chat.selectedSnippetId)?.name ?? null,
     };
   },
-});
+}, agentWork);
 const activityService = new ActivityService(database);
 // API는 제안을 읽고 실행을 줄에 넣기만 한다. AI 실행은 워커가 한다(`writer`를 주지 않는다).
 const proposalService = new ProposalService(database, { career: careerService, jobs: jobBoardService, activities: activityService, consent: consentService, credits: entitlementService, writer: null });

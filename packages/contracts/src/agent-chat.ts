@@ -368,15 +368,46 @@ export const AgentDesignReviseInputSchema = z.strictObject({
 });
 export type AgentDesignReviseInput = z.infer<typeof AgentDesignReviseInputSchema>;
 
-export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional(), goalDraft: AgentGoalDraftSchema.optional(), gapReview: GapReviewSchema.optional(), planDraft: AgentPlanDraftSchema.optional(), replanDraft: AgentReplanDraftSchema.optional(), pageEdit: AgentPageEditSchema.optional(), brewStart: AgentBrewStartSchema.optional(), brewMaterials: AgentBrewMaterialsSchema.optional(), brewInterview: AgentBrewInterviewSchema.optional(), brewDesign: AgentBrewDesignSchema.optional(), brewGeneration: AgentBrewGenerationSchema.optional() });
-export const AgentMessageSchema = z.strictObject({ id: UuidSchema, role: z.enum(["user", "assistant"]), text: z.string().max(64_000), tools: z.array(AgentToolResultSchema).max(30), selection: AgentPageSelectionSchema.optional(), createdAt: TimestampSchema });
+/**
+ * 작업물 재료. 에이전트가 AI 대화 단계에서 사용자에게 만든 사이트 링크 · 화면 스크린샷 · 깃허브 레포를 청하고, 받은 것을 고른 커리어 기록 본문의
+ * 「작업물」에 붙인다(2026-11-21 사용자: "작업물 재료는 에이전트가 사용자에게 채팅에서 적극적으로 요청하도록 하자", 붙일 곳은 커리어 기록).
+ * 생성은 고른 기록 본문의 `/v1/media/…` 그림을 지면 그림으로 쓴다.
+ */
+/** 사용자 메시지에 붙인 그림. 그림은 먼저 미디어로 올리고 그 id를 싣는다. */
+export const AgentAttachmentSchema = z.strictObject({ mediaId: UuidSchema, name: z.string().trim().max(200).optional() });
+export type AgentAttachment = z.infer<typeof AgentAttachmentSchema>;
+export const AGENT_ATTACHMENT_LIMIT = 6;
+const WorkUrlSchema = z.string().trim().url().max(2_000).refine((value) => /^https?:\/\//i.test(value), "http(s) 주소만 받습니다");
+/** 공개 깃허브 레포를 읽는 도구의 입력. */
+export const AgentRepoReadInputSchema = z.strictObject({ url: WorkUrlSchema.describe("깃허브 레포 주소(https://github.com/owner/repo)") });
+export type AgentRepoReadInput = z.infer<typeof AgentRepoReadInputSchema>;
+/** 받은 작업물을 기록에 붙이는 도구의 입력. */
+export const AgentWorkAttachInputSchema = z.strictObject({
+  recordId: UuidSchema.describe("붙일 커리어 기록의 id. 제작에서 고른 기록(brews[].materials) 중에서 고른다"),
+  items: z.array(z.discriminatedUnion("kind", [
+    z.strictObject({ kind: z.literal("image"), mediaId: UuidSchema.describe("사용자 메시지 attachments의 mediaId"), caption: z.string().trim().min(1).max(200).describe("무엇의 화면인지 한 줄") }),
+    z.strictObject({ kind: z.literal("site"), url: WorkUrlSchema.describe("사용자가 준 사이트 주소. 서버가 첫 화면을 찍는다"), caption: z.string().trim().min(1).max(200).describe("무엇의 사이트인지 한 줄") }),
+    z.strictObject({ kind: z.literal("repo"), url: WorkUrlSchema.describe("깃허브 레포 주소"), summary: z.string().trim().min(1).max(1_000).describe("read_repository로 읽은 내용으로 쓴 요약. 무엇을 만든 레포인지와 쓴 기술") }),
+  ])).min(1).max(AGENT_ATTACHMENT_LIMIT),
+});
+export type AgentWorkAttachInput = z.infer<typeof AgentWorkAttachInputSchema>;
+/** 대화에 뜨는 「작업물」 카드. 무엇을 어느 기록에 붙였는지. `src`는 지면 그림 경로(`/v1/media/…`)다. */
+export const AgentWorkMaterialsSchema = z.strictObject({
+  recordId: UuidSchema,
+  recordTitle: z.string().max(300),
+  items: z.array(z.strictObject({ kind: z.enum(["image", "site", "repo"]), src: z.string().max(300).nullable(), url: z.string().max(2_000).nullable(), caption: z.string().max(1_000) })).max(AGENT_ATTACHMENT_LIMIT),
+});
+export type AgentWorkMaterials = z.infer<typeof AgentWorkMaterialsSchema>;
+
+export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional(), goalDraft: AgentGoalDraftSchema.optional(), gapReview: GapReviewSchema.optional(), planDraft: AgentPlanDraftSchema.optional(), replanDraft: AgentReplanDraftSchema.optional(), pageEdit: AgentPageEditSchema.optional(), brewStart: AgentBrewStartSchema.optional(), brewMaterials: AgentBrewMaterialsSchema.optional(), brewInterview: AgentBrewInterviewSchema.optional(), brewDesign: AgentBrewDesignSchema.optional(), brewGeneration: AgentBrewGenerationSchema.optional(), workMaterials: AgentWorkMaterialsSchema.optional() });
+export const AgentMessageSchema = z.strictObject({ id: UuidSchema, role: z.enum(["user", "assistant"]), text: z.string().max(64_000), tools: z.array(AgentToolResultSchema).max(30), selection: AgentPageSelectionSchema.optional(), attachments: z.array(AgentAttachmentSchema).max(AGENT_ATTACHMENT_LIMIT).optional(), createdAt: TimestampSchema });
 export const AgentRunSchema = z.strictObject({ id: UuidSchema, requestId: UuidSchema, status: z.enum(["running", "complete", "cancelled", "failed", "interrupted"]), error: z.string().max(1_000).nullable(), startedAt: TimestampSchema });
 export const AgentConversationSchema = z.strictObject({ id: UuidSchema, title: z.string().max(120), contexts: z.array(AgentContextSchema).max(10), messages: z.array(AgentMessageSchema).max(100), run: AgentRunSchema.nullable(), version: z.number().int().nonnegative(), updatedAt: TimestampSchema });
 export const AgentConversationResponseSchema = z.strictObject({ data: AgentConversationSchema });
 export const AgentConversationListSchema = z.strictObject({ data: z.array(AgentConversationSchema.omit({ messages: true })).max(100) });
 export const CreateAgentConversationSchema = z.strictObject({ contexts: z.array(AgentContextSchema).max(10).default([]) });
 export const AgentApiKeySchema = z.string().trim().min(20).max(300).regex(/^sk-ant-[A-Za-z0-9_-]+$/);
-export const SendAgentMessageSchema = z.strictObject({ requestId: UuidSchema, text: z.string().trim().min(1).max(8_000), selection: AgentPageSelectionSchema.optional() });
+export const SendAgentMessageSchema = z.strictObject({ requestId: UuidSchema, text: z.string().trim().min(1).max(8_000), selection: AgentPageSelectionSchema.optional(), attachments: z.array(AgentAttachmentSchema).max(AGENT_ATTACHMENT_LIMIT).optional() });
 export const AddAgentContextSchema = z.strictObject({ context: AgentContextSchema });
 export const AgentApprovalSchema = z.strictObject({ proposalId: UuidSchema, action: z.enum(["apply", "reject", "undo"]), expectedDocumentVersion: z.number().int().nonnegative(), commandIndexes: z.array(z.number().int().nonnegative()).max(100).optional(), propertyChangeIndexes: z.array(z.number().int().nonnegative()).max(50).optional() });
 export type AgentContext = z.infer<typeof AgentContextSchema>;

@@ -3,10 +3,13 @@ import { PageElementIssues, PageServiceError, type PageApi } from "../page/index
 import { elementTitle } from "@expresso/portfolio-renderer";
 import { AgentCredentials } from "./credentials.js";
 import { createHash, randomUUID } from "node:crypto";
-import { AgentConversationSchema, isStructuredGroup, type AgentPageElementEditInput, type AgentPageEdit, type StructuredPortfolioSnapshot, type CareerDocumentBootstrap, type AgentConversation, type AgentContext, type AgentMessage, type SendAgentMessage, type AgentApproval, type AgentRecordDraftDecision, type AgentRecordDraftInput, type AgentGoalDraftDecision, type AgentGoalDraftInput, type AgentPlanDecision, type AgentReplanDecision, type ReplanProposalInput, type UpdateTaskProgress, type GapReview, type GapReviewDraft, type PlanProposalInput, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
+import { AgentConversationSchema, PAGE_IMAGE_SRC_PREFIX, isStructuredGroup, type AgentWorkAttachInput, type AgentWorkMaterials, type AgentPageElementEditInput, type AgentPageEdit, type StructuredPortfolioSnapshot, type CareerDocumentBootstrap, type AgentConversation, type AgentContext, type AgentMessage, type SendAgentMessage, type AgentApproval, type AgentRecordDraftDecision, type AgentRecordDraftInput, type AgentGoalDraftDecision, type AgentGoalDraftInput, type AgentPlanDecision, type AgentReplanDecision, type ReplanProposalInput, type UpdateTaskProgress, type GapReview, type GapReviewDraft, type PlanProposalInput, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
 import { mongoCollections, type AgentConversationDoc } from "@expresso/database";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { AgentToolRejection, type AgentRecordText, type AgentRuntime } from "../../platform/agent/runtime.js";
+import { BlockedUrlError } from "../../platform/net/public-url.js";
+import { parseRepoUrl } from "../../platform/github/repo-reader.js";
+import { appendWorkMaterials, type AgentWorkDeps } from "./work-materials.js";
 import { buildReview, hash, recordText, reviewIssues } from "./requirement-review.js";
 import { buildDraft, draftIssues } from "./record-draft.js";
 import { buildGoalDraft, carryOver, goalDraftIssues, mergeGoal } from "./goal-draft.js";
@@ -54,7 +57,7 @@ export class AgentChatService {
   /** `close()`가 시작되면 켠다. 그 뒤에 끝난 실행은 어떤 오류로 끝났든 서버 종료로 끊긴 것이다. */
   private closing = false;
   private runFailureListener: AgentRunFailureListener | null = null;
-  constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord" | "listRecords" | "listCategories" | "createRecord" | "getJobGoal" | "saveJobGoal">, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi, readonly credentials: AgentCredentials = new AgentCredentials(db), private readonly portfolios?: Pick<PortfolioReadApi, "get">, private readonly pages?: Pick<PageApi, "latest" | "elementGuide" | "editElementByAgent" | "restoreRevision">, private readonly credits?: AgentCredits, private readonly brews?: AgentBrewDeps) {}
+  constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord" | "listRecords" | "listCategories" | "createRecord" | "getJobGoal" | "saveJobGoal"> & Partial<Pick<CareerApi, "updateRecord">>, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi, readonly credentials: AgentCredentials = new AgentCredentials(db), private readonly portfolios?: Pick<PortfolioReadApi, "get">, private readonly pages?: Pick<PageApi, "latest" | "elementGuide" | "editElementByAgent" | "restoreRevision">, private readonly credits?: AgentCredits, private readonly brews?: AgentBrewDeps, private readonly work?: AgentWorkDeps) {}
   /** 제작을 만드는 요청을 대화마다 한 번에 하나씩 처리한다. */
   private readonly brewQueue = new KeyedQueue();
   private get plans() { return new PreparationPlans(this.db); }
@@ -453,6 +456,49 @@ export class AgentChatService {
    * 인터뷰 답 저장 도구. 답의 글은 모델이 쓰지 않는다 — 가리킨 사용자 메시지와 같은 근거로 앞서 저장한 메시지를 대화 순서로 잇는다.
    * 답 저장이 기록 본문을 덮어쓰므로 꼬리 답이 오면 앞의 답까지 함께 보낸다. 멱등 키는 근거와 메시지 묶음에서 만든다(다시 보내기에도 한 번).
    */
+  /** 공고 레포를 읽어 에이전트에게 준다. 읽지 못하면 그 까닭을 돌려준다. */
+  private async readRepository(url: string) {
+    if (!this.work) throw new AgentChatError(503, "work materials are not configured", "이 서버에서는 레포를 읽을 수 없습니다.");
+    try { return await this.work.readRepo(url); }
+    catch (error) { throw new AgentToolRejection([error instanceof Error ? error.message : "레포를 읽지 못했습니다."]); }
+  }
+  /**
+   * 받은 작업물을 기록 본문의 「작업물」에 붙인다. 그림은 이 대화에서 사용자가 붙인 것만, 사이트는 서버가 찍어 그 사용자의 미디어로 저장한다.
+   * 붙인 뒤의 본문은 기록의 판(version)을 맞춰 쓴다 — 그사이 사용자가 고쳤으면 다시 부르게 한다.
+   */
+  private async attachWorkMaterials(row: AgentConversationDoc, input: AgentWorkAttachInput): Promise<{ materials: AgentWorkMaterials; issues: string[] }> {
+    if (!this.work || !this.career.updateRecord) throw new AgentChatError(503, "work materials are not configured", "이 서버에서는 작업물을 붙일 수 없습니다.");
+    const record = await this.career.getRecord(row.userId, input.recordId).catch(() => null);
+    if (!record) throw new AgentToolRejection(["그 기록을 찾지 못했습니다. brews[].materials의 id를 쓰십시오."]);
+    const attached = new Set(row.messages.flatMap(message => message.attachments ?? []).map(attachment => attachment.mediaId));
+    const issues: string[] = [];
+    const items: AgentWorkMaterials["items"] = [];
+    for (const [index, item] of input.items.entries()) {
+      if (item.kind === "image") {
+        if (!attached.has(item.mediaId)) { issues.push(`${index}번 그림은 이 대화에서 사용자가 붙인 그림이 아닙니다. 사용자 메시지 attachments의 mediaId를 쓰십시오.`); continue; }
+        items.push({ kind: "image", src: `${PAGE_IMAGE_SRC_PREFIX}${item.mediaId}`, url: null, caption: item.caption });
+      }
+      else if (item.kind === "site") {
+        try {
+          const shot = await this.work.capture(item.url);
+          const media = await this.work.uploadImage(row.userId, shot.bytes);
+          items.push({ kind: "site", src: `${PAGE_IMAGE_SRC_PREFIX}${media.id}`, url: shot.finalUrl, caption: item.caption });
+        }
+        catch (error) { issues.push(`${index}번 사이트(${item.url})를 찍지 못했습니다: ${error instanceof BlockedUrlError ? "공개 주소가 아닙니다." : "열리지 않았거나 시간이 넘었습니다."} 사용자에게 주소를 확인하거나 스크린샷을 붙여 달라고 하십시오.`); }
+      }
+      else {
+        if (!parseRepoUrl(item.url)) { issues.push(`${index}번은 깃허브 레포 주소가 아닙니다.`); continue; }
+        items.push({ kind: "repo", src: null, url: item.url, caption: item.summary });
+      }
+    }
+    if (!items.length) throw new AgentToolRejection(issues);
+    const fresh = await this.career.getRecord(row.userId, input.recordId);
+    await this.career.updateRecord(row.userId, input.recordId, fresh.version, { bodyMd: appendWorkMaterials(fresh.bodyMd ?? "", items) }).catch((error: unknown) => {
+      throw new AgentToolRejection([`기록을 고치지 못했습니다(${error instanceof Error ? error.message : "알 수 없는 오류"}). 다시 부르십시오.`]);
+    });
+    // 일부만 붙였으면 붙이지 못한 까닭을 함께 돌려 모델이 사용자에게 전하게 한다.
+    return { materials: { recordId: input.recordId, recordTitle: fresh.title, items }, issues };
+  }
   private async saveInterviewAnswer(row: AgentConversationDoc, input: AgentInterviewAnswerInput) {
     const starts = row.messages.flatMap(message => message.tools).flatMap(tool => (tool.brewStart?.jobPostingId === input.jobPostingId ? [tool.brewStart] : []));
     const brew = starts.length ? await this.liveBrew(row, starts[0]!.jobAnalysisId) : null;
@@ -497,7 +543,8 @@ export class AgentChatService {
         const brew = await this.liveBrew(row, start.jobAnalysisId);
         const interview = brew?.status === "interviewing" ? await this.interviewState(row.userId, brew.id).catch(() => null) : null;
         const design = brew && brew.status !== "draft" && brew.status !== "interviewing" ? await this.brews!.designState(row.userId, brew.id).catch(() => null) : null;
-        return { jobPostingId: start.jobPostingId, title: start.title, companyName: start.companyName, selectedRecords: brew?.selected ?? null, interview, design, generation: brew?.generation ? { status: brew.generation.status } : null, ...brewStartState(await this.brews!.getResult(row.userId, start.jobAnalysisId), brew, !!row.brewAnnounced?.[start.jobAnalysisId]) };
+        const materials = brew ? await this.brews!.selectedRecords(row.userId, brew.id).catch(() => []) : [];
+        return { jobPostingId: start.jobPostingId, title: start.title, companyName: start.companyName, selectedRecords: brew?.selected ?? null, materials, interview, design, generation: brew?.generation ? { status: brew.generation.status } : null, ...brewStartState(await this.brews!.getResult(row.userId, start.jobAnalysisId), brew, !!row.brewAnnounced?.[start.jobAnalysisId]) };
       }
       catch { return null; }
     }));
@@ -700,7 +747,13 @@ export class AgentChatService {
     if (input.selection && !row.contexts.some(ref => ref.kind === "portfolio" && ref.id === input.selection!.portfolioId)) throw new AgentChatError(409, "고른 요소의 포트폴리오가 대화에 연결되어 있지 않습니다. 포트폴리오를 연결한 뒤 보내 주세요.");
     const context = await this.prepare(userId, row, !apiKey);
     const now = new Date().toISOString();
-    const user: AgentMessage = { id: input.requestId, role: "user", text: input.text, tools: [], ...(input.selection ? { selection: input.selection } : {}), createdAt: now };
+    // 붙인 그림은 그 사용자가 올린 미디어여야 한다. 에이전트는 이 id로 그림을 기록에 붙인다.
+    if (input.attachments?.length) {
+      if (!this.work) throw new AgentChatError(503, "work materials are not configured", "이 서버에서는 그림을 붙일 수 없습니다.");
+      const owned = await Promise.all(input.attachments.map(attachment => this.work!.ownsMedia(userId, attachment.mediaId)));
+      if (owned.includes(false)) throw new AgentChatError(404, "attachment not found", "붙인 그림을 찾지 못했습니다. 다시 올려 주세요.");
+    }
+    const user: AgentMessage = { id: input.requestId, role: "user", text: input.text, tools: [], ...(input.selection ? { selection: input.selection } : {}), ...(input.attachments?.length ? { attachments: input.attachments } : {}), createdAt: now };
     const assistant: AgentMessage = { id: randomUUID(), role: "assistant", text: "", tools: [], createdAt: now };
     const run = { id: randomUUID(), requestId: input.requestId, status: "running" as const, error: null, startedAt: now };
     const changed = await this.rows.findOneAndUpdate({ _id: id, userId, version: row.version, "run.status": { $ne: "running" } }, { $push: { messages: { $each: [user, assistant] } }, $set: { run, title: row.messages.length ? row.title : input.text.slice(0, 100), updatedAt: now, heartbeatAt: new Date() }, $inc: { version: 1 } }, { returnDocument: "after" });
@@ -770,6 +823,8 @@ export class AgentChatService {
         ...(event ? { event } : {}),
         startBrew: input => this.startBrew(row, input),
         saveInterviewAnswer: input => this.saveInterviewAnswer(row, input),
+        readRepository: url => this.readRepository(url),
+        attachWorkMaterials: input => this.attachWorkMaterials(row, input),
         proposeDesign: input => this.proposeDesign(row, input),
         reviseDesign: input => this.reviseDesign(row, input),
         jobGoal: goal ? { work: goal.work, place: goal.place, timing: goal.timing } : null,

@@ -18,7 +18,7 @@ async function connectTools(overrides: Partial<AgentInput> = {}) {
   await client.connect(clientSide);
   return { client, emit };
 }
-const base = () => ({ userId: "00000000-0000-4000-8000-0000000000aa", records: { list: vi.fn(async () => ({ categories: [], records: [] })), read: vi.fn(async () => []) }, review: vi.fn(), draftRecord: vi.fn(), jobGoal: null, brews: [], startBrew: vi.fn(), saveInterviewAnswer: vi.fn(), proposeDesign: vi.fn(), reviseDesign: vi.fn(), goalDraft: vi.fn(), gapReview: vi.fn(), planDraft: vi.fn(), replanDraft: vi.fn(), readPlan: vi.fn(), propose: vi.fn(), page: { read: vi.fn(), edit: vi.fn() } });
+const base = () => ({ readRepository: vi.fn(), attachWorkMaterials: vi.fn(), userId: "00000000-0000-4000-8000-0000000000aa", records: { list: vi.fn(async () => ({ categories: [], records: [] })), read: vi.fn(async () => []) }, review: vi.fn(), draftRecord: vi.fn(), jobGoal: null, brews: [], startBrew: vi.fn(), saveInterviewAnswer: vi.fn(), proposeDesign: vi.fn(), reviseDesign: vi.fn(), goalDraft: vi.fn(), gapReview: vi.fn(), planDraft: vi.fn(), replanDraft: vi.fn(), readPlan: vi.fn(), propose: vi.fn(), page: { read: vi.fn(), edit: vi.fn() } });
 describe("Claude 채팅 실행 어댑터", () => {
   it("제품 도구만 노출하고 부분 텍스트만 한 번 전달한다", async () => {
     const events: AgentEvent[] = [];
@@ -30,7 +30,7 @@ describe("Claude 채팅 실행 어댑터", () => {
     await new ClaudeAgentRuntime().run({ messages: [], context: [], signal: new AbortController().signal, emit: async event => { events.push(event); }, ...base() });
     expect(events).toEqual([{ type: "text", text: "안녕하세요" }]);
     expect(sdk.query.mock.lastCall![0].options).toMatchObject({ tools: [], settingSources: [], strictMcpConfig: true, persistSession: false, permissionMode: "dontAsk" });
-    expect(sdk.query.mock.lastCall![0].options.allowedTools).toEqual(["mcp__expresso__propose_record_edit", "mcp__expresso__list_career_records", "mcp__expresso__read_career_records", "mcp__expresso__record_requirement_review", "mcp__expresso__propose_new_record", "mcp__expresso__propose_job_goal_update", "mcp__expresso__record_gap_review", "mcp__expresso__propose_preparation_plan", "mcp__expresso__read_preparation_plan", "mcp__expresso__propose_replan", "mcp__expresso__read_page_element", "mcp__expresso__edit_page_element", "mcp__expresso__start_portfolio", "mcp__expresso__save_interview_answer", "mcp__expresso__propose_design_options", "mcp__expresso__revise_design_screen"]);
+    expect(sdk.query.mock.lastCall![0].options.allowedTools).toEqual(["mcp__expresso__propose_record_edit", "mcp__expresso__list_career_records", "mcp__expresso__read_career_records", "mcp__expresso__record_requirement_review", "mcp__expresso__propose_new_record", "mcp__expresso__propose_job_goal_update", "mcp__expresso__record_gap_review", "mcp__expresso__propose_preparation_plan", "mcp__expresso__read_preparation_plan", "mcp__expresso__propose_replan", "mcp__expresso__read_page_element", "mcp__expresso__edit_page_element", "mcp__expresso__start_portfolio", "mcp__expresso__read_repository", "mcp__expresso__attach_work_materials", "mcp__expresso__save_interview_answer", "mcp__expresso__propose_design_options", "mcp__expresso__revise_design_screen"]);
   });
   it("중단 신호를 SDK에 전달한다", async () => {
     const controller = new AbortController(); let stopped = false;
@@ -65,6 +65,21 @@ describe("Claude 채팅 실행 어댑터", () => {
     expect(events.map(tool => [tool.name, tool.status, tool.summary])).toEqual([["기록 목록 확인", "running", "기록 목록을 불러오고 있습니다."], ["기록 목록 확인", "complete", "기록 1개를 확인했습니다."]]);
     expect(events[0]!.id).toBe(events[1]!.id);
   });
+  it("작업물 붙이기는 붙인 것을 카드로 남기고, 붙이지 못한 까닭을 에이전트에게 돌려준다", async () => {
+    const recordId = "00000000-0000-4000-8000-0000000000c1";
+    const materials = { recordId, recordTitle: "상품 상세 전환", items: [{ kind: "site" as const, src: "/v1/media/00000000-0000-4000-8000-0000000000c2", url: "https://shop.example.com/", caption: "운영 중인 쇼핑몰" }] };
+    const attachWorkMaterials = vi.fn(async () => ({ materials, issues: ["1번 사이트를 찍지 못했습니다"] }));
+    const { client, emit } = await connectTools({ attachWorkMaterials });
+    const result = await client.callTool({ name: "attach_work_materials", arguments: { recordId, items: [{ kind: "site", url: "https://shop.example.com", caption: "운영 중인 쇼핑몰" }, { kind: "site", url: "http://10.0.0.1", caption: "내부" }] } });
+    expect(result.isError).toBeFalsy();
+    const done = emit.mock.calls.map(([event]) => event).filter(event => event.type === "tool").map(event => event.tool).at(-1)!;
+    expect(done).toMatchObject({ name: "작업물 붙이기", status: "complete", summary: "상품 상세 전환 · 1개", workMaterials: materials });
+    expect(JSON.stringify(result.content)).toContain("1번 사이트를 찍지 못했습니다");
+    // 레포 주소가 아닌 http(s) 밖의 주소는 스키마에서 걸린다.
+    const bad = await client.callTool({ name: "attach_work_materials", arguments: { recordId, items: [{ kind: "site", url: "file:///etc/passwd", caption: "x" }] } });
+    expect(bad.isError).toBe(true);
+  });
+
   it("제작 시작은 카드에 실을 ID를 도구 결과로 남기고, 거절된 사유는 에이전트에게 돌려준다", async () => {
     const brewStart = { startId: "00000000-0000-4000-8000-0000000000b1", jobPostingId: "00000000-0000-4000-8000-0000000000b2", jobAnalysisId: "00000000-0000-4000-8000-0000000000b3", title: "프론트엔드 개발자", companyName: "가상 회사", brewId: null };
     const running = { status: "running" as const, stage: "extracting" as const, failure: null, requirements: null, brewId: null, step: null, announced: false };
@@ -116,7 +131,7 @@ describe("Claude 채팅 실행 어댑터", () => {
   });
   it("이 대화에서 시작한 제작의 지금 상태를 프롬프트에 싣는다", async () => {
     sdk.query.mockReturnValue((async function* () { yield { type: "result", is_error: false }; })());
-    const brews = [{ jobPostingId: "00000000-0000-4000-8000-0000000000b2", title: "프론트엔드 개발자", companyName: "가상 회사", status: "done" as const, stage: "done" as const, failure: null, requirements: { total: 6, covered: 3, partial: 2, missing: 1 }, brewId: null, step: null, announced: false, selectedRecords: null, interview: null, design: null, generation: null }];
+    const brews = [{ jobPostingId: "00000000-0000-4000-8000-0000000000b2", title: "프론트엔드 개발자", companyName: "가상 회사", status: "done" as const, stage: "done" as const, failure: null, requirements: { total: 6, covered: 3, partial: 2, missing: 1 }, brewId: null, step: null, announced: false, selectedRecords: null, materials: [], interview: null, design: null, generation: null }];
     await new ClaudeAgentRuntime().run({ messages: [], context: [], signal: new AbortController().signal, emit: vi.fn(), ...base(), brews });
     const asked = JSON.parse(sdk.query.mock.lastCall![0].prompt);
     expect(asked.brews).toEqual(brews);

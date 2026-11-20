@@ -18,6 +18,8 @@ export interface AgentBrewDeps {
   createBrew(userId: string, input: { jobAnalysisId: string; lengthPreset: "single" }): Promise<{ brewId: string }>;
   /** 제작이 어디까지 갔고 기록을 몇 건 골랐는가. 지웠거나(휴지통) 없는 제작이면 null이다(`MaterialsApi.getState`). */
   brewState(userId: string, brewId: string): Promise<{ status: BrewStatus; selected: number; generation: BrewGeneration | null } | null>;
+  /** 제작에 담으려고 고른 기록. 작업물 재료를 붙일 기록을 에이전트가 여기서 고른다(`MaterialsApi.getMaterials`). */
+  selectedRecords(userId: string, brewId: string): Promise<{ id: string; title: string }[]>;
   /**
    * 디자인 대화에서 고른 첫 화면으로 생성을 맡긴다. 줄에 있거나 도는 생성이 있으면 새로 맡기지 않고 그 생성이다.
    * 고른 첫 화면이 없거나 이미 만든 포트폴리오가 있으면 거절한다(`AgentChatError`).

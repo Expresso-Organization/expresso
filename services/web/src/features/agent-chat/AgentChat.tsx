@@ -6,6 +6,7 @@ import type { Route } from "next";
 import { LogoMark } from "@/components/brand/Logo";
 import { Icon } from "@/components/ui/Icon";
 import { showToast } from "@/components/ui/toast";
+import { AttachmentsProvider, ComposerAttachments, SentAttachments, WorkMaterialsCard, useAttachmentState } from "./WorkMaterials";
 import { useRouter } from "next/navigation";
 import { AssistantRuntimeProvider, useExternalStoreRuntime, useAui, useAuiState, type ThreadMessageLike, type ToolCallMessagePartComponent } from "@assistant-ui/react";
 import { AgentChatAccessSchema, AgentResourceDetailSchema } from "@expresso/contracts";
@@ -100,6 +101,10 @@ function PageWelcome({ page }: { page: AgentChatPage }) {
   </div>;
 }
 /** 보낼 말이 가리킬 요소. 다듬기 화면에서 요소를 골랐을 때만 입력창 위에 보인다. */
+/** 입력창 위 — 고칠 요소와 붙일 그림. */
+function ComposerHead() { return <><ComposerTarget /><ComposerAttachments /></>; }
+/** 보낸 말 위 — 가리킨 요소와 붙인 그림. */
+function UserMessageHead() { return <><UserMessageTarget /><SentAttachments /></>; }
 function ComposerTarget() {
   const selection = useContext(PageContext)?.selection;
   if (!selection) return null;
@@ -134,7 +139,7 @@ function GeneralWelcome() {
 const TOOL_ICONS: Record<string, string> = {
   "기록 목록 확인": "list-bullets", "기록 읽기": "book-open-text", "요건 대조": "list-checks", "새 기록 초안": "note-pencil", "구직 목표 변경": "target", "기록 변경 제안": "pencil-line",
   "보완점 정리": "target", "준비 계획 초안": "calendar-check", "계획 진행 확인": "chart-line-up", "계획 재배치 초안": "arrows-clockwise",
-  "지면 요소 읽기": "cursor-click", "지면 요소 고침": "pencil-simple-line", "포트폴리오 제작": "coffee", "재료 고르기": "list-checks", "AI 대화": "chat-circle-dots", "답 저장": "floppy-disk", "디자인": "palette", "견본 다시 받기": "swatches", "첫 화면 고치기": "pencil-simple-line", "생성": "magic-wand",
+  "지면 요소 읽기": "cursor-click", "지면 요소 고침": "pencil-simple-line", "포트폴리오 제작": "coffee", "재료 고르기": "list-checks", "AI 대화": "chat-circle-dots", "답 저장": "floppy-disk", "디자인": "palette", "견본 다시 받기": "swatches", "첫 화면 고치기": "pencil-simple-line", "생성": "magic-wand", "레포 읽기": "github-logo", "작업물 붙이기": "images",
 };
 /**
  * 도구 호출 하나를 작업 흔적의 한 단계로 그린다. 결과의 모양으로 단계 아래를 나눈다 — 요건 대조 · 보완점 · 새 기록 · 준비 계획 ·
@@ -159,6 +164,8 @@ const RecordTool: ToolCallMessagePartComponent = props => {
   if (tool?.brewInterview) { const { brewId } = tool.brewInterview; return step(<BrewInterviewCard interview={tool.brewInterview} refreshKey={savedAnswers} continuesInChat={!!state.conversation?.messages.some(message => message.tools.some(item => item.brewDesign?.brewId === brewId))} onDesign={() => state.beginDesign(brewId)} />, null); }
   // 서버가 붙인 「디자인」. 디자인 대화의 답 하나를 그린다. 「첫 화면 보기」만 이 대화의 경로로 보내 그 카드가 대화에 붙는다.
   if (tool?.brewDesign) return step(<BrewDesignCard design={tool.brewDesign} />, null);
+  // 에이전트가 받은 작업물을 기록에 붙였다. 무엇을 어느 기록에 붙였는지 보인다.
+  if (tool?.workMaterials) return step(<WorkMaterialsCard materials={tool.workMaterials} />, null);
   // 서버가 붙인 「생성」. 진행은 제작별 상태가 읽고, 지면이 서면 가운데 무대로 간다.
   if (tool?.brewGeneration) return step(<BrewGenerationCard generation={tool.brewGeneration} />, null);
   if (tool?.review) return step(<RequirementReviewCard conversationId={state.id} toolId={tool.id} review={tool.review} />, null);
@@ -190,7 +197,7 @@ function Proposal({ proposal, beforeDocument, undone }: { proposal: AiEditPropos
 }
 const convertMessage = (message: AgentMessage): ThreadMessageLike => ({
   id: message.id, role: message.role, createdAt: new Date(message.createdAt),
-  ...(message.selection ? { metadata: { custom: { selection: message.selection } } } : {}),
+  ...(message.selection || message.attachments?.length ? { metadata: { custom: { ...(message.selection ? { selection: message.selection } : {}), ...(message.attachments?.length ? { attachments: message.attachments } : {}) } } } : {}),
   content: [
     ...message.tools.map(tool => ({ type: "tool-call" as const, toolCallId: tool.id, toolName: tool.name, args: {}, argsText: "{}", ...(tool.status === "running" ? {} : { result: { summary: tool.summary }, isError: tool.status === "failed" }) })),
     { type: "text", text: message.text },
@@ -271,7 +278,14 @@ export function AgentChat({ job, page, standalone = false, fresh = false, newHre
     return () => window.clearTimeout(timer);
   }, [serverStarted, grown]);
   useEffect(() => { onRunningChange?.(running); }, [onRunningChange, running]);
-  const runtime = useExternalStoreRuntime({ messages: state.conversation?.messages ?? [], convertMessage, isRunning: running, isLoading: state.resolving || (!!state.id && !state.conversation), isDisabled: !!preview || !canSend || state.pending || state.resolving || (!!state.id && !state.conversation), onNew: async message => { const text = message.content.filter(part => part.type === "text").map(part => part.text).join("\n"); try { await state.send(text, page?.selection ?? undefined); } catch { runtime.thread.composer.setText(text); } }, onCancel: state.cancel });
+  const attachmentState = useAttachmentState();
+  const runtime = useExternalStoreRuntime({ messages: state.conversation?.messages ?? [], convertMessage, isRunning: running, isLoading: state.resolving || (!!state.id && !state.conversation), isDisabled: !!preview || !canSend || state.pending || state.resolving || (!!state.id && !state.conversation), onNew: async message => {
+    const text = message.content.filter(part => part.type === "text").map(part => part.text).join("\n");
+    // 올리는 중인 그림이 있으면 보내지 않고 글을 돌려 둔다 — 그림 없이 말만 가면 에이전트가 붙일 것이 없다.
+    const attachments = attachmentState.take();
+    if (!attachments) { showToast("그림을 올리는 중입니다. 다 올라간 뒤 다시 보내 주세요."); runtime.thread.composer.setText(text); return; }
+    try { await state.send(text, page?.selection ?? undefined, attachments); } catch { runtime.thread.composer.setText(text); }
+  }, onCancel: state.cancel });
   // 지면 고침이 저장되거나 되돌려지면 화면의 미리보기 · 판 번호를 다시 불러온다. 처음 불러온 대화의 카드로는 다시 부르지 않는다.
   const pageEdits = (state.conversation?.messages ?? []).flatMap(message => message.tools).flatMap(tool => tool.pageEdit && tool.status === "complete" ? [`${tool.pageEdit.editId}:${tool.pageEdit.undone}`] : []).join(",");
   const seenEdits = useRef<{ id: string | null; edits: string } | null>(null);
@@ -342,10 +356,10 @@ export function AgentChat({ job, page, standalone = false, fresh = false, newHre
   const canRetry = !!lastRun && ["failed", "interrupted", "cancelled"].includes(lastRun.status) && lastMessage?.role === "assistant" && (beforeLast?.id === lastRun.requestId || lastMessage.id === lastRun.requestId);
   const retryButton = canRetry ? <Button variant="outline" size="sm" className={styles.retryButton} disabled={!canSend || state.pending} onClick={() => void state.retry()}><Icon name="arrow-clockwise" size={13} />다시 보내기</Button> : null;
   const missing = context && state.conversation && !state.conversation.contexts.some(ref => ref.kind === context.kind && ref.id === context.id);
-  return <ChatContext.Provider value={state}><JobContext.Provider value={job ?? null}><PageContext.Provider value={page ?? null}><AssistantRuntimeProvider runtime={runtime}>
+  return <ChatContext.Provider value={state}><JobContext.Provider value={job ?? null}><PageContext.Provider value={page ?? null}><AssistantRuntimeProvider runtime={runtime}><AttachmentsProvider value={attachmentState}>
     {preview ? <ResourcePreview resource={preview} onClose={() => setPreview(null)} selected={!!state.conversation?.contexts.some(ref => ref.kind === preview.kind && ref.id === preview.id)} disabled={contextDisabled} onToggle={toggleContext} /> : null}
     <AgentConsentDialog open={consentOpen} onOpenChange={setConsentOpen} onConsented={() => setAccess(current => current ? { ...current, consentRequired: false } : current)} />
-    <section ref={root} className={`acf-scope ${styles.root} ${job || page ? styles.rail : standalone ? styles.standalone : styles.panel}`} aria-label="에이전트 채팅" data-staged={staged ? "true" : undefined}>
+    <section ref={root} onPaste={event => { const files = [...event.clipboardData.files].filter(file => file.type.startsWith("image/")); if (files.length) { event.preventDefault(); attachmentState.add(files); } }} className={`acf-scope ${styles.root} ${job || page ? styles.rail : standalone ? styles.standalone : styles.panel}`} aria-label="에이전트 채팅" data-staged={staged ? "true" : undefined}>
       {standalone && !stageHost ? <div ref={setStageSlot} className={styles.stageSlot} /> : null}
       <div className={styles.main} style={standalone ? { viewTransitionName: "agent-chat" } : undefined}>
         <header className={styles.header}>
@@ -367,7 +381,7 @@ export function AgentChat({ job, page, standalone = false, fresh = false, newHre
         {accessError ? <p role="alert" className={styles.error}>채팅 사용 권한을 확인하지 못했습니다. 새로고침해 주세요.</p> : !access ? <p role="status" className={styles.status}>채팅 사용 권한 확인 중…</p> : !access.enabled ? <p className={styles.status}>에이전트 채팅이 아직 활성화되지 않았습니다.</p> : access.creditsExhausted ? <p role="alert" className={styles.status}>이번 달 AI 크레딧을 모두 썼습니다. 다음 달에 다시 대화할 수 있습니다.</p> : null}
         {/* 디자인 카드가 있는 제작마다 디자인 상태를 하나씩 두고, 그 제작의 카드들이 함께 읽는다. */}
         <DesignBrews cards={designCards} generations={generationCards} onDraw={state.drawDesign} onMake={state.startGeneration} stageHost={host} stagedBrew={stagedBrew} onStage={onStage}>
-          <div className={styles.thread}><Thread autoFocus={standalone} components={{ Welcome: ChatWelcome, AssistantHeader: AssistantIdentity, ToolFallback: RecordTool, ToolGroup: ExpandedTools, ComposerHeader: ComposerTarget, UserMessageHeader: UserMessageTarget }} /></div>
+          <div className={styles.thread}><Thread autoFocus={standalone} components={{ Welcome: ChatWelcome, AssistantHeader: AssistantIdentity, ToolFallback: RecordTool, ToolGroup: ExpandedTools, ComposerHeader: ComposerHead, UserMessageHeader: UserMessageHead }} /></div>
         </DesignBrews>
         <div className={styles.footnote}><Icon name="check-circle" size={12} /><span>{page ? "지면 고침은 바로 새 판으로 저장되고 카드에서 되돌릴 수 있습니다." : "기록의 변경은 확인 후 적용됩니다."}</span></div>
         {lastRun?.status === "cancelled" ? <div role="status" className={`${styles.status} ${styles.runNotice}`}><span>응답을 중지했습니다.</span>{retryButton}</div> : null}
@@ -375,5 +389,5 @@ export function AgentChat({ job, page, standalone = false, fresh = false, newHre
       </div>
       {standalone && !staged ? <ConversationSwitcher contexts={state.conversation?.contexts ?? []} contextDisabled={contextDisabled} onToggleContext={toggleContext} onPreview={setPreview} inline currentId={state.id} conversations={state.list} disabled={state.pending} onSelect={state.select} /> : null}
     </section>
-  </AssistantRuntimeProvider></PageContext.Provider></JobContext.Provider></ChatContext.Provider>;
+  </AttachmentsProvider></AssistantRuntimeProvider></PageContext.Provider></JobContext.Provider></ChatContext.Provider>;
 }

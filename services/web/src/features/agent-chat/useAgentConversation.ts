@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { type DesignGraphic, AgentBrewOpenResponseSchema, AgentConversationResponseSchema, AgentConversationListSchema, type AgentConversation, type AgentContext, type AgentPageSelection, type AgentApproval, type AgentPlanDecision, type AgentGoalDraftDecision, type AgentRecordDraftDecision, type AgentReplanDecision } from "@expresso/contracts";
+import { type DesignGraphic, type AgentAttachment, AgentBrewOpenResponseSchema, AgentConversationResponseSchema, AgentConversationListSchema, type AgentConversation, type AgentContext, type AgentPageSelection, type AgentApproval, type AgentPlanDecision, type AgentGoalDraftDecision, type AgentRecordDraftDecision, type AgentReplanDecision } from "@expresso/contracts";
 const base = "/api/agent/conversations";
 export async function agentRequest(path: string, body?: unknown) {
   const response = await fetch(`${base}${path}`, { ...(body === undefined ? {} : { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), cache: "no-store" });
@@ -81,14 +81,14 @@ export function useAgentConversation(context?: AgentContext, options: { restore?
     try { accept(await action()); } catch (error) { setIssue(error instanceof Error ? error.message : "요청에 실패했습니다."); } finally { setPending(false); }
   };
   /** `selection`은 다듬기 화면에서 고른 요소다. 에이전트는 그 요소를 고칠 대상으로 읽는다. */
-  const send = async (text: string, selection?: AgentPageSelection) => {
+  const send = async (text: string, selection?: AgentPageSelection, attachments: AgentAttachment[] = []) => {
     if (pending || contextMutation.current) return;
     setPending(true); setIssue(null);
     try {
       let target = id;
       if (!target) { const created = await agentRequest("", { contexts: context ? [context] : [] }); if (!mounted.current) return; select(created.id); accept(created); target = created.id; }
       requestId.current = requestId.current?.text === text ? requestId.current : { text, id: crypto.randomUUID() };
-      accept(await agentRequest(`/${target}/messages`, { text, requestId: requestId.current.id, ...(selection ? { selection } : {}) })); requestId.current = null;
+      accept(await agentRequest(`/${target}/messages`, { text, requestId: requestId.current.id, ...(selection ? { selection } : {}), ...(attachments.length ? { attachments } : {}) })); requestId.current = null;
     } catch (error) { setIssue(error instanceof Error ? error.message : "보내지 못했습니다."); throw error; } finally { setPending(false); }
   };
   const toggleContext = async (ref: AgentContext) => {
