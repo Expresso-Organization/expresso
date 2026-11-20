@@ -15,7 +15,7 @@ date: 2026-11-20
 | 파일 | 무엇을 |
 |---|---|
 | `packages/contracts/src/consultant.ts` · `agent-chat.ts` · `engagement.ts` · 테스트 | 약속 · 확인 · 동의, 도구 입력, 날짜 칸, 알림 종류 `consultant` |
-| `packages/database/src/documents/consultant.ts` · `analytics.ts` · `operations.ts` · `collections.ts` · `mongodb-migrations/0036/migration.ts` · `mongo-migrations.ts` · `mongo-build.mjs` · 테스트 | 약속 문서와 컬렉션, 마이그레이션 0036 |
+| `packages/database/src/documents/consultant.ts` · `analytics.ts` · `operations.ts` · `collections.ts` · `mongodb-migrations/0037/migration.ts` · `mongo-migrations.ts` · `mongo-build.mjs` · 테스트 | 약속 문서와 컬렉션, 마이그레이션 0037 |
 | `services/backend/src/modules/consultant/` (`commitments.ts` 새 파일 · `service.ts` · `routes.ts` · `index.ts` · 테스트) | 약속, 확인 작업, 답 처리, 동의, 라우트 |
 | `services/backend/src/modules/scheduling/public.ts` · `service.ts` · 테스트 | 키 `consultant_checkins` |
 | `services/backend/src/modules/engagement/service.ts` | 알림 종류 목록 |
@@ -32,7 +32,7 @@ date: 2026-11-20
 
 ```mermaid
 flowchart TD
-  A["1단계: 계약<br/>consultant.ts · agent-chat.ts · engagement.ts"] --> B["2단계: 문서 · 마이그레이션 0036<br/>packages/database"]:::risk
+  A["1단계: 계약<br/>consultant.ts · agent-chat.ts · engagement.ts"] --> B["2단계: 문서 · 마이그레이션 0037<br/>packages/database"]:::risk
   B --> C["3단계: 약속 · 확인 작업 · 답 처리 · 동의<br/>modules/consultant"]
   C --> D["4단계: 예약 키와 알림 종류<br/>scheduling · engagement"]
   C --> E["5단계: 약속 도구 · 기억 · 서버가 여는 대화<br/>runtime.ts · agent-chat"]
@@ -47,7 +47,7 @@ flowchart TD
 
 ## 가장 위험한 단계
 
-2단계다. 마이그레이션 0036은 기존 컬렉션 셋의 검증 규칙을 고친다(`users`, `notifications`, `scheduled_job_definitions`). 규칙을 좁히면 기존 문서의 쓰기가 막힌다. 이 마이그레이션은 허용 값을 더하기만 한다. 적용 전후에 기존 문서가 그대로 쓰이는지를 DB 패키지 테스트(실제 MongoDB)로 본다. 예약 작업의 새 키는 코드의 목록과 같은 PR에 넣는다. 되돌릴 때는 PR을 되돌린다. 더한 허용 값은 남아도 해가 없다.
+2단계다. 마이그레이션 0037은 기존 컬렉션 셋의 검증 규칙을 고친다(`users`, `notifications`, `scheduled_job_definitions`). 규칙을 좁히면 기존 문서의 쓰기가 막힌다. 이 마이그레이션은 허용 값을 더하기만 한다. 적용 전후에 기존 문서가 그대로 쓰이는지를 DB 패키지 테스트(실제 MongoDB)로 본다. 예약 작업의 새 키는 코드의 목록과 같은 PR에 넣는다. 되돌릴 때는 PR을 되돌린다. 더한 허용 값은 남아도 해가 없다.
 
 ## 검증
 
