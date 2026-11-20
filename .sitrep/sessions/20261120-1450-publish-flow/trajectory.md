@@ -41,3 +41,7 @@
 
 ### 16:30 · 완료 · 편집에서 배포 · 재배포 · 공개 중단까지 이어지는 배포 흐름
 - web typecheck, vitest, 운영 빌드 통과. 남은 일은 push · PR · 머지
+
+### ~16:45 · 발견 · 휴지통 안내 문구
+- 휴지통은 `status`만 `unlisted`로 바꾸고 `publicSlug` · `currentDeploymentId`를 남김 → 되살린 뒤 「다시 공개」로 열림
+- `PortfolioTrash.tsx`의 "다시 배포해야 열립니다"를 「다시 공개」 안내로 수정. main(#253) 반영 뒤 typecheck · vitest 499개 · 운영 빌드 통과
