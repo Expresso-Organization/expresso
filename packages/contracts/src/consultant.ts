@@ -84,6 +84,8 @@ export const CommitmentCheckinResultSchema = z.strictObject({ data: z.strictObje
  * - `quiet`: 한동안 대화가 없어 건넨 연락이 있는가.
  */
 export const ConsultantCheckinsSchema = z.strictObject({
+  /** 요금제가 먼저 연락하기를 여는가. 열지 않으면 확인할 약속과 안부는 비어 있다. */
+  available: z.boolean(),
   outreach: z.boolean().nullable(),
   today: DaySchema,
   commitments: z.array(ConsultantCommitmentSchema).max(CONSULTANT_COMMITMENT_LIMIT),

@@ -49,8 +49,8 @@ describe("약속과 확인", () => {
     expect(CommitmentCheckinAnswerSchema.safeParse({ answer: "later" }).success).toBe(false);
   });
   it("홈이 읽는 연락은 동의를 정했는지와 답을 기다리는 약속을 싣는다", () => {
-    expect(ConsultantCheckinsSchema.safeParse({ outreach: null, today: "2026-11-20", commitments: [], quiet: false }).success).toBe(true);
-    expect(ConsultantCheckinsSchema.safeParse({ outreach: true, today: "2026-11-20", commitments: [{ ...commitment, awaiting: true }], quiet: true }).success).toBe(true);
+    expect(ConsultantCheckinsSchema.safeParse({ available: true, outreach: null, today: "2026-11-20", commitments: [], quiet: false }).success).toBe(true);
+    expect(ConsultantCheckinsSchema.safeParse({ available: true, outreach: true, today: "2026-11-20", commitments: [{ ...commitment, awaiting: true }], quiet: true }).success).toBe(true);
   });
   it("요건 집계는 표본과 항목의 건수를 싣고, 진단은 항목마다 상태와 근거를 더한다", () => {
     const demand = { work: "백엔드 개발자", family: "백엔드", basis: "family", focus: null, level: "entry", sampleSize: 25, companyCount: 8, interestedCount: 0, small: false, items: [{ id: "technology:java", kind: "technology", label: "Java", count: 17 }] };
