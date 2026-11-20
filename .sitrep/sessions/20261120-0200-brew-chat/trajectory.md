@@ -257,3 +257,10 @@
 - 같은 짝 네 개 다시 그리기(61–87초): three.js 3 · canvas 2D 1, 네 장 모두 움직임 확인, 큰 숫자 · 수치 카드 · 연도 축 사라짐
 - 남은 경향: 상자 높이로 값을 읽게 하는 3D 막대그래프형(짝 3 · 4)
 - 전후 비교 보드: https://claude.ai/artifact/GEH645RN9U1wPqAj7vspAC
+
+### ~21:05 · T12.10 · 저품질 상자 금지와 보드 실제 화면 열기
+- 사용자: "이런 저퀄리티 박스는 쓰지 않게 해야겠다" (Lambert 상자 배열 무대)
+- `PAGE_SCRIPT_PROMPT`(PAGE_PROMPT_VERSION 18): three.js 형태 × 재질 짝(곡면=금속 · 광택, 다면체=굴절 유리, 선 · 입자=자체발광) · 같은 도형 격자 배열 금지 · PMREM 그러데이션 환경 + 림 라이트 · ACES 톤매핑. 출처는 3d-motion-web 스킬의 FORM × MATERIAL 규칙
+- 지침(`DESIGN_CHAT_PROMPT_VERSION` 6): 3D 장면은 공들인 오브젝트 하나 또는 이어진 장
+- 3 · 4번 다시 그리기: 검은 시트 물결 · 광택 보라 매듭(three.js, 상자 없음)
+- 보드: 이미지를 누르면 같은 문서(pageDocument + 스크립트 정책)를 보드 안 전체 화면으로 띄움(Esc로 닫기). 로컬 headless에서 열기 · 움직임 · 닫기 확인, claude.ai 안에서는 미확인(창 로그인 없음)

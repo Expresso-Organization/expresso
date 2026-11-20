@@ -82,8 +82,9 @@ import { MEDIA_ASSET_PATH_PREFIX } from "./media-path.js";
  * 받지 않은 빈칸을 모델이 서버 CLI 계정 정보로 채웠다(2026-11-10 운영, 「누구의 지면」 절).
  *
  * 17 — 지면이 그림 스크립트(`script`)를 싣는다. canvas · three.js 그림을 쓰는 법과 스크립트 없는 첫 모습을 알린다(2026-11-20).
+ * 18 — three.js 장면의 형태 · 재질 · 빛 짝. 기본 상자를 Lambert로 늘어놓은 장면이 나왔다(같은 날 사용자 "이런 저퀄리티 박스는 쓰지 않게").
  */
-export const PAGE_PROMPT_VERSION = 17;
+export const PAGE_PROMPT_VERSION = 18;
 
 /**
  * 한 지면의 상한.
@@ -713,6 +714,12 @@ export const PAGE_SCRIPT_PROMPT = [
   "- `matchMedia(\"(prefers-reduced-motion: reduce)\")`이면 한 장면만 그리고 멈춘다. 화면 밖에 있으면 그리기를 멈춘다(`IntersectionObserver`).",
   "- 그림판 크기는 컨테이너를 따르고 `devicePixelRatio`를 반영한다(`ResizeObserver`). WebGL을 얻지 못하거나 오류가 나면 아무것도 하지 않고 첫 모습을 남긴다.",
   "- 바깥으로 요청할 수 없다 — `fetch` · 바깥 그림 · 바깥 글꼴 · `eval`이 막혀 있다. 그림에 쓰는 값은 스크립트 안에 적는다.",
+  "",
+  "### three.js 장면 — 형태 · 재질 · 빛을 함께 짓는다",
+  "- 형태와 재질의 짝을 맞춘다. 밝기는 법선이 정한다 — 법선이 계속 변하는 곡면(구 · 토러스 · 튜브 · 매듭 · 덩어리)에는 금속 · 세라믹 · 광택(`MeshPhysicalMaterial`의 metalness · roughness · clearcoat)을, 평면 다면체(상자 · 결정)에는 굴절 유리(transmission · thickness · ior)를, 선 · 입자에는 자체발광(`AdditiveBlending`)을 쓴다. 평면 다면체에 Lambert · 단색 재질을 얹으면 면마다 평평한 색판이 되어 장난감 블록으로 읽힌다.",
+  "- 같은 기본 도형을 격자 · 줄로 늘어놓지 않고, 형태 하나를 연속된 덩어리 · 흐름 · 입자 장으로 짓는다. 상자 · 기둥 배열은 높이로 값을 읽게 해 막대그래프가 된다.",
+  "- 빛은 환경에서 온다. `PMREMGenerator`로 장면 안에서 그러데이션 환경(고른 스타일의 바탕색 → 강조색)을 구워 `scene.environment`에 넣고, 강조색 쪽 림 라이트를 더한다. 주변광 하나 + 방향광 하나로 끝내면 플라스틱처럼 보인다. 바깥 HDRI는 받을 수 없다.",
+  "- 렌더러는 `antialias: true` · `toneMapping: ACESFilmicToneMapping` · `outputColorSpace: SRGBColorSpace`. 깊이는 `Fog`나 거리에 따른 색 감쇠로 낸다.",
 ].join("\n");
 
 /**
