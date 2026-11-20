@@ -7,7 +7,8 @@ import { requireSession } from "@/lib/require-session";
 import type { Activity } from "@expresso/contracts";
 import type { Route } from "next";
 
-import { ACTIVITY_PAGE_SIZE, activityLine, activitySourceNote, EXPLORE_KINDS, type ExploreKind } from "./explore";
+import { ActivityWall } from "./ActivityWall";
+import { ACTIVITY_PAGE_SIZE, activitySourceNote, EXPLORE_KINDS, type ExploreKind } from "./explore";
 import { ExploreFrame } from "./ExploreFrame";
 import { JobRowList } from "./JobRows";
 import { Pagination } from "./Pagination";
@@ -84,30 +85,7 @@ function ActivityList({ label, icon, rows, total, pager, href }: {
         <span className={jobStyles.resultsCount}>{label} · {total}건</span>
         <span className={jobStyles.resultsNote}>{activitySourceNote(rows)}</span>
       </div>
-      <div className={styles.activities}>
-        {rows.map((row) => {
-          const line = activityLine(row);
-          return (
-            <a key={row.id} href={row.url} target="_blank" rel="noreferrer" className={styles.activity}>
-              <span className={styles.activityMark}>{row.host.slice(0, 1)}</span>
-              <span className={styles.activityBody}>
-                <span className={styles.activityTitle}>{row.title}</span>
-                <span className={styles.activityMeta}>{line.meta}</span>
-              </span>
-              <span className={styles.activityTags}>
-                {row.fields.slice(0, 2).map((field) => (
-                  <span key={field} className={styles.activityTag}>{field}</span>
-                ))}
-              </span>
-              <span className={styles.activityStatus}>{row.status}</span>
-              <span className={`${styles.activityDeadline} ${line.urgent ? styles.activityDeadlineUrgent : ""}`}>
-                {line.deadline}
-              </span>
-              <Icon name="arrow-square-out" size={13} className={styles.activityOut} />
-            </a>
-          );
-        })}
-      </div>
+      <ActivityWall rows={rows} />
       <Pagination page={pager} href={href} />
     </div>
   );
