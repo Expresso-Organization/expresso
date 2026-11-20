@@ -24,6 +24,7 @@ import { adminDummyAccountSteps } from "./mongodb-migrations/0024/migration.js";
 import { careerCategoryArchiveSteps } from "./mongodb-migrations/0031/migration.js";
 import { proactiveProposalSteps } from "./mongodb-migrations/0032/migration.js";
 import { jobGoalSteps } from "./mongodb-migrations/0033/migration.js";
+import { activitySourceSteps } from "./mongodb-migrations/0035/migration.js";
 import { consultantProfileSteps } from "./mongodb-migrations/0036/migration.js";
 import { consultantFollowUpSteps } from "./mongodb-migrations/0037/migration.js";
 import { consultantDiagnosisSteps } from "./mongodb-migrations/0038/migration.js";
@@ -82,7 +83,8 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
   const categoryArchiveHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0031/migration.ts", import.meta.url))).digest("hex");
   const proactiveProposalHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0032/migration.ts", import.meta.url))).digest("hex");
   const jobGoalHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0033/migration.ts", import.meta.url))).digest("hex");
-  // 0034는 열린 PR(#241)이 쓰고 있다.
+  // 0034는 열린 PR(#241 feat/design-chat)이 쓰고 있다.
+  const activitySourceHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0035/migration.ts", import.meta.url))).digest("hex");
   const consultantProfileHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0036/migration.ts", import.meta.url))).digest("hex");
   const consultantFollowUpHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0037/migration.ts", import.meta.url))).digest("hex");
   const consultantDiagnosisHash = createHash("sha256").update(await readFile(new URL("./mongodb-migrations/0038/migration.ts", import.meta.url))).digest("hex");
@@ -109,6 +111,7 @@ export async function loadMongoMigrations(): Promise<MongoMigration[]> {
     { version: "0031", name: "career_category_archive", checksum: categoryArchiveHash, steps: await careerCategoryArchiveSteps() },
     { version: "0032", name: "proactive_proposals", checksum: proactiveProposalHash, steps: await proactiveProposalSteps() },
     { version: "0033", name: "job_goal", checksum: jobGoalHash, steps: await jobGoalSteps() },
+    { version: "0035", name: "activity_sources", checksum: activitySourceHash, steps: await activitySourceSteps() },
     { version: "0036", name: "consultant_profiles", checksum: consultantProfileHash, steps: await consultantProfileSteps() },
     { version: "0037", name: "consultant_follow_up", checksum: consultantFollowUpHash, steps: await consultantFollowUpSteps() },
     { version: "0038", name: "consultant_diagnoses", checksum: consultantDiagnosisHash, steps: await consultantDiagnosisSteps() },
