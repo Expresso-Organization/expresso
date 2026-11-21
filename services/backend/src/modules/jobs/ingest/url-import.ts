@@ -1,9 +1,7 @@
-import { lookup } from "node:dns/promises";
-import { isIP } from "node:net";
-
 import { ImportedJobPostingSchema } from "@expresso/contracts";
 
 import { JobMarketError } from "../errors.js";
+import { fetchPublicPage, PublicPageError } from "../../../platform/web/public-page.js";
 import { htmlToText, USER_AGENT } from "./adapter.js";
 
 /**
@@ -16,42 +14,6 @@ import { htmlToText, USER_AGENT } from "./adapter.js";
  * 고친 뒤에 한다 — `job_posting.description_raw`는 한 번 넣으면 고칠 수 없고
  * (0002), 틀린 원문 위에서 뽑은 요건은 끝까지 틀린다.
  */
-
-/** 사용자가 준 주소를 서버가 부른다 — 우리 안쪽으로 들어오지 못하게 막는다. */
-const BLOCKED_V4 = [
-  /^10\./, /^127\./, /^0\./, /^169\.254\./, /^192\.168\./,
-  /^172\.(1[6-9]|2\d|3[01])\./, /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./,
-];
-
-function isPrivateAddress(address: string): boolean {
-  if (isIP(address) === 6) {
-    const value = address.toLowerCase();
-    return value === "::1" || value === "::"
-      || value.startsWith("fc") || value.startsWith("fd")
-      || value.startsWith("fe80") || value.startsWith("::ffff:");
-  }
-  return BLOCKED_V4.some((pattern) => pattern.test(address));
-}
-
-async function assertPublicHost(hostname: string): Promise<void> {
-  if (isIP(hostname)) {
-    if (isPrivateAddress(hostname)) throw new JobMarketError(422, "private address");
-    return;
-  }
-  if (hostname === "localhost" || hostname.endsWith(".localhost") || hostname.endsWith(".internal")) {
-    throw new JobMarketError(422, "private host");
-  }
-  let records: { address: string }[];
-  try {
-    records = await lookup(hostname, { all: true });
-  } catch {
-    throw new JobMarketError(422, "host does not resolve");
-  }
-  if (records.length === 0) throw new JobMarketError(422, "host does not resolve");
-  if (records.some((record) => isPrivateAddress(record.address))) {
-    throw new JobMarketError(422, "private address");
-  }
-}
 
 /** 1MB면 어떤 공고 페이지든 넘친다. 그보다 크면 우리가 읽을 것이 아니다. */
 const MAX_BYTES = 1_000_000;
@@ -148,73 +110,19 @@ export class JobUrlImporter {
   }
 
   async #fetchPage(rawUrl: string): Promise<{ html: string; finalUrl: string }> {
-    let current = rawUrl;
-    for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
-      let url: URL;
-      try {
-        url = new URL(current);
-      } catch {
-        throw new JobMarketError(422, "invalid URL");
-      }
-      if (url.protocol !== "https:" && url.protocol !== "http:") {
-        throw new JobMarketError(422, "unsupported scheme");
-      }
-      await assertPublicHost(url.hostname);
-
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-      let response: Response;
-      try {
-        response = await fetch(url, {
-          signal: controller.signal,
-          redirect: "manual",
-          headers: { "user-agent": USER_AGENT, accept: "text/html,application/xhtml+xml" },
-        });
-      } catch {
-        throw new JobMarketError(502, "could not reach the page");
-      } finally {
-        clearTimeout(timer);
-      }
-
-      if (response.status >= 300 && response.status < 400) {
-        const location = response.headers.get("location");
-        if (!location) throw new JobMarketError(502, "redirect without location");
-        current = new URL(location, url).toString();
-        continue;
-      }
-      if (!response.ok) {
-        // 403은 봇 차단이다. 사용자에게는 "붙여넣어 주세요"가 다음 행동이다.
-        throw new JobMarketError(
-          response.status === 403 || response.status === 401 ? 422 : 502,
-          `page returned HTTP ${response.status}`,
-        );
-      }
-
-      const body = await readCapped(response);
-      return { html: body, finalUrl: url.toString() };
+    try {
+      const page = await fetchPublicPage(rawUrl, { userAgent: USER_AGENT, accept: "text/html,application/xhtml+xml", maxBytes: MAX_BYTES, timeoutMs: TIMEOUT_MS, maxRedirects: MAX_REDIRECTS });
+      return { html: page.body, finalUrl: page.finalUrl };
+    } catch (error) {
+      if (!(error instanceof PublicPageError)) throw error;
+      // 403은 봇 차단이다. 사용자에게는 "붙여넣어 주세요"가 다음 행동이다.
+      throw new JobMarketError(UNREACHABLE.has(error.failure) ? 502 : 422, error.message);
     }
-    throw new JobMarketError(422, "too many redirects");
   }
 }
 
-async function readCapped(response: Response): Promise<string> {
-  const reader = response.body?.getReader();
-  if (!reader) return "";
-  const chunks: Uint8Array[] = [];
-  let size = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    if (!value) continue;
-    size += value.byteLength;
-    if (size > MAX_BYTES) {
-      await reader.cancel();
-      break;
-    }
-    chunks.push(value);
-  }
-  return new TextDecoder("utf-8").decode(Buffer.concat(chunks));
-}
+/** 페이지까지 닿지 못했거나 페이지가 오류를 낸 경우. 나머지(주소 · 차단 · 리다이렉트 과다)는 사용자가 고칠 입력이다. */
+const UNREACHABLE = new Set<PublicPageError["failure"]>(["could not reach the page", "redirect without location", "http error"]);
 
 /** 페이지의 모든 `application/ld+json`에서 첫 JobPosting을 찾는다. */
 export function extractJsonLd(html: string): JsonLdJobPosting | null {

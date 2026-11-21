@@ -73,6 +73,10 @@ export const structuredCatalog = defineCatalog(schema, {
       props: projectProps,
       description: "한 작업의 같은 단위 수치 2–4개(예: 5년 · 5년 · 2년, 92% · 80%)를 가로 막대 차트로 비교하고 옆에 짧은 설명을 둡니다. 값이 모두 %이면 0–100% 눈금입니다. 이전 값 없이 여러 항목을 견주는 작업 · 역량에 사용합니다.",
     },
+    CaseTrend: {
+      props: projectProps,
+      description: "한 작업의 같은 단위 수치 3–6개를 출처에 적힌 순서대로 이은 꺾은선 추이 차트로 그리고 옆에 짧은 설명을 둡니다. 점마다 값을, 출처에 시점 · 단계가 있으면 그 이름을 붙입니다. 값이 모두 %이면 0–100% 높이입니다. 기간 · 단계를 따라 한 수치가 바뀐 작업에 사용합니다. series가 있는 섹션만 고릅니다.",
+    },
     MetricStrip: {
       props: z.object({ sections: content.shape.sections, ...stageProps }),
       description: "작업마다 대표 수치 하나를 큰 숫자로 한 줄에 4개까지 보입니다. 소개 바로 뒤에 두면 첫 화면에서 성과가 먼저 읽힙니다. surface=inverse · width=bleed로 두면 지면을 가로지르는 띠가 됩니다.",

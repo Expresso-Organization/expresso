@@ -12,6 +12,7 @@ import {
   StructuredPortfolioContentSchema,
   StructuredProfileSchema,
   archetypeComponents,
+  comparableValues,
   isStructuredGroup,
   partialLeaves,
   structuredModelSchema,
@@ -19,7 +20,7 @@ import {
   type StructuredDesignPlan,
   type StructuredPortfolioContent,
 } from "@expresso/contracts";
-import { barScale, blueprintToken, describeArchetype, describeBackdrops, describeDesignLayout, designLayout, readablePeriods, structuredCatalog, type BlueprintSlot } from "@expresso/portfolio-renderer";
+import { barScale, trendScale, blueprintToken, describeArchetype, describeBackdrops, describeDesignLayout, designLayout, readablePeriods, structuredCatalog, type BlueprintSlot } from "@expresso/portfolio-renderer";
 
 import type { AiCallOptions, AiClient, AiUsage, AiViolation } from "../../platform/ai/client.js";
 import { jsonPointer, pointerParts } from "../../platform/ai/fixes.js";
@@ -50,7 +51,8 @@ const FILL_SOURCE_CHARS = 4_000;
 export const FILL_LIMITS = {
   profile: { role: 60, headline: 72, focus: 30 },
   // 수치 값은 큰 글자로 그리므로 숫자와 단위만 담는 길이입니다("1,200만 건"이 8자). 설명은 이름표(label)와 설명(note)으로 갑니다.
-  section: { period: 60, detailLabel: 20, detailText: 120, metricLabel: 40, metricValue: 10, metricNote: 80, stepLabel: 16, stepText: 60 },
+  // 추이 차트의 점 값은 수치 값과 같은 길이(`metricValue`)입니다. 점 이름은 "2024.01" · "1단계" 같은 시점 · 단계 글자입니다.
+  section: { period: 60, detailLabel: 20, detailText: 120, metricLabel: 40, metricValue: 10, metricNote: 80, stepLabel: 16, stepText: 60, seriesLabel: 40, pointLabel: 16 },
   career: { period: 60, organization: 80, role: 80, description: 160, count: 8 },
   evidence: { title: 80, kind: 30, summary: 100, body: 300 },
 } as const;
@@ -89,6 +91,28 @@ export function metricUnitsAgree(metric: { value: string; before?: string | unde
   if (!metric.before) return true;
   const kinds = [metric.value, metric.before].map((value) => (TIME_UNIT.test(value) ? "time" : COUNT_UNIT.test(value) ? "count" : null));
   return !(kinds[0] && kinds[1] && kinds[0] !== kinds[1]);
+}
+
+type FilledSeries = { label: string; points: { label?: string | undefined; value: string }[] };
+
+/**
+ * 채운 추이(series)가 어긴 규칙입니다. 점 하나를 빼면 순서의 뜻이 바뀌므로 문제는 추이 전체에 묶어 돌려줍니다.
+ * 채우기 검사가 이 문장으로 고쳐 받고, 조립 단계는 문제가 남은 추이를 싣지 않습니다. 비어 있으면(점 0개) 문제가 아닙니다.
+ */
+export function seriesProblems(series: FilledSeries | undefined, budget: number, groundSource: string): string[] {
+  if (!series?.points.length) return [];
+  const { section: S } = FILL_LIMITS;
+  const problems: string[] = [];
+  const { points } = series;
+  if (points.length > budget) problems.push(`점은 ${budget}개까지입니다(지금 ${points.length}개).`);
+  if (!series.label.trim() || chars(series.label) > S.seriesLabel) problems.push(`label에 무엇의 추이인지 ${S.seriesLabel}자 이내로 씁니다.`);
+  if (points.some((point) => chars(point.value) > S.metricValue || !METRIC_VALUE_PATTERN.test(point.value)))
+    problems.push(`점의 value는 숫자와 단위만 ${S.metricValue}자 이내로 씁니다(예: 12명, 30%, 1,200만 건).`);
+  if (points.some((point) => point.label && chars(point.label) > S.pointLabel)) problems.push(`점의 label(시점 · 단계)은 ${S.pointLabel}자 이내입니다.`);
+  if (points.length >= 3 && !comparableValues(points.map((point) => point.value))) problems.push("점의 value는 모두 같은 단위로 시작해야 합니다.");
+  const numbers = ungroundedNumbers(points.flatMap((point) => [point.value, point.label ?? ""]).join(" "), groundSource);
+  if (numbers.length) problems.push(`출처에 없는 숫자가 있습니다: ${numbers.join(", ")}.`);
+  return problems;
 }
 
 export interface DesignFirstCall {
@@ -170,6 +194,7 @@ function skeleton(raw: ReturnType<typeof rawInput>, name: string): StructuredPor
       metrics: [{ label: "-", value: "1", before: "2" }, { label: "-", value: "1" }],
       quote: "-",
       steps: [{ label: "-", text: "" }, { label: "-", text: "" }],
+      series: { label: "-", points: [{ value: "1" }, { value: "2" }, { value: "3" }] },
     })),
     career: [{ id: "career", period: "-", organization: "-", role: "-", description: "-" }],
     evidence: raw.evidence.length ? [{ id: "evidence", title: "-", kind: "-", summary: "-", body: "-" }] : [],
@@ -214,6 +239,9 @@ export function blueprintContent(plan: StructuredDesignPlan, context: PageGenera
         details: count(section.budget.details).map((index) => ({ label: slot(`${base}/details/${index}/label`, S.detailLabel), text: slot(`${base}/details/${index}/text`, S.detailText) })),
         ...(section.budget.quote ? { quote: slot(`${base}/quote`, section.budget.quote) } : {}),
         ...(section.budget.steps ? { steps: count(section.budget.steps).map((index) => ({ label: slot(`${base}/steps/${index}/label`, S.stepLabel), text: slot(`${base}/steps/${index}/text`, S.stepText) })) } : {}),
+        ...(section.budget.series
+          ? { series: { label: slot(`${base}/series/label`, S.seriesLabel), points: count(section.budget.series).map((index) => ({ label: slot(`${base}/series/points/${index}/label`, S.pointLabel), value: slot(`${base}/series/points/${index}/value`, S.metricValue) })) } }
+          : {}),
         media: section.media.map((src) => ({ src, alt: raw.media.find((item) => item.src === src)?.alt || "-", origin: "uploaded" as const })),
         sourceIds: (rawById.get(section.id)?.sourceIds ?? []).filter((key) => evidenceIds.has(key)),
         ...(section.budget.metrics
@@ -294,6 +322,8 @@ function designPlanSchema(sectionIds: [string, ...string[]], mediaCount: number)
             // 큰 인용(PullQuote)으로 보일 한 문장의 글자 수 · 과정 흐름(CaseFlow) 단계 수입니다. 쓰지 않으면 0입니다.
             quote: z.number().int().min(0).max(60),
             steps: z.number().int().min(0).max(6),
+            // 추이 차트(CaseTrend)의 점 개수입니다. 0이거나 3–6입니다.
+            series: z.number().int().min(0).max(6),
           }),
           /** 제공 이미지 번호(0부터)입니다. */
           media: z.array(z.number().int().min(0).max(Math.max(0, mediaCount - 1))).max(mediaCount ? 4 : 0),
@@ -326,6 +356,7 @@ function designPrompt(input: {
 - 폭(width): content=본문 폭, bleed=창 폭 전체입니다. bleed는 색면 섹션 · 수치 띠 · 이미지 전시에 씁니다. 컨테이너 안의 요소는 bleed여도 본문 폭으로 그립니다.
 - 출처에 이전 · 이후 수치가 있는 작업은 form=before-after와 CaseBeforeAfter로, 작업마다 대표 수치가 있으면 소개 바로 뒤에 MetricStrip을 둡니다. MetricStrip을 inverse나 field의 bleed 띠로 두면 첫 화면 아래에서 성과가 먼저 읽힙니다.
 - 이전 값 없이 같은 단위로 견줄 수치가 2–4개인 작업 · 역량(예: 기술별 사용 연수, 항목별 비율 %)은 form=bars와 CaseBars입니다. budget.metrics에 그 개수를 정합니다.
+- 한 수치가 시점 · 단계를 따라 바뀐 나열(같은 단위 값 3–6개, 예: 월별 사용자 수, 트래픽 1% → 10% → 50% → 100%)이 출처에 있는 작업은 form=trend와 CaseTrend입니다. budget.series에 점 개수(3–6)를 정하고, 나열이 없는 섹션은 0입니다.
 - 출처에 작업마다 기간이 적혀 있으면 ProjectIndex를 variant=timeline(작업 기간 차트)으로 둘 수 있습니다. 경력 기간이 두 개 이상 적혀 있으면 CareerTimeline을 variant=chart(경력 기간 차트)로 둘 수 있습니다.
 - 작업 순서 · 절차가 핵심인 작업은 form=flow와 CaseFlow입니다. budget.steps에 단계 수(2–6)를 정하면 채우는 단계가 단계 이름(${FILL_LIMITS.section.stepLabel}자)과 짧은 설명(${FILL_LIMITS.section.stepText}자)을 씁니다. 단계가 아니라 문제 · 작업 · 결과의 설명이면 form=process와 CaseProcess입니다.
 - 제공 이미지가 핵심이면 form=showcase입니다. 이미지 한 장은 CaseShowcase(지면 폭의 큰 이미지), 여러 장은 CaseGallery입니다.
@@ -358,7 +389,7 @@ ${JSON.stringify({
 plan과 spec을 함께 냅니다. plan.sections에는 자료의 모든 섹션을 한 번씩 적습니다.
 spec 형식(공급자에 넘기는 출력 스키마에서 생성):
 ${format.text}
-첫 요소는 intro(NameIntro)입니다. 섹션마다 section-<id> 요소를 정확히 한 번 두고, 그 사례 유형은 plan의 form과 맞춥니다(before-after=CaseBeforeAfter, bars=CaseBars, flow=CaseFlow, process=CaseProcess, showcase=CaseShowcase 또는 CaseGallery, technical=CaseTechnical, essay=CaseEssay 또는 skills · about이면 ContentPanel, row=CaseRow). 사례 요소의 scale · surface · width는 plan의 emphasis · surface · width로 맞춰지므로 plan에서 정합니다. MetricStrip · PullQuote의 scale · surface · width는 spec에서 정합니다. include=false인 섹션도 spec에는 두되 지면에서는 빠지므로, 컨테이너는 include=true인 요소로 짭니다.
+첫 요소는 intro(NameIntro)입니다. 섹션마다 section-<id> 요소를 정확히 한 번 두고, 그 사례 유형은 plan의 form과 맞춥니다(before-after=CaseBeforeAfter, bars=CaseBars, trend=CaseTrend, flow=CaseFlow, process=CaseProcess, showcase=CaseShowcase 또는 CaseGallery, technical=CaseTechnical, essay=CaseEssay 또는 skills · about이면 ContentPanel, row=CaseRow). 사례 요소의 scale · surface · width는 plan의 emphasis · surface · width로 맞춰지므로 plan에서 정합니다. MetricStrip · PullQuote의 scale · surface · width는 spec에서 정합니다. include=false인 섹션도 spec에는 두되 지면에서는 빠지므로, 컨테이너는 include=true인 요소로 짭니다.
 ${groups ? `컨테이너: ${describeGroupRules()} 컨테이너 안에 컨테이너를 넣지 않고, intro는 컨테이너에 넣지 않습니다.` : "모든 요소를 page.children에 바로 둡니다."}
 rationale에는 이 지면을 이렇게 설계한 이유를 씁니다. motion은 'showcase'를 씁니다.`;
 }
@@ -383,6 +414,7 @@ export function sectionFillSchema() {
     metrics: z.array(z.object({ label: z.string().min(1), value: z.string().min(1), before: z.string().min(1).optional(), note: z.string().optional() })).optional(),
     quote: z.string().optional(),
     steps: z.array(z.object({ label: z.string().min(1), text: z.string() })).optional(),
+    series: z.object({ label: z.string(), points: z.array(z.object({ label: z.string().optional(), value: z.string().min(1) })) }).optional(),
   });
 }
 
@@ -400,7 +432,7 @@ type FillDraft = FillOutputOf<SectionFillDraft>;
 type FillOutput = FillOutputOf<SectionFill>;
 
 /** 빠져도 되는 칸의 예산. 설계 예산과 기록 사례 예산(`RECORD_SECTION_BUDGET`)이 모두 이 모양을 채웁니다. */
-export interface FillBudget { summary: number; body: number; details: number; metrics: number; quote?: number | undefined; steps?: number | undefined }
+export interface FillBudget { summary: number; body: number; details: number; metrics: number; quote?: number | undefined; steps?: number | undefined; series?: number | undefined }
 
 const OMITTABLE_FILLS = [
   { key: "summary", name: "요약" },
@@ -409,6 +441,7 @@ const OMITTABLE_FILLS = [
   { key: "metrics", name: "수치" },
   { key: "quote", name: "인용" },
   { key: "steps", name: "단계" },
+  { key: "series", name: "추이" },
 ] as const;
 
 /**
@@ -434,6 +467,7 @@ export function withEmptySection(section: SectionFillDraft): SectionFill {
     metrics: section.metrics ?? [],
     quote: section.quote ?? "",
     steps: section.steps ?? [],
+    series: section.series ?? { label: "", points: [] },
   };
 }
 
@@ -524,6 +558,9 @@ export function fillViolations(
       text(`${base}/steps/${index}/label`, step.label, S.stepLabel, "단계 이름");
       text(`${base}/steps/${index}/text`, step.text, S.stepText, "단계 설명");
     });
+    const series = seriesProblems(filled.series, budget.series ?? 0, context.groundSource);
+    if (series.length)
+      violations.push({ path: `${base}/series`, problem: `${series.join(" ")} 출처에 적힌 나열 그대로 고쳐 series 전체(label · points)를 보내세요. 출처에 맞는 나열이 없으면 points를 빈 배열로 보냅니다.` });
   }
   count("/career", output.career, plan.career ? C.count : 0, "경력");
   output.career.forEach((item, index) => {
@@ -543,13 +580,18 @@ export function fillViolations(
   return violations;
 }
 
-/** 설계안이 자료의 섹션을 모두 한 번씩 다루는지 봅니다. */
-function planViolations(planned: readonly { id: string }[], sectionIds: readonly string[]): AiViolation[] {
+/** 설계안이 자료의 섹션을 모두 한 번씩 다루는지, 추이 점 개수가 0이거나 3–6인지 봅니다. */
+function planViolations(planned: readonly { id: string; budget?: { series?: number } }[], sectionIds: readonly string[]): AiViolation[] {
+  const series: AiViolation[] = planned.flatMap((section, index) =>
+    section.budget?.series === 1 || section.budget?.series === 2
+      ? [{ path: `/plan/sections/${index}/budget/series`, problem: "추이 차트의 점은 3–6개입니다. 출처에 세 개 이상의 나열이 없으면 0으로 두고 다른 form을 고르세요." }]
+      : [],
+  );
   const seen = planned.map((section) => section.id);
   const missing = sectionIds.filter((id) => !seen.includes(id));
   const repeated = [...new Set(seen.filter((id, index) => seen.indexOf(id) !== index))];
-  if (!missing.length && !repeated.length) return [];
-  return [{
+  if (!missing.length && !repeated.length) return series;
+  return [...series, {
     path: "/plan/sections",
     problem: `plan.sections에 자료의 모든 섹션을 한 번씩 적어야 합니다.${missing.length ? ` 빠진 섹션: ${missing.join(", ")}.` : ""}${repeated.length ? ` 두 번 적은 섹션: ${repeated.join(", ")}.` : ""}`,
   }];
@@ -606,7 +648,7 @@ function revisedLeaves(path: readonly (string | number)[], value: unknown): { pa
 /** 채우기 프롬프트의 섹션 한 줄입니다. 설계의 칸 예산을 칸 이름과 글자 수 · 개수로 적습니다. */
 function fillGuide(section: StructuredDesignPlan["sections"][number]) {
   const { budget } = section;
-  return `  - ${section.id}: ${section.form} · ${section.emphasis}${section.pattern === "project" ? " · 기간(출처에 적혀 있으면 그 글자 그대로)" : ""} · 제목 ${budget.title}자 · 요약 ${budget.summary}자 · 본문 ${budget.body}자 · 항목 ${budget.details}개 · 수치 ${budget.metrics}개${budget.quote ? ` · 인용 ${budget.quote}자` : ""}${budget.steps ? ` · 단계 ${budget.steps}개` : ""}`;
+  return `  - ${section.id}: ${section.form} · ${section.emphasis}${section.pattern === "project" ? " · 기간(출처에 적혀 있으면 그 글자 그대로)" : ""} · 제목 ${budget.title}자 · 요약 ${budget.summary}자 · 본문 ${budget.body}자 · 항목 ${budget.details}개 · 수치 ${budget.metrics}개${budget.quote ? ` · 인용 ${budget.quote}자` : ""}${budget.steps ? ` · 단계 ${budget.steps}개` : ""}${budget.series ? ` · 추이 점 ${budget.series}개` : ""}`;
 }
 
 /**
@@ -636,6 +678,7 @@ export function fitToContent(rawSpec: unknown, content: StructuredPortfolioConte
       if (!section) { remove.add(key); continue; }
       if (node.type === "CaseBeforeAfter" && !section.metrics?.some((metric) => metric.before)) node.type = "CaseTechnical";
       if (node.type === "CaseBars" && !barScale(section.metrics ?? [])) node.type = "CaseTechnical";
+      if (node.type === "CaseTrend" && !trendScale(section.series)) node.type = "CaseTechnical";
       if (node.type === "CaseGallery" && !section.media.length) node.type = "CaseEssay";
       if (node.type === "CaseShowcase" && !section.media.length) node.type = "CaseEssay";
       // 단계가 모자란 흐름은 설명 항목이 두 개 이상이면 과정형으로, 아니면 기사형으로 내립니다.
@@ -790,7 +833,7 @@ export async function designFirst(
 ${plan.concept}
 ## 채울 칸
 - 이름(${author}) 아래: 직무(role), 한 문장 headline(줄바꿈 없이 마침표 하나로 끝나는 한 문장, 한글 36자 이내, 직무와 구체적인 작업), 소개(intro, ${plan.profile.intro}자 이내, 0이면 빈 글), 집중 분야(focus, ${plan.profile.focus}개 이내).
-- sections: 섹션마다 아래 설계의 글자 수 · 개수 안에서 채웁니다. 예산이 0이면 빈 글이나 빈 배열입니다. before는 출처에 이전 값으로 적힌 수치에만 쓰고, 없으면 칸을 뺍니다. 수치(metrics)의 value · before는 출처에 적힌 숫자와 단위만 씁니다(예: "1.9초", "420KB", "1,200만 건"). 무엇의 수치인지는 label에, 조건 · 설명은 note에 씁니다. before-after 섹션은 이전 값(before)과 이후 값(value)을 함께 적습니다. bars 섹션의 수치는 모두 같은 단위로 적습니다(예: "5년" · "5년" · "2년"). 기간(period)은 출처에 적힌 기간을 그 글자 그대로 적고(예: "2024.04 — 2024.11", "2023.03 — 현재"), 출처에 없으면 비웁니다. process 섹션의 항목(details)은 과정의 단계를 순서대로 두 개 이상 적습니다. flow 섹션의 단계(steps)는 작업 순서대로 짧은 이름(label)과 한 줄 설명(text)입니다. 인용(quote)은 그 작업의 판단 · 원칙을 출처의 사실로 쓴 한 문장입니다.
+- sections: 섹션마다 아래 설계의 글자 수 · 개수 안에서 채웁니다. 예산이 0이면 빈 글이나 빈 배열입니다. before는 출처에 이전 값으로 적힌 수치에만 쓰고, 없으면 칸을 뺍니다. 수치(metrics)의 value · before는 출처에 적힌 숫자와 단위만 씁니다(예: "1.9초", "420KB", "1,200만 건"). 무엇의 수치인지는 label에, 조건 · 설명은 note에 씁니다. before-after 섹션은 이전 값(before)과 이후 값(value)을 함께 적습니다. bars 섹션의 수치는 모두 같은 단위로 적습니다(예: "5년" · "5년" · "2년"). 기간(period)은 출처에 적힌 기간을 그 글자 그대로 적고(예: "2024.04 — 2024.11", "2023.03 — 현재"), 출처에 없으면 비웁니다. process 섹션의 항목(details)은 과정의 단계를 순서대로 두 개 이상 적습니다. flow 섹션의 단계(steps)는 작업 순서대로 짧은 이름(label)과 한 줄 설명(text)입니다. 인용(quote)은 그 작업의 판단 · 원칙을 출처의 사실로 쓴 한 문장입니다. trend 섹션의 추이(series)는 출처에 적힌 한 수치의 나열을 순서대로 옮깁니다. label은 무엇의 추이인지이고, 점마다 value는 숫자와 단위만(모두 같은 단위), label은 출처에 시점 · 단계("2024.01", "1단계")가 적혀 있을 때만 그 글자 그대로 씁니다. 나열이 없는 섹션은 series를 {"label":"","points":[]}로 둡니다.
 ${included.map(fillGuide).join("\n")}
 ${plan.career ? "- career: 출처에 있는 경력만 적습니다. 기간(period)은 출처에 적힌 글자 그대로입니다.\n" : ""}${plan.evidence ? "- evidence: 출처 자료를 지면용으로 짧게 적습니다.\n" : ""}## 출처
 ${JSON.stringify(included.map((section) => { const source = rawById.get(section.id)!; return { id: section.id, title: source.title, purpose: source.purpose, goal: source.goal, points: source.points }; }))}
@@ -838,6 +881,10 @@ ${evidenceText}`;
       ...(metrics.length ? { metrics } : {}),
       ...(output.quote.trim() ? { quote: output.quote.trim() } : {}),
       ...(output.steps.length ? { steps: output.steps } : {}),
+      // 고쳐도 규칙에 걸린 추이는 통째로 싣지 않습니다. 점 이름이 빈 글이면 이름 없는 점입니다.
+      ...(output.series?.points.length && !seriesProblems(output.series, plannedSection.budget.series ?? 0, groundSource).length
+        ? { series: { label: output.series.label.trim(), points: output.series.points.map((point) => (point.label?.trim() ? { label: point.label.trim(), value: point.value } : { value: point.value })) } }
+        : {}),
     };
     return section;
   });

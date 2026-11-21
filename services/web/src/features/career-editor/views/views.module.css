@@ -100,8 +100,6 @@
 .tableHead { position:sticky; top:0; z-index:3; background:var(--ex-bg-muted); color:var(--ex-fg-muted); font-size:var(--ex-text-xs); }
 .tableHead>* ,.tableRow>* ,.rowActive>* ,.tableSummary>* { min-width:0; padding:8px 12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .tableHead>:first-child,.tableRow>:first-child,.rowActive>:first-child,.tableSummary>:first-child { position:sticky; z-index:2; left:0; background:inherit; }
-.tableHead>:nth-child(2),.tableRow>:nth-child(2),.rowActive>:nth-child(2),.tableSummary>:nth-child(2) { position:sticky; z-index:2; left:var(--table-controls); background:inherit; box-shadow:1px 0 var(--ex-border-soft); }
-.tableHead>:first-child,.tableHead>:nth-child(2) { z-index:4; }
 .tableColumnHeader { position:relative; display:flex; height:42px; align-items:center; padding:0!important; overflow:visible!important; }
 .tableColumnHeader[data-column-draggable="true"] { cursor:grab; }
 .tableColumnHeader[data-column-draggable="true"]:active { cursor:grabbing; }
@@ -171,7 +169,7 @@
 .cellOpenButton { display:inline-flex; min-height:26px; flex:0 0 auto; align-items:center; gap:4px; margin-left:auto; border:1px solid var(--ex-border)!important; border-radius:var(--ex-radius-control); background:var(--ex-bg-muted)!important; padding:3px 7px; color:var(--ex-fg-body)!important; font-size:var(--ex-text-xs); }
 .tableTitleValue { display:flex; min-width:0; align-items:center; gap:8px; }
 .tableTitleValue>i { flex:0 0 auto; color:var(--ex-fg-muted); }
-.tableTitleValue>span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tableTitleValue>span:not(.rowControls) { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .tableBoolean { display:inline-flex; align-items:center; gap:7px; color:var(--ex-fg-muted); }
 .tableBoolean>span { display:grid; width:14px; height:14px; place-items:center; border:1px solid var(--ex-border-firm); border-radius:3px; color:var(--ex-fg-on-accent); }
 .tableBoolean[data-checked="true"]>span { border-color:var(--ex-accent); background:var(--ex-accent); }
@@ -403,3 +401,16 @@
 @media (max-width:767px){.table,.tableGroups{--table-controls:36px}.rowAddButton,.rowDragHandle{display:none!important}.rowControls{grid-template-columns:18px}.categoryIntro{padding:18px 14px 0}.categoryBlurb{margin:8px 14px 14px}.toolbar{padding:8px}.viewTabs{width:100%;overflow-x:auto}.toolbarActions{width:100%;justify-content:flex-start;overflow-x:auto;scrollbar-width:none}.toolbarActions::-webkit-scrollbar{display:none}.viewTabs{scrollbar-width:none}.searchField{flex:1 0 140px}.filterRow{grid-template-columns:1fr}.filterConjunction:empty{display:none}.filterLeaf{grid-template-columns:1fr 1fr}.filterLeaf>:nth-child(3){grid-column:1}.sortRow{grid-template-columns:1fr 1fr}.viewSettingGrid[data-columns="2"]{grid-template-columns:1fr}.toolbarPopover,.toolbarPopover[data-menu="properties"]{right:8px;left:8px;width:auto;max-height:calc(100dvh - 190px)}.gallery,.projectGallery{grid-template-columns:1fr}.projectGalleryRegion{padding:6px 14px 18px}.list li>button{grid-template-columns:auto minmax(0,1fr)}.listType,.listMetrics{display:none!important}.board{padding:10px}.timelineRegion{--timeline-date:64px;--timeline-gap:18px;--timeline-pad:12px}.tableViewport{margin:8px;border-radius:var(--ex-radius-card)}.tableHead,.tableRow,.rowActive{grid-template-columns:44px minmax(180px,1fr) repeat(3,minmax(100px,1fr))}}
 /* 호버가 없는 기기(폰 · 태블릿)에서는 선택 상자를 늘 보입니다. 숨기면 고를 방법이 없습니다. */
 @media (hover:none) { .rowCheckbox,.projectSelect { opacity:1; } }
+
+/* 제목과 행 작업을 한 열에 둔다. 속성 열은 가로로 스크롤된다. */
+.tableTitleValue>.rowControls { flex:0 0 auto; overflow:visible; }
+.rowMenuCell { display:flex; justify-content:center; padding:0!important; }
+.rowMenuCell button { display:grid; place-items:center; width:28px; height:28px; border:0; border-radius:var(--ex-radius-sm); background:transparent; color:var(--ex-fg-muted); cursor:pointer; }
+.rowMenuCell button:hover { background:var(--ex-bg-hover); }
+.recordSummary { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:10px 18px; border-top:1px solid var(--ex-border-soft); color:var(--ex-fg-muted); font-size:var(--ex-text-xs); }
+.recordSummary button { min-height:28px; border:0; background:transparent; color:inherit; font:inherit; cursor:pointer; }
+.recordSummary button[aria-pressed="true"] { color:var(--ex-accent-text); }
+.summaryTotal { font-weight:600!important; }
+.summarySegment { display:inline-flex; align-items:center; gap:8px; }
+.summaryDivider { color:var(--ex-fg-subtle); }
+.summaryAggregate { margin-left:auto; }

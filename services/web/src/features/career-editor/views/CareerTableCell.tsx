@@ -1,7 +1,7 @@
 "use client";
 
 import type { CareerPropertyDefinitionV2, CareerPropertyValueV2, CareerRecord } from "@expresso/contracts";
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 
 import { Icon } from "@/components/ui/Icon";
 
@@ -55,7 +55,7 @@ function toValue(definition: CareerPropertyDefinitionV2, draft: string): TableCe
   return { type, value: draft };
 }
 
-function CellDisplay({ record, definition }: { record: CareerRecord; definition: CareerPropertyDefinitionV2 }) {
+function CellDisplay({ record, definition, lead }: { record: CareerRecord; definition: CareerPropertyDefinitionV2; lead?: ReactNode }) {
   const value = valueFor(record, definition);
   if (definition.type === "checkbox") {
     const checked = value === true;
@@ -70,12 +70,13 @@ function CellDisplay({ record, definition }: { record: CareerRecord; definition:
     return <span>{formatPeriodRange(String(range.start), range.end ? String(range.end) : null)}</span>;
   }
   const text = definition.type === "select" ? propertyLabel(record, definition) ?? "—" : displayValue(value);
-  if (definition.key === "title") return <span className={styles.tableTitleValue}><Icon name="file" size={17} /><span>{text === "—" ? "제목 없음" : text}</span></span>;
+  if (definition.key === "title") return <span className={styles.tableTitleValue}>{lead}<Icon name="file" size={17} /><span>{text === "—" ? "제목 없음" : text}</span></span>;
   return text === "—" ? <span className={styles.emptyCell}>—</span> : <span>{text}</span>;
 }
 
 
-export function CareerTableCell({ record, definition, active, editing, issue, cellRef, onFocus, onEdit, onCommit, onCreateOption, onCancel, onMove, onContextMenu, onOpenRecord }: {
+export function CareerTableCell({ record, definition, active, editing, issue, cellRef, onFocus, onEdit, onCommit, onCreateOption, onCancel, onMove, onContextMenu, onOpenRecord, lead }: {
+  lead?: ReactNode;
   record: CareerRecord;
   definition: CareerPropertyDefinitionV2;
   active: boolean;
@@ -112,18 +113,19 @@ export function CareerTableCell({ record, definition, active, editing, issue, ce
     return true;
   }
   function keyDown(event: KeyboardEvent<HTMLElement>) {
+    if (event.target !== event.currentTarget && (event.target as HTMLElement).closest("button, input, label")) { event.stopPropagation(); return; }
     // 편집 중인 키는 셀 밖(행 · 표)으로 보내지 않습니다. 행이 Enter · 방향키로 기록을 열거나 옮겨 갑니다.
     if (editing) { event.stopPropagation(); return; }
     if ((event.key === "Enter" || event.key === "F2") && canEdit) { event.preventDefault(); event.stopPropagation(); onEdit(); return; }
     const direction = event.key === "ArrowLeft" ? "left" : event.key === "ArrowRight" ? "right" : event.key === "ArrowUp" ? "up" : event.key === "ArrowDown" ? "down" : event.key === "Tab" ? (event.shiftKey ? "previous" : "next") : null;
     if (direction) { event.preventDefault(); event.stopPropagation(); onMove(direction); }
   }
-  return <span ref={(node) => { anchorRef.current = node; cellRef(node); }} className={styles.tableCell} role="gridcell" tabIndex={active ? 0 : -1} data-active={active ? "true" : "false"} data-editing={editing ? "true" : "false"} data-issue={issue || localIssue ? "true" : "false"} title={issue || localIssue || undefined} onFocus={onFocus} onKeyDown={keyDown} onClick={(event) => { event.stopPropagation(); if (definition.key === "title" && !editing) { onOpenRecord(); return; } if (definition.type === "checkbox" && canEdit) { onFocus(); onCommit({ type: "checkbox", value: raw !== true }); return; } if (active && canEdit) onEdit(); else onFocus(); }} onDoubleClick={(event) => { event.stopPropagation(); if (canEdit) onEdit(); }} onContextMenu={onContextMenu}>
+  return <span ref={(node) => { anchorRef.current = node; cellRef(node); }} className={styles.tableCell} role="gridcell" aria-label={definition.key === "title" ? record.title || "제목 없음" : undefined} tabIndex={active ? 0 : -1} data-active={active ? "true" : "false"} data-editing={editing ? "true" : "false"} data-issue={issue || localIssue ? "true" : "false"} title={issue || localIssue || undefined} onFocus={(event) => { if (event.target === event.currentTarget) onFocus(); }} onKeyDown={keyDown} onClick={(event) => { event.stopPropagation(); if (definition.key === "title" && !editing) { onOpenRecord(); return; } if (definition.type === "checkbox" && canEdit) { onFocus(); onCommit({ type: "checkbox", value: raw !== true }); return; } if (active && canEdit) onEdit(); else onFocus(); }} onDoubleClick={(event) => { event.stopPropagation(); if (canEdit) onEdit(); }} onContextMenu={onContextMenu}>
     {editing && inlineType(definition) ? <input ref={inputRef} className={styles.cellInput} aria-label={`${definition.name} 셀 편집`} type="text" inputMode={definition.type === "number" ? "decimal" : undefined} value={draft} onChange={(event) => { setDraft(event.target.value); setLocalIssue(""); }} onBlur={finish} onKeyDown={(event) => {
       event.stopPropagation();
       if (event.key === "Escape") { event.preventDefault(); onCancel(); return; }
       if (event.key === "Enter" || event.key === "Tab") { event.preventDefault(); if (finish() && event.key === "Tab") onMove(event.shiftKey ? "previous" : "next"); }
-    }} /> : <CellDisplay record={record} definition={definition} />}
+    }} /> : <CellDisplay record={record} definition={definition} lead={lead} />}
     {active && definition.key === "title" && !editing ? <button type="button" className={styles.cellOpenButton} onClick={(event) => { event.stopPropagation(); onOpenRecord(); }}><Icon name="arrow-square-out" size={13} />열기</button> : null}
     {popup && (definition.type === "select" || definition.type === "multi_select") ? <OptionPopout definition={definition} value={raw} anchorRef={anchorRef} onCommit={onCommit} onCreateOption={onCreateOption} onClose={onCancel} /> : null}
     {issue || localIssue ? <span className="ex-sr-only" role="alert">{issue || localIssue}</span> : null}

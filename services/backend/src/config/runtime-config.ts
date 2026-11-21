@@ -74,6 +74,8 @@ const runtimeConfigSchema = z.object({
    *
    * 비우면 `AI_PROVIDER`를 그대로 쓴다.
    */
+  /** 예약 공고 요건 추출은 명시적으로 켰을 때만 실행한다. 전체 AI 설정을 따르지 않는다. */
+  AI_PROVIDER_POSTING_FACTS: z.enum(["off", "claude-code", "codex", "fixture", "anthropic"]).default("off"),
   AI_PROVIDER_SEARCH_INTERPRET: z
     .enum(["claude-code", "codex", "fixture", "anthropic"])
     .optional(),
@@ -168,6 +170,7 @@ export interface RuntimeConfig {
   /** 지면 생성만 갈아 끼울 때. 비우면 `aiProvider`와 같다. */
   aiPageGenerationProvider?: "claude-code" | "codex" | "fixture" | "anthropic";
   /** 검색 해석만 갈아 끼울 때. 비우면 `aiProvider`와 같다. */
+  aiPostingFactsProvider?: "off" | "claude-code" | "codex" | "fixture" | "anthropic";
   aiSearchInterpretProvider?: "claude-code" | "codex" | "fixture" | "anthropic";
   anthropicApiKey?: string;
   anthropicModelHaiku?: string;
@@ -233,6 +236,7 @@ export function loadRuntimeConfig(
     ...(result.AI_PROVIDER_PAGE_GENERATION
       ? { aiPageGenerationProvider: result.AI_PROVIDER_PAGE_GENERATION }
       : {}),
+    aiPostingFactsProvider: result.AI_PROVIDER_POSTING_FACTS,
     ...(result.AI_PROVIDER_SEARCH_INTERPRET
       ? { aiSearchInterpretProvider: result.AI_PROVIDER_SEARCH_INTERPRET }
       : {}),

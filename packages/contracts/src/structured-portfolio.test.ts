@@ -10,6 +10,7 @@ import {
   StructuredNodeSchema,
   StructuredPortfolioContentSchema,
   structuredModelSchema,
+  trendReady,
   structuredLeaves,
   validateStructuredPortfolio,
   type StructuredPortfolioContent,
@@ -215,6 +216,7 @@ describe("구조화 포트폴리오 계약", () => {
         {
           ...content.sections[0]!,
           period: "2025.08 — 2026.02",
+          series: { label: "지연", points: [{ label: "첫 단계", value: "24분" }, { value: "20분" }, { value: "12분" }] },
           quote: "막히면 돌아갑니다.",
           steps: [{ label: "관찰", text: "" }, { label: "우회", text: "계획" }],
           metrics: [{ label: "지연", value: "24분", before: "3시간", note: "야간 배치" }],
@@ -231,10 +233,18 @@ describe("구조화 포트폴리오 계약", () => {
         { path: "/sections/project-a/details/0/label", value: "막힌 곳" },
         { path: "/sections/project-a/period", value: "" },
         { path: "/profile/role", value: "설계자" },
+        { path: "/sections/project-a/series/label", value: "처리 지연" },
+        { path: "/sections/project-a/series/points/0/label", value: "초기" },
+        { path: "/sections/project-a/series/points/2/value", value: "10분" },
       ],
     });
     const result = applyStructuredTextPatches(rich, edit.patches);
     const section = result.sections[0]!;
+    expect(section.series?.label).toBe("처리 지연");
+    expect(section.series?.points[0]?.label).toBe("초기");
+    expect(section.series?.points[2]?.value).toBe("10분");
+    expect(readStructuredText(rich, "/sections/project-a/series/points/0/value")).toBe("24분");
+    expect(readStructuredText(rich, "/sections/project-a/series/points/99/value")).toBeNull();
     expect(section.quote).toBe("돌아가도 닿습니다.");
     expect(section.steps?.[1]?.text).toBe("새 계획");
     expect(section.metrics?.[0]).toEqual({ label: "지연", value: "20분", before: "3시간" });
@@ -507,6 +517,24 @@ describe("시각 부품과 지면 변화 계약", () => {
     expect(StructuredNodeSchema.safeParse({ type: "CareerTimeline", props: { career: { $state: "/career" }, variant: "chart" }, children: [] }).success).toBe(true);
     expect(StructuredNodeSchema.safeParse({ type: "CareerTimeline", props: { career: { $state: "/career" } }, children: [] }).success).toBe(true);
     expect(StructuredNodeSchema.safeParse({ type: "CareerTimeline", props: { career: { $state: "/career" }, variant: "gantt" }, children: [] }).success).toBe(false);
+  });
+
+  it("추이 차트는 같은 단위로 시작하는 값이 세 개 이상인 나열이 있어야 한다", () => {
+    const series = (values: string[]): StructuredPortfolioContent => ({
+      ...content,
+      sections: [{ ...content.sections[0]!, series: { label: "주간 활성 운영자", points: values.map((value, index) => ({ label: `${index + 1}단계`, value })) } }],
+    });
+    const ready = series(["12명", "31명", "58명"]);
+    expect(trendReady(ready.sections[0]!.series)).toBe(true);
+    expect(() => validateStructuredPortfolio(withCase({ type: "CaseTrend" }), ready)).not.toThrow();
+    expect(() => validateStructuredPortfolio(withCase({ type: "CaseTrend" }), series(["12명", "31명"]))).toThrow("세 개 이상");
+    expect(() => validateStructuredPortfolio(withCase({ type: "CaseTrend" }), series(["12명", "31%", "58명"]))).toThrow("같은 단위");
+    expect(() => validateStructuredPortfolio(withCase({ type: "CaseTrend" }), content)).toThrow("나열");
+    const shape = (value: StructuredPortfolioContent) =>
+      JSON.stringify(z.toJSONSchema(structuredModelSchema(value, { intro: [], section: [], guidance: [] })));
+    expect(shape(ready)).toContain("CaseTrend");
+    expect(shape(series(["12명", "31명"]))).not.toContain("CaseTrend");
+    expect(shape(series(["약 12명", "31명", "58명"]))).not.toContain("CaseTrend");
   });
 
   it("크기 · 배경 · 폭은 정해진 값만 받고 없어도 된다", () => {

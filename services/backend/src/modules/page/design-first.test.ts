@@ -34,14 +34,14 @@ const context: PageGenerationContext = { userId: null,
   design: findPortfolioDesign({}),
 };
 
-const noText = { quote: 0, steps: 0 };
+const noText = { quote: 0, steps: 0, series: 0 };
 const plan = {
   concept: "성능 수치를 앞세운 지면",
   profile: { intro: 120, focus: 2 },
   sections: [
-    { id: "lcp", include: true, pattern: "project", form: "before-after", emphasis: "lead", surface: "inverse", width: "bleed", budget: { title: 30, summary: 60, body: 200, details: 0, metrics: 2, quote: 40, steps: 0 }, media: [] },
+    { id: "lcp", include: true, pattern: "project", form: "before-after", emphasis: "lead", surface: "inverse", width: "bleed", budget: { title: 30, summary: 60, body: 200, details: 0, metrics: 2, quote: 40, steps: 0, series: 0 }, media: [] },
     // 이전 값이 없는 수치만 채워지면 기술형으로 내려야 합니다. 단계 세 개를 채우면 과정 흐름은 그대로입니다.
-    { id: "ui", include: true, pattern: "project", form: "flow", emphasis: "standard", surface: "field", width: "content", budget: { title: 30, summary: 60, body: 120, details: 2, metrics: 1, quote: 0, steps: 3 }, media: [] },
+    { id: "ui", include: true, pattern: "project", form: "flow", emphasis: "standard", surface: "field", width: "content", budget: { title: 30, summary: 60, body: 120, details: 2, metrics: 1, quote: 0, steps: 3, series: 0 }, media: [] },
     { id: "misc", include: false, pattern: "about", form: "essay", emphasis: "compact", surface: "canvas", width: "content", budget: { title: 20, summary: 0, body: 0, details: 0, metrics: 0, ...noText }, media: [] },
   ],
   evidence: true,
@@ -296,6 +296,54 @@ describe("차트 부품의 청사진", () => {
     expect(errors.filter((line) => line.includes("blueprint_failed"))).toEqual([]);
     expect(pages).toHaveLength(1);
     expect(pages[0]!.html).toContain('data-case-type="technical"');
+  });
+});
+
+describe("추이 차트", () => {
+  const trendContext: PageGenerationContext = {
+    ...context,
+    evidence: context.evidence.map((item) => (item.id === "rec-2" ? { ...item, text: `${item.text} 주간 활성 운영자는 2022.04 12명, 2022.06 31명, 2022.08 58명이었다.` } : item)),
+  };
+  const trendPlan = { ...plan, sections: plan.sections.map((item) => (item.id === "ui" ? { ...item, form: "trend", budget: { ...item.budget, steps: 0, series: 3 } } : item)) };
+  const trendSpec = { ...spec, elements: { ...spec.elements, "section-ui": { type: "CaseTrend", props: { section: { $state: "/sectionById/ui" } }, children: [] } } };
+  const series = { label: "주간 활성 운영자", points: [{ label: "2022.04", value: "12명" }, { label: "2022.06", value: "31명" }, { label: "2022.08", value: "58명" }] };
+  const trendFill = (value: typeof series) => {
+    const filled = fill();
+    return { ...filled, sections: { ...filled.sections, ui: { ...filled.sections.ui, steps: [], series: value } } };
+  };
+
+  it("출처의 나열을 옮긴 추이는 추이 차트로 그린다", async () => {
+    const ai = new RoutedAi((request) => (request.contract === "page_design" ? { plan: trendPlan, spec: trendSpec } : trendFill(series)));
+    const result = await new StructuredPageGenerator(ai).generate(trendContext);
+    expect(ai.calls[1]!.prompt).toContain("추이 점 3개");
+    const structured = result.manifest.structured!;
+    expect(structured.spec.elements["section-ui"]?.type).toBe("CaseTrend");
+    expect(structured.content.sections.find((section) => section.id === "ui")!.series).toEqual(series);
+    expect(result.html).toContain('class="xp-trend"');
+  });
+
+  it("출처에 없는 숫자가 든 추이는 추이 전체를 고쳐 받고, 고쳐도 남으면 싣지 않고 기술형으로 그린다", async () => {
+    const invented = { ...series, points: [...series.points.slice(0, 2), { label: "2022.10", value: "90명" }] };
+    const ai = new RoutedAi((request) => (request.contract === "page_design" ? { plan: trendPlan, spec: trendSpec } : trendFill(invented)));
+    const result = await new StructuredPageGenerator(ai).generate(trendContext);
+    const fixRequest = ai.fixRequests.find((request) => request.contract === "page_fill")!;
+    expect(fixRequest.paths).toContain("/sections/ui/series");
+    expect(fixRequest.prompt).toContain("출처에 없는 숫자가 있습니다: 90");
+    const structured = result.manifest.structured!;
+    expect(structured.content.sections.find((section) => section.id === "ui")!.series).toBeUndefined();
+    expect(structured.spec.elements["section-ui"]?.type).toBe("CaseTechnical");
+  });
+
+  it("단위가 다른 점 · 예산을 넘은 점을 검사하고, 설계의 점 개수는 0이거나 3–6이다", async () => {
+    const mixed = { ...series, points: [...series.points.slice(0, 2), { label: "2022.08", value: "58%" }] };
+    const violations = fillViolations(trendFill(mixed) as never, plan as never, trendPlan.sections.filter((item) => item.include) as never, { author: "가상 하린", groundSource: "2022.04 12명 2022.06 31명 2022.08 58%", evidenceCount: 1 });
+    expect(violations.find((item) => item.path === "/sections/ui/series")?.problem).toContain("같은 단위");
+    const over = fillViolations(trendFill(series) as never, plan as never, plan.sections.filter((item) => item.include) as never, { author: "가상 하린", groundSource: "2022.04 12명 2022.06 31명 2022.08 58명", evidenceCount: 1 });
+    expect(over.find((item) => item.path === "/sections/ui/series")?.problem).toContain("0개까지");
+    const twoPoints = { ...trendPlan, sections: trendPlan.sections.map((item) => (item.id === "ui" ? { ...item, budget: { ...item.budget, series: 2 } } : item)) };
+    const ai = new RoutedAi((request) => (request.contract === "page_design" ? { plan: twoPoints, spec: trendSpec } : trendFill(series)));
+    await new StructuredPageGenerator(ai).generate(trendContext);
+    expect(ai.fixRequests.find((request) => request.contract === "page_design")?.paths).toEqual(["/plan/sections/1/budget/series"]);
   });
 });
 

@@ -53,6 +53,7 @@ export {
 export { describeArchetype } from "./archetype.js";
 export { describeBackdrops } from "./backdrop.js";
 export { barScale } from "./viz/bars.js";
+export { trendScale, type TrendScale } from "./viz/trend.js";
 export { parsePeriod, readablePeriods, type PeriodSpan } from "./viz/period.js";
 export {
   RENDER_MEASURE_WIDTHS,

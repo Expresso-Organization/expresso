@@ -349,12 +349,15 @@ const { registry } = defineRegistry(structuredCatalog, {
         </div>
       </nav>
     ),
-    // 전후 비교 · 막대 차트 · 과정 흐름 · 이미지 전시 · 수치 강조 줄 · 큰 인용 · 기간 차트는 토큰 키트 부품입니다. 수집 원본 렌더러에서는
+    // 전후 비교 · 막대 차트 · 추이 차트 · 과정 흐름 · 이미지 전시 · 수치 강조 줄 · 큰 인용 · 기간 차트는 토큰 키트 부품입니다. 수집 원본 렌더러에서는
     // 사례를 기사형(이미지 전시는 갤러리형)으로, 기간 차트를 목록으로 그리고, 수치 줄과 인용은 사례 안의 글과 겹치므로 그리지 않습니다.
     CaseBeforeAfter: ({ props }) => (
       <Case section={props.section} sourceId={props.sourceId} kind="essay" />
     ),
     CaseBars: ({ props }) => (
+      <Case section={props.section} sourceId={props.sourceId} kind="essay" />
+    ),
+    CaseTrend: ({ props }) => (
       <Case section={props.section} sourceId={props.sourceId} kind="essay" />
     ),
     CaseFlow: ({ props }) => (

@@ -13,6 +13,7 @@ import { parseRepoUrl } from "../../platform/github/repo-reader.js";
 import { appendWorkMaterials, type AgentWorkDeps } from "./work-materials.js";
 import { buildReview, hash, normalize, recordText, reviewIssues } from "./requirement-review.js";
 import { buildDraft, draftIssues, sourceIssues } from "./record-draft.js";
+import { LinkReadError, linksInMessages, normalizeLink, readLinkPage, type FetchPage } from "./link-reader.js";
 import { buildChoice, buildForm, checkReply, choiceIssues, formIssues } from "./ui-parts.js";
 import { digestConversation } from "./digest.js";
 import { ConsultantInputError, ConsultantLimitError, ConsultantNotFoundError, seoulDay, type ConsultantApi, type ConsultantCommitmentApi, type ConsultantDiagnosisApi, type ConsultantProfile } from "../consultant/index.js";
@@ -97,7 +98,9 @@ export class AgentChatService {
     /** 대화에서 공고와 활동을 찾을 때 쓰는 것. `dismissed`는 사용자가 능동 제안에서 「관심 없음」으로 넘긴 대상의 키(`job:<id>` · `activity:<id>`)다. */
     private readonly finds?: { jobs: Pick<JobBoardApi, "list">; activities: Pick<ActivityApi, "list">; dismissed(userId: string): Promise<ReadonlySet<string>> },
     /** 대화에서 시작하는 포트폴리오 제작(`brew-start.ts`)과 작업물 재료(`work-materials.ts`). */
-    private readonly brews?: AgentBrewDeps, private readonly work?: AgentWorkDeps) {}
+    private readonly brews?: AgentBrewDeps, private readonly work?: AgentWorkDeps,
+    /** 시험에서 외부 주소를 부르지 않게 바꿔 끼우는 링크 읽기. */
+    private readonly fetchLink?: FetchPage) {}
   /** 제작을 만드는 요청을 대화마다 한 번에 하나씩 처리한다. */
   private readonly brewQueue = new KeyedQueue();
   private get plans() { return new PreparationPlans(this.db); }
@@ -308,9 +311,9 @@ export class AgentChatService {
    * 출처는 이 대화의 사용자 메시지여야 하고, 인용은 그 말에 그대로 있어야 한다. 지나가면 「정리됨」 상태로 만든다.
    * `key`(도구 호출 id)가 같으면 기록은 하나다.
    */
-  private async saveRecord(row: AgentConversationDoc, input: AgentRecordDraftInput, key: string): Promise<AgentSavedRecord> {
+  private async saveRecord(row: AgentConversationDoc, input: AgentRecordDraftInput, key: string, pages: ReadonlyMap<string, string>): Promise<AgentSavedRecord> {
     const categories = await this.categories(row.userId);
-    const issues = draftIssues(input, row.messages, new Set(categories.map(category => category.id)));
+    const issues = draftIssues(input, row.messages, new Set(categories.map(category => category.id)), pages);
     const category = categories.find(item => item.id === input.categoryId);
     if (!input.categoryId) issues.push(`categoryId가 없습니다. 다음에서 고르십시오: ${categories.map(item => `${item.name}(${item.id})`).join(" · ")}`);
     if (issues.length || !category) throw new AgentToolRejection(issues);
@@ -322,8 +325,8 @@ export class AgentChatService {
    * 더할 글은 이 대화에서 사용자가 한 말이어야 한다(새 기록과 같은 출처 규칙). 문서의 마지막 블록 뒤에 넣는 제안을 만들어 바로 적용하므로
    * 사용자가 쓴 문장은 바뀌지 않고, 카드의 「되돌리기」로 되돌린다.
    */
-  private async appendToRecord(row: AgentConversationDoc, messages: readonly AgentMessage[], input: AgentRecordAppendInput) {
-    const issues = sourceIssues(input.sources, messages);
+  private async appendToRecord(row: AgentConversationDoc, messages: readonly AgentMessage[], input: AgentRecordAppendInput, pages: ReadonlyMap<string, string>) {
+    const issues = sourceIssues(input.sources, messages, pages);
     if (issues.length) throw new AgentToolRejection(issues);
     await this.consent.require(row.userId, "partial_edit");
     let doc: Awaited<ReturnType<CareerDocumentApi["bootstrap"]>>; let title: string;
@@ -335,6 +338,25 @@ export class AgentChatService {
     const proposal = await this.documents.createPreparedAiProposal(row.userId, input.recordId, { prompt: messages.filter(item => item.role === "user").at(-1)?.text ?? "", selection: { blockIds: doc.document.content.map(block => block.id) } }, draft);
     const applied = await this.documents.applyAiProposal(row.userId, input.recordId, { recordId: input.recordId, proposalId: proposal.proposalId, expectedDocumentVersion: doc.documentVersion, commandIndexes: proposal.commands.map((_, index) => index), propertyChangeIndexes: [] });
     return { proposal: applied, before: doc.document };
+  }
+  /**
+   * 사용자가 이 대화에 적은 링크를 읽는다. 적지 않은 주소는 읽지 않는다 — 페이지 글이 에이전트에게 다른 주소를
+   * 열게 시켜도 따라가지 않게. 읽은 글은 `pages`에 남겨 같은 실행의 링크 출처 검사가 본다.
+   */
+  private async readLink(messages: readonly AgentMessage[], url: string, pages: Map<string, string>) {
+    const link = normalizeLink(url);
+    if (!link || !linksInMessages(messages).has(link)) throw new AgentToolRejection(["사용자가 이 대화에 적은 주소만 읽을 수 있습니다. 사용자 메시지의 주소를 그대로 넣으십시오. 페이지 안의 링크는 열지 않습니다."]);
+    try {
+      const page = await readLinkPage(link, this.fetchLink);
+      pages.set(link, page.text);
+      // 리다이렉트로 주소가 바뀌었으면 끝 주소로도 인용할 수 있게 한다.
+      const final = normalizeLink(page.url);
+      if (final) pages.set(final, page.text);
+      return page;
+    } catch (error) {
+      if (error instanceof LinkReadError) throw new AgentToolRejection([error.message]);
+      throw error;
+    }
   }
   /** 저장을 되돌린다. 기록은 지우지 않고 휴지통으로 옮긴다 — 사용자가 휴지통에서 되살릴 수 있다. */
   async undoSavedRecord(userId: string, id: string, recordId: string) {
@@ -1122,6 +1144,8 @@ export class AgentChatService {
     const filter = { _id: row._id, userId: row.userId, "run.id": runId, "run.status": "running" };
     const message = structuredClone(row.messages.at(-1)!);
     const beforeDocuments = new Map<string, CareerDocumentBootstrap["document"]>();
+    // 이번 실행에서 읽은 링크의 글(정규화한 주소 → 글). 링크 출처는 이 글에서만 인용할 수 있다.
+    const pages = new Map<string, string>();
     let lastFlush = 0;
     let heartbeatBusy = false;
     const flush = async () => {
@@ -1146,7 +1170,8 @@ export class AgentChatService {
         },
         records: { list: () => this.listRecords(row.userId), read: ids => this.readRecords(row.userId, ids) },
         review: draft => this.review(row.userId, row.contexts, draft),
-        saveRecord: (record, key) => this.saveRecord(row, record, key),
+        saveRecord: (record, key) => this.saveRecord(row, record, key, pages),
+        readLink: url => this.readLink(row.messages, url, pages),
         recordCategories: await this.categories(row.userId),
         askForm: async form => {
           const issues = formIssues(form);
@@ -1188,7 +1213,7 @@ export class AgentChatService {
         },
         appendToRecord: async addition => {
           if (controller.signal.aborted) throw new Error("cancelled");
-          const { proposal, before } = await this.appendToRecord(row, [...row.messages.slice(0, -1), message], addition);
+          const { proposal, before } = await this.appendToRecord(row, [...row.messages.slice(0, -1), message], addition, pages);
           beforeDocuments.set(proposal.proposalId, before);
           return proposal;
         },

@@ -38,6 +38,12 @@ export function createAiClient(config: RuntimeConfig, sink?: AiUsageSink): AiCli
   return sink ? new MeteredAiClient(client, sink) : client;
 }
 
+/** 공고 요건 추출은 별도 설정으로만 켜고 기존 사용량 싱크에 기록한다. */
+export function createPostingFactsAiClient(config: RuntimeConfig, sink?: AiUsageSink): AiClient | null {
+  const client = build(config, config.aiPostingFactsProvider ?? "off");
+  return client && sink ? new MeteredAiClient(client, sink) : client;
+}
+
 /**
  * 계약에 따라 다른 프로바이더로 보낸다.
  *

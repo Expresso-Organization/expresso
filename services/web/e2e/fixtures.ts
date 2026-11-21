@@ -43,7 +43,7 @@ export async function createRecord(page: Page, categoryId: string, title: string
 
 export async function openRecordDrawer(page: Page, title: string) {
   const row = page.getByRole("row").filter({ has: page.getByText(title, { exact: true }) }).first();
-  const titleCell = row.getByRole("gridcell").nth(1);
+  const titleCell = row.getByRole("gridcell", { name: title, exact: true });
   await titleCell.click();
 }
 

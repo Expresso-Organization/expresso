@@ -68,8 +68,22 @@ export const StructuredSectionSchema = z.strictObject({
     .array(z.strictObject({ label: z.string().min(1).max(40), text: z.string().max(200) }))
     .max(6)
     .optional(),
+  /**
+   * 추이 차트(`CaseTrend`)로 그릴 한 수치의 나열입니다. 출처에 적힌 순서대로 두고, 값은 원문 대조를 지난 것만 남깁니다.
+   * 점 이름(`label`)은 출처에 시점 · 단계("2024.01", "1단계")가 적혀 있을 때만 씁니다.
+   */
+  series: z
+    .strictObject({
+      label: z.string().min(1).max(40),
+      points: z
+        .array(z.strictObject({ label: z.string().min(1).max(16).optional(), value: z.string().min(1).max(24) }))
+        .min(1)
+        .max(6),
+    })
+    .optional(),
 });
 type StructuredMetric = NonNullable<z.infer<typeof StructuredSectionSchema>["metrics"]>[number];
+export type StructuredSeries = NonNullable<z.infer<typeof StructuredSectionSchema>["series"]>;
 const LEADING_NUMBER = /^[+\-−~≈]?\s?(\d+(?:\.\d+)?)/;
 
 /**
@@ -86,14 +100,23 @@ export function metricUnit(value: string): string {
   return value.replace(/,/g, "").replace(LEADING_NUMBER, "").trim();
 }
 
+/** 길이 · 높이로 견줄 수 있는 값들인지 봅니다. 모두 숫자로 시작하고 단위가 같아야 합니다. */
+export function comparableValues(values: readonly string[]): boolean {
+  return (
+    values.length > 0 &&
+    values.every((value) => metricNumber(value) !== null) &&
+    new Set(values.map(metricUnit)).size === 1
+  );
+}
+
 /** 막대 길이로 견줄 수 있는 수치 목록인지 봅니다. 두 개 이상이고, 모두 숫자로 시작하고, 단위가 같아야 합니다. */
 export function comparableMetrics(metrics: readonly StructuredMetric[] | undefined): boolean {
-  return (
-    !!metrics &&
-    metrics.length >= 2 &&
-    metrics.every((metric) => metricNumber(metric.value) !== null) &&
-    new Set(metrics.map((metric) => metricUnit(metric.value))).size === 1
-  );
+  return !!metrics && metrics.length >= 2 && comparableValues(metrics.map((metric) => metric.value));
+}
+
+/** 추이 차트로 그릴 수 있는 나열인지 봅니다. 점이 세 개 이상이고, 값이 모두 같은 단위로 시작해야 합니다. */
+export function trendReady(series: StructuredSeries | undefined): boolean {
+  return !!series && series.points.length >= 3 && comparableValues(series.points.map((point) => point.value));
 }
 
 /** 프로필의 모양입니다. 이름 아래 한 문장 규칙은 저장 계약에서 따로 검사합니다. */
@@ -199,6 +222,8 @@ export const STRUCTURED_CASE_TYPES = [
   "CaseFlow",
   // 같은 단위 수치 두 개 이상(`comparableMetrics`)을 가로 막대 차트로 그립니다.
   "CaseBars",
+  // 같은 단위 수치 세 개 이상의 나열(`trendReady`)을 순서대로 이은 꺾은선으로 그립니다.
+  "CaseTrend",
   // 제공 이미지 한 장을 크게 두고 제목 · 요약을 그 아래 띠에 둡니다.
   "CaseShowcase",
   "CaseEssay",
@@ -358,7 +383,7 @@ export function structuredLeaves(spec: StructuredPortfolioSpec) {
  * 설계 모델이 Spec과 함께 냅니다. 섹션마다 실을지, 어떤 시각 형태로 보일지, 칸마다 글자 수를 정하고,
  * 글 채우기는 이 예산을 출력 스키마의 최대 길이로 받습니다.
  */
-export const STRUCTURED_DESIGN_FORMS = ["before-after", "bars", "flow", "process", "showcase", "technical", "essay", "row"] as const;
+export const STRUCTURED_DESIGN_FORMS = ["before-after", "bars", "trend", "flow", "process", "showcase", "technical", "essay", "row"] as const;
 export const StructuredDesignPlanSchema = z.strictObject({
   /** 지면 전체의 콘셉트 한 문장입니다. 글 채우기가 문체와 강조를 맞출 때 읽습니다. */
   concept: z.string().min(1).max(300),
@@ -386,6 +411,7 @@ export const StructuredDesignPlanSchema = z.strictObject({
           metrics: z.number().int().min(0).max(4),
           quote: z.number().int().min(0).max(60).optional(),
           steps: z.number().int().min(0).max(6).optional(),
+          series: z.number().int().min(0).max(6).optional(),
         }),
         /** 이 섹션에 붙일 제공 이미지의 src입니다. */
         media: z.array(z.string().max(2_000_000)).max(4),
@@ -411,11 +437,12 @@ export type StructuredPortfolioSnapshot = z.infer<
  * 프로필 네 칸, 섹션의 글 칸, 설명 · 단계 · 수치 목록의 칸입니다.
  */
 export const STRUCTURED_TEXT_PATH =
-  /^\/(?:profile\/(name|role|headline|intro)|sections\/([a-zA-Z0-9-]+)\/(?:(title|summary|body|period|quote)|(details|steps|metrics)\/(\d+)\/(label|text|value|before|note)))$/;
+  /^\/(?:profile\/(name|role|headline|intro)|sections\/([a-zA-Z0-9-]+)\/(?:(title|summary|body|period|quote|series\/label)|(details|steps|metrics|series\/points)\/(\d+)\/(label|text|value|before|note)))$/;
 const LIST_FIELDS = {
   details: ["label", "text"],
   steps: ["label", "text"],
   metrics: ["label", "value", "before", "note"],
+  "series/points": ["label", "value"],
 } as const;
 /** 비우면 지우는 선택 칸입니다. 계약이 빈 문자열을 받지 않습니다. */
 const OPTIONAL_TEXT = new Set(["period", "quote", "before", "note"]);
@@ -428,10 +455,12 @@ function textSlot(content: StructuredPortfolioContent, path: string): TextSlot {
   if (profileKey) return { owner: content.profile as Record<string, unknown>, key: profileKey };
   const section = content.sections.find((item) => item.id === sectionId);
   if (!section) return null;
+  if (sectionKey === "series/label") return section.series ? { owner: section.series as Record<string, unknown>, key: "label" } : null;
   if (sectionKey) return { owner: section as Record<string, unknown>, key: sectionKey };
   const name = list as keyof typeof LIST_FIELDS;
   if (!(LIST_FIELDS[name] as readonly string[]).includes(field!)) return null;
-  const item = (section[name] as Record<string, unknown>[] | undefined)?.[Number(index)];
+  const items = name === "series/points" ? section.series?.points : section[name];
+  const item = (items as Record<string, unknown>[] | undefined)?.[Number(index)];
   return item ? { owner: item, key: field! } : null;
 }
 
@@ -551,6 +580,7 @@ export function structuredModelSchema(
             (section.media.length || (type !== "CaseGallery" && type !== "CaseShowcase")) &&
             (type !== "CaseBeforeAfter" || !!section.metrics?.some((metric) => metric.before)) &&
             (type !== "CaseBars" || comparableMetrics(section.metrics)) &&
+            (type !== "CaseTrend" || trendReady(section.series)) &&
             (type !== "CaseFlow" || (section.steps?.length ?? 0) >= 2),
         ) as [string, ...string[]],
       ),
@@ -776,6 +806,8 @@ export function validateStructuredPortfolio(
         throw new Error("전후 비교 사례에는 이전 값이 있는 수치가 필요합니다.");
       if (node.type === "CaseBars" && !comparableMetrics(section.metrics))
         throw new Error("막대 차트 사례에는 같은 단위로 시작하는 수치가 두 개 이상 필요합니다.");
+      if (node.type === "CaseTrend" && !trendReady(section.series))
+        throw new Error("추이 차트 사례에는 같은 단위로 시작하는 값이 세 개 이상인 나열이 필요합니다.");
       if (node.type === "CaseFlow" && (section.steps?.length ?? 0) < 2)
         throw new Error("과정 흐름 사례에는 두 개 이상의 단계가 필요합니다.");
       if (node.type === "CaseShowcase" && !section.media.length)
