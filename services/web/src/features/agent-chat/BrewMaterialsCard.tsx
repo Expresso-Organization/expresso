@@ -102,7 +102,7 @@ export function BrewMaterialsCard({ materials: { brewId }, onBegin, disabled = f
     </ul> : null}
     {notice ? <p role="alert" className={card.error}>{notice}</p> : null}
     {data ? <div className={`${card.actions} ${styles.actions}`}>
-      {data.resumePath ? <span /> : <Link className={styles.wide} href={`/brew/${brewId}/materials` as Route}><Icon name="arrows-out-simple" size={12} />넓게 보기</Link>}
+      <span />
       {data.resumePath ? (continuesInChat ? null : <Link className={styles.next} href={data.resumePath as Route}>이어서 만들기</Link>)
         : <button type="button" className={styles.next} disabled={saving || beginning || disabled} aria-busy={beginning} onClick={() => void begin()}>{next}</button>}
     </div> : null}

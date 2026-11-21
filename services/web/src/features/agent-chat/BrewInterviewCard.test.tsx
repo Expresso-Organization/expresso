@@ -36,11 +36,11 @@ describe("AI 대화 카드의 데이터", () => {
     });
     expect(interviewCard(brew("interviewing"), bases, session(false)).bases.map(base => base.answered)).toEqual([false, false]);
     expect(interviewCard(brew("interviewing"), bases, null)).toMatchObject({ answered: 0, resumePath: null });
-    for (const status of ["recipe", "generating", "done"] as const) expect(interviewCard(brew(status), bases, null).resumePath).toBe(`/brew/${brewId}/design`);
+    for (const status of ["recipe", "generating", "done"] as const) expect(interviewCard(brew(status), bases, null).resumePath).toBe(`/brew/${brewId}`);
     // 「디자인 고르기」 뒤 구성 잡이 도는 동안도 디자인 단계로 잇는다. 실패한 잡 뒤에는 다시 인터뷰다.
     const planning = (status: string) => ({ brewId, status: "interviewing", latestJob: { jobId: brewId, type: "recipe", status } }) as unknown as BrewState;
-    expect(interviewCard(planning("running"), bases, null).resumePath).toBe(`/brew/${brewId}/design`);
-    expect(interviewCard(planning("queued"), bases, null).resumePath).toBe(`/brew/${brewId}/design`);
+    expect(interviewCard(planning("running"), bases, null).resumePath).toBe(`/brew/${brewId}`);
+    expect(interviewCard(planning("queued"), bases, null).resumePath).toBe(`/brew/${brewId}`);
     expect(interviewCard(planning("failed"), bases, null).resumePath).toBeNull();
   });
 });

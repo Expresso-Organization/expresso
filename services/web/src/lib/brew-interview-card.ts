@@ -33,6 +33,6 @@ export function interviewCard(brew: BrewState, bases: InterviewQuestionBase[], s
     answered: session?.answeredCount ?? 0,
     limit: INTERVIEW_QUESTION_LIMIT,
     // 구성 잡이 도는 동안도 구성 단계다(`planningRecipe`).
-    resumePath: (brew.status === "draft" || brew.status === "interviewing") && !planningRecipe(brew) ? null : `/brew/${brew.brewId}/design`,
+    resumePath: (brew.status === "draft" || brew.status === "interviewing") && !planningRecipe(brew) ? null : `/brew/${brew.brewId}`,
   };
 }
