@@ -15,7 +15,7 @@ it("1차 메뉴에 검색 줄 없이 새 포트폴리오와 네 메뉴만 선다
   expect(screen.queryByRole("button", { name: /검색/ })).toBeNull();
   expect(screen.queryByText("⌘K")).toBeNull();
   expect(screen.getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
-    "/brew/new",
+    "/home?new=portfolio",
     "/home",
     "/library",
     "/jobs",
