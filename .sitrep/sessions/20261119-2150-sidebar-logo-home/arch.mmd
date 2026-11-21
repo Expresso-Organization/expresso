@@ -1,0 +1,13 @@
+flowchart TD
+  AC["AppChrome"]:::done --> SB["Sidebar · Skeleton"]:::done
+  SB --> SF["SidebarFrame 브랜드 줄"]:::done
+  SF --> LK["로고 → /home 링크"]:::done
+  SF --> CL["접힘: 펴기 단추"]:::done
+  SB --> SN["SidebarNav"]:::done
+  SN --> RM["검색 줄 제거"]:::done
+  HA["HeaderActions 검색"]:::done --> CP["⌘K 명령 팔레트"]:::done
+  CS["ConversationSwitcher"]:::done --> SF
+  classDef done fill:#d1fae5,stroke:#059669
+  classDef doing fill:#fef3c7,stroke:#d97706
+  classDef decide fill:#fee2e2,stroke:#dc2626
+  classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4

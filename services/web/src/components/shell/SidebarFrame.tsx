@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { LogoMark, Wordmark } from "@/components/brand/Logo";
@@ -17,6 +18,9 @@ import styles from "./Sidebar.module.css";
  *
  * `Sidebar`와 `SidebarSkeleton`이 같은 틀을 쓴다 — 응답을 기다리는 동안에도
  * 접힘 상태와 브랜드 줄은 이미 정해져 있다.
+ *
+ * `title`이 없으면 브랜드 줄은 제품 로고이고 홈으로 가는 링크다. `title`을
+ * 받은 틀(대화 화면의 자료 칸)은 칸 이름을 보여 줄 뿐이라 링크가 아니다.
  */
 export function SidebarFrame({
   footer,
@@ -34,6 +38,16 @@ export function SidebarFrame({
   children: ReactNode;
 }) {
   const { collapsed, animated, setCollapsed } = useSidebarCollapse();
+  const brand = (
+    <>
+      <span className={styles.brandMark}>
+        <LogoMark size={22} />
+      </span>
+      <span className={`${styles.copy} ${styles.brandName}`}>
+        {title ?? <Wordmark />}
+      </span>
+    </>
+  );
 
   return (
     <aside
@@ -43,14 +57,20 @@ export function SidebarFrame({
     >
       <div className={styles.panel} data-slot="sidebar-panel">
         <div className={styles.head}>
-          <div className={styles.brand}>
-            <span className={styles.brandMark}>
-              <LogoMark size={22} />
-            </span>
-            <span className={`${styles.copy} ${styles.brandName}`}>
-              {title ?? <Wordmark />}
-            </span>
-          </div>
+          {title === undefined ? (
+            /* 접으면 이 자리에 펴기 단추가 들어서므로 링크는 탭 순서와 보조 기술에서 빠진다 */
+            <Link
+              href="/home"
+              className={`${styles.brand} ${styles.brandLink}`}
+              aria-label="Expresso 홈"
+              aria-hidden={collapsed || undefined}
+              tabIndex={collapsed ? -1 : undefined}
+            >
+              {brand}
+            </Link>
+          ) : (
+            <div className={styles.brand}>{brand}</div>
+          )}
 
           {/*
             접기와 펴기는 한 자리를 나눠 쓴다 — 접으면 로고가 물러난 자리에
