@@ -344,3 +344,8 @@
 - 지침 PAGE_MOTION_PROMPT(장면마다 한두 곳 · 본문 문단 제외) · 반응(:hover · :focus-visible 0.2초 안팎). PAGE_PROMPT_VERSION 25 · DESIGN_CHAT_PROMPT_VERSION 14
 - 다시 생성 셋: rise 6~9 · stagger 4~5 · grow 2~4 · draw 0~2, 스스로 짠 keyframes 0~1. 전후 스크롤 영상을 보드에
 - 검사: typecheck · test 통과
+
+### ~19:00 · 보고 · 이 범위에서 마감, PR
+- 사용자: "일단 여기서 작업 마무리하고 pr 올리자"
+- 상태: 이 PR 범위 완료(전체 90%). T9 「새 포트폴리오」 대화 진입 · T10 옛 단계 화면 제거는 다음 PR
+- PR 기준은 열려 있는 PR #241(feat/design-chat) — 그 위에 쌓인 커밋 58개
