@@ -30,6 +30,16 @@ it("그 tsconfig의 include는 tsconfig.json과 타입 폴더만 다르다", () 
   expect(build.map(glob => glob.replace(`${dir}/types/`, ".next/types/"))).toEqual(include("tsconfig.json"));
 });
 
+it("타입 검사는 경로 타입을 새로 만든 뒤에 돈다", () => {
+  // tsc는 `.next/types`를 읽기만 한다. 먼저 만들지 않으면 그 폴더가 없을 때 링크 경로를 검사하지 않고,
+  // 옛 빌드의 것이 남아 있으면 맞는 링크를 없는 경로로 잡는다.
+  const { typecheck } = (JSON.parse(read("package.json")) as { scripts: { typecheck: string } }).scripts;
+  const steps = typecheck.split("&&").map(step => step.trim());
+  const typegen = steps.indexOf("next typegen");
+  expect(typegen, typecheck).toBeGreaterThanOrEqual(0);
+  expect(steps.findIndex(step => step.startsWith("tsc ")), typecheck).toBeGreaterThan(typegen);
+});
+
 it("타입 검사 결과를 증분 캐시에서 꺼내 쓰지 않는다", () => {
   // 켜면 Next가 결과를 `<distDir>/cache/.tsbuildinfo`에 남기고 배포가 그 캐시를 다음 빌드로 옮긴다.
   // tsc 7.0.2는 경로 타입(link.d.ts)이 바뀌어도 바뀌지 않은 파일을 다시 검사하지 않는다 — 화면을 지우고

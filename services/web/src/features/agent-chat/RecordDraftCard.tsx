@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import type { AgentRecordDraft, AgentRecordDraftDecision } from "@expresso/contracts";
+import { useChangedSinceMount } from "@/components/motion/useChangedSinceMount";
 import { Icon } from "@/components/ui/Icon";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,6 +20,8 @@ export function RecordDraftCard({ draft, disabled, onDecide }: { draft: AgentRec
   const [bodyMd, setBodyMd] = useState(draft.bodyMd);
   const [categoryId, setCategoryId] = useState(draft.categoryId ?? "");
   const [busy, setBusy] = useState(false);
+  // 누른 결과로 바뀐 문구만 떠오른다. 대화를 다시 열어 이미 끝난 카드는 움직이지 않는다.
+  const swapped = useChangedSinceMount(draft.status);
   const [error, setError] = useState<string | null>(null);
   const decide = async (decision: AgentRecordDraftDecision) => {
     setBusy(true); setError(null);
@@ -29,8 +32,8 @@ export function RecordDraftCard({ draft, disabled, onDecide }: { draft: AgentRec
     <header className={styles.head}><Icon name="note-pencil" size={15} /><span>새 기록 초안</span></header>
     <strong className={styles.doneTitle}>{draft.title}</strong>
     {draft.status === "approved" && draft.recordId
-      ? <p className={styles.done} data-state="approved"><Icon name="check-circle" weight="fill" size={13} />기록에 저장했습니다. <Link href={`/career/records/${draft.recordId}` as Route}>기록 열기</Link></p>
-      : <p className={styles.done}><Icon name="x-circle" size={13} />초안을 거절했습니다.</p>}
+      ? <p className={`${styles.done} ${swapped ? "ex-anim-reveal" : ""}`} data-state="approved"><Icon name="check-circle" weight="fill" size={13} />기록에 저장했습니다. <Link href={`/career/records/${draft.recordId}` as Route}>기록 열기</Link></p>
+      : <p className={`${styles.done} ${swapped ? "ex-anim-reveal" : ""}`}><Icon name="x-circle" size={13} />초안을 거절했습니다.</p>}
   </section>;
   const ready = !!title.trim() && !!bodyMd.trim() && !!categoryId;
   return <section className={styles.card} aria-label="새 기록 초안">

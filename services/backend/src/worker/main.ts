@@ -1,4 +1,6 @@
 import { loadRuntimeConfig } from "../config/runtime-config.js";
+import { ConsultantCommitments } from "../modules/consultant/index.js";
+import { lastConversationAt } from "../modules/agent-chat/index.js";
 import { MongoOutboxDispatcher } from "../platform/mongo-outbox.js";
 import { createMongoResource } from "../platform/mongodb.js";
 import { createReliableQueue } from "../platform/queue.js";
@@ -37,7 +39,7 @@ import { SchedulingService } from "../modules/scheduling/index.js";
 import { AiFactsReader, createJobSourceAdapters, BundledMarkReader, JobIngestService, SiteMarkReader } from "../modules/jobs/ingest/index.js";
 import { createScheduledJobProcessor } from "./processors/scheduled-jobs.js";
 import { createProposalProcessor } from "./processors/proposals.js";
-import { EntitlementService } from "../modules/entitlements/index.js";
+import { EntitlementService, outreachGate } from "../modules/entitlements/index.js";
 import { JobBoardService } from "../modules/jobs/index.js";
 import { CareerService } from "../modules/career/index.js";
 import { ActivityService } from "../modules/activities/index.js";
@@ -225,16 +227,20 @@ const jobIngestService = new JobIngestService(
 );
 // 능동 제안은 여기서만 AI를 부른다. 켠 사용자에게만 돌고, 예약 잡과 수집이 실행을 줄에 넣는다.
 const activityService = new ActivityService(database);
+const outreachEntitled = outreachGate(new EntitlementService(database));
 const proposalService = new ProposalService(database, {
   career: new CareerService(database),
   jobs: new JobBoardService(database),
   activities: activityService,
   consent: consentService,
-  credits: new EntitlementService(database),
+  entitled: outreachEntitled,
   writer: ai ? new AiProposalWriter(ai) : null,
 });
 const proposalProcessor = createProposalProcessor(proposalService);
-const schedulingService = new SchedulingService(database, { analytics: analyticsService, accounts: accountLifecycleService, ingest: jobIngestService, notifications: engagementService, proposals: proposalService, activities: activityService });
+// 컨설턴트의 확인 작업: 약속한 날에 묻고, 대화가 없을 때 연락한다. 알림은 알림 모듈이, 마지막 대화 시각은 대화 모듈이 준다.
+const consultantCommitments = new ConsultantCommitments(database);
+const consultantCheckins = { run: (at: Date) => consultantCommitments.runCheckins({ entitled: outreachEntitled, lastConversationAt: userId => lastConversationAt(database, userId), notify: (userId, subject, dedupeKey, when) => engagementService.notify(userId, "consultant", "/home", dedupeKey, when, subject) }, at) };
+const schedulingService = new SchedulingService(database, { analytics: analyticsService, accounts: accountLifecycleService, ingest: jobIngestService, notifications: engagementService, proposals: proposalService, activities: activityService, consultant: consultantCheckins });
 const scheduledJobProcessor = createScheduledJobProcessor(schedulingService);
 const queueWorker = createQueueWorker<Record<string, unknown>, Record<string, unknown>>({
   queueName: QUEUE_NAMES.domain,

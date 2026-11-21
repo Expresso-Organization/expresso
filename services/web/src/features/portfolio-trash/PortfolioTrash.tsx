@@ -49,7 +49,7 @@ export function TrashConfirm({ target, busy, error, onConfirm, onCancel }: { tar
   return <Frame open onOpenChange={(next) => { if (!next && !busy) onCancel(); }} title={<><Icon name="trash" size={16} />{question}</>}>
       <DialogPrimitive.Description className={styles.text} render={<div />}>
         <strong>{target.title}</strong>
-        {target.published ? <p data-tone="warning">공개 주소가 바로 닫힙니다. 되살려도 다시 배포해야 열립니다.</p> : null}
+        {target.published ? <p data-tone="warning">공개 주소가 바로 닫힙니다. 되살린 뒤 배포 화면에서 「다시 공개」를 눌러야 열립니다.</p> : null}
         <p>30일 동안 휴지통에서 되살릴 수 있습니다. 그 뒤에는 {purged}가 함께 지워집니다.</p>
       </DialogPrimitive.Description>
       {error ? <p role="alert" className={styles.issue}>{error}</p> : null}

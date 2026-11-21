@@ -1,0 +1,22 @@
+/* 약속 카드 — 답변 글 아래에 놓인다. 테두리 · 바탕 · 단추는 저장한 기록 카드와 같다. */
+.card { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; max-width: 520px; border: 1px solid var(--ex-border); border-radius: var(--ex-radius-card); background: var(--ex-bg-sunken); padding: 12px 14px; font-family: var(--ex-font-ui); color: var(--ex-fg); }
+.head { display: flex; align-items: center; gap: 6px; font-size: var(--ex-text-xs); font-weight: 600; color: var(--ex-fg-muted); }
+.card[data-state="open"] .head { color: var(--ex-accent-text); }
+.card[data-state="done"] .head { color: var(--ex-status-success-text); }
+.title { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: var(--ex-text-sm); overflow-wrap: anywhere; }
+.due { flex-shrink: 0; font-family: var(--ex-font-brand); font-size: var(--ex-text-xs); font-weight: 400; color: var(--ex-fg-body); }
+.detail { margin: 0; font-size: var(--ex-text-2xs); line-height: var(--ex-leading-relaxed); color: var(--ex-fg-body); overflow-wrap: anywhere; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; }
+.primary, .secondary { display: inline-flex; align-items: center; height: 30px; padding: 0 12px; border: none; border-radius: var(--ex-radius-control); font: inherit; font-size: var(--ex-text-xs); font-weight: 600; cursor: pointer; transition: background var(--ex-motion-instant); }
+.primary { background: var(--ex-accent); color: var(--ex-fg-on-accent); }
+.primary:hover:not(:disabled) { background: var(--ex-accent-hover); }
+.primary:disabled { background: var(--ex-bg-tint); color: var(--ex-fg-faint); cursor: default; }
+.secondary { background: var(--ex-bg-tint); color: var(--ex-fg); }
+.secondary:hover:not(:disabled) { background: var(--ex-bg-tint-strong); }
+.secondary:disabled { color: var(--ex-fg-faint); cursor: default; }
+.date { height: 30px; padding: 0 8px; border: 1px solid var(--ex-border-firm); border-radius: var(--ex-radius-control); background: var(--ex-bg); color: var(--ex-fg); font: inherit; font-size: var(--ex-text-xs); }
+.primary:focus-visible, .secondary:focus-visible { outline: none; box-shadow: var(--ex-focus-ring); }
+.date:focus-visible { outline: none; }
+.note { margin: 0; font-size: var(--ex-text-2xs); line-height: var(--ex-leading-relaxed); color: var(--ex-fg-muted); }
+.error { margin: 0; font-size: var(--ex-text-2xs); color: var(--ex-status-danger-text); }
+.pending { margin: 10px 0 0; font-family: var(--ex-font-ui); font-size: var(--ex-text-xs); color: var(--ex-fg-muted); }

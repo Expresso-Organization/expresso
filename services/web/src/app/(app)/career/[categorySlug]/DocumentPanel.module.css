@@ -107,11 +107,12 @@
   color: var(--ex-fg-muted);
 }
 
+/* 좌우 여백은 문서 열(CareerDocumentEditor .content)이 줍니다. 두 곳에서 주면 본문만 안쪽으로 밀립니다. */
 .body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 24px 26px;
+  padding: 16px 0 0;
 }
 
 .title {

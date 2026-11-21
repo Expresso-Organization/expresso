@@ -5,6 +5,7 @@ import { GeneratedPageSchema } from "./page.js";
 import { CareerDocumentBootstrapSchema } from "./career-editor.js";
 import { z } from "zod";
 import { UuidSchema, TimestampSchema } from "./common.js";
+import { ConsultantCommitmentSchema, ConsultantDiagnosisSchema } from "./consultant.js";
 import { AiEditProposalDetailSchema, AiEditProposalSchema } from "./career-ai.js";
 
 export const AgentContextSchema = z.strictObject({ kind: z.enum(["job", "record", "portfolio"]), id: UuidSchema });
@@ -57,6 +58,13 @@ export const AgentRecordDraftInputSchema = z.strictObject({
   bodyMd: z.string().trim().min(1).max(20_000),
   sources: z.array(recordDraftSourceSchema).min(1).max(10),
 });
+/** 이미 있는 기록의 끝에 더할 내용. 새 기록과 같은 출처 규칙을 따른다 — 이 대화에서 사용자가 한 말이어야 한다. */
+export const AgentRecordAppendInputSchema = z.strictObject({
+  recordId: UuidSchema,
+  bodyMd: z.string().trim().min(1).max(4_000),
+  sources: z.array(recordDraftSourceSchema).min(1).max(10),
+});
+export type AgentRecordAppendInput = z.infer<typeof AgentRecordAppendInputSchema>;
 export const AgentRecordDraftSchema = z.strictObject({
   draftId: UuidSchema,
   title: AgentRecordDraftInputSchema.shape.title,
@@ -276,15 +284,131 @@ export const AgentPageEditSchema = z.strictObject({
 export type AgentPageSelection = z.infer<typeof AgentPageSelectionSchema>;
 export type AgentPageElementEditInput = z.infer<typeof AgentPageElementEditInputSchema>;
 export type AgentPageEdit = z.infer<typeof AgentPageEditSchema>;
-export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional(), goalDraft: AgentGoalDraftSchema.optional(), gapReview: GapReviewSchema.optional(), planDraft: AgentPlanDraftSchema.optional(), replanDraft: AgentReplanDraftSchema.optional(), pageEdit: AgentPageEditSchema.optional() });
-export const AgentMessageSchema = z.strictObject({ id: UuidSchema, role: z.enum(["user", "assistant"]), text: z.string().max(64_000), tools: z.array(AgentToolResultSchema).max(30), selection: AgentPageSelectionSchema.optional(), createdAt: TimestampSchema });
+/**
+ * 대화 속 화면의 부품. 에이전트가 종류를 고르고 내용을 채워 내면 화면이 종류에 맞는 컴포넌트로 그린다.
+ *
+ * 부품은 도구 결과의 `ui` 칸에 실린다. 사용자가 조작하는 부품은 답을 받는다 — 답은 사용자 메시지의
+ * `reply`에 실려 오고, 같은 갱신에서 부품의 `answer`에도 적힌다(화면은 부품만 보고 고른 것을 표시한다).
+ */
+export const AgentChoiceOptionSchema = z.strictObject({ id: z.string().min(1).max(40), label: z.string().trim().min(1).max(120), description: z.string().trim().max(300).optional() });
+export const AgentUiAnswerSchema = z.strictObject({ optionIds: z.array(z.string().min(1).max(40)).min(1).max(8), messageId: UuidSchema });
+/** 선택지. `multiple`이 거짓이면 하나, 참이면 하나 이상을 고른다. */
+export const AgentChoicePartSchema = z.strictObject({
+  kind: z.literal("choice"),
+  partId: UuidSchema,
+  prompt: z.string().trim().min(1).max(400),
+  multiple: z.boolean(),
+  options: z.array(AgentChoiceOptionSchema).min(2).max(8),
+  answer: AgentUiAnswerSchema.nullable(),
+});
+/**
+ * 입력 칸 묶음. 짧게 적을 값(기간 · 인원 · 수치)을 한 번에 받는다 — 하나씩 물으면 질문마다 실행이 한 번씩 든다.
+ * `optional`이 거짓인 칸은 비워 둘 수 없다.
+ */
+export const AgentFormFieldSchema = z.strictObject({ id: z.string().min(1).max(40), label: z.string().trim().min(1).max(60), placeholder: z.string().trim().max(120).optional(), optional: z.boolean(), /** 날짜 칸이면 `date`. 값은 `YYYY-MM-DD`다. 없으면 글 칸이다. */ type: z.enum(["text", "date"]).optional() });
+export const AgentFormValueSchema = z.strictObject({ id: z.string().min(1).max(40), text: z.string().trim().max(300) });
+export const AgentFormPartSchema = z.strictObject({
+  kind: z.literal("form"),
+  partId: UuidSchema,
+  prompt: z.string().trim().min(1).max(400),
+  fields: z.array(AgentFormFieldSchema).min(1).max(4),
+  answer: z.strictObject({ values: z.array(AgentFormValueSchema).min(1).max(4), messageId: UuidSchema }).nullable(),
+});
+export const AgentUiPartSchema = z.discriminatedUnion("kind", [AgentChoicePartSchema, AgentFormPartSchema]);
+/** 에이전트가 `ask_form`에 넣는 것. 부품과 칸의 id는 서버가 붙인다. */
+export const AgentFormInputSchema = z.strictObject({
+  prompt: z.string().trim().min(1).max(400).describe("칸들을 묶는 질문 한 문장"),
+  fields: z.array(z.strictObject({ label: z.string().trim().min(1).max(60).describe("칸 이름. 「기간」 · 「팀 인원」처럼 짧게"), placeholder: z.string().trim().max(120).optional().describe("적는 법의 예. 없어도 된다"), optional: z.boolean().optional().describe("비워도 되는 칸이면 true"), type: z.enum(["text", "date"]).optional().describe("날짜를 받는 칸이면 date. 화면에 날짜 고르기가 뜨고 값은 YYYY-MM-DD로 온다") })).min(1).max(4).describe("짧게 적을 칸 1~4개. 이름이 서로 달라야 한다"),
+});
+/** 에이전트가 `ask_choice`에 넣는 것. 부품과 선택지의 id는 서버가 붙인다. */
+export const AgentChoiceInputSchema = z.strictObject({
+  prompt: z.string().trim().min(1).max(400).describe("사용자에게 하는 질문 한 문장"),
+  multiple: z.boolean().describe("여럿을 고를 수 있으면 true, 하나만 고르면 false"),
+  options: z.array(z.strictObject({ label: z.string().trim().min(1).max(120).describe("선택지의 글. 고르면 이 글이 사용자의 답으로 대화에 남는다"), description: z.string().trim().max(300).optional().describe("선택지를 풀어 주는 한 줄. 없어도 된다") })).min(2).max(8).describe("선택지 2~8개. 글이 서로 달라야 한다"),
+});
+/** 사용자가 부품에 한 답. 메시지 보내기와 저장된 사용자 메시지가 함께 쓴다. */
+export const AgentChoiceReplySchema = z.strictObject({ partId: UuidSchema, optionIds: z.array(z.string().min(1).max(40)).min(1).max(8) });
+export const AgentFormReplySchema = z.strictObject({ partId: UuidSchema, values: z.array(AgentFormValueSchema).min(1).max(4) });
+/** 부품의 종류마다 답의 모양이 다르다 — 선택지는 고른 id, 입력 칸 묶음은 칸마다의 값. 부품과 답의 종류가 맞는지는 서버가 본다. */
+export const AgentUiReplySchema = z.union([AgentChoiceReplySchema, AgentFormReplySchema]);
+export type AgentChoicePart = z.infer<typeof AgentChoicePartSchema>;
+export type AgentUiPart = z.infer<typeof AgentUiPartSchema>;
+export type AgentChoiceInput = z.infer<typeof AgentChoiceInputSchema>;
+export type AgentUiReply = z.infer<typeof AgentUiReplySchema>;
+export type AgentFormPart = z.infer<typeof AgentFormPartSchema>;
+export type AgentFormInput = z.infer<typeof AgentFormInputSchema>;
+/**
+ * 에이전트가 대화에서 정리해 저장한 커리어 기록. 저장은 승인 없이 일어나고, 사용자는 카드에서 되돌린다(기록은 휴지통으로 간다).
+ * `sources`는 근거가 된 사용자 메시지와 그 말을 그대로 옮긴 인용이다.
+ */
+export const AgentSavedRecordSchema = z.strictObject({
+  recordId: UuidSchema,
+  title: AgentRecordDraftInputSchema.shape.title,
+  categoryName: z.string().max(120),
+  bodyMd: AgentRecordDraftInputSchema.shape.bodyMd,
+  sources: AgentRecordDraftInputSchema.shape.sources,
+  undone: z.boolean(),
+});
+export type AgentSavedRecord = z.infer<typeof AgentSavedRecordSchema>;
+/**
+ * 대화에서 찾은 공고 · 활동의 목록과 비교 표. 보여 주기만 하는 부품이다 — 사용자의 답을 받지 않는다.
+ * 목록의 줄은 서버의 검색 결과이고, 표의 글은 컨설턴트가 채운 것이다.
+ */
+export const AgentFindItemSchema = z.strictObject({
+  kind: z.enum(["job", "activity"]),
+  id: z.string().min(1).max(120),
+  title: z.string().min(1).max(300),
+  /** 회사나 주최. */
+  sub: z.string().max(200),
+  /** 지역 · 경력 · 분야 같은 짧은 조각. */
+  meta: z.array(z.string().min(1).max(80)).max(4),
+  /** 마감까지 남은 날. 상시 모집이면 null. */
+  daysLeft: z.number().int().nullable(),
+  /** 공고는 앱 안의 주소, 활동은 출처의 주소다. */
+  href: z.string().min(1).max(2_000),
+  external: z.boolean(),
+});
+export const AgentFindListSchema = z.strictObject({
+  title: z.string().max(120),
+  items: z.array(AgentFindItemSchema).max(8),
+  /** 조건에 맞는 것의 전체 수. */
+  total: z.number().int().nonnegative(),
+});
+const findLimit = z.number().int().min(1).max(8).default(5).describe("돌려받을 건수(1~8).");
+export const AgentJobSearchInputSchema = z.strictObject({
+  query: z.string().trim().min(1).max(200).optional().describe("제목 · 회사 · 원문에서 찾을 글. 직군이나 기술로 거를 수 있으면 비운다."),
+  technology: z.string().trim().min(1).max(100).optional().describe("기술 이름 하나. 예: Kafka"),
+  family: z.string().trim().min(1).max(60).optional().describe("직군. 예: 백엔드 · 프론트엔드 · 데이터 · 모바일 · 인프라 · ML"),
+  location: z.string().trim().min(1).max(60).optional().describe("지역. 예: 서울 · 경기 · 판교"),
+  experience: z.number().int().min(0).max(50).optional().describe("사용자의 경력 연수. 신입이면 0. 이 경력으로 지원할 수 있는 공고만 남긴다."),
+  interested: z.boolean().optional().describe("참이면 사용자가 관심 표시한 공고만."),
+  limit: findLimit,
+});
+export const AgentActivitySearchInputSchema = z.strictObject({
+  kind: z.enum(["contest", "hackathon"]).optional().describe("공모전(contest)이나 해커톤(hackathon). 비우면 둘 다."),
+  query: z.string().trim().min(1).max(200).optional().describe("제목 · 주최 · 분야에서 찾을 글."),
+  limit: findLimit,
+});
+export const AgentTableSchema = z.strictObject({
+  title: z.string().trim().min(1).max(120),
+  columns: z.array(z.string().trim().min(1).max(40)).min(2).max(5),
+  rows: z.array(z.array(z.string().trim().max(200)).min(2).max(5)).min(1).max(8),
+});
+export type AgentFindItem = z.infer<typeof AgentFindItemSchema>;
+export type AgentFindList = z.infer<typeof AgentFindListSchema>;
+export type AgentJobSearchInput = z.infer<typeof AgentJobSearchInputSchema>;
+export type AgentActivitySearchInput = z.infer<typeof AgentActivitySearchInputSchema>;
+export type AgentTable = z.infer<typeof AgentTableSchema>;
+export const AgentToolResultSchema = z.strictObject({ id: z.string().max(200), name: z.string().max(100), status: z.enum(["running", "complete", "failed"]), summary: z.string().max(8_000), proposal: AiEditProposalDetailSchema.optional(), beforeDocument: CareerDocumentBootstrapSchema.shape.document.optional(), undone: z.boolean().optional(), review: RequirementReviewSchema.optional(), recordDraft: AgentRecordDraftSchema.optional(), goalDraft: AgentGoalDraftSchema.optional(), gapReview: GapReviewSchema.optional(), planDraft: AgentPlanDraftSchema.optional(), replanDraft: AgentReplanDraftSchema.optional(), pageEdit: AgentPageEditSchema.optional(), ui: AgentUiPartSchema.optional(), savedRecord: AgentSavedRecordSchema.optional(), commitment: ConsultantCommitmentSchema.optional(), diagnosis: ConsultantDiagnosisSchema.optional(), list: AgentFindListSchema.optional(), table: AgentTableSchema.optional() });
+export const AgentMessageSchema = z.strictObject({ id: UuidSchema, role: z.enum(["user", "assistant"]), text: z.string().max(64_000), tools: z.array(AgentToolResultSchema).max(30), selection: AgentPageSelectionSchema.optional(), reply: AgentUiReplySchema.optional(), createdAt: TimestampSchema });
 export const AgentRunSchema = z.strictObject({ id: UuidSchema, requestId: UuidSchema, status: z.enum(["running", "complete", "cancelled", "failed", "interrupted"]), error: z.string().max(1_000).nullable(), startedAt: TimestampSchema });
 export const AgentConversationSchema = z.strictObject({ id: UuidSchema, title: z.string().max(120), contexts: z.array(AgentContextSchema).max(10), messages: z.array(AgentMessageSchema).max(100), run: AgentRunSchema.nullable(), version: z.number().int().nonnegative(), updatedAt: TimestampSchema });
 export const AgentConversationResponseSchema = z.strictObject({ data: AgentConversationSchema });
 export const AgentConversationListSchema = z.strictObject({ data: z.array(AgentConversationSchema.omit({ messages: true })).max(100) });
 export const CreateAgentConversationSchema = z.strictObject({ contexts: z.array(AgentContextSchema).max(10).default([]) });
 export const AgentApiKeySchema = z.string().trim().min(20).max(300).regex(/^sk-ant-[A-Za-z0-9_-]+$/);
-export const SendAgentMessageSchema = z.strictObject({ requestId: UuidSchema, text: z.string().trim().min(1).max(8_000), selection: AgentPageSelectionSchema.optional() });
+/** 말을 보내거나 부품에 답한다. 부품에 답할 때는 `reply`만 보낸다 — 대화에 남는 글은 서버가 고른 선택지의 글로 만든다. */
+export const SendAgentMessageSchema = z.strictObject({ requestId: UuidSchema, text: z.string().trim().max(8_000).default(""), selection: AgentPageSelectionSchema.optional(), reply: AgentUiReplySchema.optional() }).refine(input => input.text.length > 0 || !!input.reply, { message: "보낼 말이나 부품의 답이 있어야 합니다.", path: ["text"] });
 export const AddAgentContextSchema = z.strictObject({ context: AgentContextSchema });
 export const AgentApprovalSchema = z.strictObject({ proposalId: UuidSchema, action: z.enum(["apply", "reject", "undo"]), expectedDocumentVersion: z.number().int().nonnegative(), commandIndexes: z.array(z.number().int().nonnegative()).max(100).optional(), propertyChangeIndexes: z.array(z.number().int().nonnegative()).max(50).optional() });
 export type AgentContext = z.infer<typeof AgentContextSchema>;

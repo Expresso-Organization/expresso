@@ -8,6 +8,7 @@ import { Icon } from "@/components/ui/Icon";
 import type { CareerViewRendererProps } from "./view-types";
 import { keyboardActivate } from "./view-types";
 import { groupColumns, groupKeyOf, groupValue, groupingFor } from "./view-logic";
+import { RecordSelectBox } from "./RecordSelectBox";
 import styles from "./views.module.css";
 
 type Drop = { recordId: string; groupKey: string; beforeId: string | null };
@@ -99,7 +100,7 @@ export function BoardView(props: CareerViewRendererProps) {
           onDrop={drop}
           onKeyDown={(event) => keyboardActivate(event, record.id, boardRecords, props.onActivate)}
         >
-          <label><input aria-label={`${record.title || "제목 없음"} 선택`} type="checkbox" checked={props.selectedIds.has(record.id)} onChange={() => props.onToggle(record.id)} /></label>
+          <RecordSelectBox title={record.title} checked={props.selectedIds.has(record.id)} onToggle={() => props.onToggle(record.id)} />
           <button type="button" onClick={() => props.onActivate(record.id)}>{record.title || "제목 없음"}</button>
           <div className={styles.moveButtons}>
             <button type="button" aria-label={`${record.title || "제목 없음"} ${columns[columnIndex - 1]?.label ?? ""}(으)로 옮기기`} disabled={columnIndex === 0} onClick={() => move({ recordId: record.id, groupKey: columns[columnIndex - 1]!.key, beforeId: null })}><Icon name="arrow-left" size={12} /></button>

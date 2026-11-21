@@ -1,46 +1,124 @@
+import { mongoCollections } from "@expresso/database";
+import sharp from "sharp";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { createMongoFixture } from "../../../test/support/mongodb.js";
 import { ActivityService, daysUntil, seoulDate } from "./service.js";
+import { ActivitySourceError, type ActivityRow, type ActivitySource } from "./sources/adapter.js";
 
-const page = (rows: [id: string, title: string, day: string][]) => rows.map(([id, title, day]) => `
-  <li ><div class="tit"><a href="?c=find&s=1&gub=1&cidx=20&gbn=view&gp=1&ix=${id}">${title}</a>
-  <div class="sub-tit">분야 : 웹/모바일/IT</div></div><div class="organ">주최</div>
-  <div class="day">${day} <span class="dday ing">접수중</span></div></li>`).join("");
+const row = (sourceId: string, title: string, deadlineOn: string, extra: Partial<ActivityRow> = {}): ActivityRow => ({
+  sourceId, kind: "contest", title, host: "주최", fields: ["웹/모바일/IT"], url: `https://example.com/${sourceId}`, homepageUrl: null,
+  applyStartOn: null, deadlineOn, deadlinePrecision: "day", startsOn: null, eligibility: null, prize: null, tuition: null, nbcardRequired: null, status: "접수중", posterUrl: null, ...extra,
+});
+
+/** 시험용 출처 — `rows`를 바꿔 가며 돌리고, `fail`이면 던진다. */
+const source = (name: ActivitySource["name"]) => {
+  const state: { rows: ActivityRow[]; fail: boolean } = { rows: [], fail: false };
+  const adapter: ActivitySource = { name, fetch: async () => { if (state.fail) throw new ActivitySourceError(`${name}: no rows`); return state.rows; } };
+  return { adapter, state };
+};
 
 describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB_URL))("활동 수집", () => {
   let fixture: Awaited<ReturnType<typeof createMongoFixture>>;
   beforeAll(async () => { fixture = await createMongoFixture("activities"); }, 60000);
   afterAll(async () => { await fixture?.dispose(); });
 
-  it("처음 본 활동에 처음 본 때를 남기고, 다시 보면 마감일만 고친다", async () => {
+  it("처음 본 활동에 처음 본 때를 남기고, 다시 보면 칸만 고친다", async () => {
+    const wevity = source("wevity");
+    const service = new ActivityService(fixture.resource, [wevity.adapter]);
     const first = new Date("2026-11-15T03:00:00Z");
-    let pages: Record<number, string | null> = { 20: page([["1", "앱 개발 공모전", "D-3"], ["2", "바이브코딩 해커톤", "D-10"]]), 21: null };
-    // 첫 쪽만 접수 중이다. 둘째 쪽부터는 접수가 끝난 줄뿐이라 읽기를 멈춘다.
-    const asked: string[] = [];
-    const service = new ActivityService(fixture.resource, async (field, at) => { asked.push(`${field}:${at}`); return at === 1 ? pages[field] ?? null : page([["9", "지난 공모전", "D+3"]]); });
-
-    expect(await service.collect(first)).toEqual({ read: 2, added: 2, updated: 0 });
-    expect(asked).toEqual(["20:1", "20:2", "21:1"]);
+    wevity.state.rows = [row("1", "앱 개발 공모전", "2026-11-18"), row("2", "바이브코딩 해커톤", "2026-11-25", { kind: "hackathon", applyStartOn: "2026-11-20" })];
+    expect(await service.collect(first)).toMatchObject({ read: 2, added: 2, updated: 0, sources: [{ source: "wevity", read: 2, error: null }] });
 
     const second = new Date("2026-11-16T03:00:00Z");
-    pages = { 20: page([["1", "앱 개발 공모전", "D-2"], ["3", "새 공모전", "D-20"]]), 21: null };
-    expect(await service.collect(second)).toEqual({ read: 2, added: 1, updated: 1 });
+    wevity.state.rows = [row("1", "앱 개발 공모전", "2026-11-18", { prize: "총 500만원" }), row("2", "바이브코딩 해커톤", "2026-11-25", { kind: "hackathon", applyStartOn: "2026-11-20" }), row("3", "새 공모전", "2026-12-05")];
+    expect(await service.collect(second)).toMatchObject({ read: 3, added: 1, updated: 2 });
 
-    const contests = await service.list({ kind: "contest", limit: 50 }, second);
-    expect(contests.map(({ id, daysLeft }) => [id, daysLeft])).toEqual([["wevity:1", 2], ["wevity:3", 20]]);
-    expect(contests[0]?.firstSeenAt).toBe(first.toISOString());
-    expect(contests[1]?.firstSeenAt).toBe(second.toISOString());
-    expect((await service.list({ kind: "hackathon", limit: 50 }, second)).map(({ id }) => id)).toEqual(["wevity:2"]);
+    const contests = await service.page({ kind: "contest", limit: 50 }, second);
+    expect(contests.total).toBe(2);
+    expect(contests.data.map(({ id, daysLeft, prize }) => [id, daysLeft, prize])).toEqual([["wevity:1", 2, "총 500만원"], ["wevity:3", 19, null]]);
+    expect(contests.data[0]?.firstSeenAt).toBe(first.toISOString());
+    const [hackathon] = await service.list({ kind: "hackathon", limit: 50 }, second);
+    expect(hackathon).toMatchObject({ id: "wevity:2", status: "접수예정", applyStartOn: "2026-11-20", source: "wevity" });
+    expect((await service.list({ limit: 50, sort: "fresh" }, second))[0]?.id).toBe("wevity:3");
   });
 
-  it("읽히는 줄이 없으면 저장분을 그대로 두고, 접수가 끝난 활동은 목록에서 빠진다", async () => {
-    const service = new ActivityService(fixture.resource, async () => "<html>점검 중</html>");
+  it("포스터를 폭 480 webp로 줄여 보관하고, 같은 주소는 다시 받지 않으며, 주소가 없어지면 있던 포스터를 둔다", async () => {
+    const linkareer = source("linkareer");
+    // 출처 그림 대신 만든 세로 그림(1000×1400 PNG). 받은 주소를 센다.
+    const png = await sharp({ create: { width: 1000, height: 1400, channels: 3, background: "#d97757" } }).png().toBuffer();
+    const fetched: string[] = [];
+    const service = new ActivityService(fixture.resource, [linkareer.adapter], async (url) => {
+      fetched.push(url);
+      if (url.endsWith("/broken")) throw new Error("poster 404");
+      return { bytes: png, mediaType: "image/png" };
+    });
+    const at = new Date("2026-11-19T03:00:00Z");
+    linkareer.state.rows = [
+      row("p1", "포스터 공모전", "2026-12-01", { posterUrl: "https://cdn.example.com/p1.jpg" }),
+      row("p2", "그림 없는 공모전", "2026-12-02"),
+      row("p3", "깨진 그림 공모전", "2026-12-03", { posterUrl: "https://cdn.example.com/broken" }),
+    ];
+    expect((await service.collect(at)).posters).toEqual({ stored: 1, failed: 1 });
+    const [withPoster, plain, broken] = (await service.list({ kind: "contest", limit: 50 }, at)).filter(({ id }) => id.startsWith("linkareer:p"));
+    expect(withPoster?.poster).toMatchObject({ width: 480, height: 672 });
+    expect(withPoster?.poster?.url).toMatch(/^\/v1\/activities\/linkareer%3Ap1\/poster\?v=[0-9a-f]{16}$/);
+    expect(plain?.poster).toBeNull();
+    expect(broken?.poster).toBeNull();
+    const stored = await service.poster("linkareer:p1");
+    expect(stored?.mediaType).toBe("image/webp");
+    expect((await sharp(stored!.bytes).metadata()).format).toBe("webp");
+
+    // 다음 수집: 같은 주소는 받지 않는다. 출처가 그림을 주지 않게 되어도 있던 포스터는 남는다.
+    fetched.length = 0;
+    linkareer.state.rows = [row("p1", "포스터 공모전", "2026-12-01", { posterUrl: null }), row("p3", "깨진 그림 공모전", "2026-12-03", { posterUrl: "https://cdn.example.com/broken" })];
+    await service.collect(new Date("2026-11-20T03:00:00Z"));
+    expect(fetched).toEqual(["https://cdn.example.com/broken"]);
+    expect((await service.list({ kind: "contest", limit: 50 }, new Date("2026-11-20T03:00:00Z"))).find(({ id }) => id === "linkareer:p1")?.poster?.width).toBe(480);
+  });
+
+  it("출처가 실패하면 나머지를 저장하고 실패를 남긴다. 실패한 출처의 활동은 그대로 보인다", async () => {
+    const devevent = source("devevent"); const boottent = source("boottent");
+    const service = new ActivityService(fixture.resource, [devevent.adapter, boottent.adapter]);
     const at = new Date("2026-11-17T03:00:00Z");
-    expect(await service.collect(at)).toEqual({ read: 0, added: 0, updated: 0 });
-    // 「앱 개발 공모전」은 11-18 마감이라 남고, 11-19에는 빠진다.
-    expect((await service.list({ limit: 50 }, at)).some(({ id }) => id === "wevity:1")).toBe(true);
-    expect((await service.list({ limit: 50 }, new Date("2026-11-19T03:00:00Z"))).some(({ id }) => id === "wevity:1")).toBe(false);
+    devevent.state.rows = [row("d1", "데이터 해커톤", "2026-11-30", { kind: "hackathon" })];
+    boottent.state.rows = [row("b1", "백엔드 과정 3기", "2026-12-10", { kind: "bootcamp", tuition: 0, nbcardRequired: true })];
+    await service.collect(at);
+
+    boottent.state.fail = true;
+    const later = new Date("2026-11-18T03:00:00Z");
+    const result = await service.collect(later);
+    expect(result.sources).toEqual([{ source: "devevent", read: 1, error: null }, { source: "boottent", read: 0, error: "boottent: no rows" }]);
+    expect(await mongoCollections(fixture.resource.db).activitySources.findOne({ _id: "boottent" })).toMatchObject({ lastSucceededAt: at, lastError: "boottent: no rows", lastRead: 0 });
+    expect((await service.list({ kind: "bootcamp", limit: 50 }, later)).map(({ id, tuition }) => [id, tuition])).toEqual([["boottent:b1", 0]]);
+  });
+
+  it("출처의 성공한 실행에서 보이지 않은 활동은 목록에서 빠진다", async () => {
+    const contestkorea = source("contestkorea");
+    const service = new ActivityService(fixture.resource, [contestkorea.adapter]);
+    contestkorea.state.rows = [row("c1", "남는 공모전", "2026-12-20"), row("c2", "내려간 공모전", "2026-12-20")];
+    await service.collect(new Date("2026-11-17T03:00:00Z"));
+    contestkorea.state.rows = [row("c1", "남는 공모전", "2026-12-20")];
+    const at = new Date("2026-11-18T03:00:00Z");
+    await service.collect(at);
+    const ids = (await service.list({ limit: 100 }, at)).map(({ id }) => id);
+    expect(ids).toContain("contestkorea:c1");
+    expect(ids).not.toContain("contestkorea:c2");
+  });
+
+  it("여러 출처의 같은 활동은 대표 하나만 보인다", async () => {
+    const wevity = source("wevity"); const linkareer = source("linkareer");
+    const service = new ActivityService(fixture.resource, [wevity.adapter, linkareer.adapter]);
+    wevity.state.rows = [row("w9", "2026 서울관광 프롬프톤", "2026-11-29", { kind: "hackathon", homepageUrl: "https://sto.or.kr/notice/1" })];
+    linkareer.state.rows = [
+      row("l1", "[2026 서울관광 프롬프톤] 참가자모집", "2026-11-29", { kind: "hackathon" }),
+      row("l2", "2026 서울관광 프롬프톤 (Seoul Tourism Prompt-thon)", "2026-11-29", { kind: "hackathon", homepageUrl: "https://prompt2026.sto.or.kr/" }),
+    ];
+    const at = new Date("2026-11-19T03:00:00Z");
+    expect((await service.collect(at)).duplicates).toBeGreaterThanOrEqual(2);
+    const hackathons = await service.list({ kind: "hackathon", limit: 100 }, at);
+    expect(hackathons.filter(({ title }) => title.includes("프롬프톤")).map(({ id }) => id)).toEqual(["wevity:w9"]);
+    expect((await mongoCollections(fixture.resource.db).activities.findOne({ _id: "linkareer:l2" }))?.duplicateOf).toBe("wevity:w9");
   });
 
   it("남은 날은 서울 날짜로 센다", () => {

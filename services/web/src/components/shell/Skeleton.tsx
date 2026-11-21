@@ -8,6 +8,8 @@ import styles from "./Skeleton.module.css";
  * 폭과 높이는 부르는 쪽이 준다 — 실제로 그 자리에 오는 글의 크기를 알고 있는
  * 것은 화면이지 이 부품이 아니다.
  *
+ * 막대는 150ms 동안 보이지 않다가 나타난다(`ex-anim-skeleton`). 그보다 짧은 대기에는 막대가 번쩍이지 않는다.
+ *
  * 폭을 주지 않으면 칸을 채운다. 다만 가로로 늘어선 자리에서는 폭 100%가 옆
  * 것을 칸 밖으로 밀어내므로, 그런 자리에서는 `grow`로 "남은 만큼"이라고
  * 적어 준다 — 세로로 쌓인 자리에서 같은 규칙을 쓰면 막대가 위아래로 늘어난다.
@@ -35,7 +37,7 @@ export function Skel({
   return (
     <span
       aria-hidden="true"
-      className={`${styles.bar} ex-anim-shimmer${className ? ` ${className}` : ""}`}
+      className={`${styles.bar} ex-anim-skeleton${className ? ` ${className}` : ""}`}
       style={{
         display: "block",
         width: circle ? size : (w ?? "100%"),
@@ -65,7 +67,7 @@ export function SkelCard({
   return (
     <div
       aria-hidden="true"
-      className={`${styles.frame}${className ? ` ${className}` : ""}`}
+      className={`${styles.frame} ex-anim-appear${className ? ` ${className}` : ""}`}
       style={{ height: h, borderRadius: radius, ...style }}
     >
       {children}

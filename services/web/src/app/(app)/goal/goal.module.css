@@ -91,3 +91,220 @@
   outline: none;
   box-shadow: var(--ex-focus-ring);
 }
+
+/* 내 진행 — 구직 목표 아래에 컨설턴트가 기억하는 단계 · 조건 · 최근 대화를 구획으로 세운다. */
+
+.progress {
+  display: grid;
+  gap: 34px;
+  margin-top: 44px;
+  padding-top: 34px;
+  border-top: 1px solid var(--ex-border-inner);
+}
+
+.section {
+  display: grid;
+  gap: 10px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: var(--ex-text-sm);
+  font-weight: 600;
+  color: var(--ex-fg-body);
+}
+
+.sectionHint,
+.empty {
+  margin: 0;
+  font-size: var(--ex-text-xs);
+  line-height: var(--ex-leading-relaxed);
+  color: var(--ex-fg-muted);
+  word-break: keep-all;
+}
+
+.stages,
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.stageOption {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 14px;
+  border: none;
+  border-radius: var(--ex-radius-control);
+  background: var(--ex-bg-tint);
+  color: var(--ex-fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--ex-motion-instant);
+}
+
+.stageOption:hover:not(:disabled):not([data-selected]) {
+  background: var(--ex-bg-tint-strong);
+}
+
+.stageOption[data-selected] {
+  cursor: default;
+}
+
+.stageOption:disabled:not([data-selected]) {
+  color: var(--ex-fg-faint);
+  cursor: default;
+}
+
+.mark {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  border: 1px solid var(--ex-border-firm);
+  border-radius: var(--ex-radius-pill);
+  background: var(--ex-bg);
+  color: var(--ex-fg-on-accent);
+}
+
+.stageOption[data-selected] .mark {
+  border-color: var(--ex-accent);
+  background: var(--ex-accent);
+}
+
+.stageText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.stageLabel {
+  font-size: var(--ex-text-sm);
+  font-weight: 600;
+}
+
+.stageDescription {
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-muted);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: var(--ex-radius-control);
+  background: var(--ex-bg-sunken);
+}
+
+.kind {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: var(--ex-radius-pill);
+  background: var(--ex-bg-tint);
+  font-size: var(--ex-text-3xs);
+  color: var(--ex-fg-muted);
+}
+
+.kind[data-kind="avoid"] {
+  background: var(--ex-status-danger-surface);
+  color: var(--ex-status-danger-text);
+}
+
+.rowText {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg);
+  overflow-wrap: anywhere;
+}
+
+.remove {
+  flex-shrink: 0;
+  height: 28px;
+  padding: 0 10px;
+  border: none;
+  border-radius: var(--ex-radius-control);
+  background: transparent;
+  color: var(--ex-fg-muted);
+  font: inherit;
+  font-size: var(--ex-text-xs);
+  cursor: pointer;
+  transition: background var(--ex-motion-instant);
+}
+
+.remove:hover:not(:disabled) {
+  background: var(--ex-bg-tint);
+  color: var(--ex-fg);
+}
+
+.conversation {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: var(--ex-radius-control);
+  background: var(--ex-bg-sunken);
+  text-decoration: none;
+  transition: background var(--ex-motion-instant);
+}
+
+.conversation:hover {
+  background: var(--ex-bg-tint);
+}
+
+.conversationHead {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.date {
+  flex-shrink: 0;
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-muted);
+}
+
+.outcomes {
+  display: grid;
+  gap: 2px;
+  font-size: var(--ex-text-2xs);
+  line-height: var(--ex-leading-normal);
+  color: var(--ex-fg-muted);
+  overflow-wrap: anywhere;
+}
+
+.stageOption:focus-visible,
+.remove:focus-visible,
+.conversation:focus-visible {
+  outline: none;
+  box-shadow: var(--ex-focus-ring);
+}
+
+/* 하기로 한 일의 줄 — 그 약속을 잡은 대화로 간다. */
+.rowLink {
+  text-decoration: none;
+  transition: background var(--ex-motion-instant);
+}
+
+.rowLink:hover {
+  background: var(--ex-bg-tint);
+}
+
+.rowLink:focus-visible {
+  outline: none;
+  box-shadow: var(--ex-focus-ring);
+}
+
+/* 목표 진단 — 대화의 진단 카드를 그대로 세운다. 카드가 대화에서 쓰는 위 여백과 폭 상한은 여기서 푼다. */
+.diagnosis > section {
+  margin-top: 0;
+  max-width: none;
+}

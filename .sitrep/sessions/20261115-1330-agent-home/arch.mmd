@@ -1,21 +1,21 @@
 flowchart TD
-  MERGE[main 머지] --> DEPLOY[deploy.sh]
-  DEPLOY --> MIG[마이그레이션]
-  MIG --> BUILD[웹 빌드<br/>NEXT_DIST_DIR=.next-build]
-  BUILD --> CFG[next.config.ts<br/>빌드용 tsconfig 고르기]
-  CFG --> TSB[tsconfig.next-build.json]
-  TSB --> FRESH[.next-build/types<br/>이번 빌드의 타입]
-  CFG -.고치기 전.-> STALE[.next/types<br/>직전 배포의 타입]
-  BUILD --> CHECK[타입 검사<br/>증분 캐시 없이 전부]
-  FRESH --> CHECK
-  CHECK --> SWAP[.next 교체 · 재시작]
-  GUARD[tsconfig.test.ts] --> TSB
-  PR{PR 머지 D3} --> MERGE
-  TC[pnpm typecheck의 경로 타입] --> CHECK
+  NAV[화면 이동] --> SK[스켈레톤 150ms 숨김]
+  SK --> RV[AppBody 떠오름 CSS]
+  CHAT[지난 대화] --> ID[첫 렌더부터 대화 id]
+  ID --> FADE[기록 도착 떠오름]
+  NEW[새 대화] --> CLOSE[agent-chat-close 전환]
+  FEED[제안 갱신] --> CARD[카드 빠짐 · 자리 옮김]
+  FEED --> SHIFT[스크롤 당김 홈 교차]
+  VIEW[기록 보기] --> XF[보기 모양 교차]
+  LIB[라이브러리] --> PANE[지면 칸 Suspense]
+  APPR[승인 카드] --> SWAP[바뀐 문구만 떠오름]
+  ONB[온보딩] --> PANEL[본문 이어짐]
+  PR{PR 머지 D7} --> DEPLOY[운영 배포]
+  SIDE[사이드바 다시 그림 T20]
   classDef done fill:#d1fae5,stroke:#059669
   classDef doing fill:#fef3c7,stroke:#d97706
   classDef decide fill:#fee2e2,stroke:#dc2626
   classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4
-  class DEPLOY,MIG,BUILD,CFG,TSB,FRESH,CHECK,SWAP,GUARD,STALE,MERGE done
+  class NAV,SK,RV,CHAT,ID,FADE,NEW,CLOSE,FEED,CARD,SHIFT,VIEW,XF,LIB,PANE,APPR,SWAP,ONB,PANEL done
   class PR decide
-  class TC todo
+  class DEPLOY,SIDE todo
