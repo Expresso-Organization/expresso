@@ -1,4 +1,3 @@
-import type { Route } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -120,11 +119,11 @@ export function WizardSteps({
             {index > 0 ? <span className={styles.connector} aria-hidden="true" /> : null}
             {/*
               완료 단계만 클릭으로 되돌아갈 수 있다. 미래 단계는 비활성.
-              디자인 선택은 끝난 생성을 다듬기로 되돌려 보내므로 `again=1`로 카탈로그를 연다.
+              지난 단계는 모두 그 제작의 대화(`/brew/[brewId]`)가 잇는다. 디자인 선택은 다 만든 제작도 다시 만들도록 `again=1`을 붙인다.
             */}
             {done && brewId ? (
               <Link
-                href={`/brew/${brewId}/${step.segment}${step.key === "design" ? "?again=1" : ""}` as Route}
+                href={step.key === "design" ? `/brew/${brewId}?again=1` : `/brew/${brewId}`}
                 className={className}
               >
                 {mark}

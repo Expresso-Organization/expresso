@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 
 import { isoDate } from "../dates.js";
-import { ActivitySourceError, fetchText, statusOn, type ActivityRow, type ActivitySource, type FetchText } from "./adapter.js";
+import { ActivitySourceError, fetchText, imageUrl, statusOn, type ActivityRow, type ActivitySource, type FetchText } from "./adapter.js";
 import { isHackathon } from "./text.js";
 
 /**
@@ -98,7 +98,16 @@ export function devEventRow(item: DevEventItem, at: Date): ActivityRow | null {
     tuition: null,
     nbcardRequired: null,
     status: statusOn(applyStartOn, at),
+    posterUrl: null,
   };
+}
+
+/** 행사 페이지의 대표 그림(`og:image`). 속성 순서가 사이트마다 달라 두 순서를 다 본다. */
+export function openGraphImage(html: string, base: string): string | null {
+  const head = html.slice(0, 200_000);
+  const value = /<meta[^>]+property=["']og:image["'][^>]*\scontent=["']([^"']+)["']/i.exec(head)?.[1]
+    ?? /<meta[^>]+content=["']([^"']+)["'][^>]*\sproperty=["']og:image["']/i.exec(head)?.[1];
+  return imageUrl(value?.replace(/&amp;/g, "&"), base);
 }
 
 export class DevEventSource implements ActivitySource {
@@ -114,6 +123,10 @@ export class DevEventSource implements ActivitySource {
       const row = devEventRow(item, at);
       if (row) rows.set(row.sourceId, row);
     }
+    // README에는 그림이 없다. 행사 페이지(luma · onoffmix 등)의 대표 그림을 찾는다 — 못 읽으면 포스터 없이 남는다.
+    await Promise.all([...rows.values()].map(async (row) => {
+      row.posterUrl = await this.fetchPage(row.url).then((html) => openGraphImage(html, row.url)).catch(() => null);
+    }));
     return [...rows.values()];
   }
 }

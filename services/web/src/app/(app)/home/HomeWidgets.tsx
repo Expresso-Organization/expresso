@@ -9,7 +9,6 @@ import { Icon } from "@/components/ui/Icon";
 import { homeEngagement, watchedJobs } from "@/lib/app-data";
 import { activities, career, consultant, jobs, portfolios, proposals } from "@/lib/api/endpoints";
 
-import { resumeStep } from "../brew/new/resume-step";
 import { CheckinFeed } from "./CheckinFeed";
 import { ProposalFeed } from "./ProposalFeed";
 import { briefingSteps } from "./briefing";
@@ -67,7 +66,7 @@ async function ruleFindings(accessToken: string, recordTotal: number) {
     watched: watched.data,
     jobTotal: 0,
     contests: [],
-    brewHref: (brew) => `/brew/${brew.id}/${resumeStep(brew.status).segment}`,
+    brewHref: (brew) => `/brew/${brew.id}`,
   }).flatMap((step) => step.findings);
 }
 

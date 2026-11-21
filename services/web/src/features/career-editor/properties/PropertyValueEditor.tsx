@@ -1,12 +1,13 @@
 "use client";
 
 import { CareerPropertyValueV2Schema, type CareerPropertyDefinitionV2, type CareerPropertyValueV2 } from "@expresso/contracts";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 
 import { Icon } from "@/components/ui/Icon";
+import { DatePopout, OptionPopout } from "@/features/career-editor/views/ValuePopouts";
+import { formatPeriodRange } from "@/features/career-editor/views/view-logic";
 
 import { commitOnEnter, formatTimestamp, propertyOptions, ReadOnlyValue } from "./property-editors";
-import { PropertySelect } from "./PropertySelect";
 import styles from "./properties.module.css";
 
 export interface PropertyValueEditorProps {
@@ -30,9 +31,23 @@ function IssueBadge({ issue }: { issue: string | null }) {
   );
 }
 
+/**
+ * 값을 글자로 보이고, 누르면 그 자리에 고르는 팝업을 여는 칸입니다.
+ * 브라우저 기본 컨트롤(체크박스 목록 · 날짜 입력) 대신 표 셀과 같은 팝업을 쓰게 합니다.
+ */
+function PopoutField({ label, display, empty, disabled, issue, children }: { label: string; display: ReactNode; empty: boolean; disabled: boolean; issue: string | null; children(anchorRef: RefObject<HTMLButtonElement | null>, close: () => void): ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const anchorRef = useRef<HTMLButtonElement | null>(null);
+  const close = useCallback(() => setOpen(false), []);
+  return <div className={styles.fieldRow}>
+    <button ref={anchorRef} type="button" className={styles.valueTrigger} aria-label={label} aria-haspopup="dialog" aria-expanded={open} data-empty={empty ? "true" : "false"} disabled={disabled} onClick={() => setOpen((current) => !current)}>{display}</button>
+    <IssueBadge issue={issue} />
+    {open ? children(anchorRef, close) : null}
+  </div>;
+}
+
 function initialDraft(value: CareerPropertyValueV2 | null): string {
   if (!value) return "";
-  if (value.type === "date") return value.value.start;
   if (value.type === "created_time" || value.type === "updated_time") return formatTimestamp(value.value);
   if (Array.isArray(value.value)) return "";
   return String(value.value ?? "");
@@ -40,13 +55,10 @@ function initialDraft(value: CareerPropertyValueV2 | null): string {
 
 export function PropertyValueEditor({ definition, value, onCommit, onCreateOption, disabled = false }: PropertyValueEditorProps) {
   const [draft, setDraft] = useState(() => initialDraft(value));
-  const [dateEnd, setDateEnd] = useState(() => value?.type === "date" ? value.value.end ?? "" : "");
   const [issue, setIssue] = useState<string | null>(null);
-  // 새 옵션 이름은 값 초안과 따로 둔다. 값이 바뀔 때 초안을 되돌리는 effect가 입력 중인 이름을 지우지 않게 한다.
-  const [optionName, setOptionName] = useState("");
   const [saving, setSaving] = useState(false);
   const options = useMemo(() => propertyOptions(definition), [definition]);
-  useEffect(() => { setDraft(initialDraft(value)); setDateEnd(value?.type === "date" ? value.value.end ?? "" : ""); setIssue(null); }, [value]);
+  useEffect(() => { setDraft(initialDraft(value)); setIssue(null); }, [value]);
 
   async function commit(next: CareerPropertyValueV2 | null) {
     if (next === null) { setSaving(true); setIssue(null); try { await onCommit(null); } catch (error) { setIssue(error instanceof Error ? error.message : "저장하지 못했습니다."); } finally { setSaving(false); } return; }
@@ -73,31 +85,27 @@ export function PropertyValueEditor({ definition, value, onCommit, onCreateOptio
   if (definition.type === "checkbox") {
     return <label className={styles.checkboxLabel}><input aria-label={definition.name} type="checkbox" checked={value?.type === "checkbox" ? value.value : false} disabled={disabled || saving} onChange={(event) => void commit({ type: "checkbox", value: event.target.checked })} /><span>{value?.type === "checkbox" && value.value ? "예" : "아니요"}</span></label>;
   }
-  const optionInput = (choose: (optionId: string) => Promise<void>) => onCreateOption ? <div className={styles.fieldRow}><input className={styles.input} aria-label={`${definition.name} 새 항목`} placeholder="새 항목 입력 후 Enter" value={optionName} disabled={disabled || saving} onChange={(event) => { setOptionName(event.target.value); setIssue(null); }} onKeyDown={(event) => { if (event.nativeEvent.isComposing) return; commitOnEnter(event, () => {
-    if (!optionName.trim()) return;
-    setSaving(true); setIssue(null);
-    void onCreateOption(optionName).then(async (optionId) => { setOptionName(""); setSaving(false); await choose(optionId); }).catch((error: unknown) => { setSaving(false); setIssue(error instanceof Error ? error.message : "항목을 추가하지 못했습니다."); });
-  }); }} /><IssueBadge issue={issue} /></div> : null;
   if (definition.type === "select") {
-    return <div className={styles.fieldEditor}><PropertySelect
-      label={definition.name}
-      value={value?.type === "select" ? value.value ?? "" : ""}
-      placeholder="선택 안 함"
-      disabled={disabled || saving}
-      options={[{ value: "", label: "선택 안 함" }, ...options.map((option) => ({ value: option.id, label: option.name }))]}
-      onChange={(next) => void commit({ type: "select", value: next || null })}
-    />{optionInput((optionId) => commit({ type: "select", value: optionId }))}</div>;
+    // 다중 선택과 같은 단추 + 옵션 팝업입니다. 옵션 만들기도 팝업 안에서 합니다.
+    const chosen = value?.type === "select" && value.value ? options.find((option) => option.id === value.value)?.name ?? null : null;
+    return <PopoutField label={definition.name} disabled={disabled || saving} issue={issue} empty={!chosen} display={chosen ? <span className={styles.valueChips}><small>{chosen}</small></span> : "비어 있음"}>
+      {(anchorRef, close) => <OptionPopout definition={definition} value={value?.type === "select" ? value.value : null} anchorRef={anchorRef} onCommit={(next) => void commit(next)} onCreateOption={onCreateOption} onClose={close} />}
+    </PopoutField>;
   }
   if (definition.type === "multi_select") {
-    const selected = new Set(value?.type === "multi_select" ? value.value : []);
-    return <div className={styles.fieldEditor}><div className={styles.multiSelect} aria-label={definition.name}>{options.map((option) => <label key={option.id} className={styles.optionCheck}><input type="checkbox" checked={selected.has(option.id)} disabled={disabled || saving} onChange={() => { const next = new Set(selected); if (next.has(option.id)) next.delete(option.id); else next.add(option.id); void commit({ type: "multi_select", value: [...next] }); }} />{option.name}</label>)}</div>{optionInput((optionId) => commit({ type: "multi_select", value: [...new Set([...selected, optionId])] }))}</div>;
+    // 표 셀과 같은 옵션 팝업을 연다. 값은 칩으로 보인다(화면 정의서 05 · 05b의 역량 칸).
+    const labels = new Map(options.map((option) => [option.id, option.name]));
+    const chosen = value?.type === "multi_select" ? value.value.flatMap((id) => labels.has(id) ? [labels.get(id)!] : []) : [];
+    return <PopoutField label={definition.name} disabled={disabled || saving} issue={issue} empty={!chosen.length} display={chosen.length ? <span className={styles.valueChips}>{chosen.map((name, index) => <small key={`${name}-${index}`}>{name}</small>)}</span> : "비어 있음"}>
+      {(anchorRef, close) => <OptionPopout definition={definition} value={value?.type === "multi_select" ? value.value : []} anchorRef={anchorRef} onCommit={(next) => void commit(next)} onCreateOption={onCreateOption} onClose={close} />}
+    </PopoutField>;
   }
   if (definition.type === "date") {
-    const commitDate = () => {
-      if (draft === initialDraft(value) && dateEnd === (value?.type === "date" ? value.value.end ?? "" : "")) return;
-      return draft ? void commit({ type: "date", value: { start: draft, end: dateEnd || null, timezone: null } }) : void commit(null);
-    };
-    return <div className={styles.dateFields}><label><span>시작</span><input className={styles.input} aria-label={`${definition.name} 시작`} type="date" value={draft} disabled={disabled || saving} onChange={(event) => setDraft(event.target.value)} onBlur={commitDate} /></label><label><span>종료</span><div className={styles.fieldRow}><input className={styles.input} aria-label={`${definition.name} 종료`} type="date" value={dateEnd} disabled={disabled || saving} onChange={(event) => setDateEnd(event.target.value)} onBlur={commitDate} /><IssueBadge issue={issue} /></div></label></div>;
+    // 브라우저 날짜 입력 대신 표 셀과 같은 달력 팝업을 연다. 값은 표 · 갤러리와 같은 기간 표기로 보인다.
+    const range = value?.type === "date" ? value.value : null;
+    return <PopoutField label={definition.name} disabled={disabled || saving} issue={issue} empty={!range} display={range ? formatPeriodRange(range.start, range.end) : "비어 있음"}>
+      {(anchorRef, close) => <DatePopout definition={definition} value={range} anchorRef={anchorRef} onCommit={(next) => void commit(next)} onClose={close} />}
+    </PopoutField>;
   }
   if (definition.type === "file" || definition.type === "media") {
     const assetType = definition.type;

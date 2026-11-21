@@ -1,10 +1,12 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AgentConversationResponseSchema, AgentConversationListSchema, type AgentConversation, type AgentContext, type AgentPageSelection, type AgentApproval, type AgentPlanDecision, type AgentGoalDraftDecision, type AgentRecordDraftDecision, type AgentReplanDecision } from "@expresso/contracts";
+import { type DesignGraphic, type AgentAttachment, AgentBrewOpenResponseSchema, AgentConversationResponseSchema, AgentConversationListSchema, type AgentConversation, type AgentContext, type AgentPageSelection, type AgentApproval, type AgentPlanDecision, type AgentGoalDraftDecision, type AgentRecordDraftDecision, type AgentReplanDecision } from "@expresso/contracts";
 const base = "/api/agent/conversations";
 export async function agentRequest(path: string, body?: unknown) {
   const response = await fetch(`${base}${path}`, { ...(body === undefined ? {} : { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), cache: "no-store" });
-  const payload = await response.json();
+  // 본문이 비었거나 JSON이 아니면(게이트웨이 오류 등) 브라우저의 해석 오류 문장을 화면에 올리지 않는다.
+  const payload = await response.json().catch(() => null) as { error?: { message?: string; details?: { requiredConsent?: string } }; message?: string } | null;
+  if (!payload) throw new Error(response.ok ? "응답을 읽지 못했습니다." : "서버에 연결하지 못했습니다. 잠시 뒤 다시 시도해 주세요.");
   if (!response.ok && payload.error?.details?.requiredConsent === "career_records") throw new Error("AI 사용 동의가 필요합니다. 설정에서 커리어 기록 사용을 켜 주세요.");
   if (!response.ok) throw new Error(payload.error?.message ?? payload.message ?? "대화를 불러오지 못했습니다.");
   return AgentConversationResponseSchema.parse(payload).data;
@@ -22,7 +24,10 @@ export function useAgentConversation(context?: AgentContext, options: { restore?
   const [resolving, setResolving] = useState(restore === "context" && !!context);
   const [conversation, setConversation] = useState<AgentConversation | null>(null);
   const [list, setList] = useState<ReturnType<typeof AgentConversationListSchema.parse>["data"]>([]);
-  const [issue, setIssue] = useState<string | null>(null);
+  const [issue, setIssueState] = useState<string | null>(null);
+  /** 지금 떠 있는 오류 글이 배경의 다시 읽기가 띄운 것인가. 그런 글만 다음 읽기의 성공이 지운다. */
+  const pollIssue = useRef(false);
+  const setIssue = useCallback((message: string | null, fromPoll = false) => { pollIssue.current = fromPoll && message !== null; setIssueState(message); }, []);
   const [pending, setPending] = useState(false);
   const contextMutation = useRef(false);
   const mounted = useRef(true);
@@ -59,18 +64,30 @@ export function useAgentConversation(context?: AgentContext, options: { restore?
     const refresh = async () => {
       try {
         const response = await fetch(base, { cache: "no-store" }); if (!response.ok) throw new Error("대화 목록을 불러오지 못했습니다.");
-        const rows = AgentConversationListSchema.parse(await response.json()).data; if (alive) setList(rows);
-      } catch (error) { if (alive) setIssue(error instanceof Error ? error.message : "연결 오류"); }
+        const rows = AgentConversationListSchema.parse(await response.json()).data; if (alive) { setList(rows); if (pollIssue.current) setIssue(null); }
+      } catch (error) { if (alive) setIssue(error instanceof Error ? error.message : "연결 오류", true); }
     };
     void refresh(); const timer = setInterval(() => void refresh(), 10_000); return () => { alive = false; clearInterval(timer); };
-  }, [id]);
+  }, [id, setIssue]);
   useEffect(() => {
     if (!id) return;
     let alive = true;
-    const refresh = () => agentRequest(`/${id}`).then(next => { if (alive) accept(next); }).catch(error => { if (alive) setIssue(error.message); });
+    // 다시 읽기는 3초마다 돈다. 한 번의 실패(잠깐의 502)는 다음 읽기가 메우므로 알리지 않고, 두 번 잇달아 실패했을 때만 알린다.
+    // 다시 읽기가 띄운 글은 읽기에 성공하면 지운다 — 사용자가 누른 동작의 오류는 건드리지 않는다.
+    let failures = 0;
+    const refresh = () => agentRequest(`/${id}`).then(next => {
+      if (!alive) return;
+      failures = 0;
+      if (pollIssue.current) setIssue(null);
+      accept(next);
+    }).catch(error => {
+      if (!alive) return;
+      failures += 1;
+      if (failures >= 2) setIssue(error.message, true);
+    });
     void refresh(); const timer = setInterval(() => void refresh(), 3_000);
     return () => { alive = false; clearInterval(timer); };
-  }, [id, accept]);
+  }, [id, accept, setIssue]);
   useEffect(() => {
     if (!id || conversation?.run?.status !== "running") return;
     const events = new EventSource(`${base}/${id}/events`);
@@ -82,14 +99,14 @@ export function useAgentConversation(context?: AgentContext, options: { restore?
     try { accept(await action()); } catch (error) { setIssue(error instanceof Error ? error.message : "요청에 실패했습니다."); } finally { setPending(false); }
   };
   /** `selection`은 다듬기 화면에서 고른 요소다. 에이전트는 그 요소를 고칠 대상으로 읽는다. */
-  const send = async (text: string, selection?: AgentPageSelection) => {
+  const send = async (text: string, selection?: AgentPageSelection, attachments: AgentAttachment[] = []) => {
     if (pending || contextMutation.current) return;
     setPending(true); setIssue(null);
     try {
       let target = id;
       if (!target) { const created = await agentRequest("", { contexts: context ? [context] : [] }); if (!mounted.current) return; select(created.id); accept(created); target = created.id; }
       requestId.current = requestId.current?.text === text ? requestId.current : { text, id: crypto.randomUUID() };
-      accept(await agentRequest(`/${target}/messages`, { text, requestId: requestId.current.id, ...(selection ? { selection } : {}) })); requestId.current = null;
+      accept(await agentRequest(`/${target}/messages`, { text, requestId: requestId.current.id, ...(selection ? { selection } : {}), ...(attachments.length ? { attachments } : {}) })); requestId.current = null;
     } catch (error) { setIssue(error instanceof Error ? error.message : "보내지 못했습니다."); throw error; } finally { setPending(false); }
   };
   const toggleContext = async (ref: AgentContext) => {
@@ -137,6 +154,27 @@ export function useAgentConversation(context?: AgentContext, options: { restore?
     decidePlanDraft: (draftId: string, decision: AgentPlanDecision) => decide(`plan-drafts/${draftId}`, decision),
     decideReplanDraft: (draftId: string, decision: AgentReplanDecision) => decide(`replan-drafts/${draftId}`, decision),
     approve: (input: AgentApproval) => perform(() => agentRequest(`/${id}/approval`, input)),
+    /**
+     * 대화에서 시작한 제작의 공고 분석이 끝난 것을 에이전트가 알리게 한다. 서버가 답 하나를 시작하고 그 대화를 돌려준다.
+     * 사용자가 누른 일이 아니므로 「보내는 중」으로 표시하지 않고, 실패는 부른 쪽(카드)이 받는다.
+     */
+    /** 대화에서 시작한 제작을 연다. 지금 단계의 카드가 붙은 대화를 받아들인다. 실패는 부른 쪽(카드)이 받는다. */
+    openBrew: async (startId: string): Promise<void> => {
+      const response = await fetch(`${base}/${id}/brew-starts/${startId}/open`, { method: "POST", cache: "no-store" });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(payload?.error?.message ?? "제작을 열지 못했습니다.");
+      const opened = AgentBrewOpenResponseSchema.parse(payload).data;
+      accept(opened.conversation);
+    },
+    announceBrew: async (startId: string) => { if (id) accept(await agentRequest(`/${id}/brew-starts/${startId}/announce`, {})); },
+    /** 「재료 고르기」 카드의 「AI와 대화 시작」. 서버가 「AI 대화」 카드를 붙이고 에이전트가 첫 질문을 한다. 실패는 카드가 받는다. */
+    beginInterview: (brewId: string) => decide(`brews/${brewId}/interview`, {}),
+    /** 「AI 대화」 카드의 「디자인 고르기」. 서버가 구성을 맡기고 「디자인」 카드를 붙인다. 실패는 카드가 받는다. */
+    beginDesign: (brewId: string) => decide(`brews/${brewId}/design`, {}),
+    /** 「디자인」 카드의 「첫 화면 보기」. 서버가 디자인 대화에 그리기를 보내고 그 첫 화면의 카드를 붙인다. 실패는 카드가 받는다. */
+    drawDesign: (brewId: string, styleId: string, layoutId: string, graphic: DesignGraphic) => decide(`brews/${brewId}/design/draw`, { styleId, layoutId, graphic }),
+    /** 「디자인」 카드의 「이 스타일로 만들기」. 서버가 고른 첫 화면으로 생성을 맡기고 「생성」 카드를 붙인다. 실패는 카드가 받는다. */
+    startGeneration: (brewId: string) => decide(`brews/${brewId}/generation`, {}),
     /** 에이전트가 저장한 지면 고침 되돌리기. 실패를 카드가 직접 보여 주도록 오류를 다시 던진다. */
     undoPageEdit: (editId: string) => decide(`page-edits/${editId}/undo`, {}),
     /** 에이전트가 저장한 기록 되돌리기. 기록은 휴지통으로 간다. 실패를 카드가 직접 보여 주도록 오류를 다시 던진다. */

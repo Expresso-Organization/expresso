@@ -1,8 +1,8 @@
 import { expect, it } from "vitest";
 
 import { boottentDate, boottentRow, BoottentSource, parseBoottentCamps } from "./boottent.js";
-import { contestKoreaRow, parseContestKoreaList } from "./contestkorea.js";
-import { devEventRow, parseDevEventReadme } from "./devevent.js";
+import { contestKoreaPoster, contestKoreaRow, parseContestKoreaList } from "./contestkorea.js";
+import { devEventRow, openGraphImage, parseDevEventReadme } from "./devevent.js";
 import { linkareerPrize, linkareerRow, LinkareerSource } from "./linkareer.js";
 
 const AT = new Date("2026-11-20T03:00:00Z");
@@ -11,9 +11,9 @@ it("링커리어: 밀리초 시각을 서울 날짜로, 시상 규모를 만 원
   const row = linkareerRow({
     id: "296803", title: "팔공산케이블카 Four Season 사진 영상 공모전", organizationName: "팔공산케이블카",
     recruitStartAt: 1767625200000, recruitCloseAt: 1796137199999, homepageURL: null, awards: "540",
-    targets: [{ name: "대상 제한 없음" }], categories: [{ name: "사진/영상/UCC" }],
+    targets: [{ name: "대상 제한 없음" }], categories: [{ name: "사진/영상/UCC" }], thumbnailImage: { url: "https://api.linkareer.com/attachments/783240" },
   }, AT);
-  expect(row).toMatchObject({ sourceId: "296803", applyStartOn: "2026-01-06", deadlineOn: "2026-12-01", prize: "총 540만 원", eligibility: "제한 없음", url: "https://linkareer.com/activity/296803" });
+  expect(row).toMatchObject({ sourceId: "296803", applyStartOn: "2026-01-06", deadlineOn: "2026-12-01", prize: "총 540만 원", eligibility: "제한 없음", url: "https://linkareer.com/activity/296803", posterUrl: "https://api.linkareer.com/attachments/783240" });
   expect(linkareerPrize("0")).toBeNull();
 });
 
@@ -64,16 +64,33 @@ it("Dev-Event: 달별 절의 대회만 읽고, 당일 행사는 행사일을 마
 it("부트텐트: 과정 객체를 읽고, 「그달 중」 마감은 말일로, 학비는 원으로 바꾼다", async () => {
   const camp = { campId: "codeitsprint-productdesign", batchId: "1", batchName: "16기", title: "프로덕트 디자이너 과정", brandName: "코드잇 스프린트",
     regDate: "2026-11-04 00:00", regEndDate: "2026-12-98 23:59", startDate: "2026-12-29", tuition: 60, nbcardRequired: true,
-    qualification: "- 내일배움카드 발급자 대상\n- 정규 훈련 시간 참여 가능자", keywords: ["UI디자인", "Figma"], campUrl: "https://sprint.codeit.kr/track/product-design?utm_source=boottent_paid&x=1" };
+    qualification: "- 내일배움카드 발급자 대상\n- 정규 훈련 시간 참여 가능자", keywords: ["UI디자인", "Figma"], campUrl: "https://sprint.codeit.kr/track/product-design?utm_source=boottent_paid&x=1",
+    image: "https://cdn.sayun.studio/boottent/images/camps/top/header_ce8051a8.webp" };
   const early = { ...camp, campId: "nobreak-dobong", batchId: "2", regDate: "2026-11-02 00:00", regEndDate: "2026-11-29 23:59", startDate: "2026-11-02", tuition: 4.9, nbcardRequired: false };
   const flight = JSON.stringify(`3:["$","div",null,{"ads":{"camp":${JSON.stringify(camp)}},"camps":[${JSON.stringify(camp)},${JSON.stringify(early)}]}]`);
   const html = `<script>self.__next_f.push([1,${flight}])</script>`;
   expect(parseBoottentCamps(html).map(({ campId }) => campId)).toEqual(["codeitsprint-productdesign", "nobreak-dobong"]);
   const rows = await new BoottentSource(async () => html).fetch(AT);
   expect(rows[0]).toMatchObject({ kind: "bootcamp", title: "프로덕트 디자이너 과정 16기", deadlineOn: "2026-12-31", deadlinePrecision: "month", startsOn: "2026-12-29",
-    tuition: 600_000, nbcardRequired: true, eligibility: "내일배움카드 발급자 대상 · 정규 훈련 시간 참여 가능자", homepageUrl: "https://sprint.codeit.kr/track/product-design?x=1" });
+    tuition: 600_000, nbcardRequired: true, eligibility: "내일배움카드 발급자 대상 · 정규 훈련 시간 참여 가능자", homepageUrl: "https://sprint.codeit.kr/track/product-design?x=1",
+    posterUrl: "https://cdn.sayun.studio/boottent/images/camps/top/header_ce8051a8.webp" });
   // 수업 시작일이 모집 시작일과 같으면(모집 일정이 들어간 값) 수업 시작일로 쓰지 않는다.
   expect(boottentRow(early, AT)).toMatchObject({ startsOn: null, tuition: 49_000 });
   expect(boottentDate("2026-02-30")).toEqual({ on: "2026-02-28", precision: "month" });
   await expect(new BoottentSource(async () => "<html></html>").fetch(AT)).rejects.toThrow("no camps");
+});
+
+it("콘테스트코리아: 상세 본문 머리의 그림만 포스터로 읽는다", () => {
+  const html = `<div class="side"><img src="/admincenter/files/meet/[AB-2] 정보 모음[1].jpg" alt="" /></div>
+					<div class="img_area">
+						<div><img src="/admincenter/files/meet/202610121605164029020.jpg" alt="2026 대구광역시 AI 활용대회"></div>`;
+  expect(contestKoreaPoster(html)).toBe("https://www.contestkorea.com/admincenter/files/meet/202610121605164029020.jpg");
+  expect(contestKoreaPoster(`<img src="/admincenter/files/meet/banner.jpg" alt="">`)).toBeNull();
+});
+
+it("Dev-Event: 행사 페이지의 og:image를 속성 순서와 상관없이 읽는다", () => {
+  expect(openGraphImage(`<meta property="og:image" content="https://static.onoffmix.com/a.jpg"/>`, "https://onoffmix.com/event/1")).toBe("https://static.onoffmix.com/a.jpg");
+  expect(openGraphImage(`<meta content="/cover.png?a=1&amp;b=2" property="og:image">`, "https://luma.com/x")).toBe("https://luma.com/cover.png?a=1&b=2");
+  expect(openGraphImage(`<meta property="og:image" content="javascript:alert(1)">`, "https://luma.com/x")).toBeNull();
+  expect(openGraphImage("<html></html>", "https://luma.com/x")).toBeNull();
 });

@@ -1,4 +1,5 @@
 import { mongoCollections } from "@expresso/database";
+import sharp from "sharp";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { createMongoFixture } from "../../../test/support/mongodb.js";
@@ -7,7 +8,7 @@ import { ActivitySourceError, type ActivityRow, type ActivitySource } from "./so
 
 const row = (sourceId: string, title: string, deadlineOn: string, extra: Partial<ActivityRow> = {}): ActivityRow => ({
   sourceId, kind: "contest", title, host: "주최", fields: ["웹/모바일/IT"], url: `https://example.com/${sourceId}`, homepageUrl: null,
-  applyStartOn: null, deadlineOn, deadlinePrecision: "day", startsOn: null, eligibility: null, prize: null, tuition: null, nbcardRequired: null, status: "접수중", ...extra,
+  applyStartOn: null, deadlineOn, deadlinePrecision: "day", startsOn: null, eligibility: null, prize: null, tuition: null, nbcardRequired: null, status: "접수중", posterUrl: null, ...extra,
 });
 
 /** 시험용 출처 — `rows`를 바꿔 가며 돌리고, `fail`이면 던진다. */
@@ -40,6 +41,40 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const [hackathon] = await service.list({ kind: "hackathon", limit: 50 }, second);
     expect(hackathon).toMatchObject({ id: "wevity:2", status: "접수예정", applyStartOn: "2026-11-20", source: "wevity" });
     expect((await service.list({ limit: 50, sort: "fresh" }, second))[0]?.id).toBe("wevity:3");
+  });
+
+  it("포스터를 폭 480 webp로 줄여 보관하고, 같은 주소는 다시 받지 않으며, 주소가 없어지면 있던 포스터를 둔다", async () => {
+    const linkareer = source("linkareer");
+    // 출처 그림 대신 만든 세로 그림(1000×1400 PNG). 받은 주소를 센다.
+    const png = await sharp({ create: { width: 1000, height: 1400, channels: 3, background: "#d97757" } }).png().toBuffer();
+    const fetched: string[] = [];
+    const service = new ActivityService(fixture.resource, [linkareer.adapter], async (url) => {
+      fetched.push(url);
+      if (url.endsWith("/broken")) throw new Error("poster 404");
+      return { bytes: png, mediaType: "image/png" };
+    });
+    const at = new Date("2026-11-19T03:00:00Z");
+    linkareer.state.rows = [
+      row("p1", "포스터 공모전", "2026-12-01", { posterUrl: "https://cdn.example.com/p1.jpg" }),
+      row("p2", "그림 없는 공모전", "2026-12-02"),
+      row("p3", "깨진 그림 공모전", "2026-12-03", { posterUrl: "https://cdn.example.com/broken" }),
+    ];
+    expect((await service.collect(at)).posters).toEqual({ stored: 1, failed: 1 });
+    const [withPoster, plain, broken] = (await service.list({ kind: "contest", limit: 50 }, at)).filter(({ id }) => id.startsWith("linkareer:p"));
+    expect(withPoster?.poster).toMatchObject({ width: 480, height: 672 });
+    expect(withPoster?.poster?.url).toMatch(/^\/v1\/activities\/linkareer%3Ap1\/poster\?v=[0-9a-f]{16}$/);
+    expect(plain?.poster).toBeNull();
+    expect(broken?.poster).toBeNull();
+    const stored = await service.poster("linkareer:p1");
+    expect(stored?.mediaType).toBe("image/webp");
+    expect((await sharp(stored!.bytes).metadata()).format).toBe("webp");
+
+    // 다음 수집: 같은 주소는 받지 않는다. 출처가 그림을 주지 않게 되어도 있던 포스터는 남는다.
+    fetched.length = 0;
+    linkareer.state.rows = [row("p1", "포스터 공모전", "2026-12-01", { posterUrl: null }), row("p3", "깨진 그림 공모전", "2026-12-03", { posterUrl: "https://cdn.example.com/broken" })];
+    await service.collect(new Date("2026-11-20T03:00:00Z"));
+    expect(fetched).toEqual(["https://cdn.example.com/broken"]);
+    expect((await service.list({ kind: "contest", limit: 50 }, new Date("2026-11-20T03:00:00Z"))).find(({ id }) => id === "linkareer:p1")?.poster?.width).toBe(480);
   });
 
   it("출처가 실패하면 나머지를 저장하고 실패를 남긴다. 실패한 출처의 활동은 그대로 보인다", async () => {

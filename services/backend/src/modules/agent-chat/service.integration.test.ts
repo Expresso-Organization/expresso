@@ -11,7 +11,7 @@ import { PageElementIssues, PageService } from "../page/index.js";
 import { AgentCredentials } from "./credentials.js";
 import { ConsentService } from "../consent/index.js";
 import { AgentToolRejection, conversationForModel, type AgentRuntime } from "../../platform/agent/runtime.js";
-import { AgentChatService, CREDITS_EXHAUSTED, RUN_HEARTBEAT_MS, RUN_INTERRUPTED_ERROR } from "./service.js";
+import { AgentChatError, AgentChatService, CREDITS_EXHAUSTED, GOAL_SAVED, RUN_HEARTBEAT_MS, RUN_INTERRUPTED_ERROR } from "./service.js";
 import { MongoEntitlementService } from "../entitlements/index.js";
 import { PreparationPlans } from "./plans.js";
 import { buildDraft } from "./record-draft.js";
@@ -633,7 +633,10 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     await career.saveJobGoal(userId, { work: "프론트엔드 개발", place: "커머스 회사", timing: "내년 상반기", source: "app" });
     let seen: unknown;
     const goalTool = (draft: AgentGoalDraft) => ({ type: "tool" as const, tool: { id: randomUUID(), name: "구직 목표 변경", status: "complete" as const, summary: "바뀌는 칸", goalDraft: draft } });
+    let continued = 0;
     const service = make({ run: async input => {
+      // 목표 카드를 저장해 이어진 실행. 저장한 목표를 읽고 하던 일을 잇는다.
+      if (input.messages.at(-1)!.text === GOAL_SAVED) { continued += 1; expect(input.jobGoal).toMatchObject({ work: "백엔드 개발" }); await input.emit({ type: "text", text: "저장한 목표로 이어서 진행합니다." }); return; }
       seen = input.jobGoal;
       // 바뀌는 칸이 없거나 지금 글과 같으면 돌려보낸다.
       await expect(input.goalDraft({})).rejects.toBeInstanceOf(AgentToolRejection);
@@ -656,11 +659,46 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     // 카드가 선 뒤 구직 목표 화면에서 고친 칸은 승인이 되돌리지 않는다.
     await career.saveJobGoal(userId, { work: "프론트엔드 개발", place: "커머스 회사", timing: "올해 안", source: "app" });
     const approved = await service.decideGoalDraft(userId, row.id, second!.draftId, { action: "approve" });
-    expect(approved.messages.at(-1)!.tools[1]!.goalDraft!.status).toBe("approved");
     expect(await career.getJobGoal(userId)).toMatchObject({ work: "백엔드 개발", place: "커머스 회사", timing: "올해 안", source: "chat" });
-    // 같은 결정은 그대로 응답하고, 다른 결정은 받지 않는다.
+    // 대화가 이 카드에서 멈춰 있었으므로, 저장했다는 말을 사용자의 말로 더하고 하던 일을 잇는다.
+    expect(approved.messages.at(-3)!.tools[1]!.goalDraft!.status).toBe("approved");
+    expect(approved.messages.at(-2)).toMatchObject({ role: "user", text: GOAL_SAVED });
+    expect(approved.run?.status).toBe("running");
+    await expect.poll(async () => (await service.get(userId, row.id)).run?.status).toBe("complete");
+    expect((await service.get(userId, row.id)).messages.at(-1)!.text).toBe("저장한 목표로 이어서 진행합니다.");
+    // 같은 결정은 그대로 응답하고(다시 잇지 않는다), 다른 결정은 받지 않는다.
     await service.decideGoalDraft(userId, row.id, second!.draftId, { action: "approve" });
+    expect(continued).toBe(1);
     await expect(service.decideGoalDraft(userId, row.id, second!.draftId, { action: "reject" })).rejects.toMatchObject({ statusCode: 409 });
+  });
+  it("지난 답변의 목표 카드를 저장하면 저장만 하고, 이을 수 없을 때(크레딧 없음)도 저장은 남는다", async () => {
+    await career.saveJobGoal(userId, { work: "프론트엔드 개발", place: "", timing: "", source: "app" });
+    const state = { remaining: 100 as number | null, runs: 0 };
+    const service = new AgentChatService(fixture.resource, { run: async input => {
+      state.runs += 1;
+      const text = input.messages.at(-1)!.text;
+      if (text.includes("가고 싶어요")) { const draft = await input.goalDraft({ work: text.includes("데이터") ? "데이터 엔지니어" : "백엔드 개발" }); await input.emit({ type: "tool", tool: { id: randomUUID(), name: "구직 목표 변경", status: "complete", summary: "바뀌는 칸 1", goalDraft: draft } }); }
+      await input.emit({ type: "text", text: "알겠습니다." });
+    } }, career, { get: async () => { throw new Error("없는 공고"); } }, documents, consent, new AgentCredentials(fixture.resource), new PortfolioReadService(fixture.resource), new PageService(fixture.resource), { credits: async () => ({ remaining: state.remaining }) });
+    services.push(service);
+    const row = await service.create(userId, []);
+    const turn = async (text: string) => { await service.send(userId, row.id, { requestId: randomUUID(), text }); await expect.poll(async () => (await service.get(userId, row.id)).run?.status).toBe("complete"); return (await service.get(userId, row.id)).messages.at(-1)!; };
+    const old = (await turn("백엔드로 가고 싶어요")).tools[0]!.goalDraft!;
+    await turn("그건 그렇고 요즘 공부는 이렇게 하고 있어요");
+    // 지난 답변의 카드: 저장만 한다. 메시지도 실행도 늘지 않는다.
+    const before = await service.get(userId, row.id);
+    const saved = await service.decideGoalDraft(userId, row.id, old.draftId, { action: "approve" });
+    expect((await career.getJobGoal(userId))!.work).toBe("백엔드 개발");
+    expect(saved.messages).toHaveLength(before.messages.length);
+    expect(state.runs).toBe(2);
+    // 마지막 답변의 카드지만 크레딧이 없다: 저장은 남고 오류 없이 끝난다.
+    const waiting = (await turn("아니, 데이터 쪽으로 가고 싶어요")).tools[0]!.goalDraft!;
+    state.remaining = 0;
+    const blocked = await service.decideGoalDraft(userId, row.id, waiting.draftId, { action: "approve" });
+    expect((await career.getJobGoal(userId))!.work).toBe("데이터 엔지니어");
+    expect(blocked.messages.at(-1)!.tools[0]!.goalDraft!.status).toBe("approved");
+    expect(blocked.run?.status).not.toBe("running");
+    expect(state.runs).toBe(3);
   });
   it("그대로 둔 목표 변경은 저장하지 않고, 새 제안은 앞선 대기 초안을 닫으며 그 칸을 이어받는다", async () => {
     await career.saveJobGoal(userId, { work: "프론트엔드 개발", place: "", timing: "", source: "app" });
@@ -936,5 +974,491 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
 
     // 다른 계정의 한도는 그대로다.
     expect(await service.creditsExhausted(userId)).toBe(false);
+  });
+  it("대화에서 시작한 제작은 연결된 공고만 받고, 분석은 하나로 모이며, 제작은 한 번만 만들어진다", async () => {
+    const identity = new MongoIdentityService(fixture.resource);
+    const maker = (await identity.signup({ email: `${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "제작 검증" })).user.id;
+    await consent.grant(maker, ["career_records", "job_posting_analysis"], CONSENT_POLICY_VERSION);
+    const jobPostingId = randomUUID(); const jobAnalysisId = randomUUID();
+    let analysis: { status: "running" | "done" | "failed"; stage: "covering" | "done" | "failed"; failure: { code: string; retryable: boolean } | null } = { status: "running", stage: "covering", failure: null };
+    const coverage = ["covered", "covered", "partial", "missing"];
+    const analyzePosting = vi.fn(async () => ({ jobAnalysisId }));
+    const createBrew = vi.fn(async () => { await new Promise(resolve => setTimeout(resolve, 20)); return { brewId: randomUUID() }; });
+    const trashed = new Set<string>(); let brewStage: "draft" | "interviewing" = "draft";
+    const brewState = vi.fn(async (_user: string, id: string) => (trashed.has(id) ? null : { status: brewStage, selected: 7, generation: null }));
+    let failAfterCard = false; let failAnnounce = false;
+    const events: unknown[] = []; const toolStates: { status: string; announced: boolean }[] = [];
+    const getResult = vi.fn(async () => ({ analysis: { jobAnalysisId, ...analysis, attempts: 1, resultVersion: 1, analyzedAt: null }, requirements: analysis.status === "done" ? coverage.map(item => ({ coverage: item })) : [], sourceText: null, previous: null }) as never);
+    const jobs = { get: async (_user: string, id: string) => { if (id !== jobPostingId) throw Object.assign(new Error("없는 공고"), { statusCode: 404 }); return { id, title: "프론트엔드 개발자", company: { name: "가상 회사" } } as never; } };
+    let target = jobPostingId;
+    const seen: unknown[] = [];
+    const rejections: string[] = [];
+    const runtime: AgentRuntime = { run: async input => {
+      seen.push(input.brews);
+      try {
+        events.push(input.event ?? null);
+        if (input.event) { await input.emit({ type: "text", text: "분석이 끝났어요." }); if (failAnnounce) throw new Error("알림 실패"); return; }
+        const { start: brewStart, state: startState } = await input.startBrew({ jobPostingId: target });
+        toolStates.push(startState);
+        await input.emit({ type: "tool", tool: { id: randomUUID(), name: "포트폴리오 제작", status: "complete", summary: "가상 회사 · 프론트엔드 개발자", brewStart } });
+        if (failAfterCard) throw new Error("실행 실패");
+      } catch (error) { if (!(error instanceof AgentToolRejection)) throw error; rejections.push(error.issues.join(" ")); }
+      await input.emit({ type: "text", text: "분석을 시작했어요." });
+    } };
+    const make = (owner: typeof consent) => { const service = new AgentChatService(fixture.resource, runtime, career, jobs, documents, owner, new AgentCredentials(fixture.resource), new PortfolioReadService(fixture.resource), new PageService(fixture.resource), undefined, undefined, undefined, undefined, undefined, { analyzePosting, getResult, createBrew, createFreeBrew: vi.fn(), readPostingUrl: vi.fn(), submitPosting: vi.fn(), brewOrigin: vi.fn(async () => null), brewState, openInterview: vi.fn(), interview: vi.fn(async () => ({ bases: [], session: null })), saveInterviewAnswer: vi.fn(), startRecipe: vi.fn(), designDraw: vi.fn(), designPropose: vi.fn(), designRevise: vi.fn(), designState: vi.fn(async () => null), selectedRecords: vi.fn(async () => []), startGeneration: vi.fn() }); service.setRunFailureListener(() => {}); services.push(service); return service; };
+    const service = make(consent);
+    const conversation = await service.create(maker, [{ kind: "job", id: jobPostingId }]);
+    const say = async (text: string) => { await service.send(maker, conversation.id, { requestId: randomUUID(), text }); await vi.waitFor(async () => expect((await service.get(maker, conversation.id)).run?.status).toBe("complete")); return service.get(maker, conversation.id); };
+    const starts = (row: Awaited<ReturnType<typeof say>>) => row.messages.flatMap(message => message.tools).flatMap(tool => (tool.brewStart ? [tool.brewStart] : []));
+
+    // 없는 공고의 ID는 받지 않는다. 분석도 맡기지 않는다.
+    target = randomUUID();
+    expect(starts(await say("다른 공고로 만들어 줘"))).toEqual([]);
+    expect(rejections.at(-1)).toContain("그 공고를 찾지 못했습니다");
+    expect(analyzePosting).not.toHaveBeenCalled();
+
+    // 연결된 공고로 시작하면 카드에 ID가 남는다.
+    target = jobPostingId;
+    const [first] = starts(await say("이 공고로 포트폴리오 만들어 줘"));
+    expect(first).toMatchObject({ jobPostingId, jobAnalysisId, title: "프론트엔드 개발자", companyName: "가상 회사", brewId: null });
+    // 분석이 도는 동안에는 확인 수가 없고 제작을 열 수 없다.
+    expect(await service.brewStartState(maker, conversation.id, first!.startId)).toEqual({ status: "running", stage: "covering", failure: null, requirements: null, brewId: null, step: null, announced: false });
+    // 분석이 끝나기 전에는 알리지 않는다.
+    await expect(service.announceBrew(maker, conversation.id, first!.startId)).rejects.toMatchObject({ statusCode: 409 });
+    await expect(service.openBrew(maker, conversation.id, first!.startId)).rejects.toMatchObject({ statusCode: 409 });
+    expect(createBrew).not.toHaveBeenCalled();
+    // 남의 대화의 카드는 읽지 못한다.
+    await expect(service.brewStartState(userId, conversation.id, first!.startId)).rejects.toMatchObject({ statusCode: 404 });
+
+    // 다시 해 볼 수 있는 실패만 다시 맡긴다.
+    analysis = { status: "failed", stage: "failed", failure: { code: "AI_TIMEOUT", retryable: true } };
+    await service.retryBrewStart(maker, conversation.id, first!.startId);
+    expect(analyzePosting).toHaveBeenCalledTimes(2);
+    analysis = { status: "failed", stage: "failed", failure: { code: "EXTRACTOR_UNAVAILABLE", retryable: false } };
+    await service.retryBrewStart(maker, conversation.id, first!.startId);
+    expect(analyzePosting).toHaveBeenCalledTimes(2);
+
+    // 분석이 끝나면 요건의 확인 수를 센다.
+    analysis = { status: "done", stage: "done", failure: null };
+    expect(await service.brewStartState(maker, conversation.id, first!.startId)).toMatchObject({ status: "done", requirements: { total: 4, covered: 2, partial: 1, missing: 1 }, brewId: null, announced: false });
+
+    // 분석이 끝난 것을 알리면 서버가 질문 없는 답 하나를 시작한다. 두 탭이 동시에 알려도 답은 하나다.
+    const beforeAnnounce = (await service.get(maker, conversation.id)).messages.length;
+    failAnnounce = true;
+    await Promise.all([service.announceBrew(maker, conversation.id, first!.startId), service.announceBrew(maker, conversation.id, first!.startId)]);
+    await vi.waitFor(async () => expect((await service.get(maker, conversation.id)).run?.status).toBe("failed"));
+    expect((await service.get(maker, conversation.id)).messages).toHaveLength(beforeAnnounce + 1);
+    expect(events.filter(Boolean)).toEqual([{ kind: "brew_analysis_done", brewId: null, title: "프론트엔드 개발자" }]);
+    expect((await service.brewStartState(maker, conversation.id, first!.startId)).announced).toBe(true);
+    // 실패한 알림은 다시 보내기로 같은 계기에서 다시 만든다. 새 답변이 붙지 않고 그 자리가 다시 채워진다.
+    failAnnounce = false;
+    await service.retry(maker, conversation.id);
+    await vi.waitFor(async () => expect((await service.get(maker, conversation.id)).run?.status).toBe("complete"));
+    const announced = await service.get(maker, conversation.id);
+    expect(announced.messages).toHaveLength(beforeAnnounce + 1);
+    expect(announced.messages.at(-1)).toMatchObject({ role: "assistant", text: "분석이 끝났어요.", tools: [] });
+    expect(events.filter(Boolean)).toHaveLength(2);
+    // 이미 알린 분석은 다시 알리지 않는다.
+    await service.announceBrew(maker, conversation.id, first!.startId);
+    expect((await service.get(maker, conversation.id)).messages).toHaveLength(beforeAnnounce + 1);
+    // 응답에는 대화에 적어 둔 알림 표가 실리지 않는다.
+    expect(announced).not.toHaveProperty("brewAnnounced");
+    // 같은 공고로 다시 시작해도 분석은 같고, 카드만 하나 더 생긴다.
+    const [, second] = starts(await say("다시 만들어 줘"));
+    expect(second).toMatchObject({ jobAnalysisId, brewId: null });
+    // 그 실행에는 서버가 읽은 지금 상태가 넘어갔다.
+    expect(seen.at(-1)).toEqual([{ jobPostingId, title: "프론트엔드 개발자", companyName: "가상 회사", status: "done", stage: "done", failure: null, requirements: { total: 4, covered: 2, partial: 1, missing: 1 }, brewId: null, step: null, announced: true, selectedRecords: null, materials: [], interview: null, design: null, generation: null }]);
+
+    // 두 카드를 동시에 눌러도 제작은 하나이고, 대화에 붙는 「재료 고르기」 카드도 하나다. 화면은 넘어가지 않는다.
+    const cards = (row: { messages: { tools: { brewMaterials?: { brewId: string } | undefined }[] }[] }) => row.messages.flatMap(message => message.tools).flatMap(tool => (tool.brewMaterials ? [tool.brewMaterials] : []));
+    const beforeOpen = await service.get(maker, conversation.id);
+    const [left, right] = await Promise.all([service.openBrew(maker, conversation.id, first!.startId), service.openBrew(maker, conversation.id, second!.startId)]);
+    expect(createBrew).toHaveBeenCalledTimes(1);
+    expect(right.brewId).toBe(left.brewId);
+    const opened = await service.get(maker, conversation.id);
+    expect(opened.messages).toHaveLength(beforeOpen.messages.length + 1);
+    expect(cards(opened)).toEqual([{ brewId: left.brewId, jobPostingId }]);
+    // 카드를 든 답변은 서버가 쓴다 — 글이 없고 실행을 시작하지 않는다.
+    expect(opened.messages.at(-1)).toMatchObject({ role: "assistant", text: "", tools: [{ name: "재료 고르기", status: "complete" }] });
+    expect(opened.run).toEqual(beforeOpen.run);
+    expect(left.conversation).toEqual(opened);
+    // 다시 눌러도 제작도 카드도 늘지 않는다.
+    expect(await service.openBrew(maker, conversation.id, first!.startId)).toEqual({ brewId: left.brewId, conversation: opened });
+    expect(createBrew).toHaveBeenCalledTimes(1);
+    expect(await service.brewStartState(maker, conversation.id, second!.startId)).toMatchObject({ brewId: left.brewId, step: "materials" });
+    // 그 뒤에 생긴 카드도 같은 제작을 이어받고, 그 실행에는 지금 단계와 고른 기록 수가 넘어간다.
+    expect(starts(await say("한 번 더")).at(-1)).toMatchObject({ jobAnalysisId, brewId: left.brewId });
+    expect(seen.at(-1)).toMatchObject([{ brewId: left.brewId, step: "materials", selectedRecords: 7 }]);
+    expect(createBrew).toHaveBeenCalledTimes(1);
+
+    // 제작이 다음 단계로 갔으면(다른 곳에서 인터뷰를 연 제작) 그 단계의 카드를 이 대화에 붙인다. 실행은 시작하지 않는다. 다시 눌러도 하나다.
+    brewStage = "interviewing";
+    const beforeNext = (await service.get(maker, conversation.id)).messages.length;
+    const next = await service.openBrew(maker, conversation.id, first!.startId);
+    expect(next.conversation.messages.at(-1)!.tools[0]!.brewInterview).toEqual({ brewId: left.brewId, jobPostingId });
+    expect(next.conversation.run?.requestId).not.toBe(next.conversation.messages.at(-1)!.id);
+    await service.openBrew(maker, conversation.id, first!.startId);
+    expect(await service.brewStartState(maker, conversation.id, first!.startId)).toMatchObject({ step: "interview" });
+    expect((await service.get(maker, conversation.id)).messages).toHaveLength(beforeNext + 1);
+    brewStage = "draft";
+
+    // 앞서 분석해 둔 공고로 새 대화에서 시작하면, 도구가 결과를 돌려주어 그 답이 바로 알린다. 따로 알리는 답은 붙지 않는다.
+    const reused = await service.create(maker, [{ kind: "job", id: jobPostingId }]);
+    await service.send(maker, reused.id, { requestId: randomUUID(), text: "이 공고로 만들어 줘" });
+    await vi.waitFor(async () => expect((await service.get(maker, reused.id)).run?.status).toBe("complete"));
+    expect(toolStates.at(-1)).toMatchObject({ status: "done", announced: true });
+    const [ready] = starts(await service.get(maker, reused.id));
+    expect((await service.brewStartState(maker, reused.id, ready!.startId)).announced).toBe(true);
+    const beforeReused = (await service.get(maker, reused.id)).messages.length;
+    await service.announceBrew(maker, reused.id, ready!.startId);
+    expect((await service.get(maker, reused.id)).messages).toHaveLength(beforeReused);
+
+    // 실패한 답 뒤에도 그 답의 카드로 제작을 이어 갈 수 있다. 카드를 든 답변이 붙은 뒤에는 실패한 답을 다시 보내지 않는다 —
+    // 다시 보내기는 마지막 답변을 지우고 다시 쓰는데, 마지막은 이제 「재료 고르기」 카드다.
+    const failed = await service.create(maker, [{ kind: "job", id: jobPostingId }]);
+    failAfterCard = true;
+    await service.send(maker, failed.id, { requestId: randomUUID(), text: "이 공고로 만들어 줘" });
+    await vi.waitFor(async () => expect((await service.get(maker, failed.id)).run?.status).toBe("failed"));
+    failAfterCard = false;
+    const [kept] = starts(await service.get(maker, failed.id));
+    const made = await service.openBrew(maker, failed.id, kept!.startId);
+    expect(createBrew).toHaveBeenCalledTimes(2);
+    expect(cards(made.conversation!)).toEqual([{ brewId: made.brewId, jobPostingId }]);
+    await expect(service.retry(maker, failed.id)).rejects.toMatchObject({ statusCode: 409 });
+    expect(cards(await service.get(maker, failed.id))).toHaveLength(1);
+
+    // 답이 도는 동안에는 카드를 붙이지 않는다. 실행이 마지막 답변을 통째로 다시 쓰기 때문이다.
+    const busy = await service.create(maker, [{ kind: "job", id: jobPostingId }]);
+    let release!: () => void; const held = new Promise<void>(resolve => { release = resolve; });
+    const slow = new AgentChatService(fixture.resource, { run: async input => { const { start: brewStart } = await input.startBrew({ jobPostingId }); await input.emit({ type: "tool", tool: { id: randomUUID(), name: "포트폴리오 제작", status: "complete", summary: "", brewStart } }); await held; } }, career, jobs, documents, consent, new AgentCredentials(fixture.resource), new PortfolioReadService(fixture.resource), new PageService(fixture.resource), undefined, undefined, undefined, undefined, undefined, { analyzePosting, getResult, createBrew, createFreeBrew: vi.fn(), readPostingUrl: vi.fn(), submitPosting: vi.fn(), brewOrigin: vi.fn(async () => null), brewState, openInterview: vi.fn(), interview: vi.fn(async () => ({ bases: [], session: null })), saveInterviewAnswer: vi.fn(), startRecipe: vi.fn(), designDraw: vi.fn(), designPropose: vi.fn(), designRevise: vi.fn(), designState: vi.fn(async () => null), selectedRecords: vi.fn(async () => []), startGeneration: vi.fn() });
+    slow.setRunFailureListener(() => {}); services.push(slow);
+    await slow.send(maker, busy.id, { requestId: randomUUID(), text: "이 공고로 만들어 줘" });
+    await vi.waitFor(async () => expect(starts(await slow.get(maker, busy.id))).toHaveLength(1));
+    const [running] = starts(await slow.get(maker, busy.id));
+    await expect(slow.openBrew(maker, busy.id, running!.startId)).rejects.toMatchObject({ statusCode: 409, publicMessage: "응답이 끝난 뒤 눌러 주세요." });
+    release();
+    await vi.waitFor(async () => expect((await slow.get(maker, busy.id)).run?.status).toBe("complete"));
+    // 실행 중에 만든 제작은 대화에 적혀 있다. 끝난 뒤 다시 누르면 그 제작으로 카드가 붙는다.
+    const calls = createBrew.mock.calls.length;
+    const after = await slow.openBrew(maker, busy.id, running!.startId);
+    expect(createBrew).toHaveBeenCalledTimes(calls);
+    expect(cards(after.conversation!)).toEqual([{ brewId: after.brewId, jobPostingId }]);
+
+    // 휴지통에 넣은 제작은 없는 것으로 본다. 카드는 다시 「담을 기록 고르기」가 되고, 누르면 새로 만들어 그 제작의 카드를 붙인다.
+    trashed.add(made.brewId);
+    expect(await service.brewStartState(maker, failed.id, kept!.startId)).toMatchObject({ brewId: null, step: null });
+    const remade = await service.openBrew(maker, failed.id, kept!.startId);
+    expect(remade.brewId).not.toBe(made.brewId);
+    expect(cards(remade.conversation!)).toEqual([{ brewId: made.brewId, jobPostingId }, { brewId: remade.brewId, jobPostingId }]);
+    expect((await service.brewStartState(maker, failed.id, kept!.startId)).brewId).toBe(remade.brewId);
+    // 응답에는 대화에 적어 둔 제작 표가 실리지 않는다.
+    expect(await service.get(maker, failed.id)).not.toHaveProperty("brewIds");
+
+    // 공고 분석 동의가 꺼진 계정은 시작하지 못한다(기록 사용 동의만 있는 계정).
+    const noAnalysis = await service.create(userId, [{ kind: "job", id: jobPostingId }]);
+    await service.send(userId, noAnalysis.id, { requestId: randomUUID(), text: "이 공고로 만들어 줘" });
+    await vi.waitFor(async () => expect((await service.get(userId, noAnalysis.id)).run?.status).toBe("complete"));
+    expect(rejections.at(-1)).toContain("공고 분석 동의가 꺼져 있습니다");
+    expect(analyzePosting).toHaveBeenCalledTimes(7);
+  });
+  it("대화에서 연 인터뷰는 카드와 첫 질문을 한 번 붙이고, 답은 사용자 메시지 원문으로 저장한다", async () => {
+    const identity = new MongoIdentityService(fixture.resource);
+    const maker = (await identity.signup({ email: `${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "인터뷰 검증" })).user.id;
+    await consent.grant(maker, ["career_records", "job_posting_analysis"], CONSENT_POLICY_VERSION);
+    const jobPostingId = randomUUID(); const jobAnalysisId = randomUUID(); const brewId = randomUUID();
+    let stage: "draft" | "interviewing" | "recipe" = "draft";
+    const bases = [
+      { basis: { type: "requirement" as const, requirementId: randomUUID(), coverage: "missing" as const, evidence: "장애 대응 경험이 필요합니다." }, label: "장애 대응 경험이 필요합니다." },
+      { basis: { type: "record_gap" as const, recordId: randomUUID(), gap: "metric" as const, evidence: "주문 현황 대시보드" }, label: "주문 현황 대시보드" },
+    ];
+    const saved: { basis: unknown; question: string; transcript: string; key: string }[] = [];
+    const openInterview = vi.fn(async () => { stage = "interviewing"; });
+    const deps = {
+      analyzePosting: vi.fn(async () => ({ jobAnalysisId })),
+      createFreeBrew: vi.fn(), readPostingUrl: vi.fn(), submitPosting: vi.fn(), brewOrigin: vi.fn(async () => ({ jobAnalysisId, jobPostingId, title: "프론트엔드 개발자", companyName: "가상 회사", lengthPreset: "single" as const })),
+      getResult: vi.fn(async () => ({ analysis: { jobAnalysisId, status: "done", stage: "done", failure: null, attempts: 1, resultVersion: 1, analyzedAt: null }, requirements: [{ coverage: "missing" }], sourceText: null, previous: null }) as never),
+      createBrew: vi.fn(async () => ({ brewId })),
+      brewState: vi.fn(async () => ({ status: stage, selected: 2, generation: null })),
+      openInterview,
+      interview: vi.fn(async () => ({ bases, session: null })),
+      saveInterviewAnswer: vi.fn(async (_user: string, _brew: string, input: { basis: unknown; question: string; transcript: string }, key: string) => { saved.push({ ...input, key }); return { progress: { answered: 1, total: 1 } } as never; }),
+      startRecipe: vi.fn(), designDraw: vi.fn(), designPropose: vi.fn(), designRevise: vi.fn(), designState: vi.fn(async () => null), selectedRecords: vi.fn(async () => []), startGeneration: vi.fn(),
+    };
+    const jobs = { get: async () => ({ id: jobPostingId, title: "프론트엔드 개발자", company: { name: "가상 회사" } }) as never };
+    const events: unknown[] = []; const seen: unknown[] = []; const rejections: string[] = [];
+    let failFirstQuestion = true; let answerIds: (ids: string[]) => string[] = ids => ids; let saveTwice = false;
+    const runtime: AgentRuntime = { run: async input => {
+      seen.push(input.brews);
+      if (input.event) { events.push(input.event); await input.emit({ type: "text", text: "장애를 어떻게 대응하셨나요?" }); if (failFirstQuestion) throw new Error("첫 질문 실패"); return; }
+      const last = input.messages.at(-1)!;
+      if (last.text.includes("만들어")) { const { start } = await input.startBrew({ jobPostingId }); await input.emit({ type: "tool", tool: { id: randomUUID(), name: "포트폴리오 제작", status: "complete", summary: "", brewStart: start } }); return; }
+      const answer = { brewId, basis: 0, question: "장애를 어떻게 대응하셨나요?", messageIds: answerIds([last.id]) };
+      try { await input.saveInterviewAnswer(answer); if (saveTwice) await input.saveInterviewAnswer(answer); }
+      catch (error) { if (!(error instanceof AgentToolRejection)) throw error; rejections.push(error.issues.join(" ")); }
+      await input.emit({ type: "text", text: "다음 질문입니다." });
+    } };
+    const service = new AgentChatService(fixture.resource, runtime, career, jobs, documents, consent, new AgentCredentials(fixture.resource), new PortfolioReadService(fixture.resource), new PageService(fixture.resource), undefined, undefined, undefined, undefined, undefined, deps);
+    service.setRunFailureListener(() => {}); services.push(service);
+    const conversation = await service.create(maker, [{ kind: "job", id: jobPostingId }]);
+    const settle = async () => { await vi.waitFor(async () => expect(["complete", "failed"]).toContain((await service.get(maker, conversation.id)).run?.status)); return service.get(maker, conversation.id); };
+    const say = async (text: string) => { await service.send(maker, conversation.id, { requestId: randomUUID(), text }); return settle(); };
+    const [start] = (await say("이 공고로 만들어 줘")).messages.flatMap(message => message.tools).flatMap(tool => (tool.brewStart ? [tool.brewStart] : []));
+    await service.openBrew(maker, conversation.id, start!.startId);
+
+    // 이 대화가 만들지 않은 제작은 열지 않는다.
+    await expect(service.beginInterview(maker, conversation.id, randomUUID())).rejects.toMatchObject({ statusCode: 404 });
+    // 「AI와 대화 시작」: 카드를 든 답변과 첫 질문 답변이 붙고, 서버가 실행을 시작한다. 두 번 눌러도 한 번이다.
+    const before = (await service.get(maker, conversation.id)).messages.length;
+    await Promise.all([service.beginInterview(maker, conversation.id, brewId), service.beginInterview(maker, conversation.id, brewId)]);
+    let row = await settle();
+    expect(openInterview).toHaveBeenCalledTimes(1);
+    expect(row.messages).toHaveLength(before + 2);
+    expect(row.messages.at(-2)).toMatchObject({ role: "assistant", text: "", tools: [{ name: "AI 대화", brewInterview: { brewId, jobPostingId } }] });
+    expect(row.run?.status).toBe("failed");
+    expect(events).toEqual([{ kind: "brew_interview_start", brewId, title: "프론트엔드 개발자" }]);
+    // 그 실행에는 근거가 넘어갔다.
+    expect(seen.at(-1)).toMatchObject([{ step: "interview", interview: { bases: [{ index: 0, kind: "requirement", coverage: "missing", label: "장애 대응 경험이 필요합니다." }, { index: 1, kind: "record", coverage: null }], saved: [], limit: 6 } }]);
+    // 실패한 첫 질문은 다시 보내기로 같은 계기에서 다시 만든다. 카드는 그대로다.
+    failFirstQuestion = false;
+    await service.retry(maker, conversation.id);
+    row = await settle();
+    expect(row.messages).toHaveLength(before + 2);
+    expect(row.messages.at(-1)).toMatchObject({ role: "assistant", text: "장애를 어떻게 대응하셨나요?" });
+    expect(row.messages.at(-2)!.tools[0]!.brewInterview).toEqual({ brewId, jobPostingId });
+    expect(events).toHaveLength(2);
+    await service.beginInterview(maker, conversation.id, brewId);
+    expect((await service.get(maker, conversation.id)).messages).toHaveLength(before + 2);
+    expect(await service.get(maker, conversation.id)).not.toHaveProperty("brewInterviews");
+    // 인터뷰 단계의 「이어서 만들기」는 대화 안의 카드로 간다.
+    expect((await service.openBrew(maker, conversation.id, start!.startId)).conversation.messages.flatMap(message => message.tools).filter(tool => tool.brewInterview)).toHaveLength(1);
+
+    // 답은 사용자 메시지 원문이다. 같은 근거의 꼬리 답은 앞의 답과 합쳐 다시 저장한다.
+    await say("새벽 장애를 맡았습니다.");
+    expect(saved.at(-1)).toMatchObject({ basis: bases[0]!.basis, question: "장애를 어떻게 대응하셨나요?", transcript: "새벽 장애를 맡았습니다." });
+    saveTwice = true;
+    await say("  복구까지 20분 걸렸습니다.  ");
+    saveTwice = false;
+    expect(saved.at(-1)!.transcript).toBe("새벽 장애를 맡았습니다.\n\n복구까지 20분 걸렸습니다.");
+    // 같은 호출이 두 번 와도(다시 보내기) 멱등 키가 같다. 앞의 답과는 다르다.
+    expect(saved.at(-1)!.key).toBe(saved.at(-2)!.key);
+    expect(saved.at(-1)!.key).not.toBe(saved.at(-3)!.key);
+    // 이 대화의 사용자 메시지가 아닌 id는 받지 않는다.
+    const count = saved.length;
+    answerIds = ids => [...ids, randomUUID()];
+    await say("한 번 더 답합니다.");
+    answerIds = ids => ids;
+    expect(saved).toHaveLength(count);
+    expect(rejections.at(-1)).toContain("사용자 메시지가 아닌 id");
+    // 디자인 단계로 간 제작에는 더 저장하지 않는다.
+    stage = "recipe";
+    await say("더 말할게요.");
+    expect(saved).toHaveLength(count);
+    expect(rejections.at(-1)).toContain("디자인 단계로 넘어간 제작");
+  });
+  it("대화에서 연 디자인은 카드를 한 번 붙이고 구성을 맡기며, 그리기는 디자인 대화에 보내 그 답을 카드로 붙인다", async () => {
+    const identity = new MongoIdentityService(fixture.resource);
+    const maker = (await identity.signup({ email: `${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "디자인 검증" })).user.id;
+    await consent.grant(maker, ["career_records", "job_posting_analysis"], CONSENT_POLICY_VERSION);
+    const jobPostingId = randomUUID(); const jobAnalysisId = randomUUID(); const brewId = randomUUID(); const drawnId = randomUUID(); const proposedId = randomUUID(); const revisedId = randomUUID(); const generationId = randomUUID();
+    let generation: { id: string; status: "queued" | "running" | "done" | "failed" } | null = null;
+    let stage: "draft" | "interviewing" | "recipe" = "draft";
+    const design = { ready: true, busy: false, styles: ["새벽 청록"], layouts: ["차트 주인공"], screens: [] as string[], selected: null };
+    const deps = {
+      analyzePosting: vi.fn(async () => ({ jobAnalysisId })),
+      createFreeBrew: vi.fn(), readPostingUrl: vi.fn(), submitPosting: vi.fn(), brewOrigin: vi.fn(async () => ({ jobAnalysisId, jobPostingId, title: "프론트엔드 개발자", companyName: "가상 회사", lengthPreset: "single" as const })),
+      getResult: vi.fn(async () => ({ analysis: { jobAnalysisId, status: "done", stage: "done", failure: null, attempts: 1, resultVersion: 1, analyzedAt: null }, requirements: [{ coverage: "missing" }], sourceText: null, previous: null }) as never),
+      createBrew: vi.fn(async () => ({ brewId })),
+      brewState: vi.fn(async () => ({ status: stage, selected: 2, generation })),
+      openInterview: vi.fn(), interview: vi.fn(async () => ({ bases: [], session: null })), saveInterviewAnswer: vi.fn(),
+      startRecipe: vi.fn(async () => undefined),
+      selectedRecords: vi.fn(async () => []), startGeneration: vi.fn(async () => { generation = { id: generationId, status: "queued" }; return { generationId }; }),
+      designDraw: vi.fn(async () => ({ designMessageId: drawnId })),
+      designPropose: vi.fn(async () => ({ designMessageId: proposedId })),
+      designRevise: vi.fn(async () => ({ designMessageId: revisedId })),
+      designState: vi.fn(async () => design),
+    };
+    const jobs = { get: async () => ({ id: jobPostingId, title: "프론트엔드 개발자", company: { name: "가상 회사" } }) as never };
+    const seen: unknown[] = []; const tools: unknown[] = []; const refusals: string[] = [];
+    const runtime: AgentRuntime = { run: async input => {
+      seen.push(input.brews);
+      const said = input.messages.at(-1)!.text;
+      if (said.includes("만들어")) { const { start } = await input.startBrew({ jobPostingId }); await input.emit({ type: "tool", tool: { id: randomUUID(), name: "포트폴리오 제작", status: "complete", summary: "", brewStart: start } }); }
+      try {
+        if (said.includes("따뜻한")) tools.push(await input.proposeDesign({ brewId, request: said, focus: "styles" }));
+        if (said.includes("초록")) tools.push(await input.reviseDesign({ brewId, instruction: "강조색을 짙은 초록으로 바꾼다", screen: "" }));
+      } catch (error) { if (!(error instanceof AgentToolRejection)) throw error; refusals.push(error.issues.join(" ")); }
+      await input.emit({ type: "text", text: "네." });
+    } };
+    const service = new AgentChatService(fixture.resource, runtime, career, jobs, documents, consent, new AgentCredentials(fixture.resource), new PortfolioReadService(fixture.resource), new PageService(fixture.resource), undefined, undefined, undefined, undefined, undefined, deps);
+    service.setRunFailureListener(() => {}); services.push(service);
+    const conversation = await service.create(maker, [{ kind: "job", id: jobPostingId }]);
+    const say = async (text: string) => { await service.send(maker, conversation.id, { requestId: randomUUID(), text }); await vi.waitFor(async () => expect((await service.get(maker, conversation.id)).run?.status).toBe("complete")); return service.get(maker, conversation.id); };
+    const [start] = (await say("이 공고로 만들어 줘")).messages.flatMap(message => message.tools).flatMap(tool => (tool.brewStart ? [tool.brewStart] : []));
+    await service.openBrew(maker, conversation.id, start!.startId);
+    const designs = (row: { messages: { tools: { brewDesign?: unknown }[] }[] }) => row.messages.flatMap(message => message.tools).flatMap(tool => (tool.brewDesign ? [tool.brewDesign] : []));
+
+    // 재료 단계에서는 열지 않는다. 이 대화가 만들지 않은 제작도 열지 않는다.
+    await expect(service.beginDesign(maker, conversation.id, brewId)).rejects.toMatchObject({ statusCode: 409 });
+    await expect(service.beginDesign(maker, conversation.id, randomUUID())).rejects.toMatchObject({ statusCode: 404 });
+    // 「디자인 고르기」: 구성을 맡기고 카드를 붙인다. 실행을 시작하지 않는다. 두 번 눌러도 카드는 하나다.
+    stage = "interviewing";
+    const before = await service.get(maker, conversation.id);
+    await Promise.all([service.beginDesign(maker, conversation.id, brewId), service.beginDesign(maker, conversation.id, brewId)]);
+    const opened = await service.get(maker, conversation.id);
+    expect(designs(opened)).toEqual([{ brewId, jobPostingId, designMessageId: null }]);
+    expect(opened.messages).toHaveLength(before.messages.length + 1);
+    expect(opened.messages.at(-1)).toMatchObject({ role: "assistant", text: "", tools: [{ name: "디자인" }] });
+    expect(opened.run).toEqual(before.run);
+    expect(deps.startRecipe).toHaveBeenCalledTimes(1);
+
+    // 「첫 화면 보기」: 디자인 대화에 보내고 그 답을 가리키는 카드를 붙인다.
+    const input = { styleId: randomUUID(), layoutId: randomUUID() };
+    const drawn = await service.drawDesign(maker, conversation.id, brewId, input);
+    expect(deps.designDraw).toHaveBeenCalledWith(maker, brewId, input);
+    expect(designs(drawn).at(-1)).toEqual({ brewId, jobPostingId, designMessageId: drawnId });
+    // 디자인 대화의 거절은 그 문장 그대로 올린다.
+    deps.designDraw.mockRejectedValueOnce(new AgentChatError(409, "design chat is running", "답을 만드는 중입니다. 끝난 뒤에 보내 주세요."));
+    await expect(service.drawDesign(maker, conversation.id, brewId, input)).rejects.toMatchObject({ statusCode: 409, publicMessage: "답을 만드는 중입니다. 끝난 뒤에 보내 주세요." });
+    expect(designs(await service.get(maker, conversation.id))).toHaveLength(2);
+
+    // 디자인 단계의 「이어서 만들기」는 대화 안의 카드로 간다. 모델에는 디자인 대화의 상태가 넘어간다.
+    stage = "recipe";
+    await say("지금 뭐 골랐지?");
+    expect(seen.at(-1)).toMatchObject([{ step: "design", design }]);
+    expect(deps.designState).toHaveBeenCalledWith(maker, brewId);
+
+    // 말로 견본을 다시 받고 첫 화면을 고친다. 디자인 대화에 그 차례를 맡기고 그 답을 가리키는 카드를 도구 결과로 돌려준다.
+    await say("더 따뜻한 색으로 다시 보여 줘");
+    expect(deps.designPropose).toHaveBeenCalledWith(maker, brewId, { request: "더 따뜻한 색으로 다시 보여 줘", focus: "styles" });
+    await say("강조색을 초록으로");
+    expect(deps.designRevise).toHaveBeenCalledWith(maker, brewId, { instruction: "강조색을 짙은 초록으로 바꾼다", screen: "" });
+    expect(tools).toEqual([{ brewId, jobPostingId, designMessageId: proposedId }, { brewId, jobPostingId, designMessageId: revisedId }]);
+    // 디자인 대화의 거절은 그 문장을 모델에게 돌려준다. 실행은 실패하지 않는다.
+    deps.designRevise.mockRejectedValueOnce(new AgentChatError(409, "design chat is running", "답을 만드는 중입니다. 끝난 뒤에 보내 주세요."));
+    await say("강조색을 초록으로 다시");
+    expect(refusals.at(-1)).toBe("답을 만드는 중입니다. 끝난 뒤에 보내 주세요.");
+
+    // 「이 스타일로 만들기」: 생성을 맡기고 「생성」 카드를 붙인다. 실행을 시작하지 않는다. 두 번 눌러도 카드는 하나다.
+    const beforeMake = await service.get(maker, conversation.id);
+    await service.startGeneration(maker, conversation.id, brewId);
+    const made = await service.startGeneration(maker, conversation.id, brewId);
+    const generations = made.messages.flatMap(message => message.tools).flatMap(tool => (tool.brewGeneration ? [tool.brewGeneration] : []));
+    expect(generations).toEqual([{ brewId, jobPostingId, generationId }]);
+    expect(made.messages).toHaveLength(beforeMake.messages.length + 1);
+    expect(made.run).toEqual(beforeMake.run);
+    // 만드는 중에는 디자인을 바꾸지 않는다 — 도구도 「첫 화면 보기」도 거절한다. 모델에는 생성 상태가 넘어간다.
+    const refusedBefore = refusals.length;
+    await say("강조색을 초록으로 바꿔 줘");
+    expect(refusals.at(-1)).toContain("포트폴리오를 만드는 중");
+    expect(refusals).toHaveLength(refusedBefore + 1);
+    expect(seen.at(-1)).toMatchObject([{ generation: { status: "queued" } }]);
+    await expect(service.drawDesign(maker, conversation.id, brewId, input)).rejects.toMatchObject({ statusCode: 409, publicMessage: expect.stringContaining("만드는 중") });
+    generation = { id: generationId, status: "done" };
+    await say("강조색을 초록으로 바꿔 줘");
+    expect(refusals.at(-1)).toContain("다듬기에서 열기");
+    // 편집의 「다시 뽑기」: 그 제작의 대화에 다시 만들 수 있는 디자인 카드를 붙인다. 그 카드에서는 다 만든 제작도 고치고 다시 맡긴다.
+    expect(await service.resumeBrew(maker, brewId, { again: true })).toEqual({ conversationId: conversation.id });
+    const again = await service.get(maker, conversation.id);
+    expect(designs(again).at(-1)).toEqual({ brewId, jobPostingId, designMessageId: null, again: true });
+    const revisedBefore = tools.length;
+    await say("강조색을 초록으로 바꿔 줘");
+    expect(tools).toHaveLength(revisedBefore + 1);
+    expect(tools.at(-1)).toMatchObject({ brewId, again: true });
+    await service.startGeneration(maker, conversation.id, brewId);
+    expect(deps.startGeneration).toHaveBeenLastCalledWith(maker, brewId, true);
+    // 두 번 눌러도 다시 뽑기 카드는 하나다.
+    await service.resumeBrew(maker, brewId, { again: true });
+    expect(designs(await service.get(maker, conversation.id)).filter(card => (card as { again?: boolean }).again)).toHaveLength(1);
+    generation = { id: generationId, status: "done" };
+    generation = null;
+
+    // 지금의 화면에서 인터뷰를 마친 제작은 「이어서 만들기」가 이 대화에 디자인을 연다.
+    const other = await service.create(maker, [{ kind: "job", id: jobPostingId }]);
+    await service.send(maker, other.id, { requestId: randomUUID(), text: "이 공고로 만들어 줘" });
+    await vi.waitFor(async () => expect((await service.get(maker, other.id)).run?.status).toBe("complete"));
+    const [otherStart] = (await service.get(maker, other.id)).messages.flatMap(message => message.tools).flatMap(tool => (tool.brewStart ? [tool.brewStart] : []));
+    // 이 대화에서 재료를 고른 뒤 인터뷰 · 구성은 지금의 화면에서 마친 제작이다.
+    await mongoCollections(fixture.resource.db).agentConversations.updateOne({ _id: other.id }, { $set: { [`brewIds.${jobAnalysisId}`]: brewId } });
+    const resumed = await service.openBrew(maker, other.id, otherStart!.startId);
+    expect(designs(resumed.conversation)).toEqual([{ brewId, jobPostingId, designMessageId: null }]);
+  });
+  it("공고 없이 · 공고 주소로 시작하고, 대화가 없는 제작은 새 대화에서 이어 간다", async () => {
+    const identity = new MongoIdentityService(fixture.resource);
+    const maker = (await identity.signup({ email: `${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "시작 검증" })).user.id;
+    await consent.grant(maker, ["career_records", "job_posting_analysis"], CONSENT_POLICY_VERSION);
+    const freeAnalysisId = randomUUID(); const freeBrewId = randomUUID(); const jobPostingId = randomUUID(); const jobAnalysisId = randomUUID(); const legacyAnalysisId = randomUUID(); const legacyBrewId = randomUUID();
+    const done = (id: string) => ({ analysis: { jobAnalysisId: id, status: "done", stage: "done", failure: null, attempts: 1, resultVersion: 1, analyzedAt: null }, requirements: [], sourceText: null, previous: null }) as never;
+    const deps = {
+      analyzePosting: vi.fn(), getResult: vi.fn(async (_user: string, id: string) => done(id)), createBrew: vi.fn(),
+      createFreeBrew: vi.fn(async () => ({ brewId: freeBrewId, jobAnalysisId: freeAnalysisId })),
+      readPostingUrl: vi.fn(async () => ({ sourceUrl: "https://example.com/jobs/1", companyName: null, title: "백엔드 개발자", descriptionRaw: "하는 일과 자격 요건 ".repeat(30) })),
+      submitPosting: vi.fn(async () => ({ jobPostingId, jobAnalysisId })),
+      brewOrigin: vi.fn(async (): Promise<{ jobAnalysisId: string; jobPostingId: string | null; title: string; companyName: string; lengthPreset: "single" | "double" | "triple" } | null> => ({ jobAnalysisId: legacyAnalysisId, jobPostingId: null, title: "사이드 프로젝트 모음", companyName: "", lengthPreset: "double" })),
+      brewState: vi.fn(async () => ({ status: "draft" as const, selected: 0, generation: null })),
+      selectedRecords: vi.fn(async () => []), openInterview: vi.fn(), interview: vi.fn(async () => ({ bases: [], session: null })), saveInterviewAnswer: vi.fn(), startRecipe: vi.fn(), startGeneration: vi.fn(), designDraw: vi.fn(), designPropose: vi.fn(), designRevise: vi.fn(), designState: vi.fn(async () => null),
+    };
+    // 등록한 공고만 있다. 등록 뒤에는 그 공고가 대화의 자료로 붙어 다음 말을 보낼 때 읽힌다.
+    const jobs = { get: async (_user: string, id: string) => { if (id === jobPostingId) return { id, title: "백엔드 개발자", company: { name: "가상 회사" }, descriptionRaw: "하는 일" } as never; throw Object.assign(new Error("없는 공고"), { statusCode: 404 }); } };
+    const rejections: string[] = [];
+    let companyName: string | undefined;
+    let pastedId: string | undefined;
+    const runtime: AgentRuntime = { run: async input => {
+      const said = input.messages.at(-1)!.text;
+      try {
+        const last = input.messages.at(-1)!;
+        const started = said.includes("공고 없이") ? await input.startFreeBrew({ title: "사이드 프로젝트", brief: "만든 것을 보여 주고 싶다", length: "double" })
+          : said.includes("[공고 글]") ? await input.importPosting({ messageId: pastedId ?? last.id, companyName: "다른 회사", title: "프론트엔드 개발자" })
+          : await input.importPosting({ url: "https://example.com/jobs/1", ...(companyName ? { companyName } : {}) });
+        await input.emit({ type: "tool", tool: { id: randomUUID(), name: "포트폴리오 제작", status: "complete", summary: "", brewStart: started.start } });
+      } catch (error) { if (!(error instanceof AgentToolRejection)) throw error; rejections.push(error.issues.join(" ")); }
+      await input.emit({ type: "text", text: "네." });
+    } };
+    const service = new AgentChatService(fixture.resource, runtime, career, jobs as never, documents, consent, new AgentCredentials(fixture.resource), new PortfolioReadService(fixture.resource), new PageService(fixture.resource), undefined, undefined, undefined, undefined, undefined, deps);
+    service.setRunFailureListener(() => {}); services.push(service);
+    const conversation = await service.create(maker, []);
+    const say = async (text: string) => { await service.send(maker, conversation.id, { requestId: randomUUID(), text }); await vi.waitFor(async () => expect((await service.get(maker, conversation.id)).run?.status).toBe("complete")); return service.get(maker, conversation.id); };
+    const starts = (row: Awaited<ReturnType<typeof say>>) => row.messages.flatMap(message => message.tools).flatMap(tool => (tool.brewStart ? [tool.brewStart] : []));
+
+    // 공고 없이: 제작을 바로 만들고, 카드는 분석 없이 「담을 기록 고르기」부터 보인다.
+    const [free] = starts(await say("공고 없이 만들고 싶어"));
+    expect(free).toMatchObject({ jobPostingId: null, jobAnalysisId: freeAnalysisId, title: "사이드 프로젝트", lengthPreset: "double", brewId: freeBrewId });
+    expect(deps.createFreeBrew).toHaveBeenCalledWith(maker, { title: "사이드 프로젝트", brief: "만든 것을 보여 주고 싶다", lengthPreset: "double" });
+    expect(await service.brewStartState(maker, conversation.id, free!.startId)).toMatchObject({ status: "done", brewId: freeBrewId, step: "materials", announced: true });
+    const opened = await service.openBrew(maker, conversation.id, free!.startId);
+    expect(opened.conversation.messages.at(-1)!.tools[0]!.brewMaterials).toEqual({ brewId: freeBrewId, jobPostingId: null });
+
+    // 공고 주소: 회사를 읽지 못했으면 묻게 하고, 받은 뒤 등록한다. 등록한 공고는 대화의 자료에 붙는다.
+    await say("이 주소로 만들어 줘");
+    expect(rejections.at(-1)).toContain("companyName");
+    expect(deps.submitPosting).not.toHaveBeenCalled();
+    companyName = "가상 회사";
+    expect(starts(await say("가상 회사예요")).at(-1)).toMatchObject({ jobPostingId, jobAnalysisId, title: "백엔드 개발자", companyName: "가상 회사" });
+    expect(deps.submitPosting).toHaveBeenCalledWith(maker, expect.stringMatching(/^[0-9a-f]{64}$/), { companyName: "가상 회사", title: "백엔드 개발자", descriptionRaw: expect.any(String), sourceUrl: "https://example.com/jobs/1" });
+    expect((await service.get(maker, conversation.id)).contexts).toEqual([{ kind: "job", id: jobPostingId }]);
+
+    // 공고 글: 모델이 옮겨 적지 않는다. 가리킨 사용자 메시지의 원문이 그대로 등록된다. 이 대화의 사용자 메시지가 아니면 받지 않는다.
+    const posting = `[공고 글]\n  하는 일: 결제 화면을 만듭니다.\n${"자격 요건: React 3년 이상. ".repeat(20)}`;
+    pastedId = randomUUID();
+    await say(posting);
+    expect(rejections.at(-1)).toContain("사용자 메시지가 아닌 id");
+    pastedId = undefined;
+    await say(posting);
+    expect(deps.submitPosting).toHaveBeenLastCalledWith(maker, expect.any(String), { companyName: "다른 회사", title: "프론트엔드 개발자", descriptionRaw: posting.trim() });
+
+    // 대화가 없는 제작(옛 화면에서 만든 것)은 새 대화를 열어 「포트폴리오 제작」 카드와 지금 단계의 카드를 세운다.
+    const { conversationId } = await service.resumeBrew(maker, legacyBrewId);
+    expect(conversationId).not.toBe(conversation.id);
+    const resumed = await service.get(maker, conversationId);
+    expect(resumed.contexts).toEqual([]);
+    expect(resumed.title).toBe("사이드 프로젝트 모음");
+    expect(resumed.messages.map(message => message.tools.map(tool => tool.name))).toEqual([["포트폴리오 제작"], ["재료 고르기"]]);
+    expect(resumed.messages[0]!.tools[0]!.brewStart).toMatchObject({ jobPostingId: null, jobAnalysisId: legacyAnalysisId, brewId: legacyBrewId, lengthPreset: "double" });
+    expect(resumed.run).toBeNull();
+    // 같은 제작을 다시 이으면 같은 대화이고 카드는 늘지 않는다.
+    expect(await service.resumeBrew(maker, legacyBrewId)).toEqual({ conversationId });
+    expect((await service.get(maker, conversationId)).messages).toHaveLength(2);
+    // 지웠거나 없는 제작은 잇지 않는다.
+    deps.brewOrigin.mockResolvedValueOnce(null);
+    await expect(service.resumeBrew(maker, randomUUID())).rejects.toMatchObject({ statusCode: 404 });
   });
 });

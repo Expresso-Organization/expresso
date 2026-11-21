@@ -9,6 +9,7 @@ const AGGREGATE_COLLECTIONS = ["metrics_daily", "insights", "analytics_rate_limi
 const DOMAIN_COLLECTIONS = [
   "agent_conversations",
   "agent_credentials",
+  "design_chats",
   "preparation_plans",
   "proposal_feeds",
   "consultant_profiles",

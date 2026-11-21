@@ -38,6 +38,16 @@ const EMPTY_OPERATORS: readonly FilterOperator[] = ["is_empty", "is_not_empty"];
 export const MAX_FILTER_LEAVES = 20;
 export const MAX_SORTS = 10;
 
+/**
+ * 기간을 화면에 쓰는 한 가지 모양입니다. 월 단위로 `2025.03 – 2025.04`, 끝이 없으면 `2025.03`입니다.
+ * 표 · 갤러리 · 문서 속성이 같은 값을 같은 글자로 보이게 합니다(화면 정의서 05 · 05b).
+ */
+export function formatPeriodRange(start: string | null | undefined, end?: string | null): string {
+  const month = (value: string) => value.slice(0, 7).replace("-", ".");
+  if (!start) return "";
+  return end && month(end) !== month(start) ? `${month(start)} – ${month(end)}` : month(start);
+}
+
 export function activeDefinitions(category: CareerCategory): CareerPropertyDefinitionV2[] {
   return (category.propertySchemaV2 ?? []).filter((item) => item.deletedAt === null).sort((left, right) => left.order - right.order);
 }

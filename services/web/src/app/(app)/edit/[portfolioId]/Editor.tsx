@@ -52,7 +52,7 @@ function panelTarget(tab: PanelTab, revisionCount: number, chosen: string | null
 // 편집 화면은 사이드바의 「새 포트폴리오」 묶음에 속한다(`sectionForPath`의 /edit).
 const RAIL_ITEMS = [
   { icon: "house", label: "홈", href: "/home" as const, active: false },
-  { icon: "coffee", label: "새 포트폴리오", href: "/brew/new" as const, active: true },
+  { icon: "coffee", label: "새 포트폴리오", href: "/home?new=portfolio" as const, active: true },
   { icon: "target", label: "공고 탐색", href: "/jobs" as const, active: false },
   { icon: "chart-bar", label: "분석", href: "/analytics" as const, active: false },
 ];
@@ -430,7 +430,7 @@ export function Editor({
             </span>
             {/* 지금 판의 디자인을 바꾸는 API는 없다. 다른 디자인으로 다시 뽑는 단계로 간다. */}
             <Link
-              href={`/brew/${portfolio.brewId}/design?again=1`}
+              href={`/brew/${portfolio.brewId}?again=1`}
               className={styles.themeAction}
               title="디자인을 바꿔 새로 만듭니다 · 이번 달 크레딧을 씁니다"
             >
@@ -644,6 +644,8 @@ export function Editor({
                     title: portfolio.title,
                     description: generatedPage.rationale,
                     ...(generatedPage.styleSpec ? { grammar: generatedPage.styleSpec } : {}),
+                    // 배포될 문서와 같게 그림 스크립트와 정책을 싣는다. 그림 출처는 배포 주소에서 더해진다.
+                    ...(generatedPage.script ? { script: generatedPage.script, run: { origin: "" } } : {}),
                   })}
                 </pre>
               ) : (

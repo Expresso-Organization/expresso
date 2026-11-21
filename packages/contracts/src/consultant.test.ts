@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AgentDiagnosisInputSchema, ConsultantDiagnosisSchema, GoalDemandSchema, AgentCommitmentInputSchema, AgentCommitmentUpdateInputSchema, AgentMemoryUpdateInputSchema, CommitmentCheckinAnswerSchema, ConsultantCheckinsSchema, ConsultantMemorySchema, ConversationDigestSchema, SetConsultantStageSchema, UpdateCommitmentSchema } from "./consultant.js";
+import { diagnosisCounts, diagnosisCountsLine, AgentDiagnosisInputSchema, ConsultantDiagnosisSchema, GoalDemandSchema, AgentCommitmentInputSchema, AgentCommitmentUpdateInputSchema, AgentMemoryUpdateInputSchema, CommitmentCheckinAnswerSchema, ConsultantCheckinsSchema, ConsultantMemorySchema, ConversationDigestSchema, SetConsultantStageSchema, UpdateCommitmentSchema } from "./consultant.js";
 
 const id = "00000000-0000-4000-8000-000000000001";
 const at = "2026-11-20T00:00:00.000Z";
@@ -68,5 +68,15 @@ describe("약속과 확인", () => {
     expect(AgentDiagnosisInputSchema.safeParse({ summary: "요약", items: [] }).success).toBe(false);
     expect(AgentDiagnosisInputSchema.safeParse({ summary: "", items: [{ itemId: "technology:java", status: "gap" }] }).success).toBe(false);
     expect(AgentDiagnosisInputSchema.safeParse({ summary: "요약", items: [{ itemId: "technology:java", status: "confirmed", evidence: [{ recordId: "x", quote: "q" }] }] }).success).toBe(false);
+  });
+});
+
+describe("진단의 수", () => {
+  it("상태별로 세고 경력 연차는 세지 않는다. 카드 · 답변 · 요지가 이 수를 쓴다", () => {
+    const item = (kind: string, status: "confirmed" | "partial" | "unconfirmed" | "gap") => ({ kind, status });
+    const counts = diagnosisCounts([item("technology", "confirmed"), item("technology", "confirmed"), item("experience", "partial"), item("qualification", "unconfirmed"), item("career", "unconfirmed"), item("technology", "gap")]);
+    expect(counts).toEqual({ confirmed: 2, partial: 1, unconfirmed: 1, gap: 1 });
+    expect(diagnosisCountsLine(counts)).toBe("확인 2 · 일부 1 · 미확인 1 · 부족 1");
+    expect(diagnosisCounts([])).toEqual({ confirmed: 0, partial: 0, unconfirmed: 0, gap: 0 });
   });
 });

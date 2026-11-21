@@ -45,7 +45,7 @@ export function SidebarNav() {
 
   return (
     <nav aria-label="주요 이동">
-      <Link href="/brew/new" className={styles.brew} title="새 포트폴리오">
+      <Link href="/home?new=portfolio" className={styles.brew} title="새 포트폴리오">
         <span className={styles.brewLead}><Icon name="coffee" weight="fill" size={15} /></span>
         <span className={`${styles.copy} ${styles.brewLabel}`}>새 포트폴리오</span>
       </Link>

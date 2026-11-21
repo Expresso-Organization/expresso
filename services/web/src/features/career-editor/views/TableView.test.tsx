@@ -141,7 +141,7 @@ describe("TableView", () => {
     fireEvent.click(screen.getByText("Go"));
     expect(onCellCommit).toHaveBeenCalledWith(popupRecord.id, expect.objectContaining({ id: technologiesId }), { type: "multi_select", value: [optionA, optionB] });
     fireEvent.pointerDown(document.body);
-    const dateCell = screen.getByRole("gridcell", { name: "2026-09-01" });
+    const dateCell = screen.getByRole("gridcell", { name: "2026.09" });
     dateCell.getBoundingClientRect = () => ({ top: 100, bottom: 142, left: 620, right: 780, width: 160, height: 42 } as DOMRect);
     fireEvent.click(dateCell); fireEvent.click(dateCell);
     expect(screen.getByRole("dialog", { hidden: true }).getAttribute("aria-label")).toBe("기간 날짜 선택");
