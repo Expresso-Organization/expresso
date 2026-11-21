@@ -1,4 +1,10 @@
 import {
+  AgentBrewResumeResponseSchema,
+  ActivityListResponseSchema,
+  ProposalFeedResponseSchema,
+  type ListActivitiesQuery,
+  BrewTrashListResponseSchema,
+  PortfolioTrashListResponseSchema,
   MonthlyUsageResponseSchema,
   PlanListResponseSchema,
   AnalyticsAggregationResponseSchema,
@@ -31,7 +37,14 @@ import {
   CareerCategoriesResponseSchema,
   CareerProfileResponseSchema,
   OptionalCareerProfileResponseSchema,
+  OptionalJobGoalResponseSchema,
+  CommitmentCheckinResultSchema,
+  ConsultantCheckinsResponseSchema,
+  ConsultantMemoryResponseSchema,
+  ConsultantOutreachResponseSchema,
+  JobGoalResponseSchema,
   type SaveCareerProfile,
+  type SaveJobGoal,
   CareerRecordListResponseSchema,
   CareerRecordResponseSchema,
   CareerDocumentBootstrapSchema,
@@ -106,6 +119,9 @@ import {
   type ListPortfoliosQuery,
   type Login,
   type Signup,
+  DesignChatStateResponseSchema,
+  type CommitmentCheckinAnswer,
+  type ConsultantStage,
 } from "@expresso/contracts";
 import { z } from "zod";
 
@@ -214,6 +230,18 @@ export const engagement = {
 };
 
 export const portfolios = {
+  /** 휴지통으로 옮긴다. 공개 중이면 공개도 멈춘다. */
+  trash: (accessToken: string, portfolioId: string) =>
+    requestNoContent(`${API_PREFIX}/portfolios/${portfolioId}`, { accessToken, method: "DELETE" }),
+
+  /** 휴지통에서 되살린다. 공개는 다시 켜지 않는다. */
+  restore: (accessToken: string, portfolioId: string) =>
+    requestNoContent(`${API_PREFIX}/portfolios/trash/${portfolioId}/restore`, { accessToken, method: "POST" }),
+
+  /** 휴지통에 있는 포트폴리오. 최근에 지운 순서. */
+  trashList: (accessToken: string) =>
+    request(`${API_PREFIX}/portfolios/trash`, PortfolioTrashListResponseSchema, { accessToken, cache: "no-store" }),
+
   /** 00 홈 카드 · 사이드바. 최근 편집 순. */
   list: (accessToken: string, query: Partial<ListPortfoliosQuery> = {}) =>
     request(`${API_PREFIX}/portfolios`, PortfolioListResponseSchema, {
@@ -395,6 +423,55 @@ export const publishing = {
     ),
 };
 
+/** 능동 제안 — 에이전트가 먼저 권하는 행동. 켠 사용자에게만 만들어진다. */
+/** 컨설턴트의 기억 — 「내 진행」 화면이 읽고 고친다. */
+export const consultant = {
+  memory: (accessToken: string) =>
+    request(`${API_PREFIX}/consultant/memory`, ConsultantMemoryResponseSchema, { accessToken, cache: "no-store" }),
+  /** 사용자가 직접 고른 단계로 저장한다. */
+  setStage: (accessToken: string, stage: ConsultantStage) =>
+    request(`${API_PREFIX}/consultant/stage`, ConsultantMemoryResponseSchema, { accessToken, method: "PUT", body: { stage } }),
+  removePreference: (accessToken: string, preferenceId: string) =>
+    request(`${API_PREFIX}/consultant/preferences/${preferenceId}`, ConsultantMemoryResponseSchema, { accessToken, method: "DELETE" }),
+  /** 컨설턴트가 먼저 건네는 연락 — 답을 기다리는 약속과 안부. 홈이 읽는다. */
+  checkins: (accessToken: string) =>
+    request(`${API_PREFIX}/consultant/checkins`, ConsultantCheckinsResponseSchema, { accessToken, cache: "no-store" }),
+  /** 먼저 연락하기를 켜고 끈다. `proposals`가 참이면 능동 제안도 함께 켜고 끈다. */
+  setOutreach: (accessToken: string, enabled: boolean, proposals = true) =>
+    request(`${API_PREFIX}/consultant/outreach`, ConsultantOutreachResponseSchema, { accessToken, method: "PUT", body: { enabled, proposals } }),
+  /** 확인 카드의 답. 「했어요」면 그 일을 묻는 대화의 id가 함께 온다. */
+  answerCheckin: (accessToken: string, commitmentId: string, answer: CommitmentCheckinAnswer) =>
+    request(`${API_PREFIX}/consultant/commitments/${commitmentId}/checkin`, CommitmentCheckinResultSchema, { accessToken, method: "POST", body: answer }),
+  dismissQuiet: (accessToken: string) =>
+    request(`${API_PREFIX}/consultant/quiet/dismiss`, ConsultantCheckinsResponseSchema, { accessToken, method: "POST" }),
+};
+
+export const proposals = {
+  feed: (accessToken: string) =>
+    request(`${API_PREFIX}/proposals`, ProposalFeedResponseSchema, { accessToken, cache: "no-store" }),
+  /** 켠다. 첫 실행이 줄에 들어간다. 커리어 기록의 AI 사용 동의가 없으면 403이다. */
+  enable: (accessToken: string) =>
+    request(`${API_PREFIX}/proposals/enable`, ProposalFeedResponseSchema, { accessToken, method: "POST" }),
+  disable: (accessToken: string) =>
+    request(`${API_PREFIX}/proposals/disable`, ProposalFeedResponseSchema, { accessToken, method: "POST" }),
+  /** 「다시 받기」. 실행 중이면 409다. */
+  refresh: (accessToken: string) =>
+    request(`${API_PREFIX}/proposals/refresh`, ProposalFeedResponseSchema, { accessToken, method: "POST" }),
+  /** 「관심 없음」. 그 대상을 다시 제안하지 않는다. */
+  dismiss: (accessToken: string, proposalId: string) =>
+    request(`${API_PREFIX}/proposals/${proposalId}/dismiss`, ProposalFeedResponseSchema, { accessToken, method: "POST" }),
+};
+
+/** 수집한 활동(공모전 · 해커톤 · 부트캠프). 접수가 끝나지 않은 것을 마감이 가까운 순서로. */
+export const activities = {
+  list: (accessToken: string, query: Partial<ListActivitiesQuery> = {}) =>
+    request(`${API_PREFIX}/activities`, ActivityListResponseSchema, {
+      accessToken,
+      cache: "no-store",
+      query: { ...(query.kind ? { kind: query.kind } : {}), ...(query.limit ? { limit: query.limit } : {}), ...(query.offset ? { offset: query.offset } : {}) },
+    }),
+};
+
 export const consents = {
   /** 10d 온보딩과 09 설정이 읽는다. 범위마다 지금 상태 하나씩. */
   list: (accessToken: string) =>
@@ -418,6 +495,23 @@ export const consents = {
 };
 
 export const brews = {
+  /**
+   * 진행 중인 제작을 대화로 잇는다. 그 제작을 붙인 대화(없으면 새 대화)에 지금 단계의 카드를 붙이고 그 대화의 ID를 돌려준다.
+   * `again`이면 다 만든 제작도 다시 만들 수 있는 디자인 카드를 붙인다(편집의 「다시 뽑기」). AI를 부르지 않는다.
+   */
+  resume: (accessToken: string, brewId: string, again: boolean) =>
+    request(`${API_PREFIX}/agent/brews/${brewId}/resume`, AgentBrewResumeResponseSchema, { accessToken, method: "POST", body: again ? { again: true } : {}, cache: "no-store" }),
+
+  /** 만들던 포트폴리오를 휴지통으로 옮긴다. 생성 중이면 409다. */
+  trash: (accessToken: string, brewId: string) =>
+    requestNoContent(`${API_PREFIX}/brews/${brewId}`, { accessToken, method: "DELETE" }),
+
+  restore: (accessToken: string, brewId: string) =>
+    requestNoContent(`${API_PREFIX}/brews/trash/${brewId}/restore`, { accessToken, method: "POST" }),
+
+  trashList: (accessToken: string) =>
+    request(`${API_PREFIX}/brews/trash`, BrewTrashListResponseSchema, { accessToken, cache: "no-store" }),
+
   /**
    * 제작을 시작한다. 재료 순위는 이때 한 번 매겨진다.
    *
@@ -519,6 +613,12 @@ export const templates = {
     ),
 };
 
+export const designChat = {
+  /** 디자인 대화를 읽는다. 서버 화면은 이 대화를 쓸 수 있는 서버인지(AI가 꺼져 있으면 503) 보는 데 쓴다. */
+  get: (accessToken: string, brewId: string) =>
+    request(`${API_PREFIX}/brews/${brewId}/design-chat`, DesignChatStateResponseSchema, { accessToken, cache: "no-store" }),
+};
+
 export const designSystems = {
   /** M2 카탈로그. 레시피보다 먼저 열리므로 brew 입력에 기대지 않는다. */
   list: (accessToken: string) =>
@@ -586,6 +686,12 @@ export const generation = {
       GenerationJobStatusResponseSchema,
       { accessToken, cache: "no-store" },
     ),
+  /** 생성을 멈춘다. 끝난 생성은 409. 멈춘 생성은 `failed` · `CANCELLED`로 돌아온다. */
+  cancel: (accessToken: string, generationJobId: string) =>
+    request(`${API_PREFIX}/generation-jobs/${generationJobId}/cancel`, GenerationJobStatusResponseSchema, {
+      accessToken,
+      method: "POST",
+    }),
 };
 
 export const portfolioEditing = {
@@ -941,6 +1047,13 @@ export const jobs = {
       cache: "no-store",
     }),
 
+  /** 저장한 검색 한 건을 지운다. 남의 것이나 없는 것은 404. */
+  deleteSavedSearch: (accessToken: string, savedSearchId: string) =>
+    requestNoContent(`${API_PREFIX}/jobs/saved-searches/${savedSearchId}`, {
+      accessToken,
+      method: "DELETE",
+    }),
+
   /** 검색을 저장한다(201). 한 사람당 10개를 넘으면 409. */
   saveSearch: (accessToken: string, input: SaveJobSearch) =>
     request(`${API_PREFIX}/jobs/saved-searches`, SavedJobSearchResponseSchema, {
@@ -1015,6 +1128,20 @@ export const career = {
 
   saveProfile: (accessToken: string, input: SaveCareerProfile) =>
     request(`${API_PREFIX}/career/profile`, CareerProfileResponseSchema, {
+      method: "PUT",
+      accessToken,
+      body: input,
+    }),
+
+  /** 최종 구직 목표. 아직 적지 않았으면 data가 null이다. */
+  goal: (accessToken: string) =>
+    request(`${API_PREFIX}/career/goal`, OptionalJobGoalResponseSchema, {
+      accessToken,
+      cache: "no-store",
+    }),
+
+  saveGoal: (accessToken: string, input: SaveJobGoal) =>
+    request(`${API_PREFIX}/career/goal`, JobGoalResponseSchema, {
       method: "PUT",
       accessToken,
       body: input,

@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("@/features/career-editor/editor/CareerDocumentEditor", () => ({
   CareerDocumentEditor: ({ recordId, onAiRequest }: { recordId: string; onAiRequest?: (request: { id: string; recordId: string; prompt: string; blockIds: string[] }) => void }) => <div>편집기 {recordId}<button type="button" onClick={() => onAiRequest?.({ id: "selection-request", recordId, prompt: "선택한 문장을 짧게", blockIds: ["00000000-0000-4000-8000-000000000003"] })}>선택 AI 요청</button></div>,
 }));
+vi.mock("@/features/agent-chat/AgentChat", () => ({ AgentChat: () => null }));
 vi.mock("@/features/career-editor/ai/AiProposalPanel", () => ({ AiProposalPanel: ({ requestedPrompt }: { requestedPrompt?: { prompt: string } | null }) => <div>AI {requestedPrompt?.prompt}</div> }));
 vi.mock("@/features/career-editor/session/useCareerEditorSession", () => ({
   useCareerEditorSession: () => ({ snapshot: { status: "saved", documentVersion: 1, proposal: null }, document: { content: [] } }),
@@ -15,7 +16,7 @@ import { DocumentPanel } from "./DocumentPanel";
 
 const category = {
   id: "00000000-0000-4000-8000-000000000001", key: "project", name: "프로젝트", icon: "briefcase", defaultView: "gallery",
-  propertySchemaV2: [], schemaVersion: 1, sortOrder: 0, recordCount: 1, version: 1,
+  propertySchemaV2: [], schemaVersion: 1, sortOrder: 0, recordCount: 1, version: 1, archivedAt: null, builtIn: false,
 } satisfies CareerCategory;
 const record = {
   id: "00000000-0000-4000-8000-000000000002", categoryId: category.id, categoryKey: category.key, title: "드로워 기록",

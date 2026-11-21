@@ -8,7 +8,7 @@ import { type AdminService, registerAdminRoutes } from "../modules/admin/index.j
 import { type IdentityApi } from "../modules/identity/index.js";
 import { registerIdentityRoutes } from "../modules/identity/routes.js";
 import type { GoogleIdTokenVerifier } from "../modules/identity/google.js";
-import { type EntitlementApi } from "../modules/entitlements/index.js";
+import { outreachGate, type EntitlementApi } from "../modules/entitlements/index.js";
 import { registerEntitlementRoutes } from "../modules/entitlements/routes.js";
 import { type UsageApi } from "../modules/usage/index.js";
 import { registerUsageRoutes } from "../modules/usage/routes.js";
@@ -22,8 +22,9 @@ import { type JobBoardApi } from "../modules/jobs/index.js";
 import { registerJobBoardRoutes } from "../modules/jobs/board-routes.js";
 import { type JobAnalysisApi } from "../modules/job-analysis/index.js";
 import { registerJobAnalysisRoutes } from "../modules/job-analysis/routes.js";
-import { type MaterialsApi } from "../modules/materials/index.js";
+import { type BrewTrashService, type MaterialsApi } from "../modules/materials/index.js";
 import { registerMaterialsRoutes } from "../modules/materials/routes.js";
+import { registerBrewTrashRoutes } from "../modules/materials/trash-routes.js";
 import { type InterviewApi } from "../modules/interview/index.js";
 import { registerInterviewRoutes } from "../modules/interview/routes.js";
 import { type RecipeApi } from "../modules/recipe/index.js";
@@ -40,8 +41,9 @@ import { type GenerationApi } from "../modules/generation/index.js";
 import { registerGenerationRoutes } from "../modules/generation/routes.js";
 import { type PortfolioEditingApi } from "../modules/portfolio-editing/index.js";
 import { registerPortfolioEditingRoutes } from "../modules/portfolio-editing/routes.js";
-import { type PortfolioReadApi } from "../modules/portfolios/index.js";
+import { type PortfolioReadApi, type PortfolioTrashService } from "../modules/portfolios/index.js";
 import { registerPortfolioRoutes } from "../modules/portfolios/routes.js";
+import { registerPortfolioTrashRoutes } from "../modules/portfolios/trash-routes.js";
 import { type LayoutApi } from "../modules/layout/index.js";
 import { type ConsentApi } from "../modules/consent/index.js";
 import { registerConsentRoutes } from "../modules/consent/routes.js";
@@ -54,11 +56,14 @@ import { registerPageRoutes } from "../modules/page/routes.js";
 import type { PageElementEditor } from "../modules/page/element-edit.js";
 import type { PageStream } from "../modules/page/stream.js";
 import type { PageGenerator } from "../modules/page/generator.js";
-import { type PageApi } from "../modules/page/index.js";
+import { registerDesignChatRoutes, type DesignChatService, type PageApi } from "../modules/page/index.js";
 import { type AnalyticsApi } from "../modules/analytics/index.js";
 import { registerAnalyticsRoutes } from "../modules/analytics/routes.js";
 import { type EngagementApi, type UnifiedSearchApi } from "../modules/engagement/index.js";
 import { registerEngagementRoutes } from "../modules/engagement/routes.js";
+import { registerActivityRoutes, type ActivityApi } from "../modules/activities/index.js";
+import { registerProposalRoutes, type ProposalApi } from "../modules/proposals/index.js";
+import { registerConsultantRoutes, type ConsultantApi, type ConsultantCommitmentApi } from "../modules/consultant/index.js";
 import { type AccountLifecycleApi } from "../modules/account-lifecycle/index.js";
 import { registerAccountLifecycleRoutes } from "../modules/account-lifecycle/routes.js";
 import {
@@ -86,8 +91,13 @@ export interface BuildApiOptions {
   jobBoardService?: JobBoardApi;
   jobAnalysisService?: JobAnalysisApi;
   materialsService?: MaterialsApi;
+  brewTrashService?: Pick<BrewTrashService, "trash" | "restore" | "list">;
   interviewService?: InterviewApi;
   agentChatService?: AgentChatService;
+  /** 컨설턴트의 기억. 「내 진행」 화면의 라우트는 대화 서비스(지난 대화의 요지)가 함께 있을 때만 연다. */
+  consultantService?: Pick<ConsultantApi, "profile" | "setStage" | "removePreference" | "setOutreach">;
+  /** 약속과 확인. 컨설턴트 라우트는 이것까지 있을 때 연다. */
+  consultantCommitments?: Pick<ConsultantCommitmentApi, "open" | "get" | "update" | "answer" | "checkins" | "dismissQuiet">;
   recipeService?: RecipeApi;
   companyResearchService?: CompanyResearchApi;
   brewJobService?: BrewJobApi;
@@ -96,6 +106,7 @@ export interface BuildApiOptions {
   generationService?: GenerationApi;
   portfolioEditingService?: PortfolioEditingApi;
   portfolioReadService?: PortfolioReadApi;
+  portfolioTrashService?: Pick<PortfolioTrashService, "trash" | "restore" | "list">;
   layoutService?: LayoutApi;
   consentService?: ConsentApi;
   publishingService?: PublishingApi;
@@ -107,8 +118,14 @@ export interface BuildApiOptions {
   pageEditor?: PageElementEditor | null;
   /** 만들어지는 지면을 흘려보내는 통로. 없으면 그 자리가 503이다. */
   pageStream?: PageStream | null;
+  /** 디자인을 정하는 대화. AI가 꺼져 있으면 null이고 라우트는 503을 낸다. */
+  designChatService?: DesignChatService | null;
   analyticsService?: AnalyticsApi;
   engagementService?: EngagementApi;
+  /** 수집한 활동(공모전 · 해커톤) 목록. */
+  activityService?: Pick<ActivityApi, "page" | "poster">;
+  /** 능동 제안. 읽고, 켜고 끄고, 실행을 줄에 넣는다. */
+  proposalService?: Pick<ProposalApi, "feed" | "enable" | "disable" | "refresh" | "dismiss">;
   /** 00c 통합 검색. 기록 · 공고 · 포트폴리오 서비스를 묶은 것이라 따로 받는다. */
   unifiedSearchService?: UnifiedSearchApi;
   accountLifecycleService?: AccountLifecycleApi;
@@ -190,7 +207,8 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
         authenticateRequest: createAuthenticateRequest(options.identityService),
       });
     }
-    if (options.agentChatService) registerAgentChatRoutes(app, options.agentChatService, createAuthenticateRequest(options.identityService), options.config.agentChatDeveloperUserIds);
+    if (options.agentChatService) registerAgentChatRoutes(app, options.agentChatService, createAuthenticateRequest(options.identityService));
+    if (options.agentChatService && options.consultantService && options.consultantCommitments) { const chat = options.agentChatService; registerConsultantRoutes(app, { service: options.consultantService, commitments: options.consultantCommitments, digests: userId => chat.recentDigests(userId), diagnosis: userId => chat.currentDiagnosis(userId), startCheckinChat: (userId, commitment) => chat.startFromCheckin(userId, commitment), proposals: options.proposalService, entitled: options.entitlementService ? outreachGate(options.entitlementService) : async () => false, authenticateRequest: createAuthenticateRequest(options.identityService) }); }
     // 읽기 라우트를 먼저 건다 — `/jobs/postings/:id`가 쓰기 라우트와 같은 자리다.
     if (options.jobBoardService) {
       registerJobBoardRoutes(app, {
@@ -207,6 +225,12 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
     if (options.materialsService) {
       registerMaterialsRoutes(app, {
         materialsService: options.materialsService,
+        authenticateRequest: createAuthenticateRequest(options.identityService),
+      });
+    }
+    if (options.brewTrashService) {
+      registerBrewTrashRoutes(app, {
+        service: options.brewTrashService,
         authenticateRequest: createAuthenticateRequest(options.identityService),
       });
     }
@@ -261,6 +285,12 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
         authenticateRequest: createAuthenticateRequest(options.identityService),
       });
     }
+    if (options.portfolioTrashService) {
+      registerPortfolioTrashRoutes(app, {
+        service: options.portfolioTrashService,
+        authenticateRequest: createAuthenticateRequest(options.identityService),
+      });
+    }
     if (options.consentService) {
       registerConsentRoutes(app, {
         service: options.consentService,
@@ -293,6 +323,10 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
         stream: options.pageStream ?? null,
         authenticateRequest: createAuthenticateRequest(options.identityService),
       });
+      registerDesignChatRoutes(app, {
+        service: options.designChatService ?? null,
+        authenticateRequest: createAuthenticateRequest(options.identityService),
+      });
     }
     if (options.publishingService) {
       registerPublishingRoutes(app, {
@@ -313,6 +347,12 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
         ...(options.unifiedSearchService ? { search: options.unifiedSearchService } : {}),
         authenticateRequest: createAuthenticateRequest(options.identityService),
       });
+    }
+    if (options.activityService) {
+      registerActivityRoutes(app, { service: options.activityService, authenticateRequest: createAuthenticateRequest(options.identityService) });
+    }
+    if (options.proposalService) {
+      registerProposalRoutes(app, { service: options.proposalService, authenticateRequest: createAuthenticateRequest(options.identityService) });
     }
     if (options.accountLifecycleService) {
       registerAccountLifecycleRoutes(app, {

@@ -31,7 +31,7 @@ import {
 
 import type { AiClient, AiUsage, AiViolation } from "../../platform/ai/client.js";
 import { ungroundedNumbers } from "../../platform/numbers.js";
-import { FILL_LIMITS, FILL_SYSTEM, metricValueAllowed, sectionFillSchema } from "./design-first.js";
+import { FILL_LIMITS, FILL_SYSTEM, metricValueAllowed, missingFills, sectionFillSchema, withEmptySection } from "./design-first.js";
 
 /** 요소 하나에 대한 고침입니다. 바꾸지 않는 칸은 비웁니다. */
 export type ElementEdit = {
@@ -228,8 +228,10 @@ export class PageElementEditor {
     const schema = sectionFillSchema();
     type Output = z.infer<typeof schema>;
     const chars = (value: string | undefined) => [...(value ?? "")].length;
-    const check = (output: Output): AiViolation[] => {
-      const violations: AiViolation[] = [];
+    const check = (draft: Output): AiViolation[] => {
+      // 예산을 받은 칸이 빠졌으면 다른 위반과 함께 묻고, 나머지 검사는 빠진 칸을 빈 값으로 읽은 출력을 봅니다.
+      const violations: AiViolation[] = missingFills(draft, budget, "");
+      const output = withEmptySection(draft);
       const limit = (path: string, value: string | undefined, max: number, name: string) => {
         if (chars(value) > max) violations.push({ path, problem: `${name}은 ${max}자 이내여야 합니다(지금 ${chars(value)}자).` });
       };
@@ -276,14 +278,14 @@ ${input.text.slice(0, 6_000)}`;
       schema,
       { check, userId: input.userId },
     );
-    return { section: toSection(input.id, result.data), usage: result.usage };
+    return { section: toSection(input.id, withEmptySection(result.data)), usage: result.usage };
   }
 }
 
 /** 기록으로 쓰는 사례 한 개의 칸 예산입니다. 설계가 정하는 예산의 보통 크기와 같습니다. */
 export const RECORD_SECTION_BUDGET = { title: 40, summary: 120, body: 600, quote: 80, details: 4, metrics: 3 } as const;
 
-function toSection(id: string, output: z.infer<ReturnType<typeof sectionFillSchema>>): StructuredSection {
+function toSection(id: string, output: ReturnType<typeof withEmptySection>): StructuredSection {
   return StructuredSectionSchema.parse({
     id,
     title: output.title,

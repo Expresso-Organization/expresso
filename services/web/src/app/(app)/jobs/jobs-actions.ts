@@ -1,6 +1,7 @@
 "use server";
 
 import { SaveJobSearchSchema, type JobSearchCondition } from "@expresso/contracts";
+import { revalidatePath } from "next/cache";
 
 import { ApiError } from "@/lib/api/client";
 import { jobs } from "@/lib/api/endpoints";
@@ -8,6 +9,7 @@ import { requireSession } from "@/lib/require-session";
 
 export type SaveSearchState = { saved: boolean; error: string | null };
 export type ClearRecentState = { cleared: boolean; error: string | null };
+export type DeleteSavedSearchState = { error: string | null };
 
 /** 계약의 이름 칸 상한. 검색 문장이 더 길면 앞부분만 이름으로 쓴다. */
 const NAME_LIMIT = 120;
@@ -80,4 +82,18 @@ export async function clearRecentSearchesAction(): Promise<ClearRecentState> {
     throw error;
   }
   return { cleared: true, error: null };
+}
+
+/** 00b · 06 「저장한 검색 · 지우기」. 지운 뒤 목록과 「이 검색 저장」 상태를 서버가 다시 그린다. */
+export async function deleteSavedSearchAction(savedSearchId: string): Promise<DeleteSavedSearchState> {
+  const session = await requireSession();
+  try {
+    await jobs.deleteSavedSearch(session.accessToken, savedSearchId);
+  } catch (error) {
+    // 이미 지운 것(404)은 지운 것과 같다.
+    if (!(error instanceof ApiError)) throw error;
+    if (error.status !== 404) return { error: "저장한 검색을 지우지 못했습니다." };
+  }
+  revalidatePath("/jobs");
+  return { error: null };
 }

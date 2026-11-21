@@ -1,0 +1,19 @@
+/* 입력 칸 묶음 부품 — 답변 글 아래에 테두리 없이 놓는다. 칸은 기록 초안 카드의 입력 칸과, 단추는 선택지 부품의 「보내기」와 같은 모양이다. */
+.part { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; max-width: 440px; font-family: var(--ex-font-ui); color: var(--ex-fg); }
+.prompt { margin: 0; font-size: var(--ex-text-xs); font-weight: 600; line-height: var(--ex-leading-normal); }
+.fields { display: flex; flex-direction: column; gap: 8px; }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.label { display: inline-flex; align-items: baseline; gap: 6px; font-size: var(--ex-text-2xs); color: var(--ex-fg-muted); }
+.optional { font-size: var(--ex-text-3xs); color: var(--ex-fg-faint); }
+.input { width: 100%; min-width: 0; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--ex-border); border-radius: var(--ex-radius-control); background: var(--ex-bg); color: var(--ex-fg); font: inherit; font-size: var(--ex-text-xs); }
+.input:focus-visible { outline: none; }
+.input:disabled { background: var(--ex-bg-sunken); color: var(--ex-fg-body); }
+.part[data-state="closed"] .input:disabled { color: var(--ex-fg-faint); }
+.actions { display: flex; align-items: center; gap: 10px; }
+.send { height: 34px; padding: 0 14px; border: none; border-radius: var(--ex-radius-control); background: var(--ex-accent); color: var(--ex-fg-on-accent); font: inherit; font-size: var(--ex-text-xs); font-weight: 600; cursor: pointer; transition: background var(--ex-motion-instant); }
+.send:hover:not(:disabled) { background: var(--ex-accent-hover); }
+.send:disabled { background: var(--ex-bg-tint); color: var(--ex-fg-faint); cursor: default; }
+.send:focus-visible { outline: none; box-shadow: var(--ex-focus-ring); }
+.note { margin: 0; font-size: var(--ex-text-2xs); color: var(--ex-fg-muted); }
+.error { margin: 0; font-size: var(--ex-text-2xs); color: var(--ex-status-danger-text); }
+.pending { margin: 10px 0 0; font-family: var(--ex-font-ui); font-size: var(--ex-text-xs); color: var(--ex-fg-muted); }

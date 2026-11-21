@@ -1,0 +1,33 @@
+/* 대화에서 시작한 포트폴리오 제작 카드. 틀은 다른 카드(RecordDraftCard.module.css)와 같고, 여기에는 이 카드만의 것을 둔다. */
+
+/* 어느 공고인가. 누르면 공고가 열린다. */
+.target { display: flex; flex-direction: column; gap: 2px; min-width: 0; color: inherit; text-decoration: none; }
+.target span { font-size: var(--ex-text-3xs); color: var(--ex-fg-muted); }
+.target strong { font-size: var(--ex-text-sm); font-weight: 600; line-height: var(--ex-leading-snug); overflow-wrap: anywhere; }
+a.target:hover strong { color: var(--ex-accent-text); }
+
+/* 분석 진행 — 막대와 회전 표시. */
+.progress { display: flex; flex-direction: column; gap: 8px; }
+.track { width: 100%; height: 5px; overflow: hidden; border-radius: 999px; background: var(--ex-border); }
+.fill { display: block; height: 100%; border-radius: inherit; background: var(--ex-accent); transition: width var(--ex-motion-panel); }
+.stage { display: flex; align-items: center; gap: 7px; margin: 0; font-size: var(--ex-text-xs); color: var(--ex-fg-muted); }
+.spinner { width: 11px; height: 11px; flex: 0 0 auto; border: 2px solid var(--ex-border); border-top-color: var(--ex-accent); border-radius: 50%; animation: brew-start-spin 700ms linear infinite; }
+@keyframes brew-start-spin { to { rotate: 360deg; } }
+
+/* 분석 결과 — 요건이 내 기록으로 얼마나 확인되는가. 채움은 공고 분석 화면의 요건 대조 칸과 같다. */
+.coverage { display: flex; flex-direction: column; gap: 8px; }
+.bar { display: flex; gap: 2px; height: 8px; }
+.bar span { flex-basis: 0; min-width: 6px; border-radius: 2px; }
+.bar [data-coverage="covered"], .counts [data-coverage="covered"] i { background: var(--ex-status-success); }
+.bar [data-coverage="partial"], .counts [data-coverage="partial"] i { background: repeating-linear-gradient(135deg, var(--ex-status-warning-text) 0 2px, transparent 2px 5px); }
+.bar [data-coverage="missing"], .counts [data-coverage="missing"] i { box-shadow: inset 0 0 0 1px var(--ex-border-firm); }
+.counts { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; }
+.counts div { display: flex; align-items: baseline; gap: 6px; }
+.counts dt { display: flex; align-items: center; gap: 5px; font-size: var(--ex-text-2xs); color: var(--ex-fg-muted); }
+.counts dt i { width: 8px; height: 8px; border-radius: 2px; }
+.counts dd { margin: 0; font-size: var(--ex-text-xs); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation: none; }
+  .fill { transition: none; }
+}

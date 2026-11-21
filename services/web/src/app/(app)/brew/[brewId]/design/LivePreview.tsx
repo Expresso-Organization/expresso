@@ -3,11 +3,13 @@
 import {
   PageStreamBlueprintSchema,
   PageStreamFillSchema,
+  PageStreamSeedSchema,
   PageStreamStageSchema,
   PageStyleGrammarSchema,
   pagePreviewDocument,
   partialFields,
   renderableHtml,
+  type PageStreamStage,
   type PageStyleGrammar,
 } from "@expresso/contracts";
 import { useRouter } from "next/navigation";
@@ -50,10 +52,19 @@ export function LivePreview({
   jobId,
   title,
   children,
+  onLive,
+  onEnd,
 }: {
   jobId: string;
   title: string;
   children: ReactNode;
+  /** 첫 조각(고른 첫 화면 · 청사진 · 본문)이 와서 지면이 섰을 때. 에이전트 대화가 이때 지면을 가운데로 연다. */
+  onLive?: (() => void) | undefined;
+  /**
+   * 완성 · 실패를 받았을 때. 주면 이 화면은 서버 상태를 다시 읽지 않는다 — 다음 걸음은 부른 쪽이 정한다(에이전트 대화는 화면을 넘기지 않는다).
+   * 주지 않으면 지금처럼 서버가 다음 화면으로 보낼 때까지 다시 읽는다.
+   */
+  onEnd?: ((outcome: "done" | "failed") => void) | undefined;
 }) {
   const router = useRouter();
   const frame = useRef<HTMLIFrameElement>(null);
@@ -64,9 +75,11 @@ export function LivePreview({
   const [grammar, setGrammar] = useState<PageStyleGrammar | null>(null);
   const [live, setLive] = useState(false);
   /** 설계가 먼저 오는 생성의 단계. 청사진이 오기 전에는 `null`이다. */
-  const [phase, setPhase] = useState<"filling" | "filled" | "rendered" | "final" | null>(null);
+  const [phase, setPhase] = useState<keyof typeof PHASE_LABELS | null>(null);
   /** 청사진을 연 문서인가. 그러면 `delta`는 이어 쓰기가 아니라 완성본으로 바꿔 끼우는 것이다. */
   const blueprintOpen = useRef(false);
+  /** 디자인 대화에서 고른 첫 화면의 CSS. 이후에 오는 CSS는 이 뒤에 붙는다. 첫 화면 없이 만드는 생성에서는 비어 있다. */
+  const seedCss = useRef("");
   /** 사람이 지면을 직접 움직였는가. 그 뒤로는 쓰이는 자리를 따라 내려가지 않는다. */
   const userMoved = useRef(false);
   const grammarRef = useRef<PageStyleGrammar | null>(null);
@@ -74,7 +87,12 @@ export function LivePreview({
   titleRef.current = title;
   /** 스트림이 완성 · 실패를 알렸는가. 그 뒤로는 서버가 이 화면을 떠나 보낼 때까지 다시 읽는다. */
   const [ended, setEnded] = useState(false);
-  useRefreshWhile(ended);
+  useRefreshWhile(ended && !onEnd);
+  const endRef = useRef(onEnd);
+  endRef.current = onEnd;
+  const liveRef = useRef(onLive);
+  liveRef.current = onLive;
+  useEffect(() => { if (live) liveRef.current?.(); }, [live]);
 
   useEffect(() => {
     // 완성 · 실패를 받은 뒤에는 다시 열지 않는다. 남은 일은 서버 상태를 다시 읽는 것뿐이다.
@@ -90,6 +108,7 @@ export function LivePreview({
       written.current = 0;
       opened.current = false;
       blueprintOpen.current = false;
+      seedCss.current = "";
       userMoved.current = false;
       setBuffer("");
       setLive(false);
@@ -97,11 +116,12 @@ export function LivePreview({
     };
 
     /** 완성 · 실패. 연결을 닫고, 서버가 다듬기 · 실패 안내로 보낼 때까지 다시 읽는다(`ended`). */
-    const finish = () => {
+    const finish = (outcome: "done" | "failed") => {
       finished = true;
       connection?.close();
       setEnded(true);
-      router.refresh();
+      if (endRef.current) endRef.current(outcome);
+      else router.refresh();
     };
 
     const connect = () => {
@@ -138,6 +158,24 @@ export function LivePreview({
         setPhase("filling");
         setLive(true);
       });
+      source.addEventListener("seed", (event) => {
+        // 고른 첫 화면이 가장 먼저 온다. 문서를 열어 그것부터 그리고, 이어서 오는 조각은 그 뒤에 쓰인다.
+        const page = PageStreamSeedSchema.safeParse(JSON.parse((event as MessageEvent<string>).data));
+        const document_ = frame.current?.contentDocument;
+        if (!page.success || !document_ || opened.current) return;
+        const shell = pagePreviewDocument({
+          html: "",
+          css: "",
+          title: titleRef.current,
+          ...(grammarRef.current ? { grammar: grammarRef.current } : {}),
+        });
+        document_.open();
+        document_.write(`${shell.slice(0, shell.indexOf("<body>"))}<body>${page.data.html}`);
+        opened.current = true;
+        seedCss.current = page.data.css;
+        writeCss(document_, page.data.css);
+        setLive(true);
+      });
       source.addEventListener("fill", (event) => {
         const fill = PageStreamFillSchema.safeParse(JSON.parse((event as MessageEvent<string>).data));
         const document_ = frame.current?.contentDocument;
@@ -148,6 +186,8 @@ export function LivePreview({
         for (const slot of document_.querySelectorAll<HTMLElement>(`[data-slot="${CSS.escape(path)}"]`)) {
           if (revised) {
             revise(slot, text);
+            // 고친 칸이 화면 밖에서 바뀌면 지면이 멈춘 것으로 보인다. 사람이 움직이지 않았으면 그 자리로 옮긴다.
+            if (!userMoved.current) follow(document_, slot);
             continue;
           }
           const starting = slot.dataset.slotState === "empty";
@@ -176,8 +216,8 @@ export function LivePreview({
         setLive(true);
       });
       // 이제 진짜가 있다. 워커는 스트림에 완성을 쓴 뒤 잡 상태를 바꾸므로, 다시 읽은 화면이 아직 생성 중일 수 있다.
-      source.addEventListener("done", finish);
-      source.addEventListener("failed", finish);
+      source.addEventListener("done", () => finish("done"));
+      source.addEventListener("failed", () => finish("failed"));
       // 브라우저가 스스로 다시 붙는 중(`CONNECTING`)이면 맡긴다. 닫아 버렸을 때(`CLOSED`)만 우리가 다시 연다 —
       // 그대로 두면 생성이 끝나도 아무 신호가 오지 않아 화면이 멈춘다(2026-11-10 운영, Safari).
       source.onerror = () => {
@@ -253,7 +293,7 @@ export function LivePreview({
      * 그동안 지면을 세워 주는 것은 키트다. 여기 오는 것은 그 위에 얹는 것이라
      * 늦게 와도 무너지지 않고, 올 때마다 통째로 갈아 끼우면 된다.
      */
-    if (fields.css) writeCss(document_, fields.css);
+    if (fields.css) writeCss(document_, seedCss.current ? `${seedCss.current}\n${fields.css}` : fields.css);
   }, [buffer, grammar, title]);
 
   return (
@@ -282,13 +322,18 @@ export function LivePreview({
   );
 }
 
-/** 설계가 먼저 오는 생성에서 지금 일어나는 일. 청사진이 뜬 뒤로는 모델 호출이 채우기 하나뿐이다. */
-const PHASE_LABELS = {
+/**
+ * 설계가 먼저 오는 생성에서 지금 일어나는 일. 청사진이 뜬 뒤로는 모델 호출이 채우기 하나뿐이다. 글이 다 흐른 뒤
+ * (`drafted`)에는 쓴 내용을 기준과 맞춰 보고 걸린 칸을 고쳐 받는다 — 운영에서 이 구간이 2~12초였고, 그동안
+ * "채우는 중"이 떠 있으면 멈춘 것으로 보였다(2026-11-10). `designed`는 청사진(`filling`)으로 바로 넘어가 문구가 없다.
+ */
+export const PHASE_LABELS = {
   filling: "설계한 자리에 내용을 채우는 중",
+  drafted: "쓴 내용을 기준과 맞춰 보는 중",
   filled: "디자인을 입히는 중",
   rendered: "완성한 지면을 점검하는 중",
   final: "초안을 저장하는 중",
-} as const;
+} as const satisfies Record<Exclude<PageStreamStage, "designed"> | "filling" | "final", string>;
 
 /** 지면 CSS를 한 자리에 둔다. 올 때마다 통째로 갈아 끼운다. */
 function writeCss(document_: Document, css: string) {

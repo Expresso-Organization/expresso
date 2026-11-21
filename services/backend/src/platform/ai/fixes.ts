@@ -347,7 +347,8 @@ export async function runWithFixes<T>(input: {
     const reply = await input.fix(fixPrompt(grouped, output), shape);
     fixMs += reply.usage.durationMs;
     const received = shape.safeParse(await read(reply));
-    console.error(JSON.stringify({ level: "info", event: "ai.fix_round", contract, round: round + 1, paths: [...grouped.keys()].slice(0, 20), fixed: received.success ? received.data.fixes.length : 0, durationMs: reply.usage.durationMs }));
+    // 계약(모양) 위반인지 업무 규칙 위반인지 남긴다. 경로만으로는 둘이 같은 모양이라 로그로 가릴 수 없었다.
+    console.error(JSON.stringify({ level: "info", event: "ai.fix_round", contract, round: round + 1, kind: parsed.success ? "check" : "contract", paths: [...grouped.keys()].slice(0, 20), fixed: received.success ? received.data.fixes.length : 0, durationMs: reply.usage.durationMs }));
     changed = false;
     if (!received.success) continue;
     const fixes = received.data.fixes.map((fix) => ({ path: realPath(fix.path), value: fix.value }));

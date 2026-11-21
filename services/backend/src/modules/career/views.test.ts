@@ -28,7 +28,7 @@ const category: CareerCategory = {
     definition(ids.deleted, "removed", "text", 4, "2026-09-01T00:00:00.000Z"),
     definition(ids.customTime, "custom_time", "created_time", 5),
     definition(ids.systemTime, "system_time", "updated_time", 6, null, true),
-  ], schemaVersion: 1, sortOrder: 0, recordCount: 0, version: 1,
+  ], schemaVersion: 1, sortOrder: 0, recordCount: 0, version: 1, archivedAt: null, builtIn: false,
 };
 
 function view(overrides: Record<string, unknown> = {}) {

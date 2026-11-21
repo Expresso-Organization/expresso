@@ -57,7 +57,8 @@ export function MoveCategoryDialog({ open, recordId, currentCategoryId, recordVe
   const targetNames = new Map((categories.find((item) => item.id === target)?.propertySchemaV2 ?? []).map((definition) => [definition.id, definition.name]));
   const categoryOptions = [
     { value: "", label: "선택" },
-    ...categories.filter((item) => item.id !== currentCategoryId).map((item) => ({ value: item.id, label: item.name })),
+    // 보관한 카테고리로는 옮기지 않습니다. 옮긴 기록이 사이드바에서 바로 사라져 보입니다.
+    ...categories.filter((item) => item.id !== currentCategoryId && item.archivedAt === null).map((item) => ({ value: item.id, label: item.name })),
   ];
 
   return <div className={styles.backdrop}>

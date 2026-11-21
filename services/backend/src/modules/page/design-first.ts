@@ -118,6 +118,8 @@ export interface DesignFirstHooks {
    * 에이전트가 고쳐 보낸 글이라는 뜻입니다 — 화면이 그 자리를 바뀌는 모습으로 보여 줍니다.
    */
   slot?: (path: string, text: string, done: boolean, revised?: boolean) => void;
+  /** 채우기 글이 다 흐르고 계약을 지났을 때. 뒤로는 업무 규칙 검사와 걸린 칸 고치기만 남습니다. */
+  drafted?: () => void;
   thinking?: (tokens: number) => void;
 }
 
@@ -365,25 +367,79 @@ rationale에는 이 지면을 이렇게 설계한 이유를 씁니다. motion은
  * 섹션 하나를 채우는 출력 형식입니다. 모양만 정합니다 — 설계의 칸 예산과 `FILL_LIMITS`는 받은 뒤 `fillViolations`가
  * 검사하고, 걸린 칸만 쓴 에이전트가 같은 대화에서 고칩니다. 형식에 넣으면 조금만 넘쳐도 출력 전체가 거절됩니다.
  */
+/**
+ * 섹션 하나의 채우기 출력. 제목 말고는 빠져도 계약을 지납니다 — 프롬프트가 "예산이 0이면 빈 글이나 빈 배열"이라고
+ * 정했고, 모델은 그 칸을 비우는 대신 자주 아예 뺐습니다. 계약이 그것을 막으면 빠진 칸만 묻는 고치기 라운드가 먼저 돌고,
+ * 업무 규칙 검사(`fillViolations`)는 다음 라운드로 밀렸습니다(2026-11-10 운영 11건 중 대부분). 예산이 있는 칸이
+ * 빠졌는지는 `fillViolations`가 다른 위반과 함께 묻고, 빠진 빈 칸은 `withEmptyFills`가 빈 값으로 읽습니다.
+ */
 export function sectionFillSchema() {
   return z.object({
     title: z.string().min(1),
-    summary: z.string(),
-    body: z.string(),
+    summary: z.string().optional(),
+    body: z.string().optional(),
     period: z.string().optional(),
-    details: z.array(z.object({ label: z.string().min(1), text: z.string().min(1) })),
-    metrics: z.array(z.object({ label: z.string().min(1), value: z.string().min(1), before: z.string().min(1).optional(), note: z.string().optional() })),
-    quote: z.string(),
-    steps: z.array(z.object({ label: z.string().min(1), text: z.string() })),
+    details: z.array(z.object({ label: z.string().min(1), text: z.string().min(1) })).optional(),
+    metrics: z.array(z.object({ label: z.string().min(1), value: z.string().min(1), before: z.string().min(1).optional(), note: z.string().optional() })).optional(),
+    quote: z.string().optional(),
+    steps: z.array(z.object({ label: z.string().min(1), text: z.string() })).optional(),
   });
 }
 
-type FillOutput = {
+type SectionFillDraft = z.infer<ReturnType<typeof sectionFillSchema>>;
+/** 빠진 칸을 빈 값으로 읽은 섹션 출력. 섹션 조립과 업무 규칙 검사는 이것을 봅니다. */
+type SectionFill = { [Key in Exclude<keyof SectionFillDraft, "period">]-?: NonNullable<SectionFillDraft[Key]> } & Pick<SectionFillDraft, "period">;
+
+type FillOutputOf<Section> = {
   role: string; headline: string; intro: string; focus: string[];
-  sections: Record<string, z.infer<ReturnType<typeof sectionFillSchema>>>;
+  sections: Record<string, Section>;
   career: { period: string; organization: string; role: string; description: string }[];
   evidence: { id: string; title: string; kind: string; summary: string; body: string }[];
 };
+type FillDraft = FillOutputOf<SectionFillDraft>;
+type FillOutput = FillOutputOf<SectionFill>;
+
+/** 빠져도 되는 칸의 예산. 설계 예산과 기록 사례 예산(`RECORD_SECTION_BUDGET`)이 모두 이 모양을 채웁니다. */
+export interface FillBudget { summary: number; body: number; details: number; metrics: number; quote?: number | undefined; steps?: number | undefined }
+
+const OMITTABLE_FILLS = [
+  { key: "summary", name: "요약" },
+  { key: "body", name: "본문" },
+  { key: "details", name: "항목" },
+  { key: "metrics", name: "수치" },
+  { key: "quote", name: "인용" },
+  { key: "steps", name: "단계" },
+] as const;
+
+/**
+ * 예산을 받은 칸이 빠졌으면 쓴 에이전트에게 채워 달라고 합니다. 다른 업무 규칙 위반과 같은 라운드에서 묻습니다.
+ * 예산이 0인 칸은 묻지 않고 빈 값으로 읽습니다(`withEmptySection`).
+ */
+export function missingFills(section: SectionFillDraft, budget: FillBudget, base: string): AiViolation[] {
+  return OMITTABLE_FILLS.flatMap(({ key, name }) => {
+    const limit = budget[key] ?? 0;
+    return section[key] === undefined && limit > 0
+      ? [{ path: `${base}/${key}`, problem: `${name} 칸이 빠졌습니다. 설계의 예산(${limit}) 안에서 채우고, 쓸 것이 없으면 빈 값으로 보내세요.` }]
+      : [];
+  });
+}
+
+/** 빠진 칸을 프롬프트가 정한 빈 값(빈 글 · 빈 배열)으로 읽습니다. 쓴 글은 그대로 둡니다. */
+export function withEmptySection(section: SectionFillDraft): SectionFill {
+  return {
+    ...section,
+    summary: section.summary ?? "",
+    body: section.body ?? "",
+    details: section.details ?? [],
+    metrics: section.metrics ?? [],
+    quote: section.quote ?? "",
+    steps: section.steps ?? [],
+  };
+}
+
+export function withEmptyFills(output: FillDraft): FillOutput {
+  return { ...output, sections: Object.fromEntries(Object.entries(output.sections).map(([id, section]) => [id, withEmptySection(section)])) };
+}
 
 const chars = (text: string) => [...text].length;
 
@@ -392,12 +448,18 @@ const chars = (text: string) => [...text].length;
  * 경로(채우기 출력 기준)와, 쓴 에이전트가 고칠 수 있게 기준과 지금 길이를 담은 문장을 돌려줍니다.
  */
 export function fillViolations(
-  output: FillOutput,
+  draft: FillDraft,
   plan: Pick<StructuredDesignPlan, "profile" | "evidence" | "career">,
   included: readonly StructuredDesignPlan["sections"][number][],
   context: { author: string; groundSource: string; evidenceCount: number },
 ): AiViolation[] {
   const violations: AiViolation[] = [];
+  // 예산을 받은 칸이 빠졌으면 다른 위반과 같은 라운드에서 채워 달라고 합니다. 예산이 0인 칸은 빈 값으로 읽습니다.
+  for (const section of included) {
+    const filled = draft.sections[section.id];
+    if (filled) violations.push(...missingFills(filled, section.budget, `/sections${jsonPointer([section.id])}`));
+  }
+  const output = withEmptyFills(draft);
   const text = (path: string, value: string | undefined, max: number, name: string) => {
     if (value !== undefined && chars(value) > max) violations.push({ path, problem: `${name}은 ${max}자 이내여야 합니다(지금 ${chars(value)}자).` });
   };
@@ -663,7 +725,7 @@ export async function designFirst(
   const timeline: DesignFirstResult["timeline"] = [];
   const call = async <T>(
     contract: "page_design" | "page_fill", system: string, prompt: string, schema: z.ZodType<T>,
-    extra: Pick<AiCallOptions<T>, "check" | "onRevision"> & { slots?: ReturnType<typeof slotStream> } = {},
+    extra: Pick<AiCallOptions<T>, "check" | "onRevision" | "onDraft"> & { slots?: ReturnType<typeof slotStream> } = {},
   ) => {
     const result = await ai.complete(
       {
@@ -680,6 +742,7 @@ export async function designFirst(
         ...(extra.slots ? { onPartial: extra.slots.push, onPartialRestart: extra.slots.restart } : {}),
         ...(extra.check ? { check: extra.check } : {}),
         ...(extra.onRevision ? { onRevision: extra.onRevision } : {}),
+        ...(extra.onDraft ? { onDraft: extra.onDraft } : {}),
       },
     );
     usages.push(result.usage);
@@ -736,7 +799,9 @@ ${evidenceText}`;
   // 대화에서 그 칸만 고칩니다. 고친 칸은 화면의 그 자리에 바뀌는 모습으로 보입니다(`revised`).
   const filled = await call("page_fill", FILL_SYSTEM, fillPrompt, fillSchema, {
     ...(hooks.slot ? { slots: slotStream(hooks.slot) } : {}),
-    check: (output) => fillViolations(output as FillOutput, plan, included, { author, groundSource, evidenceCount: raw.evidence.length }),
+    check: (output) => fillViolations(output as FillDraft, plan, included, { author, groundSource, evidenceCount: raw.evidence.length }),
+    // 글이 다 흘렀고 계약을 지났습니다. 이제 업무 규칙 검사와 고치기가 남았다고 화면에 알립니다.
+    ...(hooks.drafted ? { onDraft: () => hooks.drafted!() } : {}),
     ...(hooks.slot
       ? {
           onRevision: (fixes) => {
@@ -748,7 +813,7 @@ ${evidenceText}`;
           },
         }
       : {}),
-  }) as FillOutput;
+  }).then((draft) => withEmptyFills(draft as FillDraft));
   const sections = included.map((plannedSection) => {
     const output = filled.sections[plannedSection.id]!;
     // 쓴 에이전트가 두 번 고쳐도 출처에 없는 숫자가 남은 수치는 싣지 않습니다. 지어낸 수치를 지면에 내보내지 않는 선입니다.

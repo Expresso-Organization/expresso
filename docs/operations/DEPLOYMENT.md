@@ -27,11 +27,11 @@ flowchart TD
     INSTALL --> CONTRACTS["contracts · database build"]
     CONTRACTS --> INFRA["MongoDB rs0 · Redis 준비"]
     INFRA --> MIGRATE["migration 계정 schema 적용"]
-    MIGRATE --> BUILD["API · Web build"]
+    MIGRATE --> BUILD["API build · Web은 .next-build에 build"]
     BUILD --> WORKER["Worker 재시작"]
     WORKER --> API["API 재시작"]
     API --> READY{"rs0·schema·Redis ready?"}
-    READY -->|예| WEB["Web 재시작"]
+    READY -->|예| WEB["Web 정지 · .next 교체 · 시작"]
     READY -->|아니오| STOP["중단 · 로그 보존"]
 ```
 
@@ -100,6 +100,27 @@ scripts/operations/deploy.sh <검증된-commit>
 
 스크립트는 `git checkout`으로 배포할 커밋에 간 직후, 그 커밋의 `deploy.sh`로 처음부터 다시 시작합니다. 로그에는 「새 배포 스크립트로 다시 시작」이 찍힙니다. git은 checkout할 때 파일을 지우고 새로 만들고, 이미 돌고 있는 bash는 이전 파일을 끝까지 읽습니다. 다시 시작하지 않으면 그 커밋이 바꾼 배포 단계가 그 배포에서 돌지 않습니다. 2026-11-03 #159 배포가 그랬습니다. 다시 시작한 스크립트는 배포 전 커밋을 `EXPRESSO_DEPLOY_PREVIOUS`로 넘겨받아 `.last-deployed-commit`에 씁니다.
 
+웹은 운영 웹이 쓰는 `services/web/.next`가 아니라 `services/web/.next-build`에 짓습니다. API가 준비되면 웹을 멈추고 `.next`를 `.next-prev`로, `.next-build`를 `.next`로 바꾼 뒤 다시 띄웁니다. 빌드하는 동안 사이트는 이전 판으로 열리고, 화면이 끊기는 시간은 웹이 다시 뜨는 몇 초입니다. 2026-11-10까지는 `.next`를 그 자리에서 다시 지어, 빌드하는 1~2분 동안 `/_next/static` 요청이 500을 내고 모든 화면이 「화면을 그리지 못했습니다」로 넘어갔습니다. 새 `.next/static`에는 이전 판 정적 파일을 7일까지 함께 둡니다. 배포 전에 열어 둔 탭이 옛 JS를 요청해도 404가 나지 않습니다.
+
+`.next-build`에 짓는 빌드는 타입 검사에 `services/web/tsconfig.next-build.json`을 씁니다. `tsconfig.json`은 링크 타입과 화면 검사를 `.next/types`에서 읽는데, 그 폴더에는 직전 배포가 만든 타입이 남아 있습니다. `tsconfig.json`으로 검사하면 새 화면으로 가는 링크가 「없는 경로」로 걸리고, 화면을 지운 배포는 지운 파일을 찾다가 멈춥니다. 2026-11-19 #242 배포가 이렇게 실패했고, 마이그레이션은 이미 적용된 뒤라 수정 배포(#244)까지 약 10분 동안 DB와 코드가 어긋났습니다. 짓는 폴더 이름을 바꾸려면 `tsconfig.<폴더 이름>.json`을 함께 만듭니다. 없으면 `next.config.ts`가 빌드를 시작하기 전에 멈춥니다.
+
+웹의 `tsconfig.json`에는 `incremental`을 두지 않습니다. 켜면 Next가 타입 검사 결과를 `.next/cache/.tsbuildinfo`에 남기고, 배포는 그 캐시를 다음 빌드로 옮겨 이어 씁니다. `tsc` 7.0.2는 경로 타입이 바뀌어도 바뀌지 않은 파일을 다시 검사하지 않아, 화면을 지우고 그 화면으로 가는 링크를 남긴 변경이 캐시가 있는 서버 빌드를 통과했습니다(2026-11-20 로컬 재현). 캐시 없는 전체 검사는 1.5초입니다.
+
+`services/web/next-env.d.ts`는 저장소가 추적하지 않습니다. 빌드가 이 파일을 `.next-build` 경로로 다시 쓰지만, 무시되는 파일이라 다음 배포의 `git checkout`을 막지 않습니다. 2026-11-20까지는 추적했고 `deploy.sh`가 배포 전에 `git checkout -- services/web/next-env.d.ts`로 되돌렸습니다. 그 줄이 있는 옛 커밋으로 되돌릴 때는 git이 무시된 파일을 덮어쓰고, 옛 스크립트가 그 줄을 다시 돌립니다.
+
+스크립트는 마이그레이션을 워커 재시작보다 먼저 돌립니다. 마이그레이션이 `scheduled_job_definitions`에 새 예약 작업을 넣으면, 워커가 재시작될 때까지 옛 코드의 워커가 그 정의를 봅니다. 워커는 자기 코드가 아는 키(`SCHEDULED_JOB_KEYS`)의 정의만 집으므로, 새 작업은 `nextRunAt`이 그대로 남았다가 새 워커의 첫 폴링에서 실행됩니다. 이 동작은 #243이 배포된 뒤의 워커부터 적용됩니다. 그 전 판의 워커는 모르는 키도 집어 다섯 번 실패시키고 `nextRunAt`을 다음 주기로 옮깁니다. 2026-11-19 #240 배포에서 `activity_collect`와 `proposal_briefing`의 첫 실행이 이렇게 하루 밀렸습니다.
+
+새 예약 작업이 든 배포 뒤에는 운영 `scheduled_job_runs`에서 그 키의 상태를 확인합니다.
+
+- 최근 실행이 `succeeded`: 정상입니다.
+- 최근 실행이 `failed`: 그 키를 모르는 옛 판 워커가 집어 첫 실행이 밀렸습니다. `scheduled_job_definitions`의 `nextRunAt`은 이미 다음 주기입니다.
+- 실행이 없고 `nextRunAt`이 지나 있음: 지금 도는 워커가 그 키를 모르거나 멈춰 있습니다. 워커가 새 판으로 재시작됐는지와 `worker.log`를 확인합니다.
+
+```js
+db.scheduled_job_runs.find({ jobKey: "<새 키>" }).sort({ scheduledFor: -1 }).limit(3)
+db.scheduled_job_definitions.find({ _id: "<새 키>" })
+```
+
 스크립트는 기존 MySQL volume을 참조하거나 삭제하지 않습니다. `down -v`도
 실행하지 않습니다. schema migration과 readiness가 통과하지 않으면 API를 준비된
 것으로 취급하지 않습니다.
@@ -125,6 +146,16 @@ pnpm --filter @expresso/backend admin revoke <email>
 그 계정의 기록과 포트폴리오가 모두 지워지고 되돌릴 수 없습니다.
 
 ## 실패와 복구
+
+새 웹 판에 문제가 있으면 다시 빌드하지 않고 직전 판으로 되돌립니다.
+
+```bash
+sudo systemctl stop expresso-web
+cd ~/expresso/services/web && mv .next .next-bad && mv .next-prev .next
+sudo systemctl start expresso-web
+```
+
+웹 빌드가 실패하면 배포가 교체 전에 멈추므로 운영 `.next`는 그대로입니다. 남은 `.next-build`는 다음 배포가 지웁니다.
 
 사용자 쓰기를 열기 전 실패하면 새 프로세스를 중단하고 이전 artifact와 설정으로
 복구할 수 있습니다. 사용자 쓰기를 연 뒤에는 URI만 MySQL로 되돌리지 않습니다.

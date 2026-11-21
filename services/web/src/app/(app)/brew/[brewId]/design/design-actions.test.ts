@@ -67,7 +67,7 @@ describe("디자인 시스템으로 생성 요청", () => {
     );
     expect(order).toEqual(["select", "submit"]);
     // 다시 뽑기에서 시작했어도 기다림 화면 주소로 옮겨, 끝난 뒤 카탈로그가 다시 열리지 않습니다.
-    expect(redirect).toHaveBeenCalledWith(`/brew/${BREW}/design`);
+    expect(redirect).toHaveBeenCalledWith(`/brew/${BREW}/design?view=catalog`);
   });
 
   it("구성이 아직이면 구성 잡을 먼저 맡기고 브루로 생성을 요청한다", async () => {

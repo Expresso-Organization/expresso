@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 
 import {
   PAGE_PROMPT_VERSION,
+  PAGE_SCRIPT_BREAK,
   PageDraftSchema,
   pageKitPrompt,
   pagePolicyPrompt,
@@ -16,6 +17,7 @@ import {
   type PortfolioPlan,
   type StructuredPortfolioContent,
   type StructuredPortfolioSnapshot,
+  type DesignTokens,
 } from "@expresso/contracts";
 
 import type { AiClient, AiModelTier, AiUsage } from "../../platform/ai/client.js";
@@ -59,7 +61,24 @@ export interface PageMedia {
   height: number;
 }
 
+/**
+ * 디자인 대화에서 사용자가 보고 고른 첫 화면입니다. 소독을 마친 마크업과 CSS입니다.
+ *
+ * 있으면 지면의 맨 앞에 **그대로** 놓입니다. 생성은 그 뒤만 쓰고, 생성기가 둘을 이어 붙입니다 — 모델에게 다시 쓰게 하면
+ * 한 글자가 달라졌을 때 고른 것과 만든 것이 어긋납니다.
+ */
+export interface PageSeed {
+  name: string;
+  words: string;
+  tokens: DesignTokens;
+  html: string;
+  css: string;
+  /** 첫 화면의 스크립트. 지면 스크립트의 첫 모듈로 그대로 들어간다. */
+  script?: string | undefined;
+}
+
 export interface PageGenerationContext {
+  seed?: PageSeed;
   /** 사용량을 남길 사용자. 사용자가 없는 작업만 null이다. */
   userId: string | null;
   author?: { name: string };
@@ -92,7 +111,7 @@ export interface PageGenerationContext {
   /** 다시 뽑을 때만. "더 차분하게" · "첫 화면을 크게". */
   instruction?: string | undefined;
   /** 다시 뽑을 때 직전 지면. 지시가 건드리지 않은 것은 그대로 두게 한다. */
-  previous?: { html: string; css: string; structured?: StructuredPortfolioSnapshot } | undefined;
+  previous?: { html: string; css: string; script?: string | undefined; structured?: StructuredPortfolioSnapshot } | undefined;
   /**
    * 키트를 쓸 것인가.
    *
@@ -112,6 +131,8 @@ export interface PageGenerationContext {
 export interface GeneratedPageResult {
   html: string;
   css: string;
+  /** 지면 스크립트. 모듈이 여럿이면 `PAGE_SCRIPT_BREAK`로 이었다. 없으면 칸을 두지 않는다. */
+  script?: string | undefined;
   rationale: string;
   /**
    * 근거에서 확인하지 못한 수. 사용자 검토용 주의점으로 보존한다.
@@ -142,6 +163,8 @@ export interface PageStreamSink {
   thinking(estimatedTokens: number): void;
   /** 설계가 끝난 지면의 청사진 문서입니다. 설계가 먼저 오는 생성만 보냅니다. */
   blueprint?(page: { html: string; css: string }): void;
+  /** 고른 첫 화면입니다. 이어서 오는 조각(`delta`)은 이 첫 화면 **뒤**에 붙는 것입니다. 첫 화면을 고른 생성만 보냅니다. */
+  seed?(page: { html: string; css: string }): void;
   /** 청사진의 글 자리 하나에 지금까지 쓴 글입니다. `revised`는 검사에 걸려 쓴 에이전트가 고쳐 보낸 글입니다. */
   fill?(path: string, text: string, done: boolean, revised?: boolean): void;
   stage?(name: PageStreamStage): void;
@@ -152,6 +175,13 @@ export interface PageGenerator {
     context: PageGenerationContext,
     sink?: PageStreamSink | null,
   ): Promise<GeneratedPageResult>;
+  /**
+   * 이 문맥의 지면을 키트 부품으로 조판하는가. 없으면 조판하는 것으로 봅니다.
+   *
+   * `false`면 모델이 CSS 전체를 쓴 지면입니다. 지면 서비스가 저장하는 스타일 문법에 `kit: false`를 넣고,
+   * 지면 문서(`pageDocument`)가 키트 CSS를 싣지 않습니다.
+   */
+  usesKit?(context: PageGenerationContext): boolean;
 }
 
 export class PageGenerationError extends Error {
@@ -207,7 +237,7 @@ const SYSTEM_KIT = [
   "- `rationale` — 이 내용을 보고 내린 판단을 한 문장으로.",
 ].join("\n");
 
-const SYSTEM = [
+export const SYSTEM = [
   "너는 이직 지원자의 **포트폴리오 웹페이지 한 장**을 만든다.",
   "글도 네가 쓰고 지면도 네가 짠다.",
   "",
@@ -257,8 +287,44 @@ export const DESIGN_PRINCIPLES = [
   "설계안에 없는 사실, 프로젝트, 회사명, 성과, 수치를 만들지 않는다.",
 ] as const;
 
-function buildPrompt(context: PageGenerationContext): string {
+/**
+ * 누구의 지면인가 — 작성자 이름과 연락처 유무.
+ *
+ * 키트는 끝 띠(`.k-foot`)에 `이름 · 값` 줄을 두라고 안내한다. 이름도 연락처도 주지 않으면 모델이 그 빈칸을
+ * 컨텍스트의 다른 값으로 채운다. 서버 Claude Code CLI는 로그인 계정 이메일을 컨텍스트에 항상 싣고, 이것을 끄는
+ * 옵션이 없다(2026-11-14 서버 2.1.272 실측: `--system-prompt` · `IS_DEMO` · `CLAUDE_CODE_DISABLE_CLAUDE_MDS`로도
+ * 남는다). 그래서 2026-11-10 운영에서 다른 사용자의 지면 끝 띠에 운영자 이름과 이메일이 찍혔다.
+ */
+export function authorPrompt(context: PageGenerationContext): string[] {
+  const name = context.author?.name.trim();
+  return [
+    "## 누구의 지면",
+    name ? `이름: ${name} — 지면에 이름을 쓸 때는 이 이름을 그대로 쓴다.` : "이름을 받지 않았다 — 이름 줄을 두지 않는다.",
+    "연락처(이메일 · 전화 · 개인 링크)는 받지 않았다. 근거에 적힌 것이 아니면 그런 줄을 두지 않는다.",
+    "컨텍스트에 보이는 이메일 · git 사용자는 서버 운영 계정이다. 이 사람의 정보가 아니므로 지면에 쓰지 않는다.",
+    "",
+  ];
+}
+
+const EMAIL = /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g;
+
+/**
+ * 근거에 없는 이메일 주소. 화면 글자와 `mailto:` 주소를 함께 본다.
+ *
+ * 연락처는 입력으로 받지 않으므로 지면의 이메일은 근거(기록 · 답변)에 사용자가 직접 적은 것뿐이어야 한다.
+ * 그 밖의 주소는 모델이 다른 곳에서 가져온 값이다. 대소문자는 가리지 않는다.
+ */
+export function ungroundedEmails(html: string, source: string): string[] {
+  const known = new Set((source.match(EMAIL) ?? []).map((email) => email.toLowerCase()));
+  const shown = [...visibleText(html).matchAll(EMAIL), ...html.matchAll(/mailto:([^"'?\s>]+)/gi)]
+    .map((match) => (match[1] ?? match[0]).toLowerCase());
+  return [...new Set(shown)].filter((email) => !known.has(email));
+}
+
+/** 요청의 앞부분입니다. 누구의 지면인지, 어디에 내는지, 공통 디자인 원칙, 스타일 문법 순서입니다. */
+export function promptOpening(context: PageGenerationContext): string[] {
   const lines: string[] = [];
+  lines.push(...authorPrompt(context));
 
   if (context.company || context.jobTitle) {
     const company = context.company;
@@ -281,7 +347,62 @@ function buildPrompt(context: PageGenerationContext): string {
     lines.push(pageStyleGrammarPrompt(context.style));
     lines.push("");
   }
+  return lines;
+}
 
+/** 쓸 수 있는 그림 목록입니다. */
+export function promptMedia(context: PageGenerationContext): string[] {
+  const lines: string[] = [];
+  if (context.media.length > 0) {
+    lines.push("## 쓸 수 있는 그림 — 주소를 그대로 옮긴다");
+    for (const asset of context.media) {
+      lines.push(
+        `- \`${asset.src}\` (${asset.width}×${asset.height}) — ${asset.alt}`
+        + `\n  srcset: \`${asset.srcSet}\``,
+      );
+    }
+    lines.push("**그림이 있는 섹션은 그림이 주인공이다.** 글 옆에 작게 끼우지 마라.");
+    lines.push("");
+  } else {
+    lines.push("## 그림");
+    lines.push("쓸 수 있는 사진이 없다. 필요하면 CSS와 SVG로 직접 그린다.");
+    lines.push("");
+  }
+  return lines;
+}
+
+/** 요청의 끝입니다. 다시 뽑기면 직전 지면과 지시를, 아니면 만들라는 한 줄을 둡니다. */
+export function promptClosing(context: PageGenerationContext): string[] {
+  const lines: string[] = [];
+  if (context.previous && context.instruction) {
+    lines.push("## 지금 지면 — 지시가 건드리지 않은 것은 그대로 둔다");
+    lines.push("```html");
+    lines.push(context.previous.html);
+    lines.push("```");
+    lines.push("```css");
+    lines.push(context.previous.css);
+    lines.push("```");
+    if (context.previous.script) {
+      lines.push("```js");
+      lines.push(context.previous.script);
+      lines.push("```");
+      // 첫 화면의 스크립트와 이어 쓴 스크립트는 따로 도는 모듈이다. 한 모듈로 합치면 같은 import가 두 번 선언되어 둘 다 멈춘다.
+      if (context.previous.script.includes(PAGE_SCRIPT_BREAK.trim()))
+        lines.push(`스크립트는 \`${PAGE_SCRIPT_BREAK.trim()}\` 줄로 나뉜 모듈들이다. 고친 \`script\`에도 그 줄을 그대로 두어 모듈을 나눈다.`);
+    }
+    lines.push("");
+    lines.push(`## 지시\n${context.instruction}`);
+    lines.push("지시대로 고친 지면 전체를 내라.");
+  } else {
+    if (context.instruction) lines.push(`## 요청\n${context.instruction}\n`);
+    lines.push("이 사람의 포트폴리오 페이지를 만들어라.");
+  }
+  return lines;
+}
+
+/** 원문 자료입니다. 설계안, 출처 맥락, 섹션 설계 순서입니다. */
+export function promptSources(context: PageGenerationContext): string[] {
+  const lines: string[] = [];
   if (context.portfolioPlan) {
     lines.push("## PortfolioPlan v1 — 편집 가능한 구성 맥락");
     lines.push(JSON.stringify(context.portfolioPlan, null, 2));
@@ -308,40 +429,11 @@ function buildPrompt(context: PageGenerationContext): string {
     lines.push(`- 분량: 약 ${section.targetLength}자`);
   }
   lines.push("");
+  return lines;
+}
 
-  if (context.media.length > 0) {
-    lines.push("## 쓸 수 있는 그림 — 주소를 그대로 옮긴다");
-    for (const asset of context.media) {
-      lines.push(
-        `- \`${asset.src}\` (${asset.width}×${asset.height}) — ${asset.alt}`
-        + `\n  srcset: \`${asset.srcSet}\``,
-      );
-    }
-    lines.push("**그림이 있는 섹션은 그림이 주인공이다.** 글 옆에 작게 끼우지 마라.");
-    lines.push("");
-  } else {
-    lines.push("## 그림");
-    lines.push("쓸 수 있는 사진이 없다. 필요하면 CSS와 SVG로 직접 그린다.");
-    lines.push("");
-  }
-
-  if (context.previous && context.instruction) {
-    lines.push("## 지금 지면 — 지시가 건드리지 않은 것은 그대로 둔다");
-    lines.push("```html");
-    lines.push(context.previous.html);
-    lines.push("```");
-    lines.push("```css");
-    lines.push(context.previous.css);
-    lines.push("```");
-    lines.push("");
-    lines.push(`## 지시\n${context.instruction}`);
-    lines.push("지시대로 고친 지면 전체를 내라.");
-  } else {
-    if (context.instruction) lines.push(`## 요청\n${context.instruction}\n`);
-    lines.push("이 사람의 포트폴리오 페이지를 만들어라.");
-  }
-
-  return lines.join("\n");
+export function buildPrompt(context: PageGenerationContext): string {
+  return [...promptOpening(context), ...promptSources(context), ...promptMedia(context), ...promptClosing(context)].join("\n");
 }
 
 /** 태그를 걷어낸 글자. 근거 대조는 **화면에 보이는 것**을 봐야 한다. */
@@ -383,7 +475,12 @@ export class AiPageGenerator implements PageGenerator {
         // 마크업이 없는 지면은 버리지 않고 같은 대화에서 고쳐 받는다. 고친 뒤에도 없으면 아래 QA가 실패로 남긴다.
         check: (draft) => {
           const problem = markupProblem(draft.html, useKit);
-          return problem ? [{ path: "/html", problem }] : [];
+          if (problem) return [{ path: "/html", problem }];
+          // 근거에 없는 이메일은 지어낸 연락처다. 다른 주소로 바꾸지 말고 그 줄을 지우라고 결과를 못 박는다.
+          return ungroundedEmails(draft.html, source).map((email) => ({
+            path: "/html",
+            problem: `근거에 없는 이메일 ${email}이 지면에 있습니다. 이 사람의 연락처가 아닙니다. 그 이메일이 든 줄(이름표와 값, mailto 링크)을 지우고 다른 주소로 바꾸지 마세요.`,
+          }));
         },
         ...(sink ? { onPartial: (text: string) => sink.delta(text), onThinking: (tokens: number) => sink.thinking(tokens) } : {}),
       },
@@ -445,7 +542,7 @@ export class AiPageGenerator implements PageGenerator {
 }
 
 /** 지면이 마크업인가. 아니면 그 이유. 생성 호출의 `check`(같은 대화에서 고치기)와 QA가 같은 판정을 쓴다. */
-function markupProblem(html: string, useKit: boolean): string | null {
+export function markupProblem(html: string, useKit: boolean): string | null {
   if (!/<[a-zA-Z]/.test(html)) return "지면에 태그가 하나도 없습니다 — 마크업 대신 설명을 냈습니다";
   if (useKit && !html.includes("k-page")) return "최상위 `k-page`가 없습니다";
   return null;
@@ -465,7 +562,7 @@ function markupProblem(html: string, useKit: boolean): string | null {
  * 근거 없는 수는 **기록만 한다.** 그 판단은 자기 이력을 아는 사람이 해야지
  * 글자 비교가 대신할 수 없고, 값은 `ungrounded_numbers`에 남는다.
  */
-function pageQa(input: {
+export function pageQa(input: {
   html: string;
   useKit: boolean;
   ungrounded: string[];

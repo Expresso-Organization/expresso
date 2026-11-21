@@ -1,33 +1,53 @@
 import { setTimeout as delay } from "node:timers/promises";
 import type { FastifyInstance, preHandlerHookHandler } from "fastify";
-import { API_PREFIX, AgentPlanDecisionSchema, AgentReplanDecisionSchema, UpdateTaskProgressSchema, AgentRecordDraftDecisionSchema, UuidSchema, CreateAgentConversationSchema, SendAgentMessageSchema, AddAgentContextSchema, AgentApprovalSchema, SaveAgentApiKeySchema, SetAgentContextsSchema } from "@expresso/contracts";
+import { API_PREFIX, AgentBrewResumeRequestSchema, AgentDesignDrawSchema, AgentPlanDecisionSchema, AgentReplanDecisionSchema, UpdateTaskProgressSchema, AgentRecordDraftDecisionSchema, AgentGoalDraftDecisionSchema, UuidSchema, CreateAgentConversationSchema, SendAgentMessageSchema, AddAgentContextSchema, AgentApprovalSchema, SaveAgentApiKeySchema, SetAgentContextsSchema } from "@expresso/contracts";
 import { requireAuth } from "../../api/plugins/auth-context.js";
-import type { IdentityPrincipal } from "../identity/index.js";
 import type { AgentChatService } from "./service.js";
 
-export function registerAgentChatRoutes(app: FastifyInstance, service: AgentChatService, authenticate: preHandlerHookHandler, developerUserIds: readonly string[] = []) {
+export function registerAgentChatRoutes(app: FastifyInstance, service: AgentChatService, authenticate: preHandlerHookHandler) {
   const base = `${API_PREFIX}/agent/conversations`;
   const options = { preHandler: authenticate };
   const id = (params: unknown) => UuidSchema.parse((params as { id: string }).id);
-  // 서버 Claude 인증은 개발 멤버와, 관리자가 대신 로그인한 더미 계정이 쓴다.
-  // 더미 계정은 스스로 로그인할 수 없어 대신 로그인 중이라는 것이 곧 관리자가 연 더미 계정이다.
-  const serverCredential = ({ user }: IdentityPrincipal) => developerUserIds.includes(user.id) || user.impersonation !== null;
-  app.get(`${API_PREFIX}/agent/access`, options, async req => ({ data: { enabled: service.enabled, serverCredentialAllowed: serverCredential(requireAuth(req)), consentRequired: await service.consentRequired(requireAuth(req).user.id), apiKeyConfigured: await service.credentials.configured(requireAuth(req).user.id), model: "sonnet" } }));
+  // 모든 계정이 서버 Claude 인증으로 쓴다. 개인 키를 등록한 계정은 그 키로 돌고 이번 달 크레딧 한도를 보지 않는다.
+  app.get(`${API_PREFIX}/agent/access`, options, async req => {
+    const userId = requireAuth(req).user.id;
+    const apiKeyConfigured = await service.credentials.configured(userId);
+    return { data: { enabled: service.enabled, consentRequired: await service.consentRequired(userId), apiKeyConfigured, creditsExhausted: !apiKeyConfigured && await service.creditsExhausted(userId), model: "sonnet" } };
+  });
   app.put(`${API_PREFIX}/agent/credential`, options, async req => { await service.credentials.save(requireAuth(req).user.id, SaveAgentApiKeySchema.parse(req.body).apiKey); return { data: { configured: true } }; });
   app.delete(`${API_PREFIX}/agent/credential`, options, async req => { await service.credentials.remove(requireAuth(req).user.id); return { data: { configured: false } }; });
   app.get(base, options, async req => ({ data: await service.list(requireAuth(req).user.id) }));
   app.post(base, options, async (req, reply) => { const input = CreateAgentConversationSchema.parse(req.body); return reply.code(201).send({ data: await service.create(requireAuth(req).user.id, input.contexts) }); });
   app.get(`${base}/:id`, options, async req => ({ data: await service.get(requireAuth(req).user.id, id(req.params)) }));
-  app.post(`${base}/:id/messages`, options, async (req, reply) => { const principal = requireAuth(req); const input = SendAgentMessageSchema.parse(req.body); const apiKey = serverCredential(principal) ? undefined : await service.credentials.read(principal.user.id); if (!serverCredential(principal) && !apiKey) return reply.code(403).send({ error: { message: "Anthropic API 키를 입력해 주세요." } }); return reply.code(202).send({ data: await service.send(principal.user.id, id(req.params), input, apiKey) }); });
+  app.post(`${base}/:id/messages`, options, async (req, reply) => { const userId = requireAuth(req).user.id; const input = SendAgentMessageSchema.parse(req.body); return reply.code(202).send({ data: await service.send(userId, id(req.params), input, await service.credentials.read(userId)) }); });
   app.get(`${base}/:id/reviews/:toolId`, options, async req => ({ data: await service.freshness(requireAuth(req).user.id, id(req.params), UuidSchema.parse((req.params as { toolId: string }).toolId)) }));
   app.post(`${base}/:id/record-drafts/:draftId`, options, async req => ({ data: await service.decideRecordDraft(requireAuth(req).user.id, id(req.params), UuidSchema.parse((req.params as { draftId: string }).draftId), AgentRecordDraftDecisionSchema.parse(req.body)) }));
+  app.post(`${base}/:id/goal-drafts/:draftId`, options, async req => { const userId = requireAuth(req).user.id; return { data: await service.decideGoalDraft(userId, id(req.params), UuidSchema.parse((req.params as { draftId: string }).draftId), AgentGoalDraftDecisionSchema.parse(req.body), await service.credentials.read(userId)) }; });
   app.post(`${base}/:id/plan-drafts/:draftId`, options, async req => ({ data: await service.decidePlanDraft(requireAuth(req).user.id, id(req.params), UuidSchema.parse((req.params as { draftId: string }).draftId), AgentPlanDecisionSchema.parse(req.body)) }));
   app.post(`${base}/:id/replan-drafts/:draftId`, options, async req => ({ data: await service.decideReplanDraft(requireAuth(req).user.id, id(req.params), UuidSchema.parse((req.params as { draftId: string }).draftId), AgentReplanDecisionSchema.parse(req.body)) }));
   app.patch(`${API_PREFIX}/agent/plans/:planId/tasks/:taskId`, options, async req => { const params = req.params as { planId: string; taskId: string }; return { data: await service.updateTaskProgress(requireAuth(req).user.id, UuidSchema.parse(params.planId), UuidSchema.parse(params.taskId), UpdateTaskProgressSchema.parse(req.body)) }; });
   app.get(`${API_PREFIX}/agent/plans/:planId`, options, async req => ({ data: await service.plan(requireAuth(req).user.id, UuidSchema.parse((req.params as { planId: string }).planId)) }));
-  app.post(`${base}/:id/retry`, options, async (req, reply) => { const principal = requireAuth(req); const apiKey = serverCredential(principal) ? undefined : await service.credentials.read(principal.user.id); if (!serverCredential(principal) && !apiKey) return reply.code(403).send({ error: { message: "Anthropic API 키를 입력해 주세요." } }); return reply.code(202).send({ data: await service.retry(principal.user.id, id(req.params), apiKey) }); });
+  // 대화에서 시작한 포트폴리오 제작. 상태 읽기 · 제작 열기 · 실패한 분석 다시 맡기기 모두 AI를 부르지 않는다.
+  const startId = (params: unknown) => UuidSchema.parse((params as { startId: string }).startId);
+  app.get(`${base}/:id/brew-starts/:startId`, options, async req => ({ data: await service.brewStartState(requireAuth(req).user.id, id(req.params), startId(req.params)) }));
+  app.post(`${base}/:id/brew-starts/:startId/open`, options, async req => ({ data: await service.openBrew(requireAuth(req).user.id, id(req.params), startId(req.params)) }));
+  // 분석이 끝난 것을 에이전트가 알리게 한다. 답 하나를 시작하므로 보내기와 같이 개인 키가 있으면 그 키로 돈다.
+  app.post(`${base}/:id/brew-starts/:startId/announce`, options, async (req, reply) => { const userId = requireAuth(req).user.id; return reply.code(202).send({ data: await service.announceBrew(userId, id(req.params), startId(req.params), await service.credentials.read(userId)) }); });
+  // 대화에서 인터뷰를 연다. 에이전트가 첫 질문을 하는 답을 시작하므로 보내기와 같이 개인 키가 있으면 그 키로 돈다.
+  app.post(`${base}/:id/brews/:brewId/interview`, options, async (req, reply) => { const userId = requireAuth(req).user.id; return reply.code(202).send({ data: await service.beginInterview(userId, id(req.params), UuidSchema.parse((req.params as { brewId: string }).brewId), await service.credentials.read(userId)) }); });
+  // 대화에서 디자인을 연다 · 견본의 짝으로 첫 화면을 그린다. 둘 다 실행을 시작하지 않는다(그리기는 디자인 대화가 뒤에서 한다).
+  const brewId = (params: unknown) => UuidSchema.parse((params as { brewId: string }).brewId);
+  app.post(`${base}/:id/brews/:brewId/design`, options, async req => ({ data: await service.beginDesign(requireAuth(req).user.id, id(req.params), brewId(req.params)) }));
+  // 고른 첫 화면으로 포트폴리오를 만든다. 실행을 시작하지 않는다(생성은 워커가 한다).
+  app.post(`${base}/:id/brews/:brewId/generation`, options, async req => ({ data: await service.startGeneration(requireAuth(req).user.id, id(req.params), brewId(req.params)) }));
+  app.post(`${base}/:id/brews/:brewId/design/draw`, options, async req => ({ data: await service.drawDesign(requireAuth(req).user.id, id(req.params), brewId(req.params), AgentDesignDrawSchema.parse(req.body)) }));
+  // 진행 중인 제작(옛 화면에서 만든 것 포함)을 그 제작의 대화로 잇는다. 카드만 붙이고 실행을 시작하지 않는다.
+  app.post(`${API_PREFIX}/agent/brews/:brewId/resume`, options, async req => ({ data: await service.resumeBrew(requireAuth(req).user.id, brewId(req.params), AgentBrewResumeRequestSchema.parse(req.body ?? {})) }));
+  app.post(`${base}/:id/brew-starts/:startId/retry`, options, async req => ({ data: await service.retryBrewStart(requireAuth(req).user.id, id(req.params), startId(req.params)) }));
+  app.post(`${base}/:id/retry`, options, async (req, reply) => { const userId = requireAuth(req).user.id; return reply.code(202).send({ data: await service.retry(userId, id(req.params), await service.credentials.read(userId)) }); });
   app.post(`${base}/:id/contexts`, options, async req => ({ data: await service.attach(requireAuth(req).user.id, id(req.params), AddAgentContextSchema.parse(req.body).context) }));
   app.post(`${base}/:id/context-selection`, options, async req => { const input = SetAgentContextsSchema.parse(req.body); return { data: await service.setContexts(requireAuth(req).user.id, id(req.params), input.contexts, input.expectedVersion) }; });
+  app.post(`${base}/:id/saved-records/:recordId/undo`, options, async req => ({ data: await service.undoSavedRecord(requireAuth(req).user.id, id(req.params), UuidSchema.parse((req.params as { recordId: string }).recordId)) }));
   app.post(`${base}/:id/page-edits/:editId/undo`, options, async req => ({ data: await service.undoPageEdit(requireAuth(req).user.id, id(req.params), UuidSchema.parse((req.params as { editId: string }).editId)) }));
   app.post(`${base}/:id/cancel`, options, async req => ({ data: await service.cancel(requireAuth(req).user.id, id(req.params)) }));
   app.post(`${base}/:id/approval`, options, async req => ({ data: await service.approve(requireAuth(req).user.id, id(req.params), AgentApprovalSchema.parse(req.body)) }));
@@ -51,5 +71,8 @@ export function registerAgentChatRoutes(app: FastifyInstance, service: AgentChat
     } catch { /* 접속 종료 후에도 모델 실행은 서버에서 계속됩니다. */ }
     finally { reply.raw.end(); }
   });
-  app.addHook("onClose", async () => service.close());
+  service.setRunFailureListener((error, run) => app.log.error({ err: error, ...run }, "agent run failed"));
+  // HTTP 서버가 열린 연결을 기다리기 전에 실행을 끊는다. 실행이 interrupted로 바뀌면 SSE 루프가
+  // 마지막 상태를 보내고 닫히므로, 종료가 SSE 연결 때문에 늦어지지 않는다.
+  app.addHook("preClose", async () => service.close());
 }

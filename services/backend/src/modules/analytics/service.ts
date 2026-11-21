@@ -25,7 +25,7 @@ export class AnalyticsService {
     // 날짜를 섞어 하루가 지나면 같은 방문자도 다른 해시가 된다. 방문자를 날짜 너머로 잇지 않는다.
     const visitorHash = analyticsDigest(`${this.#visitorSalt}:${isoDate(receivedAt)}:${input.sessionId}`); const payloadHash = analyticsDigest(serialized); const occurredAt = new Date(input.occurredAt);
     return inTransaction(this.context, async (tx) => {
-      const db = mongoCollections(tx.db); const options = { session: tx.session }; const portfolio = await db.portfolios.findOne({ publicSlug: input.slug, status: "published" }, options); const deployment = portfolio?.currentDeploymentId ? await db.deployments.findOne({ _id: portfolio.currentDeploymentId, portfolioId: portfolio._id }, options) : null; if (!deployment || !portfolio) throw new AnalyticsError(404, "published deployment not found");
+      const db = mongoCollections(tx.db); const options = { session: tx.session }; const portfolio = await db.portfolios.findOne({ publicSlug: input.slug, status: "published", deletedAt: null }, options); const deployment = portfolio?.currentDeploymentId ? await db.deployments.findOne({ _id: portfolio.currentDeploymentId, portfolioId: portfolio._id }, options) : null; if (!deployment || !portfolio) throw new AnalyticsError(404, "published deployment not found");
       const existing = await db.analyticsEventReceipts.findOne({ _id: input.eventId }, options); if (existing) { if (existing.payloadHash !== payloadHash) throw new AnalyticsError(409, "event ID reused with different payload"); return { accepted: true, duplicate: true, eventId: input.eventId }; }
       const period = analyticsMinute(receivedAt); const counterId = analyticsDigest(`${visitorHash}:${deployment._id}:${period}`);
       try {

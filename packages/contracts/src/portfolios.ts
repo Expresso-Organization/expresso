@@ -59,6 +59,22 @@ export const PortfolioListResponseSchema = z.strictObject({
   page: PageInfoSchema,
 });
 
+/**
+ * 휴지통에 있는 포트폴리오. `purgeAfter`가 지나면 복원할 수 없고 지면 · 배포 기록 · 방문 데이터와 함께 지워진다.
+ * 옮길 때 공개 중이었으면 `status`는 이미 `unlisted`다.
+ */
+export const TrashedPortfolioSchema = z.strictObject({
+  id: UuidSchema,
+  title: z.string().min(1).max(300),
+  status: PortfolioStatusSchema,
+  deletedAt: TimestampSchema,
+  purgeAfter: TimestampSchema,
+});
+
+export const PortfolioTrashListResponseSchema = z.strictObject({
+  data: z.array(TrashedPortfolioSchema).max(200),
+});
+
 export const ListPortfoliosQuerySchema = z.strictObject({
   status: PortfolioStatusSchema.optional(),
   /** 제목 부분 일치(대소문자 무시). 00c 통합 검색이 쓴다. */
@@ -170,6 +186,7 @@ export const ListPortfolioRevisionsQuerySchema = z.strictObject({
 export type PortfolioStatus = z.infer<typeof PortfolioStatusSchema>;
 export type PortfolioDeployment = z.infer<typeof PortfolioDeploymentSchema>;
 export type PortfolioSummary = z.infer<typeof PortfolioSummarySchema>;
+export type TrashedPortfolio = z.infer<typeof TrashedPortfolioSchema>;
 export type PortfolioBlock = z.infer<typeof PortfolioBlockSchema>;
 export type PortfolioSection = z.infer<typeof PortfolioSectionSchema>;
 export type PortfolioDetail = z.infer<typeof PortfolioDetailSchema>;

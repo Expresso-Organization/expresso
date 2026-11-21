@@ -21,7 +21,7 @@ import { ungroundedNumbers } from "../../platform/numbers.js";
  */
 
 /** 프롬프트를 고치면 올린다. */
-export const RECORD_CLEANUP_PROMPT_VERSION = 2;
+export const RECORD_CLEANUP_PROMPT_VERSION = 3;
 
 export interface CleanupContext {
   /** 사용량을 남길 사용자. 사용자가 없는 작업만 null이다. */
@@ -32,6 +32,8 @@ export interface CleanupContext {
   transcript: string;
   /** 이미 있던 기록. 답을 고쳐 쓰면 이 위에 덧쓴다. */
   existing: { title: string; bodyMd: string } | null;
+  /** 기록 카테고리에 이미 있는 역량 선택지 이름. 같은 뜻이면 이 이름을 그대로 쓰게 한다. */
+  knownCompetencies?: readonly string[];
 }
 
 export interface RecordCleaner {
@@ -64,7 +66,8 @@ const SYSTEM = [
   "## metrics · competencies",
   "- metrics: 답변에 **실제로 적힌** 수치를 그대로 옮긴다(\"일 1,200만 건\").",
   "  없으면 빈 배열이다. 만들어 넣지 않는다.",
-  "- competencies: 이 이야기가 보여주는 역량. 답변이 말한 행동에서만 뽑는다.",
+  "- competencies: 이 이야기가 보여주는 핵심 역량 3개까지. 답변이 말한 행동에서만 뽑는다.",
+  "  역량은 카테고리의 선택지로 쌓인다. 이미 있는 역량과 뜻이 같으면 그 이름을 글자 그대로 쓴다.",
   "",
   "말투는 답변을 쓴 사람의 것을 따른다. 존댓말이면 존댓말로 정리한다.",
 ].join("\n");
@@ -77,6 +80,13 @@ function buildPrompt(context: CleanupContext): string {
       "## 이미 있던 기록 — 답을 고쳐 썼다. 이 위에 덧쓴다",
       `제목: ${context.existing.title}`,
       context.existing.bodyMd,
+    );
+  }
+  if (context.knownCompetencies?.length) {
+    lines.push(
+      "",
+      "## 이미 있는 역량 — 같은 뜻이면 이 이름을 글자 그대로 쓴다. 목록에 없는 역량일 때만 새 이름을 짓는다",
+      ...context.knownCompetencies.map((name) => `- ${name}`),
     );
   }
   lines.push("", "이 답변을 기록으로 정리해라.");

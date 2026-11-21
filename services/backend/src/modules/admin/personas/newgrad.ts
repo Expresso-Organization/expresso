@@ -5,7 +5,7 @@ export const newgrad: Persona = {
   key: "dummy-newgrad",
   displayName: "한서윤",
   headline: "컴퓨터공학 졸업 예정 · 백엔드 지망 신입",
-  profile: { targetRoles: ["백엔드"], experienceYears: 0, primaryGoal: "explore" },
+  profile: { targetRoles: ["백엔드"], experienceYears: 0 },
   records: [
     {
       ref: "edu-univ",

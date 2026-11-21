@@ -50,6 +50,8 @@ export const BrewMaterialsSchema = z.strictObject({
   mode: z.enum(["solo", "collab"]),
   lengthPreset: z.enum(["single", "double", "triple"]),
   materials: z.array(BrewMaterialSchema).max(50),
+  /** 후보가 될 수 없는 초안 기록 수. 화면이 "초안 N건은 담지 않습니다"라고 알릴 때 쓴다. */
+  draftCount: z.number().int().nonnegative(),
 });
 
 /**
@@ -75,11 +77,25 @@ export const UpdateBrewMaterialsSchema = z.strictObject({
 export const BrewMaterialsResponseSchema = z.strictObject({ data: BrewMaterialsSchema });
 
 export type CreateBrew = z.infer<typeof CreateBrewSchema>;
+export type TrashedBrew = z.infer<typeof TrashedBrewSchema>;
 export type CreateFreeBrew = z.infer<typeof CreateFreeBrewSchema>;
 export type BrewMaterial = z.infer<typeof BrewMaterialSchema>;
 export type BrewMaterials = z.infer<typeof BrewMaterialsSchema>;
 export type UpdateBrewMaterials = z.infer<typeof UpdateBrewMaterialsSchema>;
 export type UpdateBrew = z.infer<typeof UpdateBrewSchema>;
+
+/** 휴지통에 있는 만들던 포트폴리오(제작). 이름은 홈 카드와 같다 — 붙인 이름, 공고 제목, 없으면 null. */
+export const TrashedBrewSchema = z.strictObject({
+  id: UuidSchema,
+  title: z.string().max(300).nullable(),
+  status: z.enum(["draft", "interviewing", "recipe", "generating", "done"]),
+  deletedAt: TimestampSchema,
+  purgeAfter: TimestampSchema,
+});
+
+export const BrewTrashListResponseSchema = z.strictObject({
+  data: z.array(TrashedBrewSchema).max(200),
+});
 
 /**
  * 위저드가 자기 자리를 되찾는 데 필요한 것.

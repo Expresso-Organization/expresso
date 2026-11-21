@@ -1,5 +1,4 @@
 "use client";
-import { AgentChat } from "@/features/agent-chat/AgentChat";
 
 import dynamic from "next/dynamic";
 import type { CareerCategory, CareerRecordListItem } from "@expresso/contracts";
@@ -57,12 +56,12 @@ function BlockNoteDocumentEditor({
   const firstBlockId = document?.content[0]?.id;
   return (
     <section className={styles.editor} data-mode={mode} aria-label="커리어 문서 편집기">
-      <div className={styles.topRow}>{mode === "page" ? <SaveState recordId={recordId} /> : null}<RevisionHistory recordId={recordId} /></div>
-      {record && category ? <PropertyList record={record} definitions={category.propertySchemaV2} categoryId={category.id} /> : null}
+      {/* 제목 · 속성 · 본문을 한 열에 둡니다. 여백은 이 열 한 곳에서만 줍니다(peek 패널은 머리말이 저장 상태 · 이력을 맡습니다). */}
       <div className={styles.content}>
+        {mode === "page" ? <div className={styles.topRow}><SaveState recordId={recordId} /><RevisionHistory recordId={recordId} /></div> : null}
+        {record && category ? <PropertyList record={record} definitions={category.propertySchemaV2} categoryId={category.id} /> : null}
         <BlockNoteBody yDocument={yDocument} userName="나" onAiRequest={showAiProposal || onAiRequest ? requestAi : undefined} onDocumentChange={publishDocument} onSelectionChange={setSelection} />
       </div>
-      <AgentChat context={{ kind: "record", id: recordId }} contextLabel="현재 기록" />
       {showAiProposal && document ? <details ref={panelRef} open={panelOpen} onToggle={(event) => setPanelOpen(event.currentTarget.open)}><summary>선택 영역 빠른 편집</summary><AiProposalPanel recordId={recordId} documentVersion={session.snapshot.documentVersion} selectedBlockIds={selection.length ? selection : firstBlockId ? [firstBlockId] : []} announcedProposal={session.snapshot.proposal} requestedPrompt={aiRequest} onRequestHandled={() => setAiRequest(null)} document={document} definitions={category?.propertySchemaV2 ?? []} /></details> : null}
     </section>
   );

@@ -6,6 +6,8 @@ import "@phosphor-icons/web/regular";
 import "@phosphor-icons/web/fill";
 import "@phosphor-icons/web/bold";
 
+import { Toaster } from "@/components/ui/toast";
+import { SIDEBAR_GROUPS_BOOTSTRAP } from "@/components/shell/sidebar-group-storage";
 import { THEME_BOOTSTRAP } from "@/lib/theme";
 import "@/styles/global.css";
 
@@ -42,8 +44,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           `lib/theme.ts`에 있다.
         */}
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
+        {/* 접어 둔 사이드바 묶음도 같은 이유로 첫 페인트 전에 접는다(`sidebar-group-storage.ts`) */}
+        <script dangerouslySetInnerHTML={{ __html: SIDEBAR_GROUPS_BOOTSTRAP }} />
       </head>
-      <body>{children}</body>
+      <body>{children}<Toaster /></body>
     </html>
   );
 }

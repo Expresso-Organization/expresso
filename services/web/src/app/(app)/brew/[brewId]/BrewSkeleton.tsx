@@ -36,7 +36,7 @@ export function BrewSkeleton({
     <>
       <WizardHeader title={<WizardTitle><Skel w={132} h={12} /></WizardTitle>} />
       <WizardSteps current={step} situation={<Skel w={84} h={11} />} />
-      <AppBody>
+      <AppBody pending>
         <WizardStage tinted={tinted}>
           <SkelAnnounce label={label} />
           {children}

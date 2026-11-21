@@ -101,7 +101,7 @@
   align-items: baseline;
   gap: 8px;
   padding: 5px 8px;
-  border-radius: 6px;
+  border-radius: var(--ex-radius-pill);
   transition: background var(--ex-motion-quick);
 }
 
@@ -165,7 +165,7 @@
 
 .compareButton {
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--ex-radius-control);
   padding: 5px 12px;
   background: var(--ex-accent-surface);
   color: var(--ex-accent-text);
@@ -270,7 +270,7 @@
   font-size: var(--ex-text-sm);
   color: var(--ex-fg);
   background: var(--ex-status-success-surface);
-  border-radius: 999px;
+  border-radius: var(--ex-radius-pill);
   padding: 6px 12px;
   white-space: nowrap;
 }
@@ -280,7 +280,7 @@
   color: var(--ex-fg-muted);
   background: var(--ex-bg-sunken);
   border: 1px solid var(--ex-border);
-  border-radius: 999px;
+  border-radius: var(--ex-radius-pill);
   padding: 6px 12px;
   white-space: nowrap;
 }
@@ -377,82 +377,6 @@
   line-height: 1.7;
 }
 
-/*
- * 우측 316px 레일 — 공고를 두고 나누는 대화 하나가 레일 높이를 다 쓴다.
- * 여백은 채팅이 갖고, 스크롤도 채팅의 메시지 목록 안에서만 일어난다.
- */
-.rail {
-  position: relative;
-  width: var(--job-chat-width, 316px);
-  flex-shrink: 0;
-  min-height: 0;
-  border-left: 1px solid var(--ex-border);
-  background: var(--ex-bg);
-  display: flex;
-  flex-direction: column;
-}
-
-/* 저장값이 그려진 다음부터, 끄는 중이 아닐 때만 너비가 부드럽게 바뀐다. */
-.rail[data-animated="true"]:not([data-resizing="true"]) {
-  transition: width var(--ex-motion-panel);
-}
-
-/* 접으면 레일이 사라지고 본문이 그 자리를 쓴다. 채팅은 마운트된 채 감춰 둔다. */
-.rail[data-collapsed="true"] {
-  width: 0;
-  border-left: 0;
-  overflow: hidden;
-}
-
-/*
- * 세로 방향이어야 채팅 루트가 가로로 늘어나 레일 폭을 다 쓴다. 가로 방향이면 채팅 루트가 내용 폭으로
- * 줄어, 대화가 없는 첫 화면에서 오른쪽이 비어 보인다. 높이는 채팅 루트의 `height: 100%`가 정한다.
- */
-.railChat {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.railChat[hidden] {
-  display: none;
-}
-
-/* 왼쪽 경계 핸들 — 문서 패널(`DocumentPanel`)의 핸들과 같은 모양이다. */
-.railHandle {
-  position: absolute;
-  z-index: 2;
-  top: 0;
-  bottom: 0;
-  left: -5px;
-  width: 10px;
-  cursor: col-resize;
-  touch-action: none;
-}
-
-.railHandle::after {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 4px;
-  width: 1px;
-  content: "";
-  transition: background var(--ex-motion-quick), width var(--ex-motion-quick);
-}
-
-.railHandle:hover::after,
-.railHandle:focus-visible::after,
-.rail[data-resizing="true"] .railHandle::after {
-  width: 2px;
-  background: var(--ex-fg-muted);
-}
-
-
-
-
-
 .palette {
   display: flex;
   gap: 6px;
@@ -493,7 +417,7 @@
   width: 32px;
   height: 32px;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--ex-radius-control);
   background: transparent;
   color: var(--ex-fg-muted);
   cursor: pointer;
@@ -507,10 +431,6 @@
 .headIcon:focus-visible {
   outline: 2px solid var(--ex-accent-soft);
   outline-offset: 1px;
-}
-
-.headForm {
-  display: contents;
 }
 
 /* 이 화면에서 다음으로 할 일. 머리의 다른 버튼과 크기는 같고 지면 색으로 앞에 선다. */
@@ -553,24 +473,6 @@
   /* 에스프레소 지면 위의 이름은 아이콘과 같은 글자색이다. 위 규칙이 본문색을 따로 지정하므로 덮어쓴다. */
   .headPrimary .headLabel {
     color: var(--ex-fg-on-accent);
-  }
-}
-
-/* 접힌 채 응답이 진행 중일 때의 점. */
-.chatRunning {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--ex-accent);
-}
-
-/* 레일이 본문 아래로 내려가는 폭에서는 접지 않으므로 버튼도 없다. */
-@media (max-width: 1023px) {
-  .chatToggle {
-    display: none;
   }
 }
 
@@ -623,12 +525,6 @@
   .left {
     flex: none;
     overflow: visible;
-  }
-
-  .rail {
-    width: auto;
-    border-left: none;
-    border-top: 1px solid var(--ex-border);
   }
 }
 

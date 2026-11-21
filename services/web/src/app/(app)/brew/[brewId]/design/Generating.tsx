@@ -1,6 +1,6 @@
 import type { BrewState } from "@expresso/contracts";
 
-import { refreshGenerationAction } from "./design-actions";
+import { cancelGenerationAction, refreshGenerationAction } from "./design-actions";
 import { GenerationWait, type WaitReading } from "./GenerationWait";
 import { LivePreview } from "./LivePreview";
 import styles from "./page.module.css";
@@ -14,7 +14,7 @@ import styles from "./page.module.css";
  * 끝나면 이 화면을 거치지 않는다. 03 화면이 끝난 생성을 06 다듬기로 넘긴다(`page.tsx`).
  *
  * 새로고침 버튼은 남겨 둔다. 끝났다는 신호는 워커가 보내는데, 그 워커가 죽으면 아무 신호도
- * 안 온다. 그때 사람이 누를 버튼이 있어야 한다.
+ * 안 온다. 그때 사람이 누를 버튼이 있어야 한다. 「생성 멈추기」는 생성을 끝내고 디자인 선택으로 돌아간다.
  */
 export function Generating({
   brewId,
@@ -43,10 +43,18 @@ export function Generating({
         waitedMs={waitedMs}
         recipePending={recipePending}
         actions={
-          <form action={refreshGenerationAction}>
-            <input type="hidden" name="brewId" value={brewId} />
-            <button type="submit" className={styles.gateGhost}>새로고침</button>
-          </form>
+          <>
+            <form action={refreshGenerationAction}>
+              <input type="hidden" name="brewId" value={brewId} />
+              <button type="submit" className={styles.gateGhost}>새로고침</button>
+            </form>
+            {/* 멈추면 크레딧을 차감하지 않고 디자인 선택으로 돌아간다. */}
+            <form action={cancelGenerationAction}>
+              <input type="hidden" name="brewId" value={brewId} />
+              <input type="hidden" name="generationJobId" value={generation.id} />
+              <button type="submit" className={styles.gateGhost}>생성 멈추기</button>
+            </form>
+          </>
         }
       />
     </LivePreview>

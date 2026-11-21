@@ -17,6 +17,8 @@ export interface CareerCategoryDoc {
   propertySchemaV2: Contracts.CareerPropertyDefinitionV2[];
   schemaVersion?: number;
   propertyMutationResults?: Record<string, unknown>;
+  /** 보관한 때. 없거나 null이면 보관하지 않은 카테고리다. */
+  archivedAt?: Date | null;
 }
 
 export interface CareerRecordDoc {
@@ -53,7 +55,15 @@ export interface CareerRecordDoc {
 export interface CareerProfileDoc {
   targetRoles: JsonValue;
   experienceYears: number;
-  primaryGoal: "explore" | "build" | "organize";
+  updatedAt: Date;
+}
+
+/** 사용자가 쓴 최종 구직 목표. `users.jobGoal`에 둔다. */
+export interface JobGoalDoc {
+  work: string;
+  place: string;
+  timing: string;
+  source: "onboarding" | "app" | "chat";
   updatedAt: Date;
 }
 

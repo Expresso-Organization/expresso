@@ -1,0 +1,78 @@
+[
+  {
+    "name": "net",
+    "title": "입자 그물",
+    "dimension": "3d",
+    "background": [
+      "light",
+      "dark"
+    ],
+    "look": "점들과 그 사이를 잇는 가는 선의 그물이 천천히 움직인다. 커서 쪽으로 그물이 기운다.",
+    "use": "사람 · 서비스 · 데이터가 서로 이어지는 일(플랫폼 · 협업 · 연결). 점 수 = 함께한 팀 · 프로젝트의 규모.",
+    "values": "points: 한 줄의 점 수 5~14(기본 9)",
+    "source": {
+      "name": "Vanta.js NET",
+      "url": "https://github.com/tengbao/vanta",
+      "version": "0.5.24",
+      "license": "MIT"
+    },
+    "place": "어디든 — 캔버스가 투명해 지면 바탕이 보인다"
+  },
+  {
+    "name": "dots",
+    "title": "점 격자 물결",
+    "dimension": "3d",
+    "background": [
+      "light",
+      "dark"
+    ],
+    "look": "바닥에 깔린 점 격자가 원근 속에서 물결치고, 커서를 따라 시점이 움직인다.",
+    "use": "정리된 체계를 차곡차곡 쌓아 온 일(디자인 시스템 · 인프라 · 품질). 점 간격 = 촘촘함. 화면 아래에 깔리는 바닥.",
+    "values": "spacing: 점 간격 20~45(기본 30)",
+    "source": {
+      "name": "Vanta.js DOTS",
+      "url": "https://github.com/tengbao/vanta",
+      "version": "0.5.24",
+      "license": "MIT"
+    },
+    "place": "어디든 — 캔버스가 투명하다. 화면 아래쪽에 깔면 좋다"
+  },
+  {
+    "name": "fog",
+    "title": "색 안개",
+    "dimension": "2d",
+    "background": [
+      "light",
+      "dark"
+    ],
+    "look": "고른 스타일의 색으로 된 부드러운 안개가 흐른다. 커서를 따라 결이 밀린다. 형체가 없어 글 뒤에 깔기 좋다.",
+    "use": "조용하고 부드러운 분위기, 글이 주인공인 첫 화면. 기록이 적거나 글로 보여 줄 때.",
+    "values": "speed: 흐름 빠르기 0.4~1.6(기본 0.8)",
+    "source": {
+      "name": "Vanta.js FOG",
+      "url": "https://github.com/tengbao/vanta",
+      "version": "0.5.24",
+      "license": "MIT"
+    },
+    "place": "첫 화면 전체 — 자기 바탕을 칠하므로 일부에만 두면 경계가 사각형으로 보인다"
+  },
+  {
+    "name": "blueprint",
+    "title": "블루프린트 선화",
+    "dimension": "3d",
+    "background": [
+      "light",
+      "dark"
+    ],
+    "look": "화면이나 구조를 층으로 분해한 등각 도면. 강조색 한 색의 실선 · 점선 층이 천천히 벌어지고, 커서로 기운다. 바닥에 옅은 모눈.",
+    "use": "만든 것의 구조를 보이는 일(화면 구성 · 아키텍처 · 설계). 층 = 그 화면이나 시스템의 부분(실선은 정해진 부분, 점선은 움직이는 부분).",
+    "values": "layers: [{ w, d, x, z, dashed }] 층마다 크기 · 자리(바닥 단위 -3~3)와 점선 여부, 최대 8층. 주지 않으면 상품 상세 다섯 층",
+    "source": {
+      "name": "Expresso",
+      "url": "",
+      "version": "1",
+      "license": "이 저장소"
+    },
+    "place": "어디든 — 캔버스가 투명하다. 화면 한쪽에 크게"
+  }
+]

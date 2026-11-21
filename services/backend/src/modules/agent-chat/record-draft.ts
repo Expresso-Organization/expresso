@@ -7,13 +7,18 @@ import { normalize } from "./requirement-review.js";
  * 출처는 이 대화에서 사용자가 한 말이어야 한다 — 에이전트의 답이나 다른 대화의 말은 출처가
  * 아니다. 인용은 그 메시지 안에 그대로 있어야 하고, 공백 차이만 무시한다.
  */
-export function draftIssues(input: AgentRecordDraftInput, messages: readonly AgentMessage[], categoryIds: ReadonlySet<string>) {
+/** 출처마다 이 대화의 사용자 메시지인지, 인용이 그 말에 그대로 있는지 본다. 새 기록과 기존 기록에 더하기가 같은 기준을 쓴다. */
+export function sourceIssues(sources: AgentRecordDraftInput["sources"], messages: readonly AgentMessage[]) {
   const issues: string[] = [];
-  input.sources.forEach((source, index) => {
+  sources.forEach((source, index) => {
     const message = messages.find(item => item.id === source.messageId);
     if (!message || message.role !== "user") { issues.push(`${index + 1}번 출처: 이 대화의 사용자 메시지가 아닙니다. 사용자 메시지의 id를 쓰십시오.`); return; }
     if (!normalize(message.text).includes(normalize(source.quote))) issues.push(`${index + 1}번 출처: 인용 "${source.quote}"이 그 메시지에 없습니다. 사용자가 한 말을 그대로 옮기십시오.`);
   });
+  return issues;
+}
+export function draftIssues(input: AgentRecordDraftInput, messages: readonly AgentMessage[], categoryIds: ReadonlySet<string>) {
+  const issues = sourceIssues(input.sources, messages);
   if (input.categoryId && !categoryIds.has(input.categoryId)) issues.push("categoryId가 사용자의 카테고리가 아닙니다. 모르면 비워 두십시오.");
   return issues;
 }

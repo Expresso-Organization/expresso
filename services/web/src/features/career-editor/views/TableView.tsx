@@ -14,6 +14,7 @@ import { PropertyHeaderMenu } from "./PropertyHeaderMenu";
 import type { CareerViewRendererProps } from "./view-types";
 import { displayValue, keyboardActivate, propertyKey, propertyName, rawValue } from "./view-types";
 import { EMPTY_GROUP, propertyLabel } from "./view-logic";
+import { RecordSelectBox } from "./RecordSelectBox";
 import styles from "./views.module.css";
 
 const SELECT_WIDTH = 96;
@@ -118,7 +119,8 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
   }, [cellMenu]);
 
   const width = (propertyId: string | null, fallback: number) => propertyId ? previewWidths[propertyId] ?? propertyWidth(props.view, propertyId, fallback) : fallback;
-  const template = `${SELECT_WIDTH}px ${width(titleColumnId, TITLE_WIDTH)}px ${columns.map((id) => `${width(id, PROPERTY_WIDTH)}px`).join(" ")}`;
+  // 첫 칸(행 조작)은 CSS 변수로 둡니다. 좁은 화면에서 호버가 없으니 선택 상자 하나 폭으로 줄입니다(views.module.css).
+  const template = `var(--table-controls) ${width(titleColumnId, TITLE_WIDTH)}px ${columns.map((id) => `${width(id, PROPERTY_WIDTH)}px`).join(" ")}`;
   const totalWidth = SELECT_WIDTH + width(titleColumnId, TITLE_WIDTH) + columns.reduce((total, id) => total + width(id, PROPERTY_WIDTH), 0);
   const windowed = props.records.length > WINDOW_ROWS + OVERSCAN * 2;
   const start = windowed ? Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - OVERSCAN) : 0;
@@ -380,10 +382,7 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
     <span className={styles.rowControls} role="gridcell">
       <button type="button" className={styles.rowAddButton} aria-label={props.view.sorts.length ? "새 기록" : `${record.title || "제목 없음"} 아래에 새 기록`} onClick={(event) => { event.stopPropagation(); void createAndFocus(undefined, instanceKey, record.id); }}><Icon name="plus" size={17} /></button>
       <button type="button" className={styles.rowDragHandle} aria-label={`${record.title || "제목 없음"} 순서 변경`} title="끌어서 이동 · 위아래 화살표로 이동" draggable onClick={(event) => event.stopPropagation()} onKeyDown={(event) => moveRecordFromKeyboard(event, record.id)} onDragStart={(event) => startRecordDrag(event, record.id)} onDragEnd={() => setRowDrag({ sourceId: "", targetId: null, placement: "before" })}><Icon name="dots-six-vertical" size={18} weight="bold" /></button>
-      <label className={styles.rowCheckbox} data-checked={props.selectedIds.has(record.id) ? "true" : "false"} onClick={(event) => event.stopPropagation()}>
-        <input aria-label={`${record.title || "제목 없음"} 선택`} type="checkbox" checked={props.selectedIds.has(record.id)} onChange={() => props.onToggle(record.id)} />
-        <span aria-hidden="true">{props.selectedIds.has(record.id) ? <Icon name="check" size={11} weight="bold" /> : null}</span>
-      </label>
+      <RecordSelectBox title={record.title} checked={props.selectedIds.has(record.id)} onToggle={() => props.onToggle(record.id)} />
     </span>
     {tableCell(record, titleDefinition, instanceKey, keyboardRecords)}
     {columns.map((id) => definitionsById.get(id)).filter((definition): definition is CareerPropertyDefinitionV2 => Boolean(definition)).map((definition) => tableCell(record, definition, instanceKey, keyboardRecords))}

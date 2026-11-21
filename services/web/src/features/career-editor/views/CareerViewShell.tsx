@@ -2,9 +2,10 @@
 
 import type { CareerCategory, CareerPropertyDefinitionV2, CareerPropertyValueV2, CareerRecord, CareerRecordListItem, CareerRecordStatus, CareerViewConfiguration } from "@expresso/contracts";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { DocumentPanel } from "@/app/(app)/career/[categorySlug]/DocumentPanel";
+import { ViewTransition } from "@/components/motion/ViewTransition";
 import { Icon } from "@/components/ui/Icon";
 import type { AiPromptRequest } from "@/features/career-editor/ai/AiProposalPanel";
 import { CAREER_CATEGORY_ICONS } from "@/lib/career-category-icons";
@@ -522,7 +523,8 @@ export function CareerViewShell({ category: initialCategory, initialViews, initi
         onChange={updateView}
         onCreateRecord={() => void create()}
         onAiCreate={() => setInterview({ mode: "create" })}
-        onSelect={setActiveViewId}
+        // 보기를 고르는 갱신은 Transition이다 — 아래 보기 렌더러의 교차 전환이 여기서만 돈다.
+        onSelect={(id) => startTransition(() => setActiveViewId(id))}
         onCreate={(type) => void createView(type)}
         onRename={(id, name) => { const target = viewsRef.current.find((item) => item.id === id); if (target) updateView({ ...target, name }); }}
         onType={(id, type) => { const target = viewsRef.current.find((item) => item.id === id); if (target) updateView(withType(target, type, categoryRef.current, recordsRef.current)); }}
@@ -541,7 +543,10 @@ export function CareerViewShell({ category: initialCategory, initialViews, initi
             <button type="button" onClick={() => setInterview({ mode: "create" })}><Icon name="coffee" size={13} />AI로 첫 기록 만들기</button>
           </div>
         </div>
-        : visibleRecords.length || !filtered ? renderer
+        : visibleRecords.length || !filtered
+          // 보기 모양(테이블 · 보드 · 타임라인 …)이 바뀌면 이전 보기가 옅어지며 새 보기로 넘어간다. 모양이 같은 보기끼리는
+          // 같은 렌더러가 남아 있어 돌지 않는다. 길이와 곡선은 styles/global.css의 `view-in` · `view-out`.
+          ? <ViewTransition key={view.type} enter="view-in" exit="view-out" default="none">{renderer}</ViewTransition>
           : <div className={styles.emptyFilter}>
             <strong>조건에 맞는 기록이 없습니다.</strong>
             <div>

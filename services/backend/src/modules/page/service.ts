@@ -5,7 +5,6 @@ import {
   PAGE_PROMPT_VERSION,
   PageStyleGrammarSchema,
   PortfolioArchetypeSchema,
-  PortfolioPlanSchema,
   composeTemplateStyle,
   findPortfolioStyle,
   pageDocument,
@@ -36,6 +35,8 @@ import type { ConsentApi } from "../consent/index.js";
 import { findDesignSystemRevision, findPortfolioDesign } from "../design-systems/index.js";
 import { requireActiveUser } from "../identity/index.js";
 import { DESIGN_PRINCIPLES_VERSION, type PageGenerationContext, type PageGenerator, type PageStreamSink } from "./generator.js";
+import { brewPageSources } from "./brew-sources.js";
+import { findDesignSnippet } from "./design-chat/service.js";
 import { PageElementIssues, PageServiceError } from "./public.js";
 import type { PageStream } from "./stream.js";
 import type { PageRefineInput, PageRefineOutcome } from "./structured-generator.js";
@@ -61,7 +62,7 @@ export interface PageRefiner {
 function toPage(row: GeneratedPageDoc): GeneratedPage {
   return GeneratedPageSchema.parse({
     id: row._id, portfolioId: row.portfolioId, generationJobId: row.generationJobId ?? null,
-    html: row.html, css: row.css, rationale: row.rationale, promptVersion: row.promptVersion,
+    html: row.html, css: row.css, ...(row.script ? { script: row.script } : {}), rationale: row.rationale, promptVersion: row.promptVersion,
     revision: row.revision, qualityStatus: row.qualityStatus, qaReport: row.qaReport,
     generationManifest: Object.keys(row.generationManifest).length > 0 ? row.generationManifest : null,
     styleSpec: row.styleSpecSnapshot ?? null, createdAt: row.createdAt.toISOString(),
@@ -120,34 +121,22 @@ export class PageService {
     return pageDocument({ html: row.html, css: row.css, title: portfolio?.title ?? "포트폴리오", description: row.rationale, ...(isPageStyleGrammar(row.styleSpecSnapshot) ? { grammar: row.styleSpecSnapshot } : {}) });
   }
 
-  async #context(userId: string, portfolioId: string, instruction: string | undefined, previous: { html: string; css: string } | undefined): Promise<PageGenerationContext> {
+  async #context(userId: string, portfolioId: string, instruction: string | undefined, previous: { html: string; css: string; script?: string | undefined } | undefined): Promise<PageGenerationContext> {
     const db = mongoCollections(this.context.db);
     const portfolio = await db.portfolios.findOne({ _id: portfolioId, userId });
     if (!portfolio) throw new PageServiceError(404, "portfolio not found");
-    const recipe = await db.recipes.find({ userId, brewId: portfolio.brewId }).sort({ version: -1 }).limit(1).next();
-    if (!recipe) throw new PageServiceError(404, "recipe not found for portfolio");
-    const sections = await db.recipeSections.find({ userId, recipeId: recipe._id }).sort({ orderNo: 1 }).toArray();
-    if (sections.length === 0) throw new PageServiceError(409, "recipe has no sections");
-    const paths = await db.recipeEvidencePaths.find({ userId, recipeId: recipe._id }).toArray();
-    const [records, answers, requirements, template, brew, author] = await Promise.all([
-      // 휴지통에 넣은 기록은 새로 만드는 지면의 근거로 쓰지 않습니다.
-      db.careerRecords.find({ userId, deletedAt: null, _id: { $in: paths.filter((p) => p.sourceType === "record").map((p) => p.sourceId) } }).toArray(),
-      db.answers.find({ userId, _id: { $in: paths.filter((p) => p.sourceType === "answer").map((p) => p.sourceId) } }).toArray(),
-      db.jobPostingRequirements.find({ _id: { $in: paths.filter((p) => p.sourceType === "requirement").map((p) => p.sourceId) } }).toArray(),
-      db.templates.findOne({ _id: portfolio.templateId }), db.brews.findOne({ _id: portfolio.brewId, userId }), db.users.findOne({ _id: userId }),
-    ]);
-    const sourceText = (sourceId: string) => {
-      const record = records.find(({ _id }) => _id === sourceId); if (record) return `${record.title}\n${record.bodyMd}`;
-      const answer = answers.find(({ _id }) => _id === sourceId); if (answer) return answer.transcript;
-      const requirement = requirements.find(({ _id }) => _id === sourceId);
-      return requirement ? `${requirement.label}\n${typeof requirement.sourceSpan.quote === "string" ? requirement.sourceSpan.quote : ""}` : "";
-    };
+    // 레시피 · 근거 · 공고는 제작에서 읽습니다. 디자인 대화도 같은 자료를 읽습니다(`brew-sources.ts`).
+    const sources = await brewPageSources(this.context.db, userId, portfolio.brewId);
+    const { records } = sources;
+    const template = await db.templates.findOne({ _id: portfolio.templateId });
     const composed = template ? composeTemplateStyle(template.style, portfolio.styleOverrides) : null;
     const preset = template ? findPortfolioStyle(template.code) : undefined;
     // 디자인 시스템 판으로 만든 포트폴리오는 템플릿 이름 대신 고른 디자인의 이름을 남깁니다.
     const design = portfolio.designSystemRevisionId ? findDesignSystemRevision(portfolio.designSystemRevisionId)?.spec.identity ?? null : null;
+    // 디자인 대화에서 고른 첫 화면으로 만든 포트폴리오는 그 첫 화면을 지면의 맨 앞에 그대로 둡니다. 스타일의 이름도 그것을 따릅니다.
+    const snippet = portfolio.designSnippetId ? await findDesignSnippet(this.context.db, userId, portfolio.brewId, portfolio.designSnippetId) : null;
     const style: PageStyleGrammar | undefined = composed && template ? {
-      name: design?.name ?? template.name, description: design?.description ?? template.description,
+      name: snippet?.name ?? design?.name ?? template.name, description: snippet?.note ?? design?.description ?? template.description,
       toneTags: Array.isArray(template.toneTags) ? template.toneTags.filter((v): v is string => typeof v === "string") : [],
       ...composed,
       // 지면 문법은 명조와 고딕만 안다. 고정폭 스타일은 고딕으로 내려 둔다.
@@ -161,9 +150,6 @@ export class PageService {
       imagery: composed.structure === "wide-margin" ? "project-artifacts-first" : composed.structure === "dense-grid" ? "data-visual-first" : "typography-first",
       antiPatterns: ["generic-saas-landing", "three-identical-cards", "decorative-dashboard-without-evidence", "color-only-variation"],
     } : undefined;
-    const analysis = brew ? await db.jobAnalyses.findOne({ _id: brew.jobAnalysisId, userId }) : null;
-    const posting = analysis?.jobPostingId ? await db.jobPostings.findOne({ _id: analysis.jobPostingId }) : null;
-    const company = posting ? await db.companies.findOne({ _id: posting.companyId }) : null;
     const pageSections = await db.portfolioSections.find({ userId, portfolioId }).toArray();
     const mediaBlocks = await db.blocks.find({ userId, portfolioSectionId: { $in: pageSections.map(item => item._id) }, kind: "media" }).toArray();
     const supplied = mediaBlocks.flatMap(item => { const parsed = PortfolioMediaSchema.safeParse(item.content); return parsed.success ? [{ id: parsed.data.assetId, alt: parsed.data.alt }] : []; });
@@ -172,15 +158,16 @@ export class PageService {
     const media = [...new Map(supplied.flatMap(item => { const asset = assets.find(value => value._id === item.id); return asset ? [[item.id, { src: `${PAGE_IMAGE_SRC_PREFIX}${asset._id}`, srcSet: "", alt: item.alt, width: asset.width, height: asset.height }] as const] : []; })).values()];
     return {
       userId,
-      ...(author ? { author: { name: author.displayName } } : {}),
-      portfolioPlan: recipe.portfolioPlan ? PortfolioPlanSchema.parse(recipe.portfolioPlan) : null,
+      ...(sources.author ? { author: sources.author } : {}),
+      portfolioPlan: sources.portfolioPlan,
       ...(style ? { style } : {}),
       design: findPortfolioDesign(portfolio),
       ...(PortfolioArchetypeSchema.safeParse(portfolio.archetype).success ? { archetype: PortfolioArchetypeSchema.parse(portfolio.archetype) } : {}),
-      sections: sections.map((row) => ({ id: row._id, title: row.title, purpose: row.purpose, goal: typeof row.context.goal === "string" ? row.context.goal : "", points: Array.isArray(row.context.points) ? row.context.points.filter((v): v is string => typeof v === "string") : [], targetLength: row.targetLength })),
-      evidence: [...new Map(paths.map((path) => [path.sourceId, { id: path.sourceId, label: path.sourceLabel, text: sourceText(path.sourceId) }])).values()].filter(({ text }) => text.trim().length > 0),
-      media, jobTitle: posting?.title ?? brew?.freeTitle ?? null,
-      company: company ? { name: company.name, industry: company.industry ?? null, toneSummary: company.toneSummary ?? null, brandColors: Array.isArray(company.brandColors) ? company.brandColors.filter((v): v is string => typeof v === "string") : [] } : null,
+      sections: sources.sections,
+      evidence: sources.evidence,
+      media, jobTitle: sources.jobTitle,
+      company: sources.company,
+      ...(snippet ? { seed: { name: snippet.name, words: snippet.note || snippet.words, tokens: snippet.tokens, html: snippet.html, css: snippet.css, script: snippet.script } } : {}),
       instruction, previous, useKit: !preset, modelTier: "sonnet",
     };
   }
@@ -189,12 +176,15 @@ export class PageService {
     if (!await this.owns(userId, portfolioId)) throw new PageServiceError(404, "portfolio not found");
     if (options.generationJobId) { const existing = await this.forGenerationJob(userId, options.generationJobId); if (existing) return existing; }
     const current = await this.latest(userId, portfolioId);
-    const context = await this.#context(userId, portfolioId, options.instruction, current ? { html: current.html, css: current.css } : undefined);
+    const context = await this.#context(userId, portfolioId, options.instruction, current ? { html: current.html, css: current.css, script: current.script } : undefined);
     if (context.previous && current?.generationManifest?.structured) {
       context.previous.structured = current.generationManifest.structured;
       context.structuredContent = current.generationManifest.structured.content;
     }
     if (options.pageFormat) context.pageFormat = options.pageFormat;
+    // 키트 없이 만드는 지면은 스타일 문법에 그 사실을 적습니다. 생성 중 미리보기(스트림 `begin`)와 저장하는 스냅샷이 이 값을 쓰고,
+    // 지면 문서가 키트 CSS를 싣지 않습니다.
+    if (context.style && generator.usesKit?.(context) === false) context.style = { ...context.style, kit: false };
     await this.#consent?.require(userId, "page_generation");
     const streamId = options.streamId ?? portfolioId; const stream = this.#stream;
     // 쓰기는 기다리지 않고 순서대로 쌓습니다. Redis 연결 하나의 명령은 보낸 순서로 처리됩니다.
@@ -202,6 +192,7 @@ export class PageService {
       delta: (value) => { void this.#publish(stream.delta(streamId, value)); },
       thinking: (tokens) => { void this.#publish(stream.thinking(streamId, tokens)); },
       blueprint: (page) => { void this.#publish(stream.blueprint(streamId, page)); },
+      seed: (page) => { void this.#publish(stream.seed(streamId, page)); },
       fill: (path, text, done, revised) => { void this.#publish(stream.fill(streamId, path, text, done, revised ?? false)); },
       stage: (name) => { void this.#publish(stream.stage(streamId, name)); },
     } : null;
@@ -223,6 +214,8 @@ export class PageService {
       const created: GeneratedPageDoc = {
         _id: randomUUID(), userId, portfolioId, generationJobId: options.generationJobId ?? null,
         html: result.html, css: result.css, rationale: result.rationale, revision: (last?.revision ?? -1) + 1,
+        // 지시로 고친 지면이 스크립트를 내지 않았으면 직전 판의 그림을 잇는다. 고치라는 말에 그림이 사라지면 안 된다.
+        ...((result.script ?? (options.instruction ? context.previous?.script : undefined)) ? { script: (result.script ?? context.previous?.script)! } : {}),
         instruction: options.instruction ?? null, promptVersion: PAGE_PROMPT_VERSION,
         ungroundedNumbers: result.ungrounded, removed: result.removed, qualityStatus: result.qaReport.status,
         qaReport: result.qaReport as unknown as JsonObject, generationManifest: result.manifest as unknown as JsonObject,

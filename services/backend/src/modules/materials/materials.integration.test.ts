@@ -59,6 +59,37 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB brew materials and jobs"
     await expect(materials.updateBrew(owner, brew.brewId, { mode: "collab" })).rejects.toMatchObject({ statusCode: 403 });
   });
 
+  it("대화 전 제작은 나중에 정리한 기록을 후보에 더하고, 초안 수를 알린다", async () => {
+    // Discord #issue 11-11: 초안을 정리됨으로 옮긴 뒤에도 이미 연 제작의 재료 고르기가 비어 있었다.
+    const identity = new MongoIdentityService(fixture.resource);
+    const user = (await identity.signup({ email: `brew-${randomUUID()}@example.com`, displayName: "초안", password: "correct-horse-battery" })).user.id;
+    const career = new MongoCareerService(fixture.resource);
+    const records = mongoCollections(fixture.resource.db).careerRecords;
+    const categoryId = (await career.listCategories(user))[0]!.id;
+    const draft = (await career.createRecord(user, randomUUID(), { categoryId, title: "데이터분석 스터디", properties: {}, bodyMd: "Python으로 분석" })).record;
+    const brew = await materials.createFreeBrew(user, { title: "데이터", brief: "Python 분석", lengthPreset: "single" });
+    expect(brew.materials).toEqual([]);
+    expect(brew.draftCount).toBe(1);
+
+    await records.updateOne({ _id: draft.id }, { $set: { status: "organized" } });
+    const synced = await materials.getMaterials(user, brew.brewId);
+    expect(synced.materials).toMatchObject([{ recordId: draft.id, selected: true, selectedBy: "auto", rank: 0 }]);
+    expect(synced.draftCount).toBe(0);
+    // 다시 열어도 같은 줄이 두 번 생기지 않는다.
+    expect((await materials.getMaterials(user, brew.brewId)).materials).toHaveLength(1);
+
+    // 초안으로 되돌린 기록은 목록에서 빠진다 — 남으면 계약(status)에서 화면이 멈춘다.
+    await records.updateOne({ _id: draft.id }, { $set: { status: "draft" } });
+    expect(await materials.getMaterials(user, brew.brewId)).toMatchObject({ materials: [], draftCount: 1 });
+
+    // 대화를 시작한 제작은 재료가 질문의 근거라 그대로 둔다.
+    await mongoCollections(fixture.resource.db).brews.updateOne({ _id: brew.brewId }, { $set: { status: "interviewing" } });
+    await records.updateOne({ _id: draft.id }, { $set: { status: "organized" } });
+    const later = (await career.createRecord(user, randomUUID(), { categoryId, title: "SQL 튜닝", properties: {}, bodyMd: "쿼리" })).record;
+    await records.updateOne({ _id: later.id }, { $set: { status: "verified" } });
+    expect((await materials.getMaterials(user, brew.brewId)).materials.map((row) => row.recordId)).toEqual([draft.id]);
+  });
+
   it("registers one job and outbox atomically and rejects idempotency reuse across job types", async () => {
     const results = await Promise.all([jobs.submit(owner, "interview", "brew-key-0001", { brewId }), jobs.submit(owner, "interview", "brew-key-0001", { brewId })]);
     expect(results[0]?.jobId).toBe(results[1]?.jobId);

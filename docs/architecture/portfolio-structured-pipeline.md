@@ -24,7 +24,7 @@
 
 공급자에 전달하는 `children`은 요소 ID의 enum 배열과 길이 제한을 사용합니다. [OpenAI Structured Outputs의 지원 배열 문법](https://developers.openai.com/api/docs/guides/structured-outputs)에 맞춰 위치별 튜플 문법을 피하고, 소개·연락처의 위치와 참조 관계는 반환 후 도메인 검사에서 검증합니다.
 
-`packages/portfolio-renderer`는 실제 `@json-render/core` Catalog와 `@json-render/react` Registry/Renderer를 사용합니다. 서버에서 HTML을 만들고 같은 CSS를 제품 미리보기와 저장 문서에 사용합니다. 모델이 HTML/CSS를 자유 작성하는 경로는 `PAGE_GENERATION_FORMAT=html`로 유지합니다. 기본값은 `json-render`이며 AI 공급자의 기본값 `off`는 유지합니다.
+`packages/portfolio-renderer`는 실제 `@json-render/core` Catalog와 `@json-render/react` Registry/Renderer를 사용합니다. 서버에서 HTML을 만들고 같은 CSS를 제품 미리보기와 저장 문서에 사용합니다. 모델이 HTML/CSS를 자유 작성하는 경로는 `PAGE_GENERATION_FORMAT=html`과 디자인 선택 화면의 「자유 생성」으로 유지합니다. 이 경로는 2026-11-17부터 자료 정리본과 디자인 지침으로 CSS 전체를 쓰는 `BriefedPageGenerator`입니다([자유 생성 실험](./portfolio-free-generation-lab.md)). 기본값은 `json-render`이며 AI 공급자의 기본값 `off`는 유지합니다.
 
 ## 선택 가능한 지면
 

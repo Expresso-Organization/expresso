@@ -17,14 +17,18 @@
  * 성공(#12a97a·166°)과 위험(#e2543a·12°) 근처를 비우지 않으면 회사 아바타가
  * 상태 표시로 읽힌다.
  */
-const HUES = [
-  25, // 테라코타 — espresso 계열
-  42, // 앰버
-  95, // 올리브
-  200, // 스틸 블루
-  245, // 인디고
-  292, // 플럼
-] as const;
+export const TINT_HUES = {
+  terracotta: 25, // espresso 계열
+  amber: 42,
+  olive: 95,
+  steel: 200, // 스틸 블루
+  indigo: 245,
+  plum: 292,
+} as const;
+
+export type TintHue = keyof typeof TINT_HUES;
+
+const HUES = Object.values(TINT_HUES);
 
 /**
  * FNV-1a. 짧은 문자열에 고르게 퍼지고 구현이 한 줄이라 여기 쓰기 좋다.
@@ -44,11 +48,22 @@ export interface AvatarTint {
   color: string;
 }
 
-export function avatarTint(companyName: string): AvatarTint {
-  // 이름 앞뒤 공백이나 대소문자가 달라도 같은 색이어야 한다.
-  const hue = HUES[hash(companyName.trim().toLocaleLowerCase("en-US")) % HUES.length] ?? HUES[0];
+function tint(hue: number): AvatarTint {
   return {
     background: `hsl(${hue} 46% 93%)`,
     color: `hsl(${hue} 58% 30%)`,
   };
+}
+
+export function avatarTint(companyName: string): AvatarTint {
+  // 이름 앞뒤 공백이나 대소문자가 달라도 같은 색이어야 한다.
+  return tint(HUES[hash(companyName.trim().toLocaleLowerCase("en-US")) % HUES.length] ?? TINT_HUES.terracotta);
+}
+
+/**
+ * 회사가 아닌 것이 같은 틴트를 쓸 때 — 홈의 제안 카드가 종류를 이 색으로 가른다.
+ * 무작위가 아니라 뜻이 정한 색이어야 하므로 이름에서 뽑지 않고 색상을 지정해 고른다.
+ */
+export function tintOf(hue: TintHue): AvatarTint {
+  return tint(TINT_HUES[hue]);
 }

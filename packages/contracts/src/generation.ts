@@ -28,6 +28,8 @@ export const SubmitGenerationSchema = z
     templateId: UuidSchema.optional(),
     styleOverrides: TemplateStyleOverrideSchema.optional(),
     designSystemRevisionId: UuidSchema.optional(),
+    /** 디자인 대화에서 고른 첫 화면. 이것으로 요청한 생성은 자유 생성이고, 지면의 맨 앞에 그 첫 화면이 그대로 들어간다. */
+    designSnippetId: UuidSchema.optional(),
     // 페이지 짜임새. 보내지 않으면 사례 상세형(case-study)입니다.
     archetype: PortfolioArchetypeSchema.optional(),
     // 지면을 만드는 방식. 보내지 않으면 서버 설정(`PAGE_GENERATION_FORMAT`)을 따른다.
@@ -38,13 +40,20 @@ export const SubmitGenerationSchema = z
     "recipeId와 brewId 중 하나만 보내야 합니다.",
   )
   .refine(
-    (value) => (value.templateId === undefined) !== (value.designSystemRevisionId === undefined),
-    "templateId와 designSystemRevisionId 중 하나만 보내야 합니다.",
+    (value) => [value.templateId, value.designSystemRevisionId, value.designSnippetId].filter((id) => id !== undefined).length === 1,
+    "templateId · designSystemRevisionId · designSnippetId 중 하나만 보내야 합니다.",
   )
   .refine(
-    (value) => value.designSystemRevisionId === undefined || value.styleOverrides === undefined,
-    "디자인 시스템 판으로 요청할 때는 styleOverrides를 보내지 않습니다.",
+    (value) => (value.designSystemRevisionId === undefined && value.designSnippetId === undefined) || value.styleOverrides === undefined,
+    "디자인 시스템 판이나 고른 첫 화면으로 요청할 때는 styleOverrides를 보내지 않습니다.",
+  )
+  .refine(
+    (value) => value.designSnippetId === undefined || (value.archetype === undefined && (value.pageFormat === undefined || value.pageFormat === "html")),
+    "고른 첫 화면으로 요청하는 생성은 자유 생성입니다. archetype을 보내지 않고 pageFormat은 html만 받습니다.",
   );
+
+/** 사용자가 멈춘 생성의 실패 코드. 상태는 `failed`, 다시 돌 수 없음(`retryable: false`)으로 끝난다. */
+export const GENERATION_CANCELLED = "CANCELLED";
 
 export const GenerationJobStatusSchema = z.strictObject({
   generationJobId: UuidSchema,

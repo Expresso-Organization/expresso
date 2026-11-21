@@ -7,7 +7,7 @@ import {
 } from "mongodb";
 import { describe, expect, it } from "vitest";
 
-import { createMongoResource, isMongoClientClosedError, isMongoUnavailableError } from "./mongodb.js";
+import { connectMongoUntilReady, createMongoResource, isMongoClientClosedError, isMongoUnavailableError } from "./mongodb.js";
 
 const selectionError = () => new MongoServerSelectionError("no server", { type: "Unknown" } as never);
 
@@ -47,4 +47,44 @@ describe("Mongo 오류 판별", () => {
     expect(isMongoClientClosedError(second)).toBe(true);
     await database.close();
   }, 10_000);
+});
+
+describe("connectMongoUntilReady", () => {
+  it("연결되면 끝난다", async () => {
+    let calls = 0;
+    const retries: unknown[] = [];
+    await connectMongoUntilReady(
+      { connect: (async () => { calls += 1; }) as never },
+      { signal: new AbortController().signal, onRetry: (error) => retries.push(error) },
+    );
+    expect(calls).toBe(1);
+    expect(retries).toEqual([]);
+  });
+
+  it("실패하면 다시 시도하고 중단하면 거부 없이 끝난다", async () => {
+    const database = createMongoResource("mongodb://127.0.0.1:1/expresso?directConnection=true", { databaseName: "expresso" });
+    const controller = new AbortController();
+    const retries: string[] = [];
+    const finished = connectMongoUntilReady(database.client, {
+      signal: controller.signal,
+      onRetry(error) {
+        retries.push((error as Error).name);
+        if (retries.length === 2) controller.abort();
+      },
+    });
+    await expect(finished).resolves.toBeUndefined();
+    expect(retries).toEqual(["MongoServerSelectionError", "MongoServerSelectionError"]);
+    await database.close();
+  }, 15_000);
+
+  it("중단 뒤에는 connect를 부르지 않는다", async () => {
+    const controller = new AbortController();
+    controller.abort();
+    let calls = 0;
+    await connectMongoUntilReady(
+      { connect: (async () => { calls += 1; }) as never },
+      { signal: controller.signal, onRetry: () => undefined },
+    );
+    expect(calls).toBe(0);
+  });
 });

@@ -12,7 +12,7 @@ export class CompanyResearchService implements CompanyResearchApi {
   constructor(readonly context: MongoContext) {}
   async #companyId(userId: string, brewId: string, session?: ClientSession) {
     const db = mongoCollections(this.context.db); const options = session ? { session } : {};
-    const brew = await db.brews.findOne({ _id: brewId, userId }, options);
+    const brew = await db.brews.findOne({ _id: brewId, userId, deletedAt: null }, options);
     const analysis = brew ? await db.jobAnalyses.findOne({ _id: brew.jobAnalysisId, userId }, options) : null;
     const posting = analysis?.jobPostingId ? await db.jobPostings.findOne({ _id: analysis.jobPostingId }, options) : null;
     if (!posting) throw new CompanyResearchError(404, "brew not found");

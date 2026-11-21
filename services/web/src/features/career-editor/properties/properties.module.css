@@ -9,8 +9,8 @@
 .propertyCreateAnchor { display:flex; }
 .propertyCreatePopover { position:fixed; z-index:110; display:grid; gap:6px; overflow:auto; border:1px solid var(--ex-border); border-radius:12px; padding:7px; background:var(--ex-bg); box-shadow:var(--ex-elevation-overlay); color:var(--ex-fg-body); }
 .propertyCreateNameRow { display:grid; grid-template-columns:34px minmax(0,1fr); align-items:center; gap:7px; }
-.propertyCreateIcon { display:grid; width:34px; height:34px; place-items:center; border:1px solid var(--ex-border-soft); border-radius:8px; color:var(--ex-fg-muted); }
-.propertyCreateNameRow input { min-width:0; height:34px; border:1px solid var(--ex-border-soft); border-radius:8px; outline:0; background:var(--ex-bg-tint); padding:0 10px; color:var(--ex-fg-strong); font:inherit; font-size:var(--ex-text-sm); }
+.propertyCreateIcon { display:grid; width:34px; height:34px; place-items:center; border:1px solid var(--ex-border-soft); border-radius:var(--ex-radius-control); color:var(--ex-fg-muted); }
+.propertyCreateNameRow input { min-width:0; height:34px; border:1px solid var(--ex-border-soft); border-radius:var(--ex-radius-control); outline:0; background:var(--ex-bg-tint); padding:0 10px; color:var(--ex-fg-strong); font:inherit; font-size:var(--ex-text-sm); }
 .propertyCreateNameRow input::placeholder { color:var(--ex-fg-subtle); }
 .propertyTypeHeading { display:flex; align-items:center; gap:7px; padding:11px 8px 4px; color:var(--ex-fg-muted); font-size:var(--ex-text-xs); font-weight:600; }
 .propertyTypeList { display:grid; gap:0; }
@@ -19,7 +19,7 @@
 .propertyTypeList button:disabled { opacity:.5; cursor:wait; }
 .propertyTypeList button>i:first-child { color:var(--ex-fg-muted); }
 .propertyTypeList button>i:last-child { justify-self:end; color:var(--ex-fg-subtle); }
-.propertySelect { display:flex; width:100%; min-height:34px; align-items:center; justify-content:space-between; gap:10px; border:1px solid var(--ex-border-soft); border-radius:7px; background:var(--ex-bg-tint); padding:6px 9px; color:var(--ex-fg-strong); font:inherit; font-size:var(--ex-text-sm); text-align:left; cursor:pointer; }
+.propertySelect { display:flex; width:100%; min-height:34px; align-items:center; justify-content:space-between; gap:10px; border:1px solid var(--ex-border-soft); border-radius:var(--ex-radius-control); background:var(--ex-bg-tint); padding:6px 9px; color:var(--ex-fg-strong); font:inherit; font-size:var(--ex-text-sm); text-align:left; cursor:pointer; }
 .propertySelect:hover,.propertySelect[aria-expanded="true"] { border-color:var(--ex-border-firm); background:var(--ex-bg-hover); }
 .propertySelect:focus-visible { outline:0; border-color:var(--ex-border-firm); box-shadow:var(--ex-focus-ring); }
 .propertySelect:disabled { opacity:.5; cursor:not-allowed; }
@@ -39,7 +39,7 @@
 .propertyCreateSetup>strong { padding:2px 6px; color:var(--ex-fg-strong); font-size:var(--ex-text-sm); }
 .propertyCreateSetup>label { display:grid; gap:5px; padding:0 6px; color:var(--ex-fg-muted); font-size:var(--ex-text-xs); }
 .propertyCreateBack { justify-self:start; border:0; background:transparent; padding:5px 6px; color:var(--ex-fg-muted); font:inherit; font-size:var(--ex-text-xs); cursor:pointer; }
-.propertyCreateCommit { min-height:34px; border:0; border-radius:7px; background:var(--ex-accent); padding:7px 10px; color:var(--ex-on-accent); font:inherit; cursor:pointer; }
+.propertyCreateCommit { min-height:34px; border:0; border-radius:var(--ex-radius-control); background:var(--ex-accent); padding:7px 10px; color:var(--ex-on-accent); font:inherit; cursor:pointer; }
 .propertyCreateCommit:disabled { opacity:.45; cursor:not-allowed; }
 .propertyCreateStatus { margin:0; padding:6px 8px; color:var(--ex-fg-muted); font-size:var(--ex-text-xs); }
 .listHeading { display: flex; align-items: center; justify-content: space-between; color: var(--ex-fg-muted); font-size: var(--ex-text-xs); font-weight: 600; }
@@ -49,38 +49,46 @@
 .propertyRow > label { display:flex; min-width:0; min-height:32px; align-items:center; gap:6px; color:var(--ex-fg-muted); font-size:var(--ex-text-xs); white-space:nowrap; }
 .propertyRow > label > i { flex:0 0 auto; }
 .propertyName { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.fieldEditor, .assetEditor, .dateFields { display: grid; gap: 4px; min-width: 0; }
-.input { width: 100%; min-height: 32px; box-sizing: border-box; border: 1px solid transparent; border-radius: 6px; background: transparent; padding: 6px 8px; color: var(--ex-fg-strong); font: inherit; }
+.fieldEditor, .assetEditor { display: grid; gap: 4px; min-width: 0; }
+.input { width: 100%; min-height: 32px; box-sizing: border-box; border: 1px solid transparent; border-radius: var(--ex-radius-control); background: transparent; padding: 6px 8px; color: var(--ex-fg-strong); font: inherit; }
 .input:hover { border-color: var(--ex-border-soft); background: var(--ex-bg-hover); }
 .input:focus { background: var(--ex-bg); }
+.input::placeholder { color: var(--ex-fg-subtle); }
 .issue { color: var(--ex-status-danger-text); font-size: var(--ex-text-xs); }
 .fieldRow { position: relative; display: flex; align-items: center; min-width: 0; }
 .fieldRow > .input { padding-right: 26px; }
 .issueIcon { position: absolute; right: 6px; display: flex; color: var(--ex-status-danger-text); cursor: default; }
 .helpText, .emptyValue { color: var(--ex-fg-muted); font-size: var(--ex-text-xs); }
 .emptyValue { display:flex; min-height:32px; align-items:center; padding:0 8px; }
-.checkboxLabel, .optionCheck { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; color: var(--ex-fg-body); font-size: var(--ex-text-sm); }
-.multiSelect { display: flex; flex-wrap: wrap; gap: 8px 12px; }
-.dateFields { grid-template-columns: 1fr 1fr; }
-.dateFields label { display: grid; gap: 4px; color: var(--ex-fg-muted); font-size: var(--ex-text-xs); }
+.checkboxLabel { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; color: var(--ex-fg-body); font-size: var(--ex-text-sm); }
+/* 체크박스 속성의 기본 컨트롤도 OS 파랑 대신 잉크로 칠합니다(디자인 시스템 RULE 01). */
+.checkboxLabel input { accent-color: var(--ex-fg-strong); }
+/* 다중 선택 · 날짜 값 칸 — 글자로 보이고 누르면 표 셀과 같은 팝업이 열립니다. */
+.valueTrigger { display: flex; width: 100%; min-height: 32px; box-sizing: border-box; align-items: center; border: 1px solid transparent; border-radius: var(--ex-radius-control); background: transparent; padding: 4px 8px; color: var(--ex-fg-body); font: inherit; font-size: var(--ex-text-sm); text-align: left; cursor: pointer; transition: background var(--ex-motion-instant), border-color var(--ex-motion-instant); }
+.valueTrigger:hover, .valueTrigger[aria-expanded="true"] { border-color: var(--ex-border-soft); background: var(--ex-bg-hover); }
+.valueTrigger:focus-visible { outline: 0; box-shadow: var(--ex-focus-ring); }
+.valueTrigger:disabled { cursor: wait; }
+.valueTrigger[data-empty="true"] { color: var(--ex-fg-subtle); }
+.valueChips { display: flex; flex-wrap: wrap; gap: 5px; min-width: 0; }
+.valueChips small { border-radius: var(--ex-radius-pill); background: var(--ex-bg-tint); padding: 3px 9px; color: var(--ex-fg-body); font-size: var(--ex-text-xs); }
 .readOnlyValue { display: block; min-height: 32px; padding: 7px 8px; color: var(--ex-fg-muted); font-size: var(--ex-text-sm); overflow-wrap: anywhere; }
 /* Worker가 수식 · 롤업을 다시 계산하는 동안(`useComputedRefresh`) 계산값 칸만 깜빡인다. 주기는 브루 대기 화면(`Waiting.module.css`)과 같다. */
 .propertyList[aria-busy="true"] [data-computed] { animation: computing 1.2s ease-in-out infinite; }
 @keyframes computing { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
 @media (prefers-reduced-motion: reduce) { .propertyList[aria-busy="true"] [data-computed] { animation: none; opacity: .5; } }
 .assetList { display: flex; flex-wrap: wrap; gap: 4px; }
-.assetList button { border: 1px solid var(--ex-border-soft); border-radius: 999px; background: var(--ex-bg-muted); padding: 3px 8px; color: var(--ex-fg-body); }
+.assetList button { border: 1px solid var(--ex-border-soft); border-radius: var(--ex-radius-pill); background: var(--ex-bg-muted); padding: 3px 8px; color: var(--ex-fg-body); }
 .relationEditor { position: relative; display: grid; gap: 6px; }
 .propertyChips { display: flex; flex-wrap: wrap; gap: 4px; }
-.propertyChips button { border: 1px solid var(--ex-border-soft); border-radius: 999px; background: var(--ex-bg-muted); padding: 4px 8px; color: var(--ex-fg-body); }
+.propertyChips button { border: 1px solid var(--ex-border-soft); border-radius: var(--ex-radius-pill); background: var(--ex-bg-muted); padding: 4px 8px; color: var(--ex-fg-body); }
 .relationResults { position: absolute; z-index: 8; top: 36px; right: 0; left: 0; max-height: 220px; overflow: auto; margin: 0; border: 1px solid var(--ex-border-soft); border-radius: 8px; background: var(--ex-bg); padding: 4px; box-shadow: var(--ex-elevation-overlay); list-style: none; }
 .relationResults button { width: 100%; border: 0; border-radius: 5px; background: transparent; padding: 7px 8px; color: var(--ex-fg-body); text-align: left; }
 .relationResults button:hover, .relationResults button:focus { background: var(--ex-bg-hover); }
-.formulaEditor, .rollupEditor { display: grid; gap: 10px; padding: 10px; border: 1px solid var(--ex-border-soft); border-radius: 8px; background: var(--ex-bg-muted); }
+.formulaEditor, .rollupEditor { display: grid; gap: 10px; padding: 10px; border: 1px solid var(--ex-border-soft); border-radius: var(--ex-radius-control); background: var(--ex-bg-muted); }
 .formulaEditor > label, .rollupEditor label { display: grid; gap: 4px; color: var(--ex-fg-body); font-size: var(--ex-text-xs); }
-.formulaField { position: relative; display: grid; border-radius: 6px; background: var(--ex-bg); }
+.formulaField { position: relative; display: grid; border-radius: var(--ex-radius-control); background: var(--ex-bg); }
 /* 배경 층과 textarea는 상자 · 글꼴 · 줄바꿈이 같아야 토큰이 글자와 겹친다. 한글 이름이 들어가므로 mono 글꼴을 쓰지 않는다. */
-.formulaSource, .formulaBackdrop { box-sizing: border-box; margin: 0; border: 1px solid var(--ex-border-soft); border-radius: 6px; padding: 8px; font-family: inherit; font-size: var(--ex-text-sm); line-height: 1.5; letter-spacing: normal; white-space: pre-wrap; overflow-wrap: break-word; scrollbar-gutter: stable; }
+.formulaSource, .formulaBackdrop { box-sizing: border-box; margin: 0; border: 1px solid var(--ex-border-soft); border-radius: var(--ex-radius-control); padding: 8px; font-family: inherit; font-size: var(--ex-text-sm); line-height: 1.5; letter-spacing: normal; white-space: pre-wrap; overflow-wrap: break-word; scrollbar-gutter: stable; }
 .formulaSource { position: relative; min-height: 112px; resize: vertical; background: transparent; color: var(--ex-fg-strong); }
 .formulaBackdrop { position: absolute; inset: 0; overflow: hidden; border-color: transparent; color: transparent; pointer-events: none; }
 .formulaToken { border-radius: 3px; background: var(--ex-accent-surface-hover); box-shadow: 0 0 0 2px var(--ex-accent-surface-hover), inset 0 -1px 0 var(--ex-accent); color: transparent; }
@@ -90,7 +98,7 @@
 .formulaActions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
 .formulaActions span { margin-right: auto; color: var(--ex-fg-muted); font-size: var(--ex-text-xs); }
 .formulaActions span[data-over] { color: var(--ex-status-danger-text); }
-.formulaActions button { min-height: 30px; border: 1px solid var(--ex-border-soft); border-radius: 6px; background: var(--ex-bg); padding: 5px 8px; color: var(--ex-fg-body); }
+.formulaActions button { min-height: 30px; border: 1px solid var(--ex-border-soft); border-radius: var(--ex-radius-control); background: var(--ex-bg); padding: 5px 8px; color: var(--ex-fg-body); }
 .formulaDiagnostics { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
 .formulaDiagnostics li { display: flex; gap: 5px; color: var(--ex-status-danger-text); font-size: var(--ex-text-xs); }
 .formulaDiagnostics li[data-severity="warning"] { color: var(--ex-status-warning-text); }
@@ -98,4 +106,4 @@
 .formulaValid { margin: 0; color: var(--ex-status-success-text); font-size: var(--ex-text-xs); }
 .computedPreview { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 8px; }
 .computedPreview > span { color: var(--ex-fg-muted); font-size: var(--ex-text-xs); }
-@media (max-width: 767px) { .propertyRow { grid-template-columns: 88px minmax(0, 1fr); } .dateFields { grid-template-columns: 1fr; } }
+@media (max-width: 767px) { .propertyRow { grid-template-columns: 88px minmax(0, 1fr); } }

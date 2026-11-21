@@ -274,6 +274,13 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("job market integration", () => {
       notify: false,
     })).rejects.toMatchObject({ statusCode: 409, publicDetails: { limit: 10 } });
     expect(await jobMarketService.listSavedSearches(firstUserId)).toHaveLength(10);
+    // 한도에 닿으면 지워야 다시 저장할 수 있다. 남의 것은 지우지 못한다.
+    const oldest = (await jobMarketService.listSavedSearches(firstUserId))[0]!.id;
+    const savedUrl = `/v1/jobs/saved-searches/${oldest}`;
+    expect((await app.inject({ method: "DELETE", url: savedUrl, headers: auth(secondToken) })).statusCode).toBe(404);
+    expect((await app.inject({ method: "DELETE", url: savedUrl, headers: auth() })).statusCode).toBe(204);
+    expect((await app.inject({ method: "DELETE", url: savedUrl, headers: auth() })).statusCode).toBe(404);
+    expect(await jobMarketService.listSavedSearches(firstUserId)).toHaveLength(9);
 
     const interest = await jobMarketService.upsertInterest(firstUserId, primaryPostingId, {
       stage: "saved",

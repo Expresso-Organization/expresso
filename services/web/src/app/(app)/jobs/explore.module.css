@@ -1,0 +1,272 @@
+/* 탐색 — 왼쪽 종류 목록과 공모전 · 해커톤 목록. */
+
+.split {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+
+.pane {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+
+.paneScroll {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 16px 14px;
+}
+
+/* ── 종류 목록 — 라이브러리의 왼쪽 목록과 같은 모양 ───────── */
+
+.list {
+  width: 216px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  padding: 12px 8px;
+  border-right: 1px solid var(--ex-border);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.listRow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 8px;
+  border-radius: 7px;
+  color: var(--ex-fg-muted);
+  text-decoration: none;
+  transition: background var(--ex-motion-instant);
+}
+
+.listRow:hover {
+  background: var(--ex-bg-tint);
+  /* 전역 링크 호버(`a:where(:hover)`)가 클래스 색을 덮지 않으므로 여기서 진해진다 */
+  color: var(--ex-fg-strong);
+}
+
+.listRow[aria-current="page"] {
+  background: var(--ex-bg-tint);
+  color: var(--ex-fg);
+}
+
+.listName {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--ex-text-sm);
+  color: var(--ex-fg-body);
+}
+
+.listRow[aria-current="page"] .listName {
+  font-weight: 600;
+  color: var(--ex-fg);
+}
+
+/* ── 공모전 · 해커톤 · 부트캠프 카드(워터폴 그리드) ─────────── */
+
+.wall {
+  padding: 20px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 1px solid var(--ex-border-inner);
+  border-radius: var(--ex-radius-card);
+  overflow: hidden;
+  background: var(--ex-bg);
+  color: inherit;
+  text-decoration: none;
+  transition: box-shadow var(--ex-motion-quick);
+}
+
+.card:hover {
+  box-shadow: var(--ex-elevation-card-hover);
+}
+
+.cardMedia {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  background: var(--ex-bg-tint);
+}
+
+.cardPoster {
+  display: block;
+  width: 100%;
+  height: auto;
+  transition: transform var(--ex-motion-panel);
+}
+
+.card:hover .cardPoster {
+  transform: scale(1.02);
+}
+
+/* 포스터 위 마감 — 포스터마다 바탕색이 달라 흰 바탕에 그림자로 띄운다 */
+.cardChip {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 3px 9px;
+  border-radius: var(--ex-radius-pill);
+  background: var(--ex-bg);
+  box-shadow: var(--ex-elevation-raised);
+  font-family: var(--ex-font-brand);
+  font-size: var(--ex-text-2xs);
+  font-weight: 600;
+  color: var(--ex-fg-body);
+}
+
+.cardChipUrgent {
+  color: var(--ex-accent-text);
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 12px 14px 14px;
+}
+
+.cardTitle {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: var(--ex-text-sm);
+  font-weight: 600;
+  line-height: var(--ex-leading-snug);
+  color: var(--ex-fg);
+}
+
+.cardMeta {
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.cardTag {
+  padding: 2px 8px;
+  border-radius: var(--ex-radius-pill);
+  background: var(--ex-bg-tint);
+  font-size: var(--ex-text-3xs);
+  color: var(--ex-fg-muted);
+  white-space: nowrap;
+}
+
+/* 포스터 없는 카드 — 이니셜과 글만, 위아래가 짧다 */
+.cardPlain {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+}
+
+.cardPlain:hover {
+  box-shadow: none;
+  background: var(--ex-bg-hover);
+}
+
+.cardPlainBody {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.cardDeadline {
+  font-family: var(--ex-font-brand);
+  font-size: var(--ex-text-2xs);
+  font-weight: 600;
+  color: var(--ex-fg-body);
+}
+
+.cardDeadlineUrgent {
+  color: var(--ex-accent-text);
+}
+
+@media (max-width: 767px) {
+  .wall {
+    padding: 12px;
+  }
+
+  .cardBody {
+    padding: 10px 10px 12px;
+  }
+
+  .cardTags {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card:hover .cardPoster {
+    transform: none;
+  }
+}
+
+/* ── 빈 종류 ───────────────────────────────────────────────── */
+
+.empty {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--ex-fg-muted);
+}
+
+.emptyIcon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--ex-bg-tint);
+}
+
+.emptyTitle {
+  margin: 0;
+  font-size: var(--ex-text-sm);
+}
+
+@media (min-width: 1024px) {
+  .activityTags {
+    display: flex;
+  }
+}
+
+@media (max-width: 767px) {
+  .split {
+    flex-direction: column;
+  }
+
+  .list {
+    width: auto;
+    flex-direction: row;
+    overflow-x: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--ex-border);
+  }
+
+  .listRow {
+    flex-shrink: 0;
+  }
+}

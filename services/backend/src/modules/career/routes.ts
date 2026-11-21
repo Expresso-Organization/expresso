@@ -5,11 +5,18 @@ import {
   API_PREFIX,
   CareerCategoriesResponseSchema,
   CareerCategoryIdParamsSchema,
+  CareerCategoryResponseSchema,
+  CareerCategoryDeleteImpactResponseSchema,
+  DeleteCareerCategoryQuerySchema,
+  UpdateCareerCategorySchema,
   CareerRecordIdParamsSchema,
   CareerProfileResponseSchema,
   CareerSkillEvidenceResponseSchema,
   OptionalCareerProfileResponseSchema,
   SaveCareerProfileSchema,
+  JobGoalResponseSchema,
+  OptionalJobGoalResponseSchema,
+  SaveJobGoalSchema,
   CareerSkillIdParamsSchema,
   CareerRecordResponseSchema,
   CareerRecordSchema,
@@ -128,6 +135,19 @@ export function registerCareerRoutes(
     });
   });
 
+  /** 최종 구직 목표. 아직 적지 않은 사람에게는 null이다. */
+  app.get(`${API_PREFIX}/career/goal`, { preHandler }, async (request) => {
+    const principal = requireAuth(request);
+    return OptionalJobGoalResponseSchema.parse({ data: await options.careerService.getJobGoal(principal.user.id) });
+  });
+
+  /** 통째로 덮어쓴다. 온보딩과 앱의 구직 목표 화면이 쓴다 — 대화에서 고치는 길은 에이전트 쪽에 따로 있다. */
+  app.put(`${API_PREFIX}/career/goal`, { preHandler }, async (request) => {
+    const principal = requireAuth(request);
+    const input = parseBody(SaveJobGoalSchema, request);
+    return JobGoalResponseSchema.parse({ data: await options.careerService.saveJobGoal(principal.user.id, input) });
+  });
+
   app.get(`${API_PREFIX}/career/categories`, { preHandler }, async (request) => {
     const principal = requireAuth(request);
     return CareerCategoriesResponseSchema.parse({
@@ -145,6 +165,31 @@ export function registerCareerRoutes(
     return reply.code(201).header("etag", formatResourceEtag(category.version)).send({
       data: category,
     });
+  });
+
+  app.patch(`${API_PREFIX}/career/categories/:categoryId`, { preHandler }, async (request) => {
+    const principal = requireAuth(request);
+    const { categoryId } = parseParams(CareerCategoryIdParamsSchema, request);
+    const input = parseBody(UpdateCareerCategorySchema, request);
+    if (!options.careerService.archiveCategory) throw new HttpStatusError(501, "career category archive is unavailable");
+    return CareerCategoryResponseSchema.parse({ data: await options.careerService.archiveCategory(principal.user.id, categoryId, input.archived) });
+  });
+
+  app.get(`${API_PREFIX}/career/categories/:categoryId/delete-impact`, { preHandler }, async (request) => {
+    const principal = requireAuth(request);
+    const { categoryId } = parseParams(CareerCategoryIdParamsSchema, request);
+    if (!options.careerService.getCategoryDeleteImpact) throw new HttpStatusError(501, "career category delete is unavailable");
+    return CareerCategoryDeleteImpactResponseSchema.parse({ data: await options.careerService.getCategoryDeleteImpact(principal.user.id, categoryId) });
+  });
+
+  app.delete(`${API_PREFIX}/career/categories/:categoryId`, { preHandler }, async (request, reply) => {
+    const principal = requireAuth(request);
+    const { categoryId } = parseParams(CareerCategoryIdParamsSchema, request);
+    const query = DeleteCareerCategoryQuerySchema.safeParse(request.query);
+    if (!query.success) throw new HttpStatusError(400, "invalid query");
+    if (!options.careerService.deleteCategory) throw new HttpStatusError(501, "career category delete is unavailable");
+    await options.careerService.deleteCategory(principal.user.id, categoryId, query.data.deleteRecords);
+    return reply.code(204).send();
   });
 
   app.post(`${API_PREFIX}/career/categories/:categoryId/property-schema/preview`, { preHandler }, async (request) => {

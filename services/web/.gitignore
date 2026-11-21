@@ -15,8 +15,13 @@ build/
 
 # next build가 이 파일을 자기 것으로 덮어쓴다. 아래를 남겨 두면 덮어쓰지 않는다.
 .next/
+# 배포가 새 판을 짓는 자리와 직전 판을 남기는 자리 — scripts/operations/deploy.sh
+.next-build/
+.next-prev/
 .next-e2e-*/
 out/
+# 개발 서버 · 빌드 · 타입 검사(next typegen)가 그때그때 다시 쓴다. 추적하면 검사할 때마다 변경이 생긴다.
+next-env.d.ts
 next-env.d.ts.bak
 playwright-report/
 test-results/

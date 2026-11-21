@@ -18,7 +18,7 @@
   margin: 0;
   padding: 0 6px 0 5px;
   border: 1px solid var(--ex-border);
-  border-radius: 5px;
+  border-radius: var(--ex-radius-pill);
   background: var(--ex-bg-sunken);
   color: var(--ex-fg);
   font-size: 0.94em;

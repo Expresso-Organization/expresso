@@ -36,6 +36,8 @@
 
 .navItem:hover {
   background: var(--ex-bg-sunken);
+  /* 전역 링크 호버(`a:where(:hover)`)가 클래스 색을 덮지 않으므로 여기서 진해진다 */
+  color: var(--ex-fg-strong);
 }
 
 
@@ -70,7 +72,7 @@
 .creditCard {
   background: var(--ex-bg);
   border: 1px solid var(--ex-border);
-  border-radius: 14px;
+  border-radius: var(--ex-radius-card);
   padding: 16px 18px;
 }
 
@@ -136,7 +138,7 @@
   margin-top: 14px;
   background: var(--ex-bg);
   border: 1px solid var(--ex-border);
-  border-radius: 14px;
+  border-radius: var(--ex-radius-card);
   padding: 16px 18px;
   min-width: 0;
 }
@@ -385,7 +387,7 @@
 .plan {
   background: var(--ex-bg);
   border: 1px solid var(--ex-border);
-  border-radius: 16px;
+  border-radius: var(--ex-radius-card);
   padding: 20px 22px;
   display: flex;
   flex-direction: column;
@@ -417,7 +419,7 @@
   font-weight: 600;
   color: var(--ex-accent-text);
   background: var(--ex-bg);
-  border-radius: 4px;
+  border-radius: var(--ex-radius-pill);
   padding: 2px 6px;
 }
 
@@ -470,7 +472,7 @@
   font-size: var(--ex-text-xs);
   color: var(--ex-status-success-text);
   background: var(--ex-status-success-surface);
-  border-radius: 6px;
+  border-radius: var(--ex-radius-pill);
   padding: 4px 9px;
   white-space: nowrap;
 }
@@ -482,7 +484,7 @@
   gap: 14px;
   padding: 14px 16px;
   border: 1px solid var(--ex-border);
-  border-radius: 12px;
+  border-radius: var(--ex-radius-card);
   background: var(--ex-bg);
 }
 
@@ -514,10 +516,15 @@
   color: var(--ex-fg-body);
   background: var(--ex-bg);
   border: 1px solid var(--ex-border-soft);
-  border-radius: 9px;
+  border-radius: var(--ex-radius-control);
   padding: 8px 14px;
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+a.dataAction:hover {
+  /* 전역 링크 호버(`a:where(:hover)`)가 클래스 색을 덮지 않으므로 여기서 진해진다 */
+  color: var(--ex-fg-strong);
 }
 
 /* 보낸 뒤에는 같은 버튼이 결과를 말한다 — 다시 누를 것이 없다. */
@@ -570,7 +577,7 @@
   gap: 16px;
   padding: 14px 16px;
   border: 1px solid var(--ex-border);
-  border-radius: 12px;
+  border-radius: var(--ex-radius-card);
   background: var(--ex-bg);
 }
 
@@ -596,7 +603,7 @@
 .consentOff {
   margin-left: auto;
   padding: 7px 16px;
-  border-radius: 9px;
+  border-radius: var(--ex-radius-control);
   font-family: inherit;
   font-size: var(--ex-text-sm);
   font-weight: 600;

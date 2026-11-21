@@ -16,7 +16,7 @@ export default function Loading() {
   return (
     <>
       <DocumentHeader crumbs={["내 커리어", null]} />
-      <AppBody>
+      <AppBody pending>
         <SkelRegion label="기록을 불러오는 중" className={styles.list}>
           <div className={styles.categoryHead}>
             <Skel w={34} h={34} radius={9} />

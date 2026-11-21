@@ -432,6 +432,7 @@ export class StructuredPageGenerator implements PageGenerator {
                 }
               : {}),
             ...(sink.fill ? { slot: (path, text, done, revised) => sink.fill!(path, text, done, revised) } : {}),
+            ...(sink.stage ? { drafted: () => sink.stage!("drafted") } : {}),
           }
         : {},
       this.tuning,

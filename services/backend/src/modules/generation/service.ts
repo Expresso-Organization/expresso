@@ -1,11 +1,13 @@
 import { createHash, randomUUID } from "node:crypto";
 
 import {
+  GENERATION_CANCELLED,
   GenerationJobStatusSchema,
   PageGenerationFormatSchema,
   type GeneratedPage,
   type GenerationOutput,
   type SubmitGeneration,
+  type DesignSnippet,
 } from "@expresso/contracts";
 import {
   mongoCollections,
@@ -19,8 +21,10 @@ import { inTransaction, type MongoTransaction } from "../../platform/mongo-trans
 import { writeSnapshot } from "../../platform/snapshot-payload.js";
 import { assertActiveRecordsForWrite } from "../career/index.js";
 import type { ConsentApi } from "../consent/index.js";
-import { findDesignSystemRevision, generationStyleFor } from "../design-systems/index.js";
+import { fallbackTemplateId, findDesignSystemRevision, generationStyleFor } from "../design-systems/index.js";
 import { MongoEntitlementService } from "../entitlements/index.js";
+import { findDesignSnippet } from "../page/index.js";
+import { PORTFOLIO_TRASH_RETENTION_MS } from "../portfolios/index.js";
 import { requireActiveUser } from "../identity/index.js";
 import {
   LAYOUT_PROMPT_VERSION,
@@ -56,11 +60,16 @@ async function latestRecipe(tx: MongoTransaction, userId: string, brewId: string
  *
  * 디자인 시스템 판으로 요청하면 판의 토큰에서 정하고, 어떤 판인지 함께 돌려줍니다.
  */
-function resolveStyle(input: SubmitGeneration): {
+function resolveStyle(input: SubmitGeneration, snippet: DesignSnippet | null): {
   templateId: string;
   styleOverrides: Record<string, unknown>;
   designSystemRevisionId: string | null;
 } {
+  // 대화에서 고른 첫 화면은 템플릿이 없다. 가장 중립적인 내장 템플릿을 틀로 두고, 첫 화면이 쓴 색 · 서체 · 밀도를 얹는다.
+  if (snippet) {
+    const { background, text, accent, font, density } = snippet.tokens;
+    return { templateId: fallbackTemplateId(), styleOverrides: { background, text, accent, font, density }, designSystemRevisionId: null };
+  }
   if (input.designSystemRevisionId) {
     const revision = findDesignSystemRevision(input.designSystemRevisionId);
     if (!revision) throw new GenerationError(404, "design system revision not found");
@@ -98,8 +107,11 @@ export class GenerationService {
         : await latestRecipe(tx, userId, input.brewId!);
       if (input.recipeId && !recipe) throw new GenerationError(404, "recipe not found");
       const brewId = recipe?.brewId ?? input.brewId!;
-      if (!recipe && !await db.brews.findOne({ _id: brewId, userId }, options)) throw new GenerationError(404, "brew not found");
-      const style = resolveStyle(input);
+      // 레시피로 시작해도 제작이 휴지통이면 막는다. 휴지통 제작에 포트폴리오가 생기면 안 된다.
+      if (!await db.brews.findOne({ _id: brewId, userId, deletedAt: null }, options)) throw new GenerationError(404, "brew not found");
+      const snippet = input.designSnippetId ? await findDesignSnippet(tx.db, userId, brewId, input.designSnippetId) : null;
+      if (input.designSnippetId && !snippet) throw new GenerationError(404, "design snippet not found");
+      const style = resolveStyle(input, snippet);
       if (!await db.templates.findOne({ _id: style.templateId, isActive: true }, options)) {
         throw new GenerationError(404, "template not found");
       }
@@ -122,7 +134,9 @@ export class GenerationService {
         styleOverrides: style.styleOverrides as JsonObject,
         designSystemRevisionId: style.designSystemRevisionId,
         archetype: input.archetype ?? null,
-        pageFormat: input.pageFormat ?? null,
+        // 고른 첫 화면은 모델이 쓴 마크업과 CSS다. 그 뒤를 잇는 지면도 자유 생성이어야 한다.
+        pageFormat: snippet ? "html" : input.pageFormat ?? null,
+        designSnippetId: snippet?.id ?? null,
       }, options);
       if (!recipe) return { jobId: id, waitingBrewId: brewId };
       await addMongoOutboxEvent(tx, {
@@ -177,6 +191,39 @@ export class GenerationService {
     return result.modifiedCount;
   }
 
+  /**
+   * 사용자가 생성을 멈춘다(Discord #issue 11-12 「생성 중단 · 취소 없음」).
+   *
+   * 멈춘 생성은 `failed` · `CANCELLED` · 다시 돌 수 없음으로 끝난다. 상태 값을 늘리지 않아 스키마 · 계약이 그대로다.
+   * - 끝난 생성(`done`)은 멈출 수 없다(409). 이미 실패 · 취소된 생성은 그대로 돌려준다.
+   * - 워커가 쓰던 실행 표(`runToken`)를 지워, 늦게 끝난 AI 결과가 완료 · 차감으로 이어지지 않는다
+   *   (`completeFreeHtml` · `#complete` · `prepareFreeHtml` · `process`가 모두 끝난 상태를 건너뛴다).
+   * - 이 생성이 만들던 포트폴리오는 휴지통으로 보낸다. 아직 지면이 없는 빈 초안이라 목록에 남기지 않는다.
+   * - 돌던 AI 호출은 다른 프로세스(워커)에 있어 여기서 끊지 못한다. 끝나면 결과는 버려지고 크레딧은 차감하지 않는다.
+   */
+  async cancel(userId: string, jobId: string) {
+    await inTransaction(this.context, async (tx) => {
+      await requireActiveUser(tx, userId);
+      const db = mongoCollections(tx.db); const options = { session: tx.session };
+      const job = await db.generationJobs.findOne({ _id: jobId, userId }, options);
+      if (!job) throw new GenerationError(404, "generation job not found");
+      if (job.status === "done") throw new GenerationError(409, "generation is already done");
+      if (job.status === "failed") return;
+      const now = new Date();
+      await db.generationJobs.updateOne({ _id: jobId, userId, status: job.status, attempts: job.attempts }, { $set: {
+        status: "failed", stage: "failed", errorCode: GENERATION_CANCELLED, failureRetryable: false, runToken: null, updatedAt: now,
+      } }, options);
+      if (job.portfolioId) {
+        await db.portfolios.updateOne(
+          { _id: job.portfolioId, userId, deletedAt: null },
+          { $set: { deletedAt: now, purgeAfter: new Date(now.getTime() + PORTFOLIO_TRASH_RETENTION_MS) } },
+          options,
+        );
+      }
+    });
+    return this.getStatus(userId, jobId);
+  }
+
   async getStatus(userId: string, jobId: string) {
     const job = await mongoCollections(this.context.db).generationJobs.findOne({ _id: jobId, userId });
     if (!job) throw new GenerationError(404, "generation job not found");
@@ -206,6 +253,7 @@ export class GenerationService {
           designSystemRevisionId: job.designSystemRevisionId ?? null,
           archetype: job.archetype ?? null,
           pageFormat: job.pageFormat ?? null,
+          designSnippetId: job.designSnippetId ?? null,
           createdAt: now, updatedAt: now,
         }, options);
       }
@@ -350,6 +398,8 @@ export class GenerationService {
         if (!job) throw new GenerationError(404, "generation job not found");
         await requireActiveUser(tx, job.userId);
         if (job.status === "done") return job;
+        // 사용자가 멈춘 생성은 큐가 다시 전달해도 다시 돌지 않는다.
+        if (job.status === "failed" && job.errorCode === GENERATION_CANCELLED) return job;
         if (job.status === "running") throw new GenerationError(409, "generation job is already running");
         const attempts = job.attempts + 1;
         const result = await db.generationJobs.updateOne({ _id: jobId, attempts: job.attempts, status: job.status }, { $set: {
@@ -359,7 +409,7 @@ export class GenerationService {
         if (result.matchedCount !== 1) throw new GenerationError(409, "generation job is already running");
         return { ...job, status: "running" as const, stage: "validating" as const, attempts, runToken };
       });
-      if (claimed.status === "done") return this.getStatus(claimed.userId, claimed._id);
+      if (claimed.status !== "running") return this.getStatus(claimed.userId, claimed._id);
       const prepared = await this.#context(claimed);
       if (writer.usesContract) await this.#consent?.require(claimed.userId, "generation");
       const subject = await this.#subject(claimed);

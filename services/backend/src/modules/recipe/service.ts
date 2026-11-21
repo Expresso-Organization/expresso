@@ -25,7 +25,7 @@ export class RecipeService implements RecipeApi {
   }
 
   async #plannerContext(userId: string, brewId: string) {
-    const db = mongoCollections(this.context.db); const brew = await db.brews.findOne({ _id: brewId, userId });
+    const db = mongoCollections(this.context.db); const brew = await db.brews.findOne({ _id: brewId, userId, deletedAt: null });
     if (!brew) throw new RecipeError(404, "brew not found");
     const analysis = await db.jobAnalyses.findOne({ _id: brew.jobAnalysisId, userId });
     if (!analysis) throw new RecipeError(404, "job analysis not found");
@@ -70,7 +70,7 @@ export class RecipeService implements RecipeApi {
       const replay = await db.recipes.findOne({ userId, inputIdempotencyKey: idempotencyKey }, options); if (replay) return replay._id;
       await assertActiveRecordsForWrite(tx, userId, recordIds);
       const expectedReferenceVersion = brew.referenceVersion ?? 0;
-      const guardedBrew = await db.brews.updateOne({ _id: brewId, userId, $or: [{ referenceVersion: expectedReferenceVersion }, ...(expectedReferenceVersion === 0 ? [{ referenceVersion: { $exists: false } }] : [])] }, { $set: { status: "recipe", updatedAt: new Date() }, $inc: { referenceVersion: 1 } }, options);
+      const guardedBrew = await db.brews.updateOne({ _id: brewId, userId, deletedAt: null, $or: [{ referenceVersion: expectedReferenceVersion }, ...(expectedReferenceVersion === 0 ? [{ referenceVersion: { $exists: false } }] : [])] }, { $set: { status: "recipe", updatedAt: new Date() }, $inc: { referenceVersion: 1 } }, options);
       if (!guardedBrew.matchedCount) throw new RecipeError(409, "brew materials changed while planning");
       const version = (await db.recipes.find({ userId, brewId }, options).sort({ version: -1 }).limit(1).next())?.version ?? 0;
       const now = new Date(); const recipe: RecipeDoc = { _id: randomUUID(), userId, brewId, version: version + 1, editVersion: 1, status: "draft", completeness: Decimal128.fromString("100"), generatedAt: now, inputIdempotencyKey: idempotencyKey, updatedAt: now, promptVersion: this.promptVersion };

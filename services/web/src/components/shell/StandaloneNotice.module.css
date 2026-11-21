@@ -44,7 +44,7 @@
 .action {
   height: 34px;
   padding: 0 16px;
-  border-radius: 8px;
+  border-radius: var(--ex-radius-control);
   border: 1px solid var(--ex-fg);
   background: var(--ex-bg-inverse);
   color: var(--ex-fg-on-inverse);

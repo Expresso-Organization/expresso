@@ -4,7 +4,7 @@ export const dataAnalyst: Persona = {
   key: "dummy-data-analyst",
   displayName: "문가령",
   headline: "커머스 데이터 분석가 · 4년차",
-  profile: { targetRoles: ["데이터"], experienceYears: 4, primaryGoal: "build" },
+  profile: { targetRoles: ["데이터"], experienceYears: 4 },
   records: [
     // 경험
     {

@@ -1130,6 +1130,6 @@ export const staffPlatform: Persona = {
   key: "dummy-staff-platform",
   displayName: "정우진",
   headline: "플랫폼 · 인프라 스태프 엔지니어 · 15년차",
-  profile: { targetRoles: ["DevOps", "백엔드"], experienceYears: 12, primaryGoal: "organize" },
+  profile: { targetRoles: ["DevOps", "백엔드"], experienceYears: 12 },
   records: [...experiences, ...projects, ...history, ...certifications, ...writings, ...activities, ...skills],
 };

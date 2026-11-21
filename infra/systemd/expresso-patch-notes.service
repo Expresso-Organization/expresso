@@ -1,0 +1,16 @@
+[Unit]
+Description=Expresso 패치노트 생성 (개발 포털 패치노트)
+# 생성기는 GitHub 과 Claude 를 부른다. 네트워크가 선 뒤에 돈다.
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+# 실행 스크립트 원본은 infra/server/expresso-patch-notes.sh 다.
+ExecStart=/usr/local/bin/expresso-patch-notes
+# 한 번에 PR 최대 10개(config.json maxPerRun) · PR 하나에 보통 15초 안팎이다.
+TimeoutStartSec=1h
+# 제품 서비스보다 뒤로 물러선다. 이 기계는 공용이다.
+Nice=10
+IOSchedulingClass=idle

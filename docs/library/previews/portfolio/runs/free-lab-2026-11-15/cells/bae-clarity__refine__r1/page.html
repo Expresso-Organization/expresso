@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>배준호 포트폴리오</title>
+<meta name="description" content="모든 수치가 같은 두 프로젝트(Two-tower, Faiss)에서 나오므로, 첫 화면에 시청 시간 +6.3%를 주인공으로 세우고 각 프로젝트는 문제·기여·결과로 나눈 단일 칼럼으로 풀었으며, 24시간→1시간과 18ms/30ms만 막대로 그렸다.">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Nanum+Myeongjo:wght@400;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --page-sans:"Pretendard Variable",Pretendard,-apple-system,system-ui,sans-serif;
+  --page-serif:"Nanum Myeongjo","Noto Serif KR",serif;
+  --page-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --page-display:"Outfit",var(--page-sans);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font-family:var(--page-sans);word-break:keep-all;-webkit-font-smoothing:antialiased}
+img{max-width:100%;height:auto;display:block}
+svg{max-width:100%}
+/* 가로 스크롤은 폰에서 지면을 무너뜨린다. 여기서 한 번 더 막는다. */
+body{overflow-x:hidden}
+</style>
+
+<style>
+.jh-skip{position:absolute;left:-9999px;top:0;background:#2563eb;color:#fff;padding:8px 14px;z-index:20}
+.jh-skip:focus{left:8px;top:8px}
+.jh-nav{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.94);border-bottom:1px solid #e3e8ef}
+.jh-nav-in{max-width:760px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.jh-brand{font-weight:700;color:#17202a;white-space:nowrap}
+.jh-nav nav{display:flex;gap:4px;overflow-x:auto}
+.jh-nav nav a{color:#4a5668;text-decoration:none;font-size:14px;padding:6px 10px;border-radius:6px;white-space:nowrap}
+.jh-nav nav a:hover{color:#2563eb;background:#eff4ff}
+a:focus-visible,summary:focus-visible{outline:3px solid #2563eb;outline-offset:2px}
+.jh{font-family:var(--page-sans),sans-serif;color:#17202a;background:#fff;font-size:16px;line-height:1.7;word-break:keep-all;overflow-wrap:break-word;max-width:760px;margin:0 auto;padding:0 20px 64px}
+.jh *{box-sizing:border-box}
+.jh p{margin:0 0 1em}
+.jh-label{font-family:var(--page-mono),monospace;font-size:13px;letter-spacing:.02em;color:#2563eb;margin:0 0 12px;font-weight:500}
+.jh-hero{padding:64px 0 48px}
+.jh h1{font-size:clamp(30px,6vw,46px);line-height:1.25;letter-spacing:-.02em;margin:0 0 20px;font-weight:800}
+.jh-lead{font-size:18px;color:#344054}
+.jh-tags{list-style:none;padding:0;margin:20px 0 36px;display:flex;flex-wrap:wrap;gap:8px}
+.jh-tags li{font-size:14px;padding:4px 12px;border:1px solid #c7d6f7;background:#f3f7ff;color:#1e4fc2;border-radius:999px}
+.jh-proof{border:1px solid #d9e1ee;border-radius:14px;overflow:hidden;background:#fff}
+.jh-proof-main{padding:28px 24px;background:#f3f7ff;display:flex;align-items:center;gap:20px;flex-wrap:wrap;border-bottom:1px solid #d9e1ee}
+.jh-big{font-family:var(--page-display),sans-serif;font-size:clamp(56px,14vw,88px);line-height:1;font-weight:700;color:#2563eb;letter-spacing:-.03em}
+.jh-big-cap{font-weight:600;line-height:1.45}
+.jh-big-cap small,.jh-proof-side small{font-weight:400;color:#4a5668;font-size:13px}
+.jh-proof-side{margin:0;display:grid;grid-template-columns:repeat(3,1fr)}
+.jh-proof-side div{padding:16px 20px;border-right:1px solid #e3e8ef}
+.jh-proof-side div:last-child{border-right:0}
+.jh-proof-side dt{font-size:13px;color:#4a5668;line-height:1.4}
+.jh-proof-side dd{margin:4px 0 0;font-family:var(--page-mono),monospace;font-weight:600;font-size:17px;line-height:1.35}
+.jh-sec{padding:56px 0 8px;border-top:1px solid #e3e8ef;margin-top:40px}
+.jh h2{font-size:clamp(24px,4.5vw,32px);line-height:1.35;letter-spacing:-.01em;margin:0 0 16px;font-weight:700}
+.jh h3{font-size:15px;margin:0 0 6px;color:#2563eb}
+.jh-claim{font-size:18px;font-weight:600;color:#17202a}
+.jh-trio{margin:24px 0}
+.jh-block{padding:4px 0 4px 18px;border-left:3px solid #c7d6f7;margin-bottom:20px}
+.jh-block:last-child{border-left-color:#2563eb}
+.jh-block p{margin:0}
+.jh-fig{margin:28px 0;padding:20px;border:1px solid #e3e8ef;border-radius:12px;background:#fff}
+.jh-fig figcaption{font-size:14px;font-weight:600;margin-bottom:10px}
+.jh-fig svg{display:block;width:100%;height:auto}
+.svg-t{font-size:13px;fill:#4a5668;font-family:var(--page-sans),sans-serif}
+.svg-v{font-size:14px;fill:#17202a;font-family:var(--page-mono),monospace;font-weight:600}
+.svg-vw{fill:#fff}
+.svg-old{fill:#cfd6e2}
+.svg-new{fill:#2563eb}
+.svg-track{fill:#eef2f8}
+.svg-goal{stroke:#17202a;stroke-width:2;stroke-dasharray:4 3}
+.svg-new{transform-box:fill-box;transform-origin:left center;animation:jh-grow .9s ease-out both}
+@keyframes jh-grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.jh-wide{margin:0}
+.jh-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0}
+.jh-stats div{border:1px solid #d9e1ee;border-radius:10px;padding:14px 16px;background:#f3f7ff}
+.jh-stats dt{font-size:13px;color:#4a5668}
+.jh-stats dd{margin:2px 0 0;font-family:var(--page-mono),monospace;font-size:24px;font-weight:700;color:#2563eb}
+.jh-note{font-size:13px;color:#4a5668;margin-top:10px}
+.jh-flow{list-style:none;padding:0;margin:24px 0;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;counter-reset:s}
+.jh-flow li{position:relative;padding:14px 12px;border:1px solid #d9e1ee;border-radius:10px;font-weight:600;font-size:14px;line-height:1.4;background:#fff}
+.jh-flow li small{display:block;font-weight:400;color:#4a5668;font-size:12px;margin-top:4px}
+.jh-flow li.gate{background:#2563eb;border-color:#2563eb;color:#fff}
+.jh-flow li.gate small{color:#e0e9ff}
+.jh-time{list-style:none;padding:0;margin:24px 0}
+.jh-time li{display:grid;grid-template-columns:150px 1fr;gap:16px;padding:16px 0;border-top:1px solid #e3e8ef}
+.jh-when{font-family:var(--page-mono),monospace;font-size:13px;color:#4a5668;padding-top:3px}
+.jh-time p{margin:4px 0 0;color:#344054;font-size:15px}
+.jh-refs{list-style:none;padding:0;margin:0}
+.jh-refs li{border-top:1px solid #e3e8ef}
+.jh-refs li:last-child{border-bottom:1px solid #e3e8ef}
+.jh-refs summary{cursor:pointer;padding:14px 4px;font-weight:600;list-style:none;display:flex;gap:12px;align-items:baseline}
+.jh-refs summary::-webkit-details-marker{display:none}
+.jh-refs summary::after{content:"+";margin-left:auto;color:#2563eb;font-family:var(--page-mono),monospace}
+.jh-refs details[open] summary::after{content:"−"}
+.jh-refs summary:hover{color:#2563eb}
+.jh-refs .k{font-family:var(--page-mono),monospace;font-size:12px;font-weight:500;color:#2563eb;background:#f3f7ff;border:1px solid #c7d6f7;border-radius:4px;padding:1px 8px;flex:none}
+.jh-refs details p{margin:0;padding:0 4px 16px;color:#344054;font-size:15px}
+.jh-foot{margin-top:64px;padding-top:24px;border-top:1px solid #e3e8ef;color:#4a5668;font-size:14px}
+.jh-foot p{margin:0 0 4px}
+@media (max-width:640px){
+  .jh-hero{padding:40px 0 32px}
+  .jh-proof-side{grid-template-columns:1fr}
+  .jh-proof-side div{border-right:0;border-bottom:1px solid #e3e8ef;display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+  .jh-proof-side div:last-child{border-bottom:0}
+  .jh-stats{grid-template-columns:1fr}
+  .jh-flow{grid-template-columns:1fr 1fr}
+  .jh-time li{grid-template-columns:1fr;gap:4px}
+  .jh-nav nav a:nth-child(n+4){display:none}
+  .jh-refs summary{flex-wrap:wrap;gap:6px 10px}
+}
+@media (prefers-reduced-motion:reduce){.svg-new{animation:none}}
+</style>
+</head>
+<body>
+<a class="jh-skip" href="#main">본문으로 건너뛰기</a>
+<header class="jh-nav">
+  <div class="jh-nav-in">
+    <span class="jh-brand">배준호</span>
+    <nav aria-label="섹션">
+      <a href="#evidence">성과</a>
+      <a href="#twotower">Two-tower</a>
+      <a href="#faiss">Faiss</a>
+      <a href="#mlops">MLOps</a>
+      <a href="#research">연구</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="jh">
+
+  <section class="jh-hero" aria-labelledby="h1">
+    <p class="jh-label">ML 리서치 엔지니어 · 배준호</p>
+    <h1 id="h1">추천 연구를 서비스 지표로 옮기는 ML 리서치 엔지니어</h1>
+    <p class="jh-lead">추천 모델을 연구하고, 서빙과 운영까지 붙여 홈 피드 시청 시간과 클릭률을 올렸습니다. 세션 기반 추천 연구에서 출발해 후보 생성 모델 설계부터 근사 검색 서빙까지 맡았습니다.</p>
+    <ul class="jh-tags" aria-label="집중 분야">
+      <li>추천시스템</li><li>후보 생성 모델</li><li>근사 최근접 이웃 검색</li><li>MLOps</li>
+    </ul>
+
+    <div class="jh-proof" id="evidence">
+      <div class="jh-proof-main">
+        <span class="jh-big">+6.3%</span>
+        <span class="jh-big-cap">홈 피드 1인당 시청 시간<br /><small>A/B 테스트 · 2주 · 트래픽 20%</small></span>
+      </div>
+      <dl class="jh-proof-side">
+        <div><dt>클릭률</dt><dd>+3.8%</dd></div>
+        <div><dt>오프라인 Recall@100</dt><dd>0.284 → 0.371</dd></div>
+        <div><dt>검색 p99 지연</dt><dd>18ms <small>목표 30ms</small></dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="jh-sec" id="twotower" aria-labelledby="h2a">
+    <p class="jh-label">프로젝트 · 2020.06 – 2021.03</p>
+    <h2 id="h2a">하루 늦던 홈 피드 후보를 1시간 안으로: Two-tower 도입</h2>
+    <p class="jh-claim">하루 한 번 계산하던 홈 피드 후보를 Two-tower 모델로 바꿔 신규 콘텐츠 반영 시간을 최대 24시간에서 1시간으로 줄였습니다.</p>
+
+    <div class="jh-trio">
+      <div class="jh-block">
+        <h3>문제</h3>
+        <p>기존 홈 피드는 아이템 기반 협업 필터링 결과를 하루 한 번 계산해 썼습니다. 새 콘텐츠는 다음 날에야 후보에 들어갔고, 사용자의 당일 시청 이력은 반영되지 않았습니다.</p>
+      </div>
+      <div class="jh-block">
+        <h3>제가 한 일</h3>
+        <p>사용자 타워(최근 시청 50개 + 프로필)와 콘텐츠 타워(메타데이터 + 텍스트 임베딩)를 나눈 Two-tower 모델을 만들었습니다. 배치 내 네거티브에 인기도 보정을 넣었고, 콘텐츠 임베딩은 Faiss 인덱스로 서빙했습니다.</p>
+      </div>
+      <div class="jh-block">
+        <h3>결과</h3>
+        <p>오프라인 Recall@100은 0.284에서 0.371이 되었습니다. A/B 테스트(2주, 트래픽 20%)에서 시청 시간은 +6.3%, 클릭률은 +3.8% 올랐습니다.</p>
+      </div>
+    </div>
+
+    <figure class="jh-fig">
+      <figcaption>신규 콘텐츠가 후보에 들어가는 시간 (최대)</figcaption>
+      <svg viewBox="0 0 640 120" role="img" aria-label="기존 최대 24시간, Two-tower 도입 후 1시간">
+        <text x="0" y="22" class="svg-t">기존 · 일 배치</text>
+        <rect x="0" y="30" width="640" height="22" rx="4" class="svg-old"></rect>
+        <text x="632" y="46" text-anchor="end" class="svg-v">24시간</text>
+        <text x="0" y="82" class="svg-t">Two-tower</text>
+        <rect x="0" y="90" width="27" height="22" rx="4" class="svg-new"></rect>
+        <text x="38" y="106" class="svg-v svg-vb">1시간</text>
+      </svg>
+    </figure>
+  </section>
+
+  <section class="jh-sec" id="faiss" aria-labelledby="h2b">
+    <p class="jh-label">프로젝트 · 2020.11 – 2021.05</p>
+    <h2 id="h2b">목표 30ms 안에서 임베딩 검색 돌리기: Faiss 서빙</h2>
+    <p class="jh-claim">Two-tower 후보 생성을 실서비스에 붙이기 위해 재현율·지연·메모리를 맞추고, 인덱스를 1시간마다 무중단으로 교체하게 했습니다.</p>
+    <p>콘텐츠 임베딩 검색 서버를 만들었습니다. IVF-PQ 인덱스 파라미터(nprobe 등)를 바꿔 가며 재현율과 지연 시간을 맞췄습니다. 인덱스는 1시간마다 다시 만들고, 서빙 중단 없이 교체하게 했습니다.</p>
+
+    <div class="jh-wide">
+      <figure class="jh-fig">
+        <figcaption>p99 지연 시간</figcaption>
+        <svg viewBox="0 0 640 100" role="img" aria-label="p99 지연 18ms, 목표 30ms">
+          <rect x="0" y="20" width="640" height="26" rx="4" class="svg-track"></rect>
+          <rect x="0" y="20" width="384" height="26" rx="4" class="svg-new"></rect>
+          <text x="374" y="38" text-anchor="end" class="svg-v svg-vw">18ms</text>
+          <line x1="640" y1="12" x2="640" y2="54" class="svg-goal"></line>
+          <text x="636" y="72" text-anchor="end" class="svg-t">목표 30ms</text>
+        </svg>
+      </figure>
+      <dl class="jh-stats">
+        <div><dt>p99 지연</dt><dd>18ms</dd></div>
+        <div><dt>Recall@100 손실</dt><dd>1.2%p</dd></div>
+        <div><dt>서버 메모리</dt><dd>−40%</dd></div>
+      </dl>
+      <p class="jh-note">Recall@100 손실은 정확 검색 대비, 메모리는 Flat 대비 IVF-PQ 기준입니다.</p>
+    </div>
+  </section>
+
+  <section class="jh-sec" id="mlops" aria-labelledby="h2c">
+    <p class="jh-label">MLOps</p>
+    <h2 id="h2c">지표가 떨어지면 배포되지 않는 학습 파이프라인</h2>
+    <p class="jh-claim">모델별로 흩어져 있던 학습 작업을 Kubeflow Pipelines로 모으고, 평가 지표 기준으로 배포를 막는 단계를 넣었습니다.</p>
+    <p>학습 작업이 모델별로 따로 돌고 있었습니다. 이를 Kubeflow Pipelines로 옮겨 하나로 통합했고, 평가 지표 기준에 못 미치면 배포를 막는 단계를 넣었습니다. 데이터 추출 작업의 스케줄링은 스트림온에서 Airflow로 했습니다.</p>
+    <ol class="jh-flow" aria-label="파이프라인 흐름">
+      <li>데이터 추출<small>Airflow</small></li>
+      <li>학습<small>Kubeflow Pipelines</small></li>
+      <li class="gate">평가 지표 기준<small>미달 시 배포 차단</small></li>
+      <li>배포</li>
+    </ol>
+  </section>
+
+  <section class="jh-sec" id="research" aria-labelledby="h2d">
+    <p class="jh-label">연구 · 2018.03 – 2020.02</p>
+    <h2 id="h2d">세션 그래프 추천 연구에서 출발</h2>
+    <p class="jh-claim">추천시스템 연구실 석사 과정의 세션 그래프 추천 연구가 실무 추천 작업의 바탕이 되었습니다.</p>
+    <p>한결대학교 대학원 컴퓨터공학과 추천시스템 연구실에서 석사 과정을 밟았습니다. 학위논문은 「세션 그래프 기반 다음 아이템 추천」이고, 평점은 4.3/4.5입니다. 이 논문으로 우수학위논문상을 받았으며, 학과에서 한 해 2편을 뽑습니다. 재학 중 누리랩스 AI연구소에서 6개월 연구 인턴을 했습니다.</p>
+
+    <ol class="jh-time">
+      <li><span class="jh-when">2018.03 – 2020.02</span><div><strong>한결대학교 대학원 컴퓨터공학과 · 석사 과정</strong><p>추천시스템 연구실. 학위논문 「세션 그래프 기반 다음 아이템 추천」, 평점 4.3/4.5. 우수학위논문상 수상.</p></div></li>
+      <li><span class="jh-when">재학 중 6개월</span><div><strong>누리랩스 AI연구소 · 연구 인턴</strong><p>석사 재학 중 6개월 연구 인턴.</p></div></li>
+    </ol>
+  </section>
+
+  <section class="jh-sec" aria-labelledby="h2e">
+    <p class="jh-label">근거 자료</p>
+    <h2 id="h2e">더 확인할 수 있는 기록</h2>
+    <ul class="jh-refs">
+      <li><details><summary><span class="k">프로젝트</span>홈 피드 Two-tower 후보 생성 모델 도입</summary><p>2020.06 – 2021.03. 일 배치 아이템 CF를 Two-tower로 교체. Recall@100 0.284 → 0.371, 시청 시간 +6.3%, 클릭률 +3.8%, 신규 콘텐츠 반영 최대 24시간 → 1시간.</p></details></li>
+      <li><details><summary><span class="k">프로젝트</span>Faiss 근사 최근접 이웃 검색 서빙</summary><p>2020.11 – 2021.05. p99 지연 시간 18ms(목표 30ms), Recall@100 손실 1.2%p, 메모리 40% 절감.</p></details></li>
+      <li><details><summary><span class="k">기록</span>Faiss 인덱스를 무중단으로 교체하는 방법</summary><p>1시간마다 다시 만드는 IVF-PQ 인덱스를 서빙 중단 없이 바꾸는 구조와 nprobe 조정 기록.</p></details></li>
+      <li><details><summary><span class="k">기록</span>cron 스크립트에서 Kubeflow Pipelines로</summary><p>모델별 학습 작업을 Kubeflow Pipelines로 옮기고 평가 지표 기준 배포 차단 단계를 넣은 이야기.</p></details></li>
+      <li><details><summary><span class="k">수상</span>석사 우수학위논문상</summary><p>「세션 그래프 기반 다음 아이템 추천」으로 수상. 학과에서 한 해 2편 선정.</p></details></li>
+      <li><details><summary><span class="k">기술</span>Faiss</summary><p>IVF-PQ 인덱스 파라미터 조정과 무중단 인덱스 교체를 직접 운영.</p></details></li>
+      <li><details><summary><span class="k">기술</span>Airflow</summary><p>스트림온에서 데이터 추출 작업 스케줄링에 사용.</p></details></li>
+      <li><details><summary><span class="k">학력</span>한결대학교 대학원 컴퓨터공학과 석사</summary><p>2018.03 – 2020.02, 추천시스템 연구실. 학부 2013.03 – 2018.02(군 복무 포함). 평점 4.3/4.5. 누리랩스 AI연구소 6개월 연구 인턴.</p></details></li>
+    </ul>
+  </section>
+
+  <footer class="jh-foot">
+    <p><strong>배준호</strong> · ML 리서치 엔지니어</p>
+    <p>Two-tower 후보 생성 · Faiss IVF-PQ · Kubeflow Pipelines · Airflow</p>
+  </footer>
+</main>
+</body>
+</html>

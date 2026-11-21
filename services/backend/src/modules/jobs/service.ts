@@ -131,6 +131,12 @@ export class JobMarketService implements JobMarketApi {
       return mapSaved(row);
     });
   }
+  async deleteSavedSearch(userId: string, savedSearchId: string): Promise<void> {
+    await this.#write(userId, async (tx) => {
+      const result = await mongoCollections(tx.db).savedSearches.deleteOne({ _id: savedSearchId, userId }, { session: tx.session });
+      if (!result.deletedCount) throw new JobMarketError(404, "saved search not found");
+    });
+  }
   async listSavedSearches(userId: string) { return (await mongoCollections(this.context.db).savedSearches.find({ userId }).sort({ createdAt: 1, _id: 1 }).toArray()).map(mapSaved); }
 
   async upsertInterest(userId: string, jobPostingId: string, inputValue: UpsertJobInterest) {

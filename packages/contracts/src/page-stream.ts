@@ -20,7 +20,7 @@ import { z } from "zod";
  */
 
 /** SSE 한 줄의 이름. 받는 쪽이 `switch`로 가르는 값이다. */
-export const PAGE_STREAM_EVENTS = ["begin", "thinking", "delta", "blueprint", "fill", "stage", "done", "failed"] as const;
+export const PAGE_STREAM_EVENTS = ["begin", "thinking", "delta", "blueprint", "seed", "fill", "stage", "done", "failed"] as const;
 export type PageStreamEvent = (typeof PAGE_STREAM_EVENTS)[number];
 
 export const PageStreamDeltaSchema = z.strictObject({
@@ -39,6 +39,17 @@ export const PageStreamBlueprintSchema = z.strictObject({
   css: z.string(),
 });
 
+/**
+ * 디자인 대화에서 고른 첫 화면. 그 첫 화면으로 만드는 생성이 맨 먼저 한 번 보냅니다.
+ *
+ * 지면은 이 마크업과 CSS로 시작하고, 이후 `delta`로 오는 것은 그 **뒤**에 붙는 부분입니다. 받는 쪽은 이것을 먼저 그리고
+ * `delta`의 `html` · `css`를 뒤에 잇습니다.
+ */
+export const PageStreamSeedSchema = z.strictObject({
+  html: z.string(),
+  css: z.string(),
+});
+
 /** 칸 하나의 지금까지 쓴 글입니다. 조각이 아니라 그 칸의 전체 글이라, 가장 늦게 온 것만 반영하면 됩니다. */
 export const PageStreamFillSchema = z.strictObject({
   path: z.string().min(1).max(200),
@@ -49,8 +60,11 @@ export const PageStreamFillSchema = z.strictObject({
   revised: z.boolean().default(false),
 });
 
-/** 설계가 먼저 오는 생성의 단계입니다. `filled` 뒤에는 모델 호출 없이 렌더와 측정만 남습니다. */
-export const PAGE_STREAM_STAGES = ["designed", "filled", "rendered"] as const;
+/**
+ * 설계가 먼저 오는 생성의 단계입니다. `drafted`는 채우기 글이 다 흐르고 계약을 지난 때로, 그 뒤에는 업무 규칙 검사와
+ * 걸린 칸 고치기가 남습니다. `filled` 뒤에는 모델 호출 없이 렌더와 측정만 남습니다.
+ */
+export const PAGE_STREAM_STAGES = ["designed", "drafted", "filled", "rendered"] as const;
 export type PageStreamStage = (typeof PAGE_STREAM_STAGES)[number];
 export const PageStreamStageSchema = z.strictObject({
   name: z.enum(PAGE_STREAM_STAGES),
@@ -75,8 +89,9 @@ export const PageStreamFailedSchema = z.strictObject({
  * 구조로 읽는다 — 정규식으로 `"html"`을 찾으면 **CSS 본문에 적힌 그 글자**를
  * 집는다. 지면 하나에 `content:"html"` 같은 것이 들어갈 이유는 얼마든지 있다.
  *
- * 값이 문자열인 납작한 객체만 본다. `PageDraftSchema`가 그 모양이고, 아니게
- * 되는 날에는 여기도 함께 고쳐야 한다.
+ * 돌려주는 것은 맨 바깥 객체의 **글자 칸**뿐이다. 값이 객체 · 배열 · 숫자인 칸은
+ * 구조로 건너뛴다 — 자유 생성은 `plan`(객체)을 `css` · `html`보다 먼저 쓴다.
+ * 건너뛸 값이 아직 끝나지 않았으면 거기서 멈춘다.
  */
 export function partialFields(buffer: string): Record<string, string> {
   const fields: Record<string, string> = {};
@@ -93,12 +108,17 @@ export function partialFields(buffer: string): Record<string, string> {
     at = skipSpace(buffer, key.end);
     if (buffer[at] !== ":") return fields;
     at = skipSpace(buffer, at + 1);
-    if (buffer[at] !== '"') return fields;
-
-    const value = readString(buffer, at);
-    fields[key.text] = value.text;
-    if (!value.closed) return fields;
-    at = skipSpace(buffer, value.end);
+    if (at >= buffer.length) return fields;
+    if (buffer[at] === '"') {
+      const value = readString(buffer, at);
+      fields[key.text] = value.text;
+      if (!value.closed) return fields;
+      at = skipSpace(buffer, value.end);
+    } else {
+      const end = skipValue(buffer, at);
+      if (end < 0) return fields;
+      at = skipSpace(buffer, end);
+    }
     if (buffer[at] === ",") {
       at = skipSpace(buffer, at + 1);
       continue;
@@ -199,6 +219,38 @@ function readValue(source: string, cursor: { at: number }, path: (string | numbe
 }
 
 const LITERAL = /-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|true|false|null/y;
+
+/**
+ * 글자가 아닌 값(객체 · 배열 · 숫자 · `true` · `false` · `null`)을 건너뛴다. 값이 아직 끝나지 않았으면 -1이다.
+ *
+ * 괄호는 문자열 밖의 것만 센다 — 값 안의 글에 적힌 `}`에 속지 않는다.
+ */
+function skipValue(source: string, from: number): number {
+  if (source[from] === "{" || source[from] === "[") {
+    let depth = 0;
+    let at = from;
+    while (at < source.length) {
+      const char = source[at]!;
+      if (char === '"') {
+        const text = readString(source, at);
+        if (!text.closed) return -1;
+        at = text.end;
+        continue;
+      }
+      if (char === "{" || char === "[") depth += 1;
+      else if (char === "}" || char === "]") {
+        depth -= 1;
+        if (depth === 0) return at + 1;
+      }
+      at += 1;
+    }
+    return -1;
+  }
+  // 숫자와 낱말은 쉼표나 닫는 괄호가 와야 끝난 것을 안다.
+  let at = from;
+  while (at < source.length && !",}] \n\r\t".includes(source[at]!)) at += 1;
+  return at < source.length ? at : -1;
+}
 
 function skipSpace(source: string, from: number): number {
   let at = from;
