@@ -5,23 +5,22 @@ import { activities as activitiesApi, jobs as jobsApi } from "@/lib/api/endpoint
 import { requireSession } from "@/lib/require-session";
 
 import type { Activity } from "@expresso/contracts";
+import type { Route } from "next";
 
-import { EXPLORE_KINDS, type ExploreKind } from "./explore";
+import { ActivityWall } from "./ActivityWall";
+import { ACTIVITY_PAGE_SIZE, activitySourceNote, EXPLORE_KINDS, type ExploreKind } from "./explore";
 import { ExploreFrame } from "./ExploreFrame";
 import { JobRowList } from "./JobRows";
+import { Pagination } from "./Pagination";
 import styles from "./explore.module.css";
 import jobStyles from "./page.module.css";
 
 /**
  * 채용 공고가 아닌 종류의 탐색 화면 — 인턴 · 공모전 · 해커톤 · 부트캠프.
  *
- * 인턴은 적재한 공고에서 찾고, 공모전 · 해커톤은 서버가 수집해 둔 활동을 읽는다. 부트캠프는 출처
- * (고용24 훈련과정 API)를 아직 붙이지 않아 비어 있다.
+ * 인턴은 적재한 공고에서 찾고, 공모전 · 해커톤 · 부트캠프는 서버가 수집해 둔 활동을 마감 순으로 읽는다(한 쪽 100건).
  */
-/** 활동 목록 응답 한 장의 상한(계약의 `limit` 최댓값). */
-const ACTIVITY_PAGE = 100;
-
-export async function ExploreActivities({ kind }: { kind: Exclude<ExploreKind, "jobs"> }) {
+export async function ExploreActivities({ kind, page }: { kind: Exclude<ExploreKind, "jobs">; page: number }) {
   const session = await requireSession();
   const label = EXPLORE_KINDS.find((item) => item.key === kind)?.label ?? "";
   return (
@@ -32,15 +31,28 @@ export async function ExploreActivities({ kind }: { kind: Exclude<ExploreKind, "
           <div className={styles.paneScroll}>
             {kind === "intern" ? (
               <Interns accessToken={session.accessToken} />
-            ) : kind === "bootcamp" ? (
-              <Empty icon="chalkboard-teacher" title="수집한 부트캠프 과정이 없습니다" />
             ) : (
-              <ActivityList label={label} rows={(await activitiesApi.list(session.accessToken, { kind, limit: ACTIVITY_PAGE })).data} />
+              <Activities accessToken={session.accessToken} kind={kind} label={label} page={page} />
             )}
           </div>
         </ExploreFrame>
       </AppBody>
     </>
+  );
+}
+
+async function Activities({ accessToken, kind, label, page }: { accessToken: string; kind: "contest" | "hackathon" | "bootcamp"; label: string; page: number }) {
+  const listing = await activitiesApi.list(accessToken, { kind, limit: ACTIVITY_PAGE_SIZE, offset: (page - 1) * ACTIVITY_PAGE_SIZE });
+  const totalPages = Math.ceil(listing.summary.total / ACTIVITY_PAGE_SIZE);
+  return (
+    <ActivityList
+      label={label}
+      icon={EXPLORE_KINDS.find((item) => item.key === kind)?.icon ?? "trophy"}
+      rows={listing.data}
+      total={listing.summary.total}
+      pager={{ page, pageSize: ACTIVITY_PAGE_SIZE, totalPages, hasPrevPage: page > 1, hasNextPage: page < totalPages }}
+      href={(next) => (next > 1 ? `/jobs?kind=${kind}&page=${next}` : `/jobs?kind=${kind}`) as Route}
+    />
   );
 }
 
@@ -58,35 +70,23 @@ async function Interns({ accessToken }: { accessToken: string }) {
   );
 }
 
-function ActivityList({ label, rows }: { label: string; rows: Activity[] }) {
-  if (rows.length === 0) return <Empty icon="trophy" title={`접수 중인 ${label}이 없습니다`} />;
+function ActivityList({ label, icon, rows, total, pager, href }: {
+  label: string;
+  icon: string;
+  rows: Activity[];
+  total: number;
+  pager: Parameters<typeof Pagination>[0]["page"];
+  href: (next: number) => Route;
+}) {
+  if (rows.length === 0) return <Empty icon={icon} title={`접수 중인 ${label}이 없습니다`} />;
   return (
     <div className={jobStyles.results}>
       <div className={jobStyles.resultsHead}>
-        <span className={jobStyles.resultsCount}>{label} · {rows.length}건</span>
-        <span className={jobStyles.resultsNote}>위비티 웹/모바일/IT · 게임/소프트웨어</span>
+        <span className={jobStyles.resultsCount}>{label} · {total}건</span>
+        <span className={jobStyles.resultsNote}>{activitySourceNote(rows)}</span>
       </div>
-      <div className={styles.activities}>
-        {rows.map((row) => (
-          <a key={row.id} href={row.url} target="_blank" rel="noreferrer" className={styles.activity}>
-            <span className={styles.activityMark}>{row.host.slice(0, 1)}</span>
-            <span className={styles.activityBody}>
-              <span className={styles.activityTitle}>{row.title}</span>
-              <span className={styles.activityMeta}>{row.host}</span>
-            </span>
-            <span className={styles.activityTags}>
-              {row.fields.slice(0, 2).map((field) => (
-                <span key={field} className={styles.activityTag}>{field}</span>
-              ))}
-            </span>
-            <span className={styles.activityStatus}>{row.status}</span>
-            <span className={`${styles.activityDeadline} ${row.daysLeft <= 7 ? styles.activityDeadlineUrgent : ""}`}>
-              D-{row.daysLeft}
-            </span>
-            <Icon name="arrow-square-out" size={13} className={styles.activityOut} />
-          </a>
-        ))}
-      </div>
+      <ActivityWall rows={rows} />
+      <Pagination page={pager} href={href} />
     </div>
   );
 }

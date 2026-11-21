@@ -28,6 +28,8 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB interview integration", 
   let otherUserId = "";
   let brewId = "";
   let sessionId = "";
+  let jobAnalysisId = "";
+  let selectedRecordIds: string[] = [];
 
   beforeAll(async () => {
     fixture = await createMongoFixture("interview");
@@ -57,6 +59,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB interview integration", 
     const materials = new MongoMaterialsService(fixture.resource);
     brewId = (await materials.createBrew(userId, { jobAnalysisId: submission.jobAnalysisId, lengthPreset: "single" })).brewId;
     await db.brewSources.updateMany({ userId, brewId, recordId: { $in: recordIds } }, { $set: { isSelected: true } });
+    jobAnalysisId = submission.jobAnalysisId; selectedRecordIds = recordIds;
     service = new MongoInterviewService(fixture.resource);
   }, 60_000);
   afterAll(async () => { await fixture?.dispose(); });
@@ -165,6 +168,52 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB interview integration", 
     expect((await db.answerRecordChanges.findOne({ userId, answerId: answer._id }))?.changedFields).toEqual(["title", "body_md", "competencies"]);
   });
 
+  it("에이전트 대화로 연 인터뷰는 질문 0개로 시작하고, 답을 저장할 때 근거마다 질문이 하나씩 붙는다", async () => {
+    const db = mongoCollections(fixture.resource.db);
+    const conversationBrew = (await new MongoMaterialsService(fixture.resource).createBrew(userId, { jobAnalysisId, lengthPreset: "single" })).brewId;
+    await db.brewSources.updateMany({ userId, brewId: conversationBrew, recordId: { $in: selectedRecordIds } }, { $set: { isSelected: true } });
+    const opened = await service.openConversation(userId, conversationBrew);
+    expect(opened).toMatchObject({ questionCount: 0, questions: [], status: "open" });
+    expect((await db.brews.findOne({ _id: conversationBrew }))?.status).toBe("interviewing");
+    // 다시 열어도 같은 세션이다.
+    expect((await service.openConversation(userId, conversationBrew)).id).toBe(opened.id);
+
+    const { bases } = await service.conversationState(userId, conversationBrew);
+    const first = await service.saveConversationAnswer(userId, conversationBrew, { basis: bases[0]!.basis, question: "장애를 어떻게 대응하셨나요?", transcript: "새벽 장애를 맡았습니다." }, `conv:${randomUUID()}`);
+    expect(first.recordChange.type).toBe("created");
+    expect(first.progress).toEqual({ answered: 1, total: 1 });
+    // 같은 근거의 꼬리 답은 같은 질문의 답을 다시 쓴다 — 기록 본문이 합친 글로 바뀐다.
+    const again = await service.saveConversationAnswer(userId, conversationBrew, { basis: bases[0]!.basis, question: "장애를 어떻게 대응하셨나요?", transcript: "새벽 장애를 맡았습니다.\n\n복구까지 20분 걸렸습니다." }, `conv:${randomUUID()}`);
+    expect(again.recordChange).toMatchObject({ type: "strengthened", recordId: first.recordChange.recordId });
+    expect((await db.careerRecords.findOne({ _id: first.recordChange.recordId }))?.bodyMd).toBe("새벽 장애를 맡았습니다.\n\n복구까지 20분 걸렸습니다.");
+    const state = await service.conversationState(userId, conversationBrew);
+    expect(state.session?.questions.map(({ text, answered }) => ({ text, answered }))).toEqual([{ text: "장애를 어떻게 대응하셨나요?", answered: true }]);
+
+    // 「디자인 고르기」로 구성 잡이 도는 동안은 아직 interviewing이어도 거절한다. 실패한 잡 뒤에는 다시 받는다.
+    const recipeJob = randomUUID();
+    await db.brewJobs.insertOne({ _id: recipeJob, userId, type: "recipe", input: { brewId: conversationBrew }, inputIdempotencyKey: `recipe:${conversationBrew}`, status: "running", stage: "drafting", attempts: 1, createdAt: new Date(), updatedAt: new Date() });
+    await expect(service.saveConversationAnswer(userId, conversationBrew, { basis: bases[1]!.basis, question: "어떤 성과였나요?", transcript: "답" }, `conv:${randomUUID()}`)).rejects.toMatchObject({ statusCode: 409, message: "brew is past the interview" });
+    await db.brewJobs.updateOne({ _id: recipeJob }, { $set: { status: "failed" } });
+    // 근거 목록에 없는 근거와 디자인 단계로 간 제작은 거절한다.
+    await expect(service.saveConversationAnswer(userId, conversationBrew, { basis: { type: "record_gap", recordId: randomUUID(), gap: "metric", evidence: "없는 기록" }, question: "무엇을 하셨나요?", transcript: "답" }, `conv:${randomUUID()}`)).rejects.toMatchObject({ statusCode: 409 });
+    await db.brews.updateOne({ _id: conversationBrew }, { $set: { status: "recipe" } });
+    await expect(service.saveConversationAnswer(userId, conversationBrew, { basis: bases[1]!.basis, question: "어떤 성과였나요?", transcript: "답" }, `conv:${randomUUID()}`)).rejects.toMatchObject({ statusCode: 409 });
+    // 재료 단계를 지난 제작에는 새 세션을 열지 않는다.
+    const other = (await new MongoMaterialsService(fixture.resource).createBrew(userId, { jobAnalysisId, lengthPreset: "single" })).brewId;
+    await db.brews.updateOne({ _id: other }, { $set: { status: "recipe" } });
+    await expect(service.openConversation(userId, other)).rejects.toMatchObject({ statusCode: 409 });
+  });
+
+  it("에이전트 대화의 질문은 세션마다 6개까지다", async () => {
+    const db = mongoCollections(fixture.resource.db);
+    const conversationBrew = (await new MongoMaterialsService(fixture.resource).createBrew(userId, { jobAnalysisId, lengthPreset: "single" })).brewId;
+    const session = await service.openConversation(userId, conversationBrew);
+    const { bases } = await service.conversationState(userId, conversationBrew);
+    // 근거가 넷뿐이라 질문 여섯 개를 먼저 넣어 둔다. 상한은 근거와 무관하게 질문 수로 센다.
+    await db.questions.insertMany(Array.from({ length: 6 }, (_, orderNo) => ({ _id: randomUUID(), userId, interviewSessionId: session.id, requirementId: null, replacedFromId: null, orderNo, text: `질문 ${orderNo}은 무엇인가요?`, skipped: false, basis: { type: "record_gap", recordId: randomUUID(), gap: "metric", evidence: `기록 ${orderNo}` }, active: true, variant: 0, rationale: null, createdAt: new Date() })));
+    await expect(service.saveConversationAnswer(userId, conversationBrew, { basis: bases[0]!.basis, question: "장애를 어떻게 대응하셨나요?", transcript: "답" }, `conv:${randomUUID()}`)).rejects.toMatchObject({ statusCode: 409, message: "interview question limit reached" });
+  });
+
   it("gives the cleaner the category's competencies and reuses one written differently", async () => {
     // 2026-11-13 Discord 제보: 같은 역량이 표기만 바뀌어 기록마다 새 선택지로 쌓였다.
     const db = mongoCollections(fixture.resource.db);
@@ -207,8 +256,12 @@ describeWithDatabase("interview integration", () => {
   const sql = createMysqlResource(databaseUrl ?? "mysql://127.0.0.1:1/unused").sql;
   const identityService = new IdentityService(sql);
   // 옛 MySQL 구현에는 근거 조회가 없다. 이 묶음은 그 라우트를 부르지 않는다.
+  const mongoOnly = (name: string) => () => Promise.reject(new Error(`${name} is Mongo-only`));
   const interviewService = Object.assign(new InterviewService(sql), {
-    questionBases: () => Promise.reject(new Error("question bases are Mongo-only")),
+    questionBases: mongoOnly("question bases"),
+    openConversation: mongoOnly("conversation interview"),
+    conversationState: mongoOnly("conversation interview"),
+    saveConversationAnswer: mongoOnly("conversation interview"),
   });
   // 옛 MySQL 구현에는 상태 흐름이 없다. 이 묶음은 그 라우트를 부르지 않는다.
   const brewJobService = Object.assign(new BrewJobService(sql), {

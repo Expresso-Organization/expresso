@@ -2,7 +2,8 @@ import { z } from "zod";
 import { TimestampSchema, UuidSchema } from "./common.js";
 import { ListJobPostingsQuerySchema } from "./job-board.js";
 
-export const NotificationKindSchema = z.enum(["deadline", "saved_search", "generation", "traffic"]);
+/** `consultant`는 컨설턴트가 먼저 건네는 연락(약속 확인 · 대화가 없을 때)이다. */
+export const NotificationKindSchema = z.enum(["deadline", "saved_search", "generation", "traffic", "consultant"]);
 export const NotificationPreferenceSchema = z.strictObject({ kind: NotificationKindSchema, enabled: z.boolean() });
 export const NotificationSchema = z.strictObject({
   id: UuidSchema,

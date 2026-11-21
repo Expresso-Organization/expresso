@@ -16,6 +16,7 @@ import { PagePreview } from "@/components/portfolio/PagePreview";
 import { PortfolioPage } from "@/components/portfolio/PortfolioPage";
 import { EditorTrashMenu } from "@/features/portfolio-trash/PortfolioTrash";
 import { publicSiteHost } from "@/lib/public-site";
+import { PUBLISH_ACTION_LABEL, publishState } from "@/lib/publish-state";
 
 import { AgentChat } from "@/features/agent-chat/AgentChat";
 import { ElementProperties } from "./ElementProperties";
@@ -51,7 +52,7 @@ function panelTarget(tab: PanelTab, revisionCount: number, chosen: string | null
 // 편집 화면은 사이드바의 「새 포트폴리오」 묶음에 속한다(`sectionForPath`의 /edit).
 const RAIL_ITEMS = [
   { icon: "house", label: "홈", href: "/home" as const, active: false },
-  { icon: "coffee", label: "새 포트폴리오", href: "/brew/new" as const, active: true },
+  { icon: "coffee", label: "새 포트폴리오", href: "/home?new=portfolio" as const, active: true },
   { icon: "target", label: "공고 탐색", href: "/jobs" as const, active: false },
   { icon: "chart-bar", label: "분석", href: "/analytics" as const, active: false },
 ];
@@ -313,6 +314,8 @@ export function Editor({
     ? publicSiteHost(portfolio.deployment.subdomain)
     : "아직 주소가 없습니다";
   const attention = generatedPage?.qaReport.checks.find(({ status }) => status === "fail");
+  // 상단 상태 표시와 배포 단추가 같은 판정을 쓴다. 배포 화면도 이 판정을 쓴다.
+  const publish = publishState(portfolio);
 
   /*
    * 좁은 화면에서 지금 보고 있는 칸.
@@ -324,7 +327,7 @@ export function Editor({
   const [pane, setPane] = useState<"canvas" | "sections" | "panel">("canvas");
 
   return (
-    <div className={styles.frame}>
+    <div className={`${styles.frame} ex-anim-reveal`}>
       <nav className={styles.rail} aria-label="주요 이동">
         <span className={styles.railLogo}>
           <LogoMark size={22} />
@@ -360,12 +363,12 @@ export function Editor({
           <span className={styles.statusPill}>
             <span className={styles.statusDot} />
             <span className={styles.statusText}>
-              {portfolio.status === "unlisted"
+              {publish === "unlisted"
                 ? "공개 중단"
-                : portfolio.deployment
-                ? portfolio.deployment.hasUnpublishedChanges
-                  ? `v${portfolio.deployment.version} · 배포 후 변경됨`
-                  : `배포됨 · v${portfolio.deployment.version}`
+                : publish === "changed"
+                ? `v${portfolio.deployment?.version} · 배포 후 변경됨`
+                : publish === "live"
+                ? `배포됨 · v${portfolio.deployment?.version}`
                 : "아직 배포 전"}
             </span>
           </span>
@@ -427,7 +430,7 @@ export function Editor({
             </span>
             {/* 지금 판의 디자인을 바꾸는 API는 없다. 다른 디자인으로 다시 뽑는 단계로 간다. */}
             <Link
-              href={`/brew/${portfolio.brewId}/design?again=1`}
+              href={`/brew/${portfolio.brewId}?again=1`}
               className={styles.themeAction}
               title="디자인을 바꿔 새로 만듭니다 · 이번 달 크레딧을 씁니다"
             >
@@ -449,7 +452,7 @@ export function Editor({
               className={styles.publishButton}
             >
               <Icon name="rocket-launch" size={14} />
-              배포하기
+              {PUBLISH_ACTION_LABEL[publish]}
             </Link>
             <EditorTrashMenu
               target={{ kind: "portfolio", id: portfolio.id, title: portfolio.title, published: portfolio.status === "published" }}
@@ -641,6 +644,8 @@ export function Editor({
                     title: portfolio.title,
                     description: generatedPage.rationale,
                     ...(generatedPage.styleSpec ? { grammar: generatedPage.styleSpec } : {}),
+                    // 배포될 문서와 같게 그림 스크립트와 정책을 싣는다. 그림 출처는 배포 주소에서 더해진다.
+                    ...(generatedPage.script ? { script: generatedPage.script, run: { origin: "" } } : {}),
                   })}
                 </pre>
               ) : (

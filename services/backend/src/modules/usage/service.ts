@@ -1,5 +1,6 @@
 import {
-  creditsFromTokens,
+  billableTokens,
+  creditsFromUsage,
   EntitlementCapabilitySchema,
   MonthlyUsageSchema,
   PlanSummarySchema,
@@ -12,7 +13,7 @@ import {
 import { mongoCollections } from "@expresso/database";
 
 import type { MongoContext } from "../../platform/mongodb.js";
-import { BILLABLE_TOKENS, capabilityEnabled, kstMonthlyPeriod, kstPeriodStartsAt, KST_OFFSET_MS } from "../entitlements/index.js";
+import { capabilityEnabled, kstMonthlyPeriod, kstPeriodStartsAt, KST_OFFSET_MS, METERED_CALLS, TOKEN_SUMS as TOKEN_KIND_SUMS } from "../entitlements/index.js";
 
 export class UsageSubjectNotFoundError extends Error {
   constructor() {
@@ -21,12 +22,7 @@ export class UsageSubjectNotFoundError extends Error {
   }
 }
 
-const TOKEN_SUMS = {
-  inputTokens: { $sum: "$inputTokens" },
-  outputTokens: { $sum: "$outputTokens" },
-  cacheReadTokens: { $sum: "$cacheReadTokens" },
-  calls: { $sum: 1 },
-};
+const TOKEN_SUMS = { ...TOKEN_KIND_SUMS, calls: { $sum: 1 } };
 const GROUP_LIMIT = 50;
 
 type TokenRow = UsageTokens & { calls: number };
@@ -34,8 +30,8 @@ type TokenRow = UsageTokens & { calls: number };
 interface Facets {
   totals: TokenRow[];
   daily: (TokenRow & { _id: string })[];
-  byContract: { _id: string; totalTokens: number; calls: number }[];
-  byModel: { _id: string; totalTokens: number; calls: number }[];
+  byContract: (TokenRow & { _id: string })[];
+  byModel: (TokenRow & { _id: string })[];
 }
 
 const ZERO: UsageTokens = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0 };
@@ -54,8 +50,12 @@ function tokensOf(row: TokenRow | undefined): UsageTokens {
   };
 }
 
-function groups(rows: { _id: string; totalTokens: number; calls: number }[]): UsageGroup[] {
-  return rows.map(({ _id, totalTokens, calls }) => ({ key: _id, totalTokens, calls }));
+/** 많이 쓴 순서. 무게를 곱한 토큰으로 센다 — 크레딧과 같은 셈이라 순서가 크레딧 순서와 맞는다. */
+function groups(rows: (TokenRow & { _id: string })[]): UsageGroup[] {
+  return rows
+    .map((row) => ({ key: row._id, totalTokens: Math.round(billableTokens(tokensOf(row))), calls: row.calls }))
+    .sort((left, right) => right.totalTokens - left.totalTokens || left.key.localeCompare(right.key))
+    .slice(0, GROUP_LIMIT);
 }
 
 export class UsageService {
@@ -64,8 +64,9 @@ export class UsageService {
   /**
    * 이번 달 AI 사용량.
    *
-   * 크레딧은 `entitlements`가 한도를 판단할 때와 같은 셈이다 — 기간 전체의 토큰을
-   * 더한 뒤 한 번 올린다. 집계는 데이터베이스가 한 번에 한다.
+   * 크레딧은 `entitlements`가 한도를 판단할 때와 같은 셈이다(`creditsFromUsage`) — 기간 전체의
+   * 토큰을 종류별로 더한 뒤 무게를 곱해 한 번 올린다. 서비스가 먼저 실행한 호출(능동 제안)은
+   * 한도와 마찬가지로 여기서도 뺀다. 집계는 데이터베이스가 한 번에 한다.
    */
   async monthly(userId: string, at = new Date()): Promise<MonthlyUsage> {
     const collections = mongoCollections(this.context.db);
@@ -75,26 +76,18 @@ export class UsageService {
 
     const period = kstMonthlyPeriod(at);
     const [facets] = await collections.aiUsageEvents.aggregate<Facets>([
-      { $match: { userId, createdAt: { $gte: kstPeriodStartsAt(period), $lt: new Date(period.resetsAt) } } },
+      { $match: { userId, ...METERED_CALLS, createdAt: { $gte: kstPeriodStartsAt(period), $lt: new Date(period.resetsAt) } } },
       { $facet: {
         totals: [{ $group: { _id: null, ...TOKEN_SUMS } }],
         daily: [{ $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: "+09:00" } }, ...TOKEN_SUMS } }],
-        byContract: [
-          { $group: { _id: "$contract", totalTokens: { $sum: BILLABLE_TOKENS }, calls: { $sum: 1 } } },
-          { $sort: { totalTokens: -1, _id: 1 } },
-          { $limit: GROUP_LIMIT },
-        ],
-        byModel: [
-          { $group: { _id: "$model", totalTokens: { $sum: BILLABLE_TOKENS }, calls: { $sum: 1 } } },
-          { $sort: { totalTokens: -1, _id: 1 } },
-          { $limit: GROUP_LIMIT },
-        ],
+        byContract: [{ $group: { _id: "$contract", ...TOKEN_SUMS } }],
+        byModel: [{ $group: { _id: "$model", ...TOKEN_SUMS } }],
       } },
     ]).toArray();
 
     const totals = facets?.totals[0];
     const tokens = tokensOf(totals);
-    const creditsUsed = creditsFromTokens(tokens.inputTokens + tokens.outputTokens + tokens.cacheReadTokens);
+    const creditsUsed = creditsFromUsage(tokens);
     const creditLimit = plan.monthlyCredits ?? null;
 
     // 호출이 없던 날도 0으로 채운다. 막대 사이가 비면 그날을 건너뛴 것처럼 읽힌다.

@@ -5,6 +5,19 @@
 .rail { display:flex; height:100%; min-height:0; }
 @media(max-width:1023px) { .rail { height:min(720px,85dvh); } }
 .main { min-width:0; min-height:0; flex:1; display:flex; flex-direction:column; }
+/*
+ * 대화에서 만드는 지면의 자리(독립 채팅). 지면이 서기 전에는 보이지 않게 접어 두되 \`display: none\`을 쓰지 않는다 — 미리보기 틀이
+ * 문서를 다시 만들면 쓴 것이 사라진다. 지면이 서면 가운데를 차지하고 대화는 공고 화면의 레일과 같은 폭 범위로 오른쪽에 선다.
+ */
+.stageSlot { position:absolute; width:1px; height:1px; overflow:hidden; opacity:0; pointer-events:none; }
+.standalone[data-staged="true"] .stageSlot { position:relative; flex:1; width:auto; height:auto; min-width:0; overflow:visible; opacity:1; pointer-events:auto; view-transition-name:agent-stage-slot; }
+.standalone[data-staged="true"] .main { flex:0 0 clamp(316px, 32%, 440px); border-left:1px solid var(--ex-border); }
+/* 레일이 본문 아래로 내려가는 폭(공고 화면과 같다)에서는 지면을 위에, 대화를 아래에 쌓는다. */
+@media(max-width:1023px) {
+  .standalone[data-staged="true"] { flex-direction:column; }
+  .standalone[data-staged="true"] .stageSlot { flex:0 0 55dvh; }
+  .standalone[data-staged="true"] .main { flex:1; border-left:0; border-top:1px solid var(--ex-border); }
+}
 .header { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:18px 26px; flex-shrink:0; }
 .heading { display:flex; align-items:center; gap:10px; min-width:0; }
 .heading > div { display:flex; flex-direction:column; gap:3px; min-width:0; }
@@ -51,6 +64,8 @@
 .root :global(.aui-md) { font-size:inherit; }
 /* 작업 흔적 — 단계(ToolStep)들이 세로선으로 이어지는 자리. 그룹 머리와 점의 왼쪽 끝을 맞춘다. */
 .trace { display:flex; flex-direction:column; padding-top:6px; }
+/* 답변 글 아래의 부품. 작업 흔적과 달리 접히지 않는다. */
+.belowParts { display:flex; flex-direction:column; gap:10px; }
 .proposalStatus { display:flex; align-items:center; gap:6px; color:var(--ex-fg-muted); font-size:var(--ex-text-2xs); padding-top:12px; }
 .proposalStatus::before { content:""; width:5px; height:5px; border-radius:50%; background:var(--ex-accent-soft); }
 .proposalStatus[data-state="applied"] { color:var(--ex-status-success-text); }
@@ -232,3 +247,11 @@
 .target > span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .target > i { flex:none; color:var(--ex-accent-text); }
 .sentTarget { grid-column:1 / -1; justify-self:end; }
+
+/* 홈에서 넘겨받은 첫 말. 홈의 입력창이 아래 자리에 내려앉는 동안 그 위로 떠오른다(app/(app)/home/page.tsx의 전환). */
+.root :global([data-arrival]) { animation:arrive var(--ex-motion-panel) 120ms both; }
+/* 지난 대화의 기록이 도착한 순간 — 빈 자리에서 메시지가 떠오른다(--ex-motion-glide). data-restore가 done으로 바뀔 때 한 번 돈다. */
+.root[data-restore="done"] :global([data-slot="aui_message-group"]) { animation:restore var(--ex-motion-glide) both; }
+@keyframes restore { from { opacity:0; } }
+@keyframes arrive { from { opacity:0; translate:0 16px; } }
+@media (prefers-reduced-motion: reduce) { .root :global([data-arrival]), .root[data-restore="done"] :global([data-slot="aui_message-group"]) { animation:none; } }

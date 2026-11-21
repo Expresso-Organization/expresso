@@ -1,23 +1,26 @@
 "use client";
-import { createContext, useContext, useState, useRef, useEffect } from "react";
+import { createContext, startTransition, useCallback, useContext, useMemo, useState, useRef, useEffect } from "react";
+import { flushSync } from "react-dom";
 import Link from "next/link";
 import type { Route } from "next";
+import { useChangedSinceMount } from "@/components/motion/useChangedSinceMount";
 import { LogoMark } from "@/components/brand/Logo";
 import { Icon } from "@/components/ui/Icon";
+import { showToast } from "@/components/ui/toast";
+import { AttachmentsProvider, ComposerAttachments, SentAttachments, WorkMaterialsCard, useAttachmentState } from "./WorkMaterials";
 import { useRouter } from "next/navigation";
 import { AssistantRuntimeProvider, useExternalStoreRuntime, useAui, useAuiState, type ThreadMessageLike, type ToolCallMessagePartComponent } from "@assistant-ui/react";
 import { AgentChatAccessSchema, AgentResourceDetailSchema } from "@expresso/contracts";
 import type { AgentContext, AgentMessage, AgentPageSelection, AiEditProposalDetail, CareerDocumentBootstrap } from "@expresso/contracts";
 import { ResourcePreview, type PreviewResource } from "./ResourcePreview";
-import { RequirementReviewCard } from "./RequirementReviewCard";
-import { RecordDraftCard } from "./RecordDraftCard";
-import { JobGoalDraftCard } from "./JobGoalDraftCard";
-import { GapReviewCard } from "./GapReviewCard";
-import { PlanDraftCard } from "./PlanDraftCard";
-import { PlanCard } from "./PlanCard";
-import { ReplanDraftCard } from "./ReplanDraftCard";
-import { PageEditCard } from "./PageEditCard";
+import { isBelowTool, toolPartFor, type ToolPartContext } from "./tool-parts";
 import { AgentConsentDialog } from "./AgentConsentDialog";
+import { BrewDesignCard } from "./BrewDesignCard";
+import { BrewGenerationCard } from "./BrewGenerationCard";
+import { DesignBrews } from "./design-brews";
+import { BrewInterviewCard } from "./BrewInterviewCard";
+import { BrewMaterialsCard } from "./BrewMaterialsCard";
+import { BrewStartCard } from "./BrewStartCard";
 import { ConversationSwitcher } from "./ConversationSwitcher";
 import { AiProposalDiff } from "@/features/career-editor/ai/AiProposalDiff";
 import { Thread } from "@/components/assistant-ui/elements/thread.aui";
@@ -27,7 +30,7 @@ import type { ThreadGroupPart } from "@/components/assistant-ui/elements/thread.
 import type { PropsWithChildren, ReactNode } from "react";
 import "@/styles/agent-chat-framework.css";
 import { agentRequest, useAgentConversation } from "./useAgentConversation";
-import { AGENT_CONVERSATIONS_EVENT, takeAgentHandoff } from "./agent-handoff";
+import { AGENT_CHAT_CLOSE, AGENT_CHAT_OPEN, AGENT_CONVERSATIONS_EVENT, peekAgentHandoff, takeAgentHandoff } from "./agent-handoff";
 import { ToolStep } from "./ToolStep";
 import styles from "./AgentChat.module.css";
 
@@ -36,12 +39,16 @@ const ChatContext = createContext<ReturnType<typeof useAgentConversation> | null
 /** 공고 상세 우측 레일에서 여는 대화의 공고. 첫 화면과 시작 제안이 이 공고를 기준으로 바뀐다. */
 export type AgentChatJob = { id: string; title: string; company: string };
 const JobContext = createContext<AgentChatJob | null>(null);
+/** 새 대화가 무엇을 하러 열렸는가. 「새 포트폴리오」(`/home?new=portfolio`)는 포트폴리오를 시작하는 세 갈래를 보인다. */
+const WelcomeContext = createContext<"portfolio" | null>(null);
 /**
  * 다듬기 화면에서 연 대화의 지면. 첫 화면 · 입력창 위 대상 표시 · 고침 카드의 되돌리기가 이것을 본다. `revision`은 화면이
  * 보고 있는 최신 판 번호다 — 고침 카드는 자기 판이 최신이 아니면 되돌리기를 막는다.
  */
 export type AgentChatPage = { portfolioId: string; title: string; revision: number; selection: AgentPageSelection | null };
 const PageContext = createContext<AgentChatPage | null>(null);
+/** 지금 말을 보낼 수 있는가(사용 설정 · 동의 · 이번 달 크레딧). 부품이 답을 받을지 정할 때 쓴다. */
+const SendContext = createContext(false);
 /**
  * 고침 카드의 판이 화면의 최신 판인가. 화면이 더 뒤의 판을 보고 있을 때만 false다. 고침 직후 화면이 아직 옛 판을 보고 있으면
  * (새로고침 전) 모르는 것(undefined)으로 두고 서버가 판단한다.
@@ -74,7 +81,23 @@ function useStarter() {
 function ChatWelcome() {
   const job = useContext(JobContext);
   const page = useContext(PageContext);
-  return job ? <JobWelcome job={job} /> : page ? <PageWelcome page={page} /> : <GeneralWelcome />;
+  const welcome = useContext(WelcomeContext);
+  return job ? <JobWelcome job={job} /> : page ? <PageWelcome page={page} /> : welcome === "portfolio" ? <PortfolioWelcome /> : <GeneralWelcome />;
+}
+/** 「새 포트폴리오」의 세 갈래. 입력창에 말을 넣고, 공고 주소 · 글은 사용자가 이어 붙인다. */
+const PORTFOLIO_STARTERS = [
+  { icon: "briefcase", title: "공고로 만들기", description: "지원할 공고에 맞춰", prompt: "지원할 공고에 맞춰 포트폴리오를 만들고 싶어. 맞는 공고부터 같이 찾아 줘." },
+  { icon: "link", title: "공고 주소나 글로 만들기", description: "목록에 없는 공고를 붙여 넣어", prompt: "이 공고로 포트폴리오를 만들어 줘.\n" },
+  { icon: "note-pencil", title: "공고 없이 만들기", description: "보여 주고 싶은 것에 맞춰", prompt: "공고 없이 포트폴리오를 만들고 싶어." },
+];
+function PortfolioWelcome() {
+  const { welcome, start } = useStarter();
+  return <div ref={welcome} className={styles.welcome}>
+    <div className={styles.welcomeMark}><LogoMark size={44} /></div>
+    <h1>새 포트폴리오</h1>
+    <p>지원할 공고가 있으면 공고에 맞춰, 없으면 보여 주고 싶은 것에 맞춰 만듭니다.</p>
+    <div className={styles.starters}>{PORTFOLIO_STARTERS.map(item => <Button key={item.title} variant="ghost" className={styles.starter} onClick={() => start(item.prompt)}><Icon name={item.icon} size={19} /><strong>{item.title}</strong><span>{item.description}</span><Icon name="arrow-up-right" size={14} /></Button>)}</div>
+  </div>;
 }
 /** 다듬기 화면의 시작 제안. 모두 고른 요소 하나를 고치는 말이라 요소를 고르기 전에는 막는다. */
 const PAGE_STARTERS = [
@@ -92,6 +115,10 @@ function PageWelcome({ page }: { page: AgentChatPage }) {
   </div>;
 }
 /** 보낼 말이 가리킬 요소. 다듬기 화면에서 요소를 골랐을 때만 입력창 위에 보인다. */
+/** 입력창 위 — 고칠 요소와 붙일 그림. */
+function ComposerHead() { return <><ComposerTarget /><ComposerAttachments /></>; }
+/** 보낸 말 위 — 가리킨 요소와 붙인 그림. */
+function UserMessageHead() { return <><UserMessageTarget /><SentAttachments /></>; }
 function ComposerTarget() {
   const selection = useContext(PageContext)?.selection;
   if (!selection) return null;
@@ -126,7 +153,9 @@ function GeneralWelcome() {
 const TOOL_ICONS: Record<string, string> = {
   "기록 목록 확인": "list-bullets", "기록 읽기": "book-open-text", "요건 대조": "list-checks", "새 기록 초안": "note-pencil", "구직 목표 변경": "target", "기록 변경 제안": "pencil-line",
   "보완점 정리": "target", "준비 계획 초안": "calendar-check", "계획 진행 확인": "chart-line-up", "계획 재배치 초안": "arrows-clockwise",
-  "지면 요소 읽기": "cursor-click", "지면 요소 고침": "pencil-simple-line",
+  "지면 요소 읽기": "cursor-click", "지면 요소 고침": "pencil-simple-line", "기억 갱신": "bookmark-simple", "기록 저장": "note-pencil",
+  "약속": "calendar-check", "약속 갱신": "calendar-check", "목표 요건 집계": "chart-bar", "목표 진단": "chart-bar", "기록에 더하기": "pencil-line", "공고 찾기": "briefcase", "활동 찾기": "trophy", "비교 표": "table",
+  "포트폴리오 제작": "coffee", "재료 고르기": "list-checks", "AI 대화": "chat-circle-dots", "답 저장": "floppy-disk", "디자인": "palette", "견본 다시 받기": "swatches", "첫 화면 고치기": "pencil-simple-line", "생성": "magic-wand", "레포 읽기": "github-logo", "작업물 붙이기": "images",
 };
 /**
  * 도구 호출 하나를 작업 흔적의 한 단계로 그린다. 결과의 모양으로 단계 아래를 나눈다 — 요건 대조 · 보완점 · 새 기록 · 준비 계획 ·
@@ -138,20 +167,54 @@ const RecordTool: ToolCallMessagePartComponent = props => {
   const tool = state.conversation?.messages.flatMap(message => message.tools).find(tool => tool.id === props.toolCallId);
   const busy = state.pending || state.conversation?.run?.status === "running";
   const name = tool?.name ?? props.toolName;
+  const savedAnswers = state.conversation?.messages.flatMap(message => message.tools).filter(item => item.name === "답 저장" && item.status === "complete").length ?? 0;
   const step = (detail: ReactNode, summary: string | null = tool?.summary ?? null) => <ToolStep status={tool?.status ?? (props.status.type === "running" ? "running" : "complete")} icon={TOOL_ICONS[name] ?? "wrench"} title={name} summary={summary ?? undefined}>{detail}</ToolStep>;
-  if (tool?.review) return step(<RequirementReviewCard conversationId={state.id} toolId={tool.id} review={tool.review} />, null);
-  if (tool?.gapReview) return step(<GapReviewCard conversationId={state.id} toolId={tool.id} gapReview={tool.gapReview} />, null);
-  if (tool?.recordDraft) { const draftId = tool.recordDraft.draftId; return step(<RecordDraftCard draft={tool.recordDraft} disabled={busy} onDecide={decision => state.decideDraft(draftId, decision)} />, null); }
-  if (tool?.goalDraft) { const draftId = tool.goalDraft.draftId; return step(<JobGoalDraftCard draft={tool.goalDraft} disabled={busy} onDecide={decision => state.decideGoalDraft(draftId, decision)} />, null); }
-  if (tool?.planDraft) {
-    const { draftId, planId, status } = tool.planDraft;
-    if (status === "approved" && planId) return step(<PlanCard planId={planId} refreshKey={state.conversation?.version} />, null);
-    return step(<PlanDraftCard draft={tool.planDraft} disabled={busy} onDecide={decision => state.decidePlanDraft(draftId, decision)} />, null);
-  }
-  if (tool?.replanDraft) { const draftId = tool.replanDraft.draftId; return step(<ReplanDraftCard draft={tool.replanDraft} disabled={busy} onDecide={decision => state.decideReplanDraft(draftId, decision)} />, null); }
-  if (tool?.pageEdit) { const edit = tool.pageEdit; return step(<PageEditCard edit={edit} latest={pageEditLatest(page, edit)} disabled={busy} onUndo={() => state.undoPageEdit(edit.editId)} />, null); }
+  // 대화에서 시작한 제작. 진행과 결과는 카드가 서버에서 읽는다. 제작을 여는 일은 AI를 부르지 않으므로 실행 중에만 막는다.
+  if (tool?.brewStart) return step(<BrewStartCard conversationId={state.id} start={tool.brewStart} disabled={busy} onOpen={() => state.openBrew(tool.brewStart!.startId)} onAnnounce={() => state.announceBrew(tool.brewStart!.startId)} />, null);
+  // 서버가 붙인 「재료 고르기」. 목록과 고른 것은 카드가 읽고 저장한다. 고르기는 AI를 부르지 않아 답이 도는 동안에도 쓸 수 있지만,
+  // 「AI와 대화 시작」은 에이전트의 답을 시작하므로 그동안 막는다.
+  // 인터뷰를 열면 제작이 다음 단계로 가므로 그때 다시 읽어 잠근다.
+  if (tool?.brewMaterials) { const { brewId } = tool.brewMaterials; const continues = !!state.conversation?.messages.some(message => message.tools.some(item => item.brewInterview?.brewId === brewId)); return step(<BrewMaterialsCard materials={tool.brewMaterials} disabled={busy} continuesInChat={continues} refreshKey={continues ? 1 : 0} onBegin={() => state.beginInterview(brewId)} />, null); }
+  // 서버가 붙인 「AI 대화」. 근거와 답한 질문은 카드가 읽는다. 답을 저장할 때마다 다시 읽는다 — 대화의 판은 글이 흐르는 동안에도 올라가므로 쓰지 않는다.
+  // 「디자인 고르기」는 이 대화에서 디자인을 연다. 연 뒤에는 대화 아래의 「디자인」 카드가 이어 가므로 잠긴 카드에 링크를 두지 않는다.
+  if (tool?.brewInterview) { const { brewId } = tool.brewInterview; return step(<BrewInterviewCard interview={tool.brewInterview} refreshKey={savedAnswers} continuesInChat={!!state.conversation?.messages.some(message => message.tools.some(item => item.brewDesign?.brewId === brewId))} onDesign={() => state.beginDesign(brewId)} />, null); }
+  // 서버가 붙인 「디자인」. 디자인 대화의 답 하나를 그린다. 「첫 화면 보기」만 이 대화의 경로로 보내 그 카드가 대화에 붙는다.
+  if (tool?.brewDesign) return step(<BrewDesignCard design={tool.brewDesign} />, null);
+  // 에이전트가 받은 작업물을 기록에 붙였다. 무엇을 어느 기록에 붙였는지 보인다.
+  if (tool?.workMaterials) return step(<WorkMaterialsCard materials={tool.workMaterials} />, null);
+  // 서버가 붙인 「생성」. 진행은 제작별 상태가 읽고, 지면이 서면 가운데 무대로 간다.
+  if (tool?.brewGeneration) return step(<BrewGenerationCard generation={tool.brewGeneration} />, null);
+  // 카드는 등록표(tool-parts.tsx)가 정한다. 카드가 요약을 담으므로 단계 요약은 비운다.
+  const part = tool ? toolPartFor(tool) : undefined;
+  if (tool && part?.placement === "trace") return step(part.render(tool, partContext(state, page, busy, false)), null);
   return step(tool?.proposal ? <Proposal proposal={tool.proposal} beforeDocument={tool.beforeDocument} undone={tool.undone} /> : null);
 };
+/** 등록표의 항목이 받아 쓰는 상태와 동작. */
+function partContext(state: ReturnType<typeof useAgentConversation>, page: AgentChatPage | null, busy: boolean, canAnswer: boolean): ToolPartContext {
+  return {
+    conversationId: state.id, conversationVersion: state.conversation?.version, busy, canAnswer,
+    pageEditLatest: edit => pageEditLatest(page, edit),
+    decideDraft: state.decideDraft, decideGoalDraft: state.decideGoalDraft, decidePlanDraft: state.decidePlanDraft, decideReplanDraft: state.decideReplanDraft,
+    undoPageEdit: state.undoPageEdit, answerPart: state.answerPart, undoSavedRecord: state.undoSavedRecord,
+  };
+}
+/**
+ * 답변 글 아래의 부품. 작업 흔적 밖에 그린다 — 사용자에게 건네는 화면은 에이전트가 한 일의 기록이 아니다.
+ * 답을 받는 것은 마지막 답변의 부품뿐이다. 실행 중이거나 보낼 수 없는 상태에서도 받지 않는다.
+ */
+function BelowParts() {
+  const state = useContext(ChatContext)!;
+  const page = useContext(PageContext);
+  const canSend = useContext(SendContext);
+  const messageId = useAuiState(s => s.message.id);
+  const messages = state.conversation?.messages ?? [];
+  const index = messages.findIndex(message => message.id === messageId);
+  const tools = index < 0 ? [] : messages[index]!.tools.filter(isBelowTool);
+  if (!tools.length) return null;
+  const busy = state.pending || state.conversation?.run?.status === "running";
+  const context = partContext(state, page, busy, canSend && !busy && index === messages.length - 1);
+  return <div className={styles.belowParts}>{tools.map(tool => <div key={tool.id}>{toolPartFor(tool)!.render(tool, context)}</div>)}</div>;
+}
 function ExpandedTools({ group, children }: PropsWithChildren<{ group: ThreadGroupPart }>) {
   return <ToolGroupRoot variant="ghost" defaultOpen><ToolGroupTrigger count={group.indices.length} active={group.status.type === "running"} /><ToolGroupContent><div className={styles.trace}>{children}</div></ToolGroupContent></ToolGroupRoot>;
 }
@@ -159,36 +222,60 @@ function Proposal({ proposal, beforeDocument, undone }: { proposal: AiEditPropos
   const state = useContext(ChatContext)!; const router = useRouter();
   const [commands, setCommands] = useState(new Set(proposal.commands.map((_, i) => i)));
   const [properties, setProperties] = useState(new Set(proposal.propertyChanges.map((_, i) => i)));
+  // 적용 · 거절 · 되돌리기로 바뀐 상태 문구만 떠오른다. 값이 바뀔 때마다 새로 그려 다시 돈다.
+  const status = undone ? "undone" : proposal.status;
+  const swapped = useChangedSinceMount(status);
   const toggle = (current: Set<number>, index: number) => { const next = new Set(current); if (next.has(index)) next.delete(index); else next.add(index); return next; };
   return <><AiProposalDiff proposal={proposal} document={beforeDocument ?? null} commandIndexes={commands} propertyChangeIndexes={properties} onCommandToggle={index => setCommands(current => toggle(current, index))} onPropertyToggle={index => setProperties(current => toggle(current, index))} />
-    <p className={styles.proposalStatus} data-state={undone ? "undone" : proposal.status}>{undone ? "변경을 되돌렸습니다." : proposal.status === "applied" ? "기록에 적용했습니다." : proposal.status === "ready" ? "검토 후 적용해 주세요." : proposal.status === "rejected" ? "제안을 거절했습니다." : "제안을 더 이상 적용할 수 없습니다."}</p>
+    <p key={status} className={`${styles.proposalStatus} ${swapped ? "ex-anim-reveal" : ""}`} data-state={status}>{undone ? "변경을 되돌렸습니다." : proposal.status === "applied" ? "기록에 적용했습니다." : proposal.status === "ready" ? "검토 후 적용해 주세요." : proposal.status === "rejected" ? "제안을 거절했습니다." : "제안을 더 이상 적용할 수 없습니다."}</p>
     {proposal.status === "ready" ? <div className={styles.actions}><Button className={styles.applyButton} disabled={state.pending || state.conversation?.run?.status === "running" || !(commands.size + properties.size)} onClick={() => void state.approve({ proposalId: proposal.proposalId, action: "apply", expectedDocumentVersion: proposal.baseDocumentVersion, commandIndexes: [...commands], propertyChangeIndexes: [...properties] }).then(() => router.refresh())}>선택한 변경 적용</Button><Button variant="outline" disabled={state.pending} onClick={() => void state.approve({ proposalId: proposal.proposalId, action: "reject", expectedDocumentVersion: proposal.baseDocumentVersion })}>거절</Button></div> : null}
     {proposal.status === "applied" && !undone ? <Button variant="outline" disabled={state.pending} onClick={() => void state.approve({ proposalId: proposal.proposalId, action: "undo", expectedDocumentVersion: proposal.appliedDocumentVersion! }).then(() => router.refresh())}>변경 되돌리기</Button> : null}
   </>;
 }
+/** 홈의 입력창이 대화를 시작하며 이 입력창 자리로 옮겨 오는 전환. 홈의 입력창과 이름 · 타입이 같아야 짝이 된다. */
+const HOME_COMPOSER_TRANSITION = { name: "agent-composer", share: { [AGENT_CHAT_OPEN]: "composer-morph", [AGENT_CHAT_CLOSE]: "composer-return" } };
 const convertMessage = (message: AgentMessage): ThreadMessageLike => ({
   id: message.id, role: message.role, createdAt: new Date(message.createdAt),
-  ...(message.selection ? { metadata: { custom: { selection: message.selection } } } : {}),
+  ...(message.selection || message.attachments?.length ? { metadata: { custom: { ...(message.selection ? { selection: message.selection } : {}), ...(message.attachments?.length ? { attachments: message.attachments } : {}) } } } : {}),
   content: [
-    ...message.tools.map(tool => ({ type: "tool-call" as const, toolCallId: tool.id, toolName: tool.name, args: {}, argsText: "{}", ...(tool.status === "running" ? {} : { result: { summary: tool.summary }, isError: tool.status === "failed" }) })),
+    // 답변 글 아래에 그리는 부품(등록표의 below)은 작업 흔적에 넣지 않는다. BelowParts가 저장된 메시지에서 직접 그린다.
+    ...message.tools.filter(tool => !isBelowTool(tool)).map(tool => ({ type: "tool-call" as const, toolCallId: tool.id, toolName: tool.name, args: {}, argsText: "{}", ...(tool.status === "running" ? {} : { result: { summary: tool.summary }, isError: tool.status === "failed" }) })),
     { type: "text", text: message.text },
   ],
 });
-export function AgentChat({ job, page, standalone = false, fresh = false, newHref, onRunningChange, ...props }: {
+export function AgentChat({ job, page, standalone = false, fresh = false, chatId = null, newHref, onRunningChange, stageHost = null, welcome = null, ...props }: {
   context?: AgentContext; contextLabel?: string; standalone?: boolean; job?: AgentChatJob;
   /** 참이면 주소에 적힌 대화만 연다. 홈이 쓴다 — 홈의 입력창이 넘긴 말(`agent-handoff`)이 있으면 그 말로 대화를 시작한다. */
   fresh?: boolean;
+  /** 새 대화의 시작 화면. 「새 포트폴리오」가 `portfolio`를 넘긴다. */
+  welcome?: "portfolio" | null;
+  /** `fresh`일 때 주소에 적힌 대화(`?chat=`). 서버가 읽어 넘겨, 첫 렌더부터 그 대화를 불러온다. */
+  chatId?: string | null;
   /** 「새 대화」가 갈 곳. 홈에서는 대화 전의 홈 화면으로 돌아간다. 주지 않으면 이 자리에서 대화를 비운다. */
   newHref?: string;
   /** 다듬기 화면의 지면. 대화는 이 포트폴리오가 연결된 가장 최근 대화로 열리고, 보내는 말에 고른 요소가 붙는다. */
   page?: AgentChatPage;
   /** 응답 진행 여부가 바뀔 때. 레일이 접혀 있으면 머리의 채팅 버튼이 진행 표시를 그린다. */
   onRunningChange?: ((running: boolean) => void) | undefined;
+  /**
+   * 대화에서 만드는 지면을 여는 자리. 공고 화면이 왼쪽 본문 자리를 준다(대화는 이미 오른쪽 레일에 있다). 주지 않으면 독립 채팅은
+   * 대화 창 안에 자리를 두고, 지면이 서면 지면이 가운데를 차지하고 대화가 오른쪽으로 옮긴다. 그 밖의 자리(다듬기 화면 등)는 열지 않는다.
+   */
+  stageHost?: HTMLElement | null;
 }) {
   const context: AgentContext | undefined = job ? { kind: "job", id: job.id } : page ? { kind: "portfolio", id: page.portfolioId } : props.context;
   const contextLabel = job?.title ?? page?.title ?? props.contextLabel;
-  const state = useAgentConversation(context, job || page ? { restore: "context" } : fresh ? { restore: "url" } : {});
+  const state = useAgentConversation(context, job || page ? { restore: "context" } : fresh ? { restore: "url", initialId: chatId } : {});
+  // 요청 실패는 입력 칸 아래가 아니라 알림으로 띄운다. 같은 글이 이어서 나면 알림이 하나만 남는다.
+  useEffect(() => { if (state.issue) showToast(state.issue, "danger"); }, [state.issue]);
   const router = useRouter();
+  // 홈에서 넘겨받은 말. 대화를 만들고 보내기 전, 첫 렌더부터 사용자 말풍선으로 그린다 — 그래야 대화 화면의 첫 장면에
+  // 시작 화면이 아니라 보낸 말이 있다. 서버의 사용자 메시지가 오면 같은 id로 바꿔 그려 말풍선이 다시 마운트되지 않는다.
+  // 보낼 수 없게 되면(동의 · 크레딧 · 권한 오류 · 생성이나 전송 실패) 거두고 입력창에 글을 둔다.
+  const [arrival, setArrival] = useState<{ id: string; text: string; createdAt: string } | null>(() => {
+    const handoff = fresh ? peekAgentHandoff() : null;
+    return handoff && handoff.deliver !== false ? { id: crypto.randomUUID(), text: handoff.text, createdAt: new Date().toISOString() } : null;
+  });
   const [preview, setPreview] = useState<PreviewResource | null>(null);
   const [contextTitles, setContextTitles] = useState<Record<string, string>>({});
   const contextKeys = (state.conversation?.contexts ?? []).map(ref => `${ref.kind}:${ref.id}`).join(",");
@@ -220,8 +307,50 @@ export function AgentChat({ job, page, standalone = false, fresh = false, newHre
   // 모든 계정이 서버 인증으로 대화한다. 이번 달 크레딧을 다 쓴 계정만 보내지 못한다(개인 키를 등록한 계정은 한도를 보지 않는다).
   const canSend = !!access?.enabled && !access.consentRequired && !access.creditsExhausted;
   const running = state.conversation?.run?.status === "running";
+  /**
+   * 서버가 시작한 답(대화에서 시작한 제작의 분석 완료 알림)은 사용자가 보낸 말 없이 붙는다. 스레드는 사용자가 보낸 말을 따라
+   * 내려가므로, 이런 답은 화면 아래에 가려진 채 붙는다. 답변이 답변 뒤에 바로 붙었으면 그 답이 보이게 끝까지 내린다.
+   */
+  const root = useRef<HTMLElement>(null);
+  const [previous, latest] = (state.conversation?.messages ?? []).slice(-2);
+  const serverStarted = previous?.role === "assistant" && latest?.role === "assistant" ? latest.id : null;
+  const grown = serverStarted ? latest!.text.length : 0;
+  const followed = useRef<string | null>(null);
+  useEffect(() => {
+    if (!serverStarted) return;
+    // 답변의 자리와 글이 그려진 뒤에 내린다. 처음 붙을 때는 반드시 내리고, 글이 이어지는 동안에는 사람이 아래쪽을 보고 있을 때만 따라간다.
+    const timer = window.setTimeout(() => {
+      const node = root.current?.querySelector<HTMLElement>('[data-slot="aui_thread-viewport"]');
+      if (!node) return;
+      const first = followed.current !== serverStarted;
+      followed.current = serverStarted;
+      if (first || node.scrollHeight - node.scrollTop - node.clientHeight < node.clientHeight / 2) node.scrollTo({ top: node.scrollHeight });
+    }, 80);
+    return () => window.clearTimeout(timer);
+  }, [serverStarted, grown]);
   useEffect(() => { onRunningChange?.(running); }, [onRunningChange, running]);
-  const runtime = useExternalStoreRuntime({ messages: state.conversation?.messages ?? [], convertMessage, isRunning: running, isLoading: state.resolving || (!!state.id && !state.conversation), isDisabled: !!preview || !canSend || state.pending || state.resolving || (!!state.id && !state.conversation), onNew: async message => { const text = message.content.filter(part => part.type === "text").map(part => part.text).join("\n"); try { await state.send(text, page?.selection ?? undefined); } catch { runtime.thread.composer.setText(text); } }, onCancel: state.cancel });
+  const attachmentState = useAttachmentState();
+  const serverMessages = state.conversation?.messages;
+  const messages = useMemo(() => {
+    const list = serverMessages ?? [];
+    if (!arrival) return list;
+    const first = list.find(message => message.role === "user");
+    if (!first) return [...list, { id: arrival.id, role: "user" as const, text: arrival.text, tools: [], createdAt: arrival.createdAt }];
+    return list.map(message => message === first ? { ...message, id: arrival.id } : message);
+  }, [serverMessages, arrival]);
+  const arrivalId = arrival?.id;
+  const convert = useCallback((message: AgentMessage): ThreadMessageLike => {
+    const converted = convertMessage(message);
+    if (message.id !== arrivalId) return converted;
+    return { ...converted, metadata: { ...converted.metadata, custom: { ...converted.metadata?.custom, arrival: true } } };
+  }, [arrivalId]);
+  const runtime = useExternalStoreRuntime({ messages, convertMessage: convert, isRunning: running, isLoading: !arrival && (state.resolving || (!!state.id && !state.conversation)), isDisabled: !!preview || !canSend || state.pending || state.resolving || (!!state.id && !state.conversation), onNew: async message => {
+    const text = message.content.filter(part => part.type === "text").map(part => part.text).join("\n");
+    // 올리는 중인 그림이 있으면 보내지 않고 글을 돌려 둔다 — 그림 없이 말만 가면 에이전트가 붙일 것이 없다.
+    const attachments = attachmentState.take();
+    if (!attachments) { showToast("그림을 올리는 중입니다. 다 올라간 뒤 다시 보내 주세요."); runtime.thread.composer.setText(text); return; }
+    try { await state.send(text, page?.selection ?? undefined, attachments); } catch { runtime.thread.composer.setText(text); }
+  }, onCancel: state.cancel });
   // 지면 고침이 저장되거나 되돌려지면 화면의 미리보기 · 판 번호를 다시 불러온다. 처음 불러온 대화의 카드로는 다시 부르지 않는다.
   const pageEdits = (state.conversation?.messages ?? []).flatMap(message => message.tools).flatMap(tool => tool.pageEdit && tool.status === "complete" ? [`${tool.pageEdit.editId}:${tool.pageEdit.undone}`] : []).join(",");
   const seenEdits = useRef<{ id: string | null; edits: string } | null>(null);
@@ -239,33 +368,87 @@ export function AgentChat({ job, page, standalone = false, fresh = false, newHre
     if (!fresh || !access || handoffDone.current) return;
     handoffDone.current = true;
     const handoff = takeAgentHandoff();
-    if (!handoff) return;
+    if (!handoff) { setArrival(null); return; }
+    const hold = () => { setArrival(null); runtime.thread.composer.setText(handoff.text); };
+    if (!canSend) setArrival(null);
     void (async () => {
       try {
         const created = await agentRequest("", { contexts: handoff.contexts });
         selectConversation(created.id);
         if (!canSend) { runtime.thread.composer.setText(handoff.text); return; }
         await agentRequest(`/${created.id}/messages`, { text: handoff.text, requestId: crypto.randomUUID() });
-      } catch { runtime.thread.composer.setText(handoff.text); }
+      } catch { hold(); }
     })();
   }, [fresh, access, canSend, runtime, selectConversation]);
+  // 권한을 확인하지 못하면 넘겨받은 말을 보내지 못한다. 말풍선을 거두고 입력창에 둔다.
+  useEffect(() => {
+    if (!fresh || !accessError || handoffDone.current) return;
+    handoffDone.current = true;
+    setArrival(null);
+    const handoff = takeAgentHandoff();
+    if (handoff) runtime.thread.composer.setText(handoff.text);
+  }, [fresh, accessError, runtime]);
   // 사이드바의 「최근 대화」가 새 대화와 바뀐 제목을 바로 보이도록 목록을 알린다(`SidebarConversations`가 듣는다).
   const conversationRows = JSON.stringify(state.list.map(({ id, title }) => ({ id, title })));
   useEffect(() => {
     if (standalone) window.dispatchEvent(new CustomEvent(AGENT_CONVERSATIONS_EVENT, { detail: JSON.parse(conversationRows) }));
   }, [standalone, conversationRows]);
+  // 제작 ID → 그 제작의 「생성」 카드가 가리키는 생성 ID. 마지막이 가장 최근이다.
+  const generationKey = (state.conversation?.messages ?? []).flatMap(message => message.tools).flatMap(tool => (tool.brewGeneration ? [`${tool.brewGeneration.brewId}:${tool.brewGeneration.generationId}`] : [])).join(",");
+  const generationCards = useMemo(() => {
+    const cards: Record<string, string[]> = {};
+    for (const entry of generationKey ? generationKey.split(",") : []) { const [brewId, generationId] = entry.split(":") as [string, string]; (cards[brewId] ??= []).push(generationId); }
+    return cards;
+  }, [generationKey]);
+  /**
+   * 가운데에 열린 지면. 열고 닫을 때 화면 전환으로 잇는다 — 독립 채팅에서는 대화가 오른쪽으로 옮겨 가고 지면이 가운데에 들어온다.
+   * 움직임을 줄이도록 설정했거나 전환을 지원하지 않는 브라우저에서는 바로 바꾼다.
+   */
+  const [stageSlot, setStageSlot] = useState<HTMLDivElement | null>(null);
+  const host = stageHost ?? (standalone ? stageSlot : null);
+  const [stagedBrew, setStagedBrew] = useState<string | null>(null);
+  const stagedRef = useRef(stagedBrew);
+  stagedRef.current = stagedBrew;
+  const onStage = useCallback((brewId: string, open: boolean) => {
+    const next = open ? brewId : stagedRef.current === brewId ? null : stagedRef.current;
+    if (next === stagedRef.current) return;
+    const apply = () => flushSync(() => setStagedBrew(next));
+    if (!document.startViewTransition || window.matchMedia("(prefers-reduced-motion: reduce)").matches) apply();
+    else document.startViewTransition(apply);
+  }, []);
+  const staged = !!stagedBrew && !!host && host === stageSlot;
+  // 제작 ID → 그 제작의 「디자인」 카드가 가리키는 디자인 대화의 답 ID. 여는 카드는 답 ID가 없다.
+  const designKey = (state.conversation?.messages ?? []).flatMap(message => message.tools).flatMap(tool => (tool.brewDesign ? [`${tool.brewDesign.brewId}:${tool.brewDesign.designMessageId ?? ""}`] : [])).join(",");
+  const designCards = useMemo(() => {
+    const cards: Record<string, string[]> = {};
+    for (const entry of designKey ? designKey.split(",") : []) { const [brewId, messageId] = entry.split(":") as [string, string]; (cards[brewId] ??= []).push(...(messageId ? [messageId] : [])); }
+    return cards;
+  }, [designKey]);
   const lastRun = state.conversation?.run;
-  const canRetry = !!lastRun && ["failed", "interrupted", "cancelled"].includes(lastRun.status) && state.conversation?.messages.at(-1)?.role === "assistant";
+  // 다시 보내기는 마지막 답변을 지우고 다시 쓴다. 그 실행의 답변이 마지막일 때만 둔다 — 실패한 답 뒤에 서버가 붙인 카드(재료 고르기)가
+  // 있으면 지워질 것은 그 카드다. 실행의 requestId는 질문의 ID이거나(보낸 말), 답변의 ID다(서버가 시작한 알림).
+  const [beforeLast, lastMessage] = (state.conversation?.messages ?? []).slice(-2);
+  const canRetry = !!lastRun && ["failed", "interrupted", "cancelled"].includes(lastRun.status) && lastMessage?.role === "assistant" && (beforeLast?.id === lastRun.requestId || lastMessage.id === lastRun.requestId);
   const retryButton = canRetry ? <Button variant="outline" size="sm" className={styles.retryButton} disabled={!canSend || state.pending} onClick={() => void state.retry()}><Icon name="arrow-clockwise" size={13} />다시 보내기</Button> : null;
   const missing = context && state.conversation && !state.conversation.contexts.some(ref => ref.kind === context.kind && ref.id === context.id);
-  return <ChatContext.Provider value={state}><JobContext.Provider value={job ?? null}><PageContext.Provider value={page ?? null}><AssistantRuntimeProvider runtime={runtime}>
+  return <ChatContext.Provider value={state}><JobContext.Provider value={job ?? null}><WelcomeContext.Provider value={welcome}><PageContext.Provider value={page ?? null}><SendContext.Provider value={canSend}><AssistantRuntimeProvider runtime={runtime}><AttachmentsProvider value={attachmentState}>
     {preview ? <ResourcePreview resource={preview} onClose={() => setPreview(null)} selected={!!state.conversation?.contexts.some(ref => ref.kind === preview.kind && ref.id === preview.id)} disabled={contextDisabled} onToggle={toggleContext} /> : null}
     <AgentConsentDialog open={consentOpen} onOpenChange={setConsentOpen} onConsented={() => setAccess(current => current ? { ...current, consentRequired: false } : current)} />
-    <section className={`acf-scope ${styles.root} ${job || page ? styles.rail : standalone ? styles.standalone : styles.panel}`} aria-label="에이전트 채팅">
-      <div className={styles.main}>
+    <section
+      ref={root}
+      onPaste={event => { const files = [...event.clipboardData.files].filter(file => file.type.startsWith("image/")); if (files.length) { event.preventDefault(); attachmentState.add(files); } }}
+      className={`acf-scope ${styles.root} ${job || page ? styles.rail : standalone ? styles.standalone : styles.panel}`}
+      aria-label="에이전트 채팅"
+      // 지난 대화의 기록을 기다리는 동안 pending, 도착하면 done — done이 되는 순간 메시지 묶음이 떠오른다.
+      // 보낸 말 말풍선(arrival)은 자기 모션이 있어 두지 않는다.
+      data-restore={!arrival && state.id ? (state.conversation ? "done" : "pending") : undefined}
+      data-staged={staged ? "true" : undefined}
+    >
+      {standalone && !stageHost ? <div ref={setStageSlot} className={styles.stageSlot} /> : null}
+      <div className={styles.main} style={standalone ? { viewTransitionName: "agent-chat" } : undefined}>
         <header className={styles.header}>
           <div className={styles.heading}><span className={styles.assistantMark}><LogoMark size={22} /></span><div><strong>{state.conversation?.title ?? "새 대화"}</strong><span>{running ? "답변을 준비하고 있어요" : "Expresso AI"}</span></div></div>
-          <div className={styles.headerActions}><span className={standalone ? styles.compactHistory : undefined}><ConversationSwitcher contexts={state.conversation?.contexts ?? []} contextDisabled={contextDisabled} onToggleContext={toggleContext} onPreview={setPreview} currentId={state.id} conversations={state.list} disabled={state.pending} onSelect={state.select} /></span>{!standalone ? <Link aria-label="독립 채팅으로 크게 열기" title="크게 열기" href={{ pathname: "/agent", query: state.id ? { chat: state.id } : {} }}><Icon name="arrows-out-simple" size={17} /></Link> : null}<Button variant="ghost" size="icon" aria-label="새 대화" title="새 대화" disabled={state.pending} onClick={() => newHref ? router.push(newHref as Route) : state.select(null)}><Icon name="note-pencil" size={18} /></Button></div>
+          <div className={styles.headerActions}><span className={standalone ? styles.compactHistory : undefined}><ConversationSwitcher contexts={state.conversation?.contexts ?? []} contextDisabled={contextDisabled} onToggleContext={toggleContext} onPreview={setPreview} currentId={state.id} conversations={state.list} disabled={state.pending} onSelect={state.select} /></span>{!standalone ? <Link aria-label="독립 채팅으로 크게 열기" title="크게 열기" href={{ pathname: "/agent", query: state.id ? { chat: state.id } : {} }}><Icon name="arrows-out-simple" size={17} /></Link> : null}<Button variant="ghost" size="icon" aria-label="새 대화" title="새 대화" disabled={state.pending} onClick={() => newHref ? startTransition(() => router.push(newHref as Route, { transitionTypes: [AGENT_CHAT_CLOSE] })) : state.select(null)}><Icon name="note-pencil" size={18} /></Button></div>
         </header>
 
         <div className={styles.contexts} aria-label="대화에 연결된 자료">
@@ -279,14 +462,16 @@ export function AgentChat({ job, page, standalone = false, fresh = false, newHre
           {!state.conversation?.contexts.length && !contextLabel ? <><Link className={styles.referenceEmpty} href="/jobs"><Icon name="plus" size={12} />공고</Link><Link className={styles.referenceEmpty} href="/career/experience"><Icon name="plus" size={12} />기록</Link></> : null}</div>
         </div>
         {access?.enabled && access.consentRequired ? <div role="alert" className={styles.apiKeyField}><p>채팅을 시작하려면 AI 사용 동의가 필요합니다.</p><small>대화와 연결된 커리어 기록을 AI 모델에 전달합니다.</small><Button variant="outline" onClick={() => setConsentOpen(true)}>AI 사용 동의 확인</Button></div> : null}
-        {accessError ? <p role="alert" className={styles.error}>채팅 사용 권한을 확인하지 못했습니다. 새로고침해 주세요.</p> : !access ? <p role="status" className={styles.status}>채팅 사용 권한 확인 중…</p> : !access.enabled ? <p className={styles.status}>에이전트 채팅이 아직 활성화되지 않았습니다.</p> : access.creditsExhausted ? <p role="alert" className={styles.status}>이번 달 AI 크레딧을 모두 썼습니다. 다음 달에 다시 대화할 수 있습니다.</p> : null}
-        <div className={styles.thread}><Thread autoFocus={standalone} components={{ Welcome: ChatWelcome, AssistantHeader: AssistantIdentity, ToolFallback: RecordTool, ToolGroup: ExpandedTools, ComposerHeader: ComposerTarget, UserMessageHeader: UserMessageTarget }} /></div>
+        {accessError ? <p role="alert" className={styles.error}>채팅 사용 권한을 확인하지 못했습니다. 새로고침해 주세요.</p> : !access ? (arrival ? null : <p role="status" className={styles.status}>채팅 사용 권한 확인 중…</p>) : !access.enabled ? <p className={styles.status}>에이전트 채팅이 아직 활성화되지 않았습니다.</p> : access.creditsExhausted ? <p role="alert" className={styles.status}>이번 달 AI 크레딧을 모두 썼습니다. 다음 달에 다시 대화할 수 있습니다.</p> : null}
+        {/* 디자인 카드가 있는 제작마다 디자인 상태를 하나씩 두고, 그 제작의 카드들이 함께 읽는다. */}
+        <DesignBrews cards={designCards} generations={generationCards} onDraw={state.drawDesign} onMake={state.startGeneration} stageHost={host} stagedBrew={stagedBrew} onStage={onStage}>
+          <div className={styles.thread}><Thread autoFocus={standalone} composerTransition={fresh ? HOME_COMPOSER_TRANSITION : undefined} components={{ Welcome: ChatWelcome, AssistantHeader: AssistantIdentity, AssistantFooter: BelowParts, ToolFallback: RecordTool, ToolGroup: ExpandedTools, ComposerHeader: ComposerHead, UserMessageHeader: UserMessageHead }} /></div>
+        </DesignBrews>
         <div className={styles.footnote}><Icon name="check-circle" size={12} /><span>{page ? "지면 고침은 바로 새 판으로 저장되고 카드에서 되돌릴 수 있습니다." : "기록의 변경은 확인 후 적용됩니다."}</span></div>
         {lastRun?.status === "cancelled" ? <div role="status" className={`${styles.status} ${styles.runNotice}`}><span>응답을 중지했습니다.</span>{retryButton}</div> : null}
         {lastRun?.error ? <div role="alert" className={`${styles.error} ${styles.runNotice}`}><span>{lastRun.error}</span>{retryButton}</div> : null}
-        {state.issue ? <p role="alert" className={styles.error}>{state.issue}</p> : null}
       </div>
-      {standalone ? <ConversationSwitcher contexts={state.conversation?.contexts ?? []} contextDisabled={contextDisabled} onToggleContext={toggleContext} onPreview={setPreview} inline currentId={state.id} conversations={state.list} disabled={state.pending} onSelect={state.select} /> : null}
+      {standalone && !staged ? <ConversationSwitcher contexts={state.conversation?.contexts ?? []} contextDisabled={contextDisabled} onToggleContext={toggleContext} onPreview={setPreview} inline currentId={state.id} conversations={state.list} disabled={state.pending} onSelect={state.select} /> : null}
     </section>
-  </AssistantRuntimeProvider></PageContext.Provider></JobContext.Provider></ChatContext.Provider>;
+  </AttachmentsProvider></AssistantRuntimeProvider></SendContext.Provider></PageContext.Provider></WelcomeContext.Provider></JobContext.Provider></ChatContext.Provider>;
 }

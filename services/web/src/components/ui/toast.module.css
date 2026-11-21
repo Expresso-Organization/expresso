@@ -1,0 +1,9 @@
+/* 오른쪽 위에 쌓는다. 아래쪽은 대화의 입력 칸과 겹친다. */
+.region { position:fixed; z-index:120; top:16px; right:16px; display:grid; justify-items:end; gap:8px; width:min(380px,calc(100vw - 32px)); pointer-events:none; }
+.toast { display:flex; align-items:flex-start; gap:8px; width:100%; border:1px solid var(--ex-border); border-radius:var(--ex-radius-control); background:var(--ex-bg); padding:10px 10px 10px 12px; color:var(--ex-fg-body); font-size:var(--ex-text-xs); line-height:var(--ex-leading-relaxed); box-shadow:var(--ex-elevation-overlay); pointer-events:auto; animation:toast-in var(--ex-motion-glide); }
+.toast > i { flex:0 0 auto; margin-top:3px; color:var(--ex-fg-muted); }
+.toast[data-tone="danger"] > i { color:var(--ex-status-danger-text); }
+.message { flex:1; min-width:0; overflow-wrap:anywhere; }
+.close { display:grid; flex:0 0 auto; width:22px; height:22px; place-items:center; border:0; border-radius:6px; background:transparent; padding:0; color:var(--ex-fg-muted); cursor:pointer; }
+.close:hover { background:var(--ex-bg-hover); color:var(--ex-fg-strong); }
+@keyframes toast-in { from { opacity:0; transform:translateY(-6px); } }

@@ -68,6 +68,8 @@ export * from "./portfolio-text.js";
 export * from "./portfolio-chart.js";
 export * from "./media.js";
 export * from "./page.js";
+export * from "./page-script.js";
+export * from "./page-effects.generated.js";
 export * from "./page-kit.js";
 export * from "./page-stream.js";
 export * from "./generation.js";
@@ -84,6 +86,8 @@ export * from "./structured-portfolio.js";
 export * from "./page-library.js";
 
 export * from "./agent-chat.js";
+export * from "./design-chat.js";
 export * from "./proposals.js";
+export * from "./consultant.js";
 export * from "./portfolio-archetype.js";
 export * from "./usage.js";

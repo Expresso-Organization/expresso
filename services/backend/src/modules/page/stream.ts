@@ -37,6 +37,8 @@ export type PageStreamMessage =
   | { id: string; event: "thinking"; tokens: number }
   /** 설계가 끝난 지면의 청사진 문서. 글 자리는 비어 있고 이후 `fill`이 채운다. */
   | { id: string; event: "blueprint"; html: string; css: string }
+  /** 디자인 대화에서 고른 첫 화면. 이후의 `delta`는 이 뒤에 붙는 부분이다. */
+  | { id: string; event: "seed"; html: string; css: string }
   /** 글 자리 하나의 지금까지 쓴 글. 조각이 아니라 전체 글이다. */
   | { id: string; event: "fill"; path: string; text: string; done: boolean; revised: boolean }
   | { id: string; event: "stage"; name: PageStreamStage }
@@ -108,6 +110,10 @@ export class PageStream {
     await this.#append(portfolioId, ["event", "blueprint", "html", page.html, "css", page.css]);
   }
 
+  async seed(portfolioId: string, page: { html: string; css: string }): Promise<void> {
+    await this.#append(portfolioId, ["event", "seed", "html", page.html, "css", page.css]);
+  }
+
   async fill(portfolioId: string, path: string, text: string, done: boolean, revised = false): Promise<void> {
     await this.#append(portfolioId, ["event", "fill", "path", path, "text", text, "done", done ? "1" : "0", "revised", revised ? "1" : "0"]);
   }
@@ -177,7 +183,7 @@ function toMessage(id: string, fields: string[]): PageStreamMessage | null {
   if (event === "begin") return { id, event, style: map.get("style") ?? "null" };
   if (event === "delta") return { id, event, text: map.get("text") ?? "" };
   if (event === "thinking") return { id, event, tokens: Number(map.get("tokens") ?? 0) };
-  if (event === "blueprint") return { id, event, html: map.get("html") ?? "", css: map.get("css") ?? "" };
+  if (event === "blueprint" || event === "seed") return { id, event, html: map.get("html") ?? "", css: map.get("css") ?? "" };
   if (event === "fill") return { id, event, path: map.get("path") ?? "", text: map.get("text") ?? "", done: map.get("done") === "1", revised: map.get("revised") === "1" };
   if (event === "stage") {
     const name = map.get("name");

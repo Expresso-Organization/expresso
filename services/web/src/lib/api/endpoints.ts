@@ -1,4 +1,5 @@
 import {
+  AgentBrewResumeResponseSchema,
   ActivityListResponseSchema,
   ProposalFeedResponseSchema,
   type ListActivitiesQuery,
@@ -37,6 +38,10 @@ import {
   CareerProfileResponseSchema,
   OptionalCareerProfileResponseSchema,
   OptionalJobGoalResponseSchema,
+  CommitmentCheckinResultSchema,
+  ConsultantCheckinsResponseSchema,
+  ConsultantMemoryResponseSchema,
+  ConsultantOutreachResponseSchema,
   JobGoalResponseSchema,
   type SaveCareerProfile,
   type SaveJobGoal,
@@ -114,6 +119,9 @@ import {
   type ListPortfoliosQuery,
   type Login,
   type Signup,
+  DesignChatStateResponseSchema,
+  type CommitmentCheckinAnswer,
+  type ConsultantStage,
 } from "@expresso/contracts";
 import { z } from "zod";
 
@@ -416,6 +424,28 @@ export const publishing = {
 };
 
 /** 능동 제안 — 에이전트가 먼저 권하는 행동. 켠 사용자에게만 만들어진다. */
+/** 컨설턴트의 기억 — 「내 진행」 화면이 읽고 고친다. */
+export const consultant = {
+  memory: (accessToken: string) =>
+    request(`${API_PREFIX}/consultant/memory`, ConsultantMemoryResponseSchema, { accessToken, cache: "no-store" }),
+  /** 사용자가 직접 고른 단계로 저장한다. */
+  setStage: (accessToken: string, stage: ConsultantStage) =>
+    request(`${API_PREFIX}/consultant/stage`, ConsultantMemoryResponseSchema, { accessToken, method: "PUT", body: { stage } }),
+  removePreference: (accessToken: string, preferenceId: string) =>
+    request(`${API_PREFIX}/consultant/preferences/${preferenceId}`, ConsultantMemoryResponseSchema, { accessToken, method: "DELETE" }),
+  /** 컨설턴트가 먼저 건네는 연락 — 답을 기다리는 약속과 안부. 홈이 읽는다. */
+  checkins: (accessToken: string) =>
+    request(`${API_PREFIX}/consultant/checkins`, ConsultantCheckinsResponseSchema, { accessToken, cache: "no-store" }),
+  /** 먼저 연락하기를 켜고 끈다. `proposals`가 참이면 능동 제안도 함께 켜고 끈다. */
+  setOutreach: (accessToken: string, enabled: boolean, proposals = true) =>
+    request(`${API_PREFIX}/consultant/outreach`, ConsultantOutreachResponseSchema, { accessToken, method: "PUT", body: { enabled, proposals } }),
+  /** 확인 카드의 답. 「했어요」면 그 일을 묻는 대화의 id가 함께 온다. */
+  answerCheckin: (accessToken: string, commitmentId: string, answer: CommitmentCheckinAnswer) =>
+    request(`${API_PREFIX}/consultant/commitments/${commitmentId}/checkin`, CommitmentCheckinResultSchema, { accessToken, method: "POST", body: answer }),
+  dismissQuiet: (accessToken: string) =>
+    request(`${API_PREFIX}/consultant/quiet/dismiss`, ConsultantCheckinsResponseSchema, { accessToken, method: "POST" }),
+};
+
 export const proposals = {
   feed: (accessToken: string) =>
     request(`${API_PREFIX}/proposals`, ProposalFeedResponseSchema, { accessToken, cache: "no-store" }),
@@ -432,13 +462,13 @@ export const proposals = {
     request(`${API_PREFIX}/proposals/${proposalId}/dismiss`, ProposalFeedResponseSchema, { accessToken, method: "POST" }),
 };
 
-/** 수집한 활동(공모전 · 해커톤). 접수가 끝나지 않은 것을 마감이 가까운 순서로. */
+/** 수집한 활동(공모전 · 해커톤 · 부트캠프). 접수가 끝나지 않은 것을 마감이 가까운 순서로. */
 export const activities = {
   list: (accessToken: string, query: Partial<ListActivitiesQuery> = {}) =>
     request(`${API_PREFIX}/activities`, ActivityListResponseSchema, {
       accessToken,
       cache: "no-store",
-      query: { ...(query.kind ? { kind: query.kind } : {}), ...(query.limit ? { limit: query.limit } : {}) },
+      query: { ...(query.kind ? { kind: query.kind } : {}), ...(query.limit ? { limit: query.limit } : {}), ...(query.offset ? { offset: query.offset } : {}) },
     }),
 };
 
@@ -465,6 +495,13 @@ export const consents = {
 };
 
 export const brews = {
+  /**
+   * 진행 중인 제작을 대화로 잇는다. 그 제작을 붙인 대화(없으면 새 대화)에 지금 단계의 카드를 붙이고 그 대화의 ID를 돌려준다.
+   * `again`이면 다 만든 제작도 다시 만들 수 있는 디자인 카드를 붙인다(편집의 「다시 뽑기」). AI를 부르지 않는다.
+   */
+  resume: (accessToken: string, brewId: string, again: boolean) =>
+    request(`${API_PREFIX}/agent/brews/${brewId}/resume`, AgentBrewResumeResponseSchema, { accessToken, method: "POST", body: again ? { again: true } : {}, cache: "no-store" }),
+
   /** 만들던 포트폴리오를 휴지통으로 옮긴다. 생성 중이면 409다. */
   trash: (accessToken: string, brewId: string) =>
     requestNoContent(`${API_PREFIX}/brews/${brewId}`, { accessToken, method: "DELETE" }),
@@ -574,6 +611,12 @@ export const templates = {
         query: { useCompanyColors: String(useCompanyColors) },
       },
     ),
+};
+
+export const designChat = {
+  /** 디자인 대화를 읽는다. 서버 화면은 이 대화를 쓸 수 있는 서버인지(AI가 꺼져 있으면 503) 보는 데 쓴다. */
+  get: (accessToken: string, brewId: string) =>
+    request(`${API_PREFIX}/brews/${brewId}/design-chat`, DesignChatStateResponseSchema, { accessToken, cache: "no-store" }),
 };
 
 export const designSystems = {

@@ -1,0 +1,11 @@
+/* 대화의 「AI 대화」 카드. 틀은 다른 카드(RecordDraftCard.module.css), 줄은 「재료 고르기」 카드(BrewMaterialsCard.module.css)와 같고,
+   여기에는 이 카드만의 것을 둔다. */
+
+/* 불러오는 동안의 자리. 근거 수를 모르므로 세 줄만 잡는다. */
+.loading { display: flex; flex-direction: column; gap: 12px; padding: 4px 0; }
+
+/* 근거의 종류(공고 요건 · 기록). 줄의 글보다 한 단계 가라앉힌다. */
+.kind { color: var(--ex-fg-muted); }
+
+/* 답을 저장한 근거. */
+.answered { color: var(--ex-accent-text); justify-self: end; }

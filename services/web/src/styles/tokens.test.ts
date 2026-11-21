@@ -210,7 +210,6 @@ const RADIUS = {
 } as const;
 
 const RADIUS_ROLE_EXCEPTIONS: Record<string, string> = {
-  "app/(app)/brew/[brewId]/counter/page.module.css .recordChip": "칩이 아니라 카드처럼 쓰는 기록 칸",
   "app/(app)/jobs/[jobId]/page.module.css .swatchChip": "색 견본 — 모양이 곧 내용",
   "features/career-editor/views/views.module.css .projectSelect": "칩 모양으로 그린 선택 칸 — 칩 곡률",
   "features/agent-chat/AgentChat.module.css .attachButton": "참조 칩 줄의 첨부 자리 — 옆 참조 칩과 같은 pill",
@@ -221,7 +220,8 @@ const RADIUS_ROLE_EXCEPTIONS: Record<string, string> = {
   "app/(app)/edit/[portfolioId]/page.module.css .alignButton": "세그먼트 항목(정렬)",
   "app/(app)/edit/[portfolioId]/page.module.css .sectionMoveButton": "13px 높이 화살표 — 8px이면 원이 된다",
   "app/(app)/brew/[brewId]/design/DesignCatalog.module.css .cardCheck": "카드 위 선택 표시 원",
-  "app/(app)/home/home-start.module.css .composer": "홈 입력창 — 쉬는 동안은 검색 칸과 같은 pill, 누르면 입력 칸 곡률로 펴진다",
+  "app/(app)/home/home-start.module.css .composer":
+    "홈 입력창 — 쉬는 한 줄 높이의 절반을 곡률로 둬, 쉴 때는 pill이고 펴져도 같은 모서리다. pill 토큰은 펴진 상자의 양 끝을 반원으로 만든다",
 };
 
 function radiusRole(className: string): keyof typeof RADIUS | "search" | null {
@@ -438,7 +438,7 @@ describe("텍스트 입력 포커스", () => {
   it("검사가 텍스트 입력 칸을 찾는다", () => {
     // 태그 검색이 깨지면 위 검사가 아무것도 보지 않고 통과한다.
     const classes = textInputClassesByCss();
-    expect(classes.get(join(SRC, "app", "(app)", "brew", "new", "page.module.css"))).toContain("entryInput");
+    expect(classes.get(join(SRC, "app", "(app)", "jobs", "page.module.css"))).toContain("queryText");
     expect(focusBorderDeclaration("border: 1px solid var(--ex-accent)")).toBeDefined();
     expect(focusBorderDeclaration("outline: auto")).toBeDefined();
     expect(focusBorderDeclaration("outline: none; background: var(--ex-bg)")).toBeUndefined();

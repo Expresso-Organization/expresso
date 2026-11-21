@@ -110,7 +110,11 @@ export class CareerService implements CareerApi {
     } catch (error) { if (duplicate(error)) throw new CareerError(409, "career category key already exists"); throw error; }
   }
 
-  async createRecord(userId: string, idempotencyKey: string, inputValue: CreateCareerRecord) {
+  /**
+   * 기록을 만든다. `as`를 주지 않으면 사용자가 손으로 만든 초안이다(`draft` · `manual`).
+   * 에이전트가 대화에서 정리해 저장한 기록은 `{ status: "organized", origin: "ai" }`로 만든다 — 포트폴리오 재료가 되는 상태다.
+   */
+  async createRecord(userId: string, idempotencyKey: string, inputValue: CreateCareerRecord, as: { status: "draft" | "organized"; origin: CareerRecordDoc["origin"] } = { status: "draft", origin: "manual" }) {
     const input = CreateCareerRecordSchema.parse(inputValue);
     const hash = careerRequestHash(input);
     return inTransaction(this.context, async (tx) => {
@@ -126,7 +130,7 @@ export class CareerService implements CareerApi {
         return { record: mapMongoRecord(existing), created: false };
       }
       const now = new Date();
-      const record: CareerRecordDoc = { _id: randomUUID(), userId, ...input, properties: createdProperties, status: "draft", origin: "manual", version: 1, createdAt: now, updatedAt: now, deletedAt: null, purgeAfter: null, createIdempotencyKey: idempotencyKey, createRequestHash: hash };
+      const record: CareerRecordDoc = { _id: randomUUID(), userId, ...input, properties: createdProperties, status: as.status, origin: as.origin, version: 1, createdAt: now, updatedAt: now, deletedAt: null, purgeAfter: null, createIdempotencyKey: idempotencyKey, createRequestHash: hash };
       await records.insertOne(record, { session: tx.session });
       const definitions = category.propertySchemaV2.filter((definition) => definition.deletedAt === null);
       const changedPropertyIds = definitions.filter((definition) => definition.type === "formula" || definition.type === "rollup" || Object.hasOwn(input.properties, definition.key) || (definition.type === "title" && input.title !== "")).map((definition) => definition.id);

@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { PAGE_SCRIPT_POLICY_MARK } from "@expresso/contracts";
 
 import { SITE_TRACKER_SOURCE_TAG } from "./site-tracker-message";
 
@@ -79,7 +80,21 @@ const SCRIPT_HASH = createHash("sha256").update(SITE_TRACKER_SCRIPT).digest("bas
  * 지면은 소독을 거쳐 스크립트가 없지만, 소독기가 놓친 것이 있어도 여기서 막힌다.
  * 그림 · 글꼴 · 스타일은 지금처럼 열어 둔다 — 상대 경로 그림은 부모 주소를 따라 풀린다.
  */
-export function withSiteTracker(document: string, sectionCount: number): string {
+export function withSiteTracker(document: string, sectionCount: number, origin = ""): string {
+  const script = `<script>${SITE_TRACKER_SCRIPT}</script>\n`;
+  const marker = `<meta name="expresso-sections" content="${sectionCount}">`;
+  // 그림 스크립트를 실은 지면은 이미 정책을 가졌다(`pageScriptPolicy`). 정책을 하나 더 달면 둘의 교집합이 되어 서로의 스크립트를
+  // 막는다. 그 정책의 script-src에 추적 스크립트 해시를, img-src에 그림을 내보내는 출처를 더한다.
+  if (document.includes(PAGE_SCRIPT_POLICY_MARK)) {
+    const merged = document.replace(new RegExp(`(<meta http-equiv="Content-Security-Policy" ${PAGE_SCRIPT_POLICY_MARK} content=")([^"]*)(">)`), (_whole, head: string, policy: string, tail: string) => {
+      const next = policy
+        .replace("script-src ", `script-src 'sha256-${SCRIPT_HASH}' `)
+        .replace("img-src ", origin ? `img-src ${origin} ` : "img-src ");
+      return `${head}${next}${tail}\n${marker}`;
+    });
+    const end = merged.lastIndexOf("</body>");
+    return end === -1 ? `${merged}${script}` : `${merged.slice(0, end)}${script}${merged.slice(end)}`;
+  }
   const policy = [
     `script-src 'sha256-${SCRIPT_HASH}'`,
     "connect-src 'none'",
@@ -87,9 +102,8 @@ export function withSiteTracker(document: string, sectionCount: number): string 
     "base-uri 'none'",
     "form-action 'none'",
   ].join("; ");
-  const head = `<meta http-equiv="Content-Security-Policy" content="${policy}">\n<meta name="expresso-sections" content="${sectionCount}">`;
+  const head = `<meta http-equiv="Content-Security-Policy" content="${policy}">\n${marker}`;
   const withHead = document.replace("<head>", `<head>\n${head}`);
   const end = withHead.lastIndexOf("</body>");
-  const script = `<script>${SITE_TRACKER_SCRIPT}</script>\n`;
   return end === -1 ? `${withHead}${script}` : `${withHead.slice(0, end)}${script}${withHead.slice(end)}`;
 }

@@ -1,9 +1,12 @@
-import { ProposalActionSchema, type ProposalAction } from "@expresso/contracts";
+import { ProposalActionSchema, type ActivityKind, type ProposalAction } from "@expresso/contracts";
 import { z } from "zod";
 
 import type { AiClient, AiViolation } from "../../platform/ai/client.js";
 import { jsonPointer } from "../../platform/ai/fixes.js";
 import type { Candidates } from "./candidates.js";
+
+/** 제안 표의 활동 종류 칸. */
+const ACTIVITY_KIND_LABEL: Record<ActivityKind, string> = { contest: "공모전", hackathon: "해커톤", bootcamp: "부트캠프" };
 
 /** 사용자가 쓴 최종 구직 목표. 아직 적지 않았으면 null이다. */
 export type GoalInput = { work: string; place: string; timing: string } | null;
@@ -122,7 +125,7 @@ export function buildProposalPrompt(candidates: Candidates, goal: GoalInput = nu
   candidates.activities.forEach((activity, index) => {
     const key = `A${index + 1}`;
     keys.subjects.set(key, { kind: "activity", id: activity.id });
-    lines.push(`${key} | ${activity.kind === "hackathon" ? "해커톤" : "공모전"} | ${cell(activity.title)} | ${cell(activity.host)} | ${cell(activity.fields.join(", "))} | ${deadline(activity.daysLeft)}`);
+    lines.push(`${key} | ${ACTIVITY_KIND_LABEL[activity.kind]} | ${cell(activity.title)} | ${cell(activity.host)} | ${cell(activity.fields.join(", "))} | ${deadline(activity.daysLeft)}`);
   });
 
   lines.push("", "## 손볼 기록 (W)");

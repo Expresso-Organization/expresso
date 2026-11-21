@@ -77,7 +77,8 @@ export class ChromiumPageMeasurer implements PageMeasurer {
   async measure(html: string, options: { screenshots?: boolean } = {}): Promise<PageMeasurement> {
     const started = performance.now();
     const browser = await this.#launch();
-    const context = await browser.newContext({ reducedMotion: "reduce" });
+    // 지면 스크립트는 돌리지 않는다. 측정은 배치를 보는 일이고, 모델이 쓴 코드를 우리 서버의 브라우저에서 돌릴 이유가 없다.
+    const context = await browser.newContext({ reducedMotion: "reduce", javaScriptEnabled: false });
     context.setDefaultTimeout(this.timeoutMs);
     try {
       await context.route("**/*", async (route) => {

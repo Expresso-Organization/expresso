@@ -28,6 +28,15 @@ describe("공유 대화 상태", () => {
     act(() => Events.instances.at(-1)!.callback!({ data: JSON.stringify({ data: { ...conversation, version: 2, title: "이전" } }) }));
     expect(result.current.conversation?.title).toBe("최신");
   });
+  it("서버가 넘긴 대화로 첫 렌더부터 시작해 시작 화면이 지나가지 않는다", async () => {
+    window.history.replaceState(null, "", `/home?chat=${first}`);
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => Response.json({ data: url.endsWith("conversations") ? [] : row() })));
+    const renders: (string | null)[] = [];
+    const { result } = renderHook(() => { const state = useAgentConversation(undefined, { restore: "url", initialId: first }); renders.push(state.id); return state; });
+    // 효과가 돌기 전의 첫 렌더 — 시작 화면(대화 없음)이 아니라 그 대화를 불러오는 상태다.
+    expect(renders[0]).toBe(first);
+    await waitFor(() => expect(result.current.conversation?.id).toBe(first));
+  });
   it("대화 전환 이후 도착한 이전 대화의 응답이 화면을 덮지 않는다", async () => {
     window.history.replaceState(null, "", `/agent?chat=${first}`);
     let release!: (value: Response) => void;
@@ -75,5 +84,32 @@ describe("공유 대화 상태", () => {
     await act(async () => { await result.current.send("다시 보내기").catch(() => undefined); });
     await act(async () => { await result.current.send("다시 보내기").catch(() => undefined); });
     expect(ids).toHaveLength(2); expect(ids[0]).toBe(ids[1]); expect(result.current.issue).toBe("잠시 후 재시도");
+  });
+  it("배경의 다시 읽기는 한 번 실패하면 알리지 않고 두 번 잇달아 실패하면 알리며, 다시 성공하면 그 글을 지운다. 사용자가 누른 동작의 오류는 지우지 않는다", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      window.history.replaceState(null, "", `/agent?chat=${first}`);
+      let fail = false;
+      vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+        if (url.endsWith("conversations")) return Response.json({ data: [] });
+        if (url.endsWith("messages")) return Response.json({ error: { message: "잠시 후 재시도" } }, { status: 503 });
+        return fail ? Response.json({ error: { message: "서버에 연결하지 못했습니다." } }, { status: 502 }) : Response.json({ data: row() });
+      }));
+      const { result } = renderHook(() => useAgentConversation());
+      await waitFor(() => expect(result.current.conversation?.id).toBe(first));
+      const tick = () => act(async () => { await vi.advanceTimersByTimeAsync(3_000); });
+      fail = true;
+      await tick();
+      expect(result.current.issue).toBeNull();
+      await tick();
+      expect(result.current.issue).toBe("서버에 연결하지 못했습니다.");
+      fail = false;
+      await tick();
+      expect(result.current.issue).toBeNull();
+      await act(async () => { await result.current.send("보내기").catch(() => undefined); });
+      expect(result.current.issue).toBe("잠시 후 재시도");
+      await tick();
+      expect(result.current.issue).toBe("잠시 후 재시도");
+    } finally { vi.useRealTimers(); }
   });
 });

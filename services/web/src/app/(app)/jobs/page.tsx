@@ -172,7 +172,7 @@ export default async function JobsPage({
   const params = await searchParams;
   // 탐색의 종류. 채용 공고가 아니면 그 종류의 화면이 따로 선다.
   const kind = readKind(params.kind);
-  if (kind !== "jobs") return <ExploreActivities kind={kind} />;
+  if (kind !== "jobs") return <ExploreActivities kind={kind} page={Math.max(1, Number.parseInt(String(params.page ?? "1"), 10) || 1)} />;
   const q = typeof params.q === "string" && params.q.trim() ? params.q.trim() : undefined;
   const category = typeof params.category === "string" ? params.category : undefined;
   const sort = params.sort === "deadline" || params.sort === "recent" ? params.sort : "match";
@@ -1314,11 +1314,10 @@ function BrowseRail({
         </div>
         <div className={styles.railCtaWrap}>
           {/*
-           * 공고를 여기서 고르지 않는다. 새 포트폴리오 화면이 관심 공고 · 모아 둔
-           * 공고 · 붙여넣기 중에서 고르게 한다.
+           * 공고를 여기서 고르지 않는다. 새 포트폴리오 대화가 공고 · 공고 주소나 글 · 공고 없이 중에서 고르게 한다.
            */}
           <Link
-            href="/brew/new"
+            href="/home?new=portfolio"
             className={styles.brewCta}
             /*
              * 이 단추만 시그니처가 아니라 잉크 지면이다. 지면이 어두운 테마에서

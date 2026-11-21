@@ -7,9 +7,9 @@ import { Skel } from "@/components/shell/Skeleton";
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { Icon } from "@/components/ui/Icon";
 import { homeEngagement, watchedJobs } from "@/lib/app-data";
-import { activities, career, jobs, portfolios, proposals } from "@/lib/api/endpoints";
+import { activities, career, consultant, jobs, portfolios, proposals } from "@/lib/api/endpoints";
 
-import { resumeStep } from "../brew/new/resume-step";
+import { CheckinFeed } from "./CheckinFeed";
 import { ProposalFeed } from "./ProposalFeed";
 import { briefingSteps } from "./briefing";
 import { careerProfile, siteInsights } from "./home-data";
@@ -36,6 +36,19 @@ export async function Proposals({ accessToken, recordTotal }: { accessToken: str
   return <ProposalFeed initial={feed} fallback={fallback} hasGoal={goal !== null} />;
 }
 
+/**
+ * 확인 공간. 컨설턴트가 먼저 건네는 연락(약속한 날이 된 일 · 안부)을 서버에서 읽는다.
+ * 컨설턴트가 없는 서버이거나 읽지 못하면 그리지 않는다 — 홈의 나머지는 그대로 선다.
+ */
+export async function Checkins({ accessToken }: { accessToken: string }) {
+  const [checkins, feed] = await Promise.all([
+    consultant.checkins(accessToken).then(({ data }) => data).catch(() => null),
+    proposals.feed(accessToken).then(({ data }) => data).catch(() => null),
+  ]);
+  if (!checkins) return null;
+  return <CheckinFeed initial={checkins} proposalsEnabled={feed?.enabled ?? false} />;
+}
+
 async function ruleFindings(accessToken: string, recordTotal: number) {
   const [records, home, list, sites, watched] = await Promise.all([
     career.records(accessToken, { sort: "updated_desc", limit: RECORD_PAGE }),
@@ -53,13 +66,14 @@ async function ruleFindings(accessToken: string, recordTotal: number) {
     watched: watched.data,
     jobTotal: 0,
     contests: [],
-    brewHref: (brew) => `/brew/${brew.id}/${resumeStep(brew.status).segment}`,
+    brewHref: (brew) => `/brew/${brew.id}`,
   }).flatMap((step) => step.findings);
 }
 
+// 스켈레톤 틀은 150ms 뒤에 나타난다(ex-anim-appear) — 짧은 대기에 빈 틀이 번쩍이지 않는다.
 export function ProposalsSkeleton() {
   return (
-    <section className={styles.proposals}>
+    <section className={`${styles.proposals} ex-anim-appear`}>
       <div className={styles.sectionHead}><Skel w={64} /></div>
       <div className={styles.proposalGrid}>
         <div className={styles.skeletonCard}><Skel w={180} /><Skel w={120} /></div>
@@ -75,8 +89,9 @@ export function Widgets({ children }: { children: ReactNode }) {
 }
 
 function Widget({ icon, title, href, children }: { icon: string; title: string; href: string; children: ReactNode }) {
+  // 스켈레톤 카드 자리에서 떠오른다(ex-anim-reveal).
   return (
-    <section className={styles.widget}>
+    <section className={`${styles.widget} ex-anim-reveal`}>
       <header className={styles.widgetHead}>
         <Icon name={icon} size={14} />
         <h2 className={styles.widgetTitle}>{title}</h2>
@@ -91,7 +106,7 @@ function Widget({ icon, title, href, children }: { icon: string; title: string; 
 
 export function WidgetSkeleton() {
   return (
-    <div className={styles.skeletonCard}>
+    <div className={`${styles.skeletonCard} ex-anim-appear`}>
       <Skel w={80} />
       <Skel w={200} />
       <Skel w={170} />

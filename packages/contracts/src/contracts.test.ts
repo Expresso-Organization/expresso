@@ -2,7 +2,15 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
 import {
+  PAGE_STREAM_EVENTS,
   SubmitGenerationSchema,
+  SendDesignMessageSchema,
+  DESIGN_LAYOUT_GRID,
+  DesignLayoutBlockSchema,
+  DesignTokensSchema,
+  DesignChatSchema,
+  DesignChatStateResponseSchema,
+  PageStreamSeedSchema,
   ApiErrorResponseSchema,
   CursorPaginationQuerySchema,
   CurrentUserResponseSchema,
@@ -409,15 +417,26 @@ describe("interview contracts", () => {
       questionsMayAdapt: true,
       questions: [question, { ...question, order: 1 }, { ...question, order: 2 }],
     }).questions).toHaveLength(3);
+    // 에이전트 대화로 연 세션은 질문 0개로 시작한다. 상한은 6이다.
+    expect(InterviewSessionSchema.parse({
+      id: ids.job,
+      brewId: ids.user,
+      status: "open",
+      currentOrder: 0,
+      answeredCount: 0,
+      questionCount: 0,
+      questionsMayAdapt: true,
+      questions: [],
+    }).questions).toHaveLength(0);
     expect(() => InterviewSessionSchema.parse({
       id: ids.job,
       brewId: ids.user,
       status: "open",
       currentOrder: 0,
       answeredCount: 0,
-      questionCount: 2,
+      questionCount: 7,
       questionsMayAdapt: true,
-      questions: [question, { ...question, order: 1 }],
+      questions: Array.from({ length: 7 }, (_, order) => ({ ...question, order })),
     })).toThrow();
   });
 });
@@ -918,6 +937,15 @@ describe("생성 요청 스타일 출처", () => {
     expect(SubmitGenerationSchema.safeParse({ designSystemRevisionId: id }).success).toBe(false);
     expect(SubmitGenerationSchema.safeParse({ recipeId, brewId: recipeId, designSystemRevisionId: id }).success).toBe(false);
   });
+  it("디자인 대화에서 고른 첫 화면으로도 요청한다 — 셋 중 하나만, 자유 생성으로", () => {
+    expect(SubmitGenerationSchema.safeParse({ brewId: recipeId, designSnippetId: id }).success).toBe(true);
+    expect(SubmitGenerationSchema.safeParse({ recipeId, designSnippetId: id, pageFormat: "html" }).success).toBe(true);
+    expect(SubmitGenerationSchema.safeParse({ recipeId, designSnippetId: id, designSystemRevisionId: id }).success).toBe(false);
+    expect(SubmitGenerationSchema.safeParse({ recipeId, designSnippetId: id, templateId: id }).success).toBe(false);
+    expect(SubmitGenerationSchema.safeParse({ recipeId, designSnippetId: id, pageFormat: "json-render" }).success).toBe(false);
+    expect(SubmitGenerationSchema.safeParse({ recipeId, designSnippetId: id, archetype: "poster" }).success).toBe(false);
+    expect(SubmitGenerationSchema.safeParse({ recipeId, designSnippetId: id, styleOverrides: { font: "serif" } }).success).toBe(false);
+  });
   it("디자인 시스템 판 요청에는 스타일 덮어쓰기를 받지 않는다", () => {
     expect(
       SubmitGenerationSchema.safeParse({
@@ -926,6 +954,68 @@ describe("생성 요청 스타일 출처", () => {
         styleOverrides: { font: "serif" },
       }).success,
     ).toBe(false);
+  });
+});
+
+describe("디자인을 정하는 대화", () => {
+  const id = "5d8f5f2d-6d2a-4f24-9d1a-2b8f9e7c1002";
+  const stamp = "2026-11-19T00:00:00.000Z";
+  const tokens = { background: "#ffffff", text: "#111111", accent: "#d6336c", font: "mono", density: "compact" };
+  it("보내는 것은 말 · 고른 스타일과 레이아웃으로 그리기 · 카탈로그의 디자인으로 그리기 셋이다", () => {
+    expect(SendDesignMessageSchema.safeParse({ action: "say", requestId: id, text: "흰 바탕에 분홍 강조" }).success).toBe(true);
+    expect(SendDesignMessageSchema.safeParse({ action: "say", requestId: id, text: "주황 대신 초록", subject: { kind: "snippet", id } }).success).toBe(true);
+    expect(SendDesignMessageSchema.safeParse({ action: "say", requestId: id, text: "  " }).success).toBe(false);
+    // 말의 대상은 첫 화면이나 카탈로그의 디자인이다. 견본의 스타일 · 레이아웃은 그리기로 보낸다.
+    expect(SendDesignMessageSchema.safeParse({ action: "say", requestId: id, text: "더 밝게", subject: { kind: "style", id } }).success).toBe(false);
+    // 그리기는 스타일 하나와 레이아웃 하나를 따로 받는다. 한쪽만으로는 그리지 않는다.
+    expect(SendDesignMessageSchema.safeParse({ action: "draw", requestId: id, styleId: id, layoutId: id }).success).toBe(true);
+    expect(SendDesignMessageSchema.safeParse({ action: "draw", requestId: id, styleId: id }).success).toBe(false);
+    expect(SendDesignMessageSchema.safeParse({ action: "draw", requestId: id, layoutId: id }).success).toBe(false);
+    expect(SendDesignMessageSchema.safeParse({ action: "draw_catalog", requestId: id, revisionId: id }).success).toBe(true);
+    expect(SendDesignMessageSchema.safeParse({ action: "draw_catalog", requestId: id, revisionId: id, layoutId: id }).success).toBe(true);
+    expect(SendDesignMessageSchema.safeParse({ action: "erase", requestId: id }).success).toBe(false);
+  });
+  it("스타일의 색은 #rrggbb이고 서체 계열은 고정폭까지 받는다", () => {
+    expect(DesignTokensSchema.safeParse(tokens).success).toBe(true);
+    expect(DesignTokensSchema.safeParse({ ...tokens, accent: "분홍" }).success).toBe(false);
+    expect(DesignTokensSchema.safeParse({ ...tokens, accent: "#d63" }).success).toBe(false);
+  });
+  it("레이아웃의 배치도는 가로 16칸 · 세로 10칸 격자 안의 블록이다", () => {
+    expect(DESIGN_LAYOUT_GRID).toEqual({ columns: 16, rows: 10 });
+    expect(DesignLayoutBlockSchema.safeParse({ kind: "figure", x: 6, y: 1, w: 10, h: 9 }).success).toBe(true);
+    // 격자를 벗어나거나 칸 수가 정수가 아닌 블록은 받지 않는다. 견본이 그대로 그림으로 그리는 값이다.
+    expect(DesignLayoutBlockSchema.safeParse({ kind: "figure", x: 7, y: 1, w: 10, h: 6 }).success).toBe(false);
+    expect(DesignLayoutBlockSchema.safeParse({ kind: "figure", x: 6, y: 5, w: 10, h: 6 }).success).toBe(false);
+    expect(DesignLayoutBlockSchema.safeParse({ kind: "text", x: 0.5, y: 0, w: 4, h: 2 }).success).toBe(false);
+    expect(DesignLayoutBlockSchema.safeParse({ kind: "photo", x: 0, y: 0, w: 4, h: 2 }).success).toBe(false);
+  });
+  it("대화는 말과 카드가 붙은 답, 그린 첫 화면, 고른 것을 담는다", () => {
+    const layout = { name: "전후 비교", words: "전후 비교 차트", blocks: [{ kind: "figure", x: 6, y: 1, w: 10, h: 6 }] };
+    const chat = {
+      id, brewId: id, selectedSnippetId: id, version: 4, updatedAt: stamp,
+      run: { id, requestId: id, status: "complete", error: null, startedAt: stamp },
+      snippets: [{ id, origin: "agent", name: "측정판", note: "전후 비교를 가장 크게 세웠어요.", words: "성능 리포트의 회색과 파랑", tokens, layout, css: "", html: "<header></header>", fromSnippetId: null, createdAt: stamp }],
+      messages: [
+        { id, role: "assistant", text: "어떤 느낌으로 보여 드릴까요?", status: "complete", card: { kind: "proposals", styles: [{ id, name: "측정판", words: "성능 리포트의 회색과 파랑", tokens }], layouts: [{ id, ...layout }] }, createdAt: stamp },
+        { id, role: "user", action: "draw", text: "", subjects: [{ kind: "style", id, name: "측정판" }, { kind: "layout", id, name: "전후 비교" }], createdAt: stamp },
+        { id, role: "assistant", text: "", status: "running", card: { kind: "screens", items: [{ id, name: "측정판", words: "", tokens, layout: null, status: "drawing", snippetId: null }] }, createdAt: stamp },
+        { id, role: "assistant", text: "강조색만 바꿨어요.", status: "complete", card: { kind: "revision", fromSnippetId: id, item: { id, name: "측정판", words: "초록으로", tokens, layout, status: "done", snippetId: id } }, createdAt: stamp },
+      ],
+    };
+    expect(DesignChatSchema.safeParse(chat).success).toBe(true);
+    expect(DesignChatSchema.safeParse({ ...chat, run: { ...chat.run, status: "cancelled" } }).success).toBe(false);
+    // 스타일과 레이아웃은 다른 것이다. 스타일에 배치도를, 레이아웃에 색을 실으면 받지 않는다.
+    const [first] = chat.messages;
+    const card = first!.card as { kind: string; styles: object[]; layouts: object[] };
+    expect(DesignChatSchema.safeParse({ ...chat, messages: [{ ...first, card: { ...card, styles: [{ ...card.styles[0], blocks: layout.blocks }] } }] }).success).toBe(false);
+    expect(DesignChatSchema.safeParse({ ...chat, messages: [{ ...first, card: { ...card, layouts: [{ ...card.layouts[0], tokens }] } }] }).success).toBe(false);
+    // 카탈로그의 디자인만 골라 그린 첫 화면은 레이아웃이 비어 있다.
+    expect(DesignChatSchema.safeParse({ ...chat, snippets: [{ ...chat.snippets[0], layout: null }] }).success).toBe(true);
+    expect(DesignChatStateResponseSchema.safeParse({ data: { chat: null, unchanged: true } }).success).toBe(true);
+  });
+  it("생성 중 미리보기는 고른 첫 화면을 받는 이벤트를 안다", () => {
+    expect(PAGE_STREAM_EVENTS).toContain("seed");
+    expect(PageStreamSeedSchema.safeParse({ html: "<header></header>", css: "" }).success).toBe(true);
   });
 });
 

@@ -1,6 +1,6 @@
 import { setTimeout as delay } from "node:timers/promises";
 import type { FastifyInstance, preHandlerHookHandler } from "fastify";
-import { API_PREFIX, AgentPlanDecisionSchema, AgentReplanDecisionSchema, UpdateTaskProgressSchema, AgentRecordDraftDecisionSchema, AgentGoalDraftDecisionSchema, UuidSchema, CreateAgentConversationSchema, SendAgentMessageSchema, AddAgentContextSchema, AgentApprovalSchema, SaveAgentApiKeySchema, SetAgentContextsSchema } from "@expresso/contracts";
+import { API_PREFIX, AgentBrewResumeRequestSchema, AgentDesignDrawSchema, AgentPlanDecisionSchema, AgentReplanDecisionSchema, UpdateTaskProgressSchema, AgentRecordDraftDecisionSchema, AgentGoalDraftDecisionSchema, UuidSchema, CreateAgentConversationSchema, SendAgentMessageSchema, AddAgentContextSchema, AgentApprovalSchema, SaveAgentApiKeySchema, SetAgentContextsSchema } from "@expresso/contracts";
 import { requireAuth } from "../../api/plugins/auth-context.js";
 import type { AgentChatService } from "./service.js";
 
@@ -22,14 +22,32 @@ export function registerAgentChatRoutes(app: FastifyInstance, service: AgentChat
   app.post(`${base}/:id/messages`, options, async (req, reply) => { const userId = requireAuth(req).user.id; const input = SendAgentMessageSchema.parse(req.body); return reply.code(202).send({ data: await service.send(userId, id(req.params), input, await service.credentials.read(userId)) }); });
   app.get(`${base}/:id/reviews/:toolId`, options, async req => ({ data: await service.freshness(requireAuth(req).user.id, id(req.params), UuidSchema.parse((req.params as { toolId: string }).toolId)) }));
   app.post(`${base}/:id/record-drafts/:draftId`, options, async req => ({ data: await service.decideRecordDraft(requireAuth(req).user.id, id(req.params), UuidSchema.parse((req.params as { draftId: string }).draftId), AgentRecordDraftDecisionSchema.parse(req.body)) }));
-  app.post(`${base}/:id/goal-drafts/:draftId`, options, async req => ({ data: await service.decideGoalDraft(requireAuth(req).user.id, id(req.params), UuidSchema.parse((req.params as { draftId: string }).draftId), AgentGoalDraftDecisionSchema.parse(req.body)) }));
+  app.post(`${base}/:id/goal-drafts/:draftId`, options, async req => { const userId = requireAuth(req).user.id; return { data: await service.decideGoalDraft(userId, id(req.params), UuidSchema.parse((req.params as { draftId: string }).draftId), AgentGoalDraftDecisionSchema.parse(req.body), await service.credentials.read(userId)) }; });
   app.post(`${base}/:id/plan-drafts/:draftId`, options, async req => ({ data: await service.decidePlanDraft(requireAuth(req).user.id, id(req.params), UuidSchema.parse((req.params as { draftId: string }).draftId), AgentPlanDecisionSchema.parse(req.body)) }));
   app.post(`${base}/:id/replan-drafts/:draftId`, options, async req => ({ data: await service.decideReplanDraft(requireAuth(req).user.id, id(req.params), UuidSchema.parse((req.params as { draftId: string }).draftId), AgentReplanDecisionSchema.parse(req.body)) }));
   app.patch(`${API_PREFIX}/agent/plans/:planId/tasks/:taskId`, options, async req => { const params = req.params as { planId: string; taskId: string }; return { data: await service.updateTaskProgress(requireAuth(req).user.id, UuidSchema.parse(params.planId), UuidSchema.parse(params.taskId), UpdateTaskProgressSchema.parse(req.body)) }; });
   app.get(`${API_PREFIX}/agent/plans/:planId`, options, async req => ({ data: await service.plan(requireAuth(req).user.id, UuidSchema.parse((req.params as { planId: string }).planId)) }));
+  // 대화에서 시작한 포트폴리오 제작. 상태 읽기 · 제작 열기 · 실패한 분석 다시 맡기기 모두 AI를 부르지 않는다.
+  const startId = (params: unknown) => UuidSchema.parse((params as { startId: string }).startId);
+  app.get(`${base}/:id/brew-starts/:startId`, options, async req => ({ data: await service.brewStartState(requireAuth(req).user.id, id(req.params), startId(req.params)) }));
+  app.post(`${base}/:id/brew-starts/:startId/open`, options, async req => ({ data: await service.openBrew(requireAuth(req).user.id, id(req.params), startId(req.params)) }));
+  // 분석이 끝난 것을 에이전트가 알리게 한다. 답 하나를 시작하므로 보내기와 같이 개인 키가 있으면 그 키로 돈다.
+  app.post(`${base}/:id/brew-starts/:startId/announce`, options, async (req, reply) => { const userId = requireAuth(req).user.id; return reply.code(202).send({ data: await service.announceBrew(userId, id(req.params), startId(req.params), await service.credentials.read(userId)) }); });
+  // 대화에서 인터뷰를 연다. 에이전트가 첫 질문을 하는 답을 시작하므로 보내기와 같이 개인 키가 있으면 그 키로 돈다.
+  app.post(`${base}/:id/brews/:brewId/interview`, options, async (req, reply) => { const userId = requireAuth(req).user.id; return reply.code(202).send({ data: await service.beginInterview(userId, id(req.params), UuidSchema.parse((req.params as { brewId: string }).brewId), await service.credentials.read(userId)) }); });
+  // 대화에서 디자인을 연다 · 견본의 짝으로 첫 화면을 그린다. 둘 다 실행을 시작하지 않는다(그리기는 디자인 대화가 뒤에서 한다).
+  const brewId = (params: unknown) => UuidSchema.parse((params as { brewId: string }).brewId);
+  app.post(`${base}/:id/brews/:brewId/design`, options, async req => ({ data: await service.beginDesign(requireAuth(req).user.id, id(req.params), brewId(req.params)) }));
+  // 고른 첫 화면으로 포트폴리오를 만든다. 실행을 시작하지 않는다(생성은 워커가 한다).
+  app.post(`${base}/:id/brews/:brewId/generation`, options, async req => ({ data: await service.startGeneration(requireAuth(req).user.id, id(req.params), brewId(req.params)) }));
+  app.post(`${base}/:id/brews/:brewId/design/draw`, options, async req => ({ data: await service.drawDesign(requireAuth(req).user.id, id(req.params), brewId(req.params), AgentDesignDrawSchema.parse(req.body)) }));
+  // 진행 중인 제작(옛 화면에서 만든 것 포함)을 그 제작의 대화로 잇는다. 카드만 붙이고 실행을 시작하지 않는다.
+  app.post(`${API_PREFIX}/agent/brews/:brewId/resume`, options, async req => ({ data: await service.resumeBrew(requireAuth(req).user.id, brewId(req.params), AgentBrewResumeRequestSchema.parse(req.body ?? {})) }));
+  app.post(`${base}/:id/brew-starts/:startId/retry`, options, async req => ({ data: await service.retryBrewStart(requireAuth(req).user.id, id(req.params), startId(req.params)) }));
   app.post(`${base}/:id/retry`, options, async (req, reply) => { const userId = requireAuth(req).user.id; return reply.code(202).send({ data: await service.retry(userId, id(req.params), await service.credentials.read(userId)) }); });
   app.post(`${base}/:id/contexts`, options, async req => ({ data: await service.attach(requireAuth(req).user.id, id(req.params), AddAgentContextSchema.parse(req.body).context) }));
   app.post(`${base}/:id/context-selection`, options, async req => { const input = SetAgentContextsSchema.parse(req.body); return { data: await service.setContexts(requireAuth(req).user.id, id(req.params), input.contexts, input.expectedVersion) }; });
+  app.post(`${base}/:id/saved-records/:recordId/undo`, options, async req => ({ data: await service.undoSavedRecord(requireAuth(req).user.id, id(req.params), UuidSchema.parse((req.params as { recordId: string }).recordId)) }));
   app.post(`${base}/:id/page-edits/:editId/undo`, options, async req => ({ data: await service.undoPageEdit(requireAuth(req).user.id, id(req.params), UuidSchema.parse((req.params as { editId: string }).editId)) }));
   app.post(`${base}/:id/cancel`, options, async req => ({ data: await service.cancel(requireAuth(req).user.id, id(req.params)) }));
   app.post(`${base}/:id/approval`, options, async req => ({ data: await service.approve(requireAuth(req).user.id, id(req.params), AgentApprovalSchema.parse(req.body)) }));

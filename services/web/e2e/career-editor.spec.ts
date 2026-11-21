@@ -157,13 +157,18 @@ test("adds a property and a new chip to the owner's default category", async ({ 
   // 같은 이름이 이미 있으면 그 옵션을 고른다. 시각 비교가 같은 화면을 보도록 이름을 고정한다.
   const chipName = "협업";
   const saved = page.waitForResponse((response) => response.url().includes("/api/career/records/") && response.request().method() === "PATCH" && response.ok());
-  await propertyList.getByLabel("역량 새 항목", { exact: true }).fill(chipName);
-  await propertyList.getByLabel("역량 새 항목", { exact: true }).press("Enter");
+  // 역량 칸은 칩 단추이고, 누르면 표 셀과 같은 옵션 팝업(문서 밖 포털)이 열린다.
+  await propertyList.getByRole("button", { name: "역량", exact: true }).click();
+  const options = page.getByRole("listbox", { name: "역량 값 선택" });
+  await options.getByLabel("역량 새 항목", { exact: true }).fill(chipName);
+  await options.getByLabel("역량 새 항목", { exact: true }).press("Enter");
   await saved;
-  await expect(propertyList.getByLabel(chipName, { exact: true })).toBeChecked();
+  await expect(options.getByRole("option", { name: chipName })).toHaveAttribute("aria-selected", "true");
+  await page.keyboard.press("Escape");
+  await expect(propertyList.getByRole("button", { name: "역량", exact: true })).toHaveText(chipName);
   await page.reload();
   await openRecordDrawer(page, "E2E 역량 칩");
-  await expect(page.getByLabel("문서 속성").getByLabel(chipName, { exact: true })).toBeChecked();
+  await expect(page.getByLabel("문서 속성").getByRole("button", { name: "역량", exact: true })).toHaveText(chipName);
 
   await page.getByLabel("문서 속성").getByRole("button", { name: "속성 추가", exact: true }).click();
   const propertyPopover = page.getByLabel("속성 추가", { exact: true });

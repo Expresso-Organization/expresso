@@ -8,6 +8,7 @@ import { Icon } from "@/components/ui/Icon";
 import type { CareerViewRendererProps } from "./view-types";
 import { keyboardActivate } from "./view-types";
 import { activeDefinitions, formatDate, propertyLabel, timelineRange, withinAxis, type TimelineRange } from "./view-logic";
+import { RecordSelectBox } from "./RecordSelectBox";
 import styles from "./views.module.css";
 
 /** 시작 날짜 순 세로 시간 축. 해가 바뀌는 자리에 연도 눈금이 선다. */
@@ -29,7 +30,7 @@ export function TimelineView(props: CareerViewRendererProps) {
     tabIndex={record.id === props.activeId ? 0 : -1}
     onKeyDown={(event) => keyboardActivate(event, record.id, ordered, props.onActivate)}
   >
-    <label><input aria-label={`${record.title || "제목 없음"} 선택`} type="checkbox" checked={props.selectedIds.has(record.id)} onChange={() => props.onToggle(record.id)} /></label>
+    <RecordSelectBox title={record.title} checked={props.selectedIds.has(record.id)} onToggle={() => props.onToggle(record.id)} />
     <button type="button" onClick={() => props.onActivate(record.id)}>{record.title || "제목 없음"}</button>
     <div className={styles.timelineMeta}>{details.flatMap((definition) => { const label = propertyLabel(record, definition); return label ? [<small key={definition.id}>{label}</small>] : []; }).slice(0, 3)}</div>
   </article>;

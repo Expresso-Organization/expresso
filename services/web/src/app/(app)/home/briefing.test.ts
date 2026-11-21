@@ -15,7 +15,7 @@ const base = {
   watched: [],
   jobTotal: 0,
   contests: [],
-  brewHref: () => "/brew/x/materials",
+  brewHref: () => "/brew/x",
 };
 
 it("성과를 적는 분류에서 본문과 성과 속성 어디에도 숫자가 없으면 숫자 없는 기록이다", () => {
