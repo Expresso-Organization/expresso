@@ -1,1 +1,1 @@
-export { findDesignSystemRevision, findPortfolioDesign, generationStyleFor } from "./generation-style.js";
+export { fallbackTemplateId, findDesignSystemRevision, findPortfolioDesign, generationStyleFor } from "./generation-style.js";

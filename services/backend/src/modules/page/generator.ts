@@ -16,6 +16,7 @@ import {
   type PortfolioPlan,
   type StructuredPortfolioContent,
   type StructuredPortfolioSnapshot,
+  type DesignTokens,
 } from "@expresso/contracts";
 
 import type { AiClient, AiModelTier, AiUsage } from "../../platform/ai/client.js";
@@ -59,7 +60,22 @@ export interface PageMedia {
   height: number;
 }
 
+/**
+ * 디자인 대화에서 사용자가 보고 고른 첫 화면입니다. 소독을 마친 마크업과 CSS입니다.
+ *
+ * 있으면 지면의 맨 앞에 **그대로** 놓입니다. 생성은 그 뒤만 쓰고, 생성기가 둘을 이어 붙입니다 — 모델에게 다시 쓰게 하면
+ * 한 글자가 달라졌을 때 고른 것과 만든 것이 어긋납니다.
+ */
+export interface PageSeed {
+  name: string;
+  words: string;
+  tokens: DesignTokens;
+  html: string;
+  css: string;
+}
+
 export interface PageGenerationContext {
+  seed?: PageSeed;
   /** 사용량을 남길 사용자. 사용자가 없는 작업만 null이다. */
   userId: string | null;
   author?: { name: string };
@@ -142,6 +158,8 @@ export interface PageStreamSink {
   thinking(estimatedTokens: number): void;
   /** 설계가 끝난 지면의 청사진 문서입니다. 설계가 먼저 오는 생성만 보냅니다. */
   blueprint?(page: { html: string; css: string }): void;
+  /** 고른 첫 화면입니다. 이어서 오는 조각(`delta`)은 이 첫 화면 **뒤**에 붙는 것입니다. 첫 화면을 고른 생성만 보냅니다. */
+  seed?(page: { html: string; css: string }): void;
   /** 청사진의 글 자리 하나에 지금까지 쓴 글입니다. `revised`는 검사에 걸려 쓴 에이전트가 고쳐 보낸 글입니다. */
   fill?(path: string, text: string, done: boolean, revised?: boolean): void;
   stage?(name: PageStreamStage): void;
