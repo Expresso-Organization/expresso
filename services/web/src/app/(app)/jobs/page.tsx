@@ -1314,11 +1314,10 @@ function BrowseRail({
         </div>
         <div className={styles.railCtaWrap}>
           {/*
-           * 공고를 여기서 고르지 않는다. 새 포트폴리오 화면이 관심 공고 · 모아 둔
-           * 공고 · 붙여넣기 중에서 고르게 한다.
+           * 공고를 여기서 고르지 않는다. 새 포트폴리오 대화가 공고 · 공고 주소나 글 · 공고 없이 중에서 고르게 한다.
            */}
           <Link
-            href="/brew/new"
+            href="/home?new=portfolio"
             className={styles.brewCta}
             /*
              * 이 단추만 시그니처가 아니라 잉크 지면이다. 지면이 어두운 테마에서

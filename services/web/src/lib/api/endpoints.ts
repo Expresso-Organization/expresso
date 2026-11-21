@@ -1,4 +1,5 @@
 import {
+  AgentBrewResumeResponseSchema,
   ActivityListResponseSchema,
   ProposalFeedResponseSchema,
   type ListActivitiesQuery,
@@ -494,6 +495,13 @@ export const consents = {
 };
 
 export const brews = {
+  /**
+   * 진행 중인 제작을 대화로 잇는다. 그 제작을 붙인 대화(없으면 새 대화)에 지금 단계의 카드를 붙이고 그 대화의 ID를 돌려준다.
+   * `again`이면 다 만든 제작도 다시 만들 수 있는 디자인 카드를 붙인다(편집의 「다시 뽑기」). AI를 부르지 않는다.
+   */
+  resume: (accessToken: string, brewId: string, again: boolean) =>
+    request(`${API_PREFIX}/agent/brews/${brewId}/resume`, AgentBrewResumeResponseSchema, { accessToken, method: "POST", body: again ? { again: true } : {}, cache: "no-store" }),
+
   /** 만들던 포트폴리오를 휴지통으로 옮긴다. 생성 중이면 409다. */
   trash: (accessToken: string, brewId: string) =>
     requestNoContent(`${API_PREFIX}/brews/${brewId}`, { accessToken, method: "DELETE" }),

@@ -9,7 +9,7 @@ import { ApiError } from "@/lib/api/client";
 import { jobs as jobsApi } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
-import { analyzePostingAction } from "../../brew/new/new-brew-actions";
+import { PostingChatStart } from "@/features/agent-chat/PostingChatStart";
 import { backToListHref } from "../list-query";
 
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
@@ -96,18 +96,18 @@ export default async function JobDetailPage({
           // 머리 오른쪽은 만들기 · 관심 공고 · 원문 · 채팅이다. 머리 폭이 넉넉하면(≥768px) 아이콘 옆에
           // 이름을 함께 보이고, 좁으면 아이콘만 남기고 이름은 툴팁과 읽기 레이블로 둔다.
           <div className={styles.headActions}>
-            <form action={analyzePostingAction} className={styles.headForm}>
-              <input type="hidden" name="jobPostingId" value={job.id} />
-              <button
-                type="submit"
-                className={`${styles.headIcon} ${styles.headPrimary}`}
-                aria-label={startLabel}
-                title={startLabel}
-              >
+            {/* 만들던 제작이 있으면 그 제작의 대화를, 없으면 이 공고를 붙인 새 대화를 연다. */}
+            {job.brew ? (
+              <Link className={`${styles.headIcon} ${styles.headPrimary}`} href={`/brew/${job.brew.id}`} aria-label={startLabel} title={startLabel}>
                 <Icon name="coffee" size={16} color="currentColor" />
                 <span className={styles.headLabel}>{startLabel}</span>
-              </button>
-            </form>
+              </Link>
+            ) : (
+              <PostingChatStart jobPostingId={job.id} className={`${styles.headIcon} ${styles.headPrimary}`} label={startLabel}>
+                <Icon name="coffee" size={16} color="currentColor" />
+                <span className={styles.headLabel}>{startLabel}</span>
+              </PostingChatStart>
+            )}
             <InterestButton jobPostingId={job.id} interested={job.interest !== null} />
             {job.sourceUrl ? (
               <a

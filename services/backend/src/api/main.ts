@@ -192,6 +192,10 @@ const agentBrews: AgentBrewDeps = {
   analyzePosting: (userId, jobPostingId) => jobMarketService.analyzePosting(userId, jobPostingId),
   getResult: (userId, jobAnalysisId) => jobAnalysisService.getResult(userId, jobAnalysisId),
   createBrew: (userId, input) => materialsService.createBrew(userId, input),
+  createFreeBrew: (userId, input) => materialsService.createFreeBrew(userId, input).then(state => ({ brewId: state.brewId, jobAnalysisId: state.jobAnalysisId })),
+  readPostingUrl: url => jobUrlImporter.read(url),
+  submitPosting: (userId, key, input) => jobMarketService.submitPosting(userId, key, input),
+  brewOrigin: (userId, brewId) => materialsService.origin(userId, brewId),
   // 지운 제작(휴지통)과 없는 제작은 404다. 그 밖의 오류는 그대로 올린다.
   // 구성 잡이 줄에 있거나 도는 동안은 아직 interviewing이어도 구성 단계로 본다(구성이 저장될 때 recipe가 된다). 인터뷰를 더 하지 않게 한다.
   brewState: (userId, brewId) => materialsService.getState(userId, brewId).then(state => ({ status: state.status === "interviewing" && state.latestJob?.type === "recipe" && (state.latestJob.status === "queued" || state.latestJob.status === "running") ? "recipe" as const : state.status, selected: state.materials.selected, generation: state.latestGeneration ? { id: state.latestGeneration.id, status: state.latestGeneration.status } : null }), error => { if (error instanceof MaterialsError && error.statusCode === 404) return null; throw error; }),
@@ -206,15 +210,15 @@ const agentBrews: AgentBrewDeps = {
     const chat = await designChatService.send(userId, brewId, { action: "draw", requestId: randomUUID(), ...input }).catch((error: unknown) => { throw error instanceof DesignChatError ? new AgentChatError(error.statusCode, error.message, error.publicMessage) : error; });
     return { designMessageId: chat.messages.at(-1)!.id };
   },
-  startGeneration: async (userId, brewId) => {
+  startGeneration: async (userId, brewId, again) => {
     if (!designChatService) throw new AgentChatError(503, "design chat is not configured", "이 서버에서는 대화로 포트폴리오를 만들 수 없습니다.");
     const snippetId = (await designChatService.get(userId, brewId)).chat?.selectedSnippetId;
     if (!snippetId) throw new AgentChatError(409, "no selected snippet", "「이 스타일 고르기」로 첫 화면을 먼저 골라 주세요.");
     const state = await materialsService.getState(userId, brewId);
     const latest = state.latestGeneration;
     if (latest && (latest.status === "queued" || latest.status === "running")) return { generationId: latest.id };
-    // 만드는 일은 이번 달 횟수를 쓴다. 이미 만든 포트폴리오는 다시 만들지 않는다.
-    if (latest?.status === "done") throw new AgentChatError(409, "already generated", "이미 만든 포트폴리오가 있습니다. 「만든 포트폴리오 열기」로 열어 주세요.");
+    // 만드는 일은 이번 달 횟수를 쓴다. 이미 만든 포트폴리오는 「다시 뽑기」로 연 디자인에서만 다시 만든다.
+    if (latest?.status === "done" && !again) throw new AgentChatError(409, "already generated", "이미 만든 포트폴리오가 있습니다. 「만든 포트폴리오 열기」로 열어 주세요.");
     // 두 번 눌러도 같은 키다. 실패하거나 멈춘 뒤에는 직전 생성이 달라 새 키다.
     const key = `chat-generation:${brewId}:${snippetId}:${latest?.id ?? "first"}`;
     const job = await generationService.submit(userId, key, { ...(state.recipeId ? { recipeId: state.recipeId } : { brewId }), designSnippetId: snippetId }).catch((error: unknown) => {

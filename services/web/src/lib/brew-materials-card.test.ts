@@ -19,15 +19,15 @@ describe("재료 카드의 다음 길", () => {
 
   it("질문을 만드는 중이면 상태가 아직 재료 단계여도 잠그고 대화 화면으로 잇는다", () => {
     for (const status of ["queued", "running"]) {
-      expect(resumePath(brew({ latestJob: job("interview", status) }))).toBe(`/brew/${brewId}/counter`);
+      expect(resumePath(brew({ latestJob: job("interview", status) }))).toBe(`/brew/${brewId}`);
       expect(interviewEntry(brew({ latestJob: job("interview", status) })).beginsInterview).toBe(false);
     }
   });
 
   it("재료 단계를 지난 제작은 그 단계의 화면으로 잇는다", () => {
-    expect(resumePath(brew({ status: "interviewing", interviewSessionId: jobId }))).toBe(`/brew/${brewId}/counter`);
+    expect(resumePath(brew({ status: "interviewing", interviewSessionId: jobId }))).toBe(`/brew/${brewId}`);
     // 구성 잡이 도는 동안은 아직 interviewing이어도 디자인 화면으로 잇는다.
-    expect(resumePath(brew({ status: "interviewing", interviewSessionId: jobId, latestJob: job("recipe", "running") }))).toBe(`/brew/${brewId}/design`);
-    for (const status of ["recipe", "generating", "done"] as const) expect(resumePath(brew({ status }))).toBe(`/brew/${brewId}/design`);
+    expect(resumePath(brew({ status: "interviewing", interviewSessionId: jobId, latestJob: job("recipe", "running") }))).toBe(`/brew/${brewId}`);
+    for (const status of ["recipe", "generating", "done"] as const) expect(resumePath(brew({ status }))).toBe(`/brew/${brewId}`);
   });
 });

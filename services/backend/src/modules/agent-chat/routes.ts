@@ -1,6 +1,6 @@
 import { setTimeout as delay } from "node:timers/promises";
 import type { FastifyInstance, preHandlerHookHandler } from "fastify";
-import { API_PREFIX, AgentDesignDrawSchema, AgentPlanDecisionSchema, AgentReplanDecisionSchema, UpdateTaskProgressSchema, AgentRecordDraftDecisionSchema, AgentGoalDraftDecisionSchema, UuidSchema, CreateAgentConversationSchema, SendAgentMessageSchema, AddAgentContextSchema, AgentApprovalSchema, SaveAgentApiKeySchema, SetAgentContextsSchema } from "@expresso/contracts";
+import { API_PREFIX, AgentBrewResumeRequestSchema, AgentDesignDrawSchema, AgentPlanDecisionSchema, AgentReplanDecisionSchema, UpdateTaskProgressSchema, AgentRecordDraftDecisionSchema, AgentGoalDraftDecisionSchema, UuidSchema, CreateAgentConversationSchema, SendAgentMessageSchema, AddAgentContextSchema, AgentApprovalSchema, SaveAgentApiKeySchema, SetAgentContextsSchema } from "@expresso/contracts";
 import { requireAuth } from "../../api/plugins/auth-context.js";
 import type { AgentChatService } from "./service.js";
 
@@ -41,6 +41,8 @@ export function registerAgentChatRoutes(app: FastifyInstance, service: AgentChat
   // 고른 첫 화면으로 포트폴리오를 만든다. 실행을 시작하지 않는다(생성은 워커가 한다).
   app.post(`${base}/:id/brews/:brewId/generation`, options, async req => ({ data: await service.startGeneration(requireAuth(req).user.id, id(req.params), brewId(req.params)) }));
   app.post(`${base}/:id/brews/:brewId/design/draw`, options, async req => ({ data: await service.drawDesign(requireAuth(req).user.id, id(req.params), brewId(req.params), AgentDesignDrawSchema.parse(req.body)) }));
+  // 진행 중인 제작(옛 화면에서 만든 것 포함)을 그 제작의 대화로 잇는다. 카드만 붙이고 실행을 시작하지 않는다.
+  app.post(`${API_PREFIX}/agent/brews/:brewId/resume`, options, async req => ({ data: await service.resumeBrew(requireAuth(req).user.id, brewId(req.params), AgentBrewResumeRequestSchema.parse(req.body ?? {})) }));
   app.post(`${base}/:id/brew-starts/:startId/retry`, options, async req => ({ data: await service.retryBrewStart(requireAuth(req).user.id, id(req.params), startId(req.params)) }));
   app.post(`${base}/:id/retry`, options, async (req, reply) => { const userId = requireAuth(req).user.id; return reply.code(202).send({ data: await service.retry(userId, id(req.params), await service.credentials.read(userId)) }); });
   app.post(`${base}/:id/contexts`, options, async req => ({ data: await service.attach(requireAuth(req).user.id, id(req.params), AddAgentContextSchema.parse(req.body).context) }));

@@ -83,7 +83,7 @@ describe("재료 고르기 카드", () => {
     show({ onBegin });
     fireEvent.click(await screen.findByRole("button", { name: "AI와 대화 시작" }));
     await waitFor(() => expect(onBegin).toHaveBeenCalledTimes(1));
-    expect(screen.getByRole("link", { name: "넓게 보기" }).getAttribute("href")).toBe(`/brew/${brewId}/materials`);
+    expect(screen.queryByRole("link", { name: "넓게 보기" })).toBeNull();
     cleanup();
 
     // 하나도 고르지 않았으면 단추의 말이 바뀐다. 열지 못하면 이유를 보인다.
@@ -100,20 +100,20 @@ describe("재료 고르기 카드", () => {
   });
 
   it("다음 단계로 넘어간 제작의 카드는 고른 것을 보이기만 하고, 그 단계로 가는 링크만 둔다", async () => {
-    const saved = serve(data([true, true, false], { resumePath: `/brew/${brewId}/design` }));
+    const saved = serve(data([true, true, false], { resumePath: `/brew/${brewId}` }));
     show();
     await screen.findByText("디자인 시스템 구축");
     expect(boxes().every((box) => box.disabled)).toBe(true);
     fireEvent.click(boxes()[1]!);
     expect(saved).toEqual([]);
-    expect(screen.getByRole("link", { name: "이어서 만들기" }).getAttribute("href")).toBe(`/brew/${brewId}/design`);
+    expect(screen.getByRole("link", { name: "이어서 만들기" }).getAttribute("href")).toBe(`/brew/${brewId}`);
     expect(screen.queryByRole("link", { name: "넓게 보기" })).toBeNull();
     expect(screen.queryByRole("button")).toBeNull();
   });
 
   it("다시 읽으라는 신호가 오면 다시 읽어 잠근다", async () => {
     let moved = false;
-    vi.stubGlobal("fetch", vi.fn(async () => json({ data: data([true, true, false], moved ? { resumePath: `/brew/${brewId}/counter` } : {}) })));
+    vi.stubGlobal("fetch", vi.fn(async () => json({ data: data([true, true, false], moved ? { resumePath: `/brew/${brewId}` } : {}) })));
     const props = { materials: { brewId, jobPostingId: brewId }, onBegin: async () => undefined };
     const { rerender } = render(<BrewMaterialsCard {...props} refreshKey={0} />);
     await screen.findByText("디자인 시스템 구축");
@@ -124,7 +124,7 @@ describe("재료 고르기 카드", () => {
   });
 
   it("이 대화에서 연 인터뷰로 넘어간 제작의 카드는 링크도 두지 않는다", async () => {
-    serve(data([true, true, false], { resumePath: `/brew/${brewId}/counter` }));
+    serve(data([true, true, false], { resumePath: `/brew/${brewId}` }));
     show({ continuesInChat: true });
     await screen.findByText("디자인 시스템 구축");
     expect(boxes().every((box) => box.disabled)).toBe(true);

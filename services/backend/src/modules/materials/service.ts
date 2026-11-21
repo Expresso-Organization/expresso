@@ -144,6 +144,20 @@ export class MaterialsService implements MaterialsApi {
     return this.getMaterials(userId, brewId);
   }
 
+  /**
+   * 제작이 어디서 왔는가 — 분석 · 공고(공고 없이 만든 제작이면 null) · 제목 · 분량. 지웠거나(휴지통) 없는 제작이면 null이다.
+   * 대화가 옛 화면에서 만든 제작을 이어 갈 때 카드를 세우는 데 쓴다.
+   */
+  async origin(userId: string, brewId: string) {
+    const db = mongoCollections(this.context.db);
+    const brew = await db.brews.findOne({ _id: brewId, userId, deletedAt: null });
+    if (!brew) return null;
+    const analysis = await db.jobAnalyses.findOne({ _id: brew.jobAnalysisId, userId });
+    const posting = analysis?.jobPostingId ? await db.jobPostings.findOne({ _id: analysis.jobPostingId }) : null;
+    const company = posting ? await db.companies.findOne({ _id: posting.companyId }) : null;
+    return { jobAnalysisId: brew.jobAnalysisId, jobPostingId: posting?._id ?? null, title: posting?.title ?? brew.freeTitle ?? brew.title ?? "포트폴리오", companyName: company?.name ?? "", lengthPreset: brew.lengthPreset };
+  }
+
   async getState(userId: string, brewId: string) {
     const db = mongoCollections(this.context.db);
     const brew = await db.brews.findOne({ _id: brewId, userId, deletedAt: null });
