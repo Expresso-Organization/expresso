@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 from collections import defaultdict
+import hashlib
 from dataclasses import asdict
 from datetime import datetime, timezone
 import json
@@ -131,14 +132,21 @@ def split_metrics(pairs: Sequence[dict[str, Any]], predictions: Sequence[float |
 
 
 def bootstrap_against(
-    pairs: Sequence[dict[str, Any]], candidate: Sequence[float], baseline: Sequence[float | None], split: str = "test"
+    pairs: Sequence[dict[str, Any]], candidate: Sequence[float | None], baseline: Sequence[float | None], split: str = "test"
 ) -> dict[str, Any]:
     """평가 프로필 단위 paired bootstrap. 차이는 후보 − baseline이다."""
-    candidate_rows = _rows(pairs, candidate, split)
-    baseline_rows = [{**row, "prediction": RULE_NULL_RANK_SCORE if row["prediction"] is None else row["prediction"]} for row in _rows(pairs, baseline, split)]
+    def ranked(values: Sequence[float | None]) -> list[dict[str, Any]]:
+        return [{**row, "prediction": RULE_NULL_RANK_SCORE if row["prediction"] is None else row["prediction"]} for row in _rows(pairs, values, split)]
+
+    candidate_rows = ranked(candidate)
+    baseline_rows = ranked(baseline)
     result = {"ndcgAt10": paired_bootstrap(profile_ndcg(candidate_rows), profile_ndcg(baseline_rows), iterations=BOOTSTRAP_ITERATIONS)}
-    # MAE는 baseline 점수가 있는 쌍끼리만 비교한다.
-    scored = {(row["profileId"], row["jobId"]) for row in _rows(pairs, baseline, split) if row["prediction"] is not None}
+    # MAE는 두 쪽 모두 점수가 있는 쌍끼리만 비교한다(규칙 함수 null · API 거절 제외).
+    scored = {
+        (row["profileId"], row["jobId"])
+        for row, other in zip(_rows(pairs, baseline, split), _rows(pairs, candidate, split))
+        if row["prediction"] is not None and other["prediction"] is not None
+    }
     candidate_mae = profile_mae([row for row in candidate_rows if (row["profileId"], row["jobId"]) in scored])
     baseline_mae = profile_mae([row for row in baseline_rows if (row["profileId"], row["jobId"]) in scored])
     if candidate_mae:
@@ -175,22 +183,28 @@ def rule_match_scores(dataset: dict[str, Any], pairs: Sequence[tuple[str, str]],
 # ---------------------------------------------------------------- 인코더
 
 
-def load_encoder(key: str, dataset: dict[str, Any], arguments: argparse.Namespace) -> tuple[SentenceEncoder, dict[str, Any]]:
-    """인코더를 올리고 최대 길이를 데이터에서 정한다."""
+def load_encoder(key: str, dataset: dict[str, Any], arguments: argparse.Namespace, evaluation: dict[str, Any] | None = None) -> tuple[SentenceEncoder, dict[str, Any]]:
+    """인코더를 올리고 최대 길이를 데이터에서 정한다. 평가 세트가 따로 있으면 그 텍스트도 넣는다."""
     spec = ENCODERS[key]
     encoder = SentenceEncoder.load(spec, device=arguments.device, batch_size=arguments.embedding_batch_size, max_length=spec.model_limit, model_path=arguments.encoder_path)
-    _, profile_texts, _, job_texts = _texts(dataset)
-    profile_lengths = encoder.token_lengths(profile_texts, role="profile")
-    job_lengths = encoder.token_lengths(job_texts, role="job")
-    max_length = choose_max_length(spec, profile_lengths + job_lengths)
+    measured: dict[str, tuple[list[int], list[int]]] = {}
+    for name, source in (("data", dataset), ("evalData", evaluation)):
+        if source is None or (name == "evalData" and source is dataset):
+            continue
+        _, profile_texts, _, job_texts = _texts(source)
+        measured[name] = (encoder.token_lengths(profile_texts, role="profile"), encoder.token_lengths(job_texts, role="job"))
+    max_length = choose_max_length(spec, [length for profiles, jobs in measured.values() for length in profiles + jobs])
     encoder.set_max_length(max_length)
-    return encoder, {"profiles": length_summary(profile_lengths, max_length), "jobs": length_summary(job_lengths, max_length)}
+    lengths = {name: {"profiles": length_summary(profiles, max_length), "jobs": length_summary(jobs, max_length)} for name, (profiles, jobs) in measured.items()}
+    return encoder, lengths["data"] if len(lengths) == 1 else lengths
 
 
 def embed_dataset(encoder: SentenceEncoder, dataset: dict[str, Any], cache_root: Path) -> tuple[Any, Any, dict[str, int], dict[str, int]]:
     profile_ids, profile_texts, job_ids, job_texts = _texts(dataset)
     identity = encoder.spec.cache_identity(encoder.max_length)
-    cache = cache_root / f"{encoder.spec.key}-{identity}"
+    # 학습 세트와 평가 세트의 벡터가 같은 파일을 번갈아 덮어쓰지 않게 데이터 해시를 경로에 넣는다.
+    data_tag = hashlib.sha256((dataset["hashes"]["profiles"] + dataset["hashes"]["jobs"]).encode("utf-8")).hexdigest()[:12]
+    cache = cache_root / f"{encoder.spec.key}-{identity}-{data_tag}"
     # 캐시 키에 인코더 · prompt · 최대 길이를 넣는다. 빠지면 다른 인코더가 E5 벡터를 읽는다.
     profile_vectors = pilot._cached_embeddings(encoder, profile_ids, profile_texts, cache / "profiles.pt", profile=True, model_path=Path(identity))
     job_vectors = pilot._cached_embeddings(encoder, job_ids, job_texts, cache / "jobs.pt", profile=False, model_path=Path(identity))
@@ -225,6 +239,51 @@ def fit_mlp(dataset: dict[str, Any], vectors: tuple[Any, Any, dict[str, int], di
     )
     cosine = pilot._calibrate_model_scores(pairs, (pair_profiles * pair_jobs).sum(dim=1).tolist())
     return model, learning, features, cosine
+
+
+def evaluation_dataset(arguments: argparse.Namespace, dataset: dict[str, Any]) -> dict[str, Any]:
+    """`--eval-data`가 있으면 그 세트로 평가한다. 학습 · 조기 종료는 언제나 `--data`로 한다."""
+    if not getattr(arguments, "eval_data", None):
+        return dataset
+    if not arguments.eval_labels:
+        raise SystemExit("--eval-data에는 --eval-labels가 함께 필요하다")
+    return pilot.load_training_dataset(arguments.eval_data, arguments.eval_labels)
+
+
+def calibration_split(dataset: dict[str, Any]) -> str:
+    """기준선 점수를 0–100으로 보정할 분할. 평가 세트에는 학습 분할이 없으므로 검증 분할로 한다."""
+    return "train" if any(pair["split"] == "train" for pair in dataset["pairs"]) else "valid"
+
+
+def calibrate(pairs: Sequence[dict[str, Any]], raw: Sequence[float], split: str) -> list[float]:
+    fit = [index for index, pair in enumerate(pairs) if pair["split"] == split]
+    return pilot.affine_calibrate([raw[index] for index in fit], [pairs[index]["matchScore"] for index in fit], raw)
+
+
+def lexical_baselines(dataset: dict[str, Any]) -> dict[str, list[float]]:
+    """파일럿 `run_lexical_baselines`와 같은 점수를 `calibration_split`에서 보정한다."""
+    from retrieval_baselines import build_lexical_scores
+
+    profiles = {str(row["profileId"]): pilot.render_profile(row) for row in dataset["profiles"]}
+    jobs = {str(row["jobId"]): pilot.render_job(row) for row in dataset["jobs"]}
+    pairs = dataset["pairs"]
+    maps = build_lexical_scores(profiles, jobs, [(row["profileId"], row["jobId"]) for row in pairs])
+    split = calibration_split(dataset)
+    return {name: calibrate(pairs, [maps[name][row["profileId"]][row["jobId"]] for row in pairs], split) for name in ("word_tfidf", "char_tfidf", "bm25")}
+
+
+def score_pairs(dataset: dict[str, Any], model: Any, vectors: tuple[Any, Any, dict[str, int], dict[str, int]], *, device: str) -> tuple[list[float], list[float]]:
+    """학습한 MLP와 동결 코사인으로 세트의 모든 쌍을 채점한다. 코사인은 `calibration_split`에서 보정한다."""
+    profile_vectors, job_vectors, profile_index, job_index = vectors
+    pairs = dataset["pairs"]
+    pair_profiles, pair_jobs, _, _ = pilot._pair_embedding_tensors(pairs, profile_vectors, job_vectors, profile_index, job_index)
+    mlp = pilot.predict_mlp(model, pilot.pair_features(pair_profiles, pair_jobs), device=device).tolist()
+    cosine = calibrate(pairs, (pair_profiles * pair_jobs).sum(dim=1).tolist(), calibration_split(dataset))
+    return mlp, cosine
+
+
+def _dataset_summary(dataset: dict[str, Any]) -> dict[str, Any]:
+    return {**dataset["counts"], "hashes": dataset["hashes"]}
 
 
 def _free(device: str) -> None:
@@ -265,34 +324,36 @@ def cmd_token_stats(arguments: argparse.Namespace) -> dict[str, Any]:
 def cmd_encoders(arguments: argparse.Namespace) -> dict[str, Any]:
     """인코더 4종 비교. 검증 분할만 연다. 인코더 하나가 끝날 때마다 파일을 쓴다."""
     dataset = pilot.load_training_dataset(arguments.data, arguments.labels)
+    evaluation = evaluation_dataset(arguments, dataset)
     path = arguments.output / "encoder-comparison.json"
     report: dict[str, Any] = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {"split": "valid", "rows": {}}
-    report["dataset"] = {**dataset["counts"], "hashes": dataset["hashes"]}
+    report["dataset"] = _dataset_summary(dataset)
+    report["evalDataset"] = _dataset_summary(evaluation)
     for key in arguments.encoders:
         started = time.perf_counter()
-        encoder, lengths = load_encoder(key, dataset, arguments)
+        encoder, lengths = load_encoder(key, dataset, arguments, evaluation)
         vectors = embed_dataset(encoder, dataset, arguments.output / "embedding-cache")
-        model, learning, features, cosine = fit_mlp(dataset, vectors, arguments)
-        valid = [index for index, row in enumerate(dataset["pairs"]) if row["split"] == "valid"]
-        scores = pilot.predict_mlp(model, features[valid], device=arguments.device).tolist()
-        predictions: list[float | None] = [None] * len(dataset["pairs"])
-        for index, score in zip(valid, scores):
-            predictions[index] = score
+        model, learning, _, _ = fit_mlp(dataset, vectors, arguments)
+        eval_vectors = vectors if evaluation is dataset else embed_dataset(encoder, evaluation, arguments.output / "embedding-cache")
+        mlp, cosine = score_pairs(evaluation, model, eval_vectors, device=arguments.device)
+        # 평가 분할은 열지 않는다. 검증 분할 점수만 남긴다.
+        predictions: list[float | None] = [score if pair["split"] == "valid" else None for pair, score in zip(evaluation["pairs"], mlp)]
         report["rows"][key] = {
             "modelId": encoder.spec.model_id,
             "spec": asdict(encoder.spec),
             "inputLengths": lengths,
+            "maxLength": encoder.max_length,
             "embedding": encoder.runs,
             "embeddingDimension": int(vectors[0].shape[1]),
-            "mlp": split_metrics(dataset["pairs"], predictions, "valid", roc_points=False),
-            "frozenCosine": split_metrics(dataset["pairs"], cosine, "valid", roc_points=False),
+            "mlp": split_metrics(evaluation["pairs"], predictions, "valid", roc_points=False),
+            "frozenCosine": split_metrics(evaluation["pairs"], [value if pair["split"] == "valid" else None for pair, value in zip(evaluation["pairs"], cosine)], "valid", roc_points=False),
             "learning": {key_: value for key_, value in learning.items() if key_ != "history"},
             "seconds": round(time.perf_counter() - started, 3),
             "runtime": _runtime(arguments.device),
         }
         report["updatedAt"] = _now()
         pilot._atomic_json(path, report)
-        del encoder, model, features, vectors
+        del encoder, model, vectors, eval_vectors
         _free(arguments.device)
     return report
 
@@ -338,7 +399,7 @@ def embedding_record(encoder: SentenceEncoder, output: Path) -> dict[str, Any]:
     path = output / "encoder-comparison.json"
     if path.exists():
         row = json.loads(path.read_text(encoding="utf-8")).get("rows", {}).get(encoder.spec.key)
-        if row and row.get("spec") == asdict(encoder.spec) and row["inputLengths"]["profiles"]["maxLength"] == encoder.max_length:
+        if row and row.get("spec") == asdict(encoder.spec) and row.get("maxLength") == encoder.max_length:
             return {"source": "encoder-comparison.json", "runs": row["embedding"]}
     return {"source": "embedding cache without measurement", "runs": []}
 
@@ -348,16 +409,18 @@ def cmd_train_bi(arguments: argparse.Namespace) -> dict[str, Any]:
 
     started = time.perf_counter()
     dataset = pilot.load_training_dataset(arguments.data, arguments.labels)
+    evaluation = evaluation_dataset(arguments, dataset)
     labels = load_labels(arguments.labels)
     version = next_version(arguments.output, "bi", DATASET_VERSION)
     directory = arguments.output / version
-    encoder, lengths = load_encoder(arguments.encoder, dataset, arguments)
+    encoder, lengths = load_encoder(arguments.encoder, dataset, arguments, evaluation)
     vectors = embed_dataset(encoder, dataset, arguments.output / "embedding-cache")
-    model, learning, features, cosine = fit_mlp(dataset, vectors, arguments)
-    pairs = dataset["pairs"]
-    mlp = pilot.predict_mlp(model, features, device=arguments.device).tolist()
-    lexical, _ = pilot.run_lexical_baselines(dataset)
-    rule = rule_match_scores(dataset, [(row["profileId"], row["jobId"]) for row in pairs], node=arguments.node)
+    model, learning, _, _ = fit_mlp(dataset, vectors, arguments)
+    eval_vectors = vectors if evaluation is dataset else embed_dataset(encoder, evaluation, arguments.output / "embedding-cache")
+    pairs = evaluation["pairs"]
+    mlp, cosine = score_pairs(evaluation, model, eval_vectors, device=arguments.device)
+    lexical = lexical_baselines(evaluation)
+    rule = rule_match_scores(evaluation, [(row["profileId"], row["jobId"]) for row in pairs], node=arguments.node)
     model_id = f"expresso-{arguments.encoder}-mlp-{DATASET_VERSION}"
     predictions: dict[str, Sequence[float | None]] = {model_id: mlp, "frozen-cosine": cosine, **lexical, RULE_MODEL: rule}
     checkpoint = directory / "checkpoint.pt"
@@ -390,7 +453,8 @@ def cmd_train_bi(arguments: argparse.Namespace) -> dict[str, Any]:
             f"{model_id} - {baseline}": bootstrap_against(pairs, mlp, predictions[baseline])
             for baseline in (RULE_MODEL, "char_tfidf", "frozen-cosine")
         },
-        "screeningRecall": screening(dataset, model, vectors, device=arguments.device, node=arguments.node),
+        "evalDataset": _dataset_summary(evaluation),
+        "screeningRecall": screening(evaluation, model, eval_vectors, device=arguments.device, node=arguments.node),
         "inputLengths": lengths,
         "embedding": embedding_record(encoder, arguments.output),
         "learning": learning,
@@ -410,6 +474,8 @@ def cmd_train_bi(arguments: argparse.Namespace) -> dict[str, Any]:
             extra={
                 "model": model_id,
                 "maxLength": encoder.max_length,
+                "evalData": str(arguments.eval_data) if getattr(arguments, "eval_data", None) else None,
+                "evalDataHashes": evaluation["hashes"],
                 "hyperparameters": {
                     "seed": arguments.seed,
                     "hiddenDimension": arguments.hidden_dimension,
@@ -453,15 +519,21 @@ def model_b(
     labels: Sequence[dict[str, Any]],
     split: str,
     *,
-    cross: Callable[[Sequence[dict[str, str]]], tuple[list[float], dict[str, Any]]],
+    cross: Callable[[Sequence[dict[str, str]]], tuple[list[float], dict[str, Any]]] | None,
     encoder: SentenceEncoder,
     node: str,
+    record_scores: dict[tuple[str, str, str], float | None] | None = None,
+    model_name: str = "cross-encoder",
 ) -> dict[str, Any]:
     """설계서 9.2 모델 B: (공고, 기록 1건) 점수 순서를 교사의 기록 단위 판정과 비교한다.
 
     Cross-Encoder 입력은 학습 때와 같은 틀(`build_selected_profile_text`)에 기록 하나만 넣는다.
     학습 때는 기록 최대 8개 묶음이었으므로, 이 시험이 그 입력 단위 차이의 영향을 본다.
+    외부 API(`match_api_scorer.py`)로 매긴 점수는 `record_scores`로 받는다. 점수가 없는 쌍과
+    거절한 기록이 있는 쌍은 그 모델의 평가에서 빼고 수를 남긴다.
     """
+    if (cross is None) == (record_scores is None):
+        raise ValueError("cross scorer or record scores, exactly one")
     profiles = {str(row["profileId"]): row for row in dataset["profiles"]}
     jobs = {str(row["jobId"]): row for row in dataset["jobs"]}
     selected = [label for label in labels if label.get("split") == split]
@@ -493,13 +565,21 @@ def model_b(
                 ],
             }
         )
-    cross_scores, cross_lengths = cross(cross_rows)
+    if cross is not None:
+        cross_scores, cross_lengths = cross(cross_rows)
+    else:
+        cross_lengths = None
+        cross_scores = [record_scores.get((str(selected[group_index]["profileId"]), str(selected[group_index]["jobId"]), record_id)) for group_index, record_id in owners]
     record_vectors = encoder.embed_records(record_texts)
     job_vectors = encoder.embed_jobs(job_texts)
     cross_by_group: dict[int, dict[str, float]] = defaultdict(dict)
     cosine_by_group: dict[int, dict[str, float]] = defaultdict(dict)
+    unscored: set[int] = set()
     for position, ((group_index, record_id), score) in enumerate(zip(owners, cross_scores)):
-        cross_by_group[group_index][record_id] = float(score)
+        if score is None:
+            unscored.add(group_index)
+        else:
+            cross_by_group[group_index][record_id] = float(score)
         cosine_by_group[group_index][record_id] = float((record_vectors[position] * job_vectors[group_index]).sum())
     rule_by_group: dict[int, dict[str, float]] = {}
     for row in run_rule("materials", material_requests, node=node):
@@ -507,15 +587,16 @@ def model_b(
         # rankMaterials()가 정한 순서(동점 처리 포함)를 그대로 쓰도록 순위를 점수로 바꾼다.
         rule_by_group[int(row["id"])] = {item["id"]: float(len(ranked) - position) for position, item in enumerate(ranked)}
 
-    def evaluate(scores: dict[int, dict[str, float]]) -> dict[str, Any]:
-        return record_ndcg([{"relevance": relevance[index], "scores": scores.get(index, {})} for index in range(len(selected))])
+    def evaluate(scores: dict[int, dict[str, float]], *, skip: frozenset[int] | set[int] = frozenset()) -> dict[str, Any]:
+        groups = [{"relevance": relevance[index], "scores": scores.get(index, {})} for index in range(len(selected)) if index not in skip]
+        return {**record_ndcg(groups), "unscoredPairs": len(skip)}
 
     return {
         "split": split,
         "pairs": len(selected),
         "records": len(cross_rows),
         "crossInputLengths": cross_lengths,
-        "models": {"cross-encoder": evaluate(cross_by_group), "frozen-cosine": evaluate(cosine_by_group), RULE_MATERIALS: evaluate(rule_by_group)},
+        "models": {model_name: evaluate(cross_by_group, skip=unscored), "frozen-cosine": evaluate(cosine_by_group), RULE_MATERIALS: evaluate(rule_by_group)},
     }
 
 
@@ -526,35 +607,81 @@ def cmd_eval_cross(arguments: argparse.Namespace) -> dict[str, Any]:
     pairs = dataset["pairs"]
     version = next_version(arguments.output, "cross", DATASET_VERSION)
     directory = arguments.output / version
-    by_pair = {
-        (row["profileId"], row["jobId"]): float(row["prediction"])
-        for row in pilot._read_jsonl(arguments.cross_scores)
-        if row["model"] == arguments.cross_model_name
-    }
-    missing = [pair for pair in pairs if (pair["profileId"], pair["jobId"]) not in by_pair]
+    scorer = None
+    scorer_info: dict[str, Any] = {"model": arguments.cross_model_name}
+    if arguments.cross_checkpoint:
+        scorer, scorer_info = load_cross_scorer(arguments.cross_base_model, arguments.cross_checkpoint, device=arguments.device, batch_size=arguments.cross_batch_size)
+    cross_input_lengths = None
+    if arguments.cross_scores:
+        by_pair = {
+            (row["profileId"], row["jobId"]): None if row["prediction"] is None else float(row["prediction"])
+            for row in pilot._read_jsonl(arguments.cross_scores)
+            if row["model"] == arguments.cross_model_name
+        }
+    elif scorer is not None:
+        # 점수 파일이 없으면 이 세트의 쌍을 학습 때와 같은 입력(공고 + E5 코사인 상위 기록)으로 직접 채점한다.
+        rows = pilot.prepare_cross_encoder_inputs(
+            dataset,
+            output_dir=directory / "cross-inputs",
+            e5_model_path=arguments.e5_model_path,
+            device=arguments.device,
+            embedding_batch_size=arguments.embedding_batch_size,
+            top_records=int(scorer_info.get("topRecords") or 8),
+        )
+        scores, cross_input_lengths = scorer(rows)
+        by_pair = {(row["profileId"], row["jobId"]): float(score) for row, score in zip(rows, scores)}
+    else:
+        raise SystemExit("--cross-scores나 --cross-checkpoint 중 하나가 필요하다")
+    # 지표는 검증 · 평가 분할만 쓴다. 외부 API 점수에는 학습 분할이 없다.
+    missing = [pair for pair in pairs if pair["split"] in {"valid", "test"} and (pair["profileId"], pair["jobId"]) not in by_pair]
     if missing:
-        raise ValueError(f"cross scores miss {len(missing)} pairs")
-    cross = [by_pair[(pair["profileId"], pair["jobId"])] for pair in pairs]
-    lexical, _ = pilot.run_lexical_baselines(dataset)
+        raise ValueError(f"cross scores miss {len(missing)} valid/test pairs for {arguments.cross_model_name}")
+    cross = [by_pair.get((pair["profileId"], pair["jobId"])) for pair in pairs]
+    lexical = lexical_baselines(dataset)
     rule = rule_match_scores(dataset, [(row["profileId"], row["jobId"]) for row in pairs], node=arguments.node)
     predictions: dict[str, Sequence[float | None]] = {arguments.cross_model_name: cross, "char_tfidf": lexical["char_tfidf"], RULE_MODEL: rule}
-    scorer, scorer_info = load_cross_scorer(arguments.cross_base_model, arguments.cross_checkpoint, device=arguments.device, batch_size=arguments.cross_batch_size)
+    record_scores = None
+    if scorer is None and arguments.record_scores:
+        record_scores = {
+            (str(row["profileId"]), str(row["jobId"]), str(row["recordId"])): row["prediction"]
+            for row in pilot._read_jsonl(arguments.record_scores)
+            if row["model"] == arguments.cross_model_name
+        }
+        scorer_info = {"model": arguments.cross_model_name, "recordScores": str(arguments.record_scores)}
+    label_source = {(str(row["profileId"]), str(row["jobId"])): str(row.get("labelSource")) for row in labels}
     encoder, _ = load_encoder(arguments.encoder, dataset, arguments)
     metrics = {
         "schemaVersion": "expresso-match-model-metrics-v1",
         "version": version,
         "createdAt": _now(),
         "modelA": {
-            name: {"valid": split_metrics(pairs, values, "valid", roc_points=False), "test": split_metrics(pairs, values, "test", roc_points=True)}
+            name: {
+                "valid": split_metrics(pairs, values, "valid", roc_points=False),
+                "test": split_metrics(pairs, values, "test", roc_points=True),
+                # 교사가 프로필을 나눠 맡았다. 같은 계열 모델끼리 판정이 겹치면 그 교사의 라벨에서만 높게 나온다.
+                "testByLabelSource": {
+                    source: split_metrics(
+                        [pair for pair in pairs if label_source.get((pair["profileId"], pair["jobId"])) == source],
+                        [value for pair, value in zip(pairs, values) if label_source.get((pair["profileId"], pair["jobId"])) == source],
+                        "test",
+                        roc_points=False,
+                    )
+                    for source in sorted({label_source.get((pair["profileId"], pair["jobId"])) for pair in pairs if pair["split"] == "test"})
+                },
+            }
             for name, values in predictions.items()
         },
         "comparisons": {
             f"{arguments.cross_model_name} - {baseline}": bootstrap_against(pairs, cross, predictions[baseline]) for baseline in (RULE_MODEL, "char_tfidf")
         },
         "modelB": {
-            split: model_b(dataset, labels, split, cross=scorer, encoder=encoder, node=arguments.node) for split in ("valid", "test")
-        },
+            split: model_b(dataset, labels, split, cross=scorer, record_scores=record_scores, model_name=arguments.cross_model_name, encoder=encoder, node=arguments.node)
+            for split in ("valid", "test")
+        }
+        if scorer is not None or record_scores is not None
+        else None,
         "modelBCosineEncoder": encoder.spec.model_id,
+        "modelACrossInputLengths": cross_input_lengths,
         "crossEncoder": scorer_info,
         "runtime": {**_runtime(arguments.device), "seconds": round(time.perf_counter() - started, 3)},
     }
@@ -570,7 +697,7 @@ def cmd_eval_cross(arguments: argparse.Namespace) -> dict[str, Any]:
             hashes=dataset["hashes"],
             trained_at=_now(),
             code_commit=_git_commit(),
-            extra={"model": arguments.cross_model_name, "checkpoint": str(arguments.cross_checkpoint), "crossScores": str(arguments.cross_scores), **scorer_info},
+            extra={"checkpoint": str(arguments.cross_checkpoint) if arguments.cross_checkpoint else None, "crossScores": str(arguments.cross_scores), **scorer_info, "model": arguments.cross_model_name},
         ),
     )
     return {"version": version, "directory": str(directory)}
@@ -604,15 +731,23 @@ def build_parser() -> argparse.ArgumentParser:
     encoders = commands.add_parser("encoders")
     common(encoders)
     encoders.add_argument("--encoders", nargs="+", choices=sorted(ENCODERS), default=["e5", "kure", "bge-m3", "qwen3"])
+    for command in (encoders,):
+        command.add_argument("--eval-data", type=Path, help="평가 세트 data 폴더(예: 한국어 공고 세트). 학습은 --data로 한다")
+        command.add_argument("--eval-labels", type=Path)
     train_bi = commands.add_parser("train-bi")
     common(train_bi)
     train_bi.add_argument("--encoder", choices=sorted(ENCODERS), required=True)
+    train_bi.add_argument("--eval-data", type=Path, help="평가 세트 data 폴더(예: 한국어 공고 세트). 학습은 --data로 한다")
+    train_bi.add_argument("--eval-labels", type=Path)
     eval_cross = commands.add_parser("eval-cross")
     common(eval_cross)
     eval_cross.add_argument("--encoder", choices=sorted(ENCODERS), default="e5", help="모델 B 코사인 baseline 인코더")
-    eval_cross.add_argument("--cross-scores", type=Path, required=True, help="llm_suitability_train --mode cross가 쓴 cross-encoder/scores.jsonl")
-    eval_cross.add_argument("--cross-checkpoint", type=Path, required=True, help="같은 실행의 cross-encoder/trainable-state.pt")
-    eval_cross.add_argument("--cross-base-model", default=pilot.CROSS_ENCODER_MODEL_ID)
+    eval_cross.add_argument("--cross-scores", type=Path, help="llm_suitability_train --mode cross의 cross-encoder/scores.jsonl 또는 match_api_scorer.py의 scores.jsonl. 비우면 --cross-checkpoint로 이 세트를 직접 채점한다")
+    eval_cross.add_argument("--e5-model-path", type=Path, default=Path(pilot.E5_MODEL_ID), help="직접 채점할 때 기록을 고르는 E5(파일럿과 같다). 로컬 경로도 된다")
+    model_b_source = eval_cross.add_mutually_exclusive_group()
+    model_b_source.add_argument("--cross-checkpoint", type=Path, help="같은 실행의 cross-encoder/trainable-state.pt. 모델 B를 이 가중치로 채점한다")
+    model_b_source.add_argument("--record-scores", type=Path, help="match_api_scorer.py가 쓴 record-scores.jsonl. 모델 B 점수를 이 파일에서 읽는다")
+    eval_cross.add_argument("--cross-base-model", default=pilot.CROSS_ENCODER_MODEL_ID, help="--cross-checkpoint의 기반 모델")
     eval_cross.add_argument("--cross-model-name", default=pilot.CROSS_ENCODER_ID)
     eval_cross.add_argument("--cross-batch-size", type=int, default=16)
     return parser
