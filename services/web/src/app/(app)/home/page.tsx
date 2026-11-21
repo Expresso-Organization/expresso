@@ -16,7 +16,7 @@ import { Checkins, ContestsWidget, InternsWidget, JobsWidget, Proposals, Proposa
  *
  * 대화를 시작하기 전에는 위에서 아래로 로고, 입력창, 추천 프롬프트, 확인 카드, 새 소식 위젯, 제안 카드가 보인다.
  * 말을 보내면(`?compose=1`) 같은 주소에서 대화 화면으로 바뀌고, 주소에 대화가 적혀 있으면
- * (`?chat=`) 그 대화가 열린다.
+ * (`?chat=`) 그 대화가 열린다. 「새 포트폴리오」(`?new=portfolio`)는 포트폴리오를 시작하는 세 갈래를 보이는 새 대화로 열린다.
  *
  * 말을 보내 대화를 시작하는 이동(`AGENT_CHAT_OPEN`)에서만 홈이 빠지고 대화 화면이 들어온다. 두 입력창은
  * 같은 이름이라 홈의 입력창이 대화 화면 아래 자리로 옮겨 간다. 대화 화면의 「새 대화」(`AGENT_CHAT_CLOSE`)는 그 반대로 돈다.
@@ -30,7 +30,9 @@ export default async function HomePage({
 }) {
   const [params, session] = await Promise.all([searchParams, requireSession()]);
   const chat = typeof params.chat === "string" ? params.chat : null;
-  const inConversation = chat !== null || params.compose === "1";
+  // 「새 포트폴리오」는 포트폴리오를 시작하는 세 갈래를 보이는 새 대화로 연다.
+  const newPortfolio = chat === null && params.new === "portfolio";
+  const inConversation = chat !== null || params.compose === "1" || newPortfolio;
 
   return (
     <>
@@ -40,7 +42,7 @@ export default async function HomePage({
           // 대화는 마운트할 때 주소에서 한 번 읽는다. 사이드바에서 다른 대화를 고르면 새로 세워야 그 대화가 열린다.
           // 두 감싸기는 같은 자리에 서므로 key로 갈라야 React가 바뀜(update)이 아니라 나감 · 들어옴으로 본다.
           <ViewTransition key="chat" enter={{ [AGENT_CHAT_OPEN]: "chat-arrive", default: "none" }} exit={{ [AGENT_CHAT_CLOSE]: "chat-leave", default: "none" }} default="none">
-            <AgentChat key={chat ?? "compose"} standalone fresh chatId={chat} newHref="/home" />
+            <AgentChat key={chat ?? (newPortfolio ? "portfolio" : "compose")} standalone fresh chatId={chat} newHref="/home" welcome={newPortfolio ? "portfolio" : null} />
           </ViewTransition>
         ) : (
           <ViewTransition key="home" exit={{ [AGENT_CHAT_OPEN]: "home-leave", default: "none" }} enter={{ [AGENT_CHAT_CLOSE]: "home-arrive", default: "none" }} update={{ [PROPOSAL_FEED_CHANGE]: "home-shift", default: "none" }} default="none">

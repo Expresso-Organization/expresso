@@ -72,8 +72,8 @@ export async function startGenerationAction(
 
   revalidatePath(`/brew/${brewId}/design`);
   // "다시 뽑기"(`again=1`)에서 시작했으면 그 표시를 지운다. 남겨 두면 생성이 끝나 화면을 다시 그릴 때 카탈로그가 다시
-  // 열려, 방금 채워지는 것을 지켜본 지면 대신 고르는 화면으로 돌아간다.
-  redirect(`/brew/${brewId}/design`);
+  // 열려, 방금 채워지는 것을 지켜본 지면 대신 고르는 화면으로 돌아간다. 생성이 도는 동안 카탈로그 주소는 기다림 화면이다.
+  redirect(`/brew/${brewId}/design?view=catalog`);
   return { error: null };
 }
 
@@ -108,7 +108,8 @@ export async function cancelGenerationAction(formData: FormData): Promise<void> 
     if (!(error instanceof ApiError) || (error.status !== 409 && error.status !== 404)) throw error;
   }
   revalidatePath(`/brew/${brewId}/design`);
-  redirect(`/brew/${brewId}/design`);
+  // 기다림 화면은 카탈로그에서 맡긴 생성이다. 멈추면 카탈로그로 돌아간다.
+  redirect(`/brew/${brewId}/design?view=catalog`);
 }
 
 /**

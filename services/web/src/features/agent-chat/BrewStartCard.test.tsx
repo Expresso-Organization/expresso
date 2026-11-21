@@ -25,7 +25,7 @@ function serve(answers: Record<string, () => Response>) {
   }));
   return calls;
 }
-const show = (props: Partial<Parameters<typeof BrewStartCard>[0]> = {}) => render(<BrewStartCard conversationId={conversationId} start={start} disabled={false} onOpen={vi.fn(async () => null)} {...props} />);
+const show = (props: Partial<Parameters<typeof BrewStartCard>[0]> = {}) => render(<BrewStartCard conversationId={conversationId} start={start} disabled={false} onOpen={vi.fn(async () => {})} {...props} />);
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); push.mockReset(); });
 
 describe("포트폴리오 제작 카드", () => {
@@ -42,7 +42,7 @@ describe("포트폴리오 제작 카드", () => {
   it("분석이 끝나면 요건의 확인 수를 보이고, 「담을 기록 고르기」는 화면을 넘기지 않고 대화에 카드를 붙인다", async () => {
     let state = done;
     serve({ "GET ": () => json({ data: state }) });
-    const onOpen = vi.fn(async () => { state = { ...done, brewId, step: "materials" }; return null; });
+    const onOpen = vi.fn(async () => { state = { ...done, brewId, step: "materials" }; });
     show({ onOpen });
     expect((await screen.findByRole("img")).getAttribute("aria-label")).toBe("요건 6개 가운데 기록 있음 1, 기록 일부 5, 기록 없음 0");
     fireEvent.click(screen.getByRole("button", { name: "담을 기록 고르기" }));
@@ -52,13 +52,24 @@ describe("포트폴리오 제작 카드", () => {
     expect(await screen.findByRole("button", { name: "담을 기록 고르기" })).toBeTruthy();
   });
 
-  it("재료 단계를 지난 제작은 「이어서 만들기」이고, 누르면 그 단계의 화면으로 간다. 답이 도는 동안에는 누를 수 없다", async () => {
+  it("재료 단계를 지난 제작은 「이어서 만들기」이고, 누르면 화면을 넘기지 않고 그 단계의 카드를 연다. 답이 도는 동안에는 누를 수 없다", async () => {
     serve({ "GET ": () => json({ data: { ...done, brewId, step: "interview" } }) });
     const view = show({ disabled: true });
     expect(((await screen.findByRole("button", { name: "이어서 만들기" })) as HTMLButtonElement).disabled).toBe(true);
-    view.rerender(<BrewStartCard conversationId={conversationId} start={start} disabled={false} onOpen={async () => `/brew/${brewId}/counter`} />);
+    const onOpen = vi.fn(async () => {});
+    view.rerender(<BrewStartCard conversationId={conversationId} start={start} disabled={false} onOpen={onOpen} />);
     fireEvent.click(screen.getByRole("button", { name: "이어서 만들기" }));
-    await waitFor(() => expect(push).toHaveBeenCalledWith(`/brew/${brewId}/counter`));
+    await waitFor(() => expect(onOpen).toHaveBeenCalledTimes(1));
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it("공고 없이 시작한 제작은 공고 링크와 요건 수 없이 정한 제목과 「담을 기록 고르기」를 보인다", async () => {
+    serve({ "GET ": () => json({ data: { ...done, requirements: { total: 0, covered: 0, partial: 0, missing: 0 }, brewId, step: "materials" } }) });
+    render(<BrewStartCard conversationId={conversationId} start={{ ...start, jobPostingId: null, companyName: "", title: "사이드 프로젝트 모음", brewId }} disabled={false} onOpen={vi.fn(async () => {})} />);
+    expect(await screen.findByRole("button", { name: "담을 기록 고르기" })).toBeTruthy();
+    expect(screen.getByText("사이드 프로젝트 모음")).toBeTruthy();
+    expect(screen.queryByRole("link")).toBeNull();
+    expect(screen.queryByText("기록 일부")).toBeNull();
   });
 
   it("다시 해 볼 수 있는 실패에만 「다시 분석」을 두고, 누르면 다시 맡긴 상태로 바뀐다", async () => {
@@ -83,7 +94,7 @@ describe("포트폴리오 제작 카드", () => {
     const view = show({ disabled: true, onAnnounce });
     await screen.findByRole("img");
     expect(onAnnounce).not.toHaveBeenCalled();
-    const again = (disabled: boolean) => view.rerender(<BrewStartCard conversationId={conversationId} start={start} disabled={disabled} onOpen={async () => null} onAnnounce={onAnnounce} />);
+    const again = (disabled: boolean) => view.rerender(<BrewStartCard conversationId={conversationId} start={start} disabled={disabled} onOpen={async () => {}} onAnnounce={onAnnounce} />);
     again(false);
     await waitFor(() => expect(onAnnounce).toHaveBeenCalledTimes(1));
     // 답이 다시 돌았다 끝나도 다시 청하지 않는다.

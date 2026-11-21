@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { resumeStep } from "./resume-step";
+import { resumeStep } from "./brew-resume-step";
 
 /**
  * 진행 중 제작의 status가 위저드 어느 단계로 이어지는지.

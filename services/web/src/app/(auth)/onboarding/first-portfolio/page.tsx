@@ -1,7 +1,7 @@
 import Link from "next/link";
 
-import { analyzePostingAction } from "@/app/(app)/brew/new/new-brew-actions";
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
+import { PostingChatStart } from "@/features/agent-chat/PostingChatStart";
 import { Icon } from "@/components/ui/Icon";
 import { homeEngagement } from "@/lib/app-data";
 import { requireSession } from "@/lib/require-session";
@@ -52,7 +52,7 @@ export default async function OnboardingFirstPortfolioPage() {
           <Link href="/home" className={styles.ghost}>
             홈으로 가기
           </Link>
-          <Link href="/brew/new" className={styles.primary}>
+          <Link href="/home?new=portfolio" className={styles.primary}>
             공고 골라 시작하기
           </Link>
         </>
@@ -71,9 +71,7 @@ export default async function OnboardingFirstPortfolioPage() {
 
           <div className={styles.jobCards}>
             {candidates.map((job) => (
-              <form key={job.id} action={analyzePostingAction}>
-                <input type="hidden" name="jobPostingId" value={job.id} />
-                <button type="submit" className={styles.jobCard}>
+              <PostingChatStart key={job.id} jobPostingId={job.id} className={styles.jobCard}>
                   <CompanyAvatar
                     company={{ name: job.company, logoUrl: job.companyLogoUrl }}
                     className={styles.jobAvatar}
@@ -94,8 +92,7 @@ export default async function OnboardingFirstPortfolioPage() {
                       일치도
                     </span>
                   </span>
-                </button>
-              </form>
+              </PostingChatStart>
             ))}
           </div>
 

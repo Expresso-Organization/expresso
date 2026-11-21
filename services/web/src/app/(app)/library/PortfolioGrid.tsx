@@ -8,7 +8,7 @@ import { Icon } from "@/components/ui/Icon";
 import { PortfolioTrashButton, TrashableCard } from "@/features/portfolio-trash/PortfolioTrash";
 import { publicSiteHost } from "@/lib/public-site";
 
-import { resumeStep } from "../brew/new/resume-step";
+import { resumeStep } from "@/lib/brew-resume-step";
 import type { ActiveBrew, GridItem, SiteInsight } from "../home/home-model";
 import { PreviewFrame } from "./PreviewFrame";
 import styles from "./portfolio-grid.module.css";
@@ -48,7 +48,7 @@ export function PortfolioGrid({
             />
           ),
         )}
-        <Link href={"/brew/new" as Route} className={styles.newPortfolio}>
+        <Link href="/home?new=portfolio" className={styles.newPortfolio}>
           <span className={styles.newPortfolioIcon}>
             <Icon name="plus" size={18} color="var(--ex-accent-text)" />
           </span>
@@ -59,12 +59,12 @@ export function PortfolioGrid({
   );
 }
 
-/** 끝나지 않은 제작. 배지는 멈춘 단계이고, 누르면 그 단계로 간다. */
+/** 끝나지 않은 제작. 배지는 멈춘 단계이고, 누르면 그 제작의 대화가 지금 단계의 카드와 함께 열린다. */
 function BrewCard({ brew }: { brew: ActiveBrew }) {
   const step = resumeStep(brew.status);
   return (
     <TrashableCard target={{ kind: "brew", id: brew.id, title: brew.title ?? "만들던 포트폴리오" }}>
-    <Link href={`/brew/${brew.id}/${step.segment}` as Route} className={styles.portfolioCard}>
+    <Link href={`/brew/${brew.id}`} className={styles.portfolioCard}>
       <div className={styles.portfolioThumb}>
         <span className={`${styles.portfolioBadge} ${styles.badgeMaking}`}>
           {brew.status === "generating" ? <span className={`${styles.workingDot} ex-anim-pulse`} /> : null}

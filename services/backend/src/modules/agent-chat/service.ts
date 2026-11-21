@@ -27,8 +27,8 @@ import { goalFamily } from "../jobs/demand.js";
 import type { ActivityApi } from "../activities/index.js";
 import { activityItem, activityMatches, jobItem } from "./finds.js";
 import { ConsentError, type ConsentApi } from "../consent/index.js";
-import { brewPath, brewStartState, generating, KeyedQueue, type AgentBrewDeps, type LiveBrew } from "./brew-start.js";
-import { interviewBasisKey, type AgentBrewDesign, type AgentBrewStart, type AgentBrewStartInput, type AgentBrewStartState, type AgentDesignDraw, type AgentDesignProposeInput, type AgentDesignReviseInput, type AgentInterviewAnswerInput } from "@expresso/contracts";
+import { brewStartState, generating, KeyedQueue, type AgentBrewDeps, type LiveBrew } from "./brew-start.js";
+import { interviewBasisKey, type AgentBrewDesign, type AgentBrewLength, type AgentBrewStart, type AgentBrewStartInput, type AgentFreeBrewInput, type AgentPostingImportInput, type AgentBrewStartState, type AgentDesignDraw, type AgentDesignProposeInput, type AgentDesignReviseInput, type AgentInterviewAnswerInput } from "@expresso/contracts";
 import type { AgentBrewInterviewState, AgentBrewState, AgentRunEvent } from "../../platform/agent/runtime.js";
 import { InterviewError } from "../interview/index.js";
 
@@ -411,27 +411,89 @@ export class AgentChatService {
   }
   /** 요건 대조나 보완점 정리 뒤에 공고 원문이나 근거로 쓴 기록이 바뀌었는가. */
   /**
-   * 대화에 연결된 공고로 포트폴리오 제작을 시작한다. 공고 분석을 맡기고 카드에 실을 ID를 돌려준다.
-   * 공고는 대화의 contexts에 있는 것만 받는다 — 도구 입력의 ID는 모델이 쓴 값이라 그대로 믿지 않는다.
+   * 공고로 포트폴리오 제작을 시작한다. 공고 분석을 맡기고 카드에 실을 ID를 돌려준다.
+   * 공고 ID는 모델이 쓴 값이라 그대로 믿지 않는다 — 공고가 있는지 읽어 확인하고, 대화의 자료에 없으면 붙인다(찾기로 얻은 공고).
    */
   private async startBrew(row: AgentConversationDoc, input: AgentBrewStartInput): Promise<{ start: AgentBrewStart; state: AgentBrewStartState }> {
-    if (!this.brews) throw new AgentToolRejection(["이 서버에서는 대화에서 포트폴리오 제작을 시작할 수 없습니다. 「새 포트폴리오」 화면에서 시작할 수 있다고 안내하십시오."]);
-    if (!row.contexts.some(ref => ref.kind === "job" && ref.id === input.jobPostingId)) throw new AgentToolRejection(["대화에 연결된 공고가 아닙니다. context에 있는 공고(kind가 job)의 id만 쓸 수 있습니다."]);
-    // 공고 분석은 공고 원문을 AI에 보낸다. 동의가 꺼져 있으면 시작하지 않고, 에이전트가 켜는 곳을 안내하게 한다.
-    try { await this.consent.require(row.userId, "job_analysis"); }
-    catch (error) { if (error instanceof ConsentError) throw new AgentToolRejection(["공고 분석 동의가 꺼져 있습니다. 설정의 「AI 사용 동의」에서 공고 분석을 켠 뒤 다시 요청해 달라고 안내하십시오."]); throw error; }
-    const posting = await this.jobs.get(row.userId, input.jobPostingId);
-    const { jobAnalysisId } = await this.brews.analyzePosting(row.userId, input.jobPostingId);
-    const brew = await this.liveBrew(row, jobAnalysisId);
-    const result = await this.brews.getResult(row.userId, jobAnalysisId);
-    // 앞서 분석해 둔 공고면 결과가 이미 있다. 도구가 그 결과를 돌려주어 이 답이 바로 알리므로, 따로 알리지 않도록 적어 둔다.
+    const brews = this.brewDeps();
+    await this.requireAnalysisConsent(row.userId);
+    const posting = await this.jobs.get(row.userId, input.jobPostingId).catch((error: unknown) => { if ((error as { statusCode?: number }).statusCode === 404) return null; throw error; });
+    if (!posting) throw new AgentToolRejection(["그 공고를 찾지 못했습니다. context의 공고(kind가 job)나 search_jobs가 돌려준 공고의 id를 쓰십시오. 사용자가 공고 주소나 공고 글을 주었으면 import_job_posting을 부르십시오."]);
+    const { jobAnalysisId } = await brews.analyzePosting(row.userId, input.jobPostingId);
+    return this.postingStart(row, { jobPostingId: input.jobPostingId, jobAnalysisId, title: posting.title, companyName: posting.company.name }, input.length);
+  }
+  /**
+   * 사용자가 준 공고 주소나 공고 글을 공고로 등록하고 제작을 시작한다. 주소는 서버가 읽고, 회사 · 제목을 읽지 못했으면 모델이 사용자에게 물어 다시 부르게 한다.
+   * 글은 모델이 가리킨 사용자 메시지의 원문 그대로 등록한다 — 모델이 옮겨 적으면 달라질 수 있고, 등록한 원문은 고칠 수 없다(0002).
+   */
+  private async importPosting(row: AgentConversationDoc, input: AgentPostingImportInput): Promise<{ start: AgentBrewStart; state: AgentBrewStartState }> {
+    const brews = this.brewDeps();
+    if (!input.url === !input.messageId) throw new AgentToolRejection(["url과 messageId 가운데 하나만 주십시오."]);
+    const pasted = input.messageId ? row.messages.find(message => message.role === "user" && message.id === input.messageId) : undefined;
+    if (input.messageId && !pasted) throw new AgentToolRejection([`이 대화의 사용자 메시지가 아닌 id입니다: ${input.messageId}. conversation에서 role이 user인 메시지의 id를 쓰십시오.`]);
+    await this.requireAnalysisConsent(row.userId);
+    let read: { sourceUrl: string | null; companyName: string | null; title: string | null; descriptionRaw: string };
+    if (input.url) {
+      try { read = await brews.readPostingUrl(input.url); }
+      catch (error) {
+        // 페이지에 닿지 못한 것(502)은 잠깐의 연결 문제일 수 있다. 한 번은 다시 부르게 한다.
+        const unreachable = (error as { statusCode?: number }).statusCode === 502;
+        throw new AgentToolRejection([`공고 주소를 읽지 못했습니다(${error instanceof BlockedUrlError ? "공개 주소가 아닙니다" : error instanceof Error ? error.message.slice(0, 200) : "알 수 없는 오류"}). ${unreachable ? "페이지에 닿지 못했습니다. 같은 주소로 한 번만 다시 부르고, 그래도 안 되면 " : ""}사용자에게 공고 글을 그대로 붙여 넣어 달라고 하십시오.`]);
+      }
+    }
+    else read = { sourceUrl: null, companyName: null, title: null, descriptionRaw: pasted!.text.trim() };
+    const companyName = input.companyName?.trim() || read.companyName?.trim() || "";
+    const title = input.title?.trim() || read.title?.trim() || "";
+    const missing = [...(companyName ? [] : ["companyName(회사 이름)"]), ...(title ? [] : ["title(공고 제목 · 직무)"])];
+    if (missing.length) throw new AgentToolRejection([`${missing.join(" · ")}을 알 수 없습니다. 사용자에게 물어 같은 입력에 그 칸을 넣어 다시 부르십시오.`]);
+    if (read.descriptionRaw.trim().length < 200) throw new AgentToolRejection([input.url ? "그 주소에서 공고 글을 충분히 읽지 못했습니다. 사용자에게 공고 글을 그대로 붙여 넣어 달라고 하십시오." : "공고 글이 너무 짧습니다. 하는 일과 자격 요건이 담긴 공고 전문을 붙여 달라고 하십시오."]);
+    // 같은 대화에서 같은 공고를 다시 부르면 같은 등록 · 분석이다.
+    const key = createHash("sha256").update(JSON.stringify([row._id, companyName, title, input.url ?? input.messageId])).digest("hex");
+    const submitted = await brews.submitPosting(row.userId, key, { companyName, title, descriptionRaw: read.descriptionRaw, ...(read.sourceUrl ? { sourceUrl: read.sourceUrl } : {}) });
+    return this.postingStart(row, { jobPostingId: submitted.jobPostingId, jobAnalysisId: submitted.jobAnalysisId, title, companyName }, input.length);
+  }
+  /** 공고로 시작한 제작의 카드와 지금 상태. 앞서 분석해 둔 공고면 결과가 이미 있다. */
+  private async postingStart(row: AgentConversationDoc, posting: { jobPostingId: string; jobAnalysisId: string; title: string; companyName: string }, length: AgentBrewLength | undefined): Promise<{ start: AgentBrewStart; state: AgentBrewStartState }> {
+    await this.attachJob(row, posting.jobPostingId);
+    const brew = await this.liveBrew(row, posting.jobAnalysisId);
+    const result = await this.brewDeps().getResult(row.userId, posting.jobAnalysisId);
+    // 도구가 결과를 돌려주어 이 답이 바로 알리므로, 따로 알리지 않도록 적어 둔다.
     // 메시지 밖에 적으므로 실행이 쓰는 마지막 답변과 부딪히지 않는다.
-    const announced = !!row.brewAnnounced?.[jobAnalysisId];
-    if (result.analysis.status === "done" && !announced) await this.rows.updateOne({ _id: row._id, userId: row.userId, [`brewAnnounced.${jobAnalysisId}`]: { $exists: false } }, { $set: { [`brewAnnounced.${jobAnalysisId}`]: row.messages.at(-1)!.id } });
+    const announced = !!row.brewAnnounced?.[posting.jobAnalysisId];
+    if (result.analysis.status === "done" && !announced) await this.rows.updateOne({ _id: row._id, userId: row.userId, [`brewAnnounced.${posting.jobAnalysisId}`]: { $exists: false } }, { $set: { [`brewAnnounced.${posting.jobAnalysisId}`]: row.messages.at(-1)!.id } });
     return {
-      start: { startId: randomUUID(), jobPostingId: input.jobPostingId, jobAnalysisId, title: posting.title, companyName: posting.company.name, brewId: brew?.id ?? null },
+      start: { startId: randomUUID(), ...posting, ...(length ? { lengthPreset: length } : {}), brewId: brew?.id ?? null },
       state: brewStartState(result, brew, announced || result.analysis.status === "done"),
     };
+  }
+  /**
+   * 공고 없이 제작을 시작한다. 분석할 공고가 없으니 제작을 바로 만들고 카드는 「담을 기록 고르기」부터 보인다.
+   * 알릴 분석이 없으므로 알린 것으로 적어 둔다.
+   */
+  private async startFreeBrew(row: AgentConversationDoc, input: AgentFreeBrewInput): Promise<{ start: AgentBrewStart; state: AgentBrewStartState }> {
+    const brews = this.brewDeps();
+    const lengthPreset = input.length ?? "single";
+    const { brewId, jobAnalysisId } = await brews.createFreeBrew(row.userId, { title: input.title, brief: input.brief, lengthPreset });
+    await this.rows.updateOne({ _id: row._id, userId: row.userId }, { $set: { [`brewIds.${jobAnalysisId}`]: brewId, [`brewAnnounced.${jobAnalysisId}`]: row.messages.at(-1)!.id } });
+    const state = await brews.brewState(row.userId, brewId);
+    return {
+      start: { startId: randomUUID(), jobPostingId: null, jobAnalysisId, title: input.title, companyName: "", lengthPreset, brewId },
+      state: brewStartState(await brews.getResult(row.userId, jobAnalysisId), state ? { id: brewId, ...state } : null, true),
+    };
+  }
+  private brewDeps() {
+    if (!this.brews) throw new AgentToolRejection(["이 서버에서는 대화에서 포트폴리오 제작을 시작할 수 없습니다. 그렇게 안내하십시오."]);
+    return this.brews;
+  }
+  /** 공고 분석은 공고 원문을 AI에 보낸다. 동의가 꺼져 있으면 시작하지 않고, 에이전트가 켜는 곳을 안내하게 한다. */
+  private async requireAnalysisConsent(userId: string) {
+    try { await this.consent.require(userId, "job_analysis"); }
+    catch (error) { if (error instanceof ConsentError) throw new AgentToolRejection(["공고 분석 동의가 꺼져 있습니다. 설정의 「AI 사용 동의」에서 공고 분석을 켠 뒤 다시 요청해 달라고 안내하십시오."]); throw error; }
+  }
+  /** 제작을 시작한 공고를 대화의 자료에 붙인다. 이미 있거나 자료가 가득 찼으면(10개) 두고 간다. 실행이 쓰는 칸(메시지)과 겹치지 않는다. */
+  private async attachJob(row: AgentConversationDoc, jobPostingId: string) {
+    if (row.contexts.some(ref => ref.kind === "job" && ref.id === jobPostingId) || row.contexts.length >= 10) return;
+    await this.rows.updateOne({ _id: row._id, userId: row.userId, "contexts.9": { $exists: false }, contexts: { $not: { $elemMatch: { kind: "job", id: jobPostingId } } } }, { $push: { contexts: { kind: "job", id: jobPostingId } } });
   }
   /** 이 대화에서 만든 제작 가운데 아직 남아 있는 것. 지운 제작(휴지통)은 없는 것으로 본다 — 카드가 죽은 화면을 열지 않게 한다. */
   private async liveBrew(row: AgentConversationDoc, jobAnalysisId: string): Promise<LiveBrew | null> {
@@ -478,7 +540,7 @@ export class AgentChatService {
     );
     // 다른 탭이 먼저 알렸거나 그 사이 대화가 바뀌었다. 지금 대화를 돌려주고, 카드는 다음에 다시 본다.
     if (!changed) return view(await this.owned(userId, id));
-    this.start(changed, context, apiKey, { kind: "brew_analysis_done", jobPostingId: start.jobPostingId });
+    this.start(changed, context, apiKey, { kind: "brew_analysis_done", brewId: null, title: start.title });
     return view(changed);
   }
   /**
@@ -490,19 +552,17 @@ export class AgentChatService {
     const startOf = (jobAnalysisId: string | undefined) => (jobAnalysisId ? row.messages.flatMap(message => message.tools).find(tool => tool.brewStart?.jobAnalysisId === jobAnalysisId)?.brewStart : undefined);
     const announced = Object.entries(row.brewAnnounced ?? {}).find(([, messageId]) => messageId === answerId)?.[0];
     const analysisStart = startOf(announced);
-    if (announced && analysisStart) return { field: `brewAnnounced.${announced}`, event: { kind: "brew_analysis_done", jobPostingId: analysisStart.jobPostingId } };
+    if (announced && analysisStart) return { field: `brewAnnounced.${announced}`, event: { kind: "brew_analysis_done", brewId: null, title: analysisStart.title } };
     const brewId = Object.entries(row.brewInterviews ?? {}).find(([, messageId]) => messageId === answerId)?.[0];
     const interviewStart = brewId ? startOf(Object.entries(row.brewIds ?? {}).find(([, id]) => id === brewId)?.[0]) : undefined;
-    if (brewId && interviewStart) return { field: `brewInterviews.${brewId}`, event: { kind: "brew_interview_start", jobPostingId: interviewStart.jobPostingId } };
+    if (brewId && interviewStart) return { field: `brewInterviews.${brewId}`, event: { kind: "brew_interview_start", brewId, title: interviewStart.title } };
     return null;
   }
   /**
-   * 「담을 기록 고르기」 · 「이어서 만들기」. 끝난 분석으로 제작을 한 번만 만들고 다음 단계를 연다. AI를 부르지 않는다.
-   *
-   * 재료 단계면 대화에 「재료 고르기」 카드를 든 답변을 붙인다. 이 답변은 에이전트가 아니라 서버가 쓴다 — 실행을 시작하지 않고
-   * 글 없이 카드 하나만 둔다. 같은 제작의 카드는 하나다. 그 뒤의 단계는 아직 대화로 옮기지 않아 지금의 화면 경로를 돌려준다.
+   * 「담을 기록 고르기」 · 「이어서 만들기」. 끝난 분석으로 제작을 한 번만 만들고 지금 단계의 카드를 붙인다. AI를 부르지 않는다.
+   * 카드 답변은 에이전트가 아니라 서버가 쓴다 — 실행을 시작하지 않고 글 없이 카드 하나만 둔다. 같은 제작 · 단계의 카드는 하나다.
    */
-  async openBrew(userId: string, id: string, startId: string): Promise<{ brewId: string; path: string | null; conversation: AgentConversation | null }> {
+  async openBrew(userId: string, id: string, startId: string): Promise<{ brewId: string; conversation: AgentConversation }> {
     return this.brewQueue.run(id, async () => {
       let row = await this.owned(userId, id);
       const start = this.brewStart(row, startId);
@@ -511,33 +571,66 @@ export class AgentChatService {
       if (!brew) {
         const result = await this.brews!.getResult(userId, start.jobAnalysisId);
         if (result.analysis.status !== "done") throw new AgentChatError(409, "공고 분석이 끝난 뒤 열 수 있습니다.", "공고 분석이 끝난 뒤 열 수 있습니다.");
+        if (!start.jobPostingId) throw new AgentChatError(409, "free brew was removed", "지운 포트폴리오 제작입니다. 새로 시작해 주세요.");
         const existing = brewOf(row, start.jobAnalysisId);
-        const { brewId } = await this.brews!.createBrew(userId, { jobAnalysisId: start.jobAnalysisId, lengthPreset: "single" });
+        const { brewId } = await this.brews!.createBrew(userId, { jobAnalysisId: start.jobAnalysisId, lengthPreset: start.lengthPreset ?? "single" });
         // 제작 ID는 대화에 적는다. 메시지 안을 건드리지 않으므로 실행 중에도 실행이 쓰는 마지막 답변과 부딪히지 않는다.
         // 읽은 뒤로 다른 요청이 먼저 적었으면(API 프로세스가 여럿일 때) 그 제작을 연다.
         const written = await this.rows.updateOne({ _id: id, userId, [`brewIds.${start.jobAnalysisId}`]: existing ?? { $exists: false } }, { $set: { [`brewIds.${start.jobAnalysisId}`]: brewId, updatedAt: new Date().toISOString() }, $inc: { version: 1 } });
         row = await this.owned(userId, id);
         brew = written.matchedCount ? { id: brewId, status: "draft", selected: 0 } : await this.liveBrew(row, start.jobAnalysisId) ?? { id: brewId, status: "draft", selected: 0 };
       }
-      const brewId = brew.id;
-      // AI 대화 단계는 이 대화에서 연 인터뷰면 대화 안에서 이어 간다. 지금의 화면에서 질문을 만든 제작이면 그 화면이다.
-      if (brew.status === "interviewing" && row.messages.some(message => message.tools.some(tool => tool.brewInterview?.brewId === brewId))) return { brewId, path: null, conversation: view(row) };
-      // 디자인 단계는 대화 안에서 이어 간다. 이 대화에서 연 디자인이 없으면(지금의 화면에서 인터뷰를 마친 제작) 여기서 연다.
-      if (brew.status !== "draft" && brew.status !== "interviewing") {
-        if (row.messages.some(message => message.tools.some(tool => tool.brewDesign?.brewId === brewId))) return { brewId, path: null, conversation: view(row) };
-        await this.brews!.startRecipe(userId, brewId);
-        return { brewId, path: null, conversation: view(await this.appendCard(row, { id: randomUUID(), name: "디자인", status: "complete", summary: "", brewDesign: { brewId, jobPostingId: start.jobPostingId, designMessageId: null } })) };
+      return { brewId: brew.id, conversation: view(await this.stageCard(row, start, brew)) };
+    });
+  }
+  /**
+   * 제작의 지금 단계 카드가 이 대화에 없으면 붙인다. 실행을 시작하지 않는다.
+   * 재료 → 「재료 고르기」, AI 대화 → 「AI 대화」(질문은 사용자가 말을 걸면 이어 간다), 그 뒤 → 「디자인」(구성 잡을 맡긴다)과 맡긴 생성이 있으면 「생성」.
+   * `again`(편집의 「다시 뽑기」)이면 다 만든 제작에도 다시 만들 수 있는 디자인 카드를 붙인다.
+   */
+  private async stageCard(row: AgentConversationDoc, start: AgentBrewStart, brew: LiveBrew, again = false): Promise<AgentConversationDoc> {
+    const tools = () => row.messages.flatMap(message => message.tools);
+    const card = (name: string, extra: Partial<AgentMessage["tools"][number]>) => ({ id: randomUUID(), name, status: "complete" as const, summary: "", ...extra });
+    const ids = { brewId: brew.id, jobPostingId: start.jobPostingId };
+    if (brew.status === "draft") return tools().some(tool => tool.brewMaterials?.brewId === brew.id) ? row : this.appendCard(row, card("재료 고르기", { brewMaterials: ids }));
+    if (brew.status === "interviewing") return tools().some(tool => tool.brewInterview?.brewId === brew.id) ? row : this.appendCard(row, card("AI 대화", { brewInterview: ids }));
+    const designs = tools().filter(tool => tool.brewDesign?.brewId === brew.id);
+    if (again ? !this.againOf(row, brew.id) : !designs.length) {
+      await this.brews!.startRecipe(row.userId, brew.id);
+      row = await this.appendCard(row, card("디자인", { brewDesign: { ...ids, designMessageId: null, ...(again ? { again: true } : {}) } }));
+      if (again) return row;
+    }
+    const generation = brew.generation;
+    if (generation && !tools().some(tool => tool.brewGeneration?.generationId === generation.id)) row = await this.appendCard(row, card("생성", { brewGeneration: { ...ids, generationId: generation.id } }));
+    return row;
+  }
+  /** 이 제작의 가장 최근 디자인 카드가 「다시 뽑기」로 연 것인가. 그 카드에서는 다 만든 제작도 다시 만든다. */
+  private againOf(row: AgentConversationDoc, brewId: string) {
+    return row.messages.flatMap(message => message.tools).findLast(tool => tool.brewDesign?.brewId === brewId)?.brewDesign?.again === true;
+  }
+  /**
+   * 「이어서 만들기」 · 「다시 뽑기」. 그 제작을 적은 대화(가장 최근)를 열고, 없으면 새 대화(공고 제작이면 공고를 자료로)에 「포트폴리오 제작」 카드를 세운다.
+   * 지금 단계의 카드를 붙이고 그 대화의 ID를 돌려준다. 옛 단계 화면에서 만들다 멈춘 제작도 여기로 이어 간다. AI를 부르지 않는다.
+   * 대화가 답을 쓰는 중이면 카드를 붙이지 않고 대화만 연다.
+   */
+  async resumeBrew(userId: string, brewId: string, options: { again?: boolean | undefined } = {}): Promise<{ conversationId: string }> {
+    if (!this.brews) throw new AgentChatError(503, "포트폴리오 제작 연결이 설정되지 않았습니다.");
+    const origin = await this.brews.brewOrigin(userId, brewId);
+    if (!origin) throw new AgentChatError(404, "brew not found", "포트폴리오 제작을 찾을 수 없습니다.");
+    const found = await this.rows.find({ userId, [`brewIds.${origin.jobAnalysisId}`]: brewId }).sort({ updatedAt: -1 }).limit(1).next();
+    const conversationId = found?._id ?? (await this.create(userId, origin.jobPostingId ? [{ kind: "job", id: origin.jobPostingId }] : [])).id;
+    return this.brewQueue.run(conversationId, async () => {
+      let row = await this.owned(userId, conversationId);
+      if (row.run?.status === "running" || row.messages.length >= 97) return { conversationId };
+      let start = row.messages.flatMap(message => message.tools).find(tool => tool.brewStart?.jobAnalysisId === origin.jobAnalysisId)?.brewStart;
+      if (!start) {
+        start = { startId: randomUUID(), jobPostingId: origin.jobPostingId, jobAnalysisId: origin.jobAnalysisId, title: origin.title, companyName: origin.companyName, lengthPreset: origin.lengthPreset, brewId };
+        // 분석은 이미 끝났다. 알린 것으로 적어 카드가 알림을 청하지 않게 한다. 새로 만든 대화는 사용자의 말이 없으니 그 포트폴리오의 이름을 제목으로 둔다.
+        row = await this.appendCard(row, { id: randomUUID(), name: "포트폴리오 제작", status: "complete", summary: [origin.companyName, origin.title].filter(Boolean).join(" · ").slice(0, 8_000), brewStart: start }, cardId => ({ [`brewIds.${origin.jobAnalysisId}`]: brewId, [`brewAnnounced.${origin.jobAnalysisId}`]: cardId, ...(row.messages.length === 0 ? { title: origin.title.slice(0, 120) } : {}) }));
       }
-      if (brew.status !== "draft") return { brewId, path: brewPath(brewId, brew.status), conversation: null };
-      if (row.messages.some(message => message.tools.some(tool => tool.brewMaterials?.brewId === brewId))) return { brewId, path: null, conversation: view(row) };
-      // 실행 중에는 마지막 답변을 실행이 통째로 다시 쓴다. 그 뒤에 답변을 붙일 수 없다.
-      if (row.run?.status === "running") throw new AgentChatError(409, "응답이 끝난 뒤 눌러 주세요.", "응답이 끝난 뒤 눌러 주세요.");
-      if (row.messages.length >= 99) throw new AgentChatError(409, "대화가 길어졌습니다. 새 대화를 시작해 주세요.", "대화가 길어졌습니다. 새 대화를 시작해 주세요.");
-      const now = new Date().toISOString();
-      const card: AgentMessage = { id: randomUUID(), role: "assistant", text: "", tools: [{ id: randomUUID(), name: "재료 고르기", status: "complete", summary: "", brewMaterials: { brewId, jobPostingId: start.jobPostingId } }], createdAt: now };
-      const changed = await this.rows.findOneAndUpdate({ _id: id, userId, "run.status": { $ne: "running" } }, { $push: { messages: card }, $set: { updatedAt: now }, $inc: { version: 1 } }, { returnDocument: "after" });
-      if (!changed) throw new AgentChatError(409, "응답이 끝난 뒤 눌러 주세요.", "응답이 끝난 뒤 눌러 주세요.");
-      return { brewId, path: null, conversation: view(changed) };
+      const brew = await this.liveBrew(row, origin.jobAnalysisId);
+      if (brew) await this.stageCard(row, start, brew, options.again === true);
+      return { conversationId };
     });
   }
   /**
@@ -572,7 +665,7 @@ export class AgentChatService {
         { returnDocument: "after" },
       );
       if (!changed) throw new AgentChatError(409, "응답이 끝난 뒤 눌러 주세요.", "응답이 끝난 뒤 눌러 주세요.");
-      this.start(changed, context, apiKey, { kind: "brew_interview_start", jobPostingId: start.jobPostingId });
+      this.start(changed, context, apiKey, { kind: "brew_interview_start", brewId, title: start.title });
       return view(changed);
     });
   }
@@ -606,26 +699,32 @@ export class AgentChatService {
       if (row.run?.status === "running") throw new AgentChatError(409, "응답이 끝난 뒤 눌러 주세요.", "응답이 끝난 뒤 눌러 주세요.");
       if (generating((await this.brews!.brewState(userId, brewId))?.generation)) throw new AgentChatError(409, "generation is running", "포트폴리오를 만드는 중입니다. 다 만든 뒤에 다듬기에서 고칠 수 있습니다.");
       const { designMessageId } = await this.brews!.designDraw(userId, brewId, input);
-      return view(await this.appendCard(row, { id: randomUUID(), name: "디자인", status: "complete", summary: "", brewDesign: { brewId, jobPostingId: start.jobPostingId, designMessageId } }));
+      return view(await this.appendCard(row, { id: randomUUID(), name: "디자인", status: "complete", summary: "", brewDesign: { brewId, jobPostingId: start.jobPostingId, designMessageId, ...(this.againOf(row, brewId) ? { again: true } : {}) } }));
     });
   }
   /**
    * 디자인 도구(견본 다시 받기 · 첫 화면 고치기). 디자인 대화에 그 차례를 맡기고 그 답을 가리키는 카드(`brewDesign`)를 도구 결과로 돌려준다.
    * 디자인 대화의 거절(아직 열지 않음 · 답을 만드는 중 · 크레딧 · 그린 첫 화면 없음)은 그 문장을 모델에게 돌려준다.
    */
-  private async designTool(row: AgentConversationDoc, jobPostingId: string, work: (brewId: string) => Promise<{ designMessageId: string }>): Promise<AgentBrewDesign> {
-    const starts = row.messages.flatMap(message => message.tools).flatMap(tool => (tool.brewStart?.jobPostingId === jobPostingId ? [tool.brewStart] : []));
-    const brew = starts.length ? await this.liveBrew(row, starts[0]!.jobAnalysisId) : null;
-    if (!brew) throw new AgentToolRejection(["이 대화에서 그 공고로 만든 제작이 없습니다. brews의 jobPostingId를 쓰십시오."]);
+  private async designTool(row: AgentConversationDoc, brewId: string, work: (brewId: string) => Promise<{ designMessageId: string }>): Promise<AgentBrewDesign> {
+    const brew = await this.brewInRow(row, brewId);
+    if (!brew) throw new AgentToolRejection(["이 대화에서 만든 제작이 아닙니다. brews의 brewId를 쓰십시오."]);
     if (brew.status === "draft" || brew.status === "interviewing") throw new AgentToolRejection(["아직 디자인 단계가 아닙니다. 지금 단계를 안내하십시오."]);
     if (generating(brew.generation)) throw new AgentToolRejection(["포트폴리오를 만드는 중이라 디자인을 바꿀 수 없습니다. 이번 생성에 반영되지 않습니다. 다 만들어지면 다듬기에서 고칠 수 있다고 안내하십시오."]);
-    if (brew.generation?.status === "done") throw new AgentToolRejection(["이미 만든 포트폴리오가 있습니다. 「생성」 카드의 「다듬기에서 열기」로 다듬기에서 고칠 수 있다고 안내하십시오."]);
+    const again = this.againOf(row, brew.id);
+    if (brew.generation?.status === "done" && !again) throw new AgentToolRejection(["이미 만든 포트폴리오가 있습니다. 「생성」 카드의 「다듬기에서 열기」로 다듬기에서 고칠 수 있다고 안내하십시오."]);
     if (!row.messages.some(message => message.tools.some(tool => tool.brewDesign?.brewId === brew.id))) throw new AgentToolRejection(["이 대화에 「디자인」 카드가 없습니다. 「AI 대화」 카드의 「디자인 고르기」를 권하십시오."]);
-    try { return { brewId: brew.id, jobPostingId, ...(await work(brew.id)) }; }
+    const start = this.startOfBrew(row, brew.id);
+    try { return { brewId: brew.id, jobPostingId: start.jobPostingId, ...(await work(brew.id)), ...(again ? { again: true } : {}) }; }
     catch (error) { if (error instanceof AgentChatError && error.publicMessage) throw new AgentToolRejection([error.publicMessage]); throw error; }
   }
-  private proposeDesign(row: AgentConversationDoc, input: AgentDesignProposeInput) { return this.designTool(row, input.jobPostingId, brewId => this.brews!.designPropose(row.userId, brewId, { request: input.request, focus: input.focus })); }
-  private reviseDesign(row: AgentConversationDoc, input: AgentDesignReviseInput) { return this.designTool(row, input.jobPostingId, brewId => this.brews!.designRevise(row.userId, brewId, { instruction: input.instruction, screen: input.screen })); }
+  /** 이 대화가 만든 제작 가운데 그 ID의 것. 지웠거나 다른 대화의 제작이면 null이다. 도구 입력의 ID는 모델이 쓴 값이라 대화에 적힌 것만 받는다. */
+  private async brewInRow(row: AgentConversationDoc, brewId: string): Promise<LiveBrew | null> {
+    const jobAnalysisId = Object.entries(row.brewIds ?? {}).find(([, value]) => value === brewId)?.[0];
+    return jobAnalysisId ? this.liveBrew(row, jobAnalysisId) : null;
+  }
+  private proposeDesign(row: AgentConversationDoc, input: AgentDesignProposeInput) { return this.designTool(row, input.brewId, brewId => this.brews!.designPropose(row.userId, brewId, { request: input.request, focus: input.focus })); }
+  private reviseDesign(row: AgentConversationDoc, input: AgentDesignReviseInput) { return this.designTool(row, input.brewId, brewId => this.brews!.designRevise(row.userId, brewId, { instruction: input.instruction, screen: input.screen })); }
   /**
    * 「디자인」 카드의 「이 스타일로 만들기」. 디자인 대화에서 고른 첫 화면으로 생성을 맡기고 「생성」 카드를 든 답변을 서버가 붙인다.
    * 실행을 시작하지 않는다. 생성이 줄에 있거나 도는 중이면 새로 맡기지 않고 그 생성의 카드를 붙인다(이미 있으면 대화만 돌려준다).
@@ -635,7 +734,7 @@ export class AgentChatService {
       const row = await this.owned(userId, id);
       const start = this.startOfBrew(row, brewId);
       if (!row.messages.some(message => message.tools.some(tool => tool.brewDesign?.brewId === brewId))) throw new AgentChatError(409, "디자인 카드가 없습니다.", "「디자인 고르기」로 디자인을 먼저 열어 주세요.");
-      const { generationId } = await this.brews!.startGeneration(userId, brewId);
+      const { generationId } = await this.brews!.startGeneration(userId, brewId, this.againOf(row, brewId));
       if (row.messages.some(message => message.tools.some(tool => tool.brewGeneration?.generationId === generationId))) return view(row);
       return view(await this.appendCard(row, { id: randomUUID(), name: "생성", status: "complete", summary: "", brewGeneration: { brewId, jobPostingId: start.jobPostingId, generationId } }));
     });
@@ -649,12 +748,12 @@ export class AgentChatService {
     return start;
   }
   /** 서버가 쓴 카드 답변을 붙인다. 실행 중에는 마지막 답변을 실행이 통째로 다시 쓰므로 붙일 수 없다. */
-  private async appendCard(row: AgentConversationDoc, tool: AgentMessage["tools"][number]) {
+  private async appendCard(row: AgentConversationDoc, tool: AgentMessage["tools"][number], also?: (cardId: string) => Record<string, string>) {
     if (row.run?.status === "running") throw new AgentChatError(409, "응답이 끝난 뒤 눌러 주세요.", "응답이 끝난 뒤 눌러 주세요.");
     if (row.messages.length >= 99) throw new AgentChatError(409, "대화가 길어졌습니다. 새 대화를 시작해 주세요.", "대화가 길어졌습니다. 새 대화를 시작해 주세요.");
     const now = new Date().toISOString();
     const card: AgentMessage = { id: randomUUID(), role: "assistant", text: "", tools: [tool], createdAt: now };
-    const changed = await this.rows.findOneAndUpdate({ _id: row._id, userId: row.userId, "run.status": { $ne: "running" } }, { $push: { messages: card }, $set: { updatedAt: now }, $inc: { version: 1 } }, { returnDocument: "after" });
+    const changed = await this.rows.findOneAndUpdate({ _id: row._id, userId: row.userId, "run.status": { $ne: "running" } }, { $push: { messages: card }, $set: { ...also?.(card.id), updatedAt: now }, $inc: { version: 1 } }, { returnDocument: "after" });
     if (!changed) throw new AgentChatError(409, "응답이 끝난 뒤 눌러 주세요.", "응답이 끝난 뒤 눌러 주세요.");
     return changed;
   }
@@ -716,9 +815,8 @@ export class AgentChatService {
     return { materials: { recordId: input.recordId, recordTitle: fresh.title, items }, issues };
   }
   private async saveInterviewAnswer(row: AgentConversationDoc, input: AgentInterviewAnswerInput) {
-    const starts = row.messages.flatMap(message => message.tools).flatMap(tool => (tool.brewStart?.jobPostingId === input.jobPostingId ? [tool.brewStart] : []));
-    const brew = starts.length ? await this.liveBrew(row, starts[0]!.jobAnalysisId) : null;
-    if (!brew) throw new AgentToolRejection(["이 대화에서 그 공고로 만든 제작이 없습니다. brews의 jobPostingId를 쓰십시오."]);
+    const brew = await this.brewInRow(row, input.brewId);
+    if (!brew) throw new AgentToolRejection(["이 대화에서 만든 제작이 아닙니다. brews의 brewId를 쓰십시오."]);
     if (brew.status !== "interviewing") throw new AgentToolRejection([brew.status === "draft" ? "아직 재료를 고르는 단계입니다. 「재료 고르기」 카드의 「AI와 대화 시작」을 안내하십시오." : "디자인 단계로 넘어간 제작입니다. 더 저장하지 않습니다. 「이어서 만들기」를 안내하십시오."]);
     const { bases } = await this.brews!.interview(row.userId, brew.id);
     const base = bases[input.basis];
@@ -746,7 +844,7 @@ export class AgentChatService {
     const row = await this.owned(userId, id);
     const start = this.brewStart(row, startId);
     const state = await this.brewStartState(userId, id, startId);
-    if (state.status !== "failed" || !state.failure?.retryable) return state;
+    if (state.status !== "failed" || !state.failure?.retryable || !start.jobPostingId) return state;
     await this.brews!.analyzePosting(userId, start.jobPostingId);
     return this.brewStartState(userId, id, startId);
   }
@@ -1058,6 +1156,8 @@ export class AgentChatService {
         brews: await this.brewStates(row),
         ...(event ? { event } : {}),
         startBrew: input => this.startBrew(row, input),
+        startFreeBrew: input => this.startFreeBrew(row, input),
+        importPosting: input => this.importPosting(row, input),
         saveInterviewAnswer: input => this.saveInterviewAnswer(row, input),
         readRepository: url => this.readRepository(url),
         attachWorkMaterials: input => this.attachWorkMaterials(row, input),

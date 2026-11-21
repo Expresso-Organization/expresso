@@ -39,6 +39,8 @@ const ChatContext = createContext<ReturnType<typeof useAgentConversation> | null
 /** 공고 상세 우측 레일에서 여는 대화의 공고. 첫 화면과 시작 제안이 이 공고를 기준으로 바뀐다. */
 export type AgentChatJob = { id: string; title: string; company: string };
 const JobContext = createContext<AgentChatJob | null>(null);
+/** 새 대화가 무엇을 하러 열렸는가. 「새 포트폴리오」(`/home?new=portfolio`)는 포트폴리오를 시작하는 세 갈래를 보인다. */
+const WelcomeContext = createContext<"portfolio" | null>(null);
 /**
  * 다듬기 화면에서 연 대화의 지면. 첫 화면 · 입력창 위 대상 표시 · 고침 카드의 되돌리기가 이것을 본다. `revision`은 화면이
  * 보고 있는 최신 판 번호다 — 고침 카드는 자기 판이 최신이 아니면 되돌리기를 막는다.
@@ -79,7 +81,23 @@ function useStarter() {
 function ChatWelcome() {
   const job = useContext(JobContext);
   const page = useContext(PageContext);
-  return job ? <JobWelcome job={job} /> : page ? <PageWelcome page={page} /> : <GeneralWelcome />;
+  const welcome = useContext(WelcomeContext);
+  return job ? <JobWelcome job={job} /> : page ? <PageWelcome page={page} /> : welcome === "portfolio" ? <PortfolioWelcome /> : <GeneralWelcome />;
+}
+/** 「새 포트폴리오」의 세 갈래. 입력창에 말을 넣고, 공고 주소 · 글은 사용자가 이어 붙인다. */
+const PORTFOLIO_STARTERS = [
+  { icon: "briefcase", title: "공고로 만들기", description: "지원할 공고에 맞춰", prompt: "지원할 공고에 맞춰 포트폴리오를 만들고 싶어. 맞는 공고부터 같이 찾아 줘." },
+  { icon: "link", title: "공고 주소나 글로 만들기", description: "목록에 없는 공고를 붙여 넣어", prompt: "이 공고로 포트폴리오를 만들어 줘.\n" },
+  { icon: "note-pencil", title: "공고 없이 만들기", description: "보여 주고 싶은 것에 맞춰", prompt: "공고 없이 포트폴리오를 만들고 싶어." },
+];
+function PortfolioWelcome() {
+  const { welcome, start } = useStarter();
+  return <div ref={welcome} className={styles.welcome}>
+    <div className={styles.welcomeMark}><LogoMark size={44} /></div>
+    <h1>새 포트폴리오</h1>
+    <p>지원할 공고가 있으면 공고에 맞춰, 없으면 보여 주고 싶은 것에 맞춰 만듭니다.</p>
+    <div className={styles.starters}>{PORTFOLIO_STARTERS.map(item => <Button key={item.title} variant="ghost" className={styles.starter} onClick={() => start(item.prompt)}><Icon name={item.icon} size={19} /><strong>{item.title}</strong><span>{item.description}</span><Icon name="arrow-up-right" size={14} /></Button>)}</div>
+  </div>;
 }
 /** 다듬기 화면의 시작 제안. 모두 고른 요소 하나를 고치는 말이라 요소를 고르기 전에는 막는다. */
 const PAGE_STARTERS = [
@@ -225,10 +243,12 @@ const convertMessage = (message: AgentMessage): ThreadMessageLike => ({
     { type: "text", text: message.text },
   ],
 });
-export function AgentChat({ job, page, standalone = false, fresh = false, chatId = null, newHref, onRunningChange, stageHost = null, ...props }: {
+export function AgentChat({ job, page, standalone = false, fresh = false, chatId = null, newHref, onRunningChange, stageHost = null, welcome = null, ...props }: {
   context?: AgentContext; contextLabel?: string; standalone?: boolean; job?: AgentChatJob;
   /** 참이면 주소에 적힌 대화만 연다. 홈이 쓴다 — 홈의 입력창이 넘긴 말(`agent-handoff`)이 있으면 그 말로 대화를 시작한다. */
   fresh?: boolean;
+  /** 새 대화의 시작 화면. 「새 포트폴리오」가 `portfolio`를 넘긴다. */
+  welcome?: "portfolio" | null;
   /** `fresh`일 때 주소에 적힌 대화(`?chat=`). 서버가 읽어 넘겨, 첫 렌더부터 그 대화를 불러온다. */
   chatId?: string | null;
   /** 「새 대화」가 갈 곳. 홈에서는 대화 전의 홈 화면으로 돌아간다. 주지 않으면 이 자리에서 대화를 비운다. */
@@ -411,7 +431,7 @@ export function AgentChat({ job, page, standalone = false, fresh = false, chatId
   const canRetry = !!lastRun && ["failed", "interrupted", "cancelled"].includes(lastRun.status) && lastMessage?.role === "assistant" && (beforeLast?.id === lastRun.requestId || lastMessage.id === lastRun.requestId);
   const retryButton = canRetry ? <Button variant="outline" size="sm" className={styles.retryButton} disabled={!canSend || state.pending} onClick={() => void state.retry()}><Icon name="arrow-clockwise" size={13} />다시 보내기</Button> : null;
   const missing = context && state.conversation && !state.conversation.contexts.some(ref => ref.kind === context.kind && ref.id === context.id);
-  return <ChatContext.Provider value={state}><JobContext.Provider value={job ?? null}><PageContext.Provider value={page ?? null}><SendContext.Provider value={canSend}><AssistantRuntimeProvider runtime={runtime}><AttachmentsProvider value={attachmentState}>
+  return <ChatContext.Provider value={state}><JobContext.Provider value={job ?? null}><WelcomeContext.Provider value={welcome}><PageContext.Provider value={page ?? null}><SendContext.Provider value={canSend}><AssistantRuntimeProvider runtime={runtime}><AttachmentsProvider value={attachmentState}>
     {preview ? <ResourcePreview resource={preview} onClose={() => setPreview(null)} selected={!!state.conversation?.contexts.some(ref => ref.kind === preview.kind && ref.id === preview.id)} disabled={contextDisabled} onToggle={toggleContext} /> : null}
     <AgentConsentDialog open={consentOpen} onOpenChange={setConsentOpen} onConsented={() => setAccess(current => current ? { ...current, consentRequired: false } : current)} />
     <section
@@ -453,5 +473,5 @@ export function AgentChat({ job, page, standalone = false, fresh = false, chatId
       </div>
       {standalone && !staged ? <ConversationSwitcher contexts={state.conversation?.contexts ?? []} contextDisabled={contextDisabled} onToggleContext={toggleContext} onPreview={setPreview} inline currentId={state.id} conversations={state.list} disabled={state.pending} onSelect={state.select} /> : null}
     </section>
-  </AttachmentsProvider></AssistantRuntimeProvider></SendContext.Provider></PageContext.Provider></JobContext.Provider></ChatContext.Provider>;
+  </AttachmentsProvider></AssistantRuntimeProvider></SendContext.Provider></PageContext.Provider></WelcomeContext.Provider></JobContext.Provider></ChatContext.Provider>;
 }

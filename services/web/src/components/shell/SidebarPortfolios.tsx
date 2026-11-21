@@ -43,9 +43,8 @@ export function SidebarPortfolios({
       <GlideMenu className={`${styles.portfolios} ${styles.navGroup}`}>
         {portfolios.map((portfolio) => {
           const { href } = portfolio;
-          // 제작은 단계마다 주소 끝이 바뀐다(`/brew/{id}/design`). 활성 표시는 제작 전체에 건다.
-          const base = href.startsWith("/brew/") ? href.slice(0, href.lastIndexOf("/")) : href;
-          const isActive = pathname === base || pathname.startsWith(`${base}/`);
+          // 제작의 카탈로그 화면(`/brew/{id}/design`)도 그 제작의 줄을 켠다.
+          const isActive = pathname === href || pathname.startsWith(`${href}/`);
           return (
             <Link
               key={portfolio.id}

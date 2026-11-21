@@ -15,7 +15,6 @@ export type CompareState = { error: string | null };
  * 한다. 그래서 돌아왔을 때 상태는 `queued`이고, 화면이 그 자리에서 진행을
  * 그린 뒤 끝나면 충족 수로 바뀐다.
  *
- * 제작 시작(`brew/new`)도 같은 API를 쓰지만 그쪽은 분석 대기 화면으로 보낸다.
  * 여기서는 읽던 공고에 그대로 머문다.
  */
 export async function compareWithRecordsAction(formData: FormData): Promise<CompareState> {

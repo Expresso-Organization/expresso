@@ -523,10 +523,6 @@
   outline-offset: 1px;
 }
 
-.headForm {
-  display: contents;
-}
-
 /* 이 화면에서 다음으로 할 일. 머리의 다른 버튼과 크기는 같고 지면 색으로 앞에 선다. */
 .headPrimary {
   background: var(--ex-accent);

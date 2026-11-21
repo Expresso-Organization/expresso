@@ -42,13 +42,13 @@ function makingQuestions(brew: BrewState): boolean {
 }
 
 /**
- * 대화의 카드에서 재료를 더 고칠 수 없는 제작이 이어지는 화면. 고칠 수 있으면 null이다.
+ * 대화의 카드에서 재료를 더 고칠 수 없는 제작을 잇는 주소(`/brew/[brewId]` — 그 제작의 대화를 지금 단계의 카드와 함께 연다). 고칠 수 있으면 null이다.
  *
  * 제작의 상태는 질문이 다 만들어져야 `draft`를 떠난다. 그래서 질문을 만드는 중에도 막는다 — 질문은 잡이 시작할 때 고른 재료로 만든다.
  * 그 뒤에는 구성을 만드는 중에 재료가 바뀌면 그 작업이 실패한다(`brew materials changed while planning`).
- * 갈래는 백엔드가 「이어서 만들기」에 내는 경로(`brewPath`)와 같다. 대화에서 연 인터뷰면 카드가 이 링크 대신 대화 아래의 「AI 대화」 카드에 맡긴다.
+ * 대화에서 연 인터뷰면 카드가 이 링크 대신 대화 아래의 「AI 대화」 카드에 맡긴다.
  */
 export function resumePath(brew: BrewState): string | null {
-  if (brew.status === "draft") return makingQuestions(brew) ? `/brew/${brew.brewId}/counter` : null;
-  return `/brew/${brew.brewId}/${brew.status === "interviewing" && !planningRecipe(brew) ? "counter" : "design"}`;
+  if (brew.status === "draft" && !makingQuestions(brew)) return null;
+  return `/brew/${brew.brewId}`;
 }
