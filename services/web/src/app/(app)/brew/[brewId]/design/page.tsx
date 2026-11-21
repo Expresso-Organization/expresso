@@ -17,7 +17,7 @@ import { brewingLeftMs, waitedMs } from "./wait-timing";
  * 디자인 카탈로그 화면(`?view=catalog`). 구조화 생성과 페이지 짜임새를 카탈로그에서 골라 만든다.
  *
  * 디자인은 대화의 「디자인」 카드에서 고른다. 이 주소를 `view=catalog` 없이 열면(옛 링크 · 다시 뽑기) 제작을 잇는 주소로 보낸다.
- * 진행 중인 생성은 기다림 화면으로, 끝난 생성은 06 다듬기 편집 화면으로 간다. 카탈로그 화면은 구성(레시피)이 아직이어도
+ * 진행 중인 생성은 어느 쪽으로 열든 기다림 화면이고, 끝난 생성은 06 다듬기 편집 화면으로 간다. 카탈로그 화면은 구성(레시피)이 아직이어도
  * 실행할 수 있고, 그때는 구성이 끝나는 대로 생성이 이어진다.
  */
 export default async function DesignPage({
@@ -30,7 +30,6 @@ export default async function DesignPage({
   const session = await requireSession();
   const { brewId } = await params;
   const query = await searchParams;
-  if (query.view !== "catalog") redirect(`/brew/${brewId}${query.again === "1" ? "?again=1" : ""}`);
 
   let brew;
   try {
@@ -52,6 +51,8 @@ export default async function DesignPage({
   // 끝난 생성은 다듬기로 간다. 생성 중에 `done` 신호를 받은 `LivePreview`가 다시 그리게 하면 이 분기를 탄다.
   const finished = generation?.status === "done" ? generation.portfolioId ?? brew.portfolioId : null;
   if (finished && !again) redirect(`/edit/${finished}`);
+  // 카탈로그에서 맡긴 생성은 이 주소에서 기다린다(아래). 그 밖에 `view=catalog` 없이 열면(옛 링크) 그 제작의 대화로 보낸다.
+  if (!running && query.view !== "catalog") redirect(`/brew/${brewId}${again ? "?again=1" : ""}`);
 
   if (running) {
     const reading = await waitReading(session.accessToken, brew);
