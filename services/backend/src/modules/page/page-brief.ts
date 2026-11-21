@@ -42,8 +42,10 @@ export function pageBriefSchema(sectionIds: [string, ...string[]]) {
         quote: z.string().optional().describe("그대로 크게 보일 만한 한 문장"),
         details: z.array(z.object({ label: z.string().min(1), text: z.string().min(1) })).optional().describe("역할 · 도구 · 기술 같은 이름표와 설명"),
         media: z.array(z.string()).optional().describe("이 섹션에 쓸 그림 주소"),
+        made: z.string().optional().describe("이 일이 만든 것의 생김새를 구체적인 낱말로"),
       }),
     ),
+    flagship: z.object({ sectionId: z.enum(sectionIds), why: z.string().min(1).describe("공고와 맞닿는 까닭 한 줄") }).optional().describe("대표 사례 하나"),
     career: z.array(z.object({ period: z.string(), organization: z.string().min(1), role: z.string(), description: z.string() })),
     evidence: z.array(z.object({ id: z.string().min(1), title: z.string().min(1), kind: z.string(), summary: z.string() })),
   });
@@ -114,6 +116,8 @@ export function briefRequest(context: PageGenerationContext): string {
   lines.push("  - metrics는 출처에 적힌 수치만 적습니다. value는 숫자와 단위이고, 같은 수치의 이전 값이 출처에 함께 있으면 before에 적습니다.");
   lines.push("  - steps는 출처에 순서가 있는 과정일 때만, quote는 그대로 크게 보일 만한 문장이 있을 때만 적습니다. 없으면 그 칸을 뺍니다.");
   lines.push("  - period는 출처에 적힌 기간 그대로입니다. 출처에 없으면 뺍니다.");
+  lines.push("  - made는 그 일이 만든 것의 생김새를 구체적인 낱말로 적습니다(예: 서버 · 클라이언트로 나뉜 상품 상세 화면, 10만 행 정산 표, 토큰부터 문서 사이트까지의 컴포넌트 묶음). 디자이너가 그 섹션의 그림을 여기서 고릅니다. 사례가 아닌 섹션은 뺍니다.");
+  lines.push("- flagship: 사례 섹션 가운데 공고가 찾는 것과 가장 맞닿은 하나를 대표 사례로 고르고, 까닭을 한 줄로 적습니다. 대표 사례의 body는 문제(왜 문제였는지와 그 근거) · 접근(무엇을 판단해 어떻게 했는지) · 결과를 출처가 받쳐 주는 만큼 자세히 쓰고, steps · metrics · details도 출처에 있는 만큼 채웁니다. 다른 사례는 claim과 짧은 body로 충분합니다. 사례 섹션이 없으면 뺍니다.");
   lines.push("- career: 출처에 있는 경력만 적습니다. 없으면 빈 목록입니다.");
   lines.push("- evidence: 출처 자료마다 한 줄씩, id는 위의 대괄호 안 ID 그대로입니다.");
   return lines.join("\n");
@@ -148,6 +152,7 @@ export function briefViolations(brief: PageBrief, context: PageGenerationContext
   brief.sections.forEach((section, index) => {
     const base = `/sections/${index}`;
     prose(`${base}/claim`, section.claim, "주장");
+    prose(`${base}/made`, section.made, "만든 것");
     prose(`${base}/body`, section.body, "서술");
     period(`${base}/period`, section.period);
     const metrics = section.metrics ?? [];
@@ -214,10 +219,17 @@ export function briefPrompt(brief: PageBrief): string[] {
     for (const item of brief.lead) lines.push(`- ${item.what} (${brief.sections.find((section) => section.id === item.sectionId)?.title ?? item.sectionId})`);
     lines.push("");
   }
+  const flagship = brief.flagship ? brief.sections.find((section) => section.id === brief.flagship!.sectionId) : undefined;
+  if (flagship) {
+    lines.push(`### 대표 사례 — ${flagship.title}`);
+    lines.push(`공고와 맞닿는 까닭: ${brief.flagship!.why}`);
+    lines.push("");
+  }
   lines.push(`### 섹션 ${brief.sections.length}개 — 모두 지면에 싣는다`);
   for (const [index, section] of brief.sections.entries()) {
-    lines.push(`#### ${index + 1}. ${section.title}${section.period ? ` (${section.period})` : ""}`);
+    lines.push(`#### ${index + 1}. ${section.title}${section.period ? ` (${section.period})` : ""}${section === flagship ? " — 대표 사례" : ""}`);
     lines.push(`주장: ${section.claim}`);
+    if (section.made) lines.push(`만든 것: ${section.made}`);
     if (section.body) lines.push(section.body);
     for (const metric of section.metrics ?? [])
       lines.push(`- 수치 · ${metric.label}: ${metric.before ? `${metric.before} → ` : ""}${metric.value}${metric.note ? ` (${metric.note})` : ""}`);

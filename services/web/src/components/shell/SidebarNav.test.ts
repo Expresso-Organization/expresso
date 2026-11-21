@@ -21,5 +21,5 @@ it("에이전트 대화는 홈이고, 기록과 포트폴리오는 어디서 열
 });
 
 it("새 포트폴리오 제작은 탭이 아니라 버튼이라 어느 탭도 활성으로 만들지 않는다", () => {
-  expect(sectionForPath("/brew/new")).toBeNull();
+  expect(sectionForPath("/brew/00000000-0000-4000-8000-000000000001")).toBeNull();
 });

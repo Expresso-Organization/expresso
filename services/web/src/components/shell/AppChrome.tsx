@@ -2,7 +2,7 @@ import type { Route } from "next";
 import type { ReactNode } from "react";
 import { Suspense } from "react";
 
-import { resumeStep } from "@/app/(app)/brew/new/resume-step";
+import { resumeStep } from "@/lib/brew-resume-step";
 import { gridItems } from "@/app/(app)/home/home-model";
 import { homeEngagement, recentPortfolios } from "@/lib/app-data";
 import { publicSiteHost } from "@/lib/public-site";
@@ -62,7 +62,7 @@ async function AppSidebar() {
           return {
             id: item.brew.id,
             name: item.brew.title ?? "만들던 포트폴리오",
-            href: `/brew/${item.brew.id}/${step.segment}` as Route,
+            href: `/brew/${item.brew.id}` as Route,
             meta: `만드는 중 · ${step.label}`,
             status: "draft" as const,
           };

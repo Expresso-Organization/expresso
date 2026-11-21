@@ -24,7 +24,7 @@ export function findDesignSystemRevision(
  * 스타일 값은 모두 판의 토큰에서 정하므로 템플릿은 생성 문맥의 기본 틀만 맡습니다.
  * 내장 Clarity가 가장 중립적인 틀이라 이 자리에 둡니다.
  */
-function fallbackTemplateId(): string {
+export function fallbackTemplateId(): string {
   const clarity = catalogEntries().find(
     ({ revision }) => revision.code === "clarity",
   )?.revision;

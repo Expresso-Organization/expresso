@@ -5,7 +5,9 @@ import type { CSSProperties, KeyboardEvent, PointerEvent as ReactPointerEvent } 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Icon } from "@/components/ui/Icon";
+import { AgentChat } from "@/features/agent-chat/AgentChat";
 import { CareerDocumentEditor } from "@/features/career-editor/editor/CareerDocumentEditor";
+import { RevisionHistory } from "@/features/career-editor/history/RevisionHistory";
 import { SaveState } from "@/features/career-editor/editor/SaveState";
 import { AiProposalPanel, type AiPromptRequest } from "@/features/career-editor/ai/AiProposalPanel";
 import { CareerRecordSyncProvider } from "@/features/career-editor/properties/record-sync";
@@ -159,6 +161,7 @@ export function DocumentPanel({
         <span className={styles.headLabel}>{category.name} · 문서</span>
         <div className={styles.headRight}>
           {panelRecord ? <SaveState key={panelRecord.id} recordId={panelRecord.id} className={styles.headLabel} /> : null}
+          {panelRecord ? <RevisionHistory key={`history-${panelRecord.id}`} recordId={panelRecord.id} /> : null}
           <button type="button" className={styles.headAction} aria-label="휴지통으로 옮기기" title="휴지통으로 옮기기" disabled={!record || !onDelete} onClick={onDelete}>
             <Icon name="trash" size={15} />
           </button>
@@ -175,6 +178,8 @@ export function DocumentPanel({
               <CareerRecordSyncProvider value={sync}>
                 <CareerDocumentEditor key={panelRecord.id} recordId={panelRecord.id} mode="peek" record={panelRecord} category={category} showAiProposal={false} onAiRequest={setEditorAiRequest} />
               </CareerRecordSyncProvider>
+              {/* 서랍에는 우측 레일을 둘 폭이 없어 채팅을 문서 아래에 둔다. 전체 페이지는 레일(`ChatRail`)이 맡는다. */}
+              <AgentChat key={`chat-${panelRecord.id}`} context={{ kind: "record", id: panelRecord.id }} contextLabel="현재 기록" />
             </div>
           </div>
 

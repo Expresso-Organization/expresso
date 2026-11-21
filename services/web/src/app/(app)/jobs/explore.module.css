@@ -67,59 +67,86 @@
   color: var(--ex-fg);
 }
 
-/* ── 공모전 · 해커톤 행 ───────────────────────────────────── */
+/* ── 공모전 · 해커톤 · 부트캠프 카드(워터폴 그리드) ─────────── */
 
-.activities {
-  display: flex;
-  flex-direction: column;
+.wall {
+  padding: 20px;
 }
 
-.activity {
+.card {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 13px 16px;
-  border-top: 1px solid var(--ex-border-inner);
+  flex-direction: column;
+  min-width: 0;
+  border: 1px solid var(--ex-border-inner);
+  border-radius: var(--ex-radius-card);
+  overflow: hidden;
+  background: var(--ex-bg);
   color: inherit;
   text-decoration: none;
-  transition: background var(--ex-motion-instant);
+  transition: box-shadow var(--ex-motion-quick);
 }
 
-.activity:hover {
-  background: var(--ex-bg-hover);
+.card:hover {
+  box-shadow: var(--ex-elevation-card-hover);
 }
 
-.activityMark {
-  flex-shrink: 0;
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
+.cardMedia {
+  position: relative;
+  display: block;
+  overflow: hidden;
   background: var(--ex-bg-tint);
-  font-size: var(--ex-text-xs);
-  font-weight: 600;
-  color: var(--ex-fg-muted);
 }
 
-.activityBody {
-  flex: 1;
-  min-width: 0;
+.cardPoster {
+  display: block;
+  width: 100%;
+  height: auto;
+  transition: transform var(--ex-motion-panel);
+}
+
+.card:hover .cardPoster {
+  transform: scale(1.02);
+}
+
+/* 포스터 위 마감 — 포스터마다 바탕색이 달라 흰 바탕에 그림자로 띄운다 */
+.cardChip {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 3px 9px;
+  border-radius: var(--ex-radius-pill);
+  background: var(--ex-bg);
+  box-shadow: var(--ex-elevation-raised);
+  font-family: var(--ex-font-brand);
+  font-size: var(--ex-text-2xs);
+  font-weight: 600;
+  color: var(--ex-fg-body);
+}
+
+.cardChipUrgent {
+  color: var(--ex-accent-text);
+}
+
+.cardBody {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
+  min-width: 0;
+  padding: 12px 14px 14px;
 }
 
-.activityTitle {
+.cardTitle {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
   font-size: var(--ex-text-sm);
   font-weight: 600;
+  line-height: var(--ex-leading-snug);
   color: var(--ex-fg);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.activityMeta {
+.cardMeta {
   font-size: var(--ex-text-2xs);
   color: var(--ex-fg-muted);
   white-space: nowrap;
@@ -127,13 +154,15 @@
   text-overflow: ellipsis;
 }
 
-.activityTags {
-  display: none;
+.cardTags {
+  display: flex;
+  flex-wrap: wrap;
   gap: 6px;
+  margin-top: 2px;
 }
 
-.activityTag {
-  padding: 3px 9px;
+.cardTag {
+  padding: 2px 8px;
   border-radius: var(--ex-radius-pill);
   background: var(--ex-bg-tint);
   font-size: var(--ex-text-3xs);
@@ -141,29 +170,55 @@
   white-space: nowrap;
 }
 
-.activityStatus {
-  flex-shrink: 0;
-  font-size: var(--ex-text-2xs);
-  color: var(--ex-fg-muted);
+/* 포스터 없는 카드 — 이니셜과 글만, 위아래가 짧다 */
+.cardPlain {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
 }
 
-.activityDeadline {
-  flex-shrink: 0;
-  min-width: 44px;
-  text-align: right;
+.cardPlain:hover {
+  box-shadow: none;
+  background: var(--ex-bg-hover);
+}
+
+.cardPlainBody {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.cardDeadline {
   font-family: var(--ex-font-brand);
-  font-size: var(--ex-text-sm);
+  font-size: var(--ex-text-2xs);
+  font-weight: 600;
   color: var(--ex-fg-body);
 }
 
-.activityDeadlineUrgent {
+.cardDeadlineUrgent {
   color: var(--ex-accent-text);
-  font-weight: 500;
 }
 
-.activityOut {
-  flex-shrink: 0;
-  color: var(--ex-fg-subtle);
+@media (max-width: 767px) {
+  .wall {
+    padding: 12px;
+  }
+
+  .cardBody {
+    padding: 10px 10px 12px;
+  }
+
+  .cardTags {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card:hover .cardPoster {
+    transform: none;
+  }
 }
 
 /* ── 빈 종류 ───────────────────────────────────────────────── */

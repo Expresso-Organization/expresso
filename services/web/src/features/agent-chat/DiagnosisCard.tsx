@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
-import type { ConsultantDiagnosis, DiagnosisStatus } from "@expresso/contracts";
+import { diagnosisCounts, type ConsultantDiagnosis, type DiagnosisStatus } from "@expresso/contracts";
 import { Icon } from "@/components/ui/Icon";
 import card from "./ToolCard.module.css";
 import styles from "./DiagnosisCard.module.css";
@@ -45,7 +45,9 @@ export function sampleLine(diagnosis: Pick<ConsultantDiagnosis, "family" | "work
 export function DiagnosisCard({ diagnosis }: { diagnosis: ConsultantDiagnosis }) {
   const [open, setOpen] = useState<string | null>(null);
   // 경력 연차는 공고가 받는 경력의 분포다. 기록과 대조하는 항목이 아니라 상태를 세지도, 보이지도 않는다.
-  const counts = ORDER.map(status => [status, diagnosis.items.filter(item => item.kind !== "career" && item.status === status).length] as const);
+  // 수는 컨설턴트의 답변 · 대화의 요지와 같은 함수로 센다.
+  const tally = diagnosisCounts(diagnosis.items);
+  const counts = ORDER.map(status => [status, tally[status]] as const);
   return <section className={`${card.card} ${styles.card}`} aria-label="목표 진단">
     <header className={card.head}>
       <span className={card.title}><Icon name="chart-bar" size={15} />목표 진단</span>

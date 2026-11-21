@@ -93,13 +93,19 @@ export default async function PublicSitePage({
   const snapshot = FreeHtmlDeploymentSnapshotSchema.safeParse(publication.deployment.snapshot);
   if (!snapshot.success) notFound();
   const outline = snapshot.data.outline ?? [];
+  // 그림 스크립트를 실은 지면의 정책에 그림을 내보내는 출처를 더한다. 지면의 그림은 방문자가 연 주소를 따라 풀린다.
+  const received = await headers();
+  // 프록시를 여럿 지나면 쉼표로 이어진다. 방문자 쪽의 첫 값을 쓴다.
+  const first = (value: string | null) => value?.split(",")[0]?.trim() || null;
+  const host = first(received.get("x-forwarded-host")) ?? first(received.get("host"));
+  const origin = host ? `${first(received.get("x-forwarded-proto")) ?? "https"}://${host}` : "";
 
   return (
     <div className={styles.page}>
       <SiteFrame
         slug={slug}
         title={snapshot.data.title}
-        document={withSiteTracker(snapshot.data.generatedPage.document, outline.length)}
+        document={withSiteTracker(snapshot.data.generatedPage.document, outline.length, origin)}
         outline={outline.map(({ id }) => id)}
       />
     </div>

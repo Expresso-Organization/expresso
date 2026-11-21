@@ -85,4 +85,31 @@ describe("공유 대화 상태", () => {
     await act(async () => { await result.current.send("다시 보내기").catch(() => undefined); });
     expect(ids).toHaveLength(2); expect(ids[0]).toBe(ids[1]); expect(result.current.issue).toBe("잠시 후 재시도");
   });
+  it("배경의 다시 읽기는 한 번 실패하면 알리지 않고 두 번 잇달아 실패하면 알리며, 다시 성공하면 그 글을 지운다. 사용자가 누른 동작의 오류는 지우지 않는다", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      window.history.replaceState(null, "", `/agent?chat=${first}`);
+      let fail = false;
+      vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+        if (url.endsWith("conversations")) return Response.json({ data: [] });
+        if (url.endsWith("messages")) return Response.json({ error: { message: "잠시 후 재시도" } }, { status: 503 });
+        return fail ? Response.json({ error: { message: "서버에 연결하지 못했습니다." } }, { status: 502 }) : Response.json({ data: row() });
+      }));
+      const { result } = renderHook(() => useAgentConversation());
+      await waitFor(() => expect(result.current.conversation?.id).toBe(first));
+      const tick = () => act(async () => { await vi.advanceTimersByTimeAsync(3_000); });
+      fail = true;
+      await tick();
+      expect(result.current.issue).toBeNull();
+      await tick();
+      expect(result.current.issue).toBe("서버에 연결하지 못했습니다.");
+      fail = false;
+      await tick();
+      expect(result.current.issue).toBeNull();
+      await act(async () => { await result.current.send("보내기").catch(() => undefined); });
+      expect(result.current.issue).toBe("잠시 후 재시도");
+      await tick();
+      expect(result.current.issue).toBe("잠시 후 재시도");
+    } finally { vi.useRealTimers(); }
+  });
 });

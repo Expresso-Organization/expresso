@@ -11,6 +11,10 @@
     "./editing": {
       "types": "./dist/editing.d.ts",
       "default": "./dist/editing.js"
+    },
+    "./blueprint": {
+      "types": "./dist/blueprint.d.ts",
+      "default": "./dist/blueprint.js"
     }
   },
   "scripts": {

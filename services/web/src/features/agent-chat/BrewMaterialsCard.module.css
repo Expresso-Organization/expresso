@@ -1,0 +1,40 @@
+/* 대화의 「재료 고르기」 카드. 틀은 다른 카드(RecordDraftCard.module.css)와 같고, 여기에는 이 카드만의 것을 둔다. */
+
+/* 목록이 카드 안에서 차지하는 최대 높이. 기록 일곱 줄쯤이 보인다. */
+.loading, .rows { --rows-max: 328px; }
+
+/* 머리줄 오른쪽에 지금 몇 건을 골랐는지. */
+.head .count { margin-left: auto; font-weight: 400; font-size: var(--ex-text-2xs); color: var(--ex-fg-muted); font-variant-numeric: tabular-nums; }
+.head .count strong { font-weight: 600; color: var(--ex-fg); }
+
+/* 불러오는 동안에도 다 뜬 뒤의 높이(목록의 최대 높이 + 단추 줄)를 잡아 둔다. 카드는 대화에 붙자마자 화면 끝까지 내려와 보이는데,
+   불러온 뒤에 커지면 아래쪽 단추가 화면 밖으로 밀린다. */
+.loading { display: flex; flex-direction: column; gap: 12px; padding: 4px 0; min-height: calc(var(--rows-max) + 42px); }
+
+/* 줄 세운 기록. 길면 카드 안에서 넘긴다 — 대화가 카드 하나로 밀려 올라가지 않게 한다. */
+.rows { list-style: none; margin: 0 -6px; padding: 0; max-height: var(--rows-max); overflow-y: auto; display: flex; flex-direction: column; gap: 1px; }
+.row { display: grid; grid-template-columns: auto minmax(0, 1fr) 36px; align-items: center; gap: 9px; padding: 7px 6px; border-radius: var(--ex-radius-control); cursor: pointer; }
+.row:hover { background: var(--ex-bg-tint); }
+.row input { width: 15px; height: 15px; margin: 0; accent-color: var(--ex-accent); cursor: inherit; }
+.row:has(input:disabled) { cursor: progress; }
+/* 다음 단계로 넘어간 제작의 목록은 보이기만 한다. */
+.row[data-locked="true"] { cursor: default; }
+.row[data-locked="true"]:hover { background: none; }
+.text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.title { font-size: var(--ex-text-xs); line-height: var(--ex-leading-snug); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.meta { display: flex; align-items: center; gap: 4px; font-size: var(--ex-text-3xs); color: var(--ex-fg-muted); }
+/* 고르지 않은 줄은 한 단계 가라앉힌다. */
+.row[data-selected="false"] .title { color: var(--ex-fg-muted); }
+
+/* 매칭 — 가장 잘 맞는 기록을 가득 찬 막대로 삼아 견준다. */
+.match { display: block; height: 4px; border-radius: 999px; background: var(--ex-border); overflow: hidden; }
+.match span { display: block; height: 100%; border-radius: inherit; background: var(--ex-accent); }
+.row[data-selected="false"] .match span { background: var(--ex-border-firm); }
+
+/* 왼쪽은 지금의 화면으로 가는 길, 오른쪽은 다음 단계. */
+.actions { justify-content: space-between; align-items: center; }
+.wide { display: inline-flex; align-items: center; gap: 4px; font-size: var(--ex-text-2xs); color: var(--ex-fg-muted); text-decoration: none; }
+.wide:hover { color: var(--ex-accent-text); }
+.next { display: inline-flex; align-items: center; justify-content: center; min-height: 32px; padding: 0 14px; border: 0; border-radius: var(--ex-radius-control); background: var(--ex-accent); color: var(--ex-fg-on-accent); font: inherit; font-size: var(--ex-text-xs); font-weight: 600; text-decoration: none; cursor: pointer; }
+.next:hover:not(:disabled) { background: var(--ex-accent-hover); }
+.next:disabled { opacity: 0.6; cursor: progress; }
