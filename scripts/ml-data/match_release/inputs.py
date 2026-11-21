@@ -12,14 +12,19 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import llm_suitability_train as pilot
 from match_api_scorer import ApiScorer, PROVIDERS, build_body, parse_answers, urllib_transport
 
+KIND = {"must": 0, "responsibility": 1, "preferred": 2}
+
 
 def profile_text(profile):
     text = pilot.render_profile(profile)
     return text.split("\n\n", 1)[-1] if profile.get("experienceYears") is None else text
 
 
-def profile_queries(profile, records):
-    return [profile_text({**profile, "records": records}), *map(pilot.render_record, records)]
+def profile_queries(profile, records, tokenizer=None, *, passages=None):
+    from passages import record_passages
+
+    chunks = passages if passages is not None else record_passages(records, tokenizer)
+    return [profile_text({**profile, "records": records}), *map(pilot.render_record, records), *[p["text"] for p in chunks]]
 
 
 def job_passages(job):

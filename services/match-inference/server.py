@@ -25,7 +25,8 @@ from inputs import (
     profile_queries,
     usable_records,
 )
-from record_search import propose, verify_requirement
+from record_search import verify_requirement
+from passages import CHUNK_VERSION
 
 
 def warm_batches(texts):
@@ -44,8 +45,8 @@ MAX_MEMORY_VECTORS = 16384
 class CachedRanker(CpuRanker):
     """텍스트 해시로 벡터를 재사용한다. 원문 대신 벡터만 유한 캐시에 둔다."""
 
-    def __init__(self, bundle, threads, vector_dir=None):
-        super().__init__(bundle, threads)
+    def __init__(self, bundle, threads, vector_dir=None, evidence_model=None, candidate_limit=24):
+        super().__init__(bundle, threads, evidence_mode="hybrid", evidence_model=evidence_model, candidate_limit=candidate_limit)
         self.store = VectorStore(vector_dir, bundle)
         self.vectors = OrderedDict(self.store.restore(MAX_MEMORY_VECTORS))
         self.startup_loaded = len(self.vectors)
@@ -81,8 +82,8 @@ class CachedRanker(CpuRanker):
 
 
 class Application:
-    def __init__(self, bundle, threads, cache, policy, vector_dir=None):
-        self.engine = CachedRanker(bundle, threads, vector_dir)
+    def __init__(self, bundle, threads, cache, policy, vector_dir=None, evidence_model=None, candidate_limit=24):
+        self.engine = CachedRanker(bundle, threads, vector_dir, evidence_model, candidate_limit)
         self.lock = Lock()
         self.preparing = {}
         self.scorer = (
@@ -135,7 +136,8 @@ class Application:
                 }
         if path == "/v1/checkpoint":
             with self.lock:
-                return self.engine.store.checkpoint(payload)
+                # v1의 재개 위치를 이어받으면 기존 기록의 새 문단이 준비되지 않는다.
+                return self.engine.store.checkpoint({**payload, "source": payload["source"] + "/" + CHUNK_VERSION})
         if path == "/v1/member-owners":
             with self.lock:
                 return {"owners": self.engine.store.member_owners(payload["member"])}
@@ -147,7 +149,7 @@ class Application:
         if path == "/v1/warm-profile":
             profile = payload["profile"]
             records = usable_records(profile)
-            texts = profile_queries(profile, records) if records else []
+            texts = profile_queries(profile, records, passages=self.engine.passages(records)) if records else []
             return self.prepare(
                 "user/" + profile["profileId"],
                 texts,
@@ -196,9 +198,12 @@ class Application:
         verifier_rows = []
         with self.lock:
             self.engine.profile_id = profile["profileId"]
-            result = self.engine.rank(profile, jobs, limit=limit)
+            # 전체 공고의 배치 순위 계산마다 문단 검색을 반복하지 않는다.
+            # 문단 검색은 선택 공고의 근거 조회·검증과 제작 재료 선택에 적용한다.
+            self.engine.evidence_mode = "hybrid" if mode in {"evidence", "verify"} else "record"
+            result = self.engine.rank(profile, jobs, limit=limit, include_proposals=mode == "verify")
             if mode == "verify" and self.scorer and result["jobs"]:
-                verifier_rows = propose(self.engine, profile, jobs)
+                verifier_rows = result.pop("_proposals", [])
         source = "local"
         if mode == "rerank" and self.scorer:
             result = rerank_or_local(profile, jobs, result, self.scorer)
@@ -215,7 +220,7 @@ class Application:
                 for row in verifier_rows:
                     checked = verify_requirement(row, profile, jobs[0], self.scorer)
                     verified[row["requirementId"]] = [
-                        r["recordId"]
+                        r
                         for r in checked["verified"]
                         if r["score"] is not None and r["score"] >= self.threshold
                     ][:3]
@@ -239,9 +244,8 @@ class Application:
                         {
                             "requirementId": d["requirementId"],
                             "label": criteria[row["jobId"]][d["requirementId"]],
-                            "recordIds": verified.get(
-                                d["requirementId"], d["evidenceRecordIds"]
-                            ),
+                            "recordIds": [r["recordId"] for r in verified[d["requirementId"]]] if d["requirementId"] in verified else d["evidenceRecordIds"],
+                            "passages": [{"recordId": r["recordId"], "quote": r["quote"]} for r in (verified[d["requirementId"]] if d["requirementId"] in verified else d["records"]) if "quote" in r and (d["requirementId"] in verified or r["recordId"] in d["evidenceRecordIds"])],
                         }
                         for d in row["evidence"]
                     ],
@@ -301,6 +305,8 @@ if __name__ == "__main__":
     p.add_argument("--bundle", required=True, type=Path)
     p.add_argument("--port", type=int, default=4810)
     p.add_argument("--vector-dir", type=Path, default=Path("var/match-embeddings"))
+    p.add_argument("--evidence-model", type=Path)
+    p.add_argument("--candidate-limit", type=int, default=24)
     p.add_argument("--threads", type=int, default=4)
     p.add_argument("--decisions-cache", type=Path)
     p.add_argument("--policy", type=Path)
@@ -308,7 +314,7 @@ if __name__ == "__main__":
     if a.decisions_cache and not a.policy:
         p.error("--decisions-cache에는 --policy가 필요합니다")
     serve(
-        Application(a.bundle, a.threads, a.decisions_cache, a.policy, a.vector_dir),
+        Application(a.bundle, a.threads, a.decisions_cache, a.policy, a.vector_dir, a.evidence_model, a.candidate_limit),
         host="127.0.0.1",
         port=a.port,
         threads=4,

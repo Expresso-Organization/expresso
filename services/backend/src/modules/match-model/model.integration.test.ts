@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { mongoCollections, type JobPostingDoc } from "@expresso/database";
 import {
   CONSENT_POLICY_VERSION,
+  ModelWireResultSchema,
   type ModelWireRequest,
 } from "@expresso/contracts";
 import {
@@ -108,6 +109,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
                 requirementId: "q1",
                 label: "요건",
                 recordIds: [recordId, foreignRecord],
+                passages: [{ recordId, quote: { source: "bodyMd", start: 0, end: 2, text: "운영" } }, { recordId: foreignRecord, quote: { source: "bodyMd", start: 0, end: 2, text: "타인" } }],
               },
             ],
           }))
@@ -137,12 +139,28 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
         35, 34, 33, 32, 31, 30, 29, 28, 27, 26,
       ]);
       expect(view.examined).toBe(36);
+      expect(view.jobs[0]?.evidence[0]?.records[0]?.quote?.text).toBe("운영");
       expect(view.jobs[0]?.evidence[0]?.records.map((r) => r.recordId)).toEqual(
         [recordId],
       );
       await expect(
         service.view(userId, false, privateJob),
       ).rejects.toMatchObject({ statusCode: 404 });
+    });
+    it("추론이 만들어 낸 인용문은 원문 대조 후 제외한다", async () => {
+      inference();
+      const invoke = globalThis.fetch;
+      vi.stubGlobal("fetch", async (...args: Parameters<typeof fetch>) => {
+        const response = await invoke(...args);
+        const result = ModelWireResultSchema.parse(await response.json());
+        for (const job of result.jobs) for (const evidence of job.evidence) {
+          const quote = evidence.passages[0]?.quote;
+          if (quote) quote.text = "거짓";
+        }
+        return Response.json(result);
+      });
+      const view = await service.view(userId, false);
+      expect(view.jobs[0]?.evidence[0]?.records[0]?.quote).toBeUndefined();
     });
     it("공개 공고 분석과 기록 전송 동의가 모두 있어야 외부 모델에 요청한다", async () => {
       const calls = inference();

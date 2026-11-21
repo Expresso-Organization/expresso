@@ -1,0 +1,10 @@
+flowchart TD
+  A[기록과 고정 요건] --> B[문단과 혼합 후보]
+  B --> C[로컬 근거 헤드]
+  B --> D[학습 CE 비교]
+  B --> E[Decisions 비교]
+  C --> F[원문 검증과 화면]
+  D --> G[동일 입력 평가]
+  E --> G
+  classDef done fill:#d1fae5,stroke:#059669,color:#000000
+  class A,B,C,D,E,F,G done

@@ -1,0 +1,91 @@
+{
+  "baselineValidation": {
+    "hitAt3": 0.8847262247838616,
+    "mrr": 0.7687411371849412,
+    "presenceF1": 0.5313807531380753,
+    "threshold": 0.32065367698669434
+  },
+  "chunkVersion": "record-passages-v2",
+  "cpuEquivalenceMaxAbsoluteError": 1.33514404296875e-05,
+  "device": "cuda",
+  "format": "expresso-evidence-passages-v2",
+  "hardNegativePairs": 17767,
+  "history": [
+    {
+      "epoch": 1,
+      "hitAt3": 0.9020172910662824,
+      "mrr": 0.7849160605644756,
+      "presenceF1": 0.6266968325791855,
+      "threshold": -1.155953288078308
+    },
+    {
+      "epoch": 2,
+      "hitAt3": 0.8904899135446686,
+      "mrr": 0.7860264855221627,
+      "presenceF1": 0.6395939086294417,
+      "threshold": -0.8479042053222656
+    },
+    {
+      "epoch": 3,
+      "hitAt3": 0.8933717579250721,
+      "mrr": 0.7782535108183524,
+      "presenceF1": 0.6534883720930232,
+      "threshold": -1.1242601871490479
+    },
+    {
+      "epoch": 4,
+      "hitAt3": 0.8904899135446686,
+      "mrr": 0.7848577375234436,
+      "presenceF1": 0.6674418604651163,
+      "threshold": -1.4761431217193604
+    },
+    {
+      "epoch": 5,
+      "hitAt3": 0.9020172910662824,
+      "mrr": 0.7821119802387814,
+      "presenceF1": 0.6674528301886793,
+      "threshold": -1.198945164680481
+    },
+    {
+      "epoch": 6,
+      "hitAt3": 0.9020172910662824,
+      "mrr": 0.7855781986185444,
+      "presenceF1": 0.6776649746192893,
+      "threshold": -0.982781171798706
+    },
+    {
+      "epoch": 7,
+      "hitAt3": 0.8818443804034583,
+      "mrr": 0.7800329353643475,
+      "presenceF1": 0.6794258373205742,
+      "threshold": -1.1867775917053223
+    },
+    {
+      "epoch": 8,
+      "hitAt3": 0.8962536023054755,
+      "mrr": 0.7778132290380129,
+      "presenceF1": 0.6723300970873787,
+      "threshold": -1.165076494216919
+    }
+  ],
+  "labelLimit": "교사 정답표의 미연결 기록을 약한 음성으로 사용. 사람의 대체 근거 검수 없음",
+  "loss": "record-level max over passage logits, BCE; mined implicit negatives weight 0.5",
+  "onnxSha256": "82df7a7736a6a2776c401e0878f6649666448721b1684709f4197f035c3e1833",
+  "passageCacheKey": "fdb0cd6caf61dc5f9c93250d221638c548448d6c81cfe86387876cd36ee892f2",
+  "passageCount": 4757,
+  "seed": 42,
+  "selectedEpoch": 2,
+  "selectedValidation": {
+    "hitAt3": 0.8904899135446686,
+    "mrr": 0.7860264855221627,
+    "presenceF1": 0.6395939086294417,
+    "threshold": -0.8479042053222656
+  },
+  "selection": "validation MRR; record passages from train/valid only; frozen criterion cache reused; no test/persona optimization",
+  "sourceWeightsSha256": "4bc8ec9c8a855c3246eec299df8f430cec437053bd7e403bc47df3ebff0e02e6",
+  "threshold": -0.8479042053222656,
+  "trainingPairs": 35757,
+  "trainingRequirements": 6063,
+  "validRequirements": 1281,
+  "weightsSha256": "10a48c180fd6e1a23f57f90a04b5bfc89f6a38c09a8818c122507959a8684b9d"
+}

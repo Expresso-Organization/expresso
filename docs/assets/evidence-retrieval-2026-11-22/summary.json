@@ -1,0 +1,28 @@
+{
+  "labelSource": "frozen teacher/agent record-ID references; no independent human passage judgments",
+  "test": {
+    "requirements": 256,
+    "withReference": 44,
+    "recordV1": 0.9090909090909091,
+    "passagesLearned": 0.9318181818181818,
+    "crossV1": 0.7954545454545454,
+    "crossV2": 0.9090909090909091,
+    "decisions": 0.8636363636363636
+  },
+  "persona": {
+    "requirements": 258,
+    "withReference": 153,
+    "recordV1": 0.45751633986928103,
+    "passagesLearned": 0.5098039215686274,
+    "crossV1": 0.41830065359477125,
+    "crossV2": 0.5490196078431373,
+    "decisions": 0.7647058823529411
+  },
+  "candidateRecall": {
+    "record_v1": 0.8366013071895425,
+    "hard_12": 0.8104575163398693,
+    "hard_24": 0.9281045751633987,
+    "hard_48": 0.9738562091503268
+  },
+  "sameCandidateAudit": "comparison-audit.json"
+}

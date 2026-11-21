@@ -35,6 +35,14 @@ export const ModelWireRequestSchema = z.strictObject({
   mode: z.enum(["local", "rerank", "evidence", "verify"]),
 });
 const ScoreSchema = z.number().min(0).max(100);
+export const EvidenceQuoteSchema = z.strictObject({
+  source: z.enum(["bodyMd", "title", "property"]),
+  propertyKey: z.string().optional(),
+  start: z.number().int().nonnegative(),
+  end: z.number().int().positive(),
+  text: z.string().min(1).max(16_000),
+}).refine(q => q.end > q.start && (q.source !== "property" || !!q.propertyKey));
+export type EvidenceQuote = z.infer<typeof EvidenceQuoteSchema>;
 const WireRowSchema = z.strictObject({
   jobId: UuidSchema,
   localScore: ScoreSchema,
@@ -44,6 +52,7 @@ const WireRowSchema = z.strictObject({
       requirementId: z.string(),
       label: z.string(),
       recordIds: z.array(UuidSchema),
+      passages: z.array(z.strictObject({ recordId: UuidSchema, quote: EvidenceQuoteSchema })).default([]),
     }),
   ),
 });
@@ -76,7 +85,7 @@ export const ModelViewSchema = z.strictObject({
         z.strictObject({
           label: z.string(),
           records: z.array(
-            z.strictObject({ recordId: UuidSchema, title: z.string() }),
+            z.strictObject({ recordId: UuidSchema, title: z.string(), quote: EvidenceQuoteSchema.optional() }),
           ),
         }),
       ),

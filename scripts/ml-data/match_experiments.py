@@ -515,7 +515,7 @@ def load_cross_scorer(base_model: str, checkpoint: Path, *, device: str, batch_s
         encodings, stats = pilot.tokenize_cross_encoder_inputs(tokenizer, list(rows), max_length=max_length)
         return pilot.predict_cross_encoder(model, tokenizer, encodings, batch_size=batch_size, device=device), stats
 
-    return score, {"model": payload.get("model"), "baseModel": base_model, "maxLength": max_length, "topRecords": payload.get("topRecords")}
+    return score, {"model": payload.get("model"), "baseModel": base_model, "maxLength": max_length, "topRecords": payload.get("topRecords"), "task": payload.get("task", "job-profile")}
 
 
 def model_b(

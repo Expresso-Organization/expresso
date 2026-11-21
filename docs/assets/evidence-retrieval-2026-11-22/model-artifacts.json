@@ -1,0 +1,21 @@
+{
+  "encoderRevision": "d128750597153bb5987e10b1c3493a34e5a4502a",
+  "cpuArchive": {
+    "path": "var/expresso-match-cpu-v2-final.tar.gz",
+    "bytes": 701732454,
+    "sha256": "3a6d6fbf131096ceea3571c22b374329596e210b27db412d2925d58c9775d5df"
+  },
+  "localHead": {
+    "onnxSha256": "82df7a7736a6a2776c401e0878f6649666448721b1684709f4197f035c3e1833",
+    "weightsSha256": "10a48c180fd6e1a23f57f90a04b5bfc89f6a38c09a8818c122507959a8684b9d"
+  },
+  "crossHead": {
+    "path": "var/cross-evidence/trainable-state.pt",
+    "sha256": "08576d51590224809d3320344234d4c89b223ed0343ff2b5d872a4a3d07819a9",
+    "deviceUsed": "RTX 5080; PyTorch 2.11.0+cu128",
+    "deployment": "comparison only; not loaded by CPU production service",
+    "baseModelRevision": "953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e"
+  },
+  "trainingScope": "Korean train hard negatives, validation selection; no test/persona training",
+  "deployment": "not deployed; feature branch based on 2449d932"
+}

@@ -12,6 +12,7 @@ import type { MongoContext } from "../../platform/mongodb.js";
 import { HttpStatusError } from "../../api/plugins/auth-context.js";
 import { readableCareerProperties } from "../career/record-text.js";
 import type { ConsentService } from "../consent/service.js";
+import { verifiedQuote } from "./quote.js";
 
 const LIMIT = 10;
 const BATCH = 32;
@@ -348,7 +349,7 @@ export class MatchModelService {
         }
       } else source = "fallback";
     }
-    const titles = new Map(profile.records.map((r) => [r.recordId, r.title]));
+    const records = new Map(profile.records.map((r) => [r.recordId, r]));
     return {
       status: "ok",
       source,
@@ -361,11 +362,13 @@ export class MatchModelService {
         decisionScore: row.decisionScore,
         evidence: row.evidence.map((e) => ({
           label: e.label,
-          records: e.recordIds.flatMap((recordId) =>
-            titles.has(recordId)
-              ? [{ recordId, title: titles.get(recordId)! }]
-              : [],
-          ),
+          records: [...new Set(e.recordIds)].flatMap((recordId) => {
+            const record = records.get(recordId);
+            if (!record) return [];
+            const candidate = e.passages.find(p => p.recordId === recordId)?.quote;
+            const quote = candidate && verifiedQuote(record, candidate);
+            return [{ recordId, title: record.title, ...(quote ? { quote } : {}) }];
+          }),
         })),
       })),
     };

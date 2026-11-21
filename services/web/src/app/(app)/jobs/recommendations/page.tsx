@@ -4,6 +4,7 @@ import { UuidSchema } from "@expresso/contracts";
 import { requireSession } from "@/lib/require-session";
 import { jobs } from "@/lib/api/endpoints";
 import { Results } from "./results";
+import styles from "./results.module.css";
 
 export default async function Recommendations({
   searchParams,
@@ -18,11 +19,11 @@ export default async function Recommendations({
     .modelStatus(session.accessToken)
     .catch(() => ({ available: false, decisions: false }));
   return (
-    <main className="mx-auto w-full max-w-3xl space-y-6 p-6">
-      <Link href={posting ? `/jobs/${posting}` : "/jobs"}>
+    <main className={styles.page}>
+      <Link className={styles.back} href={posting ? `/jobs/${posting}` : "/jobs"}>
         ← {posting ? "공고 상세" : "공고 탐색"}
       </Link>
-      <h1 className="text-2xl font-semibold">
+      <h1 className={styles.title}>
         {posting ? "요건별 내 경력 근거" : "내 기록으로 공고 추천받기"}
       </h1>
       <p>

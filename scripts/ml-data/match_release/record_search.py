@@ -14,8 +14,7 @@ from statistics import mean
 
 import numpy as np
 
-from cpu import CpuRanker, KIND
-from inputs import pilot, profile_text, usable_records, interactive_scorer
+from inputs import KIND, pilot, profile_text, usable_records, interactive_scorer
 from retrieval_baselines import Bm25Index
 from match_api_scorer import ApiScorer, PROVIDERS, build_body, parse_answers
 
@@ -88,18 +87,29 @@ def verify_requirement(row, profile, job, client):
         + "\n요건: "
         + row["criterion"]
     )
-    qs = [
+    passages = row.get("candidatePassages")
+    if passages:
+        keys = [(rid, chunk) for rid in row["candidates"] for chunk in passages[rid]]
+        qs = [(f"p{i}", "이 문단이 위 요건을 얼마나 직접적으로 입증하는가? 제목과 문단 밖의 수행은 추론하지 않는다.\n" + chunk["text"]) for i, (rid, chunk) in enumerate(keys)]
+    else:
+        keys = [(rid, None) for rid in row["candidates"]]
+        qs = [
         (f"r{i}", "이 기록이 위 요건을 얼마나 직접적으로 입증하는가?\n" + pilot.render_record(records[rid]))
         for i, rid in enumerate(row["candidates"])
-    ]
+        ]
     raw = client.call(build_body(client.provider, state, qs))
     if raw.get("model") != client.provider.model:
         raise ValueError("응답 모델 불일치")
     answers = parse_answers(client.provider, raw)
-    scored = [
-        {"recordId": rid, "score": answers[q]["score"]}
-        for rid, (q, _) in zip(row["candidates"], qs, strict=True)
-    ]
+    by_record = {}
+    for (rid, chunk), (q, _) in zip(keys, qs, strict=True):
+        score = answers[q]["score"]
+        item = {"recordId": rid, "score": score}
+        if chunk is not None:
+            item["quote"] = chunk["quote"]
+        if rid not in by_record or (score if score is not None else -1) > (by_record[rid]["score"] if by_record[rid]["score"] is not None else -1):
+            by_record[rid] = item
+    scored = list(by_record.values())
     if any(
         v["score"] is not None and not (math.isfinite(v["score"]) and 0 <= v["score"] <= 100) for v in scored
     ):
@@ -108,9 +118,9 @@ def verify_requirement(row, profile, job, client):
     return {**row, "verified": scored}
 
 
-def evaluate_rows(rows, golds, threshold):
+def evaluate_rows(rows, golds, threshold, modes=("local", "verified")):
     stats = {}
-    for name in ("local", "verified"):
+    for name in modes:
         h = []
         rr = []
         rc = []
@@ -160,6 +170,7 @@ def table_key(r):
 
 
 def run_eval(root, personas, output):
+    from cpu import CpuRanker
     from evaluation import cohorts
 
     engine = CpuRanker(root / "cpu")
@@ -239,6 +250,7 @@ def run_eval(root, personas, output):
 
 
 if __name__ == "__main__":
+    from cpu import CpuRanker
     p = argparse.ArgumentParser(description=__doc__)
     subs = p.add_subparsers(dest="command", required=True)
     e = subs.add_parser("evaluate")
@@ -250,6 +262,9 @@ if __name__ == "__main__":
     q.add_argument("--job-id", required=True)
     q.add_argument("--decisions-cache", type=Path)
     q.add_argument("--policy", type=Path)
+    q.add_argument("--candidate-limit", type=int, default=24)
+    q.add_argument("--evidence-model", type=Path)
+    q.add_argument("--legacy", action="store_true", help="v1 기록 단위 검색 기준선")
     a = p.parse_args()
     if a.command == "evaluate":
         run_eval(a.root, a.personas, a.output)
@@ -259,8 +274,12 @@ if __name__ == "__main__":
         jobs = [j for j in request["jobs"] if j["jobId"] == a.job_id]
         if len(jobs) != 1:
             raise ValueError("고유한 공고 ID를 지정해야 한다")
-        engine = CpuRanker(a.bundle)
-        rows = propose(engine, profile, jobs)
+        engine = CpuRanker(a.bundle, evidence_model=a.evidence_model)
+        if a.legacy:
+            rows = propose(engine, profile, jobs)
+        else:
+            from evidence_search import retrieve
+            rows = retrieve(engine, profile, jobs, a.candidate_limit)
         if a.decisions_cache:
             policy = json.loads(a.policy.read_bytes()) if a.policy else None
             provider = PROVIDERS["decisions"]

@@ -1,0 +1,81 @@
+{
+  "baselineValidation": {
+    "fn": 30,
+    "fp": 1,
+    "hitAt3": 0.8787878787878788,
+    "mrrAt3": 0.7070707070707071,
+    "presenceF1": 0.16216216216216217,
+    "referenceRecallAt3": 0.7929292929292929,
+    "requirements": 96,
+    "tn": 62,
+    "tp": 3,
+    "withReference": 33,
+    "candidateHitAtK": 1
+  },
+  "hardNegativePairsInSource": 17767,
+  "history": [
+    {
+      "epoch": 1,
+      "fn": 1,
+      "fp": 23,
+      "hitAt3": 0.9393939393939394,
+      "mrrAt3": 0.7727272727272727,
+      "presenceF1": 0.7272727272727273,
+      "referenceRecallAt3": 0.8611111111111112,
+      "requirements": 96,
+      "tn": 40,
+      "tp": 32,
+      "withReference": 33,
+      "candidateHitAtK": 1
+    },
+    {
+      "epoch": 2,
+      "fn": 0,
+      "fp": 32,
+      "hitAt3": 0.9393939393939394,
+      "mrrAt3": 0.803030303030303,
+      "presenceF1": 0.673469387755102,
+      "referenceRecallAt3": 0.8661616161616161,
+      "requirements": 96,
+      "tn": 31,
+      "tp": 33,
+      "withReference": 33,
+      "candidateHitAtK": 1
+    }
+  ],
+  "inputLengths": {
+    "maxLength": 512,
+    "maxOriginalTokens": 438,
+    "meanEncodedTokens": 101.90045833333333,
+    "medianOriginalTokens": 81,
+    "p95OriginalTokens": 247,
+    "truncatedFraction": 0.0,
+    "truncatedPairs": 0
+  },
+  "labelLimit": "교사 미연결 기록은 약한 음성. 독립 사람 판정 없음",
+  "loss": "max-passage BCE per record; mined implicit negatives weight 0.5",
+  "seed": 42,
+  "selectedEpoch": 2,
+  "selectedValidation": {
+    "fn": 0,
+    "fp": 32,
+    "hitAt3": 0.9393939393939394,
+    "mrrAt3": 0.803030303030303,
+    "presenceF1": 0.673469387755102,
+    "referenceRecallAt3": 0.8661616161616161,
+    "requirements": 96,
+    "tn": 31,
+    "tp": 33,
+    "withReference": 33,
+    "candidateHitAtK": 1
+  },
+  "selection": "validation MRR@3 only; test and persona not used",
+  "task": "requirement-passage",
+  "trainPassagePairs": 24000,
+  "trainRecordPairs": 12000,
+  "trainable": {
+    "totalParameters": 567755777,
+    "trainableParameters": 26243073
+  },
+  "validationRequirements": 96
+}

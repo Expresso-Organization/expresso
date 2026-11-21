@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { runRecommendation } from "./action";
+import styles from "./results.module.css";
 
 export function Results({
   posting,
@@ -16,15 +17,16 @@ export function Results({
     null,
   );
   return (
-    <section className="space-y-5" aria-busy={pending}>
-      <form action={action} className="flex flex-wrap items-center gap-3">
-        <Button type="submit" disabled={pending} name="mode" value="local">
+    <section className={styles.results} aria-busy={pending}>
+      <form action={action} className={styles.actions}>
+        <Button className={styles.action} type="submit" disabled={pending} name="mode" value="local">
           {posting ? "근거 찾기" : "추천받기"}
         </Button>
         {decisions && (
           <>
             <Button
               type="submit"
+              className={styles.action}
               variant="outline"
               disabled={pending}
               name="mode"
@@ -32,7 +34,7 @@ export function Results({
             >
               {posting ? "Decisions로 근거 검증" : "Decisions로 추천 순서 조정"}
             </Button>
-            <p className="w-full text-sm">
+            <p className={styles.note}>
               Decisions를 선택하면 공고와 관련 경력 내용이 OpenAI에 전송됩니다.
             </p>
           </>
@@ -65,10 +67,10 @@ export function Results({
                   ? "Decisions를 사용할 수 없어 로컬 모델 결과를 표시합니다."
                   : "로컬 모델"}
             </p>
-            <ol className="space-y-5">
+            <ol className={styles.jobs}>
               {result.jobs.map((job) => (
-                <li key={job.jobId} className="space-y-2 rounded-lg border p-4">
-                  <h2 className="font-semibold">
+                <li key={job.jobId} className={styles.job}>
+                  <h2 className={styles.jobTitle}>
                     <Link href={`/jobs/${job.jobId}`}>{job.title}</Link>
                   </h2>
                   <p>
@@ -77,20 +79,21 @@ export function Results({
                       ` · Decisions ${job.decisionScore.toFixed(1)}점`}
                   </p>
                   {posting ? (
-                    <ul className="space-y-3">
+                    <ul className={styles.criteria}>
                       {job.evidence.map((item, i) => (
-                        <li key={i}>
-                          <strong>{item.label}</strong>
+                        <li key={i} className={styles.criterion}>
+                          <h3 className={styles.label}>{item.label}</h3>
                           {item.records.length ? (
-                            <ul>
+                            <ul className={styles.records}>
                               {item.records.map((r) => (
-                                <li key={r.recordId}>
+                                <li key={r.recordId} className={styles.record}>
                                   <Link
-                                    className="underline"
+                                    className={styles.recordLink}
                                     href={`/career/records/${r.recordId}`}
                                   >
                                     {r.title}
                                   </Link>
+                                  {r.quote && <blockquote className={styles.quote}>{r.quote.text}</blockquote>}
                                 </li>
                               ))}
                             </ul>
@@ -102,7 +105,7 @@ export function Results({
                     </ul>
                   ) : (
                     <Link
-                      className="underline"
+                      className={styles.recordLink}
                       href={`/jobs/recommendations?posting=${job.jobId}`}
                     >
                       요건별 근거 보기

@@ -16,7 +16,7 @@ def package(bundle, policy, target):
     files = {
         path: "cpu/" + path.relative_to(bundle).as_posix() for path in sorted(bundle.rglob("*")) if path.is_file()
     }
-    for name in ("cpu.py", "inputs.py", "record_search.py"):
+    for name in ("cpu.py", "inputs.py", "record_search.py", "passages.py", "evidence_search.py"):
         files[here / name] = code + "match_release/" + name
     for name in (
         "llm_suitability_train.py",

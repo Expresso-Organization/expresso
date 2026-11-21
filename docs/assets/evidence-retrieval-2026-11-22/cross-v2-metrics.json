@@ -1,0 +1,103 @@
+{
+  "checkpointSha256": "08576d51590224809d3320344234d4c89b223ed0343ff2b5d872a4a3d07819a9",
+  "device": "cuda",
+  "model": {
+    "baseModel": "var/cross-base",
+    "maxLength": 512,
+    "model": "expresso-bge-evidence-hard-neg-v2",
+    "task": "requirement-passage",
+    "topRecords": 8
+  },
+  "splits": {
+    "persona": {
+      "candidateHitAtK": 0.9281045751633987,
+      "candidateIdsSha256": "6f5b5c988f98b75166b37913453537863355c723b796da350f0332d6c4ed4eaf",
+      "fn": 35,
+      "fp": 17,
+      "hitAt3": 0.5490196078431373,
+      "inputLengths": {
+        "maxLength": 512,
+        "maxOriginalTokens": 119,
+        "meanEncodedTokens": 58.80088731144632,
+        "medianOriginalTokens": 57,
+        "p95OriginalTokens": 95,
+        "truncatedFraction": 0.0,
+        "truncatedPairs": 0
+      },
+      "missedSupportedRequirements": 93,
+      "mrrAt3": 0.4074074074074074,
+      "passagePairs": 5635,
+      "presenceF1": 0.8194444444444444,
+      "referenceRecallAt3": 0.39215686274509803,
+      "requirements": 258,
+      "scoringSeconds": 11.131476799999746,
+      "shownLinks": 314,
+      "shownReferenceLinks": 70,
+      "shownReferencePrecision": 0.2229299363057325,
+      "tn": 88,
+      "tp": 118,
+      "withReference": 153
+    },
+    "test": {
+      "candidateHitAtK": 1,
+      "candidateIdsSha256": "91c4dd3e736029c94e14f9b04e9fbe686d1b4d4c1c2fdff8832ac2afa54b789d",
+      "fn": 14,
+      "fp": 23,
+      "hitAt3": 0.9090909090909091,
+      "inputLengths": {
+        "maxLength": 512,
+        "maxOriginalTokens": 409,
+        "meanEncodedTokens": 127.29390203265578,
+        "medianOriginalTokens": 101,
+        "p95OriginalTokens": 286,
+        "truncatedFraction": 0.0,
+        "truncatedPairs": 0
+      },
+      "missedSupportedRequirements": 16,
+      "mrrAt3": 0.7348484848484849,
+      "passagePairs": 3001,
+      "presenceF1": 0.6185567010309279,
+      "referenceRecallAt3": 0.7424242424242424,
+      "requirements": 256,
+      "scoringSeconds": 9.022746899999674,
+      "shownLinks": 106,
+      "shownReferenceLinks": 32,
+      "shownReferencePrecision": 0.3018867924528302,
+      "tn": 189,
+      "tp": 30,
+      "withReference": 44
+    },
+    "valid": {
+      "candidateHitAtK": 1,
+      "candidateIdsSha256": "30d27d1931fc8178d35b837aded7802cd0d59d553b400690e4b25999c8f4fdf4",
+      "fn": 2,
+      "fp": 13,
+      "hitAt3": 0.9393939393939394,
+      "inputLengths": {
+        "maxLength": 512,
+        "maxOriginalTokens": 423,
+        "meanEncodedTokens": 139.08301886792452,
+        "medianOriginalTokens": 124,
+        "p95OriginalTokens": 314,
+        "truncatedFraction": 0.0,
+        "truncatedPairs": 0
+      },
+      "missedSupportedRequirements": 7,
+      "mrrAt3": 0.803030303030303,
+      "passagePairs": 1060,
+      "presenceF1": 0.8051948051948052,
+      "referenceRecallAt3": 0.8661616161616161,
+      "requirements": 96,
+      "scoringSeconds": 3.322738000000072,
+      "shownLinks": 93,
+      "shownReferenceLinks": 36,
+      "shownReferencePrecision": 0.3870967741935484,
+      "tn": 50,
+      "tp": 31,
+      "withReference": 33
+    }
+  },
+  "taskTransfer": "요건·문단 hard negative 미세 조정",
+  "threshold": 60,
+  "thresholdSelection": "validation presence F1 only"
+}
