@@ -1397,13 +1397,18 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
       brewState: vi.fn(async () => ({ status: "draft" as const, selected: 0, generation: null })),
       selectedRecords: vi.fn(async () => []), openInterview: vi.fn(), interview: vi.fn(async () => ({ bases: [], session: null })), saveInterviewAnswer: vi.fn(), startRecipe: vi.fn(), startGeneration: vi.fn(), designDraw: vi.fn(), designPropose: vi.fn(), designRevise: vi.fn(), designState: vi.fn(async () => null),
     };
-    const jobs = { get: async () => { throw Object.assign(new Error("없는 공고"), { statusCode: 404 }); } };
+    // 등록한 공고만 있다. 등록 뒤에는 그 공고가 대화의 자료로 붙어 다음 말을 보낼 때 읽힌다.
+    const jobs = { get: async (_user: string, id: string) => { if (id === jobPostingId) return { id, title: "백엔드 개발자", company: { name: "가상 회사" }, descriptionRaw: "하는 일" } as never; throw Object.assign(new Error("없는 공고"), { statusCode: 404 }); } };
     const rejections: string[] = [];
     let companyName: string | undefined;
+    let pastedId: string | undefined;
     const runtime: AgentRuntime = { run: async input => {
       const said = input.messages.at(-1)!.text;
       try {
-        const started = said.includes("공고 없이") ? await input.startFreeBrew({ title: "사이드 프로젝트", brief: "만든 것을 보여 주고 싶다", length: "double" }) : await input.importPosting({ url: "https://example.com/jobs/1", ...(companyName ? { companyName } : {}) });
+        const last = input.messages.at(-1)!;
+        const started = said.includes("공고 없이") ? await input.startFreeBrew({ title: "사이드 프로젝트", brief: "만든 것을 보여 주고 싶다", length: "double" })
+          : said.includes("[공고 글]") ? await input.importPosting({ messageId: pastedId ?? last.id, companyName: "다른 회사", title: "프론트엔드 개발자" })
+          : await input.importPosting({ url: "https://example.com/jobs/1", ...(companyName ? { companyName } : {}) });
         await input.emit({ type: "tool", tool: { id: randomUUID(), name: "포트폴리오 제작", status: "complete", summary: "", brewStart: started.start } });
       } catch (error) { if (!(error instanceof AgentToolRejection)) throw error; rejections.push(error.issues.join(" ")); }
       await input.emit({ type: "text", text: "네." });
@@ -1430,6 +1435,15 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect(starts(await say("가상 회사예요")).at(-1)).toMatchObject({ jobPostingId, jobAnalysisId, title: "백엔드 개발자", companyName: "가상 회사" });
     expect(deps.submitPosting).toHaveBeenCalledWith(maker, expect.stringMatching(/^[0-9a-f]{64}$/), { companyName: "가상 회사", title: "백엔드 개발자", descriptionRaw: expect.any(String), sourceUrl: "https://example.com/jobs/1" });
     expect((await service.get(maker, conversation.id)).contexts).toEqual([{ kind: "job", id: jobPostingId }]);
+
+    // 공고 글: 모델이 옮겨 적지 않는다. 가리킨 사용자 메시지의 원문이 그대로 등록된다. 이 대화의 사용자 메시지가 아니면 받지 않는다.
+    const posting = `[공고 글]\n  하는 일: 결제 화면을 만듭니다.\n${"자격 요건: React 3년 이상. ".repeat(20)}`;
+    pastedId = randomUUID();
+    await say(posting);
+    expect(rejections.at(-1)).toContain("사용자 메시지가 아닌 id");
+    pastedId = undefined;
+    await say(posting);
+    expect(deps.submitPosting).toHaveBeenLastCalledWith(maker, expect.any(String), { companyName: "다른 회사", title: "프론트엔드 개발자", descriptionRaw: posting.trim() });
 
     // 대화가 없는 제작(옛 화면에서 만든 것)은 새 대화를 열어 「포트폴리오 제작」 카드와 지금 단계의 카드를 세운다.
     const { conversationId } = await service.resumeBrew(maker, legacyBrewId);

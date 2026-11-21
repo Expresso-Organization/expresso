@@ -320,14 +320,17 @@ export const AgentFreeBrewInputSchema = z.strictObject({
   length: AgentBrewLengthSchema.optional().describe("예상 분량. 사용자가 말했을 때만"),
 });
 export type AgentFreeBrewInput = z.infer<typeof AgentFreeBrewInputSchema>;
-/** 공고 주소나 공고 글을 받아 공고로 등록하는 도구의 입력. 주소와 글 가운데 하나를 준다. */
+/**
+ * 공고 주소나 공고 글을 받아 공고로 등록하는 도구의 입력. 주소와 글 가운데 하나를 준다.
+ * 글은 모델이 옮겨 적지 않는다 — 사용자가 공고 글을 붙여 넣은 메시지를 가리키면 서버가 그 원문을 그대로 등록한다(등록한 원문은 고칠 수 없다).
+ */
 export const AgentPostingImportInputSchema = z.strictObject({
   url: z.string().trim().url().max(2_000).refine((value) => /^https?:\/\//i.test(value), "http(s) 주소만 받습니다").optional().describe("사용자가 준 공고 주소"),
-  text: z.string().trim().max(1_000_000).optional().describe("사용자가 붙여 넣은 공고 글 그대로. 요약하지 않는다"),
+  messageId: UuidSchema.optional().describe("사용자가 공고 글을 붙여 넣은 메시지의 id(conversation에서 role이 user인 메시지). 글은 서버가 그 메시지 원문으로 등록한다"),
   companyName: z.string().trim().max(200).optional().describe("회사 이름. 주소로 읽지 못했거나 글로 받았을 때 사용자에게 물어 넣는다"),
   title: z.string().trim().max(300).optional().describe("공고 제목(직무). 주소로 읽지 못했거나 글로 받았을 때 사용자에게 물어 넣는다"),
   length: AgentBrewLengthSchema.optional().describe("예상 분량. 사용자가 말했을 때만"),
-}).refine((value) => !!value.url !== !!value.text, { message: "url과 text 가운데 하나만 줍니다." });
+}).refine((value) => !!value.url !== !!value.messageId, { message: "url과 messageId 가운데 하나만 줍니다." });
 export type AgentPostingImportInput = z.infer<typeof AgentPostingImportInputSchema>;
 /** 진행 중인 제작을 대화로 이어 가는 요청의 답. 그 제작을 붙인 대화다. */
 export const AgentBrewResumeSchema = z.strictObject({ conversationId: UuidSchema });

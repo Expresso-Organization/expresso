@@ -424,11 +424,13 @@ export class AgentChatService {
   }
   /**
    * 사용자가 준 공고 주소나 공고 글을 공고로 등록하고 제작을 시작한다. 주소는 서버가 읽고, 회사 · 제목을 읽지 못했으면 모델이 사용자에게 물어 다시 부르게 한다.
-   * 글은 받은 그대로 등록한다 — 등록한 원문은 고칠 수 없다(0002).
+   * 글은 모델이 가리킨 사용자 메시지의 원문 그대로 등록한다 — 모델이 옮겨 적으면 달라질 수 있고, 등록한 원문은 고칠 수 없다(0002).
    */
   private async importPosting(row: AgentConversationDoc, input: AgentPostingImportInput): Promise<{ start: AgentBrewStart; state: AgentBrewStartState }> {
     const brews = this.brewDeps();
-    if (!input.url === !input.text) throw new AgentToolRejection(["url과 text 가운데 하나만 주십시오."]);
+    if (!input.url === !input.messageId) throw new AgentToolRejection(["url과 messageId 가운데 하나만 주십시오."]);
+    const pasted = input.messageId ? row.messages.find(message => message.role === "user" && message.id === input.messageId) : undefined;
+    if (input.messageId && !pasted) throw new AgentToolRejection([`이 대화의 사용자 메시지가 아닌 id입니다: ${input.messageId}. conversation에서 role이 user인 메시지의 id를 쓰십시오.`]);
     await this.requireAnalysisConsent(row.userId);
     let read: { sourceUrl: string | null; companyName: string | null; title: string | null; descriptionRaw: string };
     if (input.url) {
@@ -439,14 +441,14 @@ export class AgentChatService {
         throw new AgentToolRejection([`공고 주소를 읽지 못했습니다(${error instanceof BlockedUrlError ? "공개 주소가 아닙니다" : error instanceof Error ? error.message.slice(0, 200) : "알 수 없는 오류"}). ${unreachable ? "페이지에 닿지 못했습니다. 같은 주소로 한 번만 다시 부르고, 그래도 안 되면 " : ""}사용자에게 공고 글을 그대로 붙여 넣어 달라고 하십시오.`]);
       }
     }
-    else read = { sourceUrl: null, companyName: null, title: null, descriptionRaw: input.text! };
+    else read = { sourceUrl: null, companyName: null, title: null, descriptionRaw: pasted!.text.trim() };
     const companyName = input.companyName?.trim() || read.companyName?.trim() || "";
     const title = input.title?.trim() || read.title?.trim() || "";
     const missing = [...(companyName ? [] : ["companyName(회사 이름)"]), ...(title ? [] : ["title(공고 제목 · 직무)"])];
     if (missing.length) throw new AgentToolRejection([`${missing.join(" · ")}을 알 수 없습니다. 사용자에게 물어 같은 입력에 그 칸을 넣어 다시 부르십시오.`]);
     if (read.descriptionRaw.trim().length < 200) throw new AgentToolRejection([input.url ? "그 주소에서 공고 글을 충분히 읽지 못했습니다. 사용자에게 공고 글을 그대로 붙여 넣어 달라고 하십시오." : "공고 글이 너무 짧습니다. 하는 일과 자격 요건이 담긴 공고 전문을 붙여 달라고 하십시오."]);
     // 같은 대화에서 같은 공고를 다시 부르면 같은 등록 · 분석이다.
-    const key = createHash("sha256").update(JSON.stringify([row._id, companyName, title, input.url ?? input.text])).digest("hex");
+    const key = createHash("sha256").update(JSON.stringify([row._id, companyName, title, input.url ?? input.messageId])).digest("hex");
     const submitted = await brews.submitPosting(row.userId, key, { companyName, title, descriptionRaw: read.descriptionRaw, ...(read.sourceUrl ? { sourceUrl: read.sourceUrl } : {}) });
     return this.postingStart(row, { jobPostingId: submitted.jobPostingId, jobAnalysisId: submitted.jobAnalysisId, title, companyName }, input.length);
   }
