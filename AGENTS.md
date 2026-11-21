@@ -63,6 +63,12 @@ pnpm test
   동시에 돌리면 한 패키지가 vitest로 dist를 읽는 동안 다른 패키지가 같은 파일을
   다시 씁니다. 타입 검사도 같습니다. 웹과 백엔드는 `@expresso/portfolio-renderer`를
   dist로 읽으므로 두 패키지의 `typecheck`가 모두 그 패키지를 먼저 짓습니다.
+- **웹의 타입 검사는 경로 타입을 먼저 새로 만듭니다**(`next typegen`). 링크의 경로는
+  `services/web/.next/types`로 검사하는데 `tsc`는 그 폴더를 만들지 않습니다. 만들지 않고
+  돌리면 폴더가 없을 때 링크를 검사하지 않고, 옛 빌드의 것이 남아 있으면 맞는 링크가
+  오류로 나옵니다. `tsc`만 따로 돌리지 않습니다. 링크에 `as Route`를 붙이면 그 링크의
+  경로 검사가 꺼집니다. `services/web/next-env.d.ts`는 Next가 개발 서버 · 빌드 · 타입
+  검사 때마다 다시 쓰는 파일이라 저장소에 두지 않습니다.
 - 백엔드를 고쳤으면 실제 인프라까지 씁니다 — `pnpm test:infra`. 루트 스크립트가
   `TEST_MONGODB_URL`과 `TEST_REDIS_URL`을 `infra:up`이 띄운 포트로 넘깁니다.
 - CI가 도는 순서는 `.github/workflows/backend-ci.yml` · `web-ci.yml`에 있습니다 —

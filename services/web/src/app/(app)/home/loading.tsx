@@ -7,7 +7,7 @@ export default function Loading() {
   return (
     <>
       <HomeHeader />
-      <AppBody>{null}</AppBody>
+      <AppBody pending>{null}</AppBody>
     </>
   );
 }

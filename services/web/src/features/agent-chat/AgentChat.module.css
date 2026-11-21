@@ -64,6 +64,8 @@
 .root :global(.aui-md) { font-size:inherit; }
 /* 작업 흔적 — 단계(ToolStep)들이 세로선으로 이어지는 자리. 그룹 머리와 점의 왼쪽 끝을 맞춘다. */
 .trace { display:flex; flex-direction:column; padding-top:6px; }
+/* 답변 글 아래의 부품. 작업 흔적과 달리 접히지 않는다. */
+.belowParts { display:flex; flex-direction:column; gap:10px; }
 .proposalStatus { display:flex; align-items:center; gap:6px; color:var(--ex-fg-muted); font-size:var(--ex-text-2xs); padding-top:12px; }
 .proposalStatus::before { content:""; width:5px; height:5px; border-radius:50%; background:var(--ex-accent-soft); }
 .proposalStatus[data-state="applied"] { color:var(--ex-status-success-text); }
@@ -245,3 +247,11 @@
 .target > span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .target > i { flex:none; color:var(--ex-accent-text); }
 .sentTarget { grid-column:1 / -1; justify-self:end; }
+
+/* 홈에서 넘겨받은 첫 말. 홈의 입력창이 아래 자리에 내려앉는 동안 그 위로 떠오른다(app/(app)/home/page.tsx의 전환). */
+.root :global([data-arrival]) { animation:arrive var(--ex-motion-panel) 120ms both; }
+/* 지난 대화의 기록이 도착한 순간 — 빈 자리에서 메시지가 떠오른다(--ex-motion-glide). data-restore가 done으로 바뀔 때 한 번 돈다. */
+.root[data-restore="done"] :global([data-slot="aui_message-group"]) { animation:restore var(--ex-motion-glide) both; }
+@keyframes restore { from { opacity:0; } }
+@keyframes arrive { from { opacity:0; translate:0 16px; } }
+@media (prefers-reduced-motion: reduce) { .root :global([data-arrival]), .root[data-restore="done"] :global([data-slot="aui_message-group"]) { animation:none; } }

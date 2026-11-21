@@ -48,13 +48,15 @@
 }
 
 /*
- * 입력창. 쉬고 있을 때는 검색 칸과 같은 pill 한 줄이고, 누르면 메시지 입력 상자의 곡률로 펴지면서
- * 도구 줄이 나타난다.
+ * 입력창. 쉬고 있을 때는 검색 칸과 같은 pill 한 줄이고, 누르면 아래로 펴지면서 도구 줄이 나타난다.
  *
- * 곡률 전환에 따로 완급을 준다. pill 토큰(999px)에서 8px로 고르게 줄이면 대부분의 시간 동안 모양이
- * 그대로이다가 끝에서 한 번에 바뀐다. 앞 10%에서 눈에 보이는 범위까지 내려오고 나머지 시간에 고르게 줄인다.
+ * 펴지고 접히는 동안 모서리는 한 번도 바뀌지 않는다. 곡률은 쉬는 한 줄 높이의 절반 — 위아래 여백
+ * 8px와 보내기 단추 40px, 테두리 1px — 이라 쉴 때는 pill이고, 펴지면 같은 모서리로 높이만 자란다.
+ * pill 토큰(999px)은 상자 높이의 절반으로 그려지므로, 쓰면 펴진 상자가 양 끝이 반원인 모양이 되고
+ * 접히는 동안 모서리가 부풀었다가 줄어든다.
  */
 .composer {
+  --composer-radius: calc(8px + 40px / 2 + 1px);
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   grid-template-areas: "mark input send";
@@ -63,10 +65,9 @@
   padding: 8px 8px 8px 22px;
   background: var(--ex-bg);
   border: 1px solid var(--ex-accent-surface-hover);
-  border-radius: var(--ex-radius-pill);
+  border-radius: var(--composer-radius);
   box-shadow: var(--ex-elevation-raised);
   transition:
-    border-radius 280ms linear(0, 0.96 10%, 1),
     padding var(--ex-motion-panel),
     box-shadow var(--ex-motion-panel);
 }
@@ -79,7 +80,6 @@
   align-items: start;
   row-gap: 10px;
   padding: 14px 10px 10px 16px;
-  border-radius: var(--ex-radius-control);
   box-shadow: var(--ex-elevation-card-hover);
 }
 
@@ -785,6 +785,23 @@
   from { opacity: 0; translate: 0 8px; }
 }
 
+/*
+ * 대화로 가는 중(서버 응답을 기다리는 동안). 입력창만 남기고 나머지는 위로 살짝 빠지며 사라진다 —
+ * 누른 직후부터 다음 장면으로 넘어가고 있다는 것이 보인다. 등장(rise)과 같은 자리의 animation을 바꿔 써서
+ * 등장의 마지막 값이 사라짐을 덮지 않게 한다.
+ */
+.stage[data-leaving] .brand,
+.stage[data-leaving] .prompts,
+.stage[data-leaving] .widgets,
+.stage[data-leaving] .proposals {
+  animation: leave var(--ex-motion-quick) forwards;
+  pointer-events: none;
+}
+
+@keyframes leave {
+  to { opacity: 0; translate: 0 -6px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero,
   .attached,
@@ -800,4 +817,49 @@
   .input {
     transition: none;
   }
+
+  .stage[data-leaving] .brand,
+  .stage[data-leaving] .prompts,
+  .stage[data-leaving] .widgets,
+  .stage[data-leaving] .proposals {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/* ── 확인 카드 — 제안 카드와 같은 틀에 서고, 날짜를 받는 칸만 더한다 ── */
+
+.checkinDue {
+  margin: 0;
+  padding: 2px 16px 0 14px;
+  font-size: var(--ex-text-2xs);
+  color: var(--ex-fg-muted);
+}
+
+/* 날짜를 받는 줄은 좁은 카드에서 다음 줄로 넘어간다. */
+.checkinActions {
+  flex-wrap: wrap;
+}
+
+.checkinDateLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--ex-text-xs);
+  color: var(--ex-fg-body);
+}
+
+.checkinDate {
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--ex-border-firm);
+  border-radius: var(--ex-radius-control);
+  background: var(--ex-bg);
+  color: var(--ex-fg);
+  font: inherit;
+  font-size: var(--ex-text-xs);
+}
+
+.checkinDate:focus-visible {
+  outline: none;
 }

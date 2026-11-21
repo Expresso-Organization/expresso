@@ -3,7 +3,7 @@
 import { CONSENT_POLICY_VERSION, type ProposalFeed } from "@expresso/contracts";
 
 import { ApiError } from "@/lib/api/client";
-import { consents, proposals } from "@/lib/api/endpoints";
+import { consents, consultant, proposals } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 export type ProposalActionResult = { feed: ProposalFeed | null; error: string | null };
@@ -19,6 +19,12 @@ async function act(run: (accessToken: string) => Promise<{ data: ProposalFeed }>
   }
 }
 
+/** 컨설턴트가 없는 서버는 404로 답한다. 그때는 제안만 다룬다. */
+function outreachUnavailable(error: unknown): null {
+  if (error instanceof ApiError && error.status === 404) return null;
+  throw error;
+}
+
 /** 지금의 제안과 실행 상태. 실행 중에는 화면이 이것을 되풀이해 읽는다. */
 export async function loadProposalsAction(): Promise<ProposalActionResult> {
   return act((accessToken) => proposals.feed(accessToken), "제안을 불러오지 못했습니다.");
@@ -32,12 +38,18 @@ export async function enableProposalsAction(): Promise<ProposalActionResult> {
   return act(async (accessToken) => {
     const granted = (await consents.list(accessToken)).data.consents.some((consent) => consent.scope === "career_records" && consent.granted);
     if (!granted) await consents.grant(accessToken, ["career_records"], CONSENT_POLICY_VERSION);
-    return proposals.enable(accessToken);
+    // 제안과 약속 확인은 한 번에 켠다. 컨설턴트가 없는 서버(404)에서는 제안만 켠다.
+    const outreach = await consultant.setOutreach(accessToken, true).catch(outreachUnavailable);
+    return outreach?.data.proposals ? proposals.feed(accessToken) : proposals.enable(accessToken);
   }, "제안을 켜지 못했습니다. 다시 시도해 주세요.");
 }
 
 export async function disableProposalsAction(): Promise<ProposalActionResult> {
-  return act((accessToken) => proposals.disable(accessToken), "제안을 끄지 못했습니다. 다시 시도해 주세요.");
+  return act(async (accessToken) => {
+    // 끌 때도 함께 끈다. 약속은 남고, 다시 켜면 그때부터 다시 여쭙니다.
+    const outreach = await consultant.setOutreach(accessToken, false).catch(outreachUnavailable);
+    return outreach ? proposals.feed(accessToken) : proposals.disable(accessToken);
+  }, "제안을 끄지 못했습니다. 다시 시도해 주세요.");
 }
 
 export async function refreshProposalsAction(): Promise<ProposalActionResult> {

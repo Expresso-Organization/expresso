@@ -16,6 +16,7 @@ import { PagePreview } from "@/components/portfolio/PagePreview";
 import { PortfolioPage } from "@/components/portfolio/PortfolioPage";
 import { EditorTrashMenu } from "@/features/portfolio-trash/PortfolioTrash";
 import { publicSiteHost } from "@/lib/public-site";
+import { PUBLISH_ACTION_LABEL, publishState } from "@/lib/publish-state";
 
 import { AgentChat } from "@/features/agent-chat/AgentChat";
 import { ElementProperties } from "./ElementProperties";
@@ -313,6 +314,8 @@ export function Editor({
     ? publicSiteHost(portfolio.deployment.subdomain)
     : "아직 주소가 없습니다";
   const attention = generatedPage?.qaReport.checks.find(({ status }) => status === "fail");
+  // 상단 상태 표시와 배포 단추가 같은 판정을 쓴다. 배포 화면도 이 판정을 쓴다.
+  const publish = publishState(portfolio);
 
   /*
    * 좁은 화면에서 지금 보고 있는 칸.
@@ -324,7 +327,7 @@ export function Editor({
   const [pane, setPane] = useState<"canvas" | "sections" | "panel">("canvas");
 
   return (
-    <div className={styles.frame}>
+    <div className={`${styles.frame} ex-anim-reveal`}>
       <nav className={styles.rail} aria-label="주요 이동">
         <span className={styles.railLogo}>
           <LogoMark size={22} />
@@ -360,12 +363,12 @@ export function Editor({
           <span className={styles.statusPill}>
             <span className={styles.statusDot} />
             <span className={styles.statusText}>
-              {portfolio.status === "unlisted"
+              {publish === "unlisted"
                 ? "공개 중단"
-                : portfolio.deployment
-                ? portfolio.deployment.hasUnpublishedChanges
-                  ? `v${portfolio.deployment.version} · 배포 후 변경됨`
-                  : `배포됨 · v${portfolio.deployment.version}`
+                : publish === "changed"
+                ? `v${portfolio.deployment?.version} · 배포 후 변경됨`
+                : publish === "live"
+                ? `배포됨 · v${portfolio.deployment?.version}`
                 : "아직 배포 전"}
             </span>
           </span>
@@ -449,7 +452,7 @@ export function Editor({
               className={styles.publishButton}
             >
               <Icon name="rocket-launch" size={14} />
-              배포하기
+              {PUBLISH_ACTION_LABEL[publish]}
             </Link>
             <EditorTrashMenu
               target={{ kind: "portfolio", id: portfolio.id, title: portfolio.title, published: portfolio.status === "published" }}

@@ -3,22 +3,29 @@ import { PageElementIssues, PageServiceError, type PageApi } from "../page/index
 import { elementTitle } from "@expresso/portfolio-renderer";
 import { AgentCredentials } from "./credentials.js";
 import { createHash, randomUUID } from "node:crypto";
-import { AgentConversationSchema, PAGE_IMAGE_SRC_PREFIX, isStructuredGroup, type AgentWorkAttachInput, type AgentWorkMaterials, type AgentPageElementEditInput, type AgentPageEdit, type StructuredPortfolioSnapshot, type CareerDocumentBootstrap, type AgentConversation, type AgentContext, type AgentMessage, type SendAgentMessage, type AgentApproval, type AgentRecordDraftDecision, type AgentRecordDraftInput, type AgentGoalDraftDecision, type AgentGoalDraftInput, type AgentPlanDecision, type AgentReplanDecision, type ReplanProposalInput, type UpdateTaskProgress, type GapReview, type GapReviewDraft, type PlanProposalInput, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
+import { AgentConversationSchema, PAGE_IMAGE_SRC_PREFIX, type AgentWorkAttachInput, type AgentWorkMaterials, type AgentJobSearchInput, type AgentActivitySearchInput, type AgentFindList, type AgentRecordAppendInput, type AgentDiagnosisInput, type ConsultantDiagnosis, type ConsultantCommitment, type AgentSavedRecord, isStructuredGroup, type AgentPageElementEditInput, type AgentPageEdit, type StructuredPortfolioSnapshot, type CareerDocumentBootstrap, type AgentConversation, type AgentContext, type AgentMessage, type SendAgentMessage, type AgentApproval, type AgentRecordDraftDecision, type AgentRecordDraftInput, type AgentGoalDraftDecision, type AgentGoalDraftInput, type AgentPlanDecision, type AgentReplanDecision, type ReplanProposalInput, type UpdateTaskProgress, type GapReview, type GapReviewDraft, type PlanProposalInput, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
 import { mongoCollections, type AgentConversationDoc } from "@expresso/database";
 import type { MongoContext } from "../../platform/mongodb.js";
-import { AgentToolRejection, type AgentRecordText, type AgentRuntime } from "../../platform/agent/runtime.js";
+import { AgentToolRejection, type AgentMemory, type AgentRecordText, type AgentRuntime } from "../../platform/agent/runtime.js";
+import { markdownToCareerDocument } from "@expresso/editor";
 import { BlockedUrlError } from "../../platform/net/public-url.js";
 import { parseRepoUrl } from "../../platform/github/repo-reader.js";
 import { appendWorkMaterials, type AgentWorkDeps } from "./work-materials.js";
-import { buildReview, hash, recordText, reviewIssues } from "./requirement-review.js";
-import { buildDraft, draftIssues } from "./record-draft.js";
+import { buildReview, hash, normalize, recordText, reviewIssues } from "./requirement-review.js";
+import { buildDraft, draftIssues, sourceIssues } from "./record-draft.js";
+import { buildChoice, buildForm, checkReply, choiceIssues, formIssues } from "./ui-parts.js";
+import { digestConversation } from "./digest.js";
+import { ConsultantInputError, ConsultantLimitError, ConsultantNotFoundError, seoulDay, type ConsultantApi, type ConsultantCommitmentApi, type ConsultantDiagnosisApi, type ConsultantProfile } from "../consultant/index.js";
 import { buildGoalDraft, carryOver, goalDraftIssues, mergeGoal } from "./goal-draft.js";
 import { buildGapReview, gapIssues, latestReview, latestTool } from "./gap-review.js";
 import { buildPreparationTasks, PlanCapacityError, scheduleRemaining } from "./preparation-planner.js";
 import { PreparationPlans } from "./plans.js";
 import type { CareerDocumentApi } from "../career-editor/index.js";
 import { readableCareerProperties, type CareerApi } from "../career/index.js";
-import type { JobBoardApi } from "../jobs/index.js";
+import type { GoalDemandApi, JobBoardApi } from "../jobs/index.js";
+import { goalFamily } from "../jobs/demand.js";
+import type { ActivityApi } from "../activities/index.js";
+import { activityItem, activityMatches, jobItem } from "./finds.js";
 import { ConsentError, type ConsentApi } from "../consent/index.js";
 import { brewPath, brewStartState, generating, KeyedQueue, type AgentBrewDeps, type LiveBrew } from "./brew-start.js";
 import { interviewBasisKey, type AgentBrewDesign, type AgentBrewStart, type AgentBrewStartInput, type AgentBrewStartState, type AgentDesignDraw, type AgentDesignProposeInput, type AgentDesignReviseInput, type AgentInterviewAnswerInput } from "@expresso/contracts";
@@ -44,9 +51,38 @@ export type AgentRunFailureListener = (error: unknown, run: { conversationId: st
  */
 const brewOf = (row: AgentConversationDoc, jobAnalysisId: string) => row.brewIds?.[jobAnalysisId] ?? null;
 export class AgentChatError extends Error { constructor(readonly statusCode: number, message: string, readonly publicMessage?: string) { super(message); } }
+const STAGE_LABELS = { exploring: "탐색", preparing: "준비", applying: "지원" } as const;
+/** 모델에 넘기는 기억의 모양. 조건은 id · 종류 · 글만, 요지는 날짜(서울이 아닌 저장된 시각의 날짜 부분)와 내용만 싣는다. */
+/** 확인 카드의 세 답. 첫째가 「했어요」다. 홈의 카드와 서버가 여는 대화가 같은 글을 쓴다. */
+const CHECKIN_OPTIONS = ["했어요", "아직이에요", "안 하기로 했어요"] as const;
+/** 모델에 넘기는 진단의 요약. 항목의 이름만 상태별로 싣는다 — 건수와 근거는 진단을 다시 읽을 때 본다. */
+function diagnosisForModel(diagnosis: ConsultantDiagnosis | null): AgentMemory["diagnosis"] {
+  if (!diagnosis) return null;
+  // 경력 연차는 공고가 받는 경력의 분포다. 기록과 대조하는 항목이 아니라 상태별 목록에 넣지 않는다.
+  const labels = (status: string) => diagnosis.items.filter(item => item.kind !== "career" && item.status === status).map(item => item.label);
+  return { assessedOn: diagnosis.assessedAt ? seoulDay(new Date(diagnosis.assessedAt)) : null, work: diagnosis.work, sampleSize: diagnosis.sampleSize, gaps: labels("gap"), unconfirmed: labels("unconfirmed"), partial: labels("partial"), confirmed: labels("confirmed").length, stale: diagnosis.stale };
+}
+function memoryForModel(profile: ConsultantProfile, digests: readonly ({ title: string; said: string[]; outcomes: string[]; lastAnswer: string } & ({ updatedAt: string } | { date: string }))[], commitments: readonly Pick<ConsultantCommitment, "id" | "title" | "dueOn">[], diagnosis: AgentMemory["diagnosis"] = null, checkins = false, at = new Date()): AgentMemory {
+  const today = seoulDay(at);
+  return {
+    stage: profile.stage,
+    checkins,
+    preferences: profile.preferences.map(({ id, kind, text }) => ({ id, kind, text })),
+    today,
+    commitments: commitments.map(({ id, title, dueOn }) => ({ id, title, dueOn, overdue: dueOn < today })),
+    diagnosis,
+    recentConversations: digests.map(digest => ({ title: digest.title, date: "date" in digest ? digest.date : digest.updatedAt.slice(0, 10), said: digest.said, outcomes: digest.outcomes, lastAnswer: digest.lastAnswer })),
+  };
+}
 /** 이번 달 크레딧을 읽는 자리. 요금제의 기능 표와 무관하게 남은 크레딧만 본다(`EntitlementService.credits`). */
-export interface AgentCredits { credits(userId: string, at?: Date): Promise<{ remaining: number | null }> }
+export interface AgentCredits {
+  credits(userId: string, at?: Date): Promise<{ remaining: number | null }>;
+  /** 요금제의 기능 표. 약속한 날에 먼저 묻는지(`consultant.outreach`)를 기억에 실을 때 쓴다. 없으면 묻지 않는 것으로 본다. */
+  check?(userId: string, capability: "consultant.outreach"): Promise<{ allowed: boolean }>;
+}
 /** 화면에 그대로 보이는 문장이다. 디자인 대화의 한도 안내와 같은 말로 시작한다. */
+/** 목표 카드를 저장했을 때 서버가 사용자의 말로 더하는 글. 지침이 이 글을 「카드에서 저장을 눌렀다」로 읽는다. */
+export const GOAL_SAVED = "구직 목표를 저장했습니다.";
 export const CREDITS_EXHAUSTED = "이번 달 AI 크레딧을 모두 썼습니다. 다음 달에 다시 대화할 수 있습니다.";
 const view = (row: AgentConversationDoc) => { const { _id, userId: _userId, heartbeatAt: _heartbeat, brewIds: _brewIds, brewAnnounced: _brewAnnounced, brewInterviews: _brewInterviews, brewInterviewMessages: _brewInterviewMessages, ...data } = row; return AgentConversationSchema.parse({ ...data, id: _id }); };
 /** 대화의 인터뷰에서 저장하는 질문의 상한. 세션 계약(`InterviewSessionSchema`)과 구성 생성이 읽는 질문 수가 6이다. */
@@ -57,7 +93,11 @@ export class AgentChatService {
   /** `close()`가 시작되면 켠다. 그 뒤에 끝난 실행은 어떤 오류로 끝났든 서버 종료로 끊긴 것이다. */
   private closing = false;
   private runFailureListener: AgentRunFailureListener | null = null;
-  constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord" | "listRecords" | "listCategories" | "createRecord" | "getJobGoal" | "saveJobGoal"> & Partial<Pick<CareerApi, "updateRecord">>, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi, readonly credentials: AgentCredentials = new AgentCredentials(db), private readonly portfolios?: Pick<PortfolioReadApi, "get">, private readonly pages?: Pick<PageApi, "latest" | "elementGuide" | "editElementByAgent" | "restoreRevision">, private readonly credits?: AgentCredits, private readonly brews?: AgentBrewDeps, private readonly work?: AgentWorkDeps) {}
+  constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord" | "listRecords" | "listCategories" | "createRecord" | "trashRecord" | "getJobGoal" | "saveJobGoal"> & Partial<Pick<CareerApi, "updateRecord">>, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi, readonly credentials: AgentCredentials = new AgentCredentials(db), private readonly portfolios?: Pick<PortfolioReadApi, "get">, private readonly pages?: Pick<PageApi, "latest" | "elementGuide" | "editElementByAgent" | "restoreRevision">, private readonly credits?: AgentCredits, private readonly consultant?: ConsultantApi, private readonly commitments?: Pick<ConsultantCommitmentApi, "open" | "create" | "update">, private readonly diagnosis?: { demand: GoalDemandApi; store: ConsultantDiagnosisApi },
+    /** 대화에서 공고와 활동을 찾을 때 쓰는 것. `dismissed`는 사용자가 능동 제안에서 「관심 없음」으로 넘긴 대상의 키(`job:<id>` · `activity:<id>`)다. */
+    private readonly finds?: { jobs: Pick<JobBoardApi, "list">; activities: Pick<ActivityApi, "list">; dismissed(userId: string): Promise<ReadonlySet<string>> },
+    /** 대화에서 시작하는 포트폴리오 제작(`brew-start.ts`)과 작업물 재료(`work-materials.ts`). */
+    private readonly brews?: AgentBrewDeps, private readonly work?: AgentWorkDeps) {}
   /** 제작을 만드는 요청을 대화마다 한 번에 하나씩 처리한다. */
   private readonly brewQueue = new KeyedQueue();
   private get plans() { return new PreparationPlans(this.db); }
@@ -81,6 +121,138 @@ export class AgentChatService {
     return row;
   }
   async get(userId: string, id: string) { return view(await this.owned(userId, id)); }
+  /**
+   * 최근 대화의 요지. 말이 오간 대화만 세고, `excludeId`(지금 대화)는 뺀다.
+   * 요지는 저장하지 않고 읽을 때 만든다 — 대화 하나는 메시지 100개와 160,000자 한도가 있어 읽는 양이 정해져 있다.
+   */
+  async recentDigests(userId: string, excludeId?: string, limit = 5) {
+    const rows = await this.rows.find({ userId, ...(excludeId ? { _id: { $ne: excludeId } } : {}), "messages.0": { $exists: true } }).sort({ updatedAt: -1 }).limit(limit).toArray();
+    return rows.map(row => digestConversation(view(row)));
+  }
+  /** 약속 도구의 실행. 약속을 쓸 수 없는 환경과 받을 수 없는 입력은 에이전트가 고칠 수 있게 사유로 돌려준다. */
+  private async commitment(work: () => Promise<ConsultantCommitment>) {
+    if (!this.commitments) throw new AgentToolRejection(["이 환경에서는 약속을 쓸 수 없습니다. 사용자에게 그렇게 전하십시오."]);
+    try { return await work(); }
+    catch (error) { if (error instanceof ConsultantInputError || error instanceof ConsultantNotFoundError) throw new AgentToolRejection([error.message]); throw error; }
+  }
+  /** 실행에 넘기는 기억. 컨설턴트 프로필이 연결되지 않은 서비스(테스트 · 미리보기)는 기억을 쓰지 않는다. */
+  private async memory(userId: string, conversationId: string): Promise<AgentMemory | null> {
+    if (!this.consultant) return null;
+    const profile = await this.consultant.profile(userId);
+    // 약속한 날에 먼저 묻는 것은 사용자가 켰고 요금제가 열 때만이다. 계정을 찾지 못하면 묻지 않는 것으로 본다.
+    const checkins = profile.outreach === true && (await this.credits?.check?.(userId, "consultant.outreach").catch(() => null))?.allowed === true;
+    return memoryForModel(profile, await this.recentDigests(userId, conversationId), await this.commitments?.open(userId) ?? [], diagnosisForModel(await this.currentDiagnosis(userId)), checkins);
+  }
+  /**
+   * 저장된 진단과, 다시 진단이 필요한지. 목표가 바뀌었거나 대조한 뒤에 기록이 바뀌었으면 그 까닭을 함께 낸다.
+   * 「내 진행」 화면과 실행에 넘기는 기억이 같은 판단을 쓴다.
+   */
+  async currentDiagnosis(userId: string): Promise<ConsultantDiagnosis | null> {
+    if (!this.diagnosis) return null;
+    const [goal, latest] = await Promise.all([this.career.getJobGoal(userId), this.career.listRecords(userId, { sort: "updated_desc", limit: 1 })]);
+    const changed = latest.data[0]?.updatedAt;
+    return this.diagnosis.store.current(userId, { work: goal?.work ?? null, recordsChangedAt: changed ? new Date(changed) : null });
+  }
+  /**
+   * 열린 공고를 찾아 목록의 줄로 옮긴다. 지금 있는 공고 목록 조회의 필터를 그대로 쓴다.
+   * 직군은 사용자가 쓰는 말(「백엔드 개발자」)로 와도 공고에 매긴 직군으로 옮기고, 옮기지 못하면 글 검색에 더한다.
+   * 사용자가 「관심 없음」으로 넘긴 공고는 뺀다 — 뺀 만큼 더 읽어 건수를 채운다.
+   */
+  private async searchJobs(userId: string, input: AgentJobSearchInput): Promise<AgentFindList> {
+    if (!this.finds) throw new AgentToolRejection(["이 환경에서는 공고를 찾을 수 없습니다. 사용자에게 그렇게 전하십시오."]);
+    const dismissed = await this.finds.dismissed(userId);
+    const family = input.family ? goalFamily(input.family) : null;
+    const q = [input.query, input.family && !family ? input.family : null].filter(Boolean).join(" ").trim();
+    const result = await this.finds.jobs.list(userId, {
+      ...(q ? { q } : {}), ...(input.technology ? { technology: input.technology } : {}), ...(family ? { family } : {}), ...(input.location ? { location: input.location } : {}),
+      ...(input.experience !== undefined ? { experience: input.experience } : {}), ...(input.interested ? { interested: true } : { deadline: "open" as const }),
+      sort: input.interested ? "deadline" : "recent", page: 1, limit: Math.min(50, input.limit + dismissed.size),
+    });
+    const kept = result.data.filter(job => !dismissed.has(`job:${job.id}`));
+    const title = [family ?? input.family, input.technology, input.location, input.experience !== undefined ? (input.experience === 0 ? "신입" : `경력 ${input.experience}년`) : null, input.query ? `「${input.query}」` : null, input.interested ? "관심 공고" : null].filter(Boolean).join(" · ");
+    return { title: `${title || "열린"} 공고`.slice(0, 120), items: kept.slice(0, input.limit).map(jobItem), total: Math.max(kept.length, result.summary.total - (result.data.length - kept.length)) };
+  }
+  /** 접수 중인 공모전 · 해커톤을 마감이 이른 순서로 찾는다. 글은 제목 · 주최 · 분야에서 찾는다. */
+  private async searchActivities(userId: string, input: AgentActivitySearchInput): Promise<AgentFindList> {
+    if (!this.finds) throw new AgentToolRejection(["이 환경에서는 활동을 찾을 수 없습니다. 사용자에게 그렇게 전하십시오."]);
+    const dismissed = await this.finds.dismissed(userId);
+    const kept = (await this.finds.activities.list({ ...(input.kind ? { kind: input.kind } : {}), limit: 100 })).filter(activity => !dismissed.has(`activity:${activity.id}`) && activityMatches(activity, input.query));
+    const title = [input.kind === "contest" ? "공모전" : input.kind === "hackathon" ? "해커톤" : "공모전 · 해커톤", input.query ? `「${input.query}」` : null].filter(Boolean).join(" · ");
+    return { title: `접수 중인 ${title}`.slice(0, 120), items: kept.slice(0, input.limit).map(activityItem), total: kept.length };
+  }
+  /** 지금 목표로 요건을 집계해 저장한다. 목표가 없으면 에이전트가 먼저 목표를 묻도록 돌려보낸다. */
+  private async goalDemand(userId: string) {
+    if (!this.diagnosis) throw new AgentToolRejection(["이 환경에서는 진단을 쓸 수 없습니다. 사용자에게 그렇게 전하십시오."]);
+    const goal = await this.career.getJobGoal(userId);
+    if (!goal?.work.trim()) throw new AgentToolRejection(["구직 목표의 하고 싶은 일이 비어 있습니다. 사용자에게 어떤 일을 목표로 하는지 묻고 propose_job_goal_update로 저장한 뒤 다시 부르십시오."]);
+    return this.diagnosis.store.saveDemand(userId, await this.diagnosis.demand.forGoal(userId, { work: goal.work, timing: goal.timing }));
+  }
+  /**
+   * 대조 결과의 확인과 저장. 요건 대조와 같은 기준이다 — 인용이 기록의 글에 그대로 있는지만 본다.
+   * 「부족」은 사용자가 해 본 적이 없다고 답한 뒤에만 받는다: 그 항목이 미확인으로 저장된 뒤에 사용자의 말이 있어야 한다.
+   */
+  private async recordDiagnosis(userId: string, messages: readonly AgentMessage[], input: AgentDiagnosisInput) {
+    if (!this.diagnosis) throw new AgentToolRejection(["이 환경에서는 진단을 쓸 수 없습니다. 사용자에게 그렇게 전하십시오."]);
+    const stored = await this.currentDiagnosis(userId);
+    if (!stored) throw new AgentToolRejection(["아직 집계가 없습니다. read_goal_demand를 먼저 부르십시오."]);
+    if (stored.stale === "goal") throw new AgentToolRejection(["집계한 뒤에 구직 목표가 바뀌었습니다. read_goal_demand를 다시 부른 뒤 대조하십시오."]);
+    const before = new Map(stored.items.map(item => [item.id, item]));
+    const records = await this.recordTexts(userId, input.items.flatMap(item => item.evidence.map(evidence => evidence.recordId)));
+    const lastSaid = messages.filter(message => message.role === "user").at(-1)?.createdAt;
+    const answered = !!stored.assessedAt && !!lastSaid && lastSaid > stored.assessedAt;
+    const issues: string[] = [];
+    const seen = new Set<string>();
+    // 경력 연차(career)는 공고가 받는 경력의 분포라 상태를 매기지 않는다. 모델이 넣어도 버린다.
+    // 자격(학위 · 전공 · 자격증)은 「해 본 적이 없다」는 한마디로 부족이 되지 않는다 — 졸업을 앞둔 사용자의 학위가 부족으로 남는다.
+    // 기록이나 사용자의 답으로 확인되기 전에는 미확인으로 둔다.
+    const assessed = input.items.filter(item => before.get(item.itemId)?.kind !== "career").map(item => item.status === "gap" && before.get(item.itemId)?.kind === "qualification" ? { ...item, status: "unconfirmed" as const } : item);
+    for (const item of assessed) {
+      const known = before.get(item.itemId);
+      const label = `항목 ${item.itemId}${known ? `(${known.label})` : ""}`;
+      if (seen.has(item.itemId)) issues.push(`${label}: 같은 항목이 두 번 있습니다.`);
+      seen.add(item.itemId);
+      if (!known) { issues.push(`${label}: 집계에 없는 항목입니다. read_goal_demand가 돌려준 id만 쓰십시오.`); continue; }
+      const grounded = item.status === "confirmed" || item.status === "partial";
+      if (grounded && item.evidence.length === 0) issues.push(`${label}: ${item.status}는 기록의 근거가 있어야 합니다. 근거가 없으면 unconfirmed로 두십시오.`);
+      if (!grounded && item.evidence.length > 0) issues.push(`${label}: ${item.status}에는 근거를 넣지 않습니다. 근거가 있으면 confirmed나 partial입니다.`);
+      if (item.status === "gap" && known.status !== "gap" && !(known.status === "unconfirmed" && answered)) issues.push(`${label}: gap은 사용자가 해 본 적이 없다고 답한 뒤에만 씁니다. 지금은 unconfirmed로 저장하고 사용자에게 해 본 적이 있는지 물으십시오.`);
+      for (const evidence of item.evidence) {
+        const record = records.get(evidence.recordId);
+        if (!record) { issues.push(`${label}: 근거 기록 ${evidence.recordId}를 찾을 수 없습니다. read_career_records로 읽은 기록만 인용할 수 있습니다.`); continue; }
+        if (!normalize(record.text).includes(normalize(evidence.quote))) issues.push(`${label}: "${record.title}"에 인용 "${evidence.quote}"이 없습니다. 기록 본문을 그대로 옮겨 주세요.`);
+      }
+    }
+    if (issues.length) throw new AgentToolRejection(issues);
+    try {
+      await this.diagnosis.store.assess(userId, input.summary, assessed.map(item => ({ itemId: item.itemId, status: item.status, note: item.note, evidence: item.evidence.map(evidence => ({ ...evidence, recordTitle: records.get(evidence.recordId)!.title.slice(0, 200) })) })));
+    } catch (error) { if (error instanceof ConsultantInputError) throw new AgentToolRejection([error.message]); throw error; }
+    // 저장한 뒤의 진단을 다시 읽어, 다시 진단이 필요한지까지 지금 기준으로 싣는다.
+    return (await this.currentDiagnosis(userId))!;
+  }
+  /**
+   * 확인 카드에서 「했어요」라고 답한 약속의 대화를 연다.
+   *
+   * 컨설턴트의 질문(답한 선택지가 딸린 메시지)과 사용자의 답을 대화에 넣고 실행을 시작한다. 질문은 정해진 문구라 모델을 부르지 않는다 —
+   * 실행 한 번이 인터뷰의 첫 질문이다. 채팅을 쓸 수 없는 상태(꺼짐 · 동의 없음 · 크레딧 소진)면 대화를 만들지 않고 null을 돌려준다.
+   */
+  async startFromCheckin(userId: string, commitment: Pick<ConsultantCommitment, "id" | "title" | "dueOn">): Promise<string | null> {
+    if (!this.runtime) return null;
+    const apiKey = await this.credentials.read(userId).catch(() => undefined);
+    const now = new Date().toISOString();
+    const partId = randomUUID(); const answerId = randomUUID();
+    const prompt = `「${commitment.title}」 어떻게 됐나요?`;
+    const question: AgentMessage = { id: randomUUID(), role: "assistant", text: `${Number(commitment.dueOn.slice(5, 7))}월 ${Number(commitment.dueOn.slice(8, 10))}일에 하기로 한 일을 여쭙니다.`, createdAt: now, tools: [{ id: randomUUID(), name: "선택지 질문", status: "complete", summary: prompt,
+      ui: { kind: "choice", partId, prompt, multiple: false, options: CHECKIN_OPTIONS.map((label, index) => ({ id: `o${index + 1}`, label })), answer: { optionIds: ["o1"], messageId: answerId } } }] };
+    const answer: AgentMessage = { id: answerId, role: "user", text: CHECKIN_OPTIONS[0], tools: [], reply: { partId, optionIds: ["o1"] }, createdAt: now };
+    const assistant: AgentMessage = { id: randomUUID(), role: "assistant", text: "", tools: [], createdAt: now };
+    const row: AgentConversationDoc = { _id: randomUUID(), userId, title: commitment.title.slice(0, 100), contexts: [], messages: [question, answer, assistant], run: { id: randomUUID(), requestId: answerId, status: "running", error: null, startedAt: now }, version: 1, updatedAt: now, heartbeatAt: new Date() };
+    let context: Awaited<ReturnType<AgentChatService["context"]>>;
+    try { context = await this.prepare(userId, { ...row, run: null }, !apiKey); }
+    catch (error) { if (error instanceof AgentChatError || (error as { statusCode?: number }).statusCode) return null; throw error; }
+    await this.rows.insertOne(row);
+    this.start(row, context, apiKey);
+    return row._id;
+  }
   async list(userId: string) {
     const rows = await this.rows.find({ userId }).project<Omit<AgentConversationDoc, "messages">>({ messages: 0 }).sort({ updatedAt: -1 }).limit(100).toArray();
     return rows.map(row => { const { messages: _messages, ...summary } = view({ ...row, messages: [] }); return summary; });
@@ -131,11 +303,49 @@ export class AgentChatService {
     return { categories, records: result.data.map(record => ({ id: record.id, title: record.title, category: record.categoryKey, status: record.status, updatedAt: record.updatedAt })) };
   }
   /** 새 기록 초안. 출처는 실행을 시작할 때의 대화(방금 보낸 질문 포함)에서 확인한다. */
-  private async draftRecord(row: AgentConversationDoc, input: AgentRecordDraftInput) {
+  /**
+   * 대화에서 사용자가 한 말로 정리한 기록을 바로 저장한다. 승인이 없으므로 출처 검사가 유일한 문이다 —
+   * 출처는 이 대화의 사용자 메시지여야 하고, 인용은 그 말에 그대로 있어야 한다. 지나가면 「정리됨」 상태로 만든다.
+   * `key`(도구 호출 id)가 같으면 기록은 하나다.
+   */
+  private async saveRecord(row: AgentConversationDoc, input: AgentRecordDraftInput, key: string): Promise<AgentSavedRecord> {
     const categories = await this.categories(row.userId);
     const issues = draftIssues(input, row.messages, new Set(categories.map(category => category.id)));
+    const category = categories.find(item => item.id === input.categoryId);
+    if (!input.categoryId) issues.push(`categoryId가 없습니다. 다음에서 고르십시오: ${categories.map(item => `${item.name}(${item.id})`).join(" · ")}`);
+    if (issues.length || !category) throw new AgentToolRejection(issues);
+    const { record } = await this.career.createRecord(row.userId, `agent-save:${row._id}:${key}`, { categoryId: category.id, title: input.title, bodyMd: input.bodyMd, properties: {} }, { status: "organized", origin: "ai" });
+    return { recordId: record.id, title: input.title, categoryName: category.name, bodyMd: input.bodyMd, sources: input.sources, undone: false };
+  }
+  /**
+   * 이미 있는 기록의 끝에 새 내용을 더한다. 대화에 연결되지 않은 기록에도 된다 — 홈의 대화에는 기록이 연결되어 있지 않다.
+   * 더할 글은 이 대화에서 사용자가 한 말이어야 한다(새 기록과 같은 출처 규칙). 문서의 마지막 블록 뒤에 넣는 제안을 만들어 바로 적용하므로
+   * 사용자가 쓴 문장은 바뀌지 않고, 카드의 「되돌리기」로 되돌린다.
+   */
+  private async appendToRecord(row: AgentConversationDoc, messages: readonly AgentMessage[], input: AgentRecordAppendInput) {
+    const issues = sourceIssues(input.sources, messages);
     if (issues.length) throw new AgentToolRejection(issues);
-    return buildDraft(input, randomUUID(), categories);
+    await this.consent.require(row.userId, "partial_edit");
+    let doc: Awaited<ReturnType<CareerDocumentApi["bootstrap"]>>; let title: string;
+    try { title = (await this.career.getRecord(row.userId, input.recordId)).title; doc = await this.documents.bootstrap(row.userId, input.recordId); }
+    catch { throw new AgentToolRejection([`기록 ${input.recordId}를 찾을 수 없습니다. list_career_records의 id를 쓰십시오.`]); }
+    const blocks = markdownToCareerDocument(input.bodyMd).content;
+    if (!blocks.length) throw new AgentToolRejection(["bodyMd에 더할 내용이 없습니다."]);
+    const draft = { summary: `「${title}」에 내용을 더했습니다.`.slice(0, 500), commands: [{ type: "insertBlocks" as const, afterBlockId: doc.document.content.at(-1)?.id ?? null, blocks }], propertyChanges: [] };
+    const proposal = await this.documents.createPreparedAiProposal(row.userId, input.recordId, { prompt: messages.filter(item => item.role === "user").at(-1)?.text ?? "", selection: { blockIds: doc.document.content.map(block => block.id) } }, draft);
+    const applied = await this.documents.applyAiProposal(row.userId, input.recordId, { recordId: input.recordId, proposalId: proposal.proposalId, expectedDocumentVersion: doc.documentVersion, commandIndexes: proposal.commands.map((_, index) => index), propertyChangeIndexes: [] });
+    return { proposal: applied, before: doc.document };
+  }
+  /** 저장을 되돌린다. 기록은 지우지 않고 휴지통으로 옮긴다 — 사용자가 휴지통에서 되살릴 수 있다. */
+  async undoSavedRecord(userId: string, id: string, recordId: string) {
+    const row = await this.owned(userId, id);
+    if (row.run?.status === "running") throw new AgentChatError(409, "응답이 끝난 뒤 되돌려 주세요.");
+    const saved = row.messages.flatMap(message => message.tools).find(tool => tool.savedRecord?.recordId === recordId)?.savedRecord;
+    if (!saved) throw new AgentChatError(404, "이 대화에서 저장한 기록을 찾을 수 없습니다.");
+    if (saved.undone) return view(row);
+    await this.career.trashRecord(userId, recordId);
+    await this.rows.updateOne({ _id: id, userId }, { $set: { "messages.$[].tools.$[tool].savedRecord.undone": true, updatedAt: new Date().toISOString() }, $inc: { version: 1 } }, { arrayFilters: [{ "tool.savedRecord.recordId": recordId }] });
+    return this.get(userId, id);
   }
   /**
    * 초안 승인 · 거절. AI 없이 동작한다.
@@ -157,7 +367,7 @@ export class AgentChatService {
     return buildGoalDraft(input, randomUUID(), current);
   }
   /** 목표 변경의 승인 · 거절. 승인하면 그 시점의 목표에 바뀌는 칸만 덮어 저장한다. AI를 부르지 않는다. */
-  async decideGoalDraft(userId: string, id: string, draftId: string, decision: AgentGoalDraftDecision) {
+  async decideGoalDraft(userId: string, id: string, draftId: string, decision: AgentGoalDraftDecision, apiKey?: string) {
     const row = await this.owned(userId, id);
     if (row.run?.status === "running") throw new AgentChatError(409, "응답이 끝난 뒤 처리해 주세요.");
     const draft = row.messages.flatMap(message => message.tools).find(tool => tool.goalDraft?.draftId === draftId)?.goalDraft;
@@ -166,6 +376,12 @@ export class AgentChatService {
     if (draft.status !== "ready") { if (draft.status === target) return view(row); throw new AgentChatError(409, draft.status === "replaced" ? "새 제안으로 바뀐 변경입니다." : "이미 처리한 변경입니다."); }
     if (decision.action === "approve") await this.career.saveJobGoal(userId, { ...mergeGoal(draft, await this.career.getJobGoal(userId)), source: "chat" });
     await this.rows.updateOne({ _id: id, userId }, { $set: { "messages.$[].tools.$[tool].goalDraft.status": target, updatedAt: new Date().toISOString() }, $inc: { version: 1 } }, { arrayFilters: [{ "tool.goalDraft.draftId": draftId, "tool.goalDraft.status": "ready" }] });
+    // 대화가 이 카드에서 멈춰 있었으면(마지막 답변의 카드) 저장한 것을 알리고 하던 일을 잇는다 — 진단을 부탁한 사용자가 「이제 진단해 주세요」를 다시 쓰지 않게 한다.
+    // 지난 답변의 카드를 저장한 것이면 저장만 한다. 잇지 못하는 까닭(크레딧 · 동의 · 대화 길이 · 에이전트 없음)이 있어도 저장은 이미 끝났으므로 오류로 돌리지 않는다.
+    if (decision.action === "approve" && row.messages.at(-1)?.tools.some(tool => tool.goalDraft?.draftId === draftId)) {
+      try { return await this.send(userId, id, { requestId: randomUUID(), text: GOAL_SAVED }, apiKey); }
+      catch (error) { if (!(error instanceof AgentChatError) && !(error instanceof ConsentError)) throw error; }
+    }
     return this.get(userId, id);
   }
   async decideRecordDraft(userId: string, id: string, draftId: string, decision: AgentRecordDraftDecision) {
@@ -745,6 +961,9 @@ export class AgentChatService {
     if (row.messages.some(message => message.id === input.requestId)) return view(row);
     if (row.messages.length >= 98 || JSON.stringify(row.messages).length > 160_000) throw new AgentChatError(409, "대화가 길어졌습니다. 새 대화를 시작해 주세요.");
     if (input.selection && !row.contexts.some(ref => ref.kind === "portfolio" && ref.id === input.selection!.portfolioId)) throw new AgentChatError(409, "고른 요소의 포트폴리오가 대화에 연결되어 있지 않습니다. 포트폴리오를 연결한 뒤 보내 주세요.");
+    // 부품에 한 답은 마지막 답변의 답 없는 부품만 받는다. 같은 요청이 다시 온 경우는 위에서 이미 돌려보냈다.
+    const reply = input.reply ? checkReply(row.messages, input.reply) : null;
+    if (reply && !reply.ok) throw new AgentChatError(409, reply.message);
     const context = await this.prepare(userId, row, !apiKey);
     const now = new Date().toISOString();
     // 붙인 그림은 그 사용자가 올린 미디어여야 한다. 에이전트는 이 id로 그림을 기록에 붙인다.
@@ -753,10 +972,20 @@ export class AgentChatService {
       const owned = await Promise.all(input.attachments.map(attachment => this.work!.ownsMedia(userId, attachment.mediaId)));
       if (owned.includes(false)) throw new AgentChatError(404, "attachment not found", "붙인 그림을 찾지 못했습니다. 다시 올려 주세요.");
     }
-    const user: AgentMessage = { id: input.requestId, role: "user", text: input.text, tools: [], ...(input.selection ? { selection: input.selection } : {}), ...(input.attachments?.length ? { attachments: input.attachments } : {}), createdAt: now };
+    // 답의 글은 서버가 고른 선택지의 글로 만든다 — 화면이 보낸 글을 쓰면 대화에 남는 말과 부품이 어긋날 수 있다.
+    const text = reply ? reply.text : input.text;
+    const user: AgentMessage = { id: input.requestId, role: "user", text, tools: [], ...(input.selection ? { selection: input.selection } : {}), ...(input.reply ? { reply: input.reply } : {}), ...(input.attachments?.length ? { attachments: input.attachments } : {}), createdAt: now };
     const assistant: AgentMessage = { id: randomUUID(), role: "assistant", text: "", tools: [], createdAt: now };
     const run = { id: randomUUID(), requestId: input.requestId, status: "running" as const, error: null, startedAt: now };
-    const changed = await this.rows.findOneAndUpdate({ _id: id, userId, version: row.version, "run.status": { $ne: "running" } }, { $push: { messages: { $each: [user, assistant] } }, $set: { run, title: row.messages.length ? row.title : input.text.slice(0, 100), updatedAt: now, heartbeatAt: new Date() }, $inc: { version: 1 } }, { returnDocument: "after" });
+    const fields = { run, title: row.messages.length ? row.title : text.slice(0, 100), updatedAt: now, heartbeatAt: new Date() };
+    // 배열에 덧붙이기와 배열 안의 칸 고치기는 한 갱신에 함께 쓸 수 없다. 답이 있으면 부품의 answer를 채운 배열 전체를 버전 조건 아래에서 쓴다.
+    const answered = (): AgentMessage[] => {
+      const messages = structuredClone(row.messages);
+      // 부품의 종류와 답의 모양이 맞는지는 checkReply가 이미 봤다.
+      if (reply?.ok) (messages[reply.messageIndex]!.tools[reply.toolIndex]!.ui as { answer: unknown }).answer = { ...reply.answer, messageId: input.requestId };
+      return [...messages, user, assistant];
+    };
+    const changed = await this.rows.findOneAndUpdate({ _id: id, userId, version: row.version, "run.status": { $ne: "running" } }, reply ? { $set: { ...fields, messages: answered() }, $inc: { version: 1 } } : { $push: { messages: { $each: [user, assistant] } }, $set: fields, $inc: { version: 1 } }, { returnDocument: "after" });
     if (!changed) throw new AgentChatError(409, "다른 화면에서 실행을 시작했습니다.");
     this.start(changed, context, apiKey);
     return view(changed);
@@ -809,6 +1038,7 @@ export class AgentChatService {
     const timeout = setTimeout(() => controller.abort(), 600_000);
     try {
       const goal = await this.career.getJobGoal(row.userId);
+      const memory = await this.memory(row.userId, row._id);
       await this.runtime!.run({ userId: row.userId, messages: row.messages.slice(0, -1), context, ...(apiKey ? { apiKey } : {}), signal: controller.signal,
         emit: async event => {
           if (controller.signal.aborted) throw new Error("cancelled");
@@ -818,7 +1048,13 @@ export class AgentChatService {
         },
         records: { list: () => this.listRecords(row.userId), read: ids => this.readRecords(row.userId, ids) },
         review: draft => this.review(row.userId, row.contexts, draft),
-        draftRecord: input => this.draftRecord(row, input),
+        saveRecord: (record, key) => this.saveRecord(row, record, key),
+        recordCategories: await this.categories(row.userId),
+        askForm: async form => {
+          const issues = formIssues(form);
+          if (issues.length) throw new AgentToolRejection(issues);
+          return buildForm(form, randomUUID());
+        },
         brews: await this.brewStates(row),
         ...(event ? { event } : {}),
         startBrew: input => this.startBrew(row, input),
@@ -838,6 +1074,35 @@ export class AgentChatService {
         planDraft: input => this.planDraft(row.userId, [...row.messages.slice(0, -1), message], input),
         replanDraft: input => this.replanDraft(row.userId, input),
         readPlan: planId => this.plans.get(row.userId, planId),
+        memory,
+        updateMemory: async update => {
+          if (!this.consultant) throw new AgentToolRejection(["이 환경에서는 기억을 쓸 수 없습니다. 사용자에게 그렇게 전하십시오."]);
+          try {
+            const { profile, changed } = await this.consultant.applyUpdate(row.userId, update);
+            const parts = [changed.stage ? `단계: ${STAGE_LABELS[changed.stage]}` : null, changed.remembered ? `조건 ${changed.remembered}개 기억` : null, changed.forgotten ? `조건 ${changed.forgotten}개 지움` : null].filter(Boolean);
+            return { summary: parts.length ? parts.join(" · ") : "이미 기억하고 있습니다.", memory: memoryForModel(profile, memory?.recentConversations ?? [], memory?.commitments ?? [], memory?.diagnosis ?? null, memory?.checkins ?? false) };
+          } catch (error) {
+            if (error instanceof ConsultantLimitError) throw new AgentToolRejection([error.message]);
+            throw error;
+          }
+        },
+        appendToRecord: async addition => {
+          if (controller.signal.aborted) throw new Error("cancelled");
+          const { proposal, before } = await this.appendToRecord(row, [...row.messages.slice(0, -1), message], addition);
+          beforeDocuments.set(proposal.proposalId, before);
+          return proposal;
+        },
+        searchJobs: search => this.searchJobs(row.userId, search),
+        searchActivities: search => this.searchActivities(row.userId, search),
+        goalDemand: () => this.goalDemand(row.userId),
+        recordDiagnosis: assessment => this.recordDiagnosis(row.userId, [...row.messages.slice(0, -1), message], assessment),
+        makeCommitment: commitment => this.commitment(() => this.commitments!.create(row.userId, commitment, row._id)),
+        updateCommitment: ({ commitmentId, status, dueOn }) => this.commitment(() => this.commitments!.update(row.userId, commitmentId, { status, dueOn })),
+        askChoice: async choice => {
+          const issues = choiceIssues(choice);
+          if (issues.length) throw new AgentToolRejection(issues);
+          return buildChoice(choice, randomUUID());
+        },
         page: {
           read: (portfolioId, key) => this.pageCall(row, portfolioId, pages => pages.elementGuide!(row.userId, portfolioId, key)),
           edit: async edit => {
@@ -846,7 +1111,8 @@ export class AgentChatService {
           },
         },
         propose: async (recordId, draft) => {
-          if (!row.contexts.some(ref => ref.kind === "record" && ref.id === recordId)) throw new AgentChatError(403, "대화에 연결된 기록만 변경할 수 있습니다.");
+          // 연결되지 않은 기록은 블록 id를 모델이 알 수 없어 고칠 수 없다. 까닭과 다른 길을 알려 같은 호출을 되풀이하지 않게 한다.
+          if (!row.contexts.some(ref => ref.kind === "record" && ref.id === recordId)) throw new AgentToolRejection(["이 기록은 대화에 연결되어 있지 않아 propose_record_edit으로 고칠 수 없습니다. 내용을 더하려면 append_to_record를 쓰십시오. 기존 문장을 고쳐야 하면 사용자에게 그 기록을 대화에 연결해 달라고 하십시오."]);
           await this.consent.require(row.userId, "partial_edit");
           if (controller.signal.aborted) throw new Error("cancelled");
           const doc = await this.documents.bootstrap(row.userId, recordId);
@@ -856,6 +1122,12 @@ export class AgentChatService {
           const proposal = await this.documents.createPreparedAiProposal(row.userId, recordId, { prompt: row.messages.at(-2)!.text, selection: { blockIds } }, draft);
           if (controller.signal.aborted) { await this.documents.cancelAiProposal(row.userId, recordId, { recordId, proposalId: proposal.proposalId }); throw new Error("cancelled"); }
           beforeDocuments.set(proposal.proposalId, doc.document);
+          // 새 블록만 더하는 제안은 사용자가 쓴 문장을 바꾸지 않는다. 승인을 기다리지 않고 바로 적용한다 — 카드의 「되돌리기」는 그대로다.
+          // 그 사이 문서가 바뀌어 적용하지 못하면 승인을 기다리는 제안으로 둔다.
+          if (draft.commands.length > 0 && draft.commands.every(command => command.type === "insertBlocks") && draft.propertyChanges.length === 0) {
+            try { return await this.documents.applyAiProposal(row.userId, recordId, { recordId, proposalId: proposal.proposalId, expectedDocumentVersion: doc.documentVersion, commandIndexes: proposal.commands.map((_, index) => index), propertyChangeIndexes: [] }); }
+            catch { return proposal; }
+          }
           return proposal;
         },
       });

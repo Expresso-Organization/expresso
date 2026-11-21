@@ -17,6 +17,9 @@ describe("PropertyValueEditor", () => {
     const onCommit = vi.fn(async () => undefined);
     const onCreateOption = vi.fn(async () => created);
     render(<PropertyValueEditor definition={definition("multi_select", { options: [{ id: option, name: "선택 A" }] })} value={{ type: "multi_select", value: [option] }} onCommit={onCommit} onCreateOption={onCreateOption} />);
+    // 값은 칩으로 보이고, 눌러야 표 셀과 같은 옵션 팝업이 열린다.
+    expect(screen.getByRole("button", { name: "테스트 속성" }).textContent).toBe("선택 A");
+    fireEvent.click(screen.getByRole("button", { name: "테스트 속성" }));
     const input = screen.getByLabelText("테스트 속성 새 항목");
     fireEvent.change(input, { target: { value: "Rust" } });
     fireEvent.keyDown(input, { key: "Enter" });
@@ -25,12 +28,22 @@ describe("PropertyValueEditor", () => {
   });
   it("hides the chip input when options cannot be created", () => {
     setup("multi_select", { type: "multi_select", value: [] }, { options: [] });
+    fireEvent.click(screen.getByRole("button", { name: "테스트 속성" }));
     expect(screen.queryByLabelText("테스트 속성 새 항목")).toBeNull();
   });
   it.each(["title", "text", "url", "email", "phone"] as const)("commits %s on Enter", async (type) => { const commit = setup(type); const input = screen.getByLabelText("테스트 속성"); fireEvent.change(input, { target: { value: "새 값" } }); fireEvent.keyDown(input, { key: "Enter" }); await waitFor(() => expect(commit).toHaveBeenCalledWith({ type, value: "새 값" })); });
   it("preserves an invalid number draft and explains the issue", () => { const commit = setup("number"); const input = screen.getByLabelText("테스트 속성"); fireEvent.change(input, { target: { value: "not-a-number" } }); fireEvent.blur(input); expect(commit).not.toHaveBeenCalled(); expect(screen.getByRole("alert", { name: "숫자를 입력해 주세요." })).toBeTruthy(); expect((input as HTMLInputElement).value).toBe("not-a-number"); });
-  it("commits select, multiselect and checkbox choices", async () => { const options = { options: [{ id: option, name: "선택 A" }] }; let commit = setup("select", null, options); const selectTrigger = screen.getByRole("button", { name: "테스트 속성" }); fireEvent.click(selectTrigger); fireEvent.click(screen.getByRole("option", { name: "선택 A" })); await waitFor(() => expect(commit).toHaveBeenCalledWith({ type: "select", value: option })); expect(document.querySelector("select")).toBeNull(); cleanup(); commit = setup("multi_select", { type: "multi_select", value: [] }, options); fireEvent.click(screen.getByLabelText("선택 A")); await waitFor(() => expect(commit).toHaveBeenCalledWith({ type: "multi_select", value: [option] })); cleanup(); commit = setup("checkbox", { type: "checkbox", value: false }); fireEvent.click(screen.getByLabelText("테스트 속성")); await waitFor(() => expect(commit).toHaveBeenCalledWith({ type: "checkbox", value: true })); });
-  it("commits a date range", async () => { const commit = setup("date"); fireEvent.change(screen.getByLabelText("테스트 속성 시작"), { target: { value: "2026-09-01" } }); fireEvent.change(screen.getByLabelText("테스트 속성 종료"), { target: { value: "2026-09-30" } }); fireEvent.blur(screen.getByLabelText("테스트 속성 종료")); await waitFor(() => expect(commit).toHaveBeenCalledWith({ type: "date", value: { start: "2026-09-01", end: "2026-09-30", timezone: null } })); });
+  it("commits select, multiselect and checkbox choices", async () => { const options = { options: [{ id: option, name: "선택 A" }] }; let commit = setup("select", null, options); const selectTrigger = screen.getByRole("button", { name: "테스트 속성" }); fireEvent.click(selectTrigger); fireEvent.click(screen.getByRole("option", { name: "선택 A" })); await waitFor(() => expect(commit).toHaveBeenCalledWith({ type: "select", value: option })); expect(document.querySelector("select")).toBeNull(); cleanup(); commit = setup("multi_select", { type: "multi_select", value: [] }, options); fireEvent.click(screen.getByRole("button", { name: "테스트 속성" })); fireEvent.click(screen.getByRole("option", { name: "선택 A" })); expect(document.querySelector("input[type=checkbox]")).toBeNull(); await waitFor(() => expect(commit).toHaveBeenCalledWith({ type: "multi_select", value: [option] })); cleanup(); commit = setup("checkbox", { type: "checkbox", value: false }); fireEvent.click(screen.getByLabelText("테스트 속성")); await waitFor(() => expect(commit).toHaveBeenCalledWith({ type: "checkbox", value: true })); });
+  it("commits a date range from the calendar popout instead of a browser date input", async () => {
+    const commit = setup("date", { type: "date", value: { start: "2026-09-01", end: null, timezone: null } });
+    const trigger = screen.getByRole("button", { name: "테스트 속성" });
+    expect(trigger.textContent).toBe("2026.09");
+    expect(document.querySelector("input[type=date]")).toBeNull();
+    fireEvent.click(trigger);
+    fireEvent.click(screen.getByRole("button", { name: /종료/ }));
+    fireEvent.click(screen.getByRole("button", { name: "30" }));
+    await waitFor(() => expect(commit).toHaveBeenCalledWith({ type: "date", value: { start: "2026-09-01", end: "2026-09-30", timezone: null } }));
+  });
   it.each(["file", "media"] as const)("validates and commits %s IDs", async (type) => { const commit = setup(type, { type, value: [] }); const input = screen.getByLabelText("테스트 속성 ID 추가"); fireEvent.change(input, { target: { value: option } }); fireEvent.keyDown(input, { key: "Enter" }); await waitFor(() => expect(commit).toHaveBeenCalledWith({ type, value: [option] })); });
   it.each(["formula", "rollup"] as const)("renders %s as read-only", (type) => { setup(type, { type, value: 3, diagnostics: [] }); expect(screen.getByRole("status", { hidden: true }).textContent).toBe("3"); });
   it.each(["created_time", "updated_time"] as const)("protects the system %s value", (type) => { setup(type, { type, value: "2026-09-01T00:00:00.000Z" }, {}, true); const shown = screen.getByRole("status", { hidden: true }); expect(shown.querySelector("time")?.getAttribute("dateTime")).toBe("2026-09-01T00:00:00.000Z"); expect(shown.textContent).toMatch(/^2026-09-01 \d{2}:\d{2}$/u); expect(screen.queryByRole("textbox")).toBeNull(); });

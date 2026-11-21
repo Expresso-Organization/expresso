@@ -52,6 +52,8 @@ describe.skipIf(!(process.env.TEST_MONGODB_URL ?? process.env.TEST_MONGODB_ADMIN
     await event({ contract: "page_generation", model: "claude-opus-4-5", tokens: [8, 16_647, 136_562, 81_423], createdAt: "2026-09-30T15:00:00.000Z" });
     await event({ contract: "search_interpret", model: "claude-haiku-5-5", tokens: [1_000, 200, 0, 0], createdAt: "2026-10-03T02:00:00.000Z" });
     await event({ contract: "agent_chat", model: "claude-sonnet-5", tokens: [500, 1_500, 3_000, 5_000], createdAt: "2026-10-03T14:30:00.000Z" });
+    // 서비스가 먼저 실행한 능동 제안은 사용량에 넣지 않는다 — 합계 · 날짜별 · 기능별 · 모델별 어디에도.
+    await event({ contract: "proposal_briefing", model: "claude-sonnet-5", tokens: [2_000, 3_000, 0, 400_000], createdAt: "2026-10-03T03:00:00.000Z" });
     // 남의 호출과 사용자가 없는 호출은 잡히지 않는다.
     await event({ contract: "job_facts", model: "claude-sonnet-5", tokens: [1, 1, 1, 1_000_000], createdAt: "2026-10-03T02:00:00.000Z", userId: null });
   }, 60_000);
@@ -65,15 +67,15 @@ describe.skipIf(!(process.env.TEST_MONGODB_URL ?? process.env.TEST_MONGODB_ADMIN
       tokensPerCredit: 10_000,
       calls: 3,
       tokens: { inputTokens: 1_508, outputTokens: 18_347, cacheReadTokens: 86_423 },
-      // 캐시 생성(139,562)은 빼고 106,278 토큰 → 10.6278 → 11
-      creditsUsed: 11,
+      // 캐시 생성(139,562)은 빼고, 캐시 읽기는 10분의 1로 센다: 1,508 + 18,347 + 8,642.3 = 28,497.3 토큰 → 2.84973 → 3
+      creditsUsed: 3,
       creditLimit: 100,
-      creditsRemaining: 89,
+      creditsRemaining: 97,
     });
     expect(usage.byContract.map(({ key }) => key)).toEqual(["page_generation", "agent_chat", "search_interpret"]);
     expect(usage.byModel).toEqual([
-      { key: "claude-opus-4-5", totalTokens: 98_078, calls: 1 },
-      { key: "claude-sonnet-5", totalTokens: 7_000, calls: 1 },
+      { key: "claude-opus-4-5", totalTokens: 24_797, calls: 1 },
+      { key: "claude-sonnet-5", totalTokens: 2_500, calls: 1 },
       { key: "claude-haiku-5-5", totalTokens: 1_200, calls: 1 },
     ]);
   });

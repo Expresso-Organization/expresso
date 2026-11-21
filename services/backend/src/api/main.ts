@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { AgentCredentials } from "../modules/agent-chat/index.js";
-import { AgentChatError, AgentChatService, type AgentWorkDeps } from "../modules/agent-chat/index.js";
+import { AgentChatError, AgentChatService, type AgentBrewDeps, type AgentWorkDeps } from "../modules/agent-chat/index.js";
 import { ChromiumSiteCapturer } from "../platform/browser/site-capture.js";
 import { GithubRepoReader } from "../platform/github/repo-reader.js";
 import { ClaudeAgentRuntime } from "../platform/agent/runtime.js";
@@ -11,10 +11,10 @@ import { safeErrorSummary } from "../platform/observability.js";
 import { createRedisResource, createStreamRedis } from "../platform/redis.js";
 import { IdentityService } from "../modules/identity/index.js";
 import { RemoteGoogleIdTokenVerifier } from "../modules/identity/google.js";
-import { EntitlementService } from "../modules/entitlements/index.js";
+import { EntitlementService, outreachGate } from "../modules/entitlements/index.js";
 import { UsageService } from "../modules/usage/index.js";
 import { CareerService } from "../modules/career/index.js";
-import { JobMarketService } from "../modules/jobs/index.js";
+import { GoalDemandService, JobMarketService } from "../modules/jobs/index.js";
 import { AiSearchInterpreter } from "../modules/jobs/search-interpreter.js";
 import { AiFactsReader, createJobSourceAdapters, BundledMarkReader, JobIngestService, JobUrlImporter, SiteMarkReader } from "../modules/jobs/ingest/index.js";
 import { JobBoardService } from "../modules/jobs/index.js";
@@ -49,6 +49,7 @@ import { AnalyticsService } from "../modules/analytics/index.js";
 import { EngagementService, UnifiedSearchService } from "../modules/engagement/index.js";
 import { ActivityService } from "../modules/activities/index.js";
 import { ProposalService } from "../modules/proposals/index.js";
+import { ConsultantCommitments, ConsultantDiagnoses, ConsultantService } from "../modules/consultant/index.js";
 import { AccountLifecycleService } from "../modules/account-lifecycle/index.js";
 import { AdminService } from "../modules/admin/index.js";
 import { CareerDocumentService } from "../modules/career-editor/index.js";
@@ -174,6 +175,8 @@ const careerDocumentService = new CareerDocumentService(
 // 편집기 밖 본문 쓰기(PATCH bodyMd · 인터뷰 재답변)가 곧바로 편집기 문서와 열린 편집기에 들어가게 연결합니다.
 careerService.setExternalBodyListener((userId, recordId) => careerDocumentService.syncExternalBody(userId, recordId));
 interviewService.setExternalBodyListener((userId, recordId) => careerDocumentService.syncExternalBody(userId, recordId));
+const consultantService = new ConsultantService(database);
+const consultantCommitments = new ConsultantCommitments(database);
 // 작업물 재료: 채팅에 붙인 그림 · 사이트 첫 화면 찍기 · 공개 깃허브 레포 읽기(`agent-chat/work-materials.ts`).
 // 운영은 측정기와 같은 headless shell을 쓴다. 그 브라우저를 깔지 않은 개발 기기는 `SITE_CAPTURE_CHANNEL=chrome`으로 설치된 Chrome을 쓴다.
 const siteCapturer = new ChromiumSiteCapturer(20_000, process.env.SITE_CAPTURE_CHANNEL?.trim() ? { channel: process.env.SITE_CAPTURE_CHANNEL.trim() } : {});
@@ -184,7 +187,8 @@ const agentWork: AgentWorkDeps = {
   capture: url => siteCapturer.capture(url),
   readRepo: url => repoReader.read(url),
 };
-const agentChatService = new AgentChatService(database, config.agentChatEnabled ? new ClaudeAgentRuntime(config.agentChatModel, aiUsage) : null, careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(database, config.agentCredentialEncryptionKey), portfolioReadService, pageService, entitlementService, {
+// 대화에서 시작하는 포트폴리오 제작이 쓰는 다른 모듈의 일(`agent-chat/brew-start.ts`).
+const agentBrews: AgentBrewDeps = {
   analyzePosting: (userId, jobPostingId) => jobMarketService.analyzePosting(userId, jobPostingId),
   getResult: (userId, jobAnalysisId) => jobAnalysisService.getResult(userId, jobAnalysisId),
   createBrew: (userId, input) => materialsService.createBrew(userId, input),
@@ -244,14 +248,17 @@ const agentChatService = new AgentChatService(database, config.agentChatEnabled 
       selected: chat.snippets.find(snippet => snippet.id === chat.selectedSnippetId)?.name ?? null,
     };
   },
-}, agentWork);
+};
 const activityService = new ActivityService(database);
+const agentChatService = new AgentChatService(database, config.agentChatEnabled ? new ClaudeAgentRuntime(config.agentChatModel, aiUsage) : null, careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(database, config.agentCredentialEncryptionKey), portfolioReadService, pageService, entitlementService, consultantService, consultantCommitments, { demand: new GoalDemandService(database), store: new ConsultantDiagnoses(database) }, { jobs: jobBoardService, activities: activityService, dismissed: userId => proposalService.dismissedKeys(userId) }, agentBrews, agentWork);
 // API는 제안을 읽고 실행을 줄에 넣기만 한다. AI 실행은 워커가 한다(`writer`를 주지 않는다).
-const proposalService = new ProposalService(database, { career: careerService, jobs: jobBoardService, activities: activityService, consent: consentService, credits: entitlementService, writer: null });
+const proposalService = new ProposalService(database, { career: careerService, jobs: jobBoardService, activities: activityService, consent: consentService, entitled: outreachGate(entitlementService), writer: null });
 const adminService = new AdminService(database, { identity: identityService, career: careerService, consent: consentService });
 const app = buildApi({
   adminService,
   agentChatService,
+  consultantService,
+  consultantCommitments,
   activityService,
   proposalService,
   config,

@@ -1,0 +1,19 @@
+/* 찾은 공고 · 활동의 목록 — 답변 글 아래에 놓인다. 테두리 · 바탕은 대화의 다른 카드와 같고, 줄은 홈 위젯의 줄을 따른다. */
+.part { display: flex; flex-direction: column; margin-top: 10px; max-width: 560px; border: 1px solid var(--ex-border); border-radius: var(--ex-radius-card); background: var(--ex-bg-sunken); font-family: var(--ex-font-ui); color: var(--ex-fg); overflow: hidden; }
+.head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 10px 14px 8px; }
+.heading { font-size: var(--ex-text-xs); font-weight: 600; overflow-wrap: anywhere; }
+.count { flex-shrink: 0; font-family: var(--ex-font-brand); font-size: var(--ex-text-3xs); color: var(--ex-fg-muted); }
+.rows { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--ex-border-inner); }
+.rows > li + li { border-top: 1px solid var(--ex-border-inner); }
+.row { display: flex; align-items: center; gap: 10px; padding: 9px 14px; color: inherit; text-decoration: none; transition: background var(--ex-motion-instant); }
+.row:hover { background: var(--ex-bg-tint); }
+.row:focus-visible { outline: none; box-shadow: inset var(--ex-focus-ring); }
+.icon { flex-shrink: 0; display: grid; place-items: center; width: 26px; height: 26px; border-radius: var(--ex-radius-control); background: var(--ex-bg-tint); color: var(--ex-fg-muted); }
+.text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.title { font-size: var(--ex-text-xs); font-weight: 500; line-height: var(--ex-leading-normal); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sub { font-size: var(--ex-text-2xs); color: var(--ex-fg-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.deadline { flex-shrink: 0; font-family: var(--ex-font-brand); font-size: var(--ex-text-2xs); color: var(--ex-fg-muted); }
+.deadline[data-urgent] { color: var(--ex-status-danger-text); }
+.go { flex-shrink: 0; color: var(--ex-fg-subtle); }
+.empty { margin: 0; padding: 4px 14px 12px; font-size: var(--ex-text-2xs); color: var(--ex-fg-muted); }
+.pending { margin: 10px 0 0; font-family: var(--ex-font-ui); font-size: var(--ex-text-xs); color: var(--ex-fg-muted); }

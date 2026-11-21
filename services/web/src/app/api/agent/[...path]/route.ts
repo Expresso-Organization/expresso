@@ -15,7 +15,8 @@ async function proxy(request: Request, context: { params: Promise<{ path: string
   const review = isGet && action === "reviews" && nested;
   const draftDecision = !isGet && isDraftAction(action) && nested;
   // 지면 고침 되돌리기(POST page-edits/:editId/undo). 본문은 없다.
-  const pageUndo = !isGet && action === "page-edits" && path.length === 5 && UuidSchema.safeParse(path[3]).success && path[4] === "undo";
+  // 저장한 기록 되돌리기(POST saved-records/:recordId/undo)도 같은 모양이다.
+  const pageUndo = !isGet && (action === "page-edits" || action === "saved-records") && path.length === 5 && UuidSchema.safeParse(path[3]).success && path[4] === "undo";
   // 대화에서 시작한 포트폴리오 제작: 상태(GET brew-starts/:startId) · 제작 열기 · 다시 분석 · 분석 완료 알림(POST brew-starts/:startId/open|retry|announce). 본문은 없다.
   const brewState = isGet && action === "brew-starts" && nested;
   const brewAction = !isGet && action === "brew-starts" && path.length === 5 && UuidSchema.safeParse(path[3]).success && (path[4] === "open" || path[4] === "retry" || path[4] === "announce");

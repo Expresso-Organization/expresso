@@ -1,20 +1,21 @@
 "use client";
 
-import type { Proposal, ProposalAction as Action, ProposalFeed as Feed, ProposalRef, ProposalRunReason } from "@expresso/contracts";
+import type { ActivityKind, Proposal, ProposalAction as Action, ProposalFeed as Feed, ProposalRef, ProposalRunReason } from "@expresso/contracts";
 import type { Route } from "next";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition, type ReactNode } from "react";
+import { startTransition as startFeedTransition, useEffect, useState, useTransition, type ReactNode } from "react";
 
 import { LogoMark } from "@/components/brand/Logo";
+import { addTransitionType, ViewTransition } from "@/components/motion/ViewTransition";
 import { tintOf, type TintHue } from "@/components/ui/company-avatar-tint";
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Icon } from "@/components/ui/Icon";
-import { putAgentHandoff } from "@/features/agent-chat/agent-handoff";
 import { ToolStep } from "@/features/agent-chat/ToolStep";
 import { CAREER_CATEGORY_ICONS } from "@/lib/career-category-icons";
 
+import { PROPOSAL_FEED_CHANGE } from "./home-transitions";
+import { useHomeHandoff } from "./HomeHandoff";
 import { ProposalAction } from "./HomeStart";
 import type { BriefingFinding } from "./briefing";
 import styles from "./home-start.module.css";
@@ -33,8 +34,12 @@ const KIND: Record<Action, { title: string; icon: string; hue: TintHue }> = {
   strengthen_record: { title: "기록 채우기", icon: "notebook", hue: "amber" },
 };
 
+/** 활동 제안의 제목. 활동 종류마다 하는 일이 다르다. */
+const ACTIVITY_TITLE: Record<ActivityKind, string> = { contest: "공모전 참가", hackathon: "해커톤 참가", bootcamp: "부트캠프 지원" };
+
 const REASON: Record<ProposalRunReason, string> = {
   no_credits: "이번 달 크레딧을 모두 써서 새 제안을 만들지 않았습니다.",
+  plan_required: "지금 요금제에서는 새 제안을 만들지 않습니다.",
   consent_required: "커리어 기록의 AI 사용 동의가 꺼져 있어 제안을 만들지 않았습니다.",
   ai_unavailable: "지금은 제안을 만들 수 없습니다.",
   nothing_new: "새로 권할 것이 없습니다. 새 공고나 공모전이 들어오면 다시 확인합니다.",
@@ -45,7 +50,16 @@ const REASON: Record<ProposalRunReason, string> = {
  * 제안 구획의 카드 한 장 — 위젯 카드와 같은 틀이다. 머리줄의 아이콘 자리에 종류 표시가 서고, 카드에서 색이 있는 곳은 거기뿐이다.
  * 색은 회사 아바타의 틴트 규칙에서 색상만 골라 쓴다.
  */
-function FeedCard({ icon, hue, title, children }: { icon: string; hue: TintHue; title: string; children: ReactNode }) {
+/** 제안 칸의 카드 하나. 클래스의 길이와 곡선은 styles/global.css의 `card-in` · `card-out` · `proposal-move`. */
+function CardTransition({ children }: { children: ReactNode }) {
+  return (
+    <ViewTransition enter="card-in" exit="card-out" update="proposal-move" default="none">
+      {children}
+    </ViewTransition>
+  );
+}
+
+export function FeedCard({ icon, hue, title, children }: { icon: string; hue: TintHue; title: string; children: ReactNode }) {
   return (
     <article className={`${styles.widget} ${styles.proposalCard}`}>
       <header className={styles.widgetHead}>
@@ -91,10 +105,10 @@ function RefRow({ item }: { item: ProposalRef }) {
  * 대화를 여는 버튼은 입력창을 거치지 않고 그 말로 대화를 바로 시작한다(홈의 입력창이 말을 넘기는 길과 같다).
  */
 function ProposalCard({ proposal, disabled, onDismiss }: { proposal: Proposal; disabled: boolean; onDismiss(): void }) {
-  const router = useRouter();
+  const handoff = useHomeHandoff();
   const { start, subject } = proposal;
   const kind = KIND[proposal.action];
-  const title = proposal.action === "plan_activity" && subject.activityKind === "hackathon" ? "해커톤 참가" : kind.title;
+  const title = proposal.action === "plan_activity" && subject.activityKind ? ACTIVITY_TITLE[subject.activityKind] : kind.title;
   return (
     <FeedCard icon={kind.icon} hue={kind.hue} title={title}>
       <p className={styles.proposalMessage}>{proposal.message}</p>
@@ -106,7 +120,8 @@ function ProposalCard({ proposal, disabled, onDismiss }: { proposal: Proposal; d
           <button
             type="button"
             className={styles.proposalAction}
-            onClick={() => { putAgentHandoff({ text: start.prompt, contexts: start.contexts }); router.push("/home?compose=1"); }}
+            disabled={handoff.pending}
+            onClick={() => handoff.open({ text: start.prompt, contexts: start.contexts })}
           >
             {start.label}
           </button>
@@ -137,12 +152,32 @@ function GoalCard() {
   );
 }
 
+/** 규칙으로 센 제안 한 건. AI를 쓰지 않는다 — 에이전트의 제안이 없을 때 같은 틀에 선다. */
+function RuleCard({ finding }: { finding: BriefingFinding }) {
+  return (
+    <FeedCard icon="lightbulb" hue="terracotta" title="지금 할 수 있는 일">
+      <p className={styles.proposalMessage}>{finding.text}</p>
+      <ul className={`${styles.rows} ${styles.proposalRefs}`}>
+        {finding.items.map((item) => (
+          <li key={item.href}>
+            <Link href={item.href as Route} className={styles.row}>
+              <span className={styles.rowBody}><span className={styles.rowTitle}>{item.label}</span></span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+      <div className={styles.proposalActions}><ProposalAction action={finding.action} /></div>
+    </FeedCard>
+  );
+}
+
 /**
  * 홈의 제안 구획 — 에이전트가 내 기록과 새 공고 · 공모전을 읽고 먼저 권하는 행동.
  *
  * 켜지 않았으면 켜는 카드만 선다. 켜면 서버가 하루 한 번, 그리고 새 소식이 들어올 때 제안을 만든다.
  * 만드는 동안에는 서버가 알리는 단계를 대화의 작업 흔적과 같은 모양으로 보인다.
- * `fallback`은 규칙으로 센 제안이다 — 크레딧이 남지 않아 에이전트가 쓰지 못했을 때만 대신 보인다.
+ * 유료 요금제의 기능이다(`feed.available`). 요금제가 열지 않으면 규칙으로 센 제안(`fallback`, AI를 쓰지 않는다)과
+ * 요금제 안내 카드가 선다 — 켜 둔 채 무료가 된 사용자의 화면이 까닭 없이 비지 않는다.
  */
 export function ProposalFeed({ initial, fallback, hasGoal }: { initial: Feed; fallback: BriefingFinding[]; hasGoal: boolean }) {
   const [feed, setFeed] = useState(initial);
@@ -155,17 +190,20 @@ export function ProposalFeed({ initial, fallback, hasGoal }: { initial: Feed; fa
     if (result.feed) setFeed(result.feed);
     setError(result.error);
   };
-  const run = (action: () => Promise<ProposalActionResult>) => startTransition(async () => apply(await action()));
+  // 결과 반영도 Transition 안에서 한다 — React 19는 await 뒤의 갱신을 Transition으로 보지 않는데, 카드가 빠지고 자리를
+  // 옮기는 전환(<ViewTransition>)은 Transition에서만 돈다.
+  // `PROPOSAL_FEED_CHANGE`는 카드가 빠져 스크롤이 당겨질 때 홈 전체를 교차시킨다(home-transitions.ts).
+  const run = (action: () => Promise<ProposalActionResult>) => startTransition(async () => { const result = await action(); startTransition(() => { addTransitionType(PROPOSAL_FEED_CHANGE); apply(result); }); });
 
   // 실행 중에는 끝날 때까지 상태를 다시 읽는다.
   useEffect(() => {
     if (!working) return;
     let alive = true;
-    const timer = setInterval(() => { void loadProposalsAction().then((result) => { if (alive && result.feed) setFeed(result.feed); }); }, POLL_MS);
+    const timer = setInterval(() => { void loadProposalsAction().then((result) => { const next = result.feed; if (alive && next) startFeedTransition(() => { addTransitionType(PROPOSAL_FEED_CHANGE); setFeed(next); }); }); }, POLL_MS);
     return () => { alive = false; clearInterval(timer); };
   }, [working]);
 
-  if (!feed.enabled) {
+  if (!feed.available) {
     return (
       <section className={styles.proposals}>
         <div className={styles.sectionHead}>
@@ -174,10 +212,34 @@ export function ProposalFeed({ initial, fallback, hasGoal }: { initial: Feed; fa
         </div>
         <div className={styles.proposalGrid}>
           {hasGoal ? null : <GoalCard />}
-          <FeedCard icon="sparkle" hue="terracotta" title="먼저 제안받기">
-            <p className={styles.proposalMessage}>내 기록과 새로 올라온 공고 · 공모전을 읽고, 지금 하면 좋은 일을 근거와 함께 권합니다.</p>
+          {fallback.map((finding) => <RuleCard key={finding.id} finding={finding} />)}
+          <FeedCard icon="sparkle" hue="terracotta" title="먼저 연락받기">
+            <p className={styles.proposalMessage}>컨설턴트가 내 기록과 새 공고 · 공모전을 읽고 지금 하면 좋은 일을 먼저 권하고, 대화에서 하기로 한 일을 약속한 날에 여쭙니다. 유료 요금제에서 쓸 수 있습니다.</p>
             <div className={styles.proposalActions}>
-              <button type="button" className={styles.proposalAction} onClick={() => setAsking(true)}>제안 켜기</button>
+              <Link href={"/account#plans" as Route} className={styles.proposalAction}>
+                요금제 보기
+                <Icon name="arrow-right" size={12} />
+              </Link>
+            </div>
+          </FeedCard>
+        </div>
+      </section>
+    );
+  }
+
+  if (!feed.enabled) {
+    return (
+      <section className={`${styles.proposals} ex-anim-reveal`}>
+        <div className={styles.sectionHead}>
+          <LogoMark size={16} />
+          <h2 className={styles.sectionTitle}>제안</h2>
+        </div>
+        <div className={styles.proposalGrid}>
+          {hasGoal ? null : <GoalCard />}
+          <FeedCard icon="sparkle" hue="terracotta" title="먼저 연락받기">
+            <p className={styles.proposalMessage}>내 기록과 새로 올라온 공고 · 공모전을 읽고 지금 하면 좋은 일을 근거와 함께 권합니다. 대화에서 하기로 한 일은 약속한 날에 여쭙니다.</p>
+            <div className={styles.proposalActions}>
+              <button type="button" className={styles.proposalAction} onClick={() => setAsking(true)}>켜기</button>
             </div>
           </FeedCard>
         </div>
@@ -185,13 +247,14 @@ export function ProposalFeed({ initial, fallback, hasGoal }: { initial: Feed; fa
         <Dialog open={asking} onOpenChange={(open) => { if (!pending) setAsking(open); }}>
           <DialogContent className={styles.enableDialog} showCloseButton={false}>
             <DialogHeader>
-              <DialogTitle className={styles.enableTitle}>제안을 켜기 전에</DialogTitle>
+              <DialogTitle className={styles.enableTitle}>먼저 연락받기 전에</DialogTitle>
               <DialogDescription className={styles.enableIntro}>켜면 누르지 않아도 익스프레소가 AI를 실행합니다.</DialogDescription>
             </DialogHeader>
             <dl className={styles.enableFacts}>
               <div><Icon name="notebook" size={18} /><div><dt>읽는 것</dt><dd>내 구직 목표와 커리어 기록, 관심 공고, 새로 수집된 채용 공고와 공모전</dd></div></div>
               <div><Icon name="clock" size={18} /><div><dt>실행되는 때</dt><dd>하루에 한 번, 그리고 내 기술과 맞는 새 공고나 공모전이 들어왔을 때 하루 한 번까지</dd></div></div>
-              <div><Icon name="coins" size={18} /><div><dt>크레딧</dt><dd>실행할 때마다 사용한 만큼 이번 달 크레딧에서 차감됩니다. 크레딧이 남지 않으면 실행하지 않습니다.</dd></div></div>
+              <div><Icon name="calendar-check" size={18} /><div><dt>하기로 한 일</dt><dd>대화에서 하기로 한 일은 약속한 날에 한 번, 답이 없으면 3일 뒤에 한 번 더 여쭙니다. 대화가 2주 없으면 한 번 안부를 묻습니다. 여쭙는 데에는 AI를 쓰지 않습니다.</dd></div></div>
+              <div><Icon name="coins" size={18} /><div><dt>크레딧</dt><dd>익스프레소가 먼저 실행하는 일이라 이번 달 크레딧에서 빼지 않습니다.</dd></div></div>
               <div><Icon name="sparkle" size={18} /><div><dt>정보를 사용하는 곳</dt><dd>Anthropic의 Claude 모델. 커리어 기록의 AI 사용 동의가 함께 켜집니다.</dd></div></div>
             </dl>
             <DialogFooter className={styles.enableFooter}>
@@ -215,7 +278,7 @@ export function ProposalFeed({ initial, fallback, hasGoal }: { initial: Feed; fa
   const useFallback = last.reason === "no_credits" && fallback.length > 0;
 
   return (
-    <section className={styles.proposals}>
+    <section className={`${styles.proposals} ex-anim-reveal`}>
       <div className={styles.sectionHead}>
         <LogoMark size={16} />
         <h2 className={styles.sectionTitle}>제안</h2>
@@ -233,8 +296,10 @@ export function ProposalFeed({ initial, fallback, hasGoal }: { initial: Feed; fa
       {error ? <p role="alert" className={styles.feedError}>{error}</p> : null}
 
       <div className={styles.proposalGrid}>
-        {hasGoal ? null : <GoalCard />}
+        {/* 카드마다 전환 경계를 두고 서로 바로 옆에 세운다 — 빠지는 카드는 옅어지고, 남은 카드는 자리를 옮기고, 새 카드는 떠오른다. */}
+        {hasGoal ? null : <CardTransition key="goal"><GoalCard /></CardTransition>}
         {working ? (
+          <CardTransition key="working">
           <FeedCard icon="sparkle" hue="terracotta" title="제안을 준비하고 있습니다">
             <div className={styles.proposalSteps} role="status">
               <ToolStep
@@ -246,28 +311,17 @@ export function ProposalFeed({ initial, fallback, hasGoal }: { initial: Feed; fa
               {last.stage === "writing" ? <ToolStep status="running" icon="pencil-simple-line" title="제안 쓰는 중" /> : null}
             </div>
           </FeedCard>
+          </CardTransition>
         ) : null}
 
         {feed.proposals.map((proposal) => (
-          <ProposalCard key={proposal.id} proposal={proposal} disabled={pending} onDismiss={() => run(() => dismissProposalAction(proposal.id))} />
+          <CardTransition key={proposal.id}>
+            <ProposalCard proposal={proposal} disabled={pending} onDismiss={() => run(() => dismissProposalAction(proposal.id))} />
+          </CardTransition>
         ))}
 
-        {/* 크레딧이 남지 않았을 때 — 규칙으로 센 제안을 같은 틀에 세운다. */}
-        {useFallback ? fallback.map((finding) => (
-          <FeedCard key={finding.id} icon="lightbulb" hue="terracotta" title="지금 할 수 있는 일">
-            <p className={styles.proposalMessage}>{finding.text}</p>
-            <ul className={`${styles.rows} ${styles.proposalRefs}`}>
-              {finding.items.map((item) => (
-                <li key={item.href}>
-                  <Link href={item.href as Route} className={styles.row}>
-                    <span className={styles.rowBody}><span className={styles.rowTitle}>{item.label}</span></span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-            <div className={styles.proposalActions}><ProposalAction action={finding.action} /></div>
-          </FeedCard>
-        )) : null}
+        {/* 예전에 크레딧이 남지 않아 멈춘 실행 — 규칙으로 센 제안을 같은 틀에 세운다. */}
+        {useFallback ? fallback.map((finding) => <CardTransition key={finding.id}><RuleCard finding={finding} /></CardTransition>) : null}
       </div>
     </section>
   );

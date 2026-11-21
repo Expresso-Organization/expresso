@@ -6,4 +6,6 @@ import type { JobMarketService as LegacyJobMarketService } from "./legacy-mysql-
 export { JobMarketService } from "./service.js";
 export { MongoJobMarketService } from "./service.js";
 export { calculateExplainableMatch, keywordMet } from "./match-score.js";
+export { GoalDemandService } from "./demand.js";
+export type GoalDemandApi = Pick<import("./demand.js").GoalDemandService, "forGoal">;
 export type JobMarketApi = Pick<LegacyJobMarketService, keyof LegacyJobMarketService>;
