@@ -4,13 +4,13 @@ import { notFound } from "next/navigation";
 
 import { AppBody, DocumentHeader } from "@/components/shell/AppShell";
 import { Icon } from "@/components/ui/Icon";
+import { ChatRail, ChatRailProvider, ChatRailStage, ChatRailToggle } from "@/features/agent-chat/ChatRail";
 import { ApiError } from "@/lib/api/client";
 import { jobs as jobsApi } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
 import { PostingChatStart } from "@/features/agent-chat/PostingChatStart";
 import { backToListHref } from "../list-query";
-import { JobChatRail, JobChatRailProvider, JobChatStage, JobChatToggle } from "./JobChatRail";
 
 import { CompanyAvatar } from "@/components/ui/CompanyAvatar";
 import { mendEmphasis } from "@/components/ui/mend-emphasis";
@@ -86,7 +86,7 @@ export default async function JobDetailPage({
 
   return (
     // 머리의 채팅 버튼과 본문의 레일이 접힘 상태를 함께 본다.
-    <JobChatRailProvider>
+    <ChatRailProvider storageKey="ex.jobChat">
       <DocumentHeader
         crumbs={[
           { label: "공고 탐색", href: backHref },
@@ -122,13 +122,13 @@ export default async function JobDetailPage({
                 <span className={styles.headLabel}>원문 보기</span>
               </a>
             ) : null}
-            <JobChatToggle className={styles.headIcon} labelClassName={styles.headLabel} />
+            <ChatRailToggle className={styles.headIcon} labelClassName={styles.headLabel} />
           </div>
         }
       />
       <AppBody>
         <div className={styles.body}>
-          <JobChatStage className={styles.left}>
+          <ChatRailStage className={styles.left}>
             {/*
             * 목록으로 돌아가는 길을 지면 안에도 둔다.
             *
@@ -349,19 +349,19 @@ export default async function JobDetailPage({
             ) : null}
 
             {job.notice ? <p className={styles.notice}>{job.notice}</p> : null}
-          </JobChatStage>
+          </ChatRailStage>
 
           {/*
             레일은 이 공고를 두고 나누는 대화 하나다. 공고가 바뀌면 다시 마운트해
             그 공고가 연결된 대화를 새로 고른다. 접기와 너비 조절은 레일이 맡는다.
           */}
-          <JobChatRail
+          <ChatRail
             key={job.id}
             job={{ id: job.id, title: job.title, company: job.company.name }}
           />
         </div>
       </AppBody>
-    </JobChatRailProvider>
+    </ChatRailProvider>
   );
 }
 

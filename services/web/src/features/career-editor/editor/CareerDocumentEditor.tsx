@@ -1,5 +1,4 @@
 "use client";
-import { AgentChat } from "@/features/agent-chat/AgentChat";
 
 import dynamic from "next/dynamic";
 import type { CareerCategory, CareerRecordListItem } from "@expresso/contracts";
@@ -63,7 +62,6 @@ function BlockNoteDocumentEditor({
         {record && category ? <PropertyList record={record} definitions={category.propertySchemaV2} categoryId={category.id} /> : null}
         <BlockNoteBody yDocument={yDocument} userName="나" onAiRequest={showAiProposal || onAiRequest ? requestAi : undefined} onDocumentChange={publishDocument} onSelectionChange={setSelection} />
       </div>
-      <AgentChat context={{ kind: "record", id: recordId }} contextLabel="현재 기록" />
       {showAiProposal && document ? <details ref={panelRef} open={panelOpen} onToggle={(event) => setPanelOpen(event.currentTarget.open)}><summary>선택 영역 빠른 편집</summary><AiProposalPanel recordId={recordId} documentVersion={session.snapshot.documentVersion} selectedBlockIds={selection.length ? selection : firstBlockId ? [firstBlockId] : []} announcedProposal={session.snapshot.proposal} requestedPrompt={aiRequest} onRequestHandled={() => setAiRequest(null)} document={document} definitions={category?.propertySchemaV2 ?? []} /></details> : null}
     </section>
   );
