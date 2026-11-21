@@ -247,6 +247,20 @@ export class IdentityService implements IdentityApi {
     if (outcome === "throttled") throw new IdentityError(429, "verification mail was sent recently");
   }
 
+  /**
+   * 표시 이름 변경. 삭제를 요청한 계정은 못 바꾼다(401) — 그 계정으로는 어떤 요청도 받지 않는다.
+   * 이메일 · 요금제 · 인증 시각 · 세션은 건드리지 않는다.
+   */
+  async updateDisplayName(userId: string, displayName: string): Promise<AuthenticatedUser> {
+    const account = await mongoCollections(this.context.db).users.findOneAndUpdate(
+      { _id: userId, deletionRequestedAt: null },
+      { $set: { displayName } },
+      { returnDocument: "after" },
+    );
+    if (!account) throw new IdentityError(401, "account is pending deletion");
+    return this.#user(account);
+  }
+
   async confirmEmailVerification(token: string): Promise<AuthenticatedUser> {
     const consumed = await this.#consumeOneTimeToken("email_verification", token);
     const collections = mongoCollections(this.context.db);
