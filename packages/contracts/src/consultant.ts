@@ -145,6 +145,23 @@ export const DiagnosisItemSchema = DemandItemSchema.extend({
   evidence: z.array(z.strictObject({ ...diagnosisEvidenceShape, recordTitle: z.string().max(200) })).max(3),
   note: z.string().max(300),
 });
+/**
+ * 진단의 상태별 수. 진단 카드 · 컨설턴트의 답변 · 대화의 요지가 이 함수 하나로 센다.
+ *
+ * 경력 연차(`career`)는 공고가 받는 경력의 분포라 기록과 대조하지 않는다. 어느 수에도 넣지 않는다 —
+ * 넣으면 카드는 「미확인 2」인데 답변은 「미확인 3」이 된다(운영에서 실제로 그랬다).
+ */
+export function diagnosisCounts(items: readonly { kind: string; status: z.infer<typeof DiagnosisStatusSchema> }[]): Record<z.infer<typeof DiagnosisStatusSchema>, number> {
+  const counts = { confirmed: 0, partial: 0, unconfirmed: 0, gap: 0 };
+  for (const item of items) if (item.kind !== "career") counts[item.status] += 1;
+  return counts;
+}
+
+/** 상태별 수를 한 줄로. 「확인 6 · 일부 1 · 미확인 2 · 부족 4」. */
+export function diagnosisCountsLine(counts: Record<z.infer<typeof DiagnosisStatusSchema>, number>): string {
+  return `확인 ${counts.confirmed} · 일부 ${counts.partial} · 미확인 ${counts.unconfirmed} · 부족 ${counts.gap}`;
+}
+
 export const ConsultantDiagnosisSchema = z.strictObject({
   ...demandShape,
   /** 컨설턴트가 쓴 진단의 한 줄 요약. 아직 대조하지 않았으면 빈 글이다. */
@@ -158,7 +175,7 @@ export const ConsultantDiagnosisSchema = z.strictObject({
 });
 /** 에이전트가 `record_diagnosis`에 넣는 것. 적지 않은 항목은 앞선 상태를 둔다. */
 export const AgentDiagnosisInputSchema = z.strictObject({
-  summary: z.string().trim().min(1).max(600).describe("진단의 한 줄 요약. 표본 수와 가장 큰 부족한 점을 적는다."),
+  summary: z.string().trim().min(1).max(600).describe("진단의 한 줄 요약. 표본 수와 가장 큰 부족한 점을 적는다. 상태별 수는 적지 않는다 — 카드가 센다."),
   items: z.array(z.strictObject({
     itemId: z.string().min(1).max(80).describe("read_goal_demand가 돌려준 항목의 id."),
     status: DiagnosisStatusSchema.describe("confirmed · partial은 기록의 근거가 있을 때만. gap은 사용자가 해 본 적이 없다고 답한 뒤에만."),

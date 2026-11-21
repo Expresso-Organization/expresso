@@ -25,6 +25,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("예약 잡과 능동 제안", ()
       activities: { collect: async () => ({
         read: 5, added: added.activities, updated: 5 - added.activities, duplicates: 0,
         sources: [{ source: "wevity" as const, read: 5, error: null }, ...(failing ? [{ source: "boottent" as const, read: 0, error: failing }] : [])],
+        posters: { stored: 0, failed: 0 },
       }) },
       proposals: {
         requestDaily: async () => { calls.push("daily"); return { requested: 3 }; },

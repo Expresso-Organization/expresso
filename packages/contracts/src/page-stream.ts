@@ -20,7 +20,7 @@ import { z } from "zod";
  */
 
 /** SSE 한 줄의 이름. 받는 쪽이 `switch`로 가르는 값이다. */
-export const PAGE_STREAM_EVENTS = ["begin", "thinking", "delta", "blueprint", "fill", "stage", "done", "failed"] as const;
+export const PAGE_STREAM_EVENTS = ["begin", "thinking", "delta", "blueprint", "seed", "fill", "stage", "done", "failed"] as const;
 export type PageStreamEvent = (typeof PAGE_STREAM_EVENTS)[number];
 
 export const PageStreamDeltaSchema = z.strictObject({
@@ -35,6 +35,17 @@ export const PageStreamDeltaSchema = z.strictObject({
  * 한 번 열고, 이후 `fill`은 그 요소의 글만 바꿉니다. 완성본은 지금처럼 `delta`로 옵니다.
  */
 export const PageStreamBlueprintSchema = z.strictObject({
+  html: z.string(),
+  css: z.string(),
+});
+
+/**
+ * 디자인 대화에서 고른 첫 화면. 그 첫 화면으로 만드는 생성이 맨 먼저 한 번 보냅니다.
+ *
+ * 지면은 이 마크업과 CSS로 시작하고, 이후 `delta`로 오는 것은 그 **뒤**에 붙는 부분입니다. 받는 쪽은 이것을 먼저 그리고
+ * `delta`의 `html` · `css`를 뒤에 잇습니다.
+ */
+export const PageStreamSeedSchema = z.strictObject({
   html: z.string(),
   css: z.string(),
 });

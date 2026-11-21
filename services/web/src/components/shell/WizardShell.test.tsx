@@ -33,13 +33,8 @@ describe("제작 흐름 단계 줄", () => {
   it("다듬기에서는 앞의 네 단계가 브루 화면으로 돌아가는 링크다", () => {
     render(<WizardSteps brewId={BREW} current="edit" situation="생성 완료" />);
     const links = screen.getAllByRole("link").map((link) => link.getAttribute("href"));
-    // 디자인 선택은 끝난 생성을 다듬기로 되돌려 보내므로 카탈로그를 여는 `again=1`을 붙인다.
-    expect(links).toEqual([
-      `/brew/${BREW}/analyze`,
-      `/brew/${BREW}/materials`,
-      `/brew/${BREW}/counter`,
-      `/brew/${BREW}/design?again=1`,
-    ]);
+    // 지난 단계는 모두 그 제작의 대화가 잇는다. 디자인 선택은 다 만든 제작도 다시 만들도록 `again=1`을 붙인다.
+    expect(links).toEqual([`/brew/${BREW}`, `/brew/${BREW}`, `/brew/${BREW}`, `/brew/${BREW}?again=1`]);
   });
 
   it("디자인 선택이 지난 단계일 때만 다시 뽑기 표시를 붙인다", () => {

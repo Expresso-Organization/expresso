@@ -61,6 +61,10 @@ export function CheckinFeed({ initial, proposalsEnabled }: { initial: Consultant
   const router = useRouter();
   const handoff = useHomeHandoff();
   const [checkins, setCheckins] = useState(initial);
+  // 서버가 새 값을 내려 주면 그 값으로 바꾼다. 제안 구획에서 먼저 연락받기를 켠 직후가 그렇다 —
+  // 옛 상태를 쥐고 있으면 방금 켠 사용자에게 받을지를 다시 묻는다.
+  const [seen, setSeen] = useState(initial);
+  if (seen !== initial) { setSeen(initial); setCheckins(initial); }
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();

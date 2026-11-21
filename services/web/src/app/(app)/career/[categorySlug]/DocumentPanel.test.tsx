@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("@/features/career-editor/editor/CareerDocumentEditor", () => ({
   CareerDocumentEditor: ({ recordId, onAiRequest }: { recordId: string; onAiRequest?: (request: { id: string; recordId: string; prompt: string; blockIds: string[] }) => void }) => <div>편집기 {recordId}<button type="button" onClick={() => onAiRequest?.({ id: "selection-request", recordId, prompt: "선택한 문장을 짧게", blockIds: ["00000000-0000-4000-8000-000000000003"] })}>선택 AI 요청</button></div>,
 }));
+vi.mock("@/features/agent-chat/AgentChat", () => ({ AgentChat: () => null }));
 vi.mock("@/features/career-editor/ai/AiProposalPanel", () => ({ AiProposalPanel: ({ requestedPrompt }: { requestedPrompt?: { prompt: string } | null }) => <div>AI {requestedPrompt?.prompt}</div> }));
 vi.mock("@/features/career-editor/session/useCareerEditorSession", () => ({
   useCareerEditorSession: () => ({ snapshot: { status: "saved", documentVersion: 1, proposal: null }, document: { content: [] } }),

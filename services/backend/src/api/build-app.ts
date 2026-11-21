@@ -56,7 +56,7 @@ import { registerPageRoutes } from "../modules/page/routes.js";
 import type { PageElementEditor } from "../modules/page/element-edit.js";
 import type { PageStream } from "../modules/page/stream.js";
 import type { PageGenerator } from "../modules/page/generator.js";
-import { type PageApi } from "../modules/page/index.js";
+import { registerDesignChatRoutes, type DesignChatService, type PageApi } from "../modules/page/index.js";
 import { type AnalyticsApi } from "../modules/analytics/index.js";
 import { registerAnalyticsRoutes } from "../modules/analytics/routes.js";
 import { type EngagementApi, type UnifiedSearchApi } from "../modules/engagement/index.js";
@@ -118,10 +118,12 @@ export interface BuildApiOptions {
   pageEditor?: PageElementEditor | null;
   /** 만들어지는 지면을 흘려보내는 통로. 없으면 그 자리가 503이다. */
   pageStream?: PageStream | null;
+  /** 디자인을 정하는 대화. AI가 꺼져 있으면 null이고 라우트는 503을 낸다. */
+  designChatService?: DesignChatService | null;
   analyticsService?: AnalyticsApi;
   engagementService?: EngagementApi;
   /** 수집한 활동(공모전 · 해커톤) 목록. */
-  activityService?: Pick<ActivityApi, "page">;
+  activityService?: Pick<ActivityApi, "page" | "poster">;
   /** 능동 제안. 읽고, 켜고 끄고, 실행을 줄에 넣는다. */
   proposalService?: Pick<ProposalApi, "feed" | "enable" | "disable" | "refresh" | "dismiss">;
   /** 00c 통합 검색. 기록 · 공고 · 포트폴리오 서비스를 묶은 것이라 따로 받는다. */
@@ -319,6 +321,10 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
         ...(options.pageGenerator ? { generator: options.pageGenerator } : {}),
         editor: options.pageEditor ?? null,
         stream: options.pageStream ?? null,
+        authenticateRequest: createAuthenticateRequest(options.identityService),
+      });
+      registerDesignChatRoutes(app, {
+        service: options.designChatService ?? null,
         authenticateRequest: createAuthenticateRequest(options.identityService),
       });
     }

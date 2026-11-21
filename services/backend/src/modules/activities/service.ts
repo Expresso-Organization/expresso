@@ -1,10 +1,11 @@
-import type { Activity, ActivitySource as ActivitySourceName, ListActivitiesQuery } from "@expresso/contracts";
+import { API_PREFIX, type Activity, type ActivitySource as ActivitySourceName, type ListActivitiesQuery } from "@expresso/contracts";
 import { mongoCollections, type ActivityDoc } from "@expresso/database";
 import type { Filter } from "mongodb";
 
 import type { MongoContext } from "../../platform/mongodb.js";
 import { daysUntil, seoulDate } from "./dates.js";
 import { findDuplicates } from "./dedupe.js";
+import { fetchImage, storeActivityPosters, type FetchImage, type PosterResult } from "./posters.js";
 import { ActivitySourceError, type ActivitySource } from "./sources/adapter.js";
 import { BoottentSource } from "./sources/boottent.js";
 import { ContestKoreaSource } from "./sources/contestkorea.js";
@@ -29,6 +30,8 @@ export interface ActivityCollectResult {
   /** 다른 활동의 중복으로 묶인 접수 중 활동 수. */
   duplicates: number;
   sources: { source: ActivitySourceName; read: number; error: string | null }[];
+  /** 이번 수집에서 새로 받아 보관한 포스터와 받지 못한 포스터. */
+  posters: PosterResult;
 }
 
 /** 활동 수집이 매일 읽는 출처. 대표를 고르는 순서와는 무관하다(`dedupe.ts`). */
@@ -58,6 +61,8 @@ function activityView(row: ActivityDoc, at: Date): Activity {
     tuition: row.tuition ?? null,
     nbcardRequired: row.nbcardRequired ?? null,
     firstSeenAt: row.firstSeenAt.toISOString(),
+    // 체크섬 앞부분을 주소에 넣는다 — 그림이 바뀌면 주소가 바뀌어, 1년 캐시를 걸어도 새 그림이 보인다.
+    poster: row.poster ? { url: `${API_PREFIX}/activities/${encodeURIComponent(row._id)}/poster?v=${row.poster.checksum.slice(0, 16)}`, width: row.poster.width, height: row.poster.height } : null,
   };
 }
 
@@ -72,9 +77,11 @@ function activityView(row: ActivityDoc, at: Date): Activity {
  */
 export class ActivityService {
   readonly #sources: readonly ActivitySource[];
+  readonly #fetchImage: FetchImage;
 
-  constructor(readonly context: MongoContext, sources: readonly ActivitySource[] = defaultActivitySources()) {
+  constructor(readonly context: MongoContext, sources: readonly ActivitySource[] = defaultActivitySources(), fetchPoster: FetchImage = fetchImage) {
     this.#sources = sources;
+    this.#fetchImage = fetchPoster;
   }
 
   /** 출처를 모두 읽는다. 실패한 출처가 있어도 나머지를 저장하고, 결과의 `sources`에 실패를 적는다. 던지지 않는다. */
@@ -82,6 +89,7 @@ export class ActivityService {
     const { activities, activitySources } = mongoCollections(this.context.db);
     let read = 0; let added = 0; let updated = 0;
     const sources: ActivityCollectResult["sources"] = [];
+    const posters: PosterResult = { stored: 0, failed: 0 };
     for (const source of this.#sources) {
       let rows;
       try {
@@ -93,7 +101,7 @@ export class ActivityService {
         continue;
       }
       for (const row of rows) {
-        const { sourceId, ...fields } = row;
+        const { sourceId, posterUrl: _posterUrl, ...fields } = row;
         const result = await activities.updateOne(
           { _id: `${source.name}:${sourceId}` },
           { $set: { ...fields, lastSeenAt: at }, $setOnInsert: { source: source.name, firstSeenAt: at, duplicateOf: null } },
@@ -103,10 +111,12 @@ export class ActivityService {
       }
       read += rows.length;
       sources.push({ source: source.name, read: rows.length, error: null });
+      const stored = await storeActivityPosters(this.context.db, rows.map((row) => ({ id: `${source.name}:${row.sourceId}`, posterUrl: row.posterUrl })), this.#fetchImage);
+      posters.stored += stored.stored; posters.failed += stored.failed;
       await activitySources.updateOne({ _id: source.name }, { $set: { lastRunAt: at, lastSucceededAt: at, lastError: null, lastRead: rows.length } }, { upsert: true });
     }
     const duplicates = await this.#markDuplicates(at);
-    return { read, added, updated, duplicates, sources };
+    return { read, added, updated, duplicates, sources, posters };
   }
 
   /** 접수 중 활동 전체로 같은 활동 묶음을 다시 계산한다. */
@@ -133,6 +143,12 @@ export class ActivityService {
    * 접수가 끝나지 않은 활동(대표만). 기본은 마감이 가까운 순서, `sort: "fresh"`면 처음 본 순서의 역순.
    * `total`은 같은 조건의 전체 수다.
    */
+  /** 보관한 포스터 그림. 없으면 null. */
+  async poster(id: string): Promise<{ bytes: Buffer; mediaType: string } | null> {
+    const doc = await mongoCollections(this.context.db).activityPosters.findOne({ _id: id }, { projection: { data: 1, mediaType: 1 } });
+    return doc ? { bytes: Buffer.from(doc.data.buffer), mediaType: doc.mediaType } : null;
+  }
+
   async list(query: Pick<ListActivitiesQuery, "kind" | "limit"> & { offset?: number; sort?: "deadline" | "fresh" }, at = new Date()): Promise<Activity[]> {
     return (await this.page(query, at)).data;
   }

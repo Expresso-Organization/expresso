@@ -143,12 +143,17 @@ export default function BlockNoteBody({ yDocument, userName, onAiRequest, onDocu
   // 콜아웃을 인용과 같은 묶음 끝에 넣습니다. 묶음이 이어지지 않으면 메뉴에 묶음 머리가 두 번 나옵니다.
   const slashItems = async (query: string) => {
     // 미디어 계약은 그림만 받습니다. 올릴 수 없는 동영상 · 오디오 · 파일 블록은 메뉴에서 뺍니다.
-    const items = getDefaultReactSlashMenuItems(editor).filter((item) => !UNSUPPORTED_SLASH_ITEMS.has((item as { key?: string }).key ?? ""));
+    // 단축키 표시(badge)는 빼고 그립니다. 메뉴마다 붙은 키 조합이 시각적 잡음이었습니다.
+    const items = getDefaultReactSlashMenuItems(editor)
+      .filter((item) => !UNSUPPORTED_SLASH_ITEMS.has((item as { key?: string }).key ?? ""))
+      .map(({ badge: _badge, ...item }) => item);
     const group = ko.slash_menu.quote.group;
     const callout = {
       title: "콜아웃",
       subtext: "아이콘과 함께 강조할 문장",
       aliases: ["callout", "강조"],
+      // 기본 항목처럼 왼쪽 아이콘 칸을 채워 제목 줄이 다른 항목과 맞게 합니다.
+      icon: <Icon name="lightbulb" size={16} />,
       ...(group ? { group } : {}),
       onItemClick: () => { insertOrUpdateBlockForSlashMenu(editor, { type: "callout" } as never); },
     };

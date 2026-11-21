@@ -38,6 +38,8 @@
 .reviewHeading>span { flex:0 0 auto; border-radius:var(--ex-radius-pill); padding:3px 7px; background:var(--ex-bg-muted); color:var(--ex-fg-muted); font-family:var(--ex-font-mono); font-size:var(--ex-text-3xs); }
 .diff { display:grid; gap:5px; overflow-y:auto; }
 .diffItem { display:grid; grid-template-columns:auto 22px minmax(0,1fr); align-items:start; gap:7px; border:1px solid var(--ex-border-soft); border-radius:7px; padding:8px; background:var(--ex-bg); cursor:pointer; }
+/* 남은 기본 체크박스 · 날짜 입력은 OS 파랑 대신 잉크로 칠합니다(디자인 시스템 RULE 01). */
+.diffItem input { accent-color:var(--ex-fg-strong); }
 .diffItem:has(input:checked)[data-tone="add"] { border-color:color-mix(in srgb,var(--ex-status-success) 38%,var(--ex-border-soft)); background:var(--ex-status-success-surface); }
 .diffItem:has(input:checked)[data-tone="remove"] { border-color:color-mix(in srgb,var(--ex-status-danger-text) 32%,var(--ex-border-soft)); background:var(--ex-status-danger-surface); }
 .diffMark { display:grid; width:22px; height:22px; place-items:center; border-radius:5px; background:var(--ex-bg-muted); color:var(--ex-fg-muted); font-family:var(--ex-font-mono); font-size:var(--ex-text-xs); }

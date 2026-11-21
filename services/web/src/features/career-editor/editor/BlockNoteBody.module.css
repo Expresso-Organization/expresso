@@ -8,7 +8,7 @@
   --bn-colors-editor-text: var(--ex-fg-body);
   --bn-colors-editor-background: var(--ex-bg);
   --bn-colors-menu-text: var(--ex-fg);
-  --bn-colors-menu-background: var(--ex-bg-chrome);
+  --bn-colors-menu-background: var(--ex-bg);
   --bn-colors-tooltip-text: var(--ex-fg-on-inverse);
   --bn-colors-tooltip-background: var(--ex-bg-inverse);
   --bn-colors-hovered-text: var(--ex-fg-strong);
@@ -100,3 +100,169 @@
 }
 
 .limitNotice { margin: 0 0 8px; border-radius: 8px; padding: 8px 10px; background: var(--ex-status-danger-surface); color: var(--ex-status-danger-text); font-size: var(--ex-text-2xs); }
+
+/*
+ * BlockNote(ariakit 테마)의 떠 있는 메뉴 · 블록 단추를 Expresso 표면으로 맞춥니다.
+ * ariakit 기본값은 고른 항목을 파랑(#007acc)으로 칠하고 단추를 입체로 그립니다(디자인 시스템 RULE 01 위반).
+ * 메뉴는 .bn-root 안(bn-portal-anchor)에 그려지므로 .body 범위로 닿습니다. 값은 표 셀 팝업(.cellPopout)과 같습니다.
+ */
+
+/* 메뉴 · 팝오버 · 서식 툴바 표면 */
+.body :global(.bn-ak-menu),
+.body :global(.bn-ak-popover),
+.body :global(.bn-ak-toolbar) {
+  border: 1px solid var(--ex-border);
+  border-radius: 10px;
+  background: var(--ex-bg);
+  color: var(--ex-fg-body);
+  box-shadow: var(--ex-elevation-overlay);
+  font-family: var(--ex-font-ui);
+}
+
+.body :global(.bn-ak-menu),
+.body :global(.bn-ak-popover) {
+  min-width: 200px;
+  gap: 2px;
+  padding: 6px;
+}
+
+.body :global(.bn-ak-popover:focus-visible),
+.body :global(.bn-ak-popover[data-focus-visible]) { outline: none; }
+
+/* 메뉴 항목 — 34px 줄, 고른 항목은 파랑 대신 옅은 잉크색 */
+.body :global(.bn-ak-menu-item) {
+  min-height: 34px;
+  box-sizing: border-box;
+  gap: 9px;
+  border-radius: 7px;
+  padding: 6px 9px;
+  color: var(--ex-fg-body);
+  font-size: var(--ex-text-sm);
+  transition: background var(--ex-motion-instant), color var(--ex-motion-instant);
+}
+
+.body :global(.bn-ak-menu-item:hover),
+.body :global(.bn-ak-menu-item[data-active-item]),
+.body :global(.bn-ak-menu-item[aria-selected="true"]),
+.body :global(.bn-ak-menu-item:active),
+.body :global(.bn-ak-menu-item[data-active]),
+.body :global(.bn-ak-menu:not(:focus) .bn-ak-menu-item:not(:focus)[aria-expanded="true"]) {
+  /* ariakit은 누를 때 위아래 여백을 9px · 7px로 바꿉니다. 같은 여백으로 두어 글자가 흔들리지 않게 합니다. */
+  padding: 6px 9px;
+  background: var(--ex-bg-tint-strong);
+  color: var(--ex-fg-strong);
+}
+
+/* 고른 값 표시(✓)는 표 셀 팝업처럼 Espresso 글자색 */
+.body :global(.bn-ak-menu-item svg:last-child:not(:first-child)) { color: var(--ex-accent-text); }
+
+.body :global(.bn-ak-group-label) {
+  padding: 8px 9px 4px;
+  color: var(--ex-fg-muted);
+  font-size: var(--ex-text-xs);
+  font-weight: 600;
+  line-height: var(--ex-leading-snug);
+  opacity: 1;
+}
+
+.body :global(.bn-ak-separator) { border-color: var(--ex-border); }
+
+/* 색 메뉴의 견본 — 강조색 값은 기록 내용이라 그대로 두고 상자만 맞춥니다. */
+.body :global(.bn-color-icon) {
+  border: 1px solid var(--ex-border-soft);
+  border-radius: 5px;
+}
+
+/* 본문 옆 블록 단추(+ · 끌기) — 작고 옅게, 올리면 진하게 */
+.body :global(.bn-side-menu) { color: var(--ex-fg-subtle); }
+
+.body :global(.bn-side-menu .bn-ak-button) {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: var(--ex-radius-control);
+  background: transparent;
+  box-shadow: none;
+  color: var(--ex-fg-subtle);
+  transition: background var(--ex-motion-instant), color var(--ex-motion-instant);
+}
+
+.body :global(.bn-side-menu .bn-ak-button:hover),
+.body :global(.bn-side-menu .bn-ak-button[data-active]),
+.body :global(.bn-side-menu .bn-ak-button:active) {
+  padding: 0;
+  background: var(--ex-bg-tint);
+  box-shadow: none;
+  color: var(--ex-fg-strong);
+}
+
+.body :global(.bn-side-menu svg) { width: 18px; height: 18px; }
+
+/* 빈 줄 안내 문구 — 한글 기울임꼴을 쓰지 않습니다. */
+.body :global(.bn-block-content:has(.ProseMirror-trailingBreak:only-child)::after) { font-style: normal; }
+
+/* / 명령 메뉴 항목 */
+/* 설명이 붙은 항목은 아이콘 상자(32px) 위아래로 6px 여백을 둡니다. 작은 항목(설명 없음)은 34px 그대로입니다. */
+.body :global(.bn-suggestion-menu-item:not(.bn-suggestion-menu-item-small)) { min-height: 44px; }
+
+.body :global(.bn-ak-suggestion-menu-item-section[data-position="left"]) {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  place-items: center;
+  border: 1px solid var(--ex-border-soft);
+  border-radius: var(--ex-radius-control);
+  padding: 0;
+  background: var(--ex-bg);
+  color: var(--ex-fg-muted);
+}
+
+.body :global(.bn-ak-suggestion-menu-item-section[data-position="left"] svg) { width: 16px; height: 16px; }
+
+.body :global(.bn-ak-suggestion-menu-item-title) {
+  color: var(--ex-fg-strong);
+  font-size: var(--ex-text-sm);
+  font-weight: 500;
+  line-height: var(--ex-leading-snug);
+}
+
+.body :global(.bn-ak-suggestion-menu-item-subtitle) {
+  color: var(--ex-fg-muted);
+  font-size: var(--ex-text-2xs);
+  line-height: var(--ex-leading-snug);
+}
+
+/* 서식 툴바 단추 · 툴팁 */
+.body :global(.bn-ak-toolbar) { gap: 2px; padding: 4px; }
+
+.body :global(.bn-toolbar .bn-ak-button) {
+  height: 30px;
+  border-radius: var(--ex-radius-control);
+  background: transparent;
+  box-shadow: none;
+  color: var(--ex-fg-body);
+}
+
+.body :global(.bn-toolbar .bn-ak-button:hover),
+.body :global(.bn-toolbar .bn-ak-button[data-selected]),
+.body :global(.bn-toolbar .bn-ak-button:active),
+.body :global(.bn-toolbar .bn-ak-button[data-active]) {
+  padding-top: 0;
+  background: var(--ex-bg-tint-strong);
+  box-shadow: none;
+  color: var(--ex-fg-strong);
+}
+
+.body :global(.bn-toolbar .bn-ak-separator) { height: 20px; border-color: var(--ex-border); }
+
+.body :global(.bn-ak-tooltip) {
+  border: 0;
+  border-radius: 6px;
+  background: var(--ex-bg-inverse);
+  box-shadow: none;
+  color: var(--ex-fg-on-inverse);
+  font-size: var(--ex-text-2xs);
+}

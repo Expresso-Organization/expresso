@@ -49,3 +49,7 @@
 ### ~00:42 · T9.1 발견 · 운영 빌드 타입 오류
 - 새 main 반영(6ac9bea5) 뒤 `pnpm --filter @expresso/web build`에서 `Sidebar.test.tsx`의 href 문자열이 `Route`에 맞지 않음. `tsc --noEmit`은 통과했음
 - `AppChrome`과 같이 `as Route`로 고침 → 빌드(39쪽) · typecheck · vitest 89파일 478개 통과
+
+### 01:05 · 완료 · 좌측 사이드바 포트폴리오 · 커리어 기록 묶음과 묶음별 접기
+- PR #246 머지(f9c6d644), `web-deploy.yml` 배포 성공. 워크트리 · 브랜치 정리
+- 이 마감 기록은 다음 코드 커밋(publish-flow)에 실림

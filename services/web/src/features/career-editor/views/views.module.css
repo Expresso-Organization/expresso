@@ -1,7 +1,8 @@
 .shell { position:relative; display:block; width:100%; height:calc(100dvh - 46px); min-height:0; overflow:clip; }
 .viewArea { width:100%; height:100%; min-width:0; overflow:auto; background:var(--ex-bg); }
 .categoryIntro { display:flex; align-items:center; gap:10px; padding:26px 30px 0; }
-.categoryIntro h1 { margin:0; color:var(--ex-fg-strong); font-family:var(--ex-font-ui); font-size:var(--ex-text-xl); font-weight:600; }
+/* 화면 제목 단계(디자인 시스템 §02b, 24px). */
+.categoryIntro h1 { margin:0; color:var(--ex-fg-strong); font-family:var(--ex-font-ui); font-size:var(--ex-text-3xl); font-weight:600; letter-spacing:-.025em; }
 .categoryIcon { display:grid; place-items:center; width:32px; height:32px; border-radius:9px; background:var(--ex-accent-surface); color:var(--ex-accent-text); }
 .categoryBlurb { max-width:680px; margin:10px 30px 20px; color:var(--ex-fg-muted); font-size:var(--ex-text-sm); line-height:var(--ex-leading-relaxed); }
 .toolbar { position:sticky; top:0; z-index:5; display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; padding:10px 16px; border-bottom:1px solid var(--ex-border-soft); background:var(--ex-bg); }
@@ -45,7 +46,7 @@
 .popoverHeader>button { display:grid; width:26px; height:26px; min-height:0; flex:0 0 auto; place-items:center; border:0; border-radius:6px; background:transparent; padding:0; color:var(--ex-fg-muted); font:inherit; cursor:pointer; }
 .popoverHeader>button:hover { background:var(--ex-bg-hover); color:var(--ex-fg-strong); }
 .popoverField { display:grid; min-width:0; gap:5px; color:var(--ex-fg-muted); font-size:var(--ex-text-xs); }
-.popoverField>input { width:100%; min-height:34px; box-sizing:border-box; border:1px solid var(--ex-border-soft); border-radius:var(--ex-radius-control); background:var(--ex-bg-tint); padding:6px 9px; color:var(--ex-fg-strong); font:inherit; }
+.popoverField>input { accent-color:var(--ex-fg-strong); width:100%; min-height:34px; box-sizing:border-box; border:1px solid var(--ex-border-soft); border-radius:var(--ex-radius-control); background:var(--ex-bg-tint); padding:6px 9px; color:var(--ex-fg-strong); font:inherit; }
 .popoverHint { margin:-6px 0 0; color:var(--ex-fg-subtle); font-size:var(--ex-text-2xs); line-height:var(--ex-leading-relaxed); }
 .clearViewSetting { justify-self:start; min-height:28px; border:0; border-radius:6px; background:transparent; padding:4px 6px; color:var(--ex-accent-text); font:inherit; font-size:var(--ex-text-xs); cursor:pointer; }
 .clearViewSetting:hover { background:var(--ex-accent-soft); }
@@ -80,8 +81,8 @@
 .emptyFilter button { min-height:32px; border:1px solid var(--ex-border); border-radius:var(--ex-radius-control); background:var(--ex-bg); padding:6px 10px; color:var(--ex-fg-body); cursor:pointer; }
 .tableViewport { max-height:calc(100dvh - 250px); margin:12px 16px 16px; overflow:auto; border:1px solid var(--ex-border-soft); border-radius:var(--ex-radius-card); background:var(--ex-bg); overscroll-behavior:contain; }
 .tableViewport[data-grouped="true"] { border:0; border-radius:0; background:transparent; }
-.table { min-width:700px; }
-.tableGroups { display:grid; gap:20px; padding:2px 0 16px; }
+.table { --table-controls:96px; min-width:700px; }
+.tableGroups { --table-controls:96px; display:grid; gap:20px; padding:2px 0 16px; }
 .tableGroup { display:grid; gap:7px; }
 .tableGroupHeader { display:flex; min-height:32px; align-items:center; gap:7px; justify-self:start; border:0; border-radius:7px; background:transparent; padding:4px 7px; color:var(--ex-fg-body); font:inherit; font-size:var(--ex-text-sm); cursor:pointer; }
 .tableGroupHeader:hover { background:var(--ex-bg-hover); color:var(--ex-fg-strong); }
@@ -99,7 +100,7 @@
 .tableHead { position:sticky; top:0; z-index:3; background:var(--ex-bg-muted); color:var(--ex-fg-muted); font-size:var(--ex-text-xs); }
 .tableHead>* ,.tableRow>* ,.rowActive>* ,.tableSummary>* { min-width:0; padding:8px 12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .tableHead>:first-child,.tableRow>:first-child,.rowActive>:first-child,.tableSummary>:first-child { position:sticky; z-index:2; left:0; background:inherit; }
-.tableHead>:nth-child(2),.tableRow>:nth-child(2),.rowActive>:nth-child(2),.tableSummary>:nth-child(2) { position:sticky; z-index:2; left:96px; background:inherit; box-shadow:1px 0 var(--ex-border-soft); }
+.tableHead>:nth-child(2),.tableRow>:nth-child(2),.rowActive>:nth-child(2),.tableSummary>:nth-child(2) { position:sticky; z-index:2; left:var(--table-controls); background:inherit; box-shadow:1px 0 var(--ex-border-soft); }
 .tableHead>:first-child,.tableHead>:nth-child(2) { z-index:4; }
 .tableColumnHeader { position:relative; display:flex; height:42px; align-items:center; padding:0!important; overflow:visible!important; }
 .tableColumnHeader[data-column-draggable="true"] { cursor:grab; }
@@ -151,11 +152,12 @@
 .rowDragHandle { cursor:grab!important; }
 .rowDragHandle:active { cursor:grabbing!important; }
 .rowCheckbox { position:relative; display:grid; width:18px; height:28px; place-items:center; opacity:0; cursor:pointer; }
-.rowCheckbox input { position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; }
-.rowCheckbox>span { display:grid; width:16px; height:16px; box-sizing:border-box; place-items:center; border:1px solid var(--ex-border-firm); border-radius:3px; background:var(--ex-bg); color:var(--ex-bg); }
-.rowCheckbox[data-checked="true"] { opacity:1; }
-.rowCheckbox[data-checked="true"]>span { border-color:var(--ex-fg-strong); background:var(--ex-fg-strong); }
-.rowCheckbox:focus-within>span { box-shadow:var(--ex-focus-ring); }
+.rowCheckbox input,.projectSelect input { position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; }
+/* 선택 상자 — 표 행 · 카드 · 목록 · 프로젝트 갤러리가 같은 무채색 상자를 씁니다(RecordSelectBox). */
+.checkMark { display:grid; width:16px; height:16px; box-sizing:border-box; place-items:center; border:1px solid var(--ex-border-firm); border-radius:3px; background:var(--ex-bg); color:var(--ex-bg); }
+.rowCheckbox[data-checked="true"],.projectSelect[data-checked="true"] { opacity:1; }
+[data-checked="true"]>.checkMark { border-color:var(--ex-fg-strong); background:var(--ex-fg-strong); }
+.rowCheckbox:focus-within>.checkMark { box-shadow:var(--ex-focus-ring); }
 .tableRow:hover .rowAddButton,.tableRow:hover .rowDragHandle,.tableRow:hover .rowCheckbox,.rowActive .rowAddButton,.rowActive .rowDragHandle,.rowActive .rowCheckbox,.rowControls:focus-within .rowAddButton,.rowControls:focus-within .rowDragHandle,.rowControls:focus-within .rowCheckbox { opacity:1; }
 .rowTitle { display:flex; min-width:0; align-items:center; gap:8px; }
 .rowTitle>i { flex:0 0 auto; color:var(--ex-fg-muted); }
@@ -189,7 +191,7 @@
 .cellPopoutInput:focus { background:var(--ex-bg); }
 .cellPopoutInput[data-issue="true"] { border-color:var(--ex-status-danger-text); }
 .optionDot { width:8px; height:8px; flex:0 0 auto; border-radius:999px; background:var(--ex-accent); opacity:.72; }
-.datePopout { overflow:visible; padding:8px; }
+.datePopout { max-height:none; overflow:visible; padding:8px; }
 .dateFieldsInline { display:grid; grid-template-columns:1fr 1fr; gap:5px; }
 .dateFieldsInline>button { display:grid; gap:2px; border:1px solid var(--ex-border-soft); border-radius:var(--ex-radius-control); background:var(--ex-bg-muted); padding:6px 8px; color:var(--ex-fg-body); font:inherit; text-align:left; cursor:pointer; }
 .dateFieldsInline>button[aria-pressed="true"] { border-color:var(--ex-accent); }
@@ -228,6 +230,11 @@
 .card,.cardActive { display:grid; gap:8px; border:1px solid var(--ex-border-soft); border-radius:var(--ex-radius-card); background:var(--ex-bg); padding:10px; box-shadow:var(--ex-elevation-raised); }
 .cardActive { border-color:var(--ex-border-firm); background:var(--ex-bg-hover); }
 .card:focus-visible,.cardActive:focus-visible { box-shadow:var(--ex-focus-ring); }
+/* 보드 · 타임라인 카드의 선택 상자 — 표 행과 같은 상자이고, 올리거나 골랐을 때만 보입니다. */
+.card>.rowCheckbox,.cardActive>.rowCheckbox { height:20px; }
+.card:hover>.rowCheckbox,.card:focus-within>.rowCheckbox,.cardActive>.rowCheckbox,.list li:hover .rowCheckbox,.list li:focus-within .rowCheckbox { opacity:1; }
+.gallery article { position:relative; }
+.gallery article>.rowCheckbox { position:absolute; z-index:1; top:8px; right:10px; }
 .cover { display:grid; place-items:center; align-content:center; gap:8px; min-height:110px; border-radius:7px; background:var(--ex-bg-tint); color:var(--ex-accent-text); font:600 var(--ex-text-3xl) var(--ex-font-brand); }
 .cover small { font:500 var(--ex-text-xs) var(--ex-font-ui); }
 .cover, .projectCover { position:relative; }
@@ -285,9 +292,9 @@
 .board article:active { cursor:grabbing; }
 .board article[data-dragging="true"] { opacity:.45; }
 .board article[data-drop="before"] { box-shadow:0 -2px var(--ex-accent),var(--ex-elevation-raised); }
-.board article>label { padding-top:2px; }
 .board article>button { min-width:0; padding:0; font-size:var(--ex-text-sm); font-weight:500; line-height:var(--ex-leading-snug); }
-.board .moveButtons { grid-column:1 / -1; opacity:0; transition:opacity var(--ex-motion-quick); }
+/* 이동 단추는 카드 흐름에서 빼 겹쳐 둡니다. 흐름 안에 두면 숨겨도 카드마다 빈 줄이 남았습니다. */
+.board .moveButtons { position:absolute; right:8px; bottom:8px; opacity:0; transition:opacity var(--ex-motion-quick); }
 .board article:hover .moveButtons,.board article:focus-within .moveButtons { opacity:1; }
 .moveButtons { justify-content:flex-end; }
 .moveButtons button { display:grid; width:26px; height:24px; place-items:center; border:1px solid var(--ex-border-soft); border-radius:var(--ex-radius-control); background:var(--ex-bg); padding:0; color:var(--ex-fg-muted); cursor:pointer; }
@@ -393,4 +400,6 @@
 .categoryDeleteReasons { display:grid; gap:6px; margin:0; padding:0 0 0 18px; color:var(--ex-fg-body); font-size:var(--ex-text-sm); line-height:var(--ex-leading-normal); }
 .archivedBadge { display:inline-flex; align-items:center; gap:4px; border:1px solid var(--ex-border-soft); border-radius:var(--ex-radius-pill); padding:1px 8px; color:var(--ex-fg-muted); font-size:var(--ex-text-2xs); }
 @media (max-width:1023px){.projectGallery{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:767px){.categoryIntro{padding:18px 14px 0}.categoryBlurb{margin:8px 14px 14px}.toolbar{padding:8px}.viewTabs{width:100%;overflow-x:auto}.toolbarActions{width:100%;justify-content:flex-start;overflow-x:auto;scrollbar-width:none}.toolbarActions::-webkit-scrollbar{display:none}.viewTabs{scrollbar-width:none}.searchField{flex:1 0 140px}.filterRow{grid-template-columns:1fr}.filterConjunction:empty{display:none}.filterLeaf{grid-template-columns:1fr 1fr}.filterLeaf>:nth-child(3){grid-column:1}.sortRow{grid-template-columns:1fr 1fr}.viewSettingGrid[data-columns="2"]{grid-template-columns:1fr}.toolbarPopover,.toolbarPopover[data-menu="properties"]{right:8px;left:8px;width:auto;max-height:calc(100dvh - 190px)}.gallery,.projectGallery{grid-template-columns:1fr}.projectGalleryRegion{padding:6px 14px 18px}.list li>button{grid-template-columns:auto minmax(0,1fr)}.listType,.listMetrics{display:none!important}.board{padding:10px}.timelineRegion{--timeline-date:64px;--timeline-gap:18px;--timeline-pad:12px}.tableViewport{margin:8px;border-radius:var(--ex-radius-card)}.tableHead,.tableRow,.rowActive{grid-template-columns:44px minmax(180px,1fr) repeat(3,minmax(100px,1fr))}}
+@media (max-width:767px){.table,.tableGroups{--table-controls:36px}.rowAddButton,.rowDragHandle{display:none!important}.rowControls{grid-template-columns:18px}.categoryIntro{padding:18px 14px 0}.categoryBlurb{margin:8px 14px 14px}.toolbar{padding:8px}.viewTabs{width:100%;overflow-x:auto}.toolbarActions{width:100%;justify-content:flex-start;overflow-x:auto;scrollbar-width:none}.toolbarActions::-webkit-scrollbar{display:none}.viewTabs{scrollbar-width:none}.searchField{flex:1 0 140px}.filterRow{grid-template-columns:1fr}.filterConjunction:empty{display:none}.filterLeaf{grid-template-columns:1fr 1fr}.filterLeaf>:nth-child(3){grid-column:1}.sortRow{grid-template-columns:1fr 1fr}.viewSettingGrid[data-columns="2"]{grid-template-columns:1fr}.toolbarPopover,.toolbarPopover[data-menu="properties"]{right:8px;left:8px;width:auto;max-height:calc(100dvh - 190px)}.gallery,.projectGallery{grid-template-columns:1fr}.projectGalleryRegion{padding:6px 14px 18px}.list li>button{grid-template-columns:auto minmax(0,1fr)}.listType,.listMetrics{display:none!important}.board{padding:10px}.timelineRegion{--timeline-date:64px;--timeline-gap:18px;--timeline-pad:12px}.tableViewport{margin:8px;border-radius:var(--ex-radius-card)}.tableHead,.tableRow,.rowActive{grid-template-columns:44px minmax(180px,1fr) repeat(3,minmax(100px,1fr))}}
+/* 호버가 없는 기기(폰 · 태블릿)에서는 선택 상자를 늘 보입니다. 숨기면 고를 방법이 없습니다. */
+@media (hover:none) { .rowCheckbox,.projectSelect { opacity:1; } }

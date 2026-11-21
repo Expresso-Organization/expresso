@@ -2,7 +2,7 @@ import type { CareerCategory, CareerPropertyDefinitionV2, CareerRecord, CareerVi
 import { CareerViewConfigurationSchema } from "@expresso/contracts";
 import { describe, expect, it } from "vitest";
 
-import { EMPTY_GROUP, defaultViewDraft, filterRoot, groupColumns, groupKeyOf, localDefaultViews, matchesFilter, normalizeFilter, operandFor, operatorsFor, propertyLabel, propertyLabels, sortRecords, timelineDefaults, timelineRange, withType, withinAxis } from "./view-logic";
+import { EMPTY_GROUP, defaultViewDraft, filterRoot, formatPeriodRange, groupColumns, groupKeyOf, localDefaultViews, matchesFilter, normalizeFilter, operandFor, operatorsFor, propertyLabel, propertyLabels, sortRecords, timelineDefaults, timelineRange, withType, withinAxis } from "./view-logic";
 
 const id = (index: number) => `00000000-0000-4000-8000-${String(index).padStart(12, "0")}`;
 function definition(index: number, key: string, type: CareerPropertyDefinitionV2["type"], config: Record<string, unknown> = {}): CareerPropertyDefinitionV2 {
@@ -110,5 +110,18 @@ describe("view-logic", () => {
     expect(localDefaultViews(category).map((item) => item.type)).toEqual(["table", "board", "timeline"]);
     const undated = { ...category, propertySchemaV2: definitions.filter((item) => item.type !== "date") };
     expect(localDefaultViews(undated).map((item) => item.type)).toEqual(["table", "board"]);
+  });
+});
+
+describe("formatPeriodRange", () => {
+  it("월 단위로 시작과 끝을 잇는다", () => {
+    expect(formatPeriodRange("2025-03-01", "2025-04-30")).toBe("2025.03 – 2025.04");
+  });
+  it("끝이 없거나 같은 달이면 한 달만 쓴다", () => {
+    expect(formatPeriodRange("2024-12-01", null)).toBe("2024.12");
+    expect(formatPeriodRange("2024-12-01", "2024-12-20")).toBe("2024.12");
+  });
+  it("시작이 없으면 빈 글자다", () => {
+    expect(formatPeriodRange(null, null)).toBe("");
   });
 });
