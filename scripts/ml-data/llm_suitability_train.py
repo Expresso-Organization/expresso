@@ -19,6 +19,8 @@ from typing import Any, Iterable, Sequence
 
 
 JOB_FIELD_LABELS = (
+    # 수집 공고(한국어 평가 세트) 전용 칸. JTH 공고에는 없는 키라 fit-v1 렌더는 바뀌지 않는다.
+    ("title", "공고 제목"),
     ("job_category", "직무"),
     ("expertise_area", "전문 영역"),
     ("years_experience", "경력 조건"),
@@ -32,6 +34,7 @@ JOB_FIELD_LABELS = (
     ("llm_required_lowest_diploma", "최소 학력"),
     ("llm_required_languages_spoken", "필요 언어"),
     ("llm_seniority_level", "직급 수준"),
+    ("description", "공고 원문"),
 )
 
 E5_MODEL_ID = "intfloat/multilingual-e5-base"
