@@ -39,3 +39,18 @@
 - `career-editor.spec.ts` 「adds a property and a new chip」이 패널의 옛 「역량 새 항목」 입력과 체크박스를 찾다가 시간 초과
 - 칩 단추 → 옵션 팝업 경로로 테스트 수정, macOS 시각 기준 이미지(375 · 1280 · 1440)를 새 패널 모양으로 갱신
 - 로컬(설치된 Chrome, 전용 인프라)에서 career-editor.spec 3개 + visual 1개 통과, 두 번 연속 실행
+
+### ~01:30 · T9 완료 · PR #266 머지와 배포
+- 머지 커밋 c991ab6b, 운영 배포 · 웹 CI · 백엔드 CI 성공. 워크트리 · 브랜치 삭제, 로컬 main을 origin/main으로 fast-forward(미커밋 AGENTS.md · launch.json 보존)
+
+### ~02:00 · T10 시작 · 본문 편집 메뉴 디자인 정합
+- 사용자 지적: BlockNote(ariakit) 블록 단추 · 블록 메뉴 · 색 메뉴 · `/` 메뉴가 튐. 원인은 ariakit 기본 스타일(#007acc 고른 항목, 입체 단추, 기울임 안내)
+- 메뉴가 .bn-root 안 bn-portal-anchor에 그려져 BlockNoteBody.module.css의 .body 범위로 덮어씀
+
+### ~02:40 · 결정 · `/` 메뉴 단축키 표시 제거(사용자)
+- slashItems에서 badge를 빼서 그림. 단축키 동작은 유지
+
+### ~02:50 · T10 완료 · 본문 편집 메뉴 디자인 정합
+- 고른 항목 배경 계산값: 어두운 rgb(42,42,46), 밝은 rgb(228,233,242)(--ex-bg-tint-strong)
+- pnpm typecheck exit 0, pnpm test exit 0(web 566 · backend 722), e2e career-editor · visual · long-record 5 통과(로컬 Chrome)
+
