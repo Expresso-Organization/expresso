@@ -40,6 +40,7 @@ export const STRUCTURED_PARTS: Record<string, Record<string, StructuredPart>> = 
   },
   CaseBeforeAfter: CASE_PARTS,
   CaseBars: CASE_PARTS,
+  CaseTrend: CASE_PARTS,
   CaseFlow: CASE_PARTS,
   CaseShowcase: CASE_PARTS,
   CaseEssay: CASE_PARTS,
@@ -78,6 +79,7 @@ export const STRUCTURED_TYPE_LABELS: Record<string, string> = {
   ProjectIndex: "작업 목차",
   CaseBeforeAfter: "전후 비교",
   CaseBars: "막대 차트",
+  CaseTrend: "추이 차트",
   CaseFlow: "과정 흐름",
   CaseShowcase: "대표 이미지",
   CaseEssay: "기사형 사례",
@@ -253,6 +255,7 @@ export function textPathLabel(snapshot: Snapshot, path: string, options: { secti
   const section = snapshot.content.sections.find((item) => item.id === parts[1]);
   // 한 섹션만 보이는 요소의 칸에서는 섹션 제목을 붙이지 않습니다.
   const prefix = section && options.section !== false ? `${section.title} · ` : "";
+  if (parts[2] === "series") return `${prefix}${parts[3] === "label" ? "추이 이름" : `추이 점 ${Number(parts[4]) + 1} ${parts[5] === "label" ? "시점 · 단계" : "값"}`}`;
   if (parts.length === 3) return `${prefix}${TEXT_LABELS[parts[2]!] ?? parts[2]}`;
   return `${prefix}${LIST_LABELS[parts[2]!] ?? parts[2]} ${Number(parts[3]) + 1} ${TEXT_LABELS[parts[4]!] ?? parts[4]}`;
 }
@@ -264,6 +267,7 @@ function sectionTextPaths(section: StructuredSection, withQuote: boolean): strin
     ...(section.period !== undefined ? [`${base}/period`] : []),
     ...(withQuote && section.quote !== undefined ? [`${base}/quote`] : []),
     ...section.details.flatMap((_, index) => [`${base}/details/${index}/label`, `${base}/details/${index}/text`]),
+    ...(section.series ? [`${base}/series/label`, ...section.series.points.flatMap((point, index) => [`${base}/series/points/${index}/value`, ...(point.label !== undefined ? [`${base}/series/points/${index}/label`] : [])])] : []),
     ...(section.steps ?? []).flatMap((_, index) => [`${base}/steps/${index}/label`, `${base}/steps/${index}/text`]),
     ...(section.metrics ?? []).flatMap((metric, index) => [
       `${base}/metrics/${index}/label`, `${base}/metrics/${index}/value`,

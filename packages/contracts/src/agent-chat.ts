@@ -53,18 +53,29 @@ export type RequirementReview = z.infer<typeof RequirementReviewSchema>;
  * 대화로 만드는 새 기록 초안. 출처는 이 대화에서 사용자가 한 말이어야 하고, 저장은 사용자가
  * 카드에서 승인할 때만 일어난다.
  */
-const recordDraftSourceSchema = z.strictObject({ messageId: UuidSchema, quote: z.string().trim().min(1).max(600) });
+const sourceQuoteSchema = z.string().trim().min(1).max(600);
+const recordDraftSourceSchema = z.strictObject({ messageId: UuidSchema, quote: sourceQuoteSchema });
+/**
+ * 기록 내용의 근거. 이 대화에서 사용자가 한 말(`messageId`)이거나, 사용자가 준 링크를 에이전트가 읽은 페이지(`url`)다.
+ * 인용은 그 말이나 페이지 글에 그대로 있어야 한다.
+ */
+export const AgentRecordSourceSchema = z.union([
+  recordDraftSourceSchema,
+  z.strictObject({ url: z.string().url().max(2_000), quote: sourceQuoteSchema }),
+]);
+export type AgentRecordSource = z.infer<typeof AgentRecordSourceSchema>;
+const recordSourcesSchema = z.array(AgentRecordSourceSchema).min(1).max(10);
 export const AgentRecordDraftInputSchema = z.strictObject({
   title: z.string().trim().min(1).max(300),
   categoryId: UuidSchema.optional(),
   bodyMd: z.string().trim().min(1).max(20_000),
-  sources: z.array(recordDraftSourceSchema).min(1).max(10),
+  sources: recordSourcesSchema,
 });
-/** 이미 있는 기록의 끝에 더할 내용. 새 기록과 같은 출처 규칙을 따른다 — 이 대화에서 사용자가 한 말이어야 한다. */
+/** 이미 있는 기록의 끝에 더할 내용. 새 기록과 같은 출처 규칙을 따른다. */
 export const AgentRecordAppendInputSchema = z.strictObject({
   recordId: UuidSchema,
   bodyMd: z.string().trim().min(1).max(4_000),
-  sources: z.array(recordDraftSourceSchema).min(1).max(10),
+  sources: recordSourcesSchema,
 });
 export type AgentRecordAppendInput = z.infer<typeof AgentRecordAppendInputSchema>;
 export const AgentRecordDraftSchema = z.strictObject({
@@ -72,7 +83,8 @@ export const AgentRecordDraftSchema = z.strictObject({
   title: AgentRecordDraftInputSchema.shape.title,
   categoryId: UuidSchema.nullable(),
   bodyMd: AgentRecordDraftInputSchema.shape.bodyMd,
-  sources: AgentRecordDraftInputSchema.shape.sources,
+  /** 승인형 초안은 링크를 읽기 전에 쓰던 카드라 사용자 메시지 출처만 있다. */
+  sources: z.array(recordDraftSourceSchema).min(1).max(10),
   /** 카드에서 고를 수 있는 카테고리. 초안을 만들 때의 목록이다. */
   categories: z.array(z.strictObject({ id: UuidSchema, name: z.string().max(120) })).max(50),
   status: z.enum(["ready", "approved", "rejected"]),
@@ -494,7 +506,7 @@ export type AgentFormPart = z.infer<typeof AgentFormPartSchema>;
 export type AgentFormInput = z.infer<typeof AgentFormInputSchema>;
 /**
  * 에이전트가 대화에서 정리해 저장한 커리어 기록. 저장은 승인 없이 일어나고, 사용자는 카드에서 되돌린다(기록은 휴지통으로 간다).
- * `sources`는 근거가 된 사용자 메시지와 그 말을 그대로 옮긴 인용이다.
+ * `sources`는 근거가 된 사용자 메시지나 읽은 링크와, 거기서 그대로 옮긴 인용이다.
  */
 export const AgentSavedRecordSchema = z.strictObject({
   recordId: UuidSchema,

@@ -28,17 +28,18 @@ describe("TableView", () => {
   afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
   it("renders every ordered property with tags, summaries, sorting and accessible resizing", () => {
     const onViewChange = vi.fn();
-    render(<TableView records={records} view={view} category={category} activeId={records[0]!.id} openId={null} selectedIds={new Set()} onActivate={() => undefined} onCreate={() => undefined} onFillMissing={() => undefined} onToggle={() => undefined} onViewChange={onViewChange} onCategoryChange={() => undefined} />);
-    expect(screen.getAllByRole("columnheader").map((header) => header.textContent)).toEqual(["", "제목", "기술", "성과", "역할", "점수"]);
+    render(<TableView showAggregate records={records} view={view} category={category} activeId={records[0]!.id} openId={null} selectedIds={new Set()} onActivate={() => undefined} onCreate={() => undefined} onFillMissing={() => undefined} onToggle={() => undefined} onViewChange={onViewChange} onCategoryChange={() => undefined} />);
+    expect(screen.getAllByRole("columnheader").map((header) => header.textContent)).toEqual(["제목", "기술", "성과", "역할", "점수", ""]);
     expect(screen.getByText("React")).toBeTruthy();
     expect(screen.getByText("Go")).toBeTruthy();
     expect(screen.getByText("2개 기록")).toBeTruthy();
+    expect(screen.getByText("합계 2")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "성과" }));
     expect(screen.getByRole("dialog", { name: "성과 속성 편집" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "오름차순 정렬" }));
     expect(onViewChange).toHaveBeenLastCalledWith(expect.objectContaining({ sorts: [{ propertyId: outcomeId, direction: "asc", nulls: "last" }] }));
     fireEvent.keyDown(screen.getByRole("separator", { name: "기술 열 너비 조절" }), { key: "ArrowRight" });
-    expect(onViewChange).toHaveBeenLastCalledWith(expect.objectContaining({ columnWidths: expect.objectContaining({ [technologiesId]: 176 }) }));
+    expect(onViewChange).toHaveBeenLastCalledWith(expect.objectContaining({ columnWidths: expect.objectContaining({ [technologiesId]: 126 }) }));
   });
 
   it("reorders rows from the Notion-style drag handle and keeps the custom selection control accessible", () => {
@@ -46,7 +47,7 @@ describe("TableView", () => {
     const { rerender } = render(<TableView records={records} view={{ ...view, sorts: [{ propertyId: scoreId, direction: "asc", nulls: "last" }] }} category={category} activeId={records[0]!.id} openId={null} selectedIds={new Set()} onActivate={() => undefined} onCreate={() => undefined} onFillMissing={() => undefined} onToggle={() => undefined} onViewChange={onViewChange} onCategoryChange={() => undefined} />);
     const dataTransfer = { effectAllowed: "none", dropEffect: "none", setData: vi.fn() };
     fireEvent.dragStart(screen.getByRole("button", { name: "첫 번째 순서 변경" }), { dataTransfer });
-    const targetRow = screen.getByRole("row", { name: /두 번째 선택/ });
+    const targetRow = screen.getByRole("checkbox", { name: "두 번째 선택" }).closest("[role=row]")!;
     targetRow.getBoundingClientRect = () => ({ top: 0, height: 42 } as DOMRect);
     fireEvent.dragOver(targetRow, { dataTransfer, clientY: 32 });
     fireEvent.drop(targetRow, { dataTransfer, clientY: 32 });
@@ -57,7 +58,12 @@ describe("TableView", () => {
     expect(onViewChange).toHaveBeenLastCalledWith(expect.objectContaining({ sorts: [], recordOrder: [records[1]!.id, records[0]!.id] }));
 
     rerender(<TableView records={records} view={view} category={category} activeId={records[0]!.id} openId={null} selectedIds={new Set([records[0]!.id])} onActivate={() => undefined} onCreate={() => undefined} onFillMissing={() => undefined} onToggle={() => undefined} onViewChange={onViewChange} onCategoryChange={() => undefined} />);
-    expect(screen.getByRole("checkbox", { name: "두 번째 선택" }).parentElement?.dataset.checked).toBe("true");
+    const checkbox = screen.getByRole("checkbox", { name: "두 번째 선택" });
+    expect(checkbox.parentElement?.dataset.checked).toBe("true");
+    checkbox.focus();
+    expect(document.activeElement).toBe(checkbox);
+    expect(fireEvent.keyDown(checkbox, { key: " " })).toBe(true);
+    expect(document.activeElement).toBe(checkbox);
   });
 
   it("reorders property columns with drag and keyboard input", () => {
@@ -169,7 +175,7 @@ describe("TableView", () => {
     const customView = { ...view, visiblePropertyIds: view.visiblePropertyIds.filter((id) => id !== titleId), propertyOrder: view.propertyOrder.filter((id) => id !== titleId) };
     render(<TableView records={records} view={customView} category={customCategory} activeId={records[0]!.id} openId={null} selectedIds={new Set()} onActivate={() => undefined} onCreate={() => undefined} onFillMissing={() => undefined} onToggle={() => undefined} onViewChange={onViewChange} onCategoryChange={() => undefined} />);
     fireEvent.keyDown(screen.getByRole("separator", { name: "제목 열 너비 조절" }), { key: "ArrowLeft" });
-    expect(onViewChange).toHaveBeenCalledWith(expect.objectContaining({ columnWidths: expect.objectContaining({ [categoryId]: 244 }) }));
+    expect(onViewChange).toHaveBeenCalledWith(expect.objectContaining({ columnWidths: expect.objectContaining({ [categoryId]: 284 }) }));
   });
 
   it("renders collapsible table sections for grouped multi-select values", () => {

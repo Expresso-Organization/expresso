@@ -23,6 +23,14 @@ describe("새 기록 초안 출처", () => {
     expect(issues[1]).toContain("그 메시지에 없습니다");
     expect(issues[2]).toContain("카테고리");
   });
+  it("링크 출처는 이번 실행에서 읽은 페이지 글에 인용이 있어야 받는다", () => {
+    const pages = new Map([["https://github.com/me/moa", "모아는 Next.js와 Supabase로 만든 가계부입니다."]]);
+    const link = (url: string, quote: string) => ({ title: "모아", bodyMd: "## 링크에서 확인한 내용\n- Next.js", sources: [{ messageId: userMessage, quote: "Airflow" }, { url, quote }] });
+    expect(draftIssues(link("https://github.com/me/moa/", "Next.js와  Supabase로"), messages, new Set(), pages)).toEqual([]);
+    expect(draftIssues(link("https://github.com/me/moa", "Kubernetes로 배포"), messages, new Set(), pages)[0]).toContain("그 페이지 글에 없습니다");
+    expect(draftIssues(link("https://github.com/me/other", "Next.js"), messages, new Set(), pages)[0]).toContain("read_link로 읽은 주소가 아닙니다");
+    expect(draftIssues(link("https://github.com/me/moa", "Next.js"), messages, new Set())[0]).toContain("read_link로 읽은 주소가 아닙니다");
+  });
   it("저장형은 처리 전 상태와 카드의 카테고리 선택지를 담는다", () => {
     const draft = buildDraft(input([{ messageId: userMessage, quote: "Airflow" }]), "00000000-0000-4000-8000-000000000004", [{ id: category, name: "경험" }]);
     expect(draft).toMatchObject({ status: "ready", recordId: null, categoryId: null, categories: [{ id: category, name: "경험" }] });

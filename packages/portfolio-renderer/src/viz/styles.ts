@@ -3,6 +3,9 @@
  *
  * 글자는 모두 HTML이라 좁은 폭에서도 본문 크기 그대로입니다. 막대 길이와 위치만 CSS 변수(`--w` · `--l`)로 받습니다.
  * 바탕 막대는 글자색(`currentColor`)을 옅게 섞어 기본 바탕 · 색면(field) · 반전(inverse) 어디서나 보이게 합니다.
+ * 추이 차트의 값 글자는 면의 바탕색(`--xp-trend-halo`)으로 테두리를 둘러, 가파른 선이 글자를 지나가도 읽히게 합니다.
+ * 값 글자 상자는 이웃 칸으로 .5em씩 넓혀 "1,200명"이 숫자와 단위 사이에서 줄바꿈되지 않게 합니다. 처음 · 끝 점은 바깥쪽으로 넓히지 않아
+ * 그림 밖(지면 열 밖)으로 나가지 않습니다.
  */
 export const VIZ_CSS = String.raw`
 .xp-barlist{display:grid;gap:calc(var(--element-gap) * 1.2);align-content:start}
@@ -31,6 +34,23 @@ export const VIZ_CSS = String.raw`
 .xp-period-axis{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);column-gap:calc(var(--component-gap) * 1.2);color:var(--xp-muted)}
 .xp-period-axis span{grid-column:2;grid-row:1;justify-self:start}
 .xp-period-axis span+span{justify-self:end}
+
+.xp-trend{--xp-trend-halo:var(--canvas);display:grid;gap:calc(var(--element-gap) * .8);margin:0;min-width:0}
+[data-surface="field"] .xp-trend{--xp-trend-halo:var(--action)}
+[data-surface="inverse"] .xp-trend{--xp-trend-halo:var(--text)}
+.xp-trend-label{font-weight:var(--xp-weight-mid);line-height:1.4}
+.xp-trend-plot{position:relative;height:clamp(9em,24cqi,13em);margin-top:2.8em;border-bottom:var(--xp-rule)}
+.xp-trend[data-named] .xp-trend-plot{margin-bottom:2.4em}
+.xp-trend-plot svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.xp-trend-area{fill:color-mix(in srgb,var(--xp-bar-after,var(--action)) 14%,transparent)}
+.xp-trend-line{fill:none;stroke:var(--xp-bar-after,var(--action));stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.xp-trend-points{position:absolute;inset:0;display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));margin:0;padding:0;list-style:none}
+.xp-trend-points li{position:relative}
+.xp-trend-dot{position:absolute;left:50%;bottom:var(--h);width:.7em;height:.7em;border-radius:50%;background:var(--xp-bar-after,var(--action));box-shadow:0 0 0 .2em var(--xp-trend-halo);transform:translate(-50%,50%)}
+.xp-trend-value{position:absolute;inset-inline:-.5em;bottom:calc(var(--h) + .75em);padding-inline:.15em;text-align:center;line-height:1.25;word-break:keep-all;font-family:var(--font-display);font-weight:var(--xp-weight);font-variant-numeric:tabular-nums;color:var(--xp-accent-text);text-shadow:0 0 .25em var(--xp-trend-halo),0 0 .25em var(--xp-trend-halo),0 0 .5em var(--xp-trend-halo)}
+.xp-trend-points li:first-child .xp-trend-value{inset-inline-start:0}
+.xp-trend-points li:last-child .xp-trend-value{inset-inline-end:0}
+.xp-trend-at{position:absolute;inset-inline:0;top:calc(100% + .5em);padding-inline:.15em;text-align:center;line-height:1.3;word-break:keep-all}
 
 @container (max-width:520px){
   .xp-barlist li{grid-template-columns:minmax(0,1fr) auto}

@@ -1,3 +1,4 @@
+import { JobSearchFlow, JobSearchProgress, JobSearchResults, JobSearchEmpty } from "./JobSearchFlow";
 import { koreanPlace } from "@expresso/contracts";
 import type {
   ConsentScope,
@@ -728,7 +729,7 @@ export default async function JobsPage({
       {header}
       <AppBody>
         <ExploreFrame kind="jobs">
-        <div className={styles.content}>
+        <JobSearchFlow listQuery={listQuery}>
           {q ? (
             <SearchQueryCard
               query={q}
@@ -773,7 +774,7 @@ export default async function JobsPage({
           )}
 
           <div className={styles.columns}>
-            <div className={styles.results}>
+            <JobSearchResults>
               <div className={styles.resultsHead}>
                 <span className={styles.resultsCount}>
                   {q
@@ -799,6 +800,7 @@ export default async function JobsPage({
                 <JobFilter sections={sections} />
               </div>
 
+              {q && listing.summary.total === 0 ? <JobSearchEmpty clearHref={listHref(new URLSearchParams())} /> : (
               <JobRowList
                 jobs={postings}
                 highlightFirst={Boolean(q)}
@@ -806,6 +808,8 @@ export default async function JobsPage({
                 now={now}
                 listQuery={listQuery}
               />
+
+              )}
 
               <div className={styles.resultsFoot}>
                 <span className={styles.footText}>
@@ -826,7 +830,7 @@ export default async function JobsPage({
                   </span>
                 ) : null}
               </div>
-            </div>
+            </JobSearchResults>
 
             <aside className={styles.rail}>
               {q ? (
@@ -851,7 +855,7 @@ export default async function JobsPage({
               )}
             </aside>
           </div>
-        </div>
+        </JobSearchFlow>
         </ExploreFrame>
       </AppBody>
     </>
@@ -1075,6 +1079,7 @@ function SearchQueryCard({
           검색
         </button>
       </form>
+      <JobSearchProgress />
 
       {/* 해석 칩 — 확신이 낮은 조건도 칩으로 만들되 끌 수 있게 둔다. 칩마다
           눌러서 다른 값을 고르거나 끌 수 있다. */}
@@ -1120,7 +1125,7 @@ function InterestedField({ interested }: { interested: boolean }) {
 
 function BrowseSearchBar({ interested }: { interested: boolean }) {
   return (
-    <form className={styles.searchBar} action="/jobs">
+    <div><form className={styles.searchBar} action="/jobs">
       <InterestedField interested={interested} />
       <Icon name="sparkle" size={18} color="var(--ex-accent-text)" />
       <input
@@ -1132,7 +1137,7 @@ function BrowseSearchBar({ interested }: { interested: boolean }) {
       <button type="submit" className={styles.querySubmit}>
         찾기
       </button>
-    </form>
+    </form><JobSearchProgress /></div>
   );
 }
 

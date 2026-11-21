@@ -13,6 +13,7 @@ import { cssVariables, fontImportCss, readableColors } from "./design-tokens.js"
 import { KIT_CSS } from "./kit-styles.js";
 import { Bars, metricNumber } from "./viz/bars.js";
 import { PeriodChart } from "./viz/period-chart.js";
+import { Trend } from "./viz/trend.js";
 import { readablePeriods } from "./viz/period.js";
 import { VIZ_CSS } from "./viz/styles.js";
 
@@ -262,7 +263,7 @@ function CaseRow({ section }: { section: StructuredSection }) {
   );
 }
 
-type CaseKind = "essay" | "technical" | "process" | "gallery" | "panel" | "before-after" | "bars" | "flow" | "showcase";
+type CaseKind = "essay" | "technical" | "process" | "gallery" | "panel" | "before-after" | "bars" | "trend" | "flow" | "showcase";
 
 /** 요소 하나의 지면 변화입니다. 계약 `STRUCTURED_SCALES` · `STRUCTURED_SURFACES` · `STRUCTURED_WIDTHS`와 같은 값입니다. */
 type Stage = { scale?: "lead" | "standard" | "compact" | undefined; surface?: "canvas" | "field" | "inverse" | undefined; width?: "content" | "bleed" | undefined };
@@ -346,6 +347,17 @@ function Case({ section, kind, stage = {} }: { section: StructuredSection; kind:
     body = (
       <div className="xp-case-grid" data-form="bars">
         <Bars metrics={section.metrics ?? []} />
+        <div className="xp-body-stack">
+          {first ? <Figure media={first} /> : null}
+          <Paragraphs value={section.body} />
+          <Details details={section.details} />
+        </div>
+      </div>
+    );
+  else if (kind === "trend")
+    body = (
+      <div className="xp-case-grid" data-form="trend">
+        <Trend series={section.series} />
         <div className="xp-body-stack">
           {first ? <Figure media={first} /> : null}
           <Paragraphs value={section.body} />
@@ -695,6 +707,7 @@ const { registry: baseRegistry } = defineRegistry(structuredCatalog, {
     },
     CaseBeforeAfter: ({ props }) => <Case section={props.section} kind="before-after" stage={stageOf(props)} />,
     CaseBars: ({ props }) => <Case section={props.section} kind="bars" stage={stageOf(props)} />,
+    CaseTrend: ({ props }) => <Case section={props.section} kind="trend" stage={stageOf(props)} />,
     CaseFlow: ({ props }) => <Case section={props.section} kind="flow" stage={stageOf(props)} />,
     CaseShowcase: ({ props }) => <Case section={props.section} kind="showcase" stage={stageOf(props)} />,
     PullQuote: ({ props }) => <PullQuote section={props.section} stage={stageOf(props)} />,

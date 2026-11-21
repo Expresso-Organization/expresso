@@ -16,6 +16,7 @@ import { GalleryView } from "./GalleryView";
 import { ListView } from "./ListView";
 import { QuickFilterBar, type CareerQuickFilter, matchesQuickFilter } from "./QuickFilterBar";
 import { RecordTrashConfirm, loadDeleteImpacts, type RecordTrashImpact } from "./record-trash";
+import { RecordSummaryBar } from "./RecordSummaryBar";
 import { TableView } from "./TableView";
 import { TimelineView } from "./TimelineView";
 import { TrashDialog } from "./TrashDialog";
@@ -69,6 +70,7 @@ export function CareerViewShell({ category: initialCategory, initialViews, initi
   const [activeId, setActiveId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [notice, setNotice] = useState<Notice | null>(null);
+  const [aggregate, setAggregate] = useState(false);
   const [quickFilter, setQuickFilter] = useState<CareerQuickFilter>("all");
   const [interview, setInterview] = useState<{ mode: "create" | "fill"; targetId?: string } | null>(null);
   const [aiRequest, setAiRequest] = useState<AiPromptRequest | null>(null);
@@ -504,7 +506,7 @@ export function CareerViewShell({ category: initialCategory, initialViews, initi
     cellIssues,
   };
 
-  const renderer = view.type === "table" ? <TableView {...common} onCategoryChange={changeCategory} /> : view.type === "list" ? <ListView {...common} /> : view.type === "gallery" ? <GalleryView {...common} /> : view.type === "board" ? <BoardView {...common} /> : <TimelineView {...common} />;
+  const renderer = view.type === "table" ? <TableView {...common} showAggregate={aggregate} onCategoryChange={changeCategory} /> : view.type === "list" ? <ListView {...common} /> : view.type === "gallery" ? <GalleryView {...common} /> : view.type === "board" ? <BoardView {...common} /> : <TimelineView {...common} />;
   const filtered = view.filter !== null || quickFilter !== "all" || search !== "";
   const empty = records.length === 0 && !page.hasNextPage;
 
@@ -532,7 +534,7 @@ export function CareerViewShell({ category: initialCategory, initialViews, initi
         onDelete={(id) => void deleteView(id)}
         onReorder={(ids) => void reorderViews(ids)}
       />
-      {records.length ? <QuickFilterBar records={records} categoryKey={category.key} value={quickFilter} onChange={setQuickFilter} /> : null}
+      {records.length && view.type !== "table" ? <QuickFilterBar records={records} categoryKey={category.key} value={quickFilter} onChange={setQuickFilter} /> : null}
       {selected.size ? <div className={styles.bulk} role="toolbar" aria-label="선택한 기록 작업"><span>{selected.size}개 선택</span>{(["draft", "organized", "verified"] as const).map((status) => <button key={status} onClick={() => void bulkStatus(status)}>{STATUS_LABELS[status]}</button>)}<button type="button" data-danger="true" onClick={() => void requestDelete([...selected])}><Icon name="trash" size={13} />삭제</button></div> : null}
       {notice ? <p role="status" className={styles.message}>{notice.text}{notice.action ? <button type="button" onClick={() => { notice.action!.run(); setNotice(null); }}>{notice.action.label}</button> : null}</p> : null}
       {empty
@@ -555,6 +557,7 @@ export function CareerViewShell({ category: initialCategory, initialViews, initi
               {view.filter !== null ? <button type="button" onClick={() => updateView({ ...view, filter: null })}>필터 지우기</button> : null}
             </div>
           </div>}
+      {records.length && view.type === "table" ? <RecordSummaryBar records={records.filter((record) => matchesFilter(record, view.filter, category) && matchesSearch(record, search))} categoryKey={category.key} filter={quickFilter} onFilterChange={setQuickFilter} aggregate={aggregate} onAggregateChange={setAggregate} partial={page.hasNextPage} /> : null}
       {page.hasNextPage ? <button className={styles.more} onClick={() => void more()}>더 보기</button> : null}
     </main>
     <DocumentPanel record={active} category={category} onClose={() => setActiveId(null)} aiRequest={aiRequest?.recordId === active?.id ? aiRequest : null} onAiRequestHandled={() => setAiRequest(null)} onRecordChange={mergeRecord} onCategoryChange={changeCategory} {...(active ? { onExpand: () => router.push(`/career/records/${active.id}` as never), onDelete: () => void requestDelete([active.id]) } : {})} />

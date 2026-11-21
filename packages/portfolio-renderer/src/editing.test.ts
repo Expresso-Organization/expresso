@@ -7,7 +7,7 @@ import {
 } from "@expresso/contracts";
 
 import { structuredCatalog } from "./catalog.js";
-import { STRUCTURED_PARTS, STRUCTURED_TYPE_LABELS, editableFields, elementStyleCss, elementTitle, styleProblems } from "./editing.js";
+import { STRUCTURED_PARTS, STRUCTURED_TYPE_LABELS, editableFields, elementStyleCss, elementTitle, elementTextPaths, textPathLabel, styleProblems } from "./editing.js";
 import { renderStructuredPortfolio } from "./renderer.js";
 
 const designs = JSON.parse(readFileSync(new URL("./fixtures/designs.json", import.meta.url), "utf8"));
@@ -108,5 +108,17 @@ describe("카탈로그에서 읽는 편집 칸", () => {
     expect(intro[0]!.options.find((option) => option.value === "split")?.label).toBe("좌우 분할");
     expect(editableFields("Columns")[0]!.options.map((option) => option.value)).toEqual(["even", "wide-start", "wide-end"]);
     expect(editableFields("Contact")).toEqual([]);
+  });
+});
+
+
+describe("추이 차트 직접 편집", () => {
+  it("현재 편집기에서 추이 이름과 점의 시점·값 경로를 제공한다", () => {
+    const snapshot = { version: 1 as const, spec: { ...spec, elements: { ...spec.elements, "section-a": { ...spec.elements["section-a"], type: "CaseTrend" } } }, content: { ...content, sections: [{ ...content.sections[0]!, series: { label: "지연", points: [{ label: "초기", value: "24분" }, { value: "20분" }, { value: "12분" }] } }] } };
+    const paths = elementTextPaths(snapshot as never, "section-a");
+    expect(paths).toContain("/sections/a/series/label");
+    expect(paths).toContain("/sections/a/series/points/0/label");
+    expect(paths).toContain("/sections/a/series/points/2/value");
+    expect(textPathLabel(snapshot as never, "/sections/a/series/points/0/label")).toBe("경로 재설계 · 추이 점 1 시점 · 단계");
   });
 });

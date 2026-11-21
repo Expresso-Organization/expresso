@@ -5,6 +5,7 @@ import { renderStructuredPortfolio } from "../renderer.js";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Bars, barScale } from "./bars.js";
 import { parsePeriod, readablePeriods } from "./period.js";
+import { Trend, trendScale } from "./trend.js";
 
 const designs = JSON.parse(readFileSync(new URL("../fixtures/designs.json", import.meta.url), "utf8"));
 const clarity = DesignSystemSpecV2Schema.parse(designs.clarity);
@@ -146,5 +147,48 @@ describe("차트 부품", () => {
     const html = renderToStaticMarkup(Bars({ metrics: [{ label: "A", value: "0건" }, { label: "B", value: "0건" }] }));
     expect(html).toContain('data-bars="neutral"');
     expect(html).not.toContain("xp-barlist-fill");
+  });
+});
+
+describe("추이 차트", () => {
+  const series = (values: string[], labels: (string | undefined)[] = []) => ({
+    label: "주간 활성 운영자",
+    points: values.map((value, index) => ({ value, ...(labels[index] ? { label: labels[index] } : {}) })),
+  });
+
+  it("점을 칸 가운데에 고르게 두고, 높이는 0부터 가장 큰 값(또는 100%)까지다", () => {
+    expect(trendScale(series(["12명", "31명", "60명"]))).toEqual({ mode: "relative", xs: [16.67, 50, 83.33], ys: [20, 51.67, 100] });
+    expect(trendScale(series(["1%", "10%", "50%", "100%"]))).toEqual({ mode: "percent", xs: [12.5, 37.5, 62.5, 87.5], ys: [1, 10, 50, 100] });
+  });
+
+  it("점이 셋 미만이거나 단위가 다르거나 모두 0이면 그리지 않는다", () => {
+    expect(trendScale(series(["12명", "31명"]))).toBeNull();
+    expect(trendScale(series(["12명", "31%", "58명"]))).toBeNull();
+    expect(trendScale(series(["0건", "0건", "0건"]))).toBeNull();
+    expect(renderToStaticMarkup(Trend({ series: series(["12명", "31명"]) }))).toBe("");
+  });
+
+  it("선 · 면은 글자 없는 SVG이고, 지면의 숫자는 받은 값과 점 이름뿐이다", () => {
+    const input = series(["12명", "31명", "58명"], ["2022.04", "2022.06", "2022.08"]);
+    const html = renderToStaticMarkup(Trend({ series: input }));
+    const svg = /<svg[\s\S]*?<\/svg>/.exec(html)![0];
+    expect(visibleText(svg).trim()).toBe("");
+    expect(svg).toContain('vector-effect="non-scaling-stroke"');
+    expect(html).toContain("data-named");
+    const source = JSON.stringify(input);
+    for (const number of visibleText(html.replace(svg, "")).match(/\d[\d.,]*/g) ?? []) expect(source).toContain(number);
+    expect(renderToStaticMarkup(Trend({ series: series(["1%", "10%", "50%"]) }))).not.toContain("data-named");
+  });
+
+  it("사례 유형 CaseTrend는 추이 차트를 그리고, 나열이 없는 섹션은 받지 않는다", () => {
+    const trended: StructuredPortfolioContent = {
+      ...content,
+      sections: content.sections.map((section) => (section.id === "b" ? { ...section, series: series(["12명", "31명", "58명"], ["2022.04", "2022.06", "2022.08"]) } : section)),
+    };
+    const html = render(pageSpec("rows", {}, "CaseTrend"), trended);
+    expect(html).toContain('data-case-type="trend"');
+    expect(html).toContain('class="xp-trend"');
+    expect(html).toContain("58명");
+    expect(() => render(pageSpec("rows", {}, "CaseTrend"))).toThrow("나열");
   });
 });

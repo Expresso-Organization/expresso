@@ -47,10 +47,10 @@ describe("DocumentPanel", () => {
     render(<DocumentPanel record={record} category={category} onClose={() => undefined} />);
     const drawer = screen.getByLabelText("문서 패널");
     const separator = screen.getByRole("separator", { name: "문서 패널 너비 조절" });
-    expect(separator.getAttribute("aria-valuenow")).toBe("680");
+    expect(separator.getAttribute("aria-valuenow")).toBe("452");
     fireEvent.keyDown(separator, { key: "ArrowLeft" });
-    expect(separator.getAttribute("aria-valuenow")).toBe("704");
-    expect(drawer.getAttribute("style")).toContain("--career-drawer-width: 704px");
+    expect(separator.getAttribute("aria-valuenow")).toBe("476");
+    expect(drawer.getAttribute("style")).toContain("--career-drawer-width: 476px");
     fireEvent.keyDown(separator, { key: "Home" });
     expect(separator.getAttribute("aria-valuenow")).toBe("360");
   });
@@ -61,8 +61,8 @@ describe("DocumentPanel", () => {
     const separator = screen.getByRole("separator", { name: "문서 패널 너비 조절" });
     fireEvent.pointerDown(separator, { button: 0, pointerId: 1, clientX: 500 });
     fireEvent.pointerMove(window, { pointerId: 1, clientX: 400 });
-    expect(separator.getAttribute("aria-valuenow")).toBe("780");
-    expect(drawer.getAttribute("style")).toContain("--career-drawer-width: 780px");
+    expect(separator.getAttribute("aria-valuenow")).toBe("552");
+    expect(drawer.getAttribute("style")).toContain("--career-drawer-width: 552px");
     fireEvent.pointerUp(window, { pointerId: 1, clientX: 400 });
     expect(drawer.getAttribute("data-resizing")).toBe("false");
   });

@@ -15,7 +15,7 @@ import { useCareerEditorSession } from "@/features/career-editor/session/useCare
 
 import styles from "./DocumentPanel.module.css";
 
-const DEFAULT_PANEL_WIDTH = 680;
+const DEFAULT_PANEL_WIDTH = 452;
 const MAX_PANEL_WIDTH = 900;
 
 export function DocumentPanel({

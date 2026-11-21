@@ -17,9 +17,9 @@ import { EMPTY_GROUP, propertyLabel } from "./view-logic";
 import { RecordSelectBox } from "./RecordSelectBox";
 import styles from "./views.module.css";
 
-const SELECT_WIDTH = 96;
-const TITLE_WIDTH = 260;
-const PROPERTY_WIDTH = 160;
+const MENU_WIDTH = 34;
+const TITLE_WIDTH = 300;
+const PROPERTY_WIDTH = 110;
 const ROW_HEIGHT = 42;
 const WINDOW_ROWS = 22;
 const OVERSCAN = 5;
@@ -119,9 +119,9 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
   }, [cellMenu]);
 
   const width = (propertyId: string | null, fallback: number) => propertyId ? previewWidths[propertyId] ?? propertyWidth(props.view, propertyId, fallback) : fallback;
-  // 첫 칸(행 조작)은 CSS 변수로 둡니다. 좁은 화면에서 호버가 없으니 선택 상자 하나 폭으로 줄입니다(views.module.css).
-  const template = `var(--table-controls) ${width(titleColumnId, TITLE_WIDTH)}px ${columns.map((id) => `${width(id, PROPERTY_WIDTH)}px`).join(" ")}`;
-  const totalWidth = SELECT_WIDTH + width(titleColumnId, TITLE_WIDTH) + columns.reduce((total, id) => total + width(id, PROPERTY_WIDTH), 0);
+  // 제목 안에 선택·행 이동을 두고, 마지막 칸에는 행 메뉴만 둡니다. 저장된 사용자 열 너비는 유지합니다.
+  const template = `${width(titleColumnId, TITLE_WIDTH)}px ${columns.map((id) => `${width(id, PROPERTY_WIDTH)}px`).join(" ")} ${MENU_WIDTH}px`;
+  const totalWidth = MENU_WIDTH + width(titleColumnId, TITLE_WIDTH) + columns.reduce((total, id) => total + width(id, PROPERTY_WIDTH), 0);
   const windowed = props.records.length > WINDOW_ROWS + OVERSCAN * 2;
   const start = windowed ? Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - OVERSCAN) : 0;
   const end = windowed ? Math.min(props.records.length, start + WINDOW_ROWS + OVERSCAN * 2) : props.records.length;
@@ -361,9 +361,9 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
   };
 
   const tableHeader = () => <div className={styles.tableHead} role="row" style={{ gridTemplateColumns: template }}>
-    <span role="columnheader" aria-label="행 작업" />
     {header(titleColumnId, "제목", TITLE_WIDTH, false)}
     {columns.map((id) => header(id, propertyName(props.category, id), PROPERTY_WIDTH))}
+    <span role="columnheader" aria-label="행 작업" />
   </div>;
 
   const tableCell = (record: CareerRecord, definition: CareerPropertyDefinitionV2, instanceKey: string, keyboardRecords: readonly CareerRecord[]) => {
@@ -372,31 +372,36 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
     const active = activeCell?.recordId === record.id && activeCell.propertyId === definition.id && activeCell.instanceKey === instanceKey;
     const editing = editingCell?.recordId === record.id && editingCell.propertyId === definition.id && editingCell.instanceKey === instanceKey;
     const issue = props.cellIssues?.get(key);
-    return <CareerTableCell key={definition.id} record={record} definition={definition} active={active} editing={editing} {...(issue ? { issue } : {})} cellRef={(node) => { if (node) cellRefs.current.set(refKey, node); else cellRefs.current.delete(refKey); }} onFocus={() => setActiveCell({ recordId: record.id, propertyId: definition.id, instanceKey })} onEdit={() => { const next = { recordId: record.id, propertyId: definition.id, instanceKey }; setActiveCell(next); setEditingCell(next); }} onCommit={(value: TableCellValue) => {
+    const lead = definition.key === "title" ? (
+    <span className={styles.rowControls}>
+      <button type="button" className={styles.rowAddButton} aria-label={props.view.sorts.length ? "새 기록" : `${record.title || "제목 없음"} 아래에 새 기록`} onClick={(event) => { event.stopPropagation(); void createAndFocus(undefined, instanceKey, record.id); }}><Icon name="plus" size={17} /></button>
+      <button type="button" className={styles.rowDragHandle} aria-label={`${record.title || "제목 없음"} 순서 변경`} title="끌어서 이동 · 위아래 화살표로 이동" draggable onClick={(event) => event.stopPropagation()} onKeyDown={(event) => moveRecordFromKeyboard(event, record.id)} onDragStart={(event) => startRecordDrag(event, record.id)} onDragEnd={() => setRowDrag({ sourceId: "", targetId: null, placement: "before" })}><Icon name="dots-six-vertical" size={18} weight="bold" /></button>
+      <RecordSelectBox title={record.title} checked={props.selectedIds.has(record.id)} onToggle={() => props.onToggle(record.id)} />
+    </span>
+    ) : undefined;
+    return <CareerTableCell lead={lead} key={definition.id} record={record} definition={definition} active={active} editing={editing} {...(issue ? { issue } : {})} cellRef={(node) => { if (node) cellRefs.current.set(refKey, node); else cellRefs.current.delete(refKey); }} onFocus={() => setActiveCell({ recordId: record.id, propertyId: definition.id, instanceKey })} onEdit={() => { const next = { recordId: record.id, propertyId: definition.id, instanceKey }; setActiveCell(next); setEditingCell(next); }} onCommit={(value: TableCellValue) => {
       if (!["multi_select", "date"].includes(definition.type)) setEditingCell(null);
       void props.onCellCommit?.(record.id, definition, value);
     }} onCreateOption={definition.type === "select" || definition.type === "multi_select" ? (name) => createOption(definition, name) : undefined} onCancel={() => setEditingCell(null)} onMove={(direction) => moveCell(record.id, definition.id, direction, instanceKey, keyboardRecords)} onContextMenu={(event) => showCellMenu(event, record.id, definition.id, instanceKey)} onOpenRecord={() => props.onActivate(record.id)} />;
   };
 
   const tableRows = (items: readonly CareerRecord[], rowOffset: number, keyboardRecords: readonly CareerRecord[], instanceKey = "main") => items.map((record, index) => <div className={record.id === props.openId ? styles.rowActive : styles.tableRow} role="row" aria-rowindex={rowOffset + index} key={record.id} tabIndex={activeCell ? -1 : record.id === props.activeId ? 0 : -1} data-dragging={rowDrag.sourceId === record.id ? "true" : undefined} data-drop-position={rowDrag.targetId === record.id ? rowDrag.placement : undefined} style={{ gridTemplateColumns: template }} onKeyDown={(event) => keyboardActivate(event, record.id, keyboardRecords, props.onActivate)} onDoubleClick={(event) => { if (event.target === event.currentTarget) props.onActivate(record.id); }} onDragOver={(event) => setRecordDropTarget(event, record.id)} onDrop={(event) => finishRecordDrop(event, record.id)}>
-    <span className={styles.rowControls} role="gridcell">
-      <button type="button" className={styles.rowAddButton} aria-label={props.view.sorts.length ? "새 기록" : `${record.title || "제목 없음"} 아래에 새 기록`} onClick={(event) => { event.stopPropagation(); void createAndFocus(undefined, instanceKey, record.id); }}><Icon name="plus" size={17} /></button>
-      <button type="button" className={styles.rowDragHandle} aria-label={`${record.title || "제목 없음"} 순서 변경`} title="끌어서 이동 · 위아래 화살표로 이동" draggable onClick={(event) => event.stopPropagation()} onKeyDown={(event) => moveRecordFromKeyboard(event, record.id)} onDragStart={(event) => startRecordDrag(event, record.id)} onDragEnd={() => setRowDrag({ sourceId: "", targetId: null, placement: "before" })}><Icon name="dots-six-vertical" size={18} weight="bold" /></button>
-      <RecordSelectBox title={record.title} checked={props.selectedIds.has(record.id)} onToggle={() => props.onToggle(record.id)} />
-    </span>
     {tableCell(record, titleDefinition, instanceKey, keyboardRecords)}
     {columns.map((id) => definitionsById.get(id)).filter((definition): definition is CareerPropertyDefinitionV2 => Boolean(definition)).map((definition) => tableCell(record, definition, instanceKey, keyboardRecords))}
+    <span className={styles.rowMenuCell} role="gridcell"><button type="button" aria-label={`${record.title || "제목 없음"} 행 메뉴`} onClick={(event) => { event.stopPropagation(); showCellMenu(event, record.id, titleColumnId, instanceKey); }}><Icon name="dots-three" size={16} /></button></span>
   </div>);
 
-  const tableSummary = <div className={styles.tableSummary} role="row" style={{ gridTemplateColumns: template }}>
-    <span role="gridcell" />
+  const tableSummary = props.showAggregate ? <div className={styles.tableSummary} role="row" style={{ gridTemplateColumns: template }}>
     <strong role="gridcell">{props.records.length}개 기록</strong>
     {columns.map((id) => {
       const key = propertyKey(props.category, id);
       const missing = key ? props.records.filter((record) => displayValue(rawValue(record, key)) === "—").length : props.records.length;
-      return <span role="gridcell" key={id}>{missing ? `빈 값 ${missing}` : "모두 입력됨"}</span>;
+      const definition = definitionsById.get(id);
+      const numbers = key && definition?.type === "number" ? props.records.map((record) => rawValue(record, key)).filter((value): value is number => typeof value === "number" && Number.isFinite(value)) : [];
+      return <span role="gridcell" key={id}>{numbers.length ? `합계 ${numbers.reduce((sum, value) => sum + value, 0).toLocaleString("ko-KR")}` : missing ? `빈 값 ${missing}` : "모두 입력됨"}</span>;
     })}
-  </div>;
+    <span role="gridcell" />
+  </div> : null;
 
   const groupInitialProperties = (group: TableGroup): Record<string, unknown> | undefined => {
     if (!groupDefinition || group.empty) return undefined;
@@ -442,6 +447,7 @@ export function TableView(props: CareerViewRendererProps & { onCategoryChange(ne
             </div> : null}
           </section>;
         })}
+        {tableSummary}
       </div>
     </div>{contextMenu}</>;
   }

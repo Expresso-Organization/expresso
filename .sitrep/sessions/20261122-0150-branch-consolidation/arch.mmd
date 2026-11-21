@@ -1,0 +1,10 @@
+flowchart TD
+ A[사용자 링크] --> B[공개 URL 검사]
+ B --> C[링크 인용 검증]
+ C --> D[(커리어 기록)]
+ E[요건 추출 설정] --> F[API·Worker]
+ G[비교 페이지] --> H[검색·테이블·추이 제품 반영]
+ classDef done fill:#d1fae5,stroke:#059669,color:#000000
+ classDef doing fill:#fef3c7,stroke:#d97706,color:#000000
+ class A,B,C,D,E,F done
+ class G,H done

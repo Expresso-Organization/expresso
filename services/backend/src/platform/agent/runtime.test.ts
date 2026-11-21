@@ -18,7 +18,7 @@ async function connectTools(overrides: Partial<AgentInput> = {}) {
   await client.connect(clientSide);
   return { client, emit };
 }
-const base = () => ({ userId: "00000000-0000-4000-8000-0000000000aa", records: { list: vi.fn(async () => ({ categories: [], records: [] })), read: vi.fn(async () => []) }, review: vi.fn(), saveRecord: vi.fn(), recordCategories: [], askForm: vi.fn(), jobGoal: null, goalDraft: vi.fn(), gapReview: vi.fn(), planDraft: vi.fn(), replanDraft: vi.fn(), readPlan: vi.fn(), propose: vi.fn(), page: { read: vi.fn(), edit: vi.fn() }, askChoice: vi.fn(), memory: null, updateMemory: vi.fn(), makeCommitment: vi.fn(), updateCommitment: vi.fn(), goalDemand: vi.fn(), recordDiagnosis: vi.fn(), appendToRecord: vi.fn(), searchJobs: vi.fn(), searchActivities: vi.fn(), brews: [], startBrew: vi.fn(), startFreeBrew: vi.fn(), importPosting: vi.fn(), saveInterviewAnswer: vi.fn(), readRepository: vi.fn(), attachWorkMaterials: vi.fn(), proposeDesign: vi.fn(), reviseDesign: vi.fn() });
+const base = () => ({ userId: "00000000-0000-4000-8000-0000000000aa", records: { list: vi.fn(async () => ({ categories: [], records: [] })), read: vi.fn(async () => []) }, review: vi.fn(), saveRecord: vi.fn(), readLink: vi.fn(), recordCategories: [], askForm: vi.fn(), jobGoal: null, goalDraft: vi.fn(), gapReview: vi.fn(), planDraft: vi.fn(), replanDraft: vi.fn(), readPlan: vi.fn(), propose: vi.fn(), page: { read: vi.fn(), edit: vi.fn() }, askChoice: vi.fn(), memory: null, updateMemory: vi.fn(), makeCommitment: vi.fn(), updateCommitment: vi.fn(), goalDemand: vi.fn(), recordDiagnosis: vi.fn(), appendToRecord: vi.fn(), searchJobs: vi.fn(), searchActivities: vi.fn(), brews: [], startBrew: vi.fn(), startFreeBrew: vi.fn(), importPosting: vi.fn(), saveInterviewAnswer: vi.fn(), readRepository: vi.fn(), attachWorkMaterials: vi.fn(), proposeDesign: vi.fn(), reviseDesign: vi.fn() });
 describe("Claude 채팅 실행 어댑터", () => {
   it("글 덩어리가 새로 시작되면 앞의 글과 빈 줄로 띄운다. 도구 앞에 한 말이 마지막 답변과 붙지 않는다", async () => {
     const events: AgentEvent[] = [];
@@ -46,7 +46,7 @@ describe("Claude 채팅 실행 어댑터", () => {
     await new ClaudeAgentRuntime().run({ messages: [], context: [], signal: new AbortController().signal, emit: async event => { events.push(event); }, ...base() });
     expect(events).toEqual([{ type: "text", text: "안녕하세요" }]);
     expect(sdk.query.mock.lastCall![0].options).toMatchObject({ tools: [], settingSources: [], strictMcpConfig: true, persistSession: false, permissionMode: "dontAsk" });
-    expect(sdk.query.mock.lastCall![0].options.allowedTools).toEqual(["mcp__expresso__propose_record_edit", "mcp__expresso__list_career_records", "mcp__expresso__read_career_records", "mcp__expresso__record_requirement_review", "mcp__expresso__save_record", "mcp__expresso__propose_job_goal_update", "mcp__expresso__record_gap_review", "mcp__expresso__propose_preparation_plan", "mcp__expresso__read_preparation_plan", "mcp__expresso__propose_replan", "mcp__expresso__read_page_element", "mcp__expresso__edit_page_element", "mcp__expresso__ask_choice", "mcp__expresso__ask_form", "mcp__expresso__update_memory", "mcp__expresso__make_commitment", "mcp__expresso__update_commitment", "mcp__expresso__read_goal_demand", "mcp__expresso__record_diagnosis", "mcp__expresso__append_to_record", "mcp__expresso__search_jobs", "mcp__expresso__search_activities", "mcp__expresso__show_table", "mcp__expresso__start_portfolio", "mcp__expresso__start_free_portfolio", "mcp__expresso__import_job_posting", "mcp__expresso__read_repository", "mcp__expresso__attach_work_materials", "mcp__expresso__save_interview_answer", "mcp__expresso__propose_design_options", "mcp__expresso__revise_design_screen"]);
+    expect(sdk.query.mock.lastCall![0].options.allowedTools).toEqual(["mcp__expresso__propose_record_edit", "mcp__expresso__list_career_records", "mcp__expresso__read_career_records", "mcp__expresso__record_requirement_review", "mcp__expresso__save_record", "mcp__expresso__propose_job_goal_update", "mcp__expresso__record_gap_review", "mcp__expresso__propose_preparation_plan", "mcp__expresso__read_preparation_plan", "mcp__expresso__propose_replan", "mcp__expresso__read_page_element", "mcp__expresso__edit_page_element", "mcp__expresso__ask_choice", "mcp__expresso__ask_form", "mcp__expresso__update_memory", "mcp__expresso__make_commitment", "mcp__expresso__update_commitment", "mcp__expresso__read_goal_demand", "mcp__expresso__record_diagnosis", "mcp__expresso__append_to_record", "mcp__expresso__search_jobs", "mcp__expresso__search_activities", "mcp__expresso__show_table", "mcp__expresso__start_portfolio", "mcp__expresso__start_free_portfolio", "mcp__expresso__import_job_posting", "mcp__expresso__read_repository", "mcp__expresso__attach_work_materials", "mcp__expresso__save_interview_answer", "mcp__expresso__propose_design_options", "mcp__expresso__revise_design_screen", "mcp__expresso__read_link"]);
   });
   it("중단 신호를 SDK에 전달한다", async () => {
     const controller = new AbortController(); let stopped = false;
@@ -442,6 +442,26 @@ describe("Claude 채팅 실행 어댑터", () => {
     expect(uneven.isError).toBe(true);
     expect((uneven.content as { text: string }[])[0]!.text).toContain("1번 줄의 칸이 2개입니다");
     expect((await client.callTool({ name: "show_table", arguments: { ...table, columns: ["공고"] } })).isError).toBe(true);
+  });
+  it("링크 읽기는 본문을 모델에게만 돌려주고 요약에는 제목과 주소만 남기며, 한 실행에 세 번까지 읽는다", async () => {
+    const page = { url: "https://github.com/me/moa", title: "me/moa: 모아 가계부", description: null, text: "모아는 Next.js로 만든 가계부입니다.", truncated: false };
+    const readLink = vi.fn(async () => page);
+    const { client, emit } = await connectTools({ readLink });
+    const read = await client.callTool({ name: "read_link", arguments: { url: "https://github.com/me/moa" } });
+    expect(read.isError).toBeFalsy();
+    expect(readLink).toHaveBeenLastCalledWith("https://github.com/me/moa");
+    expect(JSON.parse((read.content as { text: string }[])[0]!.text)).toMatchObject({ url: page.url, text: page.text });
+    const shown = emit.mock.calls.at(-1)![0];
+    expect(shown).toMatchObject({ type: "tool", tool: { name: "링크 읽기", status: "complete", summary: "me/moa: 모아 가계부 · github.com" } });
+    expect(JSON.stringify(shown)).not.toContain("가계부입니다");
+    readLink.mockRejectedValueOnce(new AgentToolRejection(["글 페이지가 아닙니다(application/pdf)."]));
+    const pdf = await client.callTool({ name: "read_link", arguments: { url: "https://example.com/a.pdf" } });
+    expect(pdf.isError).toBe(true);
+    expect((pdf.content as { text: string }[])[0]!.text).toContain("application/pdf");
+    expect((await client.callTool({ name: "read_link", arguments: { url: "https://github.com/me/moa" } })).isError).toBeFalsy();
+    const fourth = await client.callTool({ name: "read_link", arguments: { url: "https://github.com/me/moa" } });
+    expect((fourth.content as { text: string }[])[0]!.text).toContain("이미 링크를 세 번 읽었습니다");
+    expect(readLink).toHaveBeenCalledTimes(3);
   });
   it("기억을 쓸 수 없는 환경에서는 memory를 null로 싣는다", async () => {
     await connectTools();

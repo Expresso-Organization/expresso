@@ -20,6 +20,7 @@ export interface CareerViewRendererProps {
   onStatusChange?(recordId: string, status: CareerRecordStatus): Promise<void>;
   onDuplicateRecord?(recordId: string): Promise<CareerRecord | null>;
   onDeleteRecord?(recordId: string): Promise<void>;
+  showAggregate?: boolean;
   cellIssues?: ReadonlyMap<string, string>;
 }
 
