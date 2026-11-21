@@ -14,7 +14,9 @@ import { Sidebar } from "./Sidebar";
 import { SidebarSkeleton } from "./SidebarSkeleton";
 
 /**
- * 앱 셸 화면의 공통 껍데기. 각 구간의 `layout.tsx`가 이것 하나만 그린다.
+ * 앱 셸 화면의 공통 껍데기. `app/(app)/layout.tsx` 한 곳이 그린다 — 화면을 옮겨도
+ * 다시 마운트되지 않으므로 사이드바는 처음 한 번만 불러온다. 사이드바 값이 바뀌면
+ * 바꾼 쪽이 `router.refresh()`나 `revalidatePath`를 부르는 Server Action으로 다시 그린다.
  *
  * 자체는 `async`가 아니다 — 사이드바가 읽는 응답을 레이아웃이 기다리면
  * 그 아래 화면 전체가 같이 막힌다. 대신 사이드바만 Suspense 안에 두어,

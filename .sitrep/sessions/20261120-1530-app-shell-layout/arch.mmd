@@ -1,0 +1,12 @@
+flowchart TD
+  R["app/layout.tsx"]:::done --> A["(app)/layout.tsx<br/>AppChrome 한 번"]:::done
+  R --> E["(editor)/edit/[portfolioId]"]:::done
+  A --> S["셸 화면들"]:::done
+  A --> D["edit/[portfolioId]/deploy"]:::done
+  A --> SB["Sidebar 유지"]:::done
+  C["AgentChat 실행 종료"]:::done --> F["router.refresh"]:::done
+  F --> SB
+  classDef done fill:#d1fae5,stroke:#059669
+  classDef doing fill:#fef3c7,stroke:#d97706
+  classDef decide fill:#fee2e2,stroke:#dc2626
+  classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4
