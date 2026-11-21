@@ -18,7 +18,7 @@ async function connectTools(overrides: Partial<AgentInput> = {}) {
   await client.connect(clientSide);
   return { client, emit };
 }
-const base = () => ({ userId: "00000000-0000-4000-8000-0000000000aa", records: { list: vi.fn(async () => ({ categories: [], records: [] })), read: vi.fn(async () => []) }, review: vi.fn(), saveRecord: vi.fn(), recordCategories: [], askForm: vi.fn(), jobGoal: null, goalDraft: vi.fn(), gapReview: vi.fn(), planDraft: vi.fn(), replanDraft: vi.fn(), readPlan: vi.fn(), propose: vi.fn(), page: { read: vi.fn(), edit: vi.fn() }, askChoice: vi.fn(), memory: null, updateMemory: vi.fn(), makeCommitment: vi.fn(), updateCommitment: vi.fn(), goalDemand: vi.fn(), recordDiagnosis: vi.fn(), appendToRecord: vi.fn(), searchJobs: vi.fn(), searchActivities: vi.fn(), brews: [], startBrew: vi.fn(), saveInterviewAnswer: vi.fn(), readRepository: vi.fn(), attachWorkMaterials: vi.fn(), proposeDesign: vi.fn(), reviseDesign: vi.fn() });
+const base = () => ({ userId: "00000000-0000-4000-8000-0000000000aa", records: { list: vi.fn(async () => ({ categories: [], records: [] })), read: vi.fn(async () => []) }, review: vi.fn(), saveRecord: vi.fn(), recordCategories: [], askForm: vi.fn(), jobGoal: null, goalDraft: vi.fn(), gapReview: vi.fn(), planDraft: vi.fn(), replanDraft: vi.fn(), readPlan: vi.fn(), propose: vi.fn(), page: { read: vi.fn(), edit: vi.fn() }, askChoice: vi.fn(), memory: null, updateMemory: vi.fn(), makeCommitment: vi.fn(), updateCommitment: vi.fn(), goalDemand: vi.fn(), recordDiagnosis: vi.fn(), appendToRecord: vi.fn(), searchJobs: vi.fn(), searchActivities: vi.fn(), brews: [], startBrew: vi.fn(), startFreeBrew: vi.fn(), importPosting: vi.fn(), saveInterviewAnswer: vi.fn(), readRepository: vi.fn(), attachWorkMaterials: vi.fn(), proposeDesign: vi.fn(), reviseDesign: vi.fn() });
 describe("Claude 채팅 실행 어댑터", () => {
   it("글 덩어리가 새로 시작되면 앞의 글과 빈 줄로 띄운다. 도구 앞에 한 말이 마지막 답변과 붙지 않는다", async () => {
     const events: AgentEvent[] = [];
@@ -46,7 +46,7 @@ describe("Claude 채팅 실행 어댑터", () => {
     await new ClaudeAgentRuntime().run({ messages: [], context: [], signal: new AbortController().signal, emit: async event => { events.push(event); }, ...base() });
     expect(events).toEqual([{ type: "text", text: "안녕하세요" }]);
     expect(sdk.query.mock.lastCall![0].options).toMatchObject({ tools: [], settingSources: [], strictMcpConfig: true, persistSession: false, permissionMode: "dontAsk" });
-    expect(sdk.query.mock.lastCall![0].options.allowedTools).toEqual(["mcp__expresso__propose_record_edit", "mcp__expresso__list_career_records", "mcp__expresso__read_career_records", "mcp__expresso__record_requirement_review", "mcp__expresso__save_record", "mcp__expresso__propose_job_goal_update", "mcp__expresso__record_gap_review", "mcp__expresso__propose_preparation_plan", "mcp__expresso__read_preparation_plan", "mcp__expresso__propose_replan", "mcp__expresso__read_page_element", "mcp__expresso__edit_page_element", "mcp__expresso__ask_choice", "mcp__expresso__ask_form", "mcp__expresso__update_memory", "mcp__expresso__make_commitment", "mcp__expresso__update_commitment", "mcp__expresso__read_goal_demand", "mcp__expresso__record_diagnosis", "mcp__expresso__append_to_record", "mcp__expresso__search_jobs", "mcp__expresso__search_activities", "mcp__expresso__show_table", "mcp__expresso__start_portfolio", "mcp__expresso__read_repository", "mcp__expresso__attach_work_materials", "mcp__expresso__save_interview_answer", "mcp__expresso__propose_design_options", "mcp__expresso__revise_design_screen"]);
+    expect(sdk.query.mock.lastCall![0].options.allowedTools).toEqual(["mcp__expresso__propose_record_edit", "mcp__expresso__list_career_records", "mcp__expresso__read_career_records", "mcp__expresso__record_requirement_review", "mcp__expresso__save_record", "mcp__expresso__propose_job_goal_update", "mcp__expresso__record_gap_review", "mcp__expresso__propose_preparation_plan", "mcp__expresso__read_preparation_plan", "mcp__expresso__propose_replan", "mcp__expresso__read_page_element", "mcp__expresso__edit_page_element", "mcp__expresso__ask_choice", "mcp__expresso__ask_form", "mcp__expresso__update_memory", "mcp__expresso__make_commitment", "mcp__expresso__update_commitment", "mcp__expresso__read_goal_demand", "mcp__expresso__record_diagnosis", "mcp__expresso__append_to_record", "mcp__expresso__search_jobs", "mcp__expresso__search_activities", "mcp__expresso__show_table", "mcp__expresso__start_portfolio", "mcp__expresso__start_free_portfolio", "mcp__expresso__import_job_posting", "mcp__expresso__read_repository", "mcp__expresso__attach_work_materials", "mcp__expresso__save_interview_answer", "mcp__expresso__propose_design_options", "mcp__expresso__revise_design_screen"]);
   });
   it("중단 신호를 SDK에 전달한다", async () => {
     const controller = new AbortController(); let stopped = false;
@@ -119,8 +119,26 @@ describe("Claude 채팅 실행 어댑터", () => {
     expect(JSON.stringify(rejected.content)).toContain("대화에 연결된 공고가 아닙니다.");
     expect(refused.emit.mock.calls.map(([event]) => event).filter(event => event.type === "tool").at(-1)!.tool).toMatchObject({ status: "failed" });
   });
+  it("공고 없이 · 공고 주소로 시작하는 도구는 같은 카드를 세우고, 공고 없는 제작에는 분석 결과를 돌려주지 않는다", async () => {
+    const free = { startId: "00000000-0000-4000-8000-0000000000b1", jobPostingId: null, jobAnalysisId: "00000000-0000-4000-8000-0000000000b3", title: "사이드 프로젝트 모음", companyName: "", lengthPreset: "double" as const, brewId: "00000000-0000-4000-8000-0000000000b4" };
+    const state = { status: "done" as const, stage: "done" as const, failure: null, requirements: { total: 0, covered: 0, partial: 0, missing: 0 }, brewId: free.brewId, step: "materials" as const, announced: true };
+    const startFreeBrew = vi.fn(async () => ({ start: free, state }));
+    const { client, emit } = await connectTools({ startFreeBrew });
+    const result = await client.callTool({ name: "start_free_portfolio", arguments: { title: free.title, brief: "만든 것을 보여 주고 싶다", length: "double" } });
+    expect(startFreeBrew).toHaveBeenCalledWith({ title: free.title, brief: "만든 것을 보여 주고 싶다", length: "double" });
+    expect(JSON.parse((result.content as { text: string }[])[0]!.text)).toMatchObject({ started: true, withoutPosting: true });
+    expect(JSON.stringify(result.content)).not.toContain("requirements");
+    expect(emit.mock.calls.map(([event]) => event).filter(event => event.type === "tool").at(-1)!.tool).toMatchObject({ name: "포트폴리오 제작", summary: free.title, brewStart: free });
+
+    const posted = { ...free, jobPostingId: "00000000-0000-4000-8000-0000000000b2", companyName: "가상 회사", title: "백엔드 개발자" };
+    const importPosting = vi.fn(async () => ({ start: posted, state: { ...state, status: "queued" as const, stage: "queued" as const, requirements: null, brewId: null, step: null, announced: false } }));
+    const imported = await connectTools({ importPosting });
+    const accepted = await imported.client.callTool({ name: "import_job_posting", arguments: { url: "https://example.com/jobs/1" } });
+    expect(importPosting).toHaveBeenCalledWith({ url: "https://example.com/jobs/1" });
+    expect(JSON.parse((accepted.content as { text: string }[])[0]!.text)).toMatchObject({ analysis: "queued_or_running" });
+  });
   it("인터뷰 답 저장은 질문을 요약으로 남기고, 거절된 사유는 에이전트에게 돌려준다", async () => {
-    const answer = { jobPostingId: "00000000-0000-4000-8000-0000000000b2", basis: 0, question: "장애를 어떻게 대응하셨나요?", messageIds: ["00000000-0000-4000-8000-0000000000c1"] };
+    const answer = { brewId: "00000000-0000-4000-8000-0000000000b4", basis: 0, question: "장애를 어떻게 대응하셨나요?", messageIds: ["00000000-0000-4000-8000-0000000000c1"] };
     const saveInterviewAnswer = vi.fn(async () => ({ answered: 1, limit: 6 }));
     const { client, emit } = await connectTools({ saveInterviewAnswer });
     const result = await client.callTool({ name: "save_interview_answer", arguments: answer });
@@ -138,10 +156,10 @@ describe("Claude 채팅 실행 어댑터", () => {
     const card = { brewId: "00000000-0000-4000-8000-0000000000d1", jobPostingId: "00000000-0000-4000-8000-0000000000b2", designMessageId: "00000000-0000-4000-8000-0000000000d2" };
     const proposeDesign = vi.fn(async () => card);
     const { client, emit } = await connectTools({ proposeDesign, reviseDesign: vi.fn(async () => { throw new AgentToolRejection(["아직 그린 첫 화면이 없습니다."]); }) });
-    const proposed = await client.callTool({ name: "propose_design_options", arguments: { jobPostingId: card.jobPostingId, request: "더 따뜻하게", focus: "styles" } });
+    const proposed = await client.callTool({ name: "propose_design_options", arguments: { brewId: card.brewId, request: "더 따뜻하게", focus: "styles" } });
     expect(proposed.isError).toBeFalsy();
     expect(emit.mock.calls.map(([event]) => event).filter(event => event.type === "tool").at(-1)!.tool).toMatchObject({ name: "견본 다시 받기", status: "complete", brewDesign: card });
-    const revised = await client.callTool({ name: "revise_design_screen", arguments: { jobPostingId: card.jobPostingId, instruction: "강조색을 초록으로", screen: "" } });
+    const revised = await client.callTool({ name: "revise_design_screen", arguments: { brewId: card.brewId, instruction: "강조색을 초록으로", screen: "" } });
     expect(revised.isError).toBe(true);
     expect(JSON.stringify(revised.content)).toContain("아직 그린 첫 화면이 없습니다.");
   });
@@ -154,7 +172,7 @@ describe("Claude 채팅 실행 어댑터", () => {
     // 사용자의 말로 시작한 실행에는 계기가 없다.
     expect(asked).not.toHaveProperty("event");
     // 서버가 시작한 실행은 계기를 싣는다 — 새 사용자 메시지가 없으므로 무엇을 말할지는 이 값이 정한다.
-    const event = { kind: "brew_analysis_done" as const, jobPostingId: brews[0]!.jobPostingId };
+    const event = { kind: "brew_analysis_done" as const, brewId: null, title: brews[0]!.title };
     await new ClaudeAgentRuntime().run({ messages: [], context: [], signal: new AbortController().signal, emit: vi.fn(), ...base(), brews, event });
     expect(JSON.parse(sdk.query.mock.lastCall![0].prompt).event).toEqual(event);
     // 서버가 시작한 실행에서는 도구를 쓰지 못한다 — 작업 흔적도 남기지 않는다.
