@@ -76,7 +76,7 @@ export function useChatRail(container: () => HTMLElement | null, storageKey: str
   };
 }
 
-type RailValue = ReturnType<typeof useChatRail> & { aside: RefObject<HTMLElement | null>; running: boolean; setRunning: (running: boolean) => void };
+type RailValue = ReturnType<typeof useChatRail> & { aside: RefObject<HTMLElement | null>; running: boolean; setRunning: (running: boolean) => void; stageHost: HTMLElement | null; setStageHost: (element: HTMLElement | null) => void };
 const RailContext = createContext<RailValue | null>(null);
 function useRail() {
   const value = useContext(RailContext);
@@ -95,7 +95,22 @@ export function ChatRailProvider({ storageKey, children }: { storageKey: string;
   const container = useCallback(() => aside.current?.parentElement ?? null, []);
   const rail = useChatRail(container, storageKey);
   const [running, setRunning] = useState(false);
-  return <RailContext.Provider value={{ ...rail, aside, running, setRunning }}>{children}</RailContext.Provider>;
+  const [stageHost, setStageHost] = useState<HTMLElement | null>(null);
+  return <RailContext.Provider value={{ ...rail, aside, running, setRunning, stageHost, setStageHost }}>{children}</RailContext.Provider>;
+}
+
+/**
+ * 레일 왼쪽의 본문 자리. 대화에서 만드는 지면이 서면 이 자리를 덮는다 — 대화는 이미 오른쪽 레일에 있다.
+ * 덮는 층은 본문의 스크롤 바깥에 두어, 본문을 읽던 자리와 상관없이 본문 자리 전체를 차지한다.
+ */
+export function ChatRailStage({ className, children }: { className?: string | undefined; children: ReactNode }) {
+  const { setStageHost } = useRail();
+  return (
+    <div className={styles.stage}>
+      <div className={className}>{children}</div>
+      <div ref={setStageHost} className={styles.stageHost} />
+    </div>
+  );
 }
 
 /**
@@ -191,7 +206,7 @@ export function ChatRail(props: ChatRailProps) {
       ) : null}
       {/* 접혀도 채팅은 마운트된 채로 둔다 — 입력 중인 글과 진행 중인 응답이 끊기지 않게. */}
       <div className={styles.railChat} hidden={collapsed}>
-        <AgentChat {...props} onRunningChange={setRunning} />
+        <AgentChat {...props} onRunningChange={setRunning} stageHost={rail.stageHost} />
       </div>
     </aside>
   );

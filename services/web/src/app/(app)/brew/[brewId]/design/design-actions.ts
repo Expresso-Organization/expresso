@@ -15,7 +15,8 @@ import { requireSession } from "@/lib/require-session";
  * 03 디자인 선택에서 생성을 시작한다.
  *
  * 고른 디자인 시스템을 브루에 저장한 뒤, 그 판으로 생성을 요청한다. 스타일 값은 서버가
- * 판의 토큰에서 정한다. 3분쯤 걸리는 일이라 202와 잡 id만 받고 돌아온다. 진행은
+ * 판의 토큰에서 정한다. 디자인 대화에서 고른 첫 화면(`designSnippetId`)으로 시작하면 판을 저장하지 않고
+ * 그 첫 화면으로 요청한다 — 서버가 첫 화면의 색 · 서체를 스타일로 쓰고 지면의 맨 앞에 그대로 둔다. 3분쯤 걸리는 일이라 202와 잡 id만 받고 돌아온다. 진행은
  * `brew.latestGeneration`이 알려주므로 화면은 다시 그리기만 하면 된다.
  *
  * 구성(레시피)이 아직이면 구성 잡을 먼저 맡기고(브루마다 같은 키라 이미 돌고 있으면 그 잡이다) 브루로 생성을
@@ -32,29 +33,36 @@ export async function startGenerationAction(
     .object({
       brewId: z.uuid(),
       recipeId: z.uuid().optional(),
-      designSystemRevisionId: z.uuid(),
+      designSystemRevisionId: z.uuid().optional(),
+      designSnippetId: z.uuid().optional(),
       archetype: PortfolioArchetypeSchema.optional(),
       pageFormat: PageGenerationFormatSchema.optional(),
     })
+    // 카탈로그의 디자인 판과 대화에서 고른 첫 화면 가운데 하나로 시작한다.
+    .refine((value) => (value.designSystemRevisionId === undefined) !== (value.designSnippetId === undefined))
     .safeParse({
       brewId: formData.get("brewId"),
       // 구성이 없으면 폼에 칸이 없다(`null`). 빈 값도 구성이 없는 것으로 본다.
       recipeId: formData.get("recipeId") || undefined,
-      designSystemRevisionId: formData.get("designSystemRevisionId"),
+      designSystemRevisionId: formData.get("designSystemRevisionId") ?? undefined,
+      designSnippetId: formData.get("designSnippetId") ?? undefined,
       archetype: formData.get("archetype") ?? undefined,
       // 생성 방식(구조화 생성 · 자유 생성). 칸이 없으면 서버 설정을 따른다.
       pageFormat: formData.get("pageFormat") ?? undefined,
     });
   if (!ids.success) return { error: "고른 디자인을 확인하고 다시 눌러 주세요." };
-  const { brewId, recipeId, designSystemRevisionId, archetype, pageFormat } = ids.data;
+  const { brewId, recipeId, designSystemRevisionId, designSnippetId, archetype, pageFormat } = ids.data;
 
   try {
     // 선택을 먼저 남긴다. 생성이 실패해도 다시 열면 같은 디자인이 골라져 있다.
-    await designSystems.select(session.accessToken, brewId, { revisionId: designSystemRevisionId });
+    if (designSystemRevisionId) await designSystems.select(session.accessToken, brewId, { revisionId: designSystemRevisionId });
     if (!recipeId) await brews.createRecipe(session.accessToken, brewId, `recipe:${brewId}`);
     await generation.submit(
       session.accessToken,
-      { ...(recipeId ? { recipeId } : { brewId }), designSystemRevisionId, ...(archetype ? { archetype } : {}), ...(pageFormat ? { pageFormat } : {}) },
+      {
+        ...(recipeId ? { recipeId } : { brewId }),
+        ...(designSnippetId ? { designSnippetId } : { designSystemRevisionId: designSystemRevisionId!, ...(archetype ? { archetype } : {}), ...(pageFormat ? { pageFormat } : {}) }),
+      },
       randomUUID(),
     );
   } catch (error) {
@@ -66,6 +74,23 @@ export async function startGenerationAction(
   // "다시 뽑기"(`again=1`)에서 시작했으면 그 표시를 지운다. 남겨 두면 생성이 끝나 화면을 다시 그릴 때 카탈로그가 다시
   // 열려, 방금 채워지는 것을 지켜본 지면 대신 고르는 화면으로 돌아간다.
   redirect(`/brew/${brewId}/design`);
+  return { error: null };
+}
+
+/**
+ * 구성(레시피)이 없는 제작에서 구성 잡을 맡긴다. 디자인 대화는 구성의 섹션과 근거를 읽어 첫 말을 쓰므로 구성이 먼저다.
+ * 브루마다 같은 키라 이미 돌고 있으면 그 잡이다. 화면은 `brew.latestJob`을 다시 읽어 끝난 것을 안다.
+ */
+export async function ensureRecipeAction(brewId: string): Promise<{ error: string | null }> {
+  const session = await requireSession();
+  if (!z.uuid().safeParse(brewId).success) return { error: "제작을 찾지 못했습니다." };
+  try {
+    await brews.createRecipe(session.accessToken, brewId, `recipe:${brewId}`);
+  } catch (error) {
+    if (error instanceof ApiError) return { error: submitFailure(error) };
+    throw error;
+  }
+  revalidatePath(`/brew/${brewId}/design`);
   return { error: null };
 }
 
@@ -84,6 +109,21 @@ export async function cancelGenerationAction(formData: FormData): Promise<void> 
   }
   revalidatePath(`/brew/${brewId}/design`);
   redirect(`/brew/${brewId}/design`);
+}
+
+/**
+ * 에이전트 대화의 「생성」 카드가 생성을 멈춘다. 화면을 넘기지 않는다 — 카드가 상태를 다시 읽는다. 이미 끝났거나 없으면 그대로 둔다.
+ * 멈추면 크레딧을 차감하지 않는다(지금의 생성 화면과 같다).
+ */
+export async function cancelGenerationInChatAction(generationJobId: string): Promise<{ error: string | null }> {
+  const session = await requireSession();
+  if (!z.uuid().safeParse(generationJobId).success) return { error: "생성을 찾지 못했습니다." };
+  try {
+    await generation.cancel(session.accessToken, generationJobId);
+  } catch (error) {
+    if (!(error instanceof ApiError) || (error.status !== 409 && error.status !== 404)) throw error;
+  }
+  return { error: null };
 }
 
 /** 기다리는 동안 다시 읽어 온다. 01b·02b의 "새로고침"과 같은 자리다. */

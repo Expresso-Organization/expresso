@@ -25,6 +25,7 @@ date: 2026-11-21
   레일이 `AgentChat`을 직접 그린다 — 두 페이지가 서버 컴포넌트라 응답 진행 콜백을 넘기는 렌더 함수를 줄 수 없다. 공고는 `job`, 기록은 `context`를 넘긴다.
 - 레일 CSS(`.rail`, `.railChat`, `.railHandle`, `.chatRunning`, 1023px 토글 숨김 · 쌓기)를 공고 `page.module.css`에서 `ChatRail.module.css`로 옮긴다.
   `.body`의 세로 전환과 왼쪽 열 스크롤 해제는 화면마다 자기 CSS에 둔다.
+- main에서 공고 상세에 생긴 무대 층(`JobChatStage`)도 `ChatRailStage`로 옮긴다. 대화에서 만드는 지면이 레일 왼쪽 본문 자리를 덮으며, 기록 페이지도 같은 층을 쓴다.
 - 기록 페이지 토글은 기존 `viewStyles.headerMenuButton` 모양에 레이블은 `ex-sr-only`로 둔다.
 
 ## 버린 대안

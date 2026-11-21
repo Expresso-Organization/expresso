@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 
 import { AppBody, DocumentHeader } from "@/components/shell/AppShell";
 import { Icon } from "@/components/ui/Icon";
-import { ChatRail, ChatRailProvider, ChatRailToggle } from "@/features/agent-chat/ChatRail";
+import { ChatRail, ChatRailProvider, ChatRailStage, ChatRailToggle } from "@/features/agent-chat/ChatRail";
 import { ApiError } from "@/lib/api/client";
 import { jobs as jobsApi } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
@@ -128,7 +128,7 @@ export default async function JobDetailPage({
       />
       <AppBody>
         <div className={styles.body}>
-          <div className={styles.left}>
+          <ChatRailStage className={styles.left}>
             {/*
             * 목록으로 돌아가는 길을 지면 안에도 둔다.
             *
@@ -349,7 +349,7 @@ export default async function JobDetailPage({
             ) : null}
 
             {job.notice ? <p className={styles.notice}>{job.notice}</p> : null}
-          </div>
+          </ChatRailStage>
 
           {/*
             레일은 이 공고를 두고 나누는 대화 하나다. 공고가 바뀌면 다시 마운트해

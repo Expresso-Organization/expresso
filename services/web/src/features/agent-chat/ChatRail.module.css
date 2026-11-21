@@ -71,6 +71,21 @@
   background: var(--ex-fg-muted);
 }
 
+/* 레일 왼쪽 본문과 그 위를 덮는 층. 대화에서 만드는 지면이 서면 덮는 층이 본문 자리 전체를 차지한다(`ChatRailStage`). */
+.stage {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+
+/* 층 자체는 누름을 받지 않는다. 무대가 열렸을 때만 무대가 받는다(`AgentStage.module.css`). */
+.stageHost {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
 /* 머리의 접기 · 펼치기 버튼. 모양은 화면의 머리 버튼을 따르고, 여기서는 점의 기준 자리만 잡는다. */
 .toggle {
   position: relative;

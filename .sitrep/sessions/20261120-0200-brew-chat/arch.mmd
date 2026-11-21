@@ -1,0 +1,18 @@
+flowchart TD
+  M[재료 고르기 카드] --> Q[AI 대화 카드]
+  Q --> D[디자인 고르기: 구성 잡]
+  D --> C[디자인 카드: 첫 말 + 견본]
+  C --> W[첫 화면 보기]
+  T[도구: 견본 다시 받기 · 고치기] --> E[디자인 대화 엔진]
+  W --> E
+  E --> S[(design_chats)]
+  C --> K[고르기 · 이 스타일로 만들기]
+  K --> G[생성: 지금의 화면]
+  G --> R[다듬기]
+  N[새 포트폴리오 진입]
+  classDef done fill:#d1fae5,stroke:#059669
+  classDef doing fill:#fef3c7,stroke:#d97706
+  classDef decide fill:#fee2e2,stroke:#dc2626
+  classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4
+  class M,Q,D,C,W,T,E,S,K done
+  class G,R,N todo

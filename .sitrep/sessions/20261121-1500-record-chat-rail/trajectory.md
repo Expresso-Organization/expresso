@@ -12,3 +12,7 @@
 - `pnpm typecheck` 통과, `pnpm --filter @expresso/web test` 103개 파일 566개 통과.
 - 개발 서버(별도 DB) 확인: 기록 1280px 레일 316px · 접힘 새로 고침 유지 · 너비 최대(본문 − 700px) 고정, 900px 세로 쌓임 · 토글 숨김. 공고 상세 1280px · 900px 이전과 같음. 문서 서랍 채팅 문서 아래 유지, 빈 틈 없음.
 - 실행 못 함: `career-editor` e2e(이 워크트리의 Playwright 브라우저 미설치).
+
+### ~17:10 · 발견 · main 병합 충돌
+- main(0c02d7ba)이 `JobChatRail`에 무대 층(`JobChatStage` · `stageHost`)을 더함. 공용 `ChatRailStage`로 옮기고 기록 페이지도 같은 층을 씀.
+- `pnpm typecheck` 통과, `pnpm --filter @expresso/web test` 112개 파일 603개 통과. 기록 · 공고 1280px · 900px 다시 확인.
