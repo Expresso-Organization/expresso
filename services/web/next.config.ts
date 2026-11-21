@@ -40,6 +40,15 @@ export default function config(phase: string): NextConfig {
     transpilePackages: ["@expresso/contracts"],
     // 아직 만들지 않은 화면으로 링크를 걸면 빌드에서 잡힌다.
     typedRoutes: true,
+    /*
+     * 지면 틀이 자기 자신을 바깥 주소로 옮기지 못하게 한다. 그림 스크립트(`page-script.ts`)는 틀 안의 정책이 요청 · 그림 · 양식을
+     * 막지만, `location = "https://…?d=" + 글`처럼 틀이 스스로 이동하는 것은 틀 안의 정책으로 막을 수 없다. 이 이동은 틀을 품은
+     * 문서의 frame-src를 따른다 — 디자인 대화 · 다듬기 미리보기의 틀에는 아직 공개하지 않은 기록이 들어 있다(2026-11-20 점검에서
+     * 이 정책이 없을 때 글이 바깥에 닿았고, 있을 때 막혔다). srcdoc 틀과 같은 출처의 미리보기 틀은 그대로 뜬다.
+     */
+    async headers() {
+      return [{ source: "/:path*", headers: [{ key: "Content-Security-Policy", value: "frame-src 'self'" }] }];
+    },
     experimental: {
       serverActions: {
         // 커리어 본문 그림은 서버 액션으로 올린다. 기본 1MB에서 막히지 않게 미디어 상한(MEDIA_MAX_BYTES 8MB)보다 조금 크게 둔다.

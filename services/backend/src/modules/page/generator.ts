@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 
 import {
   PAGE_PROMPT_VERSION,
+  PAGE_SCRIPT_BREAK,
   PageDraftSchema,
   pageKitPrompt,
   pagePolicyPrompt,
@@ -72,6 +73,8 @@ export interface PageSeed {
   tokens: DesignTokens;
   html: string;
   css: string;
+  /** 첫 화면의 스크립트. 지면 스크립트의 첫 모듈로 그대로 들어간다. */
+  script?: string | undefined;
 }
 
 export interface PageGenerationContext {
@@ -108,7 +111,7 @@ export interface PageGenerationContext {
   /** 다시 뽑을 때만. "더 차분하게" · "첫 화면을 크게". */
   instruction?: string | undefined;
   /** 다시 뽑을 때 직전 지면. 지시가 건드리지 않은 것은 그대로 두게 한다. */
-  previous?: { html: string; css: string; structured?: StructuredPortfolioSnapshot } | undefined;
+  previous?: { html: string; css: string; script?: string | undefined; structured?: StructuredPortfolioSnapshot } | undefined;
   /**
    * 키트를 쓸 것인가.
    *
@@ -128,6 +131,8 @@ export interface PageGenerationContext {
 export interface GeneratedPageResult {
   html: string;
   css: string;
+  /** 지면 스크립트. 모듈이 여럿이면 `PAGE_SCRIPT_BREAK`로 이었다. 없으면 칸을 두지 않는다. */
+  script?: string | undefined;
   rationale: string;
   /**
    * 근거에서 확인하지 못한 수. 사용자 검토용 주의점으로 보존한다.
@@ -377,6 +382,14 @@ export function promptClosing(context: PageGenerationContext): string[] {
     lines.push("```css");
     lines.push(context.previous.css);
     lines.push("```");
+    if (context.previous.script) {
+      lines.push("```js");
+      lines.push(context.previous.script);
+      lines.push("```");
+      // 첫 화면의 스크립트와 이어 쓴 스크립트는 따로 도는 모듈이다. 한 모듈로 합치면 같은 import가 두 번 선언되어 둘 다 멈춘다.
+      if (context.previous.script.includes(PAGE_SCRIPT_BREAK.trim()))
+        lines.push(`스크립트는 \`${PAGE_SCRIPT_BREAK.trim()}\` 줄로 나뉜 모듈들이다. 고친 \`script\`에도 그 줄을 그대로 두어 모듈을 나눈다.`);
+    }
     lines.push("");
     lines.push(`## 지시\n${context.instruction}`);
     lines.push("지시대로 고친 지면 전체를 내라.");

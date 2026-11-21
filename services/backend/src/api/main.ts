@@ -1,5 +1,8 @@
+import { randomUUID } from "node:crypto";
 import { AgentCredentials } from "../modules/agent-chat/index.js";
-import { AgentChatService } from "../modules/agent-chat/index.js";
+import { AgentChatError, AgentChatService, type AgentBrewDeps, type AgentWorkDeps } from "../modules/agent-chat/index.js";
+import { ChromiumSiteCapturer } from "../platform/browser/site-capture.js";
+import { GithubRepoReader } from "../platform/github/repo-reader.js";
 import { ClaudeAgentRuntime } from "../platform/agent/runtime.js";
 import { buildApi } from "./build-app.js";
 import { loadRuntimeConfig } from "../config/runtime-config.js";
@@ -16,7 +19,7 @@ import { AiSearchInterpreter } from "../modules/jobs/search-interpreter.js";
 import { AiFactsReader, createJobSourceAdapters, BundledMarkReader, JobIngestService, JobUrlImporter, SiteMarkReader } from "../modules/jobs/ingest/index.js";
 import { JobBoardService } from "../modules/jobs/index.js";
 import { JobAnalysisService } from "../modules/job-analysis/index.js";
-import { BrewTrashService, MaterialsService } from "../modules/materials/index.js";
+import { BrewTrashService, MaterialsError, MaterialsService } from "../modules/materials/index.js";
 import { InterviewService } from "../modules/interview/index.js";
 import { RecipeService } from "../modules/recipe/index.js";
 import { CompanyResearchService } from "../modules/company-research/index.js";
@@ -30,13 +33,13 @@ import { MongoAiUsageSink } from "../platform/ai/usage-sink.js";
 import { createMailer } from "../platform/mail/create-mailer.js";
 import { DesignSystemService } from "../modules/design-systems/service.js";
 import { TemplateService } from "../modules/templates/index.js";
-import { GenerationService } from "../modules/generation/index.js";
+import { GenerationError, GenerationService } from "../modules/generation/index.js";
 import { PortfolioEditingService } from "../modules/portfolio-editing/index.js";
 import { PortfolioReadService, PortfolioTrashService } from "../modules/portfolios/index.js";
 import { LayoutService } from "../modules/layout/index.js";
 import { PublishingService } from "../modules/publishing/index.js";
 import { MediaService } from "../modules/media/index.js";
-import { DesignChatService, PageElementEditor, PageService } from "../modules/page/index.js";
+import { DesignChatError, DesignChatService, PageElementEditor, PageService } from "../modules/page/index.js";
 import { PageStream } from "../modules/page/stream.js";
 import { freePageGenerator } from "../modules/page/briefed-generator.js";
 import { StructuredPageGenerator } from "../modules/page/structured-generator.js";
@@ -174,8 +177,80 @@ careerService.setExternalBodyListener((userId, recordId) => careerDocumentServic
 interviewService.setExternalBodyListener((userId, recordId) => careerDocumentService.syncExternalBody(userId, recordId));
 const consultantService = new ConsultantService(database);
 const consultantCommitments = new ConsultantCommitments(database);
+// 작업물 재료: 채팅에 붙인 그림 · 사이트 첫 화면 찍기 · 공개 깃허브 레포 읽기(`agent-chat/work-materials.ts`).
+// 운영은 측정기와 같은 headless shell을 쓴다. 그 브라우저를 깔지 않은 개발 기기는 `SITE_CAPTURE_CHANNEL=chrome`으로 설치된 Chrome을 쓴다.
+const siteCapturer = new ChromiumSiteCapturer(20_000, process.env.SITE_CAPTURE_CHANNEL?.trim() ? { channel: process.env.SITE_CAPTURE_CHANNEL.trim() } : {});
+const repoReader = new GithubRepoReader(process.env.GITHUB_TOKEN?.trim() || null);
+const agentWork: AgentWorkDeps = {
+  ownsMedia: (userId, mediaId) => mediaService.owns(userId, mediaId),
+  uploadImage: (userId, bytes) => mediaService.upload(userId, bytes),
+  capture: url => siteCapturer.capture(url),
+  readRepo: url => repoReader.read(url),
+};
+// 대화에서 시작하는 포트폴리오 제작이 쓰는 다른 모듈의 일(`agent-chat/brew-start.ts`).
+const agentBrews: AgentBrewDeps = {
+  analyzePosting: (userId, jobPostingId) => jobMarketService.analyzePosting(userId, jobPostingId),
+  getResult: (userId, jobAnalysisId) => jobAnalysisService.getResult(userId, jobAnalysisId),
+  createBrew: (userId, input) => materialsService.createBrew(userId, input),
+  // 지운 제작(휴지통)과 없는 제작은 404다. 그 밖의 오류는 그대로 올린다.
+  // 구성 잡이 줄에 있거나 도는 동안은 아직 interviewing이어도 구성 단계로 본다(구성이 저장될 때 recipe가 된다). 인터뷰를 더 하지 않게 한다.
+  brewState: (userId, brewId) => materialsService.getState(userId, brewId).then(state => ({ status: state.status === "interviewing" && state.latestJob?.type === "recipe" && (state.latestJob.status === "queued" || state.latestJob.status === "running") ? "recipe" as const : state.status, selected: state.materials.selected, generation: state.latestGeneration ? { id: state.latestGeneration.id, status: state.latestGeneration.status } : null }), error => { if (error instanceof MaterialsError && error.statusCode === 404) return null; throw error; }),
+  selectedRecords: (userId, brewId) => materialsService.getMaterials(userId, brewId).then(state => state.materials.filter(item => item.selected).map(item => ({ id: item.recordId, title: item.title }))),
+  openInterview: (userId, brewId) => interviewService.openConversation(userId, brewId),
+  interview: (userId, brewId) => interviewService.conversationState(userId, brewId),
+  saveInterviewAnswer: (userId, brewId, input, idempotencyKey) => interviewService.saveConversationAnswer(userId, brewId, input, idempotencyKey),
+  startRecipe: (userId, brewId) => brewJobService.submit(userId, "recipe", `recipe:${brewId}`, { brewId }),
+  designDraw: async (userId, brewId, input) => {
+    if (!designChatService) throw new AgentChatError(503, "design chat is not configured", "이 서버에서는 대화로 디자인을 고를 수 없습니다.");
+    // 디자인 대화의 거절은 화면에 보일 문장을 갖고 있다. 대화의 오류로 옮겨 그 문장을 그대로 낸다.
+    const chat = await designChatService.send(userId, brewId, { action: "draw", requestId: randomUUID(), ...input }).catch((error: unknown) => { throw error instanceof DesignChatError ? new AgentChatError(error.statusCode, error.message, error.publicMessage) : error; });
+    return { designMessageId: chat.messages.at(-1)!.id };
+  },
+  startGeneration: async (userId, brewId) => {
+    if (!designChatService) throw new AgentChatError(503, "design chat is not configured", "이 서버에서는 대화로 포트폴리오를 만들 수 없습니다.");
+    const snippetId = (await designChatService.get(userId, brewId)).chat?.selectedSnippetId;
+    if (!snippetId) throw new AgentChatError(409, "no selected snippet", "「이 스타일 고르기」로 첫 화면을 먼저 골라 주세요.");
+    const state = await materialsService.getState(userId, brewId);
+    const latest = state.latestGeneration;
+    if (latest && (latest.status === "queued" || latest.status === "running")) return { generationId: latest.id };
+    // 만드는 일은 이번 달 횟수를 쓴다. 이미 만든 포트폴리오는 다시 만들지 않는다.
+    if (latest?.status === "done") throw new AgentChatError(409, "already generated", "이미 만든 포트폴리오가 있습니다. 「만든 포트폴리오 열기」로 열어 주세요.");
+    // 두 번 눌러도 같은 키다. 실패하거나 멈춘 뒤에는 직전 생성이 달라 새 키다.
+    const key = `chat-generation:${brewId}:${snippetId}:${latest?.id ?? "first"}`;
+    const job = await generationService.submit(userId, key, { ...(state.recipeId ? { recipeId: state.recipeId } : { brewId }), designSnippetId: snippetId }).catch((error: unknown) => {
+      if (!(error instanceof GenerationError)) throw error;
+      const message = error.statusCode === 402 || error.statusCode === 403 ? "이번 달 크레딧을 다 썼습니다. 다음 달에 다시 만들거나 요금제를 올려 주세요." : error.statusCode === 404 ? "고른 첫 화면을 더 이상 쓸 수 없습니다. 다시 골라 주세요." : "만들기를 시작하지 못했습니다. 잠시 뒤 다시 눌러 주세요.";
+      throw new AgentChatError(error.statusCode, error.message, message);
+    });
+    return { generationId: job.generationJobId };
+  },
+  designPropose: async (userId, brewId, input) => {
+    if (!designChatService) throw new AgentChatError(503, "design chat is not configured", "이 서버에서는 대화로 디자인을 고를 수 없습니다.");
+    const chat = await designChatService.propose(userId, brewId, { requestId: randomUUID(), ...input }).catch((error: unknown) => { throw error instanceof DesignChatError ? new AgentChatError(error.statusCode, error.message, error.publicMessage) : error; });
+    return { designMessageId: chat.messages.at(-1)!.id };
+  },
+  designRevise: async (userId, brewId, input) => {
+    if (!designChatService) throw new AgentChatError(503, "design chat is not configured", "이 서버에서는 대화로 디자인을 고를 수 없습니다.");
+    const chat = await designChatService.revise(userId, brewId, { requestId: randomUUID(), ...input }).catch((error: unknown) => { throw error instanceof DesignChatError ? new AgentChatError(error.statusCode, error.message, error.publicMessage) : error; });
+    return { designMessageId: chat.messages.at(-1)!.id };
+  },
+  designState: async (userId, brewId) => {
+    const chat = designChatService ? (await designChatService.get(userId, brewId)).chat : null;
+    if (!chat || chat.messages.length === 0) return null;
+    const proposals = chat.messages.findLast(message => message.role === "assistant" && message.card?.kind === "proposals");
+    const card = proposals?.role === "assistant" && proposals.card?.kind === "proposals" ? proposals.card : null;
+    return {
+      ready: !!card,
+      busy: chat.run?.status === "running",
+      styles: card?.styles.map(style => style.name) ?? [],
+      layouts: card?.layouts.map(layout => layout.name) ?? [],
+      screens: chat.snippets.map(snippet => snippet.name).slice(-12),
+      selected: chat.snippets.find(snippet => snippet.id === chat.selectedSnippetId)?.name ?? null,
+    };
+  },
+};
 const activityService = new ActivityService(database);
-const agentChatService = new AgentChatService(database, config.agentChatEnabled ? new ClaudeAgentRuntime(config.agentChatModel, aiUsage) : null, careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(database, config.agentCredentialEncryptionKey), portfolioReadService, pageService, entitlementService, consultantService, consultantCommitments, { demand: new GoalDemandService(database), store: new ConsultantDiagnoses(database) }, { jobs: jobBoardService, activities: activityService, dismissed: userId => proposalService.dismissedKeys(userId) });
+const agentChatService = new AgentChatService(database, config.agentChatEnabled ? new ClaudeAgentRuntime(config.agentChatModel, aiUsage) : null, careerService, jobBoardService, careerDocumentService, consentService, new AgentCredentials(database, config.agentCredentialEncryptionKey), portfolioReadService, pageService, entitlementService, consultantService, consultantCommitments, { demand: new GoalDemandService(database), store: new ConsultantDiagnoses(database) }, { jobs: jobBoardService, activities: activityService, dismissed: userId => proposalService.dismissedKeys(userId) }, agentBrews, agentWork);
 // API는 제안을 읽고 실행을 줄에 넣기만 한다. AI 실행은 워커가 한다(`writer`를 주지 않는다).
 const proposalService = new ProposalService(database, { career: careerService, jobs: jobBoardService, activities: activityService, consent: consentService, entitled: outreachGate(entitlementService), writer: null });
 const adminService = new AdminService(database, { identity: identityService, career: careerService, consent: consentService });

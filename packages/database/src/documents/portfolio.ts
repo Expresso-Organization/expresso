@@ -9,6 +9,8 @@ export interface GeneratedPageDoc {
   generationJobId?: string | null;
   html: string;
   css: string;
+  /** 지면 스크립트(`page-script.ts`). 스크립트가 없는 판과 이 칸이 생기기 전의 판에는 없다. */
+  script?: string;
   rationale: string;
   revision: number;
   instruction?: string | null;

@@ -1,4 +1,6 @@
 import { PageLibrarySelectionSchema } from "./page-library.js";
+import { PAGE_SCRIPT_BREAK, PAGE_SCRIPT_LIBRARY, PAGE_SCRIPT_POLICY_MARK, pageScriptPolicy, pageScriptText } from "./page-script.js";
+import { PAGE_EFFECT_CATALOG, PAGE_EFFECT_RUNTIME, PAGE_EFFECTS } from "./page-effects.generated.js";
 import { z } from "zod";
 
 import { TimestampSchema, UuidSchema } from "./common.js";
@@ -79,8 +81,18 @@ import { MEDIA_ASSET_PATH_PREFIX } from "./media-path.js";
  *
  * 16 — 자유 지면 프롬프트가 작성자 이름을 싣고, 연락처를 받지 않았으니 이메일 · 전화 줄을 두지 않는다고 알린다.
  * 받지 않은 빈칸을 모델이 서버 CLI 계정 정보로 채웠다(2026-11-10 운영, 「누구의 지면」 절).
+ *
+ * 17 — 지면이 그림 스크립트(`script`)를 싣는다. canvas · three.js 그림을 쓰는 법과 스크립트 없는 첫 모습을 알린다(2026-11-20).
+ * 18 — three.js 장면의 형태 · 재질 · 빛 짝. 기본 상자를 Lambert로 늘어놓은 장면이 나왔다(같은 날 사용자 "이런 저퀄리티 박스는 쓰지 않게").
+ * 19 — 3d-motion-web 엔진(MotionWeb)을 지면에 싣고 그 계약 · 재질 · 빛을 알린다(같은 날 사용자 "Build in the engine").
+ * 25 — 등장(`data-motion`)과 반응: 지면 껍데기에 등장 규칙을 싣고 쓰는 법을 알린다(2026-11-21 사용자 "자연스러운 모션+등장 애니메이션").
+ * 24 — 섹션: 대표 사례 하나에 깊이, 섹션마다 「만든 것」에서 그림 · 배치, 수치는 근거로, 장의 리듬. 정리본이 대표 사례와 만든 것을 적는다(2026-11-21 사용자 "섹션 표현/대표 사례 깊이부터").
+ * 23 — 그림은 canvas 2D로 직접. 효과 목록을 지침에서 빼고, 사용자가 카탈로그에서 고른 효과 하나만 `pageEffectPrompt`로 싣는다(2026-11-21).
+ * 22 — 3D는 라이브러리의 배경 장 · 선화로만. 방울 · 지구본 효과와 MotionWeb 엔진을 걷어냈다(2026-11-21 사용자 "의미없는 3D 오브젝트는 그냥 안쓰는게 더 낫겠다").
+ * 21 — 효과 라이브러리(ExpressoEffects): 3D · 입자 · 인터랙티브 배경은 검증된 효과에서 고른다(2026-11-21 사용자 "그걸 라이브러리로 흡수하도록 하고, 모델이 라이브러리를 참고하도록 하자").
+ * 20 — 부분 재질은 거리로 가린다(좌표 띠로 가른 셰이더가 고리를 수평으로 잘라 칠했다) · 엔진 바탕은 스타일의 바탕색.
  */
-export const PAGE_PROMPT_VERSION = 16;
+export const PAGE_PROMPT_VERSION = 25;
 
 /**
  * 한 지면의 상한.
@@ -125,6 +137,11 @@ export const PAGE_ALLOWED_TAGS = [
    * 받는 척하는 화면(가짜 로그인)을 만들 수 없다. `type`도 아래에서 두 가지로 묶는다.
    */
   "details", "summary", "label", "input",
+  /*
+   * 그림판. 스크립트가 그리는 자리라 스크립트가 돌지 않는 문서에서는 빈 칸이다 — 지면은 그 아래에 CSS로 첫 모습을 깐다.
+   * 스크립트는 따로 받는다(`page-script.ts`).
+   */
+  "canvas",
 ] as const;
 // `style` 태그는 없다. CSS는 `css` 필드로 따로 받아 따로 검사한다 — 마크업
 // 소독기에게 `<style>` 안은 그냥 글자 덩어리라 그대로 지나간다.
@@ -192,6 +209,7 @@ export const PAGE_TAG_ATTRIBUTES: Readonly<Record<string, readonly string[]>> = 
   label: ["for"],
   // `value`·`placeholder`가 없다 — 글자를 받는 칸으로 쓸 수 없게 한다.
   input: ["type", "id", "name", "checked", "disabled"],
+  canvas: ["width", "height"],
   // SVG는 표현 속성이 곧 그림이라 넓게 연다. 스크립트가 들어갈 속성은 없다.
   svg: [
     "viewBox", "width", "height", "xmlns", "fill", "stroke", "stroke-width",
@@ -206,7 +224,7 @@ export const PAGE_TAG_ATTRIBUTES: Readonly<Record<string, readonly string[]>> = 
     "clip-path", "clip-rule", "mask", "filter", "patternUnits", "markerWidth",
     "markerHeight", "refX", "refY", "orient", "text-anchor", "dominant-baseline",
     "font-size", "font-family", "font-weight", "letter-spacing", "dx", "dy",
-    "in", "in2", "result", "stdDeviation", "mode", "type", "values",
+    "in", "in2", "result", "stdDeviation", "mode", "type", "values", "pathLength",
   ],
 };
 
@@ -466,6 +484,8 @@ export const GeneratedPageSchema = z.strictObject({
   html: z.string().min(1).max(PAGE_MAX_BYTES),
   /** `<style>`에 실릴 CSS. 역시 소독을 지난 것이다. */
   css: z.string().max(PAGE_MAX_BYTES),
+  /** 지면 스크립트(`page-script.ts`). 스크립트가 없는 판과 이 칸이 생기기 전의 판에는 없다. */
+  script: z.string().max(PAGE_MAX_BYTES).optional(),
   /** 무엇을 왜 이렇게 만들었는지 한 문장. 사용자가 이걸 읽고 다시 뽑을지 정한다. */
   rationale: z.string().max(400),
   promptVersion: z.number().int().nonnegative(),
@@ -518,6 +538,8 @@ export const PageDraftSchema = z.strictObject({
   html: z.string().min(1).max(PAGE_MAX_BYTES),
   // 키트를 쓰면 지면 CSS는 비어 있어도 됩니다(생성 프롬프트의 지시). 저장 계약도 빈 CSS를 받습니다.
   css: z.string().max(PAGE_MAX_BYTES),
+  /** 지면 스크립트. canvas · three.js 그림을 그린다. 없어도 된다. */
+  script: z.string().max(PAGE_MAX_BYTES).optional(),
   rationale: z.string().min(1).max(400),
 });
 export type PageDraft = z.infer<typeof PageDraftSchema>;
@@ -569,16 +591,32 @@ export function pageDocument(input: {
    * 편집 화면처럼 고친 곳이 스크롤 위치와 상관없이 바로 보여야 하는 자리에서 쓴다. 기본은 켜짐이다.
    */
   reveal?: boolean;
+  /** 지면 스크립트. `run`이 없으면 싣지 않는다 — 스크립트가 돌지 않는 자리(생성 중 실시간 지면 · 축소 미리보기)의 문서다. */
+  script?: string | undefined;
+  /**
+   * 스크립트를 돌리는 자리에서만 준다. 주면 스크립트와 정책(`pageScriptPolicy`)을 함께 싣는다.
+   * `origin`은 그림을 내보내는 앱 출처, `extraScripts`는 같은 문서에 함께 넣을 우리 스크립트(편집 · 추적)의 원문이다 — 정책이 둘이면
+   * 교집합이 되어 서로를 막으므로 한 정책에 해시를 모은다. 넣는 일은 부르는 쪽이 한다.
+   */
+  run?: { origin: string; extraScripts?: string[] } | undefined;
 }): string {
   const escape = (value: string) => value
     .replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
+  const modules = input.run && input.script ? input.script.split(PAGE_SCRIPT_BREAK).map(pageScriptText).filter(Boolean) : [];
+  const importMap = JSON.stringify({ imports: { [PAGE_SCRIPT_LIBRARY.name]: PAGE_SCRIPT_LIBRARY.url } });
+  // 효과 라이브러리도 부르는 효과만 싣는다. 런타임 · 효과 묶음은 모듈이라 import map으로 three를 받고, 저자 모듈보다 앞에 놓여 먼저 돈다.
+  const effectNames = [...new Set(modules.flatMap((code) => [...code.matchAll(/ExpressoEffects\.mount\(\s*["'`]([a-z0-9-]+)["'`]/g)].map((m) => m[1]!)))].filter((name) => name in PAGE_EFFECTS);
+  const effects = effectNames.length ? [PAGE_EFFECT_RUNTIME, ...effectNames.map((name) => PAGE_EFFECTS[name]!)].map(pageScriptText) : [];
+  const policy = input.run
+    ? `<meta http-equiv="Content-Security-Policy" ${PAGE_SCRIPT_POLICY_MARK} content="${pageScriptPolicy({ scripts: [...(modules.length ? [importMap, ...effects, ...modules] : []), ...(input.run.extraScripts ?? [])], origin: input.run.origin, styleHosts: PAGE_ALLOWED_STYLESHEET_HOSTS })}">\n`
+    : "";
   return `<!doctype html>
 <html lang="ko"${input.reveal === false ? ' data-reveal="none"' : ""}>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${escape(input.title)}</title>
+${policy}<title>${escape(input.title)}</title>
 ${input.description ? `<meta name="description" content="${escape(input.description)}">` : ""}
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -594,7 +632,7 @@ ${input.css}
 </head>
 <body>
 ${input.html}
-</body>
+${modules.length ? `<script type="importmap">${importMap}</script>\n${[...effects, ...modules].map((code) => `<script type="module">${code}</script>\n`).join("")}` : ""}</body>
 </html>`;
 }
 
@@ -636,6 +674,43 @@ export function pagePreviewDocument(input: Parameters<typeof pageDocument>[0]): 
  * 여백을 정해 두면 모델이 쓴 CSS와 매번 싸우게 되고, 어느 쪽이 이겼는지
  * 아무도 모르는 지면이 나온다.
  */
+/**
+ * 자유 생성 지면의 등장(`data-motion`). 지면이 요소에 속성만 붙이면 여기 규칙이 움직인다 — 모델이 등장을 손으로 짜다 내용을 숨기는 일이 없게.
+ *
+ * 값과 원칙은 구조화 생성 키트의 등장(`portfolio-renderer/src/kit-styles.ts`의 REVEAL_*)을 잇는다. 요소의 위쪽이 화면 아래 25vh를 지나는 동안
+ * 나타나 읽는 자리(위 4분의 3)에서는 늘 불투명하다. 문서 끝에서 더 내릴 수 없어 다 나타나지 못한 요소는 문서 스크롤의 마지막 25vh에서 마저
+ * 나타난다. 차례는 스크롤 타임라인에서 `animation-delay`가 듣지 않아 구간 시작을 민다. 시작 상태(투명)는 움직임 줄이기가 아니고 브라우저가
+ * 스크롤 타임라인을 지원할 때만 선언한다 — 둘 중 하나가 아니면 처음부터 보인다. `<html data-reveal="none">`(측정 · 축소 미리보기)에서는 모두 꺼진다.
+ * 2026-11-21 사용자: "지금 생성 결과가 꽤 괜찮은데, 여기에 자연스러운 모션+등장 애니메이션 작업이 더해지면 좋을 것 같다."
+ */
+const MOTION_ON = ":root:not([data-reveal=\"none\"])";
+const MOTION_ZONE = "25vh";
+const MOTION_TAIL = `calc(100% - ${MOTION_ZONE}) 100%`;
+const motionRange = (step: number) => `cover calc(var(--motion-step) * ${step}) cover calc(${MOTION_ZONE} + var(--motion-step) * ${step}),${MOTION_TAIL}`;
+export const PAGE_MOTION_CSS = `
+:root{--motion-rise:20px;--motion-step:3vh;--motion-ease:cubic-bezier(.2,.7,.2,1);--motion-time:.8s}
+@keyframes page-rise{from{opacity:0;transform:translateY(var(--motion-rise))}to{opacity:1;transform:none}}
+@keyframes page-fade{from{opacity:0}to{opacity:1}}
+@keyframes page-grow{from{transform:scaleX(0)}to{transform:none}}
+@keyframes page-draw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes page-settle{to{opacity:1;transform:none;stroke-dashoffset:0}}
+@media (prefers-reduced-motion:no-preference){
+  ${MOTION_ON} [data-motion="intro"]>*{animation:page-rise var(--motion-time) var(--motion-ease) both}
+  ${MOTION_ON} [data-motion="intro"]>:nth-child(2){animation-delay:.09s}
+  ${MOTION_ON} [data-motion="intro"]>:nth-child(3){animation-delay:.18s}
+  ${MOTION_ON} [data-motion="intro"]>:nth-child(n+4){animation-delay:.27s}
+  @supports (animation-timeline:view()){
+    ${MOTION_ON} :is([data-motion="rise"],[data-motion="stagger"]>*){animation:page-rise linear both,page-settle linear forwards;animation-timeline:view(),scroll(root);animation-range:${motionRange(0)}}
+    ${MOTION_ON} [data-motion="stagger"]>:nth-child(2){animation-range:${motionRange(1)}}
+    ${MOTION_ON} [data-motion="stagger"]>:nth-child(3){animation-range:${motionRange(2)}}
+    ${MOTION_ON} [data-motion="stagger"]>:nth-child(n+4){animation-range:${motionRange(3)}}
+    ${MOTION_ON} [data-motion="fade"]{animation:page-fade linear both,page-settle linear forwards;animation-timeline:view(),scroll(root);animation-range:${motionRange(0)}}
+    ${MOTION_ON} [data-motion="grow"]{transform-origin:left center;animation:page-grow linear both,page-settle linear forwards;animation-timeline:view(),scroll(root);animation-range:${motionRange(1)}}
+    ${MOTION_ON} [data-motion="draw"] [pathLength]{stroke-dasharray:1;animation:page-draw linear both,page-settle linear forwards;animation-timeline:view(),scroll(root);animation-range:cover 0% cover calc(${MOTION_ZONE} * 1.6),${MOTION_TAIL}}
+  }
+}
+`.trim();
+
 export const PAGE_SHELL_CSS = `
 :root{
   --page-sans:"Pretendard Variable",Pretendard,-apple-system,system-ui,sans-serif;
@@ -650,6 +725,7 @@ img{max-width:100%;height:auto;display:block}
 svg{max-width:100%}
 /* 가로 스크롤은 폰에서 지면을 무너뜨린다. 여기서 한 번 더 막는다. */
 body{overflow-x:hidden}
+${PAGE_MOTION_CSS}
 `.trim();
 
 /**
@@ -658,17 +734,71 @@ body{overflow-x:hidden}
  * 소독기와 **같은 상수를 읽는다.** 목록을 늘리면 모델이 그날부터 쓸 수 있고,
  * 줄이면 그날부터 안 쓴다 — 둘이 어긋날 자리가 없다.
  */
-export function pagePolicyPrompt(): string {
+export function pagePolicyPrompt(options: { script?: boolean } = {}): string {
   return [
     "## 못 쓰는 것 — 이것 말고는 HTML도 CSS도 전부 자유다",
     "- `<script>` · `<iframe>` · `<form>`, 그리고 `onclick` 같은 모든 이벤트 속성.",
-    "  **지면은 움직이지 않는다.** 동작이 필요하면 CSS 애니메이션과 `:hover`로 낸다.",
+    options.script
+      ? "  스크립트는 마크업에 쓰지 않고 `script` 칸에 따로 쓴다(아래 「그림 스크립트」)."
+      : "  **지면은 움직이지 않는다.** 동작이 필요하면 CSS 애니메이션과 `:hover`로 낸다.",
     `- 바깥 이미지 주소. 그림은 \`${PAGE_IMAGE_SRC_PREFIX}…\`만 쓸 수 있다.`,
     "",
     "## 서체는 직접 불러라",
     `\`<link rel="stylesheet">\`로 ${PAGE_ALLOWED_STYLESHEET_HOSTS.join(" · ")}에서 가져올 수 있다.`,
     "따로 안 부르면 아래가 이미 실려 있다 —",
     ...PAGE_FONTS.map((font) => `\`${font.stack}\` ${font.label}`),
+    ...(options.script ? ["", PAGE_MOTION_PROMPT, "", PAGE_SCRIPT_PROMPT] : []),
+  ].join("\n");
+}
+
+/**
+ * 그림 스크립트를 쓰는 법. 스크립트가 도는 틀과 정책(`page-script.ts`)이 허락하는 것만 적는다 — 막힌 것을 쓰면 그림이 서지 않는다.
+ */
+/** 등장 속성(`PAGE_MOTION_CSS`)을 쓰는 법. 스크립트 칸을 쓰는 호출(자유 생성 · 디자인 대화)이 받는다. */
+export const PAGE_MOTION_PROMPT = [
+  "## 움직임 — 등장은 `data-motion`으로",
+  "지면에 등장 규칙이 실려 있다. 요소에 속성만 붙이면 스크롤에 맞춰 나타난다. 등장 애니메이션을 CSS로 직접 짜지 않는다(시작 상태를 잘못 두면 내용이 사라진다).",
+  "- `data-motion=\"intro\"` — 첫 화면의 글 묶음(이름 · 한 줄 소개 · 곁의 글). 지면이 열릴 때 자식이 차례로 떠오른다.",
+  "- `data-motion=\"rise\"` — 장 제목 · 장면의 첫 문장 · 그림처럼 장면을 여는 요소. 화면에 들어올 때 떠오른다.",
+  "- `data-motion=\"stagger\"` — 나란한 항목의 부모(단계 · 카드 묶음 · 목록). 자식이 하나씩 이어 떠오른다.",
+  "- `data-motion=\"draw\"` — 선으로 그린 SVG 그림의 바깥 요소. 안의 `path` · `line` · `polyline` · `rect` · `circle`에 `pathLength=\"1\"`을 주면 그 선이 그어지며 나타난다.",
+  "- `data-motion=\"grow\"` — 막대 · 진행선처럼 길이가 뜻인 요소. 왼쪽에서 자라난다.",
+  "- `data-motion=\"fade\"` — 움직이면 안 되고 나타나기만 할 요소(넓은 그림 · 바탕 면).",
+  "- 장면마다 장면을 여는 요소 한두 곳과 나란한 묶음에 붙인다. 모든 요소에 붙이지 않는다 — 글 한 줄 한 줄이 따로 떠오르면 읽기를 끊는다. 본문 문단에는 붙이지 않는다.",
+].join("\n");
+
+export const PAGE_SCRIPT_PROMPT = [
+  "## 그림 스크립트 — `script` 칸",
+  "- `script`에는 ES 모듈 자바스크립트를 쓴다. 문서 끝에서 `<script type=\"module\">`로 돈다. 그림이 필요 없으면 비운다.",
+  "- 그림은 canvas 2D로 직접 짓는다. three.js · WebGL 장면을 짓지 않는다 — 3D와 효과는 사용자가 카탈로그에서 골랐을 때만, 아래 「사용자가 고른 그래픽」이 알려 준다.",
+  "- 그림판은 `html`에 `<canvas>`로 두고 스크립트가 클래스로 찾는다. 스크립트는 자기 그림의 컨테이너 안만 다룬다 — 글과 마크업을 만들거나 바꾸지 않는다.",
+  "- 스크립트가 돌지 않는 자리(만들어지는 중의 지면 · 축소 미리보기)가 있다. 그림판 밑에 같은 성격의 첫 모습을 CSS(배경 · 그러데이션 · 인라인 SVG)로 깔아, 스크립트 없이도 첫 화면이 서게 한다.",
+  "- `matchMedia(\"(prefers-reduced-motion: reduce)\")`이면 한 장면만 그리고 멈춘다. 화면 밖에 있으면 그리기를 멈춘다(`IntersectionObserver`).",
+  "- 그림판 크기는 컨테이너를 따르고 `devicePixelRatio`를 반영한다(`ResizeObserver`). 오류가 나면 아무것도 하지 않고 첫 모습을 남긴다.",
+  "- 바깥으로 요청할 수 없다 — `fetch` · 바깥 그림 · 바깥 글꼴 · `eval`이 막혀 있다. 그림에 쓰는 값은 스크립트 안에 적는다.",
+].join("\n");
+
+/**
+ * 사용자가 카탈로그에서 고른 효과 하나를 쓰는 법. 고른 효과만 싣는다 — 목록을 보이면 모델이 다른 효과로 바꾼다.
+ * 모르는 이름이면 빈 글.
+ */
+export function pageEffectPrompt(name: string): string {
+  const effect = PAGE_EFFECT_CATALOG.find((item) => item.name === name);
+  if (!effect) return "";
+  return [
+    `### 효과 \`${effect.name}\` ${effect.title} — 사용자가 고른 것`,
+    `${effect.look}`,
+    "효과 코드를 직접 짜지 않고 이름으로 부른다. `import` 없이 바로 쓴다.",
+    "```js",
+    "const el = document.querySelector(\".hero-art\");   // 효과가 채울 자리. 자리와 크기는 CSS로 정한다",
+    `ExpressoEffects.mount(${JSON.stringify(effect.name)}, { el, palette: { background: "#faf8f4", ink: "#241b2b", accent: "#5f0080", soft: "#c9b3d6" }, values: { /* 아래 값 */ } });`,
+    "```",
+    "- `palette`는 고른 스타일의 바탕 · 글자 · 강조색과, 바탕과 강조 사이의 옅은 색(`soft`)이다.",
+    `- \`values\`: ${effect.values}. 기록에서 계산해 넣는다 — ${effect.use}`,
+    `- 자리: ${effect.place}.`,
+    "- 효과는 커서에 스스로 반응하고, 화면 밖이면 멈추고, 동작 줄이기면 첫 장면에서 멈춘다. 실패하면 아무것도 그리지 않는다.",
+    "- 첫 모습(CSS · SVG)은 자리(`el`) 안에 자식 요소나 `el`의 배경으로 둔다. 효과가 붙으면 런타임이 그것을 감추고, 실패하면 남는다.",
+    "- 이 효과 말고 다른 그림 스크립트는 쓰지 않는다. 한 화면에 이 효과 하나다.",
   ].join("\n");
 }
 

@@ -18,7 +18,7 @@ async function connectTools(overrides: Partial<AgentInput> = {}) {
   await client.connect(clientSide);
   return { client, emit };
 }
-const base = () => ({ userId: "00000000-0000-4000-8000-0000000000aa", records: { list: vi.fn(async () => ({ categories: [], records: [] })), read: vi.fn(async () => []) }, review: vi.fn(), saveRecord: vi.fn(), recordCategories: [], askForm: vi.fn(), jobGoal: null, goalDraft: vi.fn(), gapReview: vi.fn(), planDraft: vi.fn(), replanDraft: vi.fn(), readPlan: vi.fn(), propose: vi.fn(), page: { read: vi.fn(), edit: vi.fn() }, askChoice: vi.fn(), memory: null, updateMemory: vi.fn(), makeCommitment: vi.fn(), updateCommitment: vi.fn(), goalDemand: vi.fn(), recordDiagnosis: vi.fn(), appendToRecord: vi.fn(), searchJobs: vi.fn(), searchActivities: vi.fn() });
+const base = () => ({ userId: "00000000-0000-4000-8000-0000000000aa", records: { list: vi.fn(async () => ({ categories: [], records: [] })), read: vi.fn(async () => []) }, review: vi.fn(), saveRecord: vi.fn(), recordCategories: [], askForm: vi.fn(), jobGoal: null, goalDraft: vi.fn(), gapReview: vi.fn(), planDraft: vi.fn(), replanDraft: vi.fn(), readPlan: vi.fn(), propose: vi.fn(), page: { read: vi.fn(), edit: vi.fn() }, askChoice: vi.fn(), memory: null, updateMemory: vi.fn(), makeCommitment: vi.fn(), updateCommitment: vi.fn(), goalDemand: vi.fn(), recordDiagnosis: vi.fn(), appendToRecord: vi.fn(), searchJobs: vi.fn(), searchActivities: vi.fn(), brews: [], startBrew: vi.fn(), saveInterviewAnswer: vi.fn(), readRepository: vi.fn(), attachWorkMaterials: vi.fn(), proposeDesign: vi.fn(), reviseDesign: vi.fn() });
 describe("Claude 채팅 실행 어댑터", () => {
   it("글 덩어리가 새로 시작되면 앞의 글과 빈 줄로 띄운다. 도구 앞에 한 말이 마지막 답변과 붙지 않는다", async () => {
     const events: AgentEvent[] = [];
@@ -46,7 +46,7 @@ describe("Claude 채팅 실행 어댑터", () => {
     await new ClaudeAgentRuntime().run({ messages: [], context: [], signal: new AbortController().signal, emit: async event => { events.push(event); }, ...base() });
     expect(events).toEqual([{ type: "text", text: "안녕하세요" }]);
     expect(sdk.query.mock.lastCall![0].options).toMatchObject({ tools: [], settingSources: [], strictMcpConfig: true, persistSession: false, permissionMode: "dontAsk" });
-    expect(sdk.query.mock.lastCall![0].options.allowedTools).toEqual(["mcp__expresso__propose_record_edit", "mcp__expresso__list_career_records", "mcp__expresso__read_career_records", "mcp__expresso__record_requirement_review", "mcp__expresso__save_record", "mcp__expresso__propose_job_goal_update", "mcp__expresso__record_gap_review", "mcp__expresso__propose_preparation_plan", "mcp__expresso__read_preparation_plan", "mcp__expresso__propose_replan", "mcp__expresso__read_page_element", "mcp__expresso__edit_page_element", "mcp__expresso__ask_choice", "mcp__expresso__ask_form", "mcp__expresso__update_memory", "mcp__expresso__make_commitment", "mcp__expresso__update_commitment", "mcp__expresso__read_goal_demand", "mcp__expresso__record_diagnosis", "mcp__expresso__append_to_record", "mcp__expresso__search_jobs", "mcp__expresso__search_activities", "mcp__expresso__show_table"]);
+    expect(sdk.query.mock.lastCall![0].options.allowedTools).toEqual(["mcp__expresso__propose_record_edit", "mcp__expresso__list_career_records", "mcp__expresso__read_career_records", "mcp__expresso__record_requirement_review", "mcp__expresso__save_record", "mcp__expresso__propose_job_goal_update", "mcp__expresso__record_gap_review", "mcp__expresso__propose_preparation_plan", "mcp__expresso__read_preparation_plan", "mcp__expresso__propose_replan", "mcp__expresso__read_page_element", "mcp__expresso__edit_page_element", "mcp__expresso__ask_choice", "mcp__expresso__ask_form", "mcp__expresso__update_memory", "mcp__expresso__make_commitment", "mcp__expresso__update_commitment", "mcp__expresso__read_goal_demand", "mcp__expresso__record_diagnosis", "mcp__expresso__append_to_record", "mcp__expresso__search_jobs", "mcp__expresso__search_activities", "mcp__expresso__show_table", "mcp__expresso__start_portfolio", "mcp__expresso__read_repository", "mcp__expresso__attach_work_materials", "mcp__expresso__save_interview_answer", "mcp__expresso__propose_design_options", "mcp__expresso__revise_design_screen"]);
   });
   it("중단 신호를 SDK에 전달한다", async () => {
     const controller = new AbortController(); let stopped = false;
@@ -80,6 +80,90 @@ describe("Claude 채팅 실행 어댑터", () => {
     const events = emit.mock.calls.map(([event]) => event).filter(event => event.type === "tool").map(event => event.tool);
     expect(events.map(tool => [tool.name, tool.status, tool.summary])).toEqual([["기록 목록 확인", "running", "기록 목록을 불러오고 있습니다."], ["기록 목록 확인", "complete", "기록 1개를 확인했습니다."]]);
     expect(events[0]!.id).toBe(events[1]!.id);
+  });
+  it("작업물 붙이기는 붙인 것을 카드로 남기고, 붙이지 못한 까닭을 에이전트에게 돌려준다", async () => {
+    const recordId = "00000000-0000-4000-8000-0000000000c1";
+    const materials = { recordId, recordTitle: "상품 상세 전환", items: [{ kind: "site" as const, src: "/v1/media/00000000-0000-4000-8000-0000000000c2", url: "https://shop.example.com/", caption: "운영 중인 쇼핑몰" }] };
+    const attachWorkMaterials = vi.fn(async () => ({ materials, issues: ["1번 사이트를 찍지 못했습니다"] }));
+    const { client, emit } = await connectTools({ attachWorkMaterials });
+    const result = await client.callTool({ name: "attach_work_materials", arguments: { recordId, items: [{ kind: "site", url: "https://shop.example.com", caption: "운영 중인 쇼핑몰" }, { kind: "site", url: "http://10.0.0.1", caption: "내부" }] } });
+    expect(result.isError).toBeFalsy();
+    const done = emit.mock.calls.map(([event]) => event).filter(event => event.type === "tool").map(event => event.tool).at(-1)!;
+    expect(done).toMatchObject({ name: "작업물 붙이기", status: "complete", summary: "상품 상세 전환 · 1개", workMaterials: materials });
+    expect(JSON.stringify(result.content)).toContain("1번 사이트를 찍지 못했습니다");
+    // 레포 주소가 아닌 http(s) 밖의 주소는 스키마에서 걸린다.
+    const bad = await client.callTool({ name: "attach_work_materials", arguments: { recordId, items: [{ kind: "site", url: "file:///etc/passwd", caption: "x" }] } });
+    expect(bad.isError).toBe(true);
+  });
+
+  it("제작 시작은 카드에 실을 ID를 도구 결과로 남기고, 거절된 사유는 에이전트에게 돌려준다", async () => {
+    const brewStart = { startId: "00000000-0000-4000-8000-0000000000b1", jobPostingId: "00000000-0000-4000-8000-0000000000b2", jobAnalysisId: "00000000-0000-4000-8000-0000000000b3", title: "프론트엔드 개발자", companyName: "가상 회사", brewId: null };
+    const running = { status: "running" as const, stage: "extracting" as const, failure: null, requirements: null, brewId: null, step: null, announced: false };
+    const startBrew = vi.fn(async () => ({ start: brewStart, state: running }));
+    const { client, emit } = await connectTools({ startBrew });
+    const result = await client.callTool({ name: "start_portfolio", arguments: { jobPostingId: brewStart.jobPostingId } });
+    expect(result.isError).toBeFalsy();
+    expect(startBrew).toHaveBeenCalledWith({ jobPostingId: brewStart.jobPostingId });
+    const done = emit.mock.calls.map(([event]) => event).filter(event => event.type === "tool").map(event => event.tool).at(-1)!;
+    expect(done).toMatchObject({ name: "포트폴리오 제작", status: "complete", summary: "가상 회사 · 프론트엔드 개발자", brewStart });
+    // 분석이 도는 동안에는 결과를 돌려주지 않는다 — 모델이 결과를 지어내지 않게 한다.
+    expect(JSON.stringify(result.content)).not.toContain("covered");
+    // 앞서 분석해 둔 공고면 결과가 이미 있다. 그때만 결과를 돌려주어 그 답에서 알리게 한다.
+    const ready = await connectTools({ startBrew: vi.fn(async () => ({ start: brewStart, state: { ...running, status: "done" as const, stage: "done" as const, requirements: { total: 6, covered: 1, partial: 5, missing: 0 }, announced: true } })) });
+    const finished = await ready.client.callTool({ name: "start_portfolio", arguments: { jobPostingId: brewStart.jobPostingId } });
+    expect(JSON.parse((finished.content as { text: string }[])[0]!.text)).toMatchObject({ analysis: "done", requirements: { total: 6, covered: 1, partial: 5, missing: 0 } });
+
+    const refused = await connectTools({ startBrew: vi.fn(async () => { throw new AgentToolRejection(["대화에 연결된 공고가 아닙니다."]); }) });
+    const rejected = await refused.client.callTool({ name: "start_portfolio", arguments: { jobPostingId: brewStart.jobPostingId } });
+    expect(rejected.isError).toBe(true);
+    expect(JSON.stringify(rejected.content)).toContain("대화에 연결된 공고가 아닙니다.");
+    expect(refused.emit.mock.calls.map(([event]) => event).filter(event => event.type === "tool").at(-1)!.tool).toMatchObject({ status: "failed" });
+  });
+  it("인터뷰 답 저장은 질문을 요약으로 남기고, 거절된 사유는 에이전트에게 돌려준다", async () => {
+    const answer = { jobPostingId: "00000000-0000-4000-8000-0000000000b2", basis: 0, question: "장애를 어떻게 대응하셨나요?", messageIds: ["00000000-0000-4000-8000-0000000000c1"] };
+    const saveInterviewAnswer = vi.fn(async () => ({ answered: 1, limit: 6 }));
+    const { client, emit } = await connectTools({ saveInterviewAnswer });
+    const result = await client.callTool({ name: "save_interview_answer", arguments: answer });
+    expect(result.isError).toBeFalsy();
+    expect(saveInterviewAnswer).toHaveBeenCalledWith(answer);
+    expect(JSON.parse((result.content as { text: string }[])[0]!.text)).toMatchObject({ saved: true, answeredQuestions: 1, limit: 6 });
+    expect(emit.mock.calls.map(([event]) => event).filter(event => event.type === "tool").at(-1)!.tool).toMatchObject({ name: "답 저장", status: "complete", summary: answer.question });
+
+    const refused = await connectTools({ saveInterviewAnswer: vi.fn(async () => { throw new AgentToolRejection(["디자인 단계로 넘어간 제작입니다."]); }) });
+    const rejected = await refused.client.callTool({ name: "save_interview_answer", arguments: answer });
+    expect(rejected.isError).toBe(true);
+    expect(JSON.stringify(rejected.content)).toContain("디자인 단계로 넘어간 제작입니다.");
+  });
+  it("디자인 도구는 카드를 도구 결과로 남기고 기다리지 않고 돌아온다", async () => {
+    const card = { brewId: "00000000-0000-4000-8000-0000000000d1", jobPostingId: "00000000-0000-4000-8000-0000000000b2", designMessageId: "00000000-0000-4000-8000-0000000000d2" };
+    const proposeDesign = vi.fn(async () => card);
+    const { client, emit } = await connectTools({ proposeDesign, reviseDesign: vi.fn(async () => { throw new AgentToolRejection(["아직 그린 첫 화면이 없습니다."]); }) });
+    const proposed = await client.callTool({ name: "propose_design_options", arguments: { jobPostingId: card.jobPostingId, request: "더 따뜻하게", focus: "styles" } });
+    expect(proposed.isError).toBeFalsy();
+    expect(emit.mock.calls.map(([event]) => event).filter(event => event.type === "tool").at(-1)!.tool).toMatchObject({ name: "견본 다시 받기", status: "complete", brewDesign: card });
+    const revised = await client.callTool({ name: "revise_design_screen", arguments: { jobPostingId: card.jobPostingId, instruction: "강조색을 초록으로", screen: "" } });
+    expect(revised.isError).toBe(true);
+    expect(JSON.stringify(revised.content)).toContain("아직 그린 첫 화면이 없습니다.");
+  });
+  it("이 대화에서 시작한 제작의 지금 상태를 프롬프트에 싣는다", async () => {
+    sdk.query.mockReturnValue((async function* () { yield { type: "result", is_error: false }; })());
+    const brews = [{ jobPostingId: "00000000-0000-4000-8000-0000000000b2", title: "프론트엔드 개발자", companyName: "가상 회사", status: "done" as const, stage: "done" as const, failure: null, requirements: { total: 6, covered: 3, partial: 2, missing: 1 }, brewId: null, step: null, announced: false, selectedRecords: null, materials: [], interview: null, design: null, generation: null }];
+    await new ClaudeAgentRuntime().run({ messages: [], context: [], signal: new AbortController().signal, emit: vi.fn(), ...base(), brews });
+    const asked = JSON.parse(sdk.query.mock.lastCall![0].prompt);
+    expect(asked.brews).toEqual(brews);
+    // 사용자의 말로 시작한 실행에는 계기가 없다.
+    expect(asked).not.toHaveProperty("event");
+    // 서버가 시작한 실행은 계기를 싣는다 — 새 사용자 메시지가 없으므로 무엇을 말할지는 이 값이 정한다.
+    const event = { kind: "brew_analysis_done" as const, jobPostingId: brews[0]!.jobPostingId };
+    await new ClaudeAgentRuntime().run({ messages: [], context: [], signal: new AbortController().signal, emit: vi.fn(), ...base(), brews, event });
+    expect(JSON.parse(sdk.query.mock.lastCall![0].prompt).event).toEqual(event);
+    // 서버가 시작한 실행에서는 도구를 쓰지 못한다 — 작업 흔적도 남기지 않는다.
+    const list = vi.fn(async () => ({ categories: [], records: [] }));
+    const quiet = await connectTools({ event, records: { list, read: vi.fn(async () => []) } });
+    const refused = await quiet.client.callTool({ name: "list_career_records", arguments: {} });
+    expect(refused.isError).toBe(true);
+    expect(list).not.toHaveBeenCalled();
+    expect(quiet.emit).not.toHaveBeenCalled();
   });
   it("모델이 도구 입력을 쓰기 시작하면 실행 중을 먼저 알리고, 처리기 결과를 같은 줄에 잇는다", async () => {
     const emit = vi.fn(async (_event: AgentEvent) => undefined);

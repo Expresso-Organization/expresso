@@ -1,9 +1,11 @@
 import { mongoCollections } from "@expresso/database";
 import type { MongoContext } from "../../platform/mongodb.js";
-export { AgentChatService } from "./service.js";
+export { AgentChatError, AgentChatService } from "./service.js";
 export { registerAgentChatRoutes } from "./routes.js";
 
 export { AgentCredentials } from "./credentials.js";
+export type { AgentWorkDeps } from "./work-materials.js";
+export type { AgentBrewDeps } from "./brew-start.js";
 
 /** 사용자가 마지막으로 대화한 때. 대화가 없으면 null. 컨설턴트의 확인 작업이 「대화가 없을 때」를 가를 때 쓴다. */
 export async function lastConversationAt(db: MongoContext, userId: string): Promise<Date | null> {

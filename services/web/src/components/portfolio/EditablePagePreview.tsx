@@ -2,6 +2,7 @@
 
 import { pageDocument, type GeneratedPage } from "@expresso/contracts";
 import { useEffect, useMemo, useRef } from "react";
+import { useAppOrigin } from "@/lib/app-origin";
 
 /**
  * 다듬기 화면의 지면 미리보기. 배포 문서와 같은 `pageDocument()`에 편집용 스크립트 하나만 더한다.
@@ -11,7 +12,8 @@ import { useEffect, useMemo, useRef } from "react";
  * - 등장 애니메이션과 전환을 끈다. 배포 문서는 그대로다.
  *
  * `sandbox`에 `allow-same-origin`을 주지 않는다. 이 문서는 고유하지 않은 출처(`null`)에서 돌아 앱의 쿠키 · 저장소에
- * 닿지 못한다. 스크립트는 우리가 넣은 것 하나이고, 지면 HTML은 소독을 지난 렌더 결과다.
+ * 닿지 못한다. 지면 HTML은 소독을 지난 렌더 결과다. 그림 스크립트(`page-script.ts`)가 있으면 배포 지면과 같은 정책을 싣고,
+ * 편집 스크립트의 해시를 그 정책에 함께 넣는다 — 정책이 둘이면 서로를 막는다. 부모는 편집 스크립트의 알림도 값을 검사해 받는다.
  */
 
 const CHANNEL = "xp-editor";
@@ -105,6 +107,7 @@ export function EditablePagePreview({
   const state = useRef({ parts, selected, draftCss, onSelect, onMeasure });
   useEffect(() => { state.current = { parts, selected, draftCss, onSelect, onMeasure }; });
 
+  const origin = useAppOrigin();
   const srcDoc = useMemo(() => {
     const document = pageDocument({
       html: page.html,
@@ -112,10 +115,11 @@ export function EditablePagePreview({
       title,
       description: page.rationale,
       ...(page.styleSpec ? { grammar: page.styleSpec } : {}),
+      ...(page.script ? { script: page.script, run: { origin, extraScripts: [EDITOR_SCRIPT] } } : {}),
     });
     const at = document.lastIndexOf("</body>");
     return `${document.slice(0, at)}<script>${EDITOR_SCRIPT}</script>\n${document.slice(at)}`;
-  }, [page.html, page.css, page.rationale, page.styleSpec, title]);
+  }, [page.html, page.css, page.script, page.rationale, page.styleSpec, title, origin]);
 
   function send(message: Record<string, unknown>) {
     frame.current?.contentWindow?.postMessage({ source: CHANNEL, ...message }, "*");

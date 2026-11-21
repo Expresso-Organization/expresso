@@ -111,6 +111,21 @@ export async function cancelGenerationAction(formData: FormData): Promise<void> 
   redirect(`/brew/${brewId}/design`);
 }
 
+/**
+ * 에이전트 대화의 「생성」 카드가 생성을 멈춘다. 화면을 넘기지 않는다 — 카드가 상태를 다시 읽는다. 이미 끝났거나 없으면 그대로 둔다.
+ * 멈추면 크레딧을 차감하지 않는다(지금의 생성 화면과 같다).
+ */
+export async function cancelGenerationInChatAction(generationJobId: string): Promise<{ error: string | null }> {
+  const session = await requireSession();
+  if (!z.uuid().safeParse(generationJobId).success) return { error: "생성을 찾지 못했습니다." };
+  try {
+    await generation.cancel(session.accessToken, generationJobId);
+  } catch (error) {
+    if (!(error instanceof ApiError) || (error.status !== 409 && error.status !== 404)) throw error;
+  }
+  return { error: null };
+}
+
 /** 기다리는 동안 다시 읽어 온다. 01b·02b의 "새로고침"과 같은 자리다. */
 export async function refreshGenerationAction(formData: FormData): Promise<void> {
   await requireSession();

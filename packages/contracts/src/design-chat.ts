@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { TimestampSchema, UuidSchema } from "./common.js";
 import { PageDraftSchema } from "./page.js";
+import { PAGE_EFFECT_CATALOG } from "./page-effects.generated.js";
 import { TemplateFontSchema } from "./templates.js";
 
 /**
@@ -81,6 +82,8 @@ export const DesignSnippetSchema = z.strictObject({
   layout: DesignLayoutSpecSchema.nullable(),
   css: PageDraftSchema.shape.css,
   html: PageDraftSchema.shape.html,
+  /** 첫 화면의 스크립트(`page-script.ts`). 고르면 완성 지면의 스크립트 맨 앞에 그대로 들어간다. */
+  script: PageDraftSchema.shape.script,
   fromSnippetId: UuidSchema.nullable(),
   createdAt: TimestampSchema,
 });
@@ -108,6 +111,18 @@ export const DesignUserMessageSchema = z.strictObject({
 });
 
 /** 그리는 중이거나 그린 첫 화면 한 장. 스타일과 레이아웃은 그리기 전에 정해져 있어 기다리는 동안 그 값으로 자리를 채운다. */
+/**
+ * 첫 화면 그래픽. `canvas`는 그 사람의 기록 · 지원하는 공고 · 담을 내용에서 모델이 canvas 2D로 짓는 추상 그래픽이고(기본),
+ * 나머지는 사용자가 카탈로그에서 고른 효과 라이브러리의 효과 이름이다. 효과는 모델이 고르지 않는다
+ * (2026-11-21 사용자: "기본은 커리어 기록과 지원 대상, 포트폴리오 내용에 맞춰서 추상화된 디자인 요소를 canvas로 그리도록 하고,
+ * 3D 디자인 등은 사용자가 카탈로그에서 선택할 수 있는 요소로 하자").
+ *
+ * 앞판의 `2d` · `3d`(차원만 고르고 효과는 모델이 정했다)는 `canvas`로 읽는다 — 이 브랜치의 검증 DB에 그 장이 남아 있다.
+ */
+export const DESIGN_GRAPHICS = ["canvas", ...PAGE_EFFECT_CATALOG.map((effect) => effect.name)] as [string, ...string[]];
+export const DesignGraphicSchema = z.preprocess((value) => (value === "2d" || value === "3d" ? "canvas" : value), z.enum(DESIGN_GRAPHICS));
+export type DesignGraphic = z.infer<typeof DesignGraphicSchema>;
+
 export const DesignScreenItemSchema = z.strictObject({
   id: UuidSchema,
   name: z.string().min(1).max(120),
@@ -115,6 +130,8 @@ export const DesignScreenItemSchema = z.strictObject({
   tokens: DesignTokensSchema,
   /** 그릴 레이아웃. 카탈로그의 디자인만 골랐으면 null이고, 그리는 쪽이 자료를 보고 구성을 정한다. */
   layout: DesignLayoutSpecSchema.nullable(),
+  /** 사용자가 고른 그래픽. 고르지 않고 그렸거나(말로 청한 것 · 고친 것) 이 칸이 생기기 전의 장에는 없다 — 그때는 `canvas`다. */
+  graphic: DesignGraphicSchema.optional(),
   status: z.enum(["drawing", "done", "failed"]),
   snippetId: UuidSchema.nullable(),
 });
@@ -193,9 +210,9 @@ export const SendDesignMessageSchema = z.discriminatedUnion("action", [
     subject: z.strictObject({ kind: z.enum(["snippet", "catalog"]), id: UuidSchema }).optional(),
   }),
   /** 견본에서 고른 스타일 하나와 레이아웃 하나로 첫 화면을 그린다. */
-  z.strictObject({ action: z.literal("draw"), requestId: UuidSchema, styleId: UuidSchema, layoutId: UuidSchema }),
+  z.strictObject({ action: z.literal("draw"), requestId: UuidSchema, styleId: UuidSchema, layoutId: UuidSchema, graphic: DesignGraphicSchema.optional() }),
   /** 카탈로그의 디자인을 스타일로 삼아 그린다. 견본에서 고른 레이아웃이 있으면 함께 보낸다. */
-  z.strictObject({ action: z.literal("draw_catalog"), requestId: UuidSchema, revisionId: UuidSchema, layoutId: UuidSchema.optional() }),
+  z.strictObject({ action: z.literal("draw_catalog"), requestId: UuidSchema, revisionId: UuidSchema, layoutId: UuidSchema.optional(), graphic: DesignGraphicSchema.optional() }),
 ]);
 export type SendDesignMessage = z.infer<typeof SendDesignMessageSchema>;
 

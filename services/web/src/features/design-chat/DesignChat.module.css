@@ -39,6 +39,9 @@
   gap: 12px;
   margin-top: 12px;
 }
+/* 에이전트 대화의 「디자인」 카드. 화면이 넓어도 좁은 오른쪽 자리에 놓이므로 카드 묶음의 폭으로 좁은 배치를 고른다.
+   디자인 화면(흐름 · 무대)은 화면 폭의 규칙을 그대로 따른다 — 이 이름을 쓰지 않는다. */
+.compact .cards { container: design-cards / inline-size; }
 
 /* ── 견본: 스타일 줄과 레이아웃 줄 ─────────────── */
 /* 두 줄은 따로 고르는 두 가지다. 줄마다 이름을 두고, 줄 사이를 카드 사이보다 넓게 띄운다. */
@@ -98,6 +101,11 @@
 }
 /* 레이아웃 견본은 첫 화면을 줄인 배치도라 첫 화면과 같은 비율이다. */
 .swatch[data-kind="layout"] { aspect-ratio: 16 / 10; }
+/* 그래픽 카탈로그는 다섯 장이 한 줄에 놓인다. 효과는 실제로 그린 화면을 줄여 보이고, 「기록에서 그림」은 고른 스타일의 바탕이다. */
+.specimenRow[data-kind="graphic"] { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.swatch[data-kind="graphic"] { aspect-ratio: 16 / 8; }
+.graphicShot { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.canvasFace { position: absolute; inset: 0; display: grid; place-items: center; background: var(--ex-bg-sunken); color: var(--ex-accent); }
 /* 가장자리는 색 면 위에 그린다 — 흰 바탕의 견본도 지면과 구분된다. */
 .swatch::after {
   content: "";
@@ -177,6 +185,7 @@
   color: var(--ex-fg);
 }
 .comboPick[data-empty] { padding: 5px 12px; border-style: dashed; font-weight: 500; color: var(--ex-fg-subtle); }
+/* 배경 그래픽의 차원. 고르기 전에는 짝의 빈 자리처럼 점선이고, 고른 쪽만 채운다. */
 .comboSwatch { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ex-fg) 14%, transparent); }
 .comboSwatch > i { width: 9px; height: 9px; border-radius: 50%; }
 .comboWire { position: relative; display: block; width: 35px; aspect-ratio: 16 / 10; border-radius: 3px; overflow: hidden; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ex-fg) 14%, transparent); }
@@ -428,6 +437,8 @@ button.thumb:focus-visible, button.specimen:focus-visible, .reply:focus-visible,
 .make.make:disabled { background: var(--ex-bg-tint-strong); color: var(--ex-fg-subtle); opacity: 1; }
 
 /* ── 무대(무대 배치) ──────────────────────────── */
+/* 에이전트 대화의 「디자인」 카드에서 넓게 볼 때. 대화가 좁은 자리에 있어 무대가 화면 전체를 덮는다. */
+.overlay { position: fixed; inset: 0; z-index: 60; display: flex; background: var(--ex-bg-sunken); }
 .stage {
   position: relative;
   flex: 1;
@@ -498,8 +509,22 @@ button.thumb:focus-visible, button.specimen:focus-visible, .reply:focus-visible,
   /* 무대가 위로 쌓이면 닫는 자리도 첫 화면 위의 줄로 내려온다. */
   .stageClose { position: static; align-self: flex-start; margin: -6px 0 0 -10px; }
 }
+/* 카드 묶음이 좁을 때(에이전트 대화의 「디자인」 카드만). 좁은 화면의 규칙과 같다. */
+@container design-cards (max-width: 767px) {
+  .compact .thumbs, .compact .specimenRow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .compact .specimenRow[data-kind="graphic"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .compact .swatchFace { padding: 10px 12px; gap: 8px; }
+  .compact .viewMeta { flex-wrap: wrap; row-gap: 6px; }
+  .compact .viewActions { margin-left: 0; width: 100%; flex-wrap: wrap; }
+}
+/* 더 좁으면(공고 화면 오른쪽 자리) 스타일을 한 줄에 하나씩 놓는다. 두 칸이면 견본의 이름이 두세 글자에서 잘린다 —
+   이름이 스타일을 가르는 첫 단서다. 레이아웃은 배치도라 두 칸으로 둔다. */
+@container design-cards (max-width: 479px) {
+  .compact .proposalRow[aria-label="스타일"] .specimenRow { grid-template-columns: minmax(0, 1fr); }
+}
 @media (max-width: 767px) {
   .thumbs, .specimenRow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .specimenRow[data-kind="graphic"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   /* 좁은 화면에서는 이름 줄 아래로 행동을 내린다. 한 줄에 두면 이름이 잘리고 버튼이 화면 밖으로 나간다. */
   .viewMeta { flex-wrap: wrap; row-gap: 6px; }
   .viewActions { margin-left: 0; width: 100%; flex-wrap: wrap; }

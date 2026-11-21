@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { DesignAssistantMessageSchema, DesignCardSchema, DesignSnippetSchema, type DesignCard, type DesignChat, type DesignChatMessage, type DesignLayout, type DesignLayoutSpec, type DesignScreenItem, type DesignSnippet, type DesignStyle, type DesignSubject, type SendDesignMessage } from "@expresso/contracts";
+import { DesignAssistantMessageSchema, DesignCardSchema, DesignSnippetSchema, type DesignCard, type DesignChat, type DesignChatMessage, type DesignLayout, type DesignLayoutSpec, type DesignScreenItem, type DesignSnippet, type DesignStyle, type DesignSubject, type SendDesignMessage, type DesignGraphic } from "@expresso/contracts";
 import { mongoCollections, type DesignChatDoc, type JsonObject } from "@expresso/database";
 import type { Db, UpdateFilter } from "mongodb";
 
@@ -14,6 +14,9 @@ import { PageServiceError } from "../public.js";
 import {
   DesignHeadSchema,
   OpeningSchema,
+  ProposalsSchema,
+  proposalsCall,
+  type ProposalFocus,
   ReplySchema,
   RevisionDraftSchema,
   SnippetDraftSchema,
@@ -60,6 +63,7 @@ export class DesignChatError extends Error {
 /** 답 하나를 만드는 일. 요청을 받을 때 대상을 모두 풀어 두므로 실행은 대화를 다시 읽지 않는다. */
 type Turn =
   | { kind: "open" }
+  | { kind: "propose"; request: string; focus: ProposalFocus }
   | { kind: "say"; text: string; subject: ReplySubject | null }
   | { kind: "draw"; items: DesignScreenItem[]; origins: DesignSnippet["origin"][]; revise: { from: DesignSnippet; instruction: string } | null };
 
@@ -75,7 +79,7 @@ const view = (row: DesignChatDoc): DesignChat => ({
 });
 
 /** 그릴 첫 화면 한 장. 스타일과 레이아웃은 따로 고른 것이고, 여기서 한 장으로 짝지어진다. */
-const screenItem = (style: StyleDraft, layout: DesignLayoutSpec | null): DesignScreenItem => ({ id: randomUUID(), name: style.name, words: style.words, tokens: style.tokens, layout, status: "drawing", snippetId: null });
+const screenItem = (style: StyleDraft, layout: DesignLayoutSpec | null, graphic?: DesignGraphic): DesignScreenItem => ({ id: randomUUID(), name: style.name, words: style.words, tokens: style.tokens, layout, ...(graphic ? { graphic } : {}), status: "drawing", snippetId: null });
 /** 견본 카드의 레이아웃에서 ID를 뗀 것. 첫 화면과 그리는 호출은 값만 가진다. */
 const layoutSpec = ({ name, words, blocks }: DesignLayout): DesignLayoutSpec => ({ name, words, blocks });
 
@@ -212,7 +216,7 @@ export class DesignChatService {
     if (input.action === "draw") {
       const chosen = { style: style(input.styleId), layout: layout(input.layoutId) };
       subjects = [{ kind: "style", id: chosen.style.id, name: chosen.style.name }, { kind: "layout", id: chosen.layout.id, name: chosen.layout.name }];
-      const items = [screenItem(chosen.style, layoutSpec(chosen.layout))];
+      const items = [screenItem(chosen.style, layoutSpec(chosen.layout), input.graphic)];
       card = { kind: "screens", items };
       turn = { kind: "draw", items, origins: ["agent"], revise: null };
     } else if (input.action === "draw_catalog") {
@@ -220,7 +224,7 @@ export class DesignChatService {
       // 카탈로그의 디자인은 스타일이다. 견본에서 고른 레이아웃이 함께 오면 그 구성으로, 없으면 그리는 쪽이 구성을 정한다.
       const chosen = input.layoutId ? layout(input.layoutId) : null;
       subjects = [{ kind: "catalog", id: input.revisionId, name: draft.name }, ...(chosen ? [{ kind: "layout" as const, id: chosen.id, name: chosen.name }] : [])];
-      const items = [screenItem(draft, chosen ? layoutSpec(chosen) : null)];
+      const items = [screenItem(draft, chosen ? layoutSpec(chosen) : null, input.graphic)];
       card = { kind: "screens", items };
       turn = { kind: "draw", items, origins: ["catalog"], revise: null };
     } else {
@@ -247,6 +251,48 @@ export class DesignChatService {
         $set: { run: { id: randomUUID(), requestId: input.requestId, status: "running", error: null, startedAt: stamp }, heartbeatAt: now, updatedAt: stamp },
         $inc: { version: 1 },
       },
+      { returnDocument: "after" },
+    );
+    if (!next) throw new DesignChatError(409, "design chat changed", "대화가 그사이 바뀌었습니다. 다시 보내 주세요.");
+    this.#start(next, next.messages.length - 1, turn);
+    return view(next);
+  }
+
+  /**
+   * 에이전트 대화가 청한 차례. 무엇을 할지는 에이전트가 정했으므로 답하는 호출을 거치지 않고 그 차례를 바로 시작한다.
+   * 사용자의 차례로는 에이전트가 옮긴 요청이 남는다(지금의 디자인 화면에도 같은 대화로 보인다). 답의 말은 비워 둔다 — 말은 에이전트가 한다.
+   *
+   * - `propose`: 요청에 맞춘 견본을 낸다.
+   * - `revise`: 그린 첫 화면 하나를 고친다. 고칠 것은 이름으로 가리키고, 비면 가장 최근 것이다. 청사진 자리 · 다시 그리기는 말로 고칠 때와 같다.
+   */
+  async propose(userId: string, brewId: string, input: { requestId: string; request: string; focus: ProposalFocus }): Promise<DesignChat> {
+    return this.#delegate(userId, brewId, input.requestId, input.request, () => ({ card: null, turn: { kind: "propose", request: input.request, focus: input.focus } }));
+  }
+
+  async revise(userId: string, brewId: string, input: { requestId: string; instruction: string; screen: string }): Promise<DesignChat> {
+    return this.#delegate(userId, brewId, input.requestId, input.instruction, (row) => {
+      const from = reviseTarget(row.snippets, null, input.screen);
+      if (!from) throw new DesignChatError(409, "nothing to revise", "아직 그린 첫 화면이 없습니다. 견본에서 짝을 골라 첫 화면을 먼저 그려 주세요.");
+      const entry: DesignScreenItem = { id: randomUUID(), name: from.name, words: input.instruction, tokens: from.tokens, layout: from.layout, status: "drawing", snippetId: null };
+      return { card: { kind: "revision", fromSnippetId: from.id, item: entry, targets: [] }, turn: { kind: "draw", items: [entry], origins: ["edit"], revise: { from, instruction: input.instruction } } };
+    });
+  }
+
+  async #delegate(userId: string, brewId: string, requestId: string, text: string, plan: (row: DesignChatDoc) => { card: DesignCard | null; turn: Turn }): Promise<DesignChat> {
+    await this.#ownBrew(userId, brewId);
+    const row = await this.#load(userId, brewId);
+    if (!row || !row.head) throw new DesignChatError(409, "design chat is not open", "디자인 대화가 아직 열리지 않았습니다. 「디자인」 카드에 첫 말과 견본이 뜬 뒤에 할 수 있습니다.");
+    if (row.run?.requestId === requestId) return view(row);
+    if (row.run?.status === "running") throw new DesignChatError(409, "design chat is running", "답을 만드는 중입니다. 끝난 뒤에 보내 주세요.");
+    await this.#gate(userId);
+    const { card, turn } = plan(row);
+    const now = new Date();
+    const stamp = now.toISOString();
+    const user: DesignChatMessage = { id: randomUUID(), role: "user", action: "say", text, subjects: [], createdAt: stamp };
+    const assistant: DesignChatMessage = { id: randomUUID(), role: "assistant", text: "", status: "running", card, createdAt: stamp };
+    const next = await this.#rows.findOneAndUpdate(
+      { _id: row._id, version: row.version, "run.status": { $ne: "running" } },
+      { $push: { messages: { $each: [user, assistant] } }, $set: { run: { id: randomUUID(), requestId, status: "running", error: null, startedAt: stamp }, heartbeatAt: now, updatedAt: stamp }, $inc: { version: 1 } },
       { returnDocument: "after" },
     );
     if (!next) throw new DesignChatError(409, "design chat changed", "대화가 그사이 바뀌었습니다. 다시 보내 주세요.");
@@ -389,6 +435,14 @@ export class DesignChatService {
         return;
       }
       const head = DesignHeadSchema.parse(row.head) as DesignHead;
+      if (turn.kind === "propose") {
+        const call = proposalsCall({ userId, sources, head, messages: row.messages.slice(0, assistantAt - 1), snippets: row.snippets, request: turn.request, focus: turn.focus });
+        const { data } = await this.#ai.complete(call.spec, ProposalsSchema, { userId, check: call.check });
+        const card = DesignCardSchema.parse({ kind: "proposals", styles: data.styles.map((draft) => ({ id: randomUUID(), ...draft })), layouts: data.layouts.map((draft) => ({ id: randomUUID(), ...draft })) });
+        await this.#write(chatId, runId, { $set: { [`messages.${assistantAt}.card`]: card } } as UpdateFilter<DesignChatDoc>);
+        await this.#end(chatId, runId, assistantAt, await current(), "complete", null);
+        return;
+      }
       let draw = turn.kind === "draw" ? turn : null;
       if (turn.kind === "say") {
         const call = replyCall({
@@ -435,9 +489,10 @@ export class DesignChatService {
               await live.settled();
               data = call.apply(draft);
               // 조각은 고쳐 받는 동안 달라질 수 있다. 끝난 조각으로 고친 첫 화면에서의 자리를 다시 잡는다.
-              targets = revisedTargets(revise.from, draft.edits);
+              // 스크립트 조각은 화면의 자리가 없다. 마크업 · CSS 조각만 친다.
+              targets = revisedTargets(revise.from, draft.edits.flatMap((edit) => (edit.in === "script" ? [] : [{ ...edit, in: edit.in }])));
             } else {
-              const call = drawCall({ userId, sources, style: { name: item.name, words: item.words, tokens: item.tokens }, layout: item.layout });
+              const call = drawCall({ userId, sources, style: { name: item.name, words: item.words, tokens: item.tokens }, layout: item.layout, graphic: item.graphic ?? null });
               data = (await this.#ai.complete(call.spec, SnippetDraftSchema, { userId, check: call.check })).data;
             }
             const clean = sanitizePage({ html: data.html, css: data.css });
@@ -446,7 +501,7 @@ export class DesignChatService {
               id: randomUUID(), origin: origins[index] ?? "agent", name: data.name, note: data.note, words: item.words, tokens: data.tokens,
               // 그릴 때 따른 레이아웃이다(고친 것은 원래 첫 화면의 것). 카탈로그의 디자인만 골라 그렸으면 null이다.
               layout: item.layout,
-              css: clean.css, html: clean.html, fromSnippetId: revise?.from.id ?? null, createdAt: new Date().toISOString(),
+              css: clean.css, html: clean.html, ...(data.script?.trim() ? { script: data.script.trim() } : {}), fromSnippetId: revise?.from.id ?? null, createdAt: new Date().toISOString(),
             });
             const done = { ...item, status: "done" as const, snippetId: snippet.id };
             await this.#write(chatId, runId, {

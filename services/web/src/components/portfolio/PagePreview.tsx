@@ -1,6 +1,7 @@
 "use client";
 
 import { pageDocument, type GeneratedPage } from "@expresso/contracts";
+import { useAppOrigin } from "@/lib/app-origin";
 
 /**
  * 자유 생성 지면을 앱 안에서 보여 준다.
@@ -13,6 +14,8 @@ import { pageDocument, type GeneratedPage } from "@expresso/contracts";
  * `sandbox`는 소독기 뒤의 두 번째 방어선이다. 소독을 지난 마크업이라도
  * 우리 오리진에서 스크립트가 돌 길은 열어 두지 않는다 —
  * `allow-same-origin`을 주지 않으므로 이 문서는 우리 쿠키와 저장소에 닿지 못한다.
+ * 그림 스크립트(`page-script.ts`)가 있는 지면만 `allow-scripts`를 주고 배포 지면과 같은 정책을 싣는다 — 다듬기 화면에서
+ * 첫 화면 그래픽이 보여야 한다. 그때도 `allow-same-origin`은 주지 않고, 정책이 바깥 요청을 막는다.
  *
  * 그리고 **배포되는 문서와 같은 `pageDocument()`를 쓴다.** 미리보기가 실제와
  * 달라지면 보고 고치는 의미가 없다.
@@ -29,12 +32,13 @@ export function PagePreview({
   /** `false`면 지면 키트의 등장 애니메이션을 끈다. 편집 화면처럼 고친 곳이 바로 보여야 하는 자리에서 쓴다. */
   reveal?: boolean;
 }) {
+  const origin = useAppOrigin();
   return (
     <iframe
       className={className}
       // 제목은 스크린리더가 이 틀을 뭐라고 부를지다.
       title={`${title} 미리보기`}
-      sandbox=""
+      sandbox={page.script ? "allow-scripts" : ""}
       srcDoc={pageDocument({
         html: page.html,
         css: page.css,
@@ -42,6 +46,7 @@ export function PagePreview({
         description: page.rationale,
         ...(page.styleSpec ? { grammar: page.styleSpec } : {}),
         reveal,
+        ...(page.script ? { script: page.script, run: { origin } } : {}),
       })}
     />
   );

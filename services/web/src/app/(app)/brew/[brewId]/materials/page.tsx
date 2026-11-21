@@ -4,6 +4,8 @@ import { ApiError } from "@/lib/api/client";
 import { brews, entitlements } from "@/lib/api/endpoints";
 import { requireSession } from "@/lib/require-session";
 
+import { interviewEntry } from "@/lib/brew-materials-card";
+
 import { BrewFrame } from "../BrewFrame";
 import { brewTitle } from "../brew-title";
 import { MaterialPicker } from "./MaterialPicker";
@@ -42,9 +44,7 @@ export default async function MaterialsPage({
 
   // 질문이 이미 있거나 만드는 중이면 시작 버튼은 대화 화면으로 가는 링크다. 잡을 또 내면 질문이 있는
   // 대화 화면이 잠깐 "만드는 중"으로 돌아가고, 도는 잡 옆에 잡이 하나 더 생긴다.
-  const interviewJob = brew.latestJob?.type === "interview" ? brew.latestJob : null;
-  const beginsInterview = !brew.interviewSessionId
-    && interviewJob?.status !== "queued" && interviewJob?.status !== "running";
+  const { beginsInterview, basisJobId } = interviewEntry(brew);
 
   return (
     <BrewFrame brewId={brewId} step="materials" portfolioTitle={brewTitle(brew)} situation={`기록 최대 ${materials.selectionLimit}건`}>
@@ -54,7 +54,7 @@ export default async function MaterialsPage({
         coworkAllowed={cowork.data.allowed}
         quota={quota.data.usage ?? null}
         beginsInterview={beginsInterview}
-        basisJobId={brew.latestJob?.jobId ?? null}
+        basisJobId={basisJobId}
       />
     </BrewFrame>
   );

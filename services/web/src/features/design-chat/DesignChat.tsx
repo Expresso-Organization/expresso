@@ -1,11 +1,13 @@
 "use client";
 
+import { useAppOrigin } from "@/lib/app-origin";
 import { createContext, useActionState, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type PropsWithChildren } from "react";
 import { flushSync } from "react-dom";
+import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
 import { AssistantRuntimeProvider, useAuiState, useExternalStoreRuntime, type ThreadMessageLike, type ToolCallMessagePartComponent } from "@assistant-ui/react";
 import { snippetEditingCss, snippetRevisedCss } from "@expresso/portfolio-renderer/blueprint";
-import { DESIGN_LAYOUT_GRID, pageDocument, pagePreviewDocument, type DesignCard, type DesignLayout, type DesignLayoutSpec, type DesignScreenItem, type DesignSnippet, type DesignStyle, type DesignTokens } from "@expresso/contracts";
+import { DESIGN_LAYOUT_GRID, PAGE_EFFECT_CATALOG, pageDocument, pagePreviewDocument, type DesignCard, type DesignGraphic, type DesignLayout, type DesignLayoutSpec, type DesignScreenItem, type DesignSnippet, type DesignStyle, type DesignTokens } from "@expresso/contracts";
 
 import { startGenerationAction, type BrewState } from "@/app/(app)/brew/[brewId]/design/design-actions";
 import { DesignThumb, type DesignCatalogEntry } from "@/app/(app)/brew/[brewId]/design/DesignCatalog";
@@ -17,6 +19,10 @@ import { Icon } from "@/components/ui/Icon";
 import chatStyles from "@/features/agent-chat/AgentChat.module.css";
 import { AgentConsentDialog } from "@/features/agent-chat/AgentConsentDialog";
 import "@/styles/agent-chat-framework.css";
+import blueprintShot from "./effects/blueprint.jpg";
+import dotsShot from "./effects/dots.jpg";
+import fogShot from "./effects/fog.jpg";
+import netShot from "./effects/net.jpg";
 
 import styles from "./DesignChat.module.css";
 import { threadOf, workingLabel, type ThreadCard } from "./thread";
@@ -37,9 +43,18 @@ export interface CatalogItem { revisionId: string; code: string; name: string; r
 export interface DesignChatNotice { tone: "info" | "error"; text: string }
 
 type Layout = "stream" | "stage";
-interface Picked { style: string | null; layout: string | null }
+interface Picked { style: string | null; layout: string | null; graphic: DesignGraphic }
 /** 다음 말에 붙는 대상 — 카탈로그에서 고른 디자인. 그 디자인을 스타일로 삼아 그린다. */
 type Subject = { kind: "catalog"; item: CatalogItem };
+
+/** 그래픽 카탈로그의 축소 화면. 효과 라이브러리의 효과마다 하나다 — 카탈로그에 효과가 늘면 여기에 화면을 더한다. */
+const EFFECT_SHOTS: Record<string, StaticImageData> = { net: netShot, dots: dotsShot, fog: fogShot, blueprint: blueprintShot };
+/** 첫 화면 그래픽 카탈로그. 기본은 이 사람의 기록 · 공고 · 내용에서 canvas로 그리는 그림이고, 효과는 사용자가 골랐을 때만 들어간다. */
+const GRAPHICS = [
+  { value: "canvas", title: "기록에서 그림", look: "이 사람의 일에서 나온 형태를 그린다" },
+  ...PAGE_EFFECT_CATALOG.filter((effect) => EFFECT_SHOTS[effect.name]).map((effect) => ({ value: effect.name, title: effect.title, look: effect.look })),
+];
+const graphicTitle = (value: DesignGraphic) => GRAPHICS.find((item) => item.value === value)?.title ?? GRAPHICS[0]!.title;
 
 const ORIGIN_LABEL: Record<DesignSnippet["origin"], string> = { agent: "제안", user: "말씀하신 스타일", catalog: "카탈로그", edit: "고친 것" };
 const FONT_LABEL = { sans: "고딕", serif: "명조", mono: "고정폭" } as const;
@@ -78,9 +93,16 @@ interface View {
   effect(snippetId: string): FrameEffect | null;
   styleOf(id: string | null): DesignStyle | undefined;
   layoutOf(id: string | null): DesignLayout | undefined;
-  /** 견본에서 고른 스타일과 레이아웃. 따로 고르고, 둘이 모이면 첫 화면을 그릴 수 있다. */
+  /** 견본에서 고른 스타일 · 레이아웃과 그래픽. 그래픽은 처음부터 「기록에서 그림」이라, 스타일 · 레이아웃이 모이면 첫 화면을 그릴 수 있다. */
   picked: Picked;
   pick(kind: keyof Picked, id: string): void;
+  /** 견본에서 고른 짝으로 첫 화면을 그린다. 디자인 화면은 디자인 대화에, 에이전트 대화의 카드는 그 대화의 경로에 보낸다. */
+  draw(styleId: string, layoutId: string, graphic: DesignGraphic): void;
+  /**
+   * 고른 첫 화면으로 만든다. 주면 「이 스타일로 만들기」가 화면을 넘기지 않고 이 함수를 부른다(에이전트 대화 — 대화에 「생성」 카드가 붙는다).
+   * 실패하면 보일 문장을, 맡겼으면 null을 돌려준다. 주지 않으면 지금처럼 생성을 맡기고 생성 화면으로 간다.
+   */
+  make?: (() => Promise<string | null>) | undefined;
   /** 가장 나중에 뜬 견본 카드. 고른 짝과 「첫 화면 보기」는 이 카드 아래에만 둔다. */
   lastProposals: string | null;
   /** 답을 만드는 중이거나 요청을 보내는 중이다. 그동안 카드는 눌리지 않는다. */
@@ -95,17 +117,25 @@ interface View {
   setSubject(subject: Subject | null): void;
   openCatalog(): void;
 }
-const ViewContext = createContext<View | null>(null);
+export type { View as DesignView };
+export const DesignViewContext = createContext<View | null>(null);
+const ViewContext = DesignViewContext;
 const useView = () => useContext(ViewContext)!;
 
-export function DesignChat({ brewId, recipeId, catalog, generationAllowed, notice }: {
+/**
+ * 디자인 대화를 보는 화면의 상태 — 고른 견본, 무대에 올린 첫 화면, 고치는 중인 자리의 표시. 디자인 화면(`DesignChat`)과
+ * 에이전트 대화의 「디자인」 카드가 함께 쓴다. 넓게 보기의 전환(화면 전환 효과)은 쓰는 쪽이 `expand` · `collapse`를 덮어 정한다.
+ */
+export function useDesignView({ brewId, recipeId, generationAllowed, catalog, state, draw, make, askConsent = null }: {
   brewId: string;
   recipeId: string | null;
-  catalog: CatalogItem[];
   generationAllowed: boolean;
-  notice: DesignChatNotice | null;
+  catalog: CatalogItem[];
+  state: DesignChatState;
+  draw(styleId: string, layoutId: string, graphic: DesignGraphic): void;
+  make?: (() => Promise<string | null>) | undefined;
+  askConsent?: (() => void) | null;
 }) {
-  const state = useDesignChat(brewId);
   const { chat } = state;
   const thread = useMemo(() => threadOf(chat), [chat]);
   const [layout, setLayout] = useState<Layout>("stream");
@@ -116,15 +146,15 @@ export function DesignChat({ brewId, recipeId, catalog, generationAllowed, notic
   // 마지막으로 그릴 때 고른 스타일과 레이아웃은 대화에 남아 있다. 스타일만 새로 받은 뒤에도, 화면을 새로 고친 뒤에도
   // 앞서 고른 레이아웃이 이어져 한쪽만 다시 고르면 된다.
   const drawn = chat?.messages.findLast((message) => message.role === "user" && message.action !== "say");
-  const carried = (kind: keyof Picked) => (drawn?.role === "user" ? drawn.subjects.find((subject) => subject.kind === kind)?.id ?? null : null);
+  const carried = (kind: "style" | "layout") => (drawn?.role === "user" ? drawn.subjects.find((subject) => subject.kind === kind)?.id ?? null : null);
+  // 그래픽은 마지막으로 그린 장에 남아 있다. 없으면 기본(기록에서 그림)이다.
+  const lastGraphic = chat?.messages.flatMap((message) => (message.role === "assistant" && message.card?.kind === "screens" ? message.card.items : [])).findLast((item) => item.graphic)?.graphic ?? null;
   const picked: Picked = {
     style: touched.style !== undefined ? touched.style : carried("style"),
     layout: touched.layout !== undefined ? touched.layout : carried("layout"),
+    graphic: (touched.graphic !== undefined ? touched.graphic : lastGraphic) ?? "canvas",
   };
   const [sheet, setSheet] = useState(false);
-  /** 동의 안내를 닫았는가. 닫아도 동의는 여전히 필요하므로 입력창 위에 다시 여는 자리를 둔다. */
-  const [consentClosed, setConsentClosed] = useState(false);
-  const screen = useRef<HTMLDivElement>(null);
   /** 마지막으로 누른 카드 묶음. 배치가 바뀌면 대화 폭이 달라져 글이 다시 흐르므로, 바뀐 뒤 이 묶음을 다시 보이게 한다. */
   const anchor = useRef<HTMLElement | null>(null);
   const busy = state.running || state.pending;
@@ -136,6 +166,69 @@ export function DesignChat({ brewId, recipeId, catalog, generationAllowed, notic
     if (newest && seen.current !== null && seen.current !== newest && layout === "stage") setFocus(newest);
     seen.current = newest;
   }, [newest, layout]);
+
+  const proposals = (chat?.messages ?? []).flatMap((message) => (message.role === "assistant" && message.card?.kind === "proposals" ? [{ id: message.id, card: message.card }] : []));
+  const revisions = (chat?.messages ?? []).flatMap((message) => (message.role === "assistant" && message.card?.kind === "revision" ? [message.card] : []));
+  // 이 화면에서 고치는 중인 것을 본 카드. 그 결과가 오면 바뀐 자리를 강조한다. 다시 연 대화의 지난 고침에는 하지 않는다.
+  const [watched, setWatched] = useState<string[]>([]);
+  const unseen = revisions.filter((card) => card.item.status === "drawing" && !watched.includes(card.item.id)).map((card) => card.item.id);
+  if (unseen.length > 0) setWatched([...watched, ...unseen]);
+  const view: View = {
+    brewId, recipeId, generationAllowed, catalog, state, askConsent, draw, make,
+    cards: thread.cards,
+    users: thread.users,
+    snippet: (id) => chat?.snippets.find((item) => item.id === id),
+    effect: (snippetId) => {
+      const editing = revisions.find((card) => card.fromSnippetId === snippetId && card.item.status === "drawing" && card.targets.length > 0);
+      if (editing) return { kind: "editing", targets: editing.targets };
+      const revised = revisions.find((card) => card.item.snippetId === snippetId && card.targets.length > 0 && watched.includes(card.item.id));
+      return revised ? { kind: "revised", targets: revised.targets } : null;
+    },
+    styleOf: (id) => proposals.flatMap(({ card }) => card.styles).find((item) => item.id === id),
+    layoutOf: (id) => proposals.flatMap(({ card }) => card.layouts).find((item) => item.id === id),
+    picked,
+    // 같은 것을 다시 누르면 고른 것을 푼다.
+    // 스타일 · 레이아웃은 다시 누르면 풀린다. 그래픽은 늘 하나가 골라져 있어 누른 것으로 바뀐다.
+    pick: (kind, id) => setTouched((current) => ({ ...current, [kind]: kind === "graphic" ? id : picked[kind] === id ? null : id })),
+    lastProposals: proposals.at(-1)?.id ?? null,
+    busy,
+    layout,
+    focus,
+    show: (snippetId, from) => {
+      if (from) anchor.current = from.closest<HTMLElement>("[data-cards]");
+      setFocus(snippetId);
+    },
+    expand: (snippetId, from) => {
+      anchor.current = from.closest<HTMLElement>("[data-cards]");
+      setFocus(snippetId);
+      setLayout("stage");
+    },
+    collapse: () => setLayout("stream"),
+    subject,
+    setSubject,
+    openCatalog: () => setSheet(true),
+  };
+  return { view, thread, sheet, setSheet, setLayout, setFocus, anchor };
+}
+
+export function DesignChat({ brewId, recipeId, catalog, generationAllowed, notice }: {
+  brewId: string;
+  recipeId: string | null;
+  catalog: CatalogItem[];
+  generationAllowed: boolean;
+  notice: DesignChatNotice | null;
+}) {
+  const state = useDesignChat(brewId);
+  const { chat } = state;
+  /** 동의 안내를 닫았는가. 닫아도 동의는 여전히 필요하므로 입력창 위에 다시 여는 자리를 둔다. */
+  const [consentClosed, setConsentClosed] = useState(false);
+  const { view: base, thread, sheet, setSheet, setLayout, setFocus, anchor } = useDesignView({
+    brewId, recipeId, generationAllowed, catalog, state,
+    draw: (styleId, layoutId, graphic) => void state.send({ action: "draw", styleId, layoutId, graphic }),
+    askConsent: state.consentRequired && consentClosed ? () => setConsentClosed(false) : null,
+  });
+  const { layout, focus, subject, setSubject } = base;
+  const screen = useRef<HTMLDivElement>(null);
 
   // 답이 붙거나 첫 화면이 놓이면 대화가 길어진다. 사람이 맨 아래를 보고 있었으면 새로 온 것이 보이게 끝까지 내린다.
   // 위로 올라가 앞의 카드를 보고 있었으면 그대로 둔다.
@@ -208,45 +301,13 @@ export function DesignChat({ brewId, recipeId, catalog, generationAllowed, notic
     return () => window.removeEventListener("keydown", onKey);
   });
 
-  const proposals = (chat?.messages ?? []).flatMap((message) => (message.role === "assistant" && message.card?.kind === "proposals" ? [{ id: message.id, card: message.card }] : []));
-  const revisions = (chat?.messages ?? []).flatMap((message) => (message.role === "assistant" && message.card?.kind === "revision" ? [message.card] : []));
-  // 이 화면에서 고치는 중인 것을 본 카드. 그 결과가 오면 바뀐 자리를 강조한다. 다시 연 대화의 지난 고침에는 하지 않는다.
-  const [watched, setWatched] = useState<string[]>([]);
-  const unseen = revisions.filter((card) => card.item.status === "drawing" && !watched.includes(card.item.id)).map((card) => card.item.id);
-  if (unseen.length > 0) setWatched([...watched, ...unseen]);
   const view: View = {
-    brewId, recipeId, generationAllowed, catalog, state,
-    askConsent: state.consentRequired && consentClosed ? () => setConsentClosed(false) : null,
-    cards: thread.cards,
-    users: thread.users,
-    snippet: (id) => chat?.snippets.find((item) => item.id === id),
-    effect: (snippetId) => {
-      const editing = revisions.find((card) => card.fromSnippetId === snippetId && card.item.status === "drawing" && card.targets.length > 0);
-      if (editing) return { kind: "editing", targets: editing.targets };
-      const revised = revisions.find((card) => card.item.snippetId === snippetId && card.targets.length > 0 && watched.includes(card.item.id));
-      return revised ? { kind: "revised", targets: revised.targets } : null;
-    },
-    styleOf: (id) => proposals.flatMap(({ card }) => card.styles).find((item) => item.id === id),
-    layoutOf: (id) => proposals.flatMap(({ card }) => card.layouts).find((item) => item.id === id),
-    picked,
-    // 같은 것을 다시 누르면 고른 것을 푼다.
-    pick: (kind, id) => setTouched((current) => ({ ...current, [kind]: picked[kind] === id ? null : id })),
-    lastProposals: proposals.at(-1)?.id ?? null,
-    busy,
-    layout,
-    focus,
-    show: (snippetId, from) => {
-      if (from) anchor.current = from.closest<HTMLElement>("[data-cards]");
-      setFocus(snippetId);
-    },
+    ...base,
     expand: (snippetId, from) => {
       anchor.current = from.closest<HTMLElement>("[data-cards]");
       relayout("stage", { before: () => setFocus(snippetId), from: from.querySelector<HTMLElement>("[data-frame]") });
     },
     collapse,
-    subject,
-    setSubject,
-    openCatalog: () => setSheet(true),
   };
 
   return (
@@ -303,7 +364,7 @@ const CardTool: ToolCallMessagePartComponent = ({ toolCallId }) => {
 };
 
 /** 만들지 못한 답. 무엇이 안 됐는지와 다시 시도하는 자리를 둔다. */
-function Failure({ text, retryable }: { text: string; retryable: boolean }) {
+export function Failure({ text, retryable }: { text: string; retryable: boolean }) {
   const { state, busy, brewId } = useView();
   return (
     <p className={styles.notice} data-tone="error" role="alert">
@@ -345,13 +406,22 @@ function Swatch({ name, tokens }: { name: string; tokens: DesignTokens }) {
   );
 }
 
+/** 「기록에서 그림」의 얼굴. 고른 스타일의 바탕에 그 강조색으로 그어 본 몇 줄 — 그림은 그 사람의 기록에서 정해지므로 모양을 미리 보이지 않는다. */
+function CanvasFace({ tokens }: { tokens: DesignTokens | undefined }) {
+  return (
+    <span className={styles.canvasFace} style={tokens ? { background: tokens.background, color: tokens.accent } : undefined} aria-hidden="true">
+      <Icon name="pencil-simple-line" size={22} />
+    </span>
+  );
+}
+
 /**
  * 견본 묶음. 스타일과 레이아웃을 다른 줄에 따로 놓는다 — 사용자는 각각에서 하나씩 고른다.
  * 스타일을 고르면 레이아웃의 배치도가 그 색으로 바뀌어, 고른 짝이 어떤 모습일지를 그리기 전에 보인다.
  * 둘을 고르면 「첫 화면 보기」가 그 짝을 대화에 보내고 에이전트가 첫 화면을 그린다.
  */
-function Proposals({ styles: styleItems, layouts, footer }: { styles: DesignStyle[]; layouts: DesignLayout[]; footer: boolean }) {
-  const { state, busy, picked, pick, styleOf, layoutOf } = useView();
+export function Proposals({ styles: styleItems, layouts, footer }: { styles: DesignStyle[]; layouts: DesignLayout[]; footer: boolean }) {
+  const { busy, picked, pick, styleOf, layoutOf, draw } = useView();
   const chosen = { style: styleOf(picked.style), layout: layoutOf(picked.layout) };
   return (
     <div className={styles.proposals}>
@@ -391,6 +461,27 @@ function Proposals({ styles: styleItems, layouts, footer }: { styles: DesignStyl
           </ul>
         </section>
       ) : null}
+      {/* 그래픽은 그리기 전에 고르는 것이라 「첫 화면 보기」가 있는 카드에만 놓는다. */}
+      {footer ? (
+        <section className={styles.proposalRow} aria-label="그래픽">
+          <h4>그래픽</h4>
+          <ul className={styles.specimenRow} data-kind="graphic">
+            {GRAPHICS.map((item) => (
+              <li key={item.value}>
+                <button type="button" className={styles.specimen} aria-pressed={picked.graphic === item.value} aria-label={`그래픽 ${item.title}`} title={item.look} onClick={() => pick("graphic", item.value)}>
+                  <span className={styles.swatch} data-kind="graphic">
+                    {EFFECT_SHOTS[item.value]
+                      ? <Image src={EFFECT_SHOTS[item.value]!} alt="" width={480} height={300} sizes="160px" className={styles.graphicShot} />
+                      : <CanvasFace tokens={chosen.style?.tokens} />}
+                    <span className={styles.specimenCue} aria-hidden="true"><Icon name="check" weight="bold" size={13} /></span>
+                  </span>
+                  <span className={styles.specimenWords}><strong>{item.title}</strong></span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
       {footer ? (
         <div className={styles.combo}>
           <span className={styles.comboPick} data-empty={chosen.style ? undefined : ""}>
@@ -400,12 +491,14 @@ function Proposals({ styles: styleItems, layouts, footer }: { styles: DesignStyl
           <span className={styles.comboPick} data-empty={chosen.layout ? undefined : ""}>
             {chosen.layout ? <><span className={styles.comboWire}><Wireframe blocks={chosen.layout.blocks} tokens={chosen.style?.tokens} /></span>{chosen.layout.name}</> : "레이아웃"}
           </span>
+          <Icon name="plus" size={12} />
+          <span className={styles.comboPick}>{graphicTitle(picked.graphic)}</span>
           <button
             type="button"
             className={styles.reply}
             data-tone="primary"
             disabled={busy || !chosen.style || !chosen.layout}
-            onClick={() => { if (chosen.style && chosen.layout) void state.send({ action: "draw", styleId: chosen.style.id, layoutId: chosen.layout.id }); }}
+            onClick={() => { if (chosen.style && chosen.layout) draw(chosen.style.id, chosen.layout.id, picked.graphic); }}
           >
             <Icon name="browsers" size={14} />첫 화면 보기
           </button>
@@ -436,20 +529,24 @@ interface FrameLayer { id: number; doc: string; marked: boolean }
 
 /**
  * 첫 화면. 서버가 소독해 저장한 마크업과 CSS를 배포 문서와 같은 `pageDocument()`로 그린다.
- * `sandbox`를 비워 두어 이 안에서는 스크립트가 돌지 않고 앱의 쿠키 · 저장소에도 닿지 못한다.
+ * 그림 스크립트가 있으면 배포 지면과 같은 틀(`allow-scripts`만, `allow-same-origin` 없음)과 정책으로 돌린다 — 고르는 화면에서
+ * 그림이 보여야 고를 수 있다(2026-11-20 사용자가 스크립트 제약을 풀기로 함). 문서는 익명 출처에서 돌아 앱의 쿠키 · 저장소 · 부모 문서에
+ * 닿지 못하고, 정책이 바깥 요청을 막는다(`page-script.ts`). 스크립트가 없으면 지금처럼 `sandbox`를 비운다.
  *
  * 표시(`effect`)는 문서에 CSS를 더해 얹는다 — 막힌 틀에는 바깥에서 닿을 길이 없다. 문서가 바뀌면 틀이 다시 그려지므로,
  * 표시가 걸리거나 풀릴 때는 다음 문서를 아래에 깔고 다 뜬 뒤에 위의 것을 걷어 낸다. 표시가 없는 문서끼리는 바로 바꾼다.
  */
 function Frame({ snippet, title, effect = null }: { snippet: DesignSnippet; title: string; effect?: FrameEffect | null }) {
   const { ref, scale } = useFrameScale();
+  const origin = useAppOrigin();
   const kind = effect?.kind ?? null;
   const targets = effect?.targets.join("\n") ?? "";
   const srcDoc = useMemo(() => {
     const list = targets ? targets.split("\n") : [];
     const extra = kind === "editing" ? snippetEditingCss(list, snippet.tokens) : kind === "revised" ? snippetRevisedCss(list, snippet.tokens, REVISED_SECONDS) : "";
-    return pageDocument({ html: snippet.html, css: extra ? `${snippet.css}\n${extra}` : snippet.css, title });
-  }, [snippet.html, snippet.css, snippet.tokens, title, kind, targets]);
+    return pageDocument({ html: snippet.html, css: extra ? `${snippet.css}\n${extra}` : snippet.css, title, ...(snippet.script ? { script: snippet.script, run: { origin } } : {}) });
+  }, [snippet.html, snippet.css, snippet.script, snippet.tokens, title, kind, targets, origin]);
+  const sandbox = snippet.script ? "allow-scripts" : "";
   const marked = kind !== null;
   const [layers, setLayers] = useState<{ shown: FrameLayer; next: FrameLayer | null; leaving: boolean }>(() => ({ shown: { id: 0, doc: srcDoc, marked }, next: null, leaving: false }));
   const newest = layers.next ?? layers.shown;
@@ -465,13 +562,13 @@ function Frame({ snippet, title, effect = null }: { snippet: DesignSnippet; titl
     <div ref={ref} className={styles.frame} data-frame="" style={{ background: snippet.tokens.background }}>
       {scale > 0 && next ? (
         <iframe
-          key={next.id} title={title} srcDoc={next.doc} sandbox="" tabIndex={-1} style={frame}
+          key={next.id} title={title} srcDoc={next.doc} sandbox={sandbox} tabIndex={-1} style={frame}
           onLoad={() => setLayers((current) => (current.next?.id === next.id ? { ...current, leaving: true } : current))}
         />
       ) : null}
       {scale > 0 ? (
         <iframe
-          key={shown.id} title={title} srcDoc={shown.doc} sandbox="" tabIndex={-1} style={frame} data-leaving={leaving ? "" : undefined} aria-hidden={leaving || undefined}
+          key={shown.id} title={title} srcDoc={shown.doc} sandbox={sandbox} tabIndex={-1} style={frame} data-leaving={leaving ? "" : undefined} aria-hidden={leaving || undefined}
           onTransitionEnd={() => setLayers((current) => (current.leaving && current.next && current.shown.id === shown.id ? { shown: current.next, next: null, leaving: false } : current))}
         />
       ) : null}
@@ -573,7 +670,7 @@ function RetryRow() {
   return <div className={styles.replies}><button type="button" className={styles.reply} disabled={busy} onClick={() => void state.retry()}><Icon name="arrow-clockwise" size={13} />그리지 못한 장 다시 그리기</button></div>;
 }
 
-function Screens({ items, retryable }: { items: DesignScreenItem[]; retryable: boolean }) {
+export function Screens({ items, retryable }: { items: DesignScreenItem[]; retryable: boolean }) {
   const { snippet, layout } = useView();
   const done = items.flatMap((item) => { const found = snippet(item.snippetId); return found ? [found] : []; });
   const { local, active, open } = useShown(done);
@@ -598,7 +695,7 @@ function Screens({ items, retryable }: { items: DesignScreenItem[]; retryable: b
  * 말로 고친 결과. 무엇이 바뀌었는지를 값으로 보이고, 이전 것과 고친 것을 나란히 둔다.
  * 고치는 동안에는 큰 첫 화면에서 바뀌는 자리가 청사진으로 돌아가고, 고친 것이 오면 그 자리에서 고친 첫 화면으로 넘어간다.
  */
-function Revision({ card, retryable }: { card: Extract<DesignCard, { kind: "revision" }>; retryable: boolean }) {
+export function Revision({ card, retryable }: { card: Extract<DesignCard, { kind: "revision" }>; retryable: boolean }) {
   const { snippet, layout, effect } = useView();
   const before = snippet(card.fromSnippetId);
   const after = snippet(card.item.snippetId);
@@ -683,11 +780,22 @@ function UserAttachment() {
 }
 
 /** 고른 첫 화면으로 지면을 만든다. 생성을 맡기면 이 화면은 생성 중 화면으로 바뀐다. */
-function MakeButton() {
-  const { brewId, recipeId, generationAllowed, state } = useView();
+export function MakeButton() {
+  const { brewId, recipeId, generationAllowed, state, make } = useView();
   const [result, start, submitting] = useActionState<BrewState, FormData>(startGenerationAction, { error: null });
+  const [making, setMaking] = useState(false);
+  const [issue, setIssue] = useState<string | null>(null);
   const selected = state.chat?.selectedSnippetId;
   if (!selected) return null;
+  if (make) {
+    const run = async () => { setMaking(true); setIssue(null); setIssue(await make()); setMaking(false); };
+    return (
+      <span className={styles.makeForm}>
+        {issue ? <span className={styles.makeIssue} role="alert">{issue}</span> : !generationAllowed ? <span className={styles.makeIssue}>이번 달 AI 크레딧을 모두 썼습니다.</span> : null}
+        <Button type="button" className={styles.make} disabled={making || state.running || !generationAllowed} onClick={() => void run()}><Icon name="magic-wand" size={14} />{making ? "맡기는 중" : "이 스타일로 만들기"}</Button>
+      </span>
+    );
+  }
   return (
     <form action={start} className={styles.makeForm}>
       <input type="hidden" name="brewId" value={brewId} />
@@ -759,7 +867,7 @@ function ComposerBar({ notice }: { notice: DesignChatNotice | null }) {
 }
 
 /** 무대 배치의 왼쪽. 대화에서 넓힌 첫 화면을 크게 본다. */
-function Stage() {
+export function Stage() {
   const { focus, snippet, collapse, state, effect } = useView();
   const shown = snippet(focus);
   const close = useRef<HTMLButtonElement>(null);

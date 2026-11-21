@@ -25,7 +25,8 @@ export class PublishingService {
     const page = await db.generatedPages.find({ userId, portfolioId, qualityStatus: "ready" }, options).sort({ revision: -1 }).limit(1).next();
     if (!page) throw new PublishingError(409, "ready generated page is required for publication");
     const grammar = PageStyleGrammarSchema.safeParse(page.styleSpecSnapshot).success ? PageStyleGrammarSchema.parse(page.styleSpecSnapshot) : undefined;
-    const document = pageDocument({ html: page.html, css: page.css, title: portfolio.title, description: page.rationale, ...(grammar ? { grammar } : {}) });
+    // 그림 스크립트가 있으면 스크립트와 그 정책을 함께 싣는다. 그림을 내보내는 출처와 추적 스크립트 해시는 보여 줄 때 웹이 정책에 더한다(`withSiteTracker`).
+    const document = pageDocument({ html: page.html, css: page.css, title: portfolio.title, description: page.rationale, ...(grammar ? { grammar } : {}), ...(page.script ? { script: page.script, run: { origin: "" } } : {}) });
     return { portfolioId, title: portfolio.title, templateId: portfolio.templateId, sections: sections.map((section) => ({ id: section._id, order: section.orderNo, visible: section.visible, blocks: blocks.filter(({ portfolioSectionId: id }) => id === section._id).map((block) => ({ id: block._id, kind: block.kind, content: block.content, style: block.style, locked: block.locked })) })), generatedPage: GeneratedPageDeploymentSnapshotSchema.parse({ id: page._id, revision: page.revision, document }), outline: pageOutline(document, portfolioId) };
   }
 

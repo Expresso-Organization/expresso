@@ -62,7 +62,7 @@ export interface PageRefiner {
 function toPage(row: GeneratedPageDoc): GeneratedPage {
   return GeneratedPageSchema.parse({
     id: row._id, portfolioId: row.portfolioId, generationJobId: row.generationJobId ?? null,
-    html: row.html, css: row.css, rationale: row.rationale, promptVersion: row.promptVersion,
+    html: row.html, css: row.css, ...(row.script ? { script: row.script } : {}), rationale: row.rationale, promptVersion: row.promptVersion,
     revision: row.revision, qualityStatus: row.qualityStatus, qaReport: row.qaReport,
     generationManifest: Object.keys(row.generationManifest).length > 0 ? row.generationManifest : null,
     styleSpec: row.styleSpecSnapshot ?? null, createdAt: row.createdAt.toISOString(),
@@ -121,7 +121,7 @@ export class PageService {
     return pageDocument({ html: row.html, css: row.css, title: portfolio?.title ?? "포트폴리오", description: row.rationale, ...(isPageStyleGrammar(row.styleSpecSnapshot) ? { grammar: row.styleSpecSnapshot } : {}) });
   }
 
-  async #context(userId: string, portfolioId: string, instruction: string | undefined, previous: { html: string; css: string } | undefined): Promise<PageGenerationContext> {
+  async #context(userId: string, portfolioId: string, instruction: string | undefined, previous: { html: string; css: string; script?: string | undefined } | undefined): Promise<PageGenerationContext> {
     const db = mongoCollections(this.context.db);
     const portfolio = await db.portfolios.findOne({ _id: portfolioId, userId });
     if (!portfolio) throw new PageServiceError(404, "portfolio not found");
@@ -167,7 +167,7 @@ export class PageService {
       evidence: sources.evidence,
       media, jobTitle: sources.jobTitle,
       company: sources.company,
-      ...(snippet ? { seed: { name: snippet.name, words: snippet.note || snippet.words, tokens: snippet.tokens, html: snippet.html, css: snippet.css } } : {}),
+      ...(snippet ? { seed: { name: snippet.name, words: snippet.note || snippet.words, tokens: snippet.tokens, html: snippet.html, css: snippet.css, script: snippet.script } } : {}),
       instruction, previous, useKit: !preset, modelTier: "sonnet",
     };
   }
@@ -176,7 +176,7 @@ export class PageService {
     if (!await this.owns(userId, portfolioId)) throw new PageServiceError(404, "portfolio not found");
     if (options.generationJobId) { const existing = await this.forGenerationJob(userId, options.generationJobId); if (existing) return existing; }
     const current = await this.latest(userId, portfolioId);
-    const context = await this.#context(userId, portfolioId, options.instruction, current ? { html: current.html, css: current.css } : undefined);
+    const context = await this.#context(userId, portfolioId, options.instruction, current ? { html: current.html, css: current.css, script: current.script } : undefined);
     if (context.previous && current?.generationManifest?.structured) {
       context.previous.structured = current.generationManifest.structured;
       context.structuredContent = current.generationManifest.structured.content;
@@ -214,6 +214,8 @@ export class PageService {
       const created: GeneratedPageDoc = {
         _id: randomUUID(), userId, portfolioId, generationJobId: options.generationJobId ?? null,
         html: result.html, css: result.css, rationale: result.rationale, revision: (last?.revision ?? -1) + 1,
+        // 지시로 고친 지면이 스크립트를 내지 않았으면 직전 판의 그림을 잇는다. 고치라는 말에 그림이 사라지면 안 된다.
+        ...((result.script ?? (options.instruction ? context.previous?.script : undefined)) ? { script: (result.script ?? context.previous?.script)! } : {}),
         instruction: options.instruction ?? null, promptVersion: PAGE_PROMPT_VERSION,
         ungroundedNumbers: result.ungrounded, removed: result.removed, qualityStatus: result.qaReport.status,
         qaReport: result.qaReport as unknown as JsonObject, generationManifest: result.manifest as unknown as JsonObject,

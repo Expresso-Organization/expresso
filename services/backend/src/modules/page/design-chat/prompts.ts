@@ -14,8 +14,7 @@ import {
   type DesignLayoutBlock,
   type DesignLayoutSpec,
   type DesignSnippet,
-  type DesignTokens,
-} from "@expresso/contracts";
+  type DesignTokens, type DesignGraphic, PAGE_EFFECT_CATALOG, pageEffectPrompt } from "@expresso/contracts";
 
 import type { AiCallSpec, AiViolation } from "../../../platform/ai/client.js";
 import { PageSanitizeError, sanitizeCss } from "../../../platform/html/sanitize.js";
@@ -38,12 +37,12 @@ import { markupProblem, promptOpening, promptSources, ungroundedEmails, type Pag
  * 제안(스타일과 레이아웃을 따로), 디자인(`../design-rules.ts`), 사실. 문구를 고칠 때는 그 목록의 뜻을 지킨다.
  */
 const TIER = { modelTier: "sonnet" } as const;
-/** 프롬프트 판. 문구를 바꾸면 올린다. 2: Do와 Do not, 스타일과 레이아웃을 따로 제안(2026-11-19). */
-export const DESIGN_CHAT_PROMPT_VERSION = 2;
+/** 프롬프트 판. 문구를 바꾸면 올린다. 2: Do와 Do not, 스타일과 레이아웃을 따로 제안(2026-11-19). 4: 추상 그래픽과 그림 스크립트(2026-11-20). 5: 형태 · 흐름 · 밀도, 수치는 한 줄(같은 날). 6: 3D 형태 · 재질 · 빛 짝(같은 날). 7: MotionWeb 엔진(같은 날). 8: 사용자가 고른 그래픽 차원(같은 날). 9: 첫 화면에 수치 없음(같은 날). 10: 효과 라이브러리(2026-11-21). 11: 3D 오브젝트 없음 — 방울 · 지구본 · 엔진 제거(같은 날). 12: 형태의 계열은 스타일 · 그림 자리에서, 기록은 값만(같은 날). 13: 모티프는 그 사람의 일에서, 효과는 사용자가 카탈로그에서 고른 것만(같은 날). 14: 첫 화면 글 묶음의 등장 · 누를 것의 반응(같은 날). */
+export const DESIGN_CHAT_PROMPT_VERSION = 14;
 
 const FONT_NAME = { sans: "고딕", serif: "명조", mono: "고정폭" } as const;
 const DENSITY_NAME = { compact: "빽빽하게", comfortable: "읽기 편하게", spacious: "넓게" } as const;
-const BLOCK_NAME: Record<DesignLayoutBlock["kind"], string> = { title: "이름이나 큰 글자", text: "글", figure: "이 사람의 일로 그리는 그림", accent: "강조 요소" };
+const BLOCK_NAME: Record<DesignLayoutBlock["kind"], string> = { title: "이름이나 큰 글자", text: "글", figure: "이 사람의 기록에서 나온 추상 그래픽", accent: "강조 요소" };
 const { columns: COLUMNS, rows: ROWS } = DESIGN_LAYOUT_GRID;
 
 /** 자료 읽기 함수의 결과를 지면 프롬프트 조각들이 받는 문맥 모양으로 옮긴다. 스타일과 그림은 싣지 않는다. */
@@ -98,7 +97,7 @@ export const DesignHeadSchema = z.strictObject({
   headline: z.string().min(1).describe("이 사람이 무엇을 하는 사람인지 한 문장"),
   intro: z.string().describe("소개 두세 문장"),
   subject: z.string().min(1).describe("이 사람이 다루는 대상 · 도구 · 산출물을 구체적인 낱말로"),
-  lead: z.array(z.string().min(1)).describe("첫 화면에 세울 만한 사실. 숫자와 단위는 출처에 적힌 글자 그대로"),
+  lead: z.array(z.string().min(1)).describe("첫 화면에 세울 만한 것. 이 사람이 만든 화면 · 구조 · 흐름 · 산출물과 그 일의 맥락. 수치는 적지 않는다 — 첫 화면에 수치를 두지 않는다"),
 });
 export type DesignHead = z.infer<typeof DesignHeadSchema>;
 
@@ -172,7 +171,7 @@ const PROPOSALS = [
   "- `styles`와 `layouts`를 서로 독립된 목록으로 냅니다.",
   "- 한 목록 안의 제안은 나란히 놓았을 때 한눈에 구분되게 합니다. 스타일은 바탕의 명도와 서체 계열이 서로 겹치지 않게, 레이아웃은 주인공과 그것이 놓인 자리가 서로 다르게 잡습니다.",
   "- 스타일은 이 사람의 일(다루는 대상 · 도구 · 산출물)과 지원하는 곳(회사의 톤 · 브랜드 색)에서 가져옵니다.",
-  "- 레이아웃은 이 사람의 자료에서 그림으로 만들 수 있는 것(화면의 모습 · 전후 비교 · 구조도 · 흐름 · 차트)을 찾아, 무엇을 주인공으로 세울지에서 출발합니다.",
+  "- 레이아웃은 첫 화면에서 추상 그래픽(이 사람의 기록 · 강조할 점에서 나온 형태)과 이름 · 글을 어떻게 놓을지에서 출발합니다. 세 레이아웃은 그래픽의 자리 · 크기와 글과의 관계(겹침 · 나란함 · 둘러쌈)가 서로 다르게 잡습니다. 그래픽은 차트가 아니라 형태 · 흐름 · 밀도로 짓는 것이라, 레이아웃의 이름 · 설명에 막대 · 축 · 수치를 적지 않습니다. 첫 화면에는 수치를 두지 않습니다.",
   "- 카드의 글은 이름(두세 낱말)과 한 줄(`words`, 서른 자 안의 명사구)까지만 씁니다. 대상은 이 사람의 자료에 나오는 이름으로 씁니다.",
   "- 바탕과 글자는 본문을 오래 읽을 수 있는 명도 차이를 두고, 강조는 바탕 위에서 한눈에 구분되게 합니다.",
   "### Do not",
@@ -205,7 +204,7 @@ const OPENING_SYSTEM = [
   DESIGNER,
   "지금은 대화의 첫 말을 씁니다. 출처 자료(커리어 기록 · 답변 · 공고 요건)와 섹션 설계를 읽고 네 가지를 냅니다.",
   "- `head`: 이 사람의 첫 화면에 실을 사실입니다.",
-  "- `say`: 사용자에게 건네는 첫 말입니다. 자료를 읽다 눈에 띈 일 하나를 말하듯 짚고, 어떤 느낌으로 보여 드릴지 묻습니다. 자료의 문장을 길게 옮기지 않고 이 사람의 낱말로 줄여 말합니다.",
+  "- `say`: 사용자에게 건네는 첫 말입니다. 자료를 읽다 눈에 띈 일 하나 — 이 사람이 만든 것이나 맡은 일 — 를 말하듯 짚고, 어떤 느낌으로 보여 드릴지 묻습니다. 수치보다 무엇을 만들었는지를 짚습니다. 자료의 문장을 길게 옮기지 않고 이 사람의 낱말로 줄여 말합니다.",
   "- `styles`: 서로 뚜렷이 다른 스타일 셋입니다.",
   "- `layouts`: 서로 뚜렷이 다른 레이아웃 셋입니다.",
   "",
@@ -428,6 +427,56 @@ export function replyCall(input: {
   };
 }
 
+// ── 견본 다시 내기 (에이전트 대화) ───────────────────────────
+
+/** 견본을 다시 낼 때 무엇을 새로 내는가. */
+export type ProposalFocus = "both" | "styles" | "layouts";
+
+const PROPOSE_SYSTEM = [
+  DESIGNER,
+  "사용자의 요청에 맞춰 견본을 다시 냅니다. 말은 쓰지 않습니다 — 사용자와의 대화는 다른 쪽이 맡고, 여기서는 카드에 띄울 견본만 냅니다.",
+  "- 요청이 색 · 서체 · 분위기 이야기면 `styles`만, 구성 이야기면 `layouts`만 채웁니다. 낼 것은 아래 「낼 것」이 정합니다.",
+  "- 앞서 보인 견본과 이름 · 색 · 자리 잡기가 겹치지 않게 냅니다. 사용자가 앞선 견본의 하나를 바탕으로 바꿔 달라고 했으면 그 견본에서 요청한 것만 바꿉니다.",
+  "",
+  PROPOSALS,
+  "",
+  FACTS,
+].join("\n");
+
+export const ProposalsSchema = z.strictObject({
+  styles: z.array(StyleDraftSchema).describe("견본으로 띄울 스타일. 낼 것이 아니면 빈 목록"),
+  layouts: z.array(LayoutDraftSchema).describe("견본으로 띄울 레이아웃. 낼 것이 아니면 빈 목록"),
+});
+export type Proposals = z.infer<typeof ProposalsSchema>;
+
+/** 에이전트 대화가 청한 견본. 대화와 요청을 읽고 견본만 낸다 — 말은 에이전트가 한다. 검사는 여는 호출의 견본 검사와 같다. */
+export function proposalsCall(input: { userId: string; sources: BrewPageSources; head: DesignHead; messages: DesignChatMessage[]; snippets: DesignSnippet[]; request: string; focus: ProposalFocus }): { spec: AiCallSpec; check(output: Proposals): AiViolation[] } {
+  const context = sourcesContext(input.userId, input.sources);
+  const wanted = { both: "서로 다른 스타일 셋과 서로 다른 레이아웃 셋", styles: "서로 다른 스타일 셋. `layouts`는 빈 목록", layouts: "서로 다른 레이아웃 셋. `styles`는 빈 목록" }[input.focus];
+  const prompt = [
+    ...promptOpening(context),
+    ...headPrompt(input.head),
+    "## 지금까지의 대화",
+    ...transcript(input.messages, input.snippets),
+    "",
+    "## 사용자의 요청",
+    input.request,
+    "",
+    "## 낼 것",
+    wanted,
+  ].join("\n");
+  return {
+    spec: { contract: "page_design", system: PROPOSE_SYSTEM, prompt, promptVersion: DESIGN_CHAT_PROMPT_VERSION, ...TIER },
+    check(output) {
+      const violations: AiViolation[] = [];
+      if (input.focus !== "layouts" && output.styles.length === 0) violations.push({ path: "/styles", problem: "스타일이 하나도 없습니다. 서로 다른 스타일 셋을 내세요." });
+      if (input.focus !== "styles" && output.layouts.length === 0) violations.push({ path: "/layouts", problem: "레이아웃이 하나도 없습니다. 서로 다른 레이아웃 셋을 내세요." });
+      violations.push(...styleLimits(output.styles, "/styles"), ...layoutLimits(output.layouts, "/layouts"));
+      return violations;
+    },
+  };
+}
+
 // ── 첫 화면 그리기 · 고치기 ────────────────────────────────
 
 /** 첫 화면 한 장면의 출력. 키 순서가 쓰는 순서다 — CSS를 마크업보다 먼저 쓴다. */
@@ -437,6 +486,7 @@ export const SnippetDraftSchema = z.strictObject({
   tokens: DesignTokensSchema.describe("쓴 바탕 · 글자 · 강조 색(#rrggbb)과 서체 계열 · 밀도"),
   css: z.string().min(1),
   html: z.string().min(1),
+  script: z.string().optional().describe("그림 스크립트(ES 모듈). 그림이 필요 없으면 비운다"),
 });
 export type SnippetDraft = z.infer<typeof SnippetDraftSchema>;
 
@@ -449,6 +499,7 @@ const SNIPPET_SYSTEM = briefedSystem(FRONTEND_DESIGN_SKILL, {
     "- `tokens` — 쓴 바탕 · 글자 · 강조 색과 서체 계열 · 밀도.",
     "- `css` — 스타일 전부를 먼저 쓴다. 뒤에 올 마크업의 클래스 이름을 여기서 정해 둔다.",
     "- `html` — 위에서 정한 클래스로 첫 화면의 마크업을 쓴다.",
+    "- `script` — 그림 스크립트. 그래픽을 canvas · three.js로 지을 때 쓴다.",
   ].join("\n"),
 });
 
@@ -480,12 +531,19 @@ const FIRST_SCREEN = [
   ...NOTE,
 ];
 
+/** 사용자가 카탈로그에서 고른 효과. 기본(`canvas`)이거나 고르지 않았으면 아무것도 적지 않는다 — 기본 지침이 canvas 2D다. */
+function graphicPrompt(graphic: DesignGraphic | null): string[] {
+  const effect = graphic && graphic !== "canvas" ? PAGE_EFFECT_CATALOG.find((item) => item.name === graphic) : undefined;
+  if (!effect) return [];
+  return [`## 사용자가 고른 그래픽 — ${effect.title}`, "첫 화면의 그래픽은 사용자가 카탈로그에서 고른 이 효과다. canvas로 따로 그리지 않는다.", pageEffectPrompt(effect.name), ""];
+}
+
 /** 고른 레이아웃을 그리는 호출이 읽을 글로 편다. 견본이 그림으로 보인 배치도와 같은 값이다. */
 function layoutPrompt(layout: DesignLayoutSpec | null): string[] {
   if (!layout)
     return [
       "## 레이아웃 — 정해지지 않았다. 구성은 네가 정한다",
-      "이 사람의 자료에서 그림으로 만들 수 있는 것을 찾아 주인공으로 세우고, 나머지를 그것을 받치는 자리에 둔다.",
+      "이 사람의 기록 · 강조할 점에서 나온 추상 그래픽을 주인공으로 세우고, 이름과 글을 그것과 한 장면으로 놓는다. 첫 화면에는 수치를 두지 않는다.",
       "",
     ];
   return [
@@ -528,7 +586,7 @@ function snippetCheck(source: string, spoken = true) {
  * 첫 화면을 그리는 호출. 스타일과 레이아웃을 따로 받는다 — 사용자가 따로 고른 것이다.
  * 원문 자료 전체를 받는다. 이 사람의 일을 그림으로 만들려면 뽑아 둔 사실 몇 줄(`head`)로는 모자란다.
  */
-export function drawCall(input: { userId: string; sources: BrewPageSources; style: StyleDraft; layout: DesignLayoutSpec | null }): { spec: AiCallSpec; check(output: SnippetDraft): AiViolation[] } {
+export function drawCall(input: { userId: string; sources: BrewPageSources; style: StyleDraft; layout: DesignLayoutSpec | null; graphic?: DesignGraphic | null }): { spec: AiCallSpec; check(output: SnippetDraft): AiViolation[] } {
   const { style } = input;
   const context = sourcesContext(input.userId, input.sources);
   const prompt = [
@@ -540,6 +598,7 @@ export function drawCall(input: { userId: string; sources: BrewPageSources; styl
     `- 밀도: ${DENSITY_NAME[style.tokens.density]}.`,
     "",
     ...layoutPrompt(input.layout),
+    ...graphicPrompt(input.graphic ?? null),
     ...promptSources(context),
     ...FIRST_SCREEN,
   ].join("\n");
@@ -561,7 +620,7 @@ export const RevisionDraftSchema = z.strictObject({
   tokens: DesignTokensSchema.describe("고친 뒤의 바탕 · 글자 · 강조 색(#rrggbb)과 서체 계열 · 밀도"),
   edits: z
     .array(z.strictObject({
-      in: z.enum(["css", "html"]).describe("어디를 고치는가"),
+      in: z.enum(["css", "html", "script"]).describe("어디를 고치는가"),
       find: z.string().min(1).describe("지금 첫 화면에 있는 글자 그대로. 공백과 줄바꿈까지 같아야 한다"),
       replace: z.string().describe("그 자리에 들어갈 글자. 지우려면 빈 글"),
     }))
@@ -570,7 +629,7 @@ export const RevisionDraftSchema = z.strictObject({
 export type RevisionDraft = z.infer<typeof RevisionDraftSchema>;
 
 const REVISION_SYSTEM = [
-  "너는 포트폴리오 첫 화면의 마크업과 CSS를 고치는 편집자다. 사용자가 채팅에서 보고 있는 첫 화면에서 지시가 가리킨 것만 고친다.",
+  "너는 포트폴리오 첫 화면의 마크업 · CSS · 그림 스크립트를 고치는 편집자다. 사용자가 채팅에서 보고 있는 첫 화면에서 지시가 가리킨 것만 고친다.",
   "",
   "## 고치는 법",
   "- 첫 화면을 다시 쓰지 않는다. 바뀌는 자리만 `edits`에 조각으로 낸다. 조각마다 지금 있는 글자(`find`)와 그 자리에 들어갈 글자(`replace`)를 적는다.",
@@ -581,7 +640,7 @@ const REVISION_SYSTEM = [
   "- 지시가 가리키지 않은 색 · 서체 · 구성 · 글 · 클래스 이름은 건드리지 않는다. 새로 넣는 것은 지금 첫 화면의 색 · 서체 · 클래스 이름 짓는 법을 잇는다.",
   "- 자료에 없는 수치, 경력, 연락처를 만들지 않는다.",
   "",
-  pagePolicyPrompt(),
+  pagePolicyPrompt({ script: true }),
   "",
   "## 내는 순서",
   "- `name` — 고친 첫 화면의 짧은 이름.",
@@ -590,8 +649,8 @@ const REVISION_SYSTEM = [
 ].join("\n");
 
 /** 조각을 순서대로 적용한다. `find`가 없는 조각은 건너뛰고 그 자리 번호를 `missing`에 남긴다. 같은 글자는 모두 바꾼다. */
-export function applyEdits(snippet: Pick<DesignSnippet, "html" | "css">, edits: RevisionDraft["edits"]): { html: string; css: string; missing: number[] } {
-  const next = { html: snippet.html, css: snippet.css };
+export function applyEdits(snippet: Pick<DesignSnippet, "html" | "css" | "script">, edits: RevisionDraft["edits"]): { html: string; css: string; script: string; missing: number[] } {
+  const next = { html: snippet.html, css: snippet.css, script: snippet.script ?? "" };
   const missing: number[] = [];
   edits.forEach((edit, index) => {
     if (!next[edit.in].includes(edit.find)) missing.push(index);
@@ -600,7 +659,7 @@ export function applyEdits(snippet: Pick<DesignSnippet, "html" | "css">, edits: 
   return { ...next, missing };
 }
 
-export function reviseCall(input: { userId: string; sources: BrewPageSources; snippet: Pick<DesignSnippet, "html" | "css" | "name" | "tokens">; instruction: string }): {
+export function reviseCall(input: { userId: string; sources: BrewPageSources; snippet: Pick<DesignSnippet, "html" | "css" | "script" | "name" | "tokens">; instruction: string }): {
   spec: AiCallSpec;
   check(output: RevisionDraft): AiViolation[];
   /** 조각을 지금 첫 화면에 적용한 결과. 그린 첫 화면과 같은 모양이다. */
@@ -616,15 +675,16 @@ export function reviseCall(input: { userId: string; sources: BrewPageSources; sn
     "```css",
     snippet.css,
     "```",
+    ...(snippet.script ? ["```js", snippet.script, "```"] : []),
     "",
     "## 지시",
     input.instruction,
   ].join("\n");
   const apply = (output: RevisionDraft): SnippetDraft => {
-    const { html, css } = applyEdits(snippet, output.edits);
+    const { html, css, script } = applyEdits(snippet, output.edits);
     // 고친 것에는 건네는 말을 받지 않는다. 고치겠다는 말은 답하는 호출이 이미 했고, 한 칸을 더 쓰게 하면 그만큼 늦어진다
     // (2026-11-19 실제 호출: 조각은 9초에 왔는데 이 말을 고쳐 받느라 5초가 더 들었다).
-    return { name: output.name, note: "", tokens: output.tokens, css, html };
+    return { name: output.name, note: "", tokens: output.tokens, css, html, ...(script.trim() ? { script } : {}) };
   };
   const whole = snippetCheck(groundSource(input.sources), false);
   return {
