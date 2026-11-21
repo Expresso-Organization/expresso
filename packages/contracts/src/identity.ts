@@ -80,6 +80,14 @@ export const EmailSchema = z.email().max(320);
  */
 export const TERMS_VERSION = 1;
 
+/** 표시 이름. 가입과 프로필 변경이 같은 규칙을 쓴다 — 앞뒤 공백을 지운 1~200자. */
+export const DisplayNameSchema = z.string().trim().min(1).max(200);
+
+/** 설정 → 프로필의 표시 이름 변경. 본인 계정의 이름만 바꾸며 다른 필드는 받지 않는다. */
+export const UpdateProfileSchema = z.strictObject({
+  displayName: DisplayNameSchema,
+});
+
 /**
  * 10b 회원가입. 소셜 로그인이 1순위지만 이메일 경로를 대안으로 둔다(화면 정의서 10).
  * 최소 길이는 NIST SP 800-63B의 8자보다 한 단계 위인 10자로 잡는다.
@@ -87,7 +95,7 @@ export const TERMS_VERSION = 1;
 export const SignupSchema = z.strictObject({
   email: EmailSchema,
   password: z.string().min(10).max(200),
-  displayName: z.string().trim().min(1).max(200),
+  displayName: DisplayNameSchema,
   persistent: SessionPersistenceSchema,
   /** 동의한 약관의 판. 없거나 다르면 400 — 동의 없는 가입은 받지 않는다. */
   termsVersion: z.literal(TERMS_VERSION),
@@ -203,6 +211,7 @@ export type PasswordConfirmationRequired = z.infer<
   typeof PasswordConfirmationRequiredSchema
 >;
 export type Signup = z.infer<typeof SignupSchema>;
+export type UpdateProfile = z.infer<typeof UpdateProfileSchema>;
 export type PasswordResetRequest = z.infer<typeof PasswordResetRequestSchema>;
 export type PasswordResetConfirm = z.infer<typeof PasswordResetConfirmSchema>;
 export type EmailVerificationConfirm = z.infer<typeof EmailVerificationConfirmSchema>;
