@@ -21,6 +21,8 @@ import {
   type CreateMediaBlock,
   AnalyticsDashboardResponseSchema,
   API_PREFIX,
+  ModelViewSchema,
+  ModelAccessSchema,
   AuthSessionResponseSchema,
   SocialAuthSessionResponseSchema,
   type GoogleSignIn,
@@ -987,6 +989,10 @@ export const recipes = {
 };
 
 export const jobs = {
+  modelStatus: (accessToken: string) => request(API_PREFIX + "/jobs/model/status", ModelAccessSchema, { accessToken, cache: "no-store" }),
+  recommendations: (accessToken: string, posting: string | undefined, external: boolean) =>
+    request(posting ? API_PREFIX + "/jobs/postings/" + encodeURIComponent(posting) + "/model-evidence" : API_PREFIX + "/jobs/model/recommendations",
+      ModelViewSchema, { accessToken, cache: "no-store", method: "POST", body: { external } }),
   /** 00b 검색 결과 · 06 공고 탐색. 점수 · 관심 · 기술 충족은 사람마다 다르다. */
   postings: (accessToken: string, query: Partial<ListJobPostingsQuery> = {}) =>
     request(`${API_PREFIX}/jobs/postings`, JobPostingListResponseSchema, {

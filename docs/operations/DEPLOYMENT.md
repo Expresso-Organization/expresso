@@ -16,6 +16,9 @@
 | API | systemd `expresso-api` | 4500 |
 | Worker | systemd `expresso-worker` | 없음 |
 | Web | systemd `expresso-web` | 3500 |
+| 선택형 추천 모델 | systemd `expresso-match-inference` | loopback 4810 |
+
+추천 모델의 비활성 파일 준비·전환·복구는 [추천모델 배포 절차](MATCH_MODEL_RELEASE.md)를 따릅니다.
 
 서버 compose는 CI와 같은 MongoDB image digest, keyfile 생성, rs0 초기화 스크립트를
 사용합니다. runtime 계정은 데이터 읽기·쓰기만 가능하고 migration 계정이
@@ -28,7 +31,11 @@ flowchart TD
     CONTRACTS --> INFRA["MongoDB rs0 · Redis 준비"]
     INFRA --> MIGRATE["migration 계정 schema 적용"]
     MIGRATE --> BUILD["API build · Web은 .next-build에 build"]
-    BUILD --> WORKER["Worker 재시작"]
+    BUILD --> MODEL{"선택한 모델 있음?"}
+    MODEL -->|없음| WORKER["Worker 재시작"]
+    MODEL -->|있음| PREPARE["체크섬 · 추론 health · 임베딩 준비"]
+    PREPARE -->|성공| WORKER
+    PREPARE -->|실패| STOP
     WORKER --> API["API 재시작"]
     API --> READY{"rs0·schema·Redis ready?"}
     READY -->|예| WEB["Web 정지 · .next 교체 · 시작"]

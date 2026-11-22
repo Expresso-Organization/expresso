@@ -1,0 +1,13 @@
+{
+  "beforePid": 2832192,
+  "afterPid": 2836176,
+  "encoded": 0,
+  "diskHits": 0,
+  "startupLoaded": 12,
+  "MainPID": "2836176",
+  "NRestarts": "1",
+  "CPUQuotaPerSecUSec": "1s",
+  "ProtectSystem": "strict",
+  "StateDirectory": "expresso-match-validation",
+  "ActiveState": "active"
+}

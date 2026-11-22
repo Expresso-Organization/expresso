@@ -1,0 +1,1040 @@
+{
+  "jobDecisionsApi": {
+    "estimatedUsdBothRuns": 0.17778670000000002,
+    "firstPass": {
+      "cachedInputTokens": 0,
+      "cachedResponses": 0,
+      "estimatedUsd": 0.17713520000000002,
+      "inputTokens": 1771352,
+      "latencyP50Ms": 444.46783399325795,
+      "latencyP95Ms": 735.3069999953732,
+      "model": "gpt-6-luna",
+      "provider": "decisions",
+      "requests": 76,
+      "retries": 0
+    },
+    "replay": {
+      "cachedInputTokens": 0,
+      "cachedResponses": 75,
+      "estimatedUsd": 0.0006515,
+      "inputTokens": 6515,
+      "latencyP50Ms": 306.31225000252016,
+      "latencyP95Ms": 306.31225000252016,
+      "model": "gpt-6-luna",
+      "provider": "decisions",
+      "requests": 1,
+      "retries": 0
+    }
+  },
+  "legacyRerank": {
+    "test": {
+      "labeledPairs": 300,
+      "mlpJudgedAll": {
+        "mae": 6.705163966814677,
+        "ndcgAt10": 0.8142256892269513,
+        "pairs": 300,
+        "pairwiseMinGap5": {
+          "accuracy": 0.616504854368932,
+          "comparisons": 824,
+          "minGap": 5.0
+        },
+        "profiles": 30,
+        "refused": 0
+      },
+      "pairedJudgedCandidates": {
+        "decisions": {
+          "mae": 13.118333333333334,
+          "ndcgAt10": 0.8999928779107523,
+          "pairs": 300,
+          "pairwiseMinGap5": {
+            "accuracy": 0.8173543689320388,
+            "comparisons": 824,
+            "minGap": 5.0
+          },
+          "profiles": 30,
+          "refused": 0
+        },
+        "delta95": {
+          "iterations": 20000,
+          "lower95": 0.04289802317488227,
+          "meanDifference": 0.08576718868380102,
+          "profileCount": 30,
+          "seed": 42,
+          "upper95": 0.12659184371812227
+        },
+        "mlp": {
+          "mae": 6.705163966814677,
+          "ndcgAt10": 0.8142256892269513,
+          "pairs": 300,
+          "pairwiseMinGap5": {
+            "accuracy": 0.616504854368932,
+            "comparisons": 824,
+            "minGap": 5.0
+          },
+          "profiles": 30,
+          "refused": 0
+        }
+      },
+      "profiles": 30,
+      "top10Pipeline": {
+        "evaluatedProfiles": 30,
+        "judgedInShortlist": 54,
+        "mlpObservedNdcg": 0.26767601310421574,
+        "observedNdcgDelta95": {
+          "iterations": 20000,
+          "lower95": -0.08926896342302848,
+          "meanDifference": -0.04267437827839033,
+          "profileCount": 30,
+          "seed": 42,
+          "upper95": 0.002775372648039358
+        },
+        "poolSize": 100,
+        "refused": 0,
+        "rerankedObservedNdcg": 0.2250016348258254,
+        "shortlistPairs": 300
+      }
+    },
+    "valid": {
+      "labeledPairs": 700,
+      "mlpJudgedAll": {
+        "mae": 7.843678953817912,
+        "ndcgAt10": 0.7752127651069074,
+        "pairs": 700,
+        "pairwiseMinGap5": {
+          "accuracy": 0.6186309830159548,
+          "comparisons": 1943,
+          "minGap": 5.0
+        },
+        "profiles": 70,
+        "refused": 0
+      },
+      "pairedJudgedCandidates": {
+        "decisions": {
+          "mae": 13.119642857142857,
+          "ndcgAt10": 0.9017355958896593,
+          "pairs": 700,
+          "pairwiseMinGap5": {
+            "accuracy": 0.8113741636644365,
+            "comparisons": 1943,
+            "minGap": 5.0
+          },
+          "profiles": 70,
+          "refused": 0
+        },
+        "delta95": {
+          "iterations": 20000,
+          "lower95": 0.09709927069933175,
+          "meanDifference": 0.12652283078275195,
+          "profileCount": 70,
+          "seed": 42,
+          "upper95": 0.1567378874505962
+        },
+        "mlp": {
+          "mae": 7.843678953817912,
+          "ndcgAt10": 0.7752127651069074,
+          "pairs": 700,
+          "pairwiseMinGap5": {
+            "accuracy": 0.6186309830159548,
+            "comparisons": 1943,
+            "minGap": 5.0
+          },
+          "profiles": 70,
+          "refused": 0
+        }
+      },
+      "profiles": 70,
+      "top10Pipeline": {
+        "evaluatedProfiles": 70,
+        "judgedInShortlist": 72,
+        "mlpObservedNdcg": 0.09426228280786231,
+        "observedNdcgDelta95": {
+          "iterations": 20000,
+          "lower95": -0.008972811110028919,
+          "meanDifference": 0.010309237312392347,
+          "profileCount": 70,
+          "seed": 42,
+          "upper95": 0.03008454526165264
+        },
+        "poolSize": 154,
+        "refused": 0,
+        "rerankedObservedNdcg": 0.10457152012025465,
+        "shortlistPairs": 700
+      }
+    }
+  },
+  "newKoreanAndPersonas": {
+    "persona": {
+      "allPairsJudged": true,
+      "delta95": {
+        "decisions": {
+          "iterations": 20000,
+          "lower95": 0.005296094883244951,
+          "meanDifference": 0.04443570610053418,
+          "profileCount": 6,
+          "seed": 42,
+          "upper95": 0.09694108571242484
+        },
+        "evidence": {
+          "iterations": 20000,
+          "lower95": 0.0018212543113597286,
+          "meanDifference": 0.04060993891356072,
+          "profileCount": 6,
+          "seed": 42,
+          "upper95": 0.09279122693138003
+        },
+        "pilot": {
+          "iterations": 20000,
+          "lower95": -0.3538411544333124,
+          "meanDifference": -0.1814298566239424,
+          "profileCount": 6,
+          "seed": 42,
+          "upper95": -0.025969362266288838
+        }
+      },
+      "evidence": {
+        "hitAt3": 0.45751633986928103,
+        "mrrAt3": 0.31263616557734203,
+        "presenceConfusion": {
+          "fn": 87,
+          "fp": 28,
+          "tn": 77,
+          "tp": 66
+        },
+        "presenceF1": 0.5344129554655871,
+        "referenceRecallAt3": 0.3115468409586057,
+        "requirements": 258,
+        "withReference": 153
+      },
+      "jobPool": 6,
+      "judgedPairs": 36,
+      "judgedShortlistSlots": 18,
+      "ndcg": {
+        "decisions": 0.8972593281014333,
+        "evidence": 0.8934335609144598,
+        "local": 0.8528236220008991,
+        "pilot": 0.6713937653769566
+      },
+      "perAccount": {
+        "dev01": {
+          "evidence": {
+            "hitAt3": 0.4166666666666667,
+            "mrrAt3": 0.2569444444444444,
+            "presenceConfusion": {
+              "fn": 15,
+              "fp": 8,
+              "tn": 11,
+              "tp": 9
+            },
+            "presenceF1": 0.43902439024390244,
+            "referenceRecallAt3": 0.2708333333333333,
+            "requirements": 43,
+            "withReference": 24
+          },
+          "ndcg": {
+            "decisions": 0.9527156352094341,
+            "evidence": 0.9527156352094341,
+            "local": 0.9527156352094341,
+            "pilot": 0.5961164621385847
+          },
+          "topDecisions": "35bfd69b-e556-4a17-98a3-8119ba6f1c69",
+          "topLocal": "35bfd69b-e556-4a17-98a3-8119ba6f1c69"
+        },
+        "dummy-career-switch": {
+          "evidence": {
+            "hitAt3": 0.7368421052631579,
+            "mrrAt3": 0.4649122807017544,
+            "presenceConfusion": {
+              "fn": 13,
+              "fp": 8,
+              "tn": 16,
+              "tp": 6
+            },
+            "presenceF1": 0.36363636363636365,
+            "referenceRecallAt3": 0.5789473684210527,
+            "requirements": 43,
+            "withReference": 19
+          },
+          "ndcg": {
+            "decisions": 1.0,
+            "evidence": 1.0,
+            "local": 0.9913390439484723,
+            "pilot": 0.5038777007167792
+          },
+          "topDecisions": "35bfd69b-e556-4a17-98a3-8119ba6f1c69",
+          "topLocal": "35bfd69b-e556-4a17-98a3-8119ba6f1c69"
+        },
+        "dummy-data-analyst": {
+          "evidence": {
+            "hitAt3": 0.6129032258064516,
+            "mrrAt3": 0.3763440860215054,
+            "presenceConfusion": {
+              "fn": 20,
+              "fp": 3,
+              "tn": 9,
+              "tp": 11
+            },
+            "presenceF1": 0.4888888888888889,
+            "referenceRecallAt3": 0.3387096774193548,
+            "requirements": 43,
+            "withReference": 31
+          },
+          "ndcg": {
+            "decisions": 0.8718890600190211,
+            "evidence": 0.8487734467710791,
+            "local": 0.8487734467710791,
+            "pilot": 0.9060519773472822
+          },
+          "topDecisions": "edd36ca6-8d89-4b78-966a-ca94240a5fb0",
+          "topLocal": "9313f79c-febf-4311-bc0e-05d05c60a993"
+        },
+        "dummy-ml-research": {
+          "evidence": {
+            "hitAt3": 0.24242424242424243,
+            "mrrAt3": 0.21212121212121213,
+            "presenceConfusion": {
+              "fn": 18,
+              "fp": 3,
+              "tn": 7,
+              "tp": 15
+            },
+            "presenceF1": 0.5882352941176471,
+            "referenceRecallAt3": 0.10606060606060606,
+            "requirements": 43,
+            "withReference": 33
+          },
+          "ndcg": {
+            "decisions": 0.6345928576075551,
+            "evidence": 0.6368594274241858,
+            "local": 0.6345928576075551,
+            "pilot": 0.6368594274241858
+          },
+          "topDecisions": "9313f79c-febf-4311-bc0e-05d05c60a993",
+          "topLocal": "9313f79c-febf-4311-bc0e-05d05c60a993"
+        },
+        "dummy-newgrad": {
+          "evidence": {
+            "hitAt3": 1,
+            "mrrAt3": 0.717948717948718,
+            "presenceConfusion": {
+              "fn": 11,
+              "fp": 0,
+              "tn": 30,
+              "tp": 2
+            },
+            "presenceF1": 0.26666666666666666,
+            "referenceRecallAt3": 1.0,
+            "requirements": 43,
+            "withReference": 13
+          },
+          "ndcg": {
+            "decisions": 0.984261312211679,
+            "evidence": 0.984261312211679,
+            "local": 0.9112702617693795,
+            "pilot": 0.5927328340631803
+          },
+          "topDecisions": "30dbb6e3-6811-41b0-9f0a-c2c568ce161e",
+          "topLocal": "edd36ca6-8d89-4b78-966a-ca94240a5fb0"
+        },
+        "dummy-staff-platform": {
+          "evidence": {
+            "hitAt3": 0.18181818181818182,
+            "mrrAt3": 0.14646464646464646,
+            "presenceConfusion": {
+              "fn": 10,
+              "fp": 6,
+              "tn": 4,
+              "tp": 23
+            },
+            "presenceF1": 0.7419354838709677,
+            "referenceRecallAt3": 0.09595959595959595,
+            "requirements": 43,
+            "withReference": 33
+          },
+          "ndcg": {
+            "decisions": 0.94009710356091,
+            "evidence": 0.9379915438703806,
+            "local": 0.7782504866994742,
+            "pilot": 0.7927241905717278
+          },
+          "topDecisions": "e86187a6-f4c2-4aee-a229-3d445d34b616",
+          "topLocal": "9313f79c-febf-4311-bc0e-05d05c60a993"
+        }
+      },
+      "positivePairs": 7,
+      "profiles": 6,
+      "profilesWithPositive": 5,
+      "recallAtK": 0.8,
+      "refusedApi": 0,
+      "topK": 3
+    },
+    "test": {
+      "allPairsJudged": true,
+      "delta95": {
+        "decisions": {
+          "iterations": 20000,
+          "lower95": 0.05564564616696842,
+          "meanDifference": 0.07716899610716574,
+          "profileCount": 40,
+          "seed": 42,
+          "upper95": 0.0998590931383785
+        },
+        "evidence": {
+          "iterations": 20000,
+          "lower95": 0.008996397931678763,
+          "meanDifference": 0.02228495246694756,
+          "profileCount": 40,
+          "seed": 42,
+          "upper95": 0.03557576533404932
+        },
+        "pilot": {
+          "iterations": 20000,
+          "lower95": -0.39800711919928783,
+          "meanDifference": -0.35314156705265,
+          "profileCount": 40,
+          "seed": 42,
+          "upper95": -0.3067336186935271
+        }
+      },
+      "evidence": {
+        "hitAt3": 0.886892880904857,
+        "mrrAt3": 0.7396318474162785,
+        "presenceConfusion": {
+          "fn": 488,
+          "fp": 2028,
+          "tn": 5669,
+          "tp": 1015
+        },
+        "presenceF1": 0.4465464144302684,
+        "referenceRecallAt3": 0.7443684060450527,
+        "requirements": 9200,
+        "withReference": 1503
+      },
+      "jobPool": 32,
+      "judgedPairs": 1280,
+      "judgedShortlistSlots": 400,
+      "ndcg": {
+        "decisions": 0.6665086725185659,
+        "evidence": 0.6116246288783478,
+        "local": 0.5893396764114003,
+        "pilot": 0.23619810935875027
+      },
+      "perAccount": {},
+      "positivePairs": 1,
+      "profiles": 40,
+      "profilesWithPositive": 1,
+      "recallAtK": 1.0,
+      "refusedApi": 0,
+      "topK": 10
+    },
+    "valid": {
+      "allPairsJudged": false,
+      "delta95": {
+        "decisions": {
+          "iterations": 20000,
+          "lower95": -0.06822985373527715,
+          "meanDifference": -0.03726780150673184,
+          "profileCount": 30,
+          "seed": 42,
+          "upper95": -0.010083044980139361
+        },
+        "evidence": {
+          "iterations": 20000,
+          "lower95": -0.035947503477187094,
+          "meanDifference": -0.0205709372514424,
+          "profileCount": 30,
+          "seed": 42,
+          "upper95": -0.007322044347477687
+        },
+        "pilot": {
+          "iterations": 20000,
+          "lower95": -0.15500359013736018,
+          "meanDifference": -0.10774430324252689,
+          "profileCount": 30,
+          "seed": 42,
+          "upper95": -0.06136246057762561
+        }
+      },
+      "evidence": {
+        "hitAt3": 0.9077809798270894,
+        "mrrAt3": 0.765609990393852,
+        "presenceConfusion": {
+          "fn": 94,
+          "fp": 361,
+          "tn": 573,
+          "tp": 253
+        },
+        "presenceF1": 0.5265348595213319,
+        "referenceRecallAt3": 0.7649375600384246,
+        "requirements": 1281,
+        "withReference": 347
+      },
+      "jobPool": 34,
+      "judgedPairs": 180,
+      "judgedShortlistSlots": 69,
+      "ndcg": {
+        "decisions": 0.865864214767559,
+        "evidence": 0.8825610790228484,
+        "local": 0.9031320162742908,
+        "pilot": 0.795387713031764
+      },
+      "perAccount": {},
+      "positivePairs": 0,
+      "profiles": 30,
+      "profilesWithPositive": 0,
+      "recallAtK": null,
+      "refusedApi": 0,
+      "topK": 10
+    }
+  },
+  "notes": [
+    "valid contains 6 judged candidates per profile, not an exhaustively labeled catalog; use test for end-to-end assessment.",
+    "persona job gains are a rubric-weighted aggregation of agent-curated requirement labels, without independent human review.",
+    "record API evaluation sampled 96 validation and 256 test requirement pairs before observing labels. All 258 persona requirements were included.",
+    "top-three hit means at least one representative annotated record was recovered, conditional on the requirement having an annotated record. Additional valid records may exist."
+  ],
+  "personaDirectEvidenceOnly": {
+    "local": {
+      "directJudgments": 88,
+      "found": 40,
+      "hitAt3": 0.45454545454545453
+    },
+    "verified": {
+      "directJudgments": 88,
+      "found": 66,
+      "hitAt3": 0.75
+    }
+  },
+  "profileAblation": {
+    "dev01": [
+      {
+        "learned": {
+          "hitAt3": null,
+          "referenceRecallAt3": null,
+          "remainingWithEvidence": 0
+        },
+        "records": 1,
+        "topJob": "e86187a6-f4c2-4aee-a229-3d445d34b616"
+      },
+      {
+        "learned": {
+          "hitAt3": 1,
+          "referenceRecallAt3": 1.0,
+          "remainingWithEvidence": 4
+        },
+        "records": 3,
+        "topJob": "9313f79c-febf-4311-bc0e-05d05c60a993"
+      },
+      {
+        "learned": {
+          "hitAt3": 0.6666666666666666,
+          "referenceRecallAt3": 0.5833333333333334,
+          "remainingWithEvidence": 18
+        },
+        "records": 10,
+        "topJob": "35bfd69b-e556-4a17-98a3-8119ba6f1c69"
+      },
+      {
+        "cosine": {
+          "hitAt3": 0.625,
+          "referenceRecallAt3": 0.4375,
+          "remainingWithEvidence": 24
+        },
+        "learned": {
+          "hitAt3": 0.4166666666666667,
+          "referenceRecallAt3": 0.2708333333333333,
+          "remainingWithEvidence": 24
+        },
+        "records": 19,
+        "topJob": "35bfd69b-e556-4a17-98a3-8119ba6f1c69"
+      }
+    ],
+    "dummy-career-switch": [
+      {
+        "learned": {
+          "hitAt3": 1,
+          "referenceRecallAt3": 1.0,
+          "remainingWithEvidence": 3
+        },
+        "records": 1,
+        "topJob": "30dbb6e3-6811-41b0-9f0a-c2c568ce161e"
+      },
+      {
+        "learned": {
+          "hitAt3": 1,
+          "referenceRecallAt3": 1.0,
+          "remainingWithEvidence": 13
+        },
+        "records": 3,
+        "topJob": "30dbb6e3-6811-41b0-9f0a-c2c568ce161e"
+      },
+      {
+        "cosine": {
+          "hitAt3": 0.5263157894736842,
+          "referenceRecallAt3": 0.47368421052631576,
+          "remainingWithEvidence": 19
+        },
+        "learned": {
+          "hitAt3": 0.7368421052631579,
+          "referenceRecallAt3": 0.5789473684210527,
+          "remainingWithEvidence": 19
+        },
+        "records": 10,
+        "topJob": "35bfd69b-e556-4a17-98a3-8119ba6f1c69"
+      }
+    ],
+    "dummy-data-analyst": [
+      {
+        "learned": {
+          "hitAt3": null,
+          "referenceRecallAt3": null,
+          "remainingWithEvidence": 0
+        },
+        "records": 1,
+        "topJob": "9313f79c-febf-4311-bc0e-05d05c60a993"
+      },
+      {
+        "learned": {
+          "hitAt3": 1,
+          "referenceRecallAt3": 1.0,
+          "remainingWithEvidence": 8
+        },
+        "records": 3,
+        "topJob": "9313f79c-febf-4311-bc0e-05d05c60a993"
+      },
+      {
+        "learned": {
+          "hitAt3": 0.8571428571428571,
+          "referenceRecallAt3": 0.75,
+          "remainingWithEvidence": 14
+        },
+        "records": 10,
+        "topJob": "9313f79c-febf-4311-bc0e-05d05c60a993"
+      },
+      {
+        "cosine": {
+          "hitAt3": 0.5483870967741935,
+          "referenceRecallAt3": 0.3064516129032258,
+          "remainingWithEvidence": 31
+        },
+        "learned": {
+          "hitAt3": 0.6129032258064516,
+          "referenceRecallAt3": 0.3387096774193548,
+          "remainingWithEvidence": 31
+        },
+        "records": 25,
+        "topJob": "9313f79c-febf-4311-bc0e-05d05c60a993"
+      }
+    ],
+    "dummy-ml-research": [
+      {
+        "learned": {
+          "hitAt3": null,
+          "referenceRecallAt3": null,
+          "remainingWithEvidence": 0
+        },
+        "records": 1,
+        "topJob": "9313f79c-febf-4311-bc0e-05d05c60a993"
+      },
+      {
+        "learned": {
+          "hitAt3": null,
+          "referenceRecallAt3": null,
+          "remainingWithEvidence": 0
+        },
+        "records": 3,
+        "topJob": "9313f79c-febf-4311-bc0e-05d05c60a993"
+      },
+      {
+        "learned": {
+          "hitAt3": 0.8,
+          "referenceRecallAt3": 0.8,
+          "remainingWithEvidence": 5
+        },
+        "records": 10,
+        "topJob": "9313f79c-febf-4311-bc0e-05d05c60a993"
+      },
+      {
+        "learned": {
+          "hitAt3": 0.2,
+          "referenceRecallAt3": 0.14,
+          "remainingWithEvidence": 25
+        },
+        "records": 25,
+        "topJob": "9313f79c-febf-4311-bc0e-05d05c60a993"
+      },
+      {
+        "cosine": {
+          "hitAt3": 0.3939393939393939,
+          "referenceRecallAt3": 0.21212121212121213,
+          "remainingWithEvidence": 33
+        },
+        "learned": {
+          "hitAt3": 0.24242424242424243,
+          "referenceRecallAt3": 0.10606060606060606,
+          "remainingWithEvidence": 33
+        },
+        "records": 50,
+        "topJob": "9313f79c-febf-4311-bc0e-05d05c60a993"
+      }
+    ],
+    "dummy-newgrad": [
+      {
+        "learned": {
+          "hitAt3": 1,
+          "referenceRecallAt3": 1.0,
+          "remainingWithEvidence": 12
+        },
+        "records": 1,
+        "topJob": "edd36ca6-8d89-4b78-966a-ca94240a5fb0"
+      },
+      {
+        "cosine": {
+          "hitAt3": 1,
+          "referenceRecallAt3": 1.0,
+          "remainingWithEvidence": 13
+        },
+        "learned": {
+          "hitAt3": 1,
+          "referenceRecallAt3": 1.0,
+          "remainingWithEvidence": 13
+        },
+        "records": 3,
+        "topJob": "edd36ca6-8d89-4b78-966a-ca94240a5fb0"
+      }
+    ],
+    "dummy-staff-platform": [
+      {
+        "learned": {
+          "hitAt3": 1,
+          "referenceRecallAt3": 1.0,
+          "remainingWithEvidence": 1
+        },
+        "records": 1,
+        "topJob": "e86187a6-f4c2-4aee-a229-3d445d34b616"
+      },
+      {
+        "learned": {
+          "hitAt3": 1,
+          "referenceRecallAt3": 1.0,
+          "remainingWithEvidence": 2
+        },
+        "records": 3,
+        "topJob": "e86187a6-f4c2-4aee-a229-3d445d34b616"
+      },
+      {
+        "learned": {
+          "hitAt3": 1,
+          "referenceRecallAt3": 1.0,
+          "remainingWithEvidence": 2
+        },
+        "records": 10,
+        "topJob": "e86187a6-f4c2-4aee-a229-3d445d34b616"
+      },
+      {
+        "learned": {
+          "hitAt3": 0.23076923076923078,
+          "referenceRecallAt3": 0.20512820512820512,
+          "remainingWithEvidence": 13
+        },
+        "records": 25,
+        "topJob": "e86187a6-f4c2-4aee-a229-3d445d34b616"
+      },
+      {
+        "learned": {
+          "hitAt3": 0.24,
+          "referenceRecallAt3": 0.13999999999999999,
+          "remainingWithEvidence": 25
+        },
+        "records": 50,
+        "topJob": "9313f79c-febf-4311-bc0e-05d05c60a993"
+      },
+      {
+        "cosine": {
+          "hitAt3": 0.42424242424242425,
+          "referenceRecallAt3": 0.2222222222222222,
+          "remainingWithEvidence": 33
+        },
+        "learned": {
+          "hitAt3": 0.18181818181818182,
+          "referenceRecallAt3": 0.09595959595959595,
+          "remainingWithEvidence": 33
+        },
+        "records": 100,
+        "topJob": "9313f79c-febf-4311-bc0e-05d05c60a993"
+      }
+    ]
+  },
+  "recordApi": {
+    "api": {
+      "cachedInputTokens": 0,
+      "cachedResponses": 0,
+      "estimatedUsd": 0.2136382,
+      "inputTokens": 2136382,
+      "latencyP50Ms": 328.790667001158,
+      "latencyP95Ms": 586.5634579968173,
+      "model": "gpt-6-luna",
+      "provider": "decisions",
+      "requests": 610,
+      "retries": 0
+    },
+    "model": "gpt-6-luna",
+    "selection": "validation F1 grid 0..100 step 5",
+    "splits": {
+      "persona": {
+        "byAccount": {
+          "dev01": {
+            "local": {
+              "candidateHitAt12": 1,
+              "fn": 15,
+              "fp": 8,
+              "hitAt3": 0.4166666666666667,
+              "mrrAt3": 0.2569444444444444,
+              "presenceF1": 0.43902439024390244,
+              "referenceRecallAt3": 0.2708333333333333,
+              "requirements": 43,
+              "tn": 11,
+              "tp": 9,
+              "withReference": 24
+            },
+            "verified": {
+              "candidateHitAt12": 1,
+              "fn": 4,
+              "fp": 1,
+              "hitAt3": 0.9166666666666666,
+              "mrrAt3": 0.7847222222222222,
+              "presenceF1": 0.8888888888888888,
+              "referenceRecallAt3": 0.7916666666666666,
+              "requirements": 43,
+              "tn": 18,
+              "tp": 20,
+              "withReference": 24
+            }
+          },
+          "dummy-career-switch": {
+            "local": {
+              "candidateHitAt12": 1,
+              "fn": 13,
+              "fp": 8,
+              "hitAt3": 0.7368421052631579,
+              "mrrAt3": 0.4649122807017544,
+              "presenceF1": 0.36363636363636365,
+              "referenceRecallAt3": 0.5789473684210527,
+              "requirements": 43,
+              "tn": 16,
+              "tp": 6,
+              "withReference": 19
+            },
+            "verified": {
+              "candidateHitAt12": 1,
+              "fn": 1,
+              "fp": 0,
+              "hitAt3": 0.9473684210526315,
+              "mrrAt3": 0.8771929824561403,
+              "presenceF1": 0.972972972972973,
+              "referenceRecallAt3": 0.8157894736842105,
+              "requirements": 43,
+              "tn": 24,
+              "tp": 18,
+              "withReference": 19
+            }
+          },
+          "dummy-data-analyst": {
+            "local": {
+              "candidateHitAt12": 0.8387096774193549,
+              "fn": 20,
+              "fp": 3,
+              "hitAt3": 0.6129032258064516,
+              "mrrAt3": 0.3763440860215054,
+              "presenceF1": 0.4888888888888889,
+              "referenceRecallAt3": 0.3387096774193548,
+              "requirements": 43,
+              "tn": 9,
+              "tp": 11,
+              "withReference": 31
+            },
+            "verified": {
+              "candidateHitAt12": 0.8387096774193549,
+              "fn": 1,
+              "fp": 3,
+              "hitAt3": 0.7096774193548387,
+              "mrrAt3": 0.553763440860215,
+              "presenceF1": 0.9375,
+              "referenceRecallAt3": 0.521505376344086,
+              "requirements": 43,
+              "tn": 9,
+              "tp": 30,
+              "withReference": 31
+            }
+          },
+          "dummy-ml-research": {
+            "local": {
+              "candidateHitAt12": 0.7272727272727273,
+              "fn": 18,
+              "fp": 3,
+              "hitAt3": 0.24242424242424243,
+              "mrrAt3": 0.21212121212121213,
+              "presenceF1": 0.5882352941176471,
+              "referenceRecallAt3": 0.10606060606060606,
+              "requirements": 43,
+              "tn": 7,
+              "tp": 15,
+              "withReference": 33
+            },
+            "verified": {
+              "candidateHitAt12": 0.7272727272727273,
+              "fn": 2,
+              "fp": 2,
+              "hitAt3": 0.6666666666666666,
+              "mrrAt3": 0.5656565656565656,
+              "presenceF1": 0.9393939393939394,
+              "referenceRecallAt3": 0.40404040404040403,
+              "requirements": 43,
+              "tn": 8,
+              "tp": 31,
+              "withReference": 33
+            }
+          },
+          "dummy-newgrad": {
+            "local": {
+              "candidateHitAt12": 1,
+              "fn": 11,
+              "fp": 0,
+              "hitAt3": 1,
+              "mrrAt3": 0.717948717948718,
+              "presenceF1": 0.26666666666666666,
+              "referenceRecallAt3": 1.0,
+              "requirements": 43,
+              "tn": 30,
+              "tp": 2,
+              "withReference": 13
+            },
+            "verified": {
+              "candidateHitAt12": 1,
+              "fn": 6,
+              "fp": 1,
+              "hitAt3": 1,
+              "mrrAt3": 0.9487179487179487,
+              "presenceF1": 0.6666666666666666,
+              "referenceRecallAt3": 1.0,
+              "requirements": 43,
+              "tn": 29,
+              "tp": 7,
+              "withReference": 13
+            }
+          },
+          "dummy-staff-platform": {
+            "local": {
+              "candidateHitAt12": 0.6666666666666666,
+              "fn": 10,
+              "fp": 6,
+              "hitAt3": 0.18181818181818182,
+              "mrrAt3": 0.14646464646464646,
+              "presenceF1": 0.7419354838709677,
+              "referenceRecallAt3": 0.09595959595959595,
+              "requirements": 43,
+              "tn": 4,
+              "tp": 23,
+              "withReference": 33
+            },
+            "verified": {
+              "candidateHitAt12": 0.6666666666666666,
+              "fn": 4,
+              "fp": 1,
+              "hitAt3": 0.5151515151515151,
+              "mrrAt3": 0.46464646464646464,
+              "presenceF1": 0.9206349206349206,
+              "referenceRecallAt3": 0.30808080808080807,
+              "requirements": 43,
+              "tn": 9,
+              "tp": 29,
+              "withReference": 33
+            }
+          }
+        },
+        "local": {
+          "candidateHitAt12": 0.8366013071895425,
+          "fn": 87,
+          "fp": 28,
+          "hitAt3": 0.45751633986928103,
+          "mrrAt3": 0.31263616557734203,
+          "presenceF1": 0.5344129554655871,
+          "referenceRecallAt3": 0.3115468409586057,
+          "requirements": 258,
+          "tn": 77,
+          "tp": 66,
+          "withReference": 153
+        },
+        "verified": {
+          "candidateHitAt12": 0.8366013071895425,
+          "fn": 18,
+          "fp": 8,
+          "hitAt3": 0.7450980392156863,
+          "mrrAt3": 0.6470588235294118,
+          "presenceF1": 0.9121621621621622,
+          "referenceRecallAt3": 0.5697167755991286,
+          "requirements": 258,
+          "tn": 97,
+          "tp": 135,
+          "withReference": 153
+        }
+      },
+      "test": {
+        "local": {
+          "candidateHitAt12": 1,
+          "fn": 13,
+          "fp": 48,
+          "hitAt3": 0.9090909090909091,
+          "mrrAt3": 0.7689393939393939,
+          "presenceF1": 0.5040650406504065,
+          "referenceRecallAt3": 0.7348484848484849,
+          "requirements": 256,
+          "tn": 164,
+          "tp": 31,
+          "withReference": 44
+        },
+        "verified": {
+          "candidateHitAt12": 1,
+          "fn": 7,
+          "fp": 21,
+          "hitAt3": 0.8636363636363636,
+          "mrrAt3": 0.75,
+          "presenceF1": 0.7254901960784313,
+          "referenceRecallAt3": 0.7310606060606061,
+          "requirements": 256,
+          "tn": 191,
+          "tp": 37,
+          "withReference": 44
+        }
+      },
+      "valid": {
+        "local": {
+          "candidateHitAt12": 1,
+          "fn": 9,
+          "fp": 24,
+          "hitAt3": 0.9090909090909091,
+          "mrrAt3": 0.8282828282828283,
+          "presenceF1": 0.5925925925925926,
+          "referenceRecallAt3": 0.8131313131313131,
+          "requirements": 96,
+          "tn": 39,
+          "tp": 24,
+          "withReference": 33
+        },
+        "verified": {
+          "candidateHitAt12": 1,
+          "fn": 4,
+          "fp": 8,
+          "hitAt3": 1,
+          "mrrAt3": 0.9040404040404041,
+          "presenceF1": 0.8285714285714286,
+          "referenceRecallAt3": 0.9191919191919192,
+          "requirements": 96,
+          "tn": 55,
+          "tp": 29,
+          "withReference": 33
+        }
+      }
+    },
+    "verifiedThreshold": 25
+  }
+}

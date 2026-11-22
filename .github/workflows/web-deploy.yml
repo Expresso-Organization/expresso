@@ -12,9 +12,12 @@ on:
     branches: [main]
     paths:
       - "services/backend/**"
+      - "services/match-inference/**"
+      - "scripts/ml-data/**"
+      - "infra/systemd/**"
       - "services/web/**"
       - "packages/**"
-      - "scripts/operations/deploy.sh"
+      - "scripts/operations/**"
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
@@ -35,7 +38,8 @@ jobs:
     # T19 운영 전환을 별도로 승인하기 전에는 MongoDB 런타임 커밋을 자동 배포하지 않는다.
     if: ${{ vars.MONGODB_CUTOVER_APPROVED == 'true' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # 첫 전체 임베딩 준비를 포함합니다. 이후 배포는 저장한 벡터를 재사용합니다.
+    timeout-minutes: 90
     environment: production
 
     steps:
@@ -52,12 +56,19 @@ jobs:
           chmod 600 ~/.ssh/known_hosts
 
       - name: 배포
+        env:
+          MATCH_RELEASE: ${{ vars.MATCH_MODEL_RELEASE }}
         run: |
+          # 배포본 ID만 원격 명령에 넣습니다. 비어 있으면 현재 설정을 유지합니다.
+          if [[ -n "$MATCH_RELEASE" && ! "$MATCH_RELEASE" =~ ^[a-f0-9]{16}-[a-f0-9]{16}$ ]]; then
+            echo "MATCH_MODEL_RELEASE 형식 오류" >&2
+            exit 1
+          fi
           ssh -o IdentitiesOnly=yes \
               -i ~/.ssh/id_ed25519 \
               -p "${{ secrets.DEPLOY_SSH_PORT || 22 }}" \
               "${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }}" \
-              "bash -lc 'cd ~/expresso && scripts/operations/deploy.sh ${{ github.sha }}'"
+              "bash -lc 'cd ~/expresso && EXPRESSO_MATCH_RELEASE=$MATCH_RELEASE scripts/operations/deploy.sh ${{ github.sha }}'"
 
       - name: 배포 실패 시 로그
         if: failure()

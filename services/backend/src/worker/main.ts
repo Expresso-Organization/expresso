@@ -1,3 +1,5 @@
+import { syncMatchEmbeddings } from "./match-embeddings.js";
+import { MatchModelService } from "../modules/match-model/index.js";
 import { loadRuntimeConfig } from "../config/runtime-config.js";
 import { ConsultantCommitments } from "../modules/consultant/index.js";
 import { lastConversationAt } from "../modules/agent-chat/index.js";
@@ -146,6 +148,7 @@ const ai = createAiClient(config, aiUsage);
 const factsAi = createPostingFactsAiClient(config, aiUsage);
 // 계약을 부르기 전에 지나는 문. 워커에서 도는 계약도 예외가 아니다.
 const consentService = new ConsentService(database);
+const matchModelService = new MatchModelService(database, config.matchModelUrl, consentService);
 const jobAnalysisService = new JobAnalysisService(database);
 const generationService = new GenerationService(database, consentService);
 // 지면을 만드는 쪽이 여기다 — 조각은 전부 이 프로세스에서 나간다.
@@ -376,6 +379,9 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
 
 // 아웃박스 행이 커밋되면 1초 주기를 기다리지 않고 발행한다. 흐름이 끊기면 같은 간격으로 다시 열고,
 // 그동안 폴링은 그대로 돈다 — 흐름의 오류가 폴링 루프를 멈추지 않는다.
+const embeddings = syncMatchEmbeddings(matchModelService, abortController.signal, error => {
+  console.warn("Model embedding synchronization failed", safeErrorSummary(error));
+});
 const outboxWake = new Wake();
 const outboxWatch = watchOutboxInserts(database.db, () => outboxWake.notify(), {
   retryMs: config.outboxPollIntervalMs,
@@ -412,6 +418,7 @@ await runPollLoop({
 
 // fatal이면 처리 중인 잡을 기다리지 않습니다. 잠금이 만료되면 BullMQ의 stalled 처리가 다시 배달합니다.
 // 그 밖에는 처리 중인 잡이 결과를 쓰거나 큐로 돌아갈 때까지 기다린 뒤에 연결을 닫습니다.
+await embeddings;
 await closeWorkerRuntime({
   workers: queueWorkers,
   resources: [() => outboxWatch, () => jobs.close(), () => generationJobs.close(), () => refineJobs.close(), () => careerJobs.close(), () => database.close(), () => pageMeasurer.close()],

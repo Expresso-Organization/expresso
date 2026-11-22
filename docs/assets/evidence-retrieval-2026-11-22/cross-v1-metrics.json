@@ -1,0 +1,102 @@
+{
+  "checkpointSha256": "b010cf41be59f3f3e5ee60439d5bb3a04e175e6afdba5a4afbd2e8bea0da8847",
+  "device": "cuda",
+  "model": {
+    "baseModel": "var/cross-base",
+    "maxLength": 1536,
+    "model": "expresso-bge-cross-encoder-llm-v1",
+    "topRecords": 8
+  },
+  "splits": {
+    "persona": {
+      "candidateHitAtK": 0.9281045751633987,
+      "candidateIdsSha256": "6f5b5c988f98b75166b37913453537863355c723b796da350f0332d6c4ed4eaf",
+      "fn": 77,
+      "fp": 19,
+      "hitAt3": 0.41830065359477125,
+      "inputLengths": {
+        "maxLength": 1536,
+        "maxOriginalTokens": 144,
+        "meanEncodedTokens": 73.91783496007099,
+        "medianOriginalTokens": 73,
+        "p95OriginalTokens": 114,
+        "truncatedFraction": 0.0,
+        "truncatedPairs": 0
+      },
+      "missedSupportedRequirements": 130,
+      "mrrAt3": 0.2973856209150327,
+      "passagePairs": 5635,
+      "presenceF1": 0.6129032258064516,
+      "referenceRecallAt3": 0.29193899782135074,
+      "requirements": 258,
+      "scoringSeconds": 12.590865699999995,
+      "shownLinks": 193,
+      "shownReferenceLinks": 24,
+      "shownReferencePrecision": 0.12435233160621761,
+      "tn": 86,
+      "tp": 76,
+      "withReference": 153
+    },
+    "test": {
+      "candidateHitAtK": 1,
+      "candidateIdsSha256": "91c4dd3e736029c94e14f9b04e9fbe686d1b4d4c1c2fdff8832ac2afa54b789d",
+      "fn": 22,
+      "fp": 37,
+      "hitAt3": 0.7954545454545454,
+      "inputLengths": {
+        "maxLength": 1536,
+        "maxOriginalTokens": 443,
+        "meanEncodedTokens": 145.96434521826058,
+        "medianOriginalTokens": 119,
+        "p95OriginalTokens": 305,
+        "truncatedFraction": 0.0,
+        "truncatedPairs": 0
+      },
+      "missedSupportedRequirements": 30,
+      "mrrAt3": 0.6818181818181818,
+      "passagePairs": 3001,
+      "presenceF1": 0.42718446601941745,
+      "referenceRecallAt3": 0.6060606060606061,
+      "requirements": 256,
+      "scoringSeconds": 8.455736399999978,
+      "shownLinks": 92,
+      "shownReferenceLinks": 15,
+      "shownReferencePrecision": 0.16304347826086957,
+      "tn": 175,
+      "tp": 22,
+      "withReference": 44
+    },
+    "valid": {
+      "candidateHitAtK": 1,
+      "candidateIdsSha256": "30d27d1931fc8178d35b837aded7802cd0d59d553b400690e4b25999c8f4fdf4",
+      "fn": 15,
+      "fp": 13,
+      "hitAt3": 0.8484848484848485,
+      "inputLengths": {
+        "maxLength": 1536,
+        "maxOriginalTokens": 456,
+        "meanEncodedTokens": 158.45188679245283,
+        "medianOriginalTokens": 144,
+        "p95OriginalTokens": 328,
+        "truncatedFraction": 0.0,
+        "truncatedPairs": 0
+      },
+      "missedSupportedRequirements": 21,
+      "mrrAt3": 0.7171717171717171,
+      "passagePairs": 1060,
+      "presenceF1": 0.5625,
+      "referenceRecallAt3": 0.6919191919191919,
+      "requirements": 96,
+      "scoringSeconds": 18.743795800000044,
+      "shownLinks": 46,
+      "shownReferenceLinks": 13,
+      "shownReferencePrecision": 0.2826086956521739,
+      "tn": 50,
+      "tp": 18,
+      "withReference": 33
+    }
+  },
+  "taskTransfer": "기존 공고-프로필 Cross-Encoder를 요건-문단 쌍에 적용. 이 작업에서 재학습하지 않음",
+  "threshold": 20,
+  "thresholdSelection": "validation presence F1 only"
+}

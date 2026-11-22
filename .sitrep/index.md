@@ -19,3 +19,6 @@
 | [20261120-1530-app-shell-layout](sessions/20261120-1530-app-shell-layout/session.md) | 앱 셸 공용 레이아웃 — 화면 이동 사이 사이드바 유지 | 완료됨 | 100% |
 
 | [20261122-0150-branch-consolidation](sessions/20261122-0150-branch-consolidation/session.md) | 로컬 브랜치 정리와 승인 기능 통합 | 완료됨 | 100% |
+| [2026-11-19 한국어 적합도 모델 평가](sessions/20261119-1752-match-eval/tree.md) | 한국어 적합도 모델 평가 | 영속화·시험 프로세스 재시작 검증 완료 | 100% |
+| [20261122-0203-evidence-retrieval-v2](sessions/20261122-0203-evidence-retrieval-v2/session.md) | 근거 검색 개선 및 학습 리랭커 비교 | 완료됨 | 100% |
+| [20261122-1315-match-release-readiness](sessions/20261122-1315-match-release-readiness/session.md) | Expresso 추천모델 운영 적용 | 완료됨 | 100% |

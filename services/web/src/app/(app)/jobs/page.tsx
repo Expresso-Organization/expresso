@@ -730,6 +730,7 @@ export default async function JobsPage({
       <AppBody>
         <ExploreFrame kind="jobs">
         <JobSearchFlow listQuery={listQuery}>
+          <Link href="/jobs/recommendations" prefetch={false} className={styles.categoryTab}>내 기록으로 공고 추천받기</Link>
           {q ? (
             <SearchQueryCard
               query={q}

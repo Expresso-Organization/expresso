@@ -1,0 +1,69 @@
+{
+  "sourceFile": "jobs-with-requirements.jsonl",
+  "sourceSha256": "b97aa38dfc9026673ea6032768911780a2edbf6408bff51b7e97d83880d1f010",
+  "population": "all source job postings before candidate selection",
+  "rendering": "ko_eval_dataset.job_row -> llm_suitability_train.render_job",
+  "transformers": "4.55.4",
+  "encoders": {
+    "e5": {
+      "modelId": "intfloat/multilingual-e5-base",
+      "revision": "d128750597153bb5987e10b1c3493a34e5a4502a",
+      "tokenizer": "XLMRobertaTokenizerFast",
+      "jobs": {
+        "texts": 295,
+        "p50": 1476,
+        "p90": 2124,
+        "p99": 3051,
+        "max": 3215,
+        "maxLength": 512,
+        "truncated": 275,
+        "truncatedFraction": 0.9322033898305084
+      }
+    },
+    "kure": {
+      "modelId": "nlpai-lab/KURE-v1",
+      "revision": "444abe2a0ef1d6fd226b31de0b94133430b4de8e",
+      "tokenizer": "XLMRobertaTokenizerFast",
+      "jobs": {
+        "texts": 295,
+        "p50": 1474,
+        "p90": 2122,
+        "p99": 3049,
+        "max": 3213,
+        "maxLength": 8192,
+        "truncated": 0,
+        "truncatedFraction": 0.0
+      }
+    },
+    "bge-m3": {
+      "modelId": "BAAI/bge-m3",
+      "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+      "tokenizer": "XLMRobertaTokenizerFast",
+      "jobs": {
+        "texts": 295,
+        "p50": 1474,
+        "p90": 2122,
+        "p99": 3049,
+        "max": 3213,
+        "maxLength": 8192,
+        "truncated": 0,
+        "truncatedFraction": 0.0
+      }
+    },
+    "qwen3": {
+      "modelId": "Qwen/Qwen3-Embedding-0.6B",
+      "revision": "97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3",
+      "tokenizer": "Qwen2TokenizerFast",
+      "jobs": {
+        "texts": 295,
+        "p50": 1865,
+        "p90": 2787,
+        "p99": 3946,
+        "max": 4073,
+        "maxLength": 32768,
+        "truncated": 0,
+        "truncatedFraction": 0.0
+      }
+    }
+  }
+}

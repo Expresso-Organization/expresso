@@ -1,0 +1,19 @@
+{
+  "prepared": true,
+  "inferenceActivated": false,
+  "stats": {
+    "encoded": 961,
+    "diskHits": 0,
+    "startupLoaded": 3655
+  },
+  "usersPrepared": 12,
+  "jobsPrepared": 420,
+  "vectors": 3783,
+  "checkpoints": 1,
+  "finalRecheck": {
+    "encoded": 0,
+    "diskHits": 0,
+    "startupLoaded": 3783
+  },
+  "verifiedAt": "2026-11-22T05:19:09.007488+00:00"
+}

@@ -42,3 +42,4 @@ coordination/mongodb/**/*.lock
 
 # 진행 현황 스캐너의 로컬 실행 결과(서버에서는 /var/lib/expresso-status)
 docs/status/data/
+.next-*/

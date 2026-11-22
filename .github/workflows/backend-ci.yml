@@ -8,6 +8,9 @@ on:
     branches: [main]
     paths:
       - "services/backend/**"
+      - "services/match-inference/**"
+      - "scripts/ml-data/**"
+      - "scripts/operations/**"
       - "services/web/**"
       - "packages/contracts/**"
       - "packages/editor/**"
@@ -55,7 +58,7 @@ jobs:
           relevant=false
           while IFS= read -r file; do
             case "$file" in
-              services/backend/*|services/web/*|packages/contracts/*|packages/editor/*|packages/portfolio-renderer/*|packages/database/*|infra/*|package.json|pnpm-lock.yaml|pnpm-workspace.yaml|.github/workflows/backend-ci.yml) relevant=true ;;
+              services/backend/*|services/match-inference/*|scripts/ml-data/*|scripts/operations/*|services/web/*|packages/contracts/*|packages/editor/*|packages/portfolio-renderer/*|packages/database/*|infra/*|package.json|pnpm-lock.yaml|pnpm-workspace.yaml|.github/workflows/backend-ci.yml) relevant=true ;;
             esac
           done <<< "$files"
           echo "relevant=$relevant" >> "$GITHUB_OUTPUT"
@@ -101,6 +104,20 @@ jobs:
 
       - name: 의존성 설치
         run: pnpm install --frozen-lockfile
+
+      # https://github.com/actions/setup-python/releases/tag/v7.1.0
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: "3.12"
+
+      - name: CPU 추론 · 배포본 안전 검사
+        run: |
+          python3 -m venv "$RUNNER_TEMP/match-ci"
+          "$RUNNER_TEMP/match-ci/bin/pip" install -r services/match-inference/requirements.txt
+          "$RUNNER_TEMP/match-ci/bin/python" -m unittest discover -s services/match-inference
+          "$RUNNER_TEMP/match-ci/bin/python" scripts/ml-data/match_release/evidence_search_test.py
+          "$RUNNER_TEMP/match-ci/bin/python" -m unittest discover -s scripts/operations -p 'test_match_release.py'
+          bash -n scripts/operations/deploy.sh scripts/operations/match-service.sh scripts/operations/start-match-inference.sh scripts/operations/validate-match-activation.sh
 
       - name: MongoDB replica set 준비
         run: pnpm infra:mongodb:up
