@@ -795,6 +795,37 @@ svg [data-morph] { transform-box: fill-box; }
 .fp-repeat i { font-size: 34px; }
 .fp-repeat span { color: var(--ex-bean-ink); font-weight: 500; }
 
+/* ── 두 단계와 전환 근거 — 개발 전략 ─────────────────────── */
+.fp-strat { display: grid; grid-template-columns: 1fr 470px 1fr; gap: 40px; flex: 1 1 auto; min-height: 0; }
+.fp-strat .fp-field { display: flex; flex-direction: column; }
+.fp-strat .t { margin-top: 10px; font-size: 44px; }
+.fp-strat ul { list-style: none; margin-top: 40px; display: grid; gap: 32px; }
+.fp-strat li { display: flex; align-items: center; gap: 18px; font-size: 30px; letter-spacing: -.02em; color: var(--ex-slate-700); word-break: keep-all; }
+.fp-strat li i { font-size: 34px; color: var(--ex-slate-500); flex: none; }
+.fp-strat .sig li i { color: var(--ex-espresso); }
+.fp-strat .why { display: flex; flex-direction: column; align-items: stretch; }
+.fp-strat .why .k { text-align: center; margin-bottom: 18px; }
+.fp-strat .why .stp { text-align: center; font-size: 30px; font-weight: 600; letter-spacing: -.02em; padding: 14px 0; border-radius: 14px; background: var(--ex-white); border: 1px solid var(--ex-line-200); }
+.fp-strat .why .mv { display: flex; align-items: center; justify-content: center; gap: 12px; height: 62px; font-size: 22px; font-weight: 600; color: var(--ex-espresso); }
+.fp-strat .why .mv i { font-size: 28px; }
+.fp-strat .why .src { margin-top: 18px; text-align: center; font-size: 22px; color: var(--ex-slate-500); }
+.fp-strat .keep { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 20px; height: 84px; border-radius: 18px; background: var(--ex-surface-100); font-size: 30px; font-weight: 600; letter-spacing: -.02em; }
+.fp-strat .keep span { font-weight: 500; color: var(--ex-slate-500); }
+/* ── 두 줄 시나리오 — 서비스 시나리오 ─────────────────────── */
+.fp-scn { position: relative; display: grid; grid-template-columns: 130px repeat(6, 1fr); grid-template-rows: auto auto auto 70px; column-gap: 14px; row-gap: 16px; flex: 1 1 auto; min-height: 0; align-content: start; }
+.fp-scn .lane { align-self: center; font-size: 24px; font-weight: 600; color: var(--ex-slate-500); letter-spacing: -.01em; }
+.fp-scn .hdr { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding-bottom: 14px; border-bottom: 4px solid var(--ex-ink-900); }
+.fp-scn .hdr.me { border-bottom-color: var(--ex-slate-300); }
+.fp-scn .hdr .num { font-size: 52px; line-height: 1; color: var(--ex-ink-900); }
+.fp-scn .hdr b { font-size: 30px; font-weight: 600; letter-spacing: -.025em; word-break: keep-all; line-height: 1.25; }
+.fp-scn .c { border-radius: 16px; padding: 18px 18px; font-size: 28px; line-height: 1.45; letter-spacing: -.02em; word-break: keep-all; color: var(--ex-slate-700); }
+.fp-scn .c.u { background: var(--ex-surface-100); min-height: 160px; }
+.fp-scn .c.a { background: var(--ex-white); border: 1.5px solid var(--ex-ink-900); min-height: 230px; }
+.fp-scn .c.none { background: none; border: 1.5px dashed var(--ex-slate-300); }
+.fp-scn .c div + div { margin-top: 12px; }
+.fp-scn svg.back { position: absolute; left: 0; bottom: 0; width: 1712px; height: 70px; max-width: none; }
+.fp-scn .back-l { position: absolute; left: 533px; width: 791px; bottom: 16px; text-align: center; font-size: 24px; color: var(--ex-slate-500); white-space: nowrap; }
+.fp-scn .back-l span { background: var(--ex-surface-50); padding: 0 16px; }
 /* ── 범위 구분 — 개발 범위 ─────────────────────────────────── */
 .fp-scope { display: grid; grid-template-columns: 1fr 470px; gap: 56px; flex: 1 1 auto; min-height: 0; }
 .fp-scope .inside { border: 3px solid var(--ex-ink-900); border-radius: 28px; background: var(--ex-white); display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr 1fr; }
@@ -989,8 +1020,8 @@ svg [data-morph] { transform-box: fill-box; }
     <div class="body">
       <div class="fp-cols fp-toc">
         <div class="in dl-3"><div class="n">1</div><div class="t">프로젝트 개요</div><ul><li>선정 배경</li><li>서비스 개요</li><li>벤치마킹 사례와 차별점</li></ul></div>
-        <div class="in dl-4"><div class="n">2</div><div class="t">프로젝트 개발</div><ul><li>개발 범위</li><li>시스템 구성</li><li>주요 기능</li><li>AI 모델 구성</li><li>추천 모델 학습 방법</li></ul></div>
-        <div class="in dl-5"><div class="n">3</div><div class="t">일정 및 전략</div><ul><li>개발 일정</li><li>개발팀 구성 및 역할</li><li>개발 환경</li></ul></div>
+        <div class="in dl-4"><div class="n">2</div><div class="t">프로젝트 개발</div><ul><li>개발 전략</li><li>개발 범위</li><li>시스템 구성</li><li>주요 기능</li><li>AI 모델 구성</li><li>추천 모델 학습 방법</li></ul></div>
+        <div class="in dl-5"><div class="n">3</div><div class="t">일정 및 전략</div><ul><li>개발 일정</li><li>개발팀 구성 및 역할</li><li>개발 환경</li><li>서비스 시나리오</li></ul></div>
         <div class="in dl-6"><div class="n">4</div><div class="t">개발 성과</div><ul><li>개발 결과물</li><li>주요 화면</li><li>추천 모델 성능</li><li>성능 시험 결과</li><li>기대 효과</li></ul></div>
         <div class="in dl-7"><div class="n">5</div><div class="t">Lessons Learned</div><ul><li>개발 과정의 문제와 해결</li></ul></div>
         <div class="in dl-8"><div class="n">6</div><div class="t">프로젝트 시연</div><ul><li>시연 환경과 시나리오</li><li>동작 시연</li></ul></div>
@@ -1116,6 +1147,53 @@ svg [data-morph] { transform-box: fill-box; }
           <div class="in dl-5"><div class="k">랠릿 대비</div><div class="t">지원 공고와 강조할 경험에 맞춘 레이아웃 구성</div></div>
           <div class="in dl-6"><div class="k">Rezi · Teal 대비</div><div class="t">국내 채용 공고 연동 기반 공고 추천과 경험 매칭</div></div>
         </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 두 단계와 전환 근거 — 개발 전략. 날짜는 docs/최종-발표-버전-히스토리.html 기준 ═══ -->
+<section class="slide fp" data-title="개발 전략" data-kind="두 단계와 전환 근거">
+  <div class="frame">
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">2</span><span class="sec">프로젝트 개발</span><span class="pg"></span></div>
+    <div class="head in dl-2">
+      <h2>개발 전략</h2>
+      <p class="sub">설계 범위 구현 후 에이전트 중심 전환</p>
+    </div>
+    <div class="body">
+      <div class="fp-strat">
+        <div class="fp-field quiet in dl-3">
+          <div class="k">08-06 ~ 11-14</div>
+          <div class="t">설계 범위 구현</div>
+          <ul>
+            <li><i class="ph ph-list-checks"></i>설계서 요구기능 단위 개발</li>
+            <li><i class="ph ph-squares-four"></i>기능별 단계 화면 구성</li>
+            <li><i class="ph ph-rocket-launch"></i>운영 서버 배포 · 시연 리허설</li>
+            <li><i class="ph ph-wrench"></i>리허설 결함 · 운영 장애 수정</li>
+          </ul>
+        </div>
+        <div class="why in dl-4">
+          <div class="k">전환 근거</div>
+          <div class="stp">부족한 점 파악</div>
+          <div class="mv"><i class="ph ph-arrow-down"></i>사용자 직접 이동</div>
+          <div class="stp">행동</div>
+          <div class="mv"><i class="ph ph-arrow-down"></i>사용자 직접 이동</div>
+          <div class="stp">기록</div>
+          <div class="mv"><i class="ph ph-arrow-down"></i>사용자 직접 이동</div>
+          <div class="stp">포트폴리오</div>
+          <div class="src">Expresso AI 기획서 · 문제 정의</div>
+        </div>
+        <div class="fp-field sig in dl-5">
+          <div class="k" style="color: var(--ex-espresso)">11-17 ~ 11-22</div>
+          <div class="t">에이전트 중심 전환</div>
+          <ul>
+            <li><i class="ph ph-chat-circle-dots"></i>대화 입력창 중심 첫 화면</li>
+            <li><i class="ph ph-target"></i>구직 목표 기준 진단 · 행동 제안</li>
+            <li><i class="ph ph-notebook"></i>인터뷰 답변의 기록 자동 저장</li>
+            <li><i class="ph ph-palette"></i>포트폴리오 제작의 대화 이전</li>
+          </ul>
+        </div>
+        <div class="keep in dl-6"><i class="ph ph-recycle"></i>설계 범위 기능 재사용<span>공고 분석 · 재료 고르기 · AI 대화 · 디자인 · 생성의 대화 속 단계 카드 제공</span></div>
       </div>
     </div>
   </div>
@@ -1445,6 +1523,50 @@ svg [data-morph] { transform-box: fill-box; }
         <div><b>CI 검사</b><span>계약 빌드 · 타입 검사 · 테스트 · 통합 테스트</span></div>
         <div><b>main 머지</b><span>필수 검사 통과</span></div>
         <div><b>운영 배포</b><span>서버 자동 배포</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 두 줄 시나리오 — 서비스 시나리오. 단계는 docs/expresso-ai/product-plan.md 「사용 흐름」 ═══ -->
+<section class="slide fp" data-title="서비스 시나리오" data-kind="두 줄 시나리오">
+  <div class="frame">
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">3</span><span class="sec">프로젝트 일정 및 전략</span><span class="pg"></span></div>
+    <div class="head in dl-2">
+      <h2>서비스 시나리오</h2>
+      <p class="sub">구직 목표에서 포트폴리오 제작까지의 사용자와 Expresso AI</p>
+    </div>
+    <div class="body">
+      <div class="fp-scn">
+        <div></div>
+        <div class="hdr in dl-3"><span class="num">1</span><b>구직 목표<br>정하기</b></div>
+        <div class="hdr in dl-3"><span class="num">2</span><b>부족한 점<br>짚기</b></div>
+        <div class="hdr in dl-4"><span class="num">3</span><b>행동 제안</b></div>
+        <div class="hdr me in dl-4"><span class="num">4</span><b>행동</b></div>
+        <div class="hdr in dl-5"><span class="num">5</span><b>진행 확인 ·<br>기록</b></div>
+        <div class="hdr in dl-5"><span class="num">6</span><b>포트폴리오<br>제작</b></div>
+
+        <div class="lane in in-fade dl-6">사용자</div>
+        <div class="c u in dl-6">하고 싶은 일 · 일하고 싶은 곳 · 목표 시기 답변</div>
+        <div class="c u in dl-6">미확인 요건의 선택지 응답</div>
+        <div class="c u in dl-6">권유 수락 · 기한 약속</div>
+        <div class="c u in dl-6">제안받은 활동 수행</div>
+        <div class="c u in dl-6">「했어요」 응답 · 경험 답변</div>
+        <div class="c u in dl-6">공고 지정 · 디자인 견본 선택 · 배포</div>
+
+        <div class="lane in in-fade dl-7">Expresso AI</div>
+        <div class="c a in dl-7"><div>구직 목표 저장</div><div>목표 변경 시 카드 확인</div></div>
+        <div class="c a in dl-7"><div>같은 직군 공고의 요건 집계</div><div>기록 대조 결과의 요건별 충족 카드 표시</div></div>
+        <div class="c a in dl-7"><div>공고 · 공모전 · 해커톤 목록 제시</div><div>다음 할 일 하나와 이유 제시</div><div>약속 저장</div></div>
+        <div class="c none in dl-7"></div>
+        <div class="c a in dl-7"><div>약속한 날 진행 질문</div><div>빠진 내용 인터뷰</div><div>기록 저장</div></div>
+        <div class="c a in dl-7"><div>대화 속 단계 카드 진행</div><div>공고 분석 → 재료 고르기 → AI 대화 → 디자인 → 생성</div></div>
+
+        <svg class="back in in-fade dl-8" viewBox="0 0 1712 70" preserveAspectRatio="none" aria-hidden="true">
+          <defs><marker id="scn-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" style="fill: var(--ex-slate-400)"/></marker></defs>
+          <path d="M1324 0 V26 Q1324 40 1310 40 H547 Q533 40 533 26 V6" style="fill:none; stroke: var(--ex-slate-400); stroke-width: 2.5; stroke-dasharray: 8 8" marker-end="url(#scn-tip)"/>
+        </svg>
+        <div class="back-l in in-fade dl-8"><span>저장된 기록 기준의 재진단</span></div>
       </div>
     </div>
   </div>
