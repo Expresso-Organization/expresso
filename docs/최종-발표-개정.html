@@ -617,7 +617,7 @@ svg [data-morph] { transform-box: fill-box; }
 .slide.fp {
   --fp-in: #EAF3FF;   --fp-in-line: #6C9CD2;     /* 입력 */
   --fp-ext: #F0EDFC;  --fp-ext-line: #9382C4;    /* 외부 LLM */
-  --fp-own: #FFF0DA;  --fp-own-line: #D69B47;    /* 자체 학습 모델 */
+  --fp-own: #FBEEE4;  --fp-own-line: #C48A7D;    /* 자체 학습 모델 — 브랜드의 에스프레소 계열 */
   --fp-out: #E6F5EF;  --fp-out-line: #65A58E;    /* 출력 · 달성 */
 }
 .fp .frame { inset: 60px 104px 68px; }
@@ -679,7 +679,7 @@ svg [data-morph] { transform-box: fill-box; }
 .fp-line .st .nm { margin-top: 18px; font-size: 30px; font-weight: 600; letter-spacing: -.025em; line-height: 1.25; word-break: keep-all; }
 .fp-line .st .tag {
   position: absolute; left: 50%; bottom: 100%; transform: translateX(-50%); margin-bottom: 16px;
-  white-space: nowrap; font-size: 22px; font-weight: 600; color: #8A5A12;
+  white-space: nowrap; font-size: 22px; font-weight: 600; color: #9A4030;
   background: var(--fp-own); border: 1.5px dashed var(--fp-own-line); border-radius: 10px; padding: 7px 14px;
 }
 .fp-line .st .tag::after {
@@ -862,7 +862,7 @@ svg [data-morph] { transform-box: fill-box; }
 .fp-arch .side .ai .t { margin-top: 8px; font-size: 38px; font-weight: 600; letter-spacing: -.03em; line-height: 1.1; }
 .fp-arch .side .ai .t.brand { font-family: var(--ex-font-brand); font-weight: 500; }
 .fp-arch .side .ai small { margin-top: 8px; font-size: 22px; color: var(--ex-slate-500); letter-spacing: -.02em; white-space: nowrap; }
-.fp-state { display: inline-block; margin-top: 14px; font-size: 22px; font-weight: 600; color: #8A5A12; border: 1.5px dashed var(--fp-own-line); border-radius: 10px; padding: 6px 14px; }
+.fp-state { display: inline-block; margin-top: 14px; font-size: 22px; font-weight: 600; color: #9A4030; border: 1.5px dashed var(--fp-own-line); border-radius: 10px; padding: 6px 14px; }
 
 /* ── 대비 — 두 면 ─────────────────────────────────────── */
 .fp-two { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; flex: 1 1 auto; min-height: 0; }
@@ -1014,8 +1014,8 @@ svg [data-morph] { transform-box: fill-box; }
 .vh-map .nd .nm { margin-top: 14px; font-size: 26px; font-weight: 600; letter-spacing: -.025em; line-height: 1.22; word-break: keep-all; }
 .vh-map .nd .dt { margin-top: 6px; font-family: var(--ex-font-brand); font-weight: 300; font-size: 23px; color: var(--ex-slate-500); }
 .vh-map .band.own { background: var(--fp-own); border-color: transparent; }
-.vh-map .band.own b { color: #8A5A12; }
-.vh-map .nd.own .dot { border-color: var(--fp-own-line); font-size: 36px; color: #8A5A12; }
+.vh-map .band.own b { color: #9A4030; }
+.vh-map .nd.own .dot { border-color: var(--fp-own-line); font-size: 36px; color: #9A4030; }
 .vh-map .nd.own.wait .dot { border-style: dashed; background: var(--fp-own); }
 .vh-map.one { flex: none; height: 300px; }
 /* 세 줄 배치 — 띠와 점을 낮춘다 */
@@ -1381,10 +1381,10 @@ svg [data-morph] { transform-box: fill-box; }
 .fdp-ver.done > i { color: var(--ex-crema); opacity: 1; }
 .fdp-ver.own { display: flex; flex-direction: column; justify-content: center; gap: 22px; padding: 0 26px; }
 .fdp-ver.own .hd2 { display: flex; align-items: center; gap: 16px; }
-.fdp-ver.own .hd2 i { flex: none; width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center; font-size: 38px; color: #8A5A12; background: var(--fp-own); border: 1px solid var(--fp-own-line); }
+.fdp-ver.own .hd2 i { flex: none; width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center; font-size: 38px; color: #9A4030; background: var(--fp-own); border: 1px solid var(--fp-own-line); }
 .fdp-ver.own ol { list-style: none; counter-reset: fdp; display: grid; gap: 14px; padding-top: 22px; border-top: 1px solid var(--ex-line-inner); }
 .fdp-ver.own li { counter-increment: fdp; display: flex; align-items: baseline; gap: 14px; font-size: 25px; font-weight: 500; letter-spacing: -.03em; color: var(--ex-slate-700); white-space: nowrap; }
-.fdp-ver.own li::before { content: counter(fdp); flex: none; font-family: var(--ex-font-brand); font-weight: 300; font-size: 28px; color: #8A5A12; width: 18px; }
+.fdp-ver.own li::before { content: counter(fdp); flex: none; font-family: var(--ex-font-brand); font-weight: 300; font-size: 28px; color: #9A4030; width: 18px; }
 
 /* 18쪽 · 설계 범위 이후라는 표시 */
 .fd-stair { position: relative; }
@@ -1491,16 +1491,16 @@ svg [data-morph] { transform-box: fill-box; }
 .fd-distill .nm { font-family: var(--ex-font-ui); font-size: 24px; font-weight: 600; letter-spacing: -.03em; fill: var(--ex-ink-900); }
 .fd-distill .ax { font-family: var(--ex-font-ui); font-size: 18px; fill: var(--ex-slate-400); }
 .fd-distill .trk { fill: var(--ex-tint-100); opacity: .6; }
-.fd-distill .hero { font-family: var(--ex-font-brand); font-size: 76px; font-weight: 300; letter-spacing: -.035em; fill: #8A5A12; }
+.fd-distill .hero { font-family: var(--ex-font-brand); font-size: 76px; font-weight: 300; letter-spacing: -.035em; fill: #9A4030; }
 .fd-distill .mk { font-family: var(--ex-font-ui); font-size: 21px; font-weight: 600; fill: var(--ex-slate-500); }
-.fd-distill .gain { fill: none; stroke: #B37A1E; stroke-width: 2; }
-.fd-distill rect.w1 { fill: #E9A84A; }
+.fd-distill .gain { fill: none; stroke: #9A4030; stroke-width: 2; }
+.fd-distill rect.w1 { fill: #9A4030; }
 .fd-distill rect.w0 { fill: var(--ex-white); stroke: var(--ex-slate-300); stroke-width: 1.2; }
 .fd-distill .bar.base { fill: var(--ex-slate-400); }
-.fd-distill .bar.own { fill: #E9A84A; }
+.fd-distill .bar.own { fill: #9A4030; }
 .fd-distill .bar.ext { fill: var(--fp-ext-line); }
 .fd-distill .val { font-family: var(--ex-font-brand); font-size: 34px; font-weight: 400; letter-spacing: -.02em; fill: var(--ex-ink-900); }
-.fd-distill .val.own { fill: #8A5A12; }
+.fd-distill .val.own { fill: #9A4030; }
 .fd-distill .val.ext { fill: #5E4E96; }
 
 /* 추천 모델 아키텍처 — 동결한 E5 인코더(회색) 위에 학습한 헤드(호박색)를 올린 구조.
@@ -1510,8 +1510,8 @@ svg [data-morph] { transform-box: fill-box; }
 .fd-arch .t { font-family: var(--ex-font-ui); font-size: 34px; font-weight: 600; letter-spacing: -.035em; fill: var(--ex-ink-900); }
 .fd-arch .b { font-family: var(--ex-font-ui); font-size: 28px; font-weight: 600; letter-spacing: -.03em; fill: var(--ex-ink-900); }
 .fd-arch .d { font-family: var(--ex-font-ui); font-size: 22px; letter-spacing: -.02em; fill: #53657D; }
-.fd-arch .d.dk { fill: #8A5A12; }
-.fd-arch .d.am { fill: #8A5A12; font-weight: 600; }
+.fd-arch .d.dk { fill: #9A4030; }
+.fd-arch .d.am { fill: #9A4030; font-weight: 600; }
 .fd-arch .c { font-family: var(--ex-font-brand); font-size: 26px; font-weight: 400; fill: #53657D; }
 .fd-arch .lg { font-family: var(--ex-font-ui); font-size: 20px; fill: #53657D; }
 .fd-arch .big { font-family: var(--ex-font-brand); font-size: 76px; font-weight: 300; letter-spacing: -.03em; fill: #478670; }
@@ -1519,25 +1519,25 @@ svg [data-morph] { transform-box: fill-box; }
 .fd-arch .io { fill: #FFFFFF; stroke: #D9E3EF; stroke-width: 1.6; }
 .fd-arch .bx { fill: #FFFFFF; stroke: #D9E3EF; stroke-width: 1.6; }
 .fd-arch rect.fz { fill: #C3CCDA; }
-.fd-arch rect.tr { fill: #E9A84A; }
+.fd-arch rect.tr { fill: #9A4030; }
 .fd-arch rect.ou { fill: #BFDDCF; }
 .fd-arch rect.bx.tr { fill: var(--fp-own); stroke: var(--fp-own-line); stroke-width: 1.6; }
 .fd-arch rect.bx.ou { fill: #ECF5F1; stroke: #CCE2D7; stroke-width: 1.6; }
 .fd-arch .lane { fill: var(--ex-tint-50); }
-.fd-arch rect.h0 { fill: #FFFFFF; stroke: #EBD9BD; stroke-width: 1; }
-.fd-arch rect.h1 { fill: #F8E2BE; }
-.fd-arch rect.h2 { fill: #F1C680; }
-.fd-arch rect.h3 { fill: #D9902A; }
+.fd-arch rect.h0 { fill: #FFFFFF; stroke: #EAD5CB; stroke-width: 1; }
+.fd-arch rect.h1 { fill: #F3DCCB; }
+.fd-arch rect.h2 { fill: #D9A796; }
+.fd-arch rect.h3 { fill: #9A4030; }
 .fd-arch rect.chip.ou { fill: #ECF5F1; stroke: #CCE2D7; }
 .fd-arch .opt { fill: none; stroke: #B9C4D4; stroke-width: 1.6; stroke-dasharray: 7 6; }
 .fd-arch .ln { font-family: var(--ex-font-ui); font-size: 20px; font-weight: 600; fill: var(--ex-slate-500); }
 .fd-arch .s { font-family: var(--ex-font-ui); font-size: 22px; letter-spacing: -.02em; fill: #53657D; }
-.fd-arch .s.dk { fill: #8A5A12; }
-.fd-arch .s.am { fill: #8A5A12; font-weight: 600; }
+.fd-arch .s.dk { fill: #9A4030; }
+.fd-arch .s.am { fill: #9A4030; font-weight: 600; }
 .fd-arch .chip { fill: #FFFFFF; stroke: #D9E3EF; stroke-width: 1.6; }
 .fd-arch rect.chip.tr { fill: var(--fp-own); stroke: var(--fp-own-line); }
 .fd-arch .cp { font-family: var(--ex-font-ui); font-size: 21px; font-weight: 500; letter-spacing: -.02em; fill: var(--ex-ink-900); }
-.fd-arch .cp.dk { fill: #8A5A12; font-weight: 600; }
+.fd-arch .cp.dk { fill: #9A4030; font-weight: 600; }
 
 /* 추천 모델 평가 결과 — 파일럿 리포트(p5-model-training-results-2026-09-06.html)처럼 지표 비교 · 예측값 분포 · 근거 검색을 차트로 제시.
    값의 출처: codex/integration-match-release 의 evaluation.json 과, 같은 실험의 예측값 · 라벨 1,280쌍에서 다시 계산한 값
@@ -1547,25 +1547,25 @@ svg [data-morph] { transform-box: fill-box; }
 .fd-eval .e { font-family: var(--ex-font-ui); font-size: 18px; letter-spacing: -.01em; fill: var(--ex-slate-500); }
 .fd-eval .ax { font-family: var(--ex-font-ui); font-size: 18px; fill: var(--ex-slate-400); font-variant-numeric: tabular-nums; }
 .fd-eval .v { font-family: var(--ex-font-brand); font-size: 25px; font-weight: 400; letter-spacing: -.02em; fill: var(--ex-slate-500); }
-.fd-eval .v.own { fill: #8A5A12; }
+.fd-eval .v.own { fill: #9A4030; }
 .fd-eval .grid line { stroke: var(--ex-line-200); stroke-width: 1.5; }
 .fd-eval .base0 { stroke: var(--ex-slate-400); stroke-width: 2; }
 .fd-eval .div { stroke: var(--ex-line-200); stroke-width: 1.5; }
 .fd-eval .trk { fill: var(--ex-tint-100); opacity: .6; }
 .fd-eval .bar.base { fill: var(--ex-slate-400); }
-.fd-eval .bar.own { fill: #E9A84A; }
-.fd-eval .bar.own2 { fill: #F1C680; }
+.fd-eval .bar.own { fill: #9A4030; }
+.fd-eval .bar.own2 { fill: #E0B486; }
 .fd-eval .ln { fill: none; stroke-width: 4; stroke-linejoin: round; stroke-linecap: round; }
 .fd-eval .ln.truth { stroke: var(--ex-slate-300); stroke-dasharray: 8 8; stroke-width: 3; }
 .fd-eval .ln.base { stroke: var(--ex-slate-400); }
-.fd-eval .ln.own { stroke: #E9A84A; }
+.fd-eval .ln.own { stroke: #9A4030; }
 .fd-eval .dot.base { fill: var(--ex-slate-400); }
-.fd-eval .dot.own { fill: #E9A84A; }
+.fd-eval .dot.own { fill: #9A4030; }
 .fd-eval .pl { fill: var(--ex-white); stroke: var(--ex-line-200); stroke-width: 1.5; }
 .fd-eval .diag { stroke: var(--ex-slate-400); stroke-width: 1.5; stroke-dasharray: 6 6; }
 .fd-eval .pt.base { fill: #5E6E8C; fill-opacity: .32; }
-.fd-eval .pt.own { fill: #C97A12; fill-opacity: .38; }
-.fd-eval .g.amber { fill: #8A5A12; }
+.fd-eval .pt.own { fill: #9A4030; fill-opacity: .38; }
+.fd-eval .g.amber { fill: #9A4030; }
 
 /* 13쪽 · 설계서 열 단계 */
 .vh-v10:has(.fd-steps) { grid-template-columns: 400px 1fr; }
@@ -1845,7 +1845,7 @@ svg [data-morph] { transform-box: fill-box; }
         </svg>
         <div class="ai">
           <div class="fp-field ext in dl-7" data-morph="ai-ext"><div class="k" style="color: #5E4E96">외부 LLM</div><div class="t brand">Claude</div><small>분석 · 대화 · 생성</small></div>
-          <div class="fp-field own in dl-7" data-morph="ai-own"><div class="k" style="color: #8A5A12">자체 학습 모델</div><div class="t">추천 모델</div><small>채용 공고 · 기록 순위</small></div>
+          <div class="fp-field own in dl-7" data-morph="ai-own"><div class="k" style="color: #9A4030">자체 학습 모델</div><div class="t">추천 모델</div><small>채용 공고 · 기록 순위</small></div>
         </div>
       </div>
     </div>
@@ -1871,7 +1871,7 @@ svg [data-morph] { transform-box: fill-box; }
           </ul>
         </div>
         <div class="fp-field own in dl-4" data-morph="ai-own">
-          <div class="k" style="color: #8A5A12">자체 학습 모델</div>
+          <div class="k" style="color: #9A4030">자체 학습 모델</div>
           <div class="who">추천 모델<small>교사 LLM 판정 학습</small></div>
           
           <ul class="fp-use">
@@ -1895,9 +1895,9 @@ svg [data-morph] { transform-box: fill-box; }
       <svg class="fd-distill" viewBox="0 0 1712 650" style="width: 1712px; height: 650px; flex: none; max-width: none; max-height: none" role="img" aria-label="교사 LLM의 판정을 루브릭 가중치로 점수화해 적합도 라벨과 요건별 근거를 만들고, 그것으로 경력 근거 헤드와 채용 공고 순위 결합 모델을 학습시킨 결과. 채용 공고 순위의 NDCG@10은 파일럿 MLP 0.236에서 0.589로 2.5배, 요건별 근거 기록의 Hit@3는 88.7%">
         <defs>
           <marker id="fdd-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M2 2L8 5L2 8" fill="none" stroke="#8596AF" stroke-width="1.5"></path></marker>
-          <marker id="fdd-up" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M2 2L8 5L2 8" fill="none" stroke="#B37A1E" stroke-width="1.8"></path></marker>
+          <marker id="fdd-up" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M2 2L8 5L2 8" fill="none" stroke="#9A4030" stroke-width="1.8"></path></marker>
           <pattern id="fdd-hatch" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="20" height="20" style="fill: var(--ex-surface-50)"></rect><rect width="10" height="20" style="fill: var(--ex-tint-100)"></rect></pattern>
-          <pattern id="fdd-hatch-own" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="20" height="20" style="fill: var(--ex-surface-50)"></rect><rect width="10" height="20" style="fill: #FBE3C2"></rect></pattern>
+          <pattern id="fdd-hatch-own" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="20" height="20" style="fill: var(--ex-surface-50)"></rect><rect width="10" height="20" style="fill: #F3DCCB"></rect></pattern>
         </defs>
 
         <!-- 윗줄: 라벨을 만드는 쪽 (왼쪽 → 오른쪽) -->
@@ -1934,12 +1934,12 @@ svg [data-morph] { transform-box: fill-box; }
         <g class="in dl-7">
           <path d="M1537 264V338" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#fdd-tip)"></path><text class="k" x="1556" y="308">학습</text>
           <rect x="1040" y="350" width="671" height="296" rx="20" style="fill: var(--fp-own); stroke: var(--fp-own-line); stroke-width: 1.6"></rect>
-          <text class="t" x="1070" y="400" style="font-size:30px">추천 모델</text><text class="d" x="1682" y="398" text-anchor="end" style="fill:#8A5A12">자체 학습 모델</text>
+          <text class="t" x="1070" y="400" style="font-size:30px">추천 모델</text><text class="d" x="1682" y="398" text-anchor="end" style="fill:#9A4030">자체 학습 모델</text>
           <rect x="1070" y="426" width="290" height="190" rx="16" style="fill:#FFFFFF;stroke:#E7CEB0;stroke-width:1.6"></rect>
-          <text class="t" x="1094" y="504" style="font-size:29px">경력 근거 헤드</text><text class="d" x="1094" y="546">요건 × 기록 연결 점수</text><text class="d" x="1094" y="584" style="fill:#8A5A12">모델 B</text>
+          <text class="t" x="1094" y="504" style="font-size:29px">경력 근거 헤드</text><text class="d" x="1094" y="546">요건 × 기록 연결 점수</text><text class="d" x="1094" y="584" style="fill:#9A4030">모델 B</text>
           <path d="M1366 523H1386" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#fdd-tip)"></path>
           <rect x="1392" y="426" width="290" height="190" rx="16" style="fill:#FFFFFF;stroke:#E7CEB0;stroke-width:1.6"></rect>
-          <text class="t" x="1416" y="504" style="font-size:27px">채용 공고 순위 결합</text><text class="d" x="1416" y="546">채용 공고 적합도 점수</text><text class="d" x="1416" y="584" style="fill:#8A5A12">모델 A</text>
+          <text class="t" x="1416" y="504" style="font-size:27px">채용 공고 순위 결합</text><text class="d" x="1416" y="546">채용 공고 적합도 점수</text><text class="d" x="1416" y="584" style="fill:#9A4030">모델 A</text>
         </g>
         <g class="in dl-8">
           <path d="M1028 500H976" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#fdd-tip)"></path><text class="k" x="1002" y="480" text-anchor="middle">평가</text>
@@ -2067,7 +2067,7 @@ svg [data-morph] { transform-box: fill-box; }
           <path d="M640 200V220H1014V150H1032" class="ar" marker-end="url(#fda-tip)"></path><path d="M1006 100H1032" class="ar" marker-end="url(#fda-tip)"></path><path d="M1006 400H1032" class="ar" marker-end="url(#fda-tip)"></path>
           <rect class="bx tr" x="1040" y="40" width="290" height="520" rx="18"></rect>
           <text class="s am" x="1062" y="76">모델 A</text><text class="b" x="1062" y="112">채용 공고 순위 결합</text>
-          <circle cx="1068" cy="157" r="4.5" style="fill:#C98A2B"></circle><text class="s dk" x="1086" y="164" style="font-size:21px">파일럿 점수</text><circle cx="1068" cy="198" r="4.5" style="fill:#C98A2B"></circle><text class="s dk" x="1086" y="205" style="font-size:21px">프로필–채용 공고 코사인</text><circle cx="1068" cy="239" r="4.5" style="fill:#C98A2B"></circle><text class="s dk" x="1086" y="246" style="font-size:21px">근거 점수 평균 · 최솟값</text><circle cx="1068" cy="280" r="4.5" style="fill:#C98A2B"></circle><text class="s dk" x="1086" y="287" style="font-size:21px">필수 · 업무 · 우대별 평균</text><circle cx="1068" cy="321" r="4.5" style="fill:#C98A2B"></circle><text class="s dk" x="1086" y="328" style="font-size:21px">요건–기록 코사인</text><circle cx="1068" cy="362" r="4.5" style="fill:#C98A2B"></circle><text class="s dk" x="1086" y="369" style="font-size:21px">기록 수</text>
+          <circle cx="1068" cy="157" r="4.5" style="fill:#9A4030"></circle><text class="s dk" x="1086" y="164" style="font-size:21px">파일럿 점수</text><circle cx="1068" cy="198" r="4.5" style="fill:#9A4030"></circle><text class="s dk" x="1086" y="205" style="font-size:21px">프로필–채용 공고 코사인</text><circle cx="1068" cy="239" r="4.5" style="fill:#9A4030"></circle><text class="s dk" x="1086" y="246" style="font-size:21px">근거 점수 평균 · 최솟값</text><circle cx="1068" cy="280" r="4.5" style="fill:#9A4030"></circle><text class="s dk" x="1086" y="287" style="font-size:21px">필수 · 업무 · 우대별 평균</text><circle cx="1068" cy="321" r="4.5" style="fill:#9A4030"></circle><text class="s dk" x="1086" y="328" style="font-size:21px">요건–기록 코사인</text><circle cx="1068" cy="362" r="4.5" style="fill:#9A4030"></circle><text class="s dk" x="1086" y="369" style="font-size:21px">기록 수</text>
           <line x1="1062" y1="404" x2="1308" y2="404" style="stroke:#E7CEB0;stroke-width:1.5"></line>
           <text class="b" x="1062" y="462" style="font-size:26px">MLP 10 → 24 → 1</text><text class="s dk" x="1062" y="500">GELU · Sigmoid</text>
         </g>
