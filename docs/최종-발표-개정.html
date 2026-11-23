@@ -1340,40 +1340,44 @@ svg [data-morph] { transform-box: fill-box; }
 .fd-ndcg svg { width: 100%; height: auto; display: block; }
 
 /* 개발 범위 — 마일스톤(사전 계획) 아래에 버전(실제 수행)을 묶습니다 */
-.fd-ms { position: relative; display: grid; grid-template-columns: 1272px 392px; gap: 48px; padding-top: 44px; }
-.fd-ms .rowk { position: absolute; left: 0; font-size: 22px; font-weight: 600; letter-spacing: .02em; color: var(--ex-slate-400); }
-.fd-ms .rowk.k1 { top: 0; }
-.fd-ms .rowk.k2 { top: 252px; }
-.fd-ms .plan { display: grid; grid-template-columns: repeat(4, 318px); }
-.fd-ms .seg { height: 72px; display: flex; align-items: center; justify-content: center; gap: 10px; font-family: var(--ex-font-mono); font-size: 30px; font-weight: 500; }
-.fd-ms .plan .seg { border-right: 3px solid var(--ex-surface-50); }
-.fd-ms .m1 .seg { background: var(--ex-bean-50); color: var(--ex-espresso); border-radius: 999px 0 0 999px; }
-.fd-ms .m2 .seg { background: var(--ex-crema); color: var(--ex-ink-900); }
-.fd-ms .m3 .seg { background: var(--ex-espresso); color: var(--ex-white); }
-.fd-ms .m4 .seg { background: var(--ex-ink-900); color: var(--ex-white); border-right: 0; border-radius: 0 999px 999px 0; }
-.fd-ms .goal { height: 118px; padding: 22px 22px 0 6px; font-size: 29px; font-weight: 600; letter-spacing: -.035em; line-height: 1.3; word-break: keep-all; }
-.fd-ms .chips { margin-top: 62px; display: grid; gap: 12px; padding-right: 22px; align-content: start; }
-.fd-ms .chip { height: 68px; padding: 0 18px; border-radius: 16px; background: var(--ex-white); border: 1px solid var(--ex-line-200); display: flex; align-items: center; gap: 14px; white-space: nowrap; }
-.fd-ms .chip .vn { flex: none; min-width: 52px; font-size: 34px; line-height: 1; color: var(--ex-espresso); }
-.fd-ms .chip .nm { font-size: 26px; font-weight: 600; letter-spacing: -.03em; }
-.fd-ms .chip.done { background: var(--ex-ink-900); border-color: var(--ex-ink-900); color: var(--ex-white); }
-.fd-ms .chip.done .vn { color: var(--ex-crema); }
-.fd-ms .chip.own { height: 92px; background: var(--fp-own); border-color: var(--fp-own-line); }
-.fd-ms .chip.own i { font-size: 38px; color: #8A5A12; }
-.fd-ms .chip.own small { display: block; margin-top: 4px; font-size: 21px; font-weight: 500; color: #8A5A12; letter-spacing: -.01em; }
-.fd-ms .extra .seg { border-radius: 999px; border: 2px dashed var(--ex-espresso); color: var(--ex-espresso); background: transparent; font-family: var(--ex-font-ui); font-size: 28px; font-weight: 600; letter-spacing: -.02em; }
-.fd-ms .extra .seg i { font-size: 28px; }
-.fd-ms .extra .goal { padding-left: 4px; font-size: 44px; }
-.fd-ms .extra .chips { padding-right: 0; }
-.fd-ms .extra .chip { background: var(--ex-bean-50); border-color: transparent; }
-.fd-ms .extra .chip .vn { min-width: 118px; font-size: 28px; }
-.fd-ms .extra .chip.end { background: var(--ex-espresso); color: var(--ex-white); }
-.fd-ms .extra .chip.end .vn { color: var(--ex-white); }
 
 /* 1.0 설계 범위 완성 — 규모 수치 네 줄 */
-/* 11쪽 · 마일스톤 네 칸만 */
-.fd-ms.solo { grid-template-columns: 1712px; }
-.fd-ms.solo .plan { grid-template-columns: repeat(4, 428px); }
+/* 11쪽 · 개발 범위 — 이어진 마일스톤 막대와 그 아래 버전 묶음 */
+.fdp { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; --m1: var(--ex-bean-50); --m2: var(--ex-crema); --m3: var(--ex-espresso); --m4: var(--ex-ink-900); }
+.fdp-k { display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 600; letter-spacing: .01em; color: var(--ex-slate-400); }
+.fdp-k i { font-size: 24px; }
+.fdp-k.k2 { margin: 30px 0 14px; }
+.fdp-bar { margin-top: 14px; display: grid; grid-template-columns: repeat(4, 1fr); height: 116px; flex: none; }
+.fdp-seg { display: flex; flex-direction: column; justify-content: center; gap: 8px; padding: 0 32px; border-right: 3px solid var(--ex-surface-50); white-space: nowrap; }
+.fdp-seg .id { font-family: var(--ex-font-mono); font-size: 22px; font-weight: 500; letter-spacing: .04em; opacity: .78; }
+.fdp-seg .t { font-size: 28px; font-weight: 600; letter-spacing: -.04em; line-height: 1.1; }
+.fdp-seg.m1 { background: var(--m1); color: var(--ex-espresso); border-radius: 58px 0 0 58px; padding-left: 48px; }
+.fdp-seg.m2 { background: var(--m2); color: var(--ex-ink-900); }
+.fdp-seg.m3 { background: var(--m3); color: var(--ex-white); }
+.fdp-seg.m4 { background: var(--m4); color: var(--ex-white); border-right: 0; border-radius: 0 58px 58px 0; }
+.fdp-lanes { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.fdp-lane { display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 28px; min-height: 0; }
+.fdp-lane.m1 { background: color-mix(in srgb, var(--m1) 72%, transparent); }
+.fdp-lane.m2 { background: color-mix(in srgb, var(--m2) 26%, transparent); }
+.fdp-lane.m3 { background: color-mix(in srgb, var(--m3) 10%, transparent); }
+.fdp-lane.m4 { background: color-mix(in srgb, var(--m4) 7%, transparent); }
+.fdp-ver { position: relative; flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; justify-content: center; padding: 0 26px; border-radius: 18px; background: var(--ex-white); box-shadow: var(--ex-elevation-raised); }
+.fdp-ver .h { display: flex; align-items: baseline; gap: 14px; white-space: nowrap; }
+.fdp-ver .vn { font-size: 46px; line-height: 1; color: var(--ex-espresso); }
+.fdp-ver b { font-size: 30px; font-weight: 600; letter-spacing: -.04em; line-height: 1.2; }
+.fdp-ver .tx b { display: block; }
+.fdp-ver .tx span, .fdp-ver .d { display: block; margin-top: 8px; font-size: 23px; line-height: 1.4; letter-spacing: -.025em; color: var(--ex-slate-500); word-break: keep-all; }
+.fdp-ver > i { position: absolute; right: 18px; top: 16px; font-size: 30px; color: var(--ex-espresso); opacity: .55; }
+.fdp-ver.done { background: var(--ex-ink-900); color: var(--ex-white); }
+.fdp-ver.done .vn { color: var(--ex-crema); }
+.fdp-ver.done .d { color: var(--ex-on-dark-body); }
+.fdp-ver.done > i { color: var(--ex-crema); opacity: 1; }
+.fdp-ver.own { display: flex; flex-direction: column; justify-content: center; gap: 22px; padding: 0 26px; }
+.fdp-ver.own .hd2 { display: flex; align-items: center; gap: 16px; }
+.fdp-ver.own .hd2 i { flex: none; width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center; font-size: 38px; color: #8A5A12; background: var(--fp-own); border: 1px solid var(--fp-own-line); }
+.fdp-ver.own ol { list-style: none; counter-reset: fdp; display: grid; gap: 14px; padding-top: 22px; border-top: 1px solid var(--ex-line-inner); }
+.fdp-ver.own li { counter-increment: fdp; display: flex; align-items: baseline; gap: 14px; font-size: 25px; font-weight: 500; letter-spacing: -.03em; color: var(--ex-slate-700); white-space: nowrap; }
+.fdp-ver.own li::before { content: counter(fdp); flex: none; font-family: var(--ex-font-brand); font-weight: 300; font-size: 28px; color: #8A5A12; width: 18px; }
 
 /* 18쪽 · 설계 범위 이후라는 표시 */
 .fd-stair { position: relative; }
@@ -1767,11 +1771,34 @@ svg [data-morph] { transform-box: fill-box; }
       <p class="sub">사전 계획의 마일스톤과 실제 수행한 버전</p>
     </div>
     <div class="body">
-      <div class="fd-ms solo">
-        <div class="rowk k1 in in-fade dl-3">마일스톤 · 사전 계획</div>
-        <div class="rowk k2 in in-fade dl-5">버전 · 실제 수행</div>
-        <div class="plan">
-          <div class="col m1"><div class="seg in dl-3">M1</div><div class="goal in dl-3">커리어 기록과 공고 탐색</div><div class="chips in dl-5"><div class="chip"><div class="vn">0.1</div><div class="nm">개발 기반 구축</div></div><div class="chip"><div class="vn">0.3</div><div class="nm">커리어 기록</div></div><div class="chip"><div class="vn">0.4</div><div class="nm">공고 검색</div></div></div></div><div class="col m2"><div class="seg in dl-4">M2</div><div class="goal in dl-4">공고 맞춤 포트폴리오 제작</div><div class="chips in dl-6"><div class="chip"><div class="vn">0.2</div><div class="nm">포트폴리오 생성</div></div><div class="chip"><div class="vn">0.5</div><div class="nm">공고 맞춤 제작 흐름</div></div></div></div><div class="col m3"><div class="seg in dl-5">M3</div><div class="goal in dl-5">자체 학습 모델 기반 추천</div><div class="chips in dl-7"><div class="chip own"><i class="ph ph-brain"></i><div class="nm">추천 모델 개발<small>학습 · 평가 · 서비스 적용</small></div></div></div></div><div class="col m4"><div class="seg in dl-6">M4</div><div class="goal in dl-6">포트폴리오 배포와 방문 분석</div><div class="chips in dl-8"><div class="chip"><div class="vn">0.6</div><div class="nm">배포 · 방문 분석</div></div><div class="chip done"><div class="vn">1.0</div><div class="nm">설계 범위 완성</div></div></div></div>
+      <div class="fdp">
+        <div class="fdp-k in in-fade dl-3">사전 계획 · 제안서의 마일스톤</div>
+        <div class="fdp-bar in dl-3">
+          <div class="fdp-seg m1"><span class="id">M1</span><span class="t">커리어 기록과 공고 탐색</span></div>
+          <div class="fdp-seg m2"><span class="id">M2</span><span class="t">공고 맞춤 포트폴리오 제작</span></div>
+          <div class="fdp-seg m3"><span class="id">M3</span><span class="t">자체 학습 모델 기반 추천</span></div>
+          <div class="fdp-seg m4"><span class="id">M4</span><span class="t">포트폴리오 배포와 방문 분석</span></div>
+        </div>
+        <div class="fdp-k k2 in in-fade dl-4"><i class="ph ph-arrow-down"></i>실제 수행 · 버전</div>
+        <div class="fdp-lanes">
+          <div class="fdp-lane m1 in dl-4">
+            <div class="fdp-ver "><div class="h"><span class="vn">0.1</span><b>개발 기반 구축</b></div><div class="d">명세 · 첫 구현 · 운영 배포 · CI</div></div>
+            <div class="fdp-ver "><div class="h"><span class="vn">0.3</span><b>커리어 기록</b></div><div class="d">문서형 기록 작성 · 속성 편집</div></div>
+            <div class="fdp-ver "><div class="h"><span class="vn">0.4</span><b>공고 검색</b></div><div class="d">자연어 검색 · 지역 필터</div></div>
+          </div>
+          <div class="fdp-lane m2 in dl-5">
+            <div class="fdp-ver "><div class="h"><span class="vn">0.2</span><b>포트폴리오 생성</b></div><div class="d">생성 · 편집 · 배포 경로 구현</div></div>
+            <div class="fdp-ver "><div class="h"><span class="vn">0.5</span><b>공고 맞춤 제작 흐름</b></div><div class="d">공고 분석에서 다듬기까지 여섯 단계<br>구조화 생성 도입</div></div>
+          </div>
+          <div class="fdp-lane m3 in dl-6">
+            <div class="fdp-ver own"><div class="hd2"><i class="ph ph-brain"></i><div class="tx"><b>추천 모델 개발</b><span>플랫폼 버전과 병행</span></div></div>
+              <ol><li>합성 데이터 · 교사 라벨 구축</li><li>인코더 비교 · 모델 학습</li><li>한국어 평가 세트 구축</li><li>서비스 적용</li></ol>
+            </div>
+          </div>
+          <div class="fdp-lane m4 in dl-7">
+            <div class="fdp-ver "><div class="h"><span class="vn">0.6</span><b>배포 · 방문 분석</b></div><div class="d">공개 주소 배포 · 방문 분석 동작</div></div>
+            <div class="fdp-ver done"><div class="h"><span class="vn">1.0</span><b>설계 범위 완성</b></div><div class="d">운영 안정화<br>열 단계의 운영 환경 동작</div><i class="ph ph-seal-check"></i></div>
+          </div>
         </div>
       </div>
     </div>
