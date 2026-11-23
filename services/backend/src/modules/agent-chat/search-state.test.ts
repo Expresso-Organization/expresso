@@ -8,6 +8,10 @@ describe("대화 검색 조건", () => {
     expect(expanded).toMatchObject({ country: "한국", experience: 0, technology: "Python", locationMode: "prefer", families: ["데이터", "ML"], locations: ["판교", "강남", "성수"] });
     expect(searchConditions(expanded)).toContain("판교 · 강남 · 성수 우선");
   });
+  it("모델이 대한민국을 보내도 한국 검색을 유지한다", () => {
+    expect(mergeSearch(undefined, { country: "대한민국", locations: ["판교"], locationMode: "prefer", limit: 5 }).country).toBe("한국");
+    expect(mergeSearch({ country: "대한민국", locations: ["판교"], limit: 5 }, { locations: ["판교", "강남", "성수"], limit: 5 }).country).toBe("한국");
+  });
   it("예전 복합 지역 문자열을 개별 장소로 해석한다", () => {
     expect(new Set(searchLocations({ location: "강남 성수 판교", limit: 5 }))).toEqual(new Set(["강남", "성수", "판교"]));
   });
