@@ -1572,6 +1572,13 @@ svg [data-morph] { transform-box: fill-box; }
 .fd-eval.duo .g.sm { font-size: 25px; }
 .fd-eval.duo .bar.ref { fill: #F3DCCB; stroke: #9A4030; stroke-width: 2; stroke-dasharray: 9 7; }
 .fd-eval.duo .v.ref { fill: #9A4030; }
+.fd-eval.duo .ex-box { fill: var(--ex-tint-50); }
+.fd-eval.duo .ex-q { font-family: var(--ex-font-ui); font-size: 25px; font-weight: 600; letter-spacing: -.03em; fill: var(--ex-ink-900); }
+.fd-eval.duo .ex-t { font-family: var(--ex-font-ui); font-size: 25px; font-weight: 500; letter-spacing: -.03em; fill: var(--ex-ink-900); }
+.fd-eval.duo .ex-no { fill: var(--ex-white); stroke: var(--ex-slate-300); stroke-width: 1.5; }
+.fd-eval.duo .ex-n { font-family: var(--ex-font-brand); font-size: 22px; fill: var(--ex-slate-700); }
+.fd-eval.duo .ex-ok { fill: #FBEEE4; }
+.fd-eval.duo .ex-okt { font-family: var(--ex-font-ui); font-size: 22px; font-weight: 600; fill: #9A4030; }
 /* 추천 모델 개발 목표 — 같은 입력에서 갈라지는 두 경로. 쓰지 않은 경로는 점선과 회색, 쓰는 경로는 실선 */
 .fd-goal .k { font-family: var(--ex-font-ui); font-size: 22px; font-weight: 600; fill: var(--ex-espresso); }
 .fd-goal .t { font-family: var(--ex-font-ui); font-size: 34px; font-weight: 600; letter-spacing: -.03em; fill: var(--ex-ink-900); }
@@ -2292,7 +2299,7 @@ svg [data-morph] { transform-box: fill-box; }
   </div>
 </section>
 
-<section class="slide fp" data-title="추천 모델 평가 결과" data-kind="막대 차트">
+<section class="slide fp" data-title="추천 모델 평가 결과" data-kind="막대 차트와 예시">
   <div class="frame">
     <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">3</span><span class="sec">주요 아키텍처</span><span class="pg"></span></div>
     <div class="head in dl-2">
@@ -2300,40 +2307,46 @@ svg [data-morph] { transform-box: fill-box; }
       <p class="sub">한국어 평가 · 프로필 40명 × 채용 공고 32건 · 1,280쌍 전부 채점</p>
     </div>
     <div class="body">
-      <svg class="fd-eval duo" viewBox="0 0 1712 650" style="width: 1712px; height: 650px; flex: none; max-width: none; max-height: none" role="img" aria-label="한국어 평가 결과. 채용 공고 순위의 NDCG@10은 파일럿 MLP 0.236, 추천 모델 0.589, 추천 모델의 상위 10건을 외부 LLM으로 재정렬한 비교 실험 0.667. 순서 일치율은 파일럿 MLP 0.497, 추천 모델 0.672이고 무작위는 0.5. 요건별 근거 기록은 정답 근거 기록을 상위 1건에서 61.9퍼센트, 상위 2건 안에서 80.6퍼센트, 상위 3건 안에서 88.7퍼센트 찾았고 Recall@3는 74.4퍼센트, MRR@3는 0.740">
+      <svg class="fd-eval duo" viewBox="0 0 1712 650" style="width: 1712px; height: 650px; flex: none; max-width: none; max-height: none" role="img" aria-label="한국어 평가 결과. 채용 공고 순위의 NDCG@10은 파일럿 MLP 0.236, 추천 모델 0.589, 추천 모델의 상위 10건을 외부 LLM으로 재정렬한 비교 실험 0.667. 요건별 근거 기록은 정답 근거 기록을 상위 1건에서 61.9퍼센트, 상위 2건 안에서 80.6퍼센트, 상위 3건 안에서 88.7퍼센트 찾았고 Recall@3는 74.4퍼센트, MRR@3는 0.740. 예시: 필수요건 「기획·디자인 요구사항을 웹으로 표현할 수 있는 역량을 가진 분」에 대해 커리어 기록 13건 중 상위 3건으로 콘텐츠 시안과 전달 흐름, 요구사항 문서의 공통 점검선, 화면 구성과 시안 조정을 골랐고 1위와 3위가 정답">
         <!-- 채용 공고 순위 · NDCG@10 -->
         <g class="in dl-3">
           <text class="t" x="0" y="34">채용 공고 순위</text>
           <text class="g" x="0" y="92">NDCG@10</text><text class="e" x="0" y="126">상위 10건의 순서 품질</text>
-          <g class="grid"><line x1="64" y1="160" x2="520" y2="160"></line><line x1="64" y1="330" x2="520" y2="330"></line></g><line class="base0" x1="64" y1="500" x2="520" y2="500"></line><text class="ax" x="50" y="168" text-anchor="end">1.0</text><text class="ax" x="50" y="338" text-anchor="end">0.5</text><text class="ax" x="50" y="508" text-anchor="end">0</text>
+          <g class="grid"><line x1="64" y1="160" x2="520" y2="160"></line><line x1="64" y1="330" x2="520" y2="330"></line></g>
+          <line class="base0" x1="64" y1="500" x2="520" y2="500"></line>
+          <text class="ax" x="50" y="168" text-anchor="end">1.0</text><text class="ax" x="50" y="338" text-anchor="end">0.5</text><text class="ax" x="50" y="508" text-anchor="end">0</text>
           <rect class="bar base" x="96" y="419.8" width="110" height="80.2" rx="8"></rect><text class="v base" x="151.0" y="407.8" text-anchor="middle">0.236</text><rect class="bar own" x="236" y="299.7" width="110" height="200.3" rx="8"></rect><text class="v own" x="291.0" y="287.7" text-anchor="middle">0.589</text><rect class="bar ref" x="376" y="273.2" width="110" height="226.8" rx="8"></rect><text class="v ref" x="431.0" y="261.2" text-anchor="middle">0.667</text>
           <text class="g sm" x="151" y="540" text-anchor="middle">파일럿 MLP</text>
           <text class="g sm" x="291" y="540" text-anchor="middle">추천 모델</text>
           <text class="g sm" x="431" y="540" text-anchor="middle">외부 LLM</text><text class="g sm" x="431" y="572" text-anchor="middle">재정렬</text>
-          <text class="e" x="431" y="608" text-anchor="middle">비교 실험 · 서비스 기본 꺼짐</text>
+          <text class="e" x="526" y="610" text-anchor="end">비교 실험 · 서비스 기본 꺼짐</text>
         </g>
-        <!-- 채용 공고 순위 · 순서 일치율 -->
+        <line class="div" x1="572" y1="6" x2="572" y2="620"></line>
+        <!-- 요건별 근거 기록 · Hit@k -->
         <g class="in dl-4">
-          <text class="g" x="660" y="92">순서 일치율</text><text class="e" x="660" y="126">두 건 중 더 맞는 쪽을 앞에 둔 비율</text>
-          <g class="grid"><line x1="660" y1="160" x2="1080" y2="160"></line><line x1="660" y1="330" x2="1080" y2="330"></line></g><line class="base0" x1="660" y1="500" x2="1080" y2="500"></line><text class="ax" x="646" y="168" text-anchor="end">1.0</text><text class="ax" x="646" y="338" text-anchor="end">0.5</text><text class="ax" x="646" y="508" text-anchor="end">0</text>
-          <rect class="bar base" x="704" y="331.0" width="110" height="169.0" rx="8"></rect><text class="v base" x="759.0" y="319.0" text-anchor="middle">0.497</text><rect class="bar own" x="844" y="271.5" width="110" height="228.5" rx="8"></rect><text class="v own" x="899.0" y="259.5" text-anchor="middle">0.672</text>
-          <line class="rnd" x1="676" y1="330" x2="984" y2="330"></line><text class="e rnd" x="994" y="338">무작위</text>
-          <text class="g sm" x="759" y="540" text-anchor="middle">파일럿 MLP</text>
-          <text class="g sm" x="899" y="540" text-anchor="middle">추천 모델</text>
+          <text class="t" x="620" y="34">요건별 근거 기록</text>
+          <text class="g" x="620" y="92">Hit@k</text><text class="e" x="620" y="126">정답 근거 기록을 찾은 요건의 비율</text>
+          <text class="g" x="620" y="218">상위 1건</text><rect class="trk" x="744" y="176" width="280" height="64" rx="10"></rect><rect class="bar own" x="744" y="176" width="173.3" height="64" rx="10"></rect><text class="v own" x="1038" y="220">61.9%</text>
+          <text class="g" x="620" y="328">상위 2건</text><rect class="trk" x="744" y="286" width="280" height="64" rx="10"></rect><rect class="bar own" x="744" y="286" width="225.7" height="64" rx="10"></rect><text class="v own" x="1038" y="330">80.6%</text>
+          <text class="g" x="620" y="438">상위 3건</text><rect class="trk" x="744" y="396" width="280" height="64" rx="10"></rect><rect class="bar own" x="744" y="396" width="248.4" height="64" rx="10"></rect><text class="v own" x="1038" y="440">88.7%</text>
         </g>
-        <line class="div" x1="1136" y1="6" x2="1136" y2="600"></line>
-        <!-- 요건별 근거 기록 -->
+        <!-- 요건별 근거 기록 · Recall · MRR -->
         <g class="in dl-5">
-          <text class="t" x="1176" y="34">요건별 근거 기록</text>
-          <text class="g" x="1176" y="92">Hit@k</text><text class="e" x="1272" y="91">정답 근거 기록을 찾은 요건의 비율</text>
-          <text class="g" x="1176" y="168">상위 1건</text><rect class="trk" x="1300" y="130" width="290" height="56" rx="10"></rect><rect class="bar own" x="1300" y="130" width="179.5" height="56" rx="10"></rect><text class="v own" x="1604" y="170">61.9%</text>
-          <text class="g" x="1176" y="244">상위 2건</text><rect class="trk" x="1300" y="206" width="290" height="56" rx="10"></rect><rect class="bar own" x="1300" y="206" width="233.7" height="56" rx="10"></rect><text class="v own" x="1604" y="246">80.6%</text>
-          <text class="g" x="1176" y="320">상위 3건</text><rect class="trk" x="1300" y="282" width="290" height="56" rx="10"></rect><rect class="bar own" x="1300" y="282" width="257.2" height="56" rx="10"></rect><text class="v own" x="1604" y="322">88.7%</text>
-          <line class="div" x1="1176" y1="386" x2="1712" y2="386"></line>
-          <text class="g" x="1176" y="440">Recall@3</text><text class="v own big" x="1176" y="500">74.4%</text>
-          <text class="e" x="1176" y="548">정답 근거 기록 가운데</text><text class="e" x="1176" y="580">상위 3건에 든 비율</text>
-          <text class="g" x="1460" y="440">MRR@3</text><text class="v own big" x="1460" y="500">0.740</text>
-          <text class="e" x="1460" y="548">첫 정답 근거 기록의</text><text class="e" x="1460" y="580">순위 역수 평균</text>
+          <text class="g" x="1180" y="92">Recall@3</text><text class="v own big" x="1180" y="150">74.4%</text>
+          <text class="e" x="1180" y="190">정답 근거 기록 가운데</text><text class="e" x="1180" y="220">상위 3건에 든 비율</text>
+          <text class="g" x="1460" y="92">MRR@3</text><text class="v own big" x="1460" y="150">0.740</text>
+          <text class="e" x="1460" y="190">첫 정답 근거 기록의</text><text class="e" x="1460" y="220">순위 역수 평균</text>
+        </g>
+        <!-- 예시 한 건 -->
+        <g class="in dl-6">
+          <line class="div" x1="1180" y1="258" x2="1712" y2="258"></line>
+          <text class="g" x="1180" y="308">예시</text><text class="e" x="1244" y="307">필수요건 한 건 · 커리어 기록 13건</text>
+          <rect class="ex-box" x="1180" y="328" width="532" height="100" rx="14"></rect>
+          <text class="ex-q" x="1204" y="370">기획·디자인 요구사항을 웹으로</text><text class="ex-q" x="1204" y="404">표현할 수 있는 역량을 가진 분</text>
+          <circle class="ex-no" cx="1198" cy="470" r="17"></circle><text class="ex-n" x="1198" y="478" text-anchor="middle">1</text><text class="ex-t" x="1232" y="479">콘텐츠 시안과 전달 흐름</text><rect class="ex-ok" x="1634" y="451" width="78" height="38" rx="19"></rect><text class="ex-okt" x="1673" y="478" text-anchor="middle">정답</text>
+          <circle class="ex-no" cx="1198" cy="520" r="17"></circle><text class="ex-n" x="1198" y="528" text-anchor="middle">2</text><text class="ex-t" x="1232" y="529">요구사항 문서의 공통 점검선</text>
+          <circle class="ex-no" cx="1198" cy="570" r="17"></circle><text class="ex-n" x="1198" y="578" text-anchor="middle">3</text><text class="ex-t" x="1232" y="579">화면 구성과 시안 조정</text><rect class="ex-ok" x="1634" y="551" width="78" height="38" rx="19"></rect><text class="ex-okt" x="1673" y="578" text-anchor="middle">정답</text>
+          <text class="e" x="1180" y="626">정답 2건을 모두 상위 3건에서 찾음 · 첫 정답 1위</text>
         </g>
       </svg>
     </div>
