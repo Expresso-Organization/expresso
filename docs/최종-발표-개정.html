@@ -1313,7 +1313,7 @@ svg [data-morph] { transform-box: fill-box; }
    두 덱(최종-발표.html, 버전-히스토리-발표.html)의 장을 옮겨 조립하면서 새로 만든 자리만 둡니다.
    =========================================================== */
 /* 목차 — 넷째 칸을 넓혀 설계 범위와 추가 범위를 나란히 */
-.fd-toc { grid-template-columns: 1fr 1.05fr 1.1fr 2.5fr .95fr .9fr; padding-top: 12px; }
+.fd-toc { grid-template-columns: 1fr 1.2fr 1.15fr 1.2fr 1.05fr .9fr; padding-top: 12px; }
 .fd-toc .n { font-size: 132px; }
 .fd-toc .t { margin-top: 28px; font-size: 34px; word-break: keep-all; line-height: 1.25; }
 .fd-toc ul { margin-top: 22px; gap: 10px; }
@@ -1371,8 +1371,28 @@ svg [data-morph] { transform-box: fill-box; }
 .fd-ms .extra .chip.end .vn { color: var(--ex-white); }
 
 /* 1.0 설계 범위 완성 — 규모 수치 네 줄 */
-.vh-v10 .stats.fd-four { grid-template-rows: repeat(4, 1fr); }
-.vh-v10 .stats.fd-four .vn { font-size: 88px; }
+/* 11쪽 · 마일스톤 네 칸만 */
+.fd-ms.solo { grid-template-columns: 1712px; }
+.fd-ms.solo .plan { grid-template-columns: repeat(4, 428px); }
+
+/* 18쪽 · 설계 범위 이후라는 표시 */
+.fd-stair { position: relative; }
+.fd-plus { position: absolute; left: 0; top: 6px; display: flex; align-items: center; gap: 22px; }
+.fd-plus .pill { height: 64px; padding: 0 30px; border-radius: 999px; border: 2px dashed var(--ex-espresso); color: var(--ex-espresso); display: flex; align-items: center; gap: 10px; font-size: 28px; font-weight: 600; letter-spacing: -.02em; }
+.fd-plus .pill i { font-size: 28px; }
+.fd-plus .t { font-size: 28px; color: var(--ex-slate-500); letter-spacing: -.01em; }
+
+/* 13쪽 · 설계서 열 단계 */
+.vh-v10:has(.fd-steps) { grid-template-columns: 400px 1fr; }
+.fd-steps { display: flex; flex-direction: column; min-height: 0; }
+.fd-steps .k { font-size: 24px; font-weight: 600; color: var(--ex-slate-500); letter-spacing: -.01em; padding-bottom: 14px; }
+.fd-steps ol { list-style: none; flex: 1 1 auto; min-height: 0; display: grid; grid-template-rows: repeat(10, 1fr); border-top: 1px solid var(--ex-line-200); }
+.fd-steps li { display: flex; align-items: center; gap: 16px; font-size: 30px; font-weight: 600; letter-spacing: -.025em; border-bottom: 1px solid var(--ex-line-inner); }
+.fd-steps li i { font-size: 34px; color: var(--ex-espresso); }
+
+/* 14쪽 · 다섯 줄을 지면 높이에 고르게 */
+.fp-meter.fd-meter { align-content: stretch; grid-template-rows: 4fr 1fr; }
+.fd-meter .rows { align-items: center; }
 
 /* 남은 일 한 줄 */
 .fd-rest { flex: none; margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--ex-line-200); display: flex; align-items: baseline; gap: 28px; }
@@ -1413,7 +1433,7 @@ svg [data-morph] { transform-box: fill-box; }
 <section class="slide fp vh fd-video" data-title="시연 영상" data-kind="영상 자리 · 정지 화면">
   <div class="frame">
     <div class="fd-poster">
-      <div class="wm in dl-2"><span class="vh-wm">Expre<em>ss</em>o 2.<i>0</i></span></div>
+      <div class="wm in dl-2"><span class="vh-wm">Expre<em>ss</em>o</span></div>
       <div class="cap in in-fade dl-4"><i class="ph ph-play-circle"></i>시연 영상</div>
     </div>
   </div>
@@ -1426,15 +1446,10 @@ svg [data-morph] { transform-box: fill-box; }
     <div class="body">
       <div class="fp-cols fp-toc fd-toc">
         <div class="in dl-3"><div class="n">1</div><div class="t">문제의식</div><ul><li>선정 배경</li><li>벤치마킹 사례와 차별점</li></ul></div>
-        <div class="in dl-4"><div class="n">2</div><div class="t">프로젝트 정체성과 핵심 가치</div><ul><li>서비스 개요</li><li>주요 기능과 화면</li></ul></div>
+        <div class="in dl-4"><div class="n">2</div><div class="t">프로젝트 정체성과 핵심 가치</div><ul><li>서비스 개요</li><li>주요 기능</li></ul></div>
         <div class="in dl-5"><div class="n">3</div><div class="t">주요 아키텍처</div><ul><li>시스템 구성</li><li>AI 모델 구성</li><li>추천 모델 학습과 성능</li></ul></div>
         <div class="in dl-6"><div class="n">4</div><div class="t">개발 과정</div>
-          <ul><li>개발 범위</li><li>개발 타임라인과 팀</li></ul>
-          <div class="two">
-            <div><div class="g">Expresso 1.0 · 설계 범위</div><ul><li>1.0 설계 범위 완성</li><li>성능 지표</li></ul></div>
-            <div class="plus"><div class="g">Expresso 2.0 · 추가 범위</div><ul><li>Expresso 1.0의 한계</li><li>Expresso 2.0의 출발점</li><li>Expresso 2.0의 핵심</li><li>1.1 ~ 2.0의 단계</li></ul></div>
-          </div>
-          <ul><li>개발 규모</li></ul>
+          <ul><li>개발 범위</li><li>개발팀 구성 및 역할</li><li>1.0 설계 범위 완성</li><li>성능 지표</li></ul>
         </div>
         <div class="in dl-7"><div class="n">5</div><div class="t">Lessons &amp; Learned</div></div>
         <div class="in dl-8"><div class="n">6</div><div class="t">결론</div><ul><li>기대 효과와 남은 일</li></ul></div>
@@ -1524,7 +1539,7 @@ svg [data-morph] { transform-box: fill-box; }
   </div>
 </section>
 
-<section class="slide fp" data-title="서비스 개요" data-kind="그림과 세 열">
+<section class="slide fp" data-title="서비스 개요" data-kind="그림과 용어 풀이">
   <div class="frame">
     <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">2</span><span class="sec">프로젝트 정체성과 핵심 가치</span><span class="pg"></span></div>
     <div class="head in dl-2">
@@ -1553,20 +1568,19 @@ svg [data-morph] { transform-box: fill-box; }
         <rect x="1070" y="352" width="330" height="40" style="fill: var(--ex-surface-50)"/>
         <text x="1235" y="382" text-anchor="middle" class="s-p">방문 분석 → 다음 포트폴리오 개선</text>
       </svg>
-      <div class="fp-cols" style="grid-template-columns: repeat(3, 1fr); margin-top: 40px; border-top: 1px solid var(--ex-line-200); padding-top: 28px">
-        <div class="in dl-4"><div class="k">지원 준비</div><div class="t" style="margin-top: 8px">커리어 기록 재사용</div><div class="p" style="margin-top: 8px">쌓아 둔 기록에서 공고에 맞는 경험 선택</div></div>
-        <div class="in dl-5"><div class="k">경험 정리</div><div class="t" style="margin-top: 8px">AI 인터뷰로 기록 보완</div><div class="p" style="margin-top: 8px">공고 요건 기반 질문 생성 · 답변 기록 저장</div></div>
-        <div class="in dl-6"><div class="k">배포 이후</div><div class="t" style="margin-top: 8px">방문 분석 기반 개선</div><div class="p" style="margin-top: 8px">방문 수 · 섹션별 체류 시간 분석</div></div>
+      <div class="fp-cols" style="grid-template-columns: repeat(2, 1fr); margin-top: 40px; border-top: 1px solid var(--ex-line-200); padding-top: 28px">
+        <div class="in dl-4"><div class="k">용어</div><div class="t" style="margin-top: 8px">커리어 기록</div><div class="p" style="margin-top: 8px">프로젝트 · 활동 · 성과를 쌓아 두는 기록</div></div>
+        <div class="in dl-5"><div class="k">용어</div><div class="t" style="margin-top: 8px">공고 맞춤 포트폴리오</div><div class="p" style="margin-top: 8px">지원하는 공고의 요건에 맞춰 경험을 골라 구성한 포트폴리오</div></div>
       </div>
     </div>
   </div>
 </section>
 
-<section class="slide fp fd-live" data-title="주요 기능과 화면" data-kind="단계 흐름">
+<section class="slide fp fd-live" data-title="주요 기능" data-kind="단계 흐름">
   <div class="frame">
     <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">2</span><span class="sec">프로젝트 정체성과 핵심 가치</span><span class="pg"></span></div>
     <div class="head in dl-2">
-      <h2>주요 기능과 화면</h2>
+      <h2>주요 기능</h2>
       <p class="sub">커리어 기록에서 방문 분석까지의 사용자 흐름</p>
     </div>
     <div class="body">
@@ -1753,28 +1767,23 @@ svg [data-morph] { transform-box: fill-box; }
       <p class="sub">사전 계획의 마일스톤과 실제 수행한 버전</p>
     </div>
     <div class="body">
-      <div class="fd-ms">
+      <div class="fd-ms solo">
         <div class="rowk k1 in in-fade dl-3">마일스톤 · 사전 계획</div>
         <div class="rowk k2 in in-fade dl-5">버전 · 실제 수행</div>
         <div class="plan">
           <div class="col m1"><div class="seg in dl-3">M1</div><div class="goal in dl-3">커리어 기록과 공고 탐색</div><div class="chips in dl-5"><div class="chip"><div class="vn">0.1</div><div class="nm">개발 기반 구축</div></div><div class="chip"><div class="vn">0.3</div><div class="nm">커리어 기록</div></div><div class="chip"><div class="vn">0.4</div><div class="nm">공고 검색</div></div></div></div><div class="col m2"><div class="seg in dl-4">M2</div><div class="goal in dl-4">공고 맞춤 포트폴리오 제작</div><div class="chips in dl-6"><div class="chip"><div class="vn">0.2</div><div class="nm">포트폴리오 생성</div></div><div class="chip"><div class="vn">0.5</div><div class="nm">공고 맞춤 제작 흐름</div></div></div></div><div class="col m3"><div class="seg in dl-5">M3</div><div class="goal in dl-5">자체 학습 모델 기반 추천</div><div class="chips in dl-7"><div class="chip own"><i class="ph ph-brain"></i><div class="nm">추천 모델 개발<small>학습 · 평가 · 서비스 적용</small></div></div></div></div><div class="col m4"><div class="seg in dl-6">M4</div><div class="goal in dl-6">포트폴리오 배포와 방문 분석</div><div class="chips in dl-8"><div class="chip"><div class="vn">0.6</div><div class="nm">배포 · 방문 분석</div></div><div class="chip done"><div class="vn">1.0</div><div class="nm">설계 범위 완성</div></div></div></div>
-        </div>
-        <div class="extra">
-          <div class="seg in dl-8"><i class="ph ph-plus"></i>추가 범위</div>
-          <div class="goal in dl-8"><span class="vh-wm">Expre<em>ss</em>o 2.<i>0</i></span></div>
-          <div class="chips in dl-9"><div class="chip"><div class="vn">1.1 · 1.2</div><div class="nm">첫 화면</div></div><div class="chip"><div class="vn">1.3 ~ 1.7</div><div class="nm">AI 커리어 컨설팅</div></div><div class="chip"><div class="vn">1.8 · 1.9</div><div class="nm">포트폴리오 작성</div></div><div class="chip end"><div class="vn">2.0</div><div class="nm">에이전틱 플랫폼 전환</div></div></div>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<section class="slide fp" data-title="개발 타임라인과 팀" data-kind="담당">
+<section class="slide fp" data-title="개발팀 구성 및 역할" data-kind="담당">
   <div class="frame">
     <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">4</span><span class="sec">개발 과정</span><span class="pg"></span></div>
     <div class="head in dl-2">
-      <h2>개발 타임라인과 팀</h2>
-      <p class="sub">08-06 ~ 11-22의 진행과 담당 도메인</p>
+      <h2>개발팀 구성 및 역할</h2>
+      <p class="sub">서비스 흐름 순서의 담당 도메인</p>
     </div>
     <div class="body">
       <div class="fp-team">
@@ -1808,7 +1817,7 @@ svg [data-morph] { transform-box: fill-box; }
   </div>
 </section>
 
-<section class="slide fp vh " data-title="1.0 설계 범위 완성" data-kind="수치와 화면">
+<section class="slide fp vh " data-title="1.0 설계 범위 완성" data-kind="단계와 화면">
   <div class="frame">
     <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">4</span><span class="sec">개발 과정</span><span class="pg"></span></div>
     <div class="head in dl-2">
@@ -1817,12 +1826,7 @@ svg [data-morph] { transform-box: fill-box; }
     </div>
     <div class="body">
       <div class="vh-v10">
-        <div class="stats fd-four">
-          <div class="in dl-3"><div class="vn">211</div><div class="k">API 경로</div></div>
-          <div class="in dl-4"><div class="vn">88</div><div class="k">MongoDB 컬렉션</div></div>
-          <div class="in dl-5"><div class="vn">34</div><div class="k">웹 화면</div></div>
-          <div class="in dl-6"><div class="vn">8</div><div class="k">Worker 작업 유형</div></div>
-        </div>
+        <div class="fd-steps in dl-3"><div class="k">설계서의 사용자 흐름</div><ol><li><i class="ph ph-check-circle"></i>커리어 기록</li><li><i class="ph ph-check-circle"></i>공고 탐색</li><li><i class="ph ph-check-circle"></i>공고 분석</li><li><i class="ph ph-check-circle"></i>재료 고르기</li><li><i class="ph ph-check-circle"></i>AI 대화</li><li><i class="ph ph-check-circle"></i>레시피</li><li><i class="ph ph-check-circle"></i>디자인 선택</li><li><i class="ph ph-check-circle"></i>다듬기</li><li><i class="ph ph-check-circle"></i>배포</li><li><i class="ph ph-check-circle"></i>방문자 데이터 분석</li></ol></div>
         <div class="fp-shots in in-fade dl-4">
           <div class="fp-shot"><div class="win"><div class="bar"><i></i><i></i><i></i></div><img src="assets/최종-발표/screen-career.png" alt="커리어 기록 화면"></div><div class="cap">커리어 기록</div></div>
           <div class="fp-shot"><div class="win"><div class="bar"><i></i><i></i><i></i></div><img src="assets/최종-발표/screen-jobs.png" alt="공고 탐색 화면"></div><div class="cap">공고 탐색</div></div>
@@ -1844,7 +1848,7 @@ svg [data-morph] { transform-box: fill-box; }
       <p class="sub">설계서 성능평가지표의 목표치와 측정치</p>
     </div>
     <div class="body">
-      <div class="fp-meter in dl-3">
+      <div class="fp-meter fd-meter in dl-3">
         <div class="grp">응답 시간 p95</div>
         <div class="rows">
           <div class="row">
@@ -1974,7 +1978,8 @@ svg [data-morph] { transform-box: fill-box; }
       <p class="sub">11-17 ~ 11-22 · 버전별 <span class='vh-wm'>Expre<em>ss</em>o <span class='lt'>Agent</span></span>의 역할 확대</p>
     </div>
     <div class="body">
-      <div class="vh-stair tight">
+      <div class="vh-stair tight fd-stair">
+        <div class="fd-plus in in-fade dl-9"><span class="pill"><i class="ph ph-plus"></i>추가 범위</span><span class="t">설계 범위 이후 · 1.1 ~ 2.0</span></div>
         <div class="bar base in dl-3" style="height: 176px"><div class="vn">1.0</div><div class="nm">설계 범위<br>완성</div></div>
         <div class="bar  in dl-3" style="height: 212px"><div class="vn">1.1</div><div class="nm">대화형<br>홈 화면</div></div>
         <div class="bar  in dl-4" style="height: 248px"><div class="vn">1.2</div><div class="nm">새 공고 기반<br>AI 맞춤 제안</div></div>
@@ -1993,32 +1998,6 @@ svg [data-morph] { transform-box: fill-box; }
         <div><b>AI 커리어 컨설팅</b><span>목표 설정 → 역량 진단 → 활동 추천 → 진행 확인 → 기록 작성</span></div>
         <div class="g3"><b>포트폴리오 작성</b><span>디자인 · 작성 과정</span></div>
         <div class="end"><b>도착점</b><span>대화가 주 경로</span></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="slide fp vh " data-title="개발 규모" data-kind="수치">
-  <div class="frame">
-    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">4</span><span class="sec">개발 과정</span><span class="pg"></span></div>
-    <div class="head in dl-2">
-      <h2>개발 규모</h2>
-      <p class="sub">0.1 ~ 2.0 · 2026-08-06 ~ 11-22</p>
-    </div>
-    <div class="body">
-      <div class="fp-hero">
-        <div class="in dl-3">
-          <div class="k">1.0에서 2.0까지</div>
-          <div class="num big">6<small>일</small></div>
-          <div class="bar"><i style="width: 5.5%"></i></div>
-          <div class="p">전체 109일 중 11-17 ~ 11-22 · 머지 PR 35건</div>
-        </div>
-        <div class="fp-tiles">
-          <div class="in dl-4"><div class="num">109</div><div class="k">개발 기간 · 일</div></div>
-          <div class="in dl-5"><div class="num">237</div><div class="k">머지 PR</div></div>
-          <div class="in dl-6"><div class="num">1,714</div><div class="k">커밋</div></div>
-          <div class="in dl-7"><div class="num">17</div><div class="k">버전</div></div>
-        </div>
       </div>
     </div>
   </div>
