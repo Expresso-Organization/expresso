@@ -1356,6 +1356,36 @@ svg [data-morph] { transform-box: fill-box; }
 .fd-live .fp-line .loop { background: var(--g3) !important; }
 .fd-live .fp-line .lane { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 84px; color: var(--ex-slate-500); }
 .fd-live .fp-line .lane i { font-size: 40px; }
+/* 벤치마킹 사례와 차별점 — 단계 덮임 막대. 단계 이름과 색은 주요 기능 장의 기능 묶음과 같음 */
+.fd-cov { --g1: #EEF5FF; --g1-s: #6C9CD2; --g1-k: #3D6FA8; --g2: #EAF6F0; --g2-s: #65A58E; --g2-k: #2F7A5F;
+  --g3: #FBEEE4; --g3-s: #C48A7D; --g3-k: #9A4030; --g4: #F3F0FC; --g4-s: #9382C4; --g4-k: #5F4E9C; }
+.fd-cov .cov { display: grid; grid-template-columns: 300px repeat(4, 1fr) 300px; column-gap: 12px; row-gap: 12px; width: 1712px; flex: none; }
+.fd-cov .sh { display: flex; align-items: center; gap: 10px; height: 64px; padding: 0 18px; border-radius: 14px; font-size: 24px; font-weight: 600; letter-spacing: -.02em; }
+.fd-cov .sh i { font-size: 28px; }
+.fd-cov .sh.g1 { background: var(--g1); color: var(--g1-k); } .fd-cov .sh.g2 { background: var(--g2); color: var(--g2-k); }
+.fd-cov .sh.g3 { background: var(--g3); color: var(--g3-k); } .fd-cov .sh.g4 { background: var(--g4); color: var(--g4-k); }
+.fd-cov .rh { display: flex; align-items: center; height: 64px; padding-left: 8px; font-size: 22px; font-weight: 600; color: var(--ex-slate-500); }
+.fd-cov .nm { display: flex; flex-direction: column; justify-content: center; height: 112px; }
+.fd-cov .nm b { display: flex; align-items: center; gap: 12px; font-size: 28px; font-weight: 600; letter-spacing: -.02em; }
+.fd-cov .nm b img { width: 36px; height: 36px; object-fit: contain; border-radius: 8px; }
+.fd-cov .nm small { margin-top: 6px; font-size: 20px; color: var(--ex-slate-500); }
+.fd-cov .nm.ex b { font-family: var(--ex-font-brand); font-size: 32px; font-weight: 500; }
+.fd-cov .nm.ex b .cov-mark { width: 40px; height: 36px; }
+.fd-cov .c { height: 112px; border-radius: 14px; border: 1.5px dashed var(--ex-line-200); display: flex; align-items: center; padding: 0 18px; font-size: 22px; font-weight: 500; letter-spacing: -.02em; }
+.fd-cov .c.part.g1 { border-color: var(--g1-s); color: var(--g1-k); background: repeating-linear-gradient(135deg, var(--g1) 0 10px, var(--ex-white) 10px 20px); }
+.fd-cov .c.part.g2 { border-color: var(--g2-s); color: var(--g2-k); background: repeating-linear-gradient(135deg, var(--g2) 0 10px, var(--ex-white) 10px 20px); }
+.fd-cov .c.part.g3 { border-color: var(--g3-s); color: var(--g3-k); background: repeating-linear-gradient(135deg, var(--g3) 0 10px, var(--ex-white) 10px 20px); }
+.fd-cov .c.part.g4 { border-color: var(--g4-s); color: var(--g4-k); background: repeating-linear-gradient(135deg, var(--g4) 0 10px, var(--ex-white) 10px 20px); }
+.fd-cov .c.on { border: none; color: var(--ex-white); font-weight: 600; }
+.fd-cov .c.on.g1 { background: var(--g1-s); } .fd-cov .c.on.g2 { background: var(--g2-s); } .fd-cov .c.on.g3 { background: var(--g3-s); } .fd-cov .c.on.g4 { background: var(--g4-s); }
+.fd-cov .rs { display: flex; align-items: center; height: 112px; padding-left: 8px; font-size: 22px; line-height: 1.35; letter-spacing: -.02em; color: var(--ex-slate-700); }
+.fd-cov .rs.ex { color: var(--ex-espresso); font-weight: 600; }
+.fd-cov .sep { grid-column: 1 / -1; height: 1px; margin: 4px 0; background: var(--ex-line-200); }
+.fd-cov .lg { grid-column: 1 / -1; display: flex; gap: 32px; margin-top: 8px; font-size: 19px; color: var(--ex-slate-500); }
+.fd-cov .lg span { display: flex; align-items: center; gap: 10px; }
+.fd-cov .lg i { display: inline-block; width: 28px; height: 16px; border-radius: 4px; }
+.fd-cov .lg i.f { background: var(--ex-slate-400); }
+.fd-cov .lg i.p { border: 1.5px dashed var(--ex-slate-400); background: repeating-linear-gradient(135deg, var(--ex-tint-100) 0 5px, var(--ex-white) 5px 10px); }
 
 /* 추천 모델 성능 — 측정값이 들어올 빈 차트 */
 .fd-ndcg svg { width: 100%; height: auto; display: block; }
@@ -1462,16 +1492,6 @@ svg [data-morph] { transform-box: fill-box; }
 /* 추천 모델 학습과 성능 — 위는 제안서 「루브릭 기반 교사 지식 증류」의 네 단계 그림, 아래는 측정 전이라 빗금으로 비워 둔 NDCG@10 */
 
 /* 벤치마킹 — 왼쪽은 세 원이 겹친 그림, 오른쪽은 제안서의 서비스 카드(로고 · 실제 화면 캡처)에 Expresso와의 차이를 붙인 것 */
-.fd-bench .svcs { display: grid; grid-template-rows: repeat(3, 1fr); gap: 16px; min-height: 0; }
-.fd-bench .svc { display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: center; padding: 0 26px; border-radius: 20px; background: var(--ex-white); border: 1px solid var(--ex-line-200); box-shadow: var(--ex-elevation-raised); min-height: 0; }
-.fd-bench .nm { display: flex; align-items: center; gap: 14px; }
-.fd-bench .nm img { width: 40px; height: 40px; border-radius: 9px; object-fit: contain; }
-.fd-bench .nm b { font-size: 30px; font-weight: 600; letter-spacing: -.03em; }
-.fd-bench .does { margin-top: 8px; font-size: 21px; color: var(--ex-slate-500); letter-spacing: -.02em; }
-.fd-bench .diff { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--ex-line-inner); font-size: 25px; font-weight: 600; letter-spacing: -.035em; line-height: 1.3; word-break: keep-all; }
-.fd-bench .diff span { display: block; margin-bottom: 4px; font-size: 18px; font-weight: 600; letter-spacing: 0; color: var(--ex-espresso); }
-.fd-bench .th { display: flex; gap: 10px; }
-.fd-bench .th img { width: 150px; height: 112px; border-radius: 10px; border: 1px solid var(--ex-line-200); object-fit: cover; object-position: top left; background: var(--ex-tint-50); }
 
 /* 성능 지표 — 제안서 「성능 평가 지표」의 표 모양(옅은 머리줄, 가는 줄, 지표 이름 위의 작은 분류)에 목표와 측정치를 넣은 것 */
 .fd-kpi { display: grid; grid-template-rows: 54px repeat(5, 1fr); flex: 1 1 auto; min-height: 0; }
@@ -1953,49 +1973,15 @@ svg [data-morph] { transform-box: fill-box; }
   </div>
 </section>
 
-<section class="slide fp" data-title="벤치마킹 사례와 차별점" data-kind="겹침 그림과 서비스 카드">
+<section class="slide fp fd-cov" data-title="벤치마킹 사례와 차별점" data-kind="단계 덮임 막대">
   <div class="frame">
     <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M5.15 26.28 A17 17 0 0 0 38.85 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="hd-wm">Expresso</span><span class="no">2</span><span class="sec">프로젝트 정체성과 핵심 가치</span><span class="pg"></span></div>
     <div class="head in dl-2">
       <h2>벤치마킹 사례와 차별점</h2>
-      <p class="sub">기존 서비스의 지원 범위와 Expresso의 지원 범위</p>
+      <p class="sub">사용자 흐름 단계별 지원 범위</p>
     </div>
     <div class="body">
-      <div class="fp-read fd-bench" style="grid-template-columns: 770px 1fr; gap: 46px">
-        <div class="plot in in-fade dl-3">
-          <svg viewBox="0 0 960 677" aria-hidden="true">
-            <defs>
-              <clipPath id="fpv-b"><circle cx="570" cy="262" r="200"/></clipPath>
-              <clipPath id="fpv-c"><circle cx="460" cy="442" r="200"/></clipPath>
-            </defs>
-            <g style="fill: var(--ex-tint-100); stroke: var(--ex-slate-400); stroke-width: 2; fill-opacity: .55">
-              <circle cx="350" cy="262" r="200"/><circle cx="570" cy="262" r="200"/><circle cx="460" cy="442" r="200"/>
-            </g>
-            <g clip-path="url(#fpv-b)"><g clip-path="url(#fpv-c)"><circle cx="350" cy="262" r="200" style="fill: var(--ex-espresso)"/></g></g>
-            <text x="460" y="344" text-anchor="middle" style="font-family: var(--ex-font-brand); font-size: 34px; fill: #fff; letter-spacing: -.02em">Expresso</text>
-            <text x="436" y="42" text-anchor="end" class="s-t">채용 공고 추천</text>
-            <text x="484" y="42" class="s-t">채용 공고 맞춤 문서 작성</text>
-            <text x="644" y="618" class="s-t">커리어 기록 · 공개</text>
-            <image href="assets/benchmark/wanted-logo.svg" x="404" y="118" width="112" height="32"/><text x="460" y="188" text-anchor="middle" class="s-p" style="font-weight: 600; fill: var(--ex-ink-900)">에이전트</text>
-            <image href="assets/benchmark/rezi-logo.svg" x="636" y="222" width="68" height="28"/><image href="assets/benchmark/teal-logo.svg" x="624" y="266" width="116" height="28"/>
-            <image href="assets/benchmark/rallit-logo.svg" x="401" y="536" width="118" height="32"/>
-          </svg>
-        </div>
-        <div class="svcs">
-          <div class="svc in dl-4">
-            <div class="tx"><div class="nm"><img src="assets/프로젝트-제안서/svc-wanted.png" alt=""><b>원티드 에이전트</b></div><div class="does">채용 공고 추천 · 이력서 문구 수정 제안</div><div class="diff"><span>Expresso의 차이</span>프로젝트 과정과 성과의 시각적 포트폴리오 생성</div></div>
-            <div class="th"><img src="assets/프로젝트-제안서/wanted-coaching-entry.png" alt="원티드 포지션 맞춤 리뷰 화면"><img src="assets/프로젝트-제안서/wanted-coaching-review.png" alt="원티드 이력서 수정 제안 화면"></div>
-          </div>
-          <div class="svc in dl-5">
-            <div class="tx"><div class="nm"><img src="assets/프로젝트-제안서/svc-rallit.svg" alt=""><b>랠릿</b></div><div class="does">정해진 테마의 프로필 작성 · 링크 공유</div><div class="diff"><span>Expresso의 차이</span>지원하는 채용 공고와 강조할 경험에 맞춘 레이아웃 구성</div></div>
-            <div class="th"><img src="assets/프로젝트-제안서/rallit-hub.png" alt="랠릿 프로필 허브 화면"><img src="assets/프로젝트-제안서/rallit-profile.png" alt="랠릿 프로필 상세 화면"></div>
-          </div>
-          <div class="svc in dl-6">
-            <div class="tx"><div class="nm"><img src="assets/프로젝트-제안서/svc-rezi.png" alt=""><b>Rezi · Teal</b></div><div class="does">채용 공고 맞춤 이력서 작성 · 키워드 비교</div><div class="diff"><span>Expresso의 차이</span>국내 채용 공고 연동 기반 추천과 경험 매칭</div></div>
-            <div class="th"><img src="assets/프로젝트-제안서/rezi-agent.webp" alt="Rezi AI 작성 화면"><img src="assets/프로젝트-제안서/teal-matcher.png" alt="Teal 키워드 비교 화면"></div>
-          </div>
-        </div>
-      </div>
+      <div class="cov"><div class="rh in in-fade dl-3"></div><div class="in in-fade dl-3 sh g1"><i class="ph ph-notebook"></i>커리어 기록</div><div class="in in-fade dl-3 sh g2"><i class="ph ph-magnifying-glass"></i>채용 공고 검색</div><div class="in in-fade dl-3 sh g3"><i class="ph ph-stack"></i>포트폴리오 생성</div><div class="in in-fade dl-3 sh g4"><i class="ph ph-chart-line-up"></i>배포와 분석</div><div class="rh in in-fade dl-3">결과물</div><div class="nm in dl-4"><b><img src="assets/프로젝트-제안서/svc-wanted.png" alt="">원티드 에이전트</b><small>채용 공고 추천 · 이력서 문구 수정</small></div><div class="in dl-4 c"></div><div class="in dl-4 c on g2">채용 공고 추천</div><div class="in dl-4 c part g3">이력서 문구 수정 제안</div><div class="in dl-4 c"></div><div class="rs in dl-4">추천 공고 · 수정된 이력서</div><div class="nm in dl-5"><b><img src="assets/프로젝트-제안서/svc-rallit.svg" alt="">랠릿</b><small>정해진 테마의 프로필 · 링크 공유</small></div><div class="in dl-5 c part g1">프로필 작성</div><div class="in dl-5 c"></div><div class="in dl-5 c part g3">정해진 테마 선택</div><div class="in dl-5 c part g4">링크 공유</div><div class="rs in dl-5">공유 가능한 프로필 이력서</div><div class="nm in dl-6"><b><img src="assets/프로젝트-제안서/svc-rezi.png" alt="">Rezi · Teal</b><small>공고 맞춤 이력서 · 키워드 비교</small></div><div class="in dl-6 c"></div><div class="in dl-6 c part g2">공고 키워드 비교</div><div class="in dl-6 c part g3">공고 맞춤 이력서</div><div class="in dl-6 c"></div><div class="rs in dl-6">공고별 맞춤 이력서</div><div class="sep in in-fade dl-7"></div><div class="nm ex in dl-8"><b><svg class="cov-mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M5.15 26.28 A17 17 0 0 0 38.85 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg>Expresso</b><small>기록에서 분석까지 한 흐름</small></div><div class="in dl-8 c on g1">기록 작성 · 분류</div><div class="in dl-8 c on g2">자체 모델 추천 · 분석</div><div class="in dl-8 c on g3">공고 맞춤 포트폴리오</div><div class="in dl-8 c on g4">배포 · 방문 분석</div><div class="rs ex in dl-8">공고별 포트폴리오 웹사이트</div><div class="lg in in-fade dl-9"><span><i class="f"></i>지원</span><span><i class="p"></i>일부 지원</span></div></div>
     </div>
   </div>
 </section>
