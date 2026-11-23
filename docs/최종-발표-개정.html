@@ -753,7 +753,9 @@ svg [data-morph] { transform-box: fill-box; }
 .fp-show .views button { display: flex; align-items: center; gap: 16px; width: 100%; padding: 14px 18px; border: 1px solid transparent; border-radius: 14px; background: transparent; text-align: left; font: inherit; cursor: pointer; transition: background 400ms ease, border-color 400ms ease; }
 .fp-show .views .ic { flex: none; width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center; font-size: 26px; color: var(--ex-slate-500); background: var(--ex-white); border: 1px solid var(--ex-line-200); transition: color 400ms ease, border-color 400ms ease; }
 .fp-show .views b { display: block; font-size: 26px; font-weight: 700; letter-spacing: -.02em; color: var(--ex-slate-500); transition: color 400ms ease; }
-.fp-show .views small { display: block; margin-top: 4px; font-size: 19px; color: var(--ex-slate-400); }
+.fp-show .views small { display: flex; align-items: center; gap: 10px; margin-top: 6px; font-size: 19px; color: var(--ex-slate-400); }
+.fp-show .views small em { font-style: normal; font-weight: 600; font-size: 17px; padding: 2px 10px; border-radius: 999px; color: var(--ex-slate-700); background: var(--ex-white); border: 1px solid var(--ex-line-200); }
+.fp-show .views button.on small em { color: var(--ex-espresso); border-color: rgba(154, 64, 48, .3); }
 .fp-show .views button.on { background: var(--ex-bean-50); border-color: rgba(154, 64, 48, .24); }
 .fp-show .views button.on .ic { color: var(--ex-espresso); border-color: rgba(154, 64, 48, .3); }
 .fp-show .views button.on b { color: var(--ex-ink-900); }
@@ -2142,7 +2144,7 @@ svg [data-morph] { transform-box: fill-box; }
     </div>
     <div class="body">
       <div class="fp-show">
-        <div class="shot in dl-3"><img src="assets/최종-발표/career-screen-1.png" alt="프로젝트 기록 갤러리 보기" width="1440" height="900" class="on"><img src="assets/최종-발표/career-screen-2.png" alt="프로젝트 기록 테이블 보기" width="1440" height="900"><img src="assets/최종-발표/career-screen-3.png" alt="프로젝트 기록 타임라인 보기" width="1440" height="900"></div>
+        <div class="shot in dl-3"><img src="assets/최종-발표/career-screen-1.png" alt="경험 기록 테이블 보기" width="1440" height="900" class="on"><img src="assets/최종-발표/career-screen-2.png" alt="프로젝트 기록 갤러리 보기" width="1440" height="900"><img src="assets/최종-발표/career-screen-3.png" alt="학력 · 이력 타임라인 보기" width="1440" height="900"></div>
         <div class="txt">
           <div class="in dl-4">
             <div class="k">기록 정리</div>
@@ -2152,9 +2154,9 @@ svg [data-morph] { transform-box: fill-box; }
           <div class="in dl-5">
             <div class="k">다양한 보기</div>
             <ol class="views">
-              <li><button type="button" data-shot="0" class="on"><span class="ic"><i class="ph ph-squares-four"></i></span><span><b>갤러리</b><small>대표 그림 · 성과 수치 카드</small></span></button></li>
-              <li><button type="button" data-shot="1"><span class="ic"><i class="ph ph-table"></i></span><span><b>테이블</b><small>역할 · 기술 · 기간 · 성과의 목록 정리</small></span></button></li>
-              <li><button type="button" data-shot="2"><span class="ic"><i class="ph ph-calendar-blank"></i></span><span><b>타임라인</b><small>기간순 커리어 흐름</small></span></button></li>
+              <li><button type="button" data-shot="0" class="on"><span class="ic"><i class="ph ph-table"></i></span><span><b>테이블</b><small><em>경험</em>역량 · 시기 한 줄 비교</small></span></button></li>
+              <li><button type="button" data-shot="1"><span class="ic"><i class="ph ph-squares-four"></i></span><span><b>갤러리</b><small><em>프로젝트</em>역할 · 기술 · 성과 카드</small></span></button></li>
+              <li><button type="button" data-shot="2"><span class="ic"><i class="ph ph-calendar-blank"></i></span><span><b>타임라인</b><small><em>학력 · 이력</em>학교 · 회사의 시간순 흐름</small></span></button></li>
             </ol>
           </div>
         </div>
