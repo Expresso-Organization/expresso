@@ -1407,10 +1407,10 @@ svg [data-morph] { transform-box: fill-box; }
 @keyframes fd-roll-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-64%); } }
 @keyframes fd-roll-in { from { opacity: 0; transform: translateY(64%); } to { opacity: 1; transform: none; } }
 /* 0 의 커피색 포인트는 2.0 의 표시입니다. 1.0 인 동안에는 한 색이고, 2 가 앉을 때 빗금(/)을 긋듯
-   오른쪽 위에서 왼쪽 아래로 드러납니다. 위 겹은 아직 안 그은 자리를 흰색으로 덮는 가림막이고,
+   왼쪽 아래에서 오른쪽 위로 드러납니다. 위 겹은 아직 안 그은 자리를 흰색으로 덮는 가림막이고,
    아래 겹이 대각선으로 나뉜 본래 색입니다. */
 @property --fd-cut { syntax: "<percentage>"; inherits: false; initial-value: 100%; }
-.fd-reveal .fd-poster .wm .vh-wm i { background-image: linear-gradient(225deg, rgba(255, 255, 255, 0) 0 calc(var(--fd-cut) - 5%), var(--ex-white) var(--fd-cut) 100%), linear-gradient(135deg, var(--ex-white) 0 62.5%, var(--ex-crema) 62.5% 100%); }
+.fd-reveal .fd-poster .wm .vh-wm i { background-image: linear-gradient(45deg, rgba(255, 255, 255, 0) 0 calc(var(--fd-cut) - 5%), var(--ex-white) var(--fd-cut) 100%), linear-gradient(135deg, var(--ex-white) 0 62.5%, var(--ex-crema) 62.5% 100%); }
 @keyframes fd-cut { from { --fd-cut: 0%; } to { --fd-cut: 100%; } }
 @keyframes fd-bloom { 0% { opacity: 0; transform: scale(.5); } 55% { opacity: 1; transform: scale(1.08); } 100% { opacity: .6; transform: none; } }
 /* 앞에서 넘어올 때만 돕니다. 뒤에서 돌아오거나 목록에서 열면 처음부터 2.0 입니다. */
