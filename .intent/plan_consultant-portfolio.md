@@ -15,13 +15,13 @@ date: 2026-11-23
 | 파일 | 무엇을 |
 |---|---|
 | `packages/database/src/mongodb-migrations/0040/migration.ts` (새로) | `consultant_profiles` 검증 규칙에 `portfolioSuggestion` 더하기 |
-| `packages/database/src/mongo-migrations.ts` | 0040 등록 |
+| `packages/database/src/mongo-migrations.ts` · `mongo-build.mjs` · `schema.test.ts` | 0040 등록, dist 복사 목록, 이름 목록 |
 | `packages/database/src/documents/consultant.ts` | `ConsultantProfileDoc.portfolioSuggestion` |
 | `services/backend/src/modules/consultant/portfolio-suggestion.ts` (새로) · `.test.ts` (새로) | 문턱 상수와 판단 함수, 단위 테스트 |
 | `services/backend/src/modules/consultant/service.ts` · `index.ts` · `service.integration.test.ts` | 제안일 읽기 · 쓰기와 진입점 |
 | `services/backend/src/platform/agent/runtime.ts` · `runtime.test.ts` | `suggest_portfolio` 도구, `memory.portfolio`, `save_record` 응답, 지침 |
 | `services/backend/src/modules/agent-chat/service.ts` · `service.integration.test.ts` | 판단에 넘길 값 읽기, 도구 처리, 기억에 싣기 |
-| `services/backend/src/api/main.ts` 등 배선 | 바뀌는 생성자 인자가 있으면 맞춘다 |
+| `services/web/src/features/agent-chat/tool-parts.tsx` · `tool-parts.test.tsx` | 「포트폴리오 제안」을 선택지 부품으로 그리기 |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.
 
@@ -43,15 +43,17 @@ date: 2026-11-23
 pnpm --filter @expresso/backend typecheck
 pnpm --filter @expresso/backend test
 pnpm test:infra
+pnpm --filter @expresso/web typecheck
+pnpm --filter @expresso/web test
 ```
 
-로컬 확인: 백엔드(`AGENT_CHAT_ENABLED=1`)와 웹을 워크트리에서 띄우고, 기록 2건 · 포트폴리오 0건인 시험 계정으로 대화에서 세 번째 기록을 남긴다. 제안과 두 단추, 수락 뒤 「포트폴리오 제작」 카드를 화면으로 확인한다.
+로컬 확인: 따로 둔 DB(`expresso_portfolio_suggest`)에 마이그레이션을 적용하고, 백엔드(`AGENT_CHAT_ENABLED=1`)와 웹을 워크트리에서 띄운 뒤, 기록 2건 · 포트폴리오 0건인 시험 계정으로 대화에서 세 번째 기록을 남긴다. 제안과 두 단추, 수락 뒤 「포트폴리오 제작」 카드를 화면으로 확인한다.
 
 ```mermaid
 flowchart TD
   S1["1단계: 판단 함수와 단위 테스트<br/>consultant/portfolio-suggestion.ts"] --> S2["2단계: 0040과 제안일 읽기 쓰기<br/>database, consultant/service.ts"]
   S2 --> S3["3단계: 판단 값 읽기와 memory.portfolio<br/>agent-chat/service.ts"]
-  S3 --> S4["4단계: suggest_portfolio 도구와 지침<br/>platform/agent/runtime.ts"]:::risk
+  S3 --> S4["4단계: suggest_portfolio 도구와 지침<br/>platform/agent/runtime.ts, web tool-parts.tsx"]:::risk
   S4 --> S5["5단계: 타입 검사, 테스트, 통합 테스트"]
   S5 --> S6["6단계: 로컬 서버에서 제안과 제작 시작 확인"]
   classDef risk fill:#FCEBEB,stroke:#A32D2D,color:#501313

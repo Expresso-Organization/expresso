@@ -88,6 +88,22 @@ describe("대화 속 화면의 등록표", () => {
     rerender(<>{toolPartFor(shown)!.render(shown, context({ canAnswer: false }))}</>);
     expect((screen.getByRole("radio", { name: "예" }) as HTMLButtonElement).disabled).toBe(true);
   });
+  it("포트폴리오 제안은 선택지 질문과 같은 자리에 같은 단추로 그리고, 고른 답을 그 부품의 답으로 보낸다", () => {
+    const pending = tool("포트폴리오 제안", {}, "running");
+    expect(isBelowTool(pending)).toBe(true);
+    expect(toolPartFor(pending)?.key).toBe("choice");
+    const using = context();
+    const { rerender, container } = render(<>{toolPartFor(pending)!.render(pending, using)}</>);
+    // 권할 때가 아니라고 돌려보내진 호출은 아무것도 그리지 않는다.
+    const refused = tool("포트폴리오 제안", {}, "failed");
+    rerender(<>{toolPartFor(refused)!.render(refused, using)}</>);
+    expect(container.firstChild).toBeNull();
+    const shown = tool("포트폴리오 제안", { ui: { kind: "choice", partId: "00000000-0000-4000-8000-000000000011", prompt: "기록이 3건 모였습니다. 이 기록으로 포트폴리오를 만들어 볼까요?", multiple: false, options: [{ id: "o1", label: "지금 만들어 볼게요" }, { id: "o2", label: "나중에 할게요" }], answer: null } });
+    rerender(<>{toolPartFor(shown)!.render(shown, using)}</>);
+    expect(screen.getByText("기록이 3건 모였습니다. 이 기록으로 포트폴리오를 만들어 볼까요?")).toBeTruthy();
+    fireEvent.click(screen.getByRole("radio", { name: "지금 만들어 볼게요" }));
+    expect(using.answerPart).toHaveBeenCalledWith("00000000-0000-4000-8000-000000000011", { optionIds: ["o1"] });
+  });
   it("입력 칸 질문은 답변 글 아래에 그리고, 적은 값을 그 부품의 답으로 보낸다", () => {
     const pending = tool("입력 칸 질문", {}, "running");
     expect(isBelowTool(pending)).toBe(true);

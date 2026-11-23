@@ -19,3 +19,4 @@
 | [20261120-1530-app-shell-layout](sessions/20261120-1530-app-shell-layout/session.md) | 앱 셸 공용 레이아웃 — 화면 이동 사이 사이드바 유지 | 완료됨 | 100% |
 
 | [20261122-0150-branch-consolidation](sessions/20261122-0150-branch-consolidation/session.md) | 로컬 브랜치 정리와 승인 기능 통합 | 완료됨 | 100% |
+| [20261123-1740-consultant-portfolio](sessions/20261123-1740-consultant-portfolio/session.md) | 포트폴리오 잇기 — 기록이 쌓이면 컨설턴트가 먼저 제안 | 완료됨 | 100% |

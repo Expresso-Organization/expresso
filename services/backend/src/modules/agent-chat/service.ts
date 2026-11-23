@@ -16,7 +16,7 @@ import { buildDraft, draftIssues, sourceIssues } from "./record-draft.js";
 import { LinkReadError, linksInMessages, normalizeLink, readLinkPage, type FetchPage } from "./link-reader.js";
 import { buildChoice, buildForm, checkReply, choiceIssues, formIssues } from "./ui-parts.js";
 import { digestConversation } from "./digest.js";
-import { ConsultantInputError, ConsultantLimitError, ConsultantNotFoundError, seoulDay, type ConsultantApi, type ConsultantCommitmentApi, type ConsultantDiagnosisApi, type ConsultantProfile } from "../consultant/index.js";
+import { ConsultantInputError, ConsultantLimitError, ConsultantNotFoundError, portfolioSuggestion, seoulDay, type PortfolioSuggestion, type ConsultantApi, type ConsultantCommitmentApi, type ConsultantDiagnosisApi, type ConsultantProfile } from "../consultant/index.js";
 import { buildGoalDraft, carryOver, goalDraftIssues, mergeGoal } from "./goal-draft.js";
 import { buildGapReview, gapIssues, latestReview, latestTool } from "./gap-review.js";
 import { buildPreparationTasks, PlanCapacityError, scheduleRemaining } from "./preparation-planner.js";
@@ -63,7 +63,16 @@ function diagnosisForModel(diagnosis: ConsultantDiagnosis | null): AgentMemory["
   const labels = (status: string) => diagnosis.items.filter(item => item.kind !== "career" && item.status === status).map(item => item.label);
   return { assessedOn: diagnosis.assessedAt ? seoulDay(new Date(diagnosis.assessedAt)) : null, work: diagnosis.work, sampleSize: diagnosis.sampleSize, gaps: labels("gap"), unconfirmed: labels("unconfirmed"), partial: labels("partial"), confirmed: labels("confirmed").length, stale: diagnosis.stale };
 }
-function memoryForModel(profile: ConsultantProfile, digests: readonly ({ title: string; said: string[]; outcomes: string[]; lastAnswer: string } & ({ updatedAt: string } | { date: string }))[], commitments: readonly Pick<ConsultantCommitment, "id" | "title" | "dueOn">[], diagnosis: AgentMemory["diagnosis"] = null, checkins = false, at = new Date()): AgentMemory {
+/** 포트폴리오 제안의 두 답. 첫째가 받아들이는 답이다. 지침이 이 글을 그대로 읽는다. */
+export const PORTFOLIO_SUGGESTION_OPTIONS = ["지금 만들어 볼게요", "나중에 할게요"] as const;
+/** 지금은 제안할 때가 아닐 때 에이전트에게 돌려주는 까닭. 에이전트는 제안하지 않고 하던 답을 이어 간다. */
+const PORTFOLIO_NOT_DUE: Record<Exclude<PortfolioSuggestion, "due">, string> = {
+  has_portfolio: "이미 포트폴리오가 있습니다. 제안하지 말고 답변을 이어 가십시오.",
+  in_progress: "이 대화에서 이미 포트폴리오 제작을 시작했습니다. 제안하지 말고 지금 제작의 다음 할 일을 안내하십시오.",
+  few_records: "기록이 아직 적습니다. 제안하지 말고 답변을 이어 가십시오.",
+  recently_suggested: "최근에 이미 제안했습니다. 다시 제안하지 말고 답변을 이어 가십시오.",
+};
+function memoryForModel(profile: ConsultantProfile, digests: readonly ({ title: string; said: string[]; outcomes: string[]; lastAnswer: string } & ({ updatedAt: string } | { date: string }))[], commitments: readonly Pick<ConsultantCommitment, "id" | "title" | "dueOn">[], diagnosis: AgentMemory["diagnosis"] = null, checkins = false, portfolio: AgentMemory["portfolio"] = null, at = new Date()): AgentMemory {
   const today = seoulDay(at);
   return {
     stage: profile.stage,
@@ -72,6 +81,7 @@ function memoryForModel(profile: ConsultantProfile, digests: readonly ({ title: 
     today,
     commitments: commitments.map(({ id, title, dueOn }) => ({ id, title, dueOn, overdue: dueOn < today })),
     diagnosis,
+    portfolio,
     recentConversations: digests.map(digest => ({ title: digest.title, date: "date" in digest ? digest.date : digest.updatedAt.slice(0, 10), said: digest.said, outcomes: digest.outcomes, lastAnswer: digest.lastAnswer })),
   };
 }
@@ -94,7 +104,7 @@ export class AgentChatService {
   /** `close()`가 시작되면 켠다. 그 뒤에 끝난 실행은 어떤 오류로 끝났든 서버 종료로 끊긴 것이다. */
   private closing = false;
   private runFailureListener: AgentRunFailureListener | null = null;
-  constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord" | "listRecords" | "listCategories" | "createRecord" | "trashRecord" | "getJobGoal" | "saveJobGoal"> & Partial<Pick<CareerApi, "updateRecord">>, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi, readonly credentials: AgentCredentials = new AgentCredentials(db), private readonly portfolios?: Pick<PortfolioReadApi, "get">, private readonly pages?: Pick<PageApi, "latest" | "elementGuide" | "editElementByAgent" | "restoreRevision">, private readonly credits?: AgentCredits, private readonly consultant?: ConsultantApi, private readonly commitments?: Pick<ConsultantCommitmentApi, "open" | "create" | "update">, private readonly diagnosis?: { demand: GoalDemandApi; store: ConsultantDiagnosisApi },
+  constructor(private readonly db: MongoContext, private readonly runtime: AgentRuntime | null, private readonly career: Pick<CareerApi, "getRecord" | "listRecords" | "listCategories" | "createRecord" | "trashRecord" | "getJobGoal" | "saveJobGoal"> & Partial<Pick<CareerApi, "updateRecord">>, private readonly jobs: Pick<JobBoardApi, "get">, private readonly documents: CareerDocumentApi, private readonly consent: ConsentApi, readonly credentials: AgentCredentials = new AgentCredentials(db), private readonly portfolios?: Pick<PortfolioReadApi, "get"> & Partial<Pick<PortfolioReadApi, "list">>, private readonly pages?: Pick<PageApi, "latest" | "elementGuide" | "editElementByAgent" | "restoreRevision">, private readonly credits?: AgentCredits, private readonly consultant?: ConsultantApi, private readonly commitments?: Pick<ConsultantCommitmentApi, "open" | "create" | "update">, private readonly diagnosis?: { demand: GoalDemandApi; store: ConsultantDiagnosisApi },
     /** 대화에서 공고와 활동을 찾을 때 쓰는 것. `dismissed`는 사용자가 능동 제안에서 「관심 없음」으로 넘긴 대상의 키(`job:<id>` · `activity:<id>`)다. */
     private readonly finds?: { jobs: Pick<JobBoardApi, "list">; activities: Pick<ActivityApi, "list">; dismissed(userId: string): Promise<ReadonlySet<string>> },
     /** 대화에서 시작하는 포트폴리오 제작(`brew-start.ts`)과 작업물 재료(`work-materials.ts`). */
@@ -139,12 +149,35 @@ export class AgentChatService {
     catch (error) { if (error instanceof ConsultantInputError || error instanceof ConsultantNotFoundError) throw new AgentToolRejection([error.message]); throw error; }
   }
   /** 실행에 넘기는 기억. 컨설턴트 프로필이 연결되지 않은 서비스(테스트 · 미리보기)는 기억을 쓰지 않는다. */
-  private async memory(userId: string, conversationId: string): Promise<AgentMemory | null> {
+  private async memory(row: AgentConversationDoc): Promise<AgentMemory | null> {
     if (!this.consultant) return null;
+    const userId = row.userId; const conversationId = row._id;
     const profile = await this.consultant.profile(userId);
     // 약속한 날에 먼저 묻는 것은 사용자가 켰고 요금제가 열 때만이다. 계정을 찾지 못하면 묻지 않는 것으로 본다.
     const checkins = profile.outreach === true && (await this.credits?.check?.(userId, "consultant.outreach").catch(() => null))?.allowed === true;
-    return memoryForModel(profile, await this.recentDigests(userId, conversationId), await this.commitments?.open(userId) ?? [], diagnosisForModel(await this.currentDiagnosis(userId)), checkins);
+    return memoryForModel(profile, await this.recentDigests(userId, conversationId), await this.commitments?.open(userId) ?? [], diagnosisForModel(await this.currentDiagnosis(userId)), checkins, await this.portfolioForModel(row).catch(() => null));
+  }
+  /**
+   * 포트폴리오를 먼저 제안할 때인가(`consultant/portfolio-suggestion.ts`). 기록 · 포트폴리오 · 이 대화의 제작 · 마지막 제안일을 지금 읽어 판단한다.
+   * `current`는 지금 쓰는 답변이다 — 같은 실행에서 방금 시작한 제작도 센다. 기록은 최근 100건 가운데 내용이 있는 것만 센다.
+   * 프로필이나 포트폴리오 목록이 연결되지 않은 서비스(테스트 · 미리보기)에서는 판단하지 않는다(null).
+   * 다른 대화에서 시작해 아직 생성하지 않은 제작은 보지 않는다 — 사용자의 제작을 나열하는 진입점이 없다.
+   * 실행을 시작할 때는 읽지 못해도 대화를 막지 않는다(`memory`가 null로 싣는다) — 그때는 권하지 않을 뿐이다.
+   */
+  private async portfolioSuggestionState(row: AgentConversationDoc, current?: AgentMessage): Promise<{ status: PortfolioSuggestion; records: number } | null> {
+    if (!this.consultant || !this.portfolios?.list) return null;
+    const [records, portfolios, lastSuggestedOn] = await Promise.all([
+      this.career.listRecords(row.userId, { sort: "updated_desc", limit: 100 }),
+      this.portfolios.list(row.userId, { limit: 1 }),
+      this.consultant.portfolioSuggestedOn(row.userId),
+    ]);
+    const filled = records.data.filter(record => !record.isEmpty).length;
+    const brewing = [...row.messages, ...(current ? [current] : [])].flatMap(message => message.tools).filter(tool => tool.brewStart).length + Object.keys(row.brewIds ?? {}).length;
+    return { status: portfolioSuggestion({ records: filled, portfolios: portfolios.data.length, brewing, lastSuggestedOn, today: seoulDay(new Date()) }), records: filled };
+  }
+  private async portfolioForModel(row: AgentConversationDoc, current?: AgentMessage): Promise<AgentMemory["portfolio"]> {
+    const state = await this.portfolioSuggestionState(row, current);
+    return state ? { records: state.records, suggest: state.status === "due" } : null;
   }
   /**
    * 저장된 진단과, 다시 진단이 필요한지. 목표가 바뀌었거나 대조한 뒤에 기록이 바뀌었으면 그 까닭을 함께 낸다.
@@ -1146,6 +1179,8 @@ export class AgentChatService {
     const beforeDocuments = new Map<string, CareerDocumentBootstrap["document"]>();
     // 이번 실행에서 읽은 링크의 글(정규화한 주소 → 글). 링크 출처는 이 글에서만 인용할 수 있다.
     const pages = new Map<string, string>();
+    // 이 실행이 포트폴리오 제안을 냈는가. 제안한 날은 실행이 끝까지 간 뒤에 적는다 — 끊긴 실행의 제안은 사용자가 보지 못했을 수 있고, 다시 보내면 다시 낼 수 있어야 한다.
+    let portfolioSuggested = false;
     let lastFlush = 0;
     let heartbeatBusy = false;
     const flush = async () => {
@@ -1160,7 +1195,7 @@ export class AgentChatService {
     const timeout = setTimeout(() => controller.abort(), 600_000);
     try {
       const goal = await this.career.getJobGoal(row.userId);
-      const memory = await this.memory(row.userId, row._id);
+      const memory = await this.memory(row);
       await this.runtime!.run({ userId: row.userId, messages: row.messages.slice(0, -1), context, ...(apiKey ? { apiKey } : {}), signal: controller.signal,
         emit: async event => {
           if (controller.signal.aborted) throw new Error("cancelled");
@@ -1171,6 +1206,15 @@ export class AgentChatService {
         records: { list: () => this.listRecords(row.userId), read: ids => this.readRecords(row.userId, ids) },
         review: draft => this.review(row.userId, row.contexts, draft),
         saveRecord: (record, key) => this.saveRecord(row, record, key, pages),
+        // 기억은 실행을 시작할 때 읽은 값이다. 방금 저장한 기록으로 문턱을 넘었는지는 저장 직후에 다시 본다.
+        portfolioNow: () => this.portfolioForModel(row, message),
+        suggestPortfolio: async () => {
+          const state = await this.portfolioSuggestionState(row, message);
+          if (!state) throw new AgentToolRejection(["이 환경에서는 포트폴리오 제안을 쓸 수 없습니다. 제안하지 말고 답변을 이어 가십시오."]);
+          if (state.status !== "due") throw new AgentToolRejection([PORTFOLIO_NOT_DUE[state.status]]);
+          portfolioSuggested = true;
+          return buildChoice({ prompt: `기록이 ${state.records}건 모였습니다. 이 기록으로 포트폴리오를 만들어 볼까요?`, multiple: false, options: PORTFOLIO_SUGGESTION_OPTIONS.map(label => ({ label })) }, randomUUID());
+        },
         readLink: url => this.readLink(row.messages, url, pages),
         recordCategories: await this.categories(row.userId),
         askForm: async form => {
@@ -1205,7 +1249,7 @@ export class AgentChatService {
           try {
             const { profile, changed } = await this.consultant.applyUpdate(row.userId, update);
             const parts = [changed.stage ? `단계: ${STAGE_LABELS[changed.stage]}` : null, changed.remembered ? `조건 ${changed.remembered}개 기억` : null, changed.forgotten ? `조건 ${changed.forgotten}개 지움` : null].filter(Boolean);
-            return { summary: parts.length ? parts.join(" · ") : "이미 기억하고 있습니다.", memory: memoryForModel(profile, memory?.recentConversations ?? [], memory?.commitments ?? [], memory?.diagnosis ?? null, memory?.checkins ?? false) };
+            return { summary: parts.length ? parts.join(" · ") : "이미 기억하고 있습니다.", memory: memoryForModel(profile, memory?.recentConversations ?? [], memory?.commitments ?? [], memory?.diagnosis ?? null, memory?.checkins ?? false, memory?.portfolio ?? null) };
           } catch (error) {
             if (error instanceof ConsultantLimitError) throw new AgentToolRejection([error.message]);
             throw error;
@@ -1258,6 +1302,8 @@ export class AgentChatService {
       });
       if (controller.signal.aborted) throw new Error("cancelled");
       await flush();
+      // 제안이 화면에 남은 뒤에 적는다. 적지 못해도 답변은 끝난 것이다 — 그때는 다음 대화에서 한 번 더 권할 뿐이다.
+      if (portfolioSuggested) await this.consultant?.markPortfolioSuggested(row.userId, seoulDay(new Date())).catch(() => undefined);
       await this.rows.updateOne(filter, { $set: { "run.status": "complete" }, $inc: { version: 1 } });
     } catch (error) {
       for (const tool of message.tools) if (tool.status === "running") { tool.status = "failed"; tool.summary = "실행이 중단되었습니다."; }

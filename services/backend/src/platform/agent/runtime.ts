@@ -53,6 +53,13 @@ export interface AgentInput {
    * 출처가 사용자의 말이 아니거나 카테고리가 맞지 않으면 어긋난 항목으로 돌려보낸다. `key`가 같으면 기록은 하나다.
    */
   saveRecord(input: AgentRecordDraftInput, key: string): Promise<AgentSavedRecord>;
+  /** 포트폴리오를 먼저 제안할 때인지를 지금 다시 본 값. 기록을 저장한 직후에 부른다 — `memory.portfolio`는 실행을 시작할 때의 값이다. 판단할 수 없는 환경이면 null. */
+  portfolioNow(): Promise<AgentMemory["portfolio"]>;
+  /**
+   * 포트폴리오 제작을 먼저 제안하는 선택지 부품을 만든다. 질문과 두 선택지는 서버가 정한다.
+   * 제안할 때가 아니면(이미 있음 · 만드는 중 · 기록이 적음 · 최근에 제안함) 어긋난 항목으로 돌려보낸다.
+   */
+  suggestPortfolio(): Promise<AgentChoicePart>;
   /** 이미 있는 기록의 끝에 새 내용을 더한다. 대화에 연결되지 않은 기록에도 된다. 바로 적용하고, 적용한 제안을 돌려준다(카드에서 되돌린다). */
   appendToRecord(input: AgentRecordAppendInput): Promise<NonNullable<AgentToolResult["proposal"]>>;
   /** 사용자가 이 대화에 적은 링크를 읽는다. 적지 않은 주소 · 내부 주소 · 글이 아닌 페이지는 어긋난 항목으로 돌려보낸다. 읽은 글은 같은 실행의 링크 출처 검사가 본다. */
@@ -135,6 +142,11 @@ export interface AgentMemory {
    * `stale`은 다시 진단이 필요한 까닭이다 — `goal`은 목표가 바뀌었다, `records`는 대조한 뒤에 기록이 바뀌었다.
    */
   diagnosis: { assessedOn: string | null; work: string; sampleSize: number; gaps: string[]; unconfirmed: string[]; partial: string[]; confirmed: number; stale: "goal" | "records" | null } | null;
+  /**
+   * 포트폴리오를 먼저 제안할 때인지. `records`는 내용이 있는 기록의 수, `suggest`는 서버가 규칙으로 내린 판단이다
+   * (포트폴리오가 없고 · 이 대화에서 제작을 시작하지 않았고 · 기록이 문턱 이상이고 · 최근에 제안하지 않았다). 판단할 수 없는 환경이면 null.
+   */
+  portfolio: { records: number; suggest: boolean } | null;
   recentConversations: { title: string; date: string; said: string[]; outcomes: string[]; lastAnswer: string }[];
 }
 
@@ -203,13 +215,14 @@ const SYSTEM_PROMPT = [
   "memory.diagnosis는 구직 목표를 기준으로 한 진단의 요약입니다(gaps 해 본 적 없는 것 · unconfirmed 기록에 없고 아직 묻지 않은 것 · partial 일부만 확인된 것). 사용자가 공고를 붙이지 않고 목표에 비해 무엇이 부족한지 묻거나 무엇부터 준비할지 물을 때 진단합니다: read_goal_demand로 요건을 집계하고, list_career_records · read_career_records로 기록을 읽어 항목마다 근거를 찾은 뒤, record_diagnosis로 저장합니다. 근거를 말할 때는 「백엔드 공고 66건 중 45건에 나옵니다」처럼 표본 수와 건수를 함께 말하고, 건수는 그 표현이 나온 공고의 수이므로 「요구한다」고 단정하지 마십시오. 표본이 적으면(small) 적다고 밝히고 당신의 판단은 판단이라고 밝히십시오. 진단을 저장한 뒤 unconfirmed 항목이 있으면 ask_choice(multiple)로 그 가운데 해 본 적이 있는 것을 고르게 하십시오. 답을 받은 차례에 먼저 record_diagnosis로 선택지에 올렸지만 고르지 않은 항목을 gap으로 저장하십시오(선택지에 올리지 않은 항목은 그대로 둡니다). 고른 항목은 한 번에 하나씩 인터뷰해 save_record나 append_to_record로 기록에 남긴 뒤, record_diagnosis에 그 항목만 넣어 상태를 고치십시오. 근거의 인용은 방금 저장한 기록의 글에서 그대로 옮기십시오. 그다음 gap 가운데 먼저 채울 것 하나를 권하십시오. memory.diagnosis가 이미 있으면 다시 집계하지 말고 그 요약으로 답하십시오. stale이 goal이면 목표가 바뀐 것이니 부족한 점을 말하기 전에 다시 진단하고, stale이 records면 기록이 바뀌었다는 뜻일 뿐이니 사용자가 부족한 점을 다시 물을 때만 다시 대조하십시오.",
   "사용자가 무엇부터 할지 묻거나 진단의 부족한 점을 채우려 할 때 다음에 할 일을 권합니다. 부족한 점마다 맞는 행동을 고르십시오: 해 본 일이면 인터뷰해 기록으로, 경험이 필요하면 활동(search_activities)이나 직접 해 볼 작은 프로젝트로, 준비가 됐으면 지원할 공고(search_jobs)로 잇습니다. 찾을 때는 jobGoal의 직군과 memory의 조건을 입력에 반영하고, memory.preferences의 avoid에 걸리는 것은 권하지 마십시오. 찾은 것을 모두 권하지 말고 지금 하기에 가장 맞는 하나를 까닭 한두 문장과 함께 권하십시오. 둘 사이에서 고민하면 show_table로 견주어 보이십시오. 사용자가 하겠다고 하면 make_commitment로 저장하고 detail에 무엇을 어디에서 하는지(공고나 활동의 이름)를 적으십시오. 목록과 표는 화면에 뜨므로 그 내용을 글로 되풀이하지 마십시오.",
   "memory.commitments는 사용자가 하겠다고 한 일(약속)이고 memory.today는 오늘 날짜입니다. 사용자가 당신의 제안을 받아들이거나 언제까지 무엇을 하겠다고 말하면 make_commitment로 약속을 저장하십시오. 날짜를 말하지 않았으면 ask_form의 날짜 칸(type date)으로 물은 뒤 저장하고, 「다음 주 금요일」 같은 말은 memory.today를 기준으로 날짜로 바꾸십시오. 하겠다고 하지 않은 일을 약속으로 만들지 마십시오. 사용자가 약속한 일을 했다고 말하면 update_commitment로 done으로 닫고 그 일을 기록으로 남기는 인터뷰를 이어 가십시오. 하지 않기로 했다고 하면 dropped로 닫고, 미루겠다고 하면 새 날짜를 dueOn에 넣으십시오. 대화의 첫 메시지가 약속을 묻는 당신의 질문이고 사용자의 답이 「했어요」이면, 그 약속은 이미 닫혀 있으니 다시 닫지 말고 무엇을 어떻게 했는지 인터뷰하십시오. overdue인 약속이 있고 대화가 그 일과 닿으면 한 번만 어떻게 됐는지 물으십시오. memory.checkins가 false이면 약속한 날에 먼저 연락하지 않습니다 — 그날 먼저 묻겠다거나 알려 주겠다고 말하지 말고, 약속을 적어 두었고 「내 진행」에서 볼 수 있다고만 알리십시오.",
+  "memory.portfolio는 포트폴리오를 먼저 권할 때인지입니다(records 내용이 있는 기록의 수 · suggest 지금 권할 때인가). 사용자는 아직 포트폴리오가 없고 기록이 모였을 때 당신이 먼저 만들자고 권하기를 기대합니다. suggest가 true이거나 save_record가 portfolio.suggest를 true로 돌려주면, 이 대화에서 아직 권하지 않았을 때 한 번 suggest_portfolio를 부르십시오. 권하는 자리는 기록을 저장했다고 알린 직후, 사용자가 다음에 무엇을 할지 물었을 때, 하던 일(진단 · 약속 · 요건 대조)을 마친 답변의 끝입니다. 본문에는 기록이 모여 포트폴리오를 만들 수 있게 됐다는 까닭만 한 문장으로 쓰고, 질문과 선택지는 도구가 내므로 본문에 되풀이하지 마십시오. 인터뷰 질문이 남았거나 진단의 확인 질문에 답을 받는 중이면 그 흐름을 먼저 마치고 그다음 답변에서 권하십시오. suggest_portfolio를 부르는 답변에서는 ask_choice · ask_form을 함께 쓰지 말고, 참고 링크 질문도 하지 마십시오(그 질문은 건너뜁니다). 도구가 지금은 권할 때가 아니라고 돌려주면 권하지 말고 답변을 이어 가십시오. suggest가 false이면 사용자가 묻지 않는 한 포트폴리오를 만들자고 먼저 권하지 마십시오. 사용자의 답이 「지금 만들어 볼게요」이면 포트폴리오를 만들어 달라는 요청으로 받아 위의 세 갈래대로 시작하십시오. 대화에 연결된 공고가 없으면 본문에는 「좋습니다. 어떻게 시작할지부터 정하겠습니다.」처럼 사용자에게 건네는 한 문장만 쓰고(당신의 판단이나 할 일을 혼잣말로 적지 않습니다), ask_choice로 지원할 공고가 있는지 묻습니다(선택지: 「공고 주소나 글이 있어요」 · 「맞는 공고를 찾아 주세요」 · 「공고 없이 만들게요」). 「공고 없이 만들게요」를 고르면 위의 갈래대로 제목 · 주제와 누구에게 무엇을 보여 주고 싶은지를 먼저 한 메시지로 묻고, 답을 받은 뒤에 start_free_portfolio를 부르십시오 — 사용자가 말하지 않은 제목으로 바로 시작하지 않습니다. 답이 「나중에 할게요」이면 알겠다고 한 문장으로 받고 하던 이야기를 이어 가며, 이 대화에서 다시 권하지 마십시오. 사용자가 원할 때 말하면 바로 시작할 수 있다고만 덧붙입니다.",
   "사용자에게 고를 답이 정해진 질문(여럿 중 하나 · 예와 아니오 · 기간이나 정도의 단계)을 할 때는 본문에 번호 목록으로 적지 말고 ask_choice로 선택지를 내십시오. 선택지의 글은 사용자가 그대로 답으로 삼을 수 있는 짧은 말로 쓰고, description은 글만으로 뜻이 모자랄 때만 넣으십시오. 본문에 같은 질문과 선택지를 되풀이하지 마십시오. 사용자는 선택지를 고르지 않고 입력창에 직접 답할 수 있으므로 「직접 입력」 · 「기타」 같은 선택지는 넣지 마십시오. 질문은 ask_choice의 prompt에 쓰고, 본문에는 그 질문을 하게 된 까닭만 한두 문장으로 쓰십시오. 선택지를 낸 뒤에는 답을 짐작해 이어 가지 말고 덧붙이는 말 없이 그 답변을 끝내십시오. 한 답변에 선택지 질문은 하나만 냅니다. 사용자가 자유롭게 말해야 하는 질문(경험의 내용 · 이유 · 수치)은 글로 물으십시오. 구직 목표 · 새 기록 · 준비 계획처럼 카드가 사용자의 확인을 맡는 자리에서는 ask_choice로 다시 확인하지 마십시오. 대화의 answeredByChoice가 참인 사용자 메시지는 사용자가 선택지에서 고른 답입니다.",
   "부족한 요건을 보완할 질문을 요청받으면 가장 최근 요건 대조의 unconfirmed · partial 요건부터 한 번에 질문 하나만 하십시오. 답에 역할 · 행동 · 결과 중 빠진 것이 있으면 그것을 이어 묻고, 충분히 확인되었거나 사용자가 그만하자고 하면 질문을 멈추고 확인된 내용을 정리하십시오. 요건 대조가 없으면 먼저 대조하십시오.",
 ].join(" ");
 export interface AgentRuntime { run(input: AgentInput): Promise<void> }
 
 /** 에이전트가 부를 수 있는 도구. SDK에 넘기는 허용 목록과 실행 직전 검사가 이 목록 하나를 본다. */
-const TOOL_NAMES = ["propose_record_edit", "list_career_records", "read_career_records", "record_requirement_review", "save_record", "propose_job_goal_update", "record_gap_review", "propose_preparation_plan", "read_preparation_plan", "propose_replan", "read_page_element", "edit_page_element", "ask_choice", "ask_form", "update_memory", "make_commitment", "update_commitment", "read_goal_demand", "record_diagnosis", "append_to_record", "search_jobs", "search_activities", "show_table", "start_portfolio", "start_free_portfolio", "import_job_posting", "read_repository", "attach_work_materials", "save_interview_answer", "propose_design_options", "revise_design_screen", "read_link"] as const;
+const TOOL_NAMES = ["propose_record_edit", "list_career_records", "read_career_records", "record_requirement_review", "save_record", "propose_job_goal_update", "record_gap_review", "propose_preparation_plan", "read_preparation_plan", "propose_replan", "read_page_element", "edit_page_element", "ask_choice", "ask_form", "update_memory", "make_commitment", "update_commitment", "read_goal_demand", "record_diagnosis", "append_to_record", "search_jobs", "search_activities", "show_table", "start_portfolio", "start_free_portfolio", "import_job_posting", "read_repository", "attach_work_materials", "save_interview_answer", "propose_design_options", "revise_design_screen", "read_link", "suggest_portfolio"] as const;
 export const AGENT_ALLOWED_TOOLS = TOOL_NAMES.map(name => `mcp__expresso__${name}`);
 type ToolName = typeof TOOL_NAMES[number];
 /** 작업 흔적에 보이는 이름과, 모델이 도구 입력을 쓰는 동안 보이는 요약. */
@@ -246,6 +259,7 @@ const TOOL_LABELS: Record<ToolName, { name: string; pending: string }> = {
   search_activities: { name: "활동 찾기", pending: "공모전과 해커톤을 찾고 있습니다." },
   show_table: { name: "비교 표", pending: "표로 정리하고 있습니다." },
   read_link: { name: "링크 읽기", pending: "링크를 열어 읽고 있습니다." },
+  suggest_portfolio: { name: "포트폴리오 제안", pending: "기록과 포트폴리오를 확인하고 있습니다." },
 };
 const toolName = (qualified: string) => TOOL_NAMES.find(name => `mcp__expresso__${name}` === qualified);
 /** Claude Code가 tools/call에 실어 보내는 tool_use 블록 id. 스트림의 블록 시작과 처리기를 잇는다. */
@@ -365,7 +379,12 @@ export class ClaudeAgentRuntime implements AgentRuntime {
     }, recheck("어긋난 인용을 고쳐 다시 대조합니다.", "저장하지 않았습니다. 아래 항목을 고쳐 다시 기록하십시오.")));
     server.registerTool("save_record", { description: "대화에서 사용자가 말한 경험을 커리어 기록으로 정리해 바로 저장합니다. 사용자의 승인을 기다리지 않고, 사용자는 카드에서 되돌릴 수 있습니다. 사용자가 실제로 말한 내용과 read_link로 읽은 링크의 사실만 쓰고, sources에 근거(사용자 메시지의 id와 인용, 또는 읽은 링크의 url과 그 글에서 옮긴 인용)를 넣습니다. categoryId는 recordCategories에서 고릅니다.", inputSchema: AgentRecordDraftInputSchema.shape }, (recordInput, extra) => step("save_record", extra, async () => {
       const saved = await input.saveRecord(recordInput, toolUseId(extra) ?? crypto.randomUUID());
-      return { summary: saved.title, detail: { savedRecord: saved }, reply: reply({ saved: true, recordId: saved.recordId, category: saved.categoryName, note: "저장한 기록이 카드로 떴습니다. 무엇을 저장했는지 한 문장으로 알리고, 본문에 링크가 없으면 참고할 링크(결과물 · 저장소 · 배포한 서비스 · 글 · 발표 자료)가 있는지 글로 한 번 물으십시오." }) };
+      // 방금 저장한 기록으로 포트폴리오를 권할 때가 됐는지 다시 본다. 읽지 못해도 저장은 끝난 일이라 권하지 않는 쪽으로 둔다.
+      const portfolio = await input.portfolioNow().catch(() => null);
+      const note = portfolio?.suggest
+        ? "저장한 기록이 카드로 떴습니다. 무엇을 저장했는지 한 문장으로 알리십시오. 기록이 모여 포트폴리오를 권할 때가 됐습니다 — 인터뷰나 진단의 질문이 남아 있지 않으면 이 답변에서 suggest_portfolio를 부르고, 참고 링크 질문은 하지 마십시오."
+        : "저장한 기록이 카드로 떴습니다. 무엇을 저장했는지 한 문장으로 알리고, 본문에 링크가 없으면 참고할 링크(결과물 · 저장소 · 배포한 서비스 · 글 · 발표 자료)가 있는지 글로 한 번 물으십시오.";
+      return { summary: saved.title, detail: { savedRecord: saved }, reply: reply({ saved: true, recordId: saved.recordId, category: saved.categoryName, ...(portfolio ? { portfolio } : {}), note }) };
     }, recheck("어긋난 항목을 고쳐 다시 저장합니다.", "저장하지 않았습니다. 아래 항목을 고쳐 다시 부르십시오.")));
     server.registerTool("propose_job_goal_update", { description: "사용자가 대화에서 말한 구직 목표의 변경을 제안합니다. 바뀌는 칸만 넣고 나머지는 넣지 않습니다. 아직 승인 · 거절하지 않은 앞선 제안(status ready)의 칸은 새 제안이 이어받으므로 다시 넣지 않습니다. 저장은 사용자가 카드에서 승인할 때만 일어납니다.", inputSchema: AgentGoalDraftInputSchema.shape }, (goalInput, extra) => step("propose_job_goal_update", extra, async () => {
       const draft = await input.goalDraft(goalInput);
@@ -469,6 +488,12 @@ export class ClaudeAgentRuntime implements AgentRuntime {
       asked = true;
       return { summary: part.prompt.slice(0, 8_000), detail: { ui: part }, reply: reply({ shown: true, fields: part.fields.map(field => field.label), note: "입력 칸이 화면에 떴습니다. 본문에 더 쓰지 말고 여기서 끝내십시오." }) };
     }, recheck("어긋난 항목을 고쳐 다시 냅니다.", "입력 칸을 내지 않았습니다. 아래 항목을 고쳐 다시 부르십시오.")));
+    server.registerTool("suggest_portfolio", { description: "포트폴리오가 아직 없고 기록이 모인 사용자에게 포트폴리오 제작을 먼저 권합니다. 입력은 없습니다. 서버가 지금 권할 때인지 다시 확인하고, 맞으면 정해진 질문과 두 선택지(「지금 만들어 볼게요」 · 「나중에 할게요」)를 화면에 띄웁니다. 권할 때가 아니면 그 까닭을 돌려줍니다. 이 도구를 부른 뒤에는 답변을 끝내고 답을 기다리십시오. 한 답변에 질문 부품은 하나만 냅니다.", inputSchema: {} }, (_args, extra) => step("suggest_portfolio", extra, async () => {
+      if (asked) throw new AgentToolRejection(["이 답변에서 이미 질문 부품을 냈습니다. 답변을 끝내고 사용자의 답을 기다리십시오."]);
+      const part = await input.suggestPortfolio();
+      asked = true;
+      return { summary: part.prompt.slice(0, 8_000), detail: { ui: part }, reply: reply({ shown: true, options: part.options.map(option => option.label), note: "제안이 화면에 떴습니다. 본문에 더 쓰지 말고 여기서 끝내십시오." }) };
+    }, recheck("지금은 권할 때가 아닙니다.", "제안을 내지 않았습니다. 아래 사유를 따르십시오.")));
     const isolatedHome = input.apiKey ? await mkdtemp(join(tmpdir(), "expresso-agent-")) : null;
     try {
       const messages = query({ prompt: JSON.stringify({ conversation: conversationForModel(input.messages), ...(input.event ? { event: input.event } : {}), jobGoal: input.jobGoal, brews: input.brews, memory: input.memory, recordCategories: input.recordCategories, context: input.context }), options: {
@@ -478,7 +503,7 @@ export class ClaudeAgentRuntime implements AgentRuntime {
         tools: [], mcpServers: { expresso: { type: "sdk", name: "expresso", instance: server } }, allowedTools: AGENT_ALLOWED_TOOLS, permissionMode: "dontAsk", settingSources: [], strictMcpConfig: true,
         // 부품을 내면 실행을 거기서 끝낸다. 답은 사용자가 화면에서 고르므로 모델을 한 번 더 부를 일이 없다 —
         // 더 부르면 그 호출의 토큰(실측: 캐시 읽기 약 2만)이 들고, 답을 기다린다는 군말이 본문에 붙는다.
-        hooks: { PostToolUse: ["mcp__expresso__ask_choice", "mcp__expresso__ask_form"].map(matcher => ({ matcher, hooks: [async () => asked ? { continue: false, stopReason: "사용자의 답을 기다립니다." } : {}] })) },
+        hooks: { PostToolUse: ["mcp__expresso__ask_choice", "mcp__expresso__ask_form", "mcp__expresso__suggest_portfolio"].map(matcher => ({ matcher, hooks: [async () => asked ? { continue: false, stopReason: "사용자의 답을 기다립니다." } : {}] })) },
         systemPrompt: SYSTEM_PROMPT,
       } });
       // 이번 실행에서 글을 내보낸 적이 있는가, 다음 글 앞에 빈 줄을 넣을 차례인가.

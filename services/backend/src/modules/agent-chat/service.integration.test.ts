@@ -11,7 +11,7 @@ import { PageElementIssues, PageService } from "../page/index.js";
 import { AgentCredentials } from "./credentials.js";
 import { ConsentService } from "../consent/index.js";
 import { AgentToolRejection, conversationForModel, type AgentRuntime } from "../../platform/agent/runtime.js";
-import { AgentChatError, AgentChatService, CREDITS_EXHAUSTED, GOAL_SAVED, RUN_HEARTBEAT_MS, RUN_INTERRUPTED_ERROR } from "./service.js";
+import { AgentChatError, AgentChatService, CREDITS_EXHAUSTED, GOAL_SAVED, PORTFOLIO_SUGGESTION_OPTIONS, RUN_HEARTBEAT_MS, RUN_INTERRUPTED_ERROR } from "./service.js";
 import { MongoEntitlementService } from "../entitlements/index.js";
 import { PreparationPlans } from "./plans.js";
 import { buildDraft } from "./record-draft.js";
@@ -341,7 +341,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const first = await service.create(memoryUser, []);
     await service.send(memoryUser, first.id, { requestId: randomUUID(), text: "주 10시간씩 8주 동안 준비할게요" });
     await done(first.id);
-    expect(seen[0]).toEqual({ stage: null, checkins: false, preferences: [], today: seoulDay(new Date()), commitments: [], diagnosis: null, recentConversations: [] });
+    expect(seen[0]).toEqual({ stage: null, checkins: false, preferences: [], today: seoulDay(new Date()), commitments: [], diagnosis: null, portfolio: { records: 0, suggest: false }, recentConversations: [] });
     // 둘째 대화: 첫 대화의 요지가 실리고, 지금 대화는 실리지 않는다.
     const second = await service.create(memoryUser, []);
     await service.send(memoryUser, second.id, { requestId: randomUUID(), text: "이제 지원할 공고를 고르고 있어요" });
@@ -593,6 +593,111 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect((await service.undoSavedRecord(userId, row.id, saved.recordId)).version).toBe(undone.version);
     expect(await count()).toBe(before);
     expect((await service.recentDigests(userId)).find(item => item.conversationId === row.id)!.outcomes).toEqual([]);
+  });
+  it("포트폴리오 제안: 기록이 3건 모이고 포트폴리오가 없을 때만 권하고, 끝까지 간 답변의 제안만 적어 14일 동안 되풀이하지 않는다", async () => {
+    const consultant = new ConsultantService(fixture.resource);
+    const writer = (await new MongoIdentityService(fixture.resource).signup({ email: `${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "제안 검증" })).user.id;
+    await consent.grant(writer, ["career_records"], CONSENT_POLICY_VERSION);
+    const category = (await career.listCategories(writer))[0]!;
+    const record = (title: string, bodyMd: string) => career.createRecord(writer, randomUUID(), { categoryId: category.id, title, bodyMd, properties: {} });
+    await record("결제 서버 이전", "레거시 결제 서버를 새 구조로 옮겼다");
+    await record("사내 배포 자동화", "배포 스크립트를 파이프라인으로 바꿨다");
+    // 내용이 없는 기록은 세지 않는다.
+    await record("제목만 있는 기록", "");
+    type Input = Parameters<AgentRuntime["run"]>[0];
+    let step: (input: Input) => Promise<void> = async () => undefined;
+    const service = new AgentChatService(fixture.resource, { run: input => step(input) }, career, { get: async () => { throw new Error("없는 공고"); } }, documents, consent, new AgentCredentials(fixture.resource), new PortfolioReadService(fixture.resource), new PageService(fixture.resource), undefined, consultant);
+    services.push(service);
+    const say = async (conversationId: string, text: string, work: (input: Input) => Promise<void>) => {
+      step = work;
+      await service.send(writer, conversationId, { requestId: randomUUID(), text });
+      await expect.poll(async () => (await service.get(writer, conversationId)).run?.status).not.toBe("running");
+      return service.get(writer, conversationId);
+    };
+    const first = await service.create(writer, []);
+
+    // 기록 2건: 기억은 권하지 않는다고 하고, 도구도 돌려보낸다.
+    let memory: Input["memory"] | undefined; let refusal: unknown;
+    await say(first.id, "안녕하세요", async input => { memory = input.memory; refusal = await input.suggestPortfolio().catch(error => error); });
+    expect(memory?.portfolio).toEqual({ records: 2, suggest: false });
+    expect(refusal).toBeInstanceOf(AgentToolRejection);
+    expect((refusal as AgentToolRejection).issues[0]).toContain("기록이 아직 적습니다");
+
+    // 같은 실행에서 세 번째 기록을 저장하면 그 자리에서 권할 때가 된다 — 기억은 실행을 시작할 때의 값(2건)이다.
+    let started: Input["memory"] | undefined; let afterSave: Awaited<ReturnType<Input["portfolioNow"]>> | undefined;
+    const interrupted = await say(first.id, "인턴 때 EKS 위에 Airflow를 올려서 운영해 봤어요.", async input => {
+      started = input.memory;
+      const question = input.messages.at(-1)!;
+      const saved = await input.saveRecord({ title: "EKS 위 Airflow 운영", categoryId: category.id, bodyMd: "## 행동\nEKS 위에 Airflow를 올려 운영", sources: [{ messageId: question.id, quote: "EKS 위에 Airflow를 올려서" }] }, "k1");
+      await input.emit({ type: "tool", tool: { id: randomUUID(), name: "기록 저장", status: "complete", summary: saved.title, savedRecord: saved } });
+      afterSave = await input.portfolioNow();
+      const part = await input.suggestPortfolio();
+      await input.emit({ type: "tool", tool: { id: randomUUID(), name: "포트폴리오 제안", status: "complete", summary: part.prompt, ui: part } });
+      // 제안을 낸 뒤 실행이 실패한다. 사용자가 제안을 봤다고 볼 수 없다.
+      throw new Error("모델 호출 실패");
+    });
+    expect(started?.portfolio).toEqual({ records: 2, suggest: false });
+    expect(afterSave).toEqual({ records: 3, suggest: true });
+    expect(interrupted.run?.status).toBe("failed");
+    expect(await consultant.portfolioSuggestedOn(writer)).toBeNull();
+
+    // 끝까지 간 답변의 제안은 정해진 질문과 두 선택지로 남고, 제안한 날이 적힌다.
+    const suggested = await say(first.id, "다음에는 뭘 하면 좋을까요?", async input => {
+      memory = input.memory;
+      const part = await input.suggestPortfolio();
+      await input.emit({ type: "tool", tool: { id: randomUUID(), name: "포트폴리오 제안", status: "complete", summary: part.prompt, ui: part } });
+    });
+    expect(memory?.portfolio).toEqual({ records: 3, suggest: true });
+    expect(suggested.run?.status).toBe("complete");
+    const part = suggested.messages.at(-1)!.tools.at(-1)!.ui!;
+    expect(part).toMatchObject({ kind: "choice", prompt: "기록이 3건 모였습니다. 이 기록으로 포트폴리오를 만들어 볼까요?", multiple: false, answer: null });
+    expect(part.kind === "choice" ? part.options.map(option => option.label) : []).toEqual([...PORTFOLIO_SUGGESTION_OPTIONS]);
+    expect(await consultant.portfolioSuggestedOn(writer)).toBe(seoulDay(new Date()));
+
+    // 선택지를 고른 답은 그 글로 대화에 남는다. 제안한 뒤에는 새 대화에서도 다시 권하지 않는다.
+    step = async input => { memory = input.memory; };
+    const later = part.kind === "choice" ? part.options[1]! : null;
+    await service.send(writer, first.id, { requestId: randomUUID(), text: "", reply: { partId: part.partId, optionIds: [later!.id] } });
+    await expect.poll(async () => (await service.get(writer, first.id)).run?.status).toBe("complete");
+    expect((await service.get(writer, first.id)).messages.at(-2)).toMatchObject({ role: "user", text: "나중에 할게요" });
+    expect(memory?.portfolio).toEqual({ records: 3, suggest: false });
+    const second = await service.create(writer, []);
+    await say(second.id, "기록을 하나 더 남기고 싶어요", async input => { memory = input.memory; refusal = await input.suggestPortfolio().catch(error => error); });
+    expect(memory?.portfolio).toEqual({ records: 3, suggest: false });
+    expect((refusal as AgentToolRejection).issues[0]).toContain("최근에 이미 제안했습니다");
+
+    // 14일이 지나면 다시 권할 때가 된다.
+    const fortnightAgo = new Date(Date.now() - 14 * 86_400_000);
+    await consultant.markPortfolioSuggested(writer, seoulDay(fortnightAgo));
+    await say(second.id, "요즘 뭐 하면 좋을까요?", async input => { memory = input.memory; });
+    expect(memory?.portfolio).toEqual({ records: 3, suggest: true });
+
+    // 이 대화에서 제작을 시작했으면 권하지 않는다.
+    const brewing = await service.create(writer, []);
+    await say(brewing.id, "포트폴리오 만들어 줘", async input => {
+      await input.emit({ type: "tool", tool: { id: randomUUID(), name: "포트폴리오 제작", status: "complete", summary: "사이드 프로젝트 모음", brewStart: { startId: randomUUID(), jobPostingId: null, jobAnalysisId: randomUUID(), title: "사이드 프로젝트 모음", companyName: "", lengthPreset: "single", brewId: null } } });
+      refusal = await input.suggestPortfolio().catch(error => error);
+    });
+    expect((refusal as AgentToolRejection).issues[0]).toContain("이미 포트폴리오 제작을 시작했습니다");
+    await say(brewing.id, "지금 뭐 하면 돼?", async input => { memory = input.memory; });
+    expect(memory?.portfolio).toEqual({ records: 3, suggest: false });
+
+    // 포트폴리오가 생기면 더 권하지 않는다.
+    const db = mongoCollections(fixture.resource.db); const now = new Date();
+    await db.portfolios.insertOne({ _id: randomUUID(), userId: writer, brewId: randomUUID(), templateId: (await db.templates.findOne({}))!._id, title: "제안 검증 포트폴리오", status: "draft", createdAt: now, updatedAt: now, styleOverrides: {} });
+    await say(second.id, "또 뭐 하면 좋을까요?", async input => { memory = input.memory; refusal = await input.suggestPortfolio().catch(error => error); });
+    expect(memory?.portfolio).toEqual({ records: 3, suggest: false });
+    expect((refusal as AgentToolRejection).issues[0]).toContain("이미 포트폴리오가 있습니다");
+
+    // 프로필이 연결되지 않은 서비스는 판단하지 않는다.
+    let unwired: unknown;
+    const plain = make({ run: async input => { memory = input.memory; unwired = await input.portfolioNow(); refusal = await input.suggestPortfolio().catch(error => error); } });
+    const bare = await plain.create(writer, []);
+    await plain.send(writer, bare.id, { requestId: randomUUID(), text: "안녕하세요" });
+    await expect.poll(async () => (await plain.get(writer, bare.id)).run?.status).toBe("complete");
+    expect(memory).toBeNull();
+    expect(unwired).toBeNull();
+    expect((refusal as AgentToolRejection).issues[0]).toContain("이 환경에서는 포트폴리오 제안을 쓸 수 없습니다");
   });
   it("사용자가 적은 링크만 읽고, 읽은 페이지 글의 인용으로 기록을 저장한다", async () => {
     const category = (await career.listCategories(userId))[0]!;

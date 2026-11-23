@@ -56,6 +56,20 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     const swapped = await service.applyUpdate(userId, { forget: [after.preferences[0]!.id], remember: [{ kind: "avoid", text: "넘치는 조건" }] });
     expect(swapped.changed).toMatchObject({ remembered: 1, forgotten: 1 });
   });
+  it("포트폴리오를 제안한 날을 적고 다시 읽는다. 프로필의 모양과 남의 프로필은 그대로다", async () => {
+    const fresh = (await new MongoIdentityService(fixture.resource).signup({ email: `${randomUUID()}@example.com`, password: "correct-horse-battery", displayName: "제안 검증" })).user.id;
+    expect(await service.portfolioSuggestedOn(fresh)).toBeNull();
+    // 문서가 없는 사용자도 적을 수 있다 — 검증 규칙(0040)이 새 칸을 받는다.
+    await service.markPortfolioSuggested(fresh, "2026-11-23");
+    expect(await service.portfolioSuggestedOn(fresh)).toBe("2026-11-23");
+    await service.markPortfolioSuggested(fresh, "2026-12-07");
+    expect(await service.portfolioSuggestedOn(fresh)).toBe("2026-12-07");
+    expect(await service.profile(fresh)).toEqual({ stage: null, stageSource: null, stageUpdatedAt: null, preferences: [], outreach: null });
+    const before = await service.profile(userId);
+    await service.markPortfolioSuggested(userId, "2026-11-23");
+    expect(await service.profile(userId)).toEqual(before);
+    expect(await service.portfolioSuggestedOn(other)).toBeNull();
+  });
   it("남의 프로필에 닿지 않는다", async () => {
     const mine = await service.profile(userId);
     await service.removePreference(other, mine.preferences[0]!.id);
