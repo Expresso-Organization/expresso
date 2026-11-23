@@ -2120,12 +2120,15 @@ svg [data-morph] { transform-box: fill-box; }
   </div>
 </section>
 
-<section class="slide fp rp" data-title="주요 기능 · 배포와 분석" data-kind="실제 조작 녹화 재생">
+<section class="slide fp rx" data-title="주요 기능 · 배포와 분석" data-kind="요소 추출 재생">
   <div class="frame">
-    <div class="rp-top in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M5.15 26.28 A17 17 0 0 0 38.85 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">2</span><span class="sec">주요 기능</span><b>배포와 분석</b></div>
-    <div class="rp-screen in in-fade dl-2"></div>
-    <ol class="rp-steps"><li data-ev="deploy2" data-from="공개 주소와 버전" data-to="방문 분석" data-shift="-2000">공개 주소 발급과 버전 단위 공개</li><li data-ev="public2" data-from="공개 포트폴리오" data-to="" data-shift="0">채용 공고에 맞춘 공개 포트폴리오</li><li data-ev="deploy2" data-from="방문 분석" data-to="해설과 제안" data-shift="0">방문 · 체류 · 끝까지 읽은 비율</li><li data-ev="deploy2" data-from="해설과 제안" data-to="" data-shift="0">집계 해설과 개선 제안 · 유입 경로</li></ol>
-    <div class="rp-cap" aria-live="polite"><span class="n"></span><span class="t"></span></div>
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M5.15 26.28 A17 17 0 0 0 38.85 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="hd-wm">Expresso</span><span class="no">2</span><span class="sec">프로젝트 정체성과 핵심 가치</span><span class="pg"></span></div>
+    <div class="head in dl-2">
+      <h2>배포와 분석</h2>
+      <p class="sub">공개 주소로 배포하고, 방문 데이터로 고칠 곳을 찾는 포트폴리오</p>
+    </div>
+    <div class="body"><div class="rx-stage"></div></div>
+    <script type="application/json" class="rx-cfg">{"scene": "deploy2", "stages": ["공개 주소", "공개 포트폴리오", "방문 분석", "해설과 제안"], "parts": {"main": {"cam": {"full": {"sel": "html", "fx": 0.5, "fy": 0, "x": 960, "y": 372, "k": 0.7}, "publish": {"sel": "[class*='__publishButton']", "fx": 0.5, "fy": 0.5, "x": 960, "y": 600, "k": 2.6}, "deploy": {"sel": "[class*='__statusHead']", "fx": 0, "fy": 0, "x": 150, "y": 392, "k": 1.2}, "tiles": {"sel": "[class*='__content'] > [class*='__grid']", "fx": 0, "fy": 0, "x": 190, "y": 400, "k": 1.35}, "barista": {"sel": "[class*='__baristaCard']", "fx": 1, "fy": 0, "x": 1760, "y": 392, "k": 1.35}}, "vis": {"head": "[class*='__toolbarRight']", "deploy": "[class*='__inner']:has([class*='__statusHead'])", "tiles": "[class*='__content'] > [class*='__grid'] > :nth-child(-n+4)", "right": "[class*='__content'] > [class*='__grid'] > [class*='__baristaCard'], [class*='__content'] > [class*='__grid'] > :has([class*='__donutRow'])"}}, "pub": {"scene": "public2", "raw": true, "full": true, "cam": {"view": {"x": 150, "y": 380, "k": 0.66}}}, "page": {"follow": "main", "full": true, "cam": {}}}, "notes": {"n1": {"x": 1096, "y": 260, "w": 610, "mid": true, "k": "공개 주소", "t": "포트폴리오마다 주소를 발급하고 버전 단위로 공개"}, "n2": {"x": 1120, "y": 260, "w": 590, "mid": true, "k": "공개 포트폴리오", "t": "채용 공고에 맞춰 만든 지면을 주소 하나로 공유"}, "n3": {"x": 86, "y": 330, "w": 1500, "mid": true, "k": "방문 분석", "t": "방문 · 체류 시간 · 끝까지 읽은 비율 집계"}, "n4": {"x": 46, "y": 260, "w": 760, "mid": true, "k": "해설과 제안", "t": "방문 데이터를 풀어 쓴 해설과 고칠 곳 제안"}}, "steps": [{"settle": 8000, "do": [[0, "stage", null, 0], [0, "seek", "main", 2000], [0, "seek", "page", 2000], [0, "cam", "main", "full"], [0, "show", "main"], [0, "show", "page"], [0, "vis", "main", {"on": ["head"]}], [900, "cam", "main", "publish", 1500, "fly"], [1200, "dissolve", "page", 900], [2300, "mark", "main", {"sel": "[class*='__publishButton']", "ring": true, "radius": 20}], [3000, "unmark", "main"], [3100, "vis", "main", {"off": ["head"]}], [3100, "play", "main", 5900, 7300], [3400, "vis", "main", {"on": ["deploy"]}], [3500, "cam", "main", "deploy", 1400, "fly"], [5000, "mark", "main", {"sel": "[class*='__statusAddress']", "text": "garyeong-musinsa.expresso.ai.kr", "ring": true, "radius": 10}], [5300, "note", "n1"]]}, {"settle": 5600, "do": [[0, "stage", null, 1], [0, "hide", "n1"], [0, "unmark", "main"], [0, "dissolve", "main", 500], [0, "seek", "pub", 1400], [0, "cam", "pub", "view"], [200, "show", "pub"], [900, "play", "pub", 1400, 8000, 1.6], [1400, "note", "n2"]]}, {"settle": 4200, "do": [[0, "stage", null, 2], [0, "hide", "n2"], [0, "dissolve", "pub", 500], [0, "vis", "main", {"off": ["deploy"]}], [0, "seek", "main", 12300], [0, "cam", "main", "tiles"], [300, "appear", "main", 600], [400, "reveal", "main", "[class*='__content'] > [class*='__grid'] > :nth-child(-n+4)", 120, {"token": "tiles"}], [1700, "note", "n3"]]}, {"settle": 4200, "do": [[0, "stage", null, 3], [0, "hide", "n3"], [0, "seek", "page", 20880], [0, "vis", "main", {"off": ["tiles"]}], [0, "play", "main", 19300, 20880], [200, "cam", "main", "barista", 1300, "fly"], [400, "reveal", "main", "[class*='__content'] > [class*='__grid'] > [class*='__baristaCard'], [class*='__content'] > [class*='__grid'] > :has([class*='__donutRow'])", 160, {"token": "right"}], [1700, "mark", "main", {"sel": "[class*='__baristaHead']", "text": "BARISTA", "ring": true, "ringSel": "[class*='__baristaCard']", "radius": 16}], [2200, "note", "n4"]]}, {"settle": 2600, "do": [[0, "hide", "n4"], [0, "unmark", "main"], [0, "cam", "main", "full", 1500, "fly"], [350, "appear", "page", 1000]]}]}</script>
   </div>
 </section>
 
@@ -3408,6 +3411,7 @@ window.deck = new Deck();
      장면 사이는 배율은 로그 비율로, 기준점과 무대 위치는 선형으로 잇습니다. 기준 요소는 매 프레임 다시 잽니다. */
   const CAM_EASE = { fly: (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2), sine: (t) => -(Math.cos(Math.PI * t) - 1) / 2 };
   const camPoint = (p, pose) => {
+    if (!pose.sel) return { x: pose.px || 0, y: pose.py || 0 };
     const d = docOf(p); const e = d && (pose.text ? [...d.querySelectorAll(pose.sel)].find((x) => x.textContent.includes(pose.text)) : d.querySelector(pose.sel)); if (!e) return null;
     const r = e.getBoundingClientRect(); return { x: r.left + r.width * (pose.fx || 0), y: r.top + r.height * (pose.fy || 0) };
   };
@@ -3531,6 +3535,7 @@ window.deck = new Deck();
   const update = (p, instant) => {
     /* 전체 화면 층은 기준 부품의 카메라를 그대로 따라가 두 층이 정확히 겹칩니다. */
     if (p.cfg.fill) fillPrev(p);
+    if (p.cfg.raw) { if (p.cfg.cam) camApply(p); return true; }
     if (p.cfg.follow) {
       const d = docOf(p); if (d && d.head && p.cfg.css && !d.getElementById('__rxf')) { const t = d.createElement('style'); t.id = '__rxf'; t.textContent = p.cfg.css; d.head.appendChild(t); }
       const L = p.st.parts[p.cfg.follow]; if (L && p.host.style.transform !== L.host.style.transform) p.host.style.transform = L.host.style.transform; return true; }
