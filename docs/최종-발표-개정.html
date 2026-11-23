@@ -1681,6 +1681,20 @@ svg [data-morph] { transform-box: fill-box; }
 .fv-ul li::before { content: ''; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ex-slate-300); }
 .fv-p.on .fv-ul li { color: var(--ex-ink-900); font-weight: 600; }
 .fv-p.on .fv-ul li::before { background: #C48A7D; }
+/* 계층별 색 — 화면(파랑) · 서버(초록) · AI(보라). 수직적 협력에서는 계층마다 다른 사람이, 수평적 협력에서는 기둥 하나가 세 색을 모두 지닙니다 */
+.fv { --ly1: #3D6FA8; --ly1b: #EEF5FF; --ly1l: #C9DDF3; --ly2: #2F7A5F; --ly2b: #EAF6F0; --ly2l: #C6E3D5; --ly3: #5F4E9C; --ly3b: #F3F0FC; --ly3l: #D9D1F2; }
+.fv-band { background: var(--ex-white); }
+.fv-band.ly1 { --c: var(--ly1); --cb: var(--ly1b); --cl: var(--ly1l); }
+.fv-band.ly2 { --c: var(--ly2); --cb: var(--ly2b); --cl: var(--ly2l); }
+.fv-band.ly3 { --c: var(--ly3); --cb: var(--ly3b); --cl: var(--ly3l); }
+.fv-band .lic { color: var(--c); background: var(--cb); border-color: var(--cl); }
+.fv-band .l { color: var(--c); }
+.fv-col .d i { color: var(--ex-ink-900); }
+.fv-col .ly { border-left: 3px solid; border-image: linear-gradient(#8FB3E0, #8CC5AA, #B3A6E3) 1; }
+.fv-col .ly span:nth-child(1) { color: var(--ly1); background: var(--ly1b); }
+.fv-col .ly span:nth-child(2) { color: var(--ly2); background: var(--ly2b); }
+.fv-col .ly span:nth-child(3) { color: var(--ly3); background: var(--ly3b); }
+.fv-col .who span + span i { color: var(--ly3); }
 
 /* 13쪽 · 설계서 열 단계 */
 .vh-v10:has(.fd-steps) { grid-template-columns: 400px 1fr; }
@@ -2669,7 +2683,7 @@ svg [data-morph] { transform-box: fill-box; }
       <div class="fv" role="img" aria-label="왼쪽 수직적 협력(일반적 방식): 프론트엔드 · 백엔드 · AI · 데이터 담당이 화면 · 서버 · 모델 계층을 나눠 맡고, 기능 하나가 계층 사이 인계와 대기를 거침. 오른쪽 수평적 협력(Expresso): 커리어 기록 · 채용 공고 · 채용 공고 분석과 AI 인터뷰 · 생성 · 배포와 추천 모델 · AI 대화와 방문 분석 도메인마다 사람 한 명과 에이전트가 화면 · 서버 · AI 전 계층을 개발하고, 팀원끼리 공유 API 스키마와 상호 검토로 협력">
         <div class="fv-p in dl-3">
           <div class="fv-top"><span class="ic"><i class="ph ph-stack"></i></span><div><div class="fv-k">일반적 방식</div><div class="fv-h">수직적 협력</div></div></div>
-          <div class="fv-dg"><div class="fv-band"><span class="lic"><i class="ph ph-browser"></i></span><span class="l">화면</span><span class="r"><i class="ph ph-user"></i>프론트엔드 담당</span></div><div class="fv-hand"><i class="ph ph-hourglass-medium"></i>인계 · 대기</div><div class="fv-band"><span class="lic"><i class="ph ph-hard-drives"></i></span><span class="l">서버 · API</span><span class="r"><i class="ph ph-user"></i>백엔드 담당</span></div><div class="fv-hand"><i class="ph ph-hourglass-medium"></i>인계 · 대기</div><div class="fv-band"><span class="lic"><i class="ph ph-brain"></i></span><span class="l">모델 · 데이터</span><span class="r"><i class="ph ph-user"></i>AI · 데이터 담당</span></div></div>
+          <div class="fv-dg"><div class="fv-band ly1"><span class="lic"><i class="ph ph-browser"></i></span><span class="l">화면</span><span class="r"><i class="ph ph-user"></i>프론트엔드 담당</span></div><div class="fv-hand"><i class="ph ph-hourglass-medium"></i>인계 · 대기</div><div class="fv-band ly2"><span class="lic"><i class="ph ph-hard-drives"></i></span><span class="l">서버 · API</span><span class="r"><i class="ph ph-user"></i>백엔드 담당</span></div><div class="fv-hand"><i class="ph ph-hourglass-medium"></i>인계 · 대기</div><div class="fv-band ly3"><span class="lic"><i class="ph ph-brain"></i></span><span class="l">모델 · 데이터</span><span class="r"><i class="ph ph-user"></i>AI · 데이터 담당</span></div></div>
           <ul class="fv-ul"><li>직군별 분담</li><li>계층 사이 인계 · 대기</li><li>기능 하나에 여러 담당자 의존</li></ul>
         </div>
         <div class="fv-mid in in-fade dl-4"><i class="ph ph-arrow-right"></i></div>
@@ -3880,14 +3894,14 @@ window.deck = new Deck();
     if (still.matches) return;
     const bands = $$(s, '.fv-p:first-child .fv-band'), hands = $$(s, '.fv-p:first-child .fv-hand');
     bands.forEach((el, i) => A(el, [
-      { backgroundColor: 'var(--ex-tint-50)', borderColor: 'var(--ex-line-200)' },
-      { backgroundColor: '#FBEEE4', borderColor: '#C48A7D', offset: .35 },
-      { backgroundColor: '#FBEEE4', borderColor: '#C48A7D', offset: .7 },
-      { backgroundColor: 'var(--ex-tint-50)', borderColor: 'var(--ex-line-200)' },
+      { backgroundColor: 'var(--ex-white)', borderColor: 'var(--ex-line-200)' },
+      { backgroundColor: 'var(--cb)', borderColor: 'var(--c)', offset: .35 },
+      { backgroundColor: 'var(--cb)', borderColor: 'var(--c)', offset: .7 },
+      { backgroundColor: 'var(--ex-white)', borderColor: 'var(--ex-line-200)' },
     ], { delay: 900 + i * 950, duration: 900, easing: 'linear', fill: 'none' }));
     hands.forEach((el, i) => A(el, [
       { color: 'var(--ex-slate-500)', transform: 'none' },
-      { color: '#9A4030', transform: 'translateY(6px)', offset: .5 },
+      { color: 'var(--ex-ink-900)', transform: 'translateY(6px)', offset: .5 },
       { color: 'var(--ex-slate-500)', transform: 'none' },
     ], { delay: 900 + i * 950 + 620, duration: 700, easing: SOFT, fill: 'none' }));
   }
@@ -3901,9 +3915,9 @@ window.deck = new Deck();
     [$(right, '.fv-k'), $(right, '.fv-h')].forEach((el) => A(el, [{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }], { delay: 480, duration: 520, fill: 'backwards' }));
     /* 기둥 다섯 개는 같은 순간에 섭니다 — 차례로 기다리지 않는 병렬 작업 */
     $$(right, '.fv-col').forEach((el) => A(el, [{ opacity: 0, transform: 'translateY(36px)' }, { opacity: 1, transform: 'none' }], { delay: 680, duration: 620, fill: 'backwards' }));
-    $$(right, '.fv-col .ly span').forEach((el) => A(el, [
-      { backgroundColor: 'var(--ex-white)' }, { backgroundColor: '#F3DCCB', offset: .45 }, { backgroundColor: 'var(--ex-white)' },
-    ], { delay: 1180, duration: 900, easing: 'linear', fill: 'none' }));
+    $$(right, '.fv-col .ly span').forEach((el, i) => A(el, [
+      { transform: 'none' }, { transform: 'scale(1.08)', offset: .45 }, { transform: 'none' },
+    ], { delay: 1180 + (i % 3) * 90, duration: 700, easing: SOFT, fill: 'none' }));
     A($(right, '.fv-link'), [{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0% 0 0)' }], { delay: 1420, duration: 700, fill: 'backwards' });
     $$(right, '.fv-ul li').forEach((el, i) => A(el, [{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { delay: 1900 + i * 110, duration: 460, fill: 'backwards' }));
   }
