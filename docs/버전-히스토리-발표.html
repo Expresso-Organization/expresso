@@ -1230,44 +1230,6 @@ svg [data-morph] { transform-box: fill-box; }
   .slide.vh-dusk .ring, .slide.vh-dusk .space, .slide.vh-dusk::before, .slide.vh-recede .vh-orbit { animation: none !important; transform: none !important; opacity: 1 !important; }
 }
 
-/* ── 12 → 13쪽 전환 — 가운데 원이 계단 끝의 2.0 막대가 된다 ───────
-   ① 12쪽은 13쪽이 뜨는 동안 흐려지지 않고 서 있고, 13쪽의 씨앗(.vh-seed)이 12쪽의 원과 같은 자리 · 같은 크기로 겹쳐 있다.
-   ② 씨앗이 계단 끝으로 옮겨 가며 막대 모양으로 늘어난다. 그동안 1.0 ~ 1.9 막대가 왼쪽부터 차례로 솟는다.
-   ③ 씨앗이 자리에 닿으면 진짜 2.0 막대와 바꾸고, 막대의 글과 아래 묶음 이름이 나타난다.
-   씨앗의 숫자는 프레임 좌표다 — 원 중심 (1192, 634) 지름 200, 2.0 막대 (1567.3, 335) 144.7 × 536. */
-.deck-stage > .slide.vh-dusk:not(.active):has(+ .slide.active) { transition: opacity 0s linear 1200ms, visibility 0s linear 1200ms; }
-.deck-stage > .slide.vh-dusk:not(.active):has(+ .slide.active) > .frame { transition: none; opacity: 1; }
-.deck-stage > .slide.active.vh-climb { transition: opacity 620ms cubic-bezier(.4, 0, .2, 1) 0s, visibility 0s; }
-.deck-stage > .slide.active.vh-climb .hd { --dl: 380ms; }
-.deck-stage > .slide.active.vh-climb .head { --dl: 440ms; }
-.vh-seed { position: absolute; left: 1567.3px; top: 335px; width: 144.7px; height: 536px; border-radius: 18px 18px 0 0; background: var(--ex-espresso); color: var(--ex-white); opacity: 0; pointer-events: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center; white-space: nowrap; }
-.vh-seed i { font-size: 40px; }
-.vh-seed b { font-size: 31px; font-weight: 500; line-height: 1.12; }
-.vh-seed .vh-wm em { color: var(--ex-crema); }
-@keyframes vh-seed {
-  0%   { left: 1092px; top: 534px; width: 200px; height: 200px; border-radius: 100px; opacity: 1; }
-  30%  { left: 1092px; top: 534px; width: 200px; height: 200px; border-radius: 100px; opacity: 1; animation-timing-function: cubic-bezier(.5, 0, .15, 1); }
-  92%  { left: 1567.3px; top: 335px; width: 144.7px; height: 536px; border-radius: 18px 18px 0 0; opacity: 1; }
-  100% { left: 1567.3px; top: 335px; width: 144.7px; height: 536px; border-radius: 18px 18px 0 0; opacity: 0; }
-}
-@keyframes vh-seed-mark { 0%, 26% { opacity: 1; } 44%, 100% { opacity: 0; } }
-.deck-stage > .slide.active.vh-climb .vh-seed { animation: vh-seed 1650ms linear both; }
-.deck-stage > .slide.active.vh-climb .vh-seed > * { animation: vh-seed-mark 1650ms linear both; }
-.vh-climb .vh-stair { overflow: hidden; }
-@keyframes vh-up { from { transform: translateY(100%); } to { transform: none; } }
-.deck-stage > .slide.active.vh-climb .bar.up { animation: vh-up 760ms cubic-bezier(.3, .7, .1, 1) both; animation-delay: calc(560ms + var(--i) * 85ms); }
-@keyframes vh-show { from { opacity: 0; } to { opacity: 1; } }
-.deck-stage > .slide.active.vh-climb .bar.end { animation: vh-show 120ms linear 1480ms both; }
-.deck-stage > .slide.active.vh-climb .bar.end > * { animation: vh-show 520ms ease-out 1600ms both; }
-@media (prefers-reduced-motion: reduce) {
-  .deck-stage > .slide.active.vh-climb .vh-seed, .deck-stage > .slide.active.vh-climb .vh-seed > *, .deck-stage > .slide.active.vh-climb .bar { animation: none; }
-  .deck-stage > .slide.active.vh-climb .bar > * { animation: none; }
-}
-@media print {
-  .slide.vh-climb .vh-seed { display: none !important; }
-  .slide.vh-climb .bar, .slide.vh-climb .bar > * { animation: none !important; transform: none !important; opacity: 1 !important; }
-}
-
 /* 제목에서 바뀌는 뒷부분 — inline-block 이어야 등장 transform 이 먹는다 */
 .fp h2 .tail { display: inline-block; }
 
@@ -1693,7 +1655,7 @@ svg [data-morph] { transform-box: fill-box; }
   </div>
 </section>
 
-<section class="slide fp vh vh-climb" data-title="1.1 ~ 2.0의 단계" data-kind="계단">
+<section class="slide fp vh " data-title="1.1 ~ 2.0의 단계" data-kind="계단">
   <div class="frame">
     <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">2</span><span class="sec">에이전틱 플랫폼</span><span class="pg"></span></div>
     <div class="head in dl-2">
@@ -1702,26 +1664,25 @@ svg [data-morph] { transform-box: fill-box; }
     </div>
     <div class="body">
       <div class="vh-stair tight">
-        <div class="bar base up" style="--i: 0; height: 176px"><div class="vn">1.0</div><div class="nm">설계 범위<br>완성</div></div>
-        <div class="bar  up" style="--i: 1; height: 212px"><div class="vn">1.1</div><div class="nm">대화형<br>홈 화면</div></div>
-        <div class="bar  up" style="--i: 2; height: 248px"><div class="vn">1.2</div><div class="nm">새 공고 기반<br>AI 맞춤 제안</div></div>
-        <div class="bar g2 up" style="--i: 3; height: 284px"><div class="vn">1.3</div><div class="nm">사용자의<br>구직 목표<br>설정</div></div>
-        <div class="bar g2 up" style="--i: 4; height: 320px"><div class="vn">1.4</div><div class="nm">사용자의<br>부족한 역량<br>진단</div></div>
-        <div class="bar g2 up" style="--i: 5; height: 356px"><div class="vn">1.5</div><div class="nm">역량 보완<br>활동 추천</div></div>
-        <div class="bar g2 up" style="--i: 6; height: 392px"><div class="vn">1.6</div><div class="nm">추천 활동의<br>진행 확인</div></div>
-        <div class="bar g2 up" style="--i: 7; height: 428px"><div class="vn">1.7</div><div class="nm">커리어 기록<br>작성 도움<br>에이전트</div></div>
-        <div class="bar g3 up" style="--i: 8; height: 464px"><div class="vn">1.8</div><div class="nm">포트폴리오<br>디자인 대화</div></div>
-        <div class="bar g3 up" style="--i: 9; height: 500px"><div class="vn">1.9</div><div class="nm">포트폴리오<br>작성 과정<br>채팅 UI 이전</div></div>
-        <div class="bar end" style="--i: 10; height: 536px"><div class="vn">2.0</div><div class="nm">에이전틱<br>플랫폼<br>전환</div></div>
+        <div class="bar base in dl-3" style="height: 176px"><div class="vn">1.0</div><div class="nm">설계 범위<br>완성</div></div>
+        <div class="bar  in dl-3" style="height: 212px"><div class="vn">1.1</div><div class="nm">대화형<br>홈 화면</div></div>
+        <div class="bar  in dl-4" style="height: 248px"><div class="vn">1.2</div><div class="nm">새 공고 기반<br>AI 맞춤 제안</div></div>
+        <div class="bar g2 in dl-4" style="height: 284px"><div class="vn">1.3</div><div class="nm">사용자의<br>구직 목표<br>설정</div></div>
+        <div class="bar g2 in dl-5" style="height: 320px"><div class="vn">1.4</div><div class="nm">사용자의<br>부족한 역량<br>진단</div></div>
+        <div class="bar g2 in dl-5" style="height: 356px"><div class="vn">1.5</div><div class="nm">역량 보완<br>활동 추천</div></div>
+        <div class="bar g2 in dl-6" style="height: 392px"><div class="vn">1.6</div><div class="nm">추천 활동의<br>진행 확인</div></div>
+        <div class="bar g2 in dl-6" style="height: 428px"><div class="vn">1.7</div><div class="nm">커리어 기록<br>작성 도움<br>에이전트</div></div>
+        <div class="bar g3 in dl-7" style="height: 464px"><div class="vn">1.8</div><div class="nm">포트폴리오<br>디자인 대화</div></div>
+        <div class="bar g3 in dl-7" style="height: 500px"><div class="vn">1.9</div><div class="nm">포트폴리오<br>작성 과정<br>채팅 UI 이전</div></div>
+        <div class="bar end in dl-8" style="height: 536px"><div class="vn">2.0</div><div class="nm">에이전틱<br>플랫폼<br>전환</div></div>
       </div>
-      <div class="vh-groups eleven in in-fade" style="--dl: 1500ms">
+      <div class="vh-groups eleven in in-fade dl-9">
         <div class="base"><b>출발점</b><span>화면 옆 채팅</span></div>
         <div><b>첫 화면</b><span>대화로 시작 · 맞춤 제안</span></div>
         <div><b>AI 커리어 컨설팅</b><span>목표 설정 → 역량 진단 → 활동 추천 → 진행 확인 → 기록 작성</span></div>
         <div class="g3"><b>포트폴리오 작성</b><span>디자인 · 작성 과정</span></div>
         <div class="end"><b>도착점</b><span>대화가 주 경로</span></div>
       </div>
-      <div class="vh-seed" aria-hidden="true"><i class="ph ph-chat-circle-dots"></i><b class="vh-wm">Expre<em>ss</em>o<br><span class="lt">Agent</span></b></div>
     </div>
   </div>
 </section>
