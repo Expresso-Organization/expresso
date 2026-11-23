@@ -1354,6 +1354,8 @@ svg [data-morph] { transform-box: fill-box; }
 .fd-live .fp-line .st.g3 .dot { border-color: var(--g3-s); color: var(--g3-k); }
 .fd-live .fp-line .st.g4 .dot { border-color: var(--g4-s); color: var(--g4-k); }
 .fd-live .fp-line .loop { background: var(--g3) !important; }
+.fd-live .fp-line .lane { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 84px; color: var(--ex-slate-500); }
+.fd-live .fp-line .lane i { font-size: 40px; }
 
 /* 추천 모델 성능 — 측정값이 들어올 빈 차트 */
 .fd-ndcg svg { width: 100%; height: auto; display: block; }
@@ -2021,8 +2023,8 @@ svg [data-morph] { transform-box: fill-box; }
           <path d="M178 548 H1330" style="fill:none; stroke: var(--ex-line-200); stroke-width: 4"/>
           <path d="M340 520 V440" style="fill:none; stroke: var(--ex-slate-400); stroke-width: 2.5; stroke-dasharray: 8 8" marker-end="url(#fpl-tip)"/>
         </svg>
-        <span class="lane" style="top: 204px">사용자</span>
-        <span class="lane" style="top: 532px">관리자</span>
+        <span class="lane" style="top: 180px"><i class="ph ph-user"></i>사용자</span>
+        <span class="lane" style="top: 508px"><i class="ph ph-user-gear"></i>관리자</span>
 
         <div class="st g1" style="left: 178px; top: 176px"><div class="dot"><i class="ph ph-notebook"></i></div><div class="nm">커리어 기록</div></div>
         <div class="st own g2" style="left: 340px; top: 176px"><span class="tag">채용 공고 추천 모델</span><div class="dot"><i class="ph ph-magnifying-glass"></i></div><div class="nm">채용 공고<br>탐색</div></div>
