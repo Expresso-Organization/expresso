@@ -639,6 +639,11 @@ svg [data-morph] { transform-box: fill-box; }
 /* 아래 선 — 본문이 남는 높이를 가져가고, 그 끝에 제안서처럼 1px 선을 둡니다. */
 .fp .frame:has(> .hd)::after { content: ''; flex: none; margin-top: 18px; border-top: 1px solid var(--ex-line-200); }
 .fp.dark .frame:has(> .hd)::after, .fp.vh-dusk .frame:has(> .hd)::after { border-top-color: rgba(255, 255, 255, .13); }
+/* 한 줄 결론 — 아래 선 바로 위, 왼쪽 정렬. 본문 흐름과 떨어진 자리라 그림 크기를 바꾸지 않습니다 */
+.fp .frame > .concl { position: absolute; left: 0; right: 0; bottom: 21px; margin: 0; display: flex; align-items: center; gap: 12px; font-family: var(--ex-font-ui); font-size: 26px; font-weight: 700; line-height: 1.2; letter-spacing: -.02em; color: var(--ex-ink-900); }
+.fp .frame > .concl i { flex: none; font-size: 26px; color: var(--ex-espresso); }
+/* 남은 높이를 채우는 본문은 결론 줄 높이만큼 비켜 둡니다 */
+.fp .frame:has(> .concl) .vh-limits { margin-bottom: 58px; }
 
 .fp .head { padding-top: 40px; }
 .fp h2 { font-size: 68px; font-weight: 600; line-height: 1.16; letter-spacing: -.035em; }
@@ -1983,6 +1988,7 @@ svg [data-morph] { transform-box: fill-box; }
         <div class="fp-repeat in dl-6" style="grid-column: 1 / -1"><i class="ph ph-arrows-clockwise"></i>지원 시마다 반복<span>자료 취합 → 경험 선택 → 설명 수정 → 구성 · 편집</span></div>
       </div>
     </div>
+    <p class="concl in in-fade dl-9"><i class="ph ph-arrow-right"></i>지원할 때마다 같은 자료를 다시 모으고 고쳐 쓰는 반복 작업</p>
   </div>
 </section>
 
@@ -2018,6 +2024,7 @@ svg [data-morph] { transform-box: fill-box; }
       </svg>
       <div class="ov4"><div class="st g1 in dl-4"><b><i class="ph ph-notebook"></i>커리어 기록</b><span>프로젝트 · 활동 · 성과를 쌓아 두는 기록</span></div><i class="ph ph-caret-right ar in in-fade dl-5"></i><div class="st g2 in dl-5"><b><i class="ph ph-magnifying-glass"></i>채용 공고 검색</b><span>내 기록에 맞는 채용 공고 추천 · 요건 분석</span></div><i class="ph ph-caret-right ar in in-fade dl-5"></i><div class="st g3 in dl-6"><b><i class="ph ph-stack"></i>포트폴리오 생성</b><span>채용 공고 요건에 맞춰 경험을 골라 구성</span></div><i class="ph ph-caret-right ar in in-fade dl-5"></i><div class="st g4 in dl-7"><b><i class="ph ph-chart-line-up"></i>배포와 분석</b><span>공개 주소 배포 · 방문 데이터로 개선</span></div></div>
     </div>
+    <p class="concl in in-fade dl-9"><i class="ph ph-arrow-right"></i>커리어 기록에서 회사별 포트폴리오의 생성 · 배포 · 개선까지 한 흐름으로 연결</p>
   </div>
 </section>
 
@@ -2051,6 +2058,7 @@ svg [data-morph] { transform-box: fill-box; }
     <div class="body">
       <div class="cov"><div class="rh in in-fade dl-3"></div><div class="in in-fade dl-3 sh g1"><i class="ph ph-notebook"></i>커리어 기록</div><div class="in in-fade dl-3 sh g2"><i class="ph ph-magnifying-glass"></i>채용 공고 검색</div><div class="in in-fade dl-3 sh g3"><i class="ph ph-stack"></i>포트폴리오 생성</div><div class="in in-fade dl-3 sh g4"><i class="ph ph-chart-line-up"></i>배포와 분석</div><div class="rh in in-fade dl-3">결과물</div><div class="nm in dl-4"><b><img src="assets/프로젝트-제안서/svc-wanted.png" alt="">원티드 에이전트</b><small>채용 공고 추천 · 이력서 문구 수정</small></div><div class="in dl-4 c"></div><div class="in dl-4 c on g2">채용 공고 추천</div><div class="in dl-4 c part g3">이력서 문구 수정 제안</div><div class="in dl-4 c"></div><div class="rs in dl-4">추천 공고 · 수정된 이력서</div><div class="nm in dl-5"><b><img src="assets/프로젝트-제안서/svc-rallit.svg" alt="">랠릿</b><small>정해진 테마의 프로필 · 링크 공유</small></div><div class="in dl-5 c part g1">프로필 작성</div><div class="in dl-5 c"></div><div class="in dl-5 c part g3">정해진 테마 선택</div><div class="in dl-5 c part g4">링크 공유</div><div class="rs in dl-5">공유 가능한 프로필 이력서</div><div class="nm in dl-6"><b><img src="assets/프로젝트-제안서/svc-rezi.png" alt="">Rezi · Teal</b><small>공고 맞춤 이력서 · 키워드 비교</small></div><div class="in dl-6 c"></div><div class="in dl-6 c part g2">공고 키워드 비교</div><div class="in dl-6 c part g3">공고 맞춤 이력서</div><div class="in dl-6 c"></div><div class="rs in dl-6">공고별 맞춤 이력서</div><div class="sep in in-fade dl-7"></div><div class="nm ex in dl-8"><b><svg class="cov-mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M5.15 26.28 A17 17 0 0 0 38.85 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg>Expresso</b><small>커리어 기록에서 분석까지 한 흐름</small></div><div class="in dl-8 c on g1">커리어 기록 작성 · 분류</div><div class="in dl-8 c on g2">자체 모델 추천 · 분석</div><div class="in dl-8 c on g3">공고 맞춤 포트폴리오</div><div class="in dl-8 c on g4">배포 · 방문 분석</div><div class="rs ex in dl-8">공고별 포트폴리오 웹사이트</div><div class="lg in in-fade dl-9"><span><i class="f"></i>지원</span><span><i class="p"></i>일부 지원</span></div></div>
     </div>
+    <p class="concl in in-fade dl-9"><i class="ph ph-arrow-right"></i>기존 서비스는 흐름의 일부만 지원 · Expresso는 커리어 기록부터 방문 분석까지 전 단계 지원</p>
   </div>
 </section>
 
@@ -2100,6 +2108,7 @@ svg [data-morph] { transform-box: fill-box; }
 
       </div>
     </div>
+    <p class="concl in in-fade dl-9"><i class="ph ph-arrow-right"></i>방문 분석 결과를 다음 포트폴리오에 반영하는 순환 구조</p>
   </div>
 </section>
 
@@ -2176,6 +2185,7 @@ svg [data-morph] { transform-box: fill-box; }
         </div>
       </div>
     </div>
+    <p class="concl in in-fade dl-9"><i class="ph ph-arrow-right"></i>요청을 처리하는 API 서버와 수집 · 분석 · 생성을 맡는 Worker의 분리 실행</p>
   </div>
 </section>
 
@@ -2254,6 +2264,7 @@ svg [data-morph] { transform-box: fill-box; }
         </g>
       </svg>
     </div>
+    <p class="concl in in-fade dl-9"><i class="ph ph-arrow-right"></i>외부 LLM 판정 대비 응답 시간 약 30초 → 0.94초 · 요청당 비용 없음</p>
   </div>
 </section>
 
@@ -2445,6 +2456,7 @@ svg [data-morph] { transform-box: fill-box; }
         </g>
       </svg>
     </div>
+    <p class="concl in in-fade dl-9"><i class="ph ph-arrow-right"></i>외부 호출 없이 외부 LLM 재정렬(0.667)에 근접한 순위 품질(0.589)</p>
   </div>
 </section>
 
@@ -2500,6 +2512,7 @@ svg [data-morph] { transform-box: fill-box; }
     <div class="body">
       <div class="fd-done"><div class="k in in-fade dl-3">설계서의 사용자 흐름</div><ol class="in dl-4"><li><i class="ph ph-check-circle"></i><b>01</b><span>커리어 기록</span></li><li><i class="ph ph-check-circle"></i><b>02</b><span>채용 공고 탐색</span></li><li><i class="ph ph-check-circle"></i><b>03</b><span>채용 공고 분석</span></li><li><i class="ph ph-check-circle"></i><b>04</b><span>재료 고르기</span></li><li><i class="ph ph-check-circle"></i><b>05</b><span>AI 대화</span></li><li><i class="ph ph-check-circle"></i><b>06</b><span>레시피</span></li><li><i class="ph ph-check-circle"></i><b>07</b><span>디자인 선택</span></li><li><i class="ph ph-check-circle"></i><b>08</b><span>다듬기</span></li><li><i class="ph ph-check-circle"></i><b>09</b><span>배포</span></li><li><i class="ph ph-check-circle"></i><b>10</b><span>방문자 데이터 분석</span></li></ol></div>
     </div>
+    <p class="concl in in-fade dl-9"><i class="ph ph-arrow-right"></i>설계서의 사용자 흐름 전 단계가 운영 환경에서 동작</p>
   </div>
 </section>
 
@@ -2524,6 +2537,7 @@ svg [data-morph] { transform-box: fill-box; }
         <div class="in dl-8"><div class="vn">3</div><div class="t">사용자 스스로의 동기에 의존</div><div class="p">기록 작성과 포트폴리오 제작으로의 연결</div></div>
       </div>
     </div>
+    <p class="concl in in-fade dl-9"><i class="ph ph-arrow-right"></i>기능은 갖췄지만 기능 사이의 연결과 사용자의 출발점이 빠진 구조</p>
   </div>
 </section>
 
@@ -3816,7 +3830,7 @@ window.deck = new Deck();
       pairs: [1, 2, 3].map((n) => [`.fp-page:nth-child(${n})`, '[data-ch="cupg"]', .12, false, { measureTo: 'svg.cup' }]),
       land: 'grow',
       a: ['[data-ch="in1"]', '[data-ch="in2"]', '[data-ch="a1"]', '[data-ch="a2"]', '[data-ch="a3"]', '[data-ch="out"]', '[data-ch="core-sub"]', '[data-ch="wm"]'],
-      b: ['[data-ch="loop"]', '[data-ch="loopl"]', '.ov4'], at: [760, 980],
+      b: ['[data-ch="loop"]', '[data-ch="loopl"]', '.ov4', '.concl'], at: [760, 980],
       extra(was, now) {
         A($(now, '[data-ch="core"]'), [{ opacity: 0, transform: 'scale(.3)' }, { opacity: 1, transform: 'scale(1)' }], { delay: 360, duration: 760, easing: SOFT });
       },
@@ -3831,7 +3845,7 @@ window.deck = new Deck();
     '이름의 뜻>벤치마킹 사례와 차별점': {
       pairs: [],
       a: ['.cov .sh', '.cov .rh', '.cov .nm:not(.ex)', '.cov .c:not(.on)', '.cov .rs:not(.ex)', '.cov .sep'],
-      b: ['.cov .nm.ex', '.cov .rs.ex', '.cov .lg'],
+      b: ['.cov .nm.ex', '.cov .rs.ex', '.cov .lg', '.concl'],
       extra(was, now) {
         /* 이 장의 요점 — Expresso 줄이 네 단계를 한 번에 그어 덮습니다. */
         $$(now, '.cov .c.on').forEach((el, i) => A(el, [{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0% 0 0)' }], { delay: B_AT + 80 + i * 120, duration: 170, easing: 'linear' }));
@@ -3841,7 +3855,7 @@ window.deck = new Deck();
     '벤치마킹 사례와 차별점>주요 기능': {
       pairs: [1, 2, 3, 4].map((g) => [`.cov .sh.g${g}`, `.fp-line .band.g${g} b`, 1]),
       a: ['.fp-line .band', '.fp-line .lane', '.fp-line svg.under', '.fp-line .st'],
-      b: ['.fp-line .loop', '.fp-line .ad'], at: [340, 800],
+      b: ['.fp-line .loop', '.fp-line .ad', '.concl'], at: [340, 800],
       extra(was, now) {
         /* 추천 모델 꼬리표는 제 자리 맞춤(translateX(-50%))을 지닌 채 올라와야 옆으로 튀지 않습니다. */
         $$(now, '.fp-line .st .tag').forEach((el) => A(el, [{ opacity: 0, transform: `translate(-50%, ${RISE}px)` }, { opacity: 1, transform: 'translateX(-50%)' }], { delay: 800, duration: IN_MS }));
