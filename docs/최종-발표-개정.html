@@ -1491,8 +1491,9 @@ svg [data-morph] { transform-box: fill-box; }
 .fd-distill .nm { font-family: var(--ex-font-ui); font-size: 24px; font-weight: 600; letter-spacing: -.03em; fill: var(--ex-ink-900); }
 .fd-distill .ax { font-family: var(--ex-font-ui); font-size: 18px; fill: var(--ex-slate-400); }
 
-/* 추천 모델 아키텍처 — 두 모델의 층을 눈금으로 그려, 동결한 층(회색)과 학습한 층(호박색)을 한눈에 구분한다.
-   값의 출처: docs/design-doc/04-AI학습모델의-설계.md 4.3, scripts/ml-data/llm_suitability_train.py */
+/* 추천 모델 아키텍처 — 동결한 E5 인코더(회색) 위에 학습한 헤드(호박색)를 올린 구조.
+   값의 출처: codex/integration-match-release 브랜치의 docs/architecture/match-model-release-v1.md · evidence-retrieval-v2.md,
+   scripts/ml-data/match_release/runtime.py (2026-11-23 기준 main 미병합) */
 .fd-arch .k { font-family: var(--ex-font-ui); font-size: 21px; font-weight: 600; fill: var(--ex-espresso); }
 .fd-arch .t { font-family: var(--ex-font-ui); font-size: 34px; font-weight: 600; letter-spacing: -.035em; fill: var(--ex-ink-900); }
 .fd-arch .b { font-family: var(--ex-font-ui); font-size: 24px; font-weight: 600; letter-spacing: -.03em; fill: var(--ex-ink-900); }
@@ -1511,6 +1512,12 @@ svg [data-morph] { transform-box: fill-box; }
 .fd-arch rect.bx.tr { fill: var(--fp-own); stroke: var(--fp-own-line); stroke-width: 1.6; }
 .fd-arch rect.bx.ou { fill: #ECF5F1; stroke: #CCE2D7; stroke-width: 1.6; }
 .fd-arch .lane { fill: var(--ex-tint-50); }
+.fd-arch rect.h0 { fill: #FFFFFF; stroke: #EBD9BD; stroke-width: 1; }
+.fd-arch rect.h1 { fill: #F8E2BE; }
+.fd-arch rect.h2 { fill: #F1C680; }
+.fd-arch rect.h3 { fill: #D9902A; }
+.fd-arch rect.chip.ou { fill: #ECF5F1; stroke: #CCE2D7; }
+.fd-arch .opt { fill: none; stroke: #B9C4D4; stroke-width: 1.6; stroke-dasharray: 7 6; }
 .fd-arch .ln { font-family: var(--ex-font-ui); font-size: 20px; font-weight: 600; fill: var(--ex-slate-500); }
 .fd-arch .s { font-family: var(--ex-font-ui); font-size: 19.5px; letter-spacing: -.02em; fill: #53657D; }
 .fd-arch .s.dk { fill: #8A5A12; }
@@ -1910,93 +1917,91 @@ svg [data-morph] { transform-box: fill-box; }
     <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">3</span><span class="sec">주요 아키텍처</span><span class="pg"></span></div>
     <div class="head in dl-2">
       <h2>추천 모델 아키텍처</h2>
-      <p class="sub">공고 벡터 사전 계산 · 후보 선별 · 재정렬 · 기록 채점의 처리 과정</p>
+      <p class="sub">E5 인코더 위의 경력 근거 헤드와 공고 순위 결합 모델</p>
     </div>
     <div class="body">
-      <svg class="fd-arch" viewBox="0 0 1712 650" style="width: 1712px; height: 650px; flex: none; max-width: none; max-height: none" role="img" aria-label="공고 벡터를 미리 계산해 저장하고, 요청 시 Bi-Encoder+MLP 로 전체 공고에서 상위 후보를 선별한 뒤 Cross-Encoder 로 재정렬하며, 같은 Cross-Encoder 로 커리어 기록을 채점하는 추천 모델의 처리 과정">
+      <svg class="fd-arch" viewBox="0 0 1712 650" style="width: 1712px; height: 650px; flex: none; max-width: none; max-height: none" role="img" aria-label="E5 인코더가 프로필, 공고, 공고 요건, 커리어 기록을 벡터로 만들고, 파일럿 MLP와 코사인, 경력 근거 헤드의 점수를 공고 순위 결합 모델이 합쳐 상위 공고와 요건별 근거 기록을 내는 추천 모델의 구조">
         <defs><marker id="fda-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M2 2L8 5L2 8" fill="none" stroke="#8596AF" stroke-width="1.5"></path></marker></defs>
 
-        <!-- 세 줄: 수집 시점의 사전 계산 / 요청 시점의 공고 추천 / 요청 시점의 기록 추천 -->
         <g class="in in-fade dl-3">
-          <rect class="lane" x="0" y="0" width="760" height="186" rx="18"></rect><text class="ln" x="20" y="32">수집 시점 · 공고 벡터 사전 계산</text>
-          <rect class="lane" x="0" y="200" width="1712" height="236" rx="18"></rect><text class="ln" x="20" y="232">요청 시점 · 채용 공고 추천</text>
-          <rect class="lane" x="0" y="450" width="1712" height="200" rx="18"></rect><text class="ln" x="20" y="482">요청 시점 · 커리어 기록 추천</text>
+          <rect class="fz" x="1416" y="0" width="20" height="20" rx="5"></rect><text class="lg" x="1444" y="17">동결</text>
+          <rect class="tr" x="1516" y="0" width="20" height="20" rx="5"></rect><text class="lg" x="1544" y="17">학습</text>
+          <rect class="ou" x="1616" y="0" width="20" height="20" rx="5"></rect><text class="lg" x="1644" y="17">출력</text>
         </g>
 
-        <!-- 실행 환경과 범례 -->
-        <g class="in in-fade dl-3">
-          <rect class="fz" x="1416" y="10" width="20" height="20" rx="5"></rect><text class="lg" x="1444" y="27">동결</text>
-          <rect class="tr" x="1516" y="10" width="20" height="20" rx="5"></rect><text class="lg" x="1544" y="27">학습</text>
-          <rect class="ou" x="1616" y="10" width="20" height="20" rx="5"></rect><text class="lg" x="1644" y="27">출력</text>
-          <text class="ln" x="800" y="92">추론 환경</text>
-          <rect class="chip" x="800" y="110" width="330" height="56" rx="28"></rect><text class="cp" x="965" y="146" text-anchor="middle">ONNX Runtime · CPU 추론</text>
-          <rect class="chip" x="1146" y="110" width="330" height="56" rx="28"></rect><text class="cp" x="1311" y="146" text-anchor="middle">모델 미배포 시 규칙 함수</text>
+        <!-- 입력: 텍스트 네 종류 -->
+        <g class="in dl-3">
+          <rect class="io" x="0" y="44" width="200" height="56" rx="28"></rect><text class="b" x="100" y="80" text-anchor="middle">통합 프로필</text>
+          <rect class="io" x="0" y="112" width="200" height="56" rx="28"></rect><text class="b" x="100" y="148" text-anchor="middle">공고 원문</text>
+          <rect class="io" x="0" y="232" width="200" height="56" rx="28"></rect><text class="b" x="100" y="268" text-anchor="middle">공고 요건</text>
+          <text class="s" x="100" y="314" text-anchor="middle">필수 · 담당업무 · 우대</text>
+          <rect class="io" x="0" y="330" width="200" height="56" rx="28"></rect><text class="b" x="100" y="366" text-anchor="middle">커리어 기록</text>
+          <path d="M206 72H232" class="ar" marker-end="url(#fda-tip)"></path><path d="M206 140H232" class="ar" marker-end="url(#fda-tip)"></path><path d="M206 260H232" class="ar" marker-end="url(#fda-tip)"></path><path d="M206 358H232" class="ar" marker-end="url(#fda-tip)"></path>
         </g>
 
-        <!-- 입력 -->
+        <!-- E5 인코더: 네 종류를 모두 같은 인코더로 -->
         <g class="in dl-4">
-          <rect class="io" x="20" y="78" width="180" height="64" rx="32"></rect><text class="b" x="110" y="119" text-anchor="middle">공고 텍스트</text><text class="s" x="110" y="168" text-anchor="middle">요건 분해 · passage:</text>
-          <rect class="io" x="20" y="280" width="180" height="64" rx="32"></rect><text class="b" x="110" y="321" text-anchor="middle">프로필 텍스트</text><text class="s" x="110" y="372" text-anchor="middle">커리어 기록 · query:</text>
-          <rect class="io" x="20" y="528" width="180" height="64" rx="32"></rect><text class="b" x="110" y="569" text-anchor="middle">공고 + 기록 1건</text>
-          <path d="M206 110H228" class="ar" marker-end="url(#fda-tip)"></path><path d="M206 312H228" class="ar" marker-end="url(#fda-tip)"></path>
+          <rect class="bx" x="240" y="30" width="210" height="370" rx="18"></rect>
+          <text class="b" x="258" y="68">E5 인코더</text><text class="s" x="258" y="98">multilingual-e5-base</text>
+          <rect class="fz" x="255" y="120" width="10" height="76" rx="3"></rect><rect class="fz" x="270" y="120" width="10" height="76" rx="3"></rect><rect class="fz" x="285" y="120" width="10" height="76" rx="3"></rect><rect class="fz" x="300" y="120" width="10" height="76" rx="3"></rect><rect class="fz" x="315" y="120" width="10" height="76" rx="3"></rect><rect class="fz" x="330" y="120" width="10" height="76" rx="3"></rect><rect class="fz" x="345" y="120" width="10" height="76" rx="3"></rect><rect class="fz" x="360" y="120" width="10" height="76" rx="3"></rect><rect class="fz" x="375" y="120" width="10" height="76" rx="3"></rect><rect class="fz" x="390" y="120" width="10" height="76" rx="3"></rect><rect class="fz" x="405" y="120" width="10" height="76" rx="3"></rect><rect class="fz" x="420" y="120" width="10" height="76" rx="3"></rect>
+          <text class="s" x="258" y="228">12층 동결 · 768차원</text>
+          <line x1="258" y1="262" x2="432" y2="262" style="stroke:#D9E3EF;stroke-width:1.5"></line>
+          <text class="b" x="258" y="308" style="font-size:22px">벡터 저장</text><text class="s" x="258" y="338">SQLite</text><text class="s" x="258" y="366">바뀐 입력만 갱신</text>
         </g>
 
-        <!-- Bi-Encoder: 두 탑이 가중치를 공유 -->
-        <g class="in dl-4">
-          <rect class="bx" x="236" y="40" width="276" height="380" rx="18"></rect>
-          <text class="b" x="256" y="74" style="font-size:22px">multilingual-e5-base</text>
-          <rect class="fz" x="260" y="90" width="13" height="40" rx="3"></rect><rect class="fz" x="279" y="90" width="13" height="40" rx="3"></rect><rect class="fz" x="298" y="90" width="13" height="40" rx="3"></rect><rect class="fz" x="317" y="90" width="13" height="40" rx="3"></rect><rect class="fz" x="336" y="90" width="13" height="40" rx="3"></rect><rect class="fz" x="355" y="90" width="13" height="40" rx="3"></rect><rect class="fz" x="374" y="90" width="13" height="40" rx="3"></rect><rect class="fz" x="393" y="90" width="13" height="40" rx="3"></rect><rect class="fz" x="412" y="90" width="13" height="40" rx="3"></rect><rect class="fz" x="431" y="90" width="13" height="40" rx="3"></rect><rect class="fz" x="450" y="90" width="13" height="40" rx="3"></rect><rect class="fz" x="469" y="90" width="13" height="40" rx="3"></rect>
-          <text class="s" x="260" y="196">인코더 12층 동결</text><text class="s" x="260" y="226">두 입력이 가중치 공유</text>
-          <rect class="fz" x="260" y="292" width="13" height="40" rx="3"></rect><rect class="fz" x="279" y="292" width="13" height="40" rx="3"></rect><rect class="fz" x="298" y="292" width="13" height="40" rx="3"></rect><rect class="fz" x="317" y="292" width="13" height="40" rx="3"></rect><rect class="fz" x="336" y="292" width="13" height="40" rx="3"></rect><rect class="fz" x="355" y="292" width="13" height="40" rx="3"></rect><rect class="fz" x="374" y="292" width="13" height="40" rx="3"></rect><rect class="fz" x="393" y="292" width="13" height="40" rx="3"></rect><rect class="fz" x="412" y="292" width="13" height="40" rx="3"></rect><rect class="fz" x="431" y="292" width="13" height="40" rx="3"></rect><rect class="fz" x="450" y="292" width="13" height="40" rx="3"></rect><rect class="fz" x="469" y="292" width="13" height="40" rx="3"></rect>
-          <text class="s" x="260" y="388">Mean Pool · L2 정규화</text>
-          <path d="M520 110H552" class="ar" marker-end="url(#fda-tip)"></path><text class="s" x="536" y="96" text-anchor="middle">768</text>
-          <path d="M520 312H552" class="ar" marker-end="url(#fda-tip)"></path><text class="s" x="536" y="298" text-anchor="middle">768</text>
-        </g>
-
-        <!-- 사전 계산한 공고 벡터 -->
+        <!-- 세 갈래 점수 -->
         <g class="in dl-5">
-          <rect class="bx" x="560" y="70" width="180" height="80" rx="16"></rect>
-          <text class="b" x="650" y="104" text-anchor="middle" style="font-size:23px">공고 벡터</text><text class="s" x="650" y="134" text-anchor="middle">MongoDB 저장</text>
-          <path d="M650 158V236" class="ar" marker-end="url(#fda-tip)"></path>
+          <path d="M456 92H502" class="ar" marker-end="url(#fda-tip)"></path><path d="M478 92V16H885V22" class="ar" marker-end="url(#fda-tip)"></path>
+          <rect class="bx tr" x="510" y="30" width="240" height="120" rx="16"></rect>
+          <text class="b" x="530" y="70">파일럿 MLP</text><text class="s dk" x="530" y="102">프로필 · 공고 비교 특징</text><text class="s dk" x="530" y="130">3,072 → 256 → 1</text>
+          <rect class="bx" x="770" y="30" width="230" height="120" rx="16"></rect>
+          <text class="b" x="790" y="70">코사인 유사도</text><text class="s" x="790" y="102">프로필 · 공고</text>
+          <path d="M456 260H502" class="ar" marker-end="url(#fda-tip)"></path><path d="M456 358H502" class="ar" marker-end="url(#fda-tip)"></path>
+          <rect class="bx tr" x="510" y="176" width="490" height="224" rx="16"></rect>
+          <text class="b" x="530" y="214">경력 근거 헤드</text><text class="s am" x="980" y="213" text-anchor="end">모델 B</text>
+          <text class="s" x="596" y="268" text-anchor="end">필수</text><text class="s" x="596" y="334" text-anchor="end">업무</text><text class="s" x="596" y="372" text-anchor="end">우대</text>
+          <rect class="h1" x="606" y="236" width="15" height="15" rx="3"></rect><rect class="h0" x="625" y="236" width="15" height="15" rx="3"></rect><rect class="h2" x="644" y="236" width="15" height="15" rx="3"></rect><rect class="h0" x="663" y="236" width="15" height="15" rx="3"></rect><rect class="h0" x="682" y="236" width="15" height="15" rx="3"></rect><rect class="h3" x="701" y="236" width="15" height="15" rx="3"></rect><rect class="h0" x="720" y="236" width="15" height="15" rx="3"></rect><rect class="h1" x="739" y="236" width="15" height="15" rx="3"></rect><rect class="h0" x="758" y="236" width="15" height="15" rx="3"></rect><rect class="h0" x="777" y="236" width="15" height="15" rx="3"></rect><rect class="h0" x="796" y="236" width="15" height="15" rx="3"></rect><rect class="h0" x="606" y="255" width="15" height="15" rx="3"></rect><rect class="h0" x="625" y="255" width="15" height="15" rx="3"></rect><rect class="h0" x="644" y="255" width="15" height="15" rx="3"></rect><rect class="h3" x="663" y="255" width="15" height="15" rx="3"></rect><rect class="h1" x="682" y="255" width="15" height="15" rx="3"></rect><rect class="h0" x="701" y="255" width="15" height="15" rx="3"></rect><rect class="h0" x="720" y="255" width="15" height="15" rx="3"></rect><rect class="h0" x="739" y="255" width="15" height="15" rx="3"></rect><rect class="h2" x="758" y="255" width="15" height="15" rx="3"></rect><rect class="h0" x="777" y="255" width="15" height="15" rx="3"></rect><rect class="h0" x="796" y="255" width="15" height="15" rx="3"></rect><rect class="h0" x="606" y="274" width="15" height="15" rx="3"></rect><rect class="h2" x="625" y="274" width="15" height="15" rx="3"></rect><rect class="h0" x="644" y="274" width="15" height="15" rx="3"></rect><rect class="h0" x="663" y="274" width="15" height="15" rx="3"></rect><rect class="h0" x="682" y="274" width="15" height="15" rx="3"></rect><rect class="h0" x="701" y="274" width="15" height="15" rx="3"></rect><rect class="h1" x="720" y="274" width="15" height="15" rx="3"></rect><rect class="h0" x="739" y="274" width="15" height="15" rx="3"></rect><rect class="h0" x="758" y="274" width="15" height="15" rx="3"></rect><rect class="h3" x="777" y="274" width="15" height="15" rx="3"></rect><rect class="h0" x="796" y="274" width="15" height="15" rx="3"></rect><rect class="h3" x="606" y="293" width="15" height="15" rx="3"></rect><rect class="h0" x="625" y="293" width="15" height="15" rx="3"></rect><rect class="h0" x="644" y="293" width="15" height="15" rx="3"></rect><rect class="h1" x="663" y="293" width="15" height="15" rx="3"></rect><rect class="h0" x="682" y="293" width="15" height="15" rx="3"></rect><rect class="h0" x="701" y="293" width="15" height="15" rx="3"></rect><rect class="h0" x="720" y="293" width="15" height="15" rx="3"></rect><rect class="h2" x="739" y="293" width="15" height="15" rx="3"></rect><rect class="h0" x="758" y="293" width="15" height="15" rx="3"></rect><rect class="h0" x="777" y="293" width="15" height="15" rx="3"></rect><rect class="h0" x="796" y="293" width="15" height="15" rx="3"></rect><rect class="h0" x="606" y="312" width="15" height="15" rx="3"></rect><rect class="h0" x="625" y="312" width="15" height="15" rx="3"></rect><rect class="h1" x="644" y="312" width="15" height="15" rx="3"></rect><rect class="h0" x="663" y="312" width="15" height="15" rx="3"></rect><rect class="h3" x="682" y="312" width="15" height="15" rx="3"></rect><rect class="h0" x="701" y="312" width="15" height="15" rx="3"></rect><rect class="h0" x="720" y="312" width="15" height="15" rx="3"></rect><rect class="h0" x="739" y="312" width="15" height="15" rx="3"></rect><rect class="h0" x="758" y="312" width="15" height="15" rx="3"></rect><rect class="h1" x="777" y="312" width="15" height="15" rx="3"></rect><rect class="h2" x="796" y="312" width="15" height="15" rx="3"></rect><rect class="h0" x="606" y="331" width="15" height="15" rx="3"></rect><rect class="h1" x="625" y="331" width="15" height="15" rx="3"></rect><rect class="h0" x="644" y="331" width="15" height="15" rx="3"></rect><rect class="h0" x="663" y="331" width="15" height="15" rx="3"></rect><rect class="h0" x="682" y="331" width="15" height="15" rx="3"></rect><rect class="h2" x="701" y="331" width="15" height="15" rx="3"></rect><rect class="h3" x="720" y="331" width="15" height="15" rx="3"></rect><rect class="h0" x="739" y="331" width="15" height="15" rx="3"></rect><rect class="h0" x="758" y="331" width="15" height="15" rx="3"></rect><rect class="h0" x="777" y="331" width="15" height="15" rx="3"></rect><rect class="h0" x="796" y="331" width="15" height="15" rx="3"></rect><rect class="h0" x="606" y="350" width="15" height="15" rx="3"></rect><rect class="h0" x="625" y="350" width="15" height="15" rx="3"></rect><rect class="h0" x="644" y="350" width="15" height="15" rx="3"></rect><rect class="h2" x="663" y="350" width="15" height="15" rx="3"></rect><rect class="h0" x="682" y="350" width="15" height="15" rx="3"></rect><rect class="h0" x="701" y="350" width="15" height="15" rx="3"></rect><rect class="h0" x="720" y="350" width="15" height="15" rx="3"></rect><rect class="h0" x="739" y="350" width="15" height="15" rx="3"></rect><rect class="h3" x="758" y="350" width="15" height="15" rx="3"></rect><rect class="h0" x="777" y="350" width="15" height="15" rx="3"></rect><rect class="h1" x="796" y="350" width="15" height="15" rx="3"></rect><rect class="h2" x="606" y="369" width="15" height="15" rx="3"></rect><rect class="h0" x="625" y="369" width="15" height="15" rx="3"></rect><rect class="h0" x="644" y="369" width="15" height="15" rx="3"></rect><rect class="h0" x="663" y="369" width="15" height="15" rx="3"></rect><rect class="h0" x="682" y="369" width="15" height="15" rx="3"></rect><rect class="h1" x="701" y="369" width="15" height="15" rx="3"></rect><rect class="h0" x="720" y="369" width="15" height="15" rx="3"></rect><rect class="h3" x="739" y="369" width="15" height="15" rx="3"></rect><rect class="h0" x="758" y="369" width="15" height="15" rx="3"></rect><rect class="h0" x="777" y="369" width="15" height="15" rx="3"></rect><rect class="h0" x="796" y="369" width="15" height="15" rx="3"></rect>
+          <text class="b" x="836" y="262" style="font-size:21px">요건(행) × 기록(열)</text><text class="b" x="836" y="290" style="font-size:21px">연결 점수</text>
+          <text class="s dk" x="836" y="326">코사인</text><text class="s dk" x="836" y="352">+ 32차원 사상</text><text class="s dk" x="836" y="378">+ 요건 · 기록 편향</text>
         </g>
 
-        <!-- 선별: 비교 특징 → MLP → Sigmoid -->
-        <g class="in dl-5">
-          <rect class="bx" x="560" y="244" width="180" height="140" rx="16"></rect>
-          <text class="b" x="650" y="288" text-anchor="middle" style="font-size:23px">비교 특징</text><text class="s" x="650" y="322" text-anchor="middle">u, v, |u−v|, u⊙v</text><text class="s" x="650" y="352" text-anchor="middle">3,072차원</text>
-          <path d="M746 312H760" class="ar" marker-end="url(#fda-tip)"></path>
-          <rect class="bx tr" x="768" y="244" width="200" height="140" rx="16"></rect>
-          <text class="b" x="868" y="288" text-anchor="middle" style="font-size:25px">MLP</text><text class="s dk" x="868" y="322" text-anchor="middle">Linear · GELU · Linear</text><text class="s dk" x="868" y="352" text-anchor="middle">3,072 → 256 → 1</text>
-          <path d="M974 312H988" class="ar" marker-end="url(#fda-tip)"></path>
-          <rect class="chip" x="996" y="288" width="104" height="48" rx="24"></rect><text class="cp" x="1048" y="319" text-anchor="middle">Sigmoid</text>
-          <path d="M1106 312H1222" class="ar" marker-end="url(#fda-tip)"></path>
-          <text class="k" x="1164" y="296" text-anchor="middle">상위 K</text><text class="s" x="1164" y="342" text-anchor="middle">기록 8개</text><text class="s" x="1164" y="368" text-anchor="middle">선택</text>
-          <text class="s" x="768" y="414">전체 공고의 점수 계산</text>
-        </g>
-
-        <!-- Cross-Encoder: 공고 추천의 재정렬과 기록 추천이 함께 쓴다 -->
+        <!-- 공고 순위 결합 -->
         <g class="in dl-6">
-          <rect class="bx" x="1230" y="214" width="290" height="416" rx="18"></rect>
-          <text class="b" x="1250" y="252" style="font-size:22px">bge-reranker-v2-m3</text>
-          <rect class="chip" x="1250" y="270" width="250" height="44" rx="22"></rect><text class="cp" x="1375" y="299" text-anchor="middle" style="font-size:19px">텍스트 쌍 토큰화 · 1,536</text>
-          <rect class="fz" x="1244" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1255" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1266" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1277" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1288" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1299" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1310" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1321" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1332" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1343" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1354" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1365" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1376" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1387" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1398" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1409" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1420" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1431" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1442" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1453" y="334" width="8" height="76" rx="3"></rect><rect class="tr" x="1464" y="334" width="8" height="76" rx="3"></rect><rect class="tr" x="1475" y="334" width="8" height="76" rx="3"></rect><rect class="tr" x="1486" y="334" width="8" height="76" rx="3"></rect><rect class="tr" x="1497" y="334" width="8" height="76" rx="3"></rect>
-          <text class="s" x="1244" y="440">임베딩 · 앞쪽 20층</text><text class="s am" x="1506" y="440" text-anchor="end">4층</text>
-          <rect class="chip tr" x="1250" y="462" width="250" height="44" rx="22"></rect><text class="cp dk" x="1375" y="491" text-anchor="middle">점수 예측 헤드</text>
-          <rect class="chip" x="1250" y="520" width="250" height="44" rx="22"></rect><text class="cp" x="1375" y="549" text-anchor="middle">Sigmoid</text>
-          <text class="s" x="1375" y="604" text-anchor="middle">1,024차원</text>
+          <path d="M630 150V163H1022V110H1042" class="ar" marker-end="url(#fda-tip)"></path><path d="M1006 76H1042" class="ar" marker-end="url(#fda-tip)"></path><path d="M1006 288H1042" class="ar" marker-end="url(#fda-tip)"></path>
+          <rect class="bx tr" x="1050" y="30" width="280" height="370" rx="16"></rect>
+          <text class="b" x="1070" y="70">공고 순위 결합</text><text class="s am" x="1310" y="69" text-anchor="end">모델 A</text>
+          <circle cx="1078" cy="105" r="4" style="fill:#C98A2B"></circle><text class="s dk" x="1094" y="112">파일럿 점수</text><circle cx="1078" cy="138" r="4" style="fill:#C98A2B"></circle><text class="s dk" x="1094" y="145">프로필–공고 코사인</text><circle cx="1078" cy="171" r="4" style="fill:#C98A2B"></circle><text class="s dk" x="1094" y="178">근거 점수 평균 · 최솟값</text><circle cx="1078" cy="204" r="4" style="fill:#C98A2B"></circle><text class="s dk" x="1094" y="211">필수 · 업무 · 우대별 평균</text><circle cx="1078" cy="237" r="4" style="fill:#C98A2B"></circle><text class="s dk" x="1094" y="244">요건–기록 코사인</text><circle cx="1078" cy="270" r="4" style="fill:#C98A2B"></circle><text class="s dk" x="1094" y="277">기록 수</text>
+          <line x1="1070" y1="296" x2="1310" y2="296" style="stroke:#E7CEB0;stroke-width:1.5"></line>
+          <text class="b" x="1070" y="336" style="font-size:22px">MLP 10 → 24 → 1</text><text class="s dk" x="1070" y="368">GELU · Sigmoid</text>
         </g>
 
         <!-- 출력 -->
         <g class="in dl-7">
-          <path d="M1526 312H1548" class="ar" marker-end="url(#fda-tip)"></path>
-          <rect class="bx ou" x="1556" y="262" width="156" height="100" rx="16"></rect>
-          <text class="b" x="1634" y="304" text-anchor="middle" style="font-size:24px">공고 순위</text><text class="s" x="1634" y="336" text-anchor="middle">근거 기록 반환</text>
-          <path d="M206 560H1222" class="ar" marker-end="url(#fda-tip)"></path>
-          <text class="k" x="236" y="540">같은 Cross-Encoder 재사용</text>
-          <text class="s" x="236" y="602">선택 점수 = 관련도 + 새로 충족하는 요건 + 근거 강도 − 기록 간 중복</text>
-          <path d="M1526 560H1548" class="ar" marker-end="url(#fda-tip)"></path>
-          <rect class="bx ou" x="1556" y="510" width="156" height="100" rx="16"></rect>
-          <text class="b" x="1634" y="552" text-anchor="middle" style="font-size:24px">기록 점수</text><text class="s" x="1634" y="584" text-anchor="middle">선택 조합</text>
+          <path d="M1336 115H1372" class="ar" marker-end="url(#fda-tip)"></path>
+          <rect class="bx ou" x="1380" y="30" width="332" height="170" rx="16"></rect>
+          <text class="b" x="1404" y="70">공고 순위</text><text class="big" x="1404" y="138">상위 10</text><text class="s" x="1404" y="174">적합도 0–100</text>
+          <path d="M755 406V418H1546V408" class="ar" marker-end="url(#fda-tip)"></path>
+          <rect class="bx ou" x="1380" y="224" width="332" height="176" rx="16"></rect>
+          <text class="b" x="1404" y="264">요건별 근거 기록</text><text class="big" x="1404" y="332">상위 3건</text><text class="s" x="1404" y="368">표시 기준을 넘은 기록</text>
+        </g>
+
+        <!-- 근거 검색과 외부 검증 -->
+        <g class="in dl-8">
+          <rect class="lane" x="0" y="440" width="1080" height="210" rx="18"></rect><text class="ln" x="20" y="474">근거 검색 · 공고 하나를 열 때</text>
+          <rect class="chip " x="20" y="498" width="190" height="58" rx="29"></rect><text class="cp" x="115.0" y="535" text-anchor="middle">기록 문단 분할</text><text class="s" x="115.0" y="592" text-anchor="middle">384토큰 창</text>
+          <path d="M216 527H238" class="ar" marker-end="url(#fda-tip)"></path>
+          <rect class="chip " x="246" y="498" width="190" height="58" rx="29"></rect><text class="cp" x="341.0" y="535" text-anchor="middle">혼합 후보 24개</text><text class="s" x="341.0" y="592" text-anchor="middle">근거 점수 · 코사인 · BM25</text>
+          <path d="M442 527H464" class="ar" marker-end="url(#fda-tip)"></path>
+          <rect class="chip tr" x="472" y="498" width="170" height="58" rx="29"></rect><text class="cp" x="557.0" y="535" text-anchor="middle">근거 헤드</text><text class="s" x="557.0" y="592" text-anchor="middle">hard negative 학습</text>
+          <path d="M648 527H670" class="ar" marker-end="url(#fda-tip)"></path>
+          <rect class="chip " x="678" y="498" width="170" height="58" rx="29"></rect><text class="cp" x="763.0" y="535" text-anchor="middle">원문 대조</text><text class="s" x="763.0" y="592" text-anchor="middle">기록별 집계</text>
+          <path d="M854 527H876" class="ar" marker-end="url(#fda-tip)"></path>
+          <rect class="chip ou" x="884" y="498" width="170" height="58" rx="29"></rect><text class="cp" x="969.0" y="535" text-anchor="middle">인용 반환</text><text class="s" x="969.0" y="592" text-anchor="middle">기록 링크와 함께</text>
+          <rect class="opt" x="1112" y="440" width="600" height="210" rx="18"></rect>
+          <text class="ln" x="1136" y="474">선택형 외부 검증 · Decisions</text>
+          <text class="cp" x="1136" y="516">상위 10 재정렬 · 요건별 근거 검증</text><text class="s" x="1136" y="546">실패 시 로컬 결과 표시</text>
+          <line x1="1136" y1="568" x2="1688" y2="568" style="stroke:#D9E3EF;stroke-width:1.5"></line>
+          <text class="ln" x="1136" y="602">추론 환경</text><text class="cp" x="1250" y="603">ONNX Runtime · CPU</text><text class="s" x="1136" y="632">추론 중단 시 기존 순위로 응답</text>
         </g>
       </svg>
     </div>
