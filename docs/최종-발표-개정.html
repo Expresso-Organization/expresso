@@ -1592,6 +1592,25 @@ svg [data-morph] { transform-box: fill-box; }
 .fd-goal .way.off { stroke: #8596AF; stroke-dasharray: 8 7; }
 .fd-goal .way.on { stroke: #9A4030; }
 
+/* Lessons & Learned · 분담 대비 · 개발 순환 · 배운 점 */
+.fd-lesson .t { font-family: var(--ex-font-ui); font-size: 30px; font-weight: 600; letter-spacing: -.03em; fill: var(--ex-ink-900); }
+.fd-lesson .lb { font-family: var(--ex-font-ui); font-size: 21px; letter-spacing: -.02em; fill: var(--ex-slate-700); }
+.fd-lesson .hx { font-family: var(--ex-font-ui); font-size: 19px; font-weight: 500; fill: var(--ex-slate-500); }
+.fd-lesson .ra1 { fill: #E4E9F2; } .fd-lesson .ra2 { fill: #D3DBE7; } .fd-lesson .ra3 { fill: #C1CBDA; }
+.fd-lesson .rb { fill: #FBEEE4; stroke: #C48A7D; stroke-width: 1.6; }
+.fd-lesson .cap { font-family: var(--ex-font-ui); font-size: 24px; font-weight: 600; letter-spacing: -.02em; fill: var(--ex-slate-500); }
+.fd-lesson .cap.on { fill: #9A4030; }
+.fd-lesson .e { font-family: var(--ex-font-ui); font-size: 21px; letter-spacing: -.02em; fill: #53657D; }
+.fd-lesson .nd { fill: var(--ex-white); stroke: #D9E3EF; stroke-width: 1.6; }
+.fd-lesson .nd.on { stroke: #9A4030; stroke-width: 2; }
+.fd-lesson .g { font-family: var(--ex-font-ui); font-size: 28px; font-weight: 600; letter-spacing: -.03em; fill: var(--ex-ink-900); }
+.fd-lesson .ex { font-family: var(--ex-font-ui); font-size: 21px; letter-spacing: -.02em; fill: var(--ex-ink-900); }
+.fd-lesson .dot { fill: #C48A7D; }
+.fd-lesson .div { stroke: var(--ex-line-200); stroke-width: 1.6; }
+.fd-lesson .way { fill: none; stroke: #9A4030; stroke-width: 2; }
+.fd-lesson .k { font-family: var(--ex-font-ui); font-size: 22px; font-weight: 600; fill: var(--ex-espresso); }
+.fd-lesson .v { font-family: var(--ex-font-ui); font-size: 32px; font-weight: 600; letter-spacing: -.03em; fill: var(--ex-ink-900); }
+
 /* 13쪽 · 설계서 열 단계 */
 .vh-v10:has(.fd-steps) { grid-template-columns: 400px 1fr; }
 .fd-steps { display: flex; flex-direction: column; min-height: 0; }
@@ -2588,26 +2607,82 @@ svg [data-morph] { transform-box: fill-box; }
   </div>
 </section>
 
-<section class="slide fp" data-title="Lessons &amp; Learned" data-kind="임시 · 내용 논의 전">
+<section class="slide fp" data-title="Lessons &amp; Learned" data-kind="분담 대비 · 개발 순환 · 배운 점">
   <div class="frame">
     <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">5</span><span class="sec">Lessons &amp; Learned</span><span class="pg"></span></div>
     <div class="head in dl-2">
       <h2 class="brand" style="font-weight: 500">Lessons &amp; Learned</h2>
-      <p class="sub">개발 과정의 문제와 해결</p>
+      <p class="sub">에이전트 기반 개발(Agentic-Driven Development)에 맞는 협업 방법 탐색</p>
     </div>
     <div class="body">
-      <div class="fp-lessons">
-        <div class="k">문제</div><div></div><div class="k">해결</div>
-        <div class="fp-field in dl-3"><div class="t">DB 재시작 뒤 Worker 작업 전부 실패</div><div class="p">프로세스 생존으로 자동 재시작 미동작</div></div>
-        <div class="arrow in in-fade dl-3"><i class="ph ph-arrow-right"></i></div>
-        <div class="fp-field sig in dl-3"><div class="t">복구 불가 오류 시 Worker 종료</div><div class="p">자동 재시작 유도 · 일시 오류 재시도 · 실패 작업 지연</div></div>
-        <div class="fp-field in dl-4"><div class="t">AI 출력 검사로 인한 수치 왜곡</div><div class="p">형식 검사 통과용 값으로 내용 변경</div></div>
-        <div class="arrow in in-fade dl-4"><i class="ph ph-arrow-right"></i></div>
-        <div class="fp-field sig in dl-4"><div class="t">오류 항목만 같은 대화에서 수정</div><div class="p">출력 전체 재생성 중단</div></div>
-        <div class="fp-field in dl-5"><div class="t">영어 채용 공고 평가와 서비스 성능의 차이</div><div class="p">한국어 채용 공고 기반 서비스</div></div>
-        <div class="arrow in in-fade dl-5"><i class="ph ph-arrow-right"></i></div>
-        <div class="fp-field sig in dl-5"><div class="t">한국어 채용 공고 평가 세트 구축</div><div class="p">수집한 채용 공고와 교사 LLM 판정 사용</div></div>
-      </div>
+      <svg class="fd-lesson" viewBox="0 0 1712 650" style="width: 1712px; height: 650px; flex: none; max-width: none; max-height: none" role="img" aria-label="분담 방식 비교: 일반적 방식은 화면 · 서버 · AI 직군별로 나누고, Expresso는 커리어 기록 · 채용 공고 · 채용 공고 분석 · 포트폴리오 생성 · AI 대화 도메인별로 나눠 도메인마다 한 사람과 에이전트가 전 구간을 개발. 개발 순환: 에이전트 기반 개발(의도 · 명세 · 계획 작성 후 구현) → 교차 사용 QA(서로의 도메인을 사용자로 사용, 예: 비슷한 검색에 입력하다 만 검색어, 답변 속 내부 필드 이름) → 폴리싱 → 다시 개발. 배운 점: 분담 단위는 직군에서 도메인으로, 사람의 역할은 코드 작성에서 명세와 검증으로, 교차 사용 QA는 테스트 미검출 문제 발견">
+<defs><marker id="fdl-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#9A4030"></path></marker></defs>
+<g class="in dl-3">
+<text class="t" x="0" y="30">분담 방식</text>
+<text class="hx" x="195" y="90" text-anchor="middle">화면</text>
+<text class="hx" x="419" y="90" text-anchor="middle">화면</text>
+<text class="hx" x="255" y="90" text-anchor="middle">서버</text>
+<text class="hx" x="479" y="90" text-anchor="middle">서버</text>
+<text class="hx" x="315" y="90" text-anchor="middle">AI</text>
+<text class="hx" x="539" y="90" text-anchor="middle">AI</text>
+<text class="lb" x="0" y="134">커리어 기록</text>
+<text class="lb" x="0" y="188">채용 공고</text>
+<text class="lb" x="0" y="242">채용 공고 분석</text>
+<text class="lb" x="0" y="296">포트폴리오 생성</text>
+<text class="lb" x="0" y="350">AI 대화</text>
+<rect class="ra1" x="168" y="104" width="54" height="262" rx="8"></rect>
+<rect class="ra2" x="228" y="104" width="54" height="262" rx="8"></rect>
+<rect class="ra3" x="288" y="104" width="54" height="262" rx="8"></rect>
+<rect class="rb" x="392" y="104" width="174" height="46" rx="8"></rect>
+<rect class="rb" x="392" y="158" width="174" height="46" rx="8"></rect>
+<rect class="rb" x="392" y="212" width="174" height="46" rx="8"></rect>
+<rect class="rb" x="392" y="266" width="174" height="46" rx="8"></rect>
+<rect class="rb" x="392" y="320" width="174" height="46" rx="8"></rect>
+<text class="cap" x="255" y="406" text-anchor="middle">직군 분담</text>
+<text class="e" x="255" y="436" text-anchor="middle">일반적 방식</text>
+<text class="cap on" x="479" y="406" text-anchor="middle">도메인 분담</text>
+<text class="e" x="479" y="436" text-anchor="middle">Expresso</text>
+<line class="div" x1="0" y1="476" x2="566" y2="476"></line>
+<text class="e" x="0" y="516">도메인마다 한 사람과 에이전트</text>
+<text class="e" x="0" y="548">화면 · 서버 · AI 전 구간 개발</text>
+</g>
+<g class="in in-fade dl-4"><line class="way" x1="580" y1="110" x2="652" y2="110" marker-end="url(#fdl-tip)"></line></g>
+<g class="in dl-4">
+<text class="t" x="660" y="30">개발 순환</text>
+<rect class="nd" x="660" y="62" width="500" height="96" rx="14"></rect>
+<text class="g" x="688" y="104">에이전트 기반 개발</text>
+<text class="e" x="688" y="140">의도 · 명세 · 계획 작성 후 구현</text>
+</g>
+<g class="in dl-5">
+<line class="way" x1="910" y1="160" x2="910" y2="194" marker-end="url(#fdl-tip)"></line>
+<rect class="nd on" x="660" y="200" width="500" height="214" rx="14"></rect>
+<text class="g" x="688" y="242">교차 사용 QA</text>
+<text class="e" x="688" y="278">서로의 도메인을 사용자로 사용</text>
+<line class="div" x1="688" y1="302" x2="1132" y2="302"></line>
+<circle class="dot" cx="694" cy="333" r="5"></circle><text class="ex" x="710" y="340">「비슷한 검색」에 입력하다 만 「ㄹ옹로」</text>
+<circle class="dot" cx="694" cy="373" r="5"></circle><text class="ex" x="710" y="380">답변 속 내부 필드 이름 「jobGoal」</text>
+</g>
+<g class="in dl-6">
+<line class="way" x1="910" y1="416" x2="910" y2="450" marker-end="url(#fdl-tip)"></line>
+<rect class="nd" x="660" y="456" width="500" height="96" rx="14"></rect>
+<text class="g" x="688" y="498">폴리싱</text>
+<text class="e" x="688" y="534">QA 지적 반영 · 기능성 · 사용성 개선</text>
+<path class="way" d="M1162 504 H1198 V110 H1168" marker-end="url(#fdl-tip)"></path>
+</g>
+<g class="in dl-7"><text class="t" x="1250" y="30">배운 점</text>
+<text class="k" x="1250" y="96">분담 단위</text>
+<text class="v" x="1250" y="144">직군 → 도메인</text>
+<text class="e" x="1250" y="182">한 사람과 에이전트의 도메인 전 구간 개발</text>
+<line class="div" x1="1250" y1="218" x2="1712" y2="218"></line>
+<text class="k" x="1250" y="266">사람의 역할</text>
+<text class="v" x="1250" y="314">코드 작성 → 명세 · 검증</text>
+<text class="e" x="1250" y="352">구현 위임 · 의도 정의와 결과 판정 집중</text>
+<line class="div" x1="1250" y1="388" x2="1712" y2="388"></line>
+<text class="k" x="1250" y="436">교차 사용 QA</text>
+<text class="v" x="1250" y="484">테스트 미검출 문제 발견</text>
+<text class="e" x="1250" y="522">사용자 관점의 기능성 · 사용성 평가</text>
+</g>
+</svg>
     </div>
   </div>
 </section>
@@ -2717,6 +2792,30 @@ svg [data-morph] { transform-box: fill-box; }
           <text class="e" x="1130" y="614" style="font-size:20px">근거가 있는 요건 1,503개 기준</text>
         </g>
       </svg>
+    </div>
+  </div>
+</section>
+
+<section class="slide fp" data-title="개발 과정의 문제와 해결" data-kind="부록 · 문제와 해결 표">
+  <div class="frame">
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="sec">부록</span><span class="pg"></span></div>
+    <div class="head in dl-2">
+      <h2>개발 과정의 문제와 해결</h2>
+      <p class="sub">운영 복구 · AI 출력 검사 · 추천 모델 평가</p>
+    </div>
+    <div class="body">
+      <div class="fp-lessons">
+        <div class="k">문제</div><div></div><div class="k">해결</div>
+        <div class="fp-field in dl-3"><div class="t">DB 재시작 뒤 Worker 작업 전부 실패</div><div class="p">프로세스 생존으로 자동 재시작 미동작</div></div>
+        <div class="arrow in in-fade dl-3"><i class="ph ph-arrow-right"></i></div>
+        <div class="fp-field sig in dl-3"><div class="t">복구 불가 오류 시 Worker 종료</div><div class="p">자동 재시작 유도 · 일시 오류 재시도 · 실패 작업 지연</div></div>
+        <div class="fp-field in dl-4"><div class="t">AI 출력 검사로 인한 수치 왜곡</div><div class="p">형식 검사 통과용 값으로 내용 변경</div></div>
+        <div class="arrow in in-fade dl-4"><i class="ph ph-arrow-right"></i></div>
+        <div class="fp-field sig in dl-4"><div class="t">오류 항목만 같은 대화에서 수정</div><div class="p">출력 전체 재생성 중단</div></div>
+        <div class="fp-field in dl-5"><div class="t">영어 채용 공고 평가와 서비스 성능의 차이</div><div class="p">한국어 채용 공고 기반 서비스</div></div>
+        <div class="arrow in in-fade dl-5"><i class="ph ph-arrow-right"></i></div>
+        <div class="fp-field sig in dl-5"><div class="t">한국어 채용 공고 평가 세트 구축</div><div class="p">수집한 채용 공고와 교사 LLM 판정 사용</div></div>
+      </div>
     </div>
   </div>
 </section>
