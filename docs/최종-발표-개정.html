@@ -1393,6 +1393,37 @@ svg [data-morph] { transform-box: fill-box; }
 .fd-plus .pill i { font-size: 28px; }
 .fd-plus .t { font-size: 28px; color: var(--ex-slate-500); letter-spacing: -.01em; }
 
+/* ── Expresso 2.0 공개 장 — 15쪽 제목의 워드마크가 가운데로 커지고(카메라), 어두운 배경에서 1이 2로 넘어간다 ── */
+.slide.fp.fd-reveal { background: radial-gradient(90% 120% at 50% 50%, #1d2c4b 0%, #16223a 46%, #0e1626 100%); color: var(--ex-white); }
+.fd-reveal .frame { inset: 0; }
+/* transform 은 inline 상자에 걸리지 않습니다. 자리를 옮기는 워드마크는 inline-block 으로 둡니다. */
+.vh-wm[data-morph], .vh-wm [data-morph] { display: inline-block; }
+.fd-reveal .fd-poster .wm { position: relative; z-index: 1; font-size: 236px; white-space: nowrap; }
+.slide.fp.fd-reveal::before { content: ""; position: absolute; left: 50%; top: 50%; width: 1640px; height: 940px; margin: -470px 0 0 -820px; background: radial-gradient(closest-side, rgba(224, 180, 134, .30), rgba(154, 64, 48, .17) 50%, rgba(154, 64, 48, 0) 100%); opacity: .6; pointer-events: none; }
+.fd-roll { position: relative; display: inline-block; clip-path: inset(0 -.3em); --dw: .186em; }
+.fd-roll .d1 { position: absolute; left: 0; top: 0; opacity: 0; }
+.fd-roll .d2 { display: inline-block; }
+@keyframes fd-roll-w { from { margin-right: calc(var(--dw) * -1); } to { margin-right: 0; } }
+@keyframes fd-roll-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-64%); } }
+@keyframes fd-roll-in { from { opacity: 0; transform: translateY(64%); } to { opacity: 1; transform: none; } }
+/* 0 의 커피색 포인트는 2.0 의 표시입니다. 1.0 인 동안에는 한 색이고, 2 가 앉을 때 오른쪽 아래에서 번집니다. */
+@property --fd-cut { syntax: "<percentage>"; inherits: false; initial-value: 62.5%; }
+.fd-reveal .fd-poster .wm .vh-wm i { background-image: linear-gradient(135deg, var(--ex-white) 0 var(--fd-cut), var(--ex-crema) var(--fd-cut) 100%); }
+@keyframes fd-cut { from { --fd-cut: 100%; } to { --fd-cut: 62.5%; } }
+@keyframes fd-bloom { 0% { opacity: 0; transform: scale(.5); } 55% { opacity: 1; transform: scale(1.08); } 100% { opacity: .6; transform: none; } }
+/* 앞에서 넘어올 때만 돕니다. 뒤에서 돌아오거나 목록에서 열면 처음부터 2.0 입니다. */
+.deck-stage[data-way="fwd"] > .slide.active.fd-reveal .fd-roll { animation: fd-roll-w 640ms cubic-bezier(.45, 0, .15, 1) 1500ms both; }
+.deck-stage[data-way="fwd"] > .slide.active.fd-reveal .fd-roll .d1 { animation: fd-roll-out 520ms cubic-bezier(.5, 0, .8, .3) 1500ms both; }
+.deck-stage[data-way="fwd"] > .slide.active.fd-reveal .fd-roll .d2 { animation: fd-roll-in 660ms cubic-bezier(.2, .7, .2, 1) 1560ms both; }
+.deck-stage[data-way="fwd"] > .slide.active.fd-reveal .vh-wm i { animation: fd-cut 720ms cubic-bezier(.3, 0, .2, 1) 1760ms both; }
+.deck-stage[data-way="fwd"] > .slide.active.fd-reveal::before { animation: fd-bloom 1600ms cubic-bezier(.3, 0, .2, 1) 1620ms both; }
+/* 공개 장에서 다음 장으로 — 워드마크가 제목 자리에 앉을 즈음부터 나머지가 나타납니다. */
+.deck-stage[data-way="fwd"] > .slide.fd-reveal + .slide.active .in { animation-delay: calc(var(--dl, 0ms) + 640ms); }
+.deck-stage[data-way="fwd"] > .slide.fd-reveal + .slide.active .vh-orbit { animation: ex-in-fade 620ms cubic-bezier(.32, .72, 0, 1) 640ms both; }
+@media (prefers-reduced-motion: reduce), print {
+  .deck-stage > .slide.fd-reveal .fd-roll, .deck-stage > .slide.fd-reveal .fd-roll *, .deck-stage > .slide.fd-reveal .vh-wm i, .deck-stage > .slide.fd-reveal::before { animation: none !important; }
+}
+
 /* 13쪽 · 설계서 열 단계 */
 .vh-v10:has(.fd-steps) { grid-template-columns: 400px 1fr; }
 .fd-steps { display: flex; flex-direction: column; min-height: 0; }
@@ -1430,7 +1461,7 @@ svg [data-morph] { transform-box: fill-box; }
   <div class="frame">
     <div class="hd"><span class="sec">심화전공프로젝트 최종 발표</span></div>
     <div class="body" style="padding-top: 150px; max-width: 1120px">
-      <div class="word in dl-1">Expre<em>ss</em>o</div>
+      <div class="word"><span class="in dl-1" data-morph="wm0" style="display: inline-block">Expre<em>ss</em>o</span></div>
       <h1 class="in dl-2">채용 공고·커리어 기록 추천 모델 기반<br>맞춤형 포트폴리오 생성 및 배포 플랫폼 개발</h1>
       <dl class="meta in in-fade dl-3">
         <div><dt>팀</dt><dd>4팀 · AI 트랙</dd></div>
@@ -1441,10 +1472,10 @@ svg [data-morph] { transform-box: fill-box; }
   </div>
 </section>
 
-<section class="slide fp vh fd-video" data-title="시연 영상" data-kind="영상 자리 · 정지 화면">
+<section class="slide fp vh fd-video" data-title="시연 영상" data-kind="영상 자리 · 정지 화면" data-cam>
   <div class="frame">
     <div class="fd-poster">
-      <div class="wm in dl-2"><span class="vh-wm">Expre<em>ss</em>o</span></div>
+      <div class="wm"><span class="vh-wm in dl-2" data-morph="wm0">Expre<em>ss</em>o</span></div>
       <div class="cap in in-fade dl-4"><i class="ph ph-play-circle"></i>시연 영상</div>
     </div>
   </div>
@@ -1920,9 +1951,9 @@ svg [data-morph] { transform-box: fill-box; }
 <section class="slide fp vh " data-title="Expresso 1.0의 한계" data-kind="분절된 세 기능">
   <div class="frame">
     <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">4</span><span class="sec">개발 과정</span><span class="pg"></span></div>
-    <div class="head in dl-2">
-      <h2><span class="vh-wm">Expre<em>ss</em>o 1.<i>0</i></span>의 한계</h2>
-      <p class="sub">GUI 기반 포털식 플랫폼 · 서로 이어지지 않는 세 기능</p>
+    <div class="head">
+      <h2><span class="vh-wm" data-morph="wm10">Expre<em>ss</em>o 1.0</span><span class="tail in dl-2">의 한계</span></h2>
+      <p class="sub in dl-2">GUI 기반 포털식 플랫폼 · 서로 이어지지 않는 세 기능</p>
     </div>
     <div class="body">
       <div class="vh-apart">
@@ -1941,7 +1972,15 @@ svg [data-morph] { transform-box: fill-box; }
   </div>
 </section>
 
-<section class="slide fp vh vh-recede" data-title="Expresso 2.0의 출발점" data-kind="에이전트 기준의 기능 묶음" data-sweep="none">
+<section class="slide fp vh fd-reveal" data-title="Expresso 2.0" data-kind="공개" data-cam>
+  <div class="frame">
+    <div class="fd-poster">
+      <div class="wm"><span class="vh-wm" data-morph="wm10"><span class="mk" data-morph="wm20">Expre<em>ss</em>o <span class="fd-roll"><span class="d1">1</span><span class="d2">2</span></span>.<i>0</i></span></span></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide fp vh vh-recede" data-title="Expresso 2.0의 출발점" data-kind="에이전트 기준의 기능 묶음" data-sweep="none" data-cam>
   <div class="frame">
     <div class="hd" data-morph="hd"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">4</span><span class="sec">개발 과정</span><span class="pg"></span></div>
     <div class="head">
@@ -2449,6 +2488,7 @@ window.deck = new Deck();
        뒤로 온 것인지 앞으로 간 것인지 알 수 없습니다. */
     const back = n < (window.deck.i ?? 0);
     const way = back ? -1 : 1;
+    STAGE.dataset.way = back ? 'back' : 'fwd';
     const was = document.querySelector('.deck-stage > .slide.active');
     const from = bar();
     const marks = keyed(was);
