@@ -1480,7 +1480,7 @@ svg [data-morph] { transform-box: fill-box; }
 .fd-kpi .v .u { margin-left: 6px; font-size: 24px; color: var(--ex-slate-500); }
 
 /* 추천 모델 학습과 성능 — 윗줄에서 라벨을 만들고(왼쪽 → 오른쪽), 아랫줄에서 그 라벨로 모델을 학습시켜 평가한다(오른쪽 → 왼쪽).
-   그림체는 제안서 「루브릭 기반 교사 지식 증류」의 것. NDCG@10 은 측정 전이라 빗금으로 비워 둔다. */
+   그림체는 제안서 「루브릭 기반 교사 지식 증류」의 것. NDCG@10 값의 출처: codex/integration-match-release 의 docs/architecture/match-model-release-v1.md */
 .fd-distill .k { font-family: var(--ex-font-ui); font-size: 21px; font-weight: 600; fill: var(--ex-espresso); }
 .fd-distill .t { font-family: var(--ex-font-ui); font-size: 32px; font-weight: 600; letter-spacing: -.03em; fill: var(--ex-ink-900); }
 .fd-distill .d { font-family: var(--ex-font-ui); font-size: 23px; letter-spacing: -.02em; fill: #53657D; }
@@ -1490,6 +1490,13 @@ svg [data-morph] { transform-box: fill-box; }
 .fd-distill .big { font-family: var(--ex-font-brand); font-size: 84px; font-weight: 300; letter-spacing: -.03em; fill: #478670; }
 .fd-distill .nm { font-family: var(--ex-font-ui); font-size: 24px; font-weight: 600; letter-spacing: -.03em; fill: var(--ex-ink-900); }
 .fd-distill .ax { font-family: var(--ex-font-ui); font-size: 18px; fill: var(--ex-slate-400); }
+.fd-distill .trk { fill: var(--ex-tint-100); opacity: .6; }
+.fd-distill .bar.base { fill: var(--ex-slate-400); }
+.fd-distill .bar.own { fill: #E9A84A; }
+.fd-distill .bar.ext { fill: var(--fp-ext-line); }
+.fd-distill .val { font-family: var(--ex-font-brand); font-size: 34px; font-weight: 400; letter-spacing: -.02em; fill: var(--ex-ink-900); }
+.fd-distill .val.own { fill: #8A5A12; }
+.fd-distill .val.ext { fill: #5E4E96; }
 
 /* 추천 모델 아키텍처 — 동결한 E5 인코더(회색) 위에 학습한 헤드(호박색)를 올린 구조.
    값의 출처: codex/integration-match-release 브랜치의 docs/architecture/match-model-release-v1.md · evidence-retrieval-v2.md,
@@ -1835,8 +1842,8 @@ svg [data-morph] { transform-box: fill-box; }
           <div class="who">추천 모델<small>교사 LLM 판정 학습</small></div>
           
           <ul class="fp-use">
-            <li><div class="fp-ico"><i class="ph ph-magnifying-glass"></i></div><div><b>채용 공고 추천 모델</b><span>공고 탐색 · 프로필과 공고의 적합도 순위</span><span>Bi-Encoder+MLP 선별 후 Cross-Encoder 재정렬</span></div></li>
-            <li><div class="fp-ico"><i class="ph ph-stack"></i></div><div><b>커리어 기록 추천 모델</b><span>재료 고르기 · 공고에 맞는 기록 순위</span><span>같은 Cross-Encoder 재사용</span></div></li>
+            <li><div class="fp-ico"><i class="ph ph-magnifying-glass"></i></div><div><b>채용 공고 추천 모델</b><span>공고 탐색 · 내 기록에 맞는 공고 순위</span><span>E5 인코더 + 공고 순위 결합 모델</span></div></li>
+            <li><div class="fp-ico"><i class="ph ph-stack"></i></div><div><b>커리어 기록 추천 모델</b><span>공고 상세 · 재료 고르기의 요건별 근거 기록</span><span>E5 인코더 + 경력 근거 헤드</span></div></li>
           </ul>
         </div>
       </div>
@@ -1844,7 +1851,7 @@ svg [data-morph] { transform-box: fill-box; }
   </div>
 </section>
 
-<section class="slide fp" data-title="추천 모델 학습과 성능" data-kind="학습 흐름과 빈 차트">
+<section class="slide fp" data-title="추천 모델 학습과 성능" data-kind="학습 흐름과 성능 차트">
   <div class="frame">
     <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">3</span><span class="sec">주요 아키텍처</span><span class="pg"></span></div>
     <div class="head in dl-2">
@@ -1852,7 +1859,7 @@ svg [data-morph] { transform-box: fill-box; }
       <p class="sub">교사 LLM 판정으로 학습한 두 모델의 순위 품질</p>
     </div>
     <div class="body">
-      <svg class="fd-distill" viewBox="0 0 1712 650" style="width: 1712px; height: 650px; flex: none; max-width: none; max-height: none" role="img" aria-label="교사 LLM의 판정을 루브릭 가중치로 점수화해 적합도 라벨을 만들고, 그 라벨로 추천 모델 두 개를 학습시킨 뒤 NDCG@10으로 평가하는 흐름">
+      <svg class="fd-distill" viewBox="0 0 1712 650" style="width: 1712px; height: 650px; flex: none; max-width: none; max-height: none" role="img" aria-label="교사 LLM의 판정을 루브릭 가중치로 점수화해 적합도 라벨과 요건별 근거를 만들고, 그것으로 경력 근거 헤드와 공고 순위 결합 모델을 학습시킨 뒤 NDCG@10으로 평가한 결과">
         <defs>
           <marker id="fdd-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M2 2L8 5L2 8" fill="none" stroke="#8596AF" stroke-width="1.5"></path></marker>
           <pattern id="fdd-hatch" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="20" height="20" style="fill: var(--ex-surface-50)"></rect><rect width="10" height="20" style="fill: var(--ex-tint-100)"></rect></pattern>
@@ -1886,7 +1893,7 @@ svg [data-morph] { transform-box: fill-box; }
           <path d="M1314 147H1350" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#fdd-tip)"></path>
           <text class="k" x="1362" y="22">적합도 라벨</text>
           <rect x="1362" y="42" width="350" height="210" rx="20" style="fill:#ECF5F1;stroke:#CCE2D7;stroke-width:1.6"></rect>
-          <text class="big" x="1537" y="172" text-anchor="middle">0–100</text>
+          <text class="big" x="1537" y="152" text-anchor="middle">0–100</text><text class="d" x="1537" y="206" text-anchor="middle">+ 요건별 근거 기록</text>
         </g>
 
         <!-- 아랫줄: 라벨로 배우는 쪽 (오른쪽 → 왼쪽) -->
@@ -1895,16 +1902,16 @@ svg [data-morph] { transform-box: fill-box; }
           <rect x="1040" y="350" width="671" height="296" rx="20" style="fill: var(--fp-own); stroke: var(--fp-own-line); stroke-width: 1.6"></rect>
           <text class="t" x="1070" y="400" style="font-size:30px">추천 모델</text><text class="d" x="1682" y="398" text-anchor="end" style="fill:#8A5A12">자체 학습 모델</text>
           <rect x="1070" y="426" width="290" height="190" rx="16" style="fill:#FFFFFF;stroke:#E7CEB0;stroke-width:1.6"></rect>
-          <text class="t" x="1094" y="514" style="font-size:29px">Bi-Encoder+MLP</text><text class="d" x="1094" y="558">후보 선별</text>
+          <text class="t" x="1094" y="504" style="font-size:29px">경력 근거 헤드</text><text class="d" x="1094" y="546">요건 × 기록 연결 점수</text><text class="d" x="1094" y="584" style="fill:#8A5A12">모델 B</text>
           <path d="M1366 523H1386" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#fdd-tip)"></path>
           <rect x="1392" y="426" width="290" height="190" rx="16" style="fill:#FFFFFF;stroke:#E7CEB0;stroke-width:1.6"></rect>
-          <text class="t" x="1416" y="514" style="font-size:29px">Cross-Encoder</text><text class="d" x="1416" y="558">재정렬</text>
+          <text class="t" x="1416" y="504" style="font-size:29px">공고 순위 결합</text><text class="d" x="1416" y="546">공고 적합도 점수</text><text class="d" x="1416" y="584" style="fill:#8A5A12">모델 A</text>
         </g>
         <g class="in dl-8">
           <path d="M1028 500H976" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#fdd-tip)"></path><text class="k" x="1002" y="480" text-anchor="middle">평가</text>
-          <text class="t" x="0" y="384">NDCG@10</text><text class="d" x="186" y="383">한국어 채용 공고 평가 세트</text>
+          <text class="t" x="0" y="384">NDCG@10</text><text class="d" x="186" y="383">한국어 평가 · 프로필 40명 × 공고 32건</text>
           <g style="stroke: var(--ex-line-200); stroke-width: 1.5"><line x1="270" y1="414" x2="270" y2="622"></line><line x1="605" y1="414" x2="605" y2="622"></line><line x1="940" y1="414" x2="940" y2="622"></line></g>
-          <text class="nm" x="0" y="449">규칙 기반 점수</text><rect x="270" y="430" width="670" height="26" rx="13" fill="url(#fdd-hatch)"></rect><text class="nm" x="0" y="499">Char TF-IDF</text><rect x="270" y="480" width="670" height="26" rx="13" fill="url(#fdd-hatch)"></rect><text class="nm" x="0" y="549">Bi-Encoder+MLP</text><rect x="270" y="530" width="670" height="26" rx="13" fill="url(#fdd-hatch-own)"></rect><text class="nm" x="0" y="599">Cross-Encoder</text><rect x="270" y="580" width="670" height="26" rx="13" fill="url(#fdd-hatch-own)"></rect>
+          <text class="nm" x="0" y="460">파일럿 MLP</text><rect class="trk" x="270" y="436" width="670" height="34" rx="17"></rect><rect class="bar base" x="270" y="436" width="158" height="34" rx="17"></rect><text class="val base" x="442" y="462">0.236</text><text class="nm" x="0" y="522">추천 모델</text><rect class="trk" x="270" y="498" width="670" height="34" rx="17"></rect><rect class="bar own" x="270" y="498" width="395" height="34" rx="17"></rect><text class="val own" x="679" y="524">0.589</text><text class="nm" x="0" y="584">Decisions 재정렬</text><rect class="trk" x="270" y="560" width="670" height="34" rx="17"></rect><rect class="bar ext" x="270" y="560" width="447" height="34" rx="17"></rect><text class="val ext" x="731" y="586">0.667</text>
           <text class="ax" x="270" y="646" text-anchor="middle">0</text><text class="ax" x="605" y="646" text-anchor="middle">0.5</text><text class="ax" x="940" y="646" text-anchor="middle">1.0</text>
         </g>
       </svg>
