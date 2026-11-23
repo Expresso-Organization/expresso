@@ -91,3 +91,4 @@ export * from "./proposals.js";
 export * from "./consultant.js";
 export * from "./portfolio-archetype.js";
 export * from "./usage.js";
+export * from "./match-model.js";

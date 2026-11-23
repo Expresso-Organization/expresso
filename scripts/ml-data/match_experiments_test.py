@@ -249,11 +249,18 @@ class ExperimentCommandTest(unittest.TestCase):
         self.assertEqual(metrics["modelACrossInputLengths"], {"maxLength": 0})
         self.assertIsNotNone(metrics["modelB"]["test"]["models"][CROSS_ENCODER_ID]["ndcg"])
 
-    def test_token_stats_needs_no_model_weights(self) -> None:
+    def test_token_stats_needs_only_profiles_jobs_and_tokenizer(self) -> None:
+        (self.labels / "suitability-labels.jsonl").unlink()
+        (self.data / "candidate-manifest.jsonl").unlink()
+        args = ["token-stats", "--data", str(self.data), "--output", str(self.output), "--encoders", "fake"]
         with patch("transformers.AutoTokenizer.from_pretrained", return_value=FakeTokenizer()):
-            match_experiments.main(["token-stats", *self.common(), "--encoders", "fake"])
+            match_experiments.main(args)
         report = json.loads((self.output / "token-stats.json").read_text(encoding="utf-8"))
         self.assertLessEqual(report["encoders"]["fake"]["profiles"]["maxLength"], FAKE.model_limit)
+        with patch("transformers.AutoTokenizer.from_pretrained", return_value=FakeTokenizer()):
+            match_experiments.main([*args, "--labels", str(self.labels)])
+        legacy = json.loads((self.output / "token-stats.json").read_text(encoding="utf-8"))
+        self.assertEqual(legacy["encoders"], report["encoders"])
 
 
 if __name__ == "__main__":

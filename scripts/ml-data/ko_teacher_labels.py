@@ -1,4 +1,4 @@
-"""한국어 공고 평가 세트의 교사 라벨을 Claude Sonnet 5.5(Claude Code CLI)로 매긴다.
+"""한국어 공고 평가 세트를 Sonnet(Claude Code) 또는 GPT-6.1 Terra(Codex)로 채점한다.
 
 루브릭은 파일럿과 같은 `job-profile-fit-v1`이다. 모델은 요구사항별 종류 · 충족 수준 · 근거 기록만 판단하고,
 점수는 `llm_suitability_rubric.validate_labels`가 계산한다. 프롬프트는 파일럿 것을 수집 공고 원문용으로
@@ -25,6 +25,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 from typing import Any, Callable, Mapping, Sequence
@@ -37,8 +38,7 @@ from llm_suitability_labels import _default_command_prefix, _session_limit_messa
 from llm_suitability_rubric import COVERAGE_CODES, KIND_CODES, RUBRIC_VERSION, validate_labels  # noqa: E402
 
 
-# 사용자 결정(2026-10-25 · 2026-11-10): 교사는 Claude Sonnet 5.5 하나. 별칭 `sonnet`은 실행 시점에 다른 모델로
-# 옮겨 갈 수 있어 ID를 고정한다(본 학습 계획 1절).
+# 기존 Sonnet 실험의 기본값을 보존한다. Terra 실행은 --model gpt-6.1-terra로 선택한다.
 TEACHER_MODEL = "claude-sonnet-5-5"
 LABEL_SOURCE = "claude-code-claude-sonnet-5-5"
 PROMPT_VERSION = "ko-posting-v1"
@@ -225,7 +225,54 @@ class Conversation:
         return envelope
 
 
-def label_profile(profile: Mapping[str, Any], jobs: Sequence[Mapping[str, Any]], conversation: Conversation) -> dict[str, Any]:
+class TerraConversation:
+    """Codex의 실제 대화 ID로 교정 요청을 이어 간다."""
+
+    def __init__(self, *, model: str, effort: str) -> None:
+        self.model = model
+        self.effort = effort
+        self.session_id = ""
+        self.turns: list[dict[str, Any]] = []
+
+    def send(self, prompt: str) -> dict[str, Any]:
+        command = ["codex", "-a", "never", "exec", "-s", "read-only"]
+        if self.session_id:
+            command.append("resume")
+        command.extend(["--ignore-user-config", "--skip-git-repo-check", "--json", "-m", self.model,
+                        "-c", f"model_reasoning_effort={json.dumps(self.effort)}"])
+        if self.session_id:
+            command.append(self.session_id)
+        command.append("-")
+        started = time.perf_counter()
+        with tempfile.TemporaryDirectory() as directory:
+            process = subprocess.run(command, cwd=directory, input=SYSTEM + "\n" + prompt,
+                                     capture_output=True, encoding="utf-8")
+        answer = None
+        usage = None
+        for line in process.stdout.splitlines():
+            event = json.loads(line)
+            if event.get("type") == "thread.started":
+                self.session_id = event["thread_id"]
+            elif event.get("type") == "item.completed":
+                item = event["item"]
+                if item["type"] == "agent_message":
+                    answer = item["text"]
+                elif item["type"] not in {"reasoning"}:
+                    raise RuntimeError(f"교사 실행 중 도구 사용: {item['type']}")
+            elif event.get("type") == "turn.completed":
+                usage = event.get("usage", {})
+            elif event.get("type") == "turn.failed":
+                error = str(event.get("error", ""))
+                if any(term in error.lower() for term in ("usage limit", "rate limit", "quota")):
+                    raise SessionLimitError(error[:400])
+                raise RuntimeError(error[:400])
+        if process.returncode or answer is None or usage is None or not self.session_id:
+            raise RuntimeError(f"Codex 응답 미완료 (exit={process.returncode})")
+        self.turns.append({"kind": "fix" if self.turns else "first", "seconds": round(time.perf_counter() - started, 3), "usage": usage})
+        return {"result": answer}
+
+
+def label_profile(profile: Mapping[str, Any], jobs: Sequence[Mapping[str, Any]], conversation: Conversation | TerraConversation, *, label_source: str = LABEL_SOURCE) -> dict[str, Any]:
     envelope = conversation.send(build_prompt(profile, jobs))
     text = str(envelope.get("result") or "")
     while envelope.get("stop_reason") == "max_tokens":
@@ -268,7 +315,7 @@ def label_profile(profile: Mapping[str, Any], jobs: Sequence[Mapping[str, Any]],
         if len(remaining) >= len(problems):
             return {"status": "failed", "reason": "고친 뒤에도 위반 수가 줄지 않는다", "violations": remaining, "payload": payload}
         problems = remaining
-    labels = validate_labels(profile, jobs, {"profileId": profile["profileId"], **payload}, label_source=LABEL_SOURCE)
+    labels = validate_labels(profile, jobs, {"profileId": profile["profileId"], **payload}, label_source=label_source)
     return {"status": "done", "labels": labels, "payload": payload}
 
 
@@ -283,7 +330,10 @@ def run(arguments: argparse.Namespace, *, invoke: Invoke | None = None, prefix: 
     raw_dir = arguments.output / "raw"
     raw_dir.mkdir(parents=True, exist_ok=True)
     invoke = invoke or subprocess_invoke()
-    prefix = list(prefix) if prefix is not None else _default_command_prefix()
+    terra = arguments.model == "gpt-6.1-terra"
+    if not terra:
+        prefix = list(prefix) if prefix is not None else _default_command_prefix()
+    label_source = ("codex-" if terra else "claude-code-") + arguments.model
     lock = threading.Lock()
     stop = threading.Event()
     counts = {"done": 0, "cached": 0, "failed": 0}
@@ -298,13 +348,19 @@ def run(arguments: argparse.Namespace, *, invoke: Invoke | None = None, prefix: 
         path = raw_dir / f"{profile_id}.json"
         if path.exists():
             cached = json.loads(path.read_text(encoding="utf-8"))
-            if cached.get("status") == "done" and cached.get("promptHash") == prompt_hash and cached.get("model") == arguments.model:
+            if (cached.get("status") == "done" and cached.get("promptHash") == prompt_hash
+                    and cached.get("model") == arguments.model and cached.get("promptVersion") == PROMPT_VERSION
+                    and len(cached.get("labels", [])) == len(members)
+                    and all(label.get("labelSource") == label_source for label in cached["labels"])):
                 with lock:
                     counts["cached"] += 1
                 return
-        conversation = Conversation(prefix, invoke, model=arguments.model, effort=arguments.effort)
+        if terra:
+            conversation = TerraConversation(model=arguments.model, effort=arguments.effort)
+        else:
+            conversation = Conversation(prefix, invoke, model=arguments.model, effort=arguments.effort)
         try:
-            result = label_profile(profile, profile_jobs, conversation)
+            result = label_profile(profile, profile_jobs, conversation, label_source=label_source)
         except SessionLimitError:
             stop.set()
             raise
@@ -329,7 +385,7 @@ def run(arguments: argparse.Namespace, *, invoke: Invoke | None = None, prefix: 
     for profile_id in sorted(by_profile):
         path = raw_dir / f"{profile_id}.json"
         record = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {"status": "missing"}
-        turns += len(record.get("turns", []))
+        turns += max(0, len(record.get("turns", [])) - 1)
         if record.get("status") == "done":
             labels.extend(record["labels"])
         else:
@@ -339,7 +395,7 @@ def run(arguments: argparse.Namespace, *, invoke: Invoke | None = None, prefix: 
         "profiles": len(by_profile),
         "labeledPairs": len(labels),
         "failedProfiles": failed,
-        "fixTurns": turns - (counts["done"] + counts["failed"]),
+        "fixTurns": turns,
         "model": arguments.model,
         "rubricVersion": RUBRIC_VERSION,
         "promptVersion": PROMPT_VERSION,

@@ -1,0 +1,20 @@
+{
+  "checks": "same criterion, record IDs, passage text and offsets; profile ownership; decisions/cross quotes belong to candidate passages",
+  "splits": {
+    "persona": {
+      "inputsSha256": "7257c3b56c89640063df476bc9c8f32b954a17b66c6284eb97252d231b4d5b70",
+      "matchedInputs": 258,
+      "requirements": 258
+    },
+    "test": {
+      "inputsSha256": "d3e36fcf8d1385dc8881dd2a3b45b72a96e803c3c9e889cb33c4f351fd80f44d",
+      "matchedInputs": 256,
+      "requirements": 256
+    },
+    "valid": {
+      "inputsSha256": "403982ae2ada9590adb5dfb7727c32357b2f6b8a600ed3a9f7d3c60436fd1a65",
+      "matchedInputs": 96,
+      "requirements": 96
+    }
+  }
+}

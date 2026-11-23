@@ -1,0 +1,8 @@
+flowchart TD
+ A[최신 main 통합] --> B[배포 파일·상태 준비]
+ B --> C[통합·부하·복구 검증]
+ C --> D[실제 운영 배포]
+ classDef done fill:#d1fae5,stroke:#059669,color:#000000
+ classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4,color:#000000
+ class A,B,C done
+ class D todo

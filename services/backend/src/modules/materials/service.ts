@@ -9,6 +9,7 @@ import { assertActiveRecordsForWrite, careerRecordTextReader, recordPeriod } fro
 import { MongoEntitlementService } from "../entitlements/index.js";
 import type { MaterialsApi } from "./index.js";
 import { MaterialsError } from "./public.js";
+import type { MatchModelService } from "../match-model/index.js";
 import { rankMaterials } from "./ranking.js";
 
 /** 한 번에 담을 수 있는 재료 수와 후보 상한 — `BrewMaterialsSchema`의 `selectionLimit` · `materials.max(50)`과 같다. */
@@ -23,13 +24,33 @@ async function requirementLabels(tx: MongoTransaction, jobPostingId: string | nu
 }
 
 export class MaterialsService implements MaterialsApi {
-  constructor(readonly context: MongoContext) {}
+  constructor(readonly context: MongoContext, readonly model?: MatchModelService) {}
 
-  async #create(tx: MongoTransaction, userId: string, input: { jobAnalysisId: string; lengthPreset: BrewDoc["lengthPreset"]; freeTitle?: string; freeBrief?: string }, labels: string[]) {
+  private async suggestedMaterials(userId: string, analysisId: string) {
+    if (!this.model?.url) return;
+    const db = mongoCollections(this.context.db);
+    const analysis = await db.jobAnalyses.findOne({ _id: analysisId, userId, status: "done" });
+    if (!analysis?.jobPostingId) return;
+    const versions = new Map((await db.careerRecords.find({ userId, deletedAt: null }, { projection: { _id: 1, version: 1 } }).toArray()).map(r => [r._id, r.version]));
+    const result = await this.model.view(userId, false, analysis.jobPostingId);
+    const labels = new Map<string, string[]>();
+    for (const item of result.jobs[0]?.evidence ?? []) {
+      for (const record of item.records) labels.set(record.recordId, [...(labels.get(record.recordId) ?? []), item.label]);
+    }
+    return { versions, labels, postingId: analysis.jobPostingId, analysisVersion: analysis.resultVersion };
+  }
+
+  async #create(tx: MongoTransaction, userId: string, input: { jobAnalysisId: string; lengthPreset: BrewDoc["lengthPreset"]; freeTitle?: string; freeBrief?: string }, labels: string[], suggestion?: Awaited<ReturnType<MaterialsService["suggestedMaterials"]>>) {
     const db = mongoCollections(tx.db); const options = { session: tx.session };
     const records = await db.careerRecords.find({ userId, deletedAt: null, status: { $in: ["organized", "verified"] } }, options).toArray();
     const recordText = await careerRecordTextReader(tx.db, userId, tx.session);
-    const ranked = rankMaterials(records.flatMap((record) => record.status === "organized" || record.status === "verified" ? [{ id: record._id, title: record.title, status: record.status, text: recordText(record) }] : []), labels).slice(0, MATERIAL_LIMIT);
+    const lexical = rankMaterials(records.flatMap((record) => record.status === "organized" || record.status === "verified" ? [{ id: record._id, title: record.title, status: record.status, text: recordText(record) }] : []), labels);
+    const versions = new Map(records.map(r => [r._id, r.version]));
+    const supported = (id: string) => suggestion?.versions.get(id) === versions.get(id) ? suggestion?.labels.get(id) ?? [] : [];
+    const ranked = lexical.map(record => {
+      const evidence = supported(record.id);
+      return { ...record, count: evidence.length, reason: evidence.length ? ("모델이 제안한 요건 근거 · " + evidence.join(" / ")).slice(0, 300) : record.reason };
+    }).sort((a,b) => b.count - a.count).slice(0, MATERIAL_LIMIT);
     await assertActiveRecordsForWrite(tx, userId, ranked.map((record) => record.id));
     const brew: BrewDoc = { _id: randomUUID(), userId, ...input, mode: "solo", status: "draft", createdAt: new Date(), updatedAt: new Date() };
     await db.brews.insertOne(brew, options);
@@ -39,13 +60,14 @@ export class MaterialsService implements MaterialsApi {
 
   async createBrew(userId: string, inputValue: CreateBrew) {
     const input = CreateBrewSchema.parse(inputValue);
+    const suggestion = await this.suggestedMaterials(userId, input.jobAnalysisId).catch(() => undefined);
     const brewId = await inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId);
       const db = mongoCollections(tx.db); const options = { session: tx.session };
       const analysis = await db.jobAnalyses.findOne({ _id: input.jobAnalysisId, userId }, options);
       if (!analysis) throw new MaterialsError(404, "job analysis not found");
       if (analysis.status !== "done") throw new MaterialsError(409, "job analysis must be complete before selecting materials");
-      return this.#create(tx, userId, input, await requirementLabels(tx, analysis.jobPostingId ?? null, null));
+      return this.#create(tx, userId, input, await requirementLabels(tx, analysis.jobPostingId ?? null, null), suggestion && suggestion.postingId === analysis.jobPostingId && suggestion.analysisVersion === analysis.resultVersion ? suggestion : undefined);
     });
     return this.getMaterials(userId, brewId);
   }

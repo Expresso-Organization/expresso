@@ -1,0 +1,11 @@
+flowchart TD
+  S[공고·경력 기록 변경] --> W[동기화 Worker]
+  W --> D[(영속 임베딩)]
+  D --> A[추천 API]
+  A --> T[재시작·동시 요청 검증]
+  classDef done fill:#d1fae5,stroke:#059669
+  classDef doing fill:#fef3c7,stroke:#d97706
+  classDef decide fill:#fee2e2,stroke:#dc2626
+  classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4
+  class S,W,D,A done
+  class T done

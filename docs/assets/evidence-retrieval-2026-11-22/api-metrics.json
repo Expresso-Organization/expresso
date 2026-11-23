@@ -1,0 +1,130 @@
+{
+  "api": {
+    "cachedInputTokens": 0,
+    "cachedResponses": 0,
+    "estimatedUsd": 0.29161970000000004,
+    "inputTokens": 2916197,
+    "latencyP50Ms": 373.73045799904503,
+    "latencyP95Ms": 527.9558329930296,
+    "model": "gpt-6-luna",
+    "provider": "decisions",
+    "requests": 610,
+    "retries": 0
+  },
+  "comparison": "trained evidence reranker vs Decisions on byte-identical frozen record candidates and passages",
+  "splits": {
+    "persona": {
+      "candidateIdsSha256": "6f5b5c988f98b75166b37913453537863355c723b796da350f0332d6c4ed4eaf",
+      "decisions": {
+        "candidateHitAtK": 0.9281045751633987,
+        "fn": 21,
+        "fp": 8,
+        "hitAt3": 0.7647058823529411,
+        "missedSupportedRequirements": 58,
+        "mrrAt3": 0.630718954248366,
+        "presenceF1": 0.9010238907849829,
+        "referenceRecallAt3": 0.5751633986928104,
+        "requirements": 258,
+        "shownLinks": 318,
+        "shownReferenceLinks": 122,
+        "shownReferencePrecision": 0.3836477987421384,
+        "tn": 97,
+        "tp": 132,
+        "withReference": 153
+      },
+      "learned": {
+        "candidateHitAtK": 0.9281045751633987,
+        "fn": 46,
+        "fp": 26,
+        "hitAt3": 0.5098039215686274,
+        "missedSupportedRequirements": 104,
+        "mrrAt3": 0.3877995642701525,
+        "presenceF1": 0.7482517482517482,
+        "referenceRecallAt3": 0.35838779956427014,
+        "requirements": 258,
+        "shownLinks": 298,
+        "shownReferenceLinks": 55,
+        "shownReferencePrecision": 0.18456375838926176,
+        "tn": 79,
+        "tp": 107,
+        "withReference": 153
+      }
+    },
+    "test": {
+      "candidateIdsSha256": "91c4dd3e736029c94e14f9b04e9fbe686d1b4d4c1c2fdff8832ac2afa54b789d",
+      "decisions": {
+        "candidateHitAtK": 1,
+        "fn": 8,
+        "fp": 23,
+        "hitAt3": 0.8636363636363636,
+        "missedSupportedRequirements": 15,
+        "mrrAt3": 0.75,
+        "presenceF1": 0.6990291262135923,
+        "referenceRecallAt3": 0.7159090909090909,
+        "requirements": 256,
+        "shownLinks": 112,
+        "shownReferenceLinks": 32,
+        "shownReferencePrecision": 0.2857142857142857,
+        "tn": 189,
+        "tp": 36,
+        "withReference": 44
+      },
+      "learned": {
+        "candidateHitAtK": 1,
+        "fn": 17,
+        "fp": 19,
+        "hitAt3": 0.9318181818181818,
+        "missedSupportedRequirements": 20,
+        "mrrAt3": 0.7651515151515151,
+        "presenceF1": 0.6,
+        "referenceRecallAt3": 0.7424242424242424,
+        "requirements": 256,
+        "shownLinks": 79,
+        "shownReferenceLinks": 30,
+        "shownReferencePrecision": 0.379746835443038,
+        "tn": 193,
+        "tp": 27,
+        "withReference": 44
+      }
+    },
+    "valid": {
+      "candidateIdsSha256": "30d27d1931fc8178d35b837aded7802cd0d59d553b400690e4b25999c8f4fdf4",
+      "decisions": {
+        "candidateHitAtK": 1,
+        "fn": 4,
+        "fp": 10,
+        "hitAt3": 0.9696969696969697,
+        "missedSupportedRequirements": 6,
+        "mrrAt3": 0.8585858585858586,
+        "presenceF1": 0.8055555555555556,
+        "referenceRecallAt3": 0.898989898989899,
+        "requirements": 96,
+        "shownLinks": 80,
+        "shownReferenceLinks": 39,
+        "shownReferencePrecision": 0.4875,
+        "tn": 53,
+        "tp": 29,
+        "withReference": 33
+      },
+      "learned": {
+        "candidateHitAtK": 1,
+        "fn": 9,
+        "fp": 9,
+        "hitAt3": 0.9090909090909091,
+        "missedSupportedRequirements": 12,
+        "mrrAt3": 0.7929292929292929,
+        "presenceF1": 0.7272727272727273,
+        "referenceRecallAt3": 0.803030303030303,
+        "requirements": 96,
+        "shownLinks": 58,
+        "shownReferenceLinks": 26,
+        "shownReferencePrecision": 0.4482758620689655,
+        "tn": 54,
+        "tp": 24,
+        "withReference": 33
+      }
+    }
+  },
+  "threshold": 25,
+  "thresholdSource": "existing v1 validation policy; not selected on test/personas"
+}

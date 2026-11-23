@@ -1,3 +1,5 @@
+import type { MatchModelService } from "../modules/match-model/index.js";
+import { registerMatchModelRoutes } from "../modules/match-model/index.js";
 import { type AgentChatService, registerAgentChatRoutes } from "../modules/agent-chat/index.js";
 import Fastify, { LogController, type FastifyInstance } from "fastify";
 
@@ -88,6 +90,7 @@ export interface BuildApiOptions {
   jobMarketService?: JobMarketApi;
   jobIngestService?: JobIngestApi;
   jobUrlImporter?: JobUrlImporter;
+  matchModelService?: MatchModelService;
   jobBoardService?: JobBoardApi;
   jobAnalysisService?: JobAnalysisApi;
   materialsService?: MaterialsApi;
@@ -210,6 +213,7 @@ export function buildApi(options: BuildApiOptions): FastifyInstance {
     if (options.agentChatService) registerAgentChatRoutes(app, options.agentChatService, createAuthenticateRequest(options.identityService));
     if (options.agentChatService && options.consultantService && options.consultantCommitments) { const chat = options.agentChatService; registerConsultantRoutes(app, { service: options.consultantService, commitments: options.consultantCommitments, digests: userId => chat.recentDigests(userId), diagnosis: userId => chat.currentDiagnosis(userId), startCheckinChat: (userId, commitment) => chat.startFromCheckin(userId, commitment), proposals: options.proposalService, entitled: options.entitlementService ? outreachGate(options.entitlementService) : async () => false, authenticateRequest: createAuthenticateRequest(options.identityService) }); }
     // 읽기 라우트를 먼저 건다 — `/jobs/postings/:id`가 쓰기 라우트와 같은 자리다.
+    if (options.matchModelService) registerMatchModelRoutes(app, options.matchModelService, createAuthenticateRequest(options.identityService));
     if (options.jobBoardService) {
       registerJobBoardRoutes(app, {
         service: options.jobBoardService,

@@ -1,0 +1,16 @@
+{
+  "profile": {
+    "profileId": "example",
+    "experienceYears": 3,
+    "records": [
+      {"recordId": "data", "title": "판매 지표 대시보드", "bodyMd": "SQL로 주문 데이터를 집계하고 판매·반품 지표를 정의해 Tableau 대시보드를 운영했다."},
+      {"recordId": "ops", "title": "배치 실패 알림", "bodyMd": "실패한 작업에 알림을 연결하고 운영 절차를 문서화했다."}
+    ]
+  },
+  "jobs": [
+    {"jobId": "analyst", "fields": {"title": "예시 데이터 분석가", "description": "SQL로 매출을 분석하고 대시보드를 운영한다."},
+     "requirementsFixed": [{"id": "q1", "kind": "must", "criterion": "SQL로 주문 데이터를 분석한 경험"}, {"id": "q2", "kind": "responsibility", "criterion": "매출 대시보드 운영"}]},
+    {"jobId": "platform", "fields": {"title": "예시 플랫폼 엔지니어", "description": "클러스터 장애에 대응하고 쿠버네티스를 운영한다."},
+     "requirementsFixed": [{"id": "q1", "kind": "must", "criterion": "Kubernetes 클러스터 운영 경험"}]}
+  ]
+}

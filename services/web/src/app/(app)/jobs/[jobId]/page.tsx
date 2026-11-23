@@ -143,6 +143,7 @@ export default async function JobDetailPage({
             <Icon name="arrow-left" size={13} />
             목록으로 돌아가기
           </Link>
+          <Link href={`/jobs/recommendations?posting=${job.id}`} prefetch={false} className={styles.backToList}>요건별 내 경력 근거 보기</Link>
           <h1 className={styles.role}>{job.title}</h1>
             <div className={styles.team}>
               <CompanyAvatar company={job.company} className={styles.companyMark} fit="line" />

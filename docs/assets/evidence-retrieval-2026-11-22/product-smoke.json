@@ -1,0 +1,16 @@
+[
+  {
+    "path": "/v1/jobs/postings/9313f79c-febf-4311-bc0e-05d05c60a993/model-evidence",
+    "status": "ok",
+    "jobs": 1,
+    "quotes": 19,
+    "seconds": 1.6376042080000002
+  },
+  {
+    "path": "/v1/jobs/model/recommendations",
+    "status": "ok",
+    "jobs": 6,
+    "quotes": 0,
+    "seconds": 0.792243917
+  }
+]

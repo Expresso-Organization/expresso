@@ -1,0 +1,27 @@
+[Unit]
+Description=Expresso local recommendation inference
+After=local-fs.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/expresso
+StateDirectory=expresso-match
+StateDirectoryMode=0700
+UMask=0077
+Environment=OPENBLAS_NUM_THREADS=1
+Environment=OMP_NUM_THREADS=1
+Environment=TOKENIZERS_PARALLELISM=false
+# 선택형 외부 검증은 운영자가 별도로 설정했을 때만 켭니다.
+EnvironmentFile=-/etc/expresso/match-inference.conf
+CPUQuota=100%
+Nice=10
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ExecStart=/usr/bin/bash /home/ubuntu/expresso/scripts/operations/start-match-inference.sh
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

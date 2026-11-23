@@ -87,6 +87,12 @@
   color-scheme: light;
 
   /* ── 셸 치수 ─────────────────────────────────────────────── */
+  /* web-comfortable spacing.sm/md, 근거 인용과 본문 사이 간격 */
+  --ex-spacing-sm: 8px;
+  --ex-spacing-md: 12px;
+  --ex-spacing-lg: 16px;
+  --ex-spacing-xl: 24px;
+  --ex-reading-width: 768px;
   --ex-sidebar-width: 250px;
   /*
    * 접힌 사이드바 — 아이콘만 남는 레일.

@@ -121,6 +121,11 @@ if [ -d "$WEB_DIR/.next/static" ]; then
 fi
 
 # 큐 소비자를 먼저 올려 새 스키마의 작업을 받을 수 있게 한 뒤 API를 바꾼다.
+# 모델을 준비해 선택한 호스트에서만 켭니다. 미설정 호스트는 기존 추천을 유지합니다.
+# 파일 검사·추론 health·전체 임베딩 준비가 실패하면 API·Worker를 재시작하지 않습니다.
+if [ -n "${EXPRESSO_MATCH_RELEASE:-}" ] || [ -L "$ROOT/var/match-model/current" ]; then
+  EXPRESSO_ROOT="$ROOT" bash "$ROOT/scripts/operations/match-service.sh" activate "${EXPRESSO_MATCH_RELEASE:-current}"
+fi
 sudo systemctl restart expresso-worker
 sudo systemctl restart expresso-api
 

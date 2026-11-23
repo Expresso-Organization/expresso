@@ -1,0 +1,6 @@
+{
+  "model": "gpt-6-luna",
+  "threshold": 25,
+  "candidateLimit": 24,
+  "selection": "existing v1 threshold retained; v2 validation/test/persona comparison recorded in docs/assets/evidence-retrieval-2026-11-22/api-metrics.json"
+}
