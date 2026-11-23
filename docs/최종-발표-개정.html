@@ -1565,20 +1565,13 @@ svg [data-morph] { transform-box: fill-box; }
 .fd-eval.duo .e { font-size: 23px; }
 .fd-eval.duo .ax { font-size: 22px; }
 .fd-eval.duo .v { font-size: 32px; }
-.fd-eval.duo .v.big { font-size: 48px; }
 .fd-eval.duo .dot { stroke: var(--ex-surface-50); stroke-width: 3; }
 .fd-eval.duo line.rnd { stroke: var(--ex-slate-500); stroke-width: 2; stroke-dasharray: 8 7; }
 .fd-eval.duo text.rnd { font-size: 22px; fill: var(--ex-slate-500); }
 .fd-eval.duo .g.sm { font-size: 25px; }
 .fd-eval.duo .bar.ref { fill: #F3DCCB; stroke: #9A4030; stroke-width: 2; stroke-dasharray: 9 7; }
 .fd-eval.duo .v.ref { fill: #9A4030; }
-.fd-eval.duo .ex-box { fill: var(--ex-tint-50); }
-.fd-eval.duo .ex-q { font-family: var(--ex-font-ui); font-size: 25px; font-weight: 600; letter-spacing: -.03em; fill: var(--ex-ink-900); }
-.fd-eval.duo .ex-t { font-family: var(--ex-font-ui); font-size: 25px; font-weight: 500; letter-spacing: -.03em; fill: var(--ex-ink-900); }
-.fd-eval.duo .ex-no { fill: var(--ex-white); stroke: var(--ex-slate-300); stroke-width: 1.5; }
-.fd-eval.duo .ex-n { font-family: var(--ex-font-brand); font-size: 22px; fill: var(--ex-slate-700); }
-.fd-eval.duo .ex-ok { fill: #FBEEE4; }
-.fd-eval.duo .ex-okt { font-family: var(--ex-font-ui); font-size: 22px; font-weight: 600; fill: #9A4030; }
+.fd-eval.duo .v.big { font-size: 60px; }
 /* 추천 모델 개발 목표 — 같은 입력에서 갈라지는 두 경로. 쓰지 않은 경로는 점선과 회색, 쓰는 경로는 실선 */
 .fd-goal .k { font-family: var(--ex-font-ui); font-size: 22px; font-weight: 600; fill: var(--ex-espresso); }
 .fd-goal .t { font-family: var(--ex-font-ui); font-size: 34px; font-weight: 600; letter-spacing: -.03em; fill: var(--ex-ink-900); }
@@ -2299,7 +2292,7 @@ svg [data-morph] { transform-box: fill-box; }
   </div>
 </section>
 
-<section class="slide fp" data-title="추천 모델 평가 결과" data-kind="막대 차트와 예시">
+<section class="slide fp" data-title="추천 모델 평가 결과" data-kind="막대 차트">
   <div class="frame">
     <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">3</span><span class="sec">주요 아키텍처</span><span class="pg"></span></div>
     <div class="head in dl-2">
@@ -2307,7 +2300,7 @@ svg [data-morph] { transform-box: fill-box; }
       <p class="sub">한국어 평가 · 프로필 40명 × 채용 공고 32건 · 1,280쌍 전부 채점</p>
     </div>
     <div class="body">
-      <svg class="fd-eval duo" viewBox="0 0 1712 650" style="width: 1712px; height: 650px; flex: none; max-width: none; max-height: none" role="img" aria-label="한국어 평가 결과. 채용 공고 순위의 NDCG@10은 파일럿 MLP 0.236, 추천 모델 0.589, 추천 모델의 상위 10건을 외부 LLM으로 재정렬한 비교 실험 0.667. 요건별 근거 기록은 정답 근거 기록을 상위 1건에서 61.9퍼센트, 상위 2건 안에서 80.6퍼센트, 상위 3건 안에서 88.7퍼센트 찾았고 Recall@3는 74.4퍼센트, MRR@3는 0.740. 예시: 필수요건 「기획·디자인 요구사항을 웹으로 표현할 수 있는 역량을 가진 분」에 대해 커리어 기록 13건 중 상위 3건으로 콘텐츠 시안과 전달 흐름, 요구사항 문서의 공통 점검선, 화면 구성과 시안 조정을 골랐고 1위와 3위가 정답">
+      <svg class="fd-eval duo" viewBox="0 0 1712 650" style="width: 1712px; height: 650px; flex: none; max-width: none; max-height: none" role="img" aria-label="한국어 평가 결과. 채용 공고 순위의 NDCG@10은 파일럿 MLP 0.236, 추천 모델 0.589, 추천 모델의 상위 10건을 외부 LLM으로 재정렬한 비교 실험 0.667. 요건별 근거 기록은 정답 근거 기록을 상위 1건에서 61.9퍼센트, 상위 2건 안에서 80.6퍼센트, 상위 3건 안에서 88.7퍼센트 찾았고 Recall@3는 74.4퍼센트, MRR@3는 0.740">
         <!-- 채용 공고 순위 · NDCG@10 -->
         <g class="in dl-3">
           <text class="t" x="0" y="34">채용 공고 순위</text>
@@ -2332,21 +2325,11 @@ svg [data-morph] { transform-box: fill-box; }
         </g>
         <!-- 요건별 근거 기록 · Recall · MRR -->
         <g class="in dl-5">
-          <text class="g" x="1180" y="92">Recall@3</text><text class="v own big" x="1180" y="150">74.4%</text>
-          <text class="e" x="1180" y="190">정답 근거 기록 가운데</text><text class="e" x="1180" y="220">상위 3건에 든 비율</text>
-          <text class="g" x="1460" y="92">MRR@3</text><text class="v own big" x="1460" y="150">0.740</text>
-          <text class="e" x="1460" y="190">첫 정답 근거 기록의</text><text class="e" x="1460" y="220">순위 역수 평균</text>
-        </g>
-        <!-- 예시 한 건 -->
-        <g class="in dl-6">
-          <line class="div" x1="1180" y1="258" x2="1712" y2="258"></line>
-          <text class="g" x="1180" y="308">예시</text><text class="e" x="1244" y="307">필수요건 한 건 · 커리어 기록 13건</text>
-          <rect class="ex-box" x="1180" y="328" width="532" height="100" rx="14"></rect>
-          <text class="ex-q" x="1204" y="370">기획·디자인 요구사항을 웹으로</text><text class="ex-q" x="1204" y="404">표현할 수 있는 역량을 가진 분</text>
-          <circle class="ex-no" cx="1198" cy="470" r="17"></circle><text class="ex-n" x="1198" y="478" text-anchor="middle">1</text><text class="ex-t" x="1232" y="479">콘텐츠 시안과 전달 흐름</text><rect class="ex-ok" x="1634" y="451" width="78" height="38" rx="19"></rect><text class="ex-okt" x="1673" y="478" text-anchor="middle">정답</text>
-          <circle class="ex-no" cx="1198" cy="520" r="17"></circle><text class="ex-n" x="1198" y="528" text-anchor="middle">2</text><text class="ex-t" x="1232" y="529">요구사항 문서의 공통 점검선</text>
-          <circle class="ex-no" cx="1198" cy="570" r="17"></circle><text class="ex-n" x="1198" y="578" text-anchor="middle">3</text><text class="ex-t" x="1232" y="579">화면 구성과 시안 조정</text><rect class="ex-ok" x="1634" y="551" width="78" height="38" rx="19"></rect><text class="ex-okt" x="1673" y="578" text-anchor="middle">정답</text>
-          <text class="e" x="1180" y="626">정답 2건을 모두 상위 3건에서 찾음 · 첫 정답 1위</text>
+          <text class="g" x="1180" y="206">Recall@3</text><text class="v own big" x="1180" y="276">74.4%</text>
+          <text class="e" x="1180" y="316">정답 근거 기록 가운데 상위 3건에 든 비율</text>
+          <line class="div" x1="1180" y1="350" x2="1712" y2="350"></line>
+          <text class="g" x="1180" y="400">MRR@3</text><text class="v own big" x="1180" y="470">0.740</text>
+          <text class="e" x="1180" y="510">첫 정답 근거 기록의 순위 역수 평균</text>
         </g>
       </svg>
     </div>
