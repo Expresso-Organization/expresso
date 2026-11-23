@@ -32,3 +32,10 @@
 ### 19:00 · 완료 · 포트폴리오 잇기 — 기록이 쌓이면 컨설턴트가 먼저 제안
 - 마지막 검증: `pnpm --filter @expresso/backend typecheck` · `test`, `pnpm --filter @expresso/web typecheck` · `test`, `pnpm test:infra`(결과는 PR 본문 초안에 적음)
 - 남은 일은 전달(push · PR)뿐. 팀 레포라 사용자 결정을 기다림
+
+### 19:05 · 완료 · 마지막 검증 결과
+- `pnpm --filter @expresso/database typecheck` 통과, `pnpm --filter @expresso/database test` 6 통과(17 건너뜀). 로컬 Mongo에 붙여 돌리면 23 통과. `migrations.test.ts`의 개수 기대값(28 → 29)을 89a8f62d에서 고침
+- `pnpm --filter @expresso/backend typecheck` 통과, `pnpm --filter @expresso/backend test` 795 통과
+- `pnpm --filter @expresso/web typecheck` 통과, `pnpm --filter @expresso/web test` 585 통과
+- `pnpm test:infra` 433 통과(65 파일). 같은 날 `origin/main`(e51b9839)은 431 통과
+- 발견: 기기 부하가 높을 때(load average 80 이상) 전체 통합 테스트에서 5초 시간 초과가 실행마다 다른 테스트에 1~6건 났고 단독 실행은 통과함. 한 번은 실행 도중 로컬 Mongo 컨테이너가 재시작되어(18:59) 44개 파일이 연결 끊김으로 실패함. 부하가 내려간 뒤 다시 돌려 전부 통과
