@@ -1539,6 +1539,29 @@ svg [data-morph] { transform-box: fill-box; }
 .fd-arch .cp { font-family: var(--ex-font-ui); font-size: 21px; font-weight: 500; letter-spacing: -.02em; fill: var(--ex-ink-900); }
 .fd-arch .cp.dk { fill: #8A5A12; font-weight: 600; }
 
+/* 추천 모델 평가 결과 — 파일럿 리포트(p5-model-training-results-2026-09-06.html)처럼 지표 비교 · 예측값 분포 · 근거 검색을 차트로 제시.
+   값의 출처: codex/integration-match-release 의 evaluation.json 과, 같은 실험의 예측값 · 라벨 1,280쌍에서 다시 계산한 값
+   (순서 일치율 · Spearman · MAE · 구간별 평균 예측 점수 · Hit@1~3 · 종류별 Hit@3). NDCG@10 · Hit@3 · MRR@3 · Recall@3 은 공식 값과 일치. */
+.fd-eval .t { font-family: var(--ex-font-ui); font-size: 28px; font-weight: 600; letter-spacing: -.03em; fill: var(--ex-ink-900); }
+.fd-eval .g { font-family: var(--ex-font-ui); font-size: 23px; font-weight: 600; letter-spacing: -.03em; fill: var(--ex-ink-900); }
+.fd-eval .e { font-family: var(--ex-font-ui); font-size: 18px; letter-spacing: -.01em; fill: var(--ex-slate-500); }
+.fd-eval .ax { font-family: var(--ex-font-ui); font-size: 18px; fill: var(--ex-slate-400); font-variant-numeric: tabular-nums; }
+.fd-eval .v { font-family: var(--ex-font-brand); font-size: 25px; font-weight: 400; letter-spacing: -.02em; fill: var(--ex-slate-500); }
+.fd-eval .v.own { fill: #8A5A12; }
+.fd-eval .grid line { stroke: var(--ex-line-200); stroke-width: 1.5; }
+.fd-eval .base0 { stroke: var(--ex-slate-400); stroke-width: 2; }
+.fd-eval .div { stroke: var(--ex-line-200); stroke-width: 1.5; }
+.fd-eval .trk { fill: var(--ex-tint-100); opacity: .6; }
+.fd-eval .bar.base { fill: var(--ex-slate-400); }
+.fd-eval .bar.own { fill: #E9A84A; }
+.fd-eval .bar.own2 { fill: #F1C680; }
+.fd-eval .ln { fill: none; stroke-width: 4; stroke-linejoin: round; stroke-linecap: round; }
+.fd-eval .ln.truth { stroke: var(--ex-slate-300); stroke-dasharray: 8 8; stroke-width: 3; }
+.fd-eval .ln.base { stroke: var(--ex-slate-400); }
+.fd-eval .ln.own { stroke: #E9A84A; }
+.fd-eval .dot.base { fill: var(--ex-slate-400); }
+.fd-eval .dot.own { fill: #E9A84A; }
+
 /* 13쪽 · 설계서 열 단계 */
 .vh-v10:has(.fd-steps) { grid-template-columns: 400px 1fr; }
 .fd-steps { display: flex; flex-direction: column; min-height: 0; }
@@ -1604,7 +1627,7 @@ svg [data-morph] { transform-box: fill-box; }
       <div class="fp-cols fp-toc fd-toc">
         <div class="in dl-3"><div class="n">1</div><div class="t">문제의식</div><ul><li>선정 배경</li></ul></div>
         <div class="in dl-4"><div class="n">2</div><div class="t">프로젝트 정체성과 핵심 가치</div><ul><li>서비스 개요</li><li>벤치마킹 사례와 차별점</li><li>주요 기능</li></ul></div>
-        <div class="in dl-5"><div class="n">3</div><div class="t">주요 아키텍처</div><ul><li>시스템 구성</li><li>AI 모델 구성</li><li>추천 모델 학습과 성능</li><li>추천 모델 아키텍처</li></ul></div>
+        <div class="in dl-5"><div class="n">3</div><div class="t">주요 아키텍처</div><ul><li>시스템 구성</li><li>AI 모델 구성</li><li>추천 모델 학습과 성능</li><li>추천 모델 평가 결과</li><li>추천 모델 아키텍처</li></ul></div>
         <div class="in dl-6"><div class="n">4</div><div class="t">개발 과정</div>
           <ul><li>개발 범위</li><li>개발팀 구성 및 역할</li><li>1.0 설계 범위 완성</li><li>성능 지표</li></ul>
         </div>
@@ -1856,7 +1879,7 @@ svg [data-morph] { transform-box: fill-box; }
   </div>
 </section>
 
-<section class="slide fp" data-title="추천 모델 학습과 성능" data-kind="학습 흐름과 성능 차트">
+<section class="slide fp" data-title="추천 모델 학습과 성능" data-kind="학습 흐름과 요약 값">
   <div class="frame">
     <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">3</span><span class="sec">주요 아키텍처</span><span class="pg"></span></div>
     <div class="head in dl-2">
@@ -1915,23 +1938,70 @@ svg [data-morph] { transform-box: fill-box; }
         </g>
         <g class="in dl-8">
           <path d="M1028 500H976" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#fdd-tip)"></path><text class="k" x="1002" y="480" text-anchor="middle">평가</text>
-          <text class="t" x="0" y="384" style="font-size:28px">추천 순서가 정답과 맞는 정도</text><text class="mk" x="372" y="383">NDCG@10</text>
-          <text class="ax" x="0" y="414" style="font-size:19px">한국어 평가 · 프로필 40명 × 채용 공고 32건</text>
-          <g style="stroke: var(--ex-line-200); stroke-width: 1.5"><line x1="50" y1="440" x2="460" y2="440"></line><line x1="50" y1="523" x2="460" y2="523"></line></g>
-          <line x1="50" y1="606" x2="460" y2="606" style="stroke: var(--ex-slate-400); stroke-width: 2"></line>
-          <text class="ax" x="38" y="446" text-anchor="end">1.0</text><text class="ax" x="38" y="529" text-anchor="end">0.5</text><text class="ax" x="38" y="612" text-anchor="end">0</text>
-          <text class="ax" x="460" y="464" text-anchor="end">1.0 = 정답 순서와 완전 일치</text>
-          <rect class="bar base" x="110" y="567" width="100" height="39" rx="8"></rect><text class="val base" x="160" y="557" text-anchor="middle" style="font-size:30px">0.236</text><text class="nm" x="160" y="640" text-anchor="middle" style="font-size:22px">파일럿 MLP</text><rect class="bar own" x="270" y="508" width="100" height="98" rx="8"></rect><text class="val own" x="320" y="498" text-anchor="middle" style="font-size:30px">0.589</text><text class="nm" x="320" y="640" text-anchor="middle" style="font-size:22px">추천 모델</text>
-          <line x1="214" y1="567" x2="404" y2="567" style="stroke: var(--ex-slate-400); stroke-width: 1.5; stroke-dasharray: 5 5"></line>
-          <path d="M398 563V516" class="gain" marker-end="url(#fdd-up)"></path>
-          <text class="val own" x="410" y="547" style="font-size:24px">+0.353</text>
-          <line x1="492" y1="362" x2="492" y2="644" style="stroke: var(--ex-line-200); stroke-width: 1.5"></line>
-          <text class="t" x="520" y="384" style="font-size:28px">요건의 근거 기록을 찾은 비율</text><text class="mk" x="882" y="383">Hit@3</text>
-          <text class="ax" x="520" y="414" style="font-size:19px">한국어 평가 · 근거가 있는 요건 1,503개</text>
-          <rect class="w1" x="520" y="440" width="15" height="15" rx="3"></rect><rect class="w1" x="539" y="440" width="15" height="15" rx="3"></rect><rect class="w1" x="558" y="440" width="15" height="15" rx="3"></rect><rect class="w1" x="577" y="440" width="15" height="15" rx="3"></rect><rect class="w1" x="596" y="440" width="15" height="15" rx="3"></rect><rect class="w1" x="615" y="440" width="15" height="15" rx="3"></rect><rect class="w1" x="634" y="440" width="15" height="15" rx="3"></rect><rect class="w1" x="653" y="440" width="15" height="15" rx="3"></rect><rect class="w1" x="672" y="440" width="15" height="15" rx="3"></rect><rect class="w1" x="691" y="440" width="15" height="15" rx="3"></rect><rect class="w1" x="520" y="459" width="15" height="15" rx="3"></rect><rect class="w1" x="539" y="459" width="15" height="15" rx="3"></rect><rect class="w1" x="558" y="459" width="15" height="15" rx="3"></rect><rect class="w1" x="577" y="459" width="15" height="15" rx="3"></rect><rect class="w1" x="596" y="459" width="15" height="15" rx="3"></rect><rect class="w1" x="615" y="459" width="15" height="15" rx="3"></rect><rect class="w1" x="634" y="459" width="15" height="15" rx="3"></rect><rect class="w1" x="653" y="459" width="15" height="15" rx="3"></rect><rect class="w1" x="672" y="459" width="15" height="15" rx="3"></rect><rect class="w1" x="691" y="459" width="15" height="15" rx="3"></rect><rect class="w1" x="520" y="478" width="15" height="15" rx="3"></rect><rect class="w1" x="539" y="478" width="15" height="15" rx="3"></rect><rect class="w1" x="558" y="478" width="15" height="15" rx="3"></rect><rect class="w1" x="577" y="478" width="15" height="15" rx="3"></rect><rect class="w1" x="596" y="478" width="15" height="15" rx="3"></rect><rect class="w1" x="615" y="478" width="15" height="15" rx="3"></rect><rect class="w1" x="634" y="478" width="15" height="15" rx="3"></rect><rect class="w1" x="653" y="478" width="15" height="15" rx="3"></rect><rect class="w1" x="672" y="478" width="15" height="15" rx="3"></rect><rect class="w1" x="691" y="478" width="15" height="15" rx="3"></rect><rect class="w1" x="520" y="497" width="15" height="15" rx="3"></rect><rect class="w1" x="539" y="497" width="15" height="15" rx="3"></rect><rect class="w1" x="558" y="497" width="15" height="15" rx="3"></rect><rect class="w1" x="577" y="497" width="15" height="15" rx="3"></rect><rect class="w1" x="596" y="497" width="15" height="15" rx="3"></rect><rect class="w1" x="615" y="497" width="15" height="15" rx="3"></rect><rect class="w1" x="634" y="497" width="15" height="15" rx="3"></rect><rect class="w1" x="653" y="497" width="15" height="15" rx="3"></rect><rect class="w1" x="672" y="497" width="15" height="15" rx="3"></rect><rect class="w1" x="691" y="497" width="15" height="15" rx="3"></rect><rect class="w1" x="520" y="516" width="15" height="15" rx="3"></rect><rect class="w1" x="539" y="516" width="15" height="15" rx="3"></rect><rect class="w1" x="558" y="516" width="15" height="15" rx="3"></rect><rect class="w1" x="577" y="516" width="15" height="15" rx="3"></rect><rect class="w1" x="596" y="516" width="15" height="15" rx="3"></rect><rect class="w1" x="615" y="516" width="15" height="15" rx="3"></rect><rect class="w1" x="634" y="516" width="15" height="15" rx="3"></rect><rect class="w1" x="653" y="516" width="15" height="15" rx="3"></rect><rect class="w1" x="672" y="516" width="15" height="15" rx="3"></rect><rect class="w1" x="691" y="516" width="15" height="15" rx="3"></rect><rect class="w1" x="520" y="535" width="15" height="15" rx="3"></rect><rect class="w1" x="539" y="535" width="15" height="15" rx="3"></rect><rect class="w1" x="558" y="535" width="15" height="15" rx="3"></rect><rect class="w1" x="577" y="535" width="15" height="15" rx="3"></rect><rect class="w1" x="596" y="535" width="15" height="15" rx="3"></rect><rect class="w1" x="615" y="535" width="15" height="15" rx="3"></rect><rect class="w1" x="634" y="535" width="15" height="15" rx="3"></rect><rect class="w1" x="653" y="535" width="15" height="15" rx="3"></rect><rect class="w1" x="672" y="535" width="15" height="15" rx="3"></rect><rect class="w1" x="691" y="535" width="15" height="15" rx="3"></rect><rect class="w1" x="520" y="554" width="15" height="15" rx="3"></rect><rect class="w1" x="539" y="554" width="15" height="15" rx="3"></rect><rect class="w1" x="558" y="554" width="15" height="15" rx="3"></rect><rect class="w1" x="577" y="554" width="15" height="15" rx="3"></rect><rect class="w1" x="596" y="554" width="15" height="15" rx="3"></rect><rect class="w1" x="615" y="554" width="15" height="15" rx="3"></rect><rect class="w1" x="634" y="554" width="15" height="15" rx="3"></rect><rect class="w1" x="653" y="554" width="15" height="15" rx="3"></rect><rect class="w1" x="672" y="554" width="15" height="15" rx="3"></rect><rect class="w1" x="691" y="554" width="15" height="15" rx="3"></rect><rect class="w1" x="520" y="573" width="15" height="15" rx="3"></rect><rect class="w1" x="539" y="573" width="15" height="15" rx="3"></rect><rect class="w1" x="558" y="573" width="15" height="15" rx="3"></rect><rect class="w1" x="577" y="573" width="15" height="15" rx="3"></rect><rect class="w1" x="596" y="573" width="15" height="15" rx="3"></rect><rect class="w1" x="615" y="573" width="15" height="15" rx="3"></rect><rect class="w1" x="634" y="573" width="15" height="15" rx="3"></rect><rect class="w1" x="653" y="573" width="15" height="15" rx="3"></rect><rect class="w1" x="672" y="573" width="15" height="15" rx="3"></rect><rect class="w1" x="691" y="573" width="15" height="15" rx="3"></rect><rect class="w1" x="520" y="592" width="15" height="15" rx="3"></rect><rect class="w1" x="539" y="592" width="15" height="15" rx="3"></rect><rect class="w1" x="558" y="592" width="15" height="15" rx="3"></rect><rect class="w1" x="577" y="592" width="15" height="15" rx="3"></rect><rect class="w1" x="596" y="592" width="15" height="15" rx="3"></rect><rect class="w1" x="615" y="592" width="15" height="15" rx="3"></rect><rect class="w1" x="634" y="592" width="15" height="15" rx="3"></rect><rect class="w1" x="653" y="592" width="15" height="15" rx="3"></rect><rect class="w1" x="672" y="592" width="15" height="15" rx="3"></rect><rect class="w0" x="691" y="592" width="15" height="15" rx="3"></rect><rect class="w0" x="520" y="611" width="15" height="15" rx="3"></rect><rect class="w0" x="539" y="611" width="15" height="15" rx="3"></rect><rect class="w0" x="558" y="611" width="15" height="15" rx="3"></rect><rect class="w0" x="577" y="611" width="15" height="15" rx="3"></rect><rect class="w0" x="596" y="611" width="15" height="15" rx="3"></rect><rect class="w0" x="615" y="611" width="15" height="15" rx="3"></rect><rect class="w0" x="634" y="611" width="15" height="15" rx="3"></rect><rect class="w0" x="653" y="611" width="15" height="15" rx="3"></rect><rect class="w0" x="672" y="611" width="15" height="15" rx="3"></rect><rect class="w0" x="691" y="611" width="15" height="15" rx="3"></rect>
-          <text class="hero" x="736" y="500" style="font-size:64px">88.7%</text>
-          <text class="d" x="736" y="538" style="font-size:20px">요건마다 근거 기록을</text><text class="d" x="736" y="564" style="font-size:20px">상위 3건 안에 찾음</text>
-          <text class="nm" x="736" y="606" style="font-size:20px">Recall@3 74.4%</text><text class="nm" x="736" y="632" style="font-size:20px">MRR@3 0.740</text>
+          <text class="mk" x="0" y="420">채용 공고 순위 · NDCG@10</text>
+          <text class="hero" x="0" y="506" style="font-size:66px"><tspan style="fill: var(--ex-slate-400)">0.236</tspan><tspan dx="16" style="fill: var(--ex-slate-400); font-size:44px">→</tspan><tspan dx="16">0.589</tspan></text>
+          <text class="d" x="0" y="550">파일럿 MLP → 추천 모델</text>
+          <line x1="492" y1="392" x2="492" y2="566" style="stroke: var(--ex-line-200); stroke-width: 1.5"></line>
+          <text class="mk" x="524" y="420">요건별 근거 기록 · Hit@3</text>
+          <text class="hero" x="524" y="506" style="font-size:66px">88.7%</text>
+          <text class="d" x="524" y="550">근거 기록을 상위 3건 안에 찾은 요건</text>
+          <text class="ax" x="0" y="626" style="font-size:19px">한국어 평가 · 프로필 40명 × 채용 공고 32건</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="slide fp" data-title="추천 모델 평가 결과" data-kind="차트 세 개">
+  <div class="frame">
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">3</span><span class="sec">주요 아키텍처</span><span class="pg"></span></div>
+    <div class="head in dl-2">
+      <h2>추천 모델 평가 결과</h2>
+      <p class="sub">한국어 평가 · 프로필 40명 × 채용 공고 32건 · 1,280쌍 전부 채점</p>
+    </div>
+    <div class="body">
+      <svg class="fd-eval" viewBox="0 0 1712 650" style="width: 1712px; height: 650px; flex: none; max-width: none; max-height: none" role="img" aria-label="한국어 평가에서 파일럿 MLP와 추천 모델을 비교한 결과. NDCG@10은 0.236에서 0.589, 순서 일치율은 0.497에서 0.672, Spearman 상관은 0에서 0.350으로 올랐고, 정답 점수가 높은 구간일수록 추천 모델의 예측 점수가 높으며, 요건별 근거 기록은 상위 3건 안에서 88.7퍼센트를 찾았다">
+        <!-- 1 · 채용 공고 순위 지표 -->
+        <g class="in dl-3">
+          <text class="t" x="0" y="30">채용 공고 순위</text>
+          <rect class="bar base" x="330" y="12" width="20" height="20" rx="5"></rect><text class="e" x="358" y="29">파일럿 MLP</text>
+          <rect class="bar own" x="466" y="12" width="20" height="20" rx="5"></rect><text class="e" x="494" y="29">추천 모델</text>
+          <g class="grid"><line x1="60" y1="70" x2="590" y2="70"></line><line x1="60" y1="250" x2="590" y2="250"></line></g>
+          <line class="base0" x1="60" y1="430" x2="590" y2="430"></line>
+          <text class="ax" x="48" y="76" text-anchor="end">1.0</text><text class="ax" x="48" y="256" text-anchor="end">0.5</text><text class="ax" x="48" y="436" text-anchor="end">0</text>
+          <rect class="bar base" x="81" y="345" width="64" height="85" rx="6"></rect><text class="v base" x="113" y="335" text-anchor="middle">0.236</text><rect class="bar own" x="155" y="218" width="64" height="212" rx="6"></rect><text class="v own" x="187" y="208" text-anchor="middle">0.589</text><text class="g" x="150" y="468" text-anchor="middle">NDCG@10</text><text class="e" x="150" y="496" text-anchor="middle">상위 10건의 순서 품질</text><rect class="bar base" x="256" y="251" width="64" height="179" rx="6"></rect><text class="v base" x="288" y="241" text-anchor="middle">0.497</text><rect class="bar own" x="330" y="188" width="64" height="242" rx="6"></rect><text class="v own" x="362" y="178" text-anchor="middle">0.672</text><text class="g" x="325" y="468" text-anchor="middle">순서 일치율</text><text class="e" x="325" y="496" text-anchor="middle">두 건 중 더 맞는 쪽이 앞</text><rect class="bar base" x="431" y="427" width="64" height="3" rx="6"></rect><text class="v base" x="463" y="417" text-anchor="middle">−0.01</text><rect class="bar own" x="505" y="304" width="64" height="126" rx="6"></rect><text class="v own" x="537" y="294" text-anchor="middle">0.350</text><text class="g" x="500" y="468" text-anchor="middle">Spearman 상관</text><text class="e" x="500" y="496" text-anchor="middle">전체 순서의 일치</text>
+          <text class="g" x="0" y="578">평균 점수 오차 (MAE)</text>
+          <text class="e" x="0" y="612" style="font-size:21px">파일럿 MLP 8.26점 → 추천 모델 7.19점 · 낮을수록 정답에 가까움</text>
+        </g>
+        <line class="div" x1="615" y1="6" x2="615" y2="640"></line>
+
+        <!-- 2 · 정답 점수 구간별 평균 예측 점수 -->
+        <g class="in dl-4">
+          <text class="t" x="640" y="30">정답 점수별 예측 점수</text>
+          <g class="grid"><line x1="690" y1="90" x2="1140" y2="90"></line><line x1="690" y1="260" x2="1140" y2="260"></line></g>
+          <line class="base0" x1="690" y1="430" x2="1140" y2="430"></line>
+          <text class="ax" x="680" y="96" text-anchor="end">50</text><text class="ax" x="680" y="266" text-anchor="end">25</text><text class="ax" x="680" y="436" text-anchor="end">0</text>
+          <polyline class="ln truth" points="720,416 820,335 920,271 1020,193 1120,121"></polyline>
+          <polyline class="ln base" points="720,381 820,381 920,387 1020,395 1120,398"></polyline><circle class="dot base" cx="720" cy="381" r="6"></circle><circle class="dot base" cx="820" cy="381" r="6"></circle><circle class="dot base" cx="920" cy="387" r="6"></circle><circle class="dot base" cx="1020" cy="395" r="6"></circle><circle class="dot base" cx="1120" cy="398" r="6"></circle>
+          <polyline class="ln own" points="720,379 820,358 920,348 1020,330 1120,301"></polyline><circle class="dot own" cx="720" cy="379" r="6"></circle><circle class="dot own" cx="820" cy="358" r="6"></circle><circle class="dot own" cx="920" cy="348" r="6"></circle><circle class="dot own" cx="1020" cy="330" r="6"></circle><circle class="dot own" cx="1120" cy="301" r="6"></circle>
+          <text class="e" x="1112" y="107" text-anchor="end">정답 점수</text>
+          <text class="v own" x="1112" y="285" text-anchor="end" style="font-size:21px">추천 모델</text>
+          <text class="e" x="1112" y="384" text-anchor="end">파일럿 MLP</text>
+          <text class="g" x="720" y="466" text-anchor="middle" style="font-size:20px">0–9</text><text class="e" x="720" y="492" text-anchor="middle">851쌍</text><text class="g" x="820" y="466" text-anchor="middle" style="font-size:20px">10–19</text><text class="e" x="820" y="492" text-anchor="middle">270쌍</text><text class="g" x="920" y="466" text-anchor="middle" style="font-size:20px">20–29</text><text class="e" x="920" y="492" text-anchor="middle">99쌍</text><text class="g" x="1020" y="466" text-anchor="middle" style="font-size:20px">30–39</text><text class="e" x="1020" y="492" text-anchor="middle">49쌍</text><text class="g" x="1120" y="466" text-anchor="middle" style="font-size:20px">40 이상</text><text class="e" x="1120" y="492" text-anchor="middle">11쌍</text>
+          <text class="e" x="920" y="524" text-anchor="middle">정답 점수 구간</text>
+          <text class="g" x="640" y="578">정답이 높은 구간일수록 예측 점수 상승</text>
+          <text class="e" x="640" y="612" style="font-size:21px">파일럿 MLP의 예측은 구간에 따라 오르지 않음</text>
+        </g>
+        <line class="div" x1="1165" y1="6" x2="1165" y2="640"></line>
+
+        <!-- 3 · 요건별 근거 기록 -->
+        <g class="in dl-5">
+          <text class="t" x="1190" y="30">요건별 근거 기록</text>
+          <text class="e" x="1190" y="74">정답 근거 기록을 찾은 요건의 비율 (Hit@k)</text>
+          <text class="e" x="1190" y="300">요건 종류별 · 상위 3건</text>
+          <text class="g" x="1190" y="123" style="font-size:21px">상위 1건</text><rect class="trk" x="1330" y="96" width="300" height="38" rx="8"></rect><rect class="bar own" x="1330" y="96" width="186" height="38" rx="8"></rect><text class="v own" x="1642" y="125">61.9%</text><text class="g" x="1190" y="177" style="font-size:21px">상위 2건</text><rect class="trk" x="1330" y="150" width="300" height="38" rx="8"></rect><rect class="bar own" x="1330" y="150" width="242" height="38" rx="8"></rect><text class="v own" x="1642" y="179">80.6%</text><text class="g" x="1190" y="231" style="font-size:21px">상위 3건</text><rect class="trk" x="1330" y="204" width="300" height="38" rx="8"></rect><rect class="bar own" x="1330" y="204" width="266" height="38" rx="8"></rect><text class="v own" x="1642" y="233">88.7%</text><text class="g" x="1190" y="349" style="font-size:21px">필수요건</text><rect class="trk" x="1330" y="322" width="300" height="38" rx="8"></rect><rect class="bar own2" x="1330" y="322" width="268" height="38" rx="8"></rect><text class="v own" x="1642" y="351">89.3%</text><text class="g" x="1190" y="403" style="font-size:21px">담당업무</text><rect class="trk" x="1330" y="376" width="300" height="38" rx="8"></rect><rect class="bar own2" x="1330" y="376" width="259" height="38" rx="8"></rect><text class="v own" x="1642" y="405">86.4%</text><text class="g" x="1190" y="457" style="font-size:21px">우대요건</text><rect class="trk" x="1330" y="430" width="300" height="38" rx="8"></rect><rect class="bar own2" x="1330" y="430" width="269" height="38" rx="8"></rect><text class="v own" x="1642" y="459">89.8%</text>
+          <text class="g" x="1190" y="578">Recall@3 74.4% · MRR@3 0.740</text>
+          <text class="e" x="1190" y="612" style="font-size:21px">근거가 있는 요건 1,503개 기준</text>
         </g>
       </svg>
     </div>
