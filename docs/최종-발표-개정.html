@@ -1821,6 +1821,11 @@ svg [data-morph] { transform-box: fill-box; }
 .rx-note.on { transition: opacity 560ms cubic-bezier(.2,.8,.2,1), transform 640ms cubic-bezier(.2,.8,.2,1); }
 .rx-note.on { opacity: 1; transform: none; }
 .rx-note .k { font-size: 24px; font-weight: 700; letter-spacing: -.01em; color: var(--ex-espresso); }
+.rx-part.cam { left: -104px; top: -286px; width: 1920px; height: 1080px; transition: opacity 520ms cubic-bezier(.2,.8,.2,1), transform 720ms cubic-bezier(.2,.8,.2,1);
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 110px, #000 calc(100% - 140px), transparent 100%); mask-image: linear-gradient(to right, transparent 0, #000 110px, #000 calc(100% - 140px), transparent 100%); }
+.rx-part.cam .rx-host { transition: none; }
+.rx-note.big .k { font-size: 30px; }
+.rx-note.big .t { margin-top: 14px; font-size: 64px; font-weight: 700; line-height: 1.15; letter-spacing: -.035em; }
 .rx-note .t { margin-top: 10px; font-size: 34px; font-weight: 600; line-height: 1.32; letter-spacing: -.03em; color: var(--ex-ink-900); word-break: keep-all; }
 </style>
 </head>
@@ -2052,7 +2057,7 @@ svg [data-morph] { transform-box: fill-box; }
       <p class="sub">문장으로 찾고, 일치도와 요건별 근거로 고르는 채용 공고</p>
     </div>
     <div class="body"><div class="rx-stage"></div></div>
-    <script type="application/json" class="rx-cfg">{"scene": "jobs2", "parts": {"search": {"sel": ["[class*='__queryCard']", "[class*='__searchBar']"], "pad": 32, "css": "[class*='__parsedRow'] > *:not([data-rx-go]){opacity:0!important}", "fly": {"input": "[class*='__queryText']", "row": "[class*='__parsedRow']", "label": "[class*='__parsedLabel']", "chip": "button[class*='__parsedChip']", "rest": "[class*='__parsedAdd'], [class*='__parsedSaveForm']", "words": [{"w": "서울", "chip": 0}, {"w": "프로덕트 데이터 분석가", "chip": 1}], "note": "n1", "step": 1}}, "results": {"sel": ["[class*='__results ']", "[class*='__results']"], "clip": "[class*='__rows'] > :nth-child(3)", "pad": 32, "fade": true, "reveal": {"sel": "[class*='__resultsHead'], [class*='__rows'] > *", "gap": 90}}, "reqs": {"sel": ["[class*='qBDErq__section']"], "text": "자격 요건", "pad": 32, "style": "width: 760px; max-width: 760px;", "reveal": {"sel": "[class*='__blockTitleRow'], [class*='__requirement']:not([class*='Label']):not([class*='Note'])", "gap": 150}}}, "notes": {"n1": {"x": 164, "y": 330, "k": "AI 조건 해석", "t": "문장을 지역 · 직무 조건으로 바꿔 검색"}, "n2": {"x": 960, "y": 300, "w": 700, "k": "내 기록과의 일치도", "t": "커리어 기록 28건을 추천 모델로 비교한 점수 순 정렬"}, "n3": {"x": 1230, "y": 300, "w": 480, "k": "요건별 근거 기록", "t": "채용 공고 요건마다 근거가 된 내 기록을 연결"}}, "steps": [{"do": [[0, "seek", "search", 3300], [0, "place", "search", 164, 120, 1.5], [0, "show", "search"], [500, "play", "search", 3300, 8000]]}, {"do": [[0, "hide", "n1"], [80, "place", "search", 0, 34, 0.9], [640, "seek", "results", 9300], [640, "place", "results", 0, 170, 1.22], [640, "show", "results"], [900, "play", "results", 9300, 11420], [1500, "note", "n2"]]}, {"do": [[0, "hide", "n2"], [0, "out", "search"], [0, "out", "results"], [240, "seek", "reqs", 16800], [240, "place", "reqs", 0, 150, 1.5], [240, "show", "reqs"], [1500, "note", "n3"]]}]}</script>
+    <script type="application/json" class="rx-cfg">{"scene": "jobs2", "parts": {"search": {"sel": ["[class*='__queryCard']", "[class*='__searchBar']"], "pad": 32, "css": "[class*='__parsedRow'] > *:not([data-rx-go]){opacity:0!important}", "fly": {"input": "[class*='__queryText']", "row": "[class*='__parsedRow']", "label": "[class*='__parsedLabel']", "chip": "button[class*='__parsedChip']", "rest": "[class*='__parsedAdd'], [class*='__parsedSaveForm']", "words": [{"w": "서울", "chip": 0}, {"w": "프로덕트 데이터 분석가", "chip": 1}], "note": "n1", "step": 1, "cam": ["rest", 640, 1500, "fly"], "noteAt": 1750}, "cam": {"type0": {"sel": "[class*='__queryText'], [class*='__searchInput']", "fx": 0, "fy": 0.5, "x": 330, "y": 600, "k": 3.25}, "type1": {"sel": "[class*='__queryText'], [class*='__searchInput']", "fx": 0, "fy": 0.5, "x": 330, "y": 600, "k": 3.6}, "rest": {"sel": "[class*='__queryText'], [class*='__searchInput']", "fx": 0, "fy": 0.5, "x": 330, "y": 440, "k": 2.85}, "top": {"sel": "[class*='__queryCard']", "fx": 0, "fy": 0, "x": 104, "y": 320, "k": 0.9}}}, "results": {"sel": ["[class*='__results ']", "[class*='__results']"], "clip": "[class*='__rows'] > :nth-child(3)", "pad": 32, "fade": true, "reveal": {"sel": "[class*='__resultsHead'], [class*='__rows'] > *", "gap": 90}}, "reqs": {"sel": ["[class*='qBDErq__section']"], "text": "자격 요건", "pad": 32, "style": "width: 760px; max-width: 760px;", "reveal": {"sel": "[class*='__blockTitleRow'], [class*='__requirement']:not([class*='Label']):not([class*='Note'])", "gap": 150}}}, "notes": {"n1": {"x": 226, "y": 434, "w": 1500, "big": true, "k": "AI 조건 해석", "t": "문장을 지역 · 직무 조건으로 바꿔 검색"}, "n2": {"x": 960, "y": 300, "w": 700, "k": "내 기록과의 일치도", "t": "커리어 기록 28건을 추천 모델로 비교한 점수 순 정렬"}, "n3": {"x": 1230, "y": 300, "w": 480, "k": "요건별 근거 기록", "t": "채용 공고 요건마다 근거가 된 내 기록을 연결"}}, "steps": [{"do": [[0, "seek", "search", 3950], [0, "cam", "search", "type0"], [0, "show", "search"], [400, "play", "search", 3950, 7000], [400, "cam", "search", "type1", 3100, "sine"], [3500, "seek", "search", 7950]], "settle": 6200}, {"do": [[0, "hide", "n1"], [80, "cam", "search", "top", 900, "fly"], [640, "seek", "results", 9300], [640, "place", "results", 0, 170, 1.22], [640, "show", "results"], [900, "play", "results", 9300, 11420], [1500, "note", "n2"]], "settle": 4200}, {"do": [[0, "hide", "n2"], [0, "out", "search"], [0, "out", "results"], [240, "seek", "reqs", 16800], [240, "place", "reqs", 0, 150, 1.5], [240, "show", "reqs"], [1500, "note", "n3"]], "settle": 3500}]}</script>
   </div>
 </section>
 
@@ -3310,11 +3315,11 @@ window.deck = new Deck();
       fly.nodes.push(mark);
       const br = box.getBoundingClientRect(); box.style.transformOrigin = `${b.left + b.width / 2 - br.left}px 50%`; go(box);
       /* 단어가 떠난 자리에는 밑줄이 남아, 칩이 문장의 어느 부분에서 왔는지 계속 보입니다. */
-      const under = { top: a.bottom + 2 + 'px', height: '2px', borderRadius: '1px', backgroundColor: UNDER };
+      const under = { left: a.left + 'px', width: a.width + 'px', top: a.bottom + 2 + 'px', height: '2px', borderRadius: '1px', backgroundColor: UNDER };
       if (quiet) { Object.assign(mark.style, under); return; }
       const t0 = 820 + i * 220;
       anim(mark, [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], { duration: 380 + i * 80, delay: 120 + i * 200, easing: SOFT });
-      anim(mark, [{ top: a.top - PY + 'px', height: a.height + PY * 2 + 'px', borderRadius: '6px', backgroundColor: hl }, under], { duration: 520, delay: t0 + 160, easing: FLY });
+      anim(mark, [{ left: a.left - PX + 'px', width: a.width + PX * 2 + 'px', top: a.top - PY + 'px', height: a.height + PY * 2 + 'px', borderRadius: '6px', backgroundColor: hl }, under], { duration: 520, delay: t0 + 160, easing: FLY });
       /* 강조된 단어가 떠올라 칩의 같은 낱말 위로 내려앉고, 그 자리에서 실제 칩이 드러납니다. */
       const s = parseFloat(ccs.fontSize) / parseFloat(ics.fontSize);
       const x0 = a.left - PX, y0 = a.top - PY;
@@ -3337,8 +3342,37 @@ window.deck = new Deck();
     });
     if (label) { go(label); if (!quiet) anim(label, [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 360, delay: 640, easing: SOFT }); }
     rest.forEach((x, i) => { go(x); if (!quiet) anim(x, [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 380, delay: 2080 + i * 100, easing: SOFT }); });
+    const here = () => Number(p.st.slide.dataset.step) === f.step;
+    /* 단어가 떨어지기 시작하면 카메라가 따라 내려가며 칩 줄과 설명 자리를 엽니다. */
+    if (f.cam) { const [name, at, dur, ease] = f.cam; if (quiet) { if (here()) camTo(p, name, 0); } else p.revealTimers.push(setTimeout(() => { if (here()) camTo(p, name, dur, ease); }, at)); }
     const note = f.note && p.st && p.st.notes[f.note];
-    if (note) { const show = () => { if (Number(p.st.slide.dataset.step) === f.step) note.el.classList.add('on'); }; if (quiet) show(); else p.revealTimers.push(setTimeout(show, 2400)); }
+    if (note) { const show = () => { if (here()) note.el.classList.add('on'); }; if (quiet) show(); else p.revealTimers.push(setTimeout(show, f.noteAt || 2400)); }
+  };
+  /* 카메라: 녹화 문서의 기준 요소 한 점(P)을 무대의 한 점(X)에 두고 배율(k)을 정합니다.
+     장면 사이는 배율은 로그 비율로, 기준점과 무대 위치는 선형으로 잇습니다. 기준 요소는 매 프레임 다시 잽니다. */
+  const CAM_EASE = { fly: (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2), sine: (t) => -(Math.cos(Math.PI * t) - 1) / 2 };
+  const camPoint = (p, pose) => {
+    const d = docOf(p); const e = d && d.querySelector(pose.sel); if (!e) return null;
+    const r = e.getBoundingClientRect(); return { x: r.left + r.width * (pose.fx || 0), y: r.top + r.height * (pose.fy || 0) };
+  };
+  const camState = (p, now) => {
+    const c = p.cam; if (!c) return null;
+    const tp = camPoint(p, c.to); if (!tp) return c.last || null;
+    const T = { P: tp, X: { x: c.to.x, y: c.to.y }, k: c.to.k };
+    if (!c.from || !c.dur) return (c.last = T);
+    const e = c.ease(Math.min(1, (now - c.t0) / c.dur)); const F = c.from; const L = (a, b) => a + (b - a) * e;
+    return (c.last = { P: { x: L(F.P.x, T.P.x), y: L(F.P.y, T.P.y) }, X: { x: L(F.X.x, T.X.x), y: L(F.X.y, T.X.y) }, k: Math.exp(L(Math.log(F.k), Math.log(T.k))) });
+  };
+  const camApply = (p) => {
+    const c = camState(p, performance.now()); if (!c) return;
+    const tf = `translate(${(c.X.x - c.P.x * c.k).toFixed(2)}px, ${(c.X.y - c.P.y * c.k).toFixed(2)}px) scale(${c.k.toFixed(4)})`;
+    if (p.host.style.transform !== tf) p.host.style.transform = tf;
+  };
+  const camTo = (p, name, dur, ease) => {
+    const pose = p.cfg.cam && p.cfg.cam[name]; if (!pose) return;
+    const now = performance.now(); const from = p.cam ? camState(p, now) : null;
+    p.cam = { from, to: pose, t0: now, dur: from ? dur || 0 : 0, ease: CAM_EASE[ease || 'fly'] };
+    camApply(p);
   };
   const update = (p, instant) => {
     const el = findEl(p); const d = docOf(p);
@@ -3358,6 +3392,7 @@ window.deck = new Deck();
       });
     }
     if (p.cfg.fly) flyTick(p, el);
+    if (p.cfg.cam) { camApply(p); return true; }
     const r = el.getBoundingClientRect(); let bottom = r.bottom;
     if (p.cfg.clip) { const c = el.querySelector(p.cfg.clip); if (c) bottom = Math.min(bottom, c.getBoundingClientRect().bottom); }
     const { x, y, k } = p.at; const pad = p.cfg.pad;
@@ -3382,7 +3417,7 @@ window.deck = new Deck();
     const ev = window.__rrData[cfg.scene]; const stage = s.querySelector('.rx-stage');
     const parts = {}, notes = {};
     for (const [id, c] of Object.entries(cfg.parts)) {
-      const el = document.createElement('div'); el.className = 'rx-part' + (c.fade ? ' fade' : '');
+      const el = document.createElement('div'); el.className = 'rx-part' + (c.fade ? ' fade' : '') + (c.cam ? ' cam' : '');
       const host = document.createElement('div'); host.className = 'rx-host'; el.appendChild(host); stage.appendChild(el);
       // rrweb는 재생하면서 이벤트의 삭제 목록을 제자리에서 고쳐 쓴다. 재생기끼리 같은 배열을 쓰면 삭제가 사라지므로 재생기마다 복사본을 준다.
       const r = new rrweb.Replayer(structuredClone(ev), { root: host, mouseTail: false, showWarning: false, insertStyleRules: ['body * { animation-name: none !important; }'] });
@@ -3390,7 +3425,7 @@ window.deck = new Deck();
       parts[id] = { el, host, r, cfg: c, at: { x: 0, y: 0, k: 1 }, shown: false, timer: null, revealTimers: [], quiet: false };
     }
     for (const [id, n] of Object.entries(cfg.notes || {})) {
-      const el = document.createElement('div'); el.className = 'rx-note'; el.style.left = n.x + 'px'; el.style.top = n.y + 'px'; if (n.w) el.style.width = n.w + 'px';
+      const el = document.createElement('div'); el.className = 'rx-note' + (n.big ? ' big' : ''); el.style.left = n.x + 'px'; el.style.top = n.y + 'px'; if (n.w) el.style.width = n.w + 'px';
       el.innerHTML = `<div class="k"></div><div class="t"></div>`; el.querySelector('.k').textContent = n.k; el.querySelector('.t').textContent = n.t;
       stage.appendChild(el); notes[id] = { el, timer: null };
     }
@@ -3401,6 +3436,7 @@ window.deck = new Deck();
     const [, op, id, a, b, c] = act; const p = st.parts[id]; const n = st.notes[id];
     if (op === 'place') { p.at = { x: a, y: b, k: c }; if (instant || !p.shown) update(p, true); }
     else if (op === 'quiet') p.quiet = !!a;
+    else if (op === 'cam') camTo(p, a, instant ? 0 : b, c);
     else if (op === 'show') {
       p.el.classList.remove('leave');
       if (!p.shown) { update(p, true); p.shown = true; }
@@ -3417,15 +3453,23 @@ window.deck = new Deck();
   const reset = (st) => {
     clearAll(st);
     Object.values(st.parts).forEach((p) => {
-      flyClear(p); p.r.pause(0); p.shown = false; p.el.classList.remove('on', 'leave');
+      flyClear(p); p.cam = null; p.r.pause(0); p.shown = false; p.el.classList.remove('on', 'leave');
       const d = docOf(p); if (d) d.querySelectorAll('[data-rx-seen]').forEach((x) => { x.removeAttribute('data-rx-seen'); x.style.opacity = ''; x.style.transform = ''; x.style.transition = ''; });
     });
     Object.values(st.notes).forEach((n) => n.el.classList.remove('on'));
   };
+  /* 단계 m까지의 끝 상태를 즉시 만듭니다. 뒤로 갈 때와, 앞 단계의 움직임이 끝나기 전에 넘길 때 씁니다. */
+  const settle = (st, m) => {
+    reset(st); Object.values(st.parts).forEach((p) => { p.quiet = true; });
+    for (let i = 0; i < m; i++) st.cfg.steps[i].do.forEach((act) => run(st, act, true));
+    Object.values(st.parts).forEach((p) => { if (p.shown) update(p, true); p.quiet = false; });
+  };
   const go = async (s, n, back) => {
     const st = await setup(s); const steps = st.cfg.steps; n = Math.max(1, Math.min(n, steps.length)); s.dataset.step = n; loop(s);
     clearAll(st);
-    if (back) { reset(st); Object.values(st.parts).forEach((p) => { p.quiet = true; }); for (let i = 0; i < n; i++) steps[i].do.forEach((act) => run(st, act, true)); Object.values(st.parts).forEach((p) => { if (p.shown) update(p, true); p.quiet = false; }); return; }
+    if (back) { settle(st, n); st.until = 0; return; }
+    if (n > 1 && performance.now() < (st.until || 0)) settle(st, n - 1);
+    st.until = performance.now() + (steps[n - 1].settle || 4000);
     steps[n - 1].do.forEach((act) => { if (!act[0]) run(st, act, false); else timers.push(setTimeout(() => run(st, act, false), act[0])); });
   };
   const count = (s) => JSON.parse(s.querySelector('.rx-cfg').textContent).steps.length;
