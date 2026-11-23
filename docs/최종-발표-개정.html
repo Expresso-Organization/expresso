@@ -736,6 +736,54 @@ svg [data-morph] { transform-box: fill-box; }
 .fp-meter .val .u { font-size: 26px; color: var(--ex-slate-500); margin-left: 6px; }
 .fp-meter .val.wait { font-size: 26px; color: var(--ex-slate-400); }
 
+/* 활동 탐색 — 왼쪽은 출처에서 활동 목록까지의 수집 흐름, 오른쪽은 그 목록을 쓰는 실제 2.0 화면 둘(탐색 · 에이전트 채팅) */
+.fd-act { position: relative; width: 1712px; height: 642px; flex: none; }
+.fd-act .under { position: absolute; inset: 0; width: 1712px; height: 642px; overflow: visible; }
+.fd-act .under path { fill: none; stroke: var(--ex-slate-300); stroke-width: 2; }
+.fd-act .under .go { stroke: var(--ex-espresso); stroke-width: 2.5; }
+.fd-act .k { position: absolute; top: 18px; font-size: 20px; font-weight: 600; color: var(--ex-slate-500); letter-spacing: .01em; }
+.fd-act .src { position: absolute; left: 0; width: 244px; height: 82px; padding: 0 20px; border-radius: 14px; background: var(--ex-white); border: 1px solid var(--ex-line-200); box-shadow: 0 6px 18px rgba(22, 34, 58, .06); display: flex; flex-direction: column; justify-content: center; }
+.fd-act .src b { font-size: 24px; font-weight: 600; letter-spacing: -.02em; color: var(--ex-ink-900); }
+.fd-act .src small { margin-top: 4px; font-size: 19px; color: var(--ex-slate-500); }
+.fd-act .proc { position: absolute; left: 300px; top: 70px; width: 290px; height: 466px; padding: 10px 24px; border-radius: 20px; background: var(--ex-white); border: 1px solid var(--ex-line-200); box-shadow: 0 0 0 1px rgba(22, 34, 58, .02), 0 14px 36px rgba(22, 34, 58, .09); display: flex; flex-direction: column; justify-content: space-between; }
+.fd-act .proc .st { display: flex; gap: 14px; align-items: flex-start; padding: 18px 0; }
+.fd-act .proc .st + .st { border-top: 1px dashed var(--ex-line-200); }
+.fd-act .proc i { flex: none; font-size: 32px; color: var(--ex-espresso); margin-top: 2px; }
+.fd-act .proc b { display: block; font-size: 26px; font-weight: 700; letter-spacing: -.025em; color: var(--ex-ink-900); }
+.fd-act .proc small { display: block; margin-top: 6px; font-size: 19px; line-height: 1.35; color: var(--ex-slate-500); word-break: keep-all; }
+.fd-act .shot { position: absolute; border-radius: 14px; overflow: hidden; background: var(--ex-white); box-shadow: 0 0 0 1px rgba(22, 34, 58, .08), 0 24px 64px rgba(22, 34, 58, .14), 0 4px 12px rgba(22, 34, 58, .06); }
+.fd-act .shot img { display: block; width: 100%; height: 100%; }
+.fd-act .tag { position: absolute; z-index: 2; display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px 0 12px; border-radius: 999px; background: var(--ex-white); border: 1px solid rgba(154, 64, 48, .3); box-shadow: 0 6px 16px rgba(22, 34, 58, .1); font-size: 20px; font-weight: 600; color: var(--ex-ink-900); white-space: nowrap; }
+.fd-act .tag i { font-size: 22px; color: var(--ex-espresso); }
+
+/* 퍼스널 컨텍스트 구조 — 왼쪽은 대화마다 함께 전달하는 기억, 가운데 에이전트, 오른쪽 위는 도구로 읽는 자료, 오른쪽 아래는 사용자가 기억을 보는 「내 진행」 */
+.fd-mem { position: relative; width: 1712px; height: 642px; flex: none; }
+.fd-mem .under { position: absolute; inset: 0; width: 1712px; height: 642px; overflow: visible; }
+.fd-mem .under path { fill: none; stroke: var(--ex-slate-300); stroke-width: 2; }
+.fd-mem .under .go { stroke: var(--ex-espresso); stroke-width: 2.5; }
+.fd-mem .under .back { stroke: var(--ex-espresso); stroke-width: 2.5; stroke-dasharray: 3 9; stroke-linecap: round; }
+.fd-mem .under .user { stroke: var(--ex-slate-400); stroke-width: 2; stroke-dasharray: 3 9; stroke-linecap: round; }
+.fd-mem .card { position: absolute; border-radius: 20px; background: var(--ex-white); border: 1px solid var(--ex-line-200); box-shadow: 0 0 0 1px rgba(22, 34, 58, .02), 0 14px 36px rgba(22, 34, 58, .09); }
+.fd-mem .card > .k { padding: 22px 28px 6px; font-size: 20px; font-weight: 600; color: var(--ex-espresso); letter-spacing: .01em; }
+.fd-mem .row { display: flex; align-items: center; gap: 16px; padding: 0 28px; }
+.fd-mem .row i { flex: none; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-size: 25px; color: var(--ex-espresso); border: 1px solid rgba(154, 64, 48, .25); }
+.fd-mem .row b { display: block; font-size: 25px; font-weight: 600; letter-spacing: -.02em; color: var(--ex-ink-900); }
+.fd-mem .row small { display: block; margin-top: 3px; font-size: 19px; color: var(--ex-slate-500); }
+.fd-mem .keep .row { height: 94px; }
+.fd-mem .keep .row + .row { border-top: 1px solid var(--ex-line-200); }
+.fd-mem .read .row { height: 86px; }
+.fd-mem .read .row + .row { border-top: 1px solid var(--ex-line-200); }
+.fd-mem .agent { position: absolute; left: 760px; top: 222px; width: 248px; height: 196px; border-radius: 28px; background: var(--ex-white); border: 2px solid var(--ex-espresso); box-shadow: 0 18px 44px rgba(154, 64, 48, .16); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+.fd-mem .agent i { font-size: 46px; color: var(--ex-espresso); }
+.fd-mem .agent b { font-family: var(--ex-font-brand); font-weight: 500; font-size: 34px; line-height: 1.05; letter-spacing: -.02em; color: var(--ex-ink-900); text-align: center; }
+.fd-mem .agent b em { font-style: normal; color: var(--ex-espresso); }
+.fd-mem .lb { position: absolute; font-size: 20px; font-weight: 600; color: var(--ex-slate-700); white-space: nowrap; }
+.fd-mem .lb small { display: block; margin-top: 2px; font-size: 18px; font-weight: 400; color: var(--ex-slate-500); }
+.fd-mem .shot { position: absolute; border-radius: 14px; overflow: hidden; background: var(--ex-white); box-shadow: 0 0 0 1px rgba(22, 34, 58, .08), 0 24px 64px rgba(22, 34, 58, .14), 0 4px 12px rgba(22, 34, 58, .06); }
+.fd-mem .shot img { display: block; width: 100%; height: 100%; }
+.fd-mem .tag { position: absolute; z-index: 2; display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px 0 12px; border-radius: 999px; background: var(--ex-white); border: 1px solid var(--ex-line-200); box-shadow: 0 6px 16px rgba(22, 34, 58, .1); font-size: 20px; font-weight: 600; color: var(--ex-ink-900); white-space: nowrap; }
+.fd-mem .tag i { font-size: 22px; color: var(--ex-slate-500); }
+
 /* ── 담당 — 서비스 흐름 순서의 열 ─────────────────────── */
 .fp-team { display: grid; grid-template-columns: repeat(5, 1fr); flex: 1 1 auto; min-height: 0; }
 /* 주요 화면 — 왼쪽 실제 앱 화면이 차례로 바뀌고, 오른쪽 글이 지금 화면의 보기를 함께 가리킵니다 */
@@ -2696,6 +2744,67 @@ svg [data-morph] { transform-box: fill-box; }
   </div>
 </section>
 
+<section class="slide fp" data-title="활동 탐색" data-kind="수집 흐름과 쓰는 화면">
+  <div class="frame">
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M5.15 26.28 A17 17 0 0 0 38.85 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="hd-wm">Expresso</span><span class="no">4</span><span class="sec">개발 과정</span><span class="pg"></span></div>
+    <div class="head in dl-2">
+      <h2>활동 탐색</h2>
+      <p class="sub">채용 공고 밖의 공모전 · 해커톤 · 부트캠프 조회</p>
+    </div>
+    <div class="body">
+      <div class="fd-act">
+        <svg class="under in in-fade dl-4" viewBox="0 0 1712 642" aria-hidden="true">
+          <path d="M244 111 C272 111 272 303 300 303"/><path d="M244 207 C272 207 272 303 300 303"/><path d="M244 303 C272 303 272 303 300 303"/><path d="M244 399 C272 399 272 303 300 303"/><path d="M244 495 C272 495 272 303 300 303"/>
+          <path class="go" d="M590 303 L640 303 L640 150 L900 150"/>
+          <path class="go" d="M640 303 L640 432 L690 432"/>
+        </svg>
+        <div class="k" style="left: 0">출처</div><div class="k" style="left: 300px">수집</div>
+        <div class="src in dl-3" style="top: 70px"><b>위비티</b><small>공모전 · 해커톤</small></div><div class="src in dl-3" style="top: 166px"><b>링커리어</b><small>공모전 · 해커톤</small></div><div class="src in dl-3" style="top: 262px"><b>콘테스트코리아</b><small>공모전</small></div><div class="src in dl-4" style="top: 358px"><b>Dev-Event</b><small>공모전 · 해커톤</small></div><div class="src in dl-4" style="top: 454px"><b>부트텐트</b><small>부트캠프</small></div>
+        <div class="proc in dl-4">
+          <div class="st"><i class="ph ph-clock-clockwise"></i><span><b>매일 수집</b><small>출처마다 하루 한 번 실행</small></span></div>
+          <div class="st"><i class="ph ph-stack"></i><span><b>같은 활동 묶기</b><small>마감일 · 원 공고 주소 · 제목 대조</small></span></div>
+          <div class="st"><i class="ph ph-list-bullets"></i><span><b>활동 목록</b><small>공모전 · 해커톤 · 부트캠프</small></span></div>
+        </div>
+        <div class="shot in dl-5" style="left: 900px; top: 40px; width: 812px; height: 507px"><img src="assets/최종-발표/v20-explore-contest.webp" alt="탐색 화면의 공모전 목록" width="1440" height="900"></div>
+        <div class="tag in dl-5" style="left: 916px; top: 20px"><i class="ph ph-compass"></i>탐색 · 공모전</div>
+        <div class="shot in dl-6" style="left: 690px; top: 232px; width: 420px; height: 410px"><img src="assets/최종-발표/v20-chat-activities.webp" alt="에이전트 채팅의 활동 찾기 결과" width="561" height="547"></div>
+        <div class="tag in dl-6" style="left: 706px; top: 212px"><i class="ph ph-chat-circle-dots"></i>Expresso Agent · 활동 찾기</div>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="slide fp" data-title="퍼스널 컨텍스트 구조" data-kind="기억 구조도">
+  <div class="frame">
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M5.15 26.28 A17 17 0 0 0 38.85 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="hd-wm">Expresso</span><span class="no">4</span><span class="sec">개발 과정</span><span class="pg"></span></div>
+    <div class="head in dl-2">
+      <h2>퍼스널 컨텍스트 구조</h2>
+      <p class="sub">Expresso Agent가 대화마다 불러오는 사용자 정보</p>
+    </div>
+    <div class="body">
+      <div class="fd-mem">
+        <svg class="under in in-fade dl-4" viewBox="0 0 1712 642" aria-hidden="true">
+          <defs><marker id="mem-tip" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" style="fill: var(--ex-espresso)"/></marker></defs>
+          <path class="go" d="M600 262 L752 262" marker-end="url(#mem-tip)"/>
+          <path class="back" d="M760 384 L608 384" marker-end="url(#mem-tip)"/>
+          <path class="go" d="M1008 290 C1060 290 1060 136 1110 136" marker-end="url(#mem-tip)"/>
+          <path class="user" d="M1110 528 L600 528"/>
+        </svg>
+        <div class="card keep in dl-3" style="left: 0; top: 0; width: 600px; height: 642px"><div class="k">대화마다 함께 전달하는 기억</div><div class="row"><i class="ph ph-target"></i><span><b>구직 목표</b><small>사용자가 저장한 하고 싶은 일 · 곳 · 시기</small></span></div><div class="row"><i class="ph ph-steps"></i><span><b>지금 단계</b><small>탐색 · 준비 · 지원</small></span></div><div class="row"><i class="ph ph-sliders-horizontal"></i><span><b>원함 · 피함 조건</b><small>대화에서 나온 조건</small></span></div><div class="row"><i class="ph ph-check-square"></i><span><b>하기로 한 일</b><small>대화에서 정한 약속과 기한</small></span></div><div class="row"><i class="ph ph-chart-bar-horizontal"></i><span><b>목표 진단</b><small>목표 직군 공고 대비 부족한 점</small></span></div><div class="row"><i class="ph ph-chats"></i><span><b>지난 대화 요지</b><small>최근 대화 5개</small></span></div></div>
+        <div class="agent in dl-4"><i class="ph ph-chat-circle-dots"></i><b>Expre<em>ss</em>o<br>Agent</b></div>
+        <div class="lb in dl-4" style="left: 624px; top: 210px">대화 시작</div>
+        <div class="lb in dl-5" style="left: 624px; top: 398px">기억 갱신<small>목표 변경은 사용자 승인</small></div>
+        <div class="lb in dl-6" style="left: 760px; top: 492px">같은 기억 표시</div>
+        <div class="lb in dl-5" style="left: 1024px; top: 302px">도구 호출</div>
+        <div class="card read in dl-5" style="left: 1110px; top: 30px; width: 602px; height: 230px"><div class="k">필요할 때 조회하는 자료</div>
+          <div class="row"><i class="ph ph-notebook"></i><span><b>커리어 기록</b><small>기록 목록 · 본문 조회</small></span></div>
+          <div class="row"><i class="ph ph-paperclip"></i><span><b>함께 보는 자료</b><small>대화에 붙인 공고 · 기록 · 포트폴리오</small></span></div>
+        </div>
+        <div class="shot in dl-6" style="left: 1110px; top: 356px; width: 602px; height: 286px"><img src="assets/최종-발표/v20-goal-memory.webp" alt="내 진행 화면의 기억한 조건과 하기로 한 일" width="584" height="277"></div>
+        <div class="tag in dl-6" style="left: 1126px; top: 336px"><i class="ph ph-user-circle"></i>내 진행 · 사용자 확인 · 지우기</div>
+      </div>
+    </div>
+  </div>
+</section>
 <section class="slide fp" data-title="개발팀 구성 및 역할" data-kind="담당">
   <div class="frame">
     <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M5.15 26.28 A17 17 0 0 0 38.85 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="hd-wm">Expresso</span><span class="no">4</span><span class="sec">개발 과정</span><span class="pg"></span></div>
