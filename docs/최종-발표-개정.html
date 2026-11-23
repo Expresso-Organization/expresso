@@ -1386,6 +1386,9 @@ svg [data-morph] { transform-box: fill-box; }
 .fd-cov .lg i { display: inline-block; width: 28px; height: 16px; border-radius: 4px; }
 .fd-cov .lg i.f { background: var(--ex-slate-400); }
 .fd-cov .lg i.p { border: 1.5px dashed var(--ex-slate-400); background: repeating-linear-gradient(135deg, var(--ex-tint-100) 0 5px, var(--ex-white) 5px 10px); }
+.fp-team .role small { margin-right: 10px; font-size: .78em; font-weight: 500; color: var(--ex-slate-400); }
+.fp-team .role { white-space: nowrap; }
+.fp-team .name b.lead { margin-left: 14px; vertical-align: middle; font-size: 24px; font-weight: 600; letter-spacing: 0; color: var(--ex-espresso); }
 /* 서비스 개요 — 아래 네 단계: 흰 상자 · 테두리와 그림자로 공간감 · 단계 색은 선 아이콘에만 */
 .ov4 { display: grid; grid-template-columns: 1fr 36px 1fr 36px 1fr 36px 1fr; align-items: stretch; margin-top: 44px; width: 1712px; flex: none; }
 .ov4 .st { display: flex; flex-direction: column; gap: 12px; padding: 24px 26px; border-radius: 18px; background: var(--ex-white); border: 1px solid var(--ex-line-200); box-shadow: 0 8px 20px rgba(22, 34, 58, .06); }
@@ -1897,7 +1900,7 @@ svg [data-morph] { transform-box: fill-box; }
         <div class="in dl-4"><div class="n">2</div><div class="t">프로젝트 정체성과 핵심 가치</div><ul><li>이름의 뜻</li><li>서비스 개요</li><li>벤치마킹 사례와 차별점</li><li>주요 기능</li><li>주요 기능 화면</li></ul></div>
         <div class="in dl-5"><div class="n">3</div><div class="t">주요 아키텍처</div><ul><li>시스템 구성</li><li>AI 모델 구성</li><li>추천 모델 개발 목표</li><li>추천 모델 아키텍처</li><li>추천 모델 학습 데이터</li><li>추천 모델 평가 결과</li></ul></div>
         <div class="in dl-6"><div class="n">4</div><div class="t">개발 과정</div>
-          <ul><li>개발팀 구성 및 역할</li><li>개발 범위</li><li>1.0 설계 범위 완성</li></ul>
+          <ul><li>개발 범위</li><li>1.0 설계 범위 완성</li><li>개발팀 구성 및 역할</li></ul>
         </div>
         <div class="in dl-7"><div class="n">5</div><div class="t">Lessons &amp; Learned</div></div>
         <div class="in dl-8"><div class="n">6</div><div class="t">결론</div><ul><li>개발 산출물</li><li>기대 성과</li></ul></div>
@@ -2402,45 +2405,6 @@ svg [data-morph] { transform-box: fill-box; }
   </div>
 </section>
 
-<section class="slide fp" data-title="개발팀 구성 및 역할" data-kind="담당">
-  <div class="frame">
-    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M5.15 26.28 A17 17 0 0 0 38.85 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="hd-wm">Expresso</span><span class="no">4</span><span class="sec">개발 과정</span><span class="pg"></span></div>
-    <div class="head in dl-2">
-      <h2>개발팀 구성 및 역할</h2>
-      <p class="sub">서비스 흐름 순서의 담당 도메인</p>
-    </div>
-    <div class="body">
-      <div class="fp-team">
-        <div class="col in dl-3">
-          <div class="stage"><i class="ph ph-notebook"></i>커리어 기록</div><div class="rule"></div>
-          <div class="name">오시건</div><div class="role">백엔드</div>
-          <ul><li>기록 작성 · 편집 · 분류</li><li>기록 검색 · 첨부</li><li>계정 · 인증</li><li>DB 스키마 · 마이그레이션</li></ul>
-        </div>
-        <div class="col in dl-4">
-          <div class="stage"><i class="ph ph-magnifying-glass"></i>채용 공고</div><div class="rule"></div>
-          <div class="name">심민규</div><div class="role">백엔드</div>
-          <ul><li>채용 공고 수집 · 정규화</li><li>검색 · 필터</li><li>CI/CD 구축</li><li>서버 운영 · 모니터링</li></ul>
-        </div>
-        <div class="col in dl-5">
-          <div class="stage" style="font-size: 23px; white-space: nowrap; gap: 8px"><i class="ph ph-chats-circle"></i>채용 공고 분석 · AI 인터뷰</div><div class="rule"></div>
-          <div class="name">채서현</div><div class="role">백엔드 · AI</div>
-          <ul><li>채용 공고 요건 · 역량 추출</li><li>인터뷰 질문 생성</li><li>인터뷰 응답 처리</li></ul>
-        </div>
-        <div class="col in dl-6">
-          <div class="stage"><i class="ph ph-rocket-launch"></i>생성 · 배포 · 추천 모델</div><div class="rule"></div>
-          <div class="name">박민재</div><div class="role"><b>팀장</b>PM · AI · 프론트</div>
-          <ul><li>포트폴리오 생성 · 편집</li><li>공개 사이트 배포</li><li>추천 모델 학습 · 평가</li><li>시스템 구조 · UI/UX</li></ul>
-        </div>
-        <div class="col in dl-7">
-          <div class="stage"><i class="ph ph-chart-line-up"></i>AI 대화 · 방문 분석</div><div class="rule"></div>
-          <div class="name">윤규현</div><div class="role">데이터 · AI</div>
-          <ul><li>AI 대화 · 맥락 관리</li><li>대화 기반 기록 연동</li><li>사용량 · 요금제</li><li>방문자 통계 · 분석</li></ul>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
 <section class="slide fp vh fd-scope" data-title="개발 범위" data-kind="마일스톤과 버전">
   <div class="frame">
     <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M5.15 26.28 A17 17 0 0 0 38.85 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="hd-wm">Expresso</span><span class="no">4</span><span class="sec">개발 과정</span><span class="pg"></span></div>
@@ -2627,6 +2591,45 @@ svg [data-morph] { transform-box: fill-box; }
     <div class="fd-poster">
       <div class="wm"><span class="vh-wm in dl-2">Expre<em>ss</em>o 2.<i>0</i></span></div>
       <div class="cap in in-fade dl-4"><i class="ph ph-play-circle"></i>시연 영상</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide fp" data-title="개발팀 구성 및 역할" data-kind="담당">
+  <div class="frame">
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M5.15 26.28 A17 17 0 0 0 38.85 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="hd-wm">Expresso</span><span class="no">4</span><span class="sec">개발 과정</span><span class="pg"></span></div>
+    <div class="head in dl-2">
+      <h2>개발팀 구성 및 역할</h2>
+      <p class="sub">도메인별 담당과 주 기술</p>
+    </div>
+    <div class="body">
+      <div class="fp-team">
+        <div class="col in dl-3">
+          <div class="stage"><i class="ph ph-notebook"></i>커리어 기록</div><div class="rule"></div>
+          <div class="name">오시건</div><div class="role"><small>주 기술</small>백엔드</div>
+          <ul><li>기록 작성 · 편집 · 분류</li><li>기록 검색 · 첨부</li><li>계정 · 인증</li><li>DB 스키마 · 마이그레이션</li></ul>
+        </div>
+        <div class="col in dl-4">
+          <div class="stage"><i class="ph ph-magnifying-glass"></i>채용 공고</div><div class="rule"></div>
+          <div class="name">심민규</div><div class="role"><small>주 기술</small>백엔드</div>
+          <ul><li>채용 공고 수집 · 정규화</li><li>검색 · 필터</li><li>CI/CD 구축</li><li>서버 운영 · 모니터링</li></ul>
+        </div>
+        <div class="col in dl-5">
+          <div class="stage" style="font-size: 23px; white-space: nowrap; gap: 8px"><i class="ph ph-chats-circle"></i>채용 공고 분석 · AI 인터뷰</div><div class="rule"></div>
+          <div class="name">채서현</div><div class="role"><small>주 기술</small>백엔드 · AI</div>
+          <ul><li>채용 공고 요건 · 역량 추출</li><li>인터뷰 질문 생성</li><li>인터뷰 응답 처리</li></ul>
+        </div>
+        <div class="col in dl-6">
+          <div class="stage"><i class="ph ph-rocket-launch"></i>생성 · 배포 · 추천 모델</div><div class="rule"></div>
+          <div class="name">박민재<b class="lead">팀장</b></div><div class="role"><small>주 기술</small>PM · AI · 프론트</div>
+          <ul><li>포트폴리오 생성 · 편집</li><li>공개 사이트 배포</li><li>추천 모델 학습 · 평가</li><li>시스템 구조 · UI/UX</li></ul>
+        </div>
+        <div class="col in dl-7">
+          <div class="stage"><i class="ph ph-chart-line-up"></i>AI 대화 · 방문 분석</div><div class="rule"></div>
+          <div class="name">윤규현</div><div class="role"><small>주 기술</small>데이터 · AI</div>
+          <ul><li>AI 대화 · 맥락 관리</li><li>대화 기반 기록 연동</li><li>사용량 · 요금제</li><li>방문자 통계 · 분석</li></ul>
+        </div>
+      </div>
     </div>
   </div>
 </section>
