@@ -8,7 +8,7 @@ import { useCallback, useEffect, useRef, useState, type FocusEvent, type FormEve
 import { LogoMark, Wordmark } from "@/components/brand/Logo";
 import { ViewTransition } from "@/components/motion/ViewTransition";
 import { Icon } from "@/components/ui/Icon";
-import { AGENT_CHAT_CLOSE, AGENT_CHAT_OPEN } from "@/features/agent-chat/agent-handoff";
+import { AGENT_CHAT_CLOSE, AGENT_CHAT_OPEN, AGENT_COMPOSER_FOCUS } from "@/features/agent-chat/agent-handoff";
 import { ResourceList, type ResourceKind } from "@/features/agent-chat/ResourceList";
 import "@/styles/agent-chat-framework.css";
 
@@ -81,6 +81,13 @@ function HomeStartBody({ checkins, proposals, widgets }: { checkins: ReactNode; 
       })
       .catch(() => undefined);
     return () => controller.abort();
+  }, []);
+
+  // 대화 전 홈에서 사이드바의 「새 대화」를 누르면 입력창에 초점을 준다(`AGENT_COMPOSER_FOCUS`).
+  useEffect(() => {
+    const focus = () => input.current?.focus();
+    window.addEventListener(AGENT_COMPOSER_FOCUS, focus);
+    return () => window.removeEventListener(AGENT_COMPOSER_FOCUS, focus);
   }, []);
 
   // 바깥을 누르면 접는다. blur만 보면 놓친다 — 자료 칩을 지우면 초점을 가진 단추가 사라져 blur가 오지 않는다.

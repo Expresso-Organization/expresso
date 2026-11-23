@@ -2,10 +2,12 @@
 
 import type { Route } from "next";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { startTransition, type MouseEvent } from "react";
 
 import { GlideMenu } from "@/components/ui/GlideMenu";
 import { Icon } from "@/components/ui/Icon";
+import { AGENT_CHAT_CLOSE, AGENT_COMPOSER_FOCUS } from "@/features/agent-chat/agent-handoff";
 
 import styles from "./Sidebar.module.css";
 
@@ -40,15 +42,45 @@ export function sectionForPath(pathname: string): SidebarSection | null {
   return null;
 }
 
+/** 홈이 대화 화면을 띄우는 주소 파라미터(`home/page.tsx`). 하나라도 있으면 홈은 대화 중이다. */
+const CONVERSATION_PARAMS = ["chat", "compose", "new"] as const;
+
 export function SidebarNav() {
-  const active = sectionForPath(usePathname());
+  const pathname = usePathname();
+  const router = useRouter();
+  const active = sectionForPath(pathname);
+
+  /**
+   * 「새 대화」는 대화 전 홈으로 간다. 다른 화면에서는 링크 그대로 이동하고, 홈에서는 두 경우를 직접 처리한다.
+   * 대화 중이면 대화 화면 머리글의 「새 대화」와 같은 전환(`AGENT_CHAT_CLOSE`)으로 돌아가고,
+   * 이미 대화 전 홈이면 옮겨 갈 곳이 없으니 입력창에 초점을 준다.
+   * 쿼리는 누를 때 읽는다 — 주소를 구독하면 쿼리가 바뀔 때마다 사이드바가 다시 그려진다.
+   */
+  const startConversation = (event: MouseEvent<HTMLAnchorElement>) => {
+    // ⌘ · Ctrl · Shift 클릭과 가운데 클릭은 새 탭 · 새 창으로 여는 브라우저 동작에 맡긴다.
+    if (pathname !== "/home" || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    const params = new URLSearchParams(window.location.search);
+    if (CONVERSATION_PARAMS.some((key) => params.has(key))) {
+      startTransition(() => router.push("/home", { transitionTypes: [AGENT_CHAT_CLOSE] }));
+    } else {
+      window.dispatchEvent(new Event(AGENT_COMPOSER_FOCUS));
+    }
+  };
 
   return (
     <nav aria-label="주요 이동">
-      <Link href="/home?new=portfolio" className={styles.brew} title="새 포트폴리오">
-        <span className={styles.brewLead}><Icon name="coffee" weight="fill" size={15} /></span>
-        <span className={`${styles.copy} ${styles.brewLabel}`}>새 포트폴리오</span>
-      </Link>
+      {/* 서비스의 단 하나의 CTA인 「새 포트폴리오」 옆에 한 단계 낮춘 「새 대화」가 선다. */}
+      <div className={styles.actions}>
+        <Link href="/home?new=portfolio" className={styles.brew} title="새 포트폴리오">
+          <span className={styles.brewLead}><Icon name="coffee" weight="fill" size={15} /></span>
+          <span className={`${styles.copy} ${styles.brewLabel}`}>새 포트폴리오</span>
+        </Link>
+        <Link href="/home" className={styles.newChat} title="새 대화" aria-label="새 대화" onClick={startConversation}>
+          <Icon name="chat-circle-dots" size={16} />
+          <span className={styles.newChatLabel}><span><span>새 대화</span></span></span>
+        </Link>
+      </div>
       <GlideMenu className={`${styles.primary} ${styles.navGroup}`}>
         {PRIMARY_ITEMS.map((item) => (
           <Link

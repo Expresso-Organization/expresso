@@ -56,3 +56,9 @@ export function takeAgentHandoff(): AgentHandoff | null {
  * 사이드바는 레이아웃에 있어 대화 화면과 상태를 나눌 수 없으므로 이벤트로 받는다.
  */
 export const AGENT_CONVERSATIONS_EVENT = "ex-agent-conversations";
+
+/**
+ * 홈의 입력창에 초점을 달라는 창 이벤트 이름. 대화 전 홈에서 사이드바의 「새 대화」를 누르면 옮겨 갈 곳이 없으므로
+ * 이동 대신 이 이벤트를 보내고, 홈(`HomeStart`)이 들어 입력창에 초점을 준다.
+ */
+export const AGENT_COMPOSER_FOCUS = "ex-agent-composer-focus";
