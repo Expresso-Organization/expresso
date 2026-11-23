@@ -1491,6 +1491,35 @@ svg [data-morph] { transform-box: fill-box; }
 .fd-distill .nm { font-family: var(--ex-font-ui); font-size: 24px; font-weight: 600; letter-spacing: -.03em; fill: var(--ex-ink-900); }
 .fd-distill .ax { font-family: var(--ex-font-ui); font-size: 18px; fill: var(--ex-slate-400); }
 
+/* 추천 모델 아키텍처 — 두 모델의 층을 눈금으로 그려, 동결한 층(회색)과 학습한 층(호박색)을 한눈에 구분한다.
+   값의 출처: docs/design-doc/04-AI학습모델의-설계.md 4.3, scripts/ml-data/llm_suitability_train.py */
+.fd-arch .k { font-family: var(--ex-font-ui); font-size: 21px; font-weight: 600; fill: var(--ex-espresso); }
+.fd-arch .t { font-family: var(--ex-font-ui); font-size: 34px; font-weight: 600; letter-spacing: -.035em; fill: var(--ex-ink-900); }
+.fd-arch .b { font-family: var(--ex-font-ui); font-size: 24px; font-weight: 600; letter-spacing: -.03em; fill: var(--ex-ink-900); }
+.fd-arch .d { font-family: var(--ex-font-ui); font-size: 22px; letter-spacing: -.02em; fill: #53657D; }
+.fd-arch .d.dk { fill: #8A5A12; }
+.fd-arch .d.am { fill: #8A5A12; font-weight: 600; }
+.fd-arch .c { font-family: var(--ex-font-brand); font-size: 26px; font-weight: 400; fill: #53657D; }
+.fd-arch .lg { font-family: var(--ex-font-ui); font-size: 20px; fill: #53657D; }
+.fd-arch .big { font-family: var(--ex-font-brand); font-size: 44px; font-weight: 300; letter-spacing: -.03em; fill: #478670; }
+.fd-arch .ar { fill: none; stroke: #8596AF; stroke-width: 2; }
+.fd-arch .io { fill: #FFFFFF; stroke: #D9E3EF; stroke-width: 1.6; }
+.fd-arch .bx { fill: #FFFFFF; stroke: #D9E3EF; stroke-width: 1.6; }
+.fd-arch rect.fz { fill: #C3CCDA; }
+.fd-arch rect.tr { fill: #E9A84A; }
+.fd-arch rect.ou { fill: #BFDDCF; }
+.fd-arch rect.bx.tr { fill: var(--fp-own); stroke: var(--fp-own-line); stroke-width: 1.6; }
+.fd-arch rect.bx.ou { fill: #ECF5F1; stroke: #CCE2D7; stroke-width: 1.6; }
+.fd-arch .lane { fill: var(--ex-tint-50); }
+.fd-arch .ln { font-family: var(--ex-font-ui); font-size: 20px; font-weight: 600; fill: var(--ex-slate-500); }
+.fd-arch .s { font-family: var(--ex-font-ui); font-size: 19.5px; letter-spacing: -.02em; fill: #53657D; }
+.fd-arch .s.dk { fill: #8A5A12; }
+.fd-arch .s.am { fill: #8A5A12; font-weight: 600; }
+.fd-arch .chip { fill: #FFFFFF; stroke: #D9E3EF; stroke-width: 1.6; }
+.fd-arch rect.chip.tr { fill: var(--fp-own); stroke: var(--fp-own-line); }
+.fd-arch .cp { font-family: var(--ex-font-ui); font-size: 21px; font-weight: 500; letter-spacing: -.02em; fill: var(--ex-ink-900); }
+.fd-arch .cp.dk { fill: #8A5A12; font-weight: 600; }
+
 /* 13쪽 · 설계서 열 단계 */
 .vh-v10:has(.fd-steps) { grid-template-columns: 400px 1fr; }
 .fd-steps { display: flex; flex-direction: column; min-height: 0; }
@@ -1556,7 +1585,7 @@ svg [data-morph] { transform-box: fill-box; }
       <div class="fp-cols fp-toc fd-toc">
         <div class="in dl-3"><div class="n">1</div><div class="t">문제의식</div><ul><li>선정 배경</li></ul></div>
         <div class="in dl-4"><div class="n">2</div><div class="t">프로젝트 정체성과 핵심 가치</div><ul><li>서비스 개요</li><li>벤치마킹 사례와 차별점</li><li>주요 기능</li></ul></div>
-        <div class="in dl-5"><div class="n">3</div><div class="t">주요 아키텍처</div><ul><li>시스템 구성</li><li>AI 모델 구성</li><li>추천 모델 학습과 성능</li></ul></div>
+        <div class="in dl-5"><div class="n">3</div><div class="t">주요 아키텍처</div><ul><li>시스템 구성</li><li>AI 모델 구성</li><li>추천 모델 학습과 성능</li><li>추천 모델 아키텍처</li></ul></div>
         <div class="in dl-6"><div class="n">4</div><div class="t">개발 과정</div>
           <ul><li>개발 범위</li><li>개발팀 구성 및 역할</li><li>1.0 설계 범위 완성</li><li>성능 지표</li></ul>
         </div>
@@ -1870,6 +1899,104 @@ svg [data-morph] { transform-box: fill-box; }
           <g style="stroke: var(--ex-line-200); stroke-width: 1.5"><line x1="270" y1="414" x2="270" y2="622"></line><line x1="605" y1="414" x2="605" y2="622"></line><line x1="940" y1="414" x2="940" y2="622"></line></g>
           <text class="nm" x="0" y="449">규칙 기반 점수</text><rect x="270" y="430" width="670" height="26" rx="13" fill="url(#fdd-hatch)"></rect><text class="nm" x="0" y="499">Char TF-IDF</text><rect x="270" y="480" width="670" height="26" rx="13" fill="url(#fdd-hatch)"></rect><text class="nm" x="0" y="549">Bi-Encoder+MLP</text><rect x="270" y="530" width="670" height="26" rx="13" fill="url(#fdd-hatch-own)"></rect><text class="nm" x="0" y="599">Cross-Encoder</text><rect x="270" y="580" width="670" height="26" rx="13" fill="url(#fdd-hatch-own)"></rect>
           <text class="ax" x="270" y="646" text-anchor="middle">0</text><text class="ax" x="605" y="646" text-anchor="middle">0.5</text><text class="ax" x="940" y="646" text-anchor="middle">1.0</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="slide fp" data-title="추천 모델 아키텍처" data-kind="처리 과정 구조도">
+  <div class="frame">
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">3</span><span class="sec">주요 아키텍처</span><span class="pg"></span></div>
+    <div class="head in dl-2">
+      <h2>추천 모델 아키텍처</h2>
+      <p class="sub">공고 벡터 사전 계산 · 후보 선별 · 재정렬 · 기록 채점의 처리 과정</p>
+    </div>
+    <div class="body">
+      <svg class="fd-arch" viewBox="0 0 1712 650" style="width: 1712px; height: 650px; flex: none; max-width: none; max-height: none" role="img" aria-label="공고 벡터를 미리 계산해 저장하고, 요청 시 Bi-Encoder+MLP 로 전체 공고에서 상위 후보를 선별한 뒤 Cross-Encoder 로 재정렬하며, 같은 Cross-Encoder 로 커리어 기록을 채점하는 추천 모델의 처리 과정">
+        <defs><marker id="fda-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M2 2L8 5L2 8" fill="none" stroke="#8596AF" stroke-width="1.5"></path></marker></defs>
+
+        <!-- 세 줄: 수집 시점의 사전 계산 / 요청 시점의 공고 추천 / 요청 시점의 기록 추천 -->
+        <g class="in in-fade dl-3">
+          <rect class="lane" x="0" y="0" width="760" height="186" rx="18"></rect><text class="ln" x="20" y="32">수집 시점 · 공고 벡터 사전 계산</text>
+          <rect class="lane" x="0" y="200" width="1712" height="236" rx="18"></rect><text class="ln" x="20" y="232">요청 시점 · 채용 공고 추천</text>
+          <rect class="lane" x="0" y="450" width="1712" height="200" rx="18"></rect><text class="ln" x="20" y="482">요청 시점 · 커리어 기록 추천</text>
+        </g>
+
+        <!-- 실행 환경과 범례 -->
+        <g class="in in-fade dl-3">
+          <rect class="fz" x="1416" y="10" width="20" height="20" rx="5"></rect><text class="lg" x="1444" y="27">동결</text>
+          <rect class="tr" x="1516" y="10" width="20" height="20" rx="5"></rect><text class="lg" x="1544" y="27">학습</text>
+          <rect class="ou" x="1616" y="10" width="20" height="20" rx="5"></rect><text class="lg" x="1644" y="27">출력</text>
+          <text class="ln" x="800" y="92">추론 환경</text>
+          <rect class="chip" x="800" y="110" width="330" height="56" rx="28"></rect><text class="cp" x="965" y="146" text-anchor="middle">ONNX Runtime · CPU 추론</text>
+          <rect class="chip" x="1146" y="110" width="330" height="56" rx="28"></rect><text class="cp" x="1311" y="146" text-anchor="middle">모델 미배포 시 규칙 함수</text>
+        </g>
+
+        <!-- 입력 -->
+        <g class="in dl-4">
+          <rect class="io" x="20" y="78" width="180" height="64" rx="32"></rect><text class="b" x="110" y="119" text-anchor="middle">공고 텍스트</text><text class="s" x="110" y="168" text-anchor="middle">요건 분해 · passage:</text>
+          <rect class="io" x="20" y="280" width="180" height="64" rx="32"></rect><text class="b" x="110" y="321" text-anchor="middle">프로필 텍스트</text><text class="s" x="110" y="372" text-anchor="middle">커리어 기록 · query:</text>
+          <rect class="io" x="20" y="528" width="180" height="64" rx="32"></rect><text class="b" x="110" y="569" text-anchor="middle">공고 + 기록 1건</text>
+          <path d="M206 110H228" class="ar" marker-end="url(#fda-tip)"></path><path d="M206 312H228" class="ar" marker-end="url(#fda-tip)"></path>
+        </g>
+
+        <!-- Bi-Encoder: 두 탑이 가중치를 공유 -->
+        <g class="in dl-4">
+          <rect class="bx" x="236" y="40" width="276" height="380" rx="18"></rect>
+          <text class="b" x="256" y="74" style="font-size:22px">multilingual-e5-base</text>
+          <rect class="fz" x="260" y="90" width="13" height="40" rx="3"></rect><rect class="fz" x="279" y="90" width="13" height="40" rx="3"></rect><rect class="fz" x="298" y="90" width="13" height="40" rx="3"></rect><rect class="fz" x="317" y="90" width="13" height="40" rx="3"></rect><rect class="fz" x="336" y="90" width="13" height="40" rx="3"></rect><rect class="fz" x="355" y="90" width="13" height="40" rx="3"></rect><rect class="fz" x="374" y="90" width="13" height="40" rx="3"></rect><rect class="fz" x="393" y="90" width="13" height="40" rx="3"></rect><rect class="fz" x="412" y="90" width="13" height="40" rx="3"></rect><rect class="fz" x="431" y="90" width="13" height="40" rx="3"></rect><rect class="fz" x="450" y="90" width="13" height="40" rx="3"></rect><rect class="fz" x="469" y="90" width="13" height="40" rx="3"></rect>
+          <text class="s" x="260" y="196">인코더 12층 동결</text><text class="s" x="260" y="226">두 입력이 가중치 공유</text>
+          <rect class="fz" x="260" y="292" width="13" height="40" rx="3"></rect><rect class="fz" x="279" y="292" width="13" height="40" rx="3"></rect><rect class="fz" x="298" y="292" width="13" height="40" rx="3"></rect><rect class="fz" x="317" y="292" width="13" height="40" rx="3"></rect><rect class="fz" x="336" y="292" width="13" height="40" rx="3"></rect><rect class="fz" x="355" y="292" width="13" height="40" rx="3"></rect><rect class="fz" x="374" y="292" width="13" height="40" rx="3"></rect><rect class="fz" x="393" y="292" width="13" height="40" rx="3"></rect><rect class="fz" x="412" y="292" width="13" height="40" rx="3"></rect><rect class="fz" x="431" y="292" width="13" height="40" rx="3"></rect><rect class="fz" x="450" y="292" width="13" height="40" rx="3"></rect><rect class="fz" x="469" y="292" width="13" height="40" rx="3"></rect>
+          <text class="s" x="260" y="388">Mean Pool · L2 정규화</text>
+          <path d="M520 110H552" class="ar" marker-end="url(#fda-tip)"></path><text class="s" x="536" y="96" text-anchor="middle">768</text>
+          <path d="M520 312H552" class="ar" marker-end="url(#fda-tip)"></path><text class="s" x="536" y="298" text-anchor="middle">768</text>
+        </g>
+
+        <!-- 사전 계산한 공고 벡터 -->
+        <g class="in dl-5">
+          <rect class="bx" x="560" y="70" width="180" height="80" rx="16"></rect>
+          <text class="b" x="650" y="104" text-anchor="middle" style="font-size:23px">공고 벡터</text><text class="s" x="650" y="134" text-anchor="middle">MongoDB 저장</text>
+          <path d="M650 158V236" class="ar" marker-end="url(#fda-tip)"></path>
+        </g>
+
+        <!-- 선별: 비교 특징 → MLP → Sigmoid -->
+        <g class="in dl-5">
+          <rect class="bx" x="560" y="244" width="180" height="140" rx="16"></rect>
+          <text class="b" x="650" y="288" text-anchor="middle" style="font-size:23px">비교 특징</text><text class="s" x="650" y="322" text-anchor="middle">u, v, |u−v|, u⊙v</text><text class="s" x="650" y="352" text-anchor="middle">3,072차원</text>
+          <path d="M746 312H760" class="ar" marker-end="url(#fda-tip)"></path>
+          <rect class="bx tr" x="768" y="244" width="200" height="140" rx="16"></rect>
+          <text class="b" x="868" y="288" text-anchor="middle" style="font-size:25px">MLP</text><text class="s dk" x="868" y="322" text-anchor="middle">Linear · GELU · Linear</text><text class="s dk" x="868" y="352" text-anchor="middle">3,072 → 256 → 1</text>
+          <path d="M974 312H988" class="ar" marker-end="url(#fda-tip)"></path>
+          <rect class="chip" x="996" y="288" width="104" height="48" rx="24"></rect><text class="cp" x="1048" y="319" text-anchor="middle">Sigmoid</text>
+          <path d="M1106 312H1222" class="ar" marker-end="url(#fda-tip)"></path>
+          <text class="k" x="1164" y="296" text-anchor="middle">상위 K</text><text class="s" x="1164" y="342" text-anchor="middle">기록 8개</text><text class="s" x="1164" y="368" text-anchor="middle">선택</text>
+          <text class="s" x="768" y="414">전체 공고의 점수 계산</text>
+        </g>
+
+        <!-- Cross-Encoder: 공고 추천의 재정렬과 기록 추천이 함께 쓴다 -->
+        <g class="in dl-6">
+          <rect class="bx" x="1230" y="214" width="290" height="416" rx="18"></rect>
+          <text class="b" x="1250" y="252" style="font-size:22px">bge-reranker-v2-m3</text>
+          <rect class="chip" x="1250" y="270" width="250" height="44" rx="22"></rect><text class="cp" x="1375" y="299" text-anchor="middle" style="font-size:19px">텍스트 쌍 토큰화 · 1,536</text>
+          <rect class="fz" x="1244" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1255" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1266" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1277" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1288" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1299" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1310" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1321" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1332" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1343" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1354" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1365" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1376" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1387" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1398" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1409" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1420" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1431" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1442" y="334" width="8" height="76" rx="3"></rect><rect class="fz" x="1453" y="334" width="8" height="76" rx="3"></rect><rect class="tr" x="1464" y="334" width="8" height="76" rx="3"></rect><rect class="tr" x="1475" y="334" width="8" height="76" rx="3"></rect><rect class="tr" x="1486" y="334" width="8" height="76" rx="3"></rect><rect class="tr" x="1497" y="334" width="8" height="76" rx="3"></rect>
+          <text class="s" x="1244" y="440">임베딩 · 앞쪽 20층</text><text class="s am" x="1506" y="440" text-anchor="end">4층</text>
+          <rect class="chip tr" x="1250" y="462" width="250" height="44" rx="22"></rect><text class="cp dk" x="1375" y="491" text-anchor="middle">점수 예측 헤드</text>
+          <rect class="chip" x="1250" y="520" width="250" height="44" rx="22"></rect><text class="cp" x="1375" y="549" text-anchor="middle">Sigmoid</text>
+          <text class="s" x="1375" y="604" text-anchor="middle">1,024차원</text>
+        </g>
+
+        <!-- 출력 -->
+        <g class="in dl-7">
+          <path d="M1526 312H1548" class="ar" marker-end="url(#fda-tip)"></path>
+          <rect class="bx ou" x="1556" y="262" width="156" height="100" rx="16"></rect>
+          <text class="b" x="1634" y="304" text-anchor="middle" style="font-size:24px">공고 순위</text><text class="s" x="1634" y="336" text-anchor="middle">근거 기록 반환</text>
+          <path d="M206 560H1222" class="ar" marker-end="url(#fda-tip)"></path>
+          <text class="k" x="236" y="540">같은 Cross-Encoder 재사용</text>
+          <text class="s" x="236" y="602">선택 점수 = 관련도 + 새로 충족하는 요건 + 근거 강도 − 기록 간 중복</text>
+          <path d="M1526 560H1548" class="ar" marker-end="url(#fda-tip)"></path>
+          <rect class="bx ou" x="1556" y="510" width="156" height="100" rx="16"></rect>
+          <text class="b" x="1634" y="552" text-anchor="middle" style="font-size:24px">기록 점수</text><text class="s" x="1634" y="584" text-anchor="middle">선택 조합</text>
         </g>
       </svg>
     </div>
