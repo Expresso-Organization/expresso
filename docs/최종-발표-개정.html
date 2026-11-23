@@ -3577,9 +3577,49 @@ window.deck = new Deck();
       whole: true, pairs: [],
       a: ['.head', '.fd-toc .n'], b: ['.fd-toc .t', '.fd-toc ul'], at: [380, 560],
     },
+    /* 2 → 3 · 개요 가운데 첫 항목으로 — 이 장만 길고 자세하게 둡니다(11-24 사용자 결정).
+       다른 열은 빠지고 「선정 배경」이 제목 자리로 커지며 옮겨 간 뒤, 본문이 문제의 흐름 순서
+       (흩어진 자료 → 채용 공고 요건 → 회사별 포트폴리오 → 반복)로 쌓입니다. */
     '목차>선정 배경': {
       pairs: [['[data-ch="toc-bg"]', '[data-ch="h2"]']],
-      a: ['.head .sub', '.fp-three > :not(.fp-repeat)'], b: ['.fp-repeat'],
+      custom(was, now, m) {
+        const POP = 'cubic-bezier(.34, 1.45, .64, 1)';
+        const rise = (el, at, ms = 560, d = 20) => A(el, [{ opacity: 0, transform: `translateY(${d}px)` }, { opacity: 1, transform: 'none' }], { delay: at, duration: ms });
+        const slideIn = (el, at, ms = 520, d = -40) => A(el, [{ opacity: 0, transform: `translateX(${d}px)` }, { opacity: 1, transform: 'none' }], { delay: at, duration: ms });
+        const wipeX = (el, at, ms = 360) => A(el, [{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0% 0 0)' }], { delay: at, duration: ms });
+        A(was, [{ visibility: 'visible', opacity: 1, zIndex: 3, background: 'transparent' }, { visibility: 'visible', opacity: 1, zIndex: 3, background: 'transparent' }], { duration: 1100, fill: 'none', easing: 'linear' });
+        A($(was, '.frame'), [{ opacity: 1 }, { opacity: 1 }], { duration: 1100, fill: 'none' });
+        const cols = $$(was, '.fd-toc > div');
+        cols.slice(1).forEach((c, i) => A(c, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(-140px)' }], { delay: i * 30, duration: 620, easing: 'cubic-bezier(.4, 0, .8, .4)', fill: 'forwards' }));
+        [$(cols[0], '.n'), $(cols[0], '.t')].forEach((el) => A(el, [
+          { color: 'var(--ex-ink-900)', opacity: 1 }, { color: '#9A4030', opacity: 1, offset: .45 }, { color: '#9A4030', opacity: 0 }],
+          { duration: 900, easing: 'linear', fill: 'forwards' }));
+        A($(was, '.head'), [{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: 'forwards' });
+        A($(was, '.hd'), [{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: 'forwards' });
+        const { from, F, T } = m[0];
+        const dx = (T.x + T.w / 2) - (F.x + F.w / 2), dy = (T.y + T.h / 2) - (F.y + F.h / 2);
+        A(from, [{ transform: 'none', opacity: 1, transformOrigin: '50% 50%' }, { opacity: 1, offset: .86 }, { transform: `translate(${dx}px, ${dy}px) scale(${T.w / F.w})`, opacity: 0, transformOrigin: '50% 50%' }],
+          { delay: 260, duration: 780, easing: MOVE, fill: 'both' });
+        A($(now, '[data-ch="h2"]'), [{ opacity: 0 }, { opacity: 1 }], { delay: 980, duration: 140, easing: 'linear' });
+        rise($(now, '.head .sub'), 1000, 500, 14);
+        const b = 1150;
+        const ks = $$(now, '.fp-three .k');
+        rise(ks[0], b, 420, 10); rise(ks[1], b + 360, 420, 10); rise(ks[2], b + 820, 420, 10);
+        $$(now, '.fp-src').forEach((el, i) => rise(el, b + 60 + i * 90, 520));
+        const arrows = $$(now, '.fp-three > .arrow');
+        wipeX(arrows[0], b + 330, 320); wipeX(arrows[1], b + 790, 320);
+        rise($(now, '.fp-field'), b + 420, 560);
+        $$(now, '.fp-req li').forEach((el, i) => slideIn(el, b + 580 + i * 80, 420, -16));
+        const pos = [[0, 34, 'rotate(-4deg)'], [150, 10, 'none'], [300, 34, 'rotate(4deg)']];
+        $$(now, '.fp-page').forEach((el, i) => {
+          const [l, t, own] = pos[i];
+          A(el, [{ opacity: 0, transform: `translate(${150 - l}px, ${10 - t + 20}px) rotate(0deg)` }, { opacity: 1, transform: own }],
+            { delay: b + 900 + (i === 1 ? 0 : 90), duration: 760, easing: POP });
+        });
+        const rep = $(now, '.fp-repeat');
+        wipeX(rep, b + 1450, 720);
+        A($(rep, 'i'), [{ transform: 'rotate(-360deg)' }, { transform: 'none' }], { delay: b + 1700, duration: 760 });
+      },
     },
     '선정 배경>이름의 뜻': {
       pairs: [['.fp-page:nth-child(1)', 'svg.big', .14], ['.fp-page:nth-child(2)', 'svg.big', .14], ['.fp-page:nth-child(3)', 'svg.big', .14]],
@@ -3664,7 +3704,7 @@ window.deck = new Deck();
       m = plan.pairs.map(([a, b, k]) => { const from = $(was, a), to = $(target, b); return { from, to, k, F: box(from), T: box(to) }; });
     } catch (e) { m = null; }
     const r = inner.call(this, n);
-    if (m) { try { run(was, target, plan, m); } catch (e) { stop(); } }
+    if (m) { try { if (plan.custom) plan.custom(was, target, m); else run(was, target, plan, m); } catch (e) { stop(); } }
     return r;
   };
 })();
