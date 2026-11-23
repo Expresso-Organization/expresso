@@ -3744,7 +3744,12 @@ window.deck = new Deck();
     '벤치마킹 사례와 차별점>주요 기능': {
       pairs: [1, 2, 3, 4].map((g) => [`.cov .sh.g${g}`, `.fp-line .band.g${g} b`, 1]),
       a: ['.fp-line .band', '.fp-line .lane', '.fp-line svg.under', '.fp-line .st'],
-      b: ['.fp-line .st .tag', '.fp-line .loop', '.fp-line .ad'], at: [340, 800],
+      b: ['.fp-line .loop', '.fp-line .ad'], at: [340, 800],
+      extra(was, now) {
+        /* 추천 모델 꼬리표는 제 자리 맞춤(translateX(-50%))을 지닌 채 올라와야 옆으로 튀지 않습니다. */
+        $$(now, '.fp-line .st .tag').forEach((el) => A(el, [{ opacity: 0, transform: `translate(-50%, ${RISE}px)` }, { opacity: 1, transform: 'translateX(-50%)' }], { delay: 800, duration: IN_MS }));
+      },
+      skip: ['.fp-line .st .tag'],
     },
   };
 
