@@ -9,7 +9,7 @@ import { QUIET_DAYS, addDays } from "./commitments.js";
 
 /**
  * 제안을 시작하는 기록 수. 내용이 있는 기록만 센다.
- * 기획서는 「어느 정도 모였을 때」라고만 적는다. 3건은 이 구현이 정한 값이다(`.intent/intent_consultant-portfolio.md`의 열린 질문).
+ * 기획서는 「어느 정도 모였을 때」라고만 적는다. 3건은 사용자가 확정한 값이다(2026-11-23, `.intent/intent_consultant-portfolio.md`의 열린 질문).
  */
 export const PORTFOLIO_SUGGESTION_MIN_RECORDS = 3;
 

@@ -46,3 +46,7 @@
 - 로컬 확인: 제작 1건이 남은 계정의 새 대화에서 「이제 뭘 하면 좋을까요?」 → 제안 없이 그 제작을 이어 가라고 안내
 - 마지막 검증: `pnpm --filter @expresso/backend typecheck` 통과, `pnpm --filter @expresso/backend test` 795 통과, `pnpm test:infra` 433 통과(65 파일, 105초)
 
+### 19:30 · 결정 · 문턱은 기록 3건
+- 고른 선택지: 3건 유지. 결정한 사람: 사용자(「3건으로 두자」)
+- PR #272(https://github.com/Expresso-Organization/expresso/pull/272)를 열고 Auto-fix를 켬
+
