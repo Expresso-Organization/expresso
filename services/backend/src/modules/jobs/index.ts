@@ -9,3 +9,5 @@ export { calculateExplainableMatch, keywordMet } from "./match-score.js";
 export { GoalDemandService } from "./demand.js";
 export type GoalDemandApi = Pick<import("./demand.js").GoalDemandService, "forGoal">;
 export type JobMarketApi = Pick<LegacyJobMarketService, keyof LegacyJobMarketService>;
+
+export { normalizeCountry } from "./ingest/classify.js";

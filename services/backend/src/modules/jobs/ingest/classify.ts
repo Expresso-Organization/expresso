@@ -184,9 +184,18 @@ export function countryOf(region: string): string {
   return COUNTRY_OF_REGION[region] ?? region;
 }
 
+/** 수집 단계와 같은 지역 사전으로 국가 표기를 맞춘다. */
+export function normalizeCountry(country: string): string {
+  const value = country.normalize("NFKC").trim();
+  if (value === "국내") return "한국";
+  if (REGION_RULES.some(rule => rule.country === value)) return value;
+  const region = normalizeRegion(value);
+  return region ? countryOf(region) : value;
+}
+
 /** 그 나라에 속한 지역들. 국가 필터가 `location_region`으로 걸릴 때 쓴다. */
 export function regionsOf(country: string): string[] {
-  return REGION_RULES.filter((rule) => rule.country === country).map((rule) => rule.region);
+  return REGION_RULES.filter((rule) => rule.country === normalizeCountry(country)).map((rule) => rule.region);
 }
 
 /** 원격 근무는 지역이 아니라 근무 형태다. 여기서 다루지 않는다. */

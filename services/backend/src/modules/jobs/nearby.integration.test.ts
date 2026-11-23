@@ -38,6 +38,16 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("장소 검색 (mongodb)", () => 
     }
   });
 
+  it("대한민국·South Korea도 한국과 같은 결과와 근무지 미확인 후보를 반환한다", async () => {
+    const query = { locations: ["판교"], locationMode: "prefer" as const, sort: "match" as const, page: 1, limit: 50 };
+    const canonical = await service.list(userId, { ...query, country: "한국" });
+    for (const country of ["대한민국", "South Korea", "국내"]) {
+      const result = await service.list(userId, { ...query, country });
+      expect(result.summary.total).toBe(canonical.summary.total);
+      expect(result.data.map(job => job.id)).toEqual(canonical.data.map(job => job.id));
+    }
+    expect(canonical.summary.total).toBeGreaterThan(0);
+  });
   it("여러 지역을 OR로 늘려도 후보가 줄지 않고 중복이 없다", async () => {
     const single = await service.list(userId, { country: "한국", locations: ["판교"], sort: "match", page: 1, limit: 50 });
     const expanded = await service.list(userId, { country: "한국", locations: ["판교", "강남", "마포"], sort: "match", page: 1, limit: 50 });

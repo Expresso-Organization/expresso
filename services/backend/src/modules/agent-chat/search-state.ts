@@ -1,3 +1,4 @@
+import { normalizeCountry } from "../jobs/index.js";
 import { KOREAN_PLACES_BY_SPECIFICITY, koreanPlace, NEARBY_RADIUS_KM, type AgentJobSearchInput } from "@expresso/contracts";
 
 /** 예전 단일 지역 입력도 알려진 장소들로 나눈다. 모르는 지역은 그대로 검증에 넘긴다. */
@@ -19,6 +20,7 @@ export function mergeSearch(previous: AgentJobSearchInput | undefined, input: Ag
   if (locations) merged.locations = locations;
   if (families) merged.families = [...new Set(families)];
   if (!merged.country && locations?.some(place => koreanPlace(place) || /^(서울|경기|인천|부산|대전|대구|광주|울산|세종|제주|강원|충북|충남|전북|전남|경북|경남)$/.test(place))) merged.country = "한국";
+  if (merged.country) merged.country = normalizeCountry(merged.country);
   return merged;
 }
 

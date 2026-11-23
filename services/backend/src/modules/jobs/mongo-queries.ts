@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { KM_PER_DEGREE_LAT, urgentDeadlineRange, KOREAN_PLACES_BY_SPECIFICITY, NEARBY_RADIUS_KM, koreanPlace, kmPerDegreeLng, type KoreanPlace, type ListJobPostingsQuery } from "@expresso/contracts";
 import type { Document } from "mongodb";
-import { regionsOf } from "./ingest/classify.js";
+import { regionsOf, normalizeCountry } from "./ingest/classify.js";
 
 export const sha256 = (value: string) => createHash("sha256").update(value).digest("hex");
 export const postingDedupeHash = (companyName: string, title: string, descriptionRaw: string) => sha256([companyName, title, descriptionRaw].map((value) => value.normalize("NFKC").trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US")).join("\n"));
@@ -54,10 +54,11 @@ export function jobBoardFilter(query: ListJobPostingsQuery, at: Date, skip?: Fil
     if (query.deadline === "always") clauses.push({ expiresAt: null });
   }
   if (skip !== "country" && query.country) {
-    const inCountry = { locationRegion: { $in: regionsOf(query.country) } };
+    const country = normalizeCountry(query.country);
+    const inCountry = { locationRegion: { $in: regionsOf(country) } };
     // 지역을 읽지 못한 공고는 국내 채용 보드에서 온 것이다(근무지 칸에 회사 이름만 적힌 보드, 주소 형식이 다른 고용24).
     // 나라를 모른다고 기본 범위에서 빼면 그 회사 공고가 검색에서 통째로 사라진다.
-    clauses.push(query.country === UNPLACED_COUNTRY ? { $or: [inCountry, { locationRegion: null }] } : inCountry);
+    clauses.push(country === UNPLACED_COUNTRY ? { $or: [inCountry, { locationRegion: null }] } : inCountry);
   }
   // 지역이 나라보다 더 좁다 — 함께 와도 안전하게 겹친다(경기는 늘 한국 안이다).
   const locations = query.locations?.length ? query.locations : query.location ? [query.location] : [];
