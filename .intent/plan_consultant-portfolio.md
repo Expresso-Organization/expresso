@@ -15,7 +15,7 @@ date: 2026-11-23
 | 파일 | 무엇을 |
 |---|---|
 | `packages/database/src/mongodb-migrations/0040/migration.ts` (새로) | `consultant_profiles` 검증 규칙에 `portfolioSuggestion` 더하기 |
-| `packages/database/src/mongo-migrations.ts` · `mongo-build.mjs` · `schema.test.ts` | 0040 등록, dist 복사 목록, 이름 목록 |
+| `packages/database/src/mongo-migrations.ts` · `mongo-build.mjs` · `schema.test.ts` · `migrations.test.ts` | 0040 등록, dist 복사 목록, 이름 목록, 개수 |
 | `packages/database/src/documents/consultant.ts` | `ConsultantProfileDoc.portfolioSuggestion` |
 | `services/backend/src/modules/consultant/portfolio-suggestion.ts` (새로) · `.test.ts` (새로) | 문턱 상수와 판단 함수, 단위 테스트 |
 | `services/backend/src/modules/consultant/service.ts` · `index.ts` · `service.integration.test.ts` | 제안일 읽기 · 쓰기와 진입점 |

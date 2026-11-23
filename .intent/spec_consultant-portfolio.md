@@ -59,7 +59,7 @@ flowchart TD
 - 서버가 시작한 실행(`event`)에서는 도구를 쓸 수 없다(`step`의 거절). 제안도 그 실행에서는 나오지 않는다.
 - `consultant_profiles`의 검증 규칙은 `additionalProperties: false`다. 0040 없이 새 칸을 쓰면 쓰기가 실패한다. 로컬 Mongo는 워크트리들이 함께 쓰지만 0040은 허용 칸을 더하기만 한다.
 - 도구가 하나라도 빠지면 실행이 실패한다(`AGENT_ALLOWED_TOOLS` 검사). `TOOL_NAMES` · `TOOL_LABELS` · 등록을 함께 넣는다.
-- 새 마이그레이션은 `mongo-migrations.ts`의 목록, `mongo-build.mjs`의 복사 목록, `schema.test.ts`의 이름 목록 세 곳에 함께 넣는다. 복사 목록에서 빠지면 통합 테스트가 `dist`에서 원본을 찾지 못한다.
+- 새 마이그레이션은 `mongo-migrations.ts`의 목록, `mongo-build.mjs`의 복사 목록, `schema.test.ts`의 이름 목록, `migrations.test.ts`의 개수 네 곳에 함께 넣는다. 복사 목록에서 빠지면 통합 테스트가 `dist`에서 원본을 찾지 못한다.
 - 로컬의 `expresso` DB는 다른 계보의 마이그레이션(0006 · 0009의 이름이 다름)이 적용되어 있어 `main`의 마이그레이션을 받지 못한다. 로컬 확인은 작업마다 따로 둔 DB(`expresso_<주제>`)에서 한다.
 
 ## 완료 기준
