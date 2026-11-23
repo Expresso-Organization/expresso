@@ -1482,6 +1482,8 @@ svg [data-morph] { transform-box: fill-box; }
 .deck-stage[data-way="fwd"] > .slide.active.fd-reveal::before { animation: fd-bloom 1500ms cubic-bezier(.3, 0, .2, 1) 1600ms both; }
 /* 공개 장에서 다음 장으로 — 어두운 배경이 가운데 원으로 모이고(스크립트의 iris), 워드마크가 제목 자리에 앉을 즈음부터 나머지가 나타납니다. */
 .deck-stage[data-way="fwd"] > .slide.fd-reveal + .slide.active .in { animation-delay: calc(var(--dl, 0ms) + 640ms); }
+/* 시연 영상이 공개 장과 출발점 사이에 들어가도, 출발점의 등장 시차는 공개 장 다음일 때와 같게 둡니다 */
+.deck-stage[data-way="fwd"] > .slide.fd-video + .slide.active .in { animation-delay: calc(var(--dl, 0ms) + 640ms); }
 @media (prefers-reduced-motion: reduce), print {
   .deck-stage > .slide.fd-reveal .fd-roll, .deck-stage > .slide.fd-reveal .fd-roll *, .deck-stage > .slide.fd-reveal .vh-wm i, .deck-stage > .slide.fd-reveal::before { animation: none !important; }
 }
@@ -2492,6 +2494,15 @@ svg [data-morph] { transform-box: fill-box; }
   </div>
 </section>
 
+<section class="slide fp vh fd-video" data-title="시연 영상" data-kind="영상 자리 · 정지 화면" data-cam>
+  <div class="frame">
+    <div class="fd-poster">
+      <div class="wm"><span class="vh-wm" data-morph="wm20">Expre<em>ss</em>o 2.<i>0</i></span></div>
+      <div class="cap in in-fade dl-4"><i class="ph ph-play-circle"></i>시연 영상</div>
+    </div>
+  </div>
+</section>
+
 <section class="slide fp vh vh-recede" data-title="Expresso 2.0의 출발점" data-kind="에이전트 기준의 기능 묶음" data-sweep="none" data-cam data-iris=".vh-orbit .core">
   <div class="frame">
     <div class="hd" data-morph="hd"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M5.15 26.28 A17 17 0 0 0 38.85 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="hd-wm">Expresso</span><span class="no">4</span><span class="sec">개발 과정</span><span class="pg"></span></div>
@@ -2582,15 +2593,6 @@ svg [data-morph] { transform-box: fill-box; }
         <div class="g3"><b>포트폴리오 작성</b><span>디자인 · 작성 과정</span></div>
         <div class="end"><b>도착점</b><span>대화가 주 경로</span></div>
       </div>
-    </div>
-  </div>
-</section>
-
-<section class="slide fp vh fd-video" data-title="시연 영상" data-kind="영상 자리 · 정지 화면">
-  <div class="frame">
-    <div class="fd-poster">
-      <div class="wm"><span class="vh-wm in dl-2">Expre<em>ss</em>o 2.<i>0</i></span></div>
-      <div class="cap in in-fade dl-4"><i class="ph ph-play-circle"></i>시연 영상</div>
     </div>
   </div>
 </section>
