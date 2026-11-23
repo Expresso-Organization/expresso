@@ -3364,10 +3364,10 @@ window.deck = new Deck();
       }
       kf[N].backgroundColor = 'rgba(242,224,204,0)';
       anim(clone, kf, { duration: 820, delay: t0, easing: 'cubic-bezier(.45,0,.25,1)', fill: 'forwards' });
-      anim(box, [{ opacity: 0, transform: 'scale(.9)' }, { opacity: 1, transform: 'none' }], { duration: 380, delay: t0 + 470, easing: SOFT });
+      release(anim(box, [{ opacity: 0, transform: 'scale(.9)' }, { opacity: 1, transform: 'none' }], { duration: 380, delay: t0 + 470, easing: SOFT }));
     });
-    if (label) { go(label); if (!quiet) anim(label, [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 360, delay: 640, easing: SOFT }); }
-    rest.forEach((x, i) => { go(x); if (!quiet) anim(x, [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 380, delay: 2080 + i * 100, easing: SOFT }); });
+    if (label) { go(label); if (!quiet) release(anim(label, [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 360, delay: 640, easing: SOFT })); }
+    rest.forEach((x, i) => { go(x); if (!quiet) release(anim(x, [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 380, delay: 2080 + i * 100, easing: SOFT })); });
     const here = () => Number(p.st.slide.dataset.step) === f.step;
     /* 단어가 떨어지기 시작하면 카메라가 따라 내려가며 칩 줄과 설명 자리를 엽니다. */
     if (f.cam) { const [name, at, dur, ease] = f.cam; if (quiet) { if (here()) camTo(p, name, 0); } else p.revealTimers.push(setTimeout(() => { if (here()) camTo(p, name, dur, ease); }, at)); }
@@ -3402,6 +3402,8 @@ window.deck = new Deck();
   };
   /* 화면 이동을 잇는 장면들. 모두 녹화된 실제 요소를 움직이고, 덧그리는 것은 강조 · 테두리 · 옮겨 가는 제목뿐입니다. */
   const HL = 'rgba(224,180,134,.42)', LIFTC = 'rgb(242,224,204)';
+  /* 끝 상태가 원래 모습과 같은 등장 애니메이션은 끝나면 풉니다. 남겨 두면 그 요소가 움직이던 순간의 배율로 그린 그림에 고정되어, 카메라가 멈춘 뒤 글자가 흐려집니다. */
+  const release = (a) => { a.finished.then(() => a.cancel()).catch(() => {}); return a; };
   const xtra = (p) => (p.xtra || (p.xtra = { nodes: [], anims: [] }));
   const xtraClear = (p) => { if (!p.xtra) return; p.xtra.anims.forEach((a) => a.cancel()); p.xtra.nodes.forEach((n) => n.remove()); p.xtra = null; };
   /* 요소를 차례로 드러냅니다. bars면 일치도 막대를 0에서 채우고 점수를 0부터 올립니다. */
@@ -3411,10 +3413,10 @@ window.deck = new Deck();
     if (quiet) return; const X = xtra(p);
     [...d.querySelectorAll(sel)].forEach((x, i) => {
       const delay = ((o && o.delay) || 0) + 60 + i * gap;
-      X.anims.push(x.animate([{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { duration: 520, delay, easing: SOFT, fill: 'both' }));
+      X.anims.push(release(x.animate([{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { duration: 520, delay, easing: SOFT, fill: 'both' })));
       if (!o || !o.bars) return;
       const f = x.querySelector("[class*='__scoreFill']"), v = x.querySelector("[class*='__scoreValue']");
-      if (f && f.style.width) X.anims.push(f.animate([{ width: '0%' }, { width: f.style.width }], { duration: 900, delay: delay + 220, easing: SOFT, fill: 'both' }));
+      if (f && f.style.width) X.anims.push(release(f.animate([{ width: '0%' }, { width: f.style.width }], { duration: 900, delay: delay + 220, easing: SOFT, fill: 'both' })));
       const n = v ? parseInt(v.textContent, 10) : 0;
       if (n) { const t0 = performance.now() + delay + 220; v.textContent = '0'; const tick = () => { const u = Math.min(1, Math.max(0, (performance.now() - t0) / 900)); v.textContent = String(Math.round(n * (1 - Math.pow(1 - u, 3)))); if (u < 1 && v.isConnected && p.xtra === X) requestAnimationFrame(tick); else v.textContent = String(n); }; requestAnimationFrame(tick); }
     });
@@ -3453,7 +3455,7 @@ window.deck = new Deck();
     p.r.pause(o.at); const d = docOf(p); if (!d) return; const X = xtra(p); const clone = X.clone; X.clone = null;
     const box = d.querySelector(o.box), to = d.querySelector(o.to);
     if (quiet || !clone || !to) { if (clone) clone.remove(); return; }
-    if (box) X.anims.push(box.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 520, delay: 180, easing: 'ease-out', fill: 'both' }));
+    if (box) X.anims.push(release(box.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 520, delay: 180, easing: 'ease-out', fill: 'both' })));
     const T = X.title, b = wordRect(to, o.title) || to.getBoundingClientRect();
     const sc = parseFloat(d.defaultView.getComputedStyle(to).fontSize) / T.size;
     const x0 = T.a.left - 4, y0 = T.a.top - 2, dx = b.left - 4 * sc - x0, dy = b.top - 2 * sc - y0;
