@@ -1,0 +1,17 @@
+flowchart TD
+  U["사용자 대화"] --> R["에이전트 실행"]
+  R --> SV["save_record 응답에 재판단"]
+  R --> M["memory.portfolio"]
+  SV --> J["제안 시점 판단 함수"]
+  M --> J
+  J --> T["suggest_portfolio 도구"]
+  T --> P[("프로필 제안일 0040")]
+  T --> C["선택지 부품 두 단추"]
+  C --> W["웹 등록표"]
+  C --> S["제작 시작 도구 세 개"]
+  S --> K["포트폴리오 제작 카드"]
+  classDef done fill:#d1fae5,stroke:#059669,color:#000000
+  classDef doing fill:#fef3c7,stroke:#d97706,color:#000000
+  classDef decide fill:#fee2e2,stroke:#dc2626,color:#000000
+  classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4,color:#000000
+  class R,SV,M,J,T,P,C,W,S,K done

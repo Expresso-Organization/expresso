@@ -4,6 +4,7 @@ export { ConsultantLimitError, ConsultantService, type ConsultantProfile } from 
 export { ConsultantCommitments, ConsultantInputError, ConsultantNotFoundError, seoulDay, addDays, QUIET_DAYS, REMINDER_DAYS, type CheckinDependencies } from "./commitments.js";
 export { ConsultantDiagnoses, type DiagnosisAssessment, type DiagnosisNow } from "./diagnoses.js";
 export { registerConsultantRoutes } from "./routes.js";
-export type ConsultantApi = Pick<ConsultantService, "profile" | "setStage" | "removePreference" | "applyUpdate" | "setOutreach">;
+export { PORTFOLIO_SUGGESTION_MIN_RECORDS, portfolioSuggestion, type PortfolioSuggestion, type PortfolioSuggestionInput } from "./portfolio-suggestion.js";
+export type ConsultantApi = Pick<ConsultantService, "profile" | "setStage" | "removePreference" | "applyUpdate" | "setOutreach" | "portfolioSuggestedOn" | "markPortfolioSuggested">;
 export type ConsultantCommitmentApi = Pick<ConsultantCommitments, "open" | "get" | "create" | "update" | "answer" | "checkins" | "dismissQuiet" | "runCheckins">;
 export type ConsultantDiagnosisApi = Pick<import("./diagnoses.js").ConsultantDiagnoses, "current" | "saveDemand" | "assess">;

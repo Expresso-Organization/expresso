@@ -48,6 +48,12 @@ export interface AgentBrewDeps {
   designRevise(userId: string, brewId: string, input: { instruction: string; screen: string }): Promise<{ designMessageId: string }>;
   /** 디자인 대화의 지금 상태를 모델에 넘길 만큼 줄인 것. 아직 열지 않았거나 디자인 대화가 없는 서버면 null이다. */
   designState(userId: string, brewId: string): Promise<AgentBrewDesignState | null>;
+  /**
+   * 사용자의 끝나지 않은 제작 수(휴지통 제외). 어느 대화에서 시작했든 센다 — 사이드바의 「만드는 중」과 같은 것이다
+   * (`EngagementApi.home`의 `activeBrews`, 5건까지). 포트폴리오를 먼저 권할 때인지 볼 때 쓴다.
+   * 연결하지 않은 서버(테스트 · 미리보기)에서는 이 대화에서 시작한 제작만 본다.
+   */
+  openBrews?(userId: string): Promise<number>;
 }
 /** 모델에 넘기는 디자인 대화. 이름만 싣는다 — 색 값 · 마크업은 싣지 않는다. */
 export interface AgentBrewDesignState {

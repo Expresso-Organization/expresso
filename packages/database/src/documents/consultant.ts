@@ -21,6 +21,8 @@ export interface ConsultantProfileDoc {
    * `quiet`는 그 연락을 사용자가 아직 보지 않았다는 뜻이다.
    */
   outreach?: { enabled: boolean; decidedAt: Date; lastNotifiedOn: string | null; lastQuietOn: string | null; quiet: boolean };
+  /** 컨설턴트가 포트폴리오 제작을 먼저 제안한 마지막 서울 날짜. 제안한 적이 없는 사용자에게는 칸이 없다(0040). */
+  portfolioSuggestion?: { lastSuggestedOn: string };
   createdAt: Date;
   updatedAt: Date;
 }
