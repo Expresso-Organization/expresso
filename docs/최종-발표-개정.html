@@ -2064,7 +2064,7 @@ svg [data-morph] { transform-box: fill-box; }
       <p class="sub">문장으로 찾고, 일치도와 요건별 근거로 고르는 채용 공고</p>
     </div>
     <div class="body"><div class="rx-stage"></div></div>
-    <script type="application/json" class="rx-cfg">{"scene": "jobs2", "parts": {"search": {"sel": ["[class*='__queryCard']", "[class*='__searchBar']"], "pad": 32, "reveal": {"sel": "[class*='__parsedRow'] > *", "gap": 90}}, "results": {"sel": ["[class*='__results ']", "[class*='__results']"], "clip": "[class*='__rows'] > :nth-child(3)", "pad": 32, "fade": true, "reveal": {"sel": "[class*='__resultsHead'], [class*='__rows'] > *", "gap": 90}}, "reqs": {"sel": ["[class*='qBDErq__section']"], "text": "자격 요건", "pad": 32, "style": "width: 760px; max-width: 760px;", "reveal": {"sel": "[class*='__blockTitleRow'], [class*='__requirement']:not([class*='Label']):not([class*='Note'])", "gap": 150}}}, "notes": {"n1": {"x": 164, "y": 330, "k": "AI 조건 해석", "t": "문장을 지역 · 직무 조건으로 바꿔 검색"}, "n2": {"x": 960, "y": 300, "w": 700, "k": "내 기록과의 일치도", "t": "커리어 기록 28건을 추천 모델로 비교한 점수 순 정렬"}, "n3": {"x": 1230, "y": 300, "w": 480, "k": "요건별 근거 기록", "t": "채용 공고 요건마다 근거가 된 내 기록을 연결"}}, "steps": [{"do": [[0, "seek", "search", 3300], [0, "place", "search", 164, 120, 1.5], [0, "show", "search"], [500, "play", "search", 3300, 9300], [5600, "note", "n1"]]}, {"do": [[0, "hide", "n1"], [80, "place", "search", 0, 34, 0.9], [640, "seek", "results", 9300], [640, "place", "results", 0, 170, 1.22], [640, "show", "results"], [900, "play", "results", 9300, 11420], [1500, "note", "n2"]]}, {"do": [[0, "hide", "n2"], [0, "out", "search"], [0, "out", "results"], [240, "seek", "reqs", 16800], [240, "place", "reqs", 0, 150, 1.5], [240, "show", "reqs"], [1500, "note", "n3"]]}]}</script>
+    <script type="application/json" class="rx-cfg">{"scene": "jobs2", "parts": {"search": {"sel": ["[class*='__queryCard']", "[class*='__searchBar']"], "pad": 32, "css": "[class*='__parsedRow'] > *:not([data-rx-go]){opacity:0!important}", "fly": {"input": "[class*='__queryText']", "row": "[class*='__parsedRow']", "label": "[class*='__parsedLabel']", "chip": "button[class*='__parsedChip']", "rest": "[class*='__parsedAdd'], [class*='__parsedSaveForm']", "words": [{"w": "서울", "chip": 0}, {"w": "프로덕트 데이터 분석가", "chip": 1}], "note": "n1", "step": 1}}, "results": {"sel": ["[class*='__results ']", "[class*='__results']"], "clip": "[class*='__rows'] > :nth-child(3)", "pad": 32, "fade": true, "reveal": {"sel": "[class*='__resultsHead'], [class*='__rows'] > *", "gap": 90}}, "reqs": {"sel": ["[class*='qBDErq__section']"], "text": "자격 요건", "pad": 32, "style": "width: 760px; max-width: 760px;", "reveal": {"sel": "[class*='__blockTitleRow'], [class*='__requirement']:not([class*='Label']):not([class*='Note'])", "gap": 150}}}, "notes": {"n1": {"x": 164, "y": 330, "k": "AI 조건 해석", "t": "문장을 지역 · 직무 조건으로 바꿔 검색"}, "n2": {"x": 960, "y": 300, "w": 700, "k": "내 기록과의 일치도", "t": "커리어 기록 28건을 추천 모델로 비교한 점수 순 정렬"}, "n3": {"x": 1230, "y": 300, "w": 480, "k": "요건별 근거 기록", "t": "채용 공고 요건마다 근거가 된 내 기록을 연결"}}, "steps": [{"do": [[0, "seek", "search", 3300], [0, "place", "search", 164, 120, 1.5], [0, "show", "search"], [500, "play", "search", 3300, 8000]]}, {"do": [[0, "hide", "n1"], [80, "place", "search", 0, 34, 0.9], [640, "seek", "results", 9300], [640, "place", "results", 0, 170, 1.22], [640, "show", "results"], [900, "play", "results", 9300, 11420], [1500, "note", "n2"]]}, {"do": [[0, "hide", "n2"], [0, "out", "search"], [0, "out", "results"], [240, "seek", "reqs", 16800], [240, "place", "reqs", 0, 150, 1.5], [240, "show", "reqs"], [1500, "note", "n3"]]}]}</script>
   </div>
 </section>
 
@@ -3265,13 +3265,13 @@ window.deck = new Deck();
   const load = (src) => new Promise((ok, no) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = no; document.head.appendChild(s); });
   const libReady = () => window.rrweb ? Promise.resolve() : load(BASE + 'rrweb.js');
   const need = (k) => (window.__rrData && window.__rrData[k]) ? Promise.resolve() : load(BASE + k + '.js');
-  const KEEP = 'html,body{background:transparent!important}body *{visibility:hidden!important;animation:none!important;transition:none!important}[data-rx-keep],[data-rx-keep] *{visibility:visible!important}';
+  const KEEP = 'html,body{background:transparent!important}body *{visibility:hidden!important;animation:none!important;transition:none!important}[data-rx-keep],[data-rx-keep] *,[data-rx-ov]{visibility:visible!important}';
   const state = new WeakMap();
   let raf = 0, active = null;
   const docOf = (p) => p.host.querySelector('iframe')?.contentDocument;
   const findEl = (p) => {
     const d = docOf(p); if (!d || !d.body) return null;
-    if (!d.getElementById('__rxk')) { const st = d.createElement('style'); st.id = '__rxk'; st.textContent = KEEP; (d.head || d.documentElement).appendChild(st); }
+    if (!d.getElementById('__rxk')) { const st = d.createElement('style'); st.id = '__rxk'; st.textContent = KEEP + (p.cfg.css || ''); (d.head || d.documentElement).appendChild(st); }
     for (const sel of p.cfg.sel) {
       const list = [...d.querySelectorAll(sel)].filter((e) => !p.cfg.text || e.textContent.includes(p.cfg.text));
       const e = list.find((x) => { const r = x.getBoundingClientRect(); return r.width > 0 && r.height > 0; });
@@ -3280,6 +3280,78 @@ window.deck = new Deck();
     return null;
   };
   const REVEAL = 'opacity 460ms cubic-bezier(.2,.8,.2,1), transform 560ms cubic-bezier(.2,.8,.2,1)';
+  /* 검색 문장 속 단어가 조건 칩으로 옮겨 가는 장면. 칩 · 입력칸 · 문장은 녹화된 실제 요소이고, 강조와 옮겨 가는 단어만 덧그립니다. */
+  const FLY = 'cubic-bezier(.65,0,.35,1)', SOFT = 'cubic-bezier(.2,.8,.2,1)';
+  const wordRect = (node, word) => {
+    const t = [...node.childNodes].find((c) => c.nodeType === 3 && c.data.includes(word)); if (!t) return null;
+    const rg = node.ownerDocument.createRange(); const i = t.data.indexOf(word); rg.setStart(t, i); rg.setEnd(t, i + word.length);
+    return rg.getBoundingClientRect();
+  };
+  const overlay = (d, css, text) => {
+    const e = d.createElement('div'); e.setAttribute('data-rx-ov', '');
+    e.style.cssText = 'position:fixed;pointer-events:none;margin:0;box-sizing:border-box;white-space:pre;' + css;
+    if (text) e.textContent = text; d.body.appendChild(e); return e;
+  };
+  const flyClear = (p) => {
+    if (!p.fly) return; p.fly.anims.forEach((a) => a.cancel()); p.fly.nodes.forEach((n) => n.remove());
+    p.fly.marked.forEach((x) => { x.removeAttribute('data-rx-go'); x.style.transformOrigin = ''; }); p.fly = null;
+  };
+  const flyTick = (p, el) => {
+    if (p.fly) return;
+    const f = p.cfg.fly; const d = el.ownerDocument, w = d.defaultView;
+    const input = el.querySelector(f.input), row = el.querySelector(f.row);
+    const chips = row ? [...row.querySelectorAll(f.chip)] : [];
+    if (!input || !input.value || chips.length < f.words.length) return;
+    const fly = p.fly = { nodes: [], anims: [], marked: [] };
+    const anim = (e, kf, o) => { const a = e.animate(kf, Object.assign({ fill: 'both' }, o)); fly.anims.push(a); return a; };
+    const go = (x) => { x.setAttribute('data-rx-go', ''); fly.marked.push(x); return x; };
+    const ics = w.getComputedStyle(input), ir = input.getBoundingClientRect();
+    const ccs = w.getComputedStyle(chips[0]);
+    /* 강조색은 제품 토큰 --ex-accent-soft(#e0b486), 밑줄은 --ex-accent(#9a4030)에 투명도를 준 값입니다. */
+    const hl = 'rgba(224,180,134,.42)', UNDER = 'rgba(154,64,48,.6)', LIFT = 'rgb(242,224,204)', chipInk = ccs.color, ink = ics.color;
+    /* 입력칸 글자의 위치를 재는 거울. 화면에는 그리지 않습니다. */
+    const mirror = overlay(d, `left:${ir.left + parseFloat(ics.borderLeftWidth) + parseFloat(ics.paddingLeft) - input.scrollLeft}px;top:${ir.top}px;height:${ir.height}px;line-height:${ir.height}px;font:${ics.font};letter-spacing:${ics.letterSpacing};visibility:hidden!important;`, input.value);
+    fly.nodes.push(mirror);
+    const PX = 4, PY = 2, quiet = p.quiet;
+    const rest = [...row.querySelectorAll(f.rest)].map((x) => x.closest(f.row + ' > *') || x);
+    const label = row.querySelector(f.label);
+    f.words.forEach((wd, i) => {
+      const a = wordRect(mirror, wd.w), chip = chips[wd.chip], box = chip.closest(f.row + ' > *') || chip;
+      const b = wordRect(chip, wd.w); if (!a || !b) return;
+      const mark = overlay(d, `left:${a.left - PX}px;top:${a.top - PY}px;width:${a.width + PX * 2}px;height:${a.height + PY * 2}px;border-radius:6px;background:${hl};z-index:1;mix-blend-mode:multiply;transform-origin:0 50%;`);
+      fly.nodes.push(mark);
+      const br = box.getBoundingClientRect(); box.style.transformOrigin = `${b.left + b.width / 2 - br.left}px 50%`; go(box);
+      /* 단어가 떠난 자리에는 밑줄이 남아, 칩이 문장의 어느 부분에서 왔는지 계속 보입니다. */
+      const under = { top: a.bottom + 2 + 'px', height: '2px', borderRadius: '1px', backgroundColor: UNDER };
+      if (quiet) { Object.assign(mark.style, under); return; }
+      const t0 = 820 + i * 220;
+      anim(mark, [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], { duration: 380 + i * 80, delay: 120 + i * 200, easing: SOFT });
+      anim(mark, [{ top: a.top - PY + 'px', height: a.height + PY * 2 + 'px', borderRadius: '6px', backgroundColor: hl }, under], { duration: 520, delay: t0 + 160, easing: FLY });
+      /* 강조된 단어가 떠올라 칩의 같은 낱말 위로 내려앉고, 그 자리에서 실제 칩이 드러납니다. */
+      const s = parseFloat(ccs.fontSize) / parseFloat(ics.fontSize);
+      const x0 = a.left - PX, y0 = a.top - PY;
+      const dx = b.left - PX * s - x0, dy = b.top - PY * s - y0;
+      const clone = overlay(d, `left:${x0}px;top:${y0}px;padding:${PY}px ${PX}px;line-height:${a.height}px;border-radius:6px;font:${ics.font};letter-spacing:${ics.letterSpacing};color:${ink};background:${LIFT};z-index:3;transform-origin:0 0;opacity:0;`, wd.w);
+      fly.nodes.push(clone);
+      const kf = []; const N = 16;
+      for (let k = 0; k <= N; k++) {
+        const t = k / N, u = 1 - t;
+        /* 아래로 먼저 빠져 문장 글자와 겹치지 않게 한 뒤 칩 쪽으로 옮겨 갑니다. */
+        const x = 3 * u * t * t * dx * 0.55 + t * t * t * dx, y = 3 * u * u * t * 34 + 3 * u * t * t * 36 + t * t * t * dy;
+        const sc = 1 + (s - 1) * t + 0.06 * Math.sin(Math.PI * t);
+        kf.push({ offset: t, transform: `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px) scale(${sc.toFixed(4)})`, opacity: t < 0.8 ? 1 : 1 - (t - 0.8) / 0.2,
+          boxShadow: `0 ${(10 * Math.sin(Math.PI * t)).toFixed(1)}px ${(22 * Math.sin(Math.PI * t)).toFixed(1)}px rgba(126,50,37,${(0.2 * Math.sin(Math.PI * t)).toFixed(3)})`,
+          color: t < 0.5 ? ink : chipInk, backgroundColor: LIFT });
+      }
+      kf[N].backgroundColor = 'rgba(242,224,204,0)';
+      anim(clone, kf, { duration: 820, delay: t0, easing: 'cubic-bezier(.45,0,.25,1)', fill: 'forwards' });
+      anim(box, [{ opacity: 0, transform: 'scale(.9)' }, { opacity: 1, transform: 'none' }], { duration: 380, delay: t0 + 470, easing: SOFT });
+    });
+    if (label) { go(label); if (!quiet) anim(label, [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 360, delay: 640, easing: SOFT }); }
+    rest.forEach((x, i) => { go(x); if (!quiet) anim(x, [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 380, delay: 2080 + i * 100, easing: SOFT }); });
+    const note = f.note && p.st && p.st.notes[f.note];
+    if (note) { const show = () => { if (Number(p.st.slide.dataset.step) === f.step) note.el.classList.add('on'); }; if (quiet) show(); else p.revealTimers.push(setTimeout(show, 2400)); }
+  };
   const update = (p, instant) => {
     const el = findEl(p); const d = docOf(p);
     if (d) d.querySelectorAll('[data-rx-keep]').forEach((x) => { if (x !== el) x.removeAttribute('data-rx-keep'); });
@@ -3297,6 +3369,7 @@ window.deck = new Deck();
         p.revealTimers.push(setTimeout(() => { x.style.setProperty('transition', REVEAL, 'important'); x.style.setProperty('opacity', '1', 'important'); x.style.setProperty('transform', 'none', 'important'); }, 60 + i * p.cfg.reveal.gap));
       });
     }
+    if (p.cfg.fly) flyTick(p, el);
     const r = el.getBoundingClientRect(); let bottom = r.bottom;
     if (p.cfg.clip) { const c = el.querySelector(p.cfg.clip); if (c) bottom = Math.min(bottom, c.getBoundingClientRect().bottom); }
     const { x, y, k } = p.at; const pad = p.cfg.pad;
@@ -3333,7 +3406,7 @@ window.deck = new Deck();
       el.innerHTML = `<div class="k"></div><div class="t"></div>`; el.querySelector('.k').textContent = n.k; el.querySelector('.t').textContent = n.t;
       stage.appendChild(el); notes[id] = { el, timer: null };
     }
-    const st = { cfg, parts, notes }; state.set(s, st); return st;
+    const st = { cfg, parts, notes, slide: s }; Object.values(parts).forEach((p) => { p.st = st; }); state.set(s, st); return st;
   };
   const timers = [];
   const run = (st, act, instant) => {
@@ -3356,7 +3429,7 @@ window.deck = new Deck();
   const reset = (st) => {
     clearAll(st);
     Object.values(st.parts).forEach((p) => {
-      p.r.pause(0); p.shown = false; p.el.classList.remove('on', 'leave');
+      flyClear(p); p.r.pause(0); p.shown = false; p.el.classList.remove('on', 'leave');
       const d = docOf(p); if (d) d.querySelectorAll('[data-rx-seen]').forEach((x) => { x.removeAttribute('data-rx-seen'); x.style.opacity = ''; x.style.transform = ''; x.style.transition = ''; });
     });
     Object.values(st.notes).forEach((n) => n.el.classList.remove('on'));
