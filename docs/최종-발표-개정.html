@@ -738,19 +738,25 @@ svg [data-morph] { transform-box: fill-box; }
 
 /* ── 담당 — 서비스 흐름 순서의 열 ─────────────────────── */
 .fp-team { display: grid; grid-template-columns: repeat(5, 1fr); flex: 1 1 auto; min-height: 0; }
-/* 주요 화면 — 제안서의 주요 화면 장과 같은 틀: 왼쪽 실제 앱 완성 화면, 오른쪽 화면 목록(누르면 그 화면으로 바뀜). 글자는 발표장 기준으로 키움 */
-.fp-show { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 1088px 1fr; gap: 48px; align-items: center; }
+/* 주요 화면 — 왼쪽 실제 앱 화면이 차례로 바뀌고, 오른쪽 글이 지금 화면의 보기를 함께 가리킵니다 */
+.fp-show { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 1088px 1fr; gap: 56px; align-items: center; }
 .fp-show .shot { position: relative; width: 1088px; height: 680px; border-radius: 14px; overflow: hidden; background: var(--ex-white); box-shadow: 0 0 0 1px rgba(22, 34, 58, .08), 0 24px 64px rgba(22, 34, 58, .14), 0 4px 12px rgba(22, 34, 58, .06); }
-.fp-show .shot img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity 360ms cubic-bezier(.4, 0, .2, 1); }
+.fp-show .shot img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity 700ms cubic-bezier(.4, 0, .2, 1); }
 .fp-show .shot img.on { opacity: 1; }
-.fp-show .screens { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
-.fp-show .pick { display: block; width: 100%; padding: 18px 22px; border: 1px solid transparent; border-radius: 14px; background: transparent; text-align: left; font: inherit; cursor: pointer; transition: background 200ms ease, border-color 200ms ease; }
-.fp-show .pick:hover { background: var(--ex-surface-100); }
-.fp-show .pick b { display: block; font-size: 25px; font-weight: 600; letter-spacing: -.02em; color: var(--ex-slate-500); }
-.fp-show .pick span { display: block; margin-top: 6px; font-size: 19px; color: var(--ex-slate-400); }
-.fp-show .pick.on { background: var(--ex-bean-50); border-color: rgba(154, 64, 48, .24); }
-.fp-show .pick.on b { color: var(--ex-bean-ink); }
-.fp-show .pick.on span { color: var(--ex-espresso); }
+.fp-show .txt { display: flex; flex-direction: column; gap: 40px; }
+.fp-show .k { font-size: 20px; font-weight: 600; letter-spacing: -.01em; color: var(--ex-espresso); }
+.fp-show .lead { margin-top: 10px; font-size: 34px; font-weight: 700; line-height: 1.3; letter-spacing: -.035em; color: var(--ex-ink-900); word-break: keep-all; }
+.fp-show .cats { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px; }
+.fp-show .cats span { display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px 7px 11px; border-radius: 999px; background: var(--ex-white); border: 1px solid var(--ex-line-200); font-size: 19px; font-weight: 500; color: var(--ex-slate-700); }
+.fp-show .cats i { font-size: 20px; color: var(--ex-espresso); }
+.fp-show .views { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.fp-show .views button { display: flex; align-items: center; gap: 16px; width: 100%; padding: 14px 18px; border: 1px solid transparent; border-radius: 14px; background: transparent; text-align: left; font: inherit; cursor: pointer; transition: background 400ms ease, border-color 400ms ease; }
+.fp-show .views .ic { flex: none; width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center; font-size: 26px; color: var(--ex-slate-500); background: var(--ex-white); border: 1px solid var(--ex-line-200); transition: color 400ms ease, border-color 400ms ease; }
+.fp-show .views b { display: block; font-size: 26px; font-weight: 700; letter-spacing: -.02em; color: var(--ex-slate-500); transition: color 400ms ease; }
+.fp-show .views small { display: block; margin-top: 4px; font-size: 19px; color: var(--ex-slate-400); }
+.fp-show .views button.on { background: var(--ex-bean-50); border-color: rgba(154, 64, 48, .24); }
+.fp-show .views button.on .ic { color: var(--ex-espresso); border-color: rgba(154, 64, 48, .3); }
+.fp-show .views button.on b { color: var(--ex-ink-900); }
 .fp-team .col { padding: 0 28px; border-left: 1px solid var(--ex-line-200); display: flex; flex-direction: column; }
 .fp-team .col:first-child { padding-left: 0; border-left: none; }
 .fp-team .stage { display: flex; align-items: center; gap: 12px; height: 56px; font-size: 26px; font-weight: 600; color: var(--ex-espresso); letter-spacing: -.01em; }
@@ -2131,20 +2137,26 @@ svg [data-morph] { transform-box: fill-box; }
     <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M5.15 26.28 A17 17 0 0 0 38.85 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="hd-wm">Expresso</span><span class="no">2</span><span class="sec">프로젝트 정체성과 핵심 가치</span><span class="pg"></span></div>
     <div class="head in dl-2">
       <h2>커리어 기록</h2>
-      <p class="sub">카테고리별로 쌓고, AI 질문으로 채워 재료로 쓰는 커리어 기록</p>
+      <p class="sub">경험 · 프로젝트 · 이력을 정리하고 여러 보기로 보는 커리어 기록</p>
     </div>
     <div class="body">
       <div class="fp-show">
-        <div class="shot in dl-3"><img src="assets/최종-발표/career-screen-1.png" alt="프로젝트 기록 갤러리" width="1440" height="900" class="on"><img src="assets/최종-발표/career-screen-2.png" alt="프로젝트 기록 타임라인" width="1440" height="900"><img src="assets/최종-발표/career-screen-3.png" alt="AI 질문으로 기록 만들기" width="1440" height="900"><img src="assets/최종-발표/career-screen-4.png" alt="AI가 정리한 기록 문서와 변경 제안" width="1440" height="900"><img src="assets/최종-발표/career-screen-5.png" alt="연결된 경험이 표시된 기록 문서" width="1440" height="900"></div>
-        <aside class="in dl-4">
-          <ol class="screens">
-            <li><button type="button" class="pick on" data-shot="0" aria-pressed="true"><b>커리어 기록 · 프로젝트</b><span>카테고리별 기록 · 갤러리 보기</span></button></li>
-            <li><button type="button" class="pick" data-shot="1" aria-pressed="false"><b>커리어 기록 · 타임라인</b><span>기간순 기록 보기</span></button></li>
-            <li><button type="button" class="pick" data-shot="2" aria-pressed="false"><b>AI로 만들기</b><span>질문 답변으로 기록 문서 작성</span></button></li>
-            <li><button type="button" class="pick" data-shot="3" aria-pressed="false"><b>AI 정리 제안</b><span>답변을 문서로 정리 · 고칠 곳 제안</span></button></li>
-            <li><button type="button" class="pick" data-shot="4" aria-pressed="false"><b>재료로 쓰기</b><span>기록 연결 · 공고 매칭과 포트폴리오의 근거</span></button></li>
-          </ol>
-        </aside>
+        <div class="shot in dl-3"><img src="assets/최종-발표/career-screen-1.png" alt="프로젝트 기록 갤러리 보기" width="1440" height="900" class="on"><img src="assets/최종-발표/career-screen-2.png" alt="프로젝트 기록 테이블 보기" width="1440" height="900"><img src="assets/최종-발표/career-screen-3.png" alt="프로젝트 기록 타임라인 보기" width="1440" height="900"></div>
+        <div class="txt">
+          <div class="in dl-4">
+            <div class="k">기록 정리</div>
+            <div class="lead">경험 · 프로젝트 · 이력의<br>카테고리별 문서 정리</div>
+            <div class="cats"><span><i class="ph ph-chat-circle"></i>경험</span><span><i class="ph ph-briefcase"></i>프로젝트</span><span><i class="ph ph-graduation-cap"></i>학력 · 이력</span><span><i class="ph ph-certificate"></i>자격증 · 수상</span><span><i class="ph ph-article"></i>학술 · 집필</span><span><i class="ph ph-users-three"></i>활동 · 리더십</span><span><i class="ph ph-code"></i>스킬 · 도구</span></div>
+          </div>
+          <div class="in dl-5">
+            <div class="k">다양한 보기</div>
+            <ol class="views">
+              <li><button type="button" data-shot="0" class="on"><span class="ic"><i class="ph ph-squares-four"></i></span><span><b>갤러리</b><small>대표 그림 · 성과 수치 카드</small></span></button></li>
+              <li><button type="button" data-shot="1"><span class="ic"><i class="ph ph-table"></i></span><span><b>테이블</b><small>역할 · 기술 · 기간 · 성과의 목록 정리</small></span></button></li>
+              <li><button type="button" data-shot="2"><span class="ic"><i class="ph ph-calendar-blank"></i></span><span><b>타임라인</b><small>기간순 커리어 흐름</small></span></button></li>
+            </ol>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -4013,13 +4025,27 @@ window.deck = new Deck();
 </script>
 
 <script>
-  /* 주요 화면 장 — 오른쪽 목록을 누르면 왼쪽 완성 화면이 바뀝니다(제안서의 주요 화면 장과 같은 방식). */
-  document.addEventListener('click', (e) => {
-    const b = e.target.closest && e.target.closest('.fp-show .pick'); if (!b) return;
-    const box = b.closest('.fp-show'); const n = Number(b.dataset.shot);
-    box.querySelectorAll('.shot img').forEach((im, i) => im.classList.toggle('on', i === n));
-    box.querySelectorAll('.pick').forEach((x) => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on ? 'true' : 'false'); });
-  });
+  /* 주요 화면 장 — 장이 보이는 동안 왼쪽 화면이 4.5초마다 다음 보기로 바뀌고, 오른쪽 보기 목록이 같은 항목을 가리킵니다. 목록을 누르면 그 화면으로 바로 바뀝니다. */
+  (() => {
+    const pick = (box, n) => {
+      box.querySelectorAll('.shot img').forEach((im, i) => im.classList.toggle('on', i === n));
+      box.querySelectorAll('.views button').forEach((x, i) => x.classList.toggle('on', i === n));
+      box.dataset.n = n; box.dataset.t = Date.now();
+    };
+    document.addEventListener('click', (e) => {
+      const b = e.target.closest && e.target.closest('.fp-show .views button'); if (!b) return;
+      pick(b.closest('.fp-show'), Number(b.dataset.shot));
+    });
+    setInterval(() => {
+      document.querySelectorAll('.fp-show').forEach((box) => {
+        const on = box.closest('.slide.active');
+        if (!on) { if (box.dataset.n !== '0') pick(box, 0); box.dataset.t = Date.now(); return; }
+        if (Date.now() - Number(box.dataset.t || 0) < 4500) return;
+        const n = box.querySelectorAll('.shot img').length;
+        pick(box, (Number(box.dataset.n || 0) + 1) % n);
+      });
+    }, 250);
+  })();
 </script>
 <script>
   window.deckEditorConfig = {
