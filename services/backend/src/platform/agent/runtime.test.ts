@@ -18,7 +18,7 @@ async function connectTools(overrides: Partial<AgentInput> = {}) {
   await client.connect(clientSide);
   return { client, emit };
 }
-const base = () => ({ userId: "00000000-0000-4000-8000-0000000000aa", records: { list: vi.fn(async () => ({ categories: [], records: [] })), read: vi.fn(async () => []) }, review: vi.fn(), saveRecord: vi.fn(), readLink: vi.fn(), recordCategories: [], askForm: vi.fn(), jobGoal: null, goalDraft: vi.fn(), gapReview: vi.fn(), planDraft: vi.fn(), replanDraft: vi.fn(), readPlan: vi.fn(), propose: vi.fn(), page: { read: vi.fn(), edit: vi.fn() }, askChoice: vi.fn(), memory: null, updateMemory: vi.fn(), makeCommitment: vi.fn(), updateCommitment: vi.fn(), goalDemand: vi.fn(), recordDiagnosis: vi.fn(), appendToRecord: vi.fn(), searchJobs: vi.fn(), searchActivities: vi.fn(), brews: [], startBrew: vi.fn(), startFreeBrew: vi.fn(), importPosting: vi.fn(), saveInterviewAnswer: vi.fn(), readRepository: vi.fn(), attachWorkMaterials: vi.fn(), proposeDesign: vi.fn(), reviseDesign: vi.fn() });
+const base = () => ({ userId: "00000000-0000-4000-8000-0000000000aa", records: { list: vi.fn(async () => ({ categories: [], records: [] })), read: vi.fn(async () => []) }, review: vi.fn(), saveRecord: vi.fn(), readLink: vi.fn(), recordCategories: [], askForm: vi.fn(), jobGoal: null, goalDraft: vi.fn(), gapReview: vi.fn(), planDraft: vi.fn(), replanDraft: vi.fn(), readPlan: vi.fn(), propose: vi.fn(), page: { read: vi.fn(), edit: vi.fn() }, askChoice: vi.fn(), memory: null, updateMemory: vi.fn(), makeCommitment: vi.fn(), updateCommitment: vi.fn(), goalDemand: vi.fn(), recordDiagnosis: vi.fn(), appendToRecord: vi.fn(), searchJobs: vi.fn(), searchActivities: vi.fn(), brews: [], startBrew: vi.fn(), startFreeBrew: vi.fn(), importPosting: vi.fn(), saveInterviewAnswer: vi.fn(), readRepository: vi.fn(), attachWorkMaterials: vi.fn(), proposeDesign: vi.fn(), reviseDesign: vi.fn(), portfolioNow: vi.fn(async () => null), suggestPortfolio: vi.fn() });
 describe("Claude 채팅 실행 어댑터", () => {
   it("글 덩어리가 새로 시작되면 앞의 글과 빈 줄로 띄운다. 도구 앞에 한 말이 마지막 답변과 붙지 않는다", async () => {
     const events: AgentEvent[] = [];
@@ -46,7 +46,7 @@ describe("Claude 채팅 실행 어댑터", () => {
     await new ClaudeAgentRuntime().run({ messages: [], context: [], signal: new AbortController().signal, emit: async event => { events.push(event); }, ...base() });
     expect(events).toEqual([{ type: "text", text: "안녕하세요" }]);
     expect(sdk.query.mock.lastCall![0].options).toMatchObject({ tools: [], settingSources: [], strictMcpConfig: true, persistSession: false, permissionMode: "dontAsk" });
-    expect(sdk.query.mock.lastCall![0].options.allowedTools).toEqual(["mcp__expresso__propose_record_edit", "mcp__expresso__list_career_records", "mcp__expresso__read_career_records", "mcp__expresso__record_requirement_review", "mcp__expresso__save_record", "mcp__expresso__propose_job_goal_update", "mcp__expresso__record_gap_review", "mcp__expresso__propose_preparation_plan", "mcp__expresso__read_preparation_plan", "mcp__expresso__propose_replan", "mcp__expresso__read_page_element", "mcp__expresso__edit_page_element", "mcp__expresso__ask_choice", "mcp__expresso__ask_form", "mcp__expresso__update_memory", "mcp__expresso__make_commitment", "mcp__expresso__update_commitment", "mcp__expresso__read_goal_demand", "mcp__expresso__record_diagnosis", "mcp__expresso__append_to_record", "mcp__expresso__search_jobs", "mcp__expresso__search_activities", "mcp__expresso__show_table", "mcp__expresso__start_portfolio", "mcp__expresso__start_free_portfolio", "mcp__expresso__import_job_posting", "mcp__expresso__read_repository", "mcp__expresso__attach_work_materials", "mcp__expresso__save_interview_answer", "mcp__expresso__propose_design_options", "mcp__expresso__revise_design_screen", "mcp__expresso__read_link"]);
+    expect(sdk.query.mock.lastCall![0].options.allowedTools).toEqual(["mcp__expresso__propose_record_edit", "mcp__expresso__list_career_records", "mcp__expresso__read_career_records", "mcp__expresso__record_requirement_review", "mcp__expresso__save_record", "mcp__expresso__propose_job_goal_update", "mcp__expresso__record_gap_review", "mcp__expresso__propose_preparation_plan", "mcp__expresso__read_preparation_plan", "mcp__expresso__propose_replan", "mcp__expresso__read_page_element", "mcp__expresso__edit_page_element", "mcp__expresso__ask_choice", "mcp__expresso__ask_form", "mcp__expresso__update_memory", "mcp__expresso__make_commitment", "mcp__expresso__update_commitment", "mcp__expresso__read_goal_demand", "mcp__expresso__record_diagnosis", "mcp__expresso__append_to_record", "mcp__expresso__search_jobs", "mcp__expresso__search_activities", "mcp__expresso__show_table", "mcp__expresso__start_portfolio", "mcp__expresso__start_free_portfolio", "mcp__expresso__import_job_posting", "mcp__expresso__read_repository", "mcp__expresso__attach_work_materials", "mcp__expresso__save_interview_answer", "mcp__expresso__propose_design_options", "mcp__expresso__revise_design_screen", "mcp__expresso__read_link", "mcp__expresso__suggest_portfolio"]);
   });
   it("중단 신호를 SDK에 전달한다", async () => {
     const controller = new AbortController(); let stopped = false;
@@ -292,6 +292,56 @@ describe("Claude 채팅 실행 어댑터", () => {
     // 모델에 넘기는 대화에는 저장한 기록의 제목 · id · 되돌림 여부만 싣는다.
     expect(conversationForModel([{ id: "00000000-0000-4000-8000-000000000044", role: "assistant", text: "", createdAt: "2026-11-20T00:00:00.000Z", tools: [{ id: "s", name: "기록 저장", status: "complete", summary: saved.title, savedRecord: { ...saved, undone: true } }] }])[0]!.tools).toEqual([{ name: "기록 저장", summary: saved.title, savedRecord: { title: saved.title, recordId: saved.recordId, undone: true } }]);
   });
+  it("포트폴리오 제안은 서버가 정한 선택지를 부품으로 싣고 실행을 멈추며, 권할 때가 아니면 까닭을 돌려준다", async () => {
+    const part = { kind: "choice" as const, partId: "00000000-0000-4000-8000-000000000051", prompt: "기록이 3건 모였습니다. 이 기록으로 포트폴리오를 만들어 볼까요?", multiple: false, options: [{ id: "o1", label: "지금 만들어 볼게요" }, { id: "o2", label: "나중에 할게요" }], answer: null };
+    const suggestPortfolio = vi.fn().mockRejectedValueOnce(new AgentToolRejection(["최근에 이미 제안했습니다. 다시 제안하지 말고 답변을 이어 가십시오."])).mockResolvedValue(part);
+    const { client, emit } = await connectTools({ suggestPortfolio });
+    const rejected = await client.callTool({ name: "suggest_portfolio", arguments: {} });
+    expect(rejected.isError).toBe(true);
+    expect((rejected.content as { text: string }[])[0]!.text).toContain("최근에 이미 제안했습니다");
+    expect(emit.mock.calls.at(-1)![0]).toMatchObject({ type: "tool", tool: { name: "포트폴리오 제안", status: "failed", summary: "지금은 권할 때가 아닙니다." } });
+    // 돌려보낸 호출 뒤에는 실행이 멈추지 않는다 — 모델이 하던 답을 이어 간다.
+    const hooks = sdk.query.mock.lastCall![0].options.hooks.PostToolUse as { matcher: string; hooks: (() => Promise<unknown>)[] }[];
+    const hook = hooks.find(item => item.matcher === "mcp__expresso__suggest_portfolio")!;
+    expect(await hook.hooks[0]!()).toEqual({});
+    const shown = await client.callTool({ name: "suggest_portfolio", arguments: {} });
+    expect(shown.isError).toBeFalsy();
+    expect(emit.mock.calls.at(-1)![0]).toMatchObject({ type: "tool", tool: { name: "포트폴리오 제안", status: "complete", summary: part.prompt, ui: part } });
+    expect(JSON.parse((shown.content as { text: string }[])[0]!.text)).toMatchObject({ shown: true, options: ["지금 만들어 볼게요", "나중에 할게요"] });
+    expect(await hook.hooks[0]!()).toMatchObject({ continue: false });
+    // 제안도 질문 부품이다. 같은 답변에서 선택지를 또 내지 못한다.
+    const choice = await client.callTool({ name: "ask_choice", arguments: { prompt: "질문", multiple: false, options: [{ label: "예" }, { label: "아니오" }] } });
+    expect(choice.isError).toBe(true);
+    expect((choice.content as { text: string }[])[0]!.text).toContain("이미 질문 부품을 냈습니다");
+    expect((await client.callTool({ name: "suggest_portfolio", arguments: {} })).isError).toBe(true);
+    expect(suggestPortfolio).toHaveBeenCalledTimes(2);
+  });
+  it("기록을 저장한 직후에 포트폴리오를 권할 때인지 다시 보고, 권할 때면 링크 질문 대신 제안을 내게 한다", async () => {
+    const saved = { recordId: "00000000-0000-4000-8000-000000000052", title: "사내 배포 자동화", categoryName: "경험", bodyMd: "## 행동\n배포를 자동화", sources: [{ messageId: "00000000-0000-4000-8000-000000000053", quote: "배포를 자동화했어요" }], undone: false };
+    const args = { title: saved.title, categoryId: "00000000-0000-4000-8000-000000000054", bodyMd: saved.bodyMd, sources: saved.sources };
+    const read = async (portfolioNow: () => Promise<{ records: number; suggest: boolean } | null>) => {
+      const { client } = await connectTools({ saveRecord: vi.fn().mockResolvedValue(saved), portfolioNow });
+      return JSON.parse(((await client.callTool({ name: "save_record", arguments: args })).content as { text: string }[])[0]!.text) as { saved: boolean; portfolio?: unknown; note: string };
+    };
+    const due = await read(async () => ({ records: 3, suggest: true }));
+    expect(due).toMatchObject({ saved: true, portfolio: { records: 3, suggest: true } });
+    expect(due.note).toContain("suggest_portfolio");
+    expect(due.note).not.toContain("링크가 없으면");
+    const early = await read(async () => ({ records: 2, suggest: false }));
+    expect(early).toMatchObject({ saved: true, portfolio: { records: 2, suggest: false } });
+    expect(early.note).toContain("링크가 없으면");
+    expect(early.note).not.toContain("suggest_portfolio");
+    // 판단을 읽지 못해도 저장은 끝난 일이다. 권하지 않는 쪽으로 답한다.
+    const failed = await read(async () => { throw new Error("mongo down"); });
+    expect(failed.saved).toBe(true);
+    expect(failed.portfolio).toBeUndefined();
+    expect(failed.note).toContain("링크가 없으면");
+  });
+  it("포트폴리오 제안의 지침은 서버의 판단과 두 답의 글을 가리킨다", async () => {
+    await connectTools();
+    const prompt = sdk.query.mock.lastCall![0].options.systemPrompt as string;
+    for (const text of ["memory.portfolio", "suggest_portfolio", "「지금 만들어 볼게요」", "「나중에 할게요」", "suggest가 false이면"]) expect(prompt).toContain(text);
+  });
   it("입력 칸 묶음도 부품으로 싣고 실행을 멈추며, 한 실행의 질문 부품은 선택지와 합쳐 하나다", async () => {
     const part = { kind: "form" as const, partId: "00000000-0000-4000-8000-000000000051", prompt: "기간과 인원을 알려 주세요.", fields: [{ id: "f1", label: "기간", optional: false }, { id: "f2", label: "팀 인원", optional: true }], answer: null };
     const askForm = vi.fn(async () => part);
@@ -323,7 +373,7 @@ describe("Claude 채팅 실행 어댑터", () => {
     expect(await hook()).toEqual({});
   });
   it("기억을 프롬프트에 자료로 싣고, 기억 갱신은 요약만 남기며 빈 입력은 돌려보낸다", async () => {
-    const memory = { stage: "preparing" as const, checkins: true, preferences: [{ id: "00000000-0000-4000-8000-000000000031", kind: "avoid" as const, text: "야근이 잦은 곳" }], today: "2026-11-20", commitments: [{ id: "00000000-0000-4000-8000-000000000032", title: "해커톤 지원서 내기", dueOn: "2026-11-19", overdue: true }], diagnosis: { assessedOn: "2026-11-18", work: "백엔드 개발자", sampleSize: 66, gaps: ["Kafka"], unconfirmed: ["Kubernetes"], partial: [], confirmed: 3, stale: null }, recentConversations: [{ title: "준비 계획", date: "2026-11-19", said: ["계획을 세워 줘"], outcomes: ["준비 계획 승인: 백엔드 준비 (주 10시간 · 8주)"], lastAnswer: "계획을 저장했습니다." }] };
+    const memory = { stage: "preparing" as const, checkins: true, preferences: [{ id: "00000000-0000-4000-8000-000000000031", kind: "avoid" as const, text: "야근이 잦은 곳" }], today: "2026-11-20", commitments: [{ id: "00000000-0000-4000-8000-000000000032", title: "해커톤 지원서 내기", dueOn: "2026-11-19", overdue: true }], diagnosis: { assessedOn: "2026-11-18", work: "백엔드 개발자", sampleSize: 66, gaps: ["Kafka"], unconfirmed: ["Kubernetes"], partial: [], confirmed: 3, stale: null }, portfolio: { records: 3, suggest: true }, recentConversations: [{ title: "준비 계획", date: "2026-11-19", said: ["계획을 세워 줘"], outcomes: ["준비 계획 승인: 백엔드 준비 (주 10시간 · 8주)"], lastAnswer: "계획을 저장했습니다." }] };
     const updateMemory = vi.fn(async () => ({ summary: "단계: 지원 · 조건 1개 기억", memory: { ...memory, stage: "applying" as const } }));
     const { client, emit } = await connectTools({ memory, updateMemory });
     expect(JSON.parse(sdk.query.mock.lastCall![0].prompt)).toMatchObject({ memory });

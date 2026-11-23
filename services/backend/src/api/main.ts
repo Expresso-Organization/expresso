@@ -193,6 +193,7 @@ const agentWork: AgentWorkDeps = {
 };
 // 대화에서 시작하는 포트폴리오 제작이 쓰는 다른 모듈의 일(`agent-chat/brew-start.ts`).
 const agentBrews: AgentBrewDeps = {
+  openBrews: async userId => (await engagementService.home(userId)).activeBrews.length,
   analyzePosting: (userId, jobPostingId) => jobMarketService.analyzePosting(userId, jobPostingId),
   getResult: (userId, jobAnalysisId) => jobAnalysisService.getResult(userId, jobAnalysisId),
   createBrew: (userId, input) => materialsService.createBrew(userId, input),

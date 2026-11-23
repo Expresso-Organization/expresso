@@ -61,6 +61,17 @@ export class ConsultantService {
     return this.profile(userId);
   }
 
+  /** 포트폴리오 제작을 마지막으로 제안한 서울 날짜. 제안한 적이 없으면 null. */
+  async portfolioSuggestedOn(userId: string): Promise<string | null> {
+    return (await this.rows.findOne({ _id: userId, userId }, { projection: { portfolioSuggestion: 1 } }))?.portfolioSuggestion?.lastSuggestedOn ?? null;
+  }
+
+  /** 포트폴리오 제작을 제안했다고 적는다. `day`는 서울 날짜다. 같은 제안을 다시 하기까지의 간격은 읽는 쪽(`portfolioSuggestion`)이 본다. */
+  async markPortfolioSuggested(userId: string, day: string, at = new Date()): Promise<void> {
+    await this.ensure(userId, at);
+    await this.rows.updateOne({ _id: userId, userId }, { $set: { portfolioSuggestion: { lastSuggestedOn: day }, updatedAt: at } });
+  }
+
   async removePreference(userId: string, preferenceId: string, at = new Date()): Promise<ConsultantProfile> {
     await this.rows.updateOne({ _id: userId, userId }, { $pull: { preferences: { id: preferenceId } }, $set: { updatedAt: at } });
     return this.profile(userId);

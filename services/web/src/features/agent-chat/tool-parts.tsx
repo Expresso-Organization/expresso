@@ -61,8 +61,12 @@ export interface ToolPart {
   render(tool: AgentToolResult, context: ToolPartContext): ReactNode;
 }
 
+/** 선택지 부품을 내는 도구의 이름. */
+const CHOICE_TOOL_NAMES: readonly string[] = ["선택지 질문", "포트폴리오 제안"];
+
 export const TOOL_PARTS: readonly ToolPart[] = [
-  { key: "choice", placement: "below", toolNames: ["선택지 질문"], match: tool => tool.name === "선택지 질문",
+  // 포트폴리오 제안은 서버가 질문과 선택지를 정한 선택지 부품이다. 그리는 법은 선택지 질문과 같다.
+  { key: "choice", placement: "below", toolNames: CHOICE_TOOL_NAMES, match: tool => CHOICE_TOOL_NAMES.includes(tool.name),
     render: (tool, context) => tool.ui?.kind === "choice"
       ? <ChoicePart part={tool.ui} interactive={context.canAnswer} onAnswer={optionIds => context.answerPart(tool.ui!.partId, { optionIds })} />
       : <ChoicePartPending failed={tool.status === "failed"} /> },

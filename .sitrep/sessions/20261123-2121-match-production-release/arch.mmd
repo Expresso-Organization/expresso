@@ -1,0 +1,12 @@
+flowchart TD
+  A[추천모델 브랜치] --> B[최신 main 통합]
+  B --> C[회귀 검사]
+  C --> D[PR 필수 검사]
+  D --> E[main 머지]
+  E --> F[운영 배포]
+  F --> G[추천·근거 확인]
+  classDef done fill:#d1fae5,stroke:#059669,color:#000000
+  classDef doing fill:#fef3c7,stroke:#d97706,color:#000000
+  classDef todo fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:4,color:#000000
+  class A,B,C done
+  class D,E,F,G todo

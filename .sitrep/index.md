@@ -22,3 +22,5 @@
 | [2026-11-19 한국어 적합도 모델 평가](sessions/20261119-1752-match-eval/tree.md) | 한국어 적합도 모델 평가 | 영속화·시험 프로세스 재시작 검증 완료 | 100% |
 | [20261122-0203-evidence-retrieval-v2](sessions/20261122-0203-evidence-retrieval-v2/session.md) | 근거 검색 개선 및 학습 리랭커 비교 | 완료됨 | 100% |
 | [20261122-1315-match-release-readiness](sessions/20261122-1315-match-release-readiness/session.md) | Expresso 추천모델 운영 적용 | 완료됨 | 100% |
+| [20261123-1740-consultant-portfolio](sessions/20261123-1740-consultant-portfolio/session.md) | 포트폴리오 잇기 — 기록이 쌓이면 컨설턴트가 먼저 제안 | 완료됨 | 100% |
+| [20261123-2121-match-production-release](sessions/20261123-2121-match-production-release/session.md) | Expresso 추천모델 운영 배포 | 완료됨 | 100% |
