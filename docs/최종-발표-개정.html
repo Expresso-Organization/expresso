@@ -1447,15 +1447,6 @@ svg [data-morph] { transform-box: fill-box; }
 .fd-sys .ai small { margin-top: 8px; font-size: 21px; color: var(--ex-slate-500); letter-spacing: -.02em; white-space: nowrap; }
 
 /* 추천 모델 학습과 성능 — 위는 제안서 「루브릭 기반 교사 지식 증류」의 네 단계 그림, 아래는 측정 전이라 빗금으로 비워 둔 NDCG@10 */
-.fd-ndcg2 { margin-top: 22px; padding-top: 24px; border-top: 1px solid var(--ex-line-200); display: grid; grid-template-columns: 270px repeat(4, 1fr); gap: 34px; align-items: start; flex: none; }
-.fd-ndcg2 .h b { display: block; font-size: 36px; font-weight: 600; letter-spacing: -.03em; line-height: 1.1; }
-.fd-ndcg2 .h span { display: block; margin-top: 8px; font-size: 21px; color: var(--ex-slate-500); letter-spacing: -.02em; }
-.fd-ndcg2 .n { font-size: 25px; font-weight: 600; letter-spacing: -.03em; white-space: nowrap; }
-.fd-ndcg2 .n small { margin-left: 10px; font-size: 18px; font-weight: 500; color: var(--ex-slate-500); }
-.fd-ndcg2 .m.own .n small { color: #8A5A12; }
-.fd-ndcg2 .track { margin-top: 14px; height: 22px; border-radius: 11px; background: repeating-linear-gradient(135deg, var(--ex-tint-100) 0 10px, var(--ex-surface-50) 10px 20px); }
-.fd-ndcg2 .m.own .track { background: repeating-linear-gradient(135deg, var(--fp-own) 0 10px, var(--ex-surface-50) 10px 20px); }
-.fd-ndcg2 .ax { margin-top: 8px; display: flex; justify-content: space-between; font-size: 17px; color: var(--ex-slate-400); font-variant-numeric: tabular-nums; }
 
 /* 벤치마킹 — 왼쪽은 세 원이 겹친 그림, 오른쪽은 제안서의 서비스 카드(로고 · 실제 화면 캡처)에 Expresso와의 차이를 붙인 것 */
 .fd-bench .svcs { display: grid; grid-template-rows: repeat(3, 1fr); gap: 16px; min-height: 0; }
@@ -1487,6 +1478,18 @@ svg [data-morph] { transform-box: fill-box; }
 .fd-kpi .v { text-align: right; white-space: nowrap; }
 .fd-kpi .v .num { font-family: var(--ex-font-brand); font-weight: 300; font-size: 56px; line-height: 1; letter-spacing: -.03em; color: var(--ex-espresso); }
 .fd-kpi .v .u { margin-left: 6px; font-size: 24px; color: var(--ex-slate-500); }
+
+/* 추천 모델 학습과 성능 — 윗줄에서 라벨을 만들고(왼쪽 → 오른쪽), 아랫줄에서 그 라벨로 모델을 학습시켜 평가한다(오른쪽 → 왼쪽).
+   그림체는 제안서 「루브릭 기반 교사 지식 증류」의 것. NDCG@10 은 측정 전이라 빗금으로 비워 둔다. */
+.fd-distill .k { font-family: var(--ex-font-ui); font-size: 21px; font-weight: 600; fill: var(--ex-espresso); }
+.fd-distill .t { font-family: var(--ex-font-ui); font-size: 32px; font-weight: 600; letter-spacing: -.03em; fill: var(--ex-ink-900); }
+.fd-distill .d { font-family: var(--ex-font-ui); font-size: 23px; letter-spacing: -.02em; fill: #53657D; }
+.fd-distill .c { font-family: var(--ex-font-ui); font-size: 22px; fill: #53657D; }
+.fd-distill .w { font-family: var(--ex-font-ui); font-size: 28px; font-weight: 600; fill: #fff; }
+.fd-distill .w.dk { fill: #6b4423; font-size: 24px; }
+.fd-distill .big { font-family: var(--ex-font-brand); font-size: 84px; font-weight: 300; letter-spacing: -.03em; fill: #478670; }
+.fd-distill .nm { font-family: var(--ex-font-ui); font-size: 24px; font-weight: 600; letter-spacing: -.03em; fill: var(--ex-ink-900); }
+.fd-distill .ax { font-family: var(--ex-font-ui); font-size: 18px; fill: var(--ex-slate-400); }
 
 /* 13쪽 · 설계서 열 단계 */
 .vh-v10:has(.fd-steps) { grid-template-columns: 400px 1fr; }
@@ -1813,14 +1816,62 @@ svg [data-morph] { transform-box: fill-box; }
       <p class="sub">교사 LLM 판정으로 학습한 두 모델의 순위 품질</p>
     </div>
     <div class="body">
-      <svg class="fd-rubric in in-fade dl-3" viewBox="0 0 1664 462" style="width: 1712px; height: 475px; flex: none; max-width: none; max-height: none" role="img" aria-label="채용 공고와 합성 프로필을 교사 LLM이 판정하고, 고정된 루브릭으로 점수를 매겨 추천 모델을 학습시키는 과정"><defs><marker id="teacher-method-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M2 2L8 5L2 8" fill="none" stroke="#8596AF" stroke-width="1.5"></path></marker></defs><text x="0" y="25" style="font-family:var(--ex-font-ui);font-size:20px;fill:#9A4030;font-weight:600">01　입력</text><text x="380" y="25" style="font-family:var(--ex-font-ui);font-size:20px;fill:#9A4030;font-weight:600">02　교사 판정</text><text x="810" y="25" style="font-family:var(--ex-font-ui);font-size:20px;fill:#9A4030;font-weight:600">03　루브릭 점수화</text><text x="1400" y="25" style="font-family:var(--ex-font-ui);font-size:20px;fill:#9A4030;font-weight:600">04　지식 증류</text><rect x="0" y="112" width="280" height="114" rx="14" style="fill:#FFFFFF;stroke:#D9E3EF;stroke-width:1.6"></rect><text x="22" y="152" style="font-family:var(--ex-font-ui);font-size:27px;fill:#25354B;font-weight:600">채용 공고</text><text x="22" y="193" style="font-family:var(--ex-font-ui);font-size:20px;fill:#53657D;font-weight:400">필수 · 업무 · 우대요건</text><rect x="0" y="276" width="280" height="114" rx="14" style="fill:#FFFFFF;stroke:#D9E3EF;stroke-width:1.6"></rect><text x="22" y="316" style="font-family:var(--ex-font-ui);font-size:27px;fill:#25354B;font-weight:600">합성 프로필</text><text x="22" y="357" style="font-family:var(--ex-font-ui);font-size:20px;fill:#53657D;font-weight:400">경력 기록 · 수행 근거</text><path d="M292 170H330V224H367" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#teacher-method-arrow)"></path><path d="M292 334H330V272H367" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#teacher-method-arrow)"></path><rect x="380" y="119" width="345" height="260" rx="14" style="fill:#FFF0E1;stroke:#E7CEB0;stroke-width:1.6"></rect><text x="402" y="160" style="font-family:var(--ex-font-ui);font-size:28px;fill:#25354B;font-weight:600">교사 LLM</text><text x="402" y="192" style="font-family:var(--ex-font-ui);font-size:19px;fill:#9A623B;font-weight:400">프론티어 LLM</text><text x="402" y="248" style="font-family:var(--ex-font-ui);font-size:24px;fill:#25354B;font-weight:600">요구사항 ↔ 근거 기록</text><text x="402" y="292" style="font-family:var(--ex-font-ui);font-size:22px;fill:#53657D;font-weight:400">기록 ID를 연결하고</text><text x="402" y="325" style="font-family:var(--ex-font-ui);font-size:22px;fill:#53657D;font-weight:400">충족 수준을 판정</text><path d="M737 248H797" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#teacher-method-arrow)"></path><rect x="810" y="56" width="515" height="365" rx="14" style="fill:#FFFFFF;stroke:#D9E3EF;stroke-width:1.6"></rect><text x="833" y="97" style="font-family:var(--ex-font-ui);font-size:27px;fill:#25354B;font-weight:600">고정된 평가 기준</text><rect x="833" y="120" width="140" height="76" rx="14" style="fill:#F8F3ED;stroke:#EEE1D2;stroke-width:1.6"></rect><text x="847" y="148" style="font-family:var(--ex-font-ui);font-size:18px;fill:#53657D;font-weight:400">필수요건</text><text x="847" y="181" style="font-family:var(--ex-font-ui);font-size:27px;fill:#9A623B;font-weight:600">45%</text><rect x="990" y="120" width="140" height="76" rx="14" style="fill:#F8F3ED;stroke:#EEE1D2;stroke-width:1.6"></rect><text x="1004" y="148" style="font-family:var(--ex-font-ui);font-size:18px;fill:#53657D;font-weight:400">담당업무</text><text x="1004" y="181" style="font-family:var(--ex-font-ui);font-size:27px;fill:#9A623B;font-weight:600">40%</text><rect x="1147" y="120" width="155" height="76" rx="14" style="fill:#F8F3ED;stroke:#EEE1D2;stroke-width:1.6"></rect><text x="1161" y="148" style="font-family:var(--ex-font-ui);font-size:18px;fill:#53657D;font-weight:400">우대요건</text><text x="1161" y="181" style="font-family:var(--ex-font-ui);font-size:27px;fill:#9A623B;font-weight:600">15%</text><text x="833" y="233" style="font-family:var(--ex-font-ui);font-size:21px;fill:#53657D;font-weight:400">강한 직접 근거</text><text x="1242" y="233" style="font-family:var(--ex-font-ui);font-size:23px;fill:#9A623B;font-weight:600">100</text><text x="833" y="268" style="font-family:var(--ex-font-ui);font-size:21px;fill:#53657D;font-weight:400">직접 근거</text><text x="1242" y="268" style="font-family:var(--ex-font-ui);font-size:23px;fill:#9A623B;font-weight:600">75</text><text x="833" y="303" style="font-family:var(--ex-font-ui);font-size:21px;fill:#53657D;font-weight:400">부분 충족</text><text x="1242" y="303" style="font-family:var(--ex-font-ui);font-size:23px;fill:#9A623B;font-weight:600">50</text><text x="833" y="338" style="font-family:var(--ex-font-ui);font-size:21px;fill:#53657D;font-weight:400">전이 가능한 인접 경험</text><text x="1242" y="338" style="font-family:var(--ex-font-ui);font-size:23px;fill:#9A623B;font-weight:600">25</text><text x="833" y="373" style="font-family:var(--ex-font-ui);font-size:21px;fill:#53657D;font-weight:400">근거 없음</text><text x="1242" y="373" style="font-family:var(--ex-font-ui);font-size:23px;fill:#9A623B;font-weight:600">0</text><text x="810" y="452" style="font-family:var(--ex-font-ui);font-size:17px;fill:#53657D;font-weight:400">해당 없는 축은 제외 후 가중치 재정규화</text><path d="M1337 248H1387" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#teacher-method-arrow)"></path><rect x="1400" y="119" width="264" height="260" rx="14" style="fill:#ECF5F1;stroke:#CCE2D7;stroke-width:1.6"></rect><text x="1422" y="164" style="font-family:var(--ex-font-ui);font-size:26px;fill:#25354B;font-weight:600">적합도 라벨</text><text x="1422" y="222" style="font-family:var(--ex-font-ui);font-size:40px;fill:#478670;font-weight:400">0–100</text><text x="1422" y="265" style="font-family:var(--ex-font-ui);font-size:23px;fill:#25354B;font-weight:600">추천 모델 학습</text><text x="1422" y="310" style="font-family:var(--ex-font-ui);font-size:20px;fill:#53657D;font-weight:400">Bi-Encoder+MLP</text><text x="1422" y="343" style="font-family:var(--ex-font-ui);font-size:20px;fill:#53657D;font-weight:400">Cross-Encoder</text><text x="380" y="429" style="font-family:var(--ex-font-ui);font-size:19px;fill:#9A623B;font-weight:400">교사: 근거 해석과 판정</text><text x="380" y="455" style="font-family:var(--ex-font-ui);font-size:19px;fill:#9A623B;font-weight:400">코드: 가중 점수 계산과 오류 검사</text></svg>
-      <div class="fd-ndcg2 in dl-5">
-        <div class="h"><b>NDCG@10</b><span>한국어 채용 공고 평가 세트</span></div>
-        <div class="m"><div class="n">규칙 기반 점수<small>기준선</small></div><div class="track"></div><div class="ax"><span>0</span><span>0.5</span><span>1.0</span></div></div>
-        <div class="m"><div class="n">Char TF-IDF<small>기준선</small></div><div class="track"></div><div class="ax"><span>0</span><span>0.5</span><span>1.0</span></div></div>
-        <div class="m own"><div class="n">Bi-Encoder+MLP<small>학습 모델</small></div><div class="track"></div><div class="ax"><span>0</span><span>0.5</span><span>1.0</span></div></div>
-        <div class="m own"><div class="n">Cross-Encoder<small>학습 모델</small></div><div class="track"></div><div class="ax"><span>0</span><span>0.5</span><span>1.0</span></div></div>
-      </div>
+      <svg class="fd-distill" viewBox="0 0 1712 650" style="width: 1712px; height: 650px; flex: none; max-width: none; max-height: none" role="img" aria-label="교사 LLM의 판정을 루브릭 가중치로 점수화해 적합도 라벨을 만들고, 그 라벨로 추천 모델 두 개를 학습시킨 뒤 NDCG@10으로 평가하는 흐름">
+        <defs>
+          <marker id="fdd-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M2 2L8 5L2 8" fill="none" stroke="#8596AF" stroke-width="1.5"></path></marker>
+          <pattern id="fdd-hatch" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="20" height="20" style="fill: var(--ex-surface-50)"></rect><rect width="10" height="20" style="fill: var(--ex-tint-100)"></rect></pattern>
+          <pattern id="fdd-hatch-own" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="20" height="20" style="fill: var(--ex-surface-50)"></rect><rect width="10" height="20" style="fill: #FBE3C2"></rect></pattern>
+        </defs>
+
+        <!-- 윗줄: 라벨을 만드는 쪽 (왼쪽 → 오른쪽) -->
+        <g class="in dl-3">
+          <text class="k" x="0" y="22">입력</text>
+          <rect x="0" y="42" width="260" height="96" rx="48" style="fill:#FFFFFF;stroke:#D9E3EF;stroke-width:1.6"></rect><text class="t" x="130" y="100" text-anchor="middle">채용 공고</text>
+          <rect x="0" y="156" width="260" height="96" rx="48" style="fill:#FFFFFF;stroke:#D9E3EF;stroke-width:1.6"></rect><text class="t" x="130" y="214" text-anchor="middle">합성 프로필</text>
+        </g>
+        <g class="in dl-4">
+          <path d="M272 90H292V128H310" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#fdd-tip)"></path><path d="M272 204H292V166H310" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#fdd-tip)"></path>
+          <text class="k" x="322" y="22">교사 판정</text>
+          <rect x="322" y="42" width="320" height="210" rx="20" style="fill:#FFF0E1;stroke:#E7CEB0;stroke-width:1.6"></rect>
+          <text class="t" x="352" y="140" style="font-size:38px">교사 LLM</text><text class="d" x="352" y="186">요구사항별 충족 수준 판정</text>
+        </g>
+        <g class="in dl-5">
+          <path d="M654 147H690" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#fdd-tip)"></path>
+          <text class="k" x="702" y="22">루브릭 점수화</text>
+          <rect x="702" y="42" width="600" height="210" rx="20" style="fill:#FFFFFF;stroke:#D9E3EF;stroke-width:1.6"></rect>
+          <text class="d" x="730" y="92">요건별 가중치</text>
+          <rect x="730" y="114" width="246" height="58" rx="12" style="fill:#9A623B"></rect>
+          <rect x="980" y="114" width="217" height="58" rx="12" style="fill:#C99A6C"></rect>
+          <rect x="1201" y="114" width="73" height="58" rx="12" style="fill:#EBD5B8"></rect>
+          <text class="w" x="748" y="152">45%</text><text class="w" x="998" y="152">40%</text><text class="w dk" x="1237" y="152" text-anchor="middle">15%</text>
+          <text class="c" x="730" y="212">필수요건</text><text class="c" x="980" y="212">담당업무</text><text class="c" x="1274" y="212" text-anchor="end">우대요건</text>
+        </g>
+        <g class="in dl-6">
+          <path d="M1314 147H1350" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#fdd-tip)"></path>
+          <text class="k" x="1362" y="22">적합도 라벨</text>
+          <rect x="1362" y="42" width="350" height="210" rx="20" style="fill:#ECF5F1;stroke:#CCE2D7;stroke-width:1.6"></rect>
+          <text class="big" x="1537" y="172" text-anchor="middle">0–100</text>
+        </g>
+
+        <!-- 아랫줄: 라벨로 배우는 쪽 (오른쪽 → 왼쪽) -->
+        <g class="in dl-7">
+          <path d="M1537 264V338" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#fdd-tip)"></path><text class="k" x="1556" y="308">학습</text>
+          <rect x="1040" y="350" width="671" height="296" rx="20" style="fill: var(--fp-own); stroke: var(--fp-own-line); stroke-width: 1.6"></rect>
+          <text class="t" x="1070" y="400" style="font-size:30px">추천 모델</text><text class="d" x="1682" y="398" text-anchor="end" style="fill:#8A5A12">자체 학습 모델</text>
+          <rect x="1070" y="426" width="290" height="190" rx="16" style="fill:#FFFFFF;stroke:#E7CEB0;stroke-width:1.6"></rect>
+          <text class="t" x="1094" y="514" style="font-size:29px">Bi-Encoder+MLP</text><text class="d" x="1094" y="558">후보 선별</text>
+          <path d="M1366 523H1386" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#fdd-tip)"></path>
+          <rect x="1392" y="426" width="290" height="190" rx="16" style="fill:#FFFFFF;stroke:#E7CEB0;stroke-width:1.6"></rect>
+          <text class="t" x="1416" y="514" style="font-size:29px">Cross-Encoder</text><text class="d" x="1416" y="558">재정렬</text>
+        </g>
+        <g class="in dl-8">
+          <path d="M1028 500H976" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#fdd-tip)"></path><text class="k" x="1002" y="480" text-anchor="middle">평가</text>
+          <text class="t" x="0" y="384">NDCG@10</text><text class="d" x="186" y="383">한국어 채용 공고 평가 세트</text>
+          <g style="stroke: var(--ex-line-200); stroke-width: 1.5"><line x1="270" y1="414" x2="270" y2="622"></line><line x1="605" y1="414" x2="605" y2="622"></line><line x1="940" y1="414" x2="940" y2="622"></line></g>
+          <text class="nm" x="0" y="449">규칙 기반 점수</text><rect x="270" y="430" width="670" height="26" rx="13" fill="url(#fdd-hatch)"></rect><text class="nm" x="0" y="499">Char TF-IDF</text><rect x="270" y="480" width="670" height="26" rx="13" fill="url(#fdd-hatch)"></rect><text class="nm" x="0" y="549">Bi-Encoder+MLP</text><rect x="270" y="530" width="670" height="26" rx="13" fill="url(#fdd-hatch-own)"></rect><text class="nm" x="0" y="599">Cross-Encoder</text><rect x="270" y="580" width="670" height="26" rx="13" fill="url(#fdd-hatch-own)"></rect>
+          <text class="ax" x="270" y="646" text-anchor="middle">0</text><text class="ax" x="605" y="646" text-anchor="middle">0.5</text><text class="ax" x="940" y="646" text-anchor="middle">1.0</text>
+        </g>
+      </svg>
     </div>
   </div>
 </section>
