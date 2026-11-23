@@ -1340,6 +1340,20 @@ svg [data-morph] { transform-box: fill-box; }
 
 /* 주요 기능 — 추천 모델이 적용된 상태이므로 점선 표시를 실선으로 */
 .fd-live .fp-line .st .tag { border-style: solid; }
+/* 주요 기능 — 기능 묶음별 색(바로 뒤 주요 기능 네 장과 같은 묶음): 커리어 기록 · 채용 공고 검색 · 포트폴리오 생성 · 배포와 분석 */
+.fd-live { --g1: #EEF5FF; --g1-l: #C9DDF3; --g1-s: #6C9CD2; --g1-k: #3D6FA8;
+  --g2: #EAF6F0; --g2-l: #C6E3D5; --g2-s: #65A58E; --g2-k: #2F7A5F;
+  --g3: #FBEEE4; --g3-l: #EBCDBD; --g3-s: #C48A7D; --g3-k: #9A4030;
+  --g4: #F3F0FC; --g4-l: #D9D1F2; --g4-s: #9382C4; --g4-k: #5F4E9C; }
+.fd-live .fp-line .band.g1 { background: var(--g1); border-color: var(--g1-l); } .fd-live .fp-line .band.g1 b { color: var(--g1-k); }
+.fd-live .fp-line .band.g2 { background: var(--g2); border-color: var(--g2-l); } .fd-live .fp-line .band.g2 b { color: var(--g2-k); }
+.fd-live .fp-line .band.g3 { background: var(--g3); border-color: var(--g3-l); } .fd-live .fp-line .band.g3 b { color: var(--g3-k); }
+.fd-live .fp-line .band.g4 { background: var(--g4); border-color: var(--g4-l); } .fd-live .fp-line .band.g4 b { color: var(--g4-k); }
+.fd-live .fp-line .st.g1 .dot { border-color: var(--g1-s); color: var(--g1-k); }
+.fd-live .fp-line .st.g2 .dot { border-color: var(--g2-s); color: var(--g2-k); }
+.fd-live .fp-line .st.g3 .dot { border-color: var(--g3-s); color: var(--g3-k); }
+.fd-live .fp-line .st.g4 .dot { border-color: var(--g4-s); color: var(--g4-k); }
+.fd-live .fp-line .loop { background: var(--g3) !important; }
 
 /* 추천 모델 성능 — 측정값이 들어올 빈 차트 */
 .fd-ndcg svg { width: 100%; height: auto; display: block; }
@@ -1993,9 +2007,9 @@ svg [data-morph] { transform-box: fill-box; }
     </div>
     <div class="body">
       <div class="fp-line in in-fade dl-3">
-        <div class="band" style="left: 96px; width: 163px"><b>기록 축적</b></div>
-        <div class="band" style="left: 271px; width: 1272px"><b>채용 공고마다 반복</b></div>
-        <div class="band" style="left: 1555px; width: 157px"><b>배포 이후</b></div>
+        <div class="band g1" style="left: 96px; width: 157px"><b>커리어 기록</b></div>
+        <div class="band g2" style="left: 265px; width: 312px"><b>채용 공고 검색</b></div><div class="band g3" style="left: 589px; width: 798px"><b>포트폴리오 생성</b></div>
+        <div class="band g4" style="left: 1399px; width: 313px"><b>배포와 분석</b></div>
         <svg class="under" viewBox="0 0 1712 677" preserveAspectRatio="none" aria-hidden="true">
           <defs>
             <marker id="fpl-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
@@ -2003,25 +2017,25 @@ svg [data-morph] { transform-box: fill-box; }
             </marker>
           </defs>
           <path d="M178 220 H1636" style="fill:none; stroke: var(--ex-slate-300); stroke-width: 4"/>
-          <path d="M1636 366 V378 Q1636 392 1622 392 H354 Q340 392 340 378 V334" style="fill:none; stroke: var(--ex-slate-400); stroke-width: 2.5; stroke-dasharray: 8 8" marker-end="url(#fpl-tip)"/>
+          <path d="M1636 366 V390 Q1636 404 1622 404 H354 Q340 404 340 390 V370" style="fill:none; stroke: var(--ex-slate-400); stroke-width: 2.5; stroke-dasharray: 8 8" marker-end="url(#fpl-tip)"/>
           <path d="M178 548 H1330" style="fill:none; stroke: var(--ex-line-200); stroke-width: 4"/>
           <path d="M340 520 V440" style="fill:none; stroke: var(--ex-slate-400); stroke-width: 2.5; stroke-dasharray: 8 8" marker-end="url(#fpl-tip)"/>
         </svg>
         <span class="lane" style="top: 204px">사용자</span>
         <span class="lane" style="top: 532px">관리자</span>
 
-        <div class="st" style="left: 178px; top: 176px"><div class="dot"><i class="ph ph-notebook"></i></div><div class="nm">커리어 기록</div></div>
-        <div class="st own" style="left: 340px; top: 176px"><span class="tag">채용 공고 추천 모델</span><div class="dot"><i class="ph ph-magnifying-glass"></i></div><div class="nm">채용 공고<br>탐색</div></div>
-        <div class="st ext" style="left: 502px; top: 176px"><div class="dot"><i class="ph ph-list-magnifying-glass"></i></div><div class="nm">채용 공고<br>분석</div></div>
-        <div class="st own" style="left: 664px; top: 176px"><span class="tag">커리어 기록 추천 모델</span><div class="dot"><i class="ph ph-stack"></i></div><div class="nm">재료 고르기</div></div>
-        <div class="st ext" style="left: 826px; top: 176px"><div class="dot"><i class="ph ph-chats-circle"></i></div><div class="nm">AI 대화</div></div>
-        <div class="st ext" style="left: 988px; top: 176px"><div class="dot"><i class="ph ph-list-checks"></i></div><div class="nm">레시피</div></div>
-        <div class="st ext" style="left: 1150px; top: 176px"><div class="dot"><i class="ph ph-palette"></i></div><div class="nm">디자인 선택</div></div>
-        <div class="st ext" style="left: 1312px; top: 176px"><div class="dot"><i class="ph ph-pencil-simple-line"></i></div><div class="nm">다듬기</div></div>
-        <div class="st" style="left: 1474px; top: 176px"><div class="dot"><i class="ph ph-rocket-launch"></i></div><div class="nm">배포</div></div>
-        <div class="st ext" style="left: 1636px; top: 176px; width: 150px; margin-left: -75px"><div class="dot"><i class="ph ph-chart-line-up"></i></div><div class="nm">방문자<br>데이터 분석</div></div>
+        <div class="st g1" style="left: 178px; top: 176px"><div class="dot"><i class="ph ph-notebook"></i></div><div class="nm">커리어 기록</div></div>
+        <div class="st own g2" style="left: 340px; top: 176px"><span class="tag">채용 공고 추천 모델</span><div class="dot"><i class="ph ph-magnifying-glass"></i></div><div class="nm">채용 공고<br>탐색</div></div>
+        <div class="st ext g2" style="left: 502px; top: 176px"><div class="dot"><i class="ph ph-list-magnifying-glass"></i></div><div class="nm">채용 공고<br>분석</div></div>
+        <div class="st own g3" style="left: 664px; top: 176px"><span class="tag">커리어 기록 추천 모델</span><div class="dot"><i class="ph ph-stack"></i></div><div class="nm">재료 고르기</div></div>
+        <div class="st ext g3" style="left: 826px; top: 176px"><div class="dot"><i class="ph ph-chats-circle"></i></div><div class="nm">AI 대화</div></div>
+        <div class="st ext g3" style="left: 988px; top: 176px"><div class="dot"><i class="ph ph-list-checks"></i></div><div class="nm">레시피</div></div>
+        <div class="st ext g3" style="left: 1150px; top: 176px"><div class="dot"><i class="ph ph-palette"></i></div><div class="nm">디자인 선택</div></div>
+        <div class="st ext g3" style="left: 1312px; top: 176px"><div class="dot"><i class="ph ph-pencil-simple-line"></i></div><div class="nm">다듬기</div></div>
+        <div class="st g4" style="left: 1474px; top: 176px"><div class="dot"><i class="ph ph-rocket-launch"></i></div><div class="nm">배포</div></div>
+        <div class="st ext g4" style="left: 1636px; top: 176px; width: 150px; margin-left: -75px"><div class="dot"><i class="ph ph-chart-line-up"></i></div><div class="nm">방문자<br>데이터 분석</div></div>
 
-        <span class="loop" style="left: 760px; top: 374px; background: var(--ex-white); padding: 0 16px">방문 분석 결과의 다음 포트폴리오 반영</span>
+        <span class="loop" style="left: 760px; top: 389px; background: var(--ex-white); padding: 0 16px">방문 분석 결과의 다음 포트폴리오 반영</span>
 
         <div class="ad" style="left: 314px; top: 522px"><div class="dot"><i class="ph ph-plugs-connected"></i></div><span class="nm">채용 공고 소스 관리</span></div>
         <div class="ad" style="left: 644px; top: 522px"><div class="dot"><i class="ph ph-clipboard-text"></i></div><span class="nm">채용 공고 관리</span></div>
