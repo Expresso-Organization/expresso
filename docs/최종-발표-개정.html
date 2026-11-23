@@ -1421,9 +1421,8 @@ svg [data-morph] { transform-box: fill-box; }
 .deck-stage[data-way="fwd"] > .slide.active.fd-reveal .fd-roll .d2 { animation: fd-roll-in 660ms cubic-bezier(.2, .7, .2, 1) 1560ms both; }
 .deck-stage[data-way="fwd"] > .slide.active.fd-reveal .vh-wm i { animation: fd-cut 680ms cubic-bezier(.4, 0, .2, 1) 1820ms both; }
 .deck-stage[data-way="fwd"] > .slide.active.fd-reveal::before { animation: fd-bloom 1500ms cubic-bezier(.3, 0, .2, 1) 1600ms both; }
-/* 공개 장에서 다음 장으로 — 워드마크가 제목 자리에 앉을 즈음부터 나머지가 나타납니다. */
+/* 공개 장에서 다음 장으로 — 어두운 배경이 가운데 원으로 모이고(스크립트의 iris), 워드마크가 제목 자리에 앉을 즈음부터 나머지가 나타납니다. */
 .deck-stage[data-way="fwd"] > .slide.fd-reveal + .slide.active .in { animation-delay: calc(var(--dl, 0ms) + 640ms); }
-.deck-stage[data-way="fwd"] > .slide.fd-reveal + .slide.active .vh-orbit { animation: ex-in-fade 620ms cubic-bezier(.32, .72, 0, 1) 640ms both; }
 @media (prefers-reduced-motion: reduce), print {
   .deck-stage > .slide.fd-reveal .fd-roll, .deck-stage > .slide.fd-reveal .fd-roll *, .deck-stage > .slide.fd-reveal .vh-wm i, .deck-stage > .slide.fd-reveal::before { animation: none !important; }
 }
@@ -1984,7 +1983,7 @@ svg [data-morph] { transform-box: fill-box; }
   </div>
 </section>
 
-<section class="slide fp vh vh-recede" data-title="Expresso 2.0의 출발점" data-kind="에이전트 기준의 기능 묶음" data-sweep="none" data-cam>
+<section class="slide fp vh vh-recede" data-title="Expresso 2.0의 출발점" data-kind="에이전트 기준의 기능 묶음" data-sweep="none" data-cam data-iris=".vh-orbit .core">
   <div class="frame">
     <div class="hd" data-morph="hd"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">4</span><span class="sec">개발 과정</span><span class="pg"></span></div>
     <div class="head">
@@ -2429,7 +2428,7 @@ window.deck = new Deck();
     return { left: cx - w / 2, top: cy - h / 2, width: w, height: h };
   };
 
-  function glide(from, to, fixed) {
+  function glide(from, to, fixed, solid) {
     const a = from.getBoundingClientRect();
     const b = fixed ? rest(to) : to.getBoundingClientRect();
     if (!a.width || !b.width) return;
@@ -2448,10 +2447,12 @@ window.deck = new Deck();
     const ms = fixed || Math.min(1150, 720 + Math.hypot(dx, dy) / k * 0.3);
     /* 두 조각을 겹쳐 흐립니다 — 앞엣것은 제자리에서 사라지고 뒤엣것은 떠나면서
        나타납니다. 모양이 서로 다를 때 이 겹침이 그 차이를 덮습니다. */
-    running.push(from.animate([{ opacity: 1 }, { opacity: 0 }],
-                              { duration: Math.round(ms * .5), easing: 'linear', fill: 'forwards' }));
-    running.push(to.animate([{ opacity: 0 }, { opacity: 1 }],
-                            { duration: Math.round(ms * .45), easing: 'linear', fill: 'both' }));
+    if (!solid) {
+      running.push(from.animate([{ opacity: 1 }, { opacity: 0 }],
+                                { duration: Math.round(ms * .5), easing: 'linear', fill: 'forwards' }));
+      running.push(to.animate([{ opacity: 0 }, { opacity: 1 }],
+                              { duration: Math.round(ms * .45), easing: 'linear', fill: 'both' }));
+    }
     running.push(to.animate(
       [{ transform: `translate(${dx / k}px, ${dy / k}px) scale(${k2})` }, { transform: 'none' }],
       { duration: ms, easing: GLIDE },
@@ -2519,9 +2520,12 @@ window.deck = new Deck();
       const cam = pairs.length && (back
         ? was.dataset.cam !== undefined && now.nextElementSibling === was
         : now.dataset.cam !== undefined && was.nextElementSibling === now);
+      /* `data-iris` 가 가리키는 원이 있으면, 앞 장이 그 원으로 모이며 걷힙니다(앞으로 갈 때만). */
+      const core = cam && !back && now.dataset.iris ? now.querySelector(now.dataset.iris) : null;
       if (cam) {
-        camera(was, pairs[0], CAM_MS);
-        pairs.forEach(([prev, node]) => glide(prev, node, CAM_MS));
+        camera(was, pairs[0], CAM_MS, !!core);
+        pairs.forEach(([prev, node]) => glide(prev, node, CAM_MS, !!core));
+        if (core) iris(was, now, core, CAM_MS);
       } else if (pairs.length) {
         sweep(was, pairs.map((p) => p[0]), now, pairs.map((p) => p[1]), way);
         pairs.forEach(([prev, node]) => glide(prev, node));
@@ -2544,7 +2548,7 @@ window.deck = new Deck();
      배율을 바꾸고, 그 가운데가 다음 장 조각의 가운데로 가도록 옮깁니다. glide 와
      같은 곡선 · 같은 시간이라 두 장의 조각이 처음부터 끝까지 겹칩니다. */
   const CAM_MS = 1150;
-  function camera(oldSlide, [prev, node], ms) {
+  function camera(oldSlide, [prev, node], ms, keep) {
     const frame = oldSlide.querySelector('.frame') || oldSlide;
     const a = prev.getBoundingClientRect();
     const b = rest(node);
@@ -2561,9 +2565,45 @@ window.deck = new Deck();
       [{ transformOrigin: '0 0', transform: at(0, 1) }, { transformOrigin: '0 0', transform: at(1, s) }],
       { duration: ms, easing: GLIDE, fill: 'forwards' },
     ));
+    if (keep) return;
     running.push(frame.animate(
       [{ opacity: 1 }, { opacity: 0 }],
       { duration: Math.round(ms * .5), delay: Math.round(ms * .08), easing: 'linear', fill: 'forwards' },
+    ));
+  }
+
+  /* 조리개 — 앞 장(어두운 장)을 위에 둔 채 다음 장의 원 자리로 둥글게 오므립니다.
+     오므라드는 동안 앞 장의 바탕이 원의 색으로 바뀌어, 다 오므라들면 그 원과 같은 것이 됩니다.
+     워드마크는 두 장의 것이 처음부터 끝까지 겹쳐 있으므로(카메라), 조리개 가장자리를 지나는
+     순간에 흰 글자가 짙은 글자로 바뀝니다. */
+  function iris(dark, light, core, ms) {
+    const st = STAGE.getBoundingClientRect();
+    const f = st.width / 1920;
+    const c = rest(core);
+    const cx = (c.left + c.width / 2 - st.left) / f;
+    const cy = (c.top + c.height / 2 - st.top) / f;
+    const r1 = c.width / 2 / f;
+    const r0 = Math.hypot(Math.max(cx, 1920 - cx), Math.max(cy, 1080 - cy)) + 12;
+    const tone = getComputedStyle(core).backgroundColor;
+    const total = 1280;   // 나가는 장이 1300ms 에 치워지기 전에 끝냅니다
+    running.push(light.animate([{ opacity: 1 }, { opacity: 1 }], { duration: total }));
+    /* 나가는 장은 기본 전환이 0.4초쯤에 치워 버립니다. 조리개가 닫힐 때까지 위에 세워 둡니다. */
+    running.push(dark.animate([{ zIndex: 3, visibility: 'visible' }, { zIndex: 3, visibility: 'visible' }], { duration: total }));
+    running.push(dark.animate(
+      [{ clipPath: `circle(${r0}px at ${cx}px ${cy}px)` }, { clipPath: `circle(${r1}px at ${cx}px ${cy}px)` }],
+      { duration: ms, easing: GLIDE, fill: 'forwards' },
+    ));
+    running.push(dark.animate(
+      [{ backgroundColor: getComputedStyle(dark).backgroundColor }, { backgroundColor: tone }],
+      { duration: Math.round(ms * .8), delay: Math.round(ms * .1), easing: 'ease-in-out', fill: 'forwards' },
+    ));
+    running.push(dark.animate(
+      [{ opacity: 1 }, { opacity: 0 }],
+      { pseudoElement: '::before', duration: Math.round(ms * .7), delay: Math.round(ms * .1), easing: 'linear', fill: 'forwards' },
+    ));
+    running.push(dark.animate(
+      [{ opacity: 1, offset: 0 }, { opacity: 1, offset: .84 }, { opacity: 0, offset: 1 }],
+      { duration: total, easing: 'linear', fill: 'forwards' },
     ));
   }
 
