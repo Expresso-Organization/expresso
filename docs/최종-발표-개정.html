@@ -1394,12 +1394,13 @@ svg [data-morph] { transform-box: fill-box; }
 .fd-plus .t { font-size: 28px; color: var(--ex-slate-500); letter-spacing: -.01em; }
 
 /* ── Expresso 2.0 공개 장 — 15쪽 제목의 워드마크가 가운데로 커지고(카메라), 어두운 배경에서 1이 2로 넘어간다 ── */
-.slide.fp.fd-reveal { background: radial-gradient(90% 120% at 50% 50%, #1d2c4b 0%, #16223a 46%, #0e1626 100%); color: var(--ex-white); }
+/* 배경은 「Expresso 2.0의 핵심」 장과 같습니다 — 남색 바탕에 오른쪽에서 번지는 커피색. */
+.slide.fp.fd-reveal { background: #16223a; color: var(--ex-white); }
 .fd-reveal .frame { inset: 0; }
 /* transform 은 inline 상자에 걸리지 않습니다. 자리를 옮기는 워드마크는 inline-block 으로 둡니다. */
 .vh-wm[data-morph], .vh-wm [data-morph] { display: inline-block; }
 .fd-reveal .fd-poster .wm { position: relative; z-index: 1; font-size: 236px; white-space: nowrap; }
-.slide.fp.fd-reveal::before { content: ""; position: absolute; left: 50%; top: 50%; width: 1640px; height: 940px; margin: -470px 0 0 -820px; background: radial-gradient(closest-side, rgba(224, 180, 134, .30), rgba(154, 64, 48, .17) 50%, rgba(154, 64, 48, 0) 100%); opacity: .6; pointer-events: none; }
+.slide.fp.fd-reveal::before { content: ""; position: absolute; inset: 0; background: linear-gradient(118deg, rgba(22, 34, 58, 0) 0 38%, #45201b 74%, #8a3a2b 100%); pointer-events: none; }
 .fd-roll { position: relative; display: inline-block; clip-path: inset(0 -.3em); --dw: .186em; }
 .fd-roll .d1 { position: absolute; left: 0; top: 0; opacity: 0; }
 .fd-roll .d2 { display: inline-block; }
@@ -1412,13 +1413,14 @@ svg [data-morph] { transform-box: fill-box; }
 @property --fd-cut { syntax: "<percentage>"; inherits: false; initial-value: 100%; }
 .fd-reveal .fd-poster .wm .vh-wm i { background-image: linear-gradient(45deg, rgba(255, 255, 255, 0) 0 calc(var(--fd-cut) - 5%), var(--ex-white) var(--fd-cut) 100%), linear-gradient(135deg, var(--ex-white) 0 62.5%, var(--ex-crema) 62.5% 100%); }
 @keyframes fd-cut { from { --fd-cut: 0%; } to { --fd-cut: 100%; } }
-@keyframes fd-bloom { 0% { opacity: 0; transform: scale(.5); } 55% { opacity: 1; transform: scale(1.08); } 100% { opacity: .6; transform: none; } }
+/* 1.0 인 동안은 남색뿐이고, 2 가 앉을 때 커피색이 오른쪽에서 번져 옵니다. */
+@keyframes fd-bloom { from { opacity: 0; transform: translateX(46%); } to { opacity: 1; transform: none; } }
 /* 앞에서 넘어올 때만 돕니다. 뒤에서 돌아오거나 목록에서 열면 처음부터 2.0 입니다. */
 .deck-stage[data-way="fwd"] > .slide.active.fd-reveal .fd-roll { animation: fd-roll-w 640ms cubic-bezier(.45, 0, .15, 1) 1500ms both; }
 .deck-stage[data-way="fwd"] > .slide.active.fd-reveal .fd-roll .d1 { animation: fd-roll-out 520ms cubic-bezier(.5, 0, .8, .3) 1500ms both; }
 .deck-stage[data-way="fwd"] > .slide.active.fd-reveal .fd-roll .d2 { animation: fd-roll-in 660ms cubic-bezier(.2, .7, .2, 1) 1560ms both; }
 .deck-stage[data-way="fwd"] > .slide.active.fd-reveal .vh-wm i { animation: fd-cut 680ms cubic-bezier(.4, 0, .2, 1) 1820ms both; }
-.deck-stage[data-way="fwd"] > .slide.active.fd-reveal::before { animation: fd-bloom 1600ms cubic-bezier(.3, 0, .2, 1) 1620ms both; }
+.deck-stage[data-way="fwd"] > .slide.active.fd-reveal::before { animation: fd-bloom 1500ms cubic-bezier(.3, 0, .2, 1) 1600ms both; }
 /* 공개 장에서 다음 장으로 — 워드마크가 제목 자리에 앉을 즈음부터 나머지가 나타납니다. */
 .deck-stage[data-way="fwd"] > .slide.fd-reveal + .slide.active .in { animation-delay: calc(var(--dl, 0ms) + 640ms); }
 .deck-stage[data-way="fwd"] > .slide.fd-reveal + .slide.active .vh-orbit { animation: ex-in-fade 620ms cubic-bezier(.32, .72, 0, 1) 640ms both; }
